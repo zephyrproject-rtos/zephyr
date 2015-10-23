@@ -43,11 +43,6 @@ static struct bt_uuid device_name_uuid = {
 	.u16 = BT_UUID_GAP_DEVICE_NAME,
 };
 
-static struct bt_gatt_chrc name_chrc = {
-	.properties = BT_GATT_CHRC_READ,
-	.uuid = &device_name_uuid,
-};
-
 static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		     void *buf, uint16_t len, uint16_t offset)
 {
@@ -60,11 +55,6 @@ static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static struct bt_uuid appeareance_uuid = {
 	.type = BT_UUID_16,
 	.u16 = BT_UUID_GAP_APPEARANCE,
-};
-
-static struct bt_gatt_chrc appearance_chrc = {
-	.properties = BT_GATT_CHRC_READ,
-	.uuid = &appeareance_uuid,
 };
 
 static int read_appearance(struct bt_conn *conn,
@@ -87,29 +77,14 @@ static struct bt_uuid hrmc_uuid = {
 	.u16 = BT_UUID_HRS_MEASUREMENT,
 };
 
-static struct bt_gatt_chrc hrmc_chrc = {
-	.properties = BT_GATT_CHRC_NOTIFY,
-	.uuid = &hrmc_uuid,
-};
-
 static struct bt_uuid bslc_uuid = {
 	.type = BT_UUID_16,
 	.u16 = BT_UUID_HRS_BODY_SENSOR,
 };
 
-static struct bt_gatt_chrc bslc_chrc = {
-	.properties = BT_GATT_CHRC_READ,
-	.uuid = &bslc_uuid,
-};
-
 static struct bt_uuid hrcpc_uuid = {
 	.type = BT_UUID_16,
 	.u16 = BT_UUID_HRS_CONTROL_POINT,
-};
-
-static struct bt_gatt_chrc hrcpc_chrc = {
-	.properties = BT_GATT_CHRC_WRITE,
-	.uuid = &hrcpc_uuid,
 };
 
 static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
@@ -140,11 +115,6 @@ static struct bt_uuid blvl_uuid = {
 	.u16 = BT_UUID_BAS_BATTERY_LEVEL,
 };
 
-static struct bt_gatt_chrc blvl_chrc = {
-	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-	.uuid = &blvl_uuid,
-};
-
 static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t simulate_blvl = 0;
 static uint8_t battery = 100;
@@ -172,12 +142,6 @@ static struct bt_uuid cts_uuid = {
 static struct bt_uuid ct_uuid = {
 	.type = BT_UUID_16,
 	.u16 = BT_UUID_CTS_CURRENT_TIME,
-};
-
-static struct bt_gatt_chrc ct_chrc = {
-	.properties =  BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY |
-		BT_GATT_CHRC_WRITE,
-	.uuid = &ct_uuid,
 };
 
 static void generate_current_time(uint8_t *buf)
@@ -252,11 +216,6 @@ static struct bt_uuid model_uuid = {
 	.u16 = BT_UUID_DIS_MODEL_NUMBER_STRING,
 };
 
-static struct bt_gatt_chrc model_chrc = {
-	.properties = BT_GATT_CHRC_READ,
-	.uuid = &model_uuid,
-};
-
 static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   void *buf, uint16_t len, uint16_t offset)
 {
@@ -269,11 +228,6 @@ static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static struct bt_uuid manuf_uuid = {
 	.type = BT_UUID_16,
 	.u16 = BT_UUID_DIS_MANUFACTURER_NAME_STRING,
-};
-
-static struct bt_gatt_chrc manuf_chrc = {
-	.properties = BT_GATT_CHRC_READ,
-	.uuid = &manuf_uuid,
 };
 
 static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -298,20 +252,10 @@ static struct bt_uuid vnd_enc_uuid = {
 		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
 };
 
-static struct bt_gatt_chrc vnd_enc_chrc = {
-	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
-	.uuid = &vnd_enc_uuid,
-};
-
 static struct bt_uuid vnd_auth_uuid = {
 	.type = BT_UUID_128,
 	.u128 = { 0xf2, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
-};
-
-static struct bt_gatt_chrc vnd_auth_chrc = {
-	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
-	.uuid = &vnd_auth_uuid,
 };
 
 static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
@@ -399,12 +343,6 @@ static const struct bt_uuid vnd_long_uuid = {
 		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
 };
 
-static struct bt_gatt_chrc vnd_long_chrc = {
-	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
-		      BT_GATT_CHRC_EXT_PROP,
-	.uuid = &vnd_long_uuid,
-};
-
 static struct bt_gatt_cep vnd_long_cep = {
 	.properties = BT_GATT_CEP_RELIABLE_WRITE,
 };
@@ -440,70 +378,70 @@ static const struct bt_uuid vnd_signed_uuid = {
 		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x13 },
 };
 
-static struct bt_gatt_chrc vnd_signed_chrc = {
-	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
-		      BT_GATT_CHRC_AUTH,
-	.uuid = &vnd_signed_uuid,
-};
-
 static struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(&gap_uuid),
-	BT_GATT_CHARACTERISTIC(&name_chrc),
+	BT_GATT_CHARACTERISTIC(&device_name_uuid, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(&device_name_uuid, BT_GATT_PERM_READ,
 			  read_name, NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(&appearance_chrc),
+	BT_GATT_CHARACTERISTIC(&appeareance_uuid, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(&appeareance_uuid, BT_GATT_PERM_READ,
 			   read_appearance, NULL, NULL),
 	/* Heart Rate Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&hrs_uuid),
-	BT_GATT_CHARACTERISTIC(&hrmc_chrc),
+	BT_GATT_CHARACTERISTIC(&hrmc_uuid, BT_GATT_CHRC_NOTIFY),
 	BT_GATT_DESCRIPTOR(&hrmc_uuid, BT_GATT_PERM_READ, NULL, NULL, NULL),
 	BT_GATT_CCC(hrmc_ccc_cfg, hrmc_ccc_cfg_changed),
-	BT_GATT_CHARACTERISTIC(&bslc_chrc),
+	BT_GATT_CHARACTERISTIC(&bslc_uuid, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(&bslc_uuid, BT_GATT_PERM_READ, read_blsc, NULL,
 			   NULL),
-	BT_GATT_CHARACTERISTIC(&hrcpc_chrc),
+	BT_GATT_CHARACTERISTIC(&hrcpc_uuid, BT_GATT_CHRC_WRITE),
 	/* TODO: Add write permission and callback */
 	BT_GATT_DESCRIPTOR(&hrcpc_uuid, BT_GATT_PERM_READ, NULL, NULL, NULL),
 	/* Battery Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&bas_uuid),
-	BT_GATT_CHARACTERISTIC(&blvl_chrc),
+	BT_GATT_CHARACTERISTIC(&blvl_uuid,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
 	BT_GATT_DESCRIPTOR(&blvl_uuid, BT_GATT_PERM_READ, read_blvl, NULL,
 			   &battery),
 	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
 	/* Current Time Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&cts_uuid),
-	BT_GATT_CHARACTERISTIC(&ct_chrc),
+	BT_GATT_CHARACTERISTIC(&ct_uuid, BT_GATT_CHRC_READ |
+			       BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE),
 	BT_GATT_DESCRIPTOR(&ct_uuid, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 			   read_ct, write_ct, ct),
 	BT_GATT_CCC(ct_ccc_cfg, ct_ccc_cfg_changed),
 	/* Device Information Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&dis_uuid),
-	BT_GATT_CHARACTERISTIC(&model_chrc),
+	BT_GATT_CHARACTERISTIC(&model_uuid, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(&model_uuid, BT_GATT_PERM_READ,
 			   read_model, NULL, CONFIG_PLATFORM),
-	BT_GATT_CHARACTERISTIC(&manuf_chrc),
+	BT_GATT_CHARACTERISTIC(&manuf_uuid, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(&manuf_uuid, BT_GATT_PERM_READ,
 			   read_manuf, NULL, "Manufacturer"),
 	/* Vendor Primary Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&vnd_uuid),
-	BT_GATT_CHARACTERISTIC(&vnd_enc_chrc),
+	BT_GATT_CHARACTERISTIC(&vnd_enc_uuid,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
 	BT_GATT_DESCRIPTOR(&vnd_enc_uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_ENCRYPT |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT,
 			   read_vnd, write_vnd, vnd_value),
-	BT_GATT_CHARACTERISTIC(&vnd_auth_chrc),
+	BT_GATT_CHARACTERISTIC(&vnd_auth_uuid,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
 	BT_GATT_DESCRIPTOR(&vnd_auth_uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_AUTHEN |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_AUTHEN,
 			   read_vnd, write_vnd, vnd_value),
-	BT_GATT_CHARACTERISTIC(&vnd_long_chrc),
+	BT_GATT_CHARACTERISTIC(&vnd_long_uuid, BT_GATT_CHRC_READ |
+			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
 	BT_GATT_LONG_DESCRIPTOR(&vnd_long_uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 			   read_long_vnd, write_long_vnd, flush_long_vnd,
 			   &vnd_long_value),
 	BT_GATT_CEP(&vnd_long_cep),
-	BT_GATT_CHARACTERISTIC(&vnd_signed_chrc),
+	BT_GATT_CHARACTERISTIC(&vnd_signed_uuid, BT_GATT_CHRC_READ |
+			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_AUTH),
 	BT_GATT_DESCRIPTOR(&vnd_signed_uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 			   read_signed, write_signed, &signed_value),

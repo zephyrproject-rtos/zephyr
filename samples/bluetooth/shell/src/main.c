@@ -915,27 +915,17 @@ static struct bt_uuid device_name_uuid = {
 	.u16 = BT_UUID_GAP_DEVICE_NAME,
 };
 
-static struct bt_gatt_chrc name_chrc = {
-	.properties = BT_GATT_CHRC_READ,
-	.uuid = &device_name_uuid,
-};
-
 static struct bt_uuid appeareance_uuid = {
 	.type = BT_UUID_16,
 	.u16 = BT_UUID_GAP_APPEARANCE,
 };
 
-static struct bt_gatt_chrc appearance_chrc = {
-	.properties = BT_GATT_CHRC_READ,
-	.uuid = &appeareance_uuid,
-};
-
 static struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(&gap_uuid),
-	BT_GATT_CHARACTERISTIC(&name_chrc),
+	BT_GATT_CHARACTERISTIC(&device_name_uuid, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(&device_name_uuid, BT_GATT_PERM_READ, read_string,
 			   NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(&appearance_chrc),
+	BT_GATT_CHARACTERISTIC(&appeareance_uuid, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(&appeareance_uuid, BT_GATT_PERM_READ,
 			   read_appearance, NULL, NULL),
 };

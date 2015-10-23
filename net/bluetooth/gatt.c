@@ -826,7 +826,6 @@ static uint16_t parse_characteristic(const void *pdu,
 	const struct bt_att_read_type_rsp *rsp = pdu;
 	struct bt_uuid uuid;
 	uint16_t handle = 0;
-	struct bt_gatt_chrc value;
 
 	/* Data can be either in UUID16 or UUID128 */
 	switch (rsp->len) {
@@ -854,13 +853,6 @@ static uint16_t parse_characteristic(const void *pdu,
 			goto done;
 		}
 
-		/* Convert characteristic data, bt_gatt_chrc and gatt_chrc
-		 * have different formats so the convertion have to be done
-		 * field by field.
-		 */
-		value.properties = chrc->properties;
-		value.uuid = &uuid;
-
 		switch(uuid.type) {
 		case BT_UUID_16:
 			uuid.u16 = sys_le16_to_cpu(chrc->uuid16);
@@ -878,7 +870,8 @@ static uint16_t parse_characteristic(const void *pdu,
 			continue;
 		}
 
-		attr = (&(struct bt_gatt_attr)BT_GATT_CHARACTERISTIC(&value));
+		attr = (&(struct bt_gatt_attr)BT_GATT_CHARACTERISTIC(&uuid,
+					chrc->properties));
 		attr->handle = handle;
 
 		if (params->func(attr, params) == BT_GATT_ITER_STOP) {

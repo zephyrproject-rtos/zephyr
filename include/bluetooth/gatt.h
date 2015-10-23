@@ -406,15 +406,17 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
  *
  *  Helper macro to declare a characteristic attribute.
  *
- *  @param _value Characteristic attribute value.
+ *  @param _uuid Characteristic attribute uuid.
+ *  @param _props Characteristic attribute properties.
  */
-#define BT_GATT_CHARACTERISTIC(_value)					\
+#define BT_GATT_CHARACTERISTIC(_uuid, _props)				\
 {									\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_CHRC }),	\
 	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_chrc,					\
-	.user_data = _value,						\
+	.user_data = (&(struct bt_gatt_chrc) { .uuid = _uuid,		\
+					       .properties = _props, }),\
 }
 
 /** @brief GATT CCC configuration entry. */

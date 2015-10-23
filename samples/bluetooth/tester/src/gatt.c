@@ -229,7 +229,7 @@ static int flush_value(struct bt_conn *conn,
 	return -EINVAL;
 }
 
-static struct bt_gatt_attr chr = BT_GATT_CHARACTERISTIC(NULL);
+static struct bt_gatt_attr chr = BT_GATT_CHARACTERISTIC(NULL, 0);
 static struct bt_gatt_attr chr_val = BT_GATT_LONG_DESCRIPTOR(NULL, 0,
 							     read_value,
 							     write_value,
