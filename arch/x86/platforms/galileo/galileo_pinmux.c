@@ -587,6 +587,8 @@ uint8_t _galileo_set_pin(struct device *port, uint8_t pin, uint8_t func)
 					   enable->path[i].cfg);
 			break;
 		case PWM0:
+			pwm_pin_configure(drv_data->pwm0,
+				enable->path[i].pin, 0);
 			pwm_pin_set_duty_cycle(drv_data->pwm0,
 				enable->path[i].pin,
 				enable->path[i].level ? 100 : 0);
