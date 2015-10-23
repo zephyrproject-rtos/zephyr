@@ -25,14 +25,17 @@
 
 /* 8 chans maximum + 1 dummy, 16 bits per-chans -> 18 bytes */
 #define ADC108S102_CMD_BUFFER_SIZE		9
-/* 17 maximum dummy bytes + 16 result bytes maximum + 4 timestamp bytes */
-#define ADC108S102_SAMPLING_BUFFER_SIZE		13
-#define ADC108S102_SAMPLING_STACK_SIZE		128
+/* 1 dummy + 8 results maximum, 16 bits per-chans -> 18 bytes */
+#define ADC108S102_SAMPLING_BUFFER_SIZE		9
+#define ADC108S102_SAMPLING_STACK_SIZE		1024
 #define ADC108S102_CHANNELS			8
 #define ADC108S102_CHANNELS_SIZE		\
 			(ADC108S102_CHANNELS * sizeof(uint32_t))
 #define ADC108S102_CHANNEL_CMD(_channel_)	\
 			sys_cpu_to_be16((_channel_ << 8) << 3)
+#define ADC108S102_RESULT_MASK			0xfff /* 12 bits resolution */
+#define ADC108S102_RESULT(_res_)		\
+			(sys_be16_to_cpu(_res_) & ADC108S102_RESULT_MASK)
 
 struct ti_adc108s102_config {
 	const char *spi_port;

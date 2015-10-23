@@ -80,8 +80,8 @@ static inline void _ti_adc108s102_handle_result(struct device *dev)
 			continue;
 		}
 
-		*((uint16_t *)entry->buffer+chan->buf_idx) =
-				sys_be16_to_cpu(adc->sampling_buffer[s_i]);
+		*((uint16_t *)(entry->buffer+chan->buf_idx)) =
+				ADC108S102_RESULT(adc->sampling_buffer[s_i]);
 
 		chan->buf_idx += 2;
 	}
@@ -96,7 +96,7 @@ static int32_t _ti_adc108s102_prepare(struct device *dev)
 	uint32_t i;
 
 	adc->cmd_buf_len = 0;
-	adc->sampling_buf_len = 1;
+	adc->sampling_buf_len = 1; /* Counting the dummy byte */
 
 	for (i = 0; i < seq_table->num_entries; i++) {
 		struct adc_seq_entry *entry = &seq_table->entries[i];
@@ -107,6 +107,7 @@ static int32_t _ti_adc108s102_prepare(struct device *dev)
 			continue;
 		}
 
+		DBG("Requesting channel %d\n", entry->channel_id);
 		adc->cmd_buffer[adc->cmd_buf_len] =
 				ADC108S102_CHANNEL_CMD(entry->channel_id);
 
@@ -125,9 +126,6 @@ static int32_t _ti_adc108s102_prepare(struct device *dev)
 	/* dummy cmd byte */
 	adc->cmd_buffer[adc->cmd_buf_len] = 0;
 	adc->cmd_buf_len++;
-
-	/* 64bits timestamp */
-	adc->sampling_buf_len += 4;
 
 	DBG("ADC108S102 is prepared...");
 
