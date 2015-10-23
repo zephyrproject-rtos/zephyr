@@ -188,10 +188,10 @@ static bool prepare_transfer(struct k_args *move,
 		move->args.moved_req.extra.setup.continuation_send = writer;
 
 		return all_data_present;
-	} else {
-		/* { NULL == move, which means header exchange only } */
-		return 0; /* == don't care actually */
 	}
+
+	/* { NULL == move, which means header exchange only } */
+	return 0; /* == don't care actually */
 }
 
 /**
@@ -215,6 +215,8 @@ static void transfer(struct k_args *pMvdReq)
  */
 void _k_mbox_send_ack(struct k_args *pCopyWriter)
 {
+	struct k_args *Starter;
+
 	if (ISASYNCMSG(&(pCopyWriter->args.m1.mess))) {
 		if (pCopyWriter->args.m1.mess.extra.sema) {
 			/*
@@ -255,27 +257,25 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 				pCopyWriter->args.m1.mess.tx_block.req_size;
 			SENDARGS(pCopyWriter);
 			return;
-		} else {
-			FREEARGS(pCopyWriter);
-			return;
 		}
-	} else {
-		struct k_args *Starter;
-
-		/*
-		 * Get a pointer to the original command packet of the sender
-		 * and copy both the result as well as the message information
-		 * from the received packet of the sender before resetting the
-		 * TF_SEND and TF_SENDDATA state bits.
-		 */
-
-		Starter = pCopyWriter->Ctxt.args;
-		Starter->Time.rcode = pCopyWriter->Time.rcode;
-		Starter->args.m1.mess = pCopyWriter->args.m1.mess;
-		_k_state_bit_reset(Starter->Ctxt.task, TF_SEND | TF_SENDDATA);
 
 		FREEARGS(pCopyWriter);
+		return;
 	}
+
+	/*
+	 * Get a pointer to the original command packet of the sender
+	 * and copy both the result as well as the message information
+	 * from the received packet of the sender before resetting the
+	 * TF_SEND and TF_SENDDATA state bits.
+	 */
+
+	Starter = pCopyWriter->Ctxt.args;
+	Starter->Time.rcode = pCopyWriter->Time.rcode;
+	Starter->args.m1.mess = pCopyWriter->args.m1.mess;
+	_k_state_bit_reset(Starter->Ctxt.task, TF_SEND | TF_SENDDATA);
+
+	FREEARGS(pCopyWriter);
 }
 
 /**

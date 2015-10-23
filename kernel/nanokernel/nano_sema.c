@@ -103,9 +103,9 @@ void nano_task_sem_give(struct nano_sem *sem)
 		set_sem_available(tcs);
 		_Swap(imask);
 		return;
-	} else {
-		sem->nsig++;
 	}
+
+	sem->nsig++;
 
 	irq_unlock(imask);
 }

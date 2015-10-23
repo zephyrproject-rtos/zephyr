@@ -734,26 +734,27 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 		if (pBegin2 < pEnd1) {
 			/* intrusion!! */
 			return true;
-		} else {
-			/*
-			 * pBegin2 lies outside and to the right of the first
-			 * area, intrusion is impossible
-			 */
-			return false;
 		}
-	} else {
-		/* pBegin2 lies to the left of (pBegin1, pEnd1) */
-		/* check end pointer: is pEnd2 in (pBegin1, pEnd1( ?? */
-		if (pEnd2 > pBegin1) {
-			/* intrusion!! */
-			return true;
-		} else {
-			/* pEnd2 lies outside and to the left of the first area,
-			 * intrusion is impossible
-			 */
-			return false;
-		}
+
+		/*
+		 * pBegin2 lies outside and to the right of the first
+		 * area, intrusion is impossible
+		 */
+		return false;
 	}
+
+	/* pBegin2 lies to the left of (pBegin1, pEnd1) */
+	/* check end pointer: is pEnd2 in (pBegin1, pEnd1( ?? */
+	if (pEnd2 > pBegin1) {
+		/* intrusion!! */
+		return true;
+	}
+
+	/*
+	 * pEnd2 lies outside and to the left of the first area,
+	 * intrusion is impossible
+	 */
+	return false;
 }
 
 static void pipe_intrusion_check(struct _k_pipe_desc *desc,

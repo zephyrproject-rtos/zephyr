@@ -91,10 +91,10 @@ void nano_task_lifo_put(struct nano_lifo *lifo, void *data)
 		fiberRtnValueSet(tcs, (unsigned int) data);
 		_Swap(imask);
 		return;
-	} else {
-		*(void **) data = lifo->list;
-		lifo->list = data;
 	}
+
+	*(void **) data = lifo->list;
+	lifo->list = data;
 
 	irq_unlock(imask);
 }

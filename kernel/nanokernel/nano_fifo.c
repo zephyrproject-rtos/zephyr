@@ -139,9 +139,9 @@ void nano_task_fifo_put(struct nano_fifo *fifo, void *data)
 		fiberRtnValueSet(tcs, (unsigned int)data);
 		_Swap(imask);
 		return;
-	} else {
-		enqueue_data(fifo, data);
 	}
+
+	enqueue_data(fifo, data);
 
 	irq_unlock(imask);
 }

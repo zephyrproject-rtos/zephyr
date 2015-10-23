@@ -472,9 +472,9 @@ static void pipe_read(struct _k_pipe_struct *pipe_ptr,
 			}
 
 			return;
-		} else {
-			_k_pipe_request_status_set(pipe_read_req, XFER_BUSY);
 		}
+
+		_k_pipe_request_status_set(pipe_read_req, XFER_BUSY);
 
 	} while (--numIterations != 0);
 }
@@ -544,9 +544,9 @@ static void pipe_write(struct _k_pipe_struct *pipe_ptr,
 				myfreetimer(&writer_ptr->Time.timer);
 			}
 			return;
-		} else {
-			_k_pipe_request_status_set(pipe_write_req, XFER_BUSY);
 		}
+
+		_k_pipe_request_status_set(pipe_write_req, XFER_BUSY);
 
 	} while (--numIterations != 0);
 }

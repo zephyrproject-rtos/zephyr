@@ -103,10 +103,10 @@ void nano_task_stack_push(struct nano_stack *stack, uint32_t data)
 		_nano_fiber_schedule(tcs);
 		_Swap(imask);
 		return;
-	} else {
-		*(stack->next) = data;
-		stack->next++;
 	}
+
+	*(stack->next) = data;
+	stack->next++;
 
 	irq_unlock(imask);
 }

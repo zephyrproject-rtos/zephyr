@@ -138,36 +138,36 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 			 */
 			RequestProc->Time.timer = NULL;
 			return;
-		} else {
-			/* { TIME_BT } */
+		}
+
+		/* { TIME_BT } */
 #ifdef CANCEL_TIMERS
-			if (RequestProc->args.pipe_xfer_req.xferred_size != 0) {
-				RequestProc->Time.timer = NULL;
-			} else
+		if (RequestProc->args.pipe_xfer_req.xferred_size != 0) {
+			RequestProc->Time.timer = NULL;
+		} else
 #endif
-				/* enlist a new timer into the timeout chain */
-				_k_timeout_alloc(RequestProc);
+			/* enlist a new timer into the timeout chain */
+			_k_timeout_alloc(RequestProc);
 
-			return;
-		}
-	} else {
-		/* call is non-blocking;
-		 * Check if we don't have to queue it b/c it could not
-		 * be processed at once
-		 */
-		RequestProc->Time.timer = NULL;
-
-		if (XFER_BUSY == RequestProc->args.pipe_xfer_req.status) {
-			INSERT_ELM(pipe_ptr->readers, RequestProc);
-		} else {
-			__ASSERT_NO_MSG(XFER_IDLE ==
-				RequestProc->args.pipe_xfer_req.status);
-			__ASSERT_NO_MSG(0 == RequestProc->args.pipe_xfer_req.xferred_size);
-			RequestProc->Comm = _K_SVC_PIPE_GET_REPLY;
-			_k_pipe_get_reply(RequestProc);
-		}
 		return;
 	}
+
+	/* call is non-blocking;
+	 * Check if we don't have to queue it b/c it could not
+	 * be processed at once
+	 */
+	RequestProc->Time.timer = NULL;
+
+	if (XFER_BUSY == RequestProc->args.pipe_xfer_req.status) {
+		INSERT_ELM(pipe_ptr->readers, RequestProc);
+	} else {
+		__ASSERT_NO_MSG(XFER_IDLE ==
+			RequestProc->args.pipe_xfer_req.status);
+		__ASSERT_NO_MSG(0 == RequestProc->args.pipe_xfer_req.xferred_size);
+		RequestProc->Comm = _K_SVC_PIPE_GET_REPLY;
+		_k_pipe_get_reply(RequestProc);
+	}
+	return;
 }
 
 /**

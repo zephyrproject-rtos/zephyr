@@ -137,10 +137,10 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 			}
 			FREEARGS(A);
 			return;
-		} else {
-			Y = X;
-			X = X->next;
 		}
+
+		Y = X;
+		X = X->next;
 	}
 	A->next = X;
 	if (Y) {
@@ -170,10 +170,10 @@ void _k_sem_group_wait_accept(struct k_args *A)
 			}
 			FREEARGS(A);
 			return;
-		} else {
-			Y = X;
-			X = X->next;
 		}
+
+		Y = X;
+		X = X->next;
 	}
 	/* ERROR */
 }
@@ -260,10 +260,10 @@ void _k_sem_group_wait_request(struct k_args *A)
 			}
 			FREEARGS(A);
 			return;
-		} else {
-			Y = X;
-			X = X->next;
 		}
+
+		Y = X;
+		X = X->next;
 	}
 	A->next = X;
 	if (Y) {
