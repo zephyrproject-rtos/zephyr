@@ -434,7 +434,6 @@ struct _bt_gatt_ccc {
 	struct bt_gatt_ccc_cfg	*cfg;
 	size_t			cfg_len;
 	uint16_t		value;
-	uint16_t		value_handle;
 	void			(*cfg_changed)(uint16_t value);
 };
 
@@ -484,7 +483,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _cfg Initial configuration.
  *  @param _cfg_changed Configuration changed callback.
  */
-#define BT_GATT_CCC(_value_handle, _cfg, _cfg_changed)			\
+#define BT_GATT_CCC(_cfg, _cfg_changed)					\
 {									\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_CCC }),	\
@@ -493,7 +492,6 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	.write = bt_gatt_attr_write_ccc,				\
 	.user_data = (&(struct _bt_gatt_ccc) { .cfg = _cfg,		\
 					       .cfg_len = ARRAY_SIZE(_cfg), \
-					       .value_handle = _value_handle, \
 					       .cfg_changed = _cfg_changed, }),\
 }
 
