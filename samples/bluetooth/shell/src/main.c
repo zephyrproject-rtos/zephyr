@@ -528,8 +528,8 @@ static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		gatt_chrc = attr->user_data;
 		bt_uuid_to_str(gatt_chrc->uuid, uuid, sizeof(uuid));
-		printk("Characteristic %s found: handle %x, value_handle %x\n",
-		       uuid, attr->handle, gatt_chrc->value_handle);
+		printk("Characteristic %s found: handle %x\n", uuid,
+		       attr->handle);
 		print_chrc_props(gatt_chrc->properties);
 		break;
 	case BT_GATT_DISCOVER_INCLUDE:
@@ -917,7 +917,6 @@ static struct bt_uuid device_name_uuid = {
 
 static struct bt_gatt_chrc name_chrc = {
 	.properties = BT_GATT_CHRC_READ,
-	.value_handle = 0x0003,
 	.uuid = &device_name_uuid,
 };
 
@@ -928,7 +927,6 @@ static struct bt_uuid appeareance_uuid = {
 
 static struct bt_gatt_chrc appearance_chrc = {
 	.properties = BT_GATT_CHRC_READ,
-	.value_handle = 0x0005,
 	.uuid = &appeareance_uuid,
 };
 

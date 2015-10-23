@@ -273,7 +273,6 @@ static void add_characteristic(uint8_t *data, uint16_t len)
 	}
 
 	chrc.properties = cmd->properties;
-	chrc.value_handle = attr_value->handle;
 	chrc.uuid = gatt_buf_add(&uuid, sizeof(uuid));
 	if (!chrc.uuid) {
 		status = BTP_STATUS_FAILED;
@@ -316,9 +315,7 @@ static void set_value(uint8_t *data, uint16_t len)
 	}
 
 	if (attr->uuid->u16 == BT_UUID_GATT_CHRC) {
-		struct bt_gatt_chrc *chrc = attr->user_data;
-
-		attr = gatt_db_lookup_id(chrc->value_handle);
+		attr = attr->_next;
 		if (!attr) {
 			status = BTP_STATUS_FAILED;
 			goto rsp;

@@ -177,8 +177,6 @@ struct bt_gatt_include {
 struct bt_gatt_chrc {
 	/** Characteristic UUID. */
 	const struct bt_uuid	*uuid;
-	/** Characteristic value handle. */
-	uint16_t		value_handle;
 	/** Characteristic properties. */
 	uint8_t			properties;
 };

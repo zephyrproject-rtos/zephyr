@@ -45,7 +45,6 @@ static struct bt_uuid device_name_uuid = {
 
 static struct bt_gatt_chrc name_chrc = {
 	.properties = BT_GATT_CHRC_READ,
-	.value_handle = 0x0003,
 	.uuid = &device_name_uuid,
 };
 
@@ -65,7 +64,6 @@ static struct bt_uuid appeareance_uuid = {
 
 static struct bt_gatt_chrc appearance_chrc = {
 	.properties = BT_GATT_CHRC_READ,
-	.value_handle = 0x0005,
 	.uuid = &appeareance_uuid,
 };
 
@@ -91,7 +89,6 @@ static struct bt_uuid hrmc_uuid = {
 
 static struct bt_gatt_chrc hrmc_chrc = {
 	.properties = BT_GATT_CHRC_NOTIFY,
-	.value_handle = 0x0008,
 	.uuid = &hrmc_uuid,
 };
 
@@ -102,7 +99,6 @@ static struct bt_uuid bslc_uuid = {
 
 static struct bt_gatt_chrc bslc_chrc = {
 	.properties = BT_GATT_CHRC_READ,
-	.value_handle = 0x000b,
 	.uuid = &bslc_uuid,
 };
 
@@ -113,7 +109,6 @@ static struct bt_uuid hrcpc_uuid = {
 
 static struct bt_gatt_chrc hrcpc_chrc = {
 	.properties = BT_GATT_CHRC_WRITE,
-	.value_handle = 0x000d,
 	.uuid = &hrcpc_uuid,
 };
 
@@ -147,7 +142,6 @@ static struct bt_uuid blvl_uuid = {
 
 static struct bt_gatt_chrc blvl_chrc = {
 	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-	.value_handle = 0x0010,
 	.uuid = &blvl_uuid,
 };
 
@@ -183,7 +177,6 @@ static struct bt_uuid ct_uuid = {
 static struct bt_gatt_chrc ct_chrc = {
 	.properties =  BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY |
 		BT_GATT_CHRC_WRITE,
-	.value_handle = 0x0014,
 	.uuid = &ct_uuid,
 };
 
@@ -261,7 +254,6 @@ static struct bt_uuid model_uuid = {
 
 static struct bt_gatt_chrc model_chrc = {
 	.properties = BT_GATT_CHRC_READ,
-	.value_handle = 0x0018,
 	.uuid = &model_uuid,
 };
 
@@ -281,7 +273,6 @@ static struct bt_uuid manuf_uuid = {
 
 static struct bt_gatt_chrc manuf_chrc = {
 	.properties = BT_GATT_CHRC_READ,
-	.value_handle = 0x001a,
 	.uuid = &manuf_uuid,
 };
 
@@ -309,7 +300,6 @@ static struct bt_uuid vnd_enc_uuid = {
 
 static struct bt_gatt_chrc vnd_enc_chrc = {
 	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
-	.value_handle = 0x001d,
 	.uuid = &vnd_enc_uuid,
 };
 
@@ -321,7 +311,6 @@ static struct bt_uuid vnd_auth_uuid = {
 
 static struct bt_gatt_chrc vnd_auth_chrc = {
 	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
-	.value_handle = 0x001f,
 	.uuid = &vnd_auth_uuid,
 };
 
@@ -413,7 +402,6 @@ static const struct bt_uuid vnd_long_uuid = {
 static struct bt_gatt_chrc vnd_long_chrc = {
 	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
 		      BT_GATT_CHRC_EXT_PROP,
-	.value_handle = 0x0021,
 	.uuid = &vnd_long_uuid,
 };
 
@@ -455,7 +443,6 @@ static const struct bt_uuid vnd_signed_uuid = {
 static struct bt_gatt_chrc vnd_signed_chrc = {
 	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
 		      BT_GATT_CHRC_AUTH,
-	.value_handle = 0x0024,
 	.uuid = &vnd_signed_uuid,
 };
 

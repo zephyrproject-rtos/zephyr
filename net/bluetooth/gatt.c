@@ -192,7 +192,20 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	uint8_t value_len;
 
 	pdu.properties = chrc->properties;
-	pdu.value_handle = sys_cpu_to_le16(chrc->value_handle);
+	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part G] page 534:
+	 * 3.3.2 Characteristic Value Declaration
+	 * The Characteristic Value declaration contains the value of the
+	 * characteristic. It is the first Attribute after the characteristic
+	 * declaration. All characteristic definitions shall have a
+	 * Characteristic Value declaration.
+	 */
+	if (!attr->_next) {
+		BT_WARN("Characteritic at 0x%04x don't have descriptor\n",
+			attr->handle);
+		pdu.value_handle = 0x0000;
+	} else {
+		pdu.value_handle = sys_cpu_to_le16(attr->_next->handle);
+	}
 	value_len = sizeof(pdu.properties) + sizeof(pdu.value_handle);
 
 	if (chrc->uuid->type == BT_UUID_16) {
@@ -846,7 +859,6 @@ static uint16_t parse_characteristic(const void *pdu,
 		 * field by field.
 		 */
 		value.properties = chrc->properties;
-		value.value_handle = sys_le16_to_cpu(chrc->value_handle);
 		value.uuid = &uuid;
 
 		switch(uuid.type) {
@@ -858,9 +870,8 @@ static uint16_t parse_characteristic(const void *pdu,
 			break;
 		}
 
-		BT_DBG("handle 0x%04x uuid %s properties 0x%02x "
-		       "value_handle 0x%04x\n", handle, bt_uuid_str(&uuid),
-		       value.properties, value.value_handle);
+		BT_DBG("handle 0x%04x uuid %s properties 0x%02x\n", handle,
+		       bt_uuid_str(&uuid), chrc->properties);
 
 		/* Skip if UUID is set but doesn't match */
 		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
