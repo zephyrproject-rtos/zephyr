@@ -131,7 +131,7 @@ static inline void uart_init(struct device *dev,
  * @param p_char Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty,
- * 		-DEV_INVALID_OP if operation not supported.
+ *         -DEV_INVALID_OP if operation not supported.
  */
 static inline int uart_poll_in(struct device *dev, unsigned char *p_char)
 {

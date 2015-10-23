@@ -45,14 +45,14 @@
  *
  * EXAMPLE
  * struct pci_dev_info info = {
- * 	.class = PCI_CLASS_COMM_CTLR
+ *     .class = PCI_CLASS_COMM_CTLR
  * };
  *
  * pci_bus_scan_init();
  *
  * while (pci_bus_scan(&info) {
- * 	// do something with "info" which holds a valid result, i.e. some
- * 	// device information matching the PCI class PCI_CLASS_COMM_CTLR
+ *      // do something with "info" which holds a valid result, i.e. some
+ *      // device information matching the PCI class PCI_CLASS_COMM_CTLR
  * }
  *
  * INTERNALS

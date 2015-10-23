@@ -36,10 +36,10 @@
  * The following APIs are provided to allow floating point resource sharing to
  * be enabled or disabled at run-time:
  *
- * 	void fiber_float_enable  (nano_thread_id_t thread_id, unsigned int options)
- * 	void task_float_enable   (nano_thread_id_t thread_id, unsigned int options)
- * 	void fiber_float_disable (nano_thread_id_t thread_id)
- * 	void task_float_disable  (nano_thread_id_t thread_id)
+ * void fiber_float_enable  (nano_thread_id_t thread_id, unsigned int options)
+ * void task_float_enable   (nano_thread_id_t thread_id, unsigned int options)
+ * void fiber_float_disable (nano_thread_id_t thread_id)
+ * void task_float_disable  (nano_thread_id_t thread_id)
  *
  * The 'options' parameter is used to specify what non-integer capabilities are
  * being used.  The same options accepted by fiber_fiber_start() are used in the
