@@ -63,9 +63,9 @@ extern void _IntExit(void);
  *
  */
 #define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	\
-	const unsigned int _##device##_int_priority = (priority);		\
+	const unsigned int _##device##_int_priority = (priority);	\
 	struct _IsrTableEntry CONCAT(_isr_irq, irq)			\
-	__attribute__ ((section (TOSTR(CONCAT(.gnu.linkonce.isr_irq, irq))))) = \
+	__attribute__ ((section(TOSTR(CONCAT(.gnu.linkonce.isr_irq, irq))))) = \
 	{parameter, isr}
 
 /* internal routine documented in C file, needed by IRQ_CONFIG macro */

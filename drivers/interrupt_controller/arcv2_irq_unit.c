@@ -53,7 +53,7 @@ void _arc_v2_irq_unit_init(void)
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
 	}
-	_arc_v2_aux_reg_write (_ARC_V2_IRQ_VECT_BASE, &_VectorTable);
+	_arc_v2_aux_reg_write(_ARC_V2_IRQ_VECT_BASE, &_VectorTable);
 }
 
 /*

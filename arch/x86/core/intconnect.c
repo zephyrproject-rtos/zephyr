@@ -106,7 +106,7 @@ void *__attribute__((section(".spurNoErrIsr")))
 
 #define ALL_DYNAMIC_STUBS (CONFIG_NUM_DYNAMIC_STUBS + CONFIG_MAX_NUM_TASK_IRQS)
 
-#elif defined (CONFIG_NANOKERNEL)
+#elif defined(CONFIG_NANOKERNEL)
 
 #define ALL_DYNAMIC_STUBS (CONFIG_NUM_DYNAMIC_STUBS)
 

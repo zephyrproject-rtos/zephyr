@@ -74,7 +74,7 @@ struct cmd_pkt_set {
  * and cannot be hidden by prefixing the macro with "static".
  */
 #define CMD_PKT_SET_INSTANCE(name, num) \
-	uint32_t __noinit (_k_cmd_pkts_ ## name)[CMD_PKT_SIZE_IN_WORDS * (num)]; \
+	uint32_t __noinit(_k_cmd_pkts_ ## name)[CMD_PKT_SIZE_IN_WORDS * (num)]; \
 	struct cmd_pkt_set name = {(num), 0, (cmdPkt_t *)(_k_cmd_pkts_ ## name)}
 
 /* externs */

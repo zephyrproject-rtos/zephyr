@@ -53,7 +53,7 @@ struct net_driver {
 	size_t head_reserve;
 
 	/** Open the net transport */
-	int (*open) (void);
+	int (*open)(void);
 
 	/** Send data to net. The send() function should return:
 	 * 0 : If packet could not be sent. In this case buf should
@@ -64,7 +64,7 @@ struct net_driver {
 	 * <0: If there is an error, the buf should not be released by
 	 *     send() function.
 	 */
-	int (*send) (struct net_buf *buf);
+	int (*send)(struct net_buf *buf);
 };
 
 /**

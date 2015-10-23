@@ -89,9 +89,9 @@ typedef struct idtEntry {
  * host side simply passes a pointer to a local variable.
  *
  */
-static inline void _IdtEntCreate (unsigned long long *pIdtEntry,
-				  void (*routine)(void *),
-				  unsigned int dpl)
+static inline void _IdtEntCreate(unsigned long long *pIdtEntry,
+				 void (*routine)(void *),
+				 unsigned int dpl)
 {
 	unsigned long *pIdtEntry32 = (unsigned long *)pIdtEntry;
 

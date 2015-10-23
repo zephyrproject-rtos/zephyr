@@ -245,7 +245,7 @@ void _timer_int_handler(void *unused)
 {
 	ARG_UNUSED(unused);
 
-#if defined (CONFIG_HPET_TIMER_LEVEL_LOW) || defined (CONFIG_HPET_TIMER_LEVEL_HIGH)
+#if defined(CONFIG_HPET_TIMER_LEVEL_LOW) || defined(CONFIG_HPET_TIMER_LEVEL_HIGH)
 	/* Acknowledge interrupt */
 	*_HPET_GENERAL_INT_STATUS = 1;
 #endif
@@ -594,7 +594,7 @@ int _sys_clock_driver_init(struct device *device)
 		(*_HPET_TIMER0_CONFIG_CAPS & ~HPET_Tn_INT_ROUTE_CNF_MASK)
 #endif
 
-#if defined (CONFIG_HPET_TIMER_LEVEL_LOW) || defined (CONFIG_HPET_TIMER_LEVEL_HIGH)
+#if defined(CONFIG_HPET_TIMER_LEVEL_LOW) || defined(CONFIG_HPET_TIMER_LEVEL_HIGH)
 		| HPET_Tn_INT_TYPE_CNF;
 #else
 		;

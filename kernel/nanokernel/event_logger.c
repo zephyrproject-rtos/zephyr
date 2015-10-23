@@ -32,7 +32,7 @@ void sys_event_logger_init(struct event_logger *logger,
 
 static void event_logger_put(struct event_logger *logger, uint16_t event_id,
 	uint32_t *event_data, uint8_t data_size,
-	void(*sem_give_fn)(struct nano_sem *))
+	void (*sem_give_fn)(struct nano_sem *))
 {
 	int ret;
 	unsigned int key;
