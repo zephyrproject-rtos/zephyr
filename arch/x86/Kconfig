@@ -180,49 +180,36 @@ menu "Floating Point Options"
 
 config  FLOAT
 	bool
-	prompt "Floating point instructions"
+	prompt "Floating point registers"
 	default n
 	help
-	This option enables the use of x87 FPU and MMX instructions by
-	a task or fiber.
+	This option allows tasks and fibers to use the floating point registers.
+	By default, only a single task or fiber may use the registers, and only
+	the x87 FPU/MMX registers may be used.
 
 	Disabling this option means that any task or fiber that uses a
-	floating point instruction will get a fatal exception.
+	floating point register will get a fatal exception.
 
 config  FP_SHARING
 	bool
-	prompt "Floating point resource sharing"
+	prompt "Floating point register sharing"
 	depends on FLOAT
 	default n
 	help
-	This option allows multiple tasks and fibers to safely utilize
-	floating point hardware resources. Every task or fiber that wishes
-	to use floating point instructions (i.e. x87 FPU, MMX, or SSEx) must
-	be created with such support already enabled, or must enable this
-	support via task_float_enable() or fiber_float_enable() before
-	executing these instructions.
-
-	Enabling this option adds 108 bytes to the stack size requirement
-	of each task or fiber that utilizes x87 FPU or MMX instructions,
-	and adds 464 bytes to the stack size requirement of each task or
-	fiber that utilizes SSEx instructions. (The stack size requirement
-	of tasks and fibers that do not utilize floating point instructions
-	remains unchanged.)
-
-	Disabling this option means that only a single task or fiber may
-	utilize x87 FPU, MMX, or SSEx instructions. (The stack size
-	requirement of all tasks and fibers remains unchanged.)
+	This option allows multiple tasks and fibers to use the floating point
+	registers. Any task that uses the floating point registers must provide
+	stack space where the kernel can save these registers during context
+	switches; a task that uses only the x87 FPU/MMX registers must provide
+	108 bytes of added stack space, while a task the uses the SSE registers
+	must provide 464 bytes of added stack space.
 
 config  SSE
 	bool
-	prompt "SSEx instructions"
+	prompt "SSE registers"
 	depends on FLOAT
 	default n
 	help
-	This option enables the use of SSEx instructions by a task or fiber.
-
-	Disabling this option means that no task or fiber may use SSEx
-	instructions; any such use will result in undefined behavior.
+	This option enables the use of SSE registers by tasks and fibers.
 
 config SSE_FP_MATH
 	bool
