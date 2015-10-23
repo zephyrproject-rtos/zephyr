@@ -38,14 +38,15 @@
  * Define a default ESF for use with _NanoFatalErrorHandler() in the event
  * the caller does not have a NANO_ESF to pass
  */
-const NANO_ESF _default_esf = {0xdeaddead, /* a1 */
-						      0xdeaddead, /* a2 */
-						      0xdeaddead, /* a3 */
-						      0xdeaddead, /* a4 */
-						      0xdeaddead, /* ip */
-						      0xdeaddead, /* lr */
-						      0xdeaddead, /* pc */
-						      0xdeaddead, /* xpsr */
+const NANO_ESF _default_esf = {
+	{0xdeaddead}, /* r0/a1 */
+	{0xdeaddead}, /* r1/a2 */
+	{0xdeaddead}, /* r2/a3 */
+	{0xdeaddead}, /* r3/a4 */
+	{0xdeaddead}, /* r12/ip */
+	{0xdeaddead}, /* r14/lr */
+	{0xdeaddead}, /* r15/pc */
+	 0xdeaddead,  /* xpsr */
 };
 
 /**

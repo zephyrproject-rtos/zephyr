@@ -34,13 +34,13 @@ GTEXT(_ExcExit);
 #include <stdint.h>
 
 struct __esf {
-	uint32_t a1; /* r0 */
-	uint32_t a2; /* r1 */
-	uint32_t a3; /* r2 */
-	uint32_t a4; /* r3 */
-	uint32_t ip; /* r12 */
-	uint32_t lr; /* r14 */
-	uint32_t pc; /* r15 */
+	sys_define_gpr_with_alias(a1, r0);
+	sys_define_gpr_with_alias(a2, r1);
+	sys_define_gpr_with_alias(a3, r2);
+	sys_define_gpr_with_alias(a4, r3);
+	sys_define_gpr_with_alias(ip, r12);
+	sys_define_gpr_with_alias(lr, r14);
+	sys_define_gpr_with_alias(pc, r15);
 	uint32_t xpsr;
 };
 
