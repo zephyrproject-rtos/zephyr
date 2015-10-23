@@ -12,9 +12,9 @@
 
 /*
  * @deftypefn Supplemental int strncasecmp (const char *@var{s1}, const char *@var{s2})
- * 
+ *
  * A case-insensitive @code{strncmp}.
- * 
+ *
  * @end deftypefn
  */
 
