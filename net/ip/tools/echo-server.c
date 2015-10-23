@@ -204,61 +204,73 @@ static int join_mc_group(int sock, int ifindex, int family, void *addr,
 	return ret;
 }
 
-static int get_address(int ifindex, int family, void *address)
+static int find_address(int family, struct ifaddrs *if_address,
+			const char *if_name, void *address)
 {
-	struct ifaddrs *ifaddr, *ifa;
-	int err = -ENOENT;
-	char name[IF_NAMESIZE];
+	struct ifaddrs *tmp;
+	int error = -ENOENT;
 
-	if (!if_indextoname(ifindex, name))
-		return -EINVAL;
+	for (tmp = if_address; tmp; tmp = tmp->ifa_next) {
+		if (tmp->ifa_addr &&
+		    !strncmp(tmp->ifa_name, if_name, IF_NAMESIZE) &&
+		    tmp->ifa_addr->sa_family == family) {
 
-	if (getifaddrs(&ifaddr) < 0) {
-		err = -errno;
-		fprintf(stderr, "Cannot get addresses err %d/%s",
-			err, strerror(-err));
-		return err;
-	}
-
-	for (ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
-		if (!ifa->ifa_addr)
-			continue;
-
-		if (strncmp(ifa->ifa_name, name, IF_NAMESIZE) == 0 &&
-					ifa->ifa_addr->sa_family == family) {
-			if (family == AF_INET) {
-				struct sockaddr_in *in4 = (struct sockaddr_in *)
-					ifa->ifa_addr;
+			switch (family) {
+			case AF_INET: {
+				struct sockaddr_in *in4 =
+					(struct sockaddr_in *)tmp->ifa_addr;
 				if (in4->sin_addr.s_addr == INADDR_ANY)
 					continue;
 				if ((in4->sin_addr.s_addr & IN_CLASSB_NET) ==
-						((in_addr_t) 0xa9fe0000))
+						((in_addr_t)0xa9fe0000))
 					continue;
 				memcpy(address, &in4->sin_addr,
-							sizeof(struct in_addr));
-			} else if (family == AF_INET6) {
+				       sizeof(struct in_addr));
+				error = 0;
+				goto out;
+			}
+			case AF_INET6: {
 				struct sockaddr_in6 *in6 =
-					(struct sockaddr_in6 *)ifa->ifa_addr;
-				if (memcmp(&in6->sin6_addr, &in6addr_any,
-						sizeof(struct in6_addr)) == 0)
+					(struct sockaddr_in6 *)tmp->ifa_addr;
+				if (!memcmp(&in6->sin6_addr, &in6addr_any,
+					    sizeof(struct in6_addr)))
 					continue;
 				if (IN6_IS_ADDR_LINKLOCAL(&in6->sin6_addr))
 					continue;
 
 				memcpy(address, &in6->sin6_addr,
-						sizeof(struct in6_addr));
-			} else {
-				err = -EINVAL;
+				       sizeof(struct in6_addr));
+				error = 0;
 				goto out;
 			}
-
-			err = 0;
-			break;
+			default:
+				error = -EINVAL;
+				goto out;
+			}
 		}
 	}
 
 out:
-	freeifaddrs(ifaddr);
+	return error;
+}
+
+static int get_address(const char *if_name, int family, void *address)
+{
+	struct ifaddrs *if_address;
+	int err;
+
+	if (getifaddrs(&if_address) < 0) {
+		err = -errno;
+		fprintf(stderr, "Cannot get interface addresses for "
+			"interface %s error %d/%s",
+			if_name, err, strerror(-err));
+		return err;
+	}
+
+	err = find_address(family, if_address, if_name, address);
+
+	freeifaddrs(if_address);
+
 	return err;
 }
 
@@ -315,7 +327,7 @@ int main(int argc, char**argv)
 	 * we can listen correct addresses. We do not want to listen
 	 * link local addresses in this test.
 	 */
-	get_address(ifindex, AF_INET, &addr4_recv.sin_addr);
+	get_address(interface, AF_INET, &addr4_recv.sin_addr);
 	printf("IPv4: binding to %s\n",
 	       inet_ntop(AF_INET, &addr4_recv.sin_addr,
 			 addr_buf, sizeof(addr_buf)));
@@ -324,7 +336,7 @@ int main(int argc, char**argv)
 	addr6_recv.sin6_port = htons(SERVER_PORT);
 
 	/* Bind to global unicast address instead of ll address */
-	get_address(ifindex, AF_INET6, &addr6_recv.sin6_addr);
+	get_address(interface, AF_INET6, &addr6_recv.sin6_addr);
 	printf("IPv6: binding to %s\n",
 	       inet_ntop(AF_INET6, &addr6_recv.sin6_addr,
 			 addr_buf, sizeof(addr_buf)));

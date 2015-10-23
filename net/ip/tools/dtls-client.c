@@ -303,86 +303,73 @@ static inline void reverse(unsigned char *buf, int len)
 	}
 }
 
-static int get_ifindex(const char *name)
+static int find_address(int family, struct ifaddrs *if_address,
+			const char *if_name, void *address)
 {
-	struct ifreq ifr;
-	int sk, err;
+	struct ifaddrs *tmp;
+	int error = -ENOENT;
 
-	if (!name)
-		return -1;
+	for (tmp = if_address; tmp; tmp = tmp->ifa_next) {
+		if (tmp->ifa_addr &&
+		    !strncmp(tmp->ifa_name, if_name, IF_NAMESIZE) &&
+		    tmp->ifa_addr->sa_family == family) {
 
-	sk = socket(PF_INET6, SOCK_DGRAM | SOCK_CLOEXEC, 0);
-	if (sk < 0)
-		return -1;
-
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name) - 1);
-
-	err = ioctl(sk, SIOCGIFINDEX, &ifr);
-
-	close(sk);
-
-	if (err < 0)
-		return -1;
-
-	return ifr.ifr_ifindex;
-}
-
-static int get_address(int ifindex, int family, void *address)
-{
-	struct ifaddrs *ifaddr, *ifa;
-	int err = -ENOENT;
-	char name[IF_NAMESIZE];
-
-	if (!if_indextoname(ifindex, name))
-		return -EINVAL;
-
-	if (getifaddrs(&ifaddr) < 0) {
-		err = -errno;
-		fprintf(stderr, "Cannot get addresses err %d/%s",
-			err, strerror(-err));
-		return err;
-	}
-
-	for (ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
-		if (!ifa->ifa_addr)
-			continue;
-
-		if (strncmp(ifa->ifa_name, name, IF_NAMESIZE) == 0 &&
-					ifa->ifa_addr->sa_family == family) {
-			if (family == AF_INET) {
-				struct sockaddr_in *in4 = (struct sockaddr_in *)
-					ifa->ifa_addr;
+			switch (family) {
+			case AF_INET: {
+				struct sockaddr_in *in4 =
+					(struct sockaddr_in *)tmp->ifa_addr;
 				if (in4->sin_addr.s_addr == INADDR_ANY)
 					continue;
 				if ((in4->sin_addr.s_addr & IN_CLASSB_NET) ==
-						((in_addr_t) 0xa9fe0000))
+						((in_addr_t)0xa9fe0000))
 					continue;
 				memcpy(address, &in4->sin_addr,
-							sizeof(struct in_addr));
-			} else if (family == AF_INET6) {
+				       sizeof(struct in_addr));
+				error = 0;
+				goto out;
+			}
+			case AF_INET6: {
 				struct sockaddr_in6 *in6 =
-					(struct sockaddr_in6 *)ifa->ifa_addr;
-				if (memcmp(&in6->sin6_addr, &in6addr_any,
-						sizeof(struct in6_addr)) == 0)
+					(struct sockaddr_in6 *)tmp->ifa_addr;
+				if (!memcmp(&in6->sin6_addr, &in6addr_any,
+					    sizeof(struct in6_addr)))
 					continue;
 				if (IN6_IS_ADDR_LINKLOCAL(&in6->sin6_addr))
 					continue;
 
 				memcpy(address, &in6->sin6_addr,
-						sizeof(struct in6_addr));
-			} else {
-				err = -EINVAL;
+				       sizeof(struct in6_addr));
+				error = 0;
 				goto out;
 			}
-
-			err = 0;
-			break;
+			default:
+				error = -EINVAL;
+				goto out;
+			}
 		}
 	}
 
 out:
-	freeifaddrs(ifaddr);
+	return error;
+}
+
+static int get_address(const char *if_name, int family, void *address)
+{
+	struct ifaddrs *if_address;
+	int err;
+
+	if (getifaddrs(&if_address) < 0) {
+		err = -errno;
+		fprintf(stderr, "Cannot get interface addresses for "
+			"interface %s error %d/%s",
+			if_name, err, strerror(-err));
+		return err;
+	}
+
+	err = find_address(family, if_address, if_name, address);
+
+	freeifaddrs(if_address);
+
 	return err;
 }
 
@@ -686,7 +673,7 @@ int main(int argc, char**argv)
 	const char *target = NULL, *interface = NULL, *source = NULL;
 	fd_set rfds;
 	struct timeval tv = {};
-	int ifindex = -1, on, port;
+	int on, port;
 	void *address = NULL;
 	session_t dst;
 	struct client_data user_data;
@@ -810,13 +797,12 @@ int main(int argc, char**argv)
 		}
 
 		if (!source) {
-			ifindex = get_ifindex(interface);
-			if (ifindex < 0) {
-				printf("Invalid interface %s\n", interface);
-				exit(-EINVAL);
+			ret = get_address(interface, family, address);
+			if (ret < 0) {
+				printf("Cannot find suitable source address "
+				       "for interface %s [%d/%s]\n",
+				       interface, ret, strerror(-ret));
 			}
-
-			get_address(ifindex, family, address);
 
 			printf("Binding to %s\n", inet_ntop(family, address,
 					    addr_buf, sizeof(addr_buf)));
@@ -830,14 +816,18 @@ int main(int argc, char**argv)
 	}
 
 	on = 1;
+
+	if (family == AF_INET6) {
 #ifdef IPV6_RECVPKTINFO
-	if (setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on,
-		       sizeof(on) ) < 0) {
+		if (setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on,
+			       sizeof(on)) < 0) {
 #else /* IPV6_RECVPKTINFO */
-	if (setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, &on,
-		       sizeof(on) ) < 0) {
+		if (setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, &on,
+			       sizeof(on)) < 0) {
 #endif /* IPV6_RECVPKTINFO */
-		printf("setsockopt IPV6_PKTINFO: %s\n", strerror(errno));
+			printf("setsockopt IPV6_PKTINFO: %s\n",
+			       strerror(errno));
+		}
 	}
 
 	signal(SIGINT, signal_handler);
