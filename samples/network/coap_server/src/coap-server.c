@@ -33,6 +33,7 @@
 
 #include <zephyr.h>
 
+#ifdef CONFIG_NANOKERNEL
 #if defined(CONFIG_TINYDTLS)
 /* DTLS needs bigger stack */
 #define STACKSIZE 2500
