@@ -20,7 +20,6 @@
 # Makefile for the Bluetooth tester application
 # currently only basic_cortex_m3 platform is supported
 PLATFORM_CONFIG ?= basic_cortex_m3
-ARCH ?= arm
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
