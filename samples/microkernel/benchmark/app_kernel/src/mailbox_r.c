@@ -37,10 +37,7 @@ int mailbox_get(kmbox_t mailbox,int size,int count,unsigned int* time);
  * @brief Receive task
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void mailrecvtask(void)
 {
 	int getsize;
@@ -77,10 +74,7 @@ void mailrecvtask(void)
  * @param size      Size of each data portion.
  * @param count     Number of data portions.
  * @param time      Resulting time.
- *
- * \NOMANUAL
  */
-
 int mailbox_get(kmbox_t mailbox, int size, int count, unsigned int* time)
 {
 	int i;

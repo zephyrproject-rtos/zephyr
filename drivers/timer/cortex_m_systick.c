@@ -120,10 +120,7 @@ static unsigned char idle_mode = IDLE_NOT_TICKLESS;
  * This routine disables the systick counter.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static ALWAYS_INLINE void sysTickStop(void)
 {
 	union __stcsr reg;
@@ -149,10 +146,7 @@ static ALWAYS_INLINE void sysTickStop(void)
  * This routine enables the systick counter.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static ALWAYS_INLINE void sysTickStart(void)
 {
 	union __stcsr reg;
@@ -178,8 +172,6 @@ static ALWAYS_INLINE void sysTickStart(void)
  * interrupt.
  *
  * @return the current counter value
- *
- * \NOMANUAL
  */
 static ALWAYS_INLINE uint32_t sysTickCurrentGet(void)
 {
@@ -193,8 +185,6 @@ static ALWAYS_INLINE uint32_t sysTickCurrentGet(void)
  * This routine returns the value from the reload value register.
  *
  * @return the counter's initial count/wraparound value
- *
- * \NOMANUAL
  */
 static ALWAYS_INLINE uint32_t sysTickReloadGet(void)
 {
@@ -212,10 +202,7 @@ static ALWAYS_INLINE uint32_t sysTickReloadGet(void)
  * Note that the value given is assumed to be valid (i.e., count < (1<<24)).
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static ALWAYS_INLINE void sysTickReloadSet(
 	uint32_t count /* count from which timer is to count down */
 	)
@@ -241,10 +228,7 @@ static ALWAYS_INLINE void sysTickReloadSet(
  * system operation) or _real_timer_int_handler (when GDB_INFO is enabled).
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _TIMER_INT_HANDLER(void *unused)
 {
 	ARG_UNUSED(unused);
@@ -382,10 +366,7 @@ void _TIMER_INT_HANDLER(void *unused)
  * more elapsed ticks during a "tickless idle".
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void sysTickTicklessIdleInit(void)
 {
 	/* enable counter, disable interrupt and set clock src to system clock
@@ -461,7 +442,6 @@ static void sysTickTicklessIdleInit(void)
  *
  * @return N/A
  */
-
 void _timer_idle_enter(int32_t ticks /* system ticks */
 				)
 {
@@ -519,7 +499,6 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  *
  * @return N/A
  */
-
 void _timer_idle_exit(void)
 {
 	uint32_t count; /* timer's current count register value */
@@ -650,7 +629,6 @@ int _sys_clock_driver_init(struct device *device)
  * systick counter is a 24-bit down counter which is reset to "reload" value
  * once it reaches 0.
  */
-
 uint32_t _sys_clock_cycle_get(void)
 {
 	return clock_accumulated_count + (__scs.systick.strvr - __scs.systick.stcvr);
@@ -670,7 +648,6 @@ FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
  *
  * @return N/A
  */
-
 void timer_disable(void)
 {
 	unsigned int key; /* interrupt lock level */

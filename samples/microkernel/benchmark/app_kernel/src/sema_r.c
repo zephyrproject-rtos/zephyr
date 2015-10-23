@@ -28,10 +28,7 @@
  * @brief Receive task (Wait task)
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void waittask(void)
 {
 	int i;

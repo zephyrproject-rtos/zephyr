@@ -158,10 +158,7 @@ extern struct nano_stack _k_command_stack;
  * This routine sets the timer for periodic mode.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static inline void periodic_mode_set(void)
 {
 	*_REG_TIMER |= LOAPIC_TIMER_PERIODIC;
@@ -177,10 +174,7 @@ static inline void periodic_mode_set(void)
  * This routine disables the LOAPIC timer by masking it.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static inline void timer_interrupt_mask(void)
 {
 	*_REG_TIMER |= LOAPIC_LVT_MASKED;
@@ -196,10 +190,7 @@ static inline void timer_interrupt_mask(void)
  * This routine enables the LOAPIC timer by unmasking it.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static inline void timer_interrupt_unmask(void)
 {
 	*_REG_TIMER &= ~LOAPIC_LVT_MASKED;
@@ -214,10 +205,7 @@ static inline void timer_interrupt_unmask(void)
  * Note that setting the value to zero stops the timer.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static inline void initial_count_register_set(
 	uint32_t count /* count from which timer is to count down */
 	)
@@ -233,10 +221,7 @@ static inline void initial_count_register_set(
  * This routine sets the timer for one shot mode.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static inline void one_shot_mode_set(void)
 {
 	*_REG_TIMER &= ~LOAPIC_TIMER_PERIODIC;
@@ -251,10 +236,7 @@ static inline void one_shot_mode_set(void)
  * external bus frequency.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static inline void divide_configuration_register_set(void)
 {
 	*_REG_TIMER_CFG = (*_REG_TIMER_CFG & ~0xf) | LOAPIC_TIMER_DIVBY_1;
@@ -269,8 +251,6 @@ static inline void divide_configuration_register_set(void)
  * interrupt.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
 static inline uint32_t current_count_register_get(void)
 {
@@ -285,8 +265,6 @@ static inline uint32_t current_count_register_get(void)
  * This routine gets the value from the initial count register.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
 static inline uint32_t initial_count_register_get(void)
 {
@@ -303,7 +281,6 @@ static inline uint32_t initial_count_register_get(void)
  *
  * @return N/A
  */
-
 void _timer_int_handler(void *unused /* parameter is not used */
 				 )
 {
@@ -399,10 +376,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
  * "tickless idle".
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void tickless_idle_init(void)
 {
 	/*
@@ -426,7 +400,6 @@ static void tickless_idle_init(void)
  *
  * @return N/A
  */
-
 void _timer_idle_enter(int32_t ticks /* system ticks */
 				)
 {
@@ -482,7 +455,6 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  *
  * @return N/A
  */
-
 void _timer_idle_exit(void)
 {
 	uint32_t remaining_cycles;
@@ -578,7 +550,6 @@ void _timer_idle_exit(void)
  *
  * @return 0
  */
-
 int _sys_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
@@ -617,7 +588,6 @@ int _sys_clock_driver_init(struct device *device)
  *
  * @return up counter of elapsed clock cycles
  */
-
 uint32_t _sys_clock_cycle_get(void)
 {
 	uint32_t val; /* system clock value */
@@ -655,7 +625,6 @@ FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
  *
  * @return N/A
  */
-
 void timer_disable(void)
 {
 	unsigned int key; /* interrupt lock level */

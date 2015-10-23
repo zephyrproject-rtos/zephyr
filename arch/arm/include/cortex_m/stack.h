@@ -52,10 +52,7 @@ extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
  * pointer) register, and switched to automatically when taking an exception.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static ALWAYS_INLINE void _InterruptStackSetup(void)
 {
 	uint32_t msp = __GET_MSP();

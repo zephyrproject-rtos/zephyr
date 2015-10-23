@@ -179,10 +179,7 @@ static ALWAYS_INLINE void nanoArchInit(void)
  * @param value is the value to set as a return value
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber,
 					   unsigned int value)
 {

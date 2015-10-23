@@ -62,10 +62,7 @@ void _thread_entry_wrapper(_thread_entry_t, _thread_arg_t,
  * @param options thread options: USE_FP, USE_SSE
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 				 int priority, unsigned options)
 {
@@ -250,10 +247,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
  * _thread_entry after it has done its work.
  *
  * @return this routine does NOT return.
- *
- * \NOMANUAL
  */
-
 __asm__("\t.globl _thread_entry\n"
 	"\t.section .text\n"
 	"_thread_entry_wrapper:\n" /* should place this func .S file and use
@@ -284,10 +278,7 @@ __asm__("\t.globl _thread_entry\n"
  *
  *
  * @return opaque pointer to initialized TCS structure
- *
- * \NOMANUAL
  */
-
 void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned options)

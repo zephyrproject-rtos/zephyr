@@ -38,8 +38,6 @@
  * @param ticks the number of ticks to idle
  *
  * @return N/A
- *
- * \NOMANUAL
  */
 void nano_cpu_set_idle(int32_t ticks)
 {

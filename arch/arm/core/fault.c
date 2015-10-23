@@ -60,10 +60,7 @@
  * BFAR: 0xff001234
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _FaultDump(const NANO_ESF *esf, int fault)
 {
 	int escalation = 0;
@@ -111,10 +108,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
  * See _FaultDump() for example.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void _FaultThreadShow(const NANO_ESF *esf)
 {
 	PR_EXC("  Executing thread ID (thread): 0x%x\n"
@@ -130,10 +124,7 @@ static void _FaultThreadShow(const NANO_ESF *esf)
  * See _FaultDump() for example.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 {
 	PR_EXC("***** MPU FAULT *****\n");
@@ -164,10 +155,7 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
  * See _FaultDump() for example.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 {
 	PR_EXC("***** BUS FAULT *****\n");
@@ -204,10 +192,7 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
  * See _FaultDump() for example.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void _UsageFault(const NANO_ESF *esf)
 {
 	PR_EXC("***** USAGE FAULT *****\n");
@@ -244,10 +229,7 @@ static void _UsageFault(const NANO_ESF *esf)
  * See _FaultDump() for example.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void _HardFault(const NANO_ESF *esf)
 {
 	PR_EXC("***** HARD FAULT *****\n");
@@ -272,10 +254,7 @@ static void _HardFault(const NANO_ESF *esf)
  * See _FaultDump() for example.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void _DebugMonitor(const NANO_ESF *esf)
 {
 	PR_EXC("***** Debug monitor exception (not implemented) *****\n");
@@ -288,10 +267,7 @@ static void _DebugMonitor(const NANO_ESF *esf)
  * See _FaultDump() for example.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void _ReservedException(const NANO_ESF *esf, int fault)
 {
 	PR_EXC("***** %s %d) *****\n",
@@ -317,10 +293,7 @@ static void _ReservedException(const NANO_ESF *esf, int fault)
  *   Address: 0xff001234
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void _FaultDump(const NANO_ESF *esf, int fault)
 {
 	switch (fault) {
@@ -363,10 +336,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
  * @param psp pointer to potential ESF on PSP
  *
  * @return This function does not return.
- *
- * \NOMANUAL
  */
-
 void _Fault(const NANO_ESF *msp, const NANO_ESF *psp)
 {
 	const NANO_ESF *esf = _ScbIsNestedExc() ? msp : psp;
@@ -384,10 +354,7 @@ void _Fault(const NANO_ESF *msp, const NANO_ESF *psp)
  * Turns on the desired hardware faults.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _FaultInit(void)
 {
 	_ScbDivByZeroFaultEnable();

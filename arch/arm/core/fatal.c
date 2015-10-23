@@ -65,10 +65,7 @@ const NANO_ESF _default_esf = {0xdeaddead, /* a1 */
  * @param pEsf pointer to the exception stack frame
  *
  * @return This function does not return.
- *
- * \NOMANUAL
  */
-
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {

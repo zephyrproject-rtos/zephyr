@@ -27,10 +27,7 @@
  * @brief Memory map get/free test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void memorymap_test(void)
 {
 	uint32_t et; /* elapsed time */

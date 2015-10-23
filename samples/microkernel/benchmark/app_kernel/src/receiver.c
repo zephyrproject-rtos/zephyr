@@ -39,10 +39,7 @@ void piperecvtask(void);
  * @brief Main function of the task that receives data in the test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void recvtask(void)
 {
 	/* order must be compatible with master.c ! */

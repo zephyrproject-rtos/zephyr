@@ -29,10 +29,7 @@ extern void _task_nop(void);
  * @brief Kernel entry timing test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void call_test(void)
 {
 	uint32_t et; /* Elapsed Time */

@@ -26,10 +26,7 @@ struct nano_sem nanoSem2;
  * @brief Initialize semaphores for the test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void sema_test_init(void)
 {
 	nano_sem_init(&nanoSem1);
@@ -45,10 +42,7 @@ void sema_test_init(void)
  * @param par2   Number of test loops.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void sema_fiber1(int par1, int par2)
 {
 	int i;
@@ -70,10 +64,7 @@ void sema_fiber1(int par1, int par2)
  * @param par2   Number of test cycles.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void sema_fiber2(int par1, int par2)
 {
 	int i;
@@ -94,10 +85,7 @@ void sema_fiber2(int par1, int par2)
  * @param par2   Number of test cycles.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void sema_fiber3(int par1, int par2)
 {
 	int i;
@@ -118,10 +106,7 @@ void sema_fiber3(int par1, int par2)
  * @brief The main test entry
  *
  * @return 1 if success and 0 on failure
- *
- * \NOMANUAL
  */
-
 int sema_test(void)
 {
 	uint32_t t;

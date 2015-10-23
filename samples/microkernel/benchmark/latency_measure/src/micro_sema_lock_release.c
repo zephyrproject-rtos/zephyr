@@ -47,10 +47,7 @@ static uint32_t timestamp;
  * acquires them in order to measure the necessary time.
  *
  * @return 0 on success
- *
- * \NOMANUAL
  */
-
 int microSemaLockUnlock(void)
 {
 	int i;
@@ -97,10 +94,7 @@ int microSemaLockUnlock(void)
  * unlocks to measure the necessary time.
  *
  * @return 0 on success
- *
- * \NOMANUAL
  */
-
 int microMutexLockUnlock(void)
 {
 	int i;

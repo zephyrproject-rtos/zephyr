@@ -58,10 +58,7 @@ static volatile int ctxSwitchBalancer = 0;
  * gets the first timestamp and invokes the software interrupt.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void fiberOne(void)
 {
 	nano_fiber_sem_take_wait(&syncSema);
@@ -82,10 +79,7 @@ static void fiberOne(void)
  * the semaphore, fiber measures the time.
  *
  * @return 0 on success
- *
- * \NOMANUAL
  */
-
 static void fiberTwo(void)
 {
 	nano_fiber_sem_give(&syncSema);
@@ -101,10 +95,7 @@ static void fiberTwo(void)
  * @brief The test main function
  *
  * @return 0 on success
- *
- * \NOMANUAL
  */
-
 int nanoCtxSwitch(void)
 {
 	PRINT_FORMAT(" 4- Measure average context switch time between fibers");

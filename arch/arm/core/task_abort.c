@@ -49,10 +49,7 @@ static struct k_args cmd_packet;
  * - the task encounters a fatal exception
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _TaskAbort(void)
 {
 	const int taskAbortCode = 1;

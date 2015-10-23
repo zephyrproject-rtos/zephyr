@@ -65,10 +65,7 @@ static uint32_t clock_accumulated_count;
  * - enabling interrupt generation.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static ALWAYS_INLINE void enable(
 	uint32_t count /* interrupt triggers when up-counter reaches this value */
 )
@@ -90,8 +87,6 @@ static ALWAYS_INLINE void enable(
  * value is the 'time' elapsed from the starting count (assumed to be 0).
  *
  * @return the current counter value
- *
- * \NOMANUAL
  */
 static ALWAYS_INLINE uint32_t count_get(void)
 {
@@ -106,8 +101,6 @@ static ALWAYS_INLINE uint32_t count_get(void)
  * value to which the timer will count up to.
  *
  * @return the limit value
- *
- * \NOMANUAL
  */
 static ALWAYS_INLINE uint32_t limit_get(void)
 {
@@ -122,10 +115,7 @@ static ALWAYS_INLINE uint32_t limit_get(void)
  * event is pushed onto the microkernel stack.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _timer_int_handler(void *unused)
 {
 	uint32_t zero_ip_bit = _ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE;
@@ -149,7 +139,6 @@ void _timer_int_handler(void *unused)
  *
  * @return 0
  */
-
 int _sys_clock_driver_init(struct device *device)
 {
 	int irq = CONFIG_ARCV2_TIMER0_INT_LVL;
@@ -185,7 +174,6 @@ int _sys_clock_driver_init(struct device *device)
  *
  * @return up counter of elapsed clock cycles
  */
-
 uint32_t _sys_clock_cycle_get(void)
 {
 	return (clock_accumulated_count + count_get());
@@ -204,7 +192,6 @@ FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
  *
  * @return N/A
  */
-
 void timer_disable(void)
 {
 	unsigned int key;  /* interrupt lock level */

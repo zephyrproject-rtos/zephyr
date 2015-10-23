@@ -27,10 +27,7 @@
  * @brief Data receive task
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void dequtask(void)
 {
 	int x, i;

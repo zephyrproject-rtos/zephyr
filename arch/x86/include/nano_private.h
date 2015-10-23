@@ -759,10 +759,7 @@ extern unsigned int _interrupt_vectors_allocated[];
  * function calls.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static inline void nanoArchInit(void)
 {
 	extern void *__isr___SpuriousIntHandler;
@@ -811,10 +808,7 @@ static inline void nanoArchInit(void)
  * thus the fibers context is stored in its TCS.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static inline void fiberRtnValueSet(struct tcs *fiber, unsigned int value)
 {
 	/* write into 'eax' slot created in _Swap() entry */

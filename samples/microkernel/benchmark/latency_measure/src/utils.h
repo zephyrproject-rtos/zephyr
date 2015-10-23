@@ -48,10 +48,7 @@ extern int errorCount;
  * @brief Print dash line
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static inline void printDashLine(void)
 {
 	PRINTF("|-----------------------------------------------------------------"
@@ -109,10 +106,7 @@ typedef void (*ptestIsr) (void *unused);
  * the current interrupt service routine and stub code memory block.
  *
  * @return the allocated interrupt vector
- *
- * \NOMANUAL
  */
-
 int initSwInterrupt(ptestIsr pIsrHdlr);
 
 /**
@@ -124,8 +118,5 @@ int initSwInterrupt(ptestIsr pIsrHdlr);
  * initialized and connected by initSwInterrupt.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void setSwInterrupt(ptestIsr pIsrHdlr);

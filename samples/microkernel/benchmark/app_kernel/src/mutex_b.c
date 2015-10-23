@@ -25,10 +25,7 @@
  * @brief Mutex lock/unlock test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void mutex_test(void)
 {
 	uint32_t et; /* elapsed time */

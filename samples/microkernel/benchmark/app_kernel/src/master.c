@@ -52,10 +52,7 @@ uint32_t tm_off;
  * @brief Check for keypress
  *
  * @return 1 when a keyboard key is pressed, or 0 if no keyboard support
- *
- * \NOMANUAL
  */
-
 int kbhit(void)
 {
 	return 0;
@@ -70,10 +67,7 @@ int kbhit(void)
  *
  * @param continuously   Run test till the user presses the key.
  * @param autorun        Expect user input.
- *
- * \NOMANUAL
  */
-
 void init_output(int *continuously, int *autorun)
 {
 	ARG_UNUSED(continuously);
@@ -90,10 +84,7 @@ void init_output(int *continuously, int *autorun)
  * @brief Close output for the test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void output_close(void)
 {
 }
@@ -105,13 +96,10 @@ void output_close(void)
 /**
  *
  * @brief Perform all selected benchmarks
+ * see config.h to select or to unselect
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
-/* see config.h to select or to unselect*/
 void BenchTask(void)
 {
 	int autorun = 0, continuously = 0;
@@ -158,10 +146,7 @@ void BenchTask(void)
  * @brief Dummy test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void dummy_test(void)
 {
 	return;

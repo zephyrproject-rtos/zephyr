@@ -25,10 +25,7 @@
  * @brief Queue transfer speed test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void queue_test(void)
 {
 	uint32_t et; /* elapsed time */

@@ -87,10 +87,7 @@ entering and exiting a C interrupt handler.
  * C function prototype:
  *
  * void _IntEnt (void);
- *
- * NOMANUAL
  */
-
 SECTION_FUNC(TEXT, _IntEnt)
 
 	/*
@@ -252,10 +249,7 @@ BRANCH_LABEL(_HandleIdle)
  * C function prototype:
  *
  * void _IntExit (void);
- *
- * NOMANUAL
  */
-
 SECTION_FUNC(TEXT, _IntExit)
 
 	cli			/* disable interrupts */
@@ -409,10 +403,7 @@ BRANCH_LABEL(nestedInterrupt)
  * in the EFLAGS register upon execution of the handler,
  * thus _SpuriousIntNoErrCodeHandler()/_SpuriousIntHandler() shall be
  * invoked with interrupts disabled.
- *
- * NOMANUAL
  */
-
 SECTION_FUNC(TEXT, _SpuriousIntNoErrCodeHandler)
 
 	pushl	$0			/* push dummy err code onto stk */

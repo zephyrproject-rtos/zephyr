@@ -234,10 +234,7 @@ static ALWAYS_INLINE void nanoArchInit(void)
  * the fiber's thread is stored in its struct tcs structure.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber, unsigned int value)
 {
 	fiber->return_value = value;
@@ -248,10 +245,7 @@ static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber, unsigned int value
  * @brief Indicates if kernel is handling interrupt
  *
  * @return 1 if interrupt handler is executed, 0 otherwise
- *
- * \NOMANUAL
  */
-
 static ALWAYS_INLINE int _IS_IN_ISR(void)
 {
 	uint32_t act = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);

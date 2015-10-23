@@ -81,10 +81,7 @@ void mailbox_put(uint32_t size, int count, uint32_t *time);
  * @brief Mailbox transfer speed test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void mailbox_test(void)
 {
 	uint32_t putsize;
@@ -131,15 +128,12 @@ void mailbox_test(void)
  *
  * @brief Write the number of data chunks into the mailbox
  *
- * @return N/A
- *
  * @param size    The size of the data chunk.
  * @param count   Number of data chunks.
  * @param time    The total time.
  *
- * \NOMANUAL
+ * @return N/A
  */
-
 void mailbox_put(uint32_t size, int count, uint32_t *time)
 {
 	int i;

@@ -39,10 +39,7 @@ static uint32_t timestamp;
  * The interrupt handler gets the second timestamp.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void latencyTestIsr(void *unused)
 {
 	ARG_UNUSED(unused);
@@ -59,10 +56,7 @@ static void latencyTestIsr(void *unused)
  * gets the first timestamp and invokes the software interrupt.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void makeInt(void)
 {
 	initSwInterrupt(latencyTestIsr);
@@ -80,10 +74,7 @@ static void makeInt(void)
  * @brief The test main function
  *
  * @return 0 on success
- *
- * \NOMANUAL
  */
-
 int microIntToTask(void)
 {
 	PRINT_FORMAT(" 1- Measure time to switch from ISR to back to"

@@ -44,10 +44,7 @@ int example_handler (int event);
  * @brief Event signal speed test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void event_test(void)
 {
 	int nReturn;
@@ -168,10 +165,7 @@ void event_test(void)
  * This variable is used in the main test.
  *
  * @return 1
- *
- * \NOMANUAL
  */
-
 int example_handler (int event)
 {
 	nEventValue = event + 1;

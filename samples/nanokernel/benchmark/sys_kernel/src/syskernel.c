@@ -64,8 +64,6 @@ uint32_t tm_off;
  * Routine does necessary preparations for the test to start
  *
  * @return N/A
- *
- * \NOMANUAL
  */
 void begin_test(void)
 {
@@ -84,10 +82,7 @@ void begin_test(void)
  *
  * @param i   Number of tests.
  * @param t   Time in ticks for the whole test.
- *
- * \NOMANUAL
  */
-
 int check_result(int i, uint32_t t)
 {
 	/*
@@ -124,10 +119,7 @@ int check_result(int i, uint32_t t)
  * @brief Check for a key press
  *
  * @return 1 when a keyboard key is pressed, or 0 if no keyboard support
- *
- * \NOMANUAL
  */
-
 int kbhit(void)
 {
 	return 0;
@@ -138,11 +130,9 @@ int kbhit(void)
  *
  * @brief Prepares the test output
  *
- * @return N/A
- *
  * @param continuously   Run test till the user presses the key.
  *
- * \NOMANUAL
+ * @return N/A
  */
 
 void init_output(int *continuously)
@@ -161,10 +151,7 @@ void init_output(int *continuously)
  * @brief Close output for the test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void output_close(void)
 {
 }
@@ -174,10 +161,7 @@ void output_close(void)
  * @brief Perform all selected benchmarks
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 #ifdef CONFIG_MICROKERNEL
 void SysKernelBench(void)
 #else

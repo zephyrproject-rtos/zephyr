@@ -25,10 +25,7 @@
  * @brief Memory pool get/free test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void mempool_test(void)
 {
 	uint32_t et; /* elapsed time */

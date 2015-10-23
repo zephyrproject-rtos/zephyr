@@ -65,8 +65,6 @@ static inline void nonEssentialTaskAbort(void)
  * @param pEsf pointer to exception stack frame
  *
  * @return N/A
- *
- * \NOMANUAL
  */
 void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF * pEsf)
 {

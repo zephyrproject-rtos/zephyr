@@ -26,10 +26,7 @@
  * @brief Semaphore signal speed test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void sema_test(void)
 {
 	uint32_t et; /* elapsed Time */

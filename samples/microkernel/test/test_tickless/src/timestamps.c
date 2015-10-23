@@ -64,10 +64,7 @@ Platform-specific timestamp support for the tickless idle test.
  * This routine initializes the timestamp timer.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _TimestampOpen(void)
 {
 	/* QEMU does not currently support the 32-bit timer modes of the GPTM */
@@ -96,10 +93,7 @@ void _TimestampOpen(void)
  * This routine returns the timestamp value.
  *
  * @return timestamp value
- *
- * \NOMANUAL
  */
-
 uint32_t _TimestampRead(void)
 {
 	static uint32_t lastTimerVal = 0;
@@ -132,10 +126,7 @@ uint32_t _TimestampRead(void)
  * This routine releases the timestamp timer.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _TimestampClose(void)
 {
 
@@ -179,10 +170,7 @@ void _TimestampClose(void)
  * This routine initializes the timestamp timer.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _TimestampOpen(void)
 {
 	/* enable timer access */
@@ -216,10 +204,7 @@ void _TimestampOpen(void)
  * This routine returns the timestamp value.
  *
  * @return timestamp value
- *
- * \NOMANUAL
  */
-
 uint32_t _TimestampRead(void)
 {
 	static uint32_t lastPrescale = 0;
@@ -253,10 +238,7 @@ uint32_t _TimestampRead(void)
  * This routine releases the timestamp timer.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _TimestampClose(void)
 {
 	_TIMESTAMP_STATUS = 0x0;  /* disable counter */

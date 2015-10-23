@@ -1382,8 +1382,6 @@ static void (*intFPtr[256])(void) = {
  * value passed to it (which is essentially the interrupt vector number).
  *
  * @return N/A
- *
- * \NOMANUAL
  */
 void raiseInt(uint8_t id)
 {
@@ -1400,10 +1398,7 @@ void raiseInt(uint8_t id)
  * Trigger via NVIC. <id> is the IRQ number.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void raiseInt(uint8_t id)
 {
 	_NvicSwInterruptTrigger((unsigned int)id);

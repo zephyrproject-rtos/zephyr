@@ -30,9 +30,7 @@ uint32_t stack2[2];
  *
  * @return N/A
  *
- * \NOMANUAL
  */
-
 void stack_test_init(void)
 {
 	nano_stack_init(&nano_stack_1, stack1);
@@ -49,9 +47,7 @@ void stack_test_init(void)
  *
  * @return N/A
  *
- * \NOMANUAL
  */
-
 void stack_fiber1(int par1, int par2)
 {
 	int i;
@@ -85,9 +81,7 @@ void stack_fiber1(int par1, int par2)
  *
  * @return N/A
  *
- * \NOMANUAL
  */
-
 void stack_fiber2(int par1, int par2)
 {
 	int i;
@@ -115,9 +109,7 @@ void stack_fiber2(int par1, int par2)
  *
  * @return N/A
  *
- * \NOMANUAL
  */
-
 void stack_fiber3(int par1, int par2)
 {
 	int i;
@@ -145,9 +137,7 @@ void stack_fiber3(int par1, int par2)
  *
  * @return 1 if success and 0 on failure
  *
- * \NOMANUAL
  */
-
 int stack_test(void)
 {
 	uint32_t t;

@@ -52,10 +52,7 @@
  * (short form).
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _FaultDump(const NANO_ESF *esf, int fault)
 {
 	ARG_UNUSED(esf);
@@ -81,10 +78,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
  * responsible for implementing the error handling policy.
  *
  * @return This function does not return.
- *
- * \NOMANUAL
  */
-
 void _Fault(void)
 {
 	uint32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);

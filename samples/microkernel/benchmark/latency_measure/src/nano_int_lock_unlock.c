@@ -40,10 +40,7 @@ static uint32_t timestamp = 0;
  * @brief The test main function
  *
  * @return 0 on success
- *
- * \NOMANUAL
  */
-
 int nanoIntLockUnlock(void)
 {
 	int i;

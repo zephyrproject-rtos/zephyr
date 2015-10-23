@@ -54,10 +54,7 @@ static uint32_t timestamp = 0;
  * The interrupt handler gets the second timestamp.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void latencyTestIsr(void *unused)
 {
 	ARG_UNUSED(unused);
@@ -74,10 +71,7 @@ static void latencyTestIsr(void *unused)
  * gets the first timestamp and invokes the software interrupt.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void fiberInt(void)
 {
 	setSwInterrupt(latencyTestIsr);
@@ -93,10 +87,7 @@ static void fiberInt(void)
  * the semaphore, fiber measures the time.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void fiberWaiter(void)
 {
 	nano_fiber_sem_take_wait(&testSema);
@@ -108,10 +99,7 @@ static void fiberWaiter(void)
  * @brief The test main function
  *
  * @return 0 on success
- *
- * \NOMANUAL
  */
-
 int nanoIntToFiberSem(void)
 {
 	PRINT_FORMAT(" 3- Measure time from ISR to executing a different fiber"

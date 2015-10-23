@@ -216,10 +216,7 @@ static int stale_irq_check;
  * significant word is being retrieved (as per HPET documentation).
  *
  * @return current 64-bit counter value
- *
- * \NOMANUAL
  */
-
 static uint64_t _hpetMainCounterAtomic(void)
 {
 	uint32_t highBits;
@@ -243,10 +240,7 @@ static uint64_t _hpetMainCounterAtomic(void)
  * is pushed onto the microkernel stack.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _timer_int_handler(void *unused)
 {
 	ARG_UNUSED(unused);

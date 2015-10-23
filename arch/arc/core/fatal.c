@@ -52,10 +52,7 @@ const NANO_ESF _default_esf = {
  * create its own or use a pointer to the global default ESF <_default_esf>.
  *
  * @return This function does not return.
- *
- * \NOMANUAL
  */
-
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 							const NANO_ESF *pEsf)
 {

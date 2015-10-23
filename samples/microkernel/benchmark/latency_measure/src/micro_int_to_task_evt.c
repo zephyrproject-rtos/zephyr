@@ -41,10 +41,7 @@ static uint32_t timestamp = 0;
  * The interrupt handler gets the second timestamp.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static void latencyTestIsr(void *unused)
 {
 	ARG_UNUSED(unused);
@@ -62,10 +59,7 @@ static void latencyTestIsr(void *unused)
  * software interrupt
  *
  * @return 0 on success
- *
- * \NOMANUAL
  */
-
 void microInt(void)
 {
 	task_sem_take_wait(INTSEMA);
@@ -79,10 +73,7 @@ void microInt(void)
  * @brief The test main function
  *
  * @return 0 on success
- *
- * \NOMANUAL
  */
-
 int microIntToTaskEvt(void)
 {
 	PRINT_FORMAT(" 2- Measure time from ISR to executing a different task"

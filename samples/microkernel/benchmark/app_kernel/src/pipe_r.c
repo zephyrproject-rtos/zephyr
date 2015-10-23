@@ -38,10 +38,7 @@ int pipeget(kpipe_t pipe, K_PIPE_OPTION option,
  * @brief Receive task
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void piperecvtask(void)
 {
 	int getsize;
@@ -95,10 +92,7 @@ void piperecvtask(void)
  * @param size     Data chunk size.
  * @param count    Number of data chunks.
  * @param time     Total write time.
- *
- * \NOMANUAL
  */
-
 int pipeget(kpipe_t pipe, K_PIPE_OPTION option, int size, int count,
 			unsigned int* time)
 {

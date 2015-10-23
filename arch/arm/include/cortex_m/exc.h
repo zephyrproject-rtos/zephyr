@@ -43,8 +43,6 @@
  * interrupt context.
  *
  * @return 1 if in ISR, 0 if not.
- *
- * \NOMANUAL
  */
 static ALWAYS_INLINE int _IsInIsr(void)
 {
@@ -63,10 +61,7 @@ static ALWAYS_INLINE int _IsInIsr(void)
  * Enable fault exceptions.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 static ALWAYS_INLINE void _ExcSetup(void)
 {
 	_ScbExcPrioSet(_EXC_PENDSV, _EXC_PRIO(0xff));

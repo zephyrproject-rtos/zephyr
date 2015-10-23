@@ -78,8 +78,6 @@
  * 0000000c A __tNANO_nested_OFFSET
  * 00000000 A __tNANO_fiber_OFFSET
  * 00000004 A __tNANO_task_OFFSET
- *
- * \NOMANUAL
  */
 
 #ifndef _GEN_OFFSET_H

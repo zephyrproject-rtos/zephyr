@@ -28,10 +28,7 @@ static struct nano_fifo nanoFifo_sync; /* for synchronization */
  * @brief Initialize LIFOs for the test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void lifo_test_init(void)
 {
 	nano_lifo_init(&nanoLifo1);
@@ -47,10 +44,7 @@ void lifo_test_init(void)
  * @param par2   Number of test loops.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void lifo_fiber1(int par1, int par2)
 {
 	int i;
@@ -87,10 +81,7 @@ void lifo_fiber1(int par1, int par2)
  * @param par2   Number of test cycles.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void lifo_fiber2(int par1, int par2)
 {
 	int i;
@@ -119,10 +110,7 @@ void lifo_fiber2(int par1, int par2)
  * @param par2   Number of test loops.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void lifo_fiber3(int par1, int par2)
 {
 	int i;
@@ -150,10 +138,7 @@ void lifo_fiber3(int par1, int par2)
  * @brief The main test entry
  *
  * @return 1 if success and 0 on failure
- *
- * \NOMANUAL
  */
-
 int lifo_test(void)
 {
 	uint32_t t;

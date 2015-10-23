@@ -19,10 +19,7 @@
 /*
  * DESCRIPTION
  * Macros to abstract compiler capabilities for GCC toolchain.
- *
- * \NOMANUAL
  */
-
 #include <toolchain/common.h>
 
 #define FUNC_ALIAS(real_func, new_alias, return_type) \

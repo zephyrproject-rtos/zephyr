@@ -176,10 +176,7 @@ static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
  * @return -1 on error, 0 if 32 bit BAR retrieved or 1 if 64 bit BAR retrieved
  *
  * NOTE: Routine does not set up parameters for 64 bit BARS, they are ignored.
- *
- * \NOMANUAL
  */
-
 static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 					struct pci_dev_info *dev_info)
 {
@@ -225,10 +222,7 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
  * @brief Scan the specified PCI device for all sub functions
  *
  * @return 1 if a device has been found, 0 otherwise.
- *
- * \NOMANUAL
  */
-
 static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 					struct pci_dev_info *dev_info)
 {
@@ -350,10 +344,7 @@ void pci_bus_scan_init(void)
  *
  * @return 1 on success, 0 otherwise. On success, dev_info is filled in with
  * currently found device information
- *
- * \NOMANUAL
  */
-
 int pci_bus_scan(struct pci_dev_info *dev_info)
 {
 	union pci_addr_reg pci_ctrl_addr;

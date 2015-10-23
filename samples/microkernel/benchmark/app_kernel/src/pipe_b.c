@@ -98,10 +98,7 @@ int pipeput(kpipe_t pipe, K_PIPE_OPTION
  * @brief Test the pipes transfer speed
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void pipe_test(void)
 {
 	uint32_t	putsize;
@@ -199,10 +196,7 @@ void pipe_test(void)
  * @param size     Data chunk size.
  * @param count    Number of data chunks.
  * @param time     Total write time.
- *
- * \NOMANUAL
  */
-
 int pipeput(kpipe_t pipe, K_PIPE_OPTION option, int size, int count, uint32_t *time)
 {
 	int i;

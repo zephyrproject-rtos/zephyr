@@ -29,10 +29,7 @@ static struct nano_fifo nanoFifo_sync; /* for synchronization */
  * @brief Initialize FIFOs for the test
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void fifo_test_init(void)
 {
 	nano_fifo_init(&nanoFifo1);
@@ -44,14 +41,11 @@ void fifo_test_init(void)
  *
  * @brief Fifo test fiber
  *
- * @return N/A
- *
  * @param par1   Ignored parameter.
  * @param par2   Number of test loops.
  *
- * \NOMANUAL
+ * @return N/A
  */
-
 void fifo_fiber1(int par1, int par2)
 {
 	int i;
@@ -76,14 +70,11 @@ void fifo_fiber1(int par1, int par2)
  *
  * @brief Fifo test fiber
  *
- * @return N/A
- *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
  *
- * \NOMANUAL
+ * @return N/A
  */
-
 void fifo_fiber2(int par1, int par2)
 {
 	int i;
@@ -109,14 +100,11 @@ void fifo_fiber2(int par1, int par2)
  *
  * @brief Fifo test fiber
  *
- * @return N/A
- *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
  *
- * \NOMANUAL
+ * @return N/A
  */
-
 void fifo_fiber3(int par1, int par2)
 {
 	int i;
@@ -145,10 +133,7 @@ void fifo_fiber3(int par1, int par2)
  * @brief The main test entry
  *
  * @return 1 if success and 0 on failure
- *
- * \NOMANUAL
  */
-
 int fifo_test(void)
 {
 	uint32_t t;

@@ -35,10 +35,7 @@ int errorCount = 0; /* track number of errors */
  * @brief Test latency of nanokernel
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void nanoTest(void)
 {
 	PRINT_NANO_BANNER();
@@ -66,10 +63,7 @@ void nanoTest(void)
  * @brief Nanokernel-only testing entry point
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void main(void)
 {
 	bench_test_init();
@@ -93,10 +87,7 @@ void microTaskSwitchYield(void);
  * @brief Test latency of microkernel
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void microTest(void)
 {
 	PRINT_MICRO_BANNER();
@@ -123,10 +114,7 @@ void microTest(void)
  * @brief Microkernel testing entry point
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void microMain(void)
 {
 	bench_test_init();
