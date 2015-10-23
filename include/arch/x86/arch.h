@@ -363,7 +363,6 @@ static inline __attribute__((always_inline)) void irq_unlock(unsigned int key)
 	_int_latency_stop();
 #endif
 	_do_irq_unlock();
-	return;
 }
 #endif /* CONFIG_NO_ISRS */
 
