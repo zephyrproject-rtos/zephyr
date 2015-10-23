@@ -31,6 +31,7 @@
 #include <sys/time.h>
 #include <linux/if_ether.h>
 #include <glib.h>
+#include <pcap/pcap.h>
 
 #define PIPE_IN		".in"
 #define PIPE_OUT	".out"
@@ -46,34 +47,22 @@ static GMainLoop *main_loop = NULL;
 static char *path = NULL;
 static char *pipe_1_in = NULL, *pipe_1_out = NULL;
 static char *pipe_2_in = NULL, *pipe_2_out = NULL;
-static struct pcap *pcap = NULL;
+static struct pcap_fd *pcap;
 static int fd1_in, fd2_in;
 
-struct pcap_hdr {
-	uint32_t magic_number;  /* magic number */
-	uint16_t version_major; /* major version number */
-	uint16_t version_minor; /* minor version number */
-	int32_t  thiszone;      /* GMT to local correction */
-	uint32_t sigfigs;       /* accuracy of timestamps */
-	uint32_t snaplen;       /* max length of captured packets, in octets */
-	uint32_t network;       /* data link type */
-} __attribute__ ((packed));
-#define PCAP_HDR_SIZE (sizeof(struct pcap_hdr))
-
-struct pcap_pkt {
-	uint32_t ts_sec;        /* timestamp seconds */
-	uint32_t ts_usec;       /* timestamp microseconds */
-	uint32_t incl_len;      /* number of octets of packet saved in file */
-	uint32_t orig_len;      /* actual length of packet */
-} __attribute__ ((packed));
-#define PCAP_PKT_SIZE (sizeof(struct pcap_pkt))
-
-struct pcap {
+struct pcap_fd {
 	int fd;
-	bool closed;
-	uint32_t type;
-	uint32_t snaplen;
 };
+
+#define PCAP_FILE_HDR_SIZE (sizeof(struct pcap_file_header))
+
+struct pcap_frame {
+	uint32_t ts_sec;
+	uint32_t ts_usec;
+	uint32_t caplen;
+	uint32_t len;
+} __attribute__ ((packed));
+#define PCAP_FRAME_SIZE (sizeof(struct pcap_frame))
 
 struct debug_desc {
 	const char *name;
@@ -120,56 +109,7 @@ void log_cleanup(void)
 	closelog();
 }
 
-struct pcap *pcap_open(const char *pathname)
-{
-	struct pcap *pcap;
-	struct pcap_hdr hdr;
-	ssize_t len;
-
-	pcap = g_new0(struct pcap, 1);
-
-	pcap->fd = open(pathname, O_RDONLY | O_CLOEXEC);
-	if (pcap->fd < 0) {
-		DBG("Failed to open PCAP file");
-		g_free(pcap);
-		return NULL;
-	}
-
-	len = read(pcap->fd, &hdr, PCAP_HDR_SIZE);
-	if (len < 0) {
-		DBG("Failed to read PCAP header");
-		goto failed;
-	}
-
-	if (len != PCAP_HDR_SIZE) {
-		DBG("Wrong PCAP header size\n");
-		goto failed;
-	}
-
-	if (hdr.magic_number != 0xa1b2c3d4) {
-		DBG("Wrong PCAP header magic\n");
-		goto failed;
-	}
-
-	if (hdr.version_major != 2 || hdr.version_minor != 4) {
-		DBG("Wrong PCAP version number\n");
-		goto failed;
-	}
-
-	pcap->closed = false;
-	pcap->snaplen = hdr.snaplen;
-	pcap->type = hdr.network;
-
-	return pcap;
-
-failed:
-	close(pcap->fd);
-	g_free(pcap);
-
-	return NULL;
-}
-
-void pcap_close(struct pcap *pcap)
+void monitor_pcap_free(void)
 {
 	if (!pcap)
 		return;
@@ -180,90 +120,80 @@ void pcap_close(struct pcap *pcap)
 	g_free(pcap);
 }
 
-struct pcap *pcap_create(const char *pathname)
+bool monitor_pcap_create(const char *pathname)
 {
-	struct pcap *pcap;
-	struct pcap_hdr hdr;
+	struct pcap_file_header hdr;
 	ssize_t len;
 
-	pcap = g_new0(struct pcap, 1);
+	pcap = g_new0(struct pcap_fd, 1);
 	pcap->fd = open(pathname, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
 					S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (pcap->fd < 0) {
 		DBG("Failed to create PCAP file");
 		g_free(pcap);
-		return NULL;
+		return false;
 	}
 
-	pcap->closed = false;
-	pcap->snaplen = 0x0000ffff;
-				 /* http://www.tcpdump.org/linktypes.html */
-	pcap->type = 0x000000E6; /* LINKTYPE_IEEE802_15_4_NOFCS : 230 */
-
-	memset(&hdr, 0, sizeof(hdr));
-	hdr.magic_number = 0xa1b2c3d4;
+	memset(&hdr, 0, PCAP_FILE_HDR_SIZE);
+	hdr.magic = 0xa1b2c3d4;
 	hdr.version_major = 0x0002;
 	hdr.version_minor = 0x0004;
 	hdr.thiszone = 0;
 	hdr.sigfigs = 0;
-	hdr.snaplen = pcap->snaplen;
-	hdr.network = pcap->type;
+	hdr.snaplen = 0x0000ffff;
+	/*
+	 * http://www.tcpdump.org/linktypes.html
+	 * LINKTYPE_IEEE802_15_4_NOFCS : 230
+	 */
+	hdr.linktype = 0x000000E6;
 
-	len = write(pcap->fd, &hdr, PCAP_HDR_SIZE);
+	len = write(pcap->fd, &hdr, PCAP_FILE_HDR_SIZE);
 	if (len < 0) {
 		DBG("Failed to write PCAP header");
 		goto failed;
 	}
 
-	if (len != PCAP_HDR_SIZE) {
+	if (len != PCAP_FILE_HDR_SIZE) {
 		DBG("Written PCAP header size mimatch\n");
 		goto failed;
 	}
 
-	return pcap;
+	return true;
 
 failed:
-	close(pcap->fd);
-	g_free(pcap);
+	monitor_pcap_free();
 
-	return NULL;
+	return false;
 }
 
-bool pcap_write(struct pcap *pcap, const struct timeval *tv,
-				const void *data, uint32_t size)
+bool monitor_pcap_write(const void *data, uint32_t size)
 {
-	struct iovec iov[3];
-	struct pcap_pkt pkt;
-	ssize_t written;
+	struct pcap_frame frame;
+	struct timeval tv;
+	ssize_t len;
 
 	if (!pcap)
 		return false;
 
-	if (pcap->closed)
-		return false;
+	memset(&frame, 0, PCAP_FRAME_SIZE);
 
-	memset(&pkt, 0, sizeof(pkt));
-	if (tv) {
-		pkt.ts_sec = tv->tv_sec;
-		pkt.ts_usec = tv->tv_usec;
-	}
+	gettimeofday(&tv, NULL);
+	frame.ts_sec = tv.tv_sec;
+	frame.ts_usec = tv.tv_usec;
+	frame.caplen = size;
+	frame.len = size;
 
-	pkt.incl_len = size;
-	pkt.orig_len = size;
-
-	iov[0].iov_base = &pkt;
-	iov[0].iov_len = PCAP_PKT_SIZE;
-	iov[1].iov_base = (void *) data;
-	iov[1].iov_len = size;
-
-	written = writev(pcap->fd, iov, 2);
-	if (written < 0) {
-		pcap->closed = true;
+	len = write(pcap->fd, &frame, PCAP_FRAME_SIZE);
+	if (len < 0 || len != PCAP_FRAME_SIZE) {
+		DBG("Failed to write PCAP frame or size mismatch %d\n", len);
 		return false;
 	}
 
-	if (written < (ssize_t) (PCAP_PKT_SIZE + size)) {
-		pcap->closed = true;
+	fsync(pcap->fd);
+
+	len = write(pcap->fd, data, size);
+	if (len < 0 || len != size) {
+		DBG("Failed to write PCAP data or size mismatch %d\n", len);
 		return false;
 	}
 
@@ -278,7 +208,6 @@ static gboolean fifo_handler1(GIOChannel *channel, GIOCondition cond,
 	unsigned char buf[1];
 	ssize_t result;
 	int fd;
-	struct timeval tv;
 
 	if (cond & (G_IO_NVAL | G_IO_ERR | G_IO_HUP)) {
 		DBG("First pipe closed");
@@ -340,9 +269,7 @@ static gboolean fifo_handler1(GIOChannel *channel, GIOCondition cond,
 	if (input1_len && input1_len == input1_offset) {
 		DBG("Received %d bytes in pipe 1", input1_len);
 
-		/* write it to pcap file */
-		gettimeofday(&tv, NULL);
-		pcap_write(pcap, &tv, input1, input1_len);
+		monitor_pcap_write(input1, input1_len);
 		input1_len = input1_offset = 0;
 		memset(input1, 0, sizeof(input1));
 
@@ -360,7 +287,6 @@ static gboolean fifo_handler2(GIOChannel *channel, GIOCondition cond,
 	unsigned char buf[1];
 	ssize_t result;
 	int fd;
-	struct timeval tv;
 
 	if (cond & (G_IO_NVAL | G_IO_ERR | G_IO_HUP)) {
 		DBG("Second pipe closed");
@@ -421,9 +347,7 @@ static gboolean fifo_handler2(GIOChannel *channel, GIOCondition cond,
 	if (input2_len && input2_len == input2_offset) {
 		DBG("Received %d bytes in pipe 2", input2_len);
 
-		/* write it to pcap file */
-		gettimeofday(&tv, NULL);
-		pcap_write(pcap, &tv, input2, input2_len);
+		monitor_pcap_write(input2, input2_len);
 		input2_len = input2_offset = 0;
 		memset(input2, 0, sizeof(input2));
 
@@ -516,16 +440,15 @@ int main(int argc, char *argv[])
 	pipe_2_out = g_strconcat(pipe2, PIPE_OUT, NULL);
 	path = g_strdup(argv[1]);
 
-	pcap = pcap_create(path);
-	if (!pcap) {
-		g_free(path);
-		exit(-EINVAL);
-	}
-
 	log_init("log", FALSE, argc > 4 ? TRUE : FALSE);
 
 	DBG("Pipe 1 IN %s OUT %s", pipe_1_in, pipe_1_out);
 	DBG("Pipe 2 IN %s OUT %s", pipe_2_in, pipe_2_out);
+
+	if (!monitor_pcap_create(path)) {
+		g_free(path);
+		exit(-EINVAL);
+	}
 
 	fifo1 = setup_fifofd1();
 	if (fifo1 < 0) {
@@ -567,6 +490,7 @@ exit:
 	g_free(pipe_1_out);
 	g_free(pipe_2_in);
 	g_free(pipe_2_out);
+	monitor_pcap_free();
 	log_cleanup();
 	g_main_loop_unref(main_loop);
 
