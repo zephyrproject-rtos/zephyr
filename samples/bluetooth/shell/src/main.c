@@ -98,7 +98,7 @@ static void connected(struct bt_conn *conn)
 	printk("Connected: %s\n", addr);
 
 	if (!default_conn) {
-		default_conn = bt_conn_get(conn);
+		default_conn = bt_conn_ref(conn);
 	}
 }
 
@@ -111,7 +111,7 @@ static void disconnected(struct bt_conn *conn)
 	printk("Disconnected: %s\n", addr);
 
 	if (default_conn == conn) {
-		bt_conn_put(default_conn);
+		bt_conn_unref(default_conn);
 		default_conn = NULL;
 	}
 }
@@ -239,7 +239,7 @@ static void cmd_connect_le(int argc, char *argv[])
 		printk("Connection pending\n");
 
 		/* unref connection obj in advance as app user */
-		bt_conn_put(conn);
+		bt_conn_unref(conn);
 	}
 }
 

@@ -215,7 +215,7 @@ static void disconnected(struct bt_conn *conn)
 		return;
 	}
 
-	bt_conn_put(default_conn);
+	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
 	err = bt_start_scanning(BT_SCAN_FILTER_DUP_DISABLE, device_found);

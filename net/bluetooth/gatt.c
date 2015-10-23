@@ -362,11 +362,11 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 
 		if (att_notify(conn, data->handle, data->data, data->len) < 0) {
-			bt_conn_put(conn);
+			bt_conn_unref(conn);
 			return BT_GATT_ITER_STOP;
 		}
 
-		bt_conn_put(conn);
+		bt_conn_unref(conn);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -459,7 +459,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			/* Skip if there is another peer connected */
 			tmp = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
 			if (tmp && tmp->state == BT_CONN_CONNECTED) {
-				bt_conn_put(tmp);
+				bt_conn_unref(tmp);
 				return BT_GATT_ITER_CONTINUE;
 			}
 		}

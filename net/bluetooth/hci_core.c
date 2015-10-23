@@ -287,7 +287,7 @@ static void hci_acl(struct bt_buf *buf)
 	}
 
 	bt_conn_recv(conn, buf, flags);
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 }
 
 static void hci_num_completed_packets(struct bt_buf *buf)
@@ -320,7 +320,7 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 			conn->pending_pkts = 0;
 		}
 
-		bt_conn_put(conn);
+		bt_conn_unref(conn);
 
 		while (count--) {
 			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
@@ -385,7 +385,7 @@ static void hci_disconn_complete(struct bt_buf *buf)
 		bt_le_scan_update();
 	}
 
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 		struct bt_buf *buf;
@@ -472,7 +472,7 @@ static void le_conn_complete(struct bt_buf *buf)
 		 * We are now in DISCONNECTED state since no successful LE
 		 * link been made.
 		 */
-		bt_conn_put(conn);
+		bt_conn_unref(conn);
 
 		return;
 	}
@@ -518,7 +518,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	update_conn_params(conn);
 
 done:
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 	bt_le_scan_update();
 }
 
@@ -541,7 +541,7 @@ static void le_remote_feat_complete(struct bt_buf *buf)
 
 	update_conn_params(conn);
 
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 }
 
 static int le_conn_param_neg_reply(uint16_t handle, uint8_t reason)
@@ -604,7 +604,7 @@ static int le_conn_param_req(struct bt_buf *buf)
 					       BT_HCI_ERR_UNKNOWN_CONN_ID);
 	}
 
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 
 	if (!bt_le_conn_params_valid(min, max, latency, timeout)) {
 		return le_conn_param_neg_reply(handle,
@@ -637,7 +637,7 @@ static void le_conn_update_complete(struct bt_buf *buf)
 
 	/* TODO Notify about connection */
 
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 }
 
 static void check_pending_conn(const bt_addr_le_t *id_addr,
@@ -666,7 +666,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	bt_conn_set_state(conn, BT_CONN_CONNECT);
 
 done:
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 }
 
 static int set_flow_control(void)
@@ -747,7 +747,7 @@ static void hci_encrypt_change(struct bt_buf *buf)
 		/* TODO report error */
 		/* reset required security level in case of error */
 		conn->required_sec_level = conn->sec_level;
-		bt_conn_put(conn);
+		bt_conn_unref(conn);
 		return;
 	}
 
@@ -757,7 +757,7 @@ static void hci_encrypt_change(struct bt_buf *buf)
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
 
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 }
 
 static void hci_encrypt_key_refresh_complete(struct bt_buf *buf)
@@ -783,7 +783,7 @@ static void hci_encrypt_key_refresh_complete(struct bt_buf *buf)
 	update_sec_level(conn);
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 }
 
 static void le_ltk_request(struct bt_buf *buf)
@@ -847,7 +847,7 @@ static void le_ltk_request(struct bt_buf *buf)
 	}
 
 done:
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 }
 #endif /* CONFIG_BLUETOOTH_SMP */
 
@@ -1034,7 +1034,7 @@ int bt_le_scan_update(void)
 			return 0;
 		}
 
-		bt_conn_put(conn);
+		bt_conn_unref(conn);
 
 		return bt_hci_start_scanning(BT_LE_SCAN_PASSIVE);
 	}

@@ -36,7 +36,7 @@ struct bt_conn;
  *
  *  @return Connection object with incremented reference count.
  */
-struct bt_conn *bt_conn_get(struct bt_conn *conn);
+struct bt_conn *bt_conn_ref(struct bt_conn *conn);
 
 /** @brief Decrement a connection's reference count.
  *
@@ -44,7 +44,7 @@ struct bt_conn *bt_conn_get(struct bt_conn *conn);
  *
  *  @param conn Connection object.
  */
-void bt_conn_put(struct bt_conn *conn);
+void bt_conn_unref(struct bt_conn *conn);
 
 /** @brief Look up an existing connection by address.
  *
@@ -54,7 +54,7 @@ void bt_conn_put(struct bt_conn *conn);
  *
  *  @return Connection object or NULL if not found. The caller gets a
  *  new reference to the connection object which must be released with
- *  bt_conn_put() once done using the object.
+ *  bt_conn_unref() once done using the object.
  */
 struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
 

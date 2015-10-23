@@ -419,7 +419,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	bt_conn_reset_rx_state(conn);
 
 	BT_DBG("handle %u exiting\n", conn->handle);
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 }
 
 struct bt_conn *bt_conn_add(const bt_addr_le_t *peer)
@@ -458,7 +458,7 @@ static void timeout_fiber(int arg1, int arg2)
 	conn->timeout = NULL;
 
 	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	bt_conn_put(conn);
+	bt_conn_unref(conn);
 }
 
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
@@ -482,7 +482,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * bt_conn_add() and keep it until reaching DISCONNECTED
 		 * again.
 		 */
-		bt_conn_get(conn);
+		bt_conn_ref(conn);
 		break;
 	case BT_CONN_CONNECT:
 		if (conn->timeout) {
@@ -490,7 +490,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			conn->timeout = NULL;
 
 			/* Drop the reference taken by timeout fiber */
-			bt_conn_put(conn);
+			bt_conn_unref(conn);
 		}
 		break;
 	default:
@@ -502,7 +502,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_CONNECTED:
 		nano_fifo_init(&conn->tx_queue);
 		fiber_start(conn->stack, sizeof(conn->stack), conn_tx_fiber,
-			    (int)bt_conn_get(conn), 0, 7, 0);
+			    (int)bt_conn_ref(conn), 0, 7, 0);
 
 		bt_l2cap_connected(conn);
 		notify_connected(conn);
@@ -522,7 +522,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		/* Release the reference we took for the very first
 		 * state transition.
 		 */
-		bt_conn_put(conn);
+		bt_conn_unref(conn);
 
 		break;
 	case BT_CONN_CONNECT_SCAN:
@@ -532,7 +532,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		conn->timeout = fiber_delayed_start(conn->stack,
 						    sizeof(conn->stack),
 						    timeout_fiber,
-						    (int)bt_conn_get(conn),
+						    (int)bt_conn_ref(conn),
 						    0, 7, 0, CONN_TIMEOUT);
 		break;
 	case BT_CONN_DISCONNECT:
@@ -560,7 +560,7 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 		}
 
 		if (conns[i].handle == handle) {
-			return bt_conn_get(&conns[i]);
+			return bt_conn_ref(&conns[i]);
 		}
 	}
 
@@ -577,7 +577,7 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 		}
 
 		if (!bt_addr_le_cmp(peer, &conns[i].dst)) {
-			return bt_conn_get(&conns[i]);
+			return bt_conn_ref(&conns[i]);
 		}
 	}
 
@@ -600,14 +600,14 @@ struct bt_conn *bt_conn_lookup_state(const bt_addr_le_t *peer,
 		}
 
 		if (conns[i].state == state) {
-			return bt_conn_get(&conns[i]);
+			return bt_conn_ref(&conns[i]);
 		}
 	}
 
 	return NULL;
 }
 
-struct bt_conn *bt_conn_get(struct bt_conn *conn)
+struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
 	atomic_inc(&conn->ref);
 
@@ -616,7 +616,7 @@ struct bt_conn *bt_conn_get(struct bt_conn *conn)
 	return conn;
 }
 
-void bt_conn_put(struct bt_conn *conn)
+void bt_conn_unref(struct bt_conn *conn)
 {
 	atomic_dec(&conn->ref);
 
@@ -671,7 +671,7 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 		conn->timeout = NULL;
 
 		/* Drop the reference took by timeout fiber */
-		bt_conn_put(conn);
+		bt_conn_unref(conn);
 	}
 
 	err = bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
@@ -720,7 +720,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 		case BT_CONN_CONNECTED:
 			return conn;
 		default:
-			bt_conn_put(conn);
+			bt_conn_unref(conn);
 			return NULL;
 		}
 	}
