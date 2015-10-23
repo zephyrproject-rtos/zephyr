@@ -933,12 +933,12 @@ static struct bt_gatt_chrc appearance_chrc = {
 };
 
 static struct bt_gatt_attr attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
-	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
-	BT_GATT_DESCRIPTOR(0x0003, &device_name_uuid, BT_GATT_PERM_READ,
-			   read_string, NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(0x0004, &appearance_chrc),
-	BT_GATT_DESCRIPTOR(0x0005, &appeareance_uuid, BT_GATT_PERM_READ,
+	BT_GATT_PRIMARY_SERVICE(&gap_uuid),
+	BT_GATT_CHARACTERISTIC(&name_chrc),
+	BT_GATT_DESCRIPTOR(&device_name_uuid, BT_GATT_PERM_READ, read_string,
+			   NULL, DEVICE_NAME),
+	BT_GATT_CHARACTERISTIC(&appearance_chrc),
+	BT_GATT_DESCRIPTOR(&appeareance_uuid, BT_GATT_PERM_READ,
 			   read_appearance, NULL, NULL),
 };
 

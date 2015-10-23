@@ -630,7 +630,7 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 	/* Parse attributes found */
 	for (i = 0; length >= sizeof(rsp->list[i]);
 	     i++, length -=  sizeof(rsp->list[i])) {
-		const struct bt_gatt_attr *attr;
+		struct bt_gatt_attr *attr;
 
 		start_handle = sys_le16_to_cpu(rsp->list[i].start_handle);
 		end_handle = sys_le16_to_cpu(rsp->list[i].end_handle);
@@ -643,12 +643,13 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 
 		if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 			attr = (&(struct bt_gatt_attr)
-				BT_GATT_PRIMARY_SERVICE(start_handle, &value));
+				BT_GATT_PRIMARY_SERVICE(&value));
 		} else {
 			attr = (&(struct bt_gatt_attr)
-				BT_GATT_SECONDARY_SERVICE(start_handle,
-							  &value));
+				BT_GATT_SECONDARY_SERVICE(&value));
 		}
+
+		attr->handle = start_handle;
 
 		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
 			goto done;
@@ -751,7 +752,7 @@ static uint16_t parse_include(const void *pdu,
 	/* Parse include found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu += rsp->len) {
-		const struct bt_gatt_attr *attr;
+		struct bt_gatt_attr *attr;
 		const struct bt_att_data *data = pdu;
 		struct gatt_incl *incl = (void *)data->value;
 
@@ -787,8 +788,8 @@ static uint16_t parse_include(const void *pdu,
 			continue;
 		}
 
-		attr = (&(struct bt_gatt_attr)
-			BT_GATT_INCLUDE_SERVICE(handle, &value));
+		attr = (&(struct bt_gatt_attr)BT_GATT_INCLUDE_SERVICE(&value));
+		attr->handle = handle;
 
 		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
 			handle = 0;
@@ -830,7 +831,7 @@ static uint16_t parse_characteristic(const void *pdu,
 	/* Parse characteristics found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu += rsp->len) {
-		const struct bt_gatt_attr *attr;
+		struct bt_gatt_attr *attr;
 		const struct bt_att_data *data = pdu;
 		struct gatt_chrc *chrc = (void *)data->value;
 
@@ -866,8 +867,8 @@ static uint16_t parse_characteristic(const void *pdu,
 			continue;
 		}
 
-		attr = (&(struct bt_gatt_attr)
-			BT_GATT_CHARACTERISTIC(handle, &value));
+		attr = (&(struct bt_gatt_attr)BT_GATT_CHARACTERISTIC(&value));
+		attr->handle = handle;
 
 		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
 			handle = 0;
@@ -995,7 +996,7 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 	/* Parse descriptors found */
 	for (length--, pdu = rsp->info; length >= len;
 	     length -= len, pdu += len) {
-		const struct bt_gatt_attr *attr;
+		struct bt_gatt_attr *attr;
 
 		info.i16 = pdu;
 		handle = sys_le16_to_cpu(info.i16->handle);
@@ -1017,7 +1018,8 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 		}
 
 		attr = (&(struct bt_gatt_attr)
-			BT_GATT_DESCRIPTOR(handle, &uuid, 0, NULL, NULL, NULL));
+			BT_GATT_DESCRIPTOR(&uuid, 0, NULL, NULL, NULL));
+		attr->handle = handle;
 
 		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
 			goto done;

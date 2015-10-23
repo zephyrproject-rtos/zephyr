@@ -306,13 +306,11 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
  *
  *  Helper macro to declare a service attribute.
  *
- *  @param _handle Service attribute handle.
  *  @param _uuid Service attribute type.
  *  @param _data Service attribute value.
  */
-#define BT_GATT_SERVICE(_handle, _uuid, _service)			\
+#define BT_GATT_SERVICE(_uuid, _service)				\
 {									\
-	.handle = _handle,						\
 	.uuid = _uuid,							\
 	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_service,				\
@@ -324,12 +322,10 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
  *
  *  Helper macro to declare a primary service attribute.
  *
- *  @param _handle Service attribute handle.
  *  @param _service Service attribute value.
  */
-#define BT_GATT_PRIMARY_SERVICE(_handle, _service)			\
+#define BT_GATT_PRIMARY_SERVICE(_service)				\
 {									\
-	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_PRIMARY }),	\
 	.perm = BT_GATT_PERM_READ,					\
@@ -342,12 +338,10 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
  *
  *  Helper macro to declare a secondary service attribute.
  *
- *  @param _handle Service attribute handle.
  *  @param _service Service attribute value.
  */
-#define BT_GATT_SECONDARY_SERVICE(_handle, _service)			\
+#define BT_GATT_SECONDARY_SERVICE(_service)				\
 {									\
-	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_SECONDARY }),	\
 	.perm = BT_GATT_PERM_READ,					\
@@ -379,12 +373,10 @@ int bt_gatt_attr_read_included(struct bt_conn *conn,
  *
  *  Helper macro to declare a include service attribute.
  *
- *  @param _handle Service attribute handle.
  *  @param _service Service attribute value.
  */
-#define BT_GATT_INCLUDE_SERVICE(_handle, _service)			\
+#define BT_GATT_INCLUDE_SERVICE(_service)				\
 {									\
-	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_INCLUDE }),	\
 	.perm = BT_GATT_PERM_READ,					\
@@ -416,12 +408,10 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
  *
  *  Helper macro to declare a characteristic attribute.
  *
- *  @param _handle Characteristic attribute handle.
  *  @param _value Characteristic attribute value.
  */
-#define BT_GATT_CHARACTERISTIC(_handle, _value)				\
+#define BT_GATT_CHARACTERISTIC(_value)					\
 {									\
-	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_CHRC }),	\
 	.perm = BT_GATT_PERM_READ,					\
@@ -490,14 +480,12 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *
  *  Helper macro to declare a CCC attribute.
  *
- *  @param _handle Descriptor attribute handle.
  *  @param _value_handle Characteristic attribute value handle.
  *  @param _cfg Initial configuration.
  *  @param _cfg_changed Configuration changed callback.
  */
-#define BT_GATT_CCC(_handle, _value_handle, _cfg, _cfg_changed)		\
+#define BT_GATT_CCC(_value_handle, _cfg, _cfg_changed)			\
 {									\
-	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_CCC }),	\
 	.perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,			\
@@ -536,9 +524,8 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  *  @param _handle Descriptor attribute handle.
  *  @param _value Descriptor attribute value.
  */
-#define BT_GATT_CEP(_handle, _value)					\
+#define BT_GATT_CEP(_value)						\
 {									\
-	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_CEP }),	\
 	.perm = BT_GATT_PERM_READ,					\
@@ -551,16 +538,14 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  *
  *  Helper macro to declare a descriptor attribute.
  *
- *  @param _handle Descriptor attribute handle.
  *  @param _value Descriptor attribute value.
  *  @param _perm Descriptor attribute access permissions.
  *  @param _read Descriptor attribute read callback.
  *  @param _write Descriptor attribute write callback.
  *  @param _value Descriptor attribute value.
  */
-#define BT_GATT_DESCRIPTOR(_handle, _uuid, _perm, _read, _write, _value) \
+#define BT_GATT_DESCRIPTOR(_uuid, _perm, _read, _write, _value)		\
 {									\
-	.handle = _handle,						\
 	.uuid = _uuid,							\
 	.perm = _perm,							\
 	.read = _read,							\
@@ -573,7 +558,6 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  *
  *  Helper macro to declare a descriptor attribute.
  *
- *  @param _handle Descriptor attribute handle.
  *  @param _value Descriptor attribute value.
  *  @param _perm Descriptor attribute access permissions.
  *  @param _read Descriptor attribute read callback.
@@ -581,10 +565,8 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  *  @param _flush Descriptor attribute flush callback.
  *  @param _value Descriptor attribute value.
  */
-#define BT_GATT_LONG_DESCRIPTOR(_handle, _uuid, _perm, _read, _write, _flush, \
-				_value)					\
+#define BT_GATT_LONG_DESCRIPTOR(_uuid, _perm, _read, _write, _flush, _value) \
 {									\
-	.handle = _handle,						\
 	.uuid = _uuid,							\
 	.perm = _perm,							\
 	.read = _read,							\

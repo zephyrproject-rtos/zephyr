@@ -119,8 +119,8 @@ static void supported_commands(uint8_t *data, uint16_t len)
 			CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
 }
 
-static struct bt_gatt_attr svc_pri = BT_GATT_PRIMARY_SERVICE(0x0000, NULL);
-static struct bt_gatt_attr svc_sec = BT_GATT_SECONDARY_SERVICE(0x0000, NULL);
+static struct bt_gatt_attr svc_pri = BT_GATT_PRIMARY_SERVICE(NULL);
+static struct bt_gatt_attr svc_sec = BT_GATT_SECONDARY_SERVICE(NULL);
 
 static void add_service(uint8_t *data, uint16_t len)
 {
@@ -229,8 +229,8 @@ static int flush_value(struct bt_conn *conn,
 	return -EINVAL;
 }
 
-static struct bt_gatt_attr chr = BT_GATT_CHARACTERISTIC(0x0000, NULL);
-static struct bt_gatt_attr chr_val = BT_GATT_LONG_DESCRIPTOR(0x0000, NULL, 0,
+static struct bt_gatt_attr chr = BT_GATT_CHARACTERISTIC(NULL);
+static struct bt_gatt_attr chr_val = BT_GATT_LONG_DESCRIPTOR(NULL, 0,
 							     read_value,
 							     write_value,
 							     flush_value, NULL);
