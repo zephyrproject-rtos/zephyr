@@ -69,7 +69,7 @@ struct spi_intel_data {
 #define INTEL_SPI_SSCR0_SSE		(0x1 << 7)
 #define INTEL_SPI_SSCR0_SSE_BIT		(7)
 #define INTEL_SPI_SSCR0_SCR(__msf) \
-	((__msf && INTEL_SPI_CLK_DIV_MASK) << 8)
+	((__msf & INTEL_SPI_CLK_DIV_MASK) << 8)
 
 /* SSCR1 settings */
 #define INTEL_SPI_SSCR1_TIE_BIT		(1)

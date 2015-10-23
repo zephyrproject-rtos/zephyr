@@ -244,8 +244,8 @@ static int spi_intel_configure(struct device *dev,
 	write_sscr1(spi->sscr1, info->regs);
 
 	DBG("spi_intel_configure: DDS_RATE: 0x%x SCR: %d\n",
-				INTEL_SPI_DSS_RATE(config->max_sys_freq),
-				INTEL_SPI_SSCR0_SCR(config->max_sys_freq));
+			INTEL_SPI_DSS_RATE(config->max_sys_freq),
+			INTEL_SPI_SSCR0_SCR(config->max_sys_freq) >> 8);
 
 	/* Word size and clock rate */
 	spi->sscr0 = INTEL_SPI_SSCR0_DSS(SPI_WORD_SIZE_GET(flags)) |
