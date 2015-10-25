@@ -732,9 +732,8 @@ export INSTALL_DTBS_PATH ?= $(INSTALL_PATH)/dtbs/$(KERNELRELEASE)
 
 core-y		+=
 
-zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
-		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
-		     $(libs-y) $(libs-m)) $(app-y))
+zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(core-y) $(drivers-y) \
+		     $(libs-y) $(app-y)))
 
 zephyr-alldirs	:= $(sort $(zephyr-dirs) $(patsubst %/,%,$(filter %/, \
 		     $(init-) $(core-) $(drivers-) $(libs-) $(app-))))
@@ -748,7 +747,6 @@ libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
 # Externally visible symbols (used by link-zephyr.sh)
-export KBUILD_ZEPHYR_INIT := $(head-y) $(init-y)
 export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y) $(app-y)
 ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
 export KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
@@ -759,7 +757,7 @@ export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile
 export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(zephyr-alldirs)) arch include samples scripts)
 
-zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_INIT) $(KBUILD_ZEPHYR_MAIN)
+zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_MAIN)
 
 ALL_LIBS += $(TOOLCHAIN_LIBS)
 export ALL_LIBS
