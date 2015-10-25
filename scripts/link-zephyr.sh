@@ -196,11 +196,6 @@ fi
 info BIN ${KERNEL_NAME}.bin
 zephyr_bin_strip ${KERNEL_NAME}.elf ${KERNEL_NAME}.lst ${KERNEL_NAME}.bin ${KERNEL_NAME}.strip
 
-if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then
-	info SORTEX ${KERNEL_NAME}
-	sortextable ${KERNEL_NAME}
-fi
-
 info SYSMAP System.map
 mksysmap ${KERNEL_NAME}.elf System.map
 
