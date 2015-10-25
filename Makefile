@@ -536,7 +536,7 @@ ifneq ($(strip $(PROJECT)),)
 ifneq ($(strip $(KBUILD_ZEPHYR_APP)),)
 export KBUILD_ZEPHYR_APP
 endif
-core-y += $(SOURCE_DIR)
+app-y := $(SOURCE_DIR)
 endif
 
 
@@ -734,13 +734,14 @@ core-y		+=
 
 zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
-		     $(libs-y) $(libs-m)))
+		     $(libs-y) $(libs-m)) $(app-y))
 
 zephyr-alldirs	:= $(sort $(zephyr-dirs) $(patsubst %/,%,$(filter %/, \
-		     $(init-) $(core-) $(drivers-) $(libs-))))
+		     $(init-) $(core-) $(drivers-) $(libs-) $(app-))))
 
 init-y		:= $(patsubst %/, %/built-in.o, $(init-y))
 core-y		:= $(patsubst %/, %/built-in.o, $(core-y))
+app-y		:= $(patsubst %/, %/built-in.o, $(app-y))
 drivers-y	:= $(patsubst %/, %/built-in.o, $(drivers-y))
 libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
@@ -748,7 +749,7 @@ libs-y		:= $(libs-y1) $(libs-y2)
 
 # Externally visible symbols (used by link-zephyr.sh)
 export KBUILD_ZEPHYR_INIT := $(head-y) $(init-y)
-export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y)
+export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y) $(app-y)
 ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
 export KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
 else
