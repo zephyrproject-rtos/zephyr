@@ -19,6 +19,13 @@
 #ifndef __INCipih
 #define __INCipih
 
+/**
+ * @brief IPI Interface
+ * @defgroup ipi_interface IPI Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #include <nanokernel.h>
 #include <device.h>
 
@@ -161,5 +168,7 @@ static inline int ipi_set_enabled(struct device *ipidev, int enable)
 	return api->set_enabled(ipidev, enable);
 }
 
-
+/**
+ * @}
+ */
 #endif /* __INCipih */

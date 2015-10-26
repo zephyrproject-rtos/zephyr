@@ -18,6 +18,13 @@
 #ifndef __DRIVERS_I2C_H
 #define __DRIVERS_I2C_H
 
+/**
+ * @brief I2C Interface
+ * @defgroup i2c_interface I2C Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -266,5 +273,10 @@ static inline int i2c_resume(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
+
 
 #endif /* __DRIVERS_I2C_H */

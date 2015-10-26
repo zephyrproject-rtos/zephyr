@@ -22,6 +22,13 @@
 #ifndef __PWM_H__
 #define __PWM_H__
 
+/**
+ * @brief PWM Interface
+ * @defgroup pwm_interface PWM Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -193,5 +200,9 @@ static inline int pwm_resume(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __PWM_H__ */

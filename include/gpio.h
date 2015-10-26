@@ -18,7 +18,12 @@
 
 #ifndef __GPIO_H__
 #define __GPIO_H__
-
+/**
+ * @brief GPIO Interface
+ * @defgroup gpio_interface GPIO Interface
+ * @ingroup io_interfaces
+ * @{
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -272,5 +277,9 @@ static inline int gpio_resume(struct device *port)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __GPIO_H__ */

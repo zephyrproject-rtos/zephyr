@@ -18,6 +18,13 @@
 #ifndef __INCLUDE_PINMUX_H
 #define __INCLUDE_PINMUX_H
 
+/**
+ * @brief Pinmux Interface
+ * @defgroup pinmux_interface Pinmux Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #include <stdint.h>
 #include <device.h>
 
@@ -57,4 +64,8 @@ static inline uint32_t pinmux_get_pin(struct device *dev,
 	return api->get(dev, pin, func);
 }
 
+/**
+ *
+ * @}
+ */
 #endif /* __INCLUDE_PINMUX_H */

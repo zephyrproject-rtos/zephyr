@@ -19,6 +19,13 @@
 #ifndef __INCuarth
 #define __INCuarth
 
+/**
+ * @brief UART Interface
+ * @defgroup uart_interface UART Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -414,5 +421,9 @@ static inline unsigned int uart_irq_get(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __INCuarth */

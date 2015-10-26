@@ -19,6 +19,13 @@
 #ifndef __SPI_H__
 #define __SPI_H__
 
+/**
+ * @brief SPI Interface
+ * @defgroup spi_interface SPI Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #include <stdint.h>
 #include <stddef.h>
 #include <device.h>
@@ -212,5 +219,9 @@ static inline int spi_resume(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __SPI_H__ */
