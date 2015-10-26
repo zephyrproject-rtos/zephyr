@@ -20,6 +20,30 @@
 
 #include <toolchain.h>
 
+/**
+ *
+ * @brief Print kernel debugging message.
+ *
+ * This routine prints a kernel debugging message to the system console.
+ * Output is send immediately, without any mutual exclusion or buffering.
+ *
+ * A basic set of conversion specifier characters are supported:
+ *   - signed decimal: \%d, \%i
+ *   - unsigned decimal: \%u
+ *   - unsigned hexadecimal: \%x (\%X is treated as \%x)
+ *   - pointer: \%p
+ *   - string: \%s
+ *   - character: \%c
+ *   - percent: \%\%
+ *
+ * No other conversion specification capabilities are supported, such as flags,
+ * field width, precision, or length attributes.
+ *
+ * @param fmt Format string.
+ * @param ... Optional list of format arguments.
+ *
+ * @return N/A
+ */
 #ifdef CONFIG_PRINTK
 extern void printk(const char *fmt, ...);
 #else
