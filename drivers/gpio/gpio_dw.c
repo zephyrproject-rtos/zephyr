@@ -21,6 +21,7 @@
 #include <sys_io.h>
 #include <init.h>
 #include <misc/util.h>
+#include <misc/__assert.h>
 
 #ifdef CONFIG_SHARED_IRQ
 #include <shared_irq.h>
@@ -397,18 +398,15 @@ void gpio_config_0_irq(struct device *port)
 	IRQ_CONFIG(gpio_dw_0, config->irq_num, 0);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_0_IRQ_SHARED)
-	ARG_UNUSED(config);
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
+	__ASSERT(shared_irq_dev != NULL, "Failed to get gpio_dw_0 device binding");
 	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
 	shared_irq_enable(shared_irq_dev, port);
 #endif
 }
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
-void gpio_dw_isr_0(void *unused)
-{
-	gpio_dw_isr(&__initconfig_gpio_0);
-}
+struct device *gpio_dw_isr_0 = SYS_GET_DEVICE(gpio_dw_0);
 #endif /* CONFIG_GPIO_DW_0_IRQ_DIRECT */
 
 #endif /* CONFIG_GPIO_DW_0 */
@@ -460,18 +458,15 @@ void gpio_config_1_irq(struct device *port)
 	IRQ_CONFIG(gpio_dw_1, config->irq_num, 0);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_1_IRQ_SHARED)
-	ARG_UNUSED(config);
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
+	__ASSERT(shared_irq_dev != NULL, "Failed to get gpio_dw_1 device binding");
 	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
 	shared_irq_enable(shared_irq_dev, port);
 #endif
 }
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
-void gpio_dw_isr_1(void *unused)
-{
-	gpio_dw_isr(&__initconfig_gpio_1);
-}
+struct device *gpio_dw_isr_1 = SYS_GET_DEVICE(gpio_dw_1);
 #endif
 
 #endif /* CONFIG_GPIO_DW_1 */
