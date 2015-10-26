@@ -28,6 +28,7 @@ config GROVE_DEBUG
         bool
         prompt "Enable Grove debug messagings"
         default n
+        depends on GROVE
 
 config GROVE_LCD_RGB
         bool
