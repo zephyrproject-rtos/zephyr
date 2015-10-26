@@ -71,6 +71,11 @@
 		DEVICE_INIT_LEVEL(APPLICATION)	\
 		__device_init_end = .;			\
 
+
+/* define a section for undefined device initialization levels */
+#define DEVICE_INIT_UNDEFINED_SECTION()		\
+		KEEP(*(SORT(.init_[_A-Z0-9]*)))	\
+
 #ifdef CONFIG_X86 /* LINKER FILES: defines used by linker script */
 /* Should be moved to linker-common-defs.h */
 #if defined(CONFIG_XIP)

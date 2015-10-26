@@ -128,6 +128,12 @@ SECTIONS
 		KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(RAM)
 
+	SECTION_PROLOGUE(initlevel_error, (OPTIONAL),)
+	{
+		DEVICE_INIT_UNDEFINED_SECTION()
+	}
+	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
+
 	SECTION_PROLOGUE(_k_task_list, ALIGN(4), ALIGN(4))
 	{
 		_k_task_list_start = .;

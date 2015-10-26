@@ -136,6 +136,11 @@ SECTIONS {
 		DEVICE_INIT_SECTIONS()
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+	SECTION_PROLOGUE(initlevel_error, (OPTIONAL),)
+	{
+		DEVICE_INIT_UNDEFINED_SECTION()
+	}
+	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
 	__data_ram_end = .;
 
