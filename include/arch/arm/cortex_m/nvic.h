@@ -66,6 +66,8 @@ extern "C" {
 #define _EXC_SYSTICK 15
 /* 16+ IRQs */
 
+#define _NUM_EXC 16
+
 #define NUM_IRQS_PER_REG 32
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
