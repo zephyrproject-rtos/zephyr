@@ -332,14 +332,13 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
  * interrupt was already being handled, it is passed a pointer to both and has
  * to find out on which the ESP is present.
  *
- * @param msp pointer to potential ESF on MSP
- * @param psp pointer to potential ESF on PSP
+ * @param esf ESF on the stack, either MSP or PSP depending at what processor
+ *            state the exception was taken.
  *
  * @return This function does not return.
  */
-void _Fault(const NANO_ESF *msp, const NANO_ESF *psp)
+void _Fault(const NANO_ESF *esf)
 {
-	const NANO_ESF *esf = _ScbIsNestedExc() ? msp : psp;
 	int fault = _ScbActiveVectorGet();
 
 	FAULT_DUMP(esf, fault);

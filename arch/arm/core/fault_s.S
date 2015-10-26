@@ -74,8 +74,16 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__reserved)
     eors.n r0, r0
     msr BASEPRI, r0
 
-    mrs r0, MSP
-    mrs r1, PSP
+	/* this reimplements _ScbIsNestedExc() */
+    ldr ip, =_SCS_ICSR
+    ldr ip, [ip]
+    ands.w ip, #_SCS_ICSR_RETTOBASE
+
+	ite eq			/* is the RETTOBASE bit zero ? */
+	mrseq r0, MSP	/* if so, we're not returning to thread mode, thus this
+					 * is a nested exception: the stack frame is on the MSP */
+	mrsne r0, PSP	/* if not, we are returning to thread mode, thus this is
+					 * not a nested exception: the stack frame is on the PSP */
 
     push {lr}
     bl _Fault
