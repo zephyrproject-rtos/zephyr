@@ -61,7 +61,6 @@ extern "C" {
 #include <misc/util.h>
 #include <stdint.h>
 
-extern void _ScbSystemReset(void);
 extern void _ScbNumPriGroupSet(unsigned int n);
 
 /**

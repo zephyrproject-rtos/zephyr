@@ -38,14 +38,21 @@
  *
  * @return N/A
  */
-void _ScbSystemReset(void)
+void sys_arch_reboot(int type)
 {
 	union __aircr reg;
+
+	ARG_UNUSED(type);
 
 	reg.val = __scs.scb.aircr.val;
 	reg.bit.vectkey = SCB_AIRCR_VECTKEY_EN_W;
 	reg.bit.sysresetreq = 1;
 	__scs.scb.aircr.val = reg.val;
+
+	/* the reboot is not immediate, so wait here until it takes effect */
+	for (;;) {
+		;
+	}
 }
 
 /**
