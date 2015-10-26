@@ -570,3 +570,371 @@ Commands and responses:
 								<0x07, 0x0f>
 
 		In case of an error, the error response will be returned.
+
+	Opcode 0x0a -> 0x3f - Reserved for future use
+
+	Opcode 0x40 - Exchange MTU
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+		Response parameters:	<none>
+
+		This command is used by GATT Client to configure ATT protocol.
+		IUT is expected to send Exchange MTU Request to negotiate
+		MTU size.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x41 - Discover All Primary Services
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+		Response parameters:	Services_Count (1 octet)
+					[array] Service (variable)
+
+		Object Service is defined as:
+					Start_Handle (2 octets)
+					End_Group_Handle (2 octets)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+
+		Valid UUID_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This procedure is used by a client to discover all primary
+		services on a server.
+		Services found during discovery are returned in the response.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x42 - Discover Primary Service by UUID
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+		Response parameters:	Services_Count (1 octet)
+					[array] Service (variable)
+
+		Object Service is defined as:
+					Start_Handle (2 octets)
+					End_Group_Handle (2 octets)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+
+		Valid UUID_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This procedure is used by a client to discover primary services
+		with specific UUID on a server.
+		Services found during discovery are returned in the response.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x43 - Find Included Services
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Service_Start_Handle (2 octets)
+					Service_End_Handle (2 octets)
+		Response parameters:	Services_Count (1 octet)
+					[array] Included_Service (variable)
+
+		Object Included_Service is defined as:
+					Included_Handle (2 octets)
+					Service (7 or 21 octets)
+
+		Object Service is defined as:
+					Start_Handle (2 octets)
+					End_Group_Handle (2 octets)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+
+		Valid UUID_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This procedure is used by a client to discover service
+		relationships to other services.
+		Services found during discovery are returned in the response.
+
+	Opcode 0x44 - Discover All Characteristics of a Service
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Service_Start_Handle (2 octets)
+					Service_End_Handle (2 octets)
+		Response parameters:	Characteristics_Count (1 octet)
+					[array] Characteristic (variable)
+
+		Object Characteristic is defined as:
+					Characteristic_Handle (2 octets)
+					Value_Handle (2 octets)
+					Properties (1 octet)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+
+		Valid UUID_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This procedure is used by a client to discover all
+		characteristics within specified service range.
+		Characteristics found during discovery are returned in the
+		response.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x45 - Discover Characteristics by UUID
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Start_Handle (2 octets)
+					End_Handle (2 octets)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+		Response parameters:	Characteristics_Count (1 octet)
+					[array] Characteristic (variable)
+
+		Object Characteristic is defined as:
+					Characteristic_Handle (2 octets)
+					Value_Handle (2 octets)
+					Properties (1 octet)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+
+		Valid UUID_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This procedure is used by a client to discover characteristic
+		declarations with given UUID on a server.
+		Characteristics found during discovery are returned in the
+		response.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x46 - Discover All Characteristic Descriptors
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Start_Handle (2 octets)
+					End_Handle (2 octets)
+		Response parameters:	Descriptors_Count (1 octet)
+					[array] Descriptor (variable)
+
+		Object Descriptor is defined as:
+					Descriptor_Handle (2 octets)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+
+		Valid UUID_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This procedure is used by a client to discover all the
+		characteristic descriptors contained within characteristic.
+		Descriptors found during discovery are returned in the
+		response.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x47 - Read Characteristic Value/Descriptor
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Handle (2 octets)
+		Response parameters:	ATT_Response (1 octet)
+					Data_Length (2 octets)
+					Data (variable)
+
+		This procedure is used to read a Characteristic Value or
+		Characteristic Descriptor from a server.
+		Read results are returned in the response to this command.
+		ATT_Response shall be set to 0x00, if Read has been completed
+		successfully. Otherwise it shall be set to ATT error code
+		received.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x48 - Read Using Characteristic UUID
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Start_Handle (2 octets)
+					End_Handle (2 octets)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+		Response parameters:	ATT_Response (1 octet)s
+					Data_Length (2 octets)
+					Data (variable)
+
+		Valid UUID_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This procedure is used to read a Characteristic Value from a
+		server when characteristic UUID is known.
+		Read results are returned in the response to this command.
+		ATT_Response shall be set to 0x00, if Read has been completed
+		successfully. Otherwise it shall be set to ATT error code
+		received.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x49 - Read Long Characteristic Value/Descriptor
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Handle (2 octets)
+					Offset (2 octets)
+		Response parameters:	ATT_Response (1 octet)
+					Data_Length (2 octets)
+					Data (variable)
+
+		This procedure is used to read Long Characteristic Value or
+		Long Characteristic Descriptor from a server.
+		Read results are returned in the response to this command.
+		ATT_Response shall be set to 0x00, if Read has been completed
+		successfully. Otherwise it shall be set to ATT error code
+		received.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x4a - Read Multiple Characteristic Values
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Handles_Count (1 octet)
+					Handles (variable)
+		Response parameters:	ATT_Response (1 octet)
+					Data_Length (2 octets)
+					Data (variable)
+
+		This procedure is used to read multiple Characteristic Values
+		from a server.
+		Read results are returned in the response to this command.
+		ATT_Response shall be set to 0x00, if Read has been completed
+		successfully. Otherwise it shall be set to ATT error code
+		received.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x4b - Write Without Response
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Handle (2 octets)
+					Data_Length (2 octets)
+					Data (variable)
+		Response parameters:	<none>
+
+		This procedure is used to write a Characteristic Value to a
+		server. There is no acknowledgment that the write was
+		successfully performed.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x4c - Signed Write Without Response
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Handle (2 octets)
+					Data_Length (2 octets)
+					Data (variable)
+		Response parameters:	<none>
+
+		This procedure is used to write a Characteristic Value to a
+		server. There is no acknowledgment that the write was
+		successfully performed. This procedure is intended to be used
+		if client and server are bonded, and connected using
+		non-encrypted link.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x4d - Write Characteristic Value/Descriptor
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Handle (2 octets)
+					Data_Length (2 octets)
+					Data (variable)
+		Response parameters:	ATT_Response (1 octet)
+
+		This procedure is used to write a Characteristic Value or
+		Characteristic Descriptor to a server.
+		ATT_Response shall be set to 0x00, if Write has been completed
+		successfully. Otherwise it shall be set to ATT error code
+		received.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x4e - Write Long Characteristic Value/Descriptor
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Handle (2 octets)
+					Offset (2 octets)
+					Data_Length (2 octets)
+					Data (variable)
+		Response parameters:	ATT_Response (1 octet)
+
+		This procedure is used to write a Long Characteristic Value or
+		Long Characteristic Descriptor to a server.
+		ATT_Response shall be set to 0x00, if Write has been completed
+		successfully. Otherwise it shall be set to ATT error code
+		received.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x4f - Reliable Write
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Handle (2 octets)
+					Offset (2 octets)
+					Data_Length (2 octets)
+					Data (variable)
+		Response parameters:	ATT_Response (1 octet)
+
+		This procedure is used to write a Characteristic Value to
+		a server and assurance is required that the correct
+		Characteristic Value is going to be written.
+		ATT_Response shall be set to 0x00, if Write has been completed
+		successfully. Otherwise it shall be set to ATT error code
+		received.
+
+		In case of an error, the error response will be returned.
+
+Events:
+	Opcode 0x80 -> 0xbf - Reserved for future use
+
+	Opcode 0xc0 - Notification/Indication Received
+
+		Controller Index:	<controller id>
+		Event parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Handle (2 octets)
+					Data_Length (2 octets)
+					Data (variable)
+
+		This event indicates that IUT has received notification
+		or notification.
