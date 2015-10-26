@@ -342,7 +342,8 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_mmio_0,
 			   CONFIG_GPIO_MMIO_0_DEV_NAME,
 			   gpio_mmio_init,
 			   &gpio_mmio_0_cfg);
-pre_kernel_late_init(gpio_mmio_0, (void *)0);
+SYS_DEFINE_DEVICE(gpio_mmio_0, (void *)0, SECONDARY,
+		  CONFIG_GPIO_MMIO_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_MMIO_0 */
 
@@ -374,6 +375,7 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_mmio_1,
 			   CONFIG_GPIO_MMIO_1_DEV_NAME,
 			   gpio_mmio_init,
 			   &gpio_mmio_1_cfg);
-pre_kernel_late_init(gpio_mmio_1, (void *)0);
+SYS_DEFINE_DEVICE(gpio_mmio_1, (void *)0, SECONDARY,
+		  CONFIG_GPIO_MMIO_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_MMIO_1 */

@@ -459,7 +459,8 @@ struct spi_dw_config spi_dw_config_0 = {
 DECLARE_DEVICE_INIT_CONFIG(spi_dw_port_0, CONFIG_SPI_DW_PORT_0_DRV_NAME,
 			   spi_dw_init, &spi_dw_config_0);
 
-pre_kernel_late_init(spi_dw_port_0, &spi_dw_data_port_0);
+SYS_DEFINE_DEVICE(spi_dw_port_0, &spi_dw_data_port_0, SECONDARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 struct device *spi_dw_isr_port_0 = SYS_GET_DEVICE(spi_dw_port_0);
 
 IRQ_CONNECT_STATIC(spi_dw_irq_port_0, CONFIG_SPI_DW_PORT_0_IRQ,
@@ -494,7 +495,8 @@ struct spi_dw_config spi_dw_config_1 = {
 DECLARE_DEVICE_INIT_CONFIG(spi_dw_port_1, CONFIG_SPI_DW_PORT_1_DRV_NAME,
 			   spi_dw_init, &spi_dw_config_1);
 
-pre_kernel_late_init(spi_dw_port_1, &spi_dw_data_port_1);
+SYS_DEFINE_DEVICE(spi_dw_port_1, &spi_dw_data_port_1, SECONDARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 struct device *spi_dw_isr_port_1 = SYS_GET_DEVICE(spi_dw_port_1);
 
 IRQ_CONNECT_STATIC(spi_dw_irq_port_1, CONFIG_SPI_DW_PORT_1_IRQ,

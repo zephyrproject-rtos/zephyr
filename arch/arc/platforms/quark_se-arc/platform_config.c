@@ -38,7 +38,8 @@ static struct quark_se_ipi_controller_config_info ipi_controller_config = {
 };
 DECLARE_DEVICE_INIT_CONFIG(quark_se_ipi, "", quark_se_ipi_controller_initialize,
 			   &ipi_controller_config);
-pre_kernel_late_init(quark_se_ipi, NULL);
+SYS_DEFINE_DEVICE(quark_se_ipi, NULL, SECONDARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #if CONFIG_IPI_CONSOLE_SENDER
 #include <console/ipi_console.h>
@@ -51,7 +52,7 @@ struct ipi_console_sender_config_info quark_se_ipi_sender_config = {
 DECLARE_DEVICE_INIT_CONFIG(ipi_console, "ipi_console",
 			   ipi_console_sender_init,
 			   &quark_se_ipi_sender_config);
-nano_early_init(ipi_console, NULL);
+SYS_DEFINE_DEVICE(ipi_console, NULL, SECONDARY, CONFIG_IPI_CONSOLE_PRIORITY);
 
 #endif /* CONFIG_IPI_CONSOLE_SENDER */
 #endif /* CONFIG_IPI_QUARK_SE */

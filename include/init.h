@@ -103,25 +103,4 @@
 
 #define SYS_GET_DEVICE(name) (&(_PASTE(__initconfig_, name)))
 
-/* The following legacy APIs are provided for backwards compatibility */
-
-#define pre_kernel_core_init(cfg, data)	\
-		SYS_DEFINE_DEVICE(cfg, data, PRIMARY, 0)
-#define pre_kernel_early_init(cfg, data) \
-		SYS_DEFINE_DEVICE(cfg, data, SECONDARY, 0)
-#define pre_kernel_late_init(cfg, data)	\
-		SYS_DEFINE_DEVICE(cfg, data, SECONDARY, 50)
-#define nano_early_init(cfg, data) \
-		SYS_DEFINE_DEVICE(cfg, data, NANOKERNEL, 0)
-#define nano_late_init(cfg, data) \
-		SYS_DEFINE_DEVICE(cfg, data, NANOKERNEL, 50)
-#define micro_early_init(cfg, data)	\
-		SYS_DEFINE_DEVICE(cfg, data, MICROKERNEL, 0)
-#define micro_late_init(cfg, data) \
-		SYS_DEFINE_DEVICE(cfg, data, MICROKERNEL, 50)
-#define app_early_init(cfg, data) \
-		SYS_DEFINE_DEVICE(cfg, data, APPLICATION, 0)
-#define app_late_init(cfg, data) \
-		SYS_DEFINE_DEVICE(cfg, data, APPLICATION, 50)
-
 #endif /* _INIT_H_ */

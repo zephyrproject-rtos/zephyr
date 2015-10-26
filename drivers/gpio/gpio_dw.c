@@ -358,7 +358,8 @@ struct gpio_dw_runtime gpio_0_runtime;
 
 DECLARE_DEVICE_INIT_CONFIG(gpio_0, CONFIG_GPIO_DW_0_NAME,
 			   gpio_dw_initialize, &gpio_config_0);
-pre_kernel_late_init(gpio_0, &gpio_0_runtime);
+SYS_DEFINE_DEVICE(gpio_0, &gpio_0_runtime, SECONDARY,
+		  CONFIG_GPIO_DW_INIT_PRIORITY);
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 struct device *gpio_dw_isr_0 = SYS_GET_DEVICE(gpio_0);
@@ -416,8 +417,9 @@ struct gpio_dw_config gpio_dw_config_1 = {
 struct gpio_dw_runtime gpio_1_runtime;
 
 DECLARE_DEVICE_INIT_CONFIG(gpio_1, CONFIG_GPIO_DW_1_NAME,
-			   gpio_dw_initialize, &gpio_dw_config_1);
-pre_kernel_late_init(gpio_1, &gpio_1_runtime);
+			   gpio_dw_initialize, &gpio_config_1);
+SYS_DEFINE_DEVICE(gpio_1, &gpio_1_runtime, SECONDARY,
+		  CONFIG_GPIO_DW_INIT_PRIORITY);
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 struct device *gpio_dw_isr_1 = SYS_GET_DEVICE(gpio_1);

@@ -305,7 +305,8 @@ static struct eth_runtime eth_0_runtime;
 
 DECLARE_DEVICE_INIT_CONFIG(eth_dw_0, CONFIG_ETH_DW_0_NAME,
 			   eth_initialize, &eth_config_0);
-nano_late_init(eth_dw_0, &eth_0_runtime);
+SYS_DEFINE_DEVICE(eth_dw_0, &eth_0_runtime, NANOKERNEL,
+					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 static int eth_net_tx(struct net_buf *buf)
 {

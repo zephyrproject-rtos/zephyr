@@ -279,4 +279,5 @@ static int init(struct device *unused)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(mem_safe, "", init, NULL);
-pre_kernel_early_init(mem_safe, NULL);
+SYS_DEFINE_DEVICE(mem_safe, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

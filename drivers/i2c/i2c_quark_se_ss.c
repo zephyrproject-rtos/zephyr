@@ -751,7 +751,8 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_ss_0,
 			   &i2c_qse_ss_initialize,
 			   &i2c_config_ss_0);
 
-pre_kernel_late_init(i2c_ss_0, &i2c_ss_0_runtime);
+SYS_DEFINE_DEVICE(i2c_ss_0, &i2c_ss_0_runtime,
+					SECONDARY, CONFIG_I2C_INIT_PRIORITY);
 
 #endif /* CONFIG_I2C_QUARK_SE_SS_0 */
 
@@ -785,6 +786,7 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_ss_1,
 			   &i2c_qse_ss_initialize,
 			   &i2c_config_ss_1);
 
-pre_kernel_late_init(i2c_ss_1, &i2c_qse_ss_1_runtime);
+SYS_DEFINE_DEVICE(i2c_ss_1, &i2c_qse_ss_1_runtime,
+					SECONDARY, CONFIG_I2C_INIT_PRIORITY);
 
 #endif /* CONFIG_I2C_QUARK_SE_SS_1 */

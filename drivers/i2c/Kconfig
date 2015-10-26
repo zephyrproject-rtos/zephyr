@@ -26,6 +26,13 @@ menuconfig I2C
 	help
 	Enable I2C Driver Configuration
 
+config I2C_INIT_PRIORITY
+	int
+	depends on I2C
+	prompt "Init priority"
+	help
+	  I2C device driver initialization priority.
+
 config I2C_DW
         bool "Design Ware I2C support"
 	depends on I2C

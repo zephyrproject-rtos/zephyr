@@ -67,6 +67,15 @@ config UART_CONSOLE_BAUDRATE
 	Default is 115200, which should be usable for most RS232
 	and USB adapters.
 
+config UART_CONSOLE_PRIORITY
+	int
+	prompt "Init priority"
+	depends on UART_CONSOLE
+	help
+	  Device driver initialization priority.
+	  Console has to be initialized after the UART driver
+	  it uses.
+
 config RAM_CONSOLE
 	bool
 	prompt "Use RAM console"
@@ -100,6 +109,16 @@ config IPI_CONSOLE_RECEIVER
 	default n
 	help
 	Enable the receiving side of IPI console
+
+config IPI_CONSOLE_PRIORITY
+	int
+	prompt "IPI console init priority"
+	default 60
+	depends on IPI_CONSOLE_SENDER || IPI_CONSOLE_RECEIVER
+	help
+	  Device driver initialization priority.
+	  Console has to be initialized after the IPI subsystem
+	  it uses.
 
 config	UART_PIPE
 	bool

@@ -177,7 +177,8 @@ DECLARE_DEVICE_INIT_CONFIG(stellaris_uart0,
 			   &uart_platform_init,
 			   &stellaris_uart_dev_cfg[0]);
 
-pre_kernel_late_init(stellaris_uart0, NULL);
+SYS_DEFINE_DEVICE(stellaris_uart0, NULL, SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 /* UART 1 */
@@ -186,7 +187,8 @@ DECLARE_DEVICE_INIT_CONFIG(stellaris_uart1,
 			   &uart_platform_init,
 			   &stellaris_uart_dev_cfg[1]);
 
-pre_kernel_late_init(stellaris_uart1, NULL);
+SYS_DEFINE_DEVICE(stellaris_uart1, NULL, SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 /* UART 2 */
@@ -195,7 +197,8 @@ DECLARE_DEVICE_INIT_CONFIG(stellaris_uart2,
 			   &uart_platform_init,
 			   &stellaris_uart_dev_cfg[2]);
 
-pre_kernel_late_init(stellaris_uart2, NULL);
+SYS_DEFINE_DEVICE(stellaris_uart2, NULL, SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 /**< UART Devices */

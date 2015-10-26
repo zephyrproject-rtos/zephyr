@@ -111,6 +111,19 @@ config KERNEL_EVENT_LOGGER_BUFFER_SIZE
 	help
 	Buffer size in 32-bit words.
 
+config KERNEL_INIT_PRIORITY_DEFAULT
+	int
+	prompt "Default init priority"
+	help
+	Defaut minimal init priority for each init level.
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	int
+	prompt "Default init priority for device drivers"
+	help
+	Device driver, that depends on common components, such as
+	interrupt controller, but does not depend on other devices,
+	uses this init priority.
 
 menu "Kernel event logging points"
 depends on KERNEL_EVENT_LOGGER

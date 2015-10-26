@@ -35,4 +35,5 @@
 DECLARE_DEVICE_INIT_CONFIG(sys_clock, "sys_clock",
 			   _sys_clock_driver_init, NULL);
 
-nano_late_init(sys_clock, NULL);
+SYS_DEFINE_DEVICE(sys_clock, NULL, NANOKERNEL,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

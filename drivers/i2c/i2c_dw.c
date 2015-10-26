@@ -837,7 +837,7 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_0,
 			   &i2c_dw_initialize,
 			   &i2c_config_dw_0);
 
-pre_kernel_late_init(i2c_0, &i2c_0_runtime);
+SYS_DEFINE_DEVICE(i2c_0, &i2c_0_runtime, SECONDARY, CONFIG_I2C_INIT_PRIORITY);
 struct device *i2c_dw_isr_0_device = SYS_GET_DEVICE(i2c_0);
 
 #ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
@@ -889,7 +889,8 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_1,
 			   &i2c_dw_initialize,
 			   &i2c_config_dw_1);
 
-pre_kernel_late_init(i2c_1, &i2c_1_runtime);
+SYS_DEFINE_DEVICE(i2c_1, &i2c_1_runtime, SECONDARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 struct device *i2c_dw_isr_1_device = SYS_GET_DEVICE(i2c_1);
 
 IRQ_CONNECT_STATIC(i2c_dw_1,

@@ -235,6 +235,7 @@ DECLARE_DEVICE_INIT_CONFIG(pwm_pca9685_0,
 			   pwm_pca9685_init, &pwm_pca9685_0_cfg);
 
 /* This has to init after I2C master */
-nano_early_init(pwm_pca9685_0, &pwm_pca9685_0_drvdata);
+SYS_DEFINE_DEVICE(pwm_pca9685_0, &pwm_pca9685_0_drvdata, SECONDARY,
+		  CONFIG_PWM_PCA9685_INIT_PRIORITY);
 
 #endif /* CONFIG_PWM_PCA9685_0 */

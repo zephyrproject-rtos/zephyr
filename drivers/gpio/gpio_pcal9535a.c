@@ -625,7 +625,8 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_pcal9535a_0,
 			   gpio_pcal9535a_init, &gpio_pcal9535a_0_cfg);
 
 /* This has to init after I2C master */
-nano_early_init(gpio_pcal9535a_0, &gpio_pcal9535a_0_drvdata);
+SYS_DEFINE_DEVICE(gpio_pcal9535a_0, &gpio_pcal9535a_0_drvdata, SECONDARY,
+		  CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_0 */
 
@@ -653,7 +654,8 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_pcal9535a_1,
 			   gpio_pcal9535a_init, &gpio_pcal9535a_1_cfg);
 
 /* This has to init after I2C master */
-nano_early_init(gpio_pcal9535a_1, &gpio_pcal9535a_1_drvdata);
+SYS_DEFINE_DEVICE(gpio_pcal9535a_1, &gpio_pcal9535a_1_drvdata, SECONDARY,
+		  CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_1 */
 
@@ -681,7 +683,8 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_pcal9535a_2,
 			   gpio_pcal9535a_init, &gpio_pcal9535a_2_cfg);
 
 /* This has to init after I2C master */
-nano_early_init(gpio_pcal9535a_2, &gpio_pcal9535a_2_drvdata);
+SYS_DEFINE_DEVICE(gpio_pcal9535a_2, &gpio_pcal9535a_2_drvdata, SECONDARY,
+		  CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_2 */
 
@@ -709,6 +712,7 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_pcal9535a_3,
 			   gpio_pcal9535a_init, &gpio_pcal9535a_3_cfg);
 
 /* This has to init after I2C master */
-nano_early_init(gpio_pcal9535a_3, &gpio_pcal9535a_3_drvdata);
+SYS_DEFINE_DEVICE(gpio_pcal9535a_3, &gpio_pcal9535a_3_drvdata, SECONDARY,
+		  CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_3 */

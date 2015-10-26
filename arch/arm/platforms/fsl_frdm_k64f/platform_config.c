@@ -175,7 +175,8 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart0,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[0]);
 
-pre_kernel_late_init(k20_uart0, &k20_uart_dev_data[0]);
+SYS_DEFINE_DEVICE(k20_uart0, &k20_uart_dev_data[0], SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 /* UART 1 */
@@ -184,7 +185,8 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart1,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[1]);
 
-pre_kernel_late_init(k20_uart1, &k20_uart_dev_data[1]);
+SYS_DEFINE_DEVICE(k20_uart1, &k20_uart_dev_data[1], SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 /* UART 2 */
@@ -193,7 +195,8 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart2,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[2]);
 
-pre_kernel_late_init(k20_uart2, &k20_uart_dev_data[2]);
+SYS_DEFINE_DEVICE(k20_uart2, &k20_uart_dev_data[2], SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 /* UART 3 */
@@ -202,7 +205,8 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart3,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[3]);
 
-pre_kernel_late_init(k20_uart3, &k20_uart_dev_data[3]);
+SYS_DEFINE_DEVICE(k20_uart3, &k20_uart_dev_data[3], SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 /* UART 4 */
@@ -211,7 +215,8 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart4,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[4]);
 
-pre_kernel_late_init(k20_uart4, &k20_uart_dev_data[4]);
+SYS_DEFINE_DEVICE(k20_uart4, &k20_uart_dev_data[4], SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 /**< UART Devices */

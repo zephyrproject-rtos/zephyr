@@ -106,7 +106,8 @@ DECLARE_DEVICE_INIT_CONFIG(clock_quark_se_peripheral,
 			   &quark_se_clock_control_init,
 			   &clock_quark_se_peripheral_config);
 
-pre_kernel_early_init(clock_quark_se_peripheral, NULL);
+SYS_DEFINE_DEVICE(clock_quark_se_peripheral, NULL, PRIMARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL */
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL
@@ -120,7 +121,8 @@ DECLARE_DEVICE_INIT_CONFIG(clock_quark_se_external,
 			   &quark_se_clock_control_init,
 			   &clock_quark_se_external_config);
 
-pre_kernel_early_init(clock_quark_se_external, NULL);
+SYS_DEFINE_DEVICE(clock_quark_se_external, NULL, PRIMARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL */
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR
@@ -134,5 +136,6 @@ DECLARE_DEVICE_INIT_CONFIG(clock_quark_se_sensor,
 			   &quark_se_clock_control_init,
 			   &clock_quark_se_sensor_config);
 
-pre_kernel_early_init(clock_quark_se_sensor, NULL);
+SYS_DEFINE_DEVICE(clock_quark_se_sensor, NULL, PRIMARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR */

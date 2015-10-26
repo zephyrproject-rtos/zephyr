@@ -89,19 +89,20 @@ static int arc_init(struct device *arg)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(quark_se_ss_0, "", arc_init, NULL);
-pre_kernel_late_init(quark_se_ss_0, NULL);
+SYS_DEFINE_DEVICE(quark_se_ss_0, NULL, SECONDARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /*CONFIG_ARC_INIT*/
 
 #ifdef CONFIG_IOAPIC
 DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
-pre_kernel_early_init(ioapic_0, NULL);
+SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_IOAPIC */
 
 #ifdef CONFIG_LOAPIC
 DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
-pre_kernel_early_init(loapic_0, NULL);
+SYS_DEFINE_DEVICE(loapic_0, NULL, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_LOAPIC */
 

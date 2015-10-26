@@ -38,3 +38,12 @@ config GROVE_LCD_RGB
         help
         Setting this value will enable driver support for the Groove-LCD RGB
         Backlight.
+
+config GROVE_LCD_RGB_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	depends on GROVE_LCD_RGB
+	help
+	  Device driver initialization priority.
+	  As the device is connected to I2C bus, its driver has
+	  to be initialized after the I2C one.

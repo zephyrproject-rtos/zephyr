@@ -178,4 +178,4 @@ DECLARE_DEVICE_INIT_CONFIG(pmux,			/* config name */
 			   &pinmux_initialize,		/* init function */
 			   &board_pmux);		/* config options*/
 
-pre_kernel_late_init(pmux, NULL);
+SYS_DEFINE_DEVICE(pmux, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -73,6 +73,12 @@ config	GPIO_DW_CLASS
 	depends on GPIO_DW && PCI
 	default 0x0C
 
+config GPIO_DW_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	help
+	  Device driver initialization priority.
+
 config GPIO_DW_0
        bool "Designware GPIO block 0"
        depends on GPIO_DW
@@ -295,6 +301,12 @@ config GPIO_PCAL9535A_DEBUG
 	help
 	  Enable debugging for PCAL9535A driver.
 
+config GPIO_PCAL9535A_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	help
+	  Device driver initialization priority.
+
 config GPIO_PCAL9535A_0
 	bool "PCAL9535A GPIO chip #0"
 	depends on GPIO_PCAL9535A
@@ -418,6 +430,13 @@ config GPIO_MMIO
 	default n
 	help
 	  Enable driver for MMIO-based GPIOs.
+
+config GPIO_MMIO_INIT_PRIORITY
+	int
+	depends on GPIO_MMIO
+	prompt "Init priority"
+	help
+	  Device driver initialization priority.
 
 config GPIO_MMIO_0
 	bool "MMIO-based GPIO Port #0"
@@ -553,6 +572,13 @@ config GPIO_SCH
 	default n
 	help
 	  Enable the SCH GPIO driver found on Intel platforms
+
+config GPIO_SCH_INIT_PRIORITY
+	int
+	depends on GPIO_SCH
+	prompt "Init priority"
+	help
+	  Device driver initialization priority.
 
 config GPIO_SCH_LEGACY_IO_PORTS_ACCESS
 	bool "SCH registers accessed through legacy I/O ports"

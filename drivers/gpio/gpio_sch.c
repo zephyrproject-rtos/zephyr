@@ -361,7 +361,8 @@ struct gpio_sch_data gpio_data_0;
 
 DECLARE_DEVICE_INIT_CONFIG(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME,
 			   gpio_sch_init, &gpio_sch_0_config);
-pre_kernel_late_init(gpio_0, &gpio_data_0);
+SYS_DEFINE_DEVICE(gpio_0, &gpio_data_0, SECONDARY,
+		  CONFIG_GPIO_SCH_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_SCH_0 */
 #if CONFIG_GPIO_SCH_1
@@ -375,6 +376,7 @@ struct gpio_sch_data gpio_data_1;
 
 DECLARE_DEVICE_INIT_CONFIG(gpio_1, CONFIG_GPIO_SCH_1_DEV_NAME,
 			   gpio_sch_init, &gpio_sch_1_config);
-pre_kernel_late_init(gpio_1, &gpio_data_1);
+SYS_DEFINE_DEVICE(gpio_1, &gpio_data_1, SECONDARY,
+		  CONFIG_GPIO_SCH_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_SCH_1 */

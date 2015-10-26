@@ -152,5 +152,5 @@ struct rtc_dw_dev_config rtc_dev = {
 #ifdef CONFIG_RTC_DW
 DECLARE_DEVICE_INIT_CONFIG(rtc, RTC_DRV_NAME, &rtc_dw_init, &rtc_dev);
 
-nano_early_init(rtc, NULL);
+SYS_DEFINE_DEVICE(rtc, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif

@@ -42,6 +42,15 @@ config  ADC_TI_ADC108S102
 	help
 	Enable support for TI's ADC chip adc108s102 driver.
 
+config ADC_TI_ADC108S102_INIT_PRIORITY
+	int
+	depends on ADC_TI_ADC108S102
+	prompt "Init priority"
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
 config  ADC_TI_ADC108S102_0
 	bool "First instance of TI's adc108s102 chip"
 	depends on ADC_TI_ADC108S102

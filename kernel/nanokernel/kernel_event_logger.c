@@ -55,7 +55,8 @@ static int _sys_k_event_logger_init(struct device *arg)
 }
 DECLARE_DEVICE_INIT_CONFIG(kernel_event_logger_0, "",
 	_sys_k_event_logger_init, NULL);
-nano_early_init(kernel_event_logger_0, NULL);
+SYS_DEFINE_DEVICE(kernel_event_logger_0, NULL, NANOKERNEL,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 
 void sys_k_event_logger_put_timed(uint16_t event_id)

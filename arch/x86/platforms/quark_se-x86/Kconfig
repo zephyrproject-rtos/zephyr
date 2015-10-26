@@ -169,4 +169,22 @@ config SPI_DW_PORT_1_IRQ
 	default 3
 endif
 
-endif
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+
+config UART_CONSOLE_PRIORITY
+	default 60
+
+config IPI_CONSOLE_PRIORITY
+	default 60
+
+config GPIO_DW_INIT_PRIORITY
+	default 60
+
+config I2C_INIT_PRIORITY
+	default 60
+
+endif #PLATFORM_QUARK_SE_X86

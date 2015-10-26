@@ -87,7 +87,8 @@ DECLARE_DEVICE_INIT_CONFIG(ns16550_uart1,
 
 static struct uart_ns16550_dev_data_t ns16550_uart1_dev_data;
 
-pre_kernel_early_init(ns16550_uart1, &ns16550_uart1_dev_data);
+SYS_DEFINE_DEVICE(ns16550_uart1, &ns16550_uart1_dev_data,
+					PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 
 /**
@@ -119,7 +120,8 @@ static struct quark_se_ipi_controller_config_info ipi_controller_config = {
 };
 DECLARE_DEVICE_INIT_CONFIG(quark_se_ipi, "", quark_se_ipi_controller_initialize,
 			   &ipi_controller_config);
-pre_kernel_early_init(quark_se_ipi, NULL);
+SYS_DEFINE_DEVICE(quark_se_ipi, NULL, PRIMARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #if defined(CONFIG_IPI_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
 #include <console/ipi_console.h>
@@ -146,7 +148,8 @@ struct ipi_console_receiver_runtime_data quark_se_ipi_receiver_driver_data;
 DECLARE_DEVICE_INIT_CONFIG(ipi_console0, "ipi_console0",
 			   ipi_console_receiver_init,
 			   &quark_se_ipi_receiver_config);
-nano_early_init(ipi_console0, &quark_se_ipi_receiver_driver_data);
+SYS_DEFINE_DEVICE(ipi_console0, &quark_se_ipi_receiver_driver_data,
+					SECONDARY, CONFIG_IPI_CONSOLE_PRIORITY);
 
 #endif /* CONFIG_PRINTK && CONFIG_IPI_CONSOLE_RECEIVER */
 #endif /* CONFIG_IPI_QUARK_SE */

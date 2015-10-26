@@ -36,6 +36,8 @@
 #define DEST	IPI_CONSOLE_STDOUT
 #endif
 
+#define INIT_PRIO_IPI_SEND 50
+
 /* Set up the dummy IPI driver */
 struct ipi_dummy_config_info ipi_dummy0_config_info = {
 	.sw_irq = 0
@@ -43,7 +45,8 @@ struct ipi_dummy_config_info ipi_dummy0_config_info = {
 struct ipi_dummy_driver_data ipi_dummy0_driver_data;
 DECLARE_DEVICE_INIT_CONFIG(ipi_dummy0, "ipi_dummy0", ipi_dummy_init,
 			   &ipi_dummy0_config_info);
-pre_kernel_late_init(ipi_dummy0, &ipi_dummy0_driver_data);
+SYS_DEFINE_DEVICE(ipi_dummy0, &ipi_dummy0_driver_data, SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 /* Sending side of the console IPI driver, will forward anything sent
  * to printf() since we selected IPI_CONSOLE_STDOUT */
@@ -53,7 +56,8 @@ struct ipi_console_sender_config_info sender_config = {
 };
 DECLARE_DEVICE_INIT_CONFIG(ipi_console_send0, "ipi_send0",
 			   ipi_console_sender_init, &sender_config);
-nano_late_init(ipi_console_send0, NULL);
+SYS_DEFINE_DEVICE(ipi_console_send0, NULL, NANOKERNEL,
+		  INIT_PRIO_IPI_SEND);
 
 /* Receiving side of the console IPI driver. These numbers are
  * more or less arbitrary */
@@ -77,7 +81,8 @@ struct ipi_console_receiver_config_info receiver_config = {
 struct ipi_console_receiver_runtime_data receiver_data;
 DECLARE_DEVICE_INIT_CONFIG(ipi_console_recv0, "ipi_recv0",
 			   ipi_console_receiver_init, &receiver_config);
-nano_early_init(ipi_console_recv0, &receiver_data);
+SYS_DEFINE_DEVICE(ipi_console_recv0, &receiver_data, NANOKERNEL,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static const char thestr[] = "everything is awesome\n";
 

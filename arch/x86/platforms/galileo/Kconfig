@@ -333,4 +333,59 @@ config ETH_DW_0_IRQ
 config ETH_DW_0_IRQ_SHARED_NAME
 	default SHARED_IRQ_0_NAME if SHARED_IRQ
 endif
+
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config SHARED_IRQ_INIT_PRIORITY
+	default 50
+
+# Any device driver should be initialized after
+# shared IRQ driver, as it may use it
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 60
+
+config GPIO_MMIO_INIT_PRIORITY
+	default 60
+
+config GPIO_SCH_INIT_PRIORITY
+	default 60
+
+config GPIO_DW_INIT_PRIORITY
+	default 60
+
+# SPI uses GPIO pin, so it needs to be initialized after
+# GPIO driver
+config SPI_INTEL_INIT_PRIORITY
+	default 70
+
+# TI ADC108S102 uses SPI bus, thus
+# initialized after SPI driver
+config ADC_TI_ADC108S102_INIT_PRIORITY
+	default 80
+
+config I2C_INIT_PRIORITY
+	default 60
+
+# PCAL9535A uses I2C, thus initialized after it
+config GPIO_PCAL9535A_INIT_PRIORITY
+	default 70
+
+# PCA9685 uses I2C, thus initialized after it
+config PWM_PCA9685_INIT_PRIORITY
+	default 70
+
+# Grove RGB LCD uses I2C, thus initialized after it
+config GROVE_LCD_RGB_INIT_PRIORITY
+	default 70
+
+# Pin multiplexer uses PCAL9535A, needs to be initialized after it
+config PINMUX_INIT_PRIORITY
+	default 80
+
+# Console driver has to be initialized after UART, that it uses
+config UART_CONSOLE_PRIORITY
+	default 70
+
 endif # PLATFORM_GALILEO

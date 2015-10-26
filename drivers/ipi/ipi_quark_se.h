@@ -135,7 +135,8 @@ int quark_se_ipi_controller_initialize(struct device *d);
 	DECLARE_DEVICE_INIT_CONFIG(name, _STRINGIFY(name), \
 				   quark_se_ipi_initialize, \
 				   &quark_se_ipi_config_##name); \
-	pre_kernel_late_init(name, &quark_se_ipi_runtime_##name);
+	SYS_DEFINE_DEVICE(name, &quark_se_ipi_runtime_##name, SECONDARY, \
+						CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 
 #endif /* __INCquark_se_mailboxh */

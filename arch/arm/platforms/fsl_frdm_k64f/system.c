@@ -321,4 +321,5 @@ static int fsl_frdm_k64f_init(struct device *arg)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(fsl_frdm_0, "", fsl_frdm_k64f_init, NULL);
-pre_kernel_core_init(fsl_frdm_0, NULL);
+SYS_DEFINE_DEVICE(fsl_frdm_0, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

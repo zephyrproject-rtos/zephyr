@@ -34,6 +34,14 @@ config SHARED_IRQ_NUM_CLIENTS
 	 instance of the shared interrupt driver. To conserve RAM set
 	 this value to the lowest practical value.
 
+config SHARED_IRQ_INIT_PRIORITY
+	int
+	depends on SHARED_IRQ
+	prompt "Shared IRQ init priority"
+	help
+	 Shared IRQ are initialized on SECONDARY init level. They
+	 have to be initialized before any device that uses them.
+
 config SHARED_IRQ_0
 	bool "Shared interrupt instance 0"
 	depends on SHARED_IRQ

@@ -43,19 +43,22 @@
 
 #ifdef CONFIG_IOAPIC
 DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
-pre_kernel_core_init(ioapic_0, NULL);
+SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_IOAPIC */
 
 #ifdef CONFIG_LOAPIC
 DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
-pre_kernel_core_init(loapic_0, NULL);
+SYS_DEFINE_DEVICE(loapic_0, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_LOAPIC */
 
 #if defined(CONFIG_PIC_DISABLE)
 
 DECLARE_DEVICE_INIT_CONFIG(pic_0, "", _i8259_init, NULL);
-pre_kernel_core_init(pic_0, NULL);
+SYS_DEFINE_DEVICE(pic_0, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_PIC_DISABLE */

@@ -142,7 +142,8 @@ struct shared_irq_runtime shared_irq_0_runtime;
 
 DECLARE_DEVICE_INIT_CONFIG(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME,
 			   shared_irq_initialize, &shared_irq_config_0);
-pre_kernel_early_init(shared_irq_0, &shared_irq_0_runtime);
+SYS_DEFINE_DEVICE(shared_irq_0, &shared_irq_0_runtime, SECONDARY,
+		  CONFIG_SHARED_IRQ_INIT_PRIORITY);
 
 IRQ_CONNECT_STATIC(shared_irq_0, CONFIG_SHARED_IRQ_0_IRQ,
 		   CONFIG_SHARED_IRQ_0_PRI, shared_irq_isr_0, 0,
@@ -175,7 +176,8 @@ struct shared_irq_runtime shared_irq_1_runtime;
 
 DECLARE_DEVICE_INIT_CONFIG(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME,
 			   shared_irq_initialize, &shared_irq_config_1);
-pre_kernel_early_init(shared_irq_1, &shared_irq_1_runtime);
+SYS_DEFINE_DEVICE(shared_irq_1, &shared_irq_1_runtime, SECONDARY,
+		  CONFIG_SHARED_IRQ_INIT_PRIORITY);
 
 IRQ_CONNECT_STATIC(shared_irq_1, CONFIG_SHARED_IRQ_1_IRQ,
 		   CONFIG_SHARED_IRQ_1_PRI, shared_irq_isr_1, 0,

@@ -29,6 +29,13 @@ config PWM_PCA9685
 	help
 	  Enable driver for PCA9685 I2C-based PWM chip.
 
+config PWM_PCA9685_INIT_PRIORITY
+	int
+	depends on PWM_PCA9685
+	prompt "Init priority"
+	help
+	  Device driver initialization priority.
+
 config PWM_PCA9685_0
 	bool "PCA9685 PWM chip #0"
 	depends on PWM_PCA9685

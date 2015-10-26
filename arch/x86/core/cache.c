@@ -108,6 +108,6 @@ static int init_cache(struct device *unused)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(cache, "", init_cache, NULL);
-pre_kernel_early_init(cache, NULL);
+SYS_DEFINE_DEVICE(cache, NULL, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_CLFLUSH_DETECT || CONFIG_CACHE_LINE_SIZE_DETECT */

@@ -37,4 +37,14 @@ config RAM_SIZE
 	default 80
 
 endmenu
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+
+config UART_CONSOLE_PRIORITY
+	default 60
+
 endif

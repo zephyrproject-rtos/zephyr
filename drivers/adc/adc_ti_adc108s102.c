@@ -289,6 +289,7 @@ struct ti_adc108s102_config adc108s102_0_config = {
 DECLARE_DEVICE_INIT_CONFIG(adc108s102_0, CONFIG_ADC_TI_ADC108S102_0_DRV_NAME,
 			   ti_adc108s102_init, &adc108s102_0_config);
 
-nano_early_init(adc108s102_0, &adc108s102_0_data);
+SYS_DEFINE_DEVICE(adc108s102_0, &adc108s102_0_data, SECONDARY,
+		  CONFIG_ADC_TI_ADC108S102_INIT_PRIORITY);
 
 #endif /* CONFIG_ADC_TI_ADC108S102_0 */

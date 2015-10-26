@@ -122,4 +122,4 @@ struct wdt_dw_dev_config wdt_dev = {
 
 DECLARE_DEVICE_INIT_CONFIG(wdt, WDT_DRV_NAME, &wdt_dw_init, &wdt_dev);
 
-micro_early_init(wdt, NULL);
+SYS_DEFINE_DEVICE(wdt, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

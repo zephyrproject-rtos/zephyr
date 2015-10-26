@@ -318,7 +318,8 @@ DECLARE_DEVICE_INIT_CONFIG(adc_dw_0,	/* config name*/
 			&adc_dw_init,	/* init function*/
 			&adc_config_dev_0); /* config options*/
 
-pre_kernel_late_init(adc_dw_0, &adc_info_dev_0);
+SYS_DEFINE_DEVICE(adc_dw_0, &adc_info_dev_0, SECONDARY,
+					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 struct device *adc_dw_isr_0_device = SYS_GET_DEVICE(adc_dw_0);
 
 IRQ_CONNECT_STATIC(adc_dw_0,

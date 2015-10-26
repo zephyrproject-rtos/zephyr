@@ -45,6 +45,16 @@ config PINMUX_DEV
         prototyping on new hardware.  WARNING: When using these options, it
         is possible to permanently damage the hardware.
 
+config PINMUX_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	default 60
+	depends on PINMUX
+	help
+	  Device driver initialization priority.
+	  The device needs to be initialized after all the devices it
+	  uses.
+
 config PINMUX_GALILEO_EXP0_NAME
         string "Name of the GPIO expander 0"
         depends on PINMUX && PLATFORM_GALILEO

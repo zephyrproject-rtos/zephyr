@@ -45,4 +45,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config UART_CONSOLE_INDEX
 	default 1
 
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+
+config UART_CONSOLE_PRIORITY
+	default 60
+
 endif
