@@ -42,18 +42,13 @@
  *
  * @brief Replace an interrupt handler by another
  *
- * An interrupt's ISR can be replaced at runtime. Care must be taken that the
- * interrupt is disabled before doing this.
- *
- * This routine will hang if @a old is not found in the table and ASSERT_ON is
- * enabled.
+ * An interrupt's ISR can be replaced at runtime.
  *
  * @return N/A
  */
 
 void _irq_handler_set(
 	unsigned int irq,
-	void (*old)(void *arg),
 	void (*new)(void *arg),
 	void *arg
 )
@@ -61,13 +56,8 @@ void _irq_handler_set(
 	int key = irq_lock();
 	int index = irq - 16;
 
-	__ASSERT(old == _sw_isr_table[index].isr,
-		 "expected ISR not found in table");
-
-	if (old == _sw_isr_table[index].isr) {
-		_sw_isr_table[index].isr = new;
-		_sw_isr_table[index].arg = arg;
-	}
+	_sw_isr_table[index].isr = new;
+	_sw_isr_table[index].arg = arg;
 
 	irq_unlock(key);
 }
@@ -172,7 +162,7 @@ int irq_connect(
 	void *arg
 )
 {
-	_irq_handler_set(irq, _irq_spurious, isr, arg);
+	_irq_handler_set(irq, isr, arg);
 	_irq_priority_set(irq, prio);
 	return irq;
 }
@@ -191,7 +181,5 @@ int irq_connect(
 
 void _irq_disconnect(unsigned int irq)
 {
-	int index = irq - 16;
-
-	_irq_handler_set(irq, _sw_isr_table[index].isr, _irq_spurious, NULL);
+	_irq_handler_set(irq, _irq_spurious, NULL);
 }
