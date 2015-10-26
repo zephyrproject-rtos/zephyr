@@ -77,6 +77,8 @@ static inline int is_power_of_two(unsigned int x)
 #define KHZ(x) ((x) * 1000)
 #define MHZ(x) (KHZ(x) * 1000)
 
+#define BIT(n)  (1UL << (n))
+
 #ifdef __cplusplus
 }
 #endif

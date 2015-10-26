@@ -1,0 +1,125 @@
+# Kconfig - Synopsys DesignWare Ethernet driver configuration options
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig ETH_DW
+	bool
+	prompt "Synopsys DesignWare Ethernet driver"
+	depends on ETHERNET
+	default n
+	help
+	  Enable Synopsys DesignWare Ethernet driver.
+
+if ETH_DW
+config ETH_DW_SHARED_IRQ
+	bool
+	default n
+
+config	ETH_DW_VENDOR_ID
+	hex "PCI Vendor ID"
+	depends on PCI
+	default 0x8086
+
+config	ETH_DW_DEVICE_ID
+	hex "PCI Device ID"
+	depends on PCI
+	default 0x937
+
+config	ETH_DW_CLASS
+	hex "PCI class"
+	depends on PCI
+	default 0x02
+
+config ETH_DW_0
+       bool "Synopsys DesignWare Ethernet port 0"
+       default n
+       help
+         Include port 0 driver
+
+config ETH_DW_0_NAME
+       string "Driver name"
+       depends on ETH_DW_0
+       default "ETH_0"
+
+config ETH_DW_0_BASE_ADDR
+       hex "MAC base address"
+       depends on ETH_DW_0
+       default 0x00000000
+
+config	ETH_DW_0_BUS
+	int "Port 0 PCI bus number"
+	depends on ETH_DW_0 && PCI
+	default 0
+
+config	ETH_DW_0_DEV
+	int "Port 0 PCI device number"
+	depends on ETH_DW_0 && PCI
+	default 20
+
+config  ETH_DW_0_FUNCTION
+	int "Port 0 PCI function number"
+	depends on ETH_DW_0 && PCI
+	default 6
+
+config  ETH_DW_0_BAR
+	int "Port 0 PCI BAR slot"
+	depends on ETH_DW_0 && PCI
+	default 0
+
+choice
+	prompt "Port 0 Interrupts via"
+	default ETH_DW_0_IRQ_SHARED
+	depends on ETH_DW_0
+
+config ETH_DW_0_IRQ_DIRECT
+	bool "Direct Hardware Interrupt"
+	help
+	  When interrupts fire, the driver's ISR function is being called directly.
+
+config ETH_DW_0_IRQ_SHARED
+	bool "Shared IRQ"
+	depends on SHARED_IRQ
+	select ETH_DW_SHARED_IRQ
+	help
+	  When interrupts fire, the shared IRQ driver is notified. Then the shared IRQ
+	  driver dispatches the interrupt to other drivers.
+
+endchoice
+
+config ETH_DW_0_IRQ_SHARED_NAME
+	string "Device name for Shared IRQ"
+	depends on ETH_DW_0 && ETH_DW_0_IRQ_SHARED
+	help
+	  Specify the device name for the shared IRQ driver. It is used to register
+	  this driver with the shared IRQ driver, so interrupts can be dispatched
+	  correctly.
+
+config ETH_DW_0_IRQ
+       int "Controller interrupt number"
+       depends on ETH_DW_0 && ETH_DW_0_IRQ_DIRECT
+       default 0
+       help
+       IRQ number for the controller
+
+config ETH_DW_0_PRI
+       int "Controller interrupt priority"
+       depends on ETH_DW_0 && ETH_DW_0_IRQ_DIRECT
+       default 0
+       help
+       IRQ priority
+
+endif # ETH_DW

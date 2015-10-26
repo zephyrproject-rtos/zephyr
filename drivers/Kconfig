@@ -25,6 +25,8 @@ source "drivers/bluetooth/Kconfig"
 
 source "drivers/console/Kconfig"
 
+source "drivers/ethernet/Kconfig"
+
 source "drivers/serial/Kconfig"
 
 source "drivers/interrupt_controller/Kconfig"
