@@ -73,13 +73,15 @@
  *  @param priority The initialization priority of the device, relative to
  *  other devices of the same initialization level. Specified as an integer
  *  value in the range 0 to 99; lower values indicate earlier initialization.
- *  Must be expressed as a hard-coded decimal integer literal without leading
- *  zeroes (e.g. 32); symbolic expressions are not permitted.
+ * Must be a decimal integer literal without leading zeroes or sign (e.g. 32),
+ * or an equivalent symbolic name (e.g. #define MY_INIT_PRIO 32); symbolic
+ * expressions are *not* permitted
+ * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
 
 #define SYS_DEFINE_DEVICE(name, data, level, priority)			    \
 	 static struct device (__initconfig_##name) __used  \
-	__attribute__((__section__(".init_" #level #priority))) = { \
+	 __attribute__((__section__(".init_" #level STRINGIFY(priority)))) = { \
 		 .config = &(config_##name),\
 		 .driver_data = data}
 
