@@ -31,6 +31,5 @@ struct pinmux_config {
 };
 
 extern int pinmux_initialize(struct device *port);
-extern int pinmux_galileo_initialize(struct device *port);
 
 #endif /* __DRIVERS_PINMUX_H */
