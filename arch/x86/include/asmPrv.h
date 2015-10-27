@@ -28,9 +28,16 @@ extern "C" {
 /* Macro to generate name of stub from name of handler */
 #define MK_STUB_NAME(h) h##Stub
 
-/*
- * Assmembler version of the NANO_CPU_INT_REGISTER macro.
+/**
+ * @brief Assembler version of the NANO_CPU_INT_REGISTER macro.
+ *
  * See arch.h for details
+ *
+ * @param handler Routine to be connected
+ * @param irq IRQ number
+ * @param priority IRQ priority
+ * @param vector Interrupt Vector
+ * @param dpl Descriptor Privilege Level
  */
 #define NANO_CPU_INT_REGISTER_ASM(handler, irq, priority, vector, dpl)     \
 	.section ".intList";                                \
@@ -55,8 +62,8 @@ extern "C" {
  *
  * @brief To generate and register an exception stub
  *
- * Generates an exception stub for the handler, <h>. It is registered
- * on the vector given by <v> with the privilege level <d>; <d> should always
+ * Generates an exception stub for the handler, @a h. It is registered
+ * on the vector given by @a v with the privilege level @a d; @a d should always
  * be 0.
  *
  * Use this version of the macro if the processor pushes an error code for the
@@ -71,8 +78,8 @@ extern "C" {
  *
  * @brief To generate and register an exception stub
  *
- * Generates an exception stub for the handler, <h>. It is registered
- * on the vector given by <v> with the privilege level <d>; <d> should always
+ * Generates an exception stub for the handler, @a h. It is registered
+ * on the vector given by @a v with the privilege level @a d; @a d should always
  * be 0.
  *
  * Use this version of the macro if the processor doesn't push an error code for

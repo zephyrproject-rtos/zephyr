@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * DESCRIPTION
+
+/**
+ * @brief Custom advanced idle manager
+ *
  * This header file specifies the custom advanced idle management interface.
  * All of the APIs declared here must be supplied by the custom advanced idle
  * management system, namely the _AdvIdleCheckSleep(), _AdvIdleFunc()
@@ -28,7 +30,7 @@
 
 #ifdef CONFIG_ADVANCED_IDLE
 
-/*
+/**
  * @brief Determine if advanced sleep has occurred
  *
  * This routine checks if the system is recovering from advanced
@@ -37,10 +39,9 @@
  * @return 0 if the system is cold booting on a non-zero
  * value if the system is recovering from advanced sleep.
  */
-
 extern int _AdvIdleCheckSleep(void);
 
-/*
+/**
  * @brief Continue kernel start-up or awaken kernel from sleep
  *
  * This routine checks if the system is recovering from advanced sleep and
@@ -55,10 +56,9 @@ extern int _AdvIdleCheckSleep(void);
  *
  * @return does not return to caller
  */
-
 extern void _AdvIdleStart(void (*_Cstart)(void), void *_gdt, void *_GlobalTss);
 
-/*
+/**
  * @brief Perform advanced sleep
  *
  * This routine checks if the upcoming kernel idle interval is sufficient to
@@ -70,7 +70,6 @@ extern void _AdvIdleStart(void (*_Cstart)(void), void *_gdt, void *_GlobalTss);
  *
  * @return  non-zero if advanced sleep occurred; otherwise zero
  */
-
 extern int _AdvIdleFunc(int32_t ticks);
 
 #endif /* CONFIG_ADVANCED_IDLE */

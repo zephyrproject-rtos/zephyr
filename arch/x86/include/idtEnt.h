@@ -30,7 +30,7 @@ extern"C"
 {
 #endif
 
-/*
+/**
  * Bitmask used to determine which exceptions result in an error code being
  * pushed onto the stack.  The following exception vectors push an error code:
  *
@@ -44,7 +44,6 @@ extern"C"
  *    14      #PF         Page Fault
  *    17      #AC         Alignment Check
  */
-
 #define _EXC_ERROR_CODE_FAULTS	0x27d00
 
 
@@ -70,15 +69,15 @@ typedef struct idtEntry {
  * @brief Create an IDT entry
  *
  * This routine creates an interrupt-gate descriptor at the location defined by
- * <pIdtEntry>. The entry is created such that <routine> is invoked when an
- * interrupt vector is asserted.  The <dpl> argument specifies the privilege
+ * @a pIdtEntry. The entry is created such that @a routine is invoked when an
+ * interrupt vector is asserted.  The @a dpl argument specifies the privilege
  * level for the interrupt-gate descriptor; (hardware) interrupts and exceptions
  * should specify a level of 0, whereas handlers for user-mode software generated
  * interrupts should specify 3.
  *
  * @param pIdtEntry Pointer to where the entry is be built
  * @param routine Routine to call when interrupt occurs
- * @param dpl priv level for interrupt descriptor
+ * @param dpl Private level for interrupt descriptor
  * @return N/A
  *
  * INTERNAL

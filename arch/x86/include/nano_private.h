@@ -428,7 +428,7 @@ typedef struct s_coopReg {
 
 	/*
 	 * The following registers are considered non-volatile, i.e.
-	 *callee-save,
+	 * callee-save,
 	 * but their values are pushed onto the stack rather than stored in the
 	 * TCS
 	 * structure:
@@ -445,7 +445,7 @@ typedef struct s_coopReg {
  * The following structure defines the set of 'volatile' integer registers.
  * These registers need not be preserved by a called C function.  Given that
  * they are not preserved across function calls, they must be save/restored
- * (along with the s_coop_reg) when a pre-emptive context switch occurs.
+ * (along with the s_coop_reg) when a preemptive context switch occurs.
  */
 
 typedef struct s_preempReg {
@@ -595,9 +595,9 @@ typedef struct s_coopFloatReg {
 
 /*
  * The following structure defines the set of 'volatile' x87 FPU/MMX/SSE
- * registers.  Thes registers need not be preserved by a called C function.
+ * registers.  These registers need not be preserved by a called C function.
  * Given that they are not preserved across function calls, they must be
- * save/restored (along with s_coopFloatReg) when a pre-emptive context
+ * save/restored (along with s_coopFloatReg) when a preemptive context
  * switch occurs.
  */
 
