@@ -1,4 +1,4 @@
-/* system.c - system/hardware module for the galileo platform */
+/* galileo.c - system/hardware module for the galileo platform */
 
 /*
  * Copyright (c) 2013-2015, Wind River Systems, Inc.

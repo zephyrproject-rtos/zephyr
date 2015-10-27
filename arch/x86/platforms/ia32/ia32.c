@@ -1,4 +1,4 @@
-/* system.c - system/hardware module for the ia32 platform */
+/* ia32.c - system/hardware module for the ia32 platform */
 
 /*
  * Copyright (c) 2011-2015, Wind River Systems, Inc.
