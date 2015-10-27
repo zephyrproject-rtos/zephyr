@@ -220,3 +220,64 @@ config I2C_DEBUG
 	depends on I2C
 	help
 	This option enables the debug features for I2C connections
+
+config I2C_QUARK_SE_SS
+	bool "Enable I2C Support on Quark SE Sensor Subsystem (SS)"
+	default n
+	depends on PLATFORM_QUARK_SE_ARC
+	depends on I2C
+	help
+	This option enables the driver to support the I2C on Quark SE Sensor
+	Subsystem.
+
+config I2C_QUARK_SE_SS_0
+	bool "Enable Quark SE SS I2C Port 0"
+	depends on I2C_QUARK_SE_SS
+	default n
+
+config I2C_QUARK_SE_SS_0_BASE
+	hex "Base address for Quark SE SS I2C Port 0"
+	depends on I2C_QUARK_SE_SS_0
+	default 0x00000000
+
+config I2C_QUARK_SE_SS_0_NAME
+	string "Select a name for finding the device"
+	depends on I2C_QUARK_SE_SS_0
+	default "I2C_SS_0"
+
+config I2C_QUARK_SE_SS_0_DEFAULT_CFG
+	hex "Default Configuration for Quark SE SS I2C Port 0"
+	depends on I2C_QUARK_SE_SS_0
+	default 0x0
+	help
+	Allows the I2C port to be brought up with a default configuration.
+	This is useful to set if other drivers depend upon using the I2C bus
+	before the application has a chance to custom configure the port.
+	Setting this value does not prohibit the application from customizing
+	the values later. Refer to the I2C datasheet for proper values.
+
+config I2C_QUARK_SE_SS_1
+	bool "Enable Quark SE SS I2C Port 1"
+	depends on I2C_QUARK_SE_SS
+	default n
+
+config I2C_QUARK_SE_SS_1_BASE
+	hex "Base address for Quark SE SS I2C Port 1"
+	depends on I2C_QUARK_SE_SS_1
+	default 0x00000000
+
+config I2C_QUARK_SE_SS_1_NAME
+	string "Select a name for finding the device"
+	depends on I2C_QUARK_SE_SS_1
+	default "I2C_SS_1"
+
+config I2C_QUARK_SE_SS_1_DEFAULT_CFG
+	hex "Default Configuration for Quark SE SS I2C Port 1"
+	depends on I2C_QUARK_SE_SS_1
+	default 0x0
+	help
+	Allows the I2C port to be brought up with a default configuration.
+	This is useful to set if other drivers depend upon using the I2C bus
+	before the application has a chance to custom configure the port.
+	Setting this value does not prohibit the application from customizing
+	the values later. Refer to the I2C datasheet for proper values.
