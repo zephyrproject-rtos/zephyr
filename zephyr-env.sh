@@ -9,7 +9,7 @@ fi
 # run (if it exists) by this script.
 
 # identify OS source tree root directory
-export ZEPHYR_BASE=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+export ZEPHYR_BASE=$( builtin cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 scripts_path=${ZEPHYR_BASE}/scripts
 echo "${PATH}" | grep -q "${scripts_path}"
