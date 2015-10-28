@@ -133,7 +133,7 @@ int bt_smp_init(void);
  *
  *  @return 0 in success, error code otherwise
  */
-int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf);
+int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf);
 
 /** brief Sign message
  *
@@ -142,4 +142,4 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf);
  *
  *  @return 0 in success, error code otherwise
  */
-int bt_smp_sign(struct bt_conn *conn, struct bt_buf *buf);
+int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);

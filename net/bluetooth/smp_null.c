@@ -34,18 +34,18 @@
 
 static struct bt_l2cap_chan bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
-int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
+int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 {
 	return -ENOTSUP;
 }
 
-static void bt_smp_recv(struct bt_l2cap_chan *chan, struct bt_buf *buf)
+static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_conn *conn = chan->conn;
 	struct bt_smp_pairing_fail *rsp;
 	struct bt_smp_hdr *hdr;
 
-	bt_buf_put(buf);
+	net_buf_put(buf);
 
 	/* If a device does not support pairing then it shall respond with
 	 * a Pairing Failed command with the reason set to “Pairing Not
@@ -58,10 +58,10 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct bt_buf *buf)
 		return;
 	}
 
-	hdr = bt_buf_add(buf, sizeof(*hdr));
+	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_SMP_CMD_PAIRING_FAIL;
 
-	rsp = bt_buf_add(buf, sizeof(*rsp));
+	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->reason = BT_SMP_ERR_PAIRING_NOTSUPP;
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);

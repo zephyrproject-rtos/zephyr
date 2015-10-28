@@ -262,7 +262,7 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 {
 	struct bt_hci_cp_le_encrypt *cp;
 	struct bt_hci_rp_le_encrypt *rp;
-	struct bt_buf *buf, *rsp;
+	struct net_buf *buf, *rsp;
 	int err;
 
 	BT_DBG("key %s plaintext %s\n", h(key, 16), h(plaintext, 16));
@@ -272,7 +272,7 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 		return -ENOBUFS;
 	}
 
-	cp = bt_buf_add(buf, sizeof(*cp));
+	cp = net_buf_add(buf, sizeof(*cp));
 	memcpy(cp->key, key, sizeof(cp->key));
 	memcpy(cp->plaintext, plaintext, sizeof(cp->plaintext));
 
@@ -283,7 +283,7 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 
 	rp = (void *)rsp->data;
 	memcpy(enc_data, rp->enc_data, sizeof(rp->enc_data));
-	bt_buf_put(rsp);
+	net_buf_unref(rsp);
 
 	BT_DBG("enc_data %s\n", h(enc_data, 16));
 
@@ -297,7 +297,7 @@ static int le_rand(void *buf, size_t len)
 
 	while (len > 0) {
 		struct bt_hci_rp_le_rand *rp;
-		struct bt_buf *rsp;
+		struct net_buf *rsp;
 		size_t copy;
 		int err;
 
@@ -310,7 +310,7 @@ static int le_rand(void *buf, size_t len)
 		rp = (void *)rsp->data;
 		copy = min(len, sizeof(rp->rand));
 		memcpy(ptr, rp->rand, copy);
-		bt_buf_put(rsp);
+		net_buf_unref(rsp);
 
 		len -= copy;
 		ptr += copy;
@@ -470,17 +470,17 @@ static void smp_restart_timer(struct bt_smp *smp)
 					   SMP_TIMEOUT);
 }
 
-struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
+struct net_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 {
 	struct bt_smp_hdr *hdr;
-	struct bt_buf *buf;
+	struct net_buf *buf;
 
 	buf = bt_l2cap_create_pdu(conn);
 	if (!buf) {
 		return NULL;
 	}
 
-	hdr = bt_buf_add(buf, sizeof(*hdr));
+	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = op;
 
 	return buf;
@@ -489,14 +489,14 @@ struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_smp_pairing_fail *rsp;
-	struct bt_buf *buf;
+	struct net_buf *buf;
 
 	buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_FAIL, sizeof(*rsp));
 	if (!buf) {
 		return;
 	}
 
-	rsp = bt_buf_add(buf, sizeof(*rsp));
+	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->reason = reason;
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
@@ -612,7 +612,7 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
 	struct bt_smp_security_request *req;
-	struct bt_buf *req_buf;
+	struct net_buf *req_buf;
 
 	BT_DBG("\n");
 	smp = smp_chan_get(conn);
@@ -641,7 +641,7 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 		return -ENOBUFS;
 	}
 
-	req = bt_buf_add(req_buf, sizeof(*req));
+	req = net_buf_add(req_buf, sizeof(*req));
 	req->auth_req = get_auth(BT_SMP_AUTH_BONDING);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
@@ -651,12 +651,12 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	return 0;
 }
 
-static uint8_t smp_pairing_req(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_smp_pairing *rsp;
-	struct bt_buf *rsp_buf;
+	struct net_buf *rsp_buf;
 	int ret;
 
 	BT_DBG("\n");
@@ -676,7 +676,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct bt_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	rsp = bt_buf_add(rsp_buf, sizeof(*rsp));
+	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
 
 	rsp->auth_req = get_auth(req->auth_req);
 	rsp->io_capability = bt_smp_io_capa;
@@ -704,7 +704,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct bt_buf *buf)
 	return smp_request_tk(smp, req->io_capability);
 }
 #else
-static uint8_t smp_pairing_req(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 {
 	return BT_SMP_ERR_CMD_NOTSUPP;
 }
@@ -714,7 +714,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_pairing_confirm *req;
-	struct bt_buf *rsp_buf;
+	struct net_buf *rsp_buf;
 	int err;
 
 	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
@@ -723,12 +723,12 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	req = bt_buf_add(rsp_buf, sizeof(*req));
+	req = net_buf_add(rsp_buf, sizeof(*req));
 
 	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp, &conn->init_addr,
 		     &conn->resp_addr, req->val);
 	if (err) {
-		bt_buf_put(rsp_buf);
+		net_buf_unref(rsp_buf);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -746,7 +746,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
 	struct bt_smp_pairing *req;
-	struct bt_buf *req_buf;
+	struct net_buf *req_buf;
 
 	BT_DBG("\n");
 
@@ -779,7 +779,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 		return -ENOBUFS;
 	}
 
-	req = bt_buf_add(req_buf, sizeof(*req));
+	req = net_buf_add(req_buf, sizeof(*req));
 
 	req->auth_req = get_auth(BT_SMP_AUTH_BONDING);
 	req->io_capability = bt_smp_io_capa;
@@ -805,7 +805,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	return 0;
 }
 
-static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing *rsp = (void *)buf->data;
 	uint8_t ret;
@@ -839,7 +839,7 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct bt_buf *buf)
 	return 0;
 }
 #else
-static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 {
 	return BT_SMP_ERR_CMD_NOTSUPP;
 }
@@ -849,7 +849,7 @@ static uint8_t smp_send_pairing_random(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_pairing_random *req;
-	struct bt_buf *rsp_buf;
+	struct net_buf *rsp_buf;
 
 	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
 				    sizeof(*req));
@@ -857,7 +857,7 @@ static uint8_t smp_send_pairing_random(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	req = bt_buf_add(rsp_buf, sizeof(*req));
+	req = net_buf_add(rsp_buf, sizeof(*req));
 	memcpy(req->val, smp->prnd, sizeof(req->val));
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
@@ -867,7 +867,7 @@ static uint8_t smp_send_pairing_random(struct bt_smp *smp)
 	return 0;
 }
 
-static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing_confirm *req = (void *)buf->data;
 
@@ -919,7 +919,7 @@ static uint8_t get_encryption_key_size(struct bt_smp *smp)
 	return min(req->max_key_size, rsp->max_key_size);
 }
 
-static uint8_t smp_pairing_random(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_pairing_random *req = (void *)buf->data;
@@ -1012,7 +1012,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct bt_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_pairing_failed(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_pairing_fail *req = (void *)buf->data;
@@ -1044,7 +1044,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_keys *keys;
-	struct bt_buf *buf;
+	struct net_buf *buf;
 
 	keys = bt_keys_get_addr(&conn->dst);
 	if (!keys) {
@@ -1082,7 +1082,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 			return;
 		}
 
-		info = bt_buf_add(buf, sizeof(*info));
+		info = net_buf_add(buf, sizeof(*info));
 
 		/* distributed only enc_size bytes of key */
 		memcpy(info->ltk, keys->slave_ltk.val, keys->enc_size);
@@ -1100,7 +1100,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 			return;
 		}
 
-		ident = bt_buf_add(buf, sizeof(*ident));
+		ident = net_buf_add(buf, sizeof(*ident));
 		ident->rand = keys->slave_ltk.rand;
 		ident->ediv = keys->slave_ltk.ediv;
 
@@ -1127,7 +1127,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 			return;
 		}
 
-		info = bt_buf_add(buf, sizeof(*info));
+		info = net_buf_add(buf, sizeof(*info));
 		memcpy(info->csrk, keys->local_csrk.val, sizeof(info->csrk));
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
@@ -1137,7 +1137,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 #endif /* CONFIG_BLUETOOTH_SIGNING */
 }
 
-static uint8_t smp_encrypt_info(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_encrypt_info *req = (void *)buf->data;
@@ -1159,7 +1159,7 @@ static uint8_t smp_encrypt_info(struct bt_smp *smp, struct bt_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_master_ident(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_master_ident *req = (void *)buf->data;
@@ -1199,7 +1199,7 @@ static uint8_t smp_master_ident(struct bt_smp *smp, struct bt_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_ident_info(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_ident_info *req = (void *)buf->data;
@@ -1221,7 +1221,7 @@ static uint8_t smp_ident_info(struct bt_smp *smp, struct bt_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
@@ -1291,7 +1291,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct bt_buf *buf)
 }
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
-static uint8_t smp_signing_info(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_signing_info *req = (void *)buf->data;
@@ -1324,14 +1324,14 @@ static uint8_t smp_signing_info(struct bt_smp *smp, struct bt_buf *buf)
 	return 0;
 }
 #else
-static uint8_t smp_signing_info(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	return BT_SMP_ERR_CMD_NOTSUPP;
 }
 #endif /* CONFIG_BLUETOOTH_SIGNING */
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
-static uint8_t smp_security_request(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_security_request *req = (void *)buf->data;
@@ -1375,14 +1375,14 @@ pair:
 	return 0;
 }
 #else
-static uint8_t smp_security_request(struct bt_smp *smp, struct bt_buf *buf)
+static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 {
 	return BT_SMP_ERR_CMD_NOTSUPP;
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 static const struct {
-	uint8_t  (*func)(struct bt_smp *smp, struct bt_buf *buf);
+	uint8_t  (*func)(struct bt_smp *smp, struct net_buf *buf);
 	uint8_t  expect_len;
 } handlers[] = {
 	{ }, /* No op-code defined for 0x00 */
@@ -1399,7 +1399,7 @@ static const struct {
 	{ smp_security_request,    sizeof(struct bt_smp_security_request) },
 };
 
-static void bt_smp_recv(struct bt_l2cap_chan *chan, struct bt_buf *buf)
+static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
 	struct bt_smp_hdr *hdr = (void *)buf->data;
@@ -1412,7 +1412,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct bt_buf *buf)
 
 	BT_DBG("Received SMP code 0x%02x len %u\n", hdr->code, buf->len);
 
-	bt_buf_pull(buf, sizeof(*hdr));
+	net_buf_pull(buf, sizeof(*hdr));
 
 	/*
 	 * If SMP timeout occurred "no further SMP commands shall be sent over
@@ -1450,7 +1450,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct bt_buf *buf)
 	}
 
 done:
-	bt_buf_put(buf);
+	net_buf_unref(buf);
 }
 
 static void bt_smp_connected(struct bt_l2cap_chan *chan)
@@ -1753,7 +1753,7 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 	return 0;
 }
 
-int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
+int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct bt_keys *keys;
 	uint8_t sig[12];
@@ -1761,7 +1761,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
 	int err;
 
 	/* Store signature incl. count */
-	memcpy(sig, bt_buf_tail(buf) - sizeof(sig), sizeof(sig));
+	memcpy(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig));
 
 	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, &conn->dst);
 	if (!keys) {
@@ -1772,7 +1772,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
 
 	/* Copy signing count */
 	cnt = sys_cpu_to_le32(keys->remote_csrk.cnt);
-	memcpy(bt_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
+	memcpy(net_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
 
 	BT_DBG("Sign data len %u key %s count %u\n", buf->len - sizeof(sig),
 	       h(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
@@ -1785,7 +1785,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
 		return -EIO;
 	};
 
-	if (memcmp(sig, bt_buf_tail(buf) - sizeof(sig), sizeof(sig))) {
+	if (memcmp(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig))) {
 		BT_ERR("Unable to verify signature for %s\n",
 		       bt_addr_le_str(&conn->dst));
 		return -EBADMSG;
@@ -1796,7 +1796,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
-int bt_smp_sign(struct bt_conn *conn, struct bt_buf *buf)
+int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct bt_keys *keys;
 	uint32_t cnt;
@@ -1810,11 +1810,11 @@ int bt_smp_sign(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	/* Reserve space for data signature */
-	bt_buf_add(buf, 12);
+	net_buf_add(buf, 12);
 
 	/* Copy signing count */
 	cnt = sys_cpu_to_le32(keys->local_csrk.cnt);
-	memcpy(bt_buf_tail(buf) - 12, &cnt, sizeof(cnt));
+	memcpy(net_buf_tail(buf) - 12, &cnt, sizeof(cnt));
 
 	BT_DBG("Sign data len %u key %s count %u\n", buf->len,
 	       h(keys->local_csrk.val, 16), keys->local_csrk.cnt);
@@ -1831,12 +1831,12 @@ int bt_smp_sign(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 #else
-int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
+int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 {
 	return -ENOTSUP;
 }
 
-int bt_smp_sign(struct bt_conn *conn, struct bt_buf *buf)
+int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 {
 	return -ENOTSUP;
 }
