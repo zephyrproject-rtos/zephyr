@@ -1028,7 +1028,7 @@ static void cmd_auth_passkey(int argc, char *argv[])
 	bt_auth_passkey_entry(default_conn, passkey);
 }
 
-static void l2cap_recv(struct bt_l2cap_chan *chan, struct bt_buf *buf)
+static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
 }
