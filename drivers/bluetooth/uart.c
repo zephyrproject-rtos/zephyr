@@ -81,10 +81,10 @@ static size_t bt_uart_discard(struct device *uart, size_t len)
 	return uart_fifo_read(uart, buf, len);
 }
 
-static struct bt_buf *bt_uart_evt_recv(int *remaining)
+static struct net_buf *bt_uart_evt_recv(int *remaining)
 {
 	struct bt_hci_evt_hdr hdr;
-	struct bt_buf *buf;
+	struct net_buf *buf;
 
 	/* We can ignore the return value since we pass len == min */
 	bt_uart_read(BT_UART_DEV, (void *)&hdr, sizeof(hdr), sizeof(hdr));
@@ -93,7 +93,7 @@ static struct bt_buf *bt_uart_evt_recv(int *remaining)
 
 	buf = bt_buf_get(BT_EVT, 0);
 	if (buf) {
-		memcpy(bt_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
 	} else {
 		BT_ERR("No available event buffers!\n");
 	}
@@ -103,17 +103,17 @@ static struct bt_buf *bt_uart_evt_recv(int *remaining)
 	return buf;
 }
 
-static struct bt_buf *bt_uart_acl_recv(int *remaining)
+static struct net_buf *bt_uart_acl_recv(int *remaining)
 {
 	struct bt_hci_acl_hdr hdr;
-	struct bt_buf *buf;
+	struct net_buf *buf;
 
 	/* We can ignore the return value since we pass len == min */
 	bt_uart_read(BT_UART_DEV, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
 	buf = bt_buf_get(BT_ACL_IN, 0);
 	if (buf) {
-		memcpy(bt_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
 	} else {
 		BT_ERR("No available ACL buffers!\n");
 	}
@@ -127,7 +127,7 @@ static struct bt_buf *bt_uart_acl_recv(int *remaining)
 
 void bt_uart_isr(void *unused)
 {
-	static struct bt_buf *buf;
+	static struct net_buf *buf;
 	static int remaining;
 
 	ARG_UNUSED(unused);
@@ -169,7 +169,7 @@ void bt_uart_isr(void *unused)
 				return;
 			}
 
-			if (buf && remaining > bt_buf_tailroom(buf)) {
+			if (buf && remaining > net_buf_tailroom(buf)) {
 				BT_ERR("Not enough space in buffer\n");
 				goto failed;
 			}
@@ -184,7 +184,7 @@ void bt_uart_isr(void *unused)
 			continue;
 		}
 
-		read = bt_uart_read(BT_UART_DEV, bt_buf_tail(buf),
+		read = bt_uart_read(BT_UART_DEV, net_buf_tail(buf),
 				    remaining, 0);
 
 		buf->len += read;
@@ -204,7 +204,7 @@ void bt_uart_isr(void *unused)
 	return;
 
 failed:
-	bt_buf_put(buf);
+	net_buf_unref(buf);
 	remaining = 0;
 	buf = NULL;
 }
@@ -216,16 +216,16 @@ static void uart_out(struct device *dev, const uint8_t *data, int size)
 	}
 }
 
-static int bt_uart_send(struct bt_buf *buf)
+static int bt_uart_send(struct net_buf *buf)
 {
 	uint8_t *h4_type, *buf_type;
 
-	if (bt_buf_headroom(buf) < H4_HEADER_SIZE) {
+	if (net_buf_headroom(buf) < H4_HEADER_SIZE) {
 		BT_ERR("Not enough headroom in buffer\n");
 		return -EINVAL;
 	}
 
-	h4_type = bt_buf_push(buf, 1);
+	h4_type = net_buf_push(buf, 1);
 	buf_type = net_buf_user_data(buf);
 
 	switch (*buf_type) {
