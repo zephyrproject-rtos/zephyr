@@ -18,7 +18,7 @@
 
 #define BT_ATT_DEFAULT_LE_MTU	23
 
-/* Size of MTU is based on the maximum amount of data bt_buf can hold
+/* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding L2CAP, ACL and driver headers.
  */
 #define BT_ATT_MAX_LE_MTU	(BT_BUF_MAX_DATA - \
@@ -269,7 +269,8 @@ struct bt_att_signed_write_cmd {
 
 void bt_att_init(void);
 uint16_t bt_att_get_mtu(struct bt_conn *conn);
-struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);
+struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op,
+				  size_t len);
 
 typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
 			      const void *pdu, uint16_t length,
@@ -277,7 +278,7 @@ typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
 typedef void (*bt_att_destroy_t)(void *user_data);
 
 /* Send ATT PDU over a connection */
-int bt_att_send(struct bt_conn *conn, struct bt_buf *buf, bt_att_func_t func,
+int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_att_func_t func,
 		void *user_data, bt_att_destroy_t destroy);
 
 /* Cancel ATT request */
