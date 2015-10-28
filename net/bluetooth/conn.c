@@ -392,7 +392,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 		}
 
 		BT_DBG("passing buf %p len %u to driver\n", buf, buf->len);
-		err = bt_dev.drv->send(buf);
+		err = bt_dev.drv->send_acl(buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)\n", err);
 		} else {

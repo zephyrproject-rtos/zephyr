@@ -124,7 +124,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
 		int err;
 
-		err = bt_dev.drv->send(buf);
+		err = bt_dev.drv->send_cmd(buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)\n", err);
 		}
@@ -1154,7 +1154,7 @@ static void hci_cmd_tx_fiber(void)
 		BT_DBG("Sending command %x (buf %p) to driver\n",
 		       bt_hci(buf)->opcode, buf);
 
-		err = drv->send(buf);
+		err = drv->send_cmd(buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)\n", err);
 			net_buf_unref(buf);
@@ -1448,7 +1448,7 @@ int bt_driver_register(struct bt_driver *drv)
 		return -EALREADY;
 	}
 
-	if (!drv->open || !drv->send) {
+	if (!drv->open || !drv->send_cmd || !drv->send_acl) {
 		return -EINVAL;
 	}
 

@@ -216,7 +216,7 @@ static void uart_out(struct device *dev, const uint8_t *data, int size)
 	}
 }
 
-static int bt_uart_send(struct net_buf *buf)
+static int bt_uart_send_cmd(struct net_buf *buf)
 {
 	uint8_t *type;
 
@@ -226,18 +226,24 @@ static int bt_uart_send(struct net_buf *buf)
 	}
 
 	type = net_buf_push(buf, 1);
+	*type = H4_CMD;
 
-	switch (bt_type(buf)) {
-	case BT_CMD:
-		*type = H4_CMD;
-		break;
-	case BT_ACL_OUT:
-		*type = H4_ACL;
-		break;
-	default:
-		BT_ERR("Unknown buf type %u\n", bt_type(buf));
+	uart_out(BT_UART_DEV, buf->data, buf->len);
+
+	return 0;
+}
+
+static int bt_uart_send_acl(struct net_buf *buf)
+{
+	uint8_t *type;
+
+	if (net_buf_headroom(buf) < H4_HEADER_SIZE) {
+		BT_ERR("Not enough headroom in buffer\n");
 		return -EINVAL;
 	}
+
+	type = net_buf_push(buf, 1);
+	*type = H4_ACL;
 
 	uart_out(BT_UART_DEV, buf->data, buf->len);
 
@@ -285,7 +291,8 @@ static int bt_uart_open(void)
 static struct bt_driver drv = {
 	.head_reserve	= H4_HEADER_SIZE,
 	.open		= bt_uart_open,
-	.send		= bt_uart_send,
+	.send_cmd	= bt_uart_send_cmd,
+	.send_acl	= bt_uart_send_acl,
 };
 
 void bt_uart_init(void)
