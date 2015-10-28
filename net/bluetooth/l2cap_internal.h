@@ -45,6 +45,18 @@ struct bt_l2cap_cmd_reject {
 	uint8_t  data[0];
 } __packed;
 
+#define BT_L2CAP_DISCONN_REQ		0x06
+struct bt_l2cap_disconn_req {
+	uint16_t dcid;
+	uint16_t scid;
+} __packed;
+
+#define BT_L2CAP_DISCONN_RSP		0x07
+struct bt_l2cap_disconn_rsp {
+	uint16_t dcid;
+	uint16_t scid;
+} __packed;
+
 #define BT_L2CAP_CONN_PARAM_REQ		0x12
 struct bt_l2cap_conn_param_req {
 	uint16_t min_interval;

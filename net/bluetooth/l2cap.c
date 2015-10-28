@@ -222,7 +222,8 @@ void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
 	bt_conn_send(conn, buf);
 }
 
-static void rej_not_understood(struct bt_conn *conn, uint8_t ident)
+static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
+			      uint16_t reason)
 {
 	struct bt_l2cap_cmd_reject *rej;
 	struct bt_l2cap_sig_hdr *hdr;
@@ -239,7 +240,7 @@ static void rej_not_understood(struct bt_conn *conn, uint8_t ident)
 	hdr->len = sys_cpu_to_le16(sizeof(*rej));
 
 	rej = net_buf_add(buf, sizeof(*rej));
-	rej->reason = sys_cpu_to_le16(BT_L2CAP_REJ_NOT_UNDERSTOOD);
+	rej->reason = sys_cpu_to_le16(reason);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
@@ -273,7 +274,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	if (conn->role != BT_HCI_ROLE_MASTER) {
-		rej_not_understood(conn, ident);
+		l2cap_send_reject(conn, ident, BT_L2CAP_REJ_NOT_UNDERSTOOD);
 		return;
 	}
 
@@ -446,6 +447,78 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 rsp:
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
+
+static struct bt_l2cap_chan *l2cap_remove_tx_cid(struct bt_conn *conn,
+						 uint16_t cid)
+{
+	struct bt_l2cap_chan *chan, *prev;
+
+	for (chan = conn->channels, prev = NULL; chan;
+	     prev = chan, chan = chan->_next) {
+		if (chan->tx.cid != cid) {
+			continue;
+		}
+
+		if (!prev) {
+			conn->channels = chan->_next;
+		} else {
+			prev->_next = chan->_next;
+		}
+
+		return chan;
+	}
+
+	return NULL;
+}
+
+static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
+			   struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.conn;
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_disconn_req *req = (void *)buf->data;
+	struct bt_l2cap_disconn_rsp *rsp;
+	struct bt_l2cap_sig_hdr *hdr;
+	uint16_t scid, dcid;
+
+	if (buf->len < sizeof(*req)) {
+		BT_ERR("Too small LE conn req packet size\n");
+		return;
+	}
+
+	dcid = sys_le16_to_cpu(req->dcid);
+	scid = sys_le16_to_cpu(req->scid);
+
+	BT_DBG("scid 0x%04x dcid 0x%04x\n", dcid, scid);
+
+	chan = l2cap_remove_tx_cid(conn, scid);
+	if (!chan) {
+		l2cap_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID);
+		return;
+	}
+
+	buf = bt_l2cap_create_pdu(conn);
+	if (!buf) {
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_DISCONN_RSP;
+	hdr->ident = ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
+	rsp->scid = sys_cpu_to_le16(chan->tx.cid);
+
+	chan->conn = NULL;
+
+	if (chan->ops->disconnected) {
+		chan->ops->disconnected(chan);
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+}
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -488,10 +561,14 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_L2CAP_LE_CONN_REQ:
 		le_conn_req(l2cap, hdr->ident, buf);
 		break;
+	case BT_L2CAP_DISCONN_REQ:
+		le_disconn_req(l2cap, hdr->ident, buf);
+		break;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 	default:
 		BT_WARN("Unknown L2CAP PDU code 0x%02x\n", hdr->code);
-		rej_not_understood(chan->conn, hdr->ident);
+		l2cap_send_reject(chan->conn, hdr->ident,
+				  BT_L2CAP_REJ_NOT_UNDERSTOOD);
 		break;
 	}
 
