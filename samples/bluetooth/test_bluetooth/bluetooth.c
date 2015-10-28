@@ -34,7 +34,7 @@ static int driver_open(void)
 	return EXPECTED_ERROR;
 }
 
-static int driver_send(struct net_buf *buf)
+static int driver_send(enum bt_buf_type type, struct net_buf *buf)
 {
 	return 0;
 }
@@ -42,8 +42,7 @@ static int driver_send(struct net_buf *buf)
 static struct bt_driver drv = {
 	.head_reserve = 0,
 	.open         = driver_open,
-	.send_acl     = driver_send,
-	.send_cmd     = driver_send,
+	.send         = driver_send,
 };
 
 static void driver_init(void)

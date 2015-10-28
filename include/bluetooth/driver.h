@@ -45,11 +45,8 @@ struct bt_driver {
 	/* Open the HCI transport */
 	int (*open)(void);
 
-	/* Send HCI command to controller */
-	int (*send_cmd)(struct net_buf *buf);
-
-	/* Send ACL data to controller */
-	int (*send_acl)(struct net_buf *buf);
+	/* Send buffer command to controller */
+	int (*send)(enum bt_buf_type type, struct net_buf *buf);
 };
 
 /* Register a new HCI driver to the Bluetooth stack */
