@@ -110,13 +110,13 @@ void bt_l2cap_disconnected(struct bt_conn *conn);
 void bt_l2cap_encrypt_change(struct bt_conn *conn);
 
 /* Prepare an L2CAP PDU to be sent over a connection */
-struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn);
+struct net_buf *bt_l2cap_create_pdu(struct bt_conn *conn);
 
 /* Send L2CAP PDU over a connection */
-void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct bt_buf *buf);
+void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf);
 
 /* Receive a new L2CAP PDU from a connection */
-void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf);
+void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf);
 
 /* Perform connection parameter update request */
 int bt_l2cap_update_conn_param(struct bt_conn *conn);

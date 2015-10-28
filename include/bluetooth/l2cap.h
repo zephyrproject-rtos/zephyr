@@ -76,7 +76,7 @@ struct bt_l2cap_chan_ops {
 
 	/** Channel recv callback */
 	void			(*recv)(struct bt_l2cap_chan *chan,
-					struct bt_buf *buf);
+					struct net_buf *buf);
 };
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
