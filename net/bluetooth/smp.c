@@ -1215,6 +1215,43 @@ static uint8_t get_encryption_key_size(struct bt_smp *smp)
 	return min(req->max_key_size, rsp->max_key_size);
 }
 
+static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
+{
+	BT_DBG("\n");
+
+	/* TODO */
+	if (smp->method != JUST_WORKS) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+		uint8_t cfm[16];
+		int err;
+
+		err = smp_f4(smp->pkey, bt_dev.pkey, smp->rrnd, 0, cfm);
+		if (err) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		BT_DBG("pcnf %s cfm %s\n", h(smp->pcnf, 16), h(cfm, 16));
+
+		if (memcmp(smp->pcnf, cfm, 16)) {
+			return BT_SMP_ERR_CONFIRM_FAILED;
+		}
+
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+	smp_send_pairing_random(smp);
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+
+	return 0;
+}
+
 static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
@@ -1226,6 +1263,10 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 	BT_DBG("\n");
 
 	memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
+
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		return sc_smp_pairing_random(smp, buf);
+	}
 
 	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp,
 		     &conn->le.init_addr, &conn->le.resp_addr, cfm);
