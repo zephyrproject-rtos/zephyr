@@ -23,7 +23,7 @@
 #include <bluetooth/buf.h>
 
 /* Receive data from the controller/HCI driver */
-void bt_recv(struct bt_buf *buf);
+void bt_recv(struct net_buf *buf);
 
 struct bt_driver {
 	/* How much headroom is needed for HCI transport headers */
@@ -33,7 +33,7 @@ struct bt_driver {
 	int (*open)(void);
 
 	/* Send data to HCI */
-	int (*send)(struct bt_buf *buf);
+	int (*send)(struct net_buf *buf);
 };
 
 /* Register a new HCI driver to the Bluetooth stack */

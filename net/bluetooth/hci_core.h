@@ -74,7 +74,7 @@ struct bt_dev {
 	struct nano_sem		ncmd_sem;
 
 	/* Last sent HCI command */
-	struct bt_buf		*sent_cmd;
+	struct net_buf		*sent_cmd;
 
 	/* Queue for incoming HCI events & ACL data */
 	struct nano_fifo	rx_queue;
@@ -161,10 +161,10 @@ static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
 	return true;
 }
 
-struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
-int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf);
-int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
-			 struct bt_buf **rsp);
+struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
+int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
+int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
+			 struct net_buf **rsp);
 
 /* The helper is only safe to be called from internal fibers as it's
  * not multi-threading safe
