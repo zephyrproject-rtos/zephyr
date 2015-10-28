@@ -62,6 +62,10 @@ struct bt_l2cap {
 
 static struct bt_l2cap bt_l2cap_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
+static struct nano_fifo avail_acl_out;
+static NET_BUF_POOL(acl_out_pool, BT_BUF_ACL_OUT_MAX, BT_BUF_MAX_DATA,
+		    &avail_acl_out, NULL, sizeof(struct bt_acl_data));
+
 static struct bt_l2cap *l2cap_chan_get(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
@@ -197,7 +201,7 @@ struct net_buf *bt_l2cap_create_pdu(struct bt_conn *conn)
 				sizeof(struct bt_hci_acl_hdr) +
 				bt_dev.drv->head_reserve;
 
-	return bt_buf_get(BT_ACL_OUT, head_reserve);
+	return net_buf_get(&avail_acl_out, head_reserve);
 }
 
 void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
@@ -597,6 +601,8 @@ int bt_l2cap_init(void)
 	if (err) {
 		return err;
 	}
+
+	net_buf_pool_init(acl_out_pool);
 
 	bt_l2cap_fixed_chan_register(&chan);
 

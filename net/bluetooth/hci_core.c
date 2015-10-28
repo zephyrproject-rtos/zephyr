@@ -87,12 +87,9 @@ static void report_completed_packet(struct net_buf *buf)
 }
 
 static struct nano_fifo		avail_acl_in;
-static struct nano_fifo		avail_acl_out;
 static NET_BUF_POOL(acl_in_pool, BT_BUF_ACL_IN_MAX, BT_BUF_MAX_DATA,
 		    &avail_acl_in, report_completed_packet,
 		    sizeof(struct bt_acl_data));
-static NET_BUF_POOL(acl_out_pool, BT_BUF_ACL_OUT_MAX, BT_BUF_MAX_DATA,
-		    &avail_acl_out, NULL, sizeof(struct bt_acl_data));
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 struct net_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
@@ -107,9 +104,6 @@ struct net_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_ACL_IN:
 		buf = net_buf_get(&avail_acl_in, reserve_head);
-		break;
-	case BT_ACL_OUT:
-		buf = net_buf_get(&avail_acl_out, reserve_head);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONN */
 	default:
@@ -1599,7 +1593,6 @@ int bt_enable(bt_ready_cb_t cb)
 	net_buf_pool_init(hci_pool);
 #if defined(CONFIG_BLUETOOTH_CONN)
 	net_buf_pool_init(acl_in_pool);
-	net_buf_pool_init(acl_out_pool);
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 	/* Give cmd_sem allowing to send first HCI_Reset cmd */
