@@ -1706,3 +1706,13 @@ int bt_stop_scanning(void)
 
 	return bt_le_scan_update();
 }
+
+struct net_buf *bt_buf_get_evt(void)
+{
+	return bt_buf_get(BT_EVT, 0);
+}
+
+struct net_buf *bt_buf_get_acl(void)
+{
+	return bt_buf_get(BT_ACL_IN, 0);
+}

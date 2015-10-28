@@ -20,7 +20,13 @@
 #ifndef __BT_DRIVER_H
 #define __BT_DRIVER_H
 
-#include <bluetooth/buf.h>
+#include <net/buf.h>
+
+/* Allocate a buffer for an HCI event */
+struct net_buf *bt_buf_get_evt(void);
+
+/* Allocate a buffer for incoming ACL data */
+struct net_buf *bt_buf_get_acl(void);
 
 /* Receive data from the controller/HCI driver */
 void bt_recv(struct net_buf *buf);

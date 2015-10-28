@@ -91,7 +91,7 @@ static struct net_buf *bt_uart_evt_recv(int *remaining)
 
 	*remaining = hdr.len;
 
-	buf = bt_buf_get(BT_EVT, 0);
+	buf = bt_buf_get_evt();
 	if (buf) {
 		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
 	} else {
@@ -111,7 +111,7 @@ static struct net_buf *bt_uart_acl_recv(int *remaining)
 	/* We can ignore the return value since we pass len == min */
 	bt_uart_read(BT_UART_DEV, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
-	buf = bt_buf_get(BT_ACL_IN, 0);
+	buf = bt_buf_get_acl();
 	if (buf) {
 		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
 	} else {
