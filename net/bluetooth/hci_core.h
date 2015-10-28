@@ -189,13 +189,7 @@ int bt_le_scan_update(void);
  */
 #define BT_BUF_MAX_DATA 74
 
-#define BT_BUF_ACL_IN_MAX  7
-#define BT_BUF_ACL_OUT_MAX 7
-
 struct bt_hci_data {
-	/** Type of data contained in a buffer (bt_buf_type) */
-	uint8_t type;
-
 	/** The command OpCode that the buffer contains */
 	uint16_t opcode;
 
@@ -207,31 +201,6 @@ struct bt_hci_data {
 
 };
 struct bt_acl_data {
-	/** Type of data contained in a buffer (bt_buf_type) */
-	uint8_t type;
-
 	/** ACL connection handle */
 	uint16_t handle;
 };
-
-#define bt_hci(buf) ((struct bt_hci_data *)net_buf_user_data(buf))
-#define bt_acl(buf) ((struct bt_acl_data *)net_buf_user_data(buf))
-#define bt_type(buf) (*((uint8_t *)net_buf_user_data(buf)))
-
-/** @brief Get a new buffer from the pool.
- *
- *  Get buffer from the available buffers pool with specified type and
- *  reserved headroom.
- *
- *  @param type Buffer type.
- *  @param reserve_head How much headroom to reserve.
- *
- *  @return New buffer or NULL if out of buffers.
- *
- *  @warning If there are no available buffers and the function is
- *  called from a task or fiber the call will block until a buffer
- *  becomes available in the pool.
- */
-/* Temporary include for enum definition */
-#include <bluetooth/driver.h>
-struct net_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head);

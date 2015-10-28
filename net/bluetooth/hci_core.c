@@ -54,8 +54,11 @@ struct bt_dev bt_dev;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
+#define bt_hci(buf) ((struct bt_hci_data *)net_buf_user_data(buf))
+#define bt_acl(buf) ((struct bt_acl_data *)net_buf_user_data(buf))
+
 /* Available (free) buffers queues */
-static struct nano_fifo		avail_hci;
+static struct nano_fifo avail_hci;
 static NET_BUF_POOL(hci_pool, 8, BT_BUF_MAX_DATA, &avail_hci, NULL,
 		    sizeof(struct bt_hci_data));
 
@@ -86,36 +89,21 @@ static void report_completed_packet(struct net_buf *buf)
 	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 }
 
-static struct nano_fifo		avail_acl_in;
+#define BT_BUF_ACL_IN_MAX 7
+static struct nano_fifo avail_acl_in;
 static NET_BUF_POOL(acl_in_pool, BT_BUF_ACL_IN_MAX, BT_BUF_MAX_DATA,
 		    &avail_acl_in, report_completed_packet,
 		    sizeof(struct bt_acl_data));
 #endif /* CONFIG_BLUETOOTH_CONN */
 
-struct net_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
+/* Incoming buffer type lookup helper */
+static enum bt_buf_type bt_type(struct net_buf *buf)
 {
-	struct net_buf *buf;
-
-	switch (type) {
-	case BT_CMD:
-	case BT_EVT:
-		buf = net_buf_get(&avail_hci, reserve_head);
-		break;
-#if defined(CONFIG_BLUETOOTH_CONN)
-	case BT_ACL_IN:
-		buf = net_buf_get(&avail_acl_in, reserve_head);
-		break;
-#endif /* CONFIG_BLUETOOTH_CONN */
-	default:
-		return NULL;
+	if (buf->free == &avail_hci) {
+		return BT_EVT;
+	} else {
+		return BT_ACL_IN;
 	}
-
-	if (buf) {
-		uint8_t *buf_type = net_buf_user_data(buf);
-		*buf_type = type;
-	}
-
-	return buf;
 }
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
@@ -153,7 +141,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("opcode %x param_len %u\n", opcode, param_len);
 
-	buf = bt_buf_get(BT_CMD, bt_dev.drv->head_reserve);
+	buf = net_buf_get(&avail_hci, bt_dev.drv->head_reserve);
 	if (!buf) {
 		BT_ERR("Cannot get free buffer\n");
 		return NULL;
@@ -1777,10 +1765,14 @@ int bt_stop_scanning(void)
 
 struct net_buf *bt_buf_get_evt(void)
 {
-	return bt_buf_get(BT_EVT, 0);
+	return net_buf_get(&avail_hci, 0);
 }
 
 struct net_buf *bt_buf_get_acl(void)
 {
-	return bt_buf_get(BT_ACL_IN, 0);
+#if defined(CONFIG_BLUETOOTH_CONN)
+	return net_buf_get(&avail_acl_in, 0);
+#else
+	return NULL;
+#endif /* CONFIG_BLUETOOTH_CONN */
 }
