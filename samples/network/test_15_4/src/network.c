@@ -37,6 +37,10 @@
 #include "contiki/ipv6/uip-ds6-route.h"  /* to set the route */
 #include "contiki/ipv6/uip-ds6-nbr.h"    /* to set the neighbor cache */
 
+#ifndef CONFIG_NET_15_4_LOOPBACK_NUM
+#define CONFIG_NET_15_4_LOOPBACK_NUM 0
+#endif
+
 #if 0
 #define SRC_IPADDR  { { { 0xfe,0x80,0,0,0,0,0,0,0x08,0xbe,0xef,0x2d,0xbc,0x15,0xf0,0x0d } } }
 #define DEST_IPADDR { { { 0xfe,0x80,0,0,0,0,0,0,0x08,0xbe,0xef,0x2d,0xbc,0x15,0xf0,0x0d } } }
@@ -200,14 +204,23 @@ static struct net_context *get_context(const struct net_addr *remote,
 static void listen(const char *taskname, ksem_t mySem, ksem_t otherSem,
 		   struct net_context *ctx)
 {
+	int i = 0;
+
 	while (1) {
 		task_sem_take_wait(mySem);
 
 		receive_data(taskname, ctx);
 
+		if (CONFIG_NET_15_4_LOOPBACK_NUM != 0 &&
+					i >= CONFIG_NET_15_4_LOOPBACK_NUM) {
+			task_sem_give(otherSem);
+			return;
+		}
+
 		/* wait a while, then let other task have a turn */
 		task_sleep(SLEEPTICKS);
 		task_sem_give(otherSem);
+		i++;
 	}
 }
 
@@ -233,7 +246,15 @@ void taskA(void)
 static void send(const char *taskname, ksem_t mySem, ksem_t otherSem,
 		 struct net_context *ctx)
 {
+	int i = 0;
+
 	while (1) {
+		if (CONFIG_NET_15_4_LOOPBACK_NUM != 0 &&
+					i >= CONFIG_NET_15_4_LOOPBACK_NUM) {
+			task_sem_give(otherSem);
+			return;
+		}
+
 		task_sem_take_wait(mySem);
 
 		send_data(taskname, ctx);
@@ -241,6 +262,7 @@ static void send(const char *taskname, ksem_t mySem, ksem_t otherSem,
 		/* wait a while, then let other task have a turn */
 		task_sleep(SLEEPTICKS);
 		task_sem_give(otherSem);
+		i++;
 	}
 }
 
@@ -287,6 +309,7 @@ void fiber_receiving(void)
 	struct nano_timer timer;
 	uint32_t data[2] = {0, 0};
 	struct net_context *ctx;
+	int i = 0;
 
 	ctx = get_context(&any_addr, SRC_PORT, &loopback_addr, DEST_PORT);
 	if (!ctx) {
@@ -299,8 +322,15 @@ void fiber_receiving(void)
 	while (1) {
 		receive_data("listenFiber", ctx);
 
+		if (CONFIG_NET_15_4_LOOPBACK_NUM != 0 &&
+					i >= CONFIG_NET_15_4_LOOPBACK_NUM) {
+			nano_fiber_timer_stop(&timer);
+			return;
+		}
+
 		nano_fiber_timer_start(&timer, SLEEPTICKS);
 		nano_fiber_timer_wait(&timer);
+		i++;
 	}
 }
 
@@ -309,6 +339,7 @@ void fiber_sending(void)
 	struct nano_timer timer;
 	uint32_t data[2] = {0, 0};
 	struct net_context *ctx;
+	int i = 0;
 
 	ctx = get_context(&loopback_addr, DEST_PORT, &any_addr, SRC_PORT);
 	if (!ctx) {
@@ -319,10 +350,17 @@ void fiber_sending(void)
 	nano_timer_init(&timer, data);
 
 	while (1) {
+		if (CONFIG_NET_15_4_LOOPBACK_NUM != 0 &&
+					i >= CONFIG_NET_15_4_LOOPBACK_NUM) {
+			nano_fiber_timer_stop(&timer);
+			return;
+		}
+
 		send_data("sendFiber", ctx);
 
 		nano_fiber_timer_start(&timer, SLEEPTICKS);
 		nano_fiber_timer_wait(&timer);
+		i++;
 	}
 }
 
