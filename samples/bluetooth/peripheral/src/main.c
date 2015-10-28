@@ -283,10 +283,11 @@ static int write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
+#define MAX_DATA 74
 static struct vnd_long_value {
 	/* TODO: buffer needs to be per connection */
-	uint8_t buf[BT_BUF_MAX_DATA];
-	uint8_t data[BT_BUF_MAX_DATA];
+	uint8_t buf[MAX_DATA];
+	uint8_t data[MAX_DATA];
 } vnd_long_value = {
 	.buf = { 'V', 'e', 'n', 'd', 'o', 'r' },
 	.data = { 'V', 'e', 'n', 'd', 'o', 'r' },
