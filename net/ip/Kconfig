@@ -251,6 +251,14 @@ config	NETWORKING_WITH_6LOWPAN
 	help
 	  Enable 6LoWPAN in uIP stack
 
+config NET_15_4_LOOPBACK_NUM
+       int
+       prompt "Number of times loopback runs"
+       depends on NETWORKING_WITH_15_4_LOOPBACK || NETWORKING_WITH_15_4_LOOPBACK_UART
+       default 0
+       help
+         Number of times loopback runs, 0 means infinite.
+
 choice
 prompt "6LoWPAN compression method"
 depends on NETWORKING_WITH_6LOWPAN
