@@ -50,10 +50,6 @@ static BT_STACK_NOINIT(rx_fiber_stack, 1024);
 static BT_STACK_NOINIT(rx_prio_fiber_stack, 256);
 static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-static nano_thread_id_t rx_prio_fiber_id;
-#endif
-
 struct bt_dev bt_dev;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
@@ -148,17 +144,6 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 {
 	struct nano_sem sync_sem;
 	int err;
-
-	/* This function cannot be called from the rx fiber since it
-	 * relies on the very same fiber in processing the cmd_complete
-	 * event and giving back the blocking semaphore.
-	 */
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-	if (sys_thread_self_get() == rx_prio_fiber_id) {
-		BT_ERR("called from invalid context!\n");
-		return -EDEADLK;
-	}
-#endif
 
 	if (!buf) {
 		buf = bt_hci_cmd_create(opcode, 0);
@@ -1185,11 +1170,6 @@ static void rx_prio_fiber(void)
 	struct net_buf *buf;
 
 	BT_DBG("started\n");
-
-	/* So we can avoid bt_hci_cmd_send_sync deadlocks */
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-	rx_prio_fiber_id = sys_thread_self_get();
-#endif
 
 	while (1) {
 		struct bt_hci_evt_hdr *hdr;
