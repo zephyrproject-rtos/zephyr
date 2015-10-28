@@ -36,84 +36,21 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-/* Total number of all types of buffers */
-#if defined(CONFIG_BLUETOOTH_CONN)
-#define NUM_BUFS		22
-#else
-#define NUM_BUFS		8
-#endif /* CONFIG_BLUETOOTH_CONN */
-
-static struct bt_buf		buffers[NUM_BUFS];
-
 /* Available (free) buffers queues */
 static struct nano_fifo		avail_hci;
+static NET_BUF_POOL(hci_pool, 8, BT_BUF_MAX_DATA, &avail_hci, NULL,
+		    sizeof(struct bt_hci_data));
 
 #if defined(CONFIG_BLUETOOTH_CONN)
-static struct nano_fifo		avail_acl_in;
-static struct nano_fifo		avail_acl_out;
-#endif /* CONFIG_BLUETOOTH_CONN */
-
-static struct nano_fifo *get_avail(enum bt_buf_type type)
-{
-	switch (type) {
-	case BT_CMD:
-	case BT_EVT:
-		return &avail_hci;
-#if defined(CONFIG_BLUETOOTH_CONN)
-	case BT_ACL_IN:
-		return &avail_acl_in;
-	case BT_ACL_OUT:
-		return &avail_acl_out;
-#endif /* CONFIG_BLUETOOTH_CONN */
-	default:
-		return NULL;
-	}
-}
-
-struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
-{
-	struct nano_fifo *avail;
-	struct bt_buf *buf;
-
-	BT_DBG("type %d reserve %u\n", type, reserve_head);
-
-	avail = get_avail(type);
-	if (!avail) {
-		return NULL;
-	}
-
-	buf = nano_fifo_get(avail);
-	if (!buf) {
-		if (sys_execution_context_type_get() == NANO_CTX_ISR) {
-			BT_ERR("Failed to get free buffer\n");
-			return NULL;
-		}
-
-		BT_WARN("Low on buffers. Waiting (type %d)\n", type);
-		buf = nano_fifo_get_wait(avail);
-	}
-
-	memset(buf, 0, sizeof(*buf));
-
-	buf->ref  = 1;
-	buf->type = type;
-	buf->data = buf->buf + reserve_head;
-
-	BT_DBG("buf %p type %d reserve %u\n", buf, buf->type, reserve_head);
-
-	return buf;
-}
-
-#if defined(CONFIG_BLUETOOTH_CONN)
-static void report_completed_packet(struct bt_buf *buf)
+static void report_completed_packet(struct net_buf *buf)
 {
 
+	struct bt_acl_data *acl = net_buf_user_data(buf);
 	struct bt_hci_cp_host_num_completed_packets *cp;
 	struct bt_hci_handle_count *hc;
 	uint16_t handle;
 
-	handle = buf->acl.handle;
-	nano_fifo_put(&avail_acl_in, buf);
+	handle = acl->handle;
 
 	BT_DBG("Reporting completed packet for handle %u\n", handle);
 
@@ -127,155 +64,114 @@ static void report_completed_packet(struct bt_buf *buf)
 	cp = bt_buf_add(buf, sizeof(*cp));
 	cp->num_handles = sys_cpu_to_le16(1);
 
-	hc = bt_buf_add(buf, sizeof(*hc));
+	hc = net_buf_add(buf, sizeof(*hc));
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count  = sys_cpu_to_le16(1);
 
 	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 }
+
+static struct nano_fifo		avail_acl_in;
+static struct nano_fifo		avail_acl_out;
+static NET_BUF_POOL(acl_in_pool, BT_BUF_ACL_IN_MAX, BT_BUF_MAX_DATA,
+		    &avail_acl_in, report_completed_packet,
+		    sizeof(struct bt_acl_data));
+static NET_BUF_POOL(acl_out_pool, BT_BUF_ACL_OUT_MAX, BT_BUF_MAX_DATA,
+		    &avail_acl_out, NULL, sizeof(struct bt_acl_data));
 #endif /* CONFIG_BLUETOOTH_CONN */
+
+struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
+{
+	struct net_buf *buf;
+
+	switch (type) {
+	case BT_CMD:
+	case BT_EVT:
+		buf = net_buf_get(&avail_hci, reserve_head);
+		break;
+#if defined(CONFIG_BLUETOOTH_CONN)
+	case BT_ACL_IN:
+		buf = net_buf_get(&avail_acl_in, reserve_head);
+		break;
+	case BT_ACL_OUT:
+		buf = net_buf_get(&avail_acl_out, reserve_head);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONN */
+	default:
+		return NULL;
+	}
+
+	if (buf) {
+		uint8_t *buf_type = net_buf_user_data(buf);
+		*buf_type = type;
+	}
+
+	return buf;
+}
 
 void bt_buf_put(struct bt_buf *buf)
 {
-	struct nano_fifo *avail = get_avail(buf->type);
-
-	BT_DBG("buf %p ref %u type %d\n", buf, buf->ref, buf->type);
-
-	if (--buf->ref) {
-		return;
-	}
-
-#if defined(CONFIG_BLUETOOTH_CONN)
-	if (avail == &avail_acl_in) {
-		report_completed_packet(buf);
-		return;
-	}
-#endif /* CONFIG_BLUETOOTH_CONN */
-
-	/* Even if connection support is disabled avail shall always be not
-	 * null. It is required to first get bt_buf with specific type to be
-	 * able to put it. If connection support is disabled get returns NULL.
-	 */
-	BT_ASSERT(avail);
-
-	nano_fifo_put(avail, buf);
+	net_buf_unref(buf);
 }
 
 struct bt_buf *bt_buf_hold(struct bt_buf *buf)
 {
-	BT_DBG("buf %p (old) ref %u type %d\n", buf, buf->ref, buf->type);
-	buf->ref++;
-	return buf;
+	return net_buf_ref(buf);
 }
 
 struct bt_buf *bt_buf_clone(struct bt_buf *buf)
 {
-	struct bt_buf *clone;
-
-	clone = bt_buf_get(buf->type, bt_buf_headroom(buf));
-	if (!clone) {
-		return NULL;
-	}
-
-	/* TODO: Add reference to the original buffer instead of copying it. */
-	memcpy(bt_buf_add(clone, buf->len), buf->data, buf->len);
-
-	return clone;
+	return net_buf_clone(buf);
 }
 
 void *bt_buf_add(struct bt_buf *buf, size_t len)
 {
-	uint8_t *tail = bt_buf_tail(buf);
-
-	BT_DBG("buf %p len %u\n", buf, len);
-
-	BT_ASSERT(bt_buf_tailroom(buf) >= len);
-
-	buf->len += len;
-	return tail;
+	return net_buf_add(buf, len);
 }
 
 void bt_buf_add_le16(struct bt_buf *buf, uint16_t value)
 {
-	BT_DBG("buf %p value %u\n", buf, value);
-
-	value = sys_cpu_to_le16(value);
-	memcpy(bt_buf_add(buf, sizeof(value)), &value, sizeof(value));
+	net_buf_add_le16(buf, value);
 }
 
 void *bt_buf_push(struct bt_buf *buf, size_t len)
 {
-	BT_DBG("buf %p len %u\n", buf, len);
-
-	BT_ASSERT(bt_buf_headroom(buf) >= len);
-
-	buf->data -= len;
-	buf->len += len;
-	return buf->data;
+	return net_buf_push(buf, len);
 }
 
 void *bt_buf_pull(struct bt_buf *buf, size_t len)
 {
-	BT_DBG("buf %p len %u\n", buf, len);
-
-	BT_ASSERT(buf->len >= len);
-
-	buf->len -= len;
-	return buf->data += len;
+	return net_buf_pull(buf, len);
 }
 
 uint16_t bt_buf_pull_le16(struct bt_buf *buf)
 {
-	uint16_t value;
-
-	value = UNALIGNED_GET((uint16_t *)buf->data);
-	bt_buf_pull(buf, sizeof(value));
-
-	return sys_le16_to_cpu(value);
+	return net_buf_pull_le16(buf);
 }
 
 size_t bt_buf_headroom(struct bt_buf *buf)
 {
-	return buf->data - buf->buf;
+	return net_buf_headroom(buf);
 }
 
 size_t bt_buf_tailroom(struct bt_buf *buf)
 {
-	return BT_BUF_MAX_DATA - bt_buf_headroom(buf) - buf->len;
+	return net_buf_tailroom(buf);
 }
 
-int bt_buf_init(int acl_in, int acl_out)
+void *bt_buf_tail(struct bt_buf *buf)
 {
-	int i = 0;
+	return net_buf_tail(buf);
+}
 
-	/* Check that we have enough buffers configured */
-	if (acl_out + acl_in >= NUM_BUFS - 2) {
-		BT_ERR("Too many ACL buffers requested\n");
-		return -EINVAL;
-	}
-
-	BT_DBG("Available bufs: ACL in: %d, ACL out: %d, cmds/evts: %d\n",
-	       acl_in, acl_out, NUM_BUFS - (acl_in + acl_out));
-
+int bt_buf_init(void)
+{
 #if defined(CONFIG_BLUETOOTH_CONN)
-	nano_fifo_init(&avail_acl_in);
-	for (; acl_in > 0; i++, acl_in--) {
-		nano_fifo_put(&avail_acl_in, &buffers[i]);
-	}
-
-	nano_fifo_init(&avail_acl_out);
-	for (; acl_out > 0; i++, acl_out--) {
-		nano_fifo_put(&avail_acl_out, &buffers[i]);
-	}
+	net_buf_pool_init(acl_in_pool);
+	net_buf_pool_init(acl_out_pool);
 #endif /* CONFIG_BLUETOOTH_CONN */
 
-	nano_fifo_init(&avail_hci);
-	for (; i < NUM_BUFS; i++) {
-		nano_fifo_put(&avail_hci, &buffers[i]);
-	}
-
-	BT_DBG("%u buffers * %u bytes = %u bytes\n", NUM_BUFS,
-	       sizeof(buffers[0]), sizeof(buffers));
+	net_buf_pool_init(hci_pool);
 
 	return 0;
 }

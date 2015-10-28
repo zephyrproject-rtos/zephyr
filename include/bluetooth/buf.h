@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <net/buf.h>
 
 /** @def BT_BUF_MAX_DATA
  *  @brief Maximum amount of data that can fit in a buffer.
@@ -34,7 +35,9 @@
  */
 #define BT_BUF_MAX_DATA 74
 
-/** Type of data contained in a buffer */
+#define BT_BUF_ACL_IN_MAX  7
+#define BT_BUF_ACL_OUT_MAX 7
+
 enum bt_buf_type {
 	BT_CMD,			/** HCI command */
 	BT_EVT,			/** HCI event */
@@ -43,44 +46,30 @@ enum bt_buf_type {
 	BT_DUMMY = BT_CMD,	/** Only used for waking up fibers */
 };
 
-/** HCI command specific information */
-struct bt_buf_hci_data {
+struct bt_hci_data {
+	/** Type of data contained in a buffer (bt_buf_type) */
+	uint8_t type;
+
+	/** The command OpCode that the buffer contains */
+	uint16_t opcode;
+
 	/** Used by bt_hci_cmd_send_sync. Initially contains the waiting
 	 *  semaphore, as the semaphore is given back contains the bt_buf
 	 *  for the return parameters.
 	 */
 	void *sync;
 
-	/** The command OpCode that the buffer contains */
-	uint16_t opcode;
 };
+struct bt_acl_data {
+	/** Type of data contained in a buffer (bt_buf_type) */
+	uint8_t type;
 
-/** ACL data buffer specific information */
-struct bt_buf_acl_data {
+	/** ACL connection handle */
 	uint16_t handle;
 };
 
-struct bt_buf {
-	/** FIFO uses first 4 bytes itself, reserve space */
-	int __unused;
-
-	union {
-		struct bt_buf_hci_data	hci;
-		struct bt_buf_acl_data	acl;
-	};
-
-	/** Pointer to the start of data in the buffer. */
-	uint8_t *data;
-
-	/** Length of the data behind the data pointer. */
-	uint8_t len;
-
-	uint8_t ref:5,   /** Reference count */
-		type:3;  /** Type of data contained in the buffer */
-
-	/** The full available buffer. */
-	uint8_t buf[BT_BUF_MAX_DATA];
-};
+/* Temporary define to ease porting */
+#define bt_buf net_buf
 
 /** @brief Get a new buffer from the pool.
  *
@@ -210,19 +199,14 @@ size_t bt_buf_headroom(struct bt_buf *buf);
  *
  *  @return Tail pointer for the buffer.
  */
-#define bt_buf_tail(buf) ((buf)->data + (buf)->len)
+void *bt_buf_tail(struct bt_buf *buf);
 
 /** @brief Initialize buffer handling.
  *
- *  Initialize the buffers with specified amount of incoming and outgoing
- *  ACL buffers. The HCI command and event buffers will be allocated from
- *  whatever is left over.
- *
- *  @param acl_in Number of incoming ACL data buffers.
- *  @param acl_out Number of outgoing ACL data buffers.
+ *  Initialize the HCI and ACL buffers.
  *
  *  @return Zero on success or (negative) error code on failure.
  */
-int bt_buf_init(int acl_in, int acl_out);
+int bt_buf_init(void);
 
 #endif /* __BT_BUF_H */
