@@ -234,9 +234,6 @@ static int bt_uart_send(struct net_buf *buf)
 	case BT_ACL_OUT:
 		*type = H4_ACL;
 		break;
-	case BT_EVT:
-		*type = H4_EVT;
-		break;
 	default:
 		BT_ERR("Unknown buf type %u\n", bt_type(buf));
 		return -EINVAL;
