@@ -1,7 +1,7 @@
-# Makefile - echo client test application
+# Makefile - IP 15.4 test Makefile for nanokernel
 
 #
-# Copyright (c) 2015 Intel Corporation
+# Copyright (c) 2011-2014, Wind River Systems, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,4 +22,4 @@ PLATFORM_CONFIG ?= basic_atom
 CONF_FILE = prj_$(ARCH).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
-include $(ZEPHYR_BASE)/samples/network/echo_server/Makefile.ipstack
+include $(ZEPHYR_BASE)/samples/net/test_15_4/Makefile.15_4
