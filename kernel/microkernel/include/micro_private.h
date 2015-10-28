@@ -24,6 +24,29 @@
 #include <kernel_main.h>
 #include <nano_private.h>
 
+/*
+ * The 2 least significant bits of the commands placed on the microkernel
+ * server's command stack identify the type of command; the remaining bits
+ * are the actual argument for the command. (This works because the actual
+ * arguments are always multiples of 4.)
+ */
+
+/* process the specified command packet (containing command & argument info) */
+#define KERNEL_CMD_PACKET_TYPE		(0u)
+
+/* give the specified event */
+#define KERNEL_CMD_EVENT_TYPE		(1u)
+
+/* give the specified semaphore */
+#define KERNEL_CMD_SEMAPHORE_TYPE	(2u)
+
+/* not used */
+#define KERNEL_CMD_RESERVED_TYPE	(3u)
+
+/* mask for isolating the 2 type bits */
+#define KERNEL_CMD_TYPE_MASK		(3u)
+
+
 #define KERNEL_ENTRY(A) _k_task_call(A)
 
 #define OBJ_INDEX(objId) ((uint16_t)objId)

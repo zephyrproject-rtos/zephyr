@@ -35,8 +35,6 @@
 #include <drivers/system_timer.h>
 
 extern const kernelfunc _k_server_dispatch_table[];
-extern kevent_t _k_event_list_start[];
-extern kevent_t _k_event_list_end[];
 
 /**
  *
@@ -100,23 +98,30 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 		pArgs = (struct k_args *)nano_fiber_stack_pop_wait(
 			&_k_command_stack); /* will schedule */
 		do {
-			kevent_t event;
-			event = (kevent_t)(pArgs);
-			if ((event >= (kevent_t)_k_event_list_start) &&
-			    (event <  (kevent_t)_k_event_list_end)) {
-#ifdef CONFIG_TASK_MONITOR
-				if (_k_monitor_mask & MON_EVENT) {
-					_k_task_monitor_args(pArgs);
-				}
-#endif
-				_k_do_event_signal(event);
-			} else {
+			int cmd_type = (int)pArgs & KERNEL_CMD_TYPE_MASK;
+
+			if (cmd_type == KERNEL_CMD_PACKET_TYPE) {
+
+				/* process command packet */
+
 #ifdef CONFIG_TASK_MONITOR
 				if (_k_monitor_mask & MON_KSERV) {
 					_k_task_monitor_args(pArgs);
 				}
 #endif
 				(*pArgs->Comm)(pArgs);
+			} else {
+
+				/* cmd_type == KERNEL_CMD_EVENT_TYPE */
+
+#ifdef CONFIG_TASK_MONITOR
+				if (_k_monitor_mask & MON_EVENT) {
+					_k_task_monitor_args(pArgs);
+				}
+#endif
+				kevent_t event = (int)pArgs & ~KERNEL_CMD_TYPE_MASK;
+
+				_k_do_event_signal(event);
 			}
 
 			/*

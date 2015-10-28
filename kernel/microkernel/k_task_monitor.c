@@ -35,9 +35,6 @@ static int K_monitor_wind;
 
 k_task_monitor_hook_t _k_task_switch_callback;
 
-extern kevent_t _k_event_list_start[];
-extern kevent_t _k_event_list_end[];
-
 void task_monitor_hook_set(k_task_monitor_hook_t func)
 {
 	_k_task_switch_callback = func;
@@ -73,10 +70,12 @@ void _k_task_monitor_args(struct k_args *A)
 	if (!_k_debug_halt)
 #endif
 	{
-		k_monitor_wptr->time = _sys_clock_cycle_get();
+		int cmd_type;
 
-		if (((kevent_t)A >= (kevent_t)_k_event_list_start) &&
-		    ((kevent_t)A <  (kevent_t)_k_event_list_end)) {
+		k_monitor_wptr->time = _sys_clock_cycle_get();
+		cmd_type = (int)A & KERNEL_CMD_TYPE_MASK;
+
+		if (cmd_type == KERNEL_CMD_EVENT_TYPE) {
 			k_monitor_wptr->data2 = MO_EVENT | (uint32_t)A;
 		} else {
 			k_monitor_wptr->data1 = _k_current_task->id;
