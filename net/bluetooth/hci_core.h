@@ -176,8 +176,6 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr);
 
 int bt_le_scan_update(void);
 
-/* Buffer handling */
-
 /** @def BT_BUF_MAX_DATA
  *  @brief Maximum amount of data that can fit in a buffer.
  *
@@ -188,19 +186,3 @@ int bt_le_scan_update(void);
  *  mark.
  */
 #define BT_BUF_MAX_DATA 74
-
-struct bt_hci_data {
-	/** The command OpCode that the buffer contains */
-	uint16_t opcode;
-
-	/** Used by bt_hci_cmd_send_sync. Initially contains the waiting
-	 *  semaphore, as the semaphore is given back contains the bt_buf
-	 *  for the return parameters.
-	 */
-	void *sync;
-
-};
-struct bt_acl_data {
-	/** ACL connection handle */
-	uint16_t handle;
-};

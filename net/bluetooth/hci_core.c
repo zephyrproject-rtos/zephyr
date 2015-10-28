@@ -54,6 +54,23 @@ struct bt_dev bt_dev;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
+struct bt_hci_data {
+	/** The command OpCode that the buffer contains */
+	uint16_t opcode;
+
+	/** Used by bt_hci_cmd_send_sync. Initially contains the waiting
+	 *  semaphore, as the semaphore is given back contains the bt_buf
+	 *  for the return parameters.
+	 */
+	void *sync;
+
+};
+
+struct bt_acl_data {
+	/** ACL connection handle */
+	uint16_t handle;
+};
+
 #define bt_hci(buf) ((struct bt_hci_data *)net_buf_user_data(buf))
 #define bt_acl(buf) ((struct bt_acl_data *)net_buf_user_data(buf))
 
