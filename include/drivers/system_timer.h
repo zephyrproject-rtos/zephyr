@@ -62,7 +62,7 @@ extern uint32_t _nano_get_earliest_deadline(void);
 
 #ifdef CONFIG_MICROKERNEL
 	#define _sys_clock_tick_announce() \
-		nano_isr_stack_push(&_k_command_stack, TICK_EVENT)
+		isr_event_send(TICK_EVENT)
 #else
 	extern uint32_t _sys_idle_elapsed_ticks;
 	#define _sys_clock_tick_announce() \
