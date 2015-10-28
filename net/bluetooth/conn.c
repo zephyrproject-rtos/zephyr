@@ -124,14 +124,14 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 				uint16_t ediv, const uint8_t *ltk, size_t len)
 {
 	struct bt_hci_cp_le_start_encryption *cp;
-	struct bt_buf *buf;
+	struct net_buf *buf;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = bt_buf_add(buf, sizeof(*cp));
+	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->rand = rand;
 	cp->ediv = ediv;
@@ -220,12 +220,12 @@ static void bt_conn_reset_rx_state(struct bt_conn *conn)
 		return;
 	}
 
-	bt_buf_put(conn->rx);
+	net_buf_unref(conn->rx);
 	conn->rx = NULL;
 	conn->rx_len = 0;
 }
 
-void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
+void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_l2cap_hdr *hdr;
 	uint16_t len;
@@ -259,29 +259,29 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 		if (!conn->rx_len) {
 			BT_ERR("Unexpected L2CAP continuation\n");
 			bt_conn_reset_rx_state(conn);
-			bt_buf_put(buf);
+			net_buf_unref(buf);
 			return;
 		}
 
 		if (buf->len > conn->rx_len) {
 			BT_ERR("L2CAP data overflow\n");
 			bt_conn_reset_rx_state(conn);
-			bt_buf_put(buf);
+			net_buf_unref(buf);
 			return;
 		}
 
 		BT_DBG("Cont, len %u rx_len %u\n", buf->len, conn->rx_len);
 
-		if (buf->len > bt_buf_tailroom(conn->rx)) {
+		if (buf->len > net_buf_tailroom(conn->rx)) {
 			BT_ERR("Not enough buffer space for L2CAP data\n");
 			bt_conn_reset_rx_state(conn);
-			bt_buf_put(buf);
+			net_buf_unref(buf);
 			return;
 		}
 
-		memcpy(bt_buf_add(conn->rx, buf->len), buf->data, buf->len);
+		memcpy(net_buf_add(conn->rx, buf->len), buf->data, buf->len);
 		conn->rx_len -= buf->len;
-		bt_buf_put(buf);
+		net_buf_unref(buf);
 
 		if (conn->rx_len) {
 			return;
@@ -295,7 +295,7 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 	default:
 		BT_ERR("Unexpected ACL flags (0x%02x)\n", flags);
 		bt_conn_reset_rx_state(conn);
-		bt_buf_put(buf);
+		net_buf_unref(buf);
 		return;
 	}
 
@@ -304,7 +304,7 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 
 	if (sizeof(*hdr) + len != buf->len) {
 		BT_ERR("ACL len mismatch (%u != %u)\n", len, buf->len);
-		bt_buf_put(buf);
+		net_buf_unref(buf);
 		return;
 	}
 
@@ -313,7 +313,7 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 	bt_l2cap_recv(conn, buf);
 }
 
-void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
+void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	uint16_t len, remaining = buf->len;
 	struct bt_hci_acl_hdr *hdr;
@@ -331,12 +331,12 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 
 	len = min(remaining, bt_dev.le_mtu);
 
-	hdr = bt_buf_push(buf, sizeof(*hdr));
+	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->handle = sys_cpu_to_le16(conn->handle);
 	hdr->len = sys_cpu_to_le16(len);
 
 	buf->len -= remaining - len;
-	ptr = bt_buf_tail(buf);
+	ptr = net_buf_tail(buf);
 
 	nano_fifo_put(&frags, buf);
 	remaining -= len;
@@ -347,10 +347,10 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 		len = min(remaining, bt_dev.le_mtu);
 
 		/* Copy from original buffer */
-		memcpy(bt_buf_add(buf, len), ptr, len);
+		memcpy(net_buf_add(buf, len), ptr, len);
 		ptr += len;
 
-		hdr = bt_buf_push(buf, sizeof(*hdr));
+		hdr = net_buf_push(buf, sizeof(*hdr));
 		hdr->handle = sys_cpu_to_le16(conn->handle | (1 << 12));
 		hdr->len = sys_cpu_to_le16(len);
 
@@ -366,7 +366,7 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 static void conn_tx_fiber(int arg1, int arg2)
 {
 	struct bt_conn *conn = (struct bt_conn *)arg1;
-	struct bt_buf *buf;
+	struct net_buf *buf;
 
 	BT_DBG("Started for handle %u\n", conn->handle);
 
@@ -387,7 +387,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 		buf = nano_fifo_get_wait(&conn->tx_queue);
 		if (conn->state != BT_CONN_CONNECTED) {
 			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
-			bt_buf_put(buf);
+			net_buf_unref(buf);
 			break;
 		}
 
@@ -399,14 +399,14 @@ static void conn_tx_fiber(int arg1, int arg2)
 			conn->pending_pkts++;
 		}
 
-		bt_buf_put(buf);
+		net_buf_unref(buf);
 	}
 
 	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);
 
 	/* Give back any allocated buffers */
 	while ((buf = nano_fifo_get(&conn->tx_queue))) {
-		bt_buf_put(buf);
+		net_buf_unref(buf);
 	}
 
 	/* Return any unacknowledged packets */
@@ -639,7 +639,7 @@ void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)
 
 static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_buf *buf;
+	struct net_buf *buf;
 	struct bt_hci_cp_disconnect *disconn;
 	int err;
 
@@ -648,7 +648,7 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 		return -ENOBUFS;
 	}
 
-	disconn = bt_buf_add(buf, sizeof(*disconn));
+	disconn = net_buf_add(buf, sizeof(*disconn));
 	disconn->handle = sys_cpu_to_le16(conn->handle);
 	disconn->reason = reason;
 
@@ -741,7 +741,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 			   uint16_t latency, uint16_t timeout)
 {
 	struct hci_cp_le_conn_update *conn_update;
-	struct bt_buf *buf;
+	struct net_buf *buf;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_UPDATE,
 				sizeof(*conn_update));
@@ -749,7 +749,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 		return -ENOBUFS;
 	}
 
-	conn_update = bt_buf_add(buf, sizeof(*conn_update));
+	conn_update = net_buf_add(buf, sizeof(*conn_update));
 	memset(conn_update, 0, sizeof(*conn_update));
 	conn_update->handle = sys_cpu_to_le16(conn->handle);
 	conn_update->conn_interval_min = sys_cpu_to_le16(min);

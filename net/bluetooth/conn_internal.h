@@ -50,7 +50,7 @@ struct bt_conn {
 #endif /* CONFIG_BLUETOOTH_SMP */
 
 	uint16_t		rx_len;
-	struct bt_buf		*rx;
+	struct net_buf		*rx;
 
 	/* Queue for outgoing ACL data */
 	struct nano_fifo	tx_queue;
@@ -79,10 +79,10 @@ struct bt_conn {
 };
 
 /* Process incoming data for a connection */
-void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags);
+void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 
 /* Send data over a connection */
-void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf);
+void bt_conn_send(struct bt_conn *conn, struct net_buf *buf);
 
 /* Add a new connection */
 struct bt_conn *bt_conn_add(const bt_addr_le_t *peer);
