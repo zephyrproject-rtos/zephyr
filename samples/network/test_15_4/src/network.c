@@ -282,9 +282,6 @@ void taskB(void)
 char fiberStack_sending[STACKSIZE];
 char fiberStack_receiving[STACKSIZE];
 
-struct nano_sem nanoSemFiberRecv;
-struct nano_sem nanoSemFiberSent;
-
 void fiber_receiving(void)
 {
 	struct nano_timer timer;
@@ -337,9 +334,6 @@ void main(void)
 	init_test();
 
 	set_routes();
-
-	nano_sem_init(&nanoSemFiberSent);
-	nano_sem_init(&nanoSemFiberRecv);
 
 	task_fiber_start(&fiberStack_receiving[0], STACKSIZE,
 			 (nano_fiber_entry_t) fiber_receiving, 0, 0, 7, 0);
