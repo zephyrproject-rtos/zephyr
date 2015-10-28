@@ -218,28 +218,27 @@ static void uart_out(struct device *dev, const uint8_t *data, int size)
 
 static int bt_uart_send(struct net_buf *buf)
 {
-	uint8_t *h4_type, *buf_type;
+	uint8_t *type;
 
 	if (net_buf_headroom(buf) < H4_HEADER_SIZE) {
 		BT_ERR("Not enough headroom in buffer\n");
 		return -EINVAL;
 	}
 
-	h4_type = net_buf_push(buf, 1);
-	buf_type = net_buf_user_data(buf);
+	type = net_buf_push(buf, 1);
 
-	switch (*buf_type) {
+	switch (bt_type(buf)) {
 	case BT_CMD:
-		*h4_type = H4_CMD;
+		*type = H4_CMD;
 		break;
 	case BT_ACL_OUT:
-		*h4_type = H4_ACL;
+		*type = H4_ACL;
 		break;
 	case BT_EVT:
-		*h4_type = H4_EVT;
+		*type = H4_EVT;
 		break;
 	default:
-		BT_ERR("Unknown buf type %u\n", *buf_type);
+		BT_ERR("Unknown buf type %u\n", bt_type(buf));
 		return -EINVAL;
 	}
 

@@ -68,6 +68,10 @@ struct bt_acl_data {
 	uint16_t handle;
 };
 
+#define bt_hci(buf) ((struct bt_hci_data *)net_buf_user_data(buf))
+#define bt_acl(buf) ((struct bt_acl_data *)net_buf_user_data(buf))
+#define bt_type(buf) (*((uint8_t *)net_buf_user_data(buf)))
+
 /** @brief Get a new buffer from the pool.
  *
  *  Get buffer from the available buffers pool with specified type and

@@ -89,7 +89,6 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr)
 struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 {
 	struct bt_hci_cmd_hdr *hdr;
-	struct bt_hci_data *hci;
 	struct net_buf *buf;
 
 	BT_DBG("opcode %x param_len %u\n", opcode, param_len);
@@ -102,9 +101,8 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("buf %p\n", buf);
 
-	hci = net_buf_user_data(buf);
-	hci->opcode = opcode;
-	hci->sync = NULL;
+	bt_hci(buf)->opcode = opcode;
+	bt_hci(buf)->sync = NULL;
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
@@ -149,7 +147,6 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
 	struct nano_sem sync_sem;
-	struct bt_hci_data *hci;
 	int err;
 
 	/* This function cannot be called from the rx fiber since it
@@ -173,24 +170,23 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	BT_DBG("opcode %x len %u\n", opcode, buf->len);
 
 	nano_sem_init(&sync_sem);
-	hci = net_buf_user_data(buf);
-	hci->sync = &sync_sem;
+	bt_hci(buf)->sync = &sync_sem;
 
 	nano_fifo_put(&bt_dev.cmd_tx_queue, buf);
 
 	nano_sem_take_wait(&sync_sem);
 
 	/* Indicate failure if we failed to get the return parameters */
-	if (!hci->sync) {
+	if (!bt_hci(buf)->sync) {
 		err = -EIO;
 	} else {
 		err = 0;
 	}
 
 	if (rsp) {
-		*rsp = hci->sync;
-	} else if (hci->sync) {
-		net_buf_unref(hci->sync);
+		*rsp = bt_hci(buf)->sync;
+	} else if (bt_hci(buf)->sync) {
+		net_buf_unref(bt_hci(buf)->sync);
 	}
 
 	net_buf_unref(buf);
@@ -255,7 +251,6 @@ static void hci_acl(struct net_buf *buf)
 {
 	struct bt_hci_acl_hdr *hdr = (void *)buf->data;
 	uint16_t handle, len = sys_le16_to_cpu(hdr->len);
-	struct bt_acl_data *acl;
 	struct bt_conn *conn;
 	uint8_t flags;
 
@@ -264,12 +259,11 @@ static void hci_acl(struct net_buf *buf)
 	handle = sys_le16_to_cpu(hdr->handle);
 	flags = (handle >> 12);
 
-	acl = net_buf_user_data(buf);
-	acl->handle = bt_acl_handle(handle);
+	bt_acl(buf)->handle = bt_acl_handle(handle);
 
 	net_buf_pull(buf, sizeof(*hdr));
 
-	BT_DBG("handle %u len %u flags %u\n", acl->handle, len, flags);
+	BT_DBG("handle %u len %u flags %u\n", bt_acl(buf)->handle, len, flags);
 
 	if (buf->len != len) {
 		BT_ERR("ACL data length mismatch (%u != %u)\n", buf->len, len);
@@ -277,9 +271,10 @@ static void hci_acl(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_handle(acl->handle);
+	conn = bt_conn_lookup_handle(bt_acl(buf)->handle);
 	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u\n", acl->handle);
+		BT_ERR("Unable to find conn for handle %u\n",
+		       bt_acl(buf)->handle);
 		net_buf_unref(buf);
 		return;
 	}
@@ -866,15 +861,13 @@ static void hci_reset_complete(struct net_buf *buf)
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 {
-	struct bt_hci_data *hci;
 	struct net_buf *sent = bt_dev.sent_cmd;
 
 	if (!sent) {
 		return;
 	}
 
-	hci = net_buf_user_data(sent);
-	if (hci->opcode != opcode) {
+	if (bt_hci(sent)->opcode != opcode) {
 		BT_ERR("Unexpected completion of opcode 0x%04x\n", opcode);
 		return;
 	}
@@ -882,13 +875,13 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	bt_dev.sent_cmd = NULL;
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
-	if (hci->sync) {
-		struct nano_sem *sem = hci->sync;
+	if (bt_hci(sent)->sync) {
+		struct nano_sem *sem = bt_hci(sent)->sync;
 
 		if (status) {
-			hci->sync = NULL;
+			bt_hci(sent)->sync = NULL;
 		} else {
-			hci->sync = net_buf_ref(buf);
+			bt_hci(sent)->sync = net_buf_ref(buf);
 		}
 
 		nano_fiber_sem_give(sem);
@@ -1173,14 +1166,8 @@ static void hci_cmd_tx_fiber(void)
 			bt_dev.sent_cmd = NULL;
 		}
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
-		{
-			struct bt_hci_data *hci = net_buf_user_data(buf);
-
-			BT_DBG("Sending command %x (buf %p) to driver\n",
-			       hci->opcode, buf);
-		}
-#endif /* CONFIG_BLUETOOTH_DEBUG_HCI_CORE */
+		BT_DBG("Sending command %x (buf %p) to driver\n",
+		       bt_hci(buf)->opcode, buf);
 
 		err = drv->send(buf);
 		if (err) {
@@ -1206,17 +1193,14 @@ static void rx_prio_fiber(void)
 
 	while (1) {
 		struct bt_hci_evt_hdr *hdr;
-		uint8_t *type;
 
 		BT_DBG("calling fifo_get_wait\n");
 		buf = nano_fifo_get_wait(&bt_dev.rx_prio_queue);
 
-		type = net_buf_user_data(buf);
+		BT_DBG("buf %p type %u len %u\n", buf, bt_type(buf), buf->len);
 
-		BT_DBG("buf %p type %u len %u\n", buf, *type, buf->len);
-
-		if (*type != BT_EVT) {
-			BT_ERR("Unknown buf type %u\n", *type);
+		if (bt_type(buf) != BT_EVT) {
+			BT_ERR("Unknown buf type %u\n", bt_type(buf));
 			net_buf_unref(buf);
 			continue;
 		}
@@ -1449,18 +1433,17 @@ static int hci_init(void)
 
 void bt_recv(struct net_buf *buf)
 {
-	uint8_t *type = net_buf_user_data(buf);
 	struct bt_hci_evt_hdr *hdr;
 
 	BT_DBG("buf %p len %u\n", buf, buf->len);
 
-	if (*type == BT_ACL_IN) {
+	if (bt_type(buf) == BT_ACL_IN) {
 		nano_fifo_put(&bt_dev.rx_queue, buf);
 		return;
 	}
 
-	if (*type != BT_EVT) {
-		BT_ERR("Invalid buf type %u\n", *type);
+	if (bt_type(buf) != BT_EVT) {
+		BT_ERR("Invalid buf type %u\n", bt_type(buf));
 		net_buf_unref(buf);
 		return;
 	}
@@ -1532,16 +1515,12 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 	}
 
 	while (1) {
-		uint8_t *type;
-
 		BT_DBG("calling fifo_get_wait\n");
 		buf = nano_fifo_get_wait(&bt_dev.rx_queue);
 
-		type = net_buf_user_data(buf);
+		BT_DBG("buf %p type %u len %u\n", buf, bt_type(buf), buf->len);
 
-		BT_DBG("buf %p type %u len %u\n", buf, *type, buf->len);
-
-		switch (*type) {
+		switch (bt_type(buf)) {
 #if defined(CONFIG_BLUETOOTH_CONN)
 		case BT_ACL_IN:
 			hci_acl(buf);
@@ -1551,7 +1530,7 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 			hci_event(buf);
 			break;
 		default:
-			BT_ERR("Unknown buf type %u\n", *type);
+			BT_ERR("Unknown buf type %u\n", bt_type(buf));
 			net_buf_unref(buf);
 			break;
 		}
