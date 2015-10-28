@@ -61,7 +61,7 @@ static void report_completed_packet(struct net_buf *buf)
 		return;
 	}
 
-	cp = bt_buf_add(buf, sizeof(*cp));
+	cp = net_buf_add(buf, sizeof(*cp));
 	cp->num_handles = sys_cpu_to_le16(1);
 
 	hc = net_buf_add(buf, sizeof(*hc));
@@ -80,7 +80,7 @@ static NET_BUF_POOL(acl_out_pool, BT_BUF_ACL_OUT_MAX, BT_BUF_MAX_DATA,
 		    &avail_acl_out, NULL, sizeof(struct bt_acl_data));
 #endif /* CONFIG_BLUETOOTH_CONN */
 
-struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
+struct net_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 {
 	struct net_buf *buf;
 
@@ -107,61 +107,6 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 	}
 
 	return buf;
-}
-
-void bt_buf_put(struct bt_buf *buf)
-{
-	net_buf_unref(buf);
-}
-
-struct bt_buf *bt_buf_hold(struct bt_buf *buf)
-{
-	return net_buf_ref(buf);
-}
-
-struct bt_buf *bt_buf_clone(struct bt_buf *buf)
-{
-	return net_buf_clone(buf);
-}
-
-void *bt_buf_add(struct bt_buf *buf, size_t len)
-{
-	return net_buf_add(buf, len);
-}
-
-void bt_buf_add_le16(struct bt_buf *buf, uint16_t value)
-{
-	net_buf_add_le16(buf, value);
-}
-
-void *bt_buf_push(struct bt_buf *buf, size_t len)
-{
-	return net_buf_push(buf, len);
-}
-
-void *bt_buf_pull(struct bt_buf *buf, size_t len)
-{
-	return net_buf_pull(buf, len);
-}
-
-uint16_t bt_buf_pull_le16(struct bt_buf *buf)
-{
-	return net_buf_pull_le16(buf);
-}
-
-size_t bt_buf_headroom(struct bt_buf *buf)
-{
-	return net_buf_headroom(buf);
-}
-
-size_t bt_buf_tailroom(struct bt_buf *buf)
-{
-	return net_buf_tailroom(buf);
-}
-
-void *bt_buf_tail(struct bt_buf *buf)
-{
-	return net_buf_tail(buf);
 }
 
 int bt_buf_init(void)
