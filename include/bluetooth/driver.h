@@ -22,6 +22,13 @@
 
 #include <net/buf.h>
 
+enum bt_buf_type {
+	BT_CMD,			/** HCI command */
+	BT_EVT,			/** HCI event */
+	BT_ACL_OUT,		/** Outgoing ACL data */
+	BT_ACL_IN,		/** Incoming ACL data */
+};
+
 /* Allocate a buffer for an HCI event */
 struct net_buf *bt_buf_get_evt(void);
 

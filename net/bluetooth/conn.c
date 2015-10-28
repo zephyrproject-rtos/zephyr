@@ -508,15 +508,17 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		notify_connected(conn);
 		break;
 	case BT_CONN_DISCONNECTED:
-		/* Send dummy buffer to wake up and stop the tx fiber
-		 * for states where it was running
+		/* Notify disconnection and queue a dummy buffer to wake
+		 * up and stop the tx fiber for states where it was
+		 * running.
 		 */
 		if (old_state == BT_CONN_CONNECTED ||
 		    old_state == BT_CONN_DISCONNECT) {
 			bt_l2cap_disconnected(conn);
 			notify_disconnected(conn);
 
-			nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_DUMMY, 0));
+			nano_fifo_put(&conn->tx_queue,
+				      bt_l2cap_create_pdu(conn));
 		}
 
 		/* Release the reference we took for the very first

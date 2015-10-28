@@ -192,14 +192,6 @@ int bt_le_scan_update(void);
 #define BT_BUF_ACL_IN_MAX  7
 #define BT_BUF_ACL_OUT_MAX 7
 
-enum bt_buf_type {
-	BT_CMD,			/** HCI command */
-	BT_EVT,			/** HCI event */
-	BT_ACL_OUT,		/** Outgoing ACL data */
-	BT_ACL_IN,		/** Incoming ACL data */
-	BT_DUMMY = BT_CMD,	/** Only used for waking up fibers */
-};
-
 struct bt_hci_data {
 	/** Type of data contained in a buffer (bt_buf_type) */
 	uint8_t type;
