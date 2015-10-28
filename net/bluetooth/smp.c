@@ -77,7 +77,8 @@ enum {
 	SMP_FLAG_TIMEOUT,	/* if SMP timeout occurred */
 	SMP_FLAG_SC,		/* if LE Secure Connections is used */
 	SMP_FLAG_PKEY_PENDING,	/* if waiting for P256 Public Key */
-	SMP_FLAG_DHKEY_PENDING,	/* if waiting for DHKey */
+	SMP_FLAG_DHKEY_PENDING,	/* if waiting for local DHKey */
+	SMP_FLAG_DHKEY_SEND,	/* if should send DHKey Check after generate */
 };
 
 /* SMP channel specific context */
@@ -117,6 +118,15 @@ struct bt_smp {
 
 	/* Remote Public Key for LE SC */
 	uint8_t			pkey[64];
+
+	/* DHKey */
+	uint8_t			dhkey[32];
+
+	/* DHKey check (local or remote depends on role) */
+	uint8_t			e[16];
+
+	/* MacKey */
+	uint8_t			mackey[16];
 
 	/* Local key distribution */
 	uint8_t			local_dist;
@@ -965,6 +975,67 @@ static int smp_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x,
 	return err;
 }
 
+static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
+		  const bt_addr_le_t *a1, const bt_addr_le_t *a2, uint8_t *mackey,
+		  uint8_t *ltk)
+{
+	uint8_t salt[16] = { 0x6c, 0x88, 0x83, 0x91, 0xaa, 0xf5, 0xa5, 0x38,
+			     0x60, 0x37, 0x0b, 0xdb, 0x5a, 0x60, 0x83, 0xbe };
+	uint8_t m[53] = { 0x00, /* counter */
+			  0x62, 0x74, 0x6c, 0x65, /* keyID */
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /*n1*/
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /*2*/
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* a1 */
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* a2 */
+			  0x01, 0x00 /* length */ };
+	uint8_t t[16], ws[32];
+	int err;
+
+	BT_DBG("w %s\n", h(w, 32));
+	BT_DBG("n1 %s n2 %s\n", h(n1, 16), h(n2, 16));
+
+	swap_buf(w, ws, 32);
+
+	err = bt_smp_aes_cmac(salt, ws, 32, t);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("t %s\n", h(t, 16));
+
+	swap_buf(n1, m + 5, 16);
+	swap_buf(n2, m + 21, 16);
+	m[37] = a1->type;
+	swap_buf(a1->val, m + 38, 6);
+	m[44] = a2->type;
+	swap_buf(a2->val, m + 45, 6);
+
+	err = bt_smp_aes_cmac(t, m, sizeof(m), mackey);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("mackey %1s\n", h(mackey, 16));
+
+	swap_in_place(mackey, 16);
+
+	/* counter for ltk is 1 */
+	m[0] = 0x01;
+
+	err = bt_smp_aes_cmac(t, m, sizeof(m), ltk);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("ltk %s\n", h(ltk, 16));
+
+	swap_in_place(ltk, 16);
+
+	return 0;
+}
+
 static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
@@ -1215,6 +1286,111 @@ static uint8_t get_encryption_key_size(struct bt_smp *smp)
 	return min(req->max_key_size, rsp->max_key_size);
 }
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+static uint8_t sc_smp_send_dhkey_check(struct bt_smp *smp, const uint8_t *e)
+{
+	struct bt_smp_dhkey_check *req;
+	struct net_buf *buf;
+
+	BT_DBG("\n");
+
+	buf = bt_smp_create_pdu(smp->chan.conn, BT_SMP_DHKEY_CHECK,
+				sizeof(*req));
+	if (!buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	req = net_buf_add(buf, sizeof(*req));
+	memcpy(req->e, e, sizeof(req->e));
+
+	bt_l2cap_send(smp->chan.conn, BT_L2CAP_CID_SMP, buf);
+
+	return 0;
+}
+#endif
+
+static uint8_t smp_sc_calculate_ltk_mac_dhcheck(struct bt_smp *smp, uint8_t *e)
+{
+	BT_DBG("\n");
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+		/* calculate LTK and mackey */
+		if (smp_f5(smp->dhkey, smp->prnd, smp->rrnd,
+			   &smp->chan.conn->le.init_addr,
+			   &smp->chan.conn->le.resp_addr, smp->mackey,
+			   smp->tk)) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+		/* TODO dhkey check */
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	/* calculate LTK and mackey */
+	if (smp_f5(smp->dhkey, smp->rrnd, smp->prnd,
+		   &smp->chan.conn->le.init_addr,
+		   &smp->chan.conn->le.resp_addr, smp->mackey,
+		   smp->tk)) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	/* TODO dhkey check */
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+	return BT_SMP_ERR_UNSPECIFIED;
+}
+
+void bt_smp_dhkey_ready(const uint8_t *dhkey)
+{
+	struct bt_smp *smp = NULL;
+	int i;
+
+	BT_DBG("%p\n", dhkey);
+
+	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
+		if (atomic_test_and_clear_bit(&bt_smp_pool[i].flags,
+					      SMP_FLAG_DHKEY_PENDING)) {
+			smp = &bt_smp_pool[i];
+			break;
+		}
+	}
+
+	if (!smp) {
+		return;
+	}
+
+	if (!dhkey && atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
+		send_err_rsp(smp->chan.conn, BT_SMP_ERR_DHKEY_CHECK_FAILED);
+		return;
+	}
+
+	memcpy(smp->dhkey, dhkey, 32);
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+		if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
+			uint8_t e[16];
+
+			/* calculate mac, ltk and local dhcheck */
+			smp_sc_calculate_ltk_mac_dhcheck(smp, e);
+
+			atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+			sc_smp_send_dhkey_check(smp, e);
+		}
+
+		return;
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
+		uint8_t e[16];
+
+		/* calculate mac, ltk and local dhcheck */
+		smp_sc_calculate_ltk_mac_dhcheck(smp, e);
+	}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+}
 static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
 	BT_DBG("\n");
@@ -1227,6 +1403,7 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
 		uint8_t cfm[16];
+		uint8_t e[16];
 		int err;
 
 		err = smp_f4(smp->pkey, bt_dev.pkey, smp->rrnd, 0, cfm);
@@ -1240,8 +1417,19 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_CONFIRM_FAILED;
 		}
 
+		/* wait for DHKey being generated */
+		if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING)) {
+			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+			return 0;
+		}
+
+		/* calculate mac, ltk and local dhcheck */
+		if (smp_sc_calculate_ltk_mac_dhcheck(smp, e)) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
-		return BT_SMP_ERR_UNSPECIFIED;
+		return sc_smp_send_dhkey_check(smp, e);
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
@@ -1400,6 +1588,17 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 	 */
 	keys->type = get_keys_type(smp->method);
 	keys->enc_size = get_encryption_key_size(smp);
+
+	/*
+	 * store LTK if LE SC is used, this is safe since LE SC is mutually
+	 * exclusive with legacy pairing
+	 */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		bt_keys_add_type(keys, BT_KEYS_LTK_P256);
+		memcpy(keys->ltk.val, smp->tk, sizeof(keys->ltk.val));
+		keys->slave_ltk.rand = 0;
+		keys->slave_ltk.ediv = 0;
+	}
 
 	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
 		struct bt_smp_encrypt_info *info;

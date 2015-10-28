@@ -42,6 +42,10 @@
 #include "l2cap_internal.h"
 #endif /* CONFIG_BLUETOOTH_CONN */
 
+#if defined(CONFIG_BLUETOOTH_SMP)
+#include "smp.h"
+#endif /* CONFIG_BLUETOOTH_SMP */
+
 #if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
@@ -925,6 +929,20 @@ static void le_pkey_complete(struct net_buf *buf)
 
 	memcpy(bt_dev.pkey, evt->key, sizeof(bt_dev.pkey));
 }
+
+static void le_dhkey_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_generate_dhkey_complete *evt = (void *)buf->data;
+
+	BT_DBG("status: 0x%x\n", evt->status);
+
+	if (evt->status) {
+		bt_smp_dhkey_ready(NULL);
+		return;
+	}
+
+	bt_smp_dhkey_ready(evt->dhkey);
+}
 #endif
 #endif /* CONFIG_BLUETOOTH_SMP */
 
@@ -1184,6 +1202,9 @@ static void hci_le_meta_event(struct net_buf *buf)
 #if !defined(CONFIG_TINYCRYPT_ECC)
 	case BT_HCI_EVT_LE_P256_PUBLIC_KEY_COMPLETE:
 		le_pkey_complete(buf);
+		break;
+	case BT_HCI_EVT_LE_GENERATE_DHKEY_COMPLETE:
+		le_dhkey_complete(buf);
 		break;
 #endif
 #endif /* CONFIG_BLUETOOTH_SMP */
