@@ -210,7 +210,7 @@ static struct net_buf *net_buf_get_reserve(enum net_buf_type type,
 	}
 
 	buf->data = buf->buf + reserve_head;
-	buf->len = 0;
+	buf->datalen = 0;
 	buf->type = type;
 
 	NET_BUF_CHECK_IF_IN_USE(buf);
