@@ -20,7 +20,7 @@ MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 PLATFORM_CONFIG ?= basic_atom
 CONF_FILE = prj_$(ARCH).conf
-SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/test_15_4/src/
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/test_15_4/src/
 
 include $(ZEPHYR_BASE)/Makefile.inc
-include $(ZEPHYR_BASE)/samples/network/test_15_4/Makefile.15_4
+include $(ZEPHYR_BASE)/samples/net/test_15_4/Makefile.15_4

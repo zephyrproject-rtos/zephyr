@@ -1,4 +1,4 @@
-# Makefile - Simple network listener Makefile for microkernel
+# Makefile - coap server that is used in testing
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -18,9 +18,10 @@
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
-PLATFORM_CONFIG ?= basic_atom
+PLATFORM_CONFIG ?= basic_minuteia
 CONF_FILE = prj_$(ARCH).conf
-SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/listener/src/
-QEMU_EXTRA_FLAGS = -serial unix:/tmp/slip.sock
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/coap_server/src/
+
+QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
 
 include $(ZEPHYR_BASE)/Makefile.inc

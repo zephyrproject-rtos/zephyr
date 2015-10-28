@@ -1,4 +1,4 @@
-# Makefile - dtls server that is used in testing
+# Makefile - dtls client that is used in testing
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -20,7 +20,7 @@ MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 PLATFORM_CONFIG ?= basic_minuteia
 CONF_FILE = prj_$(ARCH).conf
-SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/dtls_server/src/
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/dtls_client/src/
 
 QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
 

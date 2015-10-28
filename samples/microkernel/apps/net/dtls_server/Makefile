@@ -1,4 +1,4 @@
-# Makefile - coap observe client test application
+# Makefile - dtls server that is used in testing
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -20,7 +20,7 @@ MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 PLATFORM_CONFIG ?= basic_minuteia
 CONF_FILE = prj_$(ARCH).conf
-SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/coap_observe_client/src/
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/dtls_server/src/
 
 QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
 

@@ -21,7 +21,7 @@ MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 PLATFORM_CONFIG ?= basic_atom
 CONF_FILE = prj_$(ARCH)_$(NET_INTF).conf
-SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/echo_server/src/
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/echo_server/src/
 QEMU_EXTRA_FLAGS = -serial unix:/tmp/slip.sock
 
 include $(ZEPHYR_BASE)/Makefile.inc
