@@ -104,14 +104,6 @@ config	BLUETOOTH_DEBUG_HCI_CORE
 	  This option enables debug support for Bluetooth HCI
 	  core
 
-config	BLUETOOTH_DEBUG_BUF
-	bool
-	prompt "Bluetooth buffers debug"
-	depends on BLUETOOTH_DEBUG
-	default n
-	help
-	  This option enables debug support for Bluetooth buffers.
-
 config	BLUETOOTH_DEBUG_CONN
 	bool
 	prompt "Bluetooth connection debug"

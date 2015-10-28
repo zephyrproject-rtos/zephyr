@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <bluetooth/buf.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
 

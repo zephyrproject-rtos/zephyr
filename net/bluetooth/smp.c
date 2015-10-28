@@ -28,6 +28,7 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 
+#include <net/buf.h>
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>

@@ -1,5 +1,4 @@
-obj-y = buf.o \
-	hci_core.o
+obj-y = hci_core.o
 
 ifeq ($(CONFIG_BLUETOOTH_CONN),y)
 	obj-y += conn.o \
