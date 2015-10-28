@@ -1,4 +1,4 @@
-# Makefile - Network echo server microkernel
+# Makefile - Simple loopback network app Makefile for nanokernel
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -20,7 +20,6 @@ MDEF_FILE = prj.mdef
 KERNEL_TYPE = nano
 PLATFORM_CONFIG ?= basic_atom
 CONF_FILE = prj_$(ARCH).conf
-SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/echo_server/src/
-QEMU_EXTRA_FLAGS = -serial unix:/tmp/slip.sock
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/loopback_test/src/
 
 include $(ZEPHYR_BASE)/Makefile.inc

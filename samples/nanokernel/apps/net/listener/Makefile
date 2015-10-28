@@ -20,6 +20,6 @@ MDEF_FILE = prj.mdef
 KERNEL_TYPE = nano
 PLATFORM_CONFIG ?= basic_atom
 CONF_FILE = prj_$(ARCH).conf
-SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/listener/src/
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/listener/src/
 
 include $(ZEPHYR_BASE)/Makefile.inc
