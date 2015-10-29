@@ -25,7 +25,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 
-/* GATT attribute permission bitfield values */
+/* GATT attribute permission bit field values */
 
 /** @def BT_GATT_PERM_READ
  *  @brief Attribute read permission.
@@ -70,7 +70,7 @@
  */
 #define BT_GATT_FLUSH_DISCARD			0x00
 /** @def BT_GATT_FLUSH_DISCARD
- *  @brief Attribute flush syncronize flag.
+ *  @brief Attribute flush synchronize flag.
  */
 #define BT_GATT_FLUSH_SYNC			0x01
 
@@ -119,7 +119,7 @@ struct bt_gatt_include {
 	uint16_t		end_handle;
 };
 
-/* Characteristic Properties Bitfield values */
+/* Characteristic Properties Bit field values */
 
 /** @def BT_GATT_CHRC_BROADCAST
  *  @brief Characteristic broadcast property.
@@ -181,7 +181,7 @@ struct bt_gatt_chrc {
 	uint8_t			properties;
 };
 
-/* Characteristic Extended Properties Bitfield values */
+/* Characteristic Extended Properties Bit field values */
 #define BT_GATT_CEP_RELIABLE_WRITE		0x0001
 #define BT_GATT_CEP_WRITABLE_AUX		0x0002
 
@@ -479,7 +479,6 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *
  *  Helper macro to declare a CCC attribute.
  *
- *  @param _value_handle Characteristic attribute value handle.
  *  @param _cfg Initial configuration.
  *  @param _cfg_changed Configuration changed callback.
  */
@@ -519,7 +518,6 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  *
  *  Helper macro to declare a CEP attribute.
  *
- *  @param _handle Descriptor attribute handle.
  *  @param _value Descriptor attribute value.
  */
 #define BT_GATT_CEP(_value)						\
@@ -536,7 +534,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  *
  *  Helper macro to declare a descriptor attribute.
  *
- *  @param _value Descriptor attribute value.
+ *  @param _uuid Descriptor attribute uuid.
  *  @param _perm Descriptor attribute access permissions.
  *  @param _read Descriptor attribute read callback.
  *  @param _write Descriptor attribute write callback.
@@ -556,7 +554,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  *
  *  Helper macro to declare a descriptor attribute.
  *
- *  @param _value Descriptor attribute value.
+ *  @param _uuid Descriptor attribute uuid.
  *  @param _perm Descriptor attribute access permissions.
  *  @param _read Descriptor attribute read callback.
  *  @param _write Descriptor attribute write callback.
@@ -604,6 +602,7 @@ typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
  * NOTE: Shall only be used once per connection.
  *
  *  @param conn Connection object.
+ *  @param func Exchange MTU Response callback function.
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func);
 
@@ -688,7 +687,7 @@ int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 		  const void *data, uint16_t length, bt_gatt_rsp_func_t func);
 
-/** @brief Write Attribute Value by handle without reponse
+/** @brief Write Attribute Value by handle without response
  *
  * This procedure write the attribute value without requiring an
  * acknowledgement that the write was successfully performed
