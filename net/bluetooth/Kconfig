@@ -17,8 +17,7 @@
 #
 
 menuconfig BLUETOOTH
-	bool
-	prompt "Bluetooth LE support"
+	bool "Bluetooth LE support"
 	default n
 	select NANO_TIMEOUTS
 	select NET_BUF
@@ -41,8 +40,7 @@ config BLUETOOTH_CENTRAL
 	select BLUETOOTH_CONN
 
 config	BLUETOOTH_DEBUG
-	bool
-	prompt "Bluetooth LE debug support"
+	bool "Bluetooth LE debug support"
 	select STDOUT_CONSOLE
 	default n
 	help
@@ -50,8 +48,7 @@ config	BLUETOOTH_DEBUG
 	  serial console.
 
 config	BLUETOOTH_DEBUG_HCI_CORE
-	bool
-	prompt "Bluetooth HCI core debug"
+	bool "Bluetooth HCI core debug"
 	depends on BLUETOOTH_DEBUG
 	default n
 	help
@@ -60,18 +57,15 @@ config	BLUETOOTH_DEBUG_HCI_CORE
 
 if BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
 config BLUETOOTH_SMP
-	bool
-	prompt "Security Manager Protocol support"
+	bool "Security Manager Protocol support"
 	default n
 
 config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
-	bool
-	prompt "L2CAP Dynamic Channel support"
+	bool "L2CAP Dynamic Channel support"
 	default n
 
 config BLUETOOTH_SIGNING
-	bool
-	prompt "Data signing support"
+	bool "Data signing support"
 	default n
 	depends on BLUETOOTH_SMP
 	help
@@ -79,13 +73,11 @@ config BLUETOOTH_SIGNING
 	  authenticated data in an unencrypted connection.
 
 config BLUETOOTH_GATT_CLIENT
-	bool
-	prompt "GATT client support"
+	bool "GATT client support"
 	default n
 
 config	BLUETOOTH_MAX_CONN
-	int
-	prompt "Maximum number of simultaneous connections"
+	int "Maximum number of simultaneous connections"
 	depends on BLUETOOTH_CONN
 	default 1
 	range 1 16
@@ -94,8 +86,7 @@ config	BLUETOOTH_MAX_CONN
 	  supported. The minimum (and default) number is 1.
 
 config	BLUETOOTH_MAX_PAIRED
-	int
-	prompt "Maximum number of paired devices"
+	int "Maximum number of paired devices"
 	depends on BLUETOOTH_CONN
 	default 1
 	range 1 32
@@ -104,8 +95,7 @@ config	BLUETOOTH_MAX_PAIRED
 	  default) number is 1.
 
 config	BLUETOOTH_DEBUG_CONN
-	bool
-	prompt "Bluetooth connection debug"
+	bool "Bluetooth connection debug"
 	depends on BLUETOOTH_DEBUG
 	default n
 	help
@@ -113,8 +103,7 @@ config	BLUETOOTH_DEBUG_CONN
 	  connection handling.
 
 config	BLUETOOTH_DEBUG_KEYS
-	bool
-	prompt "Bluetooth security keys debug"
+	bool "Bluetooth security keys debug"
 	depends on BLUETOOTH_DEBUG
 	default n
 	help
@@ -122,8 +111,7 @@ config	BLUETOOTH_DEBUG_KEYS
 	  Bluetooth security keys.
 
 config	BLUETOOTH_DEBUG_L2CAP
-	bool
-	prompt "Bluetooth L2CAP debug"
+	bool "Bluetooth L2CAP debug"
 	depends on BLUETOOTH_DEBUG
 	default n
 	help
@@ -131,8 +119,7 @@ config	BLUETOOTH_DEBUG_L2CAP
 	  L2ACP layer.
 
 config	BLUETOOTH_DEBUG_SMP
-	bool
-	prompt "Bluetooth Security Manager Protocol (SMP) debug"
+	bool "Bluetooth Security Manager Protocol (SMP) debug"
 	depends on BLUETOOTH_DEBUG
 	default n
 	help
@@ -140,8 +127,7 @@ config	BLUETOOTH_DEBUG_SMP
 	  Security Manager Protocol (SMP).
 
 config	BLUETOOTH_SMP_SELFTEST
-	bool
-	prompt "Bluetooth SMP self tests executed on init"
+	bool "Bluetooth SMP self tests executed on init"
 	depends on BLUETOOTH_DEBUG_SMP
 	default n
 	help
@@ -149,8 +135,7 @@ config	BLUETOOTH_SMP_SELFTEST
 	  to verify security and crypto functions.
 
 config	BLUETOOTH_DEBUG_ATT
-	bool
-	prompt "Bluetooth Attribute Protocol (ATT) debug"
+	bool "Bluetooth Attribute Protocol (ATT) debug"
 	depends on BLUETOOTH_DEBUG
 	default n
 	help
@@ -158,12 +143,11 @@ config	BLUETOOTH_DEBUG_ATT
 	  Attribute Protocol (ATT).
 
 config	BLUETOOTH_DEBUG_GATT
-	bool
-	prompt "Bluetooth Generic Attribute Profile (GATT) debug"
+	bool "Bluetooth Generic Attribute Profile (GATT) debug"
 	depends on BLUETOOTH_DEBUG
 	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
-endif
-endif
+endif # BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
+endif # BLUETOOTH

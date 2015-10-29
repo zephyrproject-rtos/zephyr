@@ -23,8 +23,7 @@ menu "Bluetooth UART Options"
 depends on BLUETOOTH
 
 config	BLUETOOTH_UART
-	bool
-	prompt "Bluetooth UART driver"
+	bool "Bluetooth UART driver"
 	depends on BLUETOOTH
 	select UART_INTERRUPT_DRIVEN
 	default n
@@ -32,8 +31,7 @@ config	BLUETOOTH_UART
 	  Enable Bluetooth UART driver.
 
 config	BLUETOOTH_DEBUG_UART
-	bool
-	prompt "Bluetooth UART driver debug"
+	bool "Bluetooth UART driver debug"
 	depends on BLUETOOTH_DEBUG && BLUETOOTH_UART
 	default n
 	help
