@@ -55,24 +55,41 @@ config	BLUETOOTH_DEBUG_HCI_CORE
 	  This option enables debug support for Bluetooth HCI
 	  core.
 
-config  BLUETOOTH_HCI_COUNT
-	int "Number of HCI buffers"
-	default 8
+config  BLUETOOTH_HCI_CMD_COUNT
+	int "Number of HCI command buffers"
+	default 2
 	range 2 64
 	help
-	  Number of buffers available for HCI commands and events.
+	  Number of buffers available for HCI commands.
 
-config  BLUETOOTH_HCI_SIZE
-	int "Size of HCI buffers"
+config  BLUETOOTH_HCI_CMD_SIZE
+	int "Size of HCI command buffers"
 	default 72
 	range 72 260
 	help
-	  Maximum size of each HCI buffer.
+	  Maximum size of each HCI command buffer.
+
+config  BLUETOOTH_HCI_EVT_COUNT
+	int "Number of HCI event buffers"
+	default 6
+	range 2 64
+	help
+	  Number of buffers available for HCI events. This number should
+	  ideally be at least as large as BLUETOOTH_ACL_OUT_COUNT to make
+	  sure we've got enough buffers to handle bursts of Number of
+	  Completed Packets HCI events.
+
+config  BLUETOOTH_HCI_EVT_SIZE
+	int "Size of HCI event buffers"
+	default 72
+	range 72 260
+	help
+	  Maximum size of each HCI event buffer.
 
 if BLUETOOTH_CONN
 config  BLUETOOTH_ACL_IN_COUNT
 	int "Number of incoming ACL data buffers"
-	default 7
+	default 5
 	range 1 16
 	help
 	  Number of buffers available for incoming ACL data.
@@ -88,7 +105,7 @@ config  BLUETOOTH_ACL_IN_SIZE
 
 config  BLUETOOTH_ACL_OUT_COUNT
 	int "Number of incoming ACL data buffers"
-	default 7
+	default 5
 	range 1 16
 	help
 	  Number of buffers available for incoming ACL data.

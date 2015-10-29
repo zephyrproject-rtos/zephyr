@@ -74,11 +74,16 @@ struct bt_acl_data {
 #define bt_hci(buf) ((struct bt_hci_data *)net_buf_user_data(buf))
 #define bt_acl(buf) ((struct bt_acl_data *)net_buf_user_data(buf))
 
-/* Available (free) buffers queues */
-static struct nano_fifo avail_hci;
-static NET_BUF_POOL(hci_pool, CONFIG_BLUETOOTH_HCI_COUNT,
-		    CONFIG_BLUETOOTH_HCI_SIZE, &avail_hci, NULL,
+/* HCI command buffers */
+static struct nano_fifo avail_hci_cmd;
+static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
+		    CONFIG_BLUETOOTH_HCI_CMD_SIZE, &avail_hci_cmd, NULL,
 		    sizeof(struct bt_hci_data));
+
+/* HCI event buffers */
+static struct nano_fifo avail_hci_evt;
+static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
+		    CONFIG_BLUETOOTH_HCI_EVT_SIZE, &avail_hci_evt, NULL, 0);
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 static void report_completed_packet(struct net_buf *buf)
@@ -116,7 +121,7 @@ static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
 /* Incoming buffer type lookup helper */
 static enum bt_buf_type bt_type(struct net_buf *buf)
 {
-	if (buf->free == &avail_hci) {
+	if (buf->free == &avail_hci_evt) {
 		return BT_EVT;
 	} else {
 		return BT_ACL_IN;
@@ -158,7 +163,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("opcode %x param_len %u\n", opcode, param_len);
 
-	buf = net_buf_get(&avail_hci, bt_dev.drv->send_reserve);
+	buf = net_buf_get(&avail_hci_cmd, bt_dev.drv->send_reserve);
 	if (!buf) {
 		BT_ERR("Cannot get free buffer\n");
 		return NULL;
@@ -1595,7 +1600,8 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 
 	/* Initialize the buffer pools */
-	net_buf_pool_init(hci_pool);
+	net_buf_pool_init(hci_cmd_pool);
+	net_buf_pool_init(hci_evt_pool);
 #if defined(CONFIG_BLUETOOTH_CONN)
 	net_buf_pool_init(acl_in_pool);
 #endif /* CONFIG_BLUETOOTH_CONN */
@@ -1782,7 +1788,7 @@ int bt_stop_scanning(void)
 
 struct net_buf *bt_buf_get_evt(void)
 {
-	return net_buf_get(&avail_hci, bt_dev.drv->recv_reserve);
+	return net_buf_get(&avail_hci_evt, bt_dev.drv->recv_reserve);
 }
 
 struct net_buf *bt_buf_get_acl(void)
