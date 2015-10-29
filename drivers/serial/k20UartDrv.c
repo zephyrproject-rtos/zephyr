@@ -35,11 +35,11 @@
 /* convenience defines */
 
 #define DEV_CFG(dev) \
-	((struct uart_device_config_t * const)(dev)->config->config_info)
+	((struct uart_device_config * const)(dev)->config->config_info)
 #define DEV_DATA(dev) \
-	((struct uart_k20_dev_data_t *)(dev)->driver_data)
+	((struct uart_k20_dev_data *)(dev)->driver_data)
 #define UART_STRUCT(dev) \
-	((K20_UART_t *)(DEV_CFG(dev))->base)
+	((volatile struct K20_UART *)(DEV_CFG(dev))->base)
 
 static struct uart_driver_api k20_uart_driver_api;
 
@@ -49,7 +49,7 @@ static struct uart_driver_api k20_uart_driver_api;
  * This routine is called to reset the chip in a quiescent state.
  * It is assumed that this function is called only once per UART.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param init_info Initial configuration for UART
  *
  * @return N/A
@@ -57,17 +57,17 @@ static struct uart_driver_api k20_uart_driver_api;
 void k20_uart_port_init(struct device *dev,
 			const struct uart_init_info * const init_info)
 {
-	struct uart_k20_dev_data_t *dev_data = DEV_DATA(dev);
+	struct uart_k20_dev_data *dev_data = DEV_DATA(dev);
 
 	int old_level; /* old interrupt lock level */
-	K20_SIM_t *sim =
-		(K20_SIM_t *)PERIPH_ADDR_BASE_SIM; /* sys integ. ctl */
-	C1_t c1;				   /* UART C1 register value */
-	C2_t c2;				   /* UART C2 register value */
+	volatile struct K20_SIM *sim = /* sys integ. ctl */
+		(volatile struct K20_SIM *)PERIPH_ADDR_BASE_SIM;
+	union C1 c1;				   /* UART C1 register value */
+	union C2 c2;				   /* UART C2 register value */
 
 	DEV_CFG(dev)->irq_pri = init_info->irq_pri;
 
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	/* disable interrupts */
 	old_level = irq_lock();
@@ -99,14 +99,14 @@ void k20_uart_port_init(struct device *dev,
 /**
  * @brief Poll the device for input.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param c Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
 static int k20_uart_poll_in(struct device *dev, unsigned char *c)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	if (uart->s1.field.rx_data_full == 0)
 		return (-1);
@@ -126,7 +126,7 @@ static int k20_uart_poll_in(struct device *dev, unsigned char *c)
  * If the hardware flow control is enabled then the handshake signal CTS has to
  * be asserted in order to send a character.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param c Character to send
  *
  * @return sent character
@@ -134,7 +134,7 @@ static int k20_uart_poll_in(struct device *dev, unsigned char *c)
 static unsigned char k20_uart_poll_out(struct device *dev,
 				       unsigned char c)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	/* wait for transmitter to ready to accept a character */
 	while (uart->s1.field.tx_data_empty == 0)
@@ -150,7 +150,7 @@ static unsigned char k20_uart_poll_out(struct device *dev,
 /**
  * @brief Fill FIFO with data
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param tx_data Data to transmit
  * @param len Number of bytes to send
  *
@@ -159,7 +159,7 @@ static unsigned char k20_uart_poll_out(struct device *dev,
 static int k20_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 			      int len)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 	uint8_t num_tx = 0;
 
 	while ((len - num_tx > 0) && (uart->s1.field.tx_data_empty == 1)) {
@@ -172,7 +172,7 @@ static int k20_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 /**
  * @brief Read data from FIFO
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param rx_data Pointer to data container
  * @param size Container size in bytes
  *
@@ -181,7 +181,7 @@ static int k20_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 static int k20_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 			      const int size)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 	uint8_t num_rx = 0;
 
 	while ((size - num_rx > 0) && (uart->s1.field.rx_data_full == 0)) {
@@ -194,13 +194,13 @@ static int k20_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 /**
  * @brief Enable TX interrupt
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
 static void k20_uart_irq_tx_enable(struct device *dev)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	uart->c2.field.tx_int_dma_tx_en = 1;
 }
@@ -208,13 +208,13 @@ static void k20_uart_irq_tx_enable(struct device *dev)
 /**
  * @brief Disable TX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
 static void k20_uart_irq_tx_disable(struct device *dev)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	uart->c2.field.tx_int_dma_tx_en = 0;
 }
@@ -222,13 +222,13 @@ static void k20_uart_irq_tx_disable(struct device *dev)
 /**
  * @brief Check if Tx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
 static int k20_uart_irq_tx_ready(struct device *dev)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	return uart->s1.field.tx_data_empty;
 }
@@ -236,13 +236,13 @@ static int k20_uart_irq_tx_ready(struct device *dev)
 /**
  * @brief Enable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
 static void k20_uart_irq_rx_enable(struct device *dev)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	uart->c2.field.rx_full_int_dma_tx_en = 1;
 }
@@ -250,13 +250,13 @@ static void k20_uart_irq_rx_enable(struct device *dev)
 /**
  * @brief Disable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
 static void k20_uart_irq_rx_disable(struct device *dev)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	uart->c2.field.rx_full_int_dma_tx_en = 0;
 }
@@ -264,13 +264,13 @@ static void k20_uart_irq_rx_disable(struct device *dev)
 /**
  * @brief Check if Rx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
 static int k20_uart_irq_rx_ready(struct device *dev)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	return uart->s1.field.rx_data_full;
 }
@@ -278,14 +278,14 @@ static int k20_uart_irq_rx_ready(struct device *dev)
 /**
  * @brief Enable error interrupt
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
 static void k20_uart_irq_err_enable(struct device *dev)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
-	C3_t c3 = uart->c3;
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
+	union C3 c3 = uart->c3;
 
 	c3.field.parity_err_int_en = 1;
 	c3.field.frame_err_int_en = 1;
@@ -297,14 +297,14 @@ static void k20_uart_irq_err_enable(struct device *dev)
 /**
  * @brief Disable error interrupt
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
 static void k20_uart_irq_err_disable(struct device *dev)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
-	C3_t c3 = uart->c3;
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
+	union C3 c3 = uart->c3;
 
 	c3.field.parity_err_int_en = 0;
 	c3.field.frame_err_int_en = 0;
@@ -316,13 +316,13 @@ static void k20_uart_irq_err_disable(struct device *dev)
 /**
  * @brief Check if Tx or Rx IRQ is pending
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
 static int k20_uart_irq_is_pending(struct device *dev)
 {
-	K20_UART_t *uart = UART_STRUCT(dev);
+	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	/* Look only at Tx and Rx data interrupt flags */
 
@@ -334,7 +334,7 @@ static int k20_uart_irq_is_pending(struct device *dev)
 /**
  * @brief Update IRQ status
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return always 1
  */
@@ -348,7 +348,7 @@ static int k20_uart_irq_update(struct device *dev)
  *
  * Returns the IRQ number used by the specified UART port
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */

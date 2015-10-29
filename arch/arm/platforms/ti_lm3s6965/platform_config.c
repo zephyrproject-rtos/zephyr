@@ -135,7 +135,7 @@ static int stellaris_uart2_init(struct device *dev)
 
 
 /**< UART device configurations. */
-static struct uart_device_config_t stellaris_uart_dev_cfg[] = {
+static struct uart_device_config stellaris_uart_dev_cfg[] = {
 	{
 		.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,
 		.irq = CONFIG_UART_PORT_0_IRQ,

@@ -42,7 +42,7 @@
 #define PCR_MUX_ALT6 6
 #define PCR_MUX_ALT7 7
 
-typedef union {
+union K20_PCR {
 	uint32_t value;
 	struct {
 		uint8_t ps : 1 __packed;
@@ -61,31 +61,31 @@ typedef union {
 		uint8_t isf : 1 __packed;
 		uint8_t res_25_31 : 7 __packed;
 	} field;
-} K20_PCR_t; /* Pin Control Register n, n= 0-31 */
+}; /* Pin Control Register n, n= 0-31 */
 
-typedef union {
+union K20_GPC {
 	uint32_t value;
 	struct {
 		uint16_t gpwe : 16 __packed;
 		uint16_t gpwd : 16 __packed;
 	} field;
-} K20_GPC_t; /* Global Pin Control Low/High Register */
+}; /* Global Pin Control Low/High Register */
 
 /* K20 Microntroller PCR module register structure */
 
-typedef volatile struct {
+struct K20_PORT_PCR {
 	struct {
-		K20_PCR_t pcr[32] __packed; /* 0x00-07C */
-		K20_GPC_t gpchr __packed;   /* 0x80 */
-		K20_GPC_t gpclr __packed;   /* 0x84 */
+		union K20_PCR pcr[32] __packed; /* 0x00-07C */
+		union K20_GPC gpchr __packed;   /* 0x80 */
+		union K20_GPC gpclr __packed;   /* 0x84 */
 		uint8_t res_88_9F[0xA0 - 0x88];	/* 0x88-0x9F Reserved */
 		uint32_t isfr __packed; /* 0xA0 */
 		uint8_t res_A4_FF[0x1000 - 0xA4];      /* 0xA4-0xFFF Reserved */
 	} port[5];
-} K20_PORT_PCR_t;
+};
 
 /* pin control register for port A..E on pin 0..31 */
 #define K20_PCR(base, port, pin) \
-	((K20_PCR_t *)(base + (0x1000 * port) + (pin * 4)))
+	((union K20_PCR *)(base + (0x1000 * port) + (pin * 4)))
 
 #endif /* _K20PCR_H_ */

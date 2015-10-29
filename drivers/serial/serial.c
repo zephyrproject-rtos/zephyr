@@ -31,8 +31,8 @@
  */
 int uart_platform_init(struct device *dev)
 {
-	struct uart_device_config_t *dev_cfg =
-	    (struct uart_device_config_t *)dev->config->config_info;
+	struct uart_device_config *dev_cfg =
+	    (struct uart_device_config *)dev->config->config_info;
 
 	if (dev_cfg->config_func) {
 		return dev_cfg->config_func(dev);

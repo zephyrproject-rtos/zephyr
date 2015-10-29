@@ -76,7 +76,7 @@ static int ns16550_uart_init(struct device *dev)
  *
  * This contains the device configuration for UART.
  */
-struct uart_device_config_t ns16550_uart_dev_cfg[] = {
+struct uart_device_config ns16550_uart_dev_cfg[] = {
 	{
 		.port = CONFIG_NS16550_PORT_0_BASE_ADDR,
 

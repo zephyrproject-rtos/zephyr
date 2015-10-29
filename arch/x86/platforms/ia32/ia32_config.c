@@ -73,7 +73,7 @@ static int ns16550_uart_init(struct device *dev)
 
 
 /**< UART device configuration */
-static struct uart_device_config_t ns16550_uart_dev_cfg[] = {
+static struct uart_device_config ns16550_uart_dev_cfg[] = {
 	{
 		.port = CONFIG_UART_PORT_0_REGS,
 		.irq = CONFIG_UART_PORT_0_IRQ,

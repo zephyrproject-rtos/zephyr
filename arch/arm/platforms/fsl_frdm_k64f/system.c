@@ -250,13 +250,16 @@ static int fsl_frdm_k64f_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 	/* System Integration module */
-	K20_SIM_t *sim_p = (K20_SIM_t *)PERIPH_ADDR_BASE_SIM;
+	volatile struct K20_SIM *sim_p =
+		(volatile struct K20_SIM *)PERIPH_ADDR_BASE_SIM;
 
 	/* Power Mgt Control module */
-	K6x_PMC_t *pmc_p = (K6x_PMC_t *)PERIPH_ADDR_BASE_PMC;
+	volatile struct K6x_PMC *pmc_p =
+		(volatile struct K6x_PMC *)PERIPH_ADDR_BASE_PMC;
 
 	/* Power Mgt Control module */
-	K6x_MPU_t *mpu_p = (K6x_MPU_t *)PERIPH_ADDR_BASE_MPU;
+	volatile struct K6x_MPU *mpu_p =
+		(volatile struct K6x_MPU *)PERIPH_ADDR_BASE_MPU;
 
 	int oldLevel; /* old interrupt lock level */
 	uint32_t temp_reg;

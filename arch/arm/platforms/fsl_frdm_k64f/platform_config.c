@@ -50,10 +50,11 @@ static int k20_uart_console_init(struct device *dev)
 	uint32_t port;
 	uint32_t rxPin;
 	uint32_t txPin;
-	K20_PCR_t pcr = {0}; /* Pin Control Register */
+	union K20_PCR pcr = {0}; /* Pin Control Register */
 
 	/* Port/pin ctrl module */
-	K20_PORT_PCR_t *port_pcr_p = (K20_PORT_PCR_t *)PERIPH_ADDR_BASE_PCR;
+	volatile struct K20_PORT_PCR *port_pcr_p =
+		(volatile struct K20_PORT_PCR *)PERIPH_ADDR_BASE_PCR;
 
 	struct uart_init_info info = {
 		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
@@ -91,7 +92,7 @@ static int k20_uart_console_init(struct device *dev)
 #endif /* CONFIG_UART_CONSOLE */
 
 /**< K20 UART configuration for individual ports. */
-static struct uart_device_config_t k20_uart_dev_cfg[] = {
+static struct uart_device_config k20_uart_dev_cfg[] = {
 	{
 		.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,
 		.irq = CONFIG_UART_PORT_0_IRQ,
@@ -150,7 +151,7 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 };
 
 /**< Custom device data for each UART port. */
-static struct uart_k20_dev_data_t k20_uart_dev_data[] = {
+static struct uart_k20_dev_data k20_uart_dev_data[] = {
 	{
 		.seq_port_num = 0,
 	},

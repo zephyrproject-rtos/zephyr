@@ -28,7 +28,7 @@
 #define NSIM_UART_STATUS 1
 
 #define DEV_CFG(dev) \
-	((struct uart_device_config_t * const)(dev)->config->config_info)
+	((struct uart_device_config * const)(dev)->config->config_info)
 
 #define DATA_REG(dev) (DEV_CFG(dev)->regs + NSIM_UART_DATA)
 #define STATUS_REG(dev) (DEV_CFG(dev)->regs + NSIM_UART_STATUS)
@@ -40,7 +40,7 @@ static struct uart_driver_api nsim_uart_driver_api;
 /*
  * @brief Initialize fake serial port
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param init_info Pointer to initialization information
  */
 void nsim_uart_port_init(struct device *dev,
@@ -55,7 +55,7 @@ void nsim_uart_port_init(struct device *dev,
 /*
  * @brief Output a character to serial port
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param c character to output
  */
 unsigned char nsim_uart_poll_out(struct device *dev, unsigned char c)

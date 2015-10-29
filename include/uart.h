@@ -42,7 +42,7 @@ extern "C" {
 struct uart_init_info;
 
 /* UART device configuration */
-struct uart_device_config_t {
+struct uart_device_config {
 	/**
 	 * Base port number
 	 * or memory mapped base address
@@ -123,8 +123,8 @@ int uart_platform_init(struct device *dev);
 static inline void uart_init(struct device *dev,
 			     const struct uart_init_info * const pinfo)
 {
-	struct uart_device_config_t *dev_cfg =
-	    (struct uart_device_config_t *)dev->config->config_info;
+	struct uart_device_config *dev_cfg =
+	    (struct uart_device_config *)dev->config->config_info;
 
 	if (dev_cfg->port_init != 0) {
 		dev_cfg->port_init(dev, pinfo);
@@ -134,7 +134,7 @@ static inline void uart_init(struct device *dev,
 /**
  * @brief Poll the device for input.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param p_char Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty,
@@ -157,7 +157,7 @@ static inline int uart_poll_in(struct device *dev, unsigned char *p_char)
  * If the hardware flow control is enabled then the handshake signal CTS has to
  * be asserted in order to send a character.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param out_char Character to send
  *
  * @return Sent character
@@ -177,7 +177,7 @@ static inline unsigned char uart_poll_out(struct device *dev,
 /**
  * @brief Fill FIFO with data
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param tx_data Data to transmit
  * @param size Number of bytes to send
  *
@@ -199,7 +199,7 @@ static inline int uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 /**
  * @brief Read data from FIFO
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param rx_data Data container
  * @param size Container size
  *
@@ -221,7 +221,7 @@ static inline int uart_fifo_read(struct device *dev, uint8_t *rx_data,
 /**
  * @brief Enable TX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -237,7 +237,7 @@ static inline void uart_irq_tx_enable(struct device *dev)
 /**
  * @brief Disable TX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -254,7 +254,7 @@ static inline void uart_irq_tx_disable(struct device *dev)
 /**
  * @brief Check if Tx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -273,7 +273,7 @@ static inline int uart_irq_tx_ready(struct device *dev)
 /**
  * @brief Enable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -290,7 +290,7 @@ static inline void uart_irq_rx_enable(struct device *dev)
 /**
  * @brief Disable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -307,7 +307,7 @@ static inline void uart_irq_rx_disable(struct device *dev)
 /**
  * @brief Check if Rx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -325,7 +325,7 @@ static inline int uart_irq_rx_ready(struct device *dev)
 /**
  * @brief Enable error interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -342,7 +342,7 @@ static inline void uart_irq_err_enable(struct device *dev)
 /**
  * @brief Disable error interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -359,7 +359,7 @@ static inline void uart_irq_err_disable(struct device *dev)
 /**
  * @brief Check if any IRQ is pending
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if an IRQ is pending, 0 otherwise
  */
@@ -379,7 +379,7 @@ static inline int uart_irq_is_pending(struct device *dev)
 /**
  * @brief Update cached contents of IIR
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return always 1
  */
@@ -400,7 +400,7 @@ static inline int uart_irq_update(struct device *dev)
  *
  * Returns the IRQ number used by the specified UART port.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return IRQ number, or 0 if no interrupt
  */

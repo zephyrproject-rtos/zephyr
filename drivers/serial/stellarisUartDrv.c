@@ -75,7 +75,7 @@ struct _uart {
 /* convenience defines */
 
 #define DEV_CFG(dev) \
-	((struct uart_device_config_t * const)(dev)->config->config_info)
+	((struct uart_device_config * const)(dev)->config->config_info)
 #define UART_STRUCT(dev) \
 	((volatile struct _uart *)(DEV_CFG(dev))->base)
 
@@ -146,7 +146,7 @@ static struct uart_driver_api stellaris_uart_driver_api;
  *
  * This routine set the given baud rate for the UART.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param baudrate Baud rate
  * @param sys_clk_freq_hz System clock frequency in Hz
  *
@@ -185,7 +185,7 @@ static void baudrate_set(struct device *dev,
  *
  * This routine enables the given UART.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -201,7 +201,7 @@ static inline void enable(struct device *dev)
  *
  * This routine disables the given UART.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -234,7 +234,7 @@ static inline void disable(struct device *dev)
  *
  * This routine sets the given UART's line controls to their default settings.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -251,14 +251,14 @@ static inline void line_control_defaults_set(struct device *dev)
  * This routine is called to reset the chip in a quiescent state.
  * It is assumed that this function is called only once per UART.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
 void stellaris_uart_port_init(struct device *dev,
 			      const struct uart_init_info * const init_info)
 {
-	struct uart_device_config_t * const dev_cfg = DEV_CFG(dev);
+	struct uart_device_config * const dev_cfg = DEV_CFG(dev);
 
 	dev_cfg->irq_pri = init_info->irq_pri;
 
@@ -275,7 +275,7 @@ void stellaris_uart_port_init(struct device *dev,
  *
  * This routine returns the given UART's transmit ready status.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 0 if ready to transmit, 1 otherwise
  */
@@ -289,7 +289,7 @@ static int poll_tx_ready(struct device *dev)
 /**
  * @brief Poll the device for input.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param c Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
@@ -314,7 +314,7 @@ static int stellaris_uart_poll_in(struct device *dev, unsigned char *c)
  * Checks if the transmitter is empty. If empty, a character is written to
  * the data register.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param c Character to send
  *
  * @return Sent character
@@ -337,7 +337,7 @@ static unsigned char stellaris_uart_poll_out(struct device *dev,
 /**
  * @brief Fill FIFO with data
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param tx_data Data to transmit
  * @param len Number of bytes to send
  *
@@ -359,7 +359,7 @@ static int stellaris_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 /**
  * @brief Read data from FIFO
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  * @param rx_data Pointer to data container
  * @param size Container size
  *
@@ -381,7 +381,7 @@ static int stellaris_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 /**
  * @brief Enable TX interrupt
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -435,7 +435,7 @@ static void stellaris_uart_irq_tx_enable(struct device *dev)
 /**
  * @brief Disable TX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -449,7 +449,7 @@ static void stellaris_uart_irq_tx_disable(struct device *dev)
 /**
  * @brief Check if Tx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if a Tx IRQ is pending, 0 otherwise
  */
@@ -463,7 +463,7 @@ static int stellaris_uart_irq_tx_ready(struct device *dev)
 /**
  * @brief Enable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -477,7 +477,7 @@ static void stellaris_uart_irq_rx_enable(struct device *dev)
 /**
  * @brief Disable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -491,7 +491,7 @@ static void stellaris_uart_irq_rx_disable(struct device *dev)
 /**
  * @brief Check if Rx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -505,7 +505,7 @@ static int stellaris_uart_irq_rx_ready(struct device *dev)
 /**
  * @brief Enable error interrupts
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -520,7 +520,7 @@ static void stellaris_uart_irq_err_enable(struct device *dev)
 /**
  * @brief Disable error interrupts
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
@@ -535,7 +535,7 @@ static void stellaris_uart_irq_err_disable(struct device *dev)
 /**
  * @brief Check if Tx or Rx IRQ is pending
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
@@ -550,7 +550,7 @@ static int stellaris_uart_irq_is_pending(struct device *dev)
 /**
  * @brief Update IRQ status
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return Always 1
  */
@@ -564,7 +564,7 @@ static int stellaris_uart_irq_update(struct device *dev)
  *
  * Returns the IRQ number used by the specified UART port
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct (of type struct uart_device_config)
  *
  * @return N/A
  */
