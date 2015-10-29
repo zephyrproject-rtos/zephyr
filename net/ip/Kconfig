@@ -259,6 +259,16 @@ config NET_15_4_LOOPBACK_NUM
        help
          Number of times loopback runs, 0 means infinite.
 
+config NET_SANITY_TEST
+       bool
+       prompt "Enable networking sanity test"
+       depends on NETWORKING
+       default n
+       help
+         Enable networking sanity tests. Network sanity test
+         verification and test report submission will fall under
+         this config.
+
 choice
 prompt "6LoWPAN compression method"
 depends on NETWORKING_WITH_6LOWPAN
