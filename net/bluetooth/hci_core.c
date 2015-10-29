@@ -107,7 +107,6 @@ static void report_completed_packet(struct net_buf *buf)
 	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 }
 
-#define BT_BUF_ACL_IN_MAX 7
 static struct nano_fifo avail_acl_in;
 static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
 		    CONFIG_BLUETOOTH_ACL_IN_SIZE, &avail_acl_in,
@@ -735,7 +734,7 @@ static int set_flow_control(void)
 	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BLUETOOTH_ACL_IN_SIZE -
 				       sizeof(struct bt_hci_acl_hdr) -
 				       bt_dev.drv->recv_reserve);
-	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_ACL_IN_MAX);
+	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BLUETOOTH_ACL_IN_COUNT);
 
 	err = bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
 	if (err) {
