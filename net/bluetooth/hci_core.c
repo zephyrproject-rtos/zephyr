@@ -54,7 +54,7 @@ struct bt_dev bt_dev;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
-struct bt_hci_data {
+struct cmd_data {
 	/** The command OpCode that the buffer contains */
 	uint16_t opcode;
 
@@ -66,19 +66,19 @@ struct bt_hci_data {
 
 };
 
-struct bt_acl_data {
+struct acl_data {
 	/** ACL connection handle */
 	uint16_t handle;
 };
 
-#define bt_hci(buf) ((struct bt_hci_data *)net_buf_user_data(buf))
-#define bt_acl(buf) ((struct bt_acl_data *)net_buf_user_data(buf))
+#define cmd(buf) ((struct cmd_data *)net_buf_user_data(buf))
+#define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
 /* HCI command buffers */
 static struct nano_fifo avail_hci_cmd;
 static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 		    CONFIG_BLUETOOTH_HCI_CMD_SIZE, &avail_hci_cmd, NULL,
-		    sizeof(struct bt_hci_data));
+		    sizeof(struct cmd_data));
 
 /* HCI event buffers */
 static struct nano_fifo avail_hci_evt;
@@ -90,7 +90,7 @@ static void report_completed_packet(struct net_buf *buf)
 {
 
 	struct bt_hci_cp_host_num_completed_packets *cp;
-	uint16_t handle = bt_acl(buf)->handle;
+	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 
 	BT_DBG("Reporting completed packet for handle %u\n", handle);
@@ -115,7 +115,7 @@ static void report_completed_packet(struct net_buf *buf)
 static struct nano_fifo avail_acl_in;
 static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
 		    CONFIG_BLUETOOTH_ACL_IN_SIZE, &avail_acl_in,
-		    report_completed_packet, sizeof(struct bt_acl_data));
+		    report_completed_packet, sizeof(struct acl_data));
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 /* Incoming buffer type lookup helper */
@@ -171,8 +171,8 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("buf %p\n", buf);
 
-	bt_hci(buf)->opcode = opcode;
-	bt_hci(buf)->sync = NULL;
+	cmd(buf)->opcode = opcode;
+	cmd(buf)->sync = NULL;
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
@@ -229,23 +229,23 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	BT_DBG("opcode %x len %u\n", opcode, buf->len);
 
 	nano_sem_init(&sync_sem);
-	bt_hci(buf)->sync = &sync_sem;
+	cmd(buf)->sync = &sync_sem;
 
 	nano_fifo_put(&bt_dev.cmd_tx_queue, buf);
 
 	nano_sem_take_wait(&sync_sem);
 
 	/* Indicate failure if we failed to get the return parameters */
-	if (!bt_hci(buf)->sync) {
+	if (!cmd(buf)->sync) {
 		err = -EIO;
 	} else {
 		err = 0;
 	}
 
 	if (rsp) {
-		*rsp = bt_hci(buf)->sync;
-	} else if (bt_hci(buf)->sync) {
-		net_buf_unref(bt_hci(buf)->sync);
+		*rsp = cmd(buf)->sync;
+	} else if (cmd(buf)->sync) {
+		net_buf_unref(cmd(buf)->sync);
 	}
 
 	net_buf_unref(buf);
@@ -318,11 +318,11 @@ static void hci_acl(struct net_buf *buf)
 	handle = sys_le16_to_cpu(hdr->handle);
 	flags = (handle >> 12);
 
-	bt_acl(buf)->handle = bt_acl_handle(handle);
+	acl(buf)->handle = bt_acl_handle(handle);
 
 	net_buf_pull(buf, sizeof(*hdr));
 
-	BT_DBG("handle %u len %u flags %u\n", bt_acl(buf)->handle, len, flags);
+	BT_DBG("handle %u len %u flags %u\n", acl(buf)->handle, len, flags);
 
 	if (buf->len != len) {
 		BT_ERR("ACL data length mismatch (%u != %u)\n", buf->len, len);
@@ -330,10 +330,9 @@ static void hci_acl(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_handle(bt_acl(buf)->handle);
+	conn = bt_conn_lookup_handle(acl(buf)->handle);
 	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u\n",
-		       bt_acl(buf)->handle);
+		BT_ERR("Unable to find conn for handle %u\n", acl(buf)->handle);
 		net_buf_unref(buf);
 		return;
 	}
@@ -926,7 +925,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 		return;
 	}
 
-	if (bt_hci(sent)->opcode != opcode) {
+	if (cmd(sent)->opcode != opcode) {
 		BT_ERR("Unexpected completion of opcode 0x%04x\n", opcode);
 		return;
 	}
@@ -934,13 +933,13 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	bt_dev.sent_cmd = NULL;
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
-	if (bt_hci(sent)->sync) {
-		struct nano_sem *sem = bt_hci(sent)->sync;
+	if (cmd(sent)->sync) {
+		struct nano_sem *sem = cmd(sent)->sync;
 
 		if (status) {
-			bt_hci(sent)->sync = NULL;
+			cmd(sent)->sync = NULL;
 		} else {
-			bt_hci(sent)->sync = net_buf_ref(buf);
+			cmd(sent)->sync = net_buf_ref(buf);
 		}
 
 		nano_fiber_sem_give(sem);
@@ -1226,7 +1225,7 @@ static void hci_cmd_tx_fiber(void)
 		}
 
 		BT_DBG("Sending command %x (buf %p) to driver\n",
-		       bt_hci(buf)->opcode, buf);
+		       cmd(buf)->opcode, buf);
 
 		err = drv->send(BT_CMD, buf);
 		if (err) {
