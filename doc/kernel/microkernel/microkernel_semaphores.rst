@@ -19,22 +19,6 @@ is taken. However, a semaphore cannot be taken if it is unavailable
 
 Semaphores may be given by tasks, fibers, or ISRs.
 
-.. note::
-
-   When a semaphore is given by a fiber or an ISR the caller must provide
-   a statically-allocated command packet for the microkernel server fiber
-   to use, since the kernel cannot create one on the caller's stack as it
-   does when the semaphore is given by a task. In cases where the fiber
-   or ISR can give the semaphore again before the microkernel server finishes
-   processing the earlier request the caller must provide a separate command
-   packet for each concurrent give operation.
-
-   The kernel provides the :c:macro:`CMD_PKT_SET_INSTANCE()` API to allow
-   a fiber or ISR to define a *command packet set* containing one or more
-   command packets. The :c:macro:`CMD_PKT_SET()` API is then used to reference
-   the command packet set when giving a semaphore;
-   see :ref:`isr_gives_semaphore`.
-
 Semaphores may only be taken by tasks. A task that attempts to take
 an unavailable semaphore may choose to wait for the semaphore to be given.
 Any number of tasks may wait on an unavailable semaphore simultaneously;
@@ -139,37 +123,6 @@ is available for processing by a consumer task.
 
         /* notify task that an additional data item is available */
        task_sem_give(INPUT_DATA);
-
-       ...
-   }
-
-.. _isr_gives_semaphore:
-
-Example: Giving a Semaphore from an ISR
-=======================================
-
-This code uses a semaphore to indicate that a unit of data
-is available for processing by a consumer task.
-
-.. code-block:: c
-
-   /*
-    * reserve 2 command packets for semaphore updates
-    *
-    * note: this assumes that input data arrives at a rate that allows
-    * the microkernel server fiber to finish the semaphore give operation
-    * for data item "N" before the ISR begins working on data item "N+2"
-    * (i.e. data arrives in bursts of at most one unit)
-    */
-   static CMD_PKT_SET_INSTANCE(cmd_packets, 2);
-
-   void input_data_interrupt_handler(void *arg)
-   {
-       /* save data item in a buffer */
-       ...
-
-        /* notify task that an additional data item is available */
-       isr_sem_give(INPUT_DATA, &CMD_PKT_SET(cmd_packets));
 
        ...
    }
