@@ -379,8 +379,6 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	hdr->ident = ident;
 	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
 
-	mtu = min(mtu, net_buf_tailroom(buf));
-
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	memset(rsp, 0, sizeof(*rsp));
 
