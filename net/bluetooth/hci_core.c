@@ -84,10 +84,10 @@ static void report_completed_packet(struct net_buf *buf)
 {
 
 	struct bt_hci_cp_host_num_completed_packets *cp;
+	uint16_t handle = bt_acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 
-	BT_DBG("Reporting completed packet for handle %u\n",
-	       bt_acl(buf)->handle);
+	BT_DBG("Reporting completed packet for handle %u\n", handle);
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
 				sizeof(*cp) + sizeof(*hc));
@@ -100,7 +100,7 @@ static void report_completed_packet(struct net_buf *buf)
 	cp->num_handles = sys_cpu_to_le16(1);
 
 	hc = net_buf_add(buf, sizeof(*hc));
-	hc->handle = sys_cpu_to_le16(bt_acl(buf)->handle);
+	hc->handle = sys_cpu_to_le16(handle);
 	hc->count  = sys_cpu_to_le16(1);
 
 	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
