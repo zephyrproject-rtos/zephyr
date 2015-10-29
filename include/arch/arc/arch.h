@@ -44,6 +44,7 @@ extern "C" {
 #include <arch/arc/v2/aux_regs.h>
 #include <arch/arc/v2/arcv2_irq_unit.h>
 #include <arch/arc/v2/asm_inline.h>
+#include <arch/arc/v2/addr_types.h>
 #endif
 
 #define STACK_ALIGN  4
