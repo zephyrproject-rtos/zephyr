@@ -75,33 +75,23 @@ static void *gatt_buf_add(const void *data, size_t len)
 
 static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern)
 {
-	struct bt_gatt_attr *attr;
-	static int i = 0;
+	static struct bt_gatt_attr *attr = gatt_db;
 
-	if (i == ARRAY_SIZE(gatt_db)) {
+	/* Return NULL if gatt_db is full */
+	if (attr == &gatt_db[ARRAY_SIZE(gatt_db)]) {
 		return NULL;
 	}
 
-	attr = &gatt_db[i];
 	memcpy(attr, pattern, sizeof(*attr));
-	attr->handle = ++i;
+
+	/* Register attribute in GATT database, this will assign it a handle */
+	if (bt_gatt_register(attr, 1)) {
+		return NULL;
+	}
 
 	printk("gatt_db: attribute added, handle %x\n", attr->handle);
 
-	return attr;
-}
-
-static struct bt_gatt_attr *gatt_db_lookup_id(uint16_t attr_id)
-{
-	if (attr_id > ARRAY_SIZE(gatt_db)) {
-		return NULL;
-	}
-
-	if (!gatt_db[attr_id - 1].handle) {
-		return NULL;
-	}
-
-	return &gatt_db[attr_id - 1];
+	return attr++;
 }
 
 static void supported_commands(uint8_t *data, uint16_t len)
@@ -301,20 +291,13 @@ rsp:
 	}
 }
 
-static void set_value(uint8_t *data, uint16_t len)
+static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 {
-	const struct gatt_set_value_cmd *cmd = (void *) data;
+	const struct gatt_set_value_cmd *cmd = user_data;
 	struct gatt_value value;
-	struct bt_gatt_attr *attr;
 	uint8_t status;
 
-	attr = gatt_db_lookup_id(sys_le16_to_cpu(cmd->attr_id));
-	if (!attr) {
-		status = BTP_STATUS_FAILED;
-		goto rsp;
-	}
-
-	if (attr->uuid->u16 == BT_UUID_GATT_CHRC) {
+	if (!bt_uuid_cmp(attr->uuid, chr.uuid)) {
 		attr = attr->_next;
 		if (!attr) {
 			status = BTP_STATUS_FAILED;
@@ -364,24 +347,22 @@ static void set_value(uint8_t *data, uint16_t len)
 rsp:
 	tester_rsp(BTP_SERVICE_ID_GATT, GATT_SET_VALUE, CONTROLLER_INDEX,
 		   status);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void set_value(uint8_t *data, uint16_t len)
+{
+	const struct gatt_set_value_cmd *cmd = (void *) data;
+	uint16_t handle = sys_le16_to_cpu(cmd->attr_id);
+
+	/* TODO Return error if no attribute found */
+	bt_gatt_foreach_attr(handle, handle, (bt_gatt_attr_func_t) set_value_cb,
+			     data);
 }
 
 static void start_server(uint8_t *data, uint16_t len)
 {
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(gatt_db); i++) {
-		if (!gatt_db[i].handle) {
-			break;
-		}
-	}
-
-	if (gatt_db[ARRAY_SIZE(gatt_db) - 1].handle) {
-		i++;
-	}
-
-	bt_gatt_register(gatt_db, i);
-
 	tester_rsp(BTP_SERVICE_ID_GATT, GATT_START_SERVER,
 		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
 }
