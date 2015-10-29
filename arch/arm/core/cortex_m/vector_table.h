@@ -47,7 +47,7 @@ extern "C" {
 .equ __CORTEXM_BOOT_PSP, (__CORTEXM_BOOT_MSP - 0x100)
 
 GTEXT(__start)
-GTEXT(_VectorTableROM)
+GTEXT(_vector_table)
 
 GTEXT(__reset)
 GTEXT(__nmi)
@@ -62,6 +62,10 @@ GTEXT(__reserved)
 
 GTEXT(_PrepC)
 GTEXT(_isr_wrapper)
+
+#else
+
+extern void *_vector_table[];
 
 #endif /* _ASMLANGUAGE */
 

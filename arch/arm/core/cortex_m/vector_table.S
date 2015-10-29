@@ -18,8 +18,8 @@
  * @file
  * @brief Populated vector table in ROM
  *
- * Vector table in ROM for starting system. The reset vector is the system entry
- * point, ie. the first instruction executed.
+ * Vector table at the beginning of the image for starting system. The reset
+ * vector is the system entry point, ie. the first instruction executed.
  *
  * The table is populated with all the system exception handlers. The NMI vector
  * must be populated with a valid handler since it can happen at any time. The
@@ -36,7 +36,7 @@
 
 _ASM_FILE_PROLOGUE
 SECTION_SUBSEC_FUNC(exc_vector_table,_Start,__start)
-SECTION_SUBSEC_FUNC(exc_vector_table,_Start,_VectorTableROM)
+SECTION_SUBSEC_FUNC(exc_vector_table,_Start,_vector_table)
 
     .word __CORTEXM_BOOT_MSP
     .word __reset
