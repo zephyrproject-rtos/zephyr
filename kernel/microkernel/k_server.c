@@ -110,9 +110,9 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 				}
 #endif
 				(*pArgs->Comm)(pArgs);
-			} else {
+			} else if (cmd_type == KERNEL_CMD_EVENT_TYPE) {
 
-				/* cmd_type == KERNEL_CMD_EVENT_TYPE */
+				/* give event */
 
 #ifdef CONFIG_TASK_MONITOR
 				if (_k_monitor_mask & MON_EVENT) {
@@ -122,6 +122,16 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 				kevent_t event = (int)pArgs & ~KERNEL_CMD_TYPE_MASK;
 
 				_k_do_event_signal(event);
+			} else { /* cmd_type == KERNEL_CMD_SEMAPHORE_TYPE */
+
+				/* give semaphore */
+
+#ifdef CONFIG_TASK_MONITOR
+				/* task monitoring for giving semaphore not implemented */
+#endif
+				ksem_t sem = (int)pArgs & ~KERNEL_CMD_TYPE_MASK;
+
+				_k_sem_struct_value_update(1, (struct _k_sem_struct *)sem);
 			}
 
 			/*

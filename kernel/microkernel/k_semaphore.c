@@ -26,13 +26,7 @@
 
 #include <micro_private.h>
 
-/**
- *
- * @brief Common code for signaling a semaphore
- *
- * @return N/A
- */
-static void signal_semaphore(int n, struct _k_sem_struct *S)
+void _k_sem_struct_value_update(int n, struct _k_sem_struct *S)
 {
 	struct k_args *A, *X, *Y;
 
@@ -127,7 +121,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 						ENDLIST)) {
 						waitTaskArgs->args.s1.sema = A->args.s1.sema;
 					} else {
-						signal_semaphore(1, S);
+						_k_sem_struct_value_update(1, S);
 					}
 				}
 
@@ -271,7 +265,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 	} else {
 		S->waiters = A;
 	}
-	signal_semaphore(0, S);
+	_k_sem_struct_value_update(0, S);
 }
 
 void _k_sem_group_wait_any(struct k_args *A)
@@ -371,7 +365,7 @@ void _k_sem_signal(struct k_args *A)
 	uint32_t Sid = A->args.s1.sema;
 	struct _k_sem_struct *S = (struct _k_sem_struct *)Sid;
 
-	signal_semaphore(1, S);
+	_k_sem_struct_value_update(1, S);
 }
 
 void _k_sem_group_signal(struct k_args *A)
@@ -403,15 +397,10 @@ void task_sem_group_give(ksemg_t group)
 
 FUNC_ALIAS(isr_sem_give, fiber_sem_give, void);
 
-void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet)
+void isr_sem_give(ksem_t sema)
 {
-	struct k_args *pCommand; /* ptr to command packet */
-
-	pCommand = _cmd_pkt_get(pSet);
-	pCommand->Comm = _K_SVC_SEM_SIGNAL;
-	pCommand->args.s1.sema = sema;
-
-	nano_isr_stack_push(&_k_command_stack, (uint32_t)pCommand);
+	nano_isr_stack_push(&_k_command_stack,
+						(uint32_t)sema | KERNEL_CMD_SEMAPHORE_TYPE);
 }
 
 void _k_sem_reset(struct k_args *A)

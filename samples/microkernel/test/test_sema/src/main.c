@@ -44,8 +44,6 @@ extern struct nano_sem fiberSem; /* semaphore that allows test control the fiber
 
 static ksem_t testIsrInfo;
 
-CMD_PKT_SET_INSTANCE(cmdPktSetIsr, 2);
-
 /*
  * Note that semaphore group entries are arranged so that resultSems[TC_PASS]
  * refers to SEM_TASKDONE and resultSems[TC_FAIL] refers to SEM_TASKFAIL.
@@ -165,7 +163,7 @@ void LowPriTaskEntry(void)
 
 static void testIsrHandler(void *isrData)
 {
-	isr_sem_give(*(ksem_t *)isrData, &cmdPktSetIsr);
+	isr_sem_give(*(ksem_t *)isrData);
 }
 
 /**

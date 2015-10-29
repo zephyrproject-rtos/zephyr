@@ -40,33 +40,27 @@ extern "C" {
  *
  * @brief Signal a semaphore from a fiber
  *
- * This routine (to only be called from a fiber) signals a semaphore.  It
- * requires a statically allocated command packet (from a command packet set)
- * that is implicitly released once the command packet has been processed.
+ * This routine (to only be called from a fiber) signals a semaphore.
  * To signal a semaphore from a task, task_sem_give() should be used instead.
  *
  * @param sema   Semaphore to signal.
- * @param pSet   Pointer to command packet set.
  *
  * @return N/A
  */
-extern void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet);
+extern void isr_sem_give(ksem_t sema);
 
 /**
  *
  * @brief Signal a semaphore from an ISR
  *
- * This routine (to only be called from an ISR) signals a semaphore.  It
- * requires a statically allocated command packet (from a command packet set)
- * that is implicitly released once the command packet has been processed.
+ * This routine (to only be called from an ISR) signals a semaphore.
  * To signal a semaphore from a task, task_sem_give() should be used instead.
  *
  * @param sema   Semaphore to signal.
- * @param pSet   Pointer to command packet set.
  *
  * @return N/A
  */
-extern void fiber_sem_give(ksem_t sema, struct cmd_pkt_set *pSet);
+extern void fiber_sem_give(ksem_t sema);
 
 /**
  *
@@ -142,6 +136,21 @@ extern void task_sem_group_reset(ksemg_t semagroup);
 /**
  * @cond internal
  */
+
+/**
+ *
+ * @brief Update value of semaphore structure
+ *
+ * This routine updates the value of the semaphore by 0 or more units, then
+ * gives the semaphore to any waiting tasks that can now be satisfied.
+ *
+ * @param n      Number of additional times semaphore has been given.
+ * @param sema   Semaphore structure to update.
+ *
+ * @return N/A
+ */
+extern void _k_sem_struct_value_update(int n, struct _k_sem_struct *S);
+
 /**
  *
  * @brief Test a semaphore
