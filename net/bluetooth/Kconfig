@@ -55,6 +55,54 @@ config	BLUETOOTH_DEBUG_HCI_CORE
 	  This option enables debug support for Bluetooth HCI
 	  core.
 
+config  BLUETOOTH_HCI_COUNT
+	int "Number of HCI buffers"
+	default 8
+	range 2 64
+	help
+	  Number of buffers available for HCI commands and events.
+
+config  BLUETOOTH_HCI_SIZE
+	int "Size of HCI buffers"
+	default 72
+	range 72 260
+	help
+	  Maximum size of each HCI buffer.
+
+if BLUETOOTH_CONN
+config  BLUETOOTH_ACL_IN_COUNT
+	int "Number of incoming ACL data buffers"
+	default 7
+	range 1 16
+	help
+	  Number of buffers available for incoming ACL data.
+
+config  BLUETOOTH_ACL_IN_SIZE
+	int "Size of incoming ACL data buffers"
+	default 74 if BLUETOOTH_SMP
+	default 32 if !BLUETOOTH_SMP
+	range 74 1300 if BLUETOOTH_SMP
+	range 32 1300 if !BLUETOOTH_SMP
+	help
+	  Maximum size of each incoming ACL data buffer.
+
+config  BLUETOOTH_ACL_OUT_COUNT
+	int "Number of incoming ACL data buffers"
+	default 7
+	range 1 16
+	help
+	  Number of buffers available for incoming ACL data.
+
+config  BLUETOOTH_ACL_OUT_SIZE
+	int "Size of incoming ACL data buffers"
+	default 74 if BLUETOOTH_SMP
+	default 32 if !BLUETOOTH_SMP
+	range 74 1300 if BLUETOOTH_SMP
+	range 32 1300 if !BLUETOOTH_SMP
+	help
+	  Maximum size of each outgoing ACL data buffer.
+endif # BLUETOOTH_CONN
+
 if BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"

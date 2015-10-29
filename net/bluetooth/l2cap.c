@@ -62,10 +62,9 @@ struct bt_l2cap {
 
 static struct bt_l2cap bt_l2cap_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
-#define BT_BUF_ACL_OUT_MAX 7
 static struct nano_fifo avail_acl_out;
-static NET_BUF_POOL(acl_out_pool, BT_BUF_ACL_OUT_MAX, BT_BUF_MAX_DATA,
-		    &avail_acl_out, NULL, 0);
+static NET_BUF_POOL(acl_out_pool, CONFIG_BLUETOOTH_ACL_OUT_COUNT,
+		    CONFIG_BLUETOOTH_ACL_OUT_SIZE, &avail_acl_out, NULL, 0);
 
 static struct bt_l2cap *l2cap_chan_get(struct bt_conn *conn)
 {

@@ -76,7 +76,8 @@ struct bt_acl_data {
 
 /* Available (free) buffers queues */
 static struct nano_fifo avail_hci;
-static NET_BUF_POOL(hci_pool, 8, BT_BUF_MAX_DATA, &avail_hci, NULL,
+static NET_BUF_POOL(hci_pool, CONFIG_BLUETOOTH_HCI_COUNT,
+		    CONFIG_BLUETOOTH_HCI_SIZE, &avail_hci, NULL,
 		    sizeof(struct bt_hci_data));
 
 #if defined(CONFIG_BLUETOOTH_CONN)
@@ -108,9 +109,9 @@ static void report_completed_packet(struct net_buf *buf)
 
 #define BT_BUF_ACL_IN_MAX 7
 static struct nano_fifo avail_acl_in;
-static NET_BUF_POOL(acl_in_pool, BT_BUF_ACL_IN_MAX, BT_BUF_MAX_DATA,
-		    &avail_acl_in, report_completed_packet,
-		    sizeof(struct bt_acl_data));
+static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
+		    CONFIG_BLUETOOTH_ACL_IN_SIZE, &avail_acl_in,
+		    report_completed_packet, sizeof(struct bt_acl_data));
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 /* Incoming buffer type lookup helper */
@@ -731,7 +732,7 @@ static int set_flow_control(void)
 
 	hbs = net_buf_add(buf, sizeof(*hbs));
 	memset(hbs, 0, sizeof(*hbs));
-	hbs->acl_mtu = sys_cpu_to_le16(BT_BUF_MAX_DATA -
+	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BLUETOOTH_ACL_IN_SIZE -
 				       sizeof(struct bt_hci_acl_hdr) -
 				       bt_dev.drv->recv_reserve);
 	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_ACL_IN_MAX);

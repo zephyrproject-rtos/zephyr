@@ -21,7 +21,7 @@
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding L2CAP, ACL and driver headers.
  */
-#define BT_ATT_MAX_LE_MTU	(BT_BUF_MAX_DATA - \
+#define BT_ATT_MAX_LE_MTU	(CONFIG_BLUETOOTH_ACL_IN_SIZE - \
 				 sizeof(struct bt_l2cap_hdr) - \
 				 sizeof(struct bt_hci_acl_hdr) - \
 				 bt_dev.drv->recv_reserve)

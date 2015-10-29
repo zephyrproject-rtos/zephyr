@@ -175,14 +175,3 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr);
 #endif
 
 int bt_le_scan_update(void);
-
-/** @def BT_BUF_MAX_DATA
- *  @brief Maximum amount of data that can fit in a buffer.
- *
- *  The biggest foreseeable buffer size requirement right now comes from
- *  the Bluetooth 4.2 SMP MTU which is 65. This then become 65 + 4 (L2CAP
- *  header) + 4 (ACL header) + 1 (H4 header) = 74. This also covers the
- *  biggest HCI commands and events which are a bit under the 70 byte
- *  mark.
- */
-#define BT_BUF_MAX_DATA 74
