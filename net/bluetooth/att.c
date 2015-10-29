@@ -515,12 +515,52 @@ static bool uuid_create(struct bt_uuid *uuid, struct net_buf *buf)
 	return false;
 }
 
+static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  uint8_t mask)
+{
+	if ((mask & BT_GATT_PERM_READ) && !(attr->perm & BT_GATT_PERM_READ)) {
+		return BT_ATT_ERR_READ_NOT_PERMITTED;
+	}
+
+	if ((mask & BT_GATT_PERM_WRITE) && !(attr->perm & BT_GATT_PERM_WRITE)) {
+		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
+	}
+
+	mask &= attr->perm;
+	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
+#if defined(CONFIG_BLUETOOTH_SMP)
+		if (conn->sec_level < BT_SECURITY_HIGH) {
+			return BT_ATT_ERR_AUTHENTICATION;
+		}
+#else
+		return BT_ATT_ERR_AUTHENTICATION;
+#endif /* CONFIG_BLUETOOTH_SMP */
+	}
+
+	if ((mask & BT_GATT_PERM_ENCRYPT_MASK)) {
+#if defined(CONFIG_BLUETOOTH_SMP)
+		if (!conn->encrypt) {
+			return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+		}
+#else
+		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+#endif /* CONFIG_BLUETOOTH_SMP */
+	}
+
+	if (mask & BT_GATT_PERM_AUTHOR) {
+		return BT_ATT_ERR_AUTHORIZATION;
+	}
+
+	return 0;
+}
+
 struct read_type_data {
 	struct bt_att *att;
 	struct bt_uuid *uuid;
 	struct net_buf *buf;
 	struct bt_att_read_type_rsp *rsp;
 	struct bt_att_data *item;
+	uint8_t err;
 };
 
 static uint8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
@@ -536,6 +576,30 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	BT_DBG("handle 0x%04x\n", attr->handle);
+
+	/*
+	 * If an attribute in the set of requested attributes would cause an
+	 * Error Response then this attribute cannot be included in a
+	 * Read By Type Response and the attributes before this attribute
+	 * shall be returned
+	 *
+	 * If the first attribute in the set of requested attributes would
+	 * cause an Error Response then no other attributes in the requested
+	 * attributes can be considered.
+	 */
+	data->err = check_perm(conn, attr, BT_GATT_PERM_READ_MASK);
+	if (data->err) {
+		if (!data->rsp->len) {
+			data->err = 0x00;
+		}
+		return BT_GATT_ITER_STOP;
+	}
+
+	/*
+	 * If any attribute is founded in handle range it means that error
+	 * should be changed from pre-set: attr not found error to no error.
+	 */
+	data->err = 0x00;
 
 	/* Fast foward to next item position */
 	data->item = net_buf_add(data->buf, sizeof(*data->item));
@@ -584,13 +648,16 @@ static uint8_t att_read_type_rsp(struct bt_att *att, struct bt_uuid *uuid,
 	data.rsp = net_buf_add(data.buf, sizeof(*data.rsp));
 	data.rsp->len = 0;
 
+	/* Pre-set error if no attr will be found in handle */
+	data.err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
+
 	bt_gatt_foreach_attr(start_handle, end_handle, read_type_cb, &data);
 
-	if (!data.rsp->len) {
+	if (data.err) {
 		net_buf_unref(data.buf);
 		/* Response here since handle is set */
 		send_err_rsp(conn, BT_ATT_OP_READ_TYPE_REQ, start_handle,
-			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+			     data.err);
 		return 0;
 	}
 
@@ -648,45 +715,6 @@ static uint8_t err_to_att(int err)
 	default:
 		return BT_ATT_ERR_UNLIKELY;
 	}
-}
-
-static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			  uint8_t mask)
-{
-	if ((mask & BT_GATT_PERM_READ) && !(attr->perm & BT_GATT_PERM_READ)) {
-		return BT_ATT_ERR_READ_NOT_PERMITTED;
-	}
-
-	if ((mask & BT_GATT_PERM_WRITE) && !(attr->perm & BT_GATT_PERM_WRITE)) {
-		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
-	}
-
-	mask &= attr->perm;
-	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
-#if defined(CONFIG_BLUETOOTH_SMP)
-		if (conn->sec_level < BT_SECURITY_HIGH) {
-			return BT_ATT_ERR_AUTHENTICATION;
-		}
-#else
-		return BT_ATT_ERR_AUTHENTICATION;
-#endif /* CONFIG_BLUETOOTH_SMP */
-	}
-
-	if ((mask & BT_GATT_PERM_ENCRYPT_MASK)) {
-#if defined(CONFIG_BLUETOOTH_SMP)
-		if (!conn->encrypt) {
-			return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
-		}
-#else
-		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
-#endif /* CONFIG_BLUETOOTH_SMP */
-	}
-
-	if (mask & BT_GATT_PERM_AUTHOR) {
-		return BT_ATT_ERR_AUTHORIZATION;
-	}
-
-	return 0;
 }
 
 struct read_data {
