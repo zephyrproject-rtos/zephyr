@@ -40,6 +40,24 @@ config BLUETOOTH_CENTRAL
 	default n
 	select BLUETOOTH_CONN
 
+config	BLUETOOTH_DEBUG
+	bool
+	prompt "Bluetooth LE debug support"
+	select STDOUT_CONSOLE
+	default n
+	help
+	  This option enables Bluetooth debug going to standard
+	  serial console.
+
+config	BLUETOOTH_DEBUG_HCI_CORE
+	bool
+	prompt "Bluetooth HCI core debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for Bluetooth HCI
+	  core.
+
 if BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
 config BLUETOOTH_SMP
 	bool
@@ -84,25 +102,6 @@ config	BLUETOOTH_MAX_PAIRED
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
-
-config	BLUETOOTH_DEBUG
-	bool
-	prompt "Bluetooth LE debug support"
-	depends on BLUETOOTH
-	select STDOUT_CONSOLE
-	default n
-	help
-	  This option enables Bluetooth debug going to standard
-	  serial console.
-
-config	BLUETOOTH_DEBUG_HCI_CORE
-	bool
-	prompt "Bluetooth HCI core debug"
-	depends on BLUETOOTH_DEBUG
-	default n
-	help
-	  This option enables debug support for Bluetooth HCI
-	  core
 
 config	BLUETOOTH_DEBUG_CONN
 	bool
