@@ -47,6 +47,14 @@
 #define L2CAP_LE_DYN_CID_START	0x0040
 #define L2CAP_LE_DYN_CID_END	0x007f
 
+/* Size of MTU is based on the maximum amount of data the buffer can hold
+ * excluding ACL and driver headers.
+ */
+#define BT_L2CAP_MAX_LE_MPS	(CONFIG_BLUETOOTH_ACL_IN_SIZE - \
+				 sizeof(struct bt_l2cap_hdr) - \
+				 sizeof(struct bt_hci_acl_hdr) - \
+				 bt_dev.drv->recv_reserve)
+
 static struct bt_l2cap_fixed_chan *channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_server *servers;
@@ -418,7 +426,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	chan->tx.credits = credits;
 
 	/* Init RX parameters */
-	chan->rx.mps = net_buf_tailroom(buf) + sizeof(*rsp);
+	chan->rx.mps = BT_L2CAP_MAX_LE_MPS;
 	/* TODO: Once segmentation is supported these can be different */
 	chan->rx.mtu = chan->rx.mps;
 	chan->rx.credits = L2CAP_LE_MAX_CREDITS;
