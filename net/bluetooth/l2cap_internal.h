@@ -101,6 +101,12 @@ struct bt_l2cap_le_conn_rsp {
 	uint16_t result;
 };
 
+#define BT_L2CAP_LE_CREDITS		0x16
+struct bt_l2cap_le_credits {
+	uint16_t cid;
+	uint16_t credits;
+} __packed;
+
 struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
 

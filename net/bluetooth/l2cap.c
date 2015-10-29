@@ -41,8 +41,9 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define L2CAP_LE_MIN_MTU	23
-#define L2CAP_LE_MAX_CREDITS	1
+#define L2CAP_LE_MIN_MTU		23
+#define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
+#define L2CAP_LE_CREDITS_THRESHOLD	(L2CAP_LE_MAX_CREDITS / 2)
 
 #define L2CAP_LE_DYN_CID_START	0x0040
 #define L2CAP_LE_DYN_CID_END	0x007f
@@ -576,6 +577,90 @@ drop:
 	net_buf_unref(buf);
 }
 
+static void l2cap_chan_update_credits(struct bt_l2cap_chan *chan)
+{
+	struct net_buf *buf;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_le_credits *ev;
+	uint16_t credits;
+
+	/* Only give more credits if it went bellow the defined threshold */
+	if (chan->rx.credits > L2CAP_LE_CREDITS_THRESHOLD) {
+		goto done;
+	}
+
+	/* Restore credits */
+	credits = L2CAP_LE_MAX_CREDITS - chan->rx.credits;
+	chan->rx.credits = L2CAP_LE_MAX_CREDITS;
+
+	buf = bt_l2cap_create_pdu(chan->conn);
+	if (!buf) {
+		BT_ERR("Unable to send credits\n");
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_LE_CREDITS;
+	hdr->ident = get_ident(chan->conn);
+	hdr->len = sys_cpu_to_le16(sizeof(*ev));
+
+	ev = net_buf_add(buf, sizeof(*ev));
+	ev->cid = sys_cpu_to_le16(chan->tx.cid);
+	ev->credits = sys_cpu_to_le16(credits);
+
+	bt_l2cap_send(chan->conn, BT_L2CAP_CID_LE_SIG, buf);
+
+done:
+	BT_DBG("chan %p credits %u\n", chan, chan->rx.credits);
+}
+
+static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	uint16_t sdu_len;
+
+	if (!chan->rx.credits) {
+		BT_ERR("No credits to receive packet\n");
+		net_buf_unref(buf);
+		return;
+	}
+
+	chan->rx.credits--;
+
+	/* TODO: SDU length is only sent in the first packet, for now this is
+	 * ok because MPS is the same as MTU so no segmentation should happen.
+	 */
+	sdu_len = net_buf_pull_le16(buf);
+
+	BT_DBG("chan %p len %u sdu_len %u\n", chan, buf->len, sdu_len);
+
+	if (sdu_len > chan->rx.mtu) {
+		BT_ERR("Invalid SDU length\n");
+		net_buf_unref(buf);
+		return;
+	}
+
+	chan->ops->recv(chan, buf);
+
+	l2cap_chan_update_credits(chan);
+}
+
+static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+
+	/* TODO: Check the conn type to differentiate BR/EDR and LE or
+	 * introduce a mode.
+	 */
+	if (chan->rx.cid >= L2CAP_LE_DYN_CID_START &&
+	    chan->rx.cid <= L2CAP_LE_DYN_CID_END) {
+		l2cap_chan_le_recv(chan, buf);
+		return;
+	}
+
+	BT_DBG("chan %p len %u\n", chan, buf->len);
+
+	chan->ops->recv(chan, buf);
+}
+
 void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct bt_l2cap_hdr *hdr = (void *)buf->data;
@@ -600,7 +685,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 		return;
 	}
 
-	chan->ops->recv(chan, buf);
+	l2cap_chan_recv(chan, buf);
 }
 
 int bt_l2cap_update_conn_param(struct bt_conn *conn)
