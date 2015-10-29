@@ -39,8 +39,15 @@ struct net_buf *bt_buf_get_acl(void);
 void bt_recv(struct net_buf *buf);
 
 struct bt_driver {
-	/* How much headroom is needed for HCI transport headers */
-	size_t head_reserve;
+	/* How much headroom is needed for sending to HCI. Typically
+	 * used to reserve space for HCI transport headers.
+	 */
+	size_t send_reserve;
+
+	/* How much of a buffer the driver will consume for its own use
+	 * before passing it onward to the HCI core.
+	 */
+	size_t recv_reserve;
 
 	/* Open the HCI transport */
 	int (*open)(void);

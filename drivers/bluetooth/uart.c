@@ -278,7 +278,8 @@ static int bt_uart_open(void)
 }
 
 static struct bt_driver drv = {
-	.head_reserve	= H4_HEADER_SIZE,
+	.send_reserve	= H4_HEADER_SIZE,
+	.recv_reserve	= 0,
 	.open		= bt_uart_open,
 	.send		= bt_uart_send,
 };

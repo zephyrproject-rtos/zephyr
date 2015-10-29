@@ -158,7 +158,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("opcode %x param_len %u\n", opcode, param_len);
 
-	buf = net_buf_get(&avail_hci, bt_dev.drv->head_reserve);
+	buf = net_buf_get(&avail_hci, bt_dev.drv->send_reserve);
 	if (!buf) {
 		BT_ERR("Cannot get free buffer\n");
 		return NULL;
@@ -733,7 +733,7 @@ static int set_flow_control(void)
 	memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(BT_BUF_MAX_DATA -
 				       sizeof(struct bt_hci_acl_hdr) -
-				       bt_dev.drv->head_reserve);
+				       bt_dev.drv->recv_reserve);
 	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_ACL_IN_MAX);
 
 	err = bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
@@ -1782,13 +1782,13 @@ int bt_stop_scanning(void)
 
 struct net_buf *bt_buf_get_evt(void)
 {
-	return net_buf_get(&avail_hci, 0);
+	return net_buf_get(&avail_hci, bt_dev.drv->recv_reserve);
 }
 
 struct net_buf *bt_buf_get_acl(void)
 {
 #if defined(CONFIG_BLUETOOTH_CONN)
-	return net_buf_get(&avail_acl_in, 0);
+	return net_buf_get(&avail_acl_in, bt_dev.drv->recv_reserve);
 #else
 	return NULL;
 #endif /* CONFIG_BLUETOOTH_CONN */

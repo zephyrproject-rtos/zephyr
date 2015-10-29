@@ -40,7 +40,8 @@ static int driver_send(enum bt_buf_type type, struct net_buf *buf)
 }
 
 static struct bt_driver drv = {
-	.head_reserve = 0,
+	.send_reserve = 0,
+	.recv_reserve = 0,
 	.open         = driver_open,
 	.send         = driver_send,
 };

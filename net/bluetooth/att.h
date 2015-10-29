@@ -24,7 +24,7 @@
 #define BT_ATT_MAX_LE_MTU	(BT_BUF_MAX_DATA - \
 				 sizeof(struct bt_l2cap_hdr) - \
 				 sizeof(struct bt_hci_acl_hdr) - \
-				 bt_dev.drv->head_reserve)
+				 bt_dev.drv->recv_reserve)
 
 struct bt_att_hdr {
 	uint8_t  code;
