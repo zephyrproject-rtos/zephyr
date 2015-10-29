@@ -32,9 +32,9 @@
 #define NET_BUF_ERR(fmt, ...) printf("buf: %s: " fmt, __func__, ##__VA_ARGS__)
 #define NET_BUF_WARN(fmt, ...) printf("buf: %s: " fmt, __func__, ##__VA_ARGS__)
 #define NET_BUF_INFO(fmt, ...) printf("buf: " fmt,  ##__VA_ARGS__)
-#define NET_BUF_ASSERT(cond) (if (!(cond)) { \
-				NET_BUF_ERR("buf: assert: '" #cond "' failed\n"); \
-			})
+#define NET_BUF_ASSERT(cond) do { if (!(cond)) {			  \
+			NET_BUF_ERR("buf: assert: '" #cond "' failed\n"); \
+		}} while(0)
 #else
 #define NET_BUF_DBG(fmt, ...)
 #define NET_BUF_ERR(fmt, ...)
