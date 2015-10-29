@@ -64,8 +64,8 @@ config  BLUETOOTH_HCI_CMD_COUNT
 
 config  BLUETOOTH_HCI_CMD_SIZE
 	int "Size of HCI command buffers"
-	default 72
-	range 72 260
+	default 68
+	range 68 260
 	help
 	  Maximum size of each HCI command buffer.
 
