@@ -62,6 +62,7 @@ SECTIONS {
 	GROUP_START(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(1024)) {
+		_image_rom_start = .;
 		_image_text_start = .;
 
 /* when !XIP, .text is in RAM, and vector table must be at its very start */
@@ -109,6 +110,7 @@ SECTIONS {
 		*(".rodata.*")
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	_image_rom_end = .;
 	__data_rom_start = ALIGN(4);	/* XIP imaged DATA ROM start addr */
 
 	GROUP_END(ROMABLE_REGION)
@@ -123,6 +125,7 @@ SECTIONS {
 
 /* when XIP, .text is in ROM, but vector table must be at start of .data */
 
+		_image_ram_start = .;
 		__data_ram_start = .;
 		*(.data)
 		*(".data.*")
@@ -164,7 +167,7 @@ SECTIONS {
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 	/* Define linker symbols */
-
+	_image_ram_end = .;
 	_end = .; /* end of image */
 	__bss_num_words = (__bss_end - __bss_start) >> 2;
 
