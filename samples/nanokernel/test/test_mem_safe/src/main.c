@@ -370,6 +370,7 @@ void main(void)
 		TC_PRINT("PASS (%d)\n", rc);
 	}
 
+#if !defined(CONFIG_XIP)
 	/*****
 	 * _mem_safe_write_to_text_section()
 	 */
@@ -404,6 +405,7 @@ void main(void)
 			}
 		}
 	}
+#endif
 
 	TC_END_RESULT(rv);
 	TC_END_REPORT(rv);
