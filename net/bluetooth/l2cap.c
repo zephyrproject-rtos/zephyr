@@ -55,6 +55,8 @@
 				 sizeof(struct bt_l2cap_hdr) - \
 				 sizeof(struct bt_hci_acl_hdr) - \
 				 bt_dev.drv->recv_reserve)
+/* For now use MPS - SDU length to disable segmentation */
+#define BT_L2CAP_MAX_LE_MTU	(BT_L2CAP_MAX_LE_MPS - 2)
 
 static struct bt_l2cap_fixed_chan *channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -430,7 +432,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	/* Init RX parameters */
 	chan->rx.mps = BT_L2CAP_MAX_LE_MPS;
 	/* TODO: Once segmentation is supported these can be different */
-	chan->rx.mtu = chan->rx.mps;
+	chan->rx.mtu = BT_L2CAP_MAX_LE_MTU;
 	chan->rx.credits = L2CAP_LE_MAX_CREDITS;
 
 	l2cap_chan_add(conn, chan);
