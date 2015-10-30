@@ -83,3 +83,25 @@ uip_debug_lladdr_print(const uip_lladdr_t *addr)
   }
 }
 /*---------------------------------------------------------------------------*/
+void
+uip_debug_hex_dump(const unsigned char *buffer, int len)
+{
+  int i = 0;
+
+  while (len--) {
+    if (i % 16 == 0) {
+      PRINTA("%X ", i);
+    }
+    PRINTA("%X ", *buffer++);
+
+    i++;
+    if (i % 8 == 0) {
+      if (i % 16 == 0) {
+	PRINTA("\n");
+      } else {
+	PRINTA(" ");
+      }
+    }
+  }
+}
+/*---------------------------------------------------------------------------*/

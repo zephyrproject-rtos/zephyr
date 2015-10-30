@@ -46,6 +46,7 @@
 
 void uip_debug_ipaddr_print(const uip_ipaddr_t *addr);
 void uip_debug_lladdr_print(const uip_lladdr_t *addr);
+void uip_debug_hex_dump(const unsigned char *buffer, int len);
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
