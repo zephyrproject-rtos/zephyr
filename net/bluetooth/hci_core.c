@@ -1345,14 +1345,16 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	bt_dev.le_pkts = rp->le_max_num;
 }
 
-static int hci_init(void)
+static int common_init(void)
 {
-	struct bt_hci_cp_set_event_mask *ev;
-	struct net_buf *buf, *rsp;
-	int i, err;
+	struct net_buf *rsp;
+	int err;
 
 	/* Send HCI_RESET */
-	bt_hci_cmd_send(BT_HCI_OP_RESET, NULL);
+	err = bt_hci_cmd_send(BT_HCI_OP_RESET, NULL);
+	if (err) {
+		return err;
+	}
 
 	/* Read Local Supported Features */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
@@ -1379,6 +1381,22 @@ static int hci_init(void)
 	read_bdaddr_complete(rsp);
 	net_buf_unref(rsp);
 
+#if defined(CONFIG_BLUETOOTH_CONN)
+	err = set_flow_control();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BLUETOOTH_CONN */
+
+	return 0;
+}
+
+static int le_init(void)
+{
+	struct net_buf *rsp;
+	struct bt_hci_cp_write_le_host_supp *cp;
+	int err;
+
 	/* For now we only support LE capable controllers */
 	if (!lmp_le_capable(bt_dev)) {
 		BT_ERR("Non-LE capable controller detected!\n");
@@ -1401,6 +1419,56 @@ static int hci_init(void)
 	}
 	le_read_buffer_size_complete(rsp);
 	net_buf_unref(rsp);
+
+	if (lmp_bredr_capable(bt_dev)) {
+		struct net_buf *buf;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
+					sizeof(*cp));
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+
+		/* Excplicitly enable LE for dual-mode controllers */
+		cp->le = 0x01;
+		cp->simul = 0x00;
+		return bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
+					    buf, NULL);
+	}
+
+	return 0;
+}
+
+static int br_init(void)
+{
+	struct net_buf *rsp;
+	int err;
+
+	if (!lmp_bredr_capable(bt_dev)) {
+		BT_DBG("Non-BR/EDR controller detected! Skipping BR init.\n");
+		return 0;
+	}
+
+	/* Use BR/EDR buffer size if LE reports zero buffers */
+	if (!bt_dev.le_mtu) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL,
+					   &rsp);
+		if (err) {
+			return err;
+		}
+		read_buffer_size_complete(rsp);
+		net_buf_unref(rsp);
+	}
+
+	return 0;
+}
+
+static int set_event_mask(void)
+{
+	struct bt_hci_cp_set_event_mask *ev;
+	struct net_buf *buf;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_SET_EVENT_MASK, sizeof(*ev));
 	if (!buf) {
@@ -1429,42 +1497,31 @@ static int hci_init(void)
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
 
-	bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
+}
 
-#if defined(CONFIG_BLUETOOTH_CONN)
-	err = set_flow_control();
+static int hci_init(void)
+{
+	int i, err;
+
+	err = common_init();
 	if (err) {
 		return err;
 	}
-#endif /* CONFIG_BLUETOOTH_CONN */
 
-	if (lmp_bredr_capable(bt_dev)) {
-		struct bt_hci_cp_write_le_host_supp *cp;
+	err = le_init();
+	if (err) {
+		return err;
+	}
 
-		/* Use BR/EDR buffer size if LE reports zero buffers */
-		if (!bt_dev.le_mtu) {
-			err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE,
-						   NULL, &rsp);
-			if (err) {
-				return err;
-			}
-			read_buffer_size_complete(rsp);
-			net_buf_unref(rsp);
-		}
+	err = br_init();
+	if (err) {
+		return err;
+	}
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
-					sizeof(*cp));
-		if (!buf) {
-			return -ENOBUFS;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-
-		/* Excplicitly enable LE for dual-mode controllers */
-		cp->le = 0x01;
-		cp->simul = 0x00;
-		bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, buf,
-				     NULL);
+	err = set_event_mask();
+	if (err) {
+		return err;
 	}
 
 	BT_DBG("HCI ver %u rev %u, manufacturer %u\n", bt_dev.hci_version,
