@@ -106,7 +106,7 @@ includes the file :file:`zephyr.h`.
 Private Semaphore
 -----------------
 
-Define the semaphore a source file using the following syntax:
+Define the semaphore in a source file using the following syntax:
 
 .. code-block:: c
 
