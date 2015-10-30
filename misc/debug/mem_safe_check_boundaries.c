@@ -216,6 +216,17 @@ int _mem_safe_write(void *dest, char *buf, size_t num_bytes, int width)
 			mem_access(dest, buf, width, num_bytes, SYS_MEM_SAFE_WRITE);
 }
 
+#if defined(CONFIG_XIP)
+int _mem_safe_write_to_text_section(void *dest, char *buf, size_t num_bytes)
+{
+	ARG_UNUSED(dest);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(num_bytes);
+
+	/* cannot write to text section when it's in ROM */
+	return -EFAULT;
+}
+#else
 int _mem_safe_write_to_text_section(void *dest, char *buf, size_t num_bytes)
 {
 	vaddr_t v = (vaddr_t)dest;
@@ -229,6 +240,7 @@ int _mem_safe_write_to_text_section(void *dest, char *buf, size_t num_bytes)
 	memcpy(dest, buf, num_bytes);
 	return 0;
 }
+#endif /* CONFIG_XIP */
 
 int _mem_safe_region_add(void *addr, size_t num_bytes, int perm)
 {
