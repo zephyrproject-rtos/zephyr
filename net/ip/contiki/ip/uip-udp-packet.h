@@ -40,7 +40,7 @@
 #ifndef UIP_UDP_PACKET_H_
 #define UIP_UDP_PACKET_H_
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #include "net/ip/uip.h"
 

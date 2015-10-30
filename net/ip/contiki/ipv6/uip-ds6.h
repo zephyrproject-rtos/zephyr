@@ -42,7 +42,7 @@
 #ifndef UIP_DS6_H_
 #define UIP_DS6_H_
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #include "net/ip/uip.h"
 #include "sys/stimer.h"

@@ -316,17 +316,17 @@ coap_obs_request_registration(coap_context_t *coap_ctx,
     uint8_t *ptr;
 
     if (coap_ctx->buf) {
-      net_buf_put(coap_ctx->buf);
+      ip_buf_unref(coap_ctx->buf);
     }
 
-    coap_ctx->buf = net_buf_get_tx(coap_ctx->net_ctx);
+    coap_ctx->buf = ip_buf_get_tx(coap_ctx->net_ctx);
     if (!coap_ctx->buf) {
       coap_clear_transaction(t);
       return NULL;
     }
 
     ptr = net_buf_add(coap_ctx->buf, 0);
-    net_buf_data(coap_ctx->buf) = ptr;
+    ip_buf_appdata(coap_ctx->buf) = ptr;
 
     obs = coap_obs_add_observee(coap_ctx, addr, port,
                                 (uint8_t *)token, token_len, uri,
@@ -336,11 +336,12 @@ coap_obs_request_registration(coap_context_t *coap_ctx,
       t->callback_data = obs;
       t->packet_len = coap_serialize_message(request, t->packet);
       uip_len(coap_ctx->buf) = t->packet_len;
+      net_buf_add(coap_ctx->buf, uip_len(coap_ctx->buf));
       coap_send_transaction(t);
     } else {
       PRINTF("Could not allocate obs_subject resource buffer");
       coap_clear_transaction(t);
-      net_buf_put(coap_ctx->buf);
+      ip_buf_unref(coap_ctx->buf);
       coap_ctx->buf = NULL;
     }
   } else {

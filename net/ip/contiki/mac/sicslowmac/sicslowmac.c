@@ -45,6 +45,8 @@
 
 #include <string.h>
 
+#include <net/l2_buf.h>
+
 #include "net/mac/sicslowmac/sicslowmac.h"
 #include "net/mac/frame802154.h"
 #include "net/packetbuf.h"
@@ -95,7 +97,7 @@ is_broadcast_addr(uint8_t mode, uint8_t *addr)
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-send_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
+send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
 {
   frame802154_t params;
   uint8_t len;
@@ -180,7 +182,7 @@ send_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
 }
 /*---------------------------------------------------------------------------*/
 uint8_t
-send_list(struct net_mbuf *buf, mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
+send_list(struct net_buf *buf, mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 {
   if(buf_list != NULL) {
     queuebuf_to_packetbuf(buf, buf_list->buf);
@@ -193,7 +195,7 @@ send_list(struct net_mbuf *buf, mac_callback_t sent, void *ptr, struct rdc_buf_l
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-input_packet(struct net_mbuf *buf)
+input_packet(struct net_buf *buf)
 {
   frame802154_t frame;
   int len;

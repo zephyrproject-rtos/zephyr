@@ -25,21 +25,22 @@ menuconfig NETWORKING
 	prompt "Generic networking support"
 	select NANO_TIMEOUTS
 	select NANO_TIMERS
+	select NET_BUF
 	default n
 	help
 	  This option enabled generic networking support.
 
 if NETWORKING
 
-config NET_BUF_RX_SIZE
-	int "Number of network buffers to use when receiving data"
+config IP_BUF_RX_SIZE
+	int "Number of IP net buffers to use when receiving data"
 	default 1
 	help
 	Each network buffer will contain one received IPv6 or IPv4 packet.
 	Each buffer will occupy 1280 bytes of memory.
 
-config NET_BUF_TX_SIZE
-	int "Number of network buffers to use when sending data"
+config IP_BUF_TX_SIZE
+	int "Number of IP net buffers to use when sending data"
 	default 2
 	help
 	Each network buffer will contain one sent IPv6 or IPv4 packet.
@@ -136,6 +137,7 @@ config	NETWORKING_WITH_LOGGING
 	bool
 	prompt "Enable logging of the uIP stack"
 	depends on NETWORKING
+	select NET_BUF_DEBUG
 	default n
 	help
 	  Enable packet and uIP stack logging

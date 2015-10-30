@@ -37,7 +37,7 @@
  *         Adam Dunkels <adam@sics.se>
  */
 
-#include <net/net_buf.h>
+#include <net/l2_buf.h>
 
 #include "net/mac/nullmac.h"
 #include "net/netstack.h"
@@ -48,7 +48,7 @@
 
 /*---------------------------------------------------------------------------*/
 static uint8_t
-send_packet(struct net_mbuf *buf, mac_callback_t sent,
+send_packet(struct net_buf *buf, mac_callback_t sent,
 	    bool last_fragment, void *ptr)
 {
   NETSTACK_RDC.send(buf, sent, ptr);
@@ -56,7 +56,7 @@ send_packet(struct net_mbuf *buf, mac_callback_t sent,
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-packet_input(struct net_mbuf *buf)
+packet_input(struct net_buf *buf)
 {
   return NETSTACK_LLSEC.input(buf);
 }

@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <net/net_buf.h>
+#include <net/l2_buf.h>
 #include <net_driver_15_4.h>
 #include <net/sicslowpan/sicslowpan_fragmentation.h>
 #include <net/netstack.h>
@@ -183,7 +183,7 @@ clear_fragments(uint8_t frag_info_index)
 }
 /*---------------------------------------------------------------------------*/
 static int
-store_fragment(struct net_mbuf *mbuf, uint8_t index, uint8_t offset)
+store_fragment(struct net_buf *mbuf, uint8_t index, uint8_t offset)
 {
   int i;
   for(i = 0; i < SICSLOWPAN_FRAGMENT_BUFFERS; i++) {
@@ -207,7 +207,7 @@ store_fragment(struct net_mbuf *mbuf, uint8_t index, uint8_t offset)
 /*---------------------------------------------------------------------------*/
 /* add a new fragment to the buffer */
 static int8_t
-add_fragment(struct net_mbuf *mbuf, uint16_t tag, uint16_t frag_size, uint8_t offset)
+add_fragment(struct net_buf *mbuf, uint16_t tag, uint16_t frag_size, uint8_t offset)
 {
   int i;
   int len;
@@ -280,43 +280,49 @@ store:
 /* Copy all the fragments that are associated with a specific context into uip */
 static struct net_buf *copy_frags2uip(int context)
 {
-  int i;
-  struct net_buf *buf = NULL;
+  int i, total_len = 0;
+  struct net_buf *buf;
 
-  buf = net_buf_get_reserve_rx(0);
+  buf = ip_buf_get_reserve_rx(0);
   if(!buf) {
     return NULL;
   }
 
   /* Copy from the fragment context info buffer first */
-  linkaddr_copy(&buf->dest, &frag_info[context].receiver);
-  linkaddr_copy(&buf->src, &frag_info[context].sender);
+  linkaddr_copy(&ip_buf_ll_dest(buf), &frag_info[context].receiver);
+  linkaddr_copy(&ip_buf_ll_src(buf), &frag_info[context].sender);
 
   for(i = 0; i < SICSLOWPAN_FRAGMENT_BUFFERS; i++) {
     /* And also copy all matching fragments */
     if(frag_buf[i].len > 0 && frag_buf[i].index == context) {
       memcpy(uip_buf(buf) + (uint16_t)(frag_buf[i].offset << 3),
             (uint8_t *)frag_buf[i].data, frag_buf[i].len);
+      total_len += frag_buf[i].len;
     }
   }
+  net_buf_add(buf, total_len);
+  uip_len(buf) = total_len;
+
   /* deallocate all the fragments for this context */
   clear_fragments(context);
 
   return buf;
 }
 
-static struct net_buf *copy_buf(struct net_mbuf *mbuf)
+static struct net_buf *copy_buf(struct net_buf *mbuf)
 {
-  struct net_buf *buf = NULL;
+  struct net_buf *buf;
 
-  buf = net_buf_get_reserve_rx(0);
+  buf = ip_buf_get_reserve_rx(0);
   if(!buf) {
     return NULL;
   }
 
   /* Copy from the fragment context info buffer first */
-  linkaddr_copy(&buf->dest, packetbuf_addr(mbuf, PACKETBUF_ADDR_RECEIVER));
-  linkaddr_copy(&buf->src, packetbuf_addr(mbuf, PACKETBUF_ADDR_SENDER));
+  linkaddr_copy(&ip_buf_ll_dest(buf),
+		packetbuf_addr(mbuf, PACKETBUF_ADDR_RECEIVER));
+  linkaddr_copy(&ip_buf_ll_src(buf),
+		packetbuf_addr(mbuf, PACKETBUF_ADDR_SENDER));
 
   PRINTFI("%s: mbuf datalen %d dataptr %p buf %p\n", __FUNCTION__,
 	  packetbuf_datalen(mbuf), packetbuf_dataptr(mbuf), uip_buf(buf));
@@ -324,8 +330,9 @@ static struct net_buf *copy_buf(struct net_mbuf *mbuf)
      packetbuf_datalen(mbuf) <= UIP_BUFSIZE - UIP_LLH_LEN) {
     memcpy(uip_buf(buf), packetbuf_dataptr(mbuf), packetbuf_datalen(mbuf));
     uip_len(buf) = packetbuf_datalen(mbuf);
+    net_buf_add(buf, uip_len(buf));
   } else {
-    net_buf_put(buf);
+    ip_buf_unref(buf);
     buf = NULL;
   }
 
@@ -333,7 +340,7 @@ static struct net_buf *copy_buf(struct net_mbuf *mbuf)
 }
 
 static void
-packet_sent(struct net_mbuf *buf, void *ptr, int status, int transmissions)
+packet_sent(struct net_buf *buf, void *ptr, int status, int transmissions)
 {
   const linkaddr_t *dest = packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER);
   uip_ds6_link_neighbor_callback(dest, status, transmissions);
@@ -347,7 +354,7 @@ packet_sent(struct net_mbuf *buf, void *ptr, int status, int transmissions)
  * \param dest the link layer destination address of the packet
  */
 static void
-send_packet(struct net_mbuf *buf, linkaddr_t *dest, bool last_fragment, void *ptr)
+send_packet(struct net_buf *buf, linkaddr_t *dest, bool last_fragment, void *ptr)
 {
   /* Set the link layer destination address for the packet as a
    * packetbuf attribute. The MAC layer can access the destination
@@ -383,7 +390,7 @@ static int fragment(struct net_buf *buf, void *ptr)
 
    /* Number of bytes processed. */
    uint16_t processed_ip_out_len;
-   struct net_mbuf *mbuf;
+   struct net_buf *mbuf;
    bool last_fragment = false;
 
 #define USE_FRAMER_HDRLEN 0
@@ -400,7 +407,7 @@ static int fragment(struct net_buf *buf, void *ptr)
 
   PRINTFO("max_payload: %d, framer_hdrlen: %d \n",max_payload, framer_hdrlen);
 
-  mbuf = net_mbuf_get_reserve(0);
+  mbuf = l2_buf_get_reserve(0);
   if (!mbuf) {
      goto fail;
   }
@@ -414,8 +421,9 @@ static int fragment(struct net_buf *buf, void *ptr)
   if((int)uip_len(buf) <= max_payload) {
     /* The packet does not need to be fragmented, send buf */
     packetbuf_copyfrom(mbuf, uip_buf(buf), uip_len(buf));
-    packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER, &buf->dest);
-    net_buf_put(buf);
+    packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER,
+		       &ip_buf_ll_dest(buf));
+    ip_buf_unref(buf);
     NETSTACK_LLSEC.send(mbuf, &packet_sent, true, ptr);
     return 1;
    }
@@ -467,7 +475,7 @@ static int fragment(struct net_buf *buf, void *ptr)
       PRINTFO("could not allocate queuebuf for first fragment, dropping packet\n");
       goto fail;
     }
-    send_packet(mbuf, &buf->dest, last_fragment, ptr);
+    send_packet(mbuf, &ip_buf_ll_dest(buf), last_fragment, ptr);
     queuebuf_to_packetbuf(mbuf, q);
     queuebuf_free(q);
     q = NULL;
@@ -513,7 +521,7 @@ static int fragment(struct net_buf *buf, void *ptr)
         PRINTFO("could not allocate queuebuf, dropping fragment\n");
         goto fail;
       }
-      send_packet(mbuf, &buf->dest, last_fragment, ptr);
+      send_packet(mbuf, &ip_buf_ll_dest(buf), last_fragment, ptr);
       queuebuf_to_packetbuf(mbuf, q);
       queuebuf_free(q);
       q = NULL;
@@ -528,17 +536,17 @@ static int fragment(struct net_buf *buf, void *ptr)
       }
     }
 
-    net_buf_put(buf);
+    ip_buf_unref(buf);
     return 1;
 
 fail:
     if (mbuf) {
-      net_mbuf_put(mbuf);
+      l2_buf_unref(mbuf);
     }
     return 0;
 }
 
-static int reassemble(struct net_mbuf *mbuf)
+static int reassemble(struct net_buf *mbuf)
 {
   /* size of the IP packet (read from fragment) */
   uint16_t frag_size = 0;
@@ -690,12 +698,12 @@ static int reassemble(struct net_mbuf *mbuf)
 
 out:
   /* free MAC buffer */
-  net_mbuf_put(mbuf);
+  l2_buf_unref(mbuf);
   return 1;
 
 fail:
    if(buf) {
-     net_buf_put(buf);
+     ip_buf_unref(buf);
    }
    return 0;
 }

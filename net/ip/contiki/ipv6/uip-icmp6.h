@@ -42,7 +42,7 @@
  * \author Mathilde Durvy <mdurvy@cisco.com>
  */
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #ifndef ICMP6_H_
 #define ICMP6_H_

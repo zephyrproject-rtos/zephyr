@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <net/net_buf.h>
+#include <net/l2_buf.h>
 #include <net/sicslowpan/sicslowpan_compression.h>
 #include <net/netstack.h>
 #include "net/packetbuf.h"
@@ -301,7 +301,7 @@ uncompress_addr(uip_ipaddr_t *ipaddr, uint8_t const prefix[],
  * dest
  */
 static int
-compress_hdr_iphc(struct net_mbuf *mbuf, struct net_buf *buf, linkaddr_t *link_destaddr)
+compress_hdr_iphc(struct net_buf *mbuf, struct net_buf *buf, linkaddr_t *link_destaddr)
 {
   uint8_t tmp, iphc0, iphc1;
 
@@ -575,7 +575,7 @@ compress_hdr_iphc(struct net_mbuf *mbuf, struct net_buf *buf, linkaddr_t *link_d
  * fragment.
  */
 static int
-uncompress_hdr_iphc(struct net_mbuf *mbuf, struct net_buf *ibuf)
+uncompress_hdr_iphc(struct net_buf *mbuf, struct net_buf *ibuf)
 {
   uint8_t tmp, iphc0, iphc1;
   uint8_t buf[UIP_IPUDPH_LEN] = {}; /* Size of (IP + UDP)  header*/
@@ -667,11 +667,12 @@ uncompress_hdr_iphc(struct net_mbuf *mbuf, struct net_buf *ibuf)
     /* if tmp == 0 we do not have a context and therefore no prefix */
     uncompress_addr(&SICSLOWPAN_IP_BUF(buf)->srcipaddr,
                     tmp != 0 ? context->prefix : NULL, unc_ctxconf[tmp],
-                    (uip_lladdr_t *)&ibuf->src);
+                    (uip_lladdr_t *)&ip_buf_ll_src(ibuf));
   } else {
     /* no compression and link local */
-    uncompress_addr(&SICSLOWPAN_IP_BUF(buf)->srcipaddr, llprefix, unc_llconf[tmp],
-                    (uip_lladdr_t *)&ibuf->src);
+    uncompress_addr(&SICSLOWPAN_IP_BUF(buf)->srcipaddr, llprefix,
+                    unc_llconf[tmp],
+                    (uip_lladdr_t *)&ip_buf_ll_src(ibuf));
   }
 
   /* Destination address */
@@ -712,11 +713,12 @@ uncompress_hdr_iphc(struct net_mbuf *mbuf, struct net_buf *ibuf)
 	return 0;
       }
       uncompress_addr(&SICSLOWPAN_IP_BUF(buf)->destipaddr, context->prefix,
-                      unc_ctxconf[tmp], (uip_lladdr_t *)&ibuf->dest);
+                      unc_ctxconf[tmp], (uip_lladdr_t *)&ip_buf_ll_dest(ibuf));
     } else {
       /* not context based => link local M = 0, DAC = 0 - same as SAC */
       uncompress_addr(&SICSLOWPAN_IP_BUF(buf)->destipaddr, llprefix,
-                      unc_llconf[tmp], (uip_lladdr_t *)&ibuf->dest);
+                      unc_llconf[tmp],
+                      (uip_lladdr_t *)&ip_buf_ll_dest(ibuf));
     }
   }
   uip_uncomp_hdr_len(mbuf) += UIP_IPH_LEN;
@@ -828,6 +830,7 @@ compress_hdr_ipv6(struct net_buf *buf)
   memmove(uip_buf(buf) + SICSLOWPAN_IPV6_HDR_LEN, uip_buf(buf), uip_len(buf));
   *uip_buf(buf) = SICSLOWPAN_DISPATCH_IPV6;
   uip_len(buf)++;
+  buf->len++;
   return 1;
 }
 /** @} */
@@ -837,6 +840,7 @@ static int
 uncompress_hdr_ipv6(struct net_buf *buf)
 {
   uip_len(buf)--;
+  buf->len--;
   memmove(uip_buf(buf), uip_buf(buf) + SICSLOWPAN_IPV6_HDR_LEN, uip_len(buf));
   return 1;
 }
@@ -849,7 +853,7 @@ uncompress_hdr_ipv6(struct net_buf *buf)
 static int compress(struct net_buf *buf)
 {
   uint8_t hdr_diff;
-  struct net_mbuf *mbuf;
+  struct net_buf *mbuf;
   int ret;
 
   if(uip_len(buf) >= COMPRESSION_THRESHOLD) {
@@ -860,7 +864,7 @@ static int compress(struct net_buf *buf)
     return compress_hdr_ipv6(buf);
   }
 
-  mbuf = net_mbuf_get_reserve(0);
+  mbuf = l2_buf_get_reserve(0);
   if (!mbuf) {
      return 0;
   }
@@ -874,12 +878,12 @@ static int compress(struct net_buf *buf)
 
   /* Compress the headers */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPHC
-   ret = compress_hdr_iphc(mbuf, buf, &buf->dest);
+  ret = compress_hdr_iphc(mbuf, buf, &ip_buf_ll_dest(buf));
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPHC */
 
   /* if IPHC compression fails then send uncompressed ipv6 packet */
   if (!ret) {
-     net_mbuf_put(mbuf);
+     l2_buf_unref(mbuf);
      PRINTF("sending uncompressed IPv6 packet\n");
      return compress_hdr_ipv6(buf);
      return 0;
@@ -892,20 +896,21 @@ static int compress(struct net_buf *buf)
   memmove(uip_buf(buf) + uip_packetbuf_hdr_len(mbuf),
             uip_buf(buf) + uip_uncomp_hdr_len(mbuf), uip_len(buf) - uip_uncomp_hdr_len(mbuf));
   uip_len(buf) -= hdr_diff;
+  buf->len -= hdr_diff;
   packetbuf_clear(mbuf);
-  net_mbuf_put(mbuf);
+  l2_buf_unref(mbuf);
   return 1;
 }
 
 static int uncompress(struct net_buf *buf)
 {
-  struct net_mbuf *mbuf;
+  struct net_buf *mbuf;
 
   if (*uip_buf(buf) == SICSLOWPAN_DISPATCH_IPV6) {
         return uncompress_hdr_ipv6(buf);
   }
 
-  mbuf = net_mbuf_get_reserve(0);
+  mbuf = l2_buf_get_reserve(0);
   if (!mbuf) {
      return 0;
   }
@@ -937,13 +942,14 @@ static int uncompress(struct net_buf *buf)
                 uip_len(buf) - uip_packetbuf_hdr_len(mbuf));
   memcpy(uip_buf(buf), uip_packetbuf_ptr(mbuf), uip_uncomp_hdr_len(mbuf));
   uip_len(buf) += (uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf));
+  buf->len += (uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf));
 #endif
 
-  net_mbuf_put(mbuf);
+  l2_buf_unref(mbuf);
   return 1;
 
 fail:
-  net_mbuf_put(mbuf);
+  l2_buf_unref(mbuf);
   return 0;
 }
 

@@ -38,7 +38,7 @@
  *         Niclas Finne <nfi@sics.se>
  */
 
-#include <net/net_buf.h>
+#include <net/l2_buf.h>
 
 #include "net/mac/mac-sequence.h"
 #include "net/mac/nullrdc.h"
@@ -131,7 +131,7 @@
 
 /*---------------------------------------------------------------------------*/
 static int
-send_one_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
+send_one_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
 {
   int ret;
   int last_sent_ok = 0;
@@ -306,13 +306,13 @@ send_one_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-send_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
+send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
 {
   return send_one_packet(buf, sent, ptr);
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-send_list(struct net_mbuf *buf, mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
+send_list(struct net_buf *buf, mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 {
   while(buf_list != NULL) {
     /* We backup the next pointer, as it may be nullified by
@@ -336,7 +336,7 @@ send_list(struct net_mbuf *buf, mac_callback_t sent, void *ptr, struct rdc_buf_l
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-packet_input(struct net_mbuf *buf)
+packet_input(struct net_buf *buf)
 {
 #if NULLRDC_SEND_802154_ACK
   int original_datalen;

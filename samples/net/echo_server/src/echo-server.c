@@ -32,6 +32,7 @@
 
 #include <zephyr.h>
 
+#include <net/ip_buf.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
@@ -94,21 +95,22 @@ static inline struct net_buf *prepare_reply(const char *name,
 					    const char *type,
 					    struct net_buf *buf)
 {
-	PRINT("%s: %sreceived %d bytes\n", name, type, net_buf_datalen(buf));
+	PRINT("%s: %sreceived %d bytes\n", name, type,
+	      ip_buf_appdatalen(buf));
 
 	/* In this test we reverse the received bytes.
 	 * We could just pass the data back as is but
 	 * this way it is possible to see how the app
 	 * can manipulate the received data.
 	 */
-	reverse(net_buf_data(buf), net_buf_datalen(buf));
+	reverse(ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
 #ifndef CONFIG_ETHERNET
 	/* Set the mac address of the peer in net_buf because
 	 * there is no radio layer involved in this test app.
 	 * Normally there is no need to do this.
 	 */
-	memcpy(&buf->src, &peer_mac, sizeof(buf->src));
+	memcpy(&ip_buf_ll_src(buf), &peer_mac, sizeof(ip_buf_ll_src(buf)));
 #endif
 
 	return buf;
@@ -132,7 +134,7 @@ static inline void receive_and_reply(const char *name, struct net_context *recv,
 		prepare_reply(name, "unicast ", buf);
 
 		if (net_reply(recv, buf)) {
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 		}
 		return;
 	}
@@ -142,7 +144,7 @@ static inline void receive_and_reply(const char *name, struct net_context *recv,
 		prepare_reply(name, "multicast ", buf);
 
 		if (net_reply(mcast_recv, buf)) {
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 		}
 		return;
 	}

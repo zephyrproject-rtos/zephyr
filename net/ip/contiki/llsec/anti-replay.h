@@ -45,6 +45,8 @@
 #ifndef ANTI_REPLAY_H
 #define ANTI_REPLAY_H
 
+#include <net/l2_buf.h>
+
 #include "contiki.h"
 
 struct anti_replay_info {
@@ -55,25 +57,25 @@ struct anti_replay_info {
 /**
  * \brief Sets the frame counter packetbuf attributes.
  */
-void anti_replay_set_counter(struct net_mbuf *buf);
+void anti_replay_set_counter(struct net_buf *buf);
 
 /**
  * \brief Gets the frame counter from packetbuf.
  */
-uint32_t anti_replay_get_counter(struct net_mbuf *buf);
+uint32_t anti_replay_get_counter(struct net_buf *buf);
 
 /**
  * \brief Initializes the anti-replay information about the sender
  * \param info Anti-replay information about the sender
  */
-void anti_replay_init_info(struct net_mbuf *buf, struct anti_replay_info *info);
+void anti_replay_init_info(struct net_buf *buf, struct anti_replay_info *info);
 
 /**
  * \brief               Checks if received frame was replayed
  * \param info          Anti-replay information about the sender
  * \retval 0            <-> received frame was not replayed
  */
-int anti_replay_was_replayed(struct net_mbuf *buf, struct anti_replay_info *info);
+int anti_replay_was_replayed(struct net_buf *buf, struct anti_replay_info *info);
 
 #endif /* ANTI_REPLAY_H */
 

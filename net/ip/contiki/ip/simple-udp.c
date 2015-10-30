@@ -42,7 +42,7 @@
  * @{
  */
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include "contiki-net.h"
 #include "net/ip/simple-udp.h"

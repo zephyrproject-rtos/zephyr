@@ -71,7 +71,7 @@
  * the packet back to the peer.
  */
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include "net/ip/uip.h"
 #include "net/ip/uipopt.h"
@@ -86,7 +86,7 @@
 /* For Debug, logging, statistics                                            */
 /*---------------------------------------------------------------------------*/
 
-#define DEBUG DEBUG_NONE
+#define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
 
 #if UIP_CONF_IPV6_RPL

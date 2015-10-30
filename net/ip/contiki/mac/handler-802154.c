@@ -36,6 +36,8 @@
  *         Niclas Finne <nfi@sics.se>
  */
 
+#include <net/l2_buf.h>
+
 #include "net/mac/framer-802154.h"
 #include "net/mac/frame802154.h"
 #include "net/mac/handler-802154.h"
@@ -63,7 +65,7 @@ static struct ctimer scan_timer;
 static struct ctimer beacon_send_timer;
 
 static void handle_beacon(frame802154_t *frame);
-static void handle_beacon_send_timer(struct net_mbuf *mbuf, void *p);
+static void handle_beacon_send_timer(struct net_buf *mbuf, void *p);
 static int answer_beacon_requests;
 static uint16_t panid;
 static scan_callback_t callback;
@@ -129,13 +131,13 @@ handle_beacon(frame802154_t *frame)
 }
 /*---------------------------------------------------------------------------*/
 static void
-handle_beacon_send_timer(struct net_mbuf *buf, void *p)
+handle_beacon_send_timer(struct net_buf *buf, void *p)
 {
-  struct net_mbuf *mbuf;
+  struct net_buf *mbuf;
   frame802154_t params;
   uint8_t len;
 
-  mbuf = net_mbuf_get_reserve(0);
+  mbuf = l2_buf_get_reserve(0);
   if(!mbuf) {
     return;
   }
@@ -179,7 +181,7 @@ handle_beacon_send_timer(struct net_mbuf *buf, void *p)
     frame802154_create(&params, packetbuf_hdrptr(mbuf), len);
     if(NETSTACK_RADIO.send(mbuf, packetbuf_hdrptr(mbuf),
                   packetbuf_totlen(mbuf)) != RADIO_TX_OK) {
-      net_mbuf_put(mbuf);
+      l2_buf_unref(mbuf);
       return;
     }
 
@@ -191,11 +193,11 @@ handle_beacon_send_timer(struct net_mbuf *buf, void *p)
 void
 handler_802154_send_beacon_request(void)
 {
-  struct net_mbuf *mbuf;
+  struct net_buf *mbuf;
   frame802154_t params;
   uint8_t len;
 
-  mbuf = net_mbuf_get_reserve(0);
+  mbuf = l2_buf_get_reserve(0);
   if(!mbuf) {
     return;
   }
@@ -232,7 +234,7 @@ handler_802154_send_beacon_request(void)
     frame802154_create(&params, packetbuf_hdrptr(mbuf), len);
     if(NETSTACK_RADIO.send(mbuf, packetbuf_hdrptr(mbuf),
              packetbuf_totlen(mbuf)) != RADIO_TX_OK) {
-      net_mbuf_put(mbuf);
+      l2_buf_unref(mbuf);
       return;
     }
     HANDLER_802154_STAT(handler_802154_stats.beacons_reqs_sent++);
@@ -240,7 +242,7 @@ handler_802154_send_beacon_request(void)
 }
 /*---------------------------------------------------------------------------*/
 static void
-handle_scan_timer(struct net_mbuf *mbuf, void *p)
+handle_scan_timer(struct net_buf *mbuf, void *p)
 {
   if(!scan) {
     return;

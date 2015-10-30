@@ -38,7 +38,7 @@
  *         Joakim Eriksson <joakime@sics.se>
  */
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #ifndef FRAMER_H_
 #define FRAMER_H_
@@ -48,15 +48,15 @@
 
 struct framer {
 
-  int (* length)(struct net_mbuf *buf);
-  int (* create)(struct net_mbuf *buf);
+  int (* length)(struct net_buf *buf);
+  int (* create)(struct net_buf *buf);
   
   /** Creates the frame and calls LLSEC.on_frame_created() */
-  int (* create_and_secure)(struct net_mbuf *buf);
-  int (* parse)(struct net_mbuf *buf);
+  int (* create_and_secure)(struct net_buf *buf);
+  int (* parse)(struct net_buf *buf);
 
 };
 
-int framer_canonical_create_and_secure(struct net_mbuf *buf);
+int framer_canonical_create_and_secure(struct net_buf *buf);
 
 #endif /* FRAMER_H_ */

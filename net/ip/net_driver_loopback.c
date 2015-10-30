@@ -32,7 +32,7 @@
 #include "contiki/ip/uip-debug.h"
 
 #include <net/net_core.h>
-#include <net/net_buf.h>
+#include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_socket.h>
 

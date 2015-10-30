@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 #include <net/net_ip.h>
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 /**
  * @brief Get network context.

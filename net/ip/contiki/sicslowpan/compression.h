@@ -17,7 +17,7 @@
  */
 
 #include "contiki-conf.h"
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #ifndef COMPRESSION_H_
 #define COMPRESSION_H_

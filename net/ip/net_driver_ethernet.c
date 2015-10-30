@@ -79,7 +79,7 @@ static int net_driver_ethernet_send(struct net_buf *buf)
 	 */
 	uip_arp_out(buf);
 #else
-	memcpy(eth_hdr->dest.addr, buf->dest.u8, UIP_LLADDR_LEN);
+	memcpy(eth_hdr->dest.addr, ip_buf_ll_dest(buf).u8, UIP_LLADDR_LEN);
 	memcpy(eth_hdr->src.addr, uip_lladdr.addr, UIP_LLADDR_LEN);
 #endif
 
@@ -88,7 +88,7 @@ static int net_driver_ethernet_send(struct net_buf *buf)
 		/* Release the buffer because we sent all the data
 		 * successfully.
 		 */
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 	}
 
 	return res;
@@ -108,13 +108,13 @@ void net_driver_ethernet_recv(struct net_buf *buf)
 		 * length variable.
 		 */
 		if (uip_len(buf) == 0) {
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 			return;
 		}
 
 		if (!tx_cb) {
 			NET_ERR("Ethernet transmit callback is uninitialized.\n");
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 			return;
 		}
 
@@ -122,13 +122,13 @@ void net_driver_ethernet_recv(struct net_buf *buf)
 			NET_ERR("Failed to send ARP response.\n");
 		}
 
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 	} else
 #endif
 
 	if (net_recv(buf) != 0) {
 		NET_ERR("Unexpected return value from net_recv.\n");
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 	}
 }
 

@@ -38,7 +38,7 @@
 #ifndef RPL_H
 #define RPL_H
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include "rpl-conf.h"
 

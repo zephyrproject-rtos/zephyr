@@ -87,21 +87,20 @@ static int prepare_and_send_buf(coap_context_t *ctx, session_t *session,
    * by this function unless there was an error and buf was
    * not actually sent.
    */
-  buf = net_buf_get_tx(ctx->net_ctx);
+  buf = ip_buf_get_tx(ctx->net_ctx);
   if (!buf) {
     len = -ENOBUFS;
     goto out;
   }
 
-  max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
-	  sizeof(struct uip_ip_hdr);
+  max_data_len = IP_BUF_MAX_DATA - UIP_IPUDPH_LEN;
 
   PRINTF("%s: reply to peer data %p len %d\n", __FUNCTION__, data, len);
 
   if (len > max_data_len) {
     PRINTF("%s: too much (%d bytes) data to send (max %d bytes)\n",
 	  __FUNCTION__, len, max_data_len);
-    net_buf_put(buf);
+    ip_buf_unref(buf);
     len = -EINVAL;
     goto out;
   }
@@ -124,12 +123,12 @@ static int prepare_and_send_buf(coap_context_t *ctx, session_t *session,
 
   uip_set_udp_conn(buf) = net_context_get_udp_connection(ctx->net_ctx);
 
-  memcpy(net_buf_add(buf, 0), data, len);
-  net_buf_add(buf, len);
-  net_buf_datalen(buf) = len;
+  memcpy(net_buf_add(buf, len), data, len);
+  ip_buf_appdatalen(buf) = len;
+  ip_buf_appdata(buf) = buf->data + ip_buf_reserve(buf);
 
   if (net_reply(ctx->net_ctx, buf)) {
-    net_buf_put(buf);
+    ip_buf_unref(buf);
   }
 out:
   return len;
@@ -176,27 +175,23 @@ int coap_context_wait_data(coap_context_t *coap_ctx, int32_t ticks)
     session.size = sizeof(session.addr);
     session.ifindex = 1;
 
-    uip_datalen(buf) = buf->datalen;
-    uip_appdata(buf) = buf->data;
-
-    PRINTF("coap-context: got message from ");
+    PRINTF("coap-context: got dtls message from ");
     PRINT6ADDR(&session.addr.ipaddr);
-    PRINTF(":%d %u bytes\n", uip_ntohs(session.addr.port), uip_datalen(buf));
+    PRINTF(":%d %u bytes\n", uip_ntohs(session.addr.port), uip_appdatalen(buf));
 
-    PRINTF("Received data buf %p buflen %d data %p datalen %d\n",
-	   buf, uip_len(buf), net_buf_data(buf),
-	   net_buf_datalen(buf));
+    PRINTF("Received appdata %p appdatalen %d\n",
+	   ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
     coap_ctx->buf = buf;
 
     ret = dtls_handle_message(coap_ctx->dtls_context, &session,
-			      net_buf_data(buf), net_buf_datalen(buf));
+			      ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
     /* We always release the buffer here as this buffer is never sent
      * to network anyway.
      */
     if (coap_ctx->buf) {
-      net_buf_put(coap_ctx->buf);
+      ip_buf_unref(coap_ctx->buf);
       coap_ctx->buf = NULL;
     }
 
@@ -226,7 +221,7 @@ event(struct dtls_context_t *ctx, session_t *session,
   } else if(level == DTLS_ALERT_LEVEL_FATAL && code < 256) {
     /* Fatal alert */
     if (coap_ctx && coap_ctx->buf) {
-      net_buf_put(coap_ctx->buf);
+      ip_buf_unref(coap_ctx->buf);
       coap_ctx->buf = NULL;
     }
     coap_ctx->status = STATUS_ALERT;
@@ -512,22 +507,21 @@ int coap_context_reply(coap_context_t *ctx, struct net_buf *buf)
 {
   int max_data_len, ret;
 
-  max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
-	  sizeof(struct uip_ip_hdr);
+  max_data_len = IP_BUF_MAX_DATA - UIP_IPUDPH_LEN;
 
   PRINTF("%s: reply to peer data %p len %d\n", __FUNCTION__,
-	 net_buf_data(buf), net_buf_datalen(buf));
+	 ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
-  if (net_buf_datalen(buf) > max_data_len) {
+  if (ip_buf_appdatalen(buf) > max_data_len) {
     PRINTF("%s: too much (%d bytes) data to send (max %d bytes)\n",
-	  __FUNCTION__, net_buf_datalen(buf), max_data_len);
-    net_buf_put(buf);
+	  __FUNCTION__, ip_buf_appdatalen(buf), max_data_len);
+    ip_buf_unref(buf);
     ret = -EINVAL;
     goto out;
   }
 
   if (net_reply(ctx->net_ctx, buf)) {
-    net_buf_put(buf);
+    ip_buf_unref(buf);
   }
 out:
   return ret;
@@ -539,16 +533,13 @@ int coap_context_wait_data(coap_context_t *coap_ctx, int32_t ticks)
 
   buf = net_receive(coap_ctx->net_ctx, ticks);
   if (buf) {
-    uip_datalen(buf) = buf->datalen;
-    uip_appdata(buf) = buf->data;
-
     PRINTF("coap-context: got message from ");
     PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
-    PRINTF(":%d %u bytes\n", uip_ntohs(UIP_UDP_BUF(buf)->srcport), uip_datalen(buf));
+    PRINTF(":%d %u bytes\n", uip_ntohs(UIP_UDP_BUF(buf)->srcport),
+	   uip_appdatalen(buf));
 
-    PRINTF("Received data buf %p buflen %d data %p datalen %d\n",
-	   buf, uip_len(buf), net_buf_data(buf),
-	   net_buf_datalen(buf));
+    PRINTF("Received data appdata %p appdatalen %d\n",
+	   ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
     coap_ctx->buf = buf;
 
@@ -564,24 +555,24 @@ static int coap_context_send(coap_context_t *ctx, struct net_buf *buf)
 {
   int max_data_len, ret;
 
-  max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
-	  sizeof(struct uip_ip_hdr);
+  max_data_len = IP_BUF_MAX_DATA - UIP_IPUDPH_LEN;
 
   PRINTF("%s: send to peer data %p len %d\n", __FUNCTION__,
-	 net_buf_data(buf), net_buf_datalen(buf));
+	 ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
-  if (net_buf_datalen(buf) > max_data_len) {
+  if (ip_buf_appdatalen(buf) > max_data_len) {
     PRINTF("%s: too much (%d bytes) data to send (max %d bytes)\n",
-	  __FUNCTION__, net_buf_datalen(buf), max_data_len);
-    net_buf_put(buf);
+	   __FUNCTION__, ip_buf_appdatalen(buf), max_data_len);
+    ip_buf_unref(buf);
     ret = -EINVAL;
     goto out;
   }
 
-  if ((ret = net_send(buf)) < 0) {
+  ret = net_send(buf);
+  if (ret < 0) {
     PRINT("%s: sending %d bytes failed\n", __FUNCTION__,
-	  net_buf_datalen(buf));
-    net_buf_put(buf);
+	  ip_buf_appdatalen(buf));
+    ip_buf_unref(buf);
   }
 
 out:
@@ -600,7 +591,7 @@ coap_context_send_message(coap_context_t *coap_ctx,
     return 0;
   }
 
-  net_buf_datalen(coap_ctx->buf) = length;
+  ip_buf_appdatalen(coap_ctx->buf) = length;
 
   if (!uip_udp_conn(coap_ctx->buf)) {
     /* Normal send, not a reply */
@@ -616,7 +607,7 @@ coap_context_send_message(coap_context_t *coap_ctx,
      * set the send buffer length correctly.
      */
     uip_len(coap_ctx->buf) = 0;
-    net_buf_data(coap_ctx->buf) = (uint8_t *)data;
+    ip_buf_appdata(coap_ctx->buf) = (uint8_t *)data;
 
     ret = coap_context_reply(coap_ctx, coap_ctx->buf);
   }

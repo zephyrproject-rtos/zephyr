@@ -45,7 +45,7 @@
  * @{
  */
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include "net/ip/tcpip.h"
 #include "net/ip/uip.h"
@@ -195,7 +195,7 @@ dis_output(struct net_buf *buf, uip_ipaddr_t *addr)
    */
 
   if (!buf) {
-    buf = net_buf_get_reserve_tx(0);
+    buf = ip_buf_get_reserve_tx(0);
     if (!buf) {
       PRINTF("%s(): Cannot get net_buf\n", __FUNCTION__);
       return;
@@ -248,7 +248,7 @@ dio_input(struct net_buf *buf)
   PRINTF("\n");
 
   if((nbr = uip_ds6_nbr_lookup(&from)) == NULL) {
-    if((nbr = uip_ds6_nbr_add(&from, (uip_lladdr_t *)&buf->src,
+    if((nbr = uip_ds6_nbr_add(&from, (uip_lladdr_t *)&ip_buf_ll_src(buf),
                               0, NBR_REACHABLE)) != NULL) {
       /* set reachable timer */
       stimer_set(&nbr->reachable, UIP_ND6_REACHABLE_TIME / 1000);
@@ -261,7 +261,7 @@ dio_input(struct net_buf *buf)
       PRINTF("RPL: Out of memory, dropping DIO from ");
       PRINT6ADDR(&from);
       PRINTF(", ");
-      PRINTLLADDR((uip_lladdr_t *)&buf->src);
+      PRINTLLADDR((uip_lladdr_t *)&ip_buf_ll_src(buf));
       PRINTF("\n");
       goto out;
     }
@@ -452,7 +452,7 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
   /* DAG Information Object */
   pos = 0;
 
-  buf = net_buf_get_reserve_tx(0);
+  buf = ip_buf_get_reserve_tx(0);
   if (!buf) {
     PRINTF("%s(): Cannot get net_buf\n", __FUNCTION__);
     return;
@@ -516,7 +516,7 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
     } else {
       PRINTF("RPL: Unable to send DIO because of unhandled DAG MC type %u\n",
 	(unsigned)instance->mc.type);
-      net_buf_put(buf);
+      ip_buf_unref(buf);
       return;
     }
   }
@@ -766,7 +766,7 @@ dao_input(struct net_buf *buf)
 
   if((nbr = uip_ds6_nbr_lookup(&dao_sender_addr)) == NULL) {
     if((nbr = uip_ds6_nbr_add(&dao_sender_addr,
-                              (uip_lladdr_t *)&buf->src,
+                              (uip_lladdr_t *)&ip_buf_ll_src(buf),
                               0, NBR_REACHABLE)) != NULL) {
       /* set reachable timer */
       stimer_set(&nbr->reachable, UIP_ND6_REACHABLE_TIME / 1000);
@@ -779,7 +779,7 @@ dao_input(struct net_buf *buf)
       PRINTF("RPL: Out of Memory, dropping DAO from ");
       PRINT6ADDR(&dao_sender_addr);
       PRINTF(", ");
-      PRINTLLADDR((uip_lladdr_t *)&buf->src);
+      PRINTLLADDR((uip_lladdr_t *)&ip_buf_ll_src(buf));
       PRINTF("\n");
       return;
     }
@@ -880,7 +880,7 @@ dao_output_target(rpl_parent_t *parent, uip_ipaddr_t *prefix, uint8_t lifetime)
   RPL_DEBUG_DAO_OUTPUT(parent);
 #endif
 
-  buf = net_buf_get_reserve_tx(0);
+  buf = ip_buf_get_reserve_tx(0);
   if (!buf) {
     PRINTF("%s(): Cannot get net_buf\n", __FUNCTION__);
     return;
@@ -935,7 +935,7 @@ dao_output_target(rpl_parent_t *parent, uip_ipaddr_t *prefix, uint8_t lifetime)
     return;
   }
 
-  net_buf_put(buf);
+  ip_buf_unref(buf);
   return;
 }
 /*---------------------------------------------------------------------------*/

@@ -57,13 +57,13 @@ struct nullmac_hdr {
 
 /*---------------------------------------------------------------------------*/
 static int
-hdr_length(struct net_mbuf *buf)
+hdr_length(struct net_buf *buf)
 {
   return sizeof(struct nullmac_hdr);
 }
 /*---------------------------------------------------------------------------*/
 static int
-create(struct net_mbuf *buf)
+create(struct net_buf *buf)
 {
   struct nullmac_hdr *hdr;
 
@@ -78,7 +78,7 @@ create(struct net_mbuf *buf)
 }
 /*---------------------------------------------------------------------------*/
 static int
-parse(struct net_mbuf *buf)
+parse(struct net_buf *buf)
 {
   struct nullmac_hdr *hdr;
   hdr = packetbuf_dataptr(buf);

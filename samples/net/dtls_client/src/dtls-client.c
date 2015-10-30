@@ -37,6 +37,7 @@
 
 #include <errno.h>
 
+#include <net/ip_buf.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
@@ -164,25 +165,24 @@ static inline void send_message(const char *name,
 	struct data *user_data = (struct data *)dtls_get_app_data(ctx);
 	struct net_buf *buf;
 
-	buf = net_buf_get_reserve_tx(0);
+	buf = ip_buf_get_reserve_tx(UIP_IPUDPH_LEN);
 	if (buf) {
 		uint8_t *ptr;
 		int pos = sys_rand32_get() % user_data->ipsum_len;
 
 		user_data->expecting = user_data->ipsum_len - pos;
 
-		ptr = net_buf_add(buf, 0);
-		memcpy(ptr, lorem_ipsum + pos, user_data->expecting);
 		ptr = net_buf_add(buf, user_data->expecting);
+		memcpy(ptr, lorem_ipsum + pos, user_data->expecting);
 
 		dtls_write(ctx, session,
-			   net_buf_data(buf), user_data->expecting);
+			   ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
 		/* The encrypted data to peer is actually sent by
 		 * send_to_peer() so we need to release the buffer
 		 * here.
 		 */
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 	}
 }
 
@@ -196,14 +196,13 @@ static inline bool wait_reply(const char *name,
 	/* Wait for the answer */
 	buf = net_receive(user_data->ctx, WAIT_TICKS);
 	if (buf) {
-		PRINT("Received data buf %p buflen %d data %p datalen %d\n",
-		      buf, uip_len(buf), net_buf_data(buf),
-		      net_buf_datalen(buf));
+		PRINT("Received data %p datalen %d\n",
+		      ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
-		dtls_handle_message(dtls, session, net_buf_data(buf),
-				    net_buf_datalen(buf));
+		dtls_handle_message(dtls, session, ip_buf_appdata(buf),
+				    ip_buf_appdatalen(buf));
 
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 		return true;
 	}
 
@@ -281,32 +280,32 @@ static int send_to_peer(struct dtls_context_t *ctx,
 	struct data *user_data = (struct data *)dtls_get_app_data(ctx);
 	struct net_buf *buf;
 	int max_data_len;
+	uint8_t *ptr;
 
-	buf = net_buf_get_tx(user_data->ctx);
+	buf = ip_buf_get_tx(user_data->ctx);
 	if (!buf) {
 		len = -ENOBUFS;
 		goto out;
 	}
 
-	max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
-					sizeof(struct uip_ip_hdr);
+	max_data_len = IP_BUF_MAX_DATA - UIP_IPUDPH_LEN;
 
 	PRINT("%s: send to peer data %p len %d\n", __func__, data, len);
 
 	if (len > max_data_len) {
 		PRINT("%s: too much (%d bytes) data to send (max %d bytes)\n",
 		      __func__, len, max_data_len);
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 		len = -EINVAL;
 		goto out;
 	}
 
-	memcpy(net_buf_add(buf, 0), data, len);
-	net_buf_add(buf, len);
-	net_buf_datalen(buf) = len;
+	ptr = net_buf_add(buf, len);
+	memcpy(ptr, data, len);
+	ip_buf_appdatalen(buf) = len;
 
 	if (net_send(buf)) {
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 	}
 
 out:

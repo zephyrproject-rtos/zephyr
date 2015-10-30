@@ -18,7 +18,7 @@
 
 #include "contiki.h"
 
-#include <net/net_buf.h>
+#include <net/l2_buf.h>
 #include <simple/uart.h>
 
 #include "net/packetbuf.h"
@@ -112,9 +112,9 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
   if (input_len && input_len == input_offset) {
      if (input_len < NETWORK_TEST_MAX_PACKET_LEN) {
-       struct net_mbuf *mbuf;
+       struct net_buf *mbuf;
 
-       mbuf = net_mbuf_get_reserve(0);
+       mbuf = l2_buf_get_reserve(0);
        if (mbuf) {
          packetbuf_copyfrom(mbuf, input, input_len);
 	 packetbuf_set_datalen(mbuf, input_len);
@@ -124,7 +124,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
 	 if (net_driver_15_4_recv_from_hw(mbuf) < 0) {
            PRINTF("dummy154radio: rdc input failed, packet discarded\n");
-	   net_mbuf_put(mbuf);
+	   l2_buf_unref(mbuf);
 	 }
        }
      }
@@ -185,22 +185,22 @@ prepare(const void *payload, unsigned short payload_len)
 }
 /*---------------------------------------------------------------------------*/
 static int
-transmit(struct net_mbuf *buf, unsigned short transmit_len)
+transmit(struct net_buf *buf, unsigned short transmit_len)
 {
   return RADIO_TX_OK;
 }
 
 #ifndef CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
-static void route_buf(struct net_mbuf *buf)
+static void route_buf(struct net_buf *buf)
 {
 	int len;
-	struct net_mbuf *mbuf;
+	struct net_buf *mbuf;
 
 	len = packetbuf_copyto(buf, loopback);
 	/* Receiver buffer that is passed to 15.4 Rx fiber */
 	PRINTF("dummy154radio: got %d bytes\n", len);
 
-	mbuf = net_mbuf_get_reserve(0);
+	mbuf = l2_buf_get_reserve(0);
 	if (mbuf) {
 		packetbuf_copyfrom(mbuf, loopback, len);
 		packetbuf_set_datalen(mbuf, len);
@@ -211,7 +211,7 @@ static void route_buf(struct net_mbuf *buf)
 		if (net_driver_15_4_recv_from_hw(mbuf) < 0) {
 			PRINTF("dummy154radio: rdc input failed, "
 							"packet discarded\n");
-			net_mbuf_put(mbuf);
+			l2_buf_unref(mbuf);
 		}
 
 		NET_BUF_CHECK_IF_NOT_IN_USE(mbuf);
@@ -221,7 +221,7 @@ static void route_buf(struct net_mbuf *buf)
 
 /*---------------------------------------------------------------------------*/
 static int
-send(struct net_mbuf *buf, const void *payload, unsigned short payload_len)
+send(struct net_buf *buf, const void *payload, unsigned short payload_len)
 {
 #if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
   static uint8_t output[NETWORK_TEST_MAX_PACKET_LEN];

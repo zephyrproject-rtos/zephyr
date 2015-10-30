@@ -64,18 +64,19 @@ coap_engine_receive(coap_context_t *coap_ctx)
   coap_packet_t response[1];
   coap_transaction_t *transaction = NULL;
 
-  PRINTF("%s(): received uip_datalen %u\n", __FUNCTION__,
-         (uint16_t)uip_datalen(coap_ctx->buf));
+  PRINTF("%s(): received data len %u\n", __FUNCTION__,
+         (uint16_t)uip_appdatalen(coap_ctx->buf));
 
   if(uip_newdata(coap_ctx->buf)) {
 
     PRINTF("receiving UDP datagram from: ");
     PRINT6ADDR(&UIP_IP_BUF(coap_ctx->buf)->srcipaddr);
-    PRINTF(":%u\n  Length: %u\n", uip_ntohs(UIP_UDP_BUF(coap_ctx->buf)->srcport),
-           uip_datalen(coap_ctx->buf));
+    PRINTF(":%u\n  Length: %u (payload %u)\n",
+	   uip_ntohs(UIP_UDP_BUF(coap_ctx->buf)->srcport),
+           uip_appdatalen(coap_ctx->buf));
 
     erbium_status_code =
-    coap_parse_message(message, uip_appdata(coap_ctx->buf), uip_datalen(coap_ctx->buf));
+    coap_parse_message(message, uip_appdata(coap_ctx->buf), uip_appdatalen(coap_ctx->buf));
     coap_set_context(message, coap_ctx);
 
     if(erbium_status_code == NO_ERROR) {

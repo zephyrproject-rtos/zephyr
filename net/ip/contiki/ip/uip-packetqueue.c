@@ -19,7 +19,7 @@ MEMB(packets_memb, struct uip_packetqueue_packet, MAX_NUM_QUEUED_PACKETS);
 
 /*---------------------------------------------------------------------------*/
 static void
-packet_timedout(struct net_mbuf *buf, void *ptr)
+packet_timedout(struct net_buf *buf, void *ptr)
 {
   struct uip_packetqueue_handle *h = ptr;
 
@@ -36,7 +36,7 @@ uip_packetqueue_new(struct uip_packetqueue_handle *handle)
 }
 /*---------------------------------------------------------------------------*/
 struct uip_packetqueue_packet *
-uip_packetqueue_alloc(struct net_mbuf *buf, struct uip_packetqueue_handle *handle, clock_time_t lifetime)
+uip_packetqueue_alloc(struct net_buf *buf, struct uip_packetqueue_handle *handle, clock_time_t lifetime)
 {
   PRINTF("uip_packetqueue_alloc %p\n", handle);
   if(handle->packet != NULL) {

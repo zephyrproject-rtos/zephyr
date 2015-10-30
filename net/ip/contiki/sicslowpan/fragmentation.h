@@ -17,7 +17,7 @@
  */
 
 #include "contiki-conf.h"
-#include <net/net_buf.h>
+#include <net/buf.h>
 #include <net/mac/mac.h>
 
 #ifndef FRAGMENTATION_H_
@@ -25,7 +25,7 @@
 
 struct fragmentation {
   int (* fragment)(struct net_buf *buf, void *ptr);
-  int (* reassemble)(struct net_mbuf *buf);
+  int (* reassemble)(struct net_buf *buf);
 };
 
 #endif /* FRAGMENTATION_H_ */

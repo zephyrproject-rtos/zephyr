@@ -37,7 +37,7 @@
  *         Adam Dunkels <adam@sics.se>
  */
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include "contiki-conf.h"
 

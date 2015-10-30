@@ -41,7 +41,7 @@
  *    George Oikonomou - <oikonomou@users.sourceforge.net>
  */
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include "contiki.h"
 #include "contiki-net.h"
@@ -68,7 +68,6 @@
 /* Internal Data */
 /*---------------------------------------------------------------------------*/
 static struct ctimer mcast_periodic;
-static struct net_buf netbuf;
 static uint8_t fwd_delay;
 static uint8_t fwd_spread;
 
@@ -78,10 +77,8 @@ static uint8_t fwd_spread;
 #define UIP_IP_BUF(buf)        ((struct uip_ip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
 /*---------------------------------------------------------------------------*/
 static void
-mcast_fwd(struct net_mbuf *mbuf, void *p)
+mcast_fwd(struct net_buf *buf, void *p)
 {
-  struct net_buf *buf = (struct net_buf *)mbuf;
-
   UIP_IP_BUF(buf)->ttl--;
   tcpip_output(buf, NULL);
   uip_len(buf) = 0;
@@ -94,6 +91,7 @@ in(struct net_buf *buf)
   rpl_dag_t *d;                 /* Our DODAG */
   uip_ipaddr_t *parent_ipaddr;  /* Our pref. parent's IPv6 address */
   const uip_lladdr_t *parent_lladdr;  /* Our pref. parent's LL address */
+  struct net_buf *netbuf;
 
   /*
    * Fetch a pointer to the LL address of our preferred parent
@@ -122,7 +120,7 @@ in(struct net_buf *buf)
    * We accept a datagram if it arrived from our preferred parent, discard
    * otherwise.
    */
-  if(memcmp(parent_lladdr, &buf->src,
+  if(memcmp(parent_lladdr, &ip_buf_ll_src(buf),
             UIP_LLADDR_LEN)) {
     PRINTF("SMRF: Routable in but SMRF ignored it\n");
     UIP_MCAST6_STATS_ADD(mcast_dropped);
@@ -172,8 +170,14 @@ in(struct net_buf *buf)
         fwd_delay = fwd_delay * (1 + ((random_rand() >> 11) % fwd_spread));
       }
 
-      memcpy(&netbuf, buf, sizeof(*buf));
-      ctimer_set((struct net_mbuf *)&netbuf, &mcast_periodic, fwd_delay, mcast_fwd, NULL);
+      netbuf = net_buf_clone(buf);
+      if (netbuf) {
+        memcpy(net_buf_user_data(netbuf), net_buf_user_data(buf),
+               buf->user_data_size);
+        ctimer_set(netbuf, &mcast_periodic, fwd_delay, mcast_fwd, NULL);
+      } else {
+        PRINTF("SMRF: cannot clone net buffer\n");
+      }
     }
     PRINTF("SMRF: %u bytes: fwd in %u [%u]\n",
            uip_len(buf), fwd_delay, fwd_spread);

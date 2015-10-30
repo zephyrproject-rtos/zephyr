@@ -20,7 +20,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <net/net_buf.h>
+#include <net/l2_buf.h>
 #include <net/net_core.h>
 
 #include <net/sicslowpan/null_fragmentation.h>
@@ -40,7 +40,7 @@ void uip_log(char *msg);
 #endif
 
 static void
-packet_sent(struct net_mbuf *buf, void *ptr, int status, int transmissions)
+packet_sent(struct net_buf *buf, void *ptr, int status, int transmissions)
 {
 	const linkaddr_t *dest = packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER);
 	uip_ds6_link_neighbor_callback(dest, status, transmissions);
@@ -49,10 +49,10 @@ packet_sent(struct net_mbuf *buf, void *ptr, int status, int transmissions)
 
 static int fragment(struct net_buf *buf, void *ptr)
 {
-	struct net_mbuf *mbuf;
+	struct net_buf *mbuf;
 	int ret;
 
-	mbuf = net_mbuf_get_reserve(0);
+	mbuf = l2_buf_get_reserve(0);
 	if (!mbuf) {
 		return 0;
 	}
@@ -62,8 +62,8 @@ static int fragment(struct net_buf *buf, void *ptr)
 	ret = packetbuf_copyfrom(mbuf, &uip_buf(buf)[UIP_LLH_LEN],
 				 uip_len(buf));
 	PRINTF("%s: buffer len %d copied %d\n", __FUNCTION__, uip_len(buf), ret);
-	packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER, &buf->dest);
-	net_buf_put(buf);
+	packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER, &ip_buf_ll_dest(buf));
+	ip_buf_unref(buf);
 
 	return NETSTACK_LLSEC.send(mbuf, &packet_sent, true, ptr);
 }
@@ -83,33 +83,34 @@ static int send_upstream(struct net_buf *buf)
 	return 0;
 }
 
-static int reassemble(struct net_mbuf *mbuf)
+static int reassemble(struct net_buf *mbuf)
 {
         struct net_buf *buf;
 
-	buf = net_buf_get_reserve_rx(0);
+	buf = ip_buf_get_reserve_rx(0);
 	if (!buf) {
 		return 0;
 	}
 
 	if(packetbuf_datalen(mbuf) > 0 &&
-		packetbuf_datalen(mbuf) <= UIP_BUFSIZE - UIP_LLH_LEN) {
+			packetbuf_datalen(mbuf) <= UIP_BUFSIZE - UIP_LLH_LEN) {
 		memcpy(uip_buf(buf), packetbuf_dataptr(mbuf),
 						packetbuf_datalen(mbuf));
 		uip_len(buf) = packetbuf_datalen(mbuf);
+		net_buf_add(buf, uip_len(buf));
 
 		if (send_upstream(buf) < 0) {
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 		} else {
-			net_mbuf_put(mbuf);
+			l2_buf_unref(mbuf);
 		}
 
 		return 1;
         } else {
-                PRINTF("packet discarded, datalen %d MAX %d\n",
-				packetbuf_datalen(mbuf), UIP_BUFSIZE - UIP_LLH_LEN);
-		net_buf_put(buf);
-                return 0;
+		PRINTF("packet discarded, datalen %d MAX %d\n",
+		       packetbuf_datalen(mbuf), UIP_BUFSIZE - UIP_LLH_LEN);
+		ip_buf_unref(buf);
+		return 0;
         }
 }
 

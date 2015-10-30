@@ -82,8 +82,10 @@ coap_new_transaction(uint16_t mid, coap_context_t *coap_ctx,
 void
 coap_send_transaction(coap_transaction_t *t)
 {
-  PRINTF("Sending transaction %u buf %p data %p -> %p len %d\n", t->mid,
-	 t->coap_ctx->buf, t->packet, net_buf_data(t->coap_ctx->buf),
+  PRINTF("Sending transaction %u appdata %p len %d (%d)\n",
+	 t->mid,
+	 ip_buf_appdata(t->coap_ctx->buf),
+	 ip_buf_appdatalen(t->coap_ctx->buf),
 	 t->packet_len);
 
   if (!t->coap_ctx || !t->coap_ctx->buf) {
@@ -92,14 +94,8 @@ coap_send_transaction(coap_transaction_t *t)
     return;
   }
 
-  /* Copy the data from the transaction internal buffer to net_buf which
-   * is used when actually sending the data. The payload will contain
-   * a NULL byte but that is not sent.
-   */
-  memcpy(net_buf_data(t->coap_ctx->buf), t->packet, t->packet_len + 1);
   coap_send_message(t->coap_ctx, &t->addr, t->port,
-		    net_buf_data(t->coap_ctx->buf),
-		    t->packet_len);
+		    t->packet, t->packet_len);
 
   if(COAP_TYPE_CON ==
      ((COAP_HEADER_TYPE_MASK & t->packet[0]) >> COAP_HEADER_TYPE_POSITION)) {
@@ -174,20 +170,27 @@ coap_get_transaction_by_mid(uint16_t mid)
 static inline struct net_buf *get_retransmit_buf(coap_transaction_t *t)
 {
   coap_context_t *coap_ctx = t->coap_ctx;
-  uint8_t *ptr;
 
   if (coap_ctx->buf) {
     return coap_ctx->buf;
   }
 
-  coap_ctx->buf = net_buf_get_tx(coap_ctx->net_ctx);
+  coap_ctx->buf = ip_buf_get_tx(coap_ctx->net_ctx);
   if (!coap_ctx->buf) {
     return NULL;
   }
 
-  ptr = net_buf_add(coap_ctx->buf, 0);
-  net_buf_data(coap_ctx->buf) = ptr;
-  uip_len(coap_ctx->buf) = t->packet_len;
+  /* We set the major buf params correctly. The application data pointer
+   * should point to start of the coap packet data.
+   * The tail of the packet points now to byte after coap packet.
+   */
+  ip_buf_appdata(coap_ctx->buf) = net_buf_add(coap_ctx->buf, t->packet_len);
+  ip_buf_appdatalen(coap_ctx->buf) = t->packet_len;
+
+  /* The total length of the packet is the coap packet + all the UDP/IP
+   * headers.
+   */
+  uip_len(coap_ctx->buf) = ip_buf_len(coap_ctx->buf);
 
   return coap_ctx->buf;
 }

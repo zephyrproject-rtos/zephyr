@@ -1,4 +1,4 @@
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #ifdef CONFIG_ETHERNET
 

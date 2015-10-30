@@ -45,7 +45,7 @@
 
 #include <stdio.h>
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 #include <net/net_core.h>
 
 #include "sys/process.h"

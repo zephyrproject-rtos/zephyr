@@ -42,7 +42,7 @@
  * @{
  */
 
-#include <net/net_buf.h>
+#include <net/l2_buf.h>
 
 #include "net/llsec/nullsec.h"
 #include "net/mac/frame802154.h"
@@ -68,7 +68,7 @@ bootstrap(llsec_on_bootstrapped_t on_bootstrapped)
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-send(struct net_mbuf *buf, mac_callback_t sent, bool last_fragment, void *ptr)
+send(struct net_buf *buf, mac_callback_t sent, bool last_fragment, void *ptr)
 {
   packetbuf_set_attr(buf, PACKETBUF_ATTR_FRAME_TYPE, FRAME802154_DATAFRAME);
   return NETSTACK_MAC.send(buf, sent, last_fragment, ptr);
@@ -81,7 +81,7 @@ on_frame_created(void)
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-input(struct net_mbuf *buf)
+input(struct net_buf *buf)
 {
   return NETSTACK_FRAGMENT.reassemble(buf);
 }

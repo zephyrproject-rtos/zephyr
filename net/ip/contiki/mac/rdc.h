@@ -41,7 +41,7 @@
 #ifndef RDC_H_
 #define RDC_H_
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #include "contiki-conf.h"
 #include "net/mac/mac.h"
@@ -73,13 +73,13 @@ struct rdc_driver {
   void (* init)(void);
 
   /** Send a packet from the Rime buffer  */
-  uint8_t (* send)(struct net_mbuf *buf, mac_callback_t sent_callback, void *ptr);
+  uint8_t (* send)(struct net_buf *buf, mac_callback_t sent_callback, void *ptr);
 
   /** Send a packet list */
-  uint8_t (* send_list)(struct net_mbuf *buf, mac_callback_t sent_callback, void *ptr, struct rdc_buf_list *list);
+  uint8_t (* send_list)(struct net_buf *buf, mac_callback_t sent_callback, void *ptr, struct rdc_buf_list *list);
 
   /** Callback for getting notified of incoming packet. */
-  uint8_t (* input)(struct net_mbuf *buf);
+  uint8_t (* input)(struct net_buf *buf);
 
   /** Turn the MAC layer on. */
   int (* on)(void);

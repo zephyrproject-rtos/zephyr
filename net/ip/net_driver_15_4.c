@@ -33,7 +33,7 @@
 #include "contiki/ip/uip-debug.h"
 
 #include <net/net_core.h>
-#include <net/net_buf.h>
+#include <net/l2_buf.h>
 #include <net/net_ip.h>
 #include <net/net_socket.h>
 #include <net/netstack.h>
@@ -58,15 +58,16 @@ static int net_driver_15_4_open(void)
 
 static int net_driver_15_4_send(struct net_buf *buf)
 {
-	int orig_len = buf->len;
+	int orig_len = ip_buf_len(buf);
 
 	if (!NETSTACK_COMPRESS.compress(buf)) {
 		NET_DBG("compression failed\n");
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 		return -EINVAL;
 	}
 
-	NET_DBG("sending %d bytes (original len %d)\n", buf->len, orig_len);
+	NET_DBG("sending %d bytes (original len %d)\n", ip_buf_len(buf),
+		orig_len);
 
 	nano_fifo_put(&tx_queue, buf);
 	return 1;
@@ -86,16 +87,15 @@ static void net_tx_15_4_fiber(void)
 			/* It is possible that uIP stack overwrote the len.
 			 * We need to fix this here.
 			 */
-			uip_len(buf) = uip_slen(buf) = uip_appdatalen(buf) =
-				net_buf_datalen(buf);
+			uip_len(buf) = ip_buf_len(buf);
 		}
 
-		NET_DBG("Sending (buf %p, len %u) to 15.4 stack\n",
-								buf, buf->len);
+		NET_DBG("Sending (%u bytes) to 15.4 stack\n",
+			ip_buf_len(buf));
 
 		if (!NETSTACK_FRAGMENT.fragment(buf, NULL)) {
 			/* Release buffer on error */
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 		}
 
 		net_analyze_stack("802.15.4 TX", tx_fiber_stack,
@@ -105,7 +105,7 @@ static void net_tx_15_4_fiber(void)
 
 static void net_rx_15_4_fiber(void)
 {
-	struct net_mbuf *buf;
+	struct net_buf *buf;
 #if NET_MAC_CONF_STATS
 	int byte_count;
 #endif
@@ -121,7 +121,7 @@ static void net_rx_15_4_fiber(void)
 #endif
 		if (!NETSTACK_RDC.input(buf)) {
 			NET_DBG("RDC input failed\n");
-			net_mbuf_put(buf);
+			l2_buf_unref(buf);
 		} else {
 #if NET_MAC_CONF_STATS
 			net_mac_stats.bytes_received += byte_count;
@@ -185,7 +185,7 @@ int net_driver_15_4_recv(struct net_buf *buf)
 	return 0;
 }
 
-int net_driver_15_4_recv_from_hw(struct net_mbuf *buf)
+int net_driver_15_4_recv_from_hw(struct net_buf *buf)
 {
 	nano_fifo_put(&rx_queue, buf);
 	return 0;

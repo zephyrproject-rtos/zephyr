@@ -1,4 +1,4 @@
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #ifndef UIP_PACKETQUEUE_H
 #define UIP_PACKETQUEUE_H
@@ -23,7 +23,7 @@ void uip_packetqueue_new(struct uip_packetqueue_handle *handle);
 
 
 struct uip_packetqueue_packet *
-uip_packetqueue_alloc(struct net_mbuf *buf, struct uip_packetqueue_handle *handle, clock_time_t lifetime);
+uip_packetqueue_alloc(struct net_buf *buf, struct uip_packetqueue_handle *handle, clock_time_t lifetime);
 
 
 void

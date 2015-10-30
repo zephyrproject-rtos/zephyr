@@ -44,6 +44,8 @@
 
 #include <string.h>
 
+#include <net/l2_buf.h>
+
 #include "contiki-net.h"
 #include "net/mac/mac-sequence.h"
 #include "net/packetbuf.h"
@@ -62,7 +64,7 @@ static struct seqno received_seqnos[MAX_SEQNOS];
 
 /*---------------------------------------------------------------------------*/
 int
-mac_sequence_is_duplicate(struct net_mbuf *buf)
+mac_sequence_is_duplicate(struct net_buf *buf)
 {
   int i;
 
@@ -84,7 +86,7 @@ mac_sequence_is_duplicate(struct net_mbuf *buf)
 }
 /*---------------------------------------------------------------------------*/
 void
-mac_sequence_register_seqno(struct net_mbuf *buf)
+mac_sequence_register_seqno(struct net_buf *buf)
 {
   int i, j;
 

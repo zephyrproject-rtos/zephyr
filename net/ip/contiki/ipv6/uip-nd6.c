@@ -68,6 +68,8 @@
  * \author Julien Abeille <jabeille@cisco.com>
  */
 
+#include <net/ip_buf.h>
+
 #include <string.h>
 #include "net/ipv6/uip-icmp6.h"
 #include "net/ipv6/uip-nd6.h"
@@ -337,7 +339,7 @@ uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t * src, uip_ipaddr_t * dest, 
   bool send_from_here = true;
 
   if (!buf) {
-    buf = net_buf_get_reserve_tx(UIP_IPICMPH_LEN);
+    buf = ip_buf_get_reserve_tx(UIP_IPICMPH_LEN);
     if (!buf) {
       PRINTF("%s(): Cannot send NS, no net buffers\n", __FUNCTION__);
       return;
@@ -375,7 +377,7 @@ uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t * src, uip_ipaddr_t * dest, 
       PRINTF("Dropping NS due to no suitable source address\n");
       uip_len(buf) = 0;
       if (send_from_here) {
-        net_buf_put(buf);
+        ip_buf_unref(buf);
       }
       return;
     }
@@ -406,7 +408,9 @@ uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t * src, uip_ipaddr_t * dest, 
   PRINTF("\n");
 
   if (send_from_here) {
-    tcpip_ipv6_output(buf);
+    if (tcpip_ipv6_output(buf) == 0) {
+      ip_buf_unref(buf);
+    }
   }
   return;
 }
@@ -682,7 +686,7 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
   bool send_from_here = true;
 
   if (!buf) {
-    buf = net_buf_get_reserve_tx(UIP_IPICMPH_LEN);
+    buf = ip_buf_get_reserve_tx(UIP_IPICMPH_LEN);
     if (!buf) {
       PRINTF("%s(): Cannot send RA, no net buffers\n", __FUNCTION__);
       return;
@@ -795,7 +799,9 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
   PRINTF("\n");
 
   if (send_from_here) {
-    tcpip_ipv6_output(buf);
+    if (tcpip_ipv6_output(buf) == 0) {
+      ip_buf_unref(buf);
+    }
   }
   return;
 }
@@ -810,7 +816,7 @@ uip_nd6_rs_output(struct net_buf *buf)
   bool send_from_here = false;
 
   if (!buf) {
-    buf = net_buf_get_reserve_tx(UIP_IPICMPH_LEN);
+    buf = ip_buf_get_reserve_tx(UIP_IPICMPH_LEN);
     if (!buf) {
       PRINTF("%s(): Cannot send RS, no net buffers\n", __FUNCTION__);
       return;
@@ -851,7 +857,9 @@ uip_nd6_rs_output(struct net_buf *buf)
   PRINTF("\n");
 
   if (send_from_here) {
-    tcpip_ipv6_output(buf);
+    if (tcpip_ipv6_output(buf) == 0) {
+      ip_buf_unref(buf);
+    }
   }
   return;
 }

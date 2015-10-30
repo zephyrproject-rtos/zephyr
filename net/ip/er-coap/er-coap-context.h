@@ -38,7 +38,7 @@
 #ifndef COAP_CONTEXT_H_
 #define COAP_CONTEXT_H_
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 #include <net/net_socket.h>
 
 #include "contiki-conf.h"

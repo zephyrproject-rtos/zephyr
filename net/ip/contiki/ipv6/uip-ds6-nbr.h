@@ -43,7 +43,7 @@
  *
  */
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #include "net/ip/uip.h"
 #include "net/nbr-table.h"

@@ -45,6 +45,8 @@
 #ifndef CCM_STAR_H_
 #define CCM_STAR_H_
 
+#include <net/l2_buf.h>
+
 #include "contiki.h"
 #include "net/mac/frame802154.h"
 
@@ -68,14 +70,14 @@ struct ccm_star_driver {
     * \param result  The generated MIC will be put here
     * \param mic_len  <= 16; set to LLSEC802154_MIC_LENGTH to be compliant
     */
-  void (* mic)(struct net_mbuf *buf, const uint8_t *extended_source_address,
+  void (* mic)(struct net_buf *buf, const uint8_t *extended_source_address,
       uint8_t *result,
       uint8_t mic_len);
   
   /**
    * \brief XORs the frame in the packetbuf with the key stream.
    */
-  void (* ctr)(struct net_mbuf *buf, const uint8_t *extended_source_address);
+  void (* ctr)(struct net_buf *buf, const uint8_t *extended_source_address);
 };
 
 extern const struct ccm_star_driver CCM_STAR;

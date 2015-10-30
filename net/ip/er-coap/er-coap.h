@@ -39,7 +39,7 @@
 #ifndef ER_COAP_H_
 #define ER_COAP_H_
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include <stddef.h> /* for size_t */
 #include "contiki-net.h"

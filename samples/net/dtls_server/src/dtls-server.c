@@ -28,6 +28,7 @@
 
 #include <errno.h>
 
+#include <net/ip_buf.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
@@ -133,21 +134,21 @@ static inline void receive_message(const char *name,
 
 		dtls_session_init(&session);
 
-		uip_ipaddr_copy(&session.addr.ipaddr, &NET_BUF_IP(buf)->srcipaddr);
+		uip_ipaddr_copy(&session.addr.ipaddr,
+				&NET_BUF_IP(buf)->srcipaddr);
 		session.addr.port = NET_BUF_UDP(buf)->srcport;
 
-		PRINT("Received data buf %p buflen %d data %p datalen %d\n",
-		      buf, uip_len(buf),
-		      net_buf_data(buf), net_buf_datalen(buf));
+		PRINT("Received data %p datalen %d\n",
+		      ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
-		dtls_handle_message(dtls, &session, net_buf_data(buf),
-				    net_buf_datalen(buf));
+		dtls_handle_message(dtls, &session, ip_buf_appdata(buf),
+				    ip_buf_appdatalen(buf));
 
 		/* We never send the buffer by this function. A network buffer
 		 * to be sent is allocated in send_to_peer() that is
 		 * responsible for sending the data.
 		 */
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 	}
 }
 
@@ -205,14 +206,15 @@ static int send_to_peer(struct dtls_context_t *ctx,
 			(struct net_context *)dtls_get_app_data(ctx);
 	struct net_buf *buf;
 	int max_data_len;
+	uint8_t *ptr;
 
-	buf = net_buf_get_tx(recv);
+	buf = ip_buf_get_tx(recv);
 	if (!buf) {
 		len = -ENOBUFS;
 		goto out;
 	}
 
-	max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
+	max_data_len = IP_BUF_MAX_DATA - sizeof(struct uip_udp_hdr) -
 					sizeof(struct uip_ip_hdr);
 
 	PRINT("%s: reply to peer data %p len %d\n", __func__, data, len);
@@ -220,7 +222,7 @@ static int send_to_peer(struct dtls_context_t *ctx,
 	if (len > max_data_len) {
 		PRINT("%s: too much (%d bytes) data to send (max %d bytes)\n",
 		      __func__, len, max_data_len);
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 		len = -EINVAL;
 		goto out;
 	}
@@ -244,12 +246,13 @@ static int send_to_peer(struct dtls_context_t *ctx,
 
 	uip_set_udp_conn(buf) = net_context_get_udp_connection(recv);
 
-	memcpy(net_buf_add(buf, 0), data, len);
-	net_buf_add(buf, len);
-	net_buf_datalen(buf) = len;
+	ptr = net_buf_add(buf, len);
+	memcpy(ptr, data, len);
+	ip_buf_appdata(buf) = ptr;
+	ip_buf_appdatalen(buf) = len;
 
 	if (net_reply(recv, buf)) {
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 	}
 
 out:

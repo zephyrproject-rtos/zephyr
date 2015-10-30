@@ -40,6 +40,8 @@
 #include <simple/uart.h>
 #include <net/net_core.h>
 
+#include <net/l2_buf.h>
+
 #include "contiki.h"
 
 #include "net/ip/uip.h"
@@ -272,7 +274,7 @@ PROCESS_THREAD(slip_process, ev, data, not_used)
 
     slip_active = 1;
 
-    buf = net_buf_get_reserve_rx(0);
+    buf = ip_buf_get_reserve_rx(0);
     if (!buf) {
       NET_ERR("No RX buffers left, slip msg discarded\n");
       rxbuf_init();
@@ -296,7 +298,7 @@ PROCESS_THREAD(slip_process, ev, data, not_used)
        * the buffer here as that would cause double free.
        */
       if (uip_len(buf) != 0) {
-	net_buf_put(buf);
+	ip_buf_unref(buf);
       }
     } else if(uip_len(buf) > 0
        && uip_len(buf) == (((uint16_t)(BUF(buf)->len[0]) << 8) + BUF(buf)->len[1])
@@ -315,9 +317,11 @@ PROCESS_THREAD(slip_process, ev, data, not_used)
 	}
       }
 
+      net_buf_add(buf, uip_len(buf));
+
 #ifdef SLIP_CONF_TCPIP_INPUT
       if (SLIP_CONF_TCPIP_INPUT(buf) < 0) {
-	net_buf_put(buf);
+	ip_buf_unref(buf);
       }
 #else
       tcpip_input(buf);
@@ -325,17 +329,19 @@ PROCESS_THREAD(slip_process, ev, data, not_used)
     } else {
       NET_DBG("Dropping slip message buf %p\n", buf);
       uip_len(buf) = 0;
-      net_buf_put(buf);
+      ip_buf_unref(buf);
       SLIP_STATISTICS(slip_ip_drop++);
     }
 #else /* NETSTACK_CONF_WITH_IPV6 */
     if(uip_len(buf) > 0) {
+      net_buf_add(buf, uip_len(buf));
+
       if(input_callback) {
         input_callback();
       }
 #ifdef SLIP_CONF_TCPIP_INPUT
       if (SLIP_CONF_TCPIP_INPUT(buf) < 0) {
-	net_buf_put(buf);
+	ip_buf_unref(buf);
       }
 #else
       tcpip_input(buf);

@@ -26,6 +26,7 @@
 #define PRINT           printk
 #endif
 
+#include <net/ip_buf.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
@@ -123,8 +124,8 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
 			PRINT("%s: received %d bytes\n", taskname,
-			      net_buf_datalen(buf));
-			net_buf_put(buf);
+			      ip_buf_appdatalen(buf));
+			ip_buf_unref(buf);
 		}
 
 		/* wait a while, then let other task have a turn */
@@ -194,8 +195,8 @@ void fiberEntry(void)
 		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
 			PRINT("%s: received %d bytes\n", __func__,
-				net_buf_datalen(buf));
-			net_buf_put(buf);
+				ip_buf_appdatalen(buf));
+			ip_buf_unref(buf);
 		}
 
 		/* wait a while, then let task have a turn */

@@ -43,6 +43,8 @@
  * @{
  */
 
+#include <net/l2_buf.h>
+
 #include "net/llsec/anti-replay.h"
 #include "net/packetbuf.h"
 
@@ -51,7 +53,7 @@ static uint32_t counter;
 
 /*---------------------------------------------------------------------------*/
 void
-anti_replay_set_counter(struct net_mbuf *buf)
+anti_replay_set_counter(struct net_buf *buf)
 {
   frame802154_frame_counter_t reordered_counter;
   
@@ -62,7 +64,7 @@ anti_replay_set_counter(struct net_mbuf *buf)
 }
 /*---------------------------------------------------------------------------*/
 uint32_t
-anti_replay_get_counter(struct net_mbuf *buf)
+anti_replay_get_counter(struct net_buf *buf)
 {
   frame802154_frame_counter_t disordered_counter;
   
@@ -73,7 +75,7 @@ anti_replay_get_counter(struct net_mbuf *buf)
 }
 /*---------------------------------------------------------------------------*/
 void
-anti_replay_init_info(struct net_mbuf *buf, struct anti_replay_info *info)
+anti_replay_init_info(struct net_buf *buf, struct anti_replay_info *info)
 {
   info->last_broadcast_counter
       = info->last_unicast_counter
@@ -81,7 +83,7 @@ anti_replay_init_info(struct net_mbuf *buf, struct anti_replay_info *info)
 }
 /*---------------------------------------------------------------------------*/
 int
-anti_replay_was_replayed(struct net_mbuf *buf, struct anti_replay_info *info)
+anti_replay_was_replayed(struct net_buf *buf, struct anti_replay_info *info)
 {
   uint32_t received_counter;
   

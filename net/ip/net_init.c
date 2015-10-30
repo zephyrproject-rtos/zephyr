@@ -31,7 +31,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
+#include <net/l2_buf.h>
+
 #include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/net_socket.h>
@@ -78,7 +80,7 @@ static struct net_dev {
 /* Called by application to send a packet */
 int net_send(struct net_buf *buf)
 {
-	if (buf->len == 0) {
+	if (ip_buf_len(buf) == 0) {
 		return -ENODATA;
 	}
 
@@ -195,9 +197,10 @@ static inline int udp_prepare_and_send(struct net_context *context,
 		 * to fix the length here. The protocol specific
 		 * part is added also here.
 		 */
-		uip_len(buf) = uip_slen(buf) = uip_appdatalen(buf) =
-			net_buf_datalen(buf);
+		uip_len(buf) = ip_buf_len(buf);
 	}
+
+	ip_buf_appdata(buf) = &uip_buf(buf)[UIP_IPUDPH_LEN];
 
 	port = NET_BUF_UDP(buf)->srcport;
 	NET_BUF_UDP(buf)->srcport = NET_BUF_UDP(buf)->destport;
@@ -213,7 +216,8 @@ static inline int udp_prepare_and_send(struct net_context *context,
 	 */
 	nbr = uip_ds6_nbr_lookup((uip_ipaddr_t *)&NET_BUF_IP(buf)->destipaddr);
 	if (!nbr) {
-		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&buf->src;
+		const uip_lladdr_t *lladdr =
+			(const uip_lladdr_t *)&ip_buf_ll_src(buf);
 		nbr = uip_ds6_nbr_add(
 			(uip_ipaddr_t *)&NET_BUF_IP(buf)->destipaddr,
 			lladdr, 0, NBR_REACHABLE);
@@ -244,7 +248,8 @@ static inline int udp_prepare_and_send(struct net_context *context,
 
 	ret = simple_udp_sendto_port(buf,
 				     net_context_get_udp_connection(context),
-				     buf->data, buf->len,
+				     ip_buf_appdata(buf),
+				     ip_buf_appdatalen(buf),
 				     &NET_BUF_IP(buf)->destipaddr,
 				     uip_ntohs(NET_BUF_UDP(buf)->destport));
 	if (!ret) {
@@ -303,7 +308,7 @@ int net_reply(struct net_context *context, struct net_buf *buf)
 /* Called by driver when an IP packet has been received */
 int net_recv(struct net_buf *buf)
 {
-	if (buf->len == 0) {
+	if (ip_buf_len(buf) == 0) {
 		return -ENODATA;
 	}
 
@@ -327,16 +332,17 @@ static void udp_packet_receive(struct simple_udp_connection *c,
 		/* If the context is not there, then we must discard
 		 * the buffer here, otherwise we have a buffer leak.
 		 */
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 		return;
 	}
 
-	uip_appdatalen(buf) = datalen;
-	buf->datalen = datalen;
-	buf->data = uip_appdata(buf);
+	ip_buf_appdatalen(buf) = datalen;
+	ip_buf_appdata(buf) = &uip_buf(buf)[UIP_IPUDPH_LEN];
 
-	NET_DBG("packet received buf %p context %p len %d appdatalen %d\n",
-		buf, context, buf->len, datalen);
+	NET_DBG("packet received context %p len %d "
+		"appdata %p appdatalen %d\n",
+		context, ip_buf_len(buf),
+		ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
 	nano_fifo_put(net_context_get_queue(context), buf);
 }
@@ -345,8 +351,10 @@ static void udp_packet_receive(struct simple_udp_connection *c,
 struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 {
 	struct nano_fifo *rx_queue = net_context_get_queue(context);
+	struct net_buf *buf;
 	struct net_tuple *tuple;
 	int ret = 0;
+	uint16_t reserve = 0;
 
 	tuple = net_context_get_tuple(context);
 	if (!tuple) {
@@ -376,6 +384,7 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 		}
 		net_context_set_receiver_registered(context);
 		ret = 0;
+		reserve = UIP_IPUDPH_LEN;
 		break;
 	case IPPROTO_TCP:
 		NET_DBG("TCP not yet supported\n");
@@ -398,20 +407,30 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 
 	switch (timeout) {
 	case TICKS_UNLIMITED:
-		return nano_fifo_get_wait(rx_queue);
+		buf = nano_fifo_get_wait(rx_queue);
+		break;
 	case TICKS_NONE:
-		return nano_fifo_get(rx_queue);
+		buf = nano_fifo_get(rx_queue);
+		break;
 	default:
 #ifdef CONFIG_NANO_TIMEOUTS
 #ifdef CONFIG_MICROKERNEL
-		return nano_task_fifo_get_wait_timeout(rx_queue, timeout);
+		buf = nano_task_fifo_get_wait_timeout(rx_queue, timeout);
 #else /* CONFIG_MICROKERNEL */
-		return nano_fiber_fifo_get_wait_timeout(rx_queue, timeout);
+		buf = nano_fiber_fifo_get_wait_timeout(rx_queue, timeout);
 #endif
 #else /* CONFIG_NANO_TIMEOUTS */
-		return nano_fifo_get(rx_queue);
+		buf = nano_fifo_get(rx_queue);
 #endif
+		break;
 	}
+
+	if (buf && reserve) {
+		ip_buf_appdatalen(buf) = ip_buf_len(buf) - reserve;
+		ip_buf_appdata(buf) = &uip_buf(buf)[reserve];
+	}
+
+	return buf;
 }
 
 static void udp_packet_reply(struct simple_udp_connection *c,
@@ -430,21 +449,22 @@ static void udp_packet_reply(struct simple_udp_connection *c,
 		/* If the context is not there, then we must discard
 		 * the buffer here, otherwise we have a buffer leak.
 		 */
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 		return;
 	}
 
 	queue = net_context_get_queue(context);
 
-	NET_DBG("packet reply buf %p context %p len %d queue %p\n",
-		buf, context, buf->len, queue);
-
 	/* Contiki stack will overwrite the uip_len(buf) and
 	 * uip_appdatalen(buf) values, so in order to allow
 	 * the application to use them, copy the values here.
 	 */
-	buf->datalen = uip_len(buf);
-	buf->data = uip_appdata(buf);
+	ip_buf_appdatalen(buf) = datalen;
+
+	NET_DBG("packet reply context %p len %d "
+		"appdata %p appdatalen %d queue %p\n",
+		context, ip_buf_len(buf),
+		ip_buf_appdata(buf), ip_buf_appdatalen(buf), queue);
 
 	nano_fifo_put(queue, buf);
 }
@@ -460,15 +480,15 @@ static int check_and_send_packet(struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	tuple = net_context_get_tuple(buf->context);
+	tuple = net_context_get_tuple(ip_buf_context(buf));
 	if (!tuple) {
 		return -EINVAL;
 	}
 
 	switch (tuple->ip_proto) {
 	case IPPROTO_UDP:
-		udp = net_context_get_udp_connection(buf->context);
-		if (!net_context_get_receiver_registered(buf->context)) {
+		udp = net_context_get_udp_connection(ip_buf_context(buf));
+		if (!net_context_get_receiver_registered(ip_buf_context(buf))) {
 			ret = simple_udp_register(udp, tuple->local_port,
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 				(uip_ip6addr_t *)&tuple->remote_addr->in6_addr,
@@ -476,22 +496,25 @@ static int check_and_send_packet(struct net_buf *buf)
 				(uip_ip4addr_t *)&tuple->remote_addr->in_addr,
 #endif
 				tuple->remote_port, udp_packet_reply,
-				buf->context);
+				ip_buf_context(buf));
 			if (!ret) {
 				NET_DBG("UDP connection creation failed\n");
 				ret = -ENOENT;
 				break;
 			}
-			net_context_set_receiver_registered(buf->context);
+			net_context_set_receiver_registered(ip_buf_context(buf));
 		}
 
-		/* Remember the original length as the uIP stack might
-		 * reset the uip_len(buf) value.
-		 */
-		buf->datalen = uip_len(buf);
+		if (ip_buf_appdatalen(buf) == 0) {
+			/* User application has not set the application data
+			 * length. The buffer will be discarded if we do not
+			 * set the value correctly.
+			 */
+			uip_appdatalen(buf) = buf->len - UIP_IPUDPH_LEN;
+		}
 
-		ret = simple_udp_send(buf, udp, buf->data, buf->len);
-
+		ret = simple_udp_send(buf, udp, uip_appdata(buf),
+				      uip_appdatalen(buf));
 		break;
 	case IPPROTO_TCP:
 		NET_DBG("TCP not yet supported\n");
@@ -527,7 +550,7 @@ static void net_tx_fiber(void)
 		 */
 		ret = check_and_send_packet(buf);
 		if (ret < 0) {
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 			goto wait_next;
 		} else if (ret > 0) {
 			goto wait_next;
@@ -540,7 +563,7 @@ static void net_tx_fiber(void)
 			ret = process_run(buf);
 		} while (ret > 0);
 
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 
 	wait_next:
 		/* Check stack usage (no-op if not enabled) */
@@ -567,7 +590,7 @@ static void net_rx_fiber(void)
 		NET_DBG("Received buf %p\n", buf);
 
 		if (!tcpip_input(buf)) {
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 		}
 		/* The buffer is on to its way to receiver at this
 		 * point. We must not remove it here.
@@ -685,9 +708,14 @@ static uint8_t net_tcpip_output(struct net_buf *buf, const uip_lladdr_t *lladdr)
 	}
 
 	if(lladdr == NULL) {
-		linkaddr_copy(&buf->dest, &linkaddr_null);
+		linkaddr_copy(&ip_buf_ll_dest(buf), &linkaddr_null);
 	} else {
-		linkaddr_copy(&buf->dest, (const linkaddr_t *)lladdr);
+		linkaddr_copy(&ip_buf_ll_dest(buf),
+			      (const linkaddr_t *)lladdr);
+	}
+
+	if (ip_buf_len(buf) == 0) {
+		return 0;
 	}
 
 	res = netdev.drv->send(buf);
@@ -758,7 +786,10 @@ int net_init(void)
 #endif /* UIP_STATISTICS == 1 */
 
 	net_context_init();
-	net_buf_init();
+
+	ip_buf_init();
+	l2_buf_init();
+
 	init_tx_queue();
 	init_rx_queue();
 	init_timer_fiber();

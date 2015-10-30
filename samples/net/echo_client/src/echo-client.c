@@ -41,6 +41,7 @@
 
 #include <drivers/rand32.h>
 
+#include <net/ip_buf.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
@@ -116,7 +117,6 @@ static struct in6_addr in6addr_my = MY_IPADDR;
 #define MY_PORT 8484
 #define PEER_PORT 4242
 
-static struct nano_sem flag;
 static struct net_context *unicast, *multicast;
 
 static inline void init_server()
@@ -175,20 +175,19 @@ static inline bool send_packet(const char *name,
 	struct net_buf *buf;
 	bool fail = false;
 
-	buf = net_buf_get_tx(ctx);
+	buf = ip_buf_get_tx(ctx);
 	if (buf) {
 		uint8_t *ptr;
 		int sending_len = ipsum_len - pos;
 
-		ptr = net_buf_add(buf, 0);
-		memcpy(ptr, lorem_ipsum + pos, sending_len);
 		ptr = net_buf_add(buf, sending_len);
+		memcpy(ptr, lorem_ipsum + pos, sending_len);
 		sending_len = buf->len;
 
 		if (net_send(buf) < 0) {
 			PRINT("%s: sending %d bytes failed\n",
 			      __func__, sending_len);
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 			fail = true;
 			goto out;
 		} else {
@@ -213,9 +212,9 @@ static inline bool wait_reply(const char *name,
 	/* Wait for the answer */
 	buf = net_receive(ctx, WAIT_TICKS);
 	if (buf) {
-		if (net_buf_datalen(buf) != expected_len) {
+		if (ip_buf_appdatalen(buf) != expected_len) {
 			PRINT("%s: received %d bytes, expected %d\n",
-			      name, net_buf_datalen(buf), expected_len);
+			      name, ip_buf_appdatalen(buf), expected_len);
 			fail = true;
 			goto free_buf;
 		}
@@ -225,11 +224,11 @@ static inline bool wait_reply(const char *name,
 		 * this way it is possible to see how the app
 		 * can manipulate the received data.
 		 */
-		reverse(net_buf_data(buf), net_buf_datalen(buf));
+		reverse(ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
 		/* Did we get all the data back?
 		 */
-		if (memcmp(lorem_ipsum + pos, net_buf_data(buf),
+		if (memcmp(lorem_ipsum + pos, ip_buf_appdata(buf),
 			   expected_len)) {
 			PRINT("%s: received data mismatch.\n", name);
 			fail = true;
@@ -240,7 +239,7 @@ static inline bool wait_reply(const char *name,
 			      expected_len);
 
 	free_buf:
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 	} else {
 		PRINT("%s: expected data, got none\n", name);
 		fail = true;
@@ -448,7 +447,7 @@ void fiber_sending(void)
 		}
 
 		send_unicast = !send_unicast;
-		nano_fiber_sem_take_wait(&flag);
+		fiber_sleep(10);
 	}
 }
 
@@ -468,8 +467,7 @@ void fiber_receiving(void)
 			      ipsum_len - expecting);
 		}
 
-		nano_fiber_sem_give(&flag);
-		fiber_yield();
+		fiber_sleep(10);
 	}
 }
 
@@ -480,8 +478,6 @@ void main(void)
 	init_server();
 
 	ipsum_len = strlen(lorem_ipsum);
-
-	nano_sem_init(&flag);
 
 	if (!get_context(&unicast, &multicast)) {
 		PRINT("%s: Cannot get network context\n", __func__);

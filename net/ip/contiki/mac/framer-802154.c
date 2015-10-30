@@ -36,6 +36,8 @@
  *         Joakim Eriksson <joakime@sics.se>
  */
 
+#include <net/l2_buf.h>
+
 #include "net/mac/framer-802154.h"
 #include "net/mac/frame802154.h"
 #include "net/llsec/llsec802154.h"
@@ -108,7 +110,7 @@ is_broadcast_addr(uint8_t mode, uint8_t *addr)
 }
 /*---------------------------------------------------------------------------*/
 static int
-create_frame(struct net_mbuf *buf, int do_create)
+create_frame(struct net_buf *buf, int do_create)
 {
   frame802154_t params;
   int hdr_len;
@@ -218,19 +220,19 @@ create_frame(struct net_mbuf *buf, int do_create)
 }
 /*---------------------------------------------------------------------------*/
 static int
-hdr_length(struct net_mbuf *buf)
+hdr_length(struct net_buf *buf)
 {
   return create_frame(buf, 0);
 }
 /*---------------------------------------------------------------------------*/
 static int
-create(struct net_mbuf *buf)
+create(struct net_buf *buf)
 {
   return create_frame(buf, 1);
 }
 /*---------------------------------------------------------------------------*/
 static int
-parse(struct net_mbuf *buf)
+parse(struct net_buf *buf)
 {
   frame802154_t frame;
   int hdr_len;

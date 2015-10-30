@@ -38,6 +38,8 @@
  * \author  Julien Abeille <jabeille@cisco.com> (IPv6 related code)
  */
 
+#include <net/ip_buf.h>
+
 #include "contiki-net.h"
 #include "net/ip/uip-split.h"
 #include "net/ip/uip-packetqueue.h"
@@ -50,7 +52,7 @@
 #include <string.h>
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>
@@ -553,7 +555,7 @@ tcpip_ipv6_output(struct net_buf *buf)
   PRINTF("%s(): buf %p len %d\n", __FUNCTION__, buf, uip_len(buf));
 
   if(uip_len(buf) > UIP_LINK_MTU) {
-    UIP_LOG("tcpip_ipv6_output: Packet to big");
+    UIP_LOG("tcpip_ipv6_output: Packet too big");
     uip_len(buf) = 0;
     uip_ext_len(buf) = 0;
     return 0;
@@ -736,10 +738,6 @@ tcpip_ipv6_output(struct net_buf *buf)
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
 
       if (ret == 0) {
-        if (!net_buf_datalen(buf)) {
-          /* Set the original length if it is not set yet */
-          net_buf_datalen(buf) = uip_len(buf);
-	}
         uip_len(buf) = 0;
         uip_ext_len(buf) = 0;
       }
@@ -750,9 +748,6 @@ tcpip_ipv6_output(struct net_buf *buf)
   }
   /* Multicast IP destination address. */
   ret = tcpip_output(buf, NULL);
-  if (!net_buf_datalen(buf)) {
-    net_buf_datalen(buf) = uip_len(buf);
-  }
   uip_len(buf) = 0;
   uip_ext_len(buf) = 0;
   return ret;

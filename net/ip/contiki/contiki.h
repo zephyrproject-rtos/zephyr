@@ -56,6 +56,6 @@
 
 #include "sys/energest.h"
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #endif /* CONTIKI_H_ */

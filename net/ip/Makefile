@@ -5,14 +5,11 @@ ccflags-y += -I${srctree}/net/ip/contiki/os
 ccflags-y += -I${srctree}/net/ip
 ccflags-y += -I${srctree}/include/drivers
 
-ifneq ($(CONFIG_NET_BUF_SIZE),)
-ccflags-y += -DNET_NUM_BUFS=$(CONFIG_NET_BUF_SIZE)
-endif
-
 # Zypher specific files
 obj-y = net_init.o \
-	 net_buf.o \
-	 net_context.o
+	ip_buf.o \
+	l2_buf.o \
+	net_context.o
 
 # Contiki IP stack files
 obj-y += contiki/netstack.o \

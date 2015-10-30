@@ -53,9 +53,9 @@
 /*---------------------------------------------------------------------------*/
 static struct ctimer periodic_timer;
 
-static void handle_periodic_timer(struct net_mbuf *mbuf, void *ptr);
+static void handle_periodic_timer(struct net_buf *mbuf, void *ptr);
 static void new_dio_interval(rpl_instance_t *instance);
-static void handle_dio_timer(struct net_mbuf *mbuf, void *ptr);
+static void handle_dio_timer(struct net_buf *mbuf, void *ptr);
 
 static uint16_t next_dis;
 
@@ -64,7 +64,7 @@ static uint8_t dio_send_ok;
 
 /*---------------------------------------------------------------------------*/
 static void
-handle_periodic_timer(struct net_mbuf *not_used, void *ptr)
+handle_periodic_timer(struct net_buf *not_used, void *ptr)
 {
   rpl_purge_routes();
   rpl_recalculate_ranks();
@@ -126,7 +126,7 @@ new_dio_interval(rpl_instance_t *instance)
 }
 /*---------------------------------------------------------------------------*/
 static void
-handle_dio_timer(struct net_mbuf *not_used, void *ptr)
+handle_dio_timer(struct net_buf *not_used, void *ptr)
 {
   rpl_instance_t *instance;
 
@@ -201,7 +201,7 @@ rpl_reset_dio_timer(rpl_instance_t *instance)
 #endif /* RPL_LEAF_ONLY */
 }
 /*---------------------------------------------------------------------------*/
-static void handle_dao_timer(struct net_mbuf *mbuf, void *ptr);
+static void handle_dao_timer(struct net_buf *mbuf, void *ptr);
 static void
 set_dao_lifetime_timer(rpl_instance_t *instance)
 {
@@ -224,7 +224,7 @@ set_dao_lifetime_timer(rpl_instance_t *instance)
 }
 /*---------------------------------------------------------------------------*/
 static void
-handle_dao_timer(struct net_mbuf *not_used, void *ptr)
+handle_dao_timer(struct net_buf *not_used, void *ptr)
 {
   rpl_instance_t *instance;
 #if RPL_CONF_MULTICAST
@@ -396,7 +396,7 @@ get_probing_target(rpl_dag_t *dag)
 }
 /*---------------------------------------------------------------------------*/
 static void
-handle_probing_timer(struct net_mbuf *not_used, void *ptr)
+handle_probing_timer(struct net_buf *not_used, void *ptr)
 {
   rpl_instance_t *instance = (rpl_instance_t *)ptr;
   rpl_parent_t *probing_target = RPL_PROBING_SELECT_FUNC(instance->current_dag);

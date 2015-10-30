@@ -32,7 +32,7 @@
 #ifndef UDP_SOCKET_H
 #define UDP_SOCKET_H
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #include "net/ip/uip.h"
 

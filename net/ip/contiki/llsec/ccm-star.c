@@ -42,6 +42,8 @@
  * @{
  */
 
+#include <net/l2_buf.h>
+
 #include "net/llsec/ccm-star.h"
 #include "net/llsec/llsec802154.h"
 #include "net/packetbuf.h"
@@ -50,7 +52,7 @@
 
 /*---------------------------------------------------------------------------*/
 static void
-set_nonce(struct net_mbuf *buf, uint8_t *nonce,
+set_nonce(struct net_buf *buf, uint8_t *nonce,
     uint8_t flags,
     const uint8_t *extended_source_address,
     uint8_t counter)
@@ -71,7 +73,7 @@ set_nonce(struct net_mbuf *buf, uint8_t *nonce,
 /*---------------------------------------------------------------------------*/
 /* XORs the block m[pos] ... m[pos + 15] with K_{counter} */
 static void
-ctr_step(struct net_mbuf *buf, const uint8_t *extended_source_address,
+ctr_step(struct net_buf *buf, const uint8_t *extended_source_address,
     uint8_t pos,
     uint8_t *m_and_result,
     uint8_t m_len,
@@ -89,7 +91,7 @@ ctr_step(struct net_mbuf *buf, const uint8_t *extended_source_address,
 }
 /*---------------------------------------------------------------------------*/
 static void
-mic(struct net_mbuf *buf, const uint8_t *extended_source_address,
+mic(struct net_buf *buf, const uint8_t *extended_source_address,
     uint8_t *result,
     uint8_t mic_len)
 {
@@ -163,7 +165,7 @@ mic(struct net_mbuf *buf, const uint8_t *extended_source_address,
 }
 /*---------------------------------------------------------------------------*/
 static void
-ctr(struct net_mbuf *buf, const uint8_t *extended_source_address)
+ctr(struct net_buf *buf, const uint8_t *extended_source_address)
 {
   uint8_t m_len;
   uint8_t *m;

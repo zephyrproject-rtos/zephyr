@@ -53,7 +53,7 @@
  *             the sequence number of the incoming packet with the last few ones
  *             we saw, filtering with the Rime address.
  */
-int mac_sequence_is_duplicate(struct net_mbuf *buf);
+int mac_sequence_is_duplicate(struct net_buf *buf);
 
 /**
  * \brief      Register the sequence number of the packetbuf
@@ -61,6 +61,6 @@ int mac_sequence_is_duplicate(struct net_mbuf *buf);
  *             This function is used to add the sequence number of the incoming
  *             packet to the history.
  */
-void mac_sequence_register_seqno(struct net_mbuf *buf);
+void mac_sequence_register_seqno(struct net_buf *buf);
 
 #endif /* MAC_SEQUENCE_H */

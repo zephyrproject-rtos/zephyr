@@ -30,8 +30,9 @@
  *
  */
 
+#include <net/l2_buf.h>
+
 #include "net/mac/mac.h"
-#include "net/net_buf.h"
 
 #define DEBUG 0
 #include "net/ip/uip-debug.h"
@@ -50,7 +51,7 @@ net_mac_stats_t net_mac_stats = {0};
 
 /*---------------------------------------------------------------------------*/
 void
-mac_call_sent_callback(struct net_mbuf *buf, mac_callback_t sent, void *ptr, int status, int num_tx)
+mac_call_sent_callback(struct net_buf *buf, mac_callback_t sent, void *ptr, int status, int num_tx)
 {
   PRINTF("buf %p mac_callback_t %p ptr %p status %d num_tx %d\n", buf,
          (void *)sent, ptr, status, num_tx);

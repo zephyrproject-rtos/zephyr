@@ -44,7 +44,7 @@
 #include "contiki-conf.h"
 #include "dev/radio.h"
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #if NET_MAC_CONF_STATS
 /* Statistics for sent bytes. */
@@ -55,9 +55,9 @@ typedef struct net_mac_stats {
 extern net_mac_stats_t net_mac_stats;
 #endif
 
-typedef void (* mac_callback_t)(struct net_mbuf *buf, void *ptr, int status, int transmissions);
+typedef void (* mac_callback_t)(struct net_buf *buf, void *ptr, int status, int transmissions);
 
-void mac_call_sent_callback(struct net_mbuf *buf, mac_callback_t sent, void *ptr, int status, int num_tx);
+void mac_call_sent_callback(struct net_buf *buf, mac_callback_t sent, void *ptr, int status, int num_tx);
 
 /**
  * The structure of a MAC protocol driver in Contiki.
@@ -69,11 +69,11 @@ struct mac_driver {
   void (* init)(void);
 
   /** Send a packet from the Rime buffer  */
-  uint8_t (* send)(struct net_mbuf *buf, mac_callback_t sent_callback,
+  uint8_t (* send)(struct net_buf *buf, mac_callback_t sent_callback,
                                          bool last_fragment, void *ptr);
 
   /** Callback for getting notified of incoming packet. */
-  uint8_t (* input)(struct net_mbuf *buf);
+  uint8_t (* input)(struct net_buf *buf);
   
   /** Turn the MAC layer on. */
   int (* on)(void);

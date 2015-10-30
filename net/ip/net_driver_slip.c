@@ -30,7 +30,7 @@
 #endif
 
 #include <net/net_core.h>
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include "contiki/os/dev/slip.h"
 
@@ -43,13 +43,14 @@ static int net_driver_slip_open(void)
 
 static int net_driver_slip_send(struct net_buf *buf)
 {
-	NET_DBG("Sending %d bytes\n", buf->len);
+	NET_DBG("Sending %d bytes, application data %d bytes\n",
+		ip_buf_len(buf), ip_buf_appdatalen(buf));
 
 	if (!slip_send(buf)) {
 		/* Release the buffer because we sent all the data
 		 * successfully.
 		 */
-		net_buf_put(buf);
+		ip_buf_unref(buf);
 		return 1;
 	}
 

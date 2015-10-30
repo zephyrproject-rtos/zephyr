@@ -67,7 +67,7 @@ static void eth_rx(struct device *port)
 		goto release_desc;
 	}
 
-	buf = net_buf_get_reserve_rx(0);
+	buf = ip_buf_get_reserve_rx(0);
 	if (buf == NULL) {
 		ETH_ERR("Failed to obtain RX buffer.\n");
 		goto release_desc;
@@ -79,7 +79,7 @@ static void eth_rx(struct device *port)
 		goto release_desc;
 	}
 
-	memcpy(uip_buf(buf), (void *)context->rx_buf, frm_len);
+	memcpy(net_buf_add(buf, frm_len), (void *)context->rx_buf, frm_len);
 	uip_len(buf) = frm_len;
 
 	net_driver_ethernet_recv(buf);

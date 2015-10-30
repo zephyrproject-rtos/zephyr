@@ -49,7 +49,7 @@
 #endif
 
 #ifdef WITH_CONTIKI
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 #endif
 
 #define dtls_set_version(H,V) dtls_int_to_uint16((H)->version, (V))
@@ -1171,7 +1171,7 @@ dtls_prepare_record(dtls_peer_t *peer, dtls_security_parameters_t *security,
   unsigned int i;
   
   if (*rlen < DTLS_RH_LENGTH) {
-    dtls_alert("The sendbuf (%zu bytes) is too small\n", *rlen);
+    dtls_alert("The sendbuf (%d bytes) is too small\n", *rlen);
     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
   }
 
@@ -1413,19 +1413,19 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
   size_t overall_len = 0;
 
 #ifdef WITH_CONTIKI
-  buf = net_buf_get_reserve_tx(0);
+  buf = ip_buf_get_reserve_tx(UIP_IPUDPH_LEN);
   if (!buf) {
 	  return -ENOMEM;
   }
-  sendbuf = buf->buf;
-  len = sizeof(buf->buf);
+  sendbuf = ip_buf_appdata(buf);
+  len = IP_BUF_MAX_DATA - UIP_IPUDPH_LEN; /* max application data len */
 #endif
 
   res = dtls_prepare_record(peer, security, type, buf_array, buf_len_array, buf_array_len, sendbuf, &len);
 
   if (res < 0) {
 #ifdef WITH_CONTIKI
-    net_buf_put(buf);
+    ip_buf_unref(buf);
 #endif
     return res;
   }
@@ -1481,7 +1481,7 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
   res = CALL(ctx, write, session, sendbuf, len);
 
 #ifdef WITH_CONTIKI
-  net_buf_put(buf);
+  ip_buf_unref(buf);
 #endif
 
   /* Guess number of bytes application data actually sent:
@@ -3887,9 +3887,9 @@ dtls_retransmit(dtls_context_t *context, netq_t *node) {
   if (node->retransmit_cnt < DTLS_DEFAULT_MAX_RETRANSMIT) {
 #ifdef WITH_CONTIKI
       /* Prepare to receive max. IPv6 frame size packets. */
-      struct net_buf *buf = net_buf_get_reserve_tx(0);
-      unsigned char *sendbuf = buf->buf;
-      size_t len = sizeof(buf->buf);
+      struct net_buf *buf = ip_buf_get_reserve_tx(UIP_IPUDPH_LEN);
+      unsigned char *sendbuf = ip_buf_appdata(buf);
+      size_t len = IP_BUF_MAX_DATA - UIP_IPUDPH_LEN;
 #else
       unsigned char sendbuf[DTLS_MAX_BUF];
       size_t len = sizeof(sendbuf);
@@ -3919,7 +3919,7 @@ dtls_retransmit(dtls_context_t *context, netq_t *node) {
       if (err < 0) {
 	dtls_warn("can not retransmit packet, err: %i\n", err);
 #ifdef WITH_CONTIKI
-	net_buf_put(buf);
+	ip_buf_unref(buf);
 #endif
 	return;
       }
@@ -3927,10 +3927,11 @@ dtls_retransmit(dtls_context_t *context, netq_t *node) {
 			 sizeof(dtls_record_header_t));
       dtls_debug_hexdump("retransmit unencrypted", node->data, node->length);
 
+      net_buf_add(buf, len);
       (void)CALL(context, write, &node->peer->session, sendbuf, len);
 
 #ifdef WITH_CONTIKI
-      net_buf_put(buf);
+      ip_buf_unref(buf);
 #endif
 
       return;

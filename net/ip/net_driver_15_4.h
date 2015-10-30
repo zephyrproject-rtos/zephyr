@@ -16,4 +16,4 @@
 
 int net_driver_15_4_init(void);
 int net_driver_15_4_recv(struct net_buf *buf);
-int net_driver_15_4_recv_from_hw(struct net_mbuf *buf);
+int net_driver_15_4_recv_from_hw(struct net_buf *buf);

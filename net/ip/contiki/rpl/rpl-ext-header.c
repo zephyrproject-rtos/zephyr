@@ -44,7 +44,7 @@
  * @{
  */
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include "net/ip/uip.h"
 #include "net/ip/tcpip.h"
@@ -246,7 +246,7 @@ rpl_update_header_empty(struct net_buf *buf)
         /* We should send back the packet to the originating parent,
            but it is not feasible yet, so we send a No-Path DAO instead */
         PRINTF("RPL generate No-Path DAO\n");
-        parent = rpl_get_parent((uip_lladdr_t *)&buf->src);
+        parent = rpl_get_parent((uip_lladdr_t *)&ip_buf_ll_src(buf));
         if(parent != NULL) {
           dao_output_target(parent, &UIP_IP_BUF(buf)->destipaddr, RPL_ZERO_LIFETIME);
         }

@@ -26,6 +26,7 @@
 #define PRINT           printk
 #endif
 
+#include <net/ip_buf.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
@@ -116,8 +117,8 @@ void fiberEntry(void)
 		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
 			PRINT("%s: received %d bytes\n", __func__,
-				net_buf_datalen(buf));
-			net_buf_put(buf);
+				ip_buf_appdatalen(buf));
+			ip_buf_unref(buf);
 		}
 
 		/* wait a while, then let task have a turn */
@@ -166,7 +167,7 @@ void main(void)
 	nano_timer_init(&timer, data);
 
 	while (1) {
-		buf = net_buf_get_tx(ctx);
+		buf = ip_buf_get_tx(ctx);
 		if (buf) {
 			uint8_t *ptr;
 			uint16_t sent_len;
@@ -181,7 +182,7 @@ void main(void)
 			if (net_send(buf) < 0) {
 				PRINT("%s: sending %d bytes failed\n",
 					__func__, len);
-				net_buf_put(buf);
+				ip_buf_unref(buf);
 			} else
 				PRINT("%s: sent %d bytes\n", __func__,
 					sent_len);

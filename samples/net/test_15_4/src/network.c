@@ -30,6 +30,7 @@
 #include <tc_util.h>
 #endif
 
+#include <net/ip_buf.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
 #include <net_driver_15_4.h>
@@ -128,7 +129,7 @@ static void send_data(const char *taskname, struct net_context *ctx)
 	int len = strlen(lorem_ipsum);
 	struct net_buf *buf;
 
-	buf = net_buf_get_tx(ctx);
+	buf = ip_buf_get_tx(ctx);
 	if (buf) {
 		uint8_t *ptr;
 		uint16_t sent_len;
@@ -143,7 +144,7 @@ static void send_data(const char *taskname, struct net_context *ctx)
 		if (net_send(buf) < 0) {
 			PRINT("%s: %s(): sending %d bytes failed\n",
 			      taskname, __func__, len);
-			net_buf_put(buf);
+			ip_buf_unref(buf);
 		} else {
 			PRINT("%s: %s(): sent %d bytes\n", taskname,
 			      __func__, sent_len);
@@ -161,8 +162,9 @@ static void receive_data(const char *taskname, struct net_context *ctx)
 	buf = net_receive(ctx, TICKS_NONE);
 	if (buf) {
 		PRINT("%s: %s(): received %d bytes\n", taskname,
-		      __func__, net_buf_datalen(buf));
-		if (memcmp(net_buf_data(buf), lorem_ipsum, sizeof(lorem_ipsum))) {
+		      __func__, ip_buf_appdatalen(buf));
+		if (memcmp(ip_buf_appdata(buf),
+			   lorem_ipsum, sizeof(lorem_ipsum))) {
 			PRINT("ERROR: data does not match\n");
 
 #ifdef CONFIG_NET_SANITY_TEST
@@ -171,7 +173,8 @@ static void receive_data(const char *taskname, struct net_context *ctx)
 			rp = TC_PASS;
 #endif
 		}
-		net_buf_put(buf);
+
+		ip_buf_unref(buf);
 
 #ifdef CONFIG_NET_SANITY_TEST
 		loopback++;

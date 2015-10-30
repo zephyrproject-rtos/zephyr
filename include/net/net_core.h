@@ -110,8 +110,8 @@ int net_set_mac(uint8_t *mac, uint8_t len);
  *
  * @details Application can call this function if it has received
  * a network packet from peer. The application needs to write
- * reply data into net_buf. The app can use net_buf_data(buf) and
- * net_buf_datalen(buf) to set the application data and length.
+ * reply data into net_buf. The app can use ip_buf_appdata(buf) and
+ * ip_buf_appdatalen(buf) to set the application data and length.
  *
  * @param context Network context
  * @param buf Network buffer containing the network data.

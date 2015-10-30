@@ -41,7 +41,7 @@
 #ifndef NETSTACK_H
 #define NETSTACK_H
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 
 #include "contiki-conf.h"
 

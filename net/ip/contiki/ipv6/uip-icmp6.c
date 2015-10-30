@@ -42,7 +42,7 @@
  * \author Mathilde Durvy <mdurvy@cisco.com>
  */
 
-#include <net/net_buf.h>
+#include <net/ip_buf.h>
 
 #include <string.h>
 #include "net/ipv6/uip-ds6.h"
@@ -322,6 +322,8 @@ uip_icmp6_send(struct net_buf *buf, const uip_ipaddr_t *dest, int type, int code
   UIP_ICMP_BUF(buf)->icmpchksum = ~uip_icmp6chksum(buf);
 
   uip_len(buf) = UIP_IPH_LEN + UIP_ICMPH_LEN + payload_len;
+  net_buf_add(buf, uip_len(buf));
+
   tcpip_ipv6_output(buf);
 }
 /*---------------------------------------------------------------------------*/

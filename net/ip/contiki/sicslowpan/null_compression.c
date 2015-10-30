@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <net/net_buf.h>
+#include <net/buf.h>
 #include <net/sicslowpan/null_compression.h>
 #include <net/netstack.h>
 
