@@ -71,6 +71,26 @@ static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 	}
 }
 
+#ifdef CONFIG_GPIO_DW_BOTHEDGES_SUPPORT
+static inline void dw_set_gpio_bothedges(struct device *port,
+			uint32_t pin, int flags)
+{
+	struct gpio_config_dw *config = port->config->config_info;
+	uint32_t base_addr = config->base_addr;
+	uint8_t flag_is_set = (flags & GPIO_INT_DOUBLE_EDGE);
+
+	if (flag_is_set) {
+		dw_set_bit(base_addr, INT_BOTHEDGE, pin, flag_is_set);
+		dw_set_bit(base_addr, INTTYPE_LEVEL, pin, flag_is_set);
+	}
+}
+#else
+static inline void dw_set_gpio_bothedges(struct device *port,
+			uint32_t pin, int flags)
+{
+}
+#endif
+
 static inline void dw_interrupt_config(struct device *port, int access_op,
 			 uint32_t pin, int flags)
 {
@@ -91,11 +111,7 @@ static inline void dw_interrupt_config(struct device *port, int access_op,
 	dw_set_bit(base_addr, INT_POLARITY, pin, flag_is_set);
 
 	/* both edges */
-	flag_is_set = (flags & GPIO_INT_DOUBLE_EDGE);
-	if (flag_is_set) {
-		dw_set_bit(base_addr, INT_BOTHEDGE, pin, flag_is_set);
-		dw_set_bit(base_addr, INTTYPE_LEVEL, pin, flag_is_set);
-	}
+	dw_set_gpio_bothedges(port, pin, flags);
 
 	/* use built-in debounce  */
 	flag_is_set = (flags & GPIO_INT_DEBOUNCE);

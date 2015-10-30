@@ -32,6 +32,18 @@ config GPIO_DW
 	help
 	  Enable driver for Designware GPIO
 
+config GPIO_DW_BOTHEDGES_SUPPORT
+	bool
+	prompt "Interrupt on Both Edges"
+	default y
+	depends on GPIO_DW && !ARC
+	help
+	This option is enabled by platforms that
+	supports the interrupt-both-edges feature.
+	This feature allows the GPIO hardware to
+	trigger and interrupt on both, falling and
+	rising, edges of an input.
+
 config GPIO_DW_SHARED_IRQ
 	bool
 	default n
