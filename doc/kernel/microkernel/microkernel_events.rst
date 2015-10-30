@@ -81,7 +81,7 @@ The following parameters must be defined:
                  ...
              }
 
-          If no event handler is required specify :cpp:macro:`NULL`.
+          If no event handler is required specify :c:macro:`NULL`.
 
 Public Event
 ------------
@@ -105,8 +105,27 @@ as follows:
 A public event can be referenced by name from any source file that includes
 the file :file:`zephyr.h`.
 
-.. note::
-   Private events are not supported by the Zephyr kernel.
+Private Event
+-------------
+
+Define the event in a source file using the following syntax:
+
+.. code-block:: c
+
+   DEFINE_EVENT(name, handler);
+
+For example, the following code defines a private event named ``PRIV_EVENT``,
+which has no associated event handler function.
+
+.. code-block:: c
+
+   DEFINE_EVENT(PRIV_EVENT, NULL);
+
+To utilize this event from a different source file use the following syntax:
+
+.. code-block:: c
+
+   extern const kevent_t PRIV_EVENT;
 
 Example: Signaling an Event from an ISR
 ========================================
