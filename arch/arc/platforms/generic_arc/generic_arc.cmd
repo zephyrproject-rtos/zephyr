@@ -62,7 +62,7 @@ SECTIONS {
 	GROUP_START(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(1024)) {
-		__text_start = .;
+		_image_text_start = .;
 
 /* when !XIP, .text is in RAM, and vector table must be at its very start */
 
@@ -77,7 +77,7 @@ SECTIONS {
 		*(.text)
 		*(".text.*")
 
-		__text_end = .;
+		_image_text_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	SECTION_PROLOGUE (devconfig, (OPTIONAL),)
