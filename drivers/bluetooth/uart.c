@@ -169,12 +169,13 @@ void bt_uart_isr(void *unused)
 				return;
 			}
 
+			BT_DBG("need to get %u bytes\n", remaining);
+
 			if (buf && remaining > net_buf_tailroom(buf)) {
 				BT_ERR("Not enough space in buffer\n");
-				goto failed;
+				net_buf_unref(buf);
+				buf = NULL;
 			}
-
-			BT_DBG("need to get %u bytes\n", remaining);
 		}
 
 		if (!buf) {
@@ -200,13 +201,6 @@ void bt_uart_isr(void *unused)
 			buf = NULL;
 		}
 	}
-
-	return;
-
-failed:
-	net_buf_unref(buf);
-	remaining = 0;
-	buf = NULL;
 }
 
 static void uart_out(struct device *dev, const uint8_t *data, int size)
