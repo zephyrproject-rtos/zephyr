@@ -84,6 +84,7 @@ config FAULT_DUMP
 	int
 	prompt "Fault dump level"
 	default 2
+	range 0 2
 	help
 	Different levels for display information when a fault occurs.
 
