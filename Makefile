@@ -330,8 +330,9 @@ ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 BOARD_NAME = $(subst $(DQUOTE),,$(CONFIG_BOARD))
 KERNEL_NAME = $(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 KERNEL_ELF_NAME = $(KERNEL_NAME).elf
+KERNEL_BIN_NAME = $(KERNEL_NAME).bin
 
-export SOC_NAME BOARD_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME
+export SOC_NAME BOARD_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME
 # Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 ZEPHYRINCLUDE    = \
@@ -560,7 +561,6 @@ QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(ARCH))
 # Defaults to zephyr, but the arch makefile usually adds further targets
 all: zephyr
 
-
 ifdef CONFIG_READABLE_ASM
 # Disable optimizations that make assembler listings hard to read.
 # reorder blocks reorders the control in the function
@@ -619,7 +619,7 @@ endif
 
 KBUILD_CFLAGS += $(subst $(DQUOTE),,$(CONFIG_COMPILER_OPT))
 
-export LDFLAG_LINKERCMD OUTPUT_FORMAT OUTPUT_ARCH
+export LDFLAG_LINKERCMD
 
 include arch/$(ARCH)/Makefile
 
@@ -706,6 +706,12 @@ endif
 
 export LD_TOOLCHAIN KBUILD_LDS
 
+# The all: target is the default when no target is given on the
+# command line.
+# This allow a user to issue only 'make' to build a kernel including modules
+# Defaults to zephyr, but the arch makefile usually adds further targets
+all: $(KERNEL_BIN_NAME)
+
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the command line or
 # set in the environment
@@ -726,7 +732,6 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
-# Externally visible symbols (used by link-zephyr.sh)
 export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y) $(app-y)
 export LDFLAGS_zephyr
 
@@ -735,21 +740,94 @@ zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_MAIN)
 ALL_LIBS += $(TOOLCHAIN_LIBS)
 export ALL_LIBS
 
-# Final link of zephyr
-      cmd_link-zephyr = $(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_zephyr) $(LIB_INCLUDE_DIR) $(ALL_LIBS)
-quiet_cmd_link-zephyr = LINK    $@
+LINK_LIBS := $(foreach l,$(ALL_LIBS), -l$(l))
 
-# Include targets which we want to
-# execute if the rest of the kernel build went well.
-zephyr: scripts/link-zephyr.sh $(zephyr-deps) $(KBUILD_ZEPHYR_APP) FORCE
-	@touch zephyr
-ifdef CONFIG_HEADERS_CHECK
-	$(Q)$(MAKE) -f $(srctree)/Makefile headers_check
+OUTPUT_FORMAT ?= elf32-i386
+OUTPUT_ARCH ?= i386
+
+quiet_cmd_create-lnk = LINK    $@
+      cmd_create-lnk =								\
+(										\
+	echo $(LDFLAGS_zephyr); 						\
+	echo "-Map ./$(KERNEL_NAME).map"; 					\
+	echo "-L $(objtree)/include/generated";					\
+	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms"; 				\
+	echo "-e __start"; 						 	\
+	echo "--start-group";							\
+	echo "$(KBUILD_ZEPHYR_MAIN)";						\
+	echo "$(objtree)/arch/$(ARCH)/core/offsets/offsets.o"; 			\
+	echo "--end-group"; 							\
+	echo "$(LIB_INCLUDE_DIR) $(LINK_LIBS)";					\
+) > $@
+
+$(KERNEL_NAME).lnk:
+	$(call cmd,create-lnk)
+
+linker.cmd:
+	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
+	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -I$(srctree)/include \
+	-I$(objtree)/include/generated $(KBUILD_LDS) -o $@
+
+final-linker.cmd:
+	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
+	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -DFINAL_LINK -I$(srctree)/include \
+	-I$(objtree)/include/generated $(KBUILD_LDS) -o $@
+
+TMP_ELF = .tmp_$(KERNEL_NAME).prebuilt
+
+$(TMP_ELF): $(KBUILD_ZEPHYR_APP) linker.cmd $(KERNEL_NAME).lnk
+	$(Q)$(LD) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
+
+quiet_cmd_gen_idt = SIDT    $@
+      cmd_gen_idt =									\
+(											\
+	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j intList $< isrList.bin;	\
+	$(GENIDT) -i isrList.bin -n $(CONFIG_IDT_NUM_VECTORS) -o staticIdt.bin 	\
+	-b int_vector_alloc.bin -m irq_int_vector_map.bin;				\
+	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 			\
+	--rename-section .data=staticIdt staticIdt.bin staticIdt.o;			\
+	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 			\
+	--rename-section .data=int_vector_alloc int_vector_alloc.bin int_vector_alloc.o;\
+	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 			\
+	--rename-section .data=irq_int_vector_map irq_int_vector_map.bin 		\
+		irq_int_vector_map.o;							\
+	rm staticIdt.bin irq_int_vector_map.bin int_vector_alloc.bin isrList.bin 	\
+)
+
+staticIdt.o: $(TMP_ELF)
+	$(call cmd,gen_idt)
+
+quiet_cmd_lnk_elf = LINK    $@
+      cmd_lnk_elf =									\
+(											\
+	$(LD) -T final-linker.cmd @$(KERNEL_NAME).lnk staticIdt.o int_vector_alloc.o 	\
+	irq_int_vector_map.o -o $@;							\
+	$(OBJCOPY) --set-section-flags intList=noload $@ elf.tmp;			\
+	$(OBJCOPY) -R intList elf.tmp $@;						\
+	rm elf.tmp									\
+)
+
+ifeq ($(ARCH),x86)
+$(KERNEL_ELF_NAME): staticIdt.o final-linker.cmd
+	$(call cmd,lnk_elf)
+else
+$(KERNEL_ELF_NAME): $(TMP_ELF)
+	@mv $(TMP_ELF) $(KERNEL_ELF_NAME)
 endif
 
-ifneq ($(strip $(PROJECT)),)
-	+$(call if_changed,link-zephyr)
-endif
+
+quiet_cmd_gen_bin = BIN     $@
+      cmd_gen_bin =									\
+(											\
+        $(OBJDUMP) -S $< > $(KERNEL_NAME).lst;						\
+        $(OBJCOPY) -S -O binary -R .note -R .comment -R COMMON -R .eh_frame $< $@;	\
+        $(STRIP) -s -o $(KERNEL_NAME).strip $<;						\
+)
+
+$(KERNEL_BIN_NAME): $(KERNEL_ELF_NAME)
+	$(call cmd,gen_bin)
+
+zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
@@ -863,7 +941,10 @@ CLEAN_DIRS  += $(MODVERDIR)
 
 CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
 		misc/generated/sysgen/sysgen.h \
-		misc/generated/sysgen/prj.mdef
+		misc/generated/sysgen/prj.mdef \
+		.old_version .tmp_System.map .tmp_version \
+		.tmp_* System.map *.lnk *.map *.elf *.lst \
+		*.bin *.strip staticIdt.o linker.cmd final-linker.cmd
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \
@@ -884,10 +965,7 @@ PHONY += $(clean-dirs) clean archclean zephyrclean
 $(clean-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
 
-zephyrclean:
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/link-zephyr.sh clean
-
-clean: archclean zephyrclean
+clean: archclean
 
 # mrproper - Delete all generated files, including .config
 #
