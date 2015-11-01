@@ -460,9 +460,8 @@ asm-generic:
 version_h := include/generated/version.h
 
 no-dot-config-targets := pristine distclean clean mrproper help \
-			 cscope gtags TAGS tags help% %docs check% coccicheck \
-			 $(version_h) headers_% archheaders archscripts \
-			 kernelversion %src-pkg
+			 cscope gtags TAGS tags help% %docs check% \
+			 $(version_h) headers_% kernelversion %src-pkg
 
 config-targets := 0
 mixed-targets  := 0
@@ -822,7 +821,7 @@ prepare1: prepare2 $(version_h) \
 	$(cmd_crmodverdir)
 
 archprepare_common = $(strip \
-		archheaders archscripts prepare1 scripts_basic \
+		prepare1 scripts_basic \
 		)
 
 
@@ -878,54 +877,6 @@ headerdep:
 PHONY += depend dep
 depend dep:
 	@echo '*** Warning: make $@ is unnecessary now.'
-
-
-# ---------------------------------------------------------------------------
-# Kernel headers
-
-#Default location for installed headers
-export INSTALL_HDR_PATH = $(objtree)/usr
-
-# If we do an all arch process set dst to asm-$(hdr-arch)
-hdr-dst = $(if $(KBUILD_HEADERS), dst=include/asm-$(hdr-arch), dst=include/asm)
-
-PHONY += archheaders
-archheaders:
-
-PHONY += archscripts
-archscripts:
-
-PHONY += __headers
-__headers: $(version_h) scripts_basic asm-generic archheaders archscripts FORCE
-	$(Q)$(MAKE) $(build)=scripts build_unifdef
-
-PHONY += headers_install_all
-headers_install_all:
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/headers.sh install
-
-PHONY += headers_install
-headers_install: __headers
-	$(if $(wildcard $(srctree)/arch/$(hdr-arch)/include/uapi/asm/Kbuild),, \
-	  $(error Headers not exportable for the $(SRCARCH) architecture))
-	$(Q)$(MAKE) $(hdr-inst)=include/uapi
-	$(Q)$(MAKE) $(hdr-inst)=arch/$(hdr-arch)/include/uapi/asm $(hdr-dst)
-
-PHONY += headers_check_all
-headers_check_all: headers_install_all
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/headers.sh check
-
-PHONY += headers_check
-headers_check: headers_install
-	$(Q)$(MAKE) $(hdr-inst)=include/uapi HDRCHECK=1
-	$(Q)$(MAKE) $(hdr-inst)=arch/$(hdr-arch)/include/uapi/asm $(hdr-dst) HDRCHECK=1
-
-# ---------------------------------------------------------------------------
-# Kernel selftest
-
-PHONY += kselftest
-kselftest:
-	$(Q)$(MAKE) -C tools/testing/selftests run_tests
-
 
 ###
 # Cleaning is done on three levels.
@@ -1079,30 +1030,6 @@ quiet_cmd_tags = GEN     $@
 
 tags TAGS cscope gtags: FORCE
 	$(call cmd,tags)
-
-# Scripts to check various things for consistency
-# ---------------------------------------------------------------------------
-
-PHONY += includecheck versioncheck coccicheck namespacecheck export_report
-
-includecheck:
-	find $(srctree)/* $(RCS_FIND_IGNORE) \
-		-name '*.[hcS]' -type f -print | sort \
-		| xargs $(PERL) -w $(srctree)/scripts/checkincludes.pl
-
-versioncheck:
-	find $(srctree)/* $(RCS_FIND_IGNORE) \
-		-name '*.[hcS]' -type f -print | sort \
-		| xargs $(PERL) -w $(srctree)/scripts/checkversion.pl
-
-coccicheck:
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/$@
-
-namespacecheck:
-	$(PERL) $(srctree)/scripts/namespace.pl
-
-export_report:
-	$(PERL) $(srctree)/scripts/export_report.pl
 
 endif #ifeq ($(config-targets),1)
 endif #ifeq ($(mixed-targets),1)
