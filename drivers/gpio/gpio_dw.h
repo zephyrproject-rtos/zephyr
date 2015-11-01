@@ -22,10 +22,10 @@
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
-extern int gpio_initialize_dw(struct device *port);
+extern int gpio_dw_initialize(struct device *port);
 typedef void (*gpio_config_irq_t)(struct device *port);
 
-struct gpio_config_dw {
+struct gpio_dw_config {
 	uint32_t base_addr;
 	uint32_t bits;
 	uint32_t irq_num;
@@ -39,7 +39,7 @@ struct gpio_config_dw {
 #endif /* CONFIG_GPIO_DW_SHARED_IRQ */
 };
 
-struct gpio_runtime_dw {
+struct gpio_dw_runtime {
 	gpio_callback_t callback;
 	uint32_t enabled_callbacks;
 	uint8_t port_callback;
