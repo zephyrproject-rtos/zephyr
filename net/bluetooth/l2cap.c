@@ -112,6 +112,10 @@ static void l2cap_chan_alloc_cid(struct bt_conn *conn,
 {
 	uint16_t cid;
 
+	/*
+	 * No action needed if there's already a CID allocated, e.g. in
+	 * the case of a fixed channel.
+	 */
 	if (chan->rx.cid > 0) {
 		return;
 	}
