@@ -1408,7 +1408,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small SMP PDU received\n");
-		goto done;
+		return;
 	}
 
 	BT_DBG("Received SMP code 0x%02x len %u\n", hdr->code, buf->len);
@@ -1423,7 +1423,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_TIMEOUT)) {
 		BT_WARN("SMP command (code 0x%02x) received after timeout\n",
 			hdr->code);
-		goto done;
+		return;
 	}
 
 	if (hdr->code >= ARRAY_SIZE(handlers) || !handlers[hdr->code].func) {
@@ -1432,7 +1432,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	} else {
 		if (!atomic_test_and_clear_bit(&smp->allowed_cmds, hdr->code)) {
 			BT_WARN("Unexpected SMP code 0x%02x\n", hdr->code);
-			goto done;
+			return;
 		}
 
 		if (buf->len != handlers[hdr->code].expect_len) {
@@ -1449,9 +1449,6 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 		smp_reset(smp);
 	}
-
-done:
-	net_buf_unref(buf);
 }
 
 static void bt_smp_connected(struct bt_l2cap_chan *chan)

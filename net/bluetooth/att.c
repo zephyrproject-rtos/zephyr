@@ -1478,7 +1478,7 @@ static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small ATT PDU received\n");
-		goto done;
+		return;
 	}
 
 	BT_DBG("Received ATT code 0x%02x len %u\n", hdr->code, buf->len);
@@ -1503,16 +1503,13 @@ static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	/* Commands don't have response */
 	if ((hdr->code & BT_ATT_OP_CMD_FLAG)) {
-		goto done;
+		return;
 	}
 
 	if (err) {
 		BT_DBG("ATT error 0x%02x", err);
 		send_err_rsp(chan->conn, hdr->code, 0, err);
 	}
-
-done:
-	net_buf_unref(buf);
 }
 
 static struct bt_att *att_chan_get(struct bt_conn *conn)

@@ -532,7 +532,7 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small L2CAP LE signaling PDU\n");
-		goto drop;
+		return;
 	}
 
 	len = sys_le16_to_cpu(hdr->len);
@@ -543,12 +543,12 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len != len) {
 		BT_ERR("L2CAP length mismatch (%u != %u)\n", buf->len, len);
-		goto drop;
+		return;
 	}
 
 	if (!hdr->ident) {
 		BT_ERR("Invalid ident value in L2CAP PDU\n");
-		goto drop;
+		return;
 	}
 
 	switch (hdr->code) {
@@ -574,9 +574,6 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 				  BT_L2CAP_REJ_NOT_UNDERSTOOD);
 		break;
 	}
-
-drop:
-	net_buf_unref(buf);
 }
 
 static void l2cap_chan_update_credits(struct bt_l2cap_chan *chan)
@@ -622,7 +619,6 @@ static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (!chan->rx.credits) {
 		BT_ERR("No credits to receive packet\n");
-		net_buf_unref(buf);
 		return;
 	}
 
@@ -637,7 +633,6 @@ static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (sdu_len > chan->rx.mtu) {
 		BT_ERR("Invalid SDU length\n");
-		net_buf_unref(buf);
 		return;
 	}
 
@@ -688,6 +683,8 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 	}
 
 	l2cap_chan_recv(chan, buf);
+
+	net_buf_unref(buf);
 }
 
 int bt_l2cap_update_conn_param(struct bt_conn *conn)

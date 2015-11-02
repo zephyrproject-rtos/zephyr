@@ -45,8 +45,6 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_smp_pairing_fail *rsp;
 	struct bt_smp_hdr *hdr;
 
-	net_buf_put(buf);
-
 	/* If a device does not support pairing then it shall respond with
 	 * a Pairing Failed command with the reason set to “Pairing Not
 	 * Supported” when any command is received.

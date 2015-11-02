@@ -1031,7 +1031,6 @@ static void cmd_auth_passkey(int argc, char *argv[])
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
-	net_buf_unref(buf);
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
