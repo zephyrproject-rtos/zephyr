@@ -165,6 +165,8 @@
 #define CONFIG_UART_PORT_4_REGS PERIPH_ADDR_BASE_UART4
 #define CONFIG_UART_PORT_4_IRQ IRQ_UART4_STATUS
 
+#define UART_IRQ_FLAGS 0
+
 extern struct device * const uart_devs[];
 
 /* Uart console settings */

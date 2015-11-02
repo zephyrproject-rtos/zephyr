@@ -65,6 +65,7 @@
  *
  * @param irq virtualized IRQ
  * @param priority get vector from <priority> group
+ * @param flags Interrupt flags
  *
  * @return the allocated interrupt vector
  *
@@ -76,7 +77,8 @@
  */
 int _SysIntVecAlloc(
 	unsigned int irq,		 /* virtualized IRQ */
-	unsigned int priority		 /* get vector from <priority> group */
+	unsigned int priority,		 /* get vector from <priority> group */
+	uint32_t flags			 /* interrupt flags */
 	)
 {
 	int vector;
@@ -113,7 +115,7 @@ int _SysIntVecAlloc(
 	if (irq != NANO_SOFT_IRQ)
 #endif
 	{
-		_SysIntVecProgram(vector, irq);
+		_SysIntVecProgram(vector, irq, flags);
 	}
 
 	return vector;
@@ -129,7 +131,7 @@ int _SysIntVecAlloc(
  * Drivers call this routine instead of irq_connect() when interrupts are
  * configured statically.
  *
- * The Clanton board virtualizes IRQs as follows:
+ * The Galileo board virtualizes IRQs as follows:
  *
  * - The first CONFIG_IOAPIC_NUM_RTES IRQs are provided by the IOAPIC so the
  *     IOAPIC is programmed for these IRQs
@@ -138,13 +140,14 @@ int _SysIntVecAlloc(
  *
  * @param vector the vector number
  * @param irq the virtualized IRQ
+ * @param flags interrupt flags
  *
  */
-void _SysIntVecProgram(unsigned int vector, unsigned int irq)
+void _SysIntVecProgram(unsigned int vector, unsigned int irq, uint32_t flags)
 {
 
 	if (irq < CONFIG_IOAPIC_NUM_RTES) {
-		_ioapic_int_vec_set(irq, vector);
+		_ioapic_irq_set(irq, vector, flags);
 	} else {
 		_loapic_int_vec_set(irq - CONFIG_IOAPIC_NUM_RTES, vector);
 	}

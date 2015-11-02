@@ -175,7 +175,8 @@ void uart_console_isr(void *unused)
 }
 
 IRQ_CONNECT_STATIC(console, CONFIG_UART_CONSOLE_IRQ,
-		   CONFIG_UART_CONSOLE_INT_PRI, uart_console_isr, 0);
+		   CONFIG_UART_CONSOLE_INT_PRI, uart_console_isr, 0,
+		   UART_IRQ_FLAGS);
 
 static void console_input_init(void)
 {

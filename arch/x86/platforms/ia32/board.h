@@ -36,17 +36,17 @@
 #include <drivers/ioapic.h>
 #ifdef CONFIG_SERIAL_INTERRUPT_LEVEL
 #ifdef CONFIG_SERIAL_INTERRUPT_LOW
-#define UART_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
 #else
-#define UART_IOAPIC_FLAGS (IOAPIC_LEVEL)
+#define UART_IRQ_FLAGS (IOAPIC_LEVEL)
 #endif
 #else /* edge triggered interrupt */
 #ifdef CONFIG_SERIAL_INTERRUPT_LOW
 /* generate interrupt on falling edge */
-#define UART_IOAPIC_FLAGS (IOAPIC_LOW)
+#define UART_IRQ_FLAGS (IOAPIC_LOW)
 #else
 /* generate interrupt on raising edge */
-#define UART_IOAPIC_FLAGS (0)
+#define UART_IRQ_FLAGS (0)
 #endif
 #endif
 #endif
@@ -118,11 +118,5 @@ extern struct device * const uart_devs[];
 #endif /* CONFIG_BLUETOOTH_UART */
 
 #endif /* CONFIG_NS16550 */
-
-#ifndef _ASMLANGUAGE
-
-extern void _SysIntVecProgram(unsigned int vector, unsigned int);
-
-#endif /* !_ASMLANGUAGE */
 
 #endif /* __INCboardh */

@@ -36,17 +36,17 @@
 #include <drivers/ioapic.h>
 #ifdef CONFIG_SERIAL_INTERRUPT_LEVEL
 #ifdef CONFIG_SERIAL_INTERRUPT_LOW
-#define UART_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
 #else
-#define UART_IOAPIC_FLAGS (IOAPIC_LEVEL)
+#define UART_IRQ_FLAGS (IOAPIC_LEVEL)
 #endif
 #else /* edge triggered interrupt */
 #ifdef CONFIG_SERIAL_INTERRUPT_LOW
 /* generate interrupt on falling edge */
-#define UART_IOAPIC_FLAGS (IOAPIC_LOW)
+#define UART_IRQ_FLAGS (IOAPIC_LOW)
 #else
 /* generate interrupt on raising edge */
-#define UART_IOAPIC_FLAGS (0)
+#define UART_IRQ_FLAGS (0)
 #endif
 #endif
 #endif
@@ -90,13 +90,13 @@ extern struct device * const uart_devs[];
 
 #ifdef CONFIG_GPIO_DW_0
 #if defined(CONFIG_GPIO_DW_0_FALLING_EDGE)
-#define GPIO_DW_0_IRQ_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
 #elif defined(CONFIG_GPIO_DW_0_RISING_EDGE)
-#define GPIO_DW_0_IRQ_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
 #elif defined(CONFIG_GPIO_DW_0_LEVEL_HIGH)
-#define GPIO_DW_0_IRQ_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
 #elif defined(CONFIG_GPIO_DW_0_LEVEL_LOW)
-#define GPIO_DW_0_IRQ_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
 #endif /* GPIO_DW_0 */
 
@@ -114,29 +114,27 @@ extern struct device * const uart_devs[];
 
 #ifdef CONFIG_I2C_DW
 
-#include <drivers/ioapic.h>
-
 #if defined(CONFIG_I2C_DW_IRQ_FALLING_EDGE)
-#define I2C_DW_IRQ_IOAPIC_FLAGS	(IOAPIC_EDGE | IOAPIC_LOW)
+#define I2C_DW_IRQ_FLAGS	(IOAPIC_EDGE | IOAPIC_LOW)
 #elif defined(CONFIG_I2C_DW_IRQ_RISING_EDGE)
-#define I2C_DW_IRQ_IOAPIC_FLAGS	(IOAPIC_EDGE | IOAPIC_HIGH)
+#define I2C_DW_IRQ_FLAGS	(IOAPIC_EDGE | IOAPIC_HIGH)
 #elif defined(CONFIG_I2C_DW_IRQ_LEVEL_HIGH)
-#define I2C_DW_IRQ_IOAPIC_FLAGS	(IOAPIC_LEVEL | IOAPIC_HIGH)
+#define I2C_DW_IRQ_FLAGS	(IOAPIC_LEVEL | IOAPIC_HIGH)
 #elif defined(CONFIG_I2C_DW_IRQ_LEVEL_LOW)
-#define I2C_DW_IRQ_IOAPIC_FLAGS	(IOAPIC_LEVEL | IOAPIC_LOW)
+#define I2C_DW_IRQ_FLAGS	(IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
 
 #endif /* CONFIG_I2C_DW_0 */
 
 #ifdef CONFIG_SPI_INTEL
 #if defined(CONFIG_SPI_INTEL_FALLING_EDGE)
-#define SPI_INTEL_IRQ_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+#define SPI_INTEL_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
 #elif defined(CONFIG_SPI_INTEL_RISING_EDGE)
-#define SPI_INTEL_IRQ_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+#define SPI_INTEL_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
 #elif defined(CONFIG_SPI_INTEL_LEVEL_HIGH)
-#define SPI_INTEL_IRQ_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+#define SPI_INTEL_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
 #elif defined(CONFIG_SPI_INTEL_LEVEL_LOW)
-#define SPI_INTEL_IRQ_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+#define SPI_INTEL_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
 #endif /* CONFIG_SPI_INTEL */
 
@@ -208,7 +206,5 @@ static inline int pci_irq2pin(int irq)
 		return -1;
 	return irq - NUM_STD_IRQS + 1;
 }
-
-extern void _SysIntVecProgram(unsigned int vector, unsigned int);
 
 #endif /* __INCboardh */

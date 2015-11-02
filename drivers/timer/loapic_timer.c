@@ -130,7 +130,7 @@ extern int32_t _sys_idle_elapsed_ticks;
 
 IRQ_CONNECT_STATIC(loapic, CONFIG_LOAPIC_TIMER_IRQ,
 			CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
-			_timer_int_handler, 0);
+			_timer_int_handler, 0, 0);
 
 /* computed counter 0 initial count value */
 static uint32_t __noinit cycles_per_tick;

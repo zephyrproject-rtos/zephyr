@@ -234,7 +234,8 @@ static int bt_uart_send(enum bt_buf_type buf_type, struct net_buf *buf)
 }
 
 IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
-		   CONFIG_BLUETOOTH_UART_INT_PRI, bt_uart_isr, 0);
+		   CONFIG_BLUETOOTH_UART_INT_PRI, bt_uart_isr, 0,
+		   UART_IRQ_FLAGS);
 
 static void bt_uart_setup(struct device *uart, struct uart_init_info *info)
 {

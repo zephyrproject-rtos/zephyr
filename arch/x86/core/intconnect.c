@@ -157,6 +157,7 @@ extern void *_DynIntStubsBegin;
  * @param priority requested priority of interrupt
  * @param routine the C interrupt handler
  * @param parameter parameter passed to C routine
+ * @param flags IRQ flags
  *
  * This routine connects an interrupt service routine (ISR) coded in C to
  * the specified hardware <irq>.  An interrupt vector will be allocated to
@@ -177,6 +178,9 @@ extern void *_DynIntStubsBegin;
  * the currently executing task, fiber, or ISR.  The ISR specified by <routine>
  * will then be invoked with the single <parameter>.  When the ISR returns, a
  * context switch may occur.
+ *
+ * On some platforms <flags> parameter needs to be specified to indicate if
+ * the irq is triggered by low or high level or by rising or falling edge.
  *
  * The routine searches for the first available element in the dynamic_stubs
  * array and uses it for the stub.
@@ -199,7 +203,8 @@ extern void *_DynIntStubsBegin;
  */
 
 int irq_connect(unsigned int irq, unsigned int priority,
-	void (*routine)(void *parameter), void *parameter)
+		void (*routine)(void *parameter), void *parameter,
+		uint32_t flags)
 {
 	int vector;
 	int stub_idx;
@@ -217,7 +222,7 @@ int irq_connect(unsigned int irq, unsigned int priority,
 	 * _interrupt_vectors_allocated[] array for a suitable vector.
 	 */
 
-	vector = _SysIntVecAlloc(irq, priority);
+	vector = _SysIntVecAlloc(irq, priority, flags);
 #if defined(DEBUG)
 	/*
 	 * The return value from _SysIntVecAlloc() will be -1 if an invalid

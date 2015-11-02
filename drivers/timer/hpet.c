@@ -59,6 +59,7 @@
 #include <sections.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
+#include <drivers/hpet.h>
 
 #ifdef CONFIG_MICROKERNEL
 
@@ -173,7 +174,7 @@ extern struct nano_stack _k_command_stack;
 #define HPET_COMP_DELAY 192
 
 IRQ_CONNECT_STATIC(hpet, CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
-		   _timer_int_handler, 0);
+		   _timer_int_handler, 0, HPET_IOAPIC_FLAGS);
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 static uint32_t main_count_first_irq_value;

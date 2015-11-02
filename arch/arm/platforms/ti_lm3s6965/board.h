@@ -99,6 +99,8 @@
 #define CONFIG_UART_PORT_2_REGS PERIPH_ADDR_BASE_UART2
 #define CONFIG_UART_PORT_2_IRQ IRQ_UART2
 
+#define UART_IRQ_FLAGS 0
+
 extern struct device * const uart_devs[];
 
 /* Uart console configuration */

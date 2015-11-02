@@ -70,7 +70,8 @@ int uart_simple_send(const uint8_t *data, int len)
 }
 
 IRQ_CONNECT_STATIC(uart_simple, CONFIG_UART_SIMPLE_IRQ,
-			CONFIG_UART_SIMPLE_INT_PRI, uart_simple_isr, 0);
+		   CONFIG_UART_SIMPLE_INT_PRI, uart_simple_isr, 0,
+		   UART_IRQ_FLAGS);
 
 static void uart_simple_setup(struct device *uart, struct uart_init_info *info)
 {

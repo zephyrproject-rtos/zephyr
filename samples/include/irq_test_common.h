@@ -103,7 +103,7 @@ static int initIRQ(struct isrInitInfo *i)
 
 	if (i->isr[0]) {
 		vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[0],
-				     i->arg[0]);
+				     i->arg[0], 0);
 		if (-1 == vector) {
 			return -1;
 		}
@@ -113,7 +113,7 @@ static int initIRQ(struct isrInitInfo *i)
 #if NUM_SW_IRQS >= 2
 	if (i->isr[1]) {
 		vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[1],
-				     i->arg[1]);
+				     i->arg[1], 0);
 		if (-1 == vector) {
 			return -1;
 		}
@@ -123,11 +123,11 @@ static int initIRQ(struct isrInitInfo *i)
 #elif defined(CONFIG_ARM)
 #if defined(CONFIG_CPU_CORTEX_M)
 	if (i->isr[0]) {
-		(void) irq_connect(0, IRQ_PRIORITY, i->isr[0], i->arg[0]);
+		(void) irq_connect(0, IRQ_PRIORITY, i->isr[0], i->arg[0], 0);
 		irq_enable(0);
 	}
 	if (i->isr[1]) {
-		(void) irq_connect(1, IRQ_PRIORITY, i->isr[1], i->arg[1]);
+		(void) irq_connect(1, IRQ_PRIORITY, i->isr[1], i->arg[1], 0);
 		irq_enable(1);
 	}
 #endif /* CONFIG_CPU_CORTEX_M */

@@ -161,8 +161,9 @@ typedef struct s_isrList {
  * @return N/A
  *
  */
-#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	   \
+#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags) \
 	extern void *_##device##_##isr##_stub;				               \
+	const const uint32_t _##device##_irq_flags = (flags);	\
 	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, (irq), (priority), -1, 0)
 
 
@@ -188,9 +189,10 @@ extern unsigned char _irq_to_interrupt_vector[];
  * @return N/A
  *
  */
-#define IRQ_CONFIG(device, irq, priority)			\
-	do {							\
-		_SysIntVecProgram(_IRQ_TO_INTERRUPT_VECTOR(irq), irq); \
+#define IRQ_CONFIG(device, irq, priority)				\
+	do {								\
+		_SysIntVecProgram(_IRQ_TO_INTERRUPT_VECTOR((irq)), (irq), \
+				  _##device##_irq_flags);		\
 	} while (0)
 
 
@@ -363,7 +365,8 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 extern int	irq_connect(unsigned int irq,
 					 unsigned int priority,
 					 void (*routine)(void *parameter),
-					 void *parameter);
+					 void *parameter,
+					 uint32_t flags);
 
 /**
  * @brief Enable a specific IRQ
@@ -413,7 +416,21 @@ extern const NANO_ESF _default_esf;
  * vector, and returns the vector number
  */
 extern int _SysIntVecAlloc(unsigned int irq,
-			   unsigned int priority);
+			   unsigned int priority,
+			   uint32_t flags);
+
+/**
+ *
+ * @brief Program interrupt controller
+ *
+ * This routine programs the interrupt controller with the given vector
+ * based on the given IRQ parameter.
+ *
+ * Drivers call this routine instead of irq_connect() when interrupts are
+ * configured statically.
+ *
+ */
+extern void _SysIntVecProgram(unsigned int vector, unsigned int irq, uint32_t flags);
 
 /* functions provided by the kernel for usage by _SysIntVecAlloc() */
 

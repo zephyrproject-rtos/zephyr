@@ -845,7 +845,8 @@ IRQ_CONNECT_STATIC(i2c_dw_0,
 		   CONFIG_I2C_DW_0_IRQ,
 		   CONFIG_I2C_DW_0_INT_PRIORITY,
 		   i2c_dw_isr,
-		   0);
+		   0,
+		   I2C_DW_IRQ_FLAGS);
 #endif
 
 void i2c_config_0(struct device *port)

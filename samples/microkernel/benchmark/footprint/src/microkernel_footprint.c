@@ -158,7 +158,7 @@ void fgTaskEntry(void)
 {
 #ifdef TEST_max
 	/* dynamically link in dummy ISR */
-	irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr, (void *) 0);
+	irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr, (void *) 0, 0);
 #endif /* TEST_max */
 
 	/* note: referencing "func_array" ensures it isn't optimized out */

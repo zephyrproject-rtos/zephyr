@@ -46,7 +46,7 @@ char tmpString[TMP_STRING_SIZE];
 int initSwInterrupt(ptestIsr pIsrHdlr)
 {
 	vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, pIsrHdlr,
-			     (void *) 0);
+			     (void *) 0, 0);
 	return vector;
 }
 

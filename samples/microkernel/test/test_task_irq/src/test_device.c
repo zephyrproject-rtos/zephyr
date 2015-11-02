@@ -67,14 +67,14 @@ uint32_t irq_vectors[NUM_OBJECTS] = {[0 ... (NUM_OBJECTS - 1)] = INVALID_VECTOR}
 
 int taskA(ksem_t semRdy)
 {
-	irq_vectors[DEV1_ID] = task_irq_alloc(DEV1_ID, DEV1_IRQ, 1);
+	irq_vectors[DEV1_ID] = task_irq_alloc(DEV1_ID, DEV1_IRQ, 1, 0);
 	if (irq_vectors[DEV1_ID] == INVALID_VECTOR) {
 		TC_ERROR("Not able to allocate IRQ object\n");
 		return TC_FAIL;
 	}
 	TC_PRINT("IRQ object %d using IRQ%d allocated\n", DEV1_ID, DEV1_IRQ);
 
-	irq_vectors[DEV2_ID] = task_irq_alloc(DEV2_ID, DEV2_IRQ, 2);
+	irq_vectors[DEV2_ID] = task_irq_alloc(DEV2_ID, DEV2_IRQ, 2, 0);
 	if (irq_vectors[DEV2_ID] == INVALID_VECTOR) {
 		TC_ERROR("Not able to allocate IRQ object\n");
 		return TC_FAIL;
@@ -105,7 +105,7 @@ int taskA(ksem_t semRdy)
 
 	TC_PRINT("\nAttempt to allocate an IRQ object that\n");
 	TC_PRINT("is already allocated by another task...\n");
-	if (task_irq_alloc(DEV4_ID, DEV4_IRQ, 1) != INVALID_VECTOR) {
+	if (task_irq_alloc(DEV4_ID, DEV4_IRQ, 1, 0) != INVALID_VECTOR) {
 		TC_ERROR("Error: Was able to allocate\n\n");
 		return TC_FAIL;
 	}
@@ -113,7 +113,7 @@ int taskA(ksem_t semRdy)
 
 	TC_PRINT("\nAttempt to allocate an IRQ that\n"
 		      "is already allocated by another task...\n");
-	if (task_irq_alloc(DEV5_ID, DEV4_IRQ, 1) != INVALID_VECTOR) {
+	if (task_irq_alloc(DEV5_ID, DEV4_IRQ, 1, 0) != INVALID_VECTOR) {
 		TC_ERROR("Error: Was able to allocate\n\n");
 		return TC_FAIL;
 	}
@@ -139,14 +139,14 @@ int taskA(ksem_t semRdy)
 
 int taskB(ksem_t semRdy)
 {
-	irq_vectors[DEV3_ID] = task_irq_alloc(DEV3_ID, DEV3_IRQ, 1);
+	irq_vectors[DEV3_ID] = task_irq_alloc(DEV3_ID, DEV3_IRQ, 1, 0);
 	if (irq_vectors[DEV3_ID] == INVALID_VECTOR) {
 		TC_ERROR("Not able to allocate IRQ object\n");
 		return TC_FAIL;
 	}
 	TC_PRINT("IRQ object %d using IRQ%d allocated\n", DEV3_ID, DEV3_IRQ);
 
-	irq_vectors[DEV4_ID] = task_irq_alloc(DEV4_ID, DEV4_IRQ, 1);
+	irq_vectors[DEV4_ID] = task_irq_alloc(DEV4_ID, DEV4_IRQ, 1, 0);
 	if (irq_vectors[DEV4_ID] == INVALID_VECTOR) {
 		TC_ERROR("Not able to allocate IRQ object\n");
 		return TC_FAIL;

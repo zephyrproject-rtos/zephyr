@@ -36,7 +36,8 @@ GTEXT(irq_disable)
 extern int irq_connect(unsigned int irq,
 			     unsigned int prio,
 			     void (*isr)(void *arg),
-			     void *arg);
+			     void *arg,
+			     uint32_t flags);
 
 extern void irq_enable(unsigned int irq);
 extern void irq_disable(unsigned int irq);
@@ -62,7 +63,7 @@ extern void _IntExit(void);
  * @return N/A
  *
  */
-#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	\
+#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags) \
 	const unsigned int _##device##_int_priority = (priority);	\
 	struct _IsrTableEntry CONCAT(_isr_irq, irq)			\
 	__attribute__ ((section(TOSTR(CONCAT(.gnu.linkonce.isr_irq, irq))))) = \

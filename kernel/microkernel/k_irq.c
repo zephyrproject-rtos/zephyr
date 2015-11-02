@@ -206,7 +206,8 @@ static int _k_task_irq_alloc(void *arg)
 }
 
 
-uint32_t task_irq_alloc(kirq_t irq_obj,	uint32_t irq, uint32_t priority)
+uint32_t task_irq_alloc(kirq_t irq_obj,	uint32_t irq, uint32_t priority,
+			uint32_t flags)
 {
 	struct irq_obj_reg_arg arg;  /* IRQ object registration request arguments */
 	struct task_irq_info *irq_obj_ptr; /* ptr to task IRQ object */
@@ -228,7 +229,8 @@ uint32_t task_irq_alloc(kirq_t irq_obj,	uint32_t irq, uint32_t priority)
 	 *       definition to abstract the different irq_connect signatures
 	 */
 	irq_obj_ptr->vector = irq_connect(
-		irq, priority, task_irq_int_handler, (void *)irq_obj_ptr);
+		irq, priority, task_irq_int_handler, (void *)irq_obj_ptr,
+		flags);
 	irq_enable(irq);
 
 	return irq_obj_ptr->vector;

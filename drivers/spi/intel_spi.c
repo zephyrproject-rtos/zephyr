@@ -459,7 +459,8 @@ nano_late_init(spi_intel_port_0, &spi_intel_data_port_0);
 struct device *spi_intel_isr_port_0 = SYS_GET_DEVICE(spi_intel_port_0);
 
 IRQ_CONNECT_STATIC(spi_intel_irq_port_0, CONFIG_SPI_INTEL_PORT_0_IRQ,
-		   CONFIG_SPI_INTEL_PORT_0_PRI, spi_intel_isr, 0);
+		   CONFIG_SPI_INTEL_PORT_0_PRI, spi_intel_isr, 0,
+		   SPI_INTEL_IRQ_FLAGS);
 
 void spi_config_0_irq(struct device *dev)
 {
@@ -500,7 +501,8 @@ nano_late_init(spi_intel_port_1, &spi_intel_data_port_1);
 struct device *spi_intel_isr_port_1 = SYS_GET_DEVICE(spi_intel_port_1);
 
 IRQ_CONNECT_STATIC(spi_intel_irq_port_1, CONFIG_SPI_INTEL_PORT_1_IRQ,
-		   CONFIG_SPI_INTEL_PORT_1_PRI, spi_intel_isr, 0);
+		   CONFIG_SPI_INTEL_PORT_1_PRI, spi_intel_isr, 0,
+		   SPI_INTEL_IRQ_FLAGS);
 
 void spi_config_1_irq(struct device *dev)
 {

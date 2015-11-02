@@ -69,11 +69,12 @@ extern "C" {
  * @param priority IRQ Priority
  * @param isr Interrupt Service Routine
  * @param parameter ISR parameter
+ * @param flags IRQ flags
  *
  * @return N/A
  *
  */
-#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)
+#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags)
 
 /**
  *
@@ -90,6 +91,6 @@ extern "C" {
  *
  */
 #define IRQ_CONFIG(isr, irq, priority) \
-		irq_connect(irq, priority, isr, NULL);
+		irq_connect(irq, priority, isr, NULL, 0);
 
 #endif /* _ARC_ARCH__H_ */

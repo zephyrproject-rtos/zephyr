@@ -69,7 +69,7 @@ static void uart1_init(void)
 
 	uart_init(UART1, &uart1);
 
-	irq_connect(UART1_IRQ, uart1.irq_pri, uart1_isr, 0);
+	irq_connect(UART1_IRQ, uart1.irq_pri, uart1_isr, 0, UART_IRQ_FLAGS);
 
 	irq_enable(UART1_IRQ);
 

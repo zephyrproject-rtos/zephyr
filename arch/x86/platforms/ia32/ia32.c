@@ -50,58 +50,6 @@ static int ia32_init(struct device *arg)
 	return 0;
 }
 
-#ifdef CONFIG_CONSOLE_HANDLER
-
-static int console_irq_set(struct device *unused)
-{
-	ARG_UNUSED(unused);
-
-	_ioapic_irq_set(CONFIG_UART_CONSOLE_IRQ,
-			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_UART_CONSOLE_IRQ),
-			UART_IOAPIC_FLAGS);
-
-	return 0;
-}
-
-DECLARE_DEVICE_INIT_CONFIG(consoleirq, "", console_irq_set, NULL);
-pre_kernel_late_init(consoleirq, NULL);
-
-#endif /* CONFIG_CONSOLE_HANDLER */
-
-#ifdef CONFIG_BLUETOOTH_UART
-
-static int bluetooth_irq_set(struct device *unused)
-{
-	ARG_UNUSED(unused);
-
-	_ioapic_irq_set(CONFIG_BLUETOOTH_UART_IRQ,
-			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_BLUETOOTH_UART_IRQ),
-			UART_IOAPIC_FLAGS);
-
-	return 0;
-}
-
-DECLARE_DEVICE_INIT_CONFIG(btirq, "", bluetooth_irq_set, NULL);
-pre_kernel_late_init(btirq, NULL);
-
-#endif /* CONFIG_BLUETOOTH_UART */
-
-#ifdef CONFIG_HPET_TIMER
-
-static int hpet_irq_set(struct device *unused)
-{
-	ARG_UNUSED(unused);
-	_ioapic_irq_set(CONFIG_HPET_TIMER_IRQ,
-			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_HPET_TIMER_IRQ),
-			HPET_IOAPIC_FLAGS);
-	return 0;
-}
-
-DECLARE_DEVICE_INIT_CONFIG(hpetirq, "", hpet_irq_set, NULL);
-pre_kernel_late_init(hpetirq, NULL);
-
-#endif /* CONFIG_HPET_TIMER */
-
 #ifdef CONFIG_IOAPIC
 DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
 pre_kernel_core_init(ioapic_0, NULL);

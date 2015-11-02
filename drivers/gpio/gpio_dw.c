@@ -385,7 +385,8 @@ pre_kernel_late_init(gpio_0, &gpio_0_runtime);
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 IRQ_CONNECT_STATIC(gpio_dw_0, CONFIG_GPIO_DW_0_IRQ,
-		   CONFIG_GPIO_DW_0_PRI, gpio_dw_isr_0, 0);
+		   CONFIG_GPIO_DW_0_PRI, gpio_dw_isr_0, 0,
+		   GPIO_DW_0_IRQ_FLAGS);
 #endif
 
 void gpio_config_0_irq(struct device *port)

@@ -139,8 +139,10 @@ void _irq_spurious(void *unused)
 int irq_connect(unsigned int irq,
 					    unsigned int prio,
 					    void (*isr)(void *arg),
-					    void *arg)
+					    void *arg,
+					    uint32_t flags)
 {
+	ARG_UNUSED(flags);
 	_irq_handler_set(irq, isr, arg);
 	_irq_priority_set(irq, prio);
 	return irq;

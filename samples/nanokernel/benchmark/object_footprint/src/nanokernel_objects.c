@@ -147,7 +147,7 @@ void main(void)
 #ifdef CONFIG_DYNAMIC_ISR
 	/* dynamically link in dummy ISR */
 	irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
-				(void *) 0);
+		    (void *) 0, 0);
 #endif
 
 #ifdef CONFIG_OBJECTS_FIBER

@@ -150,7 +150,7 @@ int _sys_clock_driver_init(struct device *device)
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, 0);
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, 0); /* clear the count value */
 
-	(void)irq_connect(irq, prio, _timer_int_handler, 0);
+	(void)irq_connect(irq, prio, _timer_int_handler, 0, 0);
 
 	/*
 	 * Set the reload value to achieve the configured tick rate, enable the

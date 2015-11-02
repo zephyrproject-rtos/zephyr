@@ -36,7 +36,8 @@ GTEXT(irq_disable)
 extern int irq_connect(unsigned int irq,
 			     unsigned int prio,
 			     void (*isr)(void *arg),
-			     void *arg);
+			     void *arg,
+			     uint32_t flags);
 
 extern void irq_enable(unsigned int irq);
 extern void irq_disable(unsigned int irq);
