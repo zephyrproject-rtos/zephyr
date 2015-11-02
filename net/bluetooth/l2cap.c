@@ -44,8 +44,8 @@
 #define L2CAP_LE_MIN_MTU	23
 #define L2CAP_LE_MAX_CREDITS	1
 
-#define L2CAP_CID_START		0x0040
-#define L2CAP_LE_CID_END	0x007f
+#define L2CAP_LE_DYN_CID_START	0x0040
+#define L2CAP_LE_DYN_CID_END	0x007f
 
 static struct bt_l2cap_fixed_chan *channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -123,7 +123,7 @@ static void l2cap_chan_alloc_cid(struct bt_conn *conn,
 	}
 
 	/* TODO: Check conn type before assigning cid */
-	for (cid = L2CAP_CID_START; cid < L2CAP_LE_CID_END; cid++) {
+	for (cid = L2CAP_LE_DYN_CID_START; cid < L2CAP_LE_DYN_CID_END; cid++) {
 		if (!bt_l2cap_lookup_rx_cid(conn, cid)) {
 			chan->rx.cid = cid;
 			return;
