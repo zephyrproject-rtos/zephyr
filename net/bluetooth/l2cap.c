@@ -123,7 +123,7 @@ static void l2cap_chan_alloc_cid(struct bt_conn *conn,
 	}
 
 	/* TODO: Check conn type before assigning cid */
-	for (cid = L2CAP_LE_DYN_CID_START; cid < L2CAP_LE_DYN_CID_END; cid++) {
+	for (cid = L2CAP_LE_DYN_CID_START; cid <= L2CAP_LE_DYN_CID_END; cid++) {
 		if (!bt_l2cap_lookup_rx_cid(conn, cid)) {
 			chan->rx.cid = cid;
 			return;
