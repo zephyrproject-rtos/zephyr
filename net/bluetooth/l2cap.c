@@ -152,6 +152,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		}
 
 		chan->rx.cid = fchan->cid;
+		chan->tx.cid = fchan->cid;
 
 		l2cap_chan_add(conn, chan);
 
