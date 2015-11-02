@@ -392,6 +392,12 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	/* TODO: Add security check */
 
+	if (scid < L2CAP_LE_DYN_CID_START || scid > L2CAP_LE_DYN_CID_END) {
+		rsp->dcid = req->scid;
+		rsp->result = BT_L2CAP_ERR_INVALID_SCID;
+		goto rsp;
+	}
+
 	chan = bt_l2cap_lookup_tx_cid(conn, scid);
 	if (chan) {
 		rsp->dcid = req->scid;
