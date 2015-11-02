@@ -385,7 +385,6 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	/* Check if there is a server registered */
 	server = l2cap_server_lookup_psm(psm);
 	if (!psm) {
-		rsp->dcid = req->scid;
 		rsp->result = BT_L2CAP_ERR_PSM_NOT_SUPP;
 		goto rsp;
 	}
@@ -393,14 +392,12 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	/* TODO: Add security check */
 
 	if (scid < L2CAP_LE_DYN_CID_START || scid > L2CAP_LE_DYN_CID_END) {
-		rsp->dcid = req->scid;
 		rsp->result = BT_L2CAP_ERR_INVALID_SCID;
 		goto rsp;
 	}
 
 	chan = bt_l2cap_lookup_tx_cid(conn, scid);
 	if (chan) {
-		rsp->dcid = req->scid;
 		rsp->result = BT_L2CAP_ERR_SCID_IN_USE;
 		goto rsp;
 	}
@@ -411,7 +408,6 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	 * TODO: Handle different errors, it may be required to respond async.
 	 */
 	if (server->accept(conn, &chan) < 0) {
-		rsp->dcid = req->scid;
 		rsp->result = BT_L2CAP_ERR_NO_RESOURCES;
 		goto rsp;
 	}
