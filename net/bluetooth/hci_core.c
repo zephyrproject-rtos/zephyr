@@ -740,7 +740,7 @@ static int set_flow_control(void)
 				       bt_dev.drv->recv_reserve);
 	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BLUETOOTH_ACL_IN_COUNT);
 
-	err = bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
 	if (err) {
 		return err;
 	}
