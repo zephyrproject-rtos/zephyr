@@ -68,9 +68,9 @@ config  ADC_TI_ADC108S102_0_SPI_CONFIGURATION
 	Master SPI port configuration flags used to access adc108s102 chip.
 
 config  ADC_TI_ADC108S102_0_SPI_MAX_FREQ
-	int "Master SPI port max frequency"
+	hex "Master SPI port max frequency"
 	depends on ADC_TI_ADC108S102_0
-	default 0
+	default 0x0
 	help
 	Master SPI port maximum frequency used to access adc108s102 chip.
 
