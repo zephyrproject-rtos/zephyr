@@ -93,16 +93,18 @@ Example
 
 .. code-block:: c
 
-   #define MY_DEV_IRQ 24        /* device uses IRQ 24 */
-   #define MY_DEV_PRIO 2        /* device uses interrupt priority 2 */
-   #define MY_ISR_ARG 17        /* argument passed to my_isr() */
+   #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
+   #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
+   #define MY_ISR_ARG  17       /* argument passed to my_isr() */
+   #define MY_IRQ_FLAGS 0       /* IRQ flags. Unused on non-x86 */
 
    void my_isr(void *arg)
    {
       ... /* ISR code */
    }
 
-   IRQ_CONNECT_STATIC(my_dev, MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG);
+   IRQ_CONNECT_STATIC(my_dev, MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG,
+       MY_IRQ_FLAGS);
 
    void my_isr_installer(void)
    {
@@ -148,6 +150,8 @@ This is an example of a dynamic interrupt for x86:
    #define MY_DEV_IRQ 24        /* device uses IRQ 24 */
    #define MY_DEV_PRIO 2        /* device uses interrupt priority 2 */
    #define MY_ISR_ARG 17        /* argument passed to my_isr() */
+   /* IRQ flags. Interrupt is triggered by low level signal */
+   #define MY_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
 
    void my_isr(void *arg)
    {
@@ -157,7 +161,7 @@ This is an example of a dynamic interrupt for x86:
    void my_isr_installer(void)
    {
        ...
-       irq_connect(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG);
+       irq_connect(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG, MY_IRQ_FLAGS);
        ...
        irq_enable(MY_DEV_IRQ);
        ...

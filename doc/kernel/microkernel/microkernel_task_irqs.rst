@@ -75,8 +75,10 @@ so they can be processed using the task IRQ.
    #define FOO_DEVICE 2    /* device "foo" uses task IRQ object 2 */
    #define FOO_IRQ 37      /* device "foo" uses IRQ 37 */
    #define FOO_PRIO 3      /* device "foo" uses interrupt priority 3 */
+   #define FOO_IRQ_FLAGS 0 /* device "foo" IRQ flags. Unused on non-x86 */
 
-   if (task_irq_alloc(FOO_DEVICE, FOO_IRQ, FOO_PRIO) == INVALID_VECTOR) {
+   if (task_irq_alloc(FOO_DEVICE, FOO_IRQ, FOO_PRIO, FOO_IRQ_FLAGS) ==
+      INVALID_VECTOR) {
       /* The task IRQ or the interrupt source is not available */
       printf("Task IRQ allocation failed!");
    }
