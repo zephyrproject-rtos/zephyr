@@ -395,7 +395,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	chan = bt_l2cap_lookup_tx_cid(conn, scid);
 	if (chan) {
 		rsp->dcid = req->scid;
-		rsp->result = BT_L2CAP_ERR_NO_RESOURCES;
+		rsp->result = BT_L2CAP_ERR_SCID_IN_USE;
 		goto rsp;
 	}
 
