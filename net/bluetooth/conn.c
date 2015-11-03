@@ -762,3 +762,8 @@ int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }
+
+uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
+{
+	return conn->keys ? conn->keys->enc_size : 0;
+}

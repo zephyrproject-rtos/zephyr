@@ -628,6 +628,8 @@ static uint8_t err_to_att(int err)
 		return BT_ATT_ERR_INVALID_OFFSET;
 	case -EFBIG:
 		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+	case -EACCES:
+		return BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
 	default:
 		return BT_ATT_ERR_UNLIKELY;
 	}
