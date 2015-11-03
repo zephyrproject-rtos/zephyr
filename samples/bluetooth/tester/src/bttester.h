@@ -287,6 +287,9 @@ struct gatt_set_enc_key_size_cmd {
 	uint8_t key_size;
 } __packed;
 
+/* Gatt Client */
+#define GATT_EXCHANGE_MTU		0x40
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_rsp_full(uint8_t service, uint8_t opcode, uint8_t index,

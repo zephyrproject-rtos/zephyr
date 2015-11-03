@@ -602,6 +602,34 @@ static void set_enc_key_size(uint8_t *data, uint16_t len)
 	bt_gatt_foreach_attr(handle, handle, set_enc_key_size_cb, data);
 }
 
+static void exchange_mtu_rsp(struct bt_conn *conn, uint8_t err)
+{
+	/* NOP */
+}
+
+static void exchange_mtu(uint8_t *data, uint16_t len)
+{
+	struct bt_conn *conn;
+	uint8_t status;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	if (bt_gatt_exchange_mtu(conn, exchange_mtu_rsp) < 0) {
+		status = BTP_STATUS_FAILED;
+	} else {
+		status = BTP_STATUS_SUCCESS;
+	}
+
+	bt_conn_unref(conn);
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_EXCHANGE_MTU, CONTROLLER_INDEX,
+		   status);
+}
+
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
@@ -629,6 +657,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_SET_ENC_KEY_SIZE:
 		set_enc_key_size(data, len);
+		return;
+	case GATT_EXCHANGE_MTU:
+		exchange_mtu(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,
