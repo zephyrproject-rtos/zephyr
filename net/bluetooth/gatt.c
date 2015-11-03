@@ -244,7 +244,7 @@ int bt_gatt_attr_read_ccc(struct bt_conn *conn,
 	size_t i;
 
 	for (i = 0; i < ccc->cfg_len; i++) {
-		if (bt_addr_le_cmp(&ccc->cfg[i].peer, &conn->dst)) {
+		if (bt_addr_le_cmp(&ccc->cfg[i].peer, &conn->le.dst)) {
 			continue;
 		}
 
@@ -297,14 +297,14 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		return -EFBIG;
 	}
 
-	if (bt_keys_find_addr(&conn->dst))
+	if (bt_keys_find_addr(&conn->le.dst))
 		bonded = true;
 	else
 		bonded = false;
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Check for existing configuration */
-		if (!bt_addr_le_cmp(&ccc->cfg[i].peer, &conn->dst)) {
+		if (!bt_addr_le_cmp(&ccc->cfg[i].peer, &conn->le.dst)) {
 			break;
 		}
 	}
@@ -313,7 +313,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		for (i = 0; i < ccc->cfg_len; i++) {
 			/* Check for unused configuration */
 			if (!ccc->cfg[i].valid) {
-				bt_addr_le_copy(&ccc->cfg[i].peer, &conn->dst);
+				bt_addr_le_copy(&ccc->cfg[i].peer, &conn->le.dst);
 				/* Only set valid if bonded */
 				ccc->cfg[i].valid = bonded;
 				break;
@@ -466,7 +466,7 @@ static uint8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Ignore configuration for different peer */
-		if (bt_addr_le_cmp(&conn->dst, &ccc->cfg[i].peer)) {
+		if (bt_addr_le_cmp(&conn->le.dst, &ccc->cfg[i].peer)) {
 			continue;
 		}
 
@@ -509,7 +509,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			continue;
 		}
 
-		if (bt_addr_le_cmp(&conn->dst, &ccc->cfg[i].peer)) {
+		if (bt_addr_le_cmp(&conn->le.dst, &ccc->cfg[i].peer)) {
 			struct bt_conn *tmp;
 
 			/* Skip if there is another peer connected */
@@ -566,7 +566,7 @@ static void remove_subscribtions(struct bt_conn *conn)
 	/* Lookup existing subscriptions */
 	for (params = subscriptions, prev = NULL; params;
 	     prev = params, params = params->_next) {
-		if (bt_addr_le_cmp(&params->_peer, &conn->dst)) {
+		if (bt_addr_le_cmp(&params->_peer, &conn->le.dst)) {
 			continue;
 		}
 
@@ -1343,7 +1343,7 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 static void gatt_subscription_add(struct bt_conn *conn,
 				  struct bt_gatt_subscribe_params *params)
 {
-	bt_addr_le_copy(&params->_peer, &conn->dst);
+	bt_addr_le_copy(&params->_peer, &conn->le.dst);
 
 	/* Prepend subscription */
 	params->_next = subscriptions;
@@ -1412,7 +1412,7 @@ int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
 		}
 
 		/* Check if another subscription exists */
-		if (!bt_addr_le_cmp(&tmp->_peer, &conn->dst) &&
+		if (!bt_addr_le_cmp(&tmp->_peer, &conn->le.dst) &&
 		    tmp->value_handle == params->value_handle &&
 		    tmp->value >= params->value) {
 			has_subscription = true;
@@ -1458,7 +1458,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, uint16_t handle,
 		}
 
 		/* Check if there still remains any other subscription */
-		if (!bt_addr_le_cmp(&tmp->_peer, &conn->dst) &&
+		if (!bt_addr_le_cmp(&tmp->_peer, &conn->le.dst) &&
 		    tmp->value_handle == params->value_handle) {
 			has_subscription = true;
 		}
@@ -1519,7 +1519,7 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 	/* If paired don't remove subscriptions */
-	if (bt_keys_find_addr(&conn->dst)) {
+	if (bt_keys_find_addr(&conn->le.dst)) {
 		return;
 	}
 

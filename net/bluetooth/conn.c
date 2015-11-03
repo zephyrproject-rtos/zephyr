@@ -97,14 +97,14 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	struct bt_conn_cb *cb;
 
 	if (conn->role == BT_HCI_ROLE_MASTER) {
-		rpa = &conn->resp_addr;
+		rpa = &conn->le.resp_addr;
 	} else {
-		rpa = &conn->init_addr;
+		rpa = &conn->le.init_addr;
 	}
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->identity_resolved) {
-			cb->identity_resolved(conn, rpa, &conn->dst);
+			cb->identity_resolved(conn, rpa, &conn->le.dst);
 		}
 	}
 }
@@ -152,7 +152,7 @@ static int start_security(struct bt_conn *conn)
 	{
 		struct bt_keys *keys;
 
-		keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
+		keys = bt_keys_find(BT_KEYS_LTK, &conn->le.dst);
 		if (!keys) {
 			return bt_smp_send_pairing_req(conn);
 		}
@@ -442,7 +442,7 @@ struct bt_conn *bt_conn_add(const bt_addr_le_t *peer)
 	memset(conn, 0, sizeof(*conn));
 
 	atomic_set(&conn->ref, 1);
-	bt_addr_le_copy(&conn->dst, peer);
+	bt_addr_le_copy(&conn->le.dst, peer);
 #if defined(CONFIG_BLUETOOTH_SMP)
 	conn->sec_level = BT_SECURITY_LOW;
 	conn->required_sec_level = BT_SECURITY_LOW;
@@ -579,7 +579,7 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 			continue;
 		}
 
-		if (!bt_addr_le_cmp(peer, &conns[i].dst)) {
+		if (!bt_addr_le_cmp(peer, &conns[i].le.dst)) {
 			return bt_conn_ref(&conns[i]);
 		}
 	}
@@ -598,7 +598,7 @@ struct bt_conn *bt_conn_lookup_state(const bt_addr_le_t *peer,
 		}
 
 		if (bt_addr_le_cmp(peer, BT_ADDR_LE_ANY) &&
-		    bt_addr_le_cmp(peer, &conns[i].dst)) {
+		    bt_addr_le_cmp(peer, &conns[i].le.dst)) {
 			continue;
 		}
 
@@ -628,7 +628,7 @@ void bt_conn_unref(struct bt_conn *conn)
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 {
-	return &conn->dst;
+	return &conn->le.dst;
 }
 
 void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)

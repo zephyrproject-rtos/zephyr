@@ -31,15 +31,22 @@ enum {
 	BT_CONN_AUTO_CONNECT,
 };
 
-struct bt_conn {
-	uint16_t		handle;
-	uint8_t			role;
-	atomic_t		flags[1];
-
+struct bt_conn_le {
 	bt_addr_le_t		dst;
 
 	bt_addr_le_t		init_addr;
 	bt_addr_le_t		resp_addr;
+	uint8_t			conn_interval;
+	uint8_t			features[8];
+};
+
+struct bt_conn_br {
+};
+
+struct bt_conn {
+	uint16_t		handle;
+	uint8_t			role;
+	atomic_t		flags[1];
 
 	uint8_t			pending_pkts;
 
@@ -60,8 +67,6 @@ struct bt_conn {
 	/* L2CAP channels */
 	void			*channels;
 
-	uint8_t			le_conn_interval;
-
 	atomic_t		ref;
 
 	bt_conn_state_t		state;
@@ -69,7 +74,10 @@ struct bt_conn {
 	/* Handle allowing to cancel timeout fiber */
 	void			*timeout;
 
-	uint8_t			le_features[8];
+	union {
+		struct bt_conn_le	le;
+		struct bt_conn_br	br;
+	};
 
 	/* Stack for TX fiber and timeout fiber.
 	 * Since these fibers don't overlap, one stack can be used by

@@ -472,11 +472,11 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 
 static int update_conn_params(struct bt_conn *conn)
 {
-	BT_DBG("conn %p features 0x%x\n", conn, conn->le_features[0]);
+	BT_DBG("conn %p features 0x%x\n", conn, conn->le.features[0]);
 
 	/* Check if there's a need to update conn params */
-	if (conn->le_conn_interval >= LE_CONN_MIN_INTERVAL &&
-	    conn->le_conn_interval <= LE_CONN_MAX_INTERVAL) {
+	if (conn->le.conn_interval >= LE_CONN_MIN_INTERVAL &&
+	    conn->le.conn_interval <= LE_CONN_MAX_INTERVAL) {
 		return -EALREADY;
 	}
 
@@ -485,7 +485,7 @@ static int update_conn_params(struct bt_conn *conn)
 		return bt_l2cap_update_conn_param(conn);
 	}
 
-	if ((conn->le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
+	if ((conn->le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
 	    (bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
 		return bt_conn_le_conn_update(conn, LE_CONN_MIN_INTERVAL,
 					     LE_CONN_MAX_INTERVAL,
@@ -540,8 +540,8 @@ static void le_conn_complete(struct net_buf *buf)
 	}
 
 	conn->handle   = handle;
-	bt_addr_le_copy(&conn->dst, id_addr);
-	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
+	bt_addr_le_copy(&conn->le.dst, id_addr);
+	conn->le.conn_interval = sys_le16_to_cpu(evt->interval);
 	conn->role = evt->role;
 
 	src.type = BT_ADDR_LE_PUBLIC;
@@ -551,11 +551,11 @@ static void le_conn_complete(struct net_buf *buf)
 	 * or responder address
 	 */
 	if (conn->role == BT_HCI_ROLE_MASTER) {
-		bt_addr_le_copy(&conn->init_addr, &src);
-		bt_addr_le_copy(&conn->resp_addr, &evt->peer_addr);
+		bt_addr_le_copy(&conn->le.init_addr, &src);
+		bt_addr_le_copy(&conn->le.resp_addr, &evt->peer_addr);
 	} else {
-		bt_addr_le_copy(&conn->init_addr, &evt->peer_addr);
-		bt_addr_le_copy(&conn->resp_addr, &src);
+		bt_addr_le_copy(&conn->le.init_addr, &evt->peer_addr);
+		bt_addr_le_copy(&conn->le.resp_addr, &src);
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
@@ -588,8 +588,8 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	}
 
 	if (!evt->status) {
-		memcpy(conn->le_features, evt->features,
-		       sizeof(conn->le_features));
+		memcpy(conn->le.features, evt->features,
+		       sizeof(conn->le.features));
 	}
 
 	update_conn_params(conn);
@@ -685,7 +685,7 @@ static void le_conn_update_complete(struct net_buf *buf)
 	}
 
 	if (!evt->status) {
-		conn->le_conn_interval = interval;
+		conn->le.conn_interval = interval;
 	}
 
 	/* TODO Notify about connection */
@@ -768,7 +768,7 @@ static void update_sec_level(struct bt_conn *conn)
 		return;
 	}
 
-	keys = bt_keys_find_addr(&conn->dst);
+	keys = bt_keys_find_addr(&conn->le.dst);
 	if (keys && keys->type == BT_KEYS_AUTHENTICATED) {
 		conn->sec_level = BT_SECURITY_HIGH;
 	} else {
@@ -856,7 +856,7 @@ static void le_ltk_request(struct net_buf *buf)
 	}
 
 	if (!conn->keys) {
-		conn->keys = bt_keys_find(BT_KEYS_SLAVE_LTK, &conn->dst);
+		conn->keys = bt_keys_find(BT_KEYS_SLAVE_LTK, &conn->le.dst);
 	}
 
 	if (conn->keys && (conn->keys->keys & BT_KEYS_SLAVE_LTK) &&
