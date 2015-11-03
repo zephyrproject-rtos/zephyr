@@ -337,6 +337,10 @@ Commands and responses:
 					Address (6 octets)
 		Return Parameters:	<none>
 
+		Valid Address_Type parameter values:
+					0x00 = Public
+					0x01 = Random
+
 		This command is used to create a Link Layer connection with
 		remote device.
 
@@ -348,6 +352,10 @@ Commands and responses:
 		Command parameters:	Address_Type (1 octet)
 					Address (6 octets)
 		Return Parameters:	<none>
+
+		Valid Address_Type parameter values:
+					0x00 = Public
+					0x01 = Random
 
 		This command is used to terminate an existing connection or
 		to cancel pending connection attempt.
