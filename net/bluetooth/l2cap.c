@@ -576,6 +576,7 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_chan_update_credits(struct bt_l2cap_chan *chan)
 {
 	struct net_buf *buf;
@@ -640,10 +641,11 @@ static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	l2cap_chan_update_credits(chan);
 }
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	/* TODO: Check the conn type to differentiate BR/EDR and LE or
 	 * introduce a mode.
 	 */
@@ -652,6 +654,7 @@ static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		l2cap_chan_le_recv(chan, buf);
 		return;
 	}
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 	BT_DBG("chan %p len %u\n", chan, buf->len);
 
