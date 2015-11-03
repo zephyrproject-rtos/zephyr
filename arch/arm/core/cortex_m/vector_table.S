@@ -35,8 +35,13 @@
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE
-SECTION_SUBSEC_FUNC(exc_vector_table,_Start,__start)
-SECTION_SUBSEC_FUNC(exc_vector_table,_Start,_vector_table)
+
+SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
+
+/* in XIP kernels. the entry point is also the start of the vector table */
+#if defined(CONFIG_XIP)
+SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,__start)
+#endif
 
     .word __CORTEXM_BOOT_MSP
     .word __reset
