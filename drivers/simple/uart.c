@@ -22,7 +22,6 @@
  */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
 
 #include <board.h>
 #include <uart.h>
@@ -30,6 +29,9 @@
 #include <simple/uart.h>
 #include <misc/printk.h>
 
+#if !defined(CONFIG_UART_SIMPLE_INDEX) || !defined(CONFIG_UART_SIMPLE_IRQ)
+#error One or more required values for this driver are not set.
+#else
 #define UART (uart_devs[CONFIG_UART_SIMPLE_INDEX])
 
 static uint8_t *recv_buf;
@@ -104,3 +106,4 @@ void uart_simple_register(uint8_t *buf, size_t len, uart_simple_recv_cb cb)
 
 	uart_simple_setup(UART, &info);
 }
+#endif
