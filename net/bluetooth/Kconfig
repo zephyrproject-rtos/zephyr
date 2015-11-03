@@ -90,7 +90,7 @@ if BLUETOOTH_CONN
 config  BLUETOOTH_ACL_IN_COUNT
 	int "Number of incoming ACL data buffers"
 	default 5
-	range 1 16
+	range 2 64
 	help
 	  Number of buffers available for incoming ACL data.
 
@@ -106,7 +106,7 @@ config  BLUETOOTH_ACL_IN_SIZE
 config  BLUETOOTH_ACL_OUT_COUNT
 	int "Number of incoming ACL data buffers"
 	default 5
-	range 1 16
+	range 2 64
 	help
 	  Number of buffers available for incoming ACL data.
 
