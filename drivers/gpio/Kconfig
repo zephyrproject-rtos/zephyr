@@ -703,6 +703,103 @@ config GPIO_SCH_1_BITS
 	help
 	  The total of pins the controller can manage (CPU dependent)
 
+config GPIO_K64
+	bool "Freescale K64-based GPIO driver"
+	depends on GPIO
+	default n
+	help
+	Enable driver for Freescale K64-based GPIOs.
+
+config GPIO_K64_A
+	bool "Freescale K64-based GPIO Port A"
+	depends on GPIO_K64
+	default n
+	help
+	Enable config options for Freescale K64-based GPIO port A.
+
+config GPIO_K64_A_DEV_NAME
+	string "Freescale K64-based GPIO Port A Device Name"
+	depends on GPIO_K64_A
+	default "GPIO_0"
+	help
+	Specify the device name.
+
+config GPIO_K64_A_BASE_ADDR
+	hex "Freescale K64-based GPIO Port A base address"
+	depends on GPIO_K64_A
+
+config GPIO_K64_B
+	bool "Freescale K64-based GPIO Port B"
+	depends on GPIO_K64
+	default n
+	help
+	Enable config options for Freescale K64-based GPIO port B.
+
+config GPIO_K64_B_DEV_NAME
+	string "Freescale K64-based GPIO Port B Device Name"
+	depends on GPIO_K64_B
+	default "GPIO_1"
+	help
+	Specify the device name.
+
+config GPIO_K64_B_BASE_ADDR
+	hex "Freescale K64-based GPIO Port B base address"
+	depends on GPIO_K64_B
+
+config GPIO_K64_C
+	bool "Freescale K64-based GPIO Port B"
+	depends on GPIO_K64
+	default n
+	help
+	Enable config options for Freescale K64-based GPIO port C.
+
+config GPIO_K64_C_DEV_NAME
+	string "Freescale K64-based GPIO Port B Device Name"
+	depends on GPIO_K64_C
+	default "GPIO_2"
+	help
+	Specify the device name.
+
+config GPIO_K64_C_BASE_ADDR
+	hex "Freescale K64-based GPIO Port C base address"
+	depends on GPIO_K64_C
+
+config GPIO_K64_D
+	bool "Freescale K64-based GPIO Port D"
+	depends on GPIO_K64
+	default n
+	help
+	Enable config options for Freescale K64-based GPIO port D.
+
+config GPIO_K64_D_DEV_NAME
+	string "Freescale K64-based GPIO Port D Device Name"
+	depends on GPIO_K64_D
+	default "GPIO_3"
+	help
+	Specify the device name.
+
+config GPIO_K64_D_BASE_ADDR
+	hex "Freescale K64-based GPIO Port D base address"
+	depends on GPIO_K64_D
+
+config GPIO_K64_E
+	bool "Freescale K64-based GPIO Port E"
+	depends on GPIO_K64
+	default n
+	help
+	Enable config options for Freescale K64-based GPIO port E.
+
+config GPIO_K64_E_DEV_NAME
+	string "Freescale K64-based GPIO Port E Device Name"
+	depends on GPIO_K64_E
+	default "GPIO_4"
+	help
+	Specify the device name.
+
+config GPIO_K64_E_BASE_ADDR
+	hex "Freescale K64-based GPIO Port E base address"
+	depends on GPIO_K64_E
+
 source "drivers/gpio/Kconfig.atmel_sam3"
 
 endif # GPIO

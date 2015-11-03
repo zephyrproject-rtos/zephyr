@@ -1,7 +1,7 @@
 # Kconfig - FSL FRDM K64F platform configuration options
 
 #
-# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2014-2016 Wind River Systems, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -149,6 +149,61 @@ if BLUETOOTH_UART
 config BLUETOOTH_UART_ON_DEV_NAME
 	default "UART_1"
 
+endif
+
+config GPIO
+	def_bool y
+
+if GPIO
+
+config GPIO_K64
+	def_bool y
+
+config GPIO_K64_A
+	def_bool y
+
+config GPIO_K64_B
+	def_bool y
+
+config GPIO_K64_C
+	def_bool y
+
+config GPIO_K64_D
+	def_bool y
+
+config GPIO_K64_E
+	def_bool y
+
+endif
+
+if GPIO_K64
+config PORT_K64_BASE_ADDR
+    default 0x40049000
+endif
+
+if GPIO_K64_A
+config GPIO_K64_A_BASE_ADDR
+    default 0x400FF000
+endif
+
+if GPIO_K64_B
+config GPIO_K64_B_BASE_ADDR
+    default 0x400FF040
+endif
+
+if GPIO_K64_C
+config GPIO_K64_C_BASE_ADDR
+    default 0x400FF080
+endif
+
+if GPIO_K64_D
+config GPIO_K64_D_BASE_ADDR
+    default 0x400FF0C0
+endif
+
+if GPIO_K64_E
+config GPIO_K64_E_BASE_ADDR
+    default 0x400FF100
 endif
 
 endif
