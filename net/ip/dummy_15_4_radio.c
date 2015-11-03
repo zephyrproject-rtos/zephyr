@@ -236,12 +236,12 @@ send(struct net_buf *buf, const void *payload, unsigned short payload_len)
   }
 
   if(!uart_send(DUMMY_RADIO_15_4_FRAME_TYPE)) { /* Type */
-      PRINTF("uart_send failed\n");
+      PRINTF("uart_send failed (frame type)\n");
       return RADIO_TX_ERR;
   }
 
   if(!uart_send(len)) {  /* Length */
-      PRINTF("uart_send failed\n");
+      PRINTF("uart_send failed (length)\n");
       return RADIO_TX_ERR;
   }
 
