@@ -67,6 +67,10 @@ struct net_buf {
  *  needs to be used (at runtime), after which the buffers can be
  *  accessed using the fifo given as one of the parameters.
  *
+ *  If provided with a custom destroy callback this callback is
+ *  responsible for eventually returning the buffer back to the free
+ *  buffers FIFO through nano_fifo_put(buf->free, buf).
+ *
  *  @param _name     Name of buffer pool.
  *  @param _count    Number of buffers in the pool.
  *  @param _size     Maximum data size for each buffer.

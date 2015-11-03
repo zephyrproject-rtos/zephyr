@@ -95,6 +95,8 @@ static void report_completed_packet(struct net_buf *buf)
 
 	BT_DBG("Reporting completed packet for handle %u\n", handle);
 
+	nano_fifo_put(buf->free, buf);
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
 				sizeof(*cp) + sizeof(*hc));
 	if (!buf) {

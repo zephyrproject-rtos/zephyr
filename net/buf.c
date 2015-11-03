@@ -80,9 +80,9 @@ void net_buf_unref(struct net_buf *buf)
 
 	if (buf->destroy) {
 		buf->destroy(buf);
+	} else {
+		nano_fifo_put(buf->free, buf);
 	}
-
-	nano_fifo_put(buf->free, buf);
 }
 
 struct net_buf *net_buf_ref(struct net_buf *buf)
