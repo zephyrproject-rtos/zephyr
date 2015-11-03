@@ -93,13 +93,13 @@ struct bt_l2cap_server {
 	struct bt_l2cap_server	*_next;
 };
 
-/** @brief Register attribute database.
+/** @brief Register L2CAP server.
  *
  *  Register L2CAP server for a PSM.
  *
  *  @param server Server structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_server_register(struct bt_l2cap_server *server);
 
