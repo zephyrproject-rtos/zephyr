@@ -376,7 +376,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 		bt_conn_unref(conn);
 
 		while (count--) {
-			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
+			nano_fiber_sem_give(&bt_dev.le.pkts_sem);
 		}
 	}
 }
@@ -481,12 +481,12 @@ static int update_conn_params(struct bt_conn *conn)
 	}
 
 	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
-	    !(bt_dev.le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+	    !(bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
 		return bt_l2cap_update_conn_param(conn);
 	}
 
 	if ((conn->le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
-	    (bt_dev.le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+	    (bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
 		return bt_conn_le_conn_update(conn, LE_CONN_MIN_INTERVAL,
 					     LE_CONN_MAX_INTERVAL,
 					     LE_CONN_LATENCY, LE_CONN_TIMEOUT);
@@ -561,7 +561,7 @@ static void le_conn_complete(struct net_buf *buf)
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
 	if ((evt->role == BT_HCI_ROLE_MASTER) ||
-	    (bt_dev.le_features[0] & BT_HCI_LE_SLAVE_FEATURES)) {
+	    (bt_dev.le.features[0] & BT_HCI_LE_SLAVE_FEATURES)) {
 		err = hci_le_read_remote_features(conn);
 		if (!err) {
 			goto done;
@@ -1320,7 +1320,7 @@ static void read_le_features_complete(struct net_buf *buf)
 
 	BT_DBG("status %u\n", rp->status);
 
-	memcpy(bt_dev.le_features, rp->features, sizeof(bt_dev.le_features));
+	memcpy(bt_dev.le.features, rp->features, sizeof(bt_dev.le.features));
 }
 
 static void read_buffer_size_complete(struct net_buf *buf)
@@ -1330,12 +1330,12 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	BT_DBG("status %u\n", rp->status);
 
 	/* If LE-side has buffers we can ignore the BR/EDR values */
-	if (bt_dev.le_mtu) {
+	if (bt_dev.le.mtu) {
 		return;
 	}
 
-	bt_dev.le_mtu = sys_le16_to_cpu(rp->acl_max_len);
-	bt_dev.le_pkts = sys_le16_to_cpu(rp->acl_max_num);
+	bt_dev.le.mtu = sys_le16_to_cpu(rp->acl_max_len);
+	bt_dev.le.pkts = sys_le16_to_cpu(rp->acl_max_num);
 }
 
 static void le_read_buffer_size_complete(struct net_buf *buf)
@@ -1344,8 +1344,8 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 
 	BT_DBG("status %u\n", rp->status);
 
-	bt_dev.le_mtu = sys_le16_to_cpu(rp->le_max_len);
-	bt_dev.le_pkts = rp->le_max_num;
+	bt_dev.le.mtu = sys_le16_to_cpu(rp->le_max_len);
+	bt_dev.le.pkts = rp->le_max_num;
 }
 
 static int common_init(void)
@@ -1455,7 +1455,7 @@ static int br_init(void)
 	}
 
 	/* Use BR/EDR buffer size if LE reports zero buffers */
-	if (!bt_dev.le_mtu) {
+	if (!bt_dev.le.mtu) {
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL,
 					   &rsp);
 		if (err) {
@@ -1494,7 +1494,7 @@ static int set_event_mask(void)
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_SMP)
-	if (bt_dev.le_features[0] & BT_HCI_LE_ENCRYPTION) {
+	if (bt_dev.le.features[0] & BT_HCI_LE_ENCRYPTION) {
 		ev->events[0] |= 0x80; /* Encryption Change */
 		ev->events[5] |= 0x80; /* Encryption Key Refresh Complete */
 	}
@@ -1529,14 +1529,14 @@ static int hci_init(void)
 
 	BT_DBG("HCI ver %u rev %u, manufacturer %u\n", bt_dev.hci_version,
 	       bt_dev.hci_revision, bt_dev.manufacturer);
-	BT_DBG("ACL buffers: pkts %u mtu %u\n", bt_dev.le_pkts, bt_dev.le_mtu);
+	BT_DBG("ACL buffers: pkts %u mtu %u\n", bt_dev.le.pkts, bt_dev.le.mtu);
 
 	/* Initialize & prime the semaphore for counting controller-side
 	 * available ACL packet buffers.
 	 */
-	nano_sem_init(&bt_dev.le_pkts_sem);
-	for (i = 0; i < bt_dev.le_pkts; i++) {
-		nano_sem_give(&bt_dev.le_pkts_sem);
+	nano_sem_init(&bt_dev.le.pkts_sem);
+	for (i = 0; i < bt_dev.le.pkts; i++) {
+		nano_sem_give(&bt_dev.le.pkts_sem);
 	}
 
 	return 0;

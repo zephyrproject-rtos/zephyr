@@ -46,6 +46,16 @@ enum {
 	BT_DEV_SCAN_FILTER_DUP,
 };
 
+struct bt_dev_le {
+	/* LE features */
+	uint8_t			features[8];
+
+	/* Controller buffer information */
+	uint8_t			pkts;
+	uint16_t		mtu;
+	struct nano_sem		pkts_sem;
+};
+
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Bluetooth Device Address */
@@ -59,15 +69,11 @@ struct bt_dev {
 	/* BR/EDR features page 0 */
 	uint8_t			features[8];
 
-	/* LE features */
-	uint8_t			le_features[8];
-
+	/* Current state of controller activity */
 	atomic_t		flags[1];
 
-	/* Controller buffer information */
-	uint8_t			le_pkts;
-	uint16_t		le_mtu;
-	struct nano_sem		le_pkts_sem;
+	/* LE controller specific features */
+	struct bt_dev_le	le;
 
 	/* Number of commands controller can accept */
 	uint8_t			ncmd;
