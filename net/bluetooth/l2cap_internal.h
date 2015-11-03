@@ -140,7 +140,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf);
 int bt_l2cap_update_conn_param(struct bt_conn *conn);
 
 /* Initialize L2CAP and supported channels */
-int bt_l2cap_init(void);
+void bt_l2cap_init(void);
 
 /* Lookup channel by Transmission CID */
 struct bt_l2cap_chan *bt_l2cap_lookup_tx_cid(struct bt_conn *conn,

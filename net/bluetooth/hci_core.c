@@ -1609,7 +1609,7 @@ static int bt_init(void)
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 	if (!err) {
-		err = bt_l2cap_init();
+		err = bt_conn_init();
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
 

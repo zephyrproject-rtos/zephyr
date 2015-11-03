@@ -36,6 +36,7 @@
 #include "l2cap_internal.h"
 #include "keys.h"
 #include "smp.h"
+#include "att.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_CONN)
 #undef BT_DBG
@@ -766,4 +767,20 @@ int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 {
 	return conn->keys ? conn->keys->enc_size : 0;
+}
+
+int bt_conn_init(void)
+{
+	int err;
+
+	bt_att_init();
+
+	err = bt_smp_init();
+	if (err) {
+		return err;
+	}
+
+	bt_l2cap_init();
+
+	return 0;
 }

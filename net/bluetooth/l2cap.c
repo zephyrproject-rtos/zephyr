@@ -33,8 +33,6 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-#include "att.h"
-#include "smp.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 #undef BT_DBG
@@ -757,27 +755,16 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-int bt_l2cap_init(void)
+void bt_l2cap_init(void)
 {
-	int err;
-
 	static struct bt_l2cap_fixed_chan chan = {
 		.cid	= BT_L2CAP_CID_LE_SIG,
 		.accept	= l2cap_accept,
 	};
 
-	bt_att_init();
-
-	err = bt_smp_init();
-	if (err) {
-		return err;
-	}
-
 	net_buf_pool_init(acl_out_pool);
 
 	bt_l2cap_fixed_chan_register(&chan);
-
-	return 0;
 }
 
 struct bt_l2cap_chan *bt_l2cap_lookup_tx_cid(struct bt_conn *conn,
