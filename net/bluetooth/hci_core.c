@@ -1454,16 +1454,18 @@ static int br_init(void)
 		return 0;
 	}
 
-	/* Use BR/EDR buffer size if LE reports zero buffers */
-	if (!bt_dev.le.mtu) {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL,
-					   &rsp);
-		if (err) {
-			return err;
-		}
-		read_buffer_size_complete(rsp);
-		net_buf_unref(rsp);
+	if (bt_dev.le.mtu) {
+		return 0;
 	}
+
+	/* Use BR/EDR buffer size if LE reports zero buffers */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+
+	read_buffer_size_complete(rsp);
+	net_buf_unref(rsp);
 
 	return 0;
 }
