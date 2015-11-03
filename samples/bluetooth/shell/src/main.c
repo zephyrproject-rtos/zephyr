@@ -249,7 +249,7 @@ static void cmd_disconnect(int argc, char *argv[])
 	int err;
 
 	if (default_conn) {
-		conn = default_conn;
+		conn = bt_conn_ref(default_conn);
 	} else {
 		bt_addr_le_t addr;
 
@@ -281,6 +281,8 @@ static void cmd_disconnect(int argc, char *argv[])
 	if (err) {
 		printk("Disconnection failed (err %d)\n", err);
 	}
+
+	bt_conn_unref(conn);
 }
 
 static void cmd_active_scan_on(void)
