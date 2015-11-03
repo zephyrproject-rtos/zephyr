@@ -82,6 +82,8 @@ DEFINE_CLEAR_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
 DEFINE_TEST_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
 DEFINE_TEST_BIT_OP(sssr_bsy, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_BSY_BIT)
 DEFINE_CLEAR_BIT_OP(sscr1_tie, INTEL_SPI_REG_SSCR1, INTEL_SPI_SSCR1_TIE_BIT)
+DEFINE_TEST_BIT_OP(sscr1_tie, INTEL_SPI_REG_SSCR1, INTEL_SPI_SSCR1_TIE_BIT)
+DEFINE_CLEAR_BIT_OP(sssr_ror, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_ROR_BIT)
 
 #ifdef CONFIG_SPI_INTEL_CS_GPIO
 
@@ -133,33 +135,50 @@ static void completed(struct device *dev, uint32_t error)
 		goto out;
 	}
 
-	if (spi->t_len) {
-		return;
-	}
-
-	if (spi->tx_buf && spi->tx_buf_len == 0 && !spi->rx_buf) {
+	if (spi->tx_buf == spi->tx_buf_end && !spi->rx_buf) {
 		cb_type = SPI_CB_WRITE;
-	} else if (spi->rx_buf && spi->rx_buf_len == 0 && !spi->tx_buf) {
+	} else if (spi->rx_buf == spi->rx_buf_end && !spi->tx_buf) {
 		cb_type = SPI_CB_READ;
-	} else if (spi->tx_buf && spi->tx_buf_len == 0 &&
-			spi->rx_buf && spi->rx_buf_len == 0) {
+	} else if (spi->tx_buf == spi->tx_buf_end &&
+			spi->rx_buf == spi->rx_buf_end) {
 		cb_type = SPI_CB_TRANSCEIVE;
 	} else {
 		return;
 	}
 
 out:
-	spi->tx_buf = spi->rx_buf = NULL;
-	spi->tx_buf_len = spi->rx_buf_len = 0;
+	spi->tx_buf = spi->rx_buf = spi->tx_buf_end = spi->rx_buf_end = NULL;
+	spi->t_len = spi->r_buf_len = 0;
+
+	_spi_control_cs(dev, 0);
 
 	write_sscr1(spi->sscr1, info->regs);
 	clear_bit_sscr0_sse(info->regs);
 
-	_spi_control_cs(dev, 0);
-
 	if (spi->callback) {
 		spi->callback(dev, cb_type, spi->user_data);
 	}
+}
+
+static void pull_data(struct device *dev)
+{
+	struct spi_intel_config *info = dev->config->config_info;
+	struct spi_intel_data *spi = dev->driver_data;
+	uint32_t cnt = 0;
+	uint8_t data = 0;
+
+	while (read_sssr(info->regs) & INTEL_SPI_SSSR_RNE) {
+		data = (uint8_t) read_ssdr(info->regs);
+		cnt++;
+
+		if (spi->rx_buf < spi->rx_buf_end) {
+			*(uint8_t *)(spi->rx_buf) = data;
+			spi->rx_buf++;
+		}
+	}
+
+	DBG("Pulled: %d (total: %d)\n",
+		cnt, spi->r_buf_len - (spi->rx_buf_end - spi->rx_buf));
 }
 
 static void push_data(struct device *dev)
@@ -169,57 +188,30 @@ static void push_data(struct device *dev)
 	uint32_t cnt = 0;
 	uint8_t data;
 
-	DBG("spi: push_data\n");
-
 	while (read_sssr(info->regs) & INTEL_SPI_SSSR_TNF) {
-		if (spi->tx_buf && spi->tx_buf_len > 0) {
+		if (spi->tx_buf < spi->tx_buf_end) {
 			data = *(uint8_t *)(spi->tx_buf);
 			spi->tx_buf++;
-			spi->tx_buf_len--;
-		} else if (spi->rx_buf && spi->rx_buf_len > 0) {
-			/* No need to push more than necessary */
-			if (spi->rx_buf_len - cnt <= 0) {
-				break;
-			}
-
+		} else if (spi->t_len + cnt < spi->r_buf_len) {
 			data = 0;
 		} else {
 			/* Nothing to push anymore for now */
 			break;
 		}
 
-		write_ssdr(data, info->regs);
 		cnt++;
+		DBG("Pushing 1 byte (total: %d)\n", cnt);
+		write_ssdr(data, info->regs);
+
+		pull_data(dev);
 	}
 
-	DBG("Pushed: %d\n", cnt);
 	spi->t_len += cnt;
+	DBG("Pushed: %d (total: %d)\n", cnt, spi->t_len);
 
-	if (!spi->tx_buf_len && !spi->rx_buf_len) {
+	if (spi->tx_buf == spi->tx_buf_end) {
 		clear_bit_sscr1_tie(info->regs);
 	}
-}
-
-static void pull_data(struct device *dev)
-{
-	struct spi_intel_config *info = dev->config->config_info;
-	struct spi_intel_data *spi = dev->driver_data;
-	uint32_t cnt = 0;
-	uint8_t data;
-
-	while (read_sssr(info->regs) & INTEL_SPI_SSSR_RNE) {
-		data = (uint8_t) read_ssdr(info->regs);
-		cnt++;
-
-		if (spi->rx_buf && spi->rx_buf_len > 0) {
-			*(uint8_t *)(spi->rx_buf) = data;
-			spi->rx_buf++;
-			spi->rx_buf_len--;
-		}
-	}
-
-	DBG("Pulled: %d\n", cnt);
-	spi->t_len -= cnt;
 }
 
 static int spi_intel_configure(struct device *dev,
@@ -243,13 +235,22 @@ static int spi_intel_configure(struct device *dev,
 	write_sscr0(spi->sscr0, info->regs);
 	write_sscr1(spi->sscr1, info->regs);
 
-	DBG("spi_intel_configure: DDS_RATE: 0x%x SCR: %d\n",
+	DBG("spi_intel_configure: WS: %d, DDS_RATE: 0x%x SCR: %d\n",
+			SPI_WORD_SIZE_GET(flags),
 			INTEL_SPI_DSS_RATE(config->max_sys_freq),
 			INTEL_SPI_SSCR0_SCR(config->max_sys_freq) >> 8);
 
 	/* Word size and clock rate */
 	spi->sscr0 = INTEL_SPI_SSCR0_DSS(SPI_WORD_SIZE_GET(flags)) |
 				INTEL_SPI_SSCR0_SCR(config->max_sys_freq);
+
+	/* Tx/Rx thresholds
+	 * Note: Rx thresholds needs to be 1, it does not seem to be able
+	 * to trigger reliably any interrupt with another value though the
+	 * rx fifo would be full
+	 */
+	spi->sscr1 |= INTEL_SPI_SSCR1_TFT(INTEL_SPI_SSCR1_TFT_DFLT) |
+		      INTEL_SPI_SSCR1_RFT(INTEL_SPI_SSCR1_RFT_DFLT);
 
 	/* SPI mode */
 	mode = SPI_MODE(flags);
@@ -265,15 +266,11 @@ static int spi_intel_configure(struct device *dev,
 		spi->sscr1 |= INTEL_SPI_SSCR1_LBM;
 	}
 
-	/* Tx/Rx Threshold */
-	spi->sscr1 |= INTEL_SPI_SSCR1_TFT(INTEL_SPI_SSCR1_TFT_DFLT)
-			| INTEL_SPI_SSCR1_RFT(INTEL_SPI_SSCR1_RFT_DFLT);
-
 	/* Configuring the rate */
 	write_dds_rate(INTEL_SPI_DSS_RATE(config->max_sys_freq), info->regs);
 
-	spi->tx_buf = spi->rx_buf = NULL;
-	spi->tx_buf_len = spi->rx_buf_len = spi->t_len = 0;
+	spi->tx_buf = spi->tx_buf_end = spi->rx_buf = spi->rx_buf_end = NULL;
+	spi->t_len = spi->r_buf_len = 0;
 	spi->callback = config->callback;
 	spi->user_data = user_data;
 
@@ -296,18 +293,25 @@ static int spi_intel_transceive(struct device *dev,
 		return DEV_USED;
 	}
 
+	/* Flushing recv fifo */
+	spi->rx_buf = spi->rx_buf_end = NULL;
+	pull_data(dev);
+
 	/* Set buffers info */
 	spi->tx_buf = tx_buf;
-	spi->tx_buf_len = tx_buf_len;
+	spi->tx_buf_end = tx_buf + tx_buf_len;
 	spi->rx_buf = rx_buf;
-	spi->rx_buf_len = rx_buf_len;
+	spi->rx_buf_end = rx_buf + rx_buf_len;
+	spi->r_buf_len = rx_buf_len;
 
 	_spi_control_cs(dev, 1);
 
-	/* Installing the registers (enabling interrupts and controller) */
+	/* Enabling the controller */
+	write_sscr0(spi->sscr0 | INTEL_SPI_SSCR0_SSE, info->regs);
+
+	/* Installing the registers */
 	write_sscr1(spi->sscr1 | INTEL_SPI_SSCR1_RIE |
 				INTEL_SPI_SSCR1_TIE, info->regs);
-	write_sscr0(spi->sscr0 | INTEL_SPI_SSCR0_SSE, info->regs);
 
 	return DEV_OK;
 }
@@ -348,7 +352,8 @@ void spi_intel_isr(void *arg)
 	status = read_sssr(info->regs);
 
 	if (status & INTEL_SPI_SSSR_ROR) {
-		/* Unrecoverable error */
+		/* Unrecoverable error, ack it */
+		clear_bit_sssr_ror(info->regs);
 		error = 1;
 		goto out;
 	}
@@ -357,10 +362,11 @@ void spi_intel_isr(void *arg)
 		pull_data(dev);
 	}
 
-	if (status & INTEL_SPI_SSSR_TFS) {
-		push_data(dev);
+	if (test_bit_sscr1_tie(info->regs)) {
+		if (status & INTEL_SPI_SSSR_TFS) {
+			push_data(dev);
+		}
 	}
-
 out:
 	completed(dev, error);
 }

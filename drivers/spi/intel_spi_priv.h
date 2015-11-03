@@ -48,9 +48,10 @@ struct spi_intel_data {
 	spi_callback callback;
 	void *user_data;
 	uint8_t *tx_buf;
-	uint32_t tx_buf_len;
+	uint8_t *tx_buf_end;
 	uint8_t *rx_buf;
-	uint32_t rx_buf_len;
+	uint8_t *rx_buf_end;
+	uint32_t r_buf_len;
 	uint32_t t_len;
 };
 
@@ -79,15 +80,17 @@ struct spi_intel_data {
 #define INTEL_SPI_SSCR1_LBM		(0x1 << 2)
 #define INTEL_SPI_SSCR1_SPO		(0x1 << 3)
 #define INTEL_SPI_SSCR1_SPH		(0x1 << 4)
+#define INTEL_SPI_SSCR1_TFT_MASK	(0x1f << 6)
 #define INTEL_SPI_SSCR1_TFT(__tft) \
 	(((__tft) - 1) << 6)
+#define INTEL_SPI_SSCR1_RFT_MASK	(0x1f << 11)
 #define INTEL_SPI_SSCR1_RFT(__rft) \
 	(((__rft) - 1) << 11)
 #define INTEL_SPI_SSCR1_EFWR		(0x1 << 16)
 #define INTEL_SPI_SSCR1_STRF		(0x1 << 17)
 
 #define INTEL_SPI_SSCR1_TFT_DFLT	(8)
-#define INTEL_SPI_SSCR1_RFT_DFLT	(8)
+#define INTEL_SPI_SSCR1_RFT_DFLT	(1)
 
 /* SSSR settings */
 #define INTEL_SPI_SSSR_TNF		(0x4)
@@ -106,6 +109,7 @@ struct spi_intel_data {
 	((__status & INTEL_SPI_SSSR_RFL_MASK) >> 13)
 
 #define INTEL_SPI_SSSR_BSY_BIT		(4)
+#define INTEL_SPI_SSSR_ROR_BIT		(7)
 
 /* DSS_RATE settings */
 #define INTEL_SPI_DSS_RATE(__msf) \
