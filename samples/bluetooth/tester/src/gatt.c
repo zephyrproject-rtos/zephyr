@@ -223,6 +223,7 @@ struct gatt_value {
 	uint8_t *data;
 	uint8_t *prep_data;
 	uint8_t enc_key_size;
+	bool has_ccc;
 };
 
 static int read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -349,7 +350,60 @@ static void add_characteristic(uint8_t *data, uint16_t len)
 	bt_gatt_foreach_attr(handle, handle, add_characteristic_cb, data);
 }
 
-static struct bt_gatt_attr ccc = BT_GATT_CCC(NULL, NULL);
+static bool ccc_added;
+
+static struct bt_gatt_ccc_cfg ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+
+static void ccc_cfg_changed(uint16_t value)
+{
+	/* NOP */
+}
+
+static struct bt_gatt_attr ccc = BT_GATT_CCC(ccc_cfg, ccc_cfg_changed);
+
+static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr_chrc)
+{
+	struct bt_gatt_attr *attr_desc, *attr_value;
+	struct bt_gatt_chrc *chrc = attr_chrc->user_data;
+	struct gatt_value *value;
+
+	/* Fail if another CCC already exist on server */
+	if (ccc_added) {
+		return NULL;
+	}
+
+	/* Check characteristic properties */
+	if (!(chrc->properties &
+	    (BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_INDICATE))) {
+		return NULL;
+	}
+
+	/*
+	 * Look for characteristic value (stored under next handle) to set
+	 * 'has_ccc' flag
+	 */
+	attr_value = attr_chrc->_next;
+	if (!attr_value) {
+		return NULL;
+	}
+
+	value = attr_value->user_data;
+	if (!value) {
+		return NULL;
+	}
+
+	/* Add CCC descriptor to GATT database */
+	attr_desc = gatt_db_add(&ccc);
+	if (!attr_desc) {
+		return NULL;
+	}
+
+	value->has_ccc = true;
+	ccc_added = true;
+
+	return attr_desc;
+}
+
 static struct bt_gatt_attr cep = BT_GATT_CEP(NULL);
 static struct bt_gatt_attr *dsc = &chr_val;
 
@@ -369,8 +423,7 @@ static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
 		/* TODO Add CEP descriptor */
 		attr_desc = NULL;
 	} else if (!bt_uuid_cmp(&uuid, ccc.uuid)) {
-		/* TODO Add CCC descriptor */
-		attr_desc = NULL;
+		attr_desc = add_ccc(attr);
 	} else {
 		attr_desc = gatt_db_add(dsc);
 	}
@@ -494,11 +547,40 @@ static void add_included(uint8_t *data, uint16_t len)
 	bt_gatt_foreach_attr(handle, handle, add_included_cb, data);
 }
 
+static uint8_t set_ccc_value(struct bt_gatt_attr *attr, const void *value,
+			     const uint16_t len)
+{
+	uint16_t ccc_val;
+
+	if (len != sizeof(ccc_val)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	memcpy(&ccc_val, value, sizeof(ccc_val));
+
+	/*
+	 * CCC Data has been already set, so we can only verify if the
+	 * requested data is correct
+	 */
+	if (sys_le16_to_cpu(ccc_val) != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 {
 	const struct gatt_set_value_cmd *cmd = user_data;
 	struct gatt_value value;
 	uint8_t status;
+
+	/* Handle CCC value */
+	if (!bt_uuid_cmp(attr->uuid, ccc.uuid)) {
+		status = set_ccc_value(attr, cmd->value,
+				       sys_le16_to_cpu(cmd->len));
+		goto rsp;
+	}
 
 	if (!bt_uuid_cmp(attr->uuid, chr.uuid)) {
 		attr = attr->_next;
@@ -522,7 +604,10 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 
 		memcpy(gatt_value->data, cmd->value, gatt_value->len);
 
-		/* TODO Send notification */
+		if (gatt_value->has_ccc) {
+			bt_gatt_notify(NULL, attr->handle,
+				       gatt_value->data, gatt_value->len);
+		}
 
 		status = BTP_STATUS_SUCCESS;
 		goto rsp;
@@ -540,6 +625,7 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 		goto rsp;
 	}
 
+	value.has_ccc = false;
 	value.enc_key_size = 0x00;
 
 	attr->user_data = gatt_buf_add(&value, sizeof(value));
@@ -1498,6 +1584,7 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 
 uint8_t tester_init_gatt(void)
 {
+	ccc_added = false;
 	gatt_buf_clear();
 	memset(&gatt_db, 0, sizeof(gatt_db));
 
