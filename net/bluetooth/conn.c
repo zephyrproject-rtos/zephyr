@@ -395,6 +395,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 		err = bt_dev.drv->send(BT_ACL_OUT, buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)\n", err);
+			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
 		} else {
 			conn->pending_pkts++;
 		}
