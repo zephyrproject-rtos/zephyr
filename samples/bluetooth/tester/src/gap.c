@@ -321,6 +321,24 @@ static void stop_discovery(const uint8_t *data, uint16_t len)
 		   status);
 }
 
+static void connect(const uint8_t *data, uint16_t len)
+{
+	struct bt_conn *conn;
+	uint8_t status;
+
+	conn = bt_conn_create_le((bt_addr_le_t *) data);
+	if (!conn) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	bt_conn_unref(conn);
+	status = BTP_STATUS_SUCCESS;
+
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_CONNECT, CONTROLLER_INDEX, status);
+}
+
 static void disconnect(const uint8_t *data, uint16_t len)
 {
 	struct bt_conn *conn;
@@ -393,6 +411,9 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GAP_STOP_DISCOVERY:
 		stop_discovery(data, len);
+		return;
+	case GAP_CONNECT:
+		connect(data, len);
 		return;
 	case GAP_DISCONNECT:
 		disconnect(data, len);

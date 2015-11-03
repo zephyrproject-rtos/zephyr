@@ -177,6 +177,12 @@ struct gap_start_discovery_cmd {
 
 #define GAP_STOP_DISCOVERY		0x0d
 
+#define GAP_CONNECT			0x0e
+struct gap_connect_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
 #define GAP_DISCONNECT			0x0f
 struct gap_disconnect_cmd {
 	uint8_t  address_type;
