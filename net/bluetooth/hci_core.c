@@ -1230,6 +1230,7 @@ static void hci_cmd_tx_fiber(void)
 		err = drv->send(BT_CMD, buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)\n", err);
+			nano_fiber_sem_give(&bt_dev.ncmd_sem);
 			net_buf_unref(buf);
 			continue;
 		}
