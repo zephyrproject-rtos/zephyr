@@ -1,2 +1,4 @@
+DQUOTE = "
+# This comment line is to fix the highlighting of some editors due the quote effect."
 obj-y += core/
 obj-y += platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))/

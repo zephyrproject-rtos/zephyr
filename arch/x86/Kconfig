@@ -22,6 +22,10 @@ menu "x86 architecture"
 config ARCH
         default "x86"
 
+config ARCH_DEFCONFIG
+	string
+	default "arch/x86/defconfig"
+
 menu "X86 Platform Configuration options"
 
 config RAM_SIZE

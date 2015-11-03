@@ -240,37 +240,9 @@ ARCH		?= $(SUBARCH)
 CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
 
 # Architecture as present in compile.h
-UTS_MACHINE 	:= $(ARCH)
-SRCARCH 	:= $(ARCH)
+UTS_MACHINE 	:= $(subst $(DQUOTE),,$(CONFIG_ARCH))
+SRCARCH 	= $(subst $(DQUOTE),,$(CONFIG_ARCH))
 
-# Additional ARCH settings for x86
-ifeq ($(ARCH),i386)
-        SRCARCH := x86
-endif
-ifeq ($(ARCH),x86_64)
-        SRCARCH := x86
-endif
-
-# Additional ARCH settings for sparc
-ifeq ($(ARCH),sparc32)
-       SRCARCH := sparc
-endif
-ifeq ($(ARCH),sparc64)
-       SRCARCH := sparc
-endif
-
-# Additional ARCH settings for sh
-ifeq ($(ARCH),sh64)
-       SRCARCH := sh
-endif
-
-# Additional ARCH settings for tile
-ifeq ($(ARCH),tilepro)
-       SRCARCH := tile
-endif
-ifeq ($(ARCH),tilegx)
-       SRCARCH := tile
-endif
 
 # Where to locate arch specific headers
 hdr-arch  := $(SRCARCH)
@@ -374,14 +346,15 @@ PROJECTINCLUDE := $(strip -I$(srctree)/include/microkernel \
 
 # Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
-ZEPHYRINCLUDE    := \
-		-I$(srctree)/arch/$(hdr-arch)/include \
+ZEPHYRINCLUDE    = \
+		-I$(srctree)/arch/$(SRCARCH)/include \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
 		-I$(CURDIR)/include/generated \
 		-I$(CURDIR)/misc/generated/sysgen \
 		$(USERINCLUDE) \
 		$(STDINCLUDE)
+ZEPHYRINCLUDE    +=  -I$(srctree)/arch/$(subst $(DQUOTE),,$(CONFIG_ARCH))/include
 
 KBUILD_CPPFLAGS := -DKERNEL
 
@@ -516,7 +489,7 @@ ifeq ($(config-targets),1)
 # Read arch specific Makefile to set KBUILD_DEFCONFIG as needed.
 # KBUILD_DEFCONFIG may point out an alternative default configuration
 # used for 'make defconfig'
-include $(srctree)/arch/$(SRCARCH)/Makefile
+include $(srctree)/arch/$(subst $(DQUOTE),,$(CONFIG_ARCH))/Makefile
 export KBUILD_DEFCONFIG KBUILD_KCONFIG
 
 config: scripts_basic outputmakefile FORCE
@@ -580,6 +553,8 @@ libs-y += $(KCRYPTO_DIR)/
  ZEPHYRINCLUDE += -I$(srctree)/lib/crypto/tinycrypt/include
 endif
 
+ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
+export ARCH
 ifdef ZEPHYR_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 else

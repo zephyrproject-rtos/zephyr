@@ -1,4 +1,7 @@
 # vim: filetype=make
+DQUOTE = "
+#This comment line is to fix the highlighting of some editors due the quote effect."
+ARCH=$(subst $(DQUOTE),,$(CONFIG_ARCH))
 
 ifneq ($(strip $(CONFIG_MAX_NUM_TASK_IRQS)),)
 ifneq (${CONFIG_MAX_NUM_TASK_IRQS},0)
@@ -90,11 +93,11 @@ OFFSETS_INCLUDE = $(strip \
 		-I $(srctree)/kernel/microkernel/include \
 		-I $(srctree)/kernel/nanokernel/include \
 		-I $(srctree)/lib/libc/minimal/include \
-		-I $(srctree)/arch/${SRCARCH}/include )
+		-I $(srctree)/arch/${ARCH}/include )
 
 cmd_cc_o_c_1 = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) -c -o $@ $<
 
-arch/$(SRCARCH)/core/offsets/offsets.o: arch/$(SRCARCH)/core/offsets/offsets.c
+arch/$(ARCH)/core/offsets/offsets.o: arch/$(ARCH)/core/offsets/offsets.c
 	$(Q)mkdir -p $(dir $@)
 	$(call if_changed,cc_o_c_1)
 
@@ -112,7 +115,7 @@ define offsetchk
 	fi
 endef
 
-include/generated/offsets.h: $(GENOFFSET_H) arch/$(SRCARCH)/core/offsets/offsets.o \
+include/generated/offsets.h: $(GENOFFSET_H) arch/$(ARCH)/core/offsets/offsets.o \
 					include/config/auto.conf FORCE
-	$(call offsetchk,arch/$(SRCARCH)/core/offsets/offsets.o)
+	$(call offsetchk,arch/$(ARCH)/core/offsets/offsets.o)
 
