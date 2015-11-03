@@ -316,7 +316,7 @@ static void hci_acl(struct net_buf *buf)
 	BT_DBG("buf %p\n", buf);
 
 	handle = sys_le16_to_cpu(hdr->handle);
-	flags = (handle >> 12);
+	flags = bt_acl_flags(handle);
 
 	acl(buf)->handle = bt_acl_handle(handle);
 

@@ -234,8 +234,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 	/* Check packet boundary flags */
 	switch (flags) {
-	case 0x02:
-		/* First packet */
+	case BT_ACL_START:
 		hdr = (void *)buf->data;
 		len = sys_le16_to_cpu(hdr->len);
 
@@ -254,8 +253,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		}
 
 		break;
-	case 0x01:
-		/* Continuation */
+	case BT_ACL_CONT:
 		if (!conn->rx_len) {
 			BT_ERR("Unexpected L2CAP continuation\n");
 			bt_conn_reset_rx_state(conn);
@@ -332,7 +330,8 @@ void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 	len = min(remaining, bt_dev.le_mtu);
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->handle = sys_cpu_to_le16(conn->handle);
+	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle,
+							 BT_ACL_START_NO_FLUSH));
 	hdr->len = sys_cpu_to_le16(len);
 
 	buf->len -= remaining - len;
@@ -351,7 +350,8 @@ void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 		ptr += len;
 
 		hdr = net_buf_push(buf, sizeof(*hdr));
-		hdr->handle = sys_cpu_to_le16(conn->handle | (1 << 12));
+		hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle,
+								 BT_ACL_CONT));
 		hdr->len = sys_cpu_to_le16(len);
 
 		nano_fifo_put(&frags, buf);

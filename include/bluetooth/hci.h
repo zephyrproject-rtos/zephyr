@@ -73,7 +73,13 @@ struct bt_hci_evt_hdr {
 	uint8_t  len;
 } __packed;
 
+#define BT_ACL_START_NO_FLUSH		0x00
+#define BT_ACL_CONT			0x01
+#define BT_ACL_START			0x02
+
 #define bt_acl_handle(h)		((h) & 0x0fff)
+#define bt_acl_flags(h)			((h) >> 12)
+#define bt_acl_handle_pack(h, f)	((h) | ((f) << 12))
 
 struct bt_hci_acl_hdr {
 	uint16_t handle;
