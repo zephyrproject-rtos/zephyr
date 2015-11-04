@@ -34,7 +34,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 	int
 	prompt "System tick frequency (in ticks/second)"
 	default 100
-	depends on !NO_ISRS
 	help
 	This option specifies the frequency of the system clock in Hz.
 

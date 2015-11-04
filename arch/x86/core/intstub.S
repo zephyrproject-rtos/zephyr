@@ -26,8 +26,6 @@ entering and exiting a C interrupt handler.
 
 #define _ASMLANGUAGE
 
-#ifndef CONFIG_NO_ISRS
-
 #include <nano_private.h>
 #include <arch/x86/asm.h>
 #include <offsets.h>	/* nanokernel structure offset definitions */
@@ -513,4 +511,3 @@ stub_num = 0
 1:	jmp _DynIntStubCommon
 .endr
 #endif /* ALL_DYN_IRQ_STUBS */
-#endif /* CONFIG_NO_ISRS */

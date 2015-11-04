@@ -292,13 +292,6 @@ typedef struct nanoIsf {
 #ifndef _ASMLANGUAGE
 
 
-#ifdef CONFIG_NO_ISRS
-
-static inline unsigned int irq_lock(void) { return 1; }
-static inline void irq_unlock(unsigned int key) {}
-
-#else /* CONFIG_NO_ISRS */
-
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 void _int_latency_start(void);
 void _int_latency_stop(void);
@@ -372,7 +365,6 @@ static inline __attribute__((always_inline)) void irq_unlock(unsigned int key)
 #endif
 	_do_irq_unlock();
 }
-#endif /* CONFIG_NO_ISRS */
 
 /** interrupt/exception/error related definitions */
 typedef void (*NANO_EOI_GET_FUNC) (void *);

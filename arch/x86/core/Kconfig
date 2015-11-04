@@ -18,14 +18,6 @@
 
 menu "x86 Core Options"
 
-config NO_ISRS
-	bool
-	prompt "No Asynchronous Interrupts"
-	default n
-	help
-	This option disables asynchronous interrupts support.
-
-
 config NESTED_INTERRUPTS
 	bool
 	prompt "Enable nested interrupts"
@@ -51,7 +43,6 @@ config IDT_NUM_VECTORS
 	prompt "Number of IDT vectors"
 	default 256
 	range 32 256
-	depends on !NO_ISRS
 	help
 	This option specifies the number of interrupt vector entries in the
 	Interrupt Descriptor Table (IDT). By default all 256 vectors are

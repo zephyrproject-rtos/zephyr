@@ -38,7 +38,6 @@
  * the associated dynamic stub in the IDT.
  */
 
-#ifndef CONFIG_NO_ISRS
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -444,5 +443,3 @@ void _IntVecMarkFree(unsigned int vector)
 	_interrupt_vectors_allocated[entryToSet] |= (1 << bitToSet);
 	irq_unlock(imask);
 }
-
-#endif /* CONFIG_NO_ISRS */

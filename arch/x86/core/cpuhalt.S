@@ -48,7 +48,6 @@ by nano_cpu_atomic_idle().
 	GDATA(__idle_tsc)
 #endif
 
-#ifndef CONFIG_NO_ISRS
 
 /**
  *
@@ -143,19 +142,4 @@ SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 BRANCH_LABEL(skipIntDisable)
 
 	ret
-
-#else
-
-/*
- * When no interrupt support is configured, both nano_cpu_idle() and
- * nano_cpu_atomic_idle() are "no op" routines that simply return immediately
- * without entering low-power mode.
- */
-
-SECTION_FUNC(TEXT, nano_cpu_idle)
-SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
-
-	ret
-
-#endif /* !CONFIG_NO_ISRS */
 

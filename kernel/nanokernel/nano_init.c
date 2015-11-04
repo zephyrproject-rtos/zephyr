@@ -80,9 +80,7 @@ char __noinit __stack main_task_stack[CONFIG_MAIN_STACK_SIZE];
  * nanokernel context switches to the background (or idle) task.
  */
 
-#ifndef CONFIG_NO_ISRS
 char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
-#endif
 
 /* constructor initialization */
 
@@ -152,7 +150,6 @@ static void nano_init(struct tcs *dummyOutContext)
 	dummyOutContext->prio = 0;
 
 
-#ifndef CONFIG_NO_ISRS
 	/*
 	 * The interrupt library needs to be initialized early since a series of
 	 * handlers are installed into the interrupt table to catch spurious
@@ -162,7 +159,6 @@ static void nano_init(struct tcs *dummyOutContext)
 	 */
 
 	_IntLibInit();
-#endif
 
 	/*
 	 * Initialize the thread control block (TCS) for the main task (either
