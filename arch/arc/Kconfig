@@ -46,6 +46,7 @@ menu "ARCv2 Family Options"
 config	CPU_ARCV2
 	bool
 	default y
+	select NANOKERNEL_TICKLESS_IDLE_SUPPORTED
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
 
