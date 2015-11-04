@@ -150,22 +150,23 @@ static int start_security(struct bt_conn *conn)
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	case BT_HCI_ROLE_MASTER:
 	{
-		struct bt_keys *keys;
+		if (!conn->keys) {
+			conn->keys = bt_keys_find(BT_KEYS_LTK, &conn->le.dst);
+		}
 
-		keys = bt_keys_find(BT_KEYS_LTK, &conn->le.dst);
-		if (!keys) {
+		if (!conn->keys || !(conn->keys->keys & BT_KEYS_LTK)) {
 			return bt_smp_send_pairing_req(conn);
 		}
 
 		if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
-		    keys->type != BT_KEYS_AUTHENTICATED) {
+		    conn->keys->type != BT_KEYS_AUTHENTICATED) {
 			return bt_smp_send_pairing_req(conn);
 		}
 
-		return bt_conn_le_start_encryption(conn, keys->ltk.rand,
-						   keys->ltk.ediv,
-						   keys->ltk.val,
-						   keys->enc_size);
+		return bt_conn_le_start_encryption(conn, conn->keys->ltk.rand,
+						   conn->keys->ltk.ediv,
+						   conn->keys->ltk.val,
+						   conn->keys->enc_size);
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
