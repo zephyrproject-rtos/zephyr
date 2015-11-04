@@ -56,6 +56,9 @@
 /* For now use MPS - SDU length to disable segmentation */
 #define BT_L2CAP_MAX_LE_MTU	(BT_L2CAP_MAX_LE_MPS - 2)
 
+#define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
+#define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
+
 static struct bt_l2cap_fixed_chan *channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_server *servers;
@@ -139,9 +142,14 @@ static void l2cap_chan_alloc_cid(struct bt_conn *conn,
 	}
 }
 
-static void l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
+static int l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 {
 	l2cap_chan_alloc_cid(conn, chan);
+
+	if (!chan->rx.cid) {
+		BT_ERR("Unable to allocate L2CAP CID\n");
+		return -ENOMEM;
+	}
 
 	/* Attach channel to the connection */
 	chan->_next = conn->channels;
@@ -149,6 +157,8 @@ static void l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 	chan->conn = conn;
 
 	BT_DBG("conn %p chan %p cid 0x%04x\n", conn, chan, chan->rx.cid);
+
+	return 0;
 }
 
 void bt_l2cap_connected(struct bt_conn *conn)
@@ -470,6 +480,17 @@ static struct bt_l2cap_chan *l2cap_remove_tx_cid(struct bt_conn *conn,
 	return NULL;
 }
 
+static void l2cap_chan_del(struct bt_l2cap_chan *chan)
+{
+	BT_DBG("conn %p chan %p cid 0x%04x\n", chan->conn, chan, chan->rx.cid);
+
+	chan->conn = NULL;
+
+	if (chan->ops->disconnected) {
+		chan->ops->disconnected(chan);
+	}
+}
+
 static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			   struct net_buf *buf)
 {
@@ -510,13 +531,89 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
 	rsp->scid = sys_cpu_to_le16(chan->tx.cid);
 
-	chan->conn = NULL;
-
-	if (chan->ops->disconnected) {
-		chan->ops->disconnected(chan);
-	}
+	l2cap_chan_del(chan);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+}
+
+static struct bt_l2cap_chan *__l2cap_lookup_ident(struct bt_conn *conn,
+						  uint16_t ident, bool remove)
+{
+	struct bt_l2cap_chan *chan, *prev;
+
+	for (chan = conn->channels, prev = NULL; chan;
+	     prev = chan, chan = chan->_next) {
+		if (chan->_ident != ident) {
+			continue;
+		}
+
+		if (!remove) {
+			return chan;
+		}
+
+		if (!prev) {
+			conn->channels = chan->_next;
+		} else {
+			prev->_next = chan->_next;
+		}
+
+		return chan;
+	}
+
+	return NULL;
+}
+
+static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
+			struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.conn;
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_le_conn_rsp *rsp = (void *)buf->data;
+	uint16_t dcid, mtu, mps, credits, result;
+
+	if (buf->len < sizeof(*rsp)) {
+		BT_ERR("Too small LE conn rsp packet size\n");
+		return;
+	}
+
+	dcid = sys_le16_to_cpu(rsp->dcid);
+	mtu = sys_le16_to_cpu(rsp->mtu);
+	mps = sys_le16_to_cpu(rsp->mps);
+	credits = sys_le16_to_cpu(rsp->credits);
+	result = sys_le16_to_cpu(rsp->result);
+
+	BT_DBG("dcid 0x%04x mtu %u mps %u credits %u result 0x%04x\n", dcid,
+	       mtu, mps, credits, result);
+
+	if (result == BT_L2CAP_SUCCESS) {
+		chan = l2cap_lookup_ident(conn, ident);
+	} else {
+		chan = l2cap_remove_ident(conn, ident);
+	}
+
+	if (!chan) {
+		BT_ERR("Cannot find channel for ident %u\n", ident);
+		return;
+	}
+
+	switch (result) {
+	case BT_L2CAP_SUCCESS:
+		/* Reset _ident since it is no longer pending */
+		chan->_ident = 0;
+		chan->tx.cid = dcid;
+		chan->tx.mtu = mtu;
+		chan->tx.mps = mps;
+		chan->tx.credits = credits;
+
+		if (chan->ops->connected) {
+			chan->ops->connected(chan);
+		}
+
+		break;
+	/* TODO: Retry on Authentication and Encryption errors */
+	default:
+		l2cap_chan_del(chan);
+	}
 }
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
@@ -559,6 +656,9 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	case BT_L2CAP_LE_CONN_REQ:
 		le_conn_req(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_LE_CONN_RSP:
+		le_conn_rsp(l2cap, hdr->ident, buf);
 		break;
 	case BT_L2CAP_DISCONN_REQ:
 		le_disconn_req(l2cap, hdr->ident, buf);
@@ -791,3 +891,69 @@ struct bt_l2cap_chan *bt_l2cap_lookup_rx_cid(struct bt_conn *conn,
 
 	return NULL;
 }
+
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
+			    uint16_t psm)
+{
+	struct net_buf *buf;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_le_conn_req *req;
+
+	if (psm < L2CAP_LE_PSM_START || psm > L2CAP_LE_PSM_END) {
+		return -EINVAL;
+	}
+
+	if (l2cap_chan_add(conn, chan) < 0) {
+		return -ENOMEM;
+	}
+
+	buf = bt_l2cap_create_pdu(&le_sig);
+	if (!buf) {
+		BT_ERR("Unable to send L2CP connection request\n");
+		return -ENOMEM;
+	}
+
+	/* Use existing MTU if defined */
+	if (!chan->rx.mtu) {
+		chan->rx.mtu = BT_L2CAP_MAX_LE_MTU;
+	}
+
+	chan->rx.mps = BT_L2CAP_MAX_LE_MPS;
+	chan->_ident = get_ident(chan->conn);
+	memset(&chan->tx, 0, sizeof(chan->tx));
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_LE_CONN_REQ;
+	hdr->ident = chan->_ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*req));
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->psm = sys_cpu_to_le16(psm);
+	req->scid = sys_cpu_to_le16(chan->rx.cid);
+	req->mtu = sys_cpu_to_le16(chan->rx.mtu);
+	req->mps = sys_cpu_to_le16(chan->rx.mps);
+	req->credits = sys_cpu_to_le16(L2CAP_LE_MAX_CREDITS);
+
+	bt_l2cap_send(chan->conn, BT_L2CAP_CID_LE_SIG, buf);
+
+	return 0;
+}
+
+int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
+			  uint16_t psm)
+{
+	BT_DBG("conn %p chan %p psm 0x%04x\n", conn, chan, psm);
+
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (!chan) {
+		return -EINVAL;
+	}
+
+	/* TODO: Check conn/address type when BR/EDR is introduced */
+	return l2cap_le_connect(conn, chan, psm);
+}
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */

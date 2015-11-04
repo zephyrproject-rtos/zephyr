@@ -63,6 +63,8 @@ struct bt_l2cap_chan {
 	/** Channel Receiving Endpoint */
 	struct bt_l2cap_endpoint rx;
 
+	uint8_t			_ident;
+
 	struct bt_l2cap_chan	*_next;
 };
 
@@ -102,6 +104,19 @@ struct bt_l2cap_server {
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_server_register(struct bt_l2cap_server *server);
+
+/** @brief Connect L2CAP channel
+ *
+ *  Connect L2CAP channel by PSM.
+ *
+ *  @param conn Connection object.
+ *  @param chan Channel object.
+ *  @param psm Channel PSM to connect to.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
+			  uint16_t psm);
 
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
