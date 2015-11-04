@@ -41,7 +41,7 @@
 #define NET_BUF_WARN(fmt, ...)
 #define NET_BUF_INFO(fmt, ...)
 #define NET_BUF_ASSERT(cond)
-#endif /* CONFIG_net_buf_DEBUG */
+#endif /* CONFIG_NET_BUF_DEBUG */
 
 struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 {
