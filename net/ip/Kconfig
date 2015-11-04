@@ -212,6 +212,14 @@ config	NETWORKING_WITH_15_4
 	  it into suitable chunks ready to be sent to the 802.15.4
 	  hw driver
 
+config	15_4_BEACON_SUPPORT
+	bool
+	prompt "Enable 802.15.4 beacon support"
+	depends on NETWORKING_WITH_15_4
+	default n
+	help
+	  Enable 802.15.4 beacon support
+
 config NETWORKING_WITH_15_4_PAN_ID
        hex
        prompt "IEEE 802.15.4 PAN id/address"

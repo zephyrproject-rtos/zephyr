@@ -75,10 +75,12 @@ typedef unsigned int uip_stats_t;
 #define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPHC
 #else /* 6lowpan compression method */
 #define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPV6
-#endif
-//#define FRAMER_802154_HANDLER handler_802154_frame_received
+#endif /* 6lowpan compression method */
 //#define HANDLER_802154_CONF_STATS 1
-#else
+#ifdef CONFIG_15_4_BEACON_SUPPORT
+#define FRAMER_802154_HANDLER handler_802154_frame_received
+#endif /* CONFIG_15_4_BEACON_SUPPORT */
+#else /* CONFIG_NETWORKING_WITH_15_4 */
 #define NETSTACK_CONF_FRAMER	framer_nullmac
 #define NETSTACK_CONF_RDC	nullrdc_driver
 #define NETSTACK_CONF_MAC	nullmac_driver

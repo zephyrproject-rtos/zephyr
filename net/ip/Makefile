@@ -102,6 +102,8 @@ obj-$(CONFIG_NETWORKING_WITH_15_4) += net_driver_15_4.o \
 					contiki/mac/csma.o \
 					contiki/mac/mac-sequence.o
 
+obj-$(CONFIG_15_4_BEACON_SUPPORT) += contiki/mac/handler-802154.o
+
 # At the moment we only need nullsec driver for 802.15.4
 #obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/llsec/ccm-star.o \
 #					contiki/llsec/ccm-star.o \
