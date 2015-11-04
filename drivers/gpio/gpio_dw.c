@@ -20,6 +20,7 @@
 #include <board.h>
 #include <sys_io.h>
 #include <init.h>
+#include <misc/util.h>
 
 #ifdef CONFIG_SHARED_IRQ
 #include <shared_irq.h>
@@ -46,8 +47,6 @@
 #define EXT_PORTD	0x5c
 #define INT_CLOCK_SYNC	0x60
 #define INT_BOTHEDGE	0x68
-
-#define BIT(n)	(1UL << (n))
 
 static inline uint32_t dw_read(uint32_t base_addr, uint32_t offset)
 {
