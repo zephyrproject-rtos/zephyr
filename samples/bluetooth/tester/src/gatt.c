@@ -157,6 +157,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds[0] |= 1 << GATT_SET_ENC_KEY_SIZE;
 	cmds[1] = 1 << (GATT_EXCHANGE_MTU - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_DISC_PRIM_UUID - GATT_CLIENT_OP_OFFSET);
+	cmds[1] |= 1 << (GATT_FIND_INCLUDED - GATT_CLIENT_OP_OFFSET);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -767,6 +768,99 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
+static void find_included_result(void *user_data)
+{
+	/* Respond with an error if the buffer was cleared. */
+	if (gatt_buf_isempty()) {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_FIND_INCLUDED,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	} else {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_FIND_INCLUDED,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+	}
+
+	discover_destroy(user_data);
+}
+
+static uint8_t find_included_cb(const struct bt_gatt_attr *attr,
+				void *user_data)
+{
+	struct bt_gatt_include *data = attr->user_data;
+	struct gatt_find_included_rp *rp = (void *) gatt_buf.buf;
+	struct gatt_included *included;
+	uint8_t uuid_length;
+
+	uuid_length = data->uuid->type == BT_UUID_16 ? sizeof(data->uuid->u16) :
+						       sizeof(data->uuid->u128);
+
+	included = gatt_buf_reserve(sizeof(*included) + uuid_length);
+	if (!included) {
+		/*
+		 * Clear gatt_buf if there is no more space available to cache
+		 * another attribute. This will cause find_included_result
+		 * to respond with BTP_STATUS_FAILED.
+		 */
+		gatt_buf_clear();
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	included->included_handle = attr->handle;
+	included->service.start_handle = sys_cpu_to_le16(data->start_handle);
+	included->service.end_handle = sys_cpu_to_le16(data->end_handle);
+	included->service.uuid_length = uuid_length;
+
+	if (data->uuid->type == BT_UUID_16) {
+		uint16_t u16 = sys_cpu_to_le16(data->uuid->u16);
+
+		memcpy(included->service.uuid, &u16, uuid_length);
+	} else {
+		/* TODO Read this 128bit UUID */
+		memset(included->service.uuid, 0, uuid_length);
+	}
+
+	rp->services_count++;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void find_included(uint8_t *data, uint16_t len)
+{
+	const struct gatt_find_included_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		goto fail_conn;
+	}
+
+	if (!gatt_buf_reserve(sizeof(struct gatt_find_included_rp))) {
+		goto fail;
+	}
+
+	discover_params.start_handle = sys_le16_to_cpu(cmd->start_handle);
+	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
+	discover_params.type = BT_GATT_DISCOVER_INCLUDE;
+	discover_params.func = find_included_cb;
+	discover_params.destroy = find_included_result;
+
+	if (bt_gatt_discover(conn, &discover_params) < 0) {
+		discover_destroy(&discover_params);
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	bt_conn_unref(conn);
+
+fail_conn:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_FIND_INCLUDED, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
@@ -800,6 +894,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_DISC_PRIM_UUID:
 		disc_prim_uuid(data, len);
+		return;
+	case GATT_FIND_INCLUDED:
+		find_included(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,
