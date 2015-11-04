@@ -203,9 +203,8 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		err = bt_dev.drv->send(BT_CMD, buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)\n", err);
+			net_buf_unref(buf);
 		}
-
-		net_buf_unref(buf);
 
 		return err;
 	}
@@ -1226,6 +1225,8 @@ static void hci_cmd_tx_fiber(void)
 			bt_dev.sent_cmd = NULL;
 		}
 
+		bt_dev.sent_cmd = net_buf_ref(buf);
+
 		BT_DBG("Sending command %x (buf %p) to driver\n",
 		       cmd(buf)->opcode, buf);
 
@@ -1233,11 +1234,10 @@ static void hci_cmd_tx_fiber(void)
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)\n", err);
 			nano_fiber_sem_give(&bt_dev.ncmd_sem);
+			net_buf_unref(bt_dev.sent_cmd);
+			bt_dev.sent_cmd = NULL;
 			net_buf_unref(buf);
-			continue;
 		}
-
-		bt_dev.sent_cmd = buf;
 	}
 }
 

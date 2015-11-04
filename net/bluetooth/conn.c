@@ -396,11 +396,10 @@ static void conn_tx_fiber(int arg1, int arg2)
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)\n", err);
 			nano_fiber_sem_give(&bt_dev.le.pkts_sem);
+			net_buf_unref(buf);
 		} else {
 			conn->pending_pkts++;
 		}
-
-		net_buf_unref(buf);
 	}
 
 	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);

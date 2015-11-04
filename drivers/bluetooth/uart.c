@@ -229,6 +229,7 @@ static int bt_uart_send(enum bt_buf_type buf_type, struct net_buf *buf)
 	}
 
 	uart_out(BT_UART_DEV, buf->data, buf->len);
+	net_buf_unref(buf);
 
 	return 0;
 }
