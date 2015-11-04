@@ -50,6 +50,10 @@
 #include "contiki/ip/simple-udp.h"
 #include "contiki/os/dev/slip.h"
 
+#ifdef CONFIG_15_4_BEACON_SUPPORT
+#include "contiki/mac/handler-802154.h"
+#endif
+
 /* Declare some private functions only to be used in this file so the
  * prototypes are not found in .h file.
  */
@@ -780,6 +784,10 @@ static int network_initialization(void)
 	process_start(&ctimer_process, NULL);
 
 	slip_start();
+
+#if CONFIG_15_4_BEACON_SUPPORT && CONFIG_NETWORKING_WITH_15_4_PAN_ID
+	handler_802154_join(CONFIG_NETWORKING_WITH_15_4_PAN_ID, 1);
+#endif
 
 	return 0;
 }
