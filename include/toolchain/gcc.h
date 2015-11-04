@@ -29,6 +29,7 @@
 
 #define CODE_UNREACHABLE __builtin_unreachable()
 #define FUNC_NORETURN    __attribute__((__noreturn__))
+#define FUNC_NO_FP	 __attribute__((optimize("-fomit-frame-pointer")))
 
 /* The GNU assembler for Cortex-M3 uses # for immediate values, not
  * comments, so the @nobits# trick does not work.
