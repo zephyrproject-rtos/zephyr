@@ -760,15 +760,12 @@ static int set_flow_control(void)
 #if defined(CONFIG_BLUETOOTH_SMP)
 static void update_sec_level(struct bt_conn *conn)
 {
-	struct bt_keys *keys;
-
 	if (!conn->encrypt) {
 		conn->sec_level = BT_SECURITY_LOW;
 		return;
 	}
 
-	keys = bt_keys_find_addr(&conn->le.dst);
-	if (keys && keys->type == BT_KEYS_AUTHENTICATED) {
+	if (conn->keys && conn->keys->type == BT_KEYS_AUTHENTICATED) {
 		conn->sec_level = BT_SECURITY_HIGH;
 	} else {
 		conn->sec_level = BT_SECURITY_MEDIUM;
