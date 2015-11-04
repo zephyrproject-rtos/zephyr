@@ -41,6 +41,11 @@
 
 static struct bt_gatt_attr gatt_db[MAX_ATTRIBUTES];
 
+/*
+ * gatt_buf - cache used by a gatt client (to cache data read/discovered)
+ * and gatt server (to store attribute user_data).
+ * It is not intended to be used by client and server at the same time.
+ */
 static struct {
 	uint16_t len;
 	uint8_t buf[MAX_BUFFER_SIZE];
@@ -76,6 +81,20 @@ static void *gatt_buf_add(const void *data, size_t len)
 	printk("gatt_buf: %d/%d used\n", gatt_buf.len, MAX_BUFFER_SIZE);
 
 	return ptr;
+}
+
+static void gatt_buf_clear(void)
+{
+	memset(&gatt_buf, 0, sizeof(gatt_buf));
+}
+
+static bool gatt_buf_isempty(void)
+{
+	if (gatt_buf.len) {
+		return false;
+	}
+
+	return true;
 }
 
 static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern)
@@ -137,6 +156,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds[0] |= 1 << GATT_START_SERVER;
 	cmds[0] |= 1 << GATT_SET_ENC_KEY_SIZE;
 	cmds[1] = 1 << (GATT_EXCHANGE_MTU - GATT_CLIENT_OP_OFFSET);
+	cmds[1] |= 1 << (GATT_DISC_PRIM_UUID - GATT_CLIENT_OP_OFFSET);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -640,6 +660,113 @@ fail:
 		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
+static struct bt_gatt_discover_params discover_params;
+static struct bt_uuid uuid;
+
+static void discover_destroy(void *user_data)
+{
+	struct bt_gatt_discover_params *params = user_data;
+
+	memset(params, 0, sizeof(*params));
+	gatt_buf_clear();
+}
+
+static void disc_prim_uuid_result(void *user_data)
+{
+	/* Respond with an error if the buffer was cleared. */
+	if (gatt_buf_isempty()) {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_PRIM_UUID,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	} else {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_DISC_PRIM_UUID,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+	}
+
+	discover_destroy(user_data);
+}
+
+static uint8_t disc_prim_uuid_cb(const struct bt_gatt_attr *attr,
+				 void *user_data)
+{
+	struct bt_gatt_service *data = attr->user_data;
+	struct gatt_disc_prim_uuid_rp *rp = (void *) gatt_buf.buf;
+	struct gatt_service *service;
+	uint8_t uuid_length;
+
+	uuid_length = data->uuid->type == BT_UUID_16 ? sizeof(data->uuid->u16) :
+						       sizeof(data->uuid->u128);
+
+	service = gatt_buf_reserve(sizeof(*service) + uuid_length);
+	if (!service) {
+		/*
+		 * Clear gatt_buf if there is no more space available to cache
+		 * another attribute. This will cause disc_prim_uuid_result
+		 * to respond with BTP_STATUS_FAILED.
+		 */
+		gatt_buf_clear();
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	service->start_handle = sys_cpu_to_le16(attr->handle);
+	service->end_handle = sys_cpu_to_le16(data->end_handle);
+	service->uuid_length = uuid_length;
+
+	if (data->uuid->type == BT_UUID_16) {
+		uint16_t u16 = sys_cpu_to_le16(data->uuid->u16);
+
+		memcpy(service->uuid, &u16, uuid_length);
+	} else {
+		memcpy(service->uuid, &data->uuid->u128, uuid_length);
+	}
+
+	rp->services_count++;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void disc_prim_uuid(uint8_t *data, uint16_t len)
+{
+	const struct gatt_disc_prim_uuid_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		goto fail_conn;
+	}
+
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
+		goto fail;
+	}
+
+	if (!gatt_buf_reserve(sizeof(struct gatt_disc_prim_uuid_rp))) {
+		goto fail;
+	}
+
+	discover_params.uuid = &uuid;
+	discover_params.start_handle = 0x0001;
+	discover_params.end_handle = 0xffff;
+	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+	discover_params.func = disc_prim_uuid_cb;
+	discover_params.destroy = disc_prim_uuid_result;
+
+	if (bt_gatt_discover(conn, &discover_params) < 0) {
+		discover_destroy(&discover_params);
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	bt_conn_unref(conn);
+
+fail_conn:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_PRIM_UUID, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
@@ -671,6 +798,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 	case GATT_EXCHANGE_MTU:
 		exchange_mtu(data, len);
 		return;
+	case GATT_DISC_PRIM_UUID:
+		disc_prim_uuid(data, len);
+		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,
 			   BTP_STATUS_UNKNOWN_CMD);
@@ -680,7 +810,7 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 
 uint8_t tester_init_gatt(void)
 {
-	memset(&gatt_buf, 0, sizeof(gatt_buf));
+	gatt_buf_clear();
 	memset(&gatt_db, 0, sizeof(gatt_db));
 
 	return BTP_STATUS_SUCCESS;

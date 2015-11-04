@@ -347,7 +347,26 @@ struct gatt_set_enc_key_size_cmd {
 /* Gatt Client */
 #define GATT_CLIENT_OP_OFFSET		0x40
 
+struct gatt_service {
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint8_t uuid_length;
+	uint8_t uuid[0];
+} __packed;
+
 #define GATT_EXCHANGE_MTU		0x40
+
+#define GATT_DISC_PRIM_UUID		0x42
+struct gatt_disc_prim_uuid_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint8_t uuid_length;
+	uint8_t uuid[0];
+} __packed;
+struct gatt_disc_prim_uuid_rp {
+	uint8_t services_count;
+	struct gatt_service services[0];
+} __packed;
 
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
