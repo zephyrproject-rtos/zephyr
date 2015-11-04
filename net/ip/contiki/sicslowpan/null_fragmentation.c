@@ -23,13 +23,13 @@
 #include <net/l2_buf.h>
 #include <net/net_core.h>
 
-#include <net/sicslowpan/null_fragmentation.h>
-#include <net/netstack.h>
+#include "contiki/sicslowpan/null_fragmentation.h"
+#include "contiki/netstack.h"
 
 #include "contiki/ipv6/uip-ds6-nbr.h"
 
 #define DEBUG 0
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

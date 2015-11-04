@@ -45,17 +45,17 @@
 
 #include "contiki.h"
 #include "contiki-net.h"
-#include "net/ipv6/multicast/uip-mcast6.h"
-#include "net/ipv6/multicast/uip-mcast6-route.h"
-#include "net/ipv6/multicast/uip-mcast6-stats.h"
-#include "net/ipv6/multicast/smrf.h"
-#include "net/rpl/rpl.h"
-#include "net/netstack.h"
+#include "contiki/ipv6/multicast/uip-mcast6.h"
+#include "contiki/ipv6/multicast/uip-mcast6-route.h"
+#include "contiki/ipv6/multicast/uip-mcast6-stats.h"
+#include "contiki/ipv6/multicast/smrf.h"
+#include "contiki/rpl/rpl.h"
+#include "contiki/netstack.h"
 #include "contiki/os/lib/random.h"
 #include <string.h>
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/
 /* Macros */

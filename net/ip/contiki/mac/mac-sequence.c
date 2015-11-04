@@ -47,8 +47,8 @@
 #include <net/l2_buf.h>
 
 #include "contiki-net.h"
-#include "net/mac/mac-sequence.h"
-#include "net/packetbuf.h"
+#include "contiki/mac/mac-sequence.h"
+#include "contiki/packetbuf.h"
 
 struct seqno {
   linkaddr_t sender;

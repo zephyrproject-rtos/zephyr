@@ -41,7 +41,7 @@
 #include <errno.h>
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #ifndef COAP_CONTEXT_CONF_MAX_CONTEXTS
 #define MAX_CONTEXTS 1

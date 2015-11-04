@@ -36,7 +36,7 @@
 #include <net/l2_buf.h>
 #include <net/net_ip.h>
 #include <net/net_socket.h>
-#include <net/netstack.h>
+#include "contiki/netstack.h"
 #include <net_driver_15_4.h>
 
 /* Stacks for the tx & rx fibers.

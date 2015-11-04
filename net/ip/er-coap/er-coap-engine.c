@@ -44,7 +44,7 @@
 #include "er-coap-context.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 PROCESS(coap_engine, "CoAP Engine");
 

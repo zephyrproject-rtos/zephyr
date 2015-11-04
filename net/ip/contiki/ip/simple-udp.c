@@ -45,12 +45,12 @@
 #include <net/ip_buf.h>
 
 #include "contiki-net.h"
-#include "net/ip/simple-udp.h"
+#include "contiki/ip/simple-udp.h"
 
 #include <string.h>
 
 #define DEBUG 0
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

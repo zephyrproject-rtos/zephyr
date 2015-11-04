@@ -57,9 +57,9 @@
 
 struct net_buf;
 
-#include "net/ip/uipopt.h"
-#include "net/ip/uipaddr.h"
-#include "net/ip/tcpip.h"
+#include "contiki/ip/uipopt.h"
+#include "contiki/ip/uipaddr.h"
+#include "contiki/ip/tcpip.h"
 
 /* Header sizes. */
 #if NETSTACK_CONF_WITH_IPV6

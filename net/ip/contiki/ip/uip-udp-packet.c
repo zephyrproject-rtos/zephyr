@@ -41,8 +41,8 @@
 
 #include "contiki-conf.h"
 
-#include "net/ip/uip-udp-packet.h"
-#include "net/ipv6/multicast/uip-mcast6.h"
+#include "contiki/ip/uip-udp-packet.h"
+#include "contiki/ipv6/multicast/uip-mcast6.h"
 
 #include <string.h>
 

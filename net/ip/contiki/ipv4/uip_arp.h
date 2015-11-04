@@ -50,7 +50,7 @@
 #ifndef UIP_ARP_H_
 #define UIP_ARP_H_
 
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 
 
 

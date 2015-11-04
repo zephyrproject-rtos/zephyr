@@ -38,7 +38,7 @@
  *         Adam Dunkels <adam@sics.se>
  */
 
-#include "net/ipv4/uip-neighbor.h"
+#include "contiki/ipv4/uip-neighbor.h"
 
 #include <string.h>
 #include <stdio.h>

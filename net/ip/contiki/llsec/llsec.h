@@ -57,7 +57,7 @@
 
 #include <stdbool.h>
 #include <net/buf.h>
-#include "net/mac/mac.h"
+#include "contiki/mac/mac.h"
 
 #ifndef LLSEC_H_
 #define LLSEC_H_

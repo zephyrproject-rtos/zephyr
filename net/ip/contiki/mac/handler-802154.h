@@ -39,7 +39,7 @@
 #ifndef HANDLER_802154_H_
 #define HANDLER_802154_H_
 
-#include "net/mac/frame802154.h"
+#include "contiki/mac/frame802154.h"
 
 #define BEACON_PAYLOAD_BUFFER_SIZE 128
 

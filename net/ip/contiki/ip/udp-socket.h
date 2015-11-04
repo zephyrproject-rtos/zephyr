@@ -34,7 +34,7 @@
 
 #include <net/buf.h>
 
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 
 struct udp_socket;
 

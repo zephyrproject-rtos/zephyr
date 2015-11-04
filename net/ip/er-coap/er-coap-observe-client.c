@@ -47,7 +47,7 @@
 #if COAP_OBSERVE_CLIENT
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 MEMB(obs_subjects_memb, coap_observee_t, COAP_MAX_OBSERVEES);
 LIST(obs_subjects_list);

@@ -32,7 +32,7 @@
 #include "contiki-net.h"
 
 #if UIP_CONF_IPV6_RPL
-#include "net/rpl/rpl.h"
+#include "contiki/rpl/rpl.h"
 #endif /* UIP_CONF_IPV6_RPL */
 
 #include <string.h>
@@ -42,7 +42,7 @@
 #ifndef DEBUG
 #define DEBUG DEBUG_PRINT
 #endif
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #include "debug.h"
 #include "dtls.h"

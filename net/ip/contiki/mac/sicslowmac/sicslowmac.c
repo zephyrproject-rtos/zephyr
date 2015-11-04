@@ -47,15 +47,15 @@
 
 #include <net/l2_buf.h>
 
-#include "net/mac/sicslowmac/sicslowmac.h"
-#include "net/mac/frame802154.h"
-#include "net/packetbuf.h"
-#include "net/queuebuf.h"
-#include "net/netstack.h"
+#include "contiki/mac/sicslowmac/sicslowmac.h"
+#include "contiki/mac/frame802154.h"
+#include "contiki/packetbuf.h"
+#include "contiki/queuebuf.h"
+#include "contiki/netstack.h"
 #include "lib/random.h"
 
 #define DEBUG 0
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

@@ -132,7 +132,7 @@ LIST(queuebuf_list);
 #endif /* QUEUEBUF_DEBUG */
 
 #define DEBUG 0
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

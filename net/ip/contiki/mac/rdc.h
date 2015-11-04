@@ -44,7 +44,7 @@
 #include <net/buf.h>
 
 #include "contiki-conf.h"
-#include "net/mac/mac.h"
+#include "contiki/mac/mac.h"
 
 #ifdef RDC_CONF_WITH_DUPLICATE_DETECTION
 #define RDC_WITH_DUPLICATE_DETECTION RDC_CONF_WITH_DUPLICATE_DETECTION

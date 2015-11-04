@@ -36,8 +36,8 @@
 #define NBR_TABLE_H_
 
 #include "contiki.h"
-#include "net/linkaddr.h"
-#include "net/netstack.h"
+#include "contiki/linkaddr.h"
+#include "contiki/netstack.h"
 
 /* Neighbor table size */
 #ifdef NBR_TABLE_CONF_MAX_NEIGHBORS

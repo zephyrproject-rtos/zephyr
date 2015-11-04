@@ -57,7 +57,7 @@
  * \note This ARP implementation only supports Ethernet.
  */
 
-#include "net/ipv4/uip_arp.h"
+#include "contiki/ipv4/uip_arp.h"
 
 #include <string.h>
 

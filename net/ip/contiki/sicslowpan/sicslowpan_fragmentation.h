@@ -19,7 +19,7 @@
 #ifndef SICSLOWPAN_FRAGMENTATION_H_
 #define SICSLOWPAN_FRAGMENTATION_H_
 
-#include <net/sicslowpan/fragmentation.h>
+#include "contiki/sicslowpan/fragmentation.h"
 
 extern const struct fragmentation sicslowpan_fragmentation;
 

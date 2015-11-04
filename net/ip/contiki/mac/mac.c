@@ -32,10 +32,10 @@
 
 #include <net/l2_buf.h>
 
-#include "net/mac/mac.h"
+#include "contiki/mac/mac.h"
 
 #define DEBUG 0
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

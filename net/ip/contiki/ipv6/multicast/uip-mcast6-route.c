@@ -43,8 +43,8 @@
 #include "contiki.h"
 #include "lib/list.h"
 #include "lib/memb.h"
-#include "net/ip/uip.h"
-#include "net/ipv6/multicast/uip-mcast6-route.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ipv6/multicast/uip-mcast6-route.h"
 
 #include <stdint.h>
 #include <string.h>

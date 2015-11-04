@@ -42,7 +42,7 @@
 #include "er-coap-observe.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/
 MEMB(transactions_memb, coap_transaction_t, COAP_MAX_OPEN_TRANSACTIONS);

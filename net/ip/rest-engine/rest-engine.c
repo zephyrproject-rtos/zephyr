@@ -43,7 +43,7 @@
 #include "rest-engine.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 PROCESS(rest_engine_process, "REST Engine");
 /*---------------------------------------------------------------------------*/

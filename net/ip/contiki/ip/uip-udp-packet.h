@@ -42,7 +42,7 @@
 
 #include <net/buf.h>
 
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 
 /* Return value: 0 - packet could not be sent, the net_buf is released by API
  *               1 - packet sent, caller needs to de-allocate the buf

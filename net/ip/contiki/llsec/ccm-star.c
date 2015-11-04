@@ -44,9 +44,9 @@
 
 #include <net/l2_buf.h>
 
-#include "net/llsec/ccm-star.h"
-#include "net/llsec/llsec802154.h"
-#include "net/packetbuf.h"
+#include "contiki/llsec/ccm-star.h"
+#include "contiki/llsec/llsec802154.h"
+#include "contiki/packetbuf.h"
 #include "lib/aes-128.h"
 #include <string.h>
 

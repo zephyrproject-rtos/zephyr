@@ -41,7 +41,7 @@
 #ifndef CSMA_H_
 #define CSMA_H_
 
-#include "net/mac/mac.h"
+#include "contiki/mac/mac.h"
 #include "dev/radio.h"
 
 extern const struct mac_driver csma_driver;

@@ -21,8 +21,8 @@
 #include <net/l2_buf.h>
 #include <simple/uart.h>
 
-#include "net/packetbuf.h"
-#include "net/netstack.h"
+#include "contiki/packetbuf.h"
+#include "contiki/netstack.h"
 #include "dummy_15_4_radio.h"
 #include "net_driver_15_4.h"
 
@@ -33,7 +33,7 @@
 #else
 #define DEBUG DEBUG_NONE
 #endif
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

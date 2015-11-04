@@ -39,12 +39,12 @@
 
 #include <net/l2_buf.h>
 
-#include "net/mac/nullmac.h"
-#include "net/netstack.h"
-#include "net/ip/uip.h"
-#include "net/ip/tcpip.h"
-#include "net/packetbuf.h"
-#include "net/netstack.h"
+#include "contiki/mac/nullmac.h"
+#include "contiki/netstack.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ip/tcpip.h"
+#include "contiki/packetbuf.h"
+#include "contiki/netstack.h"
 
 /*---------------------------------------------------------------------------*/
 static uint8_t

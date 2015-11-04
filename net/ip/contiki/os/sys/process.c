@@ -84,7 +84,7 @@ static volatile unsigned char poll_requested;
 static void call_process(struct process *p, process_event_t ev, process_data_t data, struct net_buf *buf);
 
 #define DEBUG 0
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

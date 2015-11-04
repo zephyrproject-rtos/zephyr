@@ -62,10 +62,10 @@
 #include <net/buf.h>
 
 #include "contiki-conf.h"
-#include "net/ipv6/multicast/uip-mcast6-engines.h"
-#include "net/ipv6/multicast/uip-mcast6-route.h"
-#include "net/ipv6/multicast/smrf.h"
-#include "net/ipv6/multicast/roll-tm.h"
+#include "contiki/ipv6/multicast/uip-mcast6-engines.h"
+#include "contiki/ipv6/multicast/uip-mcast6-route.h"
+#include "contiki/ipv6/multicast/smrf.h"
+#include "contiki/ipv6/multicast/roll-tm.h"
 
 #include <string.h>
 /*---------------------------------------------------------------------------*/

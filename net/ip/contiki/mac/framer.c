@@ -28,9 +28,9 @@
  *
  */
 
-#include "net/mac/framer.h"
-#include "net/packetbuf.h"
-#include "net/netstack.h"
+#include "contiki/mac/framer.h"
+#include "contiki/packetbuf.h"
+#include "contiki/netstack.h"
 
 /*---------------------------------------------------------------------------*/
 int

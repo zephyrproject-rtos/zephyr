@@ -53,7 +53,7 @@
 #ifndef NULLSEC_H_
 #define NULLSEC_H_
 
-#include "net/llsec/llsec.h"
+#include "contiki/llsec/llsec.h"
 
 extern const struct llsec_driver nullsec_driver;
 

@@ -157,6 +157,3 @@ obj-$(CONFIG_ER_COAP) += er-coap/er-coap.o \
 			rest-engine/rest-engine.o
 
 obj-$(CONFIG_ER_COAP_CLIENT) += er-coap/er-coap-observe-client.o
-
-# workaround for include file location
-CREATE_INCLUDE_LINK_net := $(shell ln -s ${ZEPHYR_BASE}/net/ip/contiki ${ZEPHYR_BASE}/net/ip/contiki/net > /dev/null 2>&1)

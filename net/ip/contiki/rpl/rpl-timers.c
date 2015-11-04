@@ -42,13 +42,13 @@
  */
 
 #include "contiki-conf.h"
-#include "net/rpl/rpl-private.h"
-#include "net/ipv6/multicast/uip-mcast6.h"
+#include "contiki/rpl/rpl-private.h"
+#include "contiki/ipv6/multicast/uip-mcast6.h"
 #include "lib/random.h"
 #include "sys/ctimer.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/
 static struct ctimer periodic_timer;

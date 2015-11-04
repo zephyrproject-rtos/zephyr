@@ -115,13 +115,13 @@
 #endif /* NETSTACK_CONF_FRAGMENT */
 #endif /* NETSTACK_FRAGEMENT */
 
-#include "net/llsec/llsec.h"
-#include "net/mac/mac.h"
-#include "net/mac/rdc.h"
-#include "net/mac/framer.h"
-#include "dev/radio.h"
-#include "net/sicslowpan/compression.h"
-#include "net/sicslowpan/fragmentation.h"
+#include "contiki/llsec/llsec.h"
+#include "contiki/mac/mac.h"
+#include "contiki/mac/rdc.h"
+#include "contiki/mac/framer.h"
+#include "contiki/os/dev/radio.h"
+#include "contiki/sicslowpan/compression.h"
+#include "contiki/sicslowpan/fragmentation.h"
 
 /**
  * The structure of a network driver in Contiki.

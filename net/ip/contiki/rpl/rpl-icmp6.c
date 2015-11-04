@@ -47,20 +47,20 @@
 
 #include <net/ip_buf.h>
 
-#include "net/ip/tcpip.h"
-#include "net/ip/uip.h"
-#include "net/ipv6/uip-ds6.h"
-#include "net/ipv6/uip-nd6.h"
-#include "net/ipv6/uip-icmp6.h"
-#include "net/rpl/rpl-private.h"
-#include "net/ipv6/multicast/uip-mcast6.h"
+#include "contiki/ip/tcpip.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ipv6/uip-ds6.h"
+#include "contiki/ipv6/uip-nd6.h"
+#include "contiki/ipv6/uip-icmp6.h"
+#include "contiki/rpl/rpl-private.h"
+#include "contiki/ipv6/multicast/uip-mcast6.h"
 
 #include <limits.h>
 #include <string.h>
 
 #define DEBUG DEBUG_NONE
 
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/
 #define RPL_DIO_GROUNDED                 0x80

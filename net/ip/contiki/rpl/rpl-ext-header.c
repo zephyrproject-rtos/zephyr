@@ -46,14 +46,14 @@
 
 #include <net/ip_buf.h>
 
-#include "net/ip/uip.h"
-#include "net/ip/tcpip.h"
-#include "net/ipv6/uip-ds6.h"
-#include "net/rpl/rpl-private.h"
-#include "net/packetbuf.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ip/tcpip.h"
+#include "contiki/ipv6/uip-ds6.h"
+#include "contiki/rpl/rpl-private.h"
+#include "contiki/packetbuf.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #include <limits.h>
 #include <string.h>

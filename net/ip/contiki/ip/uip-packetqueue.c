@@ -1,10 +1,10 @@
 #include <stdio.h>
 
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 
 #include "lib/memb.h"
 
-#include "net/ip/uip-packetqueue.h"
+#include "contiki/ip/uip-packetqueue.h"
 
 #define MAX_NUM_QUEUED_PACKETS 2
 MEMB(packets_memb, struct uip_packetqueue_packet, MAX_NUM_QUEUED_PACKETS);

@@ -44,12 +44,12 @@
  */
 
 #include "contiki.h"
-#include "net/rpl/rpl-private.h"
-#include "net/ip/uip.h"
-#include "net/ipv6/uip-nd6.h"
-#include "net/ipv6/uip-ds6-nbr.h"
-#include "net/nbr-table.h"
-#include "net/ipv6/multicast/uip-mcast6.h"
+#include "contiki/rpl/rpl-private.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ipv6/uip-nd6.h"
+#include "contiki/ipv6/uip-ds6-nbr.h"
+#include "contiki/nbr-table.h"
+#include "contiki/ipv6/multicast/uip-mcast6.h"
 #include "lib/list.h"
 #include "lib/memb.h"
 #include "sys/ctimer.h"
@@ -58,7 +58,7 @@
 #include <string.h>
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/
 extern rpl_of_t RPL_OF;

@@ -19,7 +19,7 @@
 #ifndef SICSLOWPAN_COMPRESSION_H_
 #define SICSLOWPAN_COMPRESSION_H_
 
-#include <net/sicslowpan/compression.h>
+#include "contiki/sicslowpan/compression.h"
 
 extern const struct compression sicslowpan_compression;
 

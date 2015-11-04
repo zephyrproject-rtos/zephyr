@@ -47,7 +47,7 @@
 #include <net/l2_buf.h>
 
 #include "contiki-net.h"
-#include "net/packetbuf.h"
+#include "contiki/packetbuf.h"
 
 #if NETSTACK_CONF_WITH_RIME
 #include "net/rime/rime.h"
@@ -75,7 +75,7 @@ static uint8_t *packetbufptr;
 #define DEBUG 0
 #define DEBUG_LEVEL DEBUG
 //#define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

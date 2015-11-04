@@ -40,7 +40,7 @@
 #ifndef DEBUG
 #define DEBUG DEBUG_PRINT
 #endif
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #include "debug.h"
 #include "dtls.h"

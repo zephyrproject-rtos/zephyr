@@ -70,14 +70,14 @@
  * the packet back to the peer.
 */
 
-#include "net/ip/uip.h"
-#include "net/ip/uipopt.h"
-#include "net/ipv4/uip_arp.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ip/uipopt.h"
+#include "contiki/ipv4/uip_arp.h"
 
-#include "net/ipv4/uip-neighbor.h"
+#include "contiki/ipv4/uip-neighbor.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #include <string.h>
 /*---------------------------------------------------------------------------*/

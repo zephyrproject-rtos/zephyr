@@ -41,7 +41,7 @@
 #include "er-coap-observe.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/
 MEMB(observers_memb, coap_observer_t, COAP_MAX_OBSERVERS);

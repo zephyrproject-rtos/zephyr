@@ -41,7 +41,7 @@
 #ifndef UIP_DEBUG_H
 #define UIP_DEBUG_H
 
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 #include <stdio.h>
 
 void uip_debug_ipaddr_print(const uip_ipaddr_t *addr);

@@ -71,15 +71,15 @@
 #include <net/ip_buf.h>
 
 #include <string.h>
-#include "net/ipv6/uip-icmp6.h"
-#include "net/ipv6/uip-nd6.h"
-#include "net/ipv6/uip-ds6.h"
-#include "net/ip/uip-nameserver.h"
+#include "contiki/ipv6/uip-icmp6.h"
+#include "contiki/ipv6/uip-nd6.h"
+#include "contiki/ipv6/uip-ds6.h"
+#include "contiki/ip/uip-nameserver.h"
 #include "lib/random.h"
 
 /*------------------------------------------------------------------*/
 #define DEBUG 0
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

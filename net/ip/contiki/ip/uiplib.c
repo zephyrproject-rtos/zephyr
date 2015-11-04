@@ -33,12 +33,12 @@
  */
 
 
-#include "net/ip/uip.h"
-#include "net/ip/uiplib.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ip/uiplib.h"
 #include <string.h>
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /*-----------------------------------------------------------------------------------*/
 #if NETSTACK_CONF_WITH_IPV6

@@ -43,7 +43,7 @@
 
 #include "contiki-conf.h"
 #include "sys/process.h"
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 
 #if ER_COAP_WITH_DTLS
 #define WITH_DTLS 1

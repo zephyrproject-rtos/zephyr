@@ -38,15 +38,15 @@
 
 #include <net/l2_buf.h>
 
-#include "net/mac/framer-802154.h"
-#include "net/mac/frame802154.h"
-#include "net/llsec/llsec802154.h"
-#include "net/packetbuf.h"
+#include "contiki/mac/framer-802154.h"
+#include "contiki/mac/frame802154.h"
+#include "contiki/llsec/llsec802154.h"
+#include "contiki/packetbuf.h"
 #include "lib/random.h"
 #include <string.h>
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /**  \brief The 16-bit identifier of the PAN on which the device is
  *   sending to.  If this value is 0xffff, the device is not

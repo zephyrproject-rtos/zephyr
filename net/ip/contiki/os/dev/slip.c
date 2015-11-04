@@ -44,7 +44,7 @@
 
 #include "contiki.h"
 
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 
 #if !defined(CONFIG_NETWORKING_DEBUG_UART)
 #undef NET_DBG

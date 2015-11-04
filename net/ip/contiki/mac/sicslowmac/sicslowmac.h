@@ -45,7 +45,7 @@
 #ifndef SICSLOWMAC_H_
 #define SICSLOWMAC_H_
 
-#include "net/mac/rdc.h"
+#include "contiki/mac/rdc.h"
 #include "dev/radio.h"
 
 extern const struct rdc_driver sicslowmac_driver;

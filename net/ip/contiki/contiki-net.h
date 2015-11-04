@@ -36,23 +36,23 @@
 
 #include "contiki.h"
 
-#include "net/ip/uip.h"
-#include "net/ip/uiplib.h"
-#include "net/ip/uip-udp-packet.h"
-#include "net/ip/simple-udp.h"
-#include "net/ip/uip-nameserver.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ip/uiplib.h"
+#include "contiki/ip/uip-udp-packet.h"
+#include "contiki/ip/simple-udp.h"
+#include "contiki/ip/uip-nameserver.h"
 
 #if NETSTACK_CONF_WITH_IPV6
-#include "net/ipv6/uip-icmp6.h"
-#include "net/ipv6/uip-ds6.h"
+#include "contiki/ipv6/uip-icmp6.h"
+#include "contiki/ipv6/uip-ds6.h"
 #endif /* NETSTACK_CONF_WITH_IPV6 */
 
 #if UIP_TCP
 /* psock.h is only needed for TCP */
-#include "net/ip/psock.h"
+#include "contiki/ip/psock.h"
 #endif
 
-#include "net/ip/udp-socket.h"
+#include "contiki/ip/udp-socket.h"
 
 #include "contiki/packetbuf.h"
 

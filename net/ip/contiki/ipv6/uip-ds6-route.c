@@ -38,12 +38,12 @@
  * \file
  *    Routing table manipulation
  */
-#include "net/ipv6/uip-ds6.h"
-#include "net/ip/uip.h"
+#include "contiki/ipv6/uip-ds6.h"
+#include "contiki/ip/uip.h"
 
 #include "lib/list.h"
 #include "lib/memb.h"
-#include "net/nbr-table.h"
+#include "contiki/nbr-table.h"
 
 #include <string.h>
 
@@ -74,7 +74,7 @@ static int num_routes = 0;
 
 #undef DEBUG
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 static void rm_routelist_callback(nbr_table_item_t *ptr);
 /*---------------------------------------------------------------------------*/

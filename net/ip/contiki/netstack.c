@@ -37,7 +37,7 @@
  *         Adam Dunkels <adam@sics.se>
  */
 
-#include "net/netstack.h"
+#include "contiki/netstack.h"
 /*---------------------------------------------------------------------------*/
 void
 netstack_init(void)

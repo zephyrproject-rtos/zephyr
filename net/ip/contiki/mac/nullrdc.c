@@ -40,12 +40,12 @@
 
 #include <net/l2_buf.h>
 
-#include "net/mac/mac-sequence.h"
-#include "net/mac/nullrdc.h"
-#include "net/packetbuf.h"
-#include "net/queuebuf.h"
-#include "net/netstack.h"
-#include "net/llsec/anti-replay.h"
+#include "contiki/mac/mac-sequence.h"
+#include "contiki/mac/nullrdc.h"
+#include "contiki/packetbuf.h"
+#include "contiki/queuebuf.h"
+#include "contiki/netstack.h"
+#include "contiki/llsec/anti-replay.h"
 #include <string.h>
 
 #if CONTIKI_TARGET_COOJA
@@ -53,7 +53,7 @@
 #endif /* CONTIKI_TARGET_COOJA */
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #ifdef NULLRDC_CONF_ADDRESS_FILTER
 #define NULLRDC_ADDRESS_FILTER NULLRDC_CONF_ADDRESS_FILTER
@@ -100,7 +100,7 @@
 #endif /* NULLRDC_CONF_SEND_802154_ACK */
 
 #if NULLRDC_SEND_802154_ACK
-#include "net/mac/frame802154.h"
+#include "contiki/mac/frame802154.h"
 #endif /* NULLRDC_SEND_802154_ACK */
 
 #define ACK_LEN 3

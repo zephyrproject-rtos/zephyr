@@ -47,7 +47,7 @@
 #ifndef ICMP6_H_
 #define ICMP6_H_
 
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 
 
 /** \name ICMPv6 message types */

@@ -38,11 +38,11 @@
 
 #include <net/l2_buf.h>
 
-#include "net/mac/framer-802154.h"
-#include "net/mac/frame802154.h"
-#include "net/mac/handler-802154.h"
-#include "net/packetbuf.h"
-#include "net/netstack.h"
+#include "contiki/mac/framer-802154.h"
+#include "contiki/mac/frame802154.h"
+#include "contiki/mac/handler-802154.h"
+#include "contiki/packetbuf.h"
+#include "contiki/netstack.h"
 #include "lib/random.h"
 #include "sys/ctimer.h"
 #include <string.h>

@@ -40,7 +40,7 @@
 #include "er-coap-engine.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #define ADD_CHAR_IF_POSSIBLE(char) \
   if(strpos >= *offset && bufpos < preferred_size) { \

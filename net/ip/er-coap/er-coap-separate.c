@@ -43,7 +43,7 @@
 #include "er-coap-transactions.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/
 /*- Separate Response API ---------------------------------------------------*/

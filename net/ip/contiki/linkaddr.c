@@ -42,7 +42,7 @@
  * @{
  */
 
-#include "net/linkaddr.h"
+#include "contiki/linkaddr.h"
 #include <string.h>
 
 linkaddr_t linkaddr_node_addr;

@@ -47,7 +47,7 @@
 
 #include <net/ip_buf.h>
 
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 #include "sys/stimer.h"
 /**
  *  \name General

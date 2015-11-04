@@ -20,16 +20,16 @@
 #include <string.h>
 
 #include <net/l2_buf.h>
-#include <net/sicslowpan/sicslowpan_compression.h>
-#include <net/netstack.h>
-#include "net/packetbuf.h"
-#include "net/ip/uip.h"
-#include "net/ip/tcpip.h"
+#include "contiki/sicslowpan/sicslowpan_compression.h"
+#include "contiki/netstack.h"
+#include "contiki/packetbuf.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ip/tcpip.h"
 #include "dev/watchdog.h"
 #include "contiki/ipv6/uip-ds6.h"
 
 #define DEBUG 0
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 #if DEBUG
 /* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
 uint8_t p;

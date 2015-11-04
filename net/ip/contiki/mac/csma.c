@@ -39,16 +39,16 @@
 
 #include <net/l2_buf.h>
 
-#include "net/mac/csma.h"
-#include "net/packetbuf.h"
-#include "net/queuebuf.h"
+#include "contiki/mac/csma.h"
+#include "contiki/packetbuf.h"
+#include "contiki/queuebuf.h"
 
 #include "sys/ctimer.h"
 #include "sys/clock.h"
 
 #include "lib/random.h"
 
-#include "net/netstack.h"
+#include "contiki/netstack.h"
 
 #include "lib/list.h"
 #include "lib/memb.h"
@@ -66,7 +66,7 @@ void uip_log(char *msg);
 #endif
 
 #define DEBUG 0
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>

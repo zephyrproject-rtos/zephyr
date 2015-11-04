@@ -68,7 +68,7 @@
 #define TCPIP_H_
 
 #include "contiki.h"
-#include "net/ip/uipaddr.h"
+#include "contiki/ip/uipaddr.h"
 
 struct uip_conn;
 
@@ -86,7 +86,7 @@ struct tcpip_uipstate {
 typedef struct tcpip_uipstate uip_udp_appstate_t;
 typedef struct tcpip_uipstate uip_tcp_appstate_t;
 typedef struct tcpip_uipstate uip_icmp6_appstate_t;
-#include "net/ip/uip.h"
+#include "contiki/ip/uip.h"
 void tcpip_uipcall(struct net_buf *buf);
 
 /**

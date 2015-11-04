@@ -45,8 +45,8 @@
 
 #include <net/l2_buf.h>
 
-#include "net/llsec/anti-replay.h"
-#include "net/packetbuf.h"
+#include "contiki/llsec/anti-replay.h"
+#include "contiki/packetbuf.h"
 
 /* This node's current frame counter value */
 static uint32_t counter;

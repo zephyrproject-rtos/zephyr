@@ -43,14 +43,14 @@
 #include "contiki.h"
 #include "contiki-lib.h"
 #include "contiki-net.h"
-#include "net/ipv6/uip-icmp6.h"
-#include "net/ipv6/multicast/uip-mcast6.h"
-#include "net/ipv6/multicast/roll-tm.h"
+#include "contiki/ipv6/uip-icmp6.h"
+#include "contiki/ipv6/multicast/uip-mcast6.h"
+#include "contiki/ipv6/multicast/roll-tm.h"
 #include "dev/watchdog.h"
 #include <string.h>
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #define TRICKLE_VERBOSE 0
 

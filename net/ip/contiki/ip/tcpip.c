@@ -41,12 +41,12 @@
 #include <net/ip_buf.h>
 
 #include "contiki-net.h"
-#include "net/ip/uip-split.h"
-#include "net/ip/uip-packetqueue.h"
+#include "contiki/ip/uip-split.h"
+#include "contiki/ip/uip-packetqueue.h"
 
 #if NETSTACK_CONF_WITH_IPV6
-#include "net/ipv6/uip-nd6.h"
-#include "net/ipv6/uip-ds6.h"
+#include "contiki/ipv6/uip-nd6.h"
+#include "contiki/ipv6/uip-ds6.h"
 #endif
 
 #include <string.h>

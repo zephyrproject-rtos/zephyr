@@ -38,7 +38,7 @@
  * \author
  *    George Oikonomou - <oikonomou@users.sourceforge.net>
  */
-#include "net/ipv6/multicast/uip-mcast6-stats.h"
+#include "contiki/ipv6/multicast/uip-mcast6-stats.h"
 
 #include <string.h>
 /*---------------------------------------------------------------------------*/

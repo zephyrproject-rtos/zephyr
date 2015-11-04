@@ -53,7 +53,7 @@
 #ifndef QUEUEBUF_H_
 #define QUEUEBUF_H_
 
-#include "net/packetbuf.h"
+#include "contiki/packetbuf.h"
 
 /* QUEUEBUF_NUM is the total number of queuebuf */
 #ifdef QUEUEBUF_CONF_NUM

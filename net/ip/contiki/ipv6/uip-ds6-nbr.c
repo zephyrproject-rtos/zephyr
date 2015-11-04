@@ -47,12 +47,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include "lib/list.h"
-#include "net/linkaddr.h"
-#include "net/packetbuf.h"
-#include "net/ipv6/uip-ds6-nbr.h"
+#include "contiki/linkaddr.h"
+#include "contiki/packetbuf.h"
+#include "contiki/ipv6/uip-ds6-nbr.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #ifdef UIP_CONF_DS6_NEIGHBOR_STATE_CHANGED
 #define NEIGHBOR_STATE_CHANGED(n) UIP_CONF_DS6_NEIGHBOR_STATE_CHANGED(n)

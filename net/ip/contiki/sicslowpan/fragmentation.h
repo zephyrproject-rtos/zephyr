@@ -18,7 +18,7 @@
 
 #include "contiki-conf.h"
 #include <net/buf.h>
-#include <net/mac/mac.h>
+#include "contiki/mac/mac.h"
 
 #ifndef FRAGMENTATION_H_
 #define FRAGMENTATION_H_

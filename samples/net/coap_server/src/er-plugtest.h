@@ -42,7 +42,7 @@
 #ifndef DEBUG
 #define DEBUG DEBUG_NONE
 #endif
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 /* double expansion */
 #define TO_STRING2(x)  # x

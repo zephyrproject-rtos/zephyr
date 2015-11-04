@@ -41,7 +41,7 @@
 #ifndef NULLRDC_H_
 #define NULLRDC_H_
 
-#include "net/mac/rdc.h"
+#include "contiki/mac/rdc.h"
 
 extern const struct rdc_driver nullrdc_driver;
 

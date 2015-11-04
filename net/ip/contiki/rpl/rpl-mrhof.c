@@ -46,11 +46,11 @@
  * @{
  */
 
-#include "net/rpl/rpl-private.h"
-#include "net/nbr-table.h"
+#include "contiki/rpl/rpl-private.h"
+#include "contiki/nbr-table.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 static void reset(rpl_dag_t *);
 static void neighbor_link_callback(rpl_parent_t *, int, int);

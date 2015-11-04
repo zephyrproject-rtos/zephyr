@@ -73,12 +73,12 @@
 
 #include <net/ip_buf.h>
 
-#include "net/ip/uip.h"
-#include "net/ip/uipopt.h"
-#include "net/ipv6/uip-icmp6.h"
-#include "net/ipv6/uip-nd6.h"
-#include "net/ipv6/uip-ds6.h"
-#include "net/ipv6/multicast/uip-mcast6.h"
+#include "contiki/ip/uip.h"
+#include "contiki/ip/uipopt.h"
+#include "contiki/ipv6/uip-icmp6.h"
+#include "contiki/ipv6/uip-nd6.h"
+#include "contiki/ipv6/uip-ds6.h"
+#include "contiki/ipv6/multicast/uip-mcast6.h"
 
 #include <string.h>
 
@@ -87,7 +87,7 @@
 /*---------------------------------------------------------------------------*/
 
 #define DEBUG DEBUG_FULL
-#include "net/ip/uip-debug.h"
+#include "contiki/ip/uip-debug.h"
 
 #if UIP_CONF_IPV6_RPL
 #include "rpl/rpl.h"

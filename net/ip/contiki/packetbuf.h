@@ -50,8 +50,8 @@
  */
 
 #include "contiki-conf.h"
-#include "net/linkaddr.h"
-#include "net/llsec/llsec802154.h"
+#include "contiki/linkaddr.h"
+#include "contiki/llsec/llsec802154.h"
 
 #ifndef PACKETBUF_H_
 #define PACKETBUF_H_

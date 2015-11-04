@@ -45,14 +45,14 @@
 
 #include <net/buf.h>
 
-#include "net/ip/uip.h"
-#include "net/nbr-table.h"
+#include "contiki/ip/uip.h"
+#include "contiki/nbr-table.h"
 #include "sys/stimer.h"
-#include "net/ipv6/uip-ds6.h"
-#include "net/nbr-table.h"
+#include "contiki/ipv6/uip-ds6.h"
+#include "contiki/nbr-table.h"
 
 #if UIP_CONF_IPV6_QUEUE_PKT
-#include "net/ip/uip-packetqueue.h"
+#include "contiki/ip/uip-packetqueue.h"
 #endif                          /*UIP_CONF_QUEUE_PKT */
 
 #ifndef UIP_DS6_NEIGHBOR_H_
