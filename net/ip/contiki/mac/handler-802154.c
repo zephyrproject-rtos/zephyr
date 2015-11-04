@@ -48,6 +48,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#define DEBUG DEBUG_NONE
+#include "contiki/ip/uip-debug.h"
+
 #define CHANNEL_LOW  11
 #define CHANNEL_HIGH 26
 
@@ -107,7 +110,7 @@ static void
 handle_beacon(frame802154_t *frame)
 {
   radio_value_t value;
-  /* printf("Beacon received on channel: %d  PanID: %x\n", ch, frame->src_pid); */
+  PRINTF("Beacon received on channel: %d  PanID: %x\n", current_channel, frame->src_pid);
   if(answer_beacon_requests &&
      (frame->payload_len == beacon_payload_len) &&
      (memcmp(beacon_payload, frame->payload, beacon_payload_len) == 0)) {
@@ -296,13 +299,13 @@ handle_scan_timer(struct net_buf *mbuf, void *p)
       channel_list[j] = i + CHANNEL_LOW;
     }
 
-#if 0
-    printf("New netselect search: channel order: ");
+#if DEBUG
+    PRINTF("New netselect search: channel order: ");
     for(i = 0; i <= (CHANNEL_HIGH - CHANNEL_LOW); i++) {
-      printf("%d ", channel_list[i]);
+      PRINTF("%d ", channel_list[i]);
     }
-    printf("\n");
-#endif /* 0 */
+    PRINTF("\n");
+#endif
   }
   current_channel = channel_list[channel_index++];
 #endif /* DISABLE_NETSELECT_RANDOM_CHANNEL */
