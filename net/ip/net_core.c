@@ -107,6 +107,10 @@ int net_send(struct net_buf *buf)
 #include "er-coap/er-coap.h"
 #endif
 
+#if HANDLER_802154_CONF_STATS
+#include "mac/handler-802154.h"
+#endif
+
 static void stats(void)
 {
 	static clock_time_t last_print;
@@ -179,6 +183,14 @@ static void stats(void)
 			RSTAT(loop_warnings));
 		NET_DBG("RPL r-repairs  %d\n",
 			RSTAT(root_repairs));
+#endif
+
+#if HANDLER_802154_CONF_STATS
+#define IEEE802154_STAT(s) (handler_802154_stats.s)
+		NET_DBG("802.15.4 beacons recv\t%d\tsent\t%d\treqs sent\t%d\n",
+			IEEE802154_STAT(beacons_received),
+			IEEE802154_STAT(beacons_sent),
+			IEEE802154_STAT(beacons_reqs_sent));
 #endif
 		last_print = clock_time();
 	}

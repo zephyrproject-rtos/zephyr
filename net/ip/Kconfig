@@ -220,6 +220,16 @@ config	15_4_BEACON_SUPPORT
 	help
 	  Enable 802.15.4 beacon support
 
+config	15_4_BEACON_STATS
+	bool
+	prompt "Enable 802.15.4 beacon statistics"
+	depends on NETWORKING_WITH_15_4
+	depends on 15_4_BEACON_SUPPORT
+	select NETWORKING_STATISTICS
+	default n
+	help
+	  Enable 802.15.4 beacon statistics support.
+
 config NETWORKING_WITH_15_4_PAN_ID
        hex
        prompt "IEEE 802.15.4 PAN id/address"
