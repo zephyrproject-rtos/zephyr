@@ -37,6 +37,7 @@ config  ADC_TI_ADC108S102
 	bool "TI adc108s102 chip driver"
 	depends on ADC
 	select SPI
+	select NANO_TIMEOUTS
 	default n
 	help
 	Enable support for TI's ADC chip adc108s102 driver.
