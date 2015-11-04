@@ -359,6 +359,14 @@ struct gatt_included {
 	struct gatt_service service;
 } __packed;
 
+struct gatt_characteristic {
+	uint16_t characteristic_handle;
+	uint16_t value_handle;
+	uint8_t properties;
+	uint8_t uuid_length;
+	uint8_t uuid[0];
+} __packed;
+
 #define GATT_EXCHANGE_MTU		0x40
 
 #define GATT_DISC_PRIM_UUID		0x42
@@ -383,6 +391,18 @@ struct gatt_find_included_cmd {
 struct gatt_find_included_rp {
 	uint8_t services_count;
 	struct gatt_included included[0];
+} __packed;
+
+#define GATT_DISC_ALL_CHRC		0x44
+struct gatt_disc_all_chrc_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t start_handle;
+	uint16_t end_handle;
+} __packed;
+struct gatt_disc_chrc_rp {
+	uint8_t characteristics_count;
+	struct gatt_characteristic characteristics[0];
 } __packed;
 
 void tester_init(void);
