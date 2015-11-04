@@ -159,6 +159,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds[1] |= 1 << (GATT_DISC_PRIM_UUID - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_FIND_INCLUDED - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_DISC_ALL_CHRC - GATT_CLIENT_OP_OFFSET);
+	cmds[1] |= 1 << (GATT_DISC_CHRC_UUID - GATT_CLIENT_OP_OFFSET);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -953,6 +954,62 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
+static void disc_chrc_uuid_result(void *user_data)
+{
+	/* Respond with an error if the buffer was cleared. */
+	if (gatt_buf_isempty()) {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_CHRC_UUID,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	} else {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_DISC_CHRC_UUID,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+	}
+
+	discover_destroy(user_data);
+}
+
+static void disc_chrc_uuid(uint8_t *data, uint16_t len)
+{
+	const struct gatt_disc_chrc_uuid_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		goto fail_conn;
+	}
+
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
+		goto fail;
+	}
+
+	if (!gatt_buf_reserve(sizeof(struct gatt_disc_chrc_rp))) {
+		goto fail;
+	}
+
+	discover_params.uuid = &uuid;
+	discover_params.start_handle = sys_le16_to_cpu(cmd->start_handle);
+	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
+	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+	discover_params.func = disc_chrc_cb;
+	discover_params.destroy = disc_chrc_uuid_result;
+
+	if (bt_gatt_discover(conn, &discover_params) < 0) {
+		discover_destroy(&discover_params);
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	bt_conn_unref(conn);
+
+fail_conn:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_CHRC_UUID, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
@@ -992,6 +1049,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_DISC_ALL_CHRC:
 		disc_all_chrc(data, len);
+		return;
+	case GATT_DISC_CHRC_UUID:
+		disc_chrc_uuid(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,

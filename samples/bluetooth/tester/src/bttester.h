@@ -405,6 +405,16 @@ struct gatt_disc_chrc_rp {
 	struct gatt_characteristic characteristics[0];
 } __packed;
 
+#define GATT_DISC_CHRC_UUID		0x45
+struct gatt_disc_chrc_uuid_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint8_t uuid_length;
+	uint8_t uuid[0];
+} __packed;
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
