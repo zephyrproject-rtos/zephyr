@@ -367,6 +367,12 @@ struct gatt_characteristic {
 	uint8_t uuid[0];
 } __packed;
 
+struct gatt_descriptor {
+	uint16_t descriptor_handle;
+	uint8_t uuid_length;
+	uint8_t uuid[0];
+} __packed;
+
 #define GATT_EXCHANGE_MTU		0x40
 
 #define GATT_DISC_PRIM_UUID		0x42
@@ -413,6 +419,18 @@ struct gatt_disc_chrc_uuid_cmd {
 	uint16_t end_handle;
 	uint8_t uuid_length;
 	uint8_t uuid[0];
+} __packed;
+
+#define GATT_DISC_ALL_DESC		0x46
+struct gatt_disc_all_desc_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t start_handle;
+	uint16_t end_handle;
+} __packed;
+struct gatt_disc_all_desc_rp {
+	uint8_t descriptors_count;
+	struct gatt_descriptor descriptors[0];
 } __packed;
 
 void tester_init(void);

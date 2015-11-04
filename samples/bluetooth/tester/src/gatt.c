@@ -160,6 +160,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds[1] |= 1 << (GATT_FIND_INCLUDED - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_DISC_ALL_CHRC - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_DISC_CHRC_UUID - GATT_CLIENT_OP_OFFSET);
+	cmds[1] |= 1 << (GATT_DISC_ALL_DESC - GATT_CLIENT_OP_OFFSET);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -1010,6 +1011,94 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
+static void disc_all_desc_result(void *user_data)
+{
+	/* Respond with an error if the buffer was cleared. */
+	if (gatt_buf_isempty()) {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_DESC,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	} else {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_DESC,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+	}
+
+	discover_destroy(user_data);
+}
+
+static uint8_t disc_all_desc_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct gatt_disc_all_desc_rp *rp = (void *) gatt_buf.buf;
+	struct gatt_descriptor *descriptor;
+	uint8_t uuid_length;
+
+	uuid_length = attr->uuid->type == BT_UUID_16 ? sizeof(attr->uuid->u16) :
+						       sizeof(attr->uuid->u128);
+
+	descriptor = gatt_buf_reserve(sizeof(*descriptor) + uuid_length);
+	if (!descriptor) {
+		/*
+		 * Clear gatt_buf if there is no more space available to cache
+		 * another attribute. This will cause disc_all_desc_result
+		 * to respond with BTP_STATUS_FAILED.
+		 */
+		gatt_buf_clear();
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	descriptor->descriptor_handle = sys_cpu_to_le16(attr->handle);
+	descriptor->uuid_length = uuid_length;
+
+	if (attr->uuid->type == BT_UUID_16) {
+		uint16_t u16 = sys_cpu_to_le16(attr->uuid->u16);
+
+		memcpy(descriptor->uuid, &u16, uuid_length);
+	} else {
+		memcpy(descriptor->uuid, &attr->uuid->u128, uuid_length);
+	}
+
+	rp->descriptors_count++;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void disc_all_desc(uint8_t *data, uint16_t len)
+{
+	const struct gatt_disc_all_desc_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		goto fail_conn;
+	}
+
+	if (!gatt_buf_reserve(sizeof(struct gatt_disc_all_desc_rp))) {
+		goto fail;
+	}
+
+	discover_params.start_handle = sys_le16_to_cpu(cmd->start_handle);
+	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
+	discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
+	discover_params.func = disc_all_desc_cb;
+	discover_params.destroy = disc_all_desc_result;
+
+	if (bt_gatt_discover(conn, &discover_params) < 0) {
+		discover_destroy(&discover_params);
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	bt_conn_unref(conn);
+
+fail_conn:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_DESC, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
@@ -1052,6 +1141,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_DISC_CHRC_UUID:
 		disc_chrc_uuid(data, len);
+		return;
+	case GATT_DISC_ALL_DESC:
+		disc_all_desc(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,
