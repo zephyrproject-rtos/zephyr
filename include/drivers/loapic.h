@@ -55,30 +55,44 @@ extern "C" {
 #define LOAPIC_LVT_MASKED 0x00010000   /* mask */
 
 #ifdef _ASMLANGUAGE
-GTEXT(_loapic_eoi)
+loapic_eoi = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 
 .macro loapic_mkstub device isr context
 GTEXT(_\()\device\()_\()\isr\()_stub)
 
 SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
-	call    _IntEnt         /* Inform kernel interrupt has begun */
-	pushl   \context        /* Push context parameter */
-	call    \isr            /* Call actual interrupt handler */
-	popl    %eax		/* Clean-up stack from push above */
-	call    _loapic_eoi     /* Inform loapic interrupt is done */
-	jmp     _IntExit        /* Inform kernel interrupt is done */
+	call    _IntEnt          /* Inform kernel interrupt has begun */
+	pushl   \context         /* Push context parameter */
+	call    \isr             /* Call actual interrupt handler */
+	popl    %eax		 /* Clean-up stack from push above */
+	xorl	%eax, %eax
+	movl	%eax, loapic_eoi /* Inform loapic interrupt is done */
+	jmp     _IntExit         /* Inform kernel interrupt is done */
 .endm
+
 #else /* _ASMLANGUAGE */
 #include <device.h>
 
 extern int _loapic_init(struct device *unused);
-extern void _loapic_eoi(void);
 extern void _loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void loapic_int_vec_trigger(unsigned int vector);
 extern void _loapic_irq_enable(unsigned int irq);
 extern void _loapic_irq_disable(unsigned int irq);
 extern void _loapic_enable(void);
 extern void _loapic_disable(void);
+
+/**
+ *
+ * @brief  send EOI (End Of Interrupt) signal to Local APIC
+ *
+ * This routine sends an EOI signal to the Local APIC's interrupting source.
+ *
+ * @return N/A
+ */
+static inline void _loapic_eoi(void)
+{
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
+}
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

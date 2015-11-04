@@ -244,8 +244,7 @@ int _loapic_init(struct device *unused)
 			LOAPIC_LVT_MASKED;
 
 	/* discard a pending interrupt if any */
-
-	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
+	_loapic_eoi();
 	return 0;
 }
 
@@ -284,20 +283,6 @@ void _loapic_disable(void)
 		~LOAPIC_ENABLE;
 
 	irq_unlock(oldLevel); /* UNLOCK INTERRUPTS */
-}
-
-/**
- *
- * @brief  send EOI (End Of Interrupt) signal to Local APIC
- *
- * This routine sends an EOI signal to the Local APIC's interrupting source.
- *
- * @return N/A
- */
-
-void _loapic_eoi(void)
-{
-	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
 }
 
 /**
