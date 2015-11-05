@@ -44,8 +44,8 @@
 #endif
 
 /* Pool for outgoing ACL fragments */
-static struct nano_fifo frag;
-static NET_BUF_POOL(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), &frag, NULL, 0);
+static struct nano_fifo frag_buf;
+static NET_BUF_POOL(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), &frag_buf, NULL, 0);
 
 /* Pool for dummy buffers to wake up the tx fibers */
 static struct nano_fifo dummy;
@@ -323,11 +323,6 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 {
-	uint16_t len, remaining = buf->len;
-	struct bt_hci_acl_hdr *hdr;
-	struct nano_fifo frags;
-	uint8_t *ptr;
-
 	BT_DBG("conn handle %u buf len %u\n", conn->handle, buf->len);
 
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -336,42 +331,104 @@ void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 		return;
 	}
 
-	nano_fifo_init(&frags);
+	nano_fifo_put(&conn->tx_queue, buf);
+}
 
-	len = min(remaining, bt_dev.le.mtu);
+static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+{
+	struct bt_hci_acl_hdr *hdr;
+	int err;
+
+	BT_DBG("conn %p buf %p len %u flags 0x%02x\n", conn, buf, buf->len,
+	       flags);
+
+	/* Wait until the controller can accept ACL packets */
+	nano_fiber_sem_take_wait(&bt_dev.le.pkts_sem);
+
+	/* Check for disconnection while waiting for pkts_sem */
+	if (conn->state != BT_CONN_CONNECTED) {
+		nano_fiber_sem_give(&bt_dev.le.pkts_sem);
+		net_buf_unref(buf);
+		return false;
+	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle,
-							 BT_ACL_START_NO_FLUSH));
-	hdr->len = sys_cpu_to_le16(len);
+	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	buf->len -= remaining - len;
-	ptr = net_buf_tail(buf);
+	BT_DBG("passing buf %p len %u to driver\n", buf, buf->len);
+	err = bt_dev.drv->send(BT_ACL_OUT, buf);
+	if (err) {
+		BT_ERR("Unable to send to driver (err %d)\n", err);
+		nano_fiber_sem_give(&bt_dev.le.pkts_sem);
+		net_buf_unref(buf);
+	} else {
+		conn->pending_pkts++;
+	}
 
-	nano_fifo_put(&frags, buf);
-	remaining -= len;
+	return true;
+}
 
-	while (remaining) {
-		buf = bt_conn_create_pdu(&frag, 0);
+static struct net_buf *create_frag(struct bt_conn *conn)
+{
+	struct net_buf *buf;
 
-		len = min(remaining, bt_dev.le.mtu);
+	buf = bt_l2cap_create_pdu(&frag_buf);
+	if (conn->state != BT_CONN_CONNECTED) {
+		if (buf) {
+			net_buf_unref(buf);
+		}
+
+		return NULL;
+	}
+
+	return buf;
+}
+
+static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
+{
+	struct net_buf *frag;
+
+	BT_DBG("conn %p buf %p len %u\n", conn, buf, buf->len);
+
+	/* Send directly if the packet fits the ACL MTU */
+	if (buf->len <= bt_dev.le.mtu) {
+		return send_frag(conn, buf, BT_ACL_START_NO_FLUSH);
+	}
+
+	/* Create & enqueue first fragment */
+	frag = create_frag(conn);
+	if (!frag) {
+		return false;
+	}
+
+	memcpy(net_buf_add(frag, bt_dev.le.mtu), buf->data, bt_dev.le.mtu);
+	net_buf_pull(buf, bt_dev.le.mtu);
+	if (!send_frag(conn, frag, BT_ACL_START_NO_FLUSH)) {
+		return false;
+	}
+
+	/*
+	 * Send the fragments. For the last one simply use the original
+	 * buffer (which works since we've used net_buf_pull on it.
+	 */
+	while (buf->len > bt_dev.le.mtu) {
+		frag = create_frag(conn);
+		if (!frag) {
+			return false;
+		}
 
 		/* Copy from original buffer */
-		memcpy(net_buf_add(buf, len), ptr, len);
-		ptr += len;
+		memcpy(net_buf_add(frag, bt_dev.le.mtu), buf->data,
+		       bt_dev.le.mtu);
+		net_buf_pull(buf, bt_dev.le.mtu);
 
-		hdr = net_buf_push(buf, sizeof(*hdr));
-		hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle,
-								 BT_ACL_CONT));
-		hdr->len = sys_cpu_to_le16(len);
-
-		nano_fifo_put(&frags, buf);
-		remaining -= len;
+		if (!send_frag(conn, frag, BT_ACL_CONT)) {
+			return false;
+		}
 	}
 
-	while ((buf = nano_fifo_get(&frags))) {
-		nano_fifo_put(&conn->tx_queue, buf);
-	}
+	return send_frag(conn, buf, BT_ACL_CONT);
 }
 
 static void conn_tx_fiber(int arg1, int arg2)
@@ -382,34 +439,15 @@ static void conn_tx_fiber(int arg1, int arg2)
 	BT_DBG("Started for handle %u\n", conn->handle);
 
 	while (conn->state == BT_CONN_CONNECTED) {
-		int err;
-
-		/* Wait until the controller can accept ACL packets */
-		BT_DBG("calling sem_take_wait\n");
-		nano_fiber_sem_take_wait(&bt_dev.le.pkts_sem);
-
-		/* check for disconnection */
-		if (conn->state != BT_CONN_CONNECTED) {
-			nano_fiber_sem_give(&bt_dev.le.pkts_sem);
-			break;
-		}
-
 		/* Get next ACL packet for connection */
 		buf = nano_fifo_get_wait(&conn->tx_queue);
 		if (conn->state != BT_CONN_CONNECTED) {
-			nano_fiber_sem_give(&bt_dev.le.pkts_sem);
 			net_buf_unref(buf);
 			break;
 		}
 
-		BT_DBG("passing buf %p len %u to driver\n", buf, buf->len);
-		err = bt_dev.drv->send(BT_ACL_OUT, buf);
-		if (err) {
-			BT_ERR("Unable to send to driver (err %d)\n", err);
-			nano_fiber_sem_give(&bt_dev.le.pkts_sem);
+		if (!send_buf(conn, buf)) {
 			net_buf_unref(buf);
-		} else {
-			conn->pending_pkts++;
 		}
 	}
 
