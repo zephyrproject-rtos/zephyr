@@ -21,11 +21,11 @@
  *  @param argc Number of parameters passed.
  *  @param argv Array of option strings. First option is always command name.
  */
-typedef void (*cmd_function_t)(int argc, char *argv[]);
+typedef void (*shell_cmd_function_t)(int argc, char *argv[]);
 
 struct shell_cmd {
 	const char *cmd_name;
-	cmd_function_t cb;
+	shell_cmd_function_t cb;
 };
 
 /** @brief Initialize shell with optional prompt, NULL in case no prompt is
@@ -40,5 +40,5 @@ void shell_init(const char *prompt, struct shell_cmd *cmds);
  *
  *  @param handler To be called if no cmd found in cmds registered with shell_init.
  */
-void shell_register_app_cmd_handler(cmd_function_t handler);
+void shell_register_app_cmd_handler(shell_cmd_function_t handler);
 

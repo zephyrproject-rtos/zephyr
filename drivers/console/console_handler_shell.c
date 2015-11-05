@@ -46,7 +46,7 @@ static struct uart_console_input buf[MAX_CMD_QUEUED];
 static struct nano_fifo avail_queue;
 static struct nano_fifo cmds_queue;
 
-static cmd_function_t app_cmd_handler;
+static shell_cmd_function_t app_cmd_handler;
 
 static void line_queue_init(void)
 {
@@ -112,7 +112,7 @@ static void show_help(int argc, char *argv[])
 	}
 }
 
-static cmd_function_t get_cb(const char *string)
+static shell_cmd_function_t get_cb(const char *string)
 {
 	size_t len;
 	int i;
@@ -142,7 +142,7 @@ static void shell(int arg1, int arg2)
 
 	while (1) {
 		struct uart_console_input *cmd;
-		cmd_function_t cb;
+		shell_cmd_function_t cb;
 
 		printk(prompt);
 
@@ -194,7 +194,7 @@ void shell_init(const char *str, struct shell_cmd *cmds)
  *
  *  @param handler To be called if no cmd found in cmds registered with shell_init.
  */
-void shell_register_app_cmd_handler(cmd_function_t handler)
+void shell_register_app_cmd_handler(shell_cmd_function_t handler)
 {
 	app_cmd_handler = handler;
 }
