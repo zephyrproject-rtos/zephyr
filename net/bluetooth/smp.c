@@ -142,7 +142,7 @@ static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
 
 	/* if none side requires MITM use JustWorks */
-	if (!(req->auth_req & rsp->auth_req & BT_SMP_AUTH_MITM)) {
+	if (!((req->auth_req | rsp->auth_req) & BT_SMP_AUTH_MITM)) {
 		return JUST_WORKS;
 	}
 
