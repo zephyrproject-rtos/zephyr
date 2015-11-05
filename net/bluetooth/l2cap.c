@@ -52,7 +52,7 @@
 #define BT_L2CAP_MAX_LE_MPS	(CONFIG_BLUETOOTH_ACL_IN_SIZE - \
 				 sizeof(struct bt_l2cap_hdr) - \
 				 sizeof(struct bt_hci_acl_hdr) - \
-				 bt_dev.drv->recv_reserve)
+				 CONFIG_BLUETOOTH_HCI_RECV_RESERVE)
 /* For now use MPS - SDU length to disable segmentation */
 #define BT_L2CAP_MAX_LE_MTU	(BT_L2CAP_MAX_LE_MPS - 2)
 

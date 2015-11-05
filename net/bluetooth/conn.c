@@ -777,7 +777,7 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 struct net_buf *bt_conn_create_pdu(struct bt_conn *conn, size_t reserve)
 {
 	size_t head_reserve = reserve + sizeof(struct bt_hci_acl_hdr) +
-				bt_dev.drv->send_reserve;
+					CONFIG_BLUETOOTH_HCI_SEND_RESERVE;
 
 	return net_buf_get(&avail_acl_out, head_reserve);
 }

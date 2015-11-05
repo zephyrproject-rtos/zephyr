@@ -24,7 +24,7 @@
 #define BT_ATT_MAX_LE_MTU	(CONFIG_BLUETOOTH_ACL_IN_SIZE - \
 				 sizeof(struct bt_l2cap_hdr) - \
 				 sizeof(struct bt_hci_acl_hdr) - \
-				 bt_dev.drv->recv_reserve)
+				 CONFIG_BLUETOOTH_HCI_RECV_RESERVE)
 
 struct bt_att_hdr {
 	uint8_t  code;

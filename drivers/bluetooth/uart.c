@@ -37,8 +37,6 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define H4_HEADER_SIZE	1
-
 #define H4_CMD		0x01
 #define H4_ACL		0x02
 #define H4_SCO		0x03
@@ -214,7 +212,7 @@ static int bt_uart_send(enum bt_buf_type buf_type, struct net_buf *buf)
 {
 	uint8_t *h4_type;
 
-	if (net_buf_headroom(buf) < H4_HEADER_SIZE) {
+	if (net_buf_headroom(buf) < CONFIG_BLUETOOTH_HCI_SEND_RESERVE) {
 		BT_ERR("Not enough headroom in buffer\n");
 		return -EINVAL;
 	}
@@ -274,8 +272,6 @@ static int bt_uart_open(void)
 }
 
 static struct bt_driver drv = {
-	.send_reserve	= H4_HEADER_SIZE,
-	.recv_reserve	= 0,
 	.open		= bt_uart_open,
 	.send		= bt_uart_send,
 };
