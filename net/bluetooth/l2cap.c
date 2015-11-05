@@ -71,10 +71,6 @@ struct bt_l2cap {
 
 static struct bt_l2cap bt_l2cap_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
-static struct nano_fifo avail_acl_out;
-static NET_BUF_POOL(acl_out_pool, CONFIG_BLUETOOTH_ACL_OUT_COUNT,
-		    CONFIG_BLUETOOTH_ACL_OUT_SIZE, &avail_acl_out, NULL, 0);
-
 static struct bt_l2cap *l2cap_chan_get(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
@@ -205,11 +201,7 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn)
 
 struct net_buf *bt_l2cap_create_pdu(struct bt_conn *conn)
 {
-	size_t head_reserve = sizeof(struct bt_l2cap_hdr) +
-				sizeof(struct bt_hci_acl_hdr) +
-				bt_dev.drv->send_reserve;
-
-	return net_buf_get(&avail_acl_out, head_reserve);
+	return bt_conn_create_pdu(conn, sizeof(struct bt_l2cap_hdr));
 }
 
 void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
@@ -761,8 +753,6 @@ void bt_l2cap_init(void)
 		.cid	= BT_L2CAP_CID_LE_SIG,
 		.accept	= l2cap_accept,
 	};
-
-	net_buf_pool_init(acl_out_pool);
 
 	bt_l2cap_fixed_chan_register(&chan);
 }

@@ -121,6 +121,9 @@ void bt_conn_identity_resolved(struct bt_conn *conn);
 /* Notify higher layers that connection security changed */
 void bt_conn_security_changed(struct bt_conn *conn);
 
+/* Prepare a PDU to be sent over a connection */
+struct net_buf *bt_conn_create_pdu(struct bt_conn *conn, size_t reserve);
+
 /* Initialize connection management */
 int bt_conn_init(void);
 

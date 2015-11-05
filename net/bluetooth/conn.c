@@ -43,6 +43,11 @@
 #define BT_DBG(fmt, ...)
 #endif
 
+/* Pool for outgoing ACL buffers */
+static struct nano_fifo avail_acl_out;
+static NET_BUF_POOL(acl_out_pool, CONFIG_BLUETOOTH_ACL_OUT_COUNT,
+		    CONFIG_BLUETOOTH_ACL_OUT_SIZE, &avail_acl_out, NULL, 0);
+
 /* How long until we cancel HCI_LE_Create_Connection */
 #define CONN_TIMEOUT	(3 * sys_clock_ticks_per_sec)
 
@@ -343,7 +348,7 @@ void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 	remaining -= len;
 
 	while (remaining) {
-		buf = bt_l2cap_create_pdu(conn);
+		buf = bt_conn_create_pdu(conn, 0);
 
 		len = min(remaining, bt_dev.le.mtu);
 
@@ -520,7 +525,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			notify_disconnected(conn);
 
 			nano_fifo_put(&conn->tx_queue,
-				      bt_l2cap_create_pdu(conn));
+				      bt_conn_create_pdu(conn, 0));
 		}
 
 		/* Release the reference we took for the very first
@@ -769,9 +774,19 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 	return conn->keys ? conn->keys->enc_size : 0;
 }
 
+struct net_buf *bt_conn_create_pdu(struct bt_conn *conn, size_t reserve)
+{
+	size_t head_reserve = reserve + sizeof(struct bt_hci_acl_hdr) +
+				bt_dev.drv->send_reserve;
+
+	return net_buf_get(&avail_acl_out, head_reserve);
+}
+
 int bt_conn_init(void)
 {
 	int err;
+
+	net_buf_pool_init(acl_out_pool);
 
 	bt_att_init();
 
