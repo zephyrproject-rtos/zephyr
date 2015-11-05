@@ -74,7 +74,7 @@ static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 static inline void dw_set_gpio_bothedges(struct device *port,
 			uint32_t pin, int flags)
 {
-	struct gpio_config_dw *config = port->config->config_info;
+	struct gpio_dw_config *config = port->config->config_info;
 	uint32_t base_addr = config->base_addr;
 	uint8_t flag_is_set = (flags & GPIO_INT_DOUBLE_EDGE);
 
