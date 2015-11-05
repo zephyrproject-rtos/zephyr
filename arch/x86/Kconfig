@@ -90,16 +90,6 @@ config ADVANCED_IDLE_SUPPORTED
 	This option signifies that the target supports the ADVANCED_IDLE
 	configuration option.
 
-config LOCK_INSTRUCTION_UNSUPPORTED
-	bool "Lock Instruction Unsupported"
-	default n
-	help
-	This option signifies that the target lacks support for the IA-32
-	LOCK prefix instruction. Code running on such targets cannot
-	use the LOCK prefix to perform read-modify-write operations in an
-	atomic manner; such targets must utilize other techniques to perform
-	atomic operations (such as locking interrupts).
-
 config NUM_DYNAMIC_STUBS
 	int "Number of dynamic int stubs"
 	default 0

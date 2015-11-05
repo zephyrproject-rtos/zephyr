@@ -116,18 +116,7 @@ SECTION_FUNC(TEXT, _IntEnt)
 	 * this saves eax on the stack without losing knowledge
 	 * of how to get back to the interrupt stub
 	 */
-
-#ifdef CONFIG_LOCK_INSTRUCTION_UNSUPPORTED
-
-	pushl	(%esp)
-	movl	%eax, 4(%esp)
-	popl	%eax
-
-#else
-
 	xchgl	%eax, (%esp)
-
-#endif /* CONFIG_LOCK_INSTRUCTION_UNSUPPORTED*/
 
 	/*
 	 * The remaining volatile registers are pushed onto the current

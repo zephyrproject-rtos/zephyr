@@ -31,8 +31,6 @@ as there is no requirement for this capability.
 
 /* includes */
 
-#if !defined(CONFIG_LOCK_INSTRUCTION_UNSUPPORTED)
-
 #define _ASMLANGUAGE
 
 #include <arch/x86/asm.h>
@@ -480,6 +478,3 @@ BRANCH_LABEL(atomic_nand_retry)
 				  /*   {ZF = 0 ;  %eax = (%edx);} */
 	jnz atomic_nand_retry
 	ret
-
-#endif /* !CONFIG_LOCK_INSTRUCTION_UNSUPPORTED */
-
