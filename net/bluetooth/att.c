@@ -80,6 +80,11 @@ struct bt_att {
 
 static struct bt_att bt_att_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
+/* Pool for outgoing ATT packets, default MTU is 23 */
+static struct nano_fifo att_buf;
+static NET_BUF_POOL(att_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(23), &att_buf, NULL, 0);
+
 static const struct bt_uuid primary_uuid = {
 	.type = BT_UUID_16,
 	.u16 = BT_UUID_GATT_PRIMARY,
@@ -1544,7 +1549,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 		return NULL;
 	}
 
-	buf = bt_l2cap_create_pdu(conn);
+	buf = bt_l2cap_create_pdu(&att_buf);
 	if (!buf) {
 		return NULL;
 	}
@@ -1640,6 +1645,8 @@ void bt_att_init(void)
 		.cid		= BT_L2CAP_CID_ATT,
 		.accept		= bt_att_accept,
 	};
+
+	net_buf_pool_init(att_pool);
 
 	bt_l2cap_fixed_chan_register(&chan);
 

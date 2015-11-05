@@ -126,6 +126,11 @@ static const uint8_t gen_method[5 /* remote */][5 /* local */] = {
 	  PASSKEY_ROLE },
 };
 
+/* Pool for outgoing LE signaling packets, MTU is 65 */
+static struct nano_fifo smp_buf;
+static NET_BUF_POOL(smp_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(65), &smp_buf, NULL, 0);
+
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 static const struct bt_auth_cb *auth_cb;
 static uint8_t bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
@@ -476,7 +481,7 @@ struct net_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	struct bt_smp_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(conn);
+	buf = bt_l2cap_create_pdu(&smp_buf);
 	if (!buf) {
 		return NULL;
 	}
@@ -2166,6 +2171,8 @@ int bt_smp_init(void)
 		.cid		= BT_L2CAP_CID_SMP,
 		.accept		= bt_smp_accept,
 	};
+
+	net_buf_pool_init(smp_pool);
 
 	bt_l2cap_fixed_chan_register(&chan);
 

@@ -61,6 +61,11 @@ static struct bt_l2cap_fixed_chan *channels;
 static struct bt_l2cap_server *servers;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
+/* Pool for outgoing LE signaling packets, MTU is 23 */
+static struct nano_fifo le_sig;
+static NET_BUF_POOL(le_pool, CONFIG_BLUETOOTH_MAX_CONN, BT_L2CAP_BUF_SIZE(23),
+		    &le_sig, NULL, 0);
+
 /* L2CAP signalling channel specific context */
 struct bt_l2cap {
 	/* The channel this context is associated with */
@@ -199,9 +204,9 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn)
 	}
 }
 
-struct net_buf *bt_l2cap_create_pdu(struct bt_conn *conn)
+struct net_buf *bt_l2cap_create_pdu(struct nano_fifo *fifo)
 {
-	return bt_conn_create_pdu(conn, sizeof(struct bt_l2cap_hdr));
+	return bt_conn_create_pdu(fifo, sizeof(struct bt_l2cap_hdr));
 }
 
 void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
@@ -222,7 +227,7 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 	struct bt_l2cap_sig_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(conn);
+	buf = bt_l2cap_create_pdu(&le_sig);
 	if (!buf) {
 		return;
 	}
@@ -279,7 +284,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	BT_DBG("min 0x%4.4x max 0x%4.4x latency: 0x%4.4x timeout: 0x%4.4x",
 	       min, max, latency, timeout);
 
-	buf = bt_l2cap_create_pdu(l2cap->chan.conn);
+	buf = bt_l2cap_create_pdu(&le_sig);
 	if (!buf) {
 		return;
 	}
@@ -370,7 +375,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	buf = bt_l2cap_create_pdu(conn);
+	buf = bt_l2cap_create_pdu(&le_sig);
 	if (!buf) {
 		return;
 	}
@@ -490,7 +495,7 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	buf = bt_l2cap_create_pdu(conn);
+	buf = bt_l2cap_create_pdu(&le_sig);
 	if (!buf) {
 		return;
 	}
@@ -583,7 +588,7 @@ static void l2cap_chan_update_credits(struct bt_l2cap_chan *chan)
 	credits = L2CAP_LE_MAX_CREDITS - chan->rx.credits;
 	chan->rx.credits = L2CAP_LE_MAX_CREDITS;
 
-	buf = bt_l2cap_create_pdu(chan->conn);
+	buf = bt_l2cap_create_pdu(&le_sig);
 	if (!buf) {
 		BT_ERR("Unable to send credits\n");
 		return;
@@ -686,7 +691,7 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn)
 	struct bt_l2cap_conn_param_req *req;
 	struct net_buf *buf;
 
-	buf = bt_l2cap_create_pdu(conn);
+	buf = bt_l2cap_create_pdu(&le_sig);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -753,6 +758,8 @@ void bt_l2cap_init(void)
 		.cid	= BT_L2CAP_CID_LE_SIG,
 		.accept	= l2cap_accept,
 	};
+
+	net_buf_pool_init(le_pool);
 
 	bt_l2cap_fixed_chan_register(&chan);
 }
