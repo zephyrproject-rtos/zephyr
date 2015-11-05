@@ -355,12 +355,14 @@ union k_args_args {
 };
 
 /*
- * The size of the k_args structure must be equivalent to ...
- *     CMD_PKT_SIZE_IN_WORDS * sizeof(uint32_t)
- * To this end the entire structure is packed.  This ensures that the compiler
- * aligns 'args' to a 4-byte boundary.  If left unpacked, then some compilers
- * may provide an extra 4 bytes of padding to align it to an 8-byte boundary,
- * thereby violating the previously stated equivalence.
+ * A command packet must be aligned on a 4-byte boundary, since this is what
+ * the microkernel server's command stack processing requires.
+ *
+ * The command packet's size must = CMD_PKT_SIZE_IN_WORDS * sizeof(uint32_t).
+ * Consequently, the structure is packed to prevent some compilers from
+ * introducing unwanted padding between fields; however, this then requires
+ * that some fields be explicitly 4-byte aligned to ensure the overall
+ * size of the structure is correct.
  */
 struct k_args {
 	struct k_args *next;
@@ -382,7 +384,7 @@ struct k_args {
 		int rcode;
 	} Time;
 	K_ARGS_ARGS args;
-} __packed;
+} __aligned(4) __packed;
 
 /* ---------------------------------------------------------------------- */
 /* KERNEL OBJECT STRUCTURES */

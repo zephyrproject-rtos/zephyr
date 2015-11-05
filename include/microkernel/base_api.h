@@ -21,6 +21,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,6 +131,10 @@ struct _k_mutex_struct {
 #endif
 };
 
+/*
+ * Semaphore structure. Must be aligned on a 4-byte boundary, since this is what
+ * the microkernel server's command stack processing requires.
+ */
 struct _k_sem_struct {
 	struct k_args *waiters;
 	int level;
@@ -137,7 +142,7 @@ struct _k_sem_struct {
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 	struct _k_sem_struct *next;
 #endif
-};
+} __aligned(4);
 
 struct _k_fifo_struct {
 	int Nelms;
@@ -235,12 +240,16 @@ struct _k_mem_map_struct {
 #endif
 };
 
+/*
+ * Event structure. Must be aligned on a 4-byte boundary, since this is what
+ * the microkernel server's command stack processing requires.
+ */
 struct _k_event_struct {
 	int status;
 	kevent_handler_t func;
 	struct k_args *waiter;
 	int count;
-};
+} __aligned(4);
 
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 struct _k_mbox_struct *_track_list_micro_mbox;
