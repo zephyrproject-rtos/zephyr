@@ -103,7 +103,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 	       "discarding packet\n", input_offset);
 	printed = true;
       }
-      input_offset++;
+      goto fail;
     } else {
       printed = false;
       input[input_offset++] = buf[0];
@@ -129,6 +129,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
        }
      }
 
+  fail:
      input_len = input_offset = input_type = 0;
      memset(input, 0, sizeof(input));
   }
