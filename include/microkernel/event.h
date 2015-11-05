@@ -33,7 +33,7 @@ extern "C" {
  * @{
  */
 
-#include <microkernel/command_packet.h>
+#include <microkernel/base_api.h>
 
 /* well-known events */
 extern const kevent_t TICK_EVENT;

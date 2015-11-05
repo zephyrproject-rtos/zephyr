@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-#include <microkernel/command_packet.h>
+#include <microkernel/base_api.h>
 
 /**
  *
