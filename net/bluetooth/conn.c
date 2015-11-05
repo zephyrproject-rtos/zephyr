@@ -332,6 +332,7 @@ void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("not connected!\n");
+		net_buf_unref(buf);
 		return;
 	}
 
