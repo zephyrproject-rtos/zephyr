@@ -90,14 +90,6 @@ config ADVANCED_IDLE_SUPPORTED
 	This option signifies that the target supports the ADVANCED_IDLE
 	configuration option.
 
-config UNALIGNED_WRITE_UNSUPPORTED
-	bool "Unaligned Write Unsupported"
-	default n
-	help
-	This option signifies that the target may not properly decode the
-	IA-32 processor's byte enable (BE) lines, resulting in the inability
-	to read/write unaligned quantities.
-
 config LOCK_INSTRUCTION_UNSUPPORTED
 	bool "Lock Instruction Unsupported"
 	default n

@@ -40,24 +40,6 @@
 	__attribute__((section(#segment ",\"wa\",@nobits#")))
 #endif
 
-/*
- * Unaligned reads and writes
- *
- * To prevent GCC from generating a "breaking strict-aliasing rule" warning,
- * use the __may_alias__ attribute to inform it that the pointer may alias
- * another type.
- */
-
-#ifdef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
-#define UNALIGNED_READ(p)    _Unaligned32Read((p))
-
-#define UNALIGNED_WRITE(p, v)						\
-	do  {								\
-		unsigned int __attribute__((__may_alias__)) *pp = (unsigned int *)(p); \
-		_Unaligned32Write(pp, (v));				\
-	}								\
-	while (0)
-#else  /* !CONFIG_UNALIGNED_WRITE_UNSUPPORTED */
 #define UNALIGNED_READ(p) (*(p))
 
 #define UNALIGNED_WRITE(p, v)						\
@@ -66,7 +48,6 @@
 		*pp = (v);						\
 	}								\
 	while (0)
-#endif /* !CONFIG_UNALIGNED_WRITE_UNSUPPORTED */
 
 /* Unaligned access */
 #define UNALIGNED_GET(p)						\

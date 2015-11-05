@@ -110,8 +110,3 @@
 
 #define __stack __aligned(STACK_ALIGN)
 
-#ifdef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
-extern void     _Unaligned32Write(unsigned int *ptr, unsigned int val);
-extern unsigned _Unaligned32Read(unsigned int *ptr);
-#endif /* CONFIG_UNALIGNED_WRITE_UNSUPPORTED */
-

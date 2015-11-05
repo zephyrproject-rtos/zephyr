@@ -16,6 +16,5 @@ obj-y += cache_s.o cache.o
 obj-y += intconnect.o intstub.o
 
 obj-$(CONFIG_FP_SHARING) += float.o
-obj-$(CONFIG_UNALIGNED_WRITE_UNSUPPORTED) += unaligned.o
 obj-$(CONFIG_MICROKERNEL) += strtask.o
 
