@@ -6,15 +6,7 @@ cflags-y += $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-secti
 ifeq ($(PERF_OPT),y)
 cflags-y += -DPERF_OPT
 else
-PREFERRED_STACK_BOUNDARY = y
-endif
-
-ifeq ($(COMPILER),gcc)
-cflags-$(PREFERRED_STACK_BOUNDARY) += $(call cc-option,-mpreferred-stack-boundary=2)
-else
-biarch := $(call cc-option,-m32)
-KBUILD_AFLAGS += $(biarch)
-KBUILD_CFLAGS += $(biarch)
+cflags-y += $(call cc-option,-mpreferred-stack-boundary=2)
 endif
 cflags-$(CONFIG_LTO) += $(call cc-option,-flto,)
 
