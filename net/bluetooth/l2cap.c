@@ -615,6 +615,32 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		l2cap_chan_del(chan);
 	}
 }
+
+static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
+			   struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.conn;
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_disconn_rsp *rsp = (void *)buf->data;
+	uint16_t dcid, scid;
+
+	if (buf->len < sizeof(*rsp)) {
+		BT_ERR("Too small LE disconn rsp packet size\n");
+		return;
+	}
+
+	dcid = sys_le16_to_cpu(rsp->dcid);
+	scid = sys_le16_to_cpu(rsp->scid);
+
+	BT_DBG("dcid 0x%04x scid 0x%04x\n", dcid, scid);
+
+	chan = l2cap_remove_tx_cid(conn, scid);
+	if (!chan) {
+		return;
+	}
+
+	l2cap_chan_del(chan);
+}
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -662,6 +688,9 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	case BT_L2CAP_DISCONN_REQ:
 		le_disconn_req(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_DISCONN_RSP:
+		le_disconn_rsp(l2cap, hdr->ident, buf);
 		break;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 	default:
@@ -955,5 +984,39 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 	/* TODO: Check conn/address type when BR/EDR is introduced */
 	return l2cap_le_connect(conn, chan, psm);
+}
+
+int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
+{
+	struct bt_conn *conn = chan->conn;
+	struct net_buf *buf;
+	struct bt_l2cap_disconn_req *req;
+	struct bt_l2cap_sig_hdr *hdr;
+
+	BT_DBG("chan %p scid 0x%04x dcid 0x%04x\n", chan, chan->rx.cid,
+	       chan->tx.cid);
+
+	if (!conn) {
+		return -ENOTCONN;
+	}
+
+	buf = bt_l2cap_create_pdu(&le_sig);
+	if (!buf) {
+		BT_ERR("Unable to send L2CP disconnect request\n");
+		return -ENOMEM;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_DISCONN_REQ;
+	hdr->ident = get_ident(conn);
+	hdr->len = sys_cpu_to_le16(sizeof(*req));
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->dcid = sys_cpu_to_le16(chan->tx.cid);
+	req->scid = sys_cpu_to_le16(chan->rx.cid);
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+
+	return 0;
 }
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */

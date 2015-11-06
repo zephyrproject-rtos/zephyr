@@ -118,6 +118,17 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server);
 int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			  uint16_t psm);
 
+/** @brief Disconnect L2CAP channel
+ *
+ *  Disconnect L2CAP channel, if the connection is pending it will be
+ *  canceled.
+ *
+ *  @param chan Channel object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
+
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
 #endif /* __BT_L2CAP_H */
