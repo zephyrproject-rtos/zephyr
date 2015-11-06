@@ -87,8 +87,8 @@ static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		      sizeof(struct bt_hci_evt_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_EVT_LEN)
 static struct nano_fifo avail_hci_evt;
-static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
-		    CONFIG_BLUETOOTH_MAX_EVT_LEN, &avail_hci_evt, NULL, 0);
+static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT, EVT_BUF_SIZE,
+		    &avail_hci_evt, NULL, 0);
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 static void report_completed_packet(struct net_buf *buf)
