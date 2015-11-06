@@ -1118,6 +1118,16 @@ static void cmd_l2cap_connect(int argc, char *argv[])
 	}
 }
 
+static void cmd_l2cap_disconnect(int argc, char *argv[])
+{
+	int err;
+
+	err = bt_l2cap_chan_disconnect(&l2cap_chan);
+	if (err) {
+		printk("Unable to disconnect: %u\n", -err);
+	}
+}
+
 struct shell_cmd commands[] = {
 	{ "init", cmd_init },
 	{ "connect", cmd_connect_le },
@@ -1143,6 +1153,7 @@ struct shell_cmd commands[] = {
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe },
 	{ "l2cap-register", cmd_l2cap_register },
 	{ "l2cap-connect", cmd_l2cap_connect },
+	{ "l2cap-disconnect", cmd_l2cap_disconnect },
 	{ NULL, NULL }
 };
 
