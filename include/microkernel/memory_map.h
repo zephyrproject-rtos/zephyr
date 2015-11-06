@@ -20,7 +20,7 @@
 
 /**
  * @brief Microkernel Memory Maps
- * @defgroup microkernel_memorymap Microkernel Memomry Maps
+ * @defgroup microkernel_memorymap Microkernel Memory Maps
  * @ingroup microkernel_services
  * @{
  */
