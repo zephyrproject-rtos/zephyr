@@ -745,6 +745,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (!chan->rx.credits) {
 		BT_ERR("No credits to receive packet\n");
+		bt_l2cap_chan_disconnect(chan);
 		return;
 	}
 
@@ -759,6 +760,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (sdu_len > chan->rx.mtu) {
 		BT_ERR("Invalid SDU length\n");
+		bt_l2cap_chan_disconnect(chan);
 		return;
 	}
 
