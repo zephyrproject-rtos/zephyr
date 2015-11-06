@@ -39,22 +39,6 @@ config BLUETOOTH_CENTRAL
 	default n
 	select BLUETOOTH_CONN
 
-config	BLUETOOTH_DEBUG
-	bool "Bluetooth LE debug support"
-	select STDOUT_CONSOLE
-	default n
-	help
-	  This option enables Bluetooth debug going to standard
-	  serial console.
-
-config	BLUETOOTH_DEBUG_HCI_CORE
-	bool "Bluetooth HCI core debug"
-	depends on BLUETOOTH_DEBUG
-	default n
-	help
-	  This option enables debug support for Bluetooth HCI
-	  core.
-
 config  BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
 	default 2
@@ -152,9 +136,27 @@ config	BLUETOOTH_MAX_PAIRED
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
 
+endif # BLUETOOTH_CONN
+
+config	BLUETOOTH_DEBUG
+	bool "Bluetooth LE debug support"
+	select STDOUT_CONSOLE
+	default n
+	help
+	  This option enables Bluetooth debug going to standard
+	  serial console.
+
 if BLUETOOTH_DEBUG
+config	BLUETOOTH_DEBUG_HCI_CORE
+	bool "Bluetooth HCI core debug"
+	default n
+	help
+	  This option enables debug support for Bluetooth HCI
+	  core.
+
 config	BLUETOOTH_DEBUG_CONN
 	bool "Bluetooth connection debug"
+	depends on BLUETOOTH_CONN
 	default n
 	help
 	  This option enables debug support for Bluetooth
@@ -170,6 +172,7 @@ config	BLUETOOTH_DEBUG_KEYS
 
 config	BLUETOOTH_DEBUG_L2CAP
 	bool "Bluetooth L2CAP debug"
+	depends on BLUETOOTH_CONN
 	default n
 	help
 	  This option enables debug support for the Bluetooth
@@ -193,6 +196,7 @@ config	BLUETOOTH_SMP_SELFTEST
 
 config	BLUETOOTH_DEBUG_ATT
 	bool "Bluetooth Attribute Protocol (ATT) debug"
+	depends on BLUETOOTH_CONN
 	default n
 	help
 	  This option enables debug support for the Bluetooth
@@ -200,10 +204,11 @@ config	BLUETOOTH_DEBUG_ATT
 
 config	BLUETOOTH_DEBUG_GATT
 	bool "Bluetooth Generic Attribute Profile (GATT) debug"
+	depends on BLUETOOTH_CONN
 	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
 endif # BLUETOOTH_DEBUG
-endif # BLUETOOTH_CONN
+
 endif # BLUETOOTH
