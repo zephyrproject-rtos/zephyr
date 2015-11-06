@@ -63,11 +63,15 @@ config	BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
 	default n
 	select BLUETOOTH_CONN
+	help
+	  Select this for LE Peripheral role support.
 
 config BLUETOOTH_CENTRAL
 	bool "Central Role support"
 	default n
 	select BLUETOOTH_CONN
+	help
+	  Select this for LE Central role support.
 
 config BLUETOOTH_CONN
 	bool
@@ -103,10 +107,16 @@ config  BLUETOOTH_ATT_MTU
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
 	default n
+	help
+	  This option enables support for the Security Manager Protocol
+	  (SMP), making it possible to pair devices over LE.
 
 config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	bool "L2CAP Dynamic Channel support"
 	default n
+	help
+	  This option enables support for LE Connection oriented Channels,
+	  allowing the creation of dynamic L2CAP Channels.
 
 config BLUETOOTH_SIGNING
 	bool "Data signing support"
@@ -119,6 +129,8 @@ config BLUETOOTH_SIGNING
 config BLUETOOTH_GATT_CLIENT
 	bool "GATT client support"
 	default n
+	help
+	  This option enables support for the GATT Client role.
 
 config	BLUETOOTH_MAX_CONN
 	int "Maximum number of simultaneous connections"
@@ -209,6 +221,7 @@ config	BLUETOOTH_DEBUG_GATT
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
+
 endif # BLUETOOTH_DEBUG
 
 endif # BLUETOOTH
