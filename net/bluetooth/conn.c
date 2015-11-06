@@ -377,7 +377,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
 
-	frag = bt_l2cap_create_pdu(&frag_buf);
+	frag = bt_conn_create_pdu(&frag_buf, 0);
 	if (conn->state != BT_CONN_CONNECTED) {
 		if (frag) {
 			net_buf_unref(frag);
