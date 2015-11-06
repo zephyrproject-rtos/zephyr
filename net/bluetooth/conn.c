@@ -373,20 +373,23 @@ fail:
 	return false;
 }
 
-static struct net_buf *create_frag(struct bt_conn *conn)
+static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 {
-	struct net_buf *buf;
+	struct net_buf *frag;
 
-	buf = bt_l2cap_create_pdu(&frag_buf);
+	frag = bt_l2cap_create_pdu(&frag_buf);
 	if (conn->state != BT_CONN_CONNECTED) {
-		if (buf) {
-			net_buf_unref(buf);
+		if (frag) {
+			net_buf_unref(frag);
 		}
 
 		return NULL;
 	}
 
-	return buf;
+	memcpy(net_buf_add(frag, bt_dev.le.mtu), buf->data, bt_dev.le.mtu);
+	net_buf_pull(buf, bt_dev.le.mtu);
+
+	return frag;
 }
 
 static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
@@ -401,13 +404,11 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 	}
 
 	/* Create & enqueue first fragment */
-	frag = create_frag(conn);
+	frag = create_frag(conn, buf);
 	if (!frag) {
 		return false;
 	}
 
-	memcpy(net_buf_add(frag, bt_dev.le.mtu), buf->data, bt_dev.le.mtu);
-	net_buf_pull(buf, bt_dev.le.mtu);
 	if (!send_frag(conn, frag, BT_ACL_START_NO_FLUSH, true)) {
 		return false;
 	}
@@ -417,15 +418,10 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 	 * buffer (which works since we've used net_buf_pull on it.
 	 */
 	while (buf->len > bt_dev.le.mtu) {
-		frag = create_frag(conn);
+		frag = create_frag(conn, buf);
 		if (!frag) {
 			return false;
 		}
-
-		/* Copy from original buffer */
-		memcpy(net_buf_add(frag, bt_dev.le.mtu), buf->data,
-		       bt_dev.le.mtu);
-		net_buf_pull(buf, bt_dev.le.mtu);
 
 		if (!send_frag(conn, frag, BT_ACL_CONT, true)) {
 			return false;
