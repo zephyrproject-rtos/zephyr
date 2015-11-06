@@ -108,6 +108,8 @@ config  BLUETOOTH_L2CAP_IN_MTU
 
 config  BLUETOOTH_ATT_MTU
 	int "Attribute Protocol (ATT) channel MTU"
+	default 50 if BLUETOOTH_SMP # BLUETOOTH_L2CAP_IN_MTU is big enough
+				    # for two complete ACL packets
 	default 23
 	range 23 BLUETOOTH_L2CAP_IN_MTU
 	help
