@@ -556,3 +556,20 @@ Commands and responses:
 		This command is used to clear the server from attributes.
 
 		In case of an error, the error response will be returned.
+
+	Opcode 0x09 - Set Required Encryption Key Size
+
+		Controller Index:	<controller id>
+		Command parameters:	Attribute_ID (2 octets)
+					Encryption_Key_Size (1 octet)
+		Response parameters:	<none>
+
+		This command is used to set required Encryption Key Size of an
+		attribute. It shall be used only if encryption or authentication
+		is needed to have access to this attribute. Otherwise an error
+		shall be returned.
+
+		Possible values for Encryption_Key_Size parameter are:
+								<0x07, 0x0f>
+
+		In case of an error, the error response will be returned.
