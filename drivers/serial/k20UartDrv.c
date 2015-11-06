@@ -184,7 +184,7 @@ static int k20_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 	uint8_t num_rx = 0;
 
-	while ((size - num_rx > 0) && (uart->s1.field.rx_data_full == 0)) {
+	while ((size - num_rx > 0) && (uart->s1.field.rx_data_full != 0)) {
 		rx_data[num_rx++] = uart->d;
 	}
 
