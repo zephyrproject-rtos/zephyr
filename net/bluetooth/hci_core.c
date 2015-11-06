@@ -116,8 +116,9 @@ static void report_completed_packet(struct net_buf *buf)
 
 static struct nano_fifo avail_acl_in;
 static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
-		    CONFIG_BLUETOOTH_ACL_IN_SIZE, &avail_acl_in,
-		    report_completed_packet, sizeof(struct acl_data));
+		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_L2CAP_IN_MTU),
+		    &avail_acl_in, report_completed_packet,
+		    sizeof(struct acl_data));
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 /* Incoming buffer type lookup helper */
@@ -736,9 +737,8 @@ static int set_flow_control(void)
 
 	hbs = net_buf_add(buf, sizeof(*hbs));
 	memset(hbs, 0, sizeof(*hbs));
-	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BLUETOOTH_ACL_IN_SIZE -
-				       sizeof(struct bt_hci_acl_hdr) -
-				       CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BLUETOOTH_L2CAP_IN_MTU +
+				       sizeof(struct bt_l2cap_hdr));
 	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BLUETOOTH_ACL_IN_COUNT);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);

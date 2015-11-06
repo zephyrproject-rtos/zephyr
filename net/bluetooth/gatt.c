@@ -613,7 +613,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 		return -ENOMEM;
 	}
 
-	mtu = BT_ATT_MAX_LE_MTU;
+	mtu = CONFIG_BLUETOOTH_ATT_MTU;
 
 	BT_DBG("Client MTU %u\n", mtu);
 

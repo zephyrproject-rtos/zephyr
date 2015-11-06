@@ -49,10 +49,7 @@
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
-#define BT_L2CAP_MAX_LE_MPS	(CONFIG_BLUETOOTH_ACL_IN_SIZE - \
-				 sizeof(struct bt_l2cap_hdr) - \
-				 sizeof(struct bt_hci_acl_hdr) - \
-				 CONFIG_BLUETOOTH_HCI_RECV_RESERVE)
+#define BT_L2CAP_MAX_LE_MPS	CONFIG_BLUETOOTH_L2CAP_IN_MTU
 /* For now use MPS - SDU length to disable segmentation */
 #define BT_L2CAP_MAX_LE_MTU	(BT_L2CAP_MAX_LE_MPS - 2)
 

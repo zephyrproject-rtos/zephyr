@@ -83,7 +83,8 @@ static struct bt_att bt_att_pool[CONFIG_BLUETOOTH_MAX_CONN];
 /* Pool for outgoing ATT packets, default MTU is 23 */
 static struct nano_fifo att_buf;
 static NET_BUF_POOL(att_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(23), &att_buf, NULL, 0);
+		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
+		    &att_buf, NULL, 0);
 
 static const struct bt_uuid primary_uuid = {
 	.type = BT_UUID_16,
@@ -156,7 +157,7 @@ static uint8_t att_mtu_req(struct bt_att *att, struct net_buf *buf)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	mtu_server = BT_ATT_MAX_LE_MTU;
+	mtu_server = CONFIG_BLUETOOTH_ATT_MTU;
 
 	BT_DBG("Server MTU %u\n", mtu_server);
 
@@ -217,7 +218,7 @@ static uint8_t att_mtu_rsp(struct bt_att *att, struct net_buf *buf)
 		return att_handle_rsp(att, NULL, 0, BT_ATT_ERR_INVALID_PDU);
 	}
 
-	att->chan.rx.mtu = min(mtu, BT_ATT_MAX_LE_MTU);
+	att->chan.rx.mtu = min(mtu, CONFIG_BLUETOOTH_ATT_MTU);
 
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 484:
 	 *

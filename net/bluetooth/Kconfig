@@ -94,14 +94,22 @@ config  BLUETOOTH_ACL_IN_COUNT
 	help
 	  Number of buffers available for incoming ACL data.
 
-config  BLUETOOTH_ACL_IN_SIZE
-	int "Size of incoming ACL data buffers"
-	default 74 if BLUETOOTH_SMP
-	default 32 if !BLUETOOTH_SMP
-	range 74 1300 if BLUETOOTH_SMP
-	range 32 1300 if !BLUETOOTH_SMP
+config  BLUETOOTH_L2CAP_IN_MTU
+	int "Maximum supported L2CAP MTU for incoming data"
+	default 65 if BLUETOOTH_SMP
+	default 23 if !BLUETOOTH_SMP
+	range 65 1300 if BLUETOOTH_SMP
+	range 23 1300 if !BLUETOOTH_SMP
 	help
-	  Maximum size of each incoming ACL data buffer.
+	  Maximum size of each incoming L2CAP PDU.
+
+config  BLUETOOTH_ATT_MTU
+	int "Attribute Protocol (ATT) channel MTU"
+	default 23
+	range 23 BLUETOOTH_L2CAP_IN_MTU
+	help
+	  The MTU for the ATT channel. The minimum and default is 23,
+	  whereas the maximum is limited by CONFIG_BLUETOOTH_L2CAP_IN_MTU.
 endif # BLUETOOTH_CONN
 
 if BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
