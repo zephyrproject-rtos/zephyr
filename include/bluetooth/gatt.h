@@ -653,22 +653,31 @@ int bt_gatt_discover(struct bt_conn *conn,
  *  @param data Attribute value data.
  *  @param length Attribute value length.
  */
-typedef void (*bt_gatt_read_func_t)(struct bt_conn *conn, int err,
-				    const void *data, uint16_t length);
+typedef uint8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, int err,
+				       const void *data, uint16_t length);
+
+/** @brief GATT Read parameters */
+struct bt_gatt_read_params {
+	/** Attribute handle */
+	uint16_t handle;
+	/** Attribute data offset */
+	uint16_t offset;
+	/** Read attribute callback */
+	bt_gatt_read_func_t func;
+	/** Read destroy callback */
+	void (*destroy)(void *user_data);
+};
 
 /** @brief Read Attribute Value by handle
  *
  * This procedure read the attribute value and return it to the callback.
  *
  * @param conn Connection object.
- * @param handle Attribute handle.
- * @param offset Attribute data offset.
- * @param func Callback function.
+ * @param params Read parameters.
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
-		 bt_gatt_read_func_t func);
+int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
 
 /** @brief Write Attribute Value by handle
  *

@@ -617,34 +617,49 @@ done:
 	}
 }
 
-static void read_func(struct bt_conn *conn, int err, const void *data,
-		      uint16_t length)
+static struct bt_gatt_read_params read_params;
+
+static uint8_t read_func(struct bt_conn *conn, int err, const void *data,
+			 uint16_t length)
 {
 	printk("Read complete: err %u length %u\n", err, length);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void read_destroy(void *user_data)
+{
+	struct bt_gatt_read_params *params = user_data;
+
+	printk("Read destroy\n");
+
+	memset(params, 0, sizeof(*params));
 }
 
 static void cmd_gatt_read(int argc, char *argv[])
 {
 	int err;
-	uint16_t handle, offset = 0;
 
 	if (!default_conn) {
 		printk("Not connected\n");
 		return;
 	}
 
+	read_params.func = read_func;
+	read_params.destroy = read_destroy;
+
 	if (argc < 2) {
 		printk("handle required\n");
 		return;
 	}
 
-	handle = strtoul(argv[1], NULL, 16);
+	read_params.handle = strtoul(argv[1], NULL, 16);
 
 	if (argc > 2) {
-		offset = strtoul(argv[2], NULL, 16);
+		read_params.offset = strtoul(argv[2], NULL, 16);
 	}
 
-	err = bt_gatt_read(default_conn, handle, offset, read_func);
+	err = bt_gatt_read(default_conn, &read_params);
 	if (err) {
 		printk("Read failed (err %d)\n", err);
 	} else {
@@ -800,14 +815,16 @@ static void subscribe_destroy(void *user_data)
 	params->value_handle = 0;
 }
 
-static void subscribe_func(struct bt_conn *conn, int err,
-			   const void *data, uint16_t length)
+static uint8_t subscribe_func(struct bt_conn *conn, int err,
+			      const void *data, uint16_t length)
 {
 	if (!length) {
 		printk("Subscribe complete: err %u\n", err);
 	} else {
 		printk("Notification: data %p length %u\n", data, length);
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 
 static void cmd_gatt_subscribe(int argc, char *argv[])

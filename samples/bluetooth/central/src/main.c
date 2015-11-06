@@ -52,12 +52,14 @@ static struct bt_uuid ccc = {
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
 
-static void subscribe_func(struct bt_conn *conn, int err,
+static uint8_t subscribe_func(struct bt_conn *conn, int err,
 			   const void *data, uint16_t length)
 {
 	if (length) {
 		printk("[NOTIFICATION] data %p length %u\n", data, length);
 	}
+
+	return BT_GATT_ITER_CONTINUE;
 }
 
 static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
