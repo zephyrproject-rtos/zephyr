@@ -115,9 +115,7 @@ config  BLUETOOTH_ATT_MTU
 	help
 	  The MTU for the ATT channel. The minimum and default is 23,
 	  whereas the maximum is limited by CONFIG_BLUETOOTH_L2CAP_IN_MTU.
-endif # BLUETOOTH_CONN
 
-if BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
 	default n
@@ -140,7 +138,6 @@ config BLUETOOTH_GATT_CLIENT
 
 config	BLUETOOTH_MAX_CONN
 	int "Maximum number of simultaneous connections"
-	depends on BLUETOOTH_CONN
 	default 1
 	range 1 16
 	help
@@ -149,16 +146,15 @@ config	BLUETOOTH_MAX_CONN
 
 config	BLUETOOTH_MAX_PAIRED
 	int "Maximum number of paired devices"
-	depends on BLUETOOTH_CONN
 	default 1
 	range 1 32
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
 
+if BLUETOOTH_DEBUG
 config	BLUETOOTH_DEBUG_CONN
 	bool "Bluetooth connection debug"
-	depends on BLUETOOTH_DEBUG
 	default n
 	help
 	  This option enables debug support for Bluetooth
@@ -166,7 +162,7 @@ config	BLUETOOTH_DEBUG_CONN
 
 config	BLUETOOTH_DEBUG_KEYS
 	bool "Bluetooth security keys debug"
-	depends on BLUETOOTH_DEBUG
+	depends on BLUETOOTH_SMP
 	default n
 	help
 	  This option enables debug support for the handling of
@@ -174,7 +170,6 @@ config	BLUETOOTH_DEBUG_KEYS
 
 config	BLUETOOTH_DEBUG_L2CAP
 	bool "Bluetooth L2CAP debug"
-	depends on BLUETOOTH_DEBUG
 	default n
 	help
 	  This option enables debug support for the Bluetooth
@@ -182,7 +177,7 @@ config	BLUETOOTH_DEBUG_L2CAP
 
 config	BLUETOOTH_DEBUG_SMP
 	bool "Bluetooth Security Manager Protocol (SMP) debug"
-	depends on BLUETOOTH_DEBUG
+	depends on BLUETOOTH_SMP
 	default n
 	help
 	  This option enables debug support for the Bluetooth
@@ -198,7 +193,6 @@ config	BLUETOOTH_SMP_SELFTEST
 
 config	BLUETOOTH_DEBUG_ATT
 	bool "Bluetooth Attribute Protocol (ATT) debug"
-	depends on BLUETOOTH_DEBUG
 	default n
 	help
 	  This option enables debug support for the Bluetooth
@@ -206,10 +200,10 @@ config	BLUETOOTH_DEBUG_ATT
 
 config	BLUETOOTH_DEBUG_GATT
 	bool "Bluetooth Generic Attribute Profile (GATT) debug"
-	depends on BLUETOOTH_DEBUG
 	default n
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
-endif # BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
+endif # BLUETOOTH_DEBUG
+endif # BLUETOOTH_CONN
 endif # BLUETOOTH
