@@ -62,12 +62,12 @@ config  BLUETOOTH_HCI_CMD_COUNT
 	help
 	  Number of buffers available for HCI commands.
 
-config  BLUETOOTH_HCI_CMD_SIZE
-	int "Size of HCI command buffers"
-	default 68
-	range 68 260
+config  BLUETOOTH_MAX_CMD_LEN
+	int "Maximum supported HCI command length"
+	default 64
+	range 64 255
 	help
-	  Maximum size of each HCI command buffer.
+	  Maximum length of each HCI command.
 
 config  BLUETOOTH_HCI_EVT_COUNT
 	int "Number of HCI event buffers"
@@ -79,12 +79,15 @@ config  BLUETOOTH_HCI_EVT_COUNT
 	  sure we've got enough buffers to handle bursts of Number of
 	  Completed Packets HCI events.
 
-config  BLUETOOTH_HCI_EVT_SIZE
-	int "Size of HCI event buffers"
-	default 72
-	range 72 260
+config  BLUETOOTH_MAX_EVT_LEN
+	int "Maximum supported HCI event length"
+	default 68
+	range 68 255
 	help
-	  Maximum size of each HCI event buffer.
+	  Maximum size of each HCI event buffer. E.g. one big event
+	  for LE is the Command Complete for Read Local Supported
+	  Commands. It is a 3 byte Command Complete header + 65 byte
+	  return parameters = 68 bytes in total.
 
 if BLUETOOTH_CONN
 config  BLUETOOTH_ACL_IN_COUNT

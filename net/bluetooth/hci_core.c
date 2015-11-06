@@ -75,15 +75,20 @@ struct acl_data {
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
 /* HCI command buffers */
+#define CMD_BUF_SIZE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
+		      sizeof(struct bt_hci_cmd_hdr) + \
+		      CONFIG_BLUETOOTH_MAX_CMD_LEN)
 static struct nano_fifo avail_hci_cmd;
-static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
-		    CONFIG_BLUETOOTH_HCI_CMD_SIZE, &avail_hci_cmd, NULL,
-		    sizeof(struct cmd_data));
+static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
+		    &avail_hci_cmd, NULL, sizeof(struct cmd_data));
 
 /* HCI event buffers */
+#define EVT_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
+		      sizeof(struct bt_hci_evt_hdr) + \
+		      CONFIG_BLUETOOTH_MAX_EVT_LEN)
 static struct nano_fifo avail_hci_evt;
 static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
-		    CONFIG_BLUETOOTH_HCI_EVT_SIZE, &avail_hci_evt, NULL, 0);
+		    CONFIG_BLUETOOTH_MAX_EVT_LEN, &avail_hci_evt, NULL, 0);
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 static void report_completed_packet(struct net_buf *buf)
