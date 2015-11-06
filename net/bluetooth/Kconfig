@@ -45,9 +45,9 @@ config  BLUETOOTH_HCI_EVT_COUNT
 	range 2 64
 	help
 	  Number of buffers available for HCI events. This number should
-	  ideally be at least as large as BLUETOOTH_ACL_OUT_COUNT to make
-	  sure we've got enough buffers to handle bursts of Number of
-	  Completed Packets HCI events.
+	  ideally be at least as large as the available outgoing buffers
+	  to make sure we've got enough buffers to handle bursts of
+	  Number of Completed Packets HCI events.
 
 config  BLUETOOTH_MAX_EVT_LEN
 	int "Maximum supported HCI event length"
