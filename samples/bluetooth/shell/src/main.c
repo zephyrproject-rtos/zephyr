@@ -1094,6 +1094,30 @@ static void cmd_l2cap_register(int argc, char *argv[])
 	}
 }
 
+static void cmd_l2cap_connect(int argc, char *argv[])
+{
+	uint16_t psm;
+	int err;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
+	if (argc < 2) {
+		printk("psm required\n");
+		return;
+	}
+
+	psm = strtoul(argv[1], NULL, 16);
+
+	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan, psm);
+	if (err < 0) {
+		printk("Unable to connect to psm %u (err %u)\n", psm, err);
+		return;
+	}
+}
+
 struct shell_cmd commands[] = {
 	{ "init", cmd_init },
 	{ "connect", cmd_connect_le },
@@ -1118,6 +1142,7 @@ struct shell_cmd commands[] = {
 	{ "gatt-subscribe", cmd_gatt_subscribe },
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe },
 	{ "l2cap-register", cmd_l2cap_register },
+	{ "l2cap-connect", cmd_l2cap_connect },
 	{ NULL, NULL }
 };
 
