@@ -102,6 +102,10 @@ int net_send(struct net_buf *buf)
 #include "rpl/rpl-private.h"
 #endif
 
+#if NET_COAP_CONF_STATS
+#include "er-coap/er-coap.h"
+#endif
+
 static void stats(void)
 {
 	static clock_time_t last_print;
@@ -142,6 +146,14 @@ static void stats(void)
 			STAT(udp.drop));
 		NET_DBG("UDP chkerr     %d\n",
 			STAT(icmp.chkerr));
+
+#if NET_COAP_CONF_STATS
+		NET_DBG("CoAP recv      %d\terr\t%d\tsent\t%d\tre-sent\t%d\n",
+			NET_COAP_STAT(recv),
+			NET_COAP_STAT(recv_err),
+			NET_COAP_STAT(sent),
+			NET_COAP_STAT(re_sent));
+#endif
 
 #if NETSTACK_CONF_WITH_IPV6
 		NET_DBG("ND recv        %d\tsent\t%d\tdrop\t%d\n",

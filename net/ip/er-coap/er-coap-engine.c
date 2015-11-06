@@ -53,6 +53,10 @@ PROCESS(coap_engine, "CoAP Engine");
 /*---------------------------------------------------------------------------*/
 static service_callback_t service_cbk = NULL;
 
+#if NET_COAP_CONF_STATS
+net_coap_stats_t net_coap_stats;
+#endif /* NET_COAP_CONF_STATS */
+
 /*---------------------------------------------------------------------------*/
 /*- Internal API ------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
@@ -80,6 +84,8 @@ coap_engine_receive(coap_context_t *coap_ctx)
     coap_set_context(message, coap_ctx);
 
     if(erbium_status_code == NO_ERROR) {
+
+      NET_COAP_STAT(recv++);
 
       /*TODO duplicates suppression, if required by application */
 
@@ -257,7 +263,9 @@ coap_engine_receive(coap_context_t *coap_ctx)
         }
 #endif /* COAP_OBSERVE_CLIENT */
       } /* request or response */
-    } /* parsed correctly */
+    } else { /* parsed correctly */
+      NET_COAP_STAT(recv_err++);
+    }
 
     /* if(parsed correctly) */
     if(erbium_status_code == NO_ERROR) {

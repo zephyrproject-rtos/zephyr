@@ -114,6 +114,14 @@ typedef unsigned int uip_stats_t;
 #define NET_MAC_CONF_STATS 0
 #endif
 
+#if defined(CONFIG_COAP_STATS)
+#define NET_COAP_CONF_STATS 1
+#define NET_COAP_STAT(code) (net_coap_stats.code)
+#else
+#define NET_COAP_CONF_STATS 0
+#define NET_COAP_STAT(code)
+#endif
+
 #ifdef CONFIG_NETWORKING_IPV6_NO_ND
 /* Disabling ND will simplify the IPv6 address assignment.
  * This should only be done in testing phase.

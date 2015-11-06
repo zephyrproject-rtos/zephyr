@@ -329,6 +329,15 @@ config	ER_COAP_WITH_DTLS
 	  are not able to send or receive non-DTLS CoAP messages, and
 	  vice versa.
 
+config	COAP_STATS
+	bool
+	prompt "Enable CoAP statistics"
+	depends on ER_COAP
+	select NETWORKING_STATISTICS
+	default n
+	help
+	  Enable CoAP statistics support.
+
 config	ER_COAP_CLIENT
 	bool
 	prompt "Enable CoAP client support"

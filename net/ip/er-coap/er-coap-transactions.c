@@ -94,6 +94,8 @@ coap_send_transaction(coap_transaction_t *t)
     return;
   }
 
+  NET_COAP_STAT(sent++);
+
   coap_send_message(t->coap_ctx, &t->addr, t->port,
 		    t->packet, t->packet_len);
 
@@ -206,6 +208,7 @@ coap_check_transactions()
       PRINTF("Retransmitting %u (%u)\n", t->mid, t->retrans_counter);
       if (get_retransmit_buf(t)) {
         coap_send_transaction(t);
+	NET_COAP_STAT(re_sent++);
       }
     }
   }

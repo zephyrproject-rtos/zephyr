@@ -53,6 +53,17 @@
 #error "UIP_CONF_BUFFER_SIZE too small for REST_MAX_CHUNK_SIZE"
 #endif
 
+#if NET_COAP_CONF_STATS
+typedef struct net_coap_stats {
+  uint32_t recv;
+  uint32_t recv_err;
+  uint32_t sent;
+  uint32_t re_sent;
+} net_coap_stats_t;
+
+extern net_coap_stats_t net_coap_stats;
+#endif /* NET_COAP_CONF_STATS */
+
 /* use Erbium CoAP for the REST Engine. Must come before include of rest-engine.h. */
 #ifndef REST
 #define REST coap_rest_implementation
