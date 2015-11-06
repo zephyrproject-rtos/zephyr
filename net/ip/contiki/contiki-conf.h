@@ -66,9 +66,7 @@ typedef unsigned int uip_stats_t;
 #define NETSTACK_CONF_FRAMER	framer_802154
 #ifdef CONFIG_NETWORKING_WITH_6LOWPAN
 #define NETSTACK_CONF_RDC	sicslowmac_driver
-#else
-#warning "You should activate 6LoWPAN with 802.15.4, you have non-working setup now."
-#endif
+#endif /* CONFIG_NETWORKING_WITH_6LOWPAN */
 #define NETSTACK_CONF_MAC	csma_driver
 #define LINKADDR_CONF_SIZE      8
 #define UIP_CONF_LL_802154	1
@@ -110,7 +108,7 @@ typedef unsigned int uip_stats_t;
 #define RPL_CONF_STATS 0
 #endif
 
-#ifdef CONFIG_NETWORKING_STATISTICS
+#if defined(CONFIG_NETWORKING_STATISTICS) && defined(CONFIG_L2_BUFFERS)
 #define NET_MAC_CONF_STATS 1
 #else
 #define NET_MAC_CONF_STATS 0

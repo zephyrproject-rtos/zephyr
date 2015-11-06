@@ -196,10 +196,15 @@ config	ETHERNET_DEBUG
 	help
 	  This option enables debug support for Ethernet drivers.
 
+config	L2_BUFFERS
+	bool
+	default n
+
 config	NETWORKING_WITH_15_4
 	bool
 	prompt "Enable 802.15.4 driver"
 	depends on NETWORKING && NETWORKING_WITH_IPV6
+	select L2_BUFFERS
 	default n
 	help
 	  Enable 802.15.4 driver that receives the IPv6 packet,
@@ -251,7 +256,8 @@ config	NETWORKING_WITH_6LOWPAN
 	depends on NETWORKING_WITH_15_4
 	default n
 	help
-	  Enable 6LoWPAN in uIP stack
+	  Enable 6LoWPAN in uIP stack. Currently this requires 802.15.4
+	  stack to be enabled.
 
 config NET_15_4_LOOPBACK_NUM
        int

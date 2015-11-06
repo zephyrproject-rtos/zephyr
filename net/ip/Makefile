@@ -8,15 +8,14 @@ ccflags-y += -I${srctree}/include/drivers
 # Zypher specific files
 obj-y = net_init.o \
 	ip_buf.o \
-	l2_buf.o \
 	net_context.o
+
+obj-$(CONFIG_L2_BUFFERS) += l2_buf.o
 
 # Contiki IP stack files
 obj-y += contiki/netstack.o \
-	contiki/packetbuf.o \
 	contiki/nbr-table.o \
 	contiki/linkaddr.o \
-	contiki/queuebuf.o \
 	contiki/ip/uip-debug.o \
 	contiki/ip/uip-packetqueue.o \
 	contiki/ip/uip-udp-packet.o \
@@ -39,9 +38,6 @@ obj-y += contiki/netstack.o \
 	contiki/os/lib/list.o \
 	contiki/os/lib/random.o \
 	contiki/os/lib/aes-128.o \
-	contiki/mac/mac.o \
-	contiki/mac/framer.o \
-	contiki/mac/mac-sequence.o \
 	contiki/llsec/nullsec.o
 
 obj-$(CONFIG_NETWORKING_WITH_IPV6) += \
@@ -82,10 +78,11 @@ ifeq ($(CONFIG_NETWORKING_WITH_6LOWPAN),y)
      obj-y += contiki/sicslowpan/sicslowpan_fragmentation.o
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/sicslowmac/sicslowmac.o
 else
-     obj-y += contiki/sicslowpan/null_compression.o
-     obj-y += contiki/sicslowpan/null_fragmentation.o
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/nullmac.o \
-		contiki/mac/framer-nullmac.o contiki/mac/nullrdc.o
+					contiki/mac/framer-nullmac.o \
+					contiki/mac/nullrdc.o \
+					contiki/sicslowpan/null_compression.o \
+					contiki/sicslowpan/null_fragmentation.o
 endif
 
 ccflags-$(CONFIG_NETWORKING_WITH_LOGGING) += -DUIP_CONF_LOGGING=1
@@ -96,6 +93,10 @@ obj-$(CONFIG_NETWORKING_WITH_LOOPBACK) += net_driver_loopback.o
 obj-$(CONFIG_NETWORKING_WITH_15_4_LOOPBACK) += dummy_15_4_radio.o
 obj-$(CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART) += dummy_15_4_radio.o
 obj-$(CONFIG_NETWORKING_WITH_15_4) += net_driver_15_4.o \
+					contiki/packetbuf.o \
+					contiki/queuebuf.o \
+					contiki/mac/mac.o \
+					contiki/mac/framer.o \
 					contiki/mac/frame802154.o \
 					contiki/mac/framer-802154.o \
 					contiki/mac/csma.o \

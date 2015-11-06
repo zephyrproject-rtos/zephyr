@@ -35,6 +35,8 @@
 #include "contiki/ip/uip.h"
 #include "contiki/packetbuf.h"
 
+#if defined(CONFIG_L2_BUFFERS)
+
 #if defined(CONFIG_NET_BUF_DEBUG)
 #undef DEBUG_L2_BUFS
 #define DEBUG_L2_BUFS
@@ -139,5 +141,10 @@ void l2_buf_unref_debug(struct net_buf *buf, const char *caller, int line);
 void l2_buf_unref(struct net_buf *buf);
 #endif
 
+#else /* defined(CONFIG_L2_BUFFERS) */
+
+#define l2_buf_init(...)
+
+#endif /* defined(CONFIG_L2_BUFFERS) */
 
 #endif /* __L2_BUF_H */
