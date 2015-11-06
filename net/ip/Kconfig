@@ -191,7 +191,7 @@ config	NETWORKING_DEBUG_UART
 config	ETHERNET_DEBUG
 	bool
 	prompt "Network Ethernet driver debug"
-	depends on NETWORKING_WITH_LOGGING
+	depends on NETWORKING_WITH_LOGGING && ETHERNET
 	default n
 	help
 	  This option enables debug support for Ethernet drivers.
