@@ -334,7 +334,8 @@ void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 	nano_fifo_put(&conn->tx_queue, buf);
 }
 
-static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
+		      bool always_consume)
 {
 	struct bt_hci_acl_hdr *hdr;
 	int err;
@@ -347,9 +348,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 	/* Check for disconnection while waiting for pkts_sem */
 	if (conn->state != BT_CONN_CONNECTED) {
-		nano_fiber_sem_give(&bt_dev.le.pkts_sem);
-		net_buf_unref(buf);
-		return false;
+		goto fail;
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
@@ -360,13 +359,18 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	err = bt_dev.drv->send(BT_ACL_OUT, buf);
 	if (err) {
 		BT_ERR("Unable to send to driver (err %d)\n", err);
-		nano_fiber_sem_give(&bt_dev.le.pkts_sem);
-		net_buf_unref(buf);
-	} else {
-		conn->pending_pkts++;
+		goto fail;
 	}
 
+	conn->pending_pkts++;
 	return true;
+
+fail:
+	nano_fiber_sem_give(&bt_dev.le.pkts_sem);
+	if (always_consume) {
+		net_buf_unref(buf);
+	}
+	return false;
 }
 
 static struct net_buf *create_frag(struct bt_conn *conn)
@@ -393,7 +397,7 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 
 	/* Send directly if the packet fits the ACL MTU */
 	if (buf->len <= bt_dev.le.mtu) {
-		return send_frag(conn, buf, BT_ACL_START_NO_FLUSH);
+		return send_frag(conn, buf, BT_ACL_START_NO_FLUSH, false);
 	}
 
 	/* Create & enqueue first fragment */
@@ -404,7 +408,7 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 
 	memcpy(net_buf_add(frag, bt_dev.le.mtu), buf->data, bt_dev.le.mtu);
 	net_buf_pull(buf, bt_dev.le.mtu);
-	if (!send_frag(conn, frag, BT_ACL_START_NO_FLUSH)) {
+	if (!send_frag(conn, frag, BT_ACL_START_NO_FLUSH, true)) {
 		return false;
 	}
 
@@ -423,12 +427,12 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 		       bt_dev.le.mtu);
 		net_buf_pull(buf, bt_dev.le.mtu);
 
-		if (!send_frag(conn, frag, BT_ACL_CONT)) {
+		if (!send_frag(conn, frag, BT_ACL_CONT, true)) {
 			return false;
 		}
 	}
 
-	return send_frag(conn, buf, BT_ACL_CONT);
+	return send_frag(conn, buf, BT_ACL_CONT, false);
 }
 
 static void conn_tx_fiber(int arg1, int arg2)
