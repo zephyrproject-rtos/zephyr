@@ -25,20 +25,6 @@ menuconfig BLUETOOTH
 	  This option enables Bluetooth Low Energy support.
 
 if BLUETOOTH
-config BLUETOOTH_CONN
-	bool
-	default n
-
-config	BLUETOOTH_PERIPHERAL
-	bool "Peripheral Role support"
-	default n
-	select BLUETOOTH_CONN
-
-config BLUETOOTH_CENTRAL
-	bool "Central Role support"
-	default n
-	select BLUETOOTH_CONN
-
 config  BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
 	default 2
@@ -72,6 +58,20 @@ config  BLUETOOTH_MAX_EVT_LEN
 	  for LE is the Command Complete for Read Local Supported
 	  Commands. It is a 3 byte Command Complete header + 65 byte
 	  return parameters = 68 bytes in total.
+
+config	BLUETOOTH_PERIPHERAL
+	bool "Peripheral Role support"
+	default n
+	select BLUETOOTH_CONN
+
+config BLUETOOTH_CENTRAL
+	bool "Central Role support"
+	default n
+	select BLUETOOTH_CONN
+
+config BLUETOOTH_CONN
+	bool
+	default n
 
 if BLUETOOTH_CONN
 config  BLUETOOTH_ACL_IN_COUNT
