@@ -32,13 +32,15 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/driver.h>
 
-#include "hci_core.h"
+#include "stack.h"
+
 #include "keys.h"
+#include "hci_core.h"
+
 #if defined(CONFIG_BLUETOOTH_CONN)
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #endif /* CONFIG_BLUETOOTH_CONN */
-#include "stack.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
 #undef BT_DBG
