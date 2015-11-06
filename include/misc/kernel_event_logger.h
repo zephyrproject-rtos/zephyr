@@ -171,6 +171,9 @@ void sys_k_event_logger_put_timed(uint16_t event_id);
  * @return No return value.
  */
 void sys_k_event_logger_register_as_collector(void);
+
+void _sys_k_event_logger_enter_sleep(void);
+
 #else /* !CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
 static inline void sys_k_event_logger_register_as_collector(void) {};
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
@@ -184,6 +187,7 @@ static inline void sys_k_event_logger_register_as_collector(void) {};
 static inline void sys_k_event_logger_put(uint16_t event_id, uint32_t *event_data,
 	uint8_t data_size) {};
 static inline void sys_k_event_logger_put_timed(uint16_t event_id) {};
+static inline void _sys_k_event_logger_enter_sleep(void) {};
 
 #endif /* _ASMLANGUAGE */
 
