@@ -201,32 +201,21 @@ void bt_uart_isr(void *unused)
 	}
 }
 
-static void uart_out(struct device *dev, const uint8_t *data, int size)
-{
-	for (int i = 0; i < size; i++) {
-		uart_poll_out(dev, data[i]);
-	}
-}
-
 static int bt_uart_send(enum bt_buf_type buf_type, struct net_buf *buf)
 {
-	uint8_t *h4_type;
-
-	if (net_buf_headroom(buf) < CONFIG_BLUETOOTH_HCI_SEND_RESERVE) {
-		BT_ERR("Not enough headroom in buffer\n");
-		return -EINVAL;
-	}
-
-	h4_type = net_buf_push(buf, 1);
 	if (buf_type == BT_ACL_OUT) {
-		*h4_type = H4_ACL;
+		uart_poll_out(BT_UART_DEV, H4_ACL);
 	} else if (buf_type == BT_CMD) {
-		*h4_type = H4_CMD;
+		uart_poll_out(BT_UART_DEV, H4_CMD);
 	} else {
 		return -EINVAL;
 	}
 
-	uart_out(BT_UART_DEV, buf->data, buf->len);
+	while (buf->len) {
+		uart_poll_out(BT_UART_DEV, buf->data[0]);
+		net_buf_pull(buf, 1);
+	}
+
 	net_buf_unref(buf);
 
 	return 0;

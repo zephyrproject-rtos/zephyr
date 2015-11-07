@@ -45,7 +45,7 @@ config	BLUETOOTH_DEBUG_UART
 config BLUETOOTH_HCI_SEND_RESERVE
 	int
 	depends on BLUETOOTH
-	default 1 if BLUETOOTH_UART
+	default 0 if BLUETOOTH_UART
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
