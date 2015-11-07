@@ -23,6 +23,7 @@
 extern "C" {
 #endif
 
+#include <nanokernel.h>
 #include <stdint.h>
 #include <stddef.h>
 
