@@ -24,6 +24,7 @@
 
 #include <board.h>
 #include <uart.h>
+#include <misc/util.h>
 #include <misc/byteorder.h>
 #include <string.h>
 
@@ -72,11 +73,7 @@ static size_t bt_uart_discard(struct device *uart, size_t len)
 {
 	uint8_t buf[33];
 
-	if (len > sizeof(buf)) {
-		len = sizeof(buf);
-	}
-
-	return uart_fifo_read(uart, buf, len);
+	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
 }
 
 static struct net_buf *bt_uart_evt_recv(int *remaining)
