@@ -131,7 +131,7 @@ by :file:`nanokernel.h`:
 
 :cpp:func:`nano_task_sem_take_wait()`,
 :cpp:func:`nano_fiber_sem_take_wait()`,
-:cpp:func:`nano_sem_task_wait()`
+:cpp:func:`nano_sem_take_wait()`
    Wait on a semaphore.
 
 :cpp:func:`nano_task_sem_take_wait_timeout()`,
