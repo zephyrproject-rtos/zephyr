@@ -111,9 +111,21 @@ void nano_task_stack_push(struct nano_stack *stack, uint32_t data)
 	irq_unlock(imask);
 }
 
+void nano_stack_push(struct nano_stack *stack, uint32_t data)
+{
+	static void (*func[3])(struct nano_stack *, uint32_t) = {
+		nano_isr_stack_push,
+		nano_fiber_stack_push,
+		nano_task_stack_push
+	};
+
+	func[sys_execution_context_type_get()](stack, data);
+}
+
 FUNC_ALIAS(_stack_pop, nano_isr_stack_pop, int);
 FUNC_ALIAS(_stack_pop, nano_fiber_stack_pop, int);
 FUNC_ALIAS(_stack_pop, nano_task_stack_pop, int);
+FUNC_ALIAS(_stack_pop, nano_stack_pop, int);
 
 /**
  *
@@ -229,4 +241,15 @@ uint32_t nano_task_stack_pop_wait(struct nano_stack *stack)
 	irq_unlock(imask);
 
 	return data;
+}
+
+uint32_t nano_stack_pop_wait(struct nano_stack *stack)
+{
+	static uint32_t (*func[3])(struct nano_stack *) = {
+		NULL,
+		nano_fiber_stack_pop_wait,
+		nano_task_stack_pop_wait,
+	};
+
+	return func[sys_execution_context_type_get()](stack);
 }

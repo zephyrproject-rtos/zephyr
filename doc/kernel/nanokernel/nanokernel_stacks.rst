@@ -131,13 +131,14 @@ The following APIs for a nanokernel stack are provided by
    Initializes a stack.
 
 :cpp:func:`nano_task_stack_push()`, :cpp:func:`nano_fiber_stack_push()`,
-:cpp:func:`nano_isr_stack_push()`
+:cpp:func:`nano_isr_stack_push()`, :cpp:func:`nano_stack_push()`
    Add an item to a stack.
 
 :cpp:func:`nano_task_stack_pop()`, :cpp:func:`nano_fiber_stack_pop()`,
-:cpp:func:`nano_isr_stack_pop()`
+:cpp:func:`nano_isr_stack_pop()`, :cpp:func:`nano_stack_pop()`
    Remove an item from a stack, or fails and continues if it is empty.
 
 :cpp:func:`nano_task_stack_pop_wait()`,
-:cpp:func:`nano_fiber_stack_pop_wait()`
+:cpp:func:`nano_fiber_stack_pop_wait()`,
+:cpp:func:`nano_stack_pop_wait()`
    Remove an item from a stack, or waits for an item if it is empty.

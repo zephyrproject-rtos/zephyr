@@ -1161,6 +1161,54 @@ struct nano_stack {
  *
  */
 extern void nano_stack_init(struct nano_stack *stack, uint32_t *data);
+
+/**
+ *
+ * @brief Push data onto a stack
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @param stack Stack on which to interact
+ * @param data Data to push on stack
+ *
+ * @return N/A
+ *
+ */
+extern void nano_stack_push(struct nano_stack *stack, uint32_t data);
+
+/**
+ *
+ * @brief Pop data from a nanokernel stack
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @param stack Stack on which to interact
+ * @param data Container for data to pop
+ *
+ * @return 1 if stack is not empty, 0 otherwise
+ *
+ */
+extern int nano_stack_pop(struct nano_stack *stack, uint32_t *data);
+
+/**
+ *
+ * @brief Pop data from a nanokernel stack, poll/pend if empty
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @param stack Stack on which to interact
+ *
+ * @return Popped data
+ *
+ */
+extern uint32_t nano_stack_pop_wait(struct nano_stack *stack);
+
 /* methods for ISRs */
 
 /**
