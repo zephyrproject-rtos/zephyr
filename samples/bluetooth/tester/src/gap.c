@@ -334,10 +334,12 @@ static void disconnect(const uint8_t *data, uint16_t len)
 
 	if (bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN)) {
 		status = BTP_STATUS_FAILED;
-		goto rsp;
+	} else {
+		status = BTP_STATUS_SUCCESS;
 	}
 
-	status = BTP_STATUS_SUCCESS;
+	bt_conn_unref(conn);
+
 rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_DISCONNECT, CONTROLLER_INDEX,
 		   status);
