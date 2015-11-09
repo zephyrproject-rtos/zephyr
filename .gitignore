@@ -23,4 +23,5 @@ doc/latex/
 sanity-out/
 scripts/grub
 doc/reference/kconfig/CONFIG_*
+doc/reference/kconfig/index.rst
 tags
