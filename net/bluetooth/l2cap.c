@@ -46,6 +46,9 @@
 #define L2CAP_LE_DYN_CID_START	0x0040
 #define L2CAP_LE_DYN_CID_END	0x007f
 
+#define L2CAP_LE_PSM_START	0x0001
+#define L2CAP_LE_PSM_END	0x00ff
+
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
@@ -324,7 +327,8 @@ static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
 
 int bt_l2cap_server_register(struct bt_l2cap_server *server)
 {
-	if (server->psm < 0x0080 || server->psm > 0x00ff || !server->accept) {
+	if (server->psm < L2CAP_LE_PSM_START ||
+	    server->psm > L2CAP_LE_PSM_END || !server->accept) {
 		return -EINVAL;
 	}
 
