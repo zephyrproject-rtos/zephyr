@@ -922,19 +922,50 @@ extern void nano_sem_give(struct nano_sem *sem);
 
 /**
  *
+ * @brief Take a nanokernel semaphore
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @param sem Pointer to a nano_sem structure.
+ *
+ * @return N/A
+ */
+extern int nano_sem_take(struct nano_sem *sem);
+
+/**
+ *
  * @brief Take a nanokernel semaphore, poll/pend if not available
  *
  * This is a convenience wrapper for the execution context-specific APIs. This
  * is helpful whenever the exact execution context is not known, but should be
  * avoided when the context is known up-front (to avoid unnecessary overhead).
  *
- * It's only valid to call this API from a fiber or a task.
+ * @warning It's only valid to call this API from a fiber or a task.
  *
  * @param sem Pointer to a nano_sem structure.
  *
  * @return N/A
  */
 extern void nano_sem_take_wait(struct nano_sem *sem);
+
+/**
+ *
+ * @brief Take a nanokernel semaphore, poll/pend with timeout if not available
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @warning It's only valid to call this API from a fiber or a task.
+ *
+ * @param sem Pointer to a nano_sem structure.
+ * @param timeout Time to wait in ticks
+ *
+ * @return N/A
+ */
+extern void nano_sem_take_wait_timeout(struct nano_sem *sem, int32_t timeout);
 
 /* methods for ISRs */
 

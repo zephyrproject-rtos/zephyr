@@ -113,14 +113,18 @@ void nano_task_sem_give(struct nano_sem *sem)
 void nano_sem_give(struct nano_sem *sem)
 {
 	static void (*func[3])(struct nano_sem *sem) = {
-		nano_isr_sem_give, nano_fiber_sem_give, nano_task_sem_give
+		nano_isr_sem_give,
+		nano_fiber_sem_give,
+		nano_task_sem_give
 	};
+
 	func[sys_execution_context_type_get()](sem);
 }
 
 FUNC_ALIAS(_sem_take, nano_isr_sem_take, int);
 FUNC_ALIAS(_sem_take, nano_fiber_sem_take, int);
 FUNC_ALIAS(_sem_take, nano_task_sem_take, int);
+FUNC_ALIAS(_sem_take, nano_sem_take, int);
 
 int _sem_take(
 	struct nano_sem *sem
@@ -186,8 +190,11 @@ void nano_task_sem_take_wait(struct nano_sem *sem)
 void nano_sem_take_wait(struct nano_sem *sem)
 {
 	static void (*func[3])(struct nano_sem *sem) = {
-		NULL, nano_fiber_sem_take_wait, nano_task_sem_take_wait
+		NULL,
+		nano_fiber_sem_take_wait,
+		nano_task_sem_take_wait
 	};
+
 	func[sys_execution_context_type_get()](sem);
 }
 
@@ -260,4 +267,14 @@ int nano_task_sem_take_wait_timeout(struct nano_sem *sem, int32_t timeout_in_tic
 	return 0;
 }
 
+void nano_sem_take_wait_timeout(struct nano_sem *sem, int32_t timeout)
+{
+	static int (*func[3])(struct nano_sem *, int32_t) = {
+		NULL,
+		nano_fiber_sem_take_wait_timeout,
+		nano_task_sem_take_wait_timeout
+	};
+
+	func[sys_execution_context_type_get()](sem, timeout);
+}
 #endif /* CONFIG_NANO_TIMEOUTS */

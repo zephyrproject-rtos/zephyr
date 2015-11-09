@@ -126,7 +126,7 @@ by :file:`nanokernel.h`:
    Signal a sempahore.
 
 :cpp:func:`nano_task_sem_take()`, :cpp:func:`nano_fiber_sem_take()`,
-:cpp:func:`nano_isr_sem_take()`
+:cpp:func:`nano_isr_sem_take()`, :cpp:func:`nano_sem_take()`
    Test a semaphore.
 
 :cpp:func:`nano_task_sem_take_wait()`,
@@ -135,5 +135,6 @@ by :file:`nanokernel.h`:
    Wait on a semaphore.
 
 :cpp:func:`nano_task_sem_take_wait_timeout()`,
-:cpp:func:`nano_fiber_sem_take_wait_timeout()`
+:cpp:func:`nano_fiber_sem_take_wait_timeout()`,
+:cpp:func:`nano_sem_take_wait_timeout()`
    Wait on a semaphore for a specified time period.
