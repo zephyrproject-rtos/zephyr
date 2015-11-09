@@ -55,9 +55,6 @@ response. Or the opcode 0x00 for an error is returned.
 
 Events opcodes start from 0x80.
 
-All command/response opcodes have the least significant bit not set. And all
-events have the least significant bit set.
-
 All fields are in little-endian byte order (least significant byte first).
 
 Controller Index can have a special value <non-controller> to indicate that
