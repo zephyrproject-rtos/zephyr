@@ -398,7 +398,7 @@ Events:
 
 		This event indicates that a device was connected.
 
-	Opcode 0x82 - Device Disconnected event
+	Opcode 0x83 - Device Disconnected event
 
 		Controller Index:	<controller id>
 		Event parameters:	Address (6 octets)
