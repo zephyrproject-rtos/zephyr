@@ -158,14 +158,18 @@ by :file:`nanokernel.h`:
 :cpp:func:`nano_timer_init()`
    Initializes a timer.
 
-:cpp:func:`nano_task_timer_start()`, :cpp:func:`nano_fiber_timer_start()`
+:cpp:func:`nano_task_timer_start()`, :cpp:func:`nano_fiber_timer_start()`,
+:cpp:func:`nano_isr_timer_start()`, :cpp:func:`nano_timer_start()`
    Start a timer.
 
-:cpp:func:`nano_task_timer_test()`, :cpp:func:`nano_fiber_timer_test()`
+:cpp:func:`nano_task_timer_test()`, :cpp:func:`nano_fiber_timer_test()`,
+:cpp:func:`nano_isr_timer_test()`, :cpp:func:`nano_timer_test()`
    Test a timer to see if it has expired.
 
-:cpp:func:`nano_task_timer_wait()`, :cpp:func:`nano_fiber_timer_wait()`
+:cpp:func:`nano_task_timer_wait()`, :cpp:func:`nano_fiber_timer_wait()`,
+:cpp:func:`nano_timer_wait()`
    Wait on a timer until it expires.
 
-:cpp:func:`nano_task_timer_stop()`, :cpp:func:`nano_fiber_timer_stop()`
+:cpp:func:`nano_task_timer_stop()`, :cpp:func:`nano_fiber_timer_stop()`,
+:cpp:func:`nano_isr_timer_stop()`, :cpp:func:`nano_timer_stop()`
    Force timer expiration, if not already expired.
