@@ -190,6 +190,12 @@ static uint8_t att_handle_rsp(struct bt_att *att, void *pdu, uint16_t len,
 		return 0;
 	}
 
+	/* Release cloned buffer */
+	if (att->req.buf) {
+		net_buf_unref(att->req.buf);
+		att->req.buf = NULL;
+	}
+
 	/* Reset request before callback so another request can be queued */
 	memcpy(&req, &att->req, sizeof(req));
 	att->req.func = NULL;
