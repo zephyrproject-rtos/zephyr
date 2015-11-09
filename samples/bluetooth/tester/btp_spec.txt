@@ -359,6 +359,72 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x10 - Set IO Capability command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	IO_Capability (1 octet)
+		Return Parameters:	<none>
+
+		Valid IO_Capabilities parameter values:
+					0x00 = Display Only
+					0x01 = Display Yes/No
+					0x02 = Keyboard Only
+					0x03 = No Input, No Output
+					0x04 = Keyboard Display
+
+		This command is used to set IO capability.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x11 - Pair command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+		Return Parameters:	<none>
+
+		This command is used to initiate pairing with remote.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x12 - Unpair command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+		Return Parameters:	<none>
+
+		This command is used to unpair with remote.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x13 - Passkey Entry Response command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Passkey (4 octets)
+		Return Parameters:	<none>
+
+		This command is used to response with passkey for pairing
+		request.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x14 - Passkey Confirmation Response command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Match (1 octet)
+		Return Parameters:	<none>
+
+		This command is used to response for pairing request with
+		confirmation in accordance with initiator and responder
+		passkey.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - New Settings event
 
@@ -390,18 +456,45 @@ Events:
 	Opcode 0x82 - Device Connected event
 
 		Controller Index:	<controller id>
-		Event parameters:	Address (6 octets)
-					Address_Type (1 octet)
+		Event parameters:	Address_Type (1 octet)
+					Address (6 octets)
 
 		This event indicates that a device was connected.
 
 	Opcode 0x83 - Device Disconnected event
 
 		Controller Index:	<controller id>
-		Event parameters:	Address (6 octets)
-					Address_Type (1 octet)
+		Event parameters:	Address_Type (1 octet)
+					Address (6 octets)
 
 		This event indicates that a device was disconnected.
+
+	Opcode 0x84 - Passkey Display event
+
+		Controller Index:	<controller id>
+		Event parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Passkey (4 octets)
+
+		This event indicates that passkey was received and it needs to
+		be confirmed on remote side.
+
+	Opcode 0x85 - Passkey Enter Request event
+
+		Controller Index:	<controller id>
+		Event parameters:	Address_Type (1 octet)
+					Address (6 octets)
+
+		This event indicates that remote requests for passkey enter.
+
+	Opcode 0x86 - Passkey Confirm Request event
+
+		Controller Index:	<controller id>
+		Event parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Passkey (4 octets)
+
+		This event indicates that passkey needs to be confirmed.
 
 GATT Service (ID 2)
 ===================
