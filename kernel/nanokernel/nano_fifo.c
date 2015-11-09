@@ -150,8 +150,11 @@ void nano_task_fifo_put(struct nano_fifo *fifo, void *data)
 void nano_fifo_put(struct nano_fifo *fifo, void *data)
 {
 	static void (*func[3])(struct nano_fifo *fifo, void *data) = {
-		nano_isr_fifo_put, nano_fiber_fifo_put, nano_task_fifo_put
+		nano_isr_fifo_put,
+		nano_fiber_fifo_put,
+		nano_task_fifo_put
 	};
+
 	func[sys_execution_context_type_get()](fifo, data);
 }
 
@@ -259,8 +262,11 @@ void *nano_task_fifo_get_wait(struct nano_fifo *fifo)
 void *nano_fifo_get_wait(struct nano_fifo *fifo)
 {
 	static void *(*func[3])(struct nano_fifo *fifo) = {
-		NULL, nano_fiber_fifo_get_wait, nano_task_fifo_get_wait
+		NULL,
+		nano_fiber_fifo_get_wait,
+		nano_task_fifo_get_wait
 	};
+
 	return func[sys_execution_context_type_get()](fifo);
 }
 
@@ -339,5 +345,16 @@ void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
 
 	irq_unlock(key);
 	return NULL;
+}
+
+void *nano_fifo_get_wait_timeout(struct nano_fifo *fifo, int32_t timeout)
+{
+	static void *(*func[3])(struct nano_fifo *, int32_t) = {
+		NULL,
+		nano_fiber_fifo_get_wait_timeout,
+		nano_task_fifo_get_wait_timeout
+	};
+
+	return func[sys_execution_context_type_get()](fifo, timeout);
 }
 #endif /* CONFIG_NANO_TIMEOUTS */

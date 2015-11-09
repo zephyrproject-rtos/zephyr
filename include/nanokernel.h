@@ -399,6 +399,24 @@ extern void *nano_fifo_get(struct nano_fifo *fifo);
  */
 extern void *nano_fifo_get_wait(struct nano_fifo *fifo);
 
+/**
+ *
+ * @brief Get the head element of a fifo, poll/pend with timeout if empty
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @warning It's only valid to call this API from a fiber or a task.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param timeout Timeout measured in ticks
+ *
+ * @return Pointer to head element in the list
+ */
+extern void *nano_fifo_get_wait_timeout(struct nano_fifo *fifo,
+		int32_t timeout);
+
 /*
  * methods for ISRs
  */
