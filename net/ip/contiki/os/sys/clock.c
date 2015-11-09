@@ -76,3 +76,14 @@ void clock_delay(unsigned int d)
 		return;
 	}
 }
+
+/* Note that this function busy waits until the delay has passed. */
+void clock_delay_usec_busywait(uint32_t dt)
+{
+#define USEC_TO_CYCLES(usec) ((usec) * sys_clock_hw_cycles_per_sec / USEC_PER_SEC)
+
+	uint32_t usec = USEC_TO_CYCLES(dt);
+	uint32_t start = nano_cycle_get_32();
+
+	while ((start + usec) > nano_cycle_get_32());
+}
