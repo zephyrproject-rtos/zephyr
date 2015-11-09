@@ -80,9 +80,12 @@ struct bt_att {
 
 static struct bt_att bt_att_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
-/* Pool for outgoing ATT packets, default MTU is 23 */
+/*
+ * Pool for outgoing ATT packets. Reserve one buffer per connection plus
+ * one additional one in case cloning is needed.
+ */
 static struct nano_fifo att_buf;
-static NET_BUF_POOL(att_pool, CONFIG_BLUETOOTH_MAX_CONN,
+static NET_BUF_POOL(att_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
 		    &att_buf, NULL, 0);
 
