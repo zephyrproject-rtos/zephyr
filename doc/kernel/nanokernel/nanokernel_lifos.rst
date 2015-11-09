@@ -130,17 +130,19 @@ The following APIs for a nanokernel LIFO are provided by :file:`nanokernel.h`:
    Initializes a LIFO.
 
 :cpp:func:`nano_task_lifo_put()`, :cpp:func:`nano_fiber_lifo_put()`,
-:cpp:func:`nano_isr_lifo_put()`
+:cpp:func:`nano_isr_lifo_put()`, :cpp:func:`nano_lifo_put()`
    Add an item to a LIFO.
 
 :cpp:func:`nano_task_lifo_get()`, :cpp:func:`nano_fiber_lifo_get()`,
-:cpp:func:`nano_isr_lifo_get()`
+:cpp:func:`nano_isr_lifo_get()`, :cpp:func:`nano_lifo_get()`
    Remove an item from a LIFO, or fails and continues if it is empty.
 
-:cpp:func:`nano_task_lifo_get_wait()`, :cpp:func:`nano_fiber_lifo_get_wait()`
+:cpp:func:`nano_task_lifo_get_wait()`, :cpp:func:`nano_fiber_lifo_get_wait()`,
+:cpp:func:`nano_lifo_get_wait()`
    Remove an item from a LIFO, or waits for an item if it is empty.
 
 :cpp:func:`nano_task_lifo_get_wait_timeout()`,
-:cpp:func:`nano_fiber_lifo_get_wait_timeout()`
+:cpp:func:`nano_fiber_lifo_get_wait_timeout()`,
+:cpp:func:`nano_lifo_get_wait_timeout()`
    Remove an item from a LIFO, or waits for an item for a specified time
    period if it is empty.

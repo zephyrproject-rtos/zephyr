@@ -630,6 +630,65 @@ struct nano_lifo {
  */
 extern void nano_lifo_init(struct nano_lifo *lifo);
 
+/**
+ * @brief Prepend an element to a LIFO
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @param lifo LIFO on which to put.
+ * @param data Data to insert.
+ *
+ * @return N/A
+ */
+extern void nano_lifo_put(struct nano_lifo *lifo, void *data);
+
+/**
+ * @brief Get the first element from a LIFO
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @param lifo LIFO on which to receive
+ *
+ * @return Pointer to first element in the list if available, otherwise NULL
+ */
+extern void *nano_lifo_get(struct nano_lifo *lifo);
+
+/**
+ * @brief Get the first element from a LIFO, poll/pend if empty
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @warning It's only valid to call this API from a fiber or a task.
+ *
+ * @param lifo LIFO on which to receive
+ *
+ * @return Pointer to first element in the list
+ */
+extern void *nano_lifo_get_wait(struct nano_lifo *lifo);
+
+/**
+ * @brief Get the first element from a LIFO, poll/pend with a timeout if empty
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @warning It's only valid to call this API from a fiber or a task.
+ *
+ * @param lifo LIFO on which to receive
+ * @param timeout Timeout in ticks
+ *
+ * @return Pointer to first element in the list
+ */
+extern void *nano_lifo_get_wait_timeout(struct nano_lifo *lifo,
+		int32_t timeout);
+
 /* methods for ISRs */
 
 /**

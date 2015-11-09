@@ -99,9 +99,21 @@ void nano_task_lifo_put(struct nano_lifo *lifo, void *data)
 	irq_unlock(imask);
 }
 
+void nano_lifo_put(struct nano_lifo *lifo, void *data)
+{
+	static void (*func[3])(struct nano_lifo *, void *) = {
+		nano_isr_lifo_put,
+		nano_fiber_lifo_put,
+		nano_task_lifo_put
+	};
+
+	func[sys_execution_context_type_get()](lifo, data);
+}
+
 FUNC_ALIAS(_lifo_get, nano_isr_lifo_get, void *);
 FUNC_ALIAS(_lifo_get, nano_fiber_lifo_get, void *);
 FUNC_ALIAS(_lifo_get, nano_task_lifo_get, void *);
+FUNC_ALIAS(_lifo_get, nano_lifo_get, void *);
 
 /** INTERNAL
  *
@@ -182,6 +194,17 @@ void *nano_task_lifo_get_wait(struct nano_lifo *lifo)
 	irq_unlock(imask);
 
 	return data;
+}
+
+void *nano_lifo_get_wait(struct nano_lifo *lifo)
+{
+	static void *(*func[3])(struct nano_lifo *) = {
+		NULL,
+		nano_fiber_lifo_get_wait,
+		nano_task_lifo_get_wait
+	};
+
+	return func[sys_execution_context_type_get()](lifo);
 }
 
 /*
@@ -279,4 +302,16 @@ void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
 	irq_unlock(key);
 	return NULL;
 }
+
+void *nano_lifo_get_wait_timeout(struct nano_lifo *lifo, int32_t timeout)
+{
+	static void *(*func[3])(struct nano_lifo *, int32_t) = {
+		NULL,
+		nano_fiber_lifo_get_wait_timeout,
+		nano_task_lifo_get_wait_timeout
+	};
+
+	return func[sys_execution_context_type_get()](lifo, timeout);
+}
+
 #endif /* CONFIG_NANO_TIMEOUTS */
