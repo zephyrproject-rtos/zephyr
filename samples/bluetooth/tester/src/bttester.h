@@ -51,12 +51,12 @@ struct btp_status {
 #define CORE_READ_SUPPORTED_COMMANDS	0x01
 struct core_read_supported_commands_rp {
 	uint8_t data[0];
-};
+} __packed;
 
 #define CORE_READ_SUPPORTED_SERVICES	0x02
 struct core_read_supported_services_rp {
 	uint8_t data[0];
-};
+} __packed;
 
 #define CORE_REGISTER_SERVICE		0x03
 struct core_register_service_cmd {
@@ -68,13 +68,13 @@ struct core_register_service_cmd {
 #define GAP_READ_SUPPORTED_COMMANDS	0x01
 struct gap_read_supported_commands_rp {
 	uint8_t data[0];
-};
+} __packed;
 
 #define GAP_READ_CONTROLLER_INDEX_LIST	0x02
 struct gap_read_controller_index_list_rp {
 	uint8_t num;
 	uint8_t index[0];
-};
+} __packed;
 
 #define GAP_SETTINGS_POWERED		0
 #define GAP_SETTINGS_CONNECTABLE	1
@@ -99,36 +99,36 @@ struct gap_read_controller_info_rp {
 	uint8_t  cod[3];
 	uint8_t  name[249];
 	uint8_t  short_name[11];
-};
+} __packed;
 
 #define GAP_RESET			0x04
 struct gap_reset_rp {
 	uint32_t current_settings;
-};
+} __packed;
 
 #define GAP_SET_POWERED			0x05
 struct gap_set_powered_cmd {
 	uint8_t powered;
-};
+} __packed;
 struct gap_set_powered_rp {
 	uint32_t current_settings;
-};
+} __packed;
 
 #define GAP_SET_CONNECTABLE		0x06
 struct gap_set_connectable_cmd {
 	uint8_t connectable;
-};
+} __packed;
 struct gap_set_connectable_rp {
 	uint32_t current_settings;
-};
+} __packed;
 
 #define GAP_SET_FAST_CONNECTABLE	0x07
 struct gap_set_fast_connectable_cmd {
 	uint8_t fast_connectable;
-};
+} __packed;
 struct gap_set_fast_connectable_rp {
 	uint32_t current_settings;
-};
+} __packed;
 
 #define GAP_NON_DISCOVERABLE		0x00
 #define GAP_GENERAL_DISCOVERABLE	0x01
@@ -137,18 +137,18 @@ struct gap_set_fast_connectable_rp {
 #define GAP_SET_DISCOVERABLE		0x08
 struct gap_set_discoverable_cmd {
 	uint8_t discoverable;
-};
+} __packed;
 struct gap_set_discoverable_rp {
 	uint32_t current_settings;
-};
+} __packed;
 
 #define GAP_SET_BONDABLE		0x09
 struct gap_set_bondable_cmd {
 	uint8_t gap_set_bondable_cmd;
-};
+} __packed;
 struct gap_set_bondable_rp {
 	uint32_t current_settings;
-};
+} __packed;
 
 #define GAP_START_ADVERTISING	0x0a
 struct gap_start_advertising_cmd {
@@ -159,12 +159,12 @@ struct gap_start_advertising_cmd {
 } __packed;
 struct gap_start_advertising_rp {
 	uint32_t current_settings;
-};
+} __packed;
 
 #define GAP_STOP_ADVERTISING		0x0b
 struct gap_stop_advertising_rp {
 	uint32_t current_settings;
-};
+} __packed;
 
 #define GAP_DISCOVERY_FLAG_LE		0x01
 #define GAP_DISCOVERY_FLAG_BREDR	0x02
@@ -187,7 +187,7 @@ struct gap_disconnect_cmd {
 #define GAP_EV_NEW_SETTINGS		0x80
 struct gap_new_settings_ev {
 	uint32_t current_settings;
-};
+} __packed;
 
 #define GAP_DEVICE_FOUND_FLAG_RSSI	0x01
 #define GAP_DEVICE_FOUND_FLAG_AD	0x02
@@ -201,26 +201,26 @@ struct gap_device_found_ev {
 	uint8_t  flags;
 	uint16_t eir_data_len;
 	uint8_t  eir_data[0];
-};
+} __packed;
 
 #define GAP_EV_DEVICE_CONNECTED		0x82
 struct gap_device_connected_ev {
 	uint8_t address[6];
 	uint8_t address_type;
-};
+} __packed;
 
 #define GAP_EV_DEVICE_DISCONNECTED	0x83
 struct gap_device_disconnected_ev {
 	uint8_t address[6];
 	uint8_t address_type;
-};
+} __packed;
 
 /* GATT Service */
 /* commands */
 #define GATT_READ_SUPPORTED_COMMANDS	0x01
 struct gatt_read_supported_commands_rp {
 	uint8_t data[0];
-};
+} __packed;
 
 #define GATT_SERVICE_PRIMARY		0x00
 #define GATT_SERVICE_SECONDARY		0x01
@@ -233,7 +233,7 @@ struct gatt_add_service_cmd {
 } __packed;
 struct gatt_add_service_rp {
 	uint16_t svc_id;
-};
+} __packed;
 
 #define GATT_ADD_CHARACTERISTIC		0x03
 struct gatt_add_characteristic_cmd {
@@ -245,7 +245,7 @@ struct gatt_add_characteristic_cmd {
 } __packed;
 struct gatt_add_characteristic_rp {
 	uint16_t char_id;
-};
+} __packed;
 
 #define GATT_ADD_DESCRIPTOR		0x04
 struct gatt_add_descriptor_cmd {
