@@ -37,7 +37,7 @@
 static struct bt_gatt_attr gatt_db[MAX_ATTRIBUTES];
 
 static struct {
-	uint8_t len;
+	uint16_t len;
 	uint8_t buf[MAX_BUFFER_SIZE];
 } gatt_buf;
 
