@@ -830,7 +830,6 @@ static uint8_t subscribe_func(struct bt_conn *conn, int err,
 static void cmd_gatt_subscribe(int argc, char *argv[])
 {
 	int err;
-	uint16_t handle;
 
 	if (subscribe_params.value_handle) {
 		printk("Cannot subscribe: subscription to %u already exists\n",
@@ -844,17 +843,16 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 	}
 
 	if (argc < 2) {
-		printk("handle required\n");
+		printk("CCC handle required\n");
 		return;
 	}
-
-	handle = strtoul(argv[1], NULL, 16);
 
 	if (argc < 3) {
 		printk("value handle required\n");
 		return;
 	}
 
+	subscribe_params.ccc_handle = strtoul(argv[1], NULL, 16);
 	subscribe_params.value_handle = strtoul(argv[2], NULL, 16);
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.func = subscribe_func;
@@ -864,7 +862,7 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 		subscribe_params.value = strtoul(argv[3], NULL, 16);
 	}
 
-	err = bt_gatt_subscribe(default_conn, handle, &subscribe_params);
+	err = bt_gatt_subscribe(default_conn, &subscribe_params);
 	if (err) {
 		printk("Subscribe failed (err %d)\n", err);
 	} else {
@@ -875,26 +873,18 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 static void cmd_gatt_unsubscribe(int argc, char *argv[])
 {
 	int err;
-	uint16_t handle;
 
 	if (!default_conn) {
 		printk("Not connected\n");
 		return;
 	}
 
-	if (argc < 2) {
-		printk("handle required\n");
-		return;
-	}
-
-	handle = strtoul(argv[1], NULL, 16);
-
 	if (!subscribe_params.value_handle) {
 		printk("No subscription found\n");
 		return;
 	}
 
-	err = bt_gatt_unsubscribe(default_conn, handle, &subscribe_params);
+	err = bt_gatt_unsubscribe(default_conn, &subscribe_params);
 	if (err) {
 		printk("Unsubscribe failed (err %d)\n", err);
 	} else {

@@ -722,6 +722,8 @@ struct bt_gatt_subscribe_params {
 	void (*destroy)(void *user_data);
 	/** Subscribe value handle */
 	uint16_t value_handle;
+	/** Subscribe CCC handle */
+	uint16_t ccc_handle;
 	/** Subscribe value */
 	uint16_t value;
 	struct bt_gatt_subscribe_params *_next;
@@ -731,14 +733,16 @@ struct bt_gatt_subscribe_params {
  *
  * This procedure subscribe to value notification using the Client
  * Characteristic Configuration handle.
+ * If notification received subscribe value callback is called to return
+ * notified value. One may then decide whether to unsubscribe directly from
+ * this callback.
  *
  * @param conn Connection object.
- * @param handle CCC handle.
  * @param params Subscribe parameters.
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
+int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params);
 
 /** @brief Unsubscribe Attribute Value Notification
@@ -747,12 +751,11 @@ int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
  * Characteristic Configuration handle.
  *
  * @param conn Connection object.
- * @param handle CCC handle.
  * @param params Subscribe parameters.
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_gatt_unsubscribe(struct bt_conn *conn, uint16_t handle,
+int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params);
 
 /** @brief Cancel GATT pending request

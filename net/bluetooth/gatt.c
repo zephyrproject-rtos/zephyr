@@ -539,8 +539,12 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 	BT_DBG("handle 0x%04x length %u\n", handle, length);
 
 	for (params = subscriptions; params; params = params->_next) {
-		if (handle == params->value_handle) {
-			params->func(conn, 0, data, length);
+		if (handle != params->value_handle) {
+			continue;
+		}
+
+		if (params->func(conn, 0, data, length) == BT_GATT_ITER_STOP) {
+			bt_gatt_unsubscribe(conn, params);
 		}
 	}
 }
@@ -1415,7 +1419,7 @@ static int gatt_write_ccc(struct bt_conn *conn, uint16_t handle, uint16_t value,
 	return gatt_send(conn, buf, func, params, NULL);
 }
 
-int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
+int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params)
 {
 	struct bt_gatt_subscribe_params *tmp;
@@ -1425,7 +1429,7 @@ int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
 		return -ENOTCONN;
 	}
 
-	if (!handle || !params || !params->func || !params->value) {
+	if (!params || !params->func || !params->value || !params->ccc_handle) {
 		return -EINVAL;
 	}
 
@@ -1450,11 +1454,11 @@ int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
 		return 0;
 	}
 
-	return gatt_write_ccc(conn, handle, params->value,
+	return gatt_write_ccc(conn, params->ccc_handle, params->value,
 			      att_write_ccc_rsp, params);
 }
 
-int bt_gatt_unsubscribe(struct bt_conn *conn, uint16_t handle,
+int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
 	struct bt_gatt_subscribe_params *tmp;
@@ -1464,7 +1468,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, uint16_t handle,
 		return -ENOTCONN;
 	}
 
-	if (!handle || !params) {
+	if (!params) {
 		return -EINVAL;
 	}
 
@@ -1501,7 +1505,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, uint16_t handle,
 		return 0;
 	}
 
-	return gatt_write_ccc(conn, handle, 0x0000, NULL, NULL);
+	return gatt_write_ccc(conn, params->ccc_handle, 0x0000, NULL, NULL);
 }
 
 void bt_gatt_cancel(struct bt_conn *conn)
