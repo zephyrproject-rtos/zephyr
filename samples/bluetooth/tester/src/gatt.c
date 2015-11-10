@@ -405,6 +405,32 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr_chrc)
 }
 
 static struct bt_gatt_attr cep = BT_GATT_CEP(NULL);
+
+static struct bt_gatt_attr *add_cep(const struct bt_gatt_attr *attr_chrc)
+{
+	struct bt_gatt_attr *attr_desc;
+	struct bt_gatt_chrc *chrc = attr_chrc->user_data;
+	struct bt_gatt_cep cep_value;
+
+	/* Extended Properties bit shall be set */
+	if (!(chrc->properties & BT_GATT_CHRC_EXT_PROP)) {
+		return NULL;
+	}
+
+	/* Add CEP descriptor to GATT database */
+	attr_desc = gatt_db_add(&cep);
+	if (!attr_desc) {
+		return NULL;
+	}
+
+	attr_desc->user_data = gatt_buf_add(&cep_value, sizeof(cep_value));
+	if (!attr_desc->user_data) {
+		return NULL;
+	}
+
+	return attr_desc;
+}
+
 static struct bt_gatt_attr *dsc = &chr_val;
 
 static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
@@ -420,8 +446,7 @@ static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
 	}
 
 	if (!bt_uuid_cmp(&uuid, cep.uuid)) {
-		/* TODO Add CEP descriptor */
-		attr_desc = NULL;
+		attr_desc = add_cep(attr);
 	} else if (!bt_uuid_cmp(&uuid, ccc.uuid)) {
 		attr_desc = add_ccc(attr);
 	} else {
@@ -569,6 +594,20 @@ static uint8_t set_ccc_value(struct bt_gatt_attr *attr, const void *value,
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t set_cep_value(struct bt_gatt_attr *attr, const void *value,
+			     const uint16_t len)
+{
+	struct bt_gatt_cep *cep_value = attr->user_data;
+
+	if (len != sizeof(cep_value->properties)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	memcpy(&cep_value->properties, value, len);
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 {
 	const struct gatt_set_value_cmd *cmd = user_data;
@@ -578,6 +617,13 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 	/* Handle CCC value */
 	if (!bt_uuid_cmp(attr->uuid, ccc.uuid)) {
 		status = set_ccc_value(attr, cmd->value,
+				       sys_le16_to_cpu(cmd->len));
+		goto rsp;
+	}
+
+	/* Set CEP value */
+	if (!bt_uuid_cmp(attr->uuid, cep.uuid)) {
+		status = set_cep_value(attr, cmd->value,
 				       sys_le16_to_cpu(cmd->len));
 		goto rsp;
 	}
