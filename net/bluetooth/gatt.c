@@ -1084,7 +1084,7 @@ static int att_find_info(struct bt_conn *conn,
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params)
 {
-	if (!conn || !params->func || !params->start_handle ||
+	if (!conn || !params || !params->func || !params->start_handle ||
 	    !params->end_handle || params->start_handle > params->end_handle) {
 		return -EINVAL;
 	}
