@@ -29,9 +29,13 @@
 
 
 #ifdef CONFIG_GPIO_DW_0
+#ifdef CONFIG_IOAPIC
 	ioapic_mkstub gpio_dw_0 gpio_dw_isr gpio_dw_isr_0
+#endif
 #endif /* CONFIG_GPIO_DW_0 */
 
 #ifdef CONFIG_GPIO_DW_1
+#ifdef CONFIG_IOAPIC
 	ioapic_mkstub gpio_dw_1 gpio_dw_isr gpio_dw_isr_1
+#endif
 #endif /* CONFIG_GPIO_DW_1 */
