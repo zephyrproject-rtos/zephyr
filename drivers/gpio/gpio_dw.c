@@ -27,27 +27,7 @@
 #include <shared_irq.h>
 #endif
 
-#define SWPORTA_DR	0x00
-#define SWPORTA_DDR	0x04
-#define SWPORTB_DR	0x0c
-#define SWPORTB_DDR	0x10
-#define SWPORTC_DR	0x18
-#define SWPORTC_DDR	0x1c
-#define SWPORTD_DR	0x24
-#define SWPORTD_DDR	0x28
-#define INTEN		0x30
-#define INTMASK		0x34
-#define INTTYPE_LEVEL	0x38
-#define INT_POLARITY	0x3c
-#define INTSTATUS	0x40
-#define PORTA_DEBOUNCE	0x48
-#define PORTA_EOI	0x4c
-#define EXT_PORTA	0x50
-#define EXT_PORTB	0x54
-#define EXT_PORTC	0x58
-#define EXT_PORTD	0x5c
-#define INT_CLOCK_SYNC	0x60
-#define INT_BOTHEDGE	0x68
+#define BIT(n)	(1UL << (n))
 
 static inline uint32_t dw_read(uint32_t base_addr, uint32_t offset)
 {
@@ -71,23 +51,16 @@ static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 	}
 }
 
-#ifdef CONFIG_GPIO_DW_BOTHEDGES_SUPPORT
-static inline void dw_set_gpio_bothedges(struct device *port,
-			uint32_t pin, int flags)
+#ifdef CONFIG_PLATFORM_QUARK_SE_ARC
+static inline void dw_set_both_edges(uint32_t base_addr, uint32_t pin)
 {
-	struct gpio_dw_config *config = port->config->config_info;
-	uint32_t base_addr = config->base_addr;
-	uint8_t flag_is_set = (flags & GPIO_INT_DOUBLE_EDGE);
-
-	if (flag_is_set) {
-		dw_set_bit(base_addr, INT_BOTHEDGE, pin, flag_is_set);
-		dw_set_bit(base_addr, INTTYPE_LEVEL, pin, flag_is_set);
-	}
+	ARG_UNUSED(base_addr);
+	ARG_UNUSED(pin);
 }
 #else
-static inline void dw_set_gpio_bothedges(struct device *port,
-			uint32_t pin, int flags)
+static inline void dw_set_both_edges(uint32_t base_addr, uint32_t pin)
 {
+	dw_set_bit(base_addr, INT_BOTHEDGE, pin, 1);
 }
 #endif
 
@@ -111,7 +84,11 @@ static inline void dw_interrupt_config(struct device *port, int access_op,
 	dw_set_bit(base_addr, INT_POLARITY, pin, flag_is_set);
 
 	/* both edges */
-	dw_set_gpio_bothedges(port, pin, flags);
+	flag_is_set = (flags & GPIO_INT_DOUBLE_EDGE);
+	if (flag_is_set) {
+		dw_set_both_edges(base_addr, pin);
+		dw_set_bit(base_addr, INTTYPE_LEVEL, pin, flag_is_set);
+	}
 
 	/* use built-in debounce  */
 	flag_is_set = (flags & GPIO_INT_DEBOUNCE);
