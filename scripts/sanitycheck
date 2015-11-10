@@ -1154,8 +1154,9 @@ class TestSuite:
                         continue
 
                     for cw in tc.config_whitelist:
-                        args = ["ARCH=" + plat.arch.name,
-                                "PLATFORM_CONFIG=" + plat.name, "initconfig"]
+                        args = tc.extra_args[:]
+                        args.extend(["ARCH=" + plat.arch.name,
+                                "PLATFORM_CONFIG=" + plat.name, "initconfig"])
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every plat/ktype combo,
                         # need a way to avoid different Make processe from clobbering
