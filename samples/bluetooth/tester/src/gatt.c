@@ -94,6 +94,30 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern)
 	return attr++;
 }
 
+/* Convert UUID from BTP command to bt_uuid */
+static uint8_t btp2bt_uuid(const uint8_t *uuid, uint8_t len,
+			   struct bt_uuid *bt_uuid)
+{
+	switch (len) {
+	case 0x02: { /* UUID 16 */
+		uint16_t u16;
+
+		bt_uuid->type = BT_UUID_16;
+		memcpy(&u16, uuid, sizeof(u16));
+		bt_uuid->u16 = sys_le16_to_cpu(u16);
+		break;
+	}
+	case 0x10: /* UUID 128*/
+		bt_uuid->type = BT_UUID_128;
+		memcpy(&bt_uuid->u128, uuid, sizeof(bt_uuid->u128));
+		break;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static void supported_commands(uint8_t *data, uint16_t len)
 {
 	uint16_t cmds;
@@ -120,19 +144,8 @@ static void add_service(uint8_t *data, uint16_t len)
 	struct gatt_add_service_rp rp;
 	struct bt_gatt_attr *attr_svc;
 	struct bt_uuid uuid;
-	uint16_t val;
 
-	switch (cmd->uuid_length) {
-	case 0x02: /* UUID 16 */
-		uuid.type = BT_UUID_16;
-		memcpy(&val, cmd->uuid, sizeof(val));
-		uuid.u16 = sys_le16_to_cpu(val);
-		break;
-	case 0x10: /* UUID 128*/
-		uuid.type = BT_UUID_128;
-		memcpy(&uuid.u128, cmd->uuid, sizeof(uuid.u128));
-		break;
-	default:
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
 		goto fail;
 	}
 
@@ -236,19 +249,8 @@ static void add_characteristic(uint8_t *data, uint16_t len)
 	struct bt_gatt_attr *attr_chrc, *attr_value;
 	struct bt_gatt_chrc chrc;
 	struct bt_uuid uuid;
-	uint16_t u16;
 
-	switch (cmd->uuid_length) {
-	case 0x02: /* UUID 16 */
-		uuid.type = BT_UUID_16;
-		memcpy(&u16, cmd->uuid, sizeof(u16));
-		uuid.u16 = sys_le16_to_cpu(u16);
-		break;
-	case 0x10: /* UUID 128*/
-		uuid.type = BT_UUID_128;
-		memcpy(&uuid.u128, cmd->uuid, sizeof(uuid.u128));
-		break;
-	default:
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
 		goto fail;
 	}
 
@@ -297,19 +299,8 @@ static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
 	struct gatt_add_descriptor_rp rp;
 	struct bt_gatt_attr *attr_desc;
 	struct bt_uuid uuid;
-	uint16_t u16;
 
-	switch (cmd->uuid_length) {
-	case 0x02: /* UUID 16 */
-		uuid.type = BT_UUID_16;
-		memcpy(&u16, cmd->uuid, sizeof(u16));
-		uuid.u16 = sys_le16_to_cpu(u16);
-		break;
-	case 0x10: /* UUID 128*/
-		uuid.type = BT_UUID_128;
-		memcpy(&uuid.u128, cmd->uuid, sizeof(uuid.u128));
-		break;
-	default:
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
 		goto fail;
 	}
 
