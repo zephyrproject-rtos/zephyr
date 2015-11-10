@@ -120,7 +120,6 @@ static void add_service(uint8_t *data, uint16_t len)
 	struct gatt_add_service_rp rp;
 	struct bt_gatt_attr *attr_svc;
 	struct bt_uuid uuid;
-	uint8_t status;
 	uint16_t val;
 
 	switch (cmd->uuid_length) {
@@ -134,8 +133,7 @@ static void add_service(uint8_t *data, uint16_t len)
 		memcpy(&uuid.u128, cmd->uuid, sizeof(uuid.u128));
 		break;
 	default:
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto fail;
 	}
 
 	switch (cmd->type) {
@@ -146,32 +144,27 @@ static void add_service(uint8_t *data, uint16_t len)
 		attr_svc = gatt_db_add(&svc_sec);
 		break;
 	default:
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto fail;
 	}
 
 	if (!attr_svc) {
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto fail;
 	}
 
 	attr_svc->user_data = gatt_buf_add(&uuid, sizeof(uuid));
 	if (!attr_svc->user_data) {
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto fail;
 	}
 
 	rp.svc_id = sys_cpu_to_le16(attr_svc->handle);
-	status = BTP_STATUS_SUCCESS;
 
-rsp:
-	if (status != BTP_STATUS_SUCCESS) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_SERVICE,
-			   CONTROLLER_INDEX, status);
-	} else {
-		tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_SERVICE,
-				CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
-	}
+	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_SERVICE,
+			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+
+	return;
+fail:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_SERVICE, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 struct gatt_value {
@@ -234,7 +227,6 @@ static void add_characteristic(uint8_t *data, uint16_t len)
 	struct bt_gatt_attr *attr_chrc, *attr_value;
 	struct bt_gatt_chrc chrc;
 	struct bt_uuid uuid;
-	uint8_t status;
 	uint16_t u16;
 
 	switch (cmd->uuid_length) {
@@ -248,49 +240,41 @@ static void add_characteristic(uint8_t *data, uint16_t len)
 		memcpy(&uuid.u128, cmd->uuid, sizeof(uuid.u128));
 		break;
 	default:
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto fail;
 	}
 
 	attr_chrc = gatt_db_add(&chr);
 	if (!attr_chrc) {
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto fail;
 	}
 
 	attr_value = gatt_db_add(&chr_val);
 	if (!attr_value) {
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto fail;
 	}
 
 	chrc.properties = cmd->properties;
 	chrc.uuid = gatt_buf_add(&uuid, sizeof(uuid));
 	if (!chrc.uuid) {
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto fail;
 	}
 
 	attr_chrc->user_data = gatt_buf_add(&chrc, sizeof(chrc));
 	if (!attr_chrc->user_data) {
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto fail;
 	}
 
 	attr_value->uuid = chrc.uuid;
 	attr_value->perm = cmd->permissions;
 
 	rp.char_id = sys_cpu_to_le16(attr_chrc->handle);
-	status = BTP_STATUS_SUCCESS;
+	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
+			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 
-rsp:
-	if (status != BTP_STATUS_SUCCESS) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
-			   CONTROLLER_INDEX, status);
-	} else {
-		tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
-				CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
-	}
+	return;
+fail:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
+		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static struct bt_gatt_attr ccc = BT_GATT_CCC(NULL, NULL);
