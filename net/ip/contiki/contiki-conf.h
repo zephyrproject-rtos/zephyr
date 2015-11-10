@@ -53,7 +53,11 @@ typedef unsigned int uip_stats_t;
 #define SICSLOWPAN_UDP_PORT_MIN                     0xF0B0
 #define SICSLOWPAN_UDP_PORT_MAX                     0xF0BF   /* F0B0 + 15 */
 #define NETSTACK_CONF_COMPRESS sicslowpan_compression
+#ifdef CONFIG_NETWORKING_WITH_BT
+#define NETSTACK_CONF_FRAGMENT null_fragmentation
+#else
 #define NETSTACK_CONF_FRAGMENT sicslowpan_fragmentation
+#endif
 #else
 #define NETSTACK_CONF_COMPRESS null_compression
 #define NETSTACK_CONF_FRAGMENT null_fragmentation
@@ -87,6 +91,9 @@ typedef unsigned int uip_stats_t;
 #define NETSTACK_CONF_RDC	nullrdc_driver
 #define NETSTACK_CONF_MAC	nullmac_driver
 #define LINKADDR_CONF_SIZE      6
+#ifdef CONFIG_NETWORKING_WITH_BT
+#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPHC
+#endif /* CONFIG_NETWORKING_WITH_BT */
 #endif /* CONFIG_NETWORKING_WITH_15_4 */
 #define NETSTACK_CONF_LLSEC	nullsec_driver
 

@@ -265,11 +265,23 @@ config NETWORKING_WITH_15_4_LOOPBACK_UART
          between two qemus
 endchoice
 
+config	NETWORKING_WITH_BT
+	bool
+	prompt "Enable Bluetooth driver"
+	depends on NETWORKING && NETWORKING_WITH_IPV6
+	depends on BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
+	select L2_BUFFERS
+	default n
+	help
+	  Enable Bluetooth driver that send and receives IPv6 packets,
+	  does header compression on it and writes it to the
+	  Bluetooth stack via L2CAP channel.
+
 config	NETWORKING_WITH_6LOWPAN
 	bool
 	prompt "Enable 6LoWPAN (IPv6 compression) in the uIP stack"
 	depends on NETWORKING
-	depends on NETWORKING_WITH_15_4
+	depends on NETWORKING_WITH_15_4 || NETWORKING_WITH_BT
 	default n
 	help
 	  Enable 6LoWPAN in uIP stack. Currently this requires 802.15.4

@@ -41,6 +41,7 @@
 #include "net_driver_15_4.h"
 #include "net_driver_slip.h"
 #include "net_driver_ethernet.h"
+#include "net_driver_bt.h"
 
 #include "contiki/os/sys/process.h"
 #include "contiki/os/sys/etimer.h"
@@ -843,6 +844,10 @@ int net_init(void)
 
 #if defined(CONFIG_NETWORKING_WITH_15_4)
 	net_driver_15_4_init();
+#endif
+
+#if defined(CONFIG_NETWORKING_WITH_BT)
+	net_driver_bt_init();
 #endif
 
 	net_driver_slip_init();
