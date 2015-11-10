@@ -304,15 +304,11 @@ static inline __attribute__((always_inline))
 {
 	uint32_t reg = 0;
 
-	__asm__ volatile("inl	%%dx, %%eax\n"
-			 "mov	%1, 1\n"
-			 "shl	%%cl, %1\n"
-			 "or	%%eax, %1\n"
-			 "outl	%%eax, %%dx;\n\t"
+	__asm__ volatile("inl	%w1, %0;\n\t"
+			 "btsl	%2, %0;\n\t"
+			 "outl	%0, %w1;\n\t"
 			 :
-			 : "d" (port),
-			   "r" (reg), "d" (bit)
-			 : "memory", "cc");
+			 : "a" (reg), "Nd" (port), "Ir" (bit));
 }
 
 static inline __attribute__((always_inline))
@@ -320,15 +316,11 @@ static inline __attribute__((always_inline))
 {
 	uint32_t reg = 0;
 
-	__asm__ volatile("inl	%%dx, %%eax\n"
-			 "mov	%1, 1\n"
-			 "shl	%%cl, %1\n"
-			 "and	%%eax, %1\n"
-			 "outl	%%eax, %%dx;\n\t"
+	__asm__ volatile("inl	%w1, %0;\n\t"
+			 "btrl	%2, %0;\n\t"
+			 "outl	%0, %w1;\n\t"
 			 :
-			 : "d" (port),
-			   "r" (reg), "d" (bit)
-			 : "memory", "cc");
+			 : "a" (reg), "Nd" (port), "Ir" (bit));
 }
 
 static inline __attribute__((always_inline))
@@ -336,15 +328,10 @@ static inline __attribute__((always_inline))
 {
 	uint32_t ret;
 
-	__asm__ volatile("inl	%%dx, %%eax\n"
-			 "bt	%2, %%eax\n"
-			 "lahf\n"
-			 "mov	%1, %%eax\n"
-			 "clc;\n\t"
-			 : "=r" (ret)
-			 : "d" (port),
-			   "Mr" (bit)
-			 : "memory", "cc");
+	__asm__ volatile("inl	%w1, %0\n\t"
+			 "btl	%2, %0\n\t"
+			 : "=a" (ret)
+			 : "Nd" (port), "Ir" (bit));
 
 	return (ret & 1);
 }
