@@ -22,6 +22,7 @@
 #include <stdint.h>
 
 #include <toolchain.h>
+#include <bluetooth/bluetooth.h>
 #include <misc/printk.h>
 #include <misc/byteorder.h>
 #include <console/uart_pipe.h>
@@ -36,6 +37,18 @@ static uint8_t cmd_buf[CMD_QUEUED * BTP_MTU];
 
 static struct nano_fifo cmds_queue;
 static struct nano_fifo avail_queue;
+
+/* Convert addr_type to the type defined by tester */
+void addr2btp(const bt_addr_le_t *bt_addr, uint8_t *addr, uint8_t *type)
+{
+	if (bt_addr->type == BTP_BDADDR_LE_RANDOM) {
+		*type = BTP_BDADDR_LE_RANDOM;
+	} else {
+		*type = BTP_BDADDR_LE_PUBLIC;
+	}
+
+	memcpy(addr, bt_addr->val, sizeof(bt_addr->val));
+}
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {

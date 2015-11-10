@@ -41,19 +41,7 @@ static void le_connected(struct bt_conn *conn)
 	struct gap_device_connected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
-	memcpy(ev.address, addr->val, sizeof(ev.address));
-
-	/* Convert addr_type to the type defined by tester */
-	switch (addr->type) {
-	case BT_ADDR_LE_PUBLIC:
-		ev.address_type = BTP_BDADDR_LE_PUBLIC;
-		break;
-	case BT_ADDR_LE_RANDOM:
-		ev.address_type = BTP_BDADDR_LE_RANDOM;
-		break;
-	default:
-		return;
-	}
+	addr2btp(addr, ev.address, &ev.address_type);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_CONNECTED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
@@ -64,19 +52,7 @@ static void le_disconnected(struct bt_conn *conn)
 	struct gap_device_disconnected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
-	memcpy(ev.address, addr->val, sizeof(ev.address));
-
-	/* Convert addr_type to the type defined by tester */
-	switch (addr->type) {
-	case BT_ADDR_LE_PUBLIC:
-		ev.address_type = BTP_BDADDR_LE_PUBLIC;
-		break;
-	case BT_ADDR_LE_RANDOM:
-		ev.address_type = BTP_BDADDR_LE_RANDOM;
-		break;
-	default:
-		return;
-	}
+	addr2btp(addr, ev.address, &ev.address_type);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_DISCONNECTED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
@@ -256,18 +232,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 
 	ev = (void*) buf;
 
-	memcpy(ev->address, addr->val, sizeof(ev->address));
-	/* Convert addr_type to the type defined by tester */
-	switch (addr->type) {
-	case BT_ADDR_LE_PUBLIC:
-		ev->address_type = BTP_BDADDR_LE_PUBLIC;
-		break;
-	case BT_ADDR_LE_RANDOM:
-		ev->address_type = BTP_BDADDR_LE_RANDOM;
-		break;
-	default:
-		return;
-	}
+	addr2btp(addr, ev->address, &ev->address_type);
 
 	ev->flags = GAP_DEVICE_FOUND_FLAG_RSSI;
 	ev->rssi = rssi;

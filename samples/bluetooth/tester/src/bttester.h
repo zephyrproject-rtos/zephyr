@@ -358,3 +358,5 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 uint8_t tester_init_gatt(void);
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			uint16_t len);
+
+void addr2btp(const bt_addr_le_t *bt_addr, uint8_t *addr, uint8_t *type);
