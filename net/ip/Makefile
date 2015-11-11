@@ -6,7 +6,7 @@ ccflags-y += -I${srctree}/net/ip
 ccflags-y += -I${srctree}/include/drivers
 
 # Zypher specific files
-obj-y = net_init.o \
+obj-y = net_core.o \
 	ip_buf.o \
 	net_context.o
 
