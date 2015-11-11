@@ -359,6 +359,25 @@ static void udp_packet_receive(struct simple_udp_connection *c,
 	nano_fifo_put(net_context_get_queue(context), buf);
 }
 
+#ifdef CONFIG_NANO_TIMEOUTS
+static inline struct net_buf *buf_wait_timeout(struct nano_fifo *queue,
+					       int32_t timeout)
+{
+	switch (sys_execution_context_type_get()) {
+	case NANO_CTX_FIBER:
+		return nano_fiber_fifo_get_wait_timeout(queue, timeout);
+	case NANO_CTX_TASK:
+		return nano_task_fifo_get_wait_timeout(queue, timeout);
+	case NANO_CTX_ISR:
+	default:
+		/* Invalid context type */
+		break;
+	}
+
+	return NULL;
+}
+#endif
+
 /* Called by application when it wants to receive network data */
 struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 {
@@ -426,11 +445,7 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 		break;
 	default:
 #ifdef CONFIG_NANO_TIMEOUTS
-#ifdef CONFIG_MICROKERNEL
-		buf = nano_task_fifo_get_wait_timeout(rx_queue, timeout);
-#else /* CONFIG_MICROKERNEL */
-		buf = nano_fiber_fifo_get_wait_timeout(rx_queue, timeout);
-#endif
+		buf = buf_wait_timeout(rx_queue, timeout);
 #else /* CONFIG_NANO_TIMEOUTS */
 		buf = nano_fifo_get(rx_queue);
 #endif
