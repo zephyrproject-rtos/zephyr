@@ -17,14 +17,21 @@
 #
 
 menuconfig BLUETOOTH
-	bool "Bluetooth LE support"
+	bool "Bluetooth support"
 	default n
 	select NANO_TIMEOUTS
 	select NET_BUF
 	help
-	  This option enables Bluetooth Low Energy support.
+	  This option enables Bluetooth support.
 
 if BLUETOOTH
+config BLUETOOTH_LE
+	bool "Bluetooth Low Energy (LE) support"
+	default n
+	help
+	  This option enables Bluetooth Low Energy (LE)"
+
+if BLUETOOTH_LE
 config  BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
 	default 2
@@ -223,5 +230,7 @@ config	BLUETOOTH_DEBUG_GATT
 	  Generic Attribute Profile (GATT).
 
 endif # BLUETOOTH_DEBUG
+
+endif # BLUETOOTH_LE
 
 endif # BLUETOOTH
