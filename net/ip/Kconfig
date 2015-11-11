@@ -168,8 +168,6 @@ config	NETWORKING_UART
 	select UART_SIMPLE
 	help
 	  Enable UART driver for passing IPv6 packets using slip.
-	  This requires running tunslip6 tool in host. See README
-	  file at net/ip/contiki/tools directory for details.
 config  ETHERNET
 	bool "Ethernet drivers"
 	help
