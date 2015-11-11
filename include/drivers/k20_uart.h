@@ -241,7 +241,7 @@ static inline void _k20_uart_fifo_enable(volatile struct K20_UART *uart_p)
 	uint8_t tx_rx_state = uart_p->c2.value && (TX_EN_MASK | RX_EN_MASK);
 
 	/* disable Rx and Tx */
-	uart_p->c2.value &= !(TX_EN_MASK | RX_EN_MASK);
+	uart_p->c2.value &= ~(TX_EN_MASK | RX_EN_MASK);
 
 	uart_p->pfifo.value |= (TX_FIFO_EN_MASK | RX_FIFO_EN_MASK);
 
