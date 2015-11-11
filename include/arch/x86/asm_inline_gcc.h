@@ -239,7 +239,9 @@ static inline __attribute__((always_inline))
 static inline __attribute__((always_inline))
 	void sys_out8(uint8_t data, io_port_t port)
 {
-	__asm__ volatile("outb	%%al, %%dx;\n\t" : : "a"(data), "d"(port));
+	__asm__ volatile("outb	%b0, %w1;\n\t"
+			 :
+			 : "a"(data), "Nd"(port));
 }
 
 
@@ -248,7 +250,9 @@ static inline __attribute__((always_inline))
 {
 	uint8_t ret;
 
-	__asm__ volatile("inb	%%dx, %%al;\n\t" : "=a"(ret) : "d"(port));
+	__asm__ volatile("inb	%w1, %b0;\n\t"
+			 : "=a"(ret)
+			 : "Nd"(port));
 	return ret;
 }
 
@@ -256,7 +260,9 @@ static inline __attribute__((always_inline))
 static inline __attribute__((always_inline))
 	void sys_out16(uint16_t data, io_port_t port)
 {
-	__asm__ volatile("outw	%%ax, %%dx;\n\t" :  : "a"(data), "d"(port));
+	__asm__ volatile("outw	%w0, %w1;\n\t"
+			 :
+			 : "a"(data), "Nd"(port));
 }
 
 
@@ -265,7 +271,9 @@ static inline __attribute__((always_inline))
 {
 	uint16_t ret;
 
-	__asm__ volatile("inw	%%dx, %%ax;\n\t" : "=a"(ret) : "d"(port));
+	__asm__ volatile("inw	%w1, %w0;\n\t"
+			 : "=a"(ret)
+			 : "Nd"(port));
 	return ret;
 }
 
@@ -273,7 +281,9 @@ static inline __attribute__((always_inline))
 static inline __attribute__((always_inline))
 	void sys_out32(uint32_t data, io_port_t port)
 {
-	__asm__ volatile("outl	%%eax, %%dx;\n\t" :  : "a"(data), "d"(port));
+	__asm__ volatile("outl	%0, %w1;\n\t"
+			 :
+			 : "a"(data), "Nd"(port));
 }
 
 
@@ -282,7 +292,9 @@ static inline __attribute__((always_inline))
 {
 	uint32_t ret;
 
-	__asm__ volatile("inl	%%dx, %%eax;\n\t" : "=a"(ret) : "d"(port));
+	__asm__ volatile("inl	%w1, %0;\n\t"
+			 : "=a"(ret)
+			 : "Nd"(port));
 	return ret;
 }
 
