@@ -230,7 +230,8 @@ static int k20_uart_irq_tx_ready(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
-	return uart->s1.field.tx_data_empty;
+	return (uart->c2.field.tx_int_dma_tx_en == 0) ?
+			0 : uart->s1.field.tx_data_empty;
 }
 
 /**
@@ -272,7 +273,8 @@ static int k20_uart_irq_rx_ready(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
-	return uart->s1.field.rx_data_full;
+	return (uart->c2.field.rx_full_int_dma_tx_en == 0) ?
+			0 : uart->s1.field.rx_data_full;
 }
 
 /**
@@ -322,13 +324,8 @@ static void k20_uart_irq_err_disable(struct device *dev)
  */
 static int k20_uart_irq_is_pending(struct device *dev)
 {
-	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
-	/* Look only at Tx and Rx data interrupt flags */
-
-	return ((uart->s1.value & (TX_DATA_EMPTY_MASK | RX_DATA_FULL_MASK))
-			? 1
-			: 0);
+	return k20_uart_irq_tx_ready(dev) || k20_uart_irq_rx_ready(dev);
 }
 
 /**
