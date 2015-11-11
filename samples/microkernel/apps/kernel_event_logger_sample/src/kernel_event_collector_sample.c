@@ -22,7 +22,18 @@
 #include <misc/kernel_event_logger.h>
 #include <string.h>
 
-#define RANDOM(x) (((nano_tick_get_32() * ((x) + 1)) & 0x2F) + 1)
+#ifdef CONFIG_NANOKERNEL
+  #define TAKE(x) nano_fiber_sem_take_wait(&x)
+  #define GIVE(x) nano_fiber_sem_give(&x)
+  #define RANDDELAY(x) myDelay(((nano_tick_get_32() * ((x) + 1)) & 0x2f) + 1)
+  #define SLEEP(x) fiber_sleep(x)
+#else  /* ! CONFIG_NANOKERNEL */
+  #define TAKE(x) task_mutex_lock_wait(x)
+  #define GIVE(x) task_mutex_unlock(x)
+  #define RANDDELAY(x) myDelay(((task_tick_get_32() * ((x) + 1)) & 0x2f) + 1)
+  #define SLEEP(x) task_sleep(x)
+#endif /*  CONFIG_NANOKERNEL */
+
 
 #define TEST_EVENT_ID 255
 
@@ -114,29 +125,33 @@ void print_context_data(uint32_t thread_id, uint32_t count,
 void fork_manager_entry(void)
 {
 	int i;
-	kmutex_t forkMutexs[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3,
-		forkMutex4, forkMutex5};
+#ifdef CONFIG_NANOKERNEL
+	/* externs */
+	extern struct nano_sem forks[N_PHILOSOPHERS];
+#else  /* ! CONFIG_NANOKERNEL */
+	kmutex_t forks[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3, forkMutex4, forkMutex5};
+#endif /*  CONFIG_NANOKERNEL */
 
-	task_sleep(2000);
+	SLEEP(2000);
 	while (1) {
 		if (forks_available) {
 			/* take all forks */
 			for (i = 0; i < N_PHILOSOPHERS; i++) {
-				task_mutex_lock_wait(forkMutexs[i]);
+				TAKE(forks[i]);
 			}
 
 			/* Philosophers won't be able to take any fork for 2000 ticks */
 			forks_available = 0;
-			task_sleep(2000);
+			SLEEP(2000);
 		} else {
 			/* give back all forks */
 			for (i = 0; i < N_PHILOSOPHERS; i++) {
-				task_mutex_unlock(forkMutexs[i]);
+				GIVE(forks[i]);
 			}
 
 			/* Philosophers will be able to take forks for 2000 ticks */
 			forks_available = 1;
-			task_sleep(2000);
+			SLEEP(2000);
 		}
 	}
 }
@@ -153,7 +168,7 @@ void busy_task_entry(void)
 		 * mode if required.
 		 */
 		is_busy_task_awake = 0;
-		task_sleep(1000);
+		SLEEP(1000);
 		ticks_when_awake = nano_tick_get_32();
 
 		/*
@@ -189,6 +204,12 @@ void summary_data_printer(void)
 			PRINTF("\x1b[2;32HForks : all taken  ");
 		}
 
+#ifndef CONFIG_NANOKERNEL
+		/* Due to fiber are not pre-emptive, the busy_task_entry thread won't
+		 * run as a fiber in nanokernel-only system, because it would affect
+		 * the visualization of the sample and the collection of the data
+		 * while running busy.
+		 */
 		PRINTF("\x1b[4;32HWorker task");
 		if (is_busy_task_awake) {
 			PRINTF("\x1b[5;32HState : BUSY");
@@ -197,6 +218,7 @@ void summary_data_printer(void)
 			PRINTF("\x1b[5;32HState : IDLE");
 			PRINTF("\x1b[6;32H                               ");
 		}
+#endif
 
 		/* print general data */
 		PRINTF("\x1b[8;1HGENERAL DATA");
@@ -287,6 +309,7 @@ void profiling_data_collector(void)
 
 			/* process the data */
 			switch (event_id) {
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 			case KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID:
 				if (data_length != 2) {
 					PRINTF("\x1b[13;1HError in context switch message. "
@@ -296,15 +319,19 @@ void profiling_data_collector(void)
 					register_context_switch_data(data[0], data[1]);
 				}
 				break;
+#endif
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 			case KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID:
 				if (data_length != 2) {
-					PRINTF("\x1b[13;1HError in sleep message. "
+					PRINTF("\x1b[13;1HError in interrupt message. "
 						"event_id = %d, Expected %d, received %d\n",
 						event_id, 2, data_length);
 				} else {
 					register_interrupt_event_data(data[0], data[1]);
 				}
 				break;
+#endif
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 			case KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID:
 				if (data_length != 3) {
 					PRINTF("\x1b[13;1HError in sleep message. "
@@ -314,6 +341,7 @@ void profiling_data_collector(void)
 					register_sleep_event_data(data[0], data[1], data[2]);
 				}
 				break;
+#endif
 			default:
 				PRINTF("unrecognized event id %d", event_id);
 			}
@@ -346,7 +374,7 @@ void kernel_event_logger_fiber_start(void)
 }
 
 #ifdef CONFIG_NANOKERNEL
-char __stack philStack[N_PHILOSOPHERS][STSIZE];
+char __stack philStack[N_PHILOSOPHERS+1][STSIZE];
 struct nano_sem forks[N_PHILOSOPHERS];
 
 /**
@@ -373,6 +401,9 @@ int main(void)
 		task_fiber_start(&philStack[i][0], STSIZE,
 						(nano_fiber_entry_t) philEntry, 0, 0, 6, 0);
 	}
+
+	task_fiber_start(&philStack[N_PHILOSOPHERS][0], STSIZE,
+		(nano_fiber_entry_t) fork_manager_entry, 0, 0, 6, 0);
 
 	/* wait forever */
 	while (1) {

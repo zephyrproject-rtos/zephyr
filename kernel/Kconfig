@@ -137,7 +137,7 @@ config KERNEL_EVENT_LOGGER_SLEEP
 	bool
 	prompt "Sleep event logging point"
 	default n
-	depends on KERNEL_EVENT_LOGGER && ADVANCED_POWER_MANAGEMENT
+	depends on KERNEL_EVENT_LOGGER && ((MICROKERNEL && ADVANCED_POWER_MANAGEMENT) || NANOKERNEL)
 	help
 	Enable low power condition event messages. These messages provide the
 	following information:
