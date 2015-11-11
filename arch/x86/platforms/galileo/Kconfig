@@ -152,11 +152,11 @@ endif
 
 if GPIO
 
-config GPIO_MMIO
+config GPIO_SCH
 	def_bool y
-config GPIO_MMIO_0
+config GPIO_SCH_0
 	def_bool y
-config GPIO_MMIO_1
+config GPIO_SCH_1
 	def_bool y
 
 config GPIO_DW
@@ -164,33 +164,21 @@ config GPIO_DW
 config GPIO_DW_0
 	def_bool y
 
-if GPIO_MMIO_0
-config GPIO_MMIO_0_DEV_NAME
-	default "GPIO_M0"
-config GPIO_MMIO_0_CFG
-	default 0x0
-config GPIO_MMIO_0_EN
+if GPIO_SCH_0
+config GPIO_SCH_0_DEV_NAME
+	default "GPIO_CW"
+config GPIO_SCH_0_BASE_ADDR
 	default 0x1080
-config GPIO_MMIO_0_DIR
-	default 0x1084
-config GPIO_MMIO_0_INPUT
-	default 0x1088
-config GPIO_MMIO_0_OUTPUT
-	default 0x1088
+config GPIO_SCH_0_BITS
+	default 2
 endif
-if GPIO_MMIO_1
-config GPIO_MMIO_1_DEV_NAME
-	default "GPIO_M1"
-config GPIO_MMIO_1_CFG
-	default 0x0
-config GPIO_MMIO_1_EN
+if GPIO_SCH_1
+config GPIO_SCH_1_DEV_NAME
+	default "GPIO_RW"
+config GPIO_SCH_1_BASE_ADDR
 	default 0x10A0
-config GPIO_MMIO_1_DIR
-	default 0x10A4
-config GPIO_MMIO_1_INPUT
-	default 0x10A8
-config GPIO_MMIO_1_OUTPUT
-	default 0x10A8
+config GPIO_SCH_1_BITS
+	default 6
 endif
 
 if GPIO_DW
@@ -238,9 +226,9 @@ config PINMUX_GALILEO_PWM0_NAME
 config PINMUX_GALILEO_GPIO_DW_NAME
 	default GPIO_DW_0_NAME
 config PINMUX_GALILEO_GPIO_INTEL_CW_NAME
-	default GPIO_MMIO_0_DEV_NAME
+	default GPIO_SCH_0_DEV_NAME
 config PINMUX_GALILEO_GPIO_INTEL_RW_NAME
-	default GPIO_MMIO_1_DEV_NAME
+	default GPIO_SCH_1_DEV_NAME
 endif
 
 if PWM
