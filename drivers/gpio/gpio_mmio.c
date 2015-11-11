@@ -62,13 +62,11 @@ static uint32_t _mm_write(uint32_t addr, uint32_t bit, uint32_t value)
 
 static uint32_t _io_set_bit(uint32_t addr, uint32_t bit, uint32_t value)
 {
-	uint32_t bit_mask = (1 << bit);
-	uint32_t tmp;
-
-	tmp = sys_in32(addr);
-	tmp &= ~bit_mask;
-	tmp |= (value << bit) & bit_mask;
-	sys_out32(tmp, addr);
+	if (!value) {
+		sys_io_clear_bit(addr, bit);
+	} else {
+		sys_io_set_bit(addr, bit);
+	}
 
 	return 0;
 }
