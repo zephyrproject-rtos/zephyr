@@ -122,40 +122,39 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 
 #if CONFIG_EXCEPTION_DEBUG
 
-static FUNC_NORETURN void generic_exc_handle(char *description,
-					     unsigned int vector,
+static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 					     const NANO_ESF *pEsf)
 {
-	printk("***** CPU exception %d: %s\n", vector, description);
+	printk("***** CPU exception %d\n", vector);
 	if ((1 << vector) & _EXC_ERROR_CODE_FAULTS) {
 		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
 	}
 	_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, pEsf);
 }
 
-#define EXC_FUNC(vector, description) \
+#define EXC_FUNC(vector) \
 FUNC_NORETURN void handle_exc_##vector(const NANO_ESF *pEsf) \
 { \
-	generic_exc_handle(description, vector, pEsf); \
+	generic_exc_handle(vector, pEsf); \
 }
 
-EXC_FUNC(IV_DIVIDE_ERROR, "Division by zero");
-EXC_FUNC(IV_NON_MASKABLE_INTERRUPT, "Non-maskable interrupt");
-EXC_FUNC(IV_OVERFLOW, "Overflow");
-EXC_FUNC(IV_BOUND_RANGE, "Bounds");
-EXC_FUNC(IV_INVALID_OPCODE, "Invalid opcode");
+EXC_FUNC(IV_DIVIDE_ERROR);
+EXC_FUNC(IV_NON_MASKABLE_INTERRUPT);
+EXC_FUNC(IV_OVERFLOW);
+EXC_FUNC(IV_BOUND_RANGE);
+EXC_FUNC(IV_INVALID_OPCODE);
 #ifndef CONFIG_FP_SHARING
-EXC_FUNC(IV_DEVICE_NOT_AVAILABLE, "FPU device not available");
+EXC_FUNC(IV_DEVICE_NOT_AVAILABLE);
 #endif
-EXC_FUNC(IV_DOUBLE_FAULT, "Double fault");
-EXC_FUNC(IV_INVALID_TSS, "Invalid task state segment");
-EXC_FUNC(IV_SEGMENT_NOT_PRESENT, "Segment not present");
-EXC_FUNC(IV_STACK_FAULT, "Stack fault");
-EXC_FUNC(IV_GENERAL_PROTECTION, "General protection fault");
-EXC_FUNC(IV_PAGE_FAULT, "Page fault");
-EXC_FUNC(IV_X87_FPU_FP_ERROR, "Floating point error");
-EXC_FUNC(IV_ALIGNMENT_CHECK, "Alignment error");
-EXC_FUNC(IV_MACHINE_CHECK, "Machine check");
+EXC_FUNC(IV_DOUBLE_FAULT);
+EXC_FUNC(IV_INVALID_TSS);
+EXC_FUNC(IV_SEGMENT_NOT_PRESENT);
+EXC_FUNC(IV_STACK_FAULT);
+EXC_FUNC(IV_GENERAL_PROTECTION);
+EXC_FUNC(IV_PAGE_FAULT);
+EXC_FUNC(IV_X87_FPU_FP_ERROR);
+EXC_FUNC(IV_ALIGNMENT_CHECK);
+EXC_FUNC(IV_MACHINE_CHECK);
 
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
