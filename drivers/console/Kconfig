@@ -114,30 +114,30 @@ config RAM_CONSOLE_BUFFER_SIZE
 	Size of the RAM console buffer. Messages will wrap around if the
 	length is exceeded.
 
-config IPI_CONSOLE_SENDER
+config IPM_CONSOLE_SENDER
 	bool
-	prompt "Inter-processor Interrupt console sender"
+	prompt "Inter-processor Mailbox console sender"
 	select CONSOLE_HAS_DRIVER
 	default n
 	help
-	Enable the sending side of IPI console
+	Enable the sending side of IPM console
 
-config IPI_CONSOLE_RECEIVER
+config IPM_CONSOLE_RECEIVER
 	bool
-	prompt "Inter-processor interrupt console receiver"
+	prompt "Inter-processor Mailbox console receiver"
 	select RING_BUFFER
 	default n
 	help
-	Enable the receiving side of IPI console
+	Enable the receiving side of IPM console
 
-config IPI_CONSOLE_PRIORITY
+config IPM_CONSOLE_PRIORITY
 	int
-	prompt "IPI console init priority"
+	prompt "IPM console init priority"
 	default 60
-	depends on IPI_CONSOLE_SENDER || IPI_CONSOLE_RECEIVER
+	depends on IPM_CONSOLE_SENDER || IPM_CONSOLE_RECEIVER
 	help
 	  Device driver initialization priority.
-	  Console has to be initialized after the IPI subsystem
+	  Console has to be initialized after the IPM subsystem
 	  it uses.
 
 config	UART_PIPE

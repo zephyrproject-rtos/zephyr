@@ -25,7 +25,6 @@
 #include <board.h>
 #include <init.h>
 #include <quark_se/shared_mem.h>
-#include <ipi/ipi_quark_se.h>
 
 /* Cannot use microkernel, since only nanokernel is supported */
 #if defined(CONFIG_MICROKERNEL)

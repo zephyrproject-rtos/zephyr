@@ -1,7 +1,5 @@
-/* ipi_dummy.c - Fake IPI driver */
-
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2015, Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef _IPI_DUMMY_H_
+#define _ASMLANGUAGE
 
-#include <zephyr.h>
-#include <device.h>
-#include <ipi.h>
+#ifdef CONFIG_X86
+#include <arch/x86/asm.h>
+#include <drivers/ioapic.h>
+#endif
 
-/* Arbitrary */
-#define DUMMY_IPI_DATA_WORDS	4
-
-struct ipi_dummy_regs {
-	uint32_t id;
-	uint32_t data[DUMMY_IPI_DATA_WORDS];
-	uint8_t busy;
-	uint8_t enabled;
-};
-
-struct ipi_dummy_driver_data {
-	ipi_callback_t cb;
-	void *cb_context;
-	volatile struct ipi_dummy_regs regs;
-};
-
-int ipi_dummy_init(struct device *d);
-
+#if defined(CONFIG_IPM_QUARK_SE)
+#if defined(CONFIG_IOAPIC)
+        ioapic_mkstub quark_se_ipm quark_se_ipm_isr 0
+#endif
 #endif

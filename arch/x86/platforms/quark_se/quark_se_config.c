@@ -23,55 +23,55 @@
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
-#if CONFIG_IPI_QUARK_SE
-#include <ipi.h>
-#include <ipi/ipi_quark_se.h>
+#if CONFIG_IPM_QUARK_SE
+#include <ipm.h>
+#include <ipm/ipm_quark_se.h>
 
-IRQ_CONNECT_STATIC(quark_se_ipi, QUARK_SE_IPI_INTERRUPT, QUARK_SE_IPI_INTERRUPT_PRI,
-		   quark_se_ipi_isr, NULL, 0);
+IRQ_CONNECT_STATIC(quark_se_ipm, QUARK_SE_IPM_INTERRUPT, QUARK_SE_IPM_INTERRUPT_PRI,
+		   quark_se_ipm_isr, NULL, 0);
 
-static int x86_quark_se_ipi_init(void)
+static int x86_quark_se_ipm_init(void)
 {
-	IRQ_CONFIG(quark_se_ipi, QUARK_SE_IPI_INTERRUPT);
-	irq_enable(QUARK_SE_IPI_INTERRUPT);
+	IRQ_CONFIG(quark_se_ipm, QUARK_SE_IPM_INTERRUPT);
+	irq_enable(QUARK_SE_IPM_INTERRUPT);
 	return DEV_OK;
 }
 
-static struct quark_se_ipi_controller_config_info ipi_controller_config = {
-	.controller_init = x86_quark_se_ipi_init
+static struct quark_se_ipm_controller_config_info ipm_controller_config = {
+	.controller_init = x86_quark_se_ipm_init
 };
-DECLARE_DEVICE_INIT_CONFIG(quark_se_ipi, "", quark_se_ipi_controller_initialize,
-			   &ipi_controller_config);
-SYS_DEFINE_DEVICE(quark_se_ipi, NULL, PRIMARY,
+DECLARE_DEVICE_INIT_CONFIG(quark_se_ipm, "", quark_se_ipm_controller_initialize,
+			   &ipm_controller_config);
+SYS_DEFINE_DEVICE(quark_se_ipm, NULL, PRIMARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-#if defined(CONFIG_IPI_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
-#include <console/ipi_console.h>
+#if defined(CONFIG_IPM_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
+#include <console/ipm_console.h>
 
-QUARK_SE_IPI_DEFINE(quark_se_ipi4, 4, QUARK_SE_IPI_INBOUND);
+QUARK_SE_IPM_DEFINE(quark_se_ipm4, 4, QUARK_SE_IPM_INBOUND);
 
-#define QUARK_SE_IPI_CONSOLE_LINE_BUF_SIZE	80
-#define QUARK_SE_IPI_CONSOLE_RING_BUF_SIZE32	128
+#define QUARK_SE_IPM_CONSOLE_LINE_BUF_SIZE	80
+#define QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32	128
 
-static uint32_t ipi_console_ring_buf_data[QUARK_SE_IPI_CONSOLE_RING_BUF_SIZE32];
-static char __stack ipi_console_fiber_stack[IPI_CONSOLE_STACK_SIZE];
-static char ipi_console_line_buf[QUARK_SE_IPI_CONSOLE_LINE_BUF_SIZE];
+static uint32_t ipm_console_ring_buf_data[QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32];
+static char __stack ipm_console_fiber_stack[IPM_CONSOLE_STACK_SIZE];
+static char ipm_console_line_buf[QUARK_SE_IPM_CONSOLE_LINE_BUF_SIZE];
 
-struct ipi_console_receiver_config_info quark_se_ipi_receiver_config = {
-	.bind_to = "quark_se_ipi4",
-	.fiber_stack = ipi_console_fiber_stack,
-	.ring_buf_data = ipi_console_ring_buf_data,
-	.rb_size32 = QUARK_SE_IPI_CONSOLE_RING_BUF_SIZE32,
-	.line_buf = ipi_console_line_buf,
-	.lb_size = QUARK_SE_IPI_CONSOLE_LINE_BUF_SIZE,
-	.flags = IPI_CONSOLE_PRINTK
+struct ipm_console_receiver_config_info quark_se_ipm_receiver_config = {
+	.bind_to = "quark_se_ipm4",
+	.fiber_stack = ipm_console_fiber_stack,
+	.ring_buf_data = ipm_console_ring_buf_data,
+	.rb_size32 = QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32,
+	.line_buf = ipm_console_line_buf,
+	.lb_size = QUARK_SE_IPM_CONSOLE_LINE_BUF_SIZE,
+	.flags = IPM_CONSOLE_PRINTK
 };
-struct ipi_console_receiver_runtime_data quark_se_ipi_receiver_driver_data;
-DECLARE_DEVICE_INIT_CONFIG(ipi_console0, "ipi_console0",
-			   ipi_console_receiver_init,
-			   &quark_se_ipi_receiver_config);
-SYS_DEFINE_DEVICE(ipi_console0, &quark_se_ipi_receiver_driver_data,
-					SECONDARY, CONFIG_IPI_CONSOLE_PRIORITY);
+struct ipm_console_receiver_runtime_data quark_se_ipm_receiver_driver_data;
+DECLARE_DEVICE_INIT_CONFIG(ipm_console0, "ipm_console0",
+			   ipm_console_receiver_init,
+			   &quark_se_ipm_receiver_config);
+SYS_DEFINE_DEVICE(ipm_console0, &quark_se_ipm_receiver_driver_data,
+					SECONDARY, CONFIG_IPM_CONSOLE_PRIORITY);
 
-#endif /* CONFIG_PRINTK && CONFIG_IPI_CONSOLE_RECEIVER */
-#endif /* CONFIG_IPI_QUARK_SE */
+#endif /* CONFIG_PRINTK && CONFIG_IPM_CONSOLE_RECEIVER */
+#endif /* CONFIG_IPM_QUARK_SE */

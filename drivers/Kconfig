@@ -57,7 +57,7 @@ source "drivers/watchdog/Kconfig"
 
 source "drivers/clock_control/Kconfig"
 
-source "drivers/ipi/Kconfig"
+source "drivers/ipm/Kconfig"
 
 source "drivers/aio/Kconfig"
 

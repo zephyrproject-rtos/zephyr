@@ -1,4 +1,4 @@
-/* ipi_dummy.c - Fake IPI driver for testing upper-level drivers */
+/* ipm_dummy.c - Fake IPM driver for testing upper-level drivers */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -17,25 +17,28 @@
  */
 
 #include <zephyr.h>
-#include <ipi.h>
+#include <ipm.h>
 #include <errno.h>
 #include <device.h>
 #include <init.h>
 #include <misc/printk.h>
 #include <irq_offload.h>
 
-#include "ipi_dummy.h"
+#include "ipm_dummy.h"
+
 
 
 /* Implemented as a software interrupt so that callbacks are executed
- * in the expected context */
-static void ipi_dummy_isr(void *data)
+ * in the expected context
+ */
+static void ipm_dummy_isr(void *data)
 {
 	struct device *d = (struct device *)data;
-	struct ipi_dummy_driver_data *driver_data = d->driver_data;
+	struct ipm_dummy_driver_data *driver_data = d->driver_data;
 
 	/* In a real driver the interrupt simply wouldn't fire, we fake
-	 * that here */
+	 * that here
+	 */
 	if (!driver_data->regs.enabled || !driver_data->regs.busy)
 		return;
 
@@ -47,18 +50,18 @@ static void ipi_dummy_isr(void *data)
 }
 
 
-/* IPI API functions for the dummy driver */
+/* IPM API functions for the dummy driver */
 
-static int ipi_dummy_send(struct device *d, int wait, uint32_t id,
+static int ipm_dummy_send(struct device *d, int wait, uint32_t id,
 			  const void *data, int size)
 {
-	struct ipi_dummy_driver_data *driver_data;
+	struct ipm_dummy_driver_data *driver_data;
 	volatile uint8_t *datareg;
 	const uint8_t *data8;
 	int i;
 
 	driver_data = d->driver_data;
-	if (size > ipi_max_data_size_get(d)) {
+	if (size > ipm_max_data_size_get(d)) {
 		return -EMSGSIZE;
 	}
 
@@ -75,64 +78,66 @@ static int ipi_dummy_send(struct device *d, int wait, uint32_t id,
 	driver_data->regs.id = id;
 	driver_data->regs.busy = 1;
 
-	irq_offload(ipi_dummy_isr, d);
+	irq_offload(ipm_dummy_isr, d);
 
 	if (wait) {
-		while(driver_data->regs.busy) {
+		while (driver_data->regs.busy) {
 			/* busy-wait */
 		}
 	}
 	return 0;
 }
 
-static void ipi_dummy_register_callback(struct device *d, ipi_callback_t cb,
+static void ipm_dummy_register_callback(struct device *d, ipm_callback_t cb,
 					void *cb_context)
 {
-	struct ipi_dummy_driver_data *driver_data;
+	struct ipm_dummy_driver_data *driver_data;
+
 	driver_data = d->driver_data;
 	driver_data->cb = cb;
 	driver_data->cb_context = cb_context;
 }
 
-static int ipi_dummy_set_enabled(struct device *d, int enable)
+static int ipm_dummy_set_enabled(struct device *d, int enable)
 {
-	struct ipi_dummy_driver_data *driver_data = d->driver_data;
+	struct ipm_dummy_driver_data *driver_data = d->driver_data;
 
 	driver_data->regs.enabled = enable;
 	if (enable) {
 		/* In case there are pending messages */
-		irq_offload(ipi_dummy_isr, d);
+		irq_offload(ipm_dummy_isr, d);
 	}
 	return 0;
 }
 
-static uint32_t ipi_dummy_max_id_val_get(struct device *d)
+static uint32_t ipm_dummy_max_id_val_get(struct device *d)
 {
 	return 0xFFFFFFFF;
 }
 
-static int ipi_dummy_max_data_size_get(struct device *d)
+static int ipm_dummy_max_data_size_get(struct device *d)
 {
-	return DUMMY_IPI_DATA_WORDS * sizeof(uint32_t);
+	return DUMMY_IPM_DATA_WORDS * sizeof(uint32_t);
 }
 
-struct ipi_driver_api ipi_dummy_api = {
-	.send = ipi_dummy_send,
-	.register_callback = ipi_dummy_register_callback,
-	.max_data_size_get = ipi_dummy_max_data_size_get,
-	.max_id_val_get = ipi_dummy_max_id_val_get,
-	.set_enabled = ipi_dummy_set_enabled
+struct ipm_driver_api ipm_dummy_api = {
+	.send = ipm_dummy_send,
+	.register_callback = ipm_dummy_register_callback,
+	.max_data_size_get = ipm_dummy_max_data_size_get,
+	.max_id_val_get = ipm_dummy_max_id_val_get,
+	.set_enabled = ipm_dummy_set_enabled
 };
 
-/* Dummy IPI driver initialization, will be bound at runtime
- * to high-level drivers under test */
+/* Dummy IPM driver initialization, will be bound at runtime
+ * to high-level drivers under test
+ */
 
-int ipi_dummy_init(struct device *d)
+int ipm_dummy_init(struct device *d)
 {
-	struct ipi_dummy_driver_data *driver_data;
+	struct ipm_dummy_driver_data *driver_data;
 
 	driver_data = d->driver_data;
-	d->driver_api = &ipi_dummy_api;
+	d->driver_api = &ipm_dummy_api;
 
 	return DEV_OK;
 }

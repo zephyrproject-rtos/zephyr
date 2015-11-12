@@ -1,4 +1,4 @@
 ccflags-y += -I${srctree}/samples/include
 
-obj-y = ipi_dummy.o test_ipi.o
+obj-y = ipm_dummy.o test_ipm.o
 

@@ -1,4 +1,4 @@
-/* ipi_console.c - Console messages to/from another processor */
+/* ipm_console.c - Console messages to/from another processor */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -16,30 +16,30 @@
  * limitations under the License.
  */
 
-#ifndef _IPI_CONSOLE_H_
-#define _IPI_CONSOLE_H_
+#ifndef _IPM_CONSOLE_H_
+#define _IPM_CONSOLE_H_
 
 #include <nanokernel.h>
 #include <device.h>
 #include <misc/ring_buffer.h>
 
-#define IPI_CONSOLE_STDOUT	(1 << 0)
-#define IPI_CONSOLE_PRINTK	(1 << 1)
+#define IPM_CONSOLE_STDOUT	(1 << 0)
+#define IPM_CONSOLE_PRINTK	(1 << 1)
 
 /*
  * Good way to determine these numbers other than trial-and-error?
  * using printf() in the fiber seems to require a lot more stack space
  */
-#define IPI_CONSOLE_STACK_SIZE		512
-#define IPI_CONSOLE_PRI			2
+#define IPM_CONSOLE_STACK_SIZE		512
+#define IPM_CONSOLE_PRI			2
 
-struct ipi_console_receiver_config_info {
-	/** Name of the low-level IPI driver to bind to */
+struct ipm_console_receiver_config_info {
+	/** Name of the low-level IPM driver to bind to */
 	char *bind_to;
 
 	/**
 	 * Stack for the receiver's fiber, which prints out messages as
-	 * they come in. Should be sized IPI_CONSOLE_STACK_SIZE
+	 * they come in. Should be sized IPM_CONSOLE_STACK_SIZE
 	 */
 	char *fiber_stack;
 
@@ -64,39 +64,39 @@ struct ipi_console_receiver_config_info {
 
 	/**
 	 * Destination for received console messages, one of
-	 * IPI_CONSOLE_STDOUT or IPI_CONSOLE_PRINTK
+	 * IPM_CONSOLE_STDOUT or IPM_CONSOLE_PRINTK
 	 */
 	unsigned int flags;
 };
 
-struct ipi_console_receiver_runtime_data {
-	/** Buffer for received bytes from the low-level IPI device */
+struct ipm_console_receiver_runtime_data {
+	/** Buffer for received bytes from the low-level IPM device */
 	struct ring_buf rb;
 
 	/** Semaphore to wake up the fiber to print out messages */
 	struct nano_sem sem;
 
-	/** pointer to the bound low-level IPI device */
-	struct device *ipi_device;
+	/** pointer to the bound low-level IPM device */
+	struct device *ipm_device;
 };
 
-struct ipi_console_sender_config_info {
+struct ipm_console_sender_config_info {
 	/** Name of the low-level driver to bind to */
 	char *bind_to;
 
 	/**
 	 * Source of messages to forward, hooks will be installed.
-	 * Can be IPI_CONSOLE_STDOUT, IPI_CONSOLE_PRINTK, or both
+	 * Can be IPM_CONSOLE_STDOUT, IPM_CONSOLE_PRINTK, or both
 	 */
 	int flags;
 };
 
-#if CONFIG_IPI_CONSOLE_RECEIVER
-int ipi_console_receiver_init(struct device *d);
+#if CONFIG_IPM_CONSOLE_RECEIVER
+int ipm_console_receiver_init(struct device *d);
 #endif
 
-#if CONFIG_IPI_CONSOLE_SENDER
-int ipi_console_sender_init(struct device *d);
+#if CONFIG_IPM_CONSOLE_SENDER
+int ipm_console_sender_init(struct device *d);
 #endif
 
-#endif /* _IPI_CONSOLE_H_ */
+#endif /* _IPM_CONSOLE_H_ */

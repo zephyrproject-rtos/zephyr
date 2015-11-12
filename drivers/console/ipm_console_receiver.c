@@ -1,4 +1,4 @@
-/* ipi_console.c - Console messages to/from another processor */
+/* ipm_console.c - Console messages to/from another processor */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -20,17 +20,17 @@
 #include <misc/ring_buffer.h>
 #include <misc/printk.h>
 #include <stdio.h>
-#include <ipi.h>
-#include <console/ipi_console.h>
+#include <ipm.h>
+#include <console/ipm_console.h>
 
-static void ipi_console_fiber(int arg1, int arg2)
+static void ipm_console_fiber(int arg1, int arg2)
 {
 	uint8_t size32;
 	uint16_t type;
 	int ret;
 	struct device *d;
-	struct ipi_console_receiver_config_info *config_info;
-	struct ipi_console_receiver_runtime_data *driver_data;
+	struct ipm_console_receiver_config_info *config_info;
+	struct ipm_console_receiver_runtime_data *driver_data;
 	int pos;
 
 	d = (struct device *)arg1;
@@ -48,7 +48,7 @@ static void ipi_console_fiber(int arg1, int arg2)
 				       NULL, &size32);
 		if (ret) {
 			/* Shouldn't ever happen... */
-			printk("ipi console ring buffer error: %d\n", ret);
+			printk("ipm console ring buffer error: %d\n", ret);
 			size32 = 0;
 			continue;
 		}
@@ -60,11 +60,11 @@ static void ipi_console_fiber(int arg1, int arg2)
 			} else {
 				config_info->line_buf[pos + 1] = '\0';
 			}
-			if (config_info->flags & IPI_CONSOLE_PRINTK) {
+			if (config_info->flags & IPM_CONSOLE_PRINTK) {
 				printk("%s: '%s'\n", d->config->name,
 				       config_info->line_buf);
 			}
-			if (config_info->flags & IPI_CONSOLE_STDOUT) {
+			if (config_info->flags & IPM_CONSOLE_STDOUT) {
 				printf("%s: '%s'\n", d->config->name,
 				       config_info->line_buf);
 			}
@@ -75,11 +75,11 @@ static void ipi_console_fiber(int arg1, int arg2)
 	}
 }
 
-static void ipi_console_receive_callback(void *context, uint32_t id,
+static void ipm_console_receive_callback(void *context, uint32_t id,
 					 volatile void *data)
 {
 	struct device *d;
-	struct ipi_console_receiver_runtime_data *driver_data;
+	struct ipm_console_receiver_runtime_data *driver_data;
 
 	ARG_UNUSED(data);
 	d = context;
@@ -90,23 +90,23 @@ static void ipi_console_receive_callback(void *context, uint32_t id,
 }
 
 
-int ipi_console_receiver_init(struct device *d)
+int ipm_console_receiver_init(struct device *d)
 {
-	struct ipi_console_receiver_config_info *config_info =
+	struct ipm_console_receiver_config_info *config_info =
 		d->config->config_info;
-	struct ipi_console_receiver_runtime_data *driver_data = d->driver_data;
-	struct device *ipi;
+	struct ipm_console_receiver_runtime_data *driver_data = d->driver_data;
+	struct device *ipm;
 
-	ipi = device_get_binding(config_info->bind_to);
+	ipm = device_get_binding(config_info->bind_to);
 
-	if (!ipi) {
-		printk("unable to bind IPI console receiver to '%s'\n",
+	if (!ipm) {
+		printk("unable to bind IPM console receiver to '%s'\n",
 		       __func__, config_info->bind_to);
 		return DEV_INVALID_CONF;
 	}
 
-	if (ipi_max_id_val_get(ipi) < 0xFF) {
-		printk("IPI driver %s doesn't support 8-bit id values",
+	if (ipm_max_id_val_get(ipm) < 0xFF) {
+		printk("IPM driver %s doesn't support 8-bit id values",
 		       config_info->bind_to);
 		return DEV_INVALID_CONF;
 	}
@@ -115,12 +115,12 @@ int ipi_console_receiver_init(struct device *d)
 	sys_ring_buf_init(&driver_data->rb, config_info->rb_size32,
 			  config_info->ring_buf_data);
 
-	ipi_register_callback(ipi, ipi_console_receive_callback, d);
+	ipm_register_callback(ipm, ipm_console_receive_callback, d);
 
-	task_fiber_start(config_info->fiber_stack, IPI_CONSOLE_STACK_SIZE,
-			 ipi_console_fiber, (int)d, 0,
-			 IPI_CONSOLE_PRI, 0);
-	ipi_set_enabled(ipi, 1);
+	task_fiber_start(config_info->fiber_stack, IPM_CONSOLE_STACK_SIZE,
+			 ipm_console_fiber, (int)d, 0,
+			 IPM_CONSOLE_PRI, 0);
+	ipm_set_enabled(ipm, 1);
 
 	return DEV_OK;
 }

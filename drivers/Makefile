@@ -20,5 +20,5 @@ obj-$(CONFIG_ETHERNET) += ethernet/
 obj-$(CONFIG_WATCHDOG) += watchdog/
 obj-$(CONFIG_RTC) += rtc/
 obj-$(CONFIG_CLOCK_CONTROL) += clock_control/
-obj-$(CONFIG_IPI) += ipi/
+obj-$(CONFIG_IPM) += ipm/
 obj-y += aio/
