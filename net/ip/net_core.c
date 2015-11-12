@@ -1,9 +1,9 @@
 /** @file
- @brief Network initialization
-
- Initialize the network IP stack. Create two fibers, one for reading data
- from applications (Tx fiber) and one for reading data from IP stack
- and passing that data to applications (Rx fiber).
+ * @brief Network initialization
+ *
+ * Initialize the network IP stack. Create two fibers, one for reading data
+ * from applications (Tx fiber) and one for reading data from IP stack
+ * and passing that data to applications (Rx fiber).
  */
 
 /*
@@ -307,11 +307,9 @@ int net_reply(struct net_context *context, struct net_buf *buf)
 	case IPPROTO_TCP:
 		NET_DBG("TCP not yet supported\n");
 		return -EINVAL;
-		break;
 	case IPPROTO_ICMPV6:
 		NET_DBG("ICMPv6 not yet supported\n");
 		return -EINVAL;
-		break;
 	}
 
 	return ret;
@@ -659,6 +657,7 @@ static void net_timer_fiber(void)
 #ifdef CONFIG_INIT_STACKS
 			{
 				static clock_time_t last_print;
+
 				if ((last_print + 10) < clock_seconds()) {
 					net_analyze_stack("timer fiber",
 							  timer_fiber_stack,
@@ -678,7 +677,7 @@ static void init_rx_queue(void)
 	nano_fifo_init(&netdev.rx_queue);
 
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-		    (nano_fiber_entry_t) net_rx_fiber, 0, 0, 7, 0);
+		    (nano_fiber_entry_t)net_rx_fiber, 0, 0, 7, 0);
 }
 
 static void init_tx_queue(void)
@@ -686,13 +685,13 @@ static void init_tx_queue(void)
 	nano_fifo_init(&netdev.tx_queue);
 
 	fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
-		    (nano_fiber_entry_t) net_tx_fiber, 0, 0, 7, 0);
+		    (nano_fiber_entry_t)net_tx_fiber, 0, 0, 7, 0);
 }
 
 static void init_timer_fiber(void)
 {
 	fiber_start(timer_fiber_stack, sizeof(timer_fiber_stack),
-		    (nano_fiber_entry_t) net_timer_fiber, 0, 0, 7, 0);
+		    (nano_fiber_entry_t)net_timer_fiber, 0, 0, 7, 0);
 }
 
 int net_set_mac(uint8_t *mac, uint8_t len)
@@ -734,11 +733,11 @@ static uint8_t net_tcpip_output(struct net_buf *buf, const uip_lladdr_t *lladdr)
 		return 0;
 	}
 
-	if(lladdr == NULL) {
-		linkaddr_copy(&ip_buf_ll_dest(buf), &linkaddr_null);
-	} else {
+	if (lladdr) {
 		linkaddr_copy(&ip_buf_ll_dest(buf),
 			      (const linkaddr_t *)lladdr);
+	} else {
+		linkaddr_copy(&ip_buf_ll_dest(buf), &linkaddr_null);
 	}
 
 	if (ip_buf_len(buf) == 0) {
@@ -821,7 +820,7 @@ int net_init(void)
 	init_rx_queue();
 	init_timer_fiber();
 
-#if defined (CONFIG_NETWORKING_WITH_15_4)
+#if defined(CONFIG_NETWORKING_WITH_15_4)
 	net_driver_15_4_init();
 #endif
 
