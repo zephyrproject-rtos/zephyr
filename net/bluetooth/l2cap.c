@@ -730,7 +730,7 @@ static void l2cap_chan_update_credits(struct bt_l2cap_chan *chan)
 	hdr->len = sys_cpu_to_le16(sizeof(*ev));
 
 	ev = net_buf_add(buf, sizeof(*ev));
-	ev->cid = sys_cpu_to_le16(chan->tx.cid);
+	ev->cid = sys_cpu_to_le16(chan->rx.cid);
 	ev->credits = sys_cpu_to_le16(credits);
 
 	bt_l2cap_send(chan->conn, BT_L2CAP_CID_LE_SIG, buf);
