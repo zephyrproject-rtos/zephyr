@@ -412,6 +412,172 @@ static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
 	return le_encrypt(k, out, out);
 }
 
+#if defined(CONFIG_BLUETOOTH_SIGNING)
+/* 1 bit left shift */
+static void array_shift(const uint8_t *in, uint8_t *out)
+{
+	uint8_t overflow = 0;
+
+	for (int i = 15; i >= 0; i--) {
+		out[i] = in[i] << 1;
+		/* previous byte */
+		out[i] |= overflow;
+		overflow = in[i] & 0x80 ? 1 : 0;
+	}
+}
+
+/* CMAC subkey generation algorithm */
+static int cmac_subkey(const uint8_t *key, uint8_t *k1, uint8_t *k2)
+{
+	const uint8_t rb[16] = {
+		[0 ... 14]	= 0x00,
+		[15]		= 0x87,
+	};
+	uint8_t zero[16] = { 0 }, *tmp = zero;
+	uint8_t l[16];
+	int err;
+
+	/* L := AES-128(K, const_Zero) */
+	err = le_encrypt(key, zero, tmp);
+	if (err) {
+		return err;
+	}
+
+	swap_buf(tmp, l, 16);
+
+	BT_DBG("l %s\n", h(l, 16));
+
+	/* if MSB(L) == 0 K1 = L << 1 */
+	if (!(l[0] & 0x80)) {
+		array_shift(l, k1);
+	/* else K1 = (L << 1) XOR rb */
+	} else {
+		array_shift(l, k1);
+		xor_128((uint128_t *)k1, (uint128_t *)rb, (uint128_t *)k1);
+	}
+
+	/* if MSB(K1) == 0 K2 = K1 << 1 */
+	if (!(k1[0] & 0x80)) {
+		array_shift(k1, k2);
+	/* else K2 = (K1 << 1) XOR rb */
+	} else {
+		array_shift(k1, k2);
+		xor_128((uint128_t *)k2, (uint128_t *)rb, (uint128_t *)k2);
+	}
+
+	return 0;
+}
+
+/* padding(x) = x || 10^i      where i is 128 - 8 * r - 1 */
+static void add_pad(const uint8_t *in, unsigned char *out, int len)
+{
+	memset(out, 0, 16);
+	memcpy(out, in, len);
+	out[len] = 0x80;
+}
+
+/* Cypher based Message Authentication Code (CMAC) with AES 128 bit
+ *
+ * Input    : key    ( 128-bit key )
+ *          : in     ( message to be authenticated )
+ *          : len    ( length of the message in octets )
+ * Output   : out    ( message authentication code )
+ */
+static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
+			   uint8_t *out)
+{
+	uint8_t k1[16], k2[16], last_block[16], *pad_block = last_block;
+	uint8_t key_s[16];
+	uint8_t *x, *y;
+	uint8_t n, flag;
+	int err;
+
+	swap_buf(key, key_s, 16);
+
+	/* (K1,K2) = Generate_Subkey(K) */
+	err = cmac_subkey(key_s, k1, k2);
+	if (err) {
+		BT_ERR("SMAC subkey generation failed\n");
+		return err;
+	}
+
+	BT_DBG("key %s subkeys k1 %s k2 %s\n", h(key, 16), h(k1, 16),
+	       h(k2, 16));
+
+	/* the number of blocks, n, is calculated, the block length is 16 bytes
+	 * n = ceil(len/const_Bsize)
+	 */
+	n = (len + 15) / 16;
+
+	/* check input length, flag indicate completed blocks */
+	if (n == 0) {
+		/* if length is 0, the number of blocks to be processed shall
+		 * be 1,and the flag shall be marked as not-complete-block
+		 * false
+		 */
+		n = 1;
+		flag = 0;
+	} else {
+		if ((len % 16) == 0) {
+			/* complete blocks */
+			flag = 1;
+		} else {
+			/* last block is not complete */
+			flag = 0;
+		}
+	}
+
+	BT_DBG("len %u n %u flag %u\n", len, n, flag);
+
+	/* if flag is true then M_last = M_n XOR K1 */
+	if (flag) {
+		xor_128((uint128_t *)&in[16 * (n - 1)], (uint128_t *)k1,
+			(uint128_t *)last_block);
+	/* else M_last = padding(M_n) XOR K2 */
+	} else {
+		add_pad(&in[16 * (n - 1)], pad_block, len % 16);
+		xor_128((uint128_t *)pad_block, (uint128_t *)k2,
+			(uint128_t *)last_block);
+	}
+
+	/* Reuse k1 and k2 buffers */
+	x = k1;
+	y = k2;
+
+	/* Zeroing x */
+	memset(x, 0, 16);
+
+	/* the basic CBC-MAC is applied to M_1,...,M_{n-1},M_last */
+	for (int i = 0; i < n - 1; i++) {
+		/* Y = X XOR M_i */
+		xor_128((uint128_t *)x, (uint128_t *)&in[i * 16],
+			(uint128_t *)y);
+
+		swap_in_place(y, 16);
+
+		/* X = AES-128(K,Y) */
+		err = le_encrypt(key_s, y, x);
+		if (err) {
+			return err;
+		}
+
+		swap_in_place(x, 16);
+	}
+
+	/* Y = M_last XOR X */
+	xor_128((uint128_t *)x, (uint128_t *)last_block, (uint128_t *)y);
+
+	swap_in_place(y, 16);
+
+	/* T = AES-128(K,Y) */
+	err = le_encrypt(key_s, y, out);
+
+	swap_in_place(out, 16);
+
+	return err;
+}
+#endif
+
 static void smp_reset(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
@@ -1555,170 +1721,6 @@ bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 }
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
-/* 1 bit left shift */
-static void array_shift(const uint8_t *in, uint8_t *out)
-{
-	uint8_t overflow = 0;
-
-	for (int i = 15; i >= 0; i--) {
-		out[i] = in[i] << 1;
-		/* previous byte */
-		out[i] |= overflow;
-		overflow = in[i] & 0x80 ? 1 : 0;
-	}
-}
-
-/* CMAC subkey generation algorithm */
-static int cmac_subkey(const uint8_t *key, uint8_t *k1, uint8_t *k2)
-{
-	const uint8_t rb[16] = {
-		[0 ... 14]	= 0x00,
-		[15]		= 0x87,
-	};
-	uint8_t zero[16] = { 0 }, *tmp = zero;
-	uint8_t l[16];
-	int err;
-
-	/* L := AES-128(K, const_Zero) */
-	err = le_encrypt(key, zero, tmp);
-	if (err) {
-		return err;
-	}
-
-	swap_buf(tmp, l, 16);
-
-	BT_DBG("l %s\n", h(l, 16));
-
-	/* if MSB(L) == 0 K1 = L << 1 */
-	if (!(l[0] & 0x80)) {
-		array_shift(l, k1);
-	/* else K1 = (L << 1) XOR rb */
-	} else {
-		array_shift(l, k1);
-		xor_128((uint128_t *)k1, (uint128_t *)rb, (uint128_t *)k1);
-	}
-
-	/* if MSB(K1) == 0 K2 = K1 << 1 */
-	if (!(k1[0] & 0x80)) {
-		array_shift(k1, k2);
-	/* else K2 = (K1 << 1) XOR rb */
-	} else {
-		array_shift(k1, k2);
-		xor_128((uint128_t *)k2, (uint128_t *)rb, (uint128_t *)k2);
-	}
-
-	return 0;
-}
-
-/* padding(x) = x || 10^i      where i is 128 - 8 * r - 1 */
-static void add_pad(const uint8_t *in, unsigned char *out, int len)
-{
-	memset(out, 0, 16);
-	memcpy(out, in, len);
-	out[len] = 0x80;
-}
-
-/* Cypher based Message Authentication Code (CMAC) with AES 128 bit
- *
- * Input    : key    ( 128-bit key )
- *          : in     ( message to be authenticated )
- *          : len    ( length of the message in octets )
- * Output   : out    ( message authentication code )
- */
-static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
-			   uint8_t *out)
-{
-	uint8_t k1[16], k2[16], last_block[16], *pad_block = last_block;
-	uint8_t key_s[16];
-	uint8_t *x, *y;
-	uint8_t n, flag;
-	int err;
-
-	swap_buf(key, key_s, 16);
-
-	/* (K1,K2) = Generate_Subkey(K) */
-	err = cmac_subkey(key_s, k1, k2);
-	if (err) {
-		BT_ERR("SMAC subkey generation failed\n");
-		return err;
-	}
-
-	BT_DBG("key %s subkeys k1 %s k2 %s\n", h(key, 16), h(k1, 16),
-	       h(k2, 16));
-
-	/* the number of blocks, n, is calculated, the block length is 16 bytes
-	 * n = ceil(len/const_Bsize)
-	 */
-	n = (len + 15) / 16;
-
-	/* check input length, flag indicate completed blocks */
-	if (n == 0) {
-		/* if length is 0, the number of blocks to be processed shall
-		 * be 1,and the flag shall be marked as not-complete-block
-		 * false
-		 */
-		n = 1;
-		flag = 0;
-	} else {
-		if ((len % 16) == 0) {
-			/* complete blocks */
-			flag = 1;
-		} else {
-			/* last block is not complete */
-			flag = 0;
-		}
-	}
-
-	BT_DBG("len %u n %u flag %u\n", len, n, flag);
-
-	/* if flag is true then M_last = M_n XOR K1 */
-	if (flag) {
-		xor_128((uint128_t *)&in[16 * (n - 1)], (uint128_t *)k1,
-			(uint128_t *)last_block);
-	/* else M_last = padding(M_n) XOR K2 */
-	} else {
-		add_pad(&in[16 * (n - 1)], pad_block, len % 16);
-		xor_128((uint128_t *)pad_block, (uint128_t *)k2,
-			(uint128_t *)last_block);
-	}
-
-	/* Reuse k1 and k2 buffers */
-	x = k1;
-	y = k2;
-
-	/* Zeroing x */
-	memset(x, 0, 16);
-
-	/* the basic CBC-MAC is applied to M_1,...,M_{n-1},M_last */
-	for (int i = 0; i < n - 1; i++) {
-		/* Y = X XOR M_i */
-		xor_128((uint128_t *)x, (uint128_t *)&in[i * 16],
-			(uint128_t *)y);
-
-		swap_in_place(y, 16);
-
-		/* X = AES-128(K,Y) */
-		err = le_encrypt(key_s, y, x);
-		if (err) {
-			return err;
-		}
-
-		swap_in_place(x, 16);
-	}
-
-	/* Y = M_last XOR X */
-	xor_128((uint128_t *)x, (uint128_t *)last_block, (uint128_t *)y);
-
-	swap_in_place(y, 16);
-
-	/* T = AES-128(K,Y) */
-	err = le_encrypt(key_s, y, out);
-
-	swap_in_place(out, 16);
-
-	return err;
-}
-
 /* Sign message using msg as a buffer, len is a size of the message,
  * msg buffer contains message itself, 32 bit count and signature,
  * so total buffer size is len + 4 + 8 octets.
