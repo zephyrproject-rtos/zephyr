@@ -641,6 +641,41 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 	l2cap_chan_del(chan);
 }
+
+static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
+		       struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.conn;
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_le_credits *ev = (void *)buf->data;
+	uint16_t credits, cid;
+
+	if (buf->len < sizeof(*ev)) {
+		BT_ERR("Too small LE Credits packet size\n");
+		return;
+	}
+
+	cid = sys_le16_to_cpu(ev->cid);
+	credits = sys_le16_to_cpu(ev->credits);
+
+	BT_DBG("cid 0x%04x credits %u\n", cid, credits);
+
+	chan = bt_l2cap_lookup_tx_cid(conn, cid);
+	if (!chan) {
+		BT_ERR("Unable to find channel of LE Credits packet\n");
+		return;
+	}
+
+	if (chan->tx.credits + credits > UINT16_MAX) {
+		BT_ERR("Credits overflow\n");
+		bt_l2cap_chan_disconnect(chan);
+		return;
+	}
+
+	chan->tx.credits += credits;
+
+	BT_DBG("chan %p total credits %u\n", chan, chan->tx.credits);
+}
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -691,6 +726,9 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	case BT_L2CAP_DISCONN_RSP:
 		le_disconn_rsp(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_LE_CREDITS:
+		le_credits(l2cap, hdr->ident, buf);
 		break;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 	default:
