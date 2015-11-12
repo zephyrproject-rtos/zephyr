@@ -863,12 +863,38 @@ static void le_ltk_request(struct net_buf *buf)
 	}
 
 	if (!conn->keys) {
-		conn->keys = bt_keys_find(BT_KEYS_SLAVE_LTK, &conn->le.dst);
+		conn->keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
+		if (!conn->keys) {
+			conn->keys = bt_keys_find(BT_KEYS_SLAVE_LTK,
+						  &conn->le.dst);
+		}
 	}
 
-	if (conn->keys && (conn->keys->keys & BT_KEYS_SLAVE_LTK) &&
-	    conn->keys->slave_ltk.rand == evt->rand &&
-	    conn->keys->slave_ltk.ediv == evt->ediv) {
+	if (conn->keys && (conn->keys->keys & BT_KEYS_LTK_P256) &&
+	    evt->rand == 0 && evt->ediv == 0) {
+		struct bt_hci_cp_le_ltk_req_reply *cp;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
+					sizeof(*cp));
+		if (!buf) {
+			BT_ERR("Out of command buffers\n");
+			goto done;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->handle = evt->handle;
+
+		/* use only enc_size bytes of key for encryption */
+		memcpy(cp->ltk, conn->keys->ltk.val, conn->keys->enc_size);
+		if (conn->keys->enc_size < sizeof(cp->ltk)) {
+			memset(cp->ltk + conn->keys->enc_size, 0,
+			       sizeof(cp->ltk) - conn->keys->enc_size);
+		}
+
+		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
+	} else if (conn->keys && (conn->keys->keys & BT_KEYS_SLAVE_LTK) &&
+		   conn->keys->slave_ltk.rand == evt->rand &&
+		   conn->keys->slave_ltk.ediv == evt->ediv) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
