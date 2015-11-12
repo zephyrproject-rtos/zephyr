@@ -83,6 +83,11 @@ struct bt_l2cap_chan_ops {
 };
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+/** @def BT_L2CAP_CHAN_SEND_RESERVE
+ *  @brief Headroom needed for outgoing buffers
+ */
+#define BT_L2CAP_CHAN_SEND_RESERVE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + 4 + 4 \
+				    + 2)
 
 /** @brief L2CAP Server structure. */
 struct bt_l2cap_server {
@@ -128,6 +133,16 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
+
+/** @brief Send data to L2CAP channel
+ *
+ *  Send data from buffer to the channel. This procedure may block waiting for
+ *  credits to send data therefore it shall be used from a fiber to be able to
+ *  receive credits when necessary.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
