@@ -34,6 +34,11 @@
 #define MAX_ATTRIBUTES 20
 #define MAX_BUFFER_SIZE 512
 
+#define GATT_PERM_ENC_READ_MASK		(BT_GATT_PERM_READ_ENCRYPT | \
+					 BT_GATT_PERM_READ_AUTHEN)
+#define GATT_PERM_ENC_WRITE_MASK	(BT_GATT_PERM_WRITE_ENCRYPT | \
+					 BT_GATT_PERM_WRITE_AUTHEN)
+
 static struct bt_gatt_attr gatt_db[MAX_ATTRIBUTES];
 
 static struct {
@@ -184,12 +189,18 @@ struct gatt_value {
 	uint16_t len;
 	uint8_t *data;
 	uint8_t *prep_data;
+	uint8_t enc_key_size;
 };
 
 static int read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		      void *buf, uint16_t len, uint16_t offset)
 {
 	const struct gatt_value *value = attr->user_data;
+
+	if ((attr->perm & GATT_PERM_ENC_READ_MASK) &&
+	    (value->enc_key_size > bt_conn_enc_key_size(conn))) {
+		return -EACCES;
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value->data,
 				 value->len);
@@ -199,6 +210,11 @@ static int write_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		       const void *buf, uint16_t len, uint16_t offset)
 {
 	struct gatt_value *value = attr->user_data;
+
+	if ((attr->perm & GATT_PERM_ENC_WRITE_MASK) &&
+	    (value->enc_key_size > bt_conn_enc_key_size(conn))) {
+		return -EACCES;
+	}
 
 	/*
 	 * If the prepare Value Offset is greater than the current length of
@@ -479,6 +495,8 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 		goto rsp;
 	}
 
+	value.enc_key_size = 0x00;
+
 	attr->user_data = gatt_buf_add(&value, sizeof(value));
 	if (!attr->user_data) {
 		status = BTP_STATUS_FAILED;
@@ -509,6 +527,69 @@ static void start_server(uint8_t *data, uint16_t len)
 		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
 }
 
+static uint8_t set_enc_key_size_cb(const struct bt_gatt_attr *attr,
+				   void *user_data)
+{
+	const struct gatt_set_enc_key_size_cmd *cmd = user_data;
+	struct gatt_value *value;
+	uint8_t status;
+
+	/* Fail if requested key size is invalid */
+	if (cmd->key_size < 0x07 || cmd->key_size > 0x0f) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	/* Fail if requested attribute is a service */
+	if (!bt_uuid_cmp(attr->uuid, svc_pri.uuid) ||
+	    !bt_uuid_cmp(attr->uuid, svc_sec.uuid) ||
+	    !bt_uuid_cmp(attr->uuid, svc_inc.uuid)) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	/* Lookup for characteristic value attribute */
+	if (!bt_uuid_cmp(attr->uuid, chr.uuid)) {
+		attr = attr->_next;
+		if (!attr) {
+			status = BTP_STATUS_FAILED;
+			goto rsp;
+		}
+	}
+
+	/* Fail if permissions are not set */
+	if (!(attr->perm & (GATT_PERM_ENC_READ_MASK |
+			    GATT_PERM_ENC_WRITE_MASK))) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	/* Fail if there is no attribute value */
+	if (!attr->user_data) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	value = attr->user_data;
+	value->enc_key_size = cmd->key_size;
+
+	status = BTP_STATUS_SUCCESS;
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_SET_ENC_KEY_SIZE, CONTROLLER_INDEX,
+		   status);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void set_enc_key_size(uint8_t *data, uint16_t len)
+{
+	const struct gatt_set_enc_key_size_cmd *cmd = (void *) data;
+	uint16_t handle = sys_le16_to_cpu(cmd->attr_id);
+
+	/* TODO Return error if no attribute found */
+	bt_gatt_foreach_attr(handle, handle, set_enc_key_size_cb, data);
+}
+
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
@@ -533,6 +614,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_START_SERVER:
 		start_server(data, len);
+		return;
+	case GATT_SET_ENC_KEY_SIZE:
+		set_enc_key_size(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,

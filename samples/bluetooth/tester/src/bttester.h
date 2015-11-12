@@ -275,6 +275,12 @@ struct gatt_add_included_service_rp {
 
 #define GATT_START_SERVER		0x07
 
+#define GATT_SET_ENC_KEY_SIZE		0x09
+struct gatt_set_enc_key_size_cmd {
+	uint16_t attr_id;
+	uint8_t key_size;
+} __packed;
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_rsp_full(uint8_t service, uint8_t opcode, uint8_t index,
