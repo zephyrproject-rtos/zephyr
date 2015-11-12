@@ -187,6 +187,15 @@ static int write_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	struct gatt_value *value = attr->user_data;
 
+	/*
+	 * If the prepare Value Offset is greater than the current length of
+	 * the attribute value Error Response shall be sent with the
+	 * «Invalid Offset».
+	 */
+	if (offset > value->len) {
+		return -EINVAL;
+	}
+
 	if (offset + len > value->len) {
 		return -EFBIG;
 	}
