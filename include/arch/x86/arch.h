@@ -154,7 +154,7 @@ typedef struct s_isrList {
  *
  * @param device Device
  * @param irq IRQ number
- * @param priority IRQ Priority (currently ignored)
+ * @param priority IRQ Priority
  * @param isr Interrupt Service Routine
  * @param parameter ISR parameter
  *
