@@ -258,9 +258,10 @@ static struct bt_gatt_attr chr_val = BT_GATT_LONG_DESCRIPTOR(NULL, 0,
 							     write_value,
 							     flush_value, NULL);
 
-static void add_characteristic(uint8_t *data, uint16_t len)
+static uint8_t add_characteristic_cb(const struct bt_gatt_attr *attr,
+				     void *user_data)
 {
-	const struct gatt_add_characteristic_cmd *cmd = (void *) data;
+	const struct gatt_add_characteristic_cmd *cmd = user_data;
 	struct gatt_add_characteristic_rp rp;
 	struct bt_gatt_attr *attr_chrc, *attr_value;
 	struct bt_gatt_chrc chrc;
@@ -298,10 +299,21 @@ static void add_characteristic(uint8_t *data, uint16_t len)
 	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
 			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 
-	return;
+	return BT_GATT_ITER_STOP;
 fail:
 	tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
 		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void add_characteristic(uint8_t *data, uint16_t len)
+{
+	const struct gatt_add_characteristic_cmd *cmd = (void *) data;
+	uint16_t handle = sys_le16_to_cpu(cmd->svc_id);
+
+	/* TODO Return error if no attribute found */
+	bt_gatt_foreach_attr(handle, handle, add_characteristic_cb, data);
 }
 
 static struct bt_gatt_attr ccc = BT_GATT_CCC(NULL, NULL);
