@@ -174,6 +174,7 @@ static inline void send_message(const char *name,
 
 		ptr = net_buf_add(buf, user_data->expecting);
 		memcpy(ptr, lorem_ipsum + pos, user_data->expecting);
+		ip_buf_appdatalen(buf) = user_data->expecting;
 
 		dtls_write(ctx, session,
 			   ip_buf_appdata(buf), ip_buf_appdatalen(buf));
