@@ -160,10 +160,16 @@ static int start_security(struct bt_conn *conn)
 	case BT_HCI_ROLE_MASTER:
 	{
 		if (!conn->keys) {
-			conn->keys = bt_keys_find(BT_KEYS_LTK, &conn->le.dst);
+			conn->keys = bt_keys_find(BT_KEYS_LTK_P256,
+						  &conn->le.dst);
+			if (!conn->keys) {
+				conn->keys = bt_keys_find(BT_KEYS_LTK,
+							  &conn->le.dst);
+			}
 		}
 
-		if (!conn->keys || !(conn->keys->keys & BT_KEYS_LTK)) {
+		if (!conn->keys ||
+		    !(conn->keys->keys & (BT_KEYS_LTK | BT_KEYS_LTK_P256))) {
 			return bt_smp_send_pairing_req(conn);
 		}
 
@@ -172,6 +178,7 @@ static int start_security(struct bt_conn *conn)
 			return bt_smp_send_pairing_req(conn);
 		}
 
+		/* LE SC LTK and legacy master LTK are stored in same place */
 		return bt_conn_le_start_encryption(conn, conn->keys->ltk.rand,
 						   conn->keys->ltk.ediv,
 						   conn->keys->ltk.val,
