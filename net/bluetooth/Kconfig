@@ -233,4 +233,10 @@ endif # BLUETOOTH_DEBUG
 
 endif # BLUETOOTH_LE
 
+config BLUETOOTH_BREDR
+	bool "Bluetooth classic (BR/EDR) support [EXPERIMENTAL]"
+	default n
+	help
+	  This option enables classic bluetooth support"
+
 endif # BLUETOOTH
