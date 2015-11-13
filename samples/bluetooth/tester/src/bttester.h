@@ -442,6 +442,15 @@ struct gatt_write_without_rsp_cmd {
 	uint8_t data[0];
 } __packed;
 
+#define GATT_SIGNED_WRITE_WITHOUT_RSP	0x4c
+struct gatt_signed_write_without_rsp_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t handle;
+	uint16_t data_length;
+	uint8_t data[0];
+} __packed;
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
