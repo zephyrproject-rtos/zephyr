@@ -40,8 +40,14 @@
 #define DEVICE_NAME "test shell"
 #define AD_SHORT_NAME		0x08
 #define AD_COMPLETE_NAME	0x09
+#define CREDITS			10
+#define DATA_MTU		(23 * CREDITS)
 
 static struct bt_conn *default_conn = NULL;
+
+static struct nano_fifo data_fifo;
+static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL, 0);
+static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 			 const uint8_t *ad, uint8_t len)
@@ -1177,6 +1183,33 @@ static void cmd_l2cap_disconnect(int argc, char *argv[])
 	}
 }
 
+static void cmd_l2cap_send(int argc, char *argv[])
+{
+	int err, len, count = 1;
+	struct net_buf *buf;
+
+	if (argc > 1) {
+		count = strtoul(argv[1], NULL, 10);
+	}
+
+	len = min(l2cap_chan.tx.mtu, DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE);
+
+	while (count--) {
+		buf = net_buf_get(&data_fifo, BT_L2CAP_CHAN_SEND_RESERVE);
+		if (!buf) {
+			printk("Unable acquire buffer\n");
+		}
+
+		memcpy(net_buf_add(buf, len), buf_data, len);
+		err = bt_l2cap_chan_send(&l2cap_chan, buf);
+		if (err) {
+			printk("Unable to send: %u\n", -err);
+			net_buf_unref(buf);
+			break;
+		}
+	}
+}
+
 struct shell_cmd commands[] = {
 	{ "init", cmd_init },
 	{ "connect", cmd_connect_le },
@@ -1204,6 +1237,7 @@ struct shell_cmd commands[] = {
 	{ "l2cap-register", cmd_l2cap_register },
 	{ "l2cap-connect", cmd_l2cap_connect },
 	{ "l2cap-disconnect", cmd_l2cap_disconnect },
+	{ "l2cap-send", cmd_l2cap_send },
 	{ NULL, NULL }
 };
 
@@ -1216,6 +1250,8 @@ void main(void)
 	bt_conn_cb_register(&conn_callbacks);
 
 	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
+
+	net_buf_pool_init(data_pool);
 
 	shell_init("btshell> ", commands);
 }
