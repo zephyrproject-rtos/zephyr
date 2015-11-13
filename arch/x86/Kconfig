@@ -28,7 +28,7 @@ source "kernel/Kconfig"
 menu "X86 Platform Configuration options"
 
 config RAM_SIZE
-	int "Amount of RAM given to the kernel (in kB)"
+	hex "Amount of RAM given to the kernel (in kB)"
 	help
 	This option specifies the amount of RAM given to the kernel. It must
 	not exceed the amount available on the target.  When running an XIP
@@ -39,7 +39,7 @@ config RAM_SIZE
 	The default value is specified by the platform.
 
 config ROM_SIZE
-	int "Amount of ROM given to the kernel (in kB)" if XIP
+	hex "Amount of ROM given to the kernel (in kB)" if XIP
 	help
 	This option specifies the amount of ROM given to the kernel. It must
 	not exceed the amount available on the target.  It must also be large
