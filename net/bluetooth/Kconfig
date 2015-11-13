@@ -51,7 +51,8 @@ config  BLUETOOTH_MAX_CMD_LEN
 
 config  BLUETOOTH_HCI_EVT_COUNT
 	int "Number of HCI event buffers"
-	default 6
+	default 8 if BLUETOOTH_CONN
+	default 4
 	range 2 64
 	help
 	  Number of buffers available for HCI events. This number should
