@@ -35,7 +35,7 @@ rest should not be triggered until the kernel is ready to handle them.
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE
-
+SECTION_SUBSEC_FUNC(exc_vector_table,_Start,__start)
 SECTION_SUBSEC_FUNC(exc_vector_table,_Start,_VectorTableROM)
 
     .word __CORTEXM_BOOT_MSP
