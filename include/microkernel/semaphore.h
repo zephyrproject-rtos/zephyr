@@ -38,9 +38,9 @@ extern "C" {
 
 /**
  *
- * @brief Signal a semaphore from a fiber
+ * @brief Signal a semaphore from an ISR
  *
- * This routine (to only be called from a fiber) signals a semaphore.
+ * This routine (to only be called from an ISR) signals a semaphore.
  * To signal a semaphore from a task, task_sem_give() should be used instead.
  *
  * @param sema   Semaphore to signal.
@@ -51,9 +51,9 @@ extern void isr_sem_give(ksem_t sema);
 
 /**
  *
- * @brief Signal a semaphore from an ISR
+ * @brief Signal a semaphore from a fiber
  *
- * This routine (to only be called from an ISR) signals a semaphore.
+ * This routine (to only be called from a fiber) signals a semaphore.
  * To signal a semaphore from a task, task_sem_give() should be used instead.
  *
  * @param sema   Semaphore to signal.
