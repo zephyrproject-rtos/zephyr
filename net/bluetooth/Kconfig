@@ -21,6 +21,7 @@ menuconfig BLUETOOTH
 	default n
 	select NANO_TIMEOUTS
 	select NET_BUF
+	select BLUETOOTH_LE
 	help
 	  This option enables Bluetooth support.
 
@@ -29,7 +30,9 @@ config BLUETOOTH_LE
 	bool "Bluetooth Low Energy (LE) support"
 	default n
 	help
-	  This option enables Bluetooth Low Energy (LE)"
+	  This option enables Bluetooth Low Energy (LE) support.
+	  Currently it is mandatory whenever Bluetooth support
+	  (CONFIG_BLUETOOTH) is enabled.
 
 if BLUETOOTH_LE
 config  BLUETOOTH_HCI_CMD_COUNT
