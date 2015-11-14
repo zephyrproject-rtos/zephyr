@@ -58,8 +58,13 @@ DOTCONFIG = $(O)/.config
 all: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
+ifeq ($(findstring qemu_,$(PLATFORM_CONFIG)),)
+qemu:
+	@echo "Emulation not available for this platform"
+else
 qemu: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
+endif
 
 initconfig: $(DOTCONFIG)
 

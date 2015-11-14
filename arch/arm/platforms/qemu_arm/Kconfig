@@ -16,10 +16,10 @@
 # limitations under the License.
 #
 
-if PLATFORM_TI_LM3S6965
+if PLATFORM_QEMU_ARM
 config PLATFORM
 	string
-	default ti_lm3s6965
+	default qemu_arm
 	help
 	This option holds the directory name used by the build system to locate
 	the correct linker file.

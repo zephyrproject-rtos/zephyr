@@ -69,13 +69,13 @@ To run an application using the x86 basic_atom platform configuration, type:
 
 .. code-block:: console
 
-   $ make PLATFORM_CONFIG=basic_atom qemu
+   $ make PLATFORM_CONFIG=qemu_x86 qemu
 
 To run an application using the ARM basic_cortex_m3 platform configuration, type:
 
 .. code-block:: console
 
-   $ make PLATFORM_CONFIG=basic_cortex_m3 ARCH=arm qemu
+   $ make PLATFORM_CONFIG=qemu_cortex_m3 ARCH=arm qemu
 
 Qemu is not supported on all platforms and architectures and some samples and
 test cases might fail when running in the emulator. When developing for a

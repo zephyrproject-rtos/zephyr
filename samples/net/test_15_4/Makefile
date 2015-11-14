@@ -18,7 +18,7 @@
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = nano
-PLATFORM_CONFIG ?= basic_atom
+PLATFORM_CONFIG ?= qemu_x86
 CONF_FILE = prj_$(ARCH).conf
 CFLAGS += -DNET_802154_TX_STACK_SIZE=5120
 

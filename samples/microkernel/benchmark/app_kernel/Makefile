@@ -1,4 +1,4 @@
-PLATFORM_CONFIG ?= basic_atom
+PLATFORM_CONFIG ?= qemu_x86
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 CONF_FILE = prj.conf

@@ -1,6 +1,6 @@
 # default configuration
 TEST ?= min
-PLATFORM_CONFIG ?= basic_atom
+PLATFORM_CONFIG ?= qemu_x86
 
 MDEF_FILE = micro_${TEST}.mdef
 KERNEL_TYPE = micro
