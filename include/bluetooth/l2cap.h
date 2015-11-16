@@ -47,7 +47,7 @@ struct bt_l2cap_endpoint {
 	/** Endpoint Maximum Transmission Unit */
 	uint16_t		mtu;
 	/** Endpoint credits */
-	uint16_t		credits;
+	struct nano_sem		credits;
 };
 
 /** @brief L2CAP Channel structure. */
