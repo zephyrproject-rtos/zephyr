@@ -180,6 +180,14 @@ struct bt_hci_rp_read_bd_addr {
 	bt_addr_t bdaddr;
 } __packed;
 
+#define BT_HCI_OP_LE_SET_EVENT_MASK		BT_OP(BT_OGF_LE, 0x0001)
+struct bt_hci_cp_le_set_event_mask {
+	uint8_t events[8];
+} __packed;
+struct bt_hci_rp_le_set_event_mask {
+	uint8_t status;
+} __packed;
+
 #define BT_HCI_OP_LE_READ_BUFFER_SIZE		BT_OP(BT_OGF_LE, 0x0002)
 struct bt_hci_rp_le_read_buffer_size {
 	uint8_t  status;

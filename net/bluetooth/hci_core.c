@@ -1400,8 +1400,10 @@ static int common_init(void)
 
 static int le_init(void)
 {
+	struct bt_hci_cp_write_le_host_supp *cp_le;
+	struct bt_hci_cp_le_set_event_mask *cp_mask;
+	struct net_buf *buf;
 	struct net_buf *rsp;
-	struct bt_hci_cp_write_le_host_supp *cp;
 	int err;
 
 	/* For now we only support LE capable controllers */
@@ -1428,24 +1430,46 @@ static int le_init(void)
 	net_buf_unref(rsp);
 
 	if (lmp_bredr_capable(bt_dev)) {
-		struct net_buf *buf;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
-					sizeof(*cp));
+					sizeof(*cp_le));
 		if (!buf) {
 			return -ENOBUFS;
 		}
 
-		cp = net_buf_add(buf, sizeof(*cp));
+		cp_le = net_buf_add(buf, sizeof(*cp_le));
 
 		/* Excplicitly enable LE for dual-mode controllers */
-		cp->le = 0x01;
-		cp->simul = 0x00;
-		return bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
-					    buf, NULL);
+		cp_le->le = 0x01;
+		cp_le->simul = 0x00;
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, buf,
+					   NULL);
+		if (err) {
+			return err;
+		}
 	}
 
-	return 0;
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EVENT_MASK, sizeof(*cp_mask));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp_mask = net_buf_add(buf, sizeof(*cp_mask));
+	memset(cp_mask, 0, sizeof(*cp_mask));
+
+	cp_mask->events[0] |= 0x02; /* LE Advertising Report Event */
+
+#if defined(CONFIG_BLUETOOTH_CONN)
+	cp_mask->events[0] |= 0x01; /* LE Connection Complete Event */
+	cp_mask->events[0] |= 0x04; /* LE Connection Update Complete Event */
+	cp_mask->events[0] |= 0x08; /* LE Read Remote Used Features Compl Evt */
+#endif /* CONFIG_BLUETOOTH_CONN */
+
+#if defined(CONFIG_BLUETOOTH_SMP)
+	cp_mask->events[0] |= 0x10; /* LE Long Term Key Request Event */
+#endif /* CONFIG_BLUETOOTH_SMP */
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, buf, NULL);
 }
 
 static int br_init(void)
