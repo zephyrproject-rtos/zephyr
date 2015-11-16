@@ -32,6 +32,7 @@ config NET_BUF
 config	NET_BUF_DEBUG
 	bool "Network buffer debugging"
 	depends on NET_BUF
+	select STDOUT_CONSOLE
 	default n
 	help
 	  Enable debug logs and checks for the generic network buffers.
