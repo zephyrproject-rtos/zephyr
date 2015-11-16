@@ -51,17 +51,18 @@
 FUNC_NO_FP int atomic_cas(atomic_t *target, atomic_val_t oldValue,
 			  atomic_val_t newValue)
 {
-	__asm__ goto ("movl %[oldValue], %%eax\n\t"
-		      "lock cmpxchg %[newValue], (%[target])\n\t"
-		      "jne %l[out]"
-		      :
-		      : [newValue] "r" (newValue), [oldValue] "m" (oldValue),
-			[target] "r" (target)
-		      : "eax"
-		      : out);
-	return 1;
-out:
-	return 0;
+	int eax;
+
+	__asm__ (
+	    "movl %[oldValue], %%eax\n\t"
+	    "lock cmpxchg %[newValue], (%[target])\n\t"
+	    "sete %%al\n\t"
+	    "movzbl %%al,%%eax"
+	    : "=&a" (eax)
+	    : [newValue] "r" (newValue), [oldValue] "m" (oldValue),
+	      [target] "r" (target));
+
+	return eax;
 }
 
 /**
