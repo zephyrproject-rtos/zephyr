@@ -69,7 +69,6 @@ struct bt_dev {
 	/* BR/EDR features page 0 */
 	uint8_t			features[8];
 
-	/* Current state of controller activity */
 	/* Supported commands */
 	uint8_t			supported_commands[36];
 
