@@ -445,6 +445,14 @@ struct gatt_read_rp {
 	uint8_t data[0];
 } __packed;
 
+#define GATT_READ_LONG			0x49
+struct gatt_read_long_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t handle;
+	uint16_t offset;
+} __packed;
+
 #define GATT_WRITE_WITHOUT_RSP		0x4b
 struct gatt_write_without_rsp_cmd {
 	uint8_t address_type;

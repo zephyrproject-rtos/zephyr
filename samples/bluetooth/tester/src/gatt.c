@@ -162,6 +162,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds[1] |= 1 << (GATT_DISC_CHRC_UUID - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_DISC_ALL_DESC - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_READ - GATT_CLIENT_OP_OFFSET);
+	cmds[1] |= 1 << (GATT_READ_LONG - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_WRITE_WITHOUT_RSP - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_SIGNED_WRITE_WITHOUT_RSP - GATT_CLIENT_OP_OFFSET);
 
@@ -1192,6 +1193,56 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
+static void read_long_result(void *user_data)
+{
+	/* Respond with an error if the buffer was cleared. */
+	if (gatt_buf_isempty()) {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_LONG,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	} else {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_READ_LONG,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+	}
+
+	read_destroy(user_data);
+}
+
+static void read_long(uint8_t *data, uint16_t len)
+{
+	const struct gatt_read_long_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		goto fail_conn;
+	}
+
+	if (!gatt_buf_reserve(sizeof(struct gatt_read_rp))) {
+		goto fail;
+	}
+
+	read_params.handle = sys_le16_to_cpu(cmd->handle);
+	read_params.offset = sys_le16_to_cpu(cmd->offset);
+	read_params.func = read_cb;
+	read_params.destroy = read_long_result;
+
+	if (bt_gatt_read(conn, &read_params) < 0) {
+		read_destroy(&read_params);
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	bt_conn_unref(conn);
+
+fail_conn:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_LONG, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 static void write_without_rsp(uint8_t *data, uint16_t len)
 {
 	const struct gatt_write_without_rsp_cmd *cmd = (void *) data;
@@ -1290,6 +1341,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_READ:
 		read(data, len);
+		return;
+	case GATT_READ_LONG:
+		read_long(data, len);
 		return;
 	case GATT_WRITE_WITHOUT_RSP:
 		write_without_rsp(data, len);
