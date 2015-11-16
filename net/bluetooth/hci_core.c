@@ -1430,7 +1430,6 @@ static int le_init(void)
 	net_buf_unref(rsp);
 
 	if (lmp_bredr_capable(bt_dev)) {
-
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
 					sizeof(*cp_le));
 		if (!buf) {
