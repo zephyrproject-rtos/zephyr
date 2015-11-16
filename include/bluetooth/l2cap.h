@@ -63,6 +63,9 @@ struct bt_l2cap_chan {
 	/** Channel Receiving Endpoint */
 	struct bt_l2cap_endpoint rx;
 
+	struct net_buf		*_sdu;
+	uint16_t		_sdu_len;
+
 	uint8_t			_ident;
 
 	struct bt_l2cap_chan	*_next;
@@ -76,6 +79,8 @@ struct bt_l2cap_chan_ops {
 	void			(*disconnected)(struct bt_l2cap_chan *chan);
 	/** Channel encrypt_change callback */
 	void			(*encrypt_change)(struct bt_l2cap_chan *chan);
+	/** Channel get_buf callback */
+	struct net_buf		*(*alloc_buf)(struct bt_l2cap_chan *chan);
 
 	/** Channel recv callback */
 	void			(*recv)(struct bt_l2cap_chan *chan,

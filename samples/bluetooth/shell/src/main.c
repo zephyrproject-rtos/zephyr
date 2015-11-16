@@ -1100,14 +1100,23 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 	printk("Channel %p disconnected\n", chan);
 }
 
+static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
+{
+	printk("Channel %p requires buffer\n", chan);
+
+	return net_buf_get(&data_fifo, 0);
+}
+
 static struct bt_l2cap_chan_ops l2cap_ops = {
+	.alloc_buf	= l2cap_alloc_buf,
 	.recv		= l2cap_recv,
 	.connected	= l2cap_connected,
 	.disconnected	= l2cap_disconnected,
 };
 
 static struct bt_l2cap_chan l2cap_chan = {
-	.ops = &l2cap_ops,
+	.ops		= &l2cap_ops,
+	.rx.mtu		= DATA_MTU,
 };
 
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)

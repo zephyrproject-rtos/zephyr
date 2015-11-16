@@ -543,6 +543,13 @@ static void l2cap_chan_del(struct bt_l2cap_chan *chan)
 	if (!chan->tx.credits.nsig) {
 		l2cap_chan_tx_give_credits(chan, 1);
 	}
+
+	/* Destroy segmented SDU if it exists */
+	if (chan->_sdu) {
+		net_buf_unref(chan->_sdu);
+		chan->_sdu = NULL;
+		chan->_sdu_len = 0;
+	}
 }
 
 static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
@@ -834,6 +841,30 @@ done:
 	BT_DBG("chan %p credits %u\n", chan, chan->rx.credits.nsig);
 }
 
+static void l2cap_chan_le_recv_sdu(struct bt_l2cap_chan *chan,
+				   struct net_buf *buf)
+{
+	BT_DBG("chan %p len %u sdu len %u\n", chan, buf->len, chan->_sdu->len);
+
+	if (chan->_sdu->len + buf->len > chan->_sdu_len) {
+		BT_ERR("SDU length mismatch\n");
+		bt_l2cap_chan_disconnect(chan);
+		return;
+	}
+
+	memcpy(net_buf_add(chan->_sdu, buf->len), buf->data, buf->len);
+
+	if (chan->_sdu->len == chan->_sdu_len) {
+		/* Receiving complete SDU, notify channel and reset SDU buf */
+		chan->ops->recv(chan, chan->_sdu);
+		net_buf_unref(chan->_sdu);
+		chan->_sdu = NULL;
+		chan->_sdu_len = 0;
+	}
+
+	l2cap_chan_update_credits(chan);
+}
+
 static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	uint16_t sdu_len;
@@ -844,9 +875,12 @@ static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return;
 	}
 
-	/* TODO: SDU length is only sent in the first packet, for now this is
-	 * ok because MPS is the same as MTU so no segmentation should happen.
-	 */
+	/* Check if segments already exist */
+	if (chan->_sdu) {
+		l2cap_chan_le_recv_sdu(chan, buf);
+		return;
+	}
+
 	sdu_len = net_buf_pull_le16(buf);
 
 	BT_DBG("chan %p len %u sdu_len %u\n", chan, buf->len, sdu_len);
@@ -854,6 +888,19 @@ static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (sdu_len > chan->rx.mtu) {
 		BT_ERR("Invalid SDU length\n");
 		bt_l2cap_chan_disconnect(chan);
+		return;
+	}
+
+	/* Check if SDU needs segmentation */
+	if (sdu_len > buf->len) {
+		chan->_sdu = chan->ops->alloc_buf(chan);
+		if (!chan) {
+			BT_ERR("Unable to allocate buffer for SDU\n");
+			bt_l2cap_chan_disconnect(chan);
+			return;
+		}
+		chan->_sdu_len = sdu_len;
+		l2cap_chan_le_recv_sdu(chan, buf);
 		return;
 	}
 
