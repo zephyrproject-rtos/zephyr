@@ -161,6 +161,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds[1] |= 1 << (GATT_DISC_ALL_CHRC - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_DISC_CHRC_UUID - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_DISC_ALL_DESC - GATT_CLIENT_OP_OFFSET);
+	cmds[1] |= 1 << (GATT_READ - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_WRITE_WITHOUT_RSP - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_SIGNED_WRITE_WITHOUT_RSP - GATT_CLIENT_OP_OFFSET);
 
@@ -1101,6 +1102,96 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
+static struct bt_gatt_read_params read_params;
+
+static void read_destroy(void *user_data)
+{
+	struct bt_gatt_read_params *params = user_data;
+
+	memset(params, 0, sizeof(*params));
+
+	if (!gatt_buf_isempty()) {
+		gatt_buf_clear();
+	}
+}
+
+static void read_result(void *user_data)
+{
+	/* Respond with an error if the buffer was cleared. */
+	if (gatt_buf_isempty()) {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	} else {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_READ, CONTROLLER_INDEX,
+			    gatt_buf.buf, gatt_buf.len);
+	}
+
+	read_destroy(user_data);
+}
+
+static uint8_t read_cb(struct bt_conn *conn, int err, const void *data,
+		       uint16_t length)
+{
+	struct gatt_read_rp *rp = (void *) gatt_buf.buf;
+
+	/* Respond to the Lower Tester with ATT Error received */
+	if (err) {
+		rp->att_response = err;
+		return BT_GATT_ITER_STOP;
+	}
+
+	/*
+	 * Clear gatt_buf if there is no more space available to cache
+	 * read result. This will cause read_result function to send
+	 * BTP error status to the Lower Tester.
+	 */
+	if (!gatt_buf_add(data, length)) {
+		gatt_buf_clear();
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	rp->data_length += length;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void read(uint8_t *data, uint16_t len)
+{
+	const struct gatt_read_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		goto fail_conn;
+	}
+
+	if (!gatt_buf_reserve(sizeof(struct gatt_read_rp))) {
+		goto fail;
+	}
+
+	read_params.handle = sys_le16_to_cpu(cmd->handle);
+	read_params.offset = 0x0000;
+	read_params.func = read_cb;
+	read_params.destroy = read_result;
+
+	if (bt_gatt_read(conn, &read_params) < 0) {
+		read_destroy(&read_params);
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	bt_conn_unref(conn);
+
+fail_conn:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 static void write_without_rsp(uint8_t *data, uint16_t len)
 {
 	const struct gatt_write_without_rsp_cmd *cmd = (void *) data;
@@ -1196,6 +1287,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_DISC_ALL_DESC:
 		disc_all_desc(data, len);
+		return;
+	case GATT_READ:
+		read(data, len);
 		return;
 	case GATT_WRITE_WITHOUT_RSP:
 		write_without_rsp(data, len);

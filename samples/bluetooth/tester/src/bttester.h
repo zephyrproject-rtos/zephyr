@@ -433,6 +433,18 @@ struct gatt_disc_all_desc_rp {
 	struct gatt_descriptor descriptors[0];
 } __packed;
 
+#define GATT_READ			0x47
+struct gatt_read_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t handle;
+} __packed;
+struct gatt_read_rp {
+	uint8_t att_response;
+	uint16_t data_length;
+	uint8_t data[0];
+} __packed;
+
 #define GATT_WRITE_WITHOUT_RSP		0x4b
 struct gatt_write_without_rsp_cmd {
 	uint8_t address_type;
