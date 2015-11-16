@@ -1412,6 +1412,16 @@ static void init_sem(struct nano_sem *sem, size_t count)
 	};
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static void read_buffer_size_complete(struct net_buf *buf)
+{
+	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
+
+	BT_DBG("status %u\n", rp->status);
+
+	bt_dev.br.mtu = sys_le16_to_cpu(rp->acl_max_len);
+}
+#else
 static void read_buffer_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
@@ -1431,6 +1441,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	init_sem(&bt_dev.le.pkts_sem, pkts);
 }
+#endif
 
 static void le_read_buffer_size_complete(struct net_buf *buf)
 {
@@ -1621,6 +1632,24 @@ static int le_init(void)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static int br_init(void)
+{
+	struct net_buf *rsp;
+	int err;
+
+	/* Get BR/EDR buffer size */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+
+	read_buffer_size_complete(rsp);
+	net_buf_unref(rsp);
+
+	return 0;
+}
+#else
 static int br_init(void)
 {
 	struct net_buf *rsp;
@@ -1646,6 +1675,7 @@ static int br_init(void)
 
 	return 0;
 }
+#endif
 
 static int set_event_mask(void)
 {
