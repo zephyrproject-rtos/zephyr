@@ -1136,11 +1136,12 @@ static void att_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 	params->offset += length;
 
 	/* Continue reading the attribute */
-	err = bt_gatt_read(conn, params);
-	if (err) {
-		params->func(conn, err, NULL, 0);
+	if (bt_gatt_read(conn, params) < 0) {
+		params->func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0);
+		goto done;
 	}
 
+	return;
 done:
 	if (params->destroy) {
 		params->destroy(params);
