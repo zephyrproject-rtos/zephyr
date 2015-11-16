@@ -55,6 +55,13 @@ struct bt_dev_le {
 	struct nano_sem		pkts_sem;
 };
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+struct bt_dev_br {
+	/* Max controller's acceptable ACL packet length */
+	uint16_t		mtu;
+};
+#endif
+
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Bluetooth Device Address */
@@ -75,6 +82,11 @@ struct bt_dev {
 
 	/* LE controller specific features */
 	struct bt_dev_le	le;
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	/* BR/EDR controller specific features */
+	struct bt_dev_br	br;
+#endif
 
 	/* Number of commands controller can accept */
 	uint8_t			ncmd;
