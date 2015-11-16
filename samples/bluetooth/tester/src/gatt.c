@@ -165,6 +165,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds[1] |= 1 << (GATT_READ_LONG - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_WRITE_WITHOUT_RSP - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_SIGNED_WRITE_WITHOUT_RSP - GATT_CLIENT_OP_OFFSET);
+	cmds[1] |= 1 << (GATT_WRITE - GATT_CLIENT_OP_OFFSET);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -1293,6 +1294,37 @@ rsp:
 		   CONTROLLER_INDEX, status);
 }
 
+static void write_rsp(struct bt_conn *conn, uint8_t err)
+{
+	tester_send(BTP_SERVICE_ID_GATT, GATT_WRITE, CONTROLLER_INDEX, &err,
+		    sizeof(err));
+}
+
+static void write(uint8_t *data, uint16_t len)
+{
+	const struct gatt_write_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		goto fail;
+	}
+
+	if (bt_gatt_write(conn, sys_le16_to_cpu(cmd->handle), 0, cmd->data,
+			  sys_le16_to_cpu(cmd->data_length), write_rsp) < 0) {
+		bt_conn_unref(conn);
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_WRITE, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
@@ -1350,6 +1382,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_SIGNED_WRITE_WITHOUT_RSP:
 		signed_write_without_rsp(data, len);
+		return;
+	case GATT_WRITE:
+		write(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,
