@@ -161,8 +161,10 @@ config	BLUETOOTH_MAX_PAIRED
 
 endif # BLUETOOTH_CONN
 
+endif # BLUETOOTH_LE
+
 config	BLUETOOTH_DEBUG
-	bool "Bluetooth LE debug support"
+	bool "Bluetooth debug support"
 	select STDOUT_CONSOLE
 	default n
 	help
@@ -234,8 +236,6 @@ config	BLUETOOTH_DEBUG_GATT
 	  Generic Attribute Profile (GATT).
 
 endif # BLUETOOTH_DEBUG
-
-endif # BLUETOOTH_LE
 
 config BLUETOOTH_BREDR
 	bool "Bluetooth classic (BR/EDR) support [EXPERIMENTAL]"
