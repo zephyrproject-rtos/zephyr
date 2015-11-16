@@ -163,6 +163,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds[1] |= 1 << (GATT_DISC_ALL_DESC - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_READ - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_READ_LONG - GATT_CLIENT_OP_OFFSET);
+	cmds[1] |= 1 << (GATT_READ_MULTIPLE - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_WRITE_WITHOUT_RSP - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_SIGNED_WRITE_WITHOUT_RSP - GATT_CLIENT_OP_OFFSET);
 	cmds[1] |= 1 << (GATT_WRITE - GATT_CLIENT_OP_OFFSET);
@@ -1245,6 +1246,62 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
+static uint8_t read_multiple_result(struct bt_conn *conn, int err,
+				    const void *data, uint16_t length)
+{
+	read_cb(conn, err, data, length);
+
+	if (gatt_buf_isempty()) {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_MULTIPLE,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	} else {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_READ_MULTIPLE,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+
+		gatt_buf_clear();
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void read_multiple(uint8_t *data, uint16_t len)
+{
+	const struct gatt_read_multiple_cmd *cmd = (void *) data;
+	uint16_t handles[cmd->handles_count];
+	struct bt_conn *conn;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(handles); i++) {
+		handles[i] = sys_le16_to_cpu(cmd->handles[i]);
+	}
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		goto fail_conn;
+	}
+
+	if (!gatt_buf_reserve(sizeof(struct gatt_read_rp))) {
+		goto fail;
+	}
+
+	if (bt_gatt_read_multiple(conn, handles, cmd->handles_count,
+	    read_multiple_result) < 0) {
+		gatt_buf_clear();
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	bt_conn_unref(conn);
+
+fail_conn:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_MULTIPLE, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 static void write_without_rsp(uint8_t *data, uint16_t len)
 {
 	const struct gatt_write_without_rsp_cmd *cmd = (void *) data;
@@ -1410,6 +1467,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_READ_LONG:
 		read_long(data, len);
+		return;
+	case GATT_READ_MULTIPLE:
+		read_multiple(data, len);
 		return;
 	case GATT_WRITE_WITHOUT_RSP:
 		write_without_rsp(data, len);
