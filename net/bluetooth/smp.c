@@ -252,7 +252,7 @@ static void xor_128(const uint128_t *p, const uint128_t *q, uint128_t *r)
 }
 
 /* swap octets for LE encrypt */
-static void swap_buf(const uint8_t *src, uint8_t *dst, uint16_t len)
+static void swap_buf(uint8_t *dst, const uint8_t *src, uint16_t len)
 {
 	int i;
 
@@ -282,13 +282,13 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 
 	BT_DBG("key %s plaintext %s\n", h(key, 16), h(plaintext, 16));
 
-	swap_buf(key, tmp, 16);
+	swap_buf(tmp, key, 16);
 
 	if (tc_aes128_set_encrypt_key(&s, tmp) == TC_FAIL) {
 		return -EINVAL;
 	}
 
-	swap_buf(plaintext, tmp, 16);
+	swap_buf(tmp, plaintext, 16);
 
 	if (tc_aes_encrypt(enc_data, tmp, &s) == TC_FAIL) {
 		return -EINVAL;
@@ -480,7 +480,7 @@ static int cmac_subkey(const uint8_t *key, uint8_t *k1, uint8_t *k2)
 		return err;
 	}
 
-	swap_buf(tmp, l, 16);
+	swap_buf(l, tmp, 16);
 
 	BT_DBG("l %s\n", h(l, 16));
 
@@ -529,7 +529,7 @@ static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
 	uint8_t n, flag;
 	int err;
 
-	swap_buf(key, key_s, 16);
+	swap_buf(key_s, key, 16);
 
 	/* (K1,K2) = Generate_Subkey(K) */
 	err = cmac_subkey(key_s, k1, k2);
@@ -957,11 +957,11 @@ static int smp_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x,
 	 * note:
 	 * bt_smp_aes_cmac uses BE data and smp_f4 accept LE so we swap
 	 */
-	swap_buf(u, m, 32);
-	swap_buf(v, m + 32, 32);
+	swap_buf(m, u, 32);
+	swap_buf(m + 32, v, 32);
 	m[64] = z;
 
-	swap_buf(x, xs, 16);
+	swap_buf(xs, x, 16);
 
 	err = bt_smp_aes_cmac(xs, m, sizeof(m), res);
 	if (err) {
@@ -996,7 +996,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	BT_DBG("w %s\n", h(w, 32));
 	BT_DBG("n1 %s n2 %s\n", h(n1, 16), h(n2, 16));
 
-	swap_buf(w, ws, 32);
+	swap_buf(ws, w, 32);
 
 	err = bt_smp_aes_cmac(salt, ws, 32, t);
 	if (err) {
@@ -1005,12 +1005,12 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 
 	BT_DBG("t %s\n", h(t, 16));
 
-	swap_buf(n1, m + 5, 16);
-	swap_buf(n2, m + 21, 16);
+	swap_buf(m + 5, n1, 16);
+	swap_buf(m + 21, n2, 16);
 	m[37] = a1->type;
-	swap_buf(a1->val, m + 38, 6);
+	swap_buf(m + 38, a1->val, 6);
 	m[44] = a2->type;
-	swap_buf(a2->val, m + 45, 6);
+	swap_buf(m + 45, a2->val, 6);
 
 	err = bt_smp_aes_cmac(t, m, sizeof(m), mackey);
 	if (err) {
@@ -1049,20 +1049,20 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	BT_DBG("r %s io_cap\n", h(r, 16), h(iocap, 3));
 	BT_DBG("a1 %s a2 %s\n", h(a1, 7), h(a2, 7));
 
-	swap_buf(n1, m, 16);
-	swap_buf(n2, m + 16, 16);
-	swap_buf(r, m + 32, 16);
-	swap_buf(iocap, m + 48, 3);
+	swap_buf(m, n1, 16);
+	swap_buf(m + 16, n2, 16);
+	swap_buf(m + 32, r, 16);
+	swap_buf(m + 48, iocap, 3);
 
 	m[51] = a1->type;
 	memcpy(m + 52, a1->val, 6);
-	swap_buf(a1->val, m + 52, 6);
+	swap_buf(m + 52, a1->val, 6);
 
 	m[58] = a2->type;
 	memcpy(m + 59, a2->val, 6);
-	swap_buf(a2->val, m + 59, 6);
+	swap_buf(m + 59, a2->val, 6);
 
-	swap_buf(w, ws, 16);
+	swap_buf(ws, w, 16);
 
 	err = bt_smp_aes_cmac(ws, m, sizeof(m), check);
 	if (err) {
@@ -2335,7 +2335,7 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 	BT_DBG("Signing msg %s len %u key %s\n", h(msg, len), len, h(key, 16));
 
 	swap_in_place(m, len + sizeof(cnt));
-	swap_buf(key, key_s, 16);
+	swap_buf(key_s, key, 16);
 
 	err = bt_smp_aes_cmac(key_s, m, len + sizeof(cnt), tmp);
 	if (err) {
@@ -2590,7 +2590,7 @@ static int smp_sign_test(void)
 	int err;
 
 	/* Use the same key as aes-cmac but swap bytes */
-	swap_buf(key, key_s, 16);
+	swap_buf(key_s, key, 16);
 
 	err = sign_test("Test sign0", key_s, M, 0, sig1);
 	if (err) {
