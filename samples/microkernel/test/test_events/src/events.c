@@ -390,14 +390,11 @@ int eventSignalHandlerTest(void)
 {
 	int  rv;     /* return value from task_event_xxx() calls */
 
-	/* Expect this call to task_event_handler_set() to fail */
-	rv = task_event_handler_set((uint32_t)_k_event_list_end + 10,
-				    eventHandler);
-	if (rv != RC_FAIL) {
-		TC_ERROR("task_event_handler_set() returned %d not %d\n",
-			rv, RC_FAIL);
-		return TC_FAIL;
-	}
+	/*
+	 * NOTE: We cannot test for the validity of an event ID, since
+	 * task_event_handler_set() only checks for valid event IDs via an
+	 * __ASSERT() and only in debug kernels (an __ASSERT() stops the system).
+	 */
 
 	/* Expect this call to task_event_handler_set() to succeed */
 	rv = task_event_handler_set(EVENT_ID, eventHandler);
