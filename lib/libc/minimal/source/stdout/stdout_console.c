@@ -39,16 +39,15 @@ int fputc(int c, FILE *stream)
 
 int fputs(const char *restrict string, FILE *restrict stream)
 {
-	int c;
-
 	if (stream != stdout) {
 		return EOF;
 	}
 
-	for (c = (int) *string; c != 0; string++) {
-		if (_stdout_hook(c) == EOF) {
+	while (*string != '\0') {
+		if (_stdout_hook((int)*string) == EOF) {
 			return EOF;
 		}
+		string++;
 	}
 
 	return 0;
