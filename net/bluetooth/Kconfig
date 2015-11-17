@@ -238,9 +238,9 @@ config	BLUETOOTH_DEBUG_GATT
 endif # BLUETOOTH_DEBUG
 
 config BLUETOOTH_BREDR
-	bool "Bluetooth classic (BR/EDR) support [EXPERIMENTAL]"
+	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
 	default n
 	help
-	  This option enables classic bluetooth support"
+	  This option enables Bluetooth BR/EDR support"
 
 endif # BLUETOOTH
