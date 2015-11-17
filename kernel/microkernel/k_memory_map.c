@@ -30,8 +30,6 @@ extern kmemory_map_t _k_mem_map_ptr_end[];
  * @brief Initialize kernel memory map subsystem
  *
  * Perform any initialization of memory maps that wasn't done at build time.
- *
- * @return N/A
  */
 void _k_mem_map_init(void)
 {
@@ -65,11 +63,7 @@ void _k_mem_map_init(void)
 }
 
 /**
- * @brief Finish handling a memory map block request that timed out
- *
- * @param A Command package with the memory map block request that timed out.
- *
- * @return N/A
+ * @brief Finish handling a memory map block allocation request that timed out
  */
 void _k_mem_map_alloc_timeout(struct k_args *A)
 {
@@ -80,11 +74,7 @@ void _k_mem_map_alloc_timeout(struct k_args *A)
 }
 
 /**
- * @brief Perform allocate memory map block request
- *
- * @param A Command package with the allocate memory map block request.
- *
- * @return N/A
+ * @brief Handle a request to allocate a memory map block
  */
 void _k_mem_map_alloc(struct k_args *A)
 {
@@ -125,17 +115,6 @@ void _k_mem_map_alloc(struct k_args *A)
 		A->Time.rcode = RC_FAIL;
 }
 
-/**
- * @brief Allocate memory map block request
- *
- * This routine is used to request a block of memory from the memory map.
- *
- * @param mmap Memory map from which to request block.
- * @param mptr Pointer to requested block of memory.
- * @param time Maximum number of ticks for which to wait.
- *
- * @return RC_OK, RC_FAIL, RC_TIME on success, error, timeout respectively
- */
 int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time)
 {
 	struct k_args A;
@@ -149,11 +128,9 @@ int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time)
 }
 
 /**
- * @brief Perform return memory map block request
+ * @brief Handle a request to free a memory map block
  *
- * @param A Command package with the return memory map block request.
- *
- * @return N/A
+ * Give block to a waiting task, if there is one.
  */
 void _k_mem_map_dealloc(struct k_args *A)
 {
@@ -189,18 +166,6 @@ void _k_mem_map_dealloc(struct k_args *A)
 	M->num_used--;
 }
 
-/**
- * @brief Return memory map block request
- *
- * This routine returns a block to the specified memory map. If a higher
- * priority task is waiting for a block from the same map a task switch
- * takes place.
- *
- * @param mmap Memory map.
- * @param mptr Block of memory to return.
- *
- * @return N/A
- */
 void _task_mem_map_free(kmemory_map_t mmap, void **mptr)
 {
 	struct k_args A;
