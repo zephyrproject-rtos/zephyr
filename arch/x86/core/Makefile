@@ -4,7 +4,12 @@ ccflags-y += -I$(srctree)/kernel/microkernel/include
 # To create dynamic stubs we need to do a .rept on the total number of
 # stubs divided by a constant, this prevents GAS from thinking the '/'
 # character starts a comment
+ifeq ($(COMPILER),clang)
+KBUILD_AFLAGS += -no-integrated-as -Wa,--divide
+else
 KBUILD_AFLAGS += -Wa,--divide
+endif
+
 
 obj-y = gdt.o thread.o fatal.o cpuhalt.o \
 	excstub.o swap.o msr.o dynamic.o \
