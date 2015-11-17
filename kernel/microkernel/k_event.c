@@ -23,9 +23,17 @@
 #include "microkernel/event.h"
 #include <toolchain.h>
 #include <sections.h>
+#include <misc/__assert.h>
 
 extern kevent_t _k_event_list_start[];
 extern kevent_t _k_event_list_end[];
+
+#define ASSERT_EVENT_IS_VALID(e, function) do { \
+	__ASSERT((vaddr_t)e >= (vaddr_t)&_k_event_list_start,\
+				"invalid event passed to %s", function); \
+	__ASSERT((vaddr_t)e < (vaddr_t)&_k_event_list_end, \
+				"invalid event passed to %s", function); \
+} while ((0))
 
 /**
  *
@@ -57,6 +65,8 @@ void _k_event_handler_set(struct k_args *A)
 int task_event_handler_set(kevent_t event, kevent_handler_t handler)
 {
 	struct k_args A;
+
+	ASSERT_EVENT_IS_VALID(event, __func__);
 
 	A.Comm = _K_SVC_EVENT_HANDLER_SET;
 	A.args.e1.event = event;
@@ -123,6 +133,8 @@ void _k_event_test(struct k_args *A)
 int _task_event_recv(kevent_t event, int32_t time)
 {
 	struct k_args A;
+
+	ASSERT_EVENT_IS_VALID(event, __func__);
 
 	A.Comm = _K_SVC_EVENT_TEST;
 	A.args.e1.event = event;
@@ -192,6 +204,8 @@ int task_event_send(kevent_t event)
 {
 	struct k_args A;
 
+	ASSERT_EVENT_IS_VALID(event, __func__);
+
 	A.Comm = _K_SVC_EVENT_SIGNAL;
 	A.args.e1.event = event;
 	KERNEL_ENTRY(&A);
@@ -202,6 +216,8 @@ FUNC_ALIAS(isr_event_send, fiber_event_send, void);
 
 void isr_event_send(kevent_t event)
 {
+	ASSERT_EVENT_IS_VALID(event, __func__);
+
 	nano_isr_stack_push(&_k_command_stack,
 						(uint32_t)event | KERNEL_CMD_EVENT_TYPE);
 }
