@@ -22,6 +22,7 @@
 
 #include <i2c.h>
 #include <nanokernel.h>
+#include <init.h>
 #include <arch/cpu.h>
 #include <string.h>
 
@@ -813,22 +814,12 @@ int i2c_dw_initialize(struct device *port)
 
 /* system bindings */
 #if CONFIG_I2C_DW_0
-#include <init.h>
 void i2c_config_0(struct device *port);
 
 struct i2c_dw_rom_config i2c_config_dw_0 = {
 	.base_address = CONFIG_I2C_DW_0_BASE,
 #ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
 	.interrupt_vector = CONFIG_I2C_DW_0_IRQ,
-#endif
-#if CONFIG_PCI
-	.pci_dev.class = CONFIG_I2C_DW_CLASS,
-	.pci_dev.bus = CONFIG_I2C_DW_0_BUS,
-	.pci_dev.dev = CONFIG_I2C_DW_0_DEV,
-	.pci_dev.vendor_id = CONFIG_I2C_DW_VENDOR_ID,
-	.pci_dev.device_id = CONFIG_I2C_DW_DEVICE_ID,
-	.pci_dev.function = CONFIG_I2C_DW_0_FUNCTION,
-	.pci_dev.bar = CONFIG_I2C_DW_0_BAR,
 #endif
 	.config_func = i2c_config_0,
 
@@ -873,5 +864,47 @@ void i2c_config_0(struct device *port)
 	shared_irq_enable(shared_irq_dev, port);
 #endif
 }
-
 #endif /* CONFIG_I2C_DW_0 */
+
+
+/*
+ * Adding in I2C1
+ */
+#if CONFIG_I2C_DW_1
+void i2c_config_1(struct device *port);
+
+struct i2c_dw_rom_config i2c_config_dw_1 = {
+	.base_address = CONFIG_I2C_DW_1_BASE,
+	.interrupt_vector = CONFIG_I2C_DW_1_IRQ,
+	.config_func = i2c_config_1,
+};
+
+struct i2c_dw_dev_config i2c_1_runtime = {
+	.app_config.raw = CONFIG_I2C_DW_1_DEFAULT_CFG,
+};
+
+DECLARE_DEVICE_INIT_CONFIG(i2c_1,
+			   CONFIG_I2C_DW_1_NAME,
+			   &i2c_dw_initialize,
+			   &i2c_config_dw_1);
+
+pre_kernel_late_init(i2c_1, &i2c_1_runtime);
+struct device *i2c_dw_isr_1_device = SYS_GET_DEVICE(i2c_1);
+
+IRQ_CONNECT_STATIC(i2c_dw_1,
+		   CONFIG_I2C_DW_1_IRQ,
+		   CONFIG_I2C_DW_1_INT_PRIORITY,
+		   i2c_dw_isr,
+		   0);
+
+void i2c_config_1(struct device *port)
+{
+	struct i2c_dw_rom_config * const config = port->config->config_info;
+	struct device *shared_irq_dev;
+
+	ARG_UNUSED(shared_irq_dev);
+	IRQ_CONFIG(i2c_dw_1, config->interrupt_vector, 0);
+	irq_enable(config->interrupt_vector);
+}
+
+#endif /* CONFIG_I2C_DW_1 */

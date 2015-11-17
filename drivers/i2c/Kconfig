@@ -170,6 +170,40 @@ config I2C_DW_0_BAR
 	depends on I2C_DW_0 && PCI
 	default 0
 
+
+config I2C_DW_1
+        bool "Enable I2C1"
+        default n
+	depends on I2C_DW
+
+config I2C_DW_1_BASE
+        hex "Base address for I2C1"
+        default 0x00000000
+        depends on I2C_DW_1
+
+config I2C_DW_1_NAME
+        string "Select a name for finding the device"
+        depends on I2C_DW_1
+        default "I2C1"
+
+config I2C_DW_1_INT_PRIORITY
+        int "Controller interrupt priority"
+        depends on I2C_DW_1
+        default 2
+        help
+        IRQ priority
+
+config I2C_DW_1_DEFAULT_CFG
+	hex "I2C default configuration"
+        depends on I2C_DW_1
+        default 0x0
+        help
+        Allows the I2C port to be brought up with a default configuration.
+        This is useful to set if other drivers depend upon using the I2C bus
+        before the application has a chance to custom configure the port.
+        Setting this value does not prohibit the application from customizing
+        the values later.  Refer to the I2C datasheet for proper values.
+
 config I2C_STATUS_DELAY
 	int "Delay for controller response"
 	depends on I2C
