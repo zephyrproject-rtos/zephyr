@@ -37,6 +37,7 @@ extern "C" {
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>
+#include <vector_table.h>
 
 #ifndef _ASMLANGUAGE
 #include <nanokernel.h>            /* public nanokernel API */
@@ -249,7 +250,13 @@ static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber, unsigned int value
 static ALWAYS_INLINE int _IS_IN_ISR(void)
 {
 	uint32_t act = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
-
+#if CONFIG_IRQ_OFFLOAD
+	/* Check if we're in a TRAP_S exception as well */
+	if (_arc_v2_aux_reg_read(_ARC_V2_STATUS32) & _ARC_V2_STATUS32_AE &&
+	    _ARC_V2_ECR_VECTOR(_arc_v2_aux_reg_read(_ARC_V2_ECR)) == EXC_EV_TRAP) {
+		return 1;
+	}
+#endif
 	return ((act & 0xffff) != 0);
 }
 

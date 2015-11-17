@@ -142,6 +142,14 @@ config	FAULT_DUMP
 	     (short strings).
 	  0: Off.
 
+config IRQ_OFFLOAD
+	bool "Enable IRQ offload"
+	default n
+	help
+	Enable irq_offload() API which allows functions to be synchronously
+	run in interrupt context. Uses one entry in the	IDT.  Mainly useful
+	for test cases.
+
 config	XIP
 	default n if NSIM
 	default y

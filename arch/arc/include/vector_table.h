@@ -31,6 +31,8 @@
 #ifndef _VECTOR_TABLE__H_
 #define _VECTOR_TABLE__H_
 
+#define EXC_EV_TRAP	0x9
+
 #ifdef _ASMLANGUAGE
 
 #include <board.h>

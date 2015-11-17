@@ -11,3 +11,5 @@ obj-y += atomic.o thread.o thread_entry_wrapper.o \
 obj-y += prep_c.o \
          reset.o \
          vector_table.o
+
+obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
