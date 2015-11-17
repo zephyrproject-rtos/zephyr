@@ -163,7 +163,7 @@ typedef struct s_isrList {
  */
 #define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags) \
 	extern void *_##device##_##isr##_stub;				               \
-	const const uint32_t _##device##_irq_flags = (flags);	\
+	const uint32_t _##device##_irq_flags = (flags);	\
 	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, (irq), (priority), -1, 0)
 
 
