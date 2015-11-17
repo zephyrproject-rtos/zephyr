@@ -30,11 +30,6 @@ or
                         # and restore pre-defined configuration info
 
 
-Problems with QEMU on ARM:
-Qemu v2.1 for ARM platform do not support tickless idle. If run the sample
-project in QEMU with the CONFIG_TICKLESS_IDLE option enabled, the project
-could present an erratic behaviour.
-
 --------------------------------------------------------------------------------
 
 Sample Output:
