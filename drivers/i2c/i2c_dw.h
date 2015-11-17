@@ -92,7 +92,7 @@ typedef void (*i2c_isr_cb_t)(struct device *port);
 
 struct i2c_dw_rom_config {
 	uint32_t        base_address;
-	uint32_t        interrupt_vector;
+	uint32_t        irq_num;
 	uint32_t        interrupt_mask;
 #ifdef CONFIG_PCI
 	struct pci_dev_info pci_dev;

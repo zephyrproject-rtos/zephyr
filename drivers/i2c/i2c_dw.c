@@ -751,7 +751,7 @@ static inline int i2c_dw_pci_setup(struct device *dev)
 
 #ifdef CONFIG_PCI_ENUMERATION
 	rom->base_address = rom->pci_dev.addr;
-	rom->interrupt_vector = rom->pci_dev.irq;
+	rom->irq_num = rom->pci_dev.irq;
 #endif
 	pci_enable_regs(&rom->pci_dev);
 
@@ -819,7 +819,7 @@ void i2c_config_0(struct device *port);
 struct i2c_dw_rom_config i2c_config_dw_0 = {
 	.base_address = CONFIG_I2C_DW_0_BASE,
 #ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
-	.interrupt_vector = CONFIG_I2C_DW_0_IRQ,
+	.irq_num = CONFIG_I2C_DW_0_IRQ,
 #endif
 	.config_func = i2c_config_0,
 
@@ -856,8 +856,8 @@ void i2c_config_0(struct device *port)
 
 #if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONFIG(i2c_dw_0, config->interrupt_vector, 0);
-	irq_enable(config->interrupt_vector);
+	IRQ_CONFIG(i2c_dw_0, config->irq_num, 0);
+	irq_enable(config->irq_num);
 #elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
 	ARG_UNUSED(config);
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
@@ -876,7 +876,7 @@ void i2c_config_1(struct device *port);
 
 struct i2c_dw_rom_config i2c_config_dw_1 = {
 	.base_address = CONFIG_I2C_DW_1_BASE,
-	.interrupt_vector = CONFIG_I2C_DW_1_IRQ,
+	.irq_num = CONFIG_I2C_DW_1_IRQ,
 	.config_func = i2c_config_1,
 };
 
@@ -904,8 +904,8 @@ void i2c_config_1(struct device *port)
 	struct device *shared_irq_dev;
 
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONFIG(i2c_dw_1, config->interrupt_vector, 0);
-	irq_enable(config->interrupt_vector);
+	IRQ_CONFIG(i2c_dw_1, config->irq_num, 0);
+	irq_enable(config->irq_num);
 }
 
 #endif /* CONFIG_I2C_DW_1 */
