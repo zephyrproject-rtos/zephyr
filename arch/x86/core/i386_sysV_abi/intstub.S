@@ -22,7 +22,7 @@ This module implements assembly routines to manage interrupts on
 the Intel IA-32 architecture.  More specifically, the interrupt (asynchronous
 exception) stubs are implemented in this module.  The stubs are invoked when
 entering and exiting a C interrupt handler.
- */
+*/
 
 #define _ASMLANGUAGE
 
@@ -41,7 +41,7 @@ entering and exiting a C interrupt handler.
 	GTEXT(_SpuriousIntHandler)
 	GTEXT(_DynIntStubsBegin)
 
- 	/* externs */
+	/* externs */
 
 	GTEXT(_Swap)
 
@@ -271,7 +271,7 @@ SECTION_FUNC(TEXT, _IntExit)
 	 * debug tools that a preemptive context switch has occurred.
 	 *
 	 * Setting the NO_METRICS bit tells _Swap() that the per-execution context
-         * [totalRunTime] calculation has already been performed and that
+	 * [totalRunTime] calculation has already been performed and that
 	 * there is no need to do it again.
 	 */
 
@@ -290,7 +290,7 @@ SECTION_FUNC(TEXT, _IntExit)
 	popl	%esp		/* switch back to kernel stack */
 
 	pushfl			/* push KERNEL_LOCK_KEY argument */
- 	call	_Swap
+	call	_Swap
 
 	/*
 	 * The interrupted thread has now been scheduled,

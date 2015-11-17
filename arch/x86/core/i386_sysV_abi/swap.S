@@ -146,7 +146,7 @@ SECTION_FUNC(TEXT, _Swap)
 	jmp 	restoreContext
 
 
- 	/*
+	/*
 	 * There are no fiber in the run queue, thus swap in the task
 	 * (_nanokernel.task).  The 'task' field will _never_ be NULL.
 	 */
@@ -376,4 +376,3 @@ BRANCH_LABEL(skipIntLatencyStop)
 #endif
 	popfl
 	ret
-

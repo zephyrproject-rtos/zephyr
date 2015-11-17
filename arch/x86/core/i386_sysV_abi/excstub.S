@@ -441,4 +441,3 @@ SECTION_FUNC(TEXT, _DynExcStubsNoErrBegin)
 
 #endif /* CONFIG_NUM_DYNAMIC_EXC_NOERR_STUBS */
 #endif /* ALL_DYN_EXC_STUBS */
-
