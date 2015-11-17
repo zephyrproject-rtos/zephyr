@@ -29,12 +29,9 @@ then announces the result of the test.
  */
 
 #include <zephyr.h>
+#include <irq_offload.h>
 #include <tc_util.h>
 
-/* test uses 1 software IRQs */
-#define NUM_SW_IRQS 1
-
-#include <irq_test_common.h>
 #include <util_test_common.h>
 
 extern void testFiberInit(void);
@@ -82,7 +79,24 @@ ksem_t semList[] = {
 	ENDLIST
 	};
 
-static vvfn _trigger_isrSemaSignal = (vvfn) sw_isr_trigger_0;
+/**
+ *
+ * @brief ISR that gives specified semaphore
+ *
+ * @param isrData    pointer to semaphore to be given
+ *
+ * @return N/A
+ */
+
+static void testIsrHandler(void *isrData)
+{
+	isr_sem_give(*(ksem_t *)isrData);
+}
+
+static void _trigger_isrSemaSignal(void)
+{
+	irq_offload(testIsrHandler, &testIsrInfo);
+}
 
 /**
  *
@@ -152,19 +166,6 @@ void LowPriTaskEntry(void)
 	task_sem_give(resultSems[LowPriTask()]);
 }
 
-/**
- *
- * @brief ISR that gives specified semaphore
- *
- * @param isrData    pointer to semaphore to be given
- *
- * @return N/A
- */
-
-static void testIsrHandler(void *isrData)
-{
-	isr_sem_give(*(ksem_t *)isrData);
-}
 
 /**
  *
@@ -195,26 +196,6 @@ void releaseTestFiber(void)
 
 /**
  *
- * @brief Initialize interrupt-related code
- *
- * Binds an ISR to the interrupt vector used to give semaphores from interrupt
- * level.
- *
- * @return N/A
- */
-
-static void testInterruptsInit(void)
-{
-	struct isrInitInfo i = {
-	{ testIsrHandler, NULL},
-	{ &testIsrInfo, NULL},
-	};
-
-	(void) initIRQ(&i);
-}
-
-/**
- *
  * @brief Entry point for MonitorTask
  *
  * This routine keeps tabs on the progress of the tasks doing the actual testing
@@ -228,7 +209,6 @@ void MonitorTaskEntry(void)
 	ksem_t result;
 	int tasksDone;
 
-	testInterruptsInit();
 	testFiberInit();
 
 	PRINT_DATA("Starting semaphore tests\n");

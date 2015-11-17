@@ -39,12 +39,8 @@
 #define INIT_PRIO_IPI_SEND 50
 
 /* Set up the dummy IPI driver */
-struct ipi_dummy_config_info ipi_dummy0_config_info = {
-	.sw_irq = 0
-};
 struct ipi_dummy_driver_data ipi_dummy0_driver_data;
-DECLARE_DEVICE_INIT_CONFIG(ipi_dummy0, "ipi_dummy0", ipi_dummy_init,
-			   &ipi_dummy0_config_info);
+DECLARE_DEVICE_INIT_CONFIG(ipi_dummy0, "ipi_dummy0", ipi_dummy_init, NULL);
 SYS_DEFINE_DEVICE(ipi_dummy0, &ipi_dummy0_driver_data, SECONDARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 

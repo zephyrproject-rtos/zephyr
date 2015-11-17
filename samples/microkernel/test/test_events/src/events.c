@@ -28,11 +28,8 @@ This modules tests the following event APIs:
 #include <zephyr.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
+#include <irq_offload.h>
 
-/* test uses 1 software IRQs */
-#define NUM_SW_IRQS 1
-
-#include <irq_test_common.h>
 #include <util_test_common.h>
 
 typedef struct {
@@ -42,8 +39,6 @@ typedef struct {
 static int  evidence = 0;
 
 static ISR_INFO  isrInfo;
-
-static void (*_trigger_isrEventSignal)(void) = (vvfn)sw_isr_trigger_0;
 static int  handlerRetVal = 0;
 
 extern void testFiberInit(void);
@@ -64,6 +59,12 @@ void isr_event_signal_handler(void *data)
 
 	isr_event_send(pInfo->event);
 }
+
+static void _trigger_isrEventSignal(void)
+{
+	irq_offload(isr_event_signal_handler, &isrInfo);
+}
+
 
 /**
  *
@@ -86,12 +87,6 @@ void releaseTestFiber(void)
 
 void microObjectsInit(void)
 {
-	struct isrInitInfo i = {
-		{isr_event_signal_handler, NULL},
-		{&isrInfo, NULL},
-	};
-
-	(void) initIRQ(&i);
 	testFiberInit();
 
 	TC_PRINT("Microkernel objects initialized\n");

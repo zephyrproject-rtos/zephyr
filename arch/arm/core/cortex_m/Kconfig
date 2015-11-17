@@ -133,6 +133,14 @@ endmenu
 menu "ARM Cortex-M3/M4 options"
 	depends on CPU_CORTEX_M3_M4
 
+config IRQ_OFFLOAD
+	bool "Enable IRQ offload"
+	default n
+	help
+	Enable irq_offload() API which allows functions to be synchronously
+	run in interrupt context. Adds some overhead to context switching.
+	Mainly useful for test cases.
+
 config SW_ISR_TABLE
 	bool
 	prompt "Enable software interrupt handler table"

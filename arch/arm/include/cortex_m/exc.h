@@ -36,10 +36,10 @@
 /**
  *
  * @brief Find out if running in an ISR context
- *
+	 *
  * The current executing vector is found in the IPSR register. We consider the
- * IRQs (exception 16 and up), and the PendSV and SYSTICK exceptions, to be
- * interrupts. Taking a fault within an exception is also considered in
+ * IRQs (exception 16 and up), and the SVC, PendSV, and SYSTICK exceptions,
+ * to be interrupts. Taking a fault within an exception is also considered in
  * interrupt context.
  *
  * @return 1 if in ISR, 0 if not.
@@ -48,8 +48,11 @@ static ALWAYS_INLINE int _IsInIsr(void)
 {
 	uint32_t vector = _IpsrGet();
 
-	/* IRQs + PendSV + SYSTICK are interrupts */
-	return (vector > 13) || (vector && _ScbIsNestedExc());
+	/*
+	 * IRQs + PendSV (14) + SVC (11) + SYSTICK (15) are interrupts.
+	 * Vectors 12 and 13 are reserved, we'll never be in there
+	 */
+	return (vector > 10) || (vector && _ScbIsNestedExc());
 }
 
 /**

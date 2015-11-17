@@ -27,11 +27,8 @@ This module tests the following task APIs:
 #include <tc_util.h>
 #include <zephyr.h>
 #include <arch/cpu.h>
+#include <irq_offload.h>
 
-/* test uses 1 software IRQs */
-#define NUM_SW_IRQS 1
-
-#include <irq_test_common.h>
 #include <util_test_common.h>
 
 #define  RT_PRIO         10     /* RegressionTask prio - must match prj.mdef */
@@ -46,8 +43,6 @@ typedef struct {
 	int  cmd;
 	int  data;
 } ISR_INFO;
-
-static vvfn _trigger_isrTaskCommand = (vvfn)sw_isr_trigger_0;
 
 static ISR_INFO   isrInfo;
 
@@ -101,7 +96,7 @@ void isr_task_command_handler(void *data)
 int isrAPIsTest(int taskId, int taskPrio)
 {
 	isrInfo.cmd = CMD_TASKID;
-	_trigger_isrTaskCommand();
+	irq_offload(isr_task_command_handler, &isrInfo);
 	if (isrInfo.data != taskId) {
 		TC_ERROR("isr_task_id_get() returned %d, not %d\n",
 				 isrInfo.data, taskId);
@@ -109,7 +104,7 @@ int isrAPIsTest(int taskId, int taskPrio)
 	}
 
 	isrInfo.cmd = CMD_PRIORITY;
-	_trigger_isrTaskCommand();
+	irq_offload(isr_task_command_handler, &isrInfo);
 	if (isrInfo.data != taskPrio) {
 		TC_ERROR("isr_task_priority_get() returned %d, not %d\n",
 				 isrInfo.data, taskPrio);
@@ -145,25 +140,6 @@ int taskMacrosTest(int taskId, int taskPrio)
 	}
 
 	return TC_PASS;
-}
-
-/**
- *
- * @brief Initialize objects used in this microkernel test suite
- *
- * @return N/A
- */
-
-void microObjectsInit(void)
-{
-	struct isrInitInfo i = {
-	{ isr_task_command_handler, NULL },
-	{ &isrInfo, NULL },
-	};
-
-	(void) initIRQ(&i);
-
-	TC_PRINT("Microkernel objects initialized\n");
 }
 
 /**
@@ -499,7 +475,6 @@ void RegressionTask(void)
 
 	PRINT_LINE;
 
-	microObjectsInit();
 	task_start(HT_TASKID);
 
 	TC_PRINT("Testing isr_task_id_get() and isr_task_priority_get()\n");

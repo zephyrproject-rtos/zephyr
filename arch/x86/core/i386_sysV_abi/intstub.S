@@ -40,6 +40,7 @@ entering and exiting a C interrupt handler.
 	GTEXT(_SpuriousIntNoErrCodeHandler)
 	GTEXT(_SpuriousIntHandler)
 	GTEXT(_DynIntStubsBegin)
+	GTEXT(_irq_sw_handler)
 
 	/* externs */
 
@@ -512,3 +513,11 @@ stub_num = 0
 1:	jmp _DynIntStubCommon
 .endr
 #endif /* ALL_DYN_IRQ_STUBS */
+
+#if CONFIG_IRQ_OFFLOAD
+SECTION_FUNC(TEXT, _irq_sw_handler)
+	call _IntEnt
+	call _irq_do_offload
+	jmp _IntExit
+
+#endif

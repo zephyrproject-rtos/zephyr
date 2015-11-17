@@ -46,11 +46,11 @@ These scenarios will be tested using a combinations of tasks, fibers and ISRs.
 #include <tc_util.h>
 #include <misc/util.h>
 #include <misc/__assert.h>
+#include <irq_offload.h>
 
 /* test uses 2 software IRQs */
 #define NUM_SW_IRQS 2
 
-#include <irq_test_common.h>
 #include <util_test_common.h>
 
 #ifndef FIBER_STACKSIZE
@@ -87,9 +87,6 @@ static volatile int  fiberDetectedFailure = 0; /* non-zero on failure */
 
 static char __stack fiberStack[FIBER_STACKSIZE];
 
-static void (*_trigger_nano_isr_lifo_put)(void) = (vvfn)sw_isr_trigger_0;
-static void (*_trigger_nano_isr_lifo_get)(void) = (vvfn)sw_isr_trigger_1;
-
 static struct nano_lifo multi_waiters;
 static struct nano_sem reply_multi_waiters;
 
@@ -112,6 +109,12 @@ void isr_lifo_put(void *data)
 	nano_isr_lifo_put(pInfo->lifo_ptr, pInfo->data);
 }
 
+static void _trigger_nano_isr_lifo_put(void)
+{
+	irq_offload(isr_lifo_put, &isrLifoInfo);
+}
+
+
 /**
  *
  * @brief Get an item from a LIFO
@@ -130,6 +133,12 @@ void isr_lifo_get(void *data)
 
 	pInfo->data = nano_isr_lifo_get(pInfo->lifo_ptr);
 }
+
+static void _trigger_nano_isr_lifo_get(void)
+{
+	irq_offload(isr_lifo_get, &isrLifoInfo);
+}
+
 
 /**
  *
@@ -445,13 +454,6 @@ int taskLifoNonWaitTest(void)
 
 void initNanoObjects(void)
 {
-	struct isrInitInfo i = {
-	{isr_lifo_put, isr_lifo_get},
-	{&isrLifoInfo, &isrLifoInfo},
-	};
-
-	(void)initIRQ(&i);
-
 	nano_lifo_init(&test_lifo);   /* Initialize the LIFO */
 	nano_sem_init(&taskWaitSem);   /* Initialize the task waiting semaphore */
 	nano_sem_init(&fiberWaitSem);  /* Initialize the fiber waiting semaphore */

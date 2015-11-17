@@ -48,11 +48,8 @@ these are run in ISR context.
 
 #include <tc_util.h>
 #include <arch/cpu.h>
+#include <irq_offload.h>
 
-/* test uses 2 software IRQs */
-#define NUM_SW_IRQS 2
-
-#include <irq_test_common.h>
 #include <util_test_common.h>
 
 #define STACKSIZE               2048
@@ -95,9 +92,6 @@ void *timerData[1];
 int retCode = TC_PASS;
 
 static ISR_STACK_INFO  isrStackInfo = {&nanoStackObj, 0};
-
-static void (*_trigger_nano_isr_stack_push)(void) = (vvfn)sw_isr_trigger_0;
-static void (*_trigger_nano_isr_stack_pop)(void) = (vvfn)sw_isr_trigger_1;
 
 void initData(void);
 void fiber1(void);
@@ -149,6 +143,11 @@ void isr_stack_push(void *parameter)
 
 }  /* isr_stack_push */
 
+static void _trigger_nano_isr_stack_push(void)
+{
+	irq_offload(isr_stack_push, &isrStackInfo);
+}
+
 /**
  *
  * @brief Get an item from a STACK
@@ -173,6 +172,10 @@ void isr_stack_pop(void *parameter)
 
 }  /* isr_stack_pop */
 
+static void _trigger_nano_isr_stack_pop(void)
+{
+	irq_offload(isr_stack_pop, &isrStackInfo);
+}
 
 /**
  *
@@ -468,13 +471,6 @@ void fiber3(void)
 
 void initNanoObjects(void)
 {
-	struct isrInitInfo i = {
-	{isr_stack_push, isr_stack_pop},
-	{&isrStackInfo, &isrStackInfo},
-	};
-
-	(void)initIRQ(&i);
-
 	nano_stack_init(&nanoStackObj,  stack1);
 	nano_stack_init(&nanoStackObj2, stack2);
 	nano_sem_init(&nanoSemObj);

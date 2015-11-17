@@ -29,11 +29,8 @@ This module tests the following CPU and thread related routines:
 #include <tc_util.h>
 #include <nano_private.h>
 #include <arch/cpu.h>
+#include <irq_offload.h>
 
-/* test uses 1 software IRQs */
-#define NUM_SW_IRQS 1
-
-#include <irq_test_common.h>
 #include <util_test_common.h>
 
 /*
@@ -99,8 +96,6 @@ static int  fiberEvidence = 0;
 
 static ISR_INFO  isrInfo;
 
-static void (*_trigger_isrHandler)(void) = (vvfn)sw_isr_trigger_0;
-
 /**
  *
  * @brief Handler to perform various actions from within an ISR context
@@ -129,6 +124,11 @@ void isr_handler(void *data)
 		break;
 	}
 }
+static void _trigger_isrHandler(void)
+{
+	irq_offload(isr_handler, NULL);
+}
+
 
 /* Cortex-M3/M4 does not implement connecting non-IRQ exception handlers */
 #if !defined(CONFIG_CPU_CORTEX_M3_M4)
@@ -173,12 +173,7 @@ int initNanoObjects(void)
 	nanoCpuExcConnect(IV_DIVIDE_ERROR, exc_divide_error_handler);
 #endif
 
-	struct isrInitInfo i = {
-	{isr_handler, NULL},
-	{&isrInfo, NULL},
-	};
-
-	return initIRQ(&i) < 0 ? TC_FAIL : TC_PASS;
+	return TC_PASS;
 }
 
 /**

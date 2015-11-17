@@ -55,11 +55,8 @@ Scenario #4:
 #include <tc_util.h>
 #include <misc/__assert.h>
 #include <misc/util.h>
+#include <irq_offload.h>
 
-/* test uses 2 software IRQs */
-#define NUM_SW_IRQS 2
-
-#include <irq_test_common.h>
 #include <util_test_common.h>
 
 #ifndef FIBER_STACKSIZE
@@ -120,9 +117,6 @@ int retCode = TC_PASS;
 
 static ISR_FIFO_INFO  isrFifoInfo = {&nanoFifoObj, NULL};
 
-static void (*_trigger_nano_isr_fifo_put)(void) = (vvfn)sw_isr_trigger_0;
-static void (*_trigger_nano_isr_fifo_get)(void) = (vvfn)sw_isr_trigger_1;
-
 void fiber1(void);
 void fiber2(void);
 void fiber3(void);
@@ -151,6 +145,12 @@ void isr_fifo_put(void *parameter)
 	nano_isr_fifo_put(pInfo->fifo_ptr, pInfo->data);
 }
 
+static void _trigger_nano_isr_fifo_put(void)
+{
+	irq_offload(isr_fifo_put, &isrFifoInfo);
+}
+
+
 /**
  *
  * @brief Get an item from a FIFO
@@ -170,6 +170,10 @@ void isr_fifo_get(void *parameter)
 	pInfo->data = nano_isr_fifo_get(pInfo->fifo_ptr);
 }
 
+static void _trigger_nano_isr_fifo_get(void)
+{
+	irq_offload(isr_fifo_get, &isrFifoInfo);
+}
 
 /**
  *
@@ -557,13 +561,6 @@ void testTaskFifoGetW(void)
 
 void initNanoObjects(void)
 {
-	struct isrInitInfo i = {
-	{isr_fifo_put, isr_fifo_get},
-	{&isrFifoInfo, &isrFifoInfo},
-	};
-
-	(void)initIRQ(&i);
-
 	nano_fifo_init(&nanoFifoObj);
 	nano_fifo_init(&nanoFifoObj2);
 

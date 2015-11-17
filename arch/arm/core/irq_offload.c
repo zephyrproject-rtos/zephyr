@@ -1,7 +1,5 @@
-/* ipi_dummy.c - Fake IPI driver */
-
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2015 Intel corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +14,31 @@
  * limitations under the License.
  */
 
-#ifndef _IPI_DUMMY_H_
+/**
+ * @file Software interrupts utility code - ARM implementation
+ */
 
-#include <zephyr.h>
-#include <device.h>
-#include <ipi.h>
+#include <nanokernel.h>
+#include <irq_offload.h>
 
-/* Arbitrary */
-#define DUMMY_IPI_DATA_WORDS	4
+static irq_offload_routine_t offload_routine;
+static void *offload_param;
 
-struct ipi_dummy_regs {
-	uint32_t id;
-	uint32_t data[DUMMY_IPI_DATA_WORDS];
-	uint8_t busy;
-	uint8_t enabled;
-};
+/* Called by __svc */
+void _irq_do_offload(void)
+{
+	offload_routine(offload_param);
+}
 
-struct ipi_dummy_driver_data {
-	ipi_callback_t cb;
-	void *cb_context;
-	volatile struct ipi_dummy_regs regs;
-};
+void irq_offload(irq_offload_routine_t routine, void *parameter)
+{
+	int key;
 
-int ipi_dummy_init(struct device *d);
+	key = irq_lock();
+	offload_routine = routine;
+	offload_param = parameter;
 
-#endif
+	__asm__ volatile ("svc #1");
+
+	irq_unlock(key);
+}

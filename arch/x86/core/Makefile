@@ -19,6 +19,7 @@ obj-y += gdt.o fatal.o cpuhalt.o \
 	crt0.o driver_static_irq_stubs.o \
 	atomic.o cache_s.o cache.o
 
+obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 obj-$(CONFIG_FP_SHARING) += float.o
 obj-$(CONFIG_MICROKERNEL) += strtask.o
 

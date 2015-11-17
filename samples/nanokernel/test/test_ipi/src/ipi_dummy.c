@@ -22,13 +22,10 @@
 #include <device.h>
 #include <init.h>
 #include <misc/printk.h>
+#include <irq_offload.h>
 
-#define NUM_SW_IRQS 2
-
-#include <irq_test_common.h>
 #include "ipi_dummy.h"
 
-static void (*trigger_dummy_isr)(void) = (vvfn)sw_isr_trigger_0;
 
 /* Implemented as a software interrupt so that callbacks are executed
  * in the expected context */
@@ -78,7 +75,7 @@ static int ipi_dummy_send(struct device *d, int wait, uint32_t id,
 	driver_data->regs.id = id;
 	driver_data->regs.busy = 1;
 
-	trigger_dummy_isr();
+	irq_offload(ipi_dummy_isr, d);
 
 	if (wait) {
 		while(driver_data->regs.busy) {
@@ -100,10 +97,11 @@ static void ipi_dummy_register_callback(struct device *d, ipi_callback_t cb,
 static int ipi_dummy_set_enabled(struct device *d, int enable)
 {
 	struct ipi_dummy_driver_data *driver_data = d->driver_data;
+
 	driver_data->regs.enabled = enable;
 	if (enable) {
 		/* In case there are pending messages */
-		trigger_dummy_isr();
+		irq_offload(ipi_dummy_isr, d);
 	}
 	return 0;
 }
@@ -131,33 +129,10 @@ struct ipi_driver_api ipi_dummy_api = {
 
 int ipi_dummy_init(struct device *d)
 {
-	struct isrInitInfo iinfo;
-	struct ipi_dummy_config_info *config_info;
-	int irq, i;
+	struct ipi_dummy_driver_data *driver_data;
 
-	config_info = (struct ipi_dummy_config_info *)d->config->config_info;
+	driver_data = d->driver_data;
 	d->driver_api = &ipi_dummy_api;
-
-	irq = config_info->sw_irq;
-	if (irq >= NUM_SW_IRQS) {
-		printk("ipi_dummy_init: invalid sw irq %d\n", irq);
-		return DEV_INVALID_CONF;
-	}
-
-	for (i = 0; i < NUM_SW_IRQS; ++i) {
-		if (i == irq) {
-			iinfo.isr[i] = ipi_dummy_isr;
-			iinfo.arg[i] = d;
-		} else {
-			iinfo.isr[i] = NULL;
-			iinfo.arg[i] = NULL;
-		}
-	}
-
-	if (initIRQ(&iinfo)) {
-		printk("ipi_dummy_init: couldn't install sw irq handler\n");
-		return DEV_FAIL;
-	}
 
 	return DEV_OK;
 }

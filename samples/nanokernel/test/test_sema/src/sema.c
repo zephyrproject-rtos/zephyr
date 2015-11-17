@@ -43,11 +43,8 @@ Scenario #4:
 #include <tc_util.h>
 #include <arch/cpu.h>
 #include <misc/util.h>
+#include <irq_offload.h>
 
-/* test uses 2 software IRQs */
-#define NUM_SW_IRQS 2
-
-#include <irq_test_common.h>
 #include <util_test_common.h>
 
 #ifndef FIBER_STACKSIZE
@@ -77,9 +74,6 @@ static void *timerData[1];
 
 static char __stack fiberStack[FIBER_STACKSIZE];
 
-static void (*_trigger_nano_isr_sem_give)(void) = (vvfn)sw_isr_trigger_0;
-static void (*_trigger_nano_isr_sem_take)(void) = (vvfn)sw_isr_trigger_1;
-
 static struct nano_sem multi_waiters;
 static struct nano_sem reply_multi_waiters;
 
@@ -102,6 +96,11 @@ void isr_sem_take(void *data)
 	pInfo->data = nano_isr_sem_take(pInfo->sem);
 }
 
+static void _trigger_nano_isr_sem_take(void)
+{
+	irq_offload(isr_sem_take, &isrSemInfo);
+}
+
 /**
  *
  * @brief Give a semaphore
@@ -120,6 +119,11 @@ void isr_sem_give(void *data)
 
 	nano_isr_sem_give(pInfo->sem);
 	pInfo->data = 1;     /* Indicate semaphore has been given */
+}
+
+static void _trigger_nano_isr_sem_give(void)
+{
+	irq_offload(isr_sem_give, &isrSemInfo);
 }
 
 /**
@@ -253,13 +257,6 @@ static void fiberEntry(int arg1, int arg2)
 
 void initNanoObjects(void)
 {
-	struct isrInitInfo i = {
-	{isr_sem_give, isr_sem_take},
-	{&isrSemInfo, &isrSemInfo},
-	};
-
-	(void)initIRQ(&i);
-
 	nano_sem_init(&testSem);
 	nano_sem_init(&multi_waiters);
 	nano_sem_init(&reply_multi_waiters);

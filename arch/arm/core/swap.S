@@ -152,6 +152,33 @@ SECTION_FUNC(TEXT, __svc)
 
     _GDB_STUB_EXC_ENTRY
 
+#if CONFIG_IRQ_OFFLOAD
+    tst lr, #0x4    /* did we come from thread mode ? */
+    ite eq  /* if zero (equal), came from handler mode */
+        mrseq r0, MSP   /* handler mode, stack frame is on MSP */
+        mrsne r0, PSP   /* thread mode, stack frame is on PSP */
+
+    ldr r0, [r0, #24]   /* grab address of PC from stack frame */
+    /* SVC is a two-byte instruction, point to it and read  encoding */
+    ldr r0, [r0, #-2]
+
+   /*
+    * grab service call number: if zero, it's a context switch;  if not,
+    * it's an irq offload
+    */
+    ands r0, #0xff
+    beq _context_switch
+
+    push {lr}
+    blx _irq_do_offload  /* call C routine which executes the offload */
+    pop {lr}
+
+    /* exception return is done in _IntExit(), including _GDB_STUB_EXC_EXIT */
+    b _IntExit
+
+BRANCH_LABEL(_context_switch);
+#endif
+
     /*
      * Unlock interrupts:
      * - in a SVC call, so protected against context switches
