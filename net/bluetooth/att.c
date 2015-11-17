@@ -554,6 +554,22 @@ static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return 0;
 }
 
+static uint8_t err_to_att(int err)
+{
+	BT_DBG("%d", err);
+
+	switch (err) {
+	case -EINVAL:
+		return BT_ATT_ERR_INVALID_OFFSET;
+	case -EFBIG:
+		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+	case -EACCES:
+		return BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
+	default:
+		return BT_ATT_ERR_UNLIKELY;
+	}
+}
+
 struct read_type_data {
 	struct bt_att *att;
 	struct bt_uuid *uuid;
@@ -609,7 +625,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	read = attr->read(conn, attr, data->buf->data + data->buf->len,
 			  att->chan.tx.mtu - data->buf->len, 0);
 	if (read < 0) {
-		/* TODO: Handle read errors */
+		data->err = err_to_att(read);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -699,22 +715,6 @@ static uint8_t att_read_type_req(struct bt_att *att, struct net_buf *buf)
 	}
 
 	return att_read_type_rsp(att, &uuid, start_handle, end_handle);
-}
-
-static uint8_t err_to_att(int err)
-{
-	BT_DBG("%d", err);
-
-	switch (err) {
-	case -EINVAL:
-		return BT_ATT_ERR_INVALID_OFFSET;
-	case -EFBIG:
-		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
-	case -EACCES:
-		return BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
-	default:
-		return BT_ATT_ERR_UNLIKELY;
-	}
 }
 
 struct read_data {
