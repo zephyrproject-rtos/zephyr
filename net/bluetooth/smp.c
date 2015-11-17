@@ -470,17 +470,16 @@ static int cmac_subkey(const uint8_t *key, uint8_t *k1, uint8_t *k2)
 		[0 ... 14]	= 0x00,
 		[15]		= 0x87,
 	};
-	uint8_t zero[16] = { 0 }, *tmp = zero;
-	uint8_t l[16];
+	uint8_t l[16] = { 0 };
 	int err;
 
 	/* L := AES-128(K, const_Zero) */
-	err = le_encrypt(key, zero, tmp);
+	err = le_encrypt(key, l, l);
 	if (err) {
 		return err;
 	}
 
-	swap_buf(l, tmp, 16);
+	swap_in_place(l, 16);
 
 	BT_DBG("l %s\n", h(l, 16));
 
