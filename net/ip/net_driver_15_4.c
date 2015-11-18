@@ -44,7 +44,7 @@
  */
 #define STACKSIZE_UNIT 1024
 static char __noinit rx_fiber_stack[STACKSIZE_UNIT * 1];
-static char __noinit tx_fiber_stack[STACKSIZE_UNIT * 4];
+static char __noinit tx_fiber_stack[STACKSIZE_UNIT * 3 / 2];
 
 /* Queue for incoming packets from hw driver */
 static struct nano_fifo rx_queue;
