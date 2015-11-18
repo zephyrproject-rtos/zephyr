@@ -52,7 +52,7 @@ LIST(ctimer_list);
 
 static char initialized;
 
-#define DEBUG 0
+#define DEBUG DEBUG_NONE
 #include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING
