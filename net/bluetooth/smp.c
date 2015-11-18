@@ -743,13 +743,11 @@ static uint8_t get_auth(uint8_t auth)
 	return auth;
 }
 
-static uint8_t smp_request_tk(struct bt_smp *smp, uint8_t remote_io)
+static uint8_t smp_request_tk(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_keys *keys;
 	uint32_t passkey;
-
-	smp->method = get_pair_method(smp, remote_io);
 
 	/* Fail if we have keys that are stronger than keys that will be
 	 * distributed in new pairing. This is to avoid replacing authenticated
@@ -921,13 +919,15 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
 	smp_restart_timer(smp);
 
+	smp->method = get_pair_method(smp, req->io_capability);
+
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
 		return 0;
 	}
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 
-	return smp_request_tk(smp, req->io_capability);
+	return smp_request_tk(smp);
 }
 #else
 static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
@@ -1222,15 +1222,19 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	if ((rsp->auth_req & BT_SMP_AUTH_SC) &&
 	    (req->auth_req & BT_SMP_AUTH_SC)) {
 		atomic_set_bit(&smp->flags, SMP_FLAG_SC);
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
+	}
 
+	smp->method = get_pair_method(smp, rsp->io_capability);
+
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
 		smp->local_dist &= SEND_KEYS_SC;
 		smp->remote_dist &= RECV_KEYS_SC;
 
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
 		return sc_send_public_key(smp);
 	}
 
-	ret = smp_request_tk(smp, rsp->io_capability);
+	ret = smp_request_tk(smp);
 	if (ret) {
 		return ret;
 	}
