@@ -111,8 +111,7 @@ static ALWAYS_INLINE uint32_t limit_get(void)
  *
  * @brief System clock periodic tick handler
  *
- * This routine handles the system clock periodic tick interrupt.  A TICK_EVENT
- * event is pushed onto the microkernel stack.
+ * This routine handles the system clock periodic tick interrupt.
  *
  * @return N/A
  */
