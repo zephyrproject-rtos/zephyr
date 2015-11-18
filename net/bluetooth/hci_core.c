@@ -1401,9 +1401,21 @@ static void read_le_features_complete(struct net_buf *buf)
 	memcpy(bt_dev.le.features, rp->features, sizeof(bt_dev.le.features));
 }
 
+static void init_sem(struct nano_sem *sem, size_t count)
+{
+	/* Initialize & prime the semaphore for counting controller-side
+	 * available ACL packet buffers.
+	 */
+	nano_sem_init(sem);
+	while (count--) {
+		nano_sem_give(sem);
+	};
+}
+
 static void read_buffer_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
+	uint16_t pkts;
 
 	BT_DBG("status %u\n", rp->status);
 
@@ -1413,7 +1425,11 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	}
 
 	bt_dev.le.mtu = sys_le16_to_cpu(rp->acl_max_len);
-	bt_dev.le.pkts = sys_le16_to_cpu(rp->acl_max_num);
+	pkts = sys_le16_to_cpu(rp->acl_max_num);
+
+	BT_DBG("ACL BR/EDR buffers: pkts %u mtu %u\n", pkts, bt_dev.le.mtu);
+
+	init_sem(&bt_dev.le.pkts_sem, pkts);
 }
 
 static void le_read_buffer_size_complete(struct net_buf *buf)
@@ -1423,7 +1439,12 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	BT_DBG("status %u\n", rp->status);
 
 	bt_dev.le.mtu = sys_le16_to_cpu(rp->le_max_len);
-	bt_dev.le.pkts = rp->le_max_num;
+
+	if (bt_dev.le.mtu) {
+		init_sem(&bt_dev.le.pkts_sem, rp->le_max_num);
+		BT_DBG("ACL LE buffers: pkts %u mtu %u\n", rp->le_max_num,
+		       bt_dev.le.mtu);
+	}
 }
 
 static void read_supported_commands_complete(struct net_buf *buf)
@@ -1663,7 +1684,7 @@ static int set_event_mask(void)
 
 static int hci_init(void)
 {
-	int i, err;
+	int err;
 
 	err = common_init();
 	if (err) {
@@ -1687,15 +1708,6 @@ static int hci_init(void)
 
 	BT_DBG("HCI ver %u rev %u, manufacturer %u\n", bt_dev.hci_version,
 	       bt_dev.hci_revision, bt_dev.manufacturer);
-	BT_DBG("ACL buffers: pkts %u mtu %u\n", bt_dev.le.pkts, bt_dev.le.mtu);
-
-	/* Initialize & prime the semaphore for counting controller-side
-	 * available ACL packet buffers.
-	 */
-	nano_sem_init(&bt_dev.le.pkts_sem);
-	for (i = 0; i < bt_dev.le.pkts; i++) {
-		nano_sem_give(&bt_dev.le.pkts_sem);
-	}
 
 	return 0;
 }

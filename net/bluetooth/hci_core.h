@@ -51,7 +51,6 @@ struct bt_dev_le {
 	uint8_t			features[8];
 
 	/* Controller buffer information */
-	uint8_t			pkts;
 	uint16_t		mtu;
 	struct nano_sem		pkts_sem;
 };
