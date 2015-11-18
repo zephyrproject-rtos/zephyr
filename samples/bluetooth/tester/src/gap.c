@@ -81,6 +81,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds |= 1 << GAP_DISCONNECT;
 	cmds |= 1 << GAP_SET_IO_CAP;
 	cmds |= 1 << GAP_PAIR;
+	cmds |= 1 << GAP_PASSKEY_ENTRY;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -430,8 +431,24 @@ rsp:
 
 static void passkey_entry(const uint8_t *data, uint16_t len)
 {
+	const struct gap_passkey_entry_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+	uint8_t status;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	bt_auth_passkey_entry(conn, sys_le32_to_cpu(cmd->passkey));
+
+	bt_conn_unref(conn);
+	status = BTP_STATUS_SUCCESS;
+
+rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PASSKEY_ENTRY, CONTROLLER_INDEX,
-		   BTP_STATUS_FAILED);
+		   status);
 }
 
 void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
