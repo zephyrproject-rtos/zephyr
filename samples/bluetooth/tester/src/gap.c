@@ -329,6 +329,24 @@ rsp:
 		   status);
 }
 
+static void set_io_cap(const uint8_t *data, uint16_t len)
+{
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_SET_IO_CAP, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void pair(const uint8_t *data, uint16_t len)
+{
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PAIR, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void passkey_entry(const uint8_t *data, uint16_t len)
+{
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PASSKEY_ENTRY, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		       uint16_t len)
 {
@@ -383,6 +401,15 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GAP_DISCONNECT:
 		disconnect(data, len);
+		return;
+	case GAP_SET_IO_CAP:
+		set_io_cap(data, len);
+		return;
+	case GAP_PAIR:
+		pair(data, len);
+		return;
+	case GAP_PASSKEY_ENTRY:
+		passkey_entry(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GAP, opcode, index,
