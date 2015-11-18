@@ -628,10 +628,9 @@ static void net_rx_fiber(void)
 
 /*
  * Run various Contiki timers. At the moment this is done via polling.
- * Max. timeout is set to 60sec so that we wake up at least once a minute.
  */
-#define DEFAULT_TIMER_WAKEUP (2 * sys_clock_ticks_per_sec)
-#define MAX_TIMER_WAKEUP (60 * sys_clock_ticks_per_sec)
+#define DEFAULT_TIMER_WAKEUP 2
+#define MAX_TIMER_WAKEUP 2
 
 static void net_timer_fiber(void)
 {
@@ -648,22 +647,22 @@ static void net_timer_fiber(void)
 			next_wakeup = DEFAULT_TIMER_WAKEUP;
 		} else {
 			if (next_wakeup > MAX_TIMER_WAKEUP) {
-				NET_DBG("Too long wakeup %d\n", next_wakeup);
 				next_wakeup = MAX_TIMER_WAKEUP;
-			}
-			if (!(next_wakeup < CLOCK_SECOND * 2)) {
-				NET_DBG("Next wakeup %d\n", next_wakeup);
 			}
 
 #ifdef CONFIG_INIT_STACKS
 			{
 				static clock_time_t last_print;
 
-				if ((last_print + 10) < clock_seconds()) {
+				/* Print stack usage every 10 sec */
+				if (!last_print ||
+				    (last_print +
+				     10 * sys_clock_hw_cycles_per_tick) <
+				    clock_get_cycle()) {
 					net_analyze_stack("timer fiber",
 							  timer_fiber_stack,
 						  sizeof(timer_fiber_stack));
-					last_print = clock_seconds();
+					last_print = clock_get_cycle() + 1;
 				}
 			}
 #endif
