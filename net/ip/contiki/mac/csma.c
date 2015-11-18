@@ -205,7 +205,6 @@ transmit_packet_list(struct net_buf *buf, void *ptr)
       PRINTF("csma: preparing number %d %p, queue len %d\n", n->transmissions, q,
           list_length(n->queued_packet_list));
       /* Send packets in the neighbor's list */
-      /*FIXME: if rdc failed to send discard all packets */
       NETSTACK_RDC.send_list(buf, packet_sent, n, q);
     }
   }
@@ -235,6 +234,7 @@ packet_sent(struct net_buf *buf, void *ptr, int status, int num_transmissions)
     break;
   case MAC_TX_COLLISION:
     n->collisions += num_transmissions;
+    n->transmissions += num_transmissions;
     break;
   case MAC_TX_DEFERRED:
     n->deferrals += num_transmissions;
@@ -265,7 +265,8 @@ packet_sent(struct net_buf *buf, void *ptr, int status, int num_transmissions)
 
         switch(status) {
         case MAC_TX_COLLISION:
-          PRINTF("csma: rexmit collision %d\n", n->transmissions);
+          PRINTF("csma: rexmit collision %d transmission %d\n",
+		 n->collisions, n->transmissions);
           break;
         case MAC_TX_NOACK:
           PRINTF("csma: rexmit noack %d\n", n->transmissions);

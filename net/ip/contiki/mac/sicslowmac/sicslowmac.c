@@ -172,6 +172,9 @@ send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
       case RADIO_TX_ERR:
         sent(buf, ptr, MAC_TX_ERR, 1);
         break;
+      case RADIO_TX_COLLISION:
+        sent(buf, ptr, MAC_TX_COLLISION, 1);
+        break;
       }
     }
   } else {
