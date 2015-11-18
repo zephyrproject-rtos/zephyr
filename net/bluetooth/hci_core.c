@@ -1420,10 +1420,16 @@ static void init_sem(struct nano_sem *sem, size_t count)
 static void read_buffer_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
+	uint16_t pkts;
 
 	BT_DBG("status %u\n", rp->status);
 
 	bt_dev.br.mtu = sys_le16_to_cpu(rp->acl_max_len);
+	pkts = sys_le16_to_cpu(rp->acl_max_num);
+
+	BT_DBG("ACL BR/EDR buffers: pkts %u mtu %u\n", pkts, bt_dev.br.mtu);
+
+	init_sem(&bt_dev.br.pkts, pkts);
 }
 #else
 static void read_buffer_size_complete(struct net_buf *buf)

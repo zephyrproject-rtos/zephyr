@@ -59,6 +59,7 @@ struct bt_dev_le {
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t		mtu;
+	struct nano_sem		pkts;
 };
 #endif
 
