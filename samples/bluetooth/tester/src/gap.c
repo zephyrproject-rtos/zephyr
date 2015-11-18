@@ -35,6 +35,7 @@
 #define CONTROLLER_ADDR (&(bt_addr_t) {{1, 2, 3, 4, 5, 6}})
 
 static atomic_t current_settings;
+struct bt_auth_cb cb;
 
 static void le_connected(struct bt_conn *conn)
 {
@@ -78,6 +79,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds |= 1 << GAP_START_DISCOVERY;
 	cmds |= 1 << GAP_STOP_DISCOVERY;
 	cmds |= 1 << GAP_DISCONNECT;
+	cmds |= 1 << GAP_SET_IO_CAP;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -329,10 +331,76 @@ rsp:
 		   status);
 }
 
+static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
+{
+	struct gap_passkey_display_ev ev;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	addr2btp(addr, ev.address, &ev.address_type);
+	ev.passkey = sys_cpu_to_le32(passkey);
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_PASSKEY_DISPLAY,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+static void auth_passkey_entry(struct bt_conn *conn)
+{
+	struct gap_passkey_entry_req_ev ev;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	addr2btp(addr, ev.address, &ev.address_type);
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_PASSKEY_ENTRY_REQ,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+static void auth_cancel(struct bt_conn *conn)
+{
+	/* TODO */
+}
+
 static void set_io_cap(const uint8_t *data, uint16_t len)
 {
+	const struct gap_set_io_cap_cmd *cmd = (void *) data;
+	uint8_t status;
+
+	/* Reset io cap requirements */
+	memset(&cb, 0, sizeof(cb));
+	bt_auth_cb_register(NULL);
+
+	switch (cmd->io_cap) {
+	case GAP_IO_CAP_DISPLAY_ONLY:
+		cb.cancel = auth_cancel;
+		cb.passkey_display = auth_passkey_display;
+		break;
+	case GAP_IO_CAP_KEYBOARD_DISPLAY:
+		cb.cancel = auth_cancel;
+		cb.passkey_display = auth_passkey_display;
+		cb.passkey_entry = auth_passkey_entry;
+		break;
+	case GAP_IO_CAP_NO_INPUT_OUTPUT:
+		cb.cancel = auth_cancel;
+		break;
+	case GAP_IO_CAP_KEYBOARD_ONLY:
+		cb.cancel = auth_cancel;
+		cb.passkey_entry = auth_passkey_entry;
+		break;
+	case GAP_IO_CAP_DISPLAY_YESNO:
+	default:
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	if (bt_auth_cb_register(&cb)) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	status = BTP_STATUS_SUCCESS;
+
+rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_SET_IO_CAP, CONTROLLER_INDEX,
-		   BTP_STATUS_FAILED);
+		   status);
 }
 
 static void pair(const uint8_t *data, uint16_t len)
