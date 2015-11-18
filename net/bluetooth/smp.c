@@ -158,7 +158,7 @@ static const uint8_t gen_method_sc[5 /* remote */][5 /* local */] = {
 	  PASSKEY_DISPLAY },
 	{ JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS },
 	{ PASSKEY_DISPLAY, PASSKEY_CONFIRM, PASSKEY_INPUT, JUST_WORKS,
-	  PASSKEY_INPUT },
+	  PASSKEY_CONFIRM },
 };
 
 /* Pool for outgoing LE signaling packets, MTU is 65 */
