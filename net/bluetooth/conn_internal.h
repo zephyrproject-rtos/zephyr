@@ -31,6 +31,15 @@ enum {
 	BT_CONN_AUTO_CONNECT,
 };
 
+
+enum {
+	BT_CONN_TYPE_LE,
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	BT_CONN_TYPE_BREDR,
+#endif
+};
+
+
 struct bt_conn_le {
 	bt_addr_le_t		dst;
 
@@ -40,11 +49,14 @@ struct bt_conn_le {
 	uint8_t			features[8];
 };
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
 struct bt_conn_br {
 };
+#endif
 
 struct bt_conn {
 	uint16_t		handle;
+	uint8_t			type;
 	uint8_t			role;
 	atomic_t		flags[1];
 
@@ -76,7 +88,9 @@ struct bt_conn {
 
 	union {
 		struct bt_conn_le	le;
+#if defined(CONFIG_BLUETOOTH_BREDR)
 		struct bt_conn_br	br;
+#endif
 	};
 
 	/* Stack for TX fiber and timeout fiber.

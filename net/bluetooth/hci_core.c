@@ -550,6 +550,7 @@ static void le_conn_complete(struct net_buf *buf)
 		return;
 	}
 
+	conn->type = BT_CONN_TYPE_LE;
 	conn->handle   = handle;
 	bt_addr_le_copy(&conn->le.dst, id_addr);
 	conn->le.conn_interval = sys_le16_to_cpu(evt->interval);
