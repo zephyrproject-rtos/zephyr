@@ -44,6 +44,7 @@
 
 #include "contiki/os/sys/process.h"
 #include "contiki/os/sys/etimer.h"
+#include "contiki/os/sys/ctimer.h"
 #include "contiki/netstack.h"
 #include "contiki/ipv6/uip-ds6.h"
 #include "contiki/ip/simple-udp.h"
@@ -765,6 +766,7 @@ static int network_initialization(void)
 	process_start(&tcpip_process, NULL);
 	process_start(&simple_udp_process, NULL);
 	process_start(&etimer_process, NULL);
+	process_start(&ctimer_process, NULL);
 
 	slip_start();
 
