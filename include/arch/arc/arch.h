@@ -53,6 +53,13 @@ extern "C" {
 }
 #endif
 
+#ifndef _ASMLANGUAGE
+struct irq_desc {
+	unsigned int irq;
+	unsigned int priority;
+	void (*isr)(void *);
+	void *parameter;
+};
 
 /**
  * @brief Connect a routine to interrupt number
@@ -65,16 +72,21 @@ extern "C" {
  * architectures.
  *
  * @param device Device
- * @param irq IRQ number
- * @param priority IRQ Priority
- * @param isr Interrupt Service Routine
- * @param parameter ISR parameter
- * @param flags IRQ flags
+ * @param i IRQ number
+ * @param p IRQ Priority
+ * @param h Interrupt Service Routine
+ * @param pm ISR parameter
  *
  * @return N/A
  *
  */
-#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags)
+#define IRQ_CONNECT_STATIC(device, i, p, h, pm) \
+	static struct irq_desc device##_irq_desc = { \
+		.irq = i, \
+		.priority = p, \
+		.isr = h, \
+		.parameter = pm, \
+	}
 
 /**
  *
@@ -83,14 +95,17 @@ extern "C" {
  * For the selected device, do the neccessary configuration
  * steps to connect and enable the IRQ line with an ISR
  * at the priority requested.
- * @param isr Pointer to the interruption service routine
- * @param irq IRQ number
- * @param priority Priority for the interruption
+ * @param device - Device name
+ * @param i IRQ number
+ * @param p Priority for the interruption
  *
  * @return N/A
  *
  */
-#define IRQ_CONFIG(isr, irq, priority) \
-		irq_connect(irq, priority, isr, NULL, 0);
+#define IRQ_CONFIG(device, i, p) \
+	irq_connect(device##_irq_desc.irq, device##_irq_desc.priority, \
+		    device##_irq_desc.isr, device##_irq_desc.parameter, 0)
+
+#endif
 
 #endif /* _ARC_ARCH__H_ */
