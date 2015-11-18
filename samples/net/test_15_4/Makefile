@@ -20,6 +20,7 @@ MDEF_FILE = prj.mdef
 KERNEL_TYPE = nano
 PLATFORM_CONFIG ?= basic_atom
 CONF_FILE = prj_$(ARCH).conf
+CFLAGS += -DNET_802154_TX_STACK_SIZE=5120
 
 include $(ZEPHYR_BASE)/Makefile.inc
 include $(ZEPHYR_BASE)/samples/net/test_15_4/Makefile.15_4
