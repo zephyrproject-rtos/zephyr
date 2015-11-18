@@ -189,6 +189,43 @@ struct gap_disconnect_cmd {
 	uint8_t  address[6];
 } __packed;
 
+#define GAP_IO_CAP_DISPLAY_ONLY		0
+#define GAP_IO_CAP_DISPLAY_YESNO	1
+#define GAP_IO_CAP_KEYBOARD_ONLY	2
+#define GAP_IO_CAP_NO_INPUT_OUTPUT	3
+#define GAP_IO_CAP_KEYBOARD_DISPLAY	4
+
+#define GAP_SET_IO_CAP			0x10
+struct gap_set_io_cap_cmd {
+	uint8_t io_cap;
+} __packed;
+
+#define GAP_PAIR			0x11
+struct gap_pair_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
+#define GAP_UNPAIR			0x12
+struct gap_unpair_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
+#define GAP_PASSKEY_ENTRY		0x13
+struct gap_passkey_entry_cmd {
+	uint8_t  address_type;
+	uint8_t  address[6];
+	uint32_t passkey;
+} __packed;
+
+#define GAP_PASSKEY_CONFIRM		0x14
+struct gap_passkey_confirm_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint8_t match;
+} __packed;
+
 /* events */
 #define GAP_EV_NEW_SETTINGS		0x80
 struct gap_new_settings_ev {
@@ -219,6 +256,26 @@ struct gap_device_connected_ev {
 struct gap_device_disconnected_ev {
 	uint8_t address[6];
 	uint8_t address_type;
+} __packed;
+
+#define GAP_EV_PASSKEY_DISPLAY		0x84
+struct gap_passkey_display_ev {
+	uint8_t  address_type;
+	uint8_t  address[6];
+	uint32_t passkey;
+} __packed;
+
+#define GAP_EV_PASSKEY_ENTRY_REQ	0x85
+struct gap_passkey_entry_req_ev {
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
+#define GAP_EV_PASSKEY_CONFIRM_REQ	0x86
+struct gap_passkey_confirm_req_ev {
+	uint8_t  address_type;
+	uint8_t  address[6];
+	uint32_t passkey;
 } __packed;
 
 /* GATT Service */
