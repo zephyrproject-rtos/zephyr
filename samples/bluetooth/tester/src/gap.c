@@ -80,6 +80,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds |= 1 << GAP_STOP_DISCOVERY;
 	cmds |= 1 << GAP_DISCONNECT;
 	cmds |= 1 << GAP_SET_IO_CAP;
+	cmds |= 1 << GAP_PAIR;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -405,8 +406,26 @@ rsp:
 
 static void pair(const uint8_t *data, uint16_t len)
 {
-	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PAIR, CONTROLLER_INDEX,
-		   BTP_STATUS_FAILED);
+	struct bt_conn *conn;
+	uint8_t status;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	if (bt_conn_security(conn, BT_SECURITY_MEDIUM)) {
+		status = BTP_STATUS_FAILED;
+		bt_conn_unref(conn);
+		goto rsp;
+	}
+
+	bt_conn_unref(conn);
+	status = BTP_STATUS_SUCCESS;
+
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PAIR, CONTROLLER_INDEX, status);
 }
 
 static void passkey_entry(const uint8_t *data, uint16_t len)
