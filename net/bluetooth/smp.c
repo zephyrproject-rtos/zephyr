@@ -2833,6 +2833,11 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 	}
 }
 
+void bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
+{
+/* TODO */
+}
+
 void bt_auth_cancel(struct bt_conn *conn)
 {
 	struct bt_smp *smp;

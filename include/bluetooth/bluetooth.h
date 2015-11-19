@@ -126,6 +126,7 @@ int bt_stop_scanning(void);
 struct bt_auth_cb {
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
 	void (*passkey_entry)(struct bt_conn *conn);
+	void (*passkey_confirm)(struct bt_conn *conn, unsigned int passkey);
 	void (*cancel)(struct bt_conn *conn);
 };
 
@@ -157,6 +158,18 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
  *  @param conn Connection object.
  */
 void bt_auth_cancel(struct bt_conn *conn);
+
+/** @brief Reply if passkey was confirmed by user.
+ *
+ *  This function should be called only after passkey_confirm callback from
+ *  bt_auth_cb structure was called. If passkey is confirmed to match then match
+ *  should be true. Otherwise match should be false.
+ *
+ *  @param conn Connection object.
+ *  @param match True if passkey was confirmed to match, false otherwise.
+ */
+void bt_auth_passkey_confirm(struct bt_conn *conn, bool match);
+
 #endif /* CONFIG_BLUETOOTH_SMP */
 
 /** @def BT_ADDR_STR_LEN
