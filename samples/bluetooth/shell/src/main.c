@@ -948,6 +948,15 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 	printk("Passkey for %s: %u\n", addr, passkey);
 }
 
+static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Confirm passkey for %s: %u\n", addr, passkey);
+}
+
 static void auth_passkey_entry(struct bt_conn *conn)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -969,25 +978,36 @@ static void auth_cancel(struct bt_conn *conn)
 static struct bt_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
+	.passkey_confirm = NULL,
+	.cancel = auth_cancel,
+};
+
+static struct bt_auth_cb auth_cb_display_yes_no = {
+	.passkey_display = auth_passkey_display,
+	.passkey_entry = NULL,
+	.passkey_confirm = auth_passkey_confirm,
 	.cancel = auth_cancel,
 };
 
 static struct bt_auth_cb auth_cb_input = {
 	.passkey_display = NULL,
 	.passkey_entry = auth_passkey_entry,
+	.passkey_confirm = NULL,
 	.cancel = auth_cancel,
 };
 
 static struct bt_auth_cb auth_cb_all = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = auth_passkey_entry,
+	.passkey_confirm = auth_passkey_confirm,
 	.cancel = auth_cancel,
 };
 
 static void cmd_auth(int argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("auth [display, input, all, none] parameter required\n");
+		printk("auth [display, yesno, input, all, none] parameter "
+		       "required\n");
 		return;
 	}
 
@@ -997,10 +1017,13 @@ static void cmd_auth(int argc, char *argv[])
 		bt_auth_cb_register(&auth_cb_input);
 	} else if (!strcmp(argv[1], "display")) {
 		bt_auth_cb_register(&auth_cb_display);
+	} else if (!strcmp(argv[1], "yesno")) {
+		bt_auth_cb_register(&auth_cb_display_yes_no);
 	} else if (!strcmp(argv[1], "none")) {
 		bt_auth_cb_register(NULL);
 	} else {
-		printk("auth [display, input, all, none] parameter required\n");
+		printk("auth [display, yesno, input, all, none] parameter "
+		       "required\n");
 	}
 }
 
@@ -1012,6 +1035,25 @@ static void cmd_auth_cancel(int argc, char *argv[])
 	}
 
 	bt_auth_cancel(default_conn);
+}
+
+static void cmd_auth_passkey_confirm(int argc, char *argv[])
+{
+	bool match;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
+	if (argc < 2) {
+		printk("true/false required\n");
+		return;
+	}
+
+	match = !strcmp(argv[1], "true");
+
+	bt_auth_passkey_confirm(default_conn, match);
 }
 
 static void cmd_auth_passkey(int argc, char *argv[])
@@ -1145,6 +1187,7 @@ struct shell_cmd commands[] = {
 	{ "auth", cmd_auth },
 	{ "auth-cancel", cmd_auth_cancel },
 	{ "auth-passkey", cmd_auth_passkey },
+	{ "auth-confirm", cmd_auth_passkey_confirm },
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu },
 	{ "gatt-discover-primary", cmd_gatt_discover },
 	{ "gatt-discover-secondary", cmd_gatt_discover },
