@@ -1655,11 +1655,6 @@ static int br_init(void)
 	struct net_buf *rsp;
 	int err;
 
-	if (!lmp_bredr_capable(bt_dev)) {
-		BT_DBG("Non-BR/EDR controller detected! Skipping BR init.\n");
-		return 0;
-	}
-
 	if (bt_dev.le.mtu) {
 		return 0;
 	}
@@ -1726,9 +1721,13 @@ static int hci_init(void)
 		return err;
 	}
 
-	err = br_init();
-	if (err) {
-		return err;
+	if (lmp_bredr_capable(bt_dev)) {
+		err = br_init();
+		if (err) {
+			return err;
+		}
+	} else {
+		BT_DBG("Non-BR/EDR controller detected! Skipping BR init.\n");
 	}
 
 	err = set_event_mask();
