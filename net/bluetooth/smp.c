@@ -693,12 +693,16 @@ struct net_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	return buf;
 }
 
-static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
+static void smp_error(struct bt_smp *smp, uint8_t reason)
 {
 	struct bt_smp_pairing_fail *rsp;
 	struct net_buf *buf;
 
-	buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_FAIL, sizeof(*rsp));
+	/* reset context */
+	smp_reset(smp);
+
+	buf = bt_smp_create_pdu(smp->chan.conn, BT_SMP_CMD_PAIRING_FAIL,
+				sizeof(*rsp));
 	if (!buf) {
 		return;
 	}
@@ -706,7 +710,7 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->reason = reason;
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+	bt_l2cap_send(smp->chan.conn, BT_L2CAP_CID_SMP, buf);
 }
 
 static int smp_init(struct bt_smp *smp)
@@ -1419,8 +1423,7 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 	}
 
 	if (!dhkey && atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
-		send_err_rsp(smp->chan.conn, BT_SMP_ERR_DHKEY_CHECK_FAILED);
-		smp_reset(smp);
+		smp_error(smp, BT_SMP_ERR_DHKEY_CHECK_FAILED);
 		return;
 	}
 
@@ -1455,16 +1458,13 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 		if (smp_f6(smp->mackey, smp->prnd, smp->rrnd, r, &smp->preq[1],
 			   &smp->chan.conn->le.init_addr,
 			   &smp->chan.conn->le.resp_addr, re)) {
-			send_err_rsp(smp->chan.conn, BT_SMP_ERR_UNSPECIFIED);
-			smp_reset(smp);
+			smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 			return;
 		}
 
 		/* compare received E with calculated remote */
 		if (memcmp(smp->e, re, 16)) {
-			send_err_rsp(smp->chan.conn,
-				     BT_SMP_ERR_DHKEY_CHECK_FAILED);
-			smp_reset(smp);
+			smp_error(smp, BT_SMP_ERR_DHKEY_CHECK_FAILED);
 			return;
 		}
 
@@ -2221,9 +2221,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	if (err) {
-		send_err_rsp(chan->conn, err);
-
-		smp_reset(smp);
+		smp_error(smp, err);
 	}
 }
 
@@ -2849,9 +2847,7 @@ void bt_auth_cancel(struct bt_conn *conn)
 		return;
 	}
 
-	send_err_rsp(conn, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
-
-	smp_reset(smp);
+	smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
 }
 
 static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
