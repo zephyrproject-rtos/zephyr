@@ -178,6 +178,12 @@ static int start_security(struct bt_conn *conn)
 			return bt_smp_send_pairing_req(conn);
 		}
 
+		if (conn->required_sec_level > BT_SECURITY_HIGH &&
+		    conn->keys->type != BT_KEYS_AUTHENTICATED &&
+		    !(conn->keys->keys & BT_KEYS_LTK_P256)) {
+			return bt_smp_send_pairing_req(conn);
+		}
+
 		/* LE SC LTK and legacy master LTK are stored in same place */
 		return bt_conn_le_start_encryption(conn, conn->keys->ltk.rand,
 						   conn->keys->ltk.ediv,
@@ -205,11 +211,6 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 	/* nothing to do */
 	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
 		return 0;
-	}
-
-	/* for now we only support legacy pairing */
-	if (sec > BT_SECURITY_HIGH) {
-		return -EINVAL;
 	}
 
 	conn->required_sec_level = sec;
