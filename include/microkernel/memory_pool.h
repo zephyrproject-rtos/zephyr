@@ -32,86 +32,96 @@ extern "C" {
  * @ingroup microkernel_services
  * @{
  */
+
 /**
  * @cond internal
  */
 
-extern int _task_mem_pool_alloc(struct k_block *B, kmemory_pool_t pid, int size, int32_t time);
-
+extern int _task_mem_pool_alloc(struct k_block *b, kmemory_pool_t p,
+								int size, int32_t ticks);
 
 /**
  * @endcond
  */
 
 /**
- * @brief Return memory pool block request
+ * @brief Return memory pool block
  *
- * This routine returns a block to a memory pool.
+ * This routine returns a block to the memory pool it was allocated from.
  *
- * The struct k_block structure contains the block details, including the pool to
- * which it should be returned.
- *
- * @param bl Pointer to block to free
+ * @param b Pointer to block descriptor.
  *
  * @return N/A
  */
-extern void task_mem_pool_free(struct k_block *bl);
+extern void task_mem_pool_free(struct k_block *b);
 
 /**
- * @brief Defragment memory pool request
+ * @brief Defragment memory pool
  *
- * This routine concatenates unused memory in a memory pool.
+ * This routine concatenates unused blocks that can be merged in memory pool
+ * @a p.
  *
- * @param pid Memory pool ID
+ * Doing a complete defragmentation of a memory pool before allocating a set
+ * of blocks may be more efficient than having the pool do an implicit
+ * partial defragmentation each time a block is allocated.
+ *
+ * @param p Memory pool name.
  *
  * @return N/A
  */
-extern void task_mem_pool_defragment(kmemory_pool_t pid);
+extern void task_mem_pool_defragment(kmemory_pool_t p);
 
 
 /**
- * @brief Allocate memory pool block request without waiting
+ * @brief Allocate memory pool block or fail
  *
- * This routine allocates a free block from the specified memory pool, ensuring
- * that its size is at least as big as the size requested (in bytes).
+ * This routine allocates a block of at least @a s bytes from memory pool
+ * @a p, and saves its information in block descriptor @a b. If no such
+ * block is available the routine immediately returns a failure indication.
  *
- * @param b Pointer to requested block
- * @param pid Pool from which to get block
- * @param s Requested block size
+ * @param b Pointer to block descriptor.
+ * @param p Memory pool name.
+ * @param s Requested block size, in bytes.
  *
- * @return RC_OK, RC_FAIL on success, failure respectively
+ * @return RC_OK on success, or RC_FAIL on failure.
  */
-#define task_mem_pool_alloc(b, pid, s) _task_mem_pool_alloc(b, pid, s, TICKS_NONE)
+#define task_mem_pool_alloc(b, p, s) \
+	_task_mem_pool_alloc(b, p, s, TICKS_NONE)
 
 /**
- * @brief Allocate memory pool block request and wait
+ * @brief Allocate memory pool block or wait
  *
- * This routine allocates a free block from the specified memory pool, ensuring
- * that its size is at least as big as the size requested (in bytes).
+ * This routine allocates a block of at least @a s bytes from memory pool
+ * @a p, and saves its information in block descriptor @a b. If no such block
+ * is available the routine waits until one can be allocated.
  *
- * @param b Pointer to requested block
- * @param pid Pool from which to get block
- * @param s Requested block size
+ * @param b Pointer to block descriptor.
+ * @param p Memory pool name.
+ * @param s Requested block size, in bytes.
  *
- * @return RC_OK, RC_FAIL on success, failure respectively
+ * @return RC_OK.
  */
-#define task_mem_pool_alloc_wait(b, pid, s) _task_mem_pool_alloc(b, pid, s, TICKS_UNLIMITED)
+#define task_mem_pool_alloc_wait(b, p, s) \
+	_task_mem_pool_alloc(b, p, s, TICKS_UNLIMITED)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 /**
- * @brief Allocate memory pool block request and wait
+ * @brief Allocate memory pool block or timeout
  *
- * This routine allocates a free block from the specified memory pool, ensuring
- * that its size is at least as big as the size requested (in bytes).
+ * This routine allocates a block of at least @a s bytes from memory pool
+ * @a p, and saves its information in block descriptor @a b. If no such block
+ * is available the routine waits until one can be allocated, or until
+ * the specified time limit is reached.
  *
- * @param b Pointer to requested block
- * @param pid Pool from which to get block
- * @param s Requested block size
- * @param t Maximum number of ticks to wait
+ * @param b Pointer to block descriptor.
+ * @param p Memory pool name.
+ * @param s Requested block size, in bytes.
+ * @param t Maximum number of ticks to wait.
  *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ * @return RC_OK on success, or RC_TIME on timeout.
  */
-#define task_mem_pool_alloc_wait_timeout(b, pid, s, t) _task_mem_pool_alloc(b, pid, s, t)
+#define task_mem_pool_alloc_wait_timeout(b, p, s, t) \
+	_task_mem_pool_alloc(b, p, s, t)
 #endif
 
 /**
