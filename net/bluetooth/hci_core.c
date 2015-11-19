@@ -777,7 +777,11 @@ static void update_sec_level(struct bt_conn *conn)
 	}
 
 	if (conn->keys && conn->keys->type == BT_KEYS_AUTHENTICATED) {
-		conn->sec_level = BT_SECURITY_HIGH;
+		if (conn->keys->keys & BT_KEYS_LTK_P256) {
+			conn->sec_level = BT_SECURITY_FIPS;
+		} else {
+			conn->sec_level = BT_SECURITY_HIGH;
+		}
 	} else {
 		conn->sec_level = BT_SECURITY_MEDIUM;
 	}
