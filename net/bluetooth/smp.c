@@ -1454,7 +1454,7 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 		memset(r, 0, sizeof(r));
 
 		/* calculate remote DHKey check */
-		if (smp_f6(smp->mackey, smp->prnd, smp->rrnd, r, &smp->preq[1],
+		if (smp_f6(smp->mackey, smp->rrnd, smp->prnd, r, &smp->preq[1],
 			   &smp->chan.conn->le.init_addr,
 			   &smp->chan.conn->le.resp_addr, re)) {
 			smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
