@@ -162,11 +162,18 @@ typedef struct s_isrList {
  * @return N/A
  *
  */
-#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags) \
+#ifdef CONFIG_MVIC
+#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags)   \
+	extern void *_##device##_##isr##_stub;				   \
+	const uint32_t _##device##_irq_flags = (flags);	\
+	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, (irq),		   \
+			      ((irq) + 0x20) / 16, (irq) + 0x20, 0)
+#else
+#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags)   \
 	extern void *_##device##_##isr##_stub;				               \
 	const uint32_t _##device##_irq_flags = (flags);	\
 	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, (irq), (priority), -1, 0)
-
+#endif
 
 extern unsigned char _irq_to_interrupt_vector[];
 /**
