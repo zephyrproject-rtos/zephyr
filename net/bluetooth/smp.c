@@ -1422,7 +1422,7 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 		return;
 	}
 
-	if (!dhkey && atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
+	if (!dhkey) {
 		smp_error(smp, BT_SMP_ERR_DHKEY_CHECK_FAILED);
 		return;
 	}
