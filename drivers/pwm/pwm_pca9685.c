@@ -124,7 +124,7 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
 		buf[4] = ((off >> 8) & 0x0F);
 	}
 
-	return i2c_polling_write(i2c_master, buf, sizeof(buf), i2c_addr);
+	return i2c_write(i2c_master, buf, sizeof(buf), i2c_addr);
 }
 
 /**

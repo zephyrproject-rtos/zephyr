@@ -108,7 +108,7 @@ static void _rgb_reg_set(struct device * const i2c, uint8_t addr, uint8_t dta)
 {
 	uint8_t data[2] = { addr, dta };
 
-	i2c_polling_write(i2c, data, sizeof(data), GROVE_RGB_BACKLIGHT_ADDR);
+	i2c_write(i2c, data, sizeof(data), GROVE_RGB_BACKLIGHT_ADDR);
 }
 
 
@@ -131,7 +131,7 @@ void glcd_print(struct device *port, unsigned char *data, uint32_t size)
 
 	for (i = 0; i < size; i++) {
 		buf[1] = data[i];
-		i2c_polling_write(dev->i2c, buf, sizeof(buf), rom->lcd_addr);
+		i2c_write(dev->i2c, buf, sizeof(buf), rom->lcd_addr);
 	}
 }
 
@@ -153,7 +153,7 @@ void glcd_cursor_pos_set(struct device *port, uint8_t col, uint8_t row)
 	data[0] = GLCD_CMD_SET_DDRAM_ADDR;
 	data[1] = col;
 
-	i2c_polling_write(dev->i2c, data, 2, rom->lcd_addr);
+	i2c_write(dev->i2c, data, 2, rom->lcd_addr);
 }
 
 
@@ -164,7 +164,7 @@ void glcd_clear(struct device *port)
 	struct glcd_data *dev = port->driver_data;
 	uint8_t clear[] = { 0, GLCD_CMD_SCREEN_CLEAR };
 
-	i2c_polling_write(dev->i2c, clear, sizeof(clear), rom->lcd_addr);
+	i2c_write(dev->i2c, clear, sizeof(clear), rom->lcd_addr);
 	DBG("Grove LCD: clear, delay 20 ms\n");
 	_sleep(20);
 }
@@ -180,7 +180,7 @@ void glcd_display_state_set(struct device *port, uint8_t opt)
 	dev->display_switch = opt;
 	data[1] = (opt | GLCD_CMD_DISPLAY_SWITCH);
 
-	i2c_polling_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
+	i2c_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
 
 	DBG("Grove LCD: set display_state options, delay 5 ms\n");
 	_sleep(5);
@@ -204,7 +204,7 @@ void glcd_input_state_set(struct device *port, uint8_t opt)
 	dev->input_set = opt;
 	data[1] = (opt | GLCD_CMD_INPUT_SET);
 
-	i2c_polling_write(dev->i2c, &dev->input_set, sizeof(dev->input_set),
+	i2c_write(dev->i2c, &dev->input_set, sizeof(dev->input_set),
 		  rom->lcd_addr);
 	DBG("Grove LCD: set the input_set, no delay\n");
 }
@@ -251,7 +251,7 @@ void glcd_function_set(struct device *port, uint8_t opt)
 	dev->function = opt;
 	data[1] = (opt | GLCD_CMD_FUNCTION_SET);
 
-	i2c_polling_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
+	i2c_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
 
 	DBG("Grove LCD: set function options, delay 5 ms\n");
 	_sleep(5);

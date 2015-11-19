@@ -115,7 +115,7 @@ static int _read_port_regs(struct device *dev, uint8_t reg,
 	int ret;
 	uint8_t cmd[] = { reg };
 
-	ret = i2c_poll_transfer(i2c_master, cmd, 1, buf->byte, 2, i2c_addr, 0);
+	ret = i2c_transfer(i2c_master, cmd, 1, buf->byte, 2, i2c_addr, 0);
 	if (ret) {
 		DBG("PCAL9535A[0x%X]: error reading register 0x%X (%d)\n",
 		    i2c_addr, reg, ret);
@@ -155,7 +155,7 @@ static int _write_port_regs(struct device *dev, uint8_t reg,
 	DBG("PCAL9535A[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X\n",
 	    i2c_addr, reg, buf->byte[0], (reg + 1), buf->byte[1]);
 
-	ret = i2c_polling_write(i2c_master, cmd, sizeof(cmd), i2c_addr);
+	ret = i2c_write(i2c_master, cmd, sizeof(cmd), i2c_addr);
 	if (ret) {
 		DBG("PCAL9535A[0x%X]: error writing from register 0x%X (%d)\n",
 		    i2c_addr, reg, ret);
