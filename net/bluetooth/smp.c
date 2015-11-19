@@ -79,6 +79,7 @@ enum {
 	SMP_FLAG_PKEY_PENDING,	/* if waiting for P256 Public Key */
 	SMP_FLAG_DHKEY_PENDING,	/* if waiting for local DHKey */
 	SMP_FLAG_DHKEY_SEND,	/* if should generate and send DHKey Check */
+	SMP_FLAG_USER_CONFIRM,	/* if waiting for passkey confirmation */
 };
 
 /* SMP channel specific context */
@@ -1087,6 +1088,45 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	return 0;
 }
 
+static int smp_g2(const uint8_t u[32], const uint8_t v[32],
+		  const uint8_t x[16], const uint8_t y[16], uint32_t *passkey)
+{
+	uint8_t m[80], xs[16];
+	int err;
+
+	BT_DBG("u %s\n", h(u, 32));
+	BT_DBG("v %s\n", h(v, 32));
+	BT_DBG("x %s y %s\n", h(x, 16), h(y, 16));
+
+	swap_buf(m, u, 32);
+	swap_buf(m + 32, v, 32);
+	swap_buf(m + 64, y, 16);
+
+	swap_buf(xs, x, 16);
+
+	/* reuse xs (key) as buffer for result */
+	err = bt_smp_aes_cmac(xs, m, sizeof(m), xs);
+	if (err) {
+		return err;
+	}
+	BT_DBG("res %s\n", h(xs, 16));
+
+	/*
+	 * TODO current this will work only for LE host but code below crashes
+	 * zephyr for some reason
+	 *
+	 * memcpy(passkey, xs + 12, 4);
+	 * *passkey = sys_be32_to_cpu(*passkey);
+	 */
+	swap_buf((uint8_t *)passkey, xs + 12, 4);
+
+	*passkey %= 1000000;
+
+	BT_DBG("passkey %u\n", *passkey);
+
+	return 0;
+}
+
 static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
@@ -1428,6 +1468,11 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 
 	memcpy(smp->dhkey, dhkey, 32);
 
+	/* wait for user passkey confirmation */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_USER_CONFIRM)) {
+		return;
+	}
+
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
 		if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
@@ -1475,10 +1520,12 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 }
 static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
+	uint32_t passkey;
+
 	BT_DBG("\n");
 
 	/* TODO */
-	if (smp->method != JUST_WORKS) {
+	if (smp->method == PASSKEY_DISPLAY || smp->method == PASSKEY_INPUT) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1499,6 +1546,18 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_CONFIRM_FAILED;
 		}
 
+		/* compare passkey before calculating LTK */
+		if (smp->method == PASSKEY_CONFIRM) {
+			if (smp_g2(bt_dev.pkey, smp->pkey, smp->prnd, smp->rrnd,
+				   &passkey)) {
+				return BT_SMP_ERR_UNSPECIFIED;
+			}
+
+			atomic_set_bit(&smp->flags, SMP_FLAG_USER_CONFIRM);
+			auth_cb->passkey_confirm(smp->chan.conn, passkey);
+			return 0;
+		}
+
 		/* wait for DHKey being generated */
 		if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING)) {
 			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
@@ -1517,6 +1576,16 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 	smp_send_pairing_random(smp);
+
+	if (smp->method == PASSKEY_CONFIRM) {
+		if (smp_g2(smp->pkey, bt_dev.pkey, smp->rrnd, smp->prnd,
+			   &passkey)) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		atomic_set_bit(&smp->flags, SMP_FLAG_USER_CONFIRM);
+		auth_cb->passkey_confirm(smp->chan.conn, passkey);
+	}
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
 	return 0;
@@ -2105,6 +2174,13 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 
 		/* wait for DHKey being generated */
 		if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING)) {
+			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+			memcpy(smp->e, req->e, sizeof(smp->e));
+			return 0;
+		}
+
+		/* waiting for user to confirm passkey */
+		if (atomic_test_bit(&smp->flags, SMP_FLAG_USER_CONFIRM)) {
 			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
 			memcpy(smp->e, req->e, sizeof(smp->e));
 			return 0;
