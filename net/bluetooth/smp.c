@@ -78,7 +78,7 @@ enum {
 	SMP_FLAG_SC,		/* if LE Secure Connections is used */
 	SMP_FLAG_PKEY_PENDING,	/* if waiting for P256 Public Key */
 	SMP_FLAG_DHKEY_PENDING,	/* if waiting for local DHKey */
-	SMP_FLAG_DHKEY_SEND,	/* if should send DHKey Check after generate */
+	SMP_FLAG_DHKEY_SEND,	/* if should generate and send DHKey Check */
 };
 
 /* SMP channel specific context */
