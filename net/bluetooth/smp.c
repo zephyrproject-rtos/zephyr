@@ -1420,6 +1420,7 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 
 	if (!dhkey && atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
 		send_err_rsp(smp->chan.conn, BT_SMP_ERR_DHKEY_CHECK_FAILED);
+		smp_reset(smp);
 		return;
 	}
 
@@ -1455,6 +1456,7 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 			   &smp->chan.conn->le.init_addr,
 			   &smp->chan.conn->le.resp_addr, re)) {
 			send_err_rsp(smp->chan.conn, BT_SMP_ERR_UNSPECIFIED);
+			smp_reset(smp);
 			return;
 		}
 
@@ -1462,6 +1464,7 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 		if (memcmp(smp->e, re, 16)) {
 			send_err_rsp(smp->chan.conn,
 				     BT_SMP_ERR_DHKEY_CHECK_FAILED);
+			smp_reset(smp);
 			return;
 		}
 
