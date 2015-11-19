@@ -693,6 +693,12 @@ struct net_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	return buf;
 }
 
+static void smp_send(struct bt_smp *smp, struct net_buf *buf)
+{
+	bt_l2cap_send(smp->chan.conn, BT_L2CAP_CID_SMP, buf);
+	smp_restart_timer(smp);
+}
+
 static void smp_error(struct bt_smp *smp, uint8_t reason)
 {
 	struct bt_smp_pairing_fail *rsp;
@@ -710,6 +716,7 @@ static void smp_error(struct bt_smp *smp, uint8_t reason)
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->reason = reason;
 
+	/* SMP timer is not restarted for PairingFailed so don't use smp_send */
 	bt_l2cap_send(smp->chan.conn, BT_L2CAP_CID_SMP, buf);
 }
 
@@ -859,6 +866,7 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	req = net_buf_add(req_buf, sizeof(*req));
 	req->auth_req = get_auth(BT_SMP_AUTH_BONDING | BT_SMP_AUTH_SC);
 
+	/* SMP timer is not restarted for SecRequest so don't use smp_send */
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
@@ -918,10 +926,9 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
 	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
+	smp_send(smp, rsp_buf);
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
-	smp_restart_timer(smp);
 
 	smp->method = get_pair_method(smp, req->io_capability);
 
@@ -1107,11 +1114,9 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
+	smp_send(smp, rsp_buf);
 
 	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
-
-	smp_restart_timer(smp);
 
 	return 0;
 }
@@ -1132,9 +1137,7 @@ static uint8_t sc_send_public_key(struct bt_smp *smp)
 	memcpy(req->x, bt_dev.pkey, sizeof(req->x));
 	memcpy(req->y, &bt_dev.pkey[32], sizeof(req->y));
 
-	bt_l2cap_send(smp->chan.conn, BT_L2CAP_CID_SMP, req_buf);
-
-	smp_restart_timer(smp);
+	smp_send(smp, req_buf);
 
 	return 0;
 }
@@ -1193,12 +1196,10 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
 	memcpy(smp->preq + 1, req, sizeof(*req));
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+	smp_send(smp, req_buf);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
 	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
-
-	smp_restart_timer(smp);
 
 	return 0;
 }
@@ -1274,9 +1275,7 @@ static uint8_t smp_send_pairing_random(struct bt_smp *smp)
 	req = net_buf_add(rsp_buf, sizeof(*req));
 	memcpy(req->val, smp->prnd, sizeof(req->val));
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
-
-	smp_restart_timer(smp);
+	smp_send(smp, rsp_buf);
 
 	return 0;
 }
@@ -1350,7 +1349,7 @@ static uint8_t sc_smp_send_dhkey_check(struct bt_smp *smp, const uint8_t *e)
 	req = net_buf_add(buf, sizeof(*req));
 	memcpy(req->e, e, sizeof(req->e));
 
-	bt_l2cap_send(smp->chan.conn, BT_L2CAP_CID_SMP, buf);
+	smp_send(smp, buf);
 
 	return 0;
 }
@@ -1711,7 +1710,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 			       sizeof(info->ltk) - keys->enc_size);
 		}
 
-		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+		smp_send(smp, buf);
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT,
 					sizeof(*ident));
@@ -1724,9 +1723,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		ident->rand = keys->slave_ltk.rand;
 		ident->ediv = keys->slave_ltk.ediv;
 
-		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
-
-		smp_restart_timer(smp);
+		smp_send(smp, buf);
 	}
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
@@ -1750,9 +1747,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		info = net_buf_add(buf, sizeof(*info));
 		memcpy(info->csrk, keys->local_csrk.val, sizeof(info->csrk));
 
-		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
-
-		smp_restart_timer(smp);
+		smp_send(smp, buf);
 	}
 #endif /* CONFIG_BLUETOOTH_SIGNING */
 }
