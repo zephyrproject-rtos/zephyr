@@ -22,7 +22,7 @@
 #include <sys_io.h>
 #include <misc/util.h>
 
-#include <gpio_sch.h>
+#include "gpio_sch.h"
 
 #ifndef CONFIG_GPIO_DEBUG
 #define DBG(...)
