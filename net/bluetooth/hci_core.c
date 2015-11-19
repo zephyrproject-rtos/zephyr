@@ -384,11 +384,11 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			conn->pending_pkts = 0;
 		}
 
-		bt_conn_unref(conn);
-
 		while (count--) {
-			nano_fiber_sem_give(&bt_dev.le.pkts_sem);
+			nano_fiber_sem_give(bt_conn_get_pkts(conn));
 		}
+
+		bt_conn_unref(conn);
 	}
 }
 

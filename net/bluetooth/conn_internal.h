@@ -142,3 +142,10 @@ struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve);
 int bt_conn_init(void);
 
 #endif /* CONFIG_BLUETOOTH_SMP */
+
+/* Selects based on connecton type right semaphore for ACL packets */
+static inline struct nano_sem *bt_conn_get_pkts(struct bt_conn *conn)
+{
+	ARG_UNUSED(conn);
+	return &bt_dev.le.pkts_sem;
+}

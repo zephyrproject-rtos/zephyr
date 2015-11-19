@@ -352,7 +352,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	       flags);
 
 	/* Wait until the controller can accept ACL packets */
-	nano_fiber_sem_take_wait(&bt_dev.le.pkts_sem);
+	nano_fiber_sem_take_wait(bt_conn_get_pkts(conn));
 
 	/* Check for disconnection while waiting for pkts_sem */
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -374,11 +374,17 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	return true;
 
 fail:
-	nano_fiber_sem_give(&bt_dev.le.pkts_sem);
+	nano_fiber_sem_give(bt_conn_get_pkts(conn));
 	if (always_consume) {
 		net_buf_unref(buf);
 	}
 	return false;
+}
+
+static inline uint16_t conn_mtu(struct bt_conn *conn)
+{
+	ARG_UNUSED(conn);
+	return bt_dev.le.mtu;
 }
 
 static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
@@ -394,8 +400,8 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 		return NULL;
 	}
 
-	memcpy(net_buf_add(frag, bt_dev.le.mtu), buf->data, bt_dev.le.mtu);
-	net_buf_pull(buf, bt_dev.le.mtu);
+	memcpy(net_buf_add(frag, conn_mtu(conn)), buf->data, conn_mtu(conn));
+	net_buf_pull(buf, conn_mtu(conn));
 
 	return frag;
 }
@@ -407,7 +413,7 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 	BT_DBG("conn %p buf %p len %u\n", conn, buf, buf->len);
 
 	/* Send directly if the packet fits the ACL MTU */
-	if (buf->len <= bt_dev.le.mtu) {
+	if (buf->len <= conn_mtu(conn)) {
 		return send_frag(conn, buf, BT_ACL_START_NO_FLUSH, false);
 	}
 
@@ -425,7 +431,7 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 	 * Send the fragments. For the last one simply use the original
 	 * buffer (which works since we've used net_buf_pull on it.
 	 */
-	while (buf->len > bt_dev.le.mtu) {
+	while (buf->len > conn_mtu(conn)) {
 		frag = create_frag(conn, buf);
 		if (!frag) {
 			return false;
@@ -469,7 +475,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	/* Return any unacknowledged packets */
 	if (conn->pending_pkts) {
 		while (conn->pending_pkts--) {
-			nano_fiber_sem_give(&bt_dev.le.pkts_sem);
+			nano_fiber_sem_give(bt_conn_get_pkts(conn));
 		}
 	}
 
