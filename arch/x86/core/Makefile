@@ -1,14 +1,15 @@
 ccflags-y += -I$(srctree)/kernel/nanokernel/include
 ccflags-y += -I$(srctree)/kernel/microkernel/include
 
+ifeq ($(COMPILER),clang)
+# We rely on GAS for assembling, so don't use the integrated assembler
+KBUILD_AFLAGS += -no-integrated-as
+endif
+
 # To create dynamic stubs we need to do a .rept on the total number of
 # stubs divided by a constant, this prevents GAS from thinking the '/'
 # character starts a comment
-ifeq ($(COMPILER),clang)
-KBUILD_AFLAGS += -no-integrated-as -Wa,--divide
-else
 KBUILD_AFLAGS += -Wa,--divide
-endif
 
 obj-y = i386_sysV_abi/
 
