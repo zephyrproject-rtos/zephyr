@@ -202,7 +202,7 @@ struct uart_k20_dev_data {
  * @param clk_freq Clock frequency
  * @param baud_rate Baud rate to set
  *
- * @return None
+ * @return N/A
  */
 static ALWAYS_INLINE void _k20_uart_baud_rate_set(volatile struct K20_UART *uart_p,
 						  uint32_t clk_freq,
@@ -234,7 +234,7 @@ static ALWAYS_INLINE void _k20_uart_baud_rate_set(volatile struct K20_UART *uart
  *
  * @param uart_p UART data
  *
- * @return None
+ * @return N/A
  */
 static inline void _k20_uart_fifo_enable(volatile struct K20_UART *uart_p)
 {

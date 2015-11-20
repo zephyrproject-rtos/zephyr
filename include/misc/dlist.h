@@ -49,7 +49,7 @@ typedef struct _dnode sys_dnode_t;
  *
  * @param list the doubly-linked list
  *
- * @return None
+ * @return N/A
  */
 
 static inline void sys_dlist_init(sys_dlist_t *list)
@@ -133,7 +133,7 @@ static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
  * @param list the doubly-linked list to operate on
  * @param node the element to append
  *
- * @return None
+ * @return N/A
  */
 
 static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
@@ -151,7 +151,7 @@ static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
  * @param list the doubly-linked list to operate on
  * @param node the element to append
  *
- * @return None
+ * @return N/A
  */
 
 static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
@@ -172,7 +172,7 @@ static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
  * @param insert_point the insert point in the list: if NULL, insert at head
  * @param node the element to append
  *
- * @return None
+ * @return N/A
  */
 
 static inline void sys_dlist_insert_after(sys_dlist_t *list,
@@ -197,7 +197,7 @@ static inline void sys_dlist_insert_after(sys_dlist_t *list,
  * @param insert_point the insert point in the list: if NULL, insert at tail
  * @param node the element to insert
  *
- * @return None
+ * @return N/A
  */
 
 static inline void sys_dlist_insert_before(sys_dlist_t *list,
@@ -226,7 +226,7 @@ static inline void sys_dlist_insert_before(sys_dlist_t *list,
  *             insert point
  * @param data parameter to cond()
  *
- * @return None
+ * @return N/A
  */
 
 static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
@@ -251,7 +251,7 @@ static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
  *
  * @param node the node to remove
  *
- * @return None
+ * @return N/A
  */
 
 static inline void sys_dlist_remove(sys_dnode_t *node)

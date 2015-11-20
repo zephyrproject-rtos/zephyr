@@ -168,7 +168,7 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
  *  @param auto_conn boolean value. If true, auto connect is enabled,
  *  if false, auto connect is disabled.
  *
- *  @return none
+ *  @return N/A
  */
 void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn);
 

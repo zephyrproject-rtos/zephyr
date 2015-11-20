@@ -42,7 +42,7 @@ struct uart_console_input {
  *  @param lines nano_fifo queue of entered lines which to be processed
  *         in the application code.
  *
- *  @return None
+ *  @return N/A
  */
 void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines);
 

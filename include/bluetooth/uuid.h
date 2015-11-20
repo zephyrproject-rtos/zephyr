@@ -173,7 +173,7 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
  *  @param str pointer where to put converted string
  *  @param len length of str
  *
- *  @return none
+ *  @return N/A
  */
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
 

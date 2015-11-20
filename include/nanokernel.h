@@ -227,7 +227,7 @@ extern void fiber_abort(void);
  *
  * @param timeout number of system ticks to sleep
  *
- * @return None
+ * @return N/A
  */
 extern void fiber_sleep(int32_t timeout);
 
@@ -263,7 +263,7 @@ extern void fiber_delayed_start_cancel(void *handle);
  *
  * @param handle A handle returned when asking to start the fiber
  *
- * @return None
+ * @return N/A
  */
 extern void fiber_fiber_delayed_start_cancel(void *handle);
 #endif
