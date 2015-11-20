@@ -231,6 +231,20 @@ extern void fiber_abort(void);
  */
 extern void fiber_sleep(int32_t timeout_in_ticks);
 
+#ifndef CONFIG_MICROKERNEL
+/**
+ * @brief Put the task to sleep
+ *
+ * Put the task to sleep for the number of system ticks passed in the
+ * @a timeout_in_ticks parameter.
+ *
+ * @param timeout_in_ticks Number of system ticks to sleep. A value of
+ * TICKS_UNLIMITED is considered invalid and may result in unexpected behavior.
+ *
+ * @return N/A
+ */
+extern void task_sleep(int32_t timeout_in_ticks);
+#endif
 
 /**
  * @brief start a fiber, but delay its execution

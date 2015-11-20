@@ -72,4 +72,7 @@ and for other execution context information.
 APIs
 ****
 
-The nanokernel does not provide any APIs for manipulating the background task.
+The nanokernel provides the following API for manipulating the background task.
+
+:cpp:func:`task_sleep()`
+   Put the background task to sleep for a specified time period.

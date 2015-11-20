@@ -40,3 +40,24 @@ void fiber_sleep(int32_t timeout_in_ticks)
 	_nano_timeout_add(_nanokernel.current, NULL, timeout_in_ticks);
 	_Swap(key);
 }
+
+#ifndef CONFIG_MICROKERNEL
+void task_sleep(int32_t timeout_in_ticks)
+{
+	int64_t  cur_ticks, limit;
+	int  key;
+
+	key = irq_lock();
+	cur_ticks = nano_tick_get();
+	limit = cur_ticks + timeout_in_ticks;
+
+	while (cur_ticks < limit) {
+		nano_cpu_atomic_idle(key);
+
+		key = irq_lock();
+		cur_ticks = nano_tick_get();
+	}
+
+	irq_unlock(key);
+}
+#endif
