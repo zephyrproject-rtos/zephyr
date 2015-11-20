@@ -23,8 +23,8 @@ config HPET_TIMER
 	bool "HPET timer"
 	default n
 	depends on X86
-        select IOAPIC
-        select LOAPIC
+	select IOAPIC
+	select LOAPIC
 	help
 	This option selects High Precision Event Timer (HPET) as a
 	system timer.
