@@ -23,8 +23,6 @@
 #include <wait_q.h>
 #include <drivers/system_timer.h>
 
-#ifdef CONFIG_NANOKERNEL
-
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
 int sys_clock_hw_cycles_per_tick =
@@ -35,6 +33,7 @@ int sys_clock_us_per_tick;
 int sys_clock_hw_cycles_per_tick;
 #endif
 
+#ifdef CONFIG_NANOKERNEL
 
 /* updated by timer driver for tickless, stays at 1 for non-tickless */
 uint32_t _sys_idle_elapsed_ticks = 1;
