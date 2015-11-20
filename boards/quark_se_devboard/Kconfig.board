@@ -1,0 +1,5 @@
+
+config  BOARD_QUARK_SE_DEVBOARD
+        bool "Quark SE Development Board"
+        select SOC_QUARK_SE
+	depends on X86

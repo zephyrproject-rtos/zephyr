@@ -1,0 +1,7 @@
+
+if BOARD_QUARK_SE_DEVBOARD
+
+config BOARD
+        default "quark_se_devboard"
+
+endif # BOARD_QUARK_SE_DEVBOARD
