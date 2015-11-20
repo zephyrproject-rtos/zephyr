@@ -148,4 +148,10 @@ config SYSTEM_CLOCK_DISABLE
 	needed by some subsystems (which will automatically select it), but is
 	rarely needed by applications.
 
+config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	bool "Timer queries its hardware to find its frequency at runtime"
+	default n
+	help
+	The drivers select this option automatically when needed. Do not modify
+	this unless you have a very good reason for it.
 endmenu

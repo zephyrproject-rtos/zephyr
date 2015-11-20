@@ -35,7 +35,12 @@
 #endif
 
 #define sys_clock_ticks_per_sec CONFIG_SYS_CLOCK_TICKS_PER_SEC
+
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+extern int sys_clock_hw_cycles_per_sec;
+#else
 #define sys_clock_hw_cycles_per_sec CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#endif
 
 /*
  * sys_clock_us_per_tick global variable represents a number
