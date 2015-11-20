@@ -153,7 +153,7 @@ static volatile struct __pio *_get_port(uint32_t pin)
 }
 
 #ifdef CONFIG_PINMUX_DEV
-static uint32_t pinmux_set(struct device *dev, uint32_t pin, uint8_t func)
+static uint32_t pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	volatile struct __pio *port = _get_port(pin);
 	uint32_t tmp;
@@ -175,7 +175,7 @@ static uint32_t pinmux_set(struct device *dev, uint32_t pin, uint8_t func)
 	return DEV_OK;
 }
 
-static uint32_t pinmux_get(struct device *dev, uint32_t pin, uint8_t *func)
+static uint32_t pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	volatile struct __pio *port = _get_port(pin);
 
@@ -190,7 +190,7 @@ static uint32_t pinmux_get(struct device *dev, uint32_t pin, uint8_t *func)
 	return DEV_OK;
 }
 #else
-static uint32_t pinmux_set(struct device *dev, uint32_t pin, uint8_t func)
+static uint32_t pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
@@ -201,7 +201,7 @@ static uint32_t pinmux_set(struct device *dev, uint32_t pin, uint8_t func)
 	return DEV_NOT_CONFIG;
 }
 
-static uint32_t pinmux_get(struct device *dev, uint32_t pin, uint8_t *func)
+static uint32_t pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);

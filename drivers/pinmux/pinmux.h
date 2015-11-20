@@ -27,7 +27,7 @@ extern "C" {
 
 struct pin_config {
 	uint8_t pin_num;
-	uint8_t mode;
+	uint32_t mode;
 };
 
 struct pinmux_config {

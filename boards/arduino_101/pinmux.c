@@ -229,7 +229,7 @@ static inline void _pinmux_pullups(uint32_t base_address)
 
 
 #ifdef CONFIG_PINMUX_DEV
-static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
+static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	struct pinmux_config * const pmux = dev->config->config_info;
 
@@ -262,7 +262,7 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
 	return DEV_OK;
 }
 
-static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint8_t *func)
+static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	struct pinmux_config * const pmux = dev->config->config_info;
 
@@ -297,7 +297,7 @@ static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint8_t *func)
 	return DEV_OK;
 }
 #else
-static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
+static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
@@ -308,7 +308,7 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
 	return DEV_NOT_CONFIG;
 }
 
-static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint8_t *func)
+static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
