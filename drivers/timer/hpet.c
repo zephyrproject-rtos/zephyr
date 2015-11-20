@@ -529,9 +529,11 @@ int _sys_clock_driver_init(struct device *device)
 	PRINTK("HPET: timer0: available interrupts mask 0x%x\n",
 	       (uint32_t)(*_HPET_TIMER0_CONFIG_CAPS >> 32));
 
-	/* Initialize "sys_clock_hw_cycles_per_tick" */
+	/* Initialize sys_clock_hw_cycles_per_tick/sec */
 
 	sys_clock_hw_cycles_per_tick = counter_load_value;
+	sys_clock_hw_cycles_per_sec = sys_clock_hw_cycles_per_tick *
+									sys_clock_ticks_per_sec;
 
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK

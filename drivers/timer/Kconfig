@@ -25,6 +25,7 @@ config HPET_TIMER
 	depends on X86
 	select IOAPIC
 	select LOAPIC
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	help
 	This option selects High Precision Event Timer (HPET) as a
 	system timer.
