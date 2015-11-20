@@ -157,6 +157,7 @@ typedef struct s_isrList {
  * @param priority IRQ Priority
  * @param isr Interrupt Service Routine
  * @param parameter ISR parameter
+ * @param flags IRQ triggering options
  *
  * @return N/A
  *
