@@ -605,7 +605,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	 */
 	data->err = check_perm(conn, attr, BT_GATT_PERM_READ_MASK);
 	if (data->err) {
-		if (!data->rsp->len) {
+		if (data->rsp->len) {
 			data->err = 0x00;
 		}
 		return BT_GATT_ITER_STOP;
