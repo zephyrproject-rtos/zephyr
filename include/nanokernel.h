@@ -222,14 +222,14 @@ extern void fiber_abort(void);
 /**
  * @brief Put the current fiber to sleep
  *
- * Put the currently running fiber to sleep for an amount of system ticks
- * passed in the timeout_in_ticks parameter.
+ * Put the currently running fiber to sleep for the number of system ticks
+ * passed in the @a timeout_in_ticks parameter.
  *
- * @param timeout number of system ticks to sleep
+ * @param timeout_in_ticks Number of system ticks to sleep
  *
  * @return N/A
  */
-extern void fiber_sleep(int32_t timeout);
+extern void fiber_sleep(int32_t timeout_in_ticks);
 
 
 /**
