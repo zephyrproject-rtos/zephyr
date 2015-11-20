@@ -9,6 +9,7 @@ obj-y = nano_fiber.o nano_lifo.o \
 	nano_context.o nano_init.o nano_sema.o \
 	version.o device.o
 
+obj-$(CONFIG_NANO_TIMEOUTS) += nano_sleep.o
 obj-$(CONFIG_STACK_CANARIES) += compiler_stack_protect.o
 obj-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o
 obj-$(CONFIG_ADVANCED_POWER_MANAGEMENT) += idle.o

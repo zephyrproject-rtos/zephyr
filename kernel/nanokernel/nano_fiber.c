@@ -179,20 +179,6 @@ FUNC_NORETURN void fiber_abort(void)
 
 #include <wait_q.h>
 
-void fiber_sleep(int32_t timeout_in_ticks)
-{
-	int key;
-
-	if (TICKS_NONE == timeout_in_ticks) {
-		fiber_yield();
-		return;
-	}
-
-	key = irq_lock();
-	_nano_timeout_add(_nanokernel.current, NULL, timeout_in_ticks);
-	_Swap(key);
-}
-
 FUNC_ALIAS(fiber_delayed_start, fiber_fiber_delayed_start, void *);
 FUNC_ALIAS(fiber_delayed_start, task_fiber_delayed_start, void *);
 
