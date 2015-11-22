@@ -1,0 +1,51 @@
+#
+# Copyright (c) 2015 Intel Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+config PLATFORM
+	string
+	default quark_d2000
+	help
+	This option holds the directory name used by the build system to locate
+	the correct linker file.
+
+config  SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32000000
+
+config  PHYS_LOAD_ADDR
+	default 0x00180000 if XIP
+	default 0x00280000 if !XIP
+
+config RAM_SIZE
+        default 8
+
+config ROM_SIZE
+        default 32
+
+config IDT_NUM_VECTORS
+	default 64
+
+config IOAPIC_NUM_RTES
+	default 32
+
+config LOAPIC_TIMER_IRQ
+	default 10
+
+config LOAPIC_TIMER_IRQ_PRIORITY
+	default 2
+
+config PHYS_RAM_ADDR
+	default 0x00280000

@@ -328,6 +328,10 @@ if PLATFORM_QUARK_SE_X86
 source "arch/x86/platforms/quark_se-x86/Kconfig"
 endif
 
+if PLATFORM_QUARK_D2000
+source "arch/x86/platforms/quark_d2000/Kconfig"
+endif
+
 source "drivers/Kconfig"
 
 source "net/Kconfig"
