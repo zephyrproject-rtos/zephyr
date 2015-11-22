@@ -59,4 +59,6 @@ source "drivers/watchdog/Kconfig"
 
 source "drivers/clock_control/Kconfig"
 
+source "drivers/ipi/Kconfig"
+
 endmenu

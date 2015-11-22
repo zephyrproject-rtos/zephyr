@@ -1,0 +1,24 @@
+menuconfig IPI
+	bool
+	prompt "IPI drivers"
+	default n
+	help
+	Include interrupt-based inter-processor communication
+	drivers in system configuration
+
+config IPI_QUARK_SE
+	bool "Quark SE Mailbox IPI driver"
+	default n
+	depends on IPI
+	help
+	IPI driver for Quark SE mailboxes
+
+config IPI_QUARK_SE_MASTER
+	bool "Quark SE Mailbox IPI master controller"
+	default n
+	depends on IPI_QUARK_SE
+	help
+	Enable this for the first CPU that initializes IPI.
+	Sets up the initial interrupt mask and clears out all
+	channels. Should be turned on for one CPU only.
+
