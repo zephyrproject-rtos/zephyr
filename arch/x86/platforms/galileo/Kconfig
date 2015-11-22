@@ -31,10 +31,10 @@ config PHYS_RAM_ADDR
        default 0x00400000
 
 config RAM_SIZE
-	default 0x8000
+	default 32768
 
 config ROM_SIZE
-	default 0x400 if XIP
+	default 1024 if XIP
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000  if HPET_TIMER
