@@ -39,10 +39,9 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
-	default 0
 	help
 	This option specifies the frequency of the hardware timer used for the
-	system clock (in Hz). It is normally set by the platform's defconfig file
+	system clock (in Hz). This option is set by the platform's Kconfig file
 	and the user should generally avoid modifying it via the menu configuration.
 
 config  SYS_CLOCK_EXISTS
