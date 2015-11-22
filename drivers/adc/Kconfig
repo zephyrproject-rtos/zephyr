@@ -81,3 +81,148 @@ config  ADC_TI_ADC108S102_0_SPI_SLAVE
 	default 0
 	help
 	adc108s102 chip's SPI slave number on master SPI port.
+
+config ADC_DW
+	bool "ARC Designware Driver"
+	depends on ADC && ARC
+	default n
+	help
+	Enable the driver implementation of the Designware ADC IP.
+
+if ADC_DW
+
+config ADC_DW_0
+	bool "First instance of DW's ADC chip"
+	default n
+	help
+	Enable first instance of ADC DW driver.
+
+config ADC_DW_NAME_0
+	string "Select a name to lookup the device"
+	default "ADC0"
+	depends on ADC_DW_0
+
+choice
+	prompt "Input Mode"
+	default ADC_DW_SINGLE_ENDED
+	depends on ADC_DW
+	help
+	ADC input mode: single ended or differential.
+
+config ADC_DW_SINGLE_ENDED
+	bool "Single ended"
+
+config ADC_DW_DIFFERENTIAL
+	bool "Differential"
+
+endchoice
+
+config ADC_DW_INPUT_MODE
+	int
+	default 0 if ADC_DW_SINGLE_ENDED
+	default 1 if ADC_DW_DIFFERENTIAL
+
+choice
+	prompt "Output Mode"
+	default ADC_DW_SERIAL
+	depends on ADC_DW
+	help
+	ADC output mode: parallel or serial.
+
+config ADC_DW_SERIAL
+	bool "Serial"
+
+config ADC_DW_PARALLEL
+	bool "Parallel"
+
+endchoice
+
+config ADC_DW_OUTPUT_MODE
+	int
+	default 0 if ADC_DW_SERIAL
+	default 1 if ADC_DW_PARALLEL
+
+choice
+	prompt "Sequence Mode"
+	default ADC_DW_SINGLESHOT
+	depends on ADC_DW
+	help
+	ADC sequence mode - single run/repetitive
+
+config ADC_DW_SINGLESHOT
+	bool "Single Ended"
+
+config ADC_DW_REPETITIVE
+	bool "Differential"
+
+endchoice
+
+config ADC_DW_SEQ_MODE
+	int
+	default 0 if ADC_DW_SINGLESHOT
+	default 1 if ADC_DW_REPETITIVE
+
+choice
+	prompt "Capture Mode"
+	default ADC_DW_RISING_EDGE
+	depends on ADC_DW
+	help
+	ADC controller capture mode:
+	by rising or falling edge of adc_clk
+
+config ADC_DW_RISING_EDGE
+	bool "Rising Edge"
+
+config ADC_DW_FALLING_EDGE
+	bool "Falling Edge"
+
+endchoice
+
+config ADC_DW_CAPTURE_MODE
+	int
+	default 0 if ADC_DW_RISING_EDGE
+	default 1 if ADC_DW_FALLING_EDGE
+
+choice
+	prompt "Sample Width"
+	depends on ADC_DW
+	default ADC_DW_WIDTH_6_BIT
+	help
+	ADC sample width
+
+config ADC_DW_WIDTH_6_BIT
+	bool "6 Bit Width"
+
+config ADC_DW_WIDTH_8_BIT
+	bool "8 Bit Width"
+
+config ADC_DW_WIDTH_10_BIT
+	bool "10 Bit Width"
+
+config ADC_DW_WIDTH_12_BIT
+	bool "12 Bit Width"
+
+endchoice
+
+config ADC_DW_WIDTH
+	int
+	default 0 if ADC_DW_WIDTH_6_BIT
+	default 1 if ADC_DW_WIDTH_8_BIT
+	default 2 if ADC_DW_WIDTH_10_BIT
+	default 3 if ADC_DW_WIDTH_12_BIT
+
+config ADC_DW_SERIAL_DELAY
+	int "Serial Delay"
+	default 1
+	help
+	Number of ADC clock ticks that the first bit of
+	the serial output is delayed after the conversion
+	has started.
+
+config ADC_DW_CLOCK_RATIO
+	int "Clock Ratio"
+	default 1024
+	help
+	ADC Clock Ratio
+
+endif
