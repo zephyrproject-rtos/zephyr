@@ -53,4 +53,6 @@ source "drivers/pinmux/Kconfig"
 
 source "drivers/adc/Kconfig"
 
+source "drivers/rtc/Kconfig"
+
 endmenu

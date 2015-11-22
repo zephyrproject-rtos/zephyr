@@ -1,0 +1,20 @@
+menuconfig RTC
+	bool "Real-Time Clock"
+	default n
+	help
+	Enable options for Real-Time Clock drivers.
+
+if RTC
+
+config RTC_DW
+	bool "Build Designware RTC Driver"
+	default n
+	help
+	Designware RTC driver.
+
+config RTC_IRQ_PRI
+	int "RTC Interrupt Priority"
+	default 2
+	help
+	RTC Interrupt Priority.
+endif # RTC
