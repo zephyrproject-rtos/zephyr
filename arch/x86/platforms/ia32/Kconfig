@@ -26,6 +26,9 @@ config PLATFORM
 config PHYS_LOAD_ADDR
 	default 0x00100000
 
+config PHYS_RAM_ADDR
+	default 0x00400000
+
 config RAM_SIZE
 	default 128 if XIP
 	default 192

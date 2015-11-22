@@ -54,6 +54,12 @@ config PHYS_LOAD_ADDR
 	help
 	This option specifies the physical address where the kernel is loaded.
 
+config PHYS_RAM_ADDR
+        hex "Physical RAM address"
+	# Default value must be supplied by platform
+        help
+        This option specifies the physical RAM address of the selected SoC.
+
 endmenu
 
 endmenu
