@@ -61,4 +61,6 @@ source "drivers/clock_control/Kconfig"
 
 source "drivers/ipi/Kconfig"
 
+source "drivers/aio/Kconfig"
+
 endmenu
