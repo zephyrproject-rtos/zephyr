@@ -73,6 +73,16 @@ config PLATFORM_IA32
 	bool "IA32"
 	select BOOTLOADER_UNKNOWN
 
+config  PLATFORM_QUARK_SE_X86
+        bool "Minimum configuration for Quark SE"
+        select CPU_MINUTEIA
+        select IOAPIC
+        select LOAPIC
+        select LOAPIC_TIMER
+        select EOI_HANDLER_SUPPORTED
+        select BOOTLOADER_UNKNOWN
+        select XIP
+
 endchoice
 
 choice
@@ -303,6 +313,10 @@ endif
 
 if PLATFORM_GALILEO
 source "arch/x86/platforms/galileo/Kconfig"
+endif
+
+if PLATFORM_QUARK_SE_X86
+source "arch/x86/platforms/quark_se-x86/Kconfig"
 endif
 
 source "drivers/Kconfig"

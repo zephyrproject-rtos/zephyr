@@ -2,3 +2,4 @@ obj-y += core/
 obj-$(CONFIG_PLATFORM_IA32_PCI) += platforms/ia32_pci/
 obj-$(CONFIG_PLATFORM_IA32) += platforms/ia32/
 obj-$(CONFIG_PLATFORM_GALILEO) += platforms/galileo/
+obj-$(CONFIG_PLATFORM_QUARK_SE_X86) += platforms/quark_se-x86/
