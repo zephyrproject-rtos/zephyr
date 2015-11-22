@@ -4,3 +4,4 @@ asflags-y +=-I$(srctree)/arch/arc/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM
 obj-y = core/
 
 obj-$(CONFIG_PLATFORM_GENERIC_ARC) += platforms/generic_arc/
+obj-$(CONFIG_PLATFORM_QUARK_SE_ARC) += platforms/quark_se-arc/
