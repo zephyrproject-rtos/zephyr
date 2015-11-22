@@ -1,0 +1,87 @@
+# Kconfig - Clock controller driver configuration options
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# Clock controller drivers
+#
+menuconfig CLOCK_CONTROL
+	bool
+	prompt "Hardware clock controller support"
+	default n
+	help
+	  Enable support for hardware clock controller. Such hardware can
+	  provide clock for other subsystem, and thus can be also used for
+	  power efficiency by controlling their clock. Note that this has
+	  nothing to do with RTC.
+
+config  CLOCK_CONTROL_DEBUG
+	bool
+	prompt "Hardware clock controller drivers debug output"
+	depends on CLOCK_CONTROL
+	default n
+
+config  CLOCK_CONTROL_QUARK_SE
+       bool
+       prompt "Quark SE Clock controller support"
+       depends on CLOCK_CONTROL && PLATFORM_QUARK_SE_X86
+       default n
+       help
+         Enable support for the Quark SE clock driver.
+
+config  CLOCK_CONTROL_QUARK_SE_PERIPHERAL
+       bool
+       prompt "Quark SE peripheral clock support"
+       depends on CLOCK_CONTROL_QUARK_SE
+       default n
+       help
+         Enable support for Quark SE peripheral clock which controls the
+         clock of I2C, SPI, GPIO controllers and more.
+
+config  CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
+       string
+       prompt "Quark SE peripheral clock device name"
+       depends on CLOCK_CONTROL_QUARK_SE_PERIPHERAL
+       default "clk_peripheral"
+
+config  CLOCK_CONTROL_QUARK_SE_EXTERNAL
+       bool
+       prompt "Quark SE external clock support"
+       depends on CLOCK_CONTROL_QUARK_SE
+       default n
+       help
+         Enable support for Quark SE external sub-system clock.
+
+config  CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME
+       string
+       prompt "Quark SE external clock device name"
+       depends on CLOCK_CONTROL_QUARK_SE_PERIPHERAL
+       default "clk_external"
+
+config  CLOCK_CONTROL_QUARK_SE_SENSOR
+       bool
+       prompt "Quark SE sensor clock support"
+       depends on CLOCK_CONTROL_QUARK_SE
+       default n
+       help
+         Enable support for Quark SE sensor sub-system clock.
+
+config  CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
+       string
+       prompt "Quark SE sensor clock device name"
+       depends on CLOCK_CONTROL_QUARK_SE_PERIPHERAL
+       default "clk_sensor"
