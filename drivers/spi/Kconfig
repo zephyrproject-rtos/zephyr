@@ -208,4 +208,97 @@ config  SPI_INTEL_PORT_1_CS_GPIO_PIN
 	depends on SPI_INTEL_PORT_1 && SPI_INTEL_CS_GPIO
 	default 0
 
-endif # SPI
+config SPI_DW
+	bool
+	prompt "Designware SPI controller driver"
+	depends on SPI
+	default n
+	help
+	  Enable support for Designware's SPI controllers.
+
+config  SPI_DW_CLOCK_GATE
+	bool "Enable glock gating"
+	depends on SPI_DW && PLATFORM_QUARK_SE_X86
+	select CLOCK_CONTROL
+	default n
+
+config	SPI_DW_CLOCK_GATE_DRV_NAME
+	string
+	depends on SPI_DW_CLOCK_GATE
+	default ""
+
+config	SPI_DW_PORT_0
+	bool
+	prompt "Designware SPI port 0"
+	depends on SPI_DW
+	default n
+	help
+	  Enable Designware SPI controller port 0.
+
+config  SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+	depends on SPI_DW_CLOCK_GATE
+	default 0
+
+config  SPI_DW_PORT_0_DRV_NAME
+	string
+	prompt "Designware SPI port 0 device name"
+	depends on SPI_DW_PORT_0
+	default "spi_dw_0"
+
+config  SPI_DW_PORT_0_REGS
+	hex
+	prompt "Port 0 registers address"
+	depends on SPI_DW_PORT_0
+	default 0x00000000
+
+config  SPI_DW_PORT_0_IRQ
+	int
+	prompt "Port 0 interrupt"
+	depends on SPI_DW_PORT_0
+	default 0
+
+config  SPI_DW_PORT_0_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_DW_PORT_0
+	default 0
+
+config  SPI_DW_PORT_1
+	bool
+	prompt "Designware SPI port 1"
+	depends on SPI_DW
+	default n
+	help
+	  Enable Designware SPI controller port 1.
+
+config  SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+	depends on SPI_DW_CLOCK_GATE
+	default 0
+
+config  SPI_DW_PORT_1_DRV_NAME
+	string
+	prompt "Designware SPI port 1 device name"
+	depends on SPI_DW_PORT_1
+	default "spi_dw_1"
+
+config  SPI_DW_PORT_1_REGS
+	hex
+	prompt "Port 1 registers address"
+	depends on SPI_DW_PORT_1
+	default 0x00000000
+
+config  SPI_DW_PORT_1_IRQ
+	int
+	prompt "Port 1 interrupt"
+	depends on SPI_DW_PORT_1
+	default 0
+
+config  SPI_DW_PORT_1_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_DW_PORT_1
+	default 0
+
+endif
