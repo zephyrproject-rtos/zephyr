@@ -18,4 +18,5 @@ obj-$(CONFIG_I2C) += i2c/
 obj-$(CONFIG_PWM) += pwm/
 obj-$(CONFIG_ADC) += adc/
 obj-$(CONFIG_ETHERNET) += ethernet/
+obj-$(CONFIG_WATCHDOG) += watchdog/
 obj-$(CONFIG_RTC) += rtc/

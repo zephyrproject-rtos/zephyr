@@ -55,4 +55,6 @@ source "drivers/adc/Kconfig"
 
 source "drivers/rtc/Kconfig"
 
+source "drivers/watchdog/Kconfig"
+
 endmenu

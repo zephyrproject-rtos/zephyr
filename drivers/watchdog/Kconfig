@@ -1,0 +1,15 @@
+menuconfig WATCHDOG
+	bool
+	prompt "Watchdog Support"
+	default n
+	help
+	Include support for watchdogs.
+
+if WATCHDOG
+config WDT_DW
+	bool "Enable DesignWare Watchdog"
+	default n
+	help
+	Enable watchdog timer.
+
+endif
