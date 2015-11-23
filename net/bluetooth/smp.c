@@ -2911,7 +2911,101 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 void bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
 {
-/* TODO */
+	struct bt_smp *smp;
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return;
+	}
+
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER_CONFIRM)) {
+		return;
+	}
+
+	/* if passkey doen't match abort pairing */
+	if (!match) {
+		smp_error(smp, BT_SMP_ERR_CONFIRM_FAILED);
+		return;
+	}
+
+	/* wait for DHKey being generated */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING)) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+		return;
+	}
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+		if (atomic_test_and_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
+			uint8_t e[16];
+
+			/* calculate mac, ltk and local dhcheck */
+			if (smp_sc_calculate_ltk_mac_dhcheck(smp, e)) {
+				smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
+				return;
+			}
+
+			atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+			sc_smp_send_dhkey_check(smp, e);
+		}
+		return;
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	if (atomic_test_and_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
+		struct bt_keys *keys;
+		uint8_t re[16];
+		uint8_t e[16], r[16];
+
+		/* calculate mac, ltk and local dhcheck */
+		smp_sc_calculate_ltk_mac_dhcheck(smp, e);
+
+		/* TODO currently only NumComparison/JustWorks */
+		memset(r, 0, sizeof(r));
+
+		/* calculate remote DHKey check */
+		if (smp_f6(smp->mackey, smp->rrnd, smp->prnd, r, &smp->preq[1],
+			   &smp->chan.conn->le.init_addr,
+			   &smp->chan.conn->le.resp_addr, re)) {
+			smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
+			return;
+		}
+
+		/* compare received E with calculated remote */
+		if (memcmp(smp->e, re, 16)) {
+			smp_error(smp, BT_SMP_ERR_DHKEY_CHECK_FAILED);
+			return;
+		}
+
+		keys = bt_keys_get_addr(&smp->chan.conn->le.dst);
+		if (!keys) {
+			smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
+			return;
+		}
+
+		/*
+		 * store key type deducted from pairing method used
+		 * it is important to store it since type is used to determine
+		 * security level upon encryption
+		 */
+		keys->type = get_keys_type(smp->method);
+		keys->enc_size = get_encryption_key_size(smp);
+
+		/*
+		 * this is safe since LE SC is mutually exclusive with legacy
+		 * pairing
+		 */
+		bt_keys_add_type(keys, BT_KEYS_LTK_P256);
+		memcpy(keys->ltk.val, smp->tk, sizeof(keys->ltk.val));
+		keys->slave_ltk.rand = 0;
+		keys->slave_ltk.ediv = 0;
+
+		/* send local e */
+		sc_smp_send_dhkey_check(smp, e);
+
+		atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
+	}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 }
 
 void bt_auth_cancel(struct bt_conn *conn)
