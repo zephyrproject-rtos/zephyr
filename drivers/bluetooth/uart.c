@@ -23,6 +23,7 @@
 #include <arch/cpu.h>
 
 #include <board.h>
+#include <init.h>
 #include <uart.h>
 #include <misc/util.h>
 #include <misc/byteorder.h>
@@ -262,7 +263,14 @@ static struct bt_driver drv = {
 	.send		= bt_uart_send,
 };
 
-void bt_uart_init(void)
+static int _bt_uart_init(struct device *unused)
 {
+	ARG_UNUSED(unused);
+
 	bt_driver_register(&drv);
+
+	return DEV_OK;
 }
+
+DECLARE_DEVICE_INIT_CONFIG(bt_uart, "", _bt_uart_init, NULL);
+nano_late_init(bt_uart, NULL);

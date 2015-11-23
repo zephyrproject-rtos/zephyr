@@ -90,7 +90,6 @@ static int stellaris_uart0_init(struct device *dev)
 	return stellaris_uart_console_init(dev);
 #elif (CONFIG_BLUETOOTH_UART_INDEX == 0)
 	RCGC1 |= RCGC1_UART0_EN;
-	bt_uart_init();
 	return DEV_OK;
 #endif
 }
@@ -108,7 +107,6 @@ static int stellaris_uart1_init(struct device *dev)
 	return stellaris_uart_console_init(dev);
 #elif (CONFIG_BLUETOOTH_UART_INDEX == 1)
 	RCGC1 |= RCGC1_UART1_EN;
-	bt_uart_init();
 	return DEV_OK;
 #endif
 }
@@ -126,7 +124,6 @@ static int stellaris_uart2_init(struct device *dev)
 	return stellaris_uart_console_init(dev);
 #elif (CONFIG_BLUETOOTH_UART_INDEX == 2)
 	RCGC1 |= RCGC1_UART2_EN;
-	bt_uart_init();
 	return DEV_OK;
 #endif
 }

@@ -16,5 +16,4 @@
  * limitations under the License.
  */
 
-void bt_uart_init(void);
 void bt_uart_isr(void *);

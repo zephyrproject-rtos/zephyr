@@ -53,12 +53,6 @@ static int ns16550_uart_init(struct device *dev)
 	}
 #endif
 
-#if defined(CONFIG_BLUETOOTH_UART)
-	if (dev == BT_UART_DEV) {
-		bt_uart_init();
-	}
-#endif
-
 	return DEV_OK;
 }
 #else
