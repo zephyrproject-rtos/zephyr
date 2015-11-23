@@ -105,6 +105,7 @@
 #endif
 
 #define _STRINGIFY(x) #x
+#define STRINGIFY(s) _STRINGIFY(s)
 
 /* Indicate that an array will be used for stack space. */
 
