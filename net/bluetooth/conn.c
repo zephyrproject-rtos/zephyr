@@ -383,8 +383,15 @@ fail:
 
 static inline uint16_t conn_mtu(struct bt_conn *conn)
 {
-	ARG_UNUSED(conn);
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BREDR || !bt_dev.le.mtu) {
+		return bt_dev.br.mtu;
+	} else {
+		return bt_dev.le.mtu;
+	}
+#else
 	return bt_dev.le.mtu;
+#endif
 }
 
 static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
