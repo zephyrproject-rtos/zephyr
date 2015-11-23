@@ -197,10 +197,6 @@ extern struct device * const uart_devs[];
 
 #endif /* CONFIG_BLUETOOTH_UART */
 
-#define EXC_FROM_IRQ(irq) ((irq) + 16)
-#define VECTOR_FROM_IRQ(irq) EXC_FROM_IRQ(irq)
-#define VECTOR_ADDR(vector) ((uint32_t *)((int)vector << 2))
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _BOARD__H_ */

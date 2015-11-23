@@ -112,10 +112,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#define EXC_FROM_IRQ(irq) ((irq) + 16)
-#define VECTOR_FROM_IRQ(irq) EXC_FROM_IRQ(irq)
-#define VECTOR_ADDR(vector) ((uint32_t *)((int)vector << 2))
-
 #include <misc/util.h>
 #include <drivers/rand32.h>
 

@@ -133,10 +133,6 @@ extern struct device * const uart_devs[];
 #define CONFIG_UART_PIPE_INT_PRI 3
 #define CONFIG_UART_PIPE_FREQ SYSCLK_DEFAULT_IOSC_HZ
 
-#define EXC_FROM_IRQ(irq) ((irq) + 16)
-#define VECTOR_FROM_IRQ(irq) EXC_FROM_IRQ(irq)
-#define VECTOR_ADDR(vector) ((uint32_t *)((int)vector << 2))
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _BOARD__H_ */
