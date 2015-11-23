@@ -52,7 +52,7 @@ struct bt_dev_le {
 
 	/* Controller buffer information */
 	uint16_t		mtu;
-	struct nano_sem		pkts_sem;
+	struct nano_sem		pkts;
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)

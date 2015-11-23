@@ -1450,7 +1450,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	BT_DBG("ACL BR/EDR buffers: pkts %u mtu %u\n", pkts, bt_dev.le.mtu);
 
-	init_sem(&bt_dev.le.pkts_sem, pkts);
+	init_sem(&bt_dev.le.pkts, pkts);
 }
 #endif
 
@@ -1463,7 +1463,7 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	bt_dev.le.mtu = sys_le16_to_cpu(rp->le_max_len);
 
 	if (bt_dev.le.mtu) {
-		init_sem(&bt_dev.le.pkts_sem, rp->le_max_num);
+		init_sem(&bt_dev.le.pkts, rp->le_max_num);
 		BT_DBG("ACL LE buffers: pkts %u mtu %u\n", rp->le_max_num,
 		       bt_dev.le.mtu);
 	}
