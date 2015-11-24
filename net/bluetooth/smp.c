@@ -2422,9 +2422,9 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	/* Store signature incl. count */
 	memcpy(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig));
 
-	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, &conn->le.dst);
+	keys = bt_keys_find(BT_KEYS_REMOTE_CSRK, &conn->le.dst);
 	if (!keys) {
-		BT_ERR("Unable to get keys for %s\n",
+		BT_ERR("Unable to find Remote CSRK for %s\n",
 		       bt_addr_le_str(&conn->le.dst));
 		return -ENOENT;
 	}
@@ -2461,9 +2461,9 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	uint32_t cnt;
 	int err;
 
-	keys = bt_keys_get_type(BT_KEYS_LOCAL_CSRK, &conn->le.dst);
+	keys = bt_keys_find(BT_KEYS_LOCAL_CSRK, &conn->le.dst);
 	if (!keys) {
-		BT_ERR("Unable to get keys for %s\n",
+		BT_ERR("Unable to find local CSRK for %s\n",
 		       bt_addr_le_str(&conn->le.dst));
 		return -ENOENT;
 	}
