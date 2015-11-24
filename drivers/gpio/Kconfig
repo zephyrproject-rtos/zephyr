@@ -137,6 +137,33 @@ config GPIO_DW_0_IRQ_SHARED
 
 endchoice
 
+choice
+prompt "DW GPIO port 0 trigger condition"
+default GPIO_DW_0_RISING_EDGE
+depends on GPIO_DW_0 && GPIO_DW_0_IRQ_DIRECT
+
+config GPIO_DW_0_FALLING_EDGE
+	bool "Falling edge"
+	help
+	  DW GPIO port 0 uses falling edge interrupt
+
+config GPIO_DW_0_RISING_EDGE
+	bool "Rising edge"
+	help
+	  DW GPIO port 0 uses rising edge interrupt
+
+config GPIO_DW_0_LEVEL_HIGH
+	bool "Level high"
+	help
+	  DW GPIO port 0 uses level high interrupt
+
+config GPIO_DW_0_LEVEL_LOW
+	bool "Level low"
+	help
+	  DW GPIO port 0 uses level low interrupt
+
+endchoice
+
 config GPIO_DW_0_IRQ_SHARED_NAME
 	string "Device name for Shared IRQ"
 	depends on GPIO_DW_0 && GPIO_DW_0_IRQ_SHARED
@@ -226,29 +253,29 @@ config GPIO_DW_1_PRI
        IRQ priority
 
 choice
-prompt "DW GPIO port 0 trigger condition"
-default GPIO_DW_0_RISING_EDGE
-depends on GPIO_DW_0 && GPIO_DW_0_IRQ_DIRECT
+prompt "DW GPIO port 1 trigger condition"
+default GPIO_DW_1_RISING_EDGE
+depends on GPIO_DW_1 && GPIO_DW_1_IRQ_DIRECT
 
-config GPIO_DW_0_FALLING_EDGE
+config GPIO_DW_1_FALLING_EDGE
 	bool "Falling edge"
 	help
-	  DW GPIO port 0 uses falling edge interrupt
+	  DW GPIO port 1 uses falling edge interrupt
 
-config GPIO_DW_0_RISING_EDGE
+config GPIO_DW_1_RISING_EDGE
 	bool "Rising edge"
 	help
-	  DW GPIO port 0 uses rising edge interrupt
+	  DW GPIO port 1 uses rising edge interrupt
 
-config GPIO_DW_0_LEVEL_HIGH
+config GPIO_DW_1_LEVEL_HIGH
 	bool "Level high"
 	help
-	  DW GPIO port 0 uses level high interrupt
+	  DW GPIO port 1 uses level high interrupt
 
-config GPIO_DW_0_LEVEL_LOW
+config GPIO_DW_1_LEVEL_LOW
 	bool "Level low"
 	help
-	  DW GPIO port 0 uses level low interrupt
+	  DW GPIO port 1 uses level low interrupt
 
 endchoice
 
