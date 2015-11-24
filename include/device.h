@@ -85,4 +85,109 @@ struct device {
 void _sys_device_do_config_level(int level);
 struct device* device_get_binding(char *name);
 
+/**
+ * Synchronous calls API
+ */
+
+#include <stdbool.h>
+#include <nanokernel.h>
+#ifdef CONFIG_MICROKERNEL
+#include <microkernel.h>
+#endif
+
+
+/**
+ * Specific type for synchronizing calls among the 2 possible contexts
+ */
+typedef struct {
+	/** Nanokernel semaphore used for fiber context */
+	struct nano_sem *f_sem;
+#ifdef CONFIG_MICROKERNEL
+	/** Microkernel semaphore used for task context */
+	struct _k_sem_struct _t_sem;
+	ksem_t t_sem;
+	bool caller_is_task;
+#endif
+} device_sync_call_t;
+
+
+/**
+ * @brief Initialize the context-dependent synchronization data
+ *
+ * @param sync A pointer to a valid devic_sync_call_t
+ */
+static inline void synchronous_call_init(device_sync_call_t *sync)
+{
+	nano_sem_init(sync->f_sem);
+#ifdef CONFIG_MICROKERNEL
+	sync->_t_sem.waiters = NULL;
+	sync->_t_sem.level = sync->_t_sem.count = 0;
+	sync->t_sem = (ksem_t)&sync->_t_sem;
+	sync->caller_is_task = false;
+#endif
+}
+
+#ifdef CONFIG_MICROKERNEL
+
+/**
+ * @brief Wait for the isr to complete the synchronous call
+ * Note: In a microkernel built this function will take care of the caller
+ * context and thus use the right attribute to handle the synchronization.
+ *
+ * @param sync A pointer to a valid devic_sync_call_t
+ */
+static inline void synchronous_call_wait(device_sync_call_t *sync)
+{
+	if ((sys_execution_context_type_get() == NANO_CTX_TASK) &&
+	    (task_priority_get() < CONFIG_NUM_TASK_PRIORITIES - 1)) {
+		sync->caller_is_task = true;
+		task_sem_take_wait(sync->t_sem);
+	} else {
+		sync->caller_is_task = false;
+		nano_sem_take_wait(sync->f_sem);
+	}
+}
+
+/**
+ * @brief Signal the caller about synchronization completion
+ * Note: In a microkernel built this function will take care of the caller
+ * context and thus use the right attribute to signale the completion.
+ *
+ * @param sync A pointer to a valid devic_sync_call_t
+ */
+static inline void synchronous_call_complete(device_sync_call_t *sync)
+{
+	if (sync->caller_is_task) {
+		task_sem_give(sync->t_sem);
+	} else {
+		nano_isr_sem_give(sync->f_sem);
+	}
+}
+
+#else
+
+/**
+ * @brief Wait for the isr to complete the synchronous call
+ * Note: It will simply wait on the internal semaphore.
+ *
+ * @param sync A pointer to a valid devic_sync_call_t
+ */
+static inline void synchronous_call_wait(device_sync_call_t *sync)
+{
+	nano_sem_take_wait(sync->f_sem);
+}
+
+/**
+ * @brief Signal the caller about synchronization completion
+ * Note: It will simply release the internal semaphore
+ *
+ * @param sync A pointer to a valid devic_sync_call_t
+ */
+static inline void synchronous_call_complete(device_sync_call_t *sync)
+{
+	nano_isr_sem_give(sync->f_sem);
+}
+
+#endif /* CONFIG_MICROKERNEL || CONFIG_NANOKERNEL */
+
 #endif /* _DEVICE_H_ */
