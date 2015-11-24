@@ -175,7 +175,7 @@ int _k_ticker(int event)
 		_TimeSliceUpdate();
 		_k_timer_list_update(ticks);
 		sys_clock_increment(ticks);
-		_nano_sys_clock_tick_announce((uint32_t)ticks);
+		_nano_sys_clock_tick_announce(ticks);
 	}
 
 	return 1;

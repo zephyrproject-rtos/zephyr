@@ -42,7 +42,7 @@ int sys_clock_hw_cycles_per_sec;
 #ifdef CONFIG_NANOKERNEL
 
 /* updated by timer driver for tickless, stays at 1 for non-tickless */
-uint32_t _sys_idle_elapsed_ticks = 1;
+int32_t _sys_idle_elapsed_ticks = 1;
 #endif /*  CONFIG_NANOKERNEL */
 
 int64_t _nano_ticks;
@@ -153,7 +153,7 @@ uint32_t nano_tick_delta_32(int64_t *reftime)
 #ifdef CONFIG_NANO_TIMEOUTS
 #include <wait_q.h>
 
-static inline void handle_expired_nano_timeouts(int ticks)
+static inline void handle_expired_nano_timeouts(int32_t ticks)
 {
 	struct _nano_timeout *head =
 		(struct _nano_timeout *)sys_dlist_peek_head(&_nanokernel.timeout_q);
@@ -199,11 +199,11 @@ static inline void handle_expired_nano_timers(int ticks)
  *
  * @return N/A
  */
-void _nano_sys_clock_tick_announce(uint32_t ticks)
+void _nano_sys_clock_tick_announce(int32_t ticks)
 {
 	_nano_ticks += ticks;
-	handle_expired_nano_timeouts((int)ticks);
-	handle_expired_nano_timers((int)ticks);
+	handle_expired_nano_timeouts(ticks);
+	handle_expired_nano_timers(ticks);
 }
 #endif
 
