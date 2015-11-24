@@ -361,6 +361,8 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_0, CONFIG_GPIO_DW_0_NAME,
 pre_kernel_late_init(gpio_0, &gpio_0_runtime);
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
+struct device *gpio_dw_isr_0 = SYS_GET_DEVICE(gpio_0);
+
 IRQ_CONNECT_STATIC(gpio_dw_0, CONFIG_GPIO_DW_0_IRQ,
 		   CONFIG_GPIO_DW_0_PRI, gpio_dw_isr, 0,
 		   GPIO_DW_0_IRQ_FLAGS);
@@ -382,10 +384,6 @@ void gpio_config_0_irq(struct device *port)
 	shared_irq_enable(shared_irq_dev, port);
 #endif
 }
-
-#ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
-struct device *gpio_dw_isr_0 = SYS_GET_DEVICE(gpio_dw_0);
-#endif /* CONFIG_GPIO_DW_0_IRQ_DIRECT */
 
 #endif /* CONFIG_GPIO_DW_0 */
 
@@ -422,6 +420,8 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_1, CONFIG_GPIO_DW_1_NAME,
 pre_kernel_late_init(gpio_1, &gpio_1_runtime);
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
+struct device *gpio_dw_isr_1 = SYS_GET_DEVICE(gpio_1);
+
 IRQ_CONNECT_STATIC(gpio_dw_1, CONFIG_GPIO_DW_1_IRQ,
 		   CONFIG_GPIO_DW_1_PRI, gpio_dw_isr, 0,
 		   GPIO_DW_1_IRQ_FLAGS);
@@ -443,9 +443,5 @@ void gpio_config_1_irq(struct device *port)
 	shared_irq_enable(shared_irq_dev, port);
 #endif
 }
-
-#ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
-struct device *gpio_dw_isr_1 = SYS_GET_DEVICE(gpio_dw_1);
-#endif
 
 #endif /* CONFIG_GPIO_DW_1 */
