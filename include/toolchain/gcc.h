@@ -148,8 +148,15 @@ A##a:
 	.type FUNC(\symbol), %object
 .endm
 
+.macro weak_data symbol
+	.weak FUNC(\symbol)
+	.type FUNC(\symbol), %object
+.endm
+
 #define GTEXT(sym) glbl_text sym
 #define GDATA(sym) glbl_data sym
+#define WDATA(sym) weak_data sym
+
 #else  /* !CONFIG_ARM && !CONFIG_ARC */
 #define GTEXT(sym) .globl FUNC(sym); .type FUNC(sym), @function
 #define GDATA(sym) .globl FUNC(sym); .type FUNC(sym), @object

@@ -35,6 +35,7 @@ extern "C" {
 #define OCTET_TO_SIZEOFUNIT(X) (X)
 #define SIZEOFUNIT_TO_OCTET(X) (X)
 
+#include <sw_isr_table.h>
 #ifdef CONFIG_CPU_ARCV2
 #include <arch/arc/v2/exc.h>
 #include <arch/arc/v2/irq.h>
@@ -54,12 +55,6 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-struct irq_desc {
-	unsigned int irq;
-	unsigned int priority;
-	void (*isr)(void *);
-	void *parameter;
-};
 
 /**
  * @brief Connect a routine to interrupt number
@@ -82,12 +77,13 @@ struct irq_desc {
  *
  */
 #define IRQ_CONNECT_STATIC(device, i, p, h, pm, f) \
-	static struct irq_desc device##_irq_desc = { \
-		.irq = i, \
-		.priority = p, \
-		.isr = h, \
-		.parameter = pm, \
-	}
+	const unsigned int _##device##_int_priority = (p);       \
+	struct _IsrTableEntry _CONCAT(_isr_irq, i)                     \
+	__attribute__ ((section(STRINGIFY(_CONCAT(.gnu.linkonce.isr_irq, i))))) = \
+	{pm, h}
+
+/* internal routine documented in C file, needed by IRQ_CONFIG macro */
+extern void _irq_priority_set(unsigned int irq, unsigned int prio);
 
 /**
  *
@@ -104,8 +100,7 @@ struct irq_desc {
  *
  */
 #define IRQ_CONFIG(device, i, p) \
-	irq_connect(device##_irq_desc.irq, device##_irq_desc.priority, \
-		    device##_irq_desc.isr, device##_irq_desc.parameter, 0)
+	_irq_priority_set(i, _##device##_int_priority)
 
 #endif
 
