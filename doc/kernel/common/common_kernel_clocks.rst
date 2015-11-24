@@ -124,10 +124,10 @@ The following kernel clock APIs are provided by :file:`microkernel.h`:
 The following kernel clock APIs are provided by :file:`microkernel.h`
 and by :file:`nanokernel.h`:
 
-:cpp:func:`nano_tick_get()`, :cpp:func:`nano_tick_get_32()`
+:cpp:func:`sys_tick_get()`, :cpp:func:`sys_tick_get_32()`
    Read the system clock.
 
-:cpp:func:`nano_tick_delta()`, :cpp:func:`nano_tick_delta_32()`
+:cpp:func:`sys_tick_delta()`, :cpp:func:`sys_tick_delta_32()`
    Compute the elapsed time since an earlier system clock reading.
 
 :cpp:func:`nano_cycle_get_32()`

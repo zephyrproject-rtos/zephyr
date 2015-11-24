@@ -29,8 +29,8 @@ nano_cpu_idle
     should have advanced by one tick.
 
 irq_lock
-  - 1. Count the number of calls to nano_tick_get_32() before a tick expires.
-  - 2. Once determined, call nano_tick_get_32() many more times than that
+  - 1. Count the number of calls to sys_tick_get_32() before a tick expires.
+  - 2. Once determined, call sys_tick_get_32() many more times than that
        with interrupts locked.  Check that the tick count remains unchanged.
 
 irq_unlock

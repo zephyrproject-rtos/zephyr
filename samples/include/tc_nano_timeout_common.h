@@ -40,7 +40,7 @@
  */
 static inline int is_timeout_in_range(int32_t orig_ticks, int32_t expected)
 {
-	int32_t diff = nano_tick_get() - orig_ticks;
+	int32_t diff = sys_tick_get() - orig_ticks;
 
 #if SHORT_TIMEOUTS
 	/*

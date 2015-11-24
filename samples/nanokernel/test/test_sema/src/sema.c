@@ -575,7 +575,7 @@ static void test_fiber_give_timeout(int sem, int timeout)
 static void test_fiber_pend_and_timeout(int data, int unused)
 {
 	struct timeout_order_data *the_data = (void *)data;
-	int32_t orig_ticks = nano_tick_get();
+	int32_t orig_ticks = sys_tick_get();
 	int rv;
 
 	ARG_UNUSED(unused);
@@ -711,13 +711,13 @@ static int test_timeout(void)
 
 	/* test nano_task_sem_take_wait_timeout() with timeout */
 	timeout = 10;
-	orig_ticks = nano_tick_get();
+	orig_ticks = sys_tick_get();
 	rv = nano_task_sem_take_wait_timeout(&sem_timeout[0], timeout);
 	if (rv) {
 		TC_ERROR(" *** timeout of %d did not time out.\n", timeout);
 		return TC_FAIL;
 	}
-	if ((nano_tick_get() - orig_ticks) < timeout) {
+	if ((sys_tick_get() - orig_ticks) < timeout) {
 		TC_ERROR(" *** task did not wait long enough on timeout of %d.\n",
 					timeout);
 		return TC_FAIL;
@@ -736,7 +736,7 @@ static int test_timeout(void)
 	TC_PRINT("test nano_task_sem_take_wait_timeout with timeout > 0\n");
 
 	timeout = 3;
-	orig_ticks = nano_tick_get();
+	orig_ticks = sys_tick_get();
 
 	rv = nano_task_sem_take_wait_timeout(&sem_timeout[0], timeout);
 
@@ -758,7 +758,7 @@ static int test_timeout(void)
 	 */
 
 	timeout = 5;
-	orig_ticks = nano_tick_get();
+	orig_ticks = sys_tick_get();
 
 	task_fiber_start(timeout_stacks[0], FIBER_STACKSIZE,
 						test_fiber_give_timeout, (int)&sem_timeout[0],

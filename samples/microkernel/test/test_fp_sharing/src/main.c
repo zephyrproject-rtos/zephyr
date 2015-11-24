@@ -80,7 +80,7 @@ x87 FPU registers are being saved/restored.
 /* macro used to read system clock value */
 
 #ifdef CONFIG_NANOKERNEL
-#define TICK_COUNT_GET() nano_tick_get_32()
+#define TICK_COUNT_GET() sys_tick_get_32()
 #else
 #define TICK_COUNT_GET() task_tick_get_32()
 #endif

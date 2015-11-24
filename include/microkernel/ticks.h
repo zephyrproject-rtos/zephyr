@@ -70,7 +70,7 @@ extern void sys_scheduler_time_slice_set(int32_t t, kpriority_t p);
  * This routine reads the processor's high precision timer.  It reads the
  * counter register on the timer device. This counter register increments
  * at a relatively high rate (e.g. 20 MHz), and thus is considered a
- * "high resolution" timer.  This is in contrast to nano_tick_get_32() and
+ * "high resolution" timer.  This is in contrast to sys_tick_get_32() and
  * task_tick_get_32() which return the value of the kernel ticks variable.
  *
  * @return current high precision clock value

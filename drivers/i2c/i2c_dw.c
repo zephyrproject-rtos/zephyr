@@ -501,9 +501,9 @@ static int i2c_dw_poll_transfer(struct device *dev,
 	}
 
 	/* Wait for bus idle */
-	start_time = nano_tick_get_32();
+	start_time = sys_tick_get_32();
 	while (regs->ic_status.bits.activity) {
-		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 			return DEV_FAIL;
 		}
 	}
@@ -524,9 +524,9 @@ static int i2c_dw_poll_transfer(struct device *dev,
 	/* Transmit */
 	while (dw->tx_len > 0) {
 		/* Wait for space in TX FIFO */
-		start_time = nano_tick_get_32();
+		start_time = sys_tick_get_32();
 		while (!regs->ic_status.bits.tfnf) {
-			if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+			if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 				ret = DEV_FAIL;
 				goto finish;
 			}
@@ -536,9 +536,9 @@ static int i2c_dw_poll_transfer(struct device *dev,
 	}
 
 	/* Wait for TX FIFO empty to be sure everything is sent. */
-	start_time = nano_tick_get_32();
+	start_time = sys_tick_get_32();
 	while (!regs->ic_status.bits.tfe) {
-		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 			ret = DEV_FAIL;
 			goto finish;
 		}
@@ -558,9 +558,9 @@ do_receive:
 
 	while (dw->rx_len > 0) {
 		/* Wait for data in RX FIFO*/
-		start_time = nano_tick_get_32();
+		start_time = sys_tick_get_32();
 		while (!regs->ic_status.bits.rfne) {
-			if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+			if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 				ret = DEV_FAIL;
 				goto finish;
 			}
@@ -571,9 +571,9 @@ do_receive:
 
 stop_det:
 	/* Wait for transfer to complete */
-	start_time = nano_tick_get_32();
+	start_time = sys_tick_get_32();
 	while (!regs->ic_raw_intr_stat.bits.stop_det) {
-		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 			ret = DEV_FAIL;
 			goto finish;
 		}
@@ -581,9 +581,9 @@ stop_det:
 	value = regs->ic_clr_stop_det;
 
 	/* Wait for bus idle */
-	start_time = nano_tick_get_32();
+	start_time = sys_tick_get_32();
 	while (regs->ic_status.bits.activity) {
-		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 			ret = DEV_FAIL;
 			goto finish;
 		}

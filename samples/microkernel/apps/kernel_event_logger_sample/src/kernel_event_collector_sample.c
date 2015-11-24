@@ -25,7 +25,7 @@
 #ifdef CONFIG_NANOKERNEL
   #define TAKE(x) nano_fiber_sem_take_wait(&x)
   #define GIVE(x) nano_fiber_sem_give(&x)
-  #define RANDDELAY(x) myDelay(((nano_tick_get_32() * ((x) + 1)) & 0x2f) + 1)
+  #define RANDDELAY(x) myDelay(((sys_tick_get_32() * ((x) + 1)) & 0x2f) + 1)
   #define SLEEP(x) fiber_sleep(x)
 #else  /* ! CONFIG_NANOKERNEL */
   #define TAKE(x) task_mutex_lock_wait(x)
@@ -169,14 +169,14 @@ void busy_task_entry(void)
 		 */
 		is_busy_task_awake = 0;
 		SLEEP(1000);
-		ticks_when_awake = nano_tick_get_32();
+		ticks_when_awake = sys_tick_get_32();
 
 		/*
 		 * keep the cpu busy for 1000 ticks preventing the system entering
 		 * to sleep mode.
 		 */
 		is_busy_task_awake = 1;
-		while (nano_tick_get_32() - ticks_when_awake < 1000) {
+		while (sys_tick_get_32() - ticks_when_awake < 1000) {
 			i++;
 		}
 	}
@@ -224,7 +224,7 @@ void summary_data_printer(void)
 		PRINTF("\x1b[8;1HGENERAL DATA");
 		PRINTF("\x1b[9;1H------------");
 
-		PRINTF("\x1b[10;1HSystem tick count : %d    ", nano_tick_get_32());
+		PRINTF("\x1b[10;1HSystem tick count : %d    ", sys_tick_get_32());
 
 		/* print dropped event counter */
 		PRINTF("\x1b[11;1HDropped events #  : %d   ", total_dropped_counter);

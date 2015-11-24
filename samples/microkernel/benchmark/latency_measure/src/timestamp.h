@@ -42,14 +42,14 @@
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
 
 typedef int64_t TICK_TYPE;
-#define TICK_GET(x) (TICK_TYPE)nano_tick_delta(x)
+#define TICK_GET(x) ((TICK_TYPE) sys_tick_delta(x))
 
 static inline void TICK_SYNCH(void)
 {
 	TICK_TYPE  reftime;
 
-	(void) nano_tick_delta(&reftime);
-	while (nano_tick_delta(&reftime) == 0) {
+	(void) sys_tick_delta(&reftime);
+	while (sys_tick_delta(&reftime) == 0) {
 	}
 }
 

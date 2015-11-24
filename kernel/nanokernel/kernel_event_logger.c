@@ -62,7 +62,7 @@ void sys_k_event_logger_put_timed(uint16_t event_id)
 {
 	uint32_t data[1];
 
-	data[0] = nano_tick_get_32();
+	data[0] = sys_tick_get_32();
 
 	sys_event_logger_put(&sys_k_event_logger, event_id, data,
 		ARRAY_SIZE(data));
@@ -86,7 +86,7 @@ void _sys_k_event_logger_context_switch(void)
 	}
 
 	if (_collector_fiber != _nanokernel.current) {
-		data[0] = nano_tick_get_32();
+		data[0] = sys_tick_get_32();
 		data[1] = (uint32_t)_nanokernel.current;
 
 		/*
@@ -124,7 +124,7 @@ void _sys_k_event_logger_interrupt(void)
 {
 	uint32_t data[2];
 
-	data[0] = nano_tick_get_32();
+	data[0] = sys_tick_get_32();
 	data[1] = _sys_current_irq_key_get();
 
 	sys_k_event_logger_put(KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID, data,
@@ -143,7 +143,7 @@ void _sys_k_event_logger_exit_sleep(void)
 {
 	uint32_t data[3];
 
-	data[0] = nano_tick_get_32();
+	data[0] = sys_tick_get_32();
 	data[1] = (nano_cycle_get_32() - _sys_k_event_logger_sleep_start_time)
 		/ sys_clock_hw_cycles_per_tick;
 	/* register the cause of exiting sleep mode */

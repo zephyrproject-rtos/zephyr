@@ -54,7 +54,7 @@ int64_t _sys_clock_tick_count;
  * @return the current system tick count
  *
  */
-uint32_t nano_tick_get_32(void)
+uint32_t sys_tick_get_32(void)
 {
 	return (uint32_t)_sys_clock_tick_count;
 }
@@ -66,7 +66,7 @@ uint32_t nano_tick_get_32(void)
  * @return the current system tick count
  *
  */
-int64_t nano_tick_get(void)
+int64_t sys_tick_get(void)
 {
 	int64_t tmp_sys_clock_tick_count;
 	/*
@@ -93,17 +93,17 @@ int64_t nano_tick_get(void)
  * tick count is the return value. Since the first call is meant to only fill in
  * the reference time, its return value should be discarded.
  *
- * Since a code fragment that wants to use nano_tick_delta passes in its
+ * Since a code fragment that wants to use sys_tick_delta() passes in its
  * own reference time variable, multiple code fragments can make use of this
  * function concurrently.
  *
  * e.g.
  * uint64_t  reftime;
- * (void) nano_tick_delta(&reftime);  /# prime it #/
+ * (void) sys_tick_delta(&reftime);  /# prime it #/
  * [do stuff]
- * x = nano_tick_delta(&reftime);     /# how long since priming #/
+ * x = sys_tick_delta(&reftime);     /# how long since priming #/
  * [do more stuff]
- * y = nano_tick_delta(&reftime);     /# how long since [do stuff] #/
+ * y = sys_tick_delta(&reftime);     /# how long since [do stuff] #/
  *
  * @return tick count since reference time; undefined for first invocation
  *
@@ -137,13 +137,13 @@ static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
  *
  * @return tick count since reference time; undefined for first invocation
  */
-int64_t nano_tick_delta(int64_t *reftime)
+int64_t sys_tick_delta(int64_t *reftime)
 {
 	return _nano_tick_delta(reftime);
 }
 
 
-uint32_t nano_tick_delta_32(int64_t *reftime)
+uint32_t sys_tick_delta_32(int64_t *reftime)
 {
 	return (uint32_t)_nano_tick_delta(reftime);
 }

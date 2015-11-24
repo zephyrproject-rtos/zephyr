@@ -1600,7 +1600,7 @@ extern void nano_task_timer_stop(struct nano_timer *timer);
  * @return the current system tick count
  *
  */
-extern int64_t nano_tick_get(void);
+extern int64_t sys_tick_get(void);
 
 /**
  *
@@ -1609,7 +1609,7 @@ extern int64_t nano_tick_get(void);
  * @return the current system tick count
  *
  */
-extern uint32_t nano_tick_get_32(void);
+extern uint32_t sys_tick_get_32(void);
 
 /**
  * @brief Return a high resolution time stamp
@@ -1626,7 +1626,7 @@ extern uint32_t nano_cycle_get_32(void);
  *
  * @return tick count since reference time; undefined for first invocation
  */
-extern int64_t nano_tick_delta(int64_t *reftime);
+extern int64_t sys_tick_delta(int64_t *reftime);
 
 /**
  *
@@ -1636,7 +1636,7 @@ extern int64_t nano_tick_delta(int64_t *reftime);
  *
  * @return 32-bit tick count since reference time; undefined for first invocation
  */
-extern uint32_t nano_tick_delta_32(int64_t *reftime);
+extern uint32_t sys_tick_delta_32(int64_t *reftime);
 
 
 /*

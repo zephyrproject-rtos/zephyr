@@ -22,7 +22,7 @@ This module tests the following timer related routines:
   nano_timer_init(), nano_fiber_timer_start(), nano_fiber_timer_stop(),
   nano_fiber_timer_test(), nano_fiber_timer_wait(), nano_task_timer_start(),
   nano_task_timer_stop(), nano_task_timer_test(), nano_task_timer_wait(),
-  nano_tick_get_32(), nano_cycle_get_32(), nano_tick_delta()
+  sys_tick_get_32(), nano_cycle_get_32(), sys_tick_delta()
  */
 
 #include <tc_util.h>
@@ -93,11 +93,11 @@ void initNanoObjects(void)
  * This routine can be called from a task or a fiber to wait upon a timer.
  * It will busy wait until the current tick ends, at which point it will
  * start and then wait upon a timer.  The length of time it spent waiting
- * gets cross-checked with the nano_tick_get_32() and nanoTimeElapsed() APIs.
+ * gets cross-checked with the sys_tick_get_32() and nanoTimeElapsed() APIs.
  * All three are expected to match up, but a tolerance of one (1) tick is
  * considered acceptable.
  *
- * This routine can be considered as testing nano_tick_get_32(),
+ * This routine can be considered as testing sys_tick_get_32(),
  * nanoTimeElapsed() and nanoXXXTimerGetW() successful expiration cases.
  *
  * @param startRtn      routine to start the timer
@@ -124,18 +124,18 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 
 	TC_PRINT("  - test expected to take four seconds\n");
 
-	tick = nano_tick_get_32();
-	while (nano_tick_get_32() == tick) {
+	tick = sys_tick_get_32();
+	while (sys_tick_get_32() == tick) {
 		/* Align to a tick boundary */
 	}
 
 	tick++;
-	(void) nano_tick_delta(&reftime);
+	(void) sys_tick_delta(&reftime);
 	startRtn(pTimer, ticks);       /* Start the timer */
 	result = waitRtn(pTimer);      /* Wait for the timer to expire */
 
-	elapsed_32 = nano_tick_delta_32(&reftime);
-	duration = nano_tick_get_32() - tick;
+	elapsed_32 = sys_tick_delta_32(&reftime);
+	duration = sys_tick_get_32() - tick;
 
 	/*
 	 * The difference between <duration> and <elapsed> is expected to be zero
@@ -149,19 +149,19 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 	}
 
 	/* Check that the non-wait-timer-get routine works properly. */
-	tick = nano_tick_get_32();
-	while (nano_tick_get_32() == tick) {
+	tick = sys_tick_get_32();
+	while (sys_tick_get_32() == tick) {
 		/* Align to a tick boundary */
 	}
 
 	tick++;
-	(void) nano_tick_delta(&reftime);
+	(void) sys_tick_delta(&reftime);
 	startRtn(pTimer, ticks);       /* Start the timer */
 	while ((result = getRtn(pTimer)) == NULL) {
 		busywaited = 1;
 	}
-	elapsed = nano_tick_delta(&reftime);
-	duration = nano_tick_get_32() - tick;
+	elapsed = sys_tick_delta(&reftime);
+	duration = sys_tick_get_32() - tick;
 
 	if ((busywaited != 1) || (result != pTimerData) ||
 		(duration - elapsed > 1) || ((duration - ticks) > 1)) {
@@ -192,8 +192,8 @@ void startTimers(timer_start_func startRtn)
 {
 	int  tick;                    /* current tick */
 
-	tick = nano_tick_get_32();
-	while (nano_tick_get_32() == tick) {
+	tick = sys_tick_get_32();
+	while (sys_tick_get_32() == tick) {
 		/* Wait for the end of the tick */
 	}
 
@@ -225,8 +225,8 @@ int busyWaitTimers(timer_get_func getRtn)
 
 	TC_PRINT("  - test expected to take five or six seconds\n");
 
-	ticks = nano_tick_get_32() + SIX_SECONDS;
-	while ((numExpired != 4) && (nano_tick_get_32() < ticks)) {
+	ticks = sys_tick_get_32() + SIX_SECONDS;
+	while ((numExpired != 4) && (sys_tick_get_32() < ticks)) {
 		result = getRtn(&timer);
 		if (result != NULL) {
 			numExpired++;
@@ -268,7 +268,7 @@ int busyWaitTimers(timer_get_func getRtn)
 		}
 	}
 
-	return (nano_tick_get_32() < ticks) ? TC_PASS : TC_FAIL;
+	return (sys_tick_get_32() < ticks) ? TC_PASS : TC_FAIL;
 }
 
 /**
@@ -299,13 +299,13 @@ int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
 
 	TC_PRINT("  - test expected to take six seconds\n");
 
-	startTick = nano_tick_get_32();
-	while (nano_tick_get_32() == startTick) {
+	startTick = sys_tick_get_32();
+	while (sys_tick_get_32() == startTick) {
 	}
 	startTick++;
 	endTick = startTick + SIX_SECONDS;
 
-	while (nano_tick_get_32() < endTick) {
+	while (sys_tick_get_32() < endTick) {
 		if ((getRtn(&timer) != NULL) || (getRtn(&shortTimer) != NULL) ||
 			(getRtn(&midTimer) != NULL) || (getRtn(&longTimer) != NULL)) {
 			return TC_FAIL;

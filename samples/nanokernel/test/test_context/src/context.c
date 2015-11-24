@@ -199,15 +199,15 @@ int nano_cpu_idleTest(void)
 	int  i;      /* loop variable */
 
 	/* Align to a "tick boundary". */
-	tick = nano_tick_get_32();
-	while (tick == nano_tick_get_32()) {
+	tick = sys_tick_get_32();
+	while (tick == sys_tick_get_32()) {
 	}
-	tick = nano_tick_get_32();
+	tick = sys_tick_get_32();
 
 	for (i = 0; i < 5; i++) {     /* Repeat the test five times */
 		nano_cpu_idle();
 		tick++;
-		if (nano_tick_get_32() != tick) {
+		if (sys_tick_get_32() != tick) {
 			return TC_FAIL;
 		}
 	}
@@ -286,12 +286,12 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 	int  imask;
 
 	/* Align to a "tick boundary" */
-	tick = nano_tick_get_32();
-	while (nano_tick_get_32() == tick) {
+	tick = sys_tick_get_32();
+	while (sys_tick_get_32() == tick) {
 	}
 	tick++;
 
-	while (nano_tick_get_32() == tick) {
+	while (sys_tick_get_32() == tick) {
 		count++;
 	}
 
@@ -305,12 +305,12 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 	count <<= 4;
 
 	imask = disableRtn(irq);
-	tick = nano_tick_get_32();
+	tick = sys_tick_get_32();
 	for (i = 0; i < count; i++) {
-		nano_tick_get_32();
+		sys_tick_get_32();
 	}
 
-	tick2 = nano_tick_get_32();
+	tick2 = sys_tick_get_32();
 
 	/*
 	 * Re-enable interrupts before returning (for both success and failure
@@ -325,10 +325,10 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
 	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
-		nano_tick_get_32();
+		sys_tick_get_32();
 	}
 
-	return (tick == nano_tick_get_32()) ? TC_FAIL : TC_PASS;
+	return (tick == sys_tick_get_32()) ? TC_FAIL : TC_PASS;
 }
 
 /**
@@ -649,7 +649,7 @@ static void test_fiber_busy_wait(int ticks, int unused)
 /* a fiber sleeps and times out, then reports through a fifo */
 static void test_fiber_sleep(int timeout, int arg2)
 {
-	int64_t orig_ticks = nano_tick_get();
+	int64_t orig_ticks = sys_tick_get();
 
 	TC_PRINT(" fiber sleeping for %d ticks\n", timeout);
 	fiber_sleep(timeout);

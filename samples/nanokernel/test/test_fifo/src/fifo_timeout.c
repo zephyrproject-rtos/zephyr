@@ -117,7 +117,7 @@ static void test_fiber_put_timeout(int fifo, int timeout)
 static void test_fiber_pend_and_timeout(int data, int unused)
 {
 	struct timeout_order_data *d = (void *)data;
-	int32_t orig_ticks = nano_tick_get();
+	int32_t orig_ticks = sys_tick_get();
 	void *packet;
 
 	ARG_UNUSED(unused);
@@ -266,14 +266,14 @@ int test_fifo_timeout(void)
 
 	/* test nano_task_fifo_get_wait_timeout() with timeout */
 	timeout = 10;
-	orig_ticks = nano_tick_get();
+	orig_ticks = sys_tick_get();
 	packet = nano_task_fifo_get_wait_timeout(&fifo_timeout[0], timeout);
 	if (packet) {
 		TC_ERROR(" *** timeout of %d did not time out.\n", timeout);
 		TC_END_RESULT(TC_FAIL);
 		return TC_FAIL;
 	}
-	if ((nano_tick_get() - orig_ticks) < timeout) {
+	if ((sys_tick_get() - orig_ticks) < timeout) {
 		TC_ERROR(" *** task did not wait long enough on timeout of %d.\n",
 					timeout);
 		TC_END_RESULT(TC_FAIL);
@@ -294,7 +294,7 @@ int test_fifo_timeout(void)
 	TC_PRINT("test nano_task_fifo_get_wait_timeout with timeout > 0\n");
 
 	timeout = 3;
-	orig_ticks = nano_tick_get();
+	orig_ticks = sys_tick_get();
 
 	packet = nano_task_fifo_get_wait_timeout(&fifo_timeout[0], timeout);
 
@@ -318,7 +318,7 @@ int test_fifo_timeout(void)
 	 */
 
 	timeout = 5;
-	orig_ticks = nano_tick_get();
+	orig_ticks = sys_tick_get();
 
 	task_fiber_start(timeout_stacks[0], FIBER_STACKSIZE,
 						test_fiber_put_timeout, (int)&fifo_timeout[0],
