@@ -31,8 +31,6 @@
 #include <toolchain.h>
 #include <sections.h>
 
-int64_t _k_sys_clock_tick_count;
-
 #ifdef CONFIG_TIMESLICING
 static int32_t slice_count = (int32_t)0;
 static int32_t slice_time = (int32_t)CONFIG_TIMESLICE_SIZE;
@@ -47,7 +45,7 @@ int32_t _sys_idle_elapsed_ticks; /* Initial value must be 0 */
 
 int32_t task_tick_get_32(void)
 {
-	return (int32_t)_k_sys_clock_tick_count;
+	return (int32_t)_sys_clock_tick_count;
 }
 
 int64_t task_tick_get(void)
@@ -55,26 +53,9 @@ int64_t task_tick_get(void)
 	int64_t ticks;
 	int key = irq_lock();
 
-	ticks = _k_sys_clock_tick_count;
+	ticks = _sys_clock_tick_count;
 	irq_unlock(key);
 	return ticks;
-}
-
-/**
- *
- * @brief Increment system clock by "N" ticks
- *
- * Interrupts are locked while updating clock since some CPUs do not support
- * native atomic operations on 64 bit values.
- * @param inc Increment
- * @return N/A
- */
-static void sys_clock_increment(int inc)
-{
-	int key = irq_lock();
-
-	_k_sys_clock_tick_count += inc;
-	irq_unlock(key);
 }
 
 /**
@@ -174,7 +155,6 @@ int _k_ticker(int event)
 	if (_TlDebugUpdate(ticks)) {
 		_TimeSliceUpdate();
 		_k_timer_list_update(ticks);
-		sys_clock_increment(ticks);
 		_nano_sys_clock_tick_announce(ticks);
 	}
 

@@ -54,11 +54,7 @@ extern void _timer_idle_exit(void);
 
 extern uint32_t _nano_get_earliest_deadline(void);
 
-#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
-	extern void _nano_sys_clock_tick_announce(int32_t ticks);
-#else
-	#define _nano_sys_clock_tick_announce(ticks) do { } while ((0))
-#endif
+extern void _nano_sys_clock_tick_announce(int32_t ticks);
 
 #ifdef CONFIG_MICROKERNEL
 	#define _sys_clock_tick_announce() \

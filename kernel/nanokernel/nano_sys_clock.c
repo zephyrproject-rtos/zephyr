@@ -188,7 +188,6 @@ static inline void handle_expired_nano_timers(int ticks)
 	#define handle_expired_nano_timers(ticks) do { } while ((0))
 #endif
 
-#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 /**
  *
  * @brief Announce a tick to the nanokernel
@@ -205,7 +204,6 @@ void _nano_sys_clock_tick_announce(int32_t ticks)
 	handle_expired_nano_timeouts(ticks);
 	handle_expired_nano_timers(ticks);
 }
-#endif
 
 /* get closest nano timers deadline expiry, (uint32_t)TICKS_UNLIMITED if none */
 #ifdef CONFIG_NANO_TIMERS
