@@ -41,7 +41,7 @@
  *
  * @return N/A
  */
-void _nano_fiber_schedule(struct tcs *tcs)
+void _nano_fiber_ready(struct tcs *tcs)
 {
 	struct tcs *pQ = (struct tcs *)&_nanokernel.fiber;
 
@@ -99,7 +99,7 @@ void _fiber_start(char *pStack,
 
 	/* make the newly crafted TCS a runnable fiber */
 
-	_nano_fiber_schedule(tcs);
+	_nano_fiber_ready(tcs);
 
 	/*
 	 * Simply return to the caller if the current thread is FIBER,
@@ -125,7 +125,7 @@ void fiber_yield(void)
 		 * then swap to the thread at the head of the fiber list.
 		 */
 
-		_nano_fiber_schedule(_nanokernel.current);
+		_nano_fiber_ready(_nanokernel.current);
 		_Swap(imask);
 	} else {
 		irq_unlock(imask);

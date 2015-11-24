@@ -50,7 +50,7 @@ struct tcs *_nano_wait_q_remove_no_check(struct _nano_queue *wait_q)
 	}
 	tcs->link = 0;
 
-	_nano_fiber_schedule(tcs);
+	_nano_fiber_ready(tcs);
 	return tcs;
 }
 

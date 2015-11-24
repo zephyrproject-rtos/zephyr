@@ -79,7 +79,7 @@ void _stack_push_non_preemptible(struct nano_stack *stack, uint32_t data)
 	if (tcs) {
 		stack->fiber = 0;
 		fiberRtnValueSet(tcs, data);
-		_nano_fiber_schedule(tcs);
+		_nano_fiber_ready(tcs);
 	} else {
 		*(stack->next) = data;
 		stack->next++;
@@ -100,7 +100,7 @@ void nano_task_stack_push(struct nano_stack *stack, uint32_t data)
 	if (tcs) {
 		stack->fiber = 0;
 		fiberRtnValueSet(tcs, data);
-		_nano_fiber_schedule(tcs);
+		_nano_fiber_ready(tcs);
 		_Swap(imask);
 		return;
 	}

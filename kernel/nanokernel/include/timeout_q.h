@@ -62,7 +62,7 @@ static inline struct _nano_timeout *_nano_timeout_handle_one_timeout(
 		_nano_timeout_remove_tcs_from_wait_q(tcs);
 		fiberRtnValueSet(tcs, (unsigned int)0);
 	}
-	_nano_fiber_schedule(tcs);
+	_nano_fiber_ready(tcs);
 	t->delta_ticks_from_prev = -1;
 
 	return (struct _nano_timeout *)sys_dlist_peek_head(timeout_q);
