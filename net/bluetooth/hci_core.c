@@ -818,6 +818,16 @@ static void hci_encrypt_change(struct net_buf *buf)
 
 	conn->encrypt = evt->encrypt;
 
+	/*
+	 * we update keys properties only on successful encryption to avoid
+	 * losing valid keys if encryption was not successful
+	 *
+	 * Update keys with last pairing info for proper sec level update.
+	 */
+	if (conn->encrypt) {
+		bt_smp_update_keys(conn);
+	}
+
 	update_sec_level(conn);
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
@@ -856,6 +866,7 @@ static void le_ltk_request(struct net_buf *buf)
 	struct bt_hci_evt_le_ltk_request *evt = (void *)buf->data;
 	struct bt_conn *conn;
 	uint16_t handle;
+	uint8_t tk[16];
 
 	handle = sys_le16_to_cpu(evt->handle);
 
@@ -865,6 +876,28 @@ static void le_ltk_request(struct net_buf *buf)
 	if (!conn) {
 		BT_ERR("Unable to lookup conn for handle %u\n", handle);
 		return;
+	}
+
+	/*
+	 * if TK is present use it, that means pairing is in progress and
+	 * we should use new TK for encryption
+	 */
+	if (evt->rand == 0 && evt->ediv == 0 && bt_smp_get_tk(conn, tk)) {
+		struct bt_hci_cp_le_ltk_req_reply *cp;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
+					sizeof(*cp));
+		if (!buf) {
+			BT_ERR("Out of command buffers\n");
+			goto done;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->handle = evt->handle;
+		memcpy(cp->ltk, tk, sizeof(cp->ltk));
+
+		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
+		goto done;
 	}
 
 	if (!conn->keys) {

@@ -1425,7 +1425,6 @@ static uint8_t compute_and_send_master_dhcheck(struct bt_smp *smp)
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 {
-	struct bt_keys *keys;
 	uint8_t re[16], e[16], r[16];
 
 	/* TODO currently only NumComparison/JustWorks */
@@ -1457,28 +1456,6 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 	if (memcmp(smp->e, re, 16)) {
 		return BT_SMP_ERR_DHKEY_CHECK_FAILED;
 	}
-
-	keys = bt_keys_get_addr(&smp->chan.conn->le.dst);
-	if (!keys) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	/*
-	 * store key type deducted from pairing method used
-	 * it is important to store it since type is used to determine
-	 * security level upon encryption
-	 */
-	keys->type = get_keys_type(smp->method);
-	keys->enc_size = get_encryption_key_size(smp);
-
-	/*
-	 * this is safe since LE SC is mutually exclusive with legacy
-	 * pairing
-	 */
-	bt_keys_add_type(keys, BT_KEYS_LTK_P256);
-	memcpy(keys->ltk.val, smp->tk, sizeof(keys->ltk.val));
-	keys->slave_ltk.rand = 0;
-	keys->slave_ltk.ediv = 0;
 
 	/* send local e */
 	sc_smp_send_dhkey_check(smp, e);
@@ -1611,8 +1588,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_pairing_random *req = (void *)buf->data;
-	struct bt_keys *keys;
-	uint8_t cfm[16];
+	uint8_t tmp[16];
 	int err;
 
 	BT_DBG("\n");
@@ -1623,43 +1599,30 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		return sc_smp_pairing_random(smp, buf);
 	}
 
+	/* calculate confirmation */
 	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp,
-		     &conn->le.init_addr, &conn->le.resp_addr, cfm);
+		     &conn->le.init_addr, &conn->le.resp_addr, tmp);
 	if (err) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	BT_DBG("pcnf %s cfm %s\n", h(smp->pcnf, 16), h(cfm, 16));
+	BT_DBG("pcnf %s cfm %s\n", h(smp->pcnf, 16), h(tmp, 16));
 
-	if (memcmp(smp->pcnf, cfm, sizeof(smp->pcnf))) {
+	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf))) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
 	}
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (conn->role == BT_HCI_ROLE_MASTER) {
-		uint8_t stk[16];
-
 		/* No need to store master STK */
-		err = smp_s1(smp->tk, smp->rrnd, smp->prnd, stk);
+		err = smp_s1(smp->tk, smp->rrnd, smp->prnd, tmp);
 		if (err) {
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		keys = bt_keys_get_addr(&conn->le.dst);
-		if (!keys) {
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		/* store key type deducted from pairing method used
-		 * it is important to store it since type is used to determine
-		 * security level upon encryption
-		 */
-		keys->type = get_keys_type(smp->method);
-		keys->enc_size = get_encryption_key_size(smp);
-
 		/* Rand and EDiv are 0 for the STK */
-		if (bt_conn_le_start_encryption(conn, 0, 0, stk,
-						keys->enc_size)) {
+		if (bt_conn_le_start_encryption(conn, 0, 0, tmp,
+						get_encryption_key_size(smp))) {
 			BT_ERR("Failed to start encryption\n");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -1671,30 +1634,13 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	keys = bt_keys_get_type(BT_KEYS_SLAVE_LTK, &conn->le.dst);
-	if (!keys) {
-		BT_ERR("Unable to create new keys\n");
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	err = smp_s1(smp->tk, smp->prnd, smp->rrnd, keys->slave_ltk.val);
+	err = smp_s1(smp->tk, smp->prnd, smp->rrnd, tmp);
 	if (err) {
-		bt_keys_clear(keys, BT_KEYS_SLAVE_LTK);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	/* store key type deducted from pairing method used
-	 * it is important to store it since type is used to determine
-	 * security level upon encryption
-	 */
-	keys->type = get_keys_type(smp->method);
-	keys->enc_size = get_encryption_key_size(smp);
-
-	/* Rand and EDiv are 0 for the STK */
-	keys->slave_ltk.rand = 0;
-	keys->slave_ltk.ediv = 0;
-
-	BT_DBG("generated STK %s\n", h(keys->slave_ltk.val, 16));
+	memcpy(smp->tk, tmp, sizeof(smp->tk));
+	BT_DBG("generated STK %s\n", h(smp->tk, 16));
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
 
@@ -1736,35 +1682,12 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 static void bt_smp_distribute_keys(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
-	struct bt_keys *keys;
+	struct bt_keys *keys = conn->keys;
 	struct net_buf *buf;
 
-	keys = bt_keys_get_addr(&conn->le.dst);
 	if (!keys) {
-		BT_ERR("Unable to look up keys for %s\n",
-		       bt_addr_le_str(&conn->le.dst));
+		BT_ERR("No keys space for %s\n", bt_addr_le_str(&conn->le.dst));
 		return;
-	}
-
-	/* Store key type deducted from pairing method used. It is important
-	 * to restore it here since all key info is cleared after encryption
-	 * was enabled before key distribution.
-	 *
-	 * All keys from pairing have same type so it is enough to store it
-	 * on local distribution only.
-	 */
-	keys->type = get_keys_type(smp->method);
-	keys->enc_size = get_encryption_key_size(smp);
-
-	/*
-	 * store LTK if LE SC is used, this is safe since LE SC is mutually
-	 * exclusive with legacy pairing
-	 */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		bt_keys_add_type(keys, BT_KEYS_LTK_P256);
-		memcpy(keys->ltk.val, smp->tk, sizeof(keys->ltk.val));
-		keys->slave_ltk.rand = 0;
-		keys->slave_ltk.ediv = 0;
 	}
 
 	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
@@ -2152,13 +2075,7 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
-		struct bt_keys *keys;
-		uint8_t e[16], r[16];
-
-		keys = bt_keys_get_addr(&smp->chan.conn->le.dst);
-		if (!keys) {
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
+		uint8_t e[16], r[16], enc_size;
 
 		/* TODO currently only NumComparison/JustWorks */
 		memset(r, 0, sizeof(r));
@@ -2174,16 +2091,10 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_DHKEY_CHECK_FAILED;
 		}
 
-		/*
-		 * store key type deducted from pairing method used
-		 * it is important to store it since type is used to determine
-		 * security level upon encryption
-		 */
-		keys->type = get_keys_type(smp->method);
-		keys->enc_size = get_encryption_key_size(smp);
+		enc_size = get_encryption_key_size(smp);
 
 		if (bt_conn_le_start_encryption(smp->chan.conn, 0, 0, smp->tk,
-						keys->enc_size) < 0) {
+						enc_size) < 0) {
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2308,7 +2219,6 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
 	struct bt_conn *conn = chan->conn;
-	struct bt_keys *keys;
 
 	BT_DBG("chan %p conn %p handle %u encrypt 0x%02x\n", chan, conn,
 	       conn->handle, conn->encrypt);
@@ -2339,15 +2249,6 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
-	}
-
-	/* If link was successfully encrypted cleanup old keys as from now on
-	 * only keys distributed in this pairing will be used. This includes
-	 * STK as it will be replaced by LTK.
-	 */
-	keys = bt_keys_find_addr(&conn->le.dst);
-	if (keys) {
-		bt_keys_clear(keys, BT_KEYS_ALL);
 	}
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
@@ -2986,6 +2887,88 @@ void bt_auth_cancel(struct bt_conn *conn)
 	}
 
 	smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+}
+
+void bt_smp_update_keys(struct bt_conn *conn)
+{
+	struct bt_smp *smp;
+
+	if (!conn) {
+		return;
+	}
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return;
+	}
+
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+		return;
+	}
+
+	/*
+	 * If link was successfully encrypted cleanup old keys as from now on
+	 * only keys distributed in this pairing or LTK from LE SC will be used.
+	 */
+	if (conn->keys) {
+		bt_keys_clear(conn->keys, BT_KEYS_ALL);
+	}
+
+	conn->keys = bt_keys_get_addr(&conn->le.dst);
+	if (!conn->keys) {
+		BT_ERR("Unable to get keys for %s\n",
+		       bt_addr_le_str(&conn->le.dst));
+		return;
+	}
+
+	/*
+	 * store key type deducted from pairing method used
+	 * it is important to store it since type is used to determine
+	 * security level upon encryption
+	 */
+	conn->keys->type = get_keys_type(smp->method);
+	conn->keys->enc_size = get_encryption_key_size(smp);
+
+	/*
+	 * Store LTK if LE SC is used, this is safe since LE SC is mutually
+	 * exclusive with legacy pairing. Other keys are added on keys
+	 * distribution.
+	 */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		bt_keys_add_type(conn->keys, BT_KEYS_LTK_P256);
+		memcpy(conn->keys->ltk.val, smp->tk,
+		       sizeof(conn->keys->ltk.val));
+		conn->keys->slave_ltk.rand = 0;
+		conn->keys->slave_ltk.ediv = 0;
+	}
+}
+
+bool bt_smp_get_tk(struct bt_conn *conn, uint8_t *tk)
+{
+	struct bt_smp *smp;
+	uint8_t enc_size;
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return false;
+	}
+
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+		return false;
+	}
+
+	enc_size = get_encryption_key_size(smp);
+
+	/*
+	 * We keep both legacy STK and LE SC LTK in TK.
+	 * Also use only enc_size bytes of key for encryption.
+	 */
+	memcpy(tk, smp->tk, enc_size);
+	if (enc_size < sizeof(smp->tk)) {
+		memset(tk + enc_size, 0, sizeof(smp->tk) - enc_size);
+	}
+
+	return true;
 }
 
 static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
