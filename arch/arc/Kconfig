@@ -56,6 +56,31 @@ config	CPU_ARCV2
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
 
+config RAM_START
+	prompt "RAM start address"
+	hex
+	default 0x4000 if NSIM
+	default 0xa8000000
+
+config RAM_SIZE
+	prompt "RAM size (in bytes)"
+	hex
+	default 0x4000 if NSIM
+	default 0x14000
+
+config NSIM
+	prompt "Running on the MetaWare nSIM simulator"
+	bool
+	default n
+	help
+	  For running on nSIM simulator.
+
+	  a) Uses non-XIP to run in RAM.
+	  b) Linked at address 0x4000 with 0x4000 of RAM so that it works with
+	     a pc_size of 16 (default).
+	  c) Sets the entry point to __reset, since it seems nSIM ignores the
+	     reset vector when starting (??).
+
 config	DATA_ENDIANNESS_LITTLE
 	bool
 	default y
