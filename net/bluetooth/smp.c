@@ -2035,7 +2035,6 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_security_request *req = (void *)buf->data;
-	struct bt_keys *keys;
 	uint8_t auth;
 
 	BT_DBG("\n");
@@ -2046,16 +2045,20 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		auth = req->auth_req & BT_SMP_AUTH_MASK;
 	}
 
-	keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
-	if (!keys) {
-		keys = bt_keys_find(BT_KEYS_LTK, &conn->le.dst);
+	if (!conn->keys) {
+		conn->keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
+		if (!conn->keys) {
+			conn->keys = bt_keys_find(BT_KEYS_LTK, &conn->le.dst);
+		}
 	}
 
-	if (!keys) {
+	if (!conn->keys) {
 		goto pair;
 	}
 
-	if ((auth & BT_SMP_AUTH_MITM) && keys->type != BT_KEYS_AUTHENTICATED) {
+	/* if MITM required key must be authenticated */
+	if ((auth & BT_SMP_AUTH_MITM) &&
+	    conn->keys->type != BT_KEYS_AUTHENTICATED) {
 		if (bt_smp_io_capa != BT_SMP_IO_NO_INPUT_OUTPUT) {
 			BT_INFO("New auth requirements: 0x%x, repairing\n",
 				auth);
@@ -2067,13 +2070,16 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		goto pair;
 	}
 
-	if ((auth & BT_SMP_AUTH_SC) && !(keys->keys & BT_KEYS_LTK_P256)) {
+	/* if LE SC required and no p256 key present reapair */
+	if ((auth & BT_SMP_AUTH_SC) && !(conn->keys->keys & BT_KEYS_LTK_P256)) {
 		BT_INFO("New auth requirements: 0x%x, repairing\n", auth);
 		goto pair;
 	}
 
-	if (bt_conn_le_start_encryption(conn, keys->ltk.rand, keys->ltk.ediv,
-					keys->ltk.val, keys->enc_size) < 0) {
+	if (bt_conn_le_start_encryption(conn, conn->keys->ltk.rand,
+					conn->keys->ltk.ediv,
+					conn->keys->ltk.val,
+					conn->keys->enc_size) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
