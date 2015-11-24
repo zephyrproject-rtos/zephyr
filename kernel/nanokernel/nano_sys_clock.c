@@ -45,7 +45,7 @@ int sys_clock_hw_cycles_per_sec;
 int32_t _sys_idle_elapsed_ticks = 1;
 #endif /*  CONFIG_NANOKERNEL */
 
-int64_t _nano_ticks;
+int64_t _sys_clock_tick_count;
 
 /**
  *
@@ -56,7 +56,7 @@ int64_t _nano_ticks;
  */
 uint32_t nano_tick_get_32(void)
 {
-	return (uint32_t)_nano_ticks;
+	return (uint32_t)_sys_clock_tick_count;
 }
 
 /**
@@ -68,18 +68,18 @@ uint32_t nano_tick_get_32(void)
  */
 int64_t nano_tick_get(void)
 {
-	int64_t tmp_nano_ticks;
+	int64_t tmp_sys_clock_tick_count;
 	/*
-	 * Lock the interrupts when reading _nano_ticks 64-bit variable.
+	 * Lock the interrupts when reading _sys_clock_tick_count 64-bit variable.
 	 * Some architectures (x86) do not handle 64-bit atomically, so
 	 * we have to lock the timer interrupt that causes change of
-	 * _nano_ticks
+	 * _sys_clock_tick_count
 	 */
 	unsigned int imask = irq_lock();
 
-	tmp_nano_ticks = _nano_ticks;
+	tmp_sys_clock_tick_count = _sys_clock_tick_count;
 	irq_unlock(imask);
-	return tmp_nano_ticks;
+	return tmp_sys_clock_tick_count;
 }
 
 /**
@@ -116,14 +116,14 @@ static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
 	int64_t  saved;
 
 	/*
-	 * Lock the interrupts when reading _nano_ticks 64-bit variable.
+	 * Lock the interrupts when reading _sys_clock_tick_count 64-bit variable.
 	 * Some architectures (x86) do not handle 64-bit atomically, so
 	 * we have to lock the timer interrupt that causes change of
-	 * _nano_ticks
+	 * _sys_clock_tick_count
 	 */
 	unsigned int imask = irq_lock();
 
-	saved = _nano_ticks;
+	saved = _sys_clock_tick_count;
 	irq_unlock(imask);
 	delta = saved - (*reftime);
 	*reftime = saved;
@@ -201,7 +201,7 @@ static inline void handle_expired_nano_timers(int ticks)
  */
 void _nano_sys_clock_tick_announce(int32_t ticks)
 {
-	_nano_ticks += ticks;
+	_sys_clock_tick_count += ticks;
 	handle_expired_nano_timeouts(ticks);
 	handle_expired_nano_timers(ticks);
 }

@@ -86,7 +86,7 @@ extern int sys_clock_hw_cycles_per_tick;
 
 #define SYS_CLOCK_HW_CYCLES_TO_NS(X) (uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(X))
 
-extern int64_t _nano_ticks;
+extern int64_t _sys_clock_tick_count;
 extern struct nano_timer *_nano_timer_list;
 
 /*
