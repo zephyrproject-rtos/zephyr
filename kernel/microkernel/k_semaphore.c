@@ -26,6 +26,18 @@
 
 #include <micro_private.h>
 
+/**
+ *
+ * @brief Update value of semaphore structure
+ *
+ * This routine updates the value of the semaphore by 0 or more units, then
+ * gives the semaphore to any waiting tasks that can now be satisfied.
+ *
+ * @param n      Number of additional times semaphore has been given.
+ * @param sema   Semaphore structure to update.
+ *
+ * @return N/A
+ */
 void _k_sem_struct_value_update(int n, struct _k_sem_struct *S)
 {
 	struct k_args *A, *X, *Y;

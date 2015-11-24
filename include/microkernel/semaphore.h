@@ -36,154 +36,12 @@ extern "C" {
 
 #include <microkernel/base_api.h>
 
-/**
- *
- * @brief Signal a semaphore from an ISR
- *
- * This routine (to only be called from an ISR) signals a semaphore.
- * To signal a semaphore from a task, task_sem_give() should be used instead.
- *
- * @param sema   Semaphore to signal.
- *
- * @return N/A
- */
-extern void isr_sem_give(ksem_t sema);
-
-/**
- *
- * @brief Signal a semaphore from a fiber
- *
- * This routine (to only be called from a fiber) signals a semaphore.
- * To signal a semaphore from a task, task_sem_give() should be used instead.
- *
- * @param sema   Semaphore to signal.
- *
- * @return N/A
- */
-extern void fiber_sem_give(ksem_t sema);
-
-/**
- *
- * @brief Signal a semaphore
- *
- * This routine signals the specified semaphore.
- *
- * @param sema   Semaphore to signal.
- *
- * @return N/A
- */
-extern void task_sem_give(ksem_t sema);
-
-/**
- *
- * @brief Signal a group of semaphores
- *
- * This routine signals a group of semaphores. A semaphore group is an array of
- * semaphore names terminated by the predefined constant ENDLIST.
- *
- * If the semaphore list of waiting tasks is empty, the signal count is
- * incremented, otherwise the highest priority waiting task is released.
- *
- * Using task_sem_group_give() is faster than using multiple single signals,
- * and ensures all signals take place before other tasks run.
- *
- * @param semagroup   Group of semaphores to signal.
- *
- * @return N/A
- */
-extern void task_sem_group_give(ksemg_t semagroup);
-
-/**
- *
- * @brief Read the semaphore signal count
- *
- * This routine reads the signal count of the specified semaphore.
- *
- * @param sema   Semaphore to query.
- *
- * @return signal count
- */
-extern int task_sem_count_get(ksem_t sema);
-
-/**
- *
- * @brief Reset semaphore count to zero
- *
- * This routine resets the signal count of the specified semaphore to zero.
- *
- * @param sema   Semaphore to reset.
- *
- * @return N/A
- */
-extern void task_sem_reset(ksem_t sema);
-
-/**
- *
- * @brief Reset a group of semaphores
- *
- * This routine resets the signal count for a group of semaphores. A semaphore
- * group is an array of semaphore names terminated by the predefined constant
- * ENDLIST.
- *
- * @param semagroup   Group of semaphores to reset.
- *
- * @return N/A
- */
-extern void task_sem_group_reset(ksemg_t semagroup);
-
-
-
-/**
- * @cond internal
- */
-
-/**
- *
- * @brief Update value of semaphore structure
- *
- * This routine updates the value of the semaphore by 0 or more units, then
- * gives the semaphore to any waiting tasks that can now be satisfied.
- *
- * @param n      Number of additional times semaphore has been given.
- * @param sema   Semaphore structure to update.
- *
- * @return N/A
- */
 extern void _k_sem_struct_value_update(int n, struct _k_sem_struct *S);
+extern int _task_sem_take(ksem_t sema, int32_t ticks);
+extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t ticks);
 
-/**
- *
- * @brief Test a semaphore
- *
- * This routine tests a semaphore to see if it has been signaled.  If the signal
- * count is greater than zero, it is decremented.
- *
- * @param sema   Semaphore to test.
- * @param time   Maximum number of ticks to wait.
- *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
- */
-extern int _task_sem_take(ksem_t sema, int32_t time);
-
-/**
- *
- * @brief Test multiple semaphores
- *
- * This routine tests a group of semaphores. A semaphore group is an array of
- * semaphore names terminated by the predefined constant ENDLIST.
- *
- * It returns the ID of the first semaphore in the group whose signal count is
- * greater than zero, and decrements the signal count.
- *
- * @param group   Group of semaphores to test.
- * @param time    Maximum number of ticks to wait.
- *
- * @return N/A
- */
-extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
-
-/**
- * @brief Initializer for microkernel semaphores
+/*
+ * Initializer for semaphore
  */
 #define __K_SEMAPHORE_DEFAULT \
 	{ \
@@ -193,49 +51,130 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
 	}
 
 /**
- * @endcond
+ *
+ * @brief Give semaphore (from an ISR).
+ *
+ * This routine gives semaphore @a sema from an ISR, rather than a task.
+ *
+ * @param sema Semaphore name.
+ *
+ * @return N/A
  */
+extern void isr_sem_give(ksem_t sema);
 
 /**
  *
- * @brief Test a semaphore
+ * @brief Give semaphore (from a fiber).
  *
- * This routine tests a semaphore to see if it has been signaled.  If the signal
- * count is greater than zero, it is decremented. I waits for none ticks.
+ * This routine gives semaphore @a sema from a fiber, rather than a task.
  *
- * @param s Semaphore to test.
+ * @param sema Semaphore name.
  *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ * @return N/A
+ */
+extern void fiber_sem_give(ksem_t sema);
+
+/**
+ *
+ * @brief Give semaphore.
+ *
+ * This routine gives semaphore @a sema.
+ *
+ * @param sema Semaphore name.
+ *
+ * @return N/A
+ */
+extern void task_sem_give(ksem_t sema);
+
+/**
+ *
+ * @brief Give a group of semaphores.
+ *
+ * This routine gives each semaphore in sempahore group @a semagroup.
+ * This method is faster than giving the semaphores individually, and
+ * ensures that all the semaphores are given before any waiting tasks run.
+ *
+ * @param semagroup Array of semaphore names, terminated by ENDLIST.
+ *
+ * @return N/A
+ */
+extern void task_sem_group_give(ksemg_t semagroup);
+
+/**
+ *
+ * @brief Read a semaphore's count.
+ *
+ * This routine reads the current count of semaphore @a sema.
+ *
+ * @param sema Semaphore name.
+ *
+ * @return Semaphore count.
+ */
+extern int task_sem_count_get(ksem_t sema);
+
+/**
+ *
+ * @brief Reset semaphore count.
+ *
+ * This routine resets the count of semaphore @a sema to zero.
+ *
+ * @param sema Semaphore name.
+ *
+ * @return N/A
+ */
+extern void task_sem_reset(ksem_t sema);
+
+/**
+ *
+ * @brief Reset a group of semaphores
+ *
+ * This routine resets the count for each semaphore in sempahore group
+ * @a semagroup to zero. This method is faster than resetting the semaphores
+ * individually.
+ *
+ * @param semagroup Array of semaphore names, terminated by ENDLIST.
+ *
+ * @return N/A
+ */
+extern void task_sem_group_reset(ksemg_t semagroup);
+
+/**
+ *
+ * @brief Take semaphore or fail.
+ *
+ * This routine takes semaphore @a s. If the semaphore's count is zero the
+ * routine immediately returns a failure indication.
+ *
+ * @param s Semaphore name.
+ *
+ * @return RC_OK on success, or RC_FAIL on failure.
  */
 #define task_sem_take(s) _task_sem_take(s, TICKS_NONE)
 
 /**
  *
- * @brief Test a semaphore
+ * @brief Take semaphore or wait.
  *
- * This routine tests a semaphore to see if it has been signaled.  If the signal
- * count is greater than zero, it is decremented. I waits for unlimited ticks.
+ * This routine takes semaphore @a s. If the semaphore's count is zero the
+ * routine waits until it is given.
  *
- * @param s Semaphore to test.
+ * @param s Semaphore name.
  *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ * @return RC_OK.
  */
 #define task_sem_take_wait(s) _task_sem_take(s, TICKS_UNLIMITED)
 
 /**
  *
- * @brief Test multiple semaphores
+ * @brief Take semaphore from group or wait.
  *
- * This routine tests a group of semaphores. A semaphore group is an array of
- * semaphore names terminated by the predefined constant ENDLIST.
+ * This routine takes a semaphore from semaphore group @a g. If all semaphores
+ * in the group have a count of zero the routine waits until one of themn
+ * can be taken.
  *
- * It returns the ID of the first semaphore in the group whose signal count is
- * greater than zero, and decrements the signal count.
- * It waits for unlimited ticks.
+ * @param g Array of semaphore names, terminated by ENDLIST.
  *
- * @param g Group of semaphores to test.
- *
- * @return N/A
+ * @return Name of semaphore that was taken.
  */
 #define task_sem_group_take_wait(g) _task_sem_group_take(g, TICKS_UNLIMITED)
 
@@ -243,32 +182,31 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
 
 /**
  *
- * @brief Test a semaphore
+ * @brief Take semaphore or timeout.
  *
- * This routine tests a semaphore to see if it has been signaled.  If the signal
- * count is greater than zero, it is decremented.
+ * This routine takes semaphore @a s. If the semaphore's count is zero the
+ * routine waits until it is given, or until the specified time limit
+ * is reached.
  *
- * @param s Semaphore to test.
+ * @param s Semaphore name.
  * @param t Maximum number of ticks to wait.
  *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ * @return RC_OK on success, or RC_TIME on timeout.
  */
 #define task_sem_take_wait_timeout(s, t) _task_sem_take(s, t)
 
 /**
  *
- * @brief Test multiple semaphores
+ * @brief Take semaphore from group or timeout.
  *
- * This routine tests a group of semaphores. A semaphore group is an array of
- * semaphore names terminated by the predefined constant ENDLIST.
+ * This routine takes a semaphore from semaphore group @a g. If all semaphores
+ * in the group have a count of zero the routine waits until one of them
+ * can be taken, or until the specified time limit is reached.
  *
- * It returns the ID of the first semaphore in the group whose signal count is
- * greater than zero, and decrements the signal count.
- *
- * @param g Group of semaphores to test.
+ * @param g Array of semaphore names, terminated by ENDLIST.
  * @param t Maximum number of ticks to wait.
  *
- * @return N/A
+ * @return Name of semaphore that was taken, or ENDLIST on timeout.
  */
 #define task_sem_group_take_wait_timeout(g, t) _task_sem_group_take(g, t)
 #endif
@@ -277,10 +215,7 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
 /**
  * @brief Define a private microkernel semaphore
  *
- * This declares and initializes a private semaphore. The new semaphore
- * can be passed to the microkernel semaphore functions.
- *
- * @param name Name of the semaphore
+ * @param name Semaphore name.
  */
 #define DEFINE_SEMAPHORE(name) \
 	struct _k_sem_struct _k_sem_obj_##name = __K_SEMAPHORE_DEFAULT; \

@@ -198,42 +198,39 @@ The following APIs for an individual semaphore are provided by
 :file:`microkernel.h`:
 
 :cpp:func:`isr_sem_give()`
-   Signals a semaphore from an ISR.
+   Gives a semaphore (from an ISR).
 
 :cpp:func:`fiber_sem_give()`
-   Signals a semaphore from a fiber.
+   Gives a semaphore (from a fiber).
 
 :cpp:func:`task_sem_give()`
-   Signals a semaphore from a task.
+   Gives a semaphore.
 
 :c:func:`task_sem_take()`
-   Tests a semaphore without waiting.
+   Takes a semaphore, or fails if not given.
 
 :c:func:`task_sem_take_wait()`
-   Waits on a semaphore.
+   Takes a semaphore, or waits until it is given.
 
 :c:func:`task_sem_take_wait_timeout()`
-   Waits on a semaphore for a specified time period.
+   Takes a semaphore, or waits for a specified time period.
 
 :cpp:func:`task_sem_reset()`
    Sets the semaphore count to zero.
 
 :cpp:func:`task_sem_count_get()`
-   Reads signal count for a semaphore.
+   Reads the count for a semaphore.
 
 The following APIs for semaphore groups are provided by microkernel.h.
 
 :cpp:func:`task_sem_group_give()`
-   Signals a set of semaphores.
-
-:c:func:`task_sem_group_take()`
-   Tests a set of semaphores without waiting.
+   Gives each semaphore in a group.
 
 :c:func:`task_sem_group_take_wait()`
-   Waits on a set of semaphores.
+   Takes a semaphore from a group, or waits until one is given.
 
 :c:func:`task_sem_group_take_wait_timeout()`
-   Waits on a set of semaphores for a specified time period.
+   Takes a semaphore from a group. or waits for a specified time period.
 
 :cpp:func:`task_sem_group_reset()`
-   Sets the semaphore count to to zero for a set of semaphores.
+   Sets the count to zero for each semaphore in a group.
