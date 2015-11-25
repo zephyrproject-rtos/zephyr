@@ -115,10 +115,6 @@ The following kernel clock APIs are provided by :file:`microkernel.h`:
 :cpp:func:`sys_tick_delta()`, :cpp:func:`sys_tick_delta_32()`
    Compute the elapsed time since an earlier system clock reading.
 
-:cpp:func:`task_cycle_get_32()`, :c:func:`fiber_cycle_get_32()`,
-:c:func:`isr_cycle_get_32()`
-   Read the hardware clock.
-
 The following kernel clock APIs are provided by :file:`microkernel.h`
 and by :file:`nanokernel.h`:
 
@@ -128,7 +124,7 @@ and by :file:`nanokernel.h`:
 :cpp:func:`sys_tick_delta()`, :cpp:func:`sys_tick_delta_32()`
    Compute the elapsed time since an earlier system clock reading.
 
-:cpp:func:`nano_cycle_get_32()`, :cpp:func:`sys_cycle_get_32()`
+:cpp:func:`sys_cycle_get_32()`
    Reads hardware clock.
 
 The following kernel clock variables are provided by :file:`microkernel.h`

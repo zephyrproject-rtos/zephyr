@@ -641,9 +641,6 @@ uint32_t sys_cycle_get_32(void)
 	return (uint32_t) *_HPET_MAIN_COUNTER_VALUE;
 }
 
-FUNC_ALIAS(sys_cycle_get_32, nano_cycle_get_32, uint32_t);
-FUNC_ALIAS(sys_cycle_get_32, task_cycle_get_32, uint32_t);
-
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 
 /**

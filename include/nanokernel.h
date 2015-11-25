@@ -1625,13 +1625,6 @@ extern uint32_t sys_tick_get_32(void);
 extern uint32_t sys_cycle_get_32(void);
 
 /**
- * @brief Return a high resolution time stamp
- *
- * @return the current timer hardware count
- */
-extern uint32_t nano_cycle_get_32(void);
-
-/**
  *
  * @brief Return number of ticks since a reference time
  *

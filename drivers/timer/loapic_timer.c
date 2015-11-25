@@ -618,9 +618,6 @@ uint32_t sys_cycle_get_32(void)
 	return val;
 }
 
-FUNC_ALIAS(sys_cycle_get_32, nano_cycle_get_32, uint32_t);
-FUNC_ALIAS(sys_cycle_get_32, task_cycle_get_32, uint32_t);
-
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**
  *

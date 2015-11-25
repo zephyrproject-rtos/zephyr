@@ -65,19 +65,6 @@ extern "C" {
 extern void sys_scheduler_time_slice_set(int32_t t, kpriority_t p);
 
 /**
- * @brief Read the processor's high precision timer
- *
- * This routine reads the processor's high precision timer.  It reads the
- * counter register on the timer device. This counter register increments
- * at a relatively high rate (e.g. 20 MHz), and thus is considered a
- * "high resolution" timer.  This is in contrast to sys_tick_get_32() which
- * returns the value of the kernel ticks variable.
- *
- * @return current high precision clock value
- */
-extern uint32_t task_cycle_get_32(void);
-
-/**
  * @brief Allocate a timer and return its object identifier
  *
  * @return timer identifier
@@ -197,11 +184,6 @@ extern int task_workload_get(void);
  * @return N/A
  */
 extern void sys_workload_time_slice_set(int32_t t);
-
-
-#define isr_cycle_get_32() sys_cycle_get_32()
-
-#define fiber_cycle_get_32() sys_cycle_get_32()
 
 #ifdef __cplusplus
 }

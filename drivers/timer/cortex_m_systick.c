@@ -634,9 +634,6 @@ uint32_t sys_cycle_get_32(void)
 	return clock_accumulated_count + (__scs.systick.strvr - __scs.systick.stcvr);
 }
 
-FUNC_ALIAS(sys_cycle_get_32, nano_cycle_get_32, uint32_t);
-FUNC_ALIAS(sys_cycle_get_32, task_cycle_get_32, uint32_t);
-
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 
 /**
