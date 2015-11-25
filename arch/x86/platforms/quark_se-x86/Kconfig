@@ -70,77 +70,85 @@ config ARC_INIT_DEBUG
 	the ARC slave processor. This will allow GDB to halt and
 	engage the ARC processor to proceed step by step execution.
 
-if GPIO_DW
+if GPIO
+config GPIO_DW
+	def_bool y
 
 config GPIO_DW_BOTHEDGES_SUPPORT
 	def_bool y
 
+config GPIO_DW_0
+	def_bool y
 config GPIO_DW_0_BASE_ADDR
-	default 0xB0000C00
+	default 0xb0000C00
 config GPIO_DW_0_IRQ
 	default 8
-
-config GPIO_DW_1_BASE_ADDR
-	default 0xB0001700
-config GPIO_DW_1_IRQ
+config GPIO_DW_0_BITS
 	default 8
 
+config GPIO_DW_1
+	def_bool y
+config GPIO_DW_1_BASE_ADDR
+	default 0xb0001700
+config GPIO_DW_1_IRQ
+	default 8
+config GPIO_DW_0_BITS
+	default 8
 endif
 
-if I2C_DW
+if I2C
+config I2C_DW
+	def_bool y
+
 config I2C_DW_0
         def_bool y
-
 config I2C_DW_0_BASE
         default 0xb0002800
-
 config I2C_DW_0_NAME
         default "I2C0"
-
-config I2C_DW_0_INT_PRIORITY
-        default 0
+config I2C_DW_0_IRQ
+	default 0
 
 config I2C_DW_1
         def_bool y
-
 config I2C_DW_1_BASE
         default 0xb0002c00
-
 config I2C_DW_1_NAME
         default "I2C1"
-
-config I2C_DW_1_INT_PRIORITY
-        default 0
+config I2C_DW_1_IRQ
+	default 1
 endif
 
-if CLOCK_CONTROL_QUARK_SE
+if CLOCK_CONTROL
+config CLOCK_CONTROL_QUARK_SE
+	def_bool y
 
 config CLOCK_CONTROL_QUARK_SE_PERIPHERAL
-	def_bool n
-	default y if SPI_DW_CLOCK_GATE
-
+	def_bool y
 config CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
 	default "clk_peripheral"
 
 config  CLOCK_CONTROL_QUARK_SE_EXTERNAL
-       def_bool n
-
+       def_bool y
 config CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME
 	default "clk_external"
 
 config  CLOCK_CONTROL_QUARK_SE_SENSOR
-       def_bool n
-
+       def_bool y
 config CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
 	default "clk_sensor"
 endif
 
-if SPI_DW
+if SPI
+config SPI_DW
+	def_bool y
 config SPI_DW_CLOCK_GATE
 	def_bool n
 config SPI_DW_CLOCK_GATE_DRV_NAME
 	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
 
+config SPI_DW_PORT_0
+	def_bool y
 config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
 	default 14
 	depends on SPI_DW_CLOCK_GATE
@@ -148,9 +156,9 @@ config SPI_DW_PORT_0_REGS
 	default 0xb0001000
 config SPI_DW_PORT_0_IRQ
 	default 2
-config SPI_DW_PORT_0_PRI
-	default 2
 
+config SPI_DW_PORT_1
+	def_bool y
 config SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
 	default 15
 	depends on SPI_DW_CLOCK_GATE
@@ -158,7 +166,5 @@ config SPI_DW_PORT_1_REGS
 	default 0xb0001400
 config SPI_DW_PORT_1_IRQ
 	default 3
-config SPI_DW_PORT_1_PRI
-	default 2
 endif
 
