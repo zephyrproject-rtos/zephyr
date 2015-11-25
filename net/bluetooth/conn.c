@@ -492,7 +492,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	bt_conn_unref(conn);
 }
 
-struct bt_conn *bt_conn_add(const bt_addr_le_t *peer)
+struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = NULL;
 	int i;
@@ -516,6 +516,7 @@ struct bt_conn *bt_conn_add(const bt_addr_le_t *peer)
 	conn->sec_level = BT_SECURITY_LOW;
 	conn->required_sec_level = BT_SECURITY_LOW;
 #endif /* CONFIG_BLUETOOTH_SMP */
+	conn->type = BT_CONN_TYPE_LE;
 
 	return conn;
 }
@@ -549,7 +550,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	switch (old_state) {
 	case BT_CONN_DISCONNECTED:
 		/* Take a reference for the first state transition after
-		 * bt_conn_add() and keep it until reaching DISCONNECTED
+		 * bt_conn_add_le() and keep it until reaching DISCONNECTED
 		 * again.
 		 */
 		bt_conn_ref(conn);
@@ -796,7 +797,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 		}
 	}
 
-	conn = bt_conn_add(peer);
+	conn = bt_conn_add_le(peer);
 	if (!conn) {
 		return NULL;
 	}
