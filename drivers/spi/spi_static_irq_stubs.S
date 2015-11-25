@@ -15,8 +15,10 @@
  */
 #define _ASMLANGUAGE
 
+#ifdef CONFIG_X86_32
 #include <arch/x86/asm.h>
 #include <drivers/ioapic.h>
+#endif
 
 #if defined(CONFIG_SPI_INTEL_PORT_0)
 	ioapic_mkstub spi_intel_irq_port_0 spi_intel_isr spi_intel_isr_port_0
@@ -24,3 +26,15 @@
 #if defined(CONFIG_SPI_INTEL_PORT_1)
 	ioapic_mkstub spi_intel_irq_port_1 spi_intel_isr spi_intel_isr_port_1
 #endif /* CONFIG_SPI_INTEL_PORT_1 */
+
+#if defined(CONFIG_SPI_DW_PORT_0)
+#ifdef CONFIG_IOAPIC
+	ioapic_mkstub spi_dw_irq_port_0 spi_dw_isr spi_dw_isr_port_0
+#endif
+#endif
+#if defined(CONFIG_SPI_DW_PORT_1)
+#ifdef CONFIG_IOAPIC
+	ioapic_mkstub spi_dw_irq_port_1 spi_dw_isr spi_dw_isr_port_1
+#endif
+#endif
+

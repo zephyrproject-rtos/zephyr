@@ -69,7 +69,6 @@ config SPI_INTEL_LEVEL_LOW
 	bool "Level low"
 	help
 	  "Intel SPI uses level low interrupt"
-
 endchoice
 
 config	SPI_INTEL_VENDOR_ID
@@ -216,6 +215,32 @@ config SPI_DW
 	help
 	  Enable support for Designware's SPI controllers.
 
+choice
+depends on SPI_DW
+prompt "DesignWare SPI interrupt trigger condition"
+default SPI_DW_RISING_EDGE
+
+config SPI_DW_FALLING_EDGE
+	bool "Falling edge"
+	help
+	  "DesignWare SPI uses falling edge interrupt"
+
+config SPI_DW_RISING_EDGE
+	bool "Rising edge"
+	help
+	  "DesignWare SPI uses rising edge interrupt"
+
+config SPI_DW_LEVEL_HIGH
+	bool "Level high"
+	help
+	  "DesignWare SPI uses level high interrupt"
+
+config SPI_DW_LEVEL_LOW
+	bool "Level low"
+	help
+	  "DesignWare SPI uses level low interrupt"
+endchoice
+
 config  SPI_DW_CLOCK_GATE
 	bool "Enable glock gating"
 	depends on SPI_DW && PLATFORM_QUARK_SE_X86
@@ -262,7 +287,7 @@ config  SPI_DW_PORT_0_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_DW_PORT_0
-	default 0
+	default 2
 
 config  SPI_DW_PORT_1
 	bool
@@ -299,6 +324,6 @@ config  SPI_DW_PORT_1_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_DW_PORT_1
-	default 0
+	default 2
 
 endif

@@ -463,7 +463,8 @@ pre_kernel_late_init(spi_dw_port_0, &spi_dw_data_port_0);
 struct device *spi_dw_isr_port_0 = SYS_GET_DEVICE(spi_dw_port_0);
 
 IRQ_CONNECT_STATIC(spi_dw_irq_port_0, CONFIG_SPI_DW_PORT_0_IRQ,
-		   CONFIG_SPI_DW_PORT_0_PRI, spi_dw_isr, 0);
+		   CONFIG_SPI_DW_PORT_0_PRI, spi_dw_isr, 0,
+		   SPI_DW_IRQ_FLAGS);
 
 void spi_config_0_irq(struct device *dev)
 {
@@ -497,7 +498,8 @@ pre_kernel_late_init(spi_dw_port_1, &spi_dw_data_port_1);
 struct device *spi_dw_isr_port_1 = SYS_GET_DEVICE(spi_dw_port_1);
 
 IRQ_CONNECT_STATIC(spi_dw_irq_port_1, CONFIG_SPI_DW_PORT_1_IRQ,
-		   CONFIG_SPI_DW_PORT_1_PRI, spi_dw_isr, 0);
+		   CONFIG_SPI_DW_PORT_1_PRI, spi_dw_isr, 0,
+		   SPI_DW_IRQ_FLAGS);
 
 void spi_config_1_irq(struct device *dev)
 {
