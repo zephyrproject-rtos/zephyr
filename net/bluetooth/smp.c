@@ -1517,6 +1517,7 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 	}
 }
+
 static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
 	uint32_t passkey;
