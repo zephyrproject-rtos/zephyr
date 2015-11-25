@@ -492,7 +492,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	bt_conn_unref(conn);
 }
 
-struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
+static struct bt_conn *conn_new(void)
 {
 	struct bt_conn *conn = NULL;
 	int i;
@@ -511,6 +511,18 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	memset(conn, 0, sizeof(*conn));
 
 	atomic_set(&conn->ref, 1);
+
+	return conn;
+}
+
+struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
+{
+	struct bt_conn *conn = conn_new();
+
+	if (!conn) {
+		return NULL;
+	};
+
 	bt_addr_le_copy(&conn->le.dst, peer);
 #if defined(CONFIG_BLUETOOTH_SMP)
 	conn->sec_level = BT_SECURITY_LOW;
