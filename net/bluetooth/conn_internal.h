@@ -155,10 +155,8 @@ static inline struct nano_sem *bt_conn_get_pkts(struct bt_conn *conn)
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BREDR || !bt_dev.le.mtu) {
 		return &bt_dev.br.pkts;
-	} else {
-		return &bt_dev.le.pkts;
 	}
-#else
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 	return &bt_dev.le.pkts;
-#endif
 }
