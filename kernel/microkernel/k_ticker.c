@@ -43,21 +43,6 @@ static kpriority_t slice_prio =
 int32_t _sys_idle_elapsed_ticks; /* Initial value must be 0 */
 #endif
 
-int32_t task_tick_get_32(void)
-{
-	return (int32_t)_sys_clock_tick_count;
-}
-
-int64_t task_tick_get(void)
-{
-	int64_t ticks;
-	int key = irq_lock();
-
-	ticks = _sys_clock_tick_count;
-	irq_unlock(key);
-	return ticks;
-}
-
 /**
  * @internal
  * @brief Task level debugging tick handler
@@ -170,32 +155,3 @@ void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
 }
 
 #endif /* CONFIG_TIMESLICING */
-
-/**
- *
- * @brief Handle elapsed ticks calculation request
- *
- * This routine, called by _k_server(), handles the request for calculating the
- * time elapsed since the specified reference time.
- *
- * @return N/A
- */
-void _k_time_elapse(struct k_args *P)
-{
-	int64_t now = task_tick_get();
-
-	P->args.c1.time2 = now - P->args.c1.time1;
-	P->args.c1.time1 = now;
-}
-
-int64_t task_tick_delta(int64_t *reftime /* pointer to reference time */
-			)
-{
-	struct k_args A;
-
-	A.Comm = _K_SVC_TIME_ELAPSE;
-	A.args.c1.time1 = *reftime;
-	KERNEL_ENTRY(&A);
-	*reftime = A.args.c1.time1;
-	return A.args.c1.time2;
-}

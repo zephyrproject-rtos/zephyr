@@ -70,13 +70,13 @@ between two points in time.
    int64_t ticks_spent;
 
    /* capture initial time stamp */
-   time_stamp = task_tick_get();
+   time_stamp = sys_tick_get();
 
    /* do work for some (extended) period of time */
    ...
 
    /* compute how long the work took & update time stamp */
-   ticks_spent = task_tick_delta(&time_stamp);
+   ticks_spent = sys_tick_delta(&time_stamp);
 
 Example: Measuring Time with High Precision
 ===========================================
@@ -109,12 +109,12 @@ APIs
 
 The following kernel clock APIs are provided by :file:`microkernel.h`:
 
-:cpp:func:`task_tick_get()`, :cpp:func:`task_tick_get_32()`,
+:cpp:func:`sys_tick_get()`, :cpp:func:`sys_tick_get_32()`,
 :c:func:`fiber_tick_get()`, :c:func:`fiber_tick_get_32()`,
 :c:func:`isr_tick_get()`, :c:func:`isr_tick_get_32()`
    Read the system clock.
 
-:cpp:func:`task_tick_delta()`, :cpp:func:`task_tick_delta_32()`
+:cpp:func:`sys_tick_delta()`, :cpp:func:`sys_tick_delta_32()`
    Compute the elapsed time since an earlier system clock reading.
 
 :cpp:func:`task_cycle_get_32()`, :c:func:`fiber_cycle_get_32()`,

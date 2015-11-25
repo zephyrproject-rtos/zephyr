@@ -40,20 +40,12 @@ static int64_t start_time;
 
 void clock_init(void)
 {
-#ifdef CONFIG_MICROKERNEL
-	start_time = task_tick_get();
-#else /*  CONFIG_NANOKERNEL */
 	sys_tick_delta(&start_time);
-#endif
 }
 
 clock_time_t clock_time(void)
 {
-#ifdef CONFIG_MICROKERNEL
-	return task_tick_get_32();
-#else /*  CONFIG_NANOKERNEL */
 	return sys_tick_get_32();
-#endif
 }
 
 unsigned long clock_seconds(void)

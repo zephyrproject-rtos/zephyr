@@ -48,7 +48,6 @@ struct k_timer {
 #define _K_SVC_MOVEDATA_REQ				_k_movedata_request
 #define _K_SVC_NOP					_k_nop
 #define _K_SVC_OFFLOAD_TO_FIBER				_k_offload_to_fiber
-#define _K_SVC_TIME_ELAPSE				_k_time_elapse
 #define _K_SVC_WORKLOAD_GET				_k_workload_get
 
 #define _K_SVC_EVENT_HANDLER_SET			_k_event_handler_set
