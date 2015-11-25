@@ -944,9 +944,9 @@ distclean: mrproper
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------
 
-boards := $(wildcard $(srctree)/arch/$(SRCARCH)/configs/*_defconfig)
+boards := $(wildcard $(srctree)/configs/*_defconfig) $(wildcard $(srctree)/arch/*/platforms/*/configs/*_defconfig)
 boards := $(sort $(notdir $(boards)))
-board-dirs := $(dir $(wildcard $(srctree)/arch/$(SRCARCH)/configs/*/*_defconfig))
+board-dirs := $(dir $(wildcard $(srctree)/configs/*/*_defconfig))
 board-dirs := $(sort $(notdir $(board-dirs:/=)))
 
 help:
@@ -964,9 +964,7 @@ help:
 	@echo  '* zephyr	  - Build the bare kernel'
 	@echo  '  qemu		  - Build the bare kernel and runs the emulation with qemu'
 	@echo  ''
-	@echo  'Architecture specific targets ($(SRCARCH)):'
-	@$(if $(archhelp),$(archhelp),\
-		echo '  No architecture specific help defined for $(SRCARCH)')
+	@echo  'Supported platforms:'
 	@echo  ''
 	@$(if $(boards), \
 		$(foreach b, $(boards), \
