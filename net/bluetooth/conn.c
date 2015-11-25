@@ -533,6 +533,22 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	return conn;
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
+{
+	struct bt_conn *conn = conn_new();
+
+	if (!conn) {
+		return NULL;
+	};
+
+	bt_addr_copy(&conn->br.dst, peer);
+	conn->type = BT_CONN_TYPE_BREDR;
+
+	return conn;
+}
+#endif
+
 static void timeout_fiber(int arg1, int arg2)
 {
 	struct bt_conn *conn = (struct bt_conn *)arg1;

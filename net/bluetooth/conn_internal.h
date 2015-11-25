@@ -51,6 +51,7 @@ struct bt_conn_le {
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 struct bt_conn_br {
+	bt_addr_t		dst;
 };
 #endif
 
@@ -108,6 +109,11 @@ void bt_conn_send(struct bt_conn *conn, struct net_buf *buf);
 
 /* Add a new LE connection */
 struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer);
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/* Add a new BR/EDR connection */
+struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
+#endif
 
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
