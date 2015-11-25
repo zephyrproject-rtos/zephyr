@@ -34,10 +34,6 @@
 #endif
 
 #if defined(CONFIG_NANOKERNEL)
-
-
-#define OS_GET_TIME() sys_cycle_get_32()
-
 /* number of ticks before timer overflows */
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
 
@@ -53,8 +49,6 @@ static inline void TICK_SYNCH(void)
 }
 
 #elif (defined(CONFIG_MICROKERNEL) && defined(KERNEL))
-#define OS_GET_TIME() task_cycle_get_32()
-
 typedef int64_t TICK_TYPE;
 
 #define TICK_SYNCH() task_sleep(1)
@@ -64,6 +58,7 @@ typedef int64_t TICK_TYPE;
 #endif /*  CONFIG_NANOKERNEL */
 
 #define TICK_GET(x) ((TICK_TYPE) sys_tick_delta(x))
+#define OS_GET_TIME() sys_cycle_get_32()
 
 /* time necessary to read the time */
 extern uint32_t tm_off;
