@@ -248,7 +248,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	struct bt_l2cap_hdr *hdr;
 	uint16_t len;
 
-	BT_DBG("handle %u len %u flags %02x\n", conn->handle, buf->len, flags);
+	BT_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
 	/* Check packet boundary flags */
 	switch (flags) {
@@ -256,15 +256,15 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		hdr = (void *)buf->data;
 		len = sys_le16_to_cpu(hdr->len);
 
-		BT_DBG("First, len %u final %u\n", buf->len, len);
+		BT_DBG("First, len %u final %u", buf->len, len);
 
 		if (conn->rx_len) {
-			BT_ERR("Unexpected first L2CAP frame\n");
+			BT_ERR("Unexpected first L2CAP frame");
 			bt_conn_reset_rx_state(conn);
 		}
 
 		conn->rx_len = (sizeof(*hdr) + len) - buf->len;
-		BT_DBG("rx_len %u\n", conn->rx_len);
+		BT_DBG("rx_len %u", conn->rx_len);
 		if (conn->rx_len) {
 			conn->rx = buf;
 			return;
@@ -273,23 +273,23 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		break;
 	case BT_ACL_CONT:
 		if (!conn->rx_len) {
-			BT_ERR("Unexpected L2CAP continuation\n");
+			BT_ERR("Unexpected L2CAP continuation");
 			bt_conn_reset_rx_state(conn);
 			net_buf_unref(buf);
 			return;
 		}
 
 		if (buf->len > conn->rx_len) {
-			BT_ERR("L2CAP data overflow\n");
+			BT_ERR("L2CAP data overflow");
 			bt_conn_reset_rx_state(conn);
 			net_buf_unref(buf);
 			return;
 		}
 
-		BT_DBG("Cont, len %u rx_len %u\n", buf->len, conn->rx_len);
+		BT_DBG("Cont, len %u rx_len %u", buf->len, conn->rx_len);
 
 		if (buf->len > net_buf_tailroom(conn->rx)) {
-			BT_ERR("Not enough buffer space for L2CAP data\n");
+			BT_ERR("Not enough buffer space for L2CAP data");
 			bt_conn_reset_rx_state(conn);
 			net_buf_unref(buf);
 			return;
@@ -309,7 +309,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 		break;
 	default:
-		BT_ERR("Unexpected ACL flags (0x%02x)\n", flags);
+		BT_ERR("Unexpected ACL flags (0x%02x)", flags);
 		bt_conn_reset_rx_state(conn);
 		net_buf_unref(buf);
 		return;
@@ -319,22 +319,22 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	len = sys_le16_to_cpu(hdr->len);
 
 	if (sizeof(*hdr) + len != buf->len) {
-		BT_ERR("ACL len mismatch (%u != %u)\n", len, buf->len);
+		BT_ERR("ACL len mismatch (%u != %u)", len, buf->len);
 		net_buf_unref(buf);
 		return;
 	}
 
-	BT_DBG("Successfully parsed %u byte L2CAP packet\n", buf->len);
+	BT_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
 
 	bt_l2cap_recv(conn, buf);
 }
 
 void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 {
-	BT_DBG("conn handle %u buf len %u\n", conn->handle, buf->len);
+	BT_DBG("conn handle %u buf len %u", conn->handle, buf->len);
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		BT_ERR("not connected!\n");
+		BT_ERR("not connected!");
 		net_buf_unref(buf);
 		return;
 	}
@@ -348,7 +348,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	struct bt_hci_acl_hdr *hdr;
 	int err;
 
-	BT_DBG("conn %p buf %p len %u flags 0x%02x\n", conn, buf, buf->len,
+	BT_DBG("conn %p buf %p len %u flags 0x%02x", conn, buf, buf->len,
 	       flags);
 
 	/* Wait until the controller can accept ACL packets */
@@ -363,10 +363,10 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	BT_DBG("passing buf %p len %u to driver\n", buf, buf->len);
+	BT_DBG("passing buf %p len %u to driver", buf, buf->len);
 	err = bt_dev.drv->send(BT_ACL_OUT, buf);
 	if (err) {
-		BT_ERR("Unable to send to driver (err %d)\n", err);
+		BT_ERR("Unable to send to driver (err %d)", err);
 		goto fail;
 	}
 
@@ -417,7 +417,7 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
 
-	BT_DBG("conn %p buf %p len %u\n", conn, buf, buf->len);
+	BT_DBG("conn %p buf %p len %u", conn, buf, buf->len);
 
 	/* Send directly if the packet fits the ACL MTU */
 	if (buf->len <= conn_mtu(conn)) {
@@ -457,7 +457,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	struct bt_conn *conn = (struct bt_conn *)arg1;
 	struct net_buf *buf;
 
-	BT_DBG("Started for handle %u\n", conn->handle);
+	BT_DBG("Started for handle %u", conn->handle);
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Get next ACL packet for connection */
@@ -472,7 +472,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 		}
 	}
 
-	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);
+	BT_DBG("handle %u disconnected - cleaning up", conn->handle);
 
 	/* Give back any allocated buffers */
 	while ((buf = nano_fifo_get(&conn->tx_queue))) {
@@ -488,7 +488,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 
 	bt_conn_reset_rx_state(conn);
 
-	BT_DBG("handle %u exiting\n", conn->handle);
+	BT_DBG("handle %u exiting", conn->handle);
 	bt_conn_unref(conn);
 }
 
@@ -564,10 +564,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
 	bt_conn_state_t old_state;
 
-	BT_DBG("%s -> %s\n", state2str(conn->state), state2str(state));
+	BT_DBG("%s -> %s", state2str(conn->state), state2str(state));
 
 	if (conn->state == state) {
-		BT_WARN("no transition\n");
+		BT_WARN("no transition");
 		return;
 	}
 
@@ -638,7 +638,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_DISCONNECT:
 		break;
 	default:
-		BT_WARN("no valid (%u) state was set\n", state);
+		BT_WARN("no valid (%u) state was set", state);
 
 		break;
 	}
@@ -711,7 +711,7 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
 	atomic_inc(&conn->ref);
 
-	BT_DBG("handle %u ref %u\n", conn->handle, atomic_get(&conn->ref));
+	BT_DBG("handle %u ref %u", conn->handle, atomic_get(&conn->ref));
 
 	return conn;
 }
@@ -720,7 +720,7 @@ void bt_conn_unref(struct bt_conn *conn)
 {
 	atomic_dec(&conn->ref);
 
-	BT_DBG("handle %u ref %u\n", conn->handle, atomic_get(&conn->ref));
+	BT_DBG("handle %u ref %u", conn->handle, atomic_get(&conn->ref));
 }
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)

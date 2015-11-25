@@ -23,13 +23,13 @@
 #include <stdio.h>
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-#define BT_DBG(fmt, ...) printf("bt: %s (%p): " fmt, __func__, \
+#define BT_DBG(fmt, ...) printf("bt: %s (%p): " fmt "\n", __func__, \
 				sys_thread_self_get(), ##__VA_ARGS__)
-#define BT_ERR(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_WARN(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_INFO(fmt, ...) printf("bt: " fmt,  ##__VA_ARGS__)
+#define BT_ERR(fmt, ...) printf("bt: %s: " fmt "\n", __func__, ##__VA_ARGS__)
+#define BT_WARN(fmt, ...) printf("bt: %s: " fmt "\n", __func__, ##__VA_ARGS__)
+#define BT_INFO(fmt, ...) printf("bt: " fmt "\n", ##__VA_ARGS__)
 #define BT_ASSERT(cond) if (!(cond)) { \
-				BT_ERR("bt: assert: '" #cond "' failed\n"); \
+				BT_ERR("bt: assert: '" #cond "' failed"); \
 			}
 #else
 #define BT_DBG(fmt, ...)

@@ -72,7 +72,7 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.recv = bt_smp_recv,
 	};
 
-	BT_DBG("conn %p handle %u\n", conn, conn->handle);
+	BT_DBG("conn %p handle %u", conn, conn->handle);
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
 		struct bt_l2cap_chan *smp = &bt_smp_pool[i];
@@ -88,7 +88,7 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		return 0;
 	}
 
-	BT_ERR("No available SMP context for conn %p\n", conn);
+	BT_ERR("No available SMP context for conn %p", conn);
 
 	return -ENOMEM;
 }

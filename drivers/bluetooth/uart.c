@@ -56,14 +56,14 @@ static int bt_uart_read(struct device *uart, uint8_t *buf,
 
 		rx = uart_fifo_read(uart, buf, len);
 		if (rx == 0) {
-			BT_DBG("Got zero bytes from UART\n");
+			BT_DBG("Got zero bytes from UART");
 			if (total < min) {
 				continue;
 			}
 			break;
 		}
 
-		BT_DBG("read %d remaining %d\n", rx, len - rx);
+		BT_DBG("read %d remaining %d", rx, len - rx);
 		len -= rx;
 		total += rx;
 		buf += rx;
@@ -93,10 +93,10 @@ static struct net_buf *bt_uart_evt_recv(int *remaining)
 	if (buf) {
 		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
 	} else {
-		BT_ERR("No available event buffers!\n");
+		BT_ERR("No available event buffers!");
 	}
 
-	BT_DBG("len %u\n", hdr.len);
+	BT_DBG("len %u", hdr.len);
 
 	return buf;
 }
@@ -113,12 +113,12 @@ static struct net_buf *bt_uart_acl_recv(int *remaining)
 	if (buf) {
 		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
 	} else {
-		BT_ERR("No available ACL buffers!\n");
+		BT_ERR("No available ACL buffers!");
 	}
 
 	*remaining = sys_le16_to_cpu(hdr.len);
 
-	BT_DBG("len %u\n", *remaining);
+	BT_DBG("len %u", *remaining);
 
 	return buf;
 }
@@ -136,9 +136,9 @@ void bt_uart_isr(void *unused)
 
 		if (!uart_irq_rx_ready(bt_uart_dev)) {
 			if (uart_irq_tx_ready(bt_uart_dev)) {
-				BT_DBG("transmit ready\n");
+				BT_DBG("transmit ready");
 			} else {
-				BT_DBG("spurious interrupt\n");
+				BT_DBG("spurious interrupt");
 			}
 			continue;
 		}
@@ -151,7 +151,7 @@ void bt_uart_isr(void *unused)
 			read = bt_uart_read(bt_uart_dev, &type,
 					    sizeof(type), 0);
 			if (read != sizeof(type)) {
-				BT_WARN("Unable to read H4 packet type\n");
+				BT_WARN("Unable to read H4 packet type");
 				continue;
 			}
 
@@ -163,14 +163,14 @@ void bt_uart_isr(void *unused)
 				buf = bt_uart_acl_recv(&remaining);
 				break;
 			default:
-				BT_ERR("Unknown H4 type %u\n", type);
+				BT_ERR("Unknown H4 type %u", type);
 				return;
 			}
 
-			BT_DBG("need to get %u bytes\n", remaining);
+			BT_DBG("need to get %u bytes", remaining);
 
 			if (buf && remaining > net_buf_tailroom(buf)) {
-				BT_ERR("Not enough space in buffer\n");
+				BT_ERR("Not enough space in buffer");
 				net_buf_unref(buf);
 				buf = NULL;
 			}
@@ -178,7 +178,7 @@ void bt_uart_isr(void *unused)
 
 		if (!buf) {
 			read = bt_uart_discard(bt_uart_dev, remaining);
-			BT_WARN("Discarded %d bytes\n", read);
+			BT_WARN("Discarded %d bytes", read);
 			remaining -= read;
 			continue;
 		}
@@ -189,10 +189,10 @@ void bt_uart_isr(void *unused)
 		buf->len += read;
 		remaining -= read;
 
-		BT_DBG("received %d bytes\n", read);
+		BT_DBG("received %d bytes", read);
 
 		if (!remaining) {
-			BT_DBG("full packet received\n");
+			BT_DBG("full packet received");
 
 			/* Pass buffer to the stack */
 			bt_recv(buf);
@@ -227,7 +227,7 @@ IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
 
 static void bt_uart_setup(struct device *uart)
 {
-	BT_DBG("\n");
+	BT_DBG("");
 
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
