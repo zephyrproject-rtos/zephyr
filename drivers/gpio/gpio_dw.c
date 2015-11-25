@@ -223,6 +223,17 @@ static inline int gpio_dw_resume_port(struct device *port)
 	return 0;
 }
 
+#ifdef CONFIG_PLATFORM_QUARK_SE
+static inline void gpio_dw_unmask_int(struct device *port)
+{
+	sys_write32(sys_read32(GPIO_INT_MASK) & INT_UNMASK_IA, GPIO_INT_MASK);
+}
+#else
+#define gpio_dw_unmask_int(...)
+#endif
+
+
+
 void gpio_dw_isr(struct device *port)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
@@ -322,6 +333,7 @@ int gpio_dw_initialize(struct device *port)
 	port->driver_api = &api_funcs;
 
 	config->config_func(port);
+	gpio_dw_unmask_int(port);
 
 	return 0;
 }

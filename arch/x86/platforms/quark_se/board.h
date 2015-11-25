@@ -261,6 +261,9 @@ struct scss_interrupt {
 #define SPI_DW_PORT_0_INT_MASK		(SCSS_INT_BASE + 0x54)
 #define SPI_DW_PORT_1_INT_MASK		(SCSS_INT_BASE + 0x58)
 
+/* GPIO */
+#define GPIO_INT_MASK			(SCSS_INT_BASE + 0x6C)
+
 /* Comparator */
 #define INT_AIO_CMP_IRQ			(0x16)
 
