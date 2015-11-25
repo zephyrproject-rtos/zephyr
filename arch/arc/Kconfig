@@ -58,10 +58,10 @@ config RAM_START
 	default 0xa8000000
 
 config RAM_SIZE
-	prompt "RAM size (in bytes)"
-	hex
-	default 0x4000 if NSIM
-	default 0x14000
+	prompt "RAM size (in kB)"
+	int
+	default 16 if NSIM
+	default 80
 
 config NSIM
 	prompt "Running on the MetaWare nSIM simulator"

@@ -52,7 +52,7 @@ Linker script for the Quark SE platform.
 
 MEMORY {
 	FLASH (rx) : ORIGIN = FLASH_START, LENGTH = FLASH_SIZE
-	SRAM  (wx) : ORIGIN = SRAM_START,  LENGTH = SRAM_SIZE
+	SRAM  (wx) : ORIGIN = SRAM_START,  LENGTH = SRAM_SIZE*1k
 	DCCM  (wx) : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE
 }
 

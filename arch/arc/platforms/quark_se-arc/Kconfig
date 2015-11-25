@@ -45,8 +45,8 @@ config RAM_START
 	default 0xa8000400
 
 config RAM_SIZE
-	default 0x4000 if NSIM
-	default 0x6000
+	default 16 if NSIM
+	default 24
 
 if GPIO_DW
 
