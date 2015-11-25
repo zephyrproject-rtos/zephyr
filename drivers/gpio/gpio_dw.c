@@ -272,8 +272,9 @@ static inline void gpio_dw_unmask_int(struct device *port)
 
 
 
-void gpio_dw_isr(struct device *port)
+void gpio_dw_isr(void *arg)
 {
+	struct device *port = (struct device *)arg;
 	struct gpio_dw_runtime *context = port->driver_data;
 	struct gpio_dw_config *config = port->config->config_info;
 	uint32_t base_addr = config->base_addr;
