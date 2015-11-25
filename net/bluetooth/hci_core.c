@@ -881,6 +881,8 @@ static void le_ltk_request(struct net_buf *buf)
 	/*
 	 * if TK is present use it, that means pairing is in progress and
 	 * we should use new TK for encryption
+	 *
+	 * Both legacy STK and LE SC LTK have rand and ediv equal to zero.
 	 */
 	if (evt->rand == 0 && evt->ediv == 0 && bt_smp_get_tk(conn, tk)) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
