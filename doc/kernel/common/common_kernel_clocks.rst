@@ -109,9 +109,7 @@ APIs
 
 The following kernel clock APIs are provided by :file:`microkernel.h`:
 
-:cpp:func:`sys_tick_get()`, :cpp:func:`sys_tick_get_32()`,
-:c:func:`fiber_tick_get()`, :c:func:`fiber_tick_get_32()`,
-:c:func:`isr_tick_get()`, :c:func:`isr_tick_get_32()`
+:cpp:func:`sys_tick_get()`, :cpp:func:`sys_tick_get_32()`
    Read the system clock.
 
 :cpp:func:`sys_tick_delta()`, :cpp:func:`sys_tick_delta_32()`

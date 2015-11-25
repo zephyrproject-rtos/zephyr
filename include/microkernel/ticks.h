@@ -200,12 +200,8 @@ extern void sys_workload_time_slice_set(int32_t t);
 
 
 #define isr_cycle_get_32() task_cycle_get_32()
-#define isr_tick_get_32() sys_tick_get_32()
-#define isr_tick_get() sys_tick_get()
 
 #define fiber_cycle_get_32() task_cycle_get_32()
-#define fiber_tick_get_32() sys_tick_get_32()
-#define fiber_tick_get() sys_tick_get()
 
 #ifdef __cplusplus
 }
