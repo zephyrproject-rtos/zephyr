@@ -2754,8 +2754,15 @@ static inline int smp_self_test(void)
 
 static uint8_t get_io_capa(const struct bt_auth_cb *cb)
 {
-	if (cb->passkey_display && cb->passkey_entry) {
+	/* Passkey Confirmation is valid only for LE SC */
+	if (cb->passkey_display && cb->passkey_entry &&
+	    (cb->passkey_confirm || !sc_supported)) {
 		return BT_SMP_IO_KEYBOARD_DISPLAY;
+	}
+
+	/* DisplayYesNo is useful only for LE SC */
+	if (sc_supported && cb->passkey_display && cb->passkey_confirm) {
+		return BT_SMP_IO_DISPLAY_YESNO;
 	}
 
 	if (cb->passkey_entry) {
