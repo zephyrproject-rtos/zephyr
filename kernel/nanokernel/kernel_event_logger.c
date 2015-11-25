@@ -137,7 +137,7 @@ void _sys_k_event_logger_interrupt(void)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 void _sys_k_event_logger_enter_sleep(void)
 {
-	_sys_k_event_logger_sleep_start_time = nano_cycle_get_32();
+	_sys_k_event_logger_sleep_start_time = sys_cycle_get_32();
 }
 
 void _sys_k_event_logger_exit_sleep(void)
@@ -145,7 +145,7 @@ void _sys_k_event_logger_exit_sleep(void)
 	uint32_t data[3];
 
 	data[0] = sys_tick_get_32();
-	data[1] = (nano_cycle_get_32() - _sys_k_event_logger_sleep_start_time)
+	data[1] = (sys_cycle_get_32() - _sys_k_event_logger_sleep_start_time)
 		/ sys_clock_hw_cycles_per_tick;
 	/* register the cause of exiting sleep mode */
 	data[2] = _sys_current_irq_key_get();

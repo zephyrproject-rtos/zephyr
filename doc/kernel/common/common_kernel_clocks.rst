@@ -91,13 +91,13 @@ between two points in time.
    uint32_t nanoseconds_spent;
 
    /* capture initial time stamp */
-   start_time = task_cycle_get_32();
+   start_time = sys_cycle_get_32();
 
    /* do work for some (short) period of time */
    ...
 
    /* capture final time stamp */
-   stop_time = task_cycle_get_32();
+   stop_time = sys_cycle_get_32();
 
    /* compute how long the work took (assumes no counter rollover) */
    cycles_spent = stop_time - start_time;

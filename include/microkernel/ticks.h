@@ -199,9 +199,9 @@ extern int task_workload_get(void);
 extern void sys_workload_time_slice_set(int32_t t);
 
 
-#define isr_cycle_get_32() task_cycle_get_32()
+#define isr_cycle_get_32() sys_cycle_get_32()
 
-#define fiber_cycle_get_32() task_cycle_get_32()
+#define fiber_cycle_get_32() sys_cycle_get_32()
 
 #ifdef __cplusplus
 }
