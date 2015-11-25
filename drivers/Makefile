@@ -10,7 +10,6 @@ obj-y += interrupt_controller/
 obj-$(CONFIG_GROVE) += grove/
 obj-$(CONFIG_PCI) += pci/
 obj-$(CONFIG_BLUETOOTH) += bluetooth/
-obj-$(CONFIG_UART_SIMPLE) += simple/
 obj-$(CONFIG_SHARED_IRQ) += shared_irq/
 obj-$(CONFIG_SPI) += spi/
 obj-$(CONFIG_GPIO) += gpio/

@@ -37,7 +37,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include <simple/uart.h>
+#include <console/uart_pipe.h>
 #include <net/net_core.h>
 
 #include <net/l2_buf.h>
@@ -466,7 +466,7 @@ void slip_start(void)
   /* Use small temp buffer for receiving data */
   static uint8_t buf[32];
 
-  uart_simple_register(buf, sizeof(buf), recv_cb);
+  uart_pipe_register(buf, sizeof(buf), recv_cb);
 
   process_start(&slip_process, NULL);
 }

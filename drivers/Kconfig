@@ -19,8 +19,6 @@
 
 menu "Device Drivers"
 
-source "drivers/simple/Kconfig"
-
 source "drivers/bluetooth/Kconfig"
 
 source "drivers/console/Kconfig"

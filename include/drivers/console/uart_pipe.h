@@ -1,7 +1,7 @@
 /** @file
- *  @brief Simple UART driver header file.
+ *  @brief Pipe UART driver header file.
  *
- *  A simple UART driver that allows applications to handle all aspects of
+ *  A pipe UART driver that allows applications to handle all aspects of
  *  received protocol data.
  */
 
@@ -35,7 +35,7 @@
  *
  *  @return Buffer to be used on next receive.
  */
-typedef uint8_t *(*uart_simple_recv_cb)(uint8_t *buf, size_t *off);
+typedef uint8_t *(*uart_pipe_recv_cb)(uint8_t *buf, size_t *off);
 
 /** @brief Register UART application.
  *
@@ -45,7 +45,7 @@ typedef uint8_t *(*uart_simple_recv_cb)(uint8_t *buf, size_t *off);
  *  @param len Size of buffer.
  *  @param cb Callback to be called on data reception.
  */
-void uart_simple_register(uint8_t *buf, size_t len, uart_simple_recv_cb cb);
+void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb);
 
 /** @brief Send data over UART.
  *
@@ -56,7 +56,7 @@ void uart_simple_register(uint8_t *buf, size_t len, uart_simple_recv_cb cb);
  *
  *  @return Number of bytes sent.
  */
-int uart_simple_send(const uint8_t *data, int len);
+int uart_pipe_send(const uint8_t *data, int len);
 
 /** @brief Simple UART interrupt handler.
  *
@@ -65,4 +65,4 @@ int uart_simple_send(const uint8_t *data, int len);
  *
  *  @param unused unused
  */
-void uart_simple_isr(void *unused);
+void uart_pipe_isr(void *unused);

@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 
-#include <simple/uart.h>
+#include <console/uart_pipe.h>
 
 #include "dev/slip.h"
 
@@ -26,7 +26,7 @@ void slip_arch_writeb(unsigned char c)
 {
 	uint8_t buf[1] = { c };
 
-	uart_simple_send(&buf[0], 1);
+	uart_pipe_send(&buf[0], 1);
 }
 
 void slip_arch_init(unsigned long ubr)

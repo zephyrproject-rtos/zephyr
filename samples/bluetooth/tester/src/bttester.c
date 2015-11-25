@@ -24,7 +24,7 @@
 #include <toolchain.h>
 #include <misc/printk.h>
 #include <misc/byteorder.h>
-#include <simple/uart.h>
+#include <console/uart_pipe.h>
 
 #include "bttester.h"
 
@@ -192,7 +192,7 @@ void tester_init(void)
 
 	task_fiber_start(stack, STACKSIZE, cmd_handler, 0, 0, 7, 0);
 
-	uart_simple_register(nano_fifo_get(&avail_queue), BTP_MTU, recv_cb);
+	uart_pipe_register(nano_fifo_get(&avail_queue), BTP_MTU, recv_cb);
 
 	printk("BT tester initialized\n");
 }
@@ -207,9 +207,9 @@ static void tester_send(uint8_t service, uint8_t opcode, uint8_t index,
 	msg.index = index;
 	msg.len = len;
 
-	uart_simple_send((uint8_t *)&msg, sizeof(msg));
+	uart_pipe_send((uint8_t *)&msg, sizeof(msg));
 	if (data && len) {
-		uart_simple_send(data, len);
+		uart_pipe_send(data, len);
 	}
 }
 

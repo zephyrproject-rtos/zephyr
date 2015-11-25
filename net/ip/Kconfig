@@ -165,7 +165,7 @@ config  NETWORKING_NO_WIRED
 	  this option is selected.
 config	NETWORKING_UART
 	bool "Network UART/slip driver"
-	select UART_SIMPLE
+	select UART_PIPE
 	help
 	  Enable UART driver for passing IPv6 packets using slip.
 config  ETHERNET
@@ -257,7 +257,7 @@ config	NETWORKING_WITH_15_4_LOOPBACK
 config NETWORKING_WITH_15_4_LOOPBACK_UART
        bool
        prompt "Enable 802.15.4 loopback radio uart driver"
-       select UART_SIMPLE
+       select UART_PIPE
        help
          Enable 802.15.4 loopback radio driver that sends
          802.15.4 frames out of qemu through uart and receive

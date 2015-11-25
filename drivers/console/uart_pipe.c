@@ -1,7 +1,7 @@
 /** @file
- * @brief Simple UART driver
+ * @brief Pipe UART driver
  *
- * A simple UART driver allowing application to handle all aspects of received
+ * A pipe UART driver allowing application to handle all aspects of received
  * protocol data.
  */
 
@@ -26,20 +26,20 @@
 #include <board.h>
 #include <uart.h>
 
-#include <simple/uart.h>
+#include <console/uart_pipe.h>
 #include <misc/printk.h>
 
-#if !defined(CONFIG_UART_SIMPLE_INDEX) || !defined(CONFIG_UART_SIMPLE_IRQ)
+#if !defined(CONFIG_UART_PIPE_INDEX) || !defined(CONFIG_UART_PIPE_IRQ)
 #error One or more required values for this driver are not set.
 #else
-#define UART (uart_devs[CONFIG_UART_SIMPLE_INDEX])
+#define UART (uart_devs[CONFIG_UART_PIPE_INDEX])
 
 static uint8_t *recv_buf;
 static size_t recv_buf_len;
-static uart_simple_recv_cb app_cb;
+static uart_pipe_recv_cb app_cb;
 static size_t recv_off;
 
-void uart_simple_isr(void *unused)
+void uart_pipe_isr(void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -56,7 +56,8 @@ void uart_simple_isr(void *unused)
 			continue;
 		}
 
-		/* Call application callback with received data. Application
+		/*
+		 * Call application callback with received data. Application
 		 * may provide new buffer or alter data offset.
 		 */
 		recv_off += rx;
@@ -64,22 +65,22 @@ void uart_simple_isr(void *unused)
 	}
 }
 
-int uart_simple_send(const uint8_t *data, int len)
+int uart_pipe_send(const uint8_t *data, int len)
 {
 	return uart_fifo_fill(UART, data, len);
 }
 
-IRQ_CONNECT_STATIC(uart_simple, CONFIG_UART_SIMPLE_IRQ,
-		   CONFIG_UART_SIMPLE_INT_PRI, uart_simple_isr, 0,
+IRQ_CONNECT_STATIC(uart_pipe, CONFIG_UART_PIPE_IRQ,
+		   CONFIG_UART_PIPE_INT_PRI, uart_pipe_isr, 0,
 		   UART_IRQ_FLAGS);
 
-static void uart_simple_setup(struct device *uart, struct uart_init_info *info)
+static void uart_pipe_setup(struct device *uart, struct uart_init_info *info)
 {
 	uart_init(uart, info);
 
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
-	IRQ_CONFIG(uart_simple, uart_irq_get(uart), 0);
+	IRQ_CONFIG(uart_pipe, uart_irq_get(uart), 0);
 	irq_enable(uart_irq_get(uart));
 
 	/* Drain the fifo */
@@ -92,19 +93,19 @@ static void uart_simple_setup(struct device *uart, struct uart_init_info *info)
 	uart_irq_rx_enable(uart);
 }
 
-void uart_simple_register(uint8_t *buf, size_t len, uart_simple_recv_cb cb)
+void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb)
 {
 	struct uart_init_info info = {
 		.options = 0,
-		.sys_clk_freq = CONFIG_UART_SIMPLE_FREQ,
-		.baud_rate = CONFIG_UART_SIMPLE_BAUDRATE,
-		.irq_pri = CONFIG_UART_SIMPLE_INT_PRI,
+		.sys_clk_freq = CONFIG_UART_PIPE_FREQ,
+		.baud_rate = CONFIG_UART_PIPE_BAUDRATE,
+		.irq_pri = CONFIG_UART_PIPE_INT_PRI,
 	};
 
 	recv_buf = buf;
 	recv_buf_len = len;
 	app_cb = cb;
 
-	uart_simple_setup(UART, &info);
+	uart_pipe_setup(UART, &info);
 }
 #endif

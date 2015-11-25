@@ -101,4 +101,15 @@ config IPI_CONSOLE_RECEIVER
 	help
 	Enable the receiving side of IPI console
 
+config	UART_PIPE
+	bool
+	prompt "Enable pipe UART driver"
+	select UART_INTERRUPT_DRIVEN
+	default n
+	help
+	Enable pipe UART driver. This driver allows application to communicate
+	over UART with custom defined protocol. Driver doesn't inspect received
+	data (as contrary to console UART driver) and all aspects of received
+	protocol data are handled by application provided callback.
+
 endif

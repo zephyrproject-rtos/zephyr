@@ -19,7 +19,7 @@
 #include "contiki.h"
 
 #include <net/l2_buf.h>
-#include <simple/uart.h>
+#include <console/uart_pipe.h>
 
 #include "contiki/packetbuf.h"
 #include "contiki/netstack.h"
@@ -150,7 +150,7 @@ static int uart_send(unsigned char c)
 	 __FUNCTION__, buf[0]);
 #endif
 
-  return uart_simple_send(&buf[0], 1);
+  return uart_pipe_send(&buf[0], 1);
 }
 #endif
 
@@ -162,7 +162,7 @@ init(void)
   /* Use small temp buffer for receiving data */
   static uint8_t buf[1];
 
-  uart_simple_register(buf, sizeof(buf), recv_cb);
+  uart_pipe_register(buf, sizeof(buf), recv_cb);
 
   /* It seems that some of the start bytes are lost so
    * send some null bytes in the start in order to sync

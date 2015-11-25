@@ -49,11 +49,11 @@ by x86 platforms.
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_CONSOLE_HANDLER */
 
-#if defined(CONFIG_UART_SIMPLE)
+#if defined(CONFIG_UART_PIPE)
 #if defined(CONFIG_IOAPIC)
-	ioapic_mkstub uart_simple uart_simple_isr 0
+	ioapic_mkstub uart_pipe uart_pipe_isr 0
 #endif /* CONFIG_IOAPIC */
-#endif /* CONFIG_UART_SIMPLE */
+#endif /* CONFIG_UART_PIPE */
 
 	/* externs (internal APIs) */
 
