@@ -42,7 +42,6 @@
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
 
 typedef int64_t TICK_TYPE;
-#define TICK_GET(x) ((TICK_TYPE) sys_tick_delta(x))
 
 static inline void TICK_SYNCH(void)
 {
@@ -57,13 +56,14 @@ static inline void TICK_SYNCH(void)
 #define OS_GET_TIME() task_cycle_get_32()
 
 typedef int64_t TICK_TYPE;
-#define TICK_GET(x) (TICK_TYPE)task_tick_delta(x)
 
 #define TICK_SYNCH() task_sleep(1)
 
 #else
 #error either  CONFIG_NANOKERNEL or CONFIG_MICROKERNEL must be defined
 #endif /*  CONFIG_NANOKERNEL */
+
+#define TICK_GET(x) ((TICK_TYPE) sys_tick_delta(x))
 
 /* time necessary to read the time */
 extern uint32_t tm_off;

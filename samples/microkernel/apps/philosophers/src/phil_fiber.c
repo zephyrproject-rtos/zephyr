@@ -22,13 +22,13 @@
   #define FORK(x) &forks[x]
   #define TAKE(x) nano_fiber_sem_take_wait(x)
   #define GIVE(x) nano_fiber_sem_give(x)
-  #define RANDDELAY(x) myDelay(((sys_tick_get_32() * ((x) + 1)) & 0x1f) + 1)
 #else  /* ! CONFIG_NANOKERNEL */
   #define FORK(x) forks[x]
   #define TAKE(x) task_mutex_lock_wait(x)
   #define GIVE(x) task_mutex_unlock(x)
-  #define RANDDELAY(x) myDelay(((task_tick_get_32() * ((x) +1)) & 0x1f) + 1)
 #endif /*  CONFIG_NANOKERNEL */
+
+#define RANDDELAY(x) myDelay(((sys_tick_get_32() * ((x) + 1)) & 0x1f) + 1)
 
 #define PRINT(x,y)	myPrint(x,y)
 

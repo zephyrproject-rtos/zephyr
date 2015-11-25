@@ -111,11 +111,11 @@ void ticklessTestTask(void)
 		 * as we can.
 		 */
 		task_sleep(1);
-		start_ticks = task_tick_get_32();
+		start_ticks = sys_tick_get_32();
 		start_tsc = _TIMESTAMP_READ();
 		task_sleep(SLEEP_TICKS);
 		end_tsc = _TIMESTAMP_READ();
-		end_ticks = task_tick_get_32();
+		end_ticks = sys_tick_get_32();
 		cal_tsc += end_tsc - start_tsc;
 	}
 	cal_tsc /= CAL_REPS;
@@ -141,11 +141,11 @@ void ticklessTestTask(void)
 		 * as we can.
 		 */
 		task_sleep(1);
-		start_ticks = task_tick_get_32();
+		start_ticks = sys_tick_get_32();
 		start_tsc = _TIMESTAMP_READ();
 		task_sleep(SLEEP_TICKS);
 		end_tsc = _TIMESTAMP_READ();
-		end_ticks = task_tick_get_32();
+		end_ticks = sys_tick_get_32();
 		diff_tsc += end_tsc - start_tsc;
 	}
 

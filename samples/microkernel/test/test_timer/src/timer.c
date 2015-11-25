@@ -22,7 +22,7 @@ This module tests the following microkernel timer routines:
 
   task_timer_alloc(), task_timer_free()
   task_timer_start(), task_timer_restart(), task_timer_stop()
-  task_tick_delta(), task_tick_get_32()
+  sys_tick_delta(), sys_tick_get_32()
  */
 
 #include <tc_util.h>
@@ -85,16 +85,16 @@ int testLowTimerPeriodicity(void)
 	pTimer[0] = task_timer_alloc();
 
 	/* Align to a tick */
-	ticks_32 = task_tick_get_32();
-	while (task_tick_get_32() == ticks_32) {
+	ticks_32 = sys_tick_get_32();
+	while (sys_tick_get_32() == ticks_32) {
 	}
 
-	(void) task_tick_delta(&refTime);
+	(void) sys_tick_delta(&refTime);
 	task_timer_start(pTimer[0], 100, 50, TIMER_SEM);
 
 	for (i = 0; i < 5; i++) {
 		status = task_sem_take_wait_timeout(TIMER_SEM, 200);
-		ticks = task_tick_delta(&refTime);
+		ticks = sys_tick_delta(&refTime);
 
 		if (status != RC_OK) {
 			TC_ERROR("** Timer appears to not have fired\n");
@@ -110,16 +110,16 @@ int testLowTimerPeriodicity(void)
 	}
 
 
-	ticks_32 = task_tick_get_32();
-	while (task_tick_get_32() == ticks_32) {     /* Align to a tick */
+	ticks_32 = sys_tick_get_32();
+	while (sys_tick_get_32() == ticks_32) {     /* Align to a tick */
 	}
-	(void) task_tick_delta_32(&refTime);
+	(void) sys_tick_delta_32(&refTime);
 
 	/* Use task_timer_restart() to change the periodicity */
 	task_timer_restart(pTimer[0], 60, 60);
 	for (i = 0; i < 6; i++) {
 		status = task_sem_take_wait_timeout(TIMER_SEM, 100);
-		ticks_32 = task_tick_delta_32(&refTime);
+		ticks_32 = sys_tick_delta_32(&refTime);
 
 		if (status != RC_OK) {
 			TC_ERROR("** Timer appears to not have fired\n");
@@ -159,8 +159,8 @@ int testLowTimerDoesNotStart(void)
 
 	for (i = 0; i < 3; i++) {
 		/* Align to a tick */
-		ticks = task_tick_get_32();
-		while (task_tick_get_32() == ticks) {
+		ticks = sys_tick_get_32();
+		while (sys_tick_get_32() == ticks) {
 		}
 
 		task_timer_start(pTimer[0], Ti[i], Tr[i], TIMER_SEM);
@@ -192,15 +192,15 @@ int testLowTimerOneShot(void)
 	pTimer[0] = task_timer_alloc();
 
 	/* Align to a tick */
-	ticks = task_tick_get_32();
-	while (task_tick_get_32() == ticks) {
+	ticks = sys_tick_get_32();
+	while (sys_tick_get_32() == ticks) {
 	}
 
 	/* Timer to fire once only in 100 ticks */
-	(void) task_tick_delta(&refTime);
+	(void) sys_tick_delta(&refTime);
 	task_timer_start(pTimer[0], 100, 0, TIMER_SEM);
 	status = task_sem_take_wait(TIMER_SEM);
-	ticks = task_tick_delta(&refTime);
+	ticks = sys_tick_delta(&refTime);
 	if (!WITHIN_ERROR(ticks, 100, 1)) {
 		TC_ERROR("** Expected %d ticks to elapse, got %d\n", 100, ticks);
 		return TC_FAIL;    /* Return failure, do not "clean up" */

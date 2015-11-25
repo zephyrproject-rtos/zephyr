@@ -6,7 +6,7 @@ This test verifies the following low resolution microkernel timer APIs operate
 as expected:
   task_timer_alloc (), task_timer_free()
   task_timer_start(), task_timer_restart(), task_timer_stop()
-  task_tick_delta(), task_tick_get_32()
+  sys_tick_delta(), sys_tick_get_32()
 
 Also verifies the nanokernel timeouts can work alongside the microkernel timers.
 
