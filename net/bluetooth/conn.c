@@ -521,7 +521,7 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 
 	if (!conn) {
 		return NULL;
-	};
+	}
 
 	bt_addr_le_copy(&conn->le.dst, peer);
 #if defined(CONFIG_BLUETOOTH_SMP)
@@ -540,7 +540,7 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 
 	if (!conn) {
 		return NULL;
-	};
+	}
 
 	bt_addr_copy(&conn->br.dst, peer);
 	conn->type = BT_CONN_TYPE_BREDR;
