@@ -556,7 +556,7 @@ static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 static uint8_t err_to_att(int err)
 {
-	BT_DBG("%d", err);
+	BT_DBG("%d\n", err);
 
 	switch (err) {
 	case -EINVAL:
