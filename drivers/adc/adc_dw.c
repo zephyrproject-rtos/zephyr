@@ -25,6 +25,7 @@
 #include <arch/cpu.h>
 #include "adc_dw.h"
 #include "adc_ss_dw.h"
+#include <sw_isr_table.h>
 
 #define ADC_CLOCK_GATE      (1 << 31)
 #define ADC_STANDBY          0x02
@@ -320,27 +321,26 @@ DECLARE_DEVICE_INIT_CONFIG(adc_dw_0,	/* config name*/
 
 SYS_DEFINE_DEVICE(adc_dw_0, &adc_info_dev_0, SECONDARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-struct device *adc_dw_isr_0_device = SYS_GET_DEVICE(adc_dw_0);
 
-IRQ_CONNECT_STATIC(adc_dw_0,
+IRQ_CONNECT_STATIC(adc_dw_0_rx,
 		IO_ADC0_INT_IRQ,
 		ADC_INT_PRIORITY,
 		adc_dw_rx_isr,
-		0);
+		SYS_GET_DEVICE(adc_dw_0), 0);
 
-IRQ_CONNECT_STATIC(adc_dw_0,
-		IO_ADC0_INT_IRQ,
+IRQ_CONNECT_STATIC(adc_dw_0_err,
+		IO_ADC0_INT_ERR,
 		ADC_INT_ERR,
 		adc_dw_err_isr,
-		0);
+		SYS_GET_DEVICE(adc_dw_0), 0);
 
 static void adc_config_0_irq(struct device *dev)
 {
 	struct adc_config *config = dev->config->config_info;
 
-	IRQ_CONFIG(adc_dw_rx_isr, config->rx_vector, 0);
+	IRQ_CONFIG(adc_dw_0_rx, IO_ADC0_INT_IRQ, 0);
 	irq_enable(config->rx_vector);
-	IRQ_CONFIG(adc_dw_err_isr, config->err_vector, 0);
+	IRQ_CONFIG(adc_dw_0_err, IO_ADC0_INT_ERR, 0);
 	irq_enable(config->err_vector);
 }
 #endif
