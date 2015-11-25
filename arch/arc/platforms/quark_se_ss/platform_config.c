@@ -23,7 +23,7 @@
 #include <ipi/ipi_quark_se.h>
 
 IRQ_CONNECT_STATIC(quark_se_ipi, QUARK_SE_IPI_INTERRUPT,
-		   QUARK_SE_IPI_INTERRUPT_PRI, quark_se_ipi_isr, NULL);
+		   QUARK_SE_IPI_INTERRUPT_PRI, quark_se_ipi_isr, NULL, 0);
 
 static int arc_quark_se_ipi_init(void)
 {

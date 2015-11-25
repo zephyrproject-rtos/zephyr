@@ -76,11 +76,12 @@ struct irq_desc {
  * @param p IRQ Priority
  * @param h Interrupt Service Routine
  * @param pm ISR parameter
+ * @param f IRQ triggering options
  *
  * @return N/A
  *
  */
-#define IRQ_CONNECT_STATIC(device, i, p, h, pm) \
+#define IRQ_CONNECT_STATIC(device, i, p, h, pm, f) \
 	static struct irq_desc device##_irq_desc = { \
 		.irq = i, \
 		.priority = p, \
