@@ -22,7 +22,7 @@ This module tests the following timer related routines:
   nano_timer_init(), nano_fiber_timer_start(), nano_fiber_timer_stop(),
   nano_fiber_timer_test(), nano_fiber_timer_wait(), nano_task_timer_start(),
   nano_task_timer_stop(), nano_task_timer_test(), nano_task_timer_wait(),
-  sys_tick_get_32(), nano_cycle_get_32(), sys_tick_delta()
+  sys_tick_get_32(), sys_cycle_get_32(), sys_tick_delta()
  */
 
 #include <tc_util.h>
@@ -419,21 +419,21 @@ static void fiberEntry(int arg1, int arg2)
 
 /**
  *
- * @brief Test the nano_cycle_get_32() API
+ * @brief Test the sys_cycle_get_32() API
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int nano_cycle_get_32Test(void)
+int sys_cycle_get_32Test(void)
 {
 	uint32_t  timeStamp1;
 	uint32_t  timeStamp2;
 	int       i;
 
-	timeStamp2 = nano_cycle_get_32();
+	timeStamp2 = sys_cycle_get_32();
 	for (i = 0; i < 1000000; i++) {
 		timeStamp1 = timeStamp2;
-		timeStamp2 = nano_cycle_get_32();
+		timeStamp2 = sys_cycle_get_32();
 
 		if (timeStamp2 < timeStamp1) {
 			TC_ERROR("Timestamp value not increasing with successive calls\n");
@@ -549,10 +549,10 @@ void main(void)
 	 * regression checks.
 	 */
 
-	TC_PRINT("Task testing of nano_cycle_get_32()\n");
-	rv = nano_cycle_get_32Test();
+	TC_PRINT("Task testing of sys_cycle_get_32()\n");
+	rv = sys_cycle_get_32Test();
 	if (rv != TC_PASS) {
-		TC_ERROR("nano_cycle_get_32Test() failed\n");
+		TC_ERROR("sys_cycle_get_32Test() failed\n");
 		goto doneTests;
 		}
 #endif

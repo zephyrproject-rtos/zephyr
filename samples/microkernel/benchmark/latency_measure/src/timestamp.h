@@ -36,7 +36,7 @@
 #if defined(CONFIG_NANOKERNEL)
 
 
-#define OS_GET_TIME() nano_cycle_get_32()
+#define OS_GET_TIME() sys_cycle_get_32()
 
 /* number of ticks before timer overflows */
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
