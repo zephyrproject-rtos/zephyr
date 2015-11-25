@@ -186,6 +186,11 @@ config I2C_DW_1_NAME
         depends on I2C_DW_1
         default "I2C1"
 
+config I2C_DW_1_IRQ
+	int "Controller interrupt"
+	depends on I2C_DW_1
+	default 0
+
 config I2C_DW_1_INT_PRIORITY
         int "Controller interrupt priority"
         depends on I2C_DW_1
