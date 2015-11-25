@@ -629,13 +629,13 @@ int _sys_clock_driver_init(struct device *device)
  * systick counter is a 24-bit down counter which is reset to "reload" value
  * once it reaches 0.
  */
-uint32_t _sys_clock_cycle_get(void)
+uint32_t sys_cycle_get_32(void)
 {
 	return clock_accumulated_count + (__scs.systick.strvr - __scs.systick.stcvr);
 }
 
-FUNC_ALIAS(_sys_clock_cycle_get, nano_cycle_get_32, uint32_t);
-FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
+FUNC_ALIAS(sys_cycle_get_32, nano_cycle_get_32, uint32_t);
+FUNC_ALIAS(sys_cycle_get_32, task_cycle_get_32, uint32_t);
 
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 

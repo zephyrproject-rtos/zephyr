@@ -128,7 +128,7 @@ and by :file:`nanokernel.h`:
 :cpp:func:`sys_tick_delta()`, :cpp:func:`sys_tick_delta_32()`
    Compute the elapsed time since an earlier system clock reading.
 
-:cpp:func:`nano_cycle_get_32()`
+:cpp:func:`nano_cycle_get_32()`, :cpp:func:`sys_cycle_get_32()`
    Reads hardware clock.
 
 The following kernel clock variables are provided by :file:`microkernel.h`

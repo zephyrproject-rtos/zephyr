@@ -636,13 +636,13 @@ int _sys_clock_driver_init(struct device *device)
  * it will need to call _hpetMainCounterAtomic().
  */
 
-uint32_t _sys_clock_cycle_get(void)
+uint32_t sys_cycle_get_32(void)
 {
 	return (uint32_t) *_HPET_MAIN_COUNTER_VALUE;
 }
 
-FUNC_ALIAS(_sys_clock_cycle_get, nano_cycle_get_32, uint32_t);
-FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
+FUNC_ALIAS(sys_cycle_get_32, nano_cycle_get_32, uint32_t);
+FUNC_ALIAS(sys_cycle_get_32, task_cycle_get_32, uint32_t);
 
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 

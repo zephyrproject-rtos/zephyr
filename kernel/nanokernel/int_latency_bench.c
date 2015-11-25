@@ -66,7 +66,7 @@ void _int_latency_start(void)
 {
 	/* when interrupts are not already locked, take time stamp */
 	if (!int_locked_timestamp && int_latency_bench_ready) {
-		int_locked_timestamp = _sys_clock_cycle_get();
+		int_locked_timestamp = sys_cycle_get_32();
 		int_lock_unlock_nest = 0;
 	}
 	int_lock_unlock_nest++;
@@ -85,7 +85,7 @@ void _int_latency_stop(void)
 {
 	uint32_t delta;
 	uint32_t delayOverhead;
-	uint32_t currentTime = _sys_clock_cycle_get();
+	uint32_t currentTime = sys_cycle_get_32();
 
 	/* ensured intLatencyStart() was invoked first */
 	if (int_locked_timestamp) {
@@ -148,24 +148,24 @@ void int_latency_init(void)
 	 */
 	while (cacheWarming) {
 		/* measure how much time it takes to read time */
-		timeToReadTime = _sys_clock_cycle_get();
-		timeToReadTime = _sys_clock_cycle_get() - timeToReadTime;
+		timeToReadTime = sys_cycle_get_32();
+		timeToReadTime = sys_cycle_get_32() - timeToReadTime;
 
 		/* measure time to call intLatencyStart() and intLatencyStop
 		 * takes
 		 */
-		initial_start_delay = _sys_clock_cycle_get();
+		initial_start_delay = sys_cycle_get_32();
 		_int_latency_start();
 		initial_start_delay =
-			_sys_clock_cycle_get() - initial_start_delay - timeToReadTime;
+			sys_cycle_get_32() - initial_start_delay - timeToReadTime;
 
-		nesting_delay = _sys_clock_cycle_get();
+		nesting_delay = sys_cycle_get_32();
 		_int_latency_start();
-		nesting_delay = _sys_clock_cycle_get() - nesting_delay - timeToReadTime;
+		nesting_delay = sys_cycle_get_32() - nesting_delay - timeToReadTime;
 
-		stop_delay = _sys_clock_cycle_get();
+		stop_delay = sys_cycle_get_32();
 		_int_latency_stop();
-		stop_delay = _sys_clock_cycle_get() - stop_delay - timeToReadTime;
+		stop_delay = sys_cycle_get_32() - stop_delay - timeToReadTime;
 
 		/* re-initialize globals to default values */
 		int_locked_latency_min = ULONG_MAX;

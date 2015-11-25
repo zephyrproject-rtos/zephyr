@@ -68,7 +68,7 @@ void sys_rand32_init(void)
 
 uint32_t sys_rand32_get(void)
 {
-	return _sys_clock_cycle_get() + atomic_add(&_rand32_counter, _RAND32_INC);
+	return sys_cycle_get_32() + atomic_add(&_rand32_counter, _RAND32_INC);
 }
 
 #endif /* __GNUC__ */

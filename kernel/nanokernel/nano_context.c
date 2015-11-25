@@ -112,10 +112,10 @@ void sys_thread_busy_wait(uint32_t usec_to_wait)
 		(uint64_t)sys_clock_hw_cycles_per_sec /
 		(uint64_t)USEC_PER_SEC
 	);
-	uint32_t start_cycles = _sys_clock_cycle_get();
+	uint32_t start_cycles = sys_cycle_get_32();
 
 	for (;;) {
-		uint32_t current_cycles = _sys_clock_cycle_get();
+		uint32_t current_cycles = sys_cycle_get_32();
 
 		/* this handles the rollover on an unsigned 32-bit value */
 		if ((current_cycles - start_cycles) >= cycles_to_wait) {

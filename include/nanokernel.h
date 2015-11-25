@@ -1614,6 +1614,19 @@ extern uint32_t sys_tick_get_32(void);
 /**
  * @brief Return a high resolution time stamp
  *
+ * This routine reads the counter register on the processor's high precision
+ * timer device. This counter register increments at a relatively high rate
+ * (e.g. 20 MHz), and is thus considered a "high resolution" timer. This is
+ * in contrast to sys_tick_get_32() which returns the value of the system
+ * ticks variable.
+ *
+ * @return the current high precision clock value
+ */
+extern uint32_t sys_cycle_get_32(void);
+
+/**
+ * @brief Return a high resolution time stamp
+ *
  * @return the current timer hardware count
  */
 extern uint32_t nano_cycle_get_32(void);

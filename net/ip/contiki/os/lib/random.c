@@ -32,5 +32,5 @@ unsigned short random_rand(void)
 	 *        implemented so fix this func when random numbers
 	 *        are available.
 	 */
-	return (unsigned short)_sys_clock_cycle_get();
+	return (unsigned short)sys_cycle_get_32();
 }

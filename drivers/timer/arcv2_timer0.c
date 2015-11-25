@@ -174,13 +174,13 @@ int _sys_clock_driver_init(struct device *device)
  *
  * @return up counter of elapsed clock cycles
  */
-uint32_t _sys_clock_cycle_get(void)
+uint32_t sys_cycle_get_32(void)
 {
 	return (clock_accumulated_count + count_get());
 }
 
-FUNC_ALIAS(_sys_clock_cycle_get, nano_cycle_get_32, uint32_t);
-FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
+FUNC_ALIAS(sys_cycle_get_32, nano_cycle_get_32, uint32_t);
+FUNC_ALIAS(sys_cycle_get_32, task_cycle_get_32, uint32_t);
 
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**

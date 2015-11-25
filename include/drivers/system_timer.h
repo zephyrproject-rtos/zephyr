@@ -33,7 +33,6 @@ GTEXT(_timer_int_handler)
 
 #include <device.h>
 
-extern uint32_t _sys_clock_cycle_get(void);
 extern int _sys_clock_driver_init(struct device *device);
 /*
  * Timer interrupt handler is one of the routines that the driver
