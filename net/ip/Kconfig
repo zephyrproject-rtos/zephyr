@@ -137,7 +137,7 @@ config	NETWORKING_WITH_LOGGING
 	bool
 	prompt "Enable logging of the uIP stack"
 	depends on NETWORKING
-	select NET_BUF_DEBUG
+	select STDOUT_CONSOLE
 	default n
 	help
 	  Enable packet and uIP stack logging

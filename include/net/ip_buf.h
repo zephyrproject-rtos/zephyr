@@ -34,7 +34,7 @@
 #include "contiki/ip/uip.h"
 #include "contiki/packetbuf.h"
 
-#if defined(CONFIG_NET_BUF_DEBUG)
+#ifdef CONFIG_NETWORKING_WITH_LOGGING
 #undef DEBUG_IP_BUFS
 #define DEBUG_IP_BUFS
 #endif

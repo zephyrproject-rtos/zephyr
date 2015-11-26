@@ -37,7 +37,7 @@
 
 #if defined(CONFIG_L2_BUFFERS)
 
-#if defined(CONFIG_NET_BUF_DEBUG)
+#ifdef CONFIG_NETWORKING_WITH_LOGGING
 #undef DEBUG_L2_BUFS
 #define DEBUG_L2_BUFS
 #endif
