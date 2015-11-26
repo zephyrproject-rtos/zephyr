@@ -1685,7 +1685,7 @@ class Config(object):
                         selects_str_rows.append(" :ref:`CONFIG_{0}`".format(target.name))
                     else:
                         selects_str_rows.append(
-                          " {0}_ if {1}".format(target.name,
+                          " :ref:`CONFIG_{0}` if {1}".format(target.name,
                                                self._expr_val_str(cond_expr)))
 		selects_str = "\n * "
                 selects_str += "\n * ".join(selects_str_rows)
@@ -1701,7 +1701,7 @@ class Config(object):
                          ":Is from env.:     " + BOOL_STR[sc.is_from_env],
                          ":Is special:       " + BOOL_STR[sc.is_special_] + "\n")
             if sc.ranges:
-                res += _lines("Ranges:", ranges_str + "\n")
+                res += _lines(":Ranges:", ranges_str + "\n")
             res += _lines(":Prompts:",
                           prompts_str,
                           ":Default values:",
@@ -1851,7 +1851,7 @@ class Config(object):
                         selects_str_rows.append(" :ref:`CONFIG_{0}`".format(target.name))
                     else:
                         selects_str_rows.append(
-                          " {0} if {1}".format(target.name,
+                          " :ref:`CONFIG_{0}` if {1}".format(target.name,
                                                self._expr_val_str(cond_expr)))
                 selects_str = "\n".join(selects_str_rows)
 
@@ -1866,7 +1866,7 @@ class Config(object):
                          "Is from env.   : " + BOOL_STR[sc.is_from_env],
                          "Is special     : " + BOOL_STR[sc.is_special_] + "\n")
             if sc.ranges:
-                res += _lines("Ranges:", ranges_str + "\n")
+                res += _lines(":Ranges:", ranges_str + "\n")
             res += _lines("Prompts:",
                           prompts_str,
                           "Default values:",
