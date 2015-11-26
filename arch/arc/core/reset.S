@@ -28,7 +28,7 @@ Reset handler that prepares the system for running C code.
 #include <sections.h>
 #include <arch/cpu.h>
 
-#define _RAM_END (CONFIG_RAM_START + CONFIG_RAM_SIZE)
+#define _RAM_END (CONFIG_RAM_START + CONFIG_RAM_SIZE * 1024)
 
 GTEXT(__reset)
 
