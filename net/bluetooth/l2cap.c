@@ -894,7 +894,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* Check if SDU needs segmentation */
 	if (sdu_len > buf->len) {
 		chan->_sdu = chan->ops->alloc_buf(chan);
-		if (!chan) {
+		if (!chan->_sdu) {
 			BT_ERR("Unable to allocate buffer for SDU");
 			bt_l2cap_chan_disconnect(chan);
 			return;
