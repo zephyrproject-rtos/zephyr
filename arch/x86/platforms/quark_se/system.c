@@ -28,7 +28,7 @@
 #include "board.h"
 #include <uart.h>
 #include <init.h>
-#include <shared_mem.h>
+#include "shared_mem.h"
 
 #ifdef CONFIG_ARC_INIT
 #define SCSS_REG_VAL(offset) \
