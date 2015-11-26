@@ -145,7 +145,7 @@ void clock_delay_usec_busywait(uint32_t delay);
 	((msec) * sys_clock_hw_cycles_per_tick * \
 	 sys_clock_us_per_tick / 1000)
 
-static inline uint32_t clock_get_cycle() { return nano_cycle_get_32(); }
+static inline uint32_t clock_get_cycle(void) { return nano_cycle_get_32(); }
 
 /**
  * Deprecated platform-specific routines.

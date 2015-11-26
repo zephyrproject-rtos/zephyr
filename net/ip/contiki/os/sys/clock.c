@@ -77,5 +77,6 @@ void clock_delay_usec_busywait(uint32_t dt)
 	uint32_t usec = USEC_TO_CYCLES(dt);
 	uint32_t start = nano_cycle_get_32();
 
-	while ((start + usec) > nano_cycle_get_32());
+	while ((start + usec) > nano_cycle_get_32()) {
+	}
 }
