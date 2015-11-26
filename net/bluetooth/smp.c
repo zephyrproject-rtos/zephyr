@@ -128,6 +128,12 @@ struct bt_smp {
 	/* MacKey */
 	uint8_t			mackey[16];
 
+	/* LE SC passkey */
+	uint32_t		passkey;
+
+	/* LE SC passkey round */
+	uint8_t			passkey_round;
+
 	/* Local key distribution */
 	uint8_t			local_dist;
 
@@ -1150,7 +1156,17 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 			break;
 		case PASSKEY_DISPLAY:
 		case PASSKEY_INPUT:
-			/* TODO */
+			/*
+			 * In the Passkey Entry protocol, the most significant
+			 * bit of Z is set equal to one and the least
+			 * significant bit is made up from one bit of the
+			 * passkey e.g. if the passkey bit is 1, then Z = 0x81
+			 * and if the passkey bit is 0, then Z = 0x80.
+			 */
+			r = (smp->passkey >> smp->passkey_round) & 0x01;
+			r |= 0x80;
+
+			break;
 		default:
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -1348,6 +1364,21 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		switch (smp->method) {
+		case PASSKEY_DISPLAY:
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_RANDOM);
+			return smp_send_pairing_confirm(smp);
+		case PASSKEY_INPUT:
+			/* TODO */
+		case JUST_WORKS:
+		case PASSKEY_CONFIRM:
+		default:
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+	}
+
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_confirm(smp);
@@ -1419,7 +1450,8 @@ static uint8_t compute_and_send_master_dhcheck(struct bt_smp *smp)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
-		/* TODO */
+		memcpy(r, &smp->passkey, sizeof(smp->passkey));
+		break;
 	default:
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -1457,7 +1489,8 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
-		/* TODO */
+		memcpy(r, &smp->passkey, sizeof(smp->passkey));
+		break;
 	default:
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -1553,38 +1586,47 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
 	uint32_t passkey;
+	uint8_t cfm[16];
+	uint8_t r;
+	int err;
 
 	BT_DBG("");
 
+	switch (smp->method) {
+	case PASSKEY_CONFIRM:
+	case JUST_WORKS:
+		r = 0;
+		break;
+	case PASSKEY_DISPLAY:
+	case PASSKEY_INPUT:
+		/*
+		 * In the Passkey Entry protocol, the most significant
+		 * bit of Z is set equal to one and the least
+		 * significant bit is made up from one bit of the
+		 * passkey e.g. if the passkey bit is 1, then Z = 0x81
+		 * and if the passkey bit is 0, then Z = 0x80.
+		 */
+		r = (smp->passkey >> smp->passkey_round) & 0x01;
+		r |= 0x80;
+
+		break;
+	default:
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	err = smp_f4(smp->pkey, bt_dev.pkey, smp->rrnd, r, cfm);
+	if (err) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	BT_DBG("pcnf %s cfm %s", h(smp->pcnf, 16), h(cfm, 16));
+
+	if (memcmp(smp->pcnf, cfm, 16)) {
+		return BT_SMP_ERR_CONFIRM_FAILED;
+	}
+
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
-		uint8_t cfm[16];
-		uint8_t r;
-		int err;
-
-		switch (smp->method) {
-		case PASSKEY_CONFIRM:
-		case JUST_WORKS:
-			r = 0;
-			break;
-		case PASSKEY_DISPLAY:
-		case PASSKEY_INPUT:
-			/* TODO */
-		default:
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		err = smp_f4(smp->pkey, bt_dev.pkey, smp->rrnd, r, cfm);
-		if (err) {
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		BT_DBG("pcnf %s cfm %s", h(smp->pcnf, 16), h(cfm, 16));
-
-		if (memcmp(smp->pcnf, cfm, 16)) {
-			return BT_SMP_ERR_CONFIRM_FAILED;
-		}
-
 		switch (smp->method) {
 		case PASSKEY_CONFIRM:
 			/* compare passkey before calculating LTK */
@@ -1601,7 +1643,19 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			break;
 		case PASSKEY_DISPLAY:
 		case PASSKEY_INPUT:
-			/* TODO */
+			smp->passkey_round++;
+			if (smp->passkey_round == 20) {
+				break;
+			}
+
+			if (le_rand(smp->prnd, 16)) {
+				return BT_SMP_ERR_UNSPECIFIED;
+			}
+
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_CONFIRM);
+			smp_send_pairing_confirm(smp);
+			return 0;
 		default:
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -1616,9 +1670,6 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
-	smp_send_pairing_random(smp);
-
 	switch (smp->method) {
 	case PASSKEY_CONFIRM:
 		if (smp_g2(smp->pkey, bt_dev.pkey, smp->rrnd, smp->prnd,
@@ -1633,10 +1684,27 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
-		/* TODO */
+		atomic_set_bit(&smp->allowed_cmds,
+			       BT_SMP_CMD_PAIRING_CONFIRM);
+		smp_send_pairing_random(smp);
+
+		smp->passkey_round++;
+		if (smp->passkey_round == 20) {
+			atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+			return 0;
+		}
+
+		if (le_rand(smp->prnd, 16)) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		return 0;
 	default:
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+	smp_send_pairing_random(smp);
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
 	return 0;
@@ -2114,6 +2182,34 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		}
 		break;
 	case PASSKEY_DISPLAY:
+		if (le_rand(&smp->passkey, sizeof(smp->passkey))) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		smp->passkey %= 1000000;
+		smp->passkey_round = 0;
+
+		auth_cb->passkey_display(smp->chan.conn, smp->passkey);
+		smp->passkey = sys_cpu_to_le32(smp->passkey);
+
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+			err = smp_send_pairing_confirm(smp);
+			if (err) {
+				return err;
+			}
+			break;
+		}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+		err = sc_send_public_key(smp);
+		if (err) {
+			return err;
+		}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+		break;
 	case PASSKEY_INPUT:
 		/* TODO */
 	default:
@@ -2155,7 +2251,8 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 			break;
 		case PASSKEY_DISPLAY:
 		case PASSKEY_INPUT:
-			/* TODO */
+			memcpy(r, &smp->passkey, sizeof(smp->passkey));
+			break;
 		default:
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
