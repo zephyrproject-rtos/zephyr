@@ -948,19 +948,25 @@ static struct bt_gatt_attr attrs[] = {
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	char passkey_str[7];
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Passkey for %s: %u\n", addr, passkey);
+	snprintf(passkey_str, 7, "%06u", passkey);
+
+	printk("Passkey for %s: %s\n", addr, passkey_str);
 }
 
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	char passkey_str[7];
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Confirm passkey for %s: %u\n", addr, passkey);
+	snprintf(passkey_str, 7, "%06u", passkey);
+
+	printk("Confirm passkey for %s: %s\n", addr, passkey_str);
 }
 
 static void auth_passkey_entry(struct bt_conn *conn)
