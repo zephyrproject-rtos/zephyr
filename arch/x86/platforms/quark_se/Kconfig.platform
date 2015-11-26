@@ -1,6 +1,6 @@
 
 
-config  PLATFORM_QUARK_SE_X86
+config  PLATFORM_QUARK_SE
         bool "Minimum configuration for Quark SE"
         select CPU_MINUTEIA
         select IOAPIC

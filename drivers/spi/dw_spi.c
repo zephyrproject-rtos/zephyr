@@ -92,7 +92,7 @@ DEFINE_TEST_BIT_OP(sr_tfnf, DW_SPI_REG_SR, DW_SPI_SR_TFNF_BIT)
 DEFINE_TEST_BIT_OP(sr_rfne, DW_SPI_REG_SR, DW_SPI_SR_RFNE_BIT)
 DEFINE_TEST_BIT_OP(icr, DW_SPI_REG_ICR, DW_SPI_SR_ICR_BIT)
 
-#ifdef CONFIG_PLATFORM_QUARK_SE_X86
+#ifdef CONFIG_PLATFORM_QUARK_SE
 #define int_unmask(__mask)						\
 	sys_write32(sys_read32(__mask) & INT_UNMASK_IA, __mask)
 #else

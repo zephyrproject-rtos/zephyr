@@ -24,7 +24,7 @@
 #include <nanokernel.h>
 #include <board.h>
 #include <init.h>
-#include <quark_se-x86/shared_mem.h>
+#include <quark_se/shared_mem.h>
 #include <ipi/ipi_quark_se.h>
 
 /* Cannot use microkernel, since only nanokernel is supported */

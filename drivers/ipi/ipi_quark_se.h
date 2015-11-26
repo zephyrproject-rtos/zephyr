@@ -29,7 +29,7 @@
 #define QUARK_SE_IPI_OUTBOUND	0
 #define QUARK_SE_IPI_INBOUND		1
 
-#if defined(CONFIG_PLATFORM_QUARK_SE_X86)
+#if defined(CONFIG_PLATFORM_QUARK_SE)
 /* First byte of the QUARK_SE_IPI_MASK register is for the Lakemont */
 #define QUARK_SE_IPI_MASK_START_BIT		0
 #define QUARK_SE_IPI_INTERRUPT		21

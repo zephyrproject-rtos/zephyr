@@ -249,7 +249,7 @@ endchoice
 
 config  SPI_DW_CLOCK_GATE
 	bool "Enable glock gating"
-	depends on SPI_DW && PLATFORM_QUARK_SE_X86
+	depends on SPI_DW && PLATFORM_QUARK_SE
 	select CLOCK_CONTROL
 	default n
 
