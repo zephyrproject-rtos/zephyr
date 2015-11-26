@@ -746,12 +746,14 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
+PLATFORM_NAME = $(subst $(DQUOTE),,$(CONFIG_PLATFORM))
+export PLATFORM_NAME
 # Externally visible symbols (used by link-zephyr.sh)
 export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y) $(app-y)
 ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
 export KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
 else
-export KBUILD_LDS         := $(srctree)/arch/$(SRCARCH)/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))/linker.cmd
+export KBUILD_LDS         := $(srctree)/arch/$(SRCARCH)/platforms/$(PLATFORM_NAME)/linker.cmd
 endif
 export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile

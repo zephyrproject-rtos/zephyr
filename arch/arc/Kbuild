@@ -1,7 +1,7 @@
-subdir-ccflags-y +=-I$(srctree)/arch/arc/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))
+subdir-ccflags-y +=-I$(srctree)/arch/arc/platforms/$(PLATFORM_NAME)
 subdir-ccflags-y +=-I$(srctree)/include/drivers
 subdir-ccflags-y +=-I$(srctree)/drivers
 subdir-asflags-y += $(subdir-ccflags-y)
 
 obj-y = core/
-obj-y += platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))/
+obj-y += platforms/$(PLATFORM_NAME)/

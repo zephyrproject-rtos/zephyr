@@ -1,10 +1,10 @@
-ccflags-y +=-I$(srctree)/arch/arc/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))
+ccflags-y +=-I$(srctree)/arch/arc/platforms/$(PLATFORM_NAME)
 ccflags-y +=-I$(srctree)/arch/x86/platforms/
 ccflags-y +=-I$(srctree)/include
 ccflags-y +=-I$(srctree)/include/drivers
 ccflags-y +=-I$(srctree)/drivers
+asflags-y +=-I$(srctree)/arch/arc/platforms/$(PLATFORM_NAME)
 ccflags-$(CONFIG_ADC) +=-I$(srctree)/drivers/adc
-asflags-y +=-I$(srctree)/arch/arc/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))
 
 asflags-y := ${ccflags-y}
 
