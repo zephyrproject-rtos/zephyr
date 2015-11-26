@@ -1143,7 +1143,21 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 	req = net_buf_add(rsp_buf, sizeof(*req));
 
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		err = smp_f4(bt_dev.pkey, smp->pkey, smp->prnd, 0, req->val);
+		uint8_t r;
+
+		switch (smp->method) {
+		case PASSKEY_CONFIRM:
+		case JUST_WORKS:
+			r = 0;
+			break;
+		case PASSKEY_DISPLAY:
+		case PASSKEY_INPUT:
+			/* TODO */
+		default:
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		err = smp_f4(bt_dev.pkey, smp->pkey, smp->prnd, r, req->val);
 	} else {
 		err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp,
 			     &conn->le.init_addr, &conn->le.resp_addr, req->val);
@@ -1399,8 +1413,18 @@ static uint8_t compute_and_send_master_dhcheck(struct bt_smp *smp)
 {
 	uint8_t e[16], r[16];
 
-	/* TODO currently only NumComparison/JustWorks */
 	memset(r, 0, sizeof(r));
+
+	switch (smp->method) {
+	case JUST_WORKS:
+	case PASSKEY_CONFIRM:
+		break;
+	case PASSKEY_DISPLAY:
+	case PASSKEY_INPUT:
+		/* TODO */
+	default:
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
 
 	/* calculate LTK and mackey */
 	if (smp_f5(smp->dhkey, smp->prnd, smp->rrnd,
@@ -1427,8 +1451,18 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 {
 	uint8_t re[16], e[16], r[16];
 
-	/* TODO currently only NumComparison/JustWorks */
 	memset(r, 0, sizeof(r));
+
+	switch (smp->method) {
+	case JUST_WORKS:
+	case PASSKEY_CONFIRM:
+		break;
+	case PASSKEY_DISPLAY:
+	case PASSKEY_INPUT:
+		/* TODO */
+	default:
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
 
 	/* calculate LTK and mackey */
 	if (smp_f5(smp->dhkey, smp->rrnd, smp->prnd,
@@ -1524,17 +1558,25 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_DBG("");
 
-	/* TODO */
-	if (smp->method == PASSKEY_DISPLAY || smp->method == PASSKEY_INPUT) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
 		uint8_t cfm[16];
+		uint8_t r;
 		int err;
 
-		err = smp_f4(smp->pkey, bt_dev.pkey, smp->rrnd, 0, cfm);
+		switch (smp->method) {
+		case PASSKEY_CONFIRM:
+		case JUST_WORKS:
+			r = 0;
+			break;
+		case PASSKEY_DISPLAY:
+		case PASSKEY_INPUT:
+			/* TODO */
+		default:
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		err = smp_f4(smp->pkey, bt_dev.pkey, smp->rrnd, r, cfm);
 		if (err) {
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -1545,8 +1587,9 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_CONFIRM_FAILED;
 		}
 
-		/* compare passkey before calculating LTK */
-		if (smp->method == PASSKEY_CONFIRM) {
+		switch (smp->method) {
+		case PASSKEY_CONFIRM:
+			/* compare passkey before calculating LTK */
 			if (smp_g2(bt_dev.pkey, smp->pkey, smp->prnd, smp->rrnd,
 				   &passkey)) {
 				return BT_SMP_ERR_UNSPECIFIED;
@@ -1556,6 +1599,13 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
 			auth_cb->passkey_confirm(smp->chan.conn, passkey);
 			return 0;
+		case JUST_WORKS:
+			break;
+		case PASSKEY_DISPLAY:
+		case PASSKEY_INPUT:
+			/* TODO */
+		default:
+			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
 		/* wait for DHKey being generated */
@@ -1571,7 +1621,8 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 	smp_send_pairing_random(smp);
 
-	if (smp->method == PASSKEY_CONFIRM) {
+	switch (smp->method) {
+	case PASSKEY_CONFIRM:
 		if (smp_g2(smp->pkey, bt_dev.pkey, smp->rrnd, smp->prnd,
 			   &passkey)) {
 			return BT_SMP_ERR_UNSPECIFIED;
@@ -1579,6 +1630,14 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 
 		atomic_set_bit(&smp->flags, SMP_FLAG_USER_CONFIRM);
 		auth_cb->passkey_confirm(smp->chan.conn, passkey);
+		break;
+	case JUST_WORKS:
+		break;
+	case PASSKEY_DISPLAY:
+	case PASSKEY_INPUT:
+		/* TODO */
+	default:
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
@@ -2035,9 +2094,15 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	memcpy(smp->pkey, req->x, 32);
 	memcpy(&smp->pkey[32], req->y, 32);
 
-	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-	} else {
+	switch (smp->method) {
+	case PASSKEY_CONFIRM:
+	case JUST_WORKS:
+		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_CONFIRM);
+			break;
+		}
+
 		err = sc_send_public_key(smp);
 		if (err) {
 			return err;
@@ -2049,6 +2114,12 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		if (err) {
 			return err;
 		}
+		break;
+	case PASSKEY_DISPLAY:
+	case PASSKEY_INPUT:
+		/* TODO */
+	default:
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_GENERATE_DHKEY, sizeof(*cp));
@@ -2078,8 +2149,18 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
 		uint8_t e[16], r[16], enc_size;
 
-		/* TODO currently only NumComparison/JustWorks */
 		memset(r, 0, sizeof(r));
+
+		switch (smp->method) {
+		case JUST_WORKS:
+		case PASSKEY_CONFIRM:
+			break;
+		case PASSKEY_DISPLAY:
+		case PASSKEY_INPUT:
+			/* TODO */
+		default:
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
 
 		/* calculate remote DHKey check for comparison */
 		if (smp_f6(smp->mackey, smp->rrnd, smp->prnd, r, &smp->prsp[1],
