@@ -93,7 +93,7 @@ void sys_k_event_logger_put_timed(uint16_t event_id);
  * an error. The function retrieves messages in FIFO order.
  *
  * @param event_id     Pointer to the id of the event fetched
- * @param dropped_event_count Pointer to how many events were dropped
+ * @param dropped      Pointer to how many events were dropped
  * @param buffer       Pointer to the buffer where the message will be copied.
  * @param buffer_size  Size of the buffer in 32-bit words.
  *
@@ -117,7 +117,7 @@ void sys_k_event_logger_put_timed(uint16_t event_id);
  * logged.
  *
  * @param event_id     Pointer to the id of the event fetched
- * @param dropped_event_count Pointer to how many events were dropped
+ * @param dropped      Pointer to how many events were dropped
  * @param buffer       Pointer to the buffer where the message will be copied.
  * @param buffer_size  Size of the buffer in 32-bit words.
  *
@@ -142,7 +142,7 @@ void sys_k_event_logger_put_timed(uint16_t event_id);
  * logged or the timeout expires.
  *
  * @param event_id     Pointer to the id of the event fetched
- * @param dropped_event_count Pointer to how many events were dropped
+ * @param dropped      Pointer to how many events were dropped
  * @param buffer       Pointer to the buffer where the message will be copied.
  * @param buffer_size  Size of the buffer in 32-bit words.
  * @param timeout      Timeout in ticks.
