@@ -15,7 +15,8 @@
  */
 
 /**
- * @file common target reboot functionality
+ * @file
+ * @brief Common target reboot functionality
  *
  * @details See misc/Kconfig and the reboot help for details.
  */
