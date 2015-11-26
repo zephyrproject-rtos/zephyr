@@ -50,7 +50,7 @@
 
 #define ADC_INT_PRIORITY    0
 
-#ifdef CONFIG_PLATFORM_QUARK_SE_ARC
+#ifdef CONFIG_PLATFORM_QUARK_SE_SS
 #define int_unmask(__mask)                                             \
 	sys_write32(sys_read32((__mask)) & ENABLE_SSS_INTERRUPTS, (__mask))
 #else

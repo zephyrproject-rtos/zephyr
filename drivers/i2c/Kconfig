@@ -236,7 +236,7 @@ config I2C_DEBUG
 config I2C_QUARK_SE_SS
 	bool "Enable I2C Support on Quark SE Sensor Subsystem (SS)"
 	default n
-	depends on PLATFORM_QUARK_SE_ARC
+	depends on PLATFORM_QUARK_SE_SS
 	depends on I2C
 	help
 	This option enables the driver to support the I2C on Quark SE Sensor

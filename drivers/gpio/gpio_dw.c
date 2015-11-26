@@ -51,7 +51,7 @@ static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 	}
 }
 
-#ifdef CONFIG_PLATFORM_QUARK_SE_ARC
+#ifdef CONFIG_PLATFORM_QUARK_SE_SS
 static inline void dw_set_both_edges(uint32_t base_addr, uint32_t pin)
 {
 	ARG_UNUSED(base_addr);

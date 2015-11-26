@@ -1,4 +1,4 @@
-/* sw_isr_table.c - Software ISR table for quark_se-arc BSP */
+/* sw_isr_table.c - Software ISR table for quark_se_ss BSP */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.

@@ -1,4 +1,4 @@
-/* system.c - system/hardware module for quark_se-arc BSP */
+/* system.c - system/hardware module for quark_se_ss BSP */
 
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.

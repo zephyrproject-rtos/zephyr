@@ -1,3 +1,0 @@
-
-config PLATFORM_QUARK_SE_ARC
-        bool "Minimum configuration for Quark SE"
