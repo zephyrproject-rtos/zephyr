@@ -86,7 +86,7 @@ uses seven tasks and six mutexes.
 Example MDEF
 ------------
 
-.. literalinclude:: ../../samples/microkernel/apps/philosophers/proj.mdef
+.. literalinclude:: ../../samples/microkernel/apps/philosophers/prj.mdef
    :linenos:
 
 Related Topics
