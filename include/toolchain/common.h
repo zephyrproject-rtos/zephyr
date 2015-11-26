@@ -111,3 +111,6 @@
 
 #define __stack __aligned(STACK_ALIGN)
 
+/* concatenate the values of the arguments into one */
+#define _DO_CONCAT(x, y) x ## y
+#define _CONCAT(x, y) _DO_CONCAT(x, y)

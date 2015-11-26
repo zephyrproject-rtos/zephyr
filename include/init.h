@@ -97,10 +97,6 @@
  *
  * @return A pointer to the device object created by SYS_DEFINE_DEVICE()
  */
-
-#define _PASTE2(a, b) a##b
-#define _PASTE(a, b) _PASTE2(a, b)
-
-#define SYS_GET_DEVICE(name) (&(_PASTE(__initconfig_, name)))
+#define SYS_GET_DEVICE(name) (&(_CONCAT(__initconfig_, name)))
 
 #endif /* _INIT_H_ */
