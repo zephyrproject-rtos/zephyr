@@ -61,6 +61,7 @@ Alternatively, a ring buffer may be initialized manually. Whether the buffer
 will use modulo or mask operations will be detected automatically:
 
 .. code-block:: c
+
     #define MY_RING_BUF_SIZE	64
 
     struct my_struct {
@@ -79,6 +80,7 @@ Example: Enqueuing data
 =======================
 
 .. code-block:: c
+
     int ret;
 
     ret = sys_ring_buf_put(&ring_buf, TYPE_FOO, 0, &my_foo, SIZE32_OF(my_foo));
@@ -89,6 +91,7 @@ Example: Enqueuing data
 If the type or value fields are sufficient, the data pointer and size may be 0.
 
 .. code-block:: c
+
     int ret;
 
     ret = sys_ring_buf_put(&ring_buf, TYPE_BAR, 17, NULL, 0);
@@ -124,8 +127,7 @@ The following APIs for ring buffers are provided by :file:`ring_buffer.h`:
 :c:func:`sys_ring_buf_init()`
    Initializes a ring buffer.
 
-:c:func:`SYS_RING_BUF_DECLARE_POW2()`,
-:c:func:`SYS_RING_BUF_DECLARE_SIZE()`
+:c:func:`SYS_RING_BUF_DECLARE_POW2()`, :c:func:`SYS_RING_BUF_DECLARE_SIZE()`
    Declare and init a file-scope ring buffer.
 
 :c:func:`sys_ring_buf_get_space()`
