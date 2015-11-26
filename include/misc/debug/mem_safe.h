@@ -20,7 +20,8 @@
 #include <errno.h>
 
 /**
- * @file safe memory access routines
+ * @file
+ * @brief Safe memory access routines
  *
  * This module provides functions for safely writing to and reading from
  * memory, as well as probing if a memory address is accessible. For the
@@ -36,8 +37,8 @@
  * Probe memory for read or write access by specifying the @a perm, either
  * SYS_MEM_SAFE_WRITE or SYS_MEM_SAFE_READ.  A size @a num_bytes specifying
  * the number of bytes to access must also be specified: for a 32-bit system,
- * it can only take the values 1,2 or 4 (8/16/32 bits). Both @p and @buf must
- * be naturally aligned to @num_bytes.
+ * it can only take the values 1,2 or 4 (8/16/32 bits). Both @a p and @a buf
+ * must be naturally aligned to @a num_bytes.
  *
  * On a read, the value read from the memory location @a p is returned through
  * @a buf; on a write, the value contained in @a buf is written to memory at
@@ -49,10 +50,9 @@
  * @param buf On reads, will contain the value read; on writes, contains the
  *            value to write
  *
- * @return 0 or an error
- * @error
- * -EINVAL if an invalid parameter is passed
- * -EFAULT if the address is not accessible.
+ * @retval 0 OK
+ * @retval -EINVAL If an invalid parameter is passed
+ * @retval -EFAULT If the address is not accessible.
  */
 
 extern int _mem_probe(void *p, int perm, size_t num_bytes, void *buf);
@@ -71,11 +71,9 @@ extern int _mem_probe(void *p, int perm, size_t num_bytes, void *buf);
  * @param num_bytes The number of bytes to read
  * @param width The access width
  *
- * @return 0 or an error
- *
- * @error
- * -EFAULT if there was an error reading memory
- * -EINVAL if access width, num_bytes and addresses are not compatible.
+ * @retval 0 OK
+ * @retval -EFAULT If there was an error reading memory
+ * @retval -EINVAL If access width, num_bytes and addresses are not compatible.
  */
 
 extern int _mem_safe_read(void *src, char *buf, size_t num_bytes,
@@ -95,11 +93,9 @@ extern int _mem_safe_read(void *src, char *buf, size_t num_bytes,
  * @param num_bytes The number of bytes to write
  * @param width The access width
  *
- * @return 0 or an error
- *
- * @error
- * -EFAULT if there was an error writing memory
- * -EINVAL if access width, num_bytes and addresses are not compatible.
+ * @retval 0 OK
+ * @retval -EFAULT If there was an error writing memory
+ * @retval -EINVAL If access width, num_bytes and addresses are not compatible.
  */
 
 extern int _mem_safe_write(void *dest, char *buf, size_t num_bytes,
@@ -115,10 +111,8 @@ extern int _mem_safe_write(void *dest, char *buf, size_t num_bytes,
  * @param buf The source buffer to write in memory
  * @param num_bytes The number of bytes to write
  *
- * @return 0 or an error
- *
- * @error
- * -EFAULT if there was an error writing memory
+ * @retval 0 Success
+ * @retval -EFAULT If there was an error writing memory
  */
 
 extern int _mem_safe_write_to_text_section(void *dest, char *buf,
@@ -144,11 +138,9 @@ extern int _mem_safe_write_to_text_section(void *dest, char *buf,
  * @param perm The access permissions, either SYS_MEM_SAFE_WRITE or
  *             SYS_MEM_SAFE_READ
  *
- * @return 0 or an error
- *
- * @error
- * -ENOMEM if there there is no space left in the table of regions
- * -EINVAL if passing invalid permissions
+ * @retval 0 OK
+ * @retval -ENOMEM If there there is no space left in the table of regions
+ * @retval -EINVAL If passing invalid permissions
  */
 
 #ifdef CONFIG_MEM_SAFE_CHECK_BOUNDARIES
