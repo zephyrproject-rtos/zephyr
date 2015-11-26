@@ -120,8 +120,8 @@ static inline int get_frees(enum ip_buf_type type)
 #define inc_free_rx_bufs(...)
 #define dec_free_tx_bufs(...)
 #define inc_free_tx_bufs(...)
-#define inc_free_rx_bufs_func NULL
-#define inc_free_tx_bufs_func NULL
+#define inc_free_rx_bufs_func(...)
+#define inc_free_tx_bufs_func(...)
 #endif
 
 static struct nano_fifo free_rx_bufs;
