@@ -240,4 +240,32 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 			addr->val[5], addr->val[4], addr->val[3],
 			addr->val[2], addr->val[1], addr->val[0], type);
 }
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/** @brief Enable/disable set controller in discoverable state.
+ *
+ *  Allows make local controller to listen on INQUIRY SCAN channel and responds
+ *  to devices making general inquiry. To enable this state it's mandatory
+ *  to first be in connectable state.
+ *
+ *  @param enable Value allowing/disallowing controller to become discoverable.
+ *
+ *  @return Negative if fail set to requested state or requested state has been
+ *  already set. Zero if done successfully.
+ */
+int bt_bredr_set_discoverable(bool enable);
+
+/** @brief Enable/disable set controller in connectable state.
+ *
+ *  Allows make local controller to be connectable. It means the controller
+ *  start listen to devices requests on PAGE SCAN channel. If disabled also
+ *  resets discoverability if was set.
+ *
+ *  @param enable Value allowing/disallowing controller to be connectable.
+ *
+ *  @return Negative if fail set to requested state or requested state has been
+ *  already set. Zero if done successfully.
+ */
+int bt_bredr_set_connectable(bool enable);
+#endif
 #endif /* __BT_BLUETOOTH_H */

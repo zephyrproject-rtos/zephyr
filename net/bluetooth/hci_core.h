@@ -44,6 +44,8 @@ enum {
 
 	BT_DEV_SCANNING,
 	BT_DEV_SCAN_FILTER_DUP,
+	BT_DEV_ISCAN,
+	BT_DEV_PSCAN,
 };
 
 struct bt_dev_le {

@@ -2105,3 +2105,78 @@ struct net_buf *bt_buf_get_acl(void)
 	return NULL;
 #endif /* CONFIG_BLUETOOTH_CONN */
 }
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static int bt_bredr_hci_write_scan(uint8_t scan)
+{
+	struct net_buf *buf;
+	int err;
+
+	BT_DBG("type %u", scan);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SCAN_ENABLE, 1);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	memcpy(net_buf_add(buf, 1), &scan, 1);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SCAN_ENABLE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	if (scan & BT_BREDR_SCAN_INQUIRY) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_ISCAN);
+	} else {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_ISCAN);
+	}
+
+	if (scan & BT_BREDR_SCAN_PAGE) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_PSCAN);
+	} else {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_PSCAN);
+	}
+
+	return 0;
+}
+
+int bt_bredr_set_connectable(bool enable)
+{
+	if (enable) {
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
+			return -EALREADY;
+		} else {
+			return bt_bredr_hci_write_scan(BT_BREDR_SCAN_PAGE);
+		}
+	} else {
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
+			return -EALREADY;
+		} else {
+			return bt_bredr_hci_write_scan(BT_BREDR_SCAN_DISABLED);
+		}
+	}
+}
+
+int bt_bredr_set_discoverable(bool enable)
+{
+	if (enable) {
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
+			return -EALREADY;
+		}
+
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
+			return -EPERM;
+		}
+
+		return bt_bredr_hci_write_scan(BT_BREDR_SCAN_INQUIRY |
+					       BT_BREDR_SCAN_PAGE);
+	} else {
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
+			return -EALREADY;
+		}
+
+		return bt_bredr_hci_write_scan(BT_BREDR_SCAN_PAGE);
+	}
+}
+#endif
