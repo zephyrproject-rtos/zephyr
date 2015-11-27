@@ -77,7 +77,7 @@ void rtc_dw_isr(void)
 	/* clear interrupt */
 	sys_read32(RTC_BASE_ADDR + RTC_EOI);
 }
-IRQ_CONNECT_STATIC(rtc, INT_RTC_IRQ, CONFIG_RTC_IRQ_PRI, rtc_dw_isr, 0);
+IRQ_CONNECT_STATIC(rtc, INT_RTC_IRQ, CONFIG_RTC_IRQ_PRI, rtc_dw_isr, 0, 0);
 
 /**
  * @brief Sets an RTC alarm
