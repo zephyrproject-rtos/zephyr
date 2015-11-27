@@ -94,9 +94,7 @@ static inline void dw_interrupt_config(struct device *port, int access_op,
 	flag_is_set = (flags & GPIO_INT_DEBOUNCE);
 	dw_set_bit(base_addr, PORTA_DEBOUNCE, pin, flag_is_set);
 
-	/* level triggered int synchronous with clock */
-	flag_is_set = (flags & GPIO_INT_CLOCK_SYNC);
-	dw_set_bit(base_addr, INT_CLOCK_SYNC, pin, flag_is_set);
+	/* Finally enabling interrupt */
 	dw_set_bit(base_addr, INTEN, pin, 1);
 }
 
@@ -112,7 +110,7 @@ static inline void dw_pin_config(struct device *port,
 	/* set direction */
 	dw_set_bit(base_addr, SWPORTA_DDR, pin, (flags & GPIO_DIR_MASK));
 
-	if (flags &  GPIO_INT)
+	if (flags & GPIO_INT)
 		dw_interrupt_config(port, GPIO_ACCESS_BY_PIN, pin, flags);
 }
 
