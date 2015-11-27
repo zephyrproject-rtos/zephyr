@@ -937,6 +937,12 @@ static int uncompress(struct net_buf *buf)
   }
 
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPHC
+  /* Check if memmove would go past the end of the buffer */
+  if ((uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf)) >
+      net_buf_tailroom(buf)) {
+    PRINTFO("uncompress: not enough space to store uncompressed headers\n");
+    goto fail;
+  }
   memmove(uip_buf(buf) + uip_uncomp_hdr_len(mbuf),
                 uip_buf(buf) + uip_packetbuf_hdr_len(mbuf),
                 uip_len(buf) - uip_packetbuf_hdr_len(mbuf));
