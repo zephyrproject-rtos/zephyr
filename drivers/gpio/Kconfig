@@ -599,6 +599,40 @@ config GPIO_MMIO_1_OUTPUT
 	help
 	  The memory address for output pin level register.
 
+config GPIO_QMSI
+	bool "QMSI GPIO driver"
+	depends on GPIO && QMSI_DRIVERS
+	default n
+	help
+	  Enable the GPIO driver found on Intel Microcontroller
+	  platforms, using the QMSI library.
+
+config GPIO_QMSI_0
+	bool "QMSI GPIO block 0"
+	depends on GPIO_QMSI
+	default n
+	help
+	  Include support for the GPIO port 0 using QMSI.
+
+config GPIO_QMSI_0_NAME
+	string "Driver name"
+	depends on GPIO_QMSI_0
+	default "GPIO_0"
+
+config GPIO_QMSI_0_IRQ
+	int "Controller interrupt number"
+	depends on GPIO_QMSI_0
+	default 0
+	help
+	  IRQ number for the controller
+
+config GPIO_QMSI_0_PRI
+	int "Controller interrupt priority"
+	depends on GPIO_QMSI_0
+	default 2
+	help
+	  IRQ priority
+
 config GPIO_SCH
 	bool "SCH GPIO controller"
 	depends on GPIO

@@ -97,6 +97,14 @@
 #define GPIO_NAME	"GPIO_"
 #endif
 
+#ifdef CONFIG_GPIO_DW_0
+#define GPIO_DRV_NAME CONFIG_GPIO_DW_0_NAME
+#elif CONFIG_GPIO_QMSI_0
+#define GPIO_DRV_NAME CONFIG_GPIO_QMSI_0_NAME
+#else
+#error "Unsupported GPIO driver"
+#endif
+
 void gpio_callback(struct device *port, uint32_t pin)
 {
 	PRINT(GPIO_NAME "%d triggered\n", pin);
@@ -112,9 +120,9 @@ void main(void)
 
 	nano_timer_init(&timer, timer_data);
 
-	gpio_dev = device_get_binding(CONFIG_GPIO_DW_0_NAME);
+	gpio_dev = device_get_binding(GPIO_DRV_NAME);
 	if (!gpio_dev) {
-		PRINT("Cannot find %s!\n", CONFIG_GPIO_DW_0_NAME);
+		PRINT("Cannot find %s!\n", GPIO_DRV_NAME);
 	}
 
 	/* Setup GPIO output */

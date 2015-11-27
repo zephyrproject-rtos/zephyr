@@ -82,6 +82,7 @@ if GPIO
 config GPIO_DW
 	def_bool y
 
+if GPIO_DW
 config GPIO_DW_BOTHEDGES_SUPPORT
 	def_bool y
 config GPIO_DW_CLOCK_GATE
@@ -109,6 +110,22 @@ config GPIO_DW_1_IRQ
 	default 31
 config GPIO_DW_1_BITS
 	default 6
+endif
+
+if QMSI_DRIVERS
+config GPIO_QMSI
+	def_bool n
+if GPIO_QMSI
+config GPIO_QMSI_0
+	def_bool n
+config GPIO_QMSI_0_NAME
+	default "gpio_0"
+config GPIO_QMSI_0_IRQ
+	default 8
+config GPIO_QMSI_0_PRI
+	default 2
+endif
+endif
 endif
 
 if I2C
