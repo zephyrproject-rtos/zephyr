@@ -726,6 +726,29 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->le.dst;
 }
 
+int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
+{
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	info->type = conn->type;
+
+	switch (conn->type) {
+	case BT_CONN_TYPE_LE:
+		if (conn->role == BT_HCI_ROLE_MASTER) {
+			info->le.src = &conn->le.init_addr;
+			info->le.dst = &conn->le.resp_addr;
+		} else {
+			info->le.src = &conn->le.resp_addr;
+			info->le.dst = &conn->le.init_addr;
+		}
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
 void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)
 {
 	if (auto_conn) {

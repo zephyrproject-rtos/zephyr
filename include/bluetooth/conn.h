@@ -66,6 +66,47 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
  */
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
 
+/** Connection Type */
+enum {
+	BT_CONN_TYPE_LE, /** LE Connection Type */
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	BT_CONN_TYPE_BREDR, /** BR/EDR Connection Type */
+#endif
+};
+
+/** LE Connection Info Structure */
+struct bt_conn_le_info {
+	const bt_addr_le_t *src; /** Source Address */
+	const bt_addr_le_t *dst; /** Destination Address */
+};
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/** BR/EDR Connection Info Structure */
+struct bt_conn_br_info;
+#endif
+
+/** Connection Info Structure */
+struct bt_conn_info {
+	/** Connection Type */
+	uint8_t type;
+	union {
+		/** LE Connection specific Info */
+		struct bt_conn_le_info le;
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		struct bt_conn_br_info br;
+#endif
+	};
+};
+
+/** @brief Get connection info
+ *
+ *  @param conn Connection object.
+ *  @param info Connection info object.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
+
 /** @brief Disconnect from a remote device or cancel pending connection.
  *
  *  Disconnect an active connection with the specified reason code or cancel

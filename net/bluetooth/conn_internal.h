@@ -32,14 +32,6 @@ enum {
 };
 
 
-enum {
-	BT_CONN_TYPE_LE,
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	BT_CONN_TYPE_BREDR,
-#endif
-};
-
-
 struct bt_conn_le {
 	bt_addr_le_t		dst;
 
