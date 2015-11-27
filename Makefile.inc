@@ -8,9 +8,9 @@ O ?= $(PROJECT_BASE)/outdir
 
 # Turn O into an absolute path; we call the main Kbuild with $(MAKE) -C
 # which changes the working directory, relative paths don't work right.
-# Need to create the directory first to make readlink happy
+# Need to create the directory first to make realpath happy
 $(shell mkdir -p $(O))
-override O := $(shell readlink -f $(O))
+override O := $(realpath $(O))
 
 export ARCH MDEF_FILE QEMU_EXTRA_FLAGS PROJECT_BASE
 
