@@ -41,6 +41,15 @@ config GPIO_DW
 	help
 	  Enable driver for Designware GPIO
 
+config GPIO_DW_IO_ACCESS
+	prompt "I/O register access"
+	default y if ARC
+	default n
+	bool
+	help
+	  Driver access configuration register by
+	  I/O or auxiliary registers.
+
 config GPIO_DW_BOTHEDGES_SUPPORT
 	bool
 	prompt "Interrupt on Both Edges"

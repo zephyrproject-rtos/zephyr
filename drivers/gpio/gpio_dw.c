@@ -28,6 +28,32 @@
 #include <shared_irq.h>
 #endif
 
+/*
+ * ARC architecture configure IP through IO auxiliary registers.
+ * Other architectures as ARM and x86 configure IP through MMIO registers
+ */
+#ifdef CONFIG_GPIO_DW_IO_ACCESS
+static inline uint32_t dw_read(uint32_t base_addr, uint32_t offset)
+{
+	return sys_in32(base_addr + offset);
+}
+
+static inline void dw_write(uint32_t base_addr, uint32_t offset,
+			   uint32_t val)
+{
+	sys_out32(val, base_addr + offset);
+}
+
+static void dw_set_bit(uint32_t base_addr, uint32_t offset,
+			      uint32_t bit, uint8_t value)
+{
+	if (!value) {
+		sys_io_clear_bit(base_addr + offset, bit);
+	} else {
+		sys_io_set_bit(base_addr + offset, bit);
+	}
+}
+#else
 static inline uint32_t dw_read(uint32_t base_addr, uint32_t offset)
 {
 	return sys_read32(base_addr + offset);
@@ -39,7 +65,6 @@ static inline void dw_write(uint32_t base_addr, uint32_t offset,
 	sys_write32(val, base_addr + offset);
 }
 
-
 static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 			      uint32_t bit, uint8_t value)
 {
@@ -49,6 +74,7 @@ static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 		sys_set_bit(base_addr + offset, bit);
 	}
 }
+#endif
 
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 static inline void _gpio_dw_clock_config(struct device *port)
