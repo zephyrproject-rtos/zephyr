@@ -1225,6 +1225,64 @@ static void cmd_l2cap_send(int argc, char *argv[])
 	}
 }
 
+static void cmd_bredr_discoverable(int argc, char *argv[])
+{
+	int err;
+	const char *action;
+
+	if (argc < 2) {
+		printk("[on/off] parameter required\n");
+		return;
+	}
+
+	action = argv[1];
+
+	if (!strcmp(action, "on")) {
+		err = bt_bredr_set_discoverable(true);
+	} else if (!strcmp(action, "off")) {
+		err = bt_bredr_set_discoverable(false);
+	} else {
+		printk("[on/off] parameter required\n");
+		return;
+	}
+
+	if (err) {
+		printk("BR/EDR set/reset discoverable failed (err %d)\n", err);
+		return;
+	}
+
+	printk("BR/EDR set/reset discoverable done\n");
+}
+
+static void cmd_bredr_connectable(int argc, char *argv[])
+{
+	int err;
+	const char *action;
+
+	if (argc < 2) {
+		printk("[on/off] parameter required\n");
+		return;
+	}
+
+	action = argv[1];
+
+	if (!strcmp(action, "on")) {
+		err = bt_bredr_set_connectable(true);
+	} else if (!strcmp(action, "off")) {
+		err = bt_bredr_set_connectable(false);
+	} else {
+		printk("[on/off] parameter required\n");
+		return;
+	}
+
+	if (err) {
+		printk("BR/EDR set/rest connectable failed (err %d)\n", err);
+		return;
+	}
+
+	printk("BR/EDR set/reset connectable done\n");
+}
+
 struct shell_cmd commands[] = {
 	{ "init", cmd_init },
 	{ "connect", cmd_connect_le },
@@ -1253,6 +1311,8 @@ struct shell_cmd commands[] = {
 	{ "l2cap-connect", cmd_l2cap_connect },
 	{ "l2cap-disconnect", cmd_l2cap_disconnect },
 	{ "l2cap-send", cmd_l2cap_send },
+	{ "br-iscan", cmd_bredr_discoverable },
+	{ "br-pscan", cmd_bredr_connectable },
 	{ NULL, NULL }
 };
 
