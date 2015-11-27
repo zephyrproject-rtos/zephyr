@@ -26,6 +26,12 @@
 #endif /* CONFIG_IOAPIC */
 #endif
 
+#if defined(CONFIG_WDT_QMSI)
+#if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
+	ioapic_mkstub wdt wdt_qmsi_isr wdt_qmsi_isr_dev
+#endif /* CONFIG_IOAPIC || CONFIG_MVIC */
+#endif /* CONFIG_WDT_QMSI */
+
 /* externs (internal APIs) */
 
 GTEXT(_IntEnt)

@@ -78,4 +78,37 @@ config WDT_DW_IRQ_PRI
 	depends on WDT_DW
 	help
 	DesignWare WDT interrupt priority
+
+config WDT_QMSI
+	bool "QMSI Watchdog driver"
+	default n
+	depends on QMSI_DRIVERS
+	help
+	This option enables the QMSI watchdog driver.
+
+	This driver is simply a shim driver based on the watchdog
+	driver provided by the QMSI BSP. For more information about
+	QMSI BSP see CONFIG_QMSI_DRIVERS.
+
+config WDT_QMSI_DRV_NAME
+	string "Driver instance name"
+	default "WDT_QMSI"
+	depends on WDT_QMSI
+	help
+	QMSI driver instance name
+
+config WDT_QMSI_IRQ
+	int "Interrupt number"
+	default 12
+	depends on WDT_QMSI
+	help
+	Watchdog interrupt number
+
+config WDT_QMSI_IRQ_PRI
+	int "Interrupt priority"
+	default 2
+	depends on WDT_QMSI
+	help
+	Watchdog interrupt priority
+
 endif
