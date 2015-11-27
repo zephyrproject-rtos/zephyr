@@ -44,6 +44,10 @@
  *  @brief Battery Service
  */
 #define BT_UUID_BAS				0x180f
+/** @def BT_UUID_IPSP
+ *  @brief IP Support Service
+ */
+#define BT_UUID_IPSS				0x1820
 /** @def BT_UUID_GATT_PRIMARY
  *  @brief GATT Primary Service
  */
