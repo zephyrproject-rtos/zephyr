@@ -85,16 +85,7 @@ config GPIO_DW_0_BASE_ADDR
 config GPIO_DW_0_IRQ
 	default 8
 config GPIO_DW_0_BITS
-	default 8
-
-config GPIO_DW_1
-	def_bool y
-config GPIO_DW_1_BASE_ADDR
-	default 0xb0001700
-config GPIO_DW_1_IRQ
-	default 8
-config GPIO_DW_0_BITS
-	default 8
+	default 32
 endif
 
 if I2C
