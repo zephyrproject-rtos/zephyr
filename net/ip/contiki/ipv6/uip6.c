@@ -86,7 +86,7 @@
 /* For Debug, logging, statistics                                            */
 /*---------------------------------------------------------------------------*/
 
-#define DEBUG DEBUG_FULL
+#define DEBUG DEBUG_NONE
 #include "contiki/ip/uip-debug.h"
 
 #if UIP_CONF_IPV6_RPL
