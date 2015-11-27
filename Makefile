@@ -559,6 +559,11 @@ $(if $(CROSS_COMPILE),, \
      $(error ZEPHYR_GCC_VARIANT is not set. ))
 endif
 
+ifdef CONFIG_QMSI_DRIVERS
+LIB_INCLUDE_DIR += -L$(CONFIG_QMSI_INSTALL_PATH:"%"=%)/lib
+ALL_LIBS += qmsi
+endif
+
 ifdef CONFIG_MINIMAL_LIBC
 ZEPHYRINCLUDE += -I$(srctree)/lib/libc/minimal/include
 endif
