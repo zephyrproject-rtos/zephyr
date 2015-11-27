@@ -33,6 +33,12 @@
 #define SLEEPTIME  10
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec)
 
+#ifdef CONFIG_PLATFORM_QUARK_SE_ARC
+	#define ADC_DEVICE_NAME CONFIG_ADC_DW_NAME_0
+#elif CONFIG_PLATFORM_GALILEO
+	#define ADC_DEVICE_NAME CONFIG_ADC_TI_ADC108S102_0_DRV_NAME
+#endif
+
 static int cb_count;
 
 static uint8_t seq_buffer[100];
@@ -78,7 +84,7 @@ void main(void)
 
 	nano_timer_init(&timer, data);
 
-	adc = device_get_binding(CONFIG_ADC_TI_ADC108S102_0_DRV_NAME);
+	adc = device_get_binding(ADC_DEVICE_NAME);
 	if (!adc) {
 		DBG("Cannot get adc controller\n");
 		goto done;
