@@ -1228,37 +1228,41 @@ static int l2cap_chan_le_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
 	BT_DBG("chan %p cid 0x%04x len %u credits %u", chan, chan->tx.cid,
 	       buf->len, chan->tx.credits.nsig);
 
+	len = buf->len;
+
 	bt_l2cap_send(chan->conn, chan->tx.cid, buf);
 
-	return buf->len;
+	return len;
 }
 
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_chan *chan,
 				  struct net_buf *buf)
 {
-	int len;
+	int ret, len;
 
 	if (buf->len > chan->tx.mtu) {
 		return -EMSGSIZE;
 	}
 
 	/* Add SDU length for the first segment */
-	len = l2cap_chan_le_send(chan, buf, buf->len);
-	if (len < 0) {
-		return len;
+	ret = l2cap_chan_le_send(chan, buf, buf->len);
+	if (ret < 0) {
+		return ret;
 	}
 
 	/* Send remaining segments */
-	while (buf->len > 0 && buf->len != len) {
-		len = l2cap_chan_le_send(chan, buf, 0);
-		if (len < 0) {
-			return len;
+	for (len = ret; buf->len > 0 && buf->len != ret; len += ret) {
+		ret = l2cap_chan_le_send(chan, buf, 0);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
+	BT_DBG("chan %p cid 0x%04x len %u\n", chan, chan->tx.cid, len);
+
 	net_buf_unref(buf);
 
-	return 0;
+	return len;
 }
 
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
