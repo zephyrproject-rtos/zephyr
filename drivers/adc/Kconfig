@@ -111,6 +111,23 @@ config ADC_DW_NAME_0
 	default "ADC0"
 	depends on ADC_DW_0
 
+config ADC_DW_0_RX_IRQ
+        int
+        prompt "ADC 0 reception interrupt"
+        depends on ADC_DW_0
+        default 18
+
+config ADC_DW_0_ERR_IRQ
+        int
+        prompt "ADC 0 error interrupt"
+        depends on ADC_DW_0
+        default 19
+
+config ADC_DW_0_PRI
+        int
+        prompt "ADC 0 interrupts' priority"
+        depends on ADC_DW_0
+        default 2
 choice
 	prompt "Input Mode"
 	default ADC_DW_SINGLE_ENDED

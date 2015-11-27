@@ -49,8 +49,6 @@
 #define SEQ_MUX_ODD_POS    16
 #define SEQ_DELAY_ODD_POS  21
 
-#define ADC_INT_PRIORITY    0
-
 #ifdef CONFIG_PLATFORM_QUARK_SE_SS
 #define int_unmask(__mask)                                             \
 	sys_write32(sys_read32((__mask)) & ENABLE_SSS_INTERRUPTS, (__mask))
@@ -301,8 +299,8 @@ struct adc_config adc_config_dev_0 = {
 		.reg_base = PERIPH_ADDR_BASE_ADC,
 		.reg_irq_mask = SCSS_REGISTER_BASE + INT_SS_ADC_IRQ_MASK,
 		.reg_err_mask = SCSS_REGISTER_BASE + INT_SS_ADC_ERR_MASK,
-		.rx_vector = IO_ADC0_INT_IRQ,
-		.err_vector = IO_ADC0_INT_ERR,
+		.rx_vector = CONFIG_ADC_DW_0_RX_IRQ,
+		.err_vector = CONFIG_ADC_DW_0_ERR_IRQ,
 		.fifo_tld = IO_ADC0_FS/2,
 		.in_mode      = CONFIG_ADC_DW_INPUT_MODE,
 		.out_mode     = CONFIG_ADC_DW_OUTPUT_MODE,
@@ -323,14 +321,14 @@ SYS_DEFINE_DEVICE(adc_dw_0, &adc_info_dev_0, SECONDARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 IRQ_CONNECT_STATIC(adc_dw_0_rx,
-		IO_ADC0_INT_IRQ,
-		ADC_INT_PRIORITY,
+		CONFIG_ADC_DW_0_RX_IRQ,
+		CONFIG_ADC_DW_0_PRI,
 		adc_dw_rx_isr,
 		SYS_GET_DEVICE(adc_dw_0), 0);
 
 IRQ_CONNECT_STATIC(adc_dw_0_err,
-		IO_ADC0_INT_ERR,
-		ADC_INT_ERR,
+		CONFIG_ADC_DW_0_ERR_IRQ,
+		CONFIG_ADC_DW_0_PRI,
 		adc_dw_err_isr,
 		SYS_GET_DEVICE(adc_dw_0), 0);
 

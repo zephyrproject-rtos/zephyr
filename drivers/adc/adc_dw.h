@@ -103,8 +103,6 @@
 /* ADC control commands */
 #define IO_ADC0_FS (32)
 #define IO_ADC0_SE (32)
-#define IO_ADC0_INT_ERR 18
-#define IO_ADC0_INT_IRQ 19
 
 #define IO_ADC_SET_CLK_DIVIDER          (0x20)
 #define IO_ADC_SET_CONFIG               (0x21)
