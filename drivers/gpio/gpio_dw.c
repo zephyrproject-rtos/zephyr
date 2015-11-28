@@ -417,7 +417,8 @@ struct gpio_dw_config gpio_dw_config_1 = {
 struct gpio_dw_runtime gpio_1_runtime;
 
 DECLARE_DEVICE_INIT_CONFIG(gpio_1, CONFIG_GPIO_DW_1_NAME,
-			   gpio_dw_initialize, &gpio_config_1);
+			   gpio_dw_initialize, &gpio_dw_config_1);
+
 SYS_DEFINE_DEVICE(gpio_1, &gpio_1_runtime, SECONDARY,
 		  CONFIG_GPIO_DW_INIT_PRIORITY);
 
