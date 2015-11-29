@@ -448,9 +448,9 @@ static int i2c_qse_ss_poll_transfer(struct device *dev,
 	int ret = DEV_OK;
 
 	/* Wait for bus idle */
-	start_time = nano_tick_get_32();
+	start_time = sys_tick_get_32();
 	while (_i2c_qse_ss_is_busy(dev)) {
-		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 			return DEV_FAIL;
 		}
 	}
@@ -471,9 +471,9 @@ static int i2c_qse_ss_poll_transfer(struct device *dev,
 	/* Transmit */
 	while (dw->tx_len > 0) {
 		/* Wait for space in TX FIFO */
-		start_time = nano_tick_get_32();
+		start_time = sys_tick_get_32();
 		while (!_i2c_qse_ss_is_tfnf(dev)) {
-			if ((nano_tick_get_32() - start_time)
+			if ((sys_tick_get_32() - start_time)
 			    > POLLING_TIMEOUT) {
 				ret = DEV_FAIL;
 				goto finish;
@@ -487,9 +487,9 @@ static int i2c_qse_ss_poll_transfer(struct device *dev,
 	}
 
 	/* Wait for TX FIFO empty to be sure everything is sent. */
-	start_time = nano_tick_get_32();
+	start_time = sys_tick_get_32();
 	while (!_i2c_qse_ss_is_tfe(dev)) {
-		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 			ret = DEV_FAIL;
 			goto finish;
 		}
@@ -511,9 +511,9 @@ do_receive:
 
 	while (dw->rx_len > 0) {
 		/* Wait for data in RX FIFO*/
-		start_time = nano_tick_get_32();
+		start_time = sys_tick_get_32();
 		while (!_i2c_qse_ss_is_rfne(dev)) {
-			if ((nano_tick_get_32() - start_time)
+			if ((sys_tick_get_32() - start_time)
 			    > POLLING_TIMEOUT) {
 				ret = DEV_FAIL;
 				goto finish;
@@ -527,9 +527,9 @@ do_receive:
 
 stop_det:
 	/* Wait for transfer to complete */
-	start_time = nano_tick_get_32();
+	start_time = sys_tick_get_32();
 	while (!_i2c_qse_ss_check_irq(dev, IC_INTR_STOP_DET)) {
-		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 			ret = DEV_FAIL;
 			goto finish;
 		}
@@ -537,9 +537,9 @@ stop_det:
 	_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_STOP_DET);
 
 	/* Wait for bus idle */
-	start_time = nano_tick_get_32();
+	start_time = sys_tick_get_32();
 	while (_i2c_qse_ss_is_busy(dev)) {
-		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
 			ret = DEV_FAIL;
 			goto finish;
 		}
