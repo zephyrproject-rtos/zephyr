@@ -21,7 +21,7 @@
 #include <drivers/ioapic.h>
 
 #if defined(CONFIG_RTC_DW)
-#if defined(CONFIG_IOAPIC)
+#if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
 	ioapic_mkstub rtc rtc_dw_isr 0
 #endif
 #endif
