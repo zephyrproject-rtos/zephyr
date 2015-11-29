@@ -21,33 +21,28 @@
 #include <device.h>
 #include <watchdog.h>
 
+#define WDT_CR			(0x0)
+#define WDT_TORR		(0x4)
+#define WDT_CCVR		(0x8)
+#define WDT_CRR			(0xC)
+#define WDT_STAT		(0x10)
+#define WDT_EIO			(0x14)
+#define WDT_COMP_PARAM_5	(0xE4)
+#define WDT_COMP_PARAM_4	(0xE8)
+#define WDT_COMP_PARAM_3	(0xEC)
+#define WDT_COMP_PARAM_2	(0xF0)
+#define WDT_COMP_PARAM_1	(0xF4)
+#define WDT_COMP_VERSION	(0xF8)
+#define WDT_COMP_TYPE		(0xFC)
+
 
 /**
- * Watchdog timer register block type.
+ * WDT Mode type.
  */
-struct wdt_dw {
-	volatile uint32_t wdt_cr;           /**< Control Register */
-	volatile uint32_t wdt_torr;         /**< Timeout Range Register */
-	volatile uint32_t wdt_ccvr;         /**< Current Counter Value Register */
-	volatile uint32_t wdt_crr;          /**< Current Restart Register */
-	volatile uint32_t wdt_stat;         /**< Interrupt Status Register */
-	volatile uint32_t wdt_eoi;          /**< Interrupt Clear Register */
-	volatile uint32_t wdt_comp_param_5; /**<  Component Parameters */
-	volatile uint32_t wdt_comp_param_4; /**<  Component Parameters */
-	volatile uint32_t wdt_comp_param_3; /**<  Component Parameters */
-	volatile uint32_t wdt_comp_param_2; /**<  Component Parameters */
-	volatile uint32_t wdt_comp_param_1; /**<  Component Parameters Register 1 */
-	volatile uint32_t wdt_comp_version; /**<  Component Version Register */
-	volatile uint32_t wdt_comp_type;    /**< Component Type Register */
-};
 
-/** WDT register block */
-#define WDT_DW ((struct wdt_dw *)WDT_BASE_ADDR)
-
-
-#define WDT_CRR_VAL                 0x76
-#define WDT_CR_ENABLE               (1 << 0)
-#define WDT_CR_INT_ENABLE           (1 << 1)        /* interrupt mode enable - mode1 */
+#define WDT_CRR_VAL		(0x76)
+#define WDT_CR_ENABLE		(1 << 0)
+#define WDT_CR_INT_ENABLE	(1 << 1)
 
 
 #define WDT_DRV_NAME "wdt_dw"

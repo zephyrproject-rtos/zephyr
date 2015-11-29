@@ -18,20 +18,22 @@
 #include <init.h>
 #include "wdt_dw.h"
 
-void (*cb_fn)(void);
+static void (*cb_fn)(void);
 
 /**
  * Enables the clock for the peripheral watchdog
  */
 static void wdt_dw_enable(void)
 {
-	SCSS_PERIPHERAL->periph_cfg0 |= SCSS_PERIPH_CFG0_WDT_ENABLE;
+	sys_set_bit(WDT_BASE_ADDR + WDT_CR, 0);
+	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 1);
+	sys_set_bit(SCSS_PERIPHERAL_BASE + SCSS_PERIPH_CFG0, 1);
 }
 
 static void wdt_dw_disable(void)
 {
 	/* Disable the clock for the peripheral watchdog */
-	SCSS_PERIPHERAL->periph_cfg0 &= ~SCSS_PERIPH_CFG0_WDT_ENABLE;
+	sys_clear_bit(SCSS_PERIPHERAL_BASE + SCSS_PERIPH_CFG0, 1);
 }
 
 void wdt_dw_isr(void)
@@ -43,50 +45,33 @@ void wdt_dw_isr(void)
 
 static void wdt_dw_get_config(struct wdt_config *config)
 {
-
+	config->timeout = sys_read32(WDT_BASE_ADDR + WDT_TORR) & WDT_TIMEOUT_MASK;
+	config->mode = (sys_read32(WDT_BASE_ADDR + WDT_CR) & WDT_MODE) >> WDT_MODE_OFFSET;
+	config->interrupt_fn = cb_fn;
 }
 
 IRQ_CONNECT_STATIC(wdt_dw, INT_WDT_IRQ, INT_WDT_IRQ_PRI, wdt_dw_isr, 0, 0);
 
-static void wdt_dw_reload(void) { WDT_DW->wdt_crr = WDT_CRR_VAL; }
+static void wdt_dw_reload(void)
+{
+	sys_write32(WDT_CRR_VAL, WDT_BASE_ADDR + WDT_CRR);
+}
 
 static int wdt_dw_set_config(struct wdt_config *config)
 {
-	int ret = 0;
-
-	wdt_dw_enable();
-	/*  Set timeout value
-	 *  [7:4] TOP_INIT - the initial timeout value is hardcoded in silicon,
-	 *  only bits [3:0] TOP are relevant.
-	 *  Once tickled TOP is loaded at the next expiration.
-	 */
-	uint32_t i;
-	uint32_t ref = (1 << 16) / (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
-				    1000000); /* 2^16/FREQ_CPU */
-	uint32_t timeout = config->timeout * 1000;
-
-	for (i = 0; i < 16; i++) {
-		if (timeout <= ref)
-			break;
-		ref = ref << 1;
-	}
-	if (i > 15) {
-		ret = -1;
-		i = 15;
-	}
-	WDT_DW->wdt_torr = i;
+	sys_write32(config->timeout, WDT_BASE_ADDR + WDT_TORR);
 
 	/* Set response mode */
 	if (WDT_MODE_RESET == config->mode) {
-		WDT_DW->wdt_cr &= ~WDT_CR_INT_ENABLE;
+		sys_clear_bit(WDT_BASE_ADDR + WDT_CR, 1);
 	} else {
 		if (config->interrupt_fn) {
 			cb_fn = config->interrupt_fn;
 		} else {
-			return -1;
+			return DEV_FAIL;
 		}
 
-		WDT_DW->wdt_cr |= WDT_CR_INT_ENABLE;
+		sys_set_bit(WDT_BASE_ADDR + WDT_CR, 1);
 
 		IRQ_CONFIG(wdt_dw, INT_WDT_IRQ, 0);
 		irq_enable(INT_WDT_IRQ);
@@ -96,10 +81,10 @@ static int wdt_dw_set_config(struct wdt_config *config)
 	}
 
 	/* Enable WDT, cannot be disabled until soc reset */
-	WDT_DW->wdt_cr |= WDT_CR_ENABLE;
+	sys_set_bit(WDT_BASE_ADDR + WDT_CR, 0);
 
 	wdt_dw_reload();
-	return ret;
+	return DEV_OK;
 }
 
 static struct wdt_driver_api wdt_dw_funcs = {

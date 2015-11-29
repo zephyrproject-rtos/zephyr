@@ -18,14 +18,45 @@
 #define _WDT_H_
 #include <stdint.h>
 
-typedef enum { WDT_MODE_RESET = 0, WDT_MODE_INTERRUPT_RESET } wdt_mode_t;
+
+#define WDT_MODE		(BIT(1))
+#define WDT_MODE_OFFSET         (1)
+#define WDT_TIMEOUT_MASK        (0xF)
+
+enum wdt_mode {
+	WDT_MODE_RESET = 0,
+	WDT_MODE_INTERRUPT_RESET
+};
+
+/**
+ * WDT clock cycles for timeout type.
+ */
+enum wdt_clock_timeout_cycles {
+	WDT_2_16_CYCLES,
+	WDT_2_17_CYCLES,
+	WDT_2_18_CYCLES,
+	WDT_2_19_CYCLES,
+	WDT_2_20_CYCLES,
+	WDT_2_21_CYCLES,
+	WDT_2_22_CYCLES,
+	WDT_2_23_CYCLES,
+	WDT_2_24_CYCLES,
+	WDT_2_25_CYCLES,
+	WDT_2_26_CYCLES,
+	WDT_2_27_CYCLES,
+	WDT_2_28_CYCLES,
+	WDT_2_29_CYCLES,
+	WDT_2_30_CYCLES,
+	WDT_2_31_CYCLES
+};
+
 
 /**
  * WDT configuration struct.
  */
 struct wdt_config {
 	uint32_t timeout;
-	wdt_mode_t mode;
+	enum wdt_mode mode;
 	void (*interrupt_fn)(void);
 };
 

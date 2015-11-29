@@ -224,6 +224,9 @@ struct scss_interrupt {
 
 #define SCSS_CCU_SYS_CLK_CTL		0x38
 
+/* Peripheral Configuration */
+#define SCSS_PERIPH_CFG0		(0x4)
+
 /* Peripheral Clock Gate Control */
 #define SCSS_CCU_PERIPH_CLK_GATE_CTL	0x18
 #define CCU_PERIPH_CLK_EN 		(1 << 1)
@@ -238,7 +241,6 @@ struct scss_interrupt {
 #define INT_WDT_IRQ               	0xc
 #define INT_WDT_IRQ_PRI              	2
 #define INT_WATCHDOG_MASK		0x47C
-#define SCSS_PERIPH_CFG0     		0x804
 #define SCSS_PERIPH_CFG0_WDT_ENABLE	(1 << 1)
 #define CCU_WDT_PCLK_EN_SW     		(1 << 10)
 
