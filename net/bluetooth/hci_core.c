@@ -283,7 +283,7 @@ static int bt_hci_stop_scanning(void)
 	}
 
 	scan_enable = net_buf_add(buf, sizeof(*scan_enable));
-	memset(scan_enable, 0x0, sizeof(*scan_enable));
+	memset(scan_enable, 0, sizeof(*scan_enable));
 	scan_enable->filter_dup = 0x00;
 	scan_enable->enable = 0x00;
 
@@ -403,7 +403,7 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	memset(cp, 0x0, sizeof(*cp));
+	memset(cp, 0, sizeof(*cp));
 
 	/* Interval == window for continuous scanning */
 	cp->scan_interval = sys_cpu_to_le16(0x0060);
@@ -641,7 +641,7 @@ static int le_conn_param_req_reply(uint16_t handle, uint16_t min, uint16_t max,
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	memset(cp, 0x0, sizeof(*cp));
+	memset(cp, 0, sizeof(*cp));
 
 	cp->handle = sys_cpu_to_le16(handle);
 	cp->interval_min = sys_cpu_to_le16(min);
