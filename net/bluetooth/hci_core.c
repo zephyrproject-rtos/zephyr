@@ -404,11 +404,14 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	memset(cp, 0x0, sizeof(*cp));
+
+	/* Interval == window for continuous scanning */
+	cp->scan_interval = sys_cpu_to_le16(0x0060);
+	cp->scan_window = cp->scan_interval;
+
 	bt_addr_le_copy(&cp->peer_addr, addr);
 	cp->conn_interval_max = sys_cpu_to_le16(0x0028);
 	cp->conn_interval_min = sys_cpu_to_le16(0x0018);
-	cp->scan_interval = sys_cpu_to_le16(0x0060);
-	cp->scan_window = sys_cpu_to_le16(0x0030);
 	cp->supervision_timeout = sys_cpu_to_le16(0x07D0);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
