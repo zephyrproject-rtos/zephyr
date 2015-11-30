@@ -747,7 +747,10 @@ libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
 PLATFORM_NAME = $(subst $(DQUOTE),,$(CONFIG_PLATFORM))
-export PLATFORM_NAME
+SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
+ARCH_NAME = $(subst $(DQUOTE),,$(CONFIG_ARCH))
+export PLATFORM_NAME SOC_NAME ARCH_NAME
+
 # Externally visible symbols (used by link-zephyr.sh)
 export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y) $(app-y)
 ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
