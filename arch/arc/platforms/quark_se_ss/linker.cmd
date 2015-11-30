@@ -1,7 +1,5 @@
-/* linker.cmd - Linker command/script file */
-
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +14,10 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This is the linker script for both standard images and XIP images.
-*/
+/**
+ * @brief Linker script for the Quark SE platform, both standard images and XIP
+ * images.
+ */
 
 /* Flash base address and size */
 #define FLASH_START     0x40000000  /* Flash bank 1 */
@@ -38,5 +36,4 @@ This is the linker script for both standard images and XIP images.
 #define DCCM_START		0x80000000
 #define DCCM_SIZE		8K
 
-
-#include "quark_se_arc_linker.cmd"
+#include <arch/arc/v2/linker.cmd>

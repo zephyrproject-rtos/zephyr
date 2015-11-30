@@ -1,7 +1,5 @@
-/* linker.cmd - Linker command/script file */
-
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +14,9 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-Linker script for the Quark SE platform.
-*/
+/**
+ * @brief Common parts of the linker scripts for the ARCv2/EM targets.
+ */
 
 #define _LINKER
 #define _ASMLANGUAGE
@@ -133,6 +130,11 @@ SECTIONS {
 		DEVICE_INIT_SECTIONS()
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+	SECTION_PROLOGUE(initlevel_error, (OPTIONAL),)
+	{
+		DEVICE_INIT_UNDEFINED_SECTION()
+	}
+	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
 	__data_ram_end = .;
 

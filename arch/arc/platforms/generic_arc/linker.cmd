@@ -39,4 +39,4 @@ This is the linker script for both standard images and XIP images.
 #define DCCM_SIZE		8K
 
 
-#include "generic_arc.cmd"
+#include <arch/arc/v2/linker.cmd>
