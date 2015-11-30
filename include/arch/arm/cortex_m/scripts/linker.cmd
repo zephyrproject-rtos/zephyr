@@ -156,12 +156,6 @@ SECTIONS
 		DEVICE_INIT_SECTIONS()
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
-	SECTION_PROLOGUE(initlevel_error, (OPTIONAL),)
-	{
-		DEVICE_INIT_UNDEFINED_SECTION()
-	}
-	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
-
 	SECTION_PROLOGUE (_k_task_list, (OPTIONAL),)
 	{
 		_k_task_list_start = .;
@@ -272,6 +266,14 @@ SECTIONS
 	*(".scs.*")
 	 } GROUP_LINK_IN(SYSTEM_CONTROL_SPACE)
     GROUP_END(SYSTEM_CONTROL_SPACE)
+
+	/* verify we don't have rogue .init_<something> initlevel sections */
+	SECTION_PROLOGUE(initlevel_error, (OPTIONAL),)
+	{
+		DEVICE_INIT_UNDEFINED_SECTION()
+	}
+	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
+
     }
 
 #ifdef CONFIG_XIP
