@@ -192,12 +192,11 @@ extern unsigned char _irq_to_interrupt_vector[];
  * For x86 platform configure APIC and mark interrupt vector allocated
  * @param device Device - not used by macro
  * @param irq IRQ
- * @param priority IRQ priority, unused on this platform
  *
  * @return N/A
  *
  */
-#define IRQ_CONFIG(device, irq, priority)				\
+#define IRQ_CONFIG(device, irq)						\
 	do {								\
 		_SysIntVecProgram(_IRQ_TO_INTERRUPT_VECTOR((irq)), (irq), \
 				  _##device##_irq_flags);		\

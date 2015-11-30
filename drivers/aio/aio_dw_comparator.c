@@ -29,7 +29,7 @@ static int dw_aio_cmp_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONFIG(dw_aio_cmp, INT_AIO_CMP_IRQ, 0);
+	IRQ_CONFIG(dw_aio_cmp, INT_AIO_CMP_IRQ);
 
 	return DEV_OK;
 }

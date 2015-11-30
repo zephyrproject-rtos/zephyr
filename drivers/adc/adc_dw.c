@@ -338,9 +338,9 @@ static void adc_config_0_irq(struct device *dev)
 {
 	struct adc_config *config = dev->config->config_info;
 
-	IRQ_CONFIG(adc_dw_0_rx, IO_ADC0_INT_IRQ, 0);
+	IRQ_CONFIG(adc_dw_0_rx, IO_ADC0_INT_IRQ);
 	irq_enable(config->rx_vector);
-	IRQ_CONFIG(adc_dw_0_err, IO_ADC0_INT_ERR, 0);
+	IRQ_CONFIG(adc_dw_0_err, IO_ADC0_INT_ERR);
 	irq_enable(config->err_vector);
 }
 #endif

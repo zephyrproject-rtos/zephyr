@@ -81,11 +81,10 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
  *
  * @param device Device to configure
  * @param irq IRQ number
- * @param priority IRQ priority (unused on this architecture)
  * @return N/A
  *
  */
-#define IRQ_CONFIG(device, irq, priority) \
+#define IRQ_CONFIG(device, irq) \
 	_irq_priority_set(irq, _##device##_int_priority)
 
 #endif /* _ASMLANGUAGE */

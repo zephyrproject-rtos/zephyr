@@ -575,7 +575,7 @@ int _sys_clock_driver_init(struct device *device)
 	 * Although the stub has already been "connected", the vector number
 	 * still has to be programmed into the interrupt controller.
 	 */
-	IRQ_CONFIG(loapic, CONFIG_LOAPIC_TIMER_IRQ, 0);
+	IRQ_CONFIG(loapic, CONFIG_LOAPIC_TIMER_IRQ);
 
 	/* Everything has been configured. It is now safe to enable the
 	 * interrupt

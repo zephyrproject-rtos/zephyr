@@ -73,7 +73,7 @@ static int wdt_dw_set_config(struct wdt_config *config)
 
 		sys_set_bit(WDT_BASE_ADDR + WDT_CR, 1);
 
-		IRQ_CONFIG(wdt_dw, INT_WDT_IRQ, 0);
+		IRQ_CONFIG(wdt_dw, INT_WDT_IRQ);
 		irq_enable(INT_WDT_IRQ);
 
 		/* unmask WDT interrupts to lmt  */

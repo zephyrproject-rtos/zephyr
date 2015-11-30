@@ -94,12 +94,11 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
  * at the priority requested.
  * @param device - Device name
  * @param i IRQ number
- * @param p Priority for the interruption
  *
  * @return N/A
  *
  */
-#define IRQ_CONFIG(device, i, p) \
+#define IRQ_CONFIG(device, i) \
 	_irq_priority_set(i, _##device##_int_priority)
 
 #endif

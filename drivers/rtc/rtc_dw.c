@@ -138,7 +138,7 @@ static struct rtc_driver_api funcs = {
 
 int rtc_dw_init(struct device *dev)
 {
-	IRQ_CONFIG(rtc, INT_RTC_IRQ, 0);
+	IRQ_CONFIG(rtc, INT_RTC_IRQ);
 	irq_enable(INT_RTC_IRQ);
 	SCSS_INTERRUPT->int_rtc_mask = INT_UNMASK_IA;
 	dev->driver_api = &funcs;

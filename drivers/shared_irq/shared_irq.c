@@ -153,7 +153,7 @@ void shared_irq_config_0_irq(struct device *port)
 {
 	struct shared_irq_config *config = port->config->config_info;
 
-	IRQ_CONFIG(shared_irq_0, config->irq_num, 0);
+	IRQ_CONFIG(shared_irq_0, config->irq_num);
 }
 
 void shared_irq_isr_0(void *unused)
@@ -187,7 +187,7 @@ void shared_irq_config_1_irq(struct device *port)
 {
 	struct shared_irq_config *config = port->config->config_info;
 
-	IRQ_CONFIG(shared_irq_1, config->irq_num, 0);
+	IRQ_CONFIG(shared_irq_1, config->irq_num);
 }
 
 void shared_irq_isr_1(void *unused)

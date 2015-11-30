@@ -32,7 +32,7 @@ IRQ_CONNECT_STATIC(quark_se_ipi, QUARK_SE_IPI_INTERRUPT, QUARK_SE_IPI_INTERRUPT_
 
 static int x86_quark_se_ipi_init(void)
 {
-	IRQ_CONFIG(quark_se_ipi, QUARK_SE_IPI_INTERRUPT, 0);
+	IRQ_CONFIG(quark_se_ipi, QUARK_SE_IPI_INTERRUPT);
 	irq_enable(QUARK_SE_IPI_INTERRUPT);
 	return DEV_OK;
 }

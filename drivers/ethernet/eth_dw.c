@@ -325,7 +325,7 @@ static void eth_config_0_irq(struct device *port)
 
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONFIG(eth_dw_0, config->irq_num, 0);
+	IRQ_CONFIG(eth_dw_0, config->irq_num);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_ETH_DW_0_IRQ_SHARED)
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);

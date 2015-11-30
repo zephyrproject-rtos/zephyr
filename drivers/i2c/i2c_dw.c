@@ -856,7 +856,7 @@ void i2c_config_0(struct device *port)
 
 #if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONFIG(i2c_dw_0, config->irq_num, 0);
+	IRQ_CONFIG(i2c_dw_0, config->irq_num);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
 	ARG_UNUSED(config);
@@ -906,7 +906,7 @@ void i2c_config_1(struct device *port)
 	struct device *shared_irq_dev;
 
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONFIG(i2c_dw_1, config->irq_num, 0);
+	IRQ_CONFIG(i2c_dw_1, config->irq_num);
 	irq_enable(config->irq_num);
 }
 

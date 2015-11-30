@@ -468,7 +468,7 @@ void spi_config_0_irq(struct device *dev)
 {
 	struct spi_intel_config *config = dev->config->config_info;
 
-	IRQ_CONFIG(spi_intel_irq_port_0, config->irq, 0);
+	IRQ_CONFIG(spi_intel_irq_port_0, config->irq);
 }
 
 #endif /* CONFIG_SPI_INTEL_PORT_0 */
@@ -512,7 +512,7 @@ void spi_config_1_irq(struct device *dev)
 {
 	struct spi_intel_config *config = dev->config->config_info;
 
-	IRQ_CONFIG(spi_intel_irq_port_1, config->irq, 0);
+	IRQ_CONFIG(spi_intel_irq_port_1, config->irq);
 }
 
 #endif /* CONFIG_SPI_INTEL_PORT_1 */

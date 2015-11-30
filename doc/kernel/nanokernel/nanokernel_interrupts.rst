@@ -109,7 +109,7 @@ Example
    void my_isr_installer(void)
    {
       ...
-      IRQ_CONFIG(my_dev, MY_DEV_IRQ, 0); /* finish IRQ configuration */
+      IRQ_CONFIG(my_dev, MY_DEV_IRQ); /* finish IRQ configuration */
       irq_enable(MY_DEV_IRQ);            /* enable IRQ */
       ...
    }
