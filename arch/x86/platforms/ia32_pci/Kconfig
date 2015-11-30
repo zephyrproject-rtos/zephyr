@@ -19,11 +19,7 @@
 if PLATFORM_IA32_PCI
 
 config PLATFORM
-	string
 	default ia32_pci
-	help
-	This option holds the directory name used by the build system to locate
-	the correct linker file.
 
 config PHYS_LOAD_ADDR
 	default 0x00100000

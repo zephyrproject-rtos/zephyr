@@ -17,11 +17,7 @@
 if PLATFORM_QUARK_SE_SS
 
 config PLATFORM
-	string
 	default quark_se_ss
-	help
-	This option holds the directory name used by the build system to locate
-	the correct linker file.
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports only 2 priority levels:

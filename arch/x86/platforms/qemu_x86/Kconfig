@@ -17,11 +17,7 @@
 if PLATFORM_QEMU_X86
 
 config PLATFORM
-	string
 	default qemu_x86
-	help
-	This option holds the directory name used by the build system to locate
-	the correct linker file.
 
 config PHYS_LOAD_ADDR
 	default 0x00100000

@@ -16,11 +16,7 @@
 
 if PLATFORM_QUARK_D2000
 config PLATFORM
-	string
 	default quark_d2000
-	help
-	This option holds the directory name used by the build system to locate
-	the correct linker file.
 
 config  SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000

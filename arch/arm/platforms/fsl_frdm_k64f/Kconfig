@@ -18,11 +18,7 @@
 
 if PLATFORM_FSL_FRDM_K64F
 config PLATFORM
-	string
 	default fsl_frdm_k64f
-	help
-	This option holds the directory name used by the build system to locate
-	the correct linker file.
 
 config NUM_IRQ_PRIO_BITS
 	int
