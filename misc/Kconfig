@@ -29,7 +29,6 @@ config  KERNEL_BIN_NAME
 	help
 	This option sets the name of the generated kernel binary.
 
-
 config  HAVE_CUSTOM_LINKER_SCRIPT
 	prompt "Custom linker scripts provided"
 	def_bool n
@@ -207,27 +206,6 @@ source "misc/debug/Kconfig"
 
 endmenu
 
-
-config BOOTLOADER_KEXEC
-	bool
-	prompt "Boot using Linux kexec() system call"
-	depends on X86
-	default n
-	help
-	This option signifies that Linux boots the kernel using kexec system call
-	and utility. This method is used to boot the kernel over the network.
-
-config BOOTLOADER_UNKNOWN
-	bool
-	prompt "Generic boot loader support"
-	default n
-	depends on X86
-	help
-	This option signifies that the target has a generic bootloader
-	or that it supports multiple ways of booting and it isn't clear
-	at build time which method is to be used. When this option is enabled
-	the platform may have to do extra work to ensure a proper startup.
-
 menu "System Monitoring Options"
 
 config  PERFORMANCE_METRICS
@@ -260,6 +238,28 @@ config  CPU_CLOCK_FREQ_MHZ
 
 endmenu
 
+menu "Boot Options"
+
+config BOOTLOADER_KEXEC
+	bool
+	prompt "Boot using Linux kexec() system call"
+	depends on X86
+	default n
+	help
+	This option signifies that Linux boots the kernel using kexec system call
+	and utility. This method is used to boot the kernel over the network.
+
+config BOOTLOADER_UNKNOWN
+	bool
+	prompt "Generic boot loader support"
+	default n
+	depends on X86
+	help
+	This option signifies that the target has a generic bootloader
+	or that it supports multiple ways of booting and it isn't clear
+	at build time which method is to be used. When this option is enabled
+	the platform may have to do extra work to ensure a proper startup.
+
 config REBOOT
 	bool "Reboot functionality"
 	default n
@@ -268,3 +268,4 @@ config REBOOT
 	Enable the sys_reboot() API. Enabling this can drag in other subsystems
 	needed to perform a "safe" reboot (e.g. SYSTEM_CLOCK_DISABLE, to stop the
 	system clock before issuing a reset).
+endmenu
