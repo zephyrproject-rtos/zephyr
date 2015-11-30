@@ -358,5 +358,5 @@ DECLARE_DEVICE_INIT_CONFIG(grove_lcd,
 			   glcd_initialize,
 			   &grove_lcd_config);
 
-SYS_DEFINE_DEVICE(grove_lcd, &grove_lcd_driver, SECONDARY,
+SYS_DEFINE_DEVICE(grove_lcd, &grove_lcd_driver, NANOKERNEL,
 		  CONFIG_GROVE_LCD_RGB_INIT_PRIORITY);
