@@ -28,10 +28,7 @@ Linker script for the Generic ARC BSPs.
 #include <sections.h>
 
 #if defined(CONFIG_NSIM)
-	#define KENTRY __reset
 	EXTERN(_VectorTable)
-#else
-	#define KENTRY _VxMicroStart
 #endif
 
 #include <linker-defs.h>

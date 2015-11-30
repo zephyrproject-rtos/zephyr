@@ -28,7 +28,6 @@ Linker script for the Quark SE platform.
 #include <sections.h>
 
 #if defined(CONFIG_NSIM)
-	#define KENTRY __reset
 	EXTERN(_VectorTable)
 #endif
 
