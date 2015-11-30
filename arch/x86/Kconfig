@@ -26,33 +26,15 @@ config ARCH_DEFCONFIG
 	string
 	default "arch/x86/defconfig"
 
-menu "X86 Platform Configuration options"
 
-config RAM_SIZE
-	int "Amount of RAM given to the kernel (in kB)"
-	help
-	This option specifies the amount of RAM given to the kernel. It must
-	not exceed the amount available on the target.  When running an XIP
-	kernel, it must be large enough to contain the data, bss and noinit
-	sections.  When not running an XIP kernel, it must be large enough to
-	contain the full image.
-
-	The default value is specified by the platform.
-
-config ROM_SIZE
-	int "Amount of ROM given to the kernel (in kB)" if XIP
-	help
-	This option specifies the amount of ROM given to the kernel. It must
-	not exceed the amount available on the target.  It must also be large
-	enough to contain the full image.
-
-	The default value is specified by the platform.
+source "arch/x86/core/Kconfig"
 
 choice
 prompt "Platform Selection"
 default PLATFORM_IA32_PCI
 source "arch/x86/platforms/*/Kconfig.platform"
 endchoice
+
 
 choice
 prompt "Intel Processor"
@@ -72,64 +54,60 @@ config CPU_MINUTEIA
 	This option signifies the use of a CPU from the Minute IA family.
 endchoice
 
-config CACHE_FLUSHING
-	bool
-	default n
-	prompt "Enable cache flushing mechanism"
-	help
-	This links in the sys_cache_flush() function. A mechanism for flushing the
-	cache must be selected as well. By default, that mechanism is discovered at
-	runtime.
-
-menu "Platform Capabilities"
-config ADVANCED_IDLE_SUPPORTED
-	bool "Advanced Idle Supported"
-	default n
-	help
-	This option signifies that the target supports the ADVANCED_IDLE
-	configuration option.
-
-config NUM_DYNAMIC_STUBS
-	int "Number of dynamic int stubs"
-	default 0
-	help
-	This option specifies the number of interrupt handlers that can be
-	installed dynamically using irq_connect().
-
-config NUM_DYNAMIC_EXC_STUBS
-	int "Number of dynamic exception stubs"
-	default 0
-	help
-	This option specifies the maximum number of dynamically allocated
-	exception stubs that are to be used with exceptions that push an
-	error code onto the stack.
-
-config NUM_DYNAMIC_EXC_NOERR_STUBS
-	int "Number of dynamic exception stubs"
-	default 0
-	help
-	This option specifies the maximum number of dynamically allocated
-	exception stubs that are to be used with exceptions that do not push
-	an error code onto the stack.
-
-config PIC_DISABLE
-	bool "Disable PIC"
-	default n
-	help
-	This option disables all interrupts on the PIC
-
-config IRQ_OFFLOAD
-	bool "Enable IRQ offload"
-	default n
-	help
-	Enable irq_offload() API which allows functions to be synchronously
-	run in interrupt context. Uses one entry in the	IDT.  Mainly useful
-	for test cases.
-
-endmenu
 
 menu "Processor Capabilities"
+menu "Floating Point Options"
 
+config  FLOAT
+	bool
+	prompt "Floating point registers"
+	default n
+	help
+	This option allows tasks and fibers to use the floating point registers.
+	By default, only a single task or fiber may use the registers, and only
+	the x87 FPU/MMX registers may be used.
+
+	Disabling this option means that any task or fiber that uses a
+	floating point register will get a fatal exception.
+
+config  FP_SHARING
+	bool
+	prompt "Floating point register sharing"
+	depends on FLOAT
+	default n
+	help
+	This option allows multiple tasks and fibers to use the floating point
+	registers. Any task that uses the floating point registers must provide
+	stack space where the kernel can save these registers during context
+	switches; a task that uses only the x87 FPU/MMX registers must provide
+	108 bytes of added stack space, while a task the uses the SSE registers
+	must provide 464 bytes of added stack space.
+
+config  SSE
+	bool
+	prompt "SSE registers"
+	depends on FLOAT
+	default n
+	help
+	This option enables the use of SSE registers by tasks and fibers.
+
+config SSE_FP_MATH
+	bool
+	prompt "Compiler-generated SSEx instructions"
+	depends on SSE
+	default n
+	help
+	This option allows the compiler to generate SSEx instructions for
+	performing floating point math. This can greatly improve performance
+	when exactly the same operations are to be performed on multiple
+	data objects; however, it can also significantly reduce performance
+	when pre-emptive task switches occur because of the larger register
+	set that must be saved and restored.
+
+	Disabling this option means that the compiler utilizes only the
+	x87 instruction set for floating point operations.
+
+endmenu
 config ISA_IA32
 	bool
 	default y
@@ -217,68 +195,66 @@ config ARCH_CACHE_FLUSH_DETECT
 	default y
 	depends on CLFLUSH_DETECT
 
+config CACHE_FLUSHING
+	bool
+	default n
+	prompt "Enable cache flushing mechanism"
+	help
+	This links in the sys_cache_flush() function. A mechanism for flushing the
+	cache must be selected as well. By default, that mechanism is discovered at
+	runtime.
 endmenu
 
-menu "Floating Point Options"
-
-config  FLOAT
-	bool
-	prompt "Floating point registers"
+menu "Platform Capabilities"
+config ADVANCED_IDLE_SUPPORTED
+	bool "Advanced Idle Supported"
 	default n
 	help
-	This option allows tasks and fibers to use the floating point registers.
-	By default, only a single task or fiber may use the registers, and only
-	the x87 FPU/MMX registers may be used.
+	This option signifies that the target supports the ADVANCED_IDLE
+	configuration option.
 
-	Disabling this option means that any task or fiber that uses a
-	floating point register will get a fatal exception.
+config NUM_DYNAMIC_STUBS
+	int "Number of dynamic int stubs"
+	default 0
+	help
+	This option specifies the number of interrupt handlers that can be
+	installed dynamically using irq_connect().
 
-config  FP_SHARING
-	bool
-	prompt "Floating point register sharing"
-	depends on FLOAT
+config NUM_DYNAMIC_EXC_STUBS
+	int "Number of dynamic exception stubs"
+	default 0
+	help
+	This option specifies the maximum number of dynamically allocated
+	exception stubs that are to be used with exceptions that push an
+	error code onto the stack.
+
+config NUM_DYNAMIC_EXC_NOERR_STUBS
+	int "Number of dynamic exception stubs"
+	default 0
+	help
+	This option specifies the maximum number of dynamically allocated
+	exception stubs that are to be used with exceptions that do not push
+	an error code onto the stack.
+
+config PIC_DISABLE
+	bool "Disable PIC"
 	default n
 	help
-	This option allows multiple tasks and fibers to use the floating point
-	registers. Any task that uses the floating point registers must provide
-	stack space where the kernel can save these registers during context
-	switches; a task that uses only the x87 FPU/MMX registers must provide
-	108 bytes of added stack space, while a task the uses the SSE registers
-	must provide 464 bytes of added stack space.
+	This option disables all interrupts on the PIC
 
-config  SSE
-	bool
-	prompt "SSE registers"
-	depends on FLOAT
+config IRQ_OFFLOAD
+	bool "Enable IRQ offload"
 	default n
 	help
-	This option enables the use of SSE registers by tasks and fibers.
-
-config SSE_FP_MATH
-	bool
-	prompt "Compiler-generated SSEx instructions"
-	depends on SSE
-	default n
-	help
-	This option allows the compiler to generate SSEx instructions for
-	performing floating point math. This can greatly improve performance
-	when exactly the same operations are to be performed on multiple
-	data objects; however, it can also significantly reduce performance
-	when pre-emptive task switches occur because of the larger register
-	set that must be saved and restored.
-
-	Disabling this option means that the compiler utilizes only the
-	x87 instruction set for floating point operations.
+	Enable irq_offload() API which allows functions to be synchronously
+	run in interrupt context. Uses one entry in the	IDT.  Mainly useful
+	for test cases.
 
 config XIP
 	default n
-
 endmenu
 
 
-source "arch/x86/core/Kconfig"
-
-endmenu
 
 source "arch/x86/platforms/*/Kconfig"
 
