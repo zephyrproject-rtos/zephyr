@@ -70,7 +70,6 @@ enum pairing_method {
 } ;
 
 enum {
-	SMP_FLAG_TK_VALID,	/* if TK values is valid */
 	SMP_FLAG_CFM_DELAYED,	/* if confirm should be send when TK is valid */
 	SMP_FLAG_ENC_PENDING,	/* if waiting for an encryption change event */
 	SMP_FLAG_PAIRING,	/* if pairing is in progress */
@@ -79,7 +78,7 @@ enum {
 	SMP_FLAG_PKEY_PENDING,	/* if waiting for P256 Public Key */
 	SMP_FLAG_DHKEY_PENDING,	/* if waiting for local DHKey */
 	SMP_FLAG_DHKEY_SEND,	/* if should generate and send DHKey Check */
-	SMP_FLAG_USER_CONFIRM,	/* if waiting for passkey confirmation */
+	SMP_FLAG_USER		/* if waiting for user input */
 };
 
 /* SMP channel specific context */
@@ -784,14 +783,13 @@ static uint8_t smp_request_tk(struct bt_smp *smp)
 
 		passkey = sys_cpu_to_le32(passkey);
 		memcpy(smp->tk, &passkey, sizeof(passkey));
-		atomic_set_bit(&smp->flags, SMP_FLAG_TK_VALID);
 
 		break;
 	case PASSKEY_INPUT:
+		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
 		auth_cb->passkey_entry(conn);
 		break;
 	case JUST_WORKS:
-		atomic_set_bit(&smp->flags, SMP_FLAG_TK_VALID);
 		break;
 	default:
 		BT_ERR("Unknown pairing method (%u)", smp->method);
@@ -1298,7 +1296,7 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return ret;
 	}
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_TK_VALID)) {
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		return smp_send_pairing_confirm(smp);
 	}
@@ -1350,7 +1348,7 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_TK_VALID)) {
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_confirm(smp);
 	}
@@ -1526,7 +1524,7 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 	memcpy(smp->dhkey, dhkey, 32);
 
 	/* wait for user passkey confirmation */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_USER_CONFIRM)) {
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
 		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
 		return;
 	}
@@ -1595,7 +1593,7 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
 
-			atomic_set_bit(&smp->flags, SMP_FLAG_USER_CONFIRM);
+			atomic_set_bit(&smp->flags, SMP_FLAG_USER);
 			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
 			auth_cb->passkey_confirm(smp->chan.conn, passkey);
 			return 0;
@@ -1628,7 +1626,7 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		atomic_set_bit(&smp->flags, SMP_FLAG_USER_CONFIRM);
+		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
 		auth_cb->passkey_confirm(smp->chan.conn, passkey);
 		break;
 	case JUST_WORKS:
@@ -2195,7 +2193,7 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 		}
 
 		/* waiting for user to confirm passkey */
-		if (atomic_test_bit(&smp->flags, SMP_FLAG_USER_CONFIRM)) {
+		if (atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
 			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
 			return 0;
 		}
@@ -2892,7 +2890,7 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 	passkey = sys_cpu_to_le32(passkey);
 	memcpy(smp->tk, &passkey, sizeof(passkey));
-	atomic_set_bit(&smp->flags, SMP_FLAG_TK_VALID);
+	atomic_clear_bit(&smp->flags, SMP_FLAG_USER);
 
 	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
 		return;
@@ -2930,7 +2928,7 @@ void bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
 		return;
 	}
 
-	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER_CONFIRM)) {
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
 		return;
 	}
 
