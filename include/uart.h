@@ -39,9 +39,18 @@ extern "C" {
 /* options for uart init */
 #define UART_OPTION_AFCE 0x01
 
-struct uart_init_info;
+/** UART configuration structure */
+struct uart_init_info {
+	int baud_rate;		/* Baud rate */
+	uint32_t sys_clk_freq;	/* System clock frequency in Hz */
 
-/* UART device configuration */
+	uint8_t irq_pri;	/* Interrupt priority level */
+	uint8_t options;	/* HW Flow Control option */
+
+	uint32_t regs;		/* Register address */
+};
+
+/** UART device configuration */
 struct uart_device_config {
 	/**
 	 * Base port number
@@ -56,6 +65,8 @@ struct uart_device_config {
 	uint8_t irq;		/**< interrupt request level */
 	uint8_t irq_pri;	/**< interrupt priority */
 
+	struct uart_init_info	init_info;
+
 #ifdef CONFIG_PCI
 	struct pci_dev_info  pci_dev;
 #endif /* CONFIG_PCI */
@@ -69,19 +80,6 @@ struct uart_device_config {
 
 	/**< Configuration function */
 	int (*config_func)(struct device *dev);
-};
-
-/** UART configuration structure */
-
-
-struct uart_init_info {
-	int baud_rate;		/* Baud rate */
-	uint32_t sys_clk_freq;	/* System clock frequency in Hz */
-
-	uint8_t irq_pri;	/* Interrupt priority level */
-	uint8_t options;	/* HW Flow Control option */
-
-	uint32_t regs;		/* Register address */
 };
 
 /**< Driver API struct */
