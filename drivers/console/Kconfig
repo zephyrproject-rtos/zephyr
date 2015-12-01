@@ -151,4 +151,26 @@ config	UART_PIPE
 	data (as contrary to console UART driver) and all aspects of received
 	protocol data are handled by application provided callback.
 
+config  UART_PIPE_ON_DEV_NAME
+	string "Device Name of UART Device for pipe UART"
+	default "UART_0"
+	depends on UART_PIPE
+	help
+	This option specifies the name of UART device to be used
+	for pipe UART.
+
+config  UART_PIPE_IRQ
+	int "IRQ for pipe UART"
+	depends on UART_PIPE
+	help
+	This option specifies the IRQ of UART device to be used
+	for pipe UART.
+
+config  UART_PIPE_IRQ_PRI
+	int "IRQ Priority for pipe UART"
+	depends on UART_PIPE
+	help
+	This option specifies the IRQ priority of UART device
+	to be used for pipe UART.
+
 endif

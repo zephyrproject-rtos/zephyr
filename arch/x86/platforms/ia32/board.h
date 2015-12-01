@@ -57,11 +57,6 @@
 
 #ifdef CONFIG_UART_NS16550
 
-/* Pipe UART definitions */
-#define CONFIG_UART_PIPE_INDEX 1
-#define CONFIG_UART_PIPE_IRQ		CONFIG_UART_NS16550_PORT_1_IRQ
-#define CONFIG_UART_PIPE_INT_PRI	CONFIG_UART_NS16550_PORT_1_IRQ_PRI
-
 #ifndef _ASMLANGUAGE
 extern struct device * const uart_devs[];
 #endif

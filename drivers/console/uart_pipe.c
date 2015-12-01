@@ -29,10 +29,7 @@
 #include <console/uart_pipe.h>
 #include <misc/printk.h>
 
-#if !defined(CONFIG_UART_PIPE_INDEX) || !defined(CONFIG_UART_PIPE_IRQ)
-#error One or more required values for this driver are not set.
-#else
-#define UART (uart_devs[CONFIG_UART_PIPE_INDEX])
+static struct device *uart_pipe_dev;
 
 static uint8_t *recv_buf;
 static size_t recv_buf_len;
@@ -43,14 +40,15 @@ void uart_pipe_isr(void *unused)
 {
 	ARG_UNUSED(unused);
 
-	while (uart_irq_update(UART) && uart_irq_is_pending(UART)) {
+	while (uart_irq_update(uart_pipe_dev)
+	       && uart_irq_is_pending(uart_pipe_dev)) {
 		int rx;
 
-		if (!uart_irq_rx_ready(UART)) {
+		if (!uart_irq_rx_ready(uart_pipe_dev)) {
 			continue;
 		}
 
-		rx = uart_fifo_read(UART, recv_buf + recv_off,
+		rx = uart_fifo_read(uart_pipe_dev, recv_buf + recv_off,
 				    recv_buf_len - recv_off);
 		if (!rx) {
 			continue;
@@ -67,11 +65,15 @@ void uart_pipe_isr(void *unused)
 
 int uart_pipe_send(const uint8_t *data, int len)
 {
-	return uart_fifo_fill(UART, data, len);
+	if (uart_pipe_dev != NULL) {
+		return uart_fifo_fill(uart_pipe_dev, data, len);
+	} else {
+		return 0;
+	}
 }
 
 IRQ_CONNECT_STATIC(uart_pipe, CONFIG_UART_PIPE_IRQ,
-		   CONFIG_UART_PIPE_INT_PRI, uart_pipe_isr, 0,
+		   CONFIG_UART_PIPE_IRQ_PRI, uart_pipe_isr, 0,
 		   UART_IRQ_FLAGS);
 
 static void uart_pipe_setup(struct device *uart)
@@ -97,6 +99,9 @@ void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb)
 	recv_buf_len = len;
 	app_cb = cb;
 
-	uart_pipe_setup(UART);
+	uart_pipe_dev = device_get_binding(CONFIG_UART_PIPE_ON_DEV_NAME);
+
+	if (uart_pipe_dev != NULL) {
+		uart_pipe_setup(uart_pipe_dev);
+	}
 }
-#endif
