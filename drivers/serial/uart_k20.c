@@ -52,12 +52,10 @@ static struct uart_driver_api uart_k20_driver_api;
  * It is assumed that this function is called only once per UART.
  *
  * @param dev UART device struct (of type struct uart_device_config)
- * @param init_info Initial configuration for UART
  *
- * @return N/A
+ * @return DEV_OK
  */
-void uart_k20_port_init(struct device *dev,
-			const struct uart_init_info * const init_info)
+static int uart_k20_init(struct device *dev)
 {
 	struct uart_k20_dev_data *dev_data = DEV_DATA(dev);
 
@@ -68,6 +66,7 @@ void uart_k20_port_init(struct device *dev,
 	union C2 c2;				   /* UART C2 register value */
 
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
+	struct uart_init_info * const init_info = &DEV_CFG(dev)->init_info;
 
 	/* disable interrupts */
 	old_level = irq_lock();
@@ -94,18 +93,6 @@ void uart_k20_port_init(struct device *dev,
 	irq_unlock(old_level);
 
 	dev->driver_api = &uart_k20_driver_api;
-}
-
-/**
- * @brief Initialize UART with defaults
- *
- * @param dev UART device struct
- *
- * @return DEV_OK
- */
-static int uart_k20_init(struct device *dev)
-{
-	uart_k20_port_init(dev, &DEV_CFG(dev)->init_info);
 
 	return DEV_OK;
 }
@@ -404,8 +391,6 @@ static struct uart_device_config uart_k20_dev_cfg_0 = {
 
 	.init_info.baud_rate = CONFIG_UART_K20_PORT_0_BAUD_RATE,
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_0_CLK_FREQ,
-
-	.port_init = uart_k20_port_init,
 };
 
 static struct uart_k20_dev_data uart_k20_dev_data_0 = {
@@ -431,8 +416,6 @@ static struct uart_device_config uart_k20_dev_cfg_1 = {
 
 	.init_info.baud_rate = CONFIG_UART_K20_PORT_1_BAUD_RATE,
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_1_CLK_FREQ,
-
-	.port_init = uart_k20_port_init,
 };
 
 static struct uart_k20_dev_data uart_k20_dev_data_1 = {
@@ -458,8 +441,6 @@ static struct uart_device_config uart_k20_dev_cfg_2 = {
 
 	.init_info.baud_rate = CONFIG_UART_K20_PORT_2_BAUD_RATE,
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_2_CLK_FREQ,
-
-	.port_init = uart_k20_port_init,
 };
 
 static struct uart_k20_dev_data uart_k20_dev_data_2 = {
@@ -485,8 +466,6 @@ static struct uart_device_config uart_k20_dev_cfg_3 = {
 
 	.init_info.baud_rate = CONFIG_UART_K20_PORT_3_BAUD_RATE,
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_3_CLK_FREQ,
-
-	.port_init = uart_k20_port_init,
 };
 
 static struct uart_k20_dev_data uart_k20_dev_data_3 = {
@@ -512,8 +491,6 @@ static struct uart_device_config uart_k20_dev_cfg_4 = {
 
 	.init_info.baud_rate = CONFIG_UART_K20_PORT_4_BAUD_RATE,
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_4_CLK_FREQ,
-
-	.port_init = uart_k20_port_init,
 };
 
 static struct uart_k20_dev_data uart_k20_dev_data_4 = {
