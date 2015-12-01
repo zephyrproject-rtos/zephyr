@@ -44,10 +44,7 @@ struct uart_init_info {
 	int baud_rate;		/* Baud rate */
 	uint32_t sys_clk_freq;	/* System clock frequency in Hz */
 
-	uint8_t irq_pri;	/* Interrupt priority level */
 	uint8_t options;	/* HW Flow Control option */
-
-	uint32_t regs;		/* Register address */
 };
 
 /** UART device configuration */
@@ -70,16 +67,6 @@ struct uart_device_config {
 #ifdef CONFIG_PCI
 	struct pci_dev_info  pci_dev;
 #endif /* CONFIG_PCI */
-
-	/**
-	 * Initializes the UART port.
-	 * It has to configure the device to 8n1.
-	 */
-	void (*port_init)(struct device *dev,
-			  const struct uart_init_info * const pinfo);
-
-	/**< Configuration function */
-	int (*config_func)(struct device *dev);
 };
 
 /**< Driver API struct */
@@ -108,27 +95,6 @@ struct uart_driver_api {
 
 #endif
 };
-
-int uart_platform_init(struct device *dev);
-
-/**
- * @brief Initialize UART
- *
- * UART driver has to configure the device to 8n1.
- *
- * @param dev UART device struct
- * @param pinfo UART configuration
- */
-static inline void uart_init(struct device *dev,
-			     const struct uart_init_info * const pinfo)
-{
-	struct uart_device_config *dev_cfg =
-	    (struct uart_device_config *)dev->config->config_info;
-
-	if (dev_cfg->port_init != 0) {
-		dev_cfg->port_init(dev, pinfo);
-	}
-}
 
 /**
  * @brief Poll the device for input.
