@@ -1371,7 +1371,14 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 				       BT_SMP_CMD_PAIRING_RANDOM);
 			return smp_send_pairing_confirm(smp);
 		case PASSKEY_INPUT:
-			/* TODO */
+			if (atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
+				atomic_set_bit(&smp->flags,
+					       SMP_FLAG_CFM_DELAYED);
+				return 0;
+			}
+
+			atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+			return smp_send_pairing_confirm(smp);
 		case JUST_WORKS:
 		case PASSKEY_CONFIRM:
 		default:
@@ -2211,7 +2218,20 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 		break;
 	case PASSKEY_INPUT:
-		/* TODO */
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+		if (smp->chan.conn->role == BT_HCI_ROLE_SLAVE) {
+			err = sc_send_public_key(smp);
+			if (err) {
+				return err;
+			}
+
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_CONFIRM);
+		}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		auth_cb->passkey_entry(smp->chan.conn);
+		break;
 	default:
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -2985,9 +3005,38 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 		return;
 	}
 
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+		return;
+	}
+
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		smp->passkey = sys_cpu_to_le32(passkey);
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+			if (smp_send_pairing_confirm(smp)) {
+				bt_auth_cancel(conn);
+				return;
+			}
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_CONFIRM);
+			return;
+		}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+		if (atomic_test_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
+			if (smp_send_pairing_confirm(smp)) {
+				bt_auth_cancel(conn);
+				return;
+			}
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_RANDOM);
+		}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+		return;
+	}
+
 	passkey = sys_cpu_to_le32(passkey);
 	memcpy(smp->tk, &passkey, sizeof(passkey));
-	atomic_clear_bit(&smp->flags, SMP_FLAG_USER);
 
 	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
 		return;
