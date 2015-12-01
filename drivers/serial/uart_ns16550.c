@@ -621,17 +621,3 @@ SYS_DEFINE_DEVICE(uart_ns16550_1, &uart_ns16550_dev_data_1,
 		  PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_NS16550_PORT_1 */
-
-/**< UART Devices */
-struct device * const uart_devs[] = {
-#ifdef CONFIG_UART_NS16550_PORT_0
-	SYS_GET_DEVICE(uart_ns16550_0),
-#else
-	NULL,
-#endif
-#ifdef CONFIG_UART_NS16550_PORT_1
-	SYS_GET_DEVICE(uart_ns16550_1),
-#else
-	NULL,
-#endif
-};

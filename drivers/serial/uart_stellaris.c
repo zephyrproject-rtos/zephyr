@@ -659,22 +659,3 @@ SYS_DEFINE_DEVICE(uart_stellaris2, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_2 */
-
-/**< UART Devices */
-struct device * const uart_devs[] = {
-#ifdef CONFIG_UART_STELLARIS_PORT_0
-	SYS_GET_DEVICE(uart_stellaris0),
-#else
-	NULL,
-#endif
-#ifdef CONFIG_UART_STELLARIS_PORT_1
-	SYS_GET_DEVICE(uart_stellaris1),
-#else
-	NULL,
-#endif
-#ifdef CONFIG_UART_STELLARIS_PORT_2
-	SYS_GET_DEVICE(uart_stellaris2),
-#else
-	NULL,
-#endif
-};

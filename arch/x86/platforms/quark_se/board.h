@@ -89,10 +89,6 @@
 /* UART uses level triggered interrupt, low level */
 #define UART_IOAPIC_FLAGS       (IOAPIC_LEVEL | IOAPIC_LOW)
 
-/* uart configuration settings */
-
-extern struct device * const uart_devs[];
-
 #endif /* CONFIG_UART_NS16550 */
 
 

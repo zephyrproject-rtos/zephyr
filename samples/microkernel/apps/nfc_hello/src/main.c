@@ -22,10 +22,11 @@
 #include <board.h>
 #include <uart.h>
 
-#define UART1 (uart_devs[1])
 #define UART1_IRQ CONFIG_UART_NS16550_PORT_1_IRQ
 #define UART1_IRQ_PRI CONFIG_UART_NS16550_PORT_1_IRQ_PRI
 #define BUF_MAXSIZE 256
+
+struct device *uart1_dev;
 
 #define D(fmt, args...)					\
 do {							\
@@ -54,18 +55,20 @@ static void msg_dump(const char *s, uint8_t *data, unsigned len)
 
 static void uart1_isr(void *x)
 {
-	int len = uart_fifo_read(UART1, buf, BUF_MAXSIZE);
+	int len = uart_fifo_read(uart1_dev, buf, BUF_MAXSIZE);
 	ARG_UNUSED(x);
 	msg_dump(__func__, buf, len);
 }
 
 static void uart1_init(void)
 {
+	uart1_dev = device_get_binding("UART_1");
+
 	irq_connect(UART1_IRQ, UART1_IRQ_PRI, uart1_isr, 0, UART_IRQ_FLAGS);
 
 	irq_enable(UART1_IRQ);
 
-	uart_irq_rx_enable(UART1);
+	uart_irq_rx_enable(uart1_dev);
 
 	D("done");
 }
@@ -85,7 +88,7 @@ void main(void)
 
 	memcpy(pdu + sizeof(*len), nci_reset, sizeof(nci_reset));
 
-	uart_fifo_fill(UART1, pdu, sizeof(*len) + sizeof(nci_reset));
+	uart_fifo_fill(uart1_dev, pdu, sizeof(*len) + sizeof(nci_reset));
 
 	while (1) {
 		nano_task_timer_start(&t, MSEC(500));

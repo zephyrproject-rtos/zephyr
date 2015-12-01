@@ -94,8 +94,6 @@
 
 #define UART_IRQ_FLAGS 0
 
-extern struct device * const uart_devs[];
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _BOARD__H_ */

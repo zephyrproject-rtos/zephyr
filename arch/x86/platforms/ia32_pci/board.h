@@ -54,12 +54,6 @@
 #define NUM_STD_IRQS 16   /* number of "standard" IRQs on an x86 platform */
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 
-/* uart configuration settings */
-
-#ifndef _ASMLANGUAGE
-extern struct device * const uart_devs[];
-#endif
-
 #ifdef CONFIG_GPIO_DW_0
 #if defined(CONFIG_GPIO_DW_0_FALLING_EDGE)
 #define GPIO_DW_0_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)

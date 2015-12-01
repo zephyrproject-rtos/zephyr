@@ -53,14 +53,4 @@
 
 #define INT_VEC_IRQ0 0x20 /* vector number for IRQ0 */
 
-/* uart configuration settings */
-
-#ifdef CONFIG_UART_NS16550
-
-#ifndef _ASMLANGUAGE
-extern struct device * const uart_devs[];
-#endif
-
-#endif /* CONFIG_UART_NS16550 */
-
 #endif /* __INCboardh */

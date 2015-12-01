@@ -156,8 +156,6 @@
 
 #define UART_IRQ_FLAGS 0
 
-extern struct device * const uart_devs[];
-
 /* Uart console settings */
 #if defined(CONFIG_UART_CONSOLE)
 

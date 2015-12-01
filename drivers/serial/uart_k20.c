@@ -506,31 +506,3 @@ SYS_DEFINE_DEVICE(uart_k20_4, &uart_k20_dev_data_4, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_4 */
-
-struct device * const uart_devs[] = {
-#ifdef CONFIG_UART_K20_PORT_0
-	SYS_GET_DEVICE(uart_k20_0),
-#else
-	NULL,
-#endif
-#ifdef CONFIG_UART_K20_PORT_1
-	SYS_GET_DEVICE(uart_k20_1),
-#else
-	NULL,
-#endif
-#ifdef CONFIG_UART_K20_PORT_2
-	SYS_GET_DEVICE(uart_k20_2),
-#else
-	NULL,
-#endif
-#ifdef CONFIG_UART_K20_PORT_3
-	SYS_GET_DEVICE(uart_k20_3),
-#else
-	NULL,
-#endif
-#ifdef CONFIG_UART_K20_PORT_4
-	SYS_GET_DEVICE(uart_k20_4),
-#else
-	NULL,
-#endif
-};

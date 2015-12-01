@@ -126,10 +126,6 @@ struct scss_interrupt {
 /* UART uses level triggered interrupt, low level */
 #define UART_IOAPIC_FLAGS       (IOAPIC_LEVEL)
 
-#ifndef _ASMLANGUAGE
-extern struct device * const uart_devs[];
-#endif
-
 /* Watchdog */
 #define WDT_BASE_ADDR			0xB0000000
 #define INT_WDT_IRQ			0x10
