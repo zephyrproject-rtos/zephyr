@@ -63,7 +63,7 @@ static pfunc func_array[] = {
 	(pfunc)task_event_send,
 	(pfunc)task_event_recv,
 	/* mutex functions */
-	(pfunc)_task_mutex_lock,
+	(pfunc)task_mutex_lock,
 	(pfunc)_task_mutex_unlock,
 	/* FIFO functions */
 	(pfunc)_task_fifo_put,

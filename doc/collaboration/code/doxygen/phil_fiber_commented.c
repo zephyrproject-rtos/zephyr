@@ -39,7 +39,7 @@
 #else
 /* For the microkernel. */
 #define FORK(x) forks[x]
-#define TAKE(x) task_mutex_lock_wait(x)
+#define TAKE(x) task_mutex_lock(x, TICKS_UNLIMITED)
 #define GIVE(x) task_mutex_unlock(x)
 #define RANDDELAY(x) myDelay(((task_tick_get_32() * ((x) + 1)) & 0x1f) + 1)
 #endif

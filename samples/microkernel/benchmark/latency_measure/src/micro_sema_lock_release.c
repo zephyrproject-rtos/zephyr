@@ -103,7 +103,7 @@ int microMutexLockUnlock(void)
 				 " unlock that mutex");
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = 0; i < N_TEST_MUTEX; i++) {
-		task_mutex_lock_wait(TEST_MUTEX);
+		task_mutex_lock(TEST_MUTEX, TICKS_UNLIMITED);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	PRINT_FORMAT(" Average time to lock the mutex %lu tcs = %lu nsec",

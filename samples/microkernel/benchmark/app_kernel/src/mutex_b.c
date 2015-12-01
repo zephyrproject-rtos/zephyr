@@ -34,7 +34,7 @@ void mutex_test(void)
 	PRINT_STRING(dashline, output_file);
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_MUTEX_RUNS; i++) {
-		task_mutex_lock_wait(DEMO_MUTEX);
+		task_mutex_lock(DEMO_MUTEX, TICKS_UNLIMITED);
 		task_mutex_unlock(DEMO_MUTEX);
 	}
 	et = TIME_STAMP_DELTA_GET(et);

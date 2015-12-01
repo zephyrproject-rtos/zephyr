@@ -133,7 +133,7 @@ mutex is in use.
 
 .. code-block:: c
 
-   task_mutex_lock_wait(XYZ);
+   task_mutex_lock(XYZ, TICKS_UNLIMITED);
    moveto(100,100);
    lineto(200,100);
    task_mutex_unlock(XYZ);
@@ -147,7 +147,7 @@ in the specified amount of time.
 
 .. code-block:: c
 
-   if (task_mutex_lock_wait_timeout(XYZ, 100) == RC_OK)
+   if (task_mutex_lock(XYZ, 100) == RC_OK)
     {
      moveto(100,100);
      lineto(200,100);
@@ -166,7 +166,7 @@ This code gives an immediate warning when a mutex is in use.
 
 .. code-block:: c
 
-   if (task_mutex_lock(XYZ) == RC_OK);
+   if (task_mutex_lock(XYZ, TICKS_NONE) == RC_OK);
     {
      do_something();
      task_mutex_unlock(XYZ); /* and unlock mutex*/
@@ -182,17 +182,9 @@ APIs
 The following Mutex APIs are provided by :file:`microkernel.h`:
 
 :c:func:`task_mutex_lock()`
-   Locks a mutex, and increments the lock count.
-
-:c:func:`task_mutex_lock_wait()`
-   Waits on a locked mutex until it is unlocked, then locks the mutex and
-   increments the lock count.
-
-:c:func:`task_mutex_lock_wait_timeout()`
    Waits on a locked mutex for the period of time defined by the timeout
    parameter. If the mutex becomes available during that period, the function
-   locks the mutex, and increments the lock count. If the timeout expires, it
-   returns RC_TIME.
+   locks the mutex, and increments the lock count.
 
 :c:func:`task_mutex_unlock()`
    Decrements a mutex lock count, and unlocks the mutex when the count

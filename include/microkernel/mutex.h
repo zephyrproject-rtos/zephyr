@@ -35,7 +35,6 @@ extern "C" {
 
 #include  <microkernel/base_api.h>
 
-extern int _task_mutex_lock(kmutex_t mutex, int32_t ticks);
 extern void _task_mutex_unlock(kmutex_t mutex);
 
 /*
@@ -53,54 +52,27 @@ extern void _task_mutex_unlock(kmutex_t mutex);
 	}
 
 /**
- * @brief Lock mutex or fail.
+ * @brief Lock mutex
  *
- * This routine locks mutex @a m. If the mutex is currently locked by another
- * task the routine immediately returns a failure indication.
- *
- * A task is permitted to lock a mutex it has already locked; in such a case
- * this routine immediately succeeds.
- *
- * @param m Mutex name.
- *
- * @return RC_OK on success, or RC_FAIL on failure.
- */
-#define task_mutex_lock(m) _task_mutex_lock(m, TICKS_NONE)
-
-/**
- * @brief Lock mutex or wait.
- *
- * This routine locks mutex @a m. If the mutex is currently locked by another
- * task the routine waits until it becomes available.
+ * This routine locks mutex @a mutex. If the mutex is currently locked by
+ * another task the routine either waits until it becomes available, or until
+ * the specified time limit is reached.
  *
  * A task is permitted to lock a mutex it has already locked; in such a case
  * this routine immediately succeeds.
  *
- * @param m Mutex name.
+ * @param mutex Mutex name.
+ * @param timeout Affects the action taken should the mutex already be locked.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. Otherwise wait up to the specified number of ticks before
+ * timing out.
  *
- * @return RC_OK.
+ * @retval RC_OK Successfully locked mutex
+ * @retval RC_TIME Timed out while waiting for mutex
+ * @retval RC_FAIL Failed to immediately lock mutex when
+ * @a timeout = TICKS_NONE
  */
-#define task_mutex_lock_wait(m) _task_mutex_lock(m, TICKS_UNLIMITED)
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-
-/**
- * @brief Lock mutex or timeout.
- *
- * This routine locks mutex @a m. If the mutex is currently locked by another
- * task the routine waits until it becomes available, or until the specified
- * time limit is reached.
- *
- * A task is permitted to lock a mutex it has already locked; in such a case
- * this routine immediately succeeds.
- *
- * @param m Mutex name.
- * @param t Maximum number of ticks to wait.
- *
- * @return RC_OK on success, or RC_TIME on timeout.
- */
-#define task_mutex_lock_wait_timeout(m, t) _task_mutex_lock(m, t)
-#endif
+extern int task_mutex_lock(kmutex_t mutex, int32_t timeout);
 
 /**
  * @brief Unlock mutex.

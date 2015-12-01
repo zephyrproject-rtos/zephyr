@@ -29,8 +29,6 @@
  * This module tests the following mutex routines:
  *
  *    task_mutex_lock
- *    task_mutex_lock_wait
- *    task_mutex_lock_wait_timeout
  *    task_mutex_unlock
  *    task_mutex_init
  *
@@ -84,7 +82,7 @@ void Task10(void)
 	task_sleep(3 * ONE_SECOND + HALF_SECOND);
 
 	/* Wait and boost owner priority to 10 */
-	rv = task_mutex_lock_wait_timeout(Mutex4, ONE_SECOND);
+	rv = task_mutex_lock(Mutex4, ONE_SECOND);
 	if (rv != RC_TIME) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to timeout on mutex 0x%x\n", Mutex4);
@@ -115,7 +113,7 @@ void Task15(void)
 	 * instead drop to 15.
 	 */
 
-	rv = task_mutex_lock_wait_timeout(Mutex4, 2 * ONE_SECOND);
+	rv = task_mutex_lock(Mutex4, 2 * ONE_SECOND);
 	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to take mutex 0x%x\n", Mutex4);
@@ -146,7 +144,7 @@ void Task20(void)
 	 * priority of the owning task RegressionTask will drop to 25.
 	 */
 
-	rv = task_mutex_lock_wait_timeout(Mutex3, 3 * ONE_SECOND);
+	rv = task_mutex_lock(Mutex3, 3 * ONE_SECOND);
 	if (rv != RC_TIME) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to timeout on mutex 0x%x\n", Mutex3);
@@ -168,7 +166,8 @@ void Task25(void)
 
 	task_sleep(ONE_SECOND + HALF_SECOND);
 
-	rv = task_mutex_lock_wait(Mutex2);      /* Wait and boost owner priority to 25 */
+	/* Wait and boost owner priority to 25 */
+	rv = task_mutex_lock(Mutex2, TICKS_UNLIMITED);
 	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to take mutex 0x%x\n", Mutex2);
@@ -191,7 +190,7 @@ void Task30(void)
 
 	task_sleep(HALF_SECOND);   /* Allow lower priority task to run */
 
-	rv = task_mutex_lock(Mutex1);       /* <Mutex1> is already locked. */
+	rv = task_mutex_lock(Mutex1, TICKS_NONE); /* <Mutex1> is already locked. */
 	if (rv != RC_FAIL) {            /* This attempt to lock the mutex */
 		/* should not succeed. */
 		tcRC = TC_FAIL;
@@ -199,7 +198,8 @@ void Task30(void)
 		return;
 	}
 
-	rv = task_mutex_lock_wait(Mutex1);      /* Wait and boost owner priority to 30 */
+	/* Wait and boost owner priority to 30 */
+	rv = task_mutex_lock(Mutex1, TICKS_UNLIMITED);
 	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to take mutex 0x%x\n", Mutex1);
@@ -221,7 +221,7 @@ void Task45(void)
 	int rv;
 
 	task_sleep(3 * ONE_SECOND + HALF_SECOND);
-	rv = task_mutex_lock_wait(Mutex3);
+	rv = task_mutex_lock(Mutex3, TICKS_UNLIMITED);
 	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to take mutex 0x%x\n", Mutex2);
@@ -261,7 +261,7 @@ void RegressionTask(void)
 	 */
 
 	for (i = 0; i < 4; i++) {
-		rv = task_mutex_lock(mutexes[i]);
+		rv = task_mutex_lock(mutexes[i], TICKS_NONE);
 		if (rv != RC_OK) {
 			TC_ERROR("Failed to lock mutex 0x%x\n", mutexes[i]);
 			tcRC = TC_FAIL;
@@ -341,14 +341,14 @@ void RegressionTask(void)
 
 	TC_PRINT("Testing recursive locking\n");
 
-	rv = task_mutex_lock(private_mutex);
+	rv = task_mutex_lock(private_mutex, TICKS_NONE);
 	if (rv != RC_OK) {
 		TC_ERROR("Failed to lock private mutex\n");
 		tcRC = TC_FAIL;
 		goto errorReturn;
 	}
 
-	rv = task_mutex_lock(private_mutex);
+	rv = task_mutex_lock(private_mutex, TICKS_NONE);
 	if (rv != RC_OK) {
 		TC_ERROR("Failed to recursively lock private mutex\n");
 		tcRC = TC_FAIL;
@@ -361,14 +361,14 @@ void RegressionTask(void)
 	task_mutex_unlock(private_mutex);
 	task_mutex_unlock(private_mutex);	/* Task50 should now have lock */
 
-	rv = task_mutex_lock(private_mutex);
+	rv = task_mutex_lock(private_mutex, TICKS_NONE);
 	if (rv != RC_FAIL) {
 		TC_ERROR("Unexpectedly got lock on private mutex\n");
 		tcRC = TC_FAIL;
 		goto errorReturn;
 	}
 
-	rv = task_mutex_lock_wait_timeout(private_mutex, ONE_SECOND);
+	rv = task_mutex_lock(private_mutex, ONE_SECOND);
 	if (rv != RC_OK) {
 		TC_ERROR("Failed to re-obtain lock on private mutex\n");
 		tcRC = TC_FAIL;

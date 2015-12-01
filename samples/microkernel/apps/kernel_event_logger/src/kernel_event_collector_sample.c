@@ -27,7 +27,7 @@
   #define GIVE(x) nano_fiber_sem_give(&x)
   #define SLEEP(x) fiber_sleep(x)
 #else  /* ! CONFIG_NANOKERNEL */
-  #define TAKE(x) task_mutex_lock_wait(x)
+  #define TAKE(x) task_mutex_lock(x, TICKS_UNLIMITED)
   #define GIVE(x) task_mutex_unlock(x)
   #define SLEEP(x) task_sleep(x)
 #endif /*  CONFIG_NANOKERNEL */

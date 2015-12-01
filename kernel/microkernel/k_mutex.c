@@ -261,22 +261,12 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 	}
 }
 
-/**
- * @brief Mutex lock kernel service
- *
- * This routine is the entry to the mutex lock kernel service.
- *
- * @param mutex Mutex object
- * @param time The maximum Timeout value (in ticks)
- *
- * @return RC_OK on success, RC_FAIL on error, RC_TIME on timeout
- */
-int _task_mutex_lock(kmutex_t mutex, int32_t time)
+int task_mutex_lock(kmutex_t mutex, int32_t timeout)
 {
 	struct k_args A; /* argument packet */
 
 	A.Comm = _K_SVC_MUTEX_LOCK_REQUEST;
-	A.Time.ticks = time;
+	A.Time.ticks = timeout;
 	A.args.l1.mutex = mutex;
 	A.args.l1.task = _k_current_task->id;
 	KERNEL_ENTRY(&A);

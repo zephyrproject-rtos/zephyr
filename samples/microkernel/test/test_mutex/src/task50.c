@@ -48,7 +48,7 @@ void Task50(void)
 
 	/* Wait for private mutex to be released */
 
-	rv = task_mutex_lock_wait(private_mutex);
+	rv = task_mutex_lock(private_mutex, TICKS_UNLIMITED);
 	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to obtain private mutex\n");
