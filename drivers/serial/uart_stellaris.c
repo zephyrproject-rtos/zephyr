@@ -254,29 +254,18 @@ static inline void line_control_defaults_set(struct device *dev)
  *
  * @param dev UART device struct (of type struct uart_device_config)
  *
- * @return N/A
+ * @return DEV_OK
  */
-void uart_stellaris_port_init(struct device *dev,
-			      const struct uart_init_info * const init_info)
+static int uart_stellaris_init(struct device *dev)
 {
+	struct uart_init_info * const init_info = &DEV_CFG(dev)->init_info;
+
 	disable(dev);
 	baudrate_set(dev, init_info->baud_rate, init_info->sys_clk_freq);
 	line_control_defaults_set(dev);
 	enable(dev);
 
 	dev->driver_api = &uart_stellaris_driver_api;
-}
-
-/**
- * @brief Initialize UART with defaults
- *
- * @param dev UART device struct
- *
- * @return DEV_OK
- */
-static int uart_stellaris_init(struct device *dev)
-{
-	uart_stellaris_port_init(dev, &DEV_CFG(dev)->init_info);
 
 	return DEV_OK;
 }
@@ -619,8 +608,6 @@ static struct uart_device_config uart_stellaris_dev_cfg_0 = {
 
 	.init_info.baud_rate = CONFIG_UART_STELLARIS_PORT_0_BAUD_RATE,
 	.init_info.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_0_CLK_FREQ,
-
-	.port_init = uart_stellaris_port_init,
 };
 
 DECLARE_DEVICE_INIT_CONFIG(uart_stellaris0,
@@ -641,8 +628,6 @@ static struct uart_device_config uart_stellaris_dev_cfg_1 = {
 
 	.init_info.baud_rate = CONFIG_UART_STELLARIS_PORT_1_BAUD_RATE,
 	.init_info.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_1_CLK_FREQ,
-
-	.port_init = uart_stellaris_port_init,
 };
 
 DECLARE_DEVICE_INIT_CONFIG(uart_stellaris1,
@@ -663,8 +648,6 @@ static struct uart_device_config uart_stellaris_dev_cfg_2 = {
 
 	.init_info.baud_rate = CONFIG_UART_STELLARIS_PORT_2_BAUD_RATE,
 	.init_info.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_2_CLK_FREQ,
-
-	.port_init = uart_stellaris_port_init,
 };
 
 DECLARE_DEVICE_INIT_CONFIG(uart_stellaris2,
