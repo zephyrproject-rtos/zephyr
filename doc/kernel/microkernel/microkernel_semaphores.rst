@@ -163,7 +163,7 @@ action depending on which one was given.
        ksem_t sem_id;
        ...
 
-       sem_id = task_sem_group_take_wait(my_sem_group);
+       sem_id = task_sem_group_take(my_sem_group, TICKS_UNLIMITED);
        if (sem_id == WORK_DONE) {
            printf("Shutting down!");
            return;
@@ -220,11 +220,8 @@ The following APIs for semaphore groups are provided by microkernel.h.
 :cpp:func:`task_sem_group_give()`
    Gives each semaphore in a group.
 
-:c:func:`task_sem_group_take_wait()`
-   Takes a semaphore from a group, or waits until one is given.
-
-:c:func:`task_sem_group_take_wait_timeout()`
-   Takes a semaphore from a group. or waits for a specified time period.
+:cpp:func:`task_sem_group_take()`
+   Waits up to a specified time period for a semaphore from a group.
 
 :cpp:func:`task_sem_group_reset()`
    Sets the count to zero for each semaphore in a group.

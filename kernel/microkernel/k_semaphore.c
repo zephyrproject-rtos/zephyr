@@ -360,13 +360,13 @@ int task_sem_take(ksem_t sema, int32_t timeout)
 	return A.Time.rcode;
 }
 
-ksem_t _task_sem_group_take(ksemg_t group, int32_t time)
+ksem_t task_sem_group_take(ksemg_t group, int32_t timeout)
 {
 	struct k_args A;
 
 	A.Comm = _K_SVC_SEM_GROUP_WAIT_ANY;
 	A.priority = _k_current_task->priority;
-	A.Time.ticks = time;
+	A.Time.ticks = timeout;
 	A.args.s1.list = group;
 	KERNEL_ENTRY(&A);
 	return A.args.s1.sema;

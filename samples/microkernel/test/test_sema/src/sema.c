@@ -22,8 +22,6 @@
  *
  * task_sem_group_reset()
  * task_sem_group_give()
- * task_sem_group_take_wait()
- * task_sem_group_take_wait_timeout()
  * task_sem_reset()
  * task_sem_give()
  * task_sem_count_get()
@@ -238,9 +236,9 @@ int simpleGroupTest(void)
 
 	/* Timeout while waiting for a semaphore from the group */
 
-	value = task_sem_group_take_wait_timeout(semList, OBJ_TIMEOUT);
+	value = task_sem_group_take(semList, OBJ_TIMEOUT);
 	if (value != ENDLIST) {
-		TC_ERROR("task_sem_group_take_wait_timeout() returned %d not %d\n",
+		TC_ERROR("task_sem_group_take() returned %d not %d\n",
 				 value, ENDLIST);
 		return TC_FAIL;
 	}
@@ -263,7 +261,7 @@ int simpleGroupTest(void)
 	/* Get the semaphores */
 
 	for (i = 9; i >= 5; i--) {
-		value = task_sem_group_take_wait_timeout(semList, 0);
+		value = task_sem_group_take(semList, 0);
 
 		for (j = 0; semList[j] != ENDLIST; j++) {
 			status = task_sem_count_get(semList[j]);
@@ -313,9 +311,9 @@ int simpleGroupWaitTest(void)
 	 */
 
 	for (i = 0; semList[i] != ENDLIST; i++) {
-		sema = task_sem_group_take_wait(semList);
+		sema = task_sem_group_take(semList, TICKS_UNLIMITED);
 		if (sema != semList[i]) {
-			TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
+			TC_ERROR("task_sem_group_take() error.  Expected %d, not %d\n",
 					 (int) semList[i], (int) sema);
 			return TC_FAIL;
 		}
@@ -328,9 +326,9 @@ int simpleGroupWaitTest(void)
 	 */
 
 	for (i = 3; i >= 0; i--) {
-		sema = task_sem_group_take_wait(semList);
+		sema = task_sem_group_take(semList, TICKS_UNLIMITED);
 		if (sema != semList[i]) {
-			TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
+			TC_ERROR("task_sem_group_take() error.  Expected %d, not %d\n",
 					 (int) semList[3], (int) sema);
 			return TC_FAIL;
 		}
@@ -342,9 +340,9 @@ int simpleGroupWaitTest(void)
 	 */
 
 	for (i = 0; semList[i] != ENDLIST; i++) {
-		sema = task_sem_group_take_wait(semList);
+		sema = task_sem_group_take(semList, TICKS_UNLIMITED);
 		if (sema != semList[i]) {
-			TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
+			TC_ERROR("task_sem_group_take() error.  Expected %d, not %d\n",
 					 (int) semList[i], (int) sema);
 			return TC_FAIL;
 		}
@@ -398,9 +396,9 @@ static int simpleFiberSemTest(void)
 	/* wait on the semaphore group while the fiber signals each semaphore in it */
 	for (i = 0; semList[i] != ENDLIST; i++) {
 		releaseTestFiber();
-		sema = task_sem_group_take_wait_timeout(semList, OBJ_TIMEOUT);
+		sema = task_sem_group_take(semList, OBJ_TIMEOUT);
 		if (sema != semList[i]) {
-			TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
+			TC_ERROR("task_sem_group_take() error.  Expected %d, not %d\n",
 					 (int) semList[i], (int) sema);
 			return TC_FAIL;
 		}
@@ -602,7 +600,7 @@ int RegressionTask(void)
 	task_sem_give(manyBlockSem);
 	task_sleep(OBJ_TIMEOUT);     /* Ensure high priority task can run */
 
-	value = task_sem_group_take_wait_timeout(semBlockList, OBJ_TIMEOUT);
+	value = task_sem_group_take(semBlockList, OBJ_TIMEOUT);
 	if (value != blockHpSem) {
 		TC_ERROR("%s priority task did not get semaphore: 0x%x\n",
 				 "High", value);
@@ -611,7 +609,7 @@ int RegressionTask(void)
 
 	task_sem_give(manyBlockSem);
 	task_sleep(OBJ_TIMEOUT);    /* Ensure medium priority task can run */
-	value = task_sem_group_take_wait_timeout(semBlockList, OBJ_TIMEOUT);
+	value = task_sem_group_take(semBlockList, OBJ_TIMEOUT);
 	if (value != blockMpSem) {
 		TC_ERROR("%s priority task did not get semaphore: 0x%x\n",
 				 "Medium", value);
@@ -622,14 +620,14 @@ int RegressionTask(void)
 
 	task_sleep(OBJ_TIMEOUT);    /* Ensure low priority task can run */
 
-	value = task_sem_group_take_wait_timeout(semBlockList, OBJ_TIMEOUT);
+	value = task_sem_group_take(semBlockList, OBJ_TIMEOUT);
 	if (value != blockLpSem) {
 		TC_ERROR("%s priority task did not get semaphore: 0x%x\n",
 				 "Low", value);
 		return TC_FAIL;
 	}
 
-	value = task_sem_group_take_wait_timeout(semBlockList, OBJ_TIMEOUT);
+	value = task_sem_group_take(semBlockList, OBJ_TIMEOUT);
 	if (value != ENDLIST) {
 		TC_ERROR("Group test Expecting ENDLIST, but got 0x%x\n",
 				 value);

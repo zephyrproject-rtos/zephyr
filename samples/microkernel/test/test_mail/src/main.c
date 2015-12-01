@@ -119,7 +119,7 @@ void MonitorTaskEntry(void)
 	 */
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
-		result = task_sem_group_take_wait_timeout(resultSems, TIMEOUT);
+		result = task_sem_group_take(resultSems, TIMEOUT);
 		if (result != resultSems[TC_PASS]) {
 			if (result != resultSems[TC_FAIL]) {
 				TC_ERROR("Monitor task timed out\n");

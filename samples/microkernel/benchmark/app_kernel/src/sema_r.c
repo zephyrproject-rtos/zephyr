@@ -49,26 +49,26 @@ void waittask(void)
 	}
 
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
-		task_sem_group_take_wait(slist);
+		task_sem_group_take(slist, TICKS_UNLIMITED);
 	}
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
-		task_sem_group_take_wait_timeout(slist, SEMA_WAIT_TIME);
+		task_sem_group_take(slist, SEMA_WAIT_TIME);
 	}
 
 	slist[2] = SEM3;
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
-		task_sem_group_take_wait(slist);
+		task_sem_group_take(slist, TICKS_UNLIMITED);
 	}
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
-		task_sem_group_take_wait_timeout(slist, SEMA_WAIT_TIME);
+		task_sem_group_take(slist, SEMA_WAIT_TIME);
 	}
 
 	slist[3] = SEM4;
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
-		task_sem_group_take_wait(slist);
+		task_sem_group_take(slist, TICKS_UNLIMITED);
 	}
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
-		task_sem_group_take_wait_timeout(slist, SEMA_WAIT_TIME);
+		task_sem_group_take(slist, SEMA_WAIT_TIME);
 	}
 }
 

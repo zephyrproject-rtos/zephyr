@@ -37,7 +37,6 @@ extern "C" {
 #include <microkernel/base_api.h>
 
 extern void _k_sem_struct_value_update(int n, struct _k_sem_struct *S);
-extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t ticks);
 
 /*
  * Initializer for semaphore
@@ -159,35 +158,20 @@ extern int task_sem_take(ksem_t sema, int32_t timeout);
 
 /**
  *
- * @brief Take semaphore from group or wait.
+ * @brief Wait for a semaphore from the semaphore group
  *
- * This routine takes a semaphore from semaphore group @a g. If all semaphores
- * in the group have a count of zero the routine waits until one of themn
- * can be taken.
+ * This routine waits up to @a timeout ticks to take a semaphore from the
+ * semaphore group @a group.
  *
- * @param g Array of semaphore names, terminated by ENDLIST.
+ * @param group Array of semaphore names, terminated by ENDLIST.
+ * @param timeout Affects the action taken should no semaphore be available.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait
+ * as long as necessary. Otherwise wait up to the specified number of ticks
+ * before timing out.
  *
- * @return Name of semaphore that was taken.
+ * @return Name of semaphore that was taken if successful, else ENDLIST
  */
-#define task_sem_group_take_wait(g) _task_sem_group_take(g, TICKS_UNLIMITED)
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-/**
- *
- * @brief Take semaphore from group or timeout.
- *
- * This routine takes a semaphore from semaphore group @a g. If all semaphores
- * in the group have a count of zero the routine waits until one of them
- * can be taken, or until the specified time limit is reached.
- *
- * @param g Array of semaphore names, terminated by ENDLIST.
- * @param t Maximum number of ticks to wait.
- *
- * @return Name of semaphore that was taken, or ENDLIST on timeout.
- */
-#define task_sem_group_take_wait_timeout(g, t) _task_sem_group_take(g, t)
-#endif
-
+extern ksem_t task_sem_group_take(ksemg_t group, int32_t timeout);
 
 /**
  * @brief Define a private microkernel semaphore
