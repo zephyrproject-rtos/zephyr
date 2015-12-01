@@ -243,22 +243,21 @@ static inline int ns16550_pci_uart_scan(struct device *dev)
  * This routine is called to reset the chip in a quiescent state.
  *
  * @param dev UART device struct (of type struct uart_device_config)
- * @param init_info Initial configuration for UART
  *
- * @return N/A
+ * @return DEV_OK if successful, failed othersie
  */
-void uart_ns16550_port_init(struct device *dev,
-			    const struct uart_init_info * const init_info)
+static int uart_ns16550_init(struct device *dev)
 {
 	struct uart_device_config * const dev_cfg = DEV_CFG(dev);
-	struct uart_ns16550_dev_data_t *const dev_data = DEV_DATA(dev);
+	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
+	struct uart_init_info * const init_info = &dev_cfg->init_info;
 
 	int old_level;     /* old interrupt lock level */
 	uint32_t divisor; /* baud rate divisor */
 	uint8_t mdc = 0;
 
 	if ((dev_cfg->port == 0) && !ns16550_pci_uart_scan(dev)) {
-		return;
+		return DEV_INVALID_OP;
 	}
 
 	dev_data->iir_cache = 0;
@@ -301,18 +300,6 @@ void uart_ns16550_port_init(struct device *dev,
 	irq_unlock(old_level);
 
 	dev->driver_api = &uart_ns16550_driver_api;
-}
-
-/**
- * @brief UART Initialization function
- *
- * @param dev UART device struct
- *
- * @return DEV_OK if successful, failed otherwise
- */
-static int uart_ns16550_init(struct device *dev)
-{
-	uart_ns16550_port_init(dev, &DEV_CFG(dev)->init_info);
 
 	return DEV_OK;
 }
@@ -587,8 +574,6 @@ struct uart_device_config uart_ns16550_dev_cfg_0 = {
 	.pci_dev.function = CONFIG_UART_NS16550_PORT_0_PCI_FUNC,
 	.pci_dev.bar = CONFIG_UART_NS16550_PORT_0_PCI_BAR,
 #endif /* CONFIG_UART_NS16550_PORT_0_PCI */
-
-	.port_init = uart_ns16550_port_init,
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0;
@@ -623,8 +608,6 @@ struct uart_device_config uart_ns16550_dev_cfg_1 = {
 	.pci_dev.function = CONFIG_UART_NS16550_PORT_1_PCI_FUNC,
 	.pci_dev.bar = CONFIG_UART_NS16550_PORT_1_PCI_BAR,
 #endif /* CONFIG_UART_NS16550_PORT_1_PCI */
-
-	.port_init = uart_ns16550_port_init,
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1;
