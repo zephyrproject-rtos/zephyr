@@ -149,7 +149,7 @@ static const struct bt_eir ad[] = {
 
 static const struct bt_eir sd[] = {
 	{
-		.len = 12,
+		.len = 15,
 		.type = BT_EIR_NAME_COMPLETE,
 		.data = DEVICE_NAME,
 	},
