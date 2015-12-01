@@ -38,9 +38,16 @@ struct gpio_dw_config {
 #ifdef CONFIG_GPIO_DW_SHARED_IRQ
 	char *shared_irq_dev_name;
 #endif /* CONFIG_GPIO_DW_SHARED_IRQ */
+
+#ifdef CONFIG_GPIO_DW_CLOCK_GATE
+	void *clock_data;
+#endif
 };
 
 struct gpio_dw_runtime {
+#ifdef CONFIG_GPIO_DW_CLOCK_GATE
+	struct device *clock;
+#endif
 	gpio_callback_t callback;
 	uint32_t enabled_callbacks;
 	uint8_t port_callback;

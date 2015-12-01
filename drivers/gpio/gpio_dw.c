@@ -22,6 +22,7 @@
 #include <init.h>
 #include <misc/util.h>
 #include <misc/__assert.h>
+#include <clock_control.h>
 
 #ifdef CONFIG_SHARED_IRQ
 #include <shared_irq.h>
@@ -50,6 +51,41 @@ static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 		sys_set_bit(base_addr + offset, bit);
 	}
 }
+
+#ifdef CONFIG_GPIO_DW_CLOCK_GATE
+static inline void _gpio_dw_clock_config(struct device *port)
+{
+	struct device *clk;
+	char *drv = CONFIG_GPIO_DW_CLOCK_GATE_DRV_NAME;
+
+	clk = device_get_binding(drv);
+	if (clk) {
+		struct gpio_dw_runtime *context = port->driver_data;
+
+		context->clock = clk;
+	}
+}
+
+static inline void _gpio_dw_clock_on(struct device *port)
+{
+	struct gpio_dw_config *config = port->config->config_info;
+	struct gpio_dw_runtime *context = port->driver_data;
+
+	clock_control_on(context->clock, config->clock_data);
+}
+
+static inline void _gpio_dw_clock_off(struct device *port)
+{
+	struct gpio_dw_config *config = port->config->config_info;
+	struct gpio_dw_runtime *context = port->driver_data;
+
+	clock_control_off(context->clock, config->clock_data);
+}
+#else
+#define _gpio_dw_clock_config(...)
+#define _gpio_dw_clock_on(...)
+#define _gpio_dw_clock_off(...)
+#endif
 
 #ifdef CONFIG_PLATFORM_QUARK_SE_SS
 static inline void dw_set_both_edges(uint32_t base_addr, uint32_t pin)
@@ -215,11 +251,15 @@ static inline int gpio_dw_disable_callback(struct device *port, int access_op,
 
 static inline int gpio_dw_suspend_port(struct device *port)
 {
+	_gpio_dw_clock_off(port);
+
 	return 0;
 }
 
 static inline int gpio_dw_resume_port(struct device *port)
 {
+	_gpio_dw_clock_on(port);
+
 	return 0;
 }
 
@@ -323,7 +363,9 @@ int gpio_dw_initialize(struct device *port)
 	base_addr = config->base_addr;
 
 	/* interrupts in sync with system clock */
-	dw_set_bit(base_addr, INT_CLOCK_SYNC, 0, 1);
+	dw_set_bit(base_addr, INT_CLOCK_SYNC, LS_SYNC_POS, 1);
+
+	_gpio_dw_clock_config(port);
 
 	/* mask and disable interrupts */
 	dw_write(base_addr, INTMASK, ~(0));
@@ -357,10 +399,13 @@ struct gpio_dw_config gpio_config_0 = {
 	.pci_dev.function = CONFIG_GPIO_DW_0_FUNCTION,
 	.pci_dev.bar = CONFIG_GPIO_DW_0_BAR,
 #endif
-	.config_func = gpio_config_0_irq,
 
+	.config_func = gpio_config_0_irq,
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
 	.shared_irq_dev_name = CONFIG_GPIO_DW_0_IRQ_SHARED_NAME,
+#endif
+#ifdef CONFIG_GPIO_DW_CLOCK_GATE
+	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_0_CLOCK_GATE_SUBSYS),
 #endif
 };
 
@@ -421,6 +466,9 @@ struct gpio_dw_config gpio_dw_config_1 = {
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_SHARED
 	.shared_irq_dev_name = CONFIG_GPIO_DW_1_IRQ_SHARED_NAME,
+#endif
+#ifdef CONFIG_GPIO_DW_CLOCK_GATE
+	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_1_CLOCK_GATE_SUBSYS),
 #endif
 };
 

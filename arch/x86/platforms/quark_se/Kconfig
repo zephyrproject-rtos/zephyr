@@ -77,6 +77,10 @@ config GPIO_DW
 
 config GPIO_DW_BOTHEDGES_SUPPORT
 	def_bool y
+config GPIO_DW_CLOCK_GATE
+	def_bool n
+config GPIO_DW_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
 
 config GPIO_DW_0
 	def_bool y
@@ -86,6 +90,9 @@ config GPIO_DW_0_IRQ
 	default 8
 config GPIO_DW_0_BITS
 	default 32
+config GPIO_DW_0_CLOCK_GATE_SUBSYS
+	default 13
+	depends on GPIO_DW_CLOCK_GATE
 endif
 
 if I2C

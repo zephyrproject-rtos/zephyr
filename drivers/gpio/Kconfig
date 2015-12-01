@@ -79,6 +79,17 @@ config GPIO_DW_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
+config GPIO_DW_CLOCK_GATE
+	bool "Enable glock gating"
+	depends on GPIO_DW
+	select CLOCK_CONTROL
+	default n
+
+config GPIO_DW_CLOCK_GATE_DRV_NAME
+	string
+	depends on GPIO_DW_CLOCK_GATE
+	default ""
+
 config GPIO_DW_0
        bool "Designware GPIO block 0"
        depends on GPIO_DW
@@ -122,6 +133,11 @@ config GPIO_DW_0_BITS
        default 32
        help
        Number of pins controlled by controller
+
+config GPIO_DW_0_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_0
+	default 0
 
 choice
 	prompt "Port 0 Interrupts via"
@@ -215,6 +231,11 @@ config GPIO_DW_1_BITS
        default 32
        help
        Number of pins controlled by controller
+
+config GPIO_DW_1_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_1
+	default 0
 
 choice
 	prompt "Port 1 Interrupts via"

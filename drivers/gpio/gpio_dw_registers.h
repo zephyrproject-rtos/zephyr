@@ -51,3 +51,5 @@
 #define INT_CLOCK_SYNC 0x60
 #define INT_BOTHEDGE   0x68
 #endif
+
+#define LS_SYNC_POS	(0)
