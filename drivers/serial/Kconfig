@@ -64,15 +64,7 @@ source "drivers/serial/Kconfig.ns16550"
 
 source "drivers/serial/Kconfig.k20"
 
-config STELLARIS_UART
-	bool "Stellaris serial driver"
-	default n
-	select SERIAL_HAS_DRIVER
-	help
-	This option enables the Stellaris serial driver.
-	This specific driver can be used for the serial hardware
-	available at the Texas Instrument LM3S6965 platform.
-
+source "drivers/serial/Kconfig.stellaris"
 
 config UART_PORT_0_NAME
 	string

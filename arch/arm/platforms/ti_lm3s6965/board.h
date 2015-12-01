@@ -92,13 +92,6 @@
 
 /* uart configuration settings */
 
-#define CONFIG_UART_PORT_0_REGS PERIPH_ADDR_BASE_UART0
-#define CONFIG_UART_PORT_0_IRQ IRQ_UART0
-#define CONFIG_UART_PORT_1_REGS PERIPH_ADDR_BASE_UART1
-#define CONFIG_UART_PORT_1_IRQ IRQ_UART1
-#define CONFIG_UART_PORT_2_REGS PERIPH_ADDR_BASE_UART2
-#define CONFIG_UART_PORT_2_IRQ IRQ_UART2
-
 #define UART_IRQ_FLAGS 0
 
 extern struct device * const uart_devs[];

@@ -25,14 +25,8 @@
 
 #include "board.h"
 
-#ifdef CONFIG_STELLARIS_UART
+#ifdef CONFIG_UART_STELLARIS
 #include <uart.h>
-#include <console/uart_console.h>
-#include <serial/stellarisUartDrv.h>
-
-#ifdef CONFIG_BLUETOOTH_UART
-#include <bluetooth/uart.h>
-#endif
 
 #define RCGC1 (*((volatile uint32_t *)0x400FE104))
 
@@ -40,172 +34,25 @@
 #define RCGC1_UART1_EN 0x00000002
 #define RCGC1_UART2_EN 0x00000004
 
-
-#if defined(CONFIG_UART_CONSOLE)
-#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
-
-/**
- * @brief Initialize Stellaris serial port as console
- *
- * Initialize the UART port for console I/O.
- *
- * @param dev The UART device struct
- *
- * @return DEV_OK if successful, otherwise failed.
- */
-static int stellaris_uart_console_init(struct device *dev)
+static int uart_stellaris_init(struct device *dev)
 {
-	struct uart_init_info info = {
-		.sys_clk_freq = SYSCLK_DEFAULT_IOSC_HZ,
-		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
-		/* Only supported in polling mode, but init all info fields */
-		.irq_pri = CONFIG_UART_CONSOLE_INT_PRI,
-	};
-
-	uart_init(UART_CONSOLE_DEV, &info);
-
-	return DEV_OK;
-}
-
-#else
-
-int stellaris_uart_console_init(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return DEV_OK;
-}
-
-#endif /* CONFIG_PRINTK || CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_UART_CONSOLE */
-
-
-#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 0)) \
-	|| (CONFIG_BLUETOOTH_UART_INDEX == 0)
-
-static int stellaris_uart0_init(struct device *dev)
-{
-#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 0))
+#ifdef CONFIG_UART_STELLARIS_PORT_0
 	RCGC1 |= RCGC1_UART0_EN;
-	return stellaris_uart_console_init(dev);
-#elif (CONFIG_BLUETOOTH_UART_INDEX == 0)
-	RCGC1 |= RCGC1_UART0_EN;
-	return DEV_OK;
 #endif
-}
 
-#endif /* CONFIG_UART_CONSOLE_INDEX == 0 || CONFIG_BLUETOOTH_UART_INDEX == 0 */
-
-
-#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 1)) \
-	|| (CONFIG_BLUETOOTH_UART_INDEX == 1)
-
-static int stellaris_uart1_init(struct device *dev)
-{
-#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 1))
+#ifdef CONFIG_UART_STELLARIS_PORT_1
 	RCGC1 |= RCGC1_UART1_EN;
-	return stellaris_uart_console_init(dev);
-#elif (CONFIG_BLUETOOTH_UART_INDEX == 1)
-	RCGC1 |= RCGC1_UART1_EN;
-	return DEV_OK;
 #endif
+
+#ifdef CONFIG_UART_STELLARIS_PORT_2
+	RCGC1 |= RCGC1_UART2_EN;
+#endif
+
+	return DEV_OK;
 }
 
-#endif /* CONFIG_UART_CONSOLE_INDEX == 0 || CONFIG_BLUETOOTH_UART_INDEX == 0 */
-
-
-#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 2)) \
-	|| (CONFIG_BLUETOOTH_UART_INDEX == 2)
-
-static int stellaris_uart2_init(struct device *dev)
-{
-#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 2))
-	RCGC1 |= RCGC1_UART2_EN;
-	return stellaris_uart_console_init(dev);
-#elif (CONFIG_BLUETOOTH_UART_INDEX == 2)
-	RCGC1 |= RCGC1_UART2_EN;
-	return DEV_OK;
-#endif
-}
-
-#endif /* CONFIG_UART_CONSOLE_INDEX == 2 || CONFIG_BLUETOOTH_UART_INDEX == 2 */
-
-
-/**< UART device configurations. */
-static struct uart_device_config stellaris_uart_dev_cfg[] = {
-	{
-		.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,
-		.irq = CONFIG_UART_PORT_0_IRQ,
-
-		.port_init = stellaris_uart_port_init,
-
-		#if (defined(CONFIG_UART_CONSOLE) \
-		     && (CONFIG_UART_CONSOLE_INDEX == 0)) \
-		    || (CONFIG_BLUETOOTH_UART_INDEX == 0)
-			.config_func = stellaris_uart0_init,
-		#endif
-	},
-	{
-		.base = (uint8_t *)CONFIG_UART_PORT_1_REGS,
-		.irq = CONFIG_UART_PORT_1_IRQ,
-
-		.port_init = stellaris_uart_port_init,
-
-		#if (defined(CONFIG_UART_CONSOLE) \
-		     && (CONFIG_UART_CONSOLE_INDEX == 1)) \
-		    || (CONFIG_BLUETOOTH_UART_INDEX == 1)
-			.config_func = stellaris_uart1_init,
-		#endif
-	},
-	{
-		.base = (uint8_t *)CONFIG_UART_PORT_2_REGS,
-		.irq = CONFIG_UART_PORT_2_IRQ,
-
-		.port_init = stellaris_uart_port_init,
-
-		#if (defined(CONFIG_UART_CONSOLE) \
-		     && (CONFIG_UART_CONSOLE_INDEX == 2)) \
-		    || (CONFIG_BLUETOOTH_UART_INDEX == 2)
-			.config_func = stellaris_uart2_init,
-		#endif
-	},
-};
-
-/* UART 0 */
-DECLARE_DEVICE_INIT_CONFIG(stellaris_uart0,
-			   CONFIG_UART_PORT_0_NAME,
-			   &uart_platform_init,
-			   &stellaris_uart_dev_cfg[0]);
-
-SYS_DEFINE_DEVICE(stellaris_uart0, NULL, SECONDARY,
+DECLARE_DEVICE_INIT_CONFIG(_uart_stellaris_en, "", uart_stellaris_init, NULL);
+SYS_DEFINE_DEVICE(_uart_stellaris_en, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-
-/* UART 1 */
-DECLARE_DEVICE_INIT_CONFIG(stellaris_uart1,
-			   CONFIG_UART_PORT_1_NAME,
-			   &uart_platform_init,
-			   &stellaris_uart_dev_cfg[1]);
-
-SYS_DEFINE_DEVICE(stellaris_uart1, NULL, SECONDARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-
-
-/* UART 2 */
-DECLARE_DEVICE_INIT_CONFIG(stellaris_uart2,
-			   CONFIG_UART_PORT_2_NAME,
-			   &uart_platform_init,
-			   &stellaris_uart_dev_cfg[2]);
-
-SYS_DEFINE_DEVICE(stellaris_uart2, NULL, SECONDARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-
-
-/**< UART Devices */
-struct device * const uart_devs[] = {
-	&__initconfig_stellaris_uart0,
-	&__initconfig_stellaris_uart1,
-	&__initconfig_stellaris_uart2,
-};
-
-#endif /* CONFIG_STELLARIS_UART */
+#endif /* CONFIG_UART_STELLARIS */
