@@ -82,7 +82,7 @@ struct bt_conn_le_info {
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /** BR/EDR Connection Info Structure */
-struct bt_conn_br_info;
+struct bt_conn_br_info {};
 #endif
 
 /** Connection Info Structure */
