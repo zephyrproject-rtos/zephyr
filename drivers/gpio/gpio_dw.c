@@ -28,8 +28,6 @@
 #include <shared_irq.h>
 #endif
 
-#define BIT(n)	(1UL << (n))
-
 static inline uint32_t dw_read(uint32_t base_addr, uint32_t offset)
 {
 	return sys_read32(base_addr + offset);
