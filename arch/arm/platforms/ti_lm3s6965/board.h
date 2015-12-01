@@ -119,10 +119,8 @@ extern struct device * const uart_devs[];
 
 /* Pipe UART definitions */
 #define CONFIG_UART_PIPE_INDEX 2
-#define CONFIG_UART_PIPE_BAUDRATE 115200
 #define CONFIG_UART_PIPE_IRQ IRQ_UART2
 #define CONFIG_UART_PIPE_INT_PRI 3
-#define CONFIG_UART_PIPE_FREQ SYSCLK_DEFAULT_IOSC_HZ
 
 #endif /* !_ASMLANGUAGE */
 

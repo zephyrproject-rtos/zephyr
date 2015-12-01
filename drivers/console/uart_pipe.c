@@ -74,10 +74,8 @@ IRQ_CONNECT_STATIC(uart_pipe, CONFIG_UART_PIPE_IRQ,
 		   CONFIG_UART_PIPE_INT_PRI, uart_pipe_isr, 0,
 		   UART_IRQ_FLAGS);
 
-static void uart_pipe_setup(struct device *uart, struct uart_init_info *info)
+static void uart_pipe_setup(struct device *uart)
 {
-	uart_init(uart, info);
-
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
 	IRQ_CONFIG(uart_pipe, uart_irq_get(uart), 0);
@@ -95,17 +93,10 @@ static void uart_pipe_setup(struct device *uart, struct uart_init_info *info)
 
 void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb)
 {
-	struct uart_init_info info = {
-		.options = 0,
-		.sys_clk_freq = CONFIG_UART_PIPE_FREQ,
-		.baud_rate = CONFIG_UART_PIPE_BAUDRATE,
-		.irq_pri = CONFIG_UART_PIPE_INT_PRI,
-	};
-
 	recv_buf = buf;
 	recv_buf_len = len;
 	app_cb = cb;
 
-	uart_pipe_setup(UART, &info);
+	uart_pipe_setup(UART);
 }
 #endif
