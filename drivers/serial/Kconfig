@@ -62,14 +62,7 @@ endmenu
 
 source "drivers/serial/Kconfig.ns16550"
 
-config K20_UART
-	bool "K20 serial driver"
-	default n
-	select SERIAL_HAS_DRIVER
-	help
-	This option enables the K20 serial driver.
-	This specific driver can be used for the serial hardware
-	available at the Freescale FRDM K64F platform.
+source "drivers/serial/Kconfig.k20"
 
 config STELLARIS_UART
 	bool "Stellaris serial driver"

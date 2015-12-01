@@ -204,10 +204,15 @@ struct uart_k20_dev_data {
  *
  * @return N/A
  */
-static ALWAYS_INLINE void _k20_uart_baud_rate_set(volatile struct K20_UART *uart_p,
+static ALWAYS_INLINE void _uart_k20_baud_rate_set(volatile struct K20_UART *u,
 						  uint32_t clk_freq,
 						  uint32_t baud_rate)
 {
+	/* avoid divide by zero */
+	if ((baud_rate == 0) || (clk_freq == 0)) {
+		return;
+	}
+
 	/*
 	 * The baud rate is calculated as:
 	 * baud_rate = clk_freq/(16*(SBR[12:0]+BRFA[5:0]/32)), where
@@ -224,9 +229,9 @@ static ALWAYS_INLINE void _k20_uart_baud_rate_set(volatile struct K20_UART *uart
 		 "clk_freq is too high or baud_rate is too low");
 
 	/* Note there are other fields (interrupts flag) in BDH register */
-	uart_p->bdh.field.sbr = (uint8_t)(sbr >> 8);
-	uart_p->bdl = (uint8_t)(sbr & 0xFF);
-	uart_p->c4.field.brfa = brfa;
+	u->bdh.field.sbr = (uint8_t)(sbr >> 8);
+	u->bdl = (uint8_t)(sbr & 0xFF);
+	u->c4.field.brfa = brfa;
 }
 
 /**
@@ -236,7 +241,7 @@ static ALWAYS_INLINE void _k20_uart_baud_rate_set(volatile struct K20_UART *uart
  *
  * @return N/A
  */
-static inline void _k20_uart_fifo_enable(volatile struct K20_UART *uart_p)
+static inline void _uart_k20_fifo_enable(volatile struct K20_UART *uart_p)
 {
 	uint8_t tx_rx_state = uart_p->c2.value && (TX_EN_MASK | RX_EN_MASK);
 

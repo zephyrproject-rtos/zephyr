@@ -17,7 +17,7 @@
 /**
  * @brief UART driver for the Freescale K20 Family of microprocessors.
  *
- * Before individual UART port can be used, k20_uart_port_init() has to be
+ * Before individual UART port can be used, uart_k20_port_init() has to be
  * called to setup the port.
  */
 
@@ -26,11 +26,13 @@
 #include <stdint.h>
 
 #include <board.h>
+#include <init.h>
 #include <uart.h>
-#include <drivers/k20_uart.h>
 #include <drivers/k20_sim.h>
 #include <toolchain.h>
 #include <sections.h>
+
+#include "uart_k20_priv.h"
 
 /* convenience defines */
 
@@ -41,7 +43,7 @@
 #define UART_STRUCT(dev) \
 	((volatile struct K20_UART *)(DEV_CFG(dev))->base)
 
-static struct uart_driver_api k20_uart_driver_api;
+static struct uart_driver_api uart_k20_driver_api;
 
 /**
  * @brief Initialize UART channel
@@ -54,7 +56,7 @@ static struct uart_driver_api k20_uart_driver_api;
  *
  * @return N/A
  */
-void k20_uart_port_init(struct device *dev,
+void uart_k20_port_init(struct device *dev,
 			const struct uart_init_info * const init_info)
 {
 	struct uart_k20_dev_data *dev_data = DEV_DATA(dev);
@@ -65,8 +67,6 @@ void k20_uart_port_init(struct device *dev,
 	union C1 c1;				   /* UART C1 register value */
 	union C2 c2;				   /* UART C2 register value */
 
-	DEV_CFG(dev)->irq_pri = init_info->irq_pri;
-
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
 	/* disable interrupts */
@@ -75,7 +75,7 @@ void k20_uart_port_init(struct device *dev,
 	/* enable clock to Uart - must be done prior to device access */
 	_k20_sim_uart_clk_enable(sim, dev_data->seq_port_num);
 
-	_k20_uart_baud_rate_set(uart, init_info->sys_clk_freq,
+	_uart_k20_baud_rate_set(uart, init_info->sys_clk_freq,
 				init_info->baud_rate);
 
 	/* 1 start bit, 8 data bits, no parity, 1 stop bit */
@@ -93,7 +93,21 @@ void k20_uart_port_init(struct device *dev,
 	/* restore interrupt state */
 	irq_unlock(old_level);
 
-	dev->driver_api = &k20_uart_driver_api;
+	dev->driver_api = &uart_k20_driver_api;
+}
+
+/**
+ * @brief Initialize UART with defaults
+ *
+ * @param dev UART device struct
+ *
+ * @return DEV_OK
+ */
+static int uart_k20_init(struct device *dev)
+{
+	uart_k20_port_init(dev, &DEV_CFG(dev)->init_info);
+
+	return DEV_OK;
 }
 
 /**
@@ -104,7 +118,7 @@ void k20_uart_port_init(struct device *dev,
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
-static int k20_uart_poll_in(struct device *dev, unsigned char *c)
+static int uart_k20_poll_in(struct device *dev, unsigned char *c)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
@@ -131,7 +145,7 @@ static int k20_uart_poll_in(struct device *dev, unsigned char *c)
  *
  * @return sent character
  */
-static unsigned char k20_uart_poll_out(struct device *dev,
+static unsigned char uart_k20_poll_out(struct device *dev,
 				       unsigned char c)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
@@ -156,7 +170,7 @@ static unsigned char k20_uart_poll_out(struct device *dev,
  *
  * @return number of bytes sent
  */
-static int k20_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
+static int uart_k20_fifo_fill(struct device *dev, const uint8_t *tx_data,
 			      int len)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
@@ -178,7 +192,7 @@ static int k20_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
  *
  * @return number of bytes read
  */
-static int k20_uart_fifo_read(struct device *dev, uint8_t *rx_data,
+static int uart_k20_fifo_read(struct device *dev, uint8_t *rx_data,
 			      const int size)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
@@ -198,7 +212,7 @@ static int k20_uart_fifo_read(struct device *dev, uint8_t *rx_data,
  *
  * @return N/A
  */
-static void k20_uart_irq_tx_enable(struct device *dev)
+static void uart_k20_irq_tx_enable(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
@@ -212,7 +226,7 @@ static void k20_uart_irq_tx_enable(struct device *dev)
  *
  * @return N/A
  */
-static void k20_uart_irq_tx_disable(struct device *dev)
+static void uart_k20_irq_tx_disable(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
@@ -226,7 +240,7 @@ static void k20_uart_irq_tx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-static int k20_uart_irq_tx_ready(struct device *dev)
+static int uart_k20_irq_tx_ready(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
@@ -241,7 +255,7 @@ static int k20_uart_irq_tx_ready(struct device *dev)
  *
  * @return N/A
  */
-static void k20_uart_irq_rx_enable(struct device *dev)
+static void uart_k20_irq_rx_enable(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
@@ -255,7 +269,7 @@ static void k20_uart_irq_rx_enable(struct device *dev)
  *
  * @return N/A
  */
-static void k20_uart_irq_rx_disable(struct device *dev)
+static void uart_k20_irq_rx_disable(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
@@ -269,7 +283,7 @@ static void k20_uart_irq_rx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-static int k20_uart_irq_rx_ready(struct device *dev)
+static int uart_k20_irq_rx_ready(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 
@@ -284,7 +298,7 @@ static int k20_uart_irq_rx_ready(struct device *dev)
  *
  * @return N/A
  */
-static void k20_uart_irq_err_enable(struct device *dev)
+static void uart_k20_irq_err_enable(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 	union C3 c3 = uart->c3;
@@ -303,7 +317,7 @@ static void k20_uart_irq_err_enable(struct device *dev)
  *
  * @return N/A
  */
-static void k20_uart_irq_err_disable(struct device *dev)
+static void uart_k20_irq_err_disable(struct device *dev)
 {
 	volatile struct K20_UART *uart = UART_STRUCT(dev);
 	union C3 c3 = uart->c3;
@@ -322,10 +336,10 @@ static void k20_uart_irq_err_disable(struct device *dev)
  *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
-static int k20_uart_irq_is_pending(struct device *dev)
+static int uart_k20_irq_is_pending(struct device *dev)
 {
 
-	return k20_uart_irq_tx_ready(dev) || k20_uart_irq_rx_ready(dev);
+	return uart_k20_irq_tx_ready(dev) || uart_k20_irq_rx_ready(dev);
 }
 
 /**
@@ -335,7 +349,7 @@ static int k20_uart_irq_is_pending(struct device *dev)
  *
  * @return always 1
  */
-static int k20_uart_irq_update(struct device *dev)
+static int uart_k20_irq_update(struct device *dev)
 {
 	return 1;
 }
@@ -347,9 +361,9 @@ static int k20_uart_irq_update(struct device *dev)
  *
  * @param dev UART device struct (of type struct uart_device_config)
  *
- * @return N/A
+ * @return IRQ number
  */
-static unsigned int k20_uart_irq_get(struct device *dev)
+static unsigned int uart_k20_irq_get(struct device *dev)
 {
 	return (unsigned int)DEV_CFG(dev)->irq;
 }
@@ -357,25 +371,189 @@ static unsigned int k20_uart_irq_get(struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
-static struct uart_driver_api k20_uart_driver_api = {
-	.poll_in = k20_uart_poll_in,
-	.poll_out = k20_uart_poll_out,
+static struct uart_driver_api uart_k20_driver_api = {
+	.poll_in = uart_k20_poll_in,
+	.poll_out = uart_k20_poll_out,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-	.fifo_fill = k20_uart_fifo_fill,
-	.fifo_read = k20_uart_fifo_read,
-	.irq_tx_enable = k20_uart_irq_tx_enable,
-	.irq_tx_disable = k20_uart_irq_tx_disable,
-	.irq_tx_ready = k20_uart_irq_tx_ready,
-	.irq_rx_enable = k20_uart_irq_rx_enable,
-	.irq_rx_disable = k20_uart_irq_rx_disable,
-	.irq_rx_ready = k20_uart_irq_rx_ready,
-	.irq_err_enable = k20_uart_irq_err_enable,
-	.irq_err_disable = k20_uart_irq_err_disable,
-	.irq_is_pending = k20_uart_irq_is_pending,
-	.irq_update = k20_uart_irq_update,
-	.irq_get = k20_uart_irq_get,
+	.fifo_fill = uart_k20_fifo_fill,
+	.fifo_read = uart_k20_fifo_read,
+	.irq_tx_enable = uart_k20_irq_tx_enable,
+	.irq_tx_disable = uart_k20_irq_tx_disable,
+	.irq_tx_ready = uart_k20_irq_tx_ready,
+	.irq_rx_enable = uart_k20_irq_rx_enable,
+	.irq_rx_disable = uart_k20_irq_rx_disable,
+	.irq_rx_ready = uart_k20_irq_rx_ready,
+	.irq_err_enable = uart_k20_irq_err_enable,
+	.irq_err_disable = uart_k20_irq_err_disable,
+	.irq_is_pending = uart_k20_irq_is_pending,
+	.irq_update = uart_k20_irq_update,
+	.irq_get = uart_k20_irq_get,
 
+#endif
+};
+
+
+#ifdef CONFIG_UART_K20_PORT_0
+
+static struct uart_device_config uart_k20_dev_cfg_0 = {
+	.base = (uint8_t *)CONFIG_UART_K20_PORT_0_BASE_ADDR,
+	.irq = CONFIG_UART_K20_PORT_0_IRQ,
+	.irq_pri = CONFIG_UART_K20_PORT_0_IRQ_PRI,
+
+	.init_info.baud_rate = CONFIG_UART_K20_PORT_0_BAUD_RATE,
+	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_0_CLK_FREQ,
+
+	.port_init = uart_k20_port_init,
+};
+
+static struct uart_k20_dev_data uart_k20_dev_data_0 = {
+	.seq_port_num = 0,
+};
+
+DECLARE_DEVICE_INIT_CONFIG(uart_k20_0,
+			   CONFIG_UART_K20_PORT_0_NAME,
+			   &uart_k20_init,
+			   &uart_k20_dev_cfg_0);
+
+SYS_DEFINE_DEVICE(uart_k20_0, &uart_k20_dev_data_0, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_UART_K20_PORT_0 */
+
+#ifdef CONFIG_UART_K20_PORT_1
+
+static struct uart_device_config uart_k20_dev_cfg_1 = {
+	.base = (uint8_t *)CONFIG_UART_K20_PORT_1_BASE_ADDR,
+	.irq = CONFIG_UART_K20_PORT_1_IRQ,
+	.irq_pri = CONFIG_UART_K20_PORT_1_IRQ_PRI,
+
+	.init_info.baud_rate = CONFIG_UART_K20_PORT_1_BAUD_RATE,
+	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_1_CLK_FREQ,
+
+	.port_init = uart_k20_port_init,
+};
+
+static struct uart_k20_dev_data uart_k20_dev_data_1 = {
+	.seq_port_num = 1,
+};
+
+DECLARE_DEVICE_INIT_CONFIG(uart_k20_1,
+			   CONFIG_UART_K20_PORT_1_NAME,
+			   &uart_k20_init,
+			   &uart_k20_dev_cfg_1);
+
+SYS_DEFINE_DEVICE(uart_k20_1, &uart_k20_dev_data_1, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_UART_K20_PORT_1 */
+
+#ifdef CONFIG_UART_K20_PORT_2
+
+static struct uart_device_config uart_k20_dev_cfg_2 = {
+	.base = (uint8_t *)CONFIG_UART_K20_PORT_2_BASE_ADDR,
+	.irq = CONFIG_UART_K20_PORT_2_IRQ,
+	.irq_pri = CONFIG_UART_K20_PORT_2_IRQ_PRI,
+
+	.init_info.baud_rate = CONFIG_UART_K20_PORT_2_BAUD_RATE,
+	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_2_CLK_FREQ,
+
+	.port_init = uart_k20_port_init,
+};
+
+static struct uart_k20_dev_data uart_k20_dev_data_2 = {
+	.seq_port_num = 2,
+};
+
+DECLARE_DEVICE_INIT_CONFIG(uart_k20_2,
+			   CONFIG_UART_K20_PORT_2_NAME,
+			   &uart_k20_init,
+			   &uart_k20_dev_cfg_2);
+
+SYS_DEFINE_DEVICE(uart_k20_2, &uart_k20_dev_data_2, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_UART_K20_PORT_2 */
+
+#ifdef CONFIG_UART_K20_PORT_3
+
+static struct uart_device_config uart_k20_dev_cfg_3 = {
+	.base = (uint8_t *)CONFIG_UART_K20_PORT_3_BASE_ADDR,
+	.irq = CONFIG_UART_K20_PORT_3_IRQ,
+	.irq_pri = CONFIG_UART_K20_PORT_3_IRQ_PRI,
+
+	.init_info.baud_rate = CONFIG_UART_K20_PORT_3_BAUD_RATE,
+	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_3_CLK_FREQ,
+
+	.port_init = uart_k20_port_init,
+};
+
+static struct uart_k20_dev_data uart_k20_dev_data_3 = {
+	.seq_port_num = 3,
+};
+
+DECLARE_DEVICE_INIT_CONFIG(uart_k20_3,
+			   CONFIG_UART_K20_PORT_3_NAME,
+			   &uart_k20_init,
+			   &uart_k20_dev_cfg_3);
+
+SYS_DEFINE_DEVICE(uart_k20_3, &uart_k20_dev_data_3, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_UART_K20_PORT_3 */
+
+#ifdef CONFIG_UART_K20_PORT_4
+
+static struct uart_device_config uart_k20_dev_cfg_4 = {
+	.base = (uint8_t *)CONFIG_UART_K20_PORT_4_BASE_ADDR,
+	.irq = CONFIG_UART_K20_PORT_4_IRQ,
+	.irq_pri = CONFIG_UART_K20_PORT_4_IRQ_PRI,
+
+	.init_info.baud_rate = CONFIG_UART_K20_PORT_4_BAUD_RATE,
+	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_4_CLK_FREQ,
+
+	.port_init = uart_k20_port_init,
+};
+
+static struct uart_k20_dev_data uart_k20_dev_data_4 = {
+	.seq_port_num = 4,
+};
+
+DECLARE_DEVICE_INIT_CONFIG(uart_k20_4,
+			   CONFIG_UART_K20_PORT_4_NAME,
+			   &uart_k20_init,
+			   &uart_k20_dev_cfg_4);
+
+SYS_DEFINE_DEVICE(uart_k20_4, &uart_k20_dev_data_4, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_UART_K20_PORT_4 */
+
+struct device * const uart_devs[] = {
+#ifdef CONFIG_UART_K20_PORT_0
+	SYS_GET_DEVICE(uart_k20_0),
+#else
+	NULL,
+#endif
+#ifdef CONFIG_UART_K20_PORT_1
+	SYS_GET_DEVICE(uart_k20_1),
+#else
+	NULL,
+#endif
+#ifdef CONFIG_UART_K20_PORT_2
+	SYS_GET_DEVICE(uart_k20_2),
+#else
+	NULL,
+#endif
+#ifdef CONFIG_UART_K20_PORT_3
+	SYS_GET_DEVICE(uart_k20_3),
+#else
+	NULL,
+#endif
+#ifdef CONFIG_UART_K20_PORT_4
+	SYS_GET_DEVICE(uart_k20_4),
+#else
+	NULL,
 #endif
 };
