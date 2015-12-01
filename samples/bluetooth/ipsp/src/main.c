@@ -171,24 +171,6 @@ static struct bt_conn_cb conn_callbacks = {
 		.disconnected = disconnected,
 };
 
-static void bt_ready(int err)
-{
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Bluetooth initialized\n");
-
-	err = bt_start_advertising(BT_LE_ADV_IND, ad, sd);
-	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	printk("Advertising successfully started\n");
-}
-
 static inline void reverse(unsigned char *buf, int len)
 {
 	int i, last = len - 1;
@@ -304,17 +286,27 @@ void main(void)
 {
 	int err;
 
-	err = bt_enable(bt_ready);
+	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
+
+	printk("Bluetooth initialized\n");
 
 	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
 	bt_conn_cb_register(&conn_callbacks);
 
 	net_init();
+
+	err = bt_start_advertising(BT_LE_ADV_IND, ad, sd);
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising successfully started\n");
 
 	listen();
 }
