@@ -54,39 +54,15 @@
 #define NUM_STD_IRQS 16   /* number of "standard" IRQs on an x86 platform */
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 
-/* serial port (aka COM port) information */
-#define COM1_BAUD_RATE 115200
-
-#define COM2_BAUD_RATE 115200
-#define COM2_INT_LVL 0x11 /* COM2 connected to IRQ17 */
-#define COM2_INT_PRI 3
-
-#define UART_REG_ADDR_INTERVAL 4 /* address diff of adjacent regs. */
-#define UART_XTAL_FREQ (2764800 * 16)
-
-/* uart configuration settings */
-
-/* Generic definitions */
-#define CONFIG_UART_PCI_VENDOR_ID 0x8086
-#define CONFIG_UART_PCI_DEVICE_ID 0x0936
-#define CONFIG_UART_PCI_BUS 0
-#define CONFIG_UART_PCI_DEV 20
-#define CONFIG_UART_PORT_0_FUNCTION 1
-#define CONFIG_UART_PORT_1_FUNCTION 5
-#define CONFIG_UART_PCI_BAR       0
-#define CONFIG_UART_BAUDRATE COM1_BAUD_RATE
-
-#define CONFIG_UART_PORT_1_IRQ		COM2_INT_LVL
-#define CONFIG_UART_PORT_1_IRQ_PRIORITY	COM2_INT_PRI
-
+/* UART console */
 #ifndef _ASMLANGUAGE
 extern struct device * const uart_devs[];
 #endif
 
 #if defined(CONFIG_UART_CONSOLE)
 
-#define CONFIG_UART_CONSOLE_IRQ		COM2_INT_LVL
-#define CONFIG_UART_CONSOLE_INT_PRI	3
+#define CONFIG_UART_CONSOLE_IRQ		CONFIG_UART_NS16550_PORT_1_IRQ
+#define CONFIG_UART_CONSOLE_INT_PRI	CONFIG_UART_NS16550_PORT_1_IRQ_PRI
 
 #define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
 
@@ -108,9 +84,9 @@ extern struct device * const uart_devs[];
 #if defined(CONFIG_BLUETOOTH_UART)
 
 #define CONFIG_BLUETOOTH_UART_INDEX	1
-#define CONFIG_BLUETOOTH_UART_IRQ	COM2_INT_LVL
+#define CONFIG_BLUETOOTH_UART_IRQ	CONFIG_UART_NS16550_PORT_1_IRQ
 #define CONFIG_BLUETOOTH_UART_INT_PRI	3
-#define CONFIG_BLUETOOTH_UART_FREQ	UART_XTAL_FREQ
+#define CONFIG_BLUETOOTH_UART_FREQ	CONFIG_UART_NS16550_PORT_1_CLK_FREQ
 #define CONFIG_BLUETOOTH_UART_BAUDRATE	CONFIG_UART_BAUDRATE
 #define BT_UART_DEV		(uart_devs[CONFIG_BLUETOOTH_UART_INDEX])
 

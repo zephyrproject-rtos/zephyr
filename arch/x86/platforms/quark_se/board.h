@@ -84,50 +84,24 @@
 
 /* serial port (aka COM port) information */
 
-#ifdef CONFIG_NS16550
-
-#define COM1_BASE_ADRS		0xB0002000
-#define COM1_INT_LVL		0x05		/* COM1 connected to IRQ5 */
-#define COM1_INT_VEC		(INT_VEC_IRQ0 + COM1_INT_LVL)
-#define COM1_INT_PRI		3
-#define COM1_BAUD_RATE		115200
-
-#define COM2_BASE_ADRS		0xB0002400
-#define COM2_INT_LVL		0x06		/* COM2 connected to IRQ6 */
-#define COM2_INT_VEC		(INT_VEC_IRQ0 + COM2_INT_LVL)
-#define COM2_INT_PRI		3
-#define COM2_BAUD_RATE		115200
-
-#define UART_REG_ADDR_INTERVAL  4       /* address diff of adjacent regs. */
-
-#define UART_XTAL_FREQ	32000000
+#ifdef CONFIG_UART_NS16550
 
 /* UART uses level triggered interrupt, low level */
 #define UART_IOAPIC_FLAGS       (IOAPIC_LEVEL | IOAPIC_LOW)
 
 /* uart configuration settings */
 
-/* Generic definitions */
-#define CONFIG_UART_BAUDRATE		COM2_BAUD_RATE
-#define CONFIG_UART_PORT_0_REGS		COM1_BASE_ADRS
-#define CONFIG_UART_PORT_0_IRQ		COM1_INT_VEC
-#define CONFIG_UART_CONSOLE_IRQ		CONFIG_UART_PORT_0_IRQ
-#define CONFIG_UART_PORT_0_IRQ_PRIORITY	COM1_INT_PRI
-#define CONFIG_UART_PORT_1_REGS		COM2_BASE_ADRS
-#define CONFIG_UART_PORT_1_IRQ		COM2_INT_VEC
-#define CONFIG_UART_PORT_1_IRQ_PRIORITY	COM2_INT_PRI
-
 extern struct device * const uart_devs[];
 
  /* Console definitions */
 #if defined(CONFIG_UART_CONSOLE)
 
-#define CONFIG_UART_CONSOLE_INT_PRI	COM2_INT_PRI
+#define CONFIG_UART_CONSOLE_INT_PRI	CONFIG_UART_NS16550_PORT1_IRQ
 #define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
 
 #endif /* CONFIG_UART_CONSOLE */
 
-#endif
+#endif /* CONFIG_UART_NS16550 */
 
 
 #ifndef _ASMLANGUAGE

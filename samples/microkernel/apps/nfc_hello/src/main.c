@@ -23,8 +23,8 @@
 #include <uart.h>
 
 #define UART1 (uart_devs[1])
-#define UART1_IRQ COM2_INT_LVL
-#define UART1_INT_PRI COM2_INT_PRI
+#define UART1_IRQ CONFIG_UART_NS16550_PORT_1_IRQ
+#define UART1_IRQ_PRI CONFIG_UART_NS16550_PORT_1_IRQ_PRI
 #define BUF_MAXSIZE 256
 
 #define D(fmt, args...)					\
@@ -61,15 +61,7 @@ static void uart1_isr(void *x)
 
 static void uart1_init(void)
 {
-	struct uart_init_info uart1 = {
-		.baud_rate = CONFIG_UART_BAUDRATE,
-		.sys_clk_freq = UART_XTAL_FREQ,
-		.irq_pri = UART1_INT_PRI,
-	};
-
-	uart_init(UART1, &uart1);
-
-	irq_connect(UART1_IRQ, uart1.irq_pri, uart1_isr, 0, UART_IRQ_FLAGS);
+	irq_connect(UART1_IRQ, UART1_IRQ_PRI, uart1_isr, 0, UART_IRQ_FLAGS);
 
 	irq_enable(UART1_IRQ);
 

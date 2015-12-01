@@ -3,5 +3,4 @@ ccflags-y += -I$(srctree)/drivers
 
 asflags-y := ${ccflags-y}
 
-obj-y += ia32_pci_config.o
 obj-y += ia32_pci.o

@@ -43,10 +43,25 @@ hardware for the Quark D2000 BSP.
 static int quark_d2000_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
-	*((unsigned char *)(COM1_BASE_ADRS + SYNOPSIS_UART_DLF_OFFSET)) =
+
+#ifdef CONFIG_UART_NS16550
+	/* enable clock gating */
+#ifdef CONFIG_UART_NS16550_PORT_0
+	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 17);
+
+	*((unsigned char *)(CONFIG_UART_NS16550_PORT_0_BASE_ADDR
+				+ SYNOPSIS_UART_DLF_OFFSET)) =
 		COM1_DLF;
-	*((unsigned char *)(COM2_BASE_ADRS + SYNOPSIS_UART_DLF_OFFSET)) =
+#endif
+#ifdef CONFIG_UART_NS16550_PORT_1
+	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 18);
+
+	*((unsigned char *)(CONFIG_UART_NS16550_PORT_1_BASE_ADDR
+				+ SYNOPSIS_UART_DLF_OFFSET)) =
 		COM2_DLF;
+#endif
+	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 1);
+#endif /* CONFIG_UART_NS16550 */
 
 	return 0;
 }

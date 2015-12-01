@@ -141,8 +141,6 @@
 #define CONFIG_UART_CONSOLE_IRQ IRQ_UART0_INTR
 #define CONFIG_UART_CONSOLE_INT_PRI 0
 
-#define UART_REG_ADDR_INTERVAL 4 /* for ns16550 driver */
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _BOARD__H_ */
