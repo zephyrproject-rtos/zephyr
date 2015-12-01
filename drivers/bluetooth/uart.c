@@ -223,11 +223,9 @@ IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
 		   CONFIG_BLUETOOTH_UART_INT_PRI, bt_uart_isr, 0,
 		   UART_IRQ_FLAGS);
 
-static void bt_uart_setup(struct device *uart, struct uart_init_info *info)
+static void bt_uart_setup(struct device *uart)
 {
 	BT_DBG("\n");
-
-	uart_init(uart, info);
 
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
@@ -246,14 +244,7 @@ static void bt_uart_setup(struct device *uart, struct uart_init_info *info)
 
 static int bt_uart_open(void)
 {
-	struct uart_init_info info = {
-		.options = 0,
-		.sys_clk_freq = CONFIG_BLUETOOTH_UART_FREQ,
-		.baud_rate = CONFIG_BLUETOOTH_UART_BAUDRATE,
-		.irq_pri = CONFIG_BLUETOOTH_UART_INT_PRI,
-	};
-
-	bt_uart_setup(BT_UART_DEV, &info);
+	bt_uart_setup(BT_UART_DEV);
 
 	return 0;
 }
