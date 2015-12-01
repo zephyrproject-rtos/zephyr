@@ -39,9 +39,6 @@ config ROM_SIZE
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000  if HPET_TIMER
 
-config UART_CONSOLE_INDEX
-	default 1
-
 config PINMUX
         def_bool y
 
@@ -410,7 +407,6 @@ config ETH_DW_0_IRQ_SHARED_NAME
 	default SHARED_IRQ_0_NAME if SHARED_IRQ
 endif
 
-
 config KERNEL_INIT_PRIORITY_DEFAULT
 	default 40
 
@@ -463,5 +459,16 @@ config PINMUX_INIT_PRIORITY
 # Console driver has to be initialized after UART, that it uses
 config UART_CONSOLE_PRIORITY
 	default 70
+
+if UART_CONSOLE
+
+config UART_CONSOLE_ON_DEV_NAME
+	default "UART_1"
+config UART_CONSOLE_IRQ
+	default 17
+config UART_CONSOLE_IRQ_PRI
+	default 3
+
+endif
 
 endif # PLATFORM_GALILEO

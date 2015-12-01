@@ -133,11 +133,7 @@
  * - only polled mode is supported (interrupt-driven mode is NOT supported); and
  * - only the target console is supported (hostserver driver is NOT supported).
  */
-#define CONFIG_UART_CONSOLE_CLK_FREQ SYSCLK_DEFAULT_IOSC_HZ
-#define CONFIG_UART_CONSOLE_BAUDRATE 115200
 #define CONFIG_UART_CONSOLE_REGS PERIPH_ADDR_BASE_UART0
-#define CONFIG_UART_CONSOLE_IRQ IRQ_UART0_INTR
-#define CONFIG_UART_CONSOLE_INT_PRI 0
 
 #endif /* !_ASMLANGUAGE */
 

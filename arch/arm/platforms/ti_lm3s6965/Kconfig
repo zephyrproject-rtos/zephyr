@@ -100,4 +100,15 @@ endif
 
 endif # UART_STELLARIS
 
+if UART_CONSOLE
+
+config UART_CONSOLE_ON_DEV_NAME
+	default "UART_0"
+config UART_CONSOLE_IRQ
+	default 5
+config UART_CONSOLE_IRQ_PRI
+	default 3
+
+endif
+
 endif

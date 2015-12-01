@@ -66,16 +66,6 @@
 extern struct device * const uart_devs[];
 #endif
 
-/* Console definitions */
-#if defined(CONFIG_UART_CONSOLE)
-
-#define CONFIG_UART_CONSOLE_IRQ		CONFIG_UART_NS16550_PORT_0_IRQ
-#define CONFIG_UART_CONSOLE_INT_PRI	CONFIG_UART_NS16550_PORT_0_IRQ_PRI
-
-#define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
-
-#endif /* CONFIG_UART_CONSOLE */
-
 /* Bluetooth UART definitions */
 #if defined(CONFIG_BLUETOOTH_UART)
 

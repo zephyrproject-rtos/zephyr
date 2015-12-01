@@ -63,25 +63,29 @@ config UART_CONSOLE
 	select CONSOLE_HAS_DRIVER
 	help
 	Enable this option to use one UART for console. Make sure
-	CONFIG_UART_CONSOLE_INDEX is also set correctly.
+	CONFIG_UART_CONSOLE_ON_DEV_NAME is also set correctly.
 
-config UART_CONSOLE_INDEX
-	int "UART Console Index"
-	default 0
-	range 0 6
+config UART_CONSOLE_ON_DEV_NAME
+	string "Device Name of UART Device for UART Console"
+	default "UART_0"
 	depends on UART_CONSOLE
 	help
-	This option specifies index for the console uart port.
+	This option specifies the name of UART device to be used for
+	UART console.
 
-config UART_CONSOLE_BAUDRATE
-	int "UART Console Baud Rate"
-	default 115200
+config UART_CONSOLE_IRQ
+	int "IRQ of UART Device for UART Console"
 	depends on UART_CONSOLE
 	help
-	This specifies the baud rate for the UART console.
+	This option specifies the IRQ of UART device to be used for
+	UART console.
 
-	Default is 115200, which should be usable for most RS232
-	and USB adapters.
+config UART_CONSOLE_IRQ_PRI
+	int "IRQ of UART Device for UART Console"
+	depends on UART_CONSOLE
+	help
+	This option specifies the IRQ priorityof UART device to be
+	used for UART console.
 
 config UART_CONSOLE_PRIORITY
 	int

@@ -93,14 +93,6 @@
 
 extern struct device * const uart_devs[];
 
- /* Console definitions */
-#if defined(CONFIG_UART_CONSOLE)
-
-#define CONFIG_UART_CONSOLE_INT_PRI	CONFIG_UART_NS16550_PORT1_IRQ
-#define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
-
-#endif /* CONFIG_UART_CONSOLE */
-
 #endif /* CONFIG_UART_NS16550 */
 
 

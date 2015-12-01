@@ -39,6 +39,8 @@
 #include <toolchain.h>
 #include <sections.h>
 
+static struct device *uart_console_dev;
+
 #if 0 /* NOTUSED */
 /**
  *
@@ -47,18 +49,14 @@
  * @return the character or EOF if nothing present
  */
 
-static int consoleIn(void)
+static int console_in(void)
 {
-#ifdef UART_CONSOLE_DEV
 	unsigned char c;
 
-	if (uart_poll_in(UART_CONSOLE_DEV, &c) < 0)
+	if (uart_poll_in(uart_console_dev, &c) < 0)
 		return EOF;
 	else
 		return (int)c;
-#else
-	return 0;
-#endif
 }
 #endif
 
@@ -69,22 +67,20 @@ static int consoleIn(void)
  *
  * Outputs both line feed and carriage return in the case of a '\n'.
  *
+ * @param c Character to output
+ *
  * @return The character passed as input.
  */
 
-static int consoleOut(int c /* character to output */
-	)
+static int console_out(int c)
 {
-#ifdef UART_CONSOLE_DEV
-	uart_poll_out(UART_CONSOLE_DEV, (unsigned char)c);
+	uart_poll_out(uart_console_dev, (unsigned char)c);
 	if ('\n' == c) {
-		uart_poll_out(UART_CONSOLE_DEV, (unsigned char)'\r');
+		uart_poll_out(uart_console_dev, (unsigned char)'\r');
 	}
 	return c;
-#else
-	return 0;
-#endif
 }
+
 #endif
 
 #if defined(CONFIG_STDOUT_CONSOLE)
@@ -128,20 +124,20 @@ void uart_console_isr(void *unused)
 {
 	ARG_UNUSED(unused);
 
-	while (uart_irq_update(UART_CONSOLE_DEV)
-	       && uart_irq_is_pending(UART_CONSOLE_DEV)) {
+	while (uart_irq_update(uart_console_dev)
+	       && uart_irq_is_pending(uart_console_dev)) {
 		/* Character(s) have been received */
-		if (uart_irq_rx_ready(UART_CONSOLE_DEV)) {
+		if (uart_irq_rx_ready(uart_console_dev)) {
 			static struct uart_console_input *cmd;
 			uint8_t byte;
 			int rx;
 
-			rx = read_uart(UART_CONSOLE_DEV, &byte, 1);
+			rx = read_uart(uart_console_dev, &byte, 1);
 			if (rx < 0) {
 				return;
 			}
 
-			if (uart_irq_input_hook(UART_CONSOLE_DEV, byte) != 0) {
+			if (uart_irq_input_hook(uart_console_dev, byte) != 0) {
 				/*
 				 * The input hook indicates that no further processing
 				 * should be done by this handler.
@@ -156,12 +152,12 @@ void uart_console_isr(void *unused)
 			}
 
 			/* Echo back to console */
-			uart_poll_out(UART_CONSOLE_DEV, byte);
+			uart_poll_out(uart_console_dev, byte);
 
 			if (byte == '\r' || byte == '\n' ||
 			    pos == sizeof(cmd->line) - 1) {
 				cmd->line[pos] = '\0';
-				uart_poll_out(UART_CONSOLE_DEV, '\n');
+				uart_poll_out(uart_console_dev, '\n');
 				pos = 0;
 
 				nano_isr_fifo_put(lines_queue, cmd);
@@ -175,24 +171,24 @@ void uart_console_isr(void *unused)
 }
 
 IRQ_CONNECT_STATIC(console, CONFIG_UART_CONSOLE_IRQ,
-		   CONFIG_UART_CONSOLE_INT_PRI, uart_console_isr, 0,
+		   CONFIG_UART_CONSOLE_IRQ_PRI, uart_console_isr, 0,
 		   UART_IRQ_FLAGS);
 
 static void console_input_init(void)
 {
 	uint8_t c;
 
-	uart_irq_rx_disable(UART_CONSOLE_DEV);
-	uart_irq_tx_disable(UART_CONSOLE_DEV);
-	IRQ_CONFIG(console, uart_irq_get(UART_CONSOLE_DEV), 0);
-	irq_enable(uart_irq_get(UART_CONSOLE_DEV));
+	uart_irq_rx_disable(uart_console_dev);
+	uart_irq_tx_disable(uart_console_dev);
+	IRQ_CONFIG(console, uart_irq_get(uart_console_dev), 0);
+	irq_enable(uart_irq_get(uart_console_dev));
 
 	/* Drain the fifo */
-	while (uart_irq_rx_ready(UART_CONSOLE_DEV)) {
-		uart_fifo_read(UART_CONSOLE_DEV, &c, 1);
+	while (uart_irq_rx_ready(uart_console_dev)) {
+		uart_fifo_read(uart_console_dev, &c, 1);
 	}
 
-	uart_irq_rx_enable(UART_CONSOLE_DEV);
+	uart_irq_rx_enable(uart_console_dev);
 }
 
 void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines)
@@ -220,8 +216,8 @@ void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines)
 
 void uart_console_hook_install(void)
 {
-	__stdout_hook_install(consoleOut);
-	__printk_hook_install(consoleOut);
+	__stdout_hook_install(console_out);
+	__printk_hook_install(console_out);
 }
 
 /**
@@ -233,6 +229,8 @@ void uart_console_hook_install(void)
 static int uart_console_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
+
+	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 
 	uart_console_hook_install();
 

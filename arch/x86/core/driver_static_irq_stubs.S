@@ -43,12 +43,6 @@ by x86 platforms.
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_BLUETOOTH_UART */
 
-#if defined(CONFIG_CONSOLE_HANDLER)
-#if defined(CONFIG_IOAPIC)
-	ioapic_mkstub console uart_console_isr 0
-#endif /* CONFIG_IOAPIC */
-#endif /* CONFIG_CONSOLE_HANDLER */
-
 #if defined(CONFIG_UART_PIPE)
 #if defined(CONFIG_IOAPIC)
 	ioapic_mkstub uart_pipe uart_pipe_isr 0
