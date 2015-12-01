@@ -1,7 +1,5 @@
-/* driver_static_irq_stubs.S - interrupt stubs */
-
 /*
- * Copyright (c) 2012-2015, Wind River Systems, Inc.
+ * Copyright (c) 2015, Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +14,25 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module contains the static interrupt stubs for the various drivers employed
-by x86 platforms.
+/**
+ * @file
+ * @brief Bluetooth UART interrupt stubs
  */
+
+#ifdef CONFIG_X86
 
 #define _ASMLANGUAGE
 
 #include <arch/x86/asm.h>
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
-#include <drivers/system_timer.h>
 
-#if defined(CONFIG_LOAPIC_TIMER)
-	loapic_mkstub loapic _timer_int_handler 0
-#endif
-
-#if defined(CONFIG_HPET_TIMER)
-	ioapic_mkstub hpet _timer_int_handler 0
-#endif
-
-#if defined(CONFIG_UART_PIPE)
+#if defined(CONFIG_BLUETOOTH_UART)
 #if defined(CONFIG_IOAPIC)
-	ioapic_mkstub uart_pipe uart_pipe_isr 0
+	ioapic_mkstub bluetooth bt_uart_isr 0
 #endif /* CONFIG_IOAPIC */
-#endif /* CONFIG_UART_PIPE */
+#endif /* CONFIG_BLUETOOTH_UART */
 
-	/* externs (internal APIs) */
+#undef _ASMLANGUAGE
 
-	GTEXT(_IntEnt)
-	GTEXT(_IntExit)
+#endif /* CONFIG_X86 */

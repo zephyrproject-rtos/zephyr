@@ -169,17 +169,6 @@ extern struct device * const uart_devs[];
 
 #endif /* CONFIG_UART_CONSOLE */
 
-/* Bluetooth UART definitions */
-#if defined(CONFIG_BLUETOOTH_UART)
-
-#define CONFIG_BLUETOOTH_UART_INDEX 1
-#define CONFIG_BLUETOOTH_UART_IRQ IRQ_UART1_STATUS
-#define CONFIG_BLUETOOTH_UART_INT_PRI 3
-
-#define BT_UART_DEV (uart_devs[CONFIG_BLUETOOTH_UART_INDEX])
-
-#endif /* CONFIG_BLUETOOTH_UART */
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _BOARD__H_ */

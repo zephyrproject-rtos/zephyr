@@ -44,6 +44,8 @@
 #define H4_SCO		0x03
 #define H4_EVT		0x04
 
+struct device *bt_uart_dev;
+
 static int bt_uart_read(struct device *uart, uint8_t *buf,
 			size_t len, size_t min)
 {
@@ -83,7 +85,7 @@ static struct net_buf *bt_uart_evt_recv(int *remaining)
 	struct net_buf *buf;
 
 	/* We can ignore the return value since we pass len == min */
-	bt_uart_read(BT_UART_DEV, (void *)&hdr, sizeof(hdr), sizeof(hdr));
+	bt_uart_read(bt_uart_dev, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
 	*remaining = hdr.len;
 
@@ -105,7 +107,7 @@ static struct net_buf *bt_uart_acl_recv(int *remaining)
 	struct net_buf *buf;
 
 	/* We can ignore the return value since we pass len == min */
-	bt_uart_read(BT_UART_DEV, (void *)&hdr, sizeof(hdr), sizeof(hdr));
+	bt_uart_read(bt_uart_dev, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
 	buf = bt_buf_get_acl();
 	if (buf) {
@@ -128,12 +130,12 @@ void bt_uart_isr(void *unused)
 
 	ARG_UNUSED(unused);
 
-	while (uart_irq_update(BT_UART_DEV) &&
-	       uart_irq_is_pending(BT_UART_DEV)) {
+	while (uart_irq_update(bt_uart_dev) &&
+	       uart_irq_is_pending(bt_uart_dev)) {
 		int read;
 
-		if (!uart_irq_rx_ready(BT_UART_DEV)) {
-			if (uart_irq_tx_ready(BT_UART_DEV)) {
+		if (!uart_irq_rx_ready(bt_uart_dev)) {
+			if (uart_irq_tx_ready(bt_uart_dev)) {
 				BT_DBG("transmit ready\n");
 			} else {
 				BT_DBG("spurious interrupt\n");
@@ -146,7 +148,7 @@ void bt_uart_isr(void *unused)
 			uint8_t type;
 
 			/* Get packet type */
-			read = bt_uart_read(BT_UART_DEV, &type,
+			read = bt_uart_read(bt_uart_dev, &type,
 					    sizeof(type), 0);
 			if (read != sizeof(type)) {
 				BT_WARN("Unable to read H4 packet type\n");
@@ -175,13 +177,13 @@ void bt_uart_isr(void *unused)
 		}
 
 		if (!buf) {
-			read = bt_uart_discard(BT_UART_DEV, remaining);
+			read = bt_uart_discard(bt_uart_dev, remaining);
 			BT_WARN("Discarded %d bytes\n", read);
 			remaining -= read;
 			continue;
 		}
 
-		read = bt_uart_read(BT_UART_DEV, net_buf_tail(buf),
+		read = bt_uart_read(bt_uart_dev, net_buf_tail(buf),
 				    remaining, 0);
 
 		buf->len += read;
@@ -202,15 +204,15 @@ void bt_uart_isr(void *unused)
 static int bt_uart_send(enum bt_buf_type buf_type, struct net_buf *buf)
 {
 	if (buf_type == BT_ACL_OUT) {
-		uart_poll_out(BT_UART_DEV, H4_ACL);
+		uart_poll_out(bt_uart_dev, H4_ACL);
 	} else if (buf_type == BT_CMD) {
-		uart_poll_out(BT_UART_DEV, H4_CMD);
+		uart_poll_out(bt_uart_dev, H4_CMD);
 	} else {
 		return -EINVAL;
 	}
 
 	while (buf->len) {
-		uart_poll_out(BT_UART_DEV, buf->data[0]);
+		uart_poll_out(bt_uart_dev, buf->data[0]);
 		net_buf_pull(buf, 1);
 	}
 
@@ -220,7 +222,7 @@ static int bt_uart_send(enum bt_buf_type buf_type, struct net_buf *buf)
 }
 
 IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
-		   CONFIG_BLUETOOTH_UART_INT_PRI, bt_uart_isr, 0,
+		   CONFIG_BLUETOOTH_UART_IRQ_PRI, bt_uart_isr, 0,
 		   UART_IRQ_FLAGS);
 
 static void bt_uart_setup(struct device *uart)
@@ -244,7 +246,7 @@ static void bt_uart_setup(struct device *uart)
 
 static int bt_uart_open(void)
 {
-	bt_uart_setup(BT_UART_DEV);
+	bt_uart_setup(bt_uart_dev);
 
 	return 0;
 }
@@ -257,6 +259,12 @@ static struct bt_driver drv = {
 static int _bt_uart_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
+
+	bt_uart_dev = device_get_binding(CONFIG_BLUETOOTH_UART_ON_DEV_NAME);
+
+	if (bt_uart_dev == NULL) {
+		return DEV_INVALID_CONF;
+	}
 
 	bt_driver_register(&drv);
 

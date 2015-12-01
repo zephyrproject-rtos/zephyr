@@ -72,16 +72,6 @@ extern struct device * const uart_devs[];
 #endif
 #endif /* GPIO_DW_0 */
 
-/* Bluetooth UART definitions */
-#if defined(CONFIG_BLUETOOTH_UART)
-
-#define CONFIG_BLUETOOTH_UART_INDEX	1
-#define CONFIG_BLUETOOTH_UART_IRQ	CONFIG_UART_NS16550_PORT_1_IRQ
-#define CONFIG_BLUETOOTH_UART_INT_PRI	CONFIG_UART_NS16550_PORT_1_IRQ_PRI
-#define BT_UART_DEV		(uart_devs[CONFIG_BLUETOOTH_UART_INDEX])
-
-#endif /* CONFIG_BLUETOOTH_UART */
-
 #ifdef CONFIG_I2C_DW
 
 #if defined(CONFIG_I2C_DW_IRQ_FALLING_EDGE)

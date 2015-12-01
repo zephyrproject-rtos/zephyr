@@ -111,4 +111,15 @@ config UART_CONSOLE_IRQ_PRI
 
 endif
 
+if BLUETOOTH_UART
+
+config BLUETOOTH_UART_ON_DEV_NAME
+	default "UART_1"
+config BLUETOOTH_UART_IRQ
+	default 6
+config BLUETOOTH_UART_IRQ_PRI
+	default 3
+
+endif
+
 endif
