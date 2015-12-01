@@ -73,6 +73,8 @@
 
 #define LOAPIC_ENABLE 0x100	/* APIC Enabled */
 
+#define LOAPIC_MVIC_ISR 0x110 /* MVIC In-Service Register offset */
+
 /* forward declarations */
 
 static void _mvic_rte_set(unsigned int irq, uint32_t value);
@@ -523,3 +525,29 @@ void loapic_int_vec_trigger(unsigned int vector)
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ICRLO) = icr_cmd;
 }
 
+/**
+ * @brief Find the currently executing interrupt vector, if any
+ *
+ * This routine finds the vector of the interrupt that is being processed.
+ * The ISR (In-Service Register) register contain the vectors of the interrupts
+ * in service. And the higher vector is the indentification of the interrupt
+ * being currently processed.
+ *
+ * MVIC ISR registers' offsets:
+ * --------------------
+ * | Offset | bits    |
+ * --------------------
+ * | 0110H  |  32:63  |
+ * --------------------
+ *
+ * @return The vector of the interrupt that is currently being processed.
+ */
+int _loapic_isr_vector_get(void)
+{
+	/* pointer to ISR vector table */
+	volatile int *pReg;
+
+	pReg = (volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_MVIC_ISR);
+
+	return 32 + (find_msb_set(*pReg) - 1);
+}
