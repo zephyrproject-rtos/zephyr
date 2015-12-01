@@ -58,8 +58,8 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <sys_clock.h>
+#include <drivers/ioapic.h>
 #include <drivers/system_timer.h>
-#include <drivers/hpet.h>
 
 #ifdef CONFIG_MICROKERNEL
 
@@ -172,6 +172,16 @@ extern struct nano_stack _k_command_stack;
  */
 
 #define HPET_COMP_DELAY 192
+
+#if defined(CONFIG_HPET_TIMER_FALLING_EDGE)
+#define HPET_IOAPIC_FLAGS  (IOAPIC_EDGE | IOAPIC_LOW)
+#elif defined(CONFIG_HPET_TIMER_RISING_EDGE)
+#define HPET_IOAPIC_FLAGS  (IOAPIC_EDGE | IOAPIC_HIGH)
+#elif defined(CONFIG_HPET_TIMER_LEVEL_HIGH)
+#define HPET_IOAPIC_FLAGS  (IOAPIC_LEVEL | IOAPIC_HIGH)
+#elif defined(CONFIG_HPET_TIMER_LEVEL_LOW)
+#define HPET_IOAPIC_FLAGS  (IOAPIC_LEVEL | IOAPIC_LOW)
+#endif
 
 IRQ_CONNECT_STATIC(hpet, CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
 		   _timer_int_handler, 0, HPET_IOAPIC_FLAGS);

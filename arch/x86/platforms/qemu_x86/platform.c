@@ -30,7 +30,6 @@
 #include <init.h>
 #include <loapic.h>
 #include <drivers/ioapic.h>
-#include <drivers/hpet.h>
 
 
 

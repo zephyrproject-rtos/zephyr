@@ -38,7 +38,6 @@
 #include <drivers/pci/pci_mgr.h>
 #include <drivers/loapic.h>
 #include <drivers/ioapic.h>
-#include <drivers/hpet.h>
 
 
 #ifdef CONFIG_IOAPIC
