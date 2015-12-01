@@ -66,6 +66,8 @@ source "drivers/serial/Kconfig.k20"
 
 source "drivers/serial/Kconfig.stellaris"
 
+source "drivers/serial/Kconfig.nsim"
+
 config UART_PORT_0_NAME
 	string
 	default "UART_0"

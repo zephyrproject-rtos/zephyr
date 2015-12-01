@@ -23,6 +23,6 @@
 
 #include <uart.h>
 
-void nsim_uart_port_init(struct device *, const struct uart_init_info * const);
+void uart_nsim_port_init(struct device *, const struct uart_init_info * const);
 
 #endif /* _DRIVERS_UART_NSIM_H_ */

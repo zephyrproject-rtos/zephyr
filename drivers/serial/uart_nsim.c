@@ -22,6 +22,7 @@
 #include <misc/util.h>
 #include <string.h>
 #include <board.h>
+#include <init.h>
 #include <uart.h>
 
 #define NSIM_UART_DATA 0
@@ -35,21 +36,20 @@
 
 #define TXEMPTY 0x80 /* Transmit FIFO empty and next character can be sent */
 
-static struct uart_driver_api nsim_uart_driver_api;
+static struct uart_driver_api uart_nsim_driver_api;
 
-/*
+/**
  * @brief Initialize fake serial port
  *
  * @param dev UART device struct (of type struct uart_device_config)
- * @param init_info Pointer to initialization information
+ *
+ * @return DEV_OK
  */
-void nsim_uart_port_init(struct device *dev,
-	       const struct uart_init_info * const init_info)
+static int uart_nsim_init(struct device *dev)
 {
-	int key = irq_lock();
+	ARG_UNUSED(dev);
 
-	DEV_CFG(dev)->regs = init_info->regs;
-	irq_unlock(key);
+	return DEV_OK;
 }
 
 /*
@@ -58,7 +58,7 @@ void nsim_uart_port_init(struct device *dev,
  * @param dev UART device struct (of type struct uart_device_config)
  * @param c character to output
  */
-unsigned char nsim_uart_poll_out(struct device *dev, unsigned char c)
+unsigned char uart_nsim_poll_out(struct device *dev, unsigned char c)
 {
 
 	/* wait for transmitter to ready to accept a character */
@@ -68,13 +68,25 @@ unsigned char nsim_uart_poll_out(struct device *dev, unsigned char c)
 	return c;
 }
 
-static int nsim_uart_poll_in(struct device *dev, unsigned char *c)
+static int uart_nsim_poll_in(struct device *dev, unsigned char *c)
 {
 	return -DEV_INVALID_OP;
 
 }
 
-static struct uart_driver_api nsim_uart_driver_api = {
-	.poll_out = nsim_uart_poll_out,
-	.poll_in = nsim_uart_poll_in,
+static struct uart_driver_api uart_nsim_driver_api = {
+	.poll_out = uart_nsim_poll_out,
+	.poll_in = uart_nsim_poll_in,
 };
+
+static struct uart_device_config uart_nsim_dev_cfg_0 = {
+	.regs = CONFIG_UART_NSIM_PORT_0_BASE_ADDR,
+};
+
+DECLARE_DEVICE_INIT_CONFIG(uart_nsim0,
+			   CONFIG_UART_NSIM_PORT_0_NAME,
+			   &uart_nsim_init,
+			   &uart_nsim_dev_cfg_0);
+
+SYS_DEFINE_DEVICE(uart_nsim0, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
