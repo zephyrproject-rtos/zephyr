@@ -26,6 +26,7 @@
 #include "utils.h"
 
 #include <arch/cpu.h>
+#include <irq_offload.h>
 
 #ifndef STACKSIZE
 #define STACKSIZE 2000
@@ -62,9 +63,8 @@ static void latencyTestIsr(void *unused)
  */
 static void fiberInt(void)
 {
-	initSwInterrupt(latencyTestIsr);
 	timestamp = TIME_STAMP_DELTA_GET(0);
-	raiseIntFunc();
+	irq_offload(latencyTestIsr, NULL);
 }
 
 /**

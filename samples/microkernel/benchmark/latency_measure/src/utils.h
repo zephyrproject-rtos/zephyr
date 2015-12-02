@@ -97,26 +97,3 @@ int nanoIntLockUnlock(void);
 /* pointer to the ISR */
 typedef void (*ptestIsr) (void *unused);
 
-/**
- *
- * @brief Initialize the interrupt handler
- *
- * Function initializes the interrupt handler with the pointer to the function
- * provided as an argument. It sets up allocated interrupt vector, pointer to
- * the current interrupt service routine and stub code memory block.
- *
- * @return the allocated interrupt vector
- */
-int initSwInterrupt(ptestIsr pIsrHdlr);
-
-/**
- *
- * @brief Set the new ISR for software interrupt
- *
- * The routine shange the ISR for the fully connected interrupt to the routine
- * provided. This routine can be invoked only after the interrupt has been
- * initialized and connected by initSwInterrupt.
- *
- * @return N/A
- */
-void setSwInterrupt(ptestIsr pIsrHdlr);

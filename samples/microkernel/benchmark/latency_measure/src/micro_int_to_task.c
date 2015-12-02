@@ -27,6 +27,7 @@
 #include "utils.h"
 
 #include <arch/cpu.h>
+#include <irq_offload.h>
 
 static volatile int flagVar = 0;
 
@@ -59,9 +60,8 @@ static void latencyTestIsr(void *unused)
  */
 static void makeInt(void)
 {
-	initSwInterrupt(latencyTestIsr);
 	flagVar = 0;
-	raiseIntFunc();
+	irq_offload(latencyTestIsr, NULL);
 	if (flagVar != 1) {
 		PRINT_FORMAT(" Flag variable has not changed. FAILED\n");
 	} else {

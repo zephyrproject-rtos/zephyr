@@ -26,6 +26,7 @@
 
 #ifdef CONFIG_MICROKERNEL
 #include <zephyr.h>
+#include <irq_offload.h>
 
 #include "timestamp.h"
 #include "utils.h"
@@ -63,8 +64,7 @@ static void latencyTestIsr(void *unused)
 void microInt(void)
 {
 	task_sem_take_wait(INTSEMA);
-	setSwInterrupt(latencyTestIsr);
-	raiseIntFunc();
+	irq_offload(latencyTestIsr, NULL);
 	task_suspend(task_id_get());
 }
 
