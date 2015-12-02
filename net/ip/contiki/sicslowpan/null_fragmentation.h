@@ -19,7 +19,7 @@
 #ifndef NULL_FRAGMENTATION_H_
 #define NULL_FRAGMENTATION_H_
 
-#include <net/sicslowpan/fragmentation.h>
+#include "contiki/sicslowpan/fragmentation.h"
 
 extern const struct fragmentation null_fragmentation;
 
