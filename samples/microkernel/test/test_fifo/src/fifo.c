@@ -22,8 +22,6 @@
  *
  *   task_fifo_put
  *   task_fifo_get
- *   task_fifo_get_wait
- *   task_fifo_get_wait_timeout
  *   task_fifo_size_get
  *   task_fifo_purge
  *
@@ -242,7 +240,7 @@ void MicroTestFifoTask(void)
 	/* (3) Wait for semaphore: get element test */
 	task_sem_take(SEMSIG_MicroTestFifoTask, TICKS_UNLIMITED);
 	TC_PRINT("%s: About to dequeue 1 element\n", __func__);
-	retValue =  task_fifo_get(FIFOQ, &locData);
+	retValue =  task_fifo_get(FIFOQ, &locData, TICKS_NONE);
 	/*
 	 * Execution is switched back to RegressionTask (a higher priority task)
 	 * which is not block anymore
@@ -302,7 +300,7 @@ int verifyQueueData(int loopCnt)
 		}
 
 		/* Dequeues element */
-		retValue = task_fifo_get(FIFOQ, &locData);
+		retValue = task_fifo_get(FIFOQ, &locData, TICKS_NONE);
 
 		switch (retValue) {
 		case RC_OK:
@@ -477,18 +475,18 @@ void RegressionTask(void)
 	/*
 	 * Semaphore to allow MicroTestFifoTask to run, but MicroTestFifoTask is lower
 	 * priority, so it won't run until this current task is blocked
-	 * in task_fifo_get_wait interface later.
+	 * in task_fifo_get interface later.
 	 */
 	task_sem_give(SEMSIG_MicroTestFifoTask);
 
 	/*
-	 * Test task_fifo_get_wait interface.
+	 * Test task_fifo_get interface.
 	 * Expect MicroTestFifoTask to run and insert SPECIAL_DATA into queue.
 	 */
 	TC_PRINT("%s: About to GetW data\n", __func__);
-	retValue = task_fifo_get_wait(FIFOQ, &locData);
+	retValue = task_fifo_get(FIFOQ, &locData, TICKS_UNLIMITED);
 	if ((retValue != RC_OK) || (locData != SPECIAL_DATA)) {
-		TC_ERROR("Failed task_fifo_get_wait interface for data %d, retValue %d\n"
+		TC_ERROR("Failed task_fifo_get interface for data %d, retValue %d\n"
 			, locData, retValue);
 		tcRC = TC_FAIL;
 		goto exitTest;
@@ -503,14 +501,14 @@ void RegressionTask(void)
 	}
 
 	/*
-	 * Test task_fifo_get_wait_timeout interface.  Try to get more data, but there is
-	 * none before it times out.
+	 * Test task_fifo_get(timeout) interface.  Try to get more data, but
+	 * there is none before it times out.
 	 */
-	retValue = task_fifo_get_wait_timeout(FIFOQ, &locData, 2);
+	retValue = task_fifo_get(FIFOQ, &locData, 2);
 	if (verifyRetValue(RC_TIME, retValue)) {
 		TC_PRINT("%s: GetWT timeout expected\n", __func__);
 	} else {
-		TC_ERROR("Failed task_fifo_get_wait_timeout interface for retValue %d\n", retValue);
+		TC_ERROR("Failed task_fifo_get interface for retValue %d\n", retValue);
 		tcRC = TC_FAIL;
 		goto exitTest;
 	}
@@ -592,7 +590,7 @@ void RegressionTask(void)
 	 */
 
 	/* Get first data */
-	retValue = task_fifo_get(FIFOQ, &locData);
+	retValue = task_fifo_get(FIFOQ, &locData, TICKS_NONE);
 	if ((retValue != RC_OK) || (locData != myData[1])) {
 		TC_ERROR("Get back data %d, retValue %d\n", locData, retValue);
 		tcRC = TC_FAIL;
@@ -602,7 +600,7 @@ void RegressionTask(void)
 	}
 
 	/* Get second data */
-	retValue = task_fifo_get(FIFOQ, &locData);
+	retValue = task_fifo_get(FIFOQ, &locData, TICKS_NONE);
 	if ((retValue != RC_OK) || (locData != myData[4])) {
 		TC_ERROR("Get back data %d, retValue %d\n", locData, retValue);
 		tcRC = TC_FAIL;
@@ -612,7 +610,7 @@ void RegressionTask(void)
 	}
 
 	/* Queue should be empty */
-	retValue = task_fifo_get(FIFOQ, &locData);
+	retValue = task_fifo_get(FIFOQ, &locData, TICKS_NONE);
 	if (retValue != RC_FAIL) {
 		TC_ERROR("%s: incorrect retValue %d\n", __func__, retValue);
 		tcRC = TC_FAIL;

@@ -141,7 +141,8 @@ void pipe_test(void)
 			pipeput(TestPipes[pipe], _ALL_N, putsize, putcount,
 				 &puttime[pipe]);
 
-			task_fifo_get_wait(CH_COMM, &getinfo); /* waiting for ack */
+			/* waiting for ack */
+			task_fifo_get(CH_COMM, &getinfo, TICKS_UNLIMITED);
 		}
 		PRINT_ALL_TO_N();
 	}
@@ -174,7 +175,8 @@ void pipe_test(void)
 				pipeput(TestPipes[pipe], _1_TO_N, putsize,
 						 putcount, &puttime[pipe]);
 				/* size*count == MESSAGE_SIZE_PIPE */
-				task_fifo_get_wait(CH_COMM, &getinfo); /* waiting for ack */
+				/* waiting for ack */
+				task_fifo_get(CH_COMM, &getinfo, TICKS_UNLIMITED);
 				getsize = getinfo.size;
 			}
 			PRINT_1_TO_N();

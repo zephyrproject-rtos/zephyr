@@ -161,7 +161,7 @@ one or more producing tasks.
 
        while (1) {
            /* get a data item */
-           task_fifo_get_wait(SIGNAL_FIFO, &data);
+           task_fifo_get(SIGNAL_FIFO, &data, TICKS_UNLIMITED);
 
            /* process data item */
            ...
@@ -178,14 +178,7 @@ The following APIs for a microkernel FIFO are provided by
    Writes item to a FIFO, or wait for a specified time period if it is full.
 
 :c:func:`task_fifo_get()`
-   Reads item from a FIFO, or fail and continue if it is empty.
-
-:c:func:`task_fifo_get_wait()`
-   Reads item from a FIFO, or wait for an item if it is empty.
-
-:c:func:`task_fifo_get_wait_timeout()`
-   Reads item from a FIFO, or wait for an
-   item for a specified time period if it is empty.
+   Reads item from a FIFO, or wait for a specified time period if it is empty.
 
 :c:func:`task_fifo_purge()`
    Discards all items in a FIFO and unblock any tasks

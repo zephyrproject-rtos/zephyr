@@ -42,7 +42,6 @@ extern "C" {
 /**
  * @cond internal
  */
-extern int _task_fifo_get(kfifo_t queue, void *data, int32_t time);
 extern int _task_fifo_ioctl(kfifo_t queue, int op);
 
 /**
@@ -90,52 +89,23 @@ extern int task_fifo_put(kfifo_t queue, void *data, int32_t timeout);
 /**
  * @brief FIFO dequeue request
  *
- * This routine tries to read a data element from the FIFO.
+ * This routine fetches the oldest item from the FIFO queue. If the FIFO is
+ * currently empty then the routine either waits until an item is added to
+ * the FIFO before fetching it, or until the specified time limit is reached.
  *
- * If the FIFO is not empty, the oldest entry is removed and copied to the
- * address provided by the caller.
+ * @param queue FIFO queue.
+ * @param data Pointer to storage location of the FIFO entry.
+ * @param timeout Affects the action taken should the FIFO be empty. If
+ * TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as long
+ * as necessary. Otherwise wait up to the specified number of ticks before
+ * timing out.
  *
- * @param q FIFO queue.
- * @param p Pointer to storage location of the FIFO entry.
- *
- * @return RC_OK on success, RC_FAIL on failure.
+ * @retval RC_OK Successfully fetched item from FIFO
+ * @retval RC_TIME Timed out while waiting to fetch item from FIFO
+ * @retval RC_FAIL Failed to immediately fetch item from FIFO when
+ * @a timeout = TICKS_NONE
  */
-#define task_fifo_get(q, p) _task_fifo_get(q, p, TICKS_NONE)
-
-/**
- * @brief FIFO dequeue request
- *
- * This routine tries to read a data element from the FIFO with wait.
- *
- * If the FIFO is not empty, the oldest entry is removed and copied to the
- * address provided by the caller.
- *
- * @param q FIFO queue.
- * @param p Pointer to storage location of the FIFO entry.
- *
- * @return RC_OK on success, RC_FAIL on failure.
- */
-#define task_fifo_get_wait(q, p) _task_fifo_get(q, p, TICKS_UNLIMITED)
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-
-/**
- *
- * @brief FIFO dequeue request
- *
- * This routine tries to read a data element from the FIFO.
- *
- * If the FIFO is not empty, the oldest entry is removed and copied to the
- * address provided by the caller.
- *
- * @param q FIFO queue.
- * @param p Pointer to storage location of the FIFO entry.
- * @param t Maximum number of ticks to wait.
- *
- * @return RC_OK on success, RC_FAIL on failure, RC_TIME on timeout.
- */
-#define task_fifo_get_wait_timeout(q, p, t) _task_fifo_get(q, p, t)
-#endif
+extern int task_fifo_get(kfifo_t queue, void *data, int32_t timeout);
 
 /**
  * @brief Queries the number of FIFO entries.

@@ -110,12 +110,14 @@ void mailbox_test(void)
 
 	putsize = 0;
 	mailbox_put(putsize, putcount, &puttime);
-	task_fifo_get_wait(MB_COMM, &getinfo); /* waiting for ack */
+	/* waiting for ack */
+	task_fifo_get(MB_COMM, &getinfo, TICKS_UNLIMITED);
 	PRINT_ONE_RESULT();
 	EmptyMsgPutTime = puttime;
 	for (putsize = 8; putsize <= MESSAGE_SIZE; putsize <<= 1) {
 		mailbox_put(putsize, putcount, &puttime);
-		task_fifo_get_wait(MB_COMM, &getinfo); /* waiting for ack */
+		/* waiting for ack */
+		task_fifo_get(MB_COMM, &getinfo, TICKS_UNLIMITED);
 		PRINT_ONE_RESULT();
 	}
 	PRINT_STRING(dashline, output_file);

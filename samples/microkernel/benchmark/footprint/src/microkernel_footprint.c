@@ -67,7 +67,7 @@ static pfunc func_array[] = {
 	(pfunc)_task_mutex_unlock,
 	/* FIFO functions */
 	(pfunc)task_fifo_put,
-	(pfunc)_task_fifo_get,
+	(pfunc)task_fifo_get,
 	(pfunc)_task_fifo_ioctl,
 	/* memory map functions */
 	(pfunc)task_mem_map_used_get,
