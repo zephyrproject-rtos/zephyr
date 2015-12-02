@@ -7,4 +7,4 @@ KBUILD_AFLAGS += -no-integrated-as
 endif
 KBUILD_AFLAGS += -Wa,--divide
 
-obj-y = excstub.o intconnect.o intstub.o swap.o thread.o
+obj-y = excstub.o intstub.o swap.o thread.o

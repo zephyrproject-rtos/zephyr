@@ -14,7 +14,7 @@ KBUILD_AFLAGS += -Wa,--divide
 obj-y = i386_sysV_abi/
 
 obj-y += gdt.o fatal.o cpuhalt.o \
-	msr.o dynamic.o \
+	msr.o dynamic.o intconnect.o \
 	excconnect.o sys_fatal_error_handler.o \
 	crt0.o driver_static_irq_stubs.o \
 	atomic.o cache_s.o cache.o
