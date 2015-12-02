@@ -26,8 +26,6 @@
 #define CLK_RTC_DIV_DEF_MASK (0xFFFFFF83)
 #define CCU_RTC_CLK_DIV_EN (2)
 
-static void (*rtc_dw_cb_fn)(void);
-
 static void rtc_dw_set_div(const enum clk_rtc_div div)
 {
 	/* set default division mask */
@@ -43,8 +41,10 @@ static void rtc_dw_set_div(const enum clk_rtc_div div)
  *  @brief   Function to enable clock gating for the RTC
  *  @return  N/A
  */
-static void rtc_dw_enable(void)
+static void rtc_dw_enable(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 11);
 	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 1);
 }
@@ -53,8 +53,10 @@ static void rtc_dw_enable(void)
  *  @brief   Function to disable clock gating for the RTC
  *  @return  N/A
  */
-static void rtc_dw_disable(void)
+static void rtc_dw_disable(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	sys_clear_bit(CLOCK_PERIPHERAL_BASE_ADDR, 11);
 }
 
@@ -65,30 +67,35 @@ static void rtc_dw_disable(void)
  *
  *  @return  N/A
  */
-void rtc_dw_isr(void)
+void rtc_dw_isr(void *arg)
 {
-	/*  Disable RTC interrupt */
-	sys_clear_bit(RTC_BASE_ADDR + RTC_CCR, 0);
+	struct device *dev = arg;
+	struct rtc_dw_dev_config *rtc_dev = dev->config->config_info;
+	struct rtc_dw_runtime *context = dev->driver_data;
 
-	if (rtc_dw_cb_fn) {
-		(*rtc_dw_cb_fn)();
+	/*  Disable RTC interrupt */
+	sys_clear_bit(rtc_dev->base_address + RTC_CCR, 0);
+
+	if (context->rtc_dw_cb_fn) {
+		context->rtc_dw_cb_fn(dev);
 	}
 
 	/* clear interrupt */
-	sys_read32(RTC_BASE_ADDR + RTC_EOI);
+	sys_read32(rtc_dev->base_address + RTC_EOI);
 }
-IRQ_CONNECT_STATIC(rtc, INT_RTC_IRQ, CONFIG_RTC_IRQ_PRI, rtc_dw_isr, 0, 0);
 
 /**
  * @brief Sets an RTC alarm
  * @param alarm_val Alarm value
  * @return 0 on success
  */
-static int rtc_dw_set_alarm(const uint32_t alarm_val)
+static int rtc_dw_set_alarm(struct device *dev, const uint32_t alarm_val)
 {
-	sys_set_bit(RTC_BASE_ADDR + RTC_CCR, 0);
+	struct rtc_dw_dev_config *rtc_dev = dev->config->config_info;
 
-	sys_write32(alarm_val, RTC_BASE_ADDR + RTC_CMR);
+	sys_set_bit(rtc_dev->base_address + RTC_CCR, 0);
+
+	sys_write32(alarm_val, rtc_dev->base_address + RTC_CMR);
 
 	return DEV_OK;
 }
@@ -98,22 +105,25 @@ static int rtc_dw_set_alarm(const uint32_t alarm_val)
  *  @param   config  pointer to a RTC configuration structure
  *  @return  0 on success
  */
-static int rtc_dw_set_config(struct rtc_config *config)
+static int rtc_dw_set_config(struct device *dev, struct rtc_config *config)
 {
+	struct rtc_dw_dev_config *rtc_dev = dev->config->config_info;
+	struct rtc_dw_runtime *context = dev->driver_data;
+
 	/*  Set RTC divider - 32768 / 32.768 khz = 1 second.  */
 	rtc_dw_set_div(RTC_DIVIDER);
 
 	/* set initial RTC value */
-	sys_write32(config->init_val, RTC_BASE_ADDR + RTC_CLR);
+	sys_write32(config->init_val, rtc_dev->base_address + RTC_CLR);
 
 	/* clear any pending interrupts */
-	sys_read32(RTC_BASE_ADDR + RTC_EOI);
+	sys_read32(rtc_dev->base_address + RTC_EOI);
 
-	rtc_dw_cb_fn = config->cb_fn;
+	context->rtc_dw_cb_fn = config->cb_fn;
 	if (config->alarm_enable) {
-		rtc_dw_set_alarm(config->alarm_val);
+		rtc_dw_set_alarm(dev, config->alarm_val);
 	} else {
-		sys_clear_bit(RTC_BASE_ADDR + RTC_CCR, 0);
+		sys_clear_bit(rtc_dev->base_address + RTC_CCR, 0);
 	}
 
 	return DEV_OK;
@@ -123,9 +133,11 @@ static int rtc_dw_set_config(struct rtc_config *config)
  * @brief Read current RTC value
  * @return current rtc value
  */
-static uint32_t rtc_dw_read(void)
+static uint32_t rtc_dw_read(struct device *dev)
 {
-	return sys_read32(RTC_BASE_ADDR + RTC_CCVR);
+	struct rtc_dw_dev_config *rtc_dev = dev->config->config_info;
+
+	return sys_read32(rtc_dev->base_address + RTC_CCVR);
 }
 
 static struct rtc_driver_api funcs = {
@@ -136,6 +148,9 @@ static struct rtc_driver_api funcs = {
 	.set_alarm = rtc_dw_set_alarm,
 };
 
+/* IRQ_CONFIG needs the flags variable declared by IRQ_CONNECT_STATIC */
+IRQ_CONNECT_STATIC(rtc, INT_RTC_IRQ, CONFIG_RTC_IRQ_PRI, rtc_dw_isr, 0, 0);
+
 int rtc_dw_init(struct device *dev)
 {
 	IRQ_CONFIG(rtc, INT_RTC_IRQ);
@@ -145,12 +160,15 @@ int rtc_dw_init(struct device *dev)
 	return DEV_OK;
 }
 
+struct rtc_dw_runtime rtc_runtime;
+
 struct rtc_dw_dev_config rtc_dev = {
 	.base_address = RTC_BASE_ADDR,
 };
 
-#ifdef CONFIG_RTC_DW
 DECLARE_DEVICE_INIT_CONFIG(rtc, RTC_DRV_NAME, &rtc_dw_init, &rtc_dev);
 
-SYS_DEFINE_DEVICE(rtc, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-#endif
+SYS_DEFINE_DEVICE(rtc, &rtc_runtime, SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+struct device *rtc_dw_isr_dev = SYS_GET_DEVICE(rtc);

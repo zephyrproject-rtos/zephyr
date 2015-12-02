@@ -23,9 +23,8 @@
 
 #define ALARM (RTC_ALARM_MINUTE / 6)
 #define RTC_DRIVER "rtc"
-struct device *rtc_dev;
 
-void test_rtc_interrupt_fn(void)
+void test_rtc_interrupt_fn(struct device *rtc_dev)
 {
 	uint32_t now = rtc_read(rtc_dev);
 
@@ -36,7 +35,7 @@ void test_rtc_interrupt_fn(void)
 void main(void)
 {
 	struct rtc_config config;
-
+	struct device *rtc_dev;
 
 	printk("Test RTC driver\n");
 	rtc_dev = device_get_binding(RTC_DRIVER);

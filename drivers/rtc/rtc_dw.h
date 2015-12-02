@@ -44,6 +44,10 @@
 #define RTC_CLK_DIV_8192_HZ	(0x2 << 3)
 #define RTC_CLK_DIV_4096_HZ	(0x3 << 3)
 
+struct rtc_dw_runtime {
+	void (*rtc_dw_cb_fn)(struct device *dev);
+};
+
 struct rtc_dw_dev_config {
 	uint32_t base_address;
 };

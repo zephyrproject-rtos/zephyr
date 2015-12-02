@@ -64,15 +64,18 @@ struct rtc_config {
 	uint8_t alarm_enable;
 	/*!< initial configuration value for the 32bit RTC alarm value  */
 	uint32_t alarm_val;
-	/*!< Pointer to function to call when alarm value matches current RTC value */
-	void (*cb_fn)(void);
+	/*!< Pointer to function to call when alarm value
+	 * matches current RTC value */
+	void (*cb_fn)(struct device *dev);
 };
 
-typedef void (*rtc_api_enable)(void);
-typedef void (*rtc_api_disable)(void);
-typedef int (*rtc_api_set_config)(struct rtc_config *config);
-typedef int (*rtc_api_set_alarm)(const uint32_t alarm_val);
-typedef uint32_t (*rtc_api_read)(void);
+typedef void (*rtc_api_enable)(struct device *dev);
+typedef void (*rtc_api_disable)(struct device *dev);
+typedef int (*rtc_api_set_config)(struct device *dev,
+				  struct rtc_config *config);
+typedef int (*rtc_api_set_alarm)(struct device *dev,
+				 const uint32_t alarm_val);
+typedef uint32_t (*rtc_api_read)(struct device *dev);
 
 struct rtc_driver_api {
 	rtc_api_enable enable;
@@ -87,7 +90,7 @@ static inline uint32_t rtc_read(struct device *dev)
 	struct rtc_driver_api *api;
 
 	api = (struct rtc_driver_api *)dev->driver_api;
-	return api->read();
+	return api->read(dev);
 }
 
 static inline void rtc_enable(struct device *dev)
@@ -95,7 +98,7 @@ static inline void rtc_enable(struct device *dev)
 	struct rtc_driver_api *api;
 
 	api = (struct rtc_driver_api *)dev->driver_api;
-	api->enable();
+	api->enable(dev);
 }
 
 
@@ -104,23 +107,25 @@ static inline void rtc_disable(struct device *dev)
 	struct rtc_driver_api *api;
 
 	api = (struct rtc_driver_api *)dev->driver_api;
-	api->disable();
+	api->disable(dev);
 }
 
-static inline int rtc_set_config(struct device *dev, struct rtc_config *cfg)
+static inline int rtc_set_config(struct device *dev,
+				 struct rtc_config *cfg)
 {
 	struct rtc_driver_api *api;
 
 	api = (struct rtc_driver_api *)dev->driver_api;
-	return api->set_config(cfg);
+	return api->set_config(dev, cfg);
 }
 
-static inline int rtc_set_alarm(struct device *dev, const uint32_t alarm_val)
+static inline int rtc_set_alarm(struct device *dev,
+				const uint32_t alarm_val)
 {
 	struct rtc_driver_api *api;
 
 	api = (struct rtc_driver_api *)dev->driver_api;
-	return api->set_alarm(alarm_val);
+	return api->set_alarm(dev, alarm_val);
 }
 
 #endif
