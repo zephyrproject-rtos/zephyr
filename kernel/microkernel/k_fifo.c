@@ -145,19 +145,12 @@ void _k_fifo_enque_request(struct k_args *A)
 	}
 }
 
-/**
- * @brief adds data to the fifo queue
- *
- * @param queue is the FIFO queue to add data to
- * @param ptr is a pointer to the data to add
- * @param time is the maximum number of ticks to wait
- */
-int _task_fifo_put(kfifo_t queue, void *data, int32_t time)
+int task_fifo_put(kfifo_t queue, void *data, int32_t timeout)
 {
 	struct k_args A;
 
 	A.Comm = _K_SVC_FIFO_ENQUE_REQUEST;
-	A.Time.ticks = time;
+	A.Time.ticks = timeout;
 	A.args.q1.data = (char *)data;
 	A.args.q1.queue = queue;
 

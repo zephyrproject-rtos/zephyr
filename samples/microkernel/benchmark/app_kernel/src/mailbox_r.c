@@ -52,14 +52,16 @@ void mailrecvtask(void)
 	getinfo.time = gettime;
 	getinfo.size = getsize;
 	getinfo.count = getcount;
-	task_fifo_put_wait(MB_COMM, &getinfo); /* acknowledge to master */
+	/* acknowledge to master */
+	task_fifo_put(MB_COMM, &getinfo, TICKS_UNLIMITED);
 
 	for (getsize = 8; getsize <= MESSAGE_SIZE; getsize <<= 1) {
 		mailbox_get(MAILB1, getsize, getcount, &gettime);
 		getinfo.time = gettime;
 		getinfo.size = getsize;
 		getinfo.count = getcount;
-		task_fifo_put_wait(MB_COMM, &getinfo); /* acknowledge to master */
+		/* acknowledge to master */
+		task_fifo_put(MB_COMM, &getinfo, TICKS_UNLIMITED);
 	}
 }
 

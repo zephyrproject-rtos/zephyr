@@ -58,7 +58,8 @@ void piperecvtask(void)
 			getinfo.time = gettime;
 			getinfo.size = getsize;
 			getinfo.count = getcount;
-			task_fifo_put_wait(CH_COMM, &getinfo); /* acknowledge to master */
+			/* acknowledge to master */
+			task_fifo_put(CH_COMM, &getinfo, TICKS_UNLIMITED);
 		}
 	}
 
@@ -73,7 +74,8 @@ void piperecvtask(void)
 				getinfo.time = gettime;
 				getinfo.size = getsize;
 				getinfo.count = getcount;
-				task_fifo_put_wait(CH_COMM, &getinfo); /* acknowledge to master */
+				/* acknowledge to master */
+				task_fifo_put(CH_COMM, &getinfo, TICKS_UNLIMITED);
 			}
 		}
 	}

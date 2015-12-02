@@ -21,8 +21,6 @@
  * This module tests the following FIFO routines:
  *
  *   task_fifo_put
- *   task_fifo_put_wait
- *   task_fifo_put_wait_timeout
  *   task_fifo_get
  *   task_fifo_get_wait
  *   task_fifo_get_wait_timeout
@@ -144,7 +142,7 @@ int fillFIFO(kfifo_t queue, int numElements)
 	int retValue;               /* return value from task_fifo_xxx APIs */
 
 	for (int i = 0; i < numElements; i++) {
-		retValue = task_fifo_put(queue, &myData[i]);
+		retValue = task_fifo_put(queue, &myData[i], TICKS_NONE);
 		switch (retValue) {
 		case RC_OK:
 			/* TC_PRINT("i=%d, successfully put in data=%d\n", i, myData[i]);  */
@@ -202,7 +200,7 @@ void MicroTestFifoTask(void)
 	TC_PRINT("Starts %s\n", __func__);
 	/* Put one element */
 	TC_PRINT("%s: Puts element %d\n", __func__, locData);
-	retValue = task_fifo_put(FIFOQ, &locData);
+	retValue = task_fifo_put(FIFOQ, &locData, TICKS_NONE);
 	/*
 	 * Execution is switched back to RegressionTask (a higher priority task)
 	 * which is not block anymore.
@@ -217,14 +215,14 @@ void MicroTestFifoTask(void)
 
 	/*
 	 * (2) Wait for semaphore: purge queue test.  Purge queue while another
-	 * task is in task_fifo_put_wait.  This is to test return value of the
-	 * task_fifo_put_wait interface.
+	 * task is in task_fifo_put(TICKS_UNLIMITED).  This is to test return
+	 * value of the task_fifo_put(TICKS_UNLIMITED) interface.
 	 */
 	task_sem_take(SEMSIG_MicroTestFifoTask, TICKS_UNLIMITED);
 	/*
 	 * RegressionTask is waiting to put data into FIFO queue, which is
-	 * full.  We purge the queue here and the task_fifo_put_wait interface
-	 * will terminate the wait and return RC_FAIL.
+	 * full.  We purge the queue here and the task_fifo_put(TICKS_UNLIMITED)
+	 * interface will terminate the wait and return RC_FAIL.
 	 */
 	TC_PRINT("%s: About to purge queue\n", __func__);
 	retValue = task_fifo_purge(FIFOQ);
@@ -381,7 +379,7 @@ void RegressionTask(void)
 
 	/*
 	 * FIFOQ is only two elements deep.  Test for proper return code when
-	 * FIFO queue is full.  Test task_fifo_put interface.
+	 * FIFO queue is full.  Test task_fifo_put(TICKS_NONE) interface.
 	 */
 	result = fillFIFO(FIFOQ, NUM_OF_ELEMENT);
 	if (result == TC_FAIL) { /* terminate test */
@@ -409,17 +407,17 @@ void RegressionTask(void)
 	}
 
 	/*
-	 * Put myData[4] into queue with wait, test task_fifo_put_wait_timeout interface.
-	 * Queue is full, so this data did not make it into queue.  Expect
-	 * return code of RC_TIME.
+	 * Put myData[4] into queue with wait, test task_fifo_put(timeout)
+	 * interface. Queue is full, so this data did not make it into queue.
+	 * Expect return code of RC_TIME.
 	 */
 	TC_PRINT("%s: About to putWT with data %d\n", __func__, myData[4]);
-	retValue = task_fifo_put_wait_timeout(FIFOQ, &myData[4], 2);  /* wait for 2 ticks */
+	retValue = task_fifo_put(FIFOQ, &myData[4], 2);  /* wait for 2 ticks */
 	if (verifyRetValue(RC_TIME, retValue)) {
 		TC_PRINT("%s: FIFO Put time out as expected for data %d\n"
 			, __func__, myData[4]);
 	} else {
-		TC_ERROR("Failed task_fifo_put_wait_timeout for data %d, retValue %d\n",
+		TC_ERROR("Failed task_fifo_put for data %d, retValue %d\n",
 				 myData[4], retValue);
 		tcRC = TC_FAIL;
 		goto exitTest;
@@ -538,7 +536,7 @@ void RegressionTask(void)
 	/* Queue is full */
 	locData = SPECIAL_DATA;
 	TC_PRINT("%s: about to putW data %d\n", __func__, locData);
-	retValue = task_fifo_put_wait(FIFOQ,  &locData);
+	retValue = task_fifo_put(FIFOQ,  &locData, TICKS_UNLIMITED);
 
 	/*
 	 * Execution is switched to MicroTestFifoTask, which will purge the queue.
@@ -548,7 +546,7 @@ void RegressionTask(void)
 	if (verifyRetValue(RC_FAIL, retValue)) {
 		TC_PRINT("%s: PutW ok when queue is purged while waiting\n", __func__);
 	} else {
-		TC_ERROR("Failed task_fifo_put_wait interface when queue is purged, retValue %d\n"
+		TC_ERROR("Failed task_fifo_put interface when queue is purged, retValue %d\n"
 			, retValue);
 		tcRC = TC_FAIL;
 		goto exitTest;
@@ -574,12 +572,12 @@ void RegressionTask(void)
 
 	/* Queue is full */
 	TC_PRINT("%s: about to putW data %d\n", __func__, myData[4]);
-	retValue = task_fifo_put_wait(FIFOQ,  &myData[4]);
+	retValue = task_fifo_put(FIFOQ,  &myData[4], TICKS_UNLIMITED);
 	/* Execution is switched to MicroTestFifoTask, which will dequeue one element */
 	if (verifyRetValue(RC_OK, retValue)) {
 		TC_PRINT("%s: PutW success for data %d\n", __func__, myData[4]);
 	} else {
-		TC_ERROR("Failed task_fifo_put_wait interface for data %d, retValue %d\n"
+		TC_ERROR("Failed task_fifo_put interface for data %d, retValue %d\n"
 			, myData[4], retValue);
 		tcRC = TC_FAIL;
 		goto exitTest;

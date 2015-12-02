@@ -42,7 +42,6 @@ extern "C" {
 /**
  * @cond internal
  */
-extern int _task_fifo_put(kfifo_t queue, void *data, int32_t time);
 extern int _task_fifo_get(kfifo_t queue, void *data, int32_t time);
 extern int _task_fifo_ioctl(kfifo_t queue, int op);
 
@@ -70,42 +69,23 @@ extern int _task_fifo_ioctl(kfifo_t queue, int op);
 /**
  * @brief FIFO enqueue request
  *
- * This routine puts an entry at the end of the FIFO queue.
+ * This routine adds an item to the FIFO queue. If the FIFO is currently full
+ * then the routine either waits until space becomes available, or until the
+ * specified time limit is reached.
  *
- * @param q FIFO queue.
- * @param p Pointer to data to add to queue.
+ * @param queue FIFO queue.
+ * @param data Pointer to data to add to queue.
+ * @param timeout Affects the action taken should the FIFO be full. If
+ * TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as long
+ * as necessary. Otherwise wait up to the specified number of ticks before
+ * timing out.
  *
- * @return RC_OK  on success, RC_FAIL on failure.
+ * @retval RC_OK Successfully added item to FIFO
+ * @retval RC_TIME Timed out while waiting to add item to FIFO
+ * @retval RC_FAIL Failed to immediately add item to FIFO when
+ * @a timeout = TICKS_NONE
  */
-#define task_fifo_put(q, p) _task_fifo_put(q, p, TICKS_NONE)
-
-/**
- * @brief FIFO enqueue request with waiting.
- *
- * This routine tries to put an entry at the end of the FIFO queue.
- *
- * @param q FIFO queue.
- * @param p Pointer to data to add to queue.
- *
- * @return RC_OK  on success, RC_FAIL on failure.
- */
-#define task_fifo_put_wait(q, p) _task_fifo_put(q, p, TICKS_UNLIMITED)
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-
-/**
- * @brief FIFO enqueue request with a time out.
- *
- * This routine puts an entry at the end of the FIFO queue with a time out.
- *
- * @param q FIFO queue.
- * @param p Pointer to data to add to queue.
- * @param t Maximum number of ticks to wait.
- *
- * @return RC_OK on success, RC_FAIL on failure, RC_TIME on timeout.
- */
-#define task_fifo_put_wait_timeout(q, p, t) _task_fifo_put(q, p, t)
-#endif
+extern int task_fifo_put(kfifo_t queue, void *data, int32_t timeout);
 
 /**
  * @brief FIFO dequeue request

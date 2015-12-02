@@ -138,7 +138,7 @@ can't keep up, throw away all existing data so newer data can be saved.
            data = ...
 
            /* send data to consumers */
-           while (task_fifo_put(SIGNAL_FIFO, &data) != RC_OK) {
+           while (task_fifo_put(SIGNAL_FIFO, &data, TICKS_NONE) != RC_OK) {
                /* FIFO is full */
                task_fifo_purge(SIGNAL_FIFO);
            }
@@ -175,12 +175,6 @@ The following APIs for a microkernel FIFO are provided by
 :file:`microkernel.h`:
 
 :c:func:`task_fifo_put()`
-   Writes item to a FIFO, or fail and continue if it is full.
-
-:c:func:`task_fifo_put_wait()`
-   Writes item to a FIFO, or wait for room to write if it is full.
-
-:c:func:`task_fifo_put_wait_timeout()`
    Writes item to a FIFO, or wait for a specified time period if it is full.
 
 :c:func:`task_fifo_get()`
