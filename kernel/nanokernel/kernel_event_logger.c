@@ -125,6 +125,11 @@ void _sys_k_event_logger_interrupt(void)
 {
 	uint32_t data[2];
 
+	/* if the kernel event logger has not been initialized, we do nothing */
+	if (sys_k_event_logger.ring_buf.buf == NULL) {
+		return;
+	}
+
 	data[0] = sys_tick_get_32();
 	data[1] = _sys_current_irq_key_get();
 
