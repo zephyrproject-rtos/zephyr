@@ -37,7 +37,7 @@ void memorymap_test(void)
 	PRINT_STRING(dashline, output_file);
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_MAP_RUNS; i++) {
-		task_mem_map_alloc_wait(MAP1, &p);
+		task_mem_map_alloc(MAP1, &p, TICKS_UNLIMITED);
 		task_mem_map_free(MAP1, &p);
 	}
 	et = TIME_STAMP_DELTA_GET(et);

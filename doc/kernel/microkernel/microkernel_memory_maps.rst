@@ -112,7 +112,7 @@ available if all the memory blocks are in use.
 
   char *block_ptr;
 
-  task_mem_map_alloc_wait(MYMAP, &block_ptr);
+  task_mem_map_alloc(MYMAP, &block_ptr, TICKS_UNLIMITED);
 
 
 Example: Requesting a Memory Block from a Map with a Conditional Time-out
@@ -126,7 +126,7 @@ in the specified time.
 
   char *block_ptr;
 
-  if (task_mem_map_alloc_wait_timeout(MYMAP, &block_ptr, 5) == RC_OK)) {
+  if (task_mem_map_alloc(MYMAP, &block_ptr, 5) == RC_OK)) {
     /* utilize memory block */
   } else {
     printf("Memory allocation time-out");
@@ -142,7 +142,7 @@ This code gives an immediate warning when all memory blocks are in use.
 
   char *block_ptr;
 
-  if (task_mem_map_alloc(MYMAP, &block_ptr) == RC_OK) {
+  if (task_mem_map_alloc(MYMAP, &block_ptr, TICKS_NONE) == RC_OK) {
     /* utilize memory block */
   } else {
     display_warning(); /* and do not allocate memory block*/
@@ -157,7 +157,7 @@ This code releases a memory block back when it is no longer needed.
 
   char *block_ptr;
 
-  task_mem_map_alloc_wait(MYMAP, &block_ptr);
+  task_mem_map_alloc(MYMAP, &block_ptr, TICKS_UNLIMITED);
   /* use memory block */
   task_mem_map_free(&block_ptr);
 
@@ -168,12 +168,6 @@ APIs
 The following Memory Map APIs are provided by :file:`microkernel.h`:
 
 :c:func:`task_mem_map_alloc()`
-   Requests a block from a memory map.
-
-:c:func:`task_mem_map_alloc_wait()`
-   Waits on a block of memory until it is available.
-
-:c:func:`task_mem_map_alloc_wait_timeout()`
    Waits on a block of memory for the period of time defined by the time-out
    parameter.
 

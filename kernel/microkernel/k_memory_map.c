@@ -115,12 +115,12 @@ void _k_mem_map_alloc(struct k_args *A)
 		A->Time.rcode = RC_FAIL;
 }
 
-int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time)
+int task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t timeout)
 {
 	struct k_args A;
 
 	A.Comm = _K_SVC_MEM_MAP_ALLOC;
-	A.Time.ticks = time;
+	A.Time.ticks = timeout;
 	A.args.a1.mmap = mmap;
 	A.args.a1.mptr = mptr;
 	KERNEL_ENTRY(&A);

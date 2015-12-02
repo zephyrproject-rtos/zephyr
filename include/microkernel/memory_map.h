@@ -37,7 +37,6 @@ extern "C" {
 /**
  * @cond internal
  */
-extern int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time);
 extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
 
 /**
@@ -81,51 +80,26 @@ extern int task_mem_map_used_get(kmemory_map_t map);
 #define task_mem_map_free(m, p) _task_mem_map_free(m, p)
 
 /**
- * @brief Allocate memory map block or fail
+ * @brief Allocate memory map block
  *
- * This routine allocates a block from memory map @a m, and saves the block's
- * address in the area indicated by @a p. If no block is available the routine
- * immediately returns a failure indication.
+ * This routine allocates a block from memory map @a mmap, and saves the
+ * block's address in the area indicated by @a mptr. If no block is available
+ * the routine waits until either one can be allocated, or until the specified
+ * time limit is reached.
  *
- * @param m Memory map name.
- * @param p Pointer to memory block address area.
+ * @param mmap Memory map name.
+ * @param mptr Pointer to memory block address area.
+ * @param timeout Affects the action taken should the memory map be exhausted.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. Otherwise wait up to the specified number of ticks before
+ * timing out.
  *
- * @return RC_OK on success, or RC_FAIL on failure.
+ * @retval RC_OK Successfully allocated memory block.
+ * @retval RC_TIME Timed out while waiting for memory block.
+ * @retval RC_FAIL Failed to immediately allocate memory block when
+ * @a timeout = TICKS_NONE
  */
-#define task_mem_map_alloc(m, p) _task_mem_map_alloc(m, p, TICKS_NONE)
-
-/**
- * @brief Allocate memory map block or wait
- *
- * This routine allocates a block from memory map @a m, and saves the block's
- * address in the area indicated by @a p. If no block is available the routine
- * waits until one can be allocated.
- *
- * @param m Memory map name.
- * @param p Pointer to memory block address area.
- *
- * @return RC_OK.
- */
-#define task_mem_map_alloc_wait(m, p) _task_mem_map_alloc(m, p, TICKS_UNLIMITED)
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-
-/**
- * @brief Allocate memory map block or timeout
- *
- * This routine allocates a block from memory map @a m, and saves the block's
- * address in the area indicated by @a p. If no block is available the routine
- * waits until one can be allocated, or until the specified time limit is
- * reached.
- *
- * @param m Memory map name.
- * @param p Pointer to memory block address area.
- * @param t Maximum number of ticks to wait.
- *
- * @return RC_OK on success, or RC_TIME on timeout.
- */
-#define task_mem_map_alloc_wait_timeout(m, p, t) _task_mem_map_alloc(m, p, t)
-#endif
+extern int task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t timeout);
 
 /**
  * @brief Define a private microkernel memory map.

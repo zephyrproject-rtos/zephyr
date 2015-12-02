@@ -62,13 +62,13 @@ MAP_LgBlks used 1 blocks
 MAP_LgBlks used 2 blocks
   task_mem_map_alloc RC_FAIL expected as all (2) blocks are used.
 ===================================================================
-RegressionTask: task_mem_map_alloc_wait_timeout timeout expected
+RegressionTask: task_mem_map_alloc timeout expected
 RegressionTask: start to wait for block
 HelperTask: About to free a memory block
-RegressionTask: task_mem_map_alloc_wait_timeout OK, block allocated at 00103ca8
+RegressionTask: task_mem_map_alloc OK, block allocated at 00103ca8
 RegressionTask: start to wait for block
 HelperTask: About to free another memory block
-RegressionTask: task_mem_map_alloc_wait OK, block allocated at 00000000
+RegressionTask: task_mem_map_alloc OK, block allocated at 00000000
 HelperTask: freed all blocks allocated by this task
 ===================================================================
 PASS - HelperTask.

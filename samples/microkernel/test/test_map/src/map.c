@@ -23,8 +23,6 @@
  * This module tests the following map routines:
  *
  *     task_mem_map_alloc
- *     task_mem_map_alloc_wait
- *     task_mem_map_alloc_wait_timeout
  *     task_mem_map_free
  *     task_mem_map_used_get
  *
@@ -173,7 +171,7 @@ int testMapGetAllBlocks(void **p)
 		}
 
 		/* Get memory block */
-		retValue = task_mem_map_alloc(MAP_LgBlks, &p[i]);
+		retValue = task_mem_map_alloc(MAP_LgBlks, &p[i], TICKS_NONE);
 		if (verifyRetValue(RC_OK, retValue)) {
 			TC_PRINT("  task_mem_map_alloc OK, p[%d] = %p\n", i, p[i]);
 		} else {
@@ -195,7 +193,7 @@ int testMapGetAllBlocks(void **p)
 	}
 
 	/* Try to get one more block and it should fail */
-	retValue = task_mem_map_alloc(MAP_LgBlks, &errPtr);
+	retValue = task_mem_map_alloc(MAP_LgBlks, &errPtr, TICKS_NONE);
 	if (verifyRetValue(RC_FAIL, retValue)) {
 		TC_PRINT("  task_mem_map_alloc RC_FAIL expected as all (%d) blocks are used.\n",
 			NUMBLOCKS);
@@ -301,7 +299,7 @@ void printPointers(void **pointer)
  *
  * This routine tests the following:
  *
- *   task_mem_map_alloc_wait, task_mem_map_alloc_wait_timeout
+ *   task_mem_map_alloc
  *
  * @return  N/A
  */
@@ -346,23 +344,23 @@ void RegressionTask(void)
 	 * HelperTask as it is waiting for SEM_REGRESSDONE.
 	 */
 
-	retValue = task_mem_map_alloc_wait_timeout(MAP_LgBlks, &b, 2);
+	retValue = task_mem_map_alloc(MAP_LgBlks, &b, 2);
 	if (verifyRetValue(RC_TIME, retValue)) {
-		TC_PRINT("%s: task_mem_map_alloc_wait_timeout timeout expected\n", __func__);
+		TC_PRINT("%s: task_mem_map_alloc timeout expected\n", __func__);
 	} else {
-		TC_ERROR("Failed task_mem_map_alloc_wait_timeout, retValue %d\n", retValue);
+		TC_ERROR("Failed task_mem_map_alloc, retValue %d\n", retValue);
 		tcRC = TC_FAIL;
 		goto exitTest;           /* terminate test */
 	}
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	task_sem_give(SEM_REGRESSDONE);    /* Allow HelperTask to run part 4 */
-	retValue = task_mem_map_alloc_wait_timeout(MAP_LgBlks, &b, 5);
+	retValue = task_mem_map_alloc(MAP_LgBlks, &b, 5);
 	if (verifyRetValue(RC_OK, retValue)) {
-		TC_PRINT("%s: task_mem_map_alloc_wait_timeout OK, block allocated at %p\n",
+		TC_PRINT("%s: task_mem_map_alloc OK, block allocated at %p\n",
 			__func__, b);
 	} else {
-		TC_ERROR("Failed task_mem_map_alloc_wait_timeout, retValue %d\n", retValue);
+		TC_ERROR("Failed task_mem_map_alloc, retValue %d\n", retValue);
 		tcRC = TC_FAIL;
 		goto exitTest;           /* terminate test */
 	}
@@ -372,12 +370,12 @@ void RegressionTask(void)
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	task_sem_give(SEM_REGRESSDONE);    /* Allow HelperTask to run part 5 */
-	retValue = task_mem_map_alloc_wait(MAP_LgBlks, &b);
+	retValue = task_mem_map_alloc(MAP_LgBlks, &b, TICKS_UNLIMITED);
 	if (verifyRetValue(RC_OK, retValue)) {
-		TC_PRINT("%s: task_mem_map_alloc_wait OK, block allocated at %p\n",
+		TC_PRINT("%s: task_mem_map_alloc OK, block allocated at %p\n",
 			__func__, b);
 	} else {
-		TC_ERROR("Failed task_mem_map_alloc_wait, retValue %d\n", retValue);
+		TC_ERROR("Failed task_mem_map_alloc, retValue %d\n", retValue);
 		tcRC = TC_FAIL;
 		goto exitTest;           /* terminate test */
 	}

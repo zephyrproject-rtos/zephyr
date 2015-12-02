@@ -71,7 +71,7 @@ static pfunc func_array[] = {
 	(pfunc)_task_fifo_ioctl,
 	/* memory map functions */
 	(pfunc)task_mem_map_used_get,
-	(pfunc)_task_mem_map_alloc,
+	(pfunc)task_mem_map_alloc,
 	(pfunc)_task_mem_map_free,
 #ifdef TEST_max
 	/* task device interrupt functions */
