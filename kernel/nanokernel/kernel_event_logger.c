@@ -144,13 +144,22 @@ void _sys_k_event_logger_exit_sleep(void)
 {
 	uint32_t data[3];
 
-	data[0] = sys_tick_get_32();
-	data[1] = (sys_cycle_get_32() - _sys_k_event_logger_sleep_start_time)
-		/ sys_clock_hw_cycles_per_tick;
-	/* register the cause of exiting sleep mode */
-	data[2] = _sys_current_irq_key_get();
+	if (_sys_k_event_logger_sleep_start_time != 0) {
+		data[0] = sys_tick_get_32();
+		data[1] = (sys_cycle_get_32() - _sys_k_event_logger_sleep_start_time)
+			/ sys_clock_hw_cycles_per_tick;
+		/* register the cause of exiting sleep mode */
+		data[2] = _sys_current_irq_key_get();
 
-	sys_k_event_logger_put(KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID, data,
-		ARRAY_SIZE(data));
+		/*
+		 * if _sys_k_event_logger_sleep_start_time is different to zero, means
+		 * that the CPU was sleeping, so we reset it to identify that the event
+		 * was processed and that any the next interrupt is no awaing the CPU.
+		 */
+		_sys_k_event_logger_sleep_start_time = 0;
+
+		sys_k_event_logger_put(KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID, data,
+			ARRAY_SIZE(data));
+	}
 }
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_SLEEP */

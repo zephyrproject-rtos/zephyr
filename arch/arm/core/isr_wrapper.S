@@ -64,6 +64,12 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	pop {lr}
 #endif
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
+	push {lr}
+	bl _sys_k_event_logger_exit_sleep
+	pop {lr}
+#endif
+
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 	/*
 	 * All interrupts are disabled when handling idle wakeup.  For tickless

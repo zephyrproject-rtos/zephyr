@@ -151,6 +151,14 @@ SECTION_FUNC(TEXT, _IntEnt)
 	popl	%eax
 #endif
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
+	/*
+	 * Preserve EAX as it contains the stub return address.
+	 */
+	pushl	%eax
+	call	_sys_k_event_logger_exit_sleep
+	popl	%eax
+#endif
 
 	/* load %ecx with &_nanokernel */
 
