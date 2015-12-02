@@ -1349,7 +1349,7 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 	}
 
 	/* Use Prepare Write if offset is set or Long Write is required */
-	if (offset || length > bt_att_get_mtu(conn) - 1) {
+	if (offset || length > (bt_att_get_mtu(conn) - sizeof(*req) - 1)) {
 		return gatt_prepare_write(conn, handle, offset, data, length,
 					  func);
 	}
