@@ -835,7 +835,7 @@ int task_mbox_data_block_get(struct k_msg *M, struct k_block *block,
 	/* 'normal' flow of task_mbox_data_block_get(): */
 
 	if (M->size != 0) {
-		retval = _task_mem_pool_alloc(block, pool_id,
+		retval = task_mem_pool_alloc(block, pool_id,
 					M->size, timeout);
 		if (retval != RC_OK) {
 			return retval;

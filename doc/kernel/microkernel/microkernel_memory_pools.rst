@@ -125,7 +125,7 @@ available, then fills it with zeroes.
 
   struct k_block block;
 
-  task_mem_pool_alloc_wait(&block, MYPOOL, 80);
+  task_mem_pool_alloc(&block, MYPOOL, 80, TICKS_UNLIMITED);
 
   memset(block.pointer_to_data, 0, 80);
 
@@ -140,7 +140,7 @@ in that time.
 
   struct k_block block;
 
-  if (task_mem_pool_alloc_wait_timeout(&block, MYPOOL, 80, 5) == RC_OK) {
+  if (task_mem_pool_alloc(&block, MYPOOL, 80, 5) == RC_OK) {
       /* use memory block */
   } else {
       printf('Memory allocation timeout');
@@ -156,7 +156,7 @@ a memory block of 80 bytes.
 
   struct k_block block;
 
-  if (task_mem_pool_alloc (&block, MYPOOL, 80) == RC_OK) {
+  if (task_mem_pool_alloc (&block, MYPOOL, 80, TICKS_NONE) == RC_OK) {
       /* use memory block */
   } else {
       printf('Memory allocation timeout');
@@ -171,7 +171,7 @@ This code releases a memory block back to a pool when it is no longer needed.
 
   struct k_block block;
 
-  task_mem_pool_alloc(&block, MYPOOL, size);
+  task_mem_pool_alloc(&block, MYPOOL, size, TICKS_NONE);
       /* use memory block */
   task_mem_pool_free(&block);
 
@@ -194,12 +194,6 @@ APIs
 The following Memory Pools APIs are provided by :file:`microkernel.h`:
 
 :c:func:`task_mem_pool_alloc()`
-   Allocates a block from a memory pool.
-
-:c:func:`task_mem_pool_alloc_wait()`
-   Waits for a block of memory until it is available.
-
-:c:func:`task_mem_pool_alloc_wait_timeout()`
    Waits for a block of memory for the time period defined by the time-out
    parameter.
 

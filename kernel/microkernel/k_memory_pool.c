@@ -541,13 +541,13 @@ void _k_mem_pool_block_get(struct k_args *A)
  *
  * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
  */
-int _task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
-			 int reqsize, int32_t time)
+int task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
+			 int reqsize, int32_t timeout)
 {
 	struct k_args A;
 
 	A.Comm = _K_SVC_MEM_POOL_BLOCK_GET;
-	A.Time.ticks = time;
+	A.Time.ticks = timeout;
 	A.args.p1.pool_id = pool_id;
 	A.args.p1.req_size = reqsize;
 

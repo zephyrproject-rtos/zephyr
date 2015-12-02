@@ -556,7 +556,8 @@ to keep up.
 
        while (1) {
            /* allocate memory block that will hold message data */
-           task_mem_pool_alloc_wait(&send_msg.tx_block, TXPOOL, 4096);
+           task_mem_pool_alloc(&send_msg.tx_block, TXPOOL,
+                               4096, TICKS_UNLIMITED);
 
            /* keep saving hardware-generated data in the memory block      */
            /* until the previous message has been received by the consumer */

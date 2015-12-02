@@ -34,17 +34,6 @@ extern "C" {
  */
 
 /**
- * @cond internal
- */
-
-extern int _task_mem_pool_alloc(struct k_block *b, kmemory_pool_t p,
-								int size, int32_t ticks);
-
-/**
- * @endcond
- */
-
-/**
  * @brief Return memory pool block
  *
  * This routine returns a block to the memory pool it was allocated from.
@@ -73,56 +62,28 @@ extern void task_mem_pool_defragment(kmemory_pool_t p);
 
 
 /**
- * @brief Allocate memory pool block or fail
+ * @brief Allocate memory pool block
  *
- * This routine allocates a block of at least @a s bytes from memory pool
- * @a p, and saves its information in block descriptor @a b. If no such
- * block is available the routine immediately returns a failure indication.
+ * This routine allocates a block of at least @a reqsize bytes from memory pool
+ * @a pool_id, and saves its information in block descriptor @a blockptr. If no
+ * such block is available the routine either waits until one can be allocated,
+ * or until the specified time limit is reached.
  *
- * @param b Pointer to block descriptor.
- * @param p Memory pool name.
- * @param s Requested block size, in bytes.
+ * @param blockptr Pointer to block descriptor.
+ * @param pool_id Memory pool name.
+ * @param reqsize Requested block size, in bytes.
+ * @param timeout Affects the action taken should the memory pool be exhausted.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. Otherwise wait up to the specified number of ticks before
+ * timing out.
  *
- * @return RC_OK on success, or RC_FAIL on failure.
+ * @retval RC_OK Successfully allocated memory block
+ * @retval RC_TIME Timed out while waiting for memory block
+ * @retval RC_FAIL Failed to immediately allocate memory block when
+ * @a timeout = TICKS_NONE
  */
-#define task_mem_pool_alloc(b, p, s) \
-	_task_mem_pool_alloc(b, p, s, TICKS_NONE)
-
-/**
- * @brief Allocate memory pool block or wait
- *
- * This routine allocates a block of at least @a s bytes from memory pool
- * @a p, and saves its information in block descriptor @a b. If no such block
- * is available the routine waits until one can be allocated.
- *
- * @param b Pointer to block descriptor.
- * @param p Memory pool name.
- * @param s Requested block size, in bytes.
- *
- * @return RC_OK.
- */
-#define task_mem_pool_alloc_wait(b, p, s) \
-	_task_mem_pool_alloc(b, p, s, TICKS_UNLIMITED)
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-/**
- * @brief Allocate memory pool block or timeout
- *
- * This routine allocates a block of at least @a s bytes from memory pool
- * @a p, and saves its information in block descriptor @a b. If no such block
- * is available the routine waits until one can be allocated, or until
- * the specified time limit is reached.
- *
- * @param b Pointer to block descriptor.
- * @param p Memory pool name.
- * @param s Requested block size, in bytes.
- * @param t Maximum number of ticks to wait.
- *
- * @return RC_OK on success, or RC_TIME on timeout.
- */
-#define task_mem_pool_alloc_wait_timeout(b, p, s, t) \
-	_task_mem_pool_alloc(b, p, s, t)
-#endif
+extern int task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
+							int reqsize, int32_t timeout);
 
 /**
  * @}

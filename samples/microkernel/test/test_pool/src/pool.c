@@ -20,7 +20,7 @@
 DESCRIPTION
 This modules tests the following memory pool routines:
 
-  task_mem_pool_alloc(), task_mem_pool_alloc_wait(), task_mem_pool_alloc_wait_timeout(),
+  task_mem_pool_alloc(),
   task_mem_pool_free()
  */
 
@@ -129,14 +129,14 @@ int poolBlockGetFunc(struct k_block *block, kmemory_pool_t pool, int size,
 {
 	ARG_UNUSED(unused);
 
-	return task_mem_pool_alloc(block, pool, size);
+	return task_mem_pool_alloc(block, pool, size, TICKS_NONE);
 }
 
 /**
  *
- * @brief Wrapper for task_mem_pool_alloc_wait()
+ * @brief Wrapper for task_mem_pool_alloc(TICKS_UNLIMITED)
  *
- * @return task_mem_pool_alloc_wait() return value
+ * @return task_mem_pool_alloc() return value
  */
 
 int poolBlockGetWFunc(struct k_block *block, kmemory_pool_t pool, int size,
@@ -144,20 +144,20 @@ int poolBlockGetWFunc(struct k_block *block, kmemory_pool_t pool, int size,
 {
 	ARG_UNUSED(unused);
 
-	return task_mem_pool_alloc_wait(block, pool, size);
+	return task_mem_pool_alloc(block, pool, size, TICKS_UNLIMITED);
 }
 
 /**
  *
- * @brief Wrapper for task_mem_pool_alloc_wait_timeout()
+ * @brief Wrapper for task_mem_pool_alloc(timeout)
  *
- * @return task_mem_pool_alloc_wait_timeout() return value
+ * @return task_mem_pool_alloc(timeout) return value
  */
 
 int poolBlockGetWTFunc(struct k_block *block, kmemory_pool_t pool,
 					   int size, int32_t timeout)
 {
-	return task_mem_pool_alloc_wait_timeout(block, pool, size, timeout);
+	return task_mem_pool_alloc(block, pool, size, timeout);
 }
 
 /**
@@ -207,7 +207,7 @@ int poolBlockGetWork(char *string, poolBlockGetFunc_t func,
 
 /**
  *
- * @brief Test the task_mem_pool_alloc() API
+ * @brief Test the task_mem_pool_alloc(TICKS_NONE) API
  *
  * The pool is 4 kB in size.
  *
@@ -257,7 +257,7 @@ void HelperTask(void)
 
 /**
  *
- * @brief Test task_mem_pool_alloc_wait_timeout()
+ * @brief Test task_mem_pool_alloc(timeout)
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -265,11 +265,11 @@ void HelperTask(void)
 int poolBlockGetTimeoutTest(void)
 {
 	struct k_block  block;
-	int  rv;   /* return value from task_mem_pool_alloc_wait_timeout() */
+	int  rv;   /* return value from task_mem_pool_alloc() */
 	int  j;    /* loop counter */
 
 	for (j = 0; j < 8; j++) {
-		rv = poolBlockGetWork("task_mem_pool_alloc_wait_timeout", poolBlockGetWTFunc,
+		rv = poolBlockGetWork("task_mem_pool_alloc", poolBlockGetWTFunc,
 							  getwtSet, ARRAY_SIZE(getwtSet));
 		if (rv != TC_PASS) {
 			return TC_FAIL;
@@ -278,20 +278,20 @@ int poolBlockGetTimeoutTest(void)
 		freeBlocks(getwtSet, ARRAY_SIZE(getwtSet));
 	}
 
-	rv = task_mem_pool_alloc_wait_timeout(&helperBlock, POOL_ID, 3148, 5);
+	rv = task_mem_pool_alloc(&helperBlock, POOL_ID, 3148, 5);
 	if (rv != RC_OK) {
 		TC_ERROR("Failed to get size 3148 byte block from POOL_ID\n");
 		return TC_FAIL;
 	}
 
-	rv = task_mem_pool_alloc(&block, POOL_ID, 3148);
+	rv = task_mem_pool_alloc(&block, POOL_ID, 3148, TICKS_NONE);
 	if (rv != RC_FAIL) {
 		TC_ERROR("Unexpectedly got size 3148 byte block from POOL_ID\n");
 		return TC_FAIL;
 	}
 
 	task_sem_give(HELPER_SEM);    /* Activate HelperTask */
-	rv = task_mem_pool_alloc_wait_timeout(&block, POOL_ID, 3148, 20);
+	rv = task_mem_pool_alloc(&block, POOL_ID, 3148, 20);
 	if (rv != RC_OK) {
 		TC_ERROR("Failed to get size 3148 byte block from POOL_ID\n");
 		return TC_FAIL;
@@ -319,23 +319,23 @@ int poolBlockGetWaitTest(void)
 {
 	int  rv;
 
-	rv = task_mem_pool_alloc_wait(&blockList[0], POOL_ID, 3000);
+	rv = task_mem_pool_alloc(&blockList[0], POOL_ID, 3000, TICKS_UNLIMITED);
 	if (rv != RC_OK) {
-		TC_ERROR("task_mem_pool_alloc_wait(3000) expected %d, got %d\n", RC_OK, rv);
+		TC_ERROR("task_mem_pool_alloc(3000) expected %d, got %d\n", RC_OK, rv);
 		return TC_FAIL;
 	}
 
 	task_sem_give(ALTERNATE_SEM);    /* Wake AlternateTask */
 	evidence = 0;
-	rv = task_mem_pool_alloc_wait(&blockList[1], POOL_ID, 128);
+	rv = task_mem_pool_alloc(&blockList[1], POOL_ID, 128, TICKS_UNLIMITED);
 	if (rv != RC_OK) {
-		TC_ERROR("task_mem_pool_alloc_wait (128) expected %d, got %d\n", RC_OK, rv);
+		TC_ERROR("task_mem_pool_alloc(128) expected %d, got %d\n", RC_OK, rv);
 		return TC_FAIL;
 	}
 
 	switch (evidence) {
 	case 0:
-		TC_ERROR("task_mem_pool_alloc_wait(128) did not block!\n");
+		TC_ERROR("task_mem_pool_alloc(128) did not block!\n");
 		return TC_FAIL;
 	case 1:
 		break;
@@ -396,9 +396,9 @@ int poolDefragTest(void)
 	 * time for DefragTask to finish.
 	 */
 
-	rv = task_mem_pool_alloc_wait_timeout(&newBlock, POOL_ID, DEFRAG_BLK_TEST, 50);
+	rv = task_mem_pool_alloc(&newBlock, POOL_ID, DEFRAG_BLK_TEST, 50);
 	if (rv != RC_TIME) {
-		TC_ERROR("task_mem_pool_alloc_wait_timeout() returned %d, not %d\n", rv, RC_TIME);
+		TC_ERROR("task_mem_pool_alloc() returned %d, not %d\n", rv, RC_TIME);
 		return TC_FAIL;
 	}
 
@@ -450,19 +450,19 @@ void RegressionTask(void)
 
 	TC_START("Test Microkernel Memory Pools");
 
-	TC_PRINT("Testing task_mem_pool_alloc() ...\n");
+	TC_PRINT("Testing task_mem_pool_alloc(TICKS_NONE) ...\n");
 	tcRC = poolBlockGetTest();
 	if (tcRC != TC_PASS) {
 		goto doneTests;
 	}
 
-	TC_PRINT("Testing task_mem_pool_alloc_wait_timeout() ...\n");
+	TC_PRINT("Testing task_mem_pool_alloc(timeout) ...\n");
 	tcRC = poolBlockGetTimeoutTest();
 	if (tcRC != TC_PASS) {
 		goto doneTests;
 	}
 
-	TC_PRINT("Testing task_mem_pool_alloc_wait() ...\n");
+	TC_PRINT("Testing task_mem_pool_alloc(TICKS_UNLIMITED) ...\n");
 	tcRC = poolBlockGetWaitTest();
 	if (tcRC != TC_PASS) {
 		goto doneTests;
