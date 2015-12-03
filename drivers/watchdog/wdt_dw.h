@@ -47,10 +47,16 @@
 
 struct wdt_dw_runtime {
 	void (*cb_fn)(struct device *dev);
+#ifdef CONFIG_WDT_DW_CLOCK_GATE
+	struct device *clock;
+#endif
 };
 
 struct wdt_dw_dev_config {
 	uint32_t base_address;
+#ifdef CONFIG_WDT_DW_CLOCK_GATE
+	void *clock_data;
+#endif
 };
 
 #endif /* WDT_DW_H_ */

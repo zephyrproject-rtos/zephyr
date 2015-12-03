@@ -16,6 +16,7 @@
 
 #include <nanokernel.h>
 #include <init.h>
+#include <clock_control.h>
 #include "wdt_dw.h"
 
 #ifdef WDT_DW_INT_MASK
@@ -28,25 +29,60 @@ static inline void _wdt_dw_int_unmask(void)
 #define _wdt_dw_int_unmask()
 #endif
 
+#ifdef CONFIG_WDT_DW_CLOCK_GATE
+static inline void _wdt_dw_clock_config(struct device *dev)
+{
+	char *drv = CONFIG_WDT_DW_CLOCK_GATE_DRV_NAME;
+	struct device *clk;
+
+	clk = device_get_binding(drv);
+	if (clk) {
+		struct wdt_dw_runtime *context = dev->driver_data;
+
+		context->clock = clk;
+	}
+}
+
+static inline void _wdt_dw_clock_on(struct device *dev)
+{
+	struct wdt_dw_dev_config *config = dev->config->config_info;
+	struct wdt_dw_runtime *context = dev->driver_data;
+
+	clock_control_on(context->clock, config->clock_data);
+}
+
+static inline void _wdt_dw_clock_off(struct device *dev)
+{
+	struct wdt_dw_dev_config *config = dev->config->config_info;
+	struct wdt_dw_runtime *context = dev->driver_data;
+
+	clock_control_off(context->clock, config->clock_data);
+}
+#else
+#define _wdt_dw_clock_config(...)
+#define _wdt_dw_clock_on(...)
+#define _wdt_dw_clock_off(...)
+#endif
+
 /**
  * Enables the clock for the peripheral watchdog
  */
 static void wdt_dw_enable(struct device *dev)
 {
-	struct wdt_dw_dev_config *wdt_dev = dev->config->config_info;
+	_wdt_dw_clock_on(dev);
 
-	sys_set_bit(wdt_dev->base_address + WDT_CR, 0);
-
-	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 1);
+#if defined(CONFIG_PLATFORM_QUARK_SE) || defined(CONFIG_PLATFORM_QUARK_D2000)
 	sys_set_bit(SCSS_PERIPHERAL_BASE + SCSS_PERIPH_CFG0, 1);
+#endif
 }
 
 static void wdt_dw_disable(struct device *dev)
 {
-	ARG_UNUSED(dev);
+	_wdt_dw_clock_off(dev);
 
-	/* Disable the clock for the peripheral watchdog */
+#if defined(CONFIG_PLATFORM_QUARK_SE) || defined(CONFIG_PLATFORM_QUARK_D2000)
 	sys_clear_bit(SCSS_PERIPHERAL_BASE + SCSS_PERIPH_CFG0, 1);
+#endif
 }
 
 void wdt_dw_isr(void *arg)
@@ -126,6 +162,8 @@ int wdt_dw_init(struct device *dev)
 
 	_wdt_dw_int_unmask();
 
+	_wdt_dw_clock_config(dev);
+
 	return 0;
 }
 
@@ -133,6 +171,9 @@ struct wdt_dw_runtime wdt_runtime;
 
 struct wdt_dw_dev_config wdt_dev = {
 	.base_address = CONFIG_WDT_DW_BASE_ADDR,
+#ifdef CONFIG_WDT_DW_CLOCK_GATE
+	.clock_data = UINT_TO_POINTER(CONFIG_WDT_DW_CLOCK_GATE_SUBSYS),
+#endif
 };
 
 DECLARE_DEVICE_INIT_CONFIG(wdt, CONFIG_WDT_DW_DRV_NAME,

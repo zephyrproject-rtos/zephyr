@@ -33,6 +33,24 @@ config WDT_DW
 	help
 	Enable watchdog timer.
 
+config WDT_DW_CLOCK_GATE
+	bool "Enable clock gating"
+	depends on WDT_DW
+	select CLOCK_CONTROL
+	default n
+	help
+	Enable clock gating on WDT DesignWare controller
+
+config WDT_DW_CLOCK_GATE_DRV_NAME
+	string "Clock gating driver name"
+	depends on WDT_DW_CLOCK_GATE
+	default ""
+
+config WDT_DW_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+	depends on WDT_DW_CLOCK_GATE
+	default 0
+
 config WDT_DW_DRV_NAME
 	string "Driver instance name"
 	default "WDT_DW"
