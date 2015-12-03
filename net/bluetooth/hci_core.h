@@ -41,11 +41,13 @@
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
 	BT_DEV_ADVERTISING,
-
 	BT_DEV_SCANNING,
 	BT_DEV_SCAN_FILTER_DUP,
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
+#endif /* CONFIG_BLUETOOTH_BREDR */
 };
 
 struct bt_dev_le {
