@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#define BTP_MTU 512
+#define BTP_MTU 1024
 
 #define BTP_INDEX_NONE		0xff
 
