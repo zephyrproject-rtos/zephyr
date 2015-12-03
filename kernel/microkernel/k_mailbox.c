@@ -450,23 +450,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 	}
 }
 
-
-/**
- * @brief Send a message to a mailbox
- *
- * This routine sends a message to a mailbox and looks for a matching receiver.
- *
- * @param mbox mailbox
- * @param prio priority of data transfer
- * @param M pointer to message to send
- * @param time maximum number of ticks to wait
- *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
- */
-int _task_mbox_put(kmbox_t mbox,
-	       kpriority_t prio,
-	       struct k_msg *M,
-	       int32_t time)
+int task_mbox_put(kmbox_t mbox, kpriority_t prio, struct k_msg *M, int32_t timeout)
 {
 	struct k_args A;
 
@@ -485,7 +469,7 @@ int _task_mbox_put(kmbox_t mbox,
 
 	A.priority = prio;
 	A.Comm = _K_SVC_MBOX_SEND_REQUEST;
-	A.Time.ticks = time;
+	A.Time.ticks = timeout;
 	A.args.m1.mess = *M;
 
 	KERNEL_ENTRY(&A);

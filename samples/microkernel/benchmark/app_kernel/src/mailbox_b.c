@@ -147,7 +147,7 @@ void mailbox_put(uint32_t size, int count, uint32_t *time)
 	task_sem_give(SEM0);
 	t = BENCH_START();
 	for (i = 0; i < count; i++) {
-		task_mbox_put_wait(MAILB1, 1, &Message);
+		task_mbox_put(MAILB1, 1, &Message, TICKS_UNLIMITED);
 	}
 	t = TIME_STAMP_DELTA_GET(t);
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);

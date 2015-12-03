@@ -401,7 +401,8 @@ that each task can handle.
            send_msg.rx_task = ANYTASK;
 
            /* send message and wait until a consumer receives it */
-           task_mbox_put_wait(REQUEST_BOX, send_priority, &send_msg);
+           task_mbox_put(REQUEST_BOX, send_priority,
+                         &send_msg,TICKS_UNLIMITED);
 
            /* info, size, and rx_task fields have been updated */
 
@@ -484,7 +485,8 @@ portion of the message isn't used.
            send_msg.rx_task = ANYTASK;
 
            /* send message and wait until a consumer receives it */
-           task_mbox_put_wait(REQUEST_BOX, send_priority, &send_msg);
+           task_mbox_put(REQUEST_BOX, send_priority,
+                         &send_msg, TICKS_UNLIMITED);
 
            /* no need to examine the receiver's "info" value */
        }
@@ -625,13 +627,7 @@ APIs
 The following APIs for mailbox operations are provided by the kernel:
 
 :c:func:`task_mbox_put()`
-   Sends synchrnonous message to a receiving task, with no waiting.
-
-:c:func:`task_mbox_put_wait()`
-   Sends synchrnonous message to a receiving task, with unlimited waiting.
-
-:c:func:`task_mbox_put_wait_timeout()`
-   Sends synchrnonous message to a receiving task, with time limited waiting.
+   Sends synchronous message to a receiving task, with time limited waiting.
 
 :c:func:`task_mbox_block_put()`
    Sends asynchrnonous message to a receiving task, or to a mailbox queue.

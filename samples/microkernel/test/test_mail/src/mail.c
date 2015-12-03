@@ -21,8 +21,6 @@
  * This module tests the following mailbox APIs:
  *
  *    task_mbox_put
- *    task_mbox_put_wait
- *    task_mbox_put_wait_timeout
  *    task_mbox_get
  *    task_mbox_get_wait
  *    task_mbox_get_wait_timeout
@@ -163,7 +161,7 @@ static void setMsg_RecvBuf(struct k_msg *inMsg, char *inBuffer, uint32_t inBuffe
  *
  * @brief Task that tests sending of mailbox messages
  *
- * This routine exercises the task_mbox_put[_wait[_timeout]] APIs.
+ * This routine exercises the task_mbox_put() API.
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -176,24 +174,26 @@ int MsgSenderTask(void)
 	/* Send message (no wait) to a mailbox with no receiver */
 
 	setMsg_Sender(&MSTmsg, noRcvrMbox, msgRcvrTask, myData1, MSGSIZE, 0);
-	retValue = task_mbox_put(noRcvrMbox, XFER_PRIO, &MSTmsg);
+	retValue = task_mbox_put(noRcvrMbox, XFER_PRIO, &MSTmsg, TICKS_NONE);
 	if (RC_FAIL != retValue) {
 		TC_ERROR("task_mbox_put to non-waiting task returned %d\n", retValue);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put to non-waiting task is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_put(TICKS_NONE) to non-waiting task is OK\n",
+			__func__);
 
 	/* Send message (with timeout) to a mailbox with no receiver */
 
 	setMsg_Sender(&MSTmsg, noRcvrMbox, msgRcvrTask, myData1, MSGSIZE, 0);
-	retValue = task_mbox_put_wait_timeout(noRcvrMbox, XFER_PRIO, &MSTmsg, 2);
+	retValue = task_mbox_put(noRcvrMbox, XFER_PRIO, &MSTmsg, 2);
 	if (RC_TIME != retValue) {
-		TC_ERROR("task_mbox_put_wait_timeout to non-waiting task returned %d\n", retValue);
+		TC_ERROR("task_mbox_put to non-waiting task returned %d\n", retValue);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put_wait_timeout to non-waiting task is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_put(timeout) to non-waiting task is OK\n",
+			__func__);
 
 	/* Wait for Receiver Task to finish using myMbox */
 
@@ -207,7 +207,7 @@ int MsgSenderTask(void)
 	 * to ensure that "size" field gets updated properly during send
 	 */
 	MSTmsg.size += 10;
-	retValue = task_mbox_put(myMbox, XFER_PRIO, &MSTmsg);
+	retValue = task_mbox_put(myMbox, XFER_PRIO, &MSTmsg, TICKS_NONE);
 	if (RC_OK != retValue) {
 		TC_ERROR("task_mbox_put to specified waiting task returned %d\n",
 			retValue);
@@ -219,7 +219,8 @@ int MsgSenderTask(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put to specified waiting task is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_put(TICKS_NONE) to specified waiting task is OK\n",
+			__func__);
 
 	/* Wait for Receiver Task to start sleeping */
 
@@ -228,31 +229,32 @@ int MsgSenderTask(void)
 	/* Send message to any task that is not yet waiting for it */
 
 	setMsg_Sender(&MSTmsg, myMbox, ANYTASK, myData2, MSGSIZE, MSG_INFO1);
-	retValue = task_mbox_put_wait_timeout(myMbox, XFER_PRIO, &MSTmsg, 5);
+	retValue = task_mbox_put(myMbox, XFER_PRIO, &MSTmsg, 5);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_put_wait_timeout to anonymous non-waiting task returned %d\n",
+		TC_ERROR("task_mbox_put to anonymous non-waiting task returned %d\n",
 			retValue);
 		return TC_FAIL;
 	}
 	if (MSTmsg.size != MSGSIZE) {
-		TC_ERROR("task_mbox_put_wait_timeout to anonymous non-waiting task "
+		TC_ERROR("task_mbox_put to anonymous non-waiting task "
 			"got wrong size (%d)\n", MSTmsg.size);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put_wait_timeout to anonymous non-waiting task is OK\n",
+	TC_PRINT("%s: task_mbox_put(timeout) to anonymous non-waiting task is OK\n",
 		__func__);
 
 	/* Send empty message to specified task */
 
 	setMsg_Sender(&MSTmsg, myMbox, msgRcvrTask, NULL, 0, MSG_INFO2);
-	retValue = task_mbox_put_wait(myMbox, XFER_PRIO, &MSTmsg);
+	retValue = task_mbox_put(myMbox, XFER_PRIO, &MSTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_put_wait of empty message returned %d\n", retValue);
+		TC_ERROR("task_mbox_put of empty message returned %d\n", retValue);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put_wait of empty message is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_put(TICKS_UNLIMITED) of empty message is OK\n",
+			__func__);
 
 
 	/* Sync with Receiver Task, since we're about to use a timeout */
@@ -267,19 +269,20 @@ int MsgSenderTask(void)
 	 * to ensure that "size" field gets updated properly during send
 	 */
 	MSTmsg.size += 10;
-	retValue = task_mbox_put_wait_timeout(myMbox, XFER_PRIO, &MSTmsg, 5);
+	retValue = task_mbox_put(myMbox, XFER_PRIO, &MSTmsg, 5);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_put_wait_timeout for 2 part receive test returned %d\n",
+		TC_ERROR("task_mbox_put for 2 part receive test returned %d\n",
 			retValue);
 		return TC_FAIL;
 	}
 	if (MSTmsg.size != MSGSIZE) {
-		TC_ERROR("task_mbox_put_wait_timeout for 2 part receive test got wrong size (%d)\n",
+		TC_ERROR("task_mbox_put for 2 part receive test got wrong size (%d)\n",
 			MSTmsg.size);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put_wait_timeout for 2 part receive test is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_put(timeout) for 2 part receive test is OK\n",
+			__func__);
 
 	/* Sync with Receiver Task, since he's about to use a timeout */
 
@@ -288,45 +291,46 @@ int MsgSenderTask(void)
 	/* Send message used in cancelled receive test */
 
 	setMsg_Sender(&MSTmsg, myMbox, msgRcvrTask, myData4, MSGSIZE, MSG_INFO2);
-	retValue = task_mbox_put_wait(myMbox, XFER_PRIO, &MSTmsg);
+	retValue = task_mbox_put(myMbox, XFER_PRIO, &MSTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_put_wait for cancelled receive test returned %d\n",
+		TC_ERROR("task_mbox_put for cancelled receive test returned %d\n",
 			retValue);
 		return TC_FAIL;
 	}
 	if (MSTmsg.size != MSGSIZE) {
 		/* kernel bug: should really set size to 0! */
-		TC_ERROR("task_mbox_put_wait for cancelled receive test got wrong size (%d)\n",
+		TC_ERROR("task_mbox_put for cancelled receive test got wrong size (%d)\n",
 			MSTmsg.size);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put_wait for cancelled receive test is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_put(TICKS_UNLIMITED) for cancelled receive test is OK\n",
+			__func__);
 
 	/* Send message used in block-based receive test */
 
 	setMsg_Sender(&MSTmsg, myMbox, msgRcvrTask, myData1, MSGSIZE, MSG_INFO2);
-	retValue = task_mbox_put_wait(myMbox, XFER_PRIO, &MSTmsg);
+	retValue = task_mbox_put(myMbox, XFER_PRIO, &MSTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_put_wait for block-based receive test returned %d\n",
+		TC_ERROR("task_mbox_put for block-based receive test returned %d\n",
 			retValue);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put_wait for block-based receive test is OK\n",
+	TC_PRINT("%s: task_mbox_put(TICKS_UNLIMITED) for block-based receive test is OK\n",
 		__func__);
 
 	/* Send message used in block-exhaustion receive test */
 
 	setMsg_Sender(&MSTmsg, myMbox, msgRcvrTask, myData2, MSGSIZE, MSG_INFO2);
-	retValue = task_mbox_put_wait(myMbox, XFER_PRIO, &MSTmsg);
+	retValue = task_mbox_put(myMbox, XFER_PRIO, &MSTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_put_wait for block-exhaustion receive test returned %d\n",
+		TC_ERROR("task_mbox_put for block-exhaustion receive test returned %d\n",
 			retValue);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put_wait for block-exhaustion receive test is OK\n",
+	TC_PRINT("%s: task_mbox_put(TICKS_UNLIMITED) for block-exhaustion receive test is OK\n",
 		__func__);
 
 	/* Sync with Receiver Task, since we're about to use a timeout */
@@ -336,19 +340,19 @@ int MsgSenderTask(void)
 	/* Send message used in long-duration receive test */
 
 	setMsg_Sender(&MSTmsg, myMbox, ANYTASK, myData3, MSGSIZE, MSG_INFO1);
-	retValue = task_mbox_put_wait_timeout(myMbox, XFER_PRIO, &MSTmsg, 2);
+	retValue = task_mbox_put(myMbox, XFER_PRIO, &MSTmsg, 2);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_put_wait_timeout for long-duration receive test returned %d\n",
+		TC_ERROR("task_mbox_put for long-duration receive test returned %d\n",
 			retValue);
 		return TC_FAIL;
 	}
 	if (MSTmsg.size != MSGSIZE) {
-		TC_ERROR("task_mbox_put_wait_timeout for long-duration receive test got wrong size "
+		TC_ERROR("task_mbox_put for long-duration receive test got wrong size "
 			"(%d)\n", MSTmsg.size);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_put_wait_timeout for long-duration receive test is OK\n",
+	TC_PRINT("%s: task_mbox_put(timeout) for long-duration receive test is OK\n",
 		__func__);
 
 	return TC_PASS;

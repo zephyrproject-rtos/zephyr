@@ -40,11 +40,6 @@ extern "C" {
 /**
  * @cond internal
  */
-extern int _task_mbox_put(kmbox_t mbox,
-				kpriority_t prio,
-				struct k_msg *M,
-				int32_t time);
-
 extern int _task_mbox_get(kmbox_t mbox, struct k_msg *M, int32_t time);
 
 extern void _task_mbox_block_put(kmbox_t mbox,
@@ -76,43 +71,21 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
  *
  * This routine sends a message to a mailbox and looks for a matching receiver.
  *
- * @param b mailbox
- * @param p priority of data transfer
- * @param m pointer to message to send
+ * @param mbox Mailbox.
+ * @param prio Priority of data transfer.
+ * @param M Pointer to message to send.
+ * @param timeout Affects the action taken should there not be a waiting
+ * receiver. If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
+ * wait as long as necessary. Otherwise wait up to the specified number of
+ * ticks before timing out.
  *
- * @return RC_OK, RC_FAIL on success, failure respectively
+ * @return RC_OK Successfully delivered message
+ * @return RC_TIME Timed out while waiting to deliver message
+ * @return RC_FAIL Failed to immediately deliver message when
+ * @a timeout = TICKS_NONE
  */
-#define task_mbox_put(b, p, m) _task_mbox_put(b, p, m, TICKS_NONE)
-
-/**
- * @brief Send a message to a mailbox and wait
- *
- * This routine sends a message to a mailbox and looks for a matching receiver.
- *
- * @param b mailbox
- * @param p priority of data transfer
- * @param m pointer to message to send
- *
- * @return RC_OK, RC_FAIL on success, failure respectively
- */
-#define task_mbox_put_wait(b, p, m) _task_mbox_put(b, p, m, TICKS_UNLIMITED)
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-
-/**
- * @brief Send a message to a mailbox and wait for timeout
- *
- * This routine sends a message to a mailbox and looks for a matching receiver.
- *
- * @param b mailbox
- * @param p priority of data transfer
- * @param m pointer to message to send
- * @param t maximum number of ticks to wait
- *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
- */
-#define task_mbox_put_wait_timeout(b, p, m, t) _task_mbox_put(b, p, m, t)
-#endif
+extern int task_mbox_put(kmbox_t mbox, kpriority_t prio,
+				struct k_msg *M, int32_t timeout);
 
 /**
  * @brief Gets struct k_msg message header structure information from
