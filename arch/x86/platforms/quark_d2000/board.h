@@ -127,7 +127,7 @@ struct scss_interrupt {
 #define UART_IOAPIC_FLAGS       (IOAPIC_LEVEL)
 
 /* Watchdog */
-#define INT_WATCHDOG_MASK		0x47C
+#define WDT_DW_INT_MASK			(SCSS_INT_BASE + 0x7C)
 #define SCSS_PERIPH_CFG0		0x4
 #define SCSS_PERIPH_CFG0_WDT_ENABLE	(1 << 1)
 #define CCU_WDT_PCLK_EN_SW		(1 << 10)

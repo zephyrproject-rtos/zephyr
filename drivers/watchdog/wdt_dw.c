@@ -18,6 +18,16 @@
 #include <init.h>
 #include "wdt_dw.h"
 
+#ifdef WDT_DW_INT_MASK
+static inline void _wdt_dw_int_unmask(void)
+{
+	sys_write32(sys_read32(WDT_DW_INT_MASK) & INT_UNMASK_IA,
+						WDT_DW_INT_MASK);
+}
+#else
+#define _wdt_dw_int_unmask()
+#endif
+
 /**
  * Enables the clock for the peripheral watchdog
  */
@@ -85,9 +95,6 @@ static int wdt_dw_set_config(struct device *dev, struct wdt_config *config)
 
 		context->cb_fn = config->interrupt_fn;
 		sys_set_bit(wdt_dev->base_address + WDT_CR, 1);
-
-		/* unmask WDT interrupts to lmt  */
-		SCSS_INTERRUPT->int_watchdog_mask &= INT_UNMASK_IA;
 	}
 
 	/* Enable WDT, cannot be disabled until soc reset */
@@ -116,6 +123,8 @@ int wdt_dw_init(struct device *dev)
 
 	IRQ_CONFIG(wdt_dw, CONFIG_WDT_DW_IRQ);
 	irq_enable(CONFIG_WDT_DW_IRQ);
+
+	_wdt_dw_int_unmask();
 
 	return 0;
 }
