@@ -1121,7 +1121,8 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
-static int start_le_scan(uint8_t scan_type, uint8_t filter_dup)
+static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
+			 uint8_t filter_dup)
 {
 	struct net_buf *buf, *rsp;
 	struct bt_hci_cp_le_set_scan_params *set_param;
@@ -1141,8 +1142,8 @@ static int start_le_scan(uint8_t scan_type, uint8_t filter_dup)
 	/* for the rest parameters apply default values according to
 	 *  spec 4.2, vol2, part E, 7.8.10
 	 */
-	set_param->interval = sys_cpu_to_le16(0x0010);
-	set_param->window = sys_cpu_to_le16(0x0010);
+	set_param->interval = sys_cpu_to_le16(interval);
+	set_param->window = sys_cpu_to_le16(window);
 	set_param->filter_policy = 0x00;
 	set_param->addr_type = 0x00;
 
@@ -1201,7 +1202,8 @@ int bt_le_scan_update(void)
 
 		bt_conn_unref(conn);
 
-		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, 0x01);
+		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, 0x0010, 0x0010,
+				     0x01);
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
 
@@ -2087,7 +2089,8 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		}
 	}
 
-	err = start_le_scan(BT_HCI_LE_SCAN_ACTIVE, param->filter_dup);
+	err = start_le_scan(BT_HCI_LE_SCAN_ACTIVE, 0x0010, 0x0010,
+			    param->filter_dup);
 	if (err) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 		return err;
