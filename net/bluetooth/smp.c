@@ -2162,10 +2162,30 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
+static uint8_t generate_dhkey(struct bt_smp *smp)
+{
+	struct bt_hci_cp_le_generate_dhkey *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_GENERATE_DHKEY, sizeof(*cp));
+	if (!buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	memcpy(cp->key, smp->pkey, sizeof(cp->key));
+
+	if (bt_hci_cmd_send_sync(BT_HCI_OP_LE_GENERATE_DHKEY, buf, NULL)) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING);
+	return 0;
+}
+
 static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_smp_public_key *req = (void *)buf->data;
-	struct bt_hci_cp_le_generate_dhkey *cp;
 	uint8_t err;
 
 	BT_DBG("");
@@ -2242,21 +2262,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_GENERATE_DHKEY, sizeof(*cp));
-	if (!buf) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	memcpy(cp->key, smp->pkey, sizeof(cp->key));
-
-	if (bt_hci_cmd_send_sync(BT_HCI_OP_LE_GENERATE_DHKEY, buf, NULL)) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING);
-
-	return 0;
+	return generate_dhkey(smp);
 }
 
 static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
