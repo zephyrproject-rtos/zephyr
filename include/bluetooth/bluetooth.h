@@ -53,24 +53,6 @@ struct bt_eir {
 	uint8_t data[29];
 } __packed;
 
-/** @brief Define a type allowing user to implement a function that can
- *  be used to get back active LE scan results.
- *
- *  A function of this type will be called back when user application
- *  triggers active LE scan. The caller will populate all needed
- *  parameters based on data coming from scan result.
- *  Such function can be set by user when LE active scan API is used.
- *
- *  @param addr Advertiser LE address and type.
- *  @param rssi Strength of advertiser signal.
- *  @param adv_type Type of advertising response from advertiser.
- *  @param adv_data Address of buffer containig advertiser data.
- *  @param len Length of advertiser data contained in buffer.
- */
-typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
-			     uint8_t adv_type, const uint8_t *adv_data,
-			     uint8_t len);
-
 /** @brief Start advertising
  *
  *  Set advertisement data, scan response data, advertisement parameters
@@ -92,6 +74,24 @@ int bt_le_adv_start(uint8_t type, const struct bt_eir *ad,
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_le_adv_stop(void);
+
+/** @brief Define a type allowing user to implement a function that can
+ *  be used to get back active LE scan results.
+ *
+ *  A function of this type will be called back when user application
+ *  triggers active LE scan. The caller will populate all needed
+ *  parameters based on data coming from scan result.
+ *  Such function can be set by user when LE active scan API is used.
+ *
+ *  @param addr Advertiser LE address and type.
+ *  @param rssi Strength of advertiser signal.
+ *  @param adv_type Type of advertising response from advertiser.
+ *  @param adv_data Address of buffer containig advertiser data.
+ *  @param len Length of advertiser data contained in buffer.
+ */
+typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
+			     uint8_t adv_type, const uint8_t *adv_data,
+			     uint8_t len);
 
 /** Filter out duplicate scanning results. **/
 typedef enum {
