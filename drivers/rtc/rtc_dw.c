@@ -26,6 +26,16 @@
 #define CLK_RTC_DIV_DEF_MASK (0xFFFFFF83)
 #define CCU_RTC_CLK_DIV_EN (2)
 
+#ifdef RTC_DW_INT_MASK
+static inline void _rtc_dw_int_unmask(void)
+{
+	sys_write32(sys_read32(RTC_DW_INT_MASK) & INT_UNMASK_IA,
+						RTC_DW_INT_MASK);
+}
+#else
+#define _rtc_dw_int_unmask()
+#endif
+
 static void rtc_dw_set_div(const enum clk_rtc_div div)
 {
 	/* set default division mask */
@@ -157,7 +167,8 @@ int rtc_dw_init(struct device *dev)
 	IRQ_CONFIG(rtc, CONFIG_RTC_DW_IRQ);
 	irq_enable(CONFIG_RTC_DW_IRQ);
 
-	SCSS_INTERRUPT->int_rtc_mask = INT_UNMASK_IA;
+	_rtc_dw_int_unmask();
+
 	dev->driver_api = &funcs;
 
 	return DEV_OK;
