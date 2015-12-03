@@ -641,21 +641,16 @@ static void smp_reset(struct bt_smp *smp)
 		conn->required_sec_level = conn->sec_level;
 	}
 
-	switch (conn->role) {
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
-	case BT_HCI_ROLE_MASTER:
+	if (conn->role == BT_HCI_ROLE_MASTER) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
-		break;
+		return;
+	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	case BT_HCI_ROLE_SLAVE:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
-		break;
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
-	default:
-		break;
-	}
 }
 
 static void smp_timeout(int arg1, int arg2)
@@ -3078,21 +3073,16 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 		return;
 	}
 
-	switch(conn->role) {
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
-	case BT_HCI_ROLE_MASTER:
+	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-		break;
+		return;
+	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	case BT_HCI_ROLE_SLAVE:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
-		break;
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
-	default:
-		break;
-	}
 }
 
 void bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
