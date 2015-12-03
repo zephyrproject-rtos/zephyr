@@ -179,6 +179,12 @@ endif
 if RTC
 config RTC_DW
 	def_bool y
+config RTC_DW_CLOCK_GATE
+	def_bool n
+config RTC_DW_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
+config RTC_DW_CLOCK_GATE_SUBSYS
+	default 11
 config RTC_DW_BASE_ADDR
 	default 0xB0000400
 config RTC_DW_IRQ

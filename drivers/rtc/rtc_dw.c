@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <rtc.h>
 #include <init.h>
+#include <clock_control.h>
 #include "board.h"
 
 #include "rtc_dw.h"
@@ -34,6 +35,41 @@ static inline void _rtc_dw_int_unmask(void)
 }
 #else
 #define _rtc_dw_int_unmask()
+#endif
+
+#ifdef CONFIG_RTC_DW_CLOCK_GATE
+static inline void _rtc_dw_clock_config(struct device *dev)
+{
+	char *drv = CONFIG_RTC_DW_CLOCK_GATE_DRV_NAME;
+	struct device *clk;
+
+	clk = device_get_binding(drv);
+	if (clk) {
+		struct rtc_dw_runtime *context = dev->driver_data;
+
+		context->clock = clk;
+	}
+}
+
+static inline void _rtc_dw_clock_on(struct device *dev)
+{
+	struct rtc_dw_dev_config *config = dev->config->config_info;
+	struct rtc_dw_runtime *context = dev->driver_data;
+
+	clock_control_on(context->clock, config->clock_data);
+}
+
+static inline void _rtc_dw_clock_off(struct device *dev)
+{
+	struct rtc_dw_dev_config *config = dev->config->config_info;
+	struct rtc_dw_runtime *context = dev->driver_data;
+
+	clock_control_off(context->clock, config->clock_data);
+}
+#else
+#define _rtc_dw_clock_config(...)
+#define _rtc_dw_clock_on(...)
+#define _rtc_dw_clock_off(...)
 #endif
 
 static void rtc_dw_set_div(const enum clk_rtc_div div)
@@ -53,10 +89,7 @@ static void rtc_dw_set_div(const enum clk_rtc_div div)
  */
 static void rtc_dw_enable(struct device *dev)
 {
-	ARG_UNUSED(dev);
-
-	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 11);
-	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 1);
+	_rtc_dw_clock_on(dev);
 }
 
 /**
@@ -65,9 +98,7 @@ static void rtc_dw_enable(struct device *dev)
  */
 static void rtc_dw_disable(struct device *dev)
 {
-	ARG_UNUSED(dev);
-
-	sys_clear_bit(CLOCK_PERIPHERAL_BASE_ADDR, 11);
+	_rtc_dw_clock_off(dev);
 }
 
 /**
@@ -169,6 +200,8 @@ int rtc_dw_init(struct device *dev)
 
 	_rtc_dw_int_unmask();
 
+	_rtc_dw_clock_config(dev);
+
 	dev->driver_api = &funcs;
 
 	return DEV_OK;
@@ -178,6 +211,9 @@ struct rtc_dw_runtime rtc_runtime;
 
 struct rtc_dw_dev_config rtc_dev = {
 	.base_address = CONFIG_RTC_DW_BASE_ADDR,
+#ifdef CONFIG_RTC_DW_CLOCK_GATE
+	.clock_data = UINT_TO_POINTER(CONFIG_RTC_DW_CLOCK_GATE_SUBSYS),
+#endif
 };
 
 DECLARE_DEVICE_INIT_CONFIG(rtc, CONFIG_RTC_DW_DRV_NAME,

@@ -44,10 +44,16 @@
 
 struct rtc_dw_runtime {
 	void (*rtc_dw_cb_fn)(struct device *dev);
+#ifdef CONFIG_RTC_DW_CLOCK_GATE
+	struct device *clock;
+#endif
 };
 
 struct rtc_dw_dev_config {
 	uint32_t base_address;
+#ifdef CONFIG_RTC_DW_CLOCK_GATE
+	void *clock_data;
+#endif
 };
 
 int rtc_dw_init(struct device *dev);

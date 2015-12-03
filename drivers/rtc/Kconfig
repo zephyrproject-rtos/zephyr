@@ -40,6 +40,24 @@ config RTC_DW_DRV_NAME
 	help
 	Designware RTC driver instance name
 
+config RTC_DW_CLOCK_GATE
+	bool "Enable clock gating"
+	depends on RTC_DW
+	select CLOCK_CONTROL
+	default n
+	help
+	Enable clock gating on RTC DesignWare controller
+
+config RTC_DW_CLOCK_GATE_DRV_NAME
+	string "Clock gating driver name"
+	depends on RTC_DW_CLOCK_GATE
+	default ""
+
+config RTC_DW_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+	depends on RTC_DW_CLOCK_GATE
+	default 0
+
 config RTC_DW_BASE_ADDR
 	hex "Base address"
 	depends on RTC_DW
