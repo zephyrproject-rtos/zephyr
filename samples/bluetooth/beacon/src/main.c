@@ -67,7 +67,7 @@ void main(void)
 	printk("Bluetooth initialized\n");
 
 	/* Start advertising */
-	err = bt_start_advertising(BT_LE_ADV_SCAN_IND, ad, sd);
+	err = bt_le_adv_start(BT_LE_ADV_SCAN_IND, ad, sd);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

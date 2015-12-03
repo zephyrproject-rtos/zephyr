@@ -82,8 +82,8 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
-			 const struct bt_eir *sd);
+int bt_le_adv_start(uint8_t type, const struct bt_eir *ad,
+		    const struct bt_eir *sd);
 
 /** @brief Stop advertising
  *
@@ -91,13 +91,13 @@ int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_stop_advertising(void);
+int bt_le_adv_stop(void);
 
 /** Filter out duplicate scanning results. **/
 typedef enum {
-	BT_SCAN_FILTER_DUP_DISABLE,
-	BT_SCAN_FILTER_DUP_ENABLE,
-} bt_scan_filter_dup_t;
+	BT_LE_SCAN_FILTER_DUP_DISABLE,
+	BT_LE_SCAN_FILTER_DUP_ENABLE,
+} bt_le_scan_filter_dup_t;
 
 /** @brief Start (LE) scanning
  *
@@ -110,7 +110,7 @@ typedef enum {
  *  @return Zero on success or error code otherwise, positive in case
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
-int bt_start_scanning(bt_scan_filter_dup_t filter, bt_le_scan_cb_t cb);
+int bt_le_scan_start(bt_le_scan_filter_dup_t filter, bt_le_scan_cb_t cb);
 
 /** @brief Stop (LE) scanning.
  *
@@ -119,7 +119,7 @@ int bt_start_scanning(bt_scan_filter_dup_t filter, bt_le_scan_cb_t cb);
  *  @return Zero on success or error code otherwise, positive in case
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
-int bt_stop_scanning(void);
+int bt_le_scan_stop(void);
 
 #if defined(CONFIG_BLUETOOTH_SMP)
 /** Authenticated pairing callback structure */

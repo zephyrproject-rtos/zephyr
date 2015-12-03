@@ -146,7 +146,7 @@ static bool eir_found(const struct bt_eir *eir, void *user_data)
 		for (i = 0; i < eir->len; i += sizeof(u16)) {
 			memcpy(&u16, &eir->data[i], sizeof(u16));
 			if (sys_le16_to_cpu(u16) == BT_UUID_HRS) {
-				int err = bt_stop_scanning();
+				int err = bt_le_scan_stop();
 
 				if (err) {
 					printk("Stopping scanning failed"
@@ -220,7 +220,7 @@ static void disconnected(struct bt_conn *conn)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
-	err = bt_start_scanning(BT_SCAN_FILTER_DUP_DISABLE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_FILTER_DUP_DISABLE, device_found);
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
 	}
@@ -249,7 +249,7 @@ void main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_start_scanning(BT_SCAN_FILTER_DUP_ENABLE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_FILTER_DUP_ENABLE, device_found);
 
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);

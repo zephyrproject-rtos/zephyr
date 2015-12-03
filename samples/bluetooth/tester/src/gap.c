@@ -218,7 +218,7 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 		adv_type = BT_LE_ADV_NONCONN_IND;
 	}
 
-	if (bt_start_advertising(adv_type, ad_data, NULL) < 0) {
+	if (bt_le_adv_start(adv_type, ad_data, NULL) < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING,
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 		return;
@@ -235,7 +235,7 @@ static void stop_advertising(const uint8_t *data, uint16_t len)
 {
 	struct gap_stop_advertising_rp rp;
 
-	if (bt_stop_advertising() < 0) {
+	if (bt_le_adv_stop() < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, GAP_STOP_ADVERTISING,
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 		return;
@@ -298,7 +298,7 @@ static void start_discovery(const uint8_t *data, uint16_t len)
 		goto reply;
 	}
 
-	if (bt_start_scanning(BT_SCAN_FILTER_DUP_ENABLE, device_found) < 0) {
+	if (bt_le_scan_start(BT_LE_SCAN_FILTER_DUP_ENABLE, device_found) < 0) {
 		status = BTP_STATUS_FAILED;
 		goto reply;
 	}
@@ -313,7 +313,7 @@ static void stop_discovery(const uint8_t *data, uint16_t len)
 {
 	uint8_t status = BTP_STATUS_SUCCESS;
 
-	if (bt_stop_scanning() < 0) {
+	if (bt_le_scan_stop() < 0) {
 		status = BTP_STATUS_FAILED;
 	}
 

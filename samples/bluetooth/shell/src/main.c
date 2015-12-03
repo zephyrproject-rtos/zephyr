@@ -295,7 +295,7 @@ static void cmd_active_scan_on(void)
 {
 	int err;
 
-	err = bt_start_scanning(BT_SCAN_FILTER_DUP_ENABLE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_FILTER_DUP_ENABLE, device_found);
 	if (err) {
 		printk("Bluetooth set active scan failed (err %d)\n", err);
 	} else {
@@ -307,7 +307,7 @@ static void cmd_scan_off(void)
 {
 	int err;
 
-	err = bt_stop_scanning();
+	err = bt_le_scan_stop();
 	if (err) {
 		printk("Stopping scanning failed (err %d)\n", err);
 	} else {
@@ -419,7 +419,7 @@ static void cmd_advertise(int argc, char *argv[])
 		const char *adv_type_str = (char*)argv[1];
 
 		if (!strcmp(adv_type_str, "off")) {
-			if (bt_stop_advertising() < 0) {
+			if (bt_le_adv_stop() < 0) {
 				printk("Failed to stop advertising\n");
 			} else {
 				printk("Advertising stopped\n");
@@ -457,7 +457,7 @@ static void cmd_advertise(int argc, char *argv[])
 		ad = ad_discov;
 	}
 
-	if (bt_start_advertising(adv_type, ad, sd) < 0) {
+	if (bt_le_adv_start(adv_type, ad, sd) < 0) {
 		printk("Failed to start advertising\n");
 	} else {
 		printk("Advertising started\n");

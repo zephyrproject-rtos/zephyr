@@ -1939,8 +1939,8 @@ int bt_enable(bt_ready_cb_t cb)
 	return 0;
 }
 
-int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
-			 const struct bt_eir *sd)
+int bt_le_adv_start(uint8_t type, const struct bt_eir *ad,
+		    const struct bt_eir *sd)
 {
 	struct net_buf *buf;
 	struct bt_hci_cp_le_set_adv_data *set_data;
@@ -2036,7 +2036,7 @@ send_set_param:
 	return 0;
 }
 
-int bt_stop_advertising(void)
+int bt_le_adv_stop(void)
 {
 	struct net_buf *buf;
 	uint8_t adv_enable;
@@ -2064,7 +2064,7 @@ int bt_stop_advertising(void)
 	return 0;
 }
 
-int bt_start_scanning(bt_scan_filter_dup_t filter, bt_le_scan_cb_t cb)
+int bt_le_scan_start(bt_le_scan_filter_dup_t filter, bt_le_scan_cb_t cb)
 {
 	/* Return if active scan is already enabled */
 	if (scan_dev_found_cb) {
@@ -2072,14 +2072,14 @@ int bt_start_scanning(bt_scan_filter_dup_t filter, bt_le_scan_cb_t cb)
 	}
 
 	scan_dev_found_cb = cb;
-	if (filter == BT_SCAN_FILTER_DUP_DISABLE) {
+	if (filter == BT_LE_SCAN_FILTER_DUP_DISABLE) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 	}
 
 	return bt_le_scan_update();
 }
 
-int bt_stop_scanning(void)
+int bt_le_scan_stop(void)
 {
 	/* Return if active scanning is already disabled */
 	if (!scan_dev_found_cb) {

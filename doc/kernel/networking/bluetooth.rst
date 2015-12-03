@@ -18,7 +18,7 @@ The following Bluetooth APIs are provided:
 :c:func:`bt_enable()`
    Enables the Bluetooth subsystem.
 
-:c:func:`bt_start_advertising()`
+:c:func:`bt_le_adv_start()`
    Sets up advertisement, scans for data, and starts advertising.
 
 .. todo:: Describe all API
