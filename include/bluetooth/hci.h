@@ -405,6 +405,15 @@ struct bt_hci_cp_le_generate_dhkey {
 
 /* Event definitions */
 
+#define BT_HCI_EVT_CONN_COMPLETE		0x03
+struct bt_hci_evt_conn_complete {
+	uint8_t   status;
+	uint16_t  handle;
+	bt_addr_t bdaddr;
+	uint8_t   link_type;
+	uint8_t   encr_mode;
+} __packed;
+
 #define BT_HCI_EVT_CONN_REQUEST			0x04
 struct bt_hci_evt_conn_request {
 	bt_addr_t bdaddr;

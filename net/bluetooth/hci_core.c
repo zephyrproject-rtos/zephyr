@@ -1488,6 +1488,32 @@ static void conn_req_event(struct net_buf *buf)
 	bt_conn_set_state(conn, BT_CONN_CONNECT);
 	bt_conn_unref(conn);
 }
+
+static void conn_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_conn_complete *evt = (void *)buf->data;
+	struct bt_conn *conn;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+
+	BT_DBG("status 0x%02x, handle %u, type 0x%02x", evt->status, handle,
+	       evt->link_type);
+
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	if (evt->status) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	conn->handle = handle;
+	bt_conn_set_state(conn, BT_CONN_CONNECTED);
+	bt_conn_unref(conn);
+}
 #endif
 
 static void hci_event(struct net_buf *buf)
@@ -1502,6 +1528,9 @@ static void hci_event(struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	case BT_HCI_EVT_CONN_REQUEST:
 		conn_req_event(buf);
+		break;
+	case BT_HCI_EVT_CONN_COMPLETE:
+		conn_complete(buf);
 		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
@@ -1944,6 +1973,7 @@ static int set_event_mask(void)
 	memset(ev, 0, sizeof(*ev));
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+	ev->events[0] |= 0x04; /* Connection Complete */
 	ev->events[0] |= 0x08; /* Connection Request */
 #endif
 	ev->events[1] |= 0x20; /* Command Complete */
