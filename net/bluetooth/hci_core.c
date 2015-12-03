@@ -1031,7 +1031,6 @@ static void hci_reset_complete(struct net_buf *buf)
 
 	scan_dev_found_cb = NULL;
 	atomic_set(bt_dev.flags, 0);
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 }
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
@@ -1122,7 +1121,7 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
-static int bt_hci_start_scanning(uint8_t scan_type)
+static int bt_hci_start_scanning(uint8_t scan_type, uint8_t filter_dup)
 {
 	struct net_buf *buf, *rsp;
 	struct bt_hci_cp_le_set_scan_params *set_param;
@@ -1156,8 +1155,7 @@ static int bt_hci_start_scanning(uint8_t scan_type)
 
 	scan_enable = net_buf_add(buf, sizeof(*scan_enable));
 	memset(scan_enable, 0, sizeof(*scan_enable));
-	scan_enable->filter_dup = atomic_test_bit(bt_dev.flags,
-						  BT_DEV_SCAN_FILTER_DUP);
+	scan_enable->filter_dup = filter_dup;
 	scan_enable->enable = 0x01;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
@@ -1203,7 +1201,7 @@ int bt_le_scan_update(void)
 
 		bt_conn_unref(conn);
 
-		return bt_hci_start_scanning(BT_HCI_LE_SCAN_PASSIVE);
+		return bt_hci_start_scanning(BT_HCI_LE_SCAN_PASSIVE, 0x01);
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
 
@@ -2081,10 +2079,6 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		return -EALREADY;
 	}
 
-	if (!param->filter_dup) {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
-	}
-
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		err = bt_hci_stop_scanning();
 		if (err) {
@@ -2093,7 +2087,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		}
 	}
 
-	err = bt_hci_start_scanning(BT_HCI_LE_SCAN_ACTIVE);
+	err = bt_hci_start_scanning(BT_HCI_LE_SCAN_ACTIVE, param->filter_dup);
 	if (err) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 		return err;
@@ -2112,7 +2106,6 @@ int bt_le_scan_stop(void)
 	}
 
 	scan_dev_found_cb = NULL;
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 
 	return bt_le_scan_update();
 }
