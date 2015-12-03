@@ -1949,6 +1949,10 @@ int bt_le_adv_start(uint8_t type, const struct bt_eir *ad,
 	uint8_t adv_enable;
 	int i, err;
 
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		return -EALREADY;
+	}
+
 	if (!ad) {
 		goto send_scan_rsp;
 	}
