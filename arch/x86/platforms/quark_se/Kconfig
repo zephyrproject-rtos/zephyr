@@ -176,6 +176,15 @@ config WDT_DW_IRQ
 	default 12
 endif
 
+if RTC
+config RTC_DW
+	def_bool y
+config RTC_DW_BASE_ADDR
+	default 0xB0000400
+config RTC_DW_IRQ
+	default 11
+endif
+
 config KERNEL_INIT_PRIORITY_DEFAULT
 	default 40
 

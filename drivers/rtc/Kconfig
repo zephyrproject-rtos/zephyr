@@ -1,3 +1,24 @@
+# Kconfig - RTC configuration options
+#
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# Real-Time Clock (RTC) options
+#
 menuconfig RTC
 	bool "Real-Time Clock"
 	default n
@@ -12,9 +33,31 @@ config RTC_DW
 	help
 	Designware RTC driver.
 
-config RTC_IRQ_PRI
-	int "RTC Interrupt Priority"
-	default 2
+config RTC_DW_DRV_NAME
+	string "Driver instance name"
+	default "RTC_DW"
+	depends on RTC_DW
 	help
-	RTC Interrupt Priority.
+	Designware RTC driver instance name
+
+config RTC_DW_BASE_ADDR
+	hex "Base address"
+	depends on RTC_DW
+	default 0x00000000
+	help
+	Base address to access RTC DesignWare controller registers
+
+config RTC_DW_IRQ
+	int "Interrupt number"
+	default 0
+	depends on RTC_DW
+	help
+	DesignWare RTC interrupt number
+
+config RTC_DW_IRQ_PRI
+	int "Interrupt priority"
+	default 2
+	depends on RTC_DW
+	help
+	DesignWare RTC interrupt priority.
 endif # RTC

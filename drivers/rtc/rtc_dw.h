@@ -21,8 +21,6 @@
 #include <device.h>
 #include <rtc.h>
 
-#define RTC_DRV_NAME "rtc"
-
 #define RTC_CCVR		(0x0)
 #define RTC_CMR			(0x4)
 #define RTC_CLR			(0x8)

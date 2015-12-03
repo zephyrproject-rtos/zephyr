@@ -151,4 +151,15 @@ config WDT_DW_IRQ
 
 endif
 
+if RTC
+
+config RTC_DW
+	def_bool y
+config RTC_DW_BASE_ADDR
+	default 0xB0000400
+config RTC_DW_IRQ
+	default 2
+
+endif
+
 endif

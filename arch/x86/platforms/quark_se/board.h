@@ -225,11 +225,9 @@ struct scss_interrupt {
 #define CCU_WDT_PCLK_EN_SW     		(1 << 10)
 
 /* RTC */
-#define RTC_BASE_ADDR               	0xB0000400
 #define CCU_RTC_CLK_DIV_OFFSET		(3)
 #define SCSS_INT_RTC_MASK	        0x478
 #define CCU_RTC_PCLK_EN_SW 		(1 << 11)
-#define INT_RTC_IRQ  		        0xb
 
 /* Clock */
 #define CLOCK_PERIPHERAL_BASE_ADDR	(SCSS_REGISTER_BASE + 0x18)

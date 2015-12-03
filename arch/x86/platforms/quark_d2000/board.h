@@ -134,10 +134,8 @@ struct scss_interrupt {
 
 
 /* RTC */
-#define RTC_BASE_ADDR                   0xB0000400
 #define CCU_RTC_CLK_DIV_OFFSET          0x3
 #define INT_RTC_MASK			0x478
-#define INT_RTC_IRQ                     0x2
 #define CCU_RTC_PCLK_EN_SW              (1 << 11)
 
 

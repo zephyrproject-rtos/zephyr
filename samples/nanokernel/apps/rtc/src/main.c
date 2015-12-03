@@ -22,7 +22,7 @@
 
 
 #define ALARM (RTC_ALARM_MINUTE / 6)
-#define RTC_DRIVER "rtc"
+#define RTC_DRIVER CONFIG_RTC_DW_DRV_NAME
 
 void test_rtc_interrupt_fn(struct device *rtc_dev)
 {
