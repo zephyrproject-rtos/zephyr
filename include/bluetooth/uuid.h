@@ -143,6 +143,23 @@ enum bt_uuid_type {
 	BT_UUID_128,
 };
 
+#define BT_UUID_DECLARE_16(value)					\
+	((struct bt_uuid *) (&(struct __bt_uuid_16) { .type = BT_UUID_16, \
+						   .u16 = value }))
+#define BT_UUID_DECLARE_128(value)					\
+	((struct bt_uuid *) (&(struct __bt_uuid_128) { .type = BT_UUID_128, \
+						    .u128 = value }))
+
+struct __bt_uuid_16 {
+	uint8_t type;
+	uint16_t u16;
+};
+
+struct __bt_uuid_128 {
+	uint8_t type;
+	uint8_t u128[16];
+};
+
 /** @brief Bluetooth UUID structure */
 struct bt_uuid {
 	/** UUID type */
