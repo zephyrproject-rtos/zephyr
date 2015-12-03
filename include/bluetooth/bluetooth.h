@@ -101,9 +101,13 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 
 /** Helper macro to enable active scanning to discover new devices */
 #define BT_LE_SCAN_ACTIVE \
-		(&(struct bt_le_scan_param) { .filter_dup = 0x01 })
+		(&(struct bt_le_scan_param) { \
+			.type = BT_HCI_LE_SCAN_ACTIVE, \
+			.filter_dup = 0x01, \
+		 })
 
 struct bt_le_scan_param {
+	uint8_t type;
 	uint8_t filter_dup;
 };
 

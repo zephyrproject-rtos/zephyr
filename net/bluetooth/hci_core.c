@@ -2089,8 +2089,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		}
 	}
 
-	err = start_le_scan(BT_HCI_LE_SCAN_ACTIVE, 0x0010, 0x0010,
-			    param->filter_dup);
+	err = start_le_scan(param->type, 0x0010, 0x0010, param->filter_dup);
 	if (err) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 		return err;
