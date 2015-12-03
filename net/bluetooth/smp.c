@@ -2208,20 +2208,48 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	memcpy(smp->pkey, req->x, 32);
 	memcpy(&smp->pkey[32], req->y, 32);
 
-	switch (smp->method) {
-	case PASSKEY_CONFIRM:
-	case JUST_WORKS:
-		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+		switch (smp->method) {
+		case PASSKEY_CONFIRM:
+		case JUST_WORKS:
 			atomic_set_bit(&smp->allowed_cmds,
 				       BT_SMP_CMD_PAIRING_CONFIRM);
 			break;
+		case PASSKEY_DISPLAY:
+			err = display_passkey(smp);
+			if (err) {
+				return err;
+			}
+
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_CONFIRM);
+
+			err = smp_send_pairing_confirm(smp);
+			if (err) {
+				return err;
+			}
+			break;
+		case PASSKEY_INPUT:
+			atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+			auth_cb->passkey_entry(smp->chan.conn);
+			break;
+		default:
+			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		err = sc_send_public_key(smp);
-		if (err) {
-			return err;
-		}
+		return generate_dhkey(smp);
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	err = sc_send_public_key(smp);
+	if (err) {
+		return err;
+	}
 
+	switch (smp->method) {
+	case PASSKEY_CONFIRM:
+	case JUST_WORKS:
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 
 		err = smp_send_pairing_confirm(smp);
@@ -2236,35 +2264,9 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		}
 
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
-		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
-			err = smp_send_pairing_confirm(smp);
-			if (err) {
-				return err;
-			}
-			break;
-		}
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-		err = sc_send_public_key(smp);
-		if (err) {
-			return err;
-		}
-#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 		break;
 	case PASSKEY_INPUT:
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-		if (smp->chan.conn->role == BT_HCI_ROLE_SLAVE) {
-			err = sc_send_public_key(smp);
-			if (err) {
-				return err;
-			}
-
-			atomic_set_bit(&smp->allowed_cmds,
-				       BT_SMP_CMD_PAIRING_CONFIRM);
-		}
-#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
 		auth_cb->passkey_entry(smp->chan.conn);
 		break;
@@ -2272,7 +2274,13 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	return generate_dhkey(smp);
+	err = generate_dhkey(smp);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+
+	return 0;
 }
 
 static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
