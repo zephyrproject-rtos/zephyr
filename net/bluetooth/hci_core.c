@@ -2068,7 +2068,7 @@ int bt_le_adv_stop(void)
 	return 0;
 }
 
-int bt_le_scan_start(bt_le_scan_filter_dup_t filter, bt_le_scan_cb_t cb)
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 {
 	/* Return if active scan is already enabled */
 	if (scan_dev_found_cb) {
@@ -2076,7 +2076,7 @@ int bt_le_scan_start(bt_le_scan_filter_dup_t filter, bt_le_scan_cb_t cb)
 	}
 
 	scan_dev_found_cb = cb;
-	if (filter == BT_LE_SCAN_FILTER_DUP_DISABLE) {
+	if (!param->filter_dup) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 	}
 

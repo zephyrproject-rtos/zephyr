@@ -93,24 +93,27 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 			     uint8_t adv_type, const uint8_t *adv_data,
 			     uint8_t len);
 
-/** Filter out duplicate scanning results. **/
-typedef enum {
-	BT_LE_SCAN_FILTER_DUP_DISABLE,
-	BT_LE_SCAN_FILTER_DUP_ENABLE,
-} bt_le_scan_filter_dup_t;
+#define BT_LE_SCAN_FILTER_DUP_DISABLE \
+		(&(struct bt_le_scan_param) { .filter_dup = 0x00 })
+#define BT_LE_SCAN_FILTER_DUP_ENABLE \
+		(&(struct bt_le_scan_param) { .filter_dup = 0x01 })
+
+struct bt_le_scan_param {
+	uint8_t filter_dup;
+};
 
 /** @brief Start (LE) scanning
  *
  *  Start LE scanning with and provide results through the specified
  *  callback.
  *
- *  @param filter_dups Enable duplicate filtering (or not).
+ *  @param param Scan parameters.
  *  @param cb Callback to notify scan results.
  *
  *  @return Zero on success or error code otherwise, positive in case
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
-int bt_le_scan_start(bt_le_scan_filter_dup_t filter, bt_le_scan_cb_t cb);
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 
 /** @brief Stop (LE) scanning.
  *
