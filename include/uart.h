@@ -30,6 +30,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 #include <device.h>
 
 #ifdef CONFIG_PCI
