@@ -22,8 +22,6 @@
  *
  *    task_mbox_put
  *    task_mbox_get
- *    task_mbox_get_wait
- *    task_mbox_get_wait_timeout
  *
  *    task_mbox_data_get
  *    task_mbox_data_block_get
@@ -362,7 +360,7 @@ int MsgSenderTask(void)
  *
  * @brief Task that tests receiving of mailbox messages
  *
- * This routine exercises the task_mbox_get[_wait[_timeout]] and task_mbox_data_get[xxx] APIs.
+ * This routine exercises the task_mbox_get() and task_mbox_data_get[xxx] APIs.
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -379,7 +377,7 @@ int MsgRcvrTask(void)
 	/* Receive message (no wait) from an empty mailbox */
 
 	setMsg_Receiver(&MRTmsg, myMbox, ANYTASK, rxBuffer, MSGSIZE);
-	retValue = task_mbox_get(myMbox, &MRTmsg);
+	retValue = task_mbox_get(myMbox, &MRTmsg, TICKS_NONE);
 	if (RC_FAIL != retValue) {
 		TC_ERROR("task_mbox_get when no message returned %d\n", retValue);
 		return TC_FAIL;
@@ -390,13 +388,14 @@ int MsgRcvrTask(void)
 	/* Receive message (with timeout) from an empty mailbox */
 
 	setMsg_Receiver(&MRTmsg, myMbox, ANYTASK, rxBuffer, MSGSIZE);
-	retValue = task_mbox_get_wait_timeout(myMbox, &MRTmsg, 2);
+	retValue = task_mbox_get(myMbox, &MRTmsg, 2);
 	if (RC_TIME != retValue) {
-		TC_ERROR("task_mbox_get_wait_timeout when no message returned %d\n", retValue);
+		TC_ERROR("task_mbox_get when no message returned %d\n",
+				retValue);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_get_wait_timeout when no message is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_get(timeout) when no message is OK\n", __func__);
 
 	/* Allow Sender Task to proceed once we start our receive */
 
@@ -405,19 +404,20 @@ int MsgRcvrTask(void)
 	/* Receive message (no timeout) from specified task */
 
 	setMsg_Receiver(&MRTmsg, myMbox, msgSenderTask, rxBuffer, MSGSIZE);
-	retValue = task_mbox_get_wait(myMbox, &MRTmsg);
+	retValue = task_mbox_get(myMbox, &MRTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_get_wait from specified task got wrong return code (%d)\n",
+		TC_ERROR("task_mbox_get from specified task got wrong return code (%d)\n",
 			retValue);
 		return TC_FAIL;
 	}
 	if (strcmp(MRTmsg.rx_data, myData1) != 0) {
-		TC_ERROR("task_mbox_get_wait from specified task got wrong data (%s)\n",
+		TC_ERROR("task_mbox_get from specified task got wrong data (%s)\n",
 			MRTmsg.rx_data);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_get_wait from specified task is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_get(TICKS_UNLIMITED) from specified task is OK\n",
+			__func__);
 
 	/* Allow Sender Task to proceed once we go to sleep for a while */
 
@@ -433,7 +433,7 @@ int MsgRcvrTask(void)
 	 */
 	MRTmsg.size += MSGSIZE;
 
-	retValue = task_mbox_get(myMbox, &MRTmsg);
+	retValue = task_mbox_get(myMbox, &MRTmsg, TICKS_NONE);
 	if (RC_OK != retValue) {
 		TC_ERROR("task_mbox_get from anonymous task got wrong return code (%d)\n",
 			retValue);
@@ -460,24 +460,24 @@ int MsgRcvrTask(void)
 	/* Receive empty message from anonymous task */
 
 	setMsg_Receiver(&MRTmsg, myMbox, ANYTASK, rxBuffer, MSGSIZE);
-	retValue = task_mbox_get_wait(myMbox, &MRTmsg);
+	retValue = task_mbox_get(myMbox, &MRTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_get_wait of empty message got wrong return code (%d)\n",
+		TC_ERROR("task_mbox_get of empty message got wrong return code (%d)\n",
 			retValue);
 		return TC_FAIL;
 	}
 	if (MRTmsg.info != MSG_INFO2) {
-		TC_ERROR("task_mbox_get_wait of empty message got wrong info (%d)\n",
+		TC_ERROR("task_mbox_get of empty message got wrong info (%d)\n",
 			MRTmsg.info);
 		return TC_FAIL;
 	}
 	if (MRTmsg.size != 0) {
-		TC_ERROR("task_mbox_get_wait of empty message got wrong size (%d)\n",
+		TC_ERROR("task_mbox_get of empty message got wrong size (%d)\n",
 			MRTmsg.size);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_get_wait of empty message is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_get(TICKS_UNLIMITED) of empty message is OK\n", __func__);
 
 
 	/* Sync with Sender Task, since he's about to use a timeout */
@@ -487,18 +487,18 @@ int MsgRcvrTask(void)
 	/* Receive message header for 2 part receive test */
 
 	setMsg_Receiver(&MRTmsg, myMbox, msgSenderTask, NULL, MSGSIZE);
-	retValue = task_mbox_get_wait(myMbox, &MRTmsg);
+	retValue = task_mbox_get(myMbox, &MRTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_get_wait of message header #3 returned %d\n", retValue);
+		TC_ERROR("task_mbox_get of message header #3 returned %d\n", retValue);
 		return TC_FAIL;
 	}
 	if (MRTmsg.info != MSG_INFO1) {
-		TC_ERROR("task_mbox_get_wait of message header #3 got wrong info (%d)\n",
+		TC_ERROR("task_mbox_get of message header #3 got wrong info (%d)\n",
 			MRTmsg.info);
 		return TC_FAIL;
 	}
 	if (MRTmsg.size != MSGSIZE) {
-		TC_ERROR("task_mbox_get_wait of message header #3 got wrong size (%d)\n",
+		TC_ERROR("task_mbox_get of message header #3 got wrong size (%d)\n",
 			MRTmsg.size);
 		return TC_FAIL;
 	}
@@ -512,7 +512,8 @@ int MsgRcvrTask(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_get_wait of message header #3 is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_get(TICKS_UNLIMITED) of message header #3 is OK\n",
+			__func__);
 	TC_PRINT("%s: task_mbox_data_get of message data #3 is OK\n", __func__);
 
 	/* Sync with Sender Task, since we're about to use a timeout */
@@ -522,18 +523,18 @@ int MsgRcvrTask(void)
 	/* Receive message header for cancelled receive test */
 
 	setMsg_Receiver(&MRTmsg, myMbox, msgSenderTask, NULL, MSGSIZE);
-	retValue = task_mbox_get_wait_timeout(myMbox, &MRTmsg, 5);
+	retValue = task_mbox_get(myMbox, &MRTmsg, 5);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_get_wait_timeout of message header #4 returned %d\n", retValue);
+		TC_ERROR("task_mbox_get of message header #4 returned %d\n", retValue);
 		return TC_FAIL;
 	}
 	if (MRTmsg.info != MSG_INFO2) {
-		TC_ERROR("task_mbox_get_wait_timeout of message header #4 got wrong info (%d)\n",
+		TC_ERROR("task_mbox_get of message header #4 got wrong info (%d)\n",
 			MRTmsg.info);
 		return TC_FAIL;
 	}
 	if (MRTmsg.size != MSGSIZE) {
-		TC_ERROR("task_mbox_get_wait_timeout of message header #4 got wrong size (%d)\n",
+		TC_ERROR("task_mbox_get of message header #4 got wrong size (%d)\n",
 			MRTmsg.size);
 		return TC_FAIL;
 	}
@@ -543,19 +544,19 @@ int MsgRcvrTask(void)
 	setMsg_RecvBuf(&MRTmsg, rxBuffer, 0);
 	task_mbox_data_get(&MRTmsg);
 
-	TC_PRINT("%s: task_mbox_get_wait_timeout of message header #4 is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_get(timeout) of message header #4 is OK\n", __func__);
 	TC_PRINT("%s: task_mbox_data_get cancellation of message #4 is OK\n", __func__);
 
 	/* Receive message header for block-based receive test */
 
 	setMsg_Receiver(&MRTmsg, myMbox, ANYTASK, NULL, MSGSIZE);
-	retValue = task_mbox_get_wait(myMbox, &MRTmsg);
+	retValue = task_mbox_get(myMbox, &MRTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_get_wait of message header #1 returned %d\n", retValue);
+		TC_ERROR("task_mbox_get of message header #1 returned %d\n", retValue);
 		return TC_FAIL;
 	}
 	if (MRTmsg.size != MSGSIZE) {
-		TC_ERROR("task_mbox_get_wait of message header #1 got wrong size (%d)\n",
+		TC_ERROR("task_mbox_get of message header #1 got wrong size (%d)\n",
 			MRTmsg.size);
 		return TC_FAIL;
 	}
@@ -582,7 +583,8 @@ int MsgRcvrTask(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_get_wait of message header #1 is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_get(TICKS_UNLIMITED) of message header #1 is OK\n",
+			__func__);
 	TC_PRINT("%s: task_mbox_data_block_get of message data #1 is OK\n",  __func__);
 
 	/* Don't free block yet ... */
@@ -590,13 +592,13 @@ int MsgRcvrTask(void)
 	/* Receive message header for block-exhaustion receive test */
 
 	setMsg_Receiver(&MRTmsg, myMbox, ANYTASK, NULL, MSGSIZE);
-	retValue = task_mbox_get_wait(myMbox, &MRTmsg);
+	retValue = task_mbox_get(myMbox, &MRTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_get_wait of message header #2 returned %d\n", retValue);
+		TC_ERROR("task_mbox_get of message header #2 returned %d\n", retValue);
 		return TC_FAIL;
 	}
 	if (MRTmsg.size != MSGSIZE) {
-		TC_ERROR("task_mbox_get_wait of message header #2 got wrong size (%d)\n",
+		TC_ERROR("task_mbox_get of message header #2 got wrong size (%d)\n",
 			MRTmsg.size);
 		return TC_FAIL;
 	}
@@ -627,7 +629,8 @@ int MsgRcvrTask(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_get_wait of message header #2 is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_get(TICKS_UNLIMITED) of message header #2 is OK\n",
+			__func__);
 	TC_PRINT("%s: task_mbox_data_block_get of message data #2 is OK\n",  __func__);
 
 	/* Free block used with most recent message */
@@ -641,18 +644,18 @@ int MsgRcvrTask(void)
 	/* Receive message header for long-duration receive test */
 
 	setMsg_Receiver(&MRTmsg, myMbox, msgSenderTask, NULL, MSGSIZE);
-	retValue = task_mbox_get_wait(myMbox, &MRTmsg);
+	retValue = task_mbox_get(myMbox, &MRTmsg, TICKS_UNLIMITED);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_get_wait of message header #3 returned %d\n", retValue);
+		TC_ERROR("task_mbox_get of message header #3 returned %d\n", retValue);
 		return TC_FAIL;
 	}
 	if (MRTmsg.info != MSG_INFO1) {
-		TC_ERROR("task_mbox_get_wait of message header #3 got wrong info (%d)\n",
+		TC_ERROR("task_mbox_get of message header #3 got wrong info (%d)\n",
 			MRTmsg.info);
 		return TC_FAIL;
 	}
 	if (MRTmsg.size != MSGSIZE) {
-		TC_ERROR("task_mbox_get_wait of message header #3 got wrong size (%d)\n",
+		TC_ERROR("task_mbox_get of message header #3 got wrong size (%d)\n",
 			MRTmsg.size);
 		return TC_FAIL;
 	}
@@ -670,7 +673,8 @@ int MsgRcvrTask(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("%s: task_mbox_get_wait of message header #3 is OK\n", __func__);
+	TC_PRINT("%s: task_mbox_get(TICKS_UNLIMITED) of message header #3 is OK\n",
+			__func__);
 	TC_PRINT("%s: task_mbox_data_get of message data #3 is OK\n", __func__);
 
 	return TC_PASS;

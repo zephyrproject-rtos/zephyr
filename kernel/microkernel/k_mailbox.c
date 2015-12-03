@@ -649,9 +649,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 }
 
 
-int _task_mbox_get(kmbox_t mbox,
-	       struct k_msg *M,
-	       int32_t time)
+int task_mbox_get(kmbox_t mbox, struct k_msg *M, int32_t timeout)
 {
 	struct k_args A;
 
@@ -666,7 +664,7 @@ int _task_mbox_get(kmbox_t mbox,
 
 	A.priority = _k_current_task->priority;
 	A.Comm = _K_SVC_MBOX_RECEIVE_REQUEST;
-	A.Time.ticks = time;
+	A.Time.ticks = timeout;
 	A.args.m1.mess = *M;
 
 	KERNEL_ENTRY(&A);

@@ -40,8 +40,6 @@ extern "C" {
 /**
  * @cond internal
  */
-extern int _task_mbox_get(kmbox_t mbox, struct k_msg *M, int32_t time);
-
 extern void _task_mbox_block_put(kmbox_t mbox,
 					kpriority_t prio,
 					struct k_msg *M,
@@ -89,40 +87,21 @@ extern int task_mbox_put(kmbox_t mbox, kpriority_t prio,
 
 /**
  * @brief Gets struct k_msg message header structure information from
- * a mailbox
- *
- * @param b mailbox
- * @param m pointer to message
- *
- * @return RC_OK, RC_FAIL on success, failure respectively
- */
-#define task_mbox_get(b, m) _task_mbox_get(b, m, TICKS_NONE)
-
-/**
- * @brief Gets struct k_msg message header structure information from
- * a mailbox and wait
- *
- * @param b mailbox
- * @param m pointer to message
- *
- * @return RC_OK, RC_FAIL on success, failure respectively
- */
-#define task_mbox_get_wait(b, m) _task_mbox_get(b, m, TICKS_UNLIMITED)
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-
-/**
- * @brief Gets struct k_msg message header structure information from
  * a mailbox and wait with timeout.
  *
- * @param b mailbox
- * @param m pointer to message
- * @param t maximum number of ticks to wait
+ * @param mbox Mailbox
+ * @param M Pointer to message
+ * @param timeout Affects the action taken should there not be a waiting
+ * sender. If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
+ * wait as long as necessary. Otherwise wait up to the specified number of
+ * ticks before timing out.
  *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ * @return RC_OK Successfully received message
+ * @return RC_TIME Timed out while waiting to receive message
+ * @return RC_FAIL Failed to immediately receive message when
+ * @a timeout = TICKS_NONE
  */
-#define task_mbox_get_wait_timeout(b, m, t) _task_mbox_get(b, m, t)
-#endif
+extern int task_mbox_get(kmbox_t mbox, struct k_msg *M, int32_t timeout);
 
 /**
  * @brief Send a message asynchronously to a mailbox

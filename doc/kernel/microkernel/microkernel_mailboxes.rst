@@ -440,7 +440,7 @@ that each task can handle.
            recv_msg.rx_task = ANYTASK;
 
            /* get a data item, waiting as long as needed */
-           task_mbox_get_wait(REQUEST_BOX, &recv_msg);
+           task_mbox_get(REQUEST_BOX, &recv_msg, TICKS_UNLIMITED);
 
            /* info, size, and tx_task fields have been updated */
 
@@ -514,7 +514,7 @@ by the sender is used to classify the message.
            recv_msg.rx_task = ANYTASK;
 
            /* get message, but not its data */
-           task_mbox_get_wait(REQUEST_BOX, &recv_msg);
+           task_mbox_get(REQUEST_BOX, &recv_msg, TICKS_UNLIMITED);
 
            /* get message data for only certain types of messages */
            if (is_message_type_ok(recv_msg.info)) {
@@ -598,7 +598,7 @@ a large message.
            recv_msg.rx_task = ANYTASK;
 
            /* get message, but not its data */
-           task_mbox_get_wait(REQUEST_BOX, &recv_msg);
+           task_mbox_get(REQUEST_BOX, &recv_msg, TICKS_UNLIMITED);
 
            /* get memory block holding data and delete the message */
            task_mbox_data_block_get_wait(&recv_msg, &recv_block, RXPOOL);
@@ -633,12 +633,6 @@ The following APIs for mailbox operations are provided by the kernel:
    Sends asynchrnonous message to a receiving task, or to a mailbox queue.
 
 :c:func:`task_mbox_get()`
-   Gets message from a mailbox, with no waiting.
-
-:c:func:`task_mbox_get_wait()`
-   Gets message from a mailbox, with unlimited waiting.
-
-:c:func:`task_mbox_get_wait_timeout()`
    Gets message from a mailbox, with time limited waiting.
 
 :c:func:`task_mbox_data_get()`

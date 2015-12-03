@@ -89,7 +89,7 @@ int mailbox_get(kmbox_t mailbox, int size, int count, unsigned int* time)
 	task_sem_take_wait(SEM0);
 	t = BENCH_START();
 	for (i = 0; i < count; i++) {
-		task_mbox_get_wait(mailbox, &Message);
+		task_mbox_get(mailbox, &Message, TICKS_UNLIMITED);
 	}
 
 	t = TIME_STAMP_DELTA_GET(t);
