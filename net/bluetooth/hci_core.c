@@ -1121,7 +1121,7 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
-static int bt_hci_start_scanning(uint8_t scan_type, uint8_t filter_dup)
+static int start_le_scan(uint8_t scan_type, uint8_t filter_dup)
 {
 	struct net_buf *buf, *rsp;
 	struct bt_hci_cp_le_set_scan_params *set_param;
@@ -1201,7 +1201,7 @@ int bt_le_scan_update(void)
 
 		bt_conn_unref(conn);
 
-		return bt_hci_start_scanning(BT_HCI_LE_SCAN_PASSIVE, 0x01);
+		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, 0x01);
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
 
@@ -2087,7 +2087,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		}
 	}
 
-	err = bt_hci_start_scanning(BT_HCI_LE_SCAN_ACTIVE, param->filter_dup);
+	err = start_le_scan(BT_HCI_LE_SCAN_ACTIVE, param->filter_dup);
 	if (err) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 		return err;
