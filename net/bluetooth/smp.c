@@ -1115,16 +1115,8 @@ static int smp_g2(const uint8_t u[32], const uint8_t v[32],
 	}
 	BT_DBG("res %s", h(xs, 16));
 
-	/*
-	 * TODO current this will work only for LE host but code below crashes
-	 * zephyr for some reason
-	 *
-	 * memcpy(passkey, xs + 12, 4);
-	 * *passkey = sys_be32_to_cpu(*passkey);
-	 */
-	swap_buf((uint8_t *)passkey, xs + 12, 4);
-
-	*passkey %= 1000000;
+	memcpy(passkey, xs + 12, 4);
+	*passkey = sys_be32_to_cpu(*passkey) % 1000000;
 
 	BT_DBG("passkey %u", *passkey);
 
