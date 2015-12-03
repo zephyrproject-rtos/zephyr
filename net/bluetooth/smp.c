@@ -1582,14 +1582,10 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 	}
 }
 
-static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
+static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 {
-	uint32_t passkey;
 	uint8_t cfm[16];
 	uint8_t r;
-	int err;
-
-	BT_DBG("");
 
 	switch (smp->method) {
 	case PASSKEY_CONFIRM:
@@ -1607,14 +1603,12 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		 */
 		r = (smp->passkey >> smp->passkey_round) & 0x01;
 		r |= 0x80;
-
 		break;
 	default:
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	err = smp_f4(smp->pkey, bt_dev.pkey, smp->rrnd, r, cfm);
-	if (err) {
+	if (smp_f4(smp->pkey, bt_dev.pkey, smp->rrnd, r, cfm)) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1624,8 +1618,23 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_CONFIRM_FAILED;
 	}
 
+	return 0;
+}
+
+static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
+{
+	uint32_t passkey;
+	uint8_t err;
+
+	BT_DBG("");
+
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+		err = sc_smp_check_confirm(smp);
+		if (err) {
+			return err;
+		}
+
 		switch (smp->method) {
 		case PASSKEY_CONFIRM:
 			/* compare passkey before calculating LTK */
@@ -1683,6 +1692,11 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
+		err = sc_smp_check_confirm(smp);
+		if (err) {
+			return err;
+		}
+
 		atomic_set_bit(&smp->allowed_cmds,
 			       BT_SMP_CMD_PAIRING_CONFIRM);
 		smp_send_pairing_random(smp);
