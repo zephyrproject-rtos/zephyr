@@ -1176,7 +1176,6 @@ static int bt_hci_start_scanning(uint8_t scan_type)
 	return err;
 }
 
-/* Used to determine whether to start scan and which scan type should be used */
 int bt_le_scan_update(void)
 {
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
@@ -1208,7 +1207,7 @@ int bt_le_scan_update(void)
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
 
-	return bt_hci_start_scanning(BT_HCI_LE_SCAN_ACTIVE);
+	return 0;
 }
 
 static void le_adv_report(struct net_buf *buf)
@@ -2075,17 +2074,34 @@ int bt_le_adv_stop(void)
 
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 {
+	int err;
+
 	/* Return if active scan is already enabled */
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return -EALREADY;
 	}
 
-	scan_dev_found_cb = cb;
 	if (!param->filter_dup) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 	}
 
-	return bt_le_scan_update();
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
+		err = bt_hci_stop_scanning();
+		if (err) {
+			atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
+			return err;
+		}
+	}
+
+	err = bt_hci_start_scanning(BT_HCI_LE_SCAN_ACTIVE);
+	if (err) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
+		return err;
+	}
+
+	scan_dev_found_cb = cb;
+
+	return 0;
 }
 
 int bt_le_scan_stop(void)
