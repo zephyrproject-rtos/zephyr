@@ -1202,7 +1202,7 @@ int bt_le_scan_update(void)
 
 		bt_conn_unref(conn);
 
-		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, 0x0010, 0x0010,
+		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, 0x0060, 0x0030,
 				     0x01);
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
