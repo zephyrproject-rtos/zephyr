@@ -1238,9 +1238,9 @@ static void cmd_bredr_discoverable(int argc, char *argv[])
 	action = argv[1];
 
 	if (!strcmp(action, "on")) {
-		err = bt_bredr_set_discoverable(true);
+		err = bt_br_set_discoverable(true);
 	} else if (!strcmp(action, "off")) {
-		err = bt_bredr_set_discoverable(false);
+		err = bt_br_set_discoverable(false);
 	} else {
 		printk("[on/off] parameter required\n");
 		return;
@@ -1267,9 +1267,9 @@ static void cmd_bredr_connectable(int argc, char *argv[])
 	action = argv[1];
 
 	if (!strcmp(action, "on")) {
-		err = bt_bredr_set_connectable(true);
+		err = bt_br_set_connectable(true);
 	} else if (!strcmp(action, "off")) {
-		err = bt_bredr_set_connectable(false);
+		err = bt_br_set_connectable(false);
 	} else {
 		printk("[on/off] parameter required\n");
 		return;

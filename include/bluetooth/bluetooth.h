@@ -253,7 +253,7 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
  *  @return Negative if fail set to requested state or requested state has been
  *  already set. Zero if done successfully.
  */
-int bt_bredr_set_discoverable(bool enable);
+int bt_br_set_discoverable(bool enable);
 
 /** @brief Enable/disable set controller in connectable state.
  *
@@ -266,6 +266,6 @@ int bt_bredr_set_discoverable(bool enable);
  *  @return Negative if fail set to requested state or requested state has been
  *  already set. Zero if done successfully.
  */
-int bt_bredr_set_connectable(bool enable);
+int bt_br_set_connectable(bool enable);
 #endif
 #endif /* __BT_BLUETOOTH_H */

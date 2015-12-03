@@ -2107,7 +2107,7 @@ struct net_buf *bt_buf_get_acl(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static int bt_bredr_hci_write_scan(uint8_t scan)
+static int write_scan_enable(uint8_t scan)
 {
 	struct net_buf *buf;
 	int err;
@@ -2141,24 +2141,24 @@ static int bt_bredr_hci_write_scan(uint8_t scan)
 	return 0;
 }
 
-int bt_bredr_set_connectable(bool enable)
+int bt_br_set_connectable(bool enable)
 {
 	if (enable) {
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
 			return -EALREADY;
 		} else {
-			return bt_bredr_hci_write_scan(BT_BREDR_SCAN_PAGE);
+			return write_scan_enable(BT_BREDR_SCAN_PAGE);
 		}
 	} else {
 		if (!atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
 			return -EALREADY;
 		} else {
-			return bt_bredr_hci_write_scan(BT_BREDR_SCAN_DISABLED);
+			return write_scan_enable(BT_BREDR_SCAN_DISABLED);
 		}
 	}
 }
 
-int bt_bredr_set_discoverable(bool enable)
+int bt_br_set_discoverable(bool enable)
 {
 	if (enable) {
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
@@ -2169,14 +2169,14 @@ int bt_bredr_set_discoverable(bool enable)
 			return -EPERM;
 		}
 
-		return bt_bredr_hci_write_scan(BT_BREDR_SCAN_INQUIRY |
-					       BT_BREDR_SCAN_PAGE);
+		return write_scan_enable(BT_BREDR_SCAN_INQUIRY |
+					 BT_BREDR_SCAN_PAGE);
 	} else {
 		if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
 			return -EALREADY;
 		}
 
-		return bt_bredr_hci_write_scan(BT_BREDR_SCAN_PAGE);
+		return write_scan_enable(BT_BREDR_SCAN_PAGE);
 	}
 }
 #endif
