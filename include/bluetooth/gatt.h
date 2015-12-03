@@ -324,8 +324,7 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
  */
 #define BT_GATT_PRIMARY_SERVICE(_service)				\
 {									\
-	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
-				     .u16 = BT_UUID_GATT_PRIMARY }),	\
+	.uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_PRIMARY),		\
 	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_service,				\
 	.user_data = _service,						\
@@ -340,8 +339,7 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
  */
 #define BT_GATT_SECONDARY_SERVICE(_service)				\
 {									\
-	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
-				     .u16 = BT_UUID_GATT_SECONDARY }),	\
+	.uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_SECONDARY),		\
 	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_service,				\
 	.user_data = _service,						\
@@ -375,8 +373,7 @@ int bt_gatt_attr_read_included(struct bt_conn *conn,
  */
 #define BT_GATT_INCLUDE_SERVICE(_service)				\
 {									\
-	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
-				     .u16 = BT_UUID_GATT_INCLUDE }),	\
+	.uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_INCLUDE),		\
 	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_included,				\
 	.user_data = _service,						\
@@ -411,8 +408,7 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
  */
 #define BT_GATT_CHARACTERISTIC(_uuid, _props)				\
 {									\
-	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
-				     .u16 = BT_UUID_GATT_CHRC }),	\
+	.uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CHRC),			\
 	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_chrc,					\
 	.user_data = (&(struct bt_gatt_chrc) { .uuid = _uuid,		\
@@ -484,8 +480,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
  */
 #define BT_GATT_CCC(_cfg, _cfg_changed)					\
 {									\
-	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
-				     .u16 = BT_UUID_GATT_CCC }),	\
+	.uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CCC),			\
 	.perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,			\
 	.read = bt_gatt_attr_read_ccc,					\
 	.write = bt_gatt_attr_write_ccc,				\
@@ -522,8 +517,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  */
 #define BT_GATT_CEP(_value)						\
 {									\
-	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
-				     .u16 = BT_UUID_GATT_CEP }),	\
+	.uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CEP),			\
 	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_cep,					\
 	.user_data = _value,						\
