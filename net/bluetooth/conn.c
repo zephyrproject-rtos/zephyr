@@ -534,6 +534,27 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (!atomic_get(&conns[i].ref)) {
+			continue;
+		}
+
+		if (conns[i].type != BT_CONN_TYPE_BR) {
+			continue;
+		}
+
+		if (!bt_addr_cmp(peer, &conns[i].br.dst)) {
+			return bt_conn_ref(&conns[i]);
+		}
+	}
+
+	return NULL;
+}
+
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 {
 	struct bt_conn *conn = conn_new();

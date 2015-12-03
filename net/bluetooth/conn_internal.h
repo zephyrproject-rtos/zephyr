@@ -112,6 +112,9 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer);
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
+
+/* Look up an existing connection by BT address */
+struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
 #endif
 
 /* Look up an existing connection */
