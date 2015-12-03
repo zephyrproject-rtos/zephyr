@@ -709,10 +709,10 @@ void _i2c_qse_ss_config_irq(struct device *port)
 	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, rom->isr_stop_mask, mask);
 
 	/* Connect the IRQs to ISR */
-	irq_connect(rom->isr_err_vector, 1, i2c_qse_ss_isr, port);
-	irq_connect(rom->isr_rx_vector, 1, i2c_qse_ss_isr, port);
-	irq_connect(rom->isr_tx_vector, 1, i2c_qse_ss_isr, port);
-	irq_connect(rom->isr_stop_vector, 1, i2c_qse_ss_isr, port);
+	irq_connect(rom->isr_err_vector, 1, i2c_qse_ss_isr, port, 0);
+	irq_connect(rom->isr_rx_vector, 1, i2c_qse_ss_isr, port, 0);
+	irq_connect(rom->isr_tx_vector, 1, i2c_qse_ss_isr, port, 0);
+	irq_connect(rom->isr_stop_vector, 1, i2c_qse_ss_isr, port, 0);
 
 	irq_enable(rom->isr_err_vector);
 	irq_enable(rom->isr_rx_vector);
