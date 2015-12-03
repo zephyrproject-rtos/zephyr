@@ -1416,6 +1416,18 @@ static void hci_le_meta_event(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static void conn_req_event(struct net_buf *buf)
+{
+	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
+
+	ARG_UNUSED(evt);
+
+	BT_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr),
+	       evt->link_type);
+}
+#endif
+
 static void hci_event(struct net_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr = (void *)buf->data;
@@ -1425,6 +1437,11 @@ static void hci_event(struct net_buf *buf)
 	net_buf_pull(buf, sizeof(*hdr));
 
 	switch (hdr->evt) {
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	case BT_HCI_EVT_CONN_REQUEST:
+		conn_req_event(buf);
+		break;
+#endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
 		hci_disconn_complete(buf);
@@ -1864,6 +1881,9 @@ static int set_event_mask(void)
 	ev = net_buf_add(buf, sizeof(*ev));
 	memset(ev, 0, sizeof(*ev));
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	ev->events[0] |= 0x08; /* Connection Request */
+#endif
 	ev->events[1] |= 0x20; /* Command Complete */
 	ev->events[1] |= 0x40; /* Command Status */
 	ev->events[1] |= 0x80; /* Hardware Error */
