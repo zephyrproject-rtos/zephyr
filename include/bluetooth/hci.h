@@ -39,6 +39,7 @@ typedef struct {
 /* HCI Error Codes */
 #define BT_HCI_ERR_UNKNOWN_CONN_ID		0x02
 #define BT_HCI_ERR_AUTHENTICATION_FAIL		0x05
+#define BT_HCI_ERR_INSUFFICIENT_RESOURCES	0x0d
 #define BT_HCI_ERR_REMOTE_USER_TERM_CONN	0x13
 #define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE	0x1a
 #define BT_HCI_ERR_INVALID_LL_PARAMS		0x1e
@@ -129,6 +130,18 @@ struct bt_hci_cmd_hdr {
 struct bt_hci_cp_disconnect {
 	uint16_t handle;
 	uint8_t  reason;
+} __packed;
+
+#define BT_HCI_OP_ACCEPT_CONN_REQ		BT_OP(BT_OGF_LINK_CTRL, 0x0009)
+struct bt_hci_cp_accept_conn_req {
+	bt_addr_t bdaddr;
+	uint8_t   role;
+} __packed;
+
+#define BT_HCI_OP_REJECT_CONN_REQ		BT_OP(BT_OGF_LINK_CTRL, 0x000a)
+struct bt_hci_cp_reject_conn_req {
+	bt_addr_t bdaddr;
+	uint8_t   reason;
 } __packed;
 
 #define BT_HCI_OP_SET_EVENT_MASK		BT_OP(BT_OGF_BASEBAND, 0x0001)

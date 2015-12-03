@@ -1417,14 +1417,70 @@ static void hci_le_meta_event(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
+{
+	struct bt_hci_cp_reject_conn_req *cp;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_REJECT_CONN_REQ, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+	cp->reason = reason;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_REJECT_CONN_REQ, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+static int accept_conn(const bt_addr_t *bdaddr)
+{
+	struct bt_hci_cp_accept_conn_req *cp;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_ACCEPT_CONN_REQ, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+	cp->role = BT_HCI_ROLE_SLAVE;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
 static void conn_req_event(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
-
-	ARG_UNUSED(evt);
+	struct bt_conn *conn;
 
 	BT_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr),
 	       evt->link_type);
+
+	conn = bt_conn_add_br(&evt->bdaddr);
+	if (!conn) {
+		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
+		return;
+	}
+
+	accept_conn(&evt->bdaddr);
+	conn->role = BT_HCI_ROLE_SLAVE;
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	bt_conn_unref(conn);
 }
 #endif
 
