@@ -298,7 +298,7 @@ static void start_discovery(const uint8_t *data, uint16_t len)
 		goto reply;
 	}
 
-	if (bt_le_scan_start(BT_LE_SCAN_FILTER_DUP_ENABLE, device_found) < 0) {
+	if (bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found) < 0) {
 		status = BTP_STATUS_FAILED;
 		goto reply;
 	}

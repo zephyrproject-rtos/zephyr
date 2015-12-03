@@ -250,8 +250,8 @@ struct bt_hci_cp_le_set_adv_enable {
 
 /* Scan types */
 #define BT_HCI_OP_LE_SET_SCAN_PARAMS		BT_OP(BT_OGF_LE, 0x000b)
-#define BT_LE_SCAN_PASSIVE			0x00
-#define BT_LE_SCAN_ACTIVE			0x01
+#define BT_HCI_LE_SCAN_PASSIVE			0x00
+#define BT_HCI_LE_SCAN_ACTIVE			0x01
 
 struct bt_hci_cp_le_set_scan_params {
 	uint8_t  scan_type;

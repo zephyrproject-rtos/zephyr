@@ -295,7 +295,7 @@ static void cmd_active_scan_on(void)
 {
 	int err;
 
-	err = bt_le_scan_start(BT_LE_SCAN_FILTER_DUP_ENABLE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
 	if (err) {
 		printk("Bluetooth set active scan failed (err %d)\n", err);
 	} else {

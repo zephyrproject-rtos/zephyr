@@ -1199,11 +1199,11 @@ int bt_le_scan_update(void)
 
 		bt_conn_unref(conn);
 
-		return bt_hci_start_scanning(BT_LE_SCAN_PASSIVE);
+		return bt_hci_start_scanning(BT_HCI_LE_SCAN_PASSIVE);
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
 
-	return bt_hci_start_scanning(BT_LE_SCAN_ACTIVE);
+	return bt_hci_start_scanning(BT_HCI_LE_SCAN_ACTIVE);
 }
 
 static void le_adv_report(struct net_buf *buf)

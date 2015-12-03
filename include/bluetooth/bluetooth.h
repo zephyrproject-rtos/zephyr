@@ -99,9 +99,8 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 			     uint8_t adv_type, const uint8_t *adv_data,
 			     uint8_t len);
 
-#define BT_LE_SCAN_FILTER_DUP_DISABLE \
-		(&(struct bt_le_scan_param) { .filter_dup = 0x00 })
-#define BT_LE_SCAN_FILTER_DUP_ENABLE \
+/** Helper macro to enable active scanning to discover new devices */
+#define BT_LE_SCAN_ACTIVE \
 		(&(struct bt_le_scan_param) { .filter_dup = 0x01 })
 
 struct bt_le_scan_param {

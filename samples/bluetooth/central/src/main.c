@@ -220,7 +220,7 @@ static void disconnected(struct bt_conn *conn)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
-	err = bt_le_scan_start(BT_LE_SCAN_FILTER_DUP_ENABLE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
 	}
@@ -249,7 +249,7 @@ void main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_le_scan_start(BT_LE_SCAN_FILTER_DUP_ENABLE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
 
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
