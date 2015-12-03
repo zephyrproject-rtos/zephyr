@@ -47,10 +47,12 @@
 
 #define WDT_DRV_NAME "wdt_dw"
 
-struct wdt_dw_dev_config {
-	uint32_t        base_address;
+struct wdt_dw_runtime {
+	void (*cb_fn)(struct device *dev);
 };
 
-int wdt_dw_init(struct device *dev);
+struct wdt_dw_dev_config {
+	uint32_t base_address;
+};
 
 #endif /* WDT_DW_H_ */

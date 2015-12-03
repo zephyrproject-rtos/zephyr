@@ -25,20 +25,20 @@
 uint32_t wdt_fired;
 
 #define WDT_DRIVER "wdt_dw"
-static struct device *wdt_dev;
 
 /* WDT Requires a callback, there is no interrupt enable / disable. */
-void wdt_example_cb(void)
+void wdt_example_cb(struct device *dev)
 {
 	wdt_fired++;
 	printk("watchdog fired\n");
-	wdt_reload(wdt_dev);
+	wdt_reload(dev);
 }
 
 void main(void)
 {
 	struct wdt_config wr_cfg;
 	struct wdt_config cfg;
+	struct device *wdt_dev;
 
 	printk("Start watchdog test\n");
 	wr_cfg.timeout = WDT_2_27_CYCLES;

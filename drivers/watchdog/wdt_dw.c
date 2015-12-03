@@ -18,72 +18,83 @@
 #include <init.h>
 #include "wdt_dw.h"
 
-static void (*cb_fn)(void);
-
 /**
  * Enables the clock for the peripheral watchdog
  */
-static void wdt_dw_enable(void)
+static void wdt_dw_enable(struct device *dev)
 {
-	sys_set_bit(WDT_BASE_ADDR + WDT_CR, 0);
+	struct wdt_dw_dev_config *wdt_dev = dev->config->config_info;
+
+	sys_set_bit(wdt_dev->base_address + WDT_CR, 0);
+
 	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 1);
 	sys_set_bit(SCSS_PERIPHERAL_BASE + SCSS_PERIPH_CFG0, 1);
 }
 
-static void wdt_dw_disable(void)
+static void wdt_dw_disable(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	/* Disable the clock for the peripheral watchdog */
 	sys_clear_bit(SCSS_PERIPHERAL_BASE + SCSS_PERIPH_CFG0, 1);
 }
 
-void wdt_dw_isr(void)
+void wdt_dw_isr(void *arg)
 {
-	if (cb_fn) {
-		(*cb_fn)();
+	struct device *dev = arg;
+	struct wdt_dw_runtime *context = dev->driver_data;
+
+	if (context->cb_fn) {
+		context->cb_fn(dev);
 	}
 }
 
-static void wdt_dw_get_config(struct wdt_config *config)
+static void wdt_dw_get_config(struct device *dev, struct wdt_config *config)
 {
-	config->timeout = sys_read32(WDT_BASE_ADDR + WDT_TORR) & WDT_TIMEOUT_MASK;
-	config->mode = (sys_read32(WDT_BASE_ADDR + WDT_CR) & WDT_MODE) >> WDT_MODE_OFFSET;
-	config->interrupt_fn = cb_fn;
+	struct wdt_dw_dev_config *wdt_dev = dev->config->config_info;
+	struct wdt_dw_runtime *context = dev->driver_data;
+
+	config->timeout = sys_read32(wdt_dev->base_address + WDT_TORR) &
+							WDT_TIMEOUT_MASK;
+	config->mode = (sys_read32(wdt_dev->base_address + WDT_CR) & WDT_MODE)
+							>> WDT_MODE_OFFSET;
+	config->interrupt_fn = context->cb_fn;
 }
 
-IRQ_CONNECT_STATIC(wdt_dw, INT_WDT_IRQ, INT_WDT_IRQ_PRI, wdt_dw_isr, 0, 0);
-
-static void wdt_dw_reload(void)
+static void wdt_dw_reload(struct device *dev)
 {
-	sys_write32(WDT_CRR_VAL, WDT_BASE_ADDR + WDT_CRR);
+	struct wdt_dw_dev_config *wdt_dev = dev->config->config_info;
+
+	sys_write32(WDT_CRR_VAL, wdt_dev->base_address + WDT_CRR);
 }
 
-static int wdt_dw_set_config(struct wdt_config *config)
+static int wdt_dw_set_config(struct device *dev, struct wdt_config *config)
 {
-	sys_write32(config->timeout, WDT_BASE_ADDR + WDT_TORR);
+	struct wdt_dw_dev_config *wdt_dev = dev->config->config_info;
+	struct wdt_dw_runtime *context = dev->driver_data;
+
+	sys_write32(config->timeout, wdt_dev->base_address + WDT_TORR);
 
 	/* Set response mode */
 	if (WDT_MODE_RESET == config->mode) {
-		sys_clear_bit(WDT_BASE_ADDR + WDT_CR, 1);
+		sys_clear_bit(wdt_dev->base_address + WDT_CR, 1);
 	} else {
-		if (config->interrupt_fn) {
-			cb_fn = config->interrupt_fn;
-		} else {
+		if (!config->interrupt_fn) {
 			return DEV_FAIL;
 		}
 
-		sys_set_bit(WDT_BASE_ADDR + WDT_CR, 1);
-
-		IRQ_CONFIG(wdt_dw, INT_WDT_IRQ);
-		irq_enable(INT_WDT_IRQ);
+		context->cb_fn = config->interrupt_fn;
+		sys_set_bit(wdt_dev->base_address + WDT_CR, 1);
 
 		/* unmask WDT interrupts to lmt  */
 		SCSS_INTERRUPT->int_watchdog_mask &= INT_UNMASK_IA;
 	}
 
 	/* Enable WDT, cannot be disabled until soc reset */
-	sys_set_bit(WDT_BASE_ADDR + WDT_CR, 0);
+	sys_set_bit(wdt_dev->base_address + WDT_CR, 0);
 
-	wdt_dw_reload();
+	wdt_dw_reload(dev);
+
 	return DEV_OK;
 }
 
@@ -95,11 +106,20 @@ static struct wdt_driver_api wdt_dw_funcs = {
 	.reload = wdt_dw_reload,
 };
 
+/* IRQ_CONFIG needs the flags variable declared by IRQ_CONNECT_STATIC */
+IRQ_CONNECT_STATIC(wdt_dw, INT_WDT_IRQ, INT_WDT_IRQ_PRI, wdt_dw_isr, 0, 0);
+
 int wdt_dw_init(struct device *dev)
 {
 	dev->driver_api = &wdt_dw_funcs;
+
+	IRQ_CONFIG(wdt_dw, INT_WDT_IRQ);
+	irq_enable(INT_WDT_IRQ);
+
 	return 0;
 }
+
+struct wdt_dw_runtime wdt_runtime;
 
 struct wdt_dw_dev_config wdt_dev = {
 	.base_address = WDT_BASE_ADDR,
@@ -107,4 +127,7 @@ struct wdt_dw_dev_config wdt_dev = {
 
 DECLARE_DEVICE_INIT_CONFIG(wdt, WDT_DRV_NAME, &wdt_dw_init, &wdt_dev);
 
-SYS_DEFINE_DEVICE(wdt, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_DEFINE_DEVICE(wdt, &wdt_runtime, SECONDARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+struct device *wdt_dw_isr_dev = SYS_GET_DEVICE(wdt);

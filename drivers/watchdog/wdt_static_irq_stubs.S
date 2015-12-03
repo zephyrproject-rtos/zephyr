@@ -22,7 +22,7 @@
 
 #if defined(CONFIG_WDT_DW)
 #if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
-	ioapic_mkstub wdt_dw wdt_dw_isr 0
+	ioapic_mkstub wdt_dw wdt_dw_isr wdt_dw_isr_dev
 #endif /* CONFIG_IOAPIC */
 #endif
 

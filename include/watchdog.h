@@ -16,8 +16,10 @@
 
 #ifndef _WDT_H_
 #define _WDT_H_
-#include <stdint.h>
 
+#include <stdint.h>
+#include <device.h>
+#include <misc/util.h>
 
 #define WDT_MODE		(BIT(1))
 #define WDT_MODE_OFFSET         (1)
@@ -57,14 +59,16 @@ enum wdt_clock_timeout_cycles {
 struct wdt_config {
 	uint32_t timeout;
 	enum wdt_mode mode;
-	void (*interrupt_fn)(void);
+	void (*interrupt_fn)(struct device *dev);
 };
 
-typedef void (*wdt_api_enable)(void);
-typedef void (*wdt_api_disable)(void);
-typedef int (*wdt_api_set_config)(struct wdt_config *config);
-typedef void (*wdt_api_get_config)(struct wdt_config *config);
-typedef void (*wdt_api_reload)(void);
+typedef void (*wdt_api_enable)(struct device *dev);
+typedef void (*wdt_api_disable)(struct device *dev);
+typedef int (*wdt_api_set_config)(struct device *dev,
+				  struct wdt_config *config);
+typedef void (*wdt_api_get_config)(struct device *dev,
+				   struct wdt_config *config);
+typedef void (*wdt_api_reload)(struct device *dev);
 
 struct wdt_driver_api {
 	wdt_api_enable enable;
@@ -79,7 +83,7 @@ static inline void wdt_enable(struct device *dev)
 	struct wdt_driver_api *api;
 
 	api = (struct wdt_driver_api *)dev->driver_api;
-	api->enable();
+	api->enable(dev);
 }
 
 static inline void wdt_disable(struct device *dev)
@@ -87,23 +91,25 @@ static inline void wdt_disable(struct device *dev)
 	struct wdt_driver_api *api;
 
 	api = (struct wdt_driver_api *)dev->driver_api;
-	api->disable();
+	api->disable(dev);
 }
 
-static inline void wdt_get_config(struct device *dev, struct wdt_config *config)
+static inline void wdt_get_config(struct device *dev,
+				  struct wdt_config *config)
 {
 	struct wdt_driver_api *api;
 
 	api = (struct wdt_driver_api *)dev->driver_api;
-	api->get_config(config);
+	api->get_config(dev, config);
 }
 
-static inline int wdt_set_config(struct device *dev, struct wdt_config *config)
+static inline int wdt_set_config(struct device *dev,
+				 struct wdt_config *config)
 {
 	struct wdt_driver_api *api;
 
 	api = (struct wdt_driver_api *)dev->driver_api;
-	return api->set_config(config);
+	return api->set_config(dev, config);
 }
 
 static inline void wdt_reload(struct device *dev)
@@ -111,7 +117,7 @@ static inline void wdt_reload(struct device *dev)
 	struct wdt_driver_api *api;
 
 	api = (struct wdt_driver_api *)dev->driver_api;
-	api->reload();
+	api->reload(dev);
 }
 
 #endif
