@@ -712,6 +712,11 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 {
 	struct bt_conn *conn;
 
+	/* No connections are allowed during explicit scanning */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return;
+	}
+
 	/* Return if event is not connectable */
 	if (evtype != BT_LE_ADV_IND && evtype != BT_LE_ADV_DIRECT_IND) {
 		return;

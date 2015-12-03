@@ -833,6 +833,10 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn;
 
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return NULL;
+	}
+
 	conn = bt_conn_lookup_addr_le(peer);
 	if (conn) {
 		switch (conn->state) {
