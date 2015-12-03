@@ -2183,6 +2183,21 @@ static uint8_t generate_dhkey(struct bt_smp *smp)
 	return 0;
 }
 
+static uint8_t display_passkey(struct bt_smp *smp)
+{
+	if (le_rand(&smp->passkey, sizeof(smp->passkey))) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	smp->passkey %= 1000000;
+	smp->passkey_round = 0;
+
+	auth_cb->passkey_display(smp->chan.conn, smp->passkey);
+	smp->passkey = sys_cpu_to_le32(smp->passkey);
+
+	return 0;
+}
+
 static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_smp_public_key *req = (void *)buf->data;
@@ -2215,15 +2230,10 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		}
 		break;
 	case PASSKEY_DISPLAY:
-		if (le_rand(&smp->passkey, sizeof(smp->passkey))) {
-			return BT_SMP_ERR_UNSPECIFIED;
+		err = display_passkey(smp);
+		if (err) {
+			return err;
 		}
-
-		smp->passkey %= 1000000;
-		smp->passkey_round = 0;
-
-		auth_cb->passkey_display(smp->chan.conn, smp->passkey);
-		smp->passkey = sys_cpu_to_le32(smp->passkey);
 
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 
