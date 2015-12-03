@@ -104,11 +104,23 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 		(&(struct bt_le_scan_param) { \
 			.type = BT_HCI_LE_SCAN_ACTIVE, \
 			.filter_dup = 0x01, \
+			.interval = 0x0030, \
+			.window = 0x0030, \
 		 })
 
+/** LE scan parameters */
 struct bt_le_scan_param {
-	uint8_t type;
-	uint8_t filter_dup;
+	/** Type of scanning (active/passive) */
+	uint8_t  type;
+
+	/** Enable duplicate filtering */
+	uint8_t  filter_dup;
+
+	/** Scan interval */
+	uint16_t interval;
+
+	/** Scan window */
+	uint16_t window;
 };
 
 /** @brief Start (LE) scanning

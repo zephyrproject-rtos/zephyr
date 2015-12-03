@@ -2072,9 +2072,36 @@ int bt_le_adv_stop(void)
 	return 0;
 }
 
+static bool valid_le_scan_param(const struct bt_le_scan_param *param)
+{
+	if (param->type != BT_HCI_LE_SCAN_PASSIVE &&
+	    param->type != BT_HCI_LE_SCAN_ACTIVE) {
+		return false;
+	}
+
+	if (param->interval < 0x0004 || param->interval > 0x4000) {
+		return false;
+	}
+
+	if (param->window < 0x0004 || param->window > 0x4000) {
+		return false;
+	}
+
+	if (param->window > param->interval) {
+		return false;
+	}
+
+	return true;
+}
+
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 {
 	int err;
+
+	/* Check that the parameters have valid values */
+	if (!valid_le_scan_param(param)) {
+		return -EINVAL;
+	}
 
 	/* Return if active scan is already enabled */
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
@@ -2089,7 +2116,8 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		}
 	}
 
-	err = start_le_scan(param->type, 0x0010, 0x0010, param->filter_dup);
+	err = start_le_scan(param->type, param->interval, param->window,
+			    param->filter_dup);
 	if (err) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 		return err;
