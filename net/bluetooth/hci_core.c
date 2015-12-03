@@ -449,7 +449,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
-		bt_le_scan_update();
+		bt_le_scan_update(false);
 	}
 
 	bt_conn_unref(conn);
@@ -586,7 +586,7 @@ static void le_conn_complete(struct net_buf *buf)
 
 done:
 	bt_conn_unref(conn);
-	bt_le_scan_update();
+	bt_le_scan_update(false);
 }
 
 static void le_remote_feat_complete(struct net_buf *buf)
@@ -1175,7 +1175,7 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 	return err;
 }
 
-int bt_le_scan_update(void)
+int bt_le_scan_update(bool fast_scan)
 {
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		int err;
@@ -1192,6 +1192,7 @@ int bt_le_scan_update(void)
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		uint16_t interval, window;
 		struct bt_conn *conn;
 
 		conn = bt_conn_lookup_state(BT_ADDR_LE_ANY,
@@ -1202,7 +1203,15 @@ int bt_le_scan_update(void)
 
 		bt_conn_unref(conn);
 
-		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, 0x0060, 0x0030,
+		if (fast_scan) {
+			interval = 0x0060;
+			window = 0x0030;
+		} else {
+			interval = 0x0800;
+			window = 0x0012;
+		}
+
+		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, interval, window,
 				     0x01);
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
@@ -2137,7 +2146,7 @@ int bt_le_scan_stop(void)
 
 	scan_dev_found_cb = NULL;
 
-	return bt_le_scan_update();
+	return bt_le_scan_update(false);
 }
 
 struct net_buf *bt_buf_get_evt(void)

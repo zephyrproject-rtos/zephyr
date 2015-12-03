@@ -815,7 +815,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	switch (conn->state) {
 	case BT_CONN_CONNECT_SCAN:
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		bt_le_scan_update();
+		bt_le_scan_update(false);
 		return 0;
 	case BT_CONN_CONNECT:
 		return bt_hci_connect_le_cancel(conn);
@@ -857,7 +857,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 
-	bt_le_scan_update();
+	bt_le_scan_update(true);
 
 	return conn;
 }
