@@ -218,7 +218,7 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 		adv_type = BT_LE_ADV_NONCONN_IND;
 	}
 
-	if (bt_le_adv_start(adv_type, ad_data, NULL) < 0) {
+	if (bt_le_adv_start(BT_LE_ADV(adv_type), ad_data, NULL) < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING,
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 		return;

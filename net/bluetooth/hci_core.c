@@ -1939,8 +1939,8 @@ int bt_enable(bt_ready_cb_t cb)
 	return 0;
 }
 
-int bt_le_adv_start(uint8_t type, const struct bt_eir *ad,
-		    const struct bt_eir *sd)
+int bt_le_adv_start(const struct bt_le_adv_param *param,
+		    const struct bt_eir *ad, const struct bt_eir *sd)
 {
 	struct net_buf *buf;
 	struct bt_hci_cp_le_set_adv_data *set_data;
@@ -2017,7 +2017,7 @@ send_set_param:
 	memset(set_param, 0, sizeof(*set_param));
 	set_param->min_interval		= sys_cpu_to_le16(0x0800);
 	set_param->max_interval		= sys_cpu_to_le16(0x0800);
-	set_param->type			= type;
+	set_param->type			= param->type;
 	set_param->channel_map		= 0x07;
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_PARAMETERS, buf);

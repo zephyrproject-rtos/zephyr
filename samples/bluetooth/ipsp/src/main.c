@@ -300,7 +300,7 @@ void main(void)
 
 	net_init();
 
-	err = bt_le_adv_start(BT_LE_ADV_IND, ad, sd);
+	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, sd);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

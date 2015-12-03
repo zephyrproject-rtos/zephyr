@@ -457,7 +457,7 @@ static void cmd_advertise(int argc, char *argv[])
 		ad = ad_discov;
 	}
 
-	if (bt_le_adv_start(adv_type, ad, sd) < 0) {
+	if (bt_le_adv_start(BT_LE_ADV(adv_type), ad, sd) < 0) {
 		printk("Failed to start advertising\n");
 	} else {
 		printk("Advertising started\n");

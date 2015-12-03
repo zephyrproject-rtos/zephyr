@@ -53,19 +53,25 @@ struct bt_eir {
 	uint8_t data[29];
 } __packed;
 
+struct bt_le_adv_param {
+	uint8_t type;
+};
+
+#define BT_LE_ADV(t) (&(struct bt_le_adv_param) { .type = t })
+
 /** @brief Start advertising
  *
  *  Set advertisement data, scan response data, advertisement parameters
  *  and start advertising.
  *
- *  @param type Advertising type.
+ *  @param param Advertising parameters.
  *  @param ad Data to be used in advertisement packets.
  *  @param sd Data to be used in scan response packets.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_le_adv_start(uint8_t type, const struct bt_eir *ad,
-		    const struct bt_eir *sd);
+int bt_le_adv_start(const struct bt_le_adv_param *param,
+		    const struct bt_eir *ad, const struct bt_eir *sd);
 
 /** @brief Stop advertising
  *
