@@ -1177,7 +1177,7 @@ int bt_le_scan_update(void)
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		int err;
 
-		if (scan_dev_found_cb) {
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 			return 0;
 		}
 
@@ -1188,7 +1188,7 @@ int bt_le_scan_update(void)
 	}
 
 #if defined(CONFIG_BLUETOOTH_CONN)
-	if (!scan_dev_found_cb) {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		struct bt_conn *conn;
 
 		conn = bt_conn_lookup_state(BT_ADDR_LE_ANY,
@@ -2071,7 +2071,7 @@ int bt_le_adv_stop(void)
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 {
 	/* Return if active scan is already enabled */
-	if (scan_dev_found_cb) {
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return -EALREADY;
 	}
 
@@ -2086,7 +2086,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 int bt_le_scan_stop(void)
 {
 	/* Return if active scanning is already disabled */
-	if (!scan_dev_found_cb) {
+	if (!atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return -EALREADY;
 	}
 
