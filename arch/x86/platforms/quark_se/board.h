@@ -220,9 +220,6 @@ struct scss_interrupt {
 #define CCU_PWM_PCLK_EN_SW     		(1 << 12)
 
 /* Watchdog */
-#define WDT_BASE_ADDR               	0xB0000000
-#define INT_WDT_IRQ               	0xc
-#define INT_WDT_IRQ_PRI              	2
 #define INT_WATCHDOG_MASK		0x47C
 #define SCSS_PERIPH_CFG0_WDT_ENABLE	(1 << 1)
 #define CCU_WDT_PCLK_EN_SW     		(1 << 10)

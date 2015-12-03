@@ -1,3 +1,24 @@
+# Kconfig - Watchdog configuration options
+#
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# Watchdog options
+#
 menuconfig WATCHDOG
 	bool
 	prompt "Watchdog Support"
@@ -12,4 +33,31 @@ config WDT_DW
 	help
 	Enable watchdog timer.
 
+config WDT_DW_DRV_NAME
+	string "Driver instance name"
+	default "WDT_DW"
+	depends on WDT_DW
+	help
+	Designware WDT driver instance name
+
+config WDT_DW_BASE_ADDR
+	hex "Base address"
+	default 0x00000000
+	depends on WDT_DW
+	help
+	Base address to access WDT DesignWare controller registers
+
+config WDT_DW_IRQ
+	int "Interrupt number"
+	default 0
+	depends on WDT_DW
+	help
+	DesignWare WDT interrupt number
+
+config WDT_DW_IRQ_PRI
+	int "Interrupt priority"
+	default 2
+	depends on WDT_DW
+	help
+	DesignWare WDT interrupt priority
 endif

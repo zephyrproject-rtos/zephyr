@@ -24,7 +24,7 @@
 
 uint32_t wdt_fired;
 
-#define WDT_DRIVER "wdt_dw"
+#define WDT_DRIVER CONFIG_WDT_DW_DRV_NAME
 
 /* WDT Requires a callback, there is no interrupt enable / disable. */
 void wdt_example_cb(struct device *dev)

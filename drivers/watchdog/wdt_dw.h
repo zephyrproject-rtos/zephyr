@@ -45,8 +45,6 @@
 #define WDT_CR_INT_ENABLE	(1 << 1)
 
 
-#define WDT_DRV_NAME "wdt_dw"
-
 struct wdt_dw_runtime {
 	void (*cb_fn)(struct device *dev);
 };

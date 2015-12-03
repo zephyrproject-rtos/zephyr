@@ -107,14 +107,15 @@ static struct wdt_driver_api wdt_dw_funcs = {
 };
 
 /* IRQ_CONFIG needs the flags variable declared by IRQ_CONNECT_STATIC */
-IRQ_CONNECT_STATIC(wdt_dw, INT_WDT_IRQ, INT_WDT_IRQ_PRI, wdt_dw_isr, 0, 0);
+IRQ_CONNECT_STATIC(wdt_dw, CONFIG_WDT_DW_IRQ,
+		   CONFIG_WDT_DW_IRQ_PRI, wdt_dw_isr, 0, 0);
 
 int wdt_dw_init(struct device *dev)
 {
 	dev->driver_api = &wdt_dw_funcs;
 
-	IRQ_CONFIG(wdt_dw, INT_WDT_IRQ);
-	irq_enable(INT_WDT_IRQ);
+	IRQ_CONFIG(wdt_dw, CONFIG_WDT_DW_IRQ);
+	irq_enable(CONFIG_WDT_DW_IRQ);
 
 	return 0;
 }
@@ -122,10 +123,11 @@ int wdt_dw_init(struct device *dev)
 struct wdt_dw_runtime wdt_runtime;
 
 struct wdt_dw_dev_config wdt_dev = {
-	.base_address = WDT_BASE_ADDR,
+	.base_address = CONFIG_WDT_DW_BASE_ADDR,
 };
 
-DECLARE_DEVICE_INIT_CONFIG(wdt, WDT_DRV_NAME, &wdt_dw_init, &wdt_dev);
+DECLARE_DEVICE_INIT_CONFIG(wdt, CONFIG_WDT_DW_DRV_NAME,
+			   &wdt_dw_init, &wdt_dev);
 
 SYS_DEFINE_DEVICE(wdt, &wdt_runtime, SECONDARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

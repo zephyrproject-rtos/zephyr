@@ -167,6 +167,15 @@ config SPI_DW_PORT_1_IRQ
 	default 3
 endif
 
+if WATCHDOG
+config WDT_DW
+	def_bool y
+config WDT_DW_BASE_ADDR
+	default 0xB0000000
+config WDT_DW_IRQ
+	default 12
+endif
+
 config KERNEL_INIT_PRIORITY_DEFAULT
 	default 40
 
