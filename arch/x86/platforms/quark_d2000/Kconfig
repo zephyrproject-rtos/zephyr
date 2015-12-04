@@ -71,7 +71,7 @@ config UART_NS16550_PORT_0_NAME
 config UART_NS16550_PORT_0_BASE_ADDR
 	default 0xB0002000
 config UART_NS16550_PORT_0_IRQ
-	default 40
+	default 8
 config UART_NS16550_PORT_0_IRQ_PRI
 	default 3
 config UART_NS16550_PORT_0_BAUD_RATE
@@ -93,7 +93,7 @@ config UART_NS16550_PORT_1_NAME
 config UART_NS16550_PORT_1_BASE_ADDR
 	default 0xB0002400
 config UART_NS16550_PORT_1_IRQ
-	default 38
+	default 6
 config UART_NS16550_PORT_1_IRQ_PRI
 	default 3
 config UART_NS16550_PORT_1_BAUD_RATE
@@ -112,7 +112,7 @@ if UART_CONSOLE
 config UART_CONSOLE_ON_DEV_NAME
 	default "UART_0"
 config UART_CONSOLE_IRQ
-	default 40
+	default 8
 config UART_CONSOLE_IRQ_PRI
 	default 3
 
@@ -123,7 +123,7 @@ if BLUETOOTH_UART
 config BLUETOOTH_UART_ON_DEV_NAME
 	default "UART_1"
 config BLUETOOTH_UART_IRQ
-	default 38
+	default 6
 config BLUETOOTH_UART_IRQ_PRI
 	default 3
 
@@ -134,7 +134,7 @@ if UART_PIPE
 config UART_PIPE_ON_DEV_NAME
 	default "UART_1"
 config UART_PIPE_IRQ
-	default 38
+	default 6
 config UART_PIPE_IRQ_PRI
 	default 3
 
