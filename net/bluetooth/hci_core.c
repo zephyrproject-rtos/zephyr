@@ -1239,6 +1239,9 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr, bool auto_conn)
 		if (atomic_test_and_clear_bit(conn->flags,
 					      BT_CONN_AUTO_CONNECT)) {
 			bt_conn_unref(conn);
+			if (conn->state == BT_CONN_CONNECT_SCAN) {
+				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			}
 		}
 	}
 
