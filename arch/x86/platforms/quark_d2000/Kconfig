@@ -168,4 +168,18 @@ endif
 
 endif
 
+if I2C_DW
+config I2C_DW_0
+        def_bool y
+
+config I2C_DW_0_BASE
+        default 0xb0002800
+
+config I2C_DW_0_NAME
+        default "I2C0"
+
+config I2C_DW_0_INT_PRIORITY
+        default 0
+endif
+
 endif # PLATFORM_QUARK_D2000
