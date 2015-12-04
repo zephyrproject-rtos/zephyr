@@ -35,12 +35,6 @@ extern "C" {
 /**
  * @cond internal
  */
-extern int _task_pipe_put(kpipe_t id,
-			void *pBuffer,
-			int iNbrBytesToWrite,
-			int *piNbrBytesWritten,
-			K_PIPE_OPTION Option,
-			int32_t TimeOut);
 
 /**
  * @internal
@@ -63,55 +57,29 @@ extern int _task_pipe_put(kpipe_t id,
 /**
  * @brief Pipe write request
  *
- * Attempt to write data from a memory buffer area to the specified pipe.
- * Fail immediately if it is not possible.
- *
- * @param i Pipe ID
- * @param b Buffer
- * @param n Number of bytes to write
- * @param pn Pointer to number of bytes written
- * @param o Pipe options
- *
- * @return RC_OK, RC_INCOMPLETE, RC_FAIL, or RC_ALIGNMENT
- */
-#define task_pipe_put(i, b, n, pn, o) \
-			_task_pipe_put(i, b, n, pn, o, TICKS_NONE)
-
-/**
- * @brief Pipe write request with unlimited wait
- *
  * Attempt to write data from a memory buffer area to the
- * specified pipe and wait forever until it succeeds.
- *
- * @param i Pipe ID
- * @param b Buffer
- * @param n Number of bytes to write
- * @param pn Pointer to number of bytes written
- * @param o Pipe options
- *
- * @return RC_OK, RC_INCOMPLETE or RC_ALIGNMENT
- */
-#define task_pipe_put_wait(i, b, n, pn, o) \
-			_task_pipe_put(i, b, n, pn, o, TICKS_UNLIMITED)
-
-/**
- * @brief Pipe write request with timeout
- *
- * Attemp to write data from a memory buffer area to the
  * specified pipe with a timeout option.
  *
  * @param id Pipe ID
- * @param b Buffer
- * @param n Number of bytes to write
- * @param pn Pointer to number of bytes written
- * @param o Pipe options
- * @param t Timeout
+ * @param buffer Buffer
+ * @param bytes_to_write Number of bytes to write
+ * @param bytes_written Pointer to number of bytes written
+ * @param options Pipe options
+ * @param timeout Affects the action taken should the pipe be full. If
+ * TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as long
+ * as necessary. Otherwise wait up to the specified number of ticks before
+ * timing out.
  *
- * @return RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
+ * @retval RC_OK Successfully wrote data to pipe
+ * @retval RC_ALIGNMENT Data is improperly aligned
+ * @retval RC_INCOMPLETE Only some of the data was written to the pipe when
+ * @a options = _ALL_N
+ * @retval RC_TIME Timed out waiting to write to pipe
+ * @retval RC_FAIL Failed to immediately write to pipe when
+ * @a timeout = TICKS_NONE
  */
-#define task_pipe_put_wait_timeout(id, b, n, pn, o, t) \
-			_task_pipe_put(id, b, n, pn, o, t)
-
+extern int task_pipe_put(kpipe_t id, void *buffer, int bytes_to_write,
+			int *bytes_written, K_PIPE_OPTION options, int32_t timeout);
 
 extern int _task_pipe_get(kpipe_t id,
 			void *pBuffer,

@@ -232,8 +232,8 @@ to a consuming task.
            data_item = ... ;
 
            /* write the entire data item to the pipe */
-           task_pipe_put_wait(DATA_PIPE, &data_item, sizeof(data_item),
-                              &amount_written, _ALL_N);
+           task_pipe_put(DATA_PIPE, &data_item, sizeof(data_item),
+                              &amount_written, _ALL_N, TICKS_UNLIMITED);
 
        }
    }
@@ -305,14 +305,7 @@ APIs
 The following Pipe APIs are provided by :file:`microkernel.h`:
 
 :c:func:`task_pipe_put()`
-   Writes data to a pipe, or fails & continues if unable to write data.
-
-:c:func:`task_pipe_put_wait()`
-   Writes data to a pipe, or waits if unable to write data.
-
-:c:func:`task_pipe_put_wait_timeout()`
-   Writes data to a pipe, or waits for
-   a specified time period if unable to write data.
+   Writes data to a pipe, with time limited waiting.
 
 :c:func:`task_pipe_block_put()`
    Writes data to a pipe from a memory pool block.

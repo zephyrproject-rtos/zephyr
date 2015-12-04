@@ -212,8 +212,8 @@ int pipeput(kpipe_t pipe, K_PIPE_OPTION option, int size, int count, uint32_t *t
 		int size2xfer = min(size, size2xfer_total - sizexferd_total);
 		int ret;
 
-		ret = task_pipe_put_wait(pipe, data_bench, size2xfer,
-								 &sizexferd, option);
+		ret = task_pipe_put(pipe, data_bench, size2xfer,
+							 &sizexferd, option, TICKS_UNLIMITED);
 		if (RC_OK != ret) {
 			return 1;
 		}

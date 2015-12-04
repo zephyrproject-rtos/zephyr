@@ -102,57 +102,49 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	return A.Time.rcode;
 }
 
-/**
- * @brief Pipe write request
- *
- * This routine attempts to write data from a memory buffer area to the
- * specified pipe.
- *
- * @return RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
- */
-int _task_pipe_put(kpipe_t Id, void *pBuffer,
-		int iNbrBytesToWrite, int *piNbrBytesWritten,
-		K_PIPE_OPTION Option, int32_t TimeOut)
+int task_pipe_put(kpipe_t id, void *buffer,
+		int bytes_to_write, int *bytes_written,
+		K_PIPE_OPTION options, int32_t timeout)
 {
 	struct k_args A;
 
 	/*
 	 * some users do not check the FUNCTION return value,
-	 * but immediately use iNbrBytesWritten; make sure it always
+	 * but immediately use bytes_written; make sure it always
 	 * has a good value, even when we return failure immediately
 	 * (see below)
 	 */
 
-	*piNbrBytesWritten = 0;
+	*bytes_written = 0;
 
-	if (unlikely(iNbrBytesToWrite % SIZEOFUNIT_TO_OCTET(1))) {
+	if (unlikely(bytes_to_write % SIZEOFUNIT_TO_OCTET(1))) {
 		return RC_ALIGNMENT;
 	}
-	if (unlikely(iNbrBytesToWrite == 0)) {
+	if (unlikely(bytes_to_write == 0)) {
 		/*
 		 * not allowed because enlisted requests with zero size
 		 * will hang in _k_pipe_process()
 		 */
 		return RC_FAIL;
 	}
-	if (unlikely(Option == _0_TO_N && TimeOut != TICKS_NONE)) {
+	if (unlikely(options == _0_TO_N && timeout != TICKS_NONE)) {
 		return RC_FAIL;
 	}
 
 	A.priority = _k_current_task->priority;
 	A.Comm = _K_SVC_PIPE_PUT_REQUEST;
-	A.Time.ticks = TimeOut;
+	A.Time.ticks = timeout;
 
-	A.args.pipe_req.req_info.pipe.id = Id;
-	A.args.pipe_req.req_type.sync.total_size = iNbrBytesToWrite;
-	A.args.pipe_req.req_type.sync.data_ptr = pBuffer;
+	A.args.pipe_req.req_info.pipe.id = id;
+	A.args.pipe_req.req_type.sync.total_size = bytes_to_write;
+	A.args.pipe_req.req_type.sync.data_ptr = buffer;
 
-	_k_pipe_option_set(&A.args, Option);
+	_k_pipe_option_set(&A.args, options);
 	_k_pipe_request_type_set(&A.args, _SYNCREQ);
 
 	KERNEL_ENTRY(&A);
 
-	*piNbrBytesWritten = A.args.pipe_ack.xferred_size;
+	*bytes_written = A.args.pipe_ack.xferred_size;
 	return A.Time.rcode;
 }
 
