@@ -103,7 +103,7 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 #define BT_LE_SCAN_ACTIVE \
 		(&(struct bt_le_scan_param) { \
 			.type = BT_HCI_LE_SCAN_ACTIVE, \
-			.filter_dup = 0x01, \
+			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE, \
 			.interval = 0x0030, \
 			.window = 0x0030, \
 		 })

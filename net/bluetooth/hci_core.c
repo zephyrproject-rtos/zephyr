@@ -284,8 +284,8 @@ static int bt_hci_stop_scanning(void)
 
 	scan_enable = net_buf_add(buf, sizeof(*scan_enable));
 	memset(scan_enable, 0, sizeof(*scan_enable));
-	scan_enable->filter_dup = 0x00;
-	scan_enable->enable = 0x00;
+	scan_enable->filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE;
+	scan_enable->enable = BT_HCI_LE_SCAN_DISABLE;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
 	if (err) {
@@ -1157,7 +1157,7 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 	scan_enable = net_buf_add(buf, sizeof(*scan_enable));
 	memset(scan_enable, 0, sizeof(*scan_enable));
 	scan_enable->filter_dup = filter_dup;
-	scan_enable->enable = 0x01;
+	scan_enable->enable = BT_HCI_LE_SCAN_ENABLE;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
 	if (err) {
