@@ -509,22 +509,6 @@ static void _mvic_rte_update(unsigned int irq, uint32_t value, uint32_t mask)
 	_mvic_rte_set(irq, (_mvic_rte_get(irq) & ~mask) | (value & mask));
 }
 
-void loapic_int_vec_trigger(unsigned int vector)
-{
-	uint32_t icr_cmd;
-
-	/*
-	 * Bit 14   : level ASSERT (1)
-	 * Bit 18-19: Destination shorthand SELF (01)
-	 * Bit 15   : trigger mode EDGE (0)
-	 *
-	 * Destination mode ignored
-	 */
-	icr_cmd = vector | (1 << 14) | (1 << 18);
-
-	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ICRLO) = icr_cmd;
-}
-
 /**
  * @brief Find the currently executing interrupt vector, if any
  *

@@ -328,35 +328,6 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 	irq_unlock(oldLevel);
 }
 
-
-/**
- *
- * @brief Trigger an interrupt from software
- *
- * This is the required method to trigger an interrupt from software,
- * use this instead of hard-coded asm "int <vector>" operations. Sends a
- * self-directed inter-processor interrupt to the LOAPIC which in turn
- * triggers the IRQ handler for the specified vector.
- *
- * @param vector IRQ vector in the IDT to trigger
- */
-void loapic_int_vec_trigger(unsigned int vector)
-{
-	uint32_t icr_cmd;
-
-	/*
-	 * Bit 14   : level ASSERT (1)
-	 * Bit 18-19: Destination shorthand SELF (01)
-	 * Bit 15   : trigger mode EDGE (0)
-	 *
-	 * Destination mode ignored,
-	 */
-	icr_cmd = vector | (1 << 14) | (1 << 18);
-
-	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ICRLO) = icr_cmd;
-}
-
-
 /**
  *
  * @brief Enable an individual LOAPIC interrupt (IRQ)

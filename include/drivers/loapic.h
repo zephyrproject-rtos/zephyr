@@ -74,7 +74,6 @@ SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
 #include <device.h>
 
 extern void _loapic_int_vec_set(unsigned int irq, unsigned int vector);
-extern void loapic_int_vec_trigger(unsigned int vector);
 extern void _loapic_irq_enable(unsigned int irq);
 extern void _loapic_irq_disable(unsigned int irq);
 extern void _loapic_enable(void);

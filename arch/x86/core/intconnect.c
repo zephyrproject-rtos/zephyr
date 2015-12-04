@@ -199,10 +199,6 @@ extern void *_DynIntStubsBegin;
  * in the assignment of an interrupt vector located in the reserved range of
  * the processor.
  *
- * For software-generated interrupts, you *must* use loapic_int_vec_trigger()
- * and not assembly 'int <vector>' operations, due to the implicit
- * _loapic_eoi() called in the common handler code.
- *
  * INTERNAL
  * For debug kernels, this routine shall return -1 when there are no
  * vectors remaining in the specified <priority> level.
@@ -265,11 +261,8 @@ void _common_dynamic_irq_handler(uint32_t stub_idx)
 {
 	dyn_irq_list[stub_idx].handler(dyn_irq_list[stub_idx].param);
 	/*
-	 * Tell the APIC we're done servicing the interrupt. We always
-	 * want to call this for both SW and HW IRQs since we generate
-	 * SW IRQs by triggering a self-directed inter-processor
-	 * interrupt, and the LOAPIC will notify the IOAPIC if necessary
-	 * for HW IRQs
+	 * Tell the APIC we're done servicing the interrupt.LOAPIC will notify
+	 * the IOAPIC if necessary
 	 */
 	_loapic_eoi();
 }
