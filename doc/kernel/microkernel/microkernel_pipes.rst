@@ -256,8 +256,8 @@ rather than reading them individually.
 
        while (1) {
            /* read 20 complete data items at once */
-           task_pipe_get_wait(DATA_PIPE, &data_items, sizeof(data_items),
-                              &amount_read, _ALL_N);
+           task_pipe_get(DATA_PIPE, &data_items, sizeof(data_items),
+                         &amount_read, _ALL_N, TICKS_UNLIMITED);
 
            /* process the data items one at a time */
            for (i = 0; i < 20; i++) {
@@ -286,7 +286,7 @@ unprocessed data bytes in the pipe.
        while (1) {
            /* consume any data bytes currently in the pipe */
            while (task_pipe_get(DATA_PIPE, &data_area, sizeof(data_area),
-                                &amount_read, _1_TO_N) == RC_OK) {
+                                &amount_read, _1_TO_N, TICKS_NONE) == RC_OK) {
                /* now have from 1 to 20 data bytes */
                for (i = 0; i < amount_read; i++) {
                    ... = data_area[i];
@@ -312,10 +312,3 @@ The following Pipe APIs are provided by :file:`microkernel.h`:
 
 :c:func:`task_pipe_get()`
    Reads data from a pipe, or fails and continues if data isn't there.
-
-:c:func:`task_pipe_get_wait()`
-   Reads data from a pipe, or waits for data if data isn't there.
-
-:c:func:`task_pipe_get_wait_timeout()`
-   Reads data from a pipe, or waits for
-   data for a specified time period if data isn't there.

@@ -22,8 +22,6 @@
  *
  *    task_pipe_put()
  *    task_pipe_get()
- *    task_pipe_get_wait()
- *    task_pipe_get_wait_timeout()
  *
  * The following target pipe routine does not yet have a test case:
  *    task_pipe_block_put()
@@ -209,7 +207,8 @@ int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
 		}
 
 		rv = task_pipe_get(pipeId, rxBuffer, singleItems[i].size,
-						   &bytesReceived, singleItems[i].options);
+						   &bytesReceived, singleItems[i].options,
+						   TICKS_NONE);
 		if (rv != singleItems[i].rcode) {
 			TC_ERROR("task_pipe_get(%d bytes) : Expected %d not %d.\n"
 					 "    bytesReceived = %d\n",
@@ -249,7 +248,8 @@ int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
 		}
 
 		rv = task_pipe_get(pipeId, rxBuffer, manyItems[i].size,
-						   &bytesReceived, manyItems[i].options);
+						   &bytesReceived, manyItems[i].options,
+						   TICKS_NONE);
 
 		if (rv != manyItems[i].rcode) {
 			TC_ERROR("task_pipe_get(%d bytes) : Expected %d not %d.\n"
@@ -453,24 +453,17 @@ int pipePutTest(void)
 int pipePutWaitHelper(void)
 {
 	int  i;           /* loop counter */
-	int  rv;          /* return value from task_pipe_get_wait */
-	int  bytesRead;   /* # of bytes read from task_pipe_get_wait() */
+	int  rv;          /* return value from task_pipe_get*/
+	int  bytesRead;   /* # of bytes read from task_pipe_get() */
 
 	(void)task_sem_take_wait(altSem);    /* Wait until test is ready */
 
-	/* 1. task_pipe_get_wait() will force a context switch to RegressionTask() */
-	rv = task_pipe_get_wait(pipeId, rxBuffer, PIPE_SIZE,
-							&bytesRead, _ALL_N);
-	if ((rv != RC_OK) || (bytesRead != PIPE_SIZE)) {
-		TC_ERROR("Expected return code %d, not %d\n"
-				 "Expected %d bytes to be read, not %d\n",
-				 RC_OK, rv, PIPE_SIZE, bytesRead);
-		return TC_FAIL;
-	}
-
-	/* 2. task_pipe_get_wait() will force a context switch to RegressionTask(). */
-	rv = task_pipe_get_wait(pipeId, rxBuffer, PIPE_SIZE,
-							&bytesRead, _1_TO_N);
+	/*
+	 * 1. task_pipe_get(TICKS_UNLIMITED) will force a context
+	 * switch to RegressionTask().
+	 */
+	rv = task_pipe_get(pipeId, rxBuffer, PIPE_SIZE,
+						&bytesRead, _ALL_N, TICKS_UNLIMITED);
 	if ((rv != RC_OK) || (bytesRead != PIPE_SIZE)) {
 		TC_ERROR("Expected return code %d, not %d\n"
 				 "Expected %d bytes to be read, not %d\n",
@@ -479,12 +472,25 @@ int pipePutWaitHelper(void)
 	}
 
 	/*
-	 * Before emptying the pipe, check that task_pipe_get_wait() fails when
-	 * using the _0_TO_N option.
+	 * 2. task_pipe_get(TICKS_UNLIMITED) will force a context
+	 * switch to RegressionTask().
+	 */
+	rv = task_pipe_get(pipeId, rxBuffer, PIPE_SIZE,
+						&bytesRead, _1_TO_N, TICKS_UNLIMITED);
+	if ((rv != RC_OK) || (bytesRead != PIPE_SIZE)) {
+		TC_ERROR("Expected return code %d, not %d\n"
+				 "Expected %d bytes to be read, not %d\n",
+				 RC_OK, rv, PIPE_SIZE, bytesRead);
+		return TC_FAIL;
+	}
+
+	/*
+	 * Before emptying the pipe, check that task_pipe_get(TICKS_UNLIMITED)
+	 * fails when using the _0_TO_N option.
 	 */
 
-	rv = task_pipe_get_wait(pipeId, rxBuffer, PIPE_SIZE / 2,
-							&bytesRead, _0_TO_N);
+	rv = task_pipe_get(pipeId, rxBuffer, PIPE_SIZE / 2,
+						&bytesRead, _0_TO_N, TICKS_UNLIMITED);
 	if (rv != RC_FAIL) {
 		TC_ERROR("Expected return code %d, not %d\n", RC_FAIL, rv);
 		return TC_FAIL;
@@ -493,7 +499,7 @@ int pipePutWaitHelper(void)
 	/* 3. Empty the pipe in two reads */
 	for (i = 0; i < 2; i++) {
 		rv = task_pipe_get(pipeId, rxBuffer, PIPE_SIZE / 2,
-						   &bytesRead, _0_TO_N);
+						   &bytesRead, _0_TO_N, TICKS_NONE);
 		if ((rv != RC_OK) || (bytesRead != PIPE_SIZE / 2)) {
 			TC_ERROR("Expected return code %d, not %d\n"
 					 "Expected %d bytes to be read, not %d\n",
@@ -569,7 +575,7 @@ int pipePutWaitTest(void)
 
 /**
  *
- * @brief Test task_pipe_get_wait_timeout()
+ * @brief Test task_pipe_get(timeout)
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -577,24 +583,17 @@ int pipePutWaitTest(void)
 int pipePutTimeoutHelper(void)
 {
 	int  i;         /* loop counter */
-	int  rv;        /* return value from task_pipe_get_wait_timeout() */
-	int  bytesRead; /* # of bytes read from task_pipe_get_wait_timeout() */
+	int  rv;        /* return value from task_pipe_get() */
+	int  bytesRead; /* # of bytes read from task_pipe_get() */
 
 	(void)task_sem_take_wait(altSem);    /* Wait until test is ready */
 
-	/* 1. task_pipe_get_wait_timeout() will force a context switch to RegressionTask() */
-	rv = task_pipe_get_wait_timeout(pipeId, rxBuffer, PIPE_SIZE,
-									&bytesRead, _ALL_N, ONE_SECOND);
-	if ((rv != RC_OK) || (bytesRead != PIPE_SIZE)) {
-		TC_ERROR("Expected return code %d, not %d\n"
-				 "Expected %d bytes to be read, not %d\n",
-				 RC_OK, rv, PIPE_SIZE, bytesRead);
-		return TC_FAIL;
-	}
-
-	/* 2. task_pipe_get_wait_timeout() will force a context switch to RegressionTask(). */
-	rv = task_pipe_get_wait_timeout(pipeId, rxBuffer, PIPE_SIZE,
-									&bytesRead, _1_TO_N, ONE_SECOND);
+	/*
+	 * 1. task_pipe_get(timeout) will force a context
+	 * switch to RegressionTask()
+	 */
+	rv = task_pipe_get(pipeId, rxBuffer, PIPE_SIZE,
+						&bytesRead, _ALL_N, ONE_SECOND);
 	if ((rv != RC_OK) || (bytesRead != PIPE_SIZE)) {
 		TC_ERROR("Expected return code %d, not %d\n"
 				 "Expected %d bytes to be read, not %d\n",
@@ -603,12 +602,25 @@ int pipePutTimeoutHelper(void)
 	}
 
 	/*
-	 * Before emptying the pipe, check that task_pipe_get_wait_timeout() fails when
+	 * 2. task_pipe_get(timeout) will force a context
+	 * switch to RegressionTask().
+	 */
+	rv = task_pipe_get(pipeId, rxBuffer, PIPE_SIZE,
+						&bytesRead, _1_TO_N, ONE_SECOND);
+	if ((rv != RC_OK) || (bytesRead != PIPE_SIZE)) {
+		TC_ERROR("Expected return code %d, not %d\n"
+				 "Expected %d bytes to be read, not %d\n",
+				 RC_OK, rv, PIPE_SIZE, bytesRead);
+		return TC_FAIL;
+	}
+
+	/*
+	 * Before emptying the pipe, check that task_pipe_get(timeout) fails when
 	 * using the _0_TO_N option.
 	 */
 
-	rv = task_pipe_get_wait_timeout(pipeId, rxBuffer, PIPE_SIZE / 2,
-									&bytesRead, _0_TO_N, ONE_SECOND);
+	rv = task_pipe_get(pipeId, rxBuffer, PIPE_SIZE / 2,
+						&bytesRead, _0_TO_N, ONE_SECOND);
 	if (rv != RC_FAIL) {
 		TC_ERROR("Expected return code %d, not %d\n", RC_FAIL, rv);
 		return TC_FAIL;
@@ -617,7 +629,7 @@ int pipePutTimeoutHelper(void)
 	/* 3. Empty the pipe in two reads */
 	for (i = 0; i < 2; i++) {
 		rv = task_pipe_get(pipeId, rxBuffer, PIPE_SIZE / 2,
-						   &bytesRead, _0_TO_N);
+						   &bytesRead, _0_TO_N, TICKS_NONE);
 		if ((rv != RC_OK) || (bytesRead != PIPE_SIZE / 2)) {
 			TC_ERROR("Expected return code %d, not %d\n"
 					 "Expected %d bytes to be read, not %d\n",
@@ -713,12 +725,12 @@ int pipePutTimeoutTest(void)
 
 /**
  *
- * @brief Routine to test task_pipe_get()
+ * @brief Routine to test task_pipe_get(TICKS_NONE)
  *
- * This routine tests the task_pipe_get() API.  Some of this functionality
- * has already been tested while testing task_pipe_put().  As a result, the
- * only remaining functionality that needs to be checked are attempts to get
- * data from an empty pipe.
+ * This routine tests the task_pipe_get(TICKS_NONE) API.  Some of this
+ * functionality has already been tested while testing task_pipe_put().  As
+ * a result, the only remaining functionality that needs to be checked are
+ * attempts to get data from an empty pipe.
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -735,7 +747,7 @@ int pipeGetTest(void)
 	for (j = 0; j < ARRAY_SIZE(options); j++) {
 		for (i = 0; i < ARRAY_SIZE(size); i++) {
 			rv = task_pipe_get(pipeId, rxBuffer, size[i],
-							   &bytesRead, options[j]);
+							   &bytesRead, options[j], TICKS_NONE);
 			if (rv != RC_FAIL) {
 				TC_ERROR("Expected return code %d, not %d\n", RC_FAIL, rv);
 				return TC_FAIL;
@@ -745,7 +757,7 @@ int pipeGetTest(void)
 
 	for (i = 0; i < ARRAY_SIZE(size); i++) {
 		rv = task_pipe_get(pipeId, rxBuffer, size[i],
-						   &bytesRead, _0_TO_N);
+						   &bytesRead, _0_TO_N, TICKS_NONE);
 		if (rv != RC_OK) {
 			TC_ERROR("Expected return code %d, not %d\n", RC_OK, rv);
 			return TC_FAIL;
@@ -762,9 +774,9 @@ int pipeGetTest(void)
 
 /**
  *
- * @brief Test task_pipe_get_wait()
+ * @brief Test task_pipe_get(TICKS_UNLIMITED)
  *
- * @param items     testcase list for task_pipe_get_wait()
+ * @param items     testcase list for task_pipe_get(TICKS_UNLIMITED)
  * @param nItems    number of items in list
  *
  * @return TC_PASS on success, TC_FAIL on failure
@@ -778,9 +790,9 @@ int pipeGetWaitHelperWork(SIZE_EXPECT *items, int nItems)
 
 	for (i = 0; i < nItems; i++) {
 		/*
-		 * Pipe should be empty.  Most calls to task_pipe_get_wait() should
-		 * block until the call to task_pipe_put() is performed in the routine
-		 * pipeGetWaitHelperWork().
+		 * Pipe should be empty.  Most calls to task_pipe_get(TICKS_UNLIMITED)
+		 * should block until the call to task_pipe_put() is performed in the
+		 * routine pipeGetWaitHelperWork().
 		 */
 
 		bytesSent = 0;
@@ -800,7 +812,7 @@ int pipeGetWaitHelperWork(SIZE_EXPECT *items, int nItems)
 
 /**
  *
- * @brief Test task_pipe_get_wait()
+ * @brief Test task_pipe_get(TICKS_UNLIMITED)
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -828,9 +840,9 @@ int pipeGetWaitHelper(void)
 
 /**
  *
- * @brief Test task_pipe_get_wait()
+ * @brief Test task_pipe_get(TICKS_UNLIMITED)
  *
- * @param items     testcase list for task_pipe_get_wait()
+ * @param items     testcase list for task_pipe_get(TICKS_UNLIMITED)
  * @param nItems    number of items in list
  *
  * @return TC_PASS on success, TC_FAIL on failure
@@ -839,18 +851,19 @@ int pipeGetWaitHelper(void)
 int pipeGetWaitTestWork(SIZE_EXPECT *items, int nItems)
 {
 	int  i;         /* loop counter */
-	int  rv;        /* return code from task_pipe_get_wait() */
-	int  bytesRead; /* # of bytes read from task_pipe_get_wait() */
+	int  rv;        /* return code from task_pipe_get() */
+	int  bytesRead; /* # of bytes read from task_pipe_get() */
 
 	for (i = 0; i < nItems; i++) {
 		/*
-		 * Pipe should be empty.  Most calls to task_pipe_get_wait() should
-		 * block until the call to task_pipe_put() is performed in the routine
-		 * pipeGetWaitHelperWork().
+		 * Pipe should be empty.  Most calls to task_pipe_get(TICKS_UNLIMITED)
+		 * should block until the call to task_pipe_put() is performed in the
+		 * routine pipeGetWaitHelperWork().
 		 */
 
-		rv = task_pipe_get_wait(pipeId, rxBuffer, items[i].size,
-								&bytesRead, items[i].options);
+		rv = task_pipe_get(pipeId, rxBuffer, items[i].size,
+						   &bytesRead, items[i].options,
+						   TICKS_UNLIMITED);
 		if ((rv != items[i].rcode) || (bytesRead != items[i].sent)) {
 			TC_ERROR("Expected return value %d, got %d\n"
 					 "Expected bytesRead = %d, got %d\n",
@@ -864,7 +877,7 @@ int pipeGetWaitTestWork(SIZE_EXPECT *items, int nItems)
 
 /**
  *
- * @brief Test task_pipe_get_wait()
+ * @brief Test task_pipe_get(TICKS_UNLIMITED)
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -888,8 +901,8 @@ int pipeGetWaitTest(void)
 		return TC_FAIL;
 	}
 
-	rv = task_pipe_get_wait(pipeId, rxBuffer, PIPE_SIZE,
-							&bytesRead, _0_TO_N);
+	rv = task_pipe_get(pipeId, rxBuffer, PIPE_SIZE,
+						&bytesRead, _0_TO_N, TICKS_UNLIMITED);
 	if (rv != RC_FAIL) {
 		TC_ERROR("Expected return code of %d, not %d\n", RC_FAIL, rv);
 		return TC_FAIL;
@@ -900,7 +913,7 @@ int pipeGetWaitTest(void)
 
 /**
  *
- * @brief Test remaining task_pipe_get_wait_timeout() functionality
+ * @brief Test remaining task_pipe_get(timeout) functionality
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -908,12 +921,13 @@ int pipeGetWaitTest(void)
 int pipeGetTimeoutTest(void)
 {
 	int  i;          /* loop counter */
-	int  rv;         /* return value from task_pipe_get_wait_timeout() */
-	int  bytesRead;  /* # of bytes read from task_pipe_get_wait_timeout() */
+	int  rv;         /* return value from task_pipe_get() */
+	int  bytesRead;  /* # of bytes read from task_pipe_get() */
 
 	for (i = 0; i < ARRAY_SIZE(timeout_cases); i++) {
-		rv = task_pipe_get_wait_timeout(pipeId, rxBuffer, timeout_cases[i].size,
-										&bytesRead, timeout_cases[i].options, ONE_SECOND);
+		rv = task_pipe_get(pipeId, rxBuffer, timeout_cases[i].size,
+						   &bytesRead, timeout_cases[i].options,
+						   ONE_SECOND);
 		if ((rv != timeout_cases[i].rcode) ||
 			(bytesRead != timeout_cases[i].sent)) {
 			TC_ERROR("Expected return code %d, got %d\n"
@@ -967,7 +981,7 @@ int AlternateTask(void)
 	}
 
 	/*
-	 * There is no pipeGetTimeoutHelper() as the task_pipe_get_wait_timeout() checks
+	 * There is no pipeGetTimeoutHelper() as the task_pipe_get(timeout) checks
 	 * have either been done in pipePutTimeoutHelper() or
 	 * pipeGetTimeoutTest().
 	 */
@@ -1008,19 +1022,19 @@ int RegressionTask(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Testing task_pipe_get() ...\n");
+	TC_PRINT("Testing task_pipe_get(TICKS_NONE) ...\n");
 	tcRC = pipeGetTest();
 	if (tcRC != TC_PASS) {
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Testing task_pipe_get_wait() ...\n");
+	TC_PRINT("Testing task_pipe_get(TICKS_UNLIMITED) ...\n");
 	tcRC = pipeGetWaitTest();
 	if (tcRC != TC_PASS) {
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Testing task_pipe_get_wait_timeout() ...\n");
+	TC_PRINT("Testing task_pipe_get(timeout) ...\n");
 	tcRC = pipeGetTimeoutTest();
 	if (tcRC != TC_PASS) {
 		return TC_FAIL;

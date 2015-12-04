@@ -109,8 +109,8 @@ int pipeget(kpipe_t pipe, K_PIPE_OPTION option, int size, int count,
 		int size2xfer = min(size, size2xfer_total - sizexferd_total);
 		int ret;
 
-		ret = task_pipe_get_wait(pipe, data_recv, size2xfer,
-								 &sizexferd, option);
+		ret = task_pipe_get(pipe, data_recv, size2xfer,
+							 &sizexferd, option, TICKS_UNLIMITED);
 		if (RC_OK != ret) {
 			return 1;
 		}

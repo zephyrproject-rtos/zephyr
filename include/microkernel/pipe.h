@@ -81,63 +81,32 @@ extern "C" {
 extern int task_pipe_put(kpipe_t id, void *buffer, int bytes_to_write,
 			int *bytes_written, K_PIPE_OPTION options, int32_t timeout);
 
-extern int _task_pipe_get(kpipe_t id,
-			void *pBuffer,
-			int iNbrBytesToRead,
-			int *piNbrBytesRead,
-			K_PIPE_OPTION Option,
-			int32_t TimeOut);
-
 /**
  * @brief Pipe read request
  *
  * Attempt to read data into a memory buffer area from the
- * specified pipe and fail immediately if not possible.
+ * specified pipe with a timeout option.
  *
  * @param id Pipe ID
- * @param b Buffer
- * @param n Number of bytes to read
- * @param pn Pointer to number of bytes read
- * @param o Pipe options
+ * @param buffer Buffer
+ * @param bytes_to_read Number of bytes to read
+ * @param bytes_read Pointer to number of bytes read
+ * @param options Pipe options
+ * @param timeout Affects the action taken should the pipe be empty. If
+ * TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as long
+ * as necessary. Otherwise wait up to the specified number of ticks before
+ * timing out.
  *
- * @return RC_OK, RC_INCOMPLETE, RC_FAIL, or RC_ALIGNMENT
+ * @retval RC_OK Successfully read data from pipe
+ * @retval RC_ALIGNMENT Data is improperly aligned
+ * @retval RC_INCOMPLETE Only some of the data was read from the pipe when
+ * @a options = _ALL_N
+ * @retval RC_TIME Timed out waiting to read from pipe
+ * @retval RC_FAIL Failed to immediately read from pipe when
+ * @a timeout = TICKS_NONE
  */
-#define task_pipe_get(id, b, n, pn, o) \
-			_task_pipe_get(id, b, n, pn, o, TICKS_NONE)
-/**
- * @brief Pipe read request and wait
- *
- * Attempt to read data into a memory buffer area from the
- * specified pipe and wait forever until it succeeds.
- *
- * @param id Pipe ID
- * @param b Buffer
- * @param n Number of bytes to read
- * @param pn Pointer to number of bytes read
- * @param o Pipe options
- *
- * @return RC_OK, RC_INCOMPLETE, or RC_ALIGNMENT
- */
-#define task_pipe_get_wait(id, b, n, pn, o) \
-			_task_pipe_get(id, b, n, pn, o, TICKS_UNLIMITED)
-/**
- * @brief Pipe read request
- *
- * This routine attempts to read data into a memory buffer area from the
- * specified pipe, with a possible timeout option.
- *
- * @param id Pipe ID
- * @param b Buffer
- * @param n Number of bytes to read
- * @param pn Pointer to number of bytes read
- * @param o Pipe options
- * @param t Timeout
- *
- * @return RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
- */
-#define task_pipe_get_wait_timeout(id, b, n, pn, o, t) \
-			_task_pipe_get(id, b, n, pn, o, t)
-
+extern int task_pipe_get(kpipe_t id, void *buffer, int bytes_to_read,
+			int *bytes_read, K_PIPE_OPTION options, int32_t timeout);
 
 extern int _task_pipe_block_put(kpipe_t id,
 				struct k_block block,

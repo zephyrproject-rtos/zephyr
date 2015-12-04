@@ -90,7 +90,7 @@ static pfunc func_array[] = {
 	(pfunc)_task_sem_group_take,
 	/* pipe functions */
 	(pfunc)task_pipe_put,
-	(pfunc)_task_pipe_get,
+	(pfunc)task_pipe_get,
 	(pfunc)_task_pipe_block_put,
 	/* mailbox functions */
 	(pfunc)task_mbox_put,
