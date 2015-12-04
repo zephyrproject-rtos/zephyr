@@ -100,6 +100,12 @@ struct bt_hci_cmd_hdr {
 #define BT_HCI_LE_CONN_PARAM_REQ_PROC		0x02
 #define BT_HCI_LE_SLAVE_FEATURES		0x08
 
+/* Defined GAP timers */
+#define BT_GAP_SCAN_FAST_INTERVAL		0x0060
+#define BT_GAP_SCAN_FAST_WINDOW			0x0030
+#define BT_GAP_SCAN_SLOW_INTERVAL		0x0800
+#define BT_GAP_SCAN_SLOW_WINDOW			0x0012
+
 /* OpCode Group Fields */
 #define BT_OGF_LINK_CTRL			0x01
 #define BT_OGF_BASEBAND				0x03

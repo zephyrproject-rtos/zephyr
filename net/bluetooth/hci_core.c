@@ -406,7 +406,7 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 	memset(cp, 0, sizeof(*cp));
 
 	/* Interval == window for continuous scanning */
-	cp->scan_interval = sys_cpu_to_le16(0x0060);
+	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
 	cp->scan_window = cp->scan_interval;
 
 	bt_addr_le_copy(&cp->peer_addr, addr);
@@ -1204,11 +1204,11 @@ int bt_le_scan_update(bool fast_scan)
 	bt_conn_unref(conn);
 
 	if (fast_scan) {
-		interval = 0x0060;
-		window = 0x0030;
+		interval = BT_GAP_SCAN_FAST_INTERVAL;
+		window = BT_GAP_SCAN_FAST_WINDOW;
 	} else {
-		interval = 0x0800;
-		window = 0x0012;
+		interval = BT_GAP_SCAN_SLOW_INTERVAL;
+		window = BT_GAP_SCAN_SLOW_WINDOW;
 	}
 
 	return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, interval, window, 0x01);

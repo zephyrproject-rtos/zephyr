@@ -99,13 +99,17 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 			     uint8_t adv_type, const uint8_t *adv_data,
 			     uint8_t len);
 
-/** Helper macro to enable active scanning to discover new devices */
+/** Helper macro to enable active scanning to discover new devices.
+ *
+ *  The interval and window are intentionally set to the same value to
+ *  perform continuous scanning.
+ */
 #define BT_LE_SCAN_ACTIVE \
 		(&(struct bt_le_scan_param) { \
 			.type = BT_HCI_LE_SCAN_ACTIVE, \
 			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE, \
-			.interval = 0x0030, \
-			.window = 0x0030, \
+			.interval = BT_GAP_SCAN_FAST_INTERVAL, \
+			.window = BT_GAP_SCAN_FAST_INTERVAL, \
 		 })
 
 /** LE scan parameters */
