@@ -35,9 +35,14 @@
 #endif /*CONFIG_PINMUX_DEV */
 
 
+#define PINMUX_PULLUP_OFFSET	0x00
+#define PINMUX_SLEW_OFFSET	0x10
+#define PINMUX_INPUT_OFFSET	0x20
+#define PINMUX_SELECT_OFFSET	0x30
+
 extern struct pin_config mux_config[];
 
-static void _quark_se_select_set(uint32_t base, uint32_t pin, uint32_t mode)
+static void _quark_se_select(uint32_t base, uint32_t pin, uint32_t mode)
 {
 	/*
 	 * the registers are 32-bit wide, but each pin requires 2 bits
@@ -49,7 +54,8 @@ static void _quark_se_select_set(uint32_t base, uint32_t pin, uint32_t mode)
 	 * Now figure out what is the full address for the register
 	 * we are looking for.  Add the base register to the register_mask
 	 */
-	volatile uint32_t *mux_register = (uint32_t *)(base + register_offset);
+	volatile uint32_t *mux_register =
+		(uint32_t *)(base + PINMUX_SELECT_OFFSET + register_offset);
 
 	/*
 	 * Finally grab the pin offset within the register
@@ -66,6 +72,66 @@ static void _quark_se_select_set(uint32_t base, uint32_t pin, uint32_t mode)
 	(*(mux_register)) = ((*(mux_register)) & ~pin_mask) | mode_mask;
 }
 
+static uint32_t _quark_se_pullup(uint32_t base, uint32_t pin, uint8_t func)
+{
+	/*
+	 * the registers are 32-bit wide, but each pin requires 1 bit
+	 * to set the input enable bit.
+	 */
+	uint32_t register_offset = (pin / 32) * 4;
+	/*
+	 * Now figure out what is the full address for the register
+	 * we are looking for.  Add the base register to the register_mask
+	 * Valid values include: 0x900, 0x904, 0x908, and 0x90C
+	 */
+	volatile uint32_t *mux_register =
+		(uint32_t *)(base + PINMUX_PULLUP_OFFSET + register_offset);
+
+	/*
+	 * Finally grab the pin offset within the register
+	 */
+	uint32_t pin_offset = pin % 32;
+
+	/*
+	 * MAGIC NUMBER: 0x1 is used as the pullup is a single bit in a
+	 * 32-bit register.
+	 */
+	(*(mux_register)) = ((*(mux_register)) & ~(0x1 << pin_offset)) |
+		((func & 0x01) << pin_offset);
+
+	return DEV_OK;
+}
+
+static uint32_t _quark_se_input(uint32_t base, uint32_t pin, uint8_t func)
+{
+	/*
+	 * the registers are 32-bit wide, but each pin requires 1 bit
+	 * to set the input enable bit.
+	 */
+	uint32_t register_offset = (pin / 32) * 4;
+	/*
+	 * Now figure out what is the full address for the register
+	 * we are looking for.  Add the base register to the register_mask
+	 * Valid values include: 0x920, 0x924, 0x928, and 0x92C
+	 */
+	volatile uint32_t *mux_register =
+		(uint32_t *)(base + PINMUX_INPUT_OFFSET + register_offset);
+
+	/*
+	 * Finally grab the pin offset within the register
+	 */
+	uint32_t pin_offset = pin % 32;
+
+	/*
+	 * MAGIC NUMBER: 0x1 is used as the pullup is a single bit in a
+	 * 32-bit register.
+	 */
+	(*(mux_register)) = ((*(mux_register)) & ~(0x1 << pin_offset)) |
+		((func & 0x01) << pin_offset);
+
+	return DEV_OK;
+}
+
 #ifdef CONFIG_PINMUX_DEV
 
 static uint32_t _quark_se_select_get(uint32_t base, uint32_t pin)
@@ -80,7 +146,8 @@ static uint32_t _quark_se_select_get(uint32_t base, uint32_t pin)
 	 * Now figure out what is the full address for the register
 	 * we are looking for.  Add the base register to the register_mask
 	 */
-	volatile uint32_t *mux_register = (uint32_t *)(base + register_offset);
+	volatile uint32_t *mux_register =
+		(uint32_t *)(base + PINMUX_SELECT_OFFSET + register_offset);
 
 	/*
 	 * Finally grab the pin offset within the register
@@ -101,9 +168,9 @@ static uint32_t _quark_se_select_get(uint32_t base, uint32_t pin)
 
 static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
 {
-	struct pinmux_config * const pmux = dev->config->config_info;
+	struct pinmux_config const * const pmux = dev->config->config_info;
 
-	_quark_se_select_set(pmux->base_address, pin, func);
+	_quark_se_select(pmux->base_address, pin, func);
 
 	return DEV_OK;
 }
@@ -124,7 +191,7 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
 #ifdef CONFIG_PINMUX_DEV
 static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint8_t *func)
 {
-	struct pinmux_config * const pmux = dev->config->config_info;
+	struct pinmux_config const * const pmux = dev->config->config_info;
 	uint32_t ret;
 
 	ret = _quark_se_select_get(pmux->base_address, pin);
@@ -145,26 +212,56 @@ static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint8_t *func)
 }
 #endif /* CONFIG_PINMUX_DEV */
 
+static uint32_t pinmux_dev_pullup(struct device *dev,
+				  uint32_t pin,
+				  uint8_t func)
+{
+	struct pinmux_config const * const pmux = dev->config->config_info;
+
+	_quark_se_pullup(pmux->base_address, pin, func);
+
+	return DEV_OK;
+}
+static uint32_t pinmux_dev_input(struct device *dev, uint32_t pin, uint8_t func)
+{
+	struct pinmux_config const * const pmux = dev->config->config_info;
+
+	_quark_se_input(pmux->base_address, pin, func);
+
+	return DEV_OK;
+}
 
 static struct pinmux_driver_api api_funcs = {
 	.set = pinmux_dev_set,
-	.get = pinmux_dev_get
+	.get = pinmux_dev_get,
+	.pullup = pinmux_dev_pullup,
+	.input = pinmux_dev_input
 };
 
-
-int pinmux_initialize(struct device *dev)
+#if defined(CONFIG_BOARD_CURIE_101)
+static inline void _pinmux_pullups(uint32_t base_address)
 {
-	struct device_config *dev_cfg = dev->config;
-	struct pinmux_config *pmux = dev_cfg->config_info;
+	_quark_se_pullup(base_address, 104, PINMUX_PULLUP_ENABLE);
+}
+#else
+static inline void _pinmux_pullups(uint32_t base_address) { };
+#endif
+
+
+int pinmux_initialize(struct device *port)
+{
+	struct pinmux_config const * const pmux = port->config->config_info;
 	int i;
 
-	dev->driver_api = &api_funcs;
+	port->driver_api = &api_funcs;
 
 	for (i = 0; i < CONFIG_PINMUX_NUM_PINS; i++) {
-		_quark_se_select_set(pmux->base_address,
+		_quark_se_select(pmux->base_address,
 			    mux_config[i].pin_num,
 			    mux_config[i].mode);
 	}
+
+	_pinmux_pullups(pmux->base_address);
 
 	return DEV_OK;
 }

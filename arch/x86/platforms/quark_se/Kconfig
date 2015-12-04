@@ -50,7 +50,7 @@ config EOI_FORWARDING_BUG
 
 if PINMUX
 config PINMUX_BASE
-        default 0xB0800930
+        default 0xb0800900
 
 endif
 
