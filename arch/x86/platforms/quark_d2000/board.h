@@ -142,8 +142,25 @@ struct scss_interrupt {
 #define INT_RTC_IRQ                     0x2
 #define CCU_RTC_PCLK_EN_SW              (1 << 11)
 
-#ifndef _ASMLANGUAGE
 
-#endif /* _ASMLANGUAGE */
+
+#ifdef CONFIG_MVIC
+#include <drivers/ioapic.h>
+#ifdef CONFIG_SERIAL_INTERRUPT_LEVEL
+#ifdef CONFIG_SERIAL_INTERRUPT_LOW
+#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+#else
+#define UART_IRQ_FLAGS (IOAPIC_LEVEL)
+#endif
+#else /* edge triggered interrupt */
+#ifdef CONFIG_SERIAL_INTERRUPT_LOW
+/* generate interrupt on falling edge */
+#define UART_IRQ_FLAGS (IOAPIC_LOW)
+#else
+/* generate interrupt on raising edge */
+#define UART_IRQ_FLAGS (0)
+#endif
+#endif
+#endif
 
 #endif /* __INCboardh */
