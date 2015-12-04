@@ -40,6 +40,8 @@
 
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
+	BT_DEV_READY,
+
 	BT_DEV_ADVERTISING,
 	BT_DEV_SCANNING,
 	BT_DEV_EXPLICIT_SCAN,

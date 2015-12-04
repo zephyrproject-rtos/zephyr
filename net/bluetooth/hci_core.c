@@ -1874,6 +1874,10 @@ static int bt_init(void)
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
 
+	if (!err) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	}
+
 	return err;
 }
 
