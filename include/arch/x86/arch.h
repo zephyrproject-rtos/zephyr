@@ -271,6 +271,8 @@ typedef struct nanoIsf {
 #define _NANO_ERR_STACK_CHK_FAIL	 (4)
 /** Kernel Allocation Failure */
 #define _NANO_ERR_ALLOCATION_FAIL    (5)
+/** Unhandled exception */
+#define _NANO_ERR_CPU_EXCEPTION		(6)
 
 #ifndef _ASMLANGUAGE
 

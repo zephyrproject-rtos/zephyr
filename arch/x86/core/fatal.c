@@ -28,6 +28,7 @@
 #include <nano_private.h>
 #include <misc/printk.h>
 #include <asmPrv.h>
+#include <drivers/loapic.h>
 
 /*
  * Define a default ESF for use with _NanoFatalErrorHandler() in the event
@@ -73,11 +74,13 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	/* Display diagnostic information about the error */
 
 	switch (reason) {
-	case _NANO_ERR_SPURIOUS_INT:
-		printk("***** Unhandled exception/interrupt occurred! "
-		       "*****\n");
+	case _NANO_ERR_CPU_EXCEPTION:
 		break;
 
+	case _NANO_ERR_SPURIOUS_INT:
+		printk("***** Unhandled interrupt vector %d occurred! "
+		       "*****\n", _loapic_isr_vector_get());
+		break;
 
 	case _NANO_ERR_INVALID_TASK_EXIT:
 		printk("***** Invalid Exit Software Error! *****\n");
@@ -129,7 +132,7 @@ static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 	if ((1 << vector) & _EXC_ERROR_CODE_FAULTS) {
 		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
 	}
-	_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, pEsf);
+	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
 }
 
 #define EXC_FUNC(vector) \
