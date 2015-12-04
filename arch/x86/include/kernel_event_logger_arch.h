@@ -32,7 +32,7 @@
  *
  * @return The key of the interrupt that is currently being processed.
  */
-int _sys_current_irq_key_get(void)
+static inline int _sys_current_irq_key_get(void)
 {
 	return _loapic_isr_vector_get();
 }
