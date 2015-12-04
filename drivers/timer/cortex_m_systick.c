@@ -1,5 +1,3 @@
-/* ARM Cortex-M systick device driver */
-
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARM Cortex-M systick device driver
+ *
  * This module implements the kernel's CORTEX-M ARM's systick device driver.
  * It provides the standard kernel "system clock driver" interfaces.
  *

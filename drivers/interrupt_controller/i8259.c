@@ -1,5 +1,3 @@
-/* i8259.c - Disable Intel 8259A PIC (Programmable Interrupt Controller) */
-
 /*
  * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Disable Intel 8259A PIC (Programmable Interrupt Controller)
+ *
  * This module disables the Intel 8259A PIC (Programmable Interrupt Controller)
  * to prevent it from generating spurious interrupts.
  */

@@ -1,5 +1,3 @@
-/* fatal_error.c - ARCv2 system fatal error handler */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARCv2 system fatal error handler
+ *
  * This module provides the _SysFatalErrorHandler() routine for ARCv2 BSPs.
  */
 

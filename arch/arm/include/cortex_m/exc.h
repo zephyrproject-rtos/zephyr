@@ -1,5 +1,3 @@
-/* exc.h - exception/interrupt context helpers for Cortex-M CPUs */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Exception/interrupt context helpers for Cortex-M CPUs
+ *
  * Exception/interrupt context helpers.
  */
 

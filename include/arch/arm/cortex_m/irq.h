@@ -1,5 +1,3 @@
-/* cortex_m/irq.h - Cortex-M public interrupt handling */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Cortex-M public interrupt handling
+ *
  * ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
  */
 

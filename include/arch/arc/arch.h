@@ -1,5 +1,3 @@
-/* arch.h - ARC specific nanokernel interface header */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARC specific nanokernel interface header
+ *
  * This header contains the ARC specific nanokernel interface.  It is
  * included by the nanokernel interface architecture-abstraction header
  * (nanokernel/cpu.h)

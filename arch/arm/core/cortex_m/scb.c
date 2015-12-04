@@ -1,5 +1,3 @@
-/* scb.h - ARM CORTEX-M3 System Control Block interface */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARM CORTEX-M3 System Control Block interface
+ *
  *
  * Most of the SCB interface consists of simple bit-flipping methods, and is
  * implemented as inline functions in scb.h. This module thus contains only data

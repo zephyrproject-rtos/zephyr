@@ -1,5 +1,3 @@
-/* k_server.c - microkernel server */
-
 /*
  * Copyright (c) 2010, 2012-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Microkernel server
+ *
  * This module implements the microkernel server, which processes service
  * requests from tasks (and, less commonly, fibers and ISRs). The requests are
  * service by a high priority fiber, thereby ensuring that requests are

@@ -1,5 +1,3 @@
-/* vector_table.c - populated exception vector table */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Populated exception vector table
+ *
  * Vector table with exceptions filled in. The reset vector is the system entry
  * point, ie. the first instruction executed.
  *

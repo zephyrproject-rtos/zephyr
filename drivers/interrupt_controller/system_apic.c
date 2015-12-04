@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+/**
  * @file
  * @brief  system module for variants with LOAPIC
  *

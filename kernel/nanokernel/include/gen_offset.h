@@ -1,5 +1,3 @@
-/* gen_offset.h - macros to generate structure member offset definitions */
-
 /*
  * Copyright (c) 2010, 2012, 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Macros to generate structure member offset definitions
+ *
  * This header contains macros to allow a nanokernel implementation to
  * generate absolute symbols whose values represents the member offsets for
  * various nanokernel structures.  These absolute symbols are typically

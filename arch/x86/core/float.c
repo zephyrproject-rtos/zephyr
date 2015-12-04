@@ -1,5 +1,3 @@
-/* float.c - floating point resource sharing routines */
-
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Floating point resource sharing routines
+ *
  * This module allows multiple tasks and fibers to safely share the system's
  * floating point resources, by allowing the system to save FPU state
  * information in a task or fiber's stack region when a pre-emptive context

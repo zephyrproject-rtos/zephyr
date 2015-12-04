@@ -1,5 +1,3 @@
-/* crt0.S - crt0 module for the IA-32 boards */
-
 /*
  * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
@@ -15,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
-DESCRIPTION
-This module contains the initial code executed by the Zephyr Kernel ELF image
-after having been loaded into RAM.
-*/	
+/**
+ * @file
+ * @brief Crt0 module for the IA-32 boards
+ *
+ * This module contains the initial code executed by the Zephyr Kernel ELF image
+ * after having been loaded into RAM.
+ */
 
 #define _ASMLANGUAGE
 

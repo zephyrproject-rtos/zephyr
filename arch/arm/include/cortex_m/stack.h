@@ -1,5 +1,3 @@
-/* stack.h - stack helpers for Cortex-M CPUs */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Stack helpers for Cortex-M CPUs
+ *
  * Stack helper functions.
  */
 

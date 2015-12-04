@@ -1,5 +1,3 @@
-/* sysFatalErrorHandler - common system fatal error handler */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Common system fatal error handler
+ *
  * This module provides the _SysFatalErrorHandler() routine which is common to
  * supported platforms.
  */

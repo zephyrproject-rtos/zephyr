@@ -1,5 +1,3 @@
-/* fatal.c - fatal fault handling */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Fatal fault handling
+ *
  * This module implements the routines necessary for handling fatal faults on
  * ARCv2 CPUs.
  */

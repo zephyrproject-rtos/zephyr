@@ -1,5 +1,3 @@
-/* cpu_idle.S - ARM CORTEX-M3 power management */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
+/**
+ * @file
+ * @brief ARM CORTEX-M3 power management
+ *
  */
 
 #define _ASMLANGUAGE

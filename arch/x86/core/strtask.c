@@ -1,5 +1,3 @@
-/* strtask.c - Intel nanokernel APIs to start a task */
-
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Intel nanokernel APIs to start a task
+ *
  * Intel-specific parts of start_task(). Only FP functionality currently.
  */
 

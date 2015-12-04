@@ -1,5 +1,3 @@
-/* vector_table.S - populated vector table in ROM */
-
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
  *
@@ -16,14 +14,16 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-Vector table in ROM for starting system. The reset vector is the system entry
-point, ie. the first instruction executed.
-
-The table is populated with all the system exception handlers. The NMI vector
-must be populated with a valid handler since it can happen at any time. The
-rest should not be triggered until the kernel is ready to handle them.
+/**
+ * @file
+ * @brief Populated vector table in ROM
+ *
+ * Vector table in ROM for starting system. The reset vector is the system entry
+ * point, ie. the first instruction executed.
+ *
+ * The table is populated with all the system exception handlers. The NMI vector
+ * must be populated with a valid handler since it can happen at any time. The
+ * rest should not be triggered until the kernel is ready to handle them.
  */
 
 #define _ASMLANGUAGE

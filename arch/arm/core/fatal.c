@@ -1,5 +1,3 @@
-/* fatal.c - nanokernel fatal error handler for ARM Cortex-M */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Nanokernel fatal error handler for ARM Cortex-M
+ *
  * This module provides the _NanoFatalErrorHandler() routine for ARM Cortex-M.
  */
 

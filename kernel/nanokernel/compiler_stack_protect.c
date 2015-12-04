@@ -1,5 +1,3 @@
-/* compiler_stack_protect.c - Compiler stack protection (kernel part) */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Compiler stack protection (kernel part)
+ *
  * This module provides functions to support compiler stack protection
  * using canaries.  This feature is enabled with configuration
  * CONFIG_STACK_CANARIES=y.

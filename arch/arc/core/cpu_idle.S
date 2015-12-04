@@ -1,5 +1,3 @@
-/* cpu_idle.S - CPU power management */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,9 +14,11 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-CPU power management routines.
+/**
+ * @file
+ * @brief CPU power management
+ *
+ * CPU power management routines.
  */
 
 #define _ASMLANGUAGE

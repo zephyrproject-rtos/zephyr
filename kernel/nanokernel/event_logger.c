@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+/**
  * @file
  * @brief Event logger support.
  */

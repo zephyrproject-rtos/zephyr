@@ -1,5 +1,3 @@
-/* linker-tool-gcc.h - GCC toolchain linker defs */
-
 /*
  * Copyright (c) 2013-2014, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief GCC toolchain linker defs
+ *
  * This header file defines the necessary macros used by the linker script for
  * use with the GCC linker.
  */

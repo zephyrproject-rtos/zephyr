@@ -1,5 +1,3 @@
-/* initialize system clock driver */
-
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Initialize system clock driver
+ *
  * Initializing the timer driver is done in this module to reduce code
  * duplication.  Although both nanokernel and microkernel systems initialize
  * the timer driver at the same point, the two systems differ in when the system
@@ -26,7 +26,7 @@
  * microkernel system all system clock ticks are deferred (and stored on the
  * kernel server command stack) until the kernel server fiber starts and begins
  * processing any queued ticks.
-*/
+ */
 
 #include <nanokernel.h>
 #include <init.h>

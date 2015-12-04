@@ -1,5 +1,3 @@
-/* linker-tool.h - toolchain-agnostic linker defs */
-
 /*
  * Copyright (c) 2013-2014, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Toolchain-agnostic linker defs
+ *
  * This header file is used to automatically select the proper set of macro
  * definitions (based on the toolchain) for the linker script.
  */

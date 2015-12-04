@@ -1,5 +1,3 @@
-/* system.c - system/hardware module for ti_lm3s6965 platform */
-
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief System/hardware module for ti_lm3s6965 platform
+ *
  * This module provides routines to initialize and support board-level hardware
  * for the ti_lm3s6965 platform.
  */

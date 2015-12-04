@@ -1,5 +1,3 @@
-/* sw_isr_table.c - Software ISR table for generic arc BSP */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Software ISR table for generic arc BSP
+ *
  * This contains the ISR table meant to be used for ISRs that take a parameter.
  * It is also used when ISRs are to be connected at runtime, and in this case
  * provides a table that is filled with _SpuriousIRQ bindings.

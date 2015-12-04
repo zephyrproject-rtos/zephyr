@@ -1,5 +1,3 @@
-/* arcv2_timer0.c - ARC timer 0 device driver */
-
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARC timer 0 device driver
+ *
  * This module implements a kernel device driver for the ARCv2 processor timer 0
  * and provides the standard "system clock driver" interfaces.
  *

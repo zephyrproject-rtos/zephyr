@@ -1,5 +1,3 @@
-/* v2/error.h - ARCv2 public error handling */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARCv2 public error handling
+ *
  * ARC-specific nanokernel error handling interface. Included by ARC/arch.h.
  */
 

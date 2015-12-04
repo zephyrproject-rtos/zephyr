@@ -1,5 +1,3 @@
-/* isr_wrapper.S - wrapper around ISRs with logic for context switching */
-
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
@@ -16,11 +14,13 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-
-Wrapper installed in vector table for handling dynamic interrupts that accept
-a parameter.
+/**
+ * @file
+ * @brief Wrapper around ISRs with logic for context switching
+ *
+ *
+ * Wrapper installed in vector table for handling dynamic interrupts that accept
+ * a parameter.
  */
 
 #define _ASMLANGUAGE

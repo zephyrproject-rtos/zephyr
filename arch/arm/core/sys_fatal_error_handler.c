@@ -1,5 +1,3 @@
-/* sysFatalErrorHandler - ARM Cortex-M system fatal error handler */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARM Cortex-M system fatal error handler
+ *
  * This module provides the _SysFatalErrorHandler() routine for Cortex-M
  * platforms.
  */

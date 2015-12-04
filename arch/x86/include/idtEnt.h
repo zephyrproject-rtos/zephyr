@@ -1,5 +1,3 @@
-/* idtEnt.h - IA-32 IDT Entry code */
-
 /*
  * Copyright (c) 2012-2014, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief IA-32 IDT Entry code
+ *
  * This header file provides code for constructing an IA-32 interrupt
  * descriptor.
  */

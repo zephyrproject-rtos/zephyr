@@ -1,5 +1,3 @@
-/* sections.h - Definitions of various linker Sections. */
-
 /*
  * Copyright (c) 2013-2014, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Definitions of various linker Sections.
+ *
  * Linker Section declarations used by linker script, C files and Assembly
  * files.
  */

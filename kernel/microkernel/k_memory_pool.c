@@ -1,5 +1,3 @@
-/* memory pool kernel services */
-
 /*
  * Copyright (c) 1997-2010, 2013-2014 Wind River Systems, Inc.
  *
@@ -300,7 +298,9 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
  *
  * @brief Recursively get a block, doing fragmentation if necessary
  *
- * [NEED A BETTER DESCRIPTION HERE]
+ * @file
+ * @brief Memory pool kernel services
+ *
  *
  * not implemented: check if we go below the minimal number of blocks with
  * the maximum size

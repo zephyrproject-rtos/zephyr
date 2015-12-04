@@ -1,5 +1,3 @@
-/* fault_s.S - fault handlers for ARCv2 */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Fault handlers for ARCv2
+ *
  * Fault handlers for ARCv2 processors.
  */
 

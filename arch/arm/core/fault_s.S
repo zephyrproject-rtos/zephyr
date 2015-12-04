@@ -1,5 +1,3 @@
-/* fault_s.S - fault handlers for ARM Cortex-M */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,9 +14,11 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-Fault handlers for ARM Cortex-M processors.
+/**
+ * @file
+ * @brief Fault handlers for ARM Cortex-M
+ *
+ * Fault handlers for ARM Cortex-M processors.
  */
 
 #define _ASMLANGUAGE

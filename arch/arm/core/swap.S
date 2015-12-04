@@ -1,5 +1,3 @@
-/* swap.S - thread context switching for ARM Cortex-M */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,10 +14,12 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module implements the routines necessary for thread context switching
-on ARM Cortex-M3/M4 CPUs.
+/**
+ * @file
+ * @brief Thread context switching for ARM Cortex-M
+ *
+ * This module implements the routines necessary for thread context switching
+ * on ARM Cortex-M3/M4 CPUs.
  */
 
 #define _ASMLANGUAGE

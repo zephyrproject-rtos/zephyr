@@ -1,5 +1,3 @@
-/* ia32.c - system/hardware module for the QEMU platform */
-
 /*
  * Copyright (c) 2011-2015, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief System/hardware module for the QEMU platform
+ *
  * This module provides routines to initialize and support board-level hardware
  * for the QEMU platform.
  */

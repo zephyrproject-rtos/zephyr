@@ -1,5 +1,3 @@
-/* scb.h - ARM CORTEX-M System Control Block interface */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARM CORTEX-M System Control Block interface
+ *
  * Provide an interface to the System Control Block found on ARM Cortex-M
  * processors.
  *

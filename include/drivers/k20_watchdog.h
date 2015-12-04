@@ -1,5 +1,3 @@
-/* Freescale K20 microprocessor Watch Dog registers */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Freescale K20 microprocessor Watch Dog registers
+ *
  * This module defines Watch Dog Registers for the K20 Family of microprocessors
  */
 

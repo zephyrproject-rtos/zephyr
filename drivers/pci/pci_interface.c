@@ -1,5 +1,3 @@
-/* pci_interface.c - PCI bus support */
-
 /*
  * Copyright (c) 2009-2011, 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief PCI bus support
+ *
  *
  * This module implements the PCI H/W access functions.
  */

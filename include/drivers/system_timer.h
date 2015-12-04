@@ -1,5 +1,3 @@
-/* system_timer.h - timer driver API */
-
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Timer driver API
+ *
  *
  * Declare API implemented by system timer driver and used by kernel components.
  */

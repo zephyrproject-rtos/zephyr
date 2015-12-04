@@ -1,5 +1,3 @@
-/* ia32_pci.c - system/hardware module for the ia32_pci platform */
-
 /*
  * Copyright (c) 2013-2015, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief System/hardware module for the ia32_pci platform
+ *
  * This module provides routines to initialize and support board-level hardware
  * for the ia32_pci platform.
  *

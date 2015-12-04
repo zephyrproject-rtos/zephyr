@@ -1,5 +1,3 @@
-/* hpet.c - Intel HPET device driver */
-
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Intel HPET device driver
+ *
  * This module implements a kernel device driver for the Intel High Precision
  * Event Timer (HPET) device, and provides the standard "system clock driver"
  * interfaces.

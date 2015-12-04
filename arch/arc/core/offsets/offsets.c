@@ -1,5 +1,3 @@
-/* offsets.c - ARCv2 nano kernel structure member offset definition file */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARCv2 nano kernel structure member offset definition file
+ *
  * This module is responsible for the generation of the absolute symbols whose
  * value represents the member offsets for various ARCv2 nanokernel
  * structures.

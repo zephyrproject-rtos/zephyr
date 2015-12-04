@@ -1,5 +1,3 @@
-/* gdb_stub.S - extra work performed upon exception entry/exit for GDB */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,15 +14,17 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-
-Prep work done when entering exceptions consists of saving the callee-saved
-registers before they get used by exception handlers, and recording the fact
-that we are running in an exception.
-
-Upon exception exit, it must be recorded that the task is not in an exception
-anymore.
+/**
+ * @file
+ * @brief Extra work performed upon exception entry/exit for GDB
+ *
+ *
+ * Prep work done when entering exceptions consists of saving the callee-saved
+ * registers before they get used by exception handlers, and recording the fact
+ * that we are running in an exception.
+ *
+ * Upon exception exit, it must be recorded that the task is not in an exception
+ * anymore.
  */
 
 #define _ASMLANGUAGE

@@ -1,5 +1,3 @@
-/* thread.c - new thread creation for ARM Cortex-M */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief New thread creation for ARM Cortex-M
+ *
  * Core nanokernel fiber related primitives for the ARM Cortex-M processor
  * architecture.
  */

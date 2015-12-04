@@ -1,5 +1,3 @@
-/* armAtomic.S - ARC atomic operations library */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,11 +14,13 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This library provides routines to perform a number of atomic operations
-on a memory location: add, subtract, increment, decrement, bitwise OR,
-bitwise NOR, bitwise AND, bitwise NAND, set, clear and compare-and-swap.
+/**
+ * @file
+ * @brief ARC atomic operations library
+ *
+ * This library provides routines to perform a number of atomic operations
+ * on a memory location: add, subtract, increment, decrement, bitwise OR,
+ * bitwise NOR, bitwise AND, bitwise NAND, set, clear and compare-and-swap.
  */
 
 #define _ASMLANGUAGE

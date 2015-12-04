@@ -1,5 +1,3 @@
-/* linker.cmd - Linker command/script file */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,10 +14,12 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This is the linker script for both standard images and XIP images.
-*/
+/**
+ * @file
+ * @brief Linker command/script file
+ *
+ * This is the linker script for both standard images and XIP images.
+ */
 
 /* Flash base address and size */
 #define FLASH_START     0x40034000  /* Flash bank 1 */

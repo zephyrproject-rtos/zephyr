@@ -1,5 +1,3 @@
-/* cache.c - cache manipulation */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -15,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Cache manipulation
+ *
  * This module contains functions for manipulation caches.
  */
 

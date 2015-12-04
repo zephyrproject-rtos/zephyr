@@ -1,5 +1,3 @@
-/* scp.c - TI LM3S6965 System Control Peripherals interface */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief TI LM3S6965 System Control Peripherals interface
+ *
  *
  * Library for controlling target-specific devices present in the 0x400fe000
  * peripherals memory region.

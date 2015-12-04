@@ -1,5 +1,3 @@
-/* __assert.h - debug aid */
-
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Debug aid
+ *
  *
  * The __ASSERT() macro can be used inside kernel code.
  *

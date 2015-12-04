@@ -1,5 +1,3 @@
-/* K20 Microprocessor MCG register definitions */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief K20 Microprocessor MCG register definitions
+ *
  * This module defines the Multipurpose Clock Generator (MCG) and Oscillator
  * (OSC) registers for the K20 Family of microprocessors.
  */

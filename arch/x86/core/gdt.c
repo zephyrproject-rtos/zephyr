@@ -1,5 +1,3 @@
-/* gdt.c - Global Descriptor Table support */
-
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Global Descriptor Table support
+ *
  * This module contains routines for updating the global descriptor table (GDT)
  * for the IA-32 architecture.
  */

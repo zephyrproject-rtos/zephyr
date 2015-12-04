@@ -1,5 +1,3 @@
-/* nvic.c - ARM CORTEX-M Series Nested Vector Interrupt Controller */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Nvic.c - ARM CORTEX-M Series Nested Vector Interrupt Controller
+ *
  * Provide an interface to the Nested Vectored Interrupt Controller found on
  * ARM Cortex-M processors.
  *

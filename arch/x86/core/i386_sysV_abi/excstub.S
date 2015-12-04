@@ -1,5 +1,3 @@
-/* excstub.S - exception management support for IA-32 architecture */
-
 /*
  * Copyright (c) 2011-2015 Wind River Systems, Inc.
  *
@@ -16,12 +14,14 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module implements assembly routines to manage exceptions (synchronous
-interrupts) on the Intel IA-32 architecture.  More specifically,
-exceptions are implemented in this module.  The stubs are invoked when entering
-and exiting a C exception handler.
+/**
+ * @file
+ * @brief Exception management support for IA-32 architecture
+ *
+ * This module implements assembly routines to manage exceptions (synchronous
+ * interrupts) on the Intel IA-32 architecture.  More specifically,
+ * exceptions are implemented in this module.  The stubs are invoked when entering
+ * and exiting a C exception handler.
  */
 
 #define _ASMLANGUAGE

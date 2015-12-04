@@ -1,5 +1,3 @@
-/* arc/v2/misc.h - ARCv2 public nanokernel miscellaneous */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARCv2 public nanokernel miscellaneous
+ *
  * ARC-specific nanokernel miscellaneous interface. Included by arc/arch.h.
  */
 

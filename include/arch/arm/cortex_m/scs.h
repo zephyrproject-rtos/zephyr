@@ -1,5 +1,3 @@
-/* scs.h - ARM CORTEX-M System Control Space */
-
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARM CORTEX-M System Control Space
+ *
  * Define the System Control Space for the CORTEX-M series of processors and
  * provide an interface for miscellaneous SCS functionalities.
  *

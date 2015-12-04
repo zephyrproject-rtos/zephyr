@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+/**
  * @file
  * @brief Non-public microkernel APIs referenced by kernel_main.c.
  */

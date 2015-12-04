@@ -1,5 +1,3 @@
-/* v2/exc.h - ARCv2 public exception handling */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARCv2 public exception handling
+ *
  * ARC-specific nanokernel exception handling interface. Included by ARC/arch.h.
  */
 

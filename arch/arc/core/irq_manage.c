@@ -1,5 +1,3 @@
-/* irq_manage.c - ARCv2 interrupt management */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARCv2 interrupt management
+ *
  *
  * Interrupt management:
  *

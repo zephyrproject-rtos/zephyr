@@ -1,5 +1,3 @@
-/* uart_console.c - UART-driven console */
-
 /*
  * Copyright (c) 2011-2012, 2014-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief UART-driven console
+ *
  *
  * Serial console driver.
  * Hooks into the printk and fputc (for printf) modules. Poll driven.

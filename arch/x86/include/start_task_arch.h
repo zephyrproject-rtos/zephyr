@@ -1,5 +1,3 @@
-/* start_task.h - Intel nanokernel declarations to start a task */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Intel nanokernel declarations to start a task
+ *
  * Intel-specific parts of start_task(). Only FP functionality currently.
  */
 

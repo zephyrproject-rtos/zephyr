@@ -1,5 +1,3 @@
-/* pci.h - PCI probe and information routines */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief PCI probe and information routines
+ *
  * Module declares routines of PCI bus initialization and query
  */
 

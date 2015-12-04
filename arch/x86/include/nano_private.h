@@ -1,5 +1,3 @@
-/* nano_private.h - private nanokernel definitions (IA-32) */
-
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Private nanokernel definitions (IA-32)
+ *
  * This file contains private nanokernel structures definitions and various
  * other definitions for the Intel Architecture 32 bit (IA-32) processor
  * architecture.

@@ -1,5 +1,3 @@
-/* Freescale K6x microprocessor MPU register definitions */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Freescale K6x microprocessor MPU register definitions
+ *
  * This module defines the Memory Protection Unit (MPU) Registers for the K6x
  * Family of microprocessors.
  * NOTE: Not all the registers are currently defined here - only those that are

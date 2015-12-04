@@ -1,5 +1,3 @@
-/* vector_table.h - definitions for the boot vector table */
-
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Definitions for the boot vector table
+ *
  *
  * Definitions for the boot vector table.
  *

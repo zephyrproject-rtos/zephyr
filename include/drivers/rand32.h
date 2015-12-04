@@ -1,5 +1,3 @@
-/* rand32.h - random number generator header file */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Random number generator header file
+ *
  * This header file declares prototypes for the kernel's random number generator
  * APIs.
  *

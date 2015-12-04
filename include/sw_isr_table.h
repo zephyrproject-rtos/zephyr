@@ -1,5 +1,3 @@
-/* sw_isr_table.h - software-managed ISR table */
-
 /*
  * Copyright (c) 2014, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Software-managed ISR table
+ *
  * Data types for a software-managed ISR table, with a parameter per-ISR.
  */
 

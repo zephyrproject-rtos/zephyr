@@ -1,5 +1,3 @@
-/* fatal.c - nanokernel fatal error handler */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Nanokernel fatal error handler
+ *
  * This module provides the _NanoFatalErrorHandler() routine.
  */
 

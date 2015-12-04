@@ -1,5 +1,3 @@
-/* isr_wrapper.S - ARM CORTEX-M3 wrapper for ISRs with parameter  */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,11 +14,12 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-
-Wrapper installed in vector table for handling dynamic interrupts that accept
-a parameter.
+/**
+ * @file
+ * @brief ARM CORTEX-M3 wrapper for ISRs with parameter
+ *
+ * Wrapper installed in vector table for handling dynamic interrupts that accept
+ * a parameter.
  */
 
 #define _ASMLANGUAGE

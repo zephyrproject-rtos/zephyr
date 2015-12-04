@@ -1,5 +1,3 @@
-/* swap.S - thread context switching */
-
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
@@ -16,12 +14,14 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module implements the routines necessary for thread context switching
-on ARCv2 CPUs.
-
-See isr_wrapper.S for details.
+/**
+ * @file
+ * @brief Thread context switching
+ *
+ * This module implements the routines necessary for thread context switching
+ * on ARCv2 CPUs.
+ *
+ * See isr_wrapper.S for details.
  */
 
 #define _ASMLANGUAGE

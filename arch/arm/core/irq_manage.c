@@ -1,5 +1,3 @@
-/* irq_manage.c - ARM CORTEX-M3 interrupt management */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARM CORTEX-M3 interrupt management
+ *
  *
  * Interrupt management: enabling/disabling and dynamic ISR
  * connecting/replacing.  SW_ISR_TABLE_DYNAMIC has to be enabled for

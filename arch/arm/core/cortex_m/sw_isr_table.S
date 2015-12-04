@@ -1,5 +1,3 @@
-/* ISR table for static ISR declarations for ARM */
-
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.
  *
@@ -16,9 +14,11 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-Software ISR table for ARM
+/**
+ * @file
+ * @brief ISR table for static ISR declarations for ARM
+ *
+ * Software ISR table for ARM
  */
 
 #define _ASMLANGUAGE

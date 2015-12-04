@@ -1,5 +1,3 @@
-/* arcv2_irq_unit.c - ARCv2 Interrupt Unit device driver */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARCv2 Interrupt Unit device driver
+ *
  * The ARCv2 interrupt unit has 16 allocated exceptions associated with
  * vectors 0 to 15 and 240 interrupts associated with vectors 16 to 255.
  * The interrupt unit is optional in the ARCv2-based processors. When

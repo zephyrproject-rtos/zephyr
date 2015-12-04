@@ -1,5 +1,3 @@
-/* thread.c - new thread creation for ARCv2 */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief New thread creation for ARCv2
+ *
  * Core nanokernel fiber related primitives for the ARCv2 processor
  * architecture.
  */

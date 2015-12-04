@@ -1,5 +1,3 @@
-/* gdb_stub.h - extra work performed upon exception entry/exit for GDB */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Extra work performed upon exception entry/exit for GDB
+ *
  *
  * Prep work done when entering exceptions consists of saving the callee-saved
  * registers before they get used by exception handlers, and recording the fact

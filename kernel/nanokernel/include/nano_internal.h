@@ -1,5 +1,3 @@
-/* architecture-independent private nanokernel APIs */
-
 /*
  * Copyright (c) 2010-2012, 2014-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Architecture-independent private nanokernel APIs
+ *
  * This file contains private nanokernel APIs that are not
  * architecture-specific.
  */

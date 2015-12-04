@@ -1,5 +1,3 @@
-/* thread.c - nanokernel thread support primitives */
-
 /*
  * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Nanokernel thread support primitives
+ *
  * This module provides core nanokernel fiber related primitives for the IA-32
  * processor architecture.
  */

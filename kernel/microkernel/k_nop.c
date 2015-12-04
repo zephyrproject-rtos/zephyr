@@ -1,5 +1,3 @@
-/* "do nothing" kernel service */
-
 /*
  * Copyright (c) 1997-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief "do nothing" kernel service
+ *
  * This module provides a "do nothing" kernel service.
  *
  * This service is primarily used by other kernel services that need a way to

@@ -1,5 +1,3 @@
-/* linker-common-sections.h - common linker sections */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Common linker sections
+ *
  * This script defines the memory location of the various sections that make up
  * a Zephyr Kernel image. This file is used by the linker.
  *

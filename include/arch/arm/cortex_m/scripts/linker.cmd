@@ -1,5 +1,3 @@
-/* linker.cmd - Linker command/script file */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,9 +14,11 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-Linker script for the Cortex-M3 platform.
+/**
+ * @file
+ * @brief Linker command/script file
+ *
+ * Linker script for the Cortex-M3 platform.
  */
 
 #define _LINKER

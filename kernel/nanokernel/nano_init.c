@@ -1,5 +1,3 @@
-/* nanokernel initialization module */
-
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Nanokernel initialization module
+ *
  * This module contains routines that are used to initialize the nanokernel.
  */
 

@@ -1,5 +1,3 @@
-/* board.h - board configuration macros for the QEMU platform */
-
 /*
  * Copyright (c) 2010-2015, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Board configuration macros for the QEMU platform
+ *
  * This header file is used to specify and describe board-level aspects for
  * the 'QEMU' platform.
  */

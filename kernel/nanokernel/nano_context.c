@@ -1,5 +1,3 @@
-/* nanokernel thread support */
-
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Nanokernel thread support
+ *
  * This module provides general purpose thread support, with applies to both
  * tasks or fibers.
  */

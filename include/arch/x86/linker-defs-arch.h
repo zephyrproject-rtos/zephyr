@@ -1,5 +1,3 @@
-/* linker-defs-arch.h - Intel commonly used macro and defines for linker script */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Intel commonly used macro and defines for linker script
+ *
  * Commonly used macros and defines for linker script.
  */
 #ifndef _LINKERDEFSARCH_H

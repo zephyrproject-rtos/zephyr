@@ -1,5 +1,3 @@
-/* irq_vector_table.c - IRQ part of vector table for generic arc BSP */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief IRQ part of vector table for generic arc BSP
+ *
  * This file contains the IRQ part of the vector table. It is meant to be used
  * for one of two cases:
  *

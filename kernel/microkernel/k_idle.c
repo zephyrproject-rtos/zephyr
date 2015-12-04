@@ -1,5 +1,3 @@
-/* k_idle.c - microkernel idle logic */
-
 /*
  * Copyright (c) 1997-2010, 2012-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Microkernel idle logic
+ *
  * Microkernel idle logic. Different forms of idling are performed by the idle
  * task, depending on how the kernel is configured.
  */

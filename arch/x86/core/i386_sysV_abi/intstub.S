@@ -1,5 +1,3 @@
-/* intstub.S - interrupt management support for IA-32 architecture */
-
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  *
@@ -16,13 +14,15 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module implements assembly routines to manage interrupts on
-the Intel IA-32 architecture.  More specifically, the interrupt (asynchronous
-exception) stubs are implemented in this module.  The stubs are invoked when
-entering and exiting a C interrupt handler.
-*/
+/**
+ * @file
+ * @brief Interrupt management support for IA-32 architecture
+ *
+ * This module implements assembly routines to manage interrupts on
+ * the Intel IA-32 architecture.  More specifically, the interrupt (asynchronous
+ * exception) stubs are implemented in this module.  The stubs are invoked when
+ * entering and exiting a C interrupt handler.
+ */
 
 #define _ASMLANGUAGE
 

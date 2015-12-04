@@ -1,5 +1,3 @@
-/* system.c - system/hardware module for the Quark SE BSP */
-
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.
  *
@@ -16,11 +14,13 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module provides routines to initialize and support board-level
-hardware for the Quark SE BSP.
-*/
+/**
+ * @file
+ * @brief System/hardware module for the Quark SE BSP
+ *
+ * This module provides routines to initialize and support board-level
+ * hardware for the Quark SE BSP.
+ */
 
 #include <nanokernel.h>
 #include <misc/printk.h>

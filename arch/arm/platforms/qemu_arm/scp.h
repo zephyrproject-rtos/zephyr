@@ -1,5 +1,3 @@
-/* scp.h - TI LM3S6965 System Control Peripherals interface */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief TI LM3S6965 System Control Peripherals interface
+ *
  * This module defines the System Control Peripheral Registers for TI LM3S6965
  * processor. The registers defined are in region 0x400fe000.
  *

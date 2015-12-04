@@ -1,5 +1,3 @@
-/* Freescale K6x microprocessor PMC register definitions */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Freescale K6x microprocessor PMC register definitions
+ *
  * This module defines the Power Management Controller (PMC) registers for the
  * K6x Family of microprocessors.
  * NOTE: Not all the registers are currently defined here - only those that are

@@ -1,5 +1,3 @@
-/* gdt.h - IA-32 Global Descriptor Table (GDT) definitions */
-
 /*
  * Copyright (c) 2011-2012, 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief IA-32 Global Descriptor Table (GDT) definitions
+ *
  * This file provides definitions for the Global Descriptor Table (GDT) for the
  * IA-32 architecture.
  */

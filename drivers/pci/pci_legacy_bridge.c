@@ -1,5 +1,3 @@
-/* pci_legacy_bridge.c - PCI legacy bridge device driver */
-
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief PCI legacy bridge device driver
+ *
  * Module provides routines for utilizing the PCI legacy bridge, including
  * detection of the bridge and using the bridge to configure the routing between
  * PCI interrupt pins and IRQs.

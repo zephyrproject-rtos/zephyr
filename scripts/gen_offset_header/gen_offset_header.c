@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+/**
  * @file
  * @brief generate offset definition header file
  *

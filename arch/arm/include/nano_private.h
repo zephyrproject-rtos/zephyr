@@ -1,5 +1,3 @@
-/* nano_private.h - private nanokernel definitions (ARM) */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Private nanokernel definitions (ARM)
+ *
  * This file contains private nanokernel structures definitions and various
  * other definitions for the ARM Cortex-M3 processor architecture.
  *

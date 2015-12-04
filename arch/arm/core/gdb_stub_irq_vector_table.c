@@ -1,5 +1,3 @@
-/* gdb_stub_irq_vector_table.c - stubs for IRQ part of vector table */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Stubs for IRQ part of vector table
+ *
  * When GDB is enabled, the static IRQ vector table needs to install the
  * _irq_vector_table_entry_with_gdb_stub stub to do some work before calling the
  * user-installed ISRs.

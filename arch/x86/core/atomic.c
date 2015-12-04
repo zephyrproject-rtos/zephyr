@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-/*
+/**
  * @file Atomic ops for x86
- * DESCRIPTION This module provides the atomic operators for IA-32
+ *
+ * This module provides the atomic operators for IA-32
  * architectures on platforms that support the LOCK prefix instruction.
  *
  * The atomic operations are guaranteed to be atomic with respect

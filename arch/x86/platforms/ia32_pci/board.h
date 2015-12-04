@@ -1,5 +1,3 @@
-/* board.h - board configuration macros for the ia32_pci platform */
-
 /*
  * Copyright (c) 2013-2015, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Board configuration macros for the ia32_pci platform
+ *
  * This header file is used to specify and describe board-level aspects for
  * the 'ia32_pci' platform.
  */

@@ -1,5 +1,3 @@
-/* driver_static_irq_stubs.S - interrupt stubs */
-
 /*
  * Copyright (c) 2012-2015, Wind River Systems, Inc.
  *
@@ -16,10 +14,12 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module contains the static interrupt stubs for the various drivers employed
-by x86 platforms.
+/**
+ * @file
+ * @brief Interrupt stubs
+ *
+ * This module contains the static interrupt stubs for the various drivers employed
+ * by x86 platforms.
  */
 
 #define _ASMLANGUAGE

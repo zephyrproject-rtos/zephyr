@@ -1,5 +1,3 @@
-/* util.h - misc utilities */
-
 /*
  * Copyright (c) 2011-2014, Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Misc utilities
+ *
  * Misc utilities usable by nanokernel, microkernel, and application code.
  */
 

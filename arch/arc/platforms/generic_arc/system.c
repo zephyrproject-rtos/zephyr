@@ -1,5 +1,3 @@
-/* system.c - system/hardware module for generic arc BSP */
-
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief System/hardware module for generic arc BSP
+ *
  * This module provides routines to initialize and support board-level hardware
  * for the generic arc platform.
  */

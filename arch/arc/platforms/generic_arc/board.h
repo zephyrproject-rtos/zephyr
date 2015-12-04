@@ -1,5 +1,3 @@
-/* board.h - board configuration macros for the generic arc BSP */
-
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Board configuration macros for the generic arc BSP
+ *
  * This header file is used to specify and describe board-level aspects for the
  * generic arc BSP.
  */

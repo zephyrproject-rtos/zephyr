@@ -1,5 +1,3 @@
-/* intconnect.c - interrupt management support for IA-32 arch */
-
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Interrupt management support for IA-32 arch
+ *
  * This module provides routines to manage asynchronous interrupts
  * on the IA-32 architecture.
  *

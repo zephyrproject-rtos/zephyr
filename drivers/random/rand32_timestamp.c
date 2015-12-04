@@ -1,5 +1,3 @@
-/* non-random number generator based on x86 CPU timestamp */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Non-random number generator based on x86 CPU timestamp
+ *
  * This module provides a non-random implementation of sys_rand32_get(), which
  * is not meant to be used in a final product as a truly random number
  * generator. It was provided to allow testing on a platform that does not (yet)

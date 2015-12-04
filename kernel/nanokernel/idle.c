@@ -1,5 +1,3 @@
-/* nanokernel idle support */
-
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Nanokernel idle support
+ *
  * This module provides routines to set the idle field in the nanokernel
  * data structure.
  */

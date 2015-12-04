@@ -1,5 +1,3 @@
-/* aux_regs.h - ARCv2 auxiliary registers definitions */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARCv2 auxiliary registers definitions
+ *
  *
  * Definitions for auxiliary registers.
  */

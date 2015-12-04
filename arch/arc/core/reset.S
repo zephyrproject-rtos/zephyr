@@ -1,5 +1,3 @@
-/* reset.S - reset handler */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,9 +14,11 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-Reset handler that prepares the system for running C code.
+/**
+ * @file
+ * @brief Reset handler
+ *
+ * Reset handler that prepares the system for running C code.
  */
 
 #define _ASMLANGUAGE

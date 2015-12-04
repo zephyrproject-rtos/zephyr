@@ -1,5 +1,3 @@
-/* cortex_m/exc.h - Cortex-M public exception handling */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Cortex-M public exception handling
+ *
  * ARM-specific nanokernel exception handling interface. Included by ARM/arch.h.
  */
 

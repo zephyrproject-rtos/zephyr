@@ -1,5 +1,3 @@
-/* toolchain/common.h - common toolchain abstraction */
-
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Common toolchain abstraction
+ *
  * Macros to abstract compiler capabilities (common to all toolchains).
  */
 

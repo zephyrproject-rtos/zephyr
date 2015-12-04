@@ -1,5 +1,3 @@
-/* fast_irq.S - handling of transitions to-and-from fast IRQs (FIRQ) */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,11 +14,13 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module implements the code for handling entry to and exit from Fast IRQs.
-
-See isr_wrapper.S for details.
+/**
+ * @file
+ * @brief Handling of transitions to-and-from fast IRQs (FIRQ)
+ *
+ * This module implements the code for handling entry to and exit from Fast IRQs.
+ *
+ * See isr_wrapper.S for details.
  */
 
 #define _ASMLANGUAGE

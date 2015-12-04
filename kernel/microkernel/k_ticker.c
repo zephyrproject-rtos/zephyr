@@ -1,5 +1,3 @@
-/* k_ticker.c - microkernel tick event handler */
-
 /*
  * Copyright (c) 1997-2010, 2012-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Microkernel tick event handler
+ *
  * This module implements the microkernel's tick event handler.
  */
 

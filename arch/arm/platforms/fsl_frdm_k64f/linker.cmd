@@ -1,5 +1,3 @@
-/* linker.cmd - Linker command/script file */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,9 +14,11 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This is the linker script for both standard images and XIP images.
+/**
+ * @file
+ * @brief Linker command/script file
+ *
+ * This is the linker script for both standard images and XIP images.
  */
 
 /*

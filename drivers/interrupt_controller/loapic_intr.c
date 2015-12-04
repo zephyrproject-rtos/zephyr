@@ -1,5 +1,3 @@
-/* loApicIntr.c - Intel Pentium[234] Local APIC/xAPIC driver */
-
 /*
  * Copyright (c) 1984-2008, 2011-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief LoApicIntr.c - Intel Pentium[234] Local APIC/xAPIC driver
+ *
  * This module is a driver for the local APIC/xAPIC (Advanced Programmable
  * Interrupt Controller) in P6 (PentiumPro, II, III) family processors
  * and P7 (Pentium4) family processors.  The local APIC/xAPIC is included

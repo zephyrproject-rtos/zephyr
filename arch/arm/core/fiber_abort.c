@@ -1,5 +1,3 @@
-/* fiber_abort.c - ARM Cortex-M fiber_abort() routine */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARM Cortex-M fiber_abort() routine
+ *
  * The ARM Cortex-M architecture provides its own fiber_abort() to deal with
  * different CPU modes (handler vs thread) when a fiber aborts. When its entry
  * point returns or when it aborts itself, the CPU is in thread mode and must

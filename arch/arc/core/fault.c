@@ -1,5 +1,3 @@
-/* fault.c - common fault handler for ARCv2 */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Common fault handler for ARCv2
+ *
  * Common fault handler for ARCv2 processors.
  */
 

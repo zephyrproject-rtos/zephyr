@@ -1,5 +1,3 @@
-/* arc/v2/irq.h - ARCv2 public interrupt handling */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief ARCv2 public interrupt handling
+ *
  * ARCv2 nanokernel interrupt handling interface. Included by ARC/v2/arch.h.
  */
 

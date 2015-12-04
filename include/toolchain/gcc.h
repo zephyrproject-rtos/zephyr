@@ -1,5 +1,3 @@
-/* toolchain/gcc.h - GCC toolchain abstraction */
-
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief GCC toolchain abstraction
+ *
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
 #include <toolchain/common.h>

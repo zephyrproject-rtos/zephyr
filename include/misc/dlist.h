@@ -1,5 +1,3 @@
-/* dlist.h - doubly-linked list inline implementation */
-
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Doubly-linked list inline implementation
+ *
  * Doubly-linked list implementation.
  *
  * The lists are expected to be initialized such that both the head and tail

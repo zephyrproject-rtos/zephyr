@@ -1,5 +1,3 @@
-/* fault.c - common fault handler for ARM Cortex-M */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Common fault handler for ARM Cortex-M
+ *
  * Common fault handler for ARM Cortex-M processors.
  */
 

@@ -1,5 +1,3 @@
-/* thread_entry_wrapper.S - wrapper for _thread_entry */
-
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
@@ -16,8 +14,10 @@
  * limitations under the License.
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file
+ * @brief Wrapper for _thread_entry
+ *
  * Wrapper for _thread_entry routine when called from the initial context.
  */
 
