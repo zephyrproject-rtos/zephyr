@@ -1910,6 +1910,7 @@ static int bt_init(void)
 
 	if (!err) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+		bt_le_scan_update(false);
 	}
 
 	return err;
