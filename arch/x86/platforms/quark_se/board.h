@@ -70,6 +70,27 @@
 #endif
 #endif /* GPIO_DW_1 */
 
+
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+#ifdef CONFIG_SERIAL_INTERRUPT_LEVEL
+#ifdef CONFIG_SERIAL_INTERRUPT_LOW
+#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+#else
+#define UART_IRQ_FLAGS (IOAPIC_LEVEL)
+#endif
+#else /* edge triggered interrupt */
+#ifdef CONFIG_SERIAL_INTERRUPT_LOW
+/* generate interrupt on falling edge */
+#define UART_IRQ_FLAGS (IOAPIC_LOW)
+#else
+/* generate interrupt on raising edge */
+#define UART_IRQ_FLAGS (0)
+#endif
+#endif
+#endif
+
+
 #ifdef CONFIG_SPI_DW
 #if defined(CONFIG_SPI_DW_FALLING_EDGE)
 #define SPI_DW_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
