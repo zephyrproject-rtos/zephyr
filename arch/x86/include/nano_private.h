@@ -663,6 +663,10 @@ struct tcs {
 	struct _nano_timeout nano_timeout;
 #endif
 
+#ifdef CONFIG_ERRNO
+	int errno_var;
+#endif
+
 	/*
 	 * The location of all floating point related structures/fields MUST be
 	 * located at the end of struct tcs.  This way only the

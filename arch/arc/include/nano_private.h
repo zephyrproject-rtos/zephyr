@@ -180,6 +180,9 @@ struct tcs {
 #ifdef CONFIG_NANO_TIMEOUTS
 	struct _nano_timeout nano_timeout;
 #endif
+#ifdef CONFIG_ERRNO
+	int errno_var;
+#endif
 };
 
 struct s_NANO {

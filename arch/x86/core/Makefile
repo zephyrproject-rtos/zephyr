@@ -22,4 +22,4 @@ obj-y += gdt.o fatal.o cpuhalt.o \
 obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 obj-$(CONFIG_FP_SHARING) += float.o
 obj-$(CONFIG_MICROKERNEL) += strtask.o
-
+obj-$(CONFIG_ERRNO) += errno.o

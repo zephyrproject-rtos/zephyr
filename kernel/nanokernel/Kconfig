@@ -82,4 +82,13 @@ config  NANO_TIMERS
 	help
 	Allow fibers and tasks to wait on nanokernel timers, which can be
 	accessed using the nano_timer_xxx() APIs.
+
+config ERRNO
+	bool
+	prompt "Enable errno support"
+	default y
+	help
+	Enable per-thread errno in the kernel. Application and library code must
+	include errno.h provided by the C library (libc) to use the errno symbol.
+	The C library must access the per-thread errno via the _get_errno() symbol.
 endmenu

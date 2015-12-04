@@ -13,3 +13,4 @@ obj-y += prep_c.o \
          vector_table.o
 
 obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
+obj-$(CONFIG_ERRNO) += errno.o
