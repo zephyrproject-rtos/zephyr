@@ -448,6 +448,11 @@ static void hci_disconn_complete(struct net_buf *buf)
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	conn->handle = 0;
 
+	if (conn->type != BT_CONN_TYPE_LE) {
+		bt_conn_unref(conn);
+		return;
+	}
+
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 		bt_le_scan_update(false);
