@@ -120,7 +120,13 @@ void _IntVecSet(unsigned int vector, void (*routine)(void *), unsigned int dpl)
 	_IdtEntCreate(pIdtEntry, routine, dpl);
 	irq_unlock(key);
 
-	/* not required to synchronize the instruction and data caches */
+#ifdef CONFIG_MVIC
+	/* Some nonstandard interrupt controllers may be doing some IDT
+	 * caching for performance reasons and need the IDT reloaded if
+	 * any changes are made to it
+	 */
+	__asm__ volatile ("lidt _idt_base_address");
+#endif
 }
 
 /*
