@@ -49,6 +49,28 @@ static struct nano_fifo data_fifo;
 static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL, 0);
 static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 
+static const char *current_prompt(void)
+{
+	static char str[BT_ADDR_LE_STR_LEN + 2];
+	static struct bt_conn_info info;
+
+	if (!default_conn) {
+		return NULL;
+	}
+
+	if (bt_conn_get_info(default_conn, &info) < 0) {
+		return NULL;
+	}
+
+	if (info.type != BT_CONN_TYPE_LE) {
+		return NULL;
+	}
+
+	bt_addr_le_to_str(info.le.dst, str, sizeof(str) - 2);
+	strcat(str, "> ");
+	return str;
+}
+
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 			 const uint8_t *ad, uint8_t len)
 {
@@ -1388,4 +1410,6 @@ void main(void)
 	net_buf_pool_init(data_pool);
 
 	shell_init("btshell> ", commands);
+
+	shell_register_prompt_handler(current_prompt);
 }
