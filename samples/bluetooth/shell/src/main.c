@@ -291,6 +291,42 @@ static void cmd_disconnect(int argc, char *argv[])
 	bt_conn_unref(conn);
 }
 
+static void cmd_auto_conn(int argc, char *argv[])
+{
+	bt_addr_le_t addr;
+	bool enable;
+	int err;
+
+	if (argc < 2) {
+		printk("Peer address required\n");
+		return;
+	}
+
+	if (argc < 3) {
+		printk("Peer address type required\n");
+		return;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return;
+	}
+
+	if (argc < 4) {
+		enable = true;
+	} else if (!strcmp(argv[3], "on")) {
+		enable = true;
+	} else if (!strcmp(argv[3], "off")) {
+		enable = false;
+	} else {
+		printk("Specify \"on\" or \"off\"\n");
+		return;
+	}
+
+	bt_le_set_auto_conn(&addr, enable);
+}
+
 static void cmd_active_scan_on(void)
 {
 	int err;
@@ -1287,6 +1323,7 @@ struct shell_cmd commands[] = {
 	{ "init", cmd_init },
 	{ "connect", cmd_connect_le },
 	{ "disconnect", cmd_disconnect },
+	{ "auto-conn", cmd_auto_conn },
 	{ "scan", cmd_scan },
 	{ "advertise", cmd_advertise },
 	{ "security", cmd_security },
