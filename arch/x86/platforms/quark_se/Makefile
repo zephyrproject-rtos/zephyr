@@ -6,4 +6,3 @@ asflags-y := ${ccflags-y}
 
 obj-$(CONFIG_PLATFORM_QUARK_SE) = system.o quark_se_config.o eoi.o
 obj-$(CONFIG_PINMUX) += pinmux.o
-obj-$(CONFIG_PINMUX) += curie101_pinmux.o
