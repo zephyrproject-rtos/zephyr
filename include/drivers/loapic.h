@@ -79,6 +79,7 @@ extern void _loapic_irq_enable(unsigned int irq);
 extern void _loapic_irq_disable(unsigned int irq);
 extern void _loapic_enable(void);
 extern void _loapic_disable(void);
+extern int _loapic_isr_vector_get(void);
 
 /**
  *
