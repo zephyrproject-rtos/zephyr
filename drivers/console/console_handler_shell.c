@@ -47,6 +47,21 @@ static struct nano_fifo avail_queue;
 static struct nano_fifo cmds_queue;
 
 static shell_cmd_function_t app_cmd_handler;
+static shell_prompt_function_t app_prompt_handler;
+
+static const char *get_prompt(void)
+{
+	if (app_prompt_handler) {
+		const char *str;
+
+		str = app_prompt_handler();
+		if (str) {
+			return str;
+		}
+	}
+
+	return prompt;
+}
 
 static void line_queue_init(void)
 {
@@ -144,7 +159,7 @@ static void shell(int arg1, int arg2)
 		struct uart_console_input *cmd;
 		shell_cmd_function_t cb;
 
-		printk(prompt);
+		printk("%s", get_prompt());
 
 		cmd = nano_fiber_fifo_get_wait(&cmds_queue);
 
@@ -197,4 +212,9 @@ void shell_init(const char *str, struct shell_cmd *cmds)
 void shell_register_app_cmd_handler(shell_cmd_function_t handler)
 {
 	app_cmd_handler = handler;
+}
+
+void shell_register_prompt_handler(shell_prompt_function_t handler)
+{
+	app_prompt_handler = handler;
 }

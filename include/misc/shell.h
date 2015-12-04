@@ -42,3 +42,14 @@ void shell_init(const char *prompt, struct shell_cmd *cmds);
  */
 void shell_register_app_cmd_handler(shell_cmd_function_t handler);
 
+/** @brief Callback to get the current prompt.
+ *
+ *  @returns Current prompt string.
+ */
+typedef const char *(*shell_prompt_function_t)(void);
+
+/** @brief Optionally register a custom prompt callback.
+ *
+ *  @param handler To be called to get the current prompt.
+ */
+void shell_register_prompt_handler(shell_prompt_function_t handler);
