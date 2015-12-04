@@ -254,7 +254,7 @@ static void cmd_disconnect(int argc, char *argv[])
 	struct bt_conn *conn;
 	int err;
 
-	if (default_conn) {
+	if (default_conn && argc < 3) {
 		conn = bt_conn_ref(default_conn);
 	} else {
 		bt_addr_le_t addr;
