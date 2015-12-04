@@ -240,6 +240,7 @@ endif # BLUETOOTH_DEBUG
 config BLUETOOTH_BREDR
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
 	default n
+	select BLUETOOTH_CONN
 	help
 	  This option enables Bluetooth BR/EDR support"
 
