@@ -677,9 +677,35 @@ static uint32_t galileo_dev_get(struct device *dev,
 }
 #endif
 
+static uint32_t galileo_dev_pullup(struct device *dev,
+				   uint32_t pin,
+				   uint8_t func)
+{
+	/*
+	 * Nothing to do.
+	 * On Galileo the pullup operation is handled through the selection
+	 * of an actual pin
+	 */
+	return DEV_OK;
+}
+
+static uint32_t galileo_dev_input_enable(struct device *dev,
+					 uint32_t pin,
+					 uint8_t func)
+{
+	/*
+	 * Nothing to do.
+	 * On Galileo select a pin for input enabling is handled through the
+	 * selection of an actual pin user configuration.
+	 */
+	return DEV_OK;
+}
+
 static struct pinmux_driver_api api_funcs = {
 	.set = galileo_dev_set,
-	.get = galileo_dev_get
+	.get = galileo_dev_get,
+	.pullup = galileo_dev_pullup,
+	.input = galileo_dev_input_enable
 };
 
 int pinmux_galileo_initialize(struct device *port)

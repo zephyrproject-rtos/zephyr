@@ -35,16 +35,26 @@
 #define PINMUX_FUNC_C		2
 #define PINMUX_FUNC_D		3
 
+#define PINMUX_PULLUP_ENABLE	(0x1)
+#define PINMUX_PULLUP_DISABLE	(0x0)
+
+#define PINMUX_INPUT_ENABLED	(0x1)
+#define PINMUX_OUTPUT_ENABLED	(0x0)
+
 typedef uint32_t (*pmux_set)(struct device *dev, uint32_t pin, uint8_t func);
 typedef uint32_t (*pmux_get)(struct device *dev, uint32_t pin, uint8_t *func);
+typedef uint32_t (*pmux_pullup)(struct device *dev, uint32_t pin, uint8_t func);
+typedef uint32_t (*pmux_input)(struct device *dev, uint32_t pin, uint8_t func);
 
 struct pinmux_driver_api {
 	pmux_set set;
 	pmux_get get;
+	pmux_pullup pullup;
+	pmux_input input;
 };
 
 
-static inline uint32_t pinmux_set_pin(struct device *dev,
+static inline uint32_t pinmux_pin_set(struct device *dev,
 				      uint32_t pin,
 				      uint8_t func)
 {
@@ -54,7 +64,7 @@ static inline uint32_t pinmux_set_pin(struct device *dev,
 	return api->set(dev, pin, func);
 }
 
-static inline uint32_t pinmux_get_pin(struct device *dev,
+static inline uint32_t pinmux_pin_get(struct device *dev,
 				      uint32_t pin,
 				      uint8_t *func)
 {
@@ -62,6 +72,26 @@ static inline uint32_t pinmux_get_pin(struct device *dev,
 
 	api = (struct pinmux_driver_api *) dev->driver_api;
 	return api->get(dev, pin, func);
+}
+
+static inline uint32_t pinmux_pin_pullup(struct device *dev,
+					 uint32_t pin,
+					 uint8_t func)
+{
+	struct pinmux_driver_api *api;
+
+	api = (struct pinmux_driver_api *) dev->driver_api;
+	return api->pullup(dev, pin, func);
+}
+
+static inline uint32_t pinmux_pin_input_enable(struct device *dev,
+					       uint32_t pin,
+					       uint8_t func)
+{
+	struct pinmux_driver_api *api;
+
+	api = (struct pinmux_driver_api *) dev->driver_api;
+	return api->input(dev, pin, func);
 }
 
 /**
