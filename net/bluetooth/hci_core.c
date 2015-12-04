@@ -1177,12 +1177,17 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 
 int bt_le_scan_update(bool fast_scan)
 {
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	uint16_t interval, window;
+	struct bt_conn *conn;
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return 0;
+	}
+
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		int err;
-
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
-			return 0;
-		}
 
 		err = bt_hci_stop_scanning();
 		if (err) {
@@ -1190,33 +1195,26 @@ int bt_le_scan_update(bool fast_scan)
 		}
 	}
 
-#if defined(CONFIG_BLUETOOTH_CONN)
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
-		uint16_t interval, window;
-		struct bt_conn *conn;
-
-		conn = bt_conn_lookup_state(BT_ADDR_LE_ANY,
-					    BT_CONN_CONNECT_SCAN);
-		if (!conn) {
-			return 0;
-		}
-
-		bt_conn_unref(conn);
-
-		if (fast_scan) {
-			interval = 0x0060;
-			window = 0x0030;
-		} else {
-			interval = 0x0800;
-			window = 0x0012;
-		}
-
-		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, interval, window,
-				     0x01);
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	conn = bt_conn_lookup_state(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
+	if (!conn) {
+		return 0;
 	}
-#endif /* CONFIG_BLUETOOTH_CONN */
 
+	bt_conn_unref(conn);
+
+	if (fast_scan) {
+		interval = 0x0060;
+		window = 0x0030;
+	} else {
+		interval = 0x0800;
+		window = 0x0012;
+	}
+
+	return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, interval, window, 0x01);
+#else
 	return 0;
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 }
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
