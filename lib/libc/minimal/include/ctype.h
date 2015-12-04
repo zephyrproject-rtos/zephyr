@@ -34,9 +34,26 @@ static inline int isspace(int c)
 	return c == ' ' || ((unsigned)c-'\t') < 5;
 }
 
+static inline int isgraph(int c)
+{
+	return ((((unsigned)c) > ' ') && (((unsigned)c) <= '~'));
+}
+
+static inline int isprint(int c)
+{
+	return ((((unsigned)c) >= ' ') && (((unsigned)c) <= '~'));
+}
+
 static inline int isdigit(int a)
 {
 	return (((unsigned)(a)-'0') < 10);
+}
+
+static inline int isxdigit(int a)
+{
+	unsigned int ua = (unsigned int)a;
+
+	return ((ua - '0') < 10) || ((ua - 'a') < 6) || ((ua - 'A') < 6);
 }
 
 static inline int tolower(int chr)
@@ -44,9 +61,9 @@ static inline int tolower(int chr)
 	return (chr >= 'A' && chr <= 'Z') ? (chr + 32) : (chr);
 }
 
-static inline int isprint(int c)
+static inline int toupper(int chr)
 {
-	return ((unsigned)c >= ' ' && (unsigned)c <= '~');
+	return (chr >= 'a' && chr <= 'z') ? (chr - 32) : (chr);
 }
 
 #endif  /* __INC_ctype_h__ */
