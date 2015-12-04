@@ -97,7 +97,7 @@ static pfunc func_array[] = {
 	(pfunc)task_mbox_get,
 	(pfunc)_task_mbox_block_put,
 	(pfunc)_task_mbox_data_get,
-	(pfunc)_task_mbox_data_block_get,
+	(pfunc)task_mbox_data_block_get,
 	/* memory pool functions */
 	(pfunc)_task_mem_pool_alloc,
 	(pfunc)task_mem_pool_free,

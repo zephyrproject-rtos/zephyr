@@ -600,8 +600,9 @@ a large message.
            /* get message, but not its data */
            task_mbox_get(REQUEST_BOX, &recv_msg, TICKS_UNLIMITED);
 
-           /* get memory block holding data and delete the message */
-           task_mbox_data_block_get_wait(&recv_msg, &recv_block, RXPOOL);
+           /* get message data as a memory block and discard message */
+           task_mbox_data_block_get(&recv_msg, &recv_block, RXPOOL,
+                                    TICKS_UNLIMITED);
 
            /* compute sum of all message bytes in memory block */
            total = 0;
@@ -639,10 +640,4 @@ The following APIs for mailbox operations are provided by the kernel:
    Retrieves message data into a buffer.
 
 :c:func:`task_mbox_data_block_get()`
-   Retrieves message data into a block, with no waiting.
-
-:c:func:`task_mbox_data_block_get_wait()`
-   Retrieves message data into a block, with unlimited waiting.
-
-:c:func:`task_mbox_data_block_get_wait_timeout()`
    Retrieves message data into a block, with time limited waiting.

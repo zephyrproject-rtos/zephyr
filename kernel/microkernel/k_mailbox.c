@@ -769,16 +769,14 @@ void _task_mbox_data_get(struct k_msg *M)
 }
 
 
-int _task_mbox_data_block_get(struct k_msg *message,
-			  struct k_block *rxblock,
-			  kmemory_pool_t pool_id,
-			  int32_t time)
+int task_mbox_data_block_get(struct k_msg *M, struct k_block *block,
+			  kmemory_pool_t pool_id, int32_t timeout)
 {
 	int retval;
 	struct k_args *MoveD;
 
 	/* sanity checks: */
-	if (message->extra.transfer == NULL) {
+	if (M->extra.transfer == NULL) {
 		/*
 		 * If a user erroneously calls this function after a
 		 * task_mbox_get(), we should not run into trouble.
@@ -790,13 +788,13 @@ int _task_mbox_data_block_get(struct k_msg *message,
 
 	/* special flow to check for possible optimisations: */
 
-	if (ISASYNCMSG(message)) {
+	if (ISASYNCMSG(M)) {
 		/* First transfer block */
-		__ASSERT_NO_MSG(message->tx_block.pool_id != -1);
-		*rxblock = message->tx_block;
+		__ASSERT_NO_MSG(M->tx_block.pool_id != -1);
+		*block = M->tx_block;
 
 		/* This is the MOVED packet */
-		MoveD = message->extra.transfer;
+		MoveD = M->extra.transfer;
 
 		/* Then release sender (writer) */
 
@@ -836,15 +834,15 @@ int _task_mbox_data_block_get(struct k_msg *message,
 
 	/* 'normal' flow of task_mbox_data_block_get(): */
 
-	if (message->size != 0) {
-		retval = _task_mem_pool_alloc(rxblock, pool_id,
-					message->size, time);
+	if (M->size != 0) {
+		retval = _task_mem_pool_alloc(block, pool_id,
+					M->size, timeout);
 		if (retval != RC_OK) {
 			return retval;
 		}
-		message->rx_data = rxblock->pointer_to_data;
+		M->rx_data = block->pointer_to_data;
 	} else {
-		rxblock->pool_id = (kmemory_pool_t) -1;
+		block->pool_id = (kmemory_pool_t) -1;
 	}
 
 	/*
@@ -854,7 +852,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 
 	struct k_args A;
 
-	A.args.m1.mess = *message;
+	A.args.m1.mess = *M;
 	A.Comm = _K_SVC_MBOX_RECEIVE_DATA;
 	KERNEL_ENTRY(&A);
 

@@ -25,8 +25,6 @@
  *
  *    task_mbox_data_get
  *    task_mbox_data_block_get
- *    task_mbox_data_block_get_wait
- *    task_mbox_data_block_get_wait_timeout
  *
  * The module does NOT test the following mailbox APIs:
  *
@@ -563,7 +561,8 @@ int MsgRcvrTask(void)
 
 	/* Try to grab message data using a block that's too small */
 
-	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblock, smallBlkszPool);
+	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblock, smallBlkszPool,
+				TICKS_NONE);
 	if (RC_FAIL != retValue) {
 		TC_ERROR("task_mbox_data_block_get that should have failed returned %d\n",
 			retValue);
@@ -572,7 +571,8 @@ int MsgRcvrTask(void)
 
 	/* Now grab message data using a block that's big enough */
 
-	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblock, testPool);
+	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblock, testPool,
+				TICKS_NONE);
 	if (RC_OK != retValue) {
 		TC_ERROR("task_mbox_data_block_get returned %d\n", retValue);
 		return TC_FAIL;
@@ -605,9 +605,9 @@ int MsgRcvrTask(void)
 
 	/* Try to grab message data using block from an empty pool */
 
-	retValue = task_mbox_data_block_get_wait_timeout(&MRTmsg, &MRTblockAlt, testPool, 2);
+	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblockAlt, testPool, 2);
 	if (RC_TIME != retValue) {
-		TC_ERROR("task_mbox_data_block_get_wait_timeout that should have timed out "
+		TC_ERROR("task_mbox_data_block_get that should have timed out "
 			"returned %d\n", retValue);
 		return TC_FAIL;
 	}
@@ -618,7 +618,8 @@ int MsgRcvrTask(void)
 
 	/* Now grab message data using the newly released block */
 
-	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblockAlt, testPool);
+	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblockAlt, testPool,
+				TICKS_NONE);
 	if (RC_OK != retValue) {
 		TC_ERROR("task_mbox_data_block_get returned %d\n", retValue);
 		return TC_FAIL;
