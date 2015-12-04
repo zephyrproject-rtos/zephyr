@@ -32,8 +32,8 @@ extern "C" {
 #endif
 
 
-/* Stub: this should be implemented as a thread local variable */
-extern int errno;
+extern int *_get_errno(void);
+#define errno (*_get_errno())
 
 /*
  * POSIX Error codes
