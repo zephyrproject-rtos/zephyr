@@ -28,13 +28,13 @@
 #include <drivers/loapic.h>
 
 #if defined(CONFIG_CONSOLE_HANDLER)
-#if defined(CONFIG_IOAPIC)
+#if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
 	ioapic_mkstub console uart_console_isr 0
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_CONSOLE_HANDLER */
 
 #if defined(CONFIG_UART_PIPE)
-#if defined(CONFIG_IOAPIC)
+#if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
 	ioapic_mkstub uart_pipe uart_pipe_isr 0
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_UART_PIPE */
