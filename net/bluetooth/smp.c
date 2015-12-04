@@ -75,7 +75,7 @@ enum {
 	SMP_FLAG_PAIRING,	/* if pairing is in progress */
 	SMP_FLAG_TIMEOUT,	/* if SMP timeout occurred */
 	SMP_FLAG_SC,		/* if LE Secure Connections is used */
-	SMP_FLAG_PKEY_PENDING,	/* if waiting for P256 Public Key */
+	SMP_FLAG_PKEY_SEND,	/* if should send Public Key when available */
 	SMP_FLAG_DHKEY_PENDING,	/* if waiting for local DHKey */
 	SMP_FLAG_DHKEY_SEND,	/* if should generate and send DHKey Check */
 	SMP_FLAG_USER		/* if waiting for user input */
@@ -176,6 +176,7 @@ static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 static const struct bt_auth_cb *auth_cb;
 static uint8_t bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
 static bool sc_supported;
+static bool sc_local_pkey_valid;
 
 static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 {
@@ -1290,6 +1291,11 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		smp->local_dist &= SEND_KEYS_SC;
 		smp->remote_dist &= RECV_KEYS_SC;
 
+		if (!sc_local_pkey_valid) {
+			atomic_set_bit(&smp->flags, SMP_FLAG_PKEY_SEND);
+			return 0;
+		}
+
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
 		return sc_send_public_key(smp);
 	}
@@ -2193,6 +2199,47 @@ static uint8_t display_passkey(struct bt_smp *smp)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+static uint8_t smp_public_key_slave(struct bt_smp *smp)
+{
+	uint8_t err;
+
+	err = sc_send_public_key(smp);
+	if (err) {
+		return err;
+	}
+
+	switch (smp->method) {
+	case PASSKEY_CONFIRM:
+	case JUST_WORKS:
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+
+		err = smp_send_pairing_confirm(smp);
+		if (err) {
+			return err;
+		}
+		break;
+	case PASSKEY_DISPLAY:
+		err = display_passkey(smp);
+		if (err) {
+			return err;
+		}
+
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		break;
+	case PASSKEY_INPUT:
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		auth_cb->passkey_entry(smp->chan.conn);
+		break;
+	default:
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	return generate_dhkey(smp);
+}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+
 static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_smp_public_key *req = (void *)buf->data;
@@ -2237,39 +2284,12 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	err = sc_send_public_key(smp);
-	if (err) {
-		return err;
+	if (!sc_local_pkey_valid) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_PKEY_SEND);
+		return 0;
 	}
 
-	switch (smp->method) {
-	case PASSKEY_CONFIRM:
-	case JUST_WORKS:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
-
-		err = smp_send_pairing_confirm(smp);
-		if (err) {
-			return err;
-		}
-		break;
-	case PASSKEY_DISPLAY:
-		err = display_passkey(smp);
-		if (err) {
-			return err;
-		}
-
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-		break;
-	case PASSKEY_INPUT:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
-		auth_cb->passkey_entry(smp->chan.conn);
-		break;
-	default:
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	err = generate_dhkey(smp);
+	err = smp_public_key_slave(smp);
 	if (err) {
 		return err;
 	}
@@ -2412,6 +2432,43 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (err) {
 		smp_error(smp, err);
+	}
+}
+
+void bt_smp_pkey_ready(void)
+{
+	int i;
+
+	BT_DBG("");
+
+	sc_local_pkey_valid = true;
+
+	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
+		struct bt_smp *smp = &bt_smp_pool[i];
+		uint8_t err;
+
+		if (!atomic_test_bit(&smp->flags, SMP_FLAG_PKEY_SEND)) {
+			continue;
+		}
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+			err = sc_send_public_key(smp);
+			if (err) {
+				smp_error(smp, err);
+			}
+
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PUBLIC_KEY);
+			continue;
+		}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+		err = smp_public_key_slave(smp);
+		if (err) {
+			smp_error(smp, err);
+		}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 	}
 }
 

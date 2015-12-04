@@ -137,6 +137,7 @@ void bt_smp_update_keys(struct bt_conn *conn);
 bool bt_smp_get_tk(struct bt_conn *conn, uint8_t *tk);
 
 void bt_smp_dhkey_ready(const uint8_t *dhkey);
+void bt_smp_pkey_ready(void);
 
 int bt_smp_init(void);
 

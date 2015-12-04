@@ -995,12 +995,8 @@ static void le_pkey_complete(struct net_buf *buf)
 		return;
 	}
 
-	/* TODO
-	 * init should be blocked until this is received or we need to notify
-	 * SMP code about Public Key being available.
-	 */
-
 	memcpy(bt_dev.pkey, evt->key, sizeof(bt_dev.pkey));
+	bt_smp_pkey_ready();
 }
 
 static void le_dhkey_complete(struct net_buf *buf)
