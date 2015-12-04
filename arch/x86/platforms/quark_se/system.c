@@ -94,6 +94,31 @@ SYS_DEFINE_DEVICE(quark_se_ss_0, NULL, SECONDARY,
 
 #endif /*CONFIG_ARC_INIT*/
 
+#ifdef CONFIG_UART_NS16550
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+static int platform_uart_init(struct device *arg)
+{
+	ARG_UNUSED(arg);
+
+#ifdef CONFIG_UART_NS16550_PORT_0
+	SCSS_INTERRUPT->int_uart_mask[0] &= INT_UNMASK_IA;
+#endif
+
+#ifdef CONFIG_UART_NS16550_PORT_1
+	SCSS_INTERRUPT->int_uart_mask[1] &= INT_UNMASK_IA;
+#endif
+
+	return DEV_OK;
+}
+
+DECLARE_DEVICE_INIT_CONFIG(platform_uart_init, "", platform_uart_init, NULL);
+SYS_DEFINE_DEVICE(platform_uart_init, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_NS16550 */
+
 #ifdef CONFIG_IOAPIC
 DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
 SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
