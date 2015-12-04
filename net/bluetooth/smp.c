@@ -3096,7 +3096,7 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
 			if (smp_send_pairing_confirm(smp)) {
-				bt_auth_cancel(conn);
+				smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
 				return;
 			}
 			atomic_set_bit(&smp->allowed_cmds,
@@ -3107,7 +3107,7 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 		if (atomic_test_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
 			if (smp_send_pairing_confirm(smp)) {
-				bt_auth_cancel(conn);
+				smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
 				return;
 			}
 			atomic_set_bit(&smp->allowed_cmds,
@@ -3126,7 +3126,7 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 	/* if confirm failed ie. due to invalid passkey, cancel pairing */
 	if (smp_send_pairing_confirm(smp)) {
-		bt_auth_cancel(conn);
+		smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
 		return;
 	}
 
