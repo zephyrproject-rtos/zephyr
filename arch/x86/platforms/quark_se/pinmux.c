@@ -37,7 +37,7 @@
 
 extern struct pin_config mux_config[];
 
-static void _pinmux_set(uint32_t base, uint32_t pin, uint32_t mode)
+static void _quark_se_select_set(uint32_t base, uint32_t pin, uint32_t mode)
 {
 	/*
 	 * the registers are 32-bit wide, but each pin requires 2 bits
@@ -68,7 +68,7 @@ static void _pinmux_set(uint32_t base, uint32_t pin, uint32_t mode)
 
 #ifdef CONFIG_PINMUX_DEV
 
-static uint32_t _pinmux_get(uint32_t base, uint32_t pin)
+static uint32_t _quark_se_select_get(uint32_t base, uint32_t pin)
 {
 	/*
 	 * the registers are 32-bit wide, but each pin requires 2 bits
@@ -103,7 +103,7 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
 {
 	struct pinmux_config * const pmux = dev->config->config_info;
 
-	_pinmux_set(pmux->base_address, pin, func);
+	_quark_se_select_set(pmux->base_address, pin, func);
 
 	return DEV_OK;
 }
@@ -127,7 +127,7 @@ static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint8_t *func)
 	struct pinmux_config * const pmux = dev->config->config_info;
 	uint32_t ret;
 
-	ret = _pinmux_get(pmux->base_address, pin);
+	ret = _quark_se_select_get(pmux->base_address, pin);
 
 	*func = ret;
 	return DEV_OK;
@@ -161,7 +161,7 @@ int pinmux_initialize(struct device *dev)
 	dev->driver_api = &api_funcs;
 
 	for (i = 0; i < CONFIG_PINMUX_NUM_PINS; i++) {
-		_pinmux_set(pmux->base_address,
+		_quark_se_select_set(pmux->base_address,
 			    mux_config[i].pin_num,
 			    mux_config[i].mode);
 	}
