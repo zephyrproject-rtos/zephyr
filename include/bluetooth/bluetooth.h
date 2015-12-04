@@ -145,6 +145,23 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  */
 int bt_le_scan_stop(void);
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+/** @brief Automatically connect to remote device if it's in range.
+ *
+ *  This function enables/disables automatic connection initiation.
+ *  Everytime the device looses the connection with peer, this connection
+ *  will be re-established if connectable advertisement from peer is received.
+ *
+ *  @param addr Remote Bluetooth address.
+ *  @param auto_conn boolean value. If true, auto connect is enabled,
+ *  if false, auto connect is disabled.
+ *
+ *  @return Zero on success or error code otherwise.
+ */
+int bt_le_set_auto_conn(bt_addr_le_t *addr, bool auto_conn);
+
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
 #if defined(CONFIG_BLUETOOTH_SMP)
 /** Authenticated pairing callback structure */
 struct bt_auth_cb {

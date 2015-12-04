@@ -1219,6 +1219,42 @@ int bt_le_scan_update(bool fast_scan)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+int bt_le_set_auto_conn(bt_addr_le_t *addr, bool auto_conn)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(addr);
+	if (!conn) {
+		conn = bt_conn_add_le(addr);
+		if (!conn) {
+			return -ENOMEM;
+		}
+	}
+
+	if (auto_conn) {
+		if (!atomic_test_and_set_bit(conn->flags,
+					     BT_CONN_AUTO_CONNECT)) {
+			bt_conn_ref(conn);
+		}
+	} else {
+		if (atomic_test_and_clear_bit(conn->flags,
+					      BT_CONN_AUTO_CONNECT)) {
+			bt_conn_unref(conn);
+		}
+	}
+
+	if (conn->state == BT_CONN_DISCONNECTED &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		bt_le_scan_update(false);
+	}
+
+	bt_conn_unref(conn);
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
 static void le_adv_report(struct net_buf *buf)
 {
 	uint8_t num_reports = buf->data[0];

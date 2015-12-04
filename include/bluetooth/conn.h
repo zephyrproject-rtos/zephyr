@@ -198,21 +198,5 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  */
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
 
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
-/** @brief Automatically connect to remote device if it's in range.
- *
- *  This function enables/disables automatic connection initiation.
- *  Everytime the device looses the connection with peer, this connection
- *  will be re-established if connectable advertisement from peer is received.
- *
- *  @param conn Existing connection object.
- *  @param auto_conn boolean value. If true, auto connect is enabled,
- *  if false, auto connect is disabled.
- *
- *  @return N/A
- */
-void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn);
-
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
 #endif /* __BT_CONN_H */

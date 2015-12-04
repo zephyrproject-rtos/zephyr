@@ -749,15 +749,6 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	return -EINVAL;
 }
 
-void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)
-{
-	if (auto_conn) {
-		atomic_set_bit(conn->flags, BT_CONN_AUTO_CONNECT);
-	} else {
-		atomic_clear_bit(conn->flags, BT_CONN_AUTO_CONNECT);
-	}
-}
-
 static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	struct net_buf *buf;
@@ -805,12 +796,16 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	/* Disconnection is initiated by us, so auto connection shall
 	 * be disabled. Otherwise the passive scan would be enabled
 	 * and we could send LE Create Connection as soon as the remote
 	 * starts advertising.
 	 */
-	bt_conn_set_auto_conn(conn, false);
+	if (conn->type == BT_CONN_TYPE_LE) {
+		bt_le_set_auto_conn(&conn->le.dst, false);
+	}
+#endif
 
 	switch (conn->state) {
 	case BT_CONN_CONNECT_SCAN:
