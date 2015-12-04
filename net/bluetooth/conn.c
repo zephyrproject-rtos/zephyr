@@ -893,6 +893,25 @@ struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve)
 	return net_buf_get(fifo, head_reserve);
 }
 
+static void background_scan_init(void)
+{
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		struct bt_conn *conn = &conns[i];
+
+		if (!atomic_get(&conn->ref)) {
+			continue;
+		}
+
+		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		}
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+}
+
 int bt_conn_init(void)
 {
 	int err;
@@ -908,6 +927,8 @@ int bt_conn_init(void)
 	}
 
 	bt_l2cap_init();
+
+	background_scan_init();
 
 	return 0;
 }

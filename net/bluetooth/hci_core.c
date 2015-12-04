@@ -1244,6 +1244,9 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr, bool auto_conn)
 
 	if (conn->state == BT_CONN_DISCONNECTED &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		if (auto_conn) {
+			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		}
 		bt_le_scan_update(false);
 	}
 
