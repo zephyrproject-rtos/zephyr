@@ -2133,6 +2133,11 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 		return false;
 	}
 
+	if (param->filter_dup != BT_HCI_LE_SCAN_FILTER_DUP_DISABLE &&
+	    param->filter_dup != BT_HCI_LE_SCAN_FILTER_DUP_ENABLE) {
+		return false;
+	}
+
 	if (param->interval < 0x0004 || param->interval > 0x4000) {
 		return false;
 	}
