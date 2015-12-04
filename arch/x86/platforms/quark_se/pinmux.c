@@ -81,14 +81,14 @@
 /* 7  G03, gpio_7, ain_7, NA */
 /* 8  L05, gpio_ss_0, ain_8, uart1_cts */
 /* 9  M05, gpio_ss_1, ain_9, uart1_rts */
-/* 10 K05, gpio_ss_2, ain_10 */
-/* 11 G01, gpio_ss_3, ain_11 */
-/* 12 J04, gpio_ss_4, ain_12 */
-/* 13 G02, gpio_ss_5, ain_13 */
-/* 14 F01, gpio_ss_6, ain_14 */
-/* 15 J05, gpio_ss_7, ain_15 */
-/* 16 L04, gpio_ss_8, ain_16, uart1_txd */
-/* 17 M04, gpio_ss_9, ain_17, uart1_rxd */
+/* 10 K05, gpio_ss_2, ain_10 */				/* AD0 */
+/* 11 G01, gpio_ss_3, ain_11 */				/* AD1 */
+/* 12 J04, gpio_ss_4, ain_12 */				/* AD2 */
+/* 13 G02, gpio_ss_5, ain_13 */				/* AD3 */
+/* 14 F01, gpio_ss_6, ain_14 */				/* AD4 */
+/* 15 J05, gpio_ss_7, ain_15 */				/* AD5 */
+/* 16 L04, gpio_ss_8, ain_16, uart1_txd */		/* IO1 */
+/* 17 M04, gpio_ss_9, ain_17, uart1_rxd */		/* IO0 */
 /* 18 K04, uart0_rx, ain_18, NA */
 /* 19 B02, uart0_tx, gpio_31, NA */
 /* 20 C01, i2c0_scl, NA, NA */
@@ -113,19 +113,19 @@
 /* 39 E04, spi1_ss_cs1, NA, NA */
 /* 40 A06, spi1_ss_cs2, uart0_cts, NA */
 /* 41 B06, spi1_ss_cs3, uart0_rts, NA */
-/* 42 C06, gpio_8, spi1_m_sck, NA */
-/* 43 D06, gpio_9, spi1_m_miso, NA */
-/* 44 E06, gpio_10, spi1_m_mosi, NA */
-/* 45 D07, gpio_11, spi1_m_cs0, NA */
+/* 42 C06, gpio_8, spi1_m_sck, NA */			/* IO13 */
+/* 43 D06, gpio_9, spi1_m_miso, NA */			/* IO12 */
+/* 44 E06, gpio_10, spi1_m_mosi, NA */			/* IO11 */
+/* 45 D07, gpio_11, spi1_m_cs0, NA */			/* IO10 */
 /* 46 C07, gpio_12, spi1_m_cs1, NA */
 /* 47 B07, gpio_13, spi1_m_cs2, NA */
 /* 48 A07, gpio_14, spi1_m_cs3, NA */
-/* 49 B08, gpio_15, i2s_rxd, NA */
-/* 50 A08, gpio_16, i2s_rscki, NA */
-/* 51 B09, gpio_17, i2s_rws, NA */
-/* 52 A09, gpio_18, i2s_tsck, NA */
-/* 53 C09, gpio_19, i2s_twsi, NA */
-/* 54 D09, gpio_20, i2s_txd, NA */
+/* 49 B08, gpio_15, i2s_rxd, NA */			/* IO5 */
+/* 50 A08, gpio_16, i2s_rscki, NA */			/* IO8 */
+/* 51 B09, gpio_17, i2s_rws, NA */			/* IO3 */
+/* 52 A09, gpio_18, i2s_tsck, NA */			/* IO2 */
+/* 53 C09, gpio_19, i2s_twsi, NA */			/* IO4 */
+/* 54 D09, gpio_20, i2s_txd, NA */			/* IO7 */
 /* 55 D08, gpio_21, spi0_m_sck, NA */
 /* 56 E07, gpio_22, spi0_m_miso, NA */
 /* 57 E09, gpio_23, spi0_m_mosi, NA */
@@ -134,10 +134,10 @@
 /* 60 B10, gpio_26, spi0_m_cs2, NA */
 /* 61 C10, gpio_27, spi0_m_cs3, NA */
 /* 62 D10, gpio_28, NA, NA */
-/* 63 E10, gpio_ss_10, pwm_0, NA */
-/* 64 D11, gpio_ss_11, pwm_1, NA */
-/* 65 C11, gpio_ss_12, pwm_2, NA */
-/* 66 B11, gpio_ss_13, pwm_3, NA */
+/* 63 E10, gpio_ss_10, pwm_0, NA */			/* IO3 */
+/* 64 D11, gpio_ss_11, pwm_1, NA */			/* IO5 */
+/* 65 C11, gpio_ss_12, pwm_2, NA */			/* IO6 */
+/* 66 B11, gpio_ss_13, pwm_3, NA */			/* IO9 */
 /* 67 D12, gpio_ss_14, clkout_32khz, NA */
 /* 68 C12, gpio_ss_15, clkout_16mhz, NA */
 
@@ -166,6 +166,10 @@ static void _pinmux_defaults(uint32_t base)
 	PIN_CONFIG(mux_config, 17, PINMUX_FUNC_C);
 	PIN_CONFIG(mux_config, 40, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 41, PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 42, PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 43, PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 44, PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 45, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 63, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 64, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 65, PINMUX_FUNC_B);
