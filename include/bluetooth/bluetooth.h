@@ -53,11 +53,31 @@ struct bt_eir {
 	uint8_t data[29];
 } __packed;
 
+/** LE Advertising Parameters. */
 struct bt_le_adv_param {
-	uint8_t type;
+	/** Advertising type */
+	uint8_t  type;
+
+	/** Minimum Advertising Interval (N * 0.625) */
+	uint16_t interval_min;
+
+	/** Maximum Advertising Interval (N * 0.625) */
+	uint16_t interval_max;
 };
 
-#define BT_LE_ADV(t) (&(struct bt_le_adv_param) { .type = t })
+/** Helper to declare advertising parameters inline
+  *
+  * @param _type     Advertising Type
+  */
+#define BT_LE_ADV_PARAM(_type, _int_min, _int_max) \
+		(&(struct bt_le_adv_param) { \
+			.type = (_type), \
+			.interval_min = (_int_min), \
+			.interval_max = (_int_max), \
+		 })
+
+#define BT_LE_ADV(t) BT_LE_ADV_PARAM(t, BT_GAP_ADV_FAST_INT_MIN_2, \
+				     BT_GAP_ADV_FAST_INT_MAX_2)
 
 /** @brief Start advertising
  *

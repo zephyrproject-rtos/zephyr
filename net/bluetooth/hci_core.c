@@ -2087,10 +2087,10 @@ send_set_param:
 	set_param = net_buf_add(buf, sizeof(*set_param));
 
 	memset(set_param, 0, sizeof(*set_param));
-	set_param->min_interval		= sys_cpu_to_le16(0x0800);
-	set_param->max_interval		= sys_cpu_to_le16(0x0800);
-	set_param->type			= param->type;
-	set_param->channel_map		= 0x07;
+	set_param->min_interval = sys_cpu_to_le16(param->interval_min);
+	set_param->max_interval = sys_cpu_to_le16(param->interval_max);
+	set_param->type         = param->type;
+	set_param->channel_map  = 0x07;
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_PARAMETERS, buf);
 
