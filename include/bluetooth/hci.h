@@ -101,10 +101,20 @@ struct bt_hci_cmd_hdr {
 #define BT_HCI_LE_SLAVE_FEATURES		0x08
 
 /* Defined GAP timers */
-#define BT_GAP_SCAN_FAST_INTERVAL		0x0060
-#define BT_GAP_SCAN_FAST_WINDOW			0x0030
-#define BT_GAP_SCAN_SLOW_INTERVAL		0x0800
-#define BT_GAP_SCAN_SLOW_WINDOW			0x0012
+#define BT_GAP_SCAN_FAST_INTERVAL		0x0060	/* 60 ms    */
+#define BT_GAP_SCAN_FAST_WINDOW			0x0030  /* 30 ms    */
+#define BT_GAP_SCAN_SLOW_INTERVAL_1		0x0800  /* 1.28 s   */
+#define BT_GAP_SCAN_SLOW_WINDOW_1		0x0012  /* 11.25 ms */
+#define BT_GAP_SCAN_SLOW_INTERVAL_2		0x1000  /* 2.56 s   */
+#define BT_GAP_SCAN_SLOW_WINDOW_2		0x0012  /* 11.25 ms */
+#define BT_GAP_ADV_FAST_INT_MIN_1		0x0030	/* 30 ms    */
+#define BT_GAP_ADV_FAST_INT_MAX_1		0x0060  /* 60 ms    */
+#define BT_GAP_ADV_FAST_INT_MIN_2		0x00a0  /* 100 ms   */
+#define BT_GAP_ADV_FAST_INT_MIN_2		0x00a0  /* 150 ms   */
+#define BT_GAP_ADV_SLOW_INT_MIN			0x0640  /* 1 s      */
+#define BT_GAP_ADV_SLOW_INT_MAX			0x0780  /* 1.2 s    */
+#define BT_GAP_INIT_CONN_INT_MIN		0x0018  /* 30 ms    */
+#define BT_GAP_INIT_CONN_INT_MAX		0x0028  /* 50 ms    */
 
 /* OpCode Group Fields */
 #define BT_OGF_LINK_CTRL			0x01

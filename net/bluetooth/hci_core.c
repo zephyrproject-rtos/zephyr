@@ -410,8 +410,8 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 	cp->scan_window = cp->scan_interval;
 
 	bt_addr_le_copy(&cp->peer_addr, addr);
-	cp->conn_interval_max = sys_cpu_to_le16(0x0028);
-	cp->conn_interval_min = sys_cpu_to_le16(0x0018);
+	cp->conn_interval_max = sys_cpu_to_le16(BT_GAP_INIT_CONN_INT_MAX);
+	cp->conn_interval_min = sys_cpu_to_le16(BT_GAP_INIT_CONN_INT_MIN);
 	cp->supervision_timeout = sys_cpu_to_le16(0x07D0);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
@@ -1203,8 +1203,8 @@ int bt_le_scan_update(bool fast_scan)
 		interval = BT_GAP_SCAN_FAST_INTERVAL;
 		window = BT_GAP_SCAN_FAST_WINDOW;
 	} else {
-		interval = BT_GAP_SCAN_SLOW_INTERVAL;
-		window = BT_GAP_SCAN_SLOW_WINDOW;
+		interval = BT_GAP_SCAN_SLOW_INTERVAL_1;
+		window = BT_GAP_SCAN_SLOW_WINDOW_1;
 	}
 
 	return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, interval, window, 0x01);
