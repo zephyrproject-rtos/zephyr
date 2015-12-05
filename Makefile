@@ -675,7 +675,9 @@ KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
 
 # generate an extra file that specifies the maximum amount of stack used,
 # on a per-function basis.
+ifdef CONFIG_STACK_USAGE
 KBUILD_CFLAGS	+= $(call cc-option,-fstack-usage)
+endif
 
 
 # disallow errors like 'EXPORT_GPL(foo);' with missing header

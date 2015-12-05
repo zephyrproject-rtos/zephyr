@@ -141,6 +141,13 @@ config  DEBUG
 	only disables optimization, more debugging variants can be selected
 	from here to allow more debugging.
 
+config STACK_USAGE
+	bool "Generate stack usage information"
+	default n
+	help
+	Generate  an extra file that specifies the maximum amount of stack used,
+	on a per-function basis.
+
 config PRINTK
 	bool
 	prompt "Send printk() to console"
