@@ -29,7 +29,7 @@
 
 #define CODE_UNREACHABLE __builtin_unreachable()
 #define FUNC_NORETURN    __attribute__((__noreturn__))
-#if __clang__
+#if defined(__clang__)
 #define FUNC_NO_FP
 #else
 #define FUNC_NO_FP	 __attribute__((optimize("-fomit-frame-pointer")))
