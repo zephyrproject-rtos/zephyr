@@ -99,33 +99,47 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 			     uint8_t adv_type, const uint8_t *adv_data,
 			     uint8_t len);
 
+/** LE scan parameters */
+struct bt_le_scan_param {
+	/** Scan type (BT_HCI_LE_SCAN_ACTIVE or BT_HCI_LE_SCAN_PASSIVE) */
+	uint8_t  type;
+
+	/** Duplicate filtering (BT_HCI_LE_SCAN_FILTER_DUP_ENABLE or
+	 *  BT_HCI_LE_SCAN_FILTER_DUP_DISABLE)
+	 */
+	uint8_t  filter_dup;
+
+	/** Scan interval (N * 0.625 ms) */
+	uint16_t interval;
+
+	/** Scan window (N * 0.625 ms) */
+	uint16_t window;
+};
+
+/** Helper to declare scan parameters inline
+  *
+  * @param _type     Scan Type (BT_HCI_LE_SCAN_ACTIVE/BT_HCI_LE_SCAN_PASSIVE)
+  * @param _filter   Filter Duplicates
+  * @param _interval Scan Interval (N * 0.625 ms)
+  * @param _window   Scan Window (N * 0.625 ms)
+  */
+#define BT_LE_SCAN_PARAM(_type, _filter, _interval, _window) \
+		(&(struct bt_le_scan_param) { \
+			.type = (_type), \
+			.filter_dup = (_filter), \
+			.interval = (_interval), \
+			.window = (_window), \
+		 })
+
 /** Helper macro to enable active scanning to discover new devices.
  *
  *  The interval and window are intentionally set to the same value to
  *  perform continuous scanning.
  */
-#define BT_LE_SCAN_ACTIVE \
-		(&(struct bt_le_scan_param) { \
-			.type = BT_HCI_LE_SCAN_ACTIVE, \
-			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE, \
-			.interval = BT_GAP_SCAN_FAST_INTERVAL, \
-			.window = BT_GAP_SCAN_FAST_INTERVAL, \
-		 })
-
-/** LE scan parameters */
-struct bt_le_scan_param {
-	/** Type of scanning (active/passive) */
-	uint8_t  type;
-
-	/** Enable duplicate filtering */
-	uint8_t  filter_dup;
-
-	/** Scan interval */
-	uint16_t interval;
-
-	/** Scan window */
-	uint16_t window;
-};
+#define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_HCI_LE_SCAN_ACTIVE, \
+					   BT_HCI_LE_SCAN_FILTER_DUP_ENABLE, \
+					   BT_GAP_SCAN_FAST_INTERVAL, \
+					   BT_GAP_SCAN_FAST_INTERVAL)
 
 /** @brief Start (LE) scanning
  *

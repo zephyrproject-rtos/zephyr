@@ -412,7 +412,8 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	bt_addr_le_copy(&cp->peer_addr, &conn->le.resp_addr);
 	cp->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
 	cp->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
-	cp->supervision_timeout = sys_cpu_to_le16(0x07D0);
+	cp->conn_latency = sys_cpu_to_le16(conn->le.latency);
+	cp->supervision_timeout = sys_cpu_to_le16(conn->le.timeout);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
@@ -503,8 +504,8 @@ static int update_conn_params(struct bt_conn *conn)
 	    (bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
 		return bt_conn_le_conn_update(conn, conn->le.interval_min,
 					      conn->le.interval_max,
-					      LE_CONN_LATENCY,
-					      LE_CONN_TIMEOUT);
+					      conn->le.latency,
+					      conn->le.timeout);
 	}
 
 	return -EBUSY;
@@ -557,6 +558,8 @@ static void le_conn_complete(struct net_buf *buf)
 	conn->handle   = handle;
 	bt_addr_le_copy(&conn->le.dst, id_addr);
 	conn->le.interval = sys_le16_to_cpu(evt->interval);
+	conn->le.latency = sys_le16_to_cpu(evt->latency);
+	conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 	conn->role = evt->role;
 
 	src.type = BT_ADDR_LE_PUBLIC;
@@ -776,6 +779,15 @@ static int set_flow_control(void)
 	enable = net_buf_add(buf, sizeof(*enable));
 	*enable = 0x01;
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+}
+
+void bt_conn_set_param_le(struct bt_conn *conn,
+			  const struct bt_le_conn_param *param)
+{
+	conn->le.interval_min = param->interval_min;
+	conn->le.interval_max = param->interval_max;
+	conn->le.latency = param->latency;
+	conn->le.timeout = param->timeout;
 }
 #endif /* CONFIG_BLUETOOTH_CONN */
 
@@ -1231,8 +1243,7 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 	}
 
 	if (param) {
-		conn->le.interval_min = param->interval_min;
-		conn->le.interval_max = param->interval_max;
+		bt_conn_set_param_le(conn, param);
 
 		if (!atomic_test_and_set_bit(conn->flags,
 					     BT_CONN_AUTO_CONNECT)) {

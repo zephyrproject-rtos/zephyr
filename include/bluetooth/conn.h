@@ -32,12 +32,33 @@ struct bt_conn;
 struct bt_le_conn_param {
 	uint16_t interval_min;
 	uint16_t interval_max;
+	uint16_t latency;
+	uint16_t timeout;
 };
 
-#define BT_LE_CONN_PARAM_DEFAULT (&(struct bt_le_conn_param) { \
-				.interval_min = BT_GAP_INIT_CONN_INT_MIN, \
-				.interval_max = BT_GAP_INIT_CONN_INT_MAX, \
-				})
+/** Helper to declare connection parameters inline
+  *
+  * @param int_min  Minimum Connection Interval (N * 1.25 ms)
+  * @param int_max  Maximum Connection Interval (N * 1.25 ms)
+  * @param lat      Connection Latency
+  * @param timeout  Supervision Timeout (N * 10 ms)
+  */
+#define BT_LE_CONN_PARAM(int_min, int_max, lat, to) \
+	(&(struct bt_le_conn_param) { \
+		.interval_min = (int_min), \
+		.interval_max = (int_max), \
+		.latency = (lat), \
+		.timeout = (to), \
+	 })
+
+/** Default LE connection parameters:
+  *   Connection Interval: 30-50 ms
+  *   Latency: 0
+  *   Timeout: 4 s
+  */
+#define BT_LE_CONN_PARAM_DEFAULT BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, \
+						  BT_GAP_INIT_CONN_INT_MAX, \
+						  0, 400)
 
 /** @brief Increment a connection's reference count.
  *

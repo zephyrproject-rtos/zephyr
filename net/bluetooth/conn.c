@@ -839,8 +839,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	if (conn) {
 		switch (conn->state) {
 		case BT_CONN_CONNECT_SCAN:
-			conn->le.interval_min = param->interval_min;
-			conn->le.interval_max = param->interval_max;
+			bt_conn_set_param_le(conn, param);
 			return conn;
 		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
@@ -856,8 +855,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
-	conn->le.interval_min = param->interval_min;
-	conn->le.interval_max = param->interval_max;
+	bt_conn_set_param_le(conn, param);
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 
