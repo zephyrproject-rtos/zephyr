@@ -1234,6 +1234,13 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 {
 	struct bt_conn *conn;
 
+	if (param && !bt_le_conn_params_valid(param->interval_min,
+					      param->interval_max,
+					      param->latency,
+					      param->timeout)) {
+		return -EINVAL;
+	}
+
 	conn = bt_conn_lookup_addr_le(addr);
 	if (!conn) {
 		conn = bt_conn_add_le(addr);
@@ -2011,6 +2018,25 @@ int bt_enable(bt_ready_cb_t cb)
 	return 0;
 }
 
+static bool valid_adv_param(const struct bt_le_adv_param *param)
+{
+	switch (param->type) {
+	case BT_LE_ADV_IND:
+	case BT_LE_ADV_SCAN_IND:
+	case BT_LE_ADV_NONCONN_IND:
+		break;
+	default:
+		return false;
+	}
+
+	if (param->interval_min > param->interval_max ||
+	    param->interval_min < 0x0020 || param->interval_max > 0x4000) {
+		return false;
+	}
+
+	return true;
+}
+
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_eir *ad, const struct bt_eir *sd)
 {
@@ -2020,6 +2046,10 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	struct bt_hci_cp_le_set_adv_parameters *set_param;
 	uint8_t adv_enable;
 	int i, err;
+
+	if (!valid_adv_param(param)) {
+		return -EINVAL;
+	}
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 		return -EALREADY;

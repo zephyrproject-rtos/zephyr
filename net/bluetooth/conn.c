@@ -831,6 +831,11 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 {
 	struct bt_conn *conn;
 
+	if (!bt_le_conn_params_valid(param->interval_min, param->interval_max,
+				     param->latency, param->timeout)) {
+		return NULL;
+	}
+
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return NULL;
 	}
