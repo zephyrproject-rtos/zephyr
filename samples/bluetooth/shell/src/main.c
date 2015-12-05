@@ -467,7 +467,7 @@ static const struct bt_eir sd[] = {
 
 static void cmd_advertise(int argc, char *argv[])
 {
-	uint8_t adv_type;
+	uint8_t adv_type = 0xff;
 	int i;
 	const struct bt_eir *ad;
 
@@ -481,37 +481,34 @@ static void cmd_advertise(int argc, char *argv[])
 		{ "nconn", BT_LE_ADV_NONCONN_IND },
 	};
 
-	adv_type = adv_t[0].type;
-	if (argc >= 2) {
-		const char *adv_type_str = (char*)argv[1];
+	if (argc < 2) {
+		goto fail;
+	}
 
-		if (!strcmp(adv_type_str, "off")) {
-			if (bt_le_adv_stop() < 0) {
-				printk("Failed to stop advertising\n");
-			} else {
-				printk("Advertising stopped\n");
-			}
-
-			return;
+	if (!strcmp(argv[1], "off")) {
+		if (bt_le_adv_stop() < 0) {
+			printk("Failed to stop advertising\n");
+		} else {
+			printk("Advertising stopped\n");
 		}
 
-		for (i = 0; i < ARRAY_SIZE(adv_t); i++) {
-			if (!strcmp(adv_type_str, adv_t[i].str)) {
-				adv_type = adv_t[i].type;
-				break;
-			}
-		}
+		return;
+	}
 
-		if (i == ARRAY_SIZE(adv_t)) {
-			goto fail;
+	for (i = 0; i < ARRAY_SIZE(adv_t); i++) {
+		if (!strcmp(argv[1], adv_t[i].str)) {
+			adv_type = adv_t[i].type;
+			break;
 		}
-	} else {
+	}
+
+	if (adv_type == 0xff) {
 		goto fail;
 	}
 
 	/* Parse advertisement data */
 	if (argc >= 3) {
-		const char *mode = (char*)argv[2];
+		const char *mode = argv[2];
 
 		if (!strcmp(mode, "discov")) {
 			ad = ad_discov;
