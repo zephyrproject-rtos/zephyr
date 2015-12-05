@@ -16,7 +16,7 @@
 
 #include <stdint.h>
 #include <gpio.h>
-#include <gpio_dw_registers.h>
+#include "gpio_dw_registers.h"
 
 #ifdef CONFIG_PCI
 #include <pci/pci.h>
