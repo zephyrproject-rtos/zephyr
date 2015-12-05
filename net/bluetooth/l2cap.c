@@ -974,8 +974,8 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn)
 	hdr->len = sys_cpu_to_le16(sizeof(*req));
 
 	req = net_buf_add(buf, sizeof(*req));
-	req->min_interval = sys_cpu_to_le16(LE_CONN_MIN_INTERVAL);
-	req->max_interval = sys_cpu_to_le16(LE_CONN_MAX_INTERVAL);
+	req->min_interval = sys_cpu_to_le16(conn->le.interval_min);
+	req->max_interval = sys_cpu_to_le16(conn->le.interval_max);
 	req->latency = sys_cpu_to_le16(LE_CONN_LATENCY);
 	req->timeout = sys_cpu_to_le16(LE_CONN_TIMEOUT);
 

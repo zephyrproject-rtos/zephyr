@@ -392,7 +392,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	}
 }
 
-static int hci_le_create_conn(const bt_addr_le_t *addr)
+static int hci_le_create_conn(const struct bt_conn *conn)
 {
 	struct net_buf *buf;
 	struct bt_hci_cp_le_create_conn *cp;
@@ -409,9 +409,9 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
 	cp->scan_window = cp->scan_interval;
 
-	bt_addr_le_copy(&cp->peer_addr, addr);
-	cp->conn_interval_max = sys_cpu_to_le16(BT_GAP_INIT_CONN_INT_MAX);
-	cp->conn_interval_min = sys_cpu_to_le16(BT_GAP_INIT_CONN_INT_MIN);
+	bt_addr_le_copy(&cp->peer_addr, &conn->le.resp_addr);
+	cp->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
+	cp->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
 	cp->supervision_timeout = sys_cpu_to_le16(0x07D0);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
@@ -489,8 +489,8 @@ static int update_conn_params(struct bt_conn *conn)
 	BT_DBG("conn %p features 0x%x", conn, conn->le.features[0]);
 
 	/* Check if there's a need to update conn params */
-	if (conn->le.conn_interval >= LE_CONN_MIN_INTERVAL &&
-	    conn->le.conn_interval <= LE_CONN_MAX_INTERVAL) {
+	if (conn->le.interval >= conn->le.interval_min &&
+	    conn->le.interval <= conn->le.interval_max) {
 		return -EALREADY;
 	}
 
@@ -501,9 +501,10 @@ static int update_conn_params(struct bt_conn *conn)
 
 	if ((conn->le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
 	    (bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
-		return bt_conn_le_conn_update(conn, LE_CONN_MIN_INTERVAL,
-					     LE_CONN_MAX_INTERVAL,
-					     LE_CONN_LATENCY, LE_CONN_TIMEOUT);
+		return bt_conn_le_conn_update(conn, conn->le.interval_min,
+					      conn->le.interval_max,
+					      LE_CONN_LATENCY,
+					      LE_CONN_TIMEOUT);
 	}
 
 	return -EBUSY;
@@ -555,7 +556,7 @@ static void le_conn_complete(struct net_buf *buf)
 
 	conn->handle   = handle;
 	bt_addr_le_copy(&conn->le.dst, id_addr);
-	conn->le.conn_interval = sys_le16_to_cpu(evt->interval);
+	conn->le.interval = sys_le16_to_cpu(evt->interval);
 	conn->role = evt->role;
 
 	src.type = BT_ADDR_LE_PUBLIC;
@@ -699,7 +700,7 @@ static void le_conn_update_complete(struct net_buf *buf)
 	}
 
 	if (!evt->status) {
-		conn->le.conn_interval = interval;
+		conn->le.interval = interval;
 	}
 
 	/* TODO Notify about connection */
@@ -731,7 +732,9 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		goto done;
 	}
 
-	if (hci_le_create_conn(addr)) {
+	bt_addr_le_copy(&conn->le.resp_addr, addr);
+
+	if (hci_le_create_conn(conn)) {
 		goto done;
 	}
 
@@ -1214,7 +1217,8 @@ int bt_le_scan_update(bool fast_scan)
 }
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
-int bt_le_set_auto_conn(bt_addr_le_t *addr, bool auto_conn)
+int bt_le_set_auto_conn(bt_addr_le_t *addr,
+			const struct bt_le_conn_param *param)
 {
 	struct bt_conn *conn;
 
@@ -1226,7 +1230,10 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr, bool auto_conn)
 		}
 	}
 
-	if (auto_conn) {
+	if (param) {
+		conn->le.interval_min = param->interval_min;
+		conn->le.interval_max = param->interval_max;
+
 		if (!atomic_test_and_set_bit(conn->flags,
 					     BT_CONN_AUTO_CONNECT)) {
 			bt_conn_ref(conn);
@@ -1243,7 +1250,7 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr, bool auto_conn)
 
 	if (conn->state == BT_CONN_DISCONNECTED &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		if (auto_conn) {
+		if (param) {
 			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 		}
 		bt_le_scan_update(false);

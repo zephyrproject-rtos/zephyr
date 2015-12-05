@@ -236,7 +236,7 @@ static void cmd_connect_le(int argc, char *argv[])
 		return;
 	}
 
-	conn = bt_conn_create_le(&addr);
+	conn = bt_conn_create_le(&addr, BT_LE_CONN_PARAM_DEFAULT);
 
 	if (!conn) {
 		printk("Connection failed\n");
@@ -294,7 +294,6 @@ static void cmd_disconnect(int argc, char *argv[])
 static void cmd_auto_conn(int argc, char *argv[])
 {
 	bt_addr_le_t addr;
-	bool enable;
 	int err;
 
 	if (argc < 2) {
@@ -314,17 +313,14 @@ static void cmd_auto_conn(int argc, char *argv[])
 	}
 
 	if (argc < 4) {
-		enable = true;
+		bt_le_set_auto_conn(&addr, BT_LE_CONN_PARAM_DEFAULT);
 	} else if (!strcmp(argv[3], "on")) {
-		enable = true;
+		bt_le_set_auto_conn(&addr, BT_LE_CONN_PARAM_DEFAULT);
 	} else if (!strcmp(argv[3], "off")) {
-		enable = false;
+		bt_le_set_auto_conn(&addr, NULL);
 	} else {
 		printk("Specify \"on\" or \"off\"\n");
-		return;
 	}
-
-	bt_le_set_auto_conn(&addr, enable);
 }
 
 static void cmd_select(int argc, char *argv[])

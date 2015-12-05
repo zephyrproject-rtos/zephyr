@@ -28,6 +28,17 @@
 /** Opaque type representing a connection to a remote device */
 struct bt_conn;
 
+/** Connection parameters for LE connections */
+struct bt_le_conn_param {
+	uint16_t interval_min;
+	uint16_t interval_max;
+};
+
+#define BT_LE_CONN_PARAM_DEFAULT (&(struct bt_le_conn_param) { \
+				.interval_min = BT_GAP_INIT_CONN_INT_MIN, \
+				.interval_max = BT_GAP_INIT_CONN_INT_MAX, \
+				})
+
 /** @brief Increment a connection's reference count.
  *
  *  Increment the reference count of a connection object.
@@ -125,11 +136,13 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
  *  Allows initiate new LE link to remote peer using its address.
  *  Returns a new reference that the the caller is responsible for managing.
  *
- *  @param peer Remote address.
+ *  @param peer  Remote address.
+ *  @param param Initial connection parameters.
  *
  *  @return Valid connection object on success or NULL otherwise.
  */
-struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer);
+struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
+				  const struct bt_le_conn_param *param);
 #endif
 
 /** Security level. */

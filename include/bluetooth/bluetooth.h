@@ -157,12 +157,13 @@ int bt_le_scan_stop(void);
  *  will be re-established if connectable advertisement from peer is received.
  *
  *  @param addr Remote Bluetooth address.
- *  @param auto_conn boolean value. If true, auto connect is enabled,
- *  if false, auto connect is disabled.
+ *  @param param If non-NULL, auto connect is enabled with the given
+ *  parameters. If NULL, auto connect is disabled.
  *
  *  @return Zero on success or error code otherwise.
  */
-int bt_le_set_auto_conn(bt_addr_le_t *addr, bool auto_conn);
+int bt_le_set_auto_conn(bt_addr_le_t *addr,
+			const struct bt_le_conn_param *param);
 
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 

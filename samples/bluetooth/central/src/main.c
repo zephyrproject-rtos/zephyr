@@ -130,7 +130,6 @@ static void connected(struct bt_conn *conn)
 static bool eir_found(const struct bt_eir *eir, void *user_data)
 {
 	bt_addr_le_t *addr = user_data;
-	uint16_t u16;
 	int i;
 
 	printk("[AD]: %u len %u\n", eir->type, eir->len);
@@ -138,24 +137,29 @@ static bool eir_found(const struct bt_eir *eir, void *user_data)
 	switch (eir->type) {
 	case BT_EIR_UUID16_SOME:
 	case BT_EIR_UUID16_ALL:
-		if ((eir->len - sizeof(eir->type)) % sizeof(u16) != 0) {
+		if ((eir->len - sizeof(eir->type)) % sizeof(uint16_t) != 0) {
 			printk("AD malformed\n");
 			return true;
 		}
 
-		for (i = 0; i < eir->len; i += sizeof(u16)) {
+		for (i = 0; i < eir->len; i += sizeof(uint16_t)) {
+			uint16_t u16;
+			int err;
+
 			memcpy(&u16, &eir->data[i], sizeof(u16));
-			if (sys_le16_to_cpu(u16) == BT_UUID_HRS) {
-				int err = bt_le_scan_stop();
-
-				if (err) {
-					printk("Stopping scanning failed"
-						" (err %d)\n", err);
-				}
-
-				default_conn = bt_conn_create_le(addr);
-				return false;
+			if (sys_le16_to_cpu(u16) != BT_UUID_HRS) {
+				continue;
 			}
+
+			err = bt_le_scan_stop();
+			if (err) {
+				printk("Stop LE scan failed (err %d)\n", err);
+				continue;
+			}
+
+			default_conn = bt_conn_create_le(addr,
+							 BT_LE_CONN_PARAM_DEFAULT);
+			return false;
 		}
 	}
 

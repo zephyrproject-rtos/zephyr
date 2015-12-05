@@ -527,6 +527,8 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	conn->required_sec_level = BT_SECURITY_LOW;
 #endif /* CONFIG_BLUETOOTH_SMP */
 	conn->type = BT_CONN_TYPE_LE;
+	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
+	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
 
 	return conn;
 }
@@ -824,7 +826,8 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
+struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
+				  const struct bt_le_conn_param *param)
 {
 	struct bt_conn *conn;
 
@@ -836,6 +839,9 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 	if (conn) {
 		switch (conn->state) {
 		case BT_CONN_CONNECT_SCAN:
+			conn->le.interval_min = param->interval_min;
+			conn->le.interval_max = param->interval_max;
+			return conn;
 		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
 			return conn;
@@ -849,6 +855,9 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 	if (!conn) {
 		return NULL;
 	}
+
+	conn->le.interval_min = param->interval_min;
+	conn->le.interval_max = param->interval_max;
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 

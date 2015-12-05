@@ -326,7 +326,8 @@ static void connect(const uint8_t *data, uint16_t len)
 	struct bt_conn *conn;
 	uint8_t status;
 
-	conn = bt_conn_create_le((bt_addr_le_t *) data);
+	conn = bt_conn_create_le((bt_addr_le_t *) data,
+				 BT_LE_CONN_PARAM_DEFAULT);
 	if (!conn) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;

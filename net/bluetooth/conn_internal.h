@@ -37,7 +37,11 @@ struct bt_conn_le {
 
 	bt_addr_le_t		init_addr;
 	bt_addr_le_t		resp_addr;
-	uint16_t		conn_interval;
+
+	uint16_t		interval;
+	uint16_t		interval_min;
+	uint16_t		interval_max;
+
 	uint8_t			features[8];
 };
 
