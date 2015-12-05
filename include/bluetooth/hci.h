@@ -233,6 +233,7 @@ struct bt_hci_rp_le_read_local_features {
 #define BT_LE_ADV_DIRECT_IND			0x01
 #define BT_LE_ADV_SCAN_IND			0x02
 #define BT_LE_ADV_NONCONN_IND			0x03
+#define BT_LE_ADV_DIRECT_IND_LOW_DUTY		0x04
 /* Needed in advertising reports when getting info about */
 #define BT_LE_ADV_SCAN_RSP			0x04
 
