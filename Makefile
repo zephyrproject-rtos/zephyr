@@ -240,7 +240,6 @@ ARCH		?= $(SUBARCH)
 CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
 
 # Architecture as present in compile.h
-UTS_MACHINE 	:= $(subst $(DQUOTE),,$(CONFIG_ARCH))
 SRCARCH 	= $(subst $(DQUOTE),,$(CONFIG_ARCH))
 
 
@@ -381,7 +380,7 @@ export VERSION_MAJOR VERSION_MINOR PATCHLEVEL VERSION_RESERVED EXTRAVERSION
 export KERNELRELEASE KERNELVERSION
 export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP
-export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE GENIDT GENOFFSET_H
+export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON GENIDT GENOFFSET_H
 export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
 
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS ZEPHYRINCLUDE OBJCOPYFLAGS LDFLAGS
@@ -720,18 +719,6 @@ export LD_TOOLCHAIN KERNEL_NAME
 # this default value
 export KBUILD_IMAGE ?= zephyr
 
-#
-# INSTALL_PATH specifies where to place the updated kernel and system map
-# images. Default is /boot, but you can set it to other values
-export	INSTALL_PATH ?= /boot
-
-#
-# INSTALL_DTBS_PATH specifies a prefix for relocations required by build roots.
-# Like INSTALL_MOD_PATH, it isn't defined in the Makefile, but can be passed as
-# an argument if needed. Otherwise it defaults to the kernel install path
-#
-export INSTALL_DTBS_PATH ?= $(INSTALL_PATH)/dtbs/$(KERNELRELEASE)
-
 core-y		+=
 
 zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(core-y) $(drivers-y) \
@@ -751,6 +738,7 @@ libs-y		:= $(libs-y1) $(libs-y2)
 PLATFORM_NAME = $(subst $(DQUOTE),,$(CONFIG_PLATFORM))
 SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
 ARCH_NAME = $(subst $(DQUOTE),,$(CONFIG_ARCH))
+
 export PLATFORM_NAME SOC_NAME ARCH_NAME
 
 # Externally visible symbols (used by link-zephyr.sh)
@@ -1021,12 +1009,9 @@ clean: $(clean-dirs)
 	$(call cmd,rmdirs)
 	$(call cmd,rmfiles)
 	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
-		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
-		-o -name '*.ko.*' \
-		-o -name '*.dwo'  \
-		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \
-		-o -name '*.symtypes' \
-		-o -name modules.builtin -o -name '.tmp_*.o.*' \
+		\( -name '*.[oas]' -o -name '.*.cmd' \
+		-o -name '*.dwo' -o -name '.*.d' -o -name '.*.tmp'  \
+		-o -name '*.symtypes' -o -name '.tmp_*.o.*' \
 		-o -name '*.gcno' \) -type f -print | xargs rm -f
 
 # Generate tags for editors

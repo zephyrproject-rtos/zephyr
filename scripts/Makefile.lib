@@ -146,8 +146,6 @@ cpp_flags      = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(ZEPHYRINCLUDE)     \
 ld_flags       = $(LDFLAGS) $(ldflags-y)
 
 dtc_cpp_flags  = -Wp,-MD,$(depfile).pre.tmp -nostdinc                    \
-		 -I$(srctree)/arch/$(SRCARCH)/boot/dts                   \
-		 -I$(srctree)/arch/$(SRCARCH)/boot/dts/include           \
 		 -I$(srctree)/drivers/of/testcase-data                   \
 		 -undef -D__DTS__
 
@@ -322,29 +320,6 @@ cmd_lz4 = (cat $(filter-out FORCE,$^) | \
 	lz4c -l -c1 stdin stdout && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
 	(rm -f $@ ; false)
 
-# U-Boot mkimage
-# ---------------------------------------------------------------------------
-
-MKIMAGE := $(srctree)/scripts/mkuboot.sh
-
-# SRCARCH just happens to match slightly more than ARCH (on sparc), so reduces
-# the number of overrides in arch makefiles
-UIMAGE_ARCH ?= $(SRCARCH)
-UIMAGE_COMPRESSION ?= $(if $(2),$(2),none)
-UIMAGE_OPTS-y ?=
-UIMAGE_TYPE ?= kernel
-UIMAGE_LOADADDR ?= arch_must_set_this
-UIMAGE_ENTRYADDR ?= $(UIMAGE_LOADADDR)
-UIMAGE_NAME ?= 'Linux-$(KERNELRELEASE)'
-UIMAGE_IN ?= $<
-UIMAGE_OUT ?= $@
-
-quiet_cmd_uimage = UIMAGE  $(UIMAGE_OUT)
-      cmd_uimage = $(CONFIG_SHELL) $(MKIMAGE) -A $(UIMAGE_ARCH) -O linux \
-			-C $(UIMAGE_COMPRESSION) $(UIMAGE_OPTS-y) \
-			-T $(UIMAGE_TYPE) \
-			-a $(UIMAGE_LOADADDR) -e $(UIMAGE_ENTRYADDR) \
-			-n $(UIMAGE_NAME) -d $(UIMAGE_IN) $(UIMAGE_OUT)
 
 # XZ
 # ---------------------------------------------------------------------------
