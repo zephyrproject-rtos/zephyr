@@ -1,3 +1,3 @@
-ccflags-y += ${PROJECTINCLUDE} -I${ZEPHYR_BASE}/include/drivers
+ccflags-y += -I${ZEPHYR_BASE}/include/drivers
 
 obj-y = pci_enum.o

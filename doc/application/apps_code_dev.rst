@@ -109,21 +109,14 @@ Steps
 
 2. Create a :file:`Makefile` for each :file:`src` directory.
 
-   a) Add the following line to each :file:`Makefile`:
-
-      .. code-block:: make
-
-         ccflags-y += ${PROJECTINCLUDE}
-
-
-   b) Use the following syntax to add file references:
+   a) Use the following syntax to add file references:
 
       .. code-block:: make
 
          obj-y += file.o file.o
 
 
-   c) Use the following syntax to add directory references:
+   b) Use the following syntax to add directory references:
 
       .. code-block:: make
 
@@ -139,7 +132,6 @@ examine this file in context, navigate to:
 
 .. code-block:: make
 
-   ccflags-y += ${PROJECTINCLUDE}
    obj-y = phil_fiber.o phil_task.o
 
 

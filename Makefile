@@ -332,9 +332,6 @@ endif
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
-PROJECTINCLUDE := $(strip -I$(srctree)/include/microkernel \
-		-I$(CURDIR)/misc/generated/sysgen) \
-		$(USERINCLUDE)
 
 PLATFORM_NAME = $(subst $(DQUOTE),,$(CONFIG_PLATFORM))
 SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
@@ -387,7 +384,7 @@ export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE CFLAGS_GCOV
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
-export KBUILD_ARFLAGS PROJECTINCLUDE LDLIBS_TOOLCHAIN
+export KBUILD_ARFLAGS LDLIBS_TOOLCHAIN
 
 
 # Files to ignore in find ... statements
