@@ -228,6 +228,8 @@ struct bt_hci_rp_le_read_local_features {
 	uint8_t  features[8];
 } __packed;
 
+#define BT_HCI_OP_LE_SET_RANDOM_ADDRESS		BT_OP(BT_OGF_LE, 0x0005)
+
 /* Advertising types */
 #define BT_LE_ADV_IND				0x00
 #define BT_LE_ADV_DIRECT_IND			0x01
