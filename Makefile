@@ -239,13 +239,6 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
 ARCH		?= $(SUBARCH)
 CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
 
-# Architecture as present in compile.h
-SRCARCH 	= $(subst $(DQUOTE),,$(CONFIG_ARCH))
-
-
-# Where to locate arch specific headers
-hdr-arch  := $(SRCARCH)
-
 KCONFIG_CONFIG	?= .config
 export KCONFIG_CONFIG
 
@@ -343,17 +336,23 @@ PROJECTINCLUDE := $(strip -I$(srctree)/include/microkernel \
 		-I$(CURDIR)/misc/generated/sysgen) \
 		$(USERINCLUDE)
 
+PLATFORM_NAME = $(subst $(DQUOTE),,$(CONFIG_PLATFORM))
+SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
+ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
+KERNEL_NAME = $(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
+KERNEL_ELF_NAME = $(KERNEL_NAME).elf
+
+export PLATFORM_NAME SOC_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME
 # Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 ZEPHYRINCLUDE    = \
-		-I$(srctree)/arch/$(SRCARCH)/include \
+		-I$(srctree)/arch/$(ARCH)/include \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
 		-I$(CURDIR)/include/generated \
 		-I$(CURDIR)/misc/generated/sysgen \
 		$(USERINCLUDE) \
 		$(STDINCLUDE)
-ZEPHYRINCLUDE    +=  -I$(srctree)/arch/$(subst $(DQUOTE),,$(CONFIG_ARCH))/include
 
 KBUILD_CPPFLAGS := -DKERNEL
 
@@ -378,7 +377,7 @@ KERNELVERSION = $(VERSION_MAJOR)$(if $(VERSION_MINOR),.$(VERSION_MINOR)$(if $(PA
 
 export VERSION_MAJOR VERSION_MINOR PATCHLEVEL VERSION_RESERVED EXTRAVERSION
 export KERNELRELEASE KERNELVERSION
-export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
+export ARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP
 export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON GENIDT GENOFFSET_H
 export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
@@ -428,9 +427,9 @@ endif
 PHONY += asm-generic
 asm-generic:
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.asm-generic \
-	            src=asm obj=arch/$(SRCARCH)/include/generated/asm
+	            src=asm obj=arch/$(ARCH)/include/generated/asm
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.asm-generic \
-	            src=uapi/asm obj=arch/$(SRCARCH)/include/generated/uapi/asm
+	            src=uapi/asm obj=arch/$(ARCH)/include/generated/uapi/asm
 
 # To make sure we do not include .config for any of the *config targets
 # catch them early, and hand them over to scripts/kconfig/Makefile
@@ -571,7 +570,7 @@ ALL_LIBS += c m
 endif
 
 QEMU_BIN_PATH	?= /usr/bin
-QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(SRCARCH))
+QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(ARCH))
 
 # The all: target is the default when no target is given on the
 # command line.
@@ -634,7 +633,7 @@ KBUILD_CFLAGS += $(subst $(DQUOTE),,$(CONFIG_COMPILER_OPT))
 
 export LDFLAG_LINKERCMD OUTPUT_FORMAT OUTPUT_ARCH
 
-include arch/$(SRCARCH)/Makefile
+include arch/$(ARCH)/Makefile
 
 KBUILD_CFLAGS += $(CFLAGS)
 KBUILD_AFLAGS += $(CFLAGS)
@@ -708,9 +707,8 @@ LDFLAGS_zephyr += $(call ld-option,--build-id=none)
 
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
 
-KERNEL_NAME=$(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 
-export LD_TOOLCHAIN KERNEL_NAME
+export LD_TOOLCHAIN
 
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the command line or
@@ -735,18 +733,13 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
-PLATFORM_NAME = $(subst $(DQUOTE),,$(CONFIG_PLATFORM))
-SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
-ARCH_NAME = $(subst $(DQUOTE),,$(CONFIG_ARCH))
-
-export PLATFORM_NAME SOC_NAME ARCH_NAME
 
 # Externally visible symbols (used by link-zephyr.sh)
 export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y) $(app-y)
 ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
 export KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
 else
-export KBUILD_LDS         := $(srctree)/arch/$(SRCARCH)/platforms/$(PLATFORM_NAME)/linker.cmd
+export KBUILD_LDS         := $(srctree)/arch/$(ARCH)/platforms/$(PLATFORM_NAME)/linker.cmd
 endif
 export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile
@@ -990,10 +983,10 @@ help-board-dirs := $(addprefix help-,$(board-dirs))
 
 help-boards: $(help-board-dirs)
 
-boards-per-dir = $(sort $(notdir $(wildcard $(srctree)/arch/$(SRCARCH)/configs/$*/*_defconfig)))
+boards-per-dir = $(sort $(notdir $(wildcard $(srctree)/arch/$(ARCH)/configs/$*/*_defconfig)))
 
 $(help-board-dirs): help-%:
-	@echo  'Architecture specific targets ($(SRCARCH) $*):'
+	@echo  'Architecture specific targets ($(ARCH) $*):'
 	@$(if $(boards-per-dir), \
 		$(foreach b, $(boards-per-dir), \
 		printf "  %-24s - Build for %s\\n" $*/$(b) $(subst _defconfig,,$(b));) \
@@ -1027,17 +1020,10 @@ endif #ifeq ($(mixed-targets),1)
 
 PHONY += checkstack kernelversion image_name
 
-# UML needs a little special treatment here.  It wants to use the host
-# toolchain, so needs $(SUBARCH) passed to checkstack.pl.  Everyone
-# else wants $(ARCH), including people doing cross-builds, which means
-# that $(SUBARCH) doesn't work here.
-ifeq ($(ARCH), um)
-CHECKSTACK_ARCH := $(SUBARCH)
-else
 CHECKSTACK_ARCH := $(ARCH)
-endif
+
 checkstack:
-	$(OBJDUMP) -d zephyr $$(find . -name '*.ko') | \
+	$(OBJDUMP) -d $(O)/$(KERNEL_ELF_NAME) | \
 	$(PERL) $(src)/scripts/checkstack.pl $(CHECKSTACK_ARCH)
 
 kernelversion:
@@ -1055,7 +1041,7 @@ tools/%: FORCE
 	$(Q)mkdir -p $(objtree)/tools
 	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(filter --j% -j,$(MAKEFLAGS))" O=$(objtree) subdir=tools -C $(src)/tools/ $*
 
-QEMU_FLAGS = $(QEMU_FLAGS_$(SRCARCH)) -pidfile qemu.pid
+QEMU_FLAGS = $(QEMU_FLAGS_$(ARCH)) -pidfile qemu.pid
 
 ifneq ($(QEMU_PIPE),)
     # Send console output to a pipe, used for running automated sanity tests
@@ -1066,8 +1052,8 @@ endif
 
 qemu: zephyr
 	$(if $(QEMU_PIPE),,@echo "To exit from QEMU enter: 'CTRL+a, x'")
-	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(SRCARCH))'
-	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_NAME).elf
+	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(ARCH))'
+	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_ELF_NAME)
 
 # Single targets
 # ---------------------------------------------------------------------------

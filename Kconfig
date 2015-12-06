@@ -15,6 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-mainmenu "Zephyr Kernel/$SRCARCH Configuration"
+mainmenu "Zephyr Kernel/$ARCH Configuration"
 
 source "Kconfig.zephyr"

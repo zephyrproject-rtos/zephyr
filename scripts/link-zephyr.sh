@@ -39,7 +39,7 @@ linker_params()
 		echo "--whole-archive ${KBUILD_ZEPHYR_APP} --no-whole-archive" >> ${1}
 	fi
 	echo "--start-group ${KBUILD_ZEPHYR_MAIN} ${KBUILD_ZEPHYR_APP}" >> ${1}
-	echo "${objtree}/arch/${SRCARCH}/core/offsets/offsets.o" >> ${1}
+	echo "${objtree}/arch/${ARCH}/core/offsets/offsets.o" >> ${1}
 	echo "--end-group" >> ${1}
 	echo "${LIB_INCLUDE_DIR} ${LIBS}" >> ${1}
 }
@@ -185,9 +185,9 @@ else
 	expr 0$(cat .old_version) + 1 >.version;
 fi;
 
-if [ "${SRCARCH}" = "x86" ]; then
-	info SIDT ${KERNEL_NAME}.elf
-	gen_idt ${KERNEL_NAME}.elf staticIdt.o int_vector_alloc irq_int_vector_map
+if [ "${ARCH}" = "x86" ]; then
+	info SIDT ${KERNEL_ELF_NAME}
+	gen_idt ${KERNEL_ELF_NAME} staticIdt.o int_vector_alloc irq_int_vector_map
 	linker_command final-linker.cmd -DFINAL_LINK
 	zephyr_link ${KERNEL_NAME}.lnk final-linker.cmd staticIdt.o \
 	            ${KERNEL_NAME}.elf int_vector_alloc.o irq_int_vector_map.o

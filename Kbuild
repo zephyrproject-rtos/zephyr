@@ -1,7 +1,4 @@
 # vim: filetype=make
-DQUOTE = "
-#This comment line is to fix the highlighting of some editors due the quote effect."
-ARCH=$(subst $(DQUOTE),,$(CONFIG_ARCH))
 
 ifneq ($(strip $(CONFIG_MAX_NUM_TASK_IRQS)),)
 ifneq (${CONFIG_MAX_NUM_TASK_IRQS},0)
