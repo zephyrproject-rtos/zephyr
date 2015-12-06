@@ -1132,6 +1132,34 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
+int bt_rand(void *buf, size_t len)
+{
+	uint8_t *ptr = buf;
+
+	while (len > 0) {
+		struct bt_hci_rp_le_rand *rp;
+		struct net_buf *rsp;
+		size_t copy;
+		int err;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
+		if (err) {
+			BT_ERR("HCI_LE_Random failed (%d)", err);
+			return err;
+		}
+
+		rp = (void *)rsp->data;
+		copy = min(len, sizeof(rp->rand));
+		memcpy(ptr, rp->rand, copy);
+		net_buf_unref(rsp);
+
+		len -= copy;
+		ptr += copy;
+	}
+
+	return 0;
+}
+
 static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 			 uint8_t filter_dup)
 {

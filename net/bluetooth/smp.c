@@ -342,34 +342,6 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 }
 #endif
 
-static int le_rand(void *buf, size_t len)
-{
-	uint8_t *ptr = buf;
-
-	while (len > 0) {
-		struct bt_hci_rp_le_rand *rp;
-		struct net_buf *rsp;
-		size_t copy;
-		int err;
-
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
-		if (err) {
-			BT_ERR("HCI_LE_Random failed (%d)", err);
-			return err;
-		}
-
-		rp = (void *)rsp->data;
-		copy = min(len, sizeof(rp->rand));
-		memcpy(ptr, rp->rand, copy);
-		net_buf_unref(rsp);
-
-		len -= copy;
-		ptr += copy;
-	}
-
-	return 0;
-}
-
 static int smp_ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
 {
 	uint8_t res[16];
@@ -728,7 +700,7 @@ static int smp_init(struct bt_smp *smp)
 	memset(smp + sizeof(smp->chan), 0, sizeof(*smp) - sizeof(smp->chan));
 
 	/* Generate local random number */
-	if (le_rand(smp->prnd, 16)) {
+	if (bt_rand(smp->prnd, 16)) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -775,7 +747,7 @@ static uint8_t smp_request_tk(struct bt_smp *smp)
 
 	switch (smp->method) {
 	case PASSKEY_DISPLAY:
-		if (le_rand(&passkey, sizeof(passkey))) {
+		if (bt_rand(&passkey, sizeof(passkey))) {
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -1657,7 +1629,7 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 				break;
 			}
 
-			if (le_rand(smp->prnd, 16)) {
+			if (bt_rand(smp->prnd, 16)) {
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
 
@@ -1708,7 +1680,7 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			return 0;
 		}
 
-		if (le_rand(smp->prnd, 16)) {
+		if (bt_rand(smp->prnd, 16)) {
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -1838,9 +1810,9 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 
 		bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
 
-		le_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
-		le_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
-		le_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
+		bt_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
+		bt_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
+		bt_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
 					sizeof(*info));
@@ -1882,7 +1854,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 
 		bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
 
-		le_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
+		bt_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
 		keys->local_csrk.cnt = 0;
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
@@ -2186,7 +2158,7 @@ static uint8_t generate_dhkey(struct bt_smp *smp)
 
 static uint8_t display_passkey(struct bt_smp *smp)
 {
-	if (le_rand(&smp->passkey, sizeof(smp->passkey))) {
+	if (bt_rand(&smp->passkey, sizeof(smp->passkey))) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
