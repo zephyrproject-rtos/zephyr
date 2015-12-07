@@ -834,7 +834,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	 * starts advertising.
 	 */
 	if (conn->type == BT_CONN_TYPE_LE) {
-		bt_le_set_auto_conn(&conn->le.dst, false);
+		bt_le_set_auto_conn(&conn->le.dst, NULL);
 	}
 #endif
 
