@@ -735,9 +735,8 @@ zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(core-y) $(drivers-y) \
 		     $(libs-y) $(app-y)))
 
 zephyr-alldirs	:= $(sort $(zephyr-dirs) $(patsubst %/,%,$(filter %/, \
-		     $(init-) $(core-) $(drivers-) $(libs-) $(app-))))
+		     $(core-) $(drivers-) $(libs-) $(app-))))
 
-init-y		:= $(patsubst %/, %/built-in.o, $(init-y))
 core-y		:= $(patsubst %/, %/built-in.o, $(core-y))
 app-y		:= $(patsubst %/, %/built-in.o, $(app-y))
 drivers-y	:= $(patsubst %/, %/built-in.o, $(drivers-y))
