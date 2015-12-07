@@ -130,7 +130,7 @@ void _k_event_test(struct k_args *A)
 	}
 }
 
-int _task_event_recv(kevent_t event, int32_t time)
+int task_event_recv(kevent_t event, int32_t timeout)
 {
 	struct k_args A;
 
@@ -138,7 +138,7 @@ int _task_event_recv(kevent_t event, int32_t time)
 
 	A.Comm = _K_SVC_EVENT_TEST;
 	A.args.e1.event = event;
-	A.Time.ticks = time;
+	A.Time.ticks = timeout;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }

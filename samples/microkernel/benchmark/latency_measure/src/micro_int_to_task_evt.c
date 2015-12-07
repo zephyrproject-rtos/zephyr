@@ -80,7 +80,7 @@ int microIntToTaskEvt(void)
 				 " (rescheduled)");
 	TICK_SYNCH();
 	task_sem_give(INTSEMA);
-	task_event_recv_wait(EVENT0);
+	task_event_recv(EVENT0, TICKS_UNLIMITED);
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	PRINT_FORMAT(" switch time is %lu tcs = %lu nsec",
 				 timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));

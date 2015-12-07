@@ -61,7 +61,7 @@ NANO_CPU_INT_REGISTER(isrDummyIntStub, -1, -1, TEST_SOFT_INT, 0);
 static pfunc func_array[] = {
 	/* event functions */
 	(pfunc)task_event_send,
-	(pfunc)_task_event_recv,
+	(pfunc)task_event_recv,
 	/* mutex functions */
 	(pfunc)_task_mutex_lock,
 	(pfunc)_task_mutex_unlock,

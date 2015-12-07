@@ -23,8 +23,6 @@
  *    task_event_send()
  *    isr_event_send()
  *    task_event_recv()
- *    task_event_recv_wait()
- *    task_event_recv_wait_timeout()
  */
 
 #include <tc_util.h>
@@ -97,7 +95,7 @@ void microObjectsInit(void)
 
 /**
  *
- * @brief Test the task_event_recv() API
+ * @brief Test the task_event_recv(TICKS_NONE) API
  *
  * There are two cases to be tested here.  The first is for testing for an
  * event when there is one.  The second is for testing for an event when there
@@ -118,14 +116,14 @@ int eventNoWaitTest(void)
 		return TC_FAIL;
 	}
 
-	rv = task_event_recv(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_NONE);
 	if (rv != RC_OK) {
 		TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_OK);
 		return TC_FAIL;
 	}
 
 	/* No event has been signalled */
-	rv = task_event_recv(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_NONE);
 	if (rv != RC_FAIL) {
 		TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_FAIL);
 		return TC_FAIL;
@@ -136,9 +134,10 @@ int eventNoWaitTest(void)
 
 /**
  *
- * @brief Test the task_event_recv_wait() API
+ * @brief Test the task_event_recv(TICKS_UNLIMITED) API
  *
- * This test checks task_event_recv_wait() against the following cases:
+ * This test checks task_event_recv(TICKS_UNLIMITED) against the following
+ * cases:
  *  1. There is already an event waiting (signalled from a task and ISR).
  *  2. The current task must wait on the event until it is signalled
  *     from either another task, an ISR or a fiber.
@@ -152,53 +151,53 @@ int eventWaitTest(void)
 	int  i;      /* loop counter */
 
 	/*
-	 * task_event_recv_wait() to return immediately as there will already be
+	 * task_event_recv() to return immediately as there will already be
 	 * an event by a task.
 	 */
 
 	task_event_send(EVENT_ID);
-	rv = task_event_recv_wait(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_UNLIMITED);
 	if (rv != RC_OK) {
-		TC_ERROR("Task: task_event_recv_wait() returned %d, not %d\n", rv, RC_OK);
+		TC_ERROR("Task: task_event_recv() returned %d, not %d\n", rv, RC_OK);
 		return TC_FAIL;
 	}
 
 	/*
-	 * task_event_recv_wait() to return immediately as there will already be
+	 * task_event_recv() to return immediately as there will already be
 	 * an event made ready by an ISR.
 	 */
 
 	isrInfo.event = EVENT_ID;
 	_trigger_isrEventSignal();
-	rv = task_event_recv_wait(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_UNLIMITED);
 	if (rv != RC_OK) {
-		TC_ERROR("ISR: task_event_recv_wait() returned %d, not %d\n", rv, RC_OK);
+		TC_ERROR("ISR: task_event_recv() returned %d, not %d\n", rv, RC_OK);
 		return TC_FAIL;
 	}
 
 	/*
-	 * task_event_recv_wait() to return immediately as there will already be
+	 * task_event_recv() to return immediately as there will already be
 	 * an event made ready by a fiber.
 	 */
 
 	releaseTestFiber();
-	rv = task_event_recv_wait(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_UNLIMITED);
 	if (rv != RC_OK) {
-		TC_ERROR("Fiber: task_event_recv_wait() returned %d, not %d\n", rv, RC_OK);
+		TC_ERROR("Fiber: task_event_recv() returned %d, not %d\n", rv, RC_OK);
 		return TC_FAIL;
 	}
 
 	task_sem_give(ALTERNATE_SEM);    /* Wake the AlternateTask */
 
 	/*
-	 * The 1st pass, task_event_recv_wait() will be signalled from a task,
+	 * The 1st pass, task_event_recv() will be signalled from a task,
 	 * from an ISR for the second and from a fiber third.
 	 */
 
 	for (i = 0; i < 3; i++) {
-		rv = task_event_recv_wait(EVENT_ID);
+		rv = task_event_recv(EVENT_ID, TICKS_UNLIMITED);
 		if (rv != RC_OK) {
-			TC_ERROR("task_event_recv_wait() returned %d, not %d\n", rv, RC_OK);
+			TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_OK);
 			return TC_FAIL;
 		}
 	}
@@ -208,9 +207,9 @@ int eventWaitTest(void)
 
 /**
  *
- * @brief Test the task_event_recv_wait_timeout() API
+ * @brief Test the task_event_recv(timeout) API
  *
- * This test checks task_event_recv_wait_timeout() against the following cases:
+ * This test checks task_event_recv(timeout) against the following cases:
  *  1. The current task times out while waiting for the event.
  *  2. There is already an event waiting (signalled from a task).
  *  3. The current task must wait on the event until it is signalled
@@ -225,31 +224,31 @@ int eventTimeoutTest(void)
 	int  i;      /* loop counter */
 
 	/* Timeout while waiting for the event */
-	rv = task_event_recv_wait_timeout(EVENT_ID, MSEC(100));
+	rv = task_event_recv(EVENT_ID, MSEC(100));
 	if (rv != RC_TIME) {
-		TC_ERROR("task_event_recv_wait_timeout() returned %d, not %d\n", rv, RC_TIME);
+		TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_TIME);
 		return TC_FAIL;
 	}
 
 	/* Let there be an event already waiting to be tested */
 	task_event_send(EVENT_ID);
-	rv = task_event_recv_wait_timeout(EVENT_ID, MSEC(100));
+	rv = task_event_recv(EVENT_ID, MSEC(100));
 	if (rv != RC_OK) {
-		TC_ERROR("task_event_recv_wait_timeout() returned %d, not %d\n", rv, RC_OK);
+		TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_OK);
 		return TC_FAIL;
 	}
 
 	task_sem_give(ALTERNATE_SEM);    /* Wake AlternateTask() */
 
 	/*
-	 * The 1st pass, task_event_recv_wait_timeout() will be signalled from a task,
+	 * The 1st pass, task_event_recv(timeout) will be signalled from a task,
 	 * from an ISR for the second and from a fiber for the third.
 	 */
 
 	for (i = 0; i < 3; i++) {
-		rv = task_event_recv_wait_timeout(EVENT_ID, MSEC(100));
+		rv = task_event_recv(EVENT_ID, MSEC(100));
 		if (rv != RC_OK) {
-			TC_ERROR("task_event_recv_wait() returned %d, not %d\n", rv, RC_OK);
+			TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_OK);
 			return TC_FAIL;
 		}
 	}
@@ -283,14 +282,14 @@ int isrEventSignalTest(void)
 	_trigger_isrEventSignal();
 	_trigger_isrEventSignal();
 
-	rv = task_event_recv(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_NONE);
 	if (rv != RC_OK) {
 		TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_OK);
 		return TC_FAIL;
 	}
 
 	/* The second event signal should be "lost" */
-	rv = task_event_recv(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_NONE);
 	if (rv != RC_FAIL) {
 		TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_FAIL);
 		return TC_FAIL;
@@ -312,7 +311,7 @@ int isrEventSignalTest(void)
 
 int fiberEventSignalTest(void)
 {
-	int  rv;    /* return value from task_event_recv() */
+	int  rv;    /* return value from task_event_recv(TICKS_NONE) */
 
 	/*
 	 * Trigger two fiber event signals.  Only one should be detected.
@@ -320,14 +319,14 @@ int fiberEventSignalTest(void)
 
 	releaseTestFiber();
 
-	rv = task_event_recv(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_NONE);
 	if (rv != RC_OK) {
 		TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_OK);
 		return TC_FAIL;
 	}
 
 	/* The second event signal should be "lost" */
-	rv = task_event_recv(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_NONE);
 	if (rv != RC_FAIL) {
 		TC_ERROR("task_event_recv() returned %d, not %d\n", rv, RC_FAIL);
 		return TC_FAIL;
@@ -417,9 +416,9 @@ int eventSignalHandlerTest(void)
 	 */
 
 	task_sem_give(ALTERNATE_SEM);    /* Wake alternate task */
-	rv = task_event_recv_wait_timeout(EVENT_ID, MSEC(100));
+	rv = task_event_recv(EVENT_ID, MSEC(100));
 	if (rv != RC_TIME) {
-		TC_ERROR("task_event_recv_wait_timeout() returned %d not %d\n", rv, RC_TIME);
+		TC_ERROR("task_event_recv() returned %d not %d\n", rv, RC_TIME);
 		return TC_FAIL;
 	}
 
@@ -429,9 +428,9 @@ int eventSignalHandlerTest(void)
 	 */
 
 	task_sem_give(ALTERNATE_SEM);    /* Wake alternate task again */
-	rv = task_event_recv_wait_timeout(EVENT_ID, MSEC(100));
+	rv = task_event_recv(EVENT_ID, MSEC(100));
 	if (rv != RC_OK) {
-		TC_ERROR("task_event_recv_wait_timeout() returned %d not %d\n", rv, RC_OK);
+		TC_ERROR("task_event_recv() returned %d not %d\n", rv, RC_OK);
 		return TC_FAIL;
 	}
 
@@ -478,13 +477,13 @@ int eventSignalHandlerTest(void)
 
 	/* Clear out the waiting events */
 
-	rv = task_event_recv(EVENT_ID);
+	rv = task_event_recv(EVENT_ID, TICKS_NONE);
 	if (rv != RC_OK) {
 		TC_ERROR("task_event_recv() returned %d not %d\n", rv, RC_OK);
 		return TC_FAIL;
 	}
 
-	rv = task_event_recv(ALT_EVENT);
+	rv = task_event_recv(ALT_EVENT, TICKS_NONE);
 	if (rv != RC_OK) {
 		TC_ERROR("task_event_recv() returned %d not %d\n", rv, RC_OK);
 		return TC_FAIL;
@@ -546,19 +545,19 @@ void RegressionTask(void)
 
 	microObjectsInit();
 
-	TC_PRINT("Testing task_event_recv() and task_event_send() ...\n");
+	TC_PRINT("Testing task_event_recv(TICKS_NONE) and task_event_send() ...\n");
 	tcRC = eventNoWaitTest();
 	if (tcRC != TC_PASS) {
 		goto doneTests;
 	}
 
-	TC_PRINT("Testing task_event_recv_wait() and task_event_send() ...\n");
+	TC_PRINT("Testing task_event_recv(TICKS_UNLIMITED) and task_event_send() ...\n");
 	tcRC = eventWaitTest();
 	if (tcRC != TC_PASS) {
 		goto doneTests;
 	}
 
-	TC_PRINT("Testing task_event_recv_wait_timeout() and task_event_send() ...\n");
+	TC_PRINT("Testing task_event_recv(timeout) and task_event_send() ...\n");
 	tcRC = eventTimeoutTest();
 	if (tcRC != TC_PASS) {
 		goto doneTests;

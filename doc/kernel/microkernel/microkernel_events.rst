@@ -154,7 +154,7 @@ This code processes events of a single type using a task.
        while (1) {
 
            /* wait for a key press to be signalled */
-           task_event_recv(KEYPRESS);
+           task_event_recv(KEYPRESS, TICKS_NONE);
 
            /* determine what key was pressed */
            char c = get_keypress();
@@ -198,7 +198,7 @@ so that the receiving task only wakes up when needed.
        while (1) {
 
            /* wait for a key press to be signalled */
-           task_event_recv(KEYPRESS);
+           task_event_recv(KEYPRESS, TICKS_NONE);
 
            /* process saved key press, which must be a digit */
            ...
@@ -220,12 +220,6 @@ The following Event APIs are provided by :file:`microkernel.h`:
    Signal an event from a task.
 
 :c:func:`task_event_recv()`
-   Tests for an event signal without waiting.
-
-:c:func:`task_event_recv_wait()`
-   Waits for an event signal.
-
-:c:func:`task_event_recv_wait_timeout()`
    Waits for an event signal for a specified time period.
 
 :cpp:func:`task_event_handler_set()`

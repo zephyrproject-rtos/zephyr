@@ -123,7 +123,7 @@ void task_irq_free(kirq_t irq_obj)
 
 	irq_disable(task_irq_object[irq_obj].irq);
 	RELEASE_VECTOR(task_irq_object[irq_obj].vector);
-	(void)task_event_recv(task_irq_object[irq_obj].event);
+	(void)task_event_recv(task_irq_object[irq_obj].event, TICKS_NONE);
 	task_irq_object[irq_obj].task_id = INVALID_TASK;
 }
 
@@ -151,7 +151,7 @@ int task_irq_wait(kirq_t irq_obj, int32_t timeout)
 	__ASSERT(task_irq_object[irq_obj].task_id == task_id_get(),
 			 "Incorrect Task ID");
 
-	return _task_event_recv(task_irq_object[irq_obj].event, timeout);
+	return task_event_recv(task_irq_object[irq_obj].event, timeout);
 }
 
 /**

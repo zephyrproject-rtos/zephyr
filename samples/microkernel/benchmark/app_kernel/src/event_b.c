@@ -78,7 +78,7 @@ void event_test(void)
 			return; /* error */
 		}
 #endif /* EVENT_CHECK */
-		nReturn = task_event_recv(TEST_EVENT);
+		nReturn = task_event_recv(TEST_EVENT, TICKS_NONE);
 #ifdef EVENT_CHECK
 		if (nReturn != RC_OK) {
 			PRINT_STRING(EventTestErr, output_file);
@@ -102,7 +102,7 @@ void event_test(void)
 			return; /* error */
 		}
 #endif /* EVENT_CHECK */
-		nReturn = task_event_recv_wait(TEST_EVENT);
+		nReturn = task_event_recv(TEST_EVENT, TICKS_UNLIMITED);
 #ifdef EVENT_CHECK
 		if (nReturn != RC_OK) {
 			PRINT_STRING(EventTestErr, output_file);
