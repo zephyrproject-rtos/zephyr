@@ -1,1 +1,1 @@
-obj-$(CONFIG_BLUETOOTH_UART) += uart.o uart_static_irq_stubs.o
+obj-$(CONFIG_BLUETOOTH_H4) += h4.o uart_static_irq_stubs.o

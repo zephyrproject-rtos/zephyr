@@ -19,16 +19,35 @@
 #
 # Bluetooth options
 #
-menu "Bluetooth UART Options"
+menu "Bluetooth HCI Driver Options"
 depends on BLUETOOTH
 
-config	BLUETOOTH_UART
-	bool "Bluetooth UART driver"
+config BLUETOOTH_UART
+	bool
+	default n
+
+choice
+	prompt "Bluetooth HCI driver"
+	depends on BLUETOOTH
+	default BLUETOOTH_H4
+
+config	BLUETOOTH_H4
+	bool "H:4 UART"
 	depends on BLUETOOTH
 	select UART_INTERRUPT_DRIVEN
-	default n
+	select BLUETOOTH_UART
 	help
-	  Enable Bluetooth UART driver.
+	  Bluetooth H:4 UART driver. Requires hardware flow control
+	  lines to be available.
+
+config BLUETOOTH_NO_DRV
+	bool "No default HCI driver"
+	depends on BLUETOOTH
+	help
+	  This is intended for unit tests where no internal driver
+	  should be selected.
+
+endchoice
 
 config	BLUETOOTH_DEBUG_UART
 	bool "Bluetooth UART driver debug"
