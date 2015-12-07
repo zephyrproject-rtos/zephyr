@@ -74,14 +74,14 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	if (unlikely(iNbrBytesToRead % SIZEOFUNIT_TO_OCTET(1))) {
 		return RC_ALIGNMENT;
 	}
-	if (unlikely(0 == iNbrBytesToRead)) {
+	if (unlikely(iNbrBytesToRead == 0)) {
 		/*
 		 * not allowed because enlisted requests with zero size
 		 * will hang in _k_pipe_process()
 		 */
 		return RC_FAIL;
 	}
-	if (unlikely(_0_TO_N == Option && TICKS_NONE != TimeOut)) {
+	if (unlikely(Option == _0_TO_N  && TimeOut != TICKS_NONE)) {
 		return RC_FAIL;
 	}
 
@@ -128,14 +128,14 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	if (unlikely(iNbrBytesToWrite % SIZEOFUNIT_TO_OCTET(1))) {
 		return RC_ALIGNMENT;
 	}
-	if (unlikely(0 == iNbrBytesToWrite)) {
+	if (unlikely(iNbrBytesToWrite == 0)) {
 		/*
 		 * not allowed because enlisted requests with zero size
 		 * will hang in _k_pipe_process()
 		 */
 		return RC_FAIL;
 	}
-	if (unlikely(_0_TO_N == Option && TICKS_NONE != TimeOut)) {
+	if (unlikely(Option == _0_TO_N && TimeOut != TICKS_NONE)) {
 		return RC_FAIL;
 	}
 
@@ -176,7 +176,7 @@ int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
 	if (unlikely(iSize2Xfer % SIZEOFUNIT_TO_OCTET(1))) {
 		return RC_ALIGNMENT;
 	}
-	if (unlikely(0 == iSize2Xfer)) {
+	if (unlikely(iSize2Xfer == 0)) {
 		/*
 		 * not allowed because enlisted requests with zero size
 		 * will hang in _k_pipe_process()

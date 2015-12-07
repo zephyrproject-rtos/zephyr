@@ -28,7 +28,7 @@
 
 void DeListWaiter(struct k_args *pReqProc)
 {
-	__ASSERT_NO_MSG(NULL != pReqProc->head);
+	__ASSERT_NO_MSG(pReqProc->head != NULL);
 	REMOVE_ELM(pReqProc);
 	pReqProc->head = NULL;
 }
@@ -127,7 +127,7 @@ void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
 	 * increment pipe counter
 	 */
 
-	if (XFER_IDLE == pipe_xfer_req->status /* current (old) status */
+	if (pipe_xfer_req->status == XFER_IDLE /* current (old) status */
 	    && (XFER_BUSY | TERM_XXX) & status /* new status */) {
 		(pipe_xfer_req->req_info.pipe.ptr->count)++;
 	}
