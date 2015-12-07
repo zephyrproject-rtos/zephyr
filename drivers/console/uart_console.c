@@ -100,8 +100,6 @@ extern void __printk_hook_install(int (*fn)(int));
 #endif
 
 #if defined(CONFIG_CONSOLE_HANDLER)
-static size_t pos;
-
 static struct nano_fifo *avail_queue;
 static struct nano_fifo *lines_queue;
 
@@ -127,6 +125,7 @@ void uart_console_isr(void *unused)
 	while (uart_irq_update(uart_console_dev) &&
 	       uart_irq_is_pending(uart_console_dev)) {
 		static struct uart_console_input *cmd;
+		static size_t pos;
 		uint8_t byte;
 		int rx;
 
