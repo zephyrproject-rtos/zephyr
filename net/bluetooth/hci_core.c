@@ -2086,6 +2086,14 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 		return false;
 	}
 
+	switch (param->addr_type) {
+	case BT_LE_ADV_ADDR_PUBLIC:
+	case BT_LE_ADV_ADDR_NRPA:
+		break;
+	default:
+		return false;
+	}
+
 	if (param->interval_min > param->interval_max ||
 	    param->interval_min < 0x0020 || param->interval_max > 0x4000) {
 		return false;
@@ -2178,6 +2186,18 @@ send_set_param:
 	set_param->max_interval = sys_cpu_to_le16(param->interval_max);
 	set_param->type         = param->type;
 	set_param->channel_map  = 0x07;
+
+	if (param->addr_type == BT_LE_ADV_ADDR_NRPA) {
+		err = le_set_nrpa();
+		if (err) {
+			net_buf_unref(buf);
+			return err;
+		}
+
+		set_param->own_addr_type = BT_ADDR_LE_RANDOM;
+	} else {
+		set_param->own_addr_type = BT_ADDR_LE_PUBLIC;
+	}
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_PARAMETERS, buf);
 

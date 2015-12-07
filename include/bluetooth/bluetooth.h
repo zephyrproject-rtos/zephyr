@@ -53,10 +53,22 @@ struct bt_eir {
 	uint8_t data[29];
 } __packed;
 
+/** Local advertising address type */
+enum {
+	/** Use local public address for advertising */
+	BT_LE_ADV_ADDR_PUBLIC,
+
+	/** Use local Non-resolvable Private Address (NRPA) for advertising */
+	BT_LE_ADV_ADDR_NRPA,
+};
+
 /** LE Advertising Parameters. */
 struct bt_le_adv_param {
 	/** Advertising type */
 	uint8_t  type;
+
+	/** Which type of own address to use for advertising */
+	uint8_t  addr_type;
 
 	/** Minimum Advertising Interval (N * 0.625) */
 	uint16_t interval_min;
@@ -67,16 +79,21 @@ struct bt_le_adv_param {
 
 /** Helper to declare advertising parameters inline
   *
-  * @param _type     Advertising Type
+  * @param _type      Advertising Type
+  * @param _addr_type Local address type to use for advertising
+  * @param _int_min   Minimum advertising interval
+  * @param _int_max   Maximum advertising interval
   */
-#define BT_LE_ADV_PARAM(_type, _int_min, _int_max) \
+#define BT_LE_ADV_PARAM(_type, _addr_type, _int_min, _int_max) \
 		(&(struct bt_le_adv_param) { \
 			.type = (_type), \
+			.addr_type = (_addr_type), \
 			.interval_min = (_int_min), \
 			.interval_max = (_int_max), \
 		 })
 
-#define BT_LE_ADV(t) BT_LE_ADV_PARAM(t, BT_GAP_ADV_FAST_INT_MIN_2, \
+#define BT_LE_ADV(t) BT_LE_ADV_PARAM(t, BT_LE_ADV_ADDR_PUBLIC, \
+				     BT_GAP_ADV_FAST_INT_MIN_2, \
 				     BT_GAP_ADV_FAST_INT_MAX_2)
 
 /** @brief Start advertising
