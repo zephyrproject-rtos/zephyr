@@ -249,7 +249,7 @@ int poolBlockGetTest(void)
 
 void HelperTask(void)
 {
-	task_sem_take_wait(HELPER_SEM);
+	task_sem_take(HELPER_SEM, TICKS_UNLIMITED);
 
 	task_sem_give(REGRESS_SEM);
 	task_mem_pool_free(&helperBlock);
@@ -297,7 +297,7 @@ int poolBlockGetTimeoutTest(void)
 		return TC_FAIL;
 	}
 
-	rv = task_sem_take(REGRESS_SEM);
+	rv = task_sem_take(REGRESS_SEM, TICKS_NONE);
 	if (rv != RC_OK) {
 		TC_ERROR("Failed to get size 3148 byte block within 20 ticks\n");
 		return TC_FAIL;
@@ -359,7 +359,7 @@ int poolBlockGetWaitTest(void)
 
 void DefragTask(void)
 {
-	task_sem_take_wait(DEFRAG_SEM);     /* Wait to be activated */
+	task_sem_take(DEFRAG_SEM, TICKS_UNLIMITED);     /* Wait to be activated */
 
 	task_mem_pool_defragment(POOL_ID);
 
@@ -402,7 +402,7 @@ int poolDefragTest(void)
 		return TC_FAIL;
 	}
 
-	rv = task_sem_take(REGRESS_SEM);
+	rv = task_sem_take(REGRESS_SEM, TICKS_NONE);
 	if (rv != RC_OK) {
 		TC_ERROR("DefragTask did not finish in allotted time!\n");
 		return TC_FAIL;
@@ -426,7 +426,7 @@ int poolDefragTest(void)
 
 void AlternateTask(void)
 {
-	task_sem_take_wait(ALTERNATE_SEM);
+	task_sem_take(ALTERNATE_SEM, TICKS_UNLIMITED);
 
 	evidence = 1;
 

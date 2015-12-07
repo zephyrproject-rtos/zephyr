@@ -84,7 +84,8 @@ void HelperTask(void)
 {
 	void *ptr[NUMBLOCKS];      /* Pointer to memory block */
 
-	task_sem_take_wait(SEM_REGRESSDONE);   /* Wait for part 1 to complete */
+	/* Wait for part 1 to complete */
+	task_sem_take(SEM_REGRESSDONE, TICKS_UNLIMITED);
 
 	/* Part 2 of test */
 
@@ -98,7 +99,8 @@ void HelperTask(void)
 	}
 
 	task_sem_give(SEM_HELPERDONE);  /* Indicate part 2 is complete */
-	task_sem_take_wait(SEM_REGRESSDONE);  /* Wait for part 3 to complete */
+	/* Wait for part 3 to complete */
+	task_sem_take(SEM_REGRESSDONE, TICKS_UNLIMITED);
 
 	/*
 	 * Part 4 of test.
@@ -112,7 +114,7 @@ void HelperTask(void)
 	task_sem_give(SEM_HELPERDONE);
 
 	/* Part 5 of test */
-	task_sem_take_wait(SEM_REGRESSDONE);
+	task_sem_take(SEM_REGRESSDONE, TICKS_UNLIMITED);
 	TC_PRINT("%s: About to free another memory block\n", __func__);
 	task_mem_map_free(MAP_LgBlks, &ptr[1]);
 
@@ -329,7 +331,8 @@ void RegressionTask(void)
 	printPointers(ptr);
 
 	task_sem_give(SEM_REGRESSDONE);   /* Allow HelperTask to run */
-	task_sem_take_wait(SEM_HELPERDONE);     /* Wait for HelperTask to finish */
+	/* Wait for HelperTask to finish */
+	task_sem_take(SEM_HELPERDONE, TICKS_UNLIMITED);
 
 	/*
 	 * Part 3 of test.
@@ -360,7 +363,8 @@ void RegressionTask(void)
 		goto exitTest;           /* terminate test */
 	}
 
-	task_sem_take_wait(SEM_HELPERDONE);   /* Wait for HelperTask to complete */
+	/* Wait for HelperTask to complete */
+	task_sem_take(SEM_HELPERDONE, TICKS_UNLIMITED);
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	task_sem_give(SEM_REGRESSDONE);    /* Allow HelperTask to run part 5 */
@@ -374,7 +378,8 @@ void RegressionTask(void)
 		goto exitTest;           /* terminate test */
 	}
 
-	task_sem_take_wait(SEM_HELPERDONE);   /* Wait for HelperTask to complete */
+	/* Wait for HelperTask to complete */
+	task_sem_take(SEM_HELPERDONE, TICKS_UNLIMITED);
 
 
 	/* Free memory block */

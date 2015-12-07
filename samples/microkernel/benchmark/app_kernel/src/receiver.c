@@ -44,19 +44,19 @@ void recvtask(void)
 {
 	/* order must be compatible with master.c ! */
 #ifdef FIFO_BENCH
-	task_sem_take_wait(STARTRCV);
+	task_sem_take(STARTRCV, TICKS_UNLIMITED);
 	dequtask();
 #endif
 #ifdef SEMA_BENCH
-	task_sem_take_wait(STARTRCV);
+	task_sem_take(STARTRCV, TICKS_UNLIMITED);
 	waittask();
 #endif
 #ifdef MAILBOX_BENCH
-	task_sem_take_wait(STARTRCV);
+	task_sem_take(STARTRCV, TICKS_UNLIMITED);
 	mailrecvtask();
 #endif
 #ifdef PIPE_BENCH
-	task_sem_take_wait(STARTRCV);
+	task_sem_take(STARTRCV, TICKS_UNLIMITED);
 	piperecvtask();
 #endif
 }

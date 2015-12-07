@@ -201,7 +201,7 @@ int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
 	int  bytesReceived;          /* number of bytes received */
 
 	for (i = 0; i < nSingles; i++) {
-		(void)task_sem_take_wait(altSem);
+		(void)task_sem_take(altSem, TICKS_UNLIMITED);
 		for (j = 0; j < sizeof(rxBuffer); j++) {
 			rxBuffer[j] = 0;
 		}
@@ -240,7 +240,7 @@ int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
 	 * stored in it.
 	 */
 
-	(void)task_sem_take_wait(altSem);
+	(void)task_sem_take(altSem, TICKS_UNLIMITED);
 
 	for (i = 0; i < nMany; i++) {
 		for (j = 0; j < sizeof(rxBuffer); j++) {
@@ -360,7 +360,7 @@ int pipePutTestWork(SIZE_EXPECT *singleItems, int nSingles,
 		}
 
 		task_sem_give(altSem);
-		(void)task_sem_take_wait(regSem);
+		(void)task_sem_take(regSem, TICKS_UNLIMITED);
 
 		nitem = task_sem_count_get(counterSem) - 1;
 		if (nitem != i) {
@@ -395,7 +395,7 @@ int pipePutTestWork(SIZE_EXPECT *singleItems, int nSingles,
 
 	task_sem_give(altSem);   /* Wake the alternate task */
 	/* wait for other task reading all the items from pipe */
-	(void)task_sem_take_wait(regSem);
+	(void)task_sem_take(regSem, TICKS_UNLIMITED);
 
 	if (task_sem_count_get(counterSem) != nMany) {
 		TC_ERROR("Expected number of items %d, not %d\n",
@@ -456,7 +456,8 @@ int pipePutWaitHelper(void)
 	int  rv;          /* return value from task_pipe_get*/
 	int  bytesRead;   /* # of bytes read from task_pipe_get() */
 
-	(void)task_sem_take_wait(altSem);    /* Wait until test is ready */
+	/* Wait until test is ready */
+	(void)task_sem_take(altSem, TICKS_UNLIMITED);
 
 	/*
 	 * 1. task_pipe_get(TICKS_UNLIMITED) will force a context
@@ -568,7 +569,7 @@ int pipePutWaitTest(void)
 	}
 
 	/* Wait for AlternateTask()'s pipePutWaitHelper() to finish */
-	(void)task_sem_take_wait(regSem);
+	(void)task_sem_take(regSem, TICKS_UNLIMITED);
 
 	return TC_PASS;
 }
@@ -586,7 +587,8 @@ int pipePutTimeoutHelper(void)
 	int  rv;        /* return value from task_pipe_get() */
 	int  bytesRead; /* # of bytes read from task_pipe_get() */
 
-	(void)task_sem_take_wait(altSem);    /* Wait until test is ready */
+	/* Wait until test is ready */
+	(void)task_sem_take(altSem, TICKS_UNLIMITED);
 
 	/*
 	 * 1. task_pipe_get(timeout) will force a context
@@ -718,7 +720,7 @@ int pipePutTimeoutTest(void)
 	}
 
 	/* Wait for AlternateTask()'s pipePutWaitHelper() to finish */
-	(void)task_sem_take_wait(regSem);
+	(void)task_sem_take(regSem, TICKS_UNLIMITED);
 
 	return TC_PASS;
 }
@@ -821,7 +823,7 @@ int pipeGetWaitHelper(void)
 {
 	int  rv;    /* return coded form pipeGetWaitHelperWork() */
 
-	(void)task_sem_take_wait(altSem);
+	(void)task_sem_take(altSem, TICKS_UNLIMITED);
 
 	rv = pipeGetWaitHelperWork(wait_all_N, ARRAY_SIZE(wait_all_N));
 	if (rv != TC_PASS) {

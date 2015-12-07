@@ -139,7 +139,7 @@ and gives a warning if it is not obtained in that time.
    {
        ...
 
-       if (task_sem_take_wait_timeout(INPUT_DATA, 500) == RC_TIME) {
+       if (task_sem_take(INPUT_DATA, 500) == RC_TIME) {
            printf("Input data not available!");
        } else {
            /* extract saved data item from buffer and process it */
@@ -207,13 +207,7 @@ The following APIs for an individual semaphore are provided by
    Gives a semaphore.
 
 :c:func:`task_sem_take()`
-   Takes a semaphore, or fails if not given.
-
-:c:func:`task_sem_take_wait()`
-   Takes a semaphore, or waits until it is given.
-
-:c:func:`task_sem_take_wait_timeout()`
-   Takes a semaphore, or waits for a specified time period.
+   Takes a semaphore, with time limited waiting.
 
 :cpp:func:`task_sem_reset()`
    Sets the semaphore count to zero.

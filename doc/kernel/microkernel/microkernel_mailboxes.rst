@@ -562,7 +562,7 @@ to keep up.
            /* until the previous message has been received by the consumer */
            do {
                memcpy(send_msg.tx_block.pointer_to_data, hw_buffer, 4096);
-           } while (task_sem_take(MY_SEMA) != RC_OK);
+           } while (task_sem_take(MY_SEMA, TICKS_NONE) != RC_OK);
 
            /* finish preparing to send message */
            send_msg.size = 4096;

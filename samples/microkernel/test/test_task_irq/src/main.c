@@ -89,7 +89,7 @@ void registerWait(void)
 	/* Wait for the 2 tasks to finish registering their IRQ objects*/
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS - 1; tasksDone++) {
-		if (task_sem_take_wait_timeout(SEM_RDY, TIMEOUT) != RC_OK) {
+		if (task_sem_take(SEM_RDY, TIMEOUT) != RC_OK) {
 			TC_ERROR("Monitor task timed out\n");
 			task_sem_give(resultSems[TC_FAIL]);
 			return;

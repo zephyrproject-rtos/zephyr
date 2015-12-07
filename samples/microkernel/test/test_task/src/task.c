@@ -151,15 +151,15 @@ int taskMacrosTest(int taskId, int taskPrio)
 
 void helperTaskSetPrioTest(void)
 {
-	task_sem_take_wait(HT_SEM);
+	task_sem_take(HT_SEM, TICKS_UNLIMITED);
 	helperData = task_priority_get();     /* Helper task priority lowered by 5 */
 	task_sem_give(RT_SEM);
 
-	task_sem_take_wait(HT_SEM);
+	task_sem_take(HT_SEM, TICKS_UNLIMITED);
 	helperData = task_priority_get();     /* Helper task prioirty raised by 10 */
 	task_sem_give(RT_SEM);
 
-	task_sem_take_wait(HT_SEM);
+	task_sem_take(HT_SEM, TICKS_UNLIMITED);
 	helperData = task_priority_get();     /* Helper task prioirty restored */
 	task_sem_give(RT_SEM);
 }
@@ -207,7 +207,7 @@ int taskSetPrioTest(void)
 	/* Lower the priority of the helper task (HelperTask) */
 	task_priority_set(HT_TASKID, HT_PRIO + 5);
 	task_sem_give(HT_SEM);
-	task_sem_take_wait(RT_SEM);
+	task_sem_take(RT_SEM, TICKS_UNLIMITED);
 	if (helperData != HT_PRIO + 5) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
 				 HT_PRIO + 5, helperData);
@@ -217,7 +217,7 @@ int taskSetPrioTest(void)
 	/* Raise the priority of the helper task (HelperTask) */
 	task_priority_set(HT_TASKID, HT_PRIO - 5);
 	task_sem_give(HT_SEM);
-	task_sem_take_wait(RT_SEM);
+	task_sem_take(RT_SEM, TICKS_UNLIMITED);
 	if (helperData != HT_PRIO - 5) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
 				 HT_PRIO - 5, helperData);
@@ -228,7 +228,7 @@ int taskSetPrioTest(void)
 	/* Restore the priority of the helper task (HelperTask) */
 	task_priority_set(HT_TASKID, HT_PRIO);
 	task_sem_give(HT_SEM);
-	task_sem_take_wait(RT_SEM);
+	task_sem_take(RT_SEM, TICKS_UNLIMITED);
 	if (helperData != HT_PRIO) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
 				 HT_PRIO, helperData);
@@ -249,7 +249,7 @@ void helperTaskSleepTest(void)
 {
 	int32_t  firstTick;
 
-	task_sem_take_wait(HT_SEM);
+	task_sem_take(HT_SEM, TICKS_UNLIMITED);
 
 	firstTick = sys_tick_get_32();
 	while (!is_main_task_ready) {
@@ -286,7 +286,7 @@ int taskSleepTest(void)
 	tick = sys_tick_get_32() - tick;
 
 	is_main_task_ready = 1;
-	task_sem_take_wait(RT_SEM);
+	task_sem_take(RT_SEM, TICKS_UNLIMITED);
 
 	if (tick != SLEEP_TIME) {
 		TC_ERROR("task_sleep() slept for %d ticks, not %d\n", tick, SLEEP_TIME);
@@ -322,7 +322,7 @@ int taskSleepTest(void)
 void helperTaskYieldTest(void)
 {
 	int  i;
-	task_sem_take_wait(HT_SEM);
+	task_sem_take(HT_SEM, TICKS_UNLIMITED);
 
 	for (i = 0; i < 5; i++) {
 		helperData++;
@@ -365,7 +365,7 @@ int taskYieldTest(void)
 	task_priority_set(HT_TASKID, HT_PRIO);
 
 	/* Ensure that the helper task finishes */
-	task_sem_take_wait(RT_SEM);
+	task_sem_take(RT_SEM, TICKS_UNLIMITED);
 
 	return TC_PASS;
 }
@@ -382,7 +382,7 @@ void helperTaskSuspendTest(void)
 {
 	helperData++;
 
-	task_sem_take_wait(HT_SEM);
+	task_sem_take(HT_SEM, TICKS_UNLIMITED);
 }
 
 /**
@@ -435,7 +435,7 @@ void HelperTask(void)
 {
 	int  rv;
 
-	task_sem_take_wait(HT_SEM);
+	task_sem_take(HT_SEM, TICKS_UNLIMITED);
 	rv = isrAPIsTest(HT_TASKID, HT_PRIO);
 	if (rv != TC_PASS) {
 		tcRC = TC_FAIL;
@@ -443,7 +443,7 @@ void HelperTask(void)
 	}
 	task_sem_give(RT_SEM);
 
-	task_sem_take_wait(HT_SEM);
+	task_sem_take(HT_SEM, TICKS_UNLIMITED);
 	rv = taskMacrosTest(HT_TASKID, HT_PRIO);
 	if (rv != TC_PASS) {
 		tcRC = TC_FAIL;
@@ -485,7 +485,7 @@ void RegressionTask(void)
 	}
 
 	task_sem_give(HT_SEM);
-	task_sem_take_wait(RT_SEM);
+	task_sem_take(RT_SEM, TICKS_UNLIMITED);
 
 	TC_PRINT("Testing task_id_get() and task_priority_get()\n");
 	rv = taskMacrosTest(RT_TASKID, RT_PRIO);
@@ -495,7 +495,7 @@ void RegressionTask(void)
 	}
 
 	task_sem_give(HT_SEM);
-	task_sem_take_wait(RT_SEM);
+	task_sem_take(RT_SEM, TICKS_UNLIMITED);
 
 	TC_PRINT("Testing task_priority_set()\n");
 	if (taskSetPrioTest() != TC_PASS) {

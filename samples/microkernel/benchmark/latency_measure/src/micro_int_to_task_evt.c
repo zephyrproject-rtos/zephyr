@@ -63,7 +63,7 @@ static void latencyTestIsr(void *unused)
  */
 void microInt(void)
 {
-	task_sem_take_wait(INTSEMA);
+	task_sem_take(INTSEMA, TICKS_UNLIMITED);
 	irq_offload(latencyTestIsr, NULL);
 	task_suspend(task_id_get());
 }

@@ -83,13 +83,13 @@ uint32_t criticalLoop(uint32_t count)
 
 void AlternateTask(void)
 {
-	task_sem_take_wait(ALT_SEM);     /* Wait to be activated */
+	task_sem_take(ALT_SEM, TICKS_UNLIMITED);     /* Wait to be activated */
 
 	altTaskIterations = criticalLoop(altTaskIterations);
 
 	task_sem_give(REGRESS_SEM);
 
-	task_sem_take_wait(ALT_SEM);    /* Wait to be re-activated */
+	task_sem_take(ALT_SEM, TICKS_UNLIMITED);    /* Wait to be re-activated */
 
 	altTaskIterations = criticalLoop(altTaskIterations);
 
@@ -119,7 +119,7 @@ void RegressionTask(void)
 	nCalls = criticalLoop(nCalls);
 
 	/* Wait for AlternateTask() to complete */
-	status = task_sem_take_wait_timeout(REGRESS_SEM, TEST_TIMEOUT);
+	status = task_sem_take(REGRESS_SEM, TEST_TIMEOUT);
 	if (status != RC_OK) {
 		TC_ERROR("Timed out waiting for REGRESS_SEM\n");
 		goto errorReturn;
@@ -141,7 +141,7 @@ void RegressionTask(void)
 	nCalls = criticalLoop(nCalls);
 
 	/* Wait for AlternateTask() to finish */
-	status = task_sem_take_wait_timeout(REGRESS_SEM, TEST_TIMEOUT);
+	status = task_sem_take(REGRESS_SEM, TEST_TIMEOUT);
 	if (status != RC_OK) {
 		TC_ERROR("Timed out waiting for REGRESS_SEM\n");
 		goto errorReturn;

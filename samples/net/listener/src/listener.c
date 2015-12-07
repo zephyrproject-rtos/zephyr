@@ -119,7 +119,7 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 	}
 
 	while (1) {
-		task_sem_take_wait(mySem);
+		task_sem_take(mySem, TICKS_UNLIMITED);
 
 		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {

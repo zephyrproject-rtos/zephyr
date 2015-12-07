@@ -37,7 +37,6 @@ extern "C" {
 #include <microkernel/base_api.h>
 
 extern void _k_sem_struct_value_update(int n, struct _k_sem_struct *S);
-extern int _task_sem_take(ksem_t sema, int32_t ticks);
 extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t ticks);
 
 /*
@@ -142,27 +141,21 @@ extern void task_sem_group_reset(ksemg_t semagroup);
  *
  * @brief Take semaphore or fail.
  *
- * This routine takes semaphore @a s. If the semaphore's count is zero the
+ * This routine takes semaphore @a sema. If the semaphore's count is zero the
  * routine immediately returns a failure indication.
  *
- * @param s Semaphore name.
+ * @param sema Semaphore name.
+ * @param timeout Affects the action taken should the semaphore be unavailable.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. Otherwise wait up to the specified number of ticks before
+ * timing out.
  *
- * @return RC_OK on success, or RC_FAIL on failure.
+ * @retval RC_OK Successfully took semaphore
+ * @retval RC_TIME Timed out while waiting for semaphore
+ * @retval RC_FAIL Failed to immediately take semaphore when
+ * @a timeout = TICKS_NONE
  */
-#define task_sem_take(s) _task_sem_take(s, TICKS_NONE)
-
-/**
- *
- * @brief Take semaphore or wait.
- *
- * This routine takes semaphore @a s. If the semaphore's count is zero the
- * routine waits until it is given.
- *
- * @param s Semaphore name.
- *
- * @return RC_OK.
- */
-#define task_sem_take_wait(s) _task_sem_take(s, TICKS_UNLIMITED)
+extern int task_sem_take(ksem_t sema, int32_t timeout);
 
 /**
  *
@@ -179,22 +172,6 @@ extern void task_sem_group_reset(ksemg_t semagroup);
 #define task_sem_group_take_wait(g) _task_sem_group_take(g, TICKS_UNLIMITED)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-
-/**
- *
- * @brief Take semaphore or timeout.
- *
- * This routine takes semaphore @a s. If the semaphore's count is zero the
- * routine waits until it is given, or until the specified time limit
- * is reached.
- *
- * @param s Semaphore name.
- * @param t Maximum number of ticks to wait.
- *
- * @return RC_OK on success, or RC_TIME on timeout.
- */
-#define task_sem_take_wait_timeout(s, t) _task_sem_take(s, t)
-
 /**
  *
  * @brief Take semaphore from group or timeout.

@@ -71,7 +71,7 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 {
 	while (1)
 	{
-		task_sem_take_wait (mySem);
+		task_sem_take (mySem, TICKS_UNLIMITED);
 
 		PRINT ("%s: Hello World!\n", taskname); /* Action 1 */
 

@@ -192,7 +192,7 @@ void MicroTestFifoTask(void)
 	int locData = SPECIAL_DATA;   /* variable to pass data to and from queue */
 
 	/* (1) Wait for semaphore: put element test */
-	task_sem_take_wait(SEMSIG_MicroTestFifoTask);
+	task_sem_take(SEMSIG_MicroTestFifoTask, TICKS_UNLIMITED);
 
 	TC_PRINT("Starts %s\n", __func__);
 	/* Put one element */
@@ -215,7 +215,7 @@ void MicroTestFifoTask(void)
 	 * task is in task_fifo_put_wait.  This is to test return value of the
 	 * task_fifo_put_wait interface.
 	 */
-	task_sem_take_wait(SEMSIG_MicroTestFifoTask);
+	task_sem_take(SEMSIG_MicroTestFifoTask, TICKS_UNLIMITED);
 	/*
 	 * RegressionTask is waiting to put data into FIFO queue, which is
 	 * full.  We purge the queue here and the task_fifo_put_wait interface
@@ -237,7 +237,7 @@ void MicroTestFifoTask(void)
 	}
 
 	/* (3) Wait for semaphore: get element test */
-	task_sem_take_wait(SEMSIG_MicroTestFifoTask);
+	task_sem_take(SEMSIG_MicroTestFifoTask, TICKS_UNLIMITED);
 	TC_PRINT("%s: About to dequeue 1 element\n", __func__);
 	retValue =  task_fifo_get(FIFOQ, &locData);
 	/*
@@ -618,7 +618,7 @@ void RegressionTask(void)
 		TC_PRINT("%s: queue is empty.  Test Done!\n", __func__);
 	}
 
-	task_sem_take_wait(SEM_TestDone);
+	task_sem_take(SEM_TestDone, TICKS_UNLIMITED);
 
 exitTest:
 

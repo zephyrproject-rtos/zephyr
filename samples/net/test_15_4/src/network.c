@@ -238,7 +238,7 @@ static void listen(const char *taskname, ksem_t mySem, ksem_t otherSem,
 	int i = 0;
 
 	while (1) {
-		task_sem_take_wait(mySem);
+		task_sem_take(mySem, TICKS_UNLIMITED);
 
 		receive_data(taskname, ctx);
 
@@ -286,7 +286,7 @@ static void send(const char *taskname, ksem_t mySem, ksem_t otherSem,
 			return;
 		}
 
-		task_sem_take_wait(mySem);
+		task_sem_take(mySem, TICKS_UNLIMITED);
 
 		send_data(taskname, ctx);
 

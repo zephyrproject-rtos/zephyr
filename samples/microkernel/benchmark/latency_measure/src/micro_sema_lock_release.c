@@ -72,7 +72,7 @@ int microSemaLockUnlock(void)
 	bench_test_start();
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = SEMASTART; i <= SEMAEND; i++) {
-		task_sem_take_wait(i);
+		task_sem_take(i, TICKS_UNLIMITED);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {

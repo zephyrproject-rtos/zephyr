@@ -42,10 +42,10 @@ void waittask(void)
 	slist[4] = ENDLIST;
 
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
-		task_sem_take_wait(SEM1);
+		task_sem_take(SEM1, TICKS_UNLIMITED);
 	}
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
-		task_sem_take_wait_timeout(SEM1, SEMA_WAIT_TIME);
+		task_sem_take(SEM1, SEMA_WAIT_TIME);
 	}
 
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {

@@ -121,7 +121,7 @@ a period of zero, it stops automatically once it expires.
    /* gather data until timer expires */
    do {
        ...
-   } while (task_sem_take(my_sem) != RC_OK);
+   } while (task_sem_take(my_sem, TICKS_NONE) != RC_OK);
 
    /* process the new data */
    ...
@@ -147,7 +147,7 @@ reactivate the timer.
        /* gather data until timer expires */
        do {
            ...
-       } while (task_sem_take(my_sem) != RC_OK);
+       } while (task_sem_take(my_sem, TICKS_NONE) != RC_OK);
 
        /* process the new data, then loop around to get more */
        ...
@@ -174,7 +174,7 @@ This code illustrates how an active timer can be stopped prematurely.
    task_timer_stop(timer_id);
 
    /* check to see if the timer expired before it was stopped */
-   if (task_sem_take(my_sem) == RC_OK) {
+   if (task_sem_take(my_sem, TICKS_NONE) == RC_OK) {
        printf("Warning: Input took too long to arrive!");
    }
 

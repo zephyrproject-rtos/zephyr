@@ -193,7 +193,7 @@ int MsgSenderTask(void)
 
 	/* Wait for Receiver Task to finish using myMbox */
 
-	(void) task_sem_take_wait(semSync1);
+	(void) task_sem_take(semSync1, TICKS_UNLIMITED);
 
 	/* Send message (no wait) to specified task that is waiting for it */
 
@@ -220,7 +220,7 @@ int MsgSenderTask(void)
 
 	/* Wait for Receiver Task to start sleeping */
 
-	(void) task_sem_take_wait(semSync2);
+	(void) task_sem_take(semSync2, TICKS_UNLIMITED);
 
 	/* Send message to any task that is not yet waiting for it */
 
@@ -255,7 +255,7 @@ int MsgSenderTask(void)
 
 	/* Sync with Receiver Task, since we're about to use a timeout */
 
-	task_sem_take_wait(semSync1);
+	task_sem_take(semSync1, TICKS_UNLIMITED);
 
 	/* Send message used in 2 part receive test */
 
@@ -331,7 +331,7 @@ int MsgSenderTask(void)
 
 	/* Sync with Receiver Task, since we're about to use a timeout */
 
-	task_sem_take_wait(semSync1);
+	task_sem_take(semSync1, TICKS_UNLIMITED);
 
 	/* Send message used in long-duration receive test */
 
@@ -516,7 +516,7 @@ int MsgRcvrTask(void)
 
 	/* Sync with Sender Task, since we're about to use a timeout */
 
-	(void) task_sem_take_wait(semSync2);
+	(void) task_sem_take(semSync2, TICKS_UNLIMITED);
 
 	/* Receive message header for cancelled receive test */
 

@@ -141,7 +141,7 @@ static inline void synchronous_call_wait(device_sync_call_t *sync)
 	if ((sys_execution_context_type_get() == NANO_CTX_TASK) &&
 	    (task_priority_get() < CONFIG_NUM_TASK_PRIORITIES - 1)) {
 		sync->caller_is_task = true;
-		task_sem_take_wait(sync->t_sem);
+		task_sem_take(sync->t_sem, TICKS_UNLIMITED);
 	} else {
 		sync->caller_is_task = false;
 		nano_sem_take_wait(&sync->f_sem);

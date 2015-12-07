@@ -57,9 +57,9 @@ int testLowTimerStop(void)
 
 	task_timer_stop(pTimer[0]);
 
-	status = task_sem_take_wait_timeout(TIMER_SEM, 20);
+	status = task_sem_take(TIMER_SEM, 20);
 	if (status != RC_TIME) {
-		TC_ERROR("** task_sem_take_wait_timeout() returned %d, not %d\n", status, RC_TIME);
+		TC_ERROR("** task_sem_take() returned %d, not %d\n", status, RC_TIME);
 		return TC_FAIL;    /* Return failure, do not "clean up" */
 	}
 
@@ -93,7 +93,7 @@ int testLowTimerPeriodicity(void)
 	task_timer_start(pTimer[0], 100, 50, TIMER_SEM);
 
 	for (i = 0; i < 5; i++) {
-		status = task_sem_take_wait_timeout(TIMER_SEM, 200);
+		status = task_sem_take(TIMER_SEM, 200);
 		ticks = sys_tick_delta(&refTime);
 
 		if (status != RC_OK) {
@@ -118,7 +118,7 @@ int testLowTimerPeriodicity(void)
 	/* Use task_timer_restart() to change the periodicity */
 	task_timer_restart(pTimer[0], 60, 60);
 	for (i = 0; i < 6; i++) {
-		status = task_sem_take_wait_timeout(TIMER_SEM, 100);
+		status = task_sem_take(TIMER_SEM, 100);
 		ticks_32 = sys_tick_delta_32(&refTime);
 
 		if (status != RC_OK) {
@@ -164,7 +164,7 @@ int testLowTimerDoesNotStart(void)
 		}
 
 		task_timer_start(pTimer[0], Ti[i], Tr[i], TIMER_SEM);
-		status = task_sem_take_wait_timeout(TIMER_SEM, 200);
+		status = task_sem_take(TIMER_SEM, 200);
 		if (status != RC_TIME) {
 			TC_ERROR("** Timer appears to have fired unexpectedly\n");
 			return TC_FAIL;    /* Return failure, do not "clean up" */
@@ -199,14 +199,14 @@ int testLowTimerOneShot(void)
 	/* Timer to fire once only in 100 ticks */
 	(void) sys_tick_delta(&refTime);
 	task_timer_start(pTimer[0], 100, 0, TIMER_SEM);
-	status = task_sem_take_wait(TIMER_SEM);
+	status = task_sem_take(TIMER_SEM, TICKS_UNLIMITED);
 	ticks = sys_tick_delta(&refTime);
 	if (!WITHIN_ERROR(ticks, 100, 1)) {
 		TC_ERROR("** Expected %d ticks to elapse, got %d\n", 100, ticks);
 		return TC_FAIL;    /* Return failure, do not "clean up" */
 	}
 	if (status != RC_OK) {
-		TC_ERROR("** task_sem_take_wait() unexpectedly failed\n");
+		TC_ERROR("** task_sem_take() unexpectedly failed\n");
 		return TC_FAIL;    /* Return failure, do not "clean up" */
 	}
 
@@ -214,9 +214,9 @@ int testLowTimerOneShot(void)
 	 * Wait up to 200 more ticks for another timer signalling
 	 * that should not occur.
 	 */
-	status = task_sem_take_wait_timeout(TIMER_SEM, 200);
+	status = task_sem_take(TIMER_SEM, 200);
 	if (status != RC_TIME) {
-		TC_ERROR("** task_sem_take_wait_timeout() expected timeout,  got %d\n", status);
+		TC_ERROR("** task_sem_take() expected timeout,  got %d\n", status);
 		return TC_FAIL;    /* Return failure, do not "clean up" */
 	}
 
@@ -362,7 +362,7 @@ void RegressionTaskEntry(void)
 	}
 
 	TC_PRINT("Verifying the nanokernel timeouts worked\n");
-	tcRC = task_sem_take_wait_timeout(test_nano_timeouts_sem, SECONDS(5));
+	tcRC = task_sem_take(test_nano_timeouts_sem, SECONDS(5));
 	tcRC = tcRC == RC_OK ? TC_PASS : TC_FAIL;
 
 exitRtn:

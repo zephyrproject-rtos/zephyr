@@ -101,7 +101,7 @@ int taskA(ksem_t semRdy)
 
 	/* Wait for other task to receive its events */
 
-	(void)task_sem_take_wait(semRdy);
+	(void)task_sem_take(semRdy, TICKS_UNLIMITED);
 
 	TC_PRINT("\nAttempt to allocate an IRQ object that\n");
 	TC_PRINT("is already allocated by another task...\n");
@@ -181,7 +181,7 @@ int taskB(ksem_t semRdy)
 	 *  will thus consume the signal first.
 	 */
 
-	(void)task_sem_take_wait(semRdy);
+	(void)task_sem_take(semRdy, TICKS_UNLIMITED);
 
 	TC_PRINT("Attempt to free an IRQ object...\n");
 	task_irq_free(DEV3_ID);

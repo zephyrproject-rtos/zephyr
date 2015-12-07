@@ -102,7 +102,7 @@ int pipeget(kpipe_t pipe, K_PIPE_OPTION option, int size, int count,
 	int size2xfer_total = size * count;
 
 	/* sync with the sender */
-	task_sem_take_wait(SEM0);
+	task_sem_take(SEM0, TICKS_UNLIMITED);
 	t = BENCH_START();
 	for (i = 0; _1_TO_N == option || (i < count); i++) {
 		int sizexferd = 0;

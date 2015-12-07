@@ -28,8 +28,6 @@
  * task_sem_give()
  * task_sem_count_get()
  * task_sem_take()
- * task_sem_take_wait()
- * task_sem_take_wait_timeout()
  * isr_sem_give()
  * fiber_sem_give()
  */
@@ -113,7 +111,7 @@ int simpleSemaTest(void)
 	 */
 
 	for (i = 9; i >= 4; i--) {
-		status = task_sem_take(simpleSem);
+		status = task_sem_take(simpleSem, TICKS_NONE);
 		if (status != RC_OK) {
 			TC_ERROR("task_sem_take(SIMPLE_SEM) error.  Expected %d, not %d.\n",
 					 RC_OK, status);
@@ -136,7 +134,7 @@ int simpleSemaTest(void)
 	 */
 
 	for (i = 0; i < 10; i++) {
-		status = task_sem_take(simpleSem);
+		status = task_sem_take(simpleSem, TICKS_NONE);
 		if (status != RC_FAIL) {
 			TC_ERROR("task_sem_take(SIMPLE_SEM) error.  Expected %d, got %d.\n",
 					 RC_FAIL, status);
@@ -168,9 +166,9 @@ int simpleSemaWaitTest(void)
 
 	for (i = 0; i < 5; i++) {
 		/* Wait one second for SIMPLE_SEM.  Timeout is expected. */
-		status = task_sem_take_wait_timeout(simpleSem, OBJ_TIMEOUT);
+		status = task_sem_take(simpleSem, OBJ_TIMEOUT);
 		if (status != RC_TIME) {
-			TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
+			TC_ERROR("task_sem_take() error.  Expected %d, got %d\n",
 					 RC_TIME, status);
 			return TC_FAIL;
 		}
@@ -184,27 +182,27 @@ int simpleSemaWaitTest(void)
 
 	task_sem_give(altSem);
 
-	status = task_sem_take_wait_timeout(simpleSem, OBJ_TIMEOUT);
+	status = task_sem_take(simpleSem, OBJ_TIMEOUT);
 	if (status != RC_OK) {
-		TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
+		TC_ERROR("task_sem_take() error.  Expected %d, got %d\n",
 				 RC_OK, status);
 		return TC_FAIL;
 	}
 
 	/*
-	 * Note that task_sem_take_wait() has been tested when waking up the alternate
-	 * task.  Since previous tests had this task waiting, the alternate task
-	 * must have had the time to enter the state where it is waiting for the
-	 * ALTTASK_SEM semaphore to be given.  Thus, we do not need to test for
-	 * it here.
+	 * Note that task_sem_take(TICKS_UNLIMITED) has been tested when waking up
+	 * the alternate task.  Since previous tests had this task waiting, the
+	 * alternate task must have had the time to enter the state where it is
+	 * waiting for the ALTTASK_SEM semaphore to be given.  Thus, we do not need
+	 * to test for it here.
 	 *
 	 * Now wait on SIMPLE_SEM again.  This time it will be woken up by an
 	 * ISR signalling the semaphore.
 	 */
 
-	status = task_sem_take_wait_timeout(simpleSem, OBJ_TIMEOUT);
+	status = task_sem_take(simpleSem, OBJ_TIMEOUT);
 	if (status != RC_OK) {
-		TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
+		TC_ERROR("task_sem_take() error.  Expected %d, got %d\n",
 				 RC_OK, status);
 		return TC_FAIL;
 	}
@@ -381,9 +379,9 @@ static int simpleFiberSemTest(void)
 
 	/* let the fiber signal the semaphore and wait on it */
 	releaseTestFiber();
-	status = task_sem_take_wait_timeout(simpleSem, OBJ_TIMEOUT);
+	status = task_sem_take(simpleSem, OBJ_TIMEOUT);
 	if (status != RC_OK) {
-		TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
+		TC_ERROR("task_sem_take() error.  Expected %d, got %d\n",
 				 RC_OK, status);
 		return TC_FAIL;
 	}
@@ -422,7 +420,7 @@ int HighPriTask(void)
 	int  status;
 
 	/* Wait until task is activated */
-	status = task_sem_take_wait(hpSem);
+	status = task_sem_take(hpSem, TICKS_UNLIMITED);
 	if (status != RC_OK) {
 		TC_ERROR("%s priority task failed to wait on %s: %d\n",
 				 "High", "HIGH_PRI_SEM", status);
@@ -430,7 +428,7 @@ int HighPriTask(void)
 	}
 
 	/* Wait on a semaphore along with other tasks */
-	status = task_sem_take_wait(manyBlockSem);
+	status = task_sem_take(manyBlockSem, TICKS_UNLIMITED);
 	if (status != RC_OK) {
 		TC_ERROR("%s priority task failed to wait on %s: %d\n",
 				 "High", "MANY_BLOCKED_SEM", status);
@@ -456,7 +454,7 @@ int LowPriTask(void)
 	int  status;
 
 	/* Wait on a semaphore along with other tasks */
-	status = task_sem_take_wait(manyBlockSem);
+	status = task_sem_take(manyBlockSem, TICKS_UNLIMITED);
 	if (status != RC_OK) {
 		TC_ERROR("%s priority task failed to wait on %s: %d\n",
 				 "Low", "MANY_BLOCKED_SEM", status);
@@ -484,9 +482,9 @@ int AlternateTask(void)
 	int  i;
 
 	/* Wait until it is time to continue */
-	status = task_sem_take_wait(altSem);
+	status = task_sem_take(altSem, TICKS_UNLIMITED);
 	if (status != RC_OK) {
-		TC_ERROR("task_sem_take_wait() error.  Expected %d, got %d\n",
+		TC_ERROR("task_sem_take() error.  Expected %d, got %d\n",
 				 RC_OK, status);
 		return TC_FAIL;
 	}
@@ -506,17 +504,17 @@ int AlternateTask(void)
 	trigger_isrSemaSignal(simpleSem);
 
 	/* Wait for RegressionTask to wake this task up */
-	status = task_sem_take_wait(altSem);
+	status = task_sem_take(altSem, TICKS_UNLIMITED);
 	if (status != RC_OK) {
-		TC_ERROR("task_sem_take_wait() error.  Expected %d, got %d",
+		TC_ERROR("task_sem_take() error.  Expected %d, got %d",
 				 RC_OK, status);
 		return TC_FAIL;
 	}
 
 	/* Wait on a semaphore that will have many waiters */
-	status = task_sem_take_wait(manyBlockSem);
+	status = task_sem_take(manyBlockSem, TICKS_UNLIMITED);
 	if (status != RC_OK) {
-		TC_ERROR("task_sem_take_wait() error.  Expected %d, got %d",
+		TC_ERROR("task_sem_take() error.  Expected %d, got %d",
 				 RC_OK, status);
 		return TC_FAIL;
 	}
@@ -525,9 +523,9 @@ int AlternateTask(void)
 	task_sem_give(blockMpSem);
 
 	/* Wait until the alternate task is needed again */
-	status = task_sem_take_wait(altSem);
+	status = task_sem_take(altSem, TICKS_UNLIMITED);
 	if (status != RC_OK) {
-		TC_ERROR("task_sem_take_wait() error.  Expected %d, got %d",
+		TC_ERROR("task_sem_take() error.  Expected %d, got %d",
 				 RC_OK, status);
 		return TC_FAIL;
 	}

@@ -502,13 +502,13 @@ int eventSignalHandlerTest(void)
 void AlternateTask(void)
 {
 	/* Wait for eventWaitTest() to run. */
-	task_sem_take_wait(ALTERNATE_SEM);
+	task_sem_take(ALTERNATE_SEM, TICKS_UNLIMITED);
 	task_event_send(EVENT_ID);
 	releaseTestFiber();
 	_trigger_isrEventSignal();
 
 	/* Wait for eventTimeoutTest() to run. */
-	task_sem_take_wait(ALTERNATE_SEM);
+	task_sem_take(ALTERNATE_SEM, TICKS_UNLIMITED);
 	task_event_send(EVENT_ID);
 	releaseTestFiber();
 	_trigger_isrEventSignal();
@@ -521,11 +521,11 @@ void AlternateTask(void)
 	 * waiting task will get woken up after the event handler for EVENT_ID runs.
 	 */
 
-	task_sem_take_wait(ALTERNATE_SEM);
+	task_sem_take(ALTERNATE_SEM, TICKS_UNLIMITED);
 	handlerRetVal = 0;
 	task_event_send(EVENT_ID);
 
-	task_sem_take_wait(ALTERNATE_SEM);
+	task_sem_take(ALTERNATE_SEM, TICKS_UNLIMITED);
 	handlerRetVal = 1;
 	task_event_send(EVENT_ID);
 }

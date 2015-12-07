@@ -349,12 +349,12 @@ void _k_sem_wait_request(struct k_args *A)
 	}
 }
 
-int _task_sem_take(ksem_t sema, int32_t time)
+int task_sem_take(ksem_t sema, int32_t timeout)
 {
 	struct k_args A;
 
 	A.Comm = _K_SVC_SEM_WAIT_REQUEST;
-	A.Time.ticks = time;
+	A.Time.ticks = timeout;
 	A.args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;

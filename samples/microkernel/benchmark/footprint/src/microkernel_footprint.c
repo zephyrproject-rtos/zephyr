@@ -86,7 +86,7 @@ static pfunc func_array[] = {
 	(pfunc)task_sem_count_get,
 	(pfunc)task_sem_reset,
 	(pfunc)task_sem_group_reset,
-	(pfunc)_task_sem_take,
+	(pfunc)task_sem_take,
 	(pfunc)_task_sem_group_take,
 	/* pipe functions */
 	(pfunc)task_pipe_put,

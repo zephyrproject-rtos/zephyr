@@ -86,7 +86,7 @@ int mailbox_get(kmbox_t mailbox, int size, int count, unsigned int* time)
 	Message.size = size;
 
 	/* sync with the sender */
-	task_sem_take_wait(SEM0);
+	task_sem_take(SEM0, TICKS_UNLIMITED);
 	t = BENCH_START();
 	for (i = 0; i < count; i++) {
 		task_mbox_get(mailbox, &Message, TICKS_UNLIMITED);

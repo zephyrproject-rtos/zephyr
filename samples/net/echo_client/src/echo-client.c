@@ -331,7 +331,7 @@ void sending_loop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 	bool send_unicast = true;
 
 	while (1) {
-		task_sem_take_wait(mySem);
+		task_sem_take(mySem, TICKS_UNLIMITED);
 
 		PRINT("%s: Sending packet\n", __func__);
 
@@ -362,7 +362,7 @@ void sending_loop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 void receiving_loop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 {
 	while (1) {
-		task_sem_take_wait(mySem);
+		task_sem_take(mySem, TICKS_UNLIMITED);
 
 		PRINT("%s: Waiting packet\n", __func__);
 
