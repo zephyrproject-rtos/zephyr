@@ -18,7 +18,5 @@ build_unifdef: $(obj)/unifdef
 build_docproc: $(obj)/docproc
 	@:
 
-subdir-$(CONFIG_MODVERSIONS) += genksyms
-
 # Let clean descend into subdirs
 subdir-	+= basic kconfig gen_idt
