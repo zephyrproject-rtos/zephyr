@@ -650,12 +650,21 @@ static int i2c_qse_ss_resume(struct device *dev)
 	return DEV_OK;
 }
 
+static int i2c_qse_ss_set_callback(struct device *dev, i2c_callback cb)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(cb);
+
+	return DEV_INVALID_OP;
+}
+
 static struct i2c_driver_api ss_funcs = {
 	.configure = i2c_qse_ss_runtime_configure,
 	.transfer = i2c_qse_ss_intr_transfer,
 	.poll_transfer = i2c_qse_ss_poll_transfer,
 	.suspend = i2c_qse_ss_suspend,
 	.resume = i2c_qse_ss_resume,
+	.set_callback = i2c_qse_ss_set_callback,
 };
 
 int i2c_qse_ss_initialize(struct device *dev)
