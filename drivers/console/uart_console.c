@@ -124,48 +124,50 @@ void uart_console_isr(void *unused)
 {
 	ARG_UNUSED(unused);
 
-	while (uart_irq_update(uart_console_dev)
-	       && uart_irq_is_pending(uart_console_dev)) {
+	while (uart_irq_update(uart_console_dev) &&
+	       uart_irq_is_pending(uart_console_dev)) {
+		static struct uart_console_input *cmd;
+		uint8_t byte;
+		int rx;
+
+		if (!uart_irq_rx_ready(uart_console_dev)) {
+			continue;
+		}
+
 		/* Character(s) have been received */
-		if (uart_irq_rx_ready(uart_console_dev)) {
-			static struct uart_console_input *cmd;
-			uint8_t byte;
-			int rx;
 
-			rx = read_uart(uart_console_dev, &byte, 1);
-			if (rx < 0) {
+		rx = read_uart(uart_console_dev, &byte, 1);
+		if (rx < 0) {
+			return;
+		}
+
+		if (uart_irq_input_hook(uart_console_dev, byte) != 0) {
+			/*
+			 * The input hook indicates that no further processing
+			 * should be done by this handler.
+			 */
+			return;
+		}
+
+		if (!cmd) {
+			cmd = nano_isr_fifo_get(avail_queue);
+			if (!cmd)
 				return;
-			}
+		}
 
-			if (uart_irq_input_hook(uart_console_dev, byte) != 0) {
-				/*
-				 * The input hook indicates that no further processing
-				 * should be done by this handler.
-				 */
-				return;
-			}
+		/* Echo back to console */
+		uart_poll_out(uart_console_dev, byte);
 
-			if (!cmd) {
-				cmd = nano_isr_fifo_get(avail_queue);
-				if (!cmd)
-					return;
-			}
+		if (byte == '\r' || byte == '\n' ||
+		    pos == sizeof(cmd->line) - 1) {
+			cmd->line[pos] = '\0';
+			uart_poll_out(uart_console_dev, '\n');
+			pos = 0;
 
-			/* Echo back to console */
-			uart_poll_out(uart_console_dev, byte);
-
-			if (byte == '\r' || byte == '\n' ||
-			    pos == sizeof(cmd->line) - 1) {
-				cmd->line[pos] = '\0';
-				uart_poll_out(uart_console_dev, '\n');
-				pos = 0;
-
-				nano_isr_fifo_put(lines_queue, cmd);
-				cmd = NULL;
-			} else {
-				cmd->line[pos++] = byte;
-			}
-
+			nano_isr_fifo_put(lines_queue, cmd);
+			cmd = NULL;
+		} else {
+			cmd->line[pos++] = byte;
 		}
 	}
 }
