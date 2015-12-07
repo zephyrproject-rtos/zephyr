@@ -729,8 +729,6 @@ export LD_TOOLCHAIN KBUILD_LDS
 # this default value
 export KBUILD_IMAGE ?= zephyr
 
-core-y		+=
-
 zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(core-y) $(drivers-y) \
 		     $(libs-y) $(app-y)))
 
