@@ -1163,16 +1163,17 @@ int bt_rand(void *buf, size_t len)
 static int le_set_nrpa(void)
 {
 	struct net_buf *buf;
-	bt_addr_t *nrpa;
+	bt_addr_t nrpa;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(*nrpa));
+	bt_rand(nrpa.val, sizeof(nrpa.val));
+	nrpa.val[5] &= 0x3f;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(nrpa));
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	nrpa = net_buf_add(buf, sizeof(*nrpa));
-	bt_rand(nrpa->val, sizeof(*nrpa));
-	nrpa->val[5] &= 0x3f;
+	memcpy(net_buf_add(buf, sizeof(nrpa)), &nrpa, sizeof(nrpa));
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
 }
@@ -1183,19 +1184,7 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 	struct net_buf *buf, *rsp;
 	struct bt_hci_cp_le_set_scan_params *set_param;
 	struct bt_hci_cp_le_set_scan_enable *scan_enable;
-	uint8_t addr_type;
 	int err;
-
-	if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
-		err = le_set_nrpa();
-		if (err) {
-			return err;
-		}
-
-		addr_type = 0x01; /* Random Address */
-	} else {
-		addr_type = 0x00; /* Public Address */
-	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS,
 				sizeof(*set_param));
@@ -1213,7 +1202,18 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 	set_param->interval = sys_cpu_to_le16(interval);
 	set_param->window = sys_cpu_to_le16(window);
 	set_param->filter_policy = 0x00;
-	set_param->addr_type = addr_type;
+
+	if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
+		err = le_set_nrpa();
+		if (err) {
+			net_buf_unref(buf);
+			return err;
+		}
+
+		set_param->addr_type = BT_ADDR_LE_RANDOM;
+	} else {
+		set_param->addr_type = BT_ADDR_LE_PUBLIC;
+	}
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAMS, buf);
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
