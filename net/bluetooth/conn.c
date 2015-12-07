@@ -688,13 +688,17 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 	return NULL;
 }
 
-struct bt_conn *bt_conn_lookup_state(const bt_addr_le_t *peer,
-				     const bt_conn_state_t state)
+struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
+					const bt_conn_state_t state)
 {
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(conns); i++) {
 		if (!atomic_get(&conns[i].ref)) {
+			continue;
+		}
+
+		if (conns[i].type != BT_CONN_TYPE_LE) {
 			continue;
 		}
 

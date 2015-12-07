@@ -528,7 +528,7 @@ static void le_conn_complete(struct net_buf *buf)
 	/* Make lookup to check if there's a connection object in CONNECT state
 	 * associated with passed peer LE address.
 	 */
-	conn = bt_conn_lookup_state(id_addr, BT_CONN_CONNECT);
+	conn = bt_conn_lookup_state_le(id_addr, BT_CONN_CONNECT);
 
 	if (evt->status) {
 		if (!conn) {
@@ -726,7 +726,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		return;
 	}
 
-	conn = bt_conn_lookup_state(id_addr, BT_CONN_CONNECT_SCAN);
+	conn = bt_conn_lookup_state_le(id_addr, BT_CONN_CONNECT_SCAN);
 	if (!conn) {
 		return;
 	}
@@ -1264,7 +1264,7 @@ int bt_le_scan_update(bool fast_scan)
 	}
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
-	conn = bt_conn_lookup_state(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
+	conn = bt_conn_lookup_state_le(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
 	if (!conn) {
 		return 0;
 	}
