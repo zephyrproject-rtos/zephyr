@@ -168,15 +168,11 @@ struct bt_le_scan_param {
 			.window = (_window), \
 		 })
 
-/** Helper macro to enable active scanning to discover new devices.
- *
- *  The interval and window are intentionally set to the same value to
- *  perform continuous scanning.
- */
+/** Helper macro to enable active scanning to discover new devices. */
 #define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_HCI_LE_SCAN_ACTIVE, \
 					   BT_HCI_LE_SCAN_FILTER_DUP_ENABLE, \
 					   BT_GAP_SCAN_FAST_INTERVAL, \
-					   BT_GAP_SCAN_FAST_INTERVAL)
+					   BT_GAP_SCAN_FAST_WINDOW)
 
 /** @brief Start (LE) scanning
  *
