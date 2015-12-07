@@ -25,14 +25,7 @@
 
 #define INT_COMPARATORS_MASK	0x7FFFF
 
-static int dw_aio_cmp_config(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONFIG(dw_aio_cmp, INT_AIO_CMP_IRQ);
-
-	return DEV_OK;
-}
+static int dw_aio_cmp_config(struct device *dev);
 
 static int dw_aio_cmp_disable(struct device *dev, uint8_t index)
 {
@@ -226,5 +219,14 @@ IRQ_CONNECT_STATIC(dw_aio_cmp,
 		   INT_AIO_CMP_IRQ,
 		   0,
 		   dw_aio_cmp_isr,
+		   0,
 		   0);
 
+static int dw_aio_cmp_config(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	IRQ_CONFIG(dw_aio_cmp, INT_AIO_CMP_IRQ);
+
+	return DEV_OK;
+}

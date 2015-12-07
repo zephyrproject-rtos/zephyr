@@ -51,9 +51,9 @@ config PINMUX_BASE
 
 endif
 
-config DW_AIO_COMPARATOR_BASE_ADDR
+config AIO_DW_COMPARATOR_BASE_ADDR
 	hex
-	depends on DW_AIO_COMPARATOR
+	depends on AIO_DW_COMPARATOR
 	default 0xb0800300
 
 config ARC_INIT
