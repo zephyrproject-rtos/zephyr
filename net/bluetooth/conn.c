@@ -384,7 +384,7 @@ fail:
 static inline uint16_t conn_mtu(struct bt_conn *conn)
 {
 #if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BREDR || !bt_dev.le.mtu) {
+	if (conn->type == BT_CONN_TYPE_BR || !bt_dev.le.mtu) {
 		return bt_dev.br.mtu;
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
@@ -543,7 +543,7 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 	}
 
 	bt_addr_copy(&conn->br.dst, peer);
-	conn->type = BT_CONN_TYPE_BREDR;
+	conn->type = BT_CONN_TYPE_BR;
 
 	return conn;
 }

@@ -102,7 +102,7 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
 enum {
 	BT_CONN_TYPE_LE, /** LE Connection Type */
 #if defined(CONFIG_BLUETOOTH_BREDR)
-	BT_CONN_TYPE_BREDR, /** BR/EDR Connection Type */
+	BT_CONN_TYPE_BR, /** BR/EDR Connection Type */
 #endif
 };
 
