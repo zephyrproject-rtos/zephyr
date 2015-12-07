@@ -85,14 +85,14 @@ int taskA(ksem_t semRdy)
 
 	task_sem_give(semRdy);
 
-	if (task_irq_test_wait(DEV1_ID) != RC_OK) {
+	if (task_irq_wait(DEV1_ID, TICKS_UNLIMITED) != RC_OK) {
 		TC_ERROR("Not able to test IRQ object event\n");
 		return TC_FAIL;
 	}
 	TC_PRINT("Received event for IRQ object %d\n", DEV1_ID);
 	task_irq_ack(DEV1_ID);
 
-	if (task_irq_test_wait(DEV2_ID) != RC_OK) {
+	if (task_irq_wait(DEV2_ID, TICKS_UNLIMITED) != RC_OK) {
 		TC_ERROR("Not able to test IRQ object event\n");
 		return TC_FAIL;
 	}
@@ -157,14 +157,14 @@ int taskB(ksem_t semRdy)
 
 	task_sem_give(semRdy);
 
-	if (task_irq_test_wait(DEV3_ID) != RC_OK) {
+	if (task_irq_wait(DEV3_ID, TICKS_UNLIMITED) != RC_OK) {
 		TC_ERROR("Not able to test IRQ object event\n");
 		return TC_FAIL;
 	}
 	TC_PRINT("Received event for IRQ object %d\n", DEV3_ID);
 	task_irq_ack(DEV3_ID);
 
-	if (task_irq_test_wait(DEV4_ID) != RC_OK) {
+	if (task_irq_wait(DEV4_ID, TICKS_UNLIMITED) != RC_OK) {
 		TC_ERROR("Not able to test IRQ object event\n");
 		return TC_FAIL;
 	}

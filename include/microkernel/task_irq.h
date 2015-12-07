@@ -50,14 +50,6 @@
  */
 extern uint32_t task_irq_alloc(kirq_t irq_obj, uint32_t irq, uint32_t priority,
 			       uint32_t flags);
-/**
- * @cond internal
- */
-extern int _task_irq_test(kirq_t irq_ob, int32_t time);
-
-/**
- * @endcond
- */
 
 /**
  *
@@ -82,43 +74,23 @@ extern void task_irq_ack(kirq_t irq_obj);
 extern void task_irq_free(kirq_t irq_obj);
 
 /**
- * @brief Determine if a task IRQ object has had an interrupt
+ * @brief Wait for task IRQ to signal an interrupt
  *
- * This tests a task IRQ object to see if it has signaled an interrupt.
- * It fails immediately if no interrupt has occurred.
- *
- * @param irq_obj IRQ object identifier
- *
- * @return RC_OK, RC_FAIL
- */
-#define task_irq_test(irq_obj) _task_irq_test(irq_obj, TICKS_NONE)
-
-/**
- * @brief Determine if a task IRQ object has had an interrupt and wait
- *
- * This tests a task IRQ object to see if it has signaled an interrupt.
- * It waits forever for a interrupt to happen.
+ * This routine waits up to @a timeout ticks for the IRQ object @a irq_obj
+ * to signal an interrupt.
  *
  * @param irq_obj IRQ object identifier
+ * @param timeout Affects the action taken should the task IRQ not yet be
+ * signaled. If TICKS_NONE, the return immediately. If TICKS_UNLIMITED, then
+ * wait as long as necessary. Otherwise wait up to the specified number of
+ * ticks before timing out.
  *
- * @return RC_OK
+ * @retval RC_OK Successfully detected signaled interrupt
+ * @retval RC_TIME Timed out while waiting for interrupt
+ * @retval RC_FAIL Failed to immediately detect signaled interrupt when
+ * @a timeout = TICKS_NONE
  */
-#define task_irq_test_wait(irq_obj) _task_irq_test(irq_obj, TICKS_UNLIMITED)
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-/**
- * @brief Determine if a task IRQ object has had an interrupt and timeout
- *
- * This tests a task IRQ object to see if it has signaled an interrupt
- * with a timeout option.
- *
- * @param irq_obj IRQ object identifier
- * @param time  Time to wait (in ticks)
- *
- * @return RC_OK, RC_FAIL, or RC_TIME
- */
-#define task_irq_test_wait_timeout(irq_obj, time) _task_irq_test(irq_obj, time)
-#endif
+extern int task_irq_wait(kirq_t irq_obj, int32_t timeout);
 
 /**
  * @}

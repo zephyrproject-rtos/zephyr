@@ -91,7 +91,7 @@ acknowledge the interrupt, and take the necessary steps to service it.
 
 .. code-block:: c
 
-   task_irq_test_wait(FOO_DEVICE);
+   task_irq_wait(FOO_DEVICE, TICKS_UNLIMITED);
 
    /* Device interrupt is now masked */
    /* Do pre-acknowledgement device processing (if any) */
@@ -134,11 +134,5 @@ The following task IRQ APIs are provided by :file:`microkernel.h`:
 :cpp:func:`task_irq_free()`
    Unbinds a task IRQ from a device and disables interrupts.
 
-:c:func:`task_irq_test()`
-   Tests to determine if an interrupt has occurred.
-
-:c:func:`task_irq_test_wait()`
-   Waits for an interrupt to occur.
-
-:c:func:`task_irq_test_wait_timeout()`
+:c:func:`task_irq_wait()`
    Waits for an interrupt to occur within a specified time period.

@@ -145,23 +145,13 @@ void task_irq_ack(kirq_t irq_obj)
 	irq_enable(task_irq_object[irq_obj].irq);
 }
 
-/**
- *
- * @brief Determine if a task IRQ object has had an interrupt
- *
- * This tests a task IRQ object to see if it has signaled an interrupt.
- * @param irq_obj IRQ object identifier
- * @param time  Time to wait (in ticks)
- *
- * @return RC_OK, RC_FAIL, or RC_TIME
- */
-int _task_irq_test(kirq_t irq_obj, int32_t time)
+int task_irq_wait(kirq_t irq_obj, int32_t timeout)
 {
 	__ASSERT(irq_obj < MAX_TASK_IRQS, "Invalid IRQ object");
 	__ASSERT(task_irq_object[irq_obj].task_id == task_id_get(),
 			 "Incorrect Task ID");
 
-	return _task_event_recv(task_irq_object[irq_obj].event, time);
+	return _task_event_recv(task_irq_object[irq_obj].event, timeout);
 }
 
 /**

@@ -76,7 +76,7 @@ static pfunc func_array[] = {
 #ifdef TEST_max
 	/* task device interrupt functions */
 	(pfunc)task_irq_alloc,
-	(pfunc)_task_irq_test,
+	(pfunc)task_irq_wait,
 	(pfunc)task_irq_ack,
 	(pfunc)task_irq_free,
 	/* semaphore functions */
