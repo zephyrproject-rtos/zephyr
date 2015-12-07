@@ -676,6 +676,10 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 			continue;
 		}
 
+		if (conns[i].type != BT_CONN_TYPE_LE) {
+			continue;
+		}
+
 		if (!bt_addr_le_cmp(peer, &conns[i].le.dst)) {
 			return bt_conn_ref(&conns[i]);
 		}
