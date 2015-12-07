@@ -467,19 +467,8 @@ static const struct bt_eir sd[] = {
 
 static void cmd_advertise(int argc, char *argv[])
 {
-	uint8_t adv_type = 0xff;
-	int i;
-	const struct bt_eir *ad;
-
-	static struct {
-		const char *str;
-		uint8_t type;
-	} adv_t[] = {
-		{ "on", BT_LE_ADV_IND },
-		{ "direct", BT_LE_ADV_DIRECT_IND },
-		{ "scan", BT_LE_ADV_SCAN_IND },
-		{ "nconn", BT_LE_ADV_NONCONN_IND },
-	};
+	struct bt_le_adv_param param;
+	const struct bt_eir *ad, *scan_rsp;
 
 	if (argc < 2) {
 		goto fail;
@@ -495,14 +484,22 @@ static void cmd_advertise(int argc, char *argv[])
 		return;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(adv_t); i++) {
-		if (!strcmp(argv[1], adv_t[i].str)) {
-			adv_type = adv_t[i].type;
-			break;
-		}
-	}
+	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
+	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
-	if (adv_type == 0xff) {
+	if (!strcmp(argv[1], "on")) {
+		param.type = BT_LE_ADV_IND;
+		param.addr_type = BT_LE_ADV_ADDR_PUBLIC;
+		scan_rsp = sd;
+	} else if (!strcmp(argv[1], "scan")) {
+		param.type = BT_LE_ADV_SCAN_IND;
+		param.addr_type = BT_LE_ADV_ADDR_PUBLIC;
+		scan_rsp = sd;
+	} else if (!strcmp(argv[1], "nconn")) {
+		param.type = BT_LE_ADV_NONCONN_IND;
+		param.addr_type = BT_LE_ADV_ADDR_NRPA;
+		scan_rsp = NULL;
+	} else {
 		goto fail;
 	}
 
@@ -521,7 +518,7 @@ static void cmd_advertise(int argc, char *argv[])
 		ad = ad_discov;
 	}
 
-	if (bt_le_adv_start(BT_LE_ADV(adv_type), ad, sd) < 0) {
+	if (bt_le_adv_start(&param, ad, scan_rsp) < 0) {
 		printk("Failed to start advertising\n");
 	} else {
 		printk("Advertising started\n");
@@ -531,11 +528,7 @@ static void cmd_advertise(int argc, char *argv[])
 
 fail:
 	printk("Usage: advertise <type> <ad mode>\n");
-	printk("type: off, ");
-	for (i = 0; i < sizeof(adv_t) / sizeof(adv_t[0]); i++) {
-		printk("%s, ", adv_t[i].str);
-	}
-	printk("\n");
+	printk("type: off, on, scan, nconn\n");
 	printk("ad mode: discov, non_discov\n");
 }
 
