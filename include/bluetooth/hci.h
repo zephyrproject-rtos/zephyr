@@ -117,6 +117,11 @@ struct bt_hci_cmd_hdr {
 #define BT_GAP_INIT_CONN_INT_MIN		0x0018  /* 30 ms    */
 #define BT_GAP_INIT_CONN_INT_MAX		0x0028  /* 50 ms    */
 
+/* HCI BR/EDR link types */
+#define BT_HCI_SCO				0x00
+#define BT_HCI_ACL				0x01
+#define BT_HCI_ESCO				0x02
+
 /* OpCode Group Fields */
 #define BT_OGF_LINK_CTRL			0x01
 #define BT_OGF_BASEBAND				0x03

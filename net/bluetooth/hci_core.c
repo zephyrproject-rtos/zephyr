@@ -1471,6 +1471,12 @@ static void conn_req_event(struct net_buf *buf)
 	BT_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr),
 	       evt->link_type);
 
+	/* Reject SCO connections until we have support for them */
+	if (evt->link_type != BT_HCI_ACL) {
+		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
+		return;
+	}
+
 	conn = bt_conn_add_br(&evt->bdaddr);
 	if (!conn) {
 		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
