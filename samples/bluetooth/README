@@ -22,7 +22,7 @@ Note that before calling btproxy make sure that Bluetooth controller is down.
 
 Now running qemu result connecting second serial line to 'bt-server-bredr'
 UNIX socket. When Bluetooth (CONFIG_BLUETOOTH) and Bluetooth HCI UART driver
-(CONFIG_BLUETOOTH_UART) are enabled, Bluetooth driver registers to the system.
+(CONFIG_BLUETOOTH_H4) are enabled, Bluetooth driver registers to the system.
 From now on Bluetooth might be used by the application. To run application in
 the qemu run:
 
