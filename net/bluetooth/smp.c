@@ -3220,8 +3220,8 @@ void bt_smp_update_keys(struct bt_conn *conn)
 		bt_keys_add_type(conn->keys, BT_KEYS_LTK_P256);
 		memcpy(conn->keys->ltk.val, smp->tk,
 		       sizeof(conn->keys->ltk.val));
-		conn->keys->slave_ltk.rand = 0;
-		conn->keys->slave_ltk.ediv = 0;
+		conn->keys->ltk.rand = 0;
+		conn->keys->ltk.ediv = 0;
 	}
 }
 
