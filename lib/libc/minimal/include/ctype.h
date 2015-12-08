@@ -44,4 +44,9 @@ static inline int tolower(int chr)
 	return (chr >= 'A' && chr <= 'Z') ? (chr + 32) : (chr);
 }
 
+static inline int isprint(int c)
+{
+	return ((unsigned)c >= ' ' && (unsigned)c <= '~');
+}
+
 #endif  /* __INC_ctype_h__ */
