@@ -130,6 +130,7 @@ def run_sanity_footprint(commit=None, cwd=os.environ.get('ZEPHYR_BASE'),
         logger.debug(output)
         return True
 
+    logger.error("Couldn't build footprint apps in commit %s" % commit)
     logger.error(output)
     raise Exception("Couldn't build footprint apps in commit %s" % commit)
 
@@ -222,10 +223,6 @@ def build_history(b_commit=None, c_commit=None):
     base_results = get_footprint_results(base_commit)
     deltas = compare_results(base_results, current_results)
     print_deltas(deltas)
-    if len(deltas) == 0:
-        logging.info("There are no changes in RAM neither in ROM of footprint apps.")
-    if len(deltas) != 0:
-        exit(1)
 
 def compare_results(base_results, current_results):
     interesting_metrics = [("ram_size", int),
@@ -287,6 +284,8 @@ def print_deltas(deltas):
                         "RAM" if metric == "ram_size" else "ROM", percentage,
                         value['delta'], value['current'])
                 error_count = error_count + 1
+    if error_count == 0:
+        print "There are no changes in RAM neither in ROM of footprint apps."
     return error_count
 
 def main():
