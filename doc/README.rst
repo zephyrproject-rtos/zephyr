@@ -2,15 +2,14 @@ Welcome to Zephyr Kernel
 ########################
 
 .. This document is in Restructured Text Format.
-
-   More information at `<http://sphinx-doc.org/rest.html>`_.
+   Find more information regarding the ReST markup in the
+   `ReST documentation`_.
    This is a comment that won't show up in formatted output
 
 Welcome to the Zephyr Project.
 
 Thank you for your interest in the Zephyr Project. These instructions are
 designed to walk you through generating the Zephyr Project's documentation.
-
 
 Documentation Notes
 *******************
@@ -49,7 +48,7 @@ Install the current version of ``Sphinx``, type:
    Make sure that ``Doxygen`` is installed in your system.
    The installation of Doxygen is beyond the scope of this document.
 
-Running the documentation generators
+Running the Documentation Generators
 ************************************
 
 Assuming that the Zephyr Project tree with the doc directory is in
@@ -71,3 +70,5 @@ Review the available formats with:
 
 If you want the LaTeX PDF output, you need to install all the Latex
 packages first. That installation is beyond the scope of this document.
+
+.. _ReST documentation: http://sphinx-doc.org/rest.html
