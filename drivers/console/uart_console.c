@@ -157,16 +157,22 @@ void uart_console_isr(void *unused)
 		/* Echo back to console */
 		uart_poll_out(uart_console_dev, byte);
 
-		if (byte == '\r' || pos == sizeof(cmd->line) - 1) {
+		if (byte == '\r') {
 			cmd->line[pos] = '\0';
 			uart_poll_out(uart_console_dev, '\n');
 			pos = 0;
 
 			nano_isr_fifo_put(lines_queue, cmd);
 			cmd = NULL;
-		} else {
-			cmd->line[pos++] = byte;
+			continue;
 		}
+
+		/* Ignore characters if there's no more buffer space */
+		if (pos == sizeof(cmd->line) - 1) {
+			continue;
+		}
+
+		cmd->line[pos++] = byte;
 	}
 }
 
