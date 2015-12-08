@@ -129,9 +129,13 @@ int _mvic_init(struct device *unused)
 
 	/* program Local Vector Table for the Virtual Wire Mode */
 
-	/* lock the MVIC timer interrupt */
-
-	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER) = LOAPIC_LVT_MASKED;
+	/* lock the MVIC timer interrupt, set which IRQ line should be
+	 * used for timer interrupts (this is unlike LOAPIC where the
+	 * vector is programmed instead).
+	 */
+	__ASSERT_NO_MSG(CONFIG_LOAPIC_TIMER_IRQ <= 15);
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER) =
+		LOAPIC_LVT_MASKED | CONFIG_LOAPIC_TIMER_IRQ;
 
 	/* discard a pending interrupt if any */
 
@@ -265,6 +269,8 @@ void _ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags)
  */
 void _ioapic_int_vec_set(unsigned int irq, unsigned int vector)
 {
+	ARG_UNUSED(irq);
+	ARG_UNUSED(vector);
 }
 
 /**
@@ -306,10 +312,7 @@ void _loapic_disable(void)
  *
  * @brief Set the vector field in the specified RTE
  *
- * This routine is utilized by the platform-provided routined _SysIntVecAllocate()
- * which in turn is provided to support the irq_connect() API.  Once
- * a vector has been allocated, this routine is invoked to update the LVT
- * entry associated with <irq> with the vector.
+ * Fixed vectors on this HW. Nothing to do.
  *
  * @param irq IRQ number of the interrupt
  * @param vector vector to copy into the LVT
@@ -318,32 +321,8 @@ void _loapic_disable(void)
  */
 void _loapic_int_vec_set(unsigned int irq, unsigned int vector)
 {
-	volatile int *pLvt; /* pointer to local vector table */
-	int32_t oldLevel;   /* previous interrupt lock level */
-
-	/*
-	 * irq is actually an index to local APIC LVT register.
-	 * ASSERT if out of range for MVIC implementation.
-	 */
-	__ASSERT_NO_MSG(irq < LOAPIC_IRQ_COUNT);
-
-	/*
-	 * The following mappings are used:
-	 *
-	 *   LVT0 -> LOAPIC_TIMER
-	 *
-	 * It's assumed that LVTs are spaced by LOAPIC_LVT_REG_SPACING bytes
-	 */
-
-	pLvt = (volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER +
-			(irq * LOAPIC_LVT_REG_SPACING));
-
-	/* update the 'vector' bits in the LVT */
-
-	oldLevel = irq_lock();
-	*pLvt = (*pLvt & ~LOAPIC_VECTOR) | vector;
-	irq_unlock(oldLevel);
-
+	ARG_UNUSED(irq);
+	ARG_UNUSED(vector);
 }
 
 /**
