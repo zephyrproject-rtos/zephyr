@@ -16,18 +16,22 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module tests the following map routines:
-
-   task_mem_map_alloc, task_mem_map_alloc_wait, task_mem_map_alloc_wait_timeout
-   task_mem_map_free
-   task_mem_map_used_get
-
-NOTE
-One should ensure that the block is released to the same map from which it was
-allocated, and is only released once.  Using an invalid pointer will have
-unpredictable side effects.
+/**
+ * @file
+ * @brief Test microkernel memory map APIs
+ *
+ * This module tests the following map routines:
+ *
+ *     task_mem_map_alloc
+ *     task_mem_map_alloc_wait
+ *     task_mem_map_alloc_wait_timeout
+ *     task_mem_map_free
+ *     task_mem_map_used_get
+ *
+ * @note
+ * One should ensure that the block is released to the same map from which it
+ * was allocated, and is only released once.  Using an invalid pointer will
+ * have unpredictable side effects.
  */
 
 #include <tc_util.h>
