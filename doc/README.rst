@@ -21,7 +21,7 @@ The project's documentation currently comprises the following items:
 
 * A set of Collaboration Guidelines for the project.
 
-* Raw Doxygen output from the code base.
+* Doxygen output from the code base for all APIs.
 
 Installing the documentation processors
 ***************************************
