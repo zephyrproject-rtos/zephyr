@@ -122,20 +122,21 @@ config BLUETOOTH_SMP
 	  This option enables support for the Security Manager Protocol
 	  (SMP), making it possible to pair devices over LE.
 
+if BLUETOOTH_SMP
+config BLUETOOTH_SIGNING
+	bool "Data signing support"
+	default n
+	help
+	  This option enables data signing which is used for transferring
+	  authenticated data in an unencrypted connection.
+endif # BLUETOOTH_SMP
+
 config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	bool "L2CAP Dynamic Channel support"
 	default n
 	help
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
-
-config BLUETOOTH_SIGNING
-	bool "Data signing support"
-	default n
-	depends on BLUETOOTH_SMP
-	help
-	  This option enables data signing which is used for transferring
-	  authenticated data in an unencrypted connection.
 
 config BLUETOOTH_GATT_CLIENT
 	bool "GATT client support"
