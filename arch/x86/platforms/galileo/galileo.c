@@ -32,7 +32,6 @@
 #include <misc/__assert.h>
 #include "board.h"
 #include <uart.h>
-#include <drivers/ioapic.h>
 #include <drivers/pci/pci.h>
 #include <drivers/pci/pci_mgr.h>
 #include <drivers/ioapic.h>
@@ -72,9 +71,3 @@ DECLARE_DEVICE_INIT_CONFIG(pci_legacy_bridge_0, "", pci_legacy_bridge_irq_config
 SYS_DEFINE_DEVICE(pci_legacy_bridge_0, NULL, SECONDARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif /* CONFIG_PCI_LEGACY_BRIDGE */
-
-#ifdef CONFIG_IOAPIC
-DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
-SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_IOAPIC */

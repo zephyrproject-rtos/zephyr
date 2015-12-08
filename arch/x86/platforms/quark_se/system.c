@@ -27,7 +27,6 @@
 #include <misc/__assert.h>
 #include "board.h"
 #include <uart.h>
-#include <drivers/ioapic.h>
 #include <init.h>
 #include <shared_mem.h>
 
@@ -117,9 +116,3 @@ SYS_DEFINE_DEVICE(platform_uart_init, NULL, PRIMARY,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #endif /* CONFIG_UART_NS16550 */
-
-#ifdef CONFIG_IOAPIC
-DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
-SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_IOAPIC */

@@ -50,7 +50,6 @@ extern "C" {
 #define ioapic_mkstub loapic_mkstub
 #else /* _ASMLANGUAGE */
 #include <device.h>
-int _ioapic_init(struct device *unused);
 void _ioapic_irq_enable(unsigned int irq);
 void _ioapic_irq_disable(unsigned int irq);
 void _ioapic_int_vec_set(unsigned int irq, unsigned int vector);

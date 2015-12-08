@@ -67,6 +67,7 @@
 
 #include <toolchain.h>
 #include <sections.h>
+#include <init.h>
 
 #include <drivers/ioapic.h> /* public API declarations */
 #include <drivers/loapic.h> /* public API declarations and registers */
@@ -350,3 +351,6 @@ static void _IoApicRedUpdateLo(unsigned int irq,
 	ioApicRedSetLo(irq, (ioApicRedGetLo(irq) & ~mask) | (value & mask));
 }
 
+DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
+SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

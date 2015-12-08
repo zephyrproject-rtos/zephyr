@@ -27,12 +27,3 @@
 #include <uart.h>
 #include <device.h>
 #include <init.h>
-#include <drivers/ioapic.h>
-
-
-#ifdef CONFIG_IOAPIC
-DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
-SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_IOAPIC */
