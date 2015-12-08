@@ -276,11 +276,8 @@ typedef struct nanoIsf {
 
 #ifndef _ASMLANGUAGE
 
-
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
 void _int_latency_start(void);
 void _int_latency_stop(void);
-#endif
 
 /**
  * @brief Disable all interrupts on the CPU (inline)
@@ -318,9 +315,7 @@ static inline __attribute__((always_inline)) unsigned int irq_lock(void)
 {
 	unsigned int key = _do_irq_lock();
 
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
 	_int_latency_start();
-#endif
 
 	return key;
 }
@@ -345,9 +340,9 @@ static inline __attribute__((always_inline)) void irq_unlock(unsigned int key)
 	if (!(key & 0x200)) {
 		return;
 	}
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
+
 	_int_latency_stop();
-#endif
+
 	_do_irq_unlock();
 }
 

@@ -55,9 +55,7 @@ extern uint64_t __idle_tsc;  /* timestamp when CPU went idle */
  */
 void nano_cpu_idle(void)
 {
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
 	_int_latency_stop();
-#endif
 	_sys_k_event_logger_enter_sleep();
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
 	__idle_tsc = _NanoTscRead();
@@ -92,9 +90,7 @@ void nano_cpu_idle(void)
 
 void nano_cpu_atomic_idle(unsigned int imask)
 {
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
 	_int_latency_stop();
-#endif
 	_sys_k_event_logger_enter_sleep();
 
 	__asm__ volatile (
@@ -115,9 +111,7 @@ void nano_cpu_atomic_idle(unsigned int imask)
 
 	/* restore interrupt lockout state before returning to caller */
 	if (!(imask & 0x200)) {
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
 		_int_latency_start();
-#endif
 		__asm__ volatile("cli");
 	}
 }
