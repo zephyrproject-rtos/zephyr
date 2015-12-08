@@ -215,21 +215,21 @@ static int adc_dw_read(struct device *dev, struct adc_seq_table *seq_tbl)
 
 	info->state = ADC_STATE_SAMPLING;
 	sys_out32(START_ADC_SEQ, adc_base + ADC_CTRL);
+
+	synchronous_call_wait(&info->sync);
+
+	if (info->state == ADC_STATE_ERROR) {
+		info->state = ADC_STATE_IDLE;
+		return DEV_FAIL;
+	}
+
 	return 0;
-}
-
-static void dw_set_user_callback(struct device *dev, adc_callback_t cb)
-{
-	struct adc_info *info = dev->driver_data;
-
-	info->cb = cb;
 }
 
 static struct adc_driver_api api_funcs = {
 	.enable  = adc_dw_enable,
 	.disable = adc_dw_disable,
 	.read    = adc_dw_read,
-	.set_callback  = dw_set_user_callback
 };
 
 int adc_dw_init(struct device *dev)
@@ -238,6 +238,7 @@ int adc_dw_init(struct device *dev)
 	uint32_t val;
 	struct adc_config *config = dev->config->config_info;
 	uint32_t adc_base = config->reg_base;
+	struct adc_info *info = dev->driver_data;
 
 	dev->driver_api = &api_funcs;
 
@@ -260,6 +261,8 @@ int adc_dw_init(struct device *dev)
 		adc_base + ADC_CTRL);
 
 	config->config_func();
+
+	synchronous_call_init(&info->sync);
 
 	int_unmask(config->reg_irq_mask);
 	int_unmask(config->reg_err_mask);
@@ -294,15 +297,13 @@ void adc_dw_rx_isr(void *arg)
 		}
 	}
 
-	if (likely(info->cb != NULL)) {
-		info->cb(dev, ADC_CB_DONE);
-	}
-
 	if (config->seq_mode == IO_ADC_SEQ_MODE_SINGLESHOT) {
 		sys_out32(RESUME_ADC_CAPTURE, adc_base + ADC_CTRL);
 		reg_val = sys_in32(adc_base + ADC_SET);
 		sys_out32(reg_val | ADC_FLUSH_RX, adc_base + ADC_SET);
 		info->state = ADC_STATE_IDLE;
+
+		synchronous_call_complete(&info->sync);
 	}
 
 	reg_val = sys_in32(adc_base + ADC_CTRL);
@@ -323,11 +324,9 @@ void adc_dw_err_isr(void *arg)
 	sys_out32(reg_val | ADC_FLUSH_RX, adc_base + ADC_CTRL);
 	sys_out32(FLUSH_ADC_ERRORS, adc_base + ADC_CTRL);
 
-	info->state = ADC_STATE_IDLE;
+	info->state = ADC_STATE_ERROR;
 
-	if (likely(info->cb != NULL)) {
-		info->cb(dev, ADC_CB_ERROR);
-	}
+	synchronous_call_complete(&info->sync);
 }
 
 #ifdef CONFIG_ADC_DW_0

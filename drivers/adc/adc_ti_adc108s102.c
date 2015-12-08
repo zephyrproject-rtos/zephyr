@@ -35,31 +35,18 @@
 #endif /* CONFIG_STDOUT_CONSOLE */
 #endif /* CONFIG_ADC_DEBUG */
 
-static void _ti_adc108s102_sampling(int data, int unused)
+static inline int _ti_adc108s102_sampling(struct device *dev)
 {
-	struct device *dev = INT_TO_POINTER(data);
 	struct ti_adc108s102_data *adc = dev->driver_data;
-
-	ARG_UNUSED(unused);
 
 	DBG("Sampling!\n");
 
 	/* SPI deals with uint8_t buffers so multiplying by 2 the length */
-	spi_transceive(adc->spi,
-			(uint8_t *) adc->cmd_buffer,
-			adc->cmd_buf_len*2,
-			(uint8_t *) adc->sampling_buffer,
-			adc->sampling_buf_len*2);
-}
-
-static void _ti_adc108s102_completed(struct device *dev,
-					enum adc_callback_type cb_type)
-{
-	struct ti_adc108s102_data *adc = dev->driver_data;
-
-	adc->seq_table = NULL;
-
-	adc->cb(dev, cb_type);
+	return spi_transceive(adc->spi,
+			      (uint8_t *) adc->cmd_buffer,
+			      adc->cmd_buf_len*2,
+			      (uint8_t *) adc->sampling_buffer,
+			      adc->sampling_buf_len*2);
 }
 
 static inline void _ti_adc108s102_handle_result(struct device *dev)
@@ -87,7 +74,7 @@ static inline void _ti_adc108s102_handle_result(struct device *dev)
 	}
 }
 
-static int32_t _ti_adc108s102_prepare(struct device *dev)
+static inline int32_t _ti_adc108s102_prepare(struct device *dev)
 {
 	struct ti_adc108s102_data *adc = dev->driver_data;
 	struct adc_seq_table *seq_table = adc->seq_table;
@@ -118,9 +105,7 @@ static int32_t _ti_adc108s102_prepare(struct device *dev)
 	}
 
 	if (adc->cmd_buf_len == 0) {
-		/* We are done */
-		_ti_adc108s102_completed(dev, ADC_CB_DONE);
-		return 0;
+		return ADC108S102_DONE;
 	}
 
 	/* dummy cmd byte */
@@ -130,43 +115,6 @@ static int32_t _ti_adc108s102_prepare(struct device *dev)
 	DBG("ADC108S102 is prepared...");
 
 	return sampling_delay;
-}
-
-static inline void _ti_adc108s102_run_with_delay(struct device *dev,
-							int32_t delay)
-{
-	struct ti_adc108s102_data *adc = dev->driver_data;
-
-	fiber_delayed_start(adc->sampling_stack,
-			    ADC108S102_SAMPLING_STACK_SIZE,
-			    _ti_adc108s102_sampling,
-			    POINTER_TO_INT(dev), 0,
-			    0, 0, delay);
-}
-
-static void _ti_adc108s102_spi_cb(struct device *spi_dev,
-					enum spi_cb_type cb_type,
-					void *user_data)
-{
-	struct device *dev = user_data;
-	int32_t delay;
-
-	DBG("_ti_adc108s102_spi_cb(%d)\n", cb_type);
-
-	switch (cb_type) {
-	case SPI_CB_WRITE: /* fall through */
-	case SPI_CB_READ: /* fall through */
-	case SPI_CB_TRANSCEIVE:
-		_ti_adc108s102_handle_result(dev);
-		delay = _ti_adc108s102_prepare(dev);
-
-		_ti_adc108s102_run_with_delay(dev, delay);
-		break;
-	case SPI_CB_ERROR: /* fall through */
-	default:
-		_ti_adc108s102_completed(dev, ADC_CB_ERROR);
-		break;
-	}
 }
 
 static void ti_adc108s102_enable(struct device *dev)
@@ -181,13 +129,6 @@ static void ti_adc108s102_enable(struct device *dev)
 static void ti_adc108s102_disable(struct device *dev)
 {
 	/* Same issue as with ti_adc108s102_enable() */
-}
-
-static void ti_adc108s102_set_callback(struct device *dev, adc_callback_t cb)
-{
-	struct ti_adc108s102_data *adc = dev->driver_data;
-
-	adc->cb = cb;
 }
 
 static inline int _verify_entries(struct adc_seq_table *seq_table)
@@ -220,12 +161,17 @@ static int ti_adc108s102_read(struct device *dev,
 	struct ti_adc108s102_config *config = dev->config->config_info;
 	struct ti_adc108s102_data *adc = dev->driver_data;
 	struct spi_config spi_conf;
+	uint32_t data[2] = {0, 0};
+	struct nano_timer timer;
+	int ret = DEV_OK;
+	int32_t delay;
 
 	spi_conf.config = config->spi_config_flags;
 	spi_conf.max_sys_freq = config->spi_freq;
-	spi_conf.callback = _ti_adc108s102_spi_cb;
 
-	if (spi_configure(adc->spi, &spi_conf, dev)) {
+	nano_timer_init(&timer, data);
+
+	if (spi_configure(adc->spi, &spi_conf)) {
 		return DEV_FAIL;
 	}
 
@@ -242,17 +188,30 @@ static int ti_adc108s102_read(struct device *dev,
 
 	adc->seq_table = seq_table;
 
-	/* Requesting sampling right away */
-	_ti_adc108s102_prepare(dev);
-	_ti_adc108s102_sampling(POINTER_TO_INT(dev), 0);
+	/* Sampling */
+	while (1) {
+		delay = _ti_adc108s102_prepare(dev);
+		if (delay == ADC108S102_DONE) {
+			break;
+		}
 
-	return DEV_OK;
+		nano_timer_start(&timer, delay);
+		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+
+		ret = _ti_adc108s102_sampling(dev);
+		if (ret != DEV_OK) {
+			break;
+		}
+
+		_ti_adc108s102_handle_result(dev);
+	}
+
+	return ret;
 }
 
 struct adc_driver_api ti_adc108s102_api = {
 	.enable = ti_adc108s102_enable,
 	.disable = ti_adc108s102_disable,
-	.set_callback = ti_adc108s102_set_callback,
 	.read = ti_adc108s102_read,
 };
 

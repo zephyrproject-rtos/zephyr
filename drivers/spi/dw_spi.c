@@ -142,38 +142,27 @@ static void completed(struct device *dev, int error)
 {
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
-	enum spi_cb_type cb_type;
 
-	if (error) {
-		cb_type = SPI_CB_ERROR;
-		goto out;
+	if (!((spi->tx_buf == spi->tx_buf_end && !spi->rx_buf) ||
+	      (spi->rx_buf == spi->rx_buf_end && !spi->tx_buf) ||
+	      (spi->tx_buf == spi->tx_buf_end &&
+				spi->rx_buf == spi->rx_buf_end) ||
+	      error)) {
+		return;
 	}
 
 	if (spi->t_len) {
 		return;
 	}
 
-	if (spi->tx_buf && spi->tx_buf_len == 0 && !spi->rx_buf) {
-		cb_type = SPI_CB_WRITE;
-	} else if (spi->rx_buf && spi->rx_buf_len == 0 && !spi->tx_buf) {
-		cb_type = SPI_CB_READ;
-	} else if (spi->tx_buf && spi->tx_buf_len == 0 &&
-			spi->rx_buf && spi->rx_buf_len == 0) {
-		cb_type = SPI_CB_TRANSCEIVE;
-	} else {
-		return;
-	}
-
-out:
 	spi->tx_buf = spi->rx_buf = NULL;
 	spi->tx_buf_len = spi->rx_buf_len = 0;
+	spi->error = error;
 
 	/* Disabling interrupts */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 
-	if (spi->callback) {
-		spi->callback(dev, cb_type, spi->user_data);
-	}
+	synchronous_call_complete(&spi->sync);
 }
 
 static void push_data(struct device *dev)
@@ -239,7 +228,7 @@ static void pull_data(struct device *dev)
 }
 
 static int spi_dw_configure(struct device *dev,
-				struct spi_config *config, void *user_data)
+				struct spi_config *config)
 {
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
@@ -287,8 +276,6 @@ static int spi_dw_configure(struct device *dev,
 
 	spi->tx_buf = spi->rx_buf = NULL;
 	spi->tx_buf_len = spi->rx_buf_len = spi->t_len = 0;
-	spi->callback = config->callback;
-	spi->user_data = user_data;
 
 	/* Mask SPI interrupts */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
@@ -345,6 +332,13 @@ static int spi_dw_transceive(struct device *dev,
 
 	/* Enable the controller */
 	set_bit_ssienr(info->regs);
+
+	synchronous_call_wait(&spi->sync);
+
+	if (spi->error) {
+		spi->error = 0;
+		return DEV_FAIL;
+	}
 
 	return DEV_OK;
 }
@@ -433,6 +427,8 @@ int spi_dw_init(struct device *dev)
 	dev->driver_api = &dw_spi_api;
 
 	info->config_func(dev);
+
+	synchronous_call_init(&spi->sync);
 
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 	clear_bit_ssienr(info->regs);

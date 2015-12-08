@@ -99,6 +99,7 @@
 #define ADC_STATE_DISABLED      1
 #define ADC_STATE_IDLE          2
 #define ADC_STATE_SAMPLING      3
+#define ADC_STATE_ERROR		4
 
 /* ADC control commands */
 #define IO_ADC0_FS (32)
@@ -181,6 +182,7 @@ struct adc_config {
  * during driver execution.
  */
 struct adc_info {
+	device_sync_call_t sync;
 	/**State of execution of the driver*/
 	uint8_t  state;
 	/**Current reception buffer index*/
@@ -189,8 +191,6 @@ struct adc_info {
 	struct adc_seq_entry *entries;
 	/**Sequence size*/
 	uint8_t seq_size;
-	/**Pointer to the reception callback.*/
-	adc_callback_t cb;
 };
 
 

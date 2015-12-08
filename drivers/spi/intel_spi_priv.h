@@ -40,13 +40,13 @@ struct spi_intel_config {
 };
 
 struct spi_intel_data {
+	device_sync_call_t sync;
+	uint8_t error;
 #ifdef CONFIG_SPI_INTEL_CS_GPIO
 	struct device *cs_gpio_port;
 #endif /* CONFIG_SPI_INTEL_CS_GPIO */
 	uint32_t sscr0;
 	uint32_t sscr1;
-	spi_callback callback;
-	void *user_data;
 	uint8_t *tx_buf;
 	uint8_t *tx_buf_end;
 	uint8_t *rx_buf;

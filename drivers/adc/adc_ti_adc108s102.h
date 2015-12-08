@@ -23,11 +23,13 @@
 
 #include <misc/byteorder.h>
 
+/* Internal return code */
+#define ADC108S102_DONE				(-1)
+
 /* 8 chans maximum + 1 dummy, 16 bits per-chans -> 18 bytes */
 #define ADC108S102_CMD_BUFFER_SIZE		9
 /* 1 dummy + 8 results maximum, 16 bits per-chans -> 18 bytes */
 #define ADC108S102_SAMPLING_BUFFER_SIZE		9
-#define ADC108S102_SAMPLING_STACK_SIZE		1024
 #define ADC108S102_CHANNELS			8
 #define ADC108S102_CHANNELS_SIZE		\
 			(ADC108S102_CHANNELS * sizeof(uint32_t))
@@ -49,7 +51,6 @@ struct ti_adc108s102_chan {
 };
 
 struct ti_adc108s102_data {
-	char __stack sampling_stack[ADC108S102_SAMPLING_STACK_SIZE];
 	uint16_t cmd_buffer[ADC108S102_CMD_BUFFER_SIZE];
 	uint8_t cmd_buf_len;
 	uint16_t sampling_buffer[ADC108S102_SAMPLING_BUFFER_SIZE];
@@ -57,7 +58,6 @@ struct ti_adc108s102_data {
 	struct device *spi;
 	struct ti_adc108s102_chan chans[ADC108S102_CHANNELS];
 	struct adc_seq_table *seq_table;
-	adc_callback_t cb;
 };
 
 #endif /* __ADC108S102_PRIV_H__ */

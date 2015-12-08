@@ -132,36 +132,25 @@ static void completed(struct device *dev, uint32_t error)
 {
 	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
-	enum spi_cb_type cb_type;
 
-	if (error) {
-		cb_type = SPI_CB_ERROR;
-		goto out;
-	}
-
-	if (spi->tx_buf == spi->tx_buf_end && !spi->rx_buf) {
-		cb_type = SPI_CB_WRITE;
-	} else if (spi->rx_buf == spi->rx_buf_end && !spi->tx_buf) {
-		cb_type = SPI_CB_READ;
-	} else if (spi->tx_buf == spi->tx_buf_end &&
-			spi->rx_buf == spi->rx_buf_end) {
-		cb_type = SPI_CB_TRANSCEIVE;
-	} else {
+	if (!((spi->tx_buf == spi->tx_buf_end && !spi->rx_buf) ||
+	      (spi->rx_buf == spi->rx_buf_end && !spi->tx_buf) ||
+	      (spi->tx_buf == spi->tx_buf_end &&
+				spi->rx_buf == spi->rx_buf_end) ||
+	      error)) {
 		return;
 	}
 
-out:
 	spi->tx_buf = spi->rx_buf = spi->tx_buf_end = spi->rx_buf_end = NULL;
 	spi->t_len = spi->r_buf_len = 0;
+	spi->error = error;
 
 	_spi_control_cs(dev, 0);
 
 	write_sscr1(spi->sscr1, info->regs);
 	clear_bit_sscr0_sse(info->regs);
 
-	if (spi->callback) {
-		spi->callback(dev, cb_type, spi->user_data);
-	}
+	synchronous_call_complete(&spi->sync);
 }
 
 static void pull_data(struct device *dev)
@@ -219,7 +208,7 @@ static void push_data(struct device *dev)
 }
 
 static int spi_intel_configure(struct device *dev,
-				struct spi_config *config, void *user_data)
+				struct spi_config *config)
 {
 	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
@@ -275,8 +264,6 @@ static int spi_intel_configure(struct device *dev,
 
 	spi->tx_buf = spi->tx_buf_end = spi->rx_buf = spi->rx_buf_end = NULL;
 	spi->t_len = spi->r_buf_len = 0;
-	spi->callback = config->callback;
-	spi->user_data = user_data;
 
 	return DEV_OK;
 }
@@ -316,6 +303,13 @@ static int spi_intel_transceive(struct device *dev,
 	/* Installing the registers */
 	write_sscr1(spi->sscr1 | INTEL_SPI_SSCR1_RIE |
 				INTEL_SPI_SSCR1_TIE, info->regs);
+
+	synchronous_call_wait(&spi->sync);
+
+	if (spi->error) {
+		spi->error = 0;
+		return DEV_FAIL;
+	}
 
 	return DEV_OK;
 }
@@ -413,6 +407,7 @@ static inline int spi_intel_setup(struct device *dev)
 int spi_intel_init(struct device *dev)
 {
 	struct spi_intel_config *info = dev->config->config_info;
+	struct spi_intel_data *spi = dev->driver_data;
 
 	dev->driver_api = &intel_spi_api;
 
@@ -423,6 +418,8 @@ int spi_intel_init(struct device *dev)
 	info->config_func();
 
 	_spi_config_cs(dev);
+
+	synchronous_call_init(&spi->sync);
 
 	irq_enable(info->irq);
 

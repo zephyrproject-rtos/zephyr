@@ -35,12 +35,12 @@ struct spi_dw_config {
 };
 
 struct spi_dw_data {
+	device_sync_call_t sync;
+	uint8_t error;
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	struct device *clock;
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
 	uint32_t slave;
-	spi_callback callback;
-	void *user_data;
 	uint8_t *tx_buf;
 	uint32_t tx_buf_len;
 	uint8_t *rx_buf;

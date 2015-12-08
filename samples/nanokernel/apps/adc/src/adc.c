@@ -30,16 +30,11 @@
 #define DBG	printk
 #endif
 
-#define SLEEPTIME  10
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec)
-
 #ifdef CONFIG_SOC_QUARK_SE_SS
 	#define ADC_DEVICE_NAME CONFIG_ADC_DW_NAME_0
 #elif CONFIG_BOARD_GALILEO
 	#define ADC_DEVICE_NAME CONFIG_ADC_TI_ADC108S102_0_DRV_NAME
 #endif
-
-static int cb_count;
 
 static uint8_t seq_buffer[100];
 static struct adc_seq_entry sample = {
@@ -62,27 +57,11 @@ static void _print_sample_in_hex(uint8_t *buf, uint32_t length)
 	}
 }
 
-static void callback(struct device *dev, enum adc_callback_type cb_type)
-{
-	DBG("ADC callback %d - type %d\n", cb_count++, cb_type);
-
-	if (cb_type == ADC_CB_DONE) {
-		DBG("Sampling is done\n");
-		_print_sample_in_hex(seq_buffer, 100);
-	} else {
-		DBG("Sampling could not proceed, an error occurred\n");
-	}
-}
-
 void main(void)
 {
 	struct device *adc;
-	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
 
-	cb_count = 0;
-
-	nano_timer_init(&timer, data);
+	DBG("ADC sample started on %s\n", ADC_DEVICE_NAME);
 
 	adc = device_get_binding(ADC_DEVICE_NAME);
 	if (!adc) {
@@ -90,19 +69,13 @@ void main(void)
 		return;
 	}
 
-	adc_set_callback(adc, callback);
-
 	adc_enable(adc);
 
 	if (adc_read(adc, &table) != DEV_OK) {
-		DBG("Could not call adc_read\n");
-	}
-
-	while (1) {
-		DBG("Waiting...");
-
-		nano_task_timer_start(&timer, SLEEPTICKS);
-		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+		DBG("Sampling could not proceed, an error occurred\n");
+	} else {
+		DBG("Sampling is done\n");
+		_print_sample_in_hex(seq_buffer, 100);
 	}
 
 	adc_disable(adc);

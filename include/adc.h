@@ -34,19 +34,6 @@
  * @ingroup io_interfaces
  * @{
  */
-/**
- * Callback type.
- * ADC_CB_DONE means sampling went fine and is over
- * ADC_CB_ERROR means an error occurred
- */
-enum adc_callback_type {
-	ADC_CB_DONE	= 0,
-	ADC_CB_ERROR	= 1
-};
-
-/** This type defines an pointer to an ADC callback routine */
-typedef void (*adc_callback_t)(struct device *dev,
-				enum adc_callback_type cb_type);
 
 /**
  * @brief Sequence entry
@@ -88,8 +75,6 @@ struct adc_driver_api {
 	void (*enable)(struct device *dev);
 	/** Pointer to the disable routine */
 	void (*disable)(struct device *dev);
-	/** Pointer to the set_cb routine */
-	void (*set_callback)(struct device *dev, adc_callback_t cb);
 	/** Pointer to the read routine */
 	int (*read)(struct device *dev, struct adc_seq_table *seq_table);
 };
@@ -128,26 +113,6 @@ static inline void adc_disable(struct device *dev)
 
 	api = (struct adc_driver_api *)dev->driver_api;
 	api->disable(dev);
-}
-
-/**
- * @brief Set callback routine
- *
- * This routine sets the callback routine that will be called by the driver
- * every time that sample data is available for consumption or an error is
- * signaled.
- *
- * @param dev Pointer to the device structure for the driver instance
- * @param cb Pointer to the function that will be set as callback.
- *
- * @return N/A
- */
-static inline void adc_set_callback(struct device *dev, adc_callback_t cb)
-{
-	struct adc_driver_api *api;
-
-	api = (struct adc_driver_api *)dev->driver_api;
-	api->set_callback(dev, cb);
 }
 
 /**
