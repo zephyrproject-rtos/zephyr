@@ -129,6 +129,16 @@ config BLUETOOTH_SIGNING
 	help
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
+
+config BLUETOOTH_SMP_SC_ONLY
+	bool "Secure Connections Only Mode"
+	default n
+	help
+	  This option enables support for Secure Connection Only Mode. In this
+	  mode device shall only use Security Mode 1 Level 4 with exception
+	  for services that only require Security Mode 1 Level 1 (no security).
+	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
+	  pairing with encryption. Enabling this option disables legacy pairing.
 endif # BLUETOOTH_SMP
 
 config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL

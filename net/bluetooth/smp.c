@@ -849,7 +849,7 @@ static uint8_t get_encryption_key_size(struct bt_smp *smp)
 	return min(req->max_key_size, rsp->max_key_size);
 }
 
-
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 		  const uint8_t preq[7], const uint8_t pres[7],
 		  const bt_addr_le_t *ia, const bt_addr_le_t *ra,
@@ -891,6 +891,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 
 	return le_encrypt(k, enc_data, enc_data);
 }
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 {
@@ -939,6 +940,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 	return 0;
 }
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 static void legacy_distribute_keys(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
@@ -989,6 +991,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		smp_send(smp, buf);
 	}
 }
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 static void bt_smp_distribute_keys(struct bt_smp *smp)
 {
@@ -1000,10 +1003,12 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		return;
 	}
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	/* Distribute legacy pairing specific keys */
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
 		legacy_distribute_keys(smp);
 	}
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
 	if (smp->local_dist & BT_SMP_DIST_SIGN) {
@@ -1032,6 +1037,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 #endif /* CONFIG_BLUETOOTH_SIGNING */
 }
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
 		  const uint8_t r2[16], uint8_t out[16])
 {
@@ -1337,6 +1343,17 @@ static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 }
+#else
+static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+
+static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 static uint8_t legacy_pairing_rsp(struct bt_smp *smp, uint8_t remote_io)
@@ -1523,15 +1540,23 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
 	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
+	smp->method = get_pair_method(smp, req->io_capability);
+
+#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC) ||
+	    smp->method == JUST_WORKS) {
+		return BT_SMP_ERR_AUTH_REQUIREMENTS;
+	}
+#endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
 	smp_send(smp, rsp_buf);
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
 		return legacy_pairing_req(smp, req->io_capability);
 	}
-
-	smp->method = get_pair_method(smp, req->io_capability);
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 	return 0;
 }
@@ -1650,10 +1675,20 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+		return BT_SMP_ERR_AUTH_REQUIREMENTS;
+#else
 		return legacy_pairing_rsp(smp, rsp->io_capability);
+#endif /* CONFIG_BLUETOOTH_SMP_SC_ONLY */
 	}
 
 	smp->method = get_pair_method(smp, rsp->io_capability);
+
+#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+	if (smp->method == JUST_WORKS) {
+		return BT_SMP_ERR_AUTH_REQUIREMENTS;
+	}
+#endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 	smp->local_dist &= SEND_KEYS_SC;
 	smp->remote_dist &= RECV_KEYS_SC;
@@ -1689,9 +1724,11 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
 		return legacy_pairing_confirm(smp);
 	}
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 	switch (smp->method) {
 	case PASSKEY_DISPLAY:
@@ -1942,9 +1979,11 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 
 	memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
 		return legacy_pairing_random(smp);
 	}
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
@@ -2070,6 +2109,8 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+#endif
 static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
@@ -3152,10 +3193,12 @@ void bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 		return;
 	}
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
 		legacy_passkey_entry(smp, passkey);
 		return;
 	}
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 	smp->passkey = sys_cpu_to_le32(passkey);
 
@@ -3377,11 +3420,17 @@ int bt_smp_init(void)
 		.accept		= bt_smp_accept,
 	};
 
+	sc_supported = le_sc_supported();
+#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+	if (!sc_supported) {
+		BT_ERR("SC Only Mode selected but LE SC not supported");
+		return -ENOENT;
+	}
+#endif /* CONFIG_BLUETOOTH_SMP_SC_ONLY */
+
 	net_buf_pool_init(smp_pool);
 
 	bt_l2cap_fixed_chan_register(&chan);
-
-	sc_supported = le_sc_supported();
 
 	BT_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
 

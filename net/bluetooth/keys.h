@@ -57,7 +57,9 @@ struct bt_keys {
 	uint8_t			type;
 	uint8_t			enc_size;
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	struct bt_ltk		slave_ltk;
+#endif /* CONFIG_BLUETOOTH_SMP_SC_ONLY */
 	struct bt_ltk		ltk;
 	struct bt_irk		irk;
 #if defined(CONFIG_BLUETOOTH_SIGNING)

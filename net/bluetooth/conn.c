@@ -213,6 +213,12 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 		return -ENOTCONN;
 	}
 
+#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+	if (sec < BT_SECURITY_FIPS) {
+		return -EOPNOTSUPP;
+	}
+#endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
+
 	/* nothing to do */
 	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
 		return 0;

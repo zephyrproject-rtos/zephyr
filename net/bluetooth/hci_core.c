@@ -976,6 +976,7 @@ static void le_ltk_request(struct net_buf *buf)
 		goto done;
 	}
 
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	if (conn->keys && (conn->keys->keys & BT_KEYS_SLAVE_LTK) &&
 	    conn->keys->slave_ltk.rand == evt->rand &&
 	    conn->keys->slave_ltk.ediv == evt->ediv) {
@@ -1003,6 +1004,7 @@ static void le_ltk_request(struct net_buf *buf)
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
 		goto done;
 	}
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, sizeof(*cp));
 	if (!buf) {
