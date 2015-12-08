@@ -25,7 +25,6 @@
 #include <nanokernel.h>
 #include "board.h"
 #include <uart.h>
-#include <drivers/pic.h>
 #include <device.h>
 #include <init.h>
 #include <loapic.h>
@@ -45,11 +44,3 @@ SYS_DEFINE_DEVICE(loapic_0, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_LOAPIC */
-
-#if defined(CONFIG_PIC_DISABLE)
-
-DECLARE_DEVICE_INIT_CONFIG(pic_0, "", _i8259_init, NULL);
-SYS_DEFINE_DEVICE(pic_0, NULL, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_PIC_DISABLE */

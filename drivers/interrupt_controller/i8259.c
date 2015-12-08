@@ -28,9 +28,19 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <device.h>
+#include <init.h>
 
-#include <drivers/pic.h>
 #include <board.h>
+
+/* programmable interrupt controller info (pair of cascaded 8259A devices) */
+#define PIC_MASTER_BASE_ADRS 0x20
+#define PIC_SLAVE_BASE_ADRS 0xa0
+#define PIC_REG_ADDR_INTERVAL 1
+
+/* register definitions */
+#define PIC_ADRS(baseAdrs, reg) (baseAdrs + (reg * PIC_REG_ADDR_INTERVAL))
+
+#define PIC_PORT2(base) PIC_ADRS(base, 0x01) /* port 2 */
 
 #define PIC_DISABLE 0xff /* Disable PIC command */
 
@@ -51,3 +61,7 @@ int _i8259_init(struct device *unused)
 	sys_out8(PIC_DISABLE, PIC_PORT2(PIC_MASTER_BASE_ADRS));
 	return 0;
 }
+
+DECLARE_DEVICE_INIT_CONFIG(pic_0, "", _i8259_init, NULL);
+SYS_DEFINE_DEVICE(pic_0, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
