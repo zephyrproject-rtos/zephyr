@@ -33,7 +33,6 @@ choice
 
 config	BLUETOOTH_H4
 	bool "H:4 UART"
-	depends on BLUETOOTH
 	select UART_INTERRUPT_DRIVEN
 	select BLUETOOTH_UART
 	help
@@ -42,7 +41,6 @@ config	BLUETOOTH_H4
 
 config BLUETOOTH_NO_DRV
 	bool "No default HCI driver"
-	depends on BLUETOOTH
 	help
 	  This is intended for unit tests where no internal driver
 	  should be selected.
