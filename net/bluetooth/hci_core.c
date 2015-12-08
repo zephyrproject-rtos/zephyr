@@ -891,6 +891,7 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 static void le_ltk_request(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_ltk_request *evt = (void *)buf->data;
+	struct bt_hci_cp_le_ltk_req_neg_reply *cp;
 	struct bt_conn *conn;
 	uint16_t handle;
 	uint8_t tk[16];
@@ -959,10 +960,14 @@ static void le_ltk_request(struct net_buf *buf)
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
-	} else if (conn->keys && (conn->keys->keys & BT_KEYS_SLAVE_LTK) &&
-		   conn->keys->slave_ltk.rand == evt->rand &&
-		   conn->keys->slave_ltk.ediv == evt->ediv) {
+		goto done;
+	}
+
+	if (conn->keys && (conn->keys->keys & BT_KEYS_SLAVE_LTK) &&
+	    conn->keys->slave_ltk.rand == evt->rand &&
+	    conn->keys->slave_ltk.ediv == evt->ediv) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
+		struct net_buf *buf;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
 					sizeof(*cp));
@@ -983,21 +988,19 @@ static void le_ltk_request(struct net_buf *buf)
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
-	} else {
-		struct bt_hci_cp_le_ltk_req_neg_reply *cp;
-
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY,
-					sizeof(*cp));
-		if (!buf) {
-			BT_ERR("Out of command buffers");
-			goto done;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->handle = evt->handle;
-
-		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, buf);
+		goto done;
 	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		BT_ERR("Out of command buffers");
+		goto done;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = evt->handle;
+
+	bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, buf);
 
 done:
 	bt_conn_unref(conn);
