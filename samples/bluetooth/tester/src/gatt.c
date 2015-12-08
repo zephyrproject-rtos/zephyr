@@ -136,8 +136,8 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds |= 1 << GATT_SET_VALUE;
 	cmds |= 1 << GATT_START_SERVER;
 
-	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
-			CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
+	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
+		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
 }
 
 static struct bt_gatt_attr svc_pri = BT_GATT_PRIMARY_SERVICE(NULL);
@@ -176,8 +176,8 @@ static void add_service(uint8_t *data, uint16_t len)
 
 	rp.svc_id = sys_cpu_to_le16(attr_svc->handle);
 
-	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_SERVICE,
-			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	tester_send(BTP_SERVICE_ID_GATT, GATT_ADD_SERVICE, CONTROLLER_INDEX,
+		    (uint8_t *) &rp, sizeof(rp));
 
 	return;
 fail:
@@ -296,8 +296,8 @@ static uint8_t add_characteristic_cb(const struct bt_gatt_attr *attr,
 	attr_value->perm = cmd->permissions;
 
 	rp.char_id = sys_cpu_to_le16(attr_chrc->handle);
-	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
-			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	tester_send(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
+		    CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 
 	return BT_GATT_ITER_STOP;
 fail:
@@ -361,8 +361,8 @@ static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
 
 	rp.desc_id = sys_cpu_to_le16(attr_desc->handle);
 
-	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_DESCRIPTOR,
-			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	tester_send(BTP_SERVICE_ID_GATT, GATT_ADD_DESCRIPTOR, CONTROLLER_INDEX,
+		    (uint8_t *) &rp, sizeof(rp));
 
 	return BT_GATT_ITER_STOP;
 fail:
@@ -441,8 +441,8 @@ static uint8_t add_included_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	rp.included_service_id = sys_cpu_to_le16(attr_incl->handle);
 
-	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
-			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	tester_send(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
+		    CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 
 	return BT_GATT_ITER_STOP;
 fail:

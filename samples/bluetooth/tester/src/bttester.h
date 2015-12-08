@@ -349,8 +349,8 @@ struct gatt_set_enc_key_size_cmd {
 
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
-void tester_rsp_full(uint8_t service, uint8_t opcode, uint8_t index,
-		     uint8_t *data, size_t len);
+void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
+		 size_t len);
 
 uint8_t tester_init_gap(void);
 void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,

@@ -46,8 +46,8 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	buf[0] |= 1 << CORE_READ_SUPPORTED_SERVICES;
 	buf[0] |= 1 << CORE_REGISTER_SERVICE;
 
-	tester_rsp_full(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_COMMANDS,
-			BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
+	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_COMMANDS,
+		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
 }
 
 static void supported_services(uint8_t *data, uint16_t len)
@@ -59,8 +59,8 @@ static void supported_services(uint8_t *data, uint16_t len)
 	buf[0] |= 1 << BTP_SERVICE_ID_GAP;
 	buf[0] |= 1 << BTP_SERVICE_ID_GATT;
 
-	tester_rsp_full(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
-			BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
+	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
+		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
 }
 
 static void register_service(uint8_t *data, uint16_t len)
@@ -197,8 +197,8 @@ void tester_init(void)
 	printk("BT tester initialized\n");
 }
 
-static void tester_send(uint8_t service, uint8_t opcode, uint8_t index,
-			uint8_t *data, size_t len)
+void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
+		 size_t len)
 {
 	struct btp_hdr msg;
 
@@ -224,10 +224,4 @@ void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status)
 
 	s.code = status;
 	tester_send(service, BTP_STATUS, index, (uint8_t *) &s, sizeof(s));
-}
-
-void tester_rsp_full(uint8_t service, uint8_t opcode, uint8_t index,
-		     uint8_t *data, size_t len)
-{
-	tester_send(service, opcode, index, data, len);
 }

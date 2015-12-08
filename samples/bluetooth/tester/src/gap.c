@@ -55,8 +55,8 @@ static void le_connected(struct bt_conn *conn)
 		return;
 	}
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_CONNECTED,
-			CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_CONNECTED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
 static void le_disconnected(struct bt_conn *conn)
@@ -78,8 +78,8 @@ static void le_disconnected(struct bt_conn *conn)
 		return;
 	}
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_DISCONNECTED,
-			CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_DISCONNECTED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -103,8 +103,8 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds |= 1 << GAP_STOP_DISCOVERY;
 	cmds |= 1 << GAP_DISCONNECT;
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
-			CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
+		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
 }
 
 static void controller_index_list(uint8_t *data,  uint16_t len)
@@ -117,8 +117,8 @@ static void controller_index_list(uint8_t *data,  uint16_t len)
 	rp->num = 1;
 	rp->index[0] = CONTROLLER_INDEX;
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_READ_CONTROLLER_INDEX_LIST,
-			BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_CONTROLLER_INDEX_LIST,
+		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
 }
 
 static void controller_info(uint8_t *data, uint16_t len)
@@ -140,8 +140,8 @@ static void controller_info(uint8_t *data, uint16_t len)
 
 	memcpy(rp.name, CONTROLLER_NAME, sizeof(CONTROLLER_NAME));
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_READ_CONTROLLER_INFO,
-			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_CONTROLLER_INFO,
+		    CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 }
 
 static void set_connectable(uint8_t *data, uint16_t len)
@@ -157,8 +157,8 @@ static void set_connectable(uint8_t *data, uint16_t len)
 
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_SET_CONNECTABLE,
-			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_SET_CONNECTABLE, CONTROLLER_INDEX,
+		    (uint8_t *) &rp, sizeof(rp));
 }
 
 static struct bt_eir ad_flags = {
@@ -196,8 +196,8 @@ static void set_discoverable(uint8_t *data, uint16_t len)
 
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_SET_DISCOVERABLE,
-			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_SET_DISCOVERABLE, CONTROLLER_INDEX,
+		    (uint8_t *) &rp, sizeof(rp));
 }
 
 static void start_advertising(const uint8_t *data, uint16_t len)
@@ -227,8 +227,8 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 	atomic_set_bit(&current_settings, GAP_SETTINGS_ADVERTISING);
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING,
-			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING, CONTROLLER_INDEX,
+		    (uint8_t *) &rp, sizeof(rp));
 }
 
 static void stop_advertising(const uint8_t *data, uint16_t len)
@@ -244,8 +244,8 @@ static void stop_advertising(const uint8_t *data, uint16_t len)
 	atomic_clear_bit(&current_settings, GAP_SETTINGS_ADVERTISING);
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_STOP_ADVERTISING,
-			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_STOP_ADVERTISING, CONTROLLER_INDEX,
+		    (uint8_t *) &rp, sizeof(rp));
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
@@ -283,8 +283,8 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 		memcpy(ev->eir_data, ad, len);
 	}
 
-	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_FOUND,
-			CONTROLLER_INDEX, buf, sizeof(buf));
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_FOUND, CONTROLLER_INDEX,
+		    buf, sizeof(buf));
 }
 
 static void start_discovery(const uint8_t *data, uint16_t len)
