@@ -145,7 +145,7 @@ struct bt_smp {
 };
 
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
-static const uint8_t gen_method[5 /* remote */][5 /* local */] = {
+static const uint8_t gen_method_legacy[5 /* remote */][5 /* local */] = {
 	{ JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS, PASSKEY_INPUT },
 	{ JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS, PASSKEY_INPUT },
 	{ PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS,
@@ -1039,7 +1039,7 @@ static uint8_t legacy_get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 		return JUST_WORKS;
 	}
 
-	method = gen_method[remote_io][bt_smp_io_capa];
+	method = gen_method_legacy[remote_io][bt_smp_io_capa];
 
 	/* if both sides have KeyboardDisplay capabilities, initiator displays
 	 * and responder inputs
