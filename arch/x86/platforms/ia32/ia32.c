@@ -32,23 +32,6 @@
 #include <drivers/ioapic.h>
 
 
-
-/**
- *
- * @brief Perform basic hardware initialization
- *
- * Initialize the interrupt controller and UARTs present in the
- * platform.
- *
- * @return 0
- */
-static int ia32_init(struct device *arg)
-{
-	ARG_UNUSED(arg);
-
-	return 0;
-}
-
 #ifdef CONFIG_IOAPIC
 DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
 SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY,
@@ -70,7 +53,3 @@ SYS_DEFINE_DEVICE(pic_0, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_PIC_DISABLE */
-
-DECLARE_DEVICE_INIT_CONFIG(ia32_0, "", ia32_init, NULL);
-SYS_DEFINE_DEVICE(ia32_0, NULL, SECONDARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
