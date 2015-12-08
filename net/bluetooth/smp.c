@@ -67,7 +67,7 @@ enum pairing_method {
 	PASSKEY_DISPLAY,	/* Passkey Entry display */
 	PASSKEY_CONFIRM,	/* Passkey confirm */
 	PASSKEY_ROLE,		/* Passkey Entry depends on role */
-} ;
+};
 
 enum {
 	SMP_FLAG_CFM_DELAYED,	/* if confirm should be send when TK is valid */
