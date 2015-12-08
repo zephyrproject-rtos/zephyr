@@ -174,29 +174,24 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	uint32_t cb_type = 0;
+	bool done = false;
 	uint32_t value;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
 
-	if (dw->state == I2C_DW_CMD_ERROR) {
-		cb_type = I2C_CB_ERROR;
-	} else if (dw->tx_buffer && !dw->tx_len) {
-		cb_type = I2C_CB_WRITE;
-	} else if (dw->rx_buffer && !dw->rx_len) {
-		cb_type = I2C_CB_READ;
+	if ((dw->state == I2C_DW_CMD_ERROR) ||
+	    (!dw->tx_len && !dw->rx_len) ||
+	    (dw->tx_buffer && !dw->tx_len && !dw->rx_buffer) ||
+	    (dw->rx_buffer && !dw->rx_len && !dw->tx_buffer)) {
+		done = true;
 	}
 
-	if (cb_type) {
+	if (done) {
 		regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
-		dw->state = I2C_DW_STATE_READY;
 		value = regs->ic_clr_intr;
 
 		synchronous_call_complete(&dw->sync);
-		if (dw->cb) {
-			dw->cb(dev, cb_type);
-		}
 	}
 
 	dw->state &= ~I2C_DW_BUSY;
@@ -397,7 +392,7 @@ static int _i2c_dw_transfer_init(struct device *dev,
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	uint32_t value = 0;
-	int ret;
+	int ret = DEV_OK;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
@@ -480,122 +475,11 @@ static int i2c_dw_transfer(struct device *dev,
 	regs->ic_enable.bits.enable = 1;
 
 	synchronous_call_wait(&dw->sync);
-
-	return DEV_OK;
-}
-
-#define POLLING_TIMEOUT		(sys_clock_ticks_per_sec / 10)
-static int i2c_dw_poll_transfer(struct device *dev,
-				uint8_t *write_buf, uint32_t write_len,
-				uint8_t *read_buf,  uint32_t read_len,
-				uint16_t slave_address, uint32_t flags)
-{
-	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	uint32_t value = 0;
-	uint32_t start_time;
-	int ret = DEV_OK;
-
-	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
-
-	if (!regs->ic_con.bits.master_mode) {
-		/* Only acting as master is supported */
-		return DEV_INVALID_OP;
+	if (dw->state == I2C_DW_CMD_ERROR) {
+		ret = DEV_FAIL;
 	}
 
-	/* Wait for bus idle */
-	start_time = sys_tick_get_32();
-	while (regs->ic_status.bits.activity) {
-		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-			return DEV_FAIL;
-		}
-	}
-
-	ret = _i2c_dw_transfer_init(dev, write_buf, write_len,
-				    read_buf, read_len, slave_address);
-	if (ret) {
-		return ret;
-	}
-
-	/* Enable controller */
-	regs->ic_enable.bits.enable = 1;
-
-	if (dw->tx_len == 0) {
-		goto do_receive;
-	}
-
-	/* Transmit */
-	while (dw->tx_len > 0) {
-		/* Wait for space in TX FIFO */
-		start_time = sys_tick_get_32();
-		while (!regs->ic_status.bits.tfnf) {
-			if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-				ret = DEV_FAIL;
-				goto finish;
-			}
-		}
-
-		_i2c_dw_data_send(dev);
-	}
-
-	/* Wait for TX FIFO empty to be sure everything is sent. */
-	start_time = sys_tick_get_32();
-	while (!regs->ic_status.bits.tfe) {
-		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-			ret = DEV_FAIL;
-			goto finish;
-		}
-	}
-
-do_receive:
-	/* Finalize TX when there is nothing more to send as
-	 * the data send function has code to deal with the end of
-	 * TX phase.
-	 */
-	_i2c_dw_data_send(dev);
-
-	/* Finish transfer when there is nothing to receive */
-	if (dw->rx_len == 0) {
-		goto stop_det;
-	}
-
-	while (dw->rx_len > 0) {
-		/* Wait for data in RX FIFO*/
-		start_time = sys_tick_get_32();
-		while (!regs->ic_status.bits.rfne) {
-			if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-				ret = DEV_FAIL;
-				goto finish;
-			}
-		}
-
-		_i2c_dw_data_read(dev);
-	}
-
-stop_det:
-	/* Wait for transfer to complete */
-	start_time = sys_tick_get_32();
-	while (!regs->ic_raw_intr_stat.bits.stop_det) {
-		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-			ret = DEV_FAIL;
-			goto finish;
-		}
-	}
-	value = regs->ic_clr_stop_det;
-
-	/* Wait for bus idle */
-	start_time = sys_tick_get_32();
-	while (regs->ic_status.bits.activity) {
-		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-			ret = DEV_FAIL;
-			goto finish;
-		}
-	}
-
-finish:
-	/* Disable controller when done */
-	regs->ic_enable.bits.enable = 0;
+	dw->state = I2C_DW_STATE_READY;
 
 	return ret;
 }
@@ -706,15 +590,6 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 	return rc;
 }
 
-static int i2c_dw_set_callback(struct device *dev, i2c_callback cb)
-{
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
-
-	dw->cb = cb;
-
-	return DEV_OK;
-}
-
 static int i2c_dw_suspend(struct device *dev)
 {
 	DBG("I2C: suspend called - function not yet implemented\n");
@@ -733,11 +608,9 @@ static int i2c_dw_resume(struct device *dev)
 
 static struct i2c_driver_api funcs = {
 	.configure = i2c_dw_runtime_configure,
-	.set_callback = i2c_dw_set_callback,
 	.transfer = i2c_dw_transfer,
 	.suspend = i2c_dw_suspend,
 	.resume = i2c_dw_resume,
-	.poll_transfer = i2c_dw_poll_transfer,
 };
 
 

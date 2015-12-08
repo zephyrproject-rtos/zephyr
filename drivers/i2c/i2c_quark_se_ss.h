@@ -29,7 +29,7 @@
 #define I2C_QSE_SS_CMD_SEND		(1 << 0)
 #define I2C_QSE_SS_CMD_RECV		(1 << 1)
 #define I2C_QSE_SS_CMD_ERROR		(1 << 2)
-#define I2C_QSE_SS_BUSY		(1 << 3)
+#define I2C_QSE_SS_BUSY			(1 << 3)
 
 /*
  * DesignWare speed values don't directly translate from the Zephyr speed
@@ -71,6 +71,7 @@ struct i2c_qse_ss_rom_config {
 };
 
 struct i2c_qse_ss_dev_config {
+	device_sync_call_t	sync;
 	union dev_config	app_config;
 
 	volatile uint8_t	state;  /* last direction of transfer */

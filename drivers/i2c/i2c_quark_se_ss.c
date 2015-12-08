@@ -246,6 +246,8 @@ static inline void _i2c_qse_ss_transfer_complete(struct device *dev)
 	_i2c_qse_ss_reg_write(dev, REG_INTR_MASK, IC_INTR_MASK_ALL);
 	_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_CLR_ALL);
 
+	synchronous_call_complete(&dw->sync);
+
 	dw->state &= ~I2C_QSE_SS_BUSY;
 }
 
@@ -414,7 +416,7 @@ static int i2c_qse_ss_intr_transfer(struct device *dev,
 				    uint8_t *read_buf,  uint32_t read_len,
 				    uint16_t slave_address, uint32_t flags)
 {
-	int ret;
+	int ret = DEV_OK;
 
 	/* First step, check if there is current activity */
 	if (_i2c_qse_ss_is_busy(dev)) {
@@ -434,124 +436,12 @@ static int i2c_qse_ss_intr_transfer(struct device *dev,
 	/* Enable controller */
 	_i2c_qse_ss_reg_write_or(dev, REG_CON, IC_CON_ENABLE);
 
-	return DEV_OK;
-}
-
-#define POLLING_TIMEOUT		(sys_clock_ticks_per_sec / 10)
-static int i2c_qse_ss_poll_transfer(struct device *dev,
-				    uint8_t *write_buf, uint32_t write_len,
-				    uint8_t *read_buf,  uint32_t read_len,
-				    uint16_t slave_address, uint32_t flags)
-{
-	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
-	uint32_t start_time;
-	int ret = DEV_OK;
-
-	/* Wait for bus idle */
-	start_time = sys_tick_get_32();
-	while (_i2c_qse_ss_is_busy(dev)) {
-		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-			return DEV_FAIL;
-		}
+	synchronous_call_wait(&dw->sync);
+	if (dw->state == I2C_QSE_SS_CMD_ERROR) {
+		ret = DEV_FAIL;
 	}
 
-	ret = _i2c_qse_ss_transfer_init(dev, write_buf, write_len,
-					read_buf, read_len, slave_address, 0);
-	if (ret) {
-		return ret;
-	}
-
-	/* Enable controller */
-	_i2c_qse_ss_reg_write_or(dev, REG_CON, IC_CON_ENABLE);
-
-	if (dw->tx_len == 0) {
-		goto do_receive;
-	}
-
-	/* Transmit */
-	while (dw->tx_len > 0) {
-		/* Wait for space in TX FIFO */
-		start_time = sys_tick_get_32();
-		while (!_i2c_qse_ss_is_tfnf(dev)) {
-			if ((sys_tick_get_32() - start_time)
-			    > POLLING_TIMEOUT) {
-				ret = DEV_FAIL;
-				goto finish;
-			}
-		}
-
-		ret = _i2c_qse_ss_data_send(dev);
-		if (ret != DEV_OK) {
-			goto finish;
-		}
-	}
-
-	/* Wait for TX FIFO empty to be sure everything is sent. */
-	start_time = sys_tick_get_32();
-	while (!_i2c_qse_ss_is_tfe(dev)) {
-		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-			ret = DEV_FAIL;
-			goto finish;
-		}
-	}
-
-	dw->state &= ~I2C_QSE_SS_CMD_SEND;
-
-do_receive:
-	/* Finalize TX when there is nothing more to send as
-	 * the data send function has code to deal with the end of
-	 * TX phase.
-	 */
-	_i2c_qse_ss_data_send(dev);
-
-	/* Finish transfer when there is nothing to receive */
-	if (dw->rx_len == 0) {
-		goto stop_det;
-	}
-
-	while (dw->rx_len > 0) {
-		/* Wait for data in RX FIFO*/
-		start_time = sys_tick_get_32();
-		while (!_i2c_qse_ss_is_rfne(dev)) {
-			if ((sys_tick_get_32() - start_time)
-			    > POLLING_TIMEOUT) {
-				ret = DEV_FAIL;
-				goto finish;
-			}
-		}
-
-		_i2c_qse_ss_data_read(dev);
-	}
-
-	dw->state &= ~I2C_QSE_SS_CMD_RECV;
-
-stop_det:
-	/* Wait for transfer to complete */
-	start_time = sys_tick_get_32();
-	while (!_i2c_qse_ss_check_irq(dev, IC_INTR_STOP_DET)) {
-		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-			ret = DEV_FAIL;
-			goto finish;
-		}
-	}
-	_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_STOP_DET);
-
-	/* Wait for bus idle */
-	start_time = sys_tick_get_32();
-	while (_i2c_qse_ss_is_busy(dev)) {
-		if ((sys_tick_get_32() - start_time) > POLLING_TIMEOUT) {
-			ret = DEV_FAIL;
-			goto finish;
-		}
-	}
-
-finish:
-	/* Disable controller when done */
-	_i2c_qse_ss_reg_write_and(dev, REG_CON, ~(IC_CON_ENABLE));
-
-	_i2c_qse_ss_transfer_complete(dev);
-
-	dw->state = I2C_QSE_SS_STATE_READY;
+	dw->state = I2C_DW_STATE_READY;
 
 	return ret;
 }
@@ -661,7 +551,6 @@ static int i2c_qse_ss_set_callback(struct device *dev, i2c_callback cb)
 static struct i2c_driver_api ss_funcs = {
 	.configure = i2c_qse_ss_runtime_configure,
 	.transfer = i2c_qse_ss_intr_transfer,
-	.poll_transfer = i2c_qse_ss_poll_transfer,
 	.suspend = i2c_qse_ss_suspend,
 	.resume = i2c_qse_ss_resume,
 	.set_callback = i2c_qse_ss_set_callback,
@@ -680,6 +569,8 @@ int i2c_qse_ss_initialize(struct device *dev)
 
 	/* Enable clock for controller so we can talk to it */
 	_i2c_qse_ss_reg_write_or(dev, REG_CON, IC_CON_CLK_ENA);
+
+	synchronous_call_init(&dev->sync);
 
 	if (i2c_qse_ss_runtime_configure(dev, dw->app_config.raw) != DEV_OK) {
 		DBG("I2C_SS: Cannot set default configuration 0x%x\n",

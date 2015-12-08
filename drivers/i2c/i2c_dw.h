@@ -120,12 +120,6 @@ struct i2c_dw_dev_config {
 	bool			support_hs_mode;
 	uint16_t		hcnt;
 	uint16_t		lcnt;
-
-	i2c_callback            cb;
 };
-
-void i2c_dw_isr(struct device *port);
-
-extern int i2c_dw_initialize(struct device *port);
 
 #endif /* __DRIVERS_I2C_DW_H */
