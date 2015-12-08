@@ -172,6 +172,12 @@ config	BLUETOOTH_DEBUG
 	  serial console.
 
 if BLUETOOTH_DEBUG
+config  BLUETOOTH_DEBUG_COLOR
+	bool "Use colored logs"
+	default y
+	help
+	  Use color in the logs. This requires an ANSI capable terminal.
+
 config	BLUETOOTH_DEBUG_HCI_CORE
 	bool "Bluetooth HCI core debug"
 	default n

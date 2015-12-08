@@ -22,11 +22,23 @@
 
 #include <stdio.h>
 
+#if defined(CONFIG_BLUETOOTH_DEBUG_COLOR)
+#define BT_COLOR_OFF     "\x1B[0m"
+#define BT_COLOR_RED     "\x1B[0;31m"
+#define BT_COLOR_YELLOW  "\x1B[0;33m"
+#else
+#define BT_COLOR_OFF     ""
+#define BT_COLOR_RED     ""
+#define BT_COLOR_YELLOW  ""
+#endif
+
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 #define BT_DBG(fmt, ...) printf("bt: %s (%p): " fmt "\n", __func__, \
 				sys_thread_self_get(), ##__VA_ARGS__)
-#define BT_ERR(fmt, ...) printf("bt: %s: " fmt "\n", __func__, ##__VA_ARGS__)
-#define BT_WARN(fmt, ...) printf("bt: %s: " fmt "\n", __func__, ##__VA_ARGS__)
+#define BT_ERR(fmt, ...) printf("bt: %s: %s" fmt "%s\n", __func__, \
+				BT_COLOR_RED, ##__VA_ARGS__, BT_COLOR_OFF)
+#define BT_WARN(fmt, ...) printf("bt: %s: %s" fmt "%s\n", __func__, \
+				 BT_COLOR_YELLOW, ##__VA_ARGS__, BT_COLOR_OFF)
 #define BT_INFO(fmt, ...) printf("bt: " fmt "\n", ##__VA_ARGS__)
 #define BT_ASSERT(cond) if (!(cond)) { \
 				BT_ERR("bt: assert: '" #cond "' failed"); \
