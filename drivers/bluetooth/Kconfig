@@ -47,13 +47,13 @@ config BLUETOOTH_NO_DRV
 
 endchoice
 
-config	BLUETOOTH_DEBUG_UART
-	bool "Bluetooth UART driver debug"
+config	BLUETOOTH_DEBUG_DRIVER
+	bool "Bluetooth driver debug"
 	depends on BLUETOOTH_DEBUG && BLUETOOTH_UART
 	default n
 	help
-	  This option enables debug support for Bluetooth UART
-	  driver
+	  This option enables debug support for the chosen
+	  Bluetooth HCI driver
 
 config  BLUETOOTH_UART_ON_DEV_NAME
 	string "Device Name of UART Device for Bluetooth"
