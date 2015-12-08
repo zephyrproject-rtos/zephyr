@@ -1,5 +1,3 @@
-/* mutex.c - test microkernel mutex APIs */
-
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
  *
@@ -16,42 +14,48 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module demonstrates the microkernel's priority inheritance algorithm.
-A task that owns a mutex is promoted to the priority level of the
-highest-priority task attempting to lock the mutex.
-
-In addition, recusive locking capabilities and the use of a private mutex
-are also tested.
-
-This module tests the following mutex routines:
-
-   task_mutex_lock, task_mutex_lock_wait, task_mutex_lock_wait_timeout
-   task_mutex_unlock, task_mutex_init
-
-Timeline for priority inheritance testing:
-  - 0.0  sec: Task10, Task15, Task20, Task25, Task30, sleep
-            : RegressionTask takes Mutex1 then sleeps
-  - 0.0  sec: Task45 sleeps
-  - 0.5  sec: Task30 wakes and waits on Mutex1
-  - 1.0  sec: RegressionTask (@ priority 30) takes Mutex2 then sleeps
-  - 1.5  sec: Task25 wakes and waits on Mutex2
-  - 2.0  sec: RegressionTask (@ priority 25) takes Mutex3 then sleeps
-  - 2.5  sec: Task20 wakes and waits on Mutex3
-  - 3.0  sec: RegressionTask (@ priority 20) takes Mutex4 then sleeps
-  - 3.5  sec: Task10 wakes and waits on Mutex4
-  - 3.5  sec: Task45 wakes and waits on Mutex3
-  - 3.75 sec: Task15 wakes and waits on Mutex4
-  - 4.0  sec: RegressionTask wakes (@ priority 10) then sleeps
-  - 4.5  sec: Task10 times out
-  - 5.0  sec: RegressionTask wakes (@ priority 15) then gives Mutex4
-            : RegressionTask (@ priority 20) sleeps
-  - 5.5  sec: Task20 times out on Mutex3
-  - 6.0  sec: RegressionTask (@ priority 25) gives Mutex3
-            : RegressionTask (@ priority 25) gives Mutex2
-            : RegressionTask (@ priority 30) gives Mutex1
-            : RegressionTask (@ priority 40) sleeps
+/**
+ * @file
+ * @brief Test microkernel mutex APIs
+ *
+ *
+ * This module demonstrates the microkernel's priority inheritance algorithm.
+ * A task that owns a mutex is promoted to the priority level of the
+ * highest-priority task attempting to lock the mutex.
+ *
+ * In addition, recusive locking capabilities and the use of a private mutex
+ * are also tested.
+ *
+ * This module tests the following mutex routines:
+ *
+ *    task_mutex_lock
+ *    task_mutex_lock_wait
+ *    task_mutex_lock_wait_timeout
+ *    task_mutex_unlock
+ *    task_mutex_init
+ *
+ * Timeline for priority inheritance testing:
+ *   - 0.0  sec: Task10, Task15, Task20, Task25, Task30, sleep
+ *             : RegressionTask takes Mutex1 then sleeps
+ *   - 0.0  sec: Task45 sleeps
+ *   - 0.5  sec: Task30 wakes and waits on Mutex1
+ *   - 1.0  sec: RegressionTask (@ priority 30) takes Mutex2 then sleeps
+ *   - 1.5  sec: Task25 wakes and waits on Mutex2
+ *   - 2.0  sec: RegressionTask (@ priority 25) takes Mutex3 then sleeps
+ *   - 2.5  sec: Task20 wakes and waits on Mutex3
+ *   - 3.0  sec: RegressionTask (@ priority 20) takes Mutex4 then sleeps
+ *   - 3.5  sec: Task10 wakes and waits on Mutex4
+ *   - 3.5  sec: Task45 wakes and waits on Mutex3
+ *   - 3.75 sec: Task15 wakes and waits on Mutex4
+ *   - 4.0  sec: RegressionTask wakes (@ priority 10) then sleeps
+ *   - 4.5  sec: Task10 times out
+ *   - 5.0  sec: RegressionTask wakes (@ priority 15) then gives Mutex4
+ *             : RegressionTask (@ priority 20) sleeps
+ *   - 5.5  sec: Task20 times out on Mutex3
+ *   - 6.0  sec: RegressionTask (@ priority 25) gives Mutex3
+ *             : RegressionTask (@ priority 25) gives Mutex2
+ *             : RegressionTask (@ priority 30) gives Mutex1
+ *             : RegressionTask (@ priority 40) sleeps
  */
 
 #include <tc_util.h>
