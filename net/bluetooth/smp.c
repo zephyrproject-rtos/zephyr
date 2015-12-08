@@ -181,7 +181,6 @@ static bool sc_local_pkey_valid;
 static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 {
 	struct bt_smp_pairing *req, *rsp;
-	uint8_t method;
 
 	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY)
 		return JUST_WORKS;
@@ -194,24 +193,7 @@ static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 		return JUST_WORKS;
 	}
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		return gen_method_sc[remote_io][bt_smp_io_capa];
-	}
-
-	method = gen_method[remote_io][bt_smp_io_capa];
-
-	/* if both sides have KeyboardDisplay capabilities, initiator displays
-	 * and responder inputs
-	 */
-	if (method == PASSKEY_ROLE) {
-		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
-			method = PASSKEY_DISPLAY;
-		} else {
-			method = PASSKEY_INPUT;
-		}
-	}
-
-	return method;
+	return gen_method_sc[remote_io][bt_smp_io_capa];
 }
 
 #if defined(CONFIG_BLUETOOTH_DEBUG_SMP)
@@ -887,58 +869,140 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_pairing_confirm *req;
-	struct net_buf *rsp_buf;
-	int err;
+	struct net_buf *buf;
+	uint8_t r;
 
-	rsp_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
-				 sizeof(*req));
-	if (!rsp_buf) {
+	switch (smp->method) {
+	case PASSKEY_CONFIRM:
+	case JUST_WORKS:
+		r = 0;
+		break;
+	case PASSKEY_DISPLAY:
+	case PASSKEY_INPUT:
+		/*
+		 * In the Passkey Entry protocol, the most significant
+		 * bit of Z is set equal to one and the least
+		 * significant bit is made up from one bit of the
+		 * passkey e.g. if the passkey bit is 1, then Z = 0x81
+		 * and if the passkey bit is 0, then Z = 0x80.
+		 */
+		r = (smp->passkey >> smp->passkey_round) & 0x01;
+		r |= 0x80;
+		break;
+	default:
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	req = net_buf_add(rsp_buf, sizeof(*req));
-
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		uint8_t r;
-
-		switch (smp->method) {
-		case PASSKEY_CONFIRM:
-		case JUST_WORKS:
-			r = 0;
-			break;
-		case PASSKEY_DISPLAY:
-		case PASSKEY_INPUT:
-			/*
-			 * In the Passkey Entry protocol, the most significant
-			 * bit of Z is set equal to one and the least
-			 * significant bit is made up from one bit of the
-			 * passkey e.g. if the passkey bit is 1, then Z = 0x81
-			 * and if the passkey bit is 0, then Z = 0x80.
-			 */
-			r = (smp->passkey >> smp->passkey_round) & 0x01;
-			r |= 0x80;
-
-			break;
-		default:
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		err = smp_f4(bt_dev.pkey, smp->pkey, smp->prnd, r, req->val);
-	} else {
-		err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp,
-			     &conn->le.init_addr, &conn->le.resp_addr, req->val);
-	}
-
-	if (err) {
-		net_buf_unref(rsp_buf);
+	buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM, sizeof(*req));
+	if (!buf) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	smp_send(smp, rsp_buf);
+	req = net_buf_add(buf, sizeof(*req));
+
+	if (smp_f4(bt_dev.pkey, smp->pkey, smp->prnd, r, req->val)) {
+		net_buf_unref(buf);
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	smp_send(smp, buf);
 
 	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
 
 	return 0;
+}
+
+static void legacy_distribute_keys(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.conn;
+	struct bt_keys *keys = conn->keys;
+
+	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
+		struct bt_smp_encrypt_info *info;
+		struct bt_smp_master_ident *ident;
+		struct net_buf *buf;
+
+		smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
+
+		bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
+
+		bt_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
+		bt_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
+		bt_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
+
+		buf = smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
+				     sizeof(*info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Encrypt Info buffer");
+			return;
+		}
+
+		info = net_buf_add(buf, sizeof(*info));
+
+		/* distributed only enc_size bytes of key */
+		memcpy(info->ltk, keys->slave_ltk.val, keys->enc_size);
+		if (keys->enc_size < sizeof(info->ltk)) {
+			memset(info->ltk + keys->enc_size, 0,
+			       sizeof(info->ltk) - keys->enc_size);
+		}
+
+		smp_send(smp, buf);
+
+		buf = smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT,
+				     sizeof(*ident));
+		if (!buf) {
+			BT_ERR("Unable to allocate Master Ident buffer");
+			return;
+		}
+
+		ident = net_buf_add(buf, sizeof(*ident));
+		ident->rand = keys->slave_ltk.rand;
+		ident->ediv = keys->slave_ltk.ediv;
+
+		smp_send(smp, buf);
+	}
+}
+
+static void bt_smp_distribute_keys(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.conn;
+	struct bt_keys *keys = conn->keys;
+
+	if (!keys) {
+		BT_ERR("No keys space for %s", bt_addr_le_str(&conn->le.dst));
+		return;
+	}
+
+	/* Distribute legacy pairing specific keys */
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		legacy_distribute_keys(smp);
+	}
+
+#if defined(CONFIG_BLUETOOTH_SIGNING)
+	if (smp->local_dist & BT_SMP_DIST_SIGN) {
+		struct bt_smp_signing_info *info;
+		struct net_buf *buf;
+
+		smp->local_dist &= ~BT_SMP_DIST_SIGN;
+
+		bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
+
+		bt_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
+		keys->local_csrk.cnt = 0;
+
+		buf = smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
+				     sizeof(*info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Signing Info buffer");
+			return;
+		}
+
+		info = net_buf_add(buf, sizeof(*info));
+		memcpy(info->csrk, keys->local_csrk.val, sizeof(info->csrk));
+
+		smp_send(smp, buf);
+	}
+#endif /* CONFIG_BLUETOOTH_SIGNING */
 }
 
 static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
@@ -959,47 +1023,46 @@ static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
 	return le_encrypt(k, out, out);
 }
 
-static int smp_init(struct bt_smp *smp)
+static uint8_t legacy_get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 {
-	/* Initialize SMP context */
-	memset(smp + sizeof(smp->chan), 0, sizeof(*smp) - sizeof(smp->chan));
+	struct bt_smp_pairing *req, *rsp;
+	uint8_t method;
 
-	/* Generate local random number */
-	if (bt_rand(smp->prnd, 16)) {
-		return BT_SMP_ERR_UNSPECIFIED;
+	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY)
+		return JUST_WORKS;
+
+	req = (struct bt_smp_pairing *)&smp->preq[1];
+	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
+
+	/* if none side requires MITM use JustWorks */
+	if (!((req->auth_req | rsp->auth_req) & BT_SMP_AUTH_MITM)) {
+		return JUST_WORKS;
 	}
 
-	BT_DBG("prnd %s", h(smp->prnd, 16));
+	method = gen_method[remote_io][bt_smp_io_capa];
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
+	/* if both sides have KeyboardDisplay capabilities, initiator displays
+	 * and responder inputs
+	 */
+	if (method == PASSKEY_ROLE) {
+		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+			method = PASSKEY_DISPLAY;
+		} else {
+			method = PASSKEY_INPUT;
+		}
+	}
 
-	return 0;
+	return method;
 }
 
-static uint8_t get_auth(uint8_t auth)
-{
-	if (sc_supported) {
-		auth &= BT_SMP_AUTH_MASK_SC;
-	} else {
-		auth &= BT_SMP_AUTH_MASK;
-	}
-
-	if (bt_smp_io_capa == BT_SMP_IO_NO_INPUT_OUTPUT) {
-		auth &= ~(BT_SMP_AUTH_MITM);
-	} else {
-		auth |= BT_SMP_AUTH_MITM;
-	}
-
-	return auth;
-}
-
-static uint8_t smp_request_tk(struct bt_smp *smp)
+static uint8_t legacy_request_tk(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_keys *keys;
 	uint32_t passkey;
 
-	/* Fail if we have keys that are stronger than keys that will be
+	/*
+	 * Fail if we have keys that are stronger than keys that will be
 	 * distributed in new pairing. This is to avoid replacing authenticated
 	 * keys with unauthenticated ones.
 	  */
@@ -1036,6 +1099,275 @@ static uint8_t smp_request_tk(struct bt_smp *smp)
 	}
 
 	return 0;
+}
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+static uint8_t legacy_send_pairing_confirm(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.conn;
+	struct bt_smp_pairing_confirm *req;
+	struct net_buf *buf;
+
+	buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM, sizeof(*req));
+	if (!buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	req = net_buf_add(buf, sizeof(*req));
+
+	if (smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp,
+		   &conn->le.init_addr, &conn->le.resp_addr, req->val)) {
+		net_buf_unref(buf);
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	smp_send(smp, buf);
+
+	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+
+	return 0;
+}
+
+static uint8_t legacy_pairing_req(struct bt_smp *smp, uint8_t remote_io)
+{
+	BT_DBG("");
+
+	smp->method = legacy_get_pair_method(smp, remote_io);
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+
+	return legacy_request_tk(smp);
+}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+
+static uint8_t legacy_pairing_random(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.conn;
+	uint8_t tmp[16];
+	int err;
+
+	BT_DBG("");
+
+	/* calculate confirmation */
+	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp,
+		     &conn->le.init_addr, &conn->le.resp_addr, tmp);
+	if (err) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	BT_DBG("pcnf %s cfm %s", h(smp->pcnf, 16), h(tmp, 16));
+
+	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf))) {
+		return BT_SMP_ERR_CONFIRM_FAILED;
+	}
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		/* No need to store master STK */
+		err = smp_s1(smp->tk, smp->rrnd, smp->prnd, tmp);
+		if (err) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		/* Rand and EDiv are 0 for the STK */
+		if (bt_conn_le_start_encryption(conn, 0, 0, tmp,
+						get_encryption_key_size(smp))) {
+			BT_ERR("Failed to start encryption");
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
+
+		return 0;
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	err = smp_s1(smp->tk, smp->prnd, smp->rrnd, tmp);
+	if (err) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	memcpy(smp->tk, tmp, sizeof(smp->tk));
+	BT_DBG("generated STK %s", h(smp->tk, 16));
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
+
+	smp_send_pairing_random(smp);
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+
+	return 0;
+}
+
+static uint8_t legacy_pairing_confirm(struct bt_smp *smp)
+{
+	BT_DBG("");
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		return smp_send_pairing_random(smp);
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		return legacy_send_pairing_confirm(smp);
+	}
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+	return 0;
+}
+
+static void legacy_passkey_entry(struct bt_smp *smp, unsigned int passkey)
+{
+	passkey = sys_cpu_to_le32(passkey);
+	memcpy(smp->tk, &passkey, sizeof(passkey));
+
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
+		smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+		return;
+	}
+
+	/* if confirm failed ie. due to invalid passkey, cancel pairing */
+	if (legacy_pairing_confirm(smp)) {
+		smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+		return;
+	}
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		return;
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+}
+
+static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
+{
+	struct bt_conn *conn = smp->chan.conn;
+	struct bt_smp_encrypt_info *req = (void *)buf->data;
+	struct bt_keys *keys;
+
+	BT_DBG("");
+
+	keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
+	if (!keys) {
+		BT_ERR("Unable to get keys for %s",
+		       bt_addr_le_str(&conn->le.dst));
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	memcpy(keys->ltk.val, req->ltk, 16);
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
+
+	return 0;
+}
+
+static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
+{
+	struct bt_conn *conn = smp->chan.conn;
+	struct bt_smp_master_ident *req = (void *)buf->data;
+	struct bt_keys *keys;
+
+	BT_DBG("");
+
+	keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
+	if (!keys) {
+		BT_ERR("Unable to get keys for %s",
+		       bt_addr_le_str(&conn->le.dst));
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	keys->ltk.ediv = req->ediv;
+	keys->ltk.rand = req->rand;
+
+	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
+
+	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+	}
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (conn->role == BT_HCI_ROLE_MASTER && !smp->remote_dist) {
+		bt_smp_distribute_keys(smp);
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		smp_reset(smp);
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+static uint8_t legacy_pairing_rsp(struct bt_smp *smp, uint8_t remote_io)
+{
+	uint8_t ret;
+
+	BT_DBG("");
+
+	smp->method = legacy_get_pair_method(smp, remote_io);
+
+	ret = legacy_request_tk(smp);
+	if (ret) {
+		return ret;
+	}
+
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		return smp_send_pairing_confirm(smp);
+	}
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+static int smp_init(struct bt_smp *smp)
+{
+	/* Initialize SMP context */
+	memset(smp + sizeof(smp->chan), 0, sizeof(*smp) - sizeof(smp->chan));
+
+	/* Generate local random number */
+	if (bt_rand(smp->prnd, 16)) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	BT_DBG("prnd %s", h(smp->prnd, 16));
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
+
+	return 0;
+}
+
+static uint8_t get_auth(uint8_t auth)
+{
+	if (sc_supported) {
+		auth &= BT_SMP_AUTH_MASK_SC;
+	} else {
+		auth &= BT_SMP_AUTH_MASK;
+	}
+
+	if (bt_smp_io_capa == BT_SMP_IO_NO_INPUT_OUTPUT) {
+		auth &= ~(BT_SMP_AUTH_MITM);
+	} else {
+		auth |= BT_SMP_AUTH_MITM;
+	}
+
+	return auth;
 }
 
 static bool sec_level_reachable(struct bt_conn *conn)
@@ -1168,15 +1500,13 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
 
-	smp->method = get_pair_method(smp, req->io_capability);
-
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		return 0;
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		return legacy_pairing_req(smp, req->io_capability);
 	}
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+	smp->method = get_pair_method(smp, req->io_capability);
 
-	return smp_request_tk(smp);
+	return 0;
 }
 #else
 static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
@@ -1272,7 +1602,6 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing *rsp = (void *)buf->data;
 	struct bt_smp_pairing *req = (struct bt_smp_pairing *)&smp->preq[1];
-	uint8_t ret;
 
 	BT_DBG("");
 
@@ -1293,34 +1622,22 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		atomic_set_bit(&smp->flags, SMP_FLAG_SC);
 	}
 
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		return legacy_pairing_rsp(smp, rsp->io_capability);
+	}
+
 	smp->method = get_pair_method(smp, rsp->io_capability);
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		smp->local_dist &= SEND_KEYS_SC;
-		smp->remote_dist &= RECV_KEYS_SC;
+	smp->local_dist &= SEND_KEYS_SC;
+	smp->remote_dist &= RECV_KEYS_SC;
 
-		if (!sc_local_pkey_valid) {
-			atomic_set_bit(&smp->flags, SMP_FLAG_PKEY_SEND);
-			return 0;
-		}
-
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
-		return sc_send_public_key(smp);
+	if (!sc_local_pkey_valid) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_PKEY_SEND);
+		return 0;
 	}
 
-	ret = smp_request_tk(smp);
-	if (ret) {
-		return ret;
-	}
-
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-		return smp_send_pairing_confirm(smp);
-	}
-
-	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
-
-	return 0;
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
+	return sc_send_public_key(smp);
 }
 #else
 static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
@@ -1345,34 +1662,27 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		switch (smp->method) {
-		case PASSKEY_DISPLAY:
-			atomic_set_bit(&smp->allowed_cmds,
-				       BT_SMP_CMD_PAIRING_RANDOM);
-			return smp_send_pairing_confirm(smp);
-		case PASSKEY_INPUT:
-			if (atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
-				atomic_set_bit(&smp->flags,
-					       SMP_FLAG_CFM_DELAYED);
-				return 0;
-			}
-
-			atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
-			return smp_send_pairing_confirm(smp);
-		case JUST_WORKS:
-		case PASSKEY_CONFIRM:
-		default:
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		return legacy_pairing_confirm(smp);
 	}
 
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
+	switch (smp->method) {
+	case PASSKEY_DISPLAY:
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_confirm(smp);
-	}
+	case PASSKEY_INPUT:
+		if (atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
+			atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+			return 0;
+		}
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		return smp_send_pairing_confirm(smp);
+	case JUST_WORKS:
+	case PASSKEY_CONFIRM:
+	default:
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 	return 0;
 }
@@ -1595,12 +1905,19 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 	return 0;
 }
 
-static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
+static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
+	struct bt_smp_pairing_random *req = (void *)buf->data;
 	uint32_t passkey;
 	uint8_t err;
 
 	BT_DBG("");
+
+	memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
+
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		return legacy_pairing_random(smp);
+	}
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
@@ -1697,72 +2014,6 @@ static uint8_t sc_smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
-{
-	struct bt_conn *conn = smp->chan.conn;
-	struct bt_smp_pairing_random *req = (void *)buf->data;
-	uint8_t tmp[16];
-	int err;
-
-	BT_DBG("");
-
-	memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
-
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		return sc_smp_pairing_random(smp, buf);
-	}
-
-	/* calculate confirmation */
-	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp,
-		     &conn->le.init_addr, &conn->le.resp_addr, tmp);
-	if (err) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	BT_DBG("pcnf %s cfm %s", h(smp->pcnf, 16), h(tmp, 16));
-
-	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf))) {
-		return BT_SMP_ERR_CONFIRM_FAILED;
-	}
-
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		/* No need to store master STK */
-		err = smp_s1(smp->tk, smp->rrnd, smp->prnd, tmp);
-		if (err) {
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		/* Rand and EDiv are 0 for the STK */
-		if (bt_conn_le_start_encryption(conn, 0, 0, tmp,
-						get_encryption_key_size(smp))) {
-			BT_ERR("Failed to start encryption");
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
-
-		return 0;
-	}
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
-
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	err = smp_s1(smp->tk, smp->prnd, smp->rrnd, tmp);
-	if (err) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	memcpy(smp->tk, tmp, sizeof(smp->tk));
-	BT_DBG("generated STK %s", h(smp->tk, 16));
-
-	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
-
-	smp_send_pairing_random(smp);
-#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
-
-	return 0;
-}
-
 static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
@@ -1789,149 +2040,6 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 	smp_reset(smp);
 
 	/* return no error to avoid sending Pairing Failed in response */
-	return 0;
-}
-
-static void bt_smp_distribute_keys(struct bt_smp *smp)
-{
-	struct bt_conn *conn = smp->chan.conn;
-	struct bt_keys *keys = conn->keys;
-	struct net_buf *buf;
-
-	if (!keys) {
-		BT_ERR("No keys space for %s", bt_addr_le_str(&conn->le.dst));
-		return;
-	}
-
-	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
-		struct bt_smp_encrypt_info *info;
-		struct bt_smp_master_ident *ident;
-
-		smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
-
-		bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
-
-		bt_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
-		bt_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
-		bt_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
-
-		buf = smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
-				     sizeof(*info));
-		if (!buf) {
-			BT_ERR("Unable to allocate Encrypt Info buffer");
-			return;
-		}
-
-		info = net_buf_add(buf, sizeof(*info));
-
-		/* distributed only enc_size bytes of key */
-		memcpy(info->ltk, keys->slave_ltk.val, keys->enc_size);
-		if (keys->enc_size < sizeof(info->ltk)) {
-			memset(info->ltk + keys->enc_size, 0,
-			       sizeof(info->ltk) - keys->enc_size);
-		}
-
-		smp_send(smp, buf);
-
-		buf = smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT,
-				     sizeof(*ident));
-		if (!buf) {
-			BT_ERR("Unable to allocate Master Ident buffer");
-			return;
-		}
-
-		ident = net_buf_add(buf, sizeof(*ident));
-		ident->rand = keys->slave_ltk.rand;
-		ident->ediv = keys->slave_ltk.ediv;
-
-		smp_send(smp, buf);
-	}
-
-#if defined(CONFIG_BLUETOOTH_SIGNING)
-	if (smp->local_dist & BT_SMP_DIST_SIGN) {
-		struct bt_smp_signing_info *info;
-
-		smp->local_dist &= ~BT_SMP_DIST_SIGN;
-
-		bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
-
-		bt_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
-		keys->local_csrk.cnt = 0;
-
-		buf = smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
-				     sizeof(*info));
-		if (!buf) {
-			BT_ERR("Unable to allocate Signing Info buffer");
-			return;
-		}
-
-		info = net_buf_add(buf, sizeof(*info));
-		memcpy(info->csrk, keys->local_csrk.val, sizeof(info->csrk));
-
-		smp_send(smp, buf);
-	}
-#endif /* CONFIG_BLUETOOTH_SIGNING */
-}
-
-static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
-{
-	struct bt_conn *conn = smp->chan.conn;
-	struct bt_smp_encrypt_info *req = (void *)buf->data;
-	struct bt_keys *keys;
-
-	BT_DBG("");
-
-	keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
-	if (!keys) {
-		BT_ERR("Unable to get keys for %s",
-		       bt_addr_le_str(&conn->le.dst));
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	memcpy(keys->ltk.val, req->ltk, 16);
-
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
-
-	return 0;
-}
-
-static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
-{
-	struct bt_conn *conn = smp->chan.conn;
-	struct bt_smp_master_ident *req = (void *)buf->data;
-	struct bt_keys *keys;
-
-	BT_DBG("");
-
-	keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
-	if (!keys) {
-		BT_ERR("Unable to get keys for %s",
-		       bt_addr_le_str(&conn->le.dst));
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	keys->ltk.ediv = req->ediv;
-	keys->ltk.rand = req->rand;
-
-	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
-
-	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
-	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
-	}
-
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
-	if (conn->role == BT_HCI_ROLE_MASTER && !smp->remote_dist) {
-		bt_smp_distribute_keys(smp);
-	}
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
-
-	/* if all keys were distributed, pairing is done */
-	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(smp);
-	}
-
 	return 0;
 }
 
@@ -3064,54 +3172,31 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 		return;
 	}
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		smp->passkey = sys_cpu_to_le32(passkey);
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
-		if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
-			if (smp_send_pairing_confirm(smp)) {
-				smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
-				return;
-			}
-			atomic_set_bit(&smp->allowed_cmds,
-				       BT_SMP_CMD_PAIRING_CONFIRM);
-			return;
-		}
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-		if (atomic_test_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
-			if (smp_send_pairing_confirm(smp)) {
-				smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
-				return;
-			}
-			atomic_set_bit(&smp->allowed_cmds,
-				       BT_SMP_CMD_PAIRING_RANDOM);
-		}
-#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		legacy_passkey_entry(smp, passkey);
 		return;
 	}
 
-	passkey = sys_cpu_to_le32(passkey);
-	memcpy(smp->tk, &passkey, sizeof(passkey));
-
-	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
-		return;
-	}
-
-	/* if confirm failed ie. due to invalid passkey, cancel pairing */
-	if (smp_send_pairing_confirm(smp)) {
-		smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
-		return;
-	}
+	smp->passkey = sys_cpu_to_le32(passkey);
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
+		if (smp_send_pairing_confirm(smp)) {
+			smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+			return;
+		}
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		return;
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
-
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
+		if (smp_send_pairing_confirm(smp)) {
+			smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+			return;
+		}
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+	}
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 }
 
