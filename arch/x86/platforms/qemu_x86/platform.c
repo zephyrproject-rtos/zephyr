@@ -27,7 +27,6 @@
 #include <uart.h>
 #include <device.h>
 #include <init.h>
-#include <loapic.h>
 #include <drivers/ioapic.h>
 
 
@@ -37,10 +36,3 @@ SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_IOAPIC */
-
-#ifdef CONFIG_LOAPIC
-DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
-SYS_DEFINE_DEVICE(loapic_0, NULL, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_LOAPIC */

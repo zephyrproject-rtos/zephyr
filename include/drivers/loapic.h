@@ -73,7 +73,6 @@ SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
 #else /* _ASMLANGUAGE */
 #include <device.h>
 
-extern int _loapic_init(struct device *unused);
 extern void _loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void loapic_int_vec_trigger(unsigned int vector);
 extern void _loapic_irq_enable(unsigned int irq);

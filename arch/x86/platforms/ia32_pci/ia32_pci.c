@@ -35,7 +35,6 @@
 #include <drivers/ioapic.h>
 #include <drivers/pci/pci.h>
 #include <drivers/pci/pci_mgr.h>
-#include <drivers/loapic.h>
 #include <drivers/ioapic.h>
 
 
@@ -45,10 +44,3 @@ SYS_DEFINE_DEVICE(ioapic_0, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_IOAPIC */
-
-#ifdef CONFIG_LOAPIC
-DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
-SYS_DEFINE_DEVICE(loapic_0, NULL, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_LOAPIC */
