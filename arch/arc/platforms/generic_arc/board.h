@@ -48,11 +48,6 @@
 #define PERIPH_ADDR_BASE_SPI_MST0 0x80010000 /* SPI Master 0 */
 #define PERIPH_ADDR_BASE_SPI_MST1 0x80010100 /* SPI Master 1 */
 
-#ifndef CONFIG_NSIM
-#define PERIPH_ADDR_BASE_UART0 0xB0002000 /* UART A */
-#define PERIPH_ADDR_BASE_UART1 0xB0002400 /* UART B */
-#endif
-
 /* IRQs */
 
 #define IRQ_TIMER0 16
@@ -125,15 +120,6 @@
 
 #define CONFIG_ARCV2_TIMER1_INT_LVL IRQ_TIMER1
 #define CONFIG_ARCV2_TIMER1_INT_PRI 1
-
-/*
- * UART configuration settings
- *
- * This BSP only supports the nanokernel.  Therefore:
- * - only polled mode is supported (interrupt-driven mode is NOT supported); and
- * - only the target console is supported (hostserver driver is NOT supported).
- */
-#define CONFIG_UART_CONSOLE_REGS PERIPH_ADDR_BASE_UART0
 
 #endif /* !_ASMLANGUAGE */
 
