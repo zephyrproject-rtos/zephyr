@@ -1067,9 +1067,14 @@ Events:
 		Controller Index:	<controller id>
 		Event parameters:	Address_Type (1 octet)
 					Address (6 octets)
+					Type (1 octet)
 					Handle (2 octets)
 					Data_Length (2 octets)
 					Data (variable)
+
+		Valid Type parameter values:
+					0x01 = Notification
+					0x02 = Indication
 
 		This event indicates that IUT has received notification
 		or notification.
