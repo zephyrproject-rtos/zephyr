@@ -1017,6 +1017,48 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x50 - Configure Notifications
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Toggle (1 octet)
+					CCC_Handle (2 octets)
+		Response parameters:	ATT_Response (1 octet)
+
+		Valid Toggle parameter values:
+					0x00 = Disable
+					0x01 = Enable
+
+		This procedure is used to configure server to notify
+		characteristic value to a client.
+		ATT_Response shall be set to 0x00, if procedure has been
+		completed successfully. Otherwise it shall be set to ATT error
+		code received.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x51 - Configure Indications
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Toggle (1 octet)
+					CCC_Handle (2 octets)
+		Response parameters:	ATT_Response (1 octet)
+
+		Valid Toggle parameter values:
+					0x00 = Disable
+					0x01 = Enable
+
+		This procedure is used to configure server to indicate
+		characteristic value to a client.
+		ATT_Response shall be set to 0x00, if procedure has been
+		completed successfully. Otherwise it shall be set to ATT error
+		code received.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 -> 0xbf - Reserved for future use
 
