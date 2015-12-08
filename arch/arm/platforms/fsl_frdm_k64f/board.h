@@ -45,12 +45,6 @@
 
 #define PERIPH_ADDR_BASE_OSC 0x40065000 /* Oscillator module */
 
-#define PERIPH_ADDR_BASE_UART0 0x4006A000 /* UART0 connected to SDA USB */
-#define PERIPH_ADDR_BASE_UART1 0x4006B000 /* not supported */
-#define PERIPH_ADDR_BASE_UART2 0x4006C000 /* not supported */
-#define PERIPH_ADDR_BASE_UART3 0x4006D000 /* not supported */
-#define PERIPH_ADDR_BASE_UART4 0x400EA000 /* not supported - for Bluetooth */
-
 #define PERIPH_ADDR_BASE_PMC 0x4007D000 /* Power Mgt Controller module */
 
 /* IRQs */
