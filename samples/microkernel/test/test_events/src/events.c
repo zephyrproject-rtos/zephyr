@@ -1,5 +1,3 @@
-/* events.c - test microkernel event APIs */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -16,12 +14,17 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This modules tests the following event APIs:
-  task_event_handler_set(), task_event_send(), isr_event_send(),
-  task_event_recv(), task_event_recv_wait(), task_event_recv_wait_timeout()
-
+/**
+ * @file
+ * @brief Test microkernel event APIs
+ *
+ * This modules tests the following event APIs:
+ *    task_event_handler_set()
+ *    task_event_send()
+ *    isr_event_send()
+ *    task_event_recv()
+ *    task_event_recv_wait()
+ *    task_event_recv_wait_timeout()
  */
 
 #include <tc_util.h>
