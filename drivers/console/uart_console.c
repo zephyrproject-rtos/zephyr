@@ -39,6 +39,7 @@
 #include <console/uart_console.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <misc/printk.h>
 
 static struct device *uart_console_dev;
 
@@ -114,10 +115,6 @@ static struct nano_fifo *lines_queue;
 #define ANSI_DOWN          'B'
 #define ANSI_FORWARD       'C'
 #define ANSI_BACKWARD      'D'
-#define ANSI_UP_STR        "\x1b[A"
-#define ANSI_DOWN_STR      "\x1b[B"
-#define ANSI_FORWARD_STR   "\x1b[C"
-#define ANSI_BACKWARD_STR  "\x1b[D"
 
 static int read_uart(struct device *uart, uint8_t *buf, unsigned int size)
 {
@@ -134,12 +131,64 @@ static int read_uart(struct device *uart, uint8_t *buf, unsigned int size)
 	return rx;
 }
 
-static void write_uart(struct device *uart, const char *str)
+static inline void cursor_forward(unsigned int count)
 {
-	while (*str) {
-		uart_poll_out(uart, *str);
-		str++;
+	printk("\x1b[%uC", count);
+}
+
+static inline void cursor_backward(unsigned int count)
+{
+	printk("\x1b[%uD", count);
+}
+
+static void insert_char(char *pos, char c, uint8_t end)
+{
+	uint8_t i;
+	char tmp;
+
+	/* Echo back to console */
+	uart_poll_out(uart_console_dev, c);
+
+	if (end == 0) {
+		*pos = c;
+		return;
 	}
+
+	tmp = *pos;
+	*(pos++) = c;
+
+	for (i = 0; i < end; i++) {
+		uart_poll_out(uart_console_dev, tmp);
+		c = pos[i];
+		pos[i] = tmp;
+		tmp = c;
+	}
+
+	/* Move cursor back to right place */
+	cursor_backward(end);
+}
+
+static void del_char(char *pos, uint8_t end)
+{
+	uint8_t i;
+
+	uart_poll_out(uart_console_dev, '\b');
+
+	if (end == 0) {
+		uart_poll_out(uart_console_dev, ' ');
+		uart_poll_out(uart_console_dev, '\b');
+		return;
+	}
+
+	for (i = 0; i < end; i++) {
+		pos[i] = pos[i + 1];
+		uart_poll_out(uart_console_dev, pos[i]);
+	}
+
+	uart_poll_out(uart_console_dev, ' ');
+
+	/* Move cursor back to right place */
+	cursor_backward(end + 1);
 }
 
 void uart_console_isr(void *unused)
@@ -150,7 +199,7 @@ void uart_console_isr(void *unused)
 	       uart_irq_is_pending(uart_console_dev)) {
 		static struct uart_console_input *cmd;
 		static bool esc, ansi_esc;
-		static size_t pos;
+		static uint8_t cur, end;
 		uint8_t byte;
 		int rx;
 
@@ -182,7 +231,28 @@ void uart_console_isr(void *unused)
 		/* Handle ANSI escape mode */
 		if (ansi_esc) {
 			ansi_esc = false;
-			/* Ignore all ANSI escape sequences for now */
+			switch (byte) {
+			case ANSI_BACKWARD:
+				if (cur == 0) {
+					break;
+				}
+
+				end++;
+				cur--;
+				cursor_backward(1);
+				break;
+			case ANSI_FORWARD:
+				if (end == 0) {
+					break;
+				}
+
+				end--;
+				cur++;
+				cursor_forward(1);
+				break;
+			default:
+				break;
+			}
 			continue;
 		}
 
@@ -204,18 +274,18 @@ void uart_console_isr(void *unused)
 		if (!isprint(byte)) {
 			switch (byte) {
 			case DEL:
-				if (pos > 0) {
-					write_uart(uart_console_dev, "\b \b");
-					pos--;
+				if (cur > 0) {
+					del_char(&cmd->line[--cur], end);
 				}
 				break;
 			case ESC:
 				esc = true;
 				break;
 			case '\r':
-				cmd->line[pos] = '\0';
+				cmd->line[cur + end] = '\0';
 				uart_poll_out(uart_console_dev, '\n');
-				pos = 0;
+				cur = 0;
+				end = 0;
 				nano_isr_fifo_put(lines_queue, cmd);
 				cmd = NULL;
 				break;
@@ -226,12 +296,9 @@ void uart_console_isr(void *unused)
 			continue;
 		}
 
-		/* Echo back to console */
-		uart_poll_out(uart_console_dev, byte);
-
 		/* Ignore characters if there's no more buffer space */
-		if (pos < sizeof(cmd->line) - 1) {
-			cmd->line[pos++] = byte;
+		if (cur + end < sizeof(cmd->line) - 1) {
+			insert_char(&cmd->line[cur++], byte, end);
 		}
 	}
 }
