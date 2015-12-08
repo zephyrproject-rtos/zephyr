@@ -39,7 +39,7 @@ config	BLUETOOTH_H4
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
 
-config BLUETOOTH_NO_DRV
+config BLUETOOTH_NO_DRIVER
 	bool "No default HCI driver"
 	help
 	  This is intended for unit tests where no internal driver
