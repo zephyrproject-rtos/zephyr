@@ -41,7 +41,7 @@
 				 BT_COLOR_YELLOW, ##__VA_ARGS__, BT_COLOR_OFF)
 #define BT_INFO(fmt, ...) printf("bt: " fmt "\n", ##__VA_ARGS__)
 #define BT_ASSERT(cond) if (!(cond)) { \
-				BT_ERR("bt: assert: '" #cond "' failed"); \
+				BT_ERR("assert: '" #cond "' failed"); \
 			}
 #else
 #define BT_DBG(fmt, ...)
