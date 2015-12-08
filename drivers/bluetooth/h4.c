@@ -47,7 +47,7 @@
 struct device *h4_dev;
 
 static int h4_read(struct device *uart, uint8_t *buf,
-			size_t len, size_t min)
+		   size_t len, size_t min)
 {
 	int total = 0;
 
