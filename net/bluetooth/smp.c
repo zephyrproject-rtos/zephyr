@@ -369,66 +369,6 @@ static int smp_ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
 	return 0;
 }
 
-static int smp_c1(const uint8_t k[16], const uint8_t r[16],
-		  const uint8_t preq[7], const uint8_t pres[7],
-		  const bt_addr_le_t *ia, const bt_addr_le_t *ra,
-		  uint8_t enc_data[16])
-{
-	uint8_t p1[16], p2[16];
-	int err;
-
-	BT_DBG("k %s r %s", h(k, 16), h(r, 16));
-	BT_DBG("ia %s ra %s", bt_addr_le_str(ia), bt_addr_le_str(ra));
-	BT_DBG("preq %s pres %s", h(preq, 7), h(pres, 7));
-
-	/* pres, preq, rat and iat are concatenated to generate p1 */
-	p1[0] = ia->type;
-	p1[1] = ra->type;
-	memcpy(p1 + 2, preq, 7);
-	memcpy(p1 + 9, pres, 7);
-
-	BT_DBG("p1 %s", h(p1, 16));
-
-	/* c1 = e(k, e(k, r XOR p1) XOR p2) */
-
-	/* Using enc_data as temporary output buffer */
-	xor_128((uint128_t *)r, (uint128_t *)p1, (uint128_t *)enc_data);
-
-	err = le_encrypt(k, enc_data, enc_data);
-	if (err) {
-		return err;
-	}
-
-	/* ra is concatenated with ia and padding to generate p2 */
-	memcpy(p2, ra->val, 6);
-	memcpy(p2 + 6, ia->val, 6);
-	memset(p2 + 12, 0, 4);
-
-	BT_DBG("p2 %s", h(p2, 16));
-
-	xor_128((uint128_t *)enc_data, (uint128_t *)p2, (uint128_t *)enc_data);
-
-	return le_encrypt(k, enc_data, enc_data);
-}
-
-static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
-		  const uint8_t r2[16], uint8_t out[16])
-{
-	/* The most significant 64-bits of r1 are discarded to generate
-	 * r1' and the most significant 64-bits of r2 are discarded to
-	 * generate r2'.
-	 * r1' is concatenated with r2' to generate r' which is used as
-	 * the 128-bit input parameter plaintextData to security function e:
-	 *
-	 *    r' = r1' || r2'
-	 */
-	memcpy(out, r2, 8);
-	memcpy(out + 8, r1, 8);
-
-	/* s1(k, r1 , r2) = e(k, r') */
-	return le_encrypt(k, out, out);
-}
-
 /* 1 bit left shift */
 static void array_shift(const uint8_t *in, uint8_t *out)
 {
@@ -592,6 +532,177 @@ static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
 	return err;
 }
 
+static int smp_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x,
+		  uint8_t z, uint8_t res[16])
+{
+	uint8_t xs[16];
+	uint8_t m[65];
+	int err;
+
+	BT_DBG("u %s", h(u, 32));
+	BT_DBG("v %s", h(v, 32));
+	BT_DBG("x %s z 0x%x", h(x, 16), z);
+
+	/*
+	 * U, V and Z are concatenated and used as input m to the function
+	 * AES-CMAC and X is used as the key k.
+	 *
+	 * Core Spec 4.2 Vol 3 Part H 2.2.5
+	 *
+	 * note:
+	 * bt_smp_aes_cmac uses BE data and smp_f4 accept LE so we swap
+	 */
+	swap_buf(m, u, 32);
+	swap_buf(m + 32, v, 32);
+	m[64] = z;
+
+	swap_buf(xs, x, 16);
+
+	err = bt_smp_aes_cmac(xs, m, sizeof(m), res);
+	if (err) {
+		return err;
+	}
+
+	swap_in_place(res, 16);
+
+	BT_DBG("res %s", h(res, 16));
+
+	return err;
+}
+
+static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
+		  const bt_addr_le_t *a1, const bt_addr_le_t *a2, uint8_t *mackey,
+		  uint8_t *ltk)
+{
+	static const uint8_t salt[16] = { 0x6c, 0x88, 0x83, 0x91, 0xaa, 0xf5,
+					  0xa5, 0x38, 0x60, 0x37, 0x0b, 0xdb,
+					  0x5a, 0x60, 0x83, 0xbe };
+	uint8_t m[53] = { 0x00, /* counter */
+			  0x62, 0x74, 0x6c, 0x65, /* keyID */
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /*n1*/
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /*2*/
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* a1 */
+			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* a2 */
+			  0x01, 0x00 /* length */ };
+	uint8_t t[16], ws[32];
+	int err;
+
+	BT_DBG("w %s", h(w, 32));
+	BT_DBG("n1 %s n2 %s", h(n1, 16), h(n2, 16));
+
+	swap_buf(ws, w, 32);
+
+	err = bt_smp_aes_cmac(salt, ws, 32, t);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("t %s", h(t, 16));
+
+	swap_buf(m + 5, n1, 16);
+	swap_buf(m + 21, n2, 16);
+	m[37] = a1->type;
+	swap_buf(m + 38, a1->val, 6);
+	m[44] = a2->type;
+	swap_buf(m + 45, a2->val, 6);
+
+	err = bt_smp_aes_cmac(t, m, sizeof(m), mackey);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("mackey %1s", h(mackey, 16));
+
+	swap_in_place(mackey, 16);
+
+	/* counter for ltk is 1 */
+	m[0] = 0x01;
+
+	err = bt_smp_aes_cmac(t, m, sizeof(m), ltk);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("ltk %s", h(ltk, 16));
+
+	swap_in_place(ltk, 16);
+
+	return 0;
+}
+
+static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
+		  const uint8_t *r, const uint8_t *iocap, const bt_addr_le_t *a1,
+		  const bt_addr_le_t *a2, uint8_t *check)
+{
+	uint8_t ws[16];
+	uint8_t m[65];
+	int err;
+
+	BT_DBG("w %s", h(w, 16));
+	BT_DBG("n1 %s n2 %s", h(n1, 16), h(n2, 16));
+	BT_DBG("r %s io_cap", h(r, 16), h(iocap, 3));
+	BT_DBG("a1 %s a2 %s", h(a1, 7), h(a2, 7));
+
+	swap_buf(m, n1, 16);
+	swap_buf(m + 16, n2, 16);
+	swap_buf(m + 32, r, 16);
+	swap_buf(m + 48, iocap, 3);
+
+	m[51] = a1->type;
+	memcpy(m + 52, a1->val, 6);
+	swap_buf(m + 52, a1->val, 6);
+
+	m[58] = a2->type;
+	memcpy(m + 59, a2->val, 6);
+	swap_buf(m + 59, a2->val, 6);
+
+	swap_buf(ws, w, 16);
+
+	err = bt_smp_aes_cmac(ws, m, sizeof(m), check);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("res %s", h(check, 16));
+
+	swap_in_place(check, 16);
+
+	return 0;
+}
+
+static int smp_g2(const uint8_t u[32], const uint8_t v[32],
+		  const uint8_t x[16], const uint8_t y[16], uint32_t *passkey)
+{
+	uint8_t m[80], xs[16];
+	int err;
+
+	BT_DBG("u %s", h(u, 32));
+	BT_DBG("v %s", h(v, 32));
+	BT_DBG("x %s y %s", h(x, 16), h(y, 16));
+
+	swap_buf(m, u, 32);
+	swap_buf(m + 32, v, 32);
+	swap_buf(m + 64, y, 16);
+
+	swap_buf(xs, x, 16);
+
+	/* reuse xs (key) as buffer for result */
+	err = bt_smp_aes_cmac(xs, m, sizeof(m), xs);
+	if (err) {
+		return err;
+	}
+	BT_DBG("res %s", h(xs, 16));
+
+	memcpy(passkey, xs + 12, 4);
+	*passkey = sys_be32_to_cpu(*passkey) % 1000000;
+
+	BT_DBG("passkey %u", *passkey);
+
+	return 0;
+}
+
 static void smp_reset(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
@@ -692,6 +803,160 @@ static void smp_error(struct bt_smp *smp, uint8_t reason)
 
 	/* SMP timer is not restarted for PairingFailed so don't use smp_send */
 	bt_l2cap_send(smp->chan.conn, BT_L2CAP_CID_SMP, buf);
+}
+
+static uint8_t smp_send_pairing_random(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.conn;
+	struct bt_smp_pairing_random *req;
+	struct net_buf *rsp_buf;
+
+	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
+				    sizeof(*req));
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	req = net_buf_add(rsp_buf, sizeof(*req));
+	memcpy(req->val, smp->prnd, sizeof(req->val));
+
+	smp_send(smp, rsp_buf);
+
+	return 0;
+}
+
+static uint8_t get_encryption_key_size(struct bt_smp *smp)
+{
+	struct bt_smp_pairing *req, *rsp;
+
+	req = (struct bt_smp_pairing *)&smp->preq[1];
+	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
+
+	/*
+	 * The smaller value of the initiating and responding devices maximum
+	 * encryption key length parameters shall be used as the encryption key
+	 * size.
+	 */
+	return min(req->max_key_size, rsp->max_key_size);
+}
+
+
+static int smp_c1(const uint8_t k[16], const uint8_t r[16],
+		  const uint8_t preq[7], const uint8_t pres[7],
+		  const bt_addr_le_t *ia, const bt_addr_le_t *ra,
+		  uint8_t enc_data[16])
+{
+	uint8_t p1[16], p2[16];
+	int err;
+
+	BT_DBG("k %s r %s", h(k, 16), h(r, 16));
+	BT_DBG("ia %s ra %s", bt_addr_le_str(ia), bt_addr_le_str(ra));
+	BT_DBG("preq %s pres %s", h(preq, 7), h(pres, 7));
+
+	/* pres, preq, rat and iat are concatenated to generate p1 */
+	p1[0] = ia->type;
+	p1[1] = ra->type;
+	memcpy(p1 + 2, preq, 7);
+	memcpy(p1 + 9, pres, 7);
+
+	BT_DBG("p1 %s", h(p1, 16));
+
+	/* c1 = e(k, e(k, r XOR p1) XOR p2) */
+
+	/* Using enc_data as temporary output buffer */
+	xor_128((uint128_t *)r, (uint128_t *)p1, (uint128_t *)enc_data);
+
+	err = le_encrypt(k, enc_data, enc_data);
+	if (err) {
+		return err;
+	}
+
+	/* ra is concatenated with ia and padding to generate p2 */
+	memcpy(p2, ra->val, 6);
+	memcpy(p2 + 6, ia->val, 6);
+	memset(p2 + 12, 0, 4);
+
+	BT_DBG("p2 %s", h(p2, 16));
+
+	xor_128((uint128_t *)enc_data, (uint128_t *)p2, (uint128_t *)enc_data);
+
+	return le_encrypt(k, enc_data, enc_data);
+}
+
+static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.conn;
+	struct bt_smp_pairing_confirm *req;
+	struct net_buf *rsp_buf;
+	int err;
+
+	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
+				    sizeof(*req));
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	req = net_buf_add(rsp_buf, sizeof(*req));
+
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		uint8_t r;
+
+		switch (smp->method) {
+		case PASSKEY_CONFIRM:
+		case JUST_WORKS:
+			r = 0;
+			break;
+		case PASSKEY_DISPLAY:
+		case PASSKEY_INPUT:
+			/*
+			 * In the Passkey Entry protocol, the most significant
+			 * bit of Z is set equal to one and the least
+			 * significant bit is made up from one bit of the
+			 * passkey e.g. if the passkey bit is 1, then Z = 0x81
+			 * and if the passkey bit is 0, then Z = 0x80.
+			 */
+			r = (smp->passkey >> smp->passkey_round) & 0x01;
+			r |= 0x80;
+
+			break;
+		default:
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		err = smp_f4(bt_dev.pkey, smp->pkey, smp->prnd, r, req->val);
+	} else {
+		err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp,
+			     &conn->le.init_addr, &conn->le.resp_addr, req->val);
+	}
+
+	if (err) {
+		net_buf_unref(rsp_buf);
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	smp_send(smp, rsp_buf);
+
+	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+
+	return 0;
+}
+
+static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
+		  const uint8_t r2[16], uint8_t out[16])
+{
+	/* The most significant 64-bits of r1 are discarded to generate
+	 * r1' and the most significant 64-bits of r2 are discarded to
+	 * generate r2'.
+	 * r1' is concatenated with r2' to generate r' which is used as
+	 * the 128-bit input parameter plaintextData to security function e:
+	 *
+	 *    r' = r1' || r2'
+	 */
+	memcpy(out, r2, 8);
+	memcpy(out + 8, r1, 8);
+
+	/* s1(k, r1 , r2) = e(k, r') */
+	return le_encrypt(k, out, out);
 }
 
 static int smp_init(struct bt_smp *smp)
@@ -920,235 +1185,6 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 }
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
-static int smp_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x,
-		  uint8_t z, uint8_t res[16])
-{
-	uint8_t xs[16];
-	uint8_t m[65];
-	int err;
-
-	BT_DBG("u %s", h(u, 32));
-	BT_DBG("v %s", h(v, 32));
-	BT_DBG("x %s z 0x%x", h(x, 16), z);
-
-	/*
-	 * U, V and Z are concatenated and used as input m to the function
-	 * AES-CMAC and X is used as the key k.
-	 *
-	 * Core Spec 4.2 Vol 3 Part H 2.2.5
-	 *
-	 * note:
-	 * bt_smp_aes_cmac uses BE data and smp_f4 accept LE so we swap
-	 */
-	swap_buf(m, u, 32);
-	swap_buf(m + 32, v, 32);
-	m[64] = z;
-
-	swap_buf(xs, x, 16);
-
-	err = bt_smp_aes_cmac(xs, m, sizeof(m), res);
-	if (err) {
-		return err;
-	}
-
-	swap_in_place(res, 16);
-
-	BT_DBG("res %s", h(res, 16));
-
-	return err;
-}
-
-static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
-		  const bt_addr_le_t *a1, const bt_addr_le_t *a2, uint8_t *mackey,
-		  uint8_t *ltk)
-{
-	static const uint8_t salt[16] = { 0x6c, 0x88, 0x83, 0x91, 0xaa, 0xf5,
-					  0xa5, 0x38, 0x60, 0x37, 0x0b, 0xdb,
-					  0x5a, 0x60, 0x83, 0xbe };
-	uint8_t m[53] = { 0x00, /* counter */
-			  0x62, 0x74, 0x6c, 0x65, /* keyID */
-			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /*n1*/
-			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /*2*/
-			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* a1 */
-			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* a2 */
-			  0x01, 0x00 /* length */ };
-	uint8_t t[16], ws[32];
-	int err;
-
-	BT_DBG("w %s", h(w, 32));
-	BT_DBG("n1 %s n2 %s", h(n1, 16), h(n2, 16));
-
-	swap_buf(ws, w, 32);
-
-	err = bt_smp_aes_cmac(salt, ws, 32, t);
-	if (err) {
-		return err;
-	}
-
-	BT_DBG("t %s", h(t, 16));
-
-	swap_buf(m + 5, n1, 16);
-	swap_buf(m + 21, n2, 16);
-	m[37] = a1->type;
-	swap_buf(m + 38, a1->val, 6);
-	m[44] = a2->type;
-	swap_buf(m + 45, a2->val, 6);
-
-	err = bt_smp_aes_cmac(t, m, sizeof(m), mackey);
-	if (err) {
-		return err;
-	}
-
-	BT_DBG("mackey %1s", h(mackey, 16));
-
-	swap_in_place(mackey, 16);
-
-	/* counter for ltk is 1 */
-	m[0] = 0x01;
-
-	err = bt_smp_aes_cmac(t, m, sizeof(m), ltk);
-	if (err) {
-		return err;
-	}
-
-	BT_DBG("ltk %s", h(ltk, 16));
-
-	swap_in_place(ltk, 16);
-
-	return 0;
-}
-
-static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
-		  const uint8_t *r, const uint8_t *iocap, const bt_addr_le_t *a1,
-		  const bt_addr_le_t *a2, uint8_t *check)
-{
-	uint8_t ws[16];
-	uint8_t m[65];
-	int err;
-
-	BT_DBG("w %s", h(w, 16));
-	BT_DBG("n1 %s n2 %s", h(n1, 16), h(n2, 16));
-	BT_DBG("r %s io_cap", h(r, 16), h(iocap, 3));
-	BT_DBG("a1 %s a2 %s", h(a1, 7), h(a2, 7));
-
-	swap_buf(m, n1, 16);
-	swap_buf(m + 16, n2, 16);
-	swap_buf(m + 32, r, 16);
-	swap_buf(m + 48, iocap, 3);
-
-	m[51] = a1->type;
-	memcpy(m + 52, a1->val, 6);
-	swap_buf(m + 52, a1->val, 6);
-
-	m[58] = a2->type;
-	memcpy(m + 59, a2->val, 6);
-	swap_buf(m + 59, a2->val, 6);
-
-	swap_buf(ws, w, 16);
-
-	err = bt_smp_aes_cmac(ws, m, sizeof(m), check);
-	if (err) {
-		return err;
-	}
-
-	BT_DBG("res %s", h(check, 16));
-
-	swap_in_place(check, 16);
-
-	return 0;
-}
-
-static int smp_g2(const uint8_t u[32], const uint8_t v[32],
-		  const uint8_t x[16], const uint8_t y[16], uint32_t *passkey)
-{
-	uint8_t m[80], xs[16];
-	int err;
-
-	BT_DBG("u %s", h(u, 32));
-	BT_DBG("v %s", h(v, 32));
-	BT_DBG("x %s y %s", h(x, 16), h(y, 16));
-
-	swap_buf(m, u, 32);
-	swap_buf(m + 32, v, 32);
-	swap_buf(m + 64, y, 16);
-
-	swap_buf(xs, x, 16);
-
-	/* reuse xs (key) as buffer for result */
-	err = bt_smp_aes_cmac(xs, m, sizeof(m), xs);
-	if (err) {
-		return err;
-	}
-	BT_DBG("res %s", h(xs, 16));
-
-	memcpy(passkey, xs + 12, 4);
-	*passkey = sys_be32_to_cpu(*passkey) % 1000000;
-
-	BT_DBG("passkey %u", *passkey);
-
-	return 0;
-}
-
-static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
-{
-	struct bt_conn *conn = smp->chan.conn;
-	struct bt_smp_pairing_confirm *req;
-	struct net_buf *rsp_buf;
-	int err;
-
-	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
-				    sizeof(*req));
-	if (!rsp_buf) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	req = net_buf_add(rsp_buf, sizeof(*req));
-
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		uint8_t r;
-
-		switch (smp->method) {
-		case PASSKEY_CONFIRM:
-		case JUST_WORKS:
-			r = 0;
-			break;
-		case PASSKEY_DISPLAY:
-		case PASSKEY_INPUT:
-			/*
-			 * In the Passkey Entry protocol, the most significant
-			 * bit of Z is set equal to one and the least
-			 * significant bit is made up from one bit of the
-			 * passkey e.g. if the passkey bit is 1, then Z = 0x81
-			 * and if the passkey bit is 0, then Z = 0x80.
-			 */
-			r = (smp->passkey >> smp->passkey_round) & 0x01;
-			r |= 0x80;
-
-			break;
-		default:
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		err = smp_f4(bt_dev.pkey, smp->pkey, smp->prnd, r, req->val);
-	} else {
-		err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp,
-			     &conn->le.init_addr, &conn->le.resp_addr, req->val);
-	}
-
-	if (err) {
-		net_buf_unref(rsp_buf);
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	smp_send(smp, rsp_buf);
-
-	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
-
-	return 0;
-}
-
 static uint8_t sc_send_public_key(struct bt_smp *smp)
 {
 	struct bt_smp_public_key *req;
@@ -1293,26 +1329,6 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
-static uint8_t smp_send_pairing_random(struct bt_smp *smp)
-{
-	struct bt_conn *conn = smp->chan.conn;
-	struct bt_smp_pairing_random *req;
-	struct net_buf *rsp_buf;
-
-	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
-				    sizeof(*req));
-	if (!rsp_buf) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	req = net_buf_add(rsp_buf, sizeof(*req));
-	memcpy(req->val, smp->prnd, sizeof(req->val));
-
-	smp_send(smp, rsp_buf);
-
-	return 0;
-}
-
 static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing_confirm *req = (void *)buf->data;
@@ -1372,20 +1388,6 @@ static uint8_t get_keys_type(uint8_t method)
 	default:
 		return BT_KEYS_UNAUTHENTICATED;
 	}
-}
-
-static uint8_t get_encryption_key_size(struct bt_smp *smp)
-{
-	struct bt_smp_pairing *req, *rsp;
-
-	req = (struct bt_smp_pairing *)&smp->preq[1];
-	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
-
-	/* The smaller value of the initiating and responding devices maximum
-	 * encryption key length parameters shall be used as the encryption key
-	 * size.
-	 */
-	return min(req->max_key_size, rsp->max_key_size);
 }
 
 static uint8_t sc_smp_send_dhkey_check(struct bt_smp *smp, const uint8_t *e)
