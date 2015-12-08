@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include <device.h>
 #include <init.h>
@@ -103,6 +104,21 @@ extern void __printk_hook_install(int (*fn)(int));
 static struct nano_fifo *avail_queue;
 static struct nano_fifo *lines_queue;
 
+/* Control characters */
+#define ESC                0x1b
+#define DEL                0x7f
+
+/* ANSI escape sequences */
+#define ANSI_ESC           '['
+#define ANSI_UP            'A'
+#define ANSI_DOWN          'B'
+#define ANSI_FORWARD       'C'
+#define ANSI_BACKWARD      'D'
+#define ANSI_UP_STR        "\x1b[A"
+#define ANSI_DOWN_STR      "\x1b[B"
+#define ANSI_FORWARD_STR   "\x1b[C"
+#define ANSI_BACKWARD_STR  "\x1b[D"
+
 static int read_uart(struct device *uart, uint8_t *buf, unsigned int size)
 {
 	int rx;
@@ -118,6 +134,14 @@ static int read_uart(struct device *uart, uint8_t *buf, unsigned int size)
 	return rx;
 }
 
+static void write_uart(struct device *uart, const char *str)
+{
+	while (*str) {
+		uart_poll_out(uart, *str);
+		str++;
+	}
+}
+
 void uart_console_isr(void *unused)
 {
 	ARG_UNUSED(unused);
@@ -125,6 +149,7 @@ void uart_console_isr(void *unused)
 	while (uart_irq_update(uart_console_dev) &&
 	       uart_irq_is_pending(uart_console_dev)) {
 		static struct uart_console_input *cmd;
+		static bool esc, ansi_esc;
 		static size_t pos;
 		uint8_t byte;
 		int rx;
@@ -154,25 +179,60 @@ void uart_console_isr(void *unused)
 				return;
 		}
 
+		/* Handle ANSI escape mode */
+		if (ansi_esc) {
+			ansi_esc = false;
+			/* Ignore all ANSI escape sequences for now */
+			continue;
+		}
+
+		/* Handle escape mode */
+		if (esc) {
+			esc = false;
+			switch (byte) {
+			case ANSI_ESC:
+				ansi_esc = true;
+				break;
+			default:
+				break;
+			}
+
+			continue;
+		}
+
+		/* Handle special control characters */
+		if (!isprint(byte)) {
+			switch (byte) {
+			case DEL:
+				if (pos > 0) {
+					write_uart(uart_console_dev, "\b \b");
+					pos--;
+				}
+				break;
+			case ESC:
+				esc = true;
+				break;
+			case '\r':
+				cmd->line[pos] = '\0';
+				uart_poll_out(uart_console_dev, '\n');
+				pos = 0;
+				nano_isr_fifo_put(lines_queue, cmd);
+				cmd = NULL;
+				break;
+			default:
+				break;
+			}
+
+			continue;
+		}
+
 		/* Echo back to console */
 		uart_poll_out(uart_console_dev, byte);
 
-		if (byte == '\r') {
-			cmd->line[pos] = '\0';
-			uart_poll_out(uart_console_dev, '\n');
-			pos = 0;
-
-			nano_isr_fifo_put(lines_queue, cmd);
-			cmd = NULL;
-			continue;
-		}
-
 		/* Ignore characters if there's no more buffer space */
-		if (pos == sizeof(cmd->line) - 1) {
-			continue;
+		if (pos < sizeof(cmd->line) - 1) {
+			cmd->line[pos++] = byte;
 		}
-
-		cmd->line[pos++] = byte;
 	}
 }
 
