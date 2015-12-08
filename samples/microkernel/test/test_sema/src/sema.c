@@ -1,5 +1,3 @@
-/* sema.c - test semaphore APIs */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -16,15 +14,24 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This modules tests the following semaphore routines:
-
-  task_sem_group_reset(), task_sem_group_give(),
-  task_sem_group_take_wait(), task_sem_group_take_wait_timeout(),
-  task_sem_reset(), task_sem_give(), task_sem_count_get(),
-  task_sem_take(), task_sem_take_wait(), task_sem_take_wait_timeout(),
-  isr_sem_give(),  fiber_sem_give()
+/**
+ * @file
+ * @brief Test semaphore APIs
+ *
+ * This modules tests the following semaphore routines:
+ *
+ * task_sem_group_reset()
+ * task_sem_group_give()
+ * task_sem_group_take_wait()
+ * task_sem_group_take_wait_timeout()
+ * task_sem_reset()
+ * task_sem_give()
+ * task_sem_count_get()
+ * task_sem_take()
+ * task_sem_take_wait()
+ * task_sem_take_wait_timeout()
+ * isr_sem_give()
+ * fiber_sem_give()
  */
 
 #include <zephyr.h>
