@@ -39,6 +39,14 @@ config	BLUETOOTH_H4
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
 
+config BLUETOOTH_H5
+	bool "H:5 UART [EXPERIMENTAL]"
+	select UART_INTERRUPT_DRIVEN
+	select BLUETOOTH_UART
+	help
+	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
+	  Three-Wire UART Transport Layer.
+
 config BLUETOOTH_NO_DRIVER
 	bool "No default HCI driver"
 	help
@@ -85,6 +93,7 @@ config BLUETOOTH_HCI_SEND_RESERVE
 	int
 	depends on BLUETOOTH
 	default 0 if BLUETOOTH_H4
+	default 1 if BLUETOOTH_H5
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
