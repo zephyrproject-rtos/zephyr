@@ -336,10 +336,11 @@ USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
 PLATFORM_NAME = $(subst $(DQUOTE),,$(CONFIG_PLATFORM))
 SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
+BOARD_NAME = $(subst $(DQUOTE),,$(CONFIG_BOARD))
 KERNEL_NAME = $(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 KERNEL_ELF_NAME = $(KERNEL_NAME).elf
 
-export PLATFORM_NAME SOC_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME
+export PLATFORM_NAME SOC_NAME BOARD_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME
 # Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 ZEPHYRINCLUDE    = \

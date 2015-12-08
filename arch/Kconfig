@@ -49,4 +49,10 @@ config PLATFORM
         This option holds the directory name used by the build system to locate
         the correct linker file.
 
+config BOARD
+	string
+	help
+	This option holds the name of the board and is used to located the files
+	related to the board in the source tree.
+
 source "arch/*/Kconfig"
