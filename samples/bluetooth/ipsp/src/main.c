@@ -47,16 +47,6 @@
 
 #define UDP_PORT		4242
 
-static struct bt_uuid gap_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GAP,
-};
-
-static struct bt_uuid device_name_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GAP_DEVICE_NAME,
-};
-
 static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		     void *buf, uint16_t len, uint16_t offset)
 {
@@ -65,11 +55,6 @@ static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
 				 strlen(name));
 }
-
-static struct bt_uuid appeareance_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GAP_APPEARANCE,
-};
 
 static int read_appearance(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
@@ -81,17 +66,6 @@ static int read_appearance(struct bt_conn *conn,
 				 sizeof(appearance));
 }
 
-/* Device Information Service Variables */
-static struct bt_uuid dis_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_DIS,
-};
-
-static struct bt_uuid model_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_DIS_MODEL_NUMBER_STRING,
-};
-
 static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   void *buf, uint16_t len, uint16_t offset)
 {
@@ -100,11 +74,6 @@ static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 strlen(value));
 }
-
-static struct bt_uuid manuf_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_DIS_MANUFACTURER_NAME_STRING,
-};
 
 static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		      void *buf, uint16_t len, uint16_t offset)
@@ -116,20 +85,21 @@ static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static struct bt_gatt_attr attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(&gap_uuid),
-	BT_GATT_CHARACTERISTIC(&device_name_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&device_name_uuid, BT_GATT_PERM_READ,
-			  read_name, NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(&appeareance_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&appeareance_uuid, BT_GATT_PERM_READ,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
+			   read_name, NULL, DEVICE_NAME),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
 			   read_appearance, NULL, NULL),
 	/* Device Information Service Declaration */
-	BT_GATT_PRIMARY_SERVICE(&dis_uuid),
-	BT_GATT_CHARACTERISTIC(&model_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&model_uuid, BT_GATT_PERM_READ,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
+	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_PERM_READ,
 			   read_model, NULL, CONFIG_PLATFORM),
-	BT_GATT_CHARACTERISTIC(&manuf_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&manuf_uuid, BT_GATT_PERM_READ,
+	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MANUFACTURER_NAME,
+			       BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_PERM_READ,
 			   read_manuf, NULL, "Manufacturer"),
 };
 

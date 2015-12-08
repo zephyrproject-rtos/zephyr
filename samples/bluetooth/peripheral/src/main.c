@@ -33,16 +33,6 @@
 #define DEVICE_NAME		"Test peripheral"
 #define HEART_RATE_APPEARANCE	0x0341
 
-static struct bt_uuid gap_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GAP,
-};
-
-static struct bt_uuid device_name_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GAP_DEVICE_NAME,
-};
-
 static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		     void *buf, uint16_t len, uint16_t offset)
 {
@@ -51,11 +41,6 @@ static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
 				 strlen(name));
 }
-
-static struct bt_uuid appeareance_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GAP_APPEARANCE,
-};
 
 static int read_appearance(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
@@ -66,26 +51,6 @@ static int read_appearance(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
 				 sizeof(appearance));
 }
-
-static struct bt_uuid hrs_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_HRS,
-};
-
-static struct bt_uuid hrmc_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_HRS_MEASUREMENT,
-};
-
-static struct bt_uuid bslc_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_HRS_BODY_SENSOR,
-};
-
-static struct bt_uuid hrcpc_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_HRS_CONTROL_POINT,
-};
 
 static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t simulate_hrm = 0;
@@ -104,17 +69,6 @@ static int read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(value));
 }
 
-/* Battery Service Variables */
-static struct bt_uuid bas_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_BAS,
-};
-
-static struct bt_uuid blvl_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_BAS_BATTERY_LEVEL,
-};
-
 static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t simulate_blvl = 0;
 static uint8_t battery = 100;
@@ -132,17 +86,6 @@ static int read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(*value));
 }
-
-/* Current Time Service Variables */
-static struct bt_uuid cts_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_CTS,
-};
-
-static struct bt_uuid ct_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_CTS_CURRENT_TIME,
-};
 
 static void generate_current_time(uint8_t *buf)
 {
@@ -205,17 +148,6 @@ static int write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-/* Device Information Service Variables */
-static struct bt_uuid dis_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_DIS,
-};
-
-static struct bt_uuid model_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_DIS_MODEL_NUMBER_STRING,
-};
-
 static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   void *buf, uint16_t len, uint16_t offset)
 {
@@ -224,11 +156,6 @@ static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 strlen(value));
 }
-
-static struct bt_uuid manuf_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_DIS_MANUFACTURER_NAME_STRING,
-};
 
 static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		      void *buf, uint16_t len, uint16_t offset)
@@ -380,45 +307,49 @@ static const struct bt_uuid vnd_signed_uuid = {
 };
 
 static struct bt_gatt_attr attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(&gap_uuid),
-	BT_GATT_CHARACTERISTIC(&device_name_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&device_name_uuid, BT_GATT_PERM_READ,
-			  read_name, NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(&appeareance_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&appeareance_uuid, BT_GATT_PERM_READ,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
+			   read_name, NULL, DEVICE_NAME),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
 			   read_appearance, NULL, NULL),
 	/* Heart Rate Service Declaration */
-	BT_GATT_PRIMARY_SERVICE(&hrs_uuid),
-	BT_GATT_CHARACTERISTIC(&hrmc_uuid, BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(&hrmc_uuid, BT_GATT_PERM_READ, NULL, NULL, NULL),
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_HRS),
+	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_MEASUREMENT, BT_GATT_CHRC_NOTIFY),
+	BT_GATT_DESCRIPTOR(BT_UUID_HRS_MEASUREMENT, BT_GATT_PERM_READ, NULL,
+			   NULL, NULL),
 	BT_GATT_CCC(hrmc_ccc_cfg, hrmc_ccc_cfg_changed),
-	BT_GATT_CHARACTERISTIC(&bslc_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&bslc_uuid, BT_GATT_PERM_READ, read_blsc, NULL,
-			   NULL),
-	BT_GATT_CHARACTERISTIC(&hrcpc_uuid, BT_GATT_CHRC_WRITE),
+	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_BODY_SENSOR, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_HRS_BODY_SENSOR, BT_GATT_PERM_READ,
+			   read_blsc, NULL, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_CONTROL_POINT, BT_GATT_CHRC_WRITE),
 	/* TODO: Add write permission and callback */
-	BT_GATT_DESCRIPTOR(&hrcpc_uuid, BT_GATT_PERM_READ, NULL, NULL, NULL),
+	BT_GATT_DESCRIPTOR(BT_UUID_HRS_CONTROL_POINT, BT_GATT_PERM_READ, NULL,
+			   NULL, NULL),
 	/* Battery Service Declaration */
-	BT_GATT_PRIMARY_SERVICE(&bas_uuid),
-	BT_GATT_CHARACTERISTIC(&blvl_uuid,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_BAS),
+	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_LEVEL,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(&blvl_uuid, BT_GATT_PERM_READ, read_blvl, NULL,
-			   &battery),
+	BT_GATT_DESCRIPTOR(BT_UUID_BAS_BATTERY_LEVEL, BT_GATT_PERM_READ,
+			   read_blvl, NULL, &battery),
 	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
 	/* Current Time Service Declaration */
-	BT_GATT_PRIMARY_SERVICE(&cts_uuid),
-	BT_GATT_CHARACTERISTIC(&ct_uuid, BT_GATT_CHRC_READ |
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_CTS),
+	BT_GATT_CHARACTERISTIC(BT_UUID_CTS_CURRENT_TIME, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE),
-	BT_GATT_DESCRIPTOR(&ct_uuid, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+	BT_GATT_DESCRIPTOR(BT_UUID_CTS_CURRENT_TIME,
+			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 			   read_ct, write_ct, ct),
 	BT_GATT_CCC(ct_ccc_cfg, ct_ccc_cfg_changed),
 	/* Device Information Service Declaration */
-	BT_GATT_PRIMARY_SERVICE(&dis_uuid),
-	BT_GATT_CHARACTERISTIC(&model_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&model_uuid, BT_GATT_PERM_READ,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
+	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_PERM_READ,
 			   read_model, NULL, CONFIG_PLATFORM),
-	BT_GATT_CHARACTERISTIC(&manuf_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&manuf_uuid, BT_GATT_PERM_READ,
+	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MANUFACTURER_NAME,
+			       BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_PERM_READ,
 			   read_manuf, NULL, "Manufacturer"),
 	/* Vendor Primary Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&vnd_uuid),

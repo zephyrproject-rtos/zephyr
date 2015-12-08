@@ -157,15 +157,9 @@ static struct bt_l2cap_server server = {
 	.accept		= ipsp_accept,
 };
 
-/* IP Support Service Variables */
-static struct bt_uuid ipss_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_IPSS,
-};
-
 static struct bt_gatt_attr attrs[] = {
 	/* IPSS Service Declaration */
-	BT_GATT_PRIMARY_SERVICE(&ipss_uuid),
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_IPSS),
 };
 
 static int net_driver_bt_open(void)

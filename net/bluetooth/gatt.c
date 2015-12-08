@@ -383,14 +383,12 @@ static int att_notify(struct bt_conn *conn, uint16_t handle, const void *data,
 static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct notify_data *data = user_data;
-	struct bt_uuid uuid = { .type = BT_UUID_16, .u16 = BT_UUID_GATT_CCC };
-	struct bt_uuid chrc = { .type = BT_UUID_16, .u16 = BT_UUID_GATT_CHRC };
 	struct _bt_gatt_ccc *ccc;
 	size_t i;
 
-	if (bt_uuid_cmp(attr->uuid, &uuid)) {
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC)) {
 		/* Stop if we reach the next characteristic */
-		if (!bt_uuid_cmp(attr->uuid, &chrc)) {
+		if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
 			return BT_GATT_ITER_STOP;
 		}
 		return BT_GATT_ITER_CONTINUE;
@@ -711,9 +709,9 @@ static int att_find_type(struct bt_conn *conn,
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
-		req->type = sys_cpu_to_le16(BT_UUID_GATT_PRIMARY);
+		req->type = sys_cpu_to_le16(BT_UUID_GATT_PRIMARY->u16);
 	} else {
-		req->type = sys_cpu_to_le16(BT_UUID_GATT_SECONDARY);
+		req->type = sys_cpu_to_le16(BT_UUID_GATT_SECONDARY->u16);
 	}
 
 	BT_DBG("uuid %s start_handle 0x%04x end_handle 0x%04x",
@@ -955,9 +953,9 @@ static int att_read_type(struct bt_conn *conn,
 
 	value = net_buf_add(buf, sizeof(*value));
 	if (params->type == BT_GATT_DISCOVER_INCLUDE)
-		*value = sys_cpu_to_le16(BT_UUID_GATT_INCLUDE);
+		*value = sys_cpu_to_le16(BT_UUID_GATT_INCLUDE->u16);
 	else
-		*value = sys_cpu_to_le16(BT_UUID_GATT_CHRC);
+		*value = sys_cpu_to_le16(BT_UUID_GATT_CHRC->u16);
 
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);

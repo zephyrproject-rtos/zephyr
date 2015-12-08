@@ -998,29 +998,13 @@ static int read_appearance(struct bt_conn *conn,
 				 sizeof(appearance));
 }
 
-/* GAP SERVICE (0x1800) */
-static struct bt_uuid gap_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GAP,
-};
-
-static struct bt_uuid device_name_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GAP_DEVICE_NAME,
-};
-
-static struct bt_uuid appeareance_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GAP_APPEARANCE,
-};
-
 static struct bt_gatt_attr attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(&gap_uuid),
-	BT_GATT_CHARACTERISTIC(&device_name_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&device_name_uuid, BT_GATT_PERM_READ, read_string,
-			   NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(&appeareance_uuid, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(&appeareance_uuid, BT_GATT_PERM_READ,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
+			   read_string, NULL, DEVICE_NAME),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
 			   read_appearance, NULL, NULL),
 };
 

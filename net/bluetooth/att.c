@@ -89,16 +89,6 @@ static NET_BUF_POOL(att_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
 		    &att_buf, NULL, 0);
 
-static const struct bt_uuid primary_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GATT_PRIMARY,
-};
-
-static const struct bt_uuid secondary_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GATT_SECONDARY,
-};
-
 static void att_req_destroy(struct bt_att_req *req)
 {
 	if (req->buf) {
@@ -391,7 +381,7 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	uint8_t uuid[16];
 
 	/* Skip if not a primary service */
-	if (bt_uuid_cmp(attr->uuid, &primary_uuid)) {
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY)) {
 		if (data->group && attr->handle > data->group->end_handle) {
 			data->group->end_handle = sys_cpu_to_le16(attr->handle);
 		}
@@ -485,7 +475,7 @@ static uint8_t att_find_type_req(struct bt_att *att, struct net_buf *buf)
 	 * and the Attribute Value set to the 16-bit Bluetooth UUID or 128-bit
 	 * UUID for the specific primary service.
 	 */
-	if (type != BT_UUID_GATT_PRIMARY) {
+	if (type != BT_UUID_GATT_PRIMARY->u16) {
 		send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, start_handle,
 			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 		return 0;
@@ -1014,8 +1004,8 @@ static uint8_t att_read_group_req(struct bt_att *att, struct net_buf *buf)
 	 * Request. The «Characteristic» grouping type shall not be used in
 	 * the ATT Read By Group Type Request.
 	 */
-	if (bt_uuid_cmp(&uuid, &primary_uuid) &&
-	    bt_uuid_cmp(&uuid, &secondary_uuid)) {
+	if (bt_uuid_cmp(&uuid, BT_UUID_GATT_PRIMARY) &&
+	    bt_uuid_cmp(&uuid, BT_UUID_GATT_SECONDARY)) {
 		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, start_handle,
 				     BT_ATT_ERR_UNSUPPORTED_GROUP_TYPE);
 		return 0;
