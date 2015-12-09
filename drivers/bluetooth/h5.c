@@ -43,6 +43,7 @@
 
 static BT_STACK_NOINIT(tx_stack, 256);
 static BT_STACK_NOINIT(rx_stack, 256);
+static BT_STACK_NOINIT(ack_stack, 256);
 
 #define HCI_3WIRE_ACK_PKT	0x00
 #define HCI_COMMAND_PKT		0x01
@@ -64,6 +65,8 @@ static bool reliable_packet(uint8_t type)
 	}
 }
 
+/* FIXME: Correct timeout */
+#define H5_RX_ACK_TIMEOUT	(sys_clock_ticks_per_sec / 4)
 
 #define SLIP_DELIMITER	0xc0
 #define SLIP_ESC	0xdb
@@ -94,6 +97,7 @@ static struct h5 {
 	struct nano_fifo	tx_queue;
 	struct nano_fifo	rx_queue;
 	struct nano_fifo	unack_queue;
+
 	struct nano_sem		active_state;
 
 	uint8_t			tx_win;
@@ -101,6 +105,9 @@ static struct h5 {
 	uint8_t			tx_seq;
 
 	uint8_t			rx_ack;
+
+	/* delayed rx ack fiber */
+	void			*ack_to;
 
 	enum state {
 		UNINIT,
@@ -280,6 +287,75 @@ static void hexdump(const unsigned char *packet, int length)
 		printf("\n");
 }
 
+static uint8_t h5_slip_byte(uint8_t byte)
+{
+	switch (byte) {
+	case SLIP_DELIMITER:
+		uart_poll_out(h5_dev, SLIP_ESC);
+		uart_poll_out(h5_dev, SLIP_ESC_DELIM);
+		return 2;
+	case SLIP_ESC:
+		uart_poll_out(h5_dev, SLIP_ESC);
+		uart_poll_out(h5_dev, SLIP_ESC_ESC);
+		return 2;
+	default:
+		uart_poll_out(h5_dev, byte);
+		return 1;
+	}
+}
+
+static void h5_send(const uint8_t *payload, uint8_t type, int len)
+{
+	uint8_t hdr[4];
+	int i;
+
+	memset(hdr, 0, sizeof(hdr));
+
+	/* Set ACK for outgoing packet and stop delayed fiber */
+	H5_SET_ACK(hdr, h5.tx_ack);
+	if (h5.ack_to) {
+		BT_DBG("Cancel delayed ack fiber");
+		fiber_delayed_start_cancel(h5.ack_to);
+		h5.ack_to = NULL;
+	}
+
+	if (reliable_packet(type)) {
+		H5_SET_RELIABLE(hdr);
+		H5_SET_SEQ(hdr, h5.tx_seq);
+		h5.tx_seq = (h5.tx_seq + 1) % 8;
+	}
+
+	H5_SET_TYPE(hdr, type);
+	H5_SET_LEN(hdr, len);
+
+	/* Calculate CRC */
+	hdr[3] = ~((hdr[0] + hdr[1] + hdr[2]) & 0xff);
+
+	h5_print_header(hdr, "TX: <");
+
+	uart_poll_out(h5_dev, SLIP_DELIMITER);
+
+	for (i = 0; i < 4; i++)
+		h5_slip_byte(hdr[i]);
+
+	for (i = 0; i < len; i++)
+		h5_slip_byte(payload[i]);
+
+	uart_poll_out(h5_dev, SLIP_DELIMITER);
+}
+
+static void ack_fiber(int arg1, int arg2)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+
+	BT_DBG("");
+
+	h5.ack_to = NULL;
+
+	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0);
+}
+
 static void h5_process_complete_packet(struct net_buf *buf, uint8_t type,
 				       uint8_t *hdr)
 {
@@ -291,6 +367,10 @@ static void h5_process_complete_packet(struct net_buf *buf, uint8_t type,
 	/* For reliable packet increment next transmit ack number */
 	if (reliable_packet(type)) {
 		h5.tx_ack = (h5.tx_ack + 1) % 8;
+		/* Start delayed fiber to ack the packet */
+		h5.ack_to = fiber_delayed_start(ack_stack, sizeof(ack_stack),
+						ack_fiber, 0, 0, 7, 0,
+						H5_RX_ACK_TIMEOUT);
 	}
 
 	h5_print_header(hdr, "RX: >");
@@ -441,57 +521,6 @@ void bt_uart_isr(void *unused)
 	}
 }
 
-static uint8_t h5_slip_byte(uint8_t byte)
-{
-	switch (byte) {
-	case SLIP_DELIMITER:
-		uart_poll_out(h5_dev, SLIP_ESC);
-		uart_poll_out(h5_dev, SLIP_ESC_DELIM);
-		return 2;
-	case SLIP_ESC:
-		uart_poll_out(h5_dev, SLIP_ESC);
-		uart_poll_out(h5_dev, SLIP_ESC_ESC);
-		return 2;
-	default:
-		uart_poll_out(h5_dev, byte);
-		return 1;
-	}
-}
-
-static void h5_send(const uint8_t *payload, uint8_t type, int len)
-{
-	uint8_t hdr[4];
-	int i;
-
-	memset(hdr, 0, sizeof(hdr));
-
-	H5_SET_ACK(hdr, h5.tx_ack);
-
-	if (reliable_packet(type)) {
-		H5_SET_RELIABLE(hdr);
-		H5_SET_SEQ(hdr, h5.tx_seq);
-		h5.tx_seq = (h5.tx_seq + 1) % 8;
-	}
-
-	H5_SET_TYPE(hdr, type);
-	H5_SET_LEN(hdr, len);
-
-	/* Calculate CRC */
-	hdr[3] = ~((hdr[0] + hdr[1] + hdr[2]) & 0xff);
-
-	h5_print_header(hdr, "TX: <");
-
-	uart_poll_out(h5_dev, SLIP_DELIMITER);
-
-	for (i = 0; i < 4; i++)
-		h5_slip_byte(hdr[i]);
-
-	for (i = 0; i < len; i++)
-		h5_slip_byte(payload[i]);
-
-	uart_poll_out(h5_dev, SLIP_DELIMITER);
-}
-
 static int bt_uart_h5_send(struct net_buf *buf)
 {
 	uint8_t type = UNALIGNED_GET((uint8_t *)buf->data);
@@ -561,6 +590,8 @@ static void tx_fiber(void)
 			 */
 			nano_fifo_put(&h5.unack_queue, buf);
 			unack_queue_len++;
+
+			/* TODO: Start delayed fiber resending packets */
 			break;
 		}
 	}
