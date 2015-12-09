@@ -1,5 +1,3 @@
-/* pipe.c - test microkernel target pipe APIs */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -16,15 +14,21 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This modules tests the following target pipe routines:
-
-  task_pipe_put(), task_pipe_put_wait(), task_pipe_put_wait_timeout()
-  task_pipe_get(), task_pipe_get_wait(), task_pipe_get_wait_timeout()
-
-The following target pipe routine does not yet have a test case:
-  task_pipe_block_put()
+/**
+ * @file
+ * @brief Test microkernel target pipe APIs
+ *
+ * This modules tests the following target pipe routines:
+ *
+ *    task_pipe_put()
+ *    task_pipe_put_wait()
+ *    task_pipe_put_wait_timeout()
+ *    task_pipe_get()
+ *    task_pipe_get_wait()
+ *    task_pipe_get_wait_timeout()
+ *
+ * The following target pipe routine does not yet have a test case:
+ *    task_pipe_block_put()
  */
 
 #include <zephyr.h>
