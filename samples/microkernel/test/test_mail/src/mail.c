@@ -1,5 +1,3 @@
-/* mail.c - test mailbox APIs */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -16,32 +14,39 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module tests the following mailbox APIs:
-
-   task_mbox_put, task_mbox_put_wait, task_mbox_put_wait_timeout
-   task_mbox_get, task_mbox_get_wait, task_mbox_get_wait_timeout
-
-   task_mbox_data_get
-   task_mbox_data_block_get,  task_mbox_data_block_get_wait,
-   task_mbox_data_block_get_wait_timeout
-
-The module does NOT test the following mailbox APIs:
-
-   task_mbox_block_put
-
-Also, not all capabilities of all of the tested APIs are exercised. Things that
-are not (yet) tested include:
-
-- Having multiple tasks sending simultaneously to a mailbox,
-  to ensure a mailbox can contain more than one message.
-- Having multiple tasks waiting simultaneously on a mailbox,
-  to ensure a mailbox can have more than one waiting task.
-- Having messages of differing priorities residing in a mailbox,
-  to ensure higher priority messages get preference.
-- Having receiving tasks of differing priorities waiting on a mailbox.
-  to ensure higher priority tasks get preference.
+/**
+ * @file
+ * @brief Test mailbox APIs
+ *
+ * This module tests the following mailbox APIs:
+ *
+ *    task_mbox_put
+ *    task_mbox_put_wait
+ *    task_mbox_put_wait_timeout
+ *    task_mbox_get
+ *    task_mbox_get_wait
+ *    task_mbox_get_wait_timeout
+ *
+ *    task_mbox_data_get
+ *    task_mbox_data_block_get
+ *    task_mbox_data_block_get_wait
+ *    task_mbox_data_block_get_wait_timeout
+ *
+ * The module does NOT test the following mailbox APIs:
+ *
+ *    task_mbox_block_put
+ *
+ * Also, not all capabilities of all of the tested APIs are exercised.
+ * Things that are not (yet) tested include:
+ *
+ * - Having multiple tasks sending simultaneously to a mailbox,
+ *   to ensure a mailbox can contain more than one message.
+ * - Having multiple tasks waiting simultaneously on a mailbox,
+ *   to ensure a mailbox can have more than one waiting task.
+ * - Having messages of differing priorities residing in a mailbox,
+ *   to ensure higher priority messages get preference.
+ * - Having receiving tasks of differing priorities waiting on a mailbox.
+ *   to ensure higher priority tasks get preference.
  */
 
 #include <zephyr.h>
