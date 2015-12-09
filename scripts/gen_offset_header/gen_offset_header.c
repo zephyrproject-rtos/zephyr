@@ -83,7 +83,7 @@
 #define SWAB_Elf32_Off    SWAB_Elf32_Word
 #define SWAB_Elf32_Sword  SWAB_Elf32_Word
 
-#if defined(WINDOWS)
+#if defined(_WIN32) || defined(__CYGWIN32__) || defined(__WIN32__)
   #define OPEN_FLAGS (O_RDONLY|O_BINARY)
 #else
   #define OPEN_FLAGS (O_RDONLY)
