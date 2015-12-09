@@ -741,7 +741,12 @@ Commands and responses:
 
 		Object Included_Service is defined as:
 					Included_Handle (2 octets)
+					Type (1 octet)
 					Service (7 or 21 octets)
+
+		Valid Type parameter values:
+					0x00 = Primary
+					0x01 = Secondary
 
 		Object Service is defined as:
 					Start_Handle (2 octets)
