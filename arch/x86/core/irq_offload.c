@@ -21,11 +21,10 @@
 #include <nanokernel.h>
 #include <irq_offload.h>
 
-#define SW_IRQ_VECTOR	(CONFIG_IDT_NUM_VECTORS - 1)
-
 extern void (*_irq_sw_handler)(void);
-NANO_CPU_INT_REGISTER(_irq_sw_handler, NANO_SOFT_IRQ, SW_IRQ_VECTOR / 16,
-		      SW_IRQ_VECTOR, 0);
+NANO_CPU_INT_REGISTER(_irq_sw_handler, NANO_SOFT_IRQ,
+		      CONFIG_IRQ_OFFLOAD_VECTOR / 16,
+		      CONFIG_IRQ_OFFLOAD_VECTOR, 0);
 
 static irq_offload_routine_t offload_routine;
 static void *offload_param;
@@ -48,7 +47,8 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 	offload_routine = routine;
 	offload_param = parameter;
 
-	__asm__ volatile("int %[vector]" : : [vector] "i" (SW_IRQ_VECTOR));
+	__asm__ volatile("int %[vector]" : :
+			 [vector] "i" (CONFIG_IRQ_OFFLOAD_VECTOR));
 
 	irq_unlock(key);
 }

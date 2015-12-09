@@ -250,6 +250,18 @@ config IRQ_OFFLOAD
 	run in interrupt context. Uses one entry in the	IDT.  Mainly useful
 	for test cases.
 
+config IRQ_OFFLOAD_VECTOR
+	int "IDT vector to use for IRQ offload"
+	default 63 if MVIC
+	default 32
+	range 32 255
+	depends on IRQ_OFFLOAD
+	help
+	Specify the IDT vector to use for the IRQ offload interrupt handler.
+	The default should be fine for most arches, but on systems like MVIC
+	where there is a fixed IRQ-to-vector mapping another value may be
+	needed to avoid collision.
+
 config XIP
 	default n
 endmenu
