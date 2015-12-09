@@ -416,6 +416,8 @@ static int i2c_qse_ss_intr_transfer(struct device *dev,
 				    uint8_t *read_buf,  uint32_t read_len,
 				    uint16_t slave_address, uint32_t flags)
 {
+	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
+
 	int ret = DEV_OK;
 
 	/* First step, check if there is current activity */
@@ -441,7 +443,7 @@ static int i2c_qse_ss_intr_transfer(struct device *dev,
 		ret = DEV_FAIL;
 	}
 
-	dw->state = I2C_DW_STATE_READY;
+	dw->state = I2C_QSE_SS_STATE_READY;
 
 	return ret;
 }
@@ -540,20 +542,11 @@ static int i2c_qse_ss_resume(struct device *dev)
 	return DEV_OK;
 }
 
-static int i2c_qse_ss_set_callback(struct device *dev, i2c_callback cb)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cb);
-
-	return DEV_INVALID_OP;
-}
-
 static struct i2c_driver_api ss_funcs = {
 	.configure = i2c_qse_ss_runtime_configure,
 	.transfer = i2c_qse_ss_intr_transfer,
 	.suspend = i2c_qse_ss_suspend,
 	.resume = i2c_qse_ss_resume,
-	.set_callback = i2c_qse_ss_set_callback,
 };
 
 int i2c_qse_ss_initialize(struct device *dev)
@@ -570,7 +563,7 @@ int i2c_qse_ss_initialize(struct device *dev)
 	/* Enable clock for controller so we can talk to it */
 	_i2c_qse_ss_reg_write_or(dev, REG_CON, IC_CON_CLK_ENA);
 
-	synchronous_call_init(&dev->sync);
+	synchronous_call_init(&dw->sync);
 
 	if (i2c_qse_ss_runtime_configure(dev, dw->app_config.raw) != DEV_OK) {
 		DBG("I2C_SS: Cannot set default configuration 0x%x\n",
