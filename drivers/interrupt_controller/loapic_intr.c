@@ -181,6 +181,11 @@
 #define IMCR_IOAPIC_ON 0x01  /* IMCR IOAPIC route enable */
 #define IMCR_IOAPIC_OFF 0x00 /* IMCR IOAPIC route disable */
 
+#if CONFIG_LOAPIC_SPURIOUS_VECTOR_ID == -1
+#define LOAPIC_SPURIOUS_VECTOR_ID (CONFIG_IDT_NUM_VECTORS - 1)
+#else
+#define LOAPIC_SPURIOUS_VECTOR_ID CONFIG_LOAPIC_SPURIOUS_VECTOR_ID
+#endif
 
 /**
  *
@@ -243,6 +248,12 @@ int _loapic_init(struct device *unused)
 	if (loApicMaxLvt >= LOAPIC_LVT_PENTIUM4)
 		*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_THERMAL) =
 			LOAPIC_LVT_MASKED;
+
+#if CONFIG_LOAPIC_SPURIOUS_VECTOR
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR) =
+		(*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR) & 0xFFFFFF00)
+		| (LOAPIC_SPURIOUS_VECTOR_ID & 0xFF);
+#endif
 
 	/* discard a pending interrupt if any */
 	_loapic_eoi();
@@ -436,3 +447,11 @@ int _loapic_isr_vector_get(void)
 DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
 SYS_DEFINE_DEVICE(loapic_0, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#if CONFIG_LOAPIC_SPURIOUS_VECTOR
+extern void _loapic_spurious_handler(void);
+
+NANO_CPU_INT_REGISTER(_loapic_spurious_handler, NANO_SOFT_IRQ,
+		      LOAPIC_SPURIOUS_VECTOR_ID >> 4,
+		      LOAPIC_SPURIOUS_VECTOR_ID, 0);
+#endif

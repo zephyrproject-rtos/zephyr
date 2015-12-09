@@ -41,6 +41,30 @@ config LOAPIC_BASE_ADDRESS
 	help
 	This option specifies the base address of the Local APIC device.
 
+config LOAPIC_SPURIOUS_VECTOR
+	bool "Handle LOAPIC spurious interrupts"
+	default n
+	depends on LOAPIC
+	help
+	A special situation may occur when a processor raises its task
+	priority to be greater than or equal to the level of the
+	interrupt for which the processor INTR signal is currently being
+	asserted. If at the time the INTA cycle is issued, the
+	interrupt that was to be dispensed has become masked (programmed
+	by software), the local APIC will deliver a spurious-interrupt
+	vector. Dispensing the spurious-interrupt vector does not affect
+	the ISR, so the handler for this vector should return without an EOI.
+	From x86 manual Volume 3 Section 10.9.
+
+config LOAPIC_SPURIOUS_VECTOR_ID
+	int "LOAPIC spurious vector ID"
+	default -1
+	depends on LOAPIC_SPURIOUS_VECTOR
+	help
+	IDT vector to use for spurious LOAPIC interrupts. Note that some
+	arches (P6, Pentium) ignore the low 4 bits and fix them at 0xF.
+	If this value is left at -1 the last entry in the IDT will be used.
+
 config IOAPIC
 	bool "IO-APIC"
 	default y
