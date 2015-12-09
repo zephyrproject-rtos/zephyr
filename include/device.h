@@ -101,7 +101,7 @@ struct device* device_get_binding(char *name);
  */
 typedef struct {
 	/** Nanokernel semaphore used for fiber context */
-	struct nano_sem *f_sem;
+	struct nano_sem f_sem;
 #ifdef CONFIG_MICROKERNEL
 	/** Microkernel semaphore used for task context */
 	struct _k_sem_struct _t_sem;
@@ -118,7 +118,7 @@ typedef struct {
  */
 static inline void synchronous_call_init(device_sync_call_t *sync)
 {
-	nano_sem_init(sync->f_sem);
+	nano_sem_init(&sync->f_sem);
 #ifdef CONFIG_MICROKERNEL
 	sync->_t_sem.waiters = NULL;
 	sync->_t_sem.level = sync->_t_sem.count = 0;
@@ -144,7 +144,7 @@ static inline void synchronous_call_wait(device_sync_call_t *sync)
 		task_sem_take_wait(sync->t_sem);
 	} else {
 		sync->caller_is_task = false;
-		nano_sem_take_wait(sync->f_sem);
+		nano_sem_take_wait(&sync->f_sem);
 	}
 }
 
@@ -160,7 +160,7 @@ static inline void synchronous_call_complete(device_sync_call_t *sync)
 	if (sync->caller_is_task) {
 		task_sem_give(sync->t_sem);
 	} else {
-		nano_isr_sem_give(sync->f_sem);
+		nano_isr_sem_give(&sync->f_sem);
 	}
 }
 
@@ -174,7 +174,7 @@ static inline void synchronous_call_complete(device_sync_call_t *sync)
  */
 static inline void synchronous_call_wait(device_sync_call_t *sync)
 {
-	nano_sem_take_wait(sync->f_sem);
+	nano_sem_take_wait(&sync->f_sem);
 }
 
 /**
@@ -185,7 +185,7 @@ static inline void synchronous_call_wait(device_sync_call_t *sync)
  */
 static inline void synchronous_call_complete(device_sync_call_t *sync)
 {
-	nano_isr_sem_give(sync->f_sem);
+	nano_isr_sem_give(&sync->f_sem);
 }
 
 #endif /* CONFIG_MICROKERNEL || CONFIG_NANOKERNEL */
