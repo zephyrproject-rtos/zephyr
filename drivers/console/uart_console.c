@@ -39,6 +39,7 @@
 #include <console/uart_console.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <atomic.h>
 #include <misc/printk.h>
 
 static struct device *uart_console_dev;
@@ -202,6 +203,81 @@ static void del_char(char *pos, uint8_t end)
 	cursor_restore();
 }
 
+enum {
+	ESC_ESC,
+	ESC_ANSI,
+	ESC_ANSI_FIRST,
+	ESC_ANSI_VAL,
+	ESC_ANSI_VAL_2
+};
+
+static atomic_t esc_state;
+static unsigned int ansi_val, ansi_val_2;
+static uint8_t cur, end;
+
+static void handle_ansi(uint8_t byte)
+{
+	if (atomic_test_and_clear_bit(&esc_state, ESC_ANSI_FIRST)) {
+		if (!isdigit(byte)) {
+			ansi_val = 1;
+			goto ansi_cmd;
+		}
+
+		atomic_set_bit(&esc_state, ESC_ANSI_VAL);
+		ansi_val = byte - '0';
+		ansi_val_2 = 0;
+		return;
+	}
+
+	if (atomic_test_bit(&esc_state, ESC_ANSI_VAL)) {
+		if (isdigit(byte)) {
+			if (atomic_test_bit(&esc_state, ESC_ANSI_VAL_2)) {
+				ansi_val_2 *= 10;
+				ansi_val_2 += byte - '0';
+			} else {
+				ansi_val *= 10;
+				ansi_val += byte - '0';
+			}
+			return;
+		}
+
+		/* Multi value sequence, e.g. Esc[Line;ColumnH */
+		if (byte == ';' &&
+		    !atomic_test_and_set_bit(&esc_state, ESC_ANSI_VAL_2)) {
+			return;
+		}
+
+		atomic_clear_bit(&esc_state, ESC_ANSI_VAL);
+		atomic_clear_bit(&esc_state, ESC_ANSI_VAL_2);
+	}
+
+ansi_cmd:
+	switch (byte) {
+	case ANSI_BACKWARD:
+		if (ansi_val > cur) {
+			break;
+		}
+
+		end += ansi_val;
+		cur -= ansi_val;
+		cursor_backward(ansi_val);
+		break;
+	case ANSI_FORWARD:
+		if (ansi_val > end) {
+			break;
+		}
+
+		end -= ansi_val;
+		cur += ansi_val;
+		cursor_forward(ansi_val);
+		break;
+	default:
+		break;
+	}
+
+	atomic_clear_bit(&esc_state, ESC_ANSI);
+}
+
 void uart_console_isr(void *unused)
 {
 	ARG_UNUSED(unused);
@@ -209,8 +285,6 @@ void uart_console_isr(void *unused)
 	while (uart_irq_update(uart_console_dev) &&
 	       uart_irq_is_pending(uart_console_dev)) {
 		static struct uart_console_input *cmd;
-		static bool esc, ansi_esc;
-		static uint8_t cur, end;
 		uint8_t byte;
 		int rx;
 
@@ -240,39 +314,17 @@ void uart_console_isr(void *unused)
 		}
 
 		/* Handle ANSI escape mode */
-		if (ansi_esc) {
-			ansi_esc = false;
-			switch (byte) {
-			case ANSI_BACKWARD:
-				if (cur == 0) {
-					break;
-				}
-
-				end++;
-				cur--;
-				cursor_backward(1);
-				break;
-			case ANSI_FORWARD:
-				if (end == 0) {
-					break;
-				}
-
-				end--;
-				cur++;
-				cursor_forward(1);
-				break;
-			default:
-				break;
-			}
+		if (atomic_test_bit(&esc_state, ESC_ANSI)) {
+			handle_ansi(byte);
 			continue;
 		}
 
 		/* Handle escape mode */
-		if (esc) {
-			esc = false;
+		if (atomic_test_and_clear_bit(&esc_state, ESC_ESC)) {
 			switch (byte) {
 			case ANSI_ESC:
-				ansi_esc = true;
+				atomic_set_bit(&esc_state, ESC_ANSI);
+				atomic_set_bit(&esc_state, ESC_ANSI_FIRST);
 				break;
 			default:
 				break;
@@ -290,7 +342,7 @@ void uart_console_isr(void *unused)
 				}
 				break;
 			case ESC:
-				esc = true;
+				atomic_set_bit(&esc_state, ESC_ESC);
 				break;
 			case '\r':
 				cmd->line[cur + end] = '\0';
