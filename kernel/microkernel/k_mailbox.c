@@ -104,7 +104,7 @@ static int match(struct k_args *Reader, struct k_args *Writer)
 		__ASSERT_NO_MSG(Writer->args.m1.mess.size ==
 			Reader->args.m1.mess.size);
 
-		__ASSERT_NO_MSG((uint32_t)(-1) != Reader->args.m1.mess.size);
+		__ASSERT_NO_MSG(Reader->args.m1.mess.size != (uint32_t)(-1));
 
 		return Reader->args.m1.mess.size;
 	}
@@ -127,11 +127,11 @@ static bool prepare_transfer(struct k_args *move,
 	 * prepare writer and reader cmd packets for 'return':
 	 * (this is shared code, irrespective of the value of 'move')
 	 */
-	__ASSERT_NO_MSG(NULL == reader->next);
+	__ASSERT_NO_MSG(reader->next == NULL);
 	reader->Comm = _K_SVC_MBOX_RECEIVE_ACK;
 	reader->Time.rcode = RC_OK;
 
-	__ASSERT_NO_MSG(NULL == writer->next);
+	__ASSERT_NO_MSG(writer->next == NULL);
 	writer->alloc = true;
 
 	writer->Comm = _K_SVC_MBOX_SEND_ACK;
@@ -178,7 +178,7 @@ static bool prepare_transfer(struct k_args *move,
 			reader->args.m1.mess.tx_block =
 				writer->args.m1.mess.tx_block;
 		} else {
-			__ASSERT_NO_MSG(NULL != writer->args.m1.mess.tx_data);
+			__ASSERT_NO_MSG(writer->args.m1.mess.tx_data != NULL);
 			move->args.moved_req.source =
 				writer->args.m1.mess.tx_data;
 			reader->args.m1.mess.tx_data =
@@ -201,8 +201,8 @@ static bool prepare_transfer(struct k_args *move,
  */
 static void transfer(struct k_args *pMvdReq)
 {
-	__ASSERT_NO_MSG(NULL != pMvdReq->args.moved_req.source);
-	__ASSERT_NO_MSG(NULL != pMvdReq->args.moved_req.destination);
+	__ASSERT_NO_MSG(pMvdReq->args.moved_req.source != NULL);
+	__ASSERT_NO_MSG(pMvdReq->args.moved_req.destination != NULL);
 
 	_k_movedata_request(pMvdReq);
 	FREEARGS(pMvdReq);
@@ -238,8 +238,7 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 		 * unless this an asynchronous transfer.
 		 */
 
-		if ((uint32_t)(-1) !=
-		    pCopyWriter->args.m1.mess.tx_block.pool_id) {
+		if (pCopyWriter->args.m1.mess.tx_block.pool_id != (uint32_t)(-1)) {
 			/*
 			 * special value to tell if block should be
 			 * freed or not
@@ -350,7 +349,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 
 		u32Size = match(CopyReader, CopyWriter);
 
-		if ((uint32_t)(-1) != u32Size) {
+		if (u32Size != (uint32_t)(-1)) {
 #ifdef CONFIG_OBJECT_MONITOR
 			MailBox->count++;
 #endif
@@ -378,7 +377,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 			}
 #endif
 
-			if (0 == u32Size) {
+			if (u32Size == 0) {
 				/* No data exchange--header only */
 				prepare_transfer(NULL, CopyReader, CopyWriter);
 				SENDARGS(CopyReader);
@@ -471,10 +470,10 @@ int _task_mbox_put(kmbox_t mbox,
 {
 	struct k_args A;
 
-	__ASSERT((0 == M->size) || (NULL != M->tx_data),
+	__ASSERT((M->size == 0) || (M->tx_data != NULL),
 			 "Invalid mailbox data specification\n");
 
-	if (unlikely((uint32_t)(-1) == M->size)) {
+	if (unlikely(M->size == (uint32_t)(-1))) {
 		/* the sender side cannot specify a size of -1 == 0xfff..ff */
 		return RC_FAIL;
 	}
@@ -573,7 +572,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 
 		u32Size = match(CopyReader, CopyWriter);
 
-		if ((uint32_t)(-1) != u32Size) {
+		if (u32Size != (uint32_t)(-1)) {
 #ifdef CONFIG_OBJECT_MONITOR
 			MailBox->count++;
 #endif
@@ -601,7 +600,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 			}
 #endif
 
-			if (0 == u32Size) {
+			if (u32Size == 0) {
 				/* No data exchange--header only */
 				prepare_transfer(NULL, CopyReader, CopyWriter);
 				SENDARGS(CopyReader);
@@ -701,7 +700,7 @@ void _task_mbox_block_put(kmbox_t mbox,
 
 	__ASSERT(0xFFFFFFFF != M->size, "Invalid mailbox data specification\n");
 
-	if (0 == M->size) {
+	if (M->size == 0) {
 		/*
 		 * trick: special value to indicate that tx_block
 		 * should NOT be released in the SND_ACK
@@ -773,7 +772,7 @@ void _task_mbox_data_get(struct k_msg *M)
 	struct k_args A;
 
 	/* sanity checks */
-	if (unlikely(NULL == M->extra.transfer)) {
+	if (unlikely(M->extra.transfer == NULL)) {
 		/*
 		 * protection: if a user erroneously calls this function after
 		 * a task_mbox_get(), we should not run into trouble
@@ -797,7 +796,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 	struct k_args *MoveD;
 
 	/* sanity checks: */
-	if (NULL == message->extra.transfer) {
+	if (message->extra.transfer == NULL) {
 		/*
 		 * If a user erroneously calls this function after a
 		 * task_mbox_get(), we should not run into trouble.
@@ -811,7 +810,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 
 	if (ISASYNCMSG(message)) {
 		/* First transfer block */
-		__ASSERT_NO_MSG(-1 != message->tx_block.pool_id);
+		__ASSERT_NO_MSG(message->tx_block.pool_id != -1);
 		*rxblock = message->tx_block;
 
 		/* This is the MOVED packet */
@@ -830,8 +829,8 @@ int _task_mbox_data_block_get(struct k_msg *message,
 		 */
 
 		Writer = MoveD->args.moved_req.extra.setup.continuation_send;
-		__ASSERT_NO_MSG(NULL != Writer);
-		__ASSERT_NO_MSG(NULL == Writer->next);
+		__ASSERT_NO_MSG(Writer != NULL);
+		__ASSERT_NO_MSG(Writer->next == NULL);
 
 		Writer->args.m1.mess.tx_block.pool_id = (uint32_t)(-1);
 		nano_task_stack_push(&_k_command_stack, (uint32_t)Writer);
@@ -845,7 +844,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 		 */
 
 		dummy = MoveD->args.moved_req.extra.setup.continuation_receive;
-		__ASSERT_NO_MSG(NULL == dummy);
+		__ASSERT_NO_MSG(dummy == NULL);
 #endif
 
 		FREEARGS(MoveD); /* Clean up MOVED */
@@ -855,7 +854,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 
 	/* 'normal' flow of task_mbox_data_block_get(): */
 
-	if (0 != message->size) {
+	if (message->size != 0) {
 		retval = _task_mem_pool_alloc(rxblock, pool_id,
 					message->size, time);
 		if (retval != RC_OK) {
