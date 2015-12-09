@@ -141,9 +141,18 @@ static inline void cursor_backward(unsigned int count)
 	printk("\x1b[%uD", count);
 }
 
+static inline void cursor_save(void)
+{
+	printk("\x1b[s");
+}
+
+static inline void cursor_restore(void)
+{
+	printk("\x1b[u");
+}
+
 static void insert_char(char *pos, char c, uint8_t end)
 {
-	uint8_t i;
 	char tmp;
 
 	/* Echo back to console */
@@ -157,21 +166,21 @@ static void insert_char(char *pos, char c, uint8_t end)
 	tmp = *pos;
 	*(pos++) = c;
 
-	for (i = 0; i < end; i++) {
+	cursor_save();
+
+	while (end-- > 0) {
 		uart_poll_out(uart_console_dev, tmp);
-		c = pos[i];
-		pos[i] = tmp;
+		c = *pos;
+		*(pos++) = tmp;
 		tmp = c;
 	}
 
 	/* Move cursor back to right place */
-	cursor_backward(end);
+	cursor_restore();
 }
 
 static void del_char(char *pos, uint8_t end)
 {
-	uint8_t i;
-
 	uart_poll_out(uart_console_dev, '\b');
 
 	if (end == 0) {
@@ -180,15 +189,17 @@ static void del_char(char *pos, uint8_t end)
 		return;
 	}
 
-	for (i = 0; i < end; i++) {
-		pos[i] = pos[i + 1];
-		uart_poll_out(uart_console_dev, pos[i]);
+	cursor_save();
+
+	while (end-- > 0) {
+		*pos = *(pos + 1);
+		uart_poll_out(uart_console_dev, *(pos++));
 	}
 
 	uart_poll_out(uart_console_dev, ' ');
 
 	/* Move cursor back to right place */
-	cursor_backward(end + 1);
+	cursor_restore();
 }
 
 void uart_console_isr(void *unused)
