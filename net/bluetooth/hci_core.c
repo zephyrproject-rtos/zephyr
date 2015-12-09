@@ -1084,7 +1084,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 {
 	struct hci_evt_cmd_complete *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
-	uint8_t *status;
+	uint8_t status;
 
 	BT_DBG("opcode %x", opcode);
 
@@ -1093,7 +1093,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	/* All command return parameters have a 1-byte status in the
 	 * beginning, so we can safely make this generalization.
 	 */
-	status = buf->data;
+	status = buf->data[0];
 
 	switch (opcode) {
 	case BT_HCI_OP_RESET:
@@ -1104,7 +1104,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 		break;
 	}
 
-	hci_cmd_done(opcode, *status, buf);
+	hci_cmd_done(opcode, status, buf);
 
 	if (evt->ncmd && !bt_dev.ncmd) {
 		/* Allow next command to be sent */
