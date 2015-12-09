@@ -102,10 +102,15 @@
  * through arch/um/include/uml-config.h; this fixdep "bug" makes sure that
  * those files will have correct dependencies.
  */
+#if !defined(_WIN32) && !defined(__WIN32__)
+  #define DO_MMAP 1
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
+#if DO_MMAP
+  #include <sys/mman.h>
+#endif
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
@@ -113,12 +118,24 @@
 #include <stdio.h>
 #include <limits.h>
 #include <ctype.h>
-#include <arpa/inet.h>
 
-#define INT_CONF ntohl(0x434f4e46)
-#define INT_ONFI ntohl(0x4f4e4649)
-#define INT_NFIG ntohl(0x4e464947)
-#define INT_FIG_ ntohl(0x4649475f)
+#if !defined(_WIN32) && !defined(__WIN32__)
+  #include <arpa/inet.h>
+#else
+  #include <winsock2.h>
+#endif
+
+#if !defined(_WIN32) && !defined(__WIN32__)
+  #define INT_CONF ntohl(0x434f4e46)
+  #define INT_ONFI ntohl(0x4f4e4649)
+  #define INT_NFIG ntohl(0x4e464947)
+  #define INT_FIG_ ntohl(0x4649475f)
+#else
+  #define INT_CONF 0x464e4f43
+  #define INT_ONFI 0x49464e4f
+  #define INT_NFIG 0x4749464e
+  #define INT_FIG_ 0x5f474946
+#endif
 
 char *target;
 char *depfile;
@@ -278,13 +295,32 @@ static int strrcmp(char *s, char *sub)
 	return memcmp(s + slen - sublen, sub, sublen);
 }
 
+#if !DO_MMAP
+static void *read_file_in(int fd, size_t size)
+{
+	void *map = malloc(size);
+
+	if (!map)
+		return map;
+	if (read(fd, map, size) != size) {
+		perror("fixdep: read_file");
+		free(map);
+		return NULL;
+	}
+	return map;
+}
+#endif
+
 static void do_config_file(const char *filename)
 {
 	struct stat st;
 	int fd;
 	void *map;
-
+#if !defined(_WIN32) && !defined(__WIN32__)
 	fd = open(filename, O_RDONLY);
+#else
+	fd = open(filename, O_RDONLY | O_BINARY);
+#endif
 	if (fd < 0) {
 		fprintf(stderr, "fixdep: error opening config file: ");
 		perror(filename);
@@ -295,16 +331,27 @@ static void do_config_file(const char *filename)
 		close(fd);
 		return;
 	}
+#if DO_MMAP
 	map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if ((long) map == -1) {
 		perror("fixdep: mmap");
 		close(fd);
 		return;
 	}
-
+#else
+	map = read_file_in(fd, st.st_size);
+	if (!map) {
+		close(fd);
+		return;
+	}
+#endif
 	parse_config_file(map, st.st_size);
 
+#if DO_MMAP
 	munmap(map, st.st_size);
+#else
+	free(map);
+#endif
 
 	close(fd);
 }
@@ -404,7 +451,11 @@ static void print_deps(void)
 	int fd;
 	void *map;
 
+#ifdef _WIN32
+	fd = open(depfile, O_RDONLY | O_BINARY);
+#else
 	fd = open(depfile, O_RDONLY);
+#endif
 	if (fd < 0) {
 		fprintf(stderr, "fixdep: error opening depfile: ");
 		perror(depfile);
@@ -420,16 +471,27 @@ static void print_deps(void)
 		close(fd);
 		return;
 	}
+#if DO_MMAP
 	map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if ((long) map == -1) {
 		perror("fixdep: mmap");
 		close(fd);
 		return;
 	}
-
+#else
+	map = read_file_in(fd, st.st_size);
+	if (!map) {
+		close(fd);
+		return;
+	}
+#endif
 	parse_dep_file(map, st.st_size);
 
+#if DO_MMAP
 	munmap(map, st.st_size);
+#else
+	free(map);
+#endif
 
 	close(fd);
 }
@@ -440,8 +502,11 @@ static void traps(void)
 	int *p = (int *)test;
 
 	if (*p != INT_CONF) {
-		fprintf(stderr, "fixdep: sizeof(int) != 4 or wrong endianness? %#x\n",
-			*p);
+		fprintf(stderr, "fixdep: sizeof(int) : %ld\n",
+			sizeof(int));
+
+		fprintf(stderr, "fixdep: sizeof(int) != 4 or wrong endianness? %#x"
+			" vs %#x\n", *p, INT_CONF);
 		exit(2);
 	}
 }
