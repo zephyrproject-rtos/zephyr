@@ -1058,7 +1058,8 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	}
 
 	if (cmd(sent)->opcode != opcode) {
-		BT_ERR("Unexpected completion of opcode 0x%04x", opcode);
+		BT_ERR("Unexpected completion of opcode 0x%04x expected 0x%04x",
+		       opcode, cmd(sent)->opcode);
 		return;
 	}
 
