@@ -54,22 +54,6 @@
 #define NUM_STD_IRQS 16   /* number of "standard" IRQs on an x86 platform */
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 
-#ifdef CONFIG_I2C_DW
-
-#include <drivers/ioapic.h>
-
-#if defined(CONFIG_I2C_DW_IRQ_FALLING_EDGE)
-#define I2C_DW_IRQ_FLAGS	(IOAPIC_EDGE | IOAPIC_LOW)
-#elif defined(CONFIG_I2C_DW_IRQ_RISING_EDGE)
-#define I2C_DW_IRQ_FLAGS	(IOAPIC_EDGE | IOAPIC_HIGH)
-#elif defined(CONFIG_I2C_DW_IRQ_LEVEL_HIGH)
-#define I2C_DW_IRQ_FLAGS	(IOAPIC_LEVEL | IOAPIC_HIGH)
-#elif defined(CONFIG_I2C_DW_IRQ_LEVEL_LOW)
-#define I2C_DW_IRQ_FLAGS	(IOAPIC_LEVEL | IOAPIC_LOW)
-#endif
-
-#endif /* CONFIG_I2C_DW_0 */
-
 #ifdef CONFIG_SPI_INTEL
 #if defined(CONFIG_SPI_INTEL_FALLING_EDGE)
 #define SPI_INTEL_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)

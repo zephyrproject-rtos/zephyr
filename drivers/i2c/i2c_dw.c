@@ -34,6 +34,10 @@
 #include <shared_irq.h>
 #endif
 
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+#endif
+
 #include "i2c_dw.h"
 #include "i2c_dw_registers.h"
 
@@ -690,6 +694,20 @@ int i2c_dw_initialize(struct device *port)
 
 	return DEV_OK;
 }
+
+#if defined(CONFIG_IOAPIC)
+	#if defined(CONFIG_I2C_DW_IRQ_FALLING_EDGE)
+		#define I2C_DW_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+	#elif defined(CONFIG_I2C_DW_IRQ_RISING_EDGE)
+		#define I2C_DW_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+	#elif defined(CONFIG_I2C_DW_IRQ_LEVEL_HIGH)
+		#define I2C_DW_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+	#elif defined(CONFIG_I2C_DW_IRQ_LEVEL_LOW)
+		#define I2C_DW_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+	#endif
+#else
+	#define I2C_DW_IRQ_FLAGS 0
+#endif /* CONFIG_IOAPIC */
 
 /* system bindings */
 #if CONFIG_I2C_DW_0
