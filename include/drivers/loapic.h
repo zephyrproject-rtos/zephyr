@@ -65,6 +65,9 @@ SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
 	pushl   \context         /* Push context parameter */
 	call    \isr             /* Call actual interrupt handler */
 	popl    %eax		 /* Clean-up stack from push above */
+#if CONFIG_EOI_FORWARDING_BUG
+	call	_lakemont_eoi
+#endif
 	xorl	%eax, %eax
 	movl	%eax, loapic_eoi /* Inform loapic interrupt is done */
 	jmp     _IntExit         /* Inform kernel interrupt is done */
@@ -80,6 +83,10 @@ extern void _loapic_enable(void);
 extern void _loapic_disable(void);
 extern int _loapic_isr_vector_get(void);
 
+#if CONFIG_EOI_FORWARDING_BUG
+extern void _lakemont_eoi(void);
+#endif
+
 /**
  *
  * @brief  send EOI (End Of Interrupt) signal to Local APIC
@@ -90,6 +97,9 @@ extern int _loapic_isr_vector_get(void);
  */
 static inline void _loapic_eoi(void)
 {
+#if CONFIG_EOI_FORWARDING_BUG
+	_lakemont_eoi();
+#endif
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
 }
 #endif /* _ASMLANGUAGE */

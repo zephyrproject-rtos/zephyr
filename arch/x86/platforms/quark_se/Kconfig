@@ -41,6 +41,13 @@ config IOAPIC_NUM_RTES
 config LOAPIC_TIMER_IRQ
 	default 64
 
+config EOI_FORWARDING_BUG
+	bool
+	default y
+	help
+	Quark SE LOAPIC has issues with forwarding EOI to the IOAPIC for level
+	triggered interrupts, this is a SW workaround.
+
 if PINMUX
 config PINMUX_BASE
         default 0xB0800930
