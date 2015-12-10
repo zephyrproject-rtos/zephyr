@@ -28,6 +28,10 @@
 #include <shared_irq.h>
 #endif
 
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+#endif
+
 /*
  * ARC architecture configure IP through IO auxiliary registers.
  * Other architectures as ARM and x86 configure IP through MMIO registers
@@ -444,6 +448,22 @@ SYS_DEFINE_DEVICE(gpio_0, &gpio_0_runtime, SECONDARY,
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 struct device *gpio_dw_isr_0 = SYS_GET_DEVICE(gpio_0);
 
+#ifdef CONFIG_IOAPIC
+#ifdef CONFIG_GPIO_DW_0
+	#if defined(CONFIG_GPIO_DW_0_FALLING_EDGE)
+		#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+	#elif defined(CONFIG_GPIO_DW_0_RISING_EDGE)
+		#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+	#elif defined(CONFIG_GPIO_DW_0_LEVEL_HIGH)
+		#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+	#elif defined(CONFIG_GPIO_DW_0_LEVEL_LOW)
+		#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+	#endif
+#endif /* CONFIG_GPIO_DW_0 */
+#else
+	#define GPIO_DW_0_IRQ_FLAGS 0
+#endif
+
 IRQ_CONNECT_STATIC(gpio_dw_0, CONFIG_GPIO_DW_0_IRQ,
 		   CONFIG_GPIO_DW_0_PRI, gpio_dw_isr, 0,
 		   GPIO_DW_0_IRQ_FLAGS);
@@ -507,6 +527,22 @@ SYS_DEFINE_DEVICE(gpio_1, &gpio_1_runtime, SECONDARY,
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 struct device *gpio_dw_isr_1 = SYS_GET_DEVICE(gpio_1);
+
+#ifdef CONFIG_IOAPIC
+#ifdef CONFIG_GPIO_DW_1
+	#if defined(CONFIG_GPIO_DW_1_FALLING_EDGE)
+		#define GPIO_DW_1_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+	#elif defined(CONFIG_GPIO_DW_1_RISING_EDGE)
+		#define GPIO_DW_1_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+	#elif defined(CONFIG_GPIO_DW_1_LEVEL_HIGH)
+		#define GPIO_DW_1_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+	#elif defined(CONFIG_GPIO_DW_1_LEVEL_LOW)
+		#define GPIO_DW_1_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+	#endif
+#endif /* CONFIG_GPIO_DW_1 */
+#else
+	#define GPIO_DW_1_IRQ_FLAGS 0
+#endif
 
 IRQ_CONNECT_STATIC(gpio_dw_1, CONFIG_GPIO_DW_1_IRQ,
 		   CONFIG_GPIO_DW_1_PRI, gpio_dw_isr, 0,
