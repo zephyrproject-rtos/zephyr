@@ -345,6 +345,8 @@ struct gatt_set_enc_key_size_cmd {
 } __packed;
 
 /* Gatt Client */
+#define GATT_CLIENT_OP_OFFSET		0x40
+
 #define GATT_EXCHANGE_MTU		0x40
 
 void tester_init(void);

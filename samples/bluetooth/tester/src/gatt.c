@@ -125,16 +125,18 @@ static uint8_t btp2bt_uuid(const uint8_t *uuid, uint8_t len,
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
-	uint16_t cmds;
-	struct gatt_read_supported_commands_rp *rp = (void *) &cmds;
+	uint64_t cmds[2];
+	struct gatt_read_supported_commands_rp *rp = (void *) cmds;
 
-	cmds = 1 << GATT_READ_SUPPORTED_COMMANDS;
-	cmds |= 1 << GATT_ADD_SERVICE;
-	cmds |= 1 << GATT_ADD_CHARACTERISTIC;
-	cmds |= 1 << GATT_ADD_DESCRIPTOR;
-	cmds |= 1 << GATT_ADD_INCLUDED_SERVICE;
-	cmds |= 1 << GATT_SET_VALUE;
-	cmds |= 1 << GATT_START_SERVER;
+	cmds[0] = 1 << GATT_READ_SUPPORTED_COMMANDS;
+	cmds[0] |= 1 << GATT_ADD_SERVICE;
+	cmds[0] |= 1 << GATT_ADD_CHARACTERISTIC;
+	cmds[0] |= 1 << GATT_ADD_DESCRIPTOR;
+	cmds[0] |= 1 << GATT_ADD_INCLUDED_SERVICE;
+	cmds[0] |= 1 << GATT_SET_VALUE;
+	cmds[0] |= 1 << GATT_START_SERVER;
+	cmds[0] |= 1 << GATT_SET_ENC_KEY_SIZE;
+	cmds[1] = 1 << (GATT_EXCHANGE_MTU - GATT_CLIENT_OP_OFFSET);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
