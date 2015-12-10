@@ -53,19 +53,6 @@
 #endif
 #endif
 
-
-#ifdef CONFIG_SPI_DW
-#if defined(CONFIG_SPI_DW_FALLING_EDGE)
-#define SPI_DW_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-#elif defined(CONFIG_SPI_DW_RISING_EDGE)
-#define SPI_DW_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-#elif defined(CONFIG_SPI_DW_LEVEL_HIGH)
-#define SPI_DW_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-#elif defined(CONFIG_SPI_DW_LEVEL_LOW)
-#define SPI_DW_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-#endif
-#endif /* CONFIG_SPI_DW */
-
 /* serial port (aka COM port) information */
 
 #ifdef CONFIG_UART_NS16550

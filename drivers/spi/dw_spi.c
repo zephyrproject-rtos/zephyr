@@ -31,6 +31,10 @@
 #include <spi.h>
 #include <dw_spi_priv.h>
 
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+#endif
+
 #ifndef CONFIG_SPI_DEBUG
 #define DBG(...) {; }
 #else
@@ -439,6 +443,20 @@ int spi_dw_init(struct device *dev)
 
 	return DEV_OK;
 }
+
+#ifdef CONFIG_IOAPIC
+	#if defined(CONFIG_SPI_DW_FALLING_EDGE)
+		#define SPI_DW_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+	#elif defined(CONFIG_SPI_DW_RISING_EDGE)
+		#define SPI_DW_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+	#elif defined(CONFIG_SPI_DW_LEVEL_HIGH)
+		#define SPI_DW_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+	#elif defined(CONFIG_SPI_DW_LEVEL_LOW)
+		#define SPI_DW_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+	#endif
+#else
+	#define SPI_DW_IRQ_FLAGS 0
+#endif /* CONFIG_IOAPIC */
 
 #ifdef CONFIG_SPI_DW_PORT_0
 
