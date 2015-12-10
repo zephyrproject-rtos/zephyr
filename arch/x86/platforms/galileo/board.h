@@ -66,34 +66,6 @@
 #endif
 #endif /* CONFIG_SPI_INTEL */
 
-#if defined (CONFIG_SHARED_IRQ) && defined (CONFIG_IOAPIC)
-
-#if CONFIG_SHARED_IRQ_0
-#if defined(CONFIG_SHARED_IRQ_0_FALLING_EDGE)
-#define SHARED_IRQ_0_FLAGS	(IOAPIC_EDGE | IOAPIC_LOW)
-#elif defined(CONFIG_SHARED_IRQ_0_RISING_EDGE)
-#define SHARED_IRQ_0_FLAGS	(IOAPIC_EDGE | IOAPIC_HIGH)
-#elif defined(CONFIG_SHARED_IRQ_0_LEVEL_HIGH)
-#define SHARED_IRQ_0_FLAGS	(IOAPIC_LEVEL | IOAPIC_HIGH)
-#elif defined(CONFIG_SHARED_IRQ_0_LEVEL_LOW)
-#define SHARED_IRQ_0_FLAGS	(IOAPIC_LEVEL | IOAPIC_LOW)
-#endif
-#endif /* CONFIG_SHARED_IRQ_0 */
-
-#if CONFIG_SHARED_IRQ_1
-#if defined(CONFIG_SHARED_IRQ_1_FALLING_EDGE)
-#define SHARED_IRQ_1_FLAGS	(IOAPIC_EDGE | IOAPIC_LOW)
-#elif defined(CONFIG_SHARED_IRQ_1_RISING_EDGE)
-#define SHARED_IRQ_1_FLAGS	(IOAPIC_EDGE | IOAPIC_HIGH)
-#elif defined(CONFIG_SHARED_IRQ_1_LEVEL_HIGH)
-#define SHARED_IRQ_1_FLAGS	(IOAPIC_LEVEL | IOAPIC_HIGH)
-#elif defined(CONFIG_SHARED_IRQ_1_LEVEL_LOW)
-#define SHARED_IRQ_1_FLAGS	(IOAPIC_LEVEL | IOAPIC_LOW)
-#endif
-#endif /* CONFIG_SHARED_IRQ_1 */
-
-#endif /* CONFIG_SHARED_IRQ && CONFIG_IOAPIC */
-
 /*
  * The irq_connect() API connects to a (virtualized) IRQ and the
  * associated interrupt controller is programmed with the allocated vector.

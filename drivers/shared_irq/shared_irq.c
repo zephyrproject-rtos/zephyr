@@ -21,6 +21,10 @@
 #include <board.h>
 #include <sys_io.h>
 
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+#endif
+
 /**
  *  @brief Register a device ISR
  *  @param dev Pointer to device structure for SHARED_IRQ driver instance.
@@ -145,6 +149,22 @@ DECLARE_DEVICE_INIT_CONFIG(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME,
 SYS_DEFINE_DEVICE(shared_irq_0, &shared_irq_0_runtime, SECONDARY,
 		  CONFIG_SHARED_IRQ_INIT_PRIORITY);
 
+#if defined(CONFIG_IOAPIC)
+#if defined(CONFIG_SHARED_IRQ_0)
+	#if defined(CONFIG_SHARED_IRQ_0_FALLING_EDGE)
+		#define SHARED_IRQ_0_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+	#elif defined(CONFIG_SHARED_IRQ_0_RISING_EDGE)
+		#define SHARED_IRQ_0_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+	#elif defined(CONFIG_SHARED_IRQ_0_LEVEL_HIGH)
+		#define SHARED_IRQ_0_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+	#elif defined(CONFIG_SHARED_IRQ_0_LEVEL_LOW)
+		#define SHARED_IRQ_0_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+	#endif
+#endif /* CONFIG_SHARED_IRQ_0 */
+#else
+	#define SHARED_IRQ_0_FLAGS 0
+#endif /* CONFIG_IOAPIC */
+
 IRQ_CONNECT_STATIC(shared_irq_0, CONFIG_SHARED_IRQ_0_IRQ,
 		   CONFIG_SHARED_IRQ_0_PRI, shared_irq_isr_0, 0,
 		   SHARED_IRQ_0_FLAGS);
@@ -178,6 +198,22 @@ DECLARE_DEVICE_INIT_CONFIG(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME,
 			   shared_irq_initialize, &shared_irq_config_1);
 SYS_DEFINE_DEVICE(shared_irq_1, &shared_irq_1_runtime, SECONDARY,
 		  CONFIG_SHARED_IRQ_INIT_PRIORITY);
+
+#if defined(CONFIG_IOAPIC)
+#if defined(CONFIG_SHARED_IRQ_1)
+	#if defined(CONFIG_SHARED_IRQ_1_FALLING_EDGE)
+		#define SHARED_IRQ_1_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+	#elif defined(CONFIG_SHARED_IRQ_1_RISING_EDGE)
+		#define SHARED_IRQ_1_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+	#elif defined(CONFIG_SHARED_IRQ_1_LEVEL_HIGH)
+		#define SHARED_IRQ_1_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+	#elif defined(CONFIG_SHARED_IRQ_1_LEVEL_LOW)
+		#define SHARED_IRQ_1_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+	#endif
+#endif /* CONFIG_SHARED_IRQ_1 */
+#else
+	#define SHARED_IRQ_1_FLAGS 0
+#endif /* CONFIG_IOAPIC */
 
 IRQ_CONNECT_STATIC(shared_irq_1, CONFIG_SHARED_IRQ_1_IRQ,
 		   CONFIG_SHARED_IRQ_1_PRI, shared_irq_isr_1, 0,
