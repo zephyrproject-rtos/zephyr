@@ -606,7 +606,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		break;
 	case BT_CONN_CONNECT:
 		if (conn->timeout) {
-			fiber_fiber_delayed_start_cancel(conn->timeout);
+			fiber_delayed_start_cancel(conn->timeout);
 			conn->timeout = NULL;
 
 			/* Drop the reference taken by timeout fiber */
@@ -810,7 +810,7 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 	int err;
 
 	if (conn->timeout) {
-		fiber_fiber_delayed_start_cancel(conn->timeout);
+		fiber_delayed_start_cancel(conn->timeout);
 		conn->timeout = NULL;
 
 		/* Drop the reference took by timeout fiber */
