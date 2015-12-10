@@ -358,6 +358,16 @@ int bt_gatt_attr_read_cud(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value, strlen(value));
 }
 
+int bt_gatt_attr_read_cpf(struct bt_conn *conn,
+			  const struct bt_gatt_attr *attr, void *buf,
+			  uint16_t len, uint16_t offset)
+{
+	struct bt_gatt_cpf *value = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 sizeof(*value));
+}
+
 struct notify_data {
 	const void *data;
 	size_t len;

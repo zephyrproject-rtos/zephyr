@@ -80,6 +80,10 @@
  *  @brief GATT Server Characteristic Configuration
  */
 #define BT_UUID_GATT_SCC			BT_UUID_DECLARE_16(0x2903)
+/** @def BT_UUID_GATT_CPF
+ *  @brief GATT Characteristic Presentation Format
+ */
+#define BT_UUID_GATT_CPF			BT_UUID_DECLARE_16(0x2904)
 /** @def BT_UUID_GAP_DEVICE_NAME
  *  @brief GAP Characteristic Device Name
  */

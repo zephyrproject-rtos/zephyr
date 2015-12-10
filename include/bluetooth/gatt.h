@@ -212,6 +212,20 @@ struct bt_gatt_ccc {
 	uint16_t		flags;
 };
 
+/** @brief GATT Characteristic Presentation Format Attribute Value. */
+struct bt_gatt_cpf {
+	/** Format of the value of the characteristic */
+	uint8_t format;
+	/** Exponent field to determine how the value of this characteristic is further formatted */
+	int8_t exponent;
+	/** Unit of the characteristic */
+	uint16_t unit;
+	/** Name space of the description */
+	uint8_t name_space;
+	/** Description of the characteristic as defined in a higher layer profile */
+	uint16_t description;
+} __packed;
+
 /* Server API */
 
 /** @brief Register attribute database.
@@ -549,6 +563,40 @@ int bt_gatt_attr_read_cud(struct bt_conn *conn,
 	.uuid = BT_UUID_GATT_CUD,					\
 	.perm = _perm,							\
 	.read = bt_gatt_attr_read_cud,					\
+	.user_data = _value,						\
+}
+
+/** @brief Read Characteristic Presentation format Descriptor Attribute helper
+ *
+ *  Read CPF attribute value storing the result into buffer after
+ *  encoding it.
+ *  NOTE: Only use this with attributes which user_data is a bt_gatt_pf.
+ *
+ *  @param conn Connection object
+ *  @param attr Attribute to read
+ *  @param buf Buffer to store the value read
+ *  @param len Buffer length
+ *  @param offset Start offset
+ *
+ *  @return number of bytes read in case of success or negative values in
+ *  case of error.
+ */
+int bt_gatt_attr_read_cpf(struct bt_conn *conn,
+			  const struct bt_gatt_attr *attr, void *buf,
+			  uint16_t len, uint16_t offset);
+
+/** @def BT_GATT_CPF
+ *  @brief Characteristic Presentation Format Descriptor Declaration Macro.
+ *
+ *  Helper macro to declare a CPF attribute.
+ *
+ *  @param _value Descriptor attribute value.
+ */
+#define BT_GATT_CPF(_value)						\
+{									\
+	.uuid = BT_UUID_GATT_CPF,					\
+	.perm = BT_GATT_PERM_READ,					\
+	.read = bt_gatt_attr_read_cpf,					\
 	.user_data = _value,						\
 }
 
