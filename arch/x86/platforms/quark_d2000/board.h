@@ -135,24 +135,17 @@ struct scss_interrupt {
 #define CCU_RTC_CLK_DIV_OFFSET          0x3
 
 
-
 #ifdef CONFIG_MVIC
 #include <drivers/ioapic.h>
-#ifdef CONFIG_SERIAL_INTERRUPT_LEVEL
-#ifdef CONFIG_SERIAL_INTERRUPT_LOW
-#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-#else
-#define UART_IRQ_FLAGS (IOAPIC_LEVEL)
+#if defined(CONFIG_UART_IRQ_FALLING_EDGE)
+	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+#elif defined(CONFIG_UART_IRQ_RISING_EDGE)
+	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+#elif defined(CONFIG_UART_IRQ_LEVEL_HIGH)
+	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+#elif defined(CONFIG_UART_IRQ_LEVEL_LOW)
+	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
-#else /* edge triggered interrupt */
-#ifdef CONFIG_SERIAL_INTERRUPT_LOW
-/* generate interrupt on falling edge */
-#define UART_IRQ_FLAGS (IOAPIC_LOW)
-#else
-/* generate interrupt on raising edge */
-#define UART_IRQ_FLAGS (0)
-#endif
-#endif
-#endif
+#endif /* CONFIG_MVIC */
 
 #endif /* __INCboardh */

@@ -34,22 +34,16 @@
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
-#ifdef CONFIG_SERIAL_INTERRUPT_LEVEL
-#ifdef CONFIG_SERIAL_INTERRUPT_LOW
-#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-#else
-#define UART_IRQ_FLAGS (IOAPIC_LEVEL)
+#if defined(CONFIG_UART_IRQ_FALLING_EDGE)
+	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+#elif defined(CONFIG_UART_IRQ_RISING_EDGE)
+	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+#elif defined(CONFIG_UART_IRQ_LEVEL_HIGH)
+	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+#elif defined(CONFIG_UART_IRQ_LEVEL_LOW)
+	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
-#else /* edge triggered interrupt */
-#ifdef CONFIG_SERIAL_INTERRUPT_LOW
-/* generate interrupt on falling edge */
-#define UART_IRQ_FLAGS (IOAPIC_LOW)
-#else
-/* generate interrupt on raising edge */
-#define UART_IRQ_FLAGS (0)
-#endif
-#endif
-#endif
+#endif /* CONFIG_IOAPIC */
 
 #define INT_VEC_IRQ0 0x20 /* vector number for IRQ0 */
 

@@ -33,32 +33,40 @@ config SERIAL_HAS_DRIVER
 	to signal that there is a serial driver. This is being used
 	by other drivers which are dependent on serial.
 
-menu "Serial Port Options"
-
-config SERIAL_INTERRUPT_LEVEL
-	bool "Serial interrupt level"
-	depends on IOAPIC
-	default y
-	help
-	Option signifies that the serial controller uses level interrupts
-	instead of edge
-
-config SERIAL_INTERRUPT_LOW
-	bool "Serial interrupt low"
-	depends on IOAPIC
-	default n
-	help
-	Option signifies that the serial controller uses low level interrupts
-	instead of high
-
 config  UART_INTERRUPT_DRIVEN
 	bool
-	prompt "Interrupt driven UART support"
+	prompt "Enable UART Interrupt support"
 	default n
 	help
 	This option enables interrupt support for UART allowing console
-	input and UART based drivers.
-endmenu
+	input and other UART based drivers.
+
+choice
+	prompt "UART IRQ Trigger Condition"
+	default UART_IRQ_RISING_EDGE
+	depends on UART_INTERRUPT_DRIVEN
+
+config UART_IRQ_FALLING_EDGE
+	bool "Falling Edge"
+	help
+	This option signifies that the UART uses falling edge interrupt.
+
+config UART_IRQ_RISING_EDGE
+	bool "Rising Edge"
+	help
+	This option signifies that the UART uses rising edge interrupt.
+
+config UART_IRQ_LEVEL_HIGH
+	bool "Level High"
+	help
+	This option signifies that the UART uses level high interrupt.
+
+config UART_IRQ_LEVEL_LOW
+	bool "Level Low"
+	help
+	This option signifies that the UART uses level low interrupt.
+
+endchoice
 
 source "drivers/serial/Kconfig.ns16550"
 
