@@ -45,7 +45,7 @@
 static int net_driver_loopback_open(void)
 {
 	const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
-	uint8_t eui64[] = { };
+	uint8_t eui64[8] = { };
 
 	net_set_mac(eui64, sizeof(eui64));
 
