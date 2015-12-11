@@ -710,6 +710,11 @@ config GPIO_K64
 	help
 	Enable driver for Freescale K64-based GPIOs.
 
+config PORT_K64_INT_STATUS_OFFSET
+	hex "Freescale K64-based Port Control interrupt status register offset"
+	depends on GPIO_K64
+	default 0xA0
+
 config GPIO_K64_A
 	bool "Freescale K64-based GPIO Port A"
 	depends on GPIO_K64
@@ -731,6 +736,20 @@ config GPIO_K64_A_BASE_ADDR
 config PORT_K64_A_BASE_ADDR
 	hex # Freescale K64-based Port Control Port A base address
 	depends on GPIO_K64_A
+
+config GPIO_K64_PORTA_IRQ
+	int "Freescale K64-based Port A interrupt number"
+	depends on GPIO_K64_A
+	default 59
+	help
+	  K64 Port A IRQ number for the interrupt controller
+
+config GPIO_K64_PORTA_PRI
+	int "Freescale K64-based Port A interrupt priority"
+	depends on GPIO_K64_A
+	default 2
+	help
+	  K64 Port A IRQ priority
 
 config GPIO_K64_B
 	bool "Freescale K64-based GPIO Port B"
@@ -754,6 +773,20 @@ config PORT_K64_B_BASE_ADDR
 	hex # Freescale K64-based Port Control Port B base address
 	depends on GPIO_K64_B
 
+config GPIO_K64_PORTB_IRQ
+	int "Freescale K64-based Port B interrupt number"
+	depends on GPIO_K64_B
+	default 60
+	help
+	K64 Port B IRQ number for the interrupt controller
+
+config GPIO_K64_PORTB_PRI
+	int "Freescale K64-based Port B interrupt priority"
+	depends on GPIO_K64_B
+	default 2
+	help
+	  K64 Port B IRQ priority
+
 config GPIO_K64_C
 	bool "Freescale K64-based GPIO Port B"
 	depends on GPIO_K64
@@ -775,6 +808,20 @@ config GPIO_K64_C_BASE_ADDR
 config PORT_K64_C_BASE_ADDR
 	hex # Freescale K64-based Port Control Port C base address
 	depends on GPIO_K64_C
+
+config GPIO_K64_PORTC_IRQ
+	int "Freescale K64-based Port C interrupt number"
+	depends on GPIO_K64_C
+	default 61
+	help
+	  K64 Port C IRQ number for the interrupt controller
+
+config GPIO_K64_PORTC_PRI
+	int "Freescale K64-based Port C interrupt priority"
+	depends on GPIO_K64_C
+	default 2
+	help
+	  K64 Port C IRQ priority
 
 config GPIO_K64_D
 	bool "Freescale K64-based GPIO Port D"
@@ -798,6 +845,20 @@ config PORT_K64_D_BASE_ADDR
 	hex # Freescale K64-based Port Control Port D base address
 	depends on GPIO_K64_D
 
+config GPIO_K64_PORTD_IRQ
+	int "Freescale K64-based Port D interrupt number"
+	depends on GPIO_K64_D
+	default 62
+	help
+	K64 Port D IRQ number for the interrupt controller
+
+config GPIO_K64_PORTD_PRI
+	int "Freescale K64-based Port D interrupt priority"
+	depends on GPIO_K64_D
+	default 2
+	help
+	  K64 Port D IRQ priority
+
 config GPIO_K64_E
 	bool "Freescale K64-based GPIO Port E"
 	depends on GPIO_K64
@@ -819,6 +880,20 @@ config GPIO_K64_E_BASE_ADDR
 config PORT_K64_E_BASE_ADDR
 	hex # Freescale K64-based Port Control Port E base address
 	depends on GPIO_K64_E
+
+config GPIO_K64_PORTE_IRQ
+	int "Freescale K64-based Port E interrupt number"
+	depends on GPIO_K64_E
+	default 63
+	help
+	K64 Port E IRQ number for the interrupt controller
+
+config GPIO_K64_PORTE_PRI
+	int "Freescale K64-based Port E interrupt priority"
+	depends on GPIO_K64_E
+	default 2
+	help
+	  K64 Port E IRQ priority
 
 source "drivers/gpio/Kconfig.atmel_sam3"
 

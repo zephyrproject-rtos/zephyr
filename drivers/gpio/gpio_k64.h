@@ -43,4 +43,12 @@ struct gpio_k64_config {
 	uint32_t port_base_addr;
 };
 
+struct gpio_k64_data {
+	/* port ISR callback routine address */
+	gpio_callback_t callback_func;
+	/* pin callback routine enable flags, by pin number */
+	uint32_t pin_callback_enables;
+	/* port callback routine enable flag */
+	uint8_t port_callback_enable;
+};
 #endif /* _GPIO_K64_H_ */

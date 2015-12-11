@@ -166,8 +166,7 @@ static uint32_t _fsl_k64_set_pin(struct device *dev,
 	bool is_gpio = false;
 	int gpio_setting;
 
-	if ((pin_id >= CONFIG_PINMUX_NUM_PINS) ||
-		(func & K64_PINMUX_INT_MASK)) {  /* interrupts not supported */
+	if (pin_id >= CONFIG_PINMUX_NUM_PINS) {
 
 		return DEV_INVALID_OP;
 	}
@@ -360,4 +359,4 @@ struct fsl_k64_data fsl_k64_pinmux_driver = {
 /* must be initialized after GPIO */
 DEVICE_INIT(pmux, PINMUX_NAME, &pinmux_fsl_k64_initialize,
 			&fsl_k64_pinmux_driver, &fsl_k64_pmux,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
