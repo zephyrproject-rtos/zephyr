@@ -700,7 +700,7 @@ enum {
 	BT_GATT_DISCOVER_DESCRIPTOR,
 };
 
-/** @brief GATT Discover Primary parameters */
+/** @brief GATT Discover Attributes parameters */
 struct bt_gatt_discover_params {
 	/** Discover UUID type */
 	struct bt_uuid *uuid;
@@ -716,10 +716,19 @@ struct bt_gatt_discover_params {
 	uint8_t type;
 };
 
-/** @brief Discover Primary Service by Service UUID
+/** @brief GATT Discover function
  *
- *  This procedure is used by a client to discover a specific primary service on
- *  a server when only the Service UUID is known.
+ *  This procedure is used by a client to discover attributes on a server.
+ *
+ *  Primary Service Discovery: Procedure allows to discover specific Primary
+ *                             Service based on UUID.
+ *  Include Service Discovery: Procedure allows to discover all Include Services
+ *                             within specified range.
+ *  Characteristic Discovery:  Procedure allows to discover all characteristics
+ *                             within specified handle range as well as
+ *                             discover characteristics with specified UUID.
+ *  Descriptors Discovery:     Procedure allows to discover all characteristic
+ *                             descriptors within specified range.
  *
  *  For each attribute found the callback is called which can then decide
  *  whether to continue discovering or stop.
