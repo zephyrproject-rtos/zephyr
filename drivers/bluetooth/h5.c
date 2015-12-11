@@ -36,6 +36,8 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/driver.h>
 
+#include <../../net/bluetooth/stack.h>
+
 #if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
@@ -386,6 +388,9 @@ static void retx_fiber(int arg1, int arg2)
 		while ((buf = nano_fifo_get(&tmp_queue))) {
 			nano_fifo_put(&h5.tx_queue, buf);
 		}
+
+		/* Analyze stack */
+		stack_analyze("retx_stack", retx_stack, sizeof(retx_stack));
 	}
 }
 
@@ -399,6 +404,12 @@ static void ack_fiber(int arg1, int arg2)
 	h5.ack_to = NULL;
 
 	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0);
+
+	/* Analyze stacks */
+	stack_analyze("ack_stack", ack_stack, sizeof(ack_stack));
+	stack_analyze("tx_stack", tx_stack, sizeof(tx_stack));
+	stack_analyze("rx_stack", rx_stack, sizeof(rx_stack));
+	stack_analyze("retx_stack", retx_stack, sizeof(retx_stack));
 }
 
 static void h5_process_complete_packet(struct net_buf *buf, uint8_t type,
