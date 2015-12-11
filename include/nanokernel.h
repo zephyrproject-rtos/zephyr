@@ -1422,6 +1422,19 @@ extern void nano_timer_init(struct nano_timer *timer, void *data);
 extern void nano_timer_start(struct nano_timer *timer, int ticks);
 
 /**
+ * @brief Wait for a nanokernel timer to expire
+ *
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
+ *
+ * @param timer Timer
+ *
+ * @return N/A
+ */
+extern void *nano_timer_wait(struct nano_timer *timer);
+
+/**
  * @brief Stop a nanokernel timer
  *
  * This is a convenience wrapper for the execution context-specific APIs. This
@@ -1430,7 +1443,7 @@ extern void nano_timer_start(struct nano_timer *timer, int ticks);
  *
  * @param timer Timer to stop
  *
- * @return N/A
+ * @return pointer to timer initialization data
  */
 extern void nano_timer_stop(struct nano_timer *timer);
 
