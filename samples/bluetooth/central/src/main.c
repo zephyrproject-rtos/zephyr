@@ -47,7 +47,8 @@ static uint8_t subscribe_func(struct bt_conn *conn, int err,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t discover_func(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr, void *user_data)
 {
 	int err;
 
@@ -58,7 +59,7 @@ static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
-		err = bt_gatt_discover(default_conn, &discover_params);
+		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
 			printk("Discover failed (err %d)\n", err);
 		}
@@ -69,7 +70,7 @@ static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
 		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 		subscribe_params.value_handle = attr->handle + 1;
 
-		err = bt_gatt_discover(default_conn, &discover_params);
+		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
 			printk("Discover failed (err %d)\n", err);
 		}
@@ -79,7 +80,7 @@ static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
 		subscribe_params.value = BT_GATT_CCC_NOTIFY;
 		subscribe_params.ccc_handle = attr->handle;
 
-		err = bt_gatt_subscribe(default_conn, &subscribe_params);
+		err = bt_gatt_subscribe(conn, &subscribe_params);
 		if (err && err != -EALREADY) {
 			printk("Subscribe failed (err %d)\n", err);
 		}

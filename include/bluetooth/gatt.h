@@ -600,6 +600,19 @@ typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func);
 
+/** @brief Discover attribute callback function.
+ *
+ *  @param conn Connection object.
+ *  @param attr Attribute found.
+ *  @param user_data Data given.
+ *
+ *  @return BT_GATT_ITER_CONTINUE if should continue attribute discovery
+ *  or BT_GATT_ITER_STOP to stop discovery procedure.
+ */
+typedef uint8_t (*bt_gatt_discover_func_t)(struct bt_conn *conn,
+					   const struct bt_gatt_attr *attr,
+					   void *user_data);
+
 enum {
 	BT_GATT_DISCOVER_PRIMARY,
 	BT_GATT_DISCOVER_SECONDARY,
@@ -613,7 +626,7 @@ struct bt_gatt_discover_params {
 	/** Discover UUID type */
 	struct bt_uuid *uuid;
 	/** Discover attribute callback */
-	bt_gatt_attr_func_t func;
+	bt_gatt_discover_func_t func;
 	/** Discover destroy callback */
 	void (*destroy)(void *user_data);
 	/** Discover start handle */

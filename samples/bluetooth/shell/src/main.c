@@ -596,7 +596,8 @@ static void print_chrc_props(uint8_t properties)
 	printk("\n");
 }
 
-static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t discover_func(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct bt_gatt_discover_params *params = user_data;
 	struct bt_gatt_service *gatt_service;

@@ -665,7 +665,7 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 
 		attr->handle = start_handle;
 
-		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
+		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
 			goto done;
 		}
 	}
@@ -737,7 +737,7 @@ static int att_find_type(struct bt_conn *conn,
 	return gatt_send(conn, buf, att_find_type_rsp, params, NULL);
 }
 
-static uint16_t parse_include(const void *pdu,
+static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 			      struct bt_gatt_discover_params *params,
 			      uint16_t length)
 {
@@ -805,7 +805,7 @@ static uint16_t parse_include(const void *pdu,
 		attr = (&(struct bt_gatt_attr)BT_GATT_INCLUDE_SERVICE(&value));
 		attr->handle = handle;
 
-		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
+		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
 			handle = 0;
 			goto done;
 		}
@@ -820,7 +820,7 @@ done:
 	return handle;
 }
 
-static uint16_t parse_characteristic(const void *pdu,
+static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 				     struct bt_gatt_discover_params *params,
 				     uint16_t length)
 {
@@ -875,7 +875,7 @@ static uint16_t parse_characteristic(const void *pdu,
 					chrc->properties));
 		attr->handle = handle;
 
-		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
+		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
 			handle = 0;
 			goto done;
 		}
@@ -904,9 +904,9 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
-		handle = parse_include(pdu, params, length);
+		handle = parse_include(conn, pdu, params, length);
 	} else {
-		handle = parse_characteristic(pdu, params, length);
+		handle = parse_characteristic(conn, pdu, params, length);
 	}
 
 	if (!handle) {
@@ -1026,7 +1026,7 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 			BT_GATT_DESCRIPTOR(&uuid, 0, NULL, NULL, NULL));
 		attr->handle = handle;
 
-		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
+		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
 			goto done;
 		}
 	}
