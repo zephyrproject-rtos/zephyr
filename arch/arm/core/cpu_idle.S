@@ -140,7 +140,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  *
  * This function is utilized by the nanokernel object "wait" APIs for tasks,
  * e.g. nano_task_lifo_get_wait(), nano_task_sem_take_wait(),
- * nano_task_stack_pop_wait(), and nano_task_fifo_get_wait().
+ * nano_task_stack_pop_wait(), and nano_task_fifo_get().
  *
  * INTERNAL
  * The requirements for nano_cpu_atomic_idle() are as follows:

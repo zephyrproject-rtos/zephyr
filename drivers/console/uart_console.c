@@ -308,7 +308,7 @@ void uart_console_isr(void *unused)
 		}
 
 		if (!cmd) {
-			cmd = nano_isr_fifo_get(avail_queue);
+			cmd = nano_isr_fifo_get(avail_queue, TICKS_NONE);
 			if (!cmd)
 				return;
 		}

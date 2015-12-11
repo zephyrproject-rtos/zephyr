@@ -21,10 +21,9 @@
  * This module tests four basic scenarios with the usage of the following FIFO
  * routines:
  *
- * nano_fiber_fifo_get, nano_fiber_fifo_get_wait, nano_fiber_fifo_put
- * nano_task_fifo_get, nano_task_fifo_get_wait, nano_task_fifo_put
+ * nano_fiber_fifo_get, nano_fiber_fifo_put
+ * nano_task_fifo_get, nano_task_fifo_put
  * nano_isr_fifo_get, nano_isr_fifo_put
- * nano_fiber_fifo_take_wait_timeout, nano_task_fifo_take_wait_timeout
  *
  * Scenario #1
  * Task enters items into a queue, starts the fiber and waits for a semaphore.
@@ -167,7 +166,7 @@ void isr_fifo_get(void *parameter)
 {
 	ISR_FIFO_INFO *pInfo = (ISR_FIFO_INFO *) parameter;
 
-	pInfo->data = nano_isr_fifo_get(pInfo->fifo_ptr);
+	pInfo->data = nano_isr_fifo_get(pInfo->fifo_ptr, TICKS_NONE);
 }
 
 static void _trigger_nano_isr_fifo_get(void)
@@ -191,7 +190,7 @@ void fiber1(void)
 	nano_fiber_sem_take_wait(&nanoSemObj1);
 
 	/* Wait for data to be added to <nanoFifoObj> by task */
-	pData = nano_fiber_fifo_get_wait(&nanoFifoObj);
+	pData = nano_fiber_fifo_get(&nanoFifoObj, TICKS_UNLIMITED);
 	if (pData != pPutList1[0]) {
 		TC_ERROR("fiber1 (1) - expected 0x%x, got 0x%x\n",
 				 pPutList1[0], pData);
@@ -200,7 +199,7 @@ void fiber1(void)
 	}
 
 	/* Wait for data to be added to <nanoFifoObj2> by fiber3 */
-	pData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
+	pData = nano_fiber_fifo_get(&nanoFifoObj2, TICKS_UNLIMITED);
 	if (pData != pPutList2[0]) {
 		TC_ERROR("fiber1 (2) - expected 0x%x, got 0x%x\n",
 				 pPutList2[0], pData);
@@ -212,7 +211,7 @@ void fiber1(void)
 
 	TC_PRINT("Test Fiber FIFO Get\n\n");
 	/* Get all FIFOs */
-	while ((pData = nano_fiber_fifo_get(&nanoFifoObj)) != NULL) {
+	while ((pData = nano_fiber_fifo_get(&nanoFifoObj, TICKS_NONE)) != NULL) {
 		TC_PRINT("FIBER FIFO Get: count = %d, ptr is %p\n", count, pData);
 		if ((count >= NUM_FIFO_ELEMENT) || (pData != pPutList1[count])) {
 			TCERR1(count);
@@ -246,7 +245,7 @@ void fiber1(void)
 
 /**
  *
- * @brief Test the nano_fiber_fifo_get_wait() interface
+ * @brief Test the nano_fiber_fifo_get(TICKS_UNLIMITED) interface
  *
  * This function tests the fifo put and get wait interfaces in a fiber.
  * It gets data from nanoFifoObj2 queue and puts data to nanoFifoObj queue.
@@ -260,7 +259,7 @@ void testFiberFifoGetW(void)
 	void *pPutData;   /* pointer to FIFO object to put to the queue */
 
 	TC_PRINT("Test Fiber FIFO Get Wait Interfaces\n\n");
-	pGetData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
+	pGetData = nano_fiber_fifo_get(&nanoFifoObj2, TICKS_UNLIMITED);
 	TC_PRINT("FIBER FIFO Get from queue2: %p\n", pGetData);
 	/* Verify results */
 	if (pGetData != pMyFifoData1) {
@@ -273,7 +272,7 @@ void testFiberFifoGetW(void)
 	TC_PRINT("FIBER FIFO Put to queue1: %p\n", pPutData);
 	nano_fiber_fifo_put(&nanoFifoObj, pPutData);
 
-	pGetData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
+	pGetData = nano_fiber_fifo_get(&nanoFifoObj2, TICKS_UNLIMITED);
 	TC_PRINT("FIBER FIFO Get from queue2: %p\n", pGetData);
 	/* Verify results */
 	if (pGetData != pMyFifoData3) {
@@ -424,7 +423,7 @@ void fiber2(void)
 	nano_fiber_sem_take_wait(&nanoSemObj2);
 
 	/* Wait for data to be added to <nanoFifoObj> */
-	pData = nano_fiber_fifo_get_wait(&nanoFifoObj);
+	pData = nano_fiber_fifo_get(&nanoFifoObj, TICKS_UNLIMITED);
 	if (pData != pPutList1[1]) {
 		TC_ERROR("fiber2 (1) - expected 0x%x, got 0x%x\n",
 				 pPutList1[1], pData);
@@ -433,7 +432,7 @@ void fiber2(void)
 	}
 
 	/* Wait for data to be added to <nanoFifoObj2> by fiber3 */
-	pData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
+	pData = nano_fiber_fifo_get(&nanoFifoObj2, TICKS_UNLIMITED);
 	if (pData != pPutList2[1]) {
 		TC_ERROR("fiber2 (2) - expected 0x%x, got 0x%x\n",
 				 pPutList2[1], pData);
@@ -445,7 +444,7 @@ void fiber2(void)
 
 	/* Fiber #2 has been reactivated by main task */
 	for (int i = 0; i < 4; i++) {
-		pData = nano_fiber_fifo_get_wait(&nanoFifoObj);
+		pData = nano_fiber_fifo_get(&nanoFifoObj, TICKS_UNLIMITED);
 		if (pData != pPutList1[i]) {
 			TC_ERROR("fiber2 (3) - iteration %d expected 0x%x, got 0x%x\n",
 					 i, pPutList1[i], pData);
@@ -486,7 +485,7 @@ void fiber3(void)
 	nano_fiber_sem_take_wait(&nanoSemObj3);
 
 	/* Immediately get the data from <nanoFifoObj2>. */
-	pData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
+	pData = nano_fiber_fifo_get(&nanoFifoObj2, TICKS_UNLIMITED);
 	if (pData != pPutList2[0]) {
 		retCode = TC_FAIL;
 		TC_ERROR("fiber3 (1) - got 0x%x from <nanoFifoObj2>, expected 0x%x\n",
@@ -512,7 +511,7 @@ void fiber3(void)
 
 /**
  *
- * @brief Test the nano_task_fifo_get_wait() interface
+ * @brief Test the nano_task_fifo_get(TICKS_UNLIMITED) interface
  *
  * This is in a task.  It puts data to nanoFifoObj2 queue and gets
  * data from nanoFifoObj queue.
@@ -534,7 +533,7 @@ void testTaskFifoGetW(void)
 	/* Activate fiber2 */
 	nano_task_sem_give(&nanoSemObj2);
 
-	pGetData = nano_task_fifo_get_wait(&nanoFifoObj);
+	pGetData = nano_task_fifo_get(&nanoFifoObj, TICKS_UNLIMITED);
 	TC_PRINT("TASK FIFO Get from queue1: %p\n", pGetData);
 	/* Verify results */
 	if (pGetData != pMyFifoData2) {
@@ -629,9 +628,9 @@ void main(void)
 	nano_task_sem_give(&nanoSemObj3);    /* Reactivate fiber #3 */
 
 	for (int i = 0; i < 4; i++) {
-		pData = nano_task_fifo_get_wait(&nanoFifoObj2);
+		pData = nano_task_fifo_get(&nanoFifoObj2, TICKS_UNLIMITED);
 		if (pData != pPutList2[i]) {
-			TC_ERROR("nano_task_fifo_get_wait() expected 0x%x, got 0x%x\n",
+			TC_ERROR("nano_task_fifo_get() expected 0x%x, got 0x%x\n",
 					 pPutList2[i], pData);
 			goto exit;
 		}
@@ -681,7 +680,7 @@ void main(void)
 	TC_PRINT("Test Task FIFO Get\n");
 
 	/* Get all FIFOs */
-	while ((pData = nano_task_fifo_get(&nanoFifoObj)) != NULL) {
+	while ((pData = nano_task_fifo_get(&nanoFifoObj, TICKS_NONE)) != NULL) {
 		TC_PRINT("TASK FIFO Get: count = %d, ptr is %p\n", count, pData);
 		if ((count >= NUM_FIFO_ELEMENT) || (pData != pPutList2[count])) {
 			TCERR1(count);

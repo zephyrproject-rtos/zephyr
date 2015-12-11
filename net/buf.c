@@ -49,7 +49,7 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 
 	NET_BUF_DBG("fifo %p reserve %u\n", fifo, reserve_head);
 
-	buf = nano_fifo_get(fifo);
+	buf = nano_fifo_get(fifo, TICKS_NONE);
 	if (!buf) {
 		if (sys_execution_context_type_get() == NANO_CTX_ISR) {
 			NET_BUF_ERR("Failed to get free buffer\n");
@@ -57,7 +57,7 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 		}
 
 		NET_BUF_WARN("Low on buffers. Waiting (fifo %p)\n", fifo);
-		buf = nano_fifo_get_wait(fifo);
+		buf = nano_fifo_get(fifo, TICKS_UNLIMITED);
 	}
 
 	buf->ref  = 1;

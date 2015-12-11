@@ -128,7 +128,7 @@ static void cmd_handler(int arg1, int arg2)
 		struct btp_hdr *cmd;
 		uint16_t len;
 
-		cmd = nano_fiber_fifo_get_wait(&cmds_queue);
+		cmd = nano_fiber_fifo_get(&cmds_queue, TICKS_UNLIMITED);
 
 		len = sys_le16_to_cpu(cmd->len);
 
@@ -179,7 +179,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 		return buf;
 	}
 
-	new_buf =  nano_fifo_get(&avail_queue);
+	new_buf =  nano_fifo_get(&avail_queue, TICKS_NONE);
 	if (!new_buf) {
 		printk("BT tester: RX overflow\n");
 		*off = 0;
@@ -205,7 +205,8 @@ void tester_init(void)
 
 	task_fiber_start(stack, STACKSIZE, cmd_handler, 0, 0, 7, 0);
 
-	uart_pipe_register(nano_fifo_get(&avail_queue), BTP_MTU, recv_cb);
+	uart_pipe_register(nano_fifo_get(&avail_queue, TICKS_NONE),
+			BTP_MTU, recv_cb);
 
 	printk("BT tester initialized\n");
 }

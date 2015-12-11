@@ -381,9 +381,9 @@ static inline struct net_buf *buf_wait_timeout(struct nano_fifo *queue,
 {
 	switch (sys_execution_context_type_get()) {
 	case NANO_CTX_FIBER:
-		return nano_fiber_fifo_get_wait_timeout(queue, timeout);
+		return nano_fiber_fifo_get(queue, timeout);
 	case NANO_CTX_TASK:
-		return nano_task_fifo_get_wait_timeout(queue, timeout);
+		return nano_task_fifo_get(queue, timeout);
 	case NANO_CTX_ISR:
 	default:
 		/* Invalid context type */
@@ -454,16 +454,16 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 
 	switch (timeout) {
 	case TICKS_UNLIMITED:
-		buf = nano_fifo_get_wait(rx_queue);
+		buf = nano_fifo_get(rx_queue, TICKS_UNLIMITED);
 		break;
 	case TICKS_NONE:
-		buf = nano_fifo_get(rx_queue);
+		buf = nano_fifo_get(rx_queue, TICKS_NONE);
 		break;
 	default:
 #ifdef CONFIG_NANO_TIMEOUTS
 		buf = buf_wait_timeout(rx_queue, timeout);
 #else /* CONFIG_NANO_TIMEOUTS */
-		buf = nano_fifo_get(rx_queue);
+		buf = nano_fifo_get(rx_queue, TICKS_NONE);
 #endif
 		break;
 	}
@@ -581,7 +581,7 @@ static void net_tx_fiber(void)
 		int ret;
 
 		/* Get next packet from application - wait if necessary */
-		buf = nano_fifo_get_wait(&netdev.tx_queue);
+		buf = nano_fifo_get(&netdev.tx_queue, TICKS_UNLIMITED);
 
 		NET_DBG("Sending (buf %p, len %u) to IP stack\n",
 			buf, buf->len);
@@ -624,7 +624,7 @@ static void net_rx_fiber(void)
 	NET_DBG("Starting RX fiber\n");
 
 	while (1) {
-		buf = nano_fifo_get_wait(&netdev.rx_queue);
+		buf = nano_fifo_get(&netdev.rx_queue, TICKS_UNLIMITED);
 
 		/* Check stack usage (no-op if not enabled) */
 		net_analyze_stack("RX fiber", rx_fiber_stack,

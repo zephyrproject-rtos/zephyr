@@ -116,7 +116,7 @@ of data items to multiple consumer fibers, if desired.
        ARG_UNUSED(unused2);
 
        while (1) {
-           rx_data = nano_fiber_fifo_get_wait(&signal_fifo);
+           rx_data = nano_fiber_fifo_get_wait(&signal_fifo, TICKS_NONE);
 
            /* process FIFO data */
            ...
@@ -137,14 +137,5 @@ The following APIs for a nanokernel FIFO are provided by :file:`nanokernel.h`:
 
 :cpp:func:`nano_task_fifo_get()`, :cpp:func:`nano_fiber_fifo_get()`,
 :cpp:func:`nano_isr_fifo_get()`, :cpp:func:`nano_fifo_get()`
-   Remove an item from a FIFO, or fails and continues if it is empty.
-
-:cpp:func:`nano_task_fifo_get_wait()`, :cpp:func:`nano_fiber_fifo_get_wait()`,
-:cpp:func:`nano_fifo_get_wait()`
-   Remove an item from a FIFO, or waits for an item if it is empty.
-
-:cpp:func:`nano_task_fifo_get_wait_timeout()`,
-:cpp:func:`nano_fiber_fifo_get_wait_timeout()`,
-:cpp:func:`nano_fifo_get_wait_timeout()`
    Remove an item from a FIFO, or waits for an item for a specified time
    period if it is empty.

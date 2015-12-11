@@ -74,7 +74,7 @@ void main(void)
 	}
 
 	for (int ii = 0; ii < N_FIBERS; ii++) {
-		struct result *p = nano_task_fifo_get_wait_timeout(&fifo, 10);
+		struct result *p = nano_task_fifo_get(&fifo, 10);
 
 		if (!p || !p->pass) {
 			rv = TC_FAIL;

@@ -86,9 +86,9 @@ Get from queue1: count = 3, ptr is 00103e80
 Test ISR FIFO (invoked from Task) - put 001056dc and get back 001056dc
 PASS - testIsrFifoFromTask.
 ===================================================================
-test nano_task_fifo_get_wait_timeout with timeout > 0
-nano_task_fifo_get_wait_timeout timed out as expected
-nano_task_fifo_get_wait_timeout got fifo in time, as expected
+test nano_task_fifo_get with timeout > 0
+nano_task_fifo_get timed out as expected
+nano_task_fifo_get got fifo in time, as expected
 testing timeouts of 5 fibers on same fifo
  got fiber (q order: 2, t/o: 10, fifo 200049c0) as expected
  got fiber (q order: 3, t/o: 15, fifo 200049c0) as expected

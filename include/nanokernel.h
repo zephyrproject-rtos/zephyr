@@ -384,52 +384,27 @@ extern void nano_fifo_put(struct nano_fifo *fifo, void *data);
  *
  * @brief Get an element from the head a fifo
  *
- * Remove the head element from the specified nanokernel multiple-waiter fifo
- * linked list fifo; it may be called from a fiber, task, or ISR context.
+ * This is a convenience wrapper for the execution of context specific APIs.
+ * It is helpful whenever the exact execution context is not known. Its use
+ * should be avoided whenever the context is known up-front (to avoid
+ * unnecessary overhead).
  *
  * If no elements are available, NULL is returned.  The first word in the
  * element contains invalid data because that memory location was used to store
  * a pointer to the next element in the linked list.
  *
  * @param fifo FIFO on which to interact.
+ * @param timeout_in_ticks Affects the action taken should the fifo be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. Otherwise wait up to the specified number of ticks
+ * before timing out.
+ *
+ * @warning If it is to be called from the context of an ISR, then @a
+ * timeout_in_ticks must be set to TICKS_NONE.
  *
  * @return Pointer to head element in the list if available, otherwise NULL
  */
-extern void *nano_fifo_get(struct nano_fifo *fifo);
-
-/**
- *
- * @brief Get the head element of a fifo, poll/pend if empty
- *
- * This is a convenience wrapper for the execution context-specific APIs. This
- * is helpful whenever the exact execution context is not known, but should be
- * avoided when the context is known up-front (to avoid unnecessary overhead).
- *
- * @warning It's only valid to call this API from a fiber or a task.
- *
- * @param fifo FIFO on which to interact.
- *
- * @return Pointer to head element in the list
- */
-extern void *nano_fifo_get_wait(struct nano_fifo *fifo);
-
-/**
- *
- * @brief Get the head element of a fifo, poll/pend with timeout if empty
- *
- * This is a convenience wrapper for the execution context-specific APIs. This
- * is helpful whenever the exact execution context is not known, but should be
- * avoided when the context is known up-front (to avoid unnecessary overhead).
- *
- * @warning It's only valid to call this API from a fiber or a task.
- *
- * @param fifo FIFO on which to interact.
- * @param timeout Timeout measured in ticks
- *
- * @return Pointer to head element in the list
- */
-extern void *nano_fifo_get_wait_timeout(struct nano_fifo *fifo,
-		int32_t timeout);
+extern void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
 
 /*
  * methods for ISRs
@@ -460,10 +435,11 @@ extern void nano_isr_fifo_put(struct nano_fifo *fifo, void *data);
  * location was used to store a pointer to the next element in the linked list.
  *
  * @param fifo FIFO on which to interact.
+ * @param timeout_in_ticks Always use TICKS_NONE.
  *
  * @return Pointer to head element in the list if available, otherwise NULL
  */
-extern void *nano_isr_fifo_get(struct nano_fifo *fifo);
+extern void *nano_isr_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
 
 /* methods for fibers */
 
@@ -492,58 +468,15 @@ extern void nano_fiber_fifo_put(struct nano_fifo *fifo, void *data);
  * location was used to store a pointer to the next element in the linked list.
  *
  * @param fifo FIFO on which to interact.
+ * @param timeout_in_ticks Affects the action taken should the fifo be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. Otherwise wait up to the specified number of ticks
+ * before timing out.
  *
  * @return Pointer to head element in the list if available, otherwise NULL
  */
-extern void *nano_fiber_fifo_get(struct nano_fifo *fifo);
-
-/**
- *
- * @brief Get the head element of a fifo, wait if empty
- *
- * Remove the head element from the specified system-level multiple-waiter
- * fifo; it can only be called from a fiber.
- *
- * If no elements are available, the calling fiber will pend until an element
- * is put onto the fifo.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @param fifo FIFO on which to interact.
- *
- * @return Pointer to head element in the list
- *
- * @note There exists a separate nano_task_fifo_get_wait() implementation
- * since a task cannot pend on a nanokernel object. Instead tasks will
- * poll the fifo object.
- */
-extern void *nano_fiber_fifo_get_wait(struct nano_fifo *fifo);
-#ifdef CONFIG_NANO_TIMEOUTS
-
-/**
- * @brief get the head element of a fifo, pend with a timeout if empty
- *
- * Remove the head element from the specified nanokernel fifo; it can only be
- * called from a fiber.
- *
- * If no elements are available, the calling fiber will pend until an element
- * is put onto the fifo, or the timeout expires, whichever comes first.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked
- * list.
- *
- * @sa nano_task_stack_pop_wait()
- *
- * @param fifo the FIFO on which to interact.
- * @param timeout_in_ticks time to wait in ticks
- *
- * @return Pointer to head element in the list, NULL if timed out
- */
-extern void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *fifo,
-		int32_t timeout_in_ticks);
-#endif
+extern void *nano_fiber_fifo_get(struct nano_fifo *fifo,
+			int32_t timeout_in_ticks);
 
 /* methods for tasks */
 
@@ -565,53 +498,25 @@ extern void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *fifo,
  */
 extern void nano_task_fifo_put(struct nano_fifo *fifo, void *data);
 
-extern void *nano_task_fifo_get(struct nano_fifo *fifo);
-
 /**
+ * @brief Get an element from the head of a FIFO from a task, poll if empty
  *
- * @brief Get the head element of a fifo, poll if empty
- *
- * Remove the head element from the specified system-level multiple-waiter
- * fifo; it can only be called from a task.
- *
- * If no elements are available, the calling task will poll until an
- * until an element is put onto the fifo.
+ * Remove the head element from the specified nanokernel multiple-waiter fifo
+ * linked list fifo. It may be called from a task.
  *
  * The first word in the element contains invalid data because that memory
  * location was used to store a pointer to the next element in the linked list.
  *
  * @param fifo FIFO on which to interact.
+ * @param timeout_in_ticks Affects the action taken should the fifo be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then poll as
+ * long as necessary. Otherwise poll up to the specified number of ticks have
+ * elapsed before timing out.
  *
- * @sa nano_task_stack_pop_wait()
- *
- * @return Pointer to head element in the list
+ * @return Pointer to head element in the list if available, otherwise NULL
  */
-extern void *nano_task_fifo_get_wait(struct nano_fifo *fifo);
-#ifdef CONFIG_NANO_TIMEOUTS
-
-/**
- * @brief get the head element of a fifo, poll with a timeout if empty
- *
- * Remove the head element from the specified nanokernel fifo; it can only be
- * called from a task.
- *
- * If no elements are available, the calling task will poll until an element
- * is put onto the fifo, or the timeout expires, whichever comes first.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked
- * list.
- *
- * @sa nano_task_stack_pop_wait()
- *
- * @param fifo the FIFO on which to operate
- * @param timeout_in_ticks time to wait in ticks
- *
- * @return Pointer to head element in the list, NULL if timed out
- */
-extern void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
-		int32_t timeout_in_ticks);
-#endif
+extern void *nano_task_fifo_get(struct nano_fifo *fifo,
+			int32_t timeout_in_ticks);
 
 /* LIFO APIs */
 

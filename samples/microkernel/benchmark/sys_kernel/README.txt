@@ -107,7 +107,7 @@ END TEST CASE
 TEST CASE: FIFO #1
 TEST COVERAGE: 
 	nano_fifo_init
-	nano_fiber_fifo_get_wait
+	nano_fiber_fifo_get
 	nano_fiber_fifo_put
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL
@@ -117,7 +117,7 @@ END TEST CASE
 TEST CASE: FIFO #2
 TEST COVERAGE: 
 	nano_fifo_init
-	nano_fiber_fifo_get_wait
+	nano_fiber_fifo_get(TICKS_UNLIMITED)
 	nano_fiber_fifo_get
 	nano_fiber_fifo_put
 	fiber_yield
@@ -129,9 +129,9 @@ END TEST CASE
 TEST CASE: FIFO #3
 TEST COVERAGE: 
 	nano_fifo_init
-	nano_fiber_fifo_get_wait
+	nano_fiber_fifo_get
 	nano_fiber_fifo_put
-	nano_task_fifo_get_wait
+	nano_task_fifo_get
 	nano_task_fifo_put
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL

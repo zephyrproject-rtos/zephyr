@@ -473,7 +473,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Get next ACL packet for connection */
-		buf = nano_fifo_get_wait(&conn->tx_queue);
+		buf = nano_fifo_get(&conn->tx_queue, TICKS_UNLIMITED);
 		if (conn->state != BT_CONN_CONNECTED) {
 			net_buf_unref(buf);
 			break;
@@ -487,7 +487,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	BT_DBG("handle %u disconnected - cleaning up", conn->handle);
 
 	/* Give back any allocated buffers */
-	while ((buf = nano_fifo_get(&conn->tx_queue))) {
+	while ((buf = nano_fifo_get(&conn->tx_queue, TICKS_NONE))) {
 		net_buf_unref(buf);
 	}
 

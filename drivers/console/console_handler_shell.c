@@ -161,7 +161,7 @@ static void shell(int arg1, int arg2)
 
 		printk("%s", get_prompt());
 
-		cmd = nano_fiber_fifo_get_wait(&cmds_queue);
+		cmd = nano_fiber_fifo_get(&cmds_queue, TICKS_UNLIMITED);
 
 		argc = line2argv(cmd->line, argv, ARRAY_SIZE(argv));
 		if (!argc) {

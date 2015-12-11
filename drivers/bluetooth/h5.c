@@ -245,7 +245,7 @@ static void process_unack(void)
 	BT_DBG("Need to remove %u packet from the queue", number_removed);
 
 	while (number_removed) {
-		struct net_buf *buf = nano_fifo_get(&h5.unack_queue);
+		struct net_buf *buf = nano_fifo_get(&h5.unack_queue, TICKS_NONE);
 
 		if (!buf) {
 			BT_ERR("Unack queue is empty");
@@ -388,12 +388,12 @@ static void retx_fiber(int arg1, int arg2)
 		nano_fifo_init(&tmp_queue);
 
 		/* Queue to temperary queue */
-		while ((buf = nano_fifo_get(&h5.tx_queue))) {
+		while ((buf = nano_fifo_get(&h5.tx_queue, TICKS_NONE))) {
 			nano_fifo_put(&tmp_queue, buf);
 		}
 
 		/* Queue unack packets to the beginning of the queue */
-		while ((buf = nano_fifo_get(&h5.unack_queue))) {
+		while ((buf = nano_fifo_get(&h5.unack_queue, TICKS_NONE))) {
 			/* include also packet type */
 			net_buf_push(buf, sizeof(uint8_t));
 			nano_fifo_put(&h5.tx_queue, buf);
@@ -401,7 +401,7 @@ static void retx_fiber(int arg1, int arg2)
 		}
 
 		/* Queue saved packets from temp queue */
-		while ((buf = nano_fifo_get(&tmp_queue))) {
+		while ((buf = nano_fifo_get(&tmp_queue, TICKS_NONE))) {
 			nano_fifo_put(&h5.tx_queue, buf);
 		}
 
@@ -668,7 +668,7 @@ static void tx_fiber(void)
 			fiber_sleep(10);
 			break;
 		case ACTIVE:
-			buf = nano_fifo_get_wait(&h5.tx_queue);
+			buf = nano_fifo_get(&h5.tx_queue, TICKS_UNLIMITED);
 			type = h5_get_type(buf);
 
 			h5_send(buf->data, type, buf->len);
@@ -699,7 +699,7 @@ static void rx_fiber(void)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = nano_fifo_get_wait(&h5.rx_queue);
+		buf = nano_fifo_get(&h5.rx_queue, TICKS_UNLIMITED);
 
 		hexdump("=> ", buf->data, buf->len);
 

@@ -54,7 +54,7 @@ void fifo_fiber1(int par1, int par2)
 
 	ARG_UNUSED(par1);
 	for (i = 0; i < par2; i++) {
-		pelement = (int *) nano_fiber_fifo_get_wait(&nanoFifo1);
+		pelement = (int *) nano_fiber_fifo_get(&nanoFifo1, TICKS_UNLIMITED);
 		if (pelement[1] != i) {
 			break;
 		}
@@ -62,7 +62,7 @@ void fifo_fiber1(int par1, int par2)
 		nano_fiber_fifo_put(&nanoFifo2, element);
 	}
 	/* wait till it is safe to end: */
-	nano_fiber_fifo_get_wait(&nanoFifo_sync);
+	nano_fiber_fifo_get(&nanoFifo_sync, TICKS_UNLIMITED);
 }
 
 
@@ -85,14 +85,14 @@ void fifo_fiber2(int par1, int par2)
 	for (i = 0; i < par2; i++) {
 		element[1] = i;
 		nano_fiber_fifo_put(&nanoFifo1, element);
-		pelement = (int *) nano_fiber_fifo_get_wait(&nanoFifo2);
+		pelement = (int *) nano_fiber_fifo_get(&nanoFifo2, TICKS_UNLIMITED);
 		if (pelement[1] != i) {
 			break;
 		}
 		(*pcounter)++;
 	}
 	/* wait till it is safe to end: */
-	nano_fiber_fifo_get_wait(&nanoFifo_sync);
+	nano_fiber_fifo_get(&nanoFifo_sync, TICKS_UNLIMITED);
 }
 
 
@@ -115,7 +115,8 @@ void fifo_fiber3(int par1, int par2)
 	for (i = 0; i < par2; i++) {
 		element[1] = i;
 		nano_fiber_fifo_put(&nanoFifo1, element);
-		while (NULL == (pelement = (int *) nano_fiber_fifo_get(&nanoFifo2))) {
+		while ((pelement = nano_fiber_fifo_get(&nanoFifo2,
+							TICKS_NONE)) == NULL) {
 			fiber_yield();
 		}
 		if (pelement[1] != i) {
@@ -124,7 +125,7 @@ void fifo_fiber3(int par1, int par2)
 		(*pcounter)++;
 	}
 	/* wait till it is safe to end: */
-	nano_fiber_fifo_get_wait(&nanoFifo_sync);
+	nano_fiber_fifo_get(&nanoFifo_sync, TICKS_UNLIMITED);
 }
 
 
@@ -149,7 +150,7 @@ int fifo_test(void)
 			"FIFO #1");
 	fprintf(output_file, sz_description,
 			"\n\tnano_fifo_init"
-			"\n\tnano_fiber_fifo_get_wait"
+			"\n\tnano_fiber_fifo_get(TICKS_UNLIMITED)"
 			"\n\tnano_fiber_fifo_put");
 	printf(sz_test_start_fmt);
 
@@ -176,8 +177,8 @@ int fifo_test(void)
 			"FIFO #2");
 	fprintf(output_file, sz_description,
 			"\n\tnano_fifo_init"
-			"\n\tnano_fiber_fifo_get_wait"
-			"\n\tnano_fiber_fifo_get"
+			"\n\tnano_fiber_fifo_get(TICKS_UNLIMITED)"
+			"\n\tnano_fiber_fifo_get(TICKS_NONE)"
 			"\n\tnano_fiber_fifo_put"
 			"\n\tfiber_yield");
 	printf(sz_test_start_fmt);
@@ -206,9 +207,9 @@ int fifo_test(void)
 			"FIFO #3");
 	fprintf(output_file, sz_description,
 			"\n\tnano_fifo_init"
-			"\n\tnano_fiber_fifo_get_wait"
+			"\n\tnano_fiber_fifo_get(TICKS_UNLIMITED)"
 			"\n\tnano_fiber_fifo_put"
-			"\n\tnano_task_fifo_get_wait"
+			"\n\tnano_task_fifo_get(TICKS_UNLIMITED)"
 			"\n\tnano_task_fifo_put");
 	printf(sz_test_start_fmt);
 
@@ -228,11 +229,11 @@ int fifo_test(void)
 		element[1] = i;
 		nano_task_fifo_put(&nanoFifo1, element);
 
-		pelement = (int *) nano_task_fifo_get_wait(&nanoFifo2);
+		pelement = (int *) nano_task_fifo_get(&nanoFifo2, TICKS_UNLIMITED);
 		if (pelement[1] != i) {
 			break;
 		}
-		pelement = (int *) nano_task_fifo_get_wait(&nanoFifo2);
+		pelement = (int *) nano_task_fifo_get(&nanoFifo2, TICKS_UNLIMITED);
 		if (pelement[1] != i) {
 			break;
 		}

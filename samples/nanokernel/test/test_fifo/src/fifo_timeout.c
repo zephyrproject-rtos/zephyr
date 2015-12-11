@@ -59,7 +59,7 @@ struct nano_fifo scratch_fifo_packets_fifo;
 
 void *get_scratch_packet(void)
 {
-	void *packet = nano_fifo_get(&scratch_fifo_packets_fifo);
+	void *packet = nano_fifo_get(&scratch_fifo_packets_fifo, TICKS_NONE);
 
 	__ASSERT_NO_MSG(packet);
 
@@ -122,7 +122,7 @@ static void test_fiber_pend_and_timeout(int data, int unused)
 
 	ARG_UNUSED(unused);
 
-	packet = nano_fiber_fifo_get_wait_timeout(d->fifo, d->timeout);
+	packet = nano_fiber_fifo_get(d->fifo, d->timeout);
 	if (packet) {
 		TC_ERROR(" *** timeout of %d did not time out.\n",
 					d->timeout);
@@ -150,7 +150,7 @@ static int test_multiple_fibers_pending(struct timeout_order_data *test_data,
 
 	for (ii = 0; ii < test_data_size; ii++) {
 		struct timeout_order_data *data =
-			nano_task_fifo_get_wait(&timeout_order_fifo);
+			nano_task_fifo_get(&timeout_order_fifo, TICKS_UNLIMITED);
 
 		if (data->timeout_order == ii) {
 			TC_PRINT(" got fiber (q order: %d, t/o: %d, fifo %p) as expected\n",
@@ -173,7 +173,7 @@ static void test_fiber_pend_and_get_data(int data, int unused)
 
 	ARG_UNUSED(unused);
 
-	packet = nano_fiber_fifo_get_wait_timeout(d->fifo, d->timeout);
+	packet = nano_fiber_fifo_get(d->fifo, d->timeout);
 	if (!packet) {
 		TC_PRINT(" *** fiber (q order: %d, t/o: %d, fifo %p) timed out!\n",
 						d->q_order, d->timeout, d->fifo);
@@ -206,7 +206,7 @@ static int test_multiple_fibers_get_data(struct timeout_order_data *test_data,
 
 		nano_task_fifo_put(test_data[ii].fifo, get_scratch_packet());
 
-		data = nano_task_fifo_get_wait(&timeout_order_fifo);
+		data = nano_task_fifo_get(&timeout_order_fifo, TICKS_UNLIMITED);
 
 		if (data->q_order == ii) {
 			TC_PRINT(" got fiber (q order: %d, t/o: %d, fifo %p) as expected\n",
@@ -218,7 +218,7 @@ static int test_multiple_fibers_get_data(struct timeout_order_data *test_data,
 		}
 	}
 
-	data = nano_task_fifo_get_wait(&timeout_order_fifo);
+	data = nano_task_fifo_get(&timeout_order_fifo, TICKS_UNLIMITED);
 	if (data->q_order == ii) {
 		TC_PRINT(" got fiber (q order: %d, t/o: %d, fifo %p) as expected\n",
 					data->q_order, data->timeout, data->fifo);
@@ -237,7 +237,7 @@ static void test_fiber_ticks_special_values(int packet, int special_value)
 	struct reply_packet *reply_packet = (void *)packet;
 
 	reply_packet->reply =
-		!!nano_fiber_fifo_get_wait_timeout(&fifo_timeout[0], special_value);
+		!!nano_fiber_fifo_get(&fifo_timeout[0], special_value);
 
 	nano_fiber_fifo_put(&timeout_order_fifo, reply_packet);
 }
@@ -264,10 +264,10 @@ int test_fifo_timeout(void)
 							&scratch_fifo_packets[ii]);
 	}
 
-	/* test nano_task_fifo_get_wait_timeout() with timeout */
+	/* test nano_task_fifo_get() with timeout */
 	timeout = 10;
 	orig_ticks = sys_tick_get();
-	packet = nano_task_fifo_get_wait_timeout(&fifo_timeout[0], timeout);
+	packet = nano_task_fifo_get(&fifo_timeout[0], timeout);
 	if (packet) {
 		TC_ERROR(" *** timeout of %d did not time out.\n", timeout);
 		TC_END_RESULT(TC_FAIL);
@@ -280,23 +280,23 @@ int test_fifo_timeout(void)
 		return TC_FAIL;
 	}
 
-	/* test nano_task_fifo_get_wait_timeout with timeout of 0 */
+	/* test nano_task_fifo_get with timeout of 0 */
 
-	packet = nano_task_fifo_get_wait_timeout(&fifo_timeout[0], 0);
+	packet = nano_task_fifo_get(&fifo_timeout[0], 0);
 	if (packet) {
 		TC_ERROR(" *** timeout of 0 did not time out.\n");
 		TC_END_RESULT(TC_FAIL);
 		return TC_FAIL;
 	}
 
-	/* test nano_task_fifo_get_wait_timeout with timeout > 0 */
+	/* test nano_task_fifo_get with timeout > 0 */
 
-	TC_PRINT("test nano_task_fifo_get_wait_timeout with timeout > 0\n");
+	TC_PRINT("test nano_task_fifo_get with timeout > 0\n");
 
 	timeout = 3;
 	orig_ticks = sys_tick_get();
 
-	packet = nano_task_fifo_get_wait_timeout(&fifo_timeout[0], timeout);
+	packet = nano_task_fifo_get(&fifo_timeout[0], timeout);
 
 	if (packet) {
 		TC_ERROR(" *** timeout of %d did not time out.\n",
@@ -310,10 +310,10 @@ int test_fifo_timeout(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("nano_task_fifo_get_wait_timeout timed out as expected\n");
+	TC_PRINT("nano_task_fifo_get timed out as expected\n");
 
 	/*
-	 * test nano_task_fifo_get_wait_timeout with a timeout and fiber that puts
+	 * test nano_task_fifo_get with a timeout and fiber that puts
 	 * data on the fifo on time
 	 */
 
@@ -325,7 +325,7 @@ int test_fifo_timeout(void)
 						timeout,
 						FIBER_PRIORITY, 0);
 
-	packet = nano_task_fifo_get_wait_timeout(&fifo_timeout[0],
+	packet = nano_task_fifo_get(&fifo_timeout[0],
 												(int)(timeout + 5));
 	if (!packet) {
 		TC_ERROR(" *** data put in time did not return valid pointer.\n");
@@ -340,14 +340,14 @@ int test_fifo_timeout(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("nano_task_fifo_get_wait_timeout got fifo in time, as expected\n");
+	TC_PRINT("nano_task_fifo_get got fifo in time, as expected\n");
 
 	/*
-	 * test nano_task_fifo_get_wait_timeout with TICKS_NONE and no data
+	 * test nano_task_fifo_get with TICKS_NONE and no data
 	 * unavailable.
 	 */
 
-	if (nano_task_fifo_get_wait_timeout(&fifo_timeout[0], TICKS_NONE)) {
+	if (nano_task_fifo_get(&fifo_timeout[0], TICKS_NONE)) {
 		TC_ERROR("task with TICKS_NONE got data, but shouldn't have\n");
 		return TC_FAIL;
 	}
@@ -355,13 +355,13 @@ int test_fifo_timeout(void)
 	TC_PRINT("task with TICKS_NONE did not get data, as expected\n");
 
 	/*
-	 * test nano_task_fifo_get_wait_timeout with TICKS_NONE and some data
+	 * test nano_task_fifo_get with TICKS_NONE and some data
 	 * available.
 	 */
 
 	scratch_packet = get_scratch_packet();
 	nano_task_fifo_put(&fifo_timeout[0], scratch_packet);
-	if (!nano_task_fifo_get_wait_timeout(&fifo_timeout[0], TICKS_NONE)) {
+	if (!nano_task_fifo_get(&fifo_timeout[0], TICKS_NONE)) {
 		TC_ERROR("task with TICKS_NONE did not get available data\n");
 		return TC_FAIL;
 	}
@@ -370,7 +370,7 @@ int test_fifo_timeout(void)
 	TC_PRINT("task with TICKS_NONE got available data, as expected\n");
 
 	/*
-	 * test nano_task_fifo_get_wait_timeout with TICKS_UNLIMITED and the
+	 * test nano_task_fifo_get with TICKS_UNLIMITED and the
 	 * data available.
 	 */
 
@@ -379,7 +379,7 @@ int test_fifo_timeout(void)
 
 	scratch_packet = get_scratch_packet();
 	nano_task_fifo_put(&fifo_timeout[0], scratch_packet);
-	if (!nano_task_fifo_get_wait_timeout(&fifo_timeout[0], TICKS_UNLIMITED)) {
+	if (!nano_task_fifo_get(&fifo_timeout[0], TICKS_UNLIMITED)) {
 		TC_ERROR(" *** This will never be hit!!! .\n");
 		return TC_FAIL;
 	}
@@ -393,7 +393,7 @@ int test_fifo_timeout(void)
 						test_fiber_ticks_special_values,
 						(int)&reply_packet, TICKS_NONE, FIBER_PRIORITY, 0);
 
-	if (!nano_task_fifo_get(&timeout_order_fifo)) {
+	if (!nano_task_fifo_get(&timeout_order_fifo, TICKS_NONE)) {
 		TC_ERROR(" *** fiber should have run and filled the fifo.\n");
 		return TC_FAIL;
 	}
@@ -414,7 +414,7 @@ int test_fifo_timeout(void)
 						(int)&reply_packet, TICKS_NONE, FIBER_PRIORITY, 0);
 	put_scratch_packet(scratch_packet);
 
-	if (!nano_task_fifo_get(&timeout_order_fifo)) {
+	if (!nano_task_fifo_get(&timeout_order_fifo, TICKS_NONE)) {
 		TC_ERROR(" *** fiber should have run and filled the fifo.\n");
 		return TC_FAIL;
 	}
@@ -435,7 +435,7 @@ int test_fifo_timeout(void)
 						(int)&reply_packet, TICKS_UNLIMITED, FIBER_PRIORITY, 0);
 	put_scratch_packet(scratch_packet);
 
-	if (!nano_task_fifo_get(&timeout_order_fifo)) {
+	if (!nano_task_fifo_get(&timeout_order_fifo, TICKS_NONE)) {
 		TC_ERROR(" *** fiber should have run and filled the fifo.\n");
 		return TC_FAIL;
 	}

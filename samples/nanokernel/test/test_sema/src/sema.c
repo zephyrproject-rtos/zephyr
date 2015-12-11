@@ -605,7 +605,7 @@ static int test_multiple_fibers_pending(struct timeout_order_data *test_data,
 
 	for (ii = 0; ii < test_data_size; ii++) {
 		struct timeout_order_data *data =
-			nano_task_fifo_get_wait(&timeout_order_fifo);
+			nano_task_fifo_get(&timeout_order_fifo, TICKS_UNLIMITED);
 
 		if (data->timeout_order == ii) {
 			TC_PRINT(" got fiber (q order: %d, t/o: %d, sem: %p) as expected\n",
@@ -659,7 +659,7 @@ static int test_multiple_fibers_get_sem(struct timeout_order_data *test_data,
 	for (ii = 0; ii < test_data_size-1; ii++) {
 		nano_task_sem_give(test_data[ii].sem);
 
-		data = nano_task_fifo_get_wait(&timeout_order_fifo);
+		data = nano_task_fifo_get(&timeout_order_fifo, TICKS_UNLIMITED);
 
 		if (data->q_order == ii) {
 			TC_PRINT(" got fiber (q order: %d, t/o: %d, sem: %p) as expected\n",
@@ -671,7 +671,7 @@ static int test_multiple_fibers_get_sem(struct timeout_order_data *test_data,
 		}
 	}
 
-	data = nano_task_fifo_get_wait(&timeout_order_fifo);
+	data = nano_task_fifo_get(&timeout_order_fifo, TICKS_UNLIMITED);
 	if (data->q_order == ii) {
 		TC_PRINT(" got fiber (q order: %d, t/o: %d, sem: %p) as expected\n",
 					data->q_order, data->timeout, data->sem);
@@ -821,7 +821,7 @@ static int test_timeout(void)
 						test_fiber_ticks_special_values,
 						(int)&reply_packet, TICKS_NONE, FIBER_PRIORITY, 0);
 
-	if (!nano_task_fifo_get(&timeout_order_fifo)) {
+	if (!nano_task_fifo_get(&timeout_order_fifo, TICKS_NONE)) {
 		TC_ERROR(" *** fiber should have run and filled the fifo.\n");
 		return TC_FAIL;
 	}
@@ -841,7 +841,7 @@ static int test_timeout(void)
 						test_fiber_ticks_special_values,
 						(int)&reply_packet, TICKS_NONE, FIBER_PRIORITY, 0);
 
-	if (!nano_task_fifo_get(&timeout_order_fifo)) {
+	if (!nano_task_fifo_get(&timeout_order_fifo, TICKS_NONE)) {
 		TC_ERROR(" *** fiber should have run and filled the fifo.\n");
 		return TC_FAIL;
 	}
@@ -861,7 +861,7 @@ static int test_timeout(void)
 						test_fiber_ticks_special_values,
 						(int)&reply_packet, TICKS_UNLIMITED, FIBER_PRIORITY, 0);
 
-	if (!nano_task_fifo_get(&timeout_order_fifo)) {
+	if (!nano_task_fifo_get(&timeout_order_fifo, TICKS_NONE)) {
 		TC_ERROR(" *** fiber should have run and filled the fifo.\n");
 		return TC_FAIL;
 	}

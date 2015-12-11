@@ -725,8 +725,7 @@ static int test_timeout(void)
 	}
 	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
 
-		data = nano_task_fifo_get_wait_timeout(&timeout_order_fifo,
-												TIMEOUT_TWO_INTERVALS);
+		data = nano_task_fifo_get(&timeout_order_fifo, TIMEOUT_TWO_INTERVALS);
 
 		if (!data) {
 			TC_ERROR(" *** timeout while waiting for delayed fiber\n");
@@ -745,8 +744,7 @@ static int test_timeout(void)
 
 	/* ensure no more fibers fire */
 
-	data = nano_task_fifo_get_wait_timeout(&timeout_order_fifo,
-											TIMEOUT_TWO_INTERVALS);
+	data = nano_task_fifo_get(&timeout_order_fifo, TIMEOUT_TWO_INTERVALS);
 
 	if (data) {
 		TC_ERROR(" *** got something on the fifo, but shouldn't have...\n");
@@ -787,8 +785,7 @@ static int test_timeout(void)
 			continue;
 		}
 
-		data = nano_task_fifo_get_wait_timeout(&timeout_order_fifo,
-												TIMEOUT_TEN_INTERVALS);
+		data = nano_task_fifo_get(&timeout_order_fifo, TIMEOUT_TEN_INTERVALS);
 
 		if (!data) {
 			TC_ERROR(" *** timeout while waiting for delayed fiber\n");
@@ -813,8 +810,7 @@ static int test_timeout(void)
 
 	/* ensure no more fibers fire */
 
-	data = nano_task_fifo_get_wait_timeout(&timeout_order_fifo,
-											TIMEOUT_TWO_INTERVALS);
+	data = nano_task_fifo_get(&timeout_order_fifo, TIMEOUT_TWO_INTERVALS);
 
 	if (data) {
 		TC_ERROR(" *** got something on the fifo, but shouldn't have...\n");

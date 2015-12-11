@@ -69,7 +69,7 @@ void lifo_fiber1(int par1, int par2)
 		nano_fiber_lifo_put(&nanoLifo2, element_b);
 	}
 	/* wait till it is safe to end: */
-	nano_fiber_fifo_get_wait(&nanoFifo_sync);
+	nano_fiber_fifo_get(&nanoFifo_sync, TICKS_UNLIMITED);
 }
 
 
@@ -99,7 +99,7 @@ void lifo_fiber2(int par1, int par2)
 		(*pcounter)++;
 	}
 	/* wait till it is safe to end: */
-	nano_fiber_fifo_get_wait(&nanoFifo_sync);
+	nano_fiber_fifo_get(&nanoFifo_sync, TICKS_UNLIMITED);
 }
 
 /**
@@ -130,7 +130,7 @@ void lifo_fiber3(int par1, int par2)
 		(*pcounter)++;
 	}
 	/* wait till it is safe to end: */
-	nano_fiber_fifo_get_wait(&nanoFifo_sync);
+	nano_fiber_fifo_get(&nanoFifo_sync, TICKS_UNLIMITED);
 }
 
 /**

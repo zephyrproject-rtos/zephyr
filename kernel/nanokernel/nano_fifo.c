@@ -25,7 +25,7 @@
  * nano_fifo_init
  * nano_fiber_fifo_put, nano_task_fifo_put, nano_isr_fifo_put
  * nano_fiber_fifo_get, nano_task_fifo_get, nano_isr_fifo_get
- * nano_fiber_fifo_get_wait, nano_task_fifo_get_wait
+ * nano_fifo_get
  */
 
 /*
@@ -158,11 +158,6 @@ void nano_fifo_put(struct nano_fifo *fifo, void *data)
 	func[sys_execution_context_type_get()](fifo, data);
 }
 
-FUNC_ALIAS(_fifo_get, nano_isr_fifo_get, void *);
-FUNC_ALIAS(_fifo_get, nano_fiber_fifo_get, void *);
-FUNC_ALIAS(_fifo_get, nano_task_fifo_get, void *);
-FUNC_ALIAS(_fifo_get, nano_fifo_get, void *);
-
 /**
  *
  * @brief Internal routine to remove data from a fifo
@@ -187,174 +182,79 @@ static inline void *dequeue_data(struct nano_fifo *fifo)
 	return data;
 }
 
-/**
- * INTERNAL
- * This function is capable of supporting invocations from fiber, task, and ISR
- * execution contexts.  However, the nano_isr_fifo_get, nano_task_fifo_get, and
- * nano_fiber_fifo_get aliases are created to support any required
- * implementation differences in the future without introducing a source code
- * migration issue.
- */
-void *_fifo_get(struct nano_fifo *fifo)
+FUNC_ALIAS(_fifo_get, nano_isr_fifo_get, void *);
+FUNC_ALIAS(_fifo_get, nano_fiber_fifo_get, void *);
+
+void *_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
 {
+	unsigned int key;
 	void *data = NULL;
-	unsigned int imask;
 
-	imask = irq_lock();
+	key = irq_lock();
 
-	if (fifo->stat > 0) {
+	if (likely(fifo->stat > 0)) {
 		fifo->stat--;
 		data = dequeue_data(fifo);
-	}
-	irq_unlock(imask);
-	return data;
-}
-
-void *nano_fiber_fifo_get_wait(struct nano_fifo *fifo)
-{
-	void *data;
-	unsigned int imask;
-
-	imask = irq_lock();
-
-	fifo->stat--;
-	if (fifo->stat < 0) {
-		_nano_wait_q_put(&fifo->wait_q);
-		data = (void *)_Swap(imask);
-	} else {
-		data = dequeue_data(fifo);
-		irq_unlock(imask);
-	}
-
-	return data;
-}
-
-void *nano_task_fifo_get_wait(struct nano_fifo *fifo)
-{
-	void *data;
-	unsigned int imask;
-
-	/* spin until data is put onto the FIFO */
-
-	while (1) {
-		imask = irq_lock();
-
-		/*
-		 * Predict that the branch will be taken to break out of the loop.
-		 * There is little cost to a misprediction since that leads to idle.
-		 */
-
-		if (likely(fifo->stat > 0))
-			break;
-
-		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
-
-		nano_cpu_atomic_idle(imask);
-	}
-
-	fifo->stat--;
-	data = dequeue_data(fifo);
-	irq_unlock(imask);
-
-	return data;
-}
-
-void *nano_fifo_get_wait(struct nano_fifo *fifo)
-{
-	static void *(*func[3])(struct nano_fifo *fifo) = {
-		NULL,
-		nano_fiber_fifo_get_wait,
-		nano_task_fifo_get_wait
-	};
-
-	return func[sys_execution_context_type_get()](fifo);
-}
-
-
-#ifdef CONFIG_NANO_TIMEOUTS
-
-void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *fifo,
-		int32_t timeout_in_ticks)
-{
-	unsigned int key;
-	void *data;
-
-	if (unlikely(TICKS_UNLIMITED == timeout_in_ticks)) {
-		return nano_fiber_fifo_get_wait(fifo);
-	}
-
-	if (unlikely(TICKS_NONE == timeout_in_ticks)) {
-		return nano_fiber_fifo_get(fifo);
-	}
-
-	key = irq_lock();
-
-	fifo->stat--;
-	if (fifo->stat < 0) {
-		_nano_timeout_add(_nanokernel.current, &fifo->wait_q, timeout_in_ticks);
+	} else if (timeout_in_ticks != TICKS_NONE) {
+		fifo->stat--;
+		_NANO_TIMEOUT_ADD(&fifo->wait_q, timeout_in_ticks);
 		_nano_wait_q_put(&fifo->wait_q);
 		data = (void *)_Swap(key);
-	} else {
-		data = dequeue_data(fifo);
-		irq_unlock(key);
+		return data;
 	}
 
+	irq_unlock(key);
 	return data;
 }
 
-void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
-			int32_t timeout_in_ticks)
+void *nano_task_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
 {
-	int64_t cur_ticks, limit;
+	int64_t cur_ticks;
+	int64_t limit = 0x7fffffffffffffffll;
 	unsigned int key;
-	void *data;
-
-	if (unlikely(TICKS_UNLIMITED == timeout_in_ticks)) {
-		return nano_task_fifo_get_wait(fifo);
-	}
-
-	if (unlikely(TICKS_NONE == timeout_in_ticks)) {
-		return nano_task_fifo_get(fifo);
-	}
 
 	key = irq_lock();
-	cur_ticks = sys_tick_get();
-	limit = cur_ticks + timeout_in_ticks;
+	cur_ticks = _NANO_TIMEOUT_TICK_GET();
+	if (timeout_in_ticks != TICKS_UNLIMITED) {
+		limit = cur_ticks + timeout_in_ticks;
+	}
 
-	while (cur_ticks < limit) {
-
+	do {
 		/*
 		 * Predict that the branch will be taken to break out of the loop.
 		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
 		if (likely(fifo->stat > 0)) {
+			void *data;
+
 			fifo->stat--;
 			data = dequeue_data(fifo);
 			irq_unlock(key);
 			return data;
 		}
 
-		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
+		if (timeout_in_ticks != TICKS_NONE) {
+			/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
 
-		nano_cpu_atomic_idle(key);
+			nano_cpu_atomic_idle(key);
 
-		key = irq_lock();
-		cur_ticks = sys_tick_get();
-	}
+			key = irq_lock();
+			cur_ticks = _NANO_TIMEOUT_TICK_GET();
+		}
+	} while (cur_ticks < limit);
 
 	irq_unlock(key);
 	return NULL;
 }
 
-void *nano_fifo_get_wait_timeout(struct nano_fifo *fifo, int32_t timeout)
+void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout)
 {
 	static void *(*func[3])(struct nano_fifo *, int32_t) = {
-		NULL,
-		nano_fiber_fifo_get_wait_timeout,
-		nano_task_fifo_get_wait_timeout
+		nano_isr_fifo_get,
+		nano_fiber_fifo_get,
+		nano_task_fifo_get
 	};
 
 	return func[sys_execution_context_type_get()](fifo, timeout);
 }
-#endif /* CONFIG_NANO_TIMEOUTS */

@@ -1729,7 +1729,7 @@ static void hci_cmd_tx_fiber(void)
 
 		/* Get next command - wait if necessary */
 		BT_DBG("calling fifo_get_wait");
-		buf = nano_fifo_get_wait(&bt_dev.cmd_tx_queue);
+		buf = nano_fifo_get(&bt_dev.cmd_tx_queue, TICKS_UNLIMITED);
 		bt_dev.ncmd = 0;
 
 		/* Clear out any existing sent command */
@@ -1765,7 +1765,7 @@ static void rx_prio_fiber(void)
 		struct bt_hci_evt_hdr *hdr;
 
 		BT_DBG("calling fifo_get_wait");
-		buf = nano_fifo_get_wait(&bt_dev.rx_prio_queue);
+		buf = nano_fifo_get(&bt_dev.rx_prio_queue, TICKS_UNLIMITED);
 
 		BT_DBG("buf %p type %u len %u", buf, bt_type(buf), buf->len);
 
@@ -2281,7 +2281,7 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait");
-		buf = nano_fifo_get_wait(&bt_dev.rx_queue);
+		buf = nano_fifo_get(&bt_dev.rx_queue, TICKS_UNLIMITED);
 
 		BT_DBG("buf %p type %u len %u", buf, bt_type(buf), buf->len);
 

@@ -87,7 +87,7 @@ static void net_tx_15_4_fiber(void)
 		struct net_buf *buf;
 
 		/* Get next packet from application - wait if necessary */
-		buf = nano_fifo_get_wait(&tx_queue);
+		buf = nano_fifo_get(&tx_queue, TICKS_UNLIMITED);
 
 		if (uip_len(buf) == 0) {
 			/* It is possible that uIP stack overwrote the len.
@@ -120,7 +120,7 @@ static void net_rx_15_4_fiber(void)
 
 	while (1) {
 		/* Wait next packet from 15.4 stack */
-		buf = nano_fifo_get_wait(&rx_queue);
+		buf = nano_fifo_get(&rx_queue, TICKS_UNLIMITED);
 
 #if NET_MAC_CONF_STATS
 		byte_count = uip_pkt_buflen(buf);
