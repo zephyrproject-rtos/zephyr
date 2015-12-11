@@ -1,5 +1,3 @@
-/* fifo.c - test microkernel FIFO APIs */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -16,19 +14,26 @@
  * limitations under the License.
  */
 
-/*
-DESCRIPTION
-This module tests the following FIFO routines:
-
-   task_fifo_put, task_fifo_put_wait, task_fifo_put_wait_timeout
-   task_fifo_get, task_fifo_get_wait, task_fifo_get_wait_timeout
-   task_fifo_size_get, task_fifo_purge
-
-Scenarios tested include:
-- Check number of elements in queue when queue is empty, full or
-  while it is being dequeued
-- Verify the data being dequeued are in correct order
-- Verify the return codes are correct for the APIs
+/**
+ * @file
+ * @brief Test microkernel FIFO APIs
+ *
+ * This module tests the following FIFO routines:
+ *
+ *   task_fifo_put
+ *   task_fifo_put_wait
+ *   task_fifo_put_wait_timeout
+ *   task_fifo_get
+ *   task_fifo_get_wait
+ *   task_fifo_get_wait_timeout
+ *   task_fifo_size_get
+ *   task_fifo_purge
+ *
+ * Scenarios tested include:
+ * - Check number of elements in queue when queue is empty, full or
+ *   while it is being dequeued
+ * - Verify the data being dequeued are in correct order
+ * - Verify the return codes are correct for the APIs
  */
 
 #include <tc_util.h>
