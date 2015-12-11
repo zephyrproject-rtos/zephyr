@@ -44,6 +44,7 @@
 static BT_STACK_NOINIT(tx_stack, 256);
 static BT_STACK_NOINIT(rx_stack, 256);
 static BT_STACK_NOINIT(ack_stack, 256);
+static BT_STACK_NOINIT(retx_stack, 256);
 
 #define HCI_3WIRE_ACK_PKT	0x00
 #define HCI_COMMAND_PKT		0x01
@@ -67,6 +68,7 @@ static bool reliable_packet(uint8_t type)
 
 /* FIXME: Correct timeout */
 #define H5_RX_ACK_TIMEOUT	(sys_clock_ticks_per_sec / 4)
+#define H5_TX_ACK_TIMEOUT	(sys_clock_ticks_per_sec / 4)
 
 #define SLIP_DELIMITER	0xc0
 #define SLIP_ESC	0xdb
@@ -108,6 +110,8 @@ static struct h5 {
 
 	/* delayed rx ack fiber */
 	void			*ack_to;
+	/* delayed retransmit fiber */
+	void			*retx_to;
 
 	enum state {
 		UNINIT,
@@ -342,6 +346,19 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 		h5_slip_byte(payload[i]);
 
 	uart_poll_out(h5_dev, SLIP_DELIMITER);
+}
+
+/* Delayed fiber taking care about retransmitting packets */
+static void retx_fiber(int arg1, int arg2)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+
+	BT_DBG("");
+
+	h5.retx_to = NULL;
+
+	/* TODO: Parse unacked queue and re-queue */
 }
 
 static void ack_fiber(int arg1, int arg2)
@@ -591,7 +608,14 @@ static void tx_fiber(void)
 			nano_fifo_put(&h5.unack_queue, buf);
 			unack_queue_len++;
 
-			/* TODO: Start delayed fiber resending packets */
+			if (h5.retx_to) {
+				fiber_delayed_start_cancel(h5.retx_to);
+			}
+
+			h5.retx_to = fiber_delayed_start(retx_stack,
+							 sizeof(retx_stack),
+							 retx_fiber, 0, 0, 7, 0,
+							 H5_TX_ACK_TIMEOUT);
 			break;
 		}
 	}
