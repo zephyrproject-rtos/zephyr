@@ -365,7 +365,28 @@ static void retx_fiber(int arg1, int arg2)
 
 	h5.retx_to = NULL;
 
-	/* TODO: Parse unacked queue and re-queue */
+	if (unack_queue_len) {
+		struct nano_fifo tmp_queue;
+		struct net_buf *buf;
+
+		nano_fifo_init(&tmp_queue);
+
+		/* Queue to temperary queue */
+		while ((buf = nano_fifo_get(&h5.tx_queue))) {
+			nano_fifo_put(&tmp_queue, buf);
+		};
+
+		/* Queue unack packets to the beginning of the queue */
+		while ((buf = nano_fifo_get(&h5.unack_queue))) {
+			nano_fifo_put(&h5.tx_queue, buf);
+			unack_queue_len--;
+		}
+
+		/* Queue saved packets from temp queue */
+		while ((buf = nano_fifo_get(&tmp_queue))) {
+			nano_fifo_put(&h5.tx_queue, buf);
+		}
+	}
 }
 
 static void ack_fiber(int arg1, int arg2)
