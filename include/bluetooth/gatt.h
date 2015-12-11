@@ -191,12 +191,6 @@ struct bt_gatt_cep {
 	uint16_t		properties;
 };
 
-/** @brief Characteristic User Description Attribute Value. */
-struct bt_gatt_cud {
-	/** Characteristic User Description string. */
-	char			*string;
-};
-
 /* Client Characteristic Configuration Values */
 
 /** @def BT_GATT_CCC_NOTIFY
@@ -520,6 +514,41 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 	.uuid = BT_UUID_GATT_CEP,					\
 	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_cep,					\
+	.user_data = _value,						\
+}
+
+/** @brief Read Characteristic User Description Descriptor Attribute helper
+ *
+ *  Read CUD attribute value storing the result into buffer after
+ *  encoding it.
+ *  NOTE: Only use this with attributes which user_data is a NULL-terminated C string.
+ *
+ *  @param conn Connection object
+ *  @param attr Attribute to read
+ *  @param buf Buffer to store the value read
+ *  @param len Buffer length
+ *  @param offset Start offset
+ *
+ *  @return number of bytes read in case of success or negative values in
+ *  case of error.
+ */
+int bt_gatt_attr_read_cud(struct bt_conn *conn,
+			  const struct bt_gatt_attr *attr, void *buf,
+			  uint16_t len, uint16_t offset);
+
+/** @def BT_GATT_CUD
+ *  @brief Characteristic User Format Descriptor Declaration Macro.
+ *
+ *  Helper macro to declare a CUD attribute.
+ *
+ *  @param _value User description NULL-terminated C string.
+ *  @param _perm Descriptor attribute access permissions.
+ */
+#define BT_GATT_CUD(_value, _perm)					\
+{									\
+	.uuid = BT_UUID_GATT_CUD,					\
+	.perm = _perm,							\
+	.read = bt_gatt_attr_read_cud,					\
 	.user_data = _value,						\
 }
 
