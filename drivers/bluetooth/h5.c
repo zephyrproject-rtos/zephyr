@@ -257,24 +257,29 @@ static void process_unack(void)
 static void h5_print_header(const uint8_t *hdr, const char *str)
 {
 	if (H5_HDR_RELIABLE(hdr)) {
-		BT_DBG("%s REL: seq %u ack %u crc %u type %u len %u\n",
+		BT_DBG("%s REL: seq %u ack %u crc %u type %u len %u",
 		       str, H5_HDR_SEQ(hdr), H5_HDR_ACK(hdr),
 		       H5_HDR_CRC(hdr), H5_HDR_PKT_TYPE(hdr),
 		       H5_HDR_LEN(hdr));
 	} else {
-		BT_DBG("%s UNREL: ack %u crc %u type %u len %u\n",
+		BT_DBG("%s UNREL: ack %u crc %u type %u len %u",
 		       str, H5_HDR_ACK(hdr), H5_HDR_CRC(hdr),
 		       H5_HDR_PKT_TYPE(hdr), H5_HDR_LEN(hdr));
 	}
 }
 
-static void hexdump(const unsigned char *packet, int length)
+static void hexdump(const char *str, const uint8_t *packet, size_t length)
 {
 	int n = 0;
 
+	if (!length) {
+		printf("%s zero-length signal packet\n");
+		return;
+	}
+
 	while (length--) {
 		if (n % 16 == 0)
-			printf("%08X ", n);
+			printf("%s %08X ", str, n);
 
 		printf("%02X ", *packet++);
 
@@ -312,6 +317,8 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 {
 	uint8_t hdr[4];
 	int i;
+
+	hexdump("<= ", payload, len);
 
 	memset(hdr, 0, sizeof(hdr));
 
@@ -354,7 +361,7 @@ static void retx_fiber(int arg1, int arg2)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 
-	BT_DBG("");
+	BT_DBG("unack_queue_len %u", unack_queue_len);
 
 	h5.retx_to = NULL;
 
@@ -400,7 +407,7 @@ static void h5_process_complete_packet(struct net_buf *buf, uint8_t type,
 		break;
 	case HCI_EVENT_PKT:
 	case HCI_ACLDATA_PKT:
-		hexdump(buf->data, buf->len);
+		hexdump("=> ", buf->data, buf->len);
 		bt_recv(buf);
 		break;
 	}
@@ -531,7 +538,6 @@ void bt_uart_isr(void *unused)
 
 			BT_DBG("Received full packet: type %u", type);
 
-			h5_print_header(hdr, "RX: >");
 			h5_process_complete_packet(buf, type, hdr);
 			break;
 		}
@@ -567,8 +573,6 @@ int h5_queue(enum bt_buf_type buf_type, struct net_buf *buf)
 
 	BT_DBG("buf_type %u type %u", buf_type, type);
 
-	hexdump(buf->data, buf->len);
-
 	memcpy(net_buf_push(buf, sizeof(type)), &type, sizeof(type));
 
 	nano_fifo_put(&h5.tx_queue, buf);
@@ -599,7 +603,6 @@ static void tx_fiber(void)
 			break;
 		case ACTIVE:
 			buf = nano_fifo_get_wait(&h5.tx_queue);
-			hexdump(buf->data, buf->len);
 			bt_uart_h5_send(buf);
 
 			/* buf is dequeued from tx_queue and queued to unack
@@ -630,7 +633,7 @@ static void rx_fiber(void)
 
 		buf = nano_fifo_get_wait(&h5.rx_queue);
 
-		hexdump(buf->data, buf->len);
+		hexdump("=> ", buf->data, buf->len);
 
 		/* Check paket type and process */
 		switch (h5.state) {
@@ -640,7 +643,6 @@ static void rx_fiber(void)
 				h5_send(conf_req, HCI_3WIRE_LINK_PKT,
 					sizeof(conf_req));
 			}
-			hexdump(buf->data, buf->len);
 			break;
 		case INIT:
 			/* TODO: Handle sync and cond messages */
