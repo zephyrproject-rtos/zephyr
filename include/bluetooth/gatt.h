@@ -492,7 +492,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
  *  Read CEP attribute value storing the result into buffer after
- *  enconding it.
+ *  encoding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_cep.
  *
  *  @param conn Connection object
