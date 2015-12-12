@@ -30,12 +30,13 @@
 #include <arch/x86/asm.h>
 #include <offsets.h>	/* nanokernel structure offset definitions */
 #include <arch/cpu.h>	/* _NANO_ERR_SPURIOUS_INT */
-
+#include <drivers/loapic.h> /* LOAPIC_EOI */
 
 
 	/* exports (internal APIs) */
 
 	GTEXT(_IntEnt)
+	GTEXT(_IntExitWithEoi)
 	GTEXT(_IntExit)
 	GTEXT(_SpuriousIntNoErrCodeHandler)
 	GTEXT(_SpuriousIntHandler)
@@ -224,6 +225,29 @@ BRANCH_LABEL(_HandleIdle)
 	jmp	*%eax		/* "return" back to stub */
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
+/**
+ * @brief Perform EOI, clean up stack, and do interrupt exit
+ *
+ * This is used by the interrupt stubs, which all leave the stack in
+ * a particular state and need to poke the interrupt controller.
+ * Prior to running the logic in _IntExit, the ISR parameter is popped off
+ * the stack and EOI is set to the LOAPIC.
+ */
+SECTION_FUNC(TEXT, _IntExitWithEoi)
+	popl %eax			/* Pushed onto stack by stub */
+#if CONFIG_EOI_FORWARDING_BUG
+	call	_lakemont_eoi
+#endif
+	xorl %eax, %eax			/* zeroes eax */
+	/* TODO not great to have hard-coded LOAPIC stuff here. When
+	 * we get around to introducing the interrupt controller abstraction
+	 * layer, the in-use IRQ controller code will define an ASM macro
+	 * with a specific name which does the correct thing for the particular
+	 * controller.
+	 */
+	loapic_eoi_reg = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
+	movl %eax, loapic_eoi_reg	/* tell LOAPIC the IRQ is handled */
+	/* fall through to _IntExit */
 
 /**
  *
@@ -247,7 +271,7 @@ BRANCH_LABEL(_HandleIdle)
  *
  * void _IntExit (void);
  */
-SECTION_FUNC(TEXT, _IntExit)
+BRANCH_LABEL(_IntExit)
 
 	cli			/* disable interrupts */
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
@@ -456,10 +480,8 @@ BRANCH_LABEL(callFatalHandler)
 #if ALL_DYN_IRQ_STUBS > 0
 BRANCH_LABEL(_DynIntStubCommon)
 	call _common_dynamic_irq_handler
-	/* Cleanse the stack of stub_num */
-	pop %eax
 	/* Clean up and call IRET */
-	jmp _IntExit
+	jmp _IntExitWithEoi
 
 /* Create all the dynamic IRQ stubs
  *

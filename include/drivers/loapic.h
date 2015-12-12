@@ -64,13 +64,7 @@ SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
 	call    _IntEnt          /* Inform kernel interrupt has begun */
 	pushl   \context         /* Push context parameter */
 	call    \isr             /* Call actual interrupt handler */
-	popl    %eax		 /* Clean-up stack from push above */
-#if CONFIG_EOI_FORWARDING_BUG
-	call	_lakemont_eoi
-#endif
-	xorl	%eax, %eax
-	movl	%eax, loapic_eoi /* Inform loapic interrupt is done */
-	jmp     _IntExit         /* Inform kernel interrupt is done */
+	jmp     _IntExitWithEoi  /* Inform kernel interrupt is done */
 .endm
 
 #else /* _ASMLANGUAGE */

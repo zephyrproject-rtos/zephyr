@@ -43,7 +43,6 @@
 #include <arch/cpu.h>
 #include <nano_private.h>
 #include <misc/__assert.h>
-#include <drivers/loapic.h>
 #include <idtEnt.h>
 
 extern void _SpuriousIntHandler(void *);
@@ -260,11 +259,6 @@ int irq_connect(unsigned int irq, unsigned int priority,
 void _common_dynamic_irq_handler(uint32_t stub_idx)
 {
 	dyn_irq_list[stub_idx].handler(dyn_irq_list[stub_idx].param);
-	/*
-	 * Tell the APIC we're done servicing the interrupt.LOAPIC will notify
-	 * the IOAPIC if necessary
-	 */
-	_loapic_eoi();
 }
 
 /**
