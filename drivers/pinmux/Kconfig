@@ -32,6 +32,7 @@ config PINMUX_BASE
 
 config PINMUX_NUM_PINS
 	int "Number of Pins to configure"
+	default 0
 	depends on PINMUX
         help
         Select the number of pins for the pinmux to operate on.
