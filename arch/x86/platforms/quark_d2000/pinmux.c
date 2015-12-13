@@ -182,8 +182,8 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
 	 * Now figure out what is the full address for the register
 	 * we are looking for.  Add the base register to the register_mask
 	 */
-	volatile uint32_t *mux_register = (uint32_t *)PINMUX_SELECT_REGISTER(
-		pmux->base_address, register_offset);
+	volatile uint32_t *mux_register =
+		(uint32_t *)PINMUX_SELECT_REGISTER(pmux->base_address, register_offset);
 
 	/*
 	 * Finally grab the pin offset within the register
@@ -198,7 +198,6 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
 	uint32_t mode_mask = func << (pin_no << 1);
 
 	(*(mux_register)) = ((*(mux_register)) & ~pin_mask) | mode_mask;
-
 
 	return DEV_OK;
 }
@@ -216,8 +215,8 @@ static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint8_t *func)
 	 * Now figure out what is the full address for the register
 	 * we are looking for.  Add the base register to the register_mask
 	 */
-	volatile uint32_t *mux_register = (uint32_t *)PINMUX_SELECT_REGISTER(
-		pmux->base_address, register_offset);
+	volatile uint32_t *mux_register =
+		(uint32_t *)PINMUX_SELECT_REGISTER(pmux->base_address, register_offset);
 
 	/*
 	 * Finally grab the pin offset within the register
@@ -243,7 +242,7 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
 	ARG_UNUSED(pin);
 	ARG_UNUSED(func);
 
-	PRINT("ERROR: %s is not enabled", __FUNC__);
+	PRINT("ERROR: %s is not enabled", __func__);
 
 	return DEV_NOT_CONFIG;
 }
@@ -254,7 +253,7 @@ static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint8_t *func)
 	ARG_UNUSED(pin);
 	ARG_UNUSED(func);
 
-	PRINT("ERROR: %s is not enabled", __FUNC__);
+	PRINT("ERROR: %s is not enabled", __func__);
 
 	return DEV_NOT_CONFIG;
 }
