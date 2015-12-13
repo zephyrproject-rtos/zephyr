@@ -23,7 +23,7 @@
 
 #define _ASMLANGUAGE
 
-#include <board.h>
+#include <platform.h>
 #include <toolchain.h>
 #include <sections.h>
 

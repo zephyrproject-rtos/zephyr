@@ -23,7 +23,7 @@
  */
 
 #include <nanokernel.h>
-#include "board.h"
+#include "platform.h"
 #include <uart.h>
 #include <device.h>
 #include <init.h>

@@ -30,7 +30,7 @@
 #include <device.h>
 #include <misc/printk.h>
 #include <misc/__assert.h>
-#include "board.h"
+#include "platform.h"
 #include <uart.h>
 #include <drivers/pci/pci.h>
 #include <drivers/pci/pci_mgr.h>

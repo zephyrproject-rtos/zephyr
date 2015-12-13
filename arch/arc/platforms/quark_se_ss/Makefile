@@ -6,6 +6,6 @@ ccflags-$(CONFIG_ADC) +=-I$(srctree)/drivers/adc
 
 asflags-y := ${ccflags-y}
 
-obj-y = system.o platform_config.o
+obj-y = platform.o platform_config.o
 obj-$(CONFIG_IRQ_VECTOR_TABLE_BSP) += irq_vector_table.o
 obj-$(CONFIG_SW_ISR_TABLE_BSP) += sw_isr_table.o

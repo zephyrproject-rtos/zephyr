@@ -509,7 +509,7 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 	$(Q)$(MAKE) $(build)=$(@)
 
 
-core-y := lib/ arch/ kernel/ misc/ net/
+core-y := lib/ arch/ kernel/ misc/ net/ boards/
 drivers-y := drivers/
 
 ifneq ($(strip $(PROJECT)),)

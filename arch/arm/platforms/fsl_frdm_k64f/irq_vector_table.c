@@ -32,12 +32,12 @@
 #include <sections.h>
 
 #if defined(CONFIG_CONSOLE_HANDLER)
-#include <board.h>
+#include <platform.h>
 #include <console/uart_console.h>
 #endif /* CONFIG_CONSOLE_HANDLER */
 
 #if defined(CONFIG_BLUETOOTH_UART)
-#include <board.h>
+#include <platform.h>
 #include <bluetooth/uart.h>
 #endif /* CONFIG_BLUETOOTH_UART */
 

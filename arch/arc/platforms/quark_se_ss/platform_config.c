@@ -16,7 +16,7 @@
 
 #include <device.h>
 #include <init.h>
-#include "board.h"
+#include "platform.h"
 
 #if CONFIG_IPM_QUARK_SE
 #include <ipm.h>

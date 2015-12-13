@@ -1,0 +1,5 @@
+
+config  BOARD_QEMU_CORTEX_M3
+        bool "Cortex-M3 Emulation (Qemu)"
+        select PLATFORM_QEMU_ARM
+	depends on ARM

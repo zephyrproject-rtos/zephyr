@@ -1,0 +1,5 @@
+
+config  BOARD_ARDUINO_101_SSS
+        bool "Arduino 101 Sensor Sub System"
+        select PLATFORM_QUARK_SE_SS
+	depends on ARC

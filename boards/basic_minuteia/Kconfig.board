@@ -1,0 +1,5 @@
+
+config  BOARD_BASIC_MINUTEIA
+        bool "Basic Minute-IA Board"
+        select PLATFORM_IA32
+	depends on X86

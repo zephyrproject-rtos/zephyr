@@ -1,5 +1,5 @@
 obj-y += platform_config.o
-obj-y += system.o
+obj-y += platform.o
 obj-y += nmi_on_reset.o
 obj-y += wdog.o
 

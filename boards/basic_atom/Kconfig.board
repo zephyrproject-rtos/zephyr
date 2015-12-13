@@ -2,3 +2,4 @@
 config  BOARD_BASIC_ATOM
         bool "Basic Atom Board"
         select PLATFORM_IA32
+	depends on X86

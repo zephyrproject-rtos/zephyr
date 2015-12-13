@@ -2,6 +2,7 @@
 config  BOARD_GALILEO
         bool "Galileo Gen2"
         select PLATFORM_QUARK_X1000
+	depends on X86
 	help
 	The Intel Galileo Gen 2 development board is a microcontroller board
 	based on the Intel Quark SoC X1000 application processor, a 32-bit

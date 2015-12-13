@@ -1,0 +1,7 @@
+
+if BOARD_ARDUINO_101_SSS
+
+config BOARD
+        default "arduino_101_sss"
+
+endif # BOARD_ARDUINO_101_SSS

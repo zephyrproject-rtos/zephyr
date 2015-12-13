@@ -23,7 +23,7 @@
 
 #include <nanokernel.h>
 
-#include "board.h"
+#include "platform.h"
 
 #ifdef CONFIG_UART_STELLARIS
 #include <uart.h>
