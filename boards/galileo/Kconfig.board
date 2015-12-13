@@ -1,0 +1,4 @@
+
+config  BOARD_GALILEO
+        bool "Galileo Gen2"
+        select PLATFORM_GALILEO

@@ -1,0 +1,4 @@
+
+config  BOARD_QEMU_X86
+        bool "QEMU x86"
+        select PLATFORM_QEMU_X86

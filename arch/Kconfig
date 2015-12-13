@@ -56,3 +56,5 @@ config BOARD
 	related to the board in the source tree.
 
 source "arch/*/Kconfig"
+
+source "boards/Kconfig"

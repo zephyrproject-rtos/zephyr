@@ -1,0 +1,4 @@
+
+config  BOARD_QUARK_SE_TEST
+        bool "Quark SE Test Board"
+        select PLATFORM_QUARK_SE

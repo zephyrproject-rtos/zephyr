@@ -1,0 +1,7 @@
+
+if BOARD_QEMU_X86
+
+config BOARD
+        default qemu_x86
+
+endif # BOARD_QEMU_X86

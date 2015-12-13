@@ -1,0 +1,8 @@
+
+
+if BOARD_QUARK_SE_TEST
+
+config BOARD
+        default "quark_se_test"
+
+endif # BOARD_QUARK_SE_TEST

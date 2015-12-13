@@ -1,0 +1,8 @@
+
+
+if BOARD_QUARK_D2000_REFERENCE
+
+config BOARD
+	default "quark_d2000_reference"
+
+endif # BOARD_QUARK_D2000_REFERENCE

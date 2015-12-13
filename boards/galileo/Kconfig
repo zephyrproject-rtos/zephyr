@@ -1,0 +1,7 @@
+
+if BOARD_GALILEO
+
+config BOARD
+        default galileo
+
+endif # BOARD_GALILEO
