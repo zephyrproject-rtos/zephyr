@@ -76,7 +76,7 @@ The following predefined variables configure the development project:
   :file:`$(PROJECT_BASE/)src/` by default. This directory name should end
   with slash **'/'**.
 
-* :makevar:`PLATFORM_CONFIG`: Selects the platform that the application's
+* :makevar:`BOARD`: Selects the platform that the application's
   build will use for the default configuration.
 
 * :makevar:`KERNEL_TYPE`: Selects the kernel type that the application's

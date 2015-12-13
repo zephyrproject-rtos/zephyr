@@ -120,7 +120,7 @@ Steps
 
       .. code-block:: make
 
-         PLATFORM_CONFIG ?= platform_configuration_name
+         BOARD ?= platform_configuration_name
 
       The supported platforms can be found in :ref:`platform`.
 
@@ -161,7 +161,7 @@ Example Makefile
 .. code-block:: make
 
    KERNEL_TYPE = micro
-   PLATFORM_CONFIG ?= qemu_x86
+   BOARD ?= qemu_x86
    CONF_FILE = prj.conf
    MDEF_FILE = prj.mdef
    include ${ZEPHYR_BASE}/Makefile.inc

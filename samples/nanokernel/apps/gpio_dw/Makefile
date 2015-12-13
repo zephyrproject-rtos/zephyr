@@ -1,7 +1,7 @@
 ifeq ($(ARCH),arc)
-PLATFORM_CONFIG ?= quark_se_ss
+BOARD ?= quark_se_ss
 else
-PLATFORM_CONFIG ?= arduino_101
+BOARD ?= arduino_101
 endif
 
 KERNEL_TYPE ?= nano

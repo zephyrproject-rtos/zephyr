@@ -1,10 +1,10 @@
 # default configuration
 TEST ?= min
-PLATFORM_CONFIG ?= qemu_x86
+BOARD ?= qemu_x86
 
 MDEF_FILE = micro_${TEST}.mdef
 KERNEL_TYPE = micro
-CONF_FILE = $(or $(wildcard prj_${TEST}_${ARCH}_${PLATFORM_CONFIG}.conf), \
+CONF_FILE = $(or $(wildcard prj_${TEST}_${ARCH}_${BOARD}.conf), \
                  $(wildcard prj_${TEST}_${ARCH}.conf))
 CFLAGS += -DTEST_${TEST}
 

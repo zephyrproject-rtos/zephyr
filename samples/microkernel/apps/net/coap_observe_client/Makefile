@@ -18,7 +18,7 @@
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
-PLATFORM_CONFIG ?= basic_minuteia
+BOARD ?= basic_minuteia
 CONF_FILE = prj_$(ARCH).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/coap_observe_client/src/
 

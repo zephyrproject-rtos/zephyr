@@ -81,8 +81,8 @@ specified.
   The markup can include only the name of the variable or the variable
   plus its value.
 
-   :makevar:`PLATFORM_CONFIG`
-   :makevar:`PLATFORM_CONFIG=basic_atom`
+   :makevar:`BOARD`
+   :makevar:`BOARD=basic_atom`
 
    ``:makevar:`VARIABLE```
 

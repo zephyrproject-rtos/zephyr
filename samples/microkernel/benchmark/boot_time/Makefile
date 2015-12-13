@@ -7,7 +7,7 @@ CONF_galileo        	= ia32_pci/prj.conf
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
-PLATFORM_CONFIG ?= qemu_x86
-CONF_FILE = ${CONF_${PLATFORM_CONFIG}}
+BOARD ?= qemu_x86
+CONF_FILE = ${CONF_${BOARD}}
 
 include ${ZEPHYR_BASE}/Makefile.inc

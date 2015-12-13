@@ -18,11 +18,11 @@ ifndef KERNEL_TYPE
 KERNEL_TYPE = micro
 endif
 
-ifdef PLATFORM_CONFIG
-KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/configs/$(PLATFORM_CONFIG)_defconfig
+ifdef BOARD
+KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/configs/$(BOARD)_defconfig
 export KBUILD_DEFCONFIG_PATH
 else
-$(error PLATFORM_CONFIG is not defined!)
+$(error BOARD is not defined!)
 endif
 
 SOURCE_DIR ?= $(PROJECT_BASE)/src/
@@ -58,7 +58,7 @@ DOTCONFIG = $(O)/.config
 all: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
-ifeq ($(findstring qemu_,$(PLATFORM_CONFIG)),)
+ifeq ($(findstring qemu_,$(BOARD)),)
 qemu:
 	@echo "Emulation not available for this platform"
 else

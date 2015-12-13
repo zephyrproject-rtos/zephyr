@@ -19,7 +19,7 @@
 # DESCRIPTION
 # Makefile for the Bluetooth init sample
 KERNEL_TYPE = nano
-PLATFORM_CONFIG ?= qemu_x86
+BOARD ?= qemu_x86
 CONF_FILE = prj_$(ARCH).conf
 QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/bluetooth/shell/src/

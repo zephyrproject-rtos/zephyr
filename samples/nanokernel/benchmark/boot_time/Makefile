@@ -6,8 +6,8 @@ CONF_galileo        = ia32_pci/prj.conf
 CONF_basic_atom     = ia32/prj_expert_test.conf
 
 KERNEL_TYPE = nano
-PLATFORM_CONFIG ?= qemu_x86
-CONF_FILE = $(CONF_$(PLATFORM_CONFIG))
+BOARD ?= qemu_x86
+CONF_FILE = $(CONF_$(BOARD))
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/microkernel/benchmark/boot_time/src/
 
 include $(ZEPHYR_BASE)/Makefile.inc

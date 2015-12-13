@@ -1,4 +1,4 @@
-PLATFORM_CONFIG ?= qemu_x86
+BOARD ?= qemu_x86
 MDEF_FILE = prj.mdef
 KERNEL_TYPE ?= nano
 CONF_FILE = prj_$(ARCH).conf

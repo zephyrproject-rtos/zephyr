@@ -19,7 +19,7 @@
 # DESCRIPTION
 # Makefile for the Bluetooth tester application
 # default for qemu_cortex_m3 as only this currently supports enought UARTs
-PLATFORM_CONFIG ?= qemu_cortex_m3
+BOARD ?= qemu_cortex_m3
 ARCH ?= arm
 
 MDEF_FILE = prj.mdef

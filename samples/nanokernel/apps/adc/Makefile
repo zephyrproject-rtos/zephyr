@@ -1,4 +1,4 @@
-PLATFORM_CONFIG = galileo
+BOARD = galileo
 KERNEL_TYPE = nano
 CONF_FILE = prj_$(ARCH).conf
 

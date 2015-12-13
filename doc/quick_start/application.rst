@@ -31,9 +31,9 @@ the default settings defined in the application Makefile, for example:
 
 .. code-block:: console
 
-   $ make PLATFORM_CONFIG=basic_atom
+   $ make BOARD=basic_atom
 
-You can build for a different platform by defining the variable PLATFORM_CONFIG
+You can build for a different platform by defining the variable BOARD
 with one of the supported platforms.
 For a list of supported platforms of a particular architecture, run:
 
@@ -69,13 +69,13 @@ To run an application using the x86 basic_atom platform configuration, type:
 
 .. code-block:: console
 
-   $ make PLATFORM_CONFIG=qemu_x86 qemu
+   $ make BOARD=qemu_x86 qemu
 
 To run an application using the ARM basic_cortex_m3 platform configuration, type:
 
 .. code-block:: console
 
-   $ make PLATFORM_CONFIG=qemu_cortex_m3 ARCH=arm qemu
+   $ make BOARD=qemu_cortex_m3 ARCH=arm qemu
 
 Qemu is not supported on all platforms and architectures and some samples and
 test cases might fail when running in the emulator. When developing for a

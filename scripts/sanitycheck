@@ -621,7 +621,7 @@ class MakeGenerator:
         """
         args = ti.test.extra_args[:]
         args.extend(["ARCH=%s" % ti.platform.arch.name,
-                     "PLATFORM_CONFIG=%s" % ti.platform.name])
+                     "BOARD=%s" % ti.platform.name])
         if ti.platform.qemu_support and not ti.build_only and not build_only:
             self.add_qemu_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout)
@@ -849,12 +849,12 @@ class SanityConfigParser:
 class Platform:
     """Class representing metadata for a particular platform
 
-    Maps directly to PLATFORM_CONFIG when building"""
+    Maps directly to BOARD when building"""
     def __init__(self, arch, name, plat_dict):
         """Constructor.
 
         @param arch Architecture object for this platform
-        @param name String name for this platform, same as PLATFORM_CONFIG
+        @param name String name for this platform, same as BOARD
         @param plat_dict SanityConfigParser output on the relevant section
             in the architecture configuration file which has lots of metadata.
             See the Architecture class.
@@ -1155,7 +1155,7 @@ class TestSuite:
                     for cw in tc.config_whitelist:
                         args = tc.extra_args[:]
                         args.extend(["ARCH=" + plat.arch.name,
-                                "PLATFORM_CONFIG=" + plat.name, "initconfig"])
+                                "BOARD=" + plat.name, "initconfig"])
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every plat/ktype combo,
                         # need a way to avoid different Make processe from clobbering

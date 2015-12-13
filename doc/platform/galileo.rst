@@ -230,7 +230,7 @@ devices.
 
    .. code-block:: console
 
-      $ make PLATFORM_CONFIG=galileo
+      $ make BOARD=galileo
 
 
 #. Use one of these cables for serial output:

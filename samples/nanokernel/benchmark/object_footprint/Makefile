@@ -1,7 +1,7 @@
 # default configuration
 
 KERNEL_TYPE = nano
-PLATFORM_CONFIG ?= basic_minuteia
+BOARD ?= basic_minuteia
 CONF_FILE ?= prj1.conf
 
 KBUILD_KCONFIG = $(PWD)/Kconfig

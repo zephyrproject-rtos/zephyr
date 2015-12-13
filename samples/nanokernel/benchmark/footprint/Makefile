@@ -2,8 +2,8 @@
 TEST ?= min
 
 KERNEL_TYPE = nano
-PLATFORM_CONFIG ?= qemu_x86
-CONF_FILE = $(or $(wildcard prj_$(TEST)_$(ARCH)_$(PLATFORM_CONFIG).conf), \
+BOARD ?= qemu_x86
+CONF_FILE = $(or $(wildcard prj_$(TEST)_$(ARCH)_$(BOARD).conf), \
                  $(wildcard prj_$(TEST)_$(ARCH).conf))
 CFLAGS += -DTEST_$(TEST)
 

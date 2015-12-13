@@ -1,5 +1,5 @@
 KERNEL_TYPE = nano
-PLATFORM_CONFIG ?= quark_se_ss
+BOARD ?= quark_se_ss
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/microkernel/apps/hello_world/src/
 CONF_FILE = prj.conf
 
