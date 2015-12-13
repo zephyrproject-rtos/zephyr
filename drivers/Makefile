@@ -1,6 +1,4 @@
 subdir-ccflags-y += -I$(srctree)/include/drivers
-subdir-ccflags-y +=-I$(srctree)/arch/$(ARCH)/platforms/$(PLATFORM_NAME)
-subdir-asflags-y +=-I$(srctree)/arch/$(ARCH)/platforms/$(PLATFORM_NAME)
 
 obj-y = console/
 obj-y += random/

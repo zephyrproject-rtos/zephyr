@@ -345,6 +345,8 @@ export PLATFORM_NAME SOC_NAME BOARD_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME
 # Needed to be compatible with the O= option
 ZEPHYRINCLUDE    = \
 		-I$(srctree)/arch/$(ARCH)/include \
+		-I$(srctree)/arch/$(ARCH)/platforms/$(PLATFORM_NAME) \
+		-I$(srctree)/boards/$(BOARD_NAME) \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
 		-I$(CURDIR)/include/generated \
