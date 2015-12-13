@@ -1,0 +1,8 @@
+
+config PLATFORM_QUARK_X1000
+	bool "Quark X1000"
+	select HPET_TIMER
+	select BOOTLOADER_UNKNOWN
+	select PCI
+	help
+	Intel Quark X1000 SoC.

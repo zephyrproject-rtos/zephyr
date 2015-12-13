@@ -16,10 +16,10 @@
 
 /**
  * @file
- * @brief Board configuration macros for the galileo platform
+ * @brief Board configuration macros for the Quark X1000 SoC
  *
- * This header file is used to specify and describe board-level aspects for
- * the 'galileo' platform.
+ * This header file is used to specify and describe SoC-level aspects for
+ * the Quark X1000 SoC.
  */
 
 #ifndef __INCboardh
