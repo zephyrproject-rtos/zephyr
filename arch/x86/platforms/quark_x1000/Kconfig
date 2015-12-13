@@ -35,26 +35,6 @@ config ROM_SIZE
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000  if HPET_TIMER
 
-config PINMUX
-        def_bool y
-
-config I2C
-	def_bool y
-
-config GPIO
-	def_bool y
-
-config PWM
-	def_bool y
-
-config SPI
-	def_bool y
-
-config ADC
-	def_bool y
-
-config SHARED_IRQ
-	def_bool y
 
 if SHARED_IRQ
 config SHARED_IRQ_0
@@ -113,38 +93,6 @@ config I2C_DW_0_IRQ_SHARED_NAME
 	default SHARED_IRQ_0_NAME if SHARED_IRQ
 endif
 
-if GPIO && I2C
-
-config GPIO_PCAL9535A
-	def_bool y
-
-config GPIO_PCAL9535A_0
-	def_bool y
-config GPIO_PCAL9535A_0_DEV_NAME
-	default "EXP0"
-config GPIO_PCAL9535A_0_I2C_ADDR
-	default 0x25
-config GPIO_PCAL9535A_0_I2C_MASTER_DEV_NAME
-	default I2C_DW_0_NAME
-
-config GPIO_PCAL9535A_1
-	def_bool y
-config GPIO_PCAL9535A_1_DEV_NAME
-	default "EXP1"
-config GPIO_PCAL9535A_1_I2C_ADDR
-	default 0x26
-config GPIO_PCAL9535A_1_I2C_MASTER_DEV_NAME
-	default I2C_DW_0_NAME
-
-config GPIO_PCAL9535A_2
-	def_bool y
-config GPIO_PCAL9535A_2_DEV_NAME
-	default "EXP2"
-config GPIO_PCAL9535A_2_I2C_ADDR
-	default 0x27
-config GPIO_PCAL9535A_2_I2C_MASTER_DEV_NAME
-	default I2C_DW_0_NAME
-endif
 
 if GPIO
 
@@ -204,48 +152,6 @@ config GPIO_DW_0_IRQ_SHARED_NAME
 endif
 endif
 
-if PINMUX
-config PINMUX_BASE
-	default 0x00000000
-config PINMUX_NUM_PINS
-        default 20
-config PINMUX_BASE
-        default 0x00000000
-config PINMUX_GALILEO_EXP0_NAME
-        default GPIO_PCAL9535A_0_DEV_NAME
-config PINMUX_GALILEO_EXP1_NAME
-        default GPIO_PCAL9535A_1_DEV_NAME
-config PINMUX_GALILEO_EXP2_NAME
-        default GPIO_PCAL9535A_2_DEV_NAME
-config PINMUX_GALILEO_PWM0_NAME
-        default PWM_PCA9685_0_DEV_NAME
-config PINMUX_GALILEO_GPIO_DW_NAME
-	default GPIO_DW_0_NAME
-config PINMUX_GALILEO_GPIO_INTEL_CW_NAME
-	default GPIO_SCH_0_DEV_NAME
-config PINMUX_GALILEO_GPIO_INTEL_RW_NAME
-	default GPIO_SCH_1_DEV_NAME
-endif
-
-if PWM
-
-config PWM_PCA9685
-	def_bool y
-
-config PWM_PCA9685_0
-	def_bool y
-
-if PWM_PCA9685_0
-
-config PWM_PCA9685_0_DEV_NAME
-	default "PWM0"
-config PWM_PCA9685_0_I2C_ADDR
-	default 0x47
-config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
-	default I2C_DW_0_NAME
-
-endif
-endif
 
 if SPI
 config SPI_INTEL
@@ -379,18 +285,6 @@ endif # UART_NS16550_PORT_1
 
 endif # UART_NS16550
 
-if ADC
-config ADC_TI_ADC108S102
-	def_bool y
-config ADC_TI_ADC108S102_0
-	def_bool y
-config ADC_TI_ADC108S102_0_SPI_PORT_NAME
-	default "SPI0"
-config ADC_TI_ADC108S102_0_SPI_CONFIGURATION
-	default 0x81
-config ADC_TI_ADC108S102_0_SPI_MAX_FREQ
-	default 0x20000000
-endif
 
 if ETH_DW
 config ETH_DW_0
@@ -428,10 +322,6 @@ config GPIO_DW_INIT_PRIORITY
 config SPI_INTEL_INIT_PRIORITY
 	default 70
 
-# TI ADC108S102 uses SPI bus, thus
-# initialized after SPI driver
-config ADC_TI_ADC108S102_INIT_PRIORITY
-	default 80
 
 config I2C_INIT_PRIORITY
 	default 60
@@ -440,9 +330,6 @@ config I2C_INIT_PRIORITY
 config GPIO_PCAL9535A_INIT_PRIORITY
 	default 70
 
-# PCA9685 uses I2C, thus initialized after it
-config PWM_PCA9685_INIT_PRIORITY
-	default 70
 
 # Pin multiplexer uses PCAL9535A, needs to be initialized after it
 config PINMUX_INIT_PRIORITY
