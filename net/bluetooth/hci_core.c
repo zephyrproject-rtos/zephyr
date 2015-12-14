@@ -58,6 +58,10 @@ static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
 
 struct bt_dev bt_dev;
 
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+const struct bt_auth_cb *bt_auth;
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
+
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
 struct cmd_data {
@@ -2538,3 +2542,61 @@ int bt_br_set_discoverable(bool enable)
 	}
 }
 #endif
+
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+int bt_auth_cb_register(const struct bt_auth_cb *cb)
+{
+	if (!cb) {
+		bt_auth = NULL;
+		return 0;
+	}
+
+	/* cancel callback should always be provided */
+	if (!cb->cancel) {
+		return -EINVAL;
+	}
+
+	if (bt_auth) {
+		return -EALREADY;
+	}
+
+	bt_auth = cb;
+	return 0;
+}
+
+void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
+{
+	if (!bt_auth) {
+		return;
+	}
+#if defined(CONFIG_BLUETOOTH_SMP)
+	if (conn->type == BT_CONN_TYPE_LE) {
+		bt_smp_auth_passkey_entry(conn, passkey);
+	}
+#endif /* CONFIG_BLUETOOTH_SMP */
+}
+
+void bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
+{
+	if (!bt_auth) {
+		return;
+	};
+#if defined(CONFIG_BLUETOOTH_SMP)
+	if (conn->type == BT_CONN_TYPE_LE) {
+		bt_smp_auth_passkey_confirm(conn, match);
+	}
+#endif /* CONFIG_BLUETOOTH_SMP */
+}
+
+void bt_auth_cancel(struct bt_conn *conn)
+{
+	if (!bt_auth) {
+		return;
+	}
+#if defined(CONFIG_BLUETOOTH_SMP)
+	if (conn->type == BT_CONN_TYPE_LE) {
+		bt_smp_auth_cancel(conn);
+	}
+#endif /* CONFIG_BLUETOOTH_SMP */
+}
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */

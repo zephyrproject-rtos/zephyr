@@ -141,6 +141,11 @@ void bt_smp_pkey_ready(void);
 
 int bt_smp_init(void);
 
+void bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
+void bt_smp_auth_passkey_confirm(struct bt_conn *conn, bool match);
+void bt_smp_auth_cancel(struct bt_conn *conn);
+void bt_smp_auth_init(void);
+
 /** brief Verify signed message
  *
  *  @param conn Bluetooth connection
