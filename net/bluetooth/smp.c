@@ -762,7 +762,8 @@ static void smp_restart_timer(struct bt_smp *smp)
 					   SMP_TIMEOUT);
 }
 
-struct net_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
+static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
+				      size_t len)
 {
 	struct bt_smp_hdr *hdr;
 	struct net_buf *buf;
@@ -792,8 +793,8 @@ static void smp_error(struct bt_smp *smp, uint8_t reason)
 	/* reset context */
 	smp_reset(smp);
 
-	buf = bt_smp_create_pdu(smp->chan.conn, BT_SMP_CMD_PAIRING_FAIL,
-				sizeof(*rsp));
+	buf = smp_create_pdu(smp->chan.conn, BT_SMP_CMD_PAIRING_FAIL,
+			     sizeof(*rsp));
 	if (!buf) {
 		return;
 	}
@@ -811,8 +812,7 @@ static uint8_t smp_send_pairing_random(struct bt_smp *smp)
 	struct bt_smp_pairing_random *req;
 	struct net_buf *rsp_buf;
 
-	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
-				    sizeof(*req));
+	rsp_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM, sizeof(*req));
 	if (!rsp_buf) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -890,8 +890,8 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 	struct net_buf *rsp_buf;
 	int err;
 
-	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
-				    sizeof(*req));
+	rsp_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
+				 sizeof(*req));
 	if (!rsp_buf) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -1095,8 +1095,8 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	req_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SECURITY_REQUEST,
-				    sizeof(*req));
+	req_buf = smp_create_pdu(conn, BT_SMP_CMD_SECURITY_REQUEST,
+				 sizeof(*req));
 	if (!req_buf) {
 		return -ENOBUFS;
 	}
@@ -1132,7 +1132,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		return ret;
 	}
 
-	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RSP, sizeof(*rsp));
+	rsp_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RSP, sizeof(*rsp));
 	if (!rsp_buf) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -1190,8 +1190,8 @@ static uint8_t sc_send_public_key(struct bt_smp *smp)
 	struct bt_smp_public_key *req;
 	struct net_buf *req_buf;
 
-	req_buf = bt_smp_create_pdu(smp->chan.conn, BT_SMP_CMD_PUBLIC_KEY,
-				    sizeof(*req));
+	req_buf = smp_create_pdu(smp->chan.conn, BT_SMP_CMD_PUBLIC_KEY,
+				 sizeof(*req));
 	if (!req_buf) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -1239,7 +1239,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 		return -ENOBUFS;
 	}
 
-	req_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_REQ, sizeof(*req));
+	req_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_REQ, sizeof(*req));
 	if (!req_buf) {
 		return -ENOBUFS;
 	}
@@ -1397,8 +1397,7 @@ static uint8_t sc_smp_send_dhkey_check(struct bt_smp *smp, const uint8_t *e)
 
 	BT_DBG("");
 
-	buf = bt_smp_create_pdu(smp->chan.conn, BT_SMP_DHKEY_CHECK,
-				sizeof(*req));
+	buf = smp_create_pdu(smp->chan.conn, BT_SMP_DHKEY_CHECK, sizeof(*req));
 	if (!buf) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -1816,8 +1815,8 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		bt_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
 		bt_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
 
-		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
-					sizeof(*info));
+		buf = smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
+				     sizeof(*info));
 		if (!buf) {
 			BT_ERR("Unable to allocate Encrypt Info buffer");
 			return;
@@ -1834,8 +1833,8 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 
 		smp_send(smp, buf);
 
-		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT,
-					sizeof(*ident));
+		buf = smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT,
+				     sizeof(*ident));
 		if (!buf) {
 			BT_ERR("Unable to allocate Master Ident buffer");
 			return;
@@ -1859,8 +1858,8 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		bt_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
 		keys->local_csrk.cnt = 0;
 
-		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
-					sizeof(*info));
+		buf = smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
+				     sizeof(*info));
 		if (!buf) {
 			BT_ERR("Unable to allocate Signing Info buffer");
 			return;
