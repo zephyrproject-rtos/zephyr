@@ -1,7 +1,0 @@
-
-if BOARD_QUARK_SE_TEST_SSS
-
-config BOARD
-        default "quark_se_test_sss"
-
-endif # BOARD_QUARK_SE_TEST_SSS

@@ -100,9 +100,11 @@ else
 	@echo "*** Default configuration is based on '$(KBUILD_DEFCONFIG)'"
 	$(Q)$< --defconfig=configs/$(KBUILD_DEFCONFIG) $(Kconfig)
 endif
+defconfigfiles=$(wildcard $(srctree)/boards/*/$@)
 
 %_defconfig: $(obj)/conf
-	$(Q)$< --defconfig=configs/$@ $(Kconfig)
+	$(if $(call defconfigfiles),, $(error No configuration exists for this board))
+	$(Q)$< --defconfig=$(defconfigfiles) $(Kconfig)
 
 configfiles=$(wildcard $(PROJECT_BASE)/$@ $(srctree)/kernel/configs/$@ $(srctree)/configs/$@)
 

@@ -19,7 +19,7 @@ KERNEL_TYPE = micro
 endif
 
 ifdef BOARD
-KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/configs/$(BOARD)_defconfig
+KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/boards/$(BOARD)/$(BOARD)_defconfig
 export KBUILD_DEFCONFIG_PATH
 else
 $(error BOARD is not defined!)

@@ -1,0 +1,7 @@
+
+if BOARD_QUARK_SE_SSS_CTB
+
+config BOARD
+        default "quark_se_sss_ctb"
+
+endif # BOARD_QUARK_SE_SSS_CTB
