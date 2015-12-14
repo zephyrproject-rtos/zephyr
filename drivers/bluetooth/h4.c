@@ -253,8 +253,7 @@ static int _bt_uart_init(struct device *unused)
 	ARG_UNUSED(unused);
 
 	h4_dev = device_get_binding(CONFIG_BLUETOOTH_UART_ON_DEV_NAME);
-
-	if (h4_dev == NULL) {
+	if (!h4_dev) {
 		return DEV_INVALID_CONF;
 	}
 
