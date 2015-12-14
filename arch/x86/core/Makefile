@@ -11,7 +11,11 @@ endif
 # character starts a comment
 KBUILD_AFLAGS += -Wa,--divide
 
-obj-y = i386_sysV_abi/
+ifndef CONFIG_X86_IAMCU
+obj-y += i386_sysV_abi/
+else
+obj-y += iamcu_abi/
+endif
 
 obj-y += gdt.o fatal.o cpuhalt.o \
 	msr.o dynamic.o intconnect.o \

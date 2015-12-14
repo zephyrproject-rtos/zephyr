@@ -23,6 +23,7 @@
 #error test_asm_inline_gcc.h goes only with x86 GCC
 #endif
 
+#if !defined(CONFIG_X86_IAMCU)
 static inline void isr_dummy(void)
 {
 	extern void _IntEnt(void);
@@ -39,5 +40,27 @@ static inline void isr_dummy(void)
 		: :
 		);
 }
+#else
+typedef void (*int_handler_t) (int context);
+
+static inline void isr_dummy(void)
+{
+	extern void _execute_handler(int_handler_t function, int context);
+
+	__asm__ volatile (
+		"pushl %%eax \n\t"
+		"pushl %%edx \n\t"
+		"pushl %%ecx \n\t"
+		"mov dummyIsr, %%eax \n\t"
+		"movl $0, %%edx \n\t"
+		"call _execute_handler \n\t"
+		"pop %%ecx \n\t"
+		"pop %%edx \n\t"
+		"pop %%eax \n\t"
+		"iret \n\t"
+		: :
+		);
+}
+#endif
 
 #endif /* _TEST_ASM_INLINE_GCC_H */

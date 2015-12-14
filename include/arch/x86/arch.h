@@ -51,6 +51,8 @@
 
 #define ALL_DYN_STUBS (ALL_DYN_EXC_STUBS + ALL_DYN_IRQ_STUBS)
 
+
+
 /*
  * Synchronize these DYN_STUB_* macros with the generated assembly for
  * _DynIntStubsBegin in intstub.S / _DynExcStubsBegin in excstub.S
@@ -58,7 +60,11 @@
  */
 
 /* Size of each dynamic interrupt/exception stub in bytes */
+#ifdef CONFIG_IAMCU
+#define DYN_STUB_SIZE		8
+#else
 #define DYN_STUB_SIZE		9
+#endif
 
 /*
  * Offset from the beginning of a stub to the byte containing the argument

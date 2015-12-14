@@ -22,6 +22,18 @@ menu "x86 architecture"
 config ARCH
         default "x86"
 
+config X86_IAMCU
+	bool
+	default n
+	prompt "IAMCU calling convention"
+	help
+	The IAMCU calling convention changes the X86 C calling convention to
+	pass some arguments via registers allowing for code size and performance
+	improvements.  Great care needs to be taken if you have assembly code
+	that will be called from C or C code called from assembly code, the
+	assembly code will need to be updated to conform to the new calling
+	convention.  If in doubt say N
+
 config ARCH_DEFCONFIG
 	string
 	default "arch/x86/defconfig"
