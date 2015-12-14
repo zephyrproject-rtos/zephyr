@@ -1,5 +1,5 @@
 
 config  BOARD_QEMU_CORTEX_M3
         bool "Cortex-M3 Emulation (Qemu)"
-        select PLATFORM_QEMU_ARM
+        select PLATFORM_TI_LM3S6965
 	depends on ARM

@@ -1,6 +1,0 @@
-
-config  PLATFORM_QEMU_ARM
-	bool "QEMU for ARM"
-	select CPU_CORTEX_M
-	select CPU_CORTEX_M3
-
