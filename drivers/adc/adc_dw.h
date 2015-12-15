@@ -52,7 +52,7 @@
  *
  * Number of reception buffers to be supported by the driver.
  */
-#define BUFS_NUM 2
+#define BUFS_NUM 32
 
 /* EAI ADC device registers */
 #define     ADC_SET         (0x00)
@@ -161,8 +161,6 @@ struct adc_config {
 	uint8_t  rx_vector;
 	/**Interruption vector for the error ISR.*/
 	uint8_t  err_vector;
-	/**FIFO TLD*/
-	uint16_t fifo_tld;
 	/**Input mode*/
 	uint8_t  in_mode;
 	/**Output mode*/
@@ -193,8 +191,6 @@ struct adc_info {
 	uint8_t  index;
 	/**Sequence size*/
 	uint32_t seq_size;
-	/**Reception buffers length*/
-	uint32_t rx_len[BUFS_NUM];
 	/**Reception buffers array*/
 	uint32_t *rx_buf[BUFS_NUM];
 	/**Pointer to the reception callback.*/

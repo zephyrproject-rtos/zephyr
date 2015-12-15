@@ -24,8 +24,6 @@
 #include <adc.h>
 #include <arch/cpu.h>
 #include "adc_dw.h"
-#include "adc_ss_dw.h"
-#include <sw_isr_table.h>
 
 #define ADC_CLOCK_GATE      (1 << 31)
 #define ADC_STANDBY          0x02
@@ -133,6 +131,7 @@ static void adc_dw_enable(struct device *dev)
 	adc_goto_normal_mode_wo_calibration();
 	sys_out32(ENABLE_ADC, adc_base + ADC_CTRL);
 	info->state = ADC_STATE_IDLE;
+	info->index = 0;
 }
 
 static void adc_dw_disable(struct device *dev)
@@ -146,7 +145,6 @@ static void adc_dw_disable(struct device *dev)
 	sys_out32(ADC_INT_DSB|ADC_SEQ_PTR_RST, adc_base + ADC_CTRL);
 
 	saved = irq_lock();
-	info->cb = NULL;
 
 	sys_out32(sys_in32(adc_base + ADC_SET)|ADC_FLUSH_RX, adc_base + ADC_SET);
 	irq_unlock(saved);
@@ -170,25 +168,18 @@ static int adc_dw_read(struct device *dev, struct adc_seq_table *seq_tbl)
 		return 1;
 	}
 
-	for (i = 0, entry = seq_tbl->entries; i < seq_tbl->num_entries; i++) {
-		if (entry[i].buffer_length % 4 != 0) {
-			return 1;
-		}
-	}
-
 	saved = irq_lock();
+	info->seq_size = seq_tbl->num_entries;
 
 	ctrl = sys_in32(adc_base + ADC_CTRL);
 	ctrl |= ADC_SEQ_PTR_RST;
 	sys_out32(ctrl, adc_base + ADC_CTRL);
 
-	info->seq_size = seq_tbl->num_entries;
-
 	tmp_val = sys_in32(adc_base + ADC_SET);
 	tmp_val &= ADC_SEQ_SIZE_SET_MASK;
 	tmp_val |= (((seq_tbl->num_entries - 1) & SIX_BITS_SET)
 		<< SEQ_ENTRIES_POS);
-	tmp_val |= ((info->seq_size - 1) << THRESHOLD_POS);
+	tmp_val |= ((seq_tbl->num_entries - 1) << THRESHOLD_POS);
 	sys_out32(tmp_val, adc_base + ADC_SET);
 
 	irq_unlock(saved);
@@ -216,26 +207,16 @@ static int adc_dw_read(struct device *dev, struct adc_seq_table *seq_tbl)
 
 	sys_out32(ctrl | ADC_SEQ_PTR_RST, adc_base + ADC_CTRL);
 
-	if (info->state == ADC_STATE_IDLE) {
-		int num_entries = seq_tbl->num_entries;
+	int num_entries = seq_tbl->num_entries;
 
-		memset(info->rx_buf, (int)NULL, BUFS_NUM);
+	memset(info->rx_buf, (int)NULL, BUFS_NUM);
 
-		for (i = 0; i < num_entries; i++) {
-			info->rx_buf[i] = (uint32_t *)entry[i].buffer;
-			info->rx_len[i] = entry[i].buffer_length/4;
-		}
-		info->index = i-1;
-		info->state = ADC_STATE_SAMPLING;
-		sys_out32(START_ADC_SEQ, adc_base + ADC_CTRL);
-	} else if (config->seq_mode == IO_ADC_SEQ_MODE_REPETITIVE) {
-		uint32_t idx = info->index;
-
-		if (info->rx_buf[idx] == NULL) {
-			info->rx_buf[idx] = (uint32_t *)entry[idx].buffer;
-			info->rx_len[idx] = entry[idx].buffer_length/4;
-		}
+	for (i = 0; i < num_entries; i++) {
+		info->rx_buf[i] = (uint32_t *)entry[i].buffer;
 	}
+
+	info->state = ADC_STATE_SAMPLING;
+	sys_out32(START_ADC_SEQ, adc_base + ADC_CTRL);
 	return 0;
 }
 
@@ -288,10 +269,64 @@ int adc_dw_init(struct device *dev)
 	return 0;
 }
 
+void adc_dw_rx_isr(void *arg)
+{
+	struct device *dev = (struct device *)arg;
+	struct device_config *dev_config = dev->config;
+	struct adc_config *config = dev_config->config_info;
+	struct adc_info *info = dev->driver_data;
+	uint32_t adc_base = config->reg_base;
+	uint32_t reg_val;
+	uint32_t index;
+
+	for (index = info->index; index < info->seq_size; index++) {
+		reg_val = sys_in32(adc_base + ADC_SET);
+		sys_out32(reg_val|ADC_POP_SAMPLE, adc_base + ADC_SET);
+		*(info->rx_buf[index]) = sys_in32(adc_base + ADC_SAMPLE);
+	}
+
+	if (likely(info->cb != NULL)) {
+		info->cb(dev, ADC_CB_DONE);
+	}
+
+	if (config->seq_mode == IO_ADC_SEQ_MODE_SINGLESHOT) {
+		sys_out32(RESUME_ADC_CAPTURE, adc_base + ADC_CTRL);
+		reg_val = sys_in32(adc_base + ADC_SET);
+		sys_out32(reg_val | ADC_FLUSH_RX, adc_base + ADC_SET);
+		info->state = ADC_STATE_IDLE;
+	}
+
+	index %= BUFS_NUM;
+	info->index = index;
+
+	reg_val = sys_in32(adc_base + ADC_CTRL);
+	sys_out32(reg_val | ADC_CLR_DATA_A, adc_base + ADC_CTRL);
+}
+
+
+void adc_dw_err_isr(void *arg)
+{
+	struct device *dev = (struct device *) arg;
+	struct adc_config  *config = dev->config->config_info;
+	struct adc_info    *info   = dev->driver_data;
+	uint32_t adc_base = config->reg_base;
+	uint32_t reg_val = sys_in32(adc_base + ADC_SET);
+
+
+	sys_out32(RESUME_ADC_CAPTURE, adc_base + ADC_CTRL);
+	sys_out32(reg_val | ADC_FLUSH_RX, adc_base + ADC_CTRL);
+	sys_out32(FLUSH_ADC_ERRORS, adc_base + ADC_CTRL);
+
+	info->state = ADC_STATE_IDLE;
+
+	if (likely(info->cb != NULL)) {
+		info->cb(dev, ADC_CB_ERROR);
+	}
+}
+
 #ifdef CONFIG_ADC_DW_0
 
 struct adc_info adc_info_dev_0 = {
-		.seq_size = 1,
 		.state = ADC_STATE_IDLE
 	};
 
@@ -301,7 +336,6 @@ struct adc_config adc_config_dev_0 = {
 		.reg_err_mask = SCSS_REGISTER_BASE + INT_SS_ADC_ERR_MASK,
 		.rx_vector = CONFIG_ADC_DW_0_RX_IRQ,
 		.err_vector = CONFIG_ADC_DW_0_ERR_IRQ,
-		.fifo_tld = IO_ADC0_FS/2,
 		.in_mode      = CONFIG_ADC_DW_INPUT_MODE,
 		.out_mode     = CONFIG_ADC_DW_OUTPUT_MODE,
 		.capture_mode = CONFIG_ADC_DW_CAPTURE_MODE,
