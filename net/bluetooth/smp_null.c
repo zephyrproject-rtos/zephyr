@@ -44,6 +44,11 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	return -ENOTSUP;
 }
 
+int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
+{
+	return -ENOTSUP;
+}
+
 static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_conn *conn = chan->conn;
