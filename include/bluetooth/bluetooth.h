@@ -214,7 +214,7 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 /** Authenticated pairing callback structure */
 struct bt_auth_cb {
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
@@ -263,7 +263,7 @@ void bt_auth_cancel(struct bt_conn *conn);
  */
 void bt_auth_passkey_confirm(struct bt_conn *conn, bool match);
 
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 /** @def BT_ADDR_STR_LEN
  *
