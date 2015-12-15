@@ -126,11 +126,17 @@ static uint8_t unack_queue_len;
 
 static const uint8_t sync_req[] = { 0x01, 0x7e };
 static const uint8_t sync_rsp[] = { 0x02, 0x7d };
-static const uint8_t conf_req[3] = { 0x03, 0xfc };
+/* Third byte may change */
+static uint8_t conf_req[3] = { 0x03, 0xfc };
 static const uint8_t conf_rsp[] = { 0x04, 0x7b };
 static const uint8_t wakeup_req[] = { 0x05, 0xfa };
 static const uint8_t woken_req[] = { 0x06, 0xf9 };
 static const uint8_t sleep_req[] = { 0x07, 0x78 };
+
+static void h5_set_txwin(uint8_t *conf)
+{
+	conf[2] = h5.tx_win & 0x07;
+}
 
 /* H5 signal buffers pool */
 #define CONFIG_BLUETOOTH_MAX_SIG_LEN	3
@@ -385,6 +391,8 @@ static void retx_fiber(int arg1, int arg2)
 
 		/* Queue unack packets to the beginning of the queue */
 		while ((buf = nano_fifo_get(&h5.unack_queue))) {
+			/* include also packet type */
+			net_buf_push(buf, sizeof(uint8_t));
 			nano_fifo_put(&h5.tx_queue, buf);
 			unack_queue_len--;
 		}
@@ -439,6 +447,9 @@ static void h5_process_complete_packet(struct net_buf *buf, uint8_t type,
 	process_unack();
 
 	switch (type) {
+	case HCI_3WIRE_ACK_PKT:
+		net_buf_unref(buf);
+		break;
 	case HCI_3WIRE_LINK_PKT:
 		nano_fifo_put(&h5.rx_queue, buf);
 		break;
@@ -521,6 +532,7 @@ void bt_uart_isr(void *unused)
 					status = PAYLOAD;
 					break;
 				case HCI_3WIRE_LINK_PKT:
+				case HCI_3WIRE_ACK_PKT:
 					buf = bt_buf_get_sig();
 					status = SIGNAL;
 					break;
@@ -677,31 +689,45 @@ static void rx_fiber(void)
 
 		hexdump("=> ", buf->data, buf->len);
 
-		/* Check paket type and process */
-		switch (h5.state) {
-		case UNINIT:
-			if (!memcmp(buf->data, sync_rsp, sizeof(sync_rsp))) {
-				h5.state = INIT;
-				h5_send(conf_req, HCI_3WIRE_LINK_PKT,
-					sizeof(conf_req));
+		if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
+			if (h5.state == ACTIVE) {
+				/* TODO Reset H5 */
 			}
-			break;
-		case INIT:
-			/* TODO: Handle sync and cond messages */
-			if (!memcmp(buf->data, conf_rsp, sizeof(conf_rsp))) {
-				h5.state = ACTIVE;
-				if (buf->len > 2) {
-					/* Configuration field present */
-					h5.tx_win = (buf->data[2] & 0x07);
-				}
 
-				BT_DBG("Finished H5 configuration, tx_win %u",
-				       h5.tx_win);
+			h5_send(sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp));
+		} else if (!memcmp(buf->data, sync_rsp, sizeof(sync_rsp))) {
+			if (h5.state == ACTIVE) {
+				/* TODO Reset H5 */
 			}
-			break;
-		case ACTIVE:
-			break;
+
+			h5.state = INIT;
+			h5_set_txwin(conf_req);
+			h5_send(conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req));
+		} else if (!memcmp(buf->data, conf_req, 2)) {
+			/*
+			 * The Host sends Config Response messages without a
+			 * Configuration Field.
+			 */
+			h5_send(conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp));
+
+			/* Then send Config Request with Configuration Field */
+			h5_set_txwin(conf_req);
+			h5_send(conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req));
+		} else if (!memcmp(buf->data, conf_rsp, 2)) {
+			h5.state = ACTIVE;
+			if (buf->len > 2) {
+				/* Configuration field present */
+				h5.tx_win = (buf->data[2] & 0x07);
+			}
+
+			BT_DBG("Finished H5 configuration, tx_win %u",
+			       h5.tx_win);
+		} else {
+			BT_ERR("Not handled yet %x %x",
+			       buf->data[0], buf->data[1]);
 		}
+
+		net_buf_unref(buf);
 	}
 }
 
@@ -710,6 +736,7 @@ static void h5_init(void)
 	BT_DBG("");
 
 	h5.state = UNINIT;
+	h5.tx_win = 4;
 
 	/* TX fiber */
 	nano_fifo_init(&h5.tx_queue);
