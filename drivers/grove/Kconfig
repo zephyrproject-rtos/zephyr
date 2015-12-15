@@ -50,6 +50,7 @@ config GROVE_LCD_RGB_I2C_MASTER_DEV_NAME
 config GROVE_LCD_RGB_INIT_PRIORITY
 	int
 	prompt "Init priority"
+	default 70
 	depends on GROVE_LCD_RGB
 	help
 	  Device driver initialization priority.

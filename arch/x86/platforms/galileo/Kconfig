@@ -444,10 +444,6 @@ config GPIO_PCAL9535A_INIT_PRIORITY
 config PWM_PCA9685_INIT_PRIORITY
 	default 70
 
-# Grove RGB LCD uses I2C, thus initialized after it
-config GROVE_LCD_RGB_INIT_PRIORITY
-	default 70
-
 # Pin multiplexer uses PCAL9535A, needs to be initialized after it
 config PINMUX_INIT_PRIORITY
 	default 80
