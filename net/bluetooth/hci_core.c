@@ -583,6 +583,15 @@ static void le_conn_complete(struct net_buf *buf)
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
+	/*
+	 * it is possible that connection was disconnected directly from
+	 * connected callback so we must check state before doing connection
+	 * parameters update
+	 */
+	if (conn->state != BT_CONN_CONNECTED) {
+		goto done;
+	}
+
 	if ((evt->role == BT_HCI_ROLE_MASTER) ||
 	    (bt_dev.le.features[0] & BT_HCI_LE_SLAVE_FEATURES)) {
 		err = hci_le_read_remote_features(conn);
