@@ -28,7 +28,6 @@
 #include <board.h>
 #include <init.h>
 #include <uart.h>
-#include <drivers/k20_sim.h>
 #include <toolchain.h>
 #include <sections.h>
 
@@ -38,8 +37,6 @@
 
 #define DEV_CFG(dev) \
 	((struct uart_device_config * const)(dev)->config->config_info)
-#define DEV_DATA(dev) \
-	((struct uart_k20_dev_data *)(dev)->driver_data)
 #define UART_STRUCT(dev) \
 	((volatile struct K20_UART *)(DEV_CFG(dev))->base)
 
@@ -57,11 +54,7 @@ static struct uart_driver_api uart_k20_driver_api;
  */
 static int uart_k20_init(struct device *dev)
 {
-	struct uart_k20_dev_data *dev_data = DEV_DATA(dev);
-
 	int old_level; /* old interrupt lock level */
-	volatile struct K20_SIM *sim = /* sys integ. ctl */
-		(volatile struct K20_SIM *)PERIPH_ADDR_BASE_SIM;
 	union C1 c1;				   /* UART C1 register value */
 	union C2 c2;				   /* UART C2 register value */
 
@@ -70,9 +63,6 @@ static int uart_k20_init(struct device *dev)
 
 	/* disable interrupts */
 	old_level = irq_lock();
-
-	/* enable clock to Uart - must be done prior to device access */
-	_k20_sim_uart_clk_enable(sim, dev_data->seq_port_num);
 
 	_uart_k20_baud_rate_set(uart, init_info->sys_clk_freq,
 				init_info->baud_rate);
@@ -393,16 +383,12 @@ static struct uart_device_config uart_k20_dev_cfg_0 = {
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_0_CLK_FREQ,
 };
 
-static struct uart_k20_dev_data uart_k20_dev_data_0 = {
-	.seq_port_num = 0,
-};
-
 DECLARE_DEVICE_INIT_CONFIG(uart_k20_0,
 			   CONFIG_UART_K20_PORT_0_NAME,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_0);
 
-SYS_DEFINE_DEVICE(uart_k20_0, &uart_k20_dev_data_0, PRIMARY,
+SYS_DEFINE_DEVICE(uart_k20_0, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_0 */
@@ -418,16 +404,12 @@ static struct uart_device_config uart_k20_dev_cfg_1 = {
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_1_CLK_FREQ,
 };
 
-static struct uart_k20_dev_data uart_k20_dev_data_1 = {
-	.seq_port_num = 1,
-};
-
 DECLARE_DEVICE_INIT_CONFIG(uart_k20_1,
 			   CONFIG_UART_K20_PORT_1_NAME,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_1);
 
-SYS_DEFINE_DEVICE(uart_k20_1, &uart_k20_dev_data_1, PRIMARY,
+SYS_DEFINE_DEVICE(uart_k20_1, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_1 */
@@ -443,16 +425,12 @@ static struct uart_device_config uart_k20_dev_cfg_2 = {
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_2_CLK_FREQ,
 };
 
-static struct uart_k20_dev_data uart_k20_dev_data_2 = {
-	.seq_port_num = 2,
-};
-
 DECLARE_DEVICE_INIT_CONFIG(uart_k20_2,
 			   CONFIG_UART_K20_PORT_2_NAME,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_2);
 
-SYS_DEFINE_DEVICE(uart_k20_2, &uart_k20_dev_data_2, PRIMARY,
+SYS_DEFINE_DEVICE(uart_k20_2, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_2 */
@@ -468,16 +446,12 @@ static struct uart_device_config uart_k20_dev_cfg_3 = {
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_3_CLK_FREQ,
 };
 
-static struct uart_k20_dev_data uart_k20_dev_data_3 = {
-	.seq_port_num = 3,
-};
-
 DECLARE_DEVICE_INIT_CONFIG(uart_k20_3,
 			   CONFIG_UART_K20_PORT_3_NAME,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_3);
 
-SYS_DEFINE_DEVICE(uart_k20_3, &uart_k20_dev_data_3, PRIMARY,
+SYS_DEFINE_DEVICE(uart_k20_3, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_3 */
@@ -493,16 +467,12 @@ static struct uart_device_config uart_k20_dev_cfg_4 = {
 	.init_info.sys_clk_freq = CONFIG_UART_K20_PORT_4_CLK_FREQ,
 };
 
-static struct uart_k20_dev_data uart_k20_dev_data_4 = {
-	.seq_port_num = 4,
-};
-
 DECLARE_DEVICE_INIT_CONFIG(uart_k20_4,
 			   CONFIG_UART_K20_PORT_4_NAME,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_4);
 
-SYS_DEFINE_DEVICE(uart_k20_4, &uart_k20_dev_data_4, PRIMARY,
+SYS_DEFINE_DEVICE(uart_k20_4, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_4 */

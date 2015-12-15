@@ -190,11 +190,6 @@ struct K20_UART {
 
 }; /* K20 Microntroller UART module */
 
-/** Device data structure */
-struct uart_k20_dev_data {
-	uint8_t seq_port_num;	/**< Sequential port number */
-};
-
 /**
  * @brief Set baud rate for K20 UART port.
  *
