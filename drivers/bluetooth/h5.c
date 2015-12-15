@@ -115,7 +115,7 @@ static struct h5 {
 	/* delayed retransmit fiber */
 	void			*retx_to;
 
-	enum state {
+	enum {
 		UNINIT,
 		INIT,
 		ACTIVE,
@@ -186,13 +186,15 @@ static int bt_uart_h5_unslip(uint8_t *byte)
 	int count;
 
 	count = bt_uart_read(h5_dev, byte, sizeof(*byte), 0);
-	if (!count)
+	if (!count) {
 		return count;
+	}
 
 	if (*byte == SLIP_ESC) {
 		count = bt_uart_read(h5_dev, byte, sizeof(*byte), 0);
-		if (!count)
+		if (!count) {
 			return count;
+		}
 
 		switch (*byte) {
 		case SLIP_ESC_DELIM:
@@ -280,22 +282,25 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 	}
 
 	while (length--) {
-		if (n % 16 == 0)
+		if (n % 16 == 0) {
 			printf("%s %08X ", str, n);
+		}
 
 		printf("%02X ", *packet++);
 
 		n++;
 		if (n % 8 == 0) {
-			if (n % 16 == 0)
+			if (n % 16 == 0) {
 				printf("\n");
-			else
+			} else {
 				printf(" ");
+			}
 		}
 	}
 
-	if (n % 16)
+	if (n % 16) {
 		printf("\n");
+	}
 }
 
 static uint8_t h5_slip_byte(uint8_t byte)
@@ -348,11 +353,13 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 
 	uart_poll_out(h5_dev, SLIP_DELIMITER);
 
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++) {
 		h5_slip_byte(hdr[i]);
+	}
 
-	for (i = 0; i < len; i++)
+	for (i = 0; i < len; i++) {
 		h5_slip_byte(payload[i]);
+	}
 
 	uart_poll_out(h5_dev, SLIP_DELIMITER);
 }
@@ -376,7 +383,7 @@ static void retx_fiber(int arg1, int arg2)
 		/* Queue to temperary queue */
 		while ((buf = nano_fifo_get(&h5.tx_queue))) {
 			nano_fifo_put(&tmp_queue, buf);
-		};
+		}
 
 		/* Queue unack packets to the beginning of the queue */
 		while ((buf = nano_fifo_get(&h5.unack_queue))) {
@@ -453,8 +460,7 @@ void bt_uart_isr(void *unused)
 	int ret, i;
 	static uint8_t type;
 	static uint8_t hdr[4];
-
-	static enum status {
+	static enum {
 		START,
 		HEADER,
 		PAYLOAD,
@@ -480,8 +486,9 @@ void bt_uart_isr(void *unused)
 		case START:
 			/* Read SLIP Delimeter */
 			ret = bt_uart_h5_unslip(&byte);
-			if (ret <= 0)
+			if (ret <= 0) {
 				continue;
+			}
 
 			if (byte == SLIP_DELIMITER) {
 				status = HEADER;
@@ -492,8 +499,9 @@ void bt_uart_isr(void *unused)
 			while (remaining) {
 				i = sizeof(hdr) - remaining;
 				ret = bt_uart_h5_unslip(&byte);
-				if (ret <= 0)
+				if (ret <= 0) {
 					return;
+				}
 
 				memcpy(&hdr[i], &byte, sizeof(byte));
 				remaining--;
@@ -531,8 +539,9 @@ void bt_uart_isr(void *unused)
 
 			while (remaining) {
 				ret = bt_uart_h5_unslip(&byte);
-				if (ret <= 0)
+				if (ret <= 0) {
 					return;
+				}
 
 				memcpy(net_buf_add(buf, sizeof(byte)), &byte,
 				       sizeof(byte));
@@ -545,8 +554,9 @@ void bt_uart_isr(void *unused)
 
 			while (remaining) {
 				ret = bt_uart_h5_unslip(&byte);
-				if (ret <= 0)
+				if (ret <= 0) {
 					return;
+				}
 
 				memcpy(net_buf_add(buf, sizeof(byte)), &byte,
 				       sizeof(byte));
@@ -557,8 +567,9 @@ void bt_uart_isr(void *unused)
 		case END:
 			/* Read SLIP Delimeter */
 			ret = bt_uart_h5_unslip(&byte);
-			if (ret <= 0)
+			if (ret <= 0) {
 				continue;
+			}
 
 			if (byte == SLIP_DELIMITER) {
 				status = START;
