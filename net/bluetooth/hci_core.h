@@ -16,18 +16,6 @@
  * limitations under the License.
  */
 
-/* Enabling debug increases stack size requirement considerably */
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-#define BT_STACK_DEBUG_EXTRA	512
-#else
-#define BT_STACK_DEBUG_EXTRA	0
-#endif
-
-#define BT_STACK(name, size) \
-		char __stack name[(size) + BT_STACK_DEBUG_EXTRA]
-#define BT_STACK_NOINIT(name, size) \
-		char __noinit __stack name[(size) + BT_STACK_DEBUG_EXTRA]
-
 /* LMP feature helpers */
 #define lmp_bredr_capable(dev)	(!((dev).features[4] & BT_LMP_NO_BREDR))
 #define lmp_le_capable(dev)	((dev).features[4] & BT_LMP_LE)

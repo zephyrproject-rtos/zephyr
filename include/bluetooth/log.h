@@ -43,12 +43,20 @@
 #define BT_ASSERT(cond) if (!(cond)) { \
 				BT_ERR("assert: '" #cond "' failed"); \
 			}
+/* Enabling debug increases stack size requirement considerably */
+#define BT_STACK_DEBUG_EXTRA	512
 #else
 #define BT_DBG(fmt, ...)
 #define BT_ERR(fmt, ...)
 #define BT_WARN(fmt, ...)
 #define BT_INFO(fmt, ...)
 #define BT_ASSERT(cond)
+#define BT_STACK_DEBUG_EXTRA	0
 #endif /* CONFIG_BLUETOOTH_DEBUG */
+
+#define BT_STACK(name, size) \
+		char __stack name[(size) + BT_STACK_DEBUG_EXTRA]
+#define BT_STACK_NOINIT(name, size) \
+		char __noinit __stack name[(size) + BT_STACK_DEBUG_EXTRA]
 
 #endif /* __BT_LOG_H */
