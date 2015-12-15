@@ -496,6 +496,26 @@ struct gatt_write_long_cmd {
 	uint8_t data[0];
 } __packed;
 
+#define GATT_CFG_NOTIFY			0x50
+#define GATT_CFG_INDICATE		0x51
+struct gatt_cfg_notify_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint8_t enable;
+	uint16_t ccc_handle;
+} __packed;
+
+/* GATT events */
+#define GATT_EV_NOTIFICATION		0xc0
+struct gatt_notification_ev {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint8_t type;
+	uint16_t handle;
+	uint16_t data_length;
+	uint8_t data[0];
+} __packed;
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
