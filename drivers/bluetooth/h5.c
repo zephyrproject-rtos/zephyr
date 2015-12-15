@@ -141,12 +141,6 @@ static struct nano_fifo avail_signal;
 static NET_BUF_POOL(signal_pool, CONFIG_BLUETOOTH_SIGNAL_COUNT, SIG_BUF_SIZE,
 		    &avail_signal, NULL, 0);
 
-/* Make packet type to reuse net_buf user data area */
-struct pkt_data {
-	uint8_t type;
-};
-#define pkt_type(buf)	(((struct pkt_data *)(net_buf_user_data(buf)))->type)
-
 static struct device *h5_dev;
 
 static struct net_buf *bt_buf_get_sig(void)
@@ -181,7 +175,7 @@ static int bt_uart_read(struct device *uart, uint8_t *buf,
 	return total;
 }
 
-static int bt_uart_h5_unslip(uint8_t *byte)
+static int h5_unslip_byte(uint8_t *byte)
 {
 	int count;
 
@@ -272,6 +266,7 @@ static void h5_print_header(const uint8_t *hdr, const char *str)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
 static void hexdump(const char *str, const uint8_t *packet, size_t length)
 {
 	int n = 0;
@@ -302,6 +297,9 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 		printf("\n");
 	}
 }
+#else
+#define hexdump(str, packet, length)
+#endif
 
 static uint8_t h5_slip_byte(uint8_t byte)
 {
@@ -427,8 +425,8 @@ static void h5_process_complete_packet(struct net_buf *buf, uint8_t type,
 	/* rx_ack should be in every packet */
 	h5.rx_ack = H5_HDR_ACK(hdr);
 
-	/* For reliable packet increment next transmit ack number */
 	if (reliable_packet(type)) {
+		/* For reliable packet increment next transmit ack number */
 		h5.tx_ack = (h5.tx_ack + 1) % 8;
 		/* Start delayed fiber to ack the packet */
 		h5.ack_to = fiber_delayed_start(ack_stack, sizeof(ack_stack),
@@ -485,7 +483,7 @@ void bt_uart_isr(void *unused)
 		switch (status) {
 		case START:
 			/* Read SLIP Delimeter */
-			ret = bt_uart_h5_unslip(&byte);
+			ret = h5_unslip_byte(&byte);
 			if (ret <= 0) {
 				continue;
 			}
@@ -498,7 +496,7 @@ void bt_uart_isr(void *unused)
 		case HEADER:
 			while (remaining) {
 				i = sizeof(hdr) - remaining;
-				ret = bt_uart_h5_unslip(&byte);
+				ret = h5_unslip_byte(&byte);
 				if (ret <= 0) {
 					return;
 				}
@@ -538,7 +536,7 @@ void bt_uart_isr(void *unused)
 			BT_DBG("Read H5 command: len %u", remaining);
 
 			while (remaining) {
-				ret = bt_uart_h5_unslip(&byte);
+				ret = h5_unslip_byte(&byte);
 				if (ret <= 0) {
 					return;
 				}
@@ -553,7 +551,7 @@ void bt_uart_isr(void *unused)
 			BT_DBG("Read payload: len %u", remaining);
 
 			while (remaining) {
-				ret = bt_uart_h5_unslip(&byte);
+				ret = h5_unslip_byte(&byte);
 				if (ret <= 0) {
 					return;
 				}
@@ -566,7 +564,7 @@ void bt_uart_isr(void *unused)
 			break;
 		case END:
 			/* Read SLIP Delimeter */
-			ret = bt_uart_h5_unslip(&byte);
+			ret = h5_unslip_byte(&byte);
 			if (ret <= 0) {
 				continue;
 			}
@@ -587,18 +585,16 @@ void bt_uart_isr(void *unused)
 	}
 }
 
-static int bt_uart_h5_send(struct net_buf *buf)
+static uint8_t h5_get_type(struct net_buf *buf)
 {
 	uint8_t type = UNALIGNED_GET((uint8_t *)buf->data);
 
 	net_buf_pull(buf, sizeof(type));
 
-	h5_send(buf->data, type, buf->len);
-
-	return 0;
+	return type;
 }
 
-int h5_queue(enum bt_buf_type buf_type, struct net_buf *buf)
+static int h5_queue(enum bt_buf_type buf_type, struct net_buf *buf)
 {
 	uint8_t type;
 
@@ -632,6 +628,7 @@ static void tx_fiber(void)
 
 	while (true) {
 		struct net_buf *buf;
+		uint8_t type;
 
 		BT_DBG("state %u", h5.state);
 
@@ -646,7 +643,9 @@ static void tx_fiber(void)
 			break;
 		case ACTIVE:
 			buf = nano_fifo_get_wait(&h5.tx_queue);
-			bt_uart_h5_send(buf);
+			type = h5_get_type(buf);
+
+			h5_send(buf->data, type, buf->len);
 
 			/* buf is dequeued from tx_queue and queued to unack
 			 * queue.
