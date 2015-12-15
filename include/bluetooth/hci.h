@@ -149,6 +149,26 @@ struct bt_hci_cp_reject_conn_req {
 	uint8_t   reason;
 } __packed;
 
+#define BT_HCI_OP_PIN_CODE_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x000d)
+struct bt_hci_cp_pin_code_reply {
+	bt_addr_t bdaddr;
+	uint8_t   pin_len;
+	uint8_t   pin_code[16];
+} __packed;
+struct bt_hci_rp_pin_code_reply {
+	uint8_t   status;
+	bt_addr_t bdaddr;
+} __packed;
+
+#define BT_HCI_OP_PIN_CODE_NEG_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x000e)
+struct bt_hci_cp_pin_code_neg_reply {
+	bt_addr_t bdaddr;
+} __packed;
+struct bt_hci_rp_pin_code_neg_reply {
+	uint8_t   status;
+	bt_addr_t bdaddr;
+} __packed;
+
 #define BT_HCI_OP_SET_EVENT_MASK		BT_OP(BT_OGF_BASEBAND, 0x0001)
 struct bt_hci_cp_set_event_mask {
 	uint8_t  events[8];
@@ -452,6 +472,18 @@ struct bt_hci_evt_cmd_status {
 struct bt_hci_evt_num_completed_packets {
 	uint8_t  num_handles;
 	struct bt_hci_handle_count h[0];
+} __packed;
+
+#define BT_HCI_EVT_PIN_CODE_REQ			0x16
+struct bt_hci_evt_pin_code_req {
+	bt_addr_t bdaddr;
+} __packed;
+
+#define BT_HCI_EVT_LINK_KEY_NOTIFY		0x18
+struct bt_hci_ev_link_key_notify {
+	bt_addr_t bdaddr;
+	uint8_t   link_key[16];
+	uint8_t   key_type;
 } __packed;
 
 #define BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE	0x30
