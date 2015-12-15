@@ -400,6 +400,7 @@ static inline uint16_t conn_mtu(struct bt_conn *conn)
 static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
+	uint16_t frag_len;
 
 	frag = bt_conn_create_pdu(&frag_buf, 0);
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -410,8 +411,10 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 		return NULL;
 	}
 
-	memcpy(net_buf_add(frag, conn_mtu(conn)), buf->data, conn_mtu(conn));
-	net_buf_pull(buf, conn_mtu(conn));
+	frag_len = min(conn_mtu(conn), net_buf_tailroom(frag));
+
+	memcpy(net_buf_add(frag, frag_len), buf->data, frag_len);
+	net_buf_pull(buf, frag_len);
 
 	return frag;
 }
