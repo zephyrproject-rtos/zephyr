@@ -34,6 +34,11 @@
 
 static struct bt_l2cap_chan bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
+/* Pool for outgoing SMP signaling packets, MTU is 23 */
+static struct nano_fifo smp_buf;
+static NET_BUF_POOL(smp_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(23), &smp_buf, NULL, 0);
+
 int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 {
 	return -ENOTSUP;
@@ -51,7 +56,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	 * Core Specification Vol. 3, Part H, 3.3
 	 */
 
-	buf = bt_l2cap_create_pdu(conn);
+	buf = bt_l2cap_create_pdu(&smp_buf);
 	if (!buf) {
 		return;
 	}
@@ -99,6 +104,8 @@ int bt_smp_init(void)
 		.cid	= BT_L2CAP_CID_SMP,
 		.accept	= bt_smp_accept,
 	};
+
+	net_buf_pool_init(smp_pool);
 
 	bt_l2cap_fixed_chan_register(&chan);
 
