@@ -21,6 +21,13 @@
  * Macros to abstract compiler capabilities (common to all toolchains).
  */
 
+/* Abstract use of extern keyword for compatibility between C and C++ */
+#ifdef __cplusplus
+#define EXTERN_C extern "C"
+#else
+#define EXTERN_C extern
+#endif
+
 /*
  * Generate a reference to an external symbol.
  * The reference indicates to the linker that the symbol is required

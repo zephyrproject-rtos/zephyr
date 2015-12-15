@@ -239,7 +239,7 @@ A##a:
 #define GEN_OFFSET_EXTERN(name) extern const char name[]
 
 #define GEN_ABS_SYM_BEGIN(name) \
-	extern void name(void); \
+	EXTERN_C void name(void); \
 	void name(void)         \
 	{
 
