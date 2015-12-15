@@ -221,6 +221,9 @@ struct bt_auth_cb {
 	void (*passkey_entry)(struct bt_conn *conn);
 	void (*passkey_confirm)(struct bt_conn *conn, unsigned int passkey);
 	void (*cancel)(struct bt_conn *conn);
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
+#endif
 };
 
 /** @brief Register authentication callbacks.
@@ -263,6 +266,18 @@ void bt_auth_cancel(struct bt_conn *conn);
  */
 void bt_auth_passkey_confirm(struct bt_conn *conn, bool match);
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/** @brief Reply with entered pincode.
+ *
+ *  This function should be called only after pincode callback from
+ *  bt_auth_cb structure was called. It's for legacy 2.0 devices.
+ *
+ *  @param conn Connection object.
+ *  @param pin Entered pincode.
+ *  @param len Entered pincode's length.
+ */
+void bt_auth_pincode_entry(struct bt_conn *conn, char *pin, size_t len);
+#endif
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 /** @def BT_ADDR_STR_LEN
