@@ -100,6 +100,11 @@ static void notify_disconnected(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP)
+uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
+{
+	return conn->keys ? conn->keys->enc_size : 0;
+}
+
 void bt_conn_identity_resolved(struct bt_conn *conn)
 {
 	const bt_addr_le_t *rpa;
@@ -919,11 +924,6 @@ int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 	conn_update->supervision_timeout = sys_cpu_to_le16(timeout);
 
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
-}
-
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
-{
-	return conn->keys ? conn->keys->enc_size : 0;
 }
 
 struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve)

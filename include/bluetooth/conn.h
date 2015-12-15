@@ -198,7 +198,18 @@ typedef enum {
  *  @return 0 on success or negative error
  */
 int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
-#endif
+
+/** @brief Get encryption key size.
+ *
+ *  This function gets encryption key size.
+ *  If there is no security (encryption) enabled 0 will be returned.
+ *
+ *  @param conn Existing connection object.
+ *
+ *  @return Encryption key size.
+ */
+uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 /** Connection callback structure */
 struct bt_conn_cb {
@@ -220,17 +231,6 @@ struct bt_conn_cb {
  *  @param cb Callback struct.
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
-
-/** @brief Get encryption key size.
- *
- *  This function gets encryption key size.
- *  If there is no security (encryption) enabled 0 will be returned.
- *
- *  @param conn Existing connection object.
- *
- *  @return Encryption key size.
- */
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
 
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
 #endif /* __BT_CONN_H */
