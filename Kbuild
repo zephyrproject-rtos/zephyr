@@ -112,7 +112,7 @@ define offsetchk
 	fi
 endef
 
-include/generated/offsets.h: $(GENOFFSET_H) arch/$(ARCH)/core/offsets/offsets.o \
+include/generated/offsets.h: arch/$(ARCH)/core/offsets/offsets.o \
 					include/config/auto.conf FORCE
 	$(call offsetchk,arch/$(ARCH)/core/offsets/offsets.o)
 
