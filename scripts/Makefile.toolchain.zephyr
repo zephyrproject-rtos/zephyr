@@ -3,9 +3,15 @@ ifndef ZEPHYR_SDK_INSTALL_DIR
 $(error ZEPHYR_SDK_INSTALL_DIR is not set)
 endif
 
+ifeq ($(HOST_OS),MINGW)
+	TOOLCHAIN_HOME = ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-mingw32
+else
+	TOOLCHAIN_HOME = ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux
+endif
+
 # arm
 CROSS_COMPILE_TARGET_arm = arm-poky-eabi
-CROSS_COMPILE_arm=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_TARGET_arm)-
+CROSS_COMPILE_arm=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_TARGET_arm)-
 CROSS_COMPILE_arm_version = $(shell $(CROSS_COMPILE_arm)gcc -dumpversion)
 LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/${CROSS_COMPILE_TARGET_arm}/lib
 LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/lib/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_arm_version)
@@ -13,7 +19,7 @@ TOOLCHAIN_CFLAGS_arm = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/
 
 # iamcu
 CROSS_COMPILE_TARGET_iamcu = i586-poky-elfiamcu
-CROSS_COMPILE_iamcu=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/iamcu-poky-elfiamcu/$(CROSS_COMPILE_TARGET_iamcu)-
+CROSS_COMPILE_iamcu=$(TOOLCHAIN_HOME)/usr/bin/iamcu-poky-elfiamcu/$(CROSS_COMPILE_TARGET_iamcu)-
 CROSS_COMPILE_iamcu_version = $(shell $(CROSS_COMPILE_iamcu)gcc -dumpversion)
 
 LIB_INCLUDE_DIR_iamcu = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamcu/usr/lib/i586-poky-elfiamcu/$(CROSS_COMPILE_iamcu_version)
@@ -22,7 +28,7 @@ TOOLCHAIN_CFLAGS_iamcu = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamc
 
 # x86
 CROSS_COMPILE_TARGET_x86 = i586-poky-elf
-CROSS_COMPILE_x86=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_x86)/$(CROSS_COMPILE_TARGET_x86)-
+CROSS_COMPILE_x86=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_x86)/$(CROSS_COMPILE_TARGET_x86)-
 CROSS_COMPILE_x86_version = $(shell $(CROSS_COMPILE_x86)gcc -dumpversion)
 
 LIB_INCLUDE_DIR_x86 = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/lib/i586-poky-elf/$(CROSS_COMPILE_x86_version)
@@ -31,7 +37,7 @@ TOOLCHAIN_CFLAGS_x86 = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/${
 
 # arc
 CROSS_COMPILE_TARGET_arc = arc-poky-elf
-CROSS_COMPILE_arc=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_TARGET_arc)-
+CROSS_COMPILE_arc=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_TARGET_arc)-
 CROSS_COMPILE_arc_version = $(shell $(CROSS_COMPILE_arc)gcc -dumpversion)
 
 LIB_INCLUDE_DIR_arc = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_arc)/usr/lib/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_arc_version)/em
@@ -55,9 +61,9 @@ OUTPUT_ARCH = iamcu:intel
 endif
 
 
-QEMU_BIN_PATH ?= ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin
+QEMU_BIN_PATH ?= $(TOOLCHAIN_HOME)/usr/bin
 QEMU           = $(QEMU_BIN_PATH)/$(QEMU_$(SRCARCH))
-QEMU_BIOS=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/share/qemu
+QEMU_BIOS=$(TOOLCHAIN_HOME)/usr/share/qemu
 
 TOOLCHAIN_LIBS = gcc
 
