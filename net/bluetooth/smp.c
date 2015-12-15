@@ -1101,7 +1101,6 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 static uint8_t legacy_send_pairing_confirm(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
@@ -1128,6 +1127,7 @@ static uint8_t legacy_send_pairing_confirm(struct bt_smp *smp)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 static uint8_t legacy_pairing_req(struct bt_smp *smp, uint8_t remote_io)
 {
 	BT_DBG("");
@@ -1327,7 +1327,7 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp, uint8_t remote_io)
 
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-		return smp_send_pairing_confirm(smp);
+		return legacy_send_pairing_confirm(smp);
 	}
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
