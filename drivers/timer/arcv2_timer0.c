@@ -159,7 +159,8 @@ static ALWAYS_INLINE void update_accumulated_count(void)
  *
  * @brief System clock periodic tick handler
  *
- * This routine handles the system clock periodic tick interrupt.
+ * This routine handles the system clock periodic tick interrupt. It always
+ * announces one tick.
  *
  * @return N/A
  */
@@ -173,16 +174,11 @@ void _timer_int_handler(void *unused)
 #if defined(CONFIG_TICKLESS_IDLE)
 	timer0_limit_register_set(cycles_per_tick - 1);
 
-	_sys_idle_elapsed_ticks++;
+	_sys_idle_elapsed_ticks = 1;
+#endif
 
 	update_accumulated_count();
-	if (_sys_idle_elapsed_ticks == 1) {
-		_sys_clock_tick_announce();
-	}
-#else
-	update_accumulated_count();
 	_sys_clock_tick_announce();
-#endif
 }
 
 #if defined(CONFIG_TICKLESS_IDLE)
@@ -246,10 +242,6 @@ void _timer_idle_enter(int32_t ticks)
  * timer out of idle mode and generating an interrupt at the next tick
  * interval.  It is expected that interrupts have been disabled.
  *
- * Note that in this routine, _sys_idle_elapsed_ticks must be zero because the
- * ticker has done its work and consumed all the ticks. This has to be true
- * otherwise idle mode wouldn't have been entered in the first place.
- *
  * RETURNS: N/A
  */
 
@@ -257,7 +249,6 @@ void _timer_idle_exit(void)
 {
 	if (straddled_tick_on_idle_enter) {
 		/* Aborting the tickless idle due to a straddled tick. */
-		_sys_idle_elapsed_ticks = 0;
 		straddled_tick_on_idle_enter = false;
 		return;
 	}
@@ -275,6 +266,8 @@ void _timer_idle_exit(void)
 		 */
 
 		_sys_idle_elapsed_ticks = programmed_ticks - 1;
+		update_accumulated_count();
+		_sys_clock_tick_announce();
 
 		return;
 	}
@@ -288,6 +281,7 @@ void _timer_idle_exit(void)
 
 	_sys_idle_elapsed_ticks = current_count / cycles_per_tick;
 	if (_sys_idle_elapsed_ticks > 0) {
+		update_accumulated_count();
 		_sys_clock_tick_announce();
 	}
 
