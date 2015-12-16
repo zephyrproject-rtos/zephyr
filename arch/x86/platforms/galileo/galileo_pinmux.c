@@ -126,7 +126,7 @@ struct mux_path _galileo_path[CONFIG_PINMUX_NUM_PINS * NUM_PIN_FUNCS] = {
 			    { G_DW,  3,   PIN_LOW, (GPIO_DIR_IN)  },
 			    { NONE,  0, DONT_CARE, (GPIO_DIR_IN)  },
 			    { NONE,  0, DONT_CARE, (GPIO_DIR_IN)  } } },
-	{0, PINMUX_FUNC_C, {{ EXP1,  0,   PIN_LOW, (GPIO_DIR_OUT) }, /* UART0_RXD */
+	{0, PINMUX_FUNC_C, {{ EXP1,  0,   PIN_HIGH, (GPIO_DIR_OUT) }, /* UART0_RXD */
 			    { EXP1,  1,   PIN_LOW, (GPIO_DIR_OUT) },
 			    { NONE,  0, DONT_CARE, (GPIO_DIR_IN)  },
 			    { NONE,  0, DONT_CARE, (GPIO_DIR_IN)  },
