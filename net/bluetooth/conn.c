@@ -783,6 +783,11 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 			info->le.dst = &conn->le.init_addr;
 		}
 		return 0;
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	case BT_CONN_TYPE_BR:
+		info->br.dst = &conn->br.dst;
+		return 0;
+#endif
 	}
 
 	return -EINVAL;

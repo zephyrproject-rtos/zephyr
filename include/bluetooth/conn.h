@@ -114,7 +114,9 @@ struct bt_conn_le_info {
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /** BR/EDR Connection Info Structure */
-struct bt_conn_br_info {};
+struct bt_conn_br_info {
+	const bt_addr_t *dst; /** Destination BR/EDR address */
+};
 #endif
 
 /** Connection Info Structure */
