@@ -1485,7 +1485,7 @@ static int accept_conn(const bt_addr_t *bdaddr)
 	return 0;
 }
 
-static void conn_req_event(struct net_buf *buf)
+static void conn_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -1575,7 +1575,7 @@ static void hci_event(struct net_buf *buf)
 	switch (hdr->evt) {
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	case BT_HCI_EVT_CONN_REQUEST:
-		conn_req_event(buf);
+		conn_req(buf);
 		break;
 	case BT_HCI_EVT_CONN_COMPLETE:
 		conn_complete(buf);
