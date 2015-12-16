@@ -2703,8 +2703,14 @@ void bt_auth_cancel(struct bt_conn *conn)
 #if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_auth_cancel(conn);
+		return;
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		pin_code_neg_reply(&conn->br.dst);
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
