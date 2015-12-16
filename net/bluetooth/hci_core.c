@@ -1639,6 +1639,26 @@ cleanup:
 
 	return err;
 }
+
+static void link_key_notify(struct net_buf *buf)
+{
+	struct bt_hci_ev_link_key_notify *evt = (void *)buf->data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	BT_DBG("%s, link type 0x%02x", bt_addr_str(&evt->bdaddr), evt->key_type);
+
+	/* TODO:
+	 * classify link key based on conn internals and update keys storage
+	 */
+
+	bt_conn_unref(conn);
+}
 #endif
 
 static void hci_event(struct net_buf *buf)
@@ -1659,6 +1679,9 @@ static void hci_event(struct net_buf *buf)
 		break;
 	case BT_HCI_EVT_PIN_CODE_REQ:
 		pin_code_req(buf);
+		break;
+	case BT_HCI_EVT_LINK_KEY_NOTIFY:
+		link_key_notify(buf);
 		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
@@ -2104,6 +2127,7 @@ static int set_event_mask(void)
 	ev->events[0] |= 0x04; /* Connection Complete */
 	ev->events[0] |= 0x08; /* Connection Request */
 	ev->events[2] |= 0x20; /* Pin Code Request */
+	ev->events[2] |= 0x80; /* Link Key Notif */
 #endif
 	ev->events[1] |= 0x20; /* Command Complete */
 	ev->events[1] |= 0x40; /* Command Status */
