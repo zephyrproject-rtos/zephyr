@@ -92,6 +92,10 @@
  *  @brief GAP Characteristic Appearance
  */
 #define BT_UUID_GAP_APPEARANCE			BT_UUID_DECLARE_16(0x2a01)
+/** @def BT_UUID_GAP_PPCP
+ *  @brief GAP Characteristic Peripheral Preferred Connection Parameters
+ */
+#define BT_UUID_GAP_PPCP			BT_UUID_DECLARE_16(0x2a04)
 /** @def BT_UUID_BAS_BATTERY_LEVEL
  *  @brief BAS Characteristic Battery Level
  */
