@@ -78,7 +78,7 @@ SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
 	pushl %edx
 	pushl %ecx
 	movl $\isr, %eax
-	movl $\context, %edx
+	movl \context, %edx
 	call _execute_handler
 	pop %ecx
 	pop %edx
