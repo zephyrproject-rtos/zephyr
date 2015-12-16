@@ -281,7 +281,8 @@ int glcd_initialize(struct device *port)
 	 * First set up the device driver...
 	 * we need a pointer to the I2C device we are bound to
 	 */
-	dev->i2c = device_get_binding(CONFIG_I2C_DW_0_NAME);
+	dev->i2c = device_get_binding(
+			CONFIG_GROVE_LCD_RGB_I2C_MASTER_DEV_NAME);
 
 	if (!dev->i2c) {
 		return DEV_NOT_CONFIG;
