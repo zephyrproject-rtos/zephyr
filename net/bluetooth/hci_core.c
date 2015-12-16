@@ -1536,6 +1536,32 @@ static void conn_complete(struct net_buf *buf)
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 	bt_conn_unref(conn);
 }
+
+static void pin_code_req(struct net_buf *buf)
+{
+	struct bt_hci_evt_pin_code_req *evt = (void *)buf->data;
+	struct bt_conn *conn;
+
+	BT_DBG("");
+
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	if (bt_auth && bt_auth->pincode_entry) {
+		bool secure = false;
+
+		if (conn->required_sec_level == BT_SECURITY_HIGH) {
+			secure = true;
+		}
+
+		bt_auth->pincode_entry(conn, secure);
+	}
+
+	bt_conn_unref(conn);
+}
 #endif
 
 static void hci_event(struct net_buf *buf)
@@ -1553,6 +1579,9 @@ static void hci_event(struct net_buf *buf)
 		break;
 	case BT_HCI_EVT_CONN_COMPLETE:
 		conn_complete(buf);
+		break;
+	case BT_HCI_EVT_PIN_CODE_REQ:
+		pin_code_req(buf);
 		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
@@ -1997,6 +2026,7 @@ static int set_event_mask(void)
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	ev->events[0] |= 0x04; /* Connection Complete */
 	ev->events[0] |= 0x08; /* Connection Request */
+	ev->events[2] |= 0x20; /* Pin Code Request */
 #endif
 	ev->events[1] |= 0x20; /* Command Complete */
 	ev->events[1] |= 0x40; /* Command Status */
