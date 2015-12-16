@@ -1051,10 +1051,33 @@ static void auth_cancel(struct bt_conn *conn)
 	printk("Pairing cancelled: %s\n", addr);
 }
 
+static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
+{
+	char addr[BT_ADDR_STR_LEN];
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) < 0) {
+		return;
+	}
+
+	if (info.type != BT_CONN_TYPE_BR) {
+		return;
+	}
+
+	bt_addr_to_str(info.br.dst, addr, sizeof(addr));
+
+	if (highsec) {
+		printk("Enter 16 digits wide PIN code for %s\n", addr);
+	} else {
+		printk("Enter PIN code for %s\n", addr);
+	}
+}
+
 static struct bt_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
+	.pincode_entry = auth_pincode_entry,
 	.cancel = auth_cancel,
 };
 
@@ -1062,6 +1085,7 @@ static struct bt_auth_cb auth_cb_display_yes_no = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = auth_passkey_confirm,
+	.pincode_entry = auth_pincode_entry,
 	.cancel = auth_cancel,
 };
 
@@ -1069,6 +1093,7 @@ static struct bt_auth_cb auth_cb_input = {
 	.passkey_display = NULL,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = NULL,
+	.pincode_entry = auth_pincode_entry,
 	.cancel = auth_cancel,
 };
 
@@ -1076,14 +1101,15 @@ static struct bt_auth_cb auth_cb_all = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = auth_passkey_confirm,
+	.pincode_entry = auth_pincode_entry,
 	.cancel = auth_cancel,
 };
 
 static void cmd_auth(int argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("auth [display, yesno, input, all, none] parameter "
-		       "required\n");
+		printk("auth [display, yesno, input, all, none] "
+		       "parameter required\n");
 		return;
 	}
 
@@ -1098,8 +1124,8 @@ static void cmd_auth(int argc, char *argv[])
 	} else if (!strcmp(argv[1], "none")) {
 		bt_auth_cb_register(NULL);
 	} else {
-		printk("auth [display, yesno, input, all, none] parameter "
-		       "required\n");
+		printk("auth [display, yesno, input, all, none] "
+		       "parameter required\n");
 	}
 }
 
@@ -1154,6 +1180,31 @@ static void cmd_auth_passkey(int argc, char *argv[])
 
 	bt_auth_passkey_entry(default_conn, passkey);
 }
+
+static void cmd_auth_pincode(int argc, char *argv[])
+{
+	uint8_t max = 16;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
+	if (argc < 2) {
+		printk("PIN code required\n");
+		return;
+	}
+
+	if (strlen(argv[1]) > max) {
+		printk("PIN code value invalid - enter max %u digits\n", max);
+		return;
+	}
+
+	printk("PIN code \"%s\" applied\n", argv[1]);
+
+	bt_auth_pincode_entry(default_conn, argv[1], strlen(argv[1]));
+}
+
 
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
@@ -1360,6 +1411,7 @@ struct shell_cmd commands[] = {
 	{ "auth-cancel", cmd_auth_cancel },
 	{ "auth-passkey", cmd_auth_passkey },
 	{ "auth-confirm", cmd_auth_passkey_confirm },
+	{ "auth-pincode", cmd_auth_pincode },
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu },
 	{ "gatt-discover-primary", cmd_gatt_discover },
 	{ "gatt-discover-secondary", cmd_gatt_discover },
