@@ -516,8 +516,6 @@ void bt_uart_isr(void *unused)
 				remaining--;
 			}
 
-			BT_DBG("Read SLIP header");
-
 			if (!remaining) {
 				remaining = H5_HDR_LEN(hdr);
 				type = H5_HDR_PKT_TYPE(hdr);
@@ -590,6 +588,19 @@ void bt_uart_isr(void *unused)
 			}
 
 			BT_DBG("Received full packet: type %u", type);
+
+			/* Check when full packet is received, it can be done
+			 * when parsing packet header but we need to receive
+			 * full packet anyway to clear UART.
+			 */
+			if (H5_HDR_RELIABLE(hdr) &&
+			    H5_HDR_SEQ(hdr) != h5.tx_ack) {
+				BT_ERR("Seq expected %u got %u. Drop packet",
+				       h5.tx_ack, H5_HDR_SEQ(hdr));
+
+				/* TODO: Reset rx */
+				break;
+			}
 
 			h5_process_complete_packet(buf, type, hdr);
 			break;
