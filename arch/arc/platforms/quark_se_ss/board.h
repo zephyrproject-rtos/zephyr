@@ -133,6 +133,7 @@
 #define UART_REG_ADDR_INTERVAL 4 /* for ns16550 driver */
 
 #define INT_ENABLE_ARC					~(0x00000001 << 8)
+#define INT_ENABLE_ARC_BIT_POS				(8)
 
 #if defined(CONFIG_I2C)
 
@@ -159,6 +160,11 @@
 #endif
 
 #endif /* CONFIG_I2C */
+
+#if defined(CONFIG_GPIO_DW)
+#define GPIO_SS_0_INT_MASK				0x408
+#define GPIO_SS_1_INT_MASK				0x40C
+#endif /* CONFIG_GPIO_DW */
 
 #endif /* !_ASMLANGUAGE */
 

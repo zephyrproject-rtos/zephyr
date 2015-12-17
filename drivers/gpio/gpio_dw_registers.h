@@ -28,6 +28,9 @@
 #define PORTA_EOI      0x09
 #define EXT_PORTA      0x0A
 #define INT_CLOCK_SYNC 0x0B
+
+#define CLK_ENA_POS	(31)
+
 #else
 #define SWPORTA_DR     0x00
 #define SWPORTA_DDR    0x04

@@ -55,3 +55,28 @@ SYS_DEFINE_DEVICE(ipm_console, NULL, SECONDARY, CONFIG_IPM_CONSOLE_PRIORITY);
 
 #endif /* CONFIG_IPM_CONSOLE_SENDER */
 #endif /* CONFIG_IPM_QUARK_SE */
+
+#ifdef CONFIG_GPIO_DW
+
+static int gpio_dw_ss_init(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#ifdef CONFIG_GPIO_DW_0
+	sys_clear_bit((SCSS_REGISTER_BASE + GPIO_SS_0_INT_MASK),
+		      INT_ENABLE_ARC_BIT_POS);
+#endif /* CONFIG_GPIO_DW_0 */
+
+#ifdef CONFIG_GPIO_DW_1
+	sys_clear_bit((SCSS_REGISTER_BASE + GPIO_SS_1_INT_MASK),
+		      INT_ENABLE_ARC_BIT_POS);
+#endif /* CONFIG_GPIO_DW_1 */
+
+	return DEV_OK;
+}
+
+DECLARE_DEVICE_INIT_CONFIG(gpio_dw_ss_init, "", gpio_dw_ss_init, NULL);
+SYS_DEFINE_DEVICE(gpio_dw_ss_init, NULL, PRIMARY,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#endif /* CONFIG_GPIO_DW */
