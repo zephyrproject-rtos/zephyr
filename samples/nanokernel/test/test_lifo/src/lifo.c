@@ -23,9 +23,8 @@
  * routines:
  *
  * nano_isr_lifo_get, nano_isr_lifo_put
- * nano_fiber_lifo_get, nano_fiber_lifo_get_wait, nano_fiber_lifo_put
- * nano_task_lifo_get, nano_task_lifo_get_wait, nano_task_lifo_put
- * nano_fiber_lifo_take_wait_timeout, nano_task_lifo_take_wait_timeout
+ * nano_fiber_lifo_get, nano_fiber_lifo_put
+ * nano_task_lifo_get, nano_task_lifo_put
  *
  * Scenario #1
  * Getting (and waiting for an object) from an empty LIFO.  Both fibers and
@@ -134,7 +133,7 @@ void isr_lifo_get(void *data)
 {
 	ISR_LIFO_INFO *pInfo = (ISR_LIFO_INFO *) data;
 
-	pInfo->data = nano_isr_lifo_get(pInfo->lifo_ptr);
+	pInfo->data = nano_isr_lifo_get(pInfo->lifo_ptr, TICKS_NONE);
 }
 
 static void _trigger_nano_isr_lifo_get(void)
@@ -165,14 +164,14 @@ int fiberLifoWaitTest(void)
 
 	TC_PRINT("Fiber waiting on an empty LIFO\n");
 	nano_fiber_sem_give(&taskWaitSem);
-	data = nano_fiber_lifo_get_wait(&test_lifo);
+	data = nano_fiber_lifo_get(&test_lifo, TICKS_UNLIMITED);
 	if (data != &lifoItem[0]) {
 		fiberDetectedFailure = 1;
 		return -1;
 	}
 
 	nano_fiber_sem_take(&fiberWaitSem, TICKS_UNLIMITED);
-	data = nano_fiber_lifo_get_wait(&test_lifo);
+	data = nano_fiber_lifo_get(&test_lifo, TICKS_UNLIMITED);
 	if (data != &lifoItem[2]) {
 		fiberDetectedFailure = 1;
 		return -1;
@@ -220,18 +219,18 @@ int fiberLifoNonWaitTest(void)
 
 	/* The LIFO has two items in it; retrieve them both */
 
-	data = nano_fiber_lifo_get(&test_lifo);
+	data = nano_fiber_lifo_get(&test_lifo, TICKS_NONE);
 	if (data != (void *) &lifoItem[3]) {
 		goto errorReturn;
 	}
 
-	data = nano_fiber_lifo_get(&test_lifo);
+	data = nano_fiber_lifo_get(&test_lifo, TICKS_NONE);
 	if (data != (void *) &lifoItem[2]) {
 		goto errorReturn;
 	}
 
 	/* LIFO should be empty--verify. */
-	data = nano_fiber_lifo_get(&test_lifo);
+	data = nano_fiber_lifo_get(&test_lifo, TICKS_NONE);
 	if (data != NULL) {
 		goto errorReturn;
 	}
@@ -334,7 +333,8 @@ int taskLifoWaitTest(void)
 	/*
 	 * The fiber ran, but is now blocked on the semaphore.  Add an item to the
 	 * LIFO before giving the semaphore that wakes the fiber so that we can
-	 * cover the path of nano_fiber_lifo_get_wait() not waiting on the LIFO.
+	 * cover the path of nano_fiber_lifo_get(TICKS_UNLIMITED) not waiting on
+	 * the LIFO.
 	 */
 
 	nano_task_lifo_put(&test_lifo, &lifoItem[2]);
@@ -343,22 +343,22 @@ int taskLifoWaitTest(void)
 	/* Check that the fiber got the correct item (lifoItem[0]) */
 
 	if (fiberDetectedFailure) {
-		TC_ERROR(" *** nano_task_lifo_put()/nano_fiber_lifo_get_wait() failure\n");
+		TC_ERROR(" *** nano_task_lifo_put()/nano_fiber_lifo_get() failure\n");
 		return TC_FAIL;
 	}
 
 	/* The LIFO is empty.  This time the task will wait for the item. */
 
 	TC_PRINT("Task waiting on an empty LIFO\n");
-	data = nano_task_lifo_get_wait(&test_lifo);
+	data = nano_task_lifo_get(&test_lifo, TICKS_UNLIMITED);
 	if (data != (void *) &lifoItem[1]) {
-		TC_ERROR(" *** nano_task_lifo_get_wait()/nano_fiber_lifo_put() failure\n");
+		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
 	}
 
-	data = nano_task_lifo_get_wait(&test_lifo);
+	data = nano_task_lifo_get(&test_lifo, TICKS_UNLIMITED);
 	if (data != (void *) &lifoItem[3]) {
-		TC_ERROR(" *** nano_task_lifo_get_wait()/nano_fiber_lifo_put() failure\n");
+		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
 	}
 
@@ -401,19 +401,19 @@ int taskLifoNonWaitTest(void)
 	/* Wait for the fiber to be ready */
 	nano_task_sem_take(&taskWaitSem, TICKS_UNLIMITED);
 
-	data = nano_task_lifo_get(&test_lifo);
+	data = nano_task_lifo_get(&test_lifo, TICKS_NONE);
 	if (data != (void *) &lifoItem[1]) {
 		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
 	}
 
-	data = nano_task_lifo_get(&test_lifo);
+	data = nano_task_lifo_get(&test_lifo, TICKS_NONE);
 	if (data != (void *) &lifoItem[0]) {
 		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
 	}
 
-	data = nano_task_lifo_get(&test_lifo);
+	data = nano_task_lifo_get(&test_lifo, TICKS_NONE);
 	if (data != NULL) {
 		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
@@ -497,7 +497,7 @@ static void fiber_multi_waiters(int arg1, int arg2)
 	void *item;
 
 	TC_PRINT("multiple-waiter fiber %d receiving item...\n", arg1);
-	item = nano_fiber_lifo_get_wait(&multi_waiters);
+	item = nano_fiber_lifo_get(&multi_waiters, TICKS_UNLIMITED);
 	if (item != &multi_waiters_items[arg1]) {
 		TC_ERROR(" *** fiber %d did not receive correct item\n", arg1);
 		TC_ERROR(" *** received %p instead of %p.\n",
@@ -544,7 +544,7 @@ static int do_test_multiple_waiters(void)
 	TC_PRINT("Task took multi-waiter reply semaphore %d times, as expected.\n",
 			 NUM_WAITERS);
 
-	if (nano_task_lifo_get(&multi_waiters)) {
+	if (nano_task_lifo_get(&multi_waiters, TICKS_NONE)) {
 		TC_ERROR(" *** multi_waiters should have been empty.\n");
 		return TC_FAIL;
 	}
@@ -678,7 +678,7 @@ static void test_fiber_pend_and_timeout(int data, int unused)
 
 	ARG_UNUSED(unused);
 
-	packet = nano_fiber_lifo_get_wait_timeout(d->lifo, d->timeout);
+	packet = nano_fiber_lifo_get(d->lifo, d->timeout);
 	if (packet) {
 		TC_ERROR(" *** timeout of %d did not time out.\n",
 					d->timeout);
@@ -729,7 +729,7 @@ static void test_fiber_pend_and_get_data(int data, int unused)
 
 	ARG_UNUSED(unused);
 
-	packet = nano_fiber_lifo_get_wait_timeout(d->lifo, d->timeout);
+	packet = nano_fiber_lifo_get(d->lifo, d->timeout);
 	if (!packet) {
 		TC_PRINT(" *** fiber (q order: %d, t/o: %d, lifo %p) timed out!\n",
 						d->q_order, d->timeout, d->lifo);
@@ -793,7 +793,7 @@ static void test_fiber_ticks_special_values(int packet, int special_value)
 	struct reply_packet *reply_packet = (void *)packet;
 
 	reply_packet->reply =
-		!!nano_fiber_lifo_get_wait_timeout(&lifo_timeout[0], special_value);
+		!!nano_fiber_lifo_get(&lifo_timeout[0], special_value);
 
 	nano_fiber_fifo_put(&timeout_order_fifo, reply_packet);
 }
@@ -820,10 +820,10 @@ static int test_timeout(void)
 							&scratch_q_packets[ii]);
 	}
 
-	/* test nano_task_lifo_get_wait_timeout() with timeout */
+	/* test nano_task_lifo_get() with timeout */
 	timeout = 10;
 	orig_ticks = sys_tick_get();
-	packet = nano_task_lifo_get_wait_timeout(&lifo_timeout[0], timeout);
+	packet = nano_task_lifo_get(&lifo_timeout[0], timeout);
 	if (packet) {
 		TC_ERROR(" *** timeout of %d did not time out.\n", timeout);
 		return TC_FAIL;
@@ -834,22 +834,22 @@ static int test_timeout(void)
 		return TC_FAIL;
 	}
 
-	/* test nano_task_lifo_get_wait_timeout with timeout of 0 */
+	/* test nano_task_lifo_get() with timeout of 0 */
 
-	packet = nano_task_lifo_get_wait_timeout(&lifo_timeout[0], 0);
+	packet = nano_task_lifo_get(&lifo_timeout[0], 0);
 	if (packet) {
 		TC_ERROR(" *** timeout of 0 did not time out.\n");
 		return TC_FAIL;
 	}
 
-	/* test nano_task_lifo_get_wait_timeout with timeout > 0 */
+	/* test nano_task_lifo_get() with timeout > 0 */
 
-	TC_PRINT("test nano_task_lifo_get_wait_timeout with timeout > 0\n");
+	TC_PRINT("test nano_task_lifo_get() with timeout > 0\n");
 
 	timeout = 3;
 	orig_ticks = sys_tick_get();
 
-	packet = nano_task_lifo_get_wait_timeout(&lifo_timeout[0], timeout);
+	packet = nano_task_lifo_get(&lifo_timeout[0], timeout);
 
 	if (packet) {
 		TC_ERROR(" *** timeout of %d did not time out.\n",
@@ -861,10 +861,10 @@ static int test_timeout(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("nano_task_lifo_get_wait_timeout timed out as expected\n");
+	TC_PRINT("nano_task_lifo_get() timed out as expected\n");
 
 	/*
-	 * test nano_task_lifo_get_wait_timeout with a timeout and fiber that puts
+	 * test nano_task_lifo_get() with a timeout and fiber that puts
 	 * data on the lifo on time
 	 */
 
@@ -876,7 +876,7 @@ static int test_timeout(void)
 						timeout,
 						FIBER_PRIORITY, 0);
 
-	packet = nano_task_lifo_get_wait_timeout(&lifo_timeout[0],
+	packet = nano_task_lifo_get(&lifo_timeout[0],
 												(int)(timeout + 5));
 	if (!packet) {
 		TC_ERROR(" *** data put in time did not return valid pointer.\n");
@@ -889,14 +889,14 @@ static int test_timeout(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("nano_task_lifo_get_wait_timeout got lifo in time, as expected\n");
+	TC_PRINT("nano_task_lifo_get() got lifo in time, as expected\n");
 
 	/*
-	 * test nano_task_lifo_get_wait_timeout with TICKS_NONE and no data
+	 * test nano_task_lifo_get() with TICKS_NONE and no data
 	 * unavailable.
 	 */
 
-	if (nano_task_lifo_get_wait_timeout(&lifo_timeout[0], TICKS_NONE)) {
+	if (nano_task_lifo_get(&lifo_timeout[0], TICKS_NONE)) {
 		TC_ERROR("task with TICKS_NONE got data, but shouldn't have\n");
 		return TC_FAIL;
 	}
@@ -904,13 +904,13 @@ static int test_timeout(void)
 	TC_PRINT("task with TICKS_NONE did not get data, as expected\n");
 
 	/*
-	 * test nano_task_lifo_get_wait_timeout with TICKS_NONE and some data
+	 * test nano_task_lifo_get() with TICKS_NONE and some data
 	 * available.
 	 */
 
 	scratch_packet = get_scratch_packet();
 	nano_task_lifo_put(&lifo_timeout[0], scratch_packet);
-	if (!nano_task_lifo_get_wait_timeout(&lifo_timeout[0], TICKS_NONE)) {
+	if (!nano_task_lifo_get(&lifo_timeout[0], TICKS_NONE)) {
 		TC_ERROR("task with TICKS_NONE did not get available data\n");
 		return TC_FAIL;
 	}
@@ -919,7 +919,7 @@ static int test_timeout(void)
 	TC_PRINT("task with TICKS_NONE got available data, as expected\n");
 
 	/*
-	 * test nano_task_lifo_get_wait_timeout with TICKS_UNLIMITED and the
+	 * test nano_task_lifo_get() with TICKS_UNLIMITED and the
 	 * data available.
 	 */
 
@@ -928,7 +928,7 @@ static int test_timeout(void)
 
 	scratch_packet = get_scratch_packet();
 	nano_task_lifo_put(&lifo_timeout[0], scratch_packet);
-	if (!nano_task_lifo_get_wait_timeout(&lifo_timeout[0], TICKS_UNLIMITED)) {
+	if (!nano_task_lifo_get(&lifo_timeout[0], TICKS_UNLIMITED)) {
 		TC_ERROR(" *** This will never be hit!!! .\n");
 		return TC_FAIL;
 	}

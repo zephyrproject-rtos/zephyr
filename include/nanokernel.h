@@ -566,47 +566,23 @@ extern void nano_lifo_put(struct nano_lifo *lifo, void *data);
 /**
  * @brief Get the first element from a LIFO
  *
- * This is a convenience wrapper for the execution context-specific APIs. This
- * is helpful whenever the exact execution context is not known, but should be
- * avoided when the context is known up-front (to avoid unnecessary overhead).
+ * This is a convenience wrapper for the execution of context specific APIs.
+ * It is helpful whenever the exact execution context is not known. Its use
+ * should be avoided whenever the context is known up-front (to avoid
+ * unnecessary overhead).
  *
  * @param lifo LIFO on which to receive
+ * @param timeout_in_ticks Affects the action taken should the LIFO be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necesssary. Otherwise wait up to the specified number of ticks
+ * before timing out.
+ *
+ * @warning If it is to be called from the context of an ISR, then @a
+ * timeout_in_ticks must be set to TICKS_NONE.
  *
  * @return Pointer to first element in the list if available, otherwise NULL
  */
-extern void *nano_lifo_get(struct nano_lifo *lifo);
-
-/**
- * @brief Get the first element from a LIFO, poll/pend if empty
- *
- * This is a convenience wrapper for the execution context-specific APIs. This
- * is helpful whenever the exact execution context is not known, but should be
- * avoided when the context is known up-front (to avoid unnecessary overhead).
- *
- * @warning It's only valid to call this API from a fiber or a task.
- *
- * @param lifo LIFO on which to receive
- *
- * @return Pointer to first element in the list
- */
-extern void *nano_lifo_get_wait(struct nano_lifo *lifo);
-
-/**
- * @brief Get the first element from a LIFO, poll/pend with a timeout if empty
- *
- * This is a convenience wrapper for the execution context-specific APIs. This
- * is helpful whenever the exact execution context is not known, but should be
- * avoided when the context is known up-front (to avoid unnecessary overhead).
- *
- * @warning It's only valid to call this API from a fiber or a task.
- *
- * @param lifo LIFO on which to receive
- * @param timeout Timeout in ticks
- *
- * @return Pointer to first element in the list
- */
-extern void *nano_lifo_get_wait_timeout(struct nano_lifo *lifo,
-		int32_t timeout);
+extern void *nano_lifo_get(struct nano_lifo *lifo, int32_t timeout_in_ticks);
 
 /* methods for ISRs */
 
@@ -635,10 +611,12 @@ extern void nano_isr_lifo_put(struct nano_lifo *lifo, void *data);
  * a pointer to the next element in the linked list.
  *
  * @param lifo LIFO from which to receive.
+ * @param timeout_in_ticks Always use TICKS_NONE.
  *
  * @return Pointer to first element in the list if available, otherwise NULL
  */
-extern void *nano_isr_lifo_get(struct nano_lifo *lifo);
+extern void *nano_isr_lifo_get(struct nano_lifo *lifo,
+		int32_t timeout_in_ticks);
 
 /* methods for fibers */
 
@@ -667,52 +645,15 @@ extern void nano_fiber_lifo_put(struct nano_lifo *lifo, void *data);
  * a pointer to the next element in the linked list.
  *
  * @param lifo LIFO from which to receive
+ * @param timeout_in_ticks Affects the action taken should the fifo be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. Otherwise wait up to the specified number of ticks
+ * before timing out.
  *
  * @return Pointer to first element in the list if available, otherwise NULL
  */
-extern void *nano_fiber_lifo_get(struct nano_lifo *lifo);
-
-/**
- * @brief Get the first element from a LIFO, wait if empty.
- *
- * Remove the first element from the specified system-level linked list LIFO;
- * it can only be called from a fiber.
- *
- * If no elements are available, the calling fiber will pend until an element
- * is put onto the list.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @param lifo LIFO from which to receive.
- *
- * @return Pointer to first element in the list
- */
-extern void *nano_fiber_lifo_get_wait(struct nano_lifo *lifo);
-
-#ifdef CONFIG_NANO_TIMEOUTS
-
-/**
- * @brief get the first element from a LIFO, wait with a timeout if empty
- *
- * Remove the first element from the specified system-level linked list lifo;
- * it can only be called from a fiber.
- *
- * If no elements are available, the calling fiber will pend until an element
- * is put onto the list, or the timeout expires, whichever comes first.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @param lifo LIFO on which to operate.
- * @param timeout_in_ticks Time to wait in ticks.
- *
- * @return Pointer to first element in the list, NULL if timed out.
- */
-extern void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *lifo,
+extern void *nano_fiber_lifo_get(struct nano_lifo *lifo,
 		int32_t timeout_in_ticks);
-
-#endif
 
 /* methods for tasks */
 
@@ -743,54 +684,15 @@ extern void nano_task_lifo_put(struct nano_lifo *lifo, void *data);
  * a pointer to the next element in the linked list.
  *
  * @param lifo LIFO from which to receive.
+ * @param timeout_in_ticks Affects the action taken should the fifo be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. Otherwise wait up to the specified number of ticks
+ * before timing out.
  *
  * @return Pointer to first element in the list if available, otherwise NULL.
  */
-extern void *nano_task_lifo_get(struct nano_lifo *lifo);
-
-/**
- * @brief Get the first element from a LIFO, poll if empty.
- *
- * Remove the first element from the specified nanokernel linked list LIFO; it
- * can only be called from a task.
- *
- * If no elements are available, the calling task will poll until an element is
- * put onto the list.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @param lifo LIFO from which to receive.
- *
- * @sa nano_task_stack_pop_wait()
- *
- * @return Pointer to first element in the list
- */
-extern void *nano_task_lifo_get_wait(struct nano_lifo *lifo);
-
-#ifdef CONFIG_NANO_TIMEOUTS
-
-/**
- * @brief get the first element from a lifo, poll if empty.
- *
- * Remove the first element from the specified nanokernel linked list lifo; it
- * can only be called from a task.
- *
- * If no elements are available, the calling task will poll until an element is
- * put onto the list, or the timeout expires, whichever comes first.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @param lifo LIFO on which to operate
- * @param timeout_in_ticks time to wait in ticks
- *
- * @return Pointer to first element in the list, NULL if timed out.
- */
-extern void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
+extern void *nano_task_lifo_get(struct nano_lifo *lifo,
 		int32_t timeout_in_ticks);
-
-#endif
 
 /**
  * @}

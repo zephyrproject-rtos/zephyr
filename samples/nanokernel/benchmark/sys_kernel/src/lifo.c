@@ -55,13 +55,13 @@ void lifo_fiber1(int par1, int par2)
 	ARG_UNUSED(par1);
 
 	for (i = 0; i < par2 / 2; i++) {
-		pelement = (int *) nano_fiber_lifo_get_wait(&nanoLifo1);
+		pelement = (int *) nano_fiber_lifo_get(&nanoLifo1, TICKS_UNLIMITED);
 		if (pelement[1] != 2 * i) {
 			break;
 		}
 		element_a[1] = 2 * i;
 		nano_fiber_lifo_put(&nanoLifo2, element_a);
-		pelement = (int *) nano_fiber_lifo_get_wait(&nanoLifo1);
+		pelement = (int *) nano_fiber_lifo_get(&nanoLifo1, TICKS_UNLIMITED);
 		if (pelement[1] != 2 * i + 1) {
 			break;
 		}
@@ -92,7 +92,7 @@ void lifo_fiber2(int par1, int par2)
 	for (i = 0; i < par2; i++) {
 		element[1] = i;
 		nano_fiber_lifo_put(&nanoLifo1, element);
-		pelement = (int *) nano_fiber_lifo_get_wait(&nanoLifo2);
+		pelement = (int *) nano_fiber_lifo_get(&nanoLifo2, TICKS_UNLIMITED);
 		if (pelement[1] != i) {
 			break;
 		}
@@ -121,7 +121,8 @@ void lifo_fiber3(int par1, int par2)
 	for (i = 0; i < par2; i++) {
 		element[1] = i;
 		nano_fiber_lifo_put(&nanoLifo1, element);
-		while (NULL == (pelement = (int *) nano_fiber_lifo_get(&nanoLifo2))) {
+		while ((pelement = nano_fiber_lifo_get(&nanoLifo2,
+							TICKS_NONE)) == NULL) {
 			fiber_yield();
 		}
 		if (pelement[1] != i) {
@@ -154,7 +155,7 @@ int lifo_test(void)
 			"LIFO #1");
 	fprintf(output_file, sz_description,
 			"\n\tnano_lifo_init"
-			"\n\tnano_fiber_lifo_get_wait"
+			"\n\tnano_fiber_lifo_get(TICKS_UNLIMITED)"
 			"\n\tnano_fiber_lifo_put");
 	printf(sz_test_start_fmt);
 
@@ -181,8 +182,8 @@ int lifo_test(void)
 			"LIFO #2");
 	fprintf(output_file, sz_description,
 			"\n\tnano_lifo_init"
-			"\n\tnano_fiber_lifo_get_wait"
-			"\n\tnano_fiber_lifo_get"
+			"\n\tnano_fiber_lifo_get(TICKS_UNLIMITED)"
+			"\n\tnano_fiber_lifo_get(TICKS_NONE)"
 			"\n\tnano_fiber_lifo_put"
 			"\n\tfiber_yield");
 	printf(sz_test_start_fmt);
@@ -211,9 +212,9 @@ int lifo_test(void)
 			"LIFO #3");
 	fprintf(output_file, sz_description,
 			"\n\tnano_lifo_init"
-			"\n\tnano_fiber_lifo_get_wait"
+			"\n\tnano_fiber_lifo_get(TICKS_UNLIMITED)"
 			"\n\tnano_fiber_lifo_put"
-			"\n\tnano_task_lifo_get_wait"
+			"\n\tnano_task_lifo_get(TICKS_UNLIMITED)"
 			"\n\tnano_task_lifo_put");
 	printf(sz_test_start_fmt);
 
@@ -231,11 +232,11 @@ int lifo_test(void)
 		element[1] = 2 * i + 1;
 		nano_task_lifo_put(&nanoLifo1, element);
 
-		pelement = (int *) nano_task_lifo_get_wait(&nanoLifo2);
+		pelement = (int *) nano_task_lifo_get(&nanoLifo2, TICKS_UNLIMITED);
 		if (pelement[1] != 2 * i + 1) {
 			break;
 		}
-		pelement = (int *) nano_task_lifo_get_wait(&nanoLifo2);
+		pelement = (int *) nano_task_lifo_get(&nanoLifo2, TICKS_UNLIMITED);
 		if (pelement[1] != 2 * i) {
 			break;
 		}

@@ -53,9 +53,9 @@ multiple-waiter fiber 2 receiving item...
 multiple-waiter fiber 1 got correct item, giving semaphore
 multiple-waiter fiber 2 got correct item, giving semaphore
 Task took multi-waiter reply semaphore 3 times, as expected.
-test nano_task_lifo_get_wait_timeout with timeout > 0
-nano_task_lifo_get_wait_timeout timed out as expected
-nano_task_lifo_get_wait_timeout got lifo in time, as expected
+test nano_task_lifo_get() with timeout > 0
+nano_task_lifo_get() timed out as expected
+nano_task_lifo_get() got lifo in time, as expected
 testing timeouts of 5 fibers on same lifo
  got fiber (q order: 2, t/o: 10, lifo 20005ff0) as expected
  got fiber (q order: 3, t/o: 15, lifo 20005ff0) as expected

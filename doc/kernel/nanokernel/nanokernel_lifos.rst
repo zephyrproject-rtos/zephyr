@@ -115,7 +115,7 @@ which are then processed in some manner.
        ARG_UNUSED(unused2);
 
        while (1) {
-           rx_data = nano_fiber_lifo_get_wait(&signal_lifo);
+           rx_data = nano_fiber_lifo_get(&signal_lifo, TICKS_UNLIMITED);
            /* process LIFO data */
            ...
        }
@@ -135,14 +135,5 @@ The following APIs for a nanokernel LIFO are provided by :file:`nanokernel.h`:
 
 :cpp:func:`nano_task_lifo_get()`, :cpp:func:`nano_fiber_lifo_get()`,
 :cpp:func:`nano_isr_lifo_get()`, :cpp:func:`nano_lifo_get()`
-   Remove an item from a LIFO, or fails and continues if it is empty.
-
-:cpp:func:`nano_task_lifo_get_wait()`, :cpp:func:`nano_fiber_lifo_get_wait()`,
-:cpp:func:`nano_lifo_get_wait()`
-   Remove an item from a LIFO, or waits for an item if it is empty.
-
-:cpp:func:`nano_task_lifo_get_wait_timeout()`,
-:cpp:func:`nano_fiber_lifo_get_wait_timeout()`,
-:cpp:func:`nano_lifo_get_wait_timeout()`
    Remove an item from a LIFO, or waits for an item for a specified time
    period if it is empty.

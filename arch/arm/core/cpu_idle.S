@@ -139,7 +139,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  * @brief Atomically re-enable interrupts and enter low power mode
  *
  * This function is utilized by the nanokernel object "wait" APIs for tasks,
- * e.g. nano_task_lifo_get_wait(), nano_task_sem_take(),
+ * e.g. nano_task_lifo_get(), nano_task_sem_take(),
  * nano_task_stack_pop_wait(), and nano_task_fifo_get().
  *
  * INTERNAL
@@ -147,7 +147,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  * 1) The enablement of interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
  *    enabled before the processor enters a low-power mode.  See the comments
- *    in nano_task_lifo_get_wait(), for example, of the race condition that occurs
+ *    in nano_task_lifo_get(), for example, of the race condition that occurs
  *    if this requirement is not met.
  *
  * 2) After waking up from the low-power mode, the interrupt lockout state

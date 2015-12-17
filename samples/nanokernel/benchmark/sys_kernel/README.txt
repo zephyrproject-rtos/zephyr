@@ -73,7 +73,7 @@ END TEST CASE
 TEST CASE: LIFO #1
 TEST COVERAGE: 
 	nano_lifo_init
-	nano_fiber_lifo_get_wait
+	nano_fiber_lifo_get(TICKS_UNLIMITED)
 	nano_fiber_lifo_put
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL
@@ -83,8 +83,8 @@ END TEST CASE
 TEST CASE: LIFO #2
 TEST COVERAGE: 
 	nano_lifo_init
-	nano_fiber_lifo_get_wait
-	nano_fiber_lifo_get
+	nano_fiber_lifo_get(TICKS_UNLIMITED)
+	nano_fiber_lifo_get(TICKS_NONE)
 	nano_fiber_lifo_put
 	fiber_yield
 Starting test. Please wait...
@@ -95,9 +95,9 @@ END TEST CASE
 TEST CASE: LIFO #3
 TEST COVERAGE: 
 	nano_lifo_init
-	nano_fiber_lifo_get_wait
+	nano_fiber_lifo_get(TICKS_UNLIMITED)
 	nano_fiber_lifo_put
-	nano_task_lifo_get_wait
+	nano_task_lifo_get(TICKS_UNLIMITED)
 	nano_task_lifo_put
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL

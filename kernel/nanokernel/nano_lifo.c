@@ -24,7 +24,7 @@
  *    nano_lifo_init
  *    nano_fiber_lifo_put, nano_task_lifo_put, nano_isr_lifo_put
  *    nano_fiber_lifo_get, nano_task_lifo_get, nano_isr_lifo_get
- *    nano_fiber_lifo_get_wait, nano_task_lifo_get_wait
+ *    nano_lifo_get
  */
 
 /** INTERNAL
@@ -112,99 +112,78 @@ void nano_lifo_put(struct nano_lifo *lifo, void *data)
 
 FUNC_ALIAS(_lifo_get, nano_isr_lifo_get, void *);
 FUNC_ALIAS(_lifo_get, nano_fiber_lifo_get, void *);
-FUNC_ALIAS(_lifo_get, nano_task_lifo_get, void *);
-FUNC_ALIAS(_lifo_get, nano_lifo_get, void *);
 
-/** INTERNAL
- *
- * This function is capable of supporting invocations from fiber, task, and ISR
- * contexts.  However, the nano_isr_lifo_get, nano_task_lifo_get, and
- * nano_fiber_lifo_get aliases are created to support any required
- * implementation differences in the future without introducing a source code
- * migration issue.
- */
-void *_lifo_get(struct nano_lifo *lifo)
+void *_lifo_get(struct nano_lifo *lifo, int32_t timeout_in_ticks)
 {
-	void *data;
+	void *data = NULL;
 	unsigned int imask;
 
 	imask = irq_lock();
 
-	data = lifo->list;
-	if (data) {
+	if (likely(lifo->list != NULL)) {
+		data = lifo->list;
 		lifo->list = *(void **) data;
+	} else if (timeout_in_ticks != TICKS_NONE) {
+		_NANO_TIMEOUT_ADD(&lifo->wait_q, timeout_in_ticks);
+		_nano_wait_q_put(&lifo->wait_q);
+		data = (void *) _Swap(imask);
+		return data;
 	}
 
 	irq_unlock(imask);
-
 	return data;
 }
 
-/** INTERNAL
- *
- * There exists a separate nano_task_lifo_get_wait() implementation since a
- * task cannot pend on a nanokernel object.  Instead, tasks will poll
- * the lifo object.
- */
-void *nano_fiber_lifo_get_wait(struct nano_lifo *lifo)
+void *nano_task_lifo_get(struct nano_lifo *lifo, int32_t timeout_in_ticks)
 {
-	void *data;
+	int64_t cur_ticks;
+	int64_t limit = 0x7fffffffffffffffll;
 	unsigned int imask;
 
 	imask = irq_lock();
-
-	if (!lifo->list) {
-		_nano_wait_q_put(&lifo->wait_q);
-		data = (void *) _Swap(imask);
-	} else {
-		data = lifo->list;
-		lifo->list = *(void **) data;
-		irq_unlock(imask);
+	cur_ticks = _NANO_TIMEOUT_TICK_GET();
+	if (timeout_in_ticks != TICKS_UNLIMITED) {
+		limit = cur_ticks + timeout_in_ticks;
 	}
 
-	return data;
-}
-
-void *nano_task_lifo_get_wait(struct nano_lifo *lifo)
-{
-	void *data;
-	unsigned int imask;
-
-	/* spin until data is put onto the LIFO */
-
-	while (1) {
-		imask = irq_lock();
-
+	do {
 		/*
 		 * Predict that the branch will be taken to break out of the loop.
 		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
-		if (likely(lifo->list))
-			break;
+		if (likely(lifo->list != NULL)) {
+			void *data = lifo->list;
 
-		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
+			lifo->list = *(void **) data;
+			irq_unlock(imask);
 
-		nano_cpu_atomic_idle(imask);
-	}
+			return data;
+		}
 
-	data = lifo->list;
-	lifo->list = *(void **) data;
+		if (timeout_in_ticks != TICKS_NONE) {
+			/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
+
+			nano_cpu_atomic_idle(imask);
+			imask = irq_lock();
+			cur_ticks = _NANO_TIMEOUT_TICK_GET();
+		}
+	} while (cur_ticks < limit);
 
 	irq_unlock(imask);
 
-	return data;
+	return NULL;
 }
 
-void *nano_lifo_get_wait(struct nano_lifo *lifo)
+void *nano_lifo_get(struct nano_lifo *lifo, int32_t timeout)
 {
-	static void *(*func[3])(struct nano_lifo *) = {
-		NULL,
-		nano_fiber_lifo_get_wait,
-		nano_task_lifo_get_wait
+	static void *(*func[3])(struct nano_lifo *, int32_t) = {
+		nano_isr_lifo_get,
+		nano_fiber_lifo_get,
+		nano_task_lifo_get
 	};
 
-	return func[sys_execution_context_type_get()](lifo);
+	return func[sys_execution_context_type_get()](lifo, timeout);
 }
 
 /*
@@ -221,7 +200,7 @@ void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo)
 {
 	void *element;
 
-	element = nano_fiber_lifo_get(lifo);
+	element = nano_fiber_lifo_get(lifo, TICKS_NONE);
 
 	if (element == NULL) {
 		_NanoFatalErrorHandler(_NANO_ERR_ALLOCATION_FAIL, &_default_esf);
@@ -229,89 +208,3 @@ void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo)
 
 	return element;
 }
-
-#ifdef CONFIG_NANO_TIMEOUTS
-
-void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *lifo,
-		int32_t timeout_in_ticks)
-{
-	unsigned int key = irq_lock();
-	void *data;
-
-	if (!lifo->list) {
-		if (unlikely(TICKS_NONE == timeout_in_ticks)) {
-			irq_unlock(key);
-			return NULL;
-		}
-		if (likely(timeout_in_ticks != TICKS_UNLIMITED)) {
-			_nano_timeout_add(_nanokernel.current, &lifo->wait_q,
-					timeout_in_ticks);
-		}
-		_nano_wait_q_put(&lifo->wait_q);
-		data = (void *)_Swap(key);
-	} else {
-		data = lifo->list;
-		lifo->list = *(void **)data;
-		irq_unlock(key);
-	}
-
-	return data;
-}
-
-void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
-		int32_t timeout_in_ticks)
-{
-	int64_t cur_ticks, limit;
-	unsigned int key;
-	void *data;
-
-	if (unlikely(TICKS_UNLIMITED == timeout_in_ticks)) {
-		return nano_task_lifo_get_wait(lifo);
-	}
-
-	if (unlikely(TICKS_NONE == timeout_in_ticks)) {
-		return nano_task_lifo_get(lifo);
-	}
-
-	key = irq_lock();
-	cur_ticks = sys_tick_get();
-	limit = cur_ticks + timeout_in_ticks;
-
-	while (cur_ticks < limit) {
-
-		/*
-		 * Predict that the branch will be taken to break out of the loop.
-		 * There is little cost to a misprediction since that leads to idle.
-		 */
-
-		if (likely(lifo->list)) {
-			data = lifo->list;
-			lifo->list = *(void **)data;
-			irq_unlock(key);
-			return data;
-		}
-
-		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
-
-		nano_cpu_atomic_idle(key);
-
-		key = irq_lock();
-		cur_ticks = sys_tick_get();
-	}
-
-	irq_unlock(key);
-	return NULL;
-}
-
-void *nano_lifo_get_wait_timeout(struct nano_lifo *lifo, int32_t timeout)
-{
-	static void *(*func[3])(struct nano_lifo *, int32_t) = {
-		NULL,
-		nano_fiber_lifo_get_wait_timeout,
-		nano_task_lifo_get_wait_timeout
-	};
-
-	return func[sys_execution_context_type_get()](lifo, timeout);
-}
-
-#endif /* CONFIG_NANO_TIMEOUTS */

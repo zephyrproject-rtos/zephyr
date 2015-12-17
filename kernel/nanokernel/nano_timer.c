@@ -165,19 +165,19 @@ FUNC_ALIAS(_timer_test, nano_timer_test, void *);
 
 void *_timer_test(struct nano_timer *timer)
 {
-	extern void *_lifo_get(struct nano_lifo *);
+	extern void *_lifo_get(struct nano_lifo *, int32_t);
 
-	return _lifo_get(&timer->lifo);
+	return _lifo_get(&timer->lifo, TICKS_NONE);
 }
 
 void *nano_fiber_timer_wait(struct nano_timer *timer)
 {
-	return nano_fiber_lifo_get_wait(&timer->lifo);
+	return nano_fiber_lifo_get(&timer->lifo, TICKS_UNLIMITED);
 }
 
 void *nano_task_timer_wait(struct nano_timer *timer)
 {
-	return nano_task_lifo_get_wait(&timer->lifo);
+	return nano_task_lifo_get(&timer->lifo, TICKS_UNLIMITED);
 }
 
 void *nano_timer_wait(struct nano_timer *timer)
