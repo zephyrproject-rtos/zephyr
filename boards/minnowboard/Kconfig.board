@@ -1,0 +1,5 @@
+
+config  BOARD_MINNOWBOARD
+        bool "Minnowboard"
+        select PLATFORM_IA32
+	depends on X86

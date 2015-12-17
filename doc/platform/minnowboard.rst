@@ -1,12 +1,12 @@
-.. _basic_atom:
+.. _minnowboard:
 
-Platform Configuration: basic_atom
-##################################
+Platform Configuration: Minnowboard Max
+#######################################
 
 Overview
 ********
 
-The basic_atom platform configuration is used by Zephyr applications
+The minnowboard platform configuration is used by Zephyr applications
 that run on QEMU emulating the Atom N28xx platform.  This platform
 configuration provides support for an x86 Atom CPU and the following devices:
 
@@ -23,12 +23,12 @@ configuration provides support for an x86 Atom CPU and the following devices:
 Supported Boards
 ****************
 
-The basic_atom platform configuration has been tested on QEMU 2.1.
+The minnowboard platform configuration has been tested on QEMU 2.1.
 
 Supported Features
 ******************
 
-The basic_atom platform configuration supports the following
+The minnowboard platform configuration supports the following
 hardware features:
 
 +--------------+------------+-----------------------+
@@ -49,13 +49,12 @@ Interrupt Controller
 Refer to the :ref:`galileo`.
 
 .. note::
-   The basic_atom platform configuration does not support PCI.
+   The minnowboard platform configuration does not support PCI.
 
 HPET System Clock Support
 =========================
 
-The basic_atom platform configuration uses a system
-clock frequency of 25 MHz.
+The minnowboard platform configuration uses a system clock frequency of 25 MHz.
 
 .. note::
    The LOAPIC timer may be used instead of the HPET. To do so,
@@ -64,7 +63,7 @@ clock frequency of 25 MHz.
 Serial Port
 ===========
 
-The basic_atom platform configuration uses a single serial communication channel
+The minnowboard platform configuration uses a single serial communication channel
 with a NS16550 serial driver that operates in polling mode.
 For an interrupt-driven driver, enable the UART_INTERRUPT_DRIVEN kernel configuration option.
 

@@ -82,7 +82,7 @@ specified.
   plus its value.
 
    :makevar:`BOARD`
-   :makevar:`BOARD=basic_atom`
+   :makevar:`BOARD=minnowboard`
 
    ``:makevar:`VARIABLE```
 

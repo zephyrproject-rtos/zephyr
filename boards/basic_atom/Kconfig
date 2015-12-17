@@ -1,7 +1,0 @@
-
-if BOARD_BASIC_ATOM
-
-config BOARD
-        default basic_atom
-
-endif # BOARD_BASIC_ATOM

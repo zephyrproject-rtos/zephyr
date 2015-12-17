@@ -31,7 +31,7 @@ the default settings defined in the application Makefile, for example:
 
 .. code-block:: console
 
-   $ make BOARD=basic_atom
+   $ make BOARD=minnowboard
 
 You can build for a different platform by defining the variable BOARD
 with one of the supported platforms.
@@ -65,7 +65,7 @@ To run an application using the default platform configuration, type:
 
    $ make qemu
 
-To run an application using the x86 basic_atom platform configuration, type:
+To run an application using the x86 minnowboard platform configuration, type:
 
 .. code-block:: console
 

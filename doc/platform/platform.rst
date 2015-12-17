@@ -16,7 +16,7 @@ kernel configuration settings.
 | Platform             | Instruction Set | Supported              |
 | Configuration        | Architecture    | Target Systems         |
 +======================+=================+========================+
-| basic_atom           | X86             | QEMU 2.1               |
+| minnowboard          | X86             | Minnowboard Max        |
 +----------------------+-----------------+------------------------+
 | basic_cortex_m3      | ARM v7-M        | QEMU 2.1 + patch       |
 +----------------------+-----------------+------------------------+
@@ -34,7 +34,7 @@ The following sections provide details on the respective platforms:
 .. toctree::
    :maxdepth: 1
 
-   basic_atom.rst
+   minnowboard.rst
    basic_cortex_m3.rst
    basic_minuteia.rst
    fsl_frdm_k64f.rst

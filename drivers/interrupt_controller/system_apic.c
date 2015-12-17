@@ -18,9 +18,6 @@
  * @file
  * @brief  system module for variants with LOAPIC
  *
- * This module provides routines to initialize and support
- * board-level hardware for the basic_atom configuration of
- * ia32 platform.
  */
 
 #include <misc/__assert.h>
