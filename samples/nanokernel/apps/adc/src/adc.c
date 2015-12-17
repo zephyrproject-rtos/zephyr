@@ -87,24 +87,23 @@ void main(void)
 	adc = device_get_binding(ADC_DEVICE_NAME);
 	if (!adc) {
 		DBG("Cannot get adc controller\n");
-		goto done;
+		return;
 	}
 
 	adc_set_callback(adc, callback);
 
 	adc_enable(adc);
 
-	adc_disable(adc);
-
 	if (adc_read(adc, &table) != DEV_OK) {
 		DBG("Could not call adc_read\n");
 	}
 
-done:
 	while (1) {
 		DBG("Waiting...");
 
 		nano_task_timer_start(&timer, SLEEPTICKS);
 		nano_task_timer_wait(&timer);
 	}
+
+	adc_disable(adc);
 }
