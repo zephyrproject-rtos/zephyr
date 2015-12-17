@@ -1,5 +1,5 @@
 
 config  BOARD_MINNOWBOARD
-        bool "Minnowboard"
-        select PLATFORM_IA32
+        bool "Minnowboard Max"
+        select PLATFORM_ATOM
 	depends on X86
