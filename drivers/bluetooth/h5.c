@@ -215,14 +215,14 @@ static int h5_unslip_byte(uint8_t *byte)
 static void process_unack(void)
 {
 	uint8_t next_seq = h5.tx_seq;
+	uint8_t number_removed = unack_queue_len;
+
+	if (!unack_queue_len) {
+		return;
+	}
 
 	BT_DBG("rx_ack %u tx_ack %u tx_seq %u unack_queue_len %u",
 	       h5.rx_ack, h5.tx_ack, h5.tx_seq, unack_queue_len);
-
-	if (!unack_queue_len) {
-		BT_DBG("Unack queue is empty");
-		return;
-	}
 
 	while (unack_queue_len > 0) {
 		if (next_seq == h5.rx_ack) {
@@ -232,7 +232,7 @@ static void process_unack(void)
 			break;
 		}
 
-		unack_queue_len--;
+		number_removed--;
 		/* Similar to (n - 1) % 8 with unsigned conversion */
 		next_seq = (next_seq - 1) & 0x07;
 	}
@@ -242,7 +242,9 @@ static void process_unack(void)
 		       h5.rx_ack, h5.tx_seq, next_seq);
 	}
 
-	while (unack_queue_len) {
+	BT_DBG("Need to remove %u packet from the queue", number_removed);
+
+	while (number_removed) {
 		struct net_buf *buf = nano_fifo_get(&h5.unack_queue);
 
 		if (!buf) {
@@ -255,6 +257,7 @@ static void process_unack(void)
 
 		net_buf_unref(buf);
 		unack_queue_len--;
+		number_removed--;
 	}
 }
 
