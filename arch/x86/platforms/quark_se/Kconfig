@@ -171,8 +171,7 @@ config SPI_DW_PORT_1_IRQ
 endif
 
 if WATCHDOG
-config WDT_DW
-	def_bool y
+if WDT_DW
 config WDT_DW_CLOCK_GATE
 	def_bool n
 config WDT_DW_CLOCK_GATE_DRV_NAME
@@ -184,10 +183,10 @@ config WDT_DW_BASE_ADDR
 config WDT_DW_IRQ
 	default 12
 endif
+endif
 
 if RTC
-config RTC_DW
-	def_bool y
+if RTC_DW
 config RTC_DW_CLOCK_GATE
 	def_bool n
 config RTC_DW_CLOCK_GATE_DRV_NAME
@@ -198,6 +197,7 @@ config RTC_DW_BASE_ADDR
 	default 0xB0000400
 config RTC_DW_IRQ
 	default 11
+endif
 endif
 
 config KERNEL_INIT_PRIORITY_DEFAULT

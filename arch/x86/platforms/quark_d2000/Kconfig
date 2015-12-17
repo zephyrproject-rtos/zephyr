@@ -138,23 +138,23 @@ endif
 
 if WATCHDOG
 
-config WDT_DW
-	def_bool y
+if WDT_DW
 config WDT_DW_BASE_ADDR
 	default 0xB0000000
 config WDT_DW_IRQ
 	default 16
+endif
 
 endif
 
 if RTC
 
-config RTC_DW
-	def_bool y
+if RTC_DW
 config RTC_DW_BASE_ADDR
 	default 0xB0000400
 config RTC_DW_IRQ
 	default 2
+endif
 
 endif
 
