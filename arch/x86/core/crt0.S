@@ -34,6 +34,7 @@
 
 	GDATA(_idt_base_address)
 	GDATA(_interrupt_stack)
+	GDATA(_Idt)
 
 
 #if defined(CONFIG_SSE)
