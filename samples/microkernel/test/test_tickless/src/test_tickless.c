@@ -53,7 +53,7 @@ typedef uint64_t _timer_res_t;
 
 #elif defined(CONFIG_ARM)
 
-#  if defined(CONFIG_PLATFORM_TI_LM3S6965_QEMU)
+#  if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
 /* A bug in the QEMU ARMv7-M sysTick timer prevents tickless idle support */
 #error "This QEMU target does not support tickless idle!"
 #  endif

@@ -19,7 +19,7 @@ The kernel supports two distinct clocks.
 * A 32-bit *hardware clock*, which is used as the source of the ticks
   for the system clock. This clock is a counter measured in unspecified
   units (called *cycles*), and increments at a frequency
-  determined by the platform hardware.
+  determined by the soc.hardware.
 
   The kernel allows this clock to be accessed directly by reading
   the timer.

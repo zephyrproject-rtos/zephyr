@@ -38,7 +38,7 @@ config  CLOCK_CONTROL_DEBUG
 config  CLOCK_CONTROL_QUARK_SE
        bool
        prompt "Quark SE Clock controller support"
-       depends on CLOCK_CONTROL && PLATFORM_QUARK_SE
+       depends on CLOCK_CONTROL && SOC_QUARK_SE
        default n
        help
          Enable support for the Quark SE clock driver.

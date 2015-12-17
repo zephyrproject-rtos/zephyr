@@ -1,0 +1,3 @@
+
+config SOC_GENERIC_ARC
+        bool

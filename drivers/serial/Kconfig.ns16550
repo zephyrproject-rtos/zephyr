@@ -20,7 +20,7 @@ config UART_NS16550_PCI
 choice
 	prompt "Controller Registers Access Method"
 	depends on UART_NS16550
-	default UART_NS16550_ACCESS_IOPORT if PLATFORM_IA32
+	default UART_NS16550_ACCESS_IOPORT if SOC_IA32
 	default UART_NS16550_ACCESS_MMIO
 
 	config UART_NS16550_ACCESS_MMIO

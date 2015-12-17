@@ -115,7 +115,7 @@ static inline void _gpio_dw_clock_off(struct device *port)
 #define _gpio_dw_clock_off(...)
 #endif
 
-#ifdef CONFIG_PLATFORM_QUARK_SE_SS
+#ifdef CONFIG_SOC_QUARK_SE_SS
 static inline void dw_set_both_edges(uint32_t base_addr, uint32_t pin)
 {
 	ARG_UNUSED(base_addr);
@@ -292,7 +292,7 @@ static inline int gpio_dw_resume_port(struct device *port)
 	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_QUARK_SE
+#ifdef CONFIG_SOC_QUARK_SE
 static inline void gpio_dw_unmask_int(struct device *port)
 {
 	sys_write32(sys_read32(GPIO_INT_MASK) & INT_UNMASK_IA, GPIO_INT_MASK);
@@ -392,10 +392,10 @@ int gpio_dw_initialize(struct device *port)
 
 	base_addr = config->base_addr;
 
-#ifdef CONFIG_PLATFORM_QUARK_SE_SS
+#ifdef CONFIG_SOC_QUARK_SE_SS
 	/* Need to enable clock for GPIO controller */
 	dw_set_bit(base_addr, INT_CLOCK_SYNC, CLK_ENA_POS, 1);
-#endif /* CONFIG_PLATFORM_QUARK_SE_SS */
+#endif /* CONFIG_SOC_QUARK_SE_SS */
 
 	/* interrupts in sync with system clock */
 	dw_set_bit(base_addr, INT_CLOCK_SYNC, LS_SYNC_POS, 1);
@@ -412,12 +412,12 @@ int gpio_dw_initialize(struct device *port)
 	config->config_func(port);
 	gpio_dw_unmask_int(port);
 
-#ifdef CONFIG_PLATFORM_QUARK_SE_SS
+#ifdef CONFIG_SOC_QUARK_SE_SS
 	/* ARC needs this to work, or else the parameter
 	 * passed to ISR is null.
 	 */
 	irq_connect(config->irq_num, 1, gpio_dw_isr, port, 0);
-#endif /* CONFIG_PLATFORM_QUARK_SE_SS */
+#endif /* CONFIG_SOC_QUARK_SE_SS */
 
 	return 0;
 }

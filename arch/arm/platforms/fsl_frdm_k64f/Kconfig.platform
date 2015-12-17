@@ -1,5 +1,0 @@
-
-config  PLATFORM_FSL_FRDM_K64F
-	bool "FSL FRDM K64F"
-	select CPU_CORTEX_M
-	select CPU_CORTEX_M4

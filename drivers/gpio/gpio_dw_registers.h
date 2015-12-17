@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_PLATFORM_QUARK_SE_SS
+#ifdef CONFIG_SOC_QUARK_SE_SS
 #define SWPORTA_DR     0x00
 #define SWPORTA_DDR    0x01
 #define INTEN          0x03

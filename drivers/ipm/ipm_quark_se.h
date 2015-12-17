@@ -29,14 +29,14 @@
 #define QUARK_SE_IPM_OUTBOUND	0
 #define QUARK_SE_IPM_INBOUND		1
 
-#if defined(CONFIG_PLATFORM_QUARK_SE)
+#if defined(CONFIG_SOC_QUARK_SE)
 /* First byte of the QUARK_SE_IPM_MASK register is for the Lakemont */
 #define QUARK_SE_IPM_MASK_START_BIT		0
 #define QUARK_SE_IPM_INTERRUPT		21
 #define QUARK_SE_IPM_ARC_LMT_DIR		QUARK_SE_IPM_INBOUND
 #define QUARK_SE_IPM_LMT_ARC_DIR		QUARK_SE_IPM_OUTBOUND
 
-#elif defined(CONFIG_PLATFORM_QUARK_SE_SS)
+#elif defined(CONFIG_SOC_QUARK_SE_SS)
 /* Second byte is for ARC */
 #define QUARK_SE_IPM_MASK_START_BIT		8
 #define QUARK_SE_IPM_INTERRUPT		57

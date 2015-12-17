@@ -1,5 +1,0 @@
-
-
-config PLATFORM_IA32
-	bool "IA32"
-	select BOOTLOADER_UNKNOWN

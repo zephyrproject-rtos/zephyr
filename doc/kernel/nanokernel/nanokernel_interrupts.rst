@@ -14,7 +14,7 @@ allowing the response to occur with very low overhead.
 When an ISR completes its normal task and fiber execution resumes.
 
 Any number of ISRs can be utilized in a Zephyr project, subject to
-any hardware constraints imposed by the underlying platform hardware.
+any hardware constraints imposed by the underlying hardware.
 Each ISR has the following properties:
 
 * The :abbr:`IRQ (Interrupt ReQuest)` signal that triggers the ISR.

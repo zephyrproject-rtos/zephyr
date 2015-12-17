@@ -42,11 +42,9 @@ config ARCH_DEFCONFIG
 source "arch/x86/core/Kconfig"
 
 choice
-prompt "Platform Selection"
-default PLATFORM_IA32_PCI
-source "arch/x86/platforms/*/Kconfig.platform"
+prompt "SoC Selection"
+source "arch/x86/soc/*/Kconfig.soc"
 endchoice
-
 
 choice
 prompt "Intel Processor"
@@ -280,6 +278,6 @@ endmenu
 
 
 
-source "arch/x86/platforms/*/Kconfig"
+source "arch/x86/soc/*/Kconfig"
 
 endmenu

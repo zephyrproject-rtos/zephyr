@@ -30,11 +30,9 @@ config ARCH_DEFCONFIG
 menu "General Platform Configuration"
 
 choice
-prompt "Platform Selection"
-default PLATFORM_FSL_FRDM_K64F
-
-source "arch/arm/platforms/*/Kconfig.platform"
-
+prompt "SoC Selection"
+default SOC_FSL_FRDM_K64F
+source "arch/arm/soc/*/Kconfig.soc"
 endchoice
 
 
@@ -71,6 +69,6 @@ source "arch/arm/core/Kconfig"
 
 endmenu
 
-source "arch/arm/platforms/*/Kconfig"
+source "arch/arm/soc/*/Kconfig"
 
 endmenu

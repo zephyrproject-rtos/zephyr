@@ -26,10 +26,8 @@ config ARCH_DEFCONFIG
 	default "arch/arc/defconfig"
 
 choice
-prompt "Platform Selection"
-default PLATFORM_GENERIC_ARC
-
-source "arch/arc/platforms/*/Kconfig.platform"
+prompt "SoC Selection"
+source "arch/arc/soc/*/Kconfig.soc"
 endchoice
 
 menu "ARC EM4 processor options"
@@ -248,6 +246,6 @@ config  ARCH_HAS_NANO_FIBER_ABORT
 endmenu
 
 
-source "arch/arc/platforms/*/Kconfig"
+source "arch/arc/soc/*/Kconfig"
 
 endmenu

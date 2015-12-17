@@ -333,19 +333,18 @@ endif
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
 
-PLATFORM_NAME = $(subst $(DQUOTE),,$(CONFIG_PLATFORM))
 SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 BOARD_NAME = $(subst $(DQUOTE),,$(CONFIG_BOARD))
 KERNEL_NAME = $(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 KERNEL_ELF_NAME = $(KERNEL_NAME).elf
 
-export PLATFORM_NAME SOC_NAME BOARD_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME
+export SOC_NAME BOARD_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME
 # Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 ZEPHYRINCLUDE    = \
 		-I$(srctree)/arch/$(ARCH)/include \
-		-I$(srctree)/arch/$(ARCH)/platforms/$(PLATFORM_NAME) \
+		-I$(srctree)/arch/$(ARCH)/soc/$(SOC_NAME) \
 		-I$(srctree)/boards/$(BOARD_NAME) \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
@@ -739,7 +738,7 @@ export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y) $(app-y)
 ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
 export KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
 else
-export KBUILD_LDS         := $(srctree)/arch/$(ARCH)/platforms/$(PLATFORM_NAME)/linker.cmd
+export KBUILD_LDS         := $(srctree)/arch/$(ARCH)/soc/$(SOC_NAME)/linker.cmd
 endif
 export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile
@@ -950,7 +949,7 @@ help:
 	@echo  '* zephyr	  - Build the bare kernel'
 	@echo  '  qemu		  - Build the bare kernel and runs the emulation with qemu'
 	@echo  ''
-	@echo  'Supported platforms:'
+	@echo  'Supported Boards:'
 	@echo  ''
 	@$(if $(boards), \
 		$(foreach b, $(boards), \

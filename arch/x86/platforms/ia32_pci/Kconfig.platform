@@ -1,6 +1,0 @@
-
-config PLATFORM_IA32_PCI
-	bool "IA32 with PCI"
-	select HPET_TIMER
-	select BOOTLOADER_UNKNOWN
-	select PCI

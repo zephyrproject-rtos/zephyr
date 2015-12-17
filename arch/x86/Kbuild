@@ -1,2 +1,2 @@
 obj-y += core/
-obj-y += platforms/$(PLATFORM_NAME)/
+obj-y += soc/$(SOC_NAME)/

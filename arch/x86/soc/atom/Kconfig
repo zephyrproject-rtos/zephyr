@@ -1,0 +1,137 @@
+# Kconfig - ATOM SoC configuration options
+
+#
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_ATOM
+
+config SOC
+	default atom
+
+config PHYS_LOAD_ADDR
+	default 0x00100000
+
+config PHYS_RAM_ADDR
+	default 0x00400000
+
+config RAM_SIZE
+	default 128 if XIP
+	default 192
+
+config ROM_SIZE
+	default 72 if XIP
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 150000000 if LOAPIC_TIMER
+	default 25000000  if HPET_TIMER
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+
+config UART_CONSOLE_PRIORITY
+	default 60
+
+config IPM_CONSOLE_PRIORITY
+	default 60
+
+if UART_NS16550
+
+config UART_NS16550_PCI
+	def_bool n
+
+config UART_NS16550_PORT_0
+	def_bool y
+
+if UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_0_NAME
+	default "UART_0"
+config UART_NS16550_PORT_0_BASE_ADDR
+	default 0x03F8
+config UART_NS16550_PORT_0_IRQ
+	default 4
+config UART_NS16550_PORT_0_IRQ_PRI
+	default 3
+config UART_NS16550_PORT_0_BAUD_RATE
+	default 115200
+config UART_NS16550_PORT_0_CLK_FREQ
+	default 1843200
+config UART_NS16550_PORT_0_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_1
+	def_bool y
+
+if UART_NS16550_PORT_1
+
+config UART_NS16550_PORT_1_NAME
+	default "UART_1"
+config UART_NS16550_PORT_1_BASE_ADDR
+	default 0x02F8
+config UART_NS16550_PORT_1_IRQ
+	default 3
+config UART_NS16550_PORT_1_IRQ_PRI
+	default 3
+config UART_NS16550_PORT_1_BAUD_RATE
+	default 115200
+config UART_NS16550_PORT_1_CLK_FREQ
+	default 1843200
+config UART_NS16550_PORT_1_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_1
+
+endif # UART_NS16550
+
+if UART_CONSOLE
+
+config UART_CONSOLE_ON_DEV_NAME
+	default "UART_0"
+config UART_CONSOLE_IRQ
+	default 4
+config UART_CONSOLE_IRQ_PRI
+	default 3
+
+endif
+
+if BLUETOOTH_UART
+
+config BLUETOOTH_UART_ON_DEV_NAME
+	default "UART_1"
+config BLUETOOTH_UART_IRQ
+	default 3
+config BLUETOOTH_UART_IRQ_PRI
+	default 3
+
+endif
+
+if UART_PIPE
+
+config UART_PIPE_ON_DEV_NAME
+	default "UART_1"
+config UART_PIPE_IRQ
+	default 3
+config UART_PIPE_IRQ_PRI
+	default 3
+
+endif
+
+endif

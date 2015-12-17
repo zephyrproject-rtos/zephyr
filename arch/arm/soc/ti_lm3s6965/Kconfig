@@ -1,0 +1,132 @@
+# Kconfig - TI LM3S6965 platform configuration options
+
+#
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_TI_LM3S6965
+config SOC
+	default ti_lm3s6965
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 3
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 34
+
+config SOC_TI_LM3S6965_QEMU
+	def_bool y
+	# Platform has only been tested on QEMU, not on real hardware, so always
+	# assume it is used for a QEMU target.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 12000000
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+
+config UART_CONSOLE_PRIORITY
+	default 60
+
+config IPM_CONSOLE_PRIORITY
+	default 60
+
+if UART_STELLARIS
+
+config UART_STELLARIS_PORT_0
+	def_bool y
+
+if UART_STELLARIS_PORT_0
+config UART_STELLARIS_PORT_0_BASE_ADDR
+	default 0x4000C000
+config UART_STELLARIS_PORT_0_IRQ
+	default 6
+config UART_STELLARIS_PORT_0_BAUD_RATE
+	default 115200
+config UART_STELLARIS_PORT_0_CLK_FREQ
+	default 12000000
+endif
+
+config UART_STELLARIS_PORT_1
+	def_bool y
+
+if UART_STELLARIS_PORT_1
+config UART_STELLARIS_PORT_1_BASE_ADDR
+	default 0x4000D000
+config UART_STELLARIS_PORT_1_IRQ
+	default 6
+config UART_STELLARIS_PORT_1_BAUD_RATE
+	default 115200
+config UART_STELLARIS_PORT_1_CLK_FREQ
+	default 12000000
+endif
+
+config UART_STELLARIS_PORT_2
+	def_bool y
+if UART_STELLARIS_PORT_2
+config UART_STELLARIS_PORT_2_BASE_ADDR
+	default 0x4000E000
+config UART_STELLARIS_PORT_2_IRQ
+	default 33
+config UART_STELLARIS_PORT_2_BAUD_RATE
+	default 115200
+config UART_STELLARIS_PORT_2_CLK_FREQ
+	default 12000000
+endif
+
+endif # UART_STELLARIS
+
+if UART_CONSOLE
+
+config UART_CONSOLE_ON_DEV_NAME
+	default "UART_0"
+config UART_CONSOLE_IRQ
+	default 5
+config UART_CONSOLE_IRQ_PRI
+	default 3
+
+endif
+
+if BLUETOOTH_UART
+
+config BLUETOOTH_UART_ON_DEV_NAME
+	default "UART_1"
+config BLUETOOTH_UART_IRQ
+	default 6
+config BLUETOOTH_UART_IRQ_PRI
+	default 3
+
+endif
+
+if UART_PIPE
+
+config UART_PIPE_ON_DEV_NAME
+	default "UART_2"
+config UART_PIPE_IRQ
+	default 33
+config UART_PIPE_IRQ_PRI
+	default 3
+
+endif
+
+endif

@@ -39,11 +39,6 @@ config ARCH
 	System architecture string.
 
 config SOC
-	string
-	help
-	SOC being used.
-
-config PLATFORM
         string
         help
         This option holds the directory name used by the build system to locate

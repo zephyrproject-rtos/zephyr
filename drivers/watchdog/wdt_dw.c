@@ -71,7 +71,7 @@ static void wdt_dw_enable(struct device *dev)
 {
 	_wdt_dw_clock_on(dev);
 
-#if defined(CONFIG_PLATFORM_QUARK_SE) || defined(CONFIG_PLATFORM_QUARK_D2000)
+#if defined(CONFIG_SOC_QUARK_SE) || defined(CONFIG_SOC_QUARK_D2000)
 	sys_set_bit(SCSS_PERIPHERAL_BASE + SCSS_PERIPH_CFG0, 1);
 #endif
 }
@@ -80,7 +80,7 @@ static void wdt_dw_disable(struct device *dev)
 {
 	_wdt_dw_clock_off(dev);
 
-#if defined(CONFIG_PLATFORM_QUARK_SE) || defined(CONFIG_PLATFORM_QUARK_D2000)
+#if defined(CONFIG_SOC_QUARK_SE) || defined(CONFIG_SOC_QUARK_D2000)
 	sys_clear_bit(SCSS_PERIPHERAL_BASE + SCSS_PERIPH_CFG0, 1);
 #endif
 }

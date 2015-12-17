@@ -1,0 +1,185 @@
+#
+# Copyright (c) 2015 Intel Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_QUARK_D2000
+config SOC
+	default quark_d2000
+
+config  SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32000000
+
+config  PHYS_LOAD_ADDR
+	default 0x00180000 if XIP
+	default 0x00280000 if !XIP
+
+config RAM_SIZE
+        default 8
+
+config ROM_SIZE
+        default 32
+
+config IDT_NUM_VECTORS
+	default 64
+
+config IOAPIC_NUM_RTES
+	default 32
+
+config LOAPIC_TIMER_IRQ
+	default 0
+
+config LOAPIC_TIMER_IRQ_PRIORITY
+	default 2
+
+config PHYS_RAM_ADDR
+	default 0x00280000
+	help
+	This option specifies the physical SRAM address of this Soc.
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+
+config UART_CONSOLE_PRIORITY
+	default 60
+
+if PINMUX
+config PINMUX_BASE
+        default 0xb0800900
+
+config PINMUX_NUM_PINS
+        default 25
+endif # PINMUX
+
+if UART_NS16550
+
+config UART_NS16550_PORT_0
+	def_bool y
+
+if UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_0_NAME
+	default "UART_0"
+config UART_NS16550_PORT_0_BASE_ADDR
+	default 0xB0002000
+config UART_NS16550_PORT_0_IRQ
+	default 8
+config UART_NS16550_PORT_0_IRQ_PRI
+	default 3
+config UART_NS16550_PORT_0_BAUD_RATE
+	default 115200
+config UART_NS16550_PORT_0_CLK_FREQ
+	default 32000000
+config UART_NS16550_PORT_0_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_1
+	def_bool y
+
+if UART_NS16550_PORT_1
+
+config UART_NS16550_PORT_1_NAME
+	default "UART_1"
+config UART_NS16550_PORT_1_BASE_ADDR
+	default 0xB0002400
+config UART_NS16550_PORT_1_IRQ
+	default 6
+config UART_NS16550_PORT_1_IRQ_PRI
+	default 3
+config UART_NS16550_PORT_1_BAUD_RATE
+	default 115200
+config UART_NS16550_PORT_1_CLK_FREQ
+	default 32000000
+config UART_NS16550_PORT_1_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_1
+
+endif # UART_NS16550
+
+if UART_CONSOLE
+
+config UART_CONSOLE_ON_DEV_NAME
+	default "UART_0"
+config UART_CONSOLE_IRQ
+	default 8
+config UART_CONSOLE_IRQ_PRI
+	default 3
+
+endif
+
+if BLUETOOTH_UART
+
+config BLUETOOTH_UART_ON_DEV_NAME
+	default "UART_1"
+config BLUETOOTH_UART_IRQ
+	default 6
+config BLUETOOTH_UART_IRQ_PRI
+	default 3
+
+endif
+
+if UART_PIPE
+
+config UART_PIPE_ON_DEV_NAME
+	default "UART_1"
+config UART_PIPE_IRQ
+	default 6
+config UART_PIPE_IRQ_PRI
+	default 3
+
+endif
+
+if WATCHDOG
+
+if WDT_DW
+config WDT_DW_BASE_ADDR
+	default 0xB0000000
+config WDT_DW_IRQ
+	default 16
+endif
+
+endif
+
+if RTC
+
+if RTC_DW
+config RTC_DW_BASE_ADDR
+	default 0xB0000400
+config RTC_DW_IRQ
+	default 2
+endif
+
+endif
+
+if I2C_DW
+config I2C_DW_0
+        def_bool y
+
+config I2C_DW_0_BASE
+        default 0xb0002800
+
+config I2C_DW_0_NAME
+        default "I2C0"
+
+config I2C_DW_0_INT_PRIORITY
+        default 0
+endif
+
+endif # SOC_QUARK_D2000
