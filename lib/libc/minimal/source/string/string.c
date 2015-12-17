@@ -25,7 +25,7 @@
  * @return pointer to destination buffer <d>
  */
 
-char *strcpy(char *restrict d, const char *restrict s)
+char *strcpy(char *_Restrict d, const char *_Restrict s)
 {
 	char *dest = d;
 
@@ -47,7 +47,7 @@ char *strcpy(char *restrict d, const char *restrict s)
  * @return pointer to destination buffer <d>
  */
 
-char *strncpy(char *restrict d, const char *restrict s, size_t n)
+char *strncpy(char *_Restrict d, const char *_Restrict s, size_t n)
 {
 	char *dest = d;
 
@@ -138,7 +138,7 @@ int strncmp(const char *s1, const char *s2, size_t n)
 	return (n == 0) ? 0 : (*s1 - *s2);
 }
 
-char *strcat(char *restrict dest, const char *restrict src)
+char *strcat(char *_Restrict dest, const char *_Restrict src)
 {
 	strcpy(dest + strlen(dest), src);
 	return dest;
@@ -208,7 +208,7 @@ void *memmove(void *d, const void *s, size_t n)
  * @return pointer to start of destination buffer
  */
 
-void *memcpy(void *restrict d, const void *restrict s, size_t n)
+void *memcpy(void *_Restrict d, const void *_Restrict s, size_t n)
 {
 	/* attempt word-sized copying only if buffers have identical alignment */
 

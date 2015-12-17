@@ -37,7 +37,7 @@ static int sprintf_out(int c, struct emitter *p)
 	return 0; /* indicate keep going so we get the total count */
 }
 
-int snprintf(char *restrict s, size_t len, const char *restrict format, ...)
+int snprintf(char *_Restrict s, size_t len, const char *_Restrict format, ...)
 {
 	va_list vargs;
 
@@ -64,7 +64,7 @@ int snprintf(char *restrict s, size_t len, const char *restrict format, ...)
 	return r;
 }
 
-int sprintf(char *restrict s, const char *restrict format, ...)
+int sprintf(char *_Restrict s, const char *_Restrict format, ...)
 {
 	va_list vargs;
 
@@ -82,7 +82,7 @@ int sprintf(char *restrict s, const char *restrict format, ...)
 	return r;
 }
 
-int vsnprintf(char *restrict s, size_t len, const char *restrict format, va_list vargs)
+int vsnprintf(char *_Restrict s, size_t len, const char *_Restrict format, va_list vargs)
 {
 	struct emitter p;
 	int     r;
@@ -105,7 +105,7 @@ int vsnprintf(char *restrict s, size_t len, const char *restrict format, va_list
 	return r;
 }
 
-int vsprintf(char *restrict s, const char *restrict format, va_list vargs)
+int vsprintf(char *_Restrict s, const char *_Restrict format, va_list vargs)
 {
 	struct emitter p;
 	int     r;

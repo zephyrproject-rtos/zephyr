@@ -21,22 +21,23 @@
 
 #include <bits/null.h>
 #include <bits/size_t.h>
+#include <bits/restrict.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern char  *strcpy(char *restrict d, const char *restrict s);
-extern char  *strncpy(char *restrict d, const char *restrict s, size_t n);
+extern char  *strcpy(char *_Restrict d, const char *_Restrict s);
+extern char  *strncpy(char *_Restrict d, const char *_Restrict s, size_t n);
 extern char  *strchr(const char *s, int c);
 extern size_t strlen(const char *s);
 extern int    strcmp(const char *s1, const char *s2);
 extern int    strncmp(const char *s1, const char *s2, size_t n);
-extern char *strcat(char *restrict dest, const char *restrict src);
+extern char *strcat(char *_Restrict dest, const char *_Restrict src);
 
 extern int    memcmp(const void *m1, const void *m2, size_t n);
 extern void  *memmove(void *d, const void *s, size_t n);
-extern void  *memcpy(void *restrict d, const void *restrict s, size_t n);
+extern void  *memcpy(void *_Restrict d, const void *_Restrict s, size_t n);
 extern void  *memset(void *buf, int c, size_t n);
 extern void  *memchr(const void *s, unsigned char c, size_t n);
 

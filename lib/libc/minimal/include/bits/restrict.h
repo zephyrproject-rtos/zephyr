@@ -15,20 +15,20 @@
  */
 
 /**
- * @file size_t definition
+ * @file _Restrict definition
+ *
+ * The macro "_Restrict" is intended to be private to the minimal libc library.
+ * It evaluates to the "restrict" keyword when a C99 compiler is used, and
+ * to "__restrict__" when a C++ compiler is used.
  */
 
-#if !defined(__size_t_defined)
-#define __size_t_defined
+#if !defined(_Restrict_defined)
+#define _Restrict_defined
 
-#ifdef __i386
-typedef unsigned long int size_t;
-#elif defined(__ARM_ARCH)
-typedef unsigned int size_t;
-#elif defined(__arc__)
-typedef unsigned int size_t;
+#ifdef __cplusplus
+	#define _Restrict __restrict__
 #else
-#error "The minimal libc library does not recognize the architecture!\n"
+	#define _Restrict restrict
 #endif
 
 #endif
