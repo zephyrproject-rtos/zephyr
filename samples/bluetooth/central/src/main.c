@@ -34,6 +34,7 @@
 
 static struct bt_conn *default_conn;
 
+static struct bt_uuid uuid;
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
 
@@ -55,7 +56,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 	printk("[ATTRIBUTE] handle %u\n", attr->handle);
 
 	if (!bt_uuid_cmp(discover_params.uuid, BT_UUID_HRS)) {
-		discover_params.uuid = BT_UUID_HRS_MEASUREMENT;
+		bt_uuid_copy(&uuid, BT_UUID_HRS_MEASUREMENT);
+		discover_params.uuid = &uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -65,7 +67,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 		}
 	} else if (!bt_uuid_cmp(discover_params.uuid,
 				BT_UUID_HRS_MEASUREMENT)) {
-		discover_params.uuid = BT_UUID_GATT_CCC;
+		bt_uuid_copy(&uuid, BT_UUID_GATT_CCC);
+		discover_params.uuid = &uuid;
 		discover_params.start_handle = attr->handle + 2;
 		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 		subscribe_params.value_handle = attr->handle + 1;
@@ -100,7 +103,8 @@ static void connected(struct bt_conn *conn)
 	printk("Connected: %s\n", addr);
 
 	if (conn == default_conn) {
-		discover_params.uuid = BT_UUID_HRS;
+		bt_uuid_copy(&uuid, BT_UUID_HRS);
+		discover_params.uuid = &uuid;
 		discover_params.func = discover_func;
 		discover_params.start_handle = 0x0001;
 		discover_params.end_handle = 0xffff;
