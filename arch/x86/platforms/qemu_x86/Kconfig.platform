@@ -1,5 +1,0 @@
-
-
-config PLATFORM_QEMU_X86
-	bool "QEMU for x86"
-	select BOOTLOADER_UNKNOWN
