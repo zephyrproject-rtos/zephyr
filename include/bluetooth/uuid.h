@@ -192,6 +192,17 @@ struct bt_uuid {
  */
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
 
+/** @brief Copy Bluetooth UUIDs.
+ *
+ *  Copy Bluetooth UUID from source to destination.
+ *
+ *  @param dst destination Bluetooth UUID
+ *  @param src src Bluetooth UUID
+ *
+ *  @return N/A
+ */
+void bt_uuid_copy(struct bt_uuid *dst, const struct bt_uuid *src);
+
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 /** @brief Convert Bluetooth UUID to string.
  *

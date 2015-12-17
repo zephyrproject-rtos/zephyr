@@ -75,6 +75,18 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 	return -EINVAL;
 }
 
+void bt_uuid_copy(struct bt_uuid *dst, const struct bt_uuid *src)
+{
+	switch (src->type) {
+	case BT_UUID_16:
+		/* Copy only the necessary data */
+		memcpy(dst, src, sizeof(struct __bt_uuid_16));
+		return;
+	default:
+		memcpy(dst, src, sizeof(*dst));
+	}
+}
+
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 {
