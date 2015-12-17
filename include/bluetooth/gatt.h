@@ -722,6 +722,9 @@ struct bt_gatt_discover_params {
  *  For each attribute found the callback is called which can then decide
  *  whether to continue discovering or stop.
  *
+ *  Note: This procedure is asynchronous therefore the parameters need to
+ *  remains valid while it is active.
+ *
  *  @param conn Connection object.
  *  @param params Discover parameters.
  *
@@ -754,12 +757,15 @@ struct bt_gatt_read_params {
 
 /** @brief Read Attribute Value by handle
  *
- * This procedure read the attribute value and return it to the callback.
+ *  This procedure read the attribute value and return it to the callback.
  *
- * @param conn Connection object.
- * @param params Read parameters.
+ *  Note: This procedure is asynchronous therefore the parameters need to
+ *  remains valid while it is active.
  *
- * @return 0 in case of success or negative value in case of error.
+ *  @param conn Connection object.
+ *  @param params Read parameters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
 
@@ -815,16 +821,19 @@ struct bt_gatt_subscribe_params {
 
 /** @brief Subscribe Attribute Value Notification
  *
- * This procedure subscribe to value notification using the Client
- * Characteristic Configuration handle.
- * If notification received subscribe value callback is called to return
- * notified value. One may then decide whether to unsubscribe directly from
- * this callback.
+ *  This procedure subscribe to value notification using the Client
+ *  Characteristic Configuration handle.
+ *  If notification received subscribe value callback is called to return
+ *  notified value. One may then decide whether to unsubscribe directly from
+ *  this callback.
  *
- * @param conn Connection object.
- * @param params Subscribe parameters.
+ *  Note: This procedure is asynchronous therefore the parameters need to
+ *  remains valid while it is active.
  *
- * @return 0 in case of success or negative value in case of error.
+ *  @param conn Connection object.
+ *  @param params Subscribe parameters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params);
