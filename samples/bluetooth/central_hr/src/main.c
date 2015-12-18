@@ -223,7 +223,8 @@ static void disconnected(struct bt_conn *conn)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+	/* This demo doesn't require active scan */
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
 	}
