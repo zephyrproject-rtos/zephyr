@@ -174,6 +174,16 @@ struct bt_le_scan_param {
 					   BT_GAP_SCAN_FAST_INTERVAL, \
 					   BT_GAP_SCAN_FAST_WINDOW)
 
+/** Helper macro to enable passive scanning to discover new devices.
+ *
+ * This macro should be used if information required for device identification
+ * (eg UUID) are known to be placed in Advertising Data.
+ */
+#define BT_LE_SCAN_PASSIVE BT_LE_SCAN_PARAM(BT_HCI_LE_SCAN_PASSIVE, \
+					    BT_HCI_LE_SCAN_FILTER_DUP_ENABLE, \
+					    BT_GAP_SCAN_FAST_INTERVAL, \
+					    BT_GAP_SCAN_FAST_WINDOW)
+
 /** @brief Start (LE) scanning
  *
  *  Start LE scanning with and provide results through the specified
