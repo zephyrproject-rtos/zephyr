@@ -156,45 +156,28 @@ static struct net_buf *bt_buf_get_sig(void)
 	return net_buf_get(&avail_signal, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
 }
 
-static int bt_uart_read(struct device *uart, uint8_t *buf,
-			size_t len, size_t min)
-{
-	int total = 0;
-
-	while (len) {
-		int rx;
-
-		rx = uart_fifo_read(uart, buf, len);
-		if (rx == 0) {
-			BT_DBG("Got zero bytes from UART");
-			if (total < min) {
-				continue;
-			}
-			break;
-		}
-
-		len -= rx;
-		total += rx;
-		buf += rx;
-	}
-
-	return total;
-}
-
+/* Read and unslip one byte, returns number of bytes read */
 static int h5_unslip_byte(uint8_t *byte)
 {
 	int count;
 
-	count = bt_uart_read(h5_dev, byte, sizeof(*byte), 0);
+	count = uart_fifo_read(h5_dev, byte, sizeof(*byte));
 	if (!count) {
 		return count;
 	}
 
+	/* Indicate that we have received slip delimeter on wire */
+	if (*byte == SLIP_DELIMITER) {
+		return count;
+	}
+
 	if (*byte == SLIP_ESC) {
-		count = bt_uart_read(h5_dev, byte, sizeof(*byte), 0);
+		count = uart_fifo_read(h5_dev, byte, sizeof(*byte));
 		if (!count) {
 			return count;
 		}
+
+		count++;
 
 		switch (*byte) {
 		case SLIP_ESC_DELIM:
@@ -484,6 +467,7 @@ void bt_uart_isr(void *unused)
 
 	while (uart_irq_update(h5_dev) &&
 	       uart_irq_is_pending(h5_dev)) {
+		bool slip_delim = false;
 
 		if (!uart_irq_rx_ready(h5_dev)) {
 			if (uart_irq_tx_ready(h5_dev)) {
@@ -494,99 +478,96 @@ void bt_uart_isr(void *unused)
 			continue;
 		}
 
+		ret = h5_unslip_byte(&byte);
+		if (!ret) {
+			continue;
+		} else if (ret < 0) {
+			if (buf) {
+				net_buf_unref(buf);
+				buf = NULL;
+			}
+			status = START;
+			continue;
+		} else if (ret == 1 && byte == SLIP_DELIMITER) {
+			slip_delim = true;
+		}
+
 		switch (status) {
 		case START:
-			/* Read SLIP Delimeter */
-			ret = h5_unslip_byte(&byte);
-			if (ret <= 0) {
-				continue;
-			}
-
-			if (byte == SLIP_DELIMITER) {
+			if (slip_delim) {
 				status = HEADER;
-				remaining = 4;
+				remaining = sizeof(hdr);
 			}
 			break;
 		case HEADER:
-			while (remaining) {
-				i = sizeof(hdr) - remaining;
-				ret = h5_unslip_byte(&byte);
-				if (ret <= 0) {
-					return;
-				}
-
-				memcpy(&hdr[i], &byte, sizeof(byte));
-				remaining--;
-			}
-
-			if (!remaining) {
-				remaining = H5_HDR_LEN(hdr);
-				type = H5_HDR_PKT_TYPE(hdr);
-
-				switch (type) {
-				case HCI_EVENT_PKT:
-					buf = bt_buf_get_evt();
-					status = PAYLOAD;
-					break;
-				case HCI_ACLDATA_PKT:
-					buf = bt_buf_get_acl();
-					status = PAYLOAD;
-					break;
-				case HCI_3WIRE_LINK_PKT:
-				case HCI_3WIRE_ACK_PKT:
-					buf = bt_buf_get_sig();
-					status = SIGNAL;
-					break;
-				default:
-					BT_ERR("Wrong packet type %u",
-					       H5_HDR_PKT_TYPE(hdr));
-					status = START;
-					break;
-				}
-			}
-			break;
-		case SIGNAL:
-			BT_DBG("Read H5 command: len %u", remaining);
-
-			while (remaining) {
-				ret = h5_unslip_byte(&byte);
-				if (ret <= 0) {
-					return;
-				}
-
-				memcpy(net_buf_add(buf, sizeof(byte)), &byte,
-				       sizeof(byte));
-				remaining--;
-			}
-			status = END;
-			break;
-		case PAYLOAD:
-			BT_DBG("Read payload: len %u", remaining);
-
-			while (remaining) {
-				ret = h5_unslip_byte(&byte);
-				if (ret <= 0) {
-					return;
-				}
-
-				memcpy(net_buf_add(buf, sizeof(byte)), &byte,
-				       sizeof(byte));
-				remaining--;
-			}
-			status = END;
-			break;
-		case END:
-			/* Read SLIP Delimeter */
-			ret = h5_unslip_byte(&byte);
-			if (ret <= 0) {
+			i = sizeof(hdr) - remaining;
+			/* In a case we confuse ending slip
+			 * delimeter with starting one
+			 */
+			if (slip_delim && !i) {
+				remaining = sizeof(hdr);
 				continue;
 			}
 
-			if (byte == SLIP_DELIMITER) {
+			memcpy(&hdr[i], &byte, sizeof(byte));
+			remaining--;
+
+			if (remaining) {
+				break;
+			}
+
+			remaining = H5_HDR_LEN(hdr);
+			type = H5_HDR_PKT_TYPE(hdr);
+
+			switch (type) {
+			case HCI_EVENT_PKT:
+				buf = bt_buf_get_evt();
+				status = PAYLOAD;
+				break;
+			case HCI_ACLDATA_PKT:
+				buf = bt_buf_get_acl();
+				status = PAYLOAD;
+				break;
+			case HCI_3WIRE_LINK_PKT:
+			case HCI_3WIRE_ACK_PKT:
+				buf = bt_buf_get_sig();
+				status = SIGNAL;
+				break;
+			default:
+				BT_ERR("Wrong packet type %u",
+				       H5_HDR_PKT_TYPE(hdr));
+				status = END;
+				break;
+			}
+			break;
+		case SIGNAL:
+			memcpy(net_buf_add(buf, sizeof(byte)), &byte,
+			       sizeof(byte));
+			remaining--;
+
+			if (remaining) {
+				break;
+			}
+
+			status = END;
+			break;
+		case PAYLOAD:
+			memcpy(net_buf_add(buf, sizeof(byte)), &byte,
+			       sizeof(byte));
+			remaining--;
+
+			if (remaining) {
+				break;
+			}
+
+			status = END;
+			break;
+		case END:
+			if (!slip_delim) {
+				BT_ERR("Missing ending SLIP_DELIMITER");
 				status = START;
-			} else {
-				status = START;
-				BT_ERR("No SLIP delimter at the end, drop");
+				net_buf_unref(buf);
+				buf = NULL;
 				break;
 			}
 
@@ -601,11 +582,14 @@ void bt_uart_isr(void *unused)
 				BT_ERR("Seq expected %u got %u. Drop packet",
 				       h5.tx_ack, H5_HDR_SEQ(hdr));
 
-				/* TODO: Reset rx */
+				status = START;
+				net_buf_unref(buf);
+				buf = NULL;
 				break;
 			}
 
 			h5_process_complete_packet(buf, type, hdr);
+			status = START;
 			break;
 		}
 	}
