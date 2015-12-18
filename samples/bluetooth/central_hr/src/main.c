@@ -49,7 +49,8 @@ static uint8_t subscribe_func(struct bt_conn *conn, int err,
 }
 
 static uint8_t discover_func(struct bt_conn *conn,
-			     const struct bt_gatt_attr *attr, void *user_data)
+			     const struct bt_gatt_attr *attr,
+			     struct bt_gatt_discover_params *params)
 {
 	int err;
 

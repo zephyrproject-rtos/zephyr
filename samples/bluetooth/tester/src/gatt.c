@@ -698,7 +698,7 @@ static void disc_prim_uuid_result(void *user_data)
 
 static uint8_t disc_prim_uuid_cb(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
-				 void *user_data)
+				 struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_service *data = attr->user_data;
 	struct gatt_disc_prim_uuid_rp *rp = (void *) gatt_buf.buf;
@@ -795,7 +795,7 @@ static void find_included_result(void *user_data)
 
 static uint8_t find_included_cb(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				void *user_data)
+				struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_include *data = attr->user_data;
 	struct gatt_find_included_rp *rp = (void *) gatt_buf.buf;
@@ -888,7 +888,8 @@ static void disc_all_chrc_result(void *user_data)
 }
 
 static uint8_t disc_chrc_cb(struct bt_conn *conn,
-			    const struct bt_gatt_attr *attr, void *user_data)
+			    const struct bt_gatt_attr *attr,
+			    struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_chrc *data = attr->user_data;
 	struct gatt_disc_chrc_rp *rp = (void *) gatt_buf.buf;
@@ -1037,7 +1038,7 @@ static void disc_all_desc_result(void *user_data)
 
 static uint8_t disc_all_desc_cb(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				void *user_data)
+				struct bt_gatt_discover_params *params)
 {
 	struct gatt_disc_all_desc_rp *rp = (void *) gatt_buf.buf;
 	struct gatt_descriptor *descriptor;
