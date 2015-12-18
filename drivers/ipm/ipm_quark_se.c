@@ -78,29 +78,22 @@ static void set_channel_irq_state(int channel, int enable)
 void quark_se_ipm_isr(void *param)
 {
 	int channel;
-	int sts;
+	int sts, bit;
 	struct device *d;
 
 	ARG_UNUSED(param);
-
-	/* Find out which mailbox channel has an incoming message */
-	while (1) {
-		sts = quark_se_ipm_sts_get();
-
-		/* FIXME: for every message sent, there are two interrupts
-		 * generated, the second has empty sts. Probably an IRQ
-		 * triggering issue
-		 */
-		if (!sts) {
-			break;
+	sts = quark_se_ipm_sts_get();
+	do {
+		bit = find_msb_set(sts) - 1 ;
+		channel = bit / 2;
+		if (sts) {
+			d = device_by_channel[channel];
+			if (d) {
+				mailbox_handle(d);
+			}
+			sts &= ~(0x1 << (bit));
 		}
-
-		channel = (find_msb_set(sts) - 1) / 2;
-		d = device_by_channel[channel];
-		if (d) {
-			mailbox_handle(d);
-		}
-	}
+	} while (sts);
 
 }
 
