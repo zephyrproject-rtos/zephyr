@@ -195,6 +195,14 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
 	       dev, type, len, rssi);
 
+	switch (type) {
+	case BT_LE_ADV_IND:
+	case BT_LE_ADV_DIRECT_IND:
+		break;
+	default:
+		return;
+	}
+
 	/* TODO: Move this to a place it can be shared */
 	ad_parse(ad, len, eir_found, (void *)addr);
 }
