@@ -89,6 +89,65 @@ config I2C_QUARK_SE_SS_1_DEFAULT_CFG
 
 endif
 
+if UART_NS16550
+
+config UART_NS16550_PORT_0
+        def_bool y
+
+if UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_0_NAME
+        default "UART_0"
+config UART_NS16550_PORT_0_BASE_ADDR
+        default 0xB0002000
+config UART_NS16550_PORT_0_IRQ
+        default 41
+config UART_NS16550_PORT_0_IRQ_PRI
+        default 1
+config UART_NS16550_PORT_0_BAUD_RATE
+        default 115200
+config UART_NS16550_PORT_0_CLK_FREQ
+        default 32000000
+config UART_NS16550_PORT_0_OPTIONS
+        default 0
+
+endif # UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_1
+        def_bool y
+
+if UART_NS16550_PORT_1
+
+config UART_NS16550_PORT_1_NAME
+        default "UART_1"
+config UART_NS16550_PORT_1_BASE_ADDR
+        default 0xB0002400
+config UART_NS16550_PORT_1_IRQ
+        default 42
+config UART_NS16550_PORT_1_IRQ_PRI
+        default 1
+config UART_NS16550_PORT_1_BAUD_RATE
+        default 115200
+config UART_NS16550_PORT_1_CLK_FREQ
+        default 32000000
+config UART_NS16550_PORT_1_OPTIONS
+        default 0
+
+endif # UART_NS16550_PORT_1
+
+endif # UART_NS16550
+
+if UART_CONSOLE
+
+config UART_CONSOLE_ON_DEV_NAME
+        default "UART_1"
+config UART_CONSOLE_IRQ
+        default 42
+config UART_CONSOLE_IRQ_PRI
+        default 1
+
+endif
+
 config KERNEL_INIT_PRIORITY_DEFAULT
 	default 40
 

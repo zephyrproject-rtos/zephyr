@@ -119,19 +119,6 @@
 #define CONFIG_ARCV2_TIMER1_INT_LVL IRQ_TIMER1
 #define CONFIG_ARCV2_TIMER1_INT_PRI 1
 
-/*
- * UART configuration settings
- *
- * This BSP only supports the nanokernel.  Therefore:
- * - only polled mode is supported (interrupt-driven mode is NOT supported); and
- * - only the target console is supported.
- */
-#define CONFIG_UART_CONSOLE_CLK_FREQ SYSCLK_DEFAULT_IOSC_HZ
-#define CONFIG_UART_CONSOLE_IRQ IRQ_UART0_INTR
-#define CONFIG_UART_CONSOLE_INT_PRI 0
-
-#define UART_REG_ADDR_INTERVAL 4 /* for ns16550 driver */
-
 #define INT_ENABLE_ARC					~(0x00000001 << 8)
 #define INT_ENABLE_ARC_BIT_POS				(8)
 
@@ -165,6 +152,11 @@
 #define GPIO_SS_0_INT_MASK				0x408
 #define GPIO_SS_1_INT_MASK				0x40C
 #endif /* CONFIG_GPIO_DW */
+
+#if defined(CONFIG_UART_NS16550)
+#define UART_NS16550_0_INT_MASK				0x460
+#define UART_NS16550_1_INT_MASK				0x464
+#endif /* CONFIG_UART_NS16550 */
 
 #endif /* !_ASMLANGUAGE */
 
