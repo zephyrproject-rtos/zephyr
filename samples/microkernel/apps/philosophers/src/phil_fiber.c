@@ -20,7 +20,7 @@
 
 #ifdef CONFIG_NANOKERNEL
   #define FORK(x) &forks[x]
-  #define TAKE(x) nano_fiber_sem_take_wait(x)
+  #define TAKE(x) nano_fiber_sem_take(x, TICKS_UNLIMITED)
   #define GIVE(x) nano_fiber_sem_give(x)
 #else  /* ! CONFIG_NANOKERNEL */
   #define FORK(x) forks[x]

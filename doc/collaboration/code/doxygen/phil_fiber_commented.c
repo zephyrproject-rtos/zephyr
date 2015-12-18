@@ -33,7 +33,7 @@
 #ifdef CONFIG_NANOKERNEL
 /* For the nanokernel. */
 #define FORK(x) &forks[x]
-#define TAKE(x) nano_fiber_sem_take_wait(x)
+#define TAKE(x) nano_fiber_sem_take(x, TICKS_UNLIMITED)
 #define GIVE(x) nano_fiber_sem_give(x)
 #define RANDDELAY(x) myDelay(((sys_tick_get_32() * ((x) + 1)) & 0x1f) + 1)
 #else

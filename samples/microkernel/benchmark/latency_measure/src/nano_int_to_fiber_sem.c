@@ -92,7 +92,7 @@ static void fiberInt(void)
  */
 static void fiberWaiter(void)
 {
-	nano_fiber_sem_take_wait(&testSema);
+	nano_fiber_sem_take(&testSema, TICKS_UNLIMITED);
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 }
 

@@ -145,7 +145,7 @@ void fiberEntry(void) {
 
 	while (1) {
 
-		nano_fiber_sem_take_wait(&nanoSemFiber); /* Action 3 */
+		nano_fiber_sem_take(&nanoSemFiber, TICKS_UNLIMITED); /* Action 3 */
 
 		PRINT("%s: Hello World!\n", __FUNCTION__); /* Action 4 */
 
@@ -181,7 +181,7 @@ void main(void) {
 		nano_task_timer_wait(&timer);
 		nano_task_sem_give(&nanoSemFiber);
 
-		nano_task_sem_take_wait(&nanoSemTask); /* Action 3 */
+		nano_task_sem_take(&nanoSemTask, TICKS_UNLIMITED); /* Action 3 */
 	}
 }
 

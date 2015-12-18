@@ -53,18 +53,18 @@ static void testFiberEntry(void)
 {
 	int i;
 	/* release semaphore test task is waiting for */
-	nano_fiber_sem_take_wait(&fiberSem);
+	nano_fiber_sem_take(&fiberSem, TICKS_UNLIMITED);
 	fiber_sem_give(simpleSem);
 
 	/* release the semaphore for N_TESTS times */
-	nano_fiber_sem_take_wait(&fiberSem);
+	nano_fiber_sem_take(&fiberSem, TICKS_UNLIMITED);
 	for (i = 0; i < N_TESTS; i++) {
 		fiber_sem_give(simpleSem);
 	}
 
 	/* signal each semaphore in the group */
 	for (i = 0; semList[i] != ENDLIST; i++) {
-		nano_fiber_sem_take_wait(&fiberSem);
+		nano_fiber_sem_take(&fiberSem, TICKS_UNLIMITED);
 		fiber_sem_give(semList[i]);
 	}
 }

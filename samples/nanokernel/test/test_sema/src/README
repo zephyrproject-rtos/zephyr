@@ -1,10 +1,10 @@
 This semaphore test set covers the following scenarios.
 
-nano_fiber_sem_take_wait
+nano_fiber_sem_take(TICKS_UNLIMITED)
   - Wait for a semaphore to be given
   - Take a semaphore without waiting
 
-nano_task_sem_take_wait
+nano_task_sem_take(TICKS_UNLIMITED)
   - Wait for a semaphore to be given
   - Take a semaphore without waiting
 

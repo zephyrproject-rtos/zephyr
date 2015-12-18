@@ -869,7 +869,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	uint16_t sdu_len;
 
-	if (!nano_fiber_sem_take(&chan->rx.credits)) {
+	if (!nano_fiber_sem_take(&chan->rx.credits, TICKS_NONE)) {
 		BT_ERR("No credits to receive packet");
 		bt_l2cap_chan_disconnect(chan);
 		return;
@@ -1213,7 +1213,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
 			      uint16_t len)
 {
 	/* Wait for credits */
-	nano_sem_take_wait(&chan->tx.credits);
+	nano_sem_take(&chan->tx.credits, TICKS_UNLIMITED);
 
 	buf = l2cap_chan_create_seg(chan, buf, len);
 	if (!buf) {

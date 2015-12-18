@@ -171,7 +171,7 @@ int fiberLifoWaitTest(void)
 		return -1;
 	}
 
-	nano_fiber_sem_take_wait(&fiberWaitSem);
+	nano_fiber_sem_take(&fiberWaitSem, TICKS_UNLIMITED);
 	data = nano_fiber_lifo_get_wait(&test_lifo);
 	if (data != &lifoItem[2]) {
 		fiberDetectedFailure = 1;
@@ -199,7 +199,7 @@ int fiberLifoWaitTest(void)
 	 * fiber will wait forever.
 	 */
 
-	nano_fiber_sem_take_wait(&fiberWaitSem);
+	nano_fiber_sem_take(&fiberWaitSem, TICKS_UNLIMITED);
 
 	return 0;
 }
@@ -251,7 +251,7 @@ int fiberLifoNonWaitTest(void)
 	 * the LIFO.
 	 */
 
-	nano_fiber_sem_take_wait(&fiberWaitSem);
+	nano_fiber_sem_take(&fiberWaitSem, TICKS_UNLIMITED);
 
 	/*
 	 * The task retrieved the two items from the LIFO and then triggered
@@ -326,7 +326,7 @@ int taskLifoWaitTest(void)
 	void *data;    /* ptr to data retrieved from LIFO */
 
 	/* Wait on <taskWaitSem> in case fiber's print message blocked */
-	nano_fiber_sem_take_wait(&taskWaitSem);
+	nano_fiber_sem_take(&taskWaitSem, TICKS_UNLIMITED);
 
 	/* The fiber is waiting on the LIFO.  Wake it. */
 	nano_task_lifo_put(&test_lifo, &lifoItem[0]);
@@ -399,7 +399,7 @@ int taskLifoNonWaitTest(void)
 	}
 
 	/* Wait for the fiber to be ready */
-	nano_task_sem_take_wait(&taskWaitSem);
+	nano_task_sem_take(&taskWaitSem, TICKS_UNLIMITED);
 
 	data = nano_task_lifo_get(&test_lifo);
 	if (data != (void *) &lifoItem[1]) {
@@ -535,7 +535,7 @@ static int do_test_multiple_waiters(void)
 
 	/* reply_multi_waiters will have been given once for each fiber */
 	for (ii = 0; ii < NUM_WAITERS; ii++) {
-		if (!nano_task_sem_take(&reply_multi_waiters)) {
+		if (!nano_task_sem_take(&reply_multi_waiters, TICKS_NONE)) {
 			TC_ERROR(" *** Cannot take sem supposedly given by waiters.\n");
 			return TC_FAIL;
 		}

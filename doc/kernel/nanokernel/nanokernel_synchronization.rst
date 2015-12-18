@@ -103,7 +103,7 @@ and gives warning if it is not obtained in that time.
    {
        ...
 
-       if (nano_fiber_sem_take_wait_timeout(&input_sem, 500) != 1) {
+       if (nano_fiber_sem_take(&input_sem, 500) != 1) {
            printk("Input data not available!");
        } else {
            /* fetch available data */
@@ -127,14 +127,4 @@ by :file:`nanokernel.h`:
 
 :cpp:func:`nano_task_sem_take()`, :cpp:func:`nano_fiber_sem_take()`,
 :cpp:func:`nano_isr_sem_take()`, :cpp:func:`nano_sem_take()`
-   Test a semaphore.
-
-:cpp:func:`nano_task_sem_take_wait()`,
-:cpp:func:`nano_fiber_sem_take_wait()`,
-:cpp:func:`nano_sem_take_wait()`
-   Wait on a semaphore.
-
-:cpp:func:`nano_task_sem_take_wait_timeout()`,
-:cpp:func:`nano_fiber_sem_take_wait_timeout()`,
-:cpp:func:`nano_sem_take_wait_timeout()`
    Wait on a semaphore for a specified time period.

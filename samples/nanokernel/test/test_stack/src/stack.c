@@ -540,7 +540,7 @@ void main(void)
 	 * the fiber the freedom to do blocking-type operations if it wants to.)
 	 *
 	 */
-	nano_task_sem_take_wait(&nanoSemObj);
+	nano_task_sem_take(&nanoSemObj, TICKS_UNLIMITED);
 	TC_PRINT("Test Task STACK Pop\n");
 
 	/* Get all data */

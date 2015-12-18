@@ -46,21 +46,21 @@ static void testFiberEntry(void)
 {
 	/* signal event for eventWaitTest() */
 	/* single test */
-	nano_fiber_sem_take_wait(&fiberSem);
+	nano_fiber_sem_take(&fiberSem, TICKS_UNLIMITED);
 	fiber_event_send(EVENT_ID);
 	/* test in cycle */
-	nano_fiber_sem_take_wait(&fiberSem);
+	nano_fiber_sem_take(&fiberSem, TICKS_UNLIMITED);
 	fiber_event_send(EVENT_ID);
 
 	/* signal event for eventTimeoutTest() */
-	nano_fiber_sem_take_wait(&fiberSem);
+	nano_fiber_sem_take(&fiberSem, TICKS_UNLIMITED);
 	fiber_event_send(EVENT_ID);
 
 	/*
 	 * Signal two events for fiberEventSignalTest ().
 	 * It has to detect only one
 	 */
-	nano_fiber_sem_take_wait(&fiberSem);
+	nano_fiber_sem_take(&fiberSem, TICKS_UNLIMITED);
 	fiber_event_send(EVENT_ID);
 	fiber_event_send(EVENT_ID);
 }

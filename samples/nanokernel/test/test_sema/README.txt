@@ -54,9 +54,9 @@ multiple-waiter fiber 0 acquired semaphore, sending reply
 multiple-waiter fiber 1 acquired semaphore, sending reply
 multiple-waiter fiber 2 acquired semaphore, sending reply
 Task took multi-waiter reply semaphore 3 times, as expected.
-test nano_task_sem_take_wait_timeout with timeout > 0
-nano_task_sem_take_wait_timeout timed out as expected
-nano_task_sem_take_wait_timeout got sem in time, as expected
+test nano_task_sem_take() with timeout > 0
+nano_task_sem_take() timed out as expected
+nano_task_sem_take() got sem in time, as expected
 testing timeouts of 5 fibers on same sem
  got fiber (q order: 2, t/o: 10, sem: 200001c8) as expected
  got fiber (q order: 3, t/o: 15, sem: 200001c8) as expected

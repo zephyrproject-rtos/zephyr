@@ -116,7 +116,7 @@ int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
 			 uint8_t *dropped_event_count, uint32_t *buffer,
 			 uint8_t *buffer_size)
 {
-	if (nano_fiber_sem_take(&(logger->sync_sema))) {
+	if (nano_fiber_sem_take(&(logger->sync_sema), TICKS_NONE)) {
 		return event_logger_get(logger, event_id, dropped_event_count,
 					buffer, buffer_size);
 	}
@@ -128,7 +128,7 @@ int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
 			      uint8_t *dropped_event_count, uint32_t *buffer,
 			      uint8_t *buffer_size)
 {
-	nano_fiber_sem_take_wait(&(logger->sync_sema));
+	nano_fiber_sem_take(&(logger->sync_sema), TICKS_UNLIMITED);
 
 	return event_logger_get(logger, event_id, dropped_event_count, buffer,
 				buffer_size);
@@ -142,7 +142,7 @@ int sys_event_logger_get_wait_timeout(struct event_logger *logger,
 				      uint32_t *buffer, uint8_t *buffer_size,
 				      uint32_t timeout)
 {
-	if (nano_fiber_sem_take_wait_timeout(&(logger->sync_sema), timeout)) {
+	if (nano_fiber_sem_take(&(logger->sync_sema), timeout)) {
 		return event_logger_get(logger, event_id, dropped_event_count,
 					buffer, buffer_size);
 	}

@@ -60,7 +60,7 @@ volatile pfunc func_array[] = {
 	/* nano semaphore functions */
 #ifdef CONFIG_OBJECTS_SEMAPHORE
 	(pfunc)nano_sem_init,
-	(pfunc)nano_fiber_sem_take_wait,
+	(pfunc)nano_fiber_sem_take,
 	(pfunc)nano_fiber_sem_give,
 #endif
 

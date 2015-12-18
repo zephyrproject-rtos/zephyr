@@ -41,7 +41,7 @@ static void ipm_console_fiber(int arg1, int arg2)
 	pos = 0;
 
 	while (1) {
-		nano_fiber_sem_take_wait(&driver_data->sem);
+		nano_fiber_sem_take(&driver_data->sem, TICKS_UNLIMITED);
 
 		ret = sys_ring_buf_get(&driver_data->rb, &type,
 				       (uint8_t *)&config_info->line_buf[pos],

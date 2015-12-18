@@ -70,7 +70,7 @@ volatile pfunc func_array[] = {
 	(pfunc)nano_fiber_timer_wait,
 	/* nano semaphore functions */
 	(pfunc)nano_sem_init,
-	(pfunc)nano_fiber_sem_take_wait,
+	(pfunc)nano_fiber_sem_take,
 	(pfunc)nano_fiber_sem_give,
 #ifdef TEST_max
 	/* nano LIFO functions */

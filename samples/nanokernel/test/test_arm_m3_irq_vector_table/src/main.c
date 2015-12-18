@@ -95,9 +95,9 @@ void main(void)
 	}
 
 	int rv;
-	rv = nano_task_sem_take(&sem[0]) ||
-		 nano_task_sem_take(&sem[1]) ||
-		 nano_task_sem_take(&sem[2]) ? TC_FAIL : TC_PASS;
+	rv = nano_task_sem_take(&sem[0], TICKS_NONE) ||
+		 nano_task_sem_take(&sem[1], TICKS_NONE) ||
+		 nano_task_sem_take(&sem[2], TICKS_NONE) ? TC_FAIL : TC_PASS;
 
 	if (TC_FAIL == rv) {
 		goto get_out;
@@ -107,9 +107,9 @@ void main(void)
 		_NvicSwInterruptTrigger(ii);
 	}
 
-	rv = nano_task_sem_take(&sem[0]) &&
-		 nano_task_sem_take(&sem[1]) &&
-		 nano_task_sem_take(&sem[2]) ? TC_PASS : TC_FAIL;
+	rv = nano_task_sem_take(&sem[0], TICKS_NONE) &&
+		 nano_task_sem_take(&sem[1], TICKS_NONE) &&
+		 nano_task_sem_take(&sem[2], TICKS_NONE) ? TC_PASS : TC_FAIL;
 
 get_out:
 	TC_END_RESULT(rv);

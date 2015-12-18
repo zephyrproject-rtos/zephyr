@@ -543,7 +543,7 @@ int fiber_yieldTest(void)
 	 * The main task will wake this fiber.
 	 */
 
-	nano_fiber_sem_take_wait(&wakeFiber);
+	nano_fiber_sem_take(&wakeFiber, TICKS_UNLIMITED);
 
 	return TC_PASS;
 }
@@ -567,7 +567,7 @@ static void fiberEntry(int task_thread_id, int arg1)
 	ARG_UNUSED(arg1);
 
 	fiberEvidence++;    /* Prove to the task that the fiber has run */
-	nano_fiber_sem_take_wait(&wakeFiber);
+	nano_fiber_sem_take(&wakeFiber, TICKS_UNLIMITED);
 
 	rv = nanoCtxFiberTest((nano_thread_id_t) task_thread_id);
 	if (rv != TC_PASS) {
@@ -575,7 +575,7 @@ static void fiberEntry(int task_thread_id, int arg1)
 	}
 
 	/* Allow the task to print any messages before the next test runs */
-	nano_fiber_sem_take_wait(&wakeFiber);
+	nano_fiber_sem_take(&wakeFiber, TICKS_UNLIMITED);
 
 	rv = fiber_yieldTest();
 	if (rv != TC_PASS) {
@@ -690,7 +690,7 @@ static int test_timeout(void)
 						test_fiber_busy_wait, (int)timeout, 0,
 						FIBER_PRIORITY, 0);
 
-	rv = nano_task_sem_take_wait_timeout(&reply_timeout, timeout + 2);
+	rv = nano_task_sem_take(&reply_timeout, timeout + 2);
 	if (!rv) {
 		rv = TC_FAIL;
 		TC_ERROR(" *** task timed out waiting for sys_thread_busy_wait()\n");
@@ -707,7 +707,7 @@ static int test_timeout(void)
 						test_fiber_sleep, (int)timeout, 0,
 						FIBER_PRIORITY, 0);
 
-	rv = nano_task_sem_take_wait_timeout(&reply_timeout, timeout + 5);
+	rv = nano_task_sem_take(&reply_timeout, timeout + 5);
 	if (!rv) {
 		rv = TC_FAIL;
 		TC_ERROR(" *** task timed out waiting for fiber on fiber_sleep().\n");

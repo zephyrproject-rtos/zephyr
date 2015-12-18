@@ -363,7 +363,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	       flags);
 
 	/* Wait until the controller can accept ACL packets */
-	nano_fiber_sem_take_wait(bt_conn_get_pkts(conn));
+	nano_fiber_sem_take(bt_conn_get_pkts(conn), TICKS_UNLIMITED);
 
 	/* Check for disconnection while waiting for pkts_sem */
 	if (conn->state != BT_CONN_CONNECTED) {

@@ -41,7 +41,7 @@ Example Code
       while (1)
       {
          /* wait for task to let us have a turn */
-         nano_fiber_sem_take_wait (&nanoSemFiber);
+         nano_fiber_sem_take(&nanoSemFiber, TICKS_UNLIMITED);
 
          /* say "hello" */
          PRINT ("%s: Hello World!\n", __FUNCTION__);
@@ -77,7 +77,7 @@ Example Code
          nano_task_sem_give (&nanoSemFiber);
 
          /* now wait for fiber to let us have a turn */
-         nano_task_sem_take_wait (&nanoSemTask);
+         nano_task_sem_take (&nanoSemTask, TICKS_UNLIMITED);
       }
 
    }
@@ -124,7 +124,7 @@ The following steps repeat endlessly:
 
 #. The fiber, now marked as runnable, pre-empts the background
    task, allowing execution to jump to the fiber.
-   nano_fiber_sem_take_wait.
+   nano_fiber_sem_take.
 
 #. The fiber then prints, “fiberEntry: Hello World!” It starts a time
    for SLEEPTICKS in the future and waits for that timer to expire. The
@@ -143,5 +143,5 @@ The following steps repeat endlessly:
    background task is scheduled.
 
 #. The background task execution picks up after the call to
-   :c:func:`nano_task_sem_take_wait()`. It jumps to the top of the
+   :c:func:`nano_task_sem_take()`. It jumps to the top of the
    while loop.

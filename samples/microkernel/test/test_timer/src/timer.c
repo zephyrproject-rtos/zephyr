@@ -356,7 +356,7 @@ void RegressionTaskEntry(void)
 	}
 
 	TC_PRINT("Verifying the nanokernel timer fired\n");
-	if (!nano_task_sem_take(&test_nano_timers_sem)) {
+	if (!nano_task_sem_take(&test_nano_timers_sem, TICKS_NONE)) {
 		tcRC = TC_FAIL;
 		goto exitRtn;
 	}

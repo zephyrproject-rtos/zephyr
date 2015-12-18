@@ -129,7 +129,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	}
 #endif
 
-	nano_sem_take_wait(&contexts_lock);
+	nano_sem_take(&contexts_lock, TICKS_UNLIMITED);
 
 	if (local_port) {
 		if (context_port_used(ip_proto, local_port, local_addr) < 0) {
@@ -171,7 +171,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 
 void net_context_put(struct net_context *context)
 {
-	nano_sem_take_wait(&contexts_lock);
+	nano_sem_take(&contexts_lock, TICKS_UNLIMITED);
 
 	memset(&context->tuple, 0, sizeof(context->tuple));
 	memset(&context->udp, 0, sizeof(context->udp));

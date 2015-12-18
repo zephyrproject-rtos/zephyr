@@ -63,7 +63,7 @@ static volatile int ctxSwitchBalancer = 0;
  */
 static void fiberOne(void)
 {
-	nano_fiber_sem_take_wait(&syncSema);
+	nano_fiber_sem_take(&syncSema, TICKS_UNLIMITED);
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	while (ctxSwitchCounter < NCTXSWITCH) {
 		fiber_yield();

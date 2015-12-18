@@ -40,7 +40,7 @@ time for one iteration is displayed.
 TEST CASE: Semaphore #1
 TEST COVERAGE: 
 	nano_sem_init
-	nano_fiber_sem_take_wait
+	nano_fiber_sem_take(TICKS_UNLIMITED)
 	nano_fiber_sem_give
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL
@@ -50,7 +50,7 @@ END TEST CASE
 TEST CASE: Semaphore #2
 TEST COVERAGE: 
 	nano_sem_init
-	nano_fiber_sem_take
+	nano_fiber_sem_take(TICKS_NONE)
 	fiber_yield
 	nano_fiber_sem_give
 Starting test. Please wait...
@@ -61,10 +61,10 @@ END TEST CASE
 TEST CASE: Semaphore #3
 TEST COVERAGE: 
 	nano_sem_init
-	nano_fiber_sem_take_wait
+	nano_fiber_sem_take(TICKS_UNLIMITED)
 	nano_fiber_sem_give
 	nano_task_sem_give
-	nano_task_sem_take_wait
+	nano_task_sem_take(TICKS_UNLIMITED)
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL
 DETAILS: Average time for 1 iteration: NNNN nSec

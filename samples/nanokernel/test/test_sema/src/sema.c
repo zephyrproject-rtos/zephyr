@@ -22,10 +22,9 @@
  * semaphore routines:
  *
  * nano_sem_init
- * nano_fiber_sem_give, nano_fiber_sem_take, nano_fiber_sem_take_wait
- * nano_task_sem_give, nano_task_sem_take, nano_task_sem_take_wait
+ * nano_fiber_sem_give, nano_fiber_sem_take
+ * nano_task_sem_give, nano_task_sem_take
  * nano_isr_sem_give, nano_isr_sem_take
- * nano_fiber_sem_take_wait_timeout, nano_task_sem_take_wait_timeout
  *
  * Scenario #1:
  * A task, fiber or ISR does not wait for the semaphore when taking it.
@@ -93,7 +92,7 @@ void isr_sem_take(void *data)
 {
 	ISR_SEM_INFO *pInfo = (ISR_SEM_INFO *) data;
 
-	pInfo->data = nano_isr_sem_take(pInfo->sem);
+	pInfo->data = nano_isr_sem_take(pInfo->sem, TICKS_NONE);
 }
 
 static void _trigger_nano_isr_sem_take(void)
@@ -152,13 +151,13 @@ int testSemFiberNoWait(void)
 	}
 
 	for (i = 0; i < 32; i++) {
-		if (nano_fiber_sem_take(&testSem) != 1) {
+		if (nano_fiber_sem_take(&testSem, TICKS_NONE) != 1) {
 			TC_ERROR(" *** Expected nano_fiber_sem_take() to succeed, not fail\n");
 			goto errorReturn;
 		}
 	}
 
-	if (nano_fiber_sem_take(&testSem) != 0) {
+	if (nano_fiber_sem_take(&testSem, TICKS_NONE) != 0) {
 		TC_ERROR(" *** Expected  nano_fiber_sem_take() to fail, not succeed\n");
 		goto errorReturn;
 	}
@@ -200,7 +199,7 @@ static void fiberEntry(int arg1, int arg2)
 	 * available (the main task will give it).
 	 */
 
-	nano_fiber_sem_take_wait(&testSem);
+	nano_fiber_sem_take(&testSem, TICKS_UNLIMITED);
 
 	semTestState = STS_TASK_WOKE_FIBER;
 
@@ -338,13 +337,13 @@ int testSemTaskNoWait(void)
 	}
 
 	for (i = 0; i < 32; i++) {
-		if (nano_task_sem_take(&testSem) != 1) {
+		if (nano_task_sem_take(&testSem, TICKS_NONE) != 1) {
 			TC_ERROR(" *** Expected nano_task_sem_take() to succeed, not fail\n");
 			goto errorReturn;
 		}
 	}
 
-	if (nano_task_sem_take(&testSem) != 0) {
+	if (nano_task_sem_take(&testSem, TICKS_NONE) != 0) {
 		TC_ERROR(" *** Expected  nano_task_sem_take() to fail, not succeed!\n");
 		goto errorReturn;
 	}
@@ -381,7 +380,7 @@ int testSemWait(void)
 
 	TC_PRINT("Semaphore from the task woke the fiber\n");
 
-	nano_task_sem_take_wait(&testSem);   /* Wait on <testSem> */
+	nano_task_sem_take(&testSem, TICKS_UNLIMITED);   /* Wait on <testSem> */
 
 	if (semTestState != STS_FIBER_WOKE_TASK) {
 		TC_ERROR(" *** Expected fiber to wake task.  It did not.\n");
@@ -390,7 +389,7 @@ int testSemWait(void)
 
 	TC_PRINT("Semaphore from the fiber woke the task\n");
 
-	nano_task_sem_take_wait(&testSem);  /* Wait on <testSem> again. */
+	nano_task_sem_take(&testSem, TICKS_UNLIMITED);  /* Wait on <testSem> again. */
 
 	if (semTestState != STS_ISR_WOKE_TASK) {
 		TC_ERROR(" *** Expected ISR to wake task.  It did not.\n");
@@ -423,7 +422,7 @@ static char __stack fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
 static void fiber_multi_waiters(int arg1, int arg2)
 {
 	TC_PRINT("multiple-waiter fiber %d trying to get semaphore...\n", arg1);
-	nano_fiber_sem_take_wait(&multi_waiters);
+	nano_fiber_sem_take(&multi_waiters, TICKS_UNLIMITED);
 	TC_PRINT("multiple-waiter fiber %d acquired semaphore, sending reply\n",
 				arg1);
 	nano_fiber_sem_give(&reply_multi_waiters);
@@ -453,7 +452,7 @@ static int do_test_multiple_waiters(void)
 
 	/* reply_multi_waiters will have been given once for each fiber */
 	for (ii = 0; ii < NUM_WAITERS; ii++) {
-		if (!nano_task_sem_take(&reply_multi_waiters)) {
+		if (!nano_task_sem_take(&reply_multi_waiters, TICKS_NONE)) {
 			TC_ERROR(" *** Cannot take sem supposedly given by waiters.\n");
 			return TC_FAIL;
 		}
@@ -462,12 +461,12 @@ static int do_test_multiple_waiters(void)
 	TC_PRINT("Task took multi-waiter reply semaphore %d times, as expected.\n",
 				NUM_WAITERS);
 
-	if (nano_task_sem_take(&multi_waiters)) {
+	if (nano_task_sem_take(&multi_waiters, TICKS_NONE)) {
 		TC_ERROR(" *** multi_waiters should have been empty.\n");
 		return TC_FAIL;
 	}
 
-	if (nano_task_sem_take(&reply_multi_waiters)) {
+	if (nano_task_sem_take(&reply_multi_waiters, TICKS_NONE)) {
 		TC_ERROR(" *** reply_multi_waiters should have been empty.\n");
 		return TC_FAIL;
 	}
@@ -577,7 +576,7 @@ static void test_fiber_pend_and_timeout(int data, int unused)
 
 	ARG_UNUSED(unused);
 
-	rv = nano_fiber_sem_take_wait_timeout(the_data->sem, the_data->timeout);
+	rv = nano_fiber_sem_take(the_data->sem, the_data->timeout);
 	if (rv) {
 		TC_ERROR(" *** timeout of %d did not time out.\n",
 					the_data->timeout);
@@ -628,7 +627,7 @@ static void test_fiber_pend_and_get_sem(int data, int unused)
 
 	ARG_UNUSED(unused);
 
-	rv = nano_fiber_sem_take_wait_timeout(the_data->sem, the_data->timeout);
+	rv = nano_fiber_sem_take(the_data->sem, the_data->timeout);
 	if (!rv) {
 		TC_PRINT(" *** fiber (q order: %d, t/o: %d, sem: %p) timed out!\n",
 						the_data->q_order, the_data->timeout, the_data->sem);
@@ -689,7 +688,7 @@ static void test_fiber_ticks_special_values(int packet, int special_value)
 	struct reply_packet *reply_packet = (void *)packet;
 
 	reply_packet->reply =
-		nano_fiber_sem_take_wait_timeout(&sem_timeout[0], special_value);
+		nano_fiber_sem_take(&sem_timeout[0], special_value);
 	nano_fiber_fifo_put(&timeout_order_fifo, reply_packet);
 }
 
@@ -706,10 +705,10 @@ static int test_timeout(void)
 	nano_sem_init(&sem_timeout[1]);
 	nano_fifo_init(&timeout_order_fifo);
 
-	/* test nano_task_sem_take_wait_timeout() with timeout */
+	/* test nano_task_sem_take() with timeout */
 	timeout = 10;
 	orig_ticks = sys_tick_get();
-	rv = nano_task_sem_take_wait_timeout(&sem_timeout[0], timeout);
+	rv = nano_task_sem_take(&sem_timeout[0], timeout);
 	if (rv) {
 		TC_ERROR(" *** timeout of %d did not time out.\n", timeout);
 		return TC_FAIL;
@@ -720,22 +719,22 @@ static int test_timeout(void)
 		return TC_FAIL;
 	}
 
-	/* test nano_task_sem_take_wait_timeout with timeout of 0 */
+	/* test nano_task_sem_take() with timeout of 0 */
 
-	rv = nano_task_sem_take_wait_timeout(&sem_timeout[0], 0);
+	rv = nano_task_sem_take(&sem_timeout[0], 0);
 	if (rv) {
 		TC_ERROR(" *** timeout of 0 did not time out.\n");
 		return TC_FAIL;
 	}
 
-	/* test nano_task_sem_take_wait_timeout with timeout > 0 */
+	/* test nano_task_sem_take() with timeout > 0 */
 
-	TC_PRINT("test nano_task_sem_take_wait_timeout with timeout > 0\n");
+	TC_PRINT("test nano_task_sem_take() with timeout > 0\n");
 
 	timeout = 3;
 	orig_ticks = sys_tick_get();
 
-	rv = nano_task_sem_take_wait_timeout(&sem_timeout[0], timeout);
+	rv = nano_task_sem_take(&sem_timeout[0], timeout);
 
 	if (rv) {
 		TC_ERROR(" *** timeout of %d did not time out.\n",
@@ -747,10 +746,10 @@ static int test_timeout(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("nano_task_sem_take_wait_timeout timed out as expected\n");
+	TC_PRINT("nano_task_sem_take() timed out as expected\n");
 
 	/*
-	 * test nano_task_sem_take_wait_timeout with a timeout and fiber that gives
+	 * test nano_task_sem_take() with a timeout and fiber that gives
 	 * the semaphore on time
 	 */
 
@@ -762,7 +761,7 @@ static int test_timeout(void)
 						timeout,
 						FIBER_PRIORITY, 0);
 
-	rv = nano_task_sem_take_wait_timeout(&sem_timeout[0], (int)(timeout + 5));
+	rv = nano_task_sem_take(&sem_timeout[0], (int)(timeout + 5));
 	if (!rv) {
 		TC_ERROR(" *** timed out even if semaphore was given in time.\n");
 		return TC_FAIL;
@@ -772,14 +771,14 @@ static int test_timeout(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("nano_task_sem_take_wait_timeout got sem in time, as expected\n");
+	TC_PRINT("nano_task_sem_take() got sem in time, as expected\n");
 
 	/*
-	 * test nano_task_sem_take_wait_timeout with TICKS_NONE and the
+	 * test nano_task_sem_take() with TICKS_NONE and the
 	 * semaphore unavailable.
 	 */
 
-	if (nano_task_sem_take_wait_timeout(&sem_timeout[0], TICKS_NONE)) {
+	if (nano_task_sem_take(&sem_timeout[0], TICKS_NONE)) {
 		TC_ERROR("task with TICKS_NONE got sem, but shouldn't have\n");
 		return TC_FAIL;
 	}
@@ -787,12 +786,12 @@ static int test_timeout(void)
 	TC_PRINT("task with TICKS_NONE did not get sem, as expected\n");
 
 	/*
-	 * test nano_task_sem_take_wait_timeout with TICKS_NONE and the
+	 * test nano_task_sem_take() with TICKS_NONE and the
 	 * semaphore available.
 	 */
 
 	nano_task_sem_give(&sem_timeout[0]);
-	if (!nano_task_sem_take_wait_timeout(&sem_timeout[0], TICKS_NONE)) {
+	if (!nano_task_sem_take(&sem_timeout[0], TICKS_NONE)) {
 		TC_ERROR("task with TICKS_NONE did not get available sem\n");
 		return TC_FAIL;
 	}
@@ -800,7 +799,7 @@ static int test_timeout(void)
 	TC_PRINT("task with TICKS_NONE got available sem, as expected\n");
 
 	/*
-	 * test nano_task_sem_take_wait_timeout with TICKS_UNLIMITED and the
+	 * test nano_task_sem_take() with TICKS_UNLIMITED and the
 	 * semaphore available.
 	 */
 
@@ -808,7 +807,7 @@ static int test_timeout(void)
 			 " will hang the test if it fails.\n");
 
 	nano_task_sem_give(&sem_timeout[0]);
-	if (!nano_task_sem_take_wait_timeout(&sem_timeout[0], TICKS_UNLIMITED)) {
+	if (!nano_task_sem_take(&sem_timeout[0], TICKS_UNLIMITED)) {
 		TC_ERROR(" *** This will never be hit!!! .\n");
 		return TC_FAIL;
 	}

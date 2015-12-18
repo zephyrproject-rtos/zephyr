@@ -250,7 +250,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	nano_fifo_put(&bt_dev.cmd_tx_queue, buf);
 
-	nano_sem_take_wait(&sync_sem);
+	nano_sem_take(&sync_sem, TICKS_UNLIMITED);
 
 	/* Indicate failure if we failed to get the return parameters */
 	if (!cmd(buf)->sync) {
@@ -1725,7 +1725,7 @@ static void hci_cmd_tx_fiber(void)
 
 		/* Wait until ncmd > 0 */
 		BT_DBG("calling sem_take_wait");
-		nano_fiber_sem_take_wait(&bt_dev.ncmd_sem);
+		nano_fiber_sem_take(&bt_dev.ncmd_sem, TICKS_UNLIMITED);
 
 		/* Get next command - wait if necessary */
 		BT_DBG("calling fifo_get_wait");

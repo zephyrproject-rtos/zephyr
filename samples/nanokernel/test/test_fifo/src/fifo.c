@@ -187,7 +187,7 @@ void fiber1(void)
 	int     count = 0;  /* counter */
 
 	/* Wait for fiber1 to be activated. */
-	nano_fiber_sem_take_wait(&nanoSemObj1);
+	nano_fiber_sem_take(&nanoSemObj1, TICKS_UNLIMITED);
 
 	/* Wait for data to be added to <nanoFifoObj> by task */
 	pData = nano_fiber_fifo_get(&nanoFifoObj, TICKS_UNLIMITED);
@@ -207,7 +207,8 @@ void fiber1(void)
 		return;
 	}
 
-	nano_fiber_sem_take_wait(&nanoSemObj1);   /* Wait for fiber1 to be reactivated */
+	/* Wait for fiber1 to be reactivated */
+	nano_fiber_sem_take(&nanoSemObj1, TICKS_UNLIMITED);
 
 	TC_PRINT("Test Fiber FIFO Get\n\n");
 	/* Get all FIFOs */
@@ -420,7 +421,7 @@ void fiber2(void)
 
 	/* Wait for fiber2 to be activated */
 
-	nano_fiber_sem_take_wait(&nanoSemObj2);
+	nano_fiber_sem_take(&nanoSemObj2, TICKS_UNLIMITED);
 
 	/* Wait for data to be added to <nanoFifoObj> */
 	pData = nano_fiber_fifo_get(&nanoFifoObj, TICKS_UNLIMITED);
@@ -440,7 +441,8 @@ void fiber2(void)
 		return;
 	}
 
-	nano_fiber_sem_take_wait(&nanoSemObj2);   /* Wait for fiber2 to be reactivated */
+	/* Wait for fiber2 to be reactivated */
+	nano_fiber_sem_take(&nanoSemObj2, TICKS_UNLIMITED);
 
 	/* Fiber #2 has been reactivated by main task */
 	for (int i = 0; i < 4; i++) {
@@ -454,7 +456,8 @@ void fiber2(void)
 	}
 
 	nano_fiber_sem_give(&nanoSemObjTask); /* Wake main task */
-	nano_fiber_sem_take_wait(&nanoSemObj2);   /* Wait for fiber2 to be reactivated */
+	/* Wait for fiber2 to be reactivated */
+	nano_fiber_sem_take(&nanoSemObj2, TICKS_UNLIMITED);
 
 	testFiberFifoGetW();
 	PRINT_LINE;
@@ -475,14 +478,14 @@ void fiber3(void)
 	void *pData;
 
 	/* Wait for fiber3 to be activated */
-	nano_fiber_sem_take_wait(&nanoSemObj3);
+	nano_fiber_sem_take(&nanoSemObj3, TICKS_UNLIMITED);
 
 	/* Put two items onto <nanoFifoObj2> to unblock fibers #1 and #2. */
 	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[0]);    /* Wake fiber1 */
 	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[1]);    /* Wake fiber2 */
 
 	/* Wait for fiber3 to be re-activated */
-	nano_fiber_sem_take_wait(&nanoSemObj3);
+	nano_fiber_sem_take(&nanoSemObj3, TICKS_UNLIMITED);
 
 	/* Immediately get the data from <nanoFifoObj2>. */
 	pData = nano_fiber_fifo_get(&nanoFifoObj2, TICKS_UNLIMITED);
@@ -505,7 +508,7 @@ void fiber3(void)
 	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[3]);
 
 	/* Wait for fiber3 to be re-activated (not expected to occur) */
-	nano_fiber_sem_take_wait(&nanoSemObj3);
+	nano_fiber_sem_take(&nanoSemObj3, TICKS_UNLIMITED);
 }
 
 
@@ -644,7 +647,7 @@ void main(void)
 	nano_task_sem_give(&nanoSemObj2);   /* Activate fiber #2 */
 
 	/* Wait for fibers to finish */
-	nano_task_sem_take_wait(&nanoSemObjTask);
+	nano_task_sem_take(&nanoSemObjTask, TICKS_UNLIMITED);
 
 	if (retCode == TC_FAIL) {
 		goto exit;
@@ -675,7 +678,7 @@ void main(void)
 	 * Wait for fiber1 to complete execution. (Using a semaphore gives
 	 * the fiber the freedom to do blocking-type operations if it wants to.)
 	 */
-	nano_task_sem_take_wait(&nanoSemObjTask);
+	nano_task_sem_take(&nanoSemObjTask, TICKS_UNLIMITED);
 
 	TC_PRINT("Test Task FIFO Get\n");
 

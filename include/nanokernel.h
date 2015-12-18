@@ -841,50 +841,24 @@ extern void nano_sem_give(struct nano_sem *sem);
 
 /**
  *
- * @brief Take a nanokernel semaphore
- *
- * This is a convenience wrapper for the execution context-specific APIs. This
- * is helpful whenever the exact execution context is not known, but should be
- * avoided when the context is known up-front (to avoid unnecessary overhead).
- *
- * @param sem Pointer to a nano_sem structure.
- *
- * @return N/A
- */
-extern int nano_sem_take(struct nano_sem *sem);
-
-/**
- *
  * @brief Take a nanokernel semaphore, poll/pend if not available
  *
  * This is a convenience wrapper for the execution context-specific APIs. This
  * is helpful whenever the exact execution context is not known, but should be
  * avoided when the context is known up-front (to avoid unnecessary overhead).
  *
- * @warning It's only valid to call this API from a fiber or a task.
- *
  * @param sem Pointer to a nano_sem structure.
+ * @param timeout_in_ticks Affects the action taken should the LIFO be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necesssary. Otherwise wait up to the specified number of ticks
+ * before timing out.
  *
- * @return N/A
+ * @warning If it is to be called from the context of an ISR, then @a
+ * timeout_in_ticks must be set to TICKS_NONE.
+ *
+ * @return 1 if semaphore is available, 0 otherwise
  */
-extern void nano_sem_take_wait(struct nano_sem *sem);
-
-/**
- *
- * @brief Take a nanokernel semaphore, poll/pend with timeout if not available
- *
- * This is a convenience wrapper for the execution context-specific APIs. This
- * is helpful whenever the exact execution context is not known, but should be
- * avoided when the context is known up-front (to avoid unnecessary overhead).
- *
- * @warning It's only valid to call this API from a fiber or a task.
- *
- * @param sem Pointer to a nano_sem structure.
- * @param timeout Time to wait in ticks
- *
- * @return N/A
- */
-extern void nano_sem_take_wait_timeout(struct nano_sem *sem, int32_t timeout);
+extern int nano_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks);
 
 /* methods for ISRs */
 
@@ -914,10 +888,11 @@ extern void nano_isr_sem_give(struct nano_sem *sem);
  * a wait (pend) operation will NOT be performed.
  *
  * @param sem Pointer to a nano_sem structure.
+ * @param timeout_in_ticks Always use TICKS_NONE.
  *
  * @return 1 if semaphore is available, 0 otherwise
  */
-extern int nano_isr_sem_take(struct nano_sem *sem);
+extern int nano_isr_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks);
 
 /* methods for fibers */
 
@@ -938,54 +913,19 @@ extern void nano_fiber_sem_give(struct nano_sem *sem);
 
 /**
  *
- * @brief Take a nanokernel semaphore, fail if unavailable
+ * @brief Take a nanokernel semaphore, wait or fail if unavailable
  *
  * Attempt to take a nanokernel semaphore; it may be called from a fiber.
  *
- * If the semaphore is not available, this function returns immediately, i.e.
- * a wait (pend) operation will NOT be performed.
- *
  * @param sem Pointer to a nano_sem structure.
+ * @param timeout_in_ticks Affects the action taken should the LIFO be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necesssary. Otherwise wait up to the specified number of ticks
+ * before timing out.
  *
  * @return 1 if semaphore is available, 0 otherwise
  */
-extern int nano_fiber_sem_take(struct nano_sem *sem);
-
-/**
- *
- * @brief Test a nanokernel semaphore, wait if unavailable
- *
- * Take a nanokernel semaphore; it can only be called from a fiber.
- *
- * If the nanokernel semaphore is not available, i.e. the event counter
- * is 0, the calling fiber will wait (pend) until the semaphore is
- * given (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give).
- *
- * @param sem Pointer to a nano_sem structure.
- *
- * @return N/A
- */
-extern void nano_fiber_sem_take_wait(struct nano_sem *sem);
-#ifdef CONFIG_NANO_TIMEOUTS
-
-/**
- * @brief test a nanokernel semaphore, wait with a timeout if unavailable
- *
- * Take a nanokernel semaphore; it can only be called from a fiber.
- *
- * If the nanokernel semaphore is not available, i.e. the event counter
- * is 0, the calling fiber will wait (pend) until the semaphore is
- * given (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give). A
- * timeout can be specified.
- *
- * @param sem Pointer to the semaphore to take
- * @param timeout time to wait in ticks
- *
- * @return 1 if semaphore is available, 0 if timed out
- */
-extern int nano_fiber_sem_take_wait_timeout(struct nano_sem *sem,
-		int32_t timeout);
-#endif
+extern int nano_fiber_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks);
 
 /* methods for tasks */
 
@@ -1014,46 +954,14 @@ extern void nano_task_sem_give(struct nano_sem *sem);
  * a wait (pend) operation will NOT be performed.
  *
  * @param sem Pointer to a nano_sem structure.
+ * @param timeout_in_ticks Affects the action taken should the LIFO be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necesssary. Otherwise wait up to the specified number of ticks
+ * before timing out.
  *
  * @return 1 if semaphore is available, 0 otherwise
  */
-extern int nano_task_sem_take(struct nano_sem *sem);
-
-/**
- *
- * @brief Take a nanokernel semaphore, poll if unavailable
- *
- * Take a nanokernel semaphore; it can only be called from a task.
- *
- * If the nanokernel semaphore is not available, i.e. the event counter
- * is 0, the calling task will poll until the semaphore is given
- * (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give).
- *
- * @param sem Pointer to a nano_sem structure.
- *
- * @return N/A
- */
-extern void nano_task_sem_take_wait(struct nano_sem *sem);
-#ifdef CONFIG_NANO_TIMEOUTS
-
-/**
- * @brief test a nanokernel semaphore, poll with a timeout if unavailable
- *
- * Take a nanokernel semaphore; it can only be called from a task.
- *
- * If the nanokernel semaphore is not available, i.e. the event counter is 0,
- * the calling task will poll until the semaphore is given (via
- * nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give). A timeout can be
- * specified.
- *
- * @param sem the semaphore to take
- * @param timeout time to wait in ticks
- *
- * @return 1 if semaphore is available, 0 if timed out
- */
-extern int nano_task_sem_take_wait_timeout(struct nano_sem *sem,
-		int32_t timeout);
-#endif
+extern int nano_task_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks);
 
 /**
  * @}

@@ -367,7 +367,8 @@ static void fiberEntry(int arg1, int arg2)
 		fiberDetectedError = 1;
 		return;
 	}
-	nano_fiber_sem_take_wait(&wakeFiber);    /* Wait forever - let task run */
+	/* Wait forever - let task run */
+	nano_fiber_sem_take(&wakeFiber, TICKS_UNLIMITED);
 
 	/* Check that timers expire in the correct order */
 	TC_PRINT("Fiber testing timers expire in the correct order\n");
@@ -378,7 +379,8 @@ static void fiberEntry(int arg1, int arg2)
 		fiberDetectedError = 2;
 		return;
 	}
-	nano_fiber_sem_take_wait(&wakeFiber);    /* Wait forever - let task run */
+	/* Wait forever - let task run */
+	nano_fiber_sem_take(&wakeFiber, TICKS_UNLIMITED);
 
 	/* Check that timers can be stopped */
 	TC_PRINT("Task testing the stopping of timers\n");
@@ -389,7 +391,8 @@ static void fiberEntry(int arg1, int arg2)
 		fiberDetectedError = 3;
 		return;
 	}
-	nano_fiber_sem_take_wait(&wakeFiber);    /* Wait forever - let task run */
+	/* Wait forever - let task run */
+	nano_fiber_sem_take(&wakeFiber, TICKS_UNLIMITED);
 
 	/* Fiber to wait on a timer that will be stopped by another fiber */
 	TC_PRINT("Fiber to stop a timer that has a waiting fiber\n");
@@ -495,7 +498,7 @@ void main(void)
 	task_fiber_start(fiberStack, FIBER_STACKSIZE, fiberEntry,
 					 0, 0, FIBER_PRIORITY, 0);
 
-	nano_task_sem_take_wait(&wakeTask);
+	nano_task_sem_take(&wakeTask, TICKS_UNLIMITED);
 
 	if (fiberDetectedError == 1) {
 		TC_ERROR("Fiber-level of waiting for timers failed\n");
@@ -504,7 +507,7 @@ void main(void)
 	}
 
 	nano_task_sem_give(&wakeFiber);
-	nano_task_sem_take_wait(&wakeTask);
+	nano_task_sem_take(&wakeTask, TICKS_UNLIMITED);
 
 	if (fiberDetectedError == 2) {
 		TC_ERROR("Fiber-level timer expiration order failed\n");
@@ -513,7 +516,7 @@ void main(void)
 	}
 
 	nano_task_sem_give(&wakeFiber);
-	nano_task_sem_take_wait(&wakeTask);
+	nano_task_sem_take(&wakeTask, TICKS_UNLIMITED);
 
 	if (fiberDetectedError == 3) {
 		TC_ERROR("Fiber-level stopping of timers test failed\n");
@@ -522,7 +525,7 @@ void main(void)
 	}
 
 	nano_task_sem_give(&wakeFiber);
-	nano_task_sem_take_wait(&wakeTask);
+	nano_task_sem_take(&wakeTask, TICKS_UNLIMITED);
 	if (fiberDetectedError == 4) {
 		TC_ERROR("Fiber stopping a timer waited upon by a fiber failed\n");
 		rv = TC_FAIL;
@@ -536,7 +539,7 @@ void main(void)
 		goto doneTests;
 	}
 
-	nano_task_sem_take_wait(&wakeTask);
+	nano_task_sem_take(&wakeTask, TICKS_UNLIMITED);
 
 #if 0
 	/*

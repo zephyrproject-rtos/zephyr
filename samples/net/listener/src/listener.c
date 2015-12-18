@@ -190,7 +190,7 @@ void fiberEntry(void)
 
 	while (1) {
 		/* wait for task to let us have a turn */
-		nano_fiber_sem_take_wait (&nanoSemFiber);
+		nano_fiber_sem_take(&nanoSemFiber, TICKS_UNLIMITED);
 
 		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
@@ -230,7 +230,7 @@ void main(void)
 		nano_task_sem_give(&nanoSemFiber);
 
 		/* now wait for fiber to let us have a turn */
-		nano_task_sem_take_wait(&nanoSemTask);
+		nano_task_sem_take(&nanoSemTask, TICKS_UNLIMITED);
 	}
 }
 

@@ -144,7 +144,7 @@ static inline void synchronous_call_wait(device_sync_call_t *sync)
 		task_sem_take(sync->t_sem, TICKS_UNLIMITED);
 	} else {
 		sync->caller_is_task = false;
-		nano_sem_take_wait(&sync->f_sem);
+		nano_sem_take(&sync->f_sem, TICKS_NONE);
 	}
 }
 
@@ -174,7 +174,7 @@ static inline void synchronous_call_complete(device_sync_call_t *sync)
  */
 static inline void synchronous_call_wait(device_sync_call_t *sync)
 {
-	nano_sem_take_wait(&sync->f_sem);
+	nano_sem_take(&sync->f_sem, TICKS_UNLIMITED);
 }
 
 /**
