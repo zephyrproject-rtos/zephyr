@@ -1,15 +1,15 @@
 .. _galileo:
 
-Platform Configuration: galileo
+Board Configuration: galileo
 ###############################
 
 Overview
 ********
 
-Developers can use the galileo platform configuration
+Developers can use the galileo board configuration
 to build a Zephyr Kernel that runs on a Galileo Development Board (Gen 1 or Gen 2).
 
-This platform configuration enables kernel support for the board's Quark SoC,
+This board configuration enables kernel support for the board's Quark SoC,
 along with the following devices:
 
 * High Precision Event Timer (HPET)
@@ -21,14 +21,14 @@ along with the following devices:
 See `Procedures`_ for using third-party tools to load an image onto the target.
 
 .. note::
-   This platform configuration may work with similar boards
+   This board configuration may work with similar boards
    that are not officially supported.
 
 Supported Boards
 ****************
 
 This section provides information about the physical characteristics of boards
-that the galileo platform configuration supports.
+that the galileo board configuration supports.
 Subsections contain detailed information on pin names, jumper settings, memory mappings,
 and board component layout.
 
@@ -66,7 +66,7 @@ For more information, see page 14 of the
 Memory Mappings
 ===============
 
-The galileo platform configuration uses default hardware memory map
+The galileo board configuration uses default hardware memory map
 addresses and sizes.
 
 For a list of memory mapped registers, see page 868 of the
@@ -86,7 +86,7 @@ For a block diagram, see page 38 of the `Intel® Quark SoC X1000 Datasheet`_.
 Supported Features
 ******************
 
-The galileo platform configuration supports the following hardware features:
+The galileo board configuration supports the following hardware features:
 
 * HPET
 
@@ -146,7 +146,7 @@ For more information, see `Intel® Quark SoC X1000 Datasheet`_, section 21.12.1.
 Interrupt Controller
 ====================
 
-The galileo platform configuration uses the kernel's static
+The galileo board configuration uses the kernel's static
 Interrupt Descriptor Table (IDT) to program the
 Advanced Programmable Interrupt Controller (APIC)
 interrupt redirection table.
@@ -225,7 +225,7 @@ application image on a Galileo board. The following instructions apply to both
 devices.
 
 
-#. Set the platform configuration to Galileo by changing the :command:`make`
+#. Set the board configuration to Galileo by changing the :command:`make`
    command to:
 
    .. code-block:: console

@@ -1,12 +1,12 @@
 .. _fsl_frdm_k64f:
 
-Platform Configuration: fsl_frdm_k64f
+Board Configuration: fsl_frdm_k64f
 #####################################
 
 Overview
 ********
 
-The fsl_frdm_k64f platform configuration is used by Zephyr applications
+The fsl_frdm_k64f board configuration is used by Zephyr applications
 that run on the Freescale Freedom Development Platform (FRDM-K64F).
 It provides support for an ARM Cortex-M4 CPU and the following devices:
 
@@ -22,13 +22,13 @@ Zephyr application image on the target. Debugging is
 done with GNU Debugger (GDB), using Eclipse plugins.
 
 .. note::
-   This platform configuration may work with similar boards,
+   This board configuration may work with similar boards,
    but they are not officially supported.
 
 Supported Boards
 ****************
 
-The fsl_frdm_k64f platform configuration has been tested to run on the
+The fsl_frdm_k64f board configuration has been tested to run on the
 Freescale Freedom Development Platform.  The physical characteristics of
 this board (including pin names, jumper settings, memory mappings, ...)
 can be found below.  No claims are made about its suitability for use with
@@ -110,7 +110,7 @@ The default switch settings for the Freescale FRDM-K64F are:
 Memory Mappings
 ===============
 
-The fsl_frdm_k64f platform configuration uses the
+The fsl_frdm_k64f board configuration uses the
 following default hardware memory map addresses and sizes:
 
 +--------------------------+---------+------------------+
@@ -182,7 +182,7 @@ http://infocenter.arm.com/help/topic/com.arm.doc.dui0552a/DUI0552A_cortex_m3_dgu
 Supported Features
 ******************
 
-The fsl_frdm_k64f platform configuration supports the following
+The fsl_frdm_k64f board configuration supports the following
 hardware features:
 
 +--------------+------------+----------------------+
@@ -421,7 +421,7 @@ Configuration Options
       Set to 'n' only when there is a good reason to do it.
 
 :option:`NUM_IRQ_PRIO_BITS`
-      The platform configuration sets this to the correct value for the board
+      The board configuration sets this to the correct value for the board
       ("4" for FRDM board, IIRC).
 
 :option:`RUNTIME_NMI`
@@ -432,11 +432,11 @@ Configuration Options
       enable this option and attach it via _NmiHandlerSet().
 
 :option:`NUM_IRQS`
-      The platform configuration sets this value to the correct number of
+      The board configuration sets this value to the correct number of
       interrupts available on the board. The default is '34'.
 
 :option:`SW_ISR_TABLE`
-      Set to 'n' when the platform configuration does not provide one.
+      Set to 'n' when the board configuration does not provide one.
 
 :option:`SW_ISR_TABLE_DYNAMIC`
       Set to 'n' to override the default.

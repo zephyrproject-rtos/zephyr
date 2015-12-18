@@ -53,4 +53,4 @@ Workflow
    with QEMU, see :ref:`apps_run`.
 
 10. To load an application image on a target hardware, see using
-    :ref:`platform` documentation.
+    :ref:`board` documentation.

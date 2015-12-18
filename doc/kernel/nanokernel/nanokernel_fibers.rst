@@ -30,7 +30,7 @@ include:
 The kernel may automatically spawn zero or more system fibers during system
 initialization. The specific set of fibers spawned depends on the kernel
 capabilities that have been configured by the application and by the
-platform configuration used to build the application image.
+board configuration used to build the application image.
 
 Fiber Lifecycle
 ===============

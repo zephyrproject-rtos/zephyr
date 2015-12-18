@@ -14,13 +14,13 @@ it is specified:
    b. The value specified by the application’s default
       configuration; that is, its :file:`prj.conf` file.
 
-   c. The value specified by the platform configuration.
+   c. The value specified by the board configuration.
 
    d. The kernel’s default value for the configuration option.
 
 .. note::
 
-   When the default platform configuration settings are sufficient for your
+   When the default board configuration settings are sufficient for your
    application, a :file:`prj.conf` file is not needed. Skip ahead to
    :ref:`override_kernel_conf`.
 
@@ -35,7 +35,7 @@ Procedures
 The procedures that follow describe how to configure a :file:`prj.conf`
 file and how to configure kernel options for microkernel and nanokernel
 applications. For information on how to work with kernel option
-inter-dependencies and platform configuration-default options, see the
+inter-dependencies and board configuration-default options, see the
 :ref:`configuration`.
 
 .. note::
@@ -50,10 +50,10 @@ Defining the Application's Default Kernel Configuration
 
 Create a :file:`prj.conf` file to define the application's
 default kernel configuration. This file can contain
-settings that override or augment platform-configuration settings.
+settings that override or augment board-configuration settings.
 
-The contents of the supported platform configuration files
-can be viewed in :file:`~/rootDir/architectureDir/configs`.
+The contents of the supported board configuration files
+can be viewed in :file:`~/rootDir/boards/BOARD/BOARD_defconfig`.
 
 Before you begin
 ----------------
@@ -85,7 +85,7 @@ Steps
 
    d) Use a # followed by a space to comment a line.
 
-   This example shows a comment line and a platform
+   This example shows a comment line and a board
    configuration override in the :file:`prj.conf`.
 
   .. code-block:: c

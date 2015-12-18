@@ -21,7 +21,7 @@ Prerequisites
 -------------
 
 * You must have already generated a .elf image file for a
-  QEMU-supported platform configuration, such as
+  QEMU-supported board configuration, such as
   basic_cortex_m3 or basic_minuteia.
 
 * The environment variable must be set for each console
@@ -57,6 +57,6 @@ Loading and Running an Application on Target Hardware
 An application image is loaded on the target based on functionality
 available on the hardware device. Loading instructions are often
 unique to the particular target board. For this reason, loading
-instructions reside with the platform-specific documentation.
+instructions reside with the board-specific documentation.
 
-For more information see :ref:`platform`.
+For more information see :ref:`board`.

@@ -87,7 +87,7 @@ example:
    $ make galileo_defconfig
 
 The command takes the default configuration for the architecture
-and the galileo platform configuration to compile the kernel.
+and the galileo board configuration to compile the kernel.
 
 .. _configuration_snippets:
 

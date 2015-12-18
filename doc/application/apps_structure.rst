@@ -74,7 +74,7 @@ Creating an Application Makefile
 ================================
 
 Create an application Makefile to define basic information such as the kernel
-type, microkernel or nanokernel, and the platform configuration used by the
+type, microkernel or nanokernel, and the board configuration used by the
 application. The build system uses the Makefile to build an image with both
 the application and the kernel libraries called either
 :file:`microkernel.elf` or :file:`nanokernel.elf`.
@@ -84,8 +84,8 @@ Before You Begin
 
 * Be familiar with the standard GNU Make language.
 
-* Be familiar with the platform configuration used for your application
-  and, if it is a custom platform configuration, where it is located.
+* Be familiar with the board configuration used for your application
+  and, if it is a custom board configuration, where it is located.
 
 * Set the environment variable for each console terminal using
   :ref:`set_environment_variables`.
@@ -115,14 +115,14 @@ Steps
       Either micro or nano, short for microkernel or
       nanokernel respectively.
 
-   b) Add the name of the platform configuration for your application on a
+   b) Add the name of the board configuration for your application on a
       new line:
 
       .. code-block:: make
 
-         BOARD ?= platform_configuration_name
+         BOARD ?= board_configuration_name
 
-      The supported platforms can be found in :ref:`platform`.
+      The supported boards can be found in :ref:`board`.
 
    c) Add the name of the default kernel configuration file for your
       application on a new line:

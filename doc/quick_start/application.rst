@@ -59,19 +59,19 @@ use QEMU with some of the supported platforms and architecture. This can be easi
 accomplished by calling a special target when building an application that
 invokes Qemu once the build process is completed.
 
-To run an application using the default platform configuration, type:
+To run an application using the default board configuration, type:
 
 .. code-block:: console
 
    $ make qemu
 
-To run an application using the x86 minnowboard platform configuration, type:
+To run an application using the x86 minnowboard board configuration, type:
 
 .. code-block:: console
 
    $ make BOARD=qemu_x86 qemu
 
-To run an application using the ARM basic_cortex_m3 platform configuration, type:
+To run an application using the ARM basic_cortex_m3 board configuration, type:
 
 .. code-block:: console
 

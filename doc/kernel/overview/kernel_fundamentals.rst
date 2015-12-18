@@ -344,10 +344,10 @@ Device Driver Library
 *********************
 
 The Zephyr kernel supports a variety of device drivers. The specific set of
-device drivers available for an application's platform configuration varies
+device drivers available for an application's board configuration varies
 according to the associated hardware components and device driver software.
 
-Device drivers which are present on all supported platform configurations
+Device drivers which are present on all supported board configurations
 are listed below.
 
 * **Interrupt controller**: This device driver is used by the nanokernel's

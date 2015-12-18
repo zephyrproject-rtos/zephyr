@@ -1,13 +1,13 @@
 .. _basic_minuteia:
 
-Platform Configuration: basic_minuteia
+Board Configuration: basic_minuteia
 ######################################
 
 Overview
 ********
 
-The Zephyr Kernel uses the basic_minuteia platform configuration
-to emulate the galileo platform (or something similar) running on QEMU.
+The Zephyr Kernel uses the basic_minuteia board configuration
+to emulate the galileo board (or something similar) running on QEMU.
 It provides support for an x86 Minute IA CPU and the following devices:
 
 * HPET
@@ -17,18 +17,18 @@ It provides support for an x86 Minute IA CPU and the following devices:
 * NS16550 UART
 
 .. note::
-   This platform configuration makes no claims about its suitability for use
+   This board configuration makes no claims about its suitability for use
    with actual galileo hardware, or any other hardware.
 
 Supported Boards
 ****************
 
-The basic_minuteia platform configuration has been tested on QEMU 2.1.
+The basic_minuteia board configuration has been tested on QEMU 2.1.
 
 Supported Features
 ******************
 
-The basic_minuteia platform configuration supports the following
+The basic_minuteia board configuration supports the following
 hardware features:
 
 +--------------+------------+-----------------------+
@@ -50,18 +50,18 @@ Interrupt Controller
 Refer to the :ref:`galileo`.
 
 .. note::
-   The basic_minuteia platform configuration does not support PCI.
+   The basic_minuteia board configuration does not support PCI.
 
 HPET System Clock Support
 =========================
 
-The basic_minuteia platform configuration uses an HPET clock frequency
+The basic_minuteia board configuration uses an HPET clock frequency
 of 25 MHz.
 
 Serial Port
 ===========
 
-The basic_minuteia platform configuration uses a single serial
+The basic_minuteia board configuration uses a single serial
 communication channel that uses the NS16550 serial driver
 operating in polling mode. To override, enable the UART_INTERRUPT_DRIVEN
 Kconfig option, which allows the system to be interrupt-driven.

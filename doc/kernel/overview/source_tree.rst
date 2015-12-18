@@ -15,7 +15,7 @@ which are not described here.
     * architecture-specific nanokernel source files
     * architecture-specific nanokernel include files for private APIs
     * platform-specific code
-    * platform configuration files
+    * board configuration files
 
 :file:`doc`
     Zephyr documentation-related material and tools.

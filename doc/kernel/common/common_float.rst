@@ -11,7 +11,7 @@ Concepts
 ********
 
 The kernel allows an application's tasks and fibers to use floating point
-registers on platform configurations that support these registers.
+registers on board configurations that support these registers.
 Threads that use the x87 FPU/MMX registers are known as "FPU users",
 while threads that use SSE registers are known as "SSE users".
 

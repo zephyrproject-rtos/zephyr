@@ -1,12 +1,12 @@
-.. _basic_cortex_m3:
+.. _qemu_cortex_m3:
 
-Platform Configuration: basic_cortex_m3
+Board Configuration: qemu_cortex_m3
 #######################################
 
 Overview
 ********
 
-The Zephyr kernel uses the basic_cortex_m3 platform configuration
+The Zephyr kernel uses the qemu_cortex_m3 board configuration
 to emulate the TI LM3S6965 platform running on QEMU. It provides support
 for an ARM Cortex-M3 CPU and the following devices:
 
@@ -17,20 +17,20 @@ for an ARM Cortex-M3 CPU and the following devices:
 * Stellaris UART
 
 .. note::
-   This platform configuration makes no claims about its suitability for use
+   This board configuration makes no claims about its suitability for use
    with an actual ti_lm3s6965 hardware system, or any other hardware system.
 
 Supported Boards
 ****************
 
-The basic_cortex_m3 platform configuration has been tested on
+The qemu_cortex_m3 board configuration has been tested on
 QEMU 2.1 patched with Zephyr's
 :file:`0001-armv7m-support-basepri-primask-interrupt-locking.patch`.
 
 Supported Features
 ******************
 
-The basic_cortex_m3 platform configuration supports the following
+The qemu_cortex_m3 board configuration supports the following
 hardware features:
 
 +--------------+------------+----------------------+
@@ -54,18 +54,18 @@ Interrupt Controller
 Refer to the :ref:`fsl_frdm_k64f`.
 
 .. note::
-   Unlike the fsl_frdm_k64 platform configuration, the basic_cortex_m3
-   platform configuration sets option :option:`NUM_IRQ_PRIO_BITS` to '3'.
+   Unlike the fsl_frdm_k64 board configuration, the qemu_cortex_m3
+   board configuration sets option :option:`NUM_IRQ_PRIO_BITS` to '3'.
 
 System Clock
 ============
-The basic_cortex_m3 platform configuration uses a system
+The qemu_cortex_m3 board configuration uses a system
 clock frequency of 12 MHz.
 
 Serial Port
 ===========
 
-The basic_cortex_m3 platform configuration uses a single
+The qemu_cortex_m3 board configuration uses a single
 serial communication channel with the CPU's UART0.
 
 Known Problems or Limitations

@@ -1,15 +1,15 @@
-.. _platform:
+.. _board:
 
-Supported Platforms
+Supported Boards
 ###################
 
-The Zephyr Kernel supports the platform configurations listed in the
-table below. An application can use a platform configuration as is,
-or it can customize a platform configuration by changing its default
+The Zephyr Kernel supports the board configurations listed in the
+table below. An application can use a board configuration as is,
+or it can customize a board configuration by changing its default
 kernel configuration settings.
 
 .. note::
-   Developers can create new platform configurations
+   Developers can create new board configurations
    that allow an application to run on other target systems.
 
 +----------------------+-----------------+------------------------+
@@ -18,9 +18,15 @@ kernel configuration settings.
 +======================+=================+========================+
 | minnowboard          | X86             | Minnowboard Max        |
 +----------------------+-----------------+------------------------+
-| basic_cortex_m3      | ARM v7-M        | QEMU 2.1 + patch       |
+| qemu_cortex_m3       | ARM v7-M        | QEMU 2.1 + patch       |
 +----------------------+-----------------+------------------------+
-| basic_minuteia       | X86             | QEMU 2.1               |
+| qemu_x86             | X86             | QEMU 2.1               |
++----------------------+-----------------+------------------------+
+| quark_d2000_crb      | X86             | Quark D2000 Boards     |
++----------------------+-----------------+------------------------+
+| quark_se_ctb         | X86             | Quark SE Boards        |
++----------------------+-----------------+------------------------+
+| arduino_101          | X86             | Arduino 101 Board      |
 +----------------------+-----------------+------------------------+
 | fsl_frdm_k64f        | ARM v7E-M       | Freescale Freedom      |
 |                      |                 | Development Platform   |
@@ -35,7 +41,7 @@ The following sections provide details on the respective platforms:
    :maxdepth: 1
 
    minnowboard.rst
-   basic_cortex_m3.rst
+   qemu_cortex_m3.rst
    basic_minuteia.rst
    fsl_frdm_k64f.rst
    galileo.rst

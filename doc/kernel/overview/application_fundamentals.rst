@@ -23,7 +23,7 @@ following files.
 
 * **Makefile**: This file typically contains a handful of lines that tell the build
   system where to find the files mentioned above, as well as the desired target
-  platform configuration and kernel type (either microkernel or nanokernel).
+  board configuration and kernel type (either microkernel or nanokernel).
 
 Once the application has been defined, it can be built with a single command.
 The results of the build process, including the final application image,

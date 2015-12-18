@@ -1,14 +1,14 @@
 .. _minnowboard:
 
-Platform Configuration: Minnowboard Max
+Board Configuration: Minnowboard Max
 #######################################
 
 Overview
 ********
 
-The minnowboard platform configuration is used by Zephyr applications
-that run on QEMU emulating the Atom N28xx platform.  This platform
-configuration provides support for an x86 Atom CPU and the following devices:
+The minnowboard board configuration is used by Zephyr applications
+that run on QEMU emulating the Atom N28xx platform.  This configuration
+provides support for an x86 Atom CPU and the following devices:
 
 * HPET
 
@@ -17,18 +17,18 @@ configuration provides support for an x86 Atom CPU and the following devices:
 * NS16550 UART
 
 .. note::
-   This platform configuration makes no claims about its suitability for use
+   This board configuration makes no claims about its suitability for use
    with an actual Atom N28xx hardware system, or any other hardware system.
 
 Supported Boards
 ****************
 
-The minnowboard platform configuration has been tested on QEMU 2.1.
+The minnowboard board configuration has been tested on QEMU 2.1.
 
 Supported Features
 ******************
 
-The minnowboard platform configuration supports the following
+The minnowboard board configuration supports the following
 hardware features:
 
 +--------------+------------+-----------------------+
@@ -49,12 +49,12 @@ Interrupt Controller
 Refer to the :ref:`galileo`.
 
 .. note::
-   The minnowboard platform configuration does not support PCI.
+   The minnowboard board configuration does not support PCI.
 
 HPET System Clock Support
 =========================
 
-The minnowboard platform configuration uses a system clock frequency of 25 MHz.
+The minnowboard board configuration uses a system clock frequency of 25 MHz.
 
 .. note::
    The LOAPIC timer may be used instead of the HPET. To do so,
@@ -63,7 +63,7 @@ The minnowboard platform configuration uses a system clock frequency of 25 MHz.
 Serial Port
 ===========
 
-The minnowboard platform configuration uses a single serial communication channel
+The minnowboard board configuration uses a single serial communication channel
 with a NS16550 serial driver that operates in polling mode.
 For an interrupt-driven driver, enable the UART_INTERRUPT_DRIVEN kernel configuration option.
 

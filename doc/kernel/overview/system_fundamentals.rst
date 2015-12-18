@@ -21,10 +21,10 @@ least one Makefile. The application's kernel configuration settings enable the b
 system to create a kernel tailor-made to meet the needs of the application
 and to make the best use of the system's resources.
 
-The Zephyr Kernel supports a variety of target systems, known as *platforms*;
-each :dfn:`platform` has its own set of hardware devices and capabilities. One or more
-*platform configurations* are defined for a given platform; each
-:dfn:`platform configuration` indicates how the devices that may be present on the
-platform are to be used by the kernel. The platform and platform configuration concepts
+The Zephyr Kernel supports a variety of target systems, known as *boards*;
+each :dfn:`board` has its own set of hardware devices and capabilities. One or more
+*board configurations* are defined for a given board; each
+:dfn:`board configuration` indicates how the devices that may be present on the
+board are to be used by the kernel. The board and board configuration concepts
 make it possible to develop a single application that can be used by a set of related
 target systems, or even target systems based on different CPU architectures.
