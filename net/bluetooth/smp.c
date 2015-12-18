@@ -1545,6 +1545,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC) ||
 	    smp->method == JUST_WORKS) {
+		net_buf_unref(rsp_buf);
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 	}
 #endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
