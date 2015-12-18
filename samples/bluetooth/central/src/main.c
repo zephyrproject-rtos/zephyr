@@ -40,11 +40,8 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	switch (type) {
-	case BT_LE_ADV_IND:
-	case BT_LE_ADV_DIRECT_IND:
-		break;
-	default:
+	/* We're only interested in connectable events */
+	if (type != BT_LE_ADV_IND && type != BT_LE_ADV_DIRECT_IND) {
 		return;
 	}
 
