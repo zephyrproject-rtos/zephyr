@@ -24,7 +24,7 @@
 
 #include "rtc_dw.h"
 
-#define CLK_RTC_DIV_DEF_MASK (0xFFFFFF83)
+#define RTC_CLK_DIV_DEF_MASK (0xFFFFFF83)
 #define CCU_RTC_CLK_DIV_EN (2)
 
 #ifdef RTC_DW_INT_MASK
@@ -76,7 +76,7 @@ static void rtc_dw_set_div(const enum clk_rtc_div div)
 {
 	/* set default division mask */
 	uint32_t reg =
-		sys_read32(CLOCK_SYSTEM_CLOCK_CONTROL) & CLK_RTC_DIV_DEF_MASK;
+		sys_read32(CLOCK_SYSTEM_CLOCK_CONTROL) & RTC_CLK_DIV_DEF_MASK;
 	reg |= (div << CCU_RTC_CLK_DIV_OFFSET);
 	sys_write32(reg, CLOCK_SYSTEM_CLOCK_CONTROL);
 	/* CLK Div en bit must be written from 0 -> 1 to apply new value */
