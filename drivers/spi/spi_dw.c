@@ -170,19 +170,32 @@ static void push_data(struct device *dev)
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t cnt = 0;
-	uint8_t data;
+	uint32_t data = 0;
 
 	DBG("spi: push_data\n");
 
 	while (test_bit_sr_tfnf(info->regs)) {
-		if (cnt == DW_SPI_RXFTLR_DFLT) {
+		if (cnt >= DW_SPI_RXFTLR_DFLT) {
 			break;
 		}
 
 		if (spi->tx_buf && spi->tx_buf_len > 0) {
-			data = *(uint8_t *)(spi->tx_buf);
-			spi->tx_buf++;
-			spi->tx_buf_len--;
+			switch (spi->dfs) {
+			case 1:
+				data = *(uint8_t *)(spi->tx_buf);
+				break;
+			case 2:
+				data = *(uint16_t *)(spi->tx_buf);
+				break;
+#ifndef CONFIG_ARC
+			case 4:
+				data = *(uint32_t *)(spi->tx_buf);
+				break;
+#endif
+			}
+
+			spi->tx_buf += spi->dfs;
+			spi->tx_buf_len -= spi->dfs;
 		} else if (spi->rx_buf && spi->rx_buf_len > 0) {
 			/* No need to push more than necessary */
 			if (spi->rx_buf_len - cnt <= 0) {
@@ -196,7 +209,7 @@ static void push_data(struct device *dev)
 		}
 
 		write_dr(data, info->regs);
-		cnt++;
+		cnt += spi->dfs;
 	}
 
 	DBG("Pushed: %d\n", cnt);
@@ -208,18 +221,31 @@ static void pull_data(struct device *dev)
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t cnt = 0;
-	uint8_t data;
+	uint32_t data = 0;
 
 	DBG("spi: pull_data\n");
 
 	while (test_bit_sr_rfne(info->regs)) {
 		data = read_dr(info->regs);
-		cnt++;
+		cnt += spi->dfs;
 
 		if (spi->rx_buf && spi->rx_buf_len > 0) {
-			*(uint8_t *)(spi->rx_buf) = data;
-			spi->rx_buf++;
-			spi->rx_buf_len--;
+			switch (spi->dfs) {
+			case 1:
+				*(uint8_t *)(spi->rx_buf) = (uint8_t)data;
+				break;
+			case 2:
+				*(uint16_t *)(spi->rx_buf) = (uint16_t)data;
+				break;
+#ifndef CONFIG_ARC
+			case 4:
+				*(uint32_t *)(spi->rx_buf) = (uint32_t)data;
+				break;
+#endif
+			}
+
+			spi->rx_buf += spi->dfs;
+			spi->rx_buf_len -= spi->dfs;
 		}
 	}
 
@@ -249,6 +275,9 @@ static int spi_dw_configure(struct device *dev,
 
 	/* Word size */
 	ctrlr0 |= DW_SPI_CTRLR0_DFS(SPI_WORD_SIZE_GET(flags));
+
+	/* Determine how many bytes are required per-frame */
+	spi->dfs = SPI_DFS_TO_BYTES(SPI_WORD_SIZE_GET(flags));
 
 	/* SPI mode */
 	mode = SPI_MODE(flags);

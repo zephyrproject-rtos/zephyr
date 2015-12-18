@@ -37,10 +37,11 @@ struct spi_dw_config {
 struct spi_dw_data {
 	device_sync_call_t sync;
 	uint8_t error;
+	uint8_t dfs; /* data frame size in bytes */
+	uint16_t slave;
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	struct device *clock;
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
-	uint32_t slave;
 	uint8_t *tx_buf;
 	uint32_t tx_buf_len;
 	uint8_t *rx_buf;
@@ -83,6 +84,8 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_SCPOL		(0x1 << 7)
 #define DW_SPI_CTRLR0_SRL		(0x1 << 11)
 #define DW_SPI_CTRLR0_DFS(__bpw)	(((__bpw) - 1) << 16)
+
+#define SPI_DFS_TO_BYTES(__bpw)		((__bpw / 8) + 1)
 
 /* SSIENR bits */
 #define DW_SPI_SSIENR_SSIEN_BIT		(0)
