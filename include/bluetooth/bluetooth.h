@@ -277,17 +277,16 @@ void bt_auth_cancel(struct bt_conn *conn);
 void bt_auth_passkey_confirm(struct bt_conn *conn, bool match);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-/** @brief Reply with entered pincode.
+/** @brief Reply with entered PIN code.
  *
- *  This function should be called only after pincode callback from
+ *  This function should be called only after PIN code callback from
  *  bt_auth_cb structure was called. It's for legacy 2.0 devices.
  *
  *  @param conn Connection object.
- *  @param pin Entered pincode.
- *  @param len Entered pincode's length.
+ *  @param pin Entered PIN code.
  */
-void bt_auth_pincode_entry(struct bt_conn *conn, char *pin, size_t len);
-#endif
+void bt_auth_pincode_entry(struct bt_conn *conn, const char *pin);
+#endif /* CONFIG_BLUETOOTH_BREDR */
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 /** @def BT_ADDR_STR_LEN

@@ -1594,11 +1594,12 @@ static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 	return err;
 }
 
-static int pin_code_reply(const bt_addr_t *bdaddr, const char *pin, size_t len)
+static int pin_code_reply(const bt_addr_t *bdaddr, const char *pin)
 {
 	struct bt_hci_cp_pin_code_reply *cp;
 	struct bt_conn *conn;
 	struct net_buf *buf;
+	size_t len;
 	int err;
 
 	BT_DBG("");
@@ -1609,6 +1610,7 @@ static int pin_code_reply(const bt_addr_t *bdaddr, const char *pin, size_t len)
 		return -EINVAL;
 	}
 
+	len = strlen(pin);
 	if (len > 16) {
 		err = -EINVAL;
 		goto cleanup;
@@ -2738,14 +2740,14 @@ void bt_auth_cancel(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-void bt_auth_pincode_entry(struct bt_conn *conn, char *pin, size_t len)
+void bt_auth_pincode_entry(struct bt_conn *conn, const char *pin)
 {
 	if (!bt_auth) {
 		return;
 	}
 
 	if (conn->type == BT_CONN_TYPE_BR) {
-		pin_code_reply(&conn->br.dst, pin, len);
+		pin_code_reply(&conn->br.dst, pin);
 	}
 }
 #endif

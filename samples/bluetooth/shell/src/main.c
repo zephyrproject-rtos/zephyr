@@ -1202,7 +1202,7 @@ static void cmd_auth_pincode(int argc, char *argv[])
 
 	printk("PIN code \"%s\" applied\n", argv[1]);
 
-	bt_auth_pincode_entry(default_conn, argv[1], strlen(argv[1]));
+	bt_auth_pincode_entry(default_conn, argv[1]);
 }
 
 
