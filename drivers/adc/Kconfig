@@ -45,6 +45,7 @@ config  ADC_TI_ADC108S102
 config ADC_TI_ADC108S102_INIT_PRIORITY
 	int
 	depends on ADC_TI_ADC108S102
+	default 80
 	prompt "Init priority"
 	help
 	  Device driver initialization priority.

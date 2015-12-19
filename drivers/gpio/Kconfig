@@ -84,6 +84,7 @@ config	GPIO_DW_CLASS
 
 config GPIO_DW_INIT_PRIORITY
 	int
+	default 60
 	prompt "Init priority"
 	help
 	  Device driver initialization priority.
@@ -333,6 +334,7 @@ config GPIO_PCAL9535A_DEBUG
 
 config GPIO_PCAL9535A_INIT_PRIORITY
 	int
+	default 70
 	prompt "Init priority"
 	help
 	  Device driver initialization priority.
@@ -464,6 +466,7 @@ config GPIO_MMIO
 config GPIO_MMIO_INIT_PRIORITY
 	int
 	depends on GPIO_MMIO
+	default 60
 	prompt "Init priority"
 	help
 	  Device driver initialization priority.
@@ -606,6 +609,7 @@ config GPIO_SCH
 config GPIO_SCH_INIT_PRIORITY
 	int
 	depends on GPIO_SCH
+	default 60
 	prompt "Init priority"
 	help
 	  Device driver initialization priority.

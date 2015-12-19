@@ -32,6 +32,7 @@ config PWM_PCA9685
 config PWM_PCA9685_INIT_PRIORITY
 	int
 	depends on PWM_PCA9685
+	default 70
 	prompt "Init priority"
 	help
 	  Device driver initialization priority.

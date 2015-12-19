@@ -90,6 +90,7 @@ config UART_CONSOLE_IRQ_PRI
 config UART_CONSOLE_PRIORITY
 	int
 	prompt "Init priority"
+	default 60
 	depends on UART_CONSOLE
 	help
 	  Device driver initialization priority.
