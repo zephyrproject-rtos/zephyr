@@ -18,7 +18,7 @@
  * @file Header file for the PCAL9535A driver.
  */
 
-#ifndef _GPIO_PCAL9353A_H_
+#ifndef _GPIO_PCAL9535A_H_
 #define _GPIO_PCAL9535A_H_
 
 #include <nanokernel.h>
