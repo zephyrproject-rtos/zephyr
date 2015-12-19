@@ -80,18 +80,6 @@ static inline int _has_i2c_master(struct device *dev)
 		return 0;
 }
 
-#define WAIT_10MS	(sys_clock_ticks_per_sec / 100)
-/**
- * @brief Simply to wait 10ms.
- *
- * @param timer nano_timer
- */
-static inline void _wait_10ms(struct nano_timer *timer)
-{
-	nano_fiber_timer_start(timer, WAIT_10MS);
-	nano_fiber_timer_wait(timer);
-}
-
 /**
  * @brief Read both port 0 and port 1 registers of certain register function.
  *
