@@ -52,19 +52,6 @@
 #endif /* CONFIG_STDOUT_CONSOLE */
 #endif /* CONFIG_I2C_DEBUG */
 
-static inline uint32_t i2c_dw_memory_read(uint32_t base_addr, uint32_t offset)
-{
-	return sys_read32(base_addr + offset);
-}
-
-
-static inline void i2c_dw_memory_write(uint32_t base_addr, uint32_t offset,
-				       uint32_t val)
-{
-	sys_write32(val, base_addr + offset);
-}
-
-
 static inline void _i2c_dw_data_ask(struct device *dev, uint8_t restart)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
