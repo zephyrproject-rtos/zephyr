@@ -235,7 +235,7 @@ void *nano_task_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
 		}
 
 		if (timeout_in_ticks != TICKS_NONE) {
-			/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
+			/* see explanation in nano_stack.c:nano_task_stack_pop() */
 
 			nano_cpu_atomic_idle(key);
 

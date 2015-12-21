@@ -56,13 +56,13 @@ void stack_fiber1(int par1, int par2)
 	ARG_UNUSED(par1);
 
 	for (i = 0; i < par2 / 2; i++) {
-		data = nano_fiber_stack_pop_wait(&nano_stack_1);
+		nano_fiber_stack_pop(&nano_stack_1, &data, TICKS_UNLIMITED);
 		if (data != 2 * i) {
 			break;
 		}
 		data = 2 * i;
 		nano_fiber_stack_push(&nano_stack_2, data);
-		data = nano_fiber_stack_pop_wait(&nano_stack_1);
+		nano_fiber_stack_pop(&nano_stack_1, &data, TICKS_UNLIMITED);
 		if (data != 2 * i + 1) {
 			break;
 		}
@@ -91,7 +91,7 @@ void stack_fiber2(int par1, int par2)
 	for (i = 0; i < par2; i++) {
 		data = i;
 		nano_fiber_stack_push(&nano_stack_1, data);
-		data = nano_fiber_stack_pop_wait(&nano_stack_2);
+		nano_fiber_stack_pop(&nano_stack_2, &data, TICKS_UNLIMITED);
 		if (data != i) {
 			break;
 		}
@@ -120,7 +120,7 @@ void stack_fiber3(int par1, int par2)
 		data = i;
 		nano_fiber_stack_push(&nano_stack_1, data);
 		data = 0xffffffff;
-		while (!nano_fiber_stack_pop(&nano_stack_2, &data)) {
+		while (!nano_fiber_stack_pop(&nano_stack_2, &data, TICKS_NONE)) {
 			fiber_yield();
 		}
 		if (data != i) {
@@ -149,7 +149,7 @@ int stack_test(void)
 			"Stack #1");
 	fprintf(output_file, sz_description,
 			"\n\tnano_stack_init"
-			"\n\tnano_fiber_stack_pop_wait"
+			"\n\tnano_fiber_stack_pop(TICKS_UNLIMITED)"
 			"\n\tnano_fiber_stack_push");
 	printf(sz_test_start_fmt);
 
@@ -171,7 +171,7 @@ int stack_test(void)
 			"Stack #2");
 	fprintf(output_file, sz_description,
 			"\n\tnano_stack_init"
-			"\n\tnano_fiber_stack_pop_wait"
+			"\n\tnano_fiber_stack_pop(TICKS_UNLIMITED)"
 			"\n\tnano_fiber_stack_pop"
 			"\n\tnano_fiber_stack_push"
 			"\n\tfiber_yield");
@@ -196,9 +196,9 @@ int stack_test(void)
 			"Stack #3");
 	fprintf(output_file, sz_description,
 			"\n\tnano_stack_init"
-			"\n\tnano_fiber_stack_pop_wait"
+			"\n\tnano_fiber_stack_pop(TICKS_UNLIMITED)"
 			"\n\tnano_fiber_stack_push"
-			"\n\tnano_task_stack_pop_wait"
+			"\n\tnano_task_stack_pop(TICKS_UNLIMITED)"
 			"\n\tnano_task_stack_push");
 	printf(sz_test_start_fmt);
 
@@ -215,11 +215,11 @@ int stack_test(void)
 		data = 2 * i + 1;
 		nano_task_stack_push(&nano_stack_1, data);
 
-		data = nano_task_stack_pop_wait(&nano_stack_2);
+		nano_task_stack_pop(&nano_stack_2, &data, TICKS_UNLIMITED);
 		if (data != 2 * i + 1) {
 			break;
 		}
-		data = nano_task_stack_pop_wait(&nano_stack_2);
+		nano_task_stack_pop(&nano_stack_2, &data, TICKS_UNLIMITED);
 		if (data != 2 * i) {
 			break;
 		}

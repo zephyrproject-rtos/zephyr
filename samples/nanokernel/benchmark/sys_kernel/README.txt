@@ -141,7 +141,7 @@ END TEST CASE
 TEST CASE: Stack #1
 TEST COVERAGE: 
 	nano_stack_init
-	nano_fiber_stack_pop_wait
+	nano_fiber_stack_pop(TICKS_UNLIMITED)
 	nano_fiber_stack_push
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL
@@ -151,7 +151,7 @@ END TEST CASE
 TEST CASE: Stack #2
 TEST COVERAGE: 
 	nano_stack_init
-	nano_fiber_stack_pop_wait
+	nano_fiber_stack_pop(TICKS_UNLIMITED)
 	nano_fiber_stack_pop
 	nano_fiber_stack_push
 	fiber_yield
@@ -163,9 +163,9 @@ END TEST CASE
 TEST CASE: Stack #3
 TEST COVERAGE: 
 	nano_stack_init
-	nano_fiber_stack_pop_wait
+	nano_fiber_stack_pop(TICKS_UNLIMITED)
 	nano_fiber_stack_push
-	nano_task_stack_pop_wait
+	nano_task_stack_pop(TICKS_UNLIMITED)
 	nano_task_stack_push
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL

@@ -115,7 +115,7 @@ in which alarms are processed isn't significant.
 
        while (1) {
            /* wait for an alarm to be reported */
-           alarm_number = nano_fiber_stack_pop_wait(&alarm_stack);
+           alarm_number = nano_fiber_stack_pop(&alarm_stack, TICKS_UNLIMITED);
            /* process alarm indication */
            ...
        }
@@ -136,9 +136,4 @@ The following APIs for a nanokernel stack are provided by
 
 :cpp:func:`nano_task_stack_pop()`, :cpp:func:`nano_fiber_stack_pop()`,
 :cpp:func:`nano_isr_stack_pop()`, :cpp:func:`nano_stack_pop()`
-   Remove an item from a stack, or fails and continues if it is empty.
-
-:cpp:func:`nano_task_stack_pop_wait()`,
-:cpp:func:`nano_fiber_stack_pop_wait()`,
-:cpp:func:`nano_stack_pop_wait()`
-   Remove an item from a stack, or waits for an item if it is empty.
+   Remove an item from a stack, or wait for an item if it is empty.

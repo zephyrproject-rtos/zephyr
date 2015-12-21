@@ -95,8 +95,8 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 	_nanokernel.current->flags |= ESSENTIAL;
 
 	while (1) { /* forever */
-		pArgs = (struct k_args *)nano_fiber_stack_pop_wait(
-			&_k_command_stack); /* will schedule */
+		(void) nano_fiber_stack_pop(&_k_command_stack, (uint32_t *)&pArgs,
+				TICKS_UNLIMITED); /* will schedule */
 		do {
 			int cmd_type = (int)pArgs & KERNEL_CMD_TYPE_MASK;
 
@@ -142,7 +142,8 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 			if (_nanokernel.fiber) {
 				fiber_yield();
 			}
-		} while (nano_fiber_stack_pop(&_k_command_stack, (void *)&pArgs));
+		} while (nano_fiber_stack_pop(&_k_command_stack, (uint32_t *)&pArgs,
+					TICKS_NONE));
 
 		pNextTask = next_task_select();
 

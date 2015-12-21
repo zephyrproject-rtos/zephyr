@@ -21,8 +21,8 @@
  * This module tests three basic scenarios with the usage of the following
  * STACK routines:
  *
- * nano_fiber_stack_pop, nano_fiber_stack_pop_wait, nano_fiber_stack_push
- * nano_task_stack_pop, nano_task_stack_pop_wait, nano_task_stack_push
+ * nano_fiber_stack_pop, nano_fiber_stack_push
+ * nano_task_stack_pop, nano_task_stack_push
  * nano_isr_stack_pop, nano_isr_stack_push
  *
  * Scenario #1
@@ -165,7 +165,7 @@ void isr_stack_pop(void *parameter)
 {
 	ISR_STACK_INFO *pInfo = (ISR_STACK_INFO *) parameter;
 
-	if (nano_isr_stack_pop(pInfo->stack_ptr, &(pInfo->data)) == 0) {
+	if (nano_isr_stack_pop(pInfo->stack_ptr, &(pInfo->data), TICKS_NONE) == 0) {
 		/* the stack is empty, set data to INVALID_DATA */
 		pInfo->data = INVALID_DATA;
 	}
@@ -195,7 +195,7 @@ void fiber1(void)
 
 	TC_PRINT("Test Fiber STACK Pop\n\n");
 	/* Get all data */
-	while (nano_fiber_stack_pop(&nanoStackObj, &data) != 0) {
+	while (nano_fiber_stack_pop(&nanoStackObj, &data, TICKS_NONE) != 0) {
 		TC_PRINT("FIBER STACK Pop: count = %d, data is %d\n", count, data);
 		if ((count >= NUM_STACK_ELEMENT) || (data != myData[NUM_STACK_ELEMENT - 1 - count])) {
 			TCERR1(count);
@@ -238,12 +238,13 @@ void fiber1(void)
 void testFiberStackPopW(void)
 {
 	uint32_t  data;     /* data used to put and get from the stack queue */
+	int rc;
 
 	TC_PRINT("Test Fiber STACK Pop Wait Interfaces\n\n");
-	data = nano_fiber_stack_pop_wait(&nanoStackObj2);
+	rc = nano_fiber_stack_pop(&nanoStackObj2, &data, TICKS_UNLIMITED);
 	TC_PRINT("FIBER STACK Pop from queue2: %d\n", data);
 	/* Verify results */
-	if (data != myData[0]) {
+	if ((rc == 0) || (data != myData[0])) {
 		retCode = TC_FAIL;
 		TCERR2;
 		return;
@@ -253,10 +254,10 @@ void testFiberStackPopW(void)
 	TC_PRINT("FIBER STACK Push to queue1: %d\n", data);
 	nano_fiber_stack_push(&nanoStackObj, data);
 
-	data = nano_fiber_stack_pop_wait(&nanoStackObj2);
+	rc = nano_fiber_stack_pop(&nanoStackObj2, &data, TICKS_UNLIMITED);
 	TC_PRINT("FIBER STACK Pop from queue2: %d\n", data);
 	/* Verify results */
-	if (data != myData[2]) {
+	if ((rc == 0) || (data != myData[2])) {
 		retCode = TC_FAIL;
 		TCERR2;
 		return;
@@ -416,6 +417,7 @@ void fiber2(void)
 void testTaskStackPopW(void)
 {
 	uint32_t  data;     /* data used to put and get from the stack queue */
+	int rc;
 
 	PRINT_LINE;
 	TC_PRINT("Test STACK Pop Wait Interfaces\n\n");
@@ -427,10 +429,10 @@ void testTaskStackPopW(void)
 	task_fiber_start(&fiberStack2[0], STACKSIZE,
 					 (nano_fiber_entry_t) fiber2, 0, 0, 7, 0);
 
-	data = nano_task_stack_pop_wait(&nanoStackObj);
+	rc = nano_task_stack_pop(&nanoStackObj, &data, TICKS_UNLIMITED);
 	TC_PRINT("TASK STACK Pop from queue1: %d\n", data);
 	/* Verify results */
-	if (data != myData[1]) {
+	if ((rc == 0) || (data != myData[1])) {
 		retCode = TC_FAIL;
 		TCERR2;
 		return;
@@ -445,7 +447,7 @@ void testTaskStackPopW(void)
 
 /**
  *
- * @brief A fiber to help test nano_task_stack_pop_wait()
+ * @brief A fiber to help test nano_task_stack_pop(TICKS_UNLIMITED)
  *
  * This fiber blocks for one second before pushing an item onto the stack.
  * The main task, which was waiting for item from the stack then unblocks.
@@ -490,6 +492,7 @@ void main(void)
 {
 	int         count = 0;  /* counter */
 	uint32_t    data;       /* data used to put and get from the stack queue */
+	int         rc;         /* return code */
 
 	TC_START("Test Nanokernel STACK");
 
@@ -508,9 +511,9 @@ void main(void)
 	 * into an idle state.
 	 */
 
-	data = nano_task_stack_pop_wait(&nanoStackObj);
-	if (data != myData[0]) {
-		TC_ERROR("nano_task_stack_pop_wait() expected 0x%x, but got 0x%x\n",
+	rc = nano_task_stack_pop(&nanoStackObj, &data, TICKS_UNLIMITED);
+	if ((rc == 0) || (data != myData[0])) {
+		TC_ERROR("nano_task_stack_pop(TICKS_UNLIMITED) expected 0x%x, but got 0x%x\n",
 				 myData[0], data);
 		retCode = TC_FAIL;
 		goto exit;
@@ -544,7 +547,7 @@ void main(void)
 	TC_PRINT("Test Task STACK Pop\n");
 
 	/* Get all data */
-	while (nano_task_stack_pop(&nanoStackObj, &data) != 0) {
+	while (nano_task_stack_pop(&nanoStackObj, &data, TICKS_NONE) != 0) {
 		TC_PRINT("TASK STACK Pop: count = %d, data is %d\n", count, data);
 		if ((count >= NUM_STACK_ELEMENT) || (data != myData[count])) {
 			TCERR1(count);

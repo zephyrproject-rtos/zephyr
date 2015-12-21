@@ -917,26 +917,17 @@ extern void nano_stack_push(struct nano_stack *stack, uint32_t data);
  *
  * @param stack Stack on which to interact
  * @param data Container for data to pop
+ * @param timeout_in_ticks Affects the action taken should the fifo be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. No other value is currently supported.
  *
- * @return 1 if stack is not empty, 0 otherwise
+ * @return 1 if data was popped from the stack, 0 otherwise
  *
+ * @warning If called from the context of an ISR, then @a timeout_in_ticks must
+ * be TICKS_NONE.
  */
-extern int nano_stack_pop(struct nano_stack *stack, uint32_t *data);
-
-/**
- *
- * @brief Pop data from a nanokernel stack, poll/pend if empty
- *
- * This is a convenience wrapper for the execution context-specific APIs. This
- * is helpful whenever the exact execution context is not known, but should be
- * avoided when the context is known up-front (to avoid unnecessary overhead).
- *
- * @param stack Stack on which to interact
- *
- * @return Popped data
- *
- */
-extern uint32_t nano_stack_pop_wait(struct nano_stack *stack);
+extern int nano_stack_pop(struct nano_stack *stack, uint32_t *data,
+			int32_t timeout_in_ticks);
 
 /* methods for ISRs */
 
@@ -969,10 +960,12 @@ extern void nano_isr_stack_push(struct nano_stack *stack, uint32_t data);
  *
  * @param stack Stack on which to interact
  * @param data Container for data to pop
- * @return 1 if stack is not empty, 0 otherwise
+ * @param timeout_in_ticks Must be TICKS_NONE
  *
+ * @return 1 if data was popped from the stack, 0 otherwise
  */
-extern int nano_isr_stack_pop(struct nano_stack *stack, uint32_t *data);
+extern int nano_isr_stack_pop(struct nano_stack *stack, uint32_t *data,
+			int32_t timeout_in_ticks);
 /* methods for fibers */
 
 /**
@@ -1004,29 +997,13 @@ extern void nano_fiber_stack_push(struct nano_stack *stack, uint32_t data);
  *
  * @param stack Stack on which to interact
  * @param data Container for data to pop
+ * @param timeout_in_ticks Affects the action taken should the fifo be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. No other value is currently supported.
  *
- * @return 1 if stack is not empty, 0 otherwise
- *
+ * @return 1 if data was popped from the stack, 0 otherwise
  */
-extern int nano_fiber_stack_pop(struct nano_stack *stack, uint32_t *data);
-
-/**
- *
- * @brief Pop data from a nanokernel stack, wait if empty
- *
- * Pop the first data word from a nanokernel stack object; it can only be
- * called from a fiber.
- *
- * If data is not available the calling fiber will pend until data is pushed
- * onto the stack.
- *
- * @param stack Stack on which to interact
- *
- * @return the data popped from the stack
- *
- */
-extern uint32_t nano_fiber_stack_pop_wait(struct nano_stack *stack);
-
+extern int nano_fiber_stack_pop(struct nano_stack *stack, uint32_t *data, int32_t timeout_in_ticks);
 
 /* methods for tasks */
 
@@ -1058,26 +1035,13 @@ extern void nano_task_stack_push(struct nano_stack *stack, uint32_t data);
  *
  * @param stack Stack on which to interact
  * @param data Container for data to pop
+ * @param timeout_in_ticks Affects the action taken should the fifo be empty.
+ * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
+ * long as necessary. No other value is currently supported.
  *
- * @return 1 if stack is not empty, 0 otherwise
+ * @return 1 if data was popped from the stack, 0 otherwise
  */
-extern int nano_task_stack_pop(struct nano_stack *stack, uint32_t *data);
-
-/**
- *
- * @brief Pop data from a nanokernel stack, poll if empty
- *
- * Pop the first data word from a nanokernel stack; it can only be called
- * from a task.
- *
- * If data is not available the calling task will poll until data is pushed
- * onto the stack.
- *
- * @param stack Stack on which to interact
- *
- * @return the data popped from the stack
- */
-extern uint32_t nano_task_stack_pop_wait(struct nano_stack *stack);
+extern int nano_task_stack_pop(struct nano_stack *stack, uint32_t *data, int32_t timeout_in_ticks);
 
 /* thread custom data APIs */
 #ifdef CONFIG_THREAD_CUSTOM_DATA
