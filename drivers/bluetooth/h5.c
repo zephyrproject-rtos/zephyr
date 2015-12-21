@@ -380,6 +380,7 @@ static void retx_fiber(int arg1, int arg2)
 			/* include also packet type */
 			net_buf_push(buf, sizeof(uint8_t));
 			nano_fifo_put(&h5.tx_queue, buf);
+			h5.tx_seq = (h5.tx_seq - 1) & 0x07;
 			unack_queue_len--;
 		}
 
