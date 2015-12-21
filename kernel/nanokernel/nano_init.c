@@ -101,6 +101,7 @@ char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
  */
 static void _main(void)
 {
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_SECONDARY);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_NANOKERNEL);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
 
@@ -247,7 +248,6 @@ FUNC_NORETURN void _Cstart(void)
 	/* perform basic hardware initialization */
 
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRIMARY);
-	_sys_device_do_config_level(_SYS_INIT_LEVEL_SECONDARY);
 
 	/*
 	 * Initialize random number generator
