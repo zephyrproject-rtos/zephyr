@@ -1,29 +1,36 @@
-.. _installing_zephyr:
+.. _installing_zephyr_linux:
 
-Development Environment Setup
-#############################
+Development Environment Setup on Linux
+######################################
 
-This section describes how to build the kernel in a development system
-and how to access the project source code.
+This section describes how to build the kernel in a development system.
+
+This guide was tested by compiling and running the Zephyr Kernel's sample
+applications on the following Linux distributions:
+
+* Ubuntu 14.04 LTS 64 bit
+* Fedora 22 64 bit
+
+Where needed, alternative instructions are listed for Ubuntu and Fedora.
 
 .. _linux_development_system:
 
 Installing the Host's Operating System
-======================================
+**************************************
 
 Building the project's software components including the kernel has been tested
 on Ubuntu and  Fedora systems. Instructions for installing these OSes are beyond
 the scope of this document.
 
 Configuring Network and Proxies
-===============================
+*******************************
 
 Building the kernel requires the command-line tools of git, ssh, wget,
 curl. Verify that each service can be run as both user and root and that access
 to the Internet and is not impeded by a firewall.
 
 Update Your Operating System
-============================
+****************************
 
 Before proceeding with the build, ensure your OS is up to date. On Ubuntu:
 
@@ -40,7 +47,7 @@ On Fedora:
 .. _required_software:
 
 Installing Requirements and Dependencies
-========================================
+****************************************
 
 Install the following with either apt-get or dnf.
 
@@ -62,5 +69,3 @@ Install the required packages in a Fedora host system with:
    $ sudo dnf group install "Development Tools"
    $ sudo dnf install git make gcc glib-devel.i686 glib2-devel.i686 \
      glibc-static libstdc++-static glibc-devel.i686
-
-

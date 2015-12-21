@@ -6,24 +6,24 @@ Quick Start Guide
 Use this guide to install the Zephyr development environment on your
 development system and to build the Zephyr Kernel on the supported platforms.
 
-Currently, the Zephyr Project supports Linux development systems only. This guide
-was tested by compiling and running the Zephyr Kernel's sample applications on
-the following Linux distributions:
+The following operating systems are supported:
 
-* Ubuntu 14.04 LTS 64 bit
-* Fedora 22 64 bit
+* Linux
+* Mac OS
 
-Follow the steps appropriate for your development system's :abbr:`OS (Operating System)`.
-Where needed, alternative instructions are listed for Ubuntu and Fedora.
-Use these procedures to create a new development environment.
-Given that the file hierarchy may change from one release to another,
-these instructions might not work properly in an existing development environment.
+Follow the steps appropriate for your development system's
+:abbr:`OS (Operating System)`.
+
+Use these procedures to create a new development environment. Given that the
+file hierarchy may change from one release to another, these instructions
+might not work properly in an existing development environment.
 
 Perform the steps in the installation procedures in the order they appear.
 
 .. toctree::
    :maxdepth: 2
 
-   installation.rst
+   installation_linux.rst
+   installation_mac.rst
    local_development.rst
    application.rst
