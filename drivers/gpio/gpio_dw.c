@@ -420,13 +420,6 @@ int gpio_dw_initialize(struct device *port)
 	config->config_func(port);
 	gpio_dw_unmask_int(port);
 
-#ifdef CONFIG_SOC_QUARK_SE_SS
-	/* ARC needs this to work, or else the parameter
-	 * passed to ISR is null.
-	 */
-	irq_connect(config->irq_num, 1, gpio_dw_isr, port, 0);
-#endif /* CONFIG_SOC_QUARK_SE_SS */
-
 	return 0;
 }
 
@@ -486,7 +479,8 @@ struct device *gpio_dw_isr_0 = SYS_GET_DEVICE(gpio_0);
 #endif
 
 IRQ_CONNECT_STATIC(gpio_dw_0, CONFIG_GPIO_DW_0_IRQ,
-		   CONFIG_GPIO_DW_0_PRI, gpio_dw_isr, 0,
+		   CONFIG_GPIO_DW_0_PRI, gpio_dw_isr,
+		   SYS_GET_DEVICE(gpio_0),
 		   GPIO_DW_0_IRQ_FLAGS);
 #endif
 
@@ -566,7 +560,8 @@ struct device *gpio_dw_isr_1 = SYS_GET_DEVICE(gpio_1);
 #endif
 
 IRQ_CONNECT_STATIC(gpio_dw_1, CONFIG_GPIO_DW_1_IRQ,
-		   CONFIG_GPIO_DW_1_PRI, gpio_dw_isr, 0,
+		   CONFIG_GPIO_DW_1_PRI, gpio_dw_isr,
+		   SYS_GET_DEVICE(gpio_1),
 		   GPIO_DW_1_IRQ_FLAGS);
 #endif
 
