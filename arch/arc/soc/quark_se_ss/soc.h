@@ -101,6 +101,8 @@
 #define IRQ_ADC_CALIB 66
 #define IRQ_ALWAYS_ON_GPIO 67
 
+#define INT_UNMASK_IA (~0x000000FF)
+
 #ifndef _ASMLANGUAGE
 
 #include <misc/util.h>

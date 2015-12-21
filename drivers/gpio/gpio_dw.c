@@ -297,6 +297,14 @@ static inline void gpio_dw_unmask_int(struct device *port)
 {
 	sys_write32(sys_read32(GPIO_INT_MASK) & INT_UNMASK_IA, GPIO_INT_MASK);
 }
+#elif CONFIG_PLATFORM_QUARK_SE_SS
+static inline void gpio_dw_unmask_int(struct device *port)
+{
+	struct gpio_dw_config *config = port->config->config_info;
+	uint32_t base = config->base_addr;
+
+	sys_out32(sys_in32(base + INTMASK) & INT_UNMASK_IA, base + INTMASK);
+}
 #else
 #define gpio_dw_unmask_int(...)
 #endif
