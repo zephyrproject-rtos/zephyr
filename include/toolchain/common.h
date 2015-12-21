@@ -28,6 +28,12 @@
 #define EXTERN_C extern
 #endif
 
+/* Use TASK_ENTRY_CPP to tag task entry points defined in C++ files. */
+
+#ifdef __cplusplus
+#define TASK_ENTRY_CPP  extern "C"
+#endif
+
 /*
  * Generate a reference to an external symbol.
  * The reference indicates to the linker that the symbol is required
