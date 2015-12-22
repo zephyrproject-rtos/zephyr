@@ -144,10 +144,7 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
 struct gatt_incl {
 	uint16_t start_handle;
 	uint16_t end_handle;
-	union {
-		uint16_t uuid16;
-		uint8_t  uuid[16];
-	};
+	uint16_t uuid16;
 } __packed;
 
 int bt_gatt_attr_read_included(struct bt_conn *conn,
@@ -162,12 +159,14 @@ int bt_gatt_attr_read_included(struct bt_conn *conn,
 	pdu.end_handle = sys_cpu_to_le16(incl->end_handle);
 	value_len = sizeof(pdu.start_handle) + sizeof(pdu.end_handle);
 
+	/*
+	 * Core 4.2, Vol 3, Part G, 3.2,
+	 * The Service UUID shall only be present when the UUID is a 16-bit
+	 * Bluetooth UUID.
+	 */
 	if (incl->uuid->type == BT_UUID_16) {
 		pdu.uuid16 = sys_cpu_to_le16(incl->uuid->u16);
 		value_len += sizeof(pdu.uuid16);
-	} else {
-		memcpy(pdu.uuid, incl->uuid->u128, sizeof(incl->uuid->u128));
-		value_len += sizeof(incl->uuid->u128);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
