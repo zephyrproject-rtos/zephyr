@@ -20,7 +20,7 @@
  *
  * genOffsetHeader -i <objectModule> -o <outputHeaderName>
  *
- * This VxMicro development host utility will process an ELF object module that
+ * This Zephyr development host utility will process an ELF object module that
  * consists of a series of absolute symbols representing the byte offset of a
  * structure member and the size of the structure.  Each absolute symbol will
  * be translated into a C preprocessor '#define' directive.  For example,
