@@ -138,18 +138,11 @@ static const uint8_t sleep_req[] = { 0x07, 0x78 };
 #define CONFIG_BLUETOOTH_SIGNAL_COUNT	2
 #define SIG_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
 		      CONFIG_BLUETOOTH_MAX_SIG_LEN)
-static struct nano_fifo avail_signal;
+static struct nano_fifo h5_sig;
 static NET_BUF_POOL(signal_pool, CONFIG_BLUETOOTH_SIGNAL_COUNT, SIG_BUF_SIZE,
-		    &avail_signal, NULL, 0);
+		    &h5_sig, NULL, 0);
 
 static struct device *h5_dev;
-
-static struct net_buf *bt_buf_get_sig(void)
-{
-	BT_DBG("");
-
-	return net_buf_get(&avail_signal, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
-}
 
 /* Read and unslip one byte, returns number of bytes read */
 static int h5_unslip_byte(uint8_t *byte)
@@ -525,7 +518,7 @@ void bt_uart_isr(void *unused)
 				break;
 			case HCI_3WIRE_LINK_PKT:
 			case HCI_3WIRE_ACK_PKT:
-				buf = bt_buf_get_sig();
+				buf = net_buf_get(&h5_sig, 0);
 				status = PAYLOAD;
 				break;
 			default:
