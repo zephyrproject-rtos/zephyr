@@ -144,43 +144,31 @@ static NET_BUF_POOL(signal_pool, CONFIG_BLUETOOTH_SIGNAL_COUNT, SIG_BUF_SIZE,
 
 static struct device *h5_dev;
 
-/* Read and unslip one byte, returns number of bytes read */
 static int h5_unslip_byte(uint8_t *byte)
 {
 	int count;
 
-	count = uart_fifo_read(h5_dev, byte, sizeof(*byte));
-	if (!count) {
-		return count;
+	if (*byte != SLIP_ESC) {
+		return 0;
 	}
 
-	/* Indicate that we have received slip delimeter on wire */
-	if (*byte == SLIP_DELIMITER) {
-		return count;
-	}
-
-	if (*byte == SLIP_ESC) {
+	do {
 		count = uart_fifo_read(h5_dev, byte, sizeof(*byte));
-		if (!count) {
-			return count;
-		}
+	} while (!count);
 
-		count++;
-
-		switch (*byte) {
-		case SLIP_ESC_DELIM:
-			*byte = SLIP_DELIMITER;
-			break;
-		case SLIP_ESC_ESC:
-			*byte = SLIP_ESC;
-			break;
-		default:
-			BT_ERR("Invalid escape byte %x\n", *byte);
-			return -1;
-		}
+	switch (*byte) {
+	case SLIP_ESC_DELIM:
+		*byte = SLIP_DELIMITER;
+		break;
+	case SLIP_ESC_ESC:
+		*byte = SLIP_ESC;
+		break;
+	default:
+		BT_ERR("Invalid escape byte %x\n", *byte);
+		return -EIO;
 	}
 
-	return count;
+	return 0;
 }
 
 static void process_unack(void)
@@ -466,22 +454,23 @@ void bt_uart_isr(void *unused)
 			continue;
 		}
 
-		ret = h5_unslip_byte(&byte);
+		ret = uart_fifo_read(h5_dev, &byte, sizeof(byte));
 		if (!ret) {
 			continue;
 		}
 
-		if (ret < 0) {
-			if (buf) {
-				net_buf_unref(buf);
-				buf = NULL;
-			}
-			status = START;
-			continue;
-		}
-
-		if (ret == 1 && byte == SLIP_DELIMITER) {
+		if (byte == SLIP_DELIMITER) {
 			slip_delim = true;
+		} else {
+			ret = h5_unslip_byte(&byte);
+			if (ret < 0) {
+				if (buf) {
+					net_buf_unref(buf);
+					buf = NULL;
+				}
+				status = START;
+				continue;
+			}
 		}
 
 		switch (status) {
