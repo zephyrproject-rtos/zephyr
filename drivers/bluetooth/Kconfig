@@ -103,6 +103,7 @@ config BLUETOOTH_HCI_RECV_RESERVE
 	int
 	depends on BLUETOOTH
 	default 0 if BLUETOOTH_H4
+	default 0 if BLUETOOTH_H5
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
