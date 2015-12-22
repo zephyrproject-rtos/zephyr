@@ -120,6 +120,13 @@ static struct h5 {
 		INIT,
 		ACTIVE,
 	}			link_state;
+
+	enum {
+		START,
+		HEADER,
+		PAYLOAD,
+		END,
+	}			rx_state;
 } h5;
 
 static uint8_t unack_queue_len;
@@ -143,6 +150,16 @@ static NET_BUF_POOL(signal_pool, CONFIG_BLUETOOTH_SIGNAL_COUNT, SIG_BUF_SIZE,
 		    &h5_sig, NULL, 0);
 
 static struct device *h5_dev;
+
+static void h5_reset_rx(void)
+{
+	if (h5.rx_buf) {
+		net_buf_unref(h5.rx_buf);
+		h5.rx_buf = NULL;
+	}
+
+	h5.rx_state = START;
+}
 
 static int h5_unslip_byte(uint8_t *byte)
 {
@@ -388,15 +405,16 @@ static void ack_fiber(int arg1, int arg2)
 	stack_analyze("retx_stack", retx_stack, sizeof(retx_stack));
 }
 
-static void h5_process_complete_packet(struct net_buf *buf, uint8_t type,
-				       uint8_t *hdr)
+static void h5_process_complete_packet(uint8_t *hdr)
 {
+	struct net_buf *buf;
+
 	BT_DBG("");
 
 	/* rx_ack should be in every packet */
 	h5.rx_ack = H5_HDR_ACK(hdr);
 
-	if (reliable_packet(type)) {
+	if (reliable_packet(H5_HDR_PKT_TYPE(hdr))) {
 		/* For reliable packet increment next transmit ack number */
 		h5.tx_ack = (h5.tx_ack + 1) % 8;
 		/* Start delayed fiber to ack the packet */
@@ -409,7 +427,10 @@ static void h5_process_complete_packet(struct net_buf *buf, uint8_t type,
 
 	process_unack();
 
-	switch (type) {
+	buf = h5.rx_buf;
+	h5.rx_buf = NULL;
+
+	switch (H5_HDR_PKT_TYPE(hdr)) {
 	case HCI_3WIRE_ACK_PKT:
 		net_buf_unref(buf);
 		break;
@@ -426,24 +447,15 @@ static void h5_process_complete_packet(struct net_buf *buf, uint8_t type,
 
 void bt_uart_isr(void *unused)
 {
-	static struct net_buf *buf;
 	static int remaining;
 	uint8_t byte;
-	int ret, i;
-	static uint8_t type;
+	int ret;
 	static uint8_t hdr[4];
-	static enum {
-		START,
-		HEADER,
-		PAYLOAD,
-		END,
-	} status = START;
 
 	ARG_UNUSED(unused);
 
 	while (uart_irq_update(h5_dev) &&
 	       uart_irq_is_pending(h5_dev)) {
-		bool slip_delim = false;
 
 		if (!uart_irq_rx_ready(h5_dev)) {
 			if (uart_irq_tx_ready(h5_dev)) {
@@ -459,38 +471,28 @@ void bt_uart_isr(void *unused)
 			continue;
 		}
 
-		if (byte == SLIP_DELIMITER) {
-			slip_delim = true;
-		} else {
-			ret = h5_unslip_byte(&byte);
-			if (ret < 0) {
-				if (buf) {
-					net_buf_unref(buf);
-					buf = NULL;
-				}
-				status = START;
-				continue;
-			}
-		}
-
-		switch (status) {
+		switch (h5.rx_state) {
 		case START:
-			if (slip_delim) {
-				status = HEADER;
+			if (byte == SLIP_DELIMITER) {
+				h5.rx_state = HEADER;
 				remaining = sizeof(hdr);
 			}
 			break;
 		case HEADER:
-			i = sizeof(hdr) - remaining;
-			/* In a case we confuse ending slip
-			 * delimeter with starting one
+			/* In a case we confuse ending slip delimeter
+			 * with starting one.
 			 */
-			if (slip_delim && !i) {
+			if (byte == SLIP_DELIMITER) {
 				remaining = sizeof(hdr);
 				continue;
 			}
 
-			memcpy(&hdr[i], &byte, sizeof(byte));
+			if (h5_unslip_byte(&byte) < 0) {
+				h5_reset_rx();
+				continue;
+			}
+
+			memcpy(&hdr[sizeof(hdr) - remaining], &byte, 1);
 			remaining--;
 
 			if (remaining) {
@@ -498,47 +500,50 @@ void bt_uart_isr(void *unused)
 			}
 
 			remaining = H5_HDR_LEN(hdr);
-			type = H5_HDR_PKT_TYPE(hdr);
 
-			switch (type) {
+			switch (H5_HDR_PKT_TYPE(hdr)) {
 			case HCI_EVENT_PKT:
-				buf = bt_buf_get_evt();
-				status = PAYLOAD;
+				h5.rx_buf = bt_buf_get_evt();
+				h5.rx_state = PAYLOAD;
 				break;
 			case HCI_ACLDATA_PKT:
-				buf = bt_buf_get_acl();
-				status = PAYLOAD;
+				h5.rx_buf = bt_buf_get_acl();
+				h5.rx_state = PAYLOAD;
 				break;
 			case HCI_3WIRE_LINK_PKT:
 			case HCI_3WIRE_ACK_PKT:
-				buf = net_buf_get(&h5_sig, 0);
-				status = PAYLOAD;
+				h5.rx_buf = net_buf_get(&h5_sig, 0);
+				h5.rx_state = PAYLOAD;
 				break;
 			default:
 				BT_ERR("Wrong packet type %u",
 				       H5_HDR_PKT_TYPE(hdr));
-				status = END;
+				h5.rx_state = END;
 				break;
 			}
 			break;
 		case PAYLOAD:
-			memcpy(net_buf_add(buf, sizeof(byte)), &byte,
+			if (h5_unslip_byte(&byte) < 0) {
+				h5_reset_rx();
+				continue;
+			}
+
+			memcpy(net_buf_add(h5.rx_buf, sizeof(byte)), &byte,
 			       sizeof(byte));
 			remaining--;
 			if (!remaining) {
-				status = END;
+				h5.rx_state = END;
 			}
 			break;
 		case END:
-			if (!slip_delim) {
+			if (byte != SLIP_DELIMITER) {
 				BT_ERR("Missing ending SLIP_DELIMITER");
-				status = START;
-				net_buf_unref(buf);
-				buf = NULL;
+				h5_reset_rx();
 				break;
 			}
 
-			BT_DBG("Received full packet: type %u", type);
+			BT_DBG("Received full packet: type %u",
+			       H5_HDR_PKT_TYPE(hdr));
 
 			/* Check when full packet is received, it can be done
 			 * when parsing packet header but we need to receive
@@ -548,15 +553,12 @@ void bt_uart_isr(void *unused)
 			    H5_HDR_SEQ(hdr) != h5.tx_ack) {
 				BT_ERR("Seq expected %u got %u. Drop packet",
 				       h5.tx_ack, H5_HDR_SEQ(hdr));
-
-				status = START;
-				net_buf_unref(buf);
-				buf = NULL;
+				h5_reset_rx();
 				break;
 			}
 
-			h5_process_complete_packet(buf, type, hdr);
-			status = START;
+			h5_process_complete_packet(hdr);
+			h5.rx_state = START;
 			break;
 		}
 	}
@@ -706,6 +708,7 @@ static void h5_init(void)
 	BT_DBG("");
 
 	h5.link_state = UNINIT;
+	h5.rx_state = START;
 	h5.tx_win = 4;
 
 	/* TX fiber */
