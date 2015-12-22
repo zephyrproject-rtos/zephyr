@@ -607,7 +607,7 @@ coap_context_send_message(coap_context_t *coap_ctx,
      * set the send buffer length correctly.
      */
     uip_len(coap_ctx->buf) = 0;
-    ip_buf_appdata(coap_ctx->buf) = (uint8_t *)data;
+    memcpy(ip_buf_appdata(coap_ctx->buf), data, length);
 
     ret = coap_context_reply(coap_ctx, coap_ctx->buf);
   }
