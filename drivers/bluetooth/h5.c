@@ -133,11 +133,6 @@ static const uint8_t wakeup_req[] = { 0x05, 0xfa };
 static const uint8_t woken_req[] = { 0x06, 0xf9 };
 static const uint8_t sleep_req[] = { 0x07, 0x78 };
 
-static void h5_set_txwin(uint8_t *conf)
-{
-	conf[2] = h5.tx_win & 0x07;
-}
-
 /* H5 signal buffers pool */
 #define CONFIG_BLUETOOTH_MAX_SIG_LEN	3
 #define CONFIG_BLUETOOTH_SIGNAL_COUNT	2
@@ -675,6 +670,11 @@ static void tx_fiber(void)
 			break;
 		}
 	}
+}
+
+static void h5_set_txwin(uint8_t *conf)
+{
+	conf[2] = h5.tx_win & 0x07;
 }
 
 static void rx_fiber(void)
