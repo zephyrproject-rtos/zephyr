@@ -20,8 +20,8 @@
  *
  * This module tests the following timer related routines:
  *  nano_timer_init(), nano_fiber_timer_start(), nano_fiber_timer_stop(),
- *  nano_fiber_timer_test(), nano_fiber_timer_wait(), nano_task_timer_start(),
- *  nano_task_timer_stop(), nano_task_timer_test(), nano_task_timer_wait(),
+ *  nano_fiber_timer_test(), nano_task_timer_start(),
+ *  nano_task_timer_stop(), nano_task_timer_test(),
  *  sys_tick_get_32(), sys_cycle_get_32(), sys_tick_delta()
  */
 
@@ -45,10 +45,9 @@
 #endif
 #define FIBER2_PRIORITY    10
 
-typedef void  (* timer_start_func)(struct nano_timer *, int);
-typedef void  (* timer_stop_func)(struct nano_timer *);
-typedef void* (* timer_getw_func)(struct nano_timer *);
-typedef void* (* timer_get_func)(struct nano_timer *);
+typedef void  (*timer_start_func)(struct nano_timer *, int);
+typedef void  (*timer_stop_func)(struct nano_timer *);
+typedef void* (*timer_test_func)(struct nano_timer *, int32_t);
 
 static struct nano_timer  timer;
 static struct nano_timer  shortTimer;
@@ -101,8 +100,7 @@ void initNanoObjects(void)
  * nanoTimeElapsed() and nanoXXXTimerGetW() successful expiration cases.
  *
  * @param startRtn      routine to start the timer
- * @param waitRtn       routine to get and wait for the timer
- * @param getRtn        routine to get the timer (no waiting)
+ * @param testRtn       routine to get and wait for the timer
  * @param pTimer        pointer to the timer
  * @param pTimerData    pointer to the expected timer data
  * @param ticks         number of ticks to wait
@@ -110,9 +108,8 @@ void initNanoObjects(void)
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
-				   timer_get_func getRtn, struct nano_timer *pTimer,
-				   void *pTimerData, int ticks)
+int basicTimerWait(timer_start_func startRtn, timer_test_func testRtn,
+				   struct nano_timer *pTimer, void *pTimerData, int ticks)
 {
 	int64_t  reftime;          /* reference time for tick delta */
 	uint32_t  tick;            /* current tick */
@@ -120,7 +117,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 	int64_t  elapsed;          /* # of elapsed ticks */
 	uint32_t  duration;        /* duration of the test in ticks */
 	void     *result;          /* value returned from timer get routine */
-	int       busywaited = 0;  /* non-zero if <getRtn> returns NULL */
+	int       busywaited = 0;  /* non-zero if <testRtn> returns NULL */
 
 	TC_PRINT("  - test expected to take four seconds\n");
 
@@ -132,7 +129,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 	tick++;
 	(void) sys_tick_delta(&reftime);
 	startRtn(pTimer, ticks);       /* Start the timer */
-	result = waitRtn(pTimer);      /* Wait for the timer to expire */
+	result = testRtn(pTimer, TICKS_UNLIMITED);/* Wait for the timer to expire */
 
 	elapsed_32 = sys_tick_delta_32(&reftime);
 	duration = sys_tick_get_32() - tick;
@@ -157,7 +154,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 	tick++;
 	(void) sys_tick_delta(&reftime);
 	startRtn(pTimer, ticks);       /* Start the timer */
-	while ((result = getRtn(pTimer)) == NULL) {
+	while ((result = testRtn(pTimer, TICKS_NONE)) == NULL) {
 		busywaited = 1;
 	}
 	elapsed = sys_tick_delta(&reftime);
@@ -212,22 +209,22 @@ void startTimers(timer_start_func startRtn)
  * expire.  The timers are expected to expire in the following order:
  *     <shortTimer>, <timer>, <midTimer>, <longTimer>
  *
- * @param getRtn    timer get routine (fiber or task)
+ * @param testRtn    timer wait routine (fiber or task)
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int busyWaitTimers(timer_get_func getRtn)
+int busyWaitTimers(timer_test_func testRtn)
 {
 	int      numExpired = 0; /* # of expired timers */
-	void    *result;         /* value returned from <getRtn> */
+	void    *result;         /* value returned from <testRtn> */
 	uint32_t ticks;          /* tick by which time test should be complete */
 
 	TC_PRINT("  - test expected to take five or six seconds\n");
 
 	ticks = sys_tick_get_32() + SIX_SECONDS;
 	while ((numExpired != 4) && (sys_tick_get_32() < ticks)) {
-		result = getRtn(&timer);
+		result = testRtn(&timer, TICKS_NONE);
 		if (result != NULL) {
 			numExpired++;
 			if ((result != timerData) || (numExpired != 2)) {
@@ -237,7 +234,7 @@ int busyWaitTimers(timer_get_func getRtn)
 			}
 		}
 
-		result = getRtn(&shortTimer);
+		result = testRtn(&shortTimer, TICKS_NONE);
 		if (result != NULL) {
 			numExpired++;
 			if ((result != shortTimerData) || (numExpired != 1)) {
@@ -247,7 +244,7 @@ int busyWaitTimers(timer_get_func getRtn)
 			}
 		}
 
-		result = getRtn(&midTimer);
+		result = testRtn(&midTimer, TICKS_NONE);
 		if (result != NULL) {
 			numExpired++;
 			if ((result != midTimerData) || (numExpired != 3)) {
@@ -257,7 +254,7 @@ int busyWaitTimers(timer_get_func getRtn)
 			}
 		}
 
-		result = getRtn(&longTimer);
+		result = testRtn(&longTimer, TICKS_NONE);
 		if (result != NULL) {
 			numExpired++;
 			if ((result != longTimerData) || (numExpired != 4)) {
@@ -282,12 +279,12 @@ int busyWaitTimers(timer_get_func getRtn)
  * these include the middle, the head, the tail, and the last item.
  *
  * @param stopRtn    routine to stop timer (fiber or task)
- * @param getRtn     timer get routine (fiber or task)
+ * @param testRtn    timer wait routine (fiber or task)
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
+int stopTimers(timer_stop_func stopRtn, timer_test_func testRtn)
 {
 	int  startTick;      /* tick at which test starts */
 	int  endTick;        /* tick by which test should be completed */
@@ -306,8 +303,10 @@ int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
 	endTick = startTick + SIX_SECONDS;
 
 	while (sys_tick_get_32() < endTick) {
-		if ((getRtn(&timer) != NULL) || (getRtn(&shortTimer) != NULL) ||
-			(getRtn(&midTimer) != NULL) || (getRtn(&longTimer) != NULL)) {
+		if ((testRtn(&timer, TICKS_NONE) != NULL) ||
+			(testRtn(&shortTimer, TICKS_NONE) != NULL) ||
+			(testRtn(&midTimer, TICKS_NONE) != NULL) ||
+			(testRtn(&longTimer, TICKS_NONE) != NULL)) {
 			return TC_FAIL;
 		}
 	}
@@ -359,8 +358,8 @@ static void fiberEntry(int arg1, int arg2)
 
 	TC_PRINT("Fiber testing basic timer functionality\n");
 
-	rv = basicTimerWait(nano_fiber_timer_start, nano_fiber_timer_wait,
-						nano_fiber_timer_test, &timer, timerData, TWO_SECONDS);
+	rv = basicTimerWait(nano_fiber_timer_start, nano_fiber_timer_test,
+						&timer, timerData, TWO_SECONDS);
 
 	nano_fiber_sem_give(&wakeTask);
 	if (rv != TC_PASS) {
@@ -399,7 +398,7 @@ static void fiberEntry(int arg1, int arg2)
 	fiber_fiber_start(fiber2Stack, FIBER2_STACKSIZE, fiber2Entry,
 					  0, 0, FIBER2_PRIORITY, 0);
 	nano_fiber_timer_start(&timer, TWO_SECONDS);   /* Start timer */
-	result = nano_fiber_timer_wait(&timer);        /* Wait on timer */
+	result = nano_fiber_timer_test(&timer, TICKS_UNLIMITED); /* Wait on timer */
 	/* Control switches to newly created fiber #2 before coming back. */
 	if (result != NULL) {
 		fiberDetectedError = 4;
@@ -411,7 +410,7 @@ static void fiberEntry(int arg1, int arg2)
 	TC_PRINT("Task to stop a timer that has a waiting fiber\n");
 	nano_fiber_sem_give(&wakeTask);
 	nano_fiber_timer_start(&timer, TWO_SECONDS);
-	result = nano_fiber_timer_wait(&timer);
+	result = nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 	if (result != NULL) {
 		fiberDetectedError = 5;
 		return;
@@ -465,8 +464,8 @@ void main(void)
 	initNanoObjects();
 
 	TC_PRINT("Task testing basic timer functionality\n");
-	rv = basicTimerWait(nano_task_timer_start, nano_task_timer_wait,
-						nano_task_timer_test, &timer, timerData, TWO_SECONDS);
+	rv = basicTimerWait(nano_task_timer_start, nano_task_timer_test,
+						&timer, timerData, TWO_SECONDS);
 	if (rv != TC_PASS) {
 		TC_ERROR("Task-level of waiting for timers failed\n");
 		goto doneTests;

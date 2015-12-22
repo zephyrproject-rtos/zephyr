@@ -297,7 +297,7 @@ static void test_nano_timers(int unused1, int unused2)
 				TEST_NANO_TIMERS_DELAY);
 	nano_fiber_timer_start(&timer, SECONDS(TEST_NANO_TIMERS_DELAY));
 	TC_PRINT("fiber pending on timer\n");
-	nano_fiber_timer_wait(&timer);
+	nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 	TC_PRINT("fiber back from waiting on timer: giving semaphore.\n");
 	nano_task_sem_give(&test_nano_timers_sem);
 	TC_PRINT("fiber semaphore given.\n");

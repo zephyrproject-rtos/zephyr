@@ -31,10 +31,10 @@ nano_fiber_timer_start
 nano_task_timer_start
 nano_fiber_timer_stop
 nano_task_timer_stop
-nano_fiber_timer_test
-nano_fiber_timer_wait
-nano_task_timer_test
-nano_task_timer_wait
+nano_fiber_timer_test(TICKS_NONE)
+nano_fiber_timer_test(TICKS_UNLIMITED)
+nano_task_timer_test(TICKS_NONE)
+nano_task_timer_test(TICKS_UNLIMITED)
 
 --------------------------------
 nanoTimeInit (implicitly done)

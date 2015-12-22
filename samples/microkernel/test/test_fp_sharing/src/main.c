@@ -344,7 +344,7 @@ void load_store_high(void)
 		 * determine whether the floating point register save/restore mechanism
 		 * in the nanokernel's context switcher is operating correctly.
 		 *
-		 * When a subsequent nano_fiber_timer_wait() invocation is performed, a
+		 * When a subsequent nano_fiber_timer_test() invocation is performed, a
 		 * (cooperative) context switch back to the preempted task will occur.
 		 * This context switch should result in restoring the state of the
 		 * task's floating point registers when the task was swapped out due
@@ -366,7 +366,7 @@ void load_store_high(void)
 
 #ifdef CONFIG_NANOKERNEL
 		nano_fiber_timer_start(&fiberTimer, 1);
-		nano_fiber_timer_wait(&fiberTimer);
+		nano_fiber_timer_test(&fiberTimer, TICKS_UNLIMITED);
 #else
 		task_sleep(1);
 #endif

@@ -63,7 +63,7 @@ void fiberEntry(void)
 
 		/* wait a while, then let task have a turn */
 		nano_fiber_timer_start(&timer, SLEEPTICKS);
-		nano_fiber_timer_wait(&timer);
+		nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 		nano_fiber_sem_give(&nanoSemTask);
 	}
 }
@@ -85,7 +85,7 @@ void main(void)
 
 		/* wait a while, then let fiber have a turn */
 		nano_task_timer_start(&timer, SLEEPTICKS);
-		nano_task_timer_wait(&timer);
+		nano_task_timer_test(&timer, TICKS_UNLIMITED);
 		nano_task_sem_give(&nanoSemFiber);
 
 		/* now wait for fiber to let us have a turn */

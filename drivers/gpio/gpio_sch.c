@@ -234,7 +234,7 @@ ack:
 loop:
 		nano_fiber_timer_start(&gpio->poll_timer,
 				       GPIO_SCH_POLLING_TICKS);
-		nano_fiber_timer_wait(&gpio->poll_timer);
+		nano_fiber_timer_test(&gpio->poll_timer, TICKS_UNLIMITED);
 	}
 }
 

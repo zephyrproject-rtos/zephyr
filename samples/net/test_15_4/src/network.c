@@ -360,7 +360,7 @@ void fiber_receiving(void)
 		}
 
 		nano_fiber_timer_start(&timer, SLEEPTICKS);
-		nano_fiber_timer_wait(&timer);
+		nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 		i++;
 	}
 }
@@ -390,7 +390,7 @@ void fiber_sending(void)
 		send_data("sendFiber", ctx);
 
 		nano_fiber_timer_start(&timer, SLEEPTICKS);
-		nano_fiber_timer_wait(&timer);
+		nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 		i++;
 	}
 }

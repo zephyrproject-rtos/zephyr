@@ -502,7 +502,7 @@ void fiber3(void)
 
 	/* Sleep for 2 seconds */
 	nano_fiber_timer_start(&timer, SECONDS(2));
-	nano_fiber_timer_wait(&timer);
+	nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 
 	/* Put final item onto the FIFO for the task to get */
 	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[3]);

@@ -73,7 +73,7 @@ static void myDelay(int ticks)
 
 	nano_timer_init(&timer, (void *) 0);
 	nano_fiber_timer_start(&timer, ticks);
-	nano_fiber_timer_wait(&timer);
+	nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 #endif
 }
 

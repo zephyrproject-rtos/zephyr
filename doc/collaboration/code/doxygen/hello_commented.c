@@ -150,7 +150,7 @@ void fiberEntry(void) {
 		PRINT("%s: Hello World!\n", __FUNCTION__); /* Action 4 */
 
 		nano_fiber_timer_start(&timer, SLEEPTICKS); /* Action 5 */
-		nano_fiber_timer_wait(&timer);
+		nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 		nano_fiber_sem_give(&nanoSemTask);
 	}
 }
@@ -178,7 +178,7 @@ void main(void) {
 		PRINT("%s: Hello World!\n", __FUNCTION__); /* Action 1 */
 
 		nano_task_timer_start(&timer, SLEEPTICKS); /* Action 2 */
-		nano_task_timer_wait(&timer);
+		nano_task_timer_test(&timer, TICKS_UNLIMITED);
 		nano_task_sem_give(&nanoSemFiber);
 
 		nano_task_sem_take(&nanoSemTask, TICKS_UNLIMITED); /* Action 3 */

@@ -1108,10 +1108,18 @@ extern void nano_timer_start(struct nano_timer *timer, int ticks);
  * avoided when the context is known up-front (to avoid unnecessary overhead).
  *
  * @param timer Timer
+ * @param timeout_in_ticks Affects the action taken if the timer has not
+ * expired. If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
+ * wait as long as necessary. No other value is currently supported.
  *
  * @return N/A
+ *
+ * @warning If called from an ISR, then @a timeout_in_ticks must be TICKS_NONE.
  */
-extern void *nano_timer_wait(struct nano_timer *timer);
+static inline void *nano_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
+{
+	return nano_lifo_get(&timer->lifo, timeout_in_ticks);
+}
 
 /**
  * @brief Stop a nanokernel timer
@@ -1125,19 +1133,6 @@ extern void *nano_timer_wait(struct nano_timer *timer);
  * @return pointer to timer initialization data
  */
 extern void nano_timer_stop(struct nano_timer *timer);
-
-/**
- * @brief Check for a timer expiry
- *
- * This is a convenience wrapper for the execution context-specific APIs. This
- * is helpful whenever the exact execution context is not known, but should be
- * avoided when the context is known up-front (to avoid unnecessary overhead).
- *
- * @param timer Timer to check
- *
- * @return pointer to timer initialization data, or NULL if timer not expired
- */
-extern void *nano_timer_test(struct nano_timer *timer);
 
 /* methods for ISRs */
 
@@ -1162,10 +1157,14 @@ extern void nano_isr_timer_start(struct nano_timer *timer, int ticks);
  * expired.
  *
  * @param timer Timer to check
+ * @param timeout_in_ticks Always use TICKS_NONE
  *
  * @return pointer to timer initialization data, or NULL if timer not expired
  */
-extern void *nano_isr_timer_test(struct nano_timer *timer);
+static inline void *nano_isr_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
+{
+	return nano_isr_lifo_get(&timer->lifo, timeout_in_ticks);
+}
 
 /**
  * @brief Stop a nanokernel timer from an ISR
@@ -1197,28 +1196,20 @@ extern void nano_fiber_timer_start(struct nano_timer *timer, int ticks);
 /**
  * @brief Make the current fiber check for a timer expiry
  *
- * This function checks if a previously started nanokernel timer object has
- * expired.
+ * This function tests if a previously started nanokernel timer object has
+ * expired, or waits until it does.
  *
  * @param timer Timer to check
+ * @param timeout_in_ticks Affects the action taken if the timer has not
+ * expired. If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
+ * wait as long as necessary. No other value is currently supported.
  *
  * @return pointer to timer initialization data, or NULL if timer not expired
  */
-extern void *nano_fiber_timer_test(struct nano_timer *timer);
-
-/**
- *
- * @brief Make the current fiber wait for a timer to expire
- *
- * This function pends on a previously started nanokernel timer object.
- * It assumes the timer is active and has neither expired nor been stopped.
- *
- * @param timer Timer to pend on
- *
- * @return pointer to timer initialization data
- *
- */
-extern void *nano_fiber_timer_wait(struct nano_timer *timer);
+static inline void *nano_fiber_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
+{
+	return nano_fiber_lifo_get(&timer->lifo, timeout_in_ticks);
+}
 
 /**
  * @brief Stop a nanokernel timer from a fiber
@@ -1249,28 +1240,20 @@ extern void nano_task_timer_start(struct nano_timer *timer, int ticks);
 /**
  * @brief Make the current task check for a timer expiry
  *
- * This function checks if a previously started nanokernel timer object has
- * expired.
+ * This function tests if a previously started nanokernel timer object has
+ * expired, or waits until it does.
  *
  * @param timer Timer to check
+ * @param timeout_in_ticks Affects the action taken if the timer has not
+ * expired. If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
+ * wait as long as necessary. No other value is currently supported.
  *
  * @return pointer to timer initialization data, or NULL if timer not expired
  */
-extern void *nano_task_timer_test(struct nano_timer *timer);
-
-/**
- *
- * @brief Make the current task wait for a timer to expire
- *
- * This function pends on a previously started nanokernel timer object.
- * It assumes the timer is active and has neither expired nor been stopped.
- *
- * @param timer Timer to pend on
- *
- * @return pointer to timer initialization data
- *
- */
-extern void *nano_task_timer_wait(struct nano_timer *timer);
+static inline void *nano_task_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
+{
+	return nano_task_lifo_get(&timer->lifo, timeout_in_ticks);
+}
 
 /**
  * @brief Stop a nanokernel timer from a task

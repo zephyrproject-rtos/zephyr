@@ -136,6 +136,6 @@ void main(void)
 
 		/* wait a while */
 		nano_task_timer_start(&timer, SLEEPTICKS);
-		nano_task_timer_wait(&timer);
+		nano_task_timer_test(&timer, TICKS_UNLIMITED);
 	}
 }

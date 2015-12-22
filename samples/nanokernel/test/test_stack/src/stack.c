@@ -458,7 +458,7 @@ void testTaskStackPopW(void)
 void fiber3(void)
 {
 	nano_fiber_timer_start(&timer, SECONDS(1));
-	nano_fiber_timer_wait(&timer);
+	nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 	nano_fiber_stack_push(&nanoStackObj, myData[0]);
 }
 

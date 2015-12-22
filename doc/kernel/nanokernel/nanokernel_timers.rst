@@ -116,7 +116,7 @@ spends gathering data before processing it.
    /* gather data until timer expires */
    do {
        ...
-   } while (nano_fiber_timer_test(&my_timer) == NULL);
+   } while (nano_fiber_timer_test(&my_timer, TICKS_NONE) == NULL);
 
    /* process the data */
    ...
@@ -144,7 +144,7 @@ This code illustrates how an active nanokernel timer can be stopped prematurely.
    nano_fiber_timer_stop(&my_timer);
 
    /* check to see if the timer expired before it was stopped */
-   if (nano_fiber_timer_test(&my_timer) != NULL) {
+   if (nano_fiber_timer_test(&my_timer, TICKS_NONE) != NULL) {
        printf("Warning: Input signal took too long to arrive!");
    }
 
@@ -164,11 +164,7 @@ by :file:`nanokernel.h`:
 
 :cpp:func:`nano_task_timer_test()`, :cpp:func:`nano_fiber_timer_test()`,
 :cpp:func:`nano_isr_timer_test()`, :cpp:func:`nano_timer_test()`
-   Test a timer to see if it has expired.
-
-:cpp:func:`nano_task_timer_wait()`, :cpp:func:`nano_fiber_timer_wait()`,
-:cpp:func:`nano_timer_wait()`
-   Wait on a timer until it expires.
+   Wait or test for timer expiration.
 
 :cpp:func:`nano_task_timer_stop()`, :cpp:func:`nano_fiber_timer_stop()`,
 :cpp:func:`nano_isr_timer_stop()`, :cpp:func:`nano_timer_stop()`

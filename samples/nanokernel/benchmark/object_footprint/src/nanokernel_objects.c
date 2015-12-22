@@ -54,7 +54,7 @@ volatile pfunc func_array[] = {
 #ifdef CONFIG_OBJECTS_TIMER
 	(pfunc)nano_timer_init,
 	(pfunc)nano_fiber_timer_start,
-	(pfunc)nano_fiber_timer_wait,
+	(pfunc)nano_fiber_timer_test,
 #endif
 
 	/* nano semaphore functions */

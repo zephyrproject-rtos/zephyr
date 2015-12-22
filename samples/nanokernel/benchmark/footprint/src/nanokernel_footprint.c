@@ -67,7 +67,7 @@ volatile pfunc func_array[] = {
 	/* nano timer functions */
 	(pfunc)nano_timer_init,
 	(pfunc)nano_fiber_timer_start,
-	(pfunc)nano_fiber_timer_wait,
+	(pfunc)nano_fiber_timer_test,
 	/* nano semaphore functions */
 	(pfunc)nano_sem_init,
 	(pfunc)nano_fiber_sem_take,

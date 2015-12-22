@@ -186,7 +186,7 @@ int fiberLifoWaitTest(void)
 	 */
 
 	nano_fiber_timer_start(&timer, SECONDS(2));
-	nano_fiber_timer_wait(&timer);
+	nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 
 	/* The task is waiting on an empty LIFO.  Wake it up. */
 	nano_fiber_lifo_put(&test_lifo, &lifoItem[3]);

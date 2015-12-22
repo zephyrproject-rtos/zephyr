@@ -211,7 +211,7 @@ static void fiberEntry(int arg1, int arg2)
 	 */
 
 	nano_fiber_timer_start(&timer, SECONDS(2));
-	nano_fiber_timer_wait(&timer);
+	nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 
 	/*
 	 * The main task is now waiting on <testSem>.  Give the semaphore <testSem>
@@ -228,7 +228,7 @@ static void fiberEntry(int arg1, int arg2)
 	semTestState = STS_FIBER_WOKE_TASK;
 
 	nano_fiber_timer_start(&timer, SECONDS(2));
-	nano_fiber_timer_wait(&timer);
+	nano_fiber_timer_test(&timer, TICKS_UNLIMITED);
 
 	/*
 	 * The main task should be waiting on <testSem> again.  This time, instead

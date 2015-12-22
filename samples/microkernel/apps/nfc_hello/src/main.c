@@ -92,6 +92,6 @@ void main(void)
 
 	while (1) {
 		nano_task_timer_start(&t, MSEC(500));
-                nano_task_timer_wait(&t);
+		nano_task_timer_test(&t, TICKS_UNLIMITED);
 	}
 }

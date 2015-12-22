@@ -157,36 +157,3 @@ void nano_timer_stop(struct nano_timer *timer)
 
 	func[sys_execution_context_type_get()](timer);
 }
-
-FUNC_ALIAS(_timer_test, nano_isr_timer_test, void *);
-FUNC_ALIAS(_timer_test, nano_fiber_timer_test, void *);
-FUNC_ALIAS(_timer_test, nano_task_timer_test, void *);
-FUNC_ALIAS(_timer_test, nano_timer_test, void *);
-
-void *_timer_test(struct nano_timer *timer)
-{
-	extern void *_lifo_get(struct nano_lifo *, int32_t);
-
-	return _lifo_get(&timer->lifo, TICKS_NONE);
-}
-
-void *nano_fiber_timer_wait(struct nano_timer *timer)
-{
-	return nano_fiber_lifo_get(&timer->lifo, TICKS_UNLIMITED);
-}
-
-void *nano_task_timer_wait(struct nano_timer *timer)
-{
-	return nano_task_lifo_get(&timer->lifo, TICKS_UNLIMITED);
-}
-
-void *nano_timer_wait(struct nano_timer *timer)
-{
-	static void *(*func[3])(struct nano_timer *) = {
-		NULL,
-		nano_fiber_timer_wait,
-		nano_task_timer_wait,
-	};
-
-	return func[sys_execution_context_type_get()](timer);
-}
