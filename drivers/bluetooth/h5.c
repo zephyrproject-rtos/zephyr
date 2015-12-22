@@ -469,14 +469,18 @@ void bt_uart_isr(void *unused)
 		ret = h5_unslip_byte(&byte);
 		if (!ret) {
 			continue;
-		} else if (ret < 0) {
+		}
+
+		if (ret < 0) {
 			if (buf) {
 				net_buf_unref(buf);
 				buf = NULL;
 			}
 			status = START;
 			continue;
-		} else if (ret == 1 && byte == SLIP_DELIMITER) {
+		}
+
+		if (ret == 1 && byte == SLIP_DELIMITER) {
 			slip_delim = true;
 		}
 
