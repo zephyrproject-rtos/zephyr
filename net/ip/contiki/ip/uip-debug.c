@@ -89,10 +89,10 @@ uip_debug_hex_dump(const unsigned char *buffer, int len)
   int i = 0;
 
   while (len--) {
-    if (i % 16 == 0) {
-      PRINTA("%X ", i);
-    }
-    PRINTA("%X ", *buffer++);
+    if(*buffer <= 0xf)
+      PRINTA("0%X ", *buffer++);
+    else
+      PRINTA("%X ", *buffer++);
 
     i++;
     if (i % 8 == 0) {
