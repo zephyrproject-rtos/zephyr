@@ -64,3 +64,34 @@ config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
 	help
 	  Specify the device name of the I2C master device to which this
 	  PCA9685 chip #0 is binded.
+
+config PWM_DW
+	bool "DesignWare PWM"
+	depends on PWM
+	default n
+	help
+	  Enable driver to utilize PWM on the DesignWare Timer IP block.
+	  Care must be taken if one is also to use the timer feature, as
+	  they both use the same set of registers.
+
+config PWM_DW_DEV_NAME
+	string "DesignWare PWM Device Name"
+	depends on PWM_DW
+	default "PWM_DW"
+	help
+	  Specify the device name for the DesignWare PWM driver.
+
+config PWM_DW_BASE_ADDR
+	hex "DesignWare PWM Base Address"
+	depends on PWM_DW
+	help
+	  Specify the base address for registers for DesignWare PWM.
+
+config PWM_DW_NUM_PORTS
+	int "Number of PWM ports for DesignWare PWM"
+	depends on PWM_DW
+	default 1
+	help
+	  Specify how many PWM ports on the IP block.
+
+	  Default is 1.
