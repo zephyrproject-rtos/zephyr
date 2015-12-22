@@ -455,7 +455,6 @@ void bt_uart_isr(void *unused)
 		START,
 		HEADER,
 		PAYLOAD,
-		SIGNAL,
 		END,
 	} status = START;
 
@@ -527,7 +526,7 @@ void bt_uart_isr(void *unused)
 			case HCI_3WIRE_LINK_PKT:
 			case HCI_3WIRE_ACK_PKT:
 				buf = bt_buf_get_sig();
-				status = SIGNAL;
+				status = PAYLOAD;
 				break;
 			default:
 				BT_ERR("Wrong packet type %u",
@@ -536,27 +535,13 @@ void bt_uart_isr(void *unused)
 				break;
 			}
 			break;
-		case SIGNAL:
-			memcpy(net_buf_add(buf, sizeof(byte)), &byte,
-			       sizeof(byte));
-			remaining--;
-
-			if (remaining) {
-				break;
-			}
-
-			status = END;
-			break;
 		case PAYLOAD:
 			memcpy(net_buf_add(buf, sizeof(byte)), &byte,
 			       sizeof(byte));
 			remaining--;
-
-			if (remaining) {
-				break;
+			if (!remaining) {
+				status = END;
 			}
-
-			status = END;
 			break;
 		case END:
 			if (!slip_delim) {
