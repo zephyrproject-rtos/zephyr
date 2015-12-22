@@ -119,7 +119,7 @@ static struct h5 {
 		UNINIT,
 		INIT,
 		ACTIVE,
-	}			state;
+	}			link_state;
 } h5;
 
 static uint8_t unack_queue_len;
@@ -607,9 +607,9 @@ static void tx_fiber(void)
 		struct net_buf *buf;
 		uint8_t type;
 
-		BT_DBG("state %u", h5.state);
+		BT_DBG("link_state %u", h5.link_state);
 
-		switch (h5.state) {
+		switch (h5.link_state) {
 		case UNINIT:
 			/* FIXME: send sync */
 			fiber_sleep(10);
@@ -660,17 +660,17 @@ static void rx_fiber(void)
 		hexdump("=> ", buf->data, buf->len);
 
 		if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
-			if (h5.state == ACTIVE) {
+			if (h5.link_state == ACTIVE) {
 				/* TODO Reset H5 */
 			}
 
 			h5_send(sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp));
 		} else if (!memcmp(buf->data, sync_rsp, sizeof(sync_rsp))) {
-			if (h5.state == ACTIVE) {
+			if (h5.link_state == ACTIVE) {
 				/* TODO Reset H5 */
 			}
 
-			h5.state = INIT;
+			h5.link_state = INIT;
 			h5_set_txwin(conf_req);
 			h5_send(conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req));
 		} else if (!memcmp(buf->data, conf_req, 2)) {
@@ -684,7 +684,7 @@ static void rx_fiber(void)
 			h5_set_txwin(conf_req);
 			h5_send(conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req));
 		} else if (!memcmp(buf->data, conf_rsp, 2)) {
-			h5.state = ACTIVE;
+			h5.link_state = ACTIVE;
 			if (buf->len > 2) {
 				/* Configuration field present */
 				h5.tx_win = (buf->data[2] & 0x07);
@@ -705,7 +705,7 @@ static void h5_init(void)
 {
 	BT_DBG("");
 
-	h5.state = UNINIT;
+	h5.link_state = UNINIT;
 	h5.tx_win = 4;
 
 	/* TX fiber */
