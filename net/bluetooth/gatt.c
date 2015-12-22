@@ -198,8 +198,7 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	 * Characteristic Value declaration.
 	 */
 	if (!attr->_next) {
-		BT_WARN("Characteritic at 0x%04x don't have descriptor",
-			attr->handle);
+		BT_WARN("No value for characteristic at 0x%04x", attr->handle);
 		pdu.value_handle = 0x0000;
 	} else {
 		pdu.value_handle = sys_cpu_to_le16(attr->_next->handle);
