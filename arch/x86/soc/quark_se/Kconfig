@@ -299,4 +299,16 @@ config UART_PIPE_IRQ_PRI
 
 endif
 
+if PWM
+if PWM_DW
+
+config PWM_DW_BASE_ADDR
+	default 0xB0000800
+
+config PWM_DW_NUM_PORTS
+	default 4
+
+endif
+endif
+
 endif #SOC_QUARK_SE_X86
