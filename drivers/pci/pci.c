@@ -387,6 +387,7 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 				lookup.func = 0;
 			}
 		}
+		lookup.dev = 0;
 	}
 
 	return 0;
