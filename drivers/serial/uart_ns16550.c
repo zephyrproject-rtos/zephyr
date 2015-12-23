@@ -256,7 +256,7 @@ static int uart_ns16550_init(struct device *dev)
 	uint32_t divisor; /* baud rate divisor */
 	uint8_t mdc = 0;
 
-	if ((dev_cfg->port == 0) && !ns16550_pci_uart_scan(dev)) {
+	if (!ns16550_pci_uart_scan(dev)) {
 		return DEV_INVALID_OP;
 	}
 
