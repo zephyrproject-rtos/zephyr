@@ -710,6 +710,16 @@ struct i2c_dw_rom_config i2c_config_dw_0 = {
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
 	.shared_irq_dev_name = CONFIG_I2C_DW_0_IRQ_SHARED_NAME,
 #endif
+
+#if CONFIG_PCI
+	.pci_dev.class = CONFIG_I2C_DW_CLASS,
+	.pci_dev.bus = CONFIG_I2C_DW_0_BUS,
+	.pci_dev.dev = CONFIG_I2C_DW_0_DEV,
+	.pci_dev.vendor_id = CONFIG_I2C_DW_VENDOR_ID,
+	.pci_dev.device_id = CONFIG_I2C_DW_DEVICE_ID,
+	.pci_dev.function = CONFIG_I2C_DW_0_FUNCTION,
+	.pci_dev.bar = CONFIG_I2C_DW_0_BAR,
+#endif
 };
 
 struct i2c_dw_dev_config i2c_0_runtime = {
@@ -762,6 +772,16 @@ struct i2c_dw_rom_config i2c_config_dw_1 = {
 	.base_address = CONFIG_I2C_DW_1_BASE,
 	.irq_num = CONFIG_I2C_DW_1_IRQ,
 	.config_func = i2c_config_1,
+
+#if CONFIG_PCI
+	.pci_dev.class = CONFIG_I2C_DW_CLASS,
+	.pci_dev.bus = CONFIG_I2C_DW_1_BUS,
+	.pci_dev.dev = CONFIG_I2C_DW_1_DEV,
+	.pci_dev.vendor_id = CONFIG_I2C_DW_VENDOR_ID,
+	.pci_dev.device_id = CONFIG_I2C_DW_DEVICE_ID,
+	.pci_dev.function = CONFIG_I2C_DW_1_FUNCTION,
+	.pci_dev.bar = CONFIG_I2C_DW_1_BAR,
+#endif
 };
 
 struct i2c_dw_dev_config i2c_1_runtime = {
