@@ -188,11 +188,11 @@ struct adc_info {
 	/**State of execution of the driver*/
 	uint8_t  state;
 	/**Current reception buffer index*/
-	uint8_t  index;
+	uint8_t  index[BUFS_NUM];
+	/**Sequence entries' array*/
+	struct adc_seq_entry *entries;
 	/**Sequence size*/
-	uint32_t seq_size;
-	/**Reception buffers array*/
-	uint32_t *rx_buf[BUFS_NUM];
+	uint8_t seq_size;
 	/**Pointer to the reception callback.*/
 	adc_callback_t cb;
 };

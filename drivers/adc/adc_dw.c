@@ -131,7 +131,6 @@ static void adc_dw_enable(struct device *dev)
 	adc_goto_normal_mode_wo_calibration();
 	sys_out32(ENABLE_ADC, adc_base + ADC_CTRL);
 	info->state = ADC_STATE_IDLE;
-	info->index = 0;
 }
 
 static void adc_dw_disable(struct device *dev)
@@ -209,10 +208,9 @@ static int adc_dw_read(struct device *dev, struct adc_seq_table *seq_tbl)
 
 	int num_entries = seq_tbl->num_entries;
 
-	memset(info->rx_buf, (int)NULL, BUFS_NUM);
-
+	info->entries = seq_tbl->entries;
 	for (i = 0; i < num_entries; i++) {
-		info->rx_buf[i] = (uint32_t *)entry[i].buffer;
+		info->index[i] = 0;
 	}
 
 	info->state = ADC_STATE_SAMPLING;
@@ -277,12 +275,23 @@ void adc_dw_rx_isr(void *arg)
 	struct adc_info *info = dev->driver_data;
 	uint32_t adc_base = config->reg_base;
 	uint32_t reg_val;
-	uint32_t index;
+	uint32_t sample_index;
+	struct adc_seq_entry *entries = info->entries;
 
-	for (index = info->index; index < info->seq_size; index++) {
+	for (sample_index = 0; sample_index < info->seq_size; sample_index++) {
+		int rep_index;
+		uint32_t *adc_buffer;
+
 		reg_val = sys_in32(adc_base + ADC_SET);
 		sys_out32(reg_val|ADC_POP_SAMPLE, adc_base + ADC_SET);
-		*(info->rx_buf[index]) = sys_in32(adc_base + ADC_SAMPLE);
+		rep_index = info->index[sample_index];
+		adc_buffer = (uint32_t *)entries[sample_index].buffer;
+		adc_buffer[rep_index] = sys_in32(adc_base + ADC_SAMPLE);
+		info->index[sample_index]++;
+		/*API array is 8 bits array but ADC reads blocks of 32 bits with every sample.*/
+		if ((info->index[sample_index] * 4) >= entries[sample_index].buffer_length) {
+			info->index[sample_index] = 0;
+		}
 	}
 
 	if (likely(info->cb != NULL)) {
@@ -295,9 +304,6 @@ void adc_dw_rx_isr(void *arg)
 		sys_out32(reg_val | ADC_FLUSH_RX, adc_base + ADC_SET);
 		info->state = ADC_STATE_IDLE;
 	}
-
-	index %= BUFS_NUM;
-	info->index = index;
 
 	reg_val = sys_in32(adc_base + ADC_CTRL);
 	sys_out32(reg_val | ADC_CLR_DATA_A, adc_base + ADC_CTRL);
