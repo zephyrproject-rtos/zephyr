@@ -342,11 +342,27 @@ struct adc_config adc_config_dev_0 = {
 		.reg_err_mask = SCSS_REGISTER_BASE + INT_SS_ADC_ERR_MASK,
 		.rx_vector = CONFIG_ADC_DW_0_RX_IRQ,
 		.err_vector = CONFIG_ADC_DW_0_ERR_IRQ,
-		.in_mode      = CONFIG_ADC_DW_INPUT_MODE,
-		.out_mode     = CONFIG_ADC_DW_OUTPUT_MODE,
-		.capture_mode = CONFIG_ADC_DW_CAPTURE_MODE,
-		.seq_mode     = CONFIG_ADC_DW_SEQ_MODE,
-		.sample_width = CONFIG_ADC_DW_WIDTH,
+#ifdef CONFIG_ADC_DW_SINGLE_ENDED
+		.in_mode      = 0,
+#elif CONFIG_ADC_DW_DIFFERENTIAL
+		.in_mode      = 1,
+#endif
+#ifdef CONFIG_ADC_DW_SERIAL
+		.out_mode     = 0,
+#elif CONFIG_ADC_DW_PARALLEL
+		.out_mode     = 1,
+#endif
+#ifdef CONFIG_ADC_DW_SINGLESHOT
+		.seq_mode = 0,
+#elif CONFIG_ADC_DW_REPETITIVE
+		.seq_mode = 1,
+#endif
+#ifdef CONFIG_ADC_DW_RISING_EDGE
+		.capture_mode = 0,
+#elif CONFIG_ADC_DW_FALLING_EDGE
+		.capture_mode = 1,
+#endif
+		.sample_width = CONFIG_ADC_DW_SAMPLE_WIDTH,
 		.clock_ratio  = CONFIG_ADC_DW_CLOCK_RATIO,
 		.serial_dly   = CONFIG_ADC_DW_SERIAL_DELAY,
 		.config_func  = adc_config_0_irq,

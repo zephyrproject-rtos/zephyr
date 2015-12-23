@@ -144,11 +144,6 @@ config ADC_DW_DIFFERENTIAL
 
 endchoice
 
-config ADC_DW_INPUT_MODE
-	int
-	default 0 if ADC_DW_SINGLE_ENDED
-	default 1 if ADC_DW_DIFFERENTIAL
-
 choice
 	prompt "Output Mode"
 	default ADC_DW_SERIAL
@@ -164,11 +159,6 @@ config ADC_DW_PARALLEL
 
 endchoice
 
-config ADC_DW_OUTPUT_MODE
-	int
-	default 0 if ADC_DW_SERIAL
-	default 1 if ADC_DW_PARALLEL
-
 choice
 	prompt "Sequence Mode"
 	default ADC_DW_SINGLESHOT
@@ -183,11 +173,6 @@ config ADC_DW_REPETITIVE
 	bool "Differential"
 
 endchoice
-
-config ADC_DW_SEQ_MODE
-	int
-	default 0 if ADC_DW_SINGLESHOT
-	default 1 if ADC_DW_REPETITIVE
 
 choice
 	prompt "Capture Mode"
@@ -205,38 +190,14 @@ config ADC_DW_FALLING_EDGE
 
 endchoice
 
-config ADC_DW_CAPTURE_MODE
-	int
-	default 0 if ADC_DW_RISING_EDGE
-	default 1 if ADC_DW_FALLING_EDGE
-
-choice
-	prompt "Sample Width"
+config ADC_DW_SAMPLE_WIDTH
+	int "Sample Width"
 	depends on ADC_DW
-	default ADC_DW_WIDTH_6_BIT
+	default 31
 	help
-	ADC sample width
-
-config ADC_DW_WIDTH_6_BIT
-	bool "6 Bit Width"
-
-config ADC_DW_WIDTH_8_BIT
-	bool "8 Bit Width"
-
-config ADC_DW_WIDTH_10_BIT
-	bool "10 Bit Width"
-
-config ADC_DW_WIDTH_12_BIT
-	bool "12 Bit Width"
-
-endchoice
-
-config ADC_DW_WIDTH
-	int
-	default 0 if ADC_DW_WIDTH_6_BIT
-	default 1 if ADC_DW_WIDTH_8_BIT
-	default 2 if ADC_DW_WIDTH_10_BIT
-	default 3 if ADC_DW_WIDTH_12_BIT
+	Defines ADC device data sample width (resolution):
+	0 = 1 bit resolution
+	31 = 32 bits resolution
 
 config ADC_DW_SERIAL_DELAY
 	int "Serial Delay"
