@@ -187,11 +187,6 @@ static void _pinmux_defaults(uint32_t base)
 	}
 }
 
-static inline void _pinmux_pullups(uint32_t base_address)
-{
-	_quark_se_pullup(base_address, 104, PINMUX_PULLUP_ENABLE);
-}
-
 static uint32_t _quark_se_pullup(uint32_t base, uint32_t pin, uint8_t func)
 {
 	/*
@@ -251,6 +246,11 @@ static uint32_t _quark_se_input(uint32_t base, uint32_t pin, uint8_t func)
 
 	return DEV_OK;
 }
+static inline void _pinmux_pullups(uint32_t base_address)
+{
+	_quark_se_pullup(base_address, 104, PINMUX_PULLUP_ENABLE);
+}
+
 
 #ifdef CONFIG_PINMUX_DEV
 static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
