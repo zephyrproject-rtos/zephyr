@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include <toolchain.h>
 
-#include <bluetooth/bluetooth.h>
 #include "bttester.h"
 
 #ifdef CONFIG_MICROKERNEL
