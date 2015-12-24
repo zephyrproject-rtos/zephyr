@@ -141,6 +141,15 @@ config  DEBUG
 	only disables optimization, more debugging variants can be selected
 	from here to allow more debugging.
 
+config  TASK_DEBUG
+	bool
+	prompt "Task debugging [EXPERIMENTAL]"
+	default n
+	help
+	This option allows execution of all tasks (with the exception of
+	essential system tasks) to be suspended so that debugging operations
+	can be performed.
+
 config STACK_USAGE
 	bool "Generate stack usage information"
 	default n
