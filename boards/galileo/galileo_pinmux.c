@@ -45,8 +45,8 @@ struct pin_config mux_config[CONFIG_PINMUX_NUM_PINS] = {
 	{ 4,  PINMUX_FUNC_B }, /* GPIO_SUS4 (out), GPIO_SUS4 (in), NA, NA */
 	{ 5,  PINMUX_FUNC_B }, /* GPIO8 (out), GPIO8 (in), PWM.LED3, NA */
 	{ 6,  PINMUX_FUNC_B }, /* GPIO9 (out), GPIO9 (in), PWM.LED5, NA */
-	{ 7,  PINMUX_FUNC_B }, /* EXP1.P0_6 (out), EXP1.P0_6 (in), NA, NA */
-	{ 8,  PINMUX_FUNC_B }, /* EXP1.P1_0 (out), EXP1.P1_0 (in), NA, NA */
+	{ 7,  PINMUX_FUNC_A }, /* EXP1.P0_6 (out), EXP1.P0_6 (in), NA, NA */
+	{ 8,  PINMUX_FUNC_A }, /* EXP1.P1_0 (out), EXP1.P1_0 (in), NA, NA */
 	{ 9,  PINMUX_FUNC_B }, /* GPIO_SUS2 (out), GPIO_SUS2 (in), PWM.LED7, NA */
 	{ 10, PINMUX_FUNC_B }, /* GPIO2 (out), GPIO2 (in), PWM.LED11, NA */
 	{ 11, PINMUX_FUNC_B }, /* GPIO_SUS3 (out), GPIO_SUS3 (in), PWM.LED9, SPI1_MOSI */
@@ -265,7 +265,7 @@ struct mux_path _galileo_path[CONFIG_PINMUX_NUM_PINS * NUM_PIN_FUNCS] = {
 
 	{7, PINMUX_FUNC_A, {{ EXP1,  6,   PIN_LOW, (GPIO_DIR_OUT) }, /* GPIO_SUS0 (out) */
 			    { EXP1,  7,   PIN_LOW, (GPIO_DIR_OUT) },
-			    { G_RW,  0,   PIN_LOW, (GPIO_DIR_OUT) },
+			    { G_RW,  0,  PIN_HIGH, (GPIO_DIR_OUT) },
 			    { NONE,  0, DONT_CARE, (GPIO_DIR_IN)  },
 			    { NONE,  0, DONT_CARE, (GPIO_DIR_IN)  } } },
 	{7, PINMUX_FUNC_B, {{ EXP1,  6,   PIN_LOW, (GPIO_DIR_IN)  }, /* GPIO_SUS0 (in) */
