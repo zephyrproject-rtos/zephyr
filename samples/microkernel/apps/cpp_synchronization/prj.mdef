@@ -1,0 +1,11 @@
+% Application       : C++ demo
+
+% TASK NAME  PRIO ENTRY STACK GROUPS
+% ==================================
+  TASK TASKA    7 task_a  2048 [EXE]
+  TASK TASKB    7 task_b  2048 [EXE]
+
+% SEMA NAME
+% =============
+  SEMA TASKASEM
+  SEMA TASKBSEM
