@@ -118,8 +118,9 @@ struct lookup_data {
 	uint32_t bus:9;
 	uint32_t dev:6;
 	uint32_t func:4;
-	uint32_t bar:4;
-	uint32_t unused:9;
+	uint32_t baridx:3;
+	uint32_t barofs:3;
+	uint32_t unused:7;
 };
 
 static struct lookup_data __noinit lookup;
@@ -178,14 +179,16 @@ static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
  * NOTE: Routine does not set up parameters for 64 bit BARS, they are ignored.
  */
 static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
-					struct pci_dev_info *dev_info)
+				     struct pci_dev_info *dev_info,
+				     int max_bars)
 {
 	uint32_t bar_value;
 	uint32_t bar_config;
+	uint32_t bar_hival;
 	uint32_t addr;
 	uint32_t mask;
 
-	pci_ctrl_addr.field.reg = 4 + lookup.bar;
+	pci_ctrl_addr.field.reg = 4 + lookup.barofs;
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
@@ -198,8 +201,19 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 	if (BAR_SPACE(bar_config) == BAR_SPACE_MEM) {
 		dev_info->mem_type = BAR_SPACE_MEM;
 		mask = ~0xf;
-		if (lookup.bar < 5 && BAR_TYPE(bar_config) == BAR_TYPE_64BIT) {
-			return 1; /* 64-bit MEM */
+		if (BAR_TYPE(bar_config) == BAR_TYPE_64BIT) {
+			/* Last BAR register cannot be 64-bit */
+			if (++lookup.barofs >= max_bars)
+				return 1;
+
+			/* Make sure the address is accessible */
+			pci_ctrl_addr.field.reg++;
+			pci_read(DEFAULT_PCI_CONTROLLER,
+				 pci_ctrl_addr,
+				 sizeof(bar_hival),
+				 &bar_hival);
+			if (bar_hival)
+				return 1; /* Inaccessible memory */
 		}
 	} else {
 		dev_info->mem_type = BAR_SPACE_IO;
@@ -243,7 +257,8 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 	}
 
 	/* scan all the possible functions for this device */
-	for (; lookup.func < LSPCI_MAX_FUNC; lookup.bar = 0, lookup.func++) {
+	for (; lookup.func < LSPCI_MAX_FUNC;
+	     lookup.baridx = 0, lookup.barofs = 0, lookup.func++) {
 		if (lookup.info.function != PCI_FUNCTION_ANY &&
 		    lookup.func != lookup.info.function) {
 			return 0;
@@ -289,12 +304,14 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 			max_bars = PCI_MAX_BARS;
 		}
 
-		for (; lookup.bar < max_bars; lookup.bar++) {
-			/* Ignore BARs with errors and 64 bit BARs */
-			if (pci_bar_params_get(pci_ctrl_addr, dev_info) != 0) {
+		for (; lookup.barofs < max_bars;
+		     lookup.baridx++, lookup.barofs++) {
+			/* Ignore BARs with errors */
+			if (pci_bar_params_get(pci_ctrl_addr, dev_info,
+					       max_bars) != 0) {
 				continue;
 			} else if (lookup.info.bar != PCI_BAR_ANY &&
-				   lookup.bar != lookup.info.bar) {
+				   lookup.baridx != lookup.info.bar) {
 				continue;
 			} else {
 				dev_info->vendor_id =
@@ -306,11 +323,14 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 				dev_info->irq = pci_pin2irq(
 					pci_dev_header.field.interrupt_pin);
 				dev_info->function = lookup.func;
-				dev_info->bar = lookup.bar;
+				dev_info->bar = lookup.baridx;
 
-				lookup.bar++;
-				if (lookup.bar >= max_bars)
-					lookup.bar = 0;
+				lookup.baridx++;
+				lookup.barofs++;
+				if (lookup.barofs >= max_bars) {
+					lookup.baridx = 0;
+					lookup.barofs = 0;
+				}
 
 				return 1;
 			}
@@ -330,7 +350,8 @@ void pci_bus_scan_init(void)
 	lookup.bus = 0;
 	lookup.dev = 0;
 	lookup.func = 0;
-	lookup.bar = 0;
+	lookup.baridx = 0;
+	lookup.barofs = 0;
 }
 
 
