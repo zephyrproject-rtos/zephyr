@@ -4,4 +4,10 @@ if BOARD_FSL_FRDM_K64F
 config BOARD
         default fsl_frdm_k64f
 
+config FLASH_SIZE
+	default 1024
+
+config SRAM_SIZE
+	default 192
+
 endif # BOARD_FSL_FRDM_K64F
