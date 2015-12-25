@@ -31,7 +31,7 @@ config NUM_IRQS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
-	default 25000000
+	default 120000000
 
 config WDOG_INIT
 	def_bool y
