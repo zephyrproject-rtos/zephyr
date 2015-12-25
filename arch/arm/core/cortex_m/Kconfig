@@ -99,7 +99,6 @@ config XIP
 
 config SRAM_SIZE
 	int "SRAM Size in kB"
-	default 192
 	help
 	This option specifies the size of the SRAM in kB.  It is normally set by
 	the platform's defconfig file and the user should generally avoid modifying
@@ -115,7 +114,6 @@ config SRAM_BASE_ADDRESS
 
 config FLASH_SIZE
 	int "Flash Size in kB"
-	default 1024
 	help
 	This option specifies the size of the flash in kB.  It is normally set by
 	the platform's defconfig file and the user should generally avoid modifying
