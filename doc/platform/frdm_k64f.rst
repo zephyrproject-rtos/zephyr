@@ -1,12 +1,12 @@
-.. _fsl_frdm_k64f:
+.. _frdm_k64f:
 
-Board Configuration: fsl_frdm_k64f
+Board Configuration: frdm_k64f
 #####################################
 
 Overview
 ********
 
-The fsl_frdm_k64f board configuration is used by Zephyr applications
+The frdm_k64f board configuration is used by Zephyr applications
 that run on the Freescale Freedom Development Platform (FRDM-K64F).
 It provides support for an ARM Cortex-M4 CPU and the following devices:
 
@@ -28,7 +28,7 @@ done with GNU Debugger (GDB), using Eclipse plugins.
 Supported Boards
 ****************
 
-The fsl_frdm_k64f board configuration has been tested to run on the
+The frdm_k64f board configuration has been tested to run on the
 Freescale Freedom Development Platform.  The physical characteristics of
 this board (including pin names, jumper settings, memory mappings, ...)
 can be found below.  No claims are made about its suitability for use with
@@ -110,7 +110,7 @@ The default switch settings for the Freescale FRDM-K64F are:
 Memory Mappings
 ===============
 
-The fsl_frdm_k64f board configuration uses the
+The frdm_k64f board configuration uses the
 following default hardware memory map addresses and sizes:
 
 +--------------------------+---------+------------------+
@@ -182,7 +182,7 @@ http://infocenter.arm.com/help/topic/com.arm.doc.dui0552a/DUI0552A_cortex_m3_dgu
 Supported Features
 ******************
 
-The fsl_frdm_k64f board configuration supports the following
+The frdm_k64f board configuration supports the following
 hardware features:
 
 +--------------+------------+----------------------+

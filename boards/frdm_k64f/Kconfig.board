@@ -1,5 +1,5 @@
 
-config  BOARD_FSL_FRDM_K64F
+config  BOARD_FRDM_K64F
         bool "Freescale FRDM-K64F"
         select SOC_FSL_FRDM_K64F
 	depends on ARM

@@ -28,7 +28,7 @@ kernel configuration settings.
 +----------------------+-----------------+------------------------+
 | arduino_101          | X86             | Arduino 101 Board      |
 +----------------------+-----------------+------------------------+
-| fsl_frdm_k64f        | ARM v7E-M       | Freescale Freedom      |
+| frdm_k64f        | ARM v7E-M       | Freescale Freedom      |
 |                      |                 | Development Platform   |
 +----------------------+-----------------+------------------------+
 | galileo              | X86             | | Galileo              |
@@ -43,6 +43,6 @@ The following sections provide details on the respective platforms:
    minnowboard.rst
    qemu_cortex_m3.rst
    basic_minuteia.rst
-   fsl_frdm_k64f.rst
+   frdm_k64f.rst
    galileo.rst
 

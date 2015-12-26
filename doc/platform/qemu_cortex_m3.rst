@@ -51,10 +51,10 @@ Interrupt Controller
 ====================
 
 
-Refer to the :ref:`fsl_frdm_k64f`.
+Refer to the :ref:`frdm_k64f`.
 
 .. note::
-   Unlike the fsl_frdm_k64 board configuration, the qemu_cortex_m3
+   Unlike the frdm_k64f board configuration, the qemu_cortex_m3
    board configuration sets option :option:`NUM_IRQ_PRIO_BITS` to '3'.
 
 System Clock
