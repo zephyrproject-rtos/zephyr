@@ -5,7 +5,7 @@ VERSION_RESERVED   = 0
 EXTRAVERSION       =
 NAME 		   = Zephyr Kernel
 
-export SOURCE_DIR PROJECT MDEF_FILE KLIBC_DIR
+export SOURCE_DIR PROJECT MDEF_FILE
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
@@ -370,7 +370,6 @@ LDFLAGS += $(call ld-option,-nostartfiles)
 LDFLAGS += $(call ld-option,-nodefaultlibs)
 LDFLAGS += $(call ld-option,-nostdlib)
 LDFLAGS += $(call ld-option,-static)
-LDLIBS_TOOLCHAIN ?= -lgcc
 
 KERNELVERSION = $(VERSION_MAJOR)$(if $(VERSION_MINOR),.$(VERSION_MINOR)$(if $(PATCHLEVEL),.$(PATCHLEVEL)))$(EXTRAVERSION)
 
@@ -386,7 +385,7 @@ export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE CFLAGS_GCOV
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
-export KBUILD_ARFLAGS LDLIBS_TOOLCHAIN
+export KBUILD_ARFLAGS
 
 
 # Files to ignore in find ... statements
