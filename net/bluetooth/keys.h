@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 enum {
 	BT_KEYS_SLAVE_LTK      = (1 << 0),
 	BT_KEYS_IRK            = (1 << 1),
@@ -24,10 +24,12 @@ enum {
 	BT_KEYS_LOCAL_CSRK     = (1 << 3),
 	BT_KEYS_REMOTE_CSRK    = (1 << 4),
 	BT_KEYS_LTK_P256       = (1 << 5),
+	BT_KEYS_LINK_KEY       = (1 << 6),
 
 	BT_KEYS_ALL            = (BT_KEYS_SLAVE_LTK | BT_KEYS_IRK | \
 				  BT_KEYS_LTK | BT_KEYS_LOCAL_CSRK | \
-				  BT_KEYS_REMOTE_CSRK | BT_KEYS_LTK_P256),
+				  BT_KEYS_REMOTE_CSRK | BT_KEYS_LTK_P256 | \
+				  BT_KEYS_LINK_KEY),
 };
 
 enum {
@@ -50,12 +52,21 @@ struct bt_csrk {
 	uint32_t		cnt;
 };
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+struct bt_link_key {
+	uint8_t			val[16];
+};
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 struct bt_keys {
 	bt_addr_le_t		addr;
+#if defined(CONFIG_BLUETOOTH_SMP)
 	uint8_t			enc_size;
+#endif
 	atomic_t		flags;
 	uint16_t		keys;
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	struct bt_ltk		slave_ltk;
 #endif /* CONFIG_BLUETOOTH_SMP_SC_ONLY */
@@ -65,7 +76,17 @@ struct bt_keys {
 	struct bt_csrk		local_csrk;
 	struct bt_csrk		remote_csrk;
 #endif /* BLUETOOTH_SIGNING */
+#endif /* CONFIG_BLUETOOTH_SMP */
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	struct bt_link_key	link_key;
+#endif /* CONFIG_BLUETOOTH_BREDR */
 };
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+struct bt_keys *bt_keys_get_link_key(const bt_addr_t *addr);
+struct bt_keys *bt_keys_find_link_key(const bt_addr_t *addr);
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr);
@@ -79,4 +100,4 @@ static inline struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr)
 {
 	return NULL;
 }
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
