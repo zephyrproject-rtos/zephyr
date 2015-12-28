@@ -1523,9 +1523,20 @@ static void link_key_notify(struct net_buf *buf)
 
 	BT_DBG("%s, link type 0x%02x", bt_addr_str(&evt->bdaddr), evt->key_type);
 
-	/* TODO:
-	 * classify link key based on conn internals and update keys storage
-	 */
+	if (!conn->keys) {
+		conn->keys = bt_keys_get_link_key(&evt->bdaddr);
+	}
+	if (!conn->keys) {
+		BT_ERR("Can't update keys for %s", bt_addr_str(&evt->bdaddr));
+		bt_conn_unref(conn);
+		return;
+	}
+
+	memcpy(conn->keys->link_key.val, evt->link_key, 16);
+
+	if (evt->key_type == BT_LK_COMBINATION) {
+		atomic_set_bit(&conn->keys->flags, BT_KEYS_BR_LEGACY);
+	}
 
 	bt_conn_unref(conn);
 }
