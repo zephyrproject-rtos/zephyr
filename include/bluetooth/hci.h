@@ -480,6 +480,17 @@ struct bt_hci_evt_pin_code_req {
 	bt_addr_t bdaddr;
 } __packed;
 
+/* Link Key types */
+#define BT_LK_COMBINATION			0x00
+#define BT_LK_LOCAL_UNIT			0x01
+#define BT_LK_REMOTE_UNIT			0x02
+#define BT_LK_DEBUG_COMBINATION			0x03
+#define BT_LK_UNAUTH_COMBINATION_P192		0x04
+#define BT_LK_AUTH_COMBINATION_P192		0x05
+#define BT_LK_CHANGED_COMBINATION		0x06
+#define BT_LK_UNAUTH_COMBINATION_P256		0x07
+#define BT_LK_AUTH_COMBINATION_P256		0x08
+
 #define BT_HCI_EVT_LINK_KEY_NOTIFY		0x18
 struct bt_hci_ev_link_key_notify {
 	bt_addr_t bdaddr;
