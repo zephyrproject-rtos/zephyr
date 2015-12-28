@@ -26,7 +26,7 @@
  * @{
  */
 
-#include <nanokernel.h>
+#include <microkernel.h>
 #include <sys_clock.h>
 
 /* externs */

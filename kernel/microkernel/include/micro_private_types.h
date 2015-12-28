@@ -136,6 +136,7 @@ struct k_mrec {
 	uint32_t time;
 	uint32_t data1;
 	uint32_t data2;
+	void     *ptr;
 };
 
 typedef enum {

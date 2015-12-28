@@ -77,9 +77,11 @@ void _k_task_monitor_args(struct k_args *A)
 
 		if (cmd_type == KERNEL_CMD_EVENT_TYPE) {
 			k_monitor_wptr->data2 = MO_EVENT | (uint32_t)A;
+			k_monitor_wptr->ptr = (void *)0;
 		} else {
 			k_monitor_wptr->data1 = _k_current_task->id;
-			k_monitor_wptr->data2 = MO_LCOMM | A->Comm;
+			k_monitor_wptr->data2 = MO_LCOMM;
+			k_monitor_wptr->ptr = A->Comm;
 		}
 
 		if (++K_monitor_wind == k_monitor_capacity) {
