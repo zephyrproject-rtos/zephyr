@@ -18,7 +18,7 @@
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = nano
-BOARD ?= basic_minuteia
+BOARD ?= qemu_x86
 CONF_FILE = prj_$(ARCH).conf
 
 QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
