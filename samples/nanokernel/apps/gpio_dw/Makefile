@@ -1,5 +1,5 @@
 ifeq ($(ARCH),arc)
-BOARD ?= quark_se_ss
+BOARD ?= arduino_101_sss
 else
 BOARD ?= arduino_101
 endif

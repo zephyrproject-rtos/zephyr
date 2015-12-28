@@ -4,6 +4,7 @@ CONF_quark_se_ctb	= quark_se/quark_se_prj.conf
 CONF_qemu_x86     	= ia32/prj_expert_test.conf
 CONF_minnowboard     	= ia32/prj_expert_test.conf
 CONF_galileo        	= ia32_pci/prj.conf
+CONF_arduino_101	= quark_se/quark_se_prj.conf
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
