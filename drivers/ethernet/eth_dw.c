@@ -286,7 +286,7 @@ static struct eth_config eth_config_0 = {
 	.irq_num		= CONFIG_ETH_DW_0_IRQ,
 #endif
 #if CONFIG_PCI
-	.pci_dev.class		= CONFIG_ETH_DW_CLASS,
+	.pci_dev.class_type	= CONFIG_ETH_DW_CLASS,
 	.pci_dev.bus		= CONFIG_ETH_DW_0_BUS,
 	.pci_dev.dev		= CONFIG_ETH_DW_0_DEV,
 	.pci_dev.vendor_id	= CONFIG_ETH_DW_VENDOR_ID,

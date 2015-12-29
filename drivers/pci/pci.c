@@ -45,7 +45,7 @@
  *
  * EXAMPLE
  * struct pci_dev_info info = {
- *     .class = PCI_CLASS_COMM_CTLR
+ *     .class_type = PCI_CLASS_COMM_CTLR
  * };
  *
  * pci_bus_scan_init();
@@ -286,8 +286,8 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 		 * Skip a device if its class is specified by the
 		 * caller and does not match
 		 */
-		if (lookup.info.class &&
-		    pci_dev_header.field.class != lookup.info.class) {
+		if (lookup.info.class_type &&
+		    pci_dev_header.field.class != lookup.info.class_type) {
 			continue;
 		}
 
@@ -318,7 +318,7 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 					pci_dev_header.field.vendor_id;
 				dev_info->device_id =
 					pci_dev_header.field.device_id;
-				dev_info->class =
+				dev_info->class_type =
 					pci_dev_header.field.class;
 				dev_info->irq = pci_pin2irq(
 					pci_dev_header.field.interrupt_pin);
@@ -342,7 +342,7 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 
 void pci_bus_scan_init(void)
 {
-	lookup.info.class = 0;
+	lookup.info.class_type = 0;
 	lookup.info.vendor_id = 0;
 	lookup.info.device_id = 0;
 	lookup.info.function = PCI_FUNCTION_ANY;
@@ -370,12 +370,12 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 {
 	union pci_addr_reg pci_ctrl_addr;
 
-	if (!lookup.info.class &&
+	if (!lookup.info.class_type &&
 	    !lookup.info.vendor_id &&
 	    !lookup.info.device_id &&
 	    lookup.info.bar == PCI_BAR_ANY &&
 	    lookup.info.function == PCI_FUNCTION_ANY) {
-		lookup.info.class = dev_info->class;
+		lookup.info.class_type = dev_info->class_type;
 		lookup.info.vendor_id = dev_info->vendor_id;
 		lookup.info.device_id = dev_info->device_id;
 		lookup.info.function = dev_info->function;
@@ -472,7 +472,7 @@ void pci_show(struct pci_dev_info *dev_info)
 		dev_info->dev,
 		dev_info->vendor_id,
 		dev_info->device_id,
-		dev_info->class,
+		dev_info->class_type,
 		dev_info->function,
 		dev_info->bar,
 		(dev_info->mem_type == BAR_SPACE_MEM) ? "MEM" : "I/O",

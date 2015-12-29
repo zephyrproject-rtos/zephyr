@@ -456,7 +456,7 @@ struct spi_intel_config spi_intel_config_0 = {
 	.regs = CONFIG_SPI_INTEL_PORT_0_REGS,
 	.irq = CONFIG_SPI_INTEL_PORT_0_IRQ,
 #if CONFIG_PCI
-	.pci_dev.class = CONFIG_SPI_INTEL_CLASS,
+	.pci_dev.class_type = CONFIG_SPI_INTEL_CLASS,
 	.pci_dev.bus = CONFIG_SPI_INTEL_PORT_0_BUS,
 	.pci_dev.dev = CONFIG_SPI_INTEL_PORT_0_DEV,
 	.pci_dev.vendor_id = CONFIG_SPI_INTEL_VENDOR_ID,
@@ -500,7 +500,7 @@ struct spi_intel_config spi_intel_config_1 = {
 	.regs = CONFIG_SPI_INTEL_PORT_1_REGS,
 	.irq = CONFIG_SPI_INTEL_PORT_1_IRQ,
 #if CONFIG_PCI
-	.pci_dev.class = CONFIG_SPI_INTEL_CLASS,
+	.pci_dev.class_type = CONFIG_SPI_INTEL_CLASS,
 	.pci_dev.bus = CONFIG_SPI_INTEL_PORT_1_BUS,
 	.pci_dev.dev = CONFIG_SPI_INTEL_PORT_1_DEV,
 	.pci_dev.function = CONFIG_SPI_INTEL_PORT_1_FUNCTION,

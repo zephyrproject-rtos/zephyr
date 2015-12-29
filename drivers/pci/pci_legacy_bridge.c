@@ -159,7 +159,7 @@ int pci_legacy_bridge_detect(struct pci_dev_info *dev_info)
 	dev_info->dev = CONFIG_PCI_LEGACY_BRIDGE_DEV;
 	dev_info->function = 0;
 	dev_info->mem_type = BAR_SPACE_MEM;
-	dev_info->class = pci_dev_header.field.class;
+	dev_info->class_type = pci_dev_header.field.class;
 	dev_info->bar = 0;
 	dev_info->vendor_id = pci_dev_header.field.vendor_id;
 	dev_info->device_id = pci_dev_header.field.device_id;

@@ -434,7 +434,7 @@ struct gpio_dw_config gpio_config_0 = {
 	.irq_num = CONFIG_GPIO_DW_0_IRQ,
 #endif
 #if CONFIG_PCI
-	.pci_dev.class = CONFIG_GPIO_DW_CLASS,
+	.pci_dev.class_type = CONFIG_GPIO_DW_CLASS,
 	.pci_dev.bus = CONFIG_GPIO_DW_0_BUS,
 	.pci_dev.dev = CONFIG_GPIO_DW_0_DEV,
 	.pci_dev.vendor_id = CONFIG_GPIO_DW_VENDOR_ID,
@@ -514,7 +514,7 @@ struct gpio_dw_config gpio_dw_config_1 = {
 	.irq_num = CONFIG_GPIO_DW_1_IRQ,
 #endif
 #if CONFIG_PCI
-	.pci_dev.class = CONFIG_GPIO_DW_CLASS,
+	.pci_dev.class_type = CONFIG_GPIO_DW_CLASS,
 	.pci_dev.bus = CONFIG_GPIO_DW_1_BUS,
 	.pci_dev.dev = CONFIG_GPIO_DW_1_DEV,
 	.pci_dev.vendor_id = CONFIG_GPIO_DW_VENDOR_ID,

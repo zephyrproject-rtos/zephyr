@@ -44,7 +44,7 @@ struct pci_dev_info {
 	uint32_t dev:5;
 	uint32_t function:4;
 	uint32_t mem_type:1; /* memory type: BAR_SPACE_MEM/BAR_SPACE_IO */
-	uint32_t class:8;
+	uint32_t class_type:8;
 	uint32_t bar:3;
 	uint32_t _reserved:3;
 

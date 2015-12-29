@@ -39,7 +39,7 @@ void pci_enumerate(void)
 
 	while (pci_bus_scan(&info)) {
 		pci_show(&info);
-		info.class = 0;
+		info.class_type = 0;
 		info.vendor_id = 0;
 		info.device_id = 0;
 		info.function = PCI_FUNCTION_ANY;

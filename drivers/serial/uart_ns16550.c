@@ -566,7 +566,7 @@ struct uart_device_config uart_ns16550_dev_cfg_0 = {
 	.init_info.options = CONFIG_UART_NS16550_PORT_0_OPTIONS,
 
 #ifdef CONFIG_UART_NS16550_PORT_0_PCI
-	.pci_dev.class = CONFIG_UART_NS16550_PORT_0_PCI_CLASS,
+	.pci_dev.class_type = CONFIG_UART_NS16550_PORT_0_PCI_CLASS,
 	.pci_dev.bus = CONFIG_UART_NS16550_PORT_0_PCI_BUS,
 	.pci_dev.dev = CONFIG_UART_NS16550_PORT_0_PCI_DEV,
 	.pci_dev.vendor_id = CONFIG_UART_NS16550_PORT_0_PCI_VENDOR_ID,
@@ -600,7 +600,7 @@ struct uart_device_config uart_ns16550_dev_cfg_1 = {
 	.init_info.options = CONFIG_UART_NS16550_PORT_1_OPTIONS,
 
 #ifdef CONFIG_UART_NS16550_PORT_1_PCI
-	.pci_dev.class = CONFIG_UART_NS16550_PORT_1_PCI_CLASS,
+	.pci_dev.class_type = CONFIG_UART_NS16550_PORT_1_PCI_CLASS,
 	.pci_dev.bus = CONFIG_UART_NS16550_PORT_1_PCI_BUS,
 	.pci_dev.dev = CONFIG_UART_NS16550_PORT_1_PCI_DEV,
 	.pci_dev.vendor_id = CONFIG_UART_NS16550_PORT_1_PCI_VENDOR_ID,

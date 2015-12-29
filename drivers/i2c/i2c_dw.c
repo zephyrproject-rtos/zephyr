@@ -712,7 +712,7 @@ struct i2c_dw_rom_config i2c_config_dw_0 = {
 #endif
 
 #if CONFIG_PCI
-	.pci_dev.class = CONFIG_I2C_DW_CLASS,
+	.pci_dev.class_type = CONFIG_I2C_DW_CLASS,
 	.pci_dev.bus = CONFIG_I2C_DW_0_BUS,
 	.pci_dev.dev = CONFIG_I2C_DW_0_DEV,
 	.pci_dev.vendor_id = CONFIG_I2C_DW_VENDOR_ID,
@@ -774,7 +774,7 @@ struct i2c_dw_rom_config i2c_config_dw_1 = {
 	.config_func = i2c_config_1,
 
 #if CONFIG_PCI
-	.pci_dev.class = CONFIG_I2C_DW_CLASS,
+	.pci_dev.class_type = CONFIG_I2C_DW_CLASS,
 	.pci_dev.bus = CONFIG_I2C_DW_1_BUS,
 	.pci_dev.dev = CONFIG_I2C_DW_1_DEV,
 	.pci_dev.vendor_id = CONFIG_I2C_DW_VENDOR_ID,
