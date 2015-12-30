@@ -42,13 +42,13 @@
 
 /*
  * Declare the ISR table
- * Macro is recursive
  */
 .macro _isr_table_declare from, to
-	_isr_table_entry_declare \from
-	.if \to-\from
-		_isr_table_declare %(\from + 1), \to
-	.endif
+	counter = \from
+	.rept (\to - \from + 1)
+		_isr_table_entry_declare %counter
+		counter = counter + 1
+	.endr
 .endm
 
 GTEXT(_irq_spurious)
