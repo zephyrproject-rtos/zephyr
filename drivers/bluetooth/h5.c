@@ -504,15 +504,33 @@ void bt_uart_isr(void *unused)
 			switch (H5_HDR_PKT_TYPE(hdr)) {
 			case HCI_EVENT_PKT:
 				h5.rx_buf = bt_buf_get_evt();
+				if (!h5.rx_buf) {
+					BT_WARN("No available event buffers");
+					h5_reset_rx();
+					continue;
+				}
+
 				h5.rx_state = PAYLOAD;
 				break;
 			case HCI_ACLDATA_PKT:
 				h5.rx_buf = bt_buf_get_acl();
+				if (!h5.rx_buf) {
+					BT_WARN("No available data buffers");
+					h5_reset_rx();
+					continue;
+				}
+
 				h5.rx_state = PAYLOAD;
 				break;
 			case HCI_3WIRE_LINK_PKT:
 			case HCI_3WIRE_ACK_PKT:
 				h5.rx_buf = net_buf_get(&h5_sig, 0);
+				if (!h5.rx_buf) {
+					BT_WARN("No available signal buffers");
+					h5_reset_rx();
+					continue;
+				}
+
 				h5.rx_state = PAYLOAD;
 				break;
 			default:
