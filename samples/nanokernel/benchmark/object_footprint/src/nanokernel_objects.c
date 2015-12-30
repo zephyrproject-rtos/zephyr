@@ -33,6 +33,7 @@ volatile int i = 0;
 
 #define IRQ_PRIORITY      3
 #define TEST_SOFT_INT	  64
+#define TEST_IRQ_OFFLOAD_VECTOR	32
 
 #define FIBER_STACK_SIZE  CONFIG_FIBER_STACK_SIZE
 
@@ -87,7 +88,7 @@ volatile pfunc func_array[] = {
 #ifdef CONFIG_STATIC_ISR
 /* ISR stub data structure */
 static void isrDummyIntStub(void *);
-NANO_CPU_INT_REGISTER(isrDummyIntStub, TEST_SOFT_INT, 0);
+NANO_CPU_INT_REGISTER(isrDummyIntStub, TEST_SOFT_INT, 0, TEST_IRQ_OFFLOAD_VECTOR, 0);
 #endif
 
 void dummyIsr(void *unused)
