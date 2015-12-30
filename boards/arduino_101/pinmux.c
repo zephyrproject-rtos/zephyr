@@ -71,22 +71,22 @@
  */
 
 /* pin, ball, mode A, mode B, mode C */
-/* 0  F02, gpio_0, ain_0, spi_s_cs */
-/* 1  G04, gpio_1, ain_1, spi_s_miso */
-/* 2  H05, gpio_2, ain_2, spi_s_sck */
-/* 3  J06, gpio_3, ain_3, spi_s_mosi */
+/* 0  F02, gpio_0, ain_0, spi_s_cs */			/* IO10 */
+/* 1  G04, gpio_1, ain_1, spi_s_miso */			/* IO12 */
+/* 2  H05, gpio_2, ain_2, spi_s_sck */			/* IO13 */
+/* 3  J06, gpio_3, ain_3, spi_s_mosi */			/* IO11 */
 /* 4  K06, gpio_4, ain_4, NA */
 /* 5  L06, gpio_5, ain_5, NA */
 /* 6  H04, gpio_6, ain_6, NA */
 /* 7  G03, gpio_7, ain_7, NA */
 /* 8  L05, gpio_ss_0, ain_8, uart1_cts */
-/* 9  M05, gpio_ss_1, ain_9, uart1_rts */
+/* 9  M05, gpio_ss_1, ain_9, uart1_rts */		/* AD5 */
 /* 10 K05, gpio_ss_2, ain_10 */				/* AD0 */
 /* 11 G01, gpio_ss_3, ain_11 */				/* AD1 */
 /* 12 J04, gpio_ss_4, ain_12 */				/* AD2 */
 /* 13 G02, gpio_ss_5, ain_13 */				/* AD3 */
 /* 14 F01, gpio_ss_6, ain_14 */				/* AD4 */
-/* 15 J05, gpio_ss_7, ain_15 */				/* AD5 */
+/* 15 J05, gpio_ss_7, ain_15 */
 /* 16 L04, gpio_ss_8, ain_16, uart1_txd */		/* IO1 */
 /* 17 M04, gpio_ss_9, ain_17, uart1_rxd */		/* IO0 */
 /* 18 K04, uart0_rx, ain_18, NA */
@@ -113,10 +113,10 @@
 /* 39 E04, spi1_ss_cs1, NA, NA */
 /* 40 A06, spi1_ss_cs2, uart0_cts, NA */
 /* 41 B06, spi1_ss_cs3, uart0_rts, NA */
-/* 42 C06, gpio_8, spi1_m_sck, NA */			/* IO13 */
-/* 43 D06, gpio_9, spi1_m_miso, NA */			/* IO12 */
-/* 44 E06, gpio_10, spi1_m_mosi, NA */			/* IO11 */
-/* 45 D07, gpio_11, spi1_m_cs0, NA */			/* IO10 */
+/* 42 C06, gpio_8, spi1_m_sck, NA */
+/* 43 D06, gpio_9, spi1_m_miso, NA */
+/* 44 E06, gpio_10, spi1_m_mosi, NA */
+/* 45 D07, gpio_11, spi1_m_cs0, NA */
 /* 46 C07, gpio_12, spi1_m_cs1, NA */
 /* 47 B07, gpio_13, spi1_m_cs2, NA */
 /* 48 A07, gpio_14, spi1_m_cs3, NA */
@@ -140,6 +140,17 @@
 /* 66 B11, gpio_ss_13, pwm_3, NA */			/* IO9 */
 /* 67 D12, gpio_ss_14, clkout_32khz, NA */
 /* 68 C12, gpio_ss_15, clkout_16mhz, NA */
+
+/* Note:
+ * 1. I2C pins on the shield are connected to i2c0_ss_sda and i2c_0_ss_scl,
+ *    which are on the sensor subsystem. They are also tied to AD4 and AD5.
+ *    Therefore, to use I2C, pin 9 (ain_9) and (ain_14) both need to be set
+ *    to PINMUX_FUNC_B, so they will not interfere with I2C operations.
+ *    Also, there is no internal pull-up on I2c bus, and thus external
+ *    pull-up resistors are needed.
+ * 2. IO3/PWM0 is connected to pin 51 and 63.
+ * 3. IO5/PWM1 is connected to pin 49 and 64.
+ */
 
 /*
  * On the QUARK_SE platform there are a minimum of 69 pins that can be possibly
@@ -165,11 +176,6 @@ static void _pinmux_defaults(uint32_t base)
 	PIN_CONFIG(mux_config, 14,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 16,  PINMUX_FUNC_C);
 	PIN_CONFIG(mux_config, 17,  PINMUX_FUNC_C);
-	/* Digital sensors on sensor subsystem i2c0.
-	 * Also need to set pin 9 (ain_9) and (ain_14)
-	 * to PINMUX_FUNC_B as these lines are tied to
-	 * the same output pins.
-	 */
 	PIN_CONFIG(mux_config, 40,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 41,  PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 55,  PINMUX_FUNC_B);
