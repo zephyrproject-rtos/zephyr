@@ -31,6 +31,7 @@ SOURCE_DIR ?= $(PROJECT_BASE)/src/
 # Kbuild doesn't work correctly if this is an absolute path
 # FIXME Do not depend on python
 override SOURCE_DIR := $(shell python -c "import os.path; print(\"%s\" % os.path.relpath(os.path.realpath('$(SOURCE_DIR)'), os.path.realpath('$(ZEPHYR_BASE)')))")/
+override SOURCE_DIR := $(subst \,/,$(SOURCE_DIR))
 export SOURCE_DIR
 
 ifeq ("$(origin V)", "command line")
