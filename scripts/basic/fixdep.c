@@ -502,8 +502,8 @@ static void traps(void)
 	int *p = (int *)test;
 
 	if (*p != INT_CONF) {
-		fprintf(stderr, "fixdep: sizeof(int) : %zu\n",
-			sizeof(int));
+		fprintf(stderr, "fixdep: sizeof(int) : %lu\n",
+			(unsigned long)sizeof(int));
 
 		fprintf(stderr, "fixdep: sizeof(int) != 4 or wrong endianness? %#x"
 			" vs %#x\n", *p, INT_CONF);
