@@ -6,7 +6,7 @@ DQUOTE = "
 
 ARCH ?= x86
 
-PROJECT_BASE ?= $(shell pwd)
+PROJECT_BASE ?= $(CURDIR)
 O ?= $(PROJECT_BASE)/outdir
 
 # Turn O into an absolute path; we call the main Kbuild with $(MAKE) -C

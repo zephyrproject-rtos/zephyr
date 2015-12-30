@@ -19,6 +19,17 @@ export SOURCE_DIR PROJECT MDEF_FILE
 # o Look for make include files relative to root of kernel src
 MAKEFLAGS += -rR --include-dir=$(CURDIR)
 
+UNAME := $(shell uname)
+ifeq (MINGW, $(findstring MINGW, $(UNAME)))
+HOST_OS=MINGW
+PWD_OPT=-W
+else ifeq (Linux, $(findstring Linux, $(UNAME)))
+HOST_OS=Linux
+else ifeq (Darwin, $(findstring Darwin, $(UNAME)))
+HOST_OS=Darwin
+endif
+export HOST_OS
+
 # Avoid funny character set dependencies
 unexport LC_ALL
 LC_COLLATE=C
@@ -140,7 +151,7 @@ ifneq ($(KBUILD_OUTPUT),)
 # check that the output directory actually exists
 saved-output := $(KBUILD_OUTPUT)
 KBUILD_OUTPUT := $(shell mkdir -p $(KBUILD_OUTPUT) && cd $(KBUILD_OUTPUT) \
-								&& /bin/pwd)
+								&& pwd $(PWD_OPT))
 $(if $(KBUILD_OUTPUT),, \
      $(error failed to create output directory "$(saved-output)"))
 
