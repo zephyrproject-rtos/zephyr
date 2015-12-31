@@ -684,17 +684,13 @@ KBUILD_CFLAGS += $(KCFLAGS)
 
 # Use --build-id when available.
 
-LDFLAGS_zephyr += $(call ld-option,-nostartfiles)
-LDFLAGS_zephyr += $(call ld-option,-nodefaultlibs)
-LDFLAGS_zephyr += $(call ld-option,-nostdlib)
-LDFLAGS_zephyr += $(call ld-option,-static)
+LDFLAGS_zephyr += $(LDFLAGS)
 LDFLAGS_zephyr += $(call ld-option,-X)
 LDFLAGS_zephyr += $(call ld-option,-N)
 LDFLAGS_zephyr += $(call ld-option,--gc-sections)
 LDFLAGS_zephyr += $(call ld-option,--build-id=none)
 
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
-
 
 ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
 KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
