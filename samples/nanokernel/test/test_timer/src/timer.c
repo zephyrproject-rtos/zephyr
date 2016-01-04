@@ -1,5 +1,3 @@
-/* timer.c - test nanokernel timer APIs */
-
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
  *
@@ -17,12 +15,14 @@
  */
 
 /*
-DESCRIPTION
-This module tests the following timer related routines:
-  nano_timer_init(), nano_fiber_timer_start(), nano_fiber_timer_stop(),
-  nano_fiber_timer_test(), nano_fiber_timer_wait(), nano_task_timer_start(),
-  nano_task_timer_stop(), nano_task_timer_test(), nano_task_timer_wait(),
-  sys_tick_get_32(), sys_cycle_get_32(), sys_tick_delta()
+ * @file
+ * @brief Test nanokernel timer APIs
+ *
+ * This module tests the following timer related routines:
+ *  nano_timer_init(), nano_fiber_timer_start(), nano_fiber_timer_stop(),
+ *  nano_fiber_timer_test(), nano_fiber_timer_wait(), nano_task_timer_start(),
+ *  nano_task_timer_stop(), nano_task_timer_test(), nano_task_timer_wait(),
+ *  sys_tick_get_32(), sys_cycle_get_32(), sys_tick_delta()
  */
 
 #include <tc_util.h>
