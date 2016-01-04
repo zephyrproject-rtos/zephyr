@@ -108,7 +108,6 @@ config	NUM_REGULAR_IRQ_PRIO_LEVELS
 config	NUM_IRQS
 	int
 	prompt "Upper limit of interrupt numbers/IDs used"
-	default 17
 	range 1 256
 	help
 	  Interrupts available will be 0 to NUM_IRQS-1.
