@@ -1,5 +1,3 @@
-/* lifo.c - test nanokernel LIFO APIs */
-
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
  *
@@ -15,31 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /*
-DESCRIPTION
-This module tests four basic scenarios with the usage of the following LIFO
-routines:
-
-   nano_isr_lifo_get, nano_isr_lifo_put
-   nano_fiber_lifo_get, nano_fiber_lifo_get_wait, nano_fiber_lifo_put
-   nano_task_lifo_get, nano_task_lifo_get_wait, nano_task_lifo_put
-   nano_fiber_lifo_take_wait_timeout, nano_task_lifo_take_wait_timeout
-
-Scenario #1
-  Getting (and waiting for an object) from an empty LIFO.  Both fibers and
-tasks can wait on a LIFO, but an ISR can not.
-
-Scenario #2
-  Getting objects from a non-empty LIFO.  Fibers, tasks and ISRs are all
-allowed to get an object from a non-empty LIFO.
-
-Scenario #3:
-   Multiple fibers pend on the same LIFO.
-
-Scenario #4:
-   Timeout scenarios with multiple LIFOs and fibers.
-
-These scenarios will be tested using a combinations of tasks, fibers and ISRs.
+ * @file
+ * @brief Test nanokernel LIFO APIs
+ *
+ * DESCRIPTION
+ * This module tests four basic scenarios with the usage of the following LIFO
+ * routines:
+ *
+ * nano_isr_lifo_get, nano_isr_lifo_put
+ * nano_fiber_lifo_get, nano_fiber_lifo_get_wait, nano_fiber_lifo_put
+ * nano_task_lifo_get, nano_task_lifo_get_wait, nano_task_lifo_put
+ * nano_fiber_lifo_take_wait_timeout, nano_task_lifo_take_wait_timeout
+ *
+ * Scenario #1
+ * Getting (and waiting for an object) from an empty LIFO.  Both fibers and
+ * tasks can wait on a LIFO, but an ISR can not.
+ *
+ * Scenario #2
+ * Getting objects from a non-empty LIFO.  Fibers, tasks and ISRs are all
+ * allowed to get an object from a non-empty LIFO.
+ *
+ * Scenario #3:
+ * Multiple fibers pend on the same LIFO.
+ *
+ * Scenario #4:
+ * Timeout scenarios with multiple LIFOs and fibers.
+ *
+ * These scenarios will be tested using a combinations of tasks, fibers and
+ * ISRs.
  */
 
 #include <zephyr.h>
