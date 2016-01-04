@@ -1,5 +1,3 @@
-/* fifo.c - test nanokernel FIFO APIs */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -17,38 +15,40 @@
  */
 
 /*
-DESCRIPTION
-This module tests four basic scenarios with the usage of the following FIFO
-routines:
+ * @file
+ * @brief Test nanokernel FIFO APIs
+ *
+ * This module tests four basic scenarios with the usage of the following FIFO
+ * routines:
+ *
+ * nano_fiber_fifo_get, nano_fiber_fifo_get_wait, nano_fiber_fifo_put
+ * nano_task_fifo_get, nano_task_fifo_get_wait, nano_task_fifo_put
+ * nano_isr_fifo_get, nano_isr_fifo_put
+ * nano_fiber_fifo_take_wait_timeout, nano_task_fifo_take_wait_timeout
+ *
+ * Scenario #1
+ * Task enters items into a queue, starts the fiber and waits for a semaphore.
+ * Fiber extracts all items from the queue and enters some items back into
+ * the queue.  Fiber gives the semaphore for task to continue.  Once the control
+ * is returned back to task, task extracts all items from the queue.
 
-   nano_fiber_fifo_get, nano_fiber_fifo_get_wait, nano_fiber_fifo_put
-   nano_task_fifo_get, nano_task_fifo_get_wait, nano_task_fifo_put
-   nano_isr_fifo_get, nano_isr_fifo_put
-   nano_fiber_fifo_take_wait_timeout, nano_task_fifo_take_wait_timeout
+ * Scenario #2
+ * Task enters an item into queue2, starts a fiber and extract an item from
+ * queue1 once the item is there.  The fiber will extract an item from queue2
+ * once the item is there and and enter an item to queue1.  The flow of control
+ * goes from task to fiber and so forth.
 
-Scenario #1
-  Task enters items into a queue, starts the fiber and waits for a semaphore.
-Fiber extracts all items from the queue and enters some items back into
-the queue.  Fiber gives the semaphore for task to continue.  Once the control
-is returned back to task, task extracts all items from the queue.
-
-Scenario #2
-  Task enters an item into queue2, starts a fiber and extract an item from
-queue1 once the item is there.  The fiber will extract an item from queue2
-once the item is there and and enter an item to queue1.  The flow of control
-goes from task to fiber and so forth.
-
-Scenario #3
-  Tests the ISR interfaces.  Function testIsrFifoFromFiber gets an item from
-the fifo queue in ISR context.  It then enters four items into the queue
-and finishes execution. Control is returned back to function
-testTaskFifoGetW which also finished it's execution and returned to main.
-Finally function testIsrFifoFromTask is run and it gets all data from
-the queue and puts and gets one last item to the queue.  All these are run
-in ISR context.
-
-Scenario #4:
-   Timeout scenarios with multiple FIFOs and fibers.
+ * Scenario #3
+ * Tests the ISR interfaces.  Function testIsrFifoFromFiber gets an item from
+ * the fifo queue in ISR context.  It then enters four items into the queue
+ * and finishes execution. Control is returned back to function
+ * testTaskFifoGetW which also finished it's execution and returned to main.
+ * Finally function testIsrFifoFromTask is run and it gets all data from
+ * the queue and puts and gets one last item to the queue.  All these are run
+ * in ISR context.
+ *
+ * Scenario #4:
+ * Timeout scenarios with multiple FIFOs and fibers.
  */
 
 #include <zephyr.h>
