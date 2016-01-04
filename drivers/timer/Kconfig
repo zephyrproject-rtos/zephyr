@@ -155,4 +155,13 @@ config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	help
 	The drivers select this option automatically when needed. Do not modify
 	this unless you have a very good reason for it.
+
+config SYSTEM_CLOCK_INIT_PRIORITY
+	int "System clock driver initialization priority"
+	default 0
+	help
+	This options can be used to set a specific initialization priority
+	value for the system clock driver. As drivers on nanokernel
+	initialization level might need the clock to be running already, you
+	should let the default value as it is (0).
 endmenu
