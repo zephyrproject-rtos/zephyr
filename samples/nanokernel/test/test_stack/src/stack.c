@@ -1,5 +1,3 @@
-/* stack.c - test nanokernel stack APIs */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -17,33 +15,35 @@
  */
 
 /*
-DESCRIPTION
-This module tests three basic scenarios with the usage of the following STACK
-routines:
-
-   nano_fiber_stack_pop, nano_fiber_stack_pop_wait, nano_fiber_stack_push
-   nano_task_stack_pop, nano_task_stack_pop_wait, nano_task_stack_push
-   nano_isr_stack_pop, nano_isr_stack_push
-
-Scenario #1
-  Task enters items into a queue, starts the fiber and waits for a semaphore.
-Fiber extracts all items from the queue and enters some items back into
-the queue.  Fiber gives the semaphore for task to continue.  Once the control
-is returned back to task, task extracts all items from the queue.
-
-Scenario #2
-  Task enters an item into queue2, starts a fiber and extract an item from
-queue1 once the item is there.  The fiber will extract an item from queue2
-once the item is there and and enter an item to queue1.  The flow of control
-goes from task to fiber and so forth.
-
-Scenario #3
-  Tests the ISR interfaces.  Fiber2 pops an item from queue1 in ISR context.
-It then enters four items into the queue and finishes execution.  Control
-is returned back to function testTaskStackPopW which also finished it's execution
-and returned to main.  Finally function testIsrStackFromTask is run and
-it popped all data from queue1, push and pop one last item to the queue.  All
-these are run in ISR context.
+ * @file
+ * @brief Test nanokernel stack APIs
+ *
+ * This module tests three basic scenarios with the usage of the following
+ * STACK routines:
+ *
+ * nano_fiber_stack_pop, nano_fiber_stack_pop_wait, nano_fiber_stack_push
+ * nano_task_stack_pop, nano_task_stack_pop_wait, nano_task_stack_push
+ * nano_isr_stack_pop, nano_isr_stack_push
+ *
+ * Scenario #1
+ * Task enters items into a queue, starts the fiber and waits for a semaphore.
+ * Fiber extracts all items from the queue and enters some items back into
+ * the queue.  Fiber gives the semaphore for task to continue.  Once the
+ * control is returned back to task, task extracts all items from the queue.
+ *
+ * Scenario #2
+ * Task enters an item into queue2, starts a fiber and extract an item from
+ * queue1 once the item is there.  The fiber will extract an item from queue2
+ * once the item is there and and enter an item to queue1.  The flow of control
+ * goes from task to fiber and so forth.
+ *
+ * Scenario #3
+ * Tests the ISR interfaces.  Fiber2 pops an item from queue1 in ISR context.
+ * It then enters four items into the queue and finishes execution.  Control
+ * is returned back to function testTaskStackPopW which also finished it's
+ * execution and returned to main.  Finally function testIsrStackFromTask is
+ * run and it popped all data from queue1, push and pop one last item to the
+ * queue. All these are run in ISR context.
  */
 
 #include <tc_util.h>
