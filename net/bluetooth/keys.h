@@ -52,9 +52,9 @@ struct bt_csrk {
 
 struct bt_keys {
 	bt_addr_le_t		addr;
-	int			keys;
-	atomic_t		flags;
 	uint8_t			enc_size;
+	atomic_t		flags;
+	uint16_t		keys;
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	struct bt_ltk		slave_ltk;
