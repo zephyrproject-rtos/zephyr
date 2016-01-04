@@ -52,6 +52,8 @@ struct vector_table {
 	uint32_t ev_div_zero;
 	uint32_t ev_dc_error;
 	uint32_t ev_maligned;
+	uint32_t unused_1;
+	uint32_t unused_2;
 };
 
 struct vector_table _VectorTable _GENERIC_SECTION(.exc_vector_table) = {
@@ -69,6 +71,8 @@ struct vector_table _VectorTable _GENERIC_SECTION(.exc_vector_table) = {
 	(uint32_t)__ev_div_zero,
 	(uint32_t)__ev_dc_error,
 	(uint32_t)__ev_maligned,
+	0,
+	0
 };
 
 extern struct vector_table __start _ALIAS_OF(_VectorTable);
