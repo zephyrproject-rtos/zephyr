@@ -1,5 +1,3 @@
-/* sema.c - test nanokernel semaphore APIs */
-
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
  *
@@ -17,27 +15,29 @@
  */
 
 /*
-DESCRIPTION
-This module tests four basic scenarios with the usage of the following semaphore
-routines:
-
-   nano_sem_init
-   nano_fiber_sem_give, nano_fiber_sem_take, nano_fiber_sem_take_wait
-   nano_task_sem_give, nano_task_sem_take, nano_task_sem_take_wait
-   nano_isr_sem_give, nano_isr_sem_take
-   nano_fiber_sem_take_wait_timeout, nano_task_sem_take_wait_timeout
-
-Scenario #1:
-   A task, fiber or ISR does not wait for the semaphore when taking it.
-
-Scenario #2:
-   A task or fiber must wait for the semaphore to be given before it gets it.
-
-Scenario #3:
-   Multiple fibers pend on the same semaphore.
-
-Scenario #4:
-   Timeout scenarios with multiple semaphores and fibers.
+ * @file
+ * @brief Test nanokernel semaphore APIs
+ *
+ * This module tests four basic scenarios with the usage of the following
+ * semaphore routines:
+ *
+ * nano_sem_init
+ * nano_fiber_sem_give, nano_fiber_sem_take, nano_fiber_sem_take_wait
+ * nano_task_sem_give, nano_task_sem_take, nano_task_sem_take_wait
+ * nano_isr_sem_give, nano_isr_sem_take
+ * nano_fiber_sem_take_wait_timeout, nano_task_sem_take_wait_timeout
+ *
+ * Scenario #1:
+ * A task, fiber or ISR does not wait for the semaphore when taking it.
+ *
+ * Scenario #2:
+ * A task or fiber must wait for the semaphore to be given before it gets it.
+ *
+ * Scenario #3:
+ * Multiple fibers pend on the same semaphore.
+ *
+ * Scenario #4:
+ * Timeout scenarios with multiple semaphores and fibers.
  */
 
 #include <tc_util.h>
