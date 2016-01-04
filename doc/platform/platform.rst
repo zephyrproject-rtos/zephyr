@@ -28,12 +28,13 @@ kernel configuration settings.
 +----------------------+-----------------+------------------------+
 | arduino_101          | X86             | Arduino 101 Board      |
 +----------------------+-----------------+------------------------+
-| frdm_k64f        | ARM v7E-M       | Freescale Freedom      |
+| frdm_k64f            | ARM v7E-M       | Freescale Freedom      |
 |                      |                 | Development Platform   |
 +----------------------+-----------------+------------------------+
 | galileo              | X86             | | Galileo              |
 |                      |                 | | Galileo (Gen 2)      |
 +----------------------+-----------------+------------------------+
+
 
 The following sections provide details on the respective platforms:
 
