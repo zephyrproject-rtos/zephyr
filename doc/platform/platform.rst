@@ -1,7 +1,7 @@
 .. _board:
 
 Supported Boards
-###################
+################
 
 The Zephyr Kernel supports the board configurations listed in the
 table below. An application can use a board configuration as is,
