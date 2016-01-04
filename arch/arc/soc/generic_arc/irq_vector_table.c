@@ -36,8 +36,8 @@ typedef void (*vth)(void); /* Vector Table Handler */
 
 #if defined(CONFIG_SW_ISR_TABLE)
 
-vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
-	[0 ...(CONFIG_NUM_IRQS - 1)] = _isr_enter
+vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS - 16] = {
+	[0 ...(CONFIG_NUM_IRQS - 17)] = _isr_enter
 };
 
 #elif !defined(CONFIG_IRQ_VECTOR_TABLE_CUSTOM)
@@ -46,8 +46,8 @@ extern void _SpuriousIRQ(void);
 
 /* placeholders: fill with real ISRs */
 
-vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
-	[0 ...(CONFIG_NUM_IRQS - 1)] = _SpuriousIRQ
+vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS - 16] = {
+	[0 ...(CONFIG_NUM_IRQS - 17)] = _SpuriousIRQ
 };
 
 #endif /* CONFIG_SW_ISR_TABLE */

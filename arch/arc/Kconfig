@@ -108,10 +108,11 @@ config	NUM_REGULAR_IRQ_PRIO_LEVELS
 config	NUM_IRQS
 	int
 	prompt "Upper limit of interrupt numbers/IDs used"
-	range 1 256
+	range 17 256
 	help
 	  Interrupts available will be 0 to NUM_IRQS-1.
-	  The minimum value is 1.
+	  The minimum value is 17 as the first 16 entries in the vector
+	  table are for CPU exceptions.
 
 	  The BSP must provide a valid default. This drives the size of the
 	  vector table.
