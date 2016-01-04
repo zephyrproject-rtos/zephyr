@@ -179,12 +179,14 @@ static int start_security(struct bt_conn *conn)
 		}
 
 		if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
-		    conn->keys->type != BT_KEYS_AUTHENTICATED) {
+		    !atomic_test_bit(&conn->keys->flags,
+				     BT_KEYS_AUTHENTICATED)) {
 			return bt_smp_send_pairing_req(conn);
 		}
 
 		if (conn->required_sec_level > BT_SECURITY_HIGH &&
-		    conn->keys->type != BT_KEYS_AUTHENTICATED &&
+		    !atomic_test_bit(&conn->keys->flags,
+				     BT_KEYS_AUTHENTICATED) &&
 		    !(conn->keys->keys & BT_KEYS_LTK_P256)) {
 			return bt_smp_send_pairing_req(conn);
 		}

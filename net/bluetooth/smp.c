@@ -1100,7 +1100,7 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 	 * keys with unauthenticated ones.
 	  */
 	keys = bt_keys_find_addr(&conn->le.dst);
-	if (keys && keys->type == BT_KEYS_AUTHENTICATED &&
+	if (keys && atomic_test_bit(&keys->flags, BT_KEYS_AUTHENTICATED) &&
 	    smp->method == JUST_WORKS) {
 		BT_ERR("JustWorks failed, authenticated keys present");
 		return BT_SMP_ERR_UNSPECIFIED;
@@ -1752,19 +1752,6 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
-static uint8_t get_keys_type(uint8_t method)
-{
-	switch (method) {
-	case PASSKEY_DISPLAY:
-	case PASSKEY_INPUT:
-	case PASSKEY_CONFIRM:
-		return BT_KEYS_AUTHENTICATED;
-	case JUST_WORKS:
-	default:
-		return BT_KEYS_UNAUTHENTICATED;
-	}
-}
-
 static uint8_t sc_smp_send_dhkey_check(struct bt_smp *smp, const uint8_t *e)
 {
 	struct bt_smp_dhkey_check *req;
@@ -2271,7 +2258,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if MITM required key must be authenticated */
 	if ((auth & BT_SMP_AUTH_MITM) &&
-	    conn->keys->type != BT_KEYS_AUTHENTICATED) {
+	    !atomic_test_bit(&conn->keys->flags, BT_KEYS_AUTHENTICATED)) {
 		if (get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT) {
 			BT_INFO("New auth requirements: 0x%x, repairing",
 				auth);
@@ -3318,7 +3305,19 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 * it is important to store it since type is used to determine
 	 * security level upon encryption
 	 */
-	conn->keys->type = get_keys_type(smp->method);
+	switch (smp->method) {
+	case PASSKEY_DISPLAY:
+	case PASSKEY_INPUT:
+	case PASSKEY_CONFIRM:
+		atomic_set_bit(&conn->keys->flags, BT_KEYS_AUTHENTICATED);
+		break;
+	case JUST_WORKS:
+	default:
+		/* unauthenticated key, clear it */
+		atomic_clear_bit(&conn->keys->flags, BT_KEYS_AUTHENTICATED);
+		break;
+	}
+
 	conn->keys->enc_size = get_encryption_key_size(smp);
 
 	/*

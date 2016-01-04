@@ -31,7 +31,6 @@ enum {
 };
 
 enum {
-	BT_KEYS_UNAUTHENTICATED,
 	BT_KEYS_AUTHENTICATED,
 };
 
@@ -54,7 +53,7 @@ struct bt_csrk {
 struct bt_keys {
 	bt_addr_le_t		addr;
 	int			keys;
-	uint8_t			type;
+	atomic_t		flags;
 	uint8_t			enc_size;
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
