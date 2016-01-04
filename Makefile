@@ -802,7 +802,7 @@ quiet_cmd_lnk_elf = LINK    $@
 (											\
 	$(LD) -T final-linker.cmd @$(KERNEL_NAME).lnk staticIdt.o int_vector_alloc.o 	\
 	irq_int_vector_map.o -o $@;							\
-	$(OBJCOPY) --set-section-flags intList=noload $@ elf.tmp;			\
+	${OBJCOPY} --change-section-address intList=${CONFIG_PHYS_LOAD_ADDR} $@ elf.tmp;\
 	$(OBJCOPY) -R intList elf.tmp $@;						\
 	rm elf.tmp									\
 )
