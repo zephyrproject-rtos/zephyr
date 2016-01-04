@@ -409,11 +409,9 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	uint16_t frag_len;
 
 	frag = bt_conn_create_pdu(&frag_buf, 0);
-	if (conn->state != BT_CONN_CONNECTED) {
-		if (frag) {
-			net_buf_unref(frag);
-		}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		net_buf_unref(frag);
 		return NULL;
 	}
 
