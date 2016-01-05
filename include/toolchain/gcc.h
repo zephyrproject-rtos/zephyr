@@ -65,8 +65,12 @@ __extension__ ({							\
 
 #define _GENERIC_SECTION(segment) __attribute__((section(#segment)))
 
+#ifndef __packed
 #define __packed        __attribute__((__packed__))
+#endif
+#ifndef __aligned
 #define __aligned(x)	__attribute__((__aligned__(x)))
+#endif
 #define __may_alias     __attribute__((__may_alias__))
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
 #define __used		__attribute__((__used__))
