@@ -1,6 +1,9 @@
 # vim: filetype=make
 #
 
+DQUOTE = "
+# "
+
 ARCH ?= x86
 
 PROJECT_BASE ?= $(shell pwd)
@@ -14,9 +17,8 @@ override O := $(realpath $(O))
 
 export ARCH MDEF_FILE QEMU_EXTRA_FLAGS PROJECT_BASE
 
-ifndef KERNEL_TYPE
-KERNEL_TYPE = micro
-endif
+KERNEL_TYPE ?= micro
+CONF_FILE_LOCAL = $(strip $(subst $(DQUOTE),,$(CONF_FILE)))
 
 ifdef BOARD
 KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/boards/$(BOARD)/$(BOARD)_defconfig
@@ -30,8 +32,6 @@ SOURCE_DIR ?= $(PROJECT_BASE)/src/
 # FIXME Do not depend on python
 override SOURCE_DIR := $(shell python -c "import os.path; print(\"%s\" % os.path.relpath(os.path.realpath('$(SOURCE_DIR)'), os.path.realpath('$(ZEPHYR_BASE)')))")/
 export SOURCE_DIR
-
-
 
 ifeq ("$(origin V)", "command line")
   KBUILD_VERBOSE = $(V)
@@ -50,8 +50,6 @@ endif
 
 zephyrmake	= @$(MAKE) -C $(ZEPHYR_BASE)  O=$(1) CFLAGS="$(CFLAGS)" \
 			PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) $(2)
-
-
 
 DOTCONFIG = $(O)/.config
 
@@ -77,9 +75,9 @@ menuconfig: initconfig
 
 KERNEL_CONFIG = $(ZEPHYR_BASE)/kernel/configs/$(KERNEL_TYPE).config
 
-$(DOTCONFIG): $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE)
+$(DOTCONFIG): $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE_LOCAL)
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
-		-q -m -O $(O) $(KBUILD_DEFCONFIG_PATH) $(KERNEL_CONFIG) $(CONF_FILE)
+		-q -m -O $(O) $(KBUILD_DEFCONFIG_PATH) $(KERNEL_CONFIG) $(CONF_FILE_LOCAL)
 	$(Q)$(MAKE) $(S) -C $(ZEPHYR_BASE) O=$(O) PROJECT=$(PROJECT_BASE) oldnoconfig
 
 pristine:
