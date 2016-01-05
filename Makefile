@@ -707,7 +707,19 @@ LDFLAGS_zephyr += $(call ld-option,--build-id=none)
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
 
 
-export LD_TOOLCHAIN
+ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
+KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
+else
+# Try a board specific linker file
+KBUILD_LDS := $(srctree)/boards/$(BOARD_NAME)/linker.cmd
+
+# If not available, try an SoC specific linker file
+ifeq ($(wildcard $(KBUILD_LDS)),)
+KBUILD_LDS         := $(srctree)/arch/$(ARCH)/soc/$(SOC_NAME)/linker.cmd
+endif
+endif
+
+export LD_TOOLCHAIN KBUILD_LDS
 
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the command line or
@@ -732,14 +744,8 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
-
 # Externally visible symbols (used by link-zephyr.sh)
 export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y) $(app-y)
-ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
-export KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
-else
-export KBUILD_LDS         := $(srctree)/arch/$(ARCH)/soc/$(SOC_NAME)/linker.cmd
-endif
 export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile
 export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(zephyr-alldirs)) arch include samples scripts)
