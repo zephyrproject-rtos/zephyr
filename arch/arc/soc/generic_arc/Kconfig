@@ -28,7 +28,7 @@ config NUM_REGULAR_IRQ_PRIO_LEVELS
 	default 1
 
 config  NUM_IRQS
-	# must be >= the highest interrupt number used
+	# must be > the highest interrupt number used
 	default 17
 
 
