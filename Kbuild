@@ -7,10 +7,10 @@ endif
 endif
 
 ifneq ("$(wildcard $(MDEF_FILE))","")
-MDEF_FILE_PATH=$(MDEF_FILE)
+MDEF_FILE_PATH=$(strip $(MDEF_FILE))
 else
 ifneq ($(MDEF_FILE),)
-MDEF_FILE_PATH=$(PROJECT_BASE)/$(MDEF_FILE)
+MDEF_FILE_PATH=$(strip $(PROJECT_BASE)/$(MDEF_FILE))
 endif
 endif
 
