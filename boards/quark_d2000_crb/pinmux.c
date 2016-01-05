@@ -40,7 +40,7 @@
 #define MASK_2_BITS			0x3
 const uint32_t PINMUX_PULLUP_OFFSET		= 0x00;
 const uint32_t PINMUX_SLEW_OFFSET		= 0x10;
-const uint32_t PINMUX_INPUT_ENABLE_OFFSET	= 0x20;
+const uint32_t PINMUX_INPUT_OFFSET		= 0x20;
 const uint32_t PINMUX_SELECT_OFFSET		= 0x30;
 
 #define PINMUX_SELECT_REGISTER(base, reg_offset) \
@@ -133,8 +133,7 @@ static void _pinmux_defaults(uint32_t base)
 
 }
 
-
-static void _quark_d2000_pullup_set(uint32_t base, uint32_t pin, uint8_t func)
+static void _quark_d2000_set_mux(uint32_t base, uint32_t pin, uint8_t func)
 {
 	/*
 	 * The register is a single 32-bit value, with CONFIG_PINMUX_NUM_PINS
@@ -144,24 +143,7 @@ static void _quark_d2000_pullup_set(uint32_t base, uint32_t pin, uint8_t func)
 	uint32_t enable_mask =  (func & 0x01) << pin;
 	uint32_t pin_mask = 0x1 << pin;
 
-	volatile uint32_t *mux_register =
-		(uint32_t *)(base + PINMUX_PULLUP_OFFSET);
-
-	(*(mux_register)) = (((*(mux_register)) & ~pin_mask) | enable_mask);
-}
-
-static void _quark_d2000_input_enable(uint32_t base, uint32_t pin, uint8_t func)
-{
-	/*
-	 * The register is a single 32-bit value, with CONFIG_PINMUX_NUM_PINS
-	 * bits set in it.  Each bit represents the input enable status of the
-	 * pin.
-	 */
-	uint32_t enable_mask =  (func & 0x01) << pin;
-	uint32_t pin_mask = 0x1 << pin;
-
-	volatile uint32_t *mux_register =
-		(uint32_t *)(base + PINMUX_INPUT_ENABLE_OFFSET);
+	volatile uint32_t *mux_register = (uint32_t *)(base);
 
 	(*(mux_register)) = (((*(mux_register)) & ~pin_mask) | enable_mask);
 }
@@ -264,7 +246,8 @@ static uint32_t pinmux_pullup_set(struct device *dev, uint32_t pin,
 {
 	struct pinmux_config * const pmux = dev->config->config_info;
 
-	_quark_d2000_pullup_set(pmux->base_address, pin, func);
+	_quark_d2000_set_mux(pmux->base_address + PINMUX_PULLUP_OFFSET, pin,
+			     func);
 
 	return DEV_OK;
 }
@@ -274,7 +257,8 @@ static uint32_t pinmux_input_enable(struct device *dev, uint32_t pin,
 {
 	struct pinmux_config * const pmux = dev->config->config_info;
 
-	_quark_d2000_input_enable(pmux->base_address, pin, func);
+	_quark_d2000_set_mux(pmux->base_address + PINMUX_INPUT_OFFSET, pin,
+			     func);
 
 	return DEV_OK;
 }
@@ -295,7 +279,7 @@ int pinmux_initialize(struct device *port)
 	_pinmux_defaults(pmux->base_address);
 
 	/* Enable the UART RX pin to receive input */
-	_quark_d2000_input_enable(pmux->base_address, 5, PINMUX_INPUT_ENABLED);
+	_quark_d2000_set_mux(pmux->base_address + PINMUX_INPUT_OFFSET, 5, 0x1);
 
 	return DEV_OK;
 }

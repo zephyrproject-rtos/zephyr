@@ -193,7 +193,7 @@ static void _pinmux_defaults(uint32_t base)
 	}
 }
 
-static uint32_t _quark_se_pullup(uint32_t base, uint32_t pin, uint8_t func)
+static uint32_t _quark_se_set_mux(uint32_t base, uint32_t pin, uint8_t func)
 {
 	/*
 	 * the registers are 32-bit wide, but each pin requires 1 bit
@@ -203,10 +203,8 @@ static uint32_t _quark_se_pullup(uint32_t base, uint32_t pin, uint8_t func)
 	/*
 	 * Now figure out what is the full address for the register
 	 * we are looking for.  Add the base register to the register_mask
-	 * Valid values include: 0x900, 0x904, 0x908, and 0x90C
 	 */
-	volatile uint32_t *mux_register =
-		(uint32_t *)(base + PINMUX_PULLUP_OFFSET + register_offset);
+	volatile uint32_t *mux_register = (uint32_t *)(base + register_offset);
 
 	/*
 	 * Finally grab the pin offset within the register
@@ -223,38 +221,10 @@ static uint32_t _quark_se_pullup(uint32_t base, uint32_t pin, uint8_t func)
 	return DEV_OK;
 }
 
-static uint32_t _quark_se_input(uint32_t base, uint32_t pin, uint8_t func)
-{
-	/*
-	 * the registers are 32-bit wide, but each pin requires 1 bit
-	 * to set the input enable bit.
-	 */
-	uint32_t register_offset = (pin / 32) * 4;
-	/*
-	 * Now figure out what is the full address for the register
-	 * we are looking for.  Add the base register to the register_mask
-	 * Valid values include: 0x920, 0x924, 0x928, and 0x92C
-	 */
-	volatile uint32_t *mux_register =
-		(uint32_t *)(base + PINMUX_INPUT_OFFSET + register_offset);
-
-	/*
-	 * Finally grab the pin offset within the register
-	 */
-	uint32_t pin_offset = pin % 32;
-
-	/*
-	 * MAGIC NUMBER: 0x1 is used as the pullup is a single bit in a
-	 * 32-bit register.
-	 */
-	(*(mux_register)) = ((*(mux_register)) & ~(0x1 << pin_offset)) |
-		((func & 0x01) << pin_offset);
-
-	return DEV_OK;
-}
 static inline void _pinmux_pullups(uint32_t base_address)
 {
-	_quark_se_pullup(base_address, 104, PINMUX_PULLUP_ENABLE);
+	_quark_se_set_mux(base_address + PINMUX_PULLUP_OFFSET, 104,
+			  PINMUX_PULLUP_ENABLE);
 }
 
 
@@ -356,7 +326,7 @@ static uint32_t pinmux_dev_pullup(struct device *dev,
 {
 	struct pinmux_config * const pmux = dev->config->config_info;
 
-	_quark_se_pullup(pmux->base_address, pin, func);
+	_quark_se_set_mux(pmux->base_address + PINMUX_PULLUP_OFFSET, pin, func);
 
 	return DEV_OK;
 }
@@ -364,7 +334,7 @@ static uint32_t pinmux_dev_input(struct device *dev, uint32_t pin, uint8_t func)
 {
 	struct pinmux_config * const pmux = dev->config->config_info;
 
-	_quark_se_input(pmux->base_address, pin, func);
+	_quark_se_set_mux(pmux->base_address + PINMUX_INPUT_OFFSET, pin, func);
 
 	return DEV_OK;
 }
