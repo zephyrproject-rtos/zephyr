@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-
 #include "toolchain.h"
 #include "sections.h"
 #include <stdint.h>	    /* uint32_t */
@@ -235,11 +233,3 @@ void int_latency_show(void)
 	int_locked_latency_min = ULONG_MAX;
 	int_locked_latency_max = 0;
 }
-
-#else
-
-void int_latency_init(void) {};
-void _int_latency_stop(void) {};
-void _int_latency_start(void) {};
-
-#endif /* CONFIG_INT_LATENCY_BENCHMARK */

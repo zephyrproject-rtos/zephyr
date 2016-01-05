@@ -282,8 +282,13 @@ typedef struct nanoIsf {
 
 #ifndef _ASMLANGUAGE
 
+#ifdef CONFIG_INT_LATENCY_BENCHMARK
 void _int_latency_start(void);
 void _int_latency_stop(void);
+#else
+#define _int_latency_start()  do { } while (0)
+#define _int_latency_stop()   do { } while (0)
+#endif
 
 /**
  * @brief Disable all interrupts on the CPU (inline)
