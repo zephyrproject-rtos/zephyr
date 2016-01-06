@@ -5,15 +5,15 @@ endif
 
 # arm
 CROSS_COMPILE_TARGET_arm = arm-poky-eabi
-CROSS_COMPILE_arm_version = 5.2.0
 CROSS_COMPILE_arm=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_TARGET_arm)-
+CROSS_COMPILE_arm_version = $(shell $(CROSS_COMPILE_arm)gcc -dumpversion)
 
 LIB_INCLUDE_DIR_arm = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/lib/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_arm_version)
 
 # iamcu
 CROSS_COMPILE_TARGET_iamcu = i586-poky-elfiamcu
-CROSS_COMPILE_iamcu_version = 4.9.3
 CROSS_COMPILE_iamcu=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/iamcu-poky-elfiamcu/$(CROSS_COMPILE_TARGET_iamcu)-
+CROSS_COMPILE_iamcu_version = $(shell $(CROSS_COMPILE_iamcu)gcc -dumpversion)
 
 LIB_INCLUDE_DIR_iamcu = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamcu/usr/lib/i586-poky-elfiamcu/$(CROSS_COMPILE_iamcu_version)
 LIB_INCLUDE_DIR_iamcu += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamcu/usr/i586-default-elfiamcu/lib/
@@ -21,8 +21,9 @@ TOOLCHAIN_CFLAGS_iamcu = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamc
 
 # x86
 CROSS_COMPILE_TARGET_x86 = i586-poky-elf
-CROSS_COMPILE_x86_version = 4.9.3
 CROSS_COMPILE_x86=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_x86)/$(CROSS_COMPILE_TARGET_x86)-
+CROSS_COMPILE_x86_version = $(shell $(CROSS_COMPILE_x86)gcc -dumpversion)
+$(warning $(CROSS_COMPILE_x86_version))
 
 LIB_INCLUDE_DIR_x86 = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/lib/i586-poky-elf/$(CROSS_COMPILE_x86_version)
 LIB_INCLUDE_DIR_x86 += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/${CROSS_COMPILE_TARGET_x86}/lib
@@ -30,8 +31,8 @@ TOOLCHAIN_CFLAGS_x86 = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/${
 
 # arc
 CROSS_COMPILE_TARGET_arc = arc-poky-elf
-CROSS_COMPILE_arc_version = 4.8.3
 CROSS_COMPILE_arc=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_TARGET_arc)-
+CROSS_COMPILE_arc_version = $(shell $(CROSS_COMPILE_arc)gcc -dumpversion)
 
 LIB_INCLUDE_DIR_arc = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_arc)/usr/lib/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_arc_version)/em
 
