@@ -3,6 +3,8 @@
 *.d
 *.cmd
 *.pyc
+*.swp
+*.swo
 !arch/*/*/*/*.cmd
 *~
 cscope.*
