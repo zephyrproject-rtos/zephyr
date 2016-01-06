@@ -169,11 +169,12 @@ endif
 
 if RTC
 
+config RTC_IRQ
+	default 2
+
 if RTC_DW
 config RTC_DW_BASE_ADDR
 	default 0xB0000400
-config RTC_DW_IRQ
-	default 2
 endif
 
 endif

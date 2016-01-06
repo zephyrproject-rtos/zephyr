@@ -190,6 +190,8 @@ endif
 endif
 
 if RTC
+config RTC_IRQ
+	default 11
 if RTC_DW
 config RTC_DW_CLOCK_GATE
 	def_bool n
@@ -199,8 +201,6 @@ config RTC_DW_CLOCK_GATE_SUBSYS
 	default 11
 config RTC_DW_BASE_ADDR
 	default 0xB0000400
-config RTC_DW_IRQ
-	default 11
 endif
 endif
 

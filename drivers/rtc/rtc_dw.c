@@ -190,13 +190,13 @@ static struct rtc_driver_api funcs = {
 };
 
 /* IRQ_CONFIG needs the flags variable declared by IRQ_CONNECT_STATIC */
-IRQ_CONNECT_STATIC(rtc, CONFIG_RTC_DW_IRQ,
-		   CONFIG_RTC_DW_IRQ_PRI, rtc_dw_isr, 0, 0);
+IRQ_CONNECT_STATIC(rtc, CONFIG_RTC_IRQ,
+		   CONFIG_RTC_IRQ_PRI, rtc_dw_isr, 0, 0);
 
 int rtc_dw_init(struct device *dev)
 {
-	IRQ_CONFIG(rtc, CONFIG_RTC_DW_IRQ);
-	irq_enable(CONFIG_RTC_DW_IRQ);
+	IRQ_CONFIG(rtc, CONFIG_RTC_IRQ);
+	irq_enable(CONFIG_RTC_IRQ);
 
 	_rtc_dw_int_unmask();
 
@@ -216,7 +216,7 @@ struct rtc_dw_dev_config rtc_dev = {
 #endif
 };
 
-DECLARE_DEVICE_INIT_CONFIG(rtc, CONFIG_RTC_DW_DRV_NAME,
+DECLARE_DEVICE_INIT_CONFIG(rtc, CONFIG_RTC_DRV_NAME,
 			   &rtc_dw_init, &rtc_dev);
 
 SYS_DEFINE_DEVICE(rtc, &rtc_runtime, SECONDARY,

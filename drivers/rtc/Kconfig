@@ -27,18 +27,38 @@ menuconfig RTC
 
 if RTC
 
+config RTC_IRQ
+	int "Interrupt number"
+	default 0
+	help
+	RTC interrupt number
+
+config RTC_IRQ_PRI
+	int "Interrupt priority"
+	default 2
+	help
+	RTC interrupt priority.
+
+config RTC_DRV_NAME
+	string "Driver instance name"
+	default "RTC_0"
+	depends on RTC
+	help
+	RTC driver instance name
+
+config RTC_QMSI
+	depends on QMSI_DRIVERS
+	bool "QMSI RTC Driver"
+	default n
+	help
+	Build QMSI RTC driver.
+
 config RTC_DW
+	depends on !RTC_QMSI
 	bool "Build Designware RTC Driver"
 	default n
 	help
 	Designware RTC driver.
-
-config RTC_DW_DRV_NAME
-	string "Driver instance name"
-	default "RTC_DW"
-	depends on RTC_DW
-	help
-	Designware RTC driver instance name
 
 config RTC_DW_CLOCK_GATE
 	bool "Enable clock gating"
@@ -65,17 +85,4 @@ config RTC_DW_BASE_ADDR
 	help
 	Base address to access RTC DesignWare controller registers
 
-config RTC_DW_IRQ
-	int "Interrupt number"
-	default 0
-	depends on RTC_DW
-	help
-	DesignWare RTC interrupt number
-
-config RTC_DW_IRQ_PRI
-	int "Interrupt priority"
-	default 2
-	depends on RTC_DW
-	help
-	DesignWare RTC interrupt priority.
 endif # RTC

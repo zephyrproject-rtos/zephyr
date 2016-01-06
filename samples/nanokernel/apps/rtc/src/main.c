@@ -20,9 +20,7 @@
 #include <rtc.h>
 #include <misc/printk.h>
 
-
 #define ALARM (RTC_ALARM_MINUTE / 6)
-#define RTC_DRIVER CONFIG_RTC_DW_DRV_NAME
 
 void test_rtc_interrupt_fn(struct device *rtc_dev)
 {
@@ -38,7 +36,7 @@ void main(void)
 	struct device *rtc_dev;
 
 	printk("Test RTC driver\n");
-	rtc_dev = device_get_binding(RTC_DRIVER);
+	rtc_dev = device_get_binding(CONFIG_RTC_DRV_NAME);
 
 	config.init_val = 0;
 	config.alarm_enable = 1;
