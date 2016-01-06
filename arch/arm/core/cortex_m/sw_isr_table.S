@@ -30,7 +30,7 @@
 _ASM_FILE_PROLOGUE
 
 /*
- * enable proprocessor features, such
+ * enable preprocessor features, such
  * as %expr - evaluate the expression and use it as a string
  */
 .altmacro
