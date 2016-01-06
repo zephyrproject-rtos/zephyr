@@ -41,6 +41,11 @@ extern "C" {
 /* options for uart init */
 #define UART_OPTION_AFCE 0x01
 
+/** Common line controls for UART */
+#define LINE_CTRL_BAUD_RATE	(1 << 0)
+#define LINE_CTRL_RTS		(1 << 1)
+#define LINE_CTRL_DTR		(1 << 2)
+
 /** UART device configuration */
 struct uart_device_config {
 	/**
@@ -88,6 +93,15 @@ struct uart_driver_api {
 	int (*irq_input_hook)(struct device *dev, uint8_t byte);
 
 #endif
+
+#ifdef CONFIG_UART_LINE_CTRL
+	int (*line_ctrl_set)(struct device *dev, uint32_t ctrl, uint32_t val);
+#endif
+
+#ifdef CONFIG_UART_DRV_CMD
+	int (*drv_cmd)(struct device *dev, uint32_t cmd, uint32_t p);
+#endif
+
 };
 
 /**
@@ -421,6 +435,62 @@ static inline void uart_irq_input_hook_set(struct device *dev,
 }
 
 #endif
+
+#ifdef CONFIG_UART_LINE_CTRL
+
+/**
+ * @brief Manipualte line control for UART.
+ *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param ctrl The line control to be manipulated
+ * @param val Value to set the line control
+ *
+ * @return DEV_OK if successful, failed otherwise
+ */
+static inline int uart_line_ctrl_set(struct device *dev,
+				     uint32_t ctrl, uint32_t val)
+{
+	struct uart_driver_api *api;
+
+	api = (struct uart_driver_api *)dev->driver_api;
+
+	if (api && api->line_ctrl_set) {
+		return api->line_ctrl_set(dev, ctrl, val);
+	}
+
+	return DEV_INVALID_OP;
+}
+
+#endif /* CONFIG_UART_LINE_CTRL */
+
+#ifdef CONFIG_UART_DRV_CMD
+
+/**
+ * @brief Send extra command to driver
+ *
+ * Implementation and accepted commands are driver specific.
+ * Refer to driver for more information.
+ *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param cmd Command to driver
+ * @param p Parameter to the command
+ *
+ * @return DEV_OK if successful, failed otherwise
+ */
+static inline int uart_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
+{
+	struct uart_driver_api *api;
+
+	api = (struct uart_driver_api *)dev->driver_api;
+
+	if (api && api->drv_cmd) {
+		return api->drv_cmd(dev, cmd, p);
+	}
+
+	return DEV_INVALID_OP;
+}
+
+#endif /* CONFIG_UART_DRV_CMD */
 
 #ifdef __cplusplus
 }

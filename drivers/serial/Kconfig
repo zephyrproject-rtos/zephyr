@@ -68,6 +68,26 @@ config UART_IRQ_LEVEL_LOW
 
 endchoice
 
+config UART_LINE_CTRL
+	bool "Enable Serial Line Control API"
+	default n
+	help
+	This enables the API for apps to control the serial line,
+	such as baud rate, CTS and RTS.
+
+	Implementation is up to individual driver.
+
+	Says no if not sure.
+
+config UART_DRV_CMD
+	bool "Enable driver commands API"
+	default n
+	help
+	This enables the API to send extra commands to drivers.
+	This allows drivers to expose hardware specific functions.
+
+	Says no if not sure.
+
 source "drivers/serial/Kconfig.ns16550"
 
 source "drivers/serial/Kconfig.k20"
