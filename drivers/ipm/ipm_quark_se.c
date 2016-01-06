@@ -135,13 +135,13 @@ static int quark_se_ipm_send(struct device *d, int wait, uint32_t id,
 	/* Wait for HW to set the sts bit */
 	while (ipm->sts.sts == 0) {
 	}
+	irq_unlock(flags);
 
 	if (wait) {
 		/* Loop until remote clears the status bit */
 		while (ipm->sts.sts != 0) {
 		}
 	}
-	irq_unlock(flags);
 	return 0;
 }
 
