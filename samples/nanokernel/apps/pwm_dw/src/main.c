@@ -51,7 +51,7 @@
 #include <sys_clock.h>
 
 /* about 1 ms */
-#define MIN_PERIOD	320000
+#define MIN_PERIOD	32000
 
 /* about 1 second */
 #define MAX_PERIOD	32000000
