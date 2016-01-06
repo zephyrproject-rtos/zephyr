@@ -73,10 +73,17 @@ struct _uart {
 	uint32_t p_cell_id3;
 };
 
+/* Device data structure */
+struct uart_stellaris_dev_data_t {
+	uint32_t baud_rate;	/* Baud rate */
+};
+
 /* convenience defines */
 
 #define DEV_CFG(dev) \
 	((struct uart_device_config * const)(dev)->config->config_info)
+#define DEV_DATA(dev) \
+	((struct uart_stellaris_dev_data_t * const)(dev)->driver_data)
 #define UART_STRUCT(dev) \
 	((volatile struct _uart *)(DEV_CFG(dev))->base)
 
@@ -258,10 +265,9 @@ static inline void line_control_defaults_set(struct device *dev)
  */
 static int uart_stellaris_init(struct device *dev)
 {
-	struct uart_init_info * const init_info = &DEV_CFG(dev)->init_info;
-
 	disable(dev);
-	baudrate_set(dev, init_info->baud_rate, init_info->sys_clk_freq);
+	baudrate_set(dev, DEV_DATA(dev)->baud_rate,
+		     DEV_CFG(dev)->sys_clk_freq);
 	line_control_defaults_set(dev);
 	enable(dev);
 
@@ -606,8 +612,11 @@ static struct uart_device_config uart_stellaris_dev_cfg_0 = {
 	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_0_BASE_ADDR,
 	.irq = CONFIG_UART_STELLARIS_PORT_0_IRQ,
 
-	.init_info.baud_rate = CONFIG_UART_STELLARIS_PORT_0_BAUD_RATE,
-	.init_info.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_0_CLK_FREQ,
+	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_0_CLK_FREQ,
+};
+
+static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_0 = {
+	.baud_rate = CONFIG_UART_STELLARIS_PORT_0_BAUD_RATE,
 };
 
 DECLARE_DEVICE_INIT_CONFIG(uart_stellaris0,
@@ -615,7 +624,7 @@ DECLARE_DEVICE_INIT_CONFIG(uart_stellaris0,
 			   &uart_stellaris_init,
 			   &uart_stellaris_dev_cfg_0);
 
-SYS_DEFINE_DEVICE(uart_stellaris0, NULL, PRIMARY,
+SYS_DEFINE_DEVICE(uart_stellaris0, &uart_stellaris_dev_data_0, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_0 */
@@ -626,8 +635,11 @@ static struct uart_device_config uart_stellaris_dev_cfg_1 = {
 	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_1_BASE_ADDR,
 	.irq = CONFIG_UART_STELLARIS_PORT_1_IRQ,
 
-	.init_info.baud_rate = CONFIG_UART_STELLARIS_PORT_1_BAUD_RATE,
-	.init_info.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_1_CLK_FREQ,
+	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_1_CLK_FREQ,
+};
+
+static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_1 = {
+	.baud_rate = CONFIG_UART_STELLARIS_PORT_1_BAUD_RATE,
 };
 
 DECLARE_DEVICE_INIT_CONFIG(uart_stellaris1,
@@ -635,7 +647,7 @@ DECLARE_DEVICE_INIT_CONFIG(uart_stellaris1,
 			   &uart_stellaris_init,
 			   &uart_stellaris_dev_cfg_1);
 
-SYS_DEFINE_DEVICE(uart_stellaris1, NULL, PRIMARY,
+SYS_DEFINE_DEVICE(uart_stellaris1, &uart_stellaris_dev_data_1, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_1 */
@@ -646,8 +658,11 @@ static struct uart_device_config uart_stellaris_dev_cfg_2 = {
 	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_2_BASE_ADDR,
 	.irq = CONFIG_UART_STELLARIS_PORT_2_IRQ,
 
-	.init_info.baud_rate = CONFIG_UART_STELLARIS_PORT_2_BAUD_RATE,
-	.init_info.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_2_CLK_FREQ,
+	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_2_CLK_FREQ,
+};
+
+static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_2 = {
+	.baud_rate = CONFIG_UART_STELLARIS_PORT_2_BAUD_RATE,
 };
 
 DECLARE_DEVICE_INIT_CONFIG(uart_stellaris2,
@@ -655,7 +670,7 @@ DECLARE_DEVICE_INIT_CONFIG(uart_stellaris2,
 			   &uart_stellaris_init,
 			   &uart_stellaris_dev_cfg_2);
 
-SYS_DEFINE_DEVICE(uart_stellaris2, NULL, PRIMARY,
+SYS_DEFINE_DEVICE(uart_stellaris2, &uart_stellaris_dev_data_2, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_2 */

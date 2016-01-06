@@ -41,14 +41,6 @@ extern "C" {
 /* options for uart init */
 #define UART_OPTION_AFCE 0x01
 
-/** UART configuration structure */
-struct uart_init_info {
-	int baud_rate;		/* Baud rate */
-	uint32_t sys_clk_freq;	/* System clock frequency in Hz */
-
-	uint8_t options;	/* HW Flow Control option */
-};
-
 /** UART device configuration */
 struct uart_device_config {
 	/**
@@ -64,7 +56,7 @@ struct uart_device_config {
 	uint8_t irq;		/**< interrupt request level */
 	uint8_t irq_pri;	/**< interrupt priority */
 
-	struct uart_init_info	init_info;
+	uint32_t sys_clk_freq;	/* System clock frequency in Hz */
 
 #ifdef CONFIG_PCI
 	struct pci_dev_info  pci_dev;

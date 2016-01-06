@@ -202,6 +202,9 @@
 
 /** Device data structure */
 struct uart_ns16550_dev_data_t {
+	uint32_t baud_rate;	/**< Baud rate */
+	uint8_t options;	/**< Serial port options */
+
 	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
 	uint8_t dlf;		/**< DLF value */
 };
@@ -263,7 +266,6 @@ static int uart_ns16550_init(struct device *dev)
 {
 	struct uart_device_config * const dev_cfg = DEV_CFG(dev);
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
-	struct uart_init_info * const init_info = &dev_cfg->init_info;
 
 	int old_level;     /* old interrupt lock level */
 	uint32_t divisor; /* baud rate divisor */
@@ -277,9 +279,9 @@ static int uart_ns16550_init(struct device *dev)
 
 	old_level = irq_lock();
 
-	if ((init_info->baud_rate != 0) && (init_info->sys_clk_freq != 0)) {
+	if ((dev_data->baud_rate != 0) && (dev_cfg->sys_clk_freq != 0)) {
 		/* calculate baud rate divisor */
-		divisor = (init_info->sys_clk_freq / init_info->baud_rate) >> 4;
+		divisor = (dev_cfg->sys_clk_freq / dev_data->baud_rate) >> 4;
 
 		/* set the DLAB to access the baud rate divisor registers */
 		OUTBYTE(LCR(dev), LCR_DLAB);
@@ -295,7 +297,7 @@ static int uart_ns16550_init(struct device *dev)
 	OUTBYTE(LCR(dev), LCR_CS8 | LCR_1_STB | LCR_PDIS);
 
 	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
-	if ((init_info->options & UART_OPTION_AFCE) == UART_OPTION_AFCE)
+	if ((dev_data->options & UART_OPTION_AFCE) == UART_OPTION_AFCE)
 		mdc |= MCR_AFCE;
 
 	OUTBYTE(MDC(dev), mdc);
@@ -578,9 +580,7 @@ struct uart_device_config uart_ns16550_dev_cfg_0 = {
 	.irq = CONFIG_UART_NS16550_PORT_0_IRQ,
 	.irq_pri = CONFIG_UART_NS16550_PORT_0_IRQ_PRI,
 
-	.init_info.baud_rate = CONFIG_UART_NS16550_PORT_0_BAUD_RATE,
-	.init_info.sys_clk_freq = CONFIG_UART_NS16550_PORT_0_CLK_FREQ,
-	.init_info.options = CONFIG_UART_NS16550_PORT_0_OPTIONS,
+	.sys_clk_freq = CONFIG_UART_NS16550_PORT_0_CLK_FREQ,
 
 #ifdef CONFIG_UART_NS16550_PORT_0_PCI
 	.pci_dev.class_type = CONFIG_UART_NS16550_PORT_0_PCI_CLASS,
@@ -594,6 +594,9 @@ struct uart_device_config uart_ns16550_dev_cfg_0 = {
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
+	.baud_rate = CONFIG_UART_NS16550_PORT_0_BAUD_RATE,
+	.options = CONFIG_UART_NS16550_PORT_0_OPTIONS,
+
 #ifdef CONFIG_UART_NS16550_PORT_0_DLF
 	.dlf = CONFIG_UART_NS16550_PORT_0_DLF,
 #endif
@@ -616,9 +619,7 @@ struct uart_device_config uart_ns16550_dev_cfg_1 = {
 	.irq = CONFIG_UART_NS16550_PORT_1_IRQ,
 	.irq_pri = CONFIG_UART_NS16550_PORT_1_IRQ_PRI,
 
-	.init_info.baud_rate = CONFIG_UART_NS16550_PORT_1_BAUD_RATE,
-	.init_info.sys_clk_freq = CONFIG_UART_NS16550_PORT_1_CLK_FREQ,
-	.init_info.options = CONFIG_UART_NS16550_PORT_1_OPTIONS,
+	.sys_clk_freq = CONFIG_UART_NS16550_PORT_1_CLK_FREQ,
 
 #ifdef CONFIG_UART_NS16550_PORT_1_PCI
 	.pci_dev.class_type = CONFIG_UART_NS16550_PORT_1_PCI_CLASS,
@@ -632,6 +633,9 @@ struct uart_device_config uart_ns16550_dev_cfg_1 = {
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
+	.baud_rate = CONFIG_UART_NS16550_PORT_1_BAUD_RATE,
+	.options = CONFIG_UART_NS16550_PORT_1_OPTIONS,
+
 #ifdef CONFIG_UART_NS16550_PORT_1_DLF
 	.dlf = CONFIG_UART_NS16550_PORT_1_DLF,
 #endif
