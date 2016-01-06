@@ -67,6 +67,9 @@ endif # PINMUX
 
 if UART_NS16550
 
+config UART_NS16550_DLF
+	def_bool y
+
 config UART_NS16550_PORT_0
 	def_bool y
 
@@ -86,6 +89,8 @@ config UART_NS16550_PORT_0_CLK_FREQ
 	default 32000000
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
+config UART_NS16550_PORT_0_DLF
+	default 0x06
 
 endif # UART_NS16550_PORT_0
 
@@ -108,6 +113,8 @@ config UART_NS16550_PORT_1_CLK_FREQ
 	default 32000000
 config UART_NS16550_PORT_1_OPTIONS
 	default 0
+config UART_NS16550_PORT_1_DLF
+	default 0x06
 
 endif # UART_NS16550_PORT_1
 

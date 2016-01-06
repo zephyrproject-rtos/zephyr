@@ -115,14 +115,6 @@ struct scss_interrupt {
 #define LOAPIC_IRQ_COUNT		1
 #define LOAPIC_LVT_REG_SPACING  0x10
 
-/* serial port (aka COM port) information */
-#define SYNOPSIS_UART_DLF_OFFSET		0xc0
-#define SYNOPSIS_UART_DLF_115200_VAL	0x06
-
-#define COM1_DLF		SYNOPSIS_UART_DLF_115200_VAL
-
-#define COM2_DLF		SYNOPSIS_UART_DLF_115200_VAL
-
 /* UART uses level triggered interrupt, low level */
 #define UART_IOAPIC_FLAGS       (IOAPIC_LEVEL)
 

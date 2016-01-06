@@ -37,6 +37,16 @@ choice
 
 endchoice
 
+config UART_NS16550_DLF
+	bool "Enable Divisor Latch Fraction (DLF) support"
+	default n
+	depends on UART_NS16550 && UART_NS16550_ACCESS_MMIO
+	help
+	  This enables support for divisor latch fraction (DLF).
+	  It is used to limit frequency error.
+
+	  Says n if you are not sure if hardware supports this.
+
 # ---------- Port 0 ----------
 
 menuconfig UART_NS16550_PORT_0
@@ -107,6 +117,13 @@ config UART_NS16550_PORT_0_OPTIONS
 	depends on UART_NS16550_PORT_0
 	help
 	  Options used for port initialization.
+
+config UART_NS16550_PORT_0_DLF
+	hex "Port 0 DLF value"
+	default 0x0
+	depends on UART_NS16550_PORT_0 && UART_NS16550_DLF
+	help
+	  Value for DLF register.
 
 config UART_NS16550_PORT_0_PCI
 	bool "Port 0 is PCI-based"
@@ -236,6 +253,13 @@ config UART_NS16550_PORT_1_OPTIONS
 	depends on UART_NS16550_PORT_1
 	help
 	  Options used for port initialization.
+
+config UART_NS16550_PORT_1_DLF
+	hex "Port 1 DLF value"
+	default 0x0
+	depends on UART_NS16550_PORT_1 && UART_NS16550_DLF
+	help
+	  Value for DLF register.
 
 config UART_NS16550_PORT_1_PCI
 	bool "Port 1 is PCI-based"

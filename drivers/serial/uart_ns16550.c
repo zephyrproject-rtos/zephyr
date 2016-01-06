@@ -59,6 +59,7 @@
 #define REG_MDC 0x04  /* Modem control reg.       */
 #define REG_LSR 0x05  /* Line status reg.         */
 #define REG_MSR 0x06  /* Modem status reg.        */
+#define REG_DLF 0xC0  /* Divisor Latch Fraction   */
 
 /* equates for interrupt enable register */
 
@@ -183,6 +184,7 @@
 #define MDC(dev)	(DEV_CFG(dev)->port + REG_MDC * UART_REG_ADDR_INTERVAL)
 #define LSR(dev)	(DEV_CFG(dev)->port + REG_LSR * UART_REG_ADDR_INTERVAL)
 #define MSR(dev)	(DEV_CFG(dev)->port + REG_MSR * UART_REG_ADDR_INTERVAL)
+#define DLF(dev)	(DEV_CFG(dev)->port + REG_DLF)
 
 #define IIRC(dev)	(DEV_DATA(dev)->iir_cache)
 
@@ -201,9 +203,20 @@
 /** Device data structure */
 struct uart_ns16550_dev_data_t {
 	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
+	uint8_t dlf;		/**< DLF value */
 };
 
 static struct uart_driver_api uart_ns16550_driver_api;
+
+#ifdef CONFIG_UART_NS16550_DLF
+static inline void set_dlf(struct device *dev, uint32_t val)
+{
+	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
+
+	OUTBYTE(DLF(dev), val);
+	dev_data->dlf = val;
+}
+#endif
 
 #if defined(CONFIG_UART_NS16550_PCI)
 
@@ -273,6 +286,10 @@ static int uart_ns16550_init(struct device *dev)
 		OUTBYTE(BRDL(dev), (unsigned char)(divisor & 0xff));
 		OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
 	}
+
+#ifdef CONFIG_UART_NS16550_DLF
+	set_dlf(dev, dev_data->dlf);
+#endif
 
 	/* 8 data bits, 1 stop bit, no parity, clear DLAB */
 	OUTBYTE(LCR(dev), LCR_CS8 | LCR_1_STB | LCR_PDIS);
@@ -576,7 +593,11 @@ struct uart_device_config uart_ns16550_dev_cfg_0 = {
 #endif /* CONFIG_UART_NS16550_PORT_0_PCI */
 };
 
-static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0;
+static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
+#ifdef CONFIG_UART_NS16550_PORT_0_DLF
+	.dlf = CONFIG_UART_NS16550_PORT_0_DLF,
+#endif
+};
 
 DECLARE_DEVICE_INIT_CONFIG(uart_ns16550_0,
 			   CONFIG_UART_NS16550_PORT_0_NAME,
@@ -610,7 +631,11 @@ struct uart_device_config uart_ns16550_dev_cfg_1 = {
 #endif /* CONFIG_UART_NS16550_PORT_1_PCI */
 };
 
-static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1;
+static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
+#ifdef CONFIG_UART_NS16550_PORT_1_DLF
+	.dlf = CONFIG_UART_NS16550_PORT_1_DLF,
+#endif
+};
 
 DECLARE_DEVICE_INIT_CONFIG(uart_ns16550_1,
 			   CONFIG_UART_NS16550_PORT_1_NAME,

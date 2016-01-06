@@ -48,17 +48,9 @@ static int quark_d2000_init(struct device *arg)
 	/* enable clock gating */
 #ifdef CONFIG_UART_NS16550_PORT_0
 	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 17);
-
-	*((unsigned char *)(CONFIG_UART_NS16550_PORT_0_BASE_ADDR
-				+ SYNOPSIS_UART_DLF_OFFSET)) =
-		COM1_DLF;
 #endif
 #ifdef CONFIG_UART_NS16550_PORT_1
 	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 18);
-
-	*((unsigned char *)(CONFIG_UART_NS16550_PORT_1_BASE_ADDR
-				+ SYNOPSIS_UART_DLF_OFFSET)) =
-		COM2_DLF;
 #endif
 	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 1);
 #endif /* CONFIG_UART_NS16550 */
