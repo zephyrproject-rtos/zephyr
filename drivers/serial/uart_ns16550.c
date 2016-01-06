@@ -46,6 +46,8 @@
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
+#include "uart_ns16550.h"
+
 /* register definitions */
 
 #define REG_THR 0x00  /* Transmitter holding reg. */
@@ -221,6 +223,25 @@ static inline void set_dlf(struct device *dev, uint32_t val)
 }
 #endif
 
+static void set_baud_rate(struct device *dev, uint32_t baud_rate)
+{
+	struct uart_device_config * const dev_cfg = DEV_CFG(dev);
+	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
+	uint32_t divisor; /* baud rate divisor */
+
+	if ((baud_rate != 0) && (dev_cfg->sys_clk_freq != 0)) {
+		/* calculate baud rate divisor */
+		divisor = (dev_cfg->sys_clk_freq / baud_rate) >> 4;
+
+		/* set the DLAB to access the baud rate divisor registers */
+		OUTBYTE(LCR(dev), LCR_DLAB);
+		OUTBYTE(BRDL(dev), (unsigned char)(divisor & 0xff));
+		OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
+
+		dev_data->baud_rate = baud_rate;
+	}
+}
+
 #if defined(CONFIG_UART_NS16550_PCI)
 
 static inline int ns16550_pci_uart_scan(struct device *dev)
@@ -264,11 +285,9 @@ static inline int ns16550_pci_uart_scan(struct device *dev)
  */
 static int uart_ns16550_init(struct device *dev)
 {
-	struct uart_device_config * const dev_cfg = DEV_CFG(dev);
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	int old_level;     /* old interrupt lock level */
-	uint32_t divisor; /* baud rate divisor */
 	uint8_t mdc = 0;
 
 	if (!ns16550_pci_uart_scan(dev)) {
@@ -279,15 +298,7 @@ static int uart_ns16550_init(struct device *dev)
 
 	old_level = irq_lock();
 
-	if ((dev_data->baud_rate != 0) && (dev_cfg->sys_clk_freq != 0)) {
-		/* calculate baud rate divisor */
-		divisor = (dev_cfg->sys_clk_freq / dev_data->baud_rate) >> 4;
-
-		/* set the DLAB to access the baud rate divisor registers */
-		OUTBYTE(LCR(dev), LCR_DLAB);
-		OUTBYTE(BRDL(dev), (unsigned char)(divisor & 0xff));
-		OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
-	}
+	set_baud_rate(dev, dev_data->baud_rate);
 
 #ifdef CONFIG_UART_NS16550_DLF
 	set_dlf(dev, dev_data->dlf);
@@ -549,6 +560,79 @@ static unsigned int uart_ns16550_irq_get(struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_UART_NS16550_LINE_CTRL
+
+/**
+ * @brief Manipualte line control for UART.
+ *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param ctrl The line control to be manipulated
+ * @param val Value to set the line control
+ *
+ * @return DEV_OK if successful, failed otherwise
+ */
+static int uart_ns16550_line_ctrl_set(struct device *dev,
+				      uint32_t ctrl, uint32_t val)
+{
+	uint32_t mdc, chg;
+
+	switch (ctrl) {
+	case LINE_CTRL_BAUD_RATE:
+		set_baud_rate(dev, val);
+		return DEV_OK;
+
+	case LINE_CTRL_RTS:
+	case LINE_CTRL_DTR:
+		mdc = INBYTE(MDC(dev));
+
+		if (ctrl == LINE_CTRL_RTS) {
+			chg = MCR_RTS;
+		} else {
+			chg = MCR_DTR;
+		}
+
+		if (val) {
+			mdc |= chg;
+		} else {
+			mdc &= ~(chg);
+		}
+		OUTBYTE(MDC(dev), mdc);
+		return DEV_OK;
+	}
+
+	return DEV_INVALID_OP;
+}
+
+#endif /* CONFIG_UART_NS16550_LINE_CTRL */
+
+#ifdef CONFIG_UART_NS16550_DRV_CMD
+
+/**
+ * @brief Send extra command to driver
+ *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param cmd Command to driver
+ * @param p Parameter to the command
+ *
+ * @return DEV_OK if successful, failed otherwise
+ */
+static int uart_ns16550_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
+{
+	switch (cmd) {
+
+#ifdef CONFIG_UART_NS16550_DLF
+	case CMD_SET_DLF:
+		set_dlf(dev, p);
+		return DEV_OK;
+#endif
+
+	}
+
+	return DEV_INVALID_OP;
+}
+
+#endif /* CONFIG_UART_NS16550_DRV_CMD */
+
 
 static struct uart_driver_api uart_ns16550_driver_api = {
 	.poll_in = uart_ns16550_poll_in,
@@ -570,6 +654,14 @@ static struct uart_driver_api uart_ns16550_driver_api = {
 	.irq_update = uart_ns16550_irq_update,
 	.irq_get = uart_ns16550_irq_get,
 
+#endif
+
+#ifdef CONFIG_UART_NS16550_LINE_CTRL
+	.line_ctrl_set = uart_ns16550_line_ctrl_set,
+#endif
+
+#ifdef CONFIG_UART_NS16550_DRV_CMD
+	.drv_cmd = uart_ns16550_drv_cmd,
 #endif
 };
 

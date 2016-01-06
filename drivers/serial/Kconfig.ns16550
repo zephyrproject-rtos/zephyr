@@ -47,6 +47,25 @@ config UART_NS16550_DLF
 
 	  Says n if you are not sure if hardware supports this.
 
+config UART_NS16550_LINE_CTRL
+	bool "Enable Serial Line Control for Apps"
+	default n
+	depends on UART_LINE_CTRL && UART_NS16550
+	help
+	  This enables the API for apps to control the serial line,
+	  such as CTS and RTS.
+
+	  Says n if not sure.
+
+config UART_NS16550_DRV_CMD
+	bool "Enable Driver Commands"
+	default n
+	depends on UART_DRV_CMD && UART_NS16550
+	help
+	  This enables the API for apps to send commands to driver.
+
+	  Says n if not sure.
+
 # ---------- Port 0 ----------
 
 menuconfig UART_NS16550_PORT_0
