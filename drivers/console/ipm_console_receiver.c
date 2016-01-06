@@ -61,11 +61,11 @@ static void ipm_console_fiber(int arg1, int arg2)
 				config_info->line_buf[pos + 1] = '\0';
 			}
 			if (config_info->flags & IPM_CONSOLE_PRINTK) {
-				printk("\n%s: '%s'", d->config->name,
+				printk("%s: '%s'\n", d->config->name,
 				       config_info->line_buf);
 			}
 			if (config_info->flags & IPM_CONSOLE_STDOUT) {
-				printf("\n%s: '%s'", d->config->name,
+				printf("%s: '%s'\n", d->config->name,
 				       config_info->line_buf);
 			}
 			pos = 0;
