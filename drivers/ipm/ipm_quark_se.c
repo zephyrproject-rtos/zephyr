@@ -41,26 +41,6 @@ static uint32_t quark_se_ipm_sts_get(void)
 	return sys_read32(QUARK_SE_IPM_CHALL_STS) & inbound_channels;
 }
 
-static void mailbox_handle(struct device *d)
-{
-	struct quark_se_ipm_config_info *config;
-	struct quark_se_ipm_driver_data *driver_data;
-	volatile struct quark_se_ipm *ipm;
-
-	config = d->config->config_info;
-	driver_data = d->driver_data;
-	ipm = config->ipm;
-
-	if (driver_data->callback) {
-		driver_data->callback(driver_data->callback_ctx,
-				      ipm->ctrl.ctrl, &ipm->data);
-	}
-
-	ipm->sts.irq = 1; /* Clear the interrupt bit */
-	ipm->sts.sts = 1; /* Clear channel status bit */
-}
-
-
 static void set_channel_irq_state(int channel, int enable)
 {
 	mem_addr_t addr = QUARK_SE_IPM_MASK;
@@ -80,21 +60,36 @@ void quark_se_ipm_isr(void *param)
 	int channel;
 	int sts, bit;
 	struct device *d;
+	struct quark_se_ipm_config_info *config;
+	struct quark_se_ipm_driver_data *driver_data;
+	volatile struct quark_se_ipm *ipm;
 
 	ARG_UNUSED(param);
 	sts = quark_se_ipm_sts_get();
-	do {
-		bit = find_msb_set(sts) - 1 ;
-		channel = bit / 2;
-		if (sts) {
-			d = device_by_channel[channel];
-			if (d) {
-				mailbox_handle(d);
-			}
-			sts &= ~(0x1 << (bit));
-		}
-	} while (sts);
 
+	__ASSERT(sts, "spurious IPM interrupt");
+	bit = find_msb_set(sts) - 1;
+	channel = bit / 2;
+	d = device_by_channel[channel];
+
+	__ASSERT(d, "got IRQ on channel with no IPM device");
+	config = d->config->config_info;
+	driver_data = d->driver_data;
+	ipm = config->ipm;
+
+	__ASSERT(driver_data->callback, "enabled IPM channel with no callback");
+	driver_data->callback(driver_data->callback_ctx, ipm->ctrl.ctrl,
+			      &ipm->data);
+
+	ipm->sts.irq = 1; /* Clear the interrupt bit */
+	ipm->sts.sts = 1; /* Clear channel status bit */
+
+	/* Wait for the above register writes to clear the channel
+	 * to propagate to the global channel status register
+	 */
+	while (quark_se_ipm_sts_get() & (0x3 << (channel * 2))) {
+		/* Busy-wait */
+	}
 }
 
 
