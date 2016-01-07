@@ -628,6 +628,12 @@ else
 KBUILD_CFLAGS  += -Os
 endif
 
+ifeq ($(CONFIG_STACK_CANARIES),y)
+KBUILD_CFLAGS += $(call cc-option,-fstack-protector-all,)
+else
+KBUILD_CFLAGS += $(call cc-option,-fno-stack-protector,)
+endif
+
 KBUILD_CFLAGS += $(subst $(DQUOTE),,$(CONFIG_COMPILER_OPT))
 
 export LDFLAG_LINKERCMD OUTPUT_FORMAT OUTPUT_ARCH
