@@ -154,6 +154,17 @@ struct bt_hci_cp_reject_conn_req {
 	uint8_t   reason;
 } __packed;
 
+#define BT_HCI_OP_LINK_KEY_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x000b)
+struct bt_hci_cp_link_key_reply {
+	bt_addr_t bdaddr;
+	uint8_t   link_key[16];
+} __packed;
+
+#define BT_HCI_OP_LINK_KEY_NEG_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x000c)
+struct bt_hci_cp_link_key_neg_reply {
+	bt_addr_t bdaddr;
+} __packed;
+
 #define BT_HCI_OP_PIN_CODE_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x000d)
 struct bt_hci_cp_pin_code_reply {
 	bt_addr_t bdaddr;
@@ -481,6 +492,11 @@ struct bt_hci_evt_num_completed_packets {
 
 #define BT_HCI_EVT_PIN_CODE_REQ			0x16
 struct bt_hci_evt_pin_code_req {
+	bt_addr_t bdaddr;
+} __packed;
+
+#define BT_HCI_EVT_LINK_KEY_REQ			0x17
+struct bt_hci_evt_link_key_req {
 	bt_addr_t bdaddr;
 } __packed;
 
