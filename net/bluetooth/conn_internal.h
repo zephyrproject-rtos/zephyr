@@ -62,11 +62,11 @@ struct bt_conn {
 
 	uint8_t			pending_pkts;
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	uint8_t			encrypt;
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 	uint16_t		rx_len;
 	struct net_buf		*rx;
