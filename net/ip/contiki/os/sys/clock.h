@@ -141,11 +141,12 @@ void clock_delay_usec(uint16_t dt);
 void clock_delay_usec_busywait(uint32_t delay);
 
 #define CLOCK_CYCLE_LT(a,b)     ((signed)((a)-(b)) < 0)
-#define CLOCK_MSEC_TO_CYCLES(msec) \
-	((msec) * sys_clock_hw_cycles_per_tick * \
-	 sys_clock_us_per_tick / 1000)
+#define CLOCK_MSEC_TO_CYCLES(msec) (MSEC(msec) * sys_clock_us_per_tick)
 
-static inline uint32_t clock_get_cycle(void) { return sys_cycle_get_32(); }
+static inline uint32_t clock_get_cycle(void)
+{
+	return sys_cycle_get_32();
+}
 
 /**
  * Deprecated platform-specific routines.
