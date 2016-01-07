@@ -23,7 +23,6 @@ TOOLCHAIN_CFLAGS_iamcu = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamc
 CROSS_COMPILE_TARGET_x86 = i586-poky-elf
 CROSS_COMPILE_x86=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_x86)/$(CROSS_COMPILE_TARGET_x86)-
 CROSS_COMPILE_x86_version = $(shell $(CROSS_COMPILE_x86)gcc -dumpversion)
-$(warning $(CROSS_COMPILE_x86_version))
 
 LIB_INCLUDE_DIR_x86 = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/lib/i586-poky-elf/$(CROSS_COMPILE_x86_version)
 LIB_INCLUDE_DIR_x86 += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/${CROSS_COMPILE_TARGET_x86}/lib
