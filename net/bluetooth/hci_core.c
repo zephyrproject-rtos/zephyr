@@ -1542,6 +1542,60 @@ static void link_key_notify(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
+
+static void link_key_neg_reply(const bt_addr_t *bdaddr)
+{
+	struct bt_hci_cp_link_key_neg_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LINK_KEY_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		BT_ERR("Out of command buffers");
+		return;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+	bt_hci_cmd_send_sync(BT_HCI_OP_LINK_KEY_NEG_REPLY, buf, NULL);
+}
+
+static void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
+{
+	struct bt_hci_cp_link_key_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LINK_KEY_REPLY, sizeof(*cp));
+	if (!buf) {
+		BT_ERR("Out of command buffers");
+		return;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+	memcpy(cp->link_key, lk, 16);
+	bt_hci_cmd_send_sync(BT_HCI_OP_LINK_KEY_REPLY, buf, NULL);
+}
+
+static void link_key_req(struct net_buf *buf)
+{
+	struct bt_hci_evt_link_key_req *evt = (void *)buf->data;
+	struct bt_keys *keys;
+
+	BT_DBG("%s", bt_addr_str(&evt->bdaddr));
+
+	keys = bt_keys_find_link_key(&evt->bdaddr);
+	if (!keys) {
+		BT_ERR("Can't find keys for %s", bt_addr_str(&evt->bdaddr));
+		link_key_neg_reply(&evt->bdaddr);
+		return;
+	}
+
+	link_key_reply(&evt->bdaddr, keys->link_key.val);
+}
 #endif
 
 static void hci_event(struct net_buf *buf)
@@ -1565,6 +1619,9 @@ static void hci_event(struct net_buf *buf)
 		break;
 	case BT_HCI_EVT_LINK_KEY_NOTIFY:
 		link_key_notify(buf);
+		break;
+	case BT_HCI_EVT_LINK_KEY_REQ:
+		link_key_req(buf);
 		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
@@ -2010,6 +2067,7 @@ static int set_event_mask(void)
 	ev->events[0] |= 0x04; /* Connection Complete */
 	ev->events[0] |= 0x08; /* Connection Request */
 	ev->events[2] |= 0x20; /* Pin Code Request */
+	ev->events[2] |= 0x40; /* Link Key Request */
 	ev->events[2] |= 0x80; /* Link Key Notif */
 #endif
 	ev->events[1] |= 0x20; /* Command Complete */
