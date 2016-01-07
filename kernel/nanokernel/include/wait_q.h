@@ -94,10 +94,22 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 	}
 }
 #include <timeout_q.h>
+
+	#define _NANO_TIMEOUT_TICK_GET()  sys_tick_get()
+
+	#define _NANO_TIMEOUT_ADD(pq, ticks)                                 \
+		do {                                                             \
+			if ((ticks) != TICKS_UNLIMITED) {                            \
+				_nano_timeout_add(_nanokernel.current, (pq), (ticks));   \
+			}                                                            \
+		} while (0)
 #else
 	#define _nano_timeout_tcs_init(tcs) do { } while ((0))
 	#define _nano_timeout_abort(tcs) do { } while ((0))
 	#define _nano_get_earliest_timeouts_deadline() ((uint32_t)TICKS_UNLIMITED)
+
+	#define _NANO_TIMEOUT_TICK_GET()  0
+	#define _NANO_TIMEOUT_ADD(pq, ticks) do { } while (0)
 #endif
 
 #endif /* _kernel_nanokernel_include_wait_q__h_ */
