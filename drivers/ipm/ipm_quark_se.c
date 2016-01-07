@@ -63,6 +63,7 @@ void quark_se_ipm_isr(void *param)
 	struct quark_se_ipm_config_info *config;
 	struct quark_se_ipm_driver_data *driver_data;
 	volatile struct quark_se_ipm *ipm;
+	unsigned int key;
 
 	ARG_UNUSED(param);
 	sts = quark_se_ipm_sts_get();
@@ -81,6 +82,8 @@ void quark_se_ipm_isr(void *param)
 	driver_data->callback(driver_data->callback_ctx, ipm->ctrl.ctrl,
 			      &ipm->data);
 
+	key = irq_lock();
+
 	ipm->sts.irq = 1; /* Clear the interrupt bit */
 	ipm->sts.sts = 1; /* Clear channel status bit */
 
@@ -90,6 +93,7 @@ void quark_se_ipm_isr(void *param)
 	while (quark_se_ipm_sts_get() & (0x3 << (channel * 2))) {
 		/* Busy-wait */
 	}
+	irq_unlock(key);
 }
 
 
