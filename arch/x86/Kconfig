@@ -223,6 +223,16 @@ config ADVANCED_IDLE_SUPPORTED
 	This option signifies that the target supports the ADVANCED_IDLE
 	configuration option.
 
+config FORCE_IRQ_VECTOR_TABLE_RAM
+	bool "Always place the IRQ vector table (IDT) in RAM"
+	default n
+	help
+	Normally, the choice on whether to put the IDT in RAM or ROM
+	is done implictly based on whether any dynamic interrupts or
+	execeptions are used. This option forces the IDT to be in RAM
+	and not ROM, useful if a particular target needs to conserve ROM
+	even if it is only using static interrupts.
+
 config NUM_DYNAMIC_STUBS
 	int "Number of dynamic int stubs"
 	default 0

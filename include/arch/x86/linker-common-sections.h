@@ -53,6 +53,7 @@
 #include <linker-defs.h>
 #include <offsets.h>
 #include <misc/util.h>
+#include <arch/cpu.h>
 
 #define MMU_PAGE_SIZE KB(4)
 
@@ -94,6 +95,12 @@ SECTIONS
 	{
 	*(.rodata)
 	*(".rodata.*")
+#if ALL_DYN_STUBS == 0 && !defined(CONFIG_FORCE_IRQ_VECTOR_TABLE_RAM)
+	IDT_MEMORY
+#endif
+#if ALL_DYN_IRQ_STUBS == 0 && !defined(CONFIG_FORCE_IRQ_VECTOR_TABLE_RAM)
+	INTERRUPT_VECTORS_ALLOCATED_MEMORY
+#endif
 	IRQ_TO_INTERRUPT_VECTOR_MEMORY
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -117,8 +124,12 @@ SECTIONS
 	__data_ram_start = .;
 	*(.data)
 	*(".data.*")
+#if ALL_DYN_STUBS > 0 || defined(CONFIG_FORCE_IRQ_VECTOR_TABLE_RAM)
 	IDT_MEMORY
+#endif
+#if ALL_DYN_IRQ_STUBS > 0 || defined(CONFIG_FORCE_IRQ_VECTOR_TABLE_RAM)
 	INTERRUPT_VECTORS_ALLOCATED_MEMORY
+#endif
 	. = ALIGN(4);
 	} GROUP_LINK_IN(RAM)
 
