@@ -218,17 +218,14 @@ static int h4_send(enum bt_buf_type buf_type, struct net_buf *buf)
 	return 0;
 }
 
-IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
-		   CONFIG_BLUETOOTH_UART_IRQ_PRI, bt_uart_isr, 0,
-		   UART_IRQ_FLAGS);
-
 static int h4_open(void)
 {
 	BT_DBG("");
 
 	uart_irq_rx_disable(h4_dev);
 	uart_irq_tx_disable(h4_dev);
-	IRQ_CONFIG(bluetooth, CONFIG_BLUETOOTH_UART_IRQ);
+	irq_connect(CONFIG_BLUETOOTH_UART_IRQ, CONFIG_BLUETOOTH_UART_IRQ_PRI,
+		    bt_uart_isr, 0, UART_IRQ_FLAGS);
 	irq_enable(CONFIG_BLUETOOTH_UART_IRQ);
 
 	/* Drain the fifo */

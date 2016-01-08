@@ -366,17 +366,14 @@ void uart_console_isr(void *unused)
 	}
 }
 
-IRQ_CONNECT_STATIC(console, CONFIG_UART_CONSOLE_IRQ,
-		   CONFIG_UART_CONSOLE_IRQ_PRI, uart_console_isr, 0,
-		   UART_IRQ_FLAGS);
-
 static void console_input_init(void)
 {
 	uint8_t c;
 
 	uart_irq_rx_disable(uart_console_dev);
 	uart_irq_tx_disable(uart_console_dev);
-	IRQ_CONFIG(console, CONFIG_UART_CONSOLE_IRQ);
+	irq_connect(CONFIG_UART_CONSOLE_IRQ, CONFIG_UART_CONSOLE_IRQ_PRI,
+		    uart_console_isr, 0, UART_IRQ_FLAGS);
 	irq_enable(CONFIG_UART_CONSOLE_IRQ);
 
 	/* Drain the fifo */

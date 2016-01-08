@@ -56,50 +56,48 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-/**
- * @brief Connect a routine to interrupt number
- *
- * For the device @a device associates IRQ number @a irq with priority
- * @a priority with the interrupt routine @a isr, that receives parameter
- * @a parameter.
- * IRQ connect static is currently not supported in ARC architecture.
- * The macro is defined as empty for code compatibility with other
- * architectures.
- *
- * @param device Device
- * @param i IRQ number
- * @param p IRQ Priority
- * @param h Interrupt Service Routine
- * @param pm ISR parameter
- * @param f IRQ triggering options
- *
- * @return N/A
- *
- */
-#define IRQ_CONNECT_STATIC(device, i, p, h, pm, f) \
-	const unsigned int _##device##_int_priority = (p);       \
-	struct _IsrTableEntry _CONCAT(_isr_irq, i)                     \
-	__attribute__ ((section(STRINGIFY(_CONCAT(.gnu.linkonce.isr_irq, i))))) = \
-	{pm, h}
-
-/* internal routine documented in C file, needed by IRQ_CONFIG macro */
+/* internal routine documented in C file, needed by irq_connect() macro */
 extern void _irq_priority_set(unsigned int irq, unsigned int prio);
 
 /**
+ * Configure a static interrupt.
  *
- * @brief Configure interrupt for the device
+ * All arguments must be computable by the compiler at build time; if this
+ * can't be done use irq_connect_dynamic() instead.
  *
- * For the selected device, do the neccessary configuration
- * steps to connect and enable the IRQ line with an ISR
- * at the priority requested.
- * @param device - Device name
- * @param i IRQ number
+ * Internally this function does a few things:
  *
- * @return N/A
+ * 1. The enum statement has no effect but forces the compiler to only
+ * accept constant values for the irq_p parameter, very important as the
+ * numerical IRQ line is used to create a named section.
  *
+ * 2. An instance of _IsrTableEntry is created containing the ISR and its
+ * parameter. If you look at how _sw_isr_table is created, each entry in the
+ * array is in its own section named by the IRQ line number. What we are doing
+ * here is to override one of the default entries (which points to the
+ * spurious IRQ handler) with what was supplied here.
+ *
+ * 3. The priority level for the interrupt is configured by a call to
+ * _irq_priority_set()
+ *
+ * @param irq_p IRQ line number
+ * @param priority_p Interrupt priority
+ * @param isr_p Interrupt service routine
+ * @param isr_param_p ISR parameter
+ * @param flags_p IRQ triggering options (currently unused)
+ *
+ * @return The vector assigned to this interrupt
  */
-#define IRQ_CONFIG(device, i) \
-	_irq_priority_set(i, _##device##_int_priority)
+#define irq_connect(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+({ \
+	enum { IRQ = irq_p }; \
+	static struct _IsrTableEntry _CONCAT(_isr_irq, irq_p) \
+		__attribute__ ((used))  \
+		__attribute__ ((section(STRINGIFY(_CONCAT(.gnu.linkonce.isr_irq, irq_p))))) = \
+			{isr_param_p, isr_p}; \
+	_irq_priority_set(irq_p, priority_p); \
+	irq_p; \
+})
 
 #endif
 

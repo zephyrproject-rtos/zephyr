@@ -420,7 +420,7 @@ int spi_intel_init(struct device *dev)
 		return DEV_NOT_CONFIG;
 	}
 
-	info->config_func(dev);
+	info->config_func();
 
 	_spi_config_cs(dev);
 
@@ -448,7 +448,7 @@ int spi_intel_init(struct device *dev)
 /* system bindings */
 #ifdef CONFIG_SPI_INTEL_PORT_0
 
-void spi_config_0_irq(struct device *dev);
+void spi_config_0_irq(void);
 
 struct spi_intel_data spi_intel_data_port_0;
 
@@ -476,23 +476,18 @@ DECLARE_DEVICE_INIT_CONFIG(spi_intel_port_0, CONFIG_SPI_INTEL_PORT_0_DRV_NAME,
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
 SYS_DEFINE_DEVICE(spi_intel_port_0, &spi_intel_data_port_0, SECONDARY,
 		  CONFIG_SPI_INTEL_INIT_PRIORITY);
-struct device *spi_intel_isr_port_0 = SYS_GET_DEVICE(spi_intel_port_0);
 
-IRQ_CONNECT_STATIC(spi_intel_irq_port_0, CONFIG_SPI_INTEL_PORT_0_IRQ,
-		   CONFIG_SPI_INTEL_PORT_0_PRI, spi_intel_isr, 0,
-		   SPI_INTEL_IRQ_FLAGS);
-
-void spi_config_0_irq(struct device *dev)
+void spi_config_0_irq(void)
 {
-	struct spi_intel_config *config = dev->config->config_info;
-
-	IRQ_CONFIG(spi_intel_irq_port_0, config->irq);
+	irq_connect(CONFIG_SPI_INTEL_PORT_0_IRQ, CONFIG_SPI_INTEL_PORT_0_PRI,
+		    spi_intel_isr, SYS_GET_DEVICE(spi_intel_port_0),
+		    SPI_INTEL_IRQ_FLAGS);
 }
 
 #endif /* CONFIG_SPI_INTEL_PORT_0 */
 #ifdef CONFIG_SPI_INTEL_PORT_1
 
-void spi_config_1_irq(struct device *dev);
+void spi_config_1_irq(void);
 
 struct spi_intel_data spi_intel_data_port_1;
 
@@ -520,17 +515,12 @@ DECLARE_DEVICE_INIT_CONFIG(spi_intel_port_1, CONFIG_SPI_INTEL_PORT_1_DRV_NAME,
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
 SYS_DEFINE_DEVICE(spi_intel_port_1, &spi_intel_data_port_1, SECONDARY,
 		  CONFIG_SPI_INTEL_INIT_PRIORITY);
-struct device *spi_intel_isr_port_1 = SYS_GET_DEVICE(spi_intel_port_1);
 
-IRQ_CONNECT_STATIC(spi_intel_irq_port_1, CONFIG_SPI_INTEL_PORT_1_IRQ,
-		   CONFIG_SPI_INTEL_PORT_1_PRI, spi_intel_isr, 0,
-		   SPI_INTEL_IRQ_FLAGS);
-
-void spi_config_1_irq(struct device *dev)
+void spi_config_1_irq(void);
 {
-	struct spi_intel_config *config = dev->config->config_info;
-
-	IRQ_CONFIG(spi_intel_irq_port_1, config->irq);
+	irq_connect(CONFIG_SPI_INTEL_PORT_1_IRQ, CONFIG_SPI_INTEL_PORT_1_PRI,
+		    spi_intel_isr, SYS_GET_DEVICE(spi_intel_port_1),
+		    SPI_INTEL_IRQ_FLAGS);
 }
 
 #endif /* CONFIG_SPI_INTEL_PORT_1 */

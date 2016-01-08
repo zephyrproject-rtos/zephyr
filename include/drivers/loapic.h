@@ -54,40 +54,7 @@ extern "C" {
 /* Local APIC Vector Table Bits */
 #define LOAPIC_LVT_MASKED 0x00010000   /* mask */
 
-#ifdef _ASMLANGUAGE
-loapic_eoi = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
-
-#if !defined(CONFIG_X86_IAMCU)
-.macro loapic_mkstub device isr context
-GTEXT(_\()\device\()_\()\isr\()_stub)
-
-SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
-	call    _IntEnt          /* Inform kernel interrupt has begun */
-	pushl   \context         /* Push context parameter */
-	call    \isr             /* Call actual interrupt handler */
-	jmp     _IntExitWithEoi  /* Inform kernel interrupt is done */
-.endm
-#else
-
-.macro loapic_mkstub device isr context
-
-GTEXT(_\()\device\()_\()\isr\()_stub)
-
-SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
-	pushl %eax
-	pushl %edx
-	pushl %ecx
-	movl $\isr, %eax
-	movl \context, %edx
-	call _execute_handler
-	pop %ecx
-	pop %edx
-	pop %eax
-	iret
-.endm
-#endif /* CONFIG_X86_IAMCU */
-
-#else /* _ASMLANGUAGE */
+#ifndef _ASMLANGUAGE
 #include <device.h>
 
 extern void _loapic_int_vec_set(unsigned int irq, unsigned int vector);

@@ -53,7 +53,7 @@
 #else
 #define int_unmask(...) { ; }
 #endif
-static void adc_config_0_irq(struct device *dev);
+static void adc_config_0_irq(void);
 
 static void adc_goto_normal_mode_wo_calibration(void)
 {
@@ -259,7 +259,7 @@ int adc_dw_init(struct device *dev)
 	sys_out32(ADC_INT_ENABLE & ~(ADC_CLK_ENABLE),
 		adc_base + ADC_CTRL);
 
-	config->config_func(dev);
+	config->config_func();
 
 	int_unmask(config->reg_irq_mask);
 	int_unmask(config->reg_err_mask);
@@ -340,8 +340,6 @@ struct adc_config adc_config_dev_0 = {
 		.reg_base = PERIPH_ADDR_BASE_ADC,
 		.reg_irq_mask = SCSS_REGISTER_BASE + INT_SS_ADC_IRQ_MASK,
 		.reg_err_mask = SCSS_REGISTER_BASE + INT_SS_ADC_ERR_MASK,
-		.rx_vector = CONFIG_ADC_DW_0_RX_IRQ,
-		.err_vector = CONFIG_ADC_DW_0_ERR_IRQ,
 #ifdef CONFIG_ADC_DW_SINGLE_ENDED
 		.in_mode      = 0,
 #elif CONFIG_ADC_DW_DIFFERENTIAL
@@ -376,25 +374,14 @@ DECLARE_DEVICE_INIT_CONFIG(adc_dw_0,	/* config name*/
 SYS_DEFINE_DEVICE(adc_dw_0, &adc_info_dev_0, SECONDARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-IRQ_CONNECT_STATIC(adc_dw_0_rx,
-		CONFIG_ADC_DW_0_RX_IRQ,
-		CONFIG_ADC_DW_0_PRI,
-		adc_dw_rx_isr,
-		SYS_GET_DEVICE(adc_dw_0), 0);
-
-IRQ_CONNECT_STATIC(adc_dw_0_err,
-		CONFIG_ADC_DW_0_ERR_IRQ,
-		CONFIG_ADC_DW_0_PRI,
-		adc_dw_err_isr,
-		SYS_GET_DEVICE(adc_dw_0), 0);
-
-static void adc_config_0_irq(struct device *dev)
+static void adc_config_0_irq(void)
 {
-	struct adc_config *config = dev->config->config_info;
+	irq_connect(CONFIG_ADC_DW_0_RX_IRQ, CONFIG_ADC_DW_0_PRI, adc_dw_rx_isr,
+		    SYS_GET_DEVICE(adc_dw_0), 0);
+	irq_enable(CONFIG_ADC_DW_0_RX_IRQ);
 
-	IRQ_CONFIG(adc_dw_0_rx, CONFIG_ADC_DW_0_RX_IRQ);
-	irq_enable(config->rx_vector);
-	IRQ_CONFIG(adc_dw_0_err, CONFIG_ADC_DW_0_ERR_IRQ);
-	irq_enable(config->err_vector);
+	irq_connect(CONFIG_ADC_DW_0_ERR_IRQ, CONFIG_ADC_DW_0_PRI,
+		    adc_dw_err_isr, SYS_GET_DEVICE(adc_dw_0), 0);
+	irq_enable(CONFIG_ADC_DW_0_ERR_IRQ);
 }
 #endif

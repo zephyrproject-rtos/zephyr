@@ -213,20 +213,11 @@ struct dw_aio_cmp_dev_data_t dw_aio_cmp_dev_data = {
 SYS_DEFINE_DEVICE(dw_aio_cmp, &dw_aio_cmp_dev_data, SECONDARY,
 	CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-struct device *dw_aio_cmp_device = SYS_GET_DEVICE(dw_aio_cmp);
-
-IRQ_CONNECT_STATIC(dw_aio_cmp,
-		   INT_AIO_CMP_IRQ,
-		   0,
-		   dw_aio_cmp_isr,
-		   0,
-		   0);
-
 static int dw_aio_cmp_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONFIG(dw_aio_cmp, INT_AIO_CMP_IRQ);
-
+	irq_connect(INT_AIO_CMP_IRQ, 0, dw_aio_cmp_isr,
+		    SYS_GET_DEVICE(dw_aio_cmp), 0);
 	return DEV_OK;
 }

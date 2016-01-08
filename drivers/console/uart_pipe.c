@@ -72,15 +72,13 @@ int uart_pipe_send(const uint8_t *data, int len)
 	}
 }
 
-IRQ_CONNECT_STATIC(uart_pipe, CONFIG_UART_PIPE_IRQ,
-		   CONFIG_UART_PIPE_IRQ_PRI, uart_pipe_isr, 0,
-		   UART_IRQ_FLAGS);
-
 static void uart_pipe_setup(struct device *uart)
 {
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
-	IRQ_CONFIG(uart_pipe, CONFIG_UART_PIPE_IRQ);
+
+	irq_connect(CONFIG_UART_PIPE_IRQ, CONFIG_UART_PIPE_IRQ_PRI,
+		    uart_pipe_isr, 0, UART_IRQ_FLAGS);
 	irq_enable(CONFIG_UART_PIPE_IRQ);
 
 	/* Drain the fifo */

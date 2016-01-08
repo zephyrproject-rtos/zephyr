@@ -151,35 +151,124 @@ typedef struct s_isrList {
 	 ISR_LIST __attribute__((section(".intList"))) MK_ISR_NAME(r) = \
 			{&r, n, p, v, d}
 
+
 /**
- * @brief Connect a routine to interrupt number
+ * Inline assembly code for the interrupt stub
  *
- * For the device @a device associates IRQ number @a irq with priority
- * @a priority with the interrupt routine @a isr, that receives parameter
- * @a parameter.
+ * This is the actual assembly code which gets run when the interrupt
+ * is triggered. Due to different calling convention semantics we have
+ * different versions for IAMCU and SYSV.
  *
- * @param device Device
- * @param irq IRQ number
- * @param priority IRQ Priority
- * @param isr Interrupt Service Routine
- * @param parameter ISR parameter
- * @param flags IRQ triggering options
+ * For IAMCU case, we call _execute_handler() with the isr and its argument
+ * as parameters.
  *
- * @return N/A
+ * For SysV case, we first call _IntEnt to properly enter Zephyr's interrupt
+ * handling context, and then directly call the isr. A jump is done to
+ * _IntExitWithEoi which does EOI to the interrupt controller, restores
+ * context, and finally does 'iret'.
  *
+ * This is only intended to be used by the irq_connect() macro.
  */
-#ifdef CONFIG_MVIC
-#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags)   \
-	extern void *_##device##_##isr##_stub;				   \
-	const uint32_t _##device##_irq_flags = (flags);	\
-	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, (irq),		   \
-			      ((irq) + 0x20) / 16, (irq) + 0x20, 0)
+#if CONFIG_X86_IAMCU
+#define _IRQ_STUB_ASM \
+	"pushl %%eax\n\t" \
+	"pushl %%edx\n\t" \
+	"pushl %%ecx\n\t" \
+	"movl %[isr], %%eax\n\t" \
+	"movl %[isr_param], %%edx\n\t" \
+	"call _execute_handler\n\t" \
+	"popl %%ecx\n\t" \
+	"popl %%edx\n\t" \
+	"popl %%eax\n\t" \
+	"iret\n\t"
 #else
-#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter, flags)   \
-	extern void *_##device##_##isr##_stub;				               \
-	const uint32_t _##device##_irq_flags = (flags);	\
-	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, (irq), (priority), -1, 0)
-#endif
+#define _IRQ_STUB_ASM \
+	"call _IntEnt\n\t" \
+	"pushl %[isr_param]\n\t" \
+	"call %P[isr]\n\t" \
+	"jmp _IntExitWithEoi\n\t"
+#endif /* CONFIG_X86_IAMCU */
+
+/**
+ * Code snippets for populating the vector ID and priority into the intList
+ *
+ * The 'magic' of static interrupts is accomplished by building up an array
+ * 'intList' at compile time, and the gen_idt tool uses this to create the
+ * actual IDT data structure.
+ *
+ * For controllers like APIC, the vectors in the IDT are not normally assigned
+ * at build time; instead the sentinel value -1 is saved, and gen_idt figures
+ * out the right vector to use based on our priority scheme. Groups of 16
+ * vectors starting at 32 correspond to each priority level.
+ *
+ * On MVIC, the mapping is fixed; the vector to use is just the irq line
+ * number plus 0x20. The priority argument supplied by the user is discarded.
+ *
+ * These macros are only intended to be used by irq_connect() macro.
+ */
+#if CONFIG_MVIC
+#define _PRIORITY_ARG(irq_p, priority_p)	((irq_p + 0x20) / 16)
+#define _VECTOR_ARG(irq_p)			(irq_p + 0x20)
+#else
+#define _PRIORITY_ARG(irq_p, priority_p)	(priority_p)
+#define _VECTOR_ARG(irq_p)			(-1)
+#endif /* CONFIG_MVIC */
+
+/**
+ * Configure a static interrupt.
+ *
+ * All arguments must be computable by the compiler at build time; if this
+ * can't be done use irq_connect_dynamic() instead.
+ *
+ * Internally this function does a few things:
+ *
+ * 1. There is a block of inline assembly which is completely skipped over
+ * at runtime with an initial 'jmp' instruction.
+ *
+ * 2. There is a declaration of the interrupt parameters in the .intList
+ * section, used by gen_idt to create the IDT. This does the same thing
+ * as the NANO_CPU_INT_REGISTER() macro, but is done in assembly as we
+ * need to populate the .fnc member with the address of the assembly
+ * IRQ stub that we generate immediately afterwards.
+ *
+ * 3. The IRQ stub itself is declared. It doesn't get run in the context
+ * of the calling function due to the initial 'jmp' instruction at the
+ * beginning of the assembly block, but a pointer to it gets saved in the IDT.
+ *
+ * 4. _SysIntVecProgram() is called at runtime to set the mapping between
+ * the vector and the IRQ line.
+ *
+ * @param irq_p IRQ line number
+ * @param priority_p Interrupt priority
+ * @param isr_p Interrupt service routine
+ * @param isr_param_p ISR parameter
+ * @param flags_p IRQ triggering options
+ *
+ * @return The vector assigned to this interrupt
+ */
+#define irq_connect(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+({ \
+	__asm__ __volatile__(							\
+		"jmp 2f\n\t" \
+		".pushsection .intList\n\t" \
+		".long 1f\n\t"			/* ISR_LIST.fnc */ \
+		".long %P[irq]\n\t"		/* ISR_LIST.irq */ \
+		".long %P[priority]\n\t"	/* ISR_LIST.priority */ \
+		".long %P[vector]\n\t"		/* ISR_LIST.vec */ \
+		".long 0\n\t"			/* ISR_LIST.dpl */ \
+		".popsection\n\t" \
+		"1:\n\t" \
+		_IRQ_STUB_ASM \
+		"2:\n\t" \
+		: \
+		: [isr] "i" (isr_p), \
+		  [isr_param] "i" (isr_param_p), \
+		  [priority] "i" _PRIORITY_ARG(irq_p, priority_p), \
+		  [vector] "i" _VECTOR_ARG(irq_p), \
+		  [irq] "i" (irq_p)); \
+	_SysIntVecProgram(_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), (flags_p)); \
+	_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
+})
 
 extern unsigned char _irq_to_interrupt_vector[];
 /**
@@ -189,24 +278,6 @@ extern unsigned char _irq_to_interrupt_vector[];
  */
 #define _IRQ_TO_INTERRUPT_VECTOR(irq)                       \
 			((unsigned int) _irq_to_interrupt_vector[irq])
-
-/**
- *
- * @brief Configure interrupt for the device
- *
- * For the given device do the necessary configuration steps.
- * For x86 platform configure APIC and mark interrupt vector allocated
- * @param device Device - not used by macro
- * @param irq IRQ
- *
- * @return N/A
- *
- */
-#define IRQ_CONFIG(device, irq)						\
-	do {								\
-		_SysIntVecProgram(_IRQ_TO_INTERRUPT_VECTOR((irq)), (irq), \
-				  _##device##_irq_flags);		\
-	} while (0)
 
 
 /**
@@ -378,7 +449,7 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 #endif /* CONFIG_SSE */
 #endif /* CONFIG_FP_SHARING */
 
-extern int	irq_connect(unsigned int irq,
+extern int	irq_connect_dynamic(unsigned int irq,
 					 unsigned int priority,
 					 void (*routine)(void *parameter),
 					 void *parameter,

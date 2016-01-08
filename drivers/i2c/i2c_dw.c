@@ -779,16 +779,6 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_0,
 			   &i2c_config_dw_0);
 
 SYS_DEFINE_DEVICE(i2c_0, &i2c_0_runtime, SECONDARY, CONFIG_I2C_INIT_PRIORITY);
-struct device *i2c_dw_isr_0_device = SYS_GET_DEVICE(i2c_0);
-
-#ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
-IRQ_CONNECT_STATIC(i2c_dw_0,
-		   CONFIG_I2C_DW_0_IRQ,
-		   CONFIG_I2C_DW_0_INT_PRIORITY,
-		   i2c_dw_isr,
-		   SYS_GET_DEVICE(i2c_0),
-		   I2C_DW_IRQ_FLAGS);
-#endif
 
 void i2c_config_0(struct device *port)
 {
@@ -797,7 +787,8 @@ void i2c_config_0(struct device *port)
 
 #if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONFIG(i2c_dw_0, config->irq_num);
+	irq_connect(CONFIG_I2C_DW_0_IRQ, CONFIG_I2C_DW_0_INT_PRIORITY,
+		    i2c_dw_isr, SYS_GET_DEVICE(i2c_0), I2C_DW_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
 	ARG_UNUSED(config);
@@ -842,14 +833,6 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_1,
 
 SYS_DEFINE_DEVICE(i2c_1, &i2c_1_runtime, SECONDARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-struct device *i2c_dw_isr_1_device = SYS_GET_DEVICE(i2c_1);
-
-IRQ_CONNECT_STATIC(i2c_dw_1,
-		   CONFIG_I2C_DW_1_IRQ,
-		   CONFIG_I2C_DW_1_INT_PRIORITY,
-		   i2c_dw_isr,
-		   SYS_GET_DEVICE(i2c_1),
-		   I2C_DW_IRQ_FLAGS);
 
 void i2c_config_1(struct device *port)
 {
@@ -857,7 +840,8 @@ void i2c_config_1(struct device *port)
 	struct device *shared_irq_dev;
 
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONFIG(i2c_dw_1, config->irq_num);
+	irq_connect(CONFIG_I2C_DW_1_IRQ, CONFIG_I2C_DW_1_INT_PRIORITY,
+		    i2c_dw_isr, SYS_GET_DEVICE(i2c_1), I2C_DW_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 }
 

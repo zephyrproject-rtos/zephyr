@@ -311,9 +311,6 @@ static void tickless_idle_init(void) {}
  */
 int _sys_clock_driver_init(struct device *device)
 {
-	int irq = CONFIG_ARCV2_TIMER0_INT_LVL;
-	int prio = CONFIG_ARCV2_TIMER0_INT_PRI;
-
 	ARG_UNUSED(device);
 
 	/* ensure that the timer will not generate interrupts */
@@ -322,7 +319,8 @@ int _sys_clock_driver_init(struct device *device)
 
 	cycles_per_tick = sys_clock_hw_cycles_per_tick;
 
-	(void)irq_connect(irq, prio, _timer_int_handler, 0, 0);
+	irq_connect(CONFIG_ARCV2_TIMER0_INT_LVL, CONFIG_ARCV2_TIMER0_INT_PRI,
+		    _timer_int_handler, 0, 0);
 
 	/*
 	 * Set the reload value to achieve the configured tick rate, enable the

@@ -37,9 +37,8 @@ irq_unlock
   - Continuation irq_lock: unlock interrupts, loop and verify the tick
     count changes.
 
-irq_connect
-  - Used during nanokernel object initialization.  Verified when triggering
-    an ISR to perform ISR context work.
+irq_offload
+  - Used when triggering an ISR to perform ISR context work.
 
 nanoCpuExcConnect
   - Used during nanokernel object initialization.  Verified by triggering a

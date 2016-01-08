@@ -95,7 +95,8 @@ Example
 
    #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
    #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
-   #define MY_ISR_ARG  17       /* argument passed to my_isr() */
+   /* argument passed to my_isr(), in this case a pointer to the device */
+   #define MY_ISR_ARG  SYS_GET_DEVICE(my_device)
    #define MY_IRQ_FLAGS 0       /* IRQ flags. Unused on non-x86 */
 
    void my_isr(void *arg)
@@ -103,22 +104,13 @@ Example
       ... /* ISR code */
    }
 
-   IRQ_CONNECT_STATIC(my_dev, MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG,
-       MY_IRQ_FLAGS);
-
    void my_isr_installer(void)
    {
       ...
-      IRQ_CONFIG(my_dev, MY_DEV_IRQ); /* finish IRQ configuration */
+      irq_connect(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG, MY_IRQ_FLAGS);
       irq_enable(MY_DEV_IRQ);            /* enable IRQ */
       ...
    }
-
-For x86 platforms only, you must also create an interrupt stub as follows:
-
-.. code-block:: asm
-
-   ioapic_mkstub my_dev my_isr
 
 Installing a Dynamic ISR
 ========================
@@ -126,11 +118,6 @@ Installing a Dynamic ISR
 Use a dynamic ISR to register an interrupt handler when the interrupt
 parameters can be found out only at runtime, or when a device is not always
 present in the system.
-
-.. note::
-
-   There is no API method to uninstall a dynamic ISR; however, it is
-   possible to replace it with a different dynamic ISR.
 
 Prerequisites
 -------------
@@ -161,7 +148,8 @@ This is an example of a dynamic interrupt for x86:
    void my_isr_installer(void)
    {
        ...
-       irq_connect(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG, MY_IRQ_FLAGS);
+       irq_connect_dynamic(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG,
+                           MY_IRQ_FLAGS);
        ...
        irq_enable(MY_DEV_IRQ);
        ...
@@ -235,20 +223,18 @@ IDT Security
 
 Ideally, the IDT memory area should be protected against accidental
 modification, in the same way that text and read-only data areas
-are protected.
+are protected. If no dynamic interrupts are in use, i.e.
+:option:`NUM_DYNAMIC_STUBS` is 0, the IDT will be located in ROM.
 
-Currently, the IDT is always located read-write memory and is
-therefore *not* protected. This is true even for systems using
-:abbr:`XIP (Execute in Place)`, where the text and read-only data areas
-reside in read-only memory (such as flash memory or ROM).
-
+If a particular project is ROM space-constrained, it's possible to
+force the IDT to be located in RAM via :option:`FORCE_IRQ_VECTOR_TABLE_RAM`.
 
 APIs
 ****
 
 These are the interrupt-related Application Program Interfaces.
 
-:c:func:`irq_connect()`
+:c:func:`irq_connect_dynamic()`
    Registers a dynamic ISR with the IDT and interrupt controller.
 
 :c:func:`irq_enable()`
@@ -268,8 +254,6 @@ Macros
 
 These are the macros used to install a static ISR.
 
-:c:macro:`IRQ_CONNECT_STATIC( )`
+:c:macro:`irq_connect()`
    Registers a static ISR with the IDT.
 
-:c:macro:`IRQ_CONFIG( )`
-   Registers a static ISR with the interrupt controller.

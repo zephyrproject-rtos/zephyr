@@ -33,7 +33,7 @@ GTEXT(irq_connect)
 GTEXT(irq_enable)
 GTEXT(irq_disable)
 #else
-extern int irq_connect(unsigned int irq,
+extern int irq_connect_dynamic(unsigned int irq,
 			     unsigned int prio,
 			     void (*isr)(void *arg),
 			     void *arg,

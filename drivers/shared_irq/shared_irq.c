@@ -128,13 +128,13 @@ int shared_irq_initialize(struct device *dev)
 	struct shared_irq_config *config = dev->config->config_info;
 
 	dev->driver_api = &api_funcs;
-	config->config(dev);
+	config->config();
 
 	return 0;
 }
 
 #if CONFIG_SHARED_IRQ_0
-void shared_irq_config_0_irq(struct device *port);
+void shared_irq_config_0_irq(void);
 
 struct shared_irq_config shared_irq_config_0 = {
 	.irq_num = CONFIG_SHARED_IRQ_0_IRQ,
@@ -165,26 +165,17 @@ SYS_DEFINE_DEVICE(shared_irq_0, &shared_irq_0_runtime, SECONDARY,
 	#define SHARED_IRQ_0_FLAGS 0
 #endif /* CONFIG_IOAPIC */
 
-IRQ_CONNECT_STATIC(shared_irq_0, CONFIG_SHARED_IRQ_0_IRQ,
-		   CONFIG_SHARED_IRQ_0_PRI, shared_irq_isr_0, 0,
-		   SHARED_IRQ_0_FLAGS);
-
-void shared_irq_config_0_irq(struct device *port)
+void shared_irq_config_0_irq(void)
 {
-	struct shared_irq_config *config = port->config->config_info;
-
-	IRQ_CONFIG(shared_irq_0, config->irq_num);
-}
-
-void shared_irq_isr_0(void *unused)
-{
-	shared_irq_isr(&__initconfig_shared_irq_0);
+	irq_connect(CONFIG_SHARED_IRQ_0_IRQ, CONFIG_SHARED_IRQ_0_PRI,
+		    shared_irq_isr, SYS_GET_DEVICE(shared_irq_0),
+		    SHARED_IRQ_0_FLAGS);
 }
 
 #endif /* CONFIG_SHARED_IRQ_0 */
 
 #if CONFIG_SHARED_IRQ_1
-void shared_irq_config_1_irq(struct device *port);
+void shared_irq_config_1_irq(void);
 
 struct shared_irq_config shared_irq_config_1 = {
 	.irq_num = CONFIG_SHARED_IRQ_1_IRQ,
@@ -215,20 +206,11 @@ SYS_DEFINE_DEVICE(shared_irq_1, &shared_irq_1_runtime, SECONDARY,
 	#define SHARED_IRQ_1_FLAGS 0
 #endif /* CONFIG_IOAPIC */
 
-IRQ_CONNECT_STATIC(shared_irq_1, CONFIG_SHARED_IRQ_1_IRQ,
-		   CONFIG_SHARED_IRQ_1_PRI, shared_irq_isr_1, 0,
-		   SHARED_IRQ_1_FLAGS);
-
-void shared_irq_config_1_irq(struct device *port)
+void shared_irq_config_1_irq(void)
 {
-	struct shared_irq_config *config = port->config->config_info;
-
-	IRQ_CONFIG(shared_irq_1, config->irq_num);
-}
-
-void shared_irq_isr_1(void *unused)
-{
-	shared_irq_isr(&__initconfig_shared_irq_1);
+	irq_connect(CONFIG_SHARED_IRQ_1_IRQ, CONFIG_SHARED_IRQ_1_PRI,
+		    shared_irq_isr, SYS_GET_DEVICE(shared_irq_1),
+		    SHARED_IRQ_1_FLAGS);
 }
 
 #endif /* CONFIG_SHARED_IRQ_1 */

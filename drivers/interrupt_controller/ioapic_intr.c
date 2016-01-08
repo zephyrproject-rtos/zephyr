@@ -113,7 +113,7 @@ int _ioapic_init(struct device *unused)
 
 	/*
 	 * Initialize the redirection table entries with default settings;
-	 * actual interrupt vectors are specified during irq_connect().
+	 * actual interrupt vectors are specified during irq_connect_dynamic().
 	 *
 	 * A future enhancement should make this initialization "table driven":
 	 * use data provided by the platform to specify the initial state

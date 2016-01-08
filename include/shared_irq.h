@@ -38,7 +38,7 @@ struct shared_irq_driver_api {
 
 extern int shared_irq_initialize(struct device *port);
 
-typedef void (*shared_irq_config_irq_t)(struct device *port);
+typedef void (*shared_irq_config_irq_t)(void);
 
 struct shared_irq_config {
 	uint32_t irq_num;

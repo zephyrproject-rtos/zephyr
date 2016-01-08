@@ -128,10 +128,6 @@
 extern int32_t _sys_idle_elapsed_ticks;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-IRQ_CONNECT_STATIC(loapic, CONFIG_LOAPIC_TIMER_IRQ,
-			CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
-			_timer_int_handler, 0, 0);
-
 /* computed counter 0 initial count value */
 static uint32_t __noinit cycles_per_tick;
 static uint32_t accumulated_cycle_count;
@@ -571,11 +567,8 @@ int _sys_clock_driver_init(struct device *device)
 	initial_count_register_set(cycles_per_tick - 1);
 	periodic_mode_set();
 
-	/*
-	 * Although the stub has already been "connected", the vector number
-	 * still has to be programmed into the interrupt controller.
-	 */
-	IRQ_CONFIG(loapic, CONFIG_LOAPIC_TIMER_IRQ);
+	irq_connect(CONFIG_LOAPIC_TIMER_IRQ, CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
+		    _timer_int_handler, 0, 0);
 
 	/* Everything has been configured. It is now safe to enable the
 	 * interrupt

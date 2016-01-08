@@ -21,7 +21,7 @@
 
 #include <spi.h>
 
-typedef void (*spi_dw_config_t)(struct device *dev);
+typedef void (*spi_dw_config_t)(void);
 
 /* Private structures */
 struct spi_dw_config {

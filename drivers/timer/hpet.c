@@ -183,8 +183,6 @@ extern struct nano_stack _k_command_stack;
 #define HPET_IOAPIC_FLAGS  (IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
 
-IRQ_CONNECT_STATIC(hpet, CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
-		   _timer_int_handler, 0, HPET_IOAPIC_FLAGS);
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 static uint32_t main_count_first_irq_value;
@@ -614,8 +612,8 @@ int _sys_clock_driver_init(struct device *device)
 	 * Although the stub has already been "connected", the vector number
 	 * still has to be programmed into the interrupt controller.
 	 */
-
-	IRQ_CONFIG(hpet, CONFIG_HPET_TIMER_IRQ);
+	irq_connect(CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
+		   _timer_int_handler, 0, HPET_IOAPIC_FLAGS);
 
 	/* enable the IRQ in the interrupt controller */
 

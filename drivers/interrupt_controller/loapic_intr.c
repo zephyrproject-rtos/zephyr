@@ -302,7 +302,7 @@ void _loapic_disable(void)
  * @brief Set the vector field in the specified RTE
  *
  * This routine is utilized by the interrupt controller's _SysIntVecAlloc()
- * routine (which exists to support the irq_connect() API).  Once
+ * routine (which exists to support the irq_connect_dynamic() API).  Once
  * a vector has been allocated, this routine is invoked to update the LVT
  * entry associated with <irq> with the vector.
  *

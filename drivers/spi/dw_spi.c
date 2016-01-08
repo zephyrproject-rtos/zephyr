@@ -459,8 +459,13 @@ int spi_dw_init(struct device *dev)
 #endif /* CONFIG_IOAPIC */
 
 #ifdef CONFIG_SPI_DW_PORT_0
-
-void spi_config_0_irq(struct device *dev);
+void spi_config_0_irq(void)
+{
+	irq_connect(CONFIG_SPI_DW_PORT_0_IRQ, CONFIG_SPI_DW_PORT_0_PRI,
+		    spi_dw_isr, SYS_GET_DEVICE(spi_dw_port_0),
+		    SPI_DW_IRQ_FLAGS);
+	irq_enable(CONFIG_SPI_DW_PORT_0_IRQ);
+}
 
 struct spi_dw_data spi_dw_data_port_0;
 
@@ -479,24 +484,16 @@ DECLARE_DEVICE_INIT_CONFIG(spi_dw_port_0, CONFIG_SPI_DW_PORT_0_DRV_NAME,
 
 SYS_DEFINE_DEVICE(spi_dw_port_0, &spi_dw_data_port_0, SECONDARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-struct device *spi_dw_isr_port_0 = SYS_GET_DEVICE(spi_dw_port_0);
-
-IRQ_CONNECT_STATIC(spi_dw_irq_port_0, CONFIG_SPI_DW_PORT_0_IRQ,
-		   CONFIG_SPI_DW_PORT_0_PRI, spi_dw_isr, 0,
-		   SPI_DW_IRQ_FLAGS);
-
-void spi_config_0_irq(struct device *dev)
-{
-	struct spi_dw_config *config = dev->config->config_info;
-
-	IRQ_CONFIG(spi_dw_irq_port_0, config->irq);
-	irq_enable(config->irq);
-}
-
 #endif /* CONFIG_SPI_DW_PORT_0 */
 #ifdef CONFIG_SPI_DW_PORT_1
 
-void spi_config_1_irq(struct device *dev);
+void spi_config_1_irq(void)
+{
+	irq_connect(CONFIG_SPI_DW_PORT_1_IRQ, CONFIG_SPI_DW_PORT_1_PRI,
+		    spi_dw_isr, SYS_GET_DEVICE(spi_dw_port_1),
+		    SPI_DW_IRQ_FLAGS);
+	irq_enable(CONFIG_SPI_DW_PORT_1_IRQ);
+}
 
 struct spi_dw_data spi_dw_data_port_1;
 
@@ -515,18 +512,4 @@ DECLARE_DEVICE_INIT_CONFIG(spi_dw_port_1, CONFIG_SPI_DW_PORT_1_DRV_NAME,
 
 SYS_DEFINE_DEVICE(spi_dw_port_1, &spi_dw_data_port_1, SECONDARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-struct device *spi_dw_isr_port_1 = SYS_GET_DEVICE(spi_dw_port_1);
-
-IRQ_CONNECT_STATIC(spi_dw_irq_port_1, CONFIG_SPI_DW_PORT_1_IRQ,
-		   CONFIG_SPI_DW_PORT_1_PRI, spi_dw_isr, 0,
-		   SPI_DW_IRQ_FLAGS);
-
-void spi_config_1_irq(struct device *dev)
-{
-	struct spi_dw_config *config = dev->config->config_info;
-
-	IRQ_CONFIG(spi_dw_irq_port_1, config->irq);
-	irq_enable(config->irq);
-}
-
 #endif /* CONFIG_SPI_DW_PORT_1 */

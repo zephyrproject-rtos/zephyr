@@ -189,23 +189,7 @@ static struct rtc_driver_api funcs = {
 	.set_alarm = rtc_dw_set_alarm,
 };
 
-/* IRQ_CONFIG needs the flags variable declared by IRQ_CONNECT_STATIC */
-IRQ_CONNECT_STATIC(rtc, CONFIG_RTC_IRQ,
-		   CONFIG_RTC_IRQ_PRI, rtc_dw_isr, 0, 0);
-
-int rtc_dw_init(struct device *dev)
-{
-	IRQ_CONFIG(rtc, CONFIG_RTC_IRQ);
-	irq_enable(CONFIG_RTC_IRQ);
-
-	_rtc_dw_int_unmask();
-
-	_rtc_dw_clock_config(dev);
-
-	dev->driver_api = &funcs;
-
-	return DEV_OK;
-}
+int rtc_dw_init(struct device *dev);
 
 struct rtc_dw_runtime rtc_runtime;
 
@@ -222,4 +206,18 @@ DECLARE_DEVICE_INIT_CONFIG(rtc, CONFIG_RTC_DRV_NAME,
 SYS_DEFINE_DEVICE(rtc, &rtc_runtime, SECONDARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-struct device *rtc_dw_isr_dev = SYS_GET_DEVICE(rtc);
+int rtc_dw_init(struct device *dev)
+{
+	irq_connect(CONFIG_RTC_IRQ, CONFIG_RTC_IRQ_PRI, rtc_dw_isr,
+		    SYS_GET_DEVICE(rtc), 0);
+	irq_enable(CONFIG_RTC_IRQ);
+
+	_rtc_dw_int_unmask();
+
+	_rtc_dw_clock_config(dev);
+
+	dev->driver_api = &funcs;
+
+	return DEV_OK;
+}
+

@@ -3,4 +3,4 @@ ccflags-y += -I${srctree}/net/ip/contiki/os/lib
 ccflags-y += -I${srctree}/net/ip/contiki/os
 ccflags-y += -I${srctree}
 
-obj-$(CONFIG_ETH_DW) += eth_dw.o eth_static_irq_stubs.o
+obj-$(CONFIG_ETH_DW) += eth_dw.o

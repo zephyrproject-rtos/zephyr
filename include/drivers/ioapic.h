@@ -46,9 +46,7 @@ extern "C" {
 #define IOAPIC_INIT 0x00000500
 #define IOAPIC_EXTINT 0x00000700
 
-#ifdef _ASMLANGUAGE
-#define ioapic_mkstub loapic_mkstub
-#else /* _ASMLANGUAGE */
+#ifndef _ASMLANGUAGE
 #include <device.h>
 void _ioapic_irq_enable(unsigned int irq);
 void _ioapic_irq_disable(unsigned int irq);

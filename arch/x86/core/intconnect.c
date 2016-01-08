@@ -202,7 +202,7 @@ extern void *_DynIntStubsBegin;
  * vectors remaining in the specified <priority> level.
  */
 
-int irq_connect(unsigned int irq, unsigned int priority,
+int irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		void (*routine)(void *parameter), void *parameter,
 		uint32_t flags)
 {

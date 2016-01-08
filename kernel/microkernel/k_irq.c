@@ -214,11 +214,7 @@ uint32_t task_irq_alloc(kirq_t irq_obj,	uint32_t irq, uint32_t priority,
 		return INVALID_VECTOR;
 	}
 
-	/*
-	 * NOTE: the comma that seems to be missing is part of the IRQ_STUB
-	 *       definition to abstract the different irq_connect signatures
-	 */
-	irq_obj_ptr->vector = irq_connect(
+	irq_obj_ptr->vector = irq_connect_dynamic(
 		irq, priority, task_irq_int_handler, (void *)irq_obj_ptr,
 		flags);
 	irq_enable(irq);

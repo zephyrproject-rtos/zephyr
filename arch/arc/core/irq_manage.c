@@ -155,7 +155,7 @@ void _irq_spurious(void *unused)
  * @return the interrupt line number
  */
 
-int irq_connect(
+int irq_connect_dynamic(
 	unsigned int irq,
 	unsigned int prio,
 	void (*isr)(void *arg),

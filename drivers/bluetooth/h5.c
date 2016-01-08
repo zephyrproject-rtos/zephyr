@@ -768,17 +768,15 @@ static void h5_init(void)
 	nano_fifo_init(&h5.unack_queue);
 }
 
-IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
-		   CONFIG_BLUETOOTH_UART_IRQ_PRI, bt_uart_isr, 0,
-		   UART_IRQ_FLAGS);
-
 static int h5_open(void)
 {
 	BT_DBG("");
 
 	uart_irq_rx_disable(h5_dev);
 	uart_irq_tx_disable(h5_dev);
-	IRQ_CONFIG(bluetooth, CONFIG_BLUETOOTH_UART_IRQ);
+
+	irq_connect(CONFIG_BLUETOOTH_UART_IRQ, CONFIG_BLUETOOTH_UART_IRQ_PRI,
+		    bt_uart_isr, 0, UART_IRQ_FLAGS);
 	irq_enable(CONFIG_BLUETOOTH_UART_IRQ);
 
 	/* Drain the fifo */

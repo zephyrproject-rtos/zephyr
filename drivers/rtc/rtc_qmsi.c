@@ -22,9 +22,6 @@
 
 #include "qm_rtc.h"
 
-IRQ_CONNECT_STATIC(rtc, CONFIG_RTC_IRQ, CONFIG_RTC_IRQ_PRI, qm_rtc_isr_0,
-		   0, IOAPIC_EDGE | IOAPIC_HIGH);
-
 static struct device *rtc_qmsi_dev;
 
 static void (*user_callback)(struct device *dev);
@@ -82,7 +79,8 @@ static struct rtc_driver_api api = {
 
 static int rtc_qmsi_init(struct device *dev)
 {
-	IRQ_CONFIG(rtc, CONFIG_RTC_IRQ);
+	irq_connect(CONFIG_RTC_IRQ, CONFIG_RTC_IRQ_PRI, qm_rtc_isr_0, 0,
+		    IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask RTC interrupt */
 	irq_enable(CONFIG_RTC_IRQ);

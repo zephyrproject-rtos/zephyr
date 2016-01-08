@@ -61,8 +61,8 @@ static int __LocalIntVecAlloc(unsigned int irq, unsigned int priority);
  *
  * @brief Allocate interrupt vector
  *
- * This routine is used by the x86's irq_connect().  It performs the following
- * functions:
+ * This routine is used by the x86's irq_connect_dynamic().  It performs the
+ * following functions:
  *
  *  a) Allocates a vector satisfying the requested priority.  The utility
  *     routine _IntVecAlloc() provided by the nanokernel will be used to

@@ -22,7 +22,7 @@ This module tests the following CPU and thread related routines:
   fiber_fiber_start(), task_fiber_start(), fiber_yield(),
   sys_thread_self_get(), sys_execution_context_type_get(), nano_cpu_idle(),
   irq_lock(), irq_unlock(),
-  irq_connect(), nanoCpuExcConnect(),
+  irq_offload(), nanoCpuExcConnect(),
   irq_enable(), irq_disable(),
  */
 

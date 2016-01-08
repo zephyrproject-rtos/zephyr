@@ -313,11 +313,6 @@ static int eth_net_tx(struct net_buf *buf)
 	return eth_tx(&__initconfig_eth_dw_0, buf);
 }
 
-#ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
-IRQ_CONNECT_STATIC(eth_dw_0, CONFIG_ETH_DW_0_IRQ,
-		   CONFIG_ETH_DW_0_PRI, eth_dw_isr, 0);
-#endif
-
 static void eth_config_0_irq(struct device *port)
 {
 	struct eth_config *config = port->config->config_info;
@@ -325,8 +320,9 @@ static void eth_config_0_irq(struct device *port)
 
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONFIG(eth_dw_0, config->irq_num);
-	irq_enable(config->irq_num);
+	irq_connect(CONFIG_ETH_DW_0_IRQ, CONFIG_ETH_DW_0_PRI, eth_dw_isr,
+		    SYS_GET_DEVICE(eth_dw_0), 0);
+	irq_enable(CONFIG_ETH_DW_0_IRQ);
 #elif defined(CONFIG_ETH_DW_0_IRQ_SHARED)
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
 	__ASSERT(shared_irq_dev != NULL, "Failed to get eth_dw device binding");
@@ -334,9 +330,4 @@ static void eth_config_0_irq(struct device *port)
 	shared_irq_enable(shared_irq_dev, port);
 #endif
 }
-
-#ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
-struct device *eth_dw_isr_0 = SYS_GET_DEVICE(eth_dw_0);
-#endif  /* CONFIG_ETH_DW_0_IRQ_DIRECT */
-
 #endif  /* CONFIG_ETH_DW_0 */

@@ -149,23 +149,7 @@ static struct wdt_driver_api wdt_dw_funcs = {
 	.reload = wdt_dw_reload,
 };
 
-/* IRQ_CONFIG needs the flags variable declared by IRQ_CONNECT_STATIC */
-IRQ_CONNECT_STATIC(wdt_dw, CONFIG_WDT_DW_IRQ,
-		   CONFIG_WDT_DW_IRQ_PRI, wdt_dw_isr, 0, 0);
-
-int wdt_dw_init(struct device *dev)
-{
-	dev->driver_api = &wdt_dw_funcs;
-
-	IRQ_CONFIG(wdt_dw, CONFIG_WDT_DW_IRQ);
-	irq_enable(CONFIG_WDT_DW_IRQ);
-
-	_wdt_dw_int_unmask();
-
-	_wdt_dw_clock_config(dev);
-
-	return 0;
-}
+int wdt_dw_init(struct device *dev);
 
 struct wdt_dw_runtime wdt_runtime;
 
@@ -182,4 +166,18 @@ DECLARE_DEVICE_INIT_CONFIG(wdt, CONFIG_WDT_DW_DRV_NAME,
 SYS_DEFINE_DEVICE(wdt, &wdt_runtime, SECONDARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-struct device *wdt_dw_isr_dev = SYS_GET_DEVICE(wdt);
+int wdt_dw_init(struct device *dev)
+{
+	dev->driver_api = &wdt_dw_funcs;
+
+	irq_connect(CONFIG_WDT_DW_IRQ, CONFIG_WDT_DW_IRQ_PRI, wdt_dw_isr,
+		    SYS_GET_DEVICE(wdt), 0);
+	irq_enable(CONFIG_WDT_DW_IRQ);
+
+	_wdt_dw_int_unmask();
+
+	_wdt_dw_clock_config(dev);
+
+	return 0;
+}
+

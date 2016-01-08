@@ -159,7 +159,7 @@ void main(void)
 {
 #ifdef TEST_max
 	/* dynamically link in dummy ISR */
-	irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
+	irq_connect_dynamic(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
 		    (void *) 0, 0);
 #endif /* TEST_max */
 #ifndef TEST_min

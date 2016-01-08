@@ -27,12 +27,10 @@
 #include <ipm.h>
 #include <ipm/ipm_quark_se.h>
 
-IRQ_CONNECT_STATIC(quark_se_ipm, QUARK_SE_IPM_INTERRUPT, QUARK_SE_IPM_INTERRUPT_PRI,
-		   quark_se_ipm_isr, NULL, 0);
-
 static int x86_quark_se_ipm_init(void)
 {
-	IRQ_CONFIG(quark_se_ipm, QUARK_SE_IPM_INTERRUPT);
+	irq_connect(QUARK_SE_IPM_INTERRUPT, QUARK_SE_IPM_INTERRUPT_PRI,
+		    quark_se_ipm_isr, NULL, 0);
 	irq_enable(QUARK_SE_IPM_INTERRUPT);
 	return DEV_OK;
 }

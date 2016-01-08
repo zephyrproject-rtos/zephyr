@@ -145,7 +145,7 @@
 #define ss_adc_data_to_mv(_data_, _resolution_) \
 	((_data_ * ADC_VREF) / (1 << _resolution_))
 
-typedef void (*adc_dw_config_t)(struct device *dev);
+typedef void (*adc_dw_config_t)(void);
 /** @brief ADC configuration
  * This structure defines the ADC configuration values
  * that define the ADC hardware instance and configuration.
@@ -157,10 +157,6 @@ struct adc_config {
 	uint32_t reg_irq_mask;
 	/**IIO address for the error mask register.*/
 	uint32_t reg_err_mask;
-	/**Interruption vector for the reception ISR.*/
-	uint8_t  rx_vector;
-	/**Interruption vector for the error ISR.*/
-	uint8_t  err_vector;
 	/**Input mode*/
 	uint8_t  in_mode;
 	/**Output mode*/

@@ -24,7 +24,7 @@
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
-typedef void (*spi_intel_config_t)(struct device *dev);
+typedef void (*spi_intel_config_t)(void);
 
 struct spi_intel_config {
 	uint32_t regs;
