@@ -810,7 +810,7 @@ void bt_conn_set_param_le(struct bt_conn *conn,
 }
 #endif /* CONFIG_BLUETOOTH_CONN */
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 static void update_sec_level(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
@@ -904,7 +904,9 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 	bt_conn_security_changed(conn);
 	bt_conn_unref(conn);
 }
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 static void le_ltk_request(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_ltk_request *evt = (void *)buf->data;
@@ -1570,14 +1572,14 @@ static void hci_event(struct net_buf *buf)
 		hci_disconn_complete(buf);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONN */
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	case BT_HCI_EVT_ENCRYPT_CHANGE:
 		hci_encrypt_change(buf);
 		break;
 	case BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE:
 		hci_encrypt_key_refresh_complete(buf);
 		break;
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 	case BT_HCI_EVT_LE_META_EVENT:
 		hci_le_meta_event(buf);
 		break;
