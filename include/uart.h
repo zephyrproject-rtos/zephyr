@@ -58,8 +58,6 @@ struct uart_device_config {
 		uint8_t *base;
 		uint32_t regs;
 	};
-	uint8_t irq;		/**< interrupt request level */
-	uint8_t irq_pri;	/**< interrupt priority */
 
 	uint32_t sys_clk_freq;	/* System clock frequency in Hz */
 
@@ -89,7 +87,6 @@ struct uart_driver_api {
 	void (*irq_err_disable)(struct device *dev);
 	int (*irq_is_pending)(struct device *dev);
 	int (*irq_update)(struct device *dev);
-	unsigned int (*irq_get)(struct device *dev);
 	int (*irq_input_hook)(struct device *dev, uint8_t byte);
 
 #endif
@@ -363,27 +360,6 @@ static inline int uart_irq_update(struct device *dev)
 	api = (struct uart_driver_api *)dev->driver_api;
 	if (api && api->irq_update) {
 		return api->irq_update(dev);
-	}
-
-	return 0;
-}
-
-/**
- * @brief Returns UART interrupt number
- *
- * Returns the IRQ number used by the specified UART port.
- *
- * @param dev UART device struct (of type struct uart_device_config)
- *
- * @return IRQ number, or 0 if no interrupt
- */
-static inline unsigned int uart_irq_get(struct device *dev)
-{
-	struct uart_driver_api *api;
-
-	api = (struct uart_driver_api *)dev->driver_api;
-	if (api && api->irq_get) {
-		return api->irq_get(dev);
 	}
 
 	return 0;

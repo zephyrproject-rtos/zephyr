@@ -228,8 +228,8 @@ static int h4_open(void)
 
 	uart_irq_rx_disable(h4_dev);
 	uart_irq_tx_disable(h4_dev);
-	IRQ_CONFIG(bluetooth, uart_irq_get(h4_dev));
-	irq_enable(uart_irq_get(h4_dev));
+	IRQ_CONFIG(bluetooth, CONFIG_BLUETOOTH_UART_IRQ);
+	irq_enable(CONFIG_BLUETOOTH_UART_IRQ);
 
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(h4_dev)) {

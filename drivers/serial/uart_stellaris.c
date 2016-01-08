@@ -565,20 +565,6 @@ static int uart_stellaris_irq_update(struct device *dev)
 	return 1;
 }
 
-/**
- * @brief Returns UART interrupt number
- *
- * Returns the IRQ number used by the specified UART port
- *
- * @param dev UART device struct (of type struct uart_device_config)
- *
- * @return IRQ number
- */
-static unsigned int uart_stellaris_irq_get(struct device *dev)
-{
-	return (unsigned int)DEV_CFG(dev)->irq;
-}
-
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
@@ -600,7 +586,6 @@ static struct uart_driver_api uart_stellaris_driver_api = {
 	.irq_err_disable = uart_stellaris_irq_err_disable,
 	.irq_is_pending = uart_stellaris_irq_is_pending,
 	.irq_update = uart_stellaris_irq_update,
-	.irq_get = uart_stellaris_irq_get,
 
 #endif
 };
@@ -610,8 +595,6 @@ static struct uart_driver_api uart_stellaris_driver_api = {
 
 static struct uart_device_config uart_stellaris_dev_cfg_0 = {
 	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_0_BASE_ADDR,
-	.irq = CONFIG_UART_STELLARIS_PORT_0_IRQ,
-
 	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_0_CLK_FREQ,
 };
 
@@ -633,8 +616,6 @@ SYS_DEFINE_DEVICE(uart_stellaris0, &uart_stellaris_dev_data_0, PRIMARY,
 
 static struct uart_device_config uart_stellaris_dev_cfg_1 = {
 	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_1_BASE_ADDR,
-	.irq = CONFIG_UART_STELLARIS_PORT_1_IRQ,
-
 	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_1_CLK_FREQ,
 };
 
@@ -656,8 +637,6 @@ SYS_DEFINE_DEVICE(uart_stellaris1, &uart_stellaris_dev_data_1, PRIMARY,
 
 static struct uart_device_config uart_stellaris_dev_cfg_2 = {
 	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_2_BASE_ADDR,
-	.irq = CONFIG_UART_STELLARIS_PORT_2_IRQ,
-
 	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_2_CLK_FREQ,
 };
 

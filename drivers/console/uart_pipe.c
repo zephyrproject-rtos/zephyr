@@ -80,8 +80,8 @@ static void uart_pipe_setup(struct device *uart)
 {
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
-	IRQ_CONFIG(uart_pipe, uart_irq_get(uart));
-	irq_enable(uart_irq_get(uart));
+	IRQ_CONFIG(uart_pipe, CONFIG_UART_PIPE_IRQ);
+	irq_enable(CONFIG_UART_PIPE_IRQ);
 
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(uart)) {
