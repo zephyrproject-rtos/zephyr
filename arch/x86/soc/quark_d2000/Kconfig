@@ -48,6 +48,9 @@ config PHYS_RAM_ADDR
 	help
 	This option specifies the physical SRAM address of this Soc.
 
+config TOOLCHAIN_VARIANT
+        default "iamcu"
+
 config KERNEL_INIT_PRIORITY_DEFAULT
 	default 40
 

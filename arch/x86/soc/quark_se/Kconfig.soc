@@ -9,3 +9,4 @@ config  SOC_QUARK_SE
         select EOI_HANDLER_SUPPORTED
         select BOOTLOADER_UNKNOWN
         select XIP
+	select X86_IAMCU

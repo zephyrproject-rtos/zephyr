@@ -7,3 +7,4 @@ config  SOC_QUARK_D2000
         select BOOTLOADER_UNKNOWN
         select XIP
         select MVIC
+	select X86_IAMCU

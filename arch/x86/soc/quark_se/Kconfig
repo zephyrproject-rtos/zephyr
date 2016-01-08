@@ -48,6 +48,10 @@ config EOI_FORWARDING_BUG
 	Quark SE LOAPIC has issues with forwarding EOI to the IOAPIC for level
 	triggered interrupts, this is a SW workaround.
 
+
+config TOOLCHAIN_VARIANT
+	default "iamcu"
+
 if PINMUX
 config PINMUX_BASE
         default 0xb0800900
