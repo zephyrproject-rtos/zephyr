@@ -68,10 +68,9 @@ static int __LocalIntVecAlloc(unsigned int irq, unsigned int priority);
  *     routine _IntVecAlloc() provided by the nanokernel will be used to
  *     perform the the allocation since the local APIC prioritizes interrupts
  *     as assumed by _IntVecAlloc().
- *  b) If an interrupt vector can be allocated, and the <irq> argument is not
- *     equal to NANO_SOFT_IRQ, the IOAPIC redirection table (RED) or the
- *     LOAPIC local vector table (LVT) will be updated with the allocated
- *     interrupt vector.
+ *  b) If an interrupt vector can be allocated, the IOAPIC redirection table
+ *     (RED) or the LOAPIC local vector table (LVT) will be updated with the
+ *     allocated interrupt vector.
  *
  * The board virtualizes IRQs as follows:
  *
@@ -110,33 +109,17 @@ int _SysIntVecAlloc(
 {
 	int vector;
 
-#if defined(CONFIG_LOAPIC_DEBUG)
-	if ((priority > 15) ||
-		((irq > HARDWARE_IRQ_LIMIT) && (irq != NANO_SOFT_IRQ)))
-		return -1;
-#endif
+	__ASSERT(priority < 16, "invalid priority");
+	__ASSERT(irq >= 0 && irq <= HARDWARE_IRQ_LIMIT, "invalid irq line");
 
 	vector = __LocalIntVecAlloc(irq, priority);
 
 	/*
 	 * Set up the appropriate interrupt controller to generate the allocated
-	 * interrupt vector for the specified IRQ.  Also, provide the required
-	 * EOI related information for the interrupt stub code generation
-	 * step.
-	 *
-	 * For software interrupts (NANO_SOFT_IRQ), skip the interrupt
-	 * controller programming step, and indicate that an EOI handler is not
-	 * required.
+	 * interrupt vector for the specified IRQ
 	 */
-
-#if defined(CONFIG_LOAPIC_DEBUG)
-	if ((vector != -1) && (irq != NANO_SOFT_IRQ))
-#else
-	if (irq != NANO_SOFT_IRQ)
-#endif
-	{
-		_SysIntVecProgram(vector, irq, flags);
-	}
+	__ASSERT(vector != -1, "bad vector id");
+	_SysIntVecProgram(vector, irq, flags);
 
 	return vector;
 }
@@ -221,19 +204,15 @@ void irq_disable(unsigned int irq)
 #ifdef FIXED_HARDWARE_IRQ_TO_VEC_MAPPING
 static inline int handle_fixed_mapping(int irq, int *vector)
 {
-	if (irq != NANO_SOFT_IRQ) {
+	/*
+	 * On this board Hardware IRQs are fixed and not programmable.
+	 */
+	*vector = FIXED_HARDWARE_IRQ_TO_VEC_MAPPING(irq);
 
-		/*
-		 * On this board Hardware IRQs are fixed and not programmable.
-		 */
-		*vector = FIXED_HARDWARE_IRQ_TO_VEC_MAPPING(irq);
+	/* mark vector as allocated */
+	_IntVecMarkAllocated(*vector);
 
-		/* mark vector as allocated */
-		_IntVecMarkAllocated(*vector);
-
-		return *vector;
-	}
-	return 0;
+	return *vector;
 }
 #else
 static inline int handle_fixed_mapping(int irq, int *vector)

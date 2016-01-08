@@ -362,7 +362,8 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 
 /**
  * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
- * to irq_connect() when connecting to a software generated interrupt.
+ * to NANO_CPU_INT_REGSITER when connecting to an interrupt that does not
+ * correspond to any IRQ line (such as spurious vector or SW IRQ)
  */
 #define NANO_SOFT_IRQ	((unsigned int) (-1))
 

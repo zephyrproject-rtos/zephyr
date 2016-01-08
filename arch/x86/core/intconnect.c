@@ -167,9 +167,7 @@ extern void *_DynIntStubsBegin;
  *
  * This routine connects an interrupt service routine (ISR) coded in C to
  * the specified hardware <irq>.  An interrupt vector will be allocated to
- * satisfy the specified <priority>.  If the interrupt service routine is being
- * connected to a software generated interrupt, then <irq> must be set to
- * NANO_SOFT_IRQ.
+ * satisfy the specified <priority>.
  *
  * The specified <irq> represents a virtualized IRQ, i.e. it does not
  * necessarily represent a specific IRQ line on a given interrupt controller
