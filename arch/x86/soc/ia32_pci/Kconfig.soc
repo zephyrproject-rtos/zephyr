@@ -1,6 +1,0 @@
-
-config SOC_IA32_PCI
-	bool "Generic IA32 SoC with PCI"
-	select HPET_TIMER
-	select BOOTLOADER_UNKNOWN
-	select PCI
