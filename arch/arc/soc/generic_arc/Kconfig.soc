@@ -1,4 +1,0 @@
-
-config SOC_GENERIC_ARC
-	prompt "Generic ARC Support"
-        bool
