@@ -1569,32 +1569,19 @@ static void pin_code_req(struct net_buf *buf)
 static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 {
 	struct bt_hci_cp_pin_code_neg_reply *cp;
-	struct bt_conn *conn;
 	struct net_buf *buf;
-	int err;
 
 	BT_DBG("");
 
-	conn = bt_conn_lookup_addr_br(bdaddr);
-	if (!conn) {
-		BT_ERR("Can't find conn for %s", bt_addr_str(bdaddr));
-		return -EINVAL;
-	}
-
 	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_NEG_REPLY, sizeof(*cp));
 	if (!buf) {
-		bt_conn_unref(conn);
 		return -ENOBUFS;
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
-
-	bt_conn_unref(conn);
-
-	return err;
+	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
 }
 
 static int pin_code_reply(const bt_addr_t *bdaddr, const char *pin)
