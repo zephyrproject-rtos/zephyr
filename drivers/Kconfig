@@ -63,4 +63,6 @@ source "drivers/aio/Kconfig"
 
 source "drivers/qmsi/Kconfig"
 
+source "drivers/nble/Kconfig"
+
 endmenu
