@@ -55,6 +55,11 @@ static int quark_d2000_init(struct device *arg)
 	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 1);
 #endif /* CONFIG_UART_NS16550 */
 
+#ifdef CONFIG_I2C_DW_0
+	/* Unmask interrupt */
+	sys_clear_bit(I2C_MST_0_INT_MASK, 0);
+#endif
+
 	return 0;
 }
 DECLARE_DEVICE_INIT_CONFIG(quark_d2000_0, "", quark_d2000_init, NULL);

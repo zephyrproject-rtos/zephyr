@@ -126,6 +126,8 @@ struct scss_interrupt {
 #define RTC_DW_INT_MASK			(SCSS_INT_BASE + 0x78)
 #define CCU_RTC_CLK_DIV_OFFSET          0x3
 
+/* I2C MST 0 */
+#define I2C_MST_0_INT_MASK		(SCSS_INT_BASE + 0x48)
 
 #ifdef CONFIG_MVIC
 #include <drivers/ioapic.h>

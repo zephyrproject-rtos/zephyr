@@ -28,13 +28,13 @@
 #endif
 
 #if defined(CONFIG_I2C_DW_0)
-#ifdef CONFIG_IOAPIC
+#if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
     ioapic_mkstub i2c_dw_0 i2c_dw_isr i2c_dw_isr_0_device
 #endif
 #endif /* CONFIG_I2C_DW_0 */
 
 #if defined(CONFIG_I2C_DW_1)
-#ifdef CONFIG_IOAPIC
+#if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
     ioapic_mkstub i2c_dw_1 i2c_dw_isr i2c_dw_isr_1_device
 #endif
 #endif /* CONFIG_I2C_DW_1 */

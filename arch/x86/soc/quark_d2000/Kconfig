@@ -185,8 +185,18 @@ config I2C_DW_0_BASE
 config I2C_DW_0_NAME
         default "I2C0"
 
+config I2C_DW_0_IRQ
+        default 4
+
 config I2C_DW_0_INT_PRIORITY
         default 0
+
+config I2C_DW_0_DEFAULT_CFG
+        default 0x12
+
+config I2C_CLOCK_SPEED
+        default 32
+
 endif
 
 endif # SOC_QUARK_D2000
