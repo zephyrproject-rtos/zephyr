@@ -781,10 +781,6 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
-	if (conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
-	}
-
 	info->type = conn->type;
 
 	switch (conn->type) {
