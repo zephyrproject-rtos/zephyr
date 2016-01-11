@@ -1,6 +1,6 @@
 GAP PICS for the PTS tool.
 
-PTS version: 6.3
+PTS version: 6.4
 
 * - different than PTS defaults
 ^ - field not available on PTS
@@ -87,8 +87,7 @@ TSPC_GAP_4_3	False (*)	Support channel establishment as initiator (O)
 TSPC_GAP_4_4	False (*)	Support channel establishment as acceptor (M)
 TSPC_GAP_4_5	False (*)	Support connection establishment as initiator
 					(O)
-TSPC_GAP_4_6	False (*)	Support connection establishment as acceptor
-					(O)
+TSPC_GAP_4_6	False (*)	Support connection establishment as acceptor (O)
 TSPC_GAP_4_7	False (*)	Support synchronization establishment
 					as receiver (C.1)
 -------------------------------------------------------------------------------
@@ -176,9 +175,9 @@ TSPC_GAP_10_1	True		Broadcast Mode (M)
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_11_1	False (*)	Privacy Feature v.1.0 (C.2)
+TSPC_GAP_11_1	False (*)	Privacy Feature v1.0 (C.2)
 TSPC_GAP_11_1A	False (*)	Privacy Feature v1.1 (C.3)
-TSPC_GAP_11_1B	(^)		Privacy Feature v1.2 (C.4)
+TSPC_GAP_11_1B	(^)		Privacy Feature v1.2 (C.5)
 TSPC_GAP_11_2	False (*)	Resolvable Private Address Generation Procedure
 					(C.1)
 TSPC_GAP_11_3	False (*)	Non-Resolvable Private Address Generation
@@ -190,8 +189,8 @@ TSPC_GAP_11_3	False (*)	Non-Resolvable Private Address Generation
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_12_1	True		Receiver
-TSPC_GAP_12_2	True		Transmitter
+TSPC_GAP_12_1	True		Receiver (M)
+TSPC_GAP_12_2	True		Transmitter (O)
 -------------------------------------------------------------------------------
 
 
@@ -199,8 +198,8 @@ TSPC_GAP_12_2	True		Transmitter
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_13_1	True		Standby
-TSPC_GAP_13_2	True		Scanning
+TSPC_GAP_13_1	True		Standby (M)
+TSPC_GAP_13_2	True		Scanning (M)
 -------------------------------------------------------------------------------
 
 
@@ -208,8 +207,8 @@ TSPC_GAP_13_2	True		Scanning
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_14_1	True		Passive Scanning
-TSPC_GAP_14_2	True		Active Scanning
+TSPC_GAP_14_1	True		Passive Scanning (M)
+TSPC_GAP_14_2	True		Active Scanning (O)
 -------------------------------------------------------------------------------
 
 
@@ -217,7 +216,7 @@ TSPC_GAP_14_2	True		Active Scanning
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_15_1	True		Non-Connectable Mode
+TSPC_GAP_15_1	True		Non-Connectable Mode (M)
 -------------------------------------------------------------------------------
 
 
@@ -225,7 +224,7 @@ TSPC_GAP_15_1	True		Non-Connectable Mode
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_16_1	True		Observation Procedure
+TSPC_GAP_16_1	True		Observation Procedure (M)
 -------------------------------------------------------------------------------
 
 
@@ -249,8 +248,8 @@ TSPC_GAP_17_4	False (*)	Resolvable Private Address Generation
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_18_1	True		Transmitter
-TSPC_GAP_18_2	True		Receiver
+TSPC_GAP_18_1	True		Transmitter (M)
+TSPC_GAP_18_2	True		Receiver (M)
 -------------------------------------------------------------------------------
 
 
@@ -258,9 +257,9 @@ TSPC_GAP_18_2	True		Receiver
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_19_1	True		Standby
-TSPC_GAP_19_2	True		Advertising
-TSPC_GAP_19_3	True		Connection, Slave Role
+TSPC_GAP_19_1	True		Standby (M)
+TSPC_GAP_19_2	True		Advertising (M)
+TSPC_GAP_19_3	True		Connection, Slave Role (C.1)
 -------------------------------------------------------------------------------
 
 
@@ -270,8 +269,8 @@ Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
 TSPC_GAP_20_1	True		Connectable Undirected Event (C.1)
 TSPC_GAP_20_2	True		Connectable Directed Event (C.2)
-TSPC_GAP_20_3	True		Non-Connectable Undirected Event
-TSPC_GAP_20_4	True		Scannable Undirected Event
+TSPC_GAP_20_3	True		Non-Connectable Undirected Event (O)
+TSPC_GAP_20_4	True		Scannable Undirected Event (O)
 -------------------------------------------------------------------------------
 
 
@@ -319,10 +318,10 @@ TSPC_GAP_21_9	True		Connection Parameter Request Procedure (C.5)
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_22_1	True		Non-Discoverable Mode (C.2)
-TSPC_GAP_22_2	True		Limited Discoverable Mode (C.1)
-TSPC_GAP_22_3	True		General Discoverable Mode (C.1)
-TSPC_GAP_22_4	True		Name Discovery Procedure (C.3)
+TSPC_GAP_22_1	True		Non-Discoverable Mode (C.1)
+TSPC_GAP_22_2	True		Limited Discoverable Mode (C.2)
+TSPC_GAP_22_3	True		General Discoverable Mode (C.3)
+TSPC_GAP_22_4	True		Name Discovery Procedure (C.4)
 -------------------------------------------------------------------------------
 
 
@@ -330,11 +329,11 @@ TSPC_GAP_22_4	True		Name Discovery Procedure (C.3)
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_23_1	True		Non-Connectable Mode (C.1)
-TSPC_GAP_23_2	False (*)	Directed Connectable Mode (O)
-TSPC_GAP_23_3	True		Undirected Connectable Mode (M)
-TSPC_GAP_23_4	True		Connection Parameter Update Procedure (O)
-TSPC_GAP_23_5	True		Terminate Connection Procedure (M)
+TSPC_GAP_23_1	True		Non-Connectable Mode (M)
+TSPC_GAP_23_2	False (*)	Directed Connectable Mode (C.1)
+TSPC_GAP_23_3	True		Undirected Connectable Mode (C.2)
+TSPC_GAP_23_4	True		Connection Parameter Update Procedure (C.2)
+TSPC_GAP_23_5	True		Terminate Connection Procedure (C.2)
 -------------------------------------------------------------------------------
 
 
@@ -344,8 +343,8 @@ Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
 TSPC_GAP_24_1	True		Non-Bondable Mode (M)
 TSPC_GAP_24_2	True		Bondable Mode (C.1)
-TSPC_GAP_24_3	True		Bonding Procedure  (C.2)
-TSPC_GAP_24_4	True		Multiple Bonds (C.3)
+TSPC_GAP_24_3	True		Bonding Procedure  (C.1)
+TSPC_GAP_24_4	True		Multiple Bonds (C.2)
 -------------------------------------------------------------------------------
 
 
@@ -353,12 +352,12 @@ TSPC_GAP_24_4	True		Multiple Bonds (C.3)
 -------------------------------------------------------------------------------
 Parameter Name	Selected	Description
 -------------------------------------------------------------------------------
-TSPC_GAP_25_1	True		Security Mode (O)
-TSPC_GAP_25_2	True		Security Mode 2 (O)
+TSPC_GAP_25_1	True		Security Mode (C.2)
+TSPC_GAP_25_2	True		Security Mode 2 (C.2)
 TSPC_GAP_25_3	True		Authentication Procedure (C.2)
-TSPC_GAP_25_4	False (*)	Authorization Procedure (O)
-TSPC_GAP_25_5	True		Connection Data Signing Procedure (O)
-TSPC_GAP_25_6	True		Authenticate Signed Data Procedure (O)
+TSPC_GAP_25_4	False (*)	Authorization Procedure (C.2)
+TSPC_GAP_25_5	True		Connection Data Signing Procedure (C.2)
+TSPC_GAP_25_6	True		Authenticate Signed Data Procedure (C.2)
 TSPC_GAP_25_7	True		Authenticated Pairing
 					(LE security mode 1 level 3) (C.1)
 TSPC_GAP_25_8	True		Unauthenticated Pairing
@@ -507,7 +506,7 @@ TSPC_GAP_36_1B	(^)		Privacy Feature v1.2 (C.7)
 TSPC_GAP_36_2	False (*)	Non-Resolvable Private Address Generation
 					Procedure (C.1)
 TSPC_GAP_36_3	False (*)	Resolvable Private Address Resolution Procedure
-					(C.2)
+					(C.3)
 TSPC_GAP_36_4	False (*)	Write to Privacy Characteristic
 					(Enable/Disable Privacy) (C.5)
 TSPC_GAP_36_5	False (*)	Resolvable Private Address Generation
