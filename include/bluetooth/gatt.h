@@ -21,6 +21,7 @@
 #define __BT_GATT_H
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
+#include <stddef.h>
 #include <misc/util.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
