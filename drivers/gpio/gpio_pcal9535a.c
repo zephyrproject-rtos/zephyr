@@ -102,8 +102,17 @@ static int _read_port_regs(struct device *dev, uint8_t reg,
 	uint16_t i2c_addr = config->i2c_slave_addr;
 	int ret;
 	uint8_t cmd[] = { reg };
+	struct i2c_msg msgs[2];
 
-	ret = i2c_transfer(i2c_master, cmd, 1, buf->byte, 2, i2c_addr, 0);
+	msgs[0].buf = cmd;
+	msgs[0].len = 1;
+	msgs[0].flags = I2C_MSG_WRITE;
+
+	msgs[1].buf = buf->byte;
+	msgs[1].len = 2;
+	msgs[1].flags = I2C_MSG_READ | I2C_MSG_RESTART;
+
+	ret = i2c_transfer(i2c_master, msgs, 2, i2c_addr);
 	if (ret) {
 		DBG("PCAL9535A[0x%X]: error reading register 0x%X (%d)\n",
 		    i2c_addr, reg, ret);

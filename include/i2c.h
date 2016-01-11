@@ -45,6 +45,26 @@ extern "C" {
 #define I2C_MODE_MASTER			(1 << 4)
 #define I2C_MODE_SLAVE_READ		(1 << 5)
 
+/* I2C Message Flags */
+#define I2C_MSG_WRITE			(0 << 0)
+#define I2C_MSG_READ			(1 << 0)
+#define I2C_MSG_RW_MASK			(1 << 0)
+
+/* STOP I2C transaction (drive should take care of this) */
+#define I2C_MSG_STOP			(1 << 1)
+/* RESTART I2C transaction */
+#define I2C_MSG_RESTART			(1 << 2)
+
+struct i2c_msg {
+	/* Data buffer in bytes */
+	uint8_t		*buf;
+
+	/* Length of buffer in bytes */
+	uint32_t	len;
+
+	/* Flags for this message */
+	uint8_t		flags;
+};
 
 union dev_config {
 	uint32_t raw;
@@ -66,12 +86,9 @@ enum i2c_cb_type {
 typedef int (*i2c_api_configure_t)(struct device *dev,
 				   uint32_t dev_config);
 typedef int (*i2c_api_full_io_t)(struct device *dev,
-				 uint8_t *tx_buf,
-				 uint32_t tx_len,
-				 uint8_t *rx_buf,
-				 uint32_t rx_len,
-				 uint16_t addr,
-				 uint32_t ctrl_flags);
+				 struct i2c_msg *msgs,
+				 uint8_t num_msgs,
+				 uint16_t addr);
 typedef int (*i2c_api_suspend_t)(struct device *dev);
 typedef int (*i2c_api_resume_t)(struct device *dev);
 
@@ -115,9 +132,14 @@ static inline int i2c_write(struct device *dev, uint8_t *buf,
 			    uint32_t len, uint16_t addr)
 {
 	struct i2c_driver_api *api;
+	struct i2c_msg msg;
+
+	msg.buf = buf;
+	msg.len = len;
+	msg.flags = I2C_MSG_WRITE;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->transfer(dev, buf, len, 0, 0, addr, 0);
+	return api->transfer(dev, &msg, 1, addr);
 }
 
 /**
@@ -136,9 +158,14 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
 			   uint32_t len, uint16_t addr)
 {
 	struct i2c_driver_api *api;
+	struct i2c_msg msg;
+
+	msg.buf = buf;
+	msg.len = len;
+	msg.flags = I2C_MSG_READ;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->transfer(dev, 0, 0, buf, len, addr, 0);
+	return api->transfer(dev, &msg, 1, addr);
 }
 
 /**
@@ -149,25 +176,20 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
  * use i2c_read()/i2c_write() instead. The function is synchronous.
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param tx_buf Memory pool that data should be transferred from
- * @param tx_len Size of the memory pool available for reading from
- * @param rx_buf Memory pool that data should be transferred to
- * @param rx_len Size of the memory pool available for writing to
+ * @param msgs Array of messages
+ * @param num_msgs Number of messages
  * @param addr Address of the I2C target device
- * @param ctrl_flags Control flags for this transfer
  *
  * @return DEV_OK if successful, another DEV_* code otherwise.
  */
 static inline int i2c_transfer(struct device *dev,
-			       uint8_t *tx_buf, uint32_t tx_len,
-			       uint8_t *rx_buf, uint32_t rx_len,
-			       uint16_t addr, uint32_t ctrl_flags)
+			       struct i2c_msg *msgs, uint8_t num_msgs,
+			       uint16_t addr)
 {
 	struct i2c_driver_api *api;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->transfer(dev, tx_buf, tx_len,
-			     rx_buf, rx_len, addr, ctrl_flags);
+	return api->transfer(dev, msgs, num_msgs, addr);
 }
 
 /**

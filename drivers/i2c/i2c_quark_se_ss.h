@@ -76,11 +76,11 @@ struct i2c_qse_ss_dev_config {
 
 	volatile uint8_t	state;  /* last direction of transfer */
 
-	uint8_t			request_bytes;
-	uint8_t			rx_len;
-	uint8_t			*rx_buffer;
-	uint8_t			tx_len;
-	uint8_t			*tx_buffer;
+	uint8_t			xfr_flags;
+
+	uint8_t			*xfr_buf;
+	uint32_t		xfr_len;
+	uint32_t		request_bytes;
 
 	uint16_t		hcnt;
 	uint16_t		lcnt;

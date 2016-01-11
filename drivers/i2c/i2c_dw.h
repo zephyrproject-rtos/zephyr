@@ -112,10 +112,10 @@ struct i2c_dw_dev_config {
 	volatile uint8_t	state;  /* last direction of transfer */
 
 	uint8_t			request_bytes;
-	uint8_t			rx_len;
-	uint8_t			*rx_buffer;
-	uint8_t			tx_len;
-	uint8_t			*tx_buffer;
+	uint8_t			xfr_flags;
+
+	uint8_t			*xfr_buf;
+	uint32_t		xfr_len;
 
 	bool			support_hs_mode;
 	uint16_t		hcnt;

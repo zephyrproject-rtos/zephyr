@@ -52,7 +52,7 @@
 #endif /* CONFIG_STDOUT_CONSOLE */
 #endif /* CONFIG_I2C_DEBUG */
 
-static inline void _i2c_dw_data_ask(struct device *dev, uint8_t restart)
+static inline void _i2c_dw_data_ask(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
@@ -61,21 +61,23 @@ static inline void _i2c_dw_data_ask(struct device *dev, uint8_t restart)
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
 
-	/* No more bytes to request */
+	/* No more bytes to request, so command queue is no longer needed */
 	if (dw->request_bytes == 0) {
+		regs->ic_intr_mask.bits.tx_empty = 0;
 		return;
 	}
 
 	/* Tell controller to get another byte */
 	data = IC_DATA_CMD_CMD;
 
-	/* Send restart if needed) */
-	if (restart) {
+	/* Send RESTART if needed */
+	if (dw->xfr_flags & I2C_MSG_RESTART) {
 		data |= IC_DATA_CMD_RESTART;
+		dw->xfr_flags &= ~(I2C_MSG_RESTART);
 	}
 
-	/* After receiving the last byte, send STOP */
-	if (dw->request_bytes == 1) {
+	/* After receiving the last byte, send STOP if needed */
+	if ((dw->xfr_flags & I2C_MSG_STOP) && (dw->request_bytes == 1)) {
 		data |= IC_DATA_CMD_STOP;
 	}
 
@@ -92,21 +94,21 @@ static void _i2c_dw_data_read(struct device *dev)
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
 
-	while (regs->ic_status.bits.rfne && (dw->rx_len > 0)) {
-		dw->rx_buffer[0] = regs->ic_data_cmd.raw;
+	while (regs->ic_status.bits.rfne && (dw->xfr_len > 0)) {
+		dw->xfr_buf[0] = regs->ic_data_cmd.raw;
 
-		dw->rx_buffer += 1;
-		dw->rx_len -= 1;
+		dw->xfr_buf++;
+		dw->xfr_len--;
 
-		if (dw->rx_len == 0) {
+		if (dw->xfr_len == 0) {
 			break;
 		}
 
-		_i2c_dw_data_ask(dev, 0);
+		_i2c_dw_data_ask(dev);
 	}
 
 	/* Nothing to receive anymore */
-	if (dw->rx_len == 0) {
+	if (dw->xfr_len == 0) {
 		dw->state &= ~I2C_DW_CMD_RECV;
 		return;
 	}
@@ -123,41 +125,33 @@ static void _i2c_dw_data_send(struct device *dev)
 		(struct i2c_dw_registers *)rom->base_address;
 
 	/* Nothing to send anymore, mask the interrupt */
-	if (dw->tx_len == 0) {
+	if (dw->xfr_len == 0) {
 		regs->ic_intr_mask.bits.tx_empty = 0;
-
-		if (dw->rx_len > 0) {
-			/* Tell controller to grab a byte.
-			 * RESTART if something has ben sent.
-			 */
-			_i2c_dw_data_ask(dev, (dw->state & I2C_DW_CMD_SEND));
-
-			/* QUIRK:
-			 * If requesting more than one byte, the process has
-			 * to be jump-started by requesting two bytes first.
-			 */
-			_i2c_dw_data_ask(dev, 0);
-		}
 
 		dw->state &= ~I2C_DW_CMD_SEND;
 
 		return;
 	}
 
-	while (regs->ic_status.bits.tfnf && (dw->tx_len > 0)) {
+	while (regs->ic_status.bits.tfnf && (dw->xfr_len > 0)) {
 		/* We have something to transmit to a specific host */
-		data = dw->tx_buffer[0];
+		data = dw->xfr_buf[0];
 
-		/* If this is the last byte to write
-		 * and nothing to receive, send STOP.
-		 */
-		if ((dw->tx_len == 1) && (dw->rx_len == 0)) {
+		/* Send RESTART if needed */
+		if (dw->xfr_flags & I2C_MSG_RESTART) {
+			data |= IC_DATA_CMD_RESTART;
+			dw->xfr_flags &= ~(I2C_MSG_RESTART);
+		}
+
+		/* Send STOP if needed */
+		if ((dw->xfr_len == 1) && (dw->xfr_flags & I2C_MSG_STOP)) {
 			data |= IC_DATA_CMD_STOP;
 		}
 
 		regs->ic_data_cmd.raw = data;
-		dw->tx_len -= 1;
-		dw->tx_buffer += 1;
+
+		dw->xfr_len--;
+		dw->xfr_buf++;
 	}
 }
 
@@ -165,44 +159,38 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	bool done = false;
 	uint32_t value;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
 
-	if ((dw->state == I2C_DW_CMD_ERROR) ||
-	    (!dw->tx_len && !dw->rx_len) ||
-	    (dw->tx_buffer && !dw->tx_len && !dw->rx_buffer) ||
-	    (dw->rx_buffer && !dw->rx_len && !dw->tx_buffer)) {
-		done = true;
-	}
+	regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
+	value = regs->ic_clr_intr;
 
-	if (done) {
-		regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
-		value = regs->ic_clr_intr;
-
-		synchronous_call_complete(&dw->sync);
-	}
-
-	dw->state &= ~I2C_DW_BUSY;
+	synchronous_call_complete(&dw->sync);
 }
 
 void i2c_dw_isr(struct device *port)
 {
 	struct i2c_dw_rom_config const * const rom = port->config->config_info;
 	struct i2c_dw_dev_config * const dw = port->driver_data;
-	uint32_t value = 0;
+	union ic_interrupt_register intr_stat;
+	uint32_t value;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
+
+	/* Cache ic_intr_stat for processing, so there is no need to read
+	 * the register multiple times.
+	 */
+	intr_stat.raw = regs->ic_intr_stat.raw;
 
 #if CONFIG_SHARED_IRQ
 	/* If using with shared IRQ, this function will be called
 	 * by the shared IRQ driver. So check here if the interrupt
 	 * is coming from the I2C controller (or somewhere else).
 	 */
-	if (!regs->ic_intr_stat.raw) {
+	if (!intr_stat.raw) {
 		return;
 	}
 #endif
@@ -222,41 +210,51 @@ void i2c_dw_isr(struct device *port)
 
 	DBG("I2C: interrupt received\n");
 
-	/*
-	 * We got a STOP_DET, this means stop right after this byte has been
-	 * handled.
-	 */
-	if (regs->ic_intr_stat.bits.stop_det) {
-		value = regs->ic_clr_stop_det;
-		_i2c_dw_transfer_complete(port);
-	}
-
 	/* Check if we are configured as a master device */
 	if (regs->ic_con.bits.master_mode) {
-		/* Check if the Master TX is ready for sending */
-		if (regs->ic_intr_stat.bits.tx_empty) {
-			_i2c_dw_data_send(port);
+		/* Bail early if there is any error. */
+		if ((DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_TX_OVER |
+		     DW_INTR_STAT_RX_OVER | DW_INTR_STAT_RX_UNDER) &
+		    intr_stat.raw) {
+			dw->state = I2C_DW_CMD_ERROR;
+			_i2c_dw_transfer_complete(port);
+			return;
 		}
 
 		/* Check if the RX FIFO reached threshold */
-		if (regs->ic_intr_stat.bits.rx_full) {
+		if (intr_stat.bits.rx_full) {
 			_i2c_dw_data_read(port);
 		}
 
-		if ((DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_TX_OVER |
-		     DW_INTR_STAT_RX_OVER | DW_INTR_STAT_RX_UNDER) &
-		    regs->ic_intr_stat.raw) {
-			dw->state = I2C_DW_CMD_ERROR;
-			_i2c_dw_transfer_complete(port);
+		/* Check if the TX FIFO is ready for commands.
+		 * TX FIFO also serves as command queue where read requests
+		 * are written to TX FIFO.
+		 */
+		if (intr_stat.bits.tx_empty) {
+			if ((dw->xfr_flags & I2C_MSG_RW_MASK)
+			    == I2C_MSG_WRITE) {
+				_i2c_dw_data_send(port);
+			} else {
+				_i2c_dw_data_ask(port);
+			}
+
+			/* If STOP is not expected, finish processing this
+			 * message if there is nothing left to do anymore.
+			 */
+			if ((dw->xfr_len == 0)
+			    && !(dw->xfr_flags & I2C_MSG_STOP)) {
+				_i2c_dw_transfer_complete(port);
+				return;
+			}
 		}
 	} else { /* we must be configured as a slave device */
 
 		/* We have a read requested by the master device */
-		if (regs->ic_intr_stat.bits.rd_req &&
+		if (intr_stat.bits.rd_req &&
 		    (!dw->app_config.bits.is_slave_read)) {
 
 			/* data is not ready to send */
-			if (regs->ic_intr_stat.bits.tx_abrt) {
+			if (intr_stat.bits.tx_abrt) {
 				/* clear the TX_ABRT interrupt */
 				value = regs->ic_clr_tx_abrt;
 			}
@@ -266,10 +264,17 @@ void i2c_dw_isr(struct device *port)
 		}
 
 		/* The slave device is ready to receive */
-		if (regs->ic_intr_stat.bits.rx_full &&
+		if (intr_stat.bits.rx_full &&
 		    dw->app_config.bits.is_slave_read) {
 			_i2c_dw_data_read(port);
 		}
+	}
+
+	/* STOP detected: finish processing this message */
+	if (intr_stat.bits.stop_det) {
+		value = regs->ic_clr_stop_det;
+		_i2c_dw_transfer_complete(port);
+		return;
 	}
 }
 
@@ -375,32 +380,14 @@ static int _i2c_dw_setup(struct device *dev)
 }
 
 
-static int _i2c_dw_transfer_init(struct device *dev,
-				 uint8_t *write_buf, uint32_t write_len,
-				 uint8_t *read_buf,  uint32_t read_len,
-				 uint16_t slave_address)
+static int _i2c_dw_transfer_init(struct device *dev, uint16_t slave_address)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	uint32_t value = 0;
-	int ret = DEV_OK;
+	uint32_t value;
+	int ret;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
-
-	dw->state |= I2C_DW_BUSY;
-	if (write_len > 0) {
-		dw->state |= I2C_DW_CMD_SEND;
-	}
-	if (read_len > 0) {
-		dw->state |= I2C_DW_CMD_RECV;
-	}
-
-	dw->rx_len = read_len;
-	dw->rx_buffer = read_buf;
-	dw->tx_len = write_len;
-	dw->tx_buffer = write_buf;
-	dw->request_bytes = read_len;
 
 	/* Disable the device controller to be able set TAR */
 	regs->ic_enable.bits.enable = 0;
@@ -428,46 +415,95 @@ static int _i2c_dw_transfer_init(struct device *dev,
 }
 
 static int i2c_dw_transfer(struct device *dev,
-			   uint8_t *write_buf, uint32_t write_len,
-			   uint8_t *read_buf,  uint32_t read_len,
-			   uint16_t slave_address, uint32_t flags)
+			   struct i2c_msg *msgs, uint8_t num_msgs,
+			   uint16_t slave_address)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	struct i2c_msg *cur_msg = msgs;
+	uint8_t msg_left = num_msgs;
+	uint8_t pflags;
 	int ret;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
 
+	/* Why bother processing no messages */
+	if (!msgs || !num_msgs) {
+		return DEV_INVALID_OP;
+	}
+
 	/* First step, check if there is current activity */
-	if (regs->ic_status.bits.activity) {
+	if ((regs->ic_status.bits.activity) || (dw->state & I2C_DW_BUSY)) {
 		return DEV_FAIL;
 	}
 
-	ret = _i2c_dw_transfer_init(dev, write_buf, write_len,
-				    read_buf, read_len, slave_address);
+	dw->state |= I2C_DW_BUSY;
+
+	ret = _i2c_dw_transfer_init(dev, slave_address);
 	if (ret) {
+		dw->state = I2C_DW_STATE_READY;
 		return ret;
-	}
-
-	/* Trigger IRQ when TX_EMPTY */
-	regs->ic_con.bits.tx_empty_ctl = 1;
-
-	if (regs->ic_con.bits.master_mode) {
-		/* Enable necessary interrupts */
-		regs->ic_intr_mask.raw = (DW_ENABLE_TX_INT_I2C_MASTER |
-					  DW_ENABLE_RX_INT_I2C_MASTER);
-	} else {
-		/* Enable necessary interrupts */
-		regs->ic_intr_mask.raw = DW_ENABLE_TX_INT_I2C_SLAVE;
 	}
 
 	/* Enable controller */
 	regs->ic_enable.bits.enable = 1;
 
-	synchronous_call_wait(&dw->sync);
-	if (dw->state == I2C_DW_CMD_ERROR) {
-		ret = DEV_FAIL;
+		/* Process all the messages */
+	while (msg_left > 0) {
+		pflags = dw->xfr_flags;
+
+		dw->xfr_buf = cur_msg->buf;
+		dw->xfr_len = cur_msg->len;
+		dw->xfr_flags = cur_msg->flags;
+
+		/* Need to RESTART if changing transfer direction */
+		if ((pflags & I2C_MSG_RW_MASK)
+		    != (dw->xfr_flags & I2C_MSG_RW_MASK)) {
+			dw->xfr_flags |= I2C_MSG_RESTART;
+		}
+
+		/* Send STOP if this is the last message */
+		if (msg_left == 1) {
+			dw->xfr_flags |= I2C_MSG_STOP;
+		}
+
+		dw->state &= ~(I2C_DW_CMD_SEND | I2C_DW_CMD_RECV);
+
+		if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+			dw->state |= I2C_DW_CMD_SEND;
+			dw->request_bytes = 0;
+		} else {
+			dw->state |= I2C_DW_CMD_RECV;
+			dw->request_bytes = dw->xfr_len;
+		}
+
+		/* Enable interrupts to trigger ISR */
+		if (regs->ic_con.bits.master_mode) {
+			/* Enable necessary interrupts */
+			regs->ic_intr_mask.raw = (DW_ENABLE_TX_INT_I2C_MASTER |
+						  DW_ENABLE_RX_INT_I2C_MASTER);
+		} else {
+			/* Enable necessary interrupts */
+			regs->ic_intr_mask.raw = DW_ENABLE_TX_INT_I2C_SLAVE;
+		}
+
+		/* Wait for transfer to be done */
+		synchronous_call_wait(&dw->sync);
+
+		if (dw->state & I2C_DW_CMD_ERROR) {
+			ret = DEV_FAIL;
+			break;
+		}
+
+		/* Something wrong if there is something left to do */
+		if (dw->xfr_len > 0) {
+			ret = DEV_FAIL;
+			break;
+		}
+
+		cur_msg++;
+		msg_left--;
 	}
 
 	dw->state = I2C_DW_STATE_READY;
@@ -739,7 +775,7 @@ IRQ_CONNECT_STATIC(i2c_dw_0,
 		   CONFIG_I2C_DW_0_IRQ,
 		   CONFIG_I2C_DW_0_INT_PRIORITY,
 		   i2c_dw_isr,
-		   0,
+		   SYS_GET_DEVICE(i2c_0),
 		   I2C_DW_IRQ_FLAGS);
 #endif
 
@@ -801,7 +837,7 @@ IRQ_CONNECT_STATIC(i2c_dw_1,
 		   CONFIG_I2C_DW_1_IRQ,
 		   CONFIG_I2C_DW_1_INT_PRIORITY,
 		   i2c_dw_isr,
-		   0,
+		   SYS_GET_DEVICE(i2c_1),
 		   I2C_DW_IRQ_FLAGS);
 
 void i2c_config_1(struct device *port)

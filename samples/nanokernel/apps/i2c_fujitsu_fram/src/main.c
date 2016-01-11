@@ -29,30 +29,52 @@
 
 int write_byte(struct device *i2c_dev, uint16_t addr, uint8_t data)
 {
-	uint8_t wr_data[3];
+	uint8_t wr_addr[2];
+	struct i2c_msg msgs[2];
 
 	/* FRAM address */
-	wr_data[0] = (addr >> 8) & 0xFF;
-	wr_data[1] = addr & 0xFF;
+	wr_addr[0] = (addr >> 8) & 0xFF;
+	wr_addr[1] = addr & 0xFF;
 
-	/* The byte to write */
-	wr_data[2] = data;
+	/* Setup I2C messages */
 
-	return i2c_write(i2c_dev, wr_data, sizeof(wr_data), FRAM_I2C_ADDR);
+	/* Send the address to write */
+	msgs[0].buf = wr_addr;
+	msgs[0].len = 2;
+	msgs[0].flags = I2C_MSG_WRITE;
+
+	/* Data to be written, and STOP after this. */
+	msgs[1].buf = &data;
+	msgs[1].len = 1;
+	msgs[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	return i2c_transfer(i2c_dev, &msgs[0], 2, FRAM_I2C_ADDR);
 }
 
 int read_byte(struct device *i2c_dev, uint16_t addr, uint8_t *data)
 {
-	uint8_t wr_data[2];
+	uint8_t wr_addr[2];
+	struct i2c_msg msgs[2];
 
 	/* Now try to read back from FRAM */
 
 	/* FRAM address */
-	wr_data[0] = (addr >> 8) & 0xFF;
-	wr_data[1] = addr & 0xFF;
+	wr_addr[0] = (addr >> 8) & 0xFF;
+	wr_addr[1] = addr & 0xFF;
 
-	return i2c_transfer(i2c_dev, wr_data, sizeof(wr_data),
-			    data, 1, FRAM_I2C_ADDR, 0);
+	/* Setup I2C messages */
+
+	/* Send the address to read */
+	msgs[0].buf = wr_addr;
+	msgs[0].len = 2;
+	msgs[0].flags = I2C_MSG_WRITE;
+
+	/* Read from device. RESTART as neededm and STOP after this. */
+	msgs[1].buf = data;
+	msgs[1].len = 1;
+	msgs[1].flags = I2C_MSG_READ | I2C_MSG_RESTART;
+
+	return i2c_transfer(i2c_dev, &msgs[0], 2, FRAM_I2C_ADDR);
 }
 
 void main(void)

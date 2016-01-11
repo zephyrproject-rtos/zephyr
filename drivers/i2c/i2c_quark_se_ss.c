@@ -127,26 +127,30 @@ static inline bool _i2c_qse_ss_check_irq(struct device *dev, uint32_t mask)
 	return _i2c_qse_ss_reg_check_bit(dev, REG_INTR_STAT, mask);
 }
 
-static inline void _i2c_qse_ss_data_ask(struct device *dev, uint8_t restart)
+static inline void _i2c_qse_ss_data_ask(struct device *dev)
 {
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
 	uint32_t data;
 
-	/* No more bytes to request */
+	/* No more bytes to request, so command queue is no longer needed */
 	if (dw->request_bytes == 0) {
+		_i2c_qse_ss_reg_write_and(dev, REG_INTR_MASK,
+					  ~(IC_INTR_TX_EMPTY));
+
 		return;
 	}
 
 	/* Tell controller to get another byte */
 	data = IC_DATA_CMD_CMD | IC_DATA_CMD_STROBE | IC_DATA_CMD_POP;
 
-	/* Send restart if needed) */
-	if (restart) {
+	/* Send RESTART if needed */
+	if (dw->xfr_flags & I2C_MSG_RESTART) {
 		data |= IC_DATA_CMD_RESTART;
+		dw->xfr_flags &= ~(I2C_MSG_RESTART);
 	}
 
-	/* After receiving the last byte, send STOP */
-	if (dw->request_bytes == 1) {
+	/* After receiving the last byte, send STOP if needed */
+	if ((dw->xfr_flags & I2C_MSG_STOP) && (dw->request_bytes == 1)) {
 		data |= IC_DATA_CMD_STOP;
 	}
 
@@ -159,28 +163,28 @@ static void _i2c_qse_ss_data_read(struct device *dev)
 {
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
 
-	while (_i2c_qse_ss_is_rfne(dev) && (dw->rx_len > 0)) {
+	while (_i2c_qse_ss_is_rfne(dev) && (dw->xfr_len > 0)) {
 		/* Need to write 0 to POP bit to
 		 * "pop" one byte from RX FIFO.
 		 */
 		_i2c_qse_ss_reg_write(dev, REG_DATA_CMD,
 				      IC_DATA_CMD_STROBE);
 
-		dw->rx_buffer[0] = _i2c_qse_ss_reg_read(dev, REG_DATA_CMD)
-				   & IC_DATA_CMD_DATA_MASK;
+		dw->xfr_buf[0] = _i2c_qse_ss_reg_read(dev, REG_DATA_CMD)
+				 & IC_DATA_CMD_DATA_MASK;
 
-		dw->rx_buffer += 1;
-		dw->rx_len -= 1;
+		dw->xfr_buf++;
+		dw->xfr_len--;
 
-		if (dw->rx_len == 0) {
+		if (dw->xfr_len == 0) {
 			break;
 		}
 
-		_i2c_qse_ss_data_ask(dev, 0);
+		_i2c_qse_ss_data_ask(dev);
 	}
 
 	/* Nothing to receive anymore */
-	if (dw->rx_len == 0) {
+	if (dw->xfr_len == 0) {
 		dw->state &= ~I2C_QSE_SS_CMD_RECV;
 		return;
 	}
@@ -189,51 +193,42 @@ static void _i2c_qse_ss_data_read(struct device *dev)
 static int _i2c_qse_ss_data_send(struct device *dev)
 {
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
-	uint32_t data = 0;
+	uint32_t data;
 
 	/* Nothing to send anymore, mask the interrupt */
-	if (dw->tx_len == 0) {
+	if (dw->xfr_len == 0) {
 		_i2c_qse_ss_reg_write_and(dev, REG_INTR_MASK,
 					  ~(IC_INTR_TX_EMPTY));
-
-		if (dw->rx_len > 0) {
-			/* Tell controller to grab a byte.
-			 * RESTART if something has ben sent.
-			 */
-			_i2c_qse_ss_data_ask(dev,
-				(dw->state & I2C_QSE_SS_CMD_SEND));
-
-			/* QUIRK:
-			 * If requesting more than one byte, the process has
-			 * to be jump-started by requesting two bytes first.
-			 */
-			_i2c_qse_ss_data_ask(dev, 0);
-		}
 
 		dw->state &= ~I2C_QSE_SS_CMD_SEND;
 
 		return DEV_OK;
 	}
 
-	while (_i2c_qse_ss_is_tfnf(dev) && (dw->tx_len > 0)) {
+	while (_i2c_qse_ss_is_tfnf(dev) && (dw->xfr_len > 0)) {
 		/* We have something to transmit to a specific host */
-		data = dw->tx_buffer[0] | IC_DATA_CMD_STROBE | IC_DATA_CMD_POP;
+		data = dw->xfr_buf[0] | IC_DATA_CMD_STROBE | IC_DATA_CMD_POP;
 
-		/* If this is the last byte to write
-		 * and nothing to receive, send STOP.
-		 */
-		if ((dw->tx_len == 1) && (dw->rx_len == 0)) {
+		/* Send RESTART if needed */
+		if (dw->xfr_flags & I2C_MSG_RESTART) {
+			data |= IC_DATA_CMD_RESTART;
+			dw->xfr_flags &= ~(I2C_MSG_RESTART);
+		}
+
+		/* Send STOP if needed */
+		if ((dw->xfr_len == 1) && (dw->xfr_flags & I2C_MSG_STOP)) {
 			data |= IC_DATA_CMD_STOP;
 		}
 
 		_i2c_qse_ss_reg_write(dev, REG_DATA_CMD, data);
 
-		dw->tx_len -= 1;
-		dw->tx_buffer += 1;
+		dw->xfr_len--;
+		dw->xfr_buf++;
 
 		if (_i2c_qse_ss_check_irq(dev, IC_INTR_TX_ABRT)) {
 			return DEV_FAIL;
 		}
+
 	}
 
 	return DEV_OK;
@@ -248,9 +243,8 @@ static inline void _i2c_qse_ss_transfer_complete(struct device *dev)
 	_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_CLR_ALL);
 
 	synchronous_call_complete(&dw->sync);
-
-	dw->state &= ~I2C_QSE_SS_BUSY;
 }
+
 
 void i2c_qse_ss_isr(void *arg)
 {
@@ -259,7 +253,7 @@ void i2c_qse_ss_isr(void *arg)
 	uint32_t ic_intr_stat;
 
 	/*
-	 * Causes of an intterrupt on ATP:
+	 * Causes of an intterrupts:
 	 *   - STOP condition is detected
 	 *   - Transfer is aborted
 	 *   - Transmit FIFO is empy
@@ -267,25 +261,11 @@ void i2c_qse_ss_isr(void *arg)
 	 *   - Receive FIFO is full
 	 *   - Receive FIFO overflow
 	 *   - Received FIFO underrun
-	 *   - Transmit data required (tx_req)
-	 *   - Receive data available (rx_avail)
 	 */
 
 	DBG("I2C_SS: interrupt received\n");
 
 	ic_intr_stat = _i2c_qse_ss_reg_read(dev, REG_INTR_STAT);
-
-	/* Check if the Master TX is ready for sending */
-	if (ic_intr_stat & IC_INTR_TX_EMPTY) {
-		_i2c_qse_ss_data_send(dev);
-		_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_TX_EMPTY);
-	}
-
-	/* Check if the RX FIFO reached threshold */
-	if (ic_intr_stat & IC_INTR_RX_FULL) {
-		_i2c_qse_ss_data_read(dev);
-		_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_RX_FULL);
-	}
 
 	/* Error conditions */
 	if ((IC_INTR_TX_ABRT | IC_INTR_TX_OVER |
@@ -296,10 +276,35 @@ void i2c_qse_ss_isr(void *arg)
 		return;
 	}
 
-	/*
-	 * We got a STOP_DET, this means stop right after this byte has been
-	 * handled.
+	/* Check if the RX FIFO reached threshold */
+	if (ic_intr_stat & IC_INTR_RX_FULL) {
+		_i2c_qse_ss_data_read(dev);
+		_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_RX_FULL);
+	}
+
+	/* Check if the TX FIFO is ready for commands.
+	 * TX FIFO also serves as command queue where read requests
+	 * are written to TX FIFO.
 	 */
+	if (ic_intr_stat & IC_INTR_TX_EMPTY) {
+		if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+			_i2c_qse_ss_data_send(dev);
+		} else {
+			_i2c_qse_ss_data_ask(dev);
+		}
+		_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_TX_EMPTY);
+
+		/* If STOP is not expected, finish processing this
+		 * message if there is nothing left to do anymore.
+		 */
+		if ((dw->xfr_len == 0)
+		    && !(dw->xfr_flags & I2C_MSG_STOP)) {
+			_i2c_qse_ss_transfer_complete(dev);
+			return;
+		}
+	}
+
+	/* STOP detected */
 	if (ic_intr_stat & IC_INTR_STOP_DET) {
 		_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_STOP_DET);
 		_i2c_qse_ss_transfer_complete(dev);
@@ -382,70 +387,91 @@ done:
 	return rc;
 }
 
-static int _i2c_qse_ss_transfer_init(struct device *dev,
-				    uint8_t *write_buf, uint32_t write_len,
-				    uint8_t *read_buf,  uint32_t read_len,
-				    uint16_t slave_address, uint32_t flags)
+static int i2c_qse_ss_intr_transfer(struct device *dev,
+				    struct i2c_msg *msgs, uint8_t num_msgs,
+				    uint16_t slave_address)
 {
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
-	int ret = 0;
+	struct i2c_msg *cur_msg = msgs;
+	uint8_t msg_left = num_msgs;
+	uint8_t pflags;
+	int ret;
+
+	/* Why bother processing no messages */
+	if (!msgs || !num_msgs) {
+		return DEV_INVALID_OP;
+	}
+
+	/* First step, check if device is idle */
+	if (_i2c_qse_ss_is_busy(dev) || (dw->state & I2C_QSE_SS_BUSY)) {
+		return DEV_USED;
+	}
 
 	dw->state |= I2C_QSE_SS_BUSY;
-	if (write_len > 0) {
-		dw->state |= I2C_QSE_SS_CMD_SEND;
-	}
-	if (read_len > 0) {
-		dw->state |= I2C_QSE_SS_CMD_RECV;
-	}
-
-	dw->rx_len = read_len;
-	dw->rx_buffer = read_buf;
-	dw->tx_len = write_len;
-	dw->tx_buffer = write_buf;
-	dw->request_bytes = read_len;
 
 	ret = _i2c_qse_ss_setup(dev, slave_address);
 	if (ret) {
+		dw->state = I2C_QSE_SS_STATE_READY;
 		return ret;
 	}
 
-	return DEV_OK;
-}
-
-static int i2c_qse_ss_intr_transfer(struct device *dev,
-				    uint8_t *write_buf, uint32_t write_len,
-				    uint8_t *read_buf,  uint32_t read_len,
-				    uint16_t slave_address, uint32_t flags)
-{
-	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
-
-	int ret = DEV_OK;
-
-	/* First step, check if there is current activity */
-	if (_i2c_qse_ss_is_busy(dev)) {
-		return DEV_FAIL;
-	}
-
-	ret = _i2c_qse_ss_transfer_init(dev, write_buf, write_len,
-				       read_buf, read_len, slave_address, 0);
-	if (ret) {
-		return ret;
-	}
-
-	/* Enable necessary interrupts */
-	_i2c_qse_ss_reg_write(dev, REG_INTR_MASK,
-			      (IC_INTR_MASK_TX | IC_INTR_MASK_RX));
+	/* To prevent RESTART for first message */
+	dw->xfr_flags = msgs[0].flags;
 
 	/* Enable controller */
 	_i2c_qse_ss_reg_write_or(dev, REG_CON, IC_CON_ENABLE);
 
-	synchronous_call_wait(&dw->sync);
-	if (dw->state == I2C_QSE_SS_CMD_ERROR) {
-		ret = DEV_FAIL;
+	/* Process all the messages */
+	while (msg_left > 0) {
+		pflags = dw->xfr_flags;
+
+		dw->xfr_buf = cur_msg->buf;
+		dw->xfr_len = cur_msg->len;
+		dw->xfr_flags = cur_msg->flags;
+
+		/* Need to RESTART if changing transfer direction */
+		if ((pflags & I2C_MSG_RW_MASK)
+		    != (dw->xfr_flags & I2C_MSG_RW_MASK)) {
+			dw->xfr_flags |= I2C_MSG_RESTART;
+		}
+
+		/* Send STOP if this is the last message */
+		if (msg_left == 1) {
+			dw->xfr_flags |= I2C_MSG_STOP;
+		}
+
+		dw->state &= ~(I2C_QSE_SS_CMD_SEND | I2C_QSE_SS_CMD_RECV);
+
+		if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+			dw->state |= I2C_QSE_SS_CMD_SEND;
+			dw->request_bytes = 0;
+		} else {
+			dw->state |= I2C_QSE_SS_CMD_RECV;
+			dw->request_bytes = dw->xfr_len;
+		}
+
+		/* Enable interrupts to trigger ISR */
+		_i2c_qse_ss_reg_write(dev, REG_INTR_MASK,
+				      (IC_INTR_MASK_TX | IC_INTR_MASK_RX));
+
+		/* Wait for transfer to be done */
+		synchronous_call_wait(&dw->sync);
+		if (dw->state & I2C_QSE_SS_CMD_ERROR) {
+			ret = DEV_FAIL;
+			break;
+		}
+
+		/* Something wrong if there is something left to do */
+		if (dw->xfr_len > 0) {
+			ret = DEV_FAIL;
+			break;
+		}
+
+		cur_msg++;
+		msg_left--;
 	}
 
 	dw->state = I2C_QSE_SS_STATE_READY;
-
 	return ret;
 }
 
