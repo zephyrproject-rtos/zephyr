@@ -1584,52 +1584,25 @@ static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
 }
 
-static int pin_code_reply(const bt_addr_t *bdaddr, const char *pin)
+static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
 {
 	struct bt_hci_cp_pin_code_reply *cp;
-	struct bt_conn *conn;
 	struct net_buf *buf;
-	size_t len;
-	int err;
 
 	BT_DBG("");
 
-	conn = bt_conn_lookup_addr_br(bdaddr);
-	if (!conn) {
-		BT_ERR("Can't find conn for %s", bt_addr_str(bdaddr));
-		return -EINVAL;
-	}
-
-	len = strlen(pin);
-	if (len > 16) {
-		err = -EINVAL;
-		goto cleanup;
-	}
-
-	if (conn->required_sec_level == BT_SECURITY_HIGH && len < 16) {
-		BT_WARN("PIN code for %s is not 16 bytes wide",
-			bt_addr_str(bdaddr));
-		bt_conn_unref(conn);
-		return pin_code_neg_reply(bdaddr);
-	}
-
 	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_REPLY, sizeof(*cp));
 	if (!buf) {
-		err = -ENOBUFS;
-		goto cleanup;
+		return -ENOBUFS;
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	memset(cp, 0, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, bdaddr);
+
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
 	cp->pin_len = len;
-	strncpy(cp->pin_code, pin, len);
+	strncpy(cp->pin_code, pin, sizeof(cp->pin_code));
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_REPLY, buf, NULL);
-cleanup:
-	bt_conn_unref(conn);
-
-	return err;
+	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_REPLY, buf, NULL);
 }
 
 static void link_key_notify(struct net_buf *buf)
@@ -2732,13 +2705,30 @@ void bt_auth_cancel(struct bt_conn *conn)
 #if defined(CONFIG_BLUETOOTH_BREDR)
 void bt_auth_pincode_entry(struct bt_conn *conn, const char *pin)
 {
+	size_t len;
+
 	if (!bt_auth) {
 		return;
 	}
 
-	if (conn->type == BT_CONN_TYPE_BR) {
-		pin_code_reply(&conn->br.dst, pin);
+	if (conn->type != BT_CONN_TYPE_BR) {
+		return;
 	}
+
+	len = strlen(pin);
+	if (len > 16) {
+		pin_code_neg_reply(&conn->br.dst);
+		return;
+	}
+
+	if (conn->required_sec_level == BT_SECURITY_HIGH && len < 16) {
+		BT_WARN("PIN code for %s is not 16 bytes wide",
+			bt_addr_str(&conn->br.dst));
+		pin_code_neg_reply(&conn->br.dst);
+		return;
+	}
+
+	pin_code_reply(conn, pin, len);
 }
 #endif
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
