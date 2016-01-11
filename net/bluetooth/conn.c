@@ -663,6 +663,14 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_CONNECT_SCAN:
 		break;
 	case BT_CONN_CONNECT:
+		/*
+		 * Timer is needed only for LE. For other link types controller
+		 * will handle connection timeout.
+		 */
+		if (conn->type != BT_CONN_TYPE_LE) {
+			break;
+		}
+
 		/* Add LE Create Connection timeout */
 		conn->timeout = fiber_delayed_start(conn->stack,
 						    sizeof(conn->stack),
