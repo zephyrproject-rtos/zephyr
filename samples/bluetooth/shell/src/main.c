@@ -45,6 +45,9 @@
 
 static struct bt_conn *default_conn = NULL;
 
+/* Connection context for BR/EDR legacy pairing in sec mode 3 */
+static struct bt_conn *pairing_conn;
+
 static struct nano_fifo data_fifo;
 static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL, 0);
 static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
@@ -127,6 +130,12 @@ static void connected(struct bt_conn *conn)
 
 	if (!default_conn) {
 		default_conn = bt_conn_ref(conn);
+	}
+
+	/* clear connection reference for sec mode 3 pairing */
+	if (pairing_conn) {
+		bt_conn_unref(pairing_conn);
+		pairing_conn = NULL;
 	}
 }
 
@@ -1049,6 +1058,12 @@ static void auth_cancel(struct bt_conn *conn)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Pairing cancelled: %s\n", addr);
+
+	/* clear connection reference for sec mode 3 pairing */
+	if (pairing_conn) {
+		bt_conn_unref(pairing_conn);
+		pairing_conn = NULL;
+	}
 }
 
 static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
@@ -1070,6 +1085,14 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 		printk("Enter 16 digits wide PIN code for %s\n", addr);
 	} else {
 		printk("Enter PIN code for %s\n", addr);
+	}
+
+	/*
+	 * Save connection info since in security mode 3 (link level enforced
+	 * security) PIN request callback is called before connected callback
+	 */
+	if (!default_conn && !pairing_conn) {
+		pairing_conn = bt_conn_ref(conn);
 	}
 }
 
@@ -1131,12 +1154,22 @@ static void cmd_auth(int argc, char *argv[])
 
 static void cmd_auth_cancel(int argc, char *argv[])
 {
-	if (!default_conn) {
+	struct bt_conn *conn;
+
+	if (default_conn) {
+		conn = default_conn;
+	} else if (pairing_conn) {
+		conn = pairing_conn;
+	} else {
+		conn = NULL;
+	}
+
+	if (!conn) {
 		printk("Not connected\n");
 		return;
 	}
 
-	bt_auth_cancel(default_conn);
+	bt_auth_cancel(conn);
 }
 
 static void cmd_auth_passkey_confirm(int argc, char *argv[])
@@ -1183,9 +1216,19 @@ static void cmd_auth_passkey(int argc, char *argv[])
 
 static void cmd_auth_pincode(int argc, char *argv[])
 {
+	struct bt_conn *conn;
+
 	uint8_t max = 16;
 
-	if (!default_conn) {
+	if (default_conn) {
+		conn = default_conn;
+	} else if (pairing_conn) {
+		conn = pairing_conn;
+	} else {
+		conn = NULL;
+	}
+
+	if (!conn) {
 		printk("Not connected\n");
 		return;
 	}
@@ -1202,7 +1245,7 @@ static void cmd_auth_pincode(int argc, char *argv[])
 
 	printk("PIN code \"%s\" applied\n", argv[1]);
 
-	bt_auth_pincode_entry(default_conn, argv[1]);
+	bt_auth_pincode_entry(conn, argv[1]);
 }
 
 
