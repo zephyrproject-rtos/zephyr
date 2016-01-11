@@ -110,7 +110,7 @@ struct i2c_dw_dev_config {
 	union dev_config	app_config;
 
 	volatile uint8_t	state;  /* last direction of transfer */
-	uint8_t			slave_mode;
+
 	uint8_t			request_bytes;
 	uint8_t			rx_len;
 	uint8_t			*rx_buffer;
