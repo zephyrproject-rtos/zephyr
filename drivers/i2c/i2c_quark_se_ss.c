@@ -38,6 +38,7 @@
 #ifndef CONFIG_I2C_DEBUG
 #define DBG(...) { ; }
 #else
+#include <misc/printk.h>
 #define DBG printk
 #endif /* CONFIG_I2C_DEBUG */
 
@@ -567,7 +568,7 @@ int i2c_qse_ss_initialize(struct device *dev)
 
 	if (i2c_qse_ss_runtime_configure(dev, dw->app_config.raw) != DEV_OK) {
 		DBG("I2C_SS: Cannot set default configuration 0x%x\n",
-		    dev->app_config.raw);
+		    dw->app_config.raw);
 		return DEV_NOT_CONFIG;
 	}
 
