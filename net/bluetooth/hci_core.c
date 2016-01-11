@@ -1540,32 +1540,6 @@ static void conn_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-static void pin_code_req(struct net_buf *buf)
-{
-	struct bt_hci_evt_pin_code_req *evt = (void *)buf->data;
-	struct bt_conn *conn;
-
-	BT_DBG("");
-
-	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
-	if (!conn) {
-		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
-		return;
-	}
-
-	if (bt_auth && bt_auth->pincode_entry) {
-		bool secure = false;
-
-		if (conn->required_sec_level == BT_SECURITY_HIGH) {
-			secure = true;
-		}
-
-		bt_auth->pincode_entry(conn, secure);
-	}
-
-	bt_conn_unref(conn);
-}
-
 static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 {
 	struct bt_hci_cp_pin_code_neg_reply *cp;
@@ -1603,6 +1577,35 @@ static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
 	strncpy(cp->pin_code, pin, sizeof(cp->pin_code));
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_REPLY, buf, NULL);
+}
+
+static void pin_code_req(struct net_buf *buf)
+{
+	struct bt_hci_evt_pin_code_req *evt = (void *)buf->data;
+	struct bt_conn *conn;
+
+	BT_DBG("");
+
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		pin_code_neg_reply(&evt->bdaddr);
+		return;
+	}
+
+	if (bt_auth && bt_auth->pincode_entry) {
+		bool secure = false;
+
+		if (conn->required_sec_level == BT_SECURITY_HIGH) {
+			secure = true;
+		}
+
+		bt_auth->pincode_entry(conn, secure);
+	} else {
+		pin_code_neg_reply(&evt->bdaddr);
+	}
+
+	bt_conn_unref(conn);
 }
 
 static void link_key_notify(struct net_buf *buf)
