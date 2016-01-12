@@ -183,8 +183,128 @@ static void print_radio_status(void)
 	}
 	DBG("\n");
 }
+
+static inline void print_exceptions_0(void)
+{
+	uint8_t flag = getreg(CC2520_EXCFLAG0);
+
+	DBG("EXCFLAG0: ");
+	if (flag & BIT(CC2520_EXCFLAGS0_RF_IDLE)) {
+		DBG("RF_IDLE ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS0_TX_FRM_DONE)) {
+		DBG("TX_FRM_DONE ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS0_TX_ACK_DONE)) {
+		DBG("TX_ACK_DONE ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS0_TX_UNDERFLOW)) {
+		DBG("TX_UNDERFLOW ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS0_TX_OVERFLOW)) {
+		DBG("TX_OVERFLOW ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS0_RX_UNDERFLOW)) {
+		DBG("RX_UNDERFLOW ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS0_RX_OVERFLOW)) {
+		DBG("RX_OVERFLOW ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS0_RXENABLE_ZERO)) {
+		DBG("RXENABLE_ZERO");
+	}
+	DBG("\n");
+}
+
+static inline void print_exceptions_1(void)
+{
+	uint8_t flag = getreg(CC2520_EXCFLAG1);
+
+	DBG("EXCFLAG1: ");
+	if (flag & BIT(CC2520_EXCFLAGS1_RX_FRM_DONE)) {
+		DBG("RX_FRM_DONE ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS1_RX_FRM_ACCEPTED)) {
+		DBG("RX_FRM_ACCEPTED ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS1_SRC_MATCH_DONE)) {
+		DBG("SRC_MATCH_DONE ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS1_SRC_MATCH_FOUND)) {
+		DBG("SRC_MATCH_FOUND ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS1_FIFOP)) {
+		DBG("FIFOP ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS1_SFD)) {
+		DBG("SFD ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS1_DPU_DONE_L)) {
+		DBG("DPU_DONE_L ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS1_DPU_DONE_H)) {
+		DBG("DPU_DONE_H");
+	}
+	DBG("\n");
+}
+
+static inline void print_errors(void)
+{
+	uint8_t flag = getreg(CC2520_EXCFLAG2);
+
+	DBG("EXCFLAG2: ");
+	if (flag & BIT(CC2520_EXCFLAGS2_MEMADDR_ERROR)) {
+		DBG("MEMADDR_ERROR ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS2_USAGE_ERROR)) {
+		DBG("USAGE_ERROR ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS2_OPERAND_ERROR)) {
+		DBG("OPERAND_ERROR ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS2_SPI_ERROR)) {
+		DBG("SPI_ERROR ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS2_RF_NO_LOCK)) {
+		DBG("RF_NO_LOCK ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS2_RX_FRM_ABORTED)) {
+		DBG("RX_FRM_ABORTED ");
+	}
+	if (flag & BIT(CC2520_EXCFLAGS2_RFBUFMOV_TIMEOUT)) {
+		DBG("RFBUFMOV_TIMEOUT");
+	}
+	DBG("\n");
+}
+
+static void clear_exceptions(void)
+{
+	DBG("Clearing up exceptions & errors\n");
+
+	setreg(CC2520_EXCFLAG0, 0);
+	setreg(CC2520_EXCFLAG1, 0);
+	setreg(CC2520_EXCFLAG2, 0);
+}
+
+static void cc2520_print_gpio_config(void)
+{
+	DBG("GPIOCTRL0: 0x%x\n", getreg(CC2520_GPIOCTRL0));
+	DBG("GPIOCTRL1: 0x%x\n", getreg(CC2520_GPIOCTRL1));
+	DBG("GPIOCTRL2: 0x%x\n", getreg(CC2520_GPIOCTRL2));
+	DBG("GPIOCTRL3: 0x%x\n", getreg(CC2520_GPIOCTRL3));
+	DBG("GPIOCTRL4: 0x%x\n", getreg(CC2520_GPIOCTRL4));
+	DBG("GPIOCTRL5: 0x%x\n", getreg(CC2520_GPIOCTRL5));
+	DBG("GPIOPOLARITY: 0x%x\n", getreg(CC2520_GPIOPOLARITY));
+	DBG("GPIOCTRL: 0x%x\n", getreg(CC2520_GPIOCTRL));
+}
+
 #else
 #define print_radio_status()
+#define print_exceptions_0()
+#define print_exceptions_1()
+#define print_errors()
+#define clear_exceptions()
+#define cc2520_print_gpio_config()
 #endif
 
 static inline unsigned int status(void)
@@ -209,6 +329,7 @@ static void flushrx(void)
 	uint8_t dummy;
 
 	cc2520_read_fifo_byte(&dummy);
+	dummy++;
 
 	cc2520_strobe(CC2520_INS_SFLUSHRX);
 	cc2520_strobe(CC2520_INS_SFLUSHRX);
@@ -223,6 +344,8 @@ static void flushrx(void)
 
 static void on(void)
 {
+	DBG("cc2520 radio on\n");
+
 	CC2520_ENABLE_FIFOP_INT();
 	cc2520_strobe(CC2520_INS_SRXON);
 
@@ -256,34 +379,22 @@ static void off(void)
 static int cc2520_off(void)
 {
 	/* Don't do anything if we are already turned off. */
-	if (receive_on == 0) {
-		return 1;
+	if (receive_on == 1) {
+		off();
 	}
-
-	off();
 
 	return 1;
 }
 
-static int cc2520_on(void)
+int cc2520_on(void)
 {
 	if (!init_ok) {
 		DBG("cc2520 not initialized, radio will stay off\n");
 		return 0;
 	}
 
-	if (receive_on) {
-		return 1;
-	}
-
-	DBG("turning radio on\n");
-	on();
-
-	if (CC2520_FIFOP_IS_1) {
-		DBG("radio is now on\n");
-	} else {
-		DBG("ERROR: FIFOP is not set, radio is not on\n");
-		receive_on = 0;
+	if (!receive_on) {
+		on();
 	}
 
 	return 1;
@@ -325,10 +436,9 @@ static radio_result_t cc2520_set_rx_mode(radio_value_t value)
 	    (old_value & RADIO_RX_MODE_ADDRESS_FILTER)) {
 		if (value & RADIO_RX_MODE_ADDRESS_FILTER) {
 			setreg(CC2520_FRMFILT0,
-			       FRAME_MAX_VERSION|FRAME_FILTER_ENABLE);
+			       FRAME_MAX_VERSION | FRAME_FILTER_ENABLE);
 		} else {
-			setreg(CC2520_FRMFILT0,
-			       FRAME_MAX_VERSION);
+			setreg(CC2520_FRMFILT0, FRAME_MAX_VERSION);
 		}
 	}
 	old_value = value;
@@ -428,7 +538,9 @@ static inline int cc2520_receiving_packet(void)
 
 static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 {
-	int i, txpower;
+	int txpower;
+	uint32_t tx_start_wait;
+	uint8_t sampled_cca;
 
 	if (!init_ok) {
 		return -EIO;
@@ -450,28 +562,31 @@ static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 	 * Note that we may have to wait up to 320 us (20 symbols) before
 	 * transmission starts.
 	 */
-#ifndef CC2520_CONF_SYMBOL_LOOP_COUNT
-#error CC2520_CONF_SYMBOL_LOOP_COUNT needs to be set!!!
-#else
-#define LOOP_20_SYMBOLS CC2520_CONF_SYMBOL_LOOP_COUNT
-#endif
 
 #if WITH_SEND_CCA
 	strobe(CC2520_INS_SRXON);
 	BUSYWAIT_UNTIL(status() & BIT(CC2520_RSSI_VALID), WAIT_100ms);
 	strobe(CC2520_INS_STXONCCA);
+	BUSYWAIT_UNTIL((sampled_cca = (getreg(CC2520_FSMSTAT1) &
+					CC2520_FSMSTAT1_SAMPLED_CCA)),
+			WAIT_10ms);
+	if (sampled_cca == 0) {
+		DBG("cc2520: sample_cca is 0, TX ERROR\n");
+		return RADIO_TX_ERR;
+	}
 #else /* WITH_SEND_CCA */
 	strobe(CC2520_INS_STXON);
 #endif /* WITH_SEND_CCA */
 
-	for (i = LOOP_20_SYMBOLS; i > 0; i--) {
+	tx_start_wait = clock_get_cycle() + CLOCK_MSEC_TO_CYCLES(3000) + 1;
+	while (CLOCK_CYCLE_LT(clock_get_cycle(), tx_start_wait)) {
 		if (!CC2520_SFD_IS_1) {
 			continue;
 		}
 
 #if PACKETBUF_WITH_PACKET_TYPE
 		{
-			rtimer_clock_t sfd_timestamp;
+			uint32_t sfd_timestamp;
 
 			sfd_timestamp = cc2520_sfd_start_time;
 			if (packetbuf_attr(buf, PACKETBUF_ATTR_PACKET_TYPE) ==
@@ -480,7 +595,7 @@ static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 				 * in TXFIFO.
 				 */
 				cc2520_write_ram(&sfd_timestamp,
-					 CC2520RAM_TXFIFO + payload_len - 1, 2);
+					CC2520RAM_TXFIFO + payload_len - 1, 2);
 			}
 		}
 #endif
@@ -521,6 +636,9 @@ static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 	 */
 	DBG("cc2520: transmission never started\n");
 
+	print_exceptions_0();
+	print_exceptions_1();
+
 	if (packetbuf_attr(buf, PACKETBUF_ATTR_RADIO_TXPOWER) > 0) {
 		/* Restore the transmission power */
 		set_txpower(txpower & 0xff);
@@ -540,12 +658,18 @@ static int cc2520_prepare(const void *payload, unsigned short payload_len)
 
 	DBG("cc2520: sending %d bytes\n", payload_len);
 
+	clear_exceptions();
+
 	/* Write packet to TX FIFO. */
 	strobe(CC2520_INS_SFLUSHTX);
 
 	total_len = payload_len + FOOTER_LEN;
+	DBG("TX FIFO has %u bytes\n", getreg(CC2520_TXFIFOCNT));
 	cc2520_write_fifo_buf(&total_len, 1);
 	cc2520_write_fifo_buf(buf, payload_len);
+	DBG("TX FIFO has %u bytes\n", getreg(CC2520_TXFIFOCNT));
+
+	print_errors();
 
 	return 0;
 }
@@ -553,10 +677,6 @@ static int cc2520_prepare(const void *payload, unsigned short payload_len)
 static int cc2520_send(struct net_buf *buf, const void *payload,
 		       unsigned short payload_len)
 {
-	if (!init_ok) {
-		return -EIO;
-	}
-
 	cc2520_prepare(payload, payload_len);
 
 	return cc2520_transmit(buf, payload_len);
@@ -594,15 +714,19 @@ int cc2520_set_channel(int c)
 	 */
 	if (receive_on) {
 		strobe(CC2520_INS_SRXON);
+		BUSYWAIT_UNTIL((status() & BIT(CC2520_RSSI_VALID)), \
+								WAIT_100ms);
+		if (!(status() & BIT(CC2520_RSSI_VALID))) {
+			return RADIO_RESULT_ERROR;
+		}
 	}
 
-	return 1;
+	return RADIO_RESULT_OK;
 }
 
 bool cc2520_set_pan_addr(unsigned pan, unsigned addr,
 			 const uint8_t *ieee_addr)
 {
-	bool ret = true;
 	uint8_t tmp[2];
 
 	/*
@@ -630,7 +754,7 @@ bool cc2520_set_pan_addr(unsigned pan, unsigned addr,
 		cc2520_write_ram(tmp_addr, CC2520RAM_IEEEADDR, 8);
 	}
 
-	return ret;
+	return true;
 }
 
 #if CONFIG_TI_CC2520_DEBUG
@@ -685,6 +809,7 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 				   cc2520_last_correlation);
 
 	} else {
+		flushrx();
 		len = FOOTER_LEN;
 	}
 
@@ -842,6 +967,7 @@ void cc2520_set_cca_threshold(int value)
 
 static void cc2520_configure(struct device *dev)
 {
+	CC2520_DISABLE_FIFOP_INT();
 	CC2520_FIFOP_INT_INIT();
 
 	/* Initially reset must be set */
@@ -852,11 +978,6 @@ static void cc2520_configure(struct device *dev)
 	/* Turn on voltage regulator. */
 	SET_VREG_ACTIVE();
 	clock_delay_usec_busywait(400);
-
-	if (getreg(CC2520_FSMSTAT1) != 0) {
-		PRINTF("cc2520: Invalid radio status\n");
-		return;
-	}
 
 	/* Release reset */
 	SET_RESET_INACTIVE();
@@ -935,6 +1056,8 @@ static void cc2520_configure(struct device *dev)
 	cc2520_set_channel(26);
 
 	flushrx();
+
+	cc2520_print_gpio_config();
 
 	init_ok = true;
 }

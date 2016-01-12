@@ -37,6 +37,7 @@ int cc2520_get_channel(void);
 bool cc2520_set_pan_addr(unsigned pan,
 			 unsigned addr,
 			 const uint8_t *ieee_addr);
+int cc2520_on(void);
 int cc2520_rssi(void);
 
 void cc2520_set_cca_threshold(int value);
