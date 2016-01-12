@@ -82,7 +82,7 @@ void main(void)
 	cnt = 0;
 
 	while (1) {
-		glcd_clear(glcd);
+		glcd_cursor_pos_set(glcd, 0, 0);
 
 		/* RGB values are from 0 - 511.
 		 * First half means incrementally brighter.
