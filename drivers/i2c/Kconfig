@@ -293,3 +293,19 @@ config I2C_QUARK_SE_SS_1_DEFAULT_CFG
 	before the application has a chance to custom configure the port.
 	Setting this value does not prohibit the application from customizing
 	the values later. Refer to the I2C datasheet for proper values.
+
+config I2C_QMSI
+	bool "QMSI I2C driver"
+	depends on QMSI_DRIVERS && I2C
+	default n
+	help
+	This option enable the QMSI I2C driver.
+
+	This driver is simply a shim driver based on the I2C driver
+	provided by the QMSI BSP. For more information about QMSI BSP
+	see CONFIG_QMSI_DRIVERS.
+
+config I2C_QMSI_0_NAME
+	string "I2C_0 device name"
+	depends on I2C_QMSI
+	default "I2C0"
