@@ -46,6 +46,8 @@
 #define I2C_FS_HCNT			((CONFIG_I2C_CLOCK_SPEED * 6) / 8)
 #define I2C_FS_LCNT			((CONFIG_I2C_CLOCK_SPEED * 7) / 8)
 
+#define I2C_QSE_SS_FIFO_DEPTH		8
+
 typedef void (*i2c_qse_ss_cfg_func_t)(struct device *port);
 
 struct i2c_qse_ss_rom_config {
@@ -81,6 +83,7 @@ struct i2c_qse_ss_dev_config {
 	uint8_t			*xfr_buf;
 	uint32_t		xfr_len;
 	uint32_t		request_bytes;
+	uint32_t		rx_pending;
 
 	uint16_t		hcnt;
 	uint16_t		lcnt;

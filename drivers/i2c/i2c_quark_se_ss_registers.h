@@ -32,6 +32,7 @@
 #define REG_INTR_CLR			0x0A
 #define REG_STATUS			0x0B
 #define REG_TXFLR			0x0C
+#define REG_RXFLR			0x0D
 #define REG_SDA_CONFIG			0x0E
 #define REG_TX_ABRT_SOURCE		0x0F
 #define REG_ENABLE_STATUS		0x11

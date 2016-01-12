@@ -31,6 +31,7 @@
 #include <sys_io.h>
 
 #include <board.h>
+#include <misc/util.h>
 
 #include "i2c_quark_se_ss.h"
 #include "i2c_quark_se_ss_registers.h"
@@ -131,6 +132,9 @@ static inline void _i2c_qse_ss_data_ask(struct device *dev)
 {
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
 	uint32_t data;
+	uint8_t tx_empty;
+	int8_t rx_empty;
+	uint8_t cnt;
 
 	/* No more bytes to request, so command queue is no longer needed */
 	if (dw->request_bytes == 0) {
@@ -140,23 +144,48 @@ static inline void _i2c_qse_ss_data_ask(struct device *dev)
 		return;
 	}
 
-	/* Tell controller to get another byte */
-	data = IC_DATA_CMD_CMD | IC_DATA_CMD_STROBE | IC_DATA_CMD_POP;
+	/* How many bytes we can actually ask */
+	rx_empty = I2C_QSE_SS_FIFO_DEPTH
+		   - _i2c_qse_ss_reg_read(dev, REG_RXFLR);
+	rx_empty -= dw->rx_pending;
 
-	/* Send RESTART if needed */
-	if (dw->xfr_flags & I2C_MSG_RESTART) {
-		data |= IC_DATA_CMD_RESTART;
-		dw->xfr_flags &= ~(I2C_MSG_RESTART);
+	if (rx_empty < 0) {
+		/* RX FIFO expected to be full.
+		 * So don't request any bytes, yet.
+		 */
+		return;
 	}
 
-	/* After receiving the last byte, send STOP if needed */
-	if ((dw->xfr_flags & I2C_MSG_STOP) && (dw->request_bytes == 1)) {
-		data |= IC_DATA_CMD_STOP;
+	/* How many empty slots in TX FIFO (as command queue) */
+	tx_empty = I2C_QSE_SS_FIFO_DEPTH
+		   - _i2c_qse_ss_reg_read(dev, REG_TXFLR);
+
+	/* Figure out how many bytes we can request */
+	cnt = min(I2C_QSE_SS_FIFO_DEPTH, dw->request_bytes);
+	cnt = min(min(tx_empty, rx_empty), cnt);
+
+	while (cnt > 0) {
+		/* Tell controller to get another byte */
+		data = IC_DATA_CMD_CMD | IC_DATA_CMD_STROBE | IC_DATA_CMD_POP;
+
+		/* Send RESTART if needed */
+		if (dw->xfr_flags & I2C_MSG_RESTART) {
+			data |= IC_DATA_CMD_RESTART;
+			dw->xfr_flags &= ~(I2C_MSG_RESTART);
+		}
+
+		/* After receiving the last byte, send STOP if needed */
+		if ((dw->xfr_flags & I2C_MSG_STOP)
+		    && (dw->request_bytes == 1)) {
+			data |= IC_DATA_CMD_STOP;
+		}
+
+		_i2c_qse_ss_reg_write(dev, REG_DATA_CMD, data);
+
+		dw->rx_pending++;
+		dw->request_bytes--;
+		cnt--;
 	}
-
-	_i2c_qse_ss_reg_write(dev, REG_DATA_CMD, data);
-
-	dw->request_bytes--;
 }
 
 static void _i2c_qse_ss_data_read(struct device *dev)
@@ -175,12 +204,11 @@ static void _i2c_qse_ss_data_read(struct device *dev)
 
 		dw->xfr_buf++;
 		dw->xfr_len--;
+		dw->rx_pending--;
 
 		if (dw->xfr_len == 0) {
 			break;
 		}
-
-		_i2c_qse_ss_data_ask(dev);
 	}
 
 	/* Nothing to receive anymore */
@@ -374,9 +402,13 @@ static int _i2c_qse_ss_setup(struct device *dev, uint16_t addr)
 	 *
 	 * TX:
 	 * Setting it to 0 so TX_EMPTY is set only when
-	 * the TX FIFO is empty.
+	 * TX FIFO is truly empty. So that we can let
+	 * the controller do the transfers for longer period
+	 * before we need to fill the FIFO again. This may
+	 * cause some pauses during transfers, but this keeps
+	 * the device from interrupting often.
 	 *
-	 * TODO: extend the threshold for multi-byte TX/RX FIFO.
+	 * TODO: extend the threshold for multi-byte RX FIFO.
 	 */
 	_i2c_qse_ss_reg_write(dev, REG_TL, 0x00000000);
 
@@ -428,6 +460,7 @@ static int i2c_qse_ss_intr_transfer(struct device *dev,
 		dw->xfr_buf = cur_msg->buf;
 		dw->xfr_len = cur_msg->len;
 		dw->xfr_flags = cur_msg->flags;
+		dw->rx_pending = 0;
 
 		/* Need to RESTART if changing transfer direction */
 		if ((pflags & I2C_MSG_RW_MASK)
