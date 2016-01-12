@@ -279,22 +279,24 @@ void i2c_dw_isr(struct device *port)
 }
 
 
-static int _i2c_dw_setup(struct device *dev)
+static int _i2c_dw_setup(struct device *dev, uint16_t slave_address)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
-	uint32_t value = 0;
+	uint32_t value;
 	union ic_con_register ic_con;
-	int rc = DEV_OK;
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
 
 	ic_con.raw = 0;
 
-	/*
-	 * Clear any interrupts currently waiting in the controller
-	 * this is done by reading register 0x40
-	 */
+	/* Disable the device controller to be able set TAR */
+	regs->ic_enable.bits.enable = 0;
+
+	/* Disable interrupts */
+	regs->ic_intr_mask.raw = 0;
+
+	/* Clear interrupts */
 	value = regs->ic_clr_intr;
 
 	/* Set master or slave mode - (initialization = slave) */
@@ -337,8 +339,7 @@ static int _i2c_dw_setup(struct device *dev)
 		break;
 	case I2C_SPEED_HIGH:
 		if (!dw->support_hs_mode) {
-			rc = DEV_INVALID_CONF;
-			break;
+			return DEV_INVALID_CONF;
 		}
 
 		DBG("I2C: speed set to HIGH\n");
@@ -349,8 +350,7 @@ static int _i2c_dw_setup(struct device *dev)
 		break;
 	default:
 		DBG("I2C: invalid speed requested\n");
-		/* TODO change */
-		rc = DEV_INVALID_CONF;
+		return DEV_INVALID_CONF;
 	}
 
 	DBG("I2C: lcnt = %d\n", dw->lcnt);
@@ -358,7 +358,6 @@ static int _i2c_dw_setup(struct device *dev)
 
 	/* Set the IC_CON register */
 	regs->ic_con = ic_con;
-	/* END of setup IC_CON */
 
 	/* Set RX fifo threshold level.
 	 * Setting it to zero automatically triggers interrupt
@@ -375,33 +374,6 @@ static int _i2c_dw_setup(struct device *dev)
 	 * TODO: threshold set to just enough for TX
 	 */
 	regs->ic_tx_tl = 0;
-
-	return rc;
-}
-
-
-static int _i2c_dw_transfer_init(struct device *dev, uint16_t slave_address)
-{
-	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
-	uint32_t value;
-	int ret;
-
-	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
-
-	/* Disable the device controller to be able set TAR */
-	regs->ic_enable.bits.enable = 0;
-
-	ret = _i2c_dw_setup(dev);
-	if (ret) {
-		return ret;
-	}
-
-	/* Disable interrupts */
-	regs->ic_intr_mask.raw = 0;
-
-	/* Clear interrupts */
-	value = regs->ic_clr_intr;
 
 	if (regs->ic_con.bits.master_mode) {
 		/* Set address of target slave */
@@ -440,7 +412,7 @@ static int i2c_dw_transfer(struct device *dev,
 
 	dw->state |= I2C_DW_BUSY;
 
-	ret = _i2c_dw_transfer_init(dev, slave_address);
+	ret = _i2c_dw_setup(dev, slave_address);
 	if (ret) {
 		dw->state = I2C_DW_STATE_READY;
 		return ret;
