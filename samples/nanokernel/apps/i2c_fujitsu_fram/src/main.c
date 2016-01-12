@@ -27,7 +27,8 @@
 
 #define FRAM_I2C_ADDR	0x50
 
-int write_byte(struct device *i2c_dev, uint16_t addr, uint8_t data)
+int write_bytes(struct device *i2c_dev, uint16_t addr,
+		uint8_t *data, uint32_t num_bytes)
 {
 	uint8_t wr_addr[2];
 	struct i2c_msg msgs[2];
@@ -44,14 +45,15 @@ int write_byte(struct device *i2c_dev, uint16_t addr, uint8_t data)
 	msgs[0].flags = I2C_MSG_WRITE;
 
 	/* Data to be written, and STOP after this. */
-	msgs[1].buf = &data;
-	msgs[1].len = 1;
+	msgs[1].buf = data;
+	msgs[1].len = num_bytes;
 	msgs[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
 	return i2c_transfer(i2c_dev, &msgs[0], 2, FRAM_I2C_ADDR);
 }
 
-int read_byte(struct device *i2c_dev, uint16_t addr, uint8_t *data)
+int read_bytes(struct device *i2c_dev, uint16_t addr,
+	       uint8_t *data, uint32_t num_bytes)
 {
 	uint8_t wr_addr[2];
 	struct i2c_msg msgs[2];
@@ -71,7 +73,7 @@ int read_byte(struct device *i2c_dev, uint16_t addr, uint8_t *data)
 
 	/* Read from device. RESTART as neededm and STOP after this. */
 	msgs[1].buf = data;
-	msgs[1].len = 1;
+	msgs[1].len = num_bytes;
 	msgs[1].flags = I2C_MSG_READ | I2C_MSG_RESTART;
 
 	return i2c_transfer(i2c_dev, &msgs[0], 2, FRAM_I2C_ADDR);
@@ -80,8 +82,9 @@ int read_byte(struct device *i2c_dev, uint16_t addr, uint8_t *data)
 void main(void)
 {
 	struct device *i2c_dev;
-	uint8_t data;
-	int ret;
+	uint8_t cmp_data[16];
+	uint8_t data[16];
+	int i, ret;
 
 #ifdef CONFIG_ARC
 	i2c_dev = device_get_binding(CONFIG_I2C_QUARK_SE_SS_0_NAME);
@@ -92,31 +95,73 @@ void main(void)
 		printk("I2C: Device not found.\n");
 	}
 
-	ret = write_byte(i2c_dev, 0x00, 0xAE);
+	/* Do one-byte read/write */
+
+	data[0] = 0xAE;
+	ret = write_bytes(i2c_dev, 0x00, &data[0], 1);
 	if (ret) {
 		printk("Error writing to FRAM! (%d)\n", ret);
 	} else {
 		printk("Wrote 0xAE to address 0x00.\n");
 	}
 
-	ret = write_byte(i2c_dev, 0x01, 0x86);
+	data[0] = 0x86;
+	ret = write_bytes(i2c_dev, 0x01, &data[0], 1);
 	if (ret) {
 		printk("Error writing to FRAM! (%d)\n", ret);
 	} else {
 		printk("Wrote 0x86 to address 0x01.\n");
 	}
 
-	ret = read_byte(i2c_dev, 0x00, &data);
+	data[0] = 0x00;
+	ret = read_bytes(i2c_dev, 0x00, &data[0], 1);
 	if (ret) {
 		printk("Error reading to FRAM! (%d)\n", ret);
 	} else {
-		printk("Read 0x%X from address 0x00.\n", data);
+		printk("Read 0x%X from address 0x00.\n", data[0]);
 	}
 
-	ret = read_byte(i2c_dev, 0x01, &data);
+	data[1] = 0x00;
+	ret = read_bytes(i2c_dev, 0x01, &data[0], 1);
 	if (ret) {
 		printk("Error reading to FRAM! (%d)\n", ret);
 	} else {
-		printk("Read 0x%X from address 0x01.\n", data);
+		printk("Read 0x%X from address 0x01.\n", data[0]);
+	}
+
+	/* Do multi-byte read/write */
+
+	/* get some random data, and clear out data[] */
+	for (i = 0; i < sizeof(cmp_data); i++) {
+		cmp_data[i] = sys_cycle_get_32() & 0xFF;
+		data[i] = 0x00;
+	}
+
+	/* write them to the FRAM */
+	ret = write_bytes(i2c_dev, 0x00, cmp_data, sizeof(cmp_data));
+	if (ret) {
+		printk("Error writing to FRAM! (%d)\n", ret);
+	} else {
+		printk("Wrote %d bytes to address 0x00.\n", sizeof(cmp_data));
+	}
+
+	ret = read_bytes(i2c_dev, 0x00, data, sizeof(data));
+	if (ret) {
+		printk("Error writing to FRAM! (%d)\n", ret);
+	} else {
+		printk("Read %d bytes from address 0x00.\n", sizeof(data));
+	}
+
+	ret = DEV_OK;
+	for (i = 0; i < sizeof(cmp_data); i++) {
+		/* uncomment below if you want to see all the bytes */
+		/* printk("0x%X ?= 0x%X\n", cmp_data[i], data[i]); */
+		if (cmp_data[i] != data[i]) {
+			printk("Data comparison failed @ %d.\n", i);
+			ret = DEV_FAIL;
+		}
+	}
+	if (ret == DEV_OK) {
+		printk("Data comparison successful.\n");
 	}
 }
