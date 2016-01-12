@@ -30,6 +30,8 @@
 #include <errno.h>
 #include <sys_io.h>
 
+#include <misc/util.h>
+
 #ifdef CONFIG_SHARED_IRQ
 #include <shared_irq.h>
 #endif
@@ -57,6 +59,9 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	uint32_t data;
+	uint8_t tx_empty;
+	int8_t rx_empty;
+	uint8_t cnt;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
@@ -67,23 +72,45 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 		return;
 	}
 
-	/* Tell controller to get another byte */
-	data = IC_DATA_CMD_CMD;
+	/* How many bytes we can actually ask */
+	rx_empty = (I2C_DW_FIFO_DEPTH - regs->ic_rxflr) - dw->rx_pending;
 
-	/* Send RESTART if needed */
-	if (dw->xfr_flags & I2C_MSG_RESTART) {
-		data |= IC_DATA_CMD_RESTART;
-		dw->xfr_flags &= ~(I2C_MSG_RESTART);
+	if (rx_empty < 0) {
+		/* RX FIFO expected to be full.
+		 * So don't request any bytes, yet.
+		 */
+		return;
 	}
 
-	/* After receiving the last byte, send STOP if needed */
-	if ((dw->xfr_flags & I2C_MSG_STOP) && (dw->request_bytes == 1)) {
-		data |= IC_DATA_CMD_STOP;
+	/* How many empty slots in TX FIFO (as command queue) */
+	tx_empty = I2C_DW_FIFO_DEPTH - regs->ic_txflr;
+
+	/* Figure out how many bytes we can request */
+	cnt = min(I2C_DW_FIFO_DEPTH, dw->request_bytes);
+	cnt = min(min(tx_empty, rx_empty), cnt);
+
+	while (cnt > 0) {
+		/* Tell controller to get another byte */
+		data = IC_DATA_CMD_CMD;
+
+		/* Send RESTART if needed */
+		if (dw->xfr_flags & I2C_MSG_RESTART) {
+			data |= IC_DATA_CMD_RESTART;
+			dw->xfr_flags &= ~(I2C_MSG_RESTART);
+		}
+
+		/* After receiving the last byte, send STOP if needed */
+		if ((dw->xfr_flags & I2C_MSG_STOP)
+		    && (dw->request_bytes == 1)) {
+			data |= IC_DATA_CMD_STOP;
+		}
+
+		regs->ic_data_cmd.raw = data;
+
+		dw->rx_pending++;
+		dw->request_bytes--;
+		cnt--;
 	}
-
-	regs->ic_data_cmd.raw = data;
-
-	dw->request_bytes--;
 }
 
 static void _i2c_dw_data_read(struct device *dev)
@@ -99,12 +126,11 @@ static void _i2c_dw_data_read(struct device *dev)
 
 		dw->xfr_buf++;
 		dw->xfr_len--;
+		dw->rx_pending--;
 
 		if (dw->xfr_len == 0) {
 			break;
 		}
-
-		_i2c_dw_data_ask(dev);
 	}
 
 	/* Nothing to receive anymore */
@@ -369,9 +395,11 @@ static int _i2c_dw_setup(struct device *dev, uint16_t slave_address)
 
 	/* Set TX fifo threshold level.
 	 * TX_EMPTY interrupt is triggered only when the
-	 * TX FIFO is truly empty.
-	 *
-	 * TODO: threshold set to just enough for TX
+	 * TX FIFO is truly empty. So that we can let
+	 * the controller do the transfers for longer period
+	 * before we need to fill the FIFO again. This may
+	 * cause some pauses during transfers, but this keeps
+	 * the device from interrupting often.
 	 */
 	regs->ic_tx_tl = 0;
 
@@ -428,6 +456,7 @@ static int i2c_dw_transfer(struct device *dev,
 		dw->xfr_buf = cur_msg->buf;
 		dw->xfr_len = cur_msg->len;
 		dw->xfr_flags = cur_msg->flags;
+		dw->rx_pending = 0;
 
 		/* Need to RESTART if changing transfer direction */
 		if ((pflags & I2C_MSG_RW_MASK)

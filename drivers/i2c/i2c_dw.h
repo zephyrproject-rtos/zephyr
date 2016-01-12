@@ -116,6 +116,7 @@ struct i2c_dw_dev_config {
 
 	uint8_t			*xfr_buf;
 	uint32_t		xfr_len;
+	uint32_t		rx_pending;
 
 	bool			support_hs_mode;
 	uint16_t		hcnt;
