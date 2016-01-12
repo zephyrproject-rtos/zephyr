@@ -86,6 +86,23 @@
 		 .driver_data = data}
 
 /**
+ * @def SYS_GET_DEVICE_NAME
+ *
+ * @brief Expands to the full name of a global device object
+ *
+ * @details Return the full name of a device object symbol created by
+ * SYS_DEFINE_DEVICE(), using the @name provided to SYS_DEFINE_DEVICE().
+ *
+ * It is meant to be used for declaring extern symbols pointing on device
+ * objects before using the SYS_GET_DEVICE macro to get the device object.
+ *
+ * @param name The same name provided to SYS_DEFINE_DEVICE()
+ *
+ * @return The exanded name of the device object created by SYS_DEFINE_DEVICE()
+ */
+#define SYS_GET_DEVICE_NAME(name) (_CONCAT(__initconfig_, name))
+
+/**
  * @def SYS_GET_DEVICE
  *
  * @brief Obtain a pointer to a device object by name
@@ -97,6 +114,6 @@
  *
  * @return A pointer to the device object created by SYS_DEFINE_DEVICE()
  */
-#define SYS_GET_DEVICE(name) (&(_CONCAT(__initconfig_, name)))
+#define SYS_GET_DEVICE(name) (&SYS_GET_DEVICE_NAME(name))
 
 #endif /* _INIT_H_ */
