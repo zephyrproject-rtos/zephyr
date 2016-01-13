@@ -279,6 +279,7 @@ void i2c_qse_ss_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
 	uint32_t ic_intr_stat;
+	int ret = DEV_OK;
 
 	/*
 	 * Causes of an intterrupts:
@@ -300,8 +301,7 @@ void i2c_qse_ss_isr(void *arg)
 	     IC_INTR_RX_OVER | IC_INTR_RX_UNDER) &
 	    ic_intr_stat) {
 		dw->state = I2C_QSE_SS_CMD_ERROR;
-		_i2c_qse_ss_transfer_complete(dev);
-		return;
+		goto done;
 	}
 
 	/* Check if the RX FIFO reached threshold */
@@ -316,7 +316,7 @@ void i2c_qse_ss_isr(void *arg)
 	 */
 	if (ic_intr_stat & IC_INTR_TX_EMPTY) {
 		if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			_i2c_qse_ss_data_send(dev);
+			ret = _i2c_qse_ss_data_send(dev);
 		} else {
 			_i2c_qse_ss_data_ask(dev);
 		}
@@ -324,19 +324,25 @@ void i2c_qse_ss_isr(void *arg)
 
 		/* If STOP is not expected, finish processing this
 		 * message if there is nothing left to do anymore.
+		 * Or bail if there is any error.
 		 */
-		if ((dw->xfr_len == 0)
-		    && !(dw->xfr_flags & I2C_MSG_STOP)) {
-			_i2c_qse_ss_transfer_complete(dev);
-			return;
+		if (((dw->xfr_len == 0)
+		     && !(dw->xfr_flags & I2C_MSG_STOP))
+		    || (ret != DEV_OK)) {
+			goto done;
 		}
 	}
 
 	/* STOP detected */
 	if (ic_intr_stat & IC_INTR_STOP_DET) {
 		_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_STOP_DET);
-		_i2c_qse_ss_transfer_complete(dev);
+		goto done;
 	}
+
+	return;
+
+done:
+	_i2c_qse_ss_transfer_complete(dev);
 }
 
 static int _i2c_qse_ss_setup(struct device *dev, uint16_t addr)
