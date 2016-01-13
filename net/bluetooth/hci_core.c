@@ -864,8 +864,10 @@ static void hci_encrypt_change(struct net_buf *buf)
 	 * losing valid keys if encryption was not successful
 	 *
 	 * Update keys with last pairing info for proper sec level update.
+	 * This is done only for LE transport, for BR/EDR keys are updated on
+	 * HCI 'Link Key Notification Event'
 	 */
-	if (conn->encrypt) {
+	if (conn->encrypt && conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_update_keys(conn);
 	}
 
