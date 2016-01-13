@@ -62,7 +62,7 @@ static void *gatt_buf_reserve(size_t len)
 	ptr = memset(gatt_buf.buf + gatt_buf.len, 0, len);
 	gatt_buf.len += len;
 
-	printk("gatt_buf: %d/%d used\n", gatt_buf.len, MAX_BUFFER_SIZE);
+	BTTESTER_DBG("%d/%d used", gatt_buf.len, MAX_BUFFER_SIZE);
 
 	return ptr;
 }
@@ -78,7 +78,7 @@ static void *gatt_buf_add(const void *data, size_t len)
 	ptr = memcpy(gatt_buf.buf + gatt_buf.len, data, len);
 	gatt_buf.len += len;
 
-	printk("gatt_buf: %d/%d used\n", gatt_buf.len, MAX_BUFFER_SIZE);
+	BTTESTER_DBG("%d/%d used", gatt_buf.len, MAX_BUFFER_SIZE);
 
 	return ptr;
 }
@@ -113,7 +113,7 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern)
 		return NULL;
 	}
 
-	printk("gatt_db: attribute added, handle %x\n", attr->handle);
+	BTTESTER_DBG("handle 0x%04x", attr->handle);
 
 	return attr++;
 }
