@@ -20,12 +20,9 @@ ifneq ($(CONFIG_SSE_FP_MATH),y)
 cflags-y += -mno-sse
 endif
 
-arch-$(CONFIG_CPU_ATOM) += $(call cc-option,-march=atom) \
-	$(call cc-option,-mtune=atom,$(call cc-option,-mtune=generic))
-arch-$(CONFIG_CPU_MINUTEIA) += $(call cc-option,-march=pentium)
+include $(srctree)/arch/$(ARCH)/soc/$(SOC_NAME)/Makefile
 
-KBUILD_CFLAGS += $(cflags-y) $(arch-y)
-KBUILD_AFLAGS += $(arch-y)
+KBUILD_CFLAGS += $(cflags-y)
 
 QEMU_BIOS ?= /usr/share/qemu
 QEMU_CPU_TYPE_x86 = qemu32
