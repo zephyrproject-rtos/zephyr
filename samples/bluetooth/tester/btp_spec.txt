@@ -1027,13 +1027,9 @@ Commands and responses:
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
 					Address (6 octets)
-					Toggle (1 octet)
+					Enable (1 octet)
 					CCC_Handle (2 octets)
 		Response parameters:	ATT_Response (1 octet)
-
-		Valid Toggle parameter values:
-					0x00 = Disable
-					0x01 = Enable
 
 		This procedure is used to configure server to notify
 		characteristic value to a client.
@@ -1048,13 +1044,9 @@ Commands and responses:
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
 					Address (6 octets)
-					Toggle (1 octet)
+					Enable (1 octet)
 					CCC_Handle (2 octets)
 		Response parameters:	ATT_Response (1 octet)
-
-		Valid Toggle parameter values:
-					0x00 = Disable
-					0x01 = Enable
 
 		This procedure is used to configure server to indicate
 		characteristic value to a client.
