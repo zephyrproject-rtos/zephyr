@@ -2,7 +2,7 @@ ccflags-y += -I$(srctree)/kernel/nanokernel/include
 ccflags-y +=-I$(srctree)/arch/$(ARCH)/include
 ccflags-y += -I$(srctree)/kernel/microkernel/include
 
-obj-y += atomic.o thread.o thread_entry_wrapper.o \
+obj-y += thread.o thread_entry_wrapper.o \
 	cpu_idle.o  fast_irq.o  fatal.o  fault.o  \
 	fault_s.o  irq_manage.o  \
 	isr_wrapper.o  regular_irq.o  swap_macros.h  swap.o \
@@ -14,3 +14,9 @@ obj-y += prep_c.o \
 
 obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 obj-$(CONFIG_ERRNO) += errno.o
+
+ifeq ($(CONFIG_ARC_ATOMIC_ASM),y)
+obj-y += atomic.o
+else
+obj-y += atomic_native.o
+endif

@@ -21,6 +21,9 @@
  * This library provides routines to perform a number of atomic operations
  * on a memory location: add, subtract, increment, decrement, bitwise OR,
  * bitwise NOR, bitwise AND, bitwise NAND, set, clear and compare-and-swap.
+ *
+ * This requires the processor to support LLOCK and SCOND instructions,
+ * where they are not supported on ARC EM family processors.
  */
 
 #define _ASMLANGUAGE
