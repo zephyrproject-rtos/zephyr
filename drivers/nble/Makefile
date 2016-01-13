@@ -1,1 +1,1 @@
-obj-$(CONFIG_NBLE) += gap.o conn.o gatt.o
+obj-$(CONFIG_NBLE) += gap.o conn.o gatt.o uart.o

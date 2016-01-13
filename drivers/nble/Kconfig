@@ -37,6 +37,28 @@ config	BLUETOOTH_MAX_PAIRED
 	int
 	default 7
 
+config  NBLE_UART_ON_DEV_NAME
+	string "Device Name of UART Device for Nordic BLE"
+	default "UART_0"
+	depends on NBLE
+	help
+	  This option specifies the name of UART device to be used
+	  for Nordic BLE.
+
+config NBLE_UART_IRQ
+	int "IRQ of UART Device for Nordic BLE"
+	depends on NBLE
+	help
+	  This option specifies the IRQ of UART device to be used
+	  for Nordic BLE.
+
+config  NBLE_UART_IRQ_PRI
+	int "IRQ Priority of UART Device for Nordic BLE"
+	depends on NBLE
+	help
+	  This option specifies the IRQ priority of UART device to be used
+	  for Nordic BLE.
+
 config NBLE
 	bool "Support for custom Nordic Semiconductor BLE protocol"
 	default n
@@ -44,6 +66,8 @@ config NBLE
 	select BLUETOOTH_CENTRAL
 	select BLUETOOTH_GATT_CLIENT
 	select BLUETOOTH_SMP
+	select UART_INTERRUPT_DRIVEN
+	select NET_BUF
 	help
 	  Enables support for using Nordic Semiconductor nRF51 Bluetooth
 	  LE chips with a custom firmware. The API for this is a subset of
