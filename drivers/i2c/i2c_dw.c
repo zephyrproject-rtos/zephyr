@@ -141,7 +141,7 @@ static void _i2c_dw_data_read(struct device *dev)
 }
 
 
-static void _i2c_dw_data_send(struct device *dev)
+static int _i2c_dw_data_send(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
@@ -156,7 +156,7 @@ static void _i2c_dw_data_send(struct device *dev)
 
 		dw->state &= ~I2C_DW_CMD_SEND;
 
-		return;
+		return DEV_OK;
 	}
 
 	while (regs->ic_status.bits.tfnf && (dw->xfr_len > 0)) {
@@ -178,7 +178,13 @@ static void _i2c_dw_data_send(struct device *dev)
 
 		dw->xfr_len--;
 		dw->xfr_buf++;
+
+		if (regs->ic_intr_stat.bits.tx_abrt) {
+			return DEV_FAIL;
+		}
 	}
+
+	return DEV_OK;
 }
 
 static inline void _i2c_dw_transfer_complete(struct device *dev)
@@ -202,6 +208,7 @@ void i2c_dw_isr(struct device *port)
 	struct i2c_dw_dev_config * const dw = port->driver_data;
 	union ic_interrupt_register intr_stat;
 	uint32_t value;
+	int ret = DEV_OK;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
@@ -243,8 +250,7 @@ void i2c_dw_isr(struct device *port)
 		     DW_INTR_STAT_RX_OVER | DW_INTR_STAT_RX_UNDER) &
 		    intr_stat.raw) {
 			dw->state = I2C_DW_CMD_ERROR;
-			_i2c_dw_transfer_complete(port);
-			return;
+			goto done;
 		}
 
 		/* Check if the RX FIFO reached threshold */
@@ -259,7 +265,7 @@ void i2c_dw_isr(struct device *port)
 		if (intr_stat.bits.tx_empty) {
 			if ((dw->xfr_flags & I2C_MSG_RW_MASK)
 			    == I2C_MSG_WRITE) {
-				_i2c_dw_data_send(port);
+				ret = _i2c_dw_data_send(port);
 			} else {
 				_i2c_dw_data_ask(port);
 			}
@@ -267,10 +273,10 @@ void i2c_dw_isr(struct device *port)
 			/* If STOP is not expected, finish processing this
 			 * message if there is nothing left to do anymore.
 			 */
-			if ((dw->xfr_len == 0)
-			    && !(dw->xfr_flags & I2C_MSG_STOP)) {
-				_i2c_dw_transfer_complete(port);
-				return;
+			if (((dw->xfr_len == 0)
+			     && !(dw->xfr_flags & I2C_MSG_STOP))
+			    || (ret != DEV_OK)) {
+				goto done;
 			}
 		}
 	} else { /* we must be configured as a slave device */
@@ -299,9 +305,13 @@ void i2c_dw_isr(struct device *port)
 	/* STOP detected: finish processing this message */
 	if (intr_stat.bits.stop_det) {
 		value = regs->ic_clr_stop_det;
-		_i2c_dw_transfer_complete(port);
-		return;
+		goto done;
 	}
+
+	return;
+
+done:
+	_i2c_dw_transfer_complete(port);
 }
 
 
