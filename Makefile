@@ -404,7 +404,6 @@ scripts_basic:
 	$(Q)$(MAKE) $(build)=scripts/basic
 	$(Q)$(MAKE) $(build)=scripts/gen_idt
 	$(Q)$(MAKE) $(build)=scripts/gen_offset_header
-	$(Q)rm -f .tmp_quiet_recordmcount
 
 # To avoid any implicit rule to kick in, define an empty command.
 scripts/basic/%: scripts_basic ;
@@ -880,7 +879,6 @@ prepare2: prepare3 outputmakefile
 
 prepare1: prepare2 $(version_h) \
                    include/config/auto.conf
-	$(cmd_crmodverdir)
 
 archprepare_common = $(strip \
 		prepare1 scripts_basic \
@@ -1150,11 +1148,9 @@ qemu: zephyr
 
 # Modules
 /: prepare scripts FORCE
-	$(cmd_crmodverdir)
 	$(Q)$(MAKE) $(build)=$(build-dir)
 
 %/: prepare scripts FORCE
-	$(cmd_crmodverdir)
 	$(Q)$(MAKE) $(build)=$(build-dir)
 
 # FIXME Should go into a make.lib or something
