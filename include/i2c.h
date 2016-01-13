@@ -136,7 +136,7 @@ static inline int i2c_write(struct device *dev, uint8_t *buf,
 
 	msg.buf = buf;
 	msg.len = len;
-	msg.flags = I2C_MSG_WRITE;
+	msg.flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
 	return api->transfer(dev, &msg, 1, addr);
@@ -162,7 +162,7 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
 
 	msg.buf = buf;
 	msg.len = len;
-	msg.flags = I2C_MSG_READ;
+	msg.flags = I2C_MSG_READ | I2C_MSG_STOP;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
 	return api->transfer(dev, &msg, 1, addr);
