@@ -119,26 +119,27 @@ static void connected(struct bt_conn *conn)
 	}
 }
 
-static bool eir_found(const struct bt_eir *eir, void *user_data)
+static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
+		      void *user_data)
 {
 	bt_addr_le_t *addr = user_data;
 	int i;
 
-	printk("[AD]: %u len %u\n", eir->type, eir->len);
+	printk("[AD]: %u data_len %u\n", type, data_len);
 
-	switch (eir->type) {
-	case BT_EIR_UUID16_SOME:
-	case BT_EIR_UUID16_ALL:
-		if ((eir->len - sizeof(eir->type)) % sizeof(uint16_t) != 0) {
+	switch (type) {
+	case BT_DATA_UUID16_SOME:
+	case BT_DATA_UUID16_ALL:
+		if (data_len % sizeof(uint16_t) != 0) {
 			printk("AD malformed\n");
 			return true;
 		}
 
-		for (i = 0; i < eir->len; i += sizeof(uint16_t)) {
+		for (i = 0; i < data_len; i += sizeof(uint16_t)) {
 			uint16_t u16;
 			int err;
 
-			memcpy(&u16, &eir->data[i], sizeof(u16));
+			memcpy(&u16, &data[i], sizeof(u16));
 			if (sys_le16_to_cpu(u16) != BT_UUID_HRS->u16) {
 				continue;
 			}
@@ -158,32 +159,30 @@ static bool eir_found(const struct bt_eir *eir, void *user_data)
 	return true;
 }
 
-static void ad_parse(const uint8_t *data, uint8_t len,
-		     bool (*func)(const struct bt_eir *eir, void *user_data),
+static void ad_parse(const uint8_t *data, uint8_t data_len,
+		     bool (*func)(uint8_t type, const uint8_t *data,
+				  uint8_t data_len, void *user_data),
 		     void *user_data)
 {
-	const void *p;
-
-	for (p = data; len > 0;) {
-		const struct bt_eir *eir = p;
+	while (data_len > 1) {
+		uint8_t len = data[0];
 
 		/* Check for early termination */
-		if (eir->len == 0) {
+		if (len == 0) {
 			return;
 		}
 
-		if ((eir->len + sizeof(eir->len) > len) ||
-		    (len < sizeof(eir->len) + sizeof(eir->type))) {
+		if ((len + 1 > data_len) || (data_len < 2)) {
 			printk("AD malformed\n");
 			return;
 		}
 
-		if (!func(eir, user_data)) {
+		if (!func(data[1], &data[2], len - 1, user_data)) {
 			return;
 		}
 
-		p += sizeof(eir->len) + eir->len;
-		len -= sizeof(eir->len) + eir->len;
+		data_len -= len + 1;
+		data += len + 1;
 	}
 }
 

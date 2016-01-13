@@ -31,6 +31,7 @@
 #include <bluetooth/gatt.h>
 
 #define DEVICE_NAME	"DIS peripheral"
+#define DEVICE_NAME_LEN	14
 #define APPEARANCE	0x0000
 
 static int read_appearance(struct bt_conn *conn,
@@ -71,27 +72,14 @@ static struct bt_gatt_attr attrs[] = {
 			   read_string, NULL, "Manufacturer"),
 };
 
-static const struct bt_eir ad[] = {
-	{
-		.len = 2,
-		.type = BT_EIR_FLAGS,
-		.data = { BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR },
-	},
-	{
-		.len = 3,
-		.type = BT_EIR_UUID16_ALL,
-		.data = { 0x0a, 0x18 },
-	},
-	{ }
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_FLAGS,
+		BT_BYTES(BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR), 1),
+	BT_DATA(BT_DATA_UUID16_ALL, BT_BYTES(0x0a, 0x18), 2),
 };
 
-static const struct bt_eir sd[] = {
-	{
-		.len = 15,
-		.type = BT_EIR_NAME_COMPLETE,
-		.data = DEVICE_NAME,
-	},
-	{ }
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
 static void connected(struct bt_conn *conn)
@@ -129,7 +117,8 @@ void main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, sd);
+	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
+			      sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

@@ -47,11 +47,26 @@ int bt_enable(bt_ready_cb_t cb);
 
 /* Advertising API */
 
-struct bt_eir {
-	uint8_t len;
+/** Description of different data types that can be encoded into
+  * advertising data. Used to form arrays that are passed to the
+  * bt_le_adv_start() function.
+  */
+struct bt_data {
 	uint8_t type;
-	uint8_t data[29];
-} __packed;
+	uint8_t data_len;
+	const uint8_t *data;
+};
+
+/** Helper to declare inline byte arrays */
+#define BT_BYTES(bytes...) ((uint8_t []) { bytes })
+
+/** Helper to declare elements of bt_data arrays */
+#define BT_DATA(_type, _data, _data_len) \
+				{ \
+					.type = _type, \
+					.data_len = _data_len, \
+					.data = _data, \
+				}
 
 /** Local advertising address type */
 enum {
@@ -103,12 +118,15 @@ struct bt_le_adv_param {
  *
  *  @param param Advertising parameters.
  *  @param ad Data to be used in advertisement packets.
+ *  @param ad_len Number of elements in ad
  *  @param sd Data to be used in scan response packets.
+ *  @param sd_len Number of elements in sd
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_le_adv_start(const struct bt_le_adv_param *param,
-		    const struct bt_eir *ad, const struct bt_eir *sd);
+		    const struct bt_data *ad, size_t ad_len,
+		    const struct bt_data *sd, size_t sd_len);
 
 /** @brief Stop advertising
  *

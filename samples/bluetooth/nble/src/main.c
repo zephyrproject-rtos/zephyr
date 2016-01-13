@@ -33,6 +33,7 @@
 #define CONFIG_BLUETOOTH_MAX_PAIRED 1
 
 #define DEVICE_NAME		"Test peripheral"
+#define DEVICE_NAME_LEN		15
 #define HEART_RATE_APPEARANCE	0x0341
 
 static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -381,33 +382,18 @@ static struct bt_gatt_attr attrs[] = {
 			   read_signed, write_signed, &signed_value),
 };
 
-static const struct bt_eir ad[] = {
-	{
-		.len = 2,
-		.type = BT_EIR_FLAGS,
-		.data = { BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR },
-	},
-	{
-		.len = 7,
-		.type = BT_EIR_UUID16_ALL,
-		.data = { 0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18 },
-	},
-	{
-		.len = 17,
-		.type = BT_EIR_UUID128_ALL,
-		.data = { 0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
-			  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
-	},
-	{ }
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_FLAGS,
+		BT_BYTES(BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR), 1),
+	BT_DATA(BT_DATA_UUID16_ALL,
+		BT_BYTES(0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18), 6),
+	BT_DATA(BT_DATA_UUID128_ALL,
+		BT_BYTES(0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+			 0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12), 16),
 };
 
-static const struct bt_eir sd[] = {
-	{
-		.len = 16,
-		.type = BT_EIR_NAME_COMPLETE,
-		.data = DEVICE_NAME,
-	},
-	{ }
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
 static void connected(struct bt_conn *conn)
@@ -434,7 +420,8 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, sd);
+	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
+					sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

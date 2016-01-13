@@ -37,7 +37,8 @@
 
 #include <misc/shell.h>
 
-#define DEVICE_NAME "test shell"
+#define DEVICE_NAME		"test shell"
+#define DEVICE_NAME_LEN		10
 #define AD_SHORT_NAME		0x08
 #define AD_COMPLETE_NAME	0x09
 #define CREDITS			10
@@ -489,30 +490,20 @@ static void cmd_gatt_exchange_mtu(int argc, char *argv[])
 	}
 }
 
-static const struct bt_eir ad_discov[] = {
-	{
-		.len = 2,
-		.type = BT_EIR_FLAGS,
-		.data = { BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR },
-	},
-	{ }
+static const struct bt_data ad_discov[] = {
+	BT_DATA(BT_DATA_FLAGS,
+		BT_BYTES(BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR), 1),
 };
 
-static const struct bt_eir ad_non_discov[] = { { 0 } };
-
-static const struct bt_eir sd[] = {
-	{
-		.len = sizeof(DEVICE_NAME),
-		.type = BT_EIR_NAME_COMPLETE,
-		.data = DEVICE_NAME,
-	},
-	{ }
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
 static void cmd_advertise(int argc, char *argv[])
 {
 	struct bt_le_adv_param param;
-	const struct bt_eir *ad, *scan_rsp;
+	const struct bt_data *ad, *scan_rsp;
+	size_t ad_len, scan_rsp_len;
 
 	if (argc < 2) {
 		goto fail;
@@ -535,14 +526,17 @@ static void cmd_advertise(int argc, char *argv[])
 		param.type = BT_LE_ADV_IND;
 		param.addr_type = BT_LE_ADV_ADDR_PUBLIC;
 		scan_rsp = sd;
+		scan_rsp_len = ARRAY_SIZE(sd);
 	} else if (!strcmp(argv[1], "scan")) {
 		param.type = BT_LE_ADV_SCAN_IND;
 		param.addr_type = BT_LE_ADV_ADDR_PUBLIC;
 		scan_rsp = sd;
+		scan_rsp_len = ARRAY_SIZE(sd);
 	} else if (!strcmp(argv[1], "nconn")) {
 		param.type = BT_LE_ADV_NONCONN_IND;
 		param.addr_type = BT_LE_ADV_ADDR_NRPA;
 		scan_rsp = NULL;
+		scan_rsp_len = 0;
 	} else {
 		goto fail;
 	}
@@ -553,16 +547,19 @@ static void cmd_advertise(int argc, char *argv[])
 
 		if (!strcmp(mode, "discov")) {
 			ad = ad_discov;
+			ad_len = ARRAY_SIZE(ad_discov);
 		} else if (!strcmp(mode, "non_discov")) {
-			ad = ad_non_discov;
+			ad = NULL;
+			ad_len = 0;
 		} else {
 			goto fail;
 		}
 	} else {
 		ad = ad_discov;
+		ad_len = ARRAY_SIZE(ad_discov);
 	}
 
-	if (bt_le_adv_start(&param, ad, scan_rsp) < 0) {
+	if (bt_le_adv_start(&param, ad, ad_len, scan_rsp, scan_rsp_len) < 0) {
 		printk("Failed to start advertising\n");
 	} else {
 		printk("Advertising started\n");

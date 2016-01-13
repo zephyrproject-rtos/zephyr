@@ -143,31 +143,27 @@ static void set_connectable(uint8_t *data, uint16_t len)
 		    (uint8_t *) &rp, sizeof(rp));
 }
 
-static struct bt_eir ad_flags = {
-		.len = 2,
-		.type = BT_EIR_FLAGS,
-		.data = { BT_LE_AD_NO_BREDR },
-};
+static uint8_t ad_flags = BT_LE_AD_NO_BREDR;
+static struct bt_data ad = BT_DATA(BT_DATA_FLAGS, &ad_flags, sizeof(ad_flags));
 
 static void set_discoverable(uint8_t *data, uint16_t len)
 {
 	const struct gap_set_discoverable_cmd *cmd = (void *) data;
 	struct gap_set_discoverable_rp rp;
-	uint8_t *flags = &ad_flags.data[0];
 
 	switch (cmd->discoverable) {
 	case GAP_NON_DISCOVERABLE:
-		*flags &= ~(BT_LE_AD_GENERAL | BT_LE_AD_LIMITED);
+		ad_flags &= ~(BT_LE_AD_GENERAL | BT_LE_AD_LIMITED);
 		atomic_clear_bit(&current_settings, GAP_SETTINGS_DISCOVERABLE);
 		break;
 	case GAP_GENERAL_DISCOVERABLE:
-		*flags &= ~BT_LE_AD_LIMITED;
-		*flags |= BT_LE_AD_GENERAL;
+		ad_flags &= ~BT_LE_AD_LIMITED;
+		ad_flags |= BT_LE_AD_GENERAL;
 		atomic_set_bit(&current_settings, GAP_SETTINGS_DISCOVERABLE);
 		break;
 	case GAP_LIMITED_DISCOVERABLE:
-		*flags &= ~BT_LE_AD_GENERAL;
-		*flags |= BT_LE_AD_LIMITED;
+		ad_flags &= ~BT_LE_AD_GENERAL;
+		ad_flags |= BT_LE_AD_LIMITED;
 		atomic_set_bit(&current_settings, GAP_SETTINGS_DISCOVERABLE);
 		break;
 	default:
@@ -187,7 +183,6 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 	const struct gap_start_advertising_cmd *cmd = (void *) data;
 	struct gap_start_advertising_rp rp;
 	uint8_t adv_type;
-	struct bt_eir ad_data[] = { ad_flags };
 
 	/* TODO
 	 * convert adv_data and scan_rsp and pass them
@@ -200,7 +195,7 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 		adv_type = BT_LE_ADV_NONCONN_IND;
 	}
 
-	if (bt_le_adv_start(BT_LE_ADV(adv_type), ad_data, NULL) < 0) {
+	if (bt_le_adv_start(BT_LE_ADV(adv_type), &ad, 1, NULL, 0) < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING,
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 		return;

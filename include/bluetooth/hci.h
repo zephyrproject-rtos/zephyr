@@ -46,24 +46,25 @@ typedef struct {
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED	0x29
 #define BT_HCI_ERR_UNACCEPT_CONN_PARAMS		0x3b
 
-/* EIR/AD definitions */
-#define BT_EIR_FLAGS			0x01 /* AD flags */
-#define BT_EIR_UUID16_SOME		0x02 /* 16-bit UUID, more available */
-#define BT_EIR_UUID16_ALL		0x03 /* 16-bit UUID, all listed */
-#define BT_EIR_UUID32_SOME		0x04 /* 32-bit UUID, more available */
-#define BT_EIR_UUID32_ALL		0x05 /* 32-bit UUID, all listed */
-#define BT_EIR_UUID128_SOME		0x06 /* 128-bit UUID, more available */
-#define BT_EIR_UUID128_ALL		0x07 /* 128-bit UUID, all listed */
-#define BT_EIR_NAME_COMPLETE		0x09 /* Complete name */
-#define BT_EIR_TX_POWER			0x0a /* Tx Power */
-#define BT_EIR_SOLICIT16		0x14 /* Solicit UUIDs, 16-bit */
-#define BT_EIR_SOLICIT128		0x15 /* Solicit UUIDs, 128-bit */
-#define BT_EIR_SVC_DATA16		0x16 /* Service data, 16-bit UUID */
-#define BT_EIR_GAP_APPEARANCE		0x19 /* GAP appearance */
-#define BT_EIR_SOLICIT32		0x1f /* Solicit UUIDs, 32-bit */
-#define BT_EIR_SVC_DATA32		0x20 /* Service data, 32-bit UUID */
-#define BT_EIR_SVC_DATA128		0x21 /* Service data, 128-bit UUID */
-#define BT_EIR_MANUFACTURER_DATA	0xff /* Manufacturer Specific Data */
+/* EIR/AD data type definitions */
+#define BT_DATA_FLAGS			0x01 /* AD flags */
+#define BT_DATA_UUID16_SOME		0x02 /* 16-bit UUID, more available */
+#define BT_DATA_UUID16_ALL		0x03 /* 16-bit UUID, all listed */
+#define BT_DATA_UUID32_SOME		0x04 /* 32-bit UUID, more available */
+#define BT_DATA_UUID32_ALL		0x05 /* 32-bit UUID, all listed */
+#define BT_DATA_UUID128_SOME		0x06 /* 128-bit UUID, more available */
+#define BT_DATA_UUID128_ALL		0x07 /* 128-bit UUID, all listed */
+#define BT_DATA_NAME_SHORTENED		0x08 /* Shortened name */
+#define BT_DATA_NAME_COMPLETE		0x09 /* Complete name */
+#define BT_DATA_TX_POWER		0x0a /* Tx Power */
+#define BT_DATA_SOLICIT16		0x14 /* Solicit UUIDs, 16-bit */
+#define BT_DATA_SOLICIT128		0x15 /* Solicit UUIDs, 128-bit */
+#define BT_DATA_SVC_DATA16		0x16 /* Service data, 16-bit UUID */
+#define BT_DATA_GAP_APPEARANCE		0x19 /* GAP appearance */
+#define BT_DATA_SOLICIT32		0x1f /* Solicit UUIDs, 32-bit */
+#define BT_DATA_SVC_DATA32		0x20 /* Service data, 32-bit UUID */
+#define BT_DATA_SVC_DATA128		0x21 /* Service data, 128-bit UUID */
+#define BT_DATA_MANUFACTURER_DATA	0xff /* Manufacturer Specific Data */
 
 #define BT_LE_AD_LIMITED		0x01 /* Limited Discoverable */
 #define BT_LE_AD_GENERAL		0x02 /* General Discoverable */

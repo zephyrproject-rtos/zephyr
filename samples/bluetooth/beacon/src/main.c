@@ -19,34 +19,21 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <misc/printk.h>
+#include <misc/util.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
 /* Set Advertisement data */
-static const struct bt_eir ad[] = {
-	{
-		.len = 3,
-		.type = BT_EIR_UUID16_ALL,
-		.data = { 0xd8, 0xfe },
-	},
-	{
-		.len = 9,
-		.type = BT_EIR_SVC_DATA16,
-		.data = { 0xd8, 0xfe, 0x00, 0x20, 0x02, '0', '1',
-			  0x08 },
-	},
-	{ }
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_UUID16_ALL, BT_BYTES(0xd8, 0xfe), 2),
+	BT_DATA(BT_DATA_SVC_DATA16,
+		BT_BYTES(0xd8, 0xfe, 0x00, 0x20, 0x02, '0', '1', 0x08), 8)
 };
 
 /* Set Scan Response data */
-static const struct bt_eir sd[] = {
-	{
-		.len = 12,
-		.type = BT_EIR_NAME_COMPLETE,
-		.data = "Test beacon",
-	},
-	{ }
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, "Test beacon", 11),
 };
 
 #ifdef CONFIG_MICROKERNEL
@@ -71,7 +58,7 @@ void main(void)
 					      BT_LE_ADV_ADDR_NRPA,
 					      BT_GAP_ADV_FAST_INT_MIN_2,
 					      BT_GAP_ADV_FAST_INT_MAX_2),
-			      ad, sd);
+			      ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
