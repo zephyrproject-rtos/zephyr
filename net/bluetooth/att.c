@@ -1625,17 +1625,18 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP)
-static void security_changed(struct bt_conn *conn, bt_security_t level)
+static void bt_att_encrypt_change(struct bt_l2cap_chan *chan)
 {
-	struct bt_att *att;
+	struct bt_att *att = CONTAINER_OF(chan, struct bt_att, chan);
+	struct bt_conn *conn = chan->conn;
 	struct bt_att_req *req;
 
-	att = att_chan_get(conn);
-	if (!att) {
+	BT_DBG("chan %p conn %p handle %u sec_level 0x%02x", chan, conn,
+	       conn->handle, conn->sec_level);
+
+	if (conn->sec_level == BT_SECURITY_LOW) {
 		return;
 	}
-
-	BT_DBG("conn %p level %u", conn, level);
 
 	req = &att->req;
 	if (!req->retrying)
@@ -1647,10 +1648,6 @@ static void security_changed(struct bt_conn *conn, bt_security_t level)
 	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, req->buf);
 	req->buf = NULL;
 }
-
-static struct bt_conn_cb conn_callbacks = {
-		.security_changed = security_changed,
-};
 #endif /* CONFIG_BLUETOOTH_SMP */
 
 static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
@@ -1660,6 +1657,9 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.connected = bt_att_connected,
 		.disconnected = bt_att_disconnected,
 		.recv = bt_att_recv,
+#if defined(CONFIG_BLUETOOTH_SMP)
+		.encrypt_change = bt_att_encrypt_change,
+#endif /* CONFIG_BLUETOOTH_SMP */
 	};
 
 	BT_DBG("conn %p handle %u", conn, conn->handle);
@@ -1693,10 +1693,6 @@ void bt_att_init(void)
 	net_buf_pool_init(att_pool);
 
 	bt_l2cap_fixed_chan_register(&chan);
-
-#if defined(CONFIG_BLUETOOTH_SMP)
-	bt_conn_cb_register(&conn_callbacks);
-#endif /* CONFIG_BLUETOOTH_SMP */
 }
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
