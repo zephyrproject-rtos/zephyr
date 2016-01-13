@@ -1,4 +1,4 @@
-BOARD ?= qemu_x86
+BOARD ?= arduino_101
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 CONF_FILE = prj.conf
