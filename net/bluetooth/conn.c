@@ -1126,6 +1126,11 @@ int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
 		return -EPERM;
 	}
 
+	/* Allow user send entered PIN to remote, then reset user state. */
+	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_USER)) {
+		return -EPERM;
+	}
+
 	if (len == 16) {
 		atomic_set_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
 	}
@@ -1142,11 +1147,11 @@ void bt_conn_pin_code_req(struct bt_conn *conn)
 			secure = true;
 		}
 
+		atomic_set_bit(conn->flags, BT_CONN_USER);
 		bt_auth->pincode_entry(conn, secure);
 	} else {
 		pin_code_neg_reply(&conn->br.dst);
 	}
-
 }
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
@@ -1191,6 +1196,11 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 #endif /* CONFIG_BLUETOOTH_SMP */
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
+		/* Allow user cancel authentication, then reset user state. */
+		if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_USER)) {
+			return -EPERM;
+		}
+
 		return pin_code_neg_reply(&conn->br.dst);
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
