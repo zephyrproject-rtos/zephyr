@@ -44,7 +44,7 @@
 #define H4_SCO		0x03
 #define H4_EVT		0x04
 
-struct device *h4_dev;
+static struct device *h4_dev;
 
 static int h4_read(struct device *uart, uint8_t *buf,
 		   size_t len, size_t min)
