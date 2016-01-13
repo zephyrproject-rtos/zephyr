@@ -249,7 +249,7 @@ config NUM_DYNAMIC_EXC_STUBS
 	error code onto the stack.
 
 config NUM_DYNAMIC_EXC_NOERR_STUBS
-	int "Number of dynamic exception stubs"
+	int "Number of dynamic no-error exception stubs"
 	default 0
 	help
 	This option specifies the maximum number of dynamically allocated
