@@ -173,6 +173,11 @@ void bt_l2cap_connected(struct bt_conn *conn)
 	struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
+	/* TODO Add support for fixed channels on BR/EDR transport */
+	if (conn->type !=  BT_CONN_TYPE_LE) {
+		return;
+	}
+
 	for (fchan = channels; fchan; fchan = fchan->_next) {
 		if (fchan->accept(conn, &chan) < 0) {
 			continue;
