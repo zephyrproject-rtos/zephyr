@@ -3,6 +3,7 @@
 asflags-y  += $(EXTRA_AFLAGS)
 ccflags-y  += $(EXTRA_CFLAGS)
 cppflags-y += $(EXTRA_CPPFLAGS)
+cxxflags-y += $(EXTRA_CXXFLAGS)
 ldflags-y  += $(EXTRA_LDFLAGS)
 
 #
@@ -114,6 +115,9 @@ _c_flags       = $(filter-out $(CFLAGS_REMOVE_$(basetarget).o), $(orig_c_flags))
 _a_flags       = $(KBUILD_CPPFLAGS) $(KBUILD_AFLAGS) $(KBUILD_SUBDIR_ASFLAGS) \
                  $(asflags-y) $(AFLAGS_$(basetarget).o)
 _cpp_flags     = $(KBUILD_CPPFLAGS) $(cppflags-y) $(CPPFLAGS_$(@F))
+orig_cxx_flags = $(KBUILD_CPPFLAGS) $(KBUILD_CXXFLAGS) $(KBUILD_SUBDIR_CXXFLAGS) \
+                 $(cxxflags-y) $(CXXFLAGS_$(basetarget).o)
+_cxx_flags     = $(filter-out $(CXXFLAGS_REMOVE_$(basetarget).o), $(orig_cxx_flags))
 
 # If building the kernel in a separate objtree expand all occurrences
 # of -Idir to -I$(srctree)/dir except for absolute paths (starting with '/').
@@ -122,6 +126,7 @@ ifeq ($(KBUILD_SRC),)
 __c_flags	= $(_c_flags)
 __a_flags	= $(_a_flags)
 __cpp_flags     = $(_cpp_flags)
+__cxx_flags     = $(_cxx_flags)
 else
 
 # -I$(obj) locates generated .h files
@@ -131,6 +136,7 @@ else
 __c_flags	= $(call addtree,-I$(obj)) $(call flags,_c_flags)
 __a_flags	=                          $(call flags,_a_flags)
 __cpp_flags     =                          $(call flags,_cpp_flags)
+__cxx_flags     =                          $(call flags,_cxx_flags)
 endif
 
 c_flags        = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(ZEPHYRINCLUDE)     \
@@ -148,6 +154,10 @@ ld_flags       = $(LDFLAGS) $(ldflags-y)
 dtc_cpp_flags  = -Wp,-MD,$(depfile).pre.tmp -nostdinc                    \
 		 -I$(srctree)/drivers/of/testcase-data                   \
 		 -undef -D__DTS__
+
+cxx_flags      = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(ZEPHYRINCLUDE)     \
+		 $(__cxx_flags) $(modkern_cflags)                           \
+		 -D"KBUILD_STR(s)=\#s" $(basename_flags) $(modname_flags)
 
 # Finds the multi-part object the current object will be linked into
 modname-multi = $(sort $(foreach m,$(multi-used),\

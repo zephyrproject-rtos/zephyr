@@ -300,8 +300,10 @@ AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
 ifeq ($(USE_CCACHE),1)
 CC		= $(CCACHE) $(CROSS_COMPILE)gcc
+CXX		= $(CCACHE) $(CROSS_COMPILE)g++
 else
 CC		= $(CROSS_COMPILE)gcc
+CXX		= $(CROSS_COMPILE)g++
 endif
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
@@ -366,6 +368,18 @@ KBUILD_CFLAGS   := -c -g -std=c99 \
 		-Wno-format-zero-length \
 		-Wno-main -ffreestanding
 
+KBUILD_CXXFLAGS   := -c -g -std=c++11 \
+		-fno-reorder-functions \
+		-fno-asynchronous-unwind-tables \
+		-fno-omit-frame-pointer \
+		-fcheck-new \
+		-fno-defer-pop -Wall \
+		-Wno-unused-but-set-variable \
+		-Wno-format-zero-length \
+		-Wno-main -ffreestanding \
+		-ffunction-sections -fdata-sections \
+		-fno-rtti -fno-exceptions
+
 KBUILD_AFLAGS   := -c -g -xassembler-with-cpp
 
 LDFLAGS += $(call ld-option,-nostartfiles)
@@ -377,13 +391,13 @@ KERNELVERSION = $(VERSION_MAJOR)$(if $(VERSION_MINOR),.$(VERSION_MINOR)$(if $(PA
 
 export VERSION_MAJOR VERSION_MINOR PATCHLEVEL VERSION_RESERVED EXTRAVERSION
 export KERNELRELEASE KERNELVERSION
-export ARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
+export ARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC CXX
 export CPP AR NM STRIP OBJCOPY OBJDUMP
 export MAKE AWK INSTALLKERNEL PERL PYTHON GENIDT GENOFFSET_H
 export HOSTCXX HOSTCXXFLAGS CHECK CHECKFLAGS
 
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS ZEPHYRINCLUDE OBJCOPYFLAGS LDFLAGS
-export KBUILD_CFLAGS CFLAGS_GCOV KBUILD_AFLAGS AFLAGS_KERNEL
+export KBUILD_CFLAGS KBUILD_CXXFLAGS CFLAGS_GCOV KBUILD_AFLAGS AFLAGS_KERNEL
 export KBUILD_ARFLAGS
 
 
@@ -599,6 +613,7 @@ export LDFLAG_LINKERCMD
 include arch/$(ARCH)/Makefile
 
 KBUILD_CFLAGS += $(CFLAGS)
+KBUILD_CXXFLAGS += $(CXXFLAGS)
 KBUILD_AFLAGS += $(CFLAGS)
 
 
@@ -1102,6 +1117,10 @@ qemu: zephyr
 %.i: %.c prepare scripts FORCE
 	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
 %.o: %.c prepare scripts FORCE
+	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
+%.o: %.cpp prepare scripts FORCE
+	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
+%.o: %.cxx prepare scripts FORCE
 	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
 %.lst: %.c prepare scripts FORCE
 	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)

@@ -8,6 +8,7 @@ arch-$(CONFIG_CPU_CORTEX_M4) += $(call cc-option,-mthumb -mcpu=cortex-m4) \
 cflags-$(CONFIG_LTO) = $(call cc-option,-flto,)
 
 KBUILD_CFLAGS += $(cflags-y) $(arch-y)
+KBUILD_CXXFLAGS += $(cflags-y) $(arch-y)
 KBUILD_AFLAGS += $(arch-y)
 
 QEMU_CPU_TYPE_arm = cortex-m3

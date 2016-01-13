@@ -86,6 +86,7 @@ SECTIONS {
 
 		*(.text)
 		*(".text.*")
+		*(.gnu.linkonce.t.*)
 
 		_image_text_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -98,6 +99,7 @@ SECTIONS {
 		__devconfig_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#ifdef CONFIG_CPLUSPLUS
 	SECTION_PROLOGUE(_CTOR_SECTION_NAME,,) {
 		/*
 		 * The compiler fills the constructor pointers table below, hence
@@ -114,9 +116,19 @@ SECTIONS {
 		__CTOR_END__ = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	SECTION_PROLOGUE(init_array, (OPTIONAL),)
+	{
+		. = ALIGN(4);
+		__init_array_start = .;
+		KEEP(*(SORT_BY_NAME(".init_array*")))
+		__init_array_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,) {
 		*(.rodata)
 		*(".rodata.*")
+		*(.gnu.linkonce.r.*)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_rom_end = .;

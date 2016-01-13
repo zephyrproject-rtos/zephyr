@@ -320,7 +320,7 @@ def kernel_main_c_tasks():
 
     kernel_main_c_out("\n")
     for task in task_list:
-        kernel_main_c_out("extern void %s(void);\n" % task[2])
+        kernel_main_c_out("EXTERN_C void %s(void);\n" % task[2])
 
     # task descriptors (including one for idle task)
     #

@@ -25,6 +25,7 @@ arch-$(CONFIG_CPU_ATOM) += $(call cc-option,-march=atom) \
 arch-$(CONFIG_CPU_MINUTEIA) += $(call cc-option,-march=pentium)
 
 KBUILD_CFLAGS += $(cflags-y) $(arch-y)
+KBUILD_CXXFLAGS += $(cflags-y) $(arch-y)
 KBUILD_AFLAGS += $(arch-y)
 
 QEMU_BIOS ?= /usr/share/qemu

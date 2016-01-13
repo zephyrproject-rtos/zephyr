@@ -96,6 +96,14 @@ void _main(void)
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_MICROKERNEL);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
 
+#ifdef CONFIG_CPLUSPLUS
+	/* Process the .ctors and .init_array sections */
+	extern void __do_global_ctors_aux(void);
+	extern void __do_init_array_aux(void);
+	__do_global_ctors_aux();
+	__do_init_array_aux();
+#endif
+
 
 #ifdef CONFIG_WORKLOAD_MONITOR
 	_k_workload_monitor_calibrate();

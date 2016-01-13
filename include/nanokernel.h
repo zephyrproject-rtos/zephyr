@@ -1363,6 +1363,35 @@ struct nano_timer *_track_list_nano_timer;
 }
 #endif
 
+#if defined(CONFIG_CPLUSPLUS) && defined(__cplusplus)
+/*
+ * Define new and delete operators.
+ * At this moment they do nothing since objects are supposed
+ * to be statically allocated
+ */
+inline void operator delete(void *ptr)
+{
+	(void)ptr;
+}
+
+inline void operator delete[](void *ptr)
+{
+	(void)ptr;
+}
+
+inline void *operator new(size_t size)
+{
+	(void)size;
+	return NULL;
+}
+
+inline void *operator new[](size_t size)
+{
+	(void)size;
+	return NULL;
+}
+#endif
+
 /* architecture-specific nanokernel public APIs */
 
 #include <arch/cpu.h>
