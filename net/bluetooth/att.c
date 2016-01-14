@@ -889,11 +889,18 @@ static uint8_t read_group_cb(const struct bt_gatt_attr *attr, void *user_data)
 	struct bt_conn *conn = att->chan.conn;
 	int read;
 
-	/* If UUID don't match update group end_handle */
-	if (bt_uuid_cmp(attr->uuid, data->uuid)) {
+	/* Update group end_handle if attribute is not a service */
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) &&
+	    bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
 		if (data->group && attr->handle > data->group->end_handle) {
 			data->group->end_handle = sys_cpu_to_le16(attr->handle);
 		}
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	/* If Group Type don't match skip */
+	if (bt_uuid_cmp(attr->uuid, data->uuid)) {
+		data->group = NULL;
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -952,6 +959,7 @@ static uint8_t att_read_group_rsp(struct bt_att *att, struct bt_uuid *uuid,
 	data.uuid = uuid;
 	data.rsp = net_buf_add(data.buf, sizeof(*data.rsp));
 	data.rsp->len = 0;
+	data.group = NULL;
 
 	bt_gatt_foreach_attr(start_handle, end_handle, read_group_cb, &data);
 
