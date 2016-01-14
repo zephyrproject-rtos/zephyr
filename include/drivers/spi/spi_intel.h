@@ -1,4 +1,4 @@
-/* intel_spi.h - Intel's SPI controller driver utilities */
+/* spi_intel.h - Intel's SPI controller driver utilities */
 
 /*
  * Copyright (c) 2015 Intel Corporation.
@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-#ifndef __INTEL_SPI_H__
-#define __INTEL_SPI_H__
+#ifndef __SPI_INTEL_H__
+#define __SPI_INTEL_H__
 
 /* SPI Maximum supported system frequencies */
 #define SPI_MAX_CLK_FREQ_25MHZ     ((0x800000 << 8))
@@ -53,4 +53,4 @@
 #define SPI_MAX_CLK_FREQ_5KHZ      ((0x20000 << 8) | 154)
 #define SPI_MAX_CLK_FREQ_1KHZ      ((0x8000 << 8) | 194)
 
-#endif /* __INTEL_SPI_H__ */
+#endif /* __SPI_INTEL_H__ */

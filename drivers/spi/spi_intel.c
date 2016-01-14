@@ -1,4 +1,4 @@
-/* intel_spi.c - Driver implementation for Intel SPI controller */
+/* spi_intel.c - Driver implementation for Intel SPI controller */
 
 /*
  * Copyright (c) 2015 Intel Corporation.
@@ -26,8 +26,8 @@
 #include <sys_io.h>
 
 #include <spi.h>
-#include <spi/intel_spi.h>
-#include "intel_spi_priv.h"
+#include <spi/spi_intel.h>
+#include "spi_intel.h"
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>

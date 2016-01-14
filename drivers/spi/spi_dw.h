@@ -1,4 +1,4 @@
-/* dw_spi_priv.h - Designware SPI driver private definitions */
+/* spi_dw.h - Designware SPI driver private definitions */
 
 /*
  * Copyright (c) 2015 Intel Corporation.
@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-#ifndef __DW_SPI_PRIV_H__
-#define __DW_SPI_PRIV_H__
+#ifndef __SPI_DW_H__
+#define __SPI_DW_H__
 
 #include <spi.h>
 
@@ -126,4 +126,4 @@ struct spi_dw_data {
 #define DW_SPI_IMR_MASK_TX		(~(0x3))
 #define DW_SPI_IMR_MASK_RX		(~(0x28))
 
-#endif /* __DW_SPI_PRIV_H__ */
+#endif /* __SPI_DW_H__ */

@@ -1,4 +1,4 @@
-/* intel_spi_priv.h - Intel's SPI driver private definitions */
+/* spi_intel.h - Intel's SPI driver private definitions */
 
 /*
  * Copyright (c) 2015 Intel Corporation.
@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-#ifndef __INTEL_SPI_PRIV_H__
-#define __INTEL_SPI_PRIV_H__
+#ifndef __SPI_INTEL_PRIV_H__
+#define __SPI_INTEL_PRIV_H__
 
 #ifdef CONFIG_PCI
 #include <pci/pci.h>
@@ -115,4 +115,4 @@ struct spi_intel_data {
 #define INTEL_SPI_DSS_RATE(__msf) \
 	((__msf & (INTEL_SPI_DDS_RATE_MASK)) >> 8)
 
-#endif /* __INTEL_SPI_PRIV_H__ */
+#endif /* __SPI_INTEL_PRIV_H__ */

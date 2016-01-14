@@ -1,4 +1,4 @@
-/* dw_spi.c - Designware SPI driver implementation */
+/* spi_dw.c - Designware SPI driver implementation */
 
 /*
  * Copyright (c) 2015 Intel Corporation.
@@ -29,7 +29,7 @@
 #include <misc/util.h>
 
 #include <spi.h>
-#include <dw_spi_priv.h>
+#include <spi_dw.h>
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
