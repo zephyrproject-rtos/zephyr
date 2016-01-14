@@ -68,7 +68,7 @@ config I2C_QUARK_SE_SS_0_BASE
 	default 0x80012000
 
 config I2C_QUARK_SE_SS_0_NAME
-	default "SS_I2C0"
+	default "I2C0"
 
 config I2C_QUARK_SE_SS_0_DEFAULT_CFG
 	default 0x12
@@ -81,7 +81,7 @@ config I2C_QUARK_SE_SS_1_BASE
 	default 0x80012100
 
 config I2C_QUARK_SE_SS_1_NAME
-	default "SS_I2C1"
+	default "I2C1"
 
 config I2C_QUARK_SE_SS_1_DEFAULT_CFG
 	default 0x12

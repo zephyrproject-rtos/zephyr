@@ -86,11 +86,7 @@ void main(void)
 	uint8_t data[16];
 	int i, ret;
 
-#ifdef CONFIG_ARC
-	i2c_dev = device_get_binding(CONFIG_I2C_QUARK_SE_SS_0_NAME);
-#elif CONFIG_X86
-	i2c_dev = device_get_binding(CONFIG_I2C_DW_0_NAME);
-#endif
+	i2c_dev = device_get_binding("I2C0");
 	if (!i2c_dev) {
 		printk("I2C: Device not found.\n");
 	}
