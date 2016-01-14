@@ -151,21 +151,6 @@ config ADC_DW_DUMMY_CONVERSION
 	sample after a resume from a low power state.
 
 choice
-	prompt "Input Mode"
-	default ADC_DW_SINGLE_ENDED
-	depends on ADC_DW
-	help
-	ADC input mode: single ended or differential.
-
-config ADC_DW_SINGLE_ENDED
-	bool "Single ended"
-
-config ADC_DW_DIFFERENTIAL
-	bool "Differential"
-
-endchoice
-
-choice
 	prompt "Output Mode"
 	default ADC_DW_SERIAL
 	depends on ADC_DW

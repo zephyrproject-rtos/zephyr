@@ -375,7 +375,7 @@ int adc_dw_init(struct device *dev)
 	tmp_val = sys_in32(adc_base + ADC_SET);
 	tmp_val &= ADC_CONFIG_SET_MASK;
 	val = (config->sample_width) & FIVE_BITS_SET;
-	val |= ((config->in_mode & ONE_BIT_SET) << INPUT_MODE_POS);
+	val &= ~(1 << INPUT_MODE_POS);
 	val |= ((config->capture_mode & ONE_BIT_SET) << CAPTURE_MODE_POS);
 	val |= ((config->out_mode & ONE_BIT_SET) << OUTPUT_MODE_POS);
 	val |= ((config->serial_dly & FIVE_BITS_SET) << SERIAL_DELAY_POS);
@@ -470,11 +470,6 @@ struct adc_config adc_config_dev_0 = {
 		.reg_base = PERIPH_ADDR_BASE_ADC,
 		.reg_irq_mask = SCSS_REGISTER_BASE + INT_SS_ADC_IRQ_MASK,
 		.reg_err_mask = SCSS_REGISTER_BASE + INT_SS_ADC_ERR_MASK,
-#ifdef CONFIG_ADC_DW_SINGLE_ENDED
-		.in_mode      = 0,
-#elif CONFIG_ADC_DW_DIFFERENTIAL
-		.in_mode      = 1,
-#endif
 #ifdef CONFIG_ADC_DW_SERIAL
 		.out_mode     = 0,
 #elif CONFIG_ADC_DW_PARALLEL

@@ -159,8 +159,6 @@ struct adc_config {
 	uint32_t reg_irq_mask;
 	/**IIO address for the error mask register.*/
 	uint32_t reg_err_mask;
-	/**Input mode*/
-	uint8_t  in_mode;
 	/**Output mode*/
 	uint8_t  out_mode;
 	/**Capture mode*/
