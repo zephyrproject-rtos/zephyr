@@ -45,29 +45,3 @@ int bt_le_scan_stop(void)
 {
 	return -ENOSYS;
 }
-
-int bt_le_set_auto_conn(bt_addr_le_t *addr,
-			const struct bt_le_conn_param *param)
-{
-	return -ENOSYS;
-}
-
-int bt_auth_cb_register(const struct bt_auth_cb *cb)
-{
-	return -ENOSYS;
-}
-
-int bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
-{
-	return -ENOSYS;
-}
-
-int bt_auth_cancel(struct bt_conn *conn)
-{
-	return -ENOSYS;
-}
-
-int bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
-{
-	return -ENOSYS;
-}
