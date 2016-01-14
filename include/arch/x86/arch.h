@@ -60,7 +60,7 @@
  */
 
 /* Size of each dynamic interrupt/exception stub in bytes */
-#ifdef CONFIG_IAMCU
+#ifdef CONFIG_X86_IAMCU
 #define DYN_STUB_SIZE		8
 #else
 #define DYN_STUB_SIZE		9
