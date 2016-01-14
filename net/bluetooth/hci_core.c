@@ -2670,75 +2670,80 @@ int bt_auth_cb_register(const struct bt_auth_cb *cb)
 	return 0;
 }
 
-void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
+int bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 {
 	if (!bt_auth) {
-		return;
+		return -EINVAL;
 	}
 #if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_auth_passkey_entry(conn, passkey);
+		return 0;
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
+
+	return -EINVAL;
 }
 
-void bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
+int bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
 {
 	if (!bt_auth) {
-		return;
+		return -EINVAL;
 	};
 #if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_auth_passkey_confirm(conn, match);
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
+
+	return -EINVAL;
 }
 
-void bt_auth_cancel(struct bt_conn *conn)
+int bt_auth_cancel(struct bt_conn *conn)
 {
 	if (!bt_auth) {
-		return;
+		return -EINVAL;
 	}
 #if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_auth_cancel(conn);
-		return;
+		return 0;
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
-		pin_code_neg_reply(&conn->br.dst);
+		return pin_code_neg_reply(&conn->br.dst);
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
+
+	return -EINVAL;
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-void bt_auth_pincode_entry(struct bt_conn *conn, const char *pin)
+int bt_auth_pincode_entry(struct bt_conn *conn, const char *pin)
 {
 	size_t len;
 
 	if (!bt_auth) {
-		return;
+		return -EINVAL;
 	}
 
 	if (conn->type != BT_CONN_TYPE_BR) {
-		return;
+		return -EINVAL;
 	}
 
 	len = strlen(pin);
 	if (len > 16) {
-		pin_code_neg_reply(&conn->br.dst);
-		return;
+		return -EINVAL;
 	}
 
 	if (conn->required_sec_level == BT_SECURITY_HIGH && len < 16) {
 		BT_WARN("PIN code for %s is not 16 bytes wide",
 			bt_addr_str(&conn->br.dst));
-		pin_code_neg_reply(&conn->br.dst);
-		return;
+		return -EPERM;
 	}
 
-	pin_code_reply(conn, pin, len);
+	return pin_code_reply(conn, pin, len);
 }
 #endif
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */

@@ -272,16 +272,20 @@ int bt_auth_cb_register(const struct bt_auth_cb *cb);
  *
  *  @param conn Connection object.
  *  @param passkey Entered passkey.
+ *
+ *  @return Zero on success or negative error code otherwise
  */
-void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
+int bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
 
 /** @brief Cancel ongoing authenticated pairing.
  *
  *  This function allows to cancel ongoing authenticated pairing.
  *
  *  @param conn Connection object.
+ *
+ *  @return Zero on success or negative error code otherwise
  */
-void bt_auth_cancel(struct bt_conn *conn);
+int bt_auth_cancel(struct bt_conn *conn);
 
 /** @brief Reply if passkey was confirmed by user.
  *
@@ -291,8 +295,10 @@ void bt_auth_cancel(struct bt_conn *conn);
  *
  *  @param conn Connection object.
  *  @param match True if passkey was confirmed to match, false otherwise.
+ *
+ *  @return Zero on success or negative error code otherwise
  */
-void bt_auth_passkey_confirm(struct bt_conn *conn, bool match);
+int bt_auth_passkey_confirm(struct bt_conn *conn, bool match);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief Reply with entered PIN code.
@@ -302,8 +308,10 @@ void bt_auth_passkey_confirm(struct bt_conn *conn, bool match);
  *
  *  @param conn Connection object.
  *  @param pin Entered PIN code.
+ *
+ *  @return Zero on success or negative error code otherwise
  */
-void bt_auth_pincode_entry(struct bt_conn *conn, const char *pin);
+int bt_auth_pincode_entry(struct bt_conn *conn, const char *pin);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
