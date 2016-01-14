@@ -112,7 +112,7 @@ struct bt_dev {
 
 extern struct bt_dev bt_dev;
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
-extern const struct bt_auth_cb *bt_auth;
+extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)

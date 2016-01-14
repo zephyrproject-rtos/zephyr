@@ -145,7 +145,7 @@ static void auth_cancel(struct bt_conn *conn)
 	printk("Pairing cancelled: %s\n", addr);
 }
 
-static struct bt_auth_cb auth_cb_display = {
+static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.cancel = auth_cancel,
@@ -169,7 +169,7 @@ void main(void)
 
 	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
-	bt_auth_cb_register(&auth_cb_display);
+	bt_conn_auth_cb_register(&auth_cb_display);
 	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),

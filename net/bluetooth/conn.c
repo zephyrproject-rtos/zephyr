@@ -56,7 +56,7 @@ static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 #define CONN_TIMEOUT	(3 * sys_clock_ticks_per_sec)
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
-const struct bt_auth_cb *bt_auth;
+const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
@@ -1013,7 +1013,7 @@ struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve)
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
-int bt_auth_cb_register(const struct bt_auth_cb *cb)
+int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 {
 	if (!cb) {
 		bt_auth = NULL;
@@ -1073,7 +1073,7 @@ static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_REPLY, buf, NULL);
 }
 
-int bt_auth_pincode_entry(struct bt_conn *conn, const char *pin)
+int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
 {
 	size_t len;
 
@@ -1116,7 +1116,7 @@ void bt_conn_pin_code_req(struct bt_conn *conn)
 }
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-int bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
+int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 {
 	if (!bt_auth) {
 		return -EINVAL;
@@ -1131,7 +1131,7 @@ int bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 	return -EINVAL;
 }
 
-int bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
+int bt_conn_auth_passkey_confirm(struct bt_conn *conn, bool match)
 {
 	if (!bt_auth) {
 		return -EINVAL;
@@ -1145,7 +1145,7 @@ int bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
 	return -EINVAL;
 }
 
-int bt_auth_cancel(struct bt_conn *conn)
+int bt_conn_auth_cancel(struct bt_conn *conn)
 {
 	if (!bt_auth) {
 		return -EINVAL;

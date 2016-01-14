@@ -254,7 +254,7 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 /** Authenticated pairing callback structure */
-struct bt_auth_cb {
+struct bt_conn_auth_cb {
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
 	void (*passkey_entry)(struct bt_conn *conn);
 	void (*passkey_confirm)(struct bt_conn *conn, unsigned int passkey);
@@ -273,19 +273,19 @@ struct bt_auth_cb {
  *
  *  @return Zero on success or negative error code otherwise
  */
-int bt_auth_cb_register(const struct bt_auth_cb *cb);
+int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb);
 
 /** @brief Reply with entered passkey.
  *
  *  This function should be called only after passkey_entry callback from
- *  bt_auth_cb structure was called.
+ *  bt_conn_auth_cb structure was called.
  *
  *  @param conn Connection object.
  *  @param passkey Entered passkey.
  *
  *  @return Zero on success or negative error code otherwise
  */
-int bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
+int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
 
 /** @brief Cancel ongoing authenticated pairing.
  *
@@ -295,33 +295,33 @@ int bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
  *
  *  @return Zero on success or negative error code otherwise
  */
-int bt_auth_cancel(struct bt_conn *conn);
+int bt_conn_auth_cancel(struct bt_conn *conn);
 
 /** @brief Reply if passkey was confirmed by user.
  *
  *  This function should be called only after passkey_confirm callback from
- *  bt_auth_cb structure was called. If passkey is confirmed to match then match
- *  should be true. Otherwise match should be false.
+ *  bt_conn_auth_cb structure was called. If passkey is confirmed to match
+ *  then match should be true. Otherwise match should be false.
  *
  *  @param conn Connection object.
  *  @param match True if passkey was confirmed to match, false otherwise.
  *
  *  @return Zero on success or negative error code otherwise
  */
-int bt_auth_passkey_confirm(struct bt_conn *conn, bool match);
+int bt_conn_auth_passkey_confirm(struct bt_conn *conn, bool match);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief Reply with entered PIN code.
  *
  *  This function should be called only after PIN code callback from
- *  bt_auth_cb structure was called. It's for legacy 2.0 devices.
+ *  bt_conn_auth_cb structure was called. It's for legacy 2.0 devices.
  *
  *  @param conn Connection object.
  *  @param pin Entered PIN code.
  *
  *  @return Zero on success or negative error code otherwise
  */
-int bt_auth_pincode_entry(struct bt_conn *conn, const char *pin);
+int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 

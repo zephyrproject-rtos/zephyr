@@ -1113,7 +1113,7 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 	}
 }
 
-static struct bt_auth_cb auth_cb_display = {
+static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
@@ -1121,7 +1121,7 @@ static struct bt_auth_cb auth_cb_display = {
 	.cancel = auth_cancel,
 };
 
-static struct bt_auth_cb auth_cb_display_yes_no = {
+static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = auth_passkey_confirm,
@@ -1129,7 +1129,7 @@ static struct bt_auth_cb auth_cb_display_yes_no = {
 	.cancel = auth_cancel,
 };
 
-static struct bt_auth_cb auth_cb_input = {
+static struct bt_conn_auth_cb auth_cb_input = {
 	.passkey_display = NULL,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = NULL,
@@ -1137,7 +1137,7 @@ static struct bt_auth_cb auth_cb_input = {
 	.cancel = auth_cancel,
 };
 
-static struct bt_auth_cb auth_cb_all = {
+static struct bt_conn_auth_cb auth_cb_all = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = auth_passkey_confirm,
@@ -1154,15 +1154,15 @@ static void cmd_auth(int argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "all")) {
-		bt_auth_cb_register(&auth_cb_all);
+		bt_conn_auth_cb_register(&auth_cb_all);
 	} else if (!strcmp(argv[1], "input")) {
-		bt_auth_cb_register(&auth_cb_input);
+		bt_conn_auth_cb_register(&auth_cb_input);
 	} else if (!strcmp(argv[1], "display")) {
-		bt_auth_cb_register(&auth_cb_display);
+		bt_conn_auth_cb_register(&auth_cb_display);
 	} else if (!strcmp(argv[1], "yesno")) {
-		bt_auth_cb_register(&auth_cb_display_yes_no);
+		bt_conn_auth_cb_register(&auth_cb_display_yes_no);
 	} else if (!strcmp(argv[1], "none")) {
-		bt_auth_cb_register(NULL);
+		bt_conn_auth_cb_register(NULL);
 	} else {
 		printk("auth [display, yesno, input, all, none] "
 		       "parameter required\n");
@@ -1186,7 +1186,7 @@ static void cmd_auth_cancel(int argc, char *argv[])
 		return;
 	}
 
-	bt_auth_cancel(conn);
+	bt_conn_auth_cancel(conn);
 }
 
 static void cmd_auth_passkey_confirm(int argc, char *argv[])
@@ -1205,7 +1205,7 @@ static void cmd_auth_passkey_confirm(int argc, char *argv[])
 
 	match = !strcmp(argv[1], "true");
 
-	bt_auth_passkey_confirm(default_conn, match);
+	bt_conn_auth_passkey_confirm(default_conn, match);
 }
 
 static void cmd_auth_passkey(int argc, char *argv[])
@@ -1228,7 +1228,7 @@ static void cmd_auth_passkey(int argc, char *argv[])
 		return;
 	}
 
-	bt_auth_passkey_entry(default_conn, passkey);
+	bt_conn_auth_passkey_entry(default_conn, passkey);
 }
 
 static void cmd_auth_pincode(int argc, char *argv[])
@@ -1262,7 +1262,7 @@ static void cmd_auth_pincode(int argc, char *argv[])
 
 	printk("PIN code \"%s\" applied\n", argv[1]);
 
-	bt_auth_pincode_entry(conn, argv[1]);
+	bt_conn_auth_pincode_entry(conn, argv[1]);
 }
 
 

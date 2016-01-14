@@ -35,7 +35,7 @@
 #define CONTROLLER_ADDR (&(bt_addr_t) {{1, 2, 3, 4, 5, 6}})
 
 static atomic_t current_settings;
-struct bt_auth_cb cb;
+struct bt_conn_auth_cb cb;
 
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
@@ -372,7 +372,7 @@ static void set_io_cap(const uint8_t *data, uint16_t len)
 
 	/* Reset io cap requirements */
 	memset(&cb, 0, sizeof(cb));
-	bt_auth_cb_register(NULL);
+	bt_conn_auth_cb_register(NULL);
 
 	switch (cmd->io_cap) {
 	case GAP_IO_CAP_DISPLAY_ONLY:
@@ -397,7 +397,7 @@ static void set_io_cap(const uint8_t *data, uint16_t len)
 		goto rsp;
 	}
 
-	if (bt_auth_cb_register(&cb)) {
+	if (bt_conn_auth_cb_register(&cb)) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}
@@ -445,7 +445,7 @@ static void passkey_entry(const uint8_t *data, uint16_t len)
 		goto rsp;
 	}
 
-	bt_auth_passkey_entry(conn, sys_le32_to_cpu(cmd->passkey));
+	bt_conn_auth_passkey_entry(conn, sys_le32_to_cpu(cmd->passkey));
 
 	bt_conn_unref(conn);
 	status = BTP_STATUS_SUCCESS;
