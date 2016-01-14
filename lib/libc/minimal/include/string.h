@@ -19,9 +19,7 @@
 #ifndef __INC_string_h__
 #define __INC_string_h__
 
-#if !defined(NULL)
-#define NULL (void *) 0
-#endif
+#include <bits/null.h>
 
 #ifdef __cplusplus
 extern "C" {

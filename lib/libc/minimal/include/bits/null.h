@@ -1,7 +1,5 @@
-/* stddef.h */
-
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2016 Wind River Systems, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef __INC_stddef_h__
-#define __INC_stddef_h__
+/**
+ * @file NULL definition
+ */
 
-#include <bits/null.h>
-
-#if !defined(__size_t_defined)
-#define __size_t_defined
-typedef unsigned int  size_t;
+#if !defined(NULL)
+	#define NULL (void *)0
 #endif
-
-#if !defined(__ptrdiff_t_defined)
-#define __ptrdiff_t_defined
-typedef int  ptrdiff_t;
-#endif
-
-#define offsetof(type, member) ((size_t) (&((type *) NULL)->member))
-
-#endif /* __INC_stddef_h__ */

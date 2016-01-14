@@ -20,10 +20,7 @@
 #define __INC_stdlib_h__
 
 #include <ctype.h>
-
-#if !defined(NULL)
-#define NULL (void *) 0
-#endif
+#include <bits/null.h>
 
 #ifdef __cplusplus
 extern "C" {

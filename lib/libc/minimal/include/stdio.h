@@ -20,6 +20,7 @@
 #define __INC_stdio_h__
 
 #include <stdarg.h>     /* Needed to get definition of va_list */
+#include <bits/null.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,10 +34,6 @@ typedef unsigned int  size_t;
 #if !defined(__FILE_defined)
 #define __FILE_defined
 typedef int  FILE;
-#endif
-
-#if !defined(NULL)
-#define NULL (void *) 0
 #endif
 
 #if !defined(EOF)
