@@ -418,10 +418,11 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static uint8_t att_find_type_rsp(struct bt_conn *conn, uint16_t start_handle,
+static uint8_t att_find_type_rsp(struct bt_att *att, uint16_t start_handle,
 				 uint16_t end_handle, const void *value,
 				 uint8_t value_len)
 {
+	struct bt_conn *conn = att->chan.conn;
 	struct find_type_data data;
 
 	memset(&data, 0, sizeof(data));
@@ -431,6 +432,7 @@ static uint8_t att_find_type_rsp(struct bt_conn *conn, uint16_t start_handle,
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
+	data.att = att;
 	data.value = value;
 	data.value_len = value_len;
 
@@ -483,7 +485,7 @@ static uint8_t att_find_type_req(struct bt_att *att, struct net_buf *buf)
 		return 0;
 	}
 
-	return att_find_type_rsp(conn, start_handle, end_handle, value,
+	return att_find_type_rsp(att, start_handle, end_handle, value,
 				 buf->len);
 }
 
