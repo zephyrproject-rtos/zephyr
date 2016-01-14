@@ -106,6 +106,7 @@ if I2C
 config I2C_DW
 	def_bool y
 
+if I2C_DW
 config I2C_DW_0
         def_bool y
 config I2C_DW_0_BASE
@@ -123,7 +124,9 @@ config I2C_DW_1_NAME
         default "I2C1"
 config I2C_DW_1_IRQ
 	default 1
-endif
+endif # I2C_DW
+
+endif # I2C
 
 if CLOCK_CONTROL
 config CLOCK_CONTROL_QUARK_SE
