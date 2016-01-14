@@ -101,7 +101,7 @@ struct spi_dw_data {
 #define DW_SPI_SR_TFNF_BIT		(1)
 #define DW_SPI_SR_RFNE_BIT		(3)
 
-/* IMR values */
+/* IMR bits (ISR valid as well) */
 #define DW_SPI_IMR_TXEIM_BIT		(0)
 #define DW_SPI_IMR_TXOIM_BIT		(1)
 #define DW_SPI_IMR_RXUIM_BIT		(2)
@@ -109,16 +109,24 @@ struct spi_dw_data {
 #define DW_SPI_IMR_RXFIM_BIT		(4)
 #define DW_SPI_IMR_MSTIM_BIT		(5)
 
-/* ISR values */
-#define DW_SPI_ISR_TXEIS		(0x1 << DW_SPI_IMR_TXEIM_BIT)
-#define DW_SPI_ISR_TXOIF		(0x1 << DW_SPI_IMR_TXOIM_BIT)
-#define DW_SPI_ISR_RXUIS		(0x1 << DW_SPI_IMR_RXUIM_BIT)
-#define DW_SPI_ISR_RXOIS		(0x1 << DW_SPI_IMR_RXOIM_BIT)
-#define DW_SPI_ISR_RXFIS		(0x1 << DW_SPI_IMR_RXFIM_BIT)
-#define DW_SPI_ISR_MSTIS		(0x1 << DW_SPI_IMR_MSTIM_BIT)
+/* IMR values */
+#define DW_SPI_IMR_TXEIM		(0x1 << DW_SPI_IMR_TXEIM_BIT)
+#define DW_SPI_IMR_TXOIM		(0x1 << DW_SPI_IMR_TXOIM_BIT)
+#define DW_SPI_IMR_RXUIM		(0x1 << DW_SPI_IMR_RXUIM_BIT)
+#define DW_SPI_IMR_RXOIM		(0x1 << DW_SPI_IMR_RXOIM_BIT)
+#define DW_SPI_IMR_RXFIM		(0x1 << DW_SPI_IMR_RXFIM_BIT)
+#define DW_SPI_IMR_MSTIM		(0x1 << DW_SPI_IMR_MSTIM_BIT)
+
+/* ISR values (same as IMR) */
+#define DW_SPI_ISR_TXEIS		DW_SPI_IMR_TXEIM
+#define DW_SPI_ISR_TXOIS		DW_SPI_IMR_TXOIM
+#define DW_SPI_ISR_RXUIS		DW_SPI_IMR_RXUIM
+#define DW_SPI_ISR_RXOIS		DW_SPI_IMR_RXOIM
+#define DW_SPI_ISR_RXFIS		DW_SPI_IMR_RXFIM
+#define DW_SPI_ISR_MSTIS		DW_SPI_IMR_MSTIM
 
 /* Error interrupt */
-#define DW_SPI_ISR_ERRORS_MASK		(DW_SPI_ISR_TXOIF | \
+#define DW_SPI_ISR_ERRORS_MASK		(DW_SPI_ISR_TXOIS | \
 					 DW_SPI_ISR_RXUIS | \
 					 DW_SPI_ISR_RXOIS | \
 					 DW_SPI_ISR_MSTIS)
@@ -126,13 +134,20 @@ struct spi_dw_data {
 #define DW_SPI_SR_ICR_BIT		(0)
 
 /* Threshold defaults */
-#define DW_SPI_TXFTLR_DFLT		(8)
-#define DW_SPI_RXFTLR_DFLT		(8)
+#define DW_SPI_TXFTLR_DFLT		(0x5)
+#define DW_SPI_RXFTLR_DFLT		(0x5)
 
 /* Interrupt mask (IMR) */
 #define DW_SPI_IMR_MASK			(0x0)
-#define DW_SPI_IMR_UNMASK		(0x1f)
-#define DW_SPI_IMR_MASK_TX		(~(0x3))
-#define DW_SPI_IMR_MASK_RX		(~(0x28))
+#define DW_SPI_IMR_UNMASK		(DW_SPI_IMR_TXEIM | \
+					 DW_SPI_IMR_TXOIM | \
+					 DW_SPI_IMR_RXUIM | \
+					 DW_SPI_IMR_RXOIM | \
+					 DW_SPI_IMR_RXFIM)
+#define DW_SPI_IMR_MASK_TX		(~(DW_SPI_IMR_TXEIM | \
+					   DW_SPI_IMR_TXOIM))
+#define DW_SPI_IMR_MASK_RX		(~(DW_SPI_IMR_RXUIM | \
+					   DW_SPI_IMR_RXOIM | \
+					   DW_SPI_IMR_RXFIM))
 
 #endif /* __SPI_DW_H__ */
