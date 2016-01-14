@@ -2360,7 +2360,8 @@ static int set_ad(uint16_t hci_op, const struct bt_data *ad, size_t ad_len)
 	for (i = 0; i < ad_len; i++) {
 		/* Check if ad fit in the remaining buffer */
 		if (set_data->len + ad[i].data_len + 2 > 31) {
-			break;
+			net_buf_unref(buf);
+			return -EINVAL;
 		}
 
 		set_data->data[set_data->len++] = ad[i].data_len + 1;
