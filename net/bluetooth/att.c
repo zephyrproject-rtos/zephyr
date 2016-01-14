@@ -372,6 +372,7 @@ struct find_type_data {
 	struct bt_att_handle_group *group;
 	const void *value;
 	uint8_t value_len;
+	uint8_t err;
 };
 
 static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
@@ -382,7 +383,13 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	int read;
 	uint8_t uuid[16];
 
-	/* Skip if not a primary service */
+	/* Skip secondary services */
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
+		data->group = NULL;
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	/* Update group end_handle if not a primary service */
 	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY)) {
 		if (data->group && attr->handle > data->group->end_handle) {
 			data->group->end_handle = sys_cpu_to_le16(attr->handle);
@@ -405,9 +412,12 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	/* Check if data matches */
 	if (read != data->value_len || memcmp(data->value, uuid, read)) {
-		/* If a group exists stop otherwise continue */
-		return data->group ? BT_GATT_ITER_STOP : BT_GATT_ITER_CONTINUE;
+		data->group = NULL;
+		return BT_GATT_ITER_CONTINUE;
 	}
+
+	/* If service has been found, error should be cleared */
+	data->err = 0x00;
 
 	/* Fast foward to next item position */
 	data->group = net_buf_add(data->buf, sizeof(*data->group));
@@ -433,16 +443,21 @@ static uint8_t att_find_type_rsp(struct bt_att *att, uint16_t start_handle,
 	}
 
 	data.att = att;
+	data.group = NULL;
 	data.value = value;
 	data.value_len = value_len;
 
+	/* Pre-set error in case no service will be found */
+	data.err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
+
 	bt_gatt_foreach_attr(start_handle, end_handle, find_type_cb, &data);
 
-	if (!data.group) {
+	/* If error has not been cleared, no service has been found */
+	if (data.err) {
 		net_buf_unref(data.buf);
 		/* Respond since handle is set */
 		send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, start_handle,
-			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+			     data.err);
 		return 0;
 	}
 
