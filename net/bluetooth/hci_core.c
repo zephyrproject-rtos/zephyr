@@ -2342,25 +2342,13 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 	return true;
 }
 
-int bt_le_adv_start(const struct bt_le_adv_param *param,
-		    const struct bt_data *ad, size_t ad_len,
-		    const struct bt_data *sd, size_t sd_len)
+static int set_ad(uint16_t hci_op, const struct bt_data *ad, size_t ad_len)
 {
-	struct net_buf *buf;
 	struct bt_hci_cp_le_set_adv_data *set_data;
-	struct bt_hci_cp_le_set_adv_parameters *set_param;
-	uint8_t adv_enable;
-	int i, err;
+	struct net_buf *buf;
+	int i;
 
-	if (!valid_adv_param(param)) {
-		return -EINVAL;
-	}
-
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-		return -EALREADY;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_DATA, sizeof(*set_data));
+	buf = bt_hci_cmd_create(hci_op, sizeof(*set_data));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2379,47 +2367,46 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		set_data->data[set_data->len++] = ad[i].type;
 
 		memcpy(&set_data->data[set_data->len], ad[i].data,
-		       ad[i].data_len);
+				ad[i].data_len);
 		set_data->len += ad[i].data_len;
 	}
 
-	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_DATA, buf);
+	return bt_hci_cmd_send(hci_op, buf);
+}
+
+int bt_le_adv_start(const struct bt_le_adv_param *param,
+		    const struct bt_data *ad, size_t ad_len,
+		    const struct bt_data *sd, size_t sd_len)
+{
+	struct net_buf *buf;
+	struct bt_hci_cp_le_set_adv_parameters *set_param;
+	uint8_t adv_enable;
+	int err;
+
+	if (!valid_adv_param(param)) {
+		return -EINVAL;
+	}
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		return -EALREADY;
+	}
+
+	err = set_ad(BT_HCI_OP_LE_SET_ADV_DATA, ad, ad_len);
+	if (err) {
+		return err;
+	}
 
 	/*
 	 * Don't bother with scan response if the advertising type isn't
 	 * a scannable one.
 	 */
-	if (param->type != BT_LE_ADV_IND && param->type != BT_LE_ADV_SCAN_IND) {
-		goto send_set_param;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_RSP_DATA,
-				sizeof(*set_data));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	set_data = net_buf_add(buf, sizeof(*set_data));
-
-	memset(set_data, 0, sizeof(*set_data));
-
-	for (i = 0; i < sd_len; i++) {
-		/* Check if ad fit in the remaining buffer */
-		if (set_data->len + sd[i].data_len + 2 > 31) {
-			break;
+	if (param->type == BT_LE_ADV_IND || param->type == BT_LE_ADV_SCAN_IND) {
+		err = set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, sd, sd_len);
+		if (err) {
+			return err;
 		}
-
-		set_data->data[set_data->len++] = sd[i].data_len + 1;
-		set_data->data[set_data->len++] = sd[i].type;
-
-		memcpy(&set_data->data[set_data->len], sd[i].data,
-		       sd[i].data_len);
-		set_data->len += sd[i].data_len;
 	}
 
-	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, buf);
-
-send_set_param:
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAMETERS,
 				sizeof(*set_param));
 	if (!buf) {
