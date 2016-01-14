@@ -94,6 +94,7 @@ config  SPI_INTEL_CS_GPIO
 config SPI_INTEL_INIT_PRIORITY
 	int
 	prompt "Init priority"
+	depends on SPI_INTEL
 	default 60
 	help
 	  Device driver initialization priority.
