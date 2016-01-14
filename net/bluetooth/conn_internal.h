@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-typedef enum {
+typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_CONNECT_SCAN,
 	BT_CONN_CONNECT,

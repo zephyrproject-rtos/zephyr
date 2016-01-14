@@ -169,7 +169,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 #endif
 
 /** Security level. */
-typedef enum {
+typedef enum __packed {
 	BT_SECURITY_LOW,    /** No encryption and no authentication. */
 	BT_SECURITY_MEDIUM, /** encryption and no authentication (no MITM). */
 	BT_SECURITY_HIGH,   /** encryption and authentication (MITM). */
