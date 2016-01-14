@@ -129,6 +129,16 @@ config ADC_DW_0_PRI
         prompt "ADC 0 interrupts' priority"
         depends on ADC_DW_0
         default 2
+
+config ADC_DW_CALIBRATION
+	bool "Enable Calibration"
+	default y
+	depends on ADC_DW
+	help
+	Enables ADC to run with a calibrated output at the
+	expense of execution speed when exiting low power states.
+	If disabled, the ADC will require the application/system-integrator
+	to provide a calibration method.
 choice
 	prompt "Input Mode"
 	default ADC_DW_SINGLE_ENDED

@@ -26,13 +26,17 @@
 #include "adc_dw.h"
 
 #define ADC_CLOCK_GATE      (1 << 31)
+#define ADC_POWER_DOWN       0x01
 #define ADC_STANDBY          0x02
-#define ADC_NORMAL_WO_CALIB  0x04
+#define ADC_NORMAL_WITH_CALIB  0x03
+#define ADC_NORMAL_WO_CALIB    0x04
 #define ADC_MODE_MASK        0x07
 
 #define ONE_BIT_SET     0x1
+#define THREE_BITS_SET   0x7
 #define FIVE_BITS_SET   0x1f
 #define SIX_BITS_SET    0x3f
+#define SEVEN_BITS_SET  0xef
 #define ELEVEN_BITS_SET 0x7ff
 
 #define INPUT_MODE_POS     5
@@ -55,32 +59,88 @@
 #endif
 static void adc_config_0_irq(void);
 
-static void adc_goto_normal_mode_wo_calibration(void)
+#ifdef CONFIG_ADC_DW_CALIBRATION
+static void calibration_command(uint8_t command)
 {
+	uint32_t state;
+	uint32_t reg_value;
+
+	state = irq_lock();
+	reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
+	reg_value |= (command & THREE_BITS_SET) << 17;
+	reg_value |= 0x10000;
+	sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
+	irq_unlock(state);
+	/*Poll waiting for command*/
+	do {
+		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
+	} while ((reg_value & 0x10) == 0);
+
+	/*Clear Calibration Request*/
+	reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
+	reg_value &= ~(0x10000);
+	sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
+}
+
+static void adc_goto_normal_mode(struct device *dev)
+{
+	struct adc_info *info = dev->driver_data;
+	uint8_t calibration_value;
 	uint32_t reg_value;
 	uint32_t state;
 
 	reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
 
-	if ((reg_value & ADC_MODE_MASK) != ADC_NORMAL_WO_CALIB) {
+	if (((reg_value & 0xE) >> 1) != ADC_NORMAL_WITH_CALIB) {
+
 		state = irq_lock();
+		/*Request  Normal With Calibration Mode*/
 		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
-
 		reg_value &= ~(ADC_MODE_MASK);
-		reg_value |= ADC_STANDBY | ADC_CLOCK_GATE;
-
+		reg_value |= ADC_NORMAL_WITH_CALIB;
 		sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
 		irq_unlock(state);
 
+		/*Poll waiting for normal mode*/
 		do {
 			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0) & 0x8;
 		} while (reg_value == 0);
 
+		if (info->calibration_value == ADC_NONE_CALIBRATION) {
+			/*Reset Calibration*/
+			calibration_command(ADC_CMD_RESET_CALIBRATION);
+			/*Request Calibration*/
+			calibration_command(ADC_CMD_START_CALIBRATION);
+			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
+			calibration_value = (reg_value >> 5) & SEVEN_BITS_SET;
+			info->calibration_value = calibration_value;
+		}
+
+		/*Load Calibration*/
+		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
+		reg_value |= (info->calibration_value << 20);
+		sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
+		calibration_command(ADC_CMD_LOAD_CALIBRATION);
+	}
+}
+
+#else
+static void adc_goto_normal_mode(struct device *dev)
+{
+	uint32_t reg_value;
+	uint32_t state;
+
+	ARG_UNUSED(dev);
+	reg_value = sys_in32(
+		PERIPH_ADDR_BASE_CREG_SLV0 + SLV_OBSR);
+
+	if (((reg_value & 0xE) >> 1) == ADC_NORMAL_WO_CALIB) {
 		state = irq_lock();
+		/*Request  Power Down*/
 		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
 
 		reg_value &= ~(ADC_MODE_MASK);
-		reg_value |= ADC_NORMAL_WO_CALIB | ADC_CLOCK_GATE;
+		reg_value |= ADC_POWER_DOWN;
 
 		sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
 		irq_unlock(state);
@@ -89,7 +149,21 @@ static void adc_goto_normal_mode_wo_calibration(void)
 			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0) & 0x8;
 		} while (reg_value == 0);
 	}
+
+	/*Request  Normal With Calibration Mode*/
+	state = irq_lock();
+	reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
+	reg_value &= ~(ADC_MODE_MASK);
+	reg_value |= ADC_NORMAL_WO_CALIB;
+	sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
+	irq_unlock(state);
+
+	/*Poll waiting for normal mode*/
+	do {
+		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
+	} while ((reg_value & 0x1) == 0);
 }
+#endif
 
 static void adc_goto_deep_power_down(void)
 {
@@ -97,7 +171,7 @@ static void adc_goto_deep_power_down(void)
 	uint32_t state;
 
 	reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
-	if ((reg_value & ADC_MODE_MASK) != 0) {
+	if ((reg_value & 0xE >> 1) != 0) {
 		state = irq_lock();
 
 		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
@@ -116,12 +190,21 @@ static void adc_goto_deep_power_down(void)
 
 static void adc_dw_enable(struct device *dev)
 {
+	uint32_t reg_value;
 	struct adc_info *info = dev->driver_data;
 	struct adc_config *config = dev->config->config_info;
 	uint32_t adc_base = config->reg_base;
 
-	adc_goto_normal_mode_wo_calibration();
+	/*Go to Normal Mode*/
+	sys_out32(ADC_INT_DSB|ENABLE_ADC, adc_base + ADC_CTRL);
+	adc_goto_normal_mode(dev);
+
+	/*Clock Gate*/
+	reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
+	reg_value &= ~(ADC_CLOCK_GATE);
+	sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
 	sys_out32(ENABLE_ADC, adc_base + ADC_CTRL);
+
 	info->state = ADC_STATE_IDLE;
 }
 
@@ -132,6 +215,7 @@ static void adc_dw_disable(struct device *dev)
 	struct adc_config *config = dev->config->config_info;
 	uint32_t adc_base = config->reg_base;
 
+	sys_out32(ADC_INT_DSB|ENABLE_ADC, adc_base + ADC_CTRL);
 	adc_goto_deep_power_down();
 	sys_out32(ADC_INT_DSB|ADC_SEQ_PTR_RST, adc_base + ADC_CTRL);
 
@@ -324,7 +408,10 @@ void adc_dw_err_isr(void *arg)
 #ifdef CONFIG_ADC_DW_0
 
 struct adc_info adc_info_dev_0 = {
-		.state = ADC_STATE_IDLE
+		.state = ADC_STATE_IDLE,
+#ifdef CONFIG_ADC_DW_CALIBRATION
+		.calibration_value = ADC_NONE_CALIBRATION,
+#endif
 	};
 
 struct adc_config adc_config_dev_0 = {

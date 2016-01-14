@@ -90,12 +90,17 @@
 #define     ADC_RESET                   (0x1)
 #define     ADC_INT_DATA_A              (0x1)
 #define     ADC_INT_ERR                 (0x6)
+#define     ADC_NONE_CALIBRATION        (0x80)
 
 #define ADC_STATE_CLOSED        0
 #define ADC_STATE_DISABLED      1
 #define ADC_STATE_IDLE          2
 #define ADC_STATE_SAMPLING      3
 #define ADC_STATE_ERROR		4
+
+#define ADC_CMD_RESET_CALIBRATION 2
+#define ADC_CMD_START_CALIBRATION 3
+#define ADC_CMD_LOAD_CALIBRATION 4
 
 /* ADC control commands */
 #define IO_ADC0_FS (32)
@@ -187,6 +192,10 @@ struct adc_info {
 	struct adc_seq_entry *entries;
 	/**Sequence size*/
 	uint8_t seq_size;
+#ifdef CONFIG_ADC_DW_CALIBRATION
+	/**Calibration value*/
+	uint8_t calibration_value;
+#endif
 };
 
 
