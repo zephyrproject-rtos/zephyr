@@ -83,7 +83,13 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_SCPH		(0x1 << 6)
 #define DW_SPI_CTRLR0_SCPOL		(0x1 << 7)
 #define DW_SPI_CTRLR0_SRL		(0x1 << 11)
-#define DW_SPI_CTRLR0_DFS(__bpw)	(((__bpw) - 1) << 16)
+#define DW_SPI_CTRLR0_DFS_16(__bpw)	((__bpw) - 1)
+#define DW_SPI_CTRLR0_DFS_32(__bpw)	(((__bpw) - 1) << 16)
+#ifdef CONFIG_ARC
+#define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_16
+#else
+#define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_32
+#endif
 
 #define SPI_DFS_TO_BYTES(__bpw)		((__bpw / 8) + 1)
 
