@@ -62,10 +62,6 @@
 #define     ADC_INTSTAT     (0x04)
 #define     ADC_SAMPLE      (0x05)
 
-/* Additional device registers */
-#define     MST_CTL         (0x00)
-#define     SLV_OBSR        (0x00)
-
 /*  Sensor Subsystem Interrupt Routing Mask */
 #define INT_SS_ADC_ERR_MASK             (0x400)
 #define INT_SS_ADC_IRQ_MASK             (0x404)

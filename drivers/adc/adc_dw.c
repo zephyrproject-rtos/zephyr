@@ -60,38 +60,33 @@ static void adc_goto_normal_mode_wo_calibration(void)
 	uint32_t reg_value;
 	uint32_t state;
 
-	reg_value = sys_in32(
-		PERIPH_ADDR_BASE_CREG_SLV0 + SLV_OBSR);
+	reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
 
 	if ((reg_value & ADC_MODE_MASK) != ADC_NORMAL_WO_CALIB) {
 		state = irq_lock();
-		reg_value = sys_in32(
-			PERIPH_ADDR_BASE_CREG_MST0 + MST_CTL);
+		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
 
 		reg_value &= ~(ADC_MODE_MASK);
 		reg_value |= ADC_STANDBY | ADC_CLOCK_GATE;
 
-		sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0 + MST_CTL);
+		sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
 		irq_unlock(state);
 
 		do {
-			reg_value = sys_in32(
-				PERIPH_ADDR_BASE_CREG_SLV0 + SLV_OBSR) & 0x8;
+			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0) & 0x8;
 		} while (reg_value == 0);
 
 		state = irq_lock();
-		reg_value = sys_in32(
-			PERIPH_ADDR_BASE_CREG_MST0 + MST_CTL);
+		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
 
 		reg_value &= ~(ADC_MODE_MASK);
 		reg_value |= ADC_NORMAL_WO_CALIB | ADC_CLOCK_GATE;
 
-		sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0 + MST_CTL);
+		sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
 		irq_unlock(state);
 
 		do {
-			reg_value = sys_in32(
-				PERIPH_ADDR_BASE_CREG_SLV0 + SLV_OBSR) & 0x8;
+			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0) & 0x8;
 		} while (reg_value == 0);
 	}
 }
@@ -101,23 +96,20 @@ static void adc_goto_deep_power_down(void)
 	uint32_t reg_value;
 	uint32_t state;
 
-	reg_value = sys_in32(
-		PERIPH_ADDR_BASE_CREG_SLV0+SLV_OBSR);
+	reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
 	if ((reg_value & ADC_MODE_MASK) != 0) {
 		state = irq_lock();
 
-		reg_value = sys_in32(
-			PERIPH_ADDR_BASE_CREG_MST0 + MST_CTL);
+		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_MST0);
 
 		reg_value &= ~(ADC_MODE_MASK);
 
 		reg_value |= 0 | ADC_CLOCK_GATE;
-		sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0 + MST_CTL);
+		sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
 
 		irq_unlock(state);
 		do {
-			reg_value = sys_in32(
-				PERIPH_ADDR_BASE_CREG_SLV0 + SLV_OBSR) & 0x8;
+			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0) & 0x8;
 		} while (reg_value == 0);
 	}
 }
