@@ -74,6 +74,12 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 	return -ENOSYS;
 }
 
+struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
+					const struct bt_le_adv_param *param)
+{
+	return NULL;
+}
+
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 {
 	return -ENOSYS;

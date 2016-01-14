@@ -184,6 +184,31 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param);
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+/** @brief Initiate directed advertising to a remote device
+ *
+ *  Allows initiating a new LE connection to remote peer with the remote
+ *  acting in central role and the local device in peripheral role.
+ *
+ *  The advertising type must be either BT_LE_ADV_DIRECT_IND or
+ *  BT_LE_ADV_DIRECT_IND_LOW_DUTY.
+ *
+ *  In case of high duty cycle this will result in a callback with
+ *  connected() with a new connection or with an error.
+ *
+ *  The advertising may be cancelled with bt_conn_disconnect().
+ *
+ *  Returns a new reference that the the caller is responsible for managing.
+ *
+ *  @param peer  Remote address.
+ *  @param param Directed advertising parameters.
+ *
+ *  @return Valid connection object on success or NULL otherwise.
+ */
+struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
+					const struct bt_le_adv_param *param);
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+
 /** Security level. */
 typedef enum __packed {
 	BT_SECURITY_LOW,    /** No encryption and no authentication. */

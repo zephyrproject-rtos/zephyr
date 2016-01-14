@@ -981,6 +981,14 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
+					const struct bt_le_adv_param *param)
+{
+	return NULL;
+}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+
 int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 			   uint16_t latency, uint16_t timeout)
 {
