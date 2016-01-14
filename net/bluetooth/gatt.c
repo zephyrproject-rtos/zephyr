@@ -51,15 +51,30 @@ static struct bt_gatt_attr *db;
 static struct bt_gatt_subscribe_params *subscriptions;
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
+#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
+#define BT_GATT_ATTR_NEXT(attr) (attr->_next)
+#else
+static size_t attr_count;
+#define BT_GATT_ATTR_NEXT(attr) \
+	((attr < db || attr > &db[attr_count - 2]) ? NULL : &attr[1])
+#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
+
 int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 {
+#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 	struct bt_gatt_attr *last;
+#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 	uint16_t handle;
 
 	if (!attrs || !count) {
 		return -EINVAL;
 	}
 
+#if !defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
+	handle = 0;
+	db = attrs;
+	attr_count = count;
+#else
 	if (!db) {
 		db = attrs;
 		last = NULL;
@@ -76,6 +91,7 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 	last->_next = attrs;
 
 populate:
+#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 	/* Populate the handles and _next pointers */
 	for (; attrs && count; attrs++, count--) {
 		if (!attrs->handle) {
@@ -86,18 +102,22 @@ populate:
 			handle = attrs->handle;
 		} else {
 			/* Service has conflicting handles */
+#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 			last->_next = NULL;
+#endif
 			BT_ERR("Unable to register handle 0x%04x",
 			       attrs->handle);
 			return -EINVAL;
 		}
 
+#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 		if (count > 1) {
 			attrs->_next = &attrs[1];
 		}
+#endif
 
 		BT_DBG("attr %p next %p handle 0x%04x uuid %s perm 0x%02x",
-		       attrs, attrs->_next, attrs->handle,
+		       attrs, BT_GATT_ATTR_NEXT(attrs), attrs->handle,
 		       bt_uuid_str(attrs->uuid), attrs->perm);
 	}
 
@@ -187,6 +207,7 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 {
 	struct bt_gatt_chrc *chrc = attr->user_data;
 	struct gatt_chrc pdu;
+	const struct bt_gatt_attr *next;
 	uint8_t value_len;
 
 	pdu.properties = chrc->properties;
@@ -197,11 +218,12 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	 * declaration. All characteristic definitions shall have a
 	 * Characteristic Value declaration.
 	 */
-	if (!attr->_next) {
+	next = BT_GATT_ATTR_NEXT(attr);
+	if (!next) {
 		BT_WARN("No value for characteristic at 0x%04x", attr->handle);
 		pdu.value_handle = 0x0000;
 	} else {
-		pdu.value_handle = sys_cpu_to_le16(attr->_next->handle);
+		pdu.value_handle = sys_cpu_to_le16(next->handle);
 	}
 	value_len = sizeof(pdu.properties) + sizeof(pdu.value_handle);
 
@@ -221,7 +243,7 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 {
 	const struct bt_gatt_attr *attr;
 
-	for (attr = db; attr; attr = attr->_next) {
+	for (attr = db; attr; attr = BT_GATT_ATTR_NEXT(attr)) {
 		/* Check if attribute handle is within range */
 		if (attr->handle < start_handle || attr->handle > end_handle) {
 			continue;
