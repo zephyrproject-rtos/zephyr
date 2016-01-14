@@ -2699,7 +2699,7 @@ int bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
 	};
 #if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
-		bt_smp_auth_passkey_confirm(conn, match);
+		return bt_smp_auth_passkey_confirm(conn, match);
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
 
@@ -2713,8 +2713,7 @@ int bt_auth_cancel(struct bt_conn *conn)
 	}
 #if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
-		bt_smp_auth_cancel(conn);
-		return 0;
+		return bt_smp_auth_cancel(conn);
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
 #if defined(CONFIG_BLUETOOTH_BREDR)

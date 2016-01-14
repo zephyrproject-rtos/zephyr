@@ -794,7 +794,7 @@ static void smp_send(struct bt_smp *smp, struct net_buf *buf)
 	smp_restart_timer(smp);
 }
 
-static void smp_error(struct bt_smp *smp, uint8_t reason)
+static int smp_error(struct bt_smp *smp, uint8_t reason)
 {
 	struct bt_smp_pairing_fail *rsp;
 	struct net_buf *buf;
@@ -805,7 +805,7 @@ static void smp_error(struct bt_smp *smp, uint8_t reason)
 	buf = smp_create_pdu(smp->chan.conn, BT_SMP_CMD_PAIRING_FAIL,
 			     sizeof(*rsp));
 	if (!buf) {
-		return;
+		return -ENOBUFS;
 	}
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
@@ -813,6 +813,8 @@ static void smp_error(struct bt_smp *smp, uint8_t reason)
 
 	/* SMP timer is not restarted for PairingFailed so don't use smp_send */
 	bt_l2cap_send(smp->chan.conn, BT_L2CAP_CID_SMP, buf);
+
+	return 0;
 }
 
 static uint8_t smp_send_pairing_random(struct bt_smp *smp)
@@ -3168,23 +3170,23 @@ static inline int smp_self_test(void)
 }
 #endif
 
-void bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
+int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 {
 	struct bt_smp *smp;
 
 	smp = smp_chan_get(conn);
 	if (!smp) {
-		return;
+		return -EINVAL;
 	}
 
 	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
-		return;
+		return -EINVAL;
 	}
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
 		legacy_passkey_entry(smp, passkey);
-		return;
+		return 0;
 	}
 #endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
@@ -3194,46 +3196,48 @@ void bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
 		if (smp_send_pairing_confirm(smp)) {
 			smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
-			return;
+			return 0;
 		}
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-		return;
+		return 0;
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
 		if (smp_send_pairing_confirm(smp)) {
 			smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
-			return;
+			return 0;
 		}
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 	}
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+
+	return 0;
 }
 
-void bt_smp_auth_passkey_confirm(struct bt_conn *conn, bool match)
+int bt_smp_auth_passkey_confirm(struct bt_conn *conn, bool match)
 {
 	struct bt_smp *smp;
 
 	smp = smp_chan_get(conn);
 	if (!smp) {
-		return;
+		return -EINVAL;
 	}
 
 	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
-		return;
+		return -EINVAL;
 	}
 
 	/* if passkey doen't match abort pairing */
 	if (!match) {
 		smp_error(smp, BT_SMP_ERR_CONFIRM_FAILED);
-		return;
+		return 0;
 	}
 
 	/* wait for DHKey being generated */
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING)) {
 		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
-		return;
+		return 0;
 	}
 
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
@@ -3244,7 +3248,7 @@ void bt_smp_auth_passkey_confirm(struct bt_conn *conn, bool match)
 			if (err) {
 				smp_error(smp, err);
 			}
-			return;
+			return 0;
 		}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
@@ -3254,18 +3258,20 @@ void bt_smp_auth_passkey_confirm(struct bt_conn *conn, bool match)
 		}
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 	}
+
+	return 0;
 }
 
-void bt_smp_auth_cancel(struct bt_conn *conn)
+int bt_smp_auth_cancel(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
 
 	smp = smp_chan_get(conn);
 	if (!smp) {
-		return;
+		return -EINVAL;
 	}
 
-	smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+	return smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
 }
 
 void bt_smp_update_keys(struct bt_conn *conn)
