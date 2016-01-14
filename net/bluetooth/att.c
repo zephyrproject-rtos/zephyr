@@ -400,8 +400,9 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	BT_DBG("handle 0x%04x", attr->handle);
 
 	/* stop if there is no space left */
-	if (att->chan.tx.mtu - data->buf->len < sizeof(*data->group))
+	if (att->chan.tx.mtu - data->buf->len < sizeof(*data->group)) {
 		return BT_GATT_ITER_STOP;
+	}
 
 	/* Read attribute value and store in the buffer */
 	read = attr->read(conn, attr, uuid, sizeof(uuid), 0);
@@ -929,8 +930,9 @@ static uint8_t read_group_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	/* Stop if there is no space left */
 	if (data->rsp->len &&
-	    att->chan.tx.mtu - data->buf->len < data->rsp->len)
+	    att->chan.tx.mtu - data->buf->len < data->rsp->len) {
 		return BT_GATT_ITER_STOP;
+	}
 
 	/* Fast foward to next group position */
 	data->group = net_buf_add(data->buf, sizeof(*data->group));
@@ -1368,8 +1370,9 @@ static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 
 	err = rsp->request == hdr->code ? rsp->error : BT_ATT_ERR_UNLIKELY;
 #if defined(CONFIG_BLUETOOTH_SMP)
-	if (req->retrying)
+	if (req->retrying) {
 		goto done;
+	}
 
 	/* Check if security needs to be changed */
 	if (!att_change_security(att->chan.conn, err)) {
@@ -1668,8 +1671,9 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan)
 	}
 
 	req = &att->req;
-	if (!req->retrying)
+	if (!req->retrying) {
 		return;
+	}
 
 	BT_DBG("Retrying");
 
