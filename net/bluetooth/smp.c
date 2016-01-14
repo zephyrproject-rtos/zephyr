@@ -3272,10 +3272,6 @@ void bt_smp_update_keys(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
 
-	if (!conn) {
-		return;
-	}
-
 	smp = smp_chan_get(conn);
 	if (!smp) {
 		return;
