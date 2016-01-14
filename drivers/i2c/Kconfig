@@ -34,6 +34,23 @@ config I2C_INIT_PRIORITY
 	help
 	  I2C device driver initialization priority.
 
+config I2C_STATUS_DELAY
+	int "Delay for controller response"
+	depends on I2C
+	default 1000
+
+config I2C_CLOCK_SPEED
+	int "Set the clock speed for I2C"
+	default 32
+	depends on I2C
+
+config I2C_DEBUG
+	bool "Enable I2C debug options"
+	default n
+	depends on I2C
+	help
+	This option enables the debug features for I2C connections
+
 config I2C_DW
         bool "Design Ware I2C support"
 	depends on I2C
@@ -178,7 +195,6 @@ config I2C_DW_0_BAR
 	depends on I2C_DW_0 && PCI
 	default 0
 
-
 config I2C_DW_1
         bool "Enable I2C1"
         default n
@@ -216,23 +232,6 @@ config I2C_DW_1_DEFAULT_CFG
         before the application has a chance to custom configure the port.
         Setting this value does not prohibit the application from customizing
         the values later.  Refer to the I2C datasheet for proper values.
-
-config I2C_STATUS_DELAY
-	int "Delay for controller response"
-	depends on I2C
-	default 1000
-
-config I2C_CLOCK_SPEED
-	int "Set the clock speed for I2C"
-	default 32
-	depends on I2C
-
-config I2C_DEBUG
-	bool "Enable I2C debug options"
-	default n
-	depends on I2C
-	help
-	This option enables the debug features for I2C connections
 
 config I2C_QUARK_SE_SS
 	bool "Enable I2C Support on Quark SE Sensor Subsystem (SS)"
