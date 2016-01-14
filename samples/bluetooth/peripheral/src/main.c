@@ -307,7 +307,7 @@ static const struct bt_uuid vnd_signed_uuid = {
 		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x13 },
 };
 
-static struct bt_gatt_attr attrs[] = {
+static struct bt_gatt_attr gap_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
@@ -315,7 +315,10 @@ static struct bt_gatt_attr attrs[] = {
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
 			   read_appearance, NULL, NULL),
-	/* Heart Rate Service Declaration */
+};
+
+/* Heart Rate Service Declaration */
+static struct bt_gatt_attr hrs_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HRS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_MEASUREMENT, BT_GATT_CHRC_NOTIFY),
 	BT_GATT_DESCRIPTOR(BT_UUID_HRS_MEASUREMENT, BT_GATT_PERM_READ, NULL,
@@ -328,14 +331,20 @@ static struct bt_gatt_attr attrs[] = {
 	/* TODO: Add write permission and callback */
 	BT_GATT_DESCRIPTOR(BT_UUID_HRS_CONTROL_POINT, BT_GATT_PERM_READ, NULL,
 			   NULL, NULL),
-	/* Battery Service Declaration */
+};
+
+/* Battery Service Declaration */
+static struct bt_gatt_attr bas_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_BAS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_LEVEL,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
 	BT_GATT_DESCRIPTOR(BT_UUID_BAS_BATTERY_LEVEL, BT_GATT_PERM_READ,
 			   read_blvl, NULL, &battery),
 	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
-	/* Current Time Service Declaration */
+};
+
+/* Current Time Service Declaration */
+static struct bt_gatt_attr cts_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CTS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_CTS_CURRENT_TIME, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE),
@@ -343,7 +352,10 @@ static struct bt_gatt_attr attrs[] = {
 			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 			   read_ct, write_ct, ct),
 	BT_GATT_CCC(ct_ccc_cfg, ct_ccc_cfg_changed),
-	/* Device Information Service Declaration */
+};
+
+/* Device Information Service Declaration */
+static struct bt_gatt_attr dis_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_PERM_READ,
@@ -352,6 +364,10 @@ static struct bt_gatt_attr attrs[] = {
 			       BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_PERM_READ,
 			   read_manuf, NULL, "Manufacturer"),
+};
+
+/* Vendor Primary Service Declaration */
+static struct bt_gatt_attr vnd_attrs[] = {
 	/* Vendor Primary Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&vnd_uuid),
 	BT_GATT_CHARACTERISTIC(&vnd_enc_uuid,
@@ -473,7 +489,12 @@ void main(void)
 	/* Simulate current time for Current Time Service */
 	generate_current_time(ct);
 
-	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
+	bt_gatt_register(gap_attrs, ARRAY_SIZE(gap_attrs));
+	bt_gatt_register(hrs_attrs, ARRAY_SIZE(hrs_attrs));
+	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
+	bt_gatt_register(cts_attrs, ARRAY_SIZE(cts_attrs));
+	bt_gatt_register(dis_attrs, ARRAY_SIZE(dis_attrs));
+	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
 
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_cb_register(&auth_cb_display);
