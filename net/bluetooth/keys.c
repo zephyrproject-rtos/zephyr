@@ -23,6 +23,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 
 #include "hci_core.h"

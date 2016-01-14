@@ -23,6 +23,7 @@
 #if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #include <stdbool.h>
 
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
 /** Opaque type representing a connection to a remote device */
@@ -166,7 +167,22 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
  */
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param);
-#endif
+
+/** @brief Automatically connect to remote device if it's in range.
+ *
+ *  This function enables/disables automatic connection initiation.
+ *  Everytime the device looses the connection with peer, this connection
+ *  will be re-established if connectable advertisement from peer is received.
+ *
+ *  @param addr Remote Bluetooth address.
+ *  @param param If non-NULL, auto connect is enabled with the given
+ *  parameters. If NULL, auto connect is disabled.
+ *
+ *  @return Zero on success or error code otherwise.
+ */
+int bt_le_set_auto_conn(bt_addr_le_t *addr,
+			const struct bt_le_conn_param *param);
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 /** Security level. */
 typedef enum __packed {
@@ -235,4 +251,78 @@ struct bt_conn_cb {
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
+
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+/** Authenticated pairing callback structure */
+struct bt_auth_cb {
+	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
+	void (*passkey_entry)(struct bt_conn *conn);
+	void (*passkey_confirm)(struct bt_conn *conn, unsigned int passkey);
+	void (*cancel)(struct bt_conn *conn);
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
+#endif
+};
+
+/** @brief Register authentication callbacks.
+ *
+ *  Register callbacks to handle authenticated pairing. Passing NULL unregisters
+ *  previous callbacks structure.
+ *
+ *  @param cb Callback struct.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_auth_cb_register(const struct bt_auth_cb *cb);
+
+/** @brief Reply with entered passkey.
+ *
+ *  This function should be called only after passkey_entry callback from
+ *  bt_auth_cb structure was called.
+ *
+ *  @param conn Connection object.
+ *  @param passkey Entered passkey.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
+
+/** @brief Cancel ongoing authenticated pairing.
+ *
+ *  This function allows to cancel ongoing authenticated pairing.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_auth_cancel(struct bt_conn *conn);
+
+/** @brief Reply if passkey was confirmed by user.
+ *
+ *  This function should be called only after passkey_confirm callback from
+ *  bt_auth_cb structure was called. If passkey is confirmed to match then match
+ *  should be true. Otherwise match should be false.
+ *
+ *  @param conn Connection object.
+ *  @param match True if passkey was confirmed to match, false otherwise.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_auth_passkey_confirm(struct bt_conn *conn, bool match);
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/** @brief Reply with entered PIN code.
+ *
+ *  This function should be called only after PIN code callback from
+ *  bt_auth_cb structure was called. It's for legacy 2.0 devices.
+ *
+ *  @param conn Connection object.
+ *  @param pin Entered PIN code.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_auth_pincode_entry(struct bt_conn *conn, const char *pin);
+#endif /* CONFIG_BLUETOOTH_BREDR */
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
+
 #endif /* __BT_CONN_H */

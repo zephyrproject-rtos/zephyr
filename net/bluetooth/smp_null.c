@@ -26,6 +26,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"

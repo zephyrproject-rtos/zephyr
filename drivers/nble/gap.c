@@ -17,6 +17,7 @@
 #include <errno.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 
 int bt_enable(bt_ready_cb_t cb)
 {

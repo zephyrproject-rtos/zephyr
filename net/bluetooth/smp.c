@@ -32,6 +32,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 
 #if defined(CONFIG_TINYCRYPT_AES)
 #include <tinycrypt/aes.h>
