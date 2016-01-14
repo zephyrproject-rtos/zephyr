@@ -30,18 +30,34 @@
 #define DBG	printk
 #endif
 
+#define SLEEPTIME  2
+#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec)
+
 #ifdef CONFIG_SOC_QUARK_SE_SS
 	#define ADC_DEVICE_NAME CONFIG_ADC_DW_NAME_0
 #elif CONFIG_BOARD_GALILEO
 	#define ADC_DEVICE_NAME CONFIG_ADC_TI_ADC108S102_0_DRV_NAME
 #endif
 
-static uint8_t seq_buffer[100];
+/*
+ * The analog input pin and channel number mapping
+ * for Arduino 101 board.
+ * A0 Channel 10
+ * A1 Channel 11
+ * A2 Channel 12
+ * A3 Channel 13
+ * A4 Channel 14
+ */
+#define CHANNEL 10
+#define BUFFER_SIZE 40
+
+static uint8_t seq_buffer[BUFFER_SIZE];
+
 static struct adc_seq_entry sample = {
-	.sampling_delay = 1,
-	.channel_id = 0,
+	.sampling_delay = 12,
+	.channel_id = CHANNEL,
 	.buffer = seq_buffer,
-	.buffer_length = 100,
+	.buffer_length = BUFFER_SIZE,
 };
 
 static struct adc_seq_table table = {
@@ -52,14 +68,17 @@ static struct adc_seq_table table = {
 static void _print_sample_in_hex(uint8_t *buf, uint32_t length)
 {
 	DBG("Buffer content:\n");
-	for (; length > 0; length -= 2, buf += 2) {
-		DBG("0x%x ", *((uint16_t *)buf));
+	for (; length > 0; length -= 4, buf += 4) {
+		DBG("0x%x ", *((uint32_t *)buf));
 	}
+	DBG("\n");
 }
 
 void main(void)
 {
 	struct device *adc;
+	struct nano_timer timer;
+	uint32_t data[2] = {0, 0};
 
 	DBG("ADC sample started on %s\n", ADC_DEVICE_NAME);
 
@@ -69,14 +88,17 @@ void main(void)
 		return;
 	}
 
+	nano_timer_init(&timer, data);
 	adc_enable(adc);
-
-	if (adc_read(adc, &table) != DEV_OK) {
-		DBG("Sampling could not proceed, an error occurred\n");
-	} else {
-		DBG("Sampling is done\n");
-		_print_sample_in_hex(seq_buffer, 100);
+	while (1) {
+		if (adc_read(adc, &table) != DEV_OK) {
+			DBG("Sampling could not proceed, an error occurred\n");
+		} else {
+			DBG("Sampling is done\n");
+			_print_sample_in_hex(seq_buffer, BUFFER_SIZE);
+		}
+		nano_timer_start(&timer, SLEEPTICKS);
+		nano_timer_test(&timer, TICKS_UNLIMITED);
 	}
-
 	adc_disable(adc);
 }
