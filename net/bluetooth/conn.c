@@ -882,6 +882,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param)
 {
@@ -924,6 +925,57 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 
 	return conn;
 }
+
+int bt_le_set_auto_conn(bt_addr_le_t *addr,
+			const struct bt_le_conn_param *param)
+{
+	struct bt_conn *conn;
+
+	if (param && !bt_le_conn_params_valid(param->interval_min,
+					      param->interval_max,
+					      param->latency,
+					      param->timeout)) {
+		return -EINVAL;
+	}
+
+	conn = bt_conn_lookup_addr_le(addr);
+	if (!conn) {
+		conn = bt_conn_add_le(addr);
+		if (!conn) {
+			return -ENOMEM;
+		}
+	}
+
+	if (param) {
+		bt_conn_set_param_le(conn, param);
+
+		if (!atomic_test_and_set_bit(conn->flags,
+					     BT_CONN_AUTO_CONNECT)) {
+			bt_conn_ref(conn);
+		}
+	} else {
+		if (atomic_test_and_clear_bit(conn->flags,
+					      BT_CONN_AUTO_CONNECT)) {
+			bt_conn_unref(conn);
+			if (conn->state == BT_CONN_CONNECT_SCAN) {
+				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			}
+		}
+	}
+
+	if (conn->state == BT_CONN_DISCONNECTED &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		if (param) {
+			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		}
+		bt_le_scan_update(false);
+	}
+
+	bt_conn_unref(conn);
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 			   uint16_t latency, uint16_t timeout)
