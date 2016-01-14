@@ -53,7 +53,7 @@ config WDT_DW_CLOCK_GATE_SUBSYS
 
 config WDT_DW_DRV_NAME
 	string "Driver instance name"
-	default "WDT_DW"
+	default "WATCHDOG"
 	depends on WDT_DW
 	help
 	Designware WDT driver instance name
@@ -92,7 +92,7 @@ config WDT_QMSI
 
 config WDT_QMSI_DRV_NAME
 	string "Driver instance name"
-	default "WDT_QMSI"
+	default "WATCHDOG"
 	depends on WDT_QMSI
 	help
 	QMSI driver instance name
