@@ -148,6 +148,12 @@ config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
 
+config BLUETOOTH_GATT_DYNAMIC_DB
+	bool "GATT dynamic database support"
+	default n
+	help
+	  This option enables GATT services to be added dynamically to database.
+
 config BLUETOOTH_GATT_CLIENT
 	bool "GATT client support"
 	default n
