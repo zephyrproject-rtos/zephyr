@@ -406,8 +406,12 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	/* Read attribute value and store in the buffer */
 	read = attr->read(conn, attr, uuid, sizeof(uuid), 0);
 	if (read < 0) {
-		/* TODO: Return an error if this fails */
-		return BT_GATT_ITER_STOP;
+		/*
+		 * Since we don't know if it is the service with requested UUID,
+		 * we cannot respond with an error to this request.
+		 */
+		data->group = NULL;
+		return BT_GATT_ITER_CONTINUE;
 	}
 
 	/* Check if data matches */
