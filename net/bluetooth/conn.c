@@ -55,6 +55,10 @@ static NET_BUF_POOL(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, &dummy, NULL, 0);
 /* How long until we cancel HCI_LE_Create_Connection */
 #define CONN_TIMEOUT	(3 * sys_clock_ticks_per_sec)
 
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+const struct bt_auth_cb *bt_auth;
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
+
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
@@ -1007,6 +1011,159 @@ struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve)
 
 	return net_buf_get(fifo, head_reserve);
 }
+
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+int bt_auth_cb_register(const struct bt_auth_cb *cb)
+{
+	if (!cb) {
+		bt_auth = NULL;
+		return 0;
+	}
+
+	/* cancel callback should always be provided */
+	if (!cb->cancel) {
+		return -EINVAL;
+	}
+
+	if (bt_auth) {
+		return -EALREADY;
+	}
+
+	bt_auth = cb;
+	return 0;
+}
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static int pin_code_neg_reply(const bt_addr_t *bdaddr)
+{
+	struct bt_hci_cp_pin_code_neg_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
+}
+
+static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
+{
+	struct bt_hci_cp_pin_code_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+	cp->pin_len = len;
+	strncpy(cp->pin_code, pin, sizeof(cp->pin_code));
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_REPLY, buf, NULL);
+}
+
+int bt_auth_pincode_entry(struct bt_conn *conn, const char *pin)
+{
+	size_t len;
+
+	if (!bt_auth) {
+		return -EINVAL;
+	}
+
+	if (conn->type != BT_CONN_TYPE_BR) {
+		return -EINVAL;
+	}
+
+	len = strlen(pin);
+	if (len > 16) {
+		return -EINVAL;
+	}
+
+	if (conn->required_sec_level == BT_SECURITY_HIGH && len < 16) {
+		BT_WARN("PIN code for %s is not 16 bytes wide",
+			bt_addr_str(&conn->br.dst));
+		return -EPERM;
+	}
+
+	return pin_code_reply(conn, pin, len);
+}
+
+void bt_conn_pin_code_req(struct bt_conn *conn)
+{
+	if (bt_auth && bt_auth->pincode_entry) {
+		bool secure = false;
+
+		if (conn->required_sec_level == BT_SECURITY_HIGH) {
+			secure = true;
+		}
+
+		bt_auth->pincode_entry(conn, secure);
+	} else {
+		pin_code_neg_reply(&conn->br.dst);
+	}
+
+}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
+int bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
+{
+	if (!bt_auth) {
+		return -EINVAL;
+	}
+#if defined(CONFIG_BLUETOOTH_SMP)
+	if (conn->type == BT_CONN_TYPE_LE) {
+		bt_smp_auth_passkey_entry(conn, passkey);
+		return 0;
+	}
+#endif /* CONFIG_BLUETOOTH_SMP */
+
+	return -EINVAL;
+}
+
+int bt_auth_passkey_confirm(struct bt_conn *conn, bool match)
+{
+	if (!bt_auth) {
+		return -EINVAL;
+	};
+#if defined(CONFIG_BLUETOOTH_SMP)
+	if (conn->type == BT_CONN_TYPE_LE) {
+		return bt_smp_auth_passkey_confirm(conn, match);
+	}
+#endif /* CONFIG_BLUETOOTH_SMP */
+
+	return -EINVAL;
+}
+
+int bt_auth_cancel(struct bt_conn *conn)
+{
+	if (!bt_auth) {
+		return -EINVAL;
+	}
+#if defined(CONFIG_BLUETOOTH_SMP)
+	if (conn->type == BT_CONN_TYPE_LE) {
+		return bt_smp_auth_cancel(conn);
+	}
+#endif /* CONFIG_BLUETOOTH_SMP */
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		return pin_code_neg_reply(&conn->br.dst);
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
+	return -EINVAL;
+}
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 static void background_scan_init(void)
 {

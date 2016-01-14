@@ -118,6 +118,8 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
 
 /* Look up an existing connection by BT address */
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
+
+void bt_conn_pin_code_req(struct bt_conn *conn);
 #endif
 
 /* Look up an existing connection */
