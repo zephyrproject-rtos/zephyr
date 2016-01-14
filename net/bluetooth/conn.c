@@ -83,7 +83,7 @@ static void notify_connected(struct bt_conn *conn)
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->connected) {
-			cb->connected(conn);
+			cb->connected(conn, conn->err);
 		}
 	}
 }
@@ -94,7 +94,7 @@ static void notify_disconnected(struct bt_conn *conn)
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->disconnected) {
-			cb->disconnected(conn);
+			cb->disconnected(conn, conn->err);
 		}
 	}
 }
@@ -652,6 +652,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			notify_disconnected(conn);
 
 			nano_fifo_put(&conn->tx_queue, net_buf_get(&dummy, 0));
+		} else if (old_state == BT_CONN_CONNECT) {
+			/* conn->err will be set in this case */
+			notify_connected(conn);
 		}
 
 		/* Release the reference we took for the very first

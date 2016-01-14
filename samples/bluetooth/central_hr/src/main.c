@@ -94,12 +94,17 @@ static uint8_t discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_STOP;
 }
 
-static void connected(struct bt_conn *conn)
+static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	if (conn_err) {
+		printk("Failed to connect to %s (%u)\n", addr, conn_err);
+		return;
+	}
 
 	printk("Connected: %s\n", addr);
 
@@ -202,14 +207,14 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	}
 }
 
-static void disconnected(struct bt_conn *conn)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected: %s\n", addr);
+	printk("Disconnected: %s (reason %u)\n", addr, reason);
 
 	if (default_conn != conn) {
 		return;
@@ -226,8 +231,8 @@ static void disconnected(struct bt_conn *conn)
 }
 
 static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
+	.connected = connected,
+	.disconnected = disconnected,
 };
 
 #ifdef CONFIG_MICROKERNEL

@@ -37,10 +37,14 @@
 static atomic_t current_settings;
 struct bt_auth_cb cb;
 
-static void le_connected(struct bt_conn *conn)
+static void le_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct gap_device_connected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	if (err) {
+		return;
+	}
 
 	memcpy(ev.address, addr->val, sizeof(ev.address));
 	ev.address_type = addr->type;
@@ -49,7 +53,7 @@ static void le_connected(struct bt_conn *conn)
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
-static void le_disconnected(struct bt_conn *conn)
+static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct gap_device_disconnected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
@@ -62,8 +66,8 @@ static void le_disconnected(struct bt_conn *conn)
 }
 
 static struct bt_conn_cb conn_callbacks = {
-		.connected = le_connected,
-		.disconnected = le_disconnected,
+	.connected = le_connected,
+	.disconnected = le_disconnected,
 };
 
 static void supported_commands(uint8_t *data, uint16_t len)

@@ -215,8 +215,8 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
 
 /** Connection callback structure */
 struct bt_conn_cb {
-	void (*connected)(struct bt_conn *conn);
-	void (*disconnected)(struct bt_conn *conn);
+	void (*connected)(struct bt_conn *conn, uint8_t err);
+	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
 #if defined(CONFIG_BLUETOOTH_SMP)
 	void (*identity_resolved)(struct bt_conn *conn,
 				  const bt_addr_le_t *rpa,

@@ -81,6 +81,9 @@ struct bt_conn {
 
 	atomic_t		ref;
 
+	/* Connection error or reason for disconnect */
+	uint8_t			err;
+
 	bt_conn_state_t		state;
 
 	/* Handle allowing to cancel timeout fiber */

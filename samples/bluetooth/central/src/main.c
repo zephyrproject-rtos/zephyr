@@ -60,22 +60,27 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
 }
 
-static void connected(struct bt_conn *conn)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	if (err) {
+		printk("Failed to connect to %s (%u)\n", addr, err);
+		return;
+	}
 
 	if (conn != default_conn) {
 		return;
 	}
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Connected: %s\n", addr);
 
 	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
-static void disconnected(struct bt_conn *conn)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
@@ -86,7 +91,7 @@ static void disconnected(struct bt_conn *conn)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected: %s\n", addr);
+	printk("Disconnected: %s (reason %u)\n", addr, reason);
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;

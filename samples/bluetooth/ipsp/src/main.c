@@ -114,19 +114,23 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
-static void connected(struct bt_conn *conn)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
-	printk("Connected\n");
+	if (err) {
+		printk("Connection failed (err %u)\n", err);
+	} else {
+		printk("Connected\n");
+	}
 }
 
-static void disconnected(struct bt_conn *conn)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	printk("Disconnected\n");
+	printk("Disconnected (reason %u)\n", reason);
 }
 
 static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
+	.connected = connected,
+	.disconnected = disconnected,
 };
 
 static inline void reverse(unsigned char *buf, int len)

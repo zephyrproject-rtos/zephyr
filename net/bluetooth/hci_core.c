@@ -441,6 +441,8 @@ static void hci_disconn_complete(struct net_buf *buf)
 		return;
 	}
 
+	conn->err = evt->reason;
+
 	/* Check stacks usage (no-ops if not enabled) */
 	stack_analyze("rx stack", rx_fiber_stack, sizeof(rx_fiber_stack));
 	stack_analyze("cmd rx stack", rx_prio_fiber_stack,
@@ -543,6 +545,8 @@ static void le_conn_complete(struct net_buf *buf)
 		if (!conn) {
 			return;
 		}
+
+		conn->err = evt->status;
 
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
@@ -1532,6 +1536,7 @@ static void conn_complete(struct net_buf *buf)
 	}
 
 	if (evt->status) {
+		conn->err = evt->status;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		bt_conn_unref(conn);
 		return;

@@ -137,17 +137,24 @@ static void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 	}
 }
 
-static void connected(struct bt_conn *conn)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	conn_addr_str(conn, addr, sizeof(addr));
+
+	if (err) {
+		printk("Failed to connect to %s (%u)\n", addr, err);
+		goto done;
+	}
+
 	printk("Connected: %s\n", addr);
 
 	if (!default_conn) {
 		default_conn = bt_conn_ref(conn);
 	}
 
+done:
 	/* clear connection reference for sec mode 3 pairing */
 	if (pairing_conn) {
 		bt_conn_unref(pairing_conn);
@@ -155,12 +162,12 @@ static void connected(struct bt_conn *conn)
 	}
 }
 
-static void disconnected(struct bt_conn *conn)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	conn_addr_str(conn, addr, sizeof(addr));
-	printk("Disconnected: %s\n", addr);
+	printk("Disconnected: %s (reason %u)\n", addr, reason);
 
 	if (default_conn == conn) {
 		bt_conn_unref(default_conn);
@@ -189,10 +196,10 @@ static void security_changed(struct bt_conn *conn, bt_security_t level)
 }
 
 static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
-		.identity_resolved = identity_resolved,
-		.security_changed = security_changed,
+	.connected = connected,
+	.disconnected = disconnected,
+	.identity_resolved = identity_resolved,
+	.security_changed = security_changed,
 };
 
 static void cmd_init(int argc, char *argv[])
