@@ -1072,7 +1072,7 @@ static void auth_cancel(struct bt_conn *conn)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	conn_addr_str(conn, addr, sizeof(addr));
 
 	printk("Pairing cancelled: %s\n", addr);
 
