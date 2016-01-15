@@ -382,7 +382,7 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr_chrc)
 	 * Look for characteristic value (stored under next handle) to set
 	 * 'has_ccc' flag
 	 */
-	attr_value = attr_chrc->_next;
+	attr_value = bt_gatt_attr_next(attr_chrc);
 	if (!attr_value) {
 		return NULL;
 	}
@@ -629,7 +629,7 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	if (!bt_uuid_cmp(attr->uuid, chr.uuid)) {
-		attr = attr->_next;
+		attr = bt_gatt_attr_next(attr);
 		if (!attr) {
 			status = BTP_STATUS_FAILED;
 			goto rsp;
@@ -727,7 +727,7 @@ static uint8_t set_enc_key_size_cb(const struct bt_gatt_attr *attr,
 
 	/* Lookup for characteristic value attribute */
 	if (!bt_uuid_cmp(attr->uuid, chr.uuid)) {
-		attr = attr->_next;
+		attr = bt_gatt_attr_next(attr);
 		if (!attr) {
 			status = BTP_STATUS_FAILED;
 			goto rsp;
