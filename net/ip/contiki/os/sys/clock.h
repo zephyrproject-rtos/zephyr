@@ -72,7 +72,7 @@
 #include "contiki-conf.h"
 
 #ifdef CONFIG_MICROKERNEL
-#include <zephyr.h>
+#include <microkernel.h>
 #else
 #include <nanokernel.h>
 #endif

@@ -74,7 +74,7 @@
 #define TIMER_H_
 
 #ifdef CONFIG_MICROKERNEL
-#include <zephyr.h>
+#include <microkernel.h>
 #else
 #include <nanokernel.h>
 #endif
