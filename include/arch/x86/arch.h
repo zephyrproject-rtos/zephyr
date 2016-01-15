@@ -229,8 +229,8 @@ typedef struct nanoEsf {
 	unsigned int esi;
 	unsigned int edi;
 	unsigned int edx;
-	unsigned int ecx;
 	unsigned int eax;
+	unsigned int ecx;
 	unsigned int errorCode;
 	unsigned int eip;
 	unsigned int cs;

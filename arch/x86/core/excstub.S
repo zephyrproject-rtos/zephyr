@@ -55,11 +55,11 @@ SECTION_FUNC(TEXT, _ExcEntNoErr)
 	/* Clear direction flag, auto-restored when the exception exits */
 	cld
 
-	/* Stash current value of EAX to free up the register */
-	pushl	%eax
+	/* Stash current value of ECX to free up the register */
+	pushl	%ecx
 
-	/* Save the return address of the stub into EAX */
-	movl	4(%esp), %eax
+	/* Save the return address of the stub into ECX */
+	movl	4(%esp), %ecx
 
 	/*
 	 * The spot for the error code contains useless data, but
@@ -117,29 +117,29 @@ SECTION_FUNC(TEXT, _ExcEnt)
 
 
 	/*
-	 * Swap eax and return address on the current stack;
-	 * this saves eax on the stack without losing knowledge
+	 * Swap ecx and return address on the current stack;
+	 * this saves ecx on the stack without losing knowledge
 	 * of how to get back to the exception stub.
 	 */
-	xchgl	%eax, (%esp)
+	xchgl	%ecx, (%esp)
 
 BRANCH_LABEL(_ExcEntSetupDone)
 
 	/* By the time we get here, the stack should look like this:
-	 * ESP -> EAX (excepting task)
-	 *	  Exception Error code (or 0)
+	 * ESP -> ECX (excepting task)
+	 *	  Exception Error code (or junk)
 	 *	  EIP (excepting task)
 	 *	  CS (excepting task)
 	 *	  EFLAGS (excepting task)
 	 *	  ...
 	 *
-	 * EAX now contains the EIP of the calling exception stub */
+	 * ECX now contains the EIP of the calling exception stub */
 
 	/*
 	 * Push the remaining volatile registers on the existing stack.
 	 */
 
-	pushl	%ecx
+	pushl	%eax
 	pushl	%edx
 
 	/*
@@ -152,8 +152,8 @@ BRANCH_LABEL(_ExcEntSetupDone)
 	pushl	%ebx
 	pushl	%ebp
 
-	leal	44(%esp), %ecx   /* Calculate ESP before interrupt occurred */
-	pushl	%ecx             /* Save calculated ESP */
+	leal	44(%esp), %eax   /* Calculate ESP before interrupt occurred */
+	pushl	%eax             /* Save calculated ESP */
 
 	/* ESP is pointing to the ESF at this point */
 
@@ -211,8 +211,12 @@ BRANCH_LABEL(alreadyInException)
 	sti
 
 BRANCH_LABEL(allDone)
+#if CONFIG_X86_IAMCU
+	movl	%esp, %eax		/* NANO_ESF * parameter */
+#else
 	pushl	%esp			/* push NANO_ESF * parameter */
-	jmp	*%eax			/* "return" back to stub */
+#endif
+	jmp	*%ecx			/* "return" back to stub */
 
 
 /**
@@ -233,10 +237,11 @@ BRANCH_LABEL(allDone)
  */
 
 SECTION_FUNC(TEXT, _ExcExit)
-
 	/* On entry, interrupts may or may not be enabled. */
 
+#ifndef CONFIG_X86_IAMCU
 	popl %ecx      /* discard the NANO_ESF * parameter */
+#endif
 
 #if defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO)
 
@@ -285,8 +290,8 @@ BRANCH_LABEL(nestedException)
 	/* restore edx and ecx which are always saved on the stack */
 
 	popl	%edx
-	popl	%ecx
 	popl	%eax
+	popl	%ecx
 
 	addl	$4, %esp	/* "pop" error code */
 

@@ -103,15 +103,15 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	}
 
 	printk("Current thread ID = 0x%x\n"
-			"Faulting instruction address = 0x%x\n"
-			"eax: %x, ebx: %x, ecx: %x, edx: %x\n"
-			"esi: %x, edi: %x, ebp: %x, esp: %x\n"
-			"eflags: %x\n",
-			sys_thread_self_get(),
-			pEsf->eip,
-			pEsf->eax, pEsf->ebx, pEsf->ecx, pEsf->edx,
-			pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp,
-			pEsf->eflags);
+	       "Faulting segment:address = 0x%x:0x%x\n"
+	       "eax: 0x%x, ebx: 0x%x, ecx: 0x%x, edx: 0x%x\n"
+	       "esi: 0x%x, edi: 0x%x, ebp: 0%x, esp: 0x%x\n"
+	       "eflags: 0x%x\n",
+	       sys_thread_self_get(),
+	       pEsf->cs & 0xFFFF, pEsf->eip,
+	       pEsf->eax, pEsf->ebx, pEsf->ecx, pEsf->edx,
+	       pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp,
+	       pEsf->eflags);
 #endif /* CONFIG_PRINTK */
 
 
