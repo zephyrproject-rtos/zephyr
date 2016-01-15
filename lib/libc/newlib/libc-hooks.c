@@ -106,7 +106,7 @@ int _fstat(int file, struct stat *st)
 }
 
 
-void exit(int status)
+void _exit(int status)
 {
 	write(1, "exit", 4);
 	while (1) {
