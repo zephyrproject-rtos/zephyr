@@ -334,13 +334,10 @@ static int adc_dw_read(struct device *dev, struct adc_seq_table *seq_tbl)
 
 	sys_out32(ctrl | ADC_SEQ_PTR_RST, adc_base + ADC_CTRL);
 
-	int num_entries = seq_tbl->num_entries;
-
 	info->entries = seq_tbl->entries;
-	for (i = 0; i < num_entries; i++) {
-		info->index[i] = 0;
-	}
-
+#ifdef CONFIG_ADC_DW_REPETITIVE
+	memset(info->index, 0, seq_tbl->num_entries);
+#endif
 	info->state = ADC_STATE_SAMPLING;
 	sys_out32(START_ADC_SEQ, adc_base + ADC_CTRL);
 
@@ -398,6 +395,7 @@ int adc_dw_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_ADC_DW_SINGLESHOT
 void adc_dw_rx_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -405,27 +403,65 @@ void adc_dw_rx_isr(void *arg)
 	struct adc_config *config = dev_config->config_info;
 	struct adc_info *info = dev->driver_data;
 	uint32_t adc_base = config->reg_base;
-	uint32_t reg_val;
-	uint32_t sample_index;
 	struct adc_seq_entry *entries = info->entries;
+	uint32_t reg_val;
+	uint32_t seq_index;
 
-	for (sample_index = 0; sample_index < info->seq_size; sample_index++) {
-		int rep_index;
+	for (seq_index = 0; seq_index < info->seq_size; seq_index++) {
 		uint32_t *adc_buffer;
 
 		reg_val = sys_in32(adc_base + ADC_SET);
 		sys_out32(reg_val|ADC_POP_SAMPLE, adc_base + ADC_SET);
-		rep_index = info->index[sample_index];
-		adc_buffer = (uint32_t *)entries[sample_index].buffer;
-		adc_buffer[rep_index] = sys_in32(adc_base + ADC_SAMPLE);
-		info->index[sample_index]++;
-		/*API array is 8 bits array but ADC reads blocks of 32 bits with every sample.*/
-		if ((info->index[sample_index] * 4) >= entries[sample_index].buffer_length) {
-			info->index[sample_index] = 0;
-		}
+		adc_buffer = (uint32_t *)entries[seq_index].buffer;
+		*adc_buffer = sys_in32(adc_base + ADC_SAMPLE);
 	}
 
-	if (config->seq_mode == IO_ADC_SEQ_MODE_SINGLESHOT) {
+	/*Resume ADC state to continue new conversions*/
+	sys_out32(RESUME_ADC_CAPTURE, adc_base + ADC_CTRL);
+	reg_val = sys_in32(adc_base + ADC_SET);
+	sys_out32(reg_val | ADC_FLUSH_RX, adc_base + ADC_SET);
+	info->state = ADC_STATE_IDLE;
+
+	synchronous_call_complete(&info->sync);
+
+	/*Clear data A register*/
+	reg_val = sys_in32(adc_base + ADC_CTRL);
+	sys_out32(reg_val | ADC_CLR_DATA_A, adc_base + ADC_CTRL);
+}
+#else /*CONFIG_ADC_DW_REPETITIVE*/
+void adc_dw_rx_isr(void *arg)
+{
+	struct device *dev = (struct device *)arg;
+	struct device_config *dev_config = dev->config;
+	struct adc_config *config = dev_config->config_info;
+	struct adc_info *info = dev->driver_data;
+	uint32_t adc_base = config->reg_base;
+	struct adc_seq_entry *entries = info->entries;
+	uint32_t reg_val;
+	uint32_t sequence_index;
+	uint8_t full_buffer_flag = 0;
+
+	for (sequence_index = 0; sequence_index < info->seq_size; sequence_index++) {
+		uint32_t *adc_buffer;
+		uint32_t repetitive_index;
+
+		repetitive_index = info->index[sequence_index];
+		/*API array is 8 bits array but ADC reads blocks of 32 bits with every sample.*/
+		if (repetitive_index >= (entries[sequence_index].buffer_length >> 2)) {
+			full_buffer_flag = 1;
+			continue;
+		}
+
+		reg_val = sys_in32(adc_base + ADC_SET);
+		sys_out32(reg_val|ADC_POP_SAMPLE, adc_base + ADC_SET);
+		adc_buffer = (uint32_t *)entries[sequence_index].buffer;
+		adc_buffer[repetitive_index] = sys_in32(adc_base + ADC_SAMPLE);
+		repetitive_index++;
+		info->index[sequence_index] = repetitive_index;
+	}
+
+	if (full_buffer_flag == 1) {
+		/*Resume ADC state to continue new conversions*/
 		sys_out32(RESUME_ADC_CAPTURE, adc_base + ADC_CTRL);
 		reg_val = sys_in32(adc_base + ADC_SET);
 		sys_out32(reg_val | ADC_FLUSH_RX, adc_base + ADC_SET);
@@ -434,9 +470,11 @@ void adc_dw_rx_isr(void *arg)
 		synchronous_call_complete(&info->sync);
 	}
 
+	/*Clear data A register*/
 	reg_val = sys_in32(adc_base + ADC_CTRL);
 	sys_out32(reg_val | ADC_CLR_DATA_A, adc_base + ADC_CTRL);
 }
+#endif
 
 
 void adc_dw_err_isr(void *arg)

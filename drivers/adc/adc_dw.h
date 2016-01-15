@@ -184,8 +184,10 @@ struct adc_info {
 	device_sync_call_t sync;
 	/**State of execution of the driver*/
 	uint8_t  state;
+#ifdef CONFIG_ADC_DW_REPETITIVE
 	/**Current reception buffer index*/
 	uint8_t  index[BUFS_NUM];
+#endif
 	/**Sequence entries' array*/
 	struct adc_seq_entry *entries;
 	/**Sequence size*/
