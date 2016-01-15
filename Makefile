@@ -1102,6 +1102,11 @@ qemu: zephyr
 	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(ARCH))'
 	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_ELF_NAME)
 
+-include $(srctree)/boards/$(BOARD_NAME)/Makefile.board
+flash: zephyr
+	@echo "Flashing $(BOARD_NAME)"
+	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/support/$(FLASH_SCRIPT) flash
+
 # Single targets
 # ---------------------------------------------------------------------------
 # Single targets are compatible with:

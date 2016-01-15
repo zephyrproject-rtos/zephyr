@@ -65,6 +65,10 @@ qemu: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 endif
 
+
+flash: $(DOTCONFIG)
+	$(Q)$(call zephyrmake,$(O),$@)
+
 initconfig: $(DOTCONFIG)
 
 menuconfig: initconfig
