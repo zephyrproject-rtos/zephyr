@@ -36,9 +36,11 @@ struct spi_dw_config {
 
 struct spi_dw_data {
 	device_sync_call_t sync;
-	uint8_t error;
-	uint8_t dfs; /* data frame size in bytes */
-	uint16_t slave;
+	uint32_t error:1;
+	uint32_t dfs:3; /* dfs in bytes: 1,2 or 4 */
+	uint32_t slave:17; /* up 16 slaves */
+	uint32_t fifo_diff:9; /* cannot be bigger than FIFO depth */
+	uint32_t _unused:2;
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	struct device *clock;
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
@@ -46,7 +48,6 @@ struct spi_dw_data {
 	uint32_t tx_buf_len;
 	uint8_t *rx_buf;
 	uint32_t rx_buf_len;
-	uint32_t t_len;
 };
 
 /* Registers */
@@ -91,7 +92,14 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_32
 #endif
 
-#define SPI_DFS_TO_BYTES(__bpw)		((__bpw / 8) + 1)
+/* 0x38 represents the bits 8,16 and 32. Knowing that 24 is bits 8 and 16
+ * These are the bits were when you divide by 8, you keep the result as it is.
+ * For all the other ones, 4 to 7, 9 to 15, etc... you need a +1,
+ * since on such division it takes only the result above 0
+ */
+#define SPI_DFS_TO_BYTES(__bpw)		(((__bpw) & ~0x38) ?		\
+						(((__bpw) / 8) + 1) :	\
+						((__bpw) / 8))
 
 /* SSIENR bits */
 #define DW_SPI_SSIENR_SSIEN_BIT		(0)
@@ -136,6 +144,7 @@ struct spi_dw_data {
 /* Threshold defaults */
 #define DW_SPI_TXFTLR_DFLT		(0x5)
 #define DW_SPI_RXFTLR_DFLT		(0x5)
+#define DW_SPI_FIFO_DEPTH		(8)
 
 /* Interrupt mask (IMR) */
 #define DW_SPI_IMR_MASK			(0x0)

@@ -85,6 +85,7 @@ DEFINE_MM_REG_WRITE(ser, DW_SPI_REG_SER, 8)
 DEFINE_MM_REG_WRITE(baudr, DW_SPI_REG_BAUDR, 16)
 DEFINE_MM_REG_WRITE(txftlr, DW_SPI_REG_TXFTLR, 32)
 DEFINE_MM_REG_WRITE(rxftlr, DW_SPI_REG_RXFTLR, 32)
+DEFINE_MM_REG_READ(rxftlr, DW_SPI_REG_RXFTLR, 32)
 DEFINE_MM_REG_READ(txflr, DW_SPI_REG_TXFLR, 32)
 DEFINE_MM_REG_READ(rxflr, DW_SPI_REG_RXFLR, 32)
 DEFINE_MM_REG_WRITE(imr, DW_SPI_REG_IMR, 8)
@@ -112,8 +113,6 @@ DEFINE_MM_REG_READ(ssi_comp_version, DW_SPI_REG_SSI_COMP_VERSION, 32)
 DEFINE_SET_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_CLEAR_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_TEST_BIT_OP(sr_busy, DW_SPI_REG_SR, DW_SPI_SR_BUSY_BIT)
-DEFINE_TEST_BIT_OP(sr_tfnf, DW_SPI_REG_SR, DW_SPI_SR_TFNF_BIT)
-DEFINE_TEST_BIT_OP(sr_rfne, DW_SPI_REG_SR, DW_SPI_SR_RFNE_BIT)
 DEFINE_TEST_BIT_OP(icr, DW_SPI_REG_ICR, DW_SPI_SR_ICR_BIT)
 
 #ifdef CONFIG_SOC_QUARK_SE
@@ -163,6 +162,10 @@ static void completed(struct device *dev, int error)
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
+	if (spi->fifo_diff) {
+		return;
+	}
+
 	if (!((spi->tx_buf && !spi->tx_buf_len && !spi->rx_buf) ||
 	      (spi->rx_buf && !spi->rx_buf_len && !spi->tx_buf) ||
 	      (spi->tx_buf && !spi->tx_buf_len &&
@@ -171,12 +174,6 @@ static void completed(struct device *dev, int error)
 		return;
 	}
 
-	if (spi->t_len) {
-		return;
-	}
-
-	spi->tx_buf = spi->rx_buf = NULL;
-	spi->tx_buf_len = spi->rx_buf_len = 0;
 	spi->error = error;
 
 	/* Disabling interrupts */
@@ -191,14 +188,13 @@ static void push_data(struct device *dev)
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t cnt = 0;
 	uint32_t data = 0;
+	uint32_t f_tx;
 
 	DBG("spi: push_data\n");
 
-	while (test_bit_sr_tfnf(info->regs)) {
-		if (cnt >= DW_SPI_RXFTLR_DFLT) {
-			break;
-		}
-
+	f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs) -
+					read_rxflr(info->regs) - 1;
+	while (f_tx) {
 		if (spi->tx_buf && spi->tx_buf_len > 0) {
 			switch (spi->dfs) {
 			case 1:
@@ -215,10 +211,10 @@ static void push_data(struct device *dev)
 			}
 
 			spi->tx_buf += spi->dfs;
-			spi->tx_buf_len -= spi->dfs;
+			spi->tx_buf_len--;
 		} else if (spi->rx_buf && spi->rx_buf_len > 0) {
 			/* No need to push more than necessary */
-			if (spi->rx_buf_len - cnt <= 0) {
+			if (spi->rx_buf_len - spi->fifo_diff <= 0) {
 				break;
 			}
 
@@ -229,11 +225,12 @@ static void push_data(struct device *dev)
 		}
 
 		write_dr(data, info->regs);
-		cnt += spi->dfs;
+		f_tx--;
+		spi->fifo_diff++;
+		cnt++;
 	}
 
 	DBG("Pushed: %d\n", cnt);
-	spi->t_len += cnt;
 }
 
 static void pull_data(struct device *dev)
@@ -245,9 +242,9 @@ static void pull_data(struct device *dev)
 
 	DBG("spi: pull_data\n");
 
-	while (test_bit_sr_rfne(info->regs)) {
+	while (read_rxflr(info->regs)) {
 		data = read_dr(info->regs);
-		cnt += spi->dfs;
+		cnt++;
 
 		if (spi->rx_buf && spi->rx_buf_len > 0) {
 			switch (spi->dfs) {
@@ -265,12 +262,19 @@ static void pull_data(struct device *dev)
 			}
 
 			spi->rx_buf += spi->dfs;
-			spi->rx_buf_len -= spi->dfs;
+			spi->rx_buf_len--;
 		}
+
+		spi->fifo_diff--;
+	}
+
+	if (!spi->rx_buf_len) {
+		write_rxftlr(DW_SPI_RXFTLR_DFLT, info->regs);
+	} else if (read_rxftlr(info->regs) >= spi->rx_buf_len) {
+		write_rxftlr(spi->rx_buf_len - 1, info->regs);
 	}
 
 	DBG("Pulled: %d\n", cnt);
-	spi->t_len -= cnt;
 }
 
 static int spi_dw_configure(struct device *dev,
@@ -316,15 +320,11 @@ static int spi_dw_configure(struct device *dev,
 	/* Installing the configuration */
 	write_ctrlr0(ctrlr0, info->regs);
 
-	/* Tx/Rx Threshold */
+	/* Tx Threshold, always at default */
 	write_txftlr(DW_SPI_TXFTLR_DFLT, info->regs);
-	write_rxftlr(DW_SPI_RXFTLR_DFLT, info->regs);
 
 	/* Configuring the rate */
 	write_baudr(config->max_sys_freq, info->regs);
-
-	spi->tx_buf = spi->rx_buf = NULL;
-	spi->tx_buf_len = spi->rx_buf_len = spi->t_len = 0;
 
 	/* Mask SPI interrupts */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
@@ -354,6 +354,7 @@ static int spi_dw_transceive(struct device *dev,
 {
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
+	uint32_t rx_thsld = DW_SPI_RXFTLR_DFLT;
 
 	DBG("spi_dw_transceive: %p, %p, %u, %p, %u\n",
 			dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
@@ -369,9 +370,18 @@ static int spi_dw_transceive(struct device *dev,
 
 	/* Set buffers info */
 	spi->tx_buf = tx_buf;
-	spi->tx_buf_len = tx_buf_len;
+	spi->tx_buf_len = tx_buf_len/spi->dfs;
 	spi->rx_buf = rx_buf;
-	spi->rx_buf_len = rx_buf_len;
+	spi->rx_buf_len = rx_buf_len/spi->dfs;
+	spi->fifo_diff = 0;
+
+	/* Does Rx thresholds needs to be lower? */
+	if (rx_buf_len && spi->rx_buf_len < DW_SPI_FIFO_DEPTH) {
+		rx_thsld = spi->rx_buf_len - 1;
+	} else if (!rx_buf_len && spi->tx_buf_len < DW_SPI_FIFO_DEPTH) {
+		rx_thsld = spi->tx_buf_len - 1;
+	}
+	write_rxftlr(rx_thsld, info->regs);
 
 	/* Slave select */
 	write_ser(spi->slave, info->regs);
