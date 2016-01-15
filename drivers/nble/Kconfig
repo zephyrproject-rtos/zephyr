@@ -37,6 +37,11 @@ config	BLUETOOTH_MAX_PAIRED
 	int
 	default 7
 
+config BLUETOOTH_DEBUG
+	bool
+	default n
+	select STDOUT_CONSOLE
+
 config  NBLE_UART_ON_DEV_NAME
 	string "Device Name of UART Device for Nordic BLE"
 	default "UART_0"
@@ -66,7 +71,9 @@ config NBLE
 	select BLUETOOTH_CENTRAL
 	select BLUETOOTH_GATT_CLIENT
 	select BLUETOOTH_SMP
+	select BLUETOOTH_DEBUG
 	select UART_INTERRUPT_DRIVEN
+	select NANO_TIMEOUTS
 	select NET_BUF
 	help
 	  Enables support for using Nordic Semiconductor nRF51 Bluetooth

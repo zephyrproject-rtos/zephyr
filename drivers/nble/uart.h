@@ -54,6 +54,7 @@ struct ipc_uart_channels {
 
 void ipc_uart_isr(void);
 void ipc_uart_ns16550_disable(struct device *dev);
+int nble_open(void);
 
 /**
  * This function triggers the sending of PDU buffer over UART.
