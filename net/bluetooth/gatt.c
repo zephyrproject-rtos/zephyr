@@ -51,12 +51,8 @@ static struct bt_gatt_attr *db;
 static struct bt_gatt_subscribe_params *subscriptions;
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
-#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
-#define BT_GATT_ATTR_NEXT(attr) (attr->_next)
-#else
+#if !defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 static size_t attr_count;
-#define BT_GATT_ATTR_NEXT(attr) \
-	((attr < db || attr > &db[attr_count - 2]) ? NULL : &attr[1])
 #endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 
 int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
@@ -117,7 +113,7 @@ populate:
 #endif
 
 		BT_DBG("attr %p next %p handle 0x%04x uuid %s perm 0x%02x",
-		       attrs, BT_GATT_ATTR_NEXT(attrs), attrs->handle,
+		       attrs, bt_gatt_attr_next(attrs), attrs->handle,
 		       bt_uuid_str(attrs->uuid), attrs->perm);
 	}
 
@@ -218,7 +214,7 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	 * declaration. All characteristic definitions shall have a
 	 * Characteristic Value declaration.
 	 */
-	next = BT_GATT_ATTR_NEXT(attr);
+	next = bt_gatt_attr_next(attr);
 	if (!next) {
 		BT_WARN("No value for characteristic at 0x%04x", attr->handle);
 		pdu.value_handle = 0x0000;
@@ -243,7 +239,7 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 {
 	const struct bt_gatt_attr *attr;
 
-	for (attr = db; attr; attr = BT_GATT_ATTR_NEXT(attr)) {
+	for (attr = db; attr; attr = bt_gatt_attr_next(attr)) {
 		/* Check if attribute handle is within range */
 		if (attr->handle < start_handle || attr->handle > end_handle) {
 			continue;
@@ -253,6 +249,16 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 			break;
 		}
 	}
+}
+
+struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
+{
+#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
+	return attr->_next;
+#else
+	return ((attr < db || attr > &db[attr_count - 2]) ? NULL :
+		(struct bt_gatt_attr *) &attr[1]);
+#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 }
 
 int bt_gatt_attr_read_ccc(struct bt_conn *conn,

@@ -280,6 +280,16 @@ typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
 void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 			  bt_gatt_attr_func_t func, void *user_data);
 
+/** @brief Iterate to the next attribute
+ *
+ *  Iterate to the next attribute following a given attribute.
+ *
+ *  @param attr Current Attribute.
+ *
+ *  @return The next attribute or NULL if it cannot be found.
+ */
+struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr);
+
 /** @brief Generic Read Attribute value helper.
  *
  *  Read attribute value storing the result into buffer.
