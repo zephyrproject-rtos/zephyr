@@ -466,11 +466,15 @@ void main(void)
 {
 	int err;
 
+	printk("Starting app\n");
+
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
+
+	printk("Bluetooth init in progress\n");
 
 	/* Simulate current time for Current Time Service */
 	generate_current_time(ct);
