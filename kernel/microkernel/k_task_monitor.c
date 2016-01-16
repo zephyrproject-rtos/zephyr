@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_TASK_MONITOR
-
 #include <micro_private.h>
 #include <microkernel/ticks.h>
 #include <drivers/system_timer.h>
@@ -109,5 +107,3 @@ void _k_task_monitor_read(struct k_args *A)
 		A->args.z4.mrec = k_monitor_buff[i];
 	}
 }
-
-#endif /* CONFIG_TASK_MONITOR */
