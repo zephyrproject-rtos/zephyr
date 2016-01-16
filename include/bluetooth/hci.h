@@ -241,6 +241,11 @@ struct bt_hci_cp_host_num_completed_packets {
 	struct bt_hci_handle_count h[0];
 } __packed;
 
+#define BT_HCI_OP_WRITE_SSP_MODE		BT_OP(BT_OGF_BASEBAND, 0x0056)
+struct bt_hci_cp_write_ssp_mode {
+	uint8_t mode;
+} __packed;
+
 #define BT_HCI_OP_LE_WRITE_LE_HOST_SUPP		BT_OP(BT_OGF_BASEBAND, 0x006d)
 struct bt_hci_cp_write_le_host_supp {
 	uint8_t  le;

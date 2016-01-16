@@ -2184,6 +2184,7 @@ static int le_init(void)
 static int br_init(void)
 {
 	struct net_buf *buf;
+	struct bt_hci_cp_write_ssp_mode *cp;
 	int err;
 
 	/* Get BR/EDR buffer size */
@@ -2194,6 +2195,19 @@ static int br_init(void)
 
 	read_buffer_size_complete(buf);
 	net_buf_unref(buf);
+
+	/* Set SSP mode */
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SSP_MODE, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->mode = 0x01;
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SSP_MODE, buf, NULL);
+	if (err) {
+		return err;
+	}
 
 	return 0;
 }
