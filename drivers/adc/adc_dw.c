@@ -103,8 +103,8 @@ static void adc_goto_normal_mode(struct device *dev)
 
 		/*Poll waiting for normal mode*/
 		do {
-			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0) & 0x8;
-		} while (reg_value == 0);
+			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
+		} while ((reg_value & 0x1) == 0);
 
 		if (info->calibration_value == ADC_NONE_CALIBRATION) {
 			/*Reset Calibration*/
@@ -146,8 +146,8 @@ static void adc_goto_normal_mode(struct device *dev)
 		irq_unlock(state);
 
 		do {
-			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0) & 0x8;
-		} while (reg_value == 0);
+			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
+		} while ((reg_value & 0x1) == 0);
 	}
 
 	/*Request  Normal With Calibration Mode*/
@@ -183,8 +183,8 @@ static void adc_goto_deep_power_down(void)
 
 		irq_unlock(state);
 		do {
-			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0) & 0x8;
-		} while (reg_value == 0);
+			reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
+		} while ((reg_value & 0x1) == 0);
 	}
 }
 
