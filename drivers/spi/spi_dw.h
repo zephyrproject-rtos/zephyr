@@ -31,6 +31,10 @@ struct spi_dw_config {
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	void *clock_data;
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
+#ifdef CONFIG_SPI_DW_CS_GPIO
+	char *cs_gpio_name;
+	uint32_t cs_gpio_pin;
+#endif /* CONFIG_SPI_DW_CS_GPIO */
 	spi_dw_config_t config_func;
 };
 
@@ -44,6 +48,9 @@ struct spi_dw_data {
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	struct device *clock;
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
+#ifdef CONFIG_SPI_DW_CS_GPIO
+	struct device *cs_gpio_port;
+#endif /* CONFIG_SPI_DW_CS_GPIO */
 	uint8_t *tx_buf;
 	uint32_t tx_buf_len;
 	uint8_t *rx_buf;

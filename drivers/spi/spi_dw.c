@@ -157,6 +157,43 @@ static inline void _clock_off(struct device *dev)
 #define _clock_off(...)
 #endif
 
+#ifdef CONFIG_SPI_DW_CS_GPIO
+
+#include <gpio.h>
+
+static inline void _spi_config_cs(struct device *dev)
+{
+	struct spi_dw_config *info = dev->config->config_info;
+	struct spi_dw_data *spi = dev->driver_data;
+	struct device *gpio;
+
+	gpio = device_get_binding(info->cs_gpio_name);
+	if (!gpio) {
+		spi->cs_gpio_port = NULL;
+		return;
+	}
+
+	gpio_pin_configure(gpio, info->cs_gpio_pin, GPIO_DIR_OUT);
+	/* Default CS line to high (idling) */
+	gpio_pin_write(gpio, info->cs_gpio_pin, 1);
+
+	spi->cs_gpio_port = gpio;
+}
+
+static inline void _spi_control_cs(struct device *dev, int on)
+{
+	struct spi_dw_config *info = dev->config->config_info;
+	struct spi_dw_data *spi = dev->driver_data;
+
+	if (spi->cs_gpio_port) {
+		gpio_pin_write(spi->cs_gpio_port, info->cs_gpio_pin, !on);
+	}
+}
+#else
+#define _spi_control_cs(...)
+#define _spi_config_cs(...)
+#endif /* CONFIG_SPI_DW_CS_GPIO */
+
 static void completed(struct device *dev, int error)
 {
 	struct spi_dw_config *info = dev->config->config_info;
@@ -179,6 +216,7 @@ static void completed(struct device *dev, int error)
 	/* Disabling interrupts */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 
+	_spi_control_cs(dev, 0);
 	synchronous_call_complete(&spi->sync);
 }
 
@@ -386,6 +424,8 @@ static int spi_dw_transceive(struct device *dev,
 	/* Slave select */
 	write_ser(spi->slave, info->regs);
 
+	_spi_control_cs(dev, 1);
+
 	/* Enable interrupts */
 	write_imr(DW_SPI_IMR_UNMASK, info->regs);
 
@@ -490,6 +530,8 @@ int spi_dw_init(struct device *dev)
 
 	synchronous_call_init(&spi->sync);
 
+	_spi_config_cs(dev);
+
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 	clear_bit_ssienr(info->regs);
 
@@ -526,6 +568,10 @@ struct spi_dw_config spi_dw_config_0 = {
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_0_CLOCK_GATE_SUBSYS),
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
+#ifdef CONFIG_SPI_DW_CS_GPIO
+	.cs_gpio_name = CONFIG_SPI_DW_PORT_0_CS_GPIO_PORT,
+	.cs_gpio_pin = CONFIG_SPI_DW_PORT_0_CS_GPIO_PIN,
+#endif
 	.config_func = spi_config_0_irq
 };
 
@@ -555,6 +601,10 @@ struct spi_dw_config spi_dw_config_1 = {
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_1_CLOCK_GATE_SUBSYS),
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
+#ifdef CONFIG_SPI_DW_CS_GPIO
+	.cs_gpio_name = CONFIG_SPI_DW_PORT_1_CS_GPIO_PORT,
+	.cs_gpio_pin = CONFIG_SPI_DW_PORT_1_CS_GPIO_PIN,
+#endif
 	.config_func = spi_config_1_irq
 };
 
