@@ -114,7 +114,7 @@ typedef struct {
 /**
  * @brief Initialize the context-dependent synchronization data
  *
- * @param sync A pointer to a valid devic_sync_call_t
+ * @param sync A pointer to a valid device_sync_call_t
  */
 static inline void synchronous_call_init(device_sync_call_t *sync)
 {
@@ -134,7 +134,7 @@ static inline void synchronous_call_init(device_sync_call_t *sync)
  * Note: In a microkernel built this function will take care of the caller
  * context and thus use the right attribute to handle the synchronization.
  *
- * @param sync A pointer to a valid devic_sync_call_t
+ * @param sync A pointer to a valid device_sync_call_t
  */
 static inline void synchronous_call_wait(device_sync_call_t *sync)
 {
@@ -153,7 +153,7 @@ static inline void synchronous_call_wait(device_sync_call_t *sync)
  * Note: In a microkernel built this function will take care of the caller
  * context and thus use the right attribute to signale the completion.
  *
- * @param sync A pointer to a valid devic_sync_call_t
+ * @param sync A pointer to a valid device_sync_call_t
  */
 static inline void synchronous_call_complete(device_sync_call_t *sync)
 {
@@ -170,7 +170,7 @@ static inline void synchronous_call_complete(device_sync_call_t *sync)
  * @brief Wait for the isr to complete the synchronous call
  * Note: It will simply wait on the internal semaphore.
  *
- * @param sync A pointer to a valid devic_sync_call_t
+ * @param sync A pointer to a valid device_sync_call_t
  */
 static inline void synchronous_call_wait(device_sync_call_t *sync)
 {
@@ -181,7 +181,7 @@ static inline void synchronous_call_wait(device_sync_call_t *sync)
  * @brief Signal the caller about synchronization completion
  * Note: It will simply release the internal semaphore
  *
- * @param sync A pointer to a valid devic_sync_call_t
+ * @param sync A pointer to a valid device_sync_call_t
  */
 static inline void synchronous_call_complete(device_sync_call_t *sync)
 {
