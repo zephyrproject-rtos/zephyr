@@ -46,6 +46,16 @@ extern "C" {
 #define LINE_CTRL_RTS		(1 << 1)
 #define LINE_CTRL_DTR		(1 << 2)
 
+/** Common errors types for UART */
+#define UART_ERROR_OVERRUN  (1 << 0) /* overrun error */
+#define UART_ERROR_PARITY   (1 << 1) /* parity error  */
+#define UART_ERROR_FRAMING  (1 << 2) /* framing error */
+/* A break interrupt was received i.e. whenever the serial input was held at a
+ * logic '0' state for longer than the sum of start time + data bits + parity +
+ * stop bits.
+ */
+#define UART_ERROR_BREAK    (1 << 3)
+
 /** UART device configuration */
 struct uart_device_config {
 	/**
@@ -71,6 +81,7 @@ struct uart_driver_api {
 	/* console I/O functions */
 	int (*poll_in)(struct device *dev, unsigned char *p_char);
 	unsigned char (*poll_out)(struct device *dev, unsigned char out_char);
+	int (*err_check)(struct device *dev);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
@@ -100,6 +111,26 @@ struct uart_driver_api {
 #endif
 
 };
+
+/**
+ * @brief Check whether an error was detected
+ *
+ * @param dev UART device struct (of type struct uart_device_config)
+ *
+ * @return one of UART_ERROR_OVERRUN, UART_ERROR_PARITY, UART_ERROR_FRAMING,
+ * UART_ERROR_BREAK if an error was detected, 0 otherwise.
+ */
+static inline int uart_err_check(struct device *dev)
+{
+	struct uart_driver_api *api;
+
+	api = (struct uart_driver_api *)dev->driver_api;
+	if (api && api->err_check) {
+		return api->err_check(dev);
+	}
+	return 0;
+}
+
 
 /**
  * @brief Poll the device for input.
