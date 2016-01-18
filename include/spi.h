@@ -54,10 +54,9 @@ extern "C" {
 
 /*
  * config is a bit field with the following parts:
- * mode			[ 0 : 1 ]   - Polarity and phase mode
- * transfer_mode	[ 2 ]       - LSB or MSB first transfer mode
- * loop_mode		[ 3 ]       - Enable or disable loopback mode
- * word_size		[ 4 : 11 ]  - Size of a data train in bits
+ * mode			[ 0 : 2 ]   - Polarity, phase and loop mode
+ * transfer_mode	[ 3 ]       - LSB or MSB first transfer mode
+ * word_size		[ 4 : 11 ]  - Size of a data frame in bits
  * RESERVED		[ 12 : 31 ] - undefined usage
  *
  * max_sys_freq is the maximum frequency supported by the slave it
