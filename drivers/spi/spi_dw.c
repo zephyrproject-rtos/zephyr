@@ -112,6 +112,7 @@ DEFINE_MM_REG_READ(ssi_comp_version, DW_SPI_REG_SSI_COMP_VERSION, 32)
 
 DEFINE_SET_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_CLEAR_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
+DEFINE_TEST_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_TEST_BIT_OP(sr_busy, DW_SPI_REG_SR, DW_SPI_SR_BUSY_BIT)
 DEFINE_TEST_BIT_OP(icr, DW_SPI_REG_ICR, DW_SPI_SR_ICR_BIT)
 
@@ -215,6 +216,8 @@ static void completed(struct device *dev, int error)
 
 	/* Disabling interrupts */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
+	/* Disabling the controller */
+	clear_bit_ssienr(info->regs);
 
 	_spi_control_cs(dev, 0);
 	synchronous_call_complete(&spi->sync);
@@ -315,6 +318,17 @@ static void pull_data(struct device *dev)
 	DBG("Pulled: %d\n", cnt);
 }
 
+static inline bool _spi_dw_is_controller_ready(struct device *dev)
+{
+	struct spi_dw_config *info = dev->config->config_info;
+
+	if (test_bit_ssienr(info->regs) || test_bit_sr_busy(info->regs)) {
+		return false;
+	}
+
+	return true;
+}
+
 static int spi_dw_configure(struct device *dev,
 				struct spi_config *config)
 {
@@ -327,13 +341,10 @@ static int spi_dw_configure(struct device *dev,
 	DBG("spi_dw_configure: %p (0x%x), %p\n", dev, info->regs, config);
 
 	/* Check status */
-	if (test_bit_sr_busy(info->regs)) {
-		DBG("spi_dw_read: %Controller is busy\n");
+	if (!_spi_dw_is_controller_ready(dev)) {
+		DBG("spi_dw_configure: Controller is busy\n");
 		return DEV_USED;
 	}
-
-	/* Disable the controller, to be able to set it up */
-	clear_bit_ssienr(info->regs);
 
 	/* Word size */
 	ctrlr0 |= DW_SPI_CTRLR0_DFS(SPI_WORD_SIZE_GET(flags));
@@ -367,9 +378,6 @@ static int spi_dw_configure(struct device *dev,
 	/* Mask SPI interrupts */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 
-	/* Enable the controller */
-	set_bit_ssienr(info->regs);
-
 	return DEV_OK;
 }
 
@@ -398,13 +406,10 @@ static int spi_dw_transceive(struct device *dev,
 			dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 
 	/* Check status */
-	if (test_bit_sr_busy(info->regs)) {
-		DBG("spi_dw_transceive: %Controller is busy\n");
+	if (!_spi_dw_is_controller_ready(dev)) {
+		DBG("spi_dw_transceive: Controller is busy\n");
 		return DEV_USED;
 	}
-
-	/* Disable the controller */
-	clear_bit_ssienr(info->regs);
 
 	/* Set buffers info */
 	spi->tx_buf = tx_buf;
@@ -449,7 +454,6 @@ static int spi_dw_suspend(struct device *dev)
 	DBG("spi_dw_suspend: %p\n", dev);
 
 	write_imr(DW_SPI_IMR_MASK, info->regs);
-	clear_bit_ssienr(info->regs);
 	irq_disable(info->irq);
 
 	_clock_off(dev);
@@ -466,7 +470,6 @@ static int spi_dw_resume(struct device *dev)
 	_clock_on(dev);
 
 	irq_enable(info->irq);
-	set_bit_ssienr(info->regs);
 	write_imr(DW_SPI_IMR_UNMASK, info->regs);
 
 	return DEV_OK;
