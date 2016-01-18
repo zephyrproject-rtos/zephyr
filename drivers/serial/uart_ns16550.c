@@ -472,6 +472,18 @@ static int uart_ns16550_irq_tx_ready(struct device *dev)
 }
 
 /**
+ * @brief Check if nothing remains to be transmitted
+ *
+ * @param dev UART device struct (of type struct uart_device_config)
+ *
+ * @return 1 if nothing remains to be transmitted, 0 otherwise
+ */
+static int uart_ns16550_irq_tx_empty(struct device *dev)
+{
+	return (INBYTE(LSR(dev)) & (LSR_TEMT | LSR_THRE)) == (LSR_TEMT | LSR_THRE);
+}
+
+/**
  * @brief Enable RX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config)
@@ -644,6 +656,7 @@ static struct uart_driver_api uart_ns16550_driver_api = {
 	.irq_tx_enable = uart_ns16550_irq_tx_enable,
 	.irq_tx_disable = uart_ns16550_irq_tx_disable,
 	.irq_tx_ready = uart_ns16550_irq_tx_ready,
+	.irq_tx_empty = uart_ns16550_irq_tx_empty,
 	.irq_rx_enable = uart_ns16550_irq_rx_enable,
 	.irq_rx_disable = uart_ns16550_irq_rx_disable,
 	.irq_rx_ready = uart_ns16550_irq_rx_ready,
