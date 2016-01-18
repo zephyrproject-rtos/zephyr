@@ -28,6 +28,11 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 {
 }
 
+struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
+{
+	return NULL;
+}
+
 int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		      void *buf, uint16_t buf_len, uint16_t offset,
 		      const void *value, uint16_t value_len)
