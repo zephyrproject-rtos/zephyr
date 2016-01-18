@@ -154,6 +154,7 @@
 #define LSR_PE 0x04    /* parity error */
 #define LSR_FE 0x08    /* framing error */
 #define LSR_BI 0x10    /* break interrupt */
+#define LSR_EOB_MASK 0x1E /* Error or Break mask */
 #define LSR_THRE 0x20  /* transmit holding register empty */
 #define LSR_TEMT 0x40  /* transmitter empty */
 
@@ -376,6 +377,19 @@ static unsigned char uart_ns16550_poll_out(struct device *dev,
 	OUTBYTE(THR(dev), c);
 
 	return c;
+}
+
+/**
+ * @brief Check if an error was received
+ *
+ * @param dev UART device struct (of type struct uart_device_config)
+ *
+ * @return one of UART_ERROR_OVERRUN, UART_ERROR_PARITY, UART_ERROR_FRAMING,
+ * UART_ERROR_BREAK if an error was detected, 0 otherwise.
+ */
+static int uart_ns16550_err_check(struct device *dev)
+{
+	return (INBYTE(LSR(dev)) & LSR_EOB_MASK) >> 1;
 }
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
@@ -622,7 +636,7 @@ static int uart_ns16550_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 static struct uart_driver_api uart_ns16550_driver_api = {
 	.poll_in = uart_ns16550_poll_in,
 	.poll_out = uart_ns16550_poll_out,
-
+	.err_check = uart_ns16550_err_check,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 	.fifo_fill = uart_ns16550_fifo_fill,
