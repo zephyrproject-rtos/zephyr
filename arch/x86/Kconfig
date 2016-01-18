@@ -117,7 +117,21 @@ config SSE_FP_MATH
 	Disabling this option means that the compiler utilizes only the
 	x87 instruction set for floating point operations.
 
+choice
+prompt "Reboot implementation"
+depends on REBOOT
+default REBOOT_RST_CNT
+
+config REBOOT_RST_CNT
+	bool
+	prompt "Reboot via RST_CNT register"
+	help
+	Reboot via the RST_CNT register, going back to BIOS.
+
+endchoice
+
 endmenu
+
 config ISA_IA32
 	bool
 	default y
