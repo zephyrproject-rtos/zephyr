@@ -1029,13 +1029,10 @@ Commands and responses:
 					Address (6 octets)
 					Enable (1 octet)
 					CCC_Handle (2 octets)
-		Response parameters:	ATT_Response (1 octet)
+		Response parameters:	<none>
 
 		This procedure is used to configure server to notify
 		characteristic value to a client.
-		ATT_Response shall be set to 0x00, if procedure has been
-		completed successfully. Otherwise it shall be set to ATT error
-		code received.
 
 		In case of an error, the error response will be returned.
 
@@ -1046,13 +1043,10 @@ Commands and responses:
 					Address (6 octets)
 					Enable (1 octet)
 					CCC_Handle (2 octets)
-		Response parameters:	ATT_Response (1 octet)
+		Response parameters:	<none>
 
 		This procedure is used to configure server to indicate
 		characteristic value to a client.
-		ATT_Response shall be set to 0x00, if procedure has been
-		completed successfully. Otherwise it shall be set to ATT error
-		code received.
 
 		In case of an error, the error response will be returned.
 
