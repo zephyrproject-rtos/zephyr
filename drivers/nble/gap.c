@@ -25,6 +25,7 @@
 #include <bluetooth/log.h>
 
 #include "uart.h"
+#include "rpc.h"
 
 #define NBLE_SWDIO_PIN	6
 #define NBLE_RESET_PIN	NBLE_SWDIO_PIN
