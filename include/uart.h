@@ -81,6 +81,7 @@ struct uart_driver_api {
 	/* console I/O functions */
 	int (*poll_in)(struct device *dev, unsigned char *p_char);
 	unsigned char (*poll_out)(struct device *dev, unsigned char out_char);
+
 	int (*err_check)(struct device *dev);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -93,6 +94,7 @@ struct uart_driver_api {
 	int (*irq_tx_ready)(struct device *dev);
 	void (*irq_rx_enable)(struct device *dev);
 	void (*irq_rx_disable)(struct device *dev);
+	int (*irq_tx_empty)(struct device *dev);
 	int (*irq_rx_ready)(struct device *dev);
 	void (*irq_err_enable)(struct device *dev);
 	void (*irq_err_disable)(struct device *dev);
@@ -303,6 +305,25 @@ static inline void uart_irq_rx_disable(struct device *dev)
 	if (api && api->irq_tx_disable) {
 		api->irq_tx_disable(dev);
 	}
+}
+
+/**
+ * @brief Check if nothing remains to be transmitted
+ *
+ * @param dev UART device struct (of type struct uart_device_config)
+ *
+ * @return 1 if nothing remains to be transmitted, 0 otherwise
+ */
+static inline int uart_irq_tx_empty(struct device *dev)
+{
+	struct uart_driver_api *api;
+
+	api = (struct uart_driver_api *)dev->driver_api;
+	if (api && api->irq_tx_empty) {
+		return api->irq_tx_empty(dev);
+	}
+
+	return 0;
 }
 
 /**
