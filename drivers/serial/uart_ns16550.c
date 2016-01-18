@@ -72,13 +72,13 @@
 
 /* equates for interrupt identification register */
 
-#define IIR_IP 0x01    /* interrupt pending bit */
-#define IIR_MASK 0x07  /* interrupt id bits mask */
-#define IIR_MSTAT 0x00 /* modem status interrupt */
-#define IIR_THRE 0X02  /* transmit holding register empty */
-#define IIR_RBRF 0x04  /* receiver buffer register full */
-#define IIR_ID 0x06    /* interrupt ID mask without IP */
-#define IIR_SEOB 0x06  /* serialization error or break */
+#define IIR_MSTAT 0x00 /* modem status interrupt  */
+#define IIR_NIP   0x01 /* no interrupt pending    */
+#define IIR_THRE  0x02 /* transmit holding register empty interrupt */
+#define IIR_RBRF  0x04 /* receiver buffer register full interrupt */
+#define IIR_LS    0x06 /* receiver line status interrupt */
+#define IIR_MASK  0x07 /* interrupt id bits mask  */
+#define IIR_ID    0x06 /* interrupt ID mask without NIP */
 
 /* equates for FIFO control register */
 
@@ -526,7 +526,7 @@ static void uart_ns16550_irq_err_disable(struct device *dev)
  */
 static int uart_ns16550_irq_is_pending(struct device *dev)
 {
-	return (!(IIRC(dev) & IIR_IP));
+	return (!(IIRC(dev) & IIR_NIP));
 }
 
 /**
@@ -548,7 +548,7 @@ static int uart_ns16550_irq_update(struct device *dev)
 #ifdef CONFIG_UART_NS16550_LINE_CTRL
 
 /**
- * @brief Manipualte line control for UART.
+ * @brief Manipulate line control for UART.
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param ctrl The line control to be manipulated
