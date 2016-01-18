@@ -66,6 +66,7 @@ struct cc2520_gpio_config {
 struct cc2520_config {
 	struct cc2520_gpio_config **gpios;
 	struct device *spi;
+	uint32_t spi_slave;
 };
 
 extern struct cc2520_gpio_config cc2520_gpio_config[CC2520_GPIO_IDX_LAST_ENTRY];
@@ -74,7 +75,6 @@ extern struct device *cc2520_sgl_dev;
 
 typedef void (*cc2520_gpio_int_handler_t)(struct device *port, uint32_t pin);
 
-struct device *cc2520_spi_configure(void);
 struct cc2520_gpio_config **cc2520_gpio_configure(void);
 
 #define CC2520_GPIO(p)							\
@@ -87,6 +87,10 @@ struct cc2520_gpio_config **cc2520_gpio_configure(void);
 	(((struct cc2520_config *)			\
 	  cc2520_sgl_dev->config->config_info)->spi)
 
+#define CC2520_SPI_SLAVE()						\
+	(((struct cc2520_config *)					\
+	  cc2520_sgl_dev->config->config_info)->spi_slave)
+
 static inline bool spi_transfer(struct device *dev,
 				uint8_t *data_out, uint8_t *data_in, int len)
 {
@@ -96,6 +100,7 @@ static inline bool spi_transfer(struct device *dev,
 	out_len = data_out ? len : 0;
 	in_len = data_in ? len : 0;
 
+	spi_slave_select(dev, CC2520_SPI_SLAVE());
 	ret = spi_transceive(dev, data_out, out_len, data_in, in_len);
 
 	return (ret == DEV_OK);

@@ -24,21 +24,6 @@
 
 #include <802.15.4/cc2520_arch.h>
 
-struct device *cc2520_spi_configure(void)
-{
-	struct device *spi;
-	struct spi_config spi_conf = {
-		.config = (8 << 4),
-		.max_sys_freq = sys_clock_hw_cycles_per_sec /
-					(250*1000), /* 250Khz */
-	};
-
-	spi = device_get_binding(CONFIG_SPI_DW_PORT_1_DRV_NAME);
-	spi_configure(spi, &spi_conf);
-
-	return spi;
-}
-
 struct cc2520_gpio_config **cc2520_gpio_configure(void)
 {
 	struct device *gpio;

@@ -965,6 +965,20 @@ void cc2520_set_cca_threshold(int value)
 	setreg(CC2520_CCACTRL0, value & 0xff);
 }
 
+static struct device *cc2520_spi_configure(void)
+{
+	struct device *spi;
+	struct spi_config spi_conf = {
+		.config = (8 << 4),
+		.max_sys_freq = CONFIG_TI_CC2520_SPI_FREQ,
+	};
+
+	spi = device_get_binding(CONFIG_TI_CC2520_SPI_DRV_NAME);
+	spi_configure(spi, &spi_conf);
+
+	return spi;
+}
+
 static void cc2520_configure(struct device *dev)
 {
 	CC2520_DISABLE_FIFOP_INT();
@@ -1110,8 +1124,9 @@ static int cc2520_init(struct device *dev)
 	dev->driver_api = &cc2520_15_4_radio_driver;
 	cc2520_sgl_dev = dev;
 
-	info->spi = cc2520_spi_configure();
 	info->gpios = cc2520_gpio_configure();
+	info->spi = cc2520_spi_configure();
+	info->spi_slave = CONFIG_TI_CC2520_SPI_SLAVE;
 
 	cc2520_configure(dev);
 

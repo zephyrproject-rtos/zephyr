@@ -46,6 +46,28 @@ config	TI_CC2520_DEBUG
 	  This option enables debug support for 802.15.4 CC2520
 	  driver
 
+config  TI_CC2520_SPI_DRV_NAME
+	string "SPI driver's name to use to access CC2520"
+	default ""
+	help
+	  This option is mandatory to set which SPI controller to use in order
+	  to actually control the CC2520 chip.
+
+config  TI_CC2520_SPI_FREQ
+	int "SPI system frequency"
+	default 0
+	help
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
+
+config	TI_CC2520_SPI_SLAVE
+	int "SPI slave linked to CC2520"
+	default 0
+	help
+	  This option sets the SPI slave number SPI controller has to switch
+	  to when dealing with CC2520 chip.
+
 endif
 
 endmenu
