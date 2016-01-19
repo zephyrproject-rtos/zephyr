@@ -30,8 +30,6 @@ typedef void (*spi_dw_config_t)(void);
 /* Private structures */
 struct spi_dw_config {
 	uint32_t regs;
-	uint32_t irq;
-	uint32_t int_mask;
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	void *clock_data;
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
@@ -61,42 +59,65 @@ struct spi_dw_data {
 	uint32_t rx_buf_len;
 };
 
-/* Registers */
-#define DW_SPI_REG_CTRLR0		(0x00)
-#define DW_SPI_REG_CTRLR1		(0x04)
-#define DW_SPI_REG_SSIENR		(0x08)
-#define DW_SPI_REG_MWCR			(0x0c)
-#define DW_SPI_REG_SER			(0x10)
-#define DW_SPI_REG_BAUDR		(0x14)
-#define DW_SPI_REG_TXFTLR		(0x18)
-#define DW_SPI_REG_RXFTLR		(0x1c)
-#define DW_SPI_REG_TXFLR		(0x20)
-#define DW_SPI_REG_RXFLR		(0x24)
-#define DW_SPI_REG_SR			(0x28)
-#define DW_SPI_REG_IMR			(0x2c)
-#define DW_SPI_REG_ISR			(0x30)
-#define DW_SPI_REG_RISR			(0x34)
-#define DW_SPI_REG_TXOICR		(0x38)
-#define DW_SPI_REG_RXOICR		(0x3c)
-#define DW_SPI_REG_RXUICR		(0x40)
-#define DW_SPI_REG_MSTICR		(0x44)
-#define DW_SPI_REG_ICR			(0x48)
-#define DW_SPI_REG_DMACR		(0x4c)
-#define DW_SPI_REG_DMATDLR		(0x50)
-#define DW_SPI_REG_DMARDLR		(0x54)
-#define DW_SPI_REG_IDR			(0x58)
-#define DW_SPI_REG_SSI_COMP_VERSION	(0x5c)
-#define DW_SPI_REG_DR			(0x60)
-#define DW_SPI_REG_RX_SAMPLE_DLY	(0xf0)
+/* Helper macros */
 
-#define DW_SSI_COMP_VERSION		(0x3332332a)
+#ifdef CONFIG_SPI_DW_ARC_AUX_REGS
+#define _REG_READ(__sz) sys_in##__sz
+#define _REG_WRITE(__sz) sys_out##__sz
+#define _REG_SET_BIT sys_io_set_bit
+#define _REG_CLEAR_BIT sys_io_clear_bit
+#define _REG_TEST_BIT sys_io_test_bit
+#else
+#define _REG_READ(__sz) sys_read##__sz
+#define _REG_WRITE(__sz) sys_write##__sz
+#define _REG_SET_BIT sys_set_bit
+#define _REG_CLEAR_BIT sys_clear_bit
+#define _REG_TEST_BIT sys_test_bit
+#endif /* CONFIG_SPI_DW_ARC_AUX_REGS */
+
+#define DEFINE_MM_REG_READ(__reg, __off, __sz)				\
+	static inline uint32_t read_##__reg(uint32_t addr)		\
+	{								\
+		return _REG_READ(__sz)(addr + __off);			\
+	}
+#define DEFINE_MM_REG_WRITE(__reg, __off, __sz)				\
+	static inline void write_##__reg(uint32_t data, uint32_t addr)	\
+	{								\
+		_REG_WRITE(__sz)(data, addr + __off);			\
+	}
+
+#define DEFINE_SET_BIT_OP(__reg_bit, __reg_off, __bit)			\
+	static inline void set_bit_##__reg_bit(uint32_t addr)		\
+	{								\
+		_REG_SET_BIT(addr + __reg_off, __bit);			\
+	}
+
+#define DEFINE_CLEAR_BIT_OP(__reg_bit, __reg_off, __bit)		\
+	static inline void clear_bit_##__reg_bit(uint32_t addr)		\
+	{								\
+		_REG_CLEAR_BIT(addr + __reg_off, __bit);		\
+	}
+
+#define DEFINE_TEST_BIT_OP(__reg_bit, __reg_off, __bit)			\
+	static inline int test_bit_##__reg_bit(uint32_t addr)		\
+	{								\
+		return _REG_TEST_BIT(addr + __reg_off, __bit);		\
+	}
+
+/* Common registers settings, bits etc... */
 
 /* CTRLR0 settings */
-#define DW_SPI_CTRLR0_SCPH		(0x1 << 6)
-#define DW_SPI_CTRLR0_SCPOL		(0x1 << 7)
-#define DW_SPI_CTRLR0_SRL		(0x1 << 11)
+#define DW_SPI_CTRLR0_SCPH_BIT		(6)
+#define DW_SPI_CTRLR0_SCPOL_BIT		(7)
+#define DW_SPI_CTRLR0_SRL_BIT		(11)
+
+#define DW_SPI_CTRLR0_SCPH		BIT(DW_SPI_CTRLR0_SCPH_BIT)
+#define DW_SPI_CTRLR0_SCPOL		BIT(DW_SPI_CTRLR0_SCPOL_BIT)
+#define DW_SPI_CTRLR0_SRL		BIT(DW_SPI_CTRLR0_SRL_BIT)
+
 #define DW_SPI_CTRLR0_DFS_16(__bpw)	((__bpw) - 1)
 #define DW_SPI_CTRLR0_DFS_32(__bpw)	(((__bpw) - 1) << 16)
+
 #ifdef CONFIG_ARC
 #define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_16
 #else
@@ -129,12 +150,12 @@ struct spi_dw_data {
 #define DW_SPI_IMR_MSTIM_BIT		(5)
 
 /* IMR values */
-#define DW_SPI_IMR_TXEIM		(0x1 << DW_SPI_IMR_TXEIM_BIT)
-#define DW_SPI_IMR_TXOIM		(0x1 << DW_SPI_IMR_TXOIM_BIT)
-#define DW_SPI_IMR_RXUIM		(0x1 << DW_SPI_IMR_RXUIM_BIT)
-#define DW_SPI_IMR_RXOIM		(0x1 << DW_SPI_IMR_RXOIM_BIT)
-#define DW_SPI_IMR_RXFIM		(0x1 << DW_SPI_IMR_RXFIM_BIT)
-#define DW_SPI_IMR_MSTIM		(0x1 << DW_SPI_IMR_MSTIM_BIT)
+#define DW_SPI_IMR_TXEIM		BIT(DW_SPI_IMR_TXEIM_BIT)
+#define DW_SPI_IMR_TXOIM		BIT(DW_SPI_IMR_TXOIM_BIT)
+#define DW_SPI_IMR_RXUIM		BIT(DW_SPI_IMR_RXUIM_BIT)
+#define DW_SPI_IMR_RXOIM		BIT(DW_SPI_IMR_RXOIM_BIT)
+#define DW_SPI_IMR_RXFIM		BIT(DW_SPI_IMR_RXFIM_BIT)
+#define DW_SPI_IMR_MSTIM		BIT(DW_SPI_IMR_MSTIM_BIT)
 
 /* ISR values (same as IMR) */
 #define DW_SPI_ISR_TXEIS		DW_SPI_IMR_TXEIM
@@ -169,6 +190,82 @@ struct spi_dw_data {
 #define DW_SPI_IMR_MASK_RX		(~(DW_SPI_IMR_RXUIM | \
 					   DW_SPI_IMR_RXOIM | \
 					   DW_SPI_IMR_RXFIM))
+
+/*
+ * Including the right register definition file
+ * SoC SPECIFIC!
+ */
+#ifdef CONFIG_SOC_QUARK_SE_SS
+#include "spi_dw_quark_se_ss_regs.h"
+#else
+#include "spi_dw_regs.h"
+#endif
+
+/* GPIO used to emulate CS */
+#ifdef CONFIG_SPI_DW_CS_GPIO
+
+#include <gpio.h>
+
+static inline void _spi_config_cs(struct device *dev)
+{
+	struct spi_dw_config *info = dev->config->config_info;
+	struct spi_dw_data *spi = dev->driver_data;
+	struct device *gpio;
+
+	gpio = device_get_binding(info->cs_gpio_name);
+	if (!gpio) {
+		spi->cs_gpio_port = NULL;
+		return;
+	}
+
+	gpio_pin_configure(gpio, info->cs_gpio_pin, GPIO_DIR_OUT);
+	/* Default CS line to high (idling) */
+	gpio_pin_write(gpio, info->cs_gpio_pin, 1);
+
+	spi->cs_gpio_port = gpio;
+}
+
+static inline void _spi_control_cs(struct device *dev, int on)
+{
+	struct spi_dw_config *info = dev->config->config_info;
+	struct spi_dw_data *spi = dev->driver_data;
+
+	if (spi->cs_gpio_port) {
+		gpio_pin_write(spi->cs_gpio_port, info->cs_gpio_pin, !on);
+	}
+}
+#else
+#define _spi_control_cs(...)
+#define _spi_config_cs(...)
+#endif /* CONFIG_SPI_DW_CS_GPIO */
+
+/* Interrupt mask
+ * SoC SPECIFIC!
+ */
+#if defined(CONFIG_SOC_QUARK_SE) || defined(CONFIG_SOC_QUARK_SE_SS)
+#ifdef CONFIG_ARC
+#define _INT_UNMASK     INT_ENABLE_ARC
+#else
+#define _INT_UNMASK	INT_UNMASK_IA
+#endif
+
+#define _spi_int_unmask(__mask)						\
+	sys_write32(sys_read32(__mask) & _INT_UNMASK, __mask)
+#else
+#define _spi_int_unmask(...)
+#endif /* CONFIG_SOC_QUARK_SE || CONFIG_SOC_QUARK_SE_SS */
+
+/* Based on those macros above, here are common helpers for some registers */
+DEFINE_MM_REG_WRITE(baudr, DW_SPI_REG_BAUDR, 16)
+DEFINE_MM_REG_READ(txflr, DW_SPI_REG_TXFLR, 32)
+DEFINE_MM_REG_READ(rxflr, DW_SPI_REG_RXFLR, 32)
+DEFINE_MM_REG_WRITE(imr, DW_SPI_REG_IMR, 8)
+DEFINE_MM_REG_READ(isr, DW_SPI_REG_ISR, 8)
+
+DEFINE_SET_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
+DEFINE_CLEAR_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
+DEFINE_TEST_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
+DEFINE_TEST_BIT_OP(sr_busy, DW_SPI_REG_SR, DW_SPI_SR_BUSY_BIT)
 
 #ifdef __cplusplus
 }

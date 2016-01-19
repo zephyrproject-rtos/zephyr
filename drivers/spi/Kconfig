@@ -245,7 +245,7 @@ config SPI_DW_INIT_PRIORITY
 	  Device driver initialization priority.
 
 choice
-depends on SPI_DW
+depends on SPI_DW && (IOAPIC || MVIC)
 prompt "DesignWare SPI interrupt trigger condition"
 default SPI_DW_RISING_EDGE
 
@@ -268,6 +268,22 @@ config SPI_DW_LEVEL_LOW
 	bool "Level low"
 	help
 	  "DesignWare SPI uses level low interrupt"
+endchoice
+
+choice
+depends on SPI_DW
+prompt "DesignWare SPI interrupt management logic"
+default SPI_DW_INTERRUPT_SINGLE_LINE
+
+config SPI_DW_INTERRUPT_SINGLE_LINE
+	bool "Single interrupt line for all interrupts"
+	help
+	  Only one line is used to trigger interrupts: RX, TX and ERROR
+	  interrupt go all through that line, undifferentiated.
+config SPI_DW_INTERRUPT_SEPARATED_LINES
+	bool "One line per-interrupt type (RX, TX and ERROR)"
+	help
+	  Each interrupt gets a dedicated line
 endchoice
 
 config  SPI_DW_CLOCK_GATE
@@ -318,10 +334,36 @@ config  SPI_DW_PORT_0_REGS
 	default 0x00000000
 
 config  SPI_DW_PORT_0_IRQ
-	int
-	prompt "Port 0 interrupt"
-	depends on SPI_DW_PORT_0
+	int "Port 0 interrupt"
+	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SINGLE_LINE
 	default 0
+	help
+	  Interrupt number dedicated to the controller. Valid if only the
+	  controller routes all interrupt through a unique line.
+
+config SPI_DW_PORT_0_ERROR_IRQ
+	int "Port 0 ERROR Interrupt"
+	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	default 0
+	help
+	  Interrupt number dedicated to the ERROR interrupt only. RX and TX
+	  interrupt numbers need to be set as well.
+
+config SPI_DW_PORT_0_RX_IRQ
+	int "Port 0 RX Interrupt"
+	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	default 0
+	help
+	  Interrupt number dedicated to the RX interrupt only. TX and ERROR
+	  interrupt numbers need to be set as well.
+
+config SPI_DW_PORT_0_TX_IRQ
+	int "Port 0 TX Interrupt"
+	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	default 0
+	help
+	  Interrupt number dedicated to the TX interrupt only. RX and ERROR
+	  interrupt numbers need to be set as well.
 
 config  SPI_DW_PORT_0_PRI
 	int
@@ -366,14 +408,40 @@ config  SPI_DW_PORT_1_REGS
 	default 0x00000000
 
 config  SPI_DW_PORT_1_IRQ
-	int
-	prompt "Port 1 interrupt"
-	depends on SPI_DW_PORT_1
+	int "Port 1 interrupt"
+	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SINGLE_LINE
 	default 0
+	help
+	  Interrupt number dedicated to the controller. Valid if only the
+	  controller routes all interrupt through a unique line.
+
+config SPI_DW_PORT_1_ERROR_IRQ
+	int "Port 1 ERROR Interrupt"
+	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	default 0
+	help
+	  Interrupt number dedicated to the ERROR interrupt only. RX and TX
+	  interrupt numbers need to be set as well.
+
+config SPI_DW_PORT_1_RX_IRQ
+	int "Port 1 RX Interrupt"
+	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	default 0
+	help
+	  Interrupt number dedicated to the RX interrupt only. TX and ERROR
+	  interrupt numbers need to be set as well.
+
+config SPI_DW_PORT_1_TX_IRQ
+	int "Port 1 TX Interrupt"
+	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	default 0
+	help
+	  Interrupt number dedicated to the TX interrupt only. RX and ERROR
+	  interrupt numbers need to be set as well.
 
 config  SPI_DW_PORT_1_PRI
 	int
-	prompt "Port 0 interrupt priority"
+	prompt "Port 1 interrupt priority"
 	depends on SPI_DW_PORT_1
 	default 2
 
