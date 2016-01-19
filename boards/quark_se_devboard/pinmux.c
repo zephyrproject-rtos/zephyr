@@ -170,6 +170,10 @@ static void _pinmux_defaults(uint32_t base)
 	PIN_CONFIG(mux_config, 56, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 57, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 58, PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 63, PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 64, PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 65, PINMUX_FUNC_B);
+	PIN_CONFIG(mux_config, 66, PINMUX_FUNC_B);
 
 	for (i = 0; i < PINMUX_MAX_REGISTERS; i++) {
 		PRINT("PINMUX: configuring register i=%d reg=%x", i,
