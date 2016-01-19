@@ -642,63 +642,15 @@ int i2c_qse_ss_initialize(struct device *dev)
 	return DEV_OK;
 }
 
-void _i2c_qse_ss_config_irq(struct device *port)
-{
-	struct i2c_qse_ss_rom_config * const rom = port->config->config_info;
-	uint32_t mask = 0;
-
-	/* Need to unmask the interrupts in System Control Subsystem (SCSS)
-	 * so the interrupt controller can route these interrupts to
-	 * the sensor subsystem.
-	 */
-	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, rom->isr_err_mask);
-	mask &= INT_ENABLE_ARC;
-	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, rom->isr_err_mask, mask);
-
-	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, rom->isr_tx_mask);
-	mask &= INT_ENABLE_ARC;
-	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, rom->isr_tx_mask, mask);
-
-	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, rom->isr_rx_mask);
-	mask &= INT_ENABLE_ARC;
-	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, rom->isr_rx_mask, mask);
-
-	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, rom->isr_stop_mask);
-	mask &= INT_ENABLE_ARC;
-	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, rom->isr_stop_mask, mask);
-
-	/* Connect the IRQs to ISR */
-	irq_connect_dynamic(rom->isr_err_vector, 1, i2c_qse_ss_isr, port, 0);
-	irq_connect_dynamic(rom->isr_rx_vector, 1, i2c_qse_ss_isr, port, 0);
-	irq_connect_dynamic(rom->isr_tx_vector, 1, i2c_qse_ss_isr, port, 0);
-	irq_connect_dynamic(rom->isr_stop_vector, 1, i2c_qse_ss_isr, port, 0);
-
-	irq_enable(rom->isr_err_vector);
-	irq_enable(rom->isr_rx_vector);
-	irq_enable(rom->isr_tx_vector);
-	irq_enable(rom->isr_stop_vector);
-}
-
-
 #if CONFIG_I2C_QUARK_SE_SS_0
 #include <init.h>
+
+void _i2c_qse_ss_config_irq_0(struct device *port);
 
 struct i2c_qse_ss_rom_config i2c_config_ss_0 = {
 	.base_address =  CONFIG_I2C_QUARK_SE_SS_0_BASE,
 
-	.config_func = _i2c_qse_ss_config_irq,
-
-	.isr_err_vector = I2C_SS_0_ERR_VECTOR,
-	.isr_err_mask = I2C_SS_0_ERR_MASK,
-
-	.isr_rx_vector = I2C_SS_0_RX_VECTOR,
-	.isr_rx_mask = I2C_SS_0_RX_MASK,
-
-	.isr_tx_vector = I2C_SS_0_TX_VECTOR,
-	.isr_tx_mask = I2C_SS_0_TX_MASK,
-
-	.isr_stop_vector = I2C_SS_0_STOP_VECTOR,
-	.isr_stop_mask = I2C_SS_0_STOP_MASK,
+	.config_func = _i2c_qse_ss_config_irq_0,
 };
 
 struct i2c_qse_ss_dev_config i2c_ss_0_runtime = {
@@ -713,27 +665,57 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_ss_0,
 SYS_DEFINE_DEVICE(i2c_ss_0, &i2c_ss_0_runtime,
 					SECONDARY, CONFIG_I2C_INIT_PRIORITY);
 
+void _i2c_qse_ss_config_irq_0(struct device *port)
+{
+	uint32_t mask = 0;
+
+	/* Need to unmask the interrupts in System Control Subsystem (SCSS)
+	 * so the interrupt controller can route these interrupts to
+	 * the sensor subsystem.
+	 */
+	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, I2C_SS_0_ERR_MASK);
+	mask &= INT_ENABLE_ARC;
+	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, I2C_SS_0_ERR_MASK, mask);
+
+	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, I2C_SS_0_TX_MASK);
+	mask &= INT_ENABLE_ARC;
+	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, I2C_SS_0_TX_MASK, mask);
+
+	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, I2C_SS_0_RX_MASK);
+	mask &= INT_ENABLE_ARC;
+	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, I2C_SS_0_RX_MASK, mask);
+
+	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, I2C_SS_0_STOP_MASK);
+	mask &= INT_ENABLE_ARC;
+	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, I2C_SS_0_STOP_MASK, mask);
+
+	/* Connect the IRQs to ISR */
+	irq_connect(I2C_SS_0_ERR_VECTOR, 1, i2c_qse_ss_isr,
+		    SYS_GET_DEVICE(i2c_ss_0), 0);
+	irq_connect(I2C_SS_0_RX_VECTOR, 1, i2c_qse_ss_isr,
+		    SYS_GET_DEVICE(i2c_ss_0), 0);
+	irq_connect(I2C_SS_0_TX_VECTOR, 1, i2c_qse_ss_isr,
+		    SYS_GET_DEVICE(i2c_ss_0), 0);
+	irq_connect(I2C_SS_0_STOP_VECTOR, 1, i2c_qse_ss_isr,
+		    SYS_GET_DEVICE(i2c_ss_0), 0);
+
+	irq_enable(I2C_SS_0_ERR_VECTOR);
+	irq_enable(I2C_SS_0_RX_VECTOR);
+	irq_enable(I2C_SS_0_TX_VECTOR);
+	irq_enable(I2C_SS_0_STOP_VECTOR);
+}
+
 #endif /* CONFIG_I2C_QUARK_SE_SS_0 */
 
 #if CONFIG_I2C_QUARK_SE_SS_1
 #include <init.h>
 
+void _i2c_qse_ss_config_irq_1(struct device *port);
+
 struct i2c_qse_ss_rom_config i2c_config_ss_1 = {
 	.base_address =  CONFIG_I2C_QUARK_SE_SS_1_BASE,
 
-	.config_func = _i2c_qse_ss_config_irq,
-
-	.isr_err_vector = I2C_SS_1_ERR_VECTOR,
-	.isr_err_mask = I2C_SS_1_ERR_MASK,
-
-	.isr_rx_vector = I2C_SS_1_RX_VECTOR,
-	.isr_rx_mask = I2C_SS_1_RX_MASK,
-
-	.isr_tx_vector = I2C_SS_1_TX_VECTOR,
-	.isr_tx_mask = I2C_SS_1_TX_MASK,
-
-	.isr_stop_vector = I2C_SS_1_STOP_VECTOR,
-	.isr_stop_mask = I2C_SS_1_STOP_MASK,
+	.config_func = _i2c_qse_ss_config_irq_1,
 };
 
 struct i2c_qse_ss_dev_config i2c_qse_ss_1_runtime = {
@@ -747,5 +729,46 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_ss_1,
 
 SYS_DEFINE_DEVICE(i2c_ss_1, &i2c_qse_ss_1_runtime,
 					SECONDARY, CONFIG_I2C_INIT_PRIORITY);
+
+
+void _i2c_qse_ss_config_irq_1(struct device *port)
+{
+	uint32_t mask = 0;
+
+	/* Need to unmask the interrupts in System Control Subsystem (SCSS)
+	 * so the interrupt controller can route these interrupts to
+	 * the sensor subsystem.
+	 */
+	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, I2C_SS_1_ERR_MASK);
+	mask &= INT_ENABLE_ARC;
+	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, I2C_SS_1_ERR_MASK, mask);
+
+	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, I2C_SS_1_TX_MASK);
+	mask &= INT_ENABLE_ARC;
+	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, I2C_SS_1_TX_MASK, mask);
+
+	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, I2C_SS_1_RX_MASK);
+	mask &= INT_ENABLE_ARC;
+	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, I2C_SS_1_RX_MASK, mask);
+
+	mask = _i2c_qse_ss_memory_read(SCSS_REGISTER_BASE, I2C_SS_1_STOP_MASK);
+	mask &= INT_ENABLE_ARC;
+	_i2c_qse_ss_memory_write(SCSS_REGISTER_BASE, I2C_SS_1_STOP_MASK, mask);
+
+	/* Connect the IRQs to ISR */
+	irq_connect(I2C_SS_1_ERR_VECTOR, 1, i2c_qse_ss_isr,
+		    SYS_GET_DEVICE(i2c_ss_1), 0);
+	irq_connect(I2C_SS_1_RX_VECTOR, 1, i2c_qse_ss_isr,
+		    SYS_GET_DEVICE(i2c_ss_1), 0);
+	irq_connect(I2C_SS_1_TX_VECTOR, 1, i2c_qse_ss_isr,
+		    SYS_GET_DEVICE(i2c_ss_1), 0);
+	irq_connect(I2C_SS_1_STOP_VECTOR, 1, i2c_qse_ss_isr,
+		    SYS_GET_DEVICE(i2c_ss_1), 0);
+
+	irq_enable(I2C_SS_1_ERR_VECTOR);
+	irq_enable(I2C_SS_1_RX_VECTOR);
+	irq_enable(I2C_SS_1_TX_VECTOR);
+	irq_enable(I2C_SS_1_STOP_VECTOR);
+}
 
 #endif /* CONFIG_I2C_QUARK_SE_SS_1 */

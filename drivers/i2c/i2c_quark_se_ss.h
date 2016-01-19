@@ -54,22 +54,6 @@ struct i2c_qse_ss_rom_config {
 	uint32_t		base_address;
 
 	i2c_qse_ss_cfg_func_t	config_func;
-
-	/* IRQ for ERR (error) conditions */
-	uint32_t		isr_err_vector;
-	uint32_t		isr_err_mask;
-
-	/* IRQ for RX_AVAIL */
-	uint32_t		isr_rx_vector;
-	uint32_t		isr_rx_mask;
-
-	/* IRQ for TX_REQ */
-	uint32_t		isr_tx_vector;
-	uint32_t		isr_tx_mask;
-
-	/* IRQ for STOP_DET */
-	uint32_t		isr_stop_vector;
-	uint32_t		isr_stop_mask;
 };
 
 struct i2c_qse_ss_dev_config {

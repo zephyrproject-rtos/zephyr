@@ -127,24 +127,24 @@
 #if defined(CONFIG_I2C)
 
 #if defined(CONFIG_I2C_QUARK_SE_SS_0)
-#define I2C_SS_0_ERR_VECTOR				(22)
+#define I2C_SS_0_ERR_VECTOR				22
 #define I2C_SS_0_ERR_MASK				0x410
-#define I2C_SS_0_RX_VECTOR				(23)
+#define I2C_SS_0_RX_VECTOR				23
 #define I2C_SS_0_RX_MASK				0x414
-#define I2C_SS_0_TX_VECTOR				(24)
+#define I2C_SS_0_TX_VECTOR				24
 #define I2C_SS_0_TX_MASK				0x418
-#define I2C_SS_0_STOP_VECTOR				(25)
+#define I2C_SS_0_STOP_VECTOR				25
 #define I2C_SS_0_STOP_MASK				0x41C
 #endif
 
 #if defined(CONFIG_I2C_QUARK_SE_SS_1)
-#define I2C_SS_1_ERR_VECTOR				(26)
+#define I2C_SS_1_ERR_VECTOR				26
 #define I2C_SS_1_ERR_MASK				0x420
-#define I2C_SS_1_RX_VECTOR				(27)
+#define I2C_SS_1_RX_VECTOR				27
 #define I2C_SS_1_RX_MASK				0x424
-#define I2C_SS_1_TX_VECTOR				(28)
+#define I2C_SS_1_TX_VECTOR				28
 #define I2C_SS_1_TX_MASK				0x428
-#define I2C_SS_1_STOP_VECTOR				(29)
+#define I2C_SS_1_STOP_VECTOR				29
 #define I2C_SS_1_STOP_MASK				0x42C
 #endif
 
