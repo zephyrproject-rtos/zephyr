@@ -30,8 +30,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#define CONFIG_BLUETOOTH_MAX_PAIRED 1
-
 #define DEVICE_NAME		"Test peripheral"
 #define DEVICE_NAME_LEN		15
 #define HEART_RATE_APPEARANCE	0x0341

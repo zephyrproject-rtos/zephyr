@@ -35,6 +35,10 @@ config BLUETOOTH_SMP
 	bool
 	default n
 
+config	BLUETOOTH_MAX_PAIRED
+	int
+	default 7
+
 config NBLE
 	bool "Support for custom Nordic Semiconductor BLE protocol"
 	default n
@@ -43,6 +47,7 @@ config NBLE
 	select BLUETOOTH_CENTRAL
 	select BLUETOOTH_GATT_CLIENT
 	select BLUETOOTH_SMP
+	select BLUETOOTH_MAX_PAIRED
 	help
 	  Enables support for using Nordic Semicondutor nRF51 Bluetooth
 	  LE chips with a custom firmware. The API for this is a subset of
