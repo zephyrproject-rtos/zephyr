@@ -96,8 +96,8 @@ int bt_gatt_attr_read_cpf(struct bt_conn *conn,
 	return -ENOSYS;
 }
 
-int bt_gatt_notify(struct bt_conn *conn, uint16_t handle, const void *data,
-		   uint16_t len)
+int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		   const void *data, uint16_t len)
 {
 	return -ENOSYS;
 }

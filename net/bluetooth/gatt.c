@@ -471,20 +471,24 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-int bt_gatt_notify(struct bt_conn *conn, uint16_t handle, const void *data,
-		   uint16_t len)
+int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		   const void *data, uint16_t len)
 {
 	struct notify_data nfy;
 
-	if (conn) {
-		return att_notify(conn, handle, data, len);
+	if (!attr || !attr->handle) {
+		return -EINVAL;
 	}
 
-	nfy.handle = handle;
+	if (conn) {
+		return att_notify(conn, attr->handle, data, len);
+	}
+
+	nfy.handle = attr->handle;
 	nfy.data = data;
 	nfy.len = len;
 
-	bt_gatt_foreach_attr(handle, 0xffff, notify_cb, &nfy);
+	bt_gatt_foreach_attr(attr->handle, 0xffff, notify_cb, &nfy);
 
 	return 0;
 }

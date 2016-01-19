@@ -670,12 +670,12 @@ int bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  notification only the given connection.
  *
  *  @param conn Connection object.
- *  @param handle Attribute handle.
+ *  @param attr Attribute object.
  *  @param value Attribute value.
  *  @param len Attribute value length.
  */
-int bt_gatt_notify(struct bt_conn *conn, uint16_t handle, const void *data,
-		   uint16_t len);
+int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		   const void *data, uint16_t len);
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 /* Client API */

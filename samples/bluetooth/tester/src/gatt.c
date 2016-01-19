@@ -653,8 +653,8 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 		memcpy(gatt_value->data, cmd->value, gatt_value->len);
 
 		if (gatt_value->has_ccc) {
-			bt_gatt_notify(NULL, attr->handle,
-				       gatt_value->data, gatt_value->len);
+			bt_gatt_notify(NULL, attr, gatt_value->data,
+				       gatt_value->len);
 		}
 
 		status = BTP_STATUS_SUCCESS;

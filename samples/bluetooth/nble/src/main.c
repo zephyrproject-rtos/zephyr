@@ -495,7 +495,7 @@ void main(void)
 		/* Current Time Service updates only when time is changed */
 		if (ct_update) {
 			ct_update = 0;
-			bt_gatt_notify(NULL, 0x0014, &ct, sizeof(ct));
+			bt_gatt_notify(NULL, &attrs[20], &ct, sizeof(ct));
 		}
 
 		/* Heartrate measurements simulation */
@@ -505,7 +505,7 @@ void main(void)
 				hrm[1] = 90;
 			}
 
-			bt_gatt_notify(NULL, 0x0008, &hrm, sizeof(hrm));
+			bt_gatt_notify(NULL, &attrs[8], &hrm, sizeof(hrm));
 		}
 
 		/* Battery level simulation */
@@ -517,7 +517,8 @@ void main(void)
 				battery = 100;
 			}
 
-			bt_gatt_notify(NULL, 0x0010, &battery, sizeof(battery));
+			bt_gatt_notify(NULL, &attrs[16], &battery,
+				       sizeof(battery));
 		}
 	}
 }
