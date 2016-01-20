@@ -44,21 +44,29 @@ config RAM_SIZE
 	default 16 if NSIM
 	default 24
 
-if GPIO_DW
-
+if GPIO
+config GPIO_DW
+	def_bool y
 config GPIO_DW_BOTHEDGES_SUPPORT
 	default n
 
+config GPIO_DW_0
+	def_bool y
 config GPIO_DW_0_BASE_ADDR
 	default 0x80017800
 config GPIO_DW_0_IRQ
 	default 20
+config GPIO_DW_0_BITS
+	default 8
 
+config GPIO_DW_1
+	def_bool y
 config GPIO_DW_1_BASE_ADDR
 	default 0x80017900
 config GPIO_DW_1_IRQ
 	default 21
-
+config GPIO_DW_1_BITS
+	default 8
 endif
 
 if I2C
