@@ -30,7 +30,7 @@ static inline void enable_interrupts(void){};
 
 static inline void disable_interrupts(void)
 {
-	__asm__ volatile("sti");
+	__asm__ volatile("cli");
 };
 
 typedef void (*int_handler_t) (int context);
