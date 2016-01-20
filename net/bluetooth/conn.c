@@ -1126,6 +1126,10 @@ int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
 		return -EPERM;
 	}
 
+	if (len == 16) {
+		atomic_set_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
+	}
+
 	return pin_code_reply(conn, pin, len);
 }
 

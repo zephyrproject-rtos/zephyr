@@ -29,6 +29,7 @@ typedef enum __packed {
 /* bt_conn flags: the flags defined here represent connection parameters */
 enum {
 	BT_CONN_AUTO_CONNECT,
+	BT_CONN_BR_LEGACY_SECURE,	/* 16 digits legacy PIN tracker */
 };
 
 struct bt_conn_le {
