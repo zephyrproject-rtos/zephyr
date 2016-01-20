@@ -68,6 +68,21 @@ SECTIONS {
 		KEEP(*(.irq_vector_table))
 		KEEP(*(".irq_vector_table.*"))
 
+#ifndef CONFIG_SW_ISR_TABLE_DYNAMIC
+		KEEP(*(.isr_irq*))
+
+		/*The following sections maps the location of the different rows for
+		the _sw_isr_table. Each row maps to an IRQ entry (handler, argument).*/
+		/*In ARC architecture, IRQ 0-15 are reserved for the system and are not
+		assignable by the user, for that reason the linker sections start
+		on IRQ 16*/
+		/* sections for IRQ16-19 */
+		KEEP(*(SORT(.gnu.linkonce.isr_irq[1][6-9])))
+		/* sections for IRQ20-99 */
+		KEEP(*(SORT(.gnu.linkonce.isr_irq[2-9][0-9])))
+		/* sections for IRQ100-999 */
+		KEEP(*(SORT(.gnu.linkonce.isr_irq[1-9][0-9][0-9])))
+#endif
 
 		*(.text)
 		*(".text.*")
@@ -123,6 +138,8 @@ SECTIONS {
 		__data_ram_start = .;
 		*(.data)
 		*(".data.*")
+
+#if CONFIG_SW_ISR_TABLE_DYNAMIC
 		KEEP(*(.isr_irq*))
 
 		/*The following sections maps the location of the different rows for
@@ -136,6 +153,7 @@ SECTIONS {
 		KEEP(*(SORT(.gnu.linkonce.isr_irq[2-9][0-9])))
 		/* sections for IRQ100-999 */
 		KEEP(*(SORT(.gnu.linkonce.isr_irq[1-9][0-9][0-9])))
+#endif
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 	SECTION_PROLOGUE(initlevel, (OPTIONAL),)

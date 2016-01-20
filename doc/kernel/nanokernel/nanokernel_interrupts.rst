@@ -127,6 +127,9 @@ Prerequisites
 * (x86 only) Set the :option:`NUM_DYNAMIC_STUBS` configuration option
   to specify the maximum number of dynamic ISRs allowed in the project.
 
+* (ARC & ARM only) Enable the :option:`SW_ISR_TABLE_DYNAMIC` so that
+  interrupts may be connected at runtime.
+
 Example
 -------
 

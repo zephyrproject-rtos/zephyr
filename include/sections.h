@@ -53,12 +53,6 @@
 #define SCS_SECTION scs
 #define SCP_SECTION scp
 
-#ifdef CONFIG_SW_ISR_TABLE_DYNAMIC
-#define ISR_TABLE_SECTION  DATA
-#else  /* !CONFIG_SW_ISR_TABLE_DYNAMIC */
-#define ISR_TABLE_SECTION  RODATA
-#endif /* CONFIG_SW_ISR_TABLE_DYNAMIC */
-
 #define SECURITY_FRDM_K64F  security_frdm_k64f
 #define IRQ_VECTOR_TABLE    irq_vector_table
 
@@ -67,12 +61,6 @@
 #endif  /* CONFIG_GDB_INFO && !CONFIG_SW_ISR_TABLE */
 
 #elif defined(CONFIG_ARC)
-
-	#ifdef CONFIG_SW_ISR_TABLE_DYNAMIC
-		#define ISR_TABLE_SECTION  DATA
-	#else
-		#define ISR_TABLE_SECTION  RODATA
-	#endif
 
 	#define IRQ_VECTOR_TABLE irq_vector_table
 

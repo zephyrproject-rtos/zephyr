@@ -37,30 +37,6 @@
 #include <sections.h>
 #include <sw_isr_table.h>
 
-/*
- * @internal
- *
- * @brief Replace an interrupt handler by another
- *
- * An interrupt's ISR can be replaced at runtime.
- *
- * @return N/A
- */
-
-void _irq_handler_set(
-	unsigned int irq,
-	void (*new)(void *arg),
-	void *arg
-)
-{
-	int key = irq_lock();
-	int index = irq - 16;
-
-	_sw_isr_table[index].isr = new;
-	_sw_isr_table[index].arg = arg;
-
-	irq_unlock(key);
-}
 
 /*
  * @brief Enable an interrupt line
@@ -142,6 +118,32 @@ void _irq_spurious(void *unused)
 		;
 }
 
+#if CONFIG_SW_ISR_TABLE_DYNAMIC
+/*
+ * @internal
+ *
+ * @brief Replace an interrupt handler by another
+ *
+ * An interrupt's ISR can be replaced at runtime.
+ *
+ * @return N/A
+ */
+
+void _irq_handler_set(
+	unsigned int irq,
+	void (*new)(void *arg),
+	void *arg
+)
+{
+	int key = irq_lock();
+	int index = irq - 16;
+
+	_sw_isr_table[index].isr = new;
+	_sw_isr_table[index].arg = arg;
+
+	irq_unlock(key);
+}
+
 /*
  * @brief Connect an ISR to an interrupt line
  *
@@ -185,3 +187,5 @@ void _irq_disconnect(unsigned int irq)
 {
 	_irq_handler_set(irq, _irq_spurious, NULL);
 }
+
+#endif /* CONFIG_SW_ISR_TABLE_DYNAMIC */

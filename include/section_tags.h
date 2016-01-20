@@ -32,9 +32,6 @@
 #define __scs_section  __in_section(SCS_SECTION, _FILE_PATH_HASH, __COUNTER__)
 #define __scp_section  __in_section(SCP_SECTION, _FILE_PATH_HASH, __COUNTER__)
 
-#define __isr_table_section __in_section(ISR_TABLE_SECTION, _FILE_PATH_HASH, \
-				      __COUNTER__)
-
 #define __irq_vector_table  __in_section(IRQ_VECTOR_TABLE, _FILE_PATH_HASH, \
 				      __COUNTER__)
 
@@ -50,9 +47,6 @@
 
 	#define __irq_vector_table \
 		__in_section(IRQ_VECTOR_TABLE, _FILE_PATH_HASH, __COUNTER__)
-
-	#define __isr_table_section \
-		__in_section(ISR_TABLE_SECTION, _FILE_PATH_HASH, __COUNTER__)
 
 #endif /* CONFIG_ARC */
 
