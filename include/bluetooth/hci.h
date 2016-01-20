@@ -447,7 +447,7 @@ struct bt_hci_evt_conn_complete {
 	uint16_t  handle;
 	bt_addr_t bdaddr;
 	uint8_t   link_type;
-	uint8_t   encr_mode;
+	uint8_t   encr_enabled;
 } __packed;
 
 #define BT_HCI_EVT_CONN_REQUEST			0x04
