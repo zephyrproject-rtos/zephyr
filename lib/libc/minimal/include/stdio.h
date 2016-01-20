@@ -21,14 +21,10 @@
 
 #include <stdarg.h>     /* Needed to get definition of va_list */
 #include <bits/null.h>
+#include <bits/size_t.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if !defined(__size_t_defined)
-#define __size_t_defined
-typedef unsigned int  size_t;
 #endif
 
 #if !defined(__FILE_defined)
