@@ -100,6 +100,15 @@ config GPIO_DW_0_BITS
 config GPIO_DW_0_CLOCK_GATE_SUBSYS
 	default 13
 	depends on GPIO_DW_CLOCK_GATE
+
+config GPIO_DW_1
+	def_bool y
+config GPIO_DW_1_BASE_ADDR
+	default 0xb0800b00
+config GPIO_DW_1_IRQ
+	default 31
+config GPIO_DW_1_BITS
+	default 6
 endif
 
 if I2C
