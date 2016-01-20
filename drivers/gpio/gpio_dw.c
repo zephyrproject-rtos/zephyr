@@ -297,10 +297,10 @@ static inline void gpio_dw_unmask_int(uint32_t mask_addr)
 {
 	sys_write32(sys_read32(mask_addr) & INT_UNMASK_IA, mask_addr);
 }
-#elif CONFIG_PLATFORM_QUARK_SE_SS
+#elif CONFIG_SOC_QUARK_SE_SS
 static inline void gpio_dw_unmask_int(uint32_t mask_addr)
 {
-	sys_out32(sys_in32(mask_addr) & INT_UNMASK_IA, mask_addr);
+	sys_write32(sys_read32(mask_addr) & INT_ENABLE_ARC, mask_addr);
 }
 #else
 #define gpio_dw_unmask_int(...)
