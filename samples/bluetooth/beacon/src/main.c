@@ -36,16 +36,8 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, "Test beacon", 11),
 };
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
-void main(void)
-#endif
+static void bt_ready(int err)
 {
-	int err;
-
-	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
@@ -65,4 +57,19 @@ void main(void)
 	}
 
 	printk("Beacon started\n");
+}
+
+#ifdef CONFIG_MICROKERNEL
+void mainloop(void)
+#else
+void main(void)
+#endif
+{
+	int err;
+
+	/* Initialize the Bluetooth Subsystem */
+	err = bt_enable(bt_ready);
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+	}
 }
