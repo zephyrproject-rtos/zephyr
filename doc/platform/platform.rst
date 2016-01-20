@@ -28,6 +28,8 @@ kernel configuration settings.
 +----------------------+-----------------+------------------------+
 | arduino_101          | X86             | Arduino 101 Board      |
 +----------------------+-----------------+------------------------+
+| arduino_due          | ARM v7-M        | Arduino Due Board      |
++----------------------+-----------------+------------------------+
 | frdm_k64f            | ARM v7E-M       | Freescale Freedom      |
 |                      |                 | Development Platform   |
 +----------------------+-----------------+------------------------+
@@ -46,4 +48,5 @@ The following sections provide details on the respective platforms:
    basic_minuteia.rst
    frdm_k64f.rst
    galileo.rst
+   arduino_due.rst
 
