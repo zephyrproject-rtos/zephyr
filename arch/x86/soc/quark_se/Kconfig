@@ -318,4 +318,13 @@ config PWM_DW_NUM_PORTS
 endif
 endif
 
+if IPM_CONSOLE_RECEIVER
+config QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32
+	int
+	default 256
+	help
+	Size of the buffer for the console reciever, for incoming
+	console messages from the ARC side. Must be a power of 2.
+endif
+
 endif #SOC_QUARK_SE_X86
