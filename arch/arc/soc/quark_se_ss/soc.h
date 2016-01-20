@@ -151,8 +151,8 @@
 #endif /* CONFIG_I2C */
 
 #if defined(CONFIG_GPIO_DW)
-#define GPIO_SS_0_INT_MASK				0x408
-#define GPIO_SS_1_INT_MASK				0x40C
+#define GPIO_DW_PORT_0_INT_MASK				(SCSS_REGISTER_BASE + 0x408)
+#define GPIO_DW_PORT_1_INT_MASK				(SCSS_REGISTER_BASE + 0x40C)
 #endif /* CONFIG_GPIO_DW */
 
 #if defined(CONFIG_UART_NS16550)

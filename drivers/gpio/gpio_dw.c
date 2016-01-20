@@ -293,23 +293,18 @@ static inline int gpio_dw_resume_port(struct device *port)
 }
 
 #ifdef CONFIG_SOC_QUARK_SE
-static inline void gpio_dw_unmask_int(struct device *port)
+static inline void gpio_dw_unmask_int(uint32_t mask_addr)
 {
-	sys_write32(sys_read32(GPIO_INT_MASK) & INT_UNMASK_IA, GPIO_INT_MASK);
+	sys_write32(sys_read32(mask_addr) & INT_UNMASK_IA, mask_addr);
 }
 #elif CONFIG_PLATFORM_QUARK_SE_SS
-static inline void gpio_dw_unmask_int(struct device *port)
+static inline void gpio_dw_unmask_int(uint32_t mask_addr)
 {
-	struct gpio_dw_config *config = port->config->config_info;
-	uint32_t base = config->base_addr;
-
-	sys_out32(sys_in32(base + INTMASK) & INT_UNMASK_IA, base + INTMASK);
+	sys_out32(sys_in32(mask_addr) & INT_UNMASK_IA, mask_addr);
 }
 #else
 #define gpio_dw_unmask_int(...)
 #endif
-
-
 
 void gpio_dw_isr(void *arg)
 {
@@ -418,7 +413,6 @@ int gpio_dw_initialize(struct device *port)
 	port->driver_api = &api_funcs;
 
 	config->config_func(port);
-	gpio_dw_unmask_int(port);
 
 	return 0;
 }
@@ -493,6 +487,7 @@ void gpio_config_0_irq(struct device *port)
 	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
 	shared_irq_enable(shared_irq_dev, port);
 #endif
+	gpio_dw_unmask_int(GPIO_DW_PORT_0_INT_MASK);
 }
 
 #endif /* CONFIG_GPIO_DW_0 */
@@ -568,6 +563,7 @@ void gpio_config_1_irq(struct device *port)
 	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
 	shared_irq_enable(shared_irq_dev, port);
 #endif
+	gpio_dw_unmask_int(GPIO_DW_PORT_1_INT_MASK);
 }
 
 #endif /* CONFIG_GPIO_DW_1 */

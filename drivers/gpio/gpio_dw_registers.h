@@ -20,7 +20,7 @@
 #define SWPORTA_DR     0x00
 #define SWPORTA_DDR    0x01
 #define INTEN          0x03
-#define INTMASK                0x04
+#define INTMASK        0x04
 #define INTTYPE_LEVEL  0x05
 #define INT_POLARITY   0x06
 #define INTSTATUS      0x07
@@ -41,7 +41,7 @@
 #define SWPORTD_DR     0x24
 #define SWPORTD_DDR    0x28
 #define INTEN          0x30
-#define INTMASK                0x34
+#define INTMASK        0x34
 #define INTTYPE_LEVEL  0x38
 #define INT_POLARITY   0x3c
 #define INTSTATUS      0x40
