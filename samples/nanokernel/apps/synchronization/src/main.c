@@ -1,4 +1,4 @@
-/* hello.c - Hello World demo */
+/* main.c - Synchronisation demo */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
