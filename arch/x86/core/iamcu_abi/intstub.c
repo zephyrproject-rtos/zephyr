@@ -20,18 +20,19 @@
 extern void _sys_power_save_idle_exit(int32_t ticks);
 
 #ifdef CONFIG_NESTED_INTERRUPTS
-static inline void enable_interrupts(void)
+static inline void enable_nested_interrupts(void)
 {
 	__asm__ volatile("sti");
-};
-#else
-static inline void enable_interrupts(void){};
-#endif
+}
 
-static inline void disable_interrupts(void)
+static inline void disable_nested_interrupts(void)
 {
 	__asm__ volatile("cli");
-};
+}
+#else
+static inline void enable_nested_interrupts(void){};
+static inline void disable_nested_interrupts(void){};
+#endif
 
 typedef void (*int_handler_t) (int context);
 
@@ -39,7 +40,10 @@ void _execute_handler(int_handler_t function, int context)
 {
 	_int_latency_start();
 
-	if (!_nanokernel.nested) {
+#ifdef CONFIG_NESTED_INTERRUPTS
+	if (!_nanokernel.nested)
+#endif
+	{
 		/* move to the interrupt stack and push current stack
 		 * pointer onto interrupt stack
 		 */
@@ -60,18 +64,21 @@ void _execute_handler(int_handler_t function, int context)
 	}
 #endif
 	_int_latency_stop();
-	enable_interrupts();
+	enable_nested_interrupts();
 
 	(*function)(context);
 	_loapic_eoi();
 
-	disable_interrupts();
+	disable_nested_interrupts();
 	_nanokernel.nested--;
 
 	/* Are we returning to a task or fiber context? If so we need
 	 * to do some work based on the context that was interrupted
 	 */
-	if (!_nanokernel.nested) {
+#ifdef CONFIG_NESTED_INTERRUPTS
+	if (!_nanokernel.nested)
+#endif
+	{
 		/* switch to kernel stack */
 		__asm__ volatile ("popl %esp");
 
