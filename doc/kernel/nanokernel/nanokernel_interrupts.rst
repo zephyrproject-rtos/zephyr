@@ -226,9 +226,6 @@ modification, in the same way that text and read-only data areas
 are protected. If no dynamic interrupts are in use, i.e.
 :option:`NUM_DYNAMIC_STUBS` is 0, the IDT will be located in ROM.
 
-If a particular project is ROM space-constrained, it's possible to
-force the IDT to be located in RAM via :option:`FORCE_IRQ_VECTOR_TABLE_RAM`.
-
 APIs
 ****
 
