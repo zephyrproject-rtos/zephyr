@@ -24,6 +24,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/log.h>
 
+#include "gap_internal.h"
 #include "uart.h"
 #include "rpc.h"
 
@@ -51,6 +52,7 @@ static int recv_cb(int channel, int request, int len, void *p_data)
 
 	switch (request) {
 	case IPC_MSG_TYPE_MESSAGE:
+		rpc_deserialize(p_data, len);
 		break;
 	case IPC_MSG_TYPE_FREE:
 		/* TODO: Try to send another message immediately */
@@ -62,6 +64,23 @@ static int recv_cb(int channel, int request, int len, void *p_data)
 	}
 
 	return 0;
+}
+
+static bt_ready_cb_t bt_ready_cb;
+
+void on_nble_up(void)
+{
+	BT_DBG("");
+	if (bt_ready_cb) {
+		bt_ready_cb(0);
+	}
+
+	ble_get_version_req(NULL);
+}
+
+void on_ble_get_version_rsp(const struct ble_version_response *rsp)
+{
+	BT_DBG("");
 }
 
 int bt_enable(bt_ready_cb_t cb)
@@ -144,6 +163,8 @@ int bt_enable(bt_ready_cb_t cb)
 		BT_ERR("Error configuring pin %d", NBLE_RESET_PIN);
 		return -ENODEV;
 	}
+
+	bt_ready_cb = cb;
 
 	return 0;
 }
