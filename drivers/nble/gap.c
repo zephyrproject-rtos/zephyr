@@ -29,6 +29,7 @@
 
 #define NBLE_SWDIO_PIN	6
 #define NBLE_RESET_PIN	NBLE_SWDIO_PIN
+#define NBLE_BTWAKE_PIN 5
 
 #define NBLE_CHANNEL	0
 
@@ -86,6 +87,18 @@ int bt_enable(bt_ready_cb_t cb)
 	ret = gpio_pin_write(gpio, NBLE_RESET_PIN, 0);
 	if (ret) {
 		BT_ERR("Error pin write %d", NBLE_RESET_PIN);
+		return -EINVAL;
+	}
+
+	ret = gpio_pin_configure(gpio, NBLE_BTWAKE_PIN, GPIO_DIR_OUT);
+	if (ret) {
+		BT_ERR("Error configuring pin %d", NBLE_BTWAKE_PIN);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_write(gpio, NBLE_BTWAKE_PIN, 1);
+	if (ret) {
+		BT_ERR("Error pin write %d", NBLE_BTWAKE_PIN);
 		return -EINVAL;
 	}
 
