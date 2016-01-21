@@ -310,7 +310,7 @@ class SizeCalculator:
     rw_sections = ["datas", "initlevel", "_k_mem_map_ptr", "_k_pipe_ptr",
                    "_k_task_ptr", "_k_task_list", "initlevel", "_k_event_list"]
     # These get copied into RAM only on non-XIP
-    ro_sections = ["text", "ctors", "rodata", "devconfig"]
+    ro_sections = ["text", "ctors", "init_array", "rodata", "devconfig"]
 
     def __init__(self, filename):
         """Constructor
