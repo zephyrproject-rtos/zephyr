@@ -88,15 +88,6 @@ static void gatt_buf_clear(void)
 	memset(&gatt_buf, 0, sizeof(gatt_buf));
 }
 
-static bool gatt_buf_isempty(void)
-{
-	if (gatt_buf.len) {
-		return false;
-	}
-
-	return true;
-}
-
 static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern)
 {
 	static struct bt_gatt_attr *attr = gatt_db;
@@ -1199,32 +1190,14 @@ fail_conn:
 
 static struct bt_gatt_read_params read_params;
 
-static void read_destroy(void *user_data)
+static void read_destroy(struct bt_gatt_read_params *params)
 {
-	struct bt_gatt_read_params *params = user_data;
-
 	memset(params, 0, sizeof(*params));
-
-	if (!gatt_buf_isempty()) {
-		gatt_buf_clear();
-	}
+	gatt_buf_clear();
 }
 
-static void read_result(void *user_data)
-{
-	/* Respond with an error if the buffer was cleared. */
-	if (gatt_buf_isempty()) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-	} else {
-		tester_send(BTP_SERVICE_ID_GATT, GATT_READ, CONTROLLER_INDEX,
-			    gatt_buf.buf, gatt_buf.len);
-	}
-
-	read_destroy(user_data);
-}
-
-static uint8_t read_cb(struct bt_conn *conn, int err, const void *data,
+static uint8_t read_cb(struct bt_conn *conn, int err,
+		       struct bt_gatt_read_params *params, const void *data,
 		       uint16_t length)
 {
 	struct gatt_read_rp *rp = (void *) gatt_buf.buf;
@@ -1232,17 +1205,20 @@ static uint8_t read_cb(struct bt_conn *conn, int err, const void *data,
 	/* Respond to the Lower Tester with ATT Error received */
 	if (err) {
 		rp->att_response = err;
+	}
+
+	/* read complete */
+	if (!data) {
+		tester_send(BTP_SERVICE_ID_GATT, btp_opcode, CONTROLLER_INDEX,
+			    gatt_buf.buf, gatt_buf.len);
+		read_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
 
-	/*
-	 * Clear gatt_buf if there is no more space available to cache
-	 * read result. This will cause read_result function to send
-	 * BTP error status to the Lower Tester.
-	 */
 	if (!gatt_buf_add(data, length)) {
-		gatt_buf_clear();
-
+		tester_rsp(BTP_SERVICE_ID_GATT, btp_opcode,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		read_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1265,10 +1241,13 @@ static void read(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	read_params.handle = sys_le16_to_cpu(cmd->handle);
-	read_params.offset = 0x0000;
+	read_params.handle_count = 1;
+	read_params.single.handle = sys_le16_to_cpu(cmd->handle);
+	read_params.single.offset = 0x0000;
 	read_params.func = read_cb;
-	read_params.destroy = read_result;
+
+	/* TODO should be handled as user_data via CONTAINER_OF macro */
+	btp_opcode = GATT_READ;
 
 	if (bt_gatt_read(conn, &read_params) < 0) {
 		read_destroy(&read_params);
@@ -1287,20 +1266,6 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
-static void read_long_result(void *user_data)
-{
-	/* Respond with an error if the buffer was cleared. */
-	if (gatt_buf_isempty()) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_LONG,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-	} else {
-		tester_send(BTP_SERVICE_ID_GATT, GATT_READ_LONG,
-			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
-	}
-
-	read_destroy(user_data);
-}
-
 static void read_long(uint8_t *data, uint16_t len)
 {
 	const struct gatt_read_long_cmd *cmd = (void *) data;
@@ -1315,10 +1280,13 @@ static void read_long(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	read_params.handle = sys_le16_to_cpu(cmd->handle);
-	read_params.offset = sys_le16_to_cpu(cmd->offset);
+	read_params.handle_count = 1;
+	read_params.single.handle = sys_le16_to_cpu(cmd->handle);
+	read_params.single.offset = sys_le16_to_cpu(cmd->offset);
 	read_params.func = read_cb;
-	read_params.destroy = read_long_result;
+
+	/* TODO should be handled as user_data via CONTAINER_OF macro */
+	btp_opcode = GATT_READ_LONG;
 
 	if (bt_gatt_read(conn, &read_params) < 0) {
 		read_destroy(&read_params);
@@ -1335,24 +1303,6 @@ fail:
 fail_conn:
 	tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_LONG, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
-}
-
-static uint8_t read_multiple_result(struct bt_conn *conn, int err,
-				    const void *data, uint16_t length)
-{
-	read_cb(conn, err, data, length);
-
-	if (gatt_buf_isempty()) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_MULTIPLE,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-	} else {
-		tester_send(BTP_SERVICE_ID_GATT, GATT_READ_MULTIPLE,
-			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
-
-		gatt_buf_clear();
-	}
-
-	return BT_GATT_ITER_STOP;
 }
 
 static void read_multiple(uint8_t *data, uint16_t len)
@@ -1375,10 +1325,15 @@ static void read_multiple(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	if (bt_gatt_read_multiple(conn, handles, cmd->handles_count,
-	    read_multiple_result) < 0) {
-		gatt_buf_clear();
+	read_params.func = read_cb;
+	read_params.handle_count = i;
+	read_params.handles = handles; /* not used in read func */
 
+	/* TODO should be handled as user_data via CONTAINER_OF macro */
+	btp_opcode = GATT_READ_MULTIPLE;
+
+	if (bt_gatt_read(conn, &read_params) < 0) {
+		gatt_buf_clear();
 		goto fail;
 	}
 

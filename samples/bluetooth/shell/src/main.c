@@ -770,21 +770,18 @@ done:
 
 static struct bt_gatt_read_params read_params;
 
-static uint8_t read_func(struct bt_conn *conn, int err, const void *data,
-			 uint16_t length)
+static uint8_t read_func(struct bt_conn *conn, int err,
+			 struct bt_gatt_read_params *params,
+			 const void *data, uint16_t length)
 {
 	printk("Read complete: err %u length %u\n", err, length);
 
+	if (!data) {
+		memset(params, 0, sizeof(*params));
+		return BT_GATT_ITER_STOP;
+	}
+
 	return BT_GATT_ITER_CONTINUE;
-}
-
-static void read_destroy(void *user_data)
-{
-	struct bt_gatt_read_params *params = user_data;
-
-	printk("Read destroy\n");
-
-	memset(params, 0, sizeof(*params));
 }
 
 static void cmd_gatt_read(int argc, char *argv[])
@@ -797,17 +794,17 @@ static void cmd_gatt_read(int argc, char *argv[])
 	}
 
 	read_params.func = read_func;
-	read_params.destroy = read_destroy;
 
 	if (argc < 2) {
 		printk("handle required\n");
 		return;
 	}
 
-	read_params.handle = strtoul(argv[1], NULL, 16);
+	read_params.handle_count = 1;
+	read_params.single.handle = strtoul(argv[1], NULL, 16);
 
 	if (argc > 2) {
-		read_params.offset = strtoul(argv[2], NULL, 16);
+		read_params.single.offset = strtoul(argv[2], NULL, 16);
 	}
 
 	err = bt_gatt_read(default_conn, &read_params);
@@ -828,7 +825,7 @@ void cmd_gatt_mread(int argc, char *argv[])
 		return;
 	}
 
-	if (argc < 2) {
+	if (argc < 3) {
 		printk("Attribute handles in hex format to read required\n");
 		return;
 	}
@@ -842,7 +839,11 @@ void cmd_gatt_mread(int argc, char *argv[])
 		h[i] = strtoul(argv[i + 1], NULL, 16);
 	}
 
-	err = bt_gatt_read_multiple(default_conn, h, i, read_func);
+	read_params.func = read_func;
+	read_params.handle_count = i;
+	read_params.handles = h; /* not used in read func */
+
+	err = bt_gatt_read(default_conn, &read_params);
 	if (err) {
 		printk("GATT multiple read request failed (err %d)\n", err);
 	}

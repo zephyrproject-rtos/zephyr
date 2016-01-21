@@ -407,12 +407,6 @@ void bt_gatt_cancel(struct bt_conn *conn)
 {
 }
 
-int bt_gatt_read_multiple(struct bt_conn *conn, const uint16_t *handles,
-			  size_t count, bt_gatt_read_func_t func)
-{
-	return -ENOSYS;
-}
-
 void on_ble_gattc_write_rsp(const struct ble_gattc_write_rsp *ev,
 			    void *priv)
 {

@@ -771,26 +771,40 @@ struct bt_gatt_discover_params {
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params);
 
+struct bt_gatt_read_params;
+
 /** @brief Read callback function
  *
  *  @param conn Connection object.
  *  @param err Error code.
- *  @param data Attribute value data.
+ *  @param params Read parameters used.
+ *  @param data Attribute value data. NULL means read has completed.
  *  @param length Attribute value length.
  */
 typedef uint8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, int err,
+				       struct bt_gatt_read_params *params,
 				       const void *data, uint16_t length);
 
 /** @brief GATT Read parameters */
 struct bt_gatt_read_params {
-	/** Attribute handle */
-	uint16_t handle;
-	/** Attribute data offset */
-	uint16_t offset;
 	/** Read attribute callback */
 	bt_gatt_read_func_t func;
-	/** Read destroy callback */
-	void (*destroy)(void *user_data);
+	/** Handles count.
+	 * If equals to 1 single.handle and single.offset are used.
+	 * If >1 Read Multiple Characteristic Values is performed and handles
+	 * are used.
+	 */
+	size_t handle_count;
+	union {
+		struct {
+			/** Attribute handle */
+			uint16_t handle;
+			/** Attribute data offset */
+			uint16_t offset;
+		} single;
+		/** Handles to read in Read Multiple Characteristic Values */
+		uint16_t *handles;
+	};
 };
 
 /** @brief Read Attribute Value by handle
@@ -907,21 +921,6 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
  *  @param conn Connection object.
  */
 void bt_gatt_cancel(struct bt_conn *conn);
-
-/** @brief Read Multiple Attribute Values by set of handles
- *
- *  Routine to be used to retrieve set of attributes values determined by set of
- *  handles in one call.
- *
- *  @param conn Connection object.
- *  @param handles Set of valid handles to attributes.
- *  @param count Number of handles to be read.
- *  @param func User callback routine to get retrieved values.
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_gatt_read_multiple(struct bt_conn *conn, const uint16_t *handles,
-			  size_t count, bt_gatt_read_func_t func);
 
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
