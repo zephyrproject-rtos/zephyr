@@ -62,18 +62,6 @@ extern uint32_t task_irq_alloc(kirq_t irq_obj, uint32_t irq, uint32_t priority,
 extern void task_irq_ack(kirq_t irq_obj);
 
 /**
- *
- * @brief Free a task IRQ object
- *
- * The task IRQ object's interrupt is disabled, and the associated event
- * is flushed; the object's interrupt vector is then freed, and the object's
- * global array entry is marked as unused.
- * @param irq_obj IRQ object identifier
- * @return N/A
- */
-extern void task_irq_free(kirq_t irq_obj);
-
-/**
  * @brief Wait for task IRQ to signal an interrupt
  *
  * This routine waits up to @a timeout ticks for the IRQ object @a irq_obj

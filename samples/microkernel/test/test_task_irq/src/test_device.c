@@ -22,8 +22,7 @@ This module exercises the task level interrupt handling feature.
 
 Each function allocates 2 IRQ objects and then tests for an event
 associated with the IRQ. The taskA() function also attempts to allocate an IRQ
-that has already been allocated by another task. The taskB() function also
-exercises the task_irq_free() API.
+that has already been allocated by another task.
  */
 
 #include <zephyr.h>
@@ -182,10 +181,5 @@ int taskB(ksem_t semRdy)
 	 */
 
 	(void)task_sem_take(semRdy, TICKS_UNLIMITED);
-
-	TC_PRINT("Attempt to free an IRQ object...\n");
-	task_irq_free(DEV3_ID);
-	TC_PRINT("IRQ object %d freed\n", DEV3_ID);
-
 	return TC_PASS;
 }

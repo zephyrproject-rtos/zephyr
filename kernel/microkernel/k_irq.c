@@ -27,8 +27,7 @@
  * The task level device driver tests/waits on this event number to determine
  * if/when the interrupt has occurred. As the ISR also disables the interrupt, the
  * task level device driver subsequently make a request to have the interrupt
- * enabled again. If desired, the device driver can free an IRQ object that
- * it is no longer interested in using.
+ * enabled again.
  *
  * These routines perform error checking to ensure that an IRQ object can only be
  * allocated by a single task, and that subsequent operations on that IRQ object
@@ -71,20 +70,6 @@ static struct task_irq_info task_irq_object[MAX_TASK_IRQS] = {
 	[0 ...(MAX_TASK_IRQS - 1)].task_id = INVALID_TASK
 };
 
-/* architecture-specific */
-
-#if defined(CONFIG_X86)
-
-#define RELEASE_VECTOR(v) _IntVecMarkFree(v)
-
-#elif defined(CONFIG_CPU_CORTEX_M3_M4)
-#include <arch/cpu.h>
-extern void _irq_disconnect(unsigned int irq);
-#define RELEASE_VECTOR(v) _irq_disconnect(v)
-#else
-#error "Unknown target"
-#endif
-
 /* array of event id used by task IRQ objects */
 extern const kevent_t _TaskIrqEvt_objIds[];
 
@@ -113,18 +98,6 @@ static void task_irq_int_handler(void *parameter)
 
 	isr_event_send(irq_obj_ptr->event);
 	irq_disable(irq_obj_ptr->irq);
-}
-
-void task_irq_free(kirq_t irq_obj)
-{
-	__ASSERT(irq_obj < MAX_TASK_IRQS, "Invalid IRQ object");
-	__ASSERT(task_irq_object[irq_obj].task_id == task_id_get(),
-			 "Incorrect Task ID");
-
-	irq_disable(task_irq_object[irq_obj].irq);
-	RELEASE_VECTOR(task_irq_object[irq_obj].vector);
-	(void)task_event_recv(task_irq_object[irq_obj].event, TICKS_NONE);
-	task_irq_object[irq_obj].task_id = INVALID_TASK;
 }
 
 /**

@@ -78,7 +78,6 @@ static pfunc func_array[] = {
 	(pfunc)task_irq_alloc,
 	(pfunc)task_irq_wait,
 	(pfunc)task_irq_ack,
-	(pfunc)task_irq_free,
 	/* semaphore functions */
 	(pfunc)isr_sem_give,
 	(pfunc)task_sem_give,
