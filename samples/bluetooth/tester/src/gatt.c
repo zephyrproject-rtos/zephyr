@@ -812,49 +812,39 @@ fail:
 
 static struct bt_gatt_discover_params discover_params;
 static union uuid uuid;
+static uint8_t btp_opcode;
 
-static void discover_destroy(void *user_data)
+static void discover_destroy(struct bt_gatt_discover_params *params)
 {
-	struct bt_gatt_discover_params *params = user_data;
-
 	memset(params, 0, sizeof(*params));
 	gatt_buf_clear();
-}
-
-static void disc_prim_uuid_result(void *user_data)
-{
-	/* Respond with an error if the buffer was cleared. */
-	if (gatt_buf_isempty()) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_PRIM_UUID,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-	} else {
-		tester_send(BTP_SERVICE_ID_GATT, GATT_DISC_PRIM_UUID,
-			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
-	}
-
-	discover_destroy(user_data);
 }
 
 static uint8_t disc_prim_uuid_cb(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 struct bt_gatt_discover_params *params)
 {
-	struct bt_gatt_service *data = attr->user_data;
+	struct bt_gatt_service *data;
 	struct gatt_disc_prim_uuid_rp *rp = (void *) gatt_buf.buf;
 	struct gatt_service *service;
 	uint8_t uuid_length;
+
+	if (!attr) {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_DISC_PRIM_UUID,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+		discover_destroy(params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	data = attr->user_data;
 
 	uuid_length = data->uuid->type == BT_UUID_TYPE_16 ? 2 : 16;
 
 	service = gatt_buf_reserve(sizeof(*service) + uuid_length);
 	if (!service) {
-		/*
-		 * Clear gatt_buf if there is no more space available to cache
-		 * another attribute. This will cause disc_prim_uuid_result
-		 * to respond with BTP_STATUS_FAILED.
-		 */
-		gatt_buf_clear();
-
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_PRIM_UUID,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		discover_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -899,7 +889,6 @@ static void disc_prim_uuid(uint8_t *data, uint16_t len)
 	discover_params.end_handle = 0xffff;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	discover_params.func = disc_prim_uuid_cb;
-	discover_params.destroy = disc_prim_uuid_result;
 
 	if (bt_gatt_discover(conn, &discover_params) < 0) {
 		discover_destroy(&discover_params);
@@ -918,40 +907,31 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
-static void find_included_result(void *user_data)
-{
-	/* Respond with an error if the buffer was cleared. */
-	if (gatt_buf_isempty()) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_FIND_INCLUDED,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-	} else {
-		tester_send(BTP_SERVICE_ID_GATT, GATT_FIND_INCLUDED,
-			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
-	}
-
-	discover_destroy(user_data);
-}
-
 static uint8_t find_included_cb(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				struct bt_gatt_discover_params *params)
 {
-	struct bt_gatt_include *data = attr->user_data;
+	struct bt_gatt_include *data;
 	struct gatt_find_included_rp *rp = (void *) gatt_buf.buf;
 	struct gatt_included *included;
 	uint8_t uuid_length;
+
+	if (!attr) {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_FIND_INCLUDED,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+		discover_destroy(params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	data = attr->user_data;
 
 	uuid_length = data->uuid->type == BT_UUID_TYPE_16 ? 2 : 16;
 
 	included = gatt_buf_reserve(sizeof(*included) + uuid_length);
 	if (!included) {
-		/*
-		 * Clear gatt_buf if there is no more space available to cache
-		 * another attribute. This will cause find_included_result
-		 * to respond with BTP_STATUS_FAILED.
-		 */
-		gatt_buf_clear();
-
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_FIND_INCLUDED,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		discover_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -992,7 +972,6 @@ static void find_included(uint8_t *data, uint16_t len)
 	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	discover_params.type = BT_GATT_DISCOVER_INCLUDE;
 	discover_params.func = find_included_cb;
-	discover_params.destroy = find_included_result;
 
 	if (bt_gatt_discover(conn, &discover_params) < 0) {
 		discover_destroy(&discover_params);
@@ -1011,40 +990,31 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
-static void disc_all_chrc_result(void *user_data)
-{
-	/* Respond with an error if the buffer was cleared. */
-	if (gatt_buf_isempty()) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_CHRC,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-	} else {
-		tester_send(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_CHRC,
-			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
-	}
-
-	discover_destroy(user_data);
-}
-
 static uint8_t disc_chrc_cb(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr,
 			    struct bt_gatt_discover_params *params)
 {
-	struct bt_gatt_chrc *data = attr->user_data;
+	struct bt_gatt_chrc *data;
 	struct gatt_disc_chrc_rp *rp = (void *) gatt_buf.buf;
 	struct gatt_characteristic *chrc;
 	uint8_t uuid_length;
+
+	if (!attr) {
+		tester_send(BTP_SERVICE_ID_GATT, btp_opcode,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+		discover_destroy(params);
+		return BT_GATT_ITER_STOP;
+	}
+
+	data = attr->user_data;
 
 	uuid_length = data->uuid->type == BT_UUID_TYPE_16 ? 2 : 16;
 
 	chrc = gatt_buf_reserve(sizeof(*chrc) + uuid_length);
 	if (!chrc) {
-		/*
-		 * Clear gatt_buf if there is no more space available to cache
-		 * another attribute. This will cause disc_all_chrc_result
-		 * to respond with BTP_STATUS_FAILED.
-		 */
-		gatt_buf_clear();
-
+		tester_rsp(BTP_SERVICE_ID_GATT, btp_opcode,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		discover_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1084,7 +1054,9 @@ static void disc_all_chrc(uint8_t *data, uint16_t len)
 	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	discover_params.func = disc_chrc_cb;
-	discover_params.destroy = disc_all_chrc_result;
+
+	/* TODO should be handled as user_data via CONTAINER_OF macro */
+	btp_opcode = GATT_DISC_ALL_CHRC;
 
 	if (bt_gatt_discover(conn, &discover_params) < 0) {
 		discover_destroy(&discover_params);
@@ -1101,20 +1073,6 @@ fail:
 fail_conn:
 	tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_CHRC, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
-}
-
-static void disc_chrc_uuid_result(void *user_data)
-{
-	/* Respond with an error if the buffer was cleared. */
-	if (gatt_buf_isempty()) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_CHRC_UUID,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-	} else {
-		tester_send(BTP_SERVICE_ID_GATT, GATT_DISC_CHRC_UUID,
-			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
-	}
-
-	discover_destroy(user_data);
 }
 
 static void disc_chrc_uuid(uint8_t *data, uint16_t len)
@@ -1140,7 +1098,9 @@ static void disc_chrc_uuid(uint8_t *data, uint16_t len)
 	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	discover_params.func = disc_chrc_cb;
-	discover_params.destroy = disc_chrc_uuid_result;
+
+	/* TODO should be handled as user_data via CONTAINER_OF macro */
+	btp_opcode = GATT_DISC_CHRC_UUID;
 
 	if (bt_gatt_discover(conn, &discover_params) < 0) {
 		discover_destroy(&discover_params);
@@ -1159,20 +1119,6 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
-static void disc_all_desc_result(void *user_data)
-{
-	/* Respond with an error if the buffer was cleared. */
-	if (gatt_buf_isempty()) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_DESC,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-	} else {
-		tester_send(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_DESC,
-			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
-	}
-
-	discover_destroy(user_data);
-}
-
 static uint8_t disc_all_desc_cb(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				struct bt_gatt_discover_params *params)
@@ -1181,17 +1127,20 @@ static uint8_t disc_all_desc_cb(struct bt_conn *conn,
 	struct gatt_descriptor *descriptor;
 	uint8_t uuid_length;
 
+	if (!attr) {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_DESC,
+			    CONTROLLER_INDEX, gatt_buf.buf, gatt_buf.len);
+		discover_destroy(params);
+		return BT_GATT_ITER_STOP;
+	}
+
 	uuid_length = attr->uuid->type == BT_UUID_TYPE_16 ? 2 : 16;
 
 	descriptor = gatt_buf_reserve(sizeof(*descriptor) + uuid_length);
 	if (!descriptor) {
-		/*
-		 * Clear gatt_buf if there is no more space available to cache
-		 * another attribute. This will cause disc_all_desc_result
-		 * to respond with BTP_STATUS_FAILED.
-		 */
-		gatt_buf_clear();
-
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_DISC_ALL_DESC,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		discover_destroy(params);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1230,7 +1179,6 @@ static void disc_all_desc(uint8_t *data, uint16_t len)
 	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 	discover_params.func = disc_all_desc_cb;
-	discover_params.destroy = disc_all_desc_result;
 
 	if (bt_gatt_discover(conn, &discover_params) < 0) {
 		discover_destroy(&discover_params);
@@ -1609,7 +1557,7 @@ static uint8_t subscribe_func(struct bt_conn *conn, int err,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void discover_complete(void *user_data)
+static void discover_complete(struct bt_gatt_discover_params *params)
 {
 	int err;
 	uint8_t op;
@@ -1641,6 +1589,11 @@ static uint8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
 {
+	if (!attr) {
+		discover_complete(params);
+		return BT_GATT_ITER_STOP;
+	}
+
 	/* Characteristic Value Handle is the next handle beyond declaration */
 	subscribe_params.value_handle = attr->handle + 1;
 
@@ -1670,7 +1623,6 @@ static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 	discover_params.end_handle = ccc_handle;
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	discover_params.func = discover_func;
-	discover_params.destroy = discover_complete;
 
 	subscribe_params.ccc_handle = ccc_handle;
 	subscribe_params.value = value;

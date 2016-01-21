@@ -54,6 +54,12 @@ static uint8_t discover_func(struct bt_conn *conn,
 {
 	int err;
 
+	if (!attr) {
+		printk("Discover complete\n");
+		memset(params, 0, sizeof(*params));
+		return BT_GATT_ITER_STOP;
+	}
+
 	printk("[ATTRIBUTE] handle %u\n", attr->handle);
 
 	if (BT_UUID_16(discover_params.uuid)->val == BT_UUID_HRS_VAL) {

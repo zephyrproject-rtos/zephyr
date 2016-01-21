@@ -675,6 +675,12 @@ static uint8_t discover_func(struct bt_conn *conn,
 	struct bt_gatt_include *gatt_include;
 	char uuid[37];
 
+	if (!attr) {
+		printk("Discover complete\n");
+		memset(params, 0, sizeof(*params));
+		return BT_GATT_ITER_STOP;
+	}
+
 	switch (params->type) {
 	case BT_GATT_DISCOVER_SECONDARY:
 	case BT_GATT_DISCOVER_PRIMARY:
@@ -706,15 +712,6 @@ static uint8_t discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void discover_destroy(void *user_data)
-{
-	struct bt_gatt_discover_params *params = user_data;
-
-	printk("Discover destroy\n");
-
-	memset(params, 0, sizeof(*params));
-}
-
 static void cmd_gatt_discover(int argc, char *argv[])
 {
 	int err;
@@ -725,7 +722,6 @@ static void cmd_gatt_discover(int argc, char *argv[])
 	}
 
 	discover_params.func = discover_func;
-	discover_params.destroy = discover_destroy;
 	discover_params.start_handle = 0x0001;
 	discover_params.end_handle = 0xffff;
 

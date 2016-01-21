@@ -715,7 +715,7 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		attr->handle = start_handle;
 
 		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
-			goto done;
+			return;
 		}
 	}
 
@@ -736,9 +736,7 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 	}
 
 done:
-	if (params->destroy) {
-		params->destroy(params);
-	}
+	params->func(conn, NULL, params);
 }
 
 static int att_find_type(struct bt_conn *conn,
@@ -984,9 +982,7 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 	}
 
 done:
-	if (params->destroy) {
-		params->destroy(params);
-	}
+	params->func(conn, NULL, params);
 }
 
 static int att_read_type(struct bt_conn *conn,
@@ -1085,7 +1081,7 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 		attr->handle = handle;
 
 		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
-			goto done;
+			return;
 		}
 	}
 
@@ -1111,9 +1107,7 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 	}
 
 done:
-	if (params->destroy) {
-		params->destroy(params);
-	}
+	params->func(conn, NULL, params);
 }
 
 static int att_find_info(struct bt_conn *conn,

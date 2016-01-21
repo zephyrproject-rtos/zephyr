@@ -710,6 +710,10 @@ struct bt_gatt_discover_params;
  *  @param attr Attribute found.
  *  @param params Discovery parameters given.
  *
+ *  If discovery procedure has completed this callback will be called with
+ *  attr set to NULL. This will not happen if procedure was stopped by returning
+ *  BT_GATT_ITER_STOP.
+ *
  *  @return BT_GATT_ITER_CONTINUE if should continue attribute discovery
  *  or BT_GATT_ITER_STOP to stop discovery procedure.
  */
@@ -731,8 +735,6 @@ struct bt_gatt_discover_params {
 	struct bt_uuid *uuid;
 	/** Discover attribute callback */
 	bt_gatt_discover_func_t func;
-	/** Discover destroy callback */
-	void (*destroy)(void *user_data);
 	/** Discover start handle */
 	uint16_t start_handle;
 	/** Discover end handle */
