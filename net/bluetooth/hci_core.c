@@ -1125,7 +1125,14 @@ static void hci_encrypt_change(struct net_buf *buf)
 		bt_smp_update_keys(conn);
 	}
 
-	update_sec_level(conn);
+	if (conn->type == BT_CONN_TYPE_LE) {
+		update_sec_level(conn);
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	} else {
+		update_sec_level_br(conn);
+#endif /* CONFIG_BLUETOOTH_BREDR */
+	}
+
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
 
