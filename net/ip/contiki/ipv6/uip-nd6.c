@@ -837,10 +837,13 @@ uip_nd6_rs_output(struct net_buf *buf)
   if(uip_is_addr_unspecified(&UIP_IP_BUF(buf)->srcipaddr)) {
     UIP_IP_BUF(buf)->len[1] = UIP_ICMPH_LEN + UIP_ND6_RS_LEN;
     uip_len(buf) = uip_l3_icmp_hdr_len(buf) + UIP_ND6_RS_LEN;
+    memset(&uip_buf(buf)[uip_l2_l3_icmp_hdr_len(buf)], UIP_ND6_RS_LEN, 0);
+    net_buf_add(buf, UIP_ND6_RS_LEN);
   } else {
     uip_len(buf) = uip_l3_icmp_hdr_len(buf) + UIP_ND6_RS_LEN + UIP_ND6_OPT_LLAO_LEN;
     UIP_IP_BUF(buf)->len[1] =
       UIP_ICMPH_LEN + UIP_ND6_RS_LEN + UIP_ND6_OPT_LLAO_LEN;
+    net_buf_add(buf, UIP_ND6_RS_LEN + UIP_ND6_OPT_LLAO_LEN);
 
     create_llao(&uip_buf(buf)[uip_l2_l3_icmp_hdr_len(buf) + UIP_ND6_RS_LEN],
 		UIP_ND6_OPT_SLLAO);
