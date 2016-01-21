@@ -389,10 +389,12 @@ uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t * src, uip_ipaddr_t * dest, 
 
     uip_len(buf) =
       UIP_IPH_LEN + UIP_ICMPH_LEN + UIP_ND6_NS_LEN + UIP_ND6_OPT_LLAO_LEN;
+    net_buf_add(buf, UIP_ND6_NS_LEN + UIP_ND6_OPT_LLAO_LEN);
   } else {
     uip_create_unspecified(&UIP_IP_BUF(buf)->srcipaddr);
     UIP_IP_BUF(buf)->len[1] = UIP_ICMPH_LEN + UIP_ND6_NS_LEN;
     uip_len(buf) = UIP_IPH_LEN + UIP_ICMPH_LEN + UIP_ND6_NS_LEN;
+    net_buf_add(buf, UIP_ND6_NS_LEN);
   }
 
   UIP_ICMP_BUF(buf)->icmpchksum = 0;
