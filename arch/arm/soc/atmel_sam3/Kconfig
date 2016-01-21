@@ -1,0 +1,134 @@
+# Kconfig - Atmel SAM3 family processor configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+config SOC_ATMEL_SAM3
+	bool
+	default n
+
+if SOC_ATMEL_SAM3
+
+config SOC
+	default atmel_sam3
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 3
+
+#
+# SAM3X8E has total 45 peripherals capable of
+# generating interrupts.
+#
+config NUM_IRQS
+	int
+	default 45
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 84000000
+
+#
+# SRAM address depends on the processor.
+#
+# SAM3X8E has two SRAM banks:
+#   64K @ 0x20000000
+#   32K @ 0x20080000
+# The first 64K is mirrored at 0x20070000
+# to provide one continuous 96K block.
+#
+config SRAM_SIZE
+	default 96 if SOC_ATMEL_SAM3X8E
+
+config SRAM_BASE_ADDRESS
+	default 0x20000000
+	default 0x20070000 if SOC_ATMEL_SAM3X8E
+
+#
+# Atmel SAM3 family has flash starting @ 0x00080000.
+#
+# SAM3X8E has 512K of flash.
+#
+config FLASH_SIZE
+	default 512 if SOC_ATMEL_SAM3X8E
+
+config FLASH_BASE_ADDRESS
+	default 0x00080000
+
+config SOC_ATMEL_SAM3_EXT_SLCK
+	bool "Atmel SAM3 to use external crystal oscillator for slow clock"
+	default n
+	help
+	Says y if you want to use external 32 kHz crystal
+	oscillator to drive the slow clock. Note that this
+	adds a few seconds to boot time, as the crystal
+	needs to stabilize after power-up.
+
+	Says n if you do not need accraute and precise timers.
+	The slow clock will be driven by the internal fast
+	RC oscillator running at 32 kHz.
+
+config SOC_ATMEL_SAM3_EXT_MAINCK
+	bool "Atmel SAM3 to use external crystal oscillator for main clock"
+	default n
+	help
+	The main clock is being used to drive the PLL, and
+	thus driving the processor clock.
+
+	Says y if you want to use external crystal oscillator
+	to drive the main clock. Note that this adds about
+	a second to boot time, as the crystal needs to
+	stabilize after power-up.
+
+	The crystal used here can be from 3 to 20 MHz.
+
+	Says n here will use the internal fast RC oscillator
+	running at 12 MHz.
+
+config SOC_ATMEL_SAM3_PLLA_MULA
+	hex
+	default 0x06
+	help
+	This is the multiplier (MULA) used by the PLL.
+	The processor clock is (MAINCK * (MULA + 1) / DIVA).
+
+	Board config file can override this settings
+	for a particular board.
+
+	With default of MULA == 6, and DIVA == 1,
+	PLL is running at 7 times of main clock.
+
+config SOC_ATMEL_SAM3_PLLA_DIVA
+	hex
+	default 0x01
+	help
+	This is the divider (DIVA) used by the PLL.
+	The processor clock is (MAINCK * (MULA + 1) / DIVA).
+
+	Board config file can override this settings
+	for a particular board.
+
+	With default of MULA == 6, and DIVA == 1,
+	PLL is running at 7 times of main clock.
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+
+endif # SOC_ATMEL_SAM3

@@ -1,0 +1,6 @@
+
+config SOC_ATMEL_SAM3X8E
+	bool "Atmel SAM3X8E Processor"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M3
+	select SOC_ATMEL_SAM3
