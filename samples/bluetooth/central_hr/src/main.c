@@ -38,12 +38,17 @@ static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
 
-static uint8_t subscribe_func(struct bt_conn *conn, int err,
+static uint8_t notify_func(struct bt_conn *conn,
+			   struct bt_gatt_subscribe_params *params,
 			   const void *data, uint16_t length)
 {
-	if (length) {
-		printk("[NOTIFICATION] data %p length %u\n", data, length);
+	if (!data) {
+		printk("[UNSUBSCRIBED]\n");
+		params->value_handle = 0;
+		return BT_GATT_ITER_STOP;
 	}
+
+	printk("[NOTIFICATION] data %p length %u\n", data, length);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -84,16 +89,18 @@ static uint8_t discover_func(struct bt_conn *conn,
 		if (err) {
 			printk("Discover failed (err %d)\n", err);
 		}
-
 	} else {
-		subscribe_params.func = subscribe_func;
+		subscribe_params.notify = notify_func;
 		subscribe_params.value = BT_GATT_CCC_NOTIFY;
 		subscribe_params.ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, &subscribe_params);
 		if (err && err != -EALREADY) {
 			printk("Subscribe failed (err %d)\n", err);
+		} else {
+			printk("[SUBSCRIBED]\n");
 		}
+
 		return BT_GATT_ITER_STOP;
 	}
 

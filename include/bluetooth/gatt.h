@@ -841,13 +841,24 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 				   const void *data, uint16_t length,
 				   bool sign);
 
+struct bt_gatt_subscribe_params;
+
+/** @brief Notification callback function
+ *
+ *  @param conn Connection object.
+ *  @param params Subscription parameters.
+ *  @param data Attribute value data. If NULL then subscription was removed.
+ *  @param length Attribute value length.
+ */
+typedef uint8_t (*bt_gatt_notify_func_t)(struct bt_conn *conn,
+					 struct bt_gatt_subscribe_params *params,
+					 const void *data, uint16_t length);
+
 /** @brief GATT Subscribe parameters */
 struct bt_gatt_subscribe_params {
 	bt_addr_le_t _peer;
-	/** Subscribe value callback */
-	bt_gatt_read_func_t func;
-	/** Subscribe destroy callback */
-	void (*destroy)(void *user_data);
+	/** Notification value callback */
+	bt_gatt_notify_func_t notify;
 	/** Subscribe value handle */
 	uint16_t value_handle;
 	/** Subscribe CCC handle */
@@ -863,7 +874,8 @@ struct bt_gatt_subscribe_params {
  *  Characteristic Configuration handle.
  *  If notification received subscribe value callback is called to return
  *  notified value. One may then decide whether to unsubscribe directly from
- *  this callback.
+ *  this callback. Notification callback with NULL data will not be called if
+ *  subscription was removed by this method.
  *
  *  Note: This procedure is asynchronous therefore the parameters need to
  *  remains valid while it is active.
@@ -879,7 +891,8 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 /** @brief Unsubscribe Attribute Value Notification
  *
  * This procedure unsubscribe to value notification using the Client
- * Characteristic Configuration handle.
+ * Characteristic Configuration handle. Notification callback with NULL data
+ * will not be called if subscription was removed by this call.
  *
  * @param conn Connection object.
  * @param params Subscribe parameters.

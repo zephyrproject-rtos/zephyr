@@ -1508,39 +1508,20 @@ fail:
 }
 
 static struct bt_gatt_subscribe_params subscribe_params;
-static struct bt_conn *default_conn;
-
-static void subscribe_destroy(void *user_data)
-{
-	struct bt_gatt_subscribe_params *params = user_data;
-
-	memset(params, 0, sizeof(*params));
-}
 
 /* ev header + default MTU_ATT-3 */
 static uint8_t ev_buf[33];
 
-static uint8_t subscribe_func(struct bt_conn *conn, int err,
-			      const void *data, uint16_t length)
+static uint8_t notify_func(struct bt_conn *conn,
+			   struct bt_gatt_subscribe_params *params,
+			   const void *data, uint16_t length)
 {
 	struct gatt_notification_ev *ev = (void *) ev_buf;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
-	uint8_t op;
 
-	op = subscribe_params.value == BT_GATT_CCC_NOTIFY ? GATT_CFG_NOTIFY :
-							    GATT_CFG_INDICATE;
-
-	if (!length) {
-		/* Subscribe procedure is complete, send response */
-		tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX,
-			   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
-		return BT_GATT_ITER_CONTINUE;
-	}
-
-	if (length > ARRAY_SIZE(ev_buf)) {
-		BTTESTER_DBG("Out of memory");
-		tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX,
-			   BTP_STATUS_FAILED);
+	if (!data) {
+		BTTESTER_DBG("Unsubscribed");
+		memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1557,32 +1538,32 @@ static uint8_t subscribe_func(struct bt_conn *conn, int err,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void discover_complete(struct bt_gatt_discover_params *params)
+static void discover_complete(struct bt_conn *conn,
+			      struct bt_gatt_discover_params *params)
 {
-	int err;
-	uint8_t op;
+	uint8_t op, status;
 
-	/* If default_conn == NULL, it means that chrc has not been found */
-	if (!default_conn) {
+	/* If no value handle it means that chrc has not been found */
+	if (!subscribe_params.value_handle) {
+		status = BTP_STATUS_FAILED;
 		goto fail;
 	}
 
-	err = bt_gatt_subscribe(default_conn, &subscribe_params);
-
-	/* Drop conn reference taken by discover_func */
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
-
-	/* Return if bt_gatt_subscribe succeeded */
-	if (!err) {
-		return;
+	if (bt_gatt_subscribe(conn, &subscribe_params) < 0) {
+		status = BTP_STATUS_FAILED;
+		goto fail;
 	}
+
+	status = BTP_STATUS_SUCCESS;
 fail:
 	op = subscribe_params.value == BT_GATT_CCC_NOTIFY ? GATT_CFG_NOTIFY :
 							    GATT_CFG_INDICATE;
-	subscribe_destroy(&subscribe_params);
-	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX,
-		   BTP_STATUS_FAILED);
+
+	if (status == BTP_STATUS_FAILED) {
+		memset(&subscribe_params, 0, sizeof(subscribe_params));
+	}
+
+	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
 }
 
 static uint8_t discover_func(struct bt_conn *conn,
@@ -1590,17 +1571,12 @@ static uint8_t discover_func(struct bt_conn *conn,
 			     struct bt_gatt_discover_params *params)
 {
 	if (!attr) {
-		discover_complete(params);
+		discover_complete(conn, params);
 		return BT_GATT_ITER_STOP;
 	}
 
 	/* Characteristic Value Handle is the next handle beyond declaration */
 	subscribe_params.value_handle = attr->handle + 1;
-
-	/* Save this conn to be used in discover_complete*/
-	if (!default_conn) {
-		default_conn = bt_conn_ref(conn);
-	}
 
 	/*
 	 * Continue characteristic discovery to get last characteristic
@@ -1613,7 +1589,7 @@ static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 			       uint16_t value)
 {
 	/* Fail if there is another subscription enabled */
-	if (subscribe_params.value_handle) {
+	if (subscribe_params.ccc_handle) {
 		BTTESTER_DBG("Another subscription already enabled");
 		return -EEXIST;
 	}
@@ -1626,8 +1602,7 @@ static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 
 	subscribe_params.ccc_handle = ccc_handle;
 	subscribe_params.value = value;
-	subscribe_params.func = subscribe_func;
-	subscribe_params.destroy = subscribe_destroy;
+	subscribe_params.notify = notify_func;
 
 	return bt_gatt_discover(conn, &discover_params);
 }
@@ -1644,6 +1619,8 @@ static int disable_subscription(struct bt_conn *conn, uint16_t ccc_handle)
 		return -EBUSY;
 	}
 
+	subscribe_params.ccc_handle = 0;
+
 	return 0;
 }
 
@@ -1652,35 +1629,43 @@ static void config_subscription(uint8_t *data, uint16_t len, uint16_t op)
 	const struct gatt_cfg_notify_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 	uint16_t ccc_handle = sys_le16_to_cpu(cmd->ccc_handle);
-	uint16_t value = op == GATT_CFG_NOTIFY ? BT_GATT_CCC_NOTIFY :
-						 BT_GATT_CCC_INDICATE;
+	uint8_t status;
 
 	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
 	if (!conn) {
-		goto fail;
+		tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX,
+			   BTP_STATUS_FAILED);
+		return;
 	}
 
 	if (cmd->enable) {
+		uint16_t value;
+
+		if (op == GATT_CFG_NOTIFY) {
+			value = BT_GATT_CCC_NOTIFY;
+		} else {
+			value = BT_GATT_CCC_INDICATE;
+		}
+
+		/* on success response will be sent from callback */
 		if (enable_subscription(conn, ccc_handle, value) == 0) {
 			bt_conn_unref(conn);
-			/* Response will be sent by subscribe_func */
 			return;
 		}
-		BTTESTER_DBG("Failed to enable subscription");
+
+		status = BTP_STATUS_FAILED;
 	} else {
-		if (disable_subscription(conn, ccc_handle) == 0) {
-			bt_conn_unref(conn);
-			tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX,
-				   BTP_STATUS_SUCCESS);
-			return;
+		if (disable_subscription(conn, ccc_handle) < 0) {
+			status = BTP_STATUS_FAILED;
+		} else {
+			status = BTP_STATUS_SUCCESS;
 		}
-		BTTESTER_DBG("Failed to disable subscription");
 	}
 
+	BTTESTER_DBG("Config subscription (op %u) status %u", op, status);
+
 	bt_conn_unref(conn);
-fail:
-	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX,
-		   BTP_STATUS_FAILED);
+	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
 }
 
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,

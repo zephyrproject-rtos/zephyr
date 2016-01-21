@@ -958,22 +958,17 @@ static void cmd_gatt_write_signed(int argc, char *argv[])
 
 static struct bt_gatt_subscribe_params subscribe_params;
 
-static void subscribe_destroy(void *user_data)
+static uint8_t notify_func(struct bt_conn *conn,
+			   struct bt_gatt_subscribe_params *params,
+			   const void *data, uint16_t length)
 {
-	struct bt_gatt_subscribe_params *params = user_data;
-
-	printk("Subscribe destroy\n");
-	params->value_handle = 0;
-}
-
-static uint8_t subscribe_func(struct bt_conn *conn, int err,
-			      const void *data, uint16_t length)
-{
-	if (!length) {
-		printk("Subscribe complete: err %u\n", err);
-	} else {
-		printk("Notification: data %p length %u\n", data, length);
+	if (!data) {
+		printk("Ubsubscribed\n");
+		params->value_handle = 0;
+		return BT_GATT_ITER_STOP;
 	}
+
+	printk("Notification: data %p length %u\n", data, length);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -1006,8 +1001,7 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 	subscribe_params.ccc_handle = strtoul(argv[1], NULL, 16);
 	subscribe_params.value_handle = strtoul(argv[2], NULL, 16);
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
-	subscribe_params.func = subscribe_func;
-	subscribe_params.destroy = subscribe_destroy;
+	subscribe_params.notify = notify_func;
 
 	if (argc > 3) {
 		subscribe_params.value = strtoul(argv[3], NULL, 16);
@@ -1016,9 +1010,10 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 	err = bt_gatt_subscribe(default_conn, &subscribe_params);
 	if (err) {
 		printk("Subscribe failed (err %d)\n", err);
-	} else {
-		printk("Subscribe pending\n");
+		return;
 	}
+
+	printk("Subscribed\n");
 }
 
 static void cmd_gatt_unsubscribe(int argc, char *argv[])

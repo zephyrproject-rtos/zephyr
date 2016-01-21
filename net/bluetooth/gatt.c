@@ -590,13 +590,15 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 			continue;
 		}
 
-		if (params->func(conn, 0, data, length) == BT_GATT_ITER_STOP) {
+		if (params->notify(conn, params, data, length) ==
+		    BT_GATT_ITER_STOP) {
 			bt_gatt_unsubscribe(conn, params);
 		}
 	}
 }
 
-static void gatt_subscription_remove(struct bt_gatt_subscribe_params *prev,
+static void gatt_subscription_remove(struct bt_conn *conn,
+				     struct bt_gatt_subscribe_params *prev,
 				     struct bt_gatt_subscribe_params *params)
 {
 	/* Remove subscription from the list*/
@@ -606,8 +608,7 @@ static void gatt_subscription_remove(struct bt_gatt_subscribe_params *prev,
 		prev->_next = params->_next;
 	}
 
-	if (params->destroy)
-		params->destroy(params);
+	params->notify(conn, params, NULL, 0);
 }
 
 static void remove_subscribtions(struct bt_conn *conn)
@@ -622,7 +623,7 @@ static void remove_subscribtions(struct bt_conn *conn)
 		}
 
 		/* Remove subscription */
-		gatt_subscription_remove(prev, params);
+		gatt_subscription_remove(conn, prev, params);
 	}
 }
 
@@ -1437,15 +1438,19 @@ static void att_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
 
 	BT_DBG("err 0x%02x", err);
 
-	params->func(conn, err, NULL, 0);
-
+	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
-		if (params->destroy)
-			params->destroy(params);
-		return;
-	}
+		struct bt_gatt_subscribe_params *cur, *prev;
 
-	gatt_subscription_add(conn, params);
+		for (cur = subscriptions, prev = NULL; cur;
+		     prev = cur, cur = cur->_next) {
+
+			if (cur == params) {
+				gatt_subscription_remove(conn, prev, params);
+				break;
+			}
+		}
+	}
 }
 
 static int gatt_write_ccc(struct bt_conn *conn, uint16_t handle, uint16_t value,
@@ -1480,7 +1485,8 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		return -ENOTCONN;
 	}
 
-	if (!params || !params->func || !params->value || !params->ccc_handle) {
+	if (!params || !params->notify ||
+	    !params->value || !params->ccc_handle) {
 		return -EINVAL;
 	}
 
@@ -1499,14 +1505,24 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		}
 	}
 
-	/* Skip write if already subcribed */
-	if (has_subscription) {
-		gatt_subscription_add(conn, params);
-		return 0;
+	/* Skip write if already subscribed */
+	if (!has_subscription) {
+		int err;
+
+		err = gatt_write_ccc(conn, params->ccc_handle, params->value,
+				     att_write_ccc_rsp, NULL);
+		if (err) {
+			return err;
+		}
 	}
 
-	return gatt_write_ccc(conn, params->ccc_handle, params->value,
-			      att_write_ccc_rsp, params);
+	/*
+	 * Add subscription before write complete as some implementation were
+	 * reported to send notification before reply to CCC write.
+	 */
+	gatt_subscription_add(conn, params);
+
+	return 0;
 }
 
 int bt_gatt_unsubscribe(struct bt_conn *conn,
@@ -1546,10 +1562,6 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 
 	if (!found) {
 		return -EINVAL;
-	}
-
-	if (params->destroy) {
-		params->destroy(params);
 	}
 
 	if (has_subscription) {
