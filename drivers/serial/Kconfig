@@ -96,4 +96,6 @@ source "drivers/serial/Kconfig.stellaris"
 
 source "drivers/serial/Kconfig.nsim"
 
+source "drivers/serial/Kconfig.atmel_sam3"
+
 endif
