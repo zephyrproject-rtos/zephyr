@@ -16,9 +16,7 @@
 # limitations under the License.
 #
 
-# These BLUETOOTH_* dependencies are redefined here since we can't use
-# net/bluetooth/KConfig (which depend on CONFIG_BLUETOOTH)
-#
+if !BLUETOOTH
 config BLUETOOTH_PERIPHERAL
 	bool
 	default n
@@ -42,7 +40,6 @@ config	BLUETOOTH_MAX_PAIRED
 config NBLE
 	bool "Support for custom Nordic Semiconductor BLE protocol"
 	default n
-	depends on !BLUETOOTH
 	select BLUETOOTH_PERIPHERAL
 	select BLUETOOTH_CENTRAL
 	select BLUETOOTH_GATT_CLIENT
@@ -52,3 +49,4 @@ config NBLE
 	  LE chips with a custom firmware. The API for this is a subset of
 	  the normal Bluetooth API (include/bluetooth/*.h). This driver can
 	  only be enabled if CONFIG_BLUETOOTH has not been enabled.
+endif
