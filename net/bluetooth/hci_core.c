@@ -897,6 +897,30 @@ static void conn_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+static void update_sec_level_br(struct bt_conn *conn)
+{
+	if (!conn->encrypt) {
+		conn->sec_level = BT_SECURITY_LOW;
+		return;
+	}
+
+	if (conn->keys && (conn->keys->keys & BT_KEYS_LINK_KEY)) {
+		conn->sec_level = BT_SECURITY_MEDIUM;
+		if (atomic_test_bit(&conn->keys->flags,
+				    BT_KEYS_AUTHENTICATED)) {
+			conn->sec_level = BT_SECURITY_HIGH;
+		}
+	} else {
+		BT_WARN("No BR/EDR link key found");
+		conn->sec_level = BT_SECURITY_MEDIUM;
+	}
+
+	if (conn->required_sec_level > conn->sec_level) {
+		BT_ERR("Failed to set required security level");
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+	}
+}
+
 static void conn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_complete *evt = (void *)buf->data;
@@ -920,6 +944,8 @@ static void conn_complete(struct net_buf *buf)
 	}
 
 	conn->handle = handle;
+	conn->encrypt = evt->encr_enabled;
+	update_sec_level_br(conn);
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 	bt_conn_unref(conn);
 }
