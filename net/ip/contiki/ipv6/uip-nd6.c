@@ -727,6 +727,7 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
 
   uip_len = UIP_IPH_LEN + UIP_ICMPH_LEN + UIP_ND6_RA_LEN;
   uip_nd6_opt_offset(buf) = UIP_ND6_RA_LEN;
+  net_buf_add(buf, UIP_ND6_RA_LEN);
 
 
 #if !UIP_CONF_ROUTER
@@ -744,6 +745,7 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
       uip_ipaddr_copy(&(UIP_ND6_OPT_PREFIX_BUF(buf)->prefix), &(uip_prefix(buf)->ipaddr));
       uip_nd6_opt_offset(buf) += UIP_ND6_OPT_PREFIX_INFO_LEN;
       uip_len(buf) += UIP_ND6_OPT_PREFIX_INFO_LEN;
+      net_buf_add(buf, UIP_ND6_OPT_PREFIX_INFO_LEN);
     }
   }
 #endif /* !UIP_CONF_ROUTER */
@@ -753,6 +755,7 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
 
   uip_len(buf) += UIP_ND6_OPT_LLAO_LEN;
   uip_nd6_opt_offset(buf) += UIP_ND6_OPT_LLAO_LEN;
+  net_buf_add(buf, UIP_ND6_OPT_LLAO_LEN);
 
   /* MTU */
   UIP_ND6_OPT_MTU_BUF(buf)->type = UIP_ND6_OPT_MTU;
@@ -763,6 +766,7 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
 
   uip_len(buf) += UIP_ND6_OPT_MTU_LEN;
   uip_nd6_opt_offset(buf) += UIP_ND6_OPT_MTU_LEN;
+  net_buf_add(buf, UIP_ND6_OPT_MTU_LEN);
 
 #if UIP_ND6_RA_RDNSS
   if(uip_nameserver_count() > 0) {
@@ -783,6 +787,7 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
     PRINTF("%d nameservers reported\n", i);
     uip_len(buf) += UIP_ND6_OPT_RDNSS_BUF(buf)->len << 3;
     uip_nd6_opt_offset(buf) += UIP_ND6_OPT_RDNSS_BUF(buf)->len << 3;
+    net_buf_add(buf, UIP_ND6_OPT_RDNSS_BUF(buf)->len << 3);
   }
 #endif /* UIP_ND6_RA_RDNSS */
 
