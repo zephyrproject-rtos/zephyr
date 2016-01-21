@@ -25,24 +25,24 @@ Follow these steps to install the SDK on your host system.
 
 #. Download the SDK self-extractable binary from:
 
-   https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.6-i686-setup.run
+   https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.7.1-i686-setup.run
 
     .. code-block:: console
 
        $ wget --user=USERNAME --ask-password \
-       https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.6-i686-setup.run
+       https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.7.1-i686-setup.run
 
 #. Run the installation binary, type:
 
     .. code-block:: console
 
-       $ chmod +x zephyr-sdk-0.6-i686-setup.run
+       $ chmod +x zephyr-sdk-0.7.1-i686-setup.run
 
-       $ sudo ./zephyr-sdk-0.6-i686-setup.run
+       $ sudo ./zephyr-sdk-0.7.1-i686-setup.run
 
 
 #. Follow the installation instructions on the screen. The
-   toolchain's default installation location is :file:`/opt/zephyr-sdk/0.6`.
+   toolchain's default installation location is :file:`/opt/zephyr-sdk/`.
 
     .. code-block:: console
 
@@ -50,15 +50,15 @@ Follow these steps to install the SDK on your host system.
 
        Uncompressing SDK for Zephyr  100%
 
-       Enter target directory for SDK (default: /opt/zephyr-sdk/0.6):
+       Enter target directory for SDK (default: /opt/zephyr-sdk/):
 
 #. Enter a new location or hit :kbd:`Return` to accept default.
 
     .. code-block:: console
 
-       Installing SDK to /opt/zephyr-sdk/0.6
+       Installing SDK to /opt/zephyr-sdk/
 
-       Creating directory /opt/zephyr-sdk/0.6
+       Creating directory /opt/zephyr-sdk/
 
        Success
 
@@ -81,7 +81,7 @@ Follow these steps to install the SDK on your host system.
 
        $ export ZEPHYR_GCC_VARIANT=zephyr
 
-       $ export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk/0.6
+       $ export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk/
 
 
 
