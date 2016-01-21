@@ -1161,14 +1161,19 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 
 	/*
 	 * Update keys with last pairing info for proper sec level update.
-	 * This is done only for LE transport, for BR/EDR keys are updated on
-	 * HCI 'Link Key Notification Event'
+	 * This is done only for LE transport. For BR/EDR transport keys are
+	 * updated on HCI 'Link Key Notification Event', therefore update here
+	 * only security level based on available keys and encryption state.
 	 */
 	if (conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_update_keys(conn);
+		update_sec_level(conn);
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	} else {
+		update_sec_level_br(conn);
+#endif /* CONFIG_BLUETOOTH_BREDR */
 	}
 
-	update_sec_level(conn);
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
 	bt_conn_unref(conn);
