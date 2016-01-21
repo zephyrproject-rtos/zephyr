@@ -59,6 +59,7 @@
 
 #include "contiki/ipv4/uip_arp.h"
 
+#include <net/ip_buf.h>
 #include <string.h>
 
 struct arp_hdr {

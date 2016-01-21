@@ -79,6 +79,7 @@
 #define DEBUG DEBUG_NONE
 #include "contiki/ip/uip-debug.h"
 
+#include <net/ip_buf.h>
 #include <string.h>
 /*---------------------------------------------------------------------------*/
 /* Variable definitions. */
