@@ -20,6 +20,12 @@ if SOC_FSL_FRDM_K64F
 config SOC
 	default fsl_frdm_k64f
 
+config SRAM_BASE_ADDRESS
+	default 0x20000000
+
+config FLASH_BASE_ADDRESS
+	default 0x00000000
+
 config NUM_IRQ_PRIO_BITS
 	int
 	default 4

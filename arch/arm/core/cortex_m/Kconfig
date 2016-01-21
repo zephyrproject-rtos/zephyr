@@ -106,7 +106,6 @@ config SRAM_SIZE
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
-	default 0x20000000
 	help
 	This option specifies the base address of the SRAM on the platform.  It is
 	normally set by the platform's defconfig file and the user should generally
@@ -121,7 +120,6 @@ config FLASH_SIZE
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
-	default 0x00000000
 	help
 	This option specifies the base address of the flash on the platform.  It is
 	normally set by the platform's defconfig file and the user should generally
