@@ -143,10 +143,10 @@ static void completed(struct device *dev, int error)
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
-	if (!((spi->tx_buf == spi->tx_buf_end && !spi->rx_buf) ||
-	      (spi->rx_buf == spi->rx_buf_end && !spi->tx_buf) ||
-	      (spi->tx_buf == spi->tx_buf_end &&
-				spi->rx_buf == spi->rx_buf_end) ||
+	if (!((spi->tx_buf && !spi->tx_buf_len && !spi->rx_buf) ||
+	      (spi->rx_buf && !spi->rx_buf_len && !spi->tx_buf) ||
+	      (spi->tx_buf && !spi->tx_buf_len &&
+				spi->rx_buf && !spi->rx_buf_len) ||
 	      error)) {
 		return;
 	}
@@ -416,6 +416,7 @@ static struct spi_driver_api dw_spi_api = {
 int spi_dw_init(struct device *dev)
 {
 	struct spi_dw_config *info = dev->config->config_info;
+	struct spi_dw_data *spi = dev->driver_data;
 
 	_clock_config(dev);
 
