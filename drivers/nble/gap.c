@@ -24,6 +24,8 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/log.h>
 
+#include <net/buf.h>
+
 #include "gap_internal.h"
 #include "uart.h"
 #include "rpc.h"
@@ -31,40 +33,6 @@
 #define NBLE_SWDIO_PIN	6
 #define NBLE_RESET_PIN	NBLE_SWDIO_PIN
 #define NBLE_BTWAKE_PIN 5
-
-#define NBLE_CHANNEL	0
-
-static void *channel;
-
-/**
- * Function handling the events from the UART IPC (irq).
- *
- * @param channel Channel on which the event applies
- * @param request IPC_MSG_TYPE_MESSAGE when a new message was received,
- * IPC_MSG_TYPE_FREE when the previous message was sent and can be freed.
- * @param len Length of the data
- * @param p_data Pointer to the data
- * @return 0
- */
-static int recv_cb(int channel, int request, int len, void *p_data)
-{
-	BT_DBG("channel %d request %d len %d", channel, request, len);
-
-	switch (request) {
-	case IPC_MSG_TYPE_MESSAGE:
-		rpc_deserialize(p_data, len);
-		break;
-	case IPC_MSG_TYPE_FREE:
-		/* TODO: Try to send another message immediately */
-		break;
-	default:
-		/* Free the message */
-		BT_ERR("Unsupported RPC request");
-		break;
-	}
-
-	return 0;
-}
 
 static bt_ready_cb_t bt_ready_cb;
 
@@ -141,10 +109,6 @@ int bt_enable(bt_ready_cb_t cb)
 		BT_ERR("ISR context is not supported");
 		return -EINVAL;
 	}
-
-	/* Open the UART channel for RPC while Nordic is in reset */
-	channel = ipc_uart_channel_open(NBLE_CHANNEL, recv_cb);
-	BT_DBG("channel %p", channel);
 
 	ret = nble_open();
 	if (ret) {

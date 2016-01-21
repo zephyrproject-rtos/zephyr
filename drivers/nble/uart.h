@@ -52,8 +52,6 @@ struct ipc_uart_channels {
 	int (*cb)(int chan, int request, int len, void *data);
 };
 
-void ipc_uart_isr(void);
-void ipc_uart_ns16550_disable(struct device *dev);
 int nble_open(void);
 
 /**

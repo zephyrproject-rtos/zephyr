@@ -28,6 +28,7 @@
 #include <bluetooth/log.h>
 
 #include "uart.h"
+#include "rpc.h"
 
 /* TODO: check size */
 #define NBLE_IPC_COUNT	1
@@ -39,53 +40,27 @@ static NET_BUF_POOL(rx_pool, NBLE_IPC_COUNT, NBLE_BUF_SIZE, &rx, NULL, 0);
 static struct nano_fifo tx;
 static NET_BUF_POOL(tx_pool, NBLE_IPC_COUNT, NBLE_BUF_SIZE, &tx, NULL, 0);
 
-enum {
-	STATUS_TX_IDLE = 0,
-	STATUS_TX_BUSY,
-	STATUS_TX_DONE,
-};
-
-enum {
-	STATUS_RX_IDLE = 0,
-	STATUS_RX_HDR,
-	STATUS_RX_DATA
-};
-
-/**
- * Describes the uart IPC to handle
- */
-struct ipc_uart_info {
-	int uart_num;		/* UART device to use */
-	uint32_t irq_vector;	/* IRQ number */
-	uint32_t irq_mask;	/* IRQ mask */
-
-	/* callback to be called to set wake state when TX is starting
-	 * or ending
-	 */
-	void (*tx_cb)(bool wake_state, void*);
-	void *tx_cb_param;	/* tx_cb function parameter */
-};
-
-struct ipc_uart {
-	uint8_t *tx_data;
-	uint8_t *rx_ptr;
-	struct ipc_uart_channels channels[IPC_UART_MAX_CHANNEL];
-	struct ipc_uart_header tx_hdr;
-	struct ipc_uart_header rx_hdr;
-	uint16_t send_counter;
-	uint16_t rx_size;
-	uint8_t tx_state;
-	uint8_t rx_state;
-	uint8_t uart_enabled;
-	/* protect against multiple wakelock and wake assert calls */
-	uint8_t tx_wakelock_acquired;
-	/* TODO: remove once IRQ will take a parameter */
-	struct device *device;
-};
-
-static struct ipc_uart ipc;
+static BT_STACK_NOINIT(rx_fiber_stack, 256);
 
 static struct device *nble_dev;
+
+static struct nano_fifo rx_queue;
+
+static void rx_fiber(void)
+{
+	BT_DBG("Started");
+
+	while (true) {
+		struct net_buf *buf;
+
+		buf = nano_fifo_get(&rx_queue, TICKS_UNLIMITED);
+		BT_DBG("Got buf %p", buf);
+
+		rpc_deserialize(buf->data, buf->len);
+
+		net_buf_unref(buf);
+	}
+}
 
 uint8_t *rpc_alloc_cb(uint16_t length)
 {
@@ -135,22 +110,6 @@ void rpc_transmit_cb(uint8_t *p_buf, uint16_t length)
 	poll_out(buf->data, buf->len);
 
 	net_buf_unref(buf);
-}
-
-static void uart_frame_recv(uint16_t len, uint8_t *p_data)
-{
-	BT_DBG("rcv: len: %d data len %d src %d channel %d",
-	       ipc.rx_hdr.len, len, ipc.rx_hdr.src_cpu_id, ipc.rx_hdr.channel);
-
-	if ((ipc.rx_hdr.channel < IPC_UART_MAX_CHANNEL) &&
-	    (ipc.channels[ipc.rx_hdr.channel].cb != NULL)) {
-		ipc.channels[ipc.rx_hdr.channel].cb(ipc.rx_hdr.channel,
-						    IPC_MSG_TYPE_MESSAGE,
-						    len,
-						    p_data);
-	} else {
-		BT_ERR("uart_ipc: bad channel %d", ipc.rx_hdr.channel);
-	}
 }
 
 static int nble_read(struct device *uart, uint8_t *buf,
@@ -265,83 +224,19 @@ void bt_uart_isr(void *unused)
 			BT_DBG("full packet received");
 
 			/* Pass buffer to the stack */
-			uart_frame_recv(buf->len, buf->data);
-			net_buf_unref(buf);
-			buf = NULL;
+			nano_fifo_put(&rx_queue, buf);
 		}
 	}
-}
-
-void *ipc_uart_channel_open(int channel_id,
-			    int (*cb)(int, int, int, void *))
-{
-	struct ipc_uart_channels *chan;
-
-	if (channel_id > (IPC_UART_MAX_CHANNEL - 1))
-		return NULL;
-
-	chan = &ipc.channels[channel_id];
-
-	if (chan->state != IPC_CHANNEL_STATE_CLOSED)
-		return NULL;
-
-	chan->state = IPC_CHANNEL_STATE_OPEN;
-	chan->cb = cb;
-
-	ipc.uart_enabled = 1;
-
-	return chan;
-}
-
-void ipc_uart_close_channel(int channel_id)
-{
-	ipc.channels[channel_id].state = IPC_CHANNEL_STATE_CLOSED;
-	ipc.channels[channel_id].cb = NULL;
-	ipc.channels[channel_id].index = channel_id;
-
-	ipc.uart_enabled = 0;
-}
-
-void ipc_uart_ns16550_set_tx_cb(struct device *dev, void (*cb)(bool, void*),
-				void *param)
-{
-	struct ipc_uart_info *info = dev->driver_data;
-
-	info->tx_cb = cb;
-	info->tx_cb_param = param;
-}
-
-static int ipc_uart_ns16550_init(struct device *dev)
-{
-	struct ipc_uart_info *info = dev->driver_data;
-	int i;
-
-	/* Fail init if no info defined */
-	if (!info) {
-		BT_ERR("No driver data found");
-		return -1;
-	}
-
-	for (i = 0; i < IPC_UART_MAX_CHANNEL; i++) {
-		ipc_uart_close_channel(i);
-	}
-
-	/* Set dev used in irq handler */
-	ipc.device = dev;
-
-	ipc.uart_enabled = 0;
-
-	/* Initialize the reception pointer */
-	ipc.rx_size = sizeof(ipc.rx_hdr);
-	ipc.rx_ptr = (uint8_t *)&ipc.rx_hdr;
-	ipc.rx_state = STATUS_RX_IDLE;
-
-	return 0;
 }
 
 int nble_open(void)
 {
 	BT_DBG("");
+
+	/* Initialize receive queue and start rx_fiber */
+	nano_fifo_init(&rx_queue);
+	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
+		    (nano_fiber_entry_t)rx_fiber, 0, 0, 7, 0);
 
 	uart_irq_rx_disable(nble_dev);
 	uart_irq_tx_disable(nble_dev);
@@ -362,8 +257,6 @@ int nble_open(void)
 	return 0;
 }
 
-struct ipc_uart_info info;
-
 static int _bt_nble_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
@@ -375,10 +268,6 @@ static int _bt_nble_init(struct device *unused)
 
 	net_buf_pool_init(rx_pool);
 	net_buf_pool_init(tx_pool);
-
-	nble_dev->driver_data = &info;
-	ipc_uart_ns16550_init(nble_dev);
-	/* TODO: Register nble driver */
 
 	return DEV_OK;
 }
