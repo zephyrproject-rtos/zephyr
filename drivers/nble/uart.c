@@ -36,6 +36,8 @@
 static struct nano_fifo rx;
 static NET_BUF_POOL(rx_pool, NBLE_IPC_COUNT, NBLE_BUF_SIZE, &rx, NULL, 0);
 
+static struct nano_fifo tx;
+static NET_BUF_POOL(tx_pool, NBLE_IPC_COUNT, NBLE_BUF_SIZE, &tx, NULL, 0);
 
 enum {
 	STATUS_TX_IDLE = 0,
@@ -84,6 +86,56 @@ struct ipc_uart {
 static struct ipc_uart ipc;
 
 static struct device *nble_dev;
+
+uint8_t *rpc_alloc_cb(uint16_t length)
+{
+	struct net_buf *buf;
+
+	BT_DBG("length %u", length);
+
+	buf = net_buf_get(&tx, 0);
+	if (!buf) {
+		BT_ERR("Unable to get tx buffer");
+		return NULL;
+	}
+
+	if (length > net_buf_tailroom(buf)) {
+		BT_ERR("Too big tx buffer requested");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	return buf->__buf;
+}
+
+static void poll_out(const void *buf, size_t length)
+{
+	const uint8_t *ptr = buf;
+
+	while (length--) {
+		uart_poll_out(nble_dev, *ptr++);
+	}
+}
+
+void rpc_transmit_cb(uint8_t *p_buf, uint16_t length)
+{
+	struct net_buf *buf = CONTAINER_OF(p_buf, struct net_buf, __buf);
+	struct ipc_uart_header hdr;
+
+	BT_DBG("p_buf %p length %u", p_buf, length);
+
+	hdr.len = length;
+	hdr.channel = 0;
+	hdr.src_cpu_id = 0;
+
+	/* Send header */
+	poll_out(&hdr, sizeof(hdr));
+
+	/* Send data */
+	poll_out(buf->data, buf->len);
+
+	net_buf_unref(buf);
+}
 
 static void uart_frame_recv(uint16_t len, uint8_t *p_data)
 {
@@ -250,46 +302,6 @@ void ipc_uart_close_channel(int channel_id)
 	ipc.uart_enabled = 0;
 }
 
-static void uart_poll_bytes(uint8_t *buf, size_t len)
-{
-	while (len--) {
-		uart_poll_out(nble_dev, *buf++);
-	}
-}
-
-int ipc_uart_ns16550_send_pdu(struct device *dev, void *handle, int len,
-			      void *p_data)
-{
-	struct ipc_uart_channels *chan = (struct ipc_uart_channels *)handle;
-	struct ipc_uart_header hdr;
-
-	if (ipc.tx_state == STATUS_TX_BUSY) {
-		return IPC_UART_TX_BUSY;
-	}
-
-	/* It is eventually possible to be in DONE state
-	 * (sending last bytes of previous message),
-	 * so we move immediately to BUSY and configure the next frame
-	 */
-
-	/* FIXME: needed? */
-	ipc.tx_state = STATUS_TX_BUSY;
-
-	/* Using polling for transmit */
-
-	/* Send header */
-	hdr.len = len;
-	hdr.channel = chan->index;
-	hdr.src_cpu_id = 0;
-
-	uart_poll_bytes((uint8_t *)&hdr, sizeof(hdr));
-
-	/* Send data */
-	uart_poll_bytes(p_data, len);
-
-	return IPC_UART_ERROR_OK;
-}
-
 void ipc_uart_ns16550_set_tx_cb(struct device *dev, void (*cb)(bool, void*),
 				void *param)
 {
@@ -362,6 +374,7 @@ static int _bt_nble_init(struct device *unused)
 	}
 
 	net_buf_pool_init(rx_pool);
+	net_buf_pool_init(tx_pool);
 
 	nble_dev->driver_data = &info;
 	ipc_uart_ns16550_init(nble_dev);
