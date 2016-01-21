@@ -1,0 +1,7 @@
+
+if BOARD_ARDUINO_DUE
+
+config BOARD
+	default arduino_due
+
+endif # BOARD_ARDUINO_DUE

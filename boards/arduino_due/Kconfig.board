@@ -1,0 +1,5 @@
+
+config BOARD_ARDUINO_DUE
+	bool "Arduino Due Board"
+	select SOC_ATMEL_SAM3
+	depends on ARM
