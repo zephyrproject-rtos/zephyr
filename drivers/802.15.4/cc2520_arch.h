@@ -32,19 +32,20 @@
 
 #include "cc2520.h"
 
+#if CONFIG_TI_CC2520_DEBUG
+
+#define DRIVER_STR "TI cc2520 driver"
+
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
-#define CC2520_PRINT          printf
+#define DBG	printf
 #else
 #include <misc/printk.h>
-#define CC2520_PRINT          printk
+#define DBG	printk
 #endif
-
-#if CONFIG_TI_CC2520_DEBUG
-#define CC2520_PRINTF(...) CC2520_PRINT(__VA_ARGS__)
 #else
-#define CC2520_PRINTF(...)
-#endif
+#define DBG(...)
+#endif /* CONFIG_TI_CC2520_DEBUG */
 
 #ifndef CLOCK_CYCLE_LT
 #define CLOCK_CYCLE_LT(a, b)	((signed)((a)-(b)) < 0)
@@ -69,6 +70,7 @@ struct cc2520_config {
 
 extern struct cc2520_gpio_config cc2520_gpio_config[CC2520_GPIO_IDX_LAST_ENTRY];
 extern struct cc2520_config cc2520_config;
+extern struct device *cc2520_sgl_dev;
 
 typedef void (*cc2520_gpio_int_handler_t)(struct device *port, uint32_t pin);
 
@@ -78,26 +80,40 @@ struct cc2520_gpio_config **cc2520_gpio_configure(void);
 #define CC2520_GPIO(p)							\
 	(((struct device *)&						\
 	  ((struct cc2520_config *)					\
-	   device_get_binding(CONFIG_CC2520_DRV_NAME)->			\
+	   cc2520_sgl_dev->						\
 	   config->config_info)->gpios[CC2520_GPIO_IDX_ ## p]->gpio))
 
 #define CC2520_SPI() \
 	(((struct cc2520_config *)			\
-	  device_get_binding(CONFIG_CC2520_DRV_NAME)->	\
-	  config->config_info)->spi)
+	  cc2520_sgl_dev->config->config_info)->spi)
+
+static inline bool spi_transfer(struct device *dev,
+				uint8_t *data_out, uint8_t *data_in, int len)
+{
+	uint32_t out_len, in_len;
+	int ret;
+
+	out_len = data_out ? len : 0;
+	in_len = data_in ? len : 0;
+
+	ret = spi_transceive(dev, data_out, out_len, data_in, in_len);
+
+	return (ret == DEV_OK);
+}
 
 static inline bool cc2520_read_fifo_buf(uint8_t *buffer, uint32_t count)
 {
 	uint8_t data[128 + 1] = { 0xff };
-	int ret;
+	bool ret;
 
 	data[0] = CC2520_INS_RXBUF;
 
-	ret = spi_transceive(CC2520_SPI(), data, sizeof(data),
-			     data, sizeof(data));
-	memcpy(buffer, data + 1, count);
+	ret = spi_transfer(CC2520_SPI(), data, data, count + 1);
+	if (ret) {
+		memcpy(buffer, data + 1, count);
+	}
 
-	return (!ret);
+	return ret;
 }
 
 static inline bool cc2520_write_fifo_buf(uint8_t *buffer, int count)
@@ -105,7 +121,7 @@ static inline bool cc2520_write_fifo_buf(uint8_t *buffer, int count)
 	uint8_t data[128 + 1];
 
 	if (count > (sizeof(data) - 1)) {
-		CC2520_PRINTF("%s: too long data %d, max is %d\n", __func__,
+		DBG("%s: too long data %d, max is %d\n", __func__,
 		       count, sizeof(data) - 1);
 		return false;
 	}
@@ -113,33 +129,33 @@ static inline bool cc2520_write_fifo_buf(uint8_t *buffer, int count)
 	data[0] = CC2520_INS_TXBUF;
 	memcpy(&data[1], buffer, count);
 
-	return (!spi_write(CC2520_SPI(), data, count + 1));
+	return spi_transfer(CC2520_SPI(), data, NULL, count + 1);
 }
 
 static inline bool cc2520_write_reg(uint16_t addr, uint16_t value)
 {
 	uint8_t data[3];
 
-	data[0] = CC2520_INS_MEMWR | ((addr >> 8) & 0x0f);
-	data[1] = addr;
-	data[2] = value;
+	data[0] = (CC2520_INS_MEMWR | (addr >> 8)) & 0xff;
+	data[1] = addr & 0xff;
+	data[2] = value & 0xff;
 
-	return (!spi_write(CC2520_SPI(), data, 3));
+	return spi_transfer(CC2520_SPI(), data, NULL, 3);
 }
 
 static inline bool cc2520_read_reg(uint16_t addr, uint16_t *value)
 {
 	uint8_t data[3];
-	int ret;
+	bool ret;
 
-	data[0] = CC2520_INS_MEMRD | ((addr >> 8) & 0x0f);
-	data[1] = addr;
+	data[0] = (CC2520_INS_MEMRD | (addr >> 8)) & 0xff;
+	data[1] = addr & 0xff;
 	data[2] = 0;
 
-	ret = spi_transceive(CC2520_SPI(), data, 3, data, 3);
+	ret = spi_transfer(CC2520_SPI(), data, data, 3);
 	*value = data[2];
 
-	return (!ret);
+	return ret;
 }
 
 static inline bool cc2520_write_ram(uint8_t *buffer, int addr, int count)
@@ -147,16 +163,16 @@ static inline bool cc2520_write_ram(uint8_t *buffer, int addr, int count)
 	uint8_t data[128 + 1 + 1];
 
 	if (count > (sizeof(data) - 2)) {
-		CC2520_PRINTF("%s: too long data %d, max is %d\n",
+		DBG("%s: too long data %d, max is %d\n",
 			      __func__, count, sizeof(data) - 2);
 		return false;
 	}
 
-	data[0] = CC2520_INS_MEMWR | (addr >> 8);
-	data[1] = addr;
+	data[0] = (CC2520_INS_MEMWR | (addr >> 8)) & 0xff;
+	data[1] = addr & 0xff;
 	memcpy(&data[2], buffer, count);
 
-	return (!spi_write(CC2520_SPI(), data, count + 2));
+	return spi_transfer(CC2520_SPI(), data, NULL, count + 2);
 }
 
 static inline bool cc2520_read_ram(uint8_t *buffer, int addr, uint32_t count)
@@ -164,11 +180,10 @@ static inline bool cc2520_read_ram(uint8_t *buffer, int addr, uint32_t count)
 	uint8_t data[128 + 1 + 1] = { 0 };
 	int ret;
 
-	data[0] = CC2520_INS_MEMRD | (addr >> 8);
-	data[1] = addr;
+	data[0] = (CC2520_INS_MEMRD | (addr >> 8)) & 0xff;
+	data[1] = addr & 0xff;
 
-	ret = spi_transceive(CC2520_SPI(), data, sizeof(data),
-			     data, sizeof(data));
+	ret = spi_transfer(CC2520_SPI(), data, data, count + 2);
 	memcpy(buffer, data + 2, count);
 
 	return (!ret);
@@ -176,20 +191,14 @@ static inline bool cc2520_read_ram(uint8_t *buffer, int addr, uint32_t count)
 
 static inline bool cc2520_get_status(uint8_t *status)
 {
-	uint8_t data[1];
+	uint8_t data = CC2520_INS_SNOP;
 
-	data[0] = CC2520_INS_SNOP;
-
-	return (!spi_transceive(CC2520_SPI(), data, 1, status, 1));
+	return spi_transfer(CC2520_SPI(), &data, status, 1);
 }
 
 static inline bool cc2520_strobe(uint8_t strobe)
 {
-	uint8_t data[1];
-
-	data[0] = strobe;
-
-	return (!spi_write(CC2520_SPI(), data, 1));
+	return spi_transfer(CC2520_SPI(), &strobe, NULL, 1);
 }
 
 static inline bool cc2520_strobe_plus_nop(uint8_t strobe)
@@ -199,7 +208,7 @@ static inline bool cc2520_strobe_plus_nop(uint8_t strobe)
 	data[0] = strobe;
 	data[1] = CC2520_INS_SNOP;
 
-	return (!spi_write(CC2520_SPI(), data, 2));
+	return spi_transfer(CC2520_SPI(), data, NULL, 2);
 }
 
 static inline int cc2520_get_fifop(void)
@@ -257,7 +266,7 @@ static inline void cc2520_set_reset(int enable)
 
 static inline void cc2520_enable_fifop_int(int enable)
 {
-	CC2520_PRINTF("%s FIFOP\n", enable ? "enable" : "disable");
+	DBG("%s FIFOP\n", enable ? "enable" : "disable");
 
 	if (enable) {
 		gpio_pin_enable_callback(CC2520_GPIO(FIFOP),

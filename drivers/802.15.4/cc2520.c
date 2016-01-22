@@ -71,41 +71,34 @@
 #define FOOTER1_CRC_OK      0x80
 #define FOOTER1_CORRELATION 0x7f
 
-#define BV(bit) (1L << (bit))
-
 #define WAIT_100ms 100
 #define WAIT_1000ms 1000
 #define WAIT_200ms 200
 #define WAIT_10ms 10
 #define WAIT_1ms 1
 
-#ifdef CONFIG_TI_CC2520_DEBUG
-#define DEBUG DEBUG_FULL
-
-/* set this if you want to debug the driver locking */
-#define CC2520_MUTEX_DEBUG 0
-#else
-#define DEBUG DEBUG_NONE
-#define CC2520_MUTEX_DEBUG 0
-#endif
-#include "contiki/ip/uip-debug.h"
-
 struct cc2520_gpio_config cc2520_gpio_config[CC2520_GPIO_IDX_LAST_ENTRY];
 struct cc2520_config cc2520_config;
+
+/* CC2520 is currently a singleton instance
+ * This would be needed no get fixed. The main
+ * issue is the gpio cb handler: it would need to
+ * get access to the relevant instance of cc2520 driver
+ */
+struct device *cc2520_sgl_dev;
 
 /* static int cc2520_authority_level_of_sender; */
 static int cc2520_packets_seen, cc2520_packets_read;
 
-static struct nano_sem lock;
-static uint8_t lock_on, lock_off, locked;
 static bool init_ok;
 
 /* max time is in millisecs */
 #define BUSYWAIT_UNTIL(cond, max_time)					\
 	do {								\
 		uint32_t t0 = clock_get_cycle();			\
+		uint32_t limit = t0 + CLOCK_MSEC_TO_CYCLES(max_time);	\
 		while (!(cond) && CLOCK_CYCLE_LT(clock_get_cycle(),	\
-				t0 + CLOCK_MSEC_TO_CYCLES(max_time)));	\
+							limit));	\
 	} while (0)
 
 #define CC2520_STROBE_PLUS_NOP(strobe) cc2520_strobe_plus_nop(strobe)
@@ -144,7 +137,7 @@ static uint8_t getreg(uint16_t regname)
 	uint16_t reg = 0;
 
 	if (!cc2520_read_reg(regname, &reg)) {
-		PRINTF("%s: cannot read reg %d value\n", __func__,
+		DBG("%s: cannot read reg %d value\n", __func__,
 		       regname);
 	}
 	return reg;
@@ -153,42 +146,42 @@ static uint8_t getreg(uint16_t regname)
 static void setreg(uint16_t regname, uint8_t value)
 {
 	if (!cc2520_write_reg(regname, value)) {
-		PRINTF("%s: cannot set reg %d to %d\n", __func__,
+		DBG("%s: cannot set reg %d to %d\n", __func__,
 		       regname, value);
 	}
 }
 
-#ifdef DEBUG
+#ifdef CONFIG_TI_CC2520_DEBUG
 static void print_radio_status(void)
 {
 	uint8_t value = getreg(CC2520_FSMSTAT1);
 
-	PRINTF("Radio status FSMSTAT1: ");
-	if (value & BV(CC2520_STATUS_FIFO)) {
-		PRINTF("FIFO ");
+	DBG("Radio status FSMSTAT1: ");
+	if (value & BIT(CC2520_STATUS_FIFO)) {
+		DBG("FIFO ");
 	}
-	if (value & BV(CC2520_STATUS_FIFOP)) {
-		PRINTF("FIFOP ");
+	if (value & BIT(CC2520_STATUS_FIFOP)) {
+		DBG("FIFOP ");
 	}
-	if (value & BV(CC2520_STATUS_SFD)) {
-		PRINTF("SFD ");
+	if (value & BIT(CC2520_STATUS_SFD)) {
+		DBG("SFD ");
 	}
-	if (value & BV(CC2520_STATUS_CCA)) {
-		PRINTF("CCA ");
+	if (value & BIT(CC2520_STATUS_CCA)) {
+		DBG("CCA ");
 	}
-	if (value & BV(CC2520_STATUS_SAMPLED_CCA)) {
-		PRINTF("SAMPLED_CCA ");
+	if (value & BIT(CC2520_STATUS_SAMPLED_CCA)) {
+		DBG("SAMPLED_CCA ");
 	}
-	if (value & BV(CC2520_STATUS_LOCK_STATUS)) {
-		PRINTF("LOCK_STATUS ");
+	if (value & BIT(CC2520_STATUS_LOCK_STATUS)) {
+		DBG("LOCK_STATUS ");
 	}
-	if (value & BV(CC2520_STATUS_TX_ACTIVE)) {
-		PRINTF("TX_ACTIVE ");
+	if (value & BIT(CC2520_STATUS_TX_ACTIVE)) {
+		DBG("TX_ACTIVE ");
 	}
-	if (value & BV(CC2520_STATUS_RX_ACTIVE)) {
-		PRINTF("RX_ACTIVE ");
+	if (value & BIT(CC2520_STATUS_RX_ACTIVE)) {
+		DBG("RX_ACTIVE ");
 	}
-	PRINTF("\n");
+	DBG("\n");
 }
 #else
 #define print_radio_status()
@@ -199,7 +192,7 @@ static inline unsigned int status(void)
 	uint8_t status = 0x00;
 
 	if (!cc2520_get_status(&status)) {
-		PRINTF("Reading status 0x%x failed\n", status);
+		DBG("Reading status 0x%x failed\n", status);
 		return 0x00;
 	}
 
@@ -233,7 +226,11 @@ static void on(void)
 	CC2520_ENABLE_FIFOP_INT();
 	cc2520_strobe(CC2520_INS_SRXON);
 
-	BUSYWAIT_UNTIL(status() & (BV(CC2520_XOSC16M_STABLE)), WAIT_10ms);
+	BUSYWAIT_UNTIL(status() & (BIT(CC2520_XOSC16M_STABLE)), WAIT_10ms);
+	if (!(status() & BIT(CC2520_XOSC16M_STABLE))) {
+		DBG("Clock is not stabilized, radio is not on\n");
+		return;
+	}
 
 	print_radio_status();
 
@@ -242,11 +239,11 @@ static void on(void)
 
 static void off(void)
 {
-	PRINTF("cc2520 radio off\n");
+	DBG("cc2520 radio off\n");
 	receive_on = 0;
 
 	/* Wait for transmission to end before turning radio off. */
-	BUSYWAIT_UNTIL(!(status() & BV(CC2520_TX_ACTIVE)), WAIT_100ms);
+	BUSYWAIT_UNTIL(!(status() & BIT(CC2520_TX_ACTIVE)), WAIT_100ms);
 
 	cc2520_strobe(CC2520_INS_SRFOFF);
 	CC2520_DISABLE_FIFOP_INT();
@@ -256,50 +253,6 @@ static void off(void)
 	}
 }
 
-#if CC2520_MUTEX_DEBUG
-#define _get_lock() _get_lock_debug(__func__, __LINE__)
-static void _get_lock_debug(const char *caller, int line)
-#define GET_LOCK() _get_lock_debug(__func__, __LINE__)
-#else
-static void _get_lock(void)
-#define GET_LOCK() _get_lock()
-#endif
-{
-	nano_sem_take(&lock, TICKS_UNLIMITED);
-	locked++;
-
-#if CC2520_MUTEX_DEBUG
-	PRINTF("%s():%d: %p count %d\n", caller, line, &lock, locked);
-#endif
-}
-
-#if CC2520_MUTEX_DEBUG
-#define _relase_lock() _release_lock_debug(__func__, __LINE__)
-static void _release_lock_debug(const char *caller, int line)
-#define RELEASE_LOCK() _release_lock_debug(__func__, __LINE__)
-#else
-static void _release_lock(void)
-#define RELEASE_LOCK() _release_lock()
-#endif
-{
-	if (lock_on) {
-		on();
-		lock_on = 0;
-	}
-	if (lock_off) {
-		off();
-		lock_off = 0;
-	}
-
-	locked--;
-
-#if CC2520_MUTEX_DEBUG
-	PRINTF("%s():%d: %p count %d\n", caller, line, &lock, locked);
-#endif
-
-	nano_sem_give(&lock);
-}
-
 static int cc2520_off(void)
 {
 	/* Don't do anything if we are already turned off. */
@@ -307,55 +260,31 @@ static int cc2520_off(void)
 		return 1;
 	}
 
-	/* If we are called when the driver is locked, we indicate that the
-	 * radio should be turned off when the lock is unlocked.
-	 */
-	if (locked) {
-		PRINTF("cc2520: Off when locked (%d)\n", locked);
-		lock_off = 1;
-		return 1;
-	}
+	off();
 
-	GET_LOCK();
-	/* If we are currently receiving a packet (indicated by SFD == 1),
-	 * we don't actually switch the radio off now, but signal that the
-	 * driver should switch off the radio once the packet has been
-	 * received and processed, by setting the 'lock_off' variable.
-	 */
-	if (status() & BV(CC2520_TX_ACTIVE)) {
-		lock_off = 1;
-	} else {
-		off();
-	}
-	RELEASE_LOCK();
 	return 1;
 }
 
 static int cc2520_on(void)
 {
 	if (!init_ok) {
-		PRINTF("cc2520 not initialized, radio will stay off\n");
+		DBG("cc2520 not initialized, radio will stay off\n");
 		return 0;
 	}
 
 	if (receive_on) {
 		return 1;
 	}
-	if (locked) {
-		lock_on = 1;
-		return 1;
-	}
 
-	GET_LOCK();
-	PRINTF("turning radio on\n");
+	DBG("turning radio on\n");
 	on();
+
 	if (CC2520_FIFOP_IS_1) {
-		PRINTF("radio is now on\n");
+		DBG("radio is now on\n");
 	} else {
-		PRINTF("ERROR: FIFOP is not set, radio is not on\n");
+		DBG("ERROR: FIFOP is not set, radio is not on\n");
 		receive_on = 0;
 	}
-	RELEASE_LOCK();
 
 	return 1;
 }
@@ -375,13 +304,13 @@ static radio_result_t cc2520_set_rx_mode(radio_value_t value)
 	/*
 	 * Writing RAM requires crystal oscillator to be stable.
 	 */
-	BUSYWAIT_UNTIL(status() & (BV(CC2520_XOSC16M_STABLE)), WAIT_100ms);
-	if (!(status() & (BV(CC2520_XOSC16M_STABLE)))) {
-		PRINTF("cc2520_set_rx_mode: CC2520_XOSC16M_STABLE not set\n");
+	BUSYWAIT_UNTIL(status() & (BIT(CC2520_XOSC16M_STABLE)), WAIT_100ms);
+	if (!(status() & (BIT(CC2520_XOSC16M_STABLE)))) {
+		DBG("cc2520_set_rx_mode: CC2520_XOSC16M_STABLE not set\n");
 	}
 
 	/* Wait for any transmission to end. */
-	BUSYWAIT_UNTIL(!(status() & BV(CC2520_TX_ACTIVE)), WAIT_100ms);
+	BUSYWAIT_UNTIL(!(status() & BIT(CC2520_TX_ACTIVE)), WAIT_100ms);
 
 	if ((value & RADIO_RX_MODE_AUTOACK) !=
 	    (old_value & RADIO_RX_MODE_AUTOACK)) {
@@ -408,8 +337,8 @@ static radio_result_t cc2520_set_rx_mode(radio_value_t value)
 	if (receive_on) {
 		cc2520_strobe(CC2520_INS_SRXON);
 
-		BUSYWAIT_UNTIL((status() & BV(CC2520_RSSI_VALID)), WAIT_100ms);
-		if (!(status() & BV(CC2520_RSSI_VALID))) {
+		BUSYWAIT_UNTIL((status() & BIT(CC2520_RSSI_VALID)), WAIT_100ms);
+		if (!(status() & BIT(CC2520_RSSI_VALID))) {
 			return RADIO_RESULT_ERROR;
 		}
 	}
@@ -505,8 +434,6 @@ static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 		return -EIO;
 	}
 
-	GET_LOCK();
-
 	txpower = 0;
 
 	if (packetbuf_attr(buf, PACKETBUF_ATTR_RADIO_TXPOWER) > 0) {
@@ -531,7 +458,7 @@ static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 
 #if WITH_SEND_CCA
 	strobe(CC2520_INS_SRXON);
-	BUSYWAIT_UNTIL(status() & BV(CC2520_RSSI_VALID), WAIT_100ms);
+	BUSYWAIT_UNTIL(status() & BIT(CC2520_RSSI_VALID), WAIT_100ms);
 	strobe(CC2520_INS_STXONCCA);
 #else /* WITH_SEND_CCA */
 	strobe(CC2520_INS_STXON);
@@ -558,22 +485,21 @@ static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 		}
 #endif
 
-		if (!(status() & BV(CC2520_TX_ACTIVE))) {
+		if (!(status() & BIT(CC2520_TX_ACTIVE))) {
 			/* SFD went high but we are not transmitting.
 			 * This means that we just started receiving a packet,
 			 * so we drop the transmission.
 			 */
-			PRINTF("TX collision 0x%x\n", status());
-			RELEASE_LOCK();
+			DBG("TX collision 0x%x\n", status());
 			return RADIO_TX_COLLISION;
 		}
 
 		/* We wait until transmission has ended so that we get an
 		 * accurate measurement of the transmission time.
 		 */
-		BUSYWAIT_UNTIL(!(status() & BV(CC2520_TX_ACTIVE)), WAIT_100ms);
+		BUSYWAIT_UNTIL(!(status() & BIT(CC2520_TX_ACTIVE)), WAIT_100ms);
 
-		PRINTF("status 0x%x\n", status());
+		DBG("status 0x%x\n", status());
 
 		if (!receive_on) {
 			/* We need to explicitly turn off the radio,
@@ -587,22 +513,19 @@ static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 			set_txpower(txpower & 0xff);
 		}
 
-		RELEASE_LOCK();
-
 		return RADIO_TX_OK;
 	}
 
 	/* If we are using WITH_SEND_CCA, we get here if the packet wasn't
 	 * transmitted because of other channel activity.
 	 */
-	PRINTF("cc2520: transmission never started\n");
+	DBG("cc2520: transmission never started\n");
 
 	if (packetbuf_attr(buf, PACKETBUF_ATTR_RADIO_TXPOWER) > 0) {
 		/* Restore the transmission power */
 		set_txpower(txpower & 0xff);
 	}
 
-	RELEASE_LOCK();
 	return RADIO_TX_COLLISION;
 }
 
@@ -615,9 +538,7 @@ static int cc2520_prepare(const void *payload, unsigned short payload_len)
 		return -EIO;
 	}
 
-	GET_LOCK();
-
-	PRINTF("cc2520: sending %d bytes\n", payload_len);
+	DBG("cc2520: sending %d bytes\n", payload_len);
 
 	/* Write packet to TX FIFO. */
 	strobe(CC2520_INS_SFLUSHTX);
@@ -626,7 +547,6 @@ static int cc2520_prepare(const void *payload, unsigned short payload_len)
 	cc2520_write_fifo_buf(&total_len, 1);
 	cc2520_write_fifo_buf(buf, payload_len);
 
-	RELEASE_LOCK();
 	return 0;
 }
 
@@ -651,7 +571,6 @@ int cc2520_set_channel(int c)
 {
 	uint16_t f;
 
-	GET_LOCK();
 	/*
 	 * Subtract the base channel (11), multiply by 5, which is the
 	 * channel spacing. 357 is 2405-2048 and 0x4000 is LOCK_THR = 1.
@@ -662,10 +581,10 @@ int cc2520_set_channel(int c)
 	/*
 	 * Writing RAM requires crystal oscillator to be stable.
 	 */
-	BUSYWAIT_UNTIL((status() & (BV(CC2520_XOSC16M_STABLE))), WAIT_100ms);
+	BUSYWAIT_UNTIL((status() & (BIT(CC2520_XOSC16M_STABLE))), WAIT_100ms);
 
 	/* Wait for any transmission to end. */
-	BUSYWAIT_UNTIL(!(status() & BV(CC2520_TX_ACTIVE)), WAIT_100ms);
+	BUSYWAIT_UNTIL(!(status() & BIT(CC2520_TX_ACTIVE)), WAIT_100ms);
 
 	/* Define radio channel (between 11 and 25) */
 	setreg(CC2520_FREQCTRL, f);
@@ -677,8 +596,6 @@ int cc2520_set_channel(int c)
 		strobe(CC2520_INS_SRXON);
 	}
 
-	RELEASE_LOCK();
-
 	return 1;
 }
 
@@ -688,12 +605,10 @@ bool cc2520_set_pan_addr(unsigned pan, unsigned addr,
 	bool ret = true;
 	uint8_t tmp[2];
 
-	GET_LOCK();
-
 	/*
 	 * Writing RAM requires crystal oscillator to be stable.
 	 */
-	BUSYWAIT_UNTIL((status()) & (BV(CC2520_XOSC16M_STABLE)), WAIT_1000ms);
+	BUSYWAIT_UNTIL((status()) & (BIT(CC2520_XOSC16M_STABLE)), WAIT_1000ms);
 
 	tmp[0] = pan & 0xff;
 	tmp[1] = pan >> 8;
@@ -715,12 +630,10 @@ bool cc2520_set_pan_addr(unsigned pan, unsigned addr,
 		cc2520_write_ram(tmp_addr, CC2520RAM_IEEEADDR, 8);
 	}
 
-	RELEASE_LOCK();
-
 	return ret;
 }
 
-#if DEBUG
+#if CONFIG_TI_CC2520_DEBUG
 #define read_packet() read_packet_debug(__func__)
 static void read_packet_debug(const char *caller);
 #else
@@ -740,8 +653,6 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 		return 0;
 	}
 
-	GET_LOCK();
-
 	cc2520_packets_read++;
 
 	getrxbyte(&len);
@@ -749,19 +660,16 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 	if (len > CC2520_MAX_PACKET_LEN) {
 		/* Oops, we must be out of sync. */
 		flushrx();
-		RELEASE_LOCK();
 		return 0;
 	}
 
 	if (len <= FOOTER_LEN) {
 		flushrx();
-		RELEASE_LOCK();
 		return 0;
 	}
 
 	if (len - FOOTER_LEN > bufsize) {
 		flushrx();
-		RELEASE_LOCK();
 		return 0;
 	}
 
@@ -793,8 +701,6 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 		}
 	}
 
-	RELEASE_LOCK();
-
 	if (len < FOOTER_LEN) {
 		return 0;
 	}
@@ -802,7 +708,7 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 	return len - FOOTER_LEN;
 }
 
-#if DEBUG
+#if CONFIG_TI_CC2520_DEBUG
 static void read_packet_debug(const char *caller)
 #else
 static void read_packet(void)
@@ -825,13 +731,13 @@ static void read_packet(void)
 
 		packetbuf_set_datalen(buf, len);
 
-#if DEBUG
-		PRINTF("%s: %s: received %d bytes\n", caller, __func__, len);
+#if CONFIG_TI_CC2520_DEBUG
+		DBG("%s: %s: received %d bytes\n", caller, __func__, len);
 #endif
 
 		if (net_driver_15_4_recv_from_hw(buf) < 0) {
-#if DEBUG
-			PRINTF("%s: %s: rdc input failed, packet discarded\n",
+#if CONFIG_TI_CC2520_DEBUG
+			DBG("%s: %s: rdc input failed, packet discarded\n",
 			       caller, __func__);
 #endif
 			l2_buf_unref(buf);
@@ -841,7 +747,12 @@ static void read_packet(void)
 
 static void cc2520_gpio_int_handler(struct device *port, uint32_t pin)
 {
-	PRINTF("%s: RX interrupt in pin %d\n", __func__, pin);
+	DBG("%s: RX interrupt in pin %d\n", __func__, pin);
+
+	/* In order to make this driver available for 2+ instances
+	 * it would require this handler to get access to the concerned
+	 * instance
+	 */
 
 	CC2520_CLEAR_FIFOP_INT();
 
@@ -854,18 +765,14 @@ static void cc2520_gpio_int_handler(struct device *port, uint32_t pin)
 
 void cc2520_set_txpower(uint8_t power)
 {
-	GET_LOCK();
 	set_txpower(power);
-	RELEASE_LOCK();
 }
 
 int cc2520_get_txpower(void)
 {
 	uint8_t power;
 
-	GET_LOCK();
 	power = getreg(CC2520_TXPOWER);
-	RELEASE_LOCK();
 
 	return power;
 }
@@ -875,24 +782,17 @@ int cc2520_rssi(void)
 	int radio_was_off = 0;
 	int rssi;
 
-	if (locked) {
-		return 0;
-	}
-
-	GET_LOCK();
-
 	if (!receive_on) {
 		radio_was_off = 1;
 		cc2520_on();
 	}
-	BUSYWAIT_UNTIL(status() & BV(CC2520_RSSI_VALID), WAIT_10ms);
+	BUSYWAIT_UNTIL(status() & BIT(CC2520_RSSI_VALID), WAIT_10ms);
 
 	rssi = (int)((signed char)getreg(CC2520_RSSI));
 
 	if (radio_was_off) {
 		cc2520_off();
 	}
-	RELEASE_LOCK();
 
 	return rssi;
 }
@@ -901,13 +801,7 @@ int cc2520_cca_valid(void)
 {
 	int valid;
 
-	if (locked) {
-		return 1;
-	}
-
-	GET_LOCK();
-	valid = !!(status() & BV(CC2520_RSSI_VALID));
-	RELEASE_LOCK();
+	valid = !!(status() & BIT(CC2520_RSSI_VALID));
 
 	return valid;
 }
@@ -917,16 +811,6 @@ static int cc2520_cca(void)
 	int radio_was_off = 0;
 	int cca;
 
-	/* If the radio is locked by an underlying thread (because we are
-	 * being invoked through an interrupt), we preted that the coast is
-	 * clear (i.e., no packet is currently being transmitted by a
-	 * neighbor).
-	 */
-	if (locked) {
-		return 1;
-	}
-
-	GET_LOCK();
 	if (!receive_on) {
 		radio_was_off = 1;
 		cc2520_on();
@@ -934,36 +818,30 @@ static int cc2520_cca(void)
 
 	/* Make sure that the radio really got turned on. */
 	if (!receive_on) {
-		RELEASE_LOCK();
 		if (radio_was_off) {
 			cc2520_off();
 		}
 		return 1;
 	}
 
-	BUSYWAIT_UNTIL(status() & BV(CC2520_RSSI_VALID), WAIT_10ms);
+	BUSYWAIT_UNTIL(status() & BIT(CC2520_RSSI_VALID), WAIT_10ms);
 
 	cca = CC2520_CCA_IS_1;
 
 	if (radio_was_off) {
 		cc2520_off();
 	}
-	RELEASE_LOCK();
 
 	return cca;
 }
 
 void cc2520_set_cca_threshold(int value)
 {
-	GET_LOCK();
 	setreg(CC2520_CCACTRL0, value & 0xff);
-	RELEASE_LOCK();
 }
 
 static void cc2520_configure(struct device *dev)
 {
-	int st;
-
 	CC2520_FIFOP_INT_INIT();
 
 	/* Initially reset must be set */
@@ -975,9 +853,8 @@ static void cc2520_configure(struct device *dev)
 	SET_VREG_ACTIVE();
 	clock_delay_usec_busywait(400);
 
-	st = getreg(CC2520_FSMSTAT1);
-	if (st != 0) {
-		PRINTF("cc2520: Invalid radio status %d\n", st);
+	if (getreg(CC2520_FSMSTAT1) != 0) {
+		PRINTF("cc2520: Invalid radio status\n");
 		return;
 	}
 
@@ -987,16 +864,15 @@ static void cc2520_configure(struct device *dev)
 
 	/* Turn on the crystal oscillator. */
 	if (!CC2520_STROBE_PLUS_NOP(CC2520_INS_SXOSCON)) {
-		PRINTF("Strobe SXOSCON sending failed\n");
+		DBG("Strobe SXOSCON sending failed\n");
 		return;
 	}
 
 	clock_delay_usec_busywait(800);
 
-	BUSYWAIT_UNTIL(((st = status()) & BV(CC2520_XOSC16M_STABLE)),	\
-								WAIT_10ms);
-	if (!(st & BV(CC2520_XOSC16M_STABLE))) {
-		PRINTF("Clock is not stabilized.\n");
+	BUSYWAIT_UNTIL((status() & BIT(CC2520_XOSC16M_STABLE)),	WAIT_10ms);
+	if (!(status() & BIT(CC2520_XOSC16M_STABLE))) {
+		DBG("Clock is not stabilized.\n");
 		return;
 	}
 
@@ -1102,18 +978,14 @@ cc2520_driver_api_t cc2520_15_4_radio_driver = {
 	.set_object = set_object,
 };
 
-#define DRIVER_STR "TI cc2520 driver"
-
 static int cc2520_init(struct device *dev)
 {
 	struct cc2520_config *info = dev->config->config_info;
 
-	PRINTF("%s setup\n", DRIVER_STR);
+	DBG("%s setup\n", DRIVER_STR);
 
 	dev->driver_api = &cc2520_15_4_radio_driver;
-
-	nano_sem_init(&lock);
-	nano_fiber_sem_give(&lock);
+	cc2520_sgl_dev = dev;
 
 	info->spi = cc2520_spi_configure();
 	info->gpios = cc2520_gpio_configure();
@@ -1121,9 +993,10 @@ static int cc2520_init(struct device *dev)
 	cc2520_configure(dev);
 
 	if (init_ok) {
-		PRINTF("%s initialized on device: %p\n", DRIVER_STR, dev);
+		DBG("%s initialized on device: %p\n", DRIVER_STR, dev);
 	} else {
-		PRINTF("%s initialization failed\n", DRIVER_STR);
+		cc2520_sgl_dev = NULL;
+		DBG("%s initialization failed\n", DRIVER_STR);
 	}
 
 	return DEV_OK;
@@ -1132,5 +1005,5 @@ static int cc2520_init(struct device *dev)
 DECLARE_DEVICE_INIT_CONFIG(cc2520, CONFIG_CC2520_DRV_NAME,
 			   cc2520_init, &cc2520_config);
 
-SYS_DEFINE_DEVICE(cc2520, NULL, SECONDARY,
+SYS_DEFINE_DEVICE(cc2520, NULL, NANOKERNEL,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
