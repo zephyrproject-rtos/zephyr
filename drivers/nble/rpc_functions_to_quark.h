@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-#include "gap_internal.h"
-#include "gatt_internal.h"
-
 /* declare the list of functions sorted by signature */
 #define LIST_FN_SIG_NONE					\
 	FN_SIG_NONE(on_nble_up)

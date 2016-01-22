@@ -18,6 +18,9 @@
 
 #include "rpc.h"
 
+#include "gap_internal.h"
+#include "gatt_internal.h"
+
 #include "rpc_functions_to_ble_core.h"
 
 /* Build the functions exposed */

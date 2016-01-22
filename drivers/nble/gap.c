@@ -24,8 +24,6 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/log.h>
 
-#include <net/buf.h>
-
 #include "gap_internal.h"
 #include "uart.h"
 #include "rpc.h"

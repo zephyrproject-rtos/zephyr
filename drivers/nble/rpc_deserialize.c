@@ -26,6 +26,9 @@
 
 #include "rpc.h"
 
+#include "gap_internal.h"
+#include "gatt_internal.h"
+
 #include "rpc_functions_to_quark.h"
 
 /* Build the list of prototypes and check that list are made only of matching
