@@ -27,6 +27,10 @@
 #ifndef _GDB_STUB__H_
 #define _GDB_STUB__H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 
 #if CONFIG_GDB_INFO
@@ -58,4 +62,9 @@ GTEXT(_irq_vector_table_entry_with_gdb_stub)
 #else
 extern void _irq_vector_table_entry_with_gdb_stub(void);
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _GDB_STUB__H_ */

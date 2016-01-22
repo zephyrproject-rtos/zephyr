@@ -60,6 +60,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TC_SHA256_BLOCK_SIZE (64)
 #define TC_SHA256_DIGEST_SIZE (32)
 #define TC_SHA256_STATE_BLOCKS (TC_SHA256_DIGEST_SIZE/4)
@@ -119,5 +123,9 @@ int32_t tc_sha256_update(TCSha256State_t s,
  *  @param Sha256 state struct
  */
 int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

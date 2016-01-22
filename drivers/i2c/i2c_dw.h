@@ -26,6 +26,10 @@
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define I2C_DW_MAGIC_KEY			0x44570140
 
 
@@ -122,5 +126,9 @@ struct i2c_dw_dev_config {
 	uint16_t		hcnt;
 	uint16_t		lcnt;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __DRIVERS_I2C_DW_H */

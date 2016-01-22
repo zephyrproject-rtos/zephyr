@@ -29,6 +29,10 @@
 #include <nanokernel.h>
 #include <device.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Callback API for incoming IPM messages
  *
@@ -167,6 +171,10 @@ static inline int ipm_set_enabled(struct device *ipmdev, int enable)
 	api = (struct ipm_driver_api *) ipmdev->driver_api;
 	return api->set_enabled(ipmdev, enable);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}

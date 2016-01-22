@@ -27,6 +27,10 @@
 #include <nano_private.h>
 #include <asm_inline.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
 #define STACK_ALIGN_SIZE 8
 #else
@@ -61,5 +65,9 @@ static ALWAYS_INLINE void _InterruptStackSetup(void)
 }
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ARM_CORTEXM_STACK__H_ */

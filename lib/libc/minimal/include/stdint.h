@@ -19,6 +19,10 @@
 #ifndef __INC_stdint_h__
 #define __INC_stdint_h__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define INT8_MAX    0x7F
 #define INT16_MAX   0x7FFF
 #define INT32_MAX   0x7FFFFFFF
@@ -55,5 +59,9 @@ typedef unsigned long long  uint64_t;
 
 typedef int                 intptr_t;
 typedef unsigned int        uintptr_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __INC_stdint_h__ */

@@ -24,6 +24,10 @@
 #ifndef _misc_reboot__h_
 #define _misc_reboot__h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SYS_REBOOT_WARM 0
 #define SYS_REBOOT_COLD 1
 
@@ -40,4 +44,9 @@
  */
 
 extern void sys_reboot(int type);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _misc_reboot__h_ */

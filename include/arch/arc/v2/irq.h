@@ -27,6 +27,10 @@
 #include <arch/arc/v2/aux_regs.h>
 #include <toolchain/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 GTEXT(_irq_exit);
 GTEXT(irq_connect)
@@ -103,4 +107,9 @@ static ALWAYS_INLINE void irq_unlock(unsigned int key)
 }
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ARCH_ARC_V2_IRQ__H_ */

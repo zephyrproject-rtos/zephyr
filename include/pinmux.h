@@ -28,6 +28,10 @@
 #include <stdint.h>
 #include <device.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PINMUX_NAME		"pinmux"
 
 #define PINMUX_FUNC_A		0
@@ -94,8 +98,13 @@ static inline uint32_t pinmux_pin_input_enable(struct device *dev,
 	return api->input(dev, pin, func);
 }
 
+#ifdef __cplusplus
+}
+#endif
+
 /**
  *
  * @}
  */
+
 #endif /* __INCLUDE_PINMUX_H */

@@ -22,6 +22,10 @@
 #ifndef __KERNEL_EVENT_LOGGER_ARCH_H__
 #define __KERNEL_EVENT_LOGGER_ARCH_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Get the identification of the current interrupt.
  *
@@ -34,5 +38,9 @@ int _sys_current_irq_key_get(void)
 {
 	return _IpsrGet();
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL_EVENT_LOGGER_ARCH_H__ */

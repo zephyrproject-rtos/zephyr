@@ -35,6 +35,10 @@
 #include "contiki/ip/uip.h"
 #include "contiki/packetbuf.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(CONFIG_L2_BUFFERS)
 
 #ifdef CONFIG_NETWORKING_WITH_LOGGING
@@ -146,5 +150,9 @@ void l2_buf_unref(struct net_buf *buf);
 #define l2_buf_init(...)
 
 #endif /* defined(CONFIG_L2_BUFFERS) */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __L2_BUF_H */

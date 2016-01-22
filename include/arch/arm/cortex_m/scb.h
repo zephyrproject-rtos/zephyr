@@ -39,6 +39,10 @@
 #ifndef _SCB__H_
 #define _SCB__H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 
 /* needed by nano_cpu_atomic_idle() written in asm */
@@ -1202,5 +1206,9 @@ static inline void _ScbUsageFaultAllFaultsReset(void)
 	__scs.scb.cfsr.byte.ufsr.val = 0xffff;
 }
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SCB__H_ */

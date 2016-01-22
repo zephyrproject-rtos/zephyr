@@ -39,6 +39,10 @@
 
 #include <arch/arm/cortex_m/scs.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* for assembler, only works with constants */
 #define _EXC_PRIO(pri) (((pri) << (8 - CONFIG_NUM_IRQ_PRIO_BITS)) & 0xff)
 #if defined(CONFIG_ZERO_LATENCY_IRQS)
@@ -220,5 +224,9 @@ static inline void _NvicSwInterruptTrigger(unsigned int irq)
 }
 
 #endif /* !_ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NVIC_H_ */

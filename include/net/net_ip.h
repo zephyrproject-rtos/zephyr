@@ -25,6 +25,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Protocol families */
 #define PF_UNSPEC	0	/* Unspecified.  */
 #define PF_INET		2	/* IP protocol family.  */
@@ -100,5 +104,9 @@ struct net_tuple {
 	/** IP protocol */
 	enum ip_protocol ip_proto;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __NET_IP_H */

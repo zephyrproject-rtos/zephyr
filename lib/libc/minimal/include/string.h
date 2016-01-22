@@ -23,6 +23,10 @@
 #define NULL (void *) 0
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(__size_t_defined)
 #define __size_t_defined
 typedef unsigned int  size_t;
@@ -41,5 +45,9 @@ extern void  *memmove(void *d, const void *s, size_t n);
 extern void  *memcpy(void *restrict d, const void *restrict s, size_t n);
 extern void  *memset(void *buf, int c, size_t n);
 extern void  *memchr(const void *s, unsigned char c, size_t n);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* __INC_string_h__ */

@@ -27,6 +27,10 @@
 
 #include <misc/util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* default system clock */
 
 #define SYSCLK_DEFAULT_IOSC_HZ MHZ(120)
@@ -162,5 +166,9 @@
 #endif /* CONFIG_UART_CONSOLE */
 
 #endif /* !_ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SOC__H_ */

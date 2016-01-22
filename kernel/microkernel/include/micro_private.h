@@ -24,6 +24,10 @@
 #include <kernel_main.h>
 #include <nano_private.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * The 2 least significant bits of the commands placed on the microkernel
  * server's command stack identify the type of command; the remaining bits
@@ -218,5 +222,9 @@ extern void _k_workload_monitor_idle_end(void);
 #define TO_ALIST(L, A) nano_fiber_stack_push((L), (uint32_t)(A))
 
 #define SENDARGS(A) nano_fiber_stack_push(&_k_command_stack, (uint32_t)(A))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

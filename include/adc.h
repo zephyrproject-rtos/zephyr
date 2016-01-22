@@ -28,6 +28,10 @@
 #include <stdint.h>
 #include <device.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief ADC Interface
  * @defgroup adc_interface ADC Interface
@@ -138,5 +142,9 @@ static inline int adc_read(struct device *dev, struct adc_seq_table *seq_table)
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* __INCLUDE_ADC_H__ */

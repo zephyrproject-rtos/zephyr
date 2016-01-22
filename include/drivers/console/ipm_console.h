@@ -23,6 +23,10 @@
 #include <device.h>
 #include <misc/ring_buffer.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define IPM_CONSOLE_STDOUT	(1 << 0)
 #define IPM_CONSOLE_PRINTK	(1 << 1)
 
@@ -97,6 +101,10 @@ int ipm_console_receiver_init(struct device *d);
 
 #if CONFIG_IPM_CONSOLE_SENDER
 int ipm_console_sender_init(struct device *d);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _IPM_CONSOLE_H_ */

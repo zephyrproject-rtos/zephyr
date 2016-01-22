@@ -39,6 +39,10 @@
 #include <stdint.h>
 #include <adc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * ADC driver name.
  *
@@ -211,5 +215,9 @@ struct adc_info {
  * @return Integer: 0 for success, error otherwise.
  */
 int adc_dw_init(struct device *dev);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /*  DW_ADC_H_ */

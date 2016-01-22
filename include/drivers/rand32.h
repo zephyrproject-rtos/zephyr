@@ -34,7 +34,15 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void sys_rand32_init(void);
 extern uint32_t sys_rand32_get(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __INCrand32h */

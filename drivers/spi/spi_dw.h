@@ -21,6 +21,10 @@
 
 #include <spi.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*spi_dw_config_t)(void);
 
 /* Private structures */
@@ -166,4 +170,8 @@ struct spi_dw_data {
 					   DW_SPI_IMR_RXOIM | \
 					   DW_SPI_IMR_RXFIM))
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* __SPI_DW_H__ */
+

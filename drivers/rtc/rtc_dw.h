@@ -21,6 +21,10 @@
 #include <device.h>
 #include <rtc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define RTC_CCVR		(0x0)
 #define RTC_CMR			(0x4)
 #define RTC_CLR			(0x8)
@@ -57,5 +61,9 @@ struct rtc_dw_dev_config {
 };
 
 int rtc_dw_init(struct device *dev);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _RTC_DW_H_ */

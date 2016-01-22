@@ -16,4 +16,12 @@
  * limitations under the License.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void bt_uart_isr(void *);
+
+#ifdef __cplusplus
+}
+#endif

@@ -25,6 +25,10 @@
 
 #include <misc/dlist.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* initialize the nano timeouts part of TCS when enabled in the kernel */
 
 static inline void _nano_timeout_tcs_init(struct tcs *tcs)
@@ -149,5 +153,9 @@ static inline uint32_t _nano_get_earliest_timeouts_deadline(void)
 
 	return t ? t->delta_ticks_from_prev : TICKS_UNLIMITED;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _kernel_nanokernel_include_timeout_q__h_ */

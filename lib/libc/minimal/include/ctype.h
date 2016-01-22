@@ -19,6 +19,10 @@
 #ifndef __INC_ctype_h__
 #define __INC_ctype_h__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static inline int isupper(int a)
 {
 	return ((unsigned)(a)-'A') < 26;
@@ -65,5 +69,9 @@ static inline int toupper(int chr)
 {
 	return (chr >= 'a' && chr <= 'z') ? (chr - 32) : (chr);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* __INC_ctype_h__ */

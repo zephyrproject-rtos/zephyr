@@ -18,6 +18,9 @@
 #ifndef __DRIVERS_I2C_DW_REGISTERS_H
 #define __DRIVERS_I2C_DW_REGISTERS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*  IC_CON bits */
 #define IC_CON_TX_INTR_MODE			(1 << 8)
@@ -259,5 +262,9 @@ struct i2c_dw_registers {
 	uint32_t ic_comp_version;	/* offset 0xF8 */
 	uint32_t ic_comp_type;		/* offset 0xFC */
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __DRIVERS_I2C_DW_REGISTERS_H */

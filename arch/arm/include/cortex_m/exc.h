@@ -27,6 +27,10 @@
 #include <arch/cpu.h>
 #include <asm_inline.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 
 /* nothing */
@@ -79,5 +83,10 @@ static ALWAYS_INLINE void _ExcSetup(void)
 }
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* _ARM_CORTEXM_ISR__H_ */

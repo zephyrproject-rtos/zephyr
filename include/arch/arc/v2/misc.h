@@ -24,10 +24,18 @@
 #ifndef _ARCH_ARC_V2_MISC_H_
 #define _ARCH_ARC_V2_MISC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _ASMLANGUAGE
 extern unsigned int nano_cpu_sleep_mode;
 extern void nano_cpu_idle(void);
 extern void nano_cpu_atomic_idle(unsigned int key);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _ARCH_ARC_V2_MISC_H_ */

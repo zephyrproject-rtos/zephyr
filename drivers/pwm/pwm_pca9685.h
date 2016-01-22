@@ -24,6 +24,10 @@
 #include <gpio.h>
 #include <i2c.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Initialization function for PCA9685
  *
@@ -46,5 +50,9 @@ struct pwm_pca9685_drv_data {
 	/** Master I2C device */
 	struct device *i2c_master;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __PWM_PCA9685_H__ */

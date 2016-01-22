@@ -76,6 +76,10 @@
 
 #include <tinycrypt/aes.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *  @brief CBC encryption procedure
  *  CBC encrypts inlen bytes of the in buffer into the out buffer
@@ -139,5 +143,9 @@ int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
 int32_t tc_cbc_mode_decrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
 			    uint32_t inlen, const uint8_t *iv,
 			    const TCAesKeySched_t sched);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

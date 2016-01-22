@@ -26,6 +26,10 @@
 
 #include "contiki/ip/uip.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*eth_config_irq_t)(struct device *port);
 
 struct eth_config {
@@ -191,5 +195,9 @@ struct eth_runtime {
 #define REG_ADDR_STATUS                0x1014
 #define REG_ADDR_DMA_OPERATION         0x1018
 #define REG_ADDR_INT_ENABLE            0x101C
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DRIVERS_ETHERNET_ETH_DW_PRIV_H_ */

@@ -20,6 +20,10 @@
 #ifndef __BT_GATT_H
 #define __BT_GATT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #include <stddef.h>
 #include <misc/util.h>
@@ -906,4 +910,9 @@ int bt_gatt_read_multiple(struct bt_conn *conn, const uint16_t *handles,
 
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __BT_GATT_H */

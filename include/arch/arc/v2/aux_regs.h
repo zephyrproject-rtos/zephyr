@@ -25,6 +25,10 @@
 #ifndef _ARC_V2_AUX_REGS__H_
 #define _ARC_V2_AUX_REGS__H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _ARC_V2_LP_START 0x002
 #define _ARC_V2_LP_END 0x003
 #define _ARC_V2_STATUS32 0x00a
@@ -103,5 +107,9 @@
 	})
 #endif /* __GNUC__ */
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ARC_V2_AUX_REGS__H_ */

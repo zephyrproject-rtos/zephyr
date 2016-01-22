@@ -23,9 +23,12 @@
 
 #include <misc/byteorder.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Internal return code */
 #define ADC108S102_DONE				(-1)
-
 /* 8 chans maximum + 1 dummy, 16 bits per-chans -> 18 bytes */
 #define ADC108S102_CMD_BUFFER_SIZE		9
 /* 1 dummy + 8 results maximum, 16 bits per-chans -> 18 bytes */
@@ -59,5 +62,9 @@ struct ti_adc108s102_data {
 	struct ti_adc108s102_chan chans[ADC108S102_CHANNELS];
 	struct adc_seq_table *seq_table;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ADC108S102_PRIV_H__ */

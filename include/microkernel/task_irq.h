@@ -29,6 +29,10 @@
 
 #include <microkernel/base_api.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define INVALID_VECTOR 0xFFFFFFFF
 
 /**
@@ -83,4 +87,9 @@ extern int task_irq_wait(kirq_t irq_obj, int32_t timeout);
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* TASK_IRQ_H */

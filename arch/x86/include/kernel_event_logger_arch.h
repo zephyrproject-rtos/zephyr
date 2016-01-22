@@ -24,6 +24,10 @@
 
 #include <drivers/loapic.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Get the identification of the current interrupt.
  *
@@ -36,5 +40,9 @@ static inline int _sys_current_irq_key_get(void)
 {
 	return _loapic_isr_vector_get();
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL_EVENT_LOGGER_ARCH_H__ */

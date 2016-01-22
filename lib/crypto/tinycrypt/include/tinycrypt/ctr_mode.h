@@ -69,6 +69,10 @@
 
 #include <tinycrypt/aes.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *  @brief CTR mode encryption/decryption procedure.
  *  CTR mode encrypts (or decrypts) inlen bytes from in buffer into out buffer
@@ -95,5 +99,9 @@
  */
 int32_t tc_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
 		    uint32_t inlen, uint8_t *ctr, const TCAesKeySched_t sched);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

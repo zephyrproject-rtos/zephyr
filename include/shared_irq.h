@@ -21,6 +21,10 @@
 
 #include <autoconf.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef int (*isr_t)(struct device *dev);
 
 /* driver API definition */
@@ -96,5 +100,9 @@ static inline int shared_irq_disable(struct device *dev, struct device *isr_dev)
 	api = (struct shared_irq_driver_api *) dev->driver_api;
 	return api->disable(dev, isr_dev);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SHARED_IRQ_H_ */

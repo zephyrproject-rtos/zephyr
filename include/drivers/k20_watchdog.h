@@ -26,6 +26,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Sequence of writes within 20 bus cycles for action to take effect */
 #define WDOG_REFRESH_1 0xA602
 #define WDOG_REFRESH_2 0xB480
@@ -134,5 +138,9 @@ static ALWAYS_INLINE void wdog_disable(volatile struct K20_WDOG *wdog_p)
 	stctrlh.field.wdogen = 0;
 	wdog_p->stctrlh.value = stctrlh.value;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _K20WDOG_H_ */

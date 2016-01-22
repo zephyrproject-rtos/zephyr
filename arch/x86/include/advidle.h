@@ -28,6 +28,10 @@
 #ifndef __INCadvidle
 #define __INCadvidle
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef CONFIG_ADVANCED_IDLE
 
 /**
@@ -73,5 +77,9 @@ extern void _AdvIdleStart(void (*_Cstart)(void), void *_gdt, void *_GlobalTss);
 extern int _AdvIdleFunc(int32_t ticks);
 
 #endif /* CONFIG_ADVANCED_IDLE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __INCadvidle */

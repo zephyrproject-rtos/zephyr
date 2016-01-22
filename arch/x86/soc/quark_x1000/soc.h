@@ -45,6 +45,10 @@
 #endif
 #endif /* CONFIG_IOAPIC */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NUM_STD_IRQS 16   /* number of "standard" IRQs on an x86 platform */
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 
@@ -116,5 +120,9 @@ static inline int pci_irq2pin(int irq)
 		return -1;
 	return irq - NUM_STD_IRQS + 1;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SOC_H_ */

@@ -23,6 +23,9 @@
 #include <pci/pci.h>
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef void (*spi_intel_config_t)(void);
 
@@ -114,5 +117,8 @@ struct spi_intel_data {
 /* DSS_RATE settings */
 #define INTEL_SPI_DSS_RATE(__msf) \
 	((__msf & (INTEL_SPI_DDS_RATE_MASK)) >> 8)
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SPI_INTEL_PRIV_H__ */

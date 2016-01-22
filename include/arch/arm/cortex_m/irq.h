@@ -27,6 +27,10 @@
 #include <arch/arm/cortex_m/nvic.h>
 #include <sw_isr_table.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 GTEXT(_IntExit);
 GTEXT(irq_connect_dynamic)
@@ -97,5 +101,9 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
 })
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ARCH_ARM_CORTEXM_IRQ_H_ */

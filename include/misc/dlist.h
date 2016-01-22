@@ -30,6 +30,10 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct _dnode {
 	union {
 		struct _dnode *head; /* ptr to head of list (sys_dlist_t) */
@@ -280,5 +284,9 @@ static inline sys_dnode_t *sys_dlist_get(sys_dlist_t *list)
 	sys_dlist_remove(node);
 	return node;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _misc_dlist__h_ */

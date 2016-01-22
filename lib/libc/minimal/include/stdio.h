@@ -21,6 +21,10 @@
 
 #include <stdarg.h>     /* Needed to get definition of va_list */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(__size_t_defined)
 #define __size_t_defined
 typedef unsigned int  size_t;
@@ -64,5 +68,9 @@ int puts(const char *s);
 int fputc(int c, FILE *stream);
 int fputs(const char *restrict s, FILE *restrict stream);
 size_t fwrite(const void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __INC_stdio_h__ */

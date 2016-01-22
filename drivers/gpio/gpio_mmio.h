@@ -25,6 +25,10 @@
 
 #include <gpio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* For enable register:
  * NORMAL: 0 - disable, 1 - enable
  * INV: 0 - enable, 1 - disable
@@ -78,5 +82,9 @@ struct gpio_mmio_config {
 		__gpio_mmio_access_t write;
 	} access;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _GPIO_MMIO_H_ */

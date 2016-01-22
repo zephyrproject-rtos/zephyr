@@ -34,6 +34,10 @@
 #include "contiki/ip/uip.h"
 #include "contiki/packetbuf.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef CONFIG_NETWORKING_WITH_LOGGING
 #undef DEBUG_IP_BUFS
 #define DEBUG_IP_BUFS
@@ -373,5 +377,9 @@ static inline void net_analyze_stack(const char *name,
 #define net_analyze_stack(...)
 #endif
 /* @endcond */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __IP_BUF_H */

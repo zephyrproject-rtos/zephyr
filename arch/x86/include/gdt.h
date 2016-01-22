@@ -27,6 +27,10 @@
 
 #include <arch/x86/arch.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _ASMLANGUAGE
 
 #include <stdint.h>
@@ -63,4 +67,9 @@ extern tGdtHeader _gdt; /* GDT is implemented in arch/x86/core/gdt.c */
 
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _GDT_H */

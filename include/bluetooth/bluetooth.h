@@ -26,6 +26,10 @@
 
 #include <bluetooth/hci.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief Callback for notifying that Bluetooth has been enabled.
  *
  *  @param err zero on success or (negative) error code otherwise.
@@ -319,4 +323,9 @@ int bt_br_set_discoverable(bool enable);
  */
 int bt_br_set_connectable(bool enable);
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __BT_BLUETOOTH_H */

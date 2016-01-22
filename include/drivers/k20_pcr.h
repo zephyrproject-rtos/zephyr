@@ -27,6 +27,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PCR_PORT_A 0
 #define PCR_PORT_B 1
 #define PCR_PORT_C 2
@@ -87,5 +91,9 @@ struct K20_PORT_PCR {
 /* pin control register for port A..E on pin 0..31 */
 #define K20_PCR(base, port, pin) \
 	((union K20_PCR *)(base + (0x1000 * port) + (pin * 4)))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _K20PCR_H_ */

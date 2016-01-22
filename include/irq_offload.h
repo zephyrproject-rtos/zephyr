@@ -20,6 +20,10 @@
 #ifndef _IRQ_OFFLOAD_H_
 #define _IRQ_OFFLOAD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*irq_offload_routine_t)(void *parameter);
 
 /**
@@ -35,5 +39,9 @@ typedef void (*irq_offload_routine_t)(void *parameter);
  * interrupt
  */
 void irq_offload(irq_offload_routine_t routine, void *parameter);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SW_IRQ_H_ */

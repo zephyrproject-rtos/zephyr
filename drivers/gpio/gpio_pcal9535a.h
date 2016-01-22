@@ -26,6 +26,10 @@
 #include <gpio.h>
 #include <i2c.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Initialization function for PCAL9535A
  *
@@ -72,5 +76,9 @@ struct gpio_pcal9535a_drv_data {
 		union gpio_pcal9535a_port_data pud_sel;
 	} reg_cache;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _GPIO_PCAL9535A_H_ */

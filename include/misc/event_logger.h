@@ -22,6 +22,10 @@
 #ifndef __EVENT_LOGGER_H__
 #define __EVENT_LOGGER_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define EVENT_HEADER_SIZE        1
 
 #ifndef _ASMLANGUAGE
@@ -149,4 +153,9 @@ int sys_event_logger_get_wait_timeout(struct event_logger *logger,
 #endif /* CONFIG_NANO_TIMEOUTS */
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __EVENT_LOGGER_H__ */

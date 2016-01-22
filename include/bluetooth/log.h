@@ -22,6 +22,10 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(CONFIG_BLUETOOTH_DEBUG_COLOR)
 #define BT_COLOR_OFF     "\x1B[0m"
 #define BT_COLOR_RED     "\x1B[0;31m"
@@ -58,5 +62,9 @@
 		char __stack name[(size) + BT_STACK_DEBUG_EXTRA]
 #define BT_STACK_NOINIT(name, size) \
 		char __noinit __stack name[(size) + BT_STACK_DEBUG_EXTRA]
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BT_LOG_H */

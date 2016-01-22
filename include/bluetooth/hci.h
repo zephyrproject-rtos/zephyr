@@ -21,6 +21,10 @@
 #include <toolchain.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BT_ADDR_LE_PUBLIC  0x00
 #define BT_ADDR_LE_RANDOM  0x01
 
@@ -575,5 +579,9 @@ struct bt_hci_evt_le_generate_dhkey_complete {
 	uint8_t status;
 	uint8_t dhkey[32];
 } __packed;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BT_HCI_H */

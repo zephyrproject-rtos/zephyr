@@ -65,6 +65,10 @@
 
 #include <tinycrypt/sha256.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct tc_hmac_state_struct {
 	/* the internal state required by h */
 	struct tc_sha256_state_struct hash_state;
@@ -128,5 +132,9 @@ int32_t tc_hmac_update(TCHmacState_t ctx,
  *  @param ctx IN -- the HMAC state for computing tag
  */
 int32_t tc_hmac_final(uint8_t *tag, uint32_t taglen, TCHmacState_t ctx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

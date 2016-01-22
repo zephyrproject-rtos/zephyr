@@ -71,6 +71,10 @@
 #include <tinycrypt/sha256.h>
 #include <tinycrypt/hmac.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct tc_hmac_prng_struct {
 	/* the HMAC instance for this PRNG */
 	struct tc_hmac_state_struct h;
@@ -150,5 +154,9 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed,
  *  @param prng IN/OUT -- the PRNG state
  */
 int32_t tc_hmac_prng_generate(uint8_t *out, uint32_t outlen, TCHmacPrng_t prng);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

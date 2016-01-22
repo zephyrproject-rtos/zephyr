@@ -29,6 +29,10 @@
 #include <stdint.h>
 #include <misc/__assert.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SIM_OCS32K_SYS 0
 #define SIM_OCS32K_RTS 2
 #define SIM_OCS32K_LPO 3 /* 1kHz */
@@ -214,5 +218,9 @@ struct K20_SIM {
 	uint32_t clkdiv2;		       /* 0x1048 */
 	uint8_t res104c_1063[0x1063 - 0x104c]; /* Reserved */
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _K20SIM_H_ */

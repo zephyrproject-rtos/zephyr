@@ -26,6 +26,10 @@
 #include <device.h>
 #include <init.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define QUARK_SE_IPM_OUTBOUND	0
 #define QUARK_SE_IPM_INBOUND		1
 
@@ -139,5 +143,8 @@ int quark_se_ipm_controller_initialize(struct device *d);
 	SYS_DEFINE_DEVICE(name, &quark_se_ipm_runtime_##name, SECONDARY, \
 						CONFIG_KERNEL_INIT_PRIORITY_DEFAULT)
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __INCquark_se_mailboxh */

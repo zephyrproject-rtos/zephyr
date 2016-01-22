@@ -19,6 +19,10 @@
 #ifndef __SPI_INTEL_H__
 #define __SPI_INTEL_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* SPI Maximum supported system frequencies */
 #define SPI_MAX_CLK_FREQ_25MHZ     ((0x800000 << 8))
 #define SPI_MAX_CLK_FREQ_20MHz     ((0x666666 << 8) | 1)
@@ -52,5 +56,8 @@
 #define SPI_MAX_CLK_FREQ_10KHZ     ((0x20000 << 8) | 77)
 #define SPI_MAX_CLK_FREQ_5KHZ      ((0x20000 << 8) | 154)
 #define SPI_MAX_CLK_FREQ_1KHZ      ((0x8000 << 8) | 194)
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SPI_INTEL_H__ */

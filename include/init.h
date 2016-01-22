@@ -21,6 +21,10 @@
 #include <device.h>
 #include <toolchain.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * System initialization levels. The PRIMARY and SECONDARY levels are
  * executed in the kernel's initialization context, which uses the interrupt
@@ -115,5 +119,9 @@
  * @return A pointer to the device object created by SYS_DEFINE_DEVICE()
  */
 #define SYS_GET_DEVICE(name) (&SYS_GET_DEVICE_NAME(name))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _INIT_H_ */

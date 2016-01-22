@@ -19,6 +19,10 @@
 #ifndef _kernel_version__h_
 #define _kernel_version__h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * The kernel version has been converted from a string to a four-byte
  * quantity that is divided into two parts.
@@ -39,5 +43,9 @@
 /* kernel version routines */
 
 extern uint32_t sys_kernel_version_get(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _kernel_version__h_ */

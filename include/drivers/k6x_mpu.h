@@ -29,6 +29,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MPU_VALID_MASK 0x01
 #define MPU_SLV_PORT_ERR_MASK 0xF8
 
@@ -67,5 +71,9 @@ struct K6x_MPU {
 									*/
 	uint32_t rgnDescAltAccCtrl[MPU_NUM_REGIONS]; /* 0x0800 */
 }; /* K6x Microntroller PMC module */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _K6xMPU_H_ */

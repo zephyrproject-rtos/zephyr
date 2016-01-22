@@ -33,8 +33,16 @@
 #include <nano_private.h>
 #include <microkernel/task.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _START_TASK_ARCH(task, opt_ptr) \
 	do {/* nothing */              \
 	} while ((0))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _START_TASK_ARCH__H_ */

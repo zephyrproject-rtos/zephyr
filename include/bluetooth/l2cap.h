@@ -34,6 +34,10 @@
 #ifndef __BT_L2CAP_H
 #define __BT_L2CAP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #include <net/buf.h>
 #include <bluetooth/conn.h>
@@ -151,4 +155,9 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __BT_L2CAP_H */

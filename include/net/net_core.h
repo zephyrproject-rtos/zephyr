@@ -23,6 +23,10 @@
 #ifndef __NET_CORE_H
 #define __NET_CORE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Network subsystem logging helpers */
 
 #define NET_DBG(fmt, ...) printk("net: %s: " fmt, __func__, ##__VA_ARGS__)
@@ -124,5 +128,9 @@ int net_reply(struct net_context *context, struct net_buf *buf);
 int net_recv(struct net_buf *buf);
 
 void net_context_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __NET_CORE_H */

@@ -29,6 +29,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PMC_REGSC_ACKISO_MASK 0x08 /* ack I/O isolation (write to clear) */
 
 union REGSC {
@@ -49,5 +53,9 @@ struct K6x_PMC {
 	uint8_t lvdsc2;		/* 0x0001 */
 	union REGSC regsc;	/* 0x0002 */
 };	/* K6x Microntroller PMC module */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _K6xPMC_H_ */

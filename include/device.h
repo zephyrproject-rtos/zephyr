@@ -18,6 +18,10 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def DECLARE_DEVICE_INIT_CONFIG
  *
  *  @brief Define an config object
@@ -189,5 +193,9 @@ static inline void synchronous_call_complete(device_sync_call_t *sync)
 }
 
 #endif /* CONFIG_MICROKERNEL || CONFIG_NANOKERNEL */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _DEVICE_H_ */

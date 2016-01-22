@@ -24,6 +24,10 @@
 #ifndef _ARCH_ARC_V2_EXC_H_
 #define _ARCH_ARC_V2_EXC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 #else
 struct __esf {
@@ -34,5 +38,10 @@ struct __esf {
 typedef struct __esf NANO_ESF;
 extern const NANO_ESF _default_esf;
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* _ARCH_ARC_V2_EXC_H_ */

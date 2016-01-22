@@ -17,6 +17,10 @@
 #ifndef DISPLAY_GROVE_LCD_H
 #define DISPLAY_GROVE_LCD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define GROVE_LCD_NAME			"GLCD"
 
 /**
@@ -161,5 +165,9 @@ void glcd_color_set(struct device *port, uint8_t r, uint8_t g, uint8_t b);
  *  @return Returns DEV_OK if all passes
  */
 int glcd_initialize(struct device *port);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DISPLAY_GROVE_LCD_H */

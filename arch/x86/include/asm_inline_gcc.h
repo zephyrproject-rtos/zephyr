@@ -19,6 +19,10 @@
 #ifndef _ASM_INLINE_GCC_H
 #define _ASM_INLINE_GCC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * The file must not be included directly
  * Include asm_inline.h instead
@@ -136,4 +140,9 @@ static inline void _do_fp_ctx_init(int flags)
 #endif /* CONFIG_FP_SHARING */
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ASM_INLINE_GCC_H */

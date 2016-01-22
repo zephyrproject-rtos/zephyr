@@ -24,6 +24,10 @@
 #include <toolchain.h>
 #include <arch/cpu.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 
 /* entering this macro, current is in r2 */
@@ -159,4 +163,9 @@
 .endm
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /*  _SWAP_MACROS__H_ */

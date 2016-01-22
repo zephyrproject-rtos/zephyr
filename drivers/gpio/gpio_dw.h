@@ -23,6 +23,10 @@
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int gpio_dw_initialize(struct device *port);
 typedef void (*gpio_config_irq_t)(struct device *port);
 
@@ -52,3 +56,8 @@ struct gpio_dw_runtime {
 	uint32_t enabled_callbacks;
 	uint8_t port_callback;
 };
+
+#ifdef __cplusplus
+}
+#endif
+

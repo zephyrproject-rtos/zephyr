@@ -21,6 +21,10 @@
 #ifndef _ASM_INLINE_GCC_PUBLIC_GCC_H
 #define _ASM_INLINE_GCC_PUBLIC_GCC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * The file must not be included directly
  * Include arch/cpu.h instead
@@ -170,4 +174,9 @@ static ALWAYS_INLINE void irq_unlock(unsigned int key)
 
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ASM_INLINE_GCC_PUBLIC_GCC_H */

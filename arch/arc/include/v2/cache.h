@@ -27,6 +27,10 @@
 
 #include <arch/cpu.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _ASMLANGUAGE
 
 #define CACHE_ENABLE 0x00
@@ -49,4 +53,9 @@ static ALWAYS_INLINE void _icache_setup(void)
 }
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ARCV2_CACHE__H_ */

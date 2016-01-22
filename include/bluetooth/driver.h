@@ -35,6 +35,10 @@ struct net_buf *bt_buf_get_evt(void);
 /* Allocate a buffer for incoming ACL data */
 struct net_buf *bt_buf_get_acl(void);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Receive data from the controller/HCI driver */
 void bt_recv(struct net_buf *buf);
 
@@ -51,5 +55,9 @@ int bt_driver_register(struct bt_driver *drv);
 
 /* Unregister a previously registered HCI driver */
 void bt_driver_unregister(struct bt_driver *drv);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BT_DRIVER_H */

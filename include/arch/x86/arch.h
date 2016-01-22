@@ -29,6 +29,10 @@
 #include <arch/x86/addr_types.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* APIs need to support non-byte addressable architectures */
 
 #define OCTET_TO_SIZEOFUNIT(X) (X)
@@ -538,5 +542,9 @@ extern void	_IntVecMarkFree(unsigned int vector);
 #define SYS_X86_RST_CNT_SYS_RST 0x02
 #define SYS_X86_RST_CNT_CPU_RST 0x4
 #define SYS_X86_RST_CNT_FULL_RST 0x08
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ARCH_IFACE_H */

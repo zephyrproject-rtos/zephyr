@@ -25,6 +25,10 @@
 #define NULL (void *) 0
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(__size_t_defined)
 #define __size_t_defined
 typedef unsigned int  size_t;
@@ -34,5 +38,8 @@ unsigned long int strtoul(const char *str, char **endptr, int base);
 long int strtol(const char *str, char **endptr, int base);
 int atoi(const char *s);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* __INC_stdlib_h__ */

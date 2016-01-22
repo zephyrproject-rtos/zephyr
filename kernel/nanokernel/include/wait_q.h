@@ -21,6 +21,10 @@
 
 #include <nano_private.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* reset a wait queue, call during operation */
 static inline void _nano_wait_q_reset(struct _nano_queue *wait_q)
 {
@@ -110,6 +114,10 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 
 	#define _NANO_TIMEOUT_TICK_GET()  0
 	#define _NANO_TIMEOUT_ADD(pq, ticks) do { } while (0)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _kernel_nanokernel_include_wait_q__h_ */

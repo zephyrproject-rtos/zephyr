@@ -31,6 +31,10 @@
 #ifndef _VECTOR_TABLE__H_
 #define _VECTOR_TABLE__H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define EXC_EV_TRAP	0x9
 
 #ifdef _ASMLANGUAGE
@@ -78,5 +82,9 @@ extern void __ev_dc_error(void);
 extern void __ev_maligned(void);
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _VECTOR_TABLE__H_ */

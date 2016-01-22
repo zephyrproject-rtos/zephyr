@@ -24,6 +24,10 @@
 #ifndef _ARCH_ARM_CORTEXM_EXC_H_
 #define _ARCH_ARM_CORTEXM_EXC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 GTEXT(_ExcExit);
 #else
@@ -45,6 +49,10 @@ typedef struct __esf NANO_ESF;
 extern const NANO_ESF _default_esf;
 
 extern void _ExcExit(void);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _ARCH_ARM_CORTEXM_EXC_H_ */

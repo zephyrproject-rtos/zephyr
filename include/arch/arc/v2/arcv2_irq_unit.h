@@ -19,6 +19,10 @@
 #ifndef _ARC_V2_IRQ_UNIT__H
 #define _ARC_V2_IRQ_UNIT__H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* configuration flags for interrupt unit */
 
 #define _ARC_V2_INT_DISABLE 0
@@ -107,4 +111,9 @@ void _arc_v2_irq_unit_int_eoi(int irq);
 void _arc_v2_irq_unit_init(void);
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ARC_V2_IRQ_UNIT__H */

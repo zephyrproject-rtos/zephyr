@@ -26,6 +26,10 @@
 #include <misc/util.h>
 #include <nanokernel.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Alignment needed for various parts of the buffer definition */
 #define __net_buf_align __aligned(sizeof(int))
 
@@ -249,5 +253,9 @@ size_t net_buf_headroom(struct net_buf *buf);
  *  @return Tail pointer for the buffer.
  */
 #define net_buf_tail(buf) ((buf)->data + (buf)->len)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __NET_BUF_H */

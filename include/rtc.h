@@ -20,6 +20,10 @@
 #include <device.h>
 #include <misc/util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum clk_rtc_div {
 	RTC_CLK_DIV_1,
 	RTC_CLK_DIV_2,
@@ -124,5 +128,9 @@ static inline int rtc_set_alarm(struct device *dev,
 	api = (struct rtc_driver_api *)dev->driver_api;
 	return api->set_alarm(dev, alarm_val);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

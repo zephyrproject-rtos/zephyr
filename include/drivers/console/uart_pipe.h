@@ -23,6 +23,10 @@
 
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief Received data callback.
  *
  *  This function is called when new data is received on UART. The off parameter
@@ -66,3 +70,7 @@ int uart_pipe_send(const uint8_t *data, int len);
  *  @param unused unused
  */
 void uart_pipe_isr(void *unused);
+
+#ifdef __cplusplus
+}
+#endif

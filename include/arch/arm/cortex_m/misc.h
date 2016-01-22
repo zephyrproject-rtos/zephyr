@@ -24,8 +24,16 @@
 #ifndef _ARCH_ARM_CORTEXM_MISC_H_
 #define _ARCH_ARM_CORTEXM_MISC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _ASMLANGUAGE
 extern void nano_cpu_idle(void);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _ARCH_ARM_CORTEXM_MISC_H_ */

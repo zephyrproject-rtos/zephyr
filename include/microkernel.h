@@ -19,6 +19,10 @@
 #ifndef _MICROKERNEL_H
 #define _MICROKERNEL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* nanokernel and generic kernel public APIs */
 
 #include <nanokernel.h>
@@ -56,5 +60,9 @@
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MICROKERNEL_H */

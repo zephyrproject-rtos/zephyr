@@ -30,6 +30,10 @@
 #ifndef _SWAPSTK_H
 #define _SWAPSTK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _ASMLANGUAGE
 
 /* Stack of a saved context */
@@ -44,5 +48,9 @@ typedef struct s_SwapStk {
 } tSwapStk;
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SWAPSTK_H */

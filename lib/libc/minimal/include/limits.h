@@ -19,6 +19,10 @@
 #ifndef __INC_limits_h__
 #define __INC_limits_h__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define UCHAR_MAX  0xFF
 #define SCHAR_MAX  0x7F
 #define SCHAR_MIN  (-SCHAR_MAX - 1)
@@ -53,5 +57,9 @@
 #define UINT_MAX    0xFFFFFFFFu
 #define ULONG_MAX   0xFFFFFFFFul
 #define ULLONG_MAX  0xFFFFFFFFFFFFFFFFull
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* __INC_limits_h__ */

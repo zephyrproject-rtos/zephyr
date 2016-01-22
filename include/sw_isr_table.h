@@ -24,6 +24,10 @@
 #ifndef _SW_ISR_TABLE__H_
 #define _SW_ISR_TABLE__H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(_ASMLANGUAGE)
 /*
  * Note the order: arg first, then ISR. This allows a table entry to be
@@ -39,5 +43,9 @@ typedef struct _IsrTableEntry _IsrTableEntry_t;
 
 extern _IsrTableEntry_t _sw_isr_table[CONFIG_NUM_IRQS];
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SW_ISR_TABLE__H_ */

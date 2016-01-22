@@ -57,6 +57,10 @@
 #ifndef _SCS__H_
 #define _SCS__H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 
 #include <arch/arm/cortex_m/memory_map.h>
@@ -556,5 +560,9 @@ static inline void _scs_relocate_vector_table(void *new_addr)
 }
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SCS__H_ */

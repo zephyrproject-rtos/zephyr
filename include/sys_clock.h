@@ -26,6 +26,10 @@
 #ifndef _SYS_CLOCK__H_
 #define _SYS_CLOCK__H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 
@@ -98,5 +102,9 @@ extern struct nano_timer *_nano_timer_list;
 #define MSEC(x)    (SECONDS(x) / 1000)
 
 #endif /* !_ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SYS_CLOCK__H_ */

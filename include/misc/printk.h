@@ -20,6 +20,10 @@
 
 #include <toolchain.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *
  * @brief Print kernel debugging message.
@@ -50,6 +54,10 @@ extern void printk(const char *fmt, ...);
 static inline void printk(const char *fmt, ...)
 {
 	ARG_UNUSED(fmt);
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 

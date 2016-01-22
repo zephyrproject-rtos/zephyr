@@ -25,6 +25,10 @@
 #ifndef __KERNEL_EVENT_LOGGER_H__
 #define __KERNEL_EVENT_LOGGER_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef CONFIG_KERNEL_EVENT_LOGGER
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
@@ -199,5 +203,9 @@ static inline void _sys_k_event_logger_enter_sleep(void) {};
 */
 
 #endif /* CONFIG_KERNEL_EVENT_LOGGER */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL_EVENT_LOGGER_H__ */

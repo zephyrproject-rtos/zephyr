@@ -31,6 +31,10 @@
 #ifndef _VECTOR_TABLE__H_
 #define _VECTOR_TABLE__H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 
 #include <board.h>
@@ -60,5 +64,9 @@ GTEXT(_PrepC)
 GTEXT(_isr_wrapper)
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _VECTOR_TABLE__H_ */

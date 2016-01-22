@@ -39,6 +39,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _SCP_OSC_SOURCE_MAIN 0
 #define _SCP_OSC_SOURCE_INTERNAL 1
 #define _SCP_OSC_SOURCE_INTERNAL_DIV4 2
@@ -162,4 +166,9 @@ struct __scp {
 };
 
 extern volatile struct __scp __scp;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _SCP_H_ */

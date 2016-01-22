@@ -26,6 +26,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* MCG - module register structure */
 typedef volatile struct
 {
@@ -203,5 +207,9 @@ typedef union {
 
 /* Control register fields */
 #define OSC_CR_EXT_CLK_EN 0x80
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _K20MCG_H_ */

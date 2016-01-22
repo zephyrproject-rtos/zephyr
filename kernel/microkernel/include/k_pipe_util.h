@@ -35,6 +35,9 @@ typedef uint32_t TIME_TYPE;
 #define _TIME_B  ((TIME_TYPE)0x00020000)
 #define _TIME_BT ((TIME_TYPE)0x00040000)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern void _k_pipe_process(struct _k_pipe_struct *pipe_ptr,
 					 struct k_args *writer_ptr, struct k_args *reader_ptr);
@@ -57,5 +60,9 @@ void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
 
 TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *args);
 void _k_pipe_time_type_set(K_ARGS_ARGS *args, TIME_TYPE TimeType);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _K_PIPE_UTIL_H */

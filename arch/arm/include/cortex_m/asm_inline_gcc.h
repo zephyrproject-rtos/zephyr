@@ -19,6 +19,10 @@
 #ifndef _ASM_INLINE_GCC_H
 #define _ASM_INLINE_GCC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * The file must not be included directly
  * Include asm_inline.h instead
@@ -57,4 +61,9 @@ static ALWAYS_INLINE void _MspSet(uint32_t msp /* value to store in MSP */
 }
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ASM_INLINE_GCC_H */

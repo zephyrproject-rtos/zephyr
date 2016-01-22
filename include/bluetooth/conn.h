@@ -20,6 +20,10 @@
 #ifndef __BT_CONN_H
 #define __BT_CONN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #include <stdbool.h>
 
@@ -349,5 +353,9 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn, bool match);
 int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BT_CONN_H */

@@ -41,6 +41,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TC_SUCCESS 1
 #define TC_FAIL 0
 #define TC_RESEED_REQ -1
@@ -64,5 +68,9 @@ void _set(uint8_t *to, uint8_t val, uint32_t len);
  * finite field used by AES.
  */
 uint8_t _double_byte(uint8_t a);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -17,6 +17,10 @@
 #ifndef _AIO_COMPARATOR_H_
 #define _AIO_COMPARATOR_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum aio_cmp_ref {
 	AIO_CMP_REF_A,		/**< Use reference A. */
 	AIO_CMP_REF_B,		/**< Use reference B. */
@@ -83,5 +87,9 @@ static inline int aio_cmp_configure(struct device *dev, uint8_t index,
 	api = (struct aio_cmp_driver_api *)dev->driver_api;
 	return api->configure(dev, index, polarity, refsel, cb, param);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _AIO_COMPARATOR_H_ */

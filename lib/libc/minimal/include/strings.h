@@ -19,6 +19,14 @@
 #ifndef __INC_strings_h__
 #define __INC_strings_h__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int strncasecmp(const char *s1, const char *s2, size_t n);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* __INC_strings_h__ */

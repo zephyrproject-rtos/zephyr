@@ -19,6 +19,10 @@
 
 #include <errno.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @file
  * @brief Safe memory access routines
@@ -150,6 +154,10 @@ static inline int _mem_safe_region_add(void *addr, size_t num_bytes,
 											int perm)
 {
 	return 0;
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 

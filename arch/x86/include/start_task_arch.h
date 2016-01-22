@@ -31,8 +31,16 @@
 #include <nano_private.h>
 #include <microkernel/task.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void _StartTaskArch(struct k_task *, unsigned int *);
 
 #define _START_TASK_ARCH(task, opt_ptr) _StartTaskArch(task, opt_ptr)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _START_TASK_ARCH__H_ */

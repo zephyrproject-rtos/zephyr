@@ -25,6 +25,10 @@
 #ifndef _TIMER__H_
 #define _TIMER__H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _ASMLANGUAGE
 
 GTEXT(_timer_int_handler)
@@ -65,5 +69,9 @@ extern void _nano_sys_clock_tick_announce(int32_t ticks);
 #endif
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _TIMER__H_ */

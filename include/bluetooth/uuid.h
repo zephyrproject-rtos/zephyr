@@ -20,6 +20,10 @@
 #ifndef __BT_UUID_H
 #define __BT_UUID_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def BBT_UUID_GAP
  *  @brief Generic Access
  */
@@ -232,5 +236,9 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
  */
 const char *bt_uuid_str(const struct bt_uuid *uuid);
 #endif /* CONFIG_BLUETOOTH_DEBUG */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BT_UUID_H */

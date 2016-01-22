@@ -19,6 +19,10 @@
 #ifndef __ASM_INLINE_GCC_H__
 #define __ASM_INLINE_GCC_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _ASMLANGUAGE
 
 #include <sys_io.h>
@@ -266,4 +270,9 @@ static inline __attribute__((always_inline))
 }
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __ASM_INLINE_GCC_H__ */

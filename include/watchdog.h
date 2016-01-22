@@ -21,6 +21,10 @@
 #include <device.h>
 #include <misc/util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define WDT_MODE		(BIT(1))
 #define WDT_MODE_OFFSET         (1)
 #define WDT_TIMEOUT_MASK        (0xF)
@@ -119,5 +123,9 @@ static inline void wdt_reload(struct device *dev)
 	api = (struct wdt_driver_api *)dev->driver_api;
 	api->reload(dev);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

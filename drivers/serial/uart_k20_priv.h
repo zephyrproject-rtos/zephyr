@@ -26,6 +26,10 @@
 #include <stdint.h>
 #include <misc/__assert.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 union BDH {
 	uint8_t value;
 	struct {
@@ -250,5 +254,9 @@ static inline void _uart_k20_fifo_enable(volatile struct K20_UART *uart_p)
 	/* restore Rx and Tx */
 	uart_p->c2.value |= tx_rx_state;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _K20UART_H_ */

@@ -16,6 +16,10 @@
  * limitations under the License.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief Callback called when command is entered.
  *
  *  @param argc Number of parameters passed.
@@ -53,3 +57,8 @@ typedef const char *(*shell_prompt_function_t)(void);
  *  @param handler To be called to get the current prompt.
  */
 void shell_register_prompt_handler(shell_prompt_function_t handler);
+
+#ifdef __cplusplus
+}
+#endif
+

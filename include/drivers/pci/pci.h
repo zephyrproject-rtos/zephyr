@@ -24,6 +24,10 @@
 #ifndef _PCI_H_
 #define _PCI_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BAR_SPACE_MEM 0
 #define BAR_SPACE_IO 1
 
@@ -75,6 +79,10 @@ void pci_legacy_bridge_configure(struct pci_dev_info *dev_info,
 extern void pci_show(struct pci_dev_info *dev_info);
 #else
 #define pci_show(__unused__) { ; }
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _PCI_H_ */

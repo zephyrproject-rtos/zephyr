@@ -24,6 +24,10 @@
 #ifndef _ARCH_ARC_V2_FFS_H_
 #define _ARCH_ARC_V2_FFS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _ASMLANGUAGE
 
 #include <stdint.h>
@@ -88,5 +92,9 @@ static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 #endif
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ARCH_ARC_V2_FFS_H_ */

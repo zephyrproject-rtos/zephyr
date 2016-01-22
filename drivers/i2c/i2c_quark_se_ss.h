@@ -24,6 +24,10 @@
 #include <i2c.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* dev->state values from IC_DATA_CMD Data transfer mode settings (bit 8) */
 #define I2C_QSE_SS_STATE_READY		(0)
 #define I2C_QSE_SS_CMD_SEND		(1 << 0)
@@ -72,5 +76,9 @@ struct i2c_qse_ss_dev_config {
 	uint16_t		hcnt;
 	uint16_t		lcnt;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __DRIVERS_I2C_QUARK_SE_SS_H__ */
