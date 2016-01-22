@@ -116,7 +116,7 @@
 /* 42 C06, gpio_8, spi1_m_sck, NA */		/* 15.4 SPI */
 /* 43 D06, gpio_9, spi1_m_miso, NA */		/* 15.4 SPI */
 /* 44 E06, gpio_10, spi1_m_mosi, NA */		/* 15.4 SPI */
-/* 45 D07, gpio_11, spi1_m_cs0, NA */		/* 15.4 SPI */
+/* 45 D07, gpio_11, spi1_m_cs0, NA */		/* 15.4 SPI GPIO CS */
 /* 46 C07, gpio_12, spi1_m_cs1, NA */
 /* 47 B07, gpio_13, spi1_m_cs2, NA */
 /* 48 A07, gpio_14, spi1_m_cs3, NA */
@@ -166,7 +166,6 @@ static void _pinmux_defaults(uint32_t base)
 	PIN_CONFIG(mux_config, 42, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 43, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 44, PINMUX_FUNC_B);
-	PIN_CONFIG(mux_config, 45, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 55, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 56, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 57, PINMUX_FUNC_B);

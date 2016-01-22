@@ -4,4 +4,25 @@ if BOARD_QUARK_SE_DEVBOARD
 config BOARD
         default "quark_se_devboard"
 
+if NETWORKING_WITH_15_4_TI_CC2520
+
+config SPI
+	def_bool y
+config GPIO
+	def_bool y
+
+config TI_CC2520_SPI_DRV_NAME
+	default SPI_DW_PORT_1_DRV_NAME
+config TI_CC2520_SPI_FREQ
+	default 32
+config TI_CC2520_SPI_SLAVE
+	default 1
+config SPI_DW_CS_GPIO
+	def_bool y
+config SPI_DW_PORT_1_CS_GPIO_PORT
+	default GPIO_DW_0_NAME
+config SPI_DW_PORT_1_CS_GPIO_PIN
+	default 11
+endif # NETWORKING_WITH_15_4_TI_CC2520
+
 endif # BOARD_QUARK_SE_DEVBOARD
