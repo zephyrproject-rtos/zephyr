@@ -28,6 +28,8 @@
 #include <misc/byteorder.h>
 #endif /* CONFIG_BLUETOOTH_DEBUG */
 
+#define UUID_16_BASE_OFFSET 12
+
 /* TODO: Decide wether to continue using BLE format or switch to RFC 4122 */
 static const struct bt_uuid uuid128_base = {
 	.type = BT_UUID_128,
@@ -36,12 +38,28 @@ static const struct bt_uuid uuid128_base = {
 
 };
 
+static inline void cpu_to_uuid128(void *dst, const void *src, int len)
+{
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	int i;
+
+	for (i = 0; i < len; i++) {
+		((uint8_t *)dst)[i] = ((uint8_t *)src)[(len - 1) - i];
+	}
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	memcpy(dst, src, len);
+#else
+#error "Unknown byte order"
+#endif
+}
+
 static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid *dst)
 {
 	switch (src->type) {
 	case BT_UUID_16:
 		*dst = uuid128_base;
-		memcpy(&dst->u128[2], &src->u16, sizeof(src->u16));
+		cpu_to_uuid128(&dst->u128[UUID_16_BASE_OFFSET], &src->u16,
+			       sizeof(src->u16));
 		return;
 	case BT_UUID_128:
 		memcpy(dst, src, sizeof(*dst));
