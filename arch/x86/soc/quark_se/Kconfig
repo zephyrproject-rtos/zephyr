@@ -234,6 +234,9 @@ config GPIO_DW_INIT_PRIORITY
 config I2C_INIT_PRIORITY
 	default 60
 
+config SPI_DW_INIT_PRIORITY
+	default 70 # It might require GPIO to be ready first
+
 if UART_NS16550
 
 config UART_NS16550_PORT_0
