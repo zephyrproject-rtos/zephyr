@@ -337,7 +337,7 @@ endif
 USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
 
 SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
-ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
+override ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 BOARD_NAME = $(subst $(DQUOTE),,$(CONFIG_BOARD))
 KERNEL_NAME = $(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 KERNEL_ELF_NAME = $(KERNEL_NAME).elf
