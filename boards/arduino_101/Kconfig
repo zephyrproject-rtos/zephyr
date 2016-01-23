@@ -4,4 +4,18 @@ if BOARD_ARDUINO_101
 config BOARD
         default "arduino_101"
 
+if NBLE
+
+config GPIO
+	def_bool y
+
+config NBLE_UART_ON_DEV_NAME
+        default UART_NS16550_PORT_0_NAME
+config NBLE_UART_IRQ
+        default UART_NS16550_PORT_0_IRQ
+config NBLE_UART_IRQ_PRI
+        default UART_NS16550_PORT_0_IRQ_PRI
+
+endif
+
 endif # BOARD_ARDUINO_101
