@@ -20,18 +20,6 @@
 
 #define LIST_FN_SIG_S						\
 	FN_SIG_S(on_ble_get_version_rsp,			\
-		 const struct ble_version_response *)
-
-#define LIST_FN_SIG_P
-#define LIST_FN_SIG_S_B
-#define LIST_FN_SIG_B_B_P
-#define LIST_FN_SIG_S_B_P
-#define LIST_FN_SIG_S_P
-#define LIST_FN_SIG_S_B_B_P
-
-#if 0
-#define LIST_FN_SIG_S						\
-	FN_SIG_S(on_ble_get_version_rsp,			\
 		 const struct ble_version_response *)		\
 	FN_SIG_S(on_ble_gap_connect_evt,			\
 		 const struct ble_gap_connect_evt *)		\
@@ -137,4 +125,3 @@
 		     uint8_t *, uint8_t, void*)
 
 #define LIST_FN_SIG_S_B_B_P
-#endif
