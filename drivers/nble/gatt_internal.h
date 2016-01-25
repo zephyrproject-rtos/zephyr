@@ -219,14 +219,13 @@ struct ble_gatts_attribute_response {
  * The response to this request is received through @ref
  * on_ble_gatts_send_svc_changed_rsp
  *
- * @param par     attribute parameters
- * @param data      attribute value data to write
- * @param len          length of attribute value to write
- * @param priv       pointer to private data
+ * @param par Attribute parameters
+ * @param data Attribute value data to write
+ * @param len Length of attribute value to write
+ * @param priv Pointer to private data
  */
 void ble_gatts_set_attribute_value_req(const struct ble_gatts_set_attribute_params *par,
-				       uint8_t *data, uint8_t len,
-				       void *priv);
+				       uint8_t *data, uint8_t len, void *priv);
 
 /**
  * Response to @ref ble_gatts_send_svc_changed_req.
@@ -241,8 +240,8 @@ void on_ble_gatts_set_attribute_value_rsp(const struct ble_gatts_attribute_respo
  * The response to this request is received through @ref
  * on_ble_gatts_get_attribute_value_rsp
  *
- * @param par     getting attribute parameters
- * @param priv       pointer to private data
+ * @param par Getting attribute parameters
+ * @param priv Pointer to private data
  */
 void ble_gatts_get_attribute_value_req(const struct ble_gatts_get_attribute_params *par,
 				       void *priv);
@@ -250,9 +249,9 @@ void ble_gatts_get_attribute_value_req(const struct ble_gatts_get_attribute_para
 /**
  * Response to @ref ble_gatts_get_attribute_value_req.
  *
- * @param par     response
- * @param data      attribute value
- * @param length       length of attribute value
+ * @param par Response
+ * @param data Attribute value
+ * @param length Length of attribute value
  */
 void on_ble_gatts_get_attribute_value_rsp(const struct ble_gatts_attribute_response *par,
 					  uint8_t *data, uint8_t length);
@@ -271,8 +270,8 @@ struct ble_gatts_svc_changed_params {
  *
  * @note Not yet supported
  *
- * @param par service parameters
- * @param priv       pointer to private data
+ * @param par Service parameters
+ * @param priv Pointer to private data
  */
 void ble_gatts_send_svc_changed_req(const struct ble_gatts_svc_changed_params *par,
 				    void *priv);
@@ -288,7 +287,7 @@ void on_ble_gatts_send_svc_changed_rsp(const struct ble_core_response *par);
  *
  * @param par Parameters of attribute data base
  * @param attr Serialized attribute buffer
- * @param attr_len length of buffer
+ * @param attr_len Length of buffer
  */
 void ble_gatt_register_req(const struct ble_gatt_register *par,
 			   uint8_t *buf, uint16_t len);
@@ -309,7 +308,7 @@ struct ble_gatt_attr_idx_entry {
  *
  * @param par Parameters of attribute data base
  * @param attr Returned attributes index list
- * @param attr_len length of buffer
+ * @param attr_len Length of buffer
  */
 void on_ble_gatt_register_rsp(const struct ble_gatt_register *par,
 			      const struct ble_gatt_attr_idx_entry *attr,
@@ -318,8 +317,8 @@ void on_ble_gatt_register_rsp(const struct ble_gatt_register *par,
 /**
  * Function invoked by the BLE core when a write occurs.
  *
- * @param ev  Pointer to the event structure
- * @param buf  Pointer to data buffer
+ * @param ev Pointer to the event structure
+ * @param buf Pointer to data buffer
  * @param buflen Buffer length
  */
 void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *ev,
@@ -328,8 +327,8 @@ void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *ev,
 /**
  * Retrieves handle based on attribute array and index of attribute
  *
- * @param attrs attribute array
- * @param index index of attribute
+ * @param attrs Attribute array
+ * @param index Index of attribute
  *
  * @return Handle of attribute or 0 if not found
  */
@@ -342,9 +341,9 @@ uint16_t ble_attr_idx_to_handle(const struct bt_gatt_attr *attrs,
  * The response to this request is received through @ref
  * on_ble_gatts_send_notif_ind_rsp
  *
- * @param par     notification parameters
- * @param data      indication data to write
- * @param length       length of indication - may be 0, in this case already
+ * @param par Notification parameters
+ * @param data Indication data to write
+ * @param length Length of indication - may be 0, in this case already
  * stored data is sent
  */
 void ble_gatt_send_notif_req(const struct ble_gatt_send_notif_ind_params *par,
@@ -356,9 +355,9 @@ void ble_gatt_send_notif_req(const struct ble_gatt_send_notif_ind_params *par,
  * The response to this request is received through @ref
  * on_ble_gatts_send_notif_ind_rsp
  *
- * @param par     indication parameters
- * @param data      indication data to write
- * @param length       length of indication - may be 0, in this case already
+ * @param par Indication parameters
+ * @param data Indication data to write
+ * @param length Length of indication - may be 0, in this case already
  * stored data is sent
  */
 void ble_gatt_send_ind_req(const struct ble_gatt_send_notif_ind_params *par,
@@ -382,7 +381,7 @@ struct ble_core_discover_params {
 /**
  * Discover service.
  *
- * @param req    Request structure.
+ * @param req Request structure.
  * @param priv Pointer to private data.
  */
 void ble_gattc_discover_req(const struct ble_core_discover_params *req,
@@ -391,12 +390,13 @@ void ble_gattc_discover_req(const struct ble_core_discover_params *req,
 /**
  * Response to @ref ble_gattc_discover_req.
  *
- * @param ev     Pointer to the event structure
- * @param data      Pointer to the data
- * @param data_len  Length of the data
+ * @param ev Pointer to the event structure
+ * @param data Pointer to the data
+ * @param data_len Length of the data
  */
 void on_ble_gattc_discover_rsp(const struct ble_gattc_evt *ev,
-		const struct ble_gattc_attr *data, uint8_t data_len);
+			       const struct ble_gattc_attr *data,
+			       uint8_t data_len);
 
 /** GATT Attribute stream structure.
  *
@@ -479,8 +479,8 @@ void ble_gattc_write_req(const struct ble_gattc_write_params *params,
 /**
  * Response to @ref ble_gattc_write_req.
  *
- * @param ev       Pointer to the event structure
- * @param priv      Pointer to private data.
+ * @param ev Pointer to the event structure
+ * @param priv Pointer to private data.
  */
 void on_ble_gattc_write_rsp(const struct ble_gattc_write_rsp *ev,
 			    void *priv);
