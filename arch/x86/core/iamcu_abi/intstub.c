@@ -17,7 +17,15 @@
 #include <nano_private.h>
 #include <drivers/loapic.h>
 
+#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+
+#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
+extern void _power_save_idle_exit(void);
+#else
 extern void _sys_power_save_idle_exit(int32_t ticks);
+#endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE*/
+
+#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
 #ifdef CONFIG_NESTED_INTERRUPTS
 static inline void enable_nested_interrupts(void)
@@ -74,11 +82,17 @@ void _execute_handler(int_handler_t function, int context)
 	_nanokernel.nested++;
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+
+#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
+	_power_save_idle_exit();
+#else
 	if (_nanokernel.idle) {
 		_sys_power_save_idle_exit(_nanokernel.idle);
 		_nanokernel.idle = 0;
 	}
-#endif
+#endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE*/
+
+#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 	_int_latency_stop();
 	enable_nested_interrupts();
 

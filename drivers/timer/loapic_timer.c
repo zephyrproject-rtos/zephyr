@@ -102,10 +102,6 @@
 #define LOAPIC_TIMER_PERIODIC 0x00020000 /* Timer Mode: Periodic */
 
 
-#if defined(CONFIG_MICROKERNEL) && defined(CONFIG_TICKLESS_IDLE)
-#define TIMER_SUPPORTS_TICKLESS
-#endif /* CONFIG_MICROKERNEL && CONFIG_TICKLESS_IDLE */
-
 /* Helpful macros and inlines for programming timer */
 #define _REG_TIMER ((volatile uint32_t *) \
 					(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER))
@@ -116,30 +112,30 @@
 #define _REG_TIMER_CFG ((volatile uint32_t *) \
 						(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CONFIG))
 
-#if defined(TIMER_SUPPORTS_TICKLESS)
+#if defined(CONFIG_TICKLESS_IDLE)
 #define TIMER_MODE_ONE_SHOT     0
 #define TIMER_MODE_PERIODIC     1
-#else /* !TIMER_SUPPORTS_TICKLESS */
+#else /* !CONFIG_TICKLESS_IDLE */
 #define tickless_idle_init() \
 	do {/* nothing */              \
 	} while (0)
-#endif /* !TIMER_SUPPORTS_TICKLESS */
-#if defined(TIMER_SUPPORTS_TICKLESS)
+#endif /* !CONFIG_TICKLESS_IDLE */
+#if defined(CONFIG_TICKLESS_IDLE)
 extern int32_t _sys_idle_elapsed_ticks;
-#endif /* TIMER_SUPPORTS_TICKLESS */
+#endif /* CONFIG_TICKLESS_IDLE */
 
 /* computed counter 0 initial count value */
 static uint32_t __noinit cycles_per_tick;
 static uint32_t accumulated_cycle_count;
 
-#if defined(TIMER_SUPPORTS_TICKLESS)
+#if defined(CONFIG_TICKLESS_IDLE)
 static uint32_t programmed_cycles;
 static uint32_t programmed_full_ticks;
 static uint32_t __noinit max_system_ticks;
 static uint32_t __noinit cycles_per_max_ticks;
 static bool timer_known_to_have_expired;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
-#endif /* TIMER_SUPPORTS_TICKLESS */
+#endif /* CONFIG_TICKLESS_IDLE */
 
 /* externs */
 
@@ -160,7 +156,7 @@ static inline void periodic_mode_set(void)
 	*_REG_TIMER |= LOAPIC_TIMER_PERIODIC;
 }
 
-#if defined(TIMER_SUPPORTS_TICKLESS) ||              \
+#if defined(CONFIG_TICKLESS_IDLE) ||              \
 	defined(LOAPIC_TIMER_PERIODIC_WORKAROUND) || \
 	defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**
@@ -177,7 +173,7 @@ static inline void timer_interrupt_mask(void)
 }
 #endif
 
-#if defined(TIMER_SUPPORTS_TICKLESS) || \
+#if defined(CONFIG_TICKLESS_IDLE) || \
 	defined(LOAPIC_TIMER_PERIODIC_WORKAROUND)
 /**
  *
@@ -209,7 +205,7 @@ static inline void initial_count_register_set(
 	*_REG_TIMER_ICR = count;
 }
 
-#if defined(TIMER_SUPPORTS_TICKLESS)
+#if defined(CONFIG_TICKLESS_IDLE)
 /**
  *
  * @brief Set the timer for one shot mode
@@ -222,7 +218,7 @@ static inline void one_shot_mode_set(void)
 {
 	*_REG_TIMER &= ~LOAPIC_TIMER_PERIODIC;
 }
-#endif /* TIMER_SUPPORTS_TICKLESS */
+#endif /* CONFIG_TICKLESS_IDLE */
 
 /**
  *
@@ -259,7 +255,7 @@ static inline uint32_t current_count_register_get(void)
 	return *_REG_TIMER_CCR;
 }
 
-#if defined(TIMER_SUPPORTS_TICKLESS)
+#if defined(CONFIG_TICKLESS_IDLE)
 /**
  *
  * @brief Get the value from the initial count register
@@ -272,7 +268,7 @@ static inline uint32_t initial_count_register_get(void)
 {
 	return *_REG_TIMER_ICR;
 }
-#endif /* TIMER_SUPPORTS_TICKLESS */
+#endif /* CONFIG_TICKLESS_IDLE */
 
 /**
  *
@@ -288,7 +284,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 {
 	ARG_UNUSED(unused);
 
-#ifdef TIMER_SUPPORTS_TICKLESS
+#ifdef CONFIG_TICKLESS_IDLE
 	if (timer_mode == TIMER_MODE_ONE_SHOT) {
 		if (!timer_known_to_have_expired) {
 			uint32_t  cycles;
@@ -325,8 +321,11 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	 * for the tick due to the timer interrupt itself. Also, if not in
 	 * one-shot mode, _sys_idle_elapsed_ticks will be 0.
 	 */
+#ifdef CONFIG_MICROKERNEL
 	_sys_idle_elapsed_ticks++;
-
+#else
+	_sys_idle_elapsed_ticks = 1;
+#endif
 	/* track the accumulated cycle count */
 	accumulated_cycle_count += cycles_per_tick * _sys_idle_elapsed_ticks;
 
@@ -343,15 +342,9 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	/* track the accumulated cycle count */
 	accumulated_cycle_count += cycles_per_tick;
 
-#if defined(CONFIG_MICROKERNEL)
 	_sys_clock_tick_announce();
-#endif
+#endif /*CONFIG_TICKLESS_IDLE*/
 
-#endif /*TIMER_SUPPORTS_TICKLESS*/
-
-#if defined(CONFIG_NANOKERNEL)
-	_sys_clock_tick_announce();
-#endif /*  CONFIG_NANOKERNEL */
 
 #ifdef LOAPIC_TIMER_PERIODIC_WORKAROUND
 	/*
@@ -365,7 +358,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 #endif /* LOAPIC_TIMER_PERIODIC_WORKAROUND */
 }
 
-#if defined(TIMER_SUPPORTS_TICKLESS)
+#if defined(CONFIG_TICKLESS_IDLE)
 /**
  *
  * @brief Initialize the tickless idle feature
@@ -541,7 +534,7 @@ void _timer_idle_exit(void)
 		initial_count_register_set(programmed_cycles);
 	}
 }
-#endif /* TIMER_SUPPORTS_TICKLESS */
+#endif /* CONFIG_TICKLESS_IDLE */
 
 /**
  *
@@ -598,7 +591,7 @@ uint32_t sys_cycle_get_32(void)
 	 * in the Initial Count Register (ICR).
 	 */
 
-#if !defined(TIMER_SUPPORTS_TICKLESS)
+#if !defined(CONFIG_TICKLESS_IDLE)
 	/* The value in the ICR always matches cycles_per_tick. */
 	val = accumulated_cycle_count - current_count_register_get() +
 			cycles_per_tick;

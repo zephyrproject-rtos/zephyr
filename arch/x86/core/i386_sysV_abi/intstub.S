@@ -48,7 +48,11 @@
 	GTEXT(_Swap)
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
+	GTEXT(_power_save_idle_exit)
+#else
 	GTEXT(_sys_power_save_idle_exit)
+#endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE */
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
 
@@ -204,6 +208,10 @@ BRANCH_LABEL(alreadyOnIntStack)
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 BRANCH_LABEL(_HandleIdle)
+#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
+	pushl	%eax
+	call _power_save_idle_exit
+#else
 	pushl	%eax
 	push	__tNANO_idle_OFFSET(%ecx)
 	movl	$0, __tNANO_idle_OFFSET(%ecx)
@@ -217,6 +225,7 @@ BRANCH_LABEL(_HandleIdle)
 
 	call	_sys_power_save_idle_exit
 	add	$0x4, %esp
+#endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE */
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
 #endif

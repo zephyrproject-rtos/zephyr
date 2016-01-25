@@ -60,6 +60,7 @@
 #include <sys_clock.h>
 #include <drivers/ioapic.h>
 #include <drivers/system_timer.h>
+#include <nano_private.h>
 
 #ifdef CONFIG_MICROKERNEL
 
@@ -67,11 +68,8 @@
 
 extern struct nano_stack _k_command_stack;
 
-#ifdef CONFIG_TICKLESS_IDLE
-#define TIMER_SUPPORTS_TICKLESS
-#endif
-
 #endif /*  CONFIG_MICROKERNEL */
+
 
 #include <board.h>
 
@@ -197,7 +195,7 @@ extern uint32_t _hw_irq_to_c_handler_latency;
 #define PRINTK(...)
 #endif
 
-#ifdef TIMER_SUPPORTS_TICKLESS
+#ifdef CONFIG_TICKLESS_IDLE
 
 /* additional globals, locals, and forward declarations */
 
@@ -236,7 +234,7 @@ static uint64_t _hpetMainCounterAtomic(void)
 	return ((uint64_t)highBits << 32) | lowBits;
 }
 
-#endif /* TIMER_SUPPORTS_TICKLESS */
+#endif /* CONFIG_TICKLESS_IDLE */
 
 /**
  *
@@ -267,9 +265,8 @@ void _timer_int_handler(void *unused)
 	main_count_expected_value += main_count_first_irq_value;
 #endif
 
-#ifdef CONFIG_MICROKERNEL
 
-#ifndef TIMER_SUPPORTS_TICKLESS
+#ifndef CONFIG_TICKLESS_IDLE
 
 	/*
 	 * one more tick has occurred -- don't need to do anything special since
@@ -301,7 +298,11 @@ void _timer_int_handler(void *unused)
 	 * for the tick due to the timer interrupt itself. Also, if not in
 	 * tickless mode, _sys_idle_elapsed_ticks will be 0.
 	 */
+#ifdef CONFIG_MICROKERNEL
 	_sys_idle_elapsed_ticks++;
+#else
+	_sys_idle_elapsed_ticks = 1;
+#endif /* CONFIG_MICROKERNEL */
 
 	/*
 	 * If we transistion from 0 elapsed ticks to 1 we need to announce the
@@ -315,14 +316,11 @@ void _timer_int_handler(void *unused)
 		_sys_clock_tick_announce();
 	}
 
-#endif /* !TIMER_SUPPORTS_TICKLESS */
+#endif /* !CONFIG_TICKLESS_IDLE */
 
-#else
-	_sys_clock_tick_announce();
-#endif /* CONFIG_MICROKERNEL */
 }
 
-#ifdef TIMER_SUPPORTS_TICKLESS
+#ifdef CONFIG_TICKLESS_IDLE
 
 /*
  * Ensure that _timer_idle_enter() is never asked to idle for fewer than 2
@@ -467,7 +465,7 @@ void _timer_idle_exit(void)
 	programmed_ticks = 1;
 }
 
-#endif /* TIMER_SUPPORTS_TICKLESS */
+#endif /* CONFIG_TICKLESS_IDLE */
 
 /**
  *
@@ -483,7 +481,7 @@ int _sys_clock_driver_init(struct device *device)
 {
 	uint64_t hpetClockPeriod;
 	uint64_t tickFempto;
-#ifndef TIMER_SUPPORTS_TICKLESS
+#ifndef CONFIG_TICKLESS_IDLE
 	uint32_t counter_load_value;
 #endif
 
@@ -555,7 +553,7 @@ int _sys_clock_driver_init(struct device *device)
 	*_HPET_GENERAL_CONFIG |= HPET_LEGACY_RT_CNF;
 #endif /* CONFIG_HPET_TIMER_LEGACY_EMULATION */
 
-#ifndef TIMER_SUPPORTS_TICKLESS
+#ifndef CONFIG_TICKLESS_IDLE
 	/*
 	 * Set timer0 to periodic mode, ready to expire every tick
 	 * Setting 32-bit mode during the first load of the comparator
@@ -568,7 +566,7 @@ int _sys_clock_driver_init(struct device *device)
 	/* set timer0 to one-shot mode, ready to expire on the first tick */
 
 	*_HPET_TIMER0_CONFIG_CAPS &= ~HPET_Tn_TYPE_CNF;
-#endif /* !TIMER_SUPPORTS_TICKLESS */
+#endif /* !CONFIG_TICKLESS_IDLE */
 
 	/*
 	 * Set the comparator register for timer0.  The write to the comparator

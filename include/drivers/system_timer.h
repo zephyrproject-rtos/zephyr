@@ -53,7 +53,7 @@ extern void sys_clock_disable(void);
 #ifdef CONFIG_TICKLESS_IDLE
 extern void _timer_idle_enter(int32_t ticks);
 extern void _timer_idle_exit(void);
-#endif /* TIMER_SUPPORTS_TICKLESS */
+#endif /* CONFIG_TICKLESS_IDLE */
 
 extern uint32_t _nano_get_earliest_deadline(void);
 
