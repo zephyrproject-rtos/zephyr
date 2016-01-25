@@ -69,4 +69,6 @@ source "drivers/nble/Kconfig"
 
 source "drivers/flash/Kconfig"
 
+source "drivers/sensor/Kconfig"
+
 endmenu
