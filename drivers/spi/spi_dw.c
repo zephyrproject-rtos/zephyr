@@ -271,6 +271,10 @@ static void push_data(struct device *dev)
 		cnt++;
 	}
 
+	if (!spi->tx_buf_len && !spi->rx_buf_len) {
+		write_txftlr(0, info->regs);
+	}
+
 	DBG("Pushed: %d\n", cnt);
 }
 
@@ -309,8 +313,8 @@ static void pull_data(struct device *dev)
 		spi->fifo_diff--;
 	}
 
-	if (!spi->rx_buf_len) {
-		write_rxftlr(DW_SPI_RXFTLR_DFLT, info->regs);
+	if (!spi->rx_buf_len && spi->tx_buf_len < DW_SPI_FIFO_DEPTH) {
+		write_rxftlr(spi->tx_buf_len - 1, info->regs);
 	} else if (read_rxftlr(info->regs) >= spi->rx_buf_len) {
 		write_rxftlr(spi->rx_buf_len - 1, info->regs);
 	}
