@@ -26,7 +26,7 @@ The project's documentation currently comprises the following items:
 Installing the documentation processors
 ***************************************
 
-Install the current version of :program:`Sphinx`, type:
+Install the current version of ``Sphinx``, type:
 
 .. code-block:: bash
 
@@ -46,14 +46,14 @@ Install the current version of :program:`Sphinx`, type:
 
 .. note::
 
-   Make sure that :program:`Doxygen` is installed in your system.
+   Make sure that ``Doxygen`` is installed in your system.
    The installation of Doxygen is beyond the scope of this document.
 
 Running the documentation generators
 ************************************
 
 Assuming that the Zephyr Project tree with the doc directory is in
-:file:`DIRECTORY`, type:
+``DIRECTORY``, type:
 
 .. code-block:: bash
 
@@ -61,7 +61,7 @@ Assuming that the Zephyr Project tree with the doc directory is in
 
    $ make doxy html
 
-Find the output in :file:`DIRECTORY/doc/_build/html/index.html`
+Find the output in ``DIRECTORY/doc/_build/html/index.html``
 
 Review the available formats with:
 
