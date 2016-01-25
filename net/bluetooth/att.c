@@ -532,11 +532,13 @@ static bool uuid_create(struct bt_uuid *uuid, struct net_buf *buf)
 static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  uint8_t mask)
 {
-	if ((mask & BT_GATT_PERM_READ) && !(attr->perm & BT_GATT_PERM_READ)) {
+	if ((mask & BT_GATT_PERM_READ) &&
+	    !(attr->perm & BT_GATT_PERM_READ_MASK)) {
 		return BT_ATT_ERR_READ_NOT_PERMITTED;
 	}
 
-	if ((mask & BT_GATT_PERM_WRITE) && !(attr->perm & BT_GATT_PERM_WRITE)) {
+	if ((mask & BT_GATT_PERM_WRITE) &&
+	    !(attr->perm & BT_GATT_PERM_WRITE_MASK)) {
 		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
 	}
 
