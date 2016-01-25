@@ -7,8 +7,9 @@ endif
 CROSS_COMPILE_TARGET_arm = arm-poky-eabi
 CROSS_COMPILE_arm=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_TARGET_arm)-
 CROSS_COMPILE_arm_version = $(shell $(CROSS_COMPILE_arm)gcc -dumpversion)
-
-LIB_INCLUDE_DIR_arm = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/lib/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_arm_version)
+LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/${CROSS_COMPILE_TARGET_arm}/lib
+LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/lib/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_arm_version)
+TOOLCHAIN_CFLAGS_arm = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/${CROSS_COMPILE_TARGET_arm}/include
 
 # iamcu
 CROSS_COMPILE_TARGET_iamcu = i586-poky-elfiamcu
@@ -34,6 +35,8 @@ CROSS_COMPILE_arc=${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/
 CROSS_COMPILE_arc_version = $(shell $(CROSS_COMPILE_arc)gcc -dumpversion)
 
 LIB_INCLUDE_DIR_arc = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_arc)/usr/lib/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_arc_version)/em
+LIB_INCLUDE_DIR_arc += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_arc)/usr/${CROSS_COMPILE_TARGET_arc}/lib/em
+TOOLCHAIN_CFLAGS_arc = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_arc)/usr/${CROSS_COMPILE_TARGET_arc}/include
 
 ifneq ($(CONFIG_TOOLCHAIN_VARIANT),"")
 CROSS_COMPILE = $(CROSS_COMPILE_$(subst $\",,$(CONFIG_TOOLCHAIN_VARIANT)))
