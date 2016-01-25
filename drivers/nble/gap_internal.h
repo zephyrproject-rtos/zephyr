@@ -241,7 +241,7 @@ void on_nble_up(void);
  * The response to this request is received through
  * @ref on_ble_gap_service_write_rsp
  *
- * @param par data of the characteristic to write
+ * @param par Data of the characteristic to write
  * @param user_data User data
  */
 void ble_gap_service_write_req(const struct ble_gap_service_write_params *par,
@@ -266,7 +266,7 @@ void on_ble_gap_service_write_rsp(const struct ble_service_write_response *par);
  *
  * The response to this request is received through @ref on_ble_gap_dbg_rsp
  *
- * @param par debug parameters
+ * @param par Debug parameters
  * @param user_data User data
  */
 void ble_gap_dbg_req(const struct debug_params *par, void *user_data);
@@ -287,8 +287,8 @@ void on_ble_gap_dbg_rsp(const struct debug_response *par);
  * This shall put the controller stack into a usable (enabled) state.
  * Hence this should be called first!
  *
- * @param config     BLE write configuration
- * @param user_data    User data
+ * @param config BLE write configuration
+ * @param user_data User data
  *
  */
 void ble_set_enable_config_req(const struct ble_wr_config_params *config,
@@ -300,7 +300,7 @@ void ble_set_enable_config_req(const struct ble_wr_config_params *config,
  * The response to this request is received through
  * @ref on_ble_gap_start_advertise_rsp
  *
- * @param par advertisement
+ * @param par Advertisement
  * @param p_adv_data Pointer to advertisement and scan response data
  */
 void ble_gap_start_advertise_req(struct ble_gap_adv_params *par);
@@ -315,7 +315,7 @@ void on_ble_gap_start_advertise_rsp(const struct ble_core_response *par);
 /**
  * Request to stop advertisement
  *
- * @param user_data pointer to private data
+ * @param user_data Pointer to private data
  */
 void ble_gap_stop_advertise_req(void *user_data);
 
@@ -348,11 +348,11 @@ struct ble_gap_irk_info {
  * Store white in BLE controller. It needs to be done BEFORE starting
  * advertisement or start scanning
  *
- * @param bd_array      array of bd addresses
- * @param bd_array_size size of bd addresses array
- * @param irk_array     array of irk keys (for address resolution offload)
- * @param irk_array_size size of irk keys array
- * @param priv        pointer to private data
+ * @param bd_array Array of bd addresses
+ * @param bd_array_size Size of bd addresses array
+ * @param irk_array Array of irk keys (for address resolution offload)
+ * @param irk_array_size Size of irk keys array
+ * @param priv Pointer to private data
  */
 void ble_gap_wr_white_list_req(bt_addr_le_t *bd_array, uint8_t bd_array_size,
 			       struct ble_gap_irk_info *irk_array,
@@ -486,7 +486,7 @@ struct ble_core_gap_sm_config_params {
  * The response to this request is received through
  * @ref on_ble_gap_sm_config_rsp
  *
- * @param par local authentication/bonding parameters
+ * @param par Local authentication/bonding parameters
  * @param user_data User data
  */
 void ble_gap_sm_config_req(const struct ble_core_gap_sm_config_params *par,
@@ -563,7 +563,7 @@ struct ble_gap_sm_key_reply_req_params {
  * The response to this request is received through
  * @ref on_ble_gap_sm_passkey_reply_rsp
  *
- * @param par connection on which bonding is going on and  bonding security
+ * @param par Connection on which bonding is going on and  bonding security
  * reply
  * @param user_data User data
  */
@@ -598,19 +598,21 @@ void on_ble_gap_sm_clear_bonds_rsp(const struct ble_core_response *par);
  * RSSI report parameters
  */
 struct ble_core_rssi_report_params {
-	uint16_t conn_handle;   /**< Connection handle */
-	uint8_t op;             /**< RSSI operation @ref BLE_GAP_RSSI_OPS */
-	uint8_t delta_dBm;      /**< minimum RSSI dBm change to report a new RSSI value */
-	uint8_t min_count;      /**< number of delta_dBm changes before sending a new RSSI report */
+	uint16_t conn_handle;	/**< Connection handle */
+	uint8_t op;		/**< RSSI operation @ref BLE_GAP_RSSI_OPS */
+	uint8_t delta_dBm;	/**< minimum RSSI dBm change report new val */
+	/**< number of delta_dBm changes before sending a new RSSI report */
+	uint8_t min_count;
 };
 
 /**
  * Enable or disable the reporting of the RSSI value.
  *
- * The response to this request is received through @ref on_ble_gap_set_rssi_report_rsp
+ * The response to this request is received through
+ * @ref on_ble_gap_set_rssi_report_rsp
  *
  * @param params RSSI report parameters
- * @param user_data  pointer to user data
+ * @param user_data Pointer to user data
  */
 void ble_gap_set_rssi_report_req(const struct ble_core_rssi_report_params *par,
 				 void *user_data);
@@ -644,7 +646,7 @@ struct ble_gap_scan_params {
  * The response to this request is received through
  * @ref on_ble_gap_start_scan_rsp
  *
- * @param par scan parameters
+ * @param par Scan parameters
  * @param user_data Pointer to user data
  */
 void ble_gap_start_scan_req(const struct ble_gap_scan_params *par, void *priv);
@@ -700,7 +702,7 @@ struct ble_gap_cancel_connect_params {
  * The response to this request is received through
  * @ref on_ble_gap_cancel_connect_rsp
  *
- * @param par contains address of device for which the connection shall
+ * @param par Contains address of device for which the connection shall
  * be canceled
  * @param user_data Pointer to user data
  */
@@ -737,7 +739,7 @@ struct ble_gap_set_option_params {
  * The response to this request is received through
  * @ref on_ble_gap_set_option_rsp
  *
- * @param par contains gap options parameters
+ * @param par Contains gap options parameters
  * @param user_data Pointer to user data
  */
 void ble_gap_set_option_req(const struct ble_gap_set_option_params *par,
@@ -768,7 +770,7 @@ struct ble_gap_gen_cmd_params {
  * The response to this request is received through
  * @ref on_ble_gap_generic_cmd_rsp
  *
- * @param par contains Generic command parameters.
+ * @param par Contains Generic command parameters.
  * @param user_data Pointer to user data
  */
 void ble_gap_generic_cmd_req(const struct ble_gap_gen_cmd_params *par,
