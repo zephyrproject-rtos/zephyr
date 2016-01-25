@@ -17,6 +17,9 @@
 #include <errno.h>
 
 #include <bluetooth/gatt.h>
+#include <bluetooth/log.h>
+
+#include "gatt_internal.h"
 
 int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 {
@@ -151,4 +154,63 @@ int bt_gatt_read_multiple(struct bt_conn *conn, const uint16_t *handles,
 			  size_t count, bt_gatt_read_func_t func)
 {
 	return -ENOSYS;
+}
+
+void on_ble_gattc_write_rsp(const struct ble_gattc_write_rsp *ev,
+			    void *priv)
+{
+	BT_DBG("");
+}
+
+void on_ble_gattc_read_rsp(const struct ble_gattc_read_rsp *ev,
+			   uint8_t *data, uint8_t data_len, void *priv)
+{
+	BT_DBG("");
+}
+
+void on_ble_gattc_value_evt(const struct ble_gattc_value_evt *ev,
+		uint8_t *buf, uint8_t buflen)
+{
+	BT_DBG("");
+}
+
+void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *ev,
+			    const uint8_t *buf, uint8_t buflen)
+{
+	BT_DBG("");
+}
+
+void on_ble_gatts_get_attribute_value_rsp(const struct ble_gatts_attribute_response *par,
+					  uint8_t *data, uint8_t length)
+{
+	BT_DBG("");
+}
+
+void on_ble_gatt_register_rsp(const struct ble_gatt_register *par,
+			      const struct ble_gatt_attr_idx_entry *attr,
+			      uint8_t len)
+{
+	BT_DBG("");
+}
+
+void on_ble_gattc_discover_rsp(const struct ble_gattc_evt *ev,
+			       const struct ble_gattc_attr *data,
+			       uint8_t data_len)
+{
+	BT_DBG("");
+}
+
+void on_ble_gatts_send_svc_changed_rsp(const struct ble_core_response *par)
+{
+	BT_DBG("");
+}
+
+void on_ble_gatts_set_attribute_value_rsp(const struct ble_gatts_attribute_response *par)
+{
+	BT_DBG("");
+}
+
+void on_ble_gatts_send_notif_ind_rsp(const struct ble_gatt_notif_ind_rsp *par)
+{
+	BT_DBG("");
 }
