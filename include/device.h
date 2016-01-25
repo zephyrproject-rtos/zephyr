@@ -231,10 +231,15 @@ static inline void device_sync_call_wait(device_sync_call_t *sync)
  */
 static inline void device_sync_call_complete(device_sync_call_t *sync)
 {
+	static void (*func[3])(ksem_t sema) = {
+		isr_sem_give,
+		fiber_sem_give,
+		task_sem_give
+	};
 	if (sync->waiter_is_task) {
-		task_sem_give(sync->t_sem);
+		func[sys_execution_context_type_get()](sync->t_sem);
 	} else {
-		nano_isr_sem_give(&sync->f_sem);
+		nano_sem_give(&sync->f_sem);
 	}
 }
 
@@ -259,7 +264,7 @@ static inline void device_sync_call_wait(device_sync_call_t *sync)
  */
 static inline void device_sync_call_complete(device_sync_call_t *sync)
 {
-	nano_isr_sem_give(&sync->f_sem);
+	nano_sem_give(&sync->f_sem);
 }
 
 #endif /* CONFIG_MICROKERNEL || CONFIG_NANOKERNEL */
