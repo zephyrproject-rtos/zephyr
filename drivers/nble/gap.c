@@ -244,7 +244,13 @@ void on_ble_gap_dtm_init_rsp(void *user_data)
 
 void ble_log(const struct ble_log_s *param, char *format, uint8_t len)
 {
-	BT_DBG("");
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+	/* Build meaningful output */
+	printf("nble: ");
+	printf(format, param->param0, param->param1, param->param2,
+	       param->param3);
+	printf("\n");
+#endif
 }
 
 void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
