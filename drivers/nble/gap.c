@@ -37,6 +37,7 @@ static bt_ready_cb_t bt_ready_cb;
 void on_nble_up(void)
 {
 	BT_DBG("");
+
 	if (bt_ready_cb) {
 		bt_ready_cb(0);
 	}
@@ -250,7 +251,6 @@ void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
 {
 	BT_DBG("");
 }
-
 
 void on_ble_gap_disconnect_evt(const struct ble_gap_disconnect_evt *ev)
 {
