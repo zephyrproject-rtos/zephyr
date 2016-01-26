@@ -361,7 +361,7 @@ struct gpio_sch_data gpio_data_0;
 
 DEVICE_INIT_CONFIG_DEFINE(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME,
 			   gpio_sch_init, &gpio_sch_0_config);
-SYS_DEFINE_DEVICE(gpio_0, &gpio_data_0, SECONDARY,
+DEVICE_DEFINE(gpio_0, &gpio_data_0, SECONDARY,
 		  CONFIG_GPIO_SCH_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_SCH_0 */
@@ -376,7 +376,7 @@ struct gpio_sch_data gpio_data_1;
 
 DEVICE_INIT_CONFIG_DEFINE(gpio_1, CONFIG_GPIO_SCH_1_DEV_NAME,
 			   gpio_sch_init, &gpio_sch_1_config);
-SYS_DEFINE_DEVICE(gpio_1, &gpio_data_1, SECONDARY,
+DEVICE_DEFINE(gpio_1, &gpio_data_1, SECONDARY,
 		  CONFIG_GPIO_SCH_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_SCH_1 */

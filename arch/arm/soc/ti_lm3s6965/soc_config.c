@@ -52,7 +52,7 @@ static int uart_stellaris_init(struct device *dev)
 }
 
 DEVICE_INIT_CONFIG_DEFINE(_uart_stellaris_en, "", uart_stellaris_init, NULL);
-SYS_DEFINE_DEVICE(_uart_stellaris_en, NULL, PRIMARY,
+DEVICE_DEFINE(_uart_stellaris_en, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS */

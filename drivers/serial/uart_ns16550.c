@@ -707,7 +707,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_ns16550_0,
 			   &uart_ns16550_init,
 			   &uart_ns16550_dev_cfg_0);
 
-SYS_DEFINE_DEVICE(uart_ns16550_0, &uart_ns16550_dev_data_0,
+DEVICE_DEFINE(uart_ns16550_0, &uart_ns16550_dev_data_0,
 		  PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_NS16550_PORT_0 */
@@ -743,7 +743,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_ns16550_1,
 			   &uart_ns16550_init,
 			   &uart_ns16550_dev_cfg_1);
 
-SYS_DEFINE_DEVICE(uart_ns16550_1, &uart_ns16550_dev_data_1,
+DEVICE_DEFINE(uart_ns16550_1, &uart_ns16550_dev_data_1,
 		  PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_NS16550_PORT_1 */

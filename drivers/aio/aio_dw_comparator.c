@@ -210,7 +210,7 @@ struct dw_aio_cmp_dev_data_t dw_aio_cmp_dev_data = {
 	.num_cmp = AIO_DW_CMP_COUNT,
 };
 
-SYS_DEFINE_DEVICE(dw_aio_cmp, &dw_aio_cmp_dev_data, SECONDARY,
+DEVICE_DEFINE(dw_aio_cmp, &dw_aio_cmp_dev_data, SECONDARY,
 	CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 static int dw_aio_cmp_config(struct device *dev)

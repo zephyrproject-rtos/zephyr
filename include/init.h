@@ -39,7 +39,7 @@ extern "C" {
 #define _SYS_INIT_LEVEL_APPLICATION  4
 
 
-/** @def SYS_DEFINE_DEVICE
+/** @def DEVICE_DEFINE
  *
  *  @brief Define device object
  *
@@ -83,7 +83,7 @@ extern "C" {
  * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
 
-#define SYS_DEFINE_DEVICE(name, data, level, priority)			    \
+#define DEVICE_DEFINE(name, data, level, priority)			    \
 	 static struct device (__initconfig_##name) __used  \
 	 __attribute__((__section__(".init_" #level STRINGIFY(priority)))) = { \
 		 .config = &(config_##name),\
@@ -95,14 +95,14 @@ extern "C" {
  * @brief Expands to the full name of a global device object
  *
  * @details Return the full name of a device object symbol created by
- * SYS_DEFINE_DEVICE(), using the @name provided to SYS_DEFINE_DEVICE().
+ * DEVICE_DEFINE(), using the @name provided to DEVICE_DEFINE().
  *
  * It is meant to be used for declaring extern symbols pointing on device
  * objects before using the SYS_GET_DEVICE macro to get the device object.
  *
- * @param name The same name provided to SYS_DEFINE_DEVICE()
+ * @param name The same name provided to DEVICE_DEFINE()
  *
- * @return The exanded name of the device object created by SYS_DEFINE_DEVICE()
+ * @return The exanded name of the device object created by DEVICE_DEFINE()
  */
 #define SYS_GET_DEVICE_NAME(name) (_CONCAT(__initconfig_, name))
 
@@ -112,11 +112,11 @@ extern "C" {
  * @brief Obtain a pointer to a device object by name
  *
  * @details Return the address of a device object created by
- * SYS_DEFINE_DEVICE(), using the @name provided to SYS_DEFINE_DEVICE().
+ * DEVICE_DEFINE(), using the @name provided to DEVICE_DEFINE().
  *
- * @param name The same name provided to SYS_DEFINE_DEVICE()
+ * @param name The same name provided to DEVICE_DEFINE()
  *
- * @return A pointer to the device object created by SYS_DEFINE_DEVICE()
+ * @return A pointer to the device object created by DEVICE_DEFINE()
  */
 #define SYS_GET_DEVICE(name) (&SYS_GET_DEVICE_NAME(name))
 

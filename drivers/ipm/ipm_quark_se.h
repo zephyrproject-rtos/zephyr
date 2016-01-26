@@ -140,7 +140,7 @@ int quark_se_ipm_controller_initialize(struct device *d);
 	DEVICE_INIT_CONFIG_DEFINE(name, _STRINGIFY(name), \
 				   quark_se_ipm_initialize, \
 				   &quark_se_ipm_config_##name); \
-	SYS_DEFINE_DEVICE(name, &quark_se_ipm_runtime_##name, SECONDARY, \
+	DEVICE_DEFINE(name, &quark_se_ipm_runtime_##name, SECONDARY, \
 						CONFIG_KERNEL_INIT_PRIORITY_DEFAULT)
 
 #ifdef __cplusplus

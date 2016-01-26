@@ -662,7 +662,7 @@ DEVICE_INIT_CONFIG_DEFINE(i2c_ss_0,
 			   &i2c_qse_ss_initialize,
 			   &i2c_config_ss_0);
 
-SYS_DEFINE_DEVICE(i2c_ss_0, &i2c_ss_0_runtime,
+DEVICE_DEFINE(i2c_ss_0, &i2c_ss_0_runtime,
 					SECONDARY, CONFIG_I2C_INIT_PRIORITY);
 
 void _i2c_qse_ss_config_irq_0(struct device *port)
@@ -727,7 +727,7 @@ DEVICE_INIT_CONFIG_DEFINE(i2c_ss_1,
 			   &i2c_qse_ss_initialize,
 			   &i2c_config_ss_1);
 
-SYS_DEFINE_DEVICE(i2c_ss_1, &i2c_qse_ss_1_runtime,
+DEVICE_DEFINE(i2c_ss_1, &i2c_qse_ss_1_runtime,
 					SECONDARY, CONFIG_I2C_INIT_PRIORITY);
 
 

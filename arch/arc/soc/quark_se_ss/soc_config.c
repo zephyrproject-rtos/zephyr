@@ -35,7 +35,7 @@ static struct quark_se_ipm_controller_config_info ipm_controller_config = {
 };
 DEVICE_INIT_CONFIG_DEFINE(quark_se_ipm, "", quark_se_ipm_controller_initialize,
 			   &ipm_controller_config);
-SYS_DEFINE_DEVICE(quark_se_ipm, NULL, SECONDARY,
+DEVICE_DEFINE(quark_se_ipm, NULL, SECONDARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #if CONFIG_IPM_CONSOLE_SENDER
@@ -49,7 +49,7 @@ struct ipm_console_sender_config_info quark_se_ipm_sender_config = {
 DEVICE_INIT_CONFIG_DEFINE(ipm_console, "ipm_console",
 			   ipm_console_sender_init,
 			   &quark_se_ipm_sender_config);
-SYS_DEFINE_DEVICE(ipm_console, NULL, SECONDARY, CONFIG_IPM_CONSOLE_PRIORITY);
+DEVICE_DEFINE(ipm_console, NULL, SECONDARY, CONFIG_IPM_CONSOLE_PRIORITY);
 
 #endif /* CONFIG_IPM_CONSOLE_SENDER */
 #endif /* CONFIG_IPM_QUARK_SE */
@@ -74,7 +74,7 @@ static int uart_ns16550_init(struct device *dev)
 }
 
 DEVICE_INIT_CONFIG_DEFINE(uart_ns16550_init, "", uart_ns16550_init, NULL);
-SYS_DEFINE_DEVICE(uart_ns16550_init, NULL, PRIMARY,
+DEVICE_DEFINE(uart_ns16550_init, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_UART_NS16550 */

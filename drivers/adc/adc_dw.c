@@ -534,7 +534,7 @@ DEVICE_INIT_CONFIG_DEFINE(adc_dw_0,	/* config name*/
 			&adc_dw_init,	/* init function*/
 			&adc_config_dev_0); /* config options*/
 
-SYS_DEFINE_DEVICE(adc_dw_0, &adc_info_dev_0, SECONDARY,
+DEVICE_DEFINE(adc_dw_0, &adc_info_dev_0, SECONDARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static void adc_config_0_irq(void)

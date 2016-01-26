@@ -450,7 +450,7 @@ struct gpio_dw_runtime gpio_0_runtime;
 
 DEVICE_INIT_CONFIG_DEFINE(gpio_dw_0, CONFIG_GPIO_DW_0_NAME,
 			   gpio_dw_initialize, &gpio_config_0);
-SYS_DEFINE_DEVICE(gpio_dw_0, &gpio_0_runtime, SECONDARY,
+DEVICE_DEFINE(gpio_dw_0, &gpio_0_runtime, SECONDARY,
 		  CONFIG_GPIO_DW_INIT_PRIORITY);
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
@@ -526,7 +526,7 @@ struct gpio_dw_runtime gpio_1_runtime;
 DEVICE_INIT_CONFIG_DEFINE(gpio_dw_1, CONFIG_GPIO_DW_1_NAME,
 			   gpio_dw_initialize, &gpio_dw_config_1);
 
-SYS_DEFINE_DEVICE(gpio_dw_1, &gpio_1_runtime, SECONDARY,
+DEVICE_DEFINE(gpio_dw_1, &gpio_1_runtime, SECONDARY,
 		  CONFIG_GPIO_DW_INIT_PRIORITY);
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT

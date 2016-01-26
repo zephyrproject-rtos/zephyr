@@ -100,7 +100,7 @@ static int init(struct device *dev)
 
 DEVICE_INIT_CONFIG_DEFINE(wdt, CONFIG_WDT_QMSI_DRV_NAME, init, 0);
 
-SYS_DEFINE_DEVICE(wdt, 0, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(wdt, 0, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 /* Define 'struct device' variable which is passed to the ISR. Even if it
  * is not used by the ISR code, we require it in order to be able to pass

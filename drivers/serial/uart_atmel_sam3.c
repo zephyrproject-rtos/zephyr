@@ -264,5 +264,5 @@ DEVICE_INIT_CONFIG_DEFINE(uart_sam3_0,
 			   &uart_sam3_init,
 			   &uart_sam3_dev_cfg_0);
 
-SYS_DEFINE_DEVICE(uart_sam3_0, &uart_sam3_dev_data_0,
+DEVICE_DEFINE(uart_sam3_0, &uart_sam3_dev_data_0,
 		  PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

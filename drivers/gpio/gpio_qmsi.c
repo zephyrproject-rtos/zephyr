@@ -280,5 +280,5 @@ static struct gpio_qmsi_runtime gpio_0_runtime;
 DEVICE_INIT_CONFIG_DEFINE(gpio_0, CONFIG_GPIO_QMSI_0_NAME,
 			   &gpio_qmsi_init, &gpio_0_config);
 
-SYS_DEFINE_DEVICE(gpio_0, &gpio_0_runtime, SECONDARY,
+DEVICE_DEFINE(gpio_0, &gpio_0_runtime, SECONDARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

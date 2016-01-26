@@ -49,5 +49,5 @@ static int quark_se_arc_init(struct device *arg)
 	return 0;
 }
 DEVICE_INIT_CONFIG_DEFINE(quark_se_arc_0, "", quark_se_arc_init, NULL);
-SYS_DEFINE_DEVICE(quark_se_arc_0, NULL, PRIMARY,
+DEVICE_DEFINE(quark_se_arc_0, NULL, PRIMARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

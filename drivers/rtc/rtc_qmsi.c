@@ -95,7 +95,7 @@ static int rtc_qmsi_init(struct device *dev)
 DEVICE_INIT_CONFIG_DEFINE(rtc, CONFIG_RTC_DRV_NAME,
 			   &rtc_qmsi_init, NULL);
 
-SYS_DEFINE_DEVICE(rtc, NULL, SECONDARY,
+DEVICE_DEFINE(rtc, NULL, SECONDARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 static struct device *rtc_qmsi_dev = SYS_GET_DEVICE(rtc);

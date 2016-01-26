@@ -88,5 +88,5 @@ DEVICE_INIT_CONFIG_DEFINE(uart_nsim0,
 			   &uart_nsim_init,
 			   &uart_nsim_dev_cfg_0);
 
-SYS_DEFINE_DEVICE(uart_nsim0, NULL, PRIMARY,
+DEVICE_DEFINE(uart_nsim0, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

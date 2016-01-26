@@ -40,7 +40,7 @@ static struct quark_se_ipm_controller_config_info ipm_controller_config = {
 };
 DEVICE_INIT_CONFIG_DEFINE(quark_se_ipm, "", quark_se_ipm_controller_initialize,
 			   &ipm_controller_config);
-SYS_DEFINE_DEVICE(quark_se_ipm, NULL, PRIMARY,
+DEVICE_DEFINE(quark_se_ipm, NULL, PRIMARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #if defined(CONFIG_IPM_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
@@ -67,7 +67,7 @@ struct ipm_console_receiver_runtime_data quark_se_ipm_receiver_driver_data;
 DEVICE_INIT_CONFIG_DEFINE(ipm_console0, "ipm_console0",
 			   ipm_console_receiver_init,
 			   &quark_se_ipm_receiver_config);
-SYS_DEFINE_DEVICE(ipm_console0, &quark_se_ipm_receiver_driver_data,
+DEVICE_DEFINE(ipm_console0, &quark_se_ipm_receiver_driver_data,
 					SECONDARY, CONFIG_IPM_CONSOLE_PRIORITY);
 
 #endif /* CONFIG_PRINTK && CONFIG_IPM_CONSOLE_RECEIVER */

@@ -607,7 +607,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_stellaris0,
 			   &uart_stellaris_init,
 			   &uart_stellaris_dev_cfg_0);
 
-SYS_DEFINE_DEVICE(uart_stellaris0, &uart_stellaris_dev_data_0, PRIMARY,
+DEVICE_DEFINE(uart_stellaris0, &uart_stellaris_dev_data_0, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_0 */
@@ -628,7 +628,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_stellaris1,
 			   &uart_stellaris_init,
 			   &uart_stellaris_dev_cfg_1);
 
-SYS_DEFINE_DEVICE(uart_stellaris1, &uart_stellaris_dev_data_1, PRIMARY,
+DEVICE_DEFINE(uart_stellaris1, &uart_stellaris_dev_data_1, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_1 */
@@ -649,7 +649,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_stellaris2,
 			   &uart_stellaris_init,
 			   &uart_stellaris_dev_cfg_2);
 
-SYS_DEFINE_DEVICE(uart_stellaris2, &uart_stellaris_dev_data_2, PRIMARY,
+DEVICE_DEFINE(uart_stellaris2, &uart_stellaris_dev_data_2, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_2 */

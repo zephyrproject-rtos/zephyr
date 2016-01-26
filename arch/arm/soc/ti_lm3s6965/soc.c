@@ -57,5 +57,5 @@ static int ti_lm3s6965_init(struct device *arg)
 }
 
 DEVICE_INIT_CONFIG_DEFINE(ti_lm3_0, "", ti_lm3s6965_init, NULL);
-SYS_DEFINE_DEVICE(ti_lm3_0, NULL, PRIMARY,
+DEVICE_DEFINE(ti_lm3_0, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

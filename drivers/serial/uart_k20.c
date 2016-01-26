@@ -381,7 +381,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_k20_0,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_0);
 
-SYS_DEFINE_DEVICE(uart_k20_0, &uart_k20_dev_data_0, PRIMARY,
+DEVICE_DEFINE(uart_k20_0, &uart_k20_dev_data_0, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_0 */
@@ -402,7 +402,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_k20_1,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_1);
 
-SYS_DEFINE_DEVICE(uart_k20_1, &uart_k20_dev_data_1, PRIMARY,
+DEVICE_DEFINE(uart_k20_1, &uart_k20_dev_data_1, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_1 */
@@ -423,7 +423,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_k20_2,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_2);
 
-SYS_DEFINE_DEVICE(uart_k20_2, &uart_k20_dev_data_2, PRIMARY,
+DEVICE_DEFINE(uart_k20_2, &uart_k20_dev_data_2, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_2 */
@@ -444,7 +444,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_k20_3,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_3);
 
-SYS_DEFINE_DEVICE(uart_k20_3, &uart_k20_dev_data_3, PRIMARY,
+DEVICE_DEFINE(uart_k20_3, &uart_k20_dev_data_3, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_3 */
@@ -465,7 +465,7 @@ DEVICE_INIT_CONFIG_DEFINE(uart_k20_4,
 			   &uart_k20_init,
 			   &uart_k20_dev_cfg_4);
 
-SYS_DEFINE_DEVICE(uart_k20_4, &uart_k20_dev_data_4, PRIMARY,
+DEVICE_DEFINE(uart_k20_4, &uart_k20_dev_data_4, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_4 */

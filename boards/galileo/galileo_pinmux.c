@@ -784,5 +784,5 @@ struct galileo_data galileo_pinmux_driver = {
  * 1 - PCA9535 and PCAL9685
  * 2 - pinmux
  */
-SYS_DEFINE_DEVICE(pmux, &galileo_pinmux_driver, SECONDARY,
+DEVICE_DEFINE(pmux, &galileo_pinmux_driver, SECONDARY,
 		  CONFIG_PINMUX_INIT_PRIORITY);
