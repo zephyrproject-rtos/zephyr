@@ -40,15 +40,46 @@ struct gpio_qmsi_runtime {
 	uint32_t pin_callbacks;
 	uint8_t port_callback;
 };
+
+int gpio_qmsi_init(struct device *dev);
+
+#ifdef CONFIG_GPIO_QMSI_0
+static struct gpio_qmsi_config gpio_0_config = {
+	.gpio = QM_GPIO_0,
+	.addr = &QM_GPIO[0],
+	.num_pins = QM_NUM_GPIO_PINS,
+};
+
+static struct gpio_qmsi_runtime gpio_0_runtime;
+
+DEVICE_INIT(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
+	    &gpio_0_runtime, &gpio_0_config,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+#endif /* CONFIG_GPIO_QMSI_0 */
+
+#ifdef CONFIG_GPIO_QMSI_AON
+static struct gpio_qmsi_config gpio_aon_config = {
+	.gpio = QM_AON_GPIO_0,
+	.addr = (qm_gpio_reg_t *) QM_AON_GPIO_BASE,
+	.num_pins = QM_NUM_AON_GPIO_PINS,
+};
+
+static struct gpio_qmsi_runtime gpio_aon_runtime;
+
+DEVICE_INIT(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
+	    &gpio_aon_runtime, &gpio_aon_config,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_GPIO_QMSI_AON */
+
 /*
  * TODO: Zephyr's API is not clear about the behavior of the this
  * application callback. This topic is currently under
  * discussion, so this implementation will be fixed as soon as a
  * decision is made.
  */
-static void gpio_qmsi_0_int_callback(uint32_t status)
+static void gpio_qmsi_callback(struct device *port, uint32_t status)
 {
-	struct device *port = device_get_binding(CONFIG_GPIO_QMSI_0_NAME);
 	struct gpio_qmsi_config *config = port->config->config_info;
 	struct gpio_qmsi_runtime *context = port->driver_data;
 	const uint32_t enabled_mask = context->pin_callbacks & status;
@@ -70,6 +101,28 @@ static void gpio_qmsi_0_int_callback(uint32_t status)
 			context->callback(port, bit);
 		}
 	}
+}
+
+static void gpio_qmsi_0_int_callback(uint32_t status)
+{
+#ifndef CONFIG_GPIO_QMSI_0
+	return;
+#else
+	struct device *port = DEVICE_GET(gpio_0);
+
+	gpio_qmsi_callback(port, status);
+#endif
+}
+
+static void gpio_qmsi_aon_int_callback(uint32_t status)
+{
+#ifndef CONFIG_GPIO_QMSI_AON
+	return;
+#else
+	struct device *port = DEVICE_GET(gpio_aon);
+
+	gpio_qmsi_callback(port, status);
+#endif
 }
 
 static void qmsi_write_bit(uint32_t *target, uint8_t bit, uint8_t value)
@@ -108,8 +161,17 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 		qmsi_write_bit(&cfg.int_en, pin, 1);
 	}
 
-	/* FIXME: for multiple GPIO ports */
-	cfg.callback = gpio_qmsi_0_int_callback;
+	switch (gpio) {
+	case QM_GPIO_0:
+		cfg.callback = gpio_qmsi_0_int_callback;
+		break;
+	case QM_AON_GPIO_0:
+		cfg.callback = gpio_qmsi_aon_int_callback;
+		break;
+	default:
+		return;
+	}
+
 	qm_gpio_set_config(gpio, &cfg);
 
 	/* Recover the original interrupt mask for this port. */
@@ -250,33 +312,33 @@ int gpio_qmsi_init(struct device *port)
 	struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	uint32_t reg = (uint32_t) gpio_config->addr;
 
-	clk_periph_enable(CLK_PERIPH_GPIO_REGISTER |
-			  CLK_PERIPH_GPIO_INTERRUPT | CLK_PERIPH_GPIO_DB);
+	switch (gpio_config->gpio) {
+	case QM_GPIO_0:
+		clk_periph_enable(CLK_PERIPH_GPIO_REGISTER |
+				  CLK_PERIPH_GPIO_INTERRUPT |
+				  CLK_PERIPH_GPIO_DB);
+		IRQ_CONNECT(CONFIG_GPIO_QMSI_0_IRQ,
+			    CONFIG_GPIO_QMSI_0_PRI, qm_gpio_isr_0,
+			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
+		irq_enable(CONFIG_GPIO_QMSI_0_IRQ);
+		QM_SCSS_INT->int_gpio_mask &= ~BIT(0);
+		break;
+	case QM_AON_GPIO_0:
+		IRQ_CONNECT(CONFIG_GPIO_QMSI_AON_IRQ,
+			    CONFIG_GPIO_QMSI_AON_PRI, qm_aon_gpio_isr_0,
+			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
+		irq_enable(CONFIG_GPIO_QMSI_AON_IRQ);
+		QM_SCSS_INT->int_aon_gpio_mask &= ~BIT(0);
+		break;
+	default:
+		return DEV_FAIL;
+	}
 
 	/* mask and disable interrupts */
 	sys_write32(~(0), reg + INTMASK);
 	sys_write32(0, reg + INTEN);
 	sys_write32(~(0), reg + PORTA_EOI);
 
-	IRQ_CONNECT(CONFIG_GPIO_QMSI_0_IRQ, CONFIG_GPIO_QMSI_0_PRI, qm_gpio_isr_0,
-		    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-
-	/* Enable GPIO IRQ and unmask interrupts for Lakemont. */
-	sys_clear_bit(QM_SCSS_INT_BASE + INT_GPIO_MASK, 0);
-	irq_enable(CONFIG_GPIO_QMSI_0_IRQ);
-
 	port->driver_api = &api_funcs;
 	return DEV_OK;
 }
-
-static struct gpio_qmsi_config gpio_0_config = {
-	.gpio = QM_GPIO_0,
-	.addr = &QM_GPIO[0],
-	.num_pins = QM_NUM_GPIO_PINS,
-};
-
-static struct gpio_qmsi_runtime gpio_0_runtime;
-
-DEVICE_INIT(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
-			&gpio_0_runtime, &gpio_0_config,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

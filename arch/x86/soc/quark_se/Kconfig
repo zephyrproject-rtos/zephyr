@@ -124,6 +124,14 @@ config GPIO_QMSI_0_IRQ
 	default 8
 config GPIO_QMSI_0_PRI
 	default 2
+config GPIO_QMSI_AON
+	def_bool n
+config GPIO_QMSI_AON_NAME
+	default "gpio_aon"
+config GPIO_QMSI_AON_IRQ
+	default 31
+config GPIO_QMSI_AON_PRI
+	default 2
 endif
 endif
 endif
