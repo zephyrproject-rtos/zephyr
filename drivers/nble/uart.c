@@ -116,6 +116,7 @@ static int nble_read(struct device *uart, uint8_t *buf,
 		     size_t len, size_t min)
 {
 	int total = 0;
+	int tries = 10;
 
 	while (len) {
 		int rx;
@@ -123,7 +124,7 @@ static int nble_read(struct device *uart, uint8_t *buf,
 		rx = uart_fifo_read(uart, buf, len);
 		if (rx == 0) {
 			BT_DBG("Got zero bytes from UART");
-			if (total < min) {
+			if (total < min && tries--) {
 				continue;
 			}
 			break;
