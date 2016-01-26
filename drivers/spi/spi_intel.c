@@ -150,7 +150,7 @@ static void completed(struct device *dev, uint32_t error)
 	write_sscr1(spi->sscr1, info->regs);
 	clear_bit_sscr0_sse(info->regs);
 
-	synchronous_call_complete(&spi->sync);
+	device_sync_call_complete(&spi->sync);
 }
 
 static void pull_data(struct device *dev)
@@ -304,7 +304,7 @@ static int spi_intel_transceive(struct device *dev,
 	write_sscr1(spi->sscr1 | INTEL_SPI_SSCR1_RIE |
 				INTEL_SPI_SSCR1_TIE, info->regs);
 
-	synchronous_call_wait(&spi->sync);
+	device_sync_call_wait(&spi->sync);
 
 	if (spi->error) {
 		spi->error = 0;
@@ -419,7 +419,7 @@ int spi_intel_init(struct device *dev)
 
 	_spi_config_cs(dev);
 
-	synchronous_call_init(&spi->sync);
+	device_sync_call_init(&spi->sync);
 
 	irq_enable(info->irq);
 

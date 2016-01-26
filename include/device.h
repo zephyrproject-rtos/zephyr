@@ -120,7 +120,7 @@ typedef struct {
  *
  * @param sync A pointer to a valid device_sync_call_t
  */
-static inline void synchronous_call_init(device_sync_call_t *sync)
+static inline void device_sync_call_init(device_sync_call_t *sync)
 {
 	nano_sem_init(&sync->f_sem);
 #ifdef CONFIG_MICROKERNEL
@@ -140,7 +140,7 @@ static inline void synchronous_call_init(device_sync_call_t *sync)
  *
  * @param sync A pointer to a valid device_sync_call_t
  */
-static inline void synchronous_call_wait(device_sync_call_t *sync)
+static inline void device_sync_call_wait(device_sync_call_t *sync)
 {
 	if ((sys_execution_context_type_get() == NANO_CTX_TASK) &&
 	    (task_priority_get() < CONFIG_NUM_TASK_PRIORITIES - 1)) {
@@ -159,7 +159,7 @@ static inline void synchronous_call_wait(device_sync_call_t *sync)
  *
  * @param sync A pointer to a valid device_sync_call_t
  */
-static inline void synchronous_call_complete(device_sync_call_t *sync)
+static inline void device_sync_call_complete(device_sync_call_t *sync)
 {
 	if (sync->caller_is_task) {
 		task_sem_give(sync->t_sem);
@@ -176,7 +176,7 @@ static inline void synchronous_call_complete(device_sync_call_t *sync)
  *
  * @param sync A pointer to a valid device_sync_call_t
  */
-static inline void synchronous_call_wait(device_sync_call_t *sync)
+static inline void device_sync_call_wait(device_sync_call_t *sync)
 {
 	nano_sem_take(&sync->f_sem, TICKS_UNLIMITED);
 }
@@ -187,7 +187,7 @@ static inline void synchronous_call_wait(device_sync_call_t *sync)
  *
  * @param sync A pointer to a valid device_sync_call_t
  */
-static inline void synchronous_call_complete(device_sync_call_t *sync)
+static inline void device_sync_call_complete(device_sync_call_t *sync)
 {
 	nano_isr_sem_give(&sync->f_sem);
 }

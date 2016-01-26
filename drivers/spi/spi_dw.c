@@ -220,7 +220,7 @@ static void completed(struct device *dev, int error)
 	clear_bit_ssienr(info->regs);
 
 	_spi_control_cs(dev, 0);
-	synchronous_call_complete(&spi->sync);
+	device_sync_call_complete(&spi->sync);
 }
 
 static void push_data(struct device *dev)
@@ -441,7 +441,7 @@ static int spi_dw_transceive(struct device *dev,
 	/* Enable the controller */
 	set_bit_ssienr(info->regs);
 
-	synchronous_call_wait(&spi->sync);
+	device_sync_call_wait(&spi->sync);
 
 	if (spi->error) {
 		spi->error = 0;
@@ -535,7 +535,7 @@ int spi_dw_init(struct device *dev)
 
 	info->config_func();
 
-	synchronous_call_init(&spi->sync);
+	device_sync_call_init(&spi->sync);
 
 	_spi_config_cs(dev);
 

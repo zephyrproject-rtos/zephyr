@@ -270,7 +270,7 @@ static inline void _i2c_qse_ss_transfer_complete(struct device *dev)
 	_i2c_qse_ss_reg_write(dev, REG_INTR_MASK, IC_INTR_MASK_ALL);
 	_i2c_qse_ss_reg_write(dev, REG_INTR_CLR, IC_INTR_CLR_ALL);
 
-	synchronous_call_complete(&dw->sync);
+	device_sync_call_complete(&dw->sync);
 }
 
 
@@ -494,7 +494,7 @@ static int i2c_qse_ss_intr_transfer(struct device *dev,
 				      (IC_INTR_MASK_TX | IC_INTR_MASK_RX));
 
 		/* Wait for transfer to be done */
-		synchronous_call_wait(&dw->sync);
+		device_sync_call_wait(&dw->sync);
 		if (dw->state & I2C_QSE_SS_CMD_ERROR) {
 			ret = DEV_FAIL;
 			break;
@@ -629,7 +629,7 @@ int i2c_qse_ss_initialize(struct device *dev)
 	/* Enable clock for controller so we can talk to it */
 	_i2c_qse_ss_reg_write_or(dev, REG_CON, IC_CON_CLK_ENA);
 
-	synchronous_call_init(&dw->sync);
+	device_sync_call_init(&dw->sync);
 
 	if (i2c_qse_ss_runtime_configure(dev, dw->app_config.raw) != DEV_OK) {
 		DBG("I2C_SS: Cannot set default configuration 0x%x\n",

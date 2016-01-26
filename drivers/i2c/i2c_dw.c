@@ -199,7 +199,7 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 	regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
 	value = regs->ic_clr_intr;
 
-	synchronous_call_complete(&dw->sync);
+	device_sync_call_complete(&dw->sync);
 }
 
 void i2c_dw_isr(struct device *port)
@@ -500,7 +500,7 @@ static int i2c_dw_transfer(struct device *dev,
 		}
 
 		/* Wait for transfer to be done */
-		synchronous_call_wait(&dw->sync);
+		device_sync_call_wait(&dw->sync);
 
 		if (dw->state & I2C_DW_CMD_ERROR) {
 			ret = DEV_FAIL;
@@ -689,7 +689,7 @@ int i2c_dw_initialize(struct device *port)
 		return DEV_NOT_CONFIG;
 	}
 
-	synchronous_call_init(&dev->sync);
+	device_sync_call_init(&dev->sync);
 
 	regs = (struct i2c_dw_registers *) rom->base_address;
 
