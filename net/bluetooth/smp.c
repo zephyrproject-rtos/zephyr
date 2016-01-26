@@ -1385,8 +1385,9 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp, uint8_t remote_io)
 
 static int smp_init(struct bt_smp *smp)
 {
-	/* Initialize SMP context */
-	memset(smp + sizeof(smp->chan), 0, sizeof(*smp) - sizeof(smp->chan));
+	/* Initialize SMP context without clearing L2CAP channel context */
+	memset((uint8_t *)smp + sizeof(smp->chan), 0,
+	       sizeof(*smp) - sizeof(smp->chan));
 
 	/* Generate local random number */
 	if (bt_rand(smp->prnd, 16)) {
