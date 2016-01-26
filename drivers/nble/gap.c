@@ -131,11 +131,94 @@ int bt_enable(bt_ready_cb_t cb)
 	return 0;
 }
 
+static bool valid_adv_param(const struct bt_le_adv_param *param)
+{
+	switch (param->type) {
+	case BT_LE_ADV_IND:
+	case BT_LE_ADV_SCAN_IND:
+	case BT_LE_ADV_NONCONN_IND:
+		break;
+	default:
+		return false;
+	}
+
+	switch (param->addr_type) {
+	case BT_LE_ADV_ADDR_PUBLIC:
+	case BT_LE_ADV_ADDR_NRPA:
+		break;
+	default:
+		return false;
+	}
+
+	if (param->interval_min > param->interval_max ||
+	    param->interval_min < 0x0020 || param->interval_max > 0x4000) {
+		return false;
+	}
+
+	return true;
+}
+
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
-	return -ENOSYS;
+	struct ble_gap_adv_params params = { 0 };
+	int i;
+
+	if (!valid_adv_param(param)) {
+		return -EINVAL;
+	}
+
+	for (i = 0; i < ad_len; i++) {
+		uint8_t *p;
+
+		/* Check if ad fit in the remaining buffer */
+		if (params.ad.len + ad[i].data_len + 2 > 31) {
+			break;
+		}
+
+		p = &params.ad.data[params.ad.len];
+		*p++ = ad[i].data_len + 1;
+		*p++ = ad[i].type;
+		memcpy(p, ad[i].data, ad[i].data_len);
+		params.ad.len += ad[i].data_len + 2;
+	}
+
+	/*
+	 * Don't bother with scan response if the advertising type isn't
+	 * a scannable one.
+	 */
+	if (param->type != BT_LE_ADV_IND && param->type != BT_LE_ADV_SCAN_IND) {
+		goto send_set_param;
+	}
+
+	for (i = 0; i < sd_len; i++) {
+		uint8_t *p;
+
+		/* Check if sd fit in the remaining buffer */
+		if (params.sd.len + sd[i].data_len + 2 > 31) {
+			break;
+		}
+
+		p = &params.sd.data[params.sd.len];
+		*p++ = sd[i].data_len + 1;
+		*p++ = sd[i].type;
+		memcpy(p, sd[i].data, sd[i].data_len);
+		params.sd.len += sd[i].data_len + 2;
+	}
+
+send_set_param:
+	/* Timeout is handled by application timer */
+	params.timeout = 0;
+	/* forced to none currently (no whitelist support) */
+	params.filter_policy = 0;
+	params.interval_max = param->interval_max;
+	params.interval_min = param->interval_min;
+	params.type = param->type;
+
+	ble_gap_start_advertise_req(&params);
+
+	return 0;
 }
 
 int bt_le_adv_stop(void)
