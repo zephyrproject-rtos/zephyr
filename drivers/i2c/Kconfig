@@ -305,7 +305,22 @@ config I2C_QMSI
 	provided by the QMSI BSP. For more information about QMSI BSP
 	see CONFIG_QMSI_DRIVERS.
 
+config I2C_QMSI_0
+	bool "Enable I2C_0 controller"
+	default n
+	depends on I2C_QMSI
+
 config I2C_QMSI_0_NAME
 	string "I2C_0 device name"
-	depends on I2C_QMSI
+	depends on I2C_QMSI_0
 	default "I2C0"
+
+config I2C_QMSI_1
+	bool "Enable I2C_1 controller"
+	default n
+	depends on I2C_QMSI
+
+config I2C_QMSI_1_NAME
+	string "I2C_1 device name"
+	depends on I2C_QMSI_1
+	default "I2C1"

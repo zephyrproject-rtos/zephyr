@@ -21,8 +21,19 @@
 #include "qm_i2c.h"
 #include "qm_scss.h"
 
+/* Convenient macro to get the controller instance from the 'config_info'
+ * field defined in the 'struct device_config'.
+ */
+#define GET_CONTROLLER_INSTANCE(dev) \
+	(((struct i2c_qmsi_config_info *)dev->config->config_info)->instance)
+
+struct i2c_qmsi_config_info {
+	qm_i2c_t instance; /* Controller instance. */
+};
+
 static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 {
+	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	union dev_config cfg;
 	qm_i2c_config_t qm_cfg;
 
@@ -50,7 +61,7 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 		return DEV_INVALID_CONF;
 	}
 
-	if (qm_i2c_set_config(QM_I2C_0, &qm_cfg) != QM_RC_OK)
+	if (qm_i2c_set_config(instance, &qm_cfg) != QM_RC_OK)
 		return DEV_FAIL;
 
 	return DEV_OK;
@@ -65,9 +76,10 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 			     uint8_t num_msgs, uint16_t addr)
 {
+	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	qm_rc_t rc;
 
-	if (qm_i2c_get_status(QM_I2C_0) != QM_I2C_IDLE)
+	if (qm_i2c_get_status(instance) != QM_I2C_IDLE)
 		return DEV_USED;
 
 	if  (msgs == NULL || num_msgs == 0)
@@ -80,8 +92,8 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 		bool stop = (msgs[i].flags & I2C_MSG_STOP) == I2C_MSG_STOP;
 
 		rc = (op == I2C_MSG_WRITE) ?
-			qm_i2c_master_write(QM_I2C_0, addr, buf, len, stop) :
-			qm_i2c_master_read(QM_I2C_0, addr, buf, len, stop);
+			qm_i2c_master_write(instance, addr, buf, len, stop) :
+			qm_i2c_master_read(instance, addr, buf, len, stop);
 
 		if (rc != QM_RC_OK)
 			return DEV_FAIL;
@@ -109,12 +121,41 @@ static struct i2c_driver_api api = {
 
 static int i2c_qmsi_init(struct device *dev)
 {
-	clk_periph_enable(CLK_PERIPH_I2C_M0_REGISTER);
+	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
+
+	switch (instance) {
+	case QM_I2C_0:
+		clk_periph_enable(CLK_PERIPH_I2C_M0_REGISTER);
+		break;
+	case QM_I2C_1:
+		clk_periph_enable(CLK_PERIPH_I2C_M1_REGISTER);
+		break;
+	default:
+		return DEV_FAIL;
+	}
 
 	dev->driver_api = &api;
-	return 0;
+	return DEV_OK;
 }
 
-DEVICE_INIT(i2c_qmsi_0, CONFIG_I2C_QMSI_0_NAME, i2c_qmsi_init,
-			0, NULL,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+#ifdef CONFIG_I2C_QMSI_0
+
+static struct i2c_qmsi_config_info config_info_0 = {
+	.instance = QM_I2C_0,
+};
+
+DEVICE_INIT(i2c_0, CONFIG_I2C_QMSI_0_NAME, i2c_qmsi_init, 0, &config_info_0,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_I2C_QMSI_0 */
+
+#ifdef CONFIG_I2C_QMSI_1
+
+static struct i2c_qmsi_config_info config_info_1 = {
+	.instance = QM_I2C_1,
+};
+
+DEVICE_INIT(i2c_1, CONFIG_I2C_QMSI_1_NAME, i2c_qmsi_init, 0, &config_info_1,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_I2C_QMSI_1 */
