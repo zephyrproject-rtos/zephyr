@@ -37,6 +37,7 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
+#include <nanokernel.h>
 #define BT_DBG(fmt, ...) printf("bt: %s (%p): " fmt "\n", __func__, \
 				sys_thread_self_get(), ##__VA_ARGS__)
 #define BT_ERR(fmt, ...) printf("bt: %s: %s" fmt "%s\n", __func__, \
