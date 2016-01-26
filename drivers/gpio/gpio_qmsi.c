@@ -277,7 +277,7 @@ static struct gpio_qmsi_config gpio_0_config = {
 
 static struct gpio_qmsi_runtime gpio_0_runtime;
 
-DECLARE_DEVICE_INIT_CONFIG(gpio_0, CONFIG_GPIO_QMSI_0_NAME,
+DEVICE_INIT_CONFIG_DEFINE(gpio_0, CONFIG_GPIO_QMSI_0_NAME,
 			   &gpio_qmsi_init, &gpio_0_config);
 
 SYS_DEFINE_DEVICE(gpio_0, &gpio_0_runtime, SECONDARY,

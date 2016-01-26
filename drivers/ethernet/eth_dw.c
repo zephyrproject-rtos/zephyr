@@ -303,7 +303,7 @@ static struct eth_config eth_config_0 = {
 
 static struct eth_runtime eth_0_runtime;
 
-DECLARE_DEVICE_INIT_CONFIG(eth_dw_0, CONFIG_ETH_DW_0_NAME,
+DEVICE_INIT_CONFIG_DEFINE(eth_dw_0, CONFIG_ETH_DW_0_NAME,
 			   eth_initialize, &eth_config_0);
 SYS_DEFINE_DEVICE(eth_dw_0, &eth_0_runtime, NANOKERNEL,
 					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

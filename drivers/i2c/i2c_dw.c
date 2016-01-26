@@ -773,7 +773,7 @@ struct i2c_dw_dev_config i2c_0_runtime = {
 	.app_config.raw = CONFIG_I2C_DW_0_DEFAULT_CFG,
 };
 
-DECLARE_DEVICE_INIT_CONFIG(i2c_0,
+DEVICE_INIT_CONFIG_DEFINE(i2c_0,
 			   CONFIG_I2C_DW_0_NAME,
 			   &i2c_dw_initialize,
 			   &i2c_config_dw_0);
@@ -826,7 +826,7 @@ struct i2c_dw_dev_config i2c_1_runtime = {
 	.app_config.raw = CONFIG_I2C_DW_1_DEFAULT_CFG,
 };
 
-DECLARE_DEVICE_INIT_CONFIG(i2c_1,
+DEVICE_INIT_CONFIG_DEFINE(i2c_1,
 			   CONFIG_I2C_DW_1_NAME,
 			   &i2c_dw_initialize,
 			   &i2c_config_dw_1);

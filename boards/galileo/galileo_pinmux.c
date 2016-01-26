@@ -765,7 +765,7 @@ struct pinmux_config galileo_pmux = {
 	.base_address = 0x00000000,
 };
 
-DECLARE_DEVICE_INIT_CONFIG(pmux,
+DEVICE_INIT_CONFIG_DEFINE(pmux,
 			  PINMUX_NAME,
 			  &pinmux_galileo_initialize,
 			  &galileo_pmux);

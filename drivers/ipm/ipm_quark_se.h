@@ -137,7 +137,7 @@ int quark_se_ipm_controller_initialize(struct device *d);
 		.direction = dir \
 	}; \
 	struct quark_se_ipm_driver_data quark_se_ipm_runtime_##name; \
-	DECLARE_DEVICE_INIT_CONFIG(name, _STRINGIFY(name), \
+	DEVICE_INIT_CONFIG_DEFINE(name, _STRINGIFY(name), \
 				   quark_se_ipm_initialize, \
 				   &quark_se_ipm_config_##name); \
 	SYS_DEFINE_DEVICE(name, &quark_se_ipm_runtime_##name, SECONDARY, \

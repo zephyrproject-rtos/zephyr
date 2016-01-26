@@ -45,6 +45,6 @@ static int ram_console_init(struct device *d)
 	return DEV_OK;
 }
 
-DECLARE_DEVICE_INIT_CONFIG(ram_console, "", ram_console_init, NULL);
+DEVICE_INIT_CONFIG_DEFINE(ram_console, "", ram_console_init, NULL);
 SYS_DEFINE_DEVICE(ram_console, NULL, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 

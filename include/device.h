@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-/** @def DECLARE_DEVICE_INIT_CONFIG
+/** @def DEVICE_INIT_CONFIG_DEFINE
  *
  *  @brief Define an config object
  *
@@ -42,7 +42,7 @@ extern "C" {
  *
  *  @sa __define_initconfig()
  */
-#define DECLARE_DEVICE_INIT_CONFIG(cfg_name, drv_name, init_fn, config) \
+#define DEVICE_INIT_CONFIG_DEFINE(cfg_name, drv_name, init_fn, config) \
 	static struct device_config config_##cfg_name	__used		\
 	__attribute__((__section__(".devconfig.init"))) = { \
 		.name = drv_name, .init = (init_fn), \

@@ -230,7 +230,7 @@ static struct pwm_pca9685_config pwm_pca9685_0_cfg = {
 
 static struct pwm_pca9685_drv_data pwm_pca9685_0_drvdata;
 
-DECLARE_DEVICE_INIT_CONFIG(pwm_pca9685_0,
+DEVICE_INIT_CONFIG_DEFINE(pwm_pca9685_0,
 			   CONFIG_PWM_PCA9685_0_DEV_NAME,
 			   pwm_pca9685_init, &pwm_pca9685_0_cfg);
 

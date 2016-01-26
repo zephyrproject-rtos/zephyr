@@ -529,7 +529,7 @@ struct adc_config adc_config_dev_0 = {
 		.config_func  = adc_config_0_irq,
 	};
 
-DECLARE_DEVICE_INIT_CONFIG(adc_dw_0,	/* config name*/
+DEVICE_INIT_CONFIG_DEFINE(adc_dw_0,	/* config name*/
 			CONFIG_ADC_DW_NAME_0,	/* driver name*/
 			&adc_dw_init,	/* init function*/
 			&adc_config_dev_0); /* config options*/

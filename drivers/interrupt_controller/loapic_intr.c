@@ -444,7 +444,7 @@ int _loapic_isr_vector_get(void)
 	return 0;
 }
 
-DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
+DEVICE_INIT_CONFIG_DEFINE(loapic_0, "", _loapic_init, NULL);
 SYS_DEFINE_DEVICE(loapic_0, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 

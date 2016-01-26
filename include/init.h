@@ -49,7 +49,7 @@ extern "C" {
  *  @param name Device name.
  *
  *  @param data Pointer to the device's configuration data.
- *  @sa DECLARE_DEVICE_INIT_CONFIG()
+ *  @sa DEVICE_INIT_CONFIG_DEFINE()
  *
  *  @param level The initialization level at which configuration occurs.
  *  Must be one of the following symbols, which are listed in the order

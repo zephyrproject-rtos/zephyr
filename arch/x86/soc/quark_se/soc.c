@@ -86,7 +86,7 @@ static int arc_init(struct device *arg)
 	return DEV_OK;
 }
 
-DECLARE_DEVICE_INIT_CONFIG(quark_se_ss_0, "", arc_init, NULL);
+DEVICE_INIT_CONFIG_DEFINE(quark_se_ss_0, "", arc_init, NULL);
 SYS_DEFINE_DEVICE(quark_se_ss_0, NULL, SECONDARY,
 					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
@@ -110,7 +110,7 @@ static int platform_uart_init(struct device *arg)
 	return DEV_OK;
 }
 
-DECLARE_DEVICE_INIT_CONFIG(platform_uart_init, "", platform_uart_init, NULL);
+DEVICE_INIT_CONFIG_DEFINE(platform_uart_init, "", platform_uart_init, NULL);
 SYS_DEFINE_DEVICE(platform_uart_init, NULL, PRIMARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 

@@ -160,7 +160,7 @@ struct wdt_dw_dev_config wdt_dev = {
 #endif
 };
 
-DECLARE_DEVICE_INIT_CONFIG(wdt, CONFIG_WDT_DW_DRV_NAME,
+DEVICE_INIT_CONFIG_DEFINE(wdt, CONFIG_WDT_DW_DRV_NAME,
 			   &wdt_dw_init, &wdt_dev);
 
 SYS_DEFINE_DEVICE(wdt, &wdt_runtime, SECONDARY,

@@ -53,7 +53,7 @@ static int _sys_k_event_logger_init(struct device *arg)
 
 	return 0;
 }
-DECLARE_DEVICE_INIT_CONFIG(kernel_event_logger_0, "",
+DEVICE_INIT_CONFIG_DEFINE(kernel_event_logger_0, "",
 	_sys_k_event_logger_init, NULL);
 SYS_DEFINE_DEVICE(kernel_event_logger_0, NULL, NANOKERNEL,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

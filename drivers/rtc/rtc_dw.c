@@ -200,7 +200,7 @@ struct rtc_dw_dev_config rtc_dev = {
 #endif
 };
 
-DECLARE_DEVICE_INIT_CONFIG(rtc, CONFIG_RTC_DRV_NAME,
+DEVICE_INIT_CONFIG_DEFINE(rtc, CONFIG_RTC_DRV_NAME,
 			   &rtc_dw_init, &rtc_dev);
 
 SYS_DEFINE_DEVICE(rtc, &rtc_runtime, SECONDARY,

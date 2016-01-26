@@ -702,7 +702,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
 #endif
 };
 
-DECLARE_DEVICE_INIT_CONFIG(uart_ns16550_0,
+DEVICE_INIT_CONFIG_DEFINE(uart_ns16550_0,
 			   CONFIG_UART_NS16550_PORT_0_NAME,
 			   &uart_ns16550_init,
 			   &uart_ns16550_dev_cfg_0);
@@ -738,7 +738,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
 #endif
 };
 
-DECLARE_DEVICE_INIT_CONFIG(uart_ns16550_1,
+DEVICE_INIT_CONFIG_DEFINE(uart_ns16550_1,
 			   CONFIG_UART_NS16550_PORT_1_NAME,
 			   &uart_ns16550_init,
 			   &uart_ns16550_dev_cfg_1);

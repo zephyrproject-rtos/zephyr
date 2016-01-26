@@ -40,7 +40,7 @@
 
 /* Set up the dummy IPM driver */
 struct ipm_dummy_driver_data ipm_dummy0_driver_data;
-DECLARE_DEVICE_INIT_CONFIG(ipm_dummy0, "ipm_dummy0", ipm_dummy_init, NULL);
+DEVICE_INIT_CONFIG_DEFINE(ipm_dummy0, "ipm_dummy0", ipm_dummy_init, NULL);
 SYS_DEFINE_DEVICE(ipm_dummy0, &ipm_dummy0_driver_data, SECONDARY,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
@@ -51,7 +51,7 @@ struct ipm_console_sender_config_info sender_config = {
 	.bind_to = "ipm_dummy0",
 	.flags = SOURCE
 };
-DECLARE_DEVICE_INIT_CONFIG(ipm_console_send0, "ipm_send0",
+DEVICE_INIT_CONFIG_DEFINE(ipm_console_send0, "ipm_send0",
 			   ipm_console_sender_init, &sender_config);
 SYS_DEFINE_DEVICE(ipm_console_send0, NULL, NANOKERNEL,
 		  INIT_PRIO_IPM_SEND);
@@ -78,7 +78,7 @@ struct ipm_console_receiver_config_info receiver_config = {
 };
 
 struct ipm_console_receiver_runtime_data receiver_data;
-DECLARE_DEVICE_INIT_CONFIG(ipm_console_recv0, "ipm_recv0",
+DEVICE_INIT_CONFIG_DEFINE(ipm_console_recv0, "ipm_recv0",
 			   ipm_console_receiver_init, &receiver_config);
 SYS_DEFINE_DEVICE(ipm_console_recv0, &receiver_data, NANOKERNEL,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

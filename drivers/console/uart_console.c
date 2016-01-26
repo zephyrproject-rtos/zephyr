@@ -429,7 +429,7 @@ static int uart_console_init(struct device *arg)
 
 	return DEV_OK;
 }
-DECLARE_DEVICE_INIT_CONFIG(uart_console, "", uart_console_init, NULL);
+DEVICE_INIT_CONFIG_DEFINE(uart_console, "", uart_console_init, NULL);
 
 /* UART consloe initializes after the UART device itself */
 #if defined(CONFIG_EARLY_CONSOLE)

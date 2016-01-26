@@ -354,7 +354,7 @@ struct glcd_data grove_lcd_driver = {
 	.function = 0,
 };
 
-DECLARE_DEVICE_INIT_CONFIG(grove_lcd,
+DEVICE_INIT_CONFIG_DEFINE(grove_lcd,
 			   GROVE_LCD_NAME,
 			   glcd_initialize,
 			   &grove_lcd_config);

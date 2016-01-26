@@ -338,7 +338,7 @@ static struct gpio_mmio_config gpio_mmio_0_cfg = {
 #endif
 };
 
-DECLARE_DEVICE_INIT_CONFIG(gpio_mmio_0,
+DEVICE_INIT_CONFIG_DEFINE(gpio_mmio_0,
 			   CONFIG_GPIO_MMIO_0_DEV_NAME,
 			   gpio_mmio_init,
 			   &gpio_mmio_0_cfg);
@@ -371,7 +371,7 @@ static struct gpio_mmio_config gpio_mmio_1_cfg = {
 #endif
 };
 
-DECLARE_DEVICE_INIT_CONFIG(gpio_mmio_1,
+DEVICE_INIT_CONFIG_DEFINE(gpio_mmio_1,
 			   CONFIG_GPIO_MMIO_1_DEV_NAME,
 			   gpio_mmio_init,
 			   &gpio_mmio_1_cfg);

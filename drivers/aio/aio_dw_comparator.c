@@ -201,7 +201,7 @@ struct dw_aio_cmp_dev_cfg_t dw_aio_cmp_dev_config = {
 	.config_func = dw_aio_cmp_config,
 };
 
-DECLARE_DEVICE_INIT_CONFIG(dw_aio_cmp,
+DEVICE_INIT_CONFIG_DEFINE(dw_aio_cmp,
 			   AIO_DW_CMP_DRV_NAME,
 			   &dw_aio_cmp_init,
 			   &dw_aio_cmp_dev_config);

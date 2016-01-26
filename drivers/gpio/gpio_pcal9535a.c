@@ -617,7 +617,7 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_0_drvdata = {
 	.reg_cache.pud_sel = { .all = 0xFFFF },
 };
 
-DECLARE_DEVICE_INIT_CONFIG(gpio_pcal9535a_0,
+DEVICE_INIT_CONFIG_DEFINE(gpio_pcal9535a_0,
 			   CONFIG_GPIO_PCAL9535A_0_DEV_NAME,
 			   gpio_pcal9535a_init, &gpio_pcal9535a_0_cfg);
 
@@ -646,7 +646,7 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_1_drvdata = {
 	.reg_cache.pud_sel = { .all = 0xFFFF },
 };
 
-DECLARE_DEVICE_INIT_CONFIG(gpio_pcal9535a_1,
+DEVICE_INIT_CONFIG_DEFINE(gpio_pcal9535a_1,
 			   CONFIG_GPIO_PCAL9535A_1_DEV_NAME,
 			   gpio_pcal9535a_init, &gpio_pcal9535a_1_cfg);
 
@@ -675,7 +675,7 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_2_drvdata = {
 	.reg_cache.pud_sel = { .all = 0xFFFF },
 };
 
-DECLARE_DEVICE_INIT_CONFIG(gpio_pcal9535a_2,
+DEVICE_INIT_CONFIG_DEFINE(gpio_pcal9535a_2,
 			   CONFIG_GPIO_PCAL9535A_2_DEV_NAME,
 			   gpio_pcal9535a_init, &gpio_pcal9535a_2_cfg);
 
@@ -704,7 +704,7 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_3_drvdata = {
 	.reg_cache.pud_sel = { .all = 0xFFFF },
 };
 
-DECLARE_DEVICE_INIT_CONFIG(gpio_pcal9535a_3,
+DEVICE_INIT_CONFIG_DEFINE(gpio_pcal9535a_3,
 			   CONFIG_GPIO_PCAL9535A_3_DEV_NAME,
 			   gpio_pcal9535a_init, &gpio_pcal9535a_3_cfg);
 
