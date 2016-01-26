@@ -1241,8 +1241,8 @@ static uint8_t legacy_pairing_confirm(struct bt_smp *smp)
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
-		return smp_send_pairing_random(smp);
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		return legacy_send_pairing_confirm(smp);
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
