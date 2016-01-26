@@ -209,7 +209,7 @@ DEVICE_DEFINE(rtc, &rtc_runtime, SECONDARY,
 int rtc_dw_init(struct device *dev)
 {
 	irq_connect(CONFIG_RTC_IRQ, CONFIG_RTC_IRQ_PRI, rtc_dw_isr,
-		    SYS_GET_DEVICE(rtc), 0);
+		    DEVICE_GET(rtc), 0);
 	irq_enable(CONFIG_RTC_IRQ);
 
 	_rtc_dw_int_unmask();

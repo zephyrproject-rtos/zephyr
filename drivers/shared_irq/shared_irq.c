@@ -168,7 +168,7 @@ DEVICE_DEFINE(shared_irq_0, &shared_irq_0_runtime, SECONDARY,
 void shared_irq_config_0_irq(void)
 {
 	irq_connect(CONFIG_SHARED_IRQ_0_IRQ, CONFIG_SHARED_IRQ_0_PRI,
-		    shared_irq_isr, SYS_GET_DEVICE(shared_irq_0),
+		    shared_irq_isr, DEVICE_GET(shared_irq_0),
 		    SHARED_IRQ_0_FLAGS);
 }
 
@@ -209,7 +209,7 @@ DEVICE_DEFINE(shared_irq_1, &shared_irq_1_runtime, SECONDARY,
 void shared_irq_config_1_irq(void)
 {
 	irq_connect(CONFIG_SHARED_IRQ_1_IRQ, CONFIG_SHARED_IRQ_1_PRI,
-		    shared_irq_isr, SYS_GET_DEVICE(shared_irq_1),
+		    shared_irq_isr, DEVICE_GET(shared_irq_1),
 		    SHARED_IRQ_1_FLAGS);
 }
 

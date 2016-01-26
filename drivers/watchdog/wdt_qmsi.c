@@ -106,7 +106,7 @@ DEVICE_DEFINE(wdt, 0, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
  * is not used by the ISR code, we require it in order to be able to pass
  * the device argument from the user callback (wdt_config->interrupt_fn).
  */
-struct device *wdt_qmsi_isr_dev = SYS_GET_DEVICE(wdt);
+struct device *wdt_qmsi_isr_dev = DEVICE_GET(wdt);
 
 static void interrupt_callback(void)
 {

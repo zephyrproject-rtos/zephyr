@@ -691,13 +691,13 @@ void _i2c_qse_ss_config_irq_0(struct device *port)
 
 	/* Connect the IRQs to ISR */
 	irq_connect(I2C_SS_0_ERR_VECTOR, 1, i2c_qse_ss_isr,
-		    SYS_GET_DEVICE(i2c_ss_0), 0);
+		    DEVICE_GET(i2c_ss_0), 0);
 	irq_connect(I2C_SS_0_RX_VECTOR, 1, i2c_qse_ss_isr,
-		    SYS_GET_DEVICE(i2c_ss_0), 0);
+		    DEVICE_GET(i2c_ss_0), 0);
 	irq_connect(I2C_SS_0_TX_VECTOR, 1, i2c_qse_ss_isr,
-		    SYS_GET_DEVICE(i2c_ss_0), 0);
+		    DEVICE_GET(i2c_ss_0), 0);
 	irq_connect(I2C_SS_0_STOP_VECTOR, 1, i2c_qse_ss_isr,
-		    SYS_GET_DEVICE(i2c_ss_0), 0);
+		    DEVICE_GET(i2c_ss_0), 0);
 
 	irq_enable(I2C_SS_0_ERR_VECTOR);
 	irq_enable(I2C_SS_0_RX_VECTOR);
@@ -757,13 +757,13 @@ void _i2c_qse_ss_config_irq_1(struct device *port)
 
 	/* Connect the IRQs to ISR */
 	irq_connect(I2C_SS_1_ERR_VECTOR, 1, i2c_qse_ss_isr,
-		    SYS_GET_DEVICE(i2c_ss_1), 0);
+		    DEVICE_GET(i2c_ss_1), 0);
 	irq_connect(I2C_SS_1_RX_VECTOR, 1, i2c_qse_ss_isr,
-		    SYS_GET_DEVICE(i2c_ss_1), 0);
+		    DEVICE_GET(i2c_ss_1), 0);
 	irq_connect(I2C_SS_1_TX_VECTOR, 1, i2c_qse_ss_isr,
-		    SYS_GET_DEVICE(i2c_ss_1), 0);
+		    DEVICE_GET(i2c_ss_1), 0);
 	irq_connect(I2C_SS_1_STOP_VECTOR, 1, i2c_qse_ss_isr,
-		    SYS_GET_DEVICE(i2c_ss_1), 0);
+		    DEVICE_GET(i2c_ss_1), 0);
 
 	irq_enable(I2C_SS_1_ERR_VECTOR);
 	irq_enable(I2C_SS_1_RX_VECTOR);

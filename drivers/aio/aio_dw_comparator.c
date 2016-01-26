@@ -218,6 +218,6 @@ static int dw_aio_cmp_config(struct device *dev)
 	ARG_UNUSED(dev);
 
 	irq_connect(INT_AIO_CMP_IRQ, 0, dw_aio_cmp_isr,
-		    SYS_GET_DEVICE(dw_aio_cmp), 0);
+		    DEVICE_GET(dw_aio_cmp), 0);
 	return DEV_OK;
 }

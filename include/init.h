@@ -90,7 +90,7 @@ extern "C" {
 		 .driver_data = data}
 
 /**
- * @def SYS_GET_DEVICE_NAME
+ * @def DEVICE_NAME_GET
  *
  * @brief Expands to the full name of a global device object
  *
@@ -98,16 +98,16 @@ extern "C" {
  * DEVICE_DEFINE(), using the @name provided to DEVICE_DEFINE().
  *
  * It is meant to be used for declaring extern symbols pointing on device
- * objects before using the SYS_GET_DEVICE macro to get the device object.
+ * objects before using the DEVICE_GET macro to get the device object.
  *
  * @param name The same name provided to DEVICE_DEFINE()
  *
  * @return The exanded name of the device object created by DEVICE_DEFINE()
  */
-#define SYS_GET_DEVICE_NAME(name) (_CONCAT(__initconfig_, name))
+#define DEVICE_NAME_GET(name) (_CONCAT(__initconfig_, name))
 
 /**
- * @def SYS_GET_DEVICE
+ * @def DEVICE_GET
  *
  * @brief Obtain a pointer to a device object by name
  *
@@ -118,7 +118,7 @@ extern "C" {
  *
  * @return A pointer to the device object created by DEVICE_DEFINE()
  */
-#define SYS_GET_DEVICE(name) (&SYS_GET_DEVICE_NAME(name))
+#define DEVICE_GET(name) (&DEVICE_NAME_GET(name))
 
 #ifdef __cplusplus
 }

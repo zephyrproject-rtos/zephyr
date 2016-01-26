@@ -591,7 +591,7 @@ DEVICE_DEFINE(spi_dw_port_0, &spi_dw_data_port_0, SECONDARY,
 void spi_config_0_irq(void)
 {
 	irq_connect(CONFIG_SPI_DW_PORT_0_IRQ, CONFIG_SPI_DW_PORT_0_PRI,
-		    spi_dw_isr, SYS_GET_DEVICE(spi_dw_port_0),
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_0),
 		    SPI_DW_IRQ_FLAGS);
 	irq_enable(CONFIG_SPI_DW_PORT_0_IRQ);
 }
@@ -624,7 +624,7 @@ DEVICE_DEFINE(spi_dw_port_1, &spi_dw_data_port_1, SECONDARY,
 void spi_config_1_irq(void)
 {
 	irq_connect(CONFIG_SPI_DW_PORT_1_IRQ, CONFIG_SPI_DW_PORT_1_PRI,
-		    spi_dw_isr, SYS_GET_DEVICE(spi_dw_port_1),
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_1),
 		    SPI_DW_IRQ_FLAGS);
 	irq_enable(CONFIG_SPI_DW_PORT_1_IRQ);
 }
