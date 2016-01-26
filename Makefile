@@ -750,14 +750,14 @@ final-linker.cmd:
 
 TMP_ELF = .tmp_$(KERNEL_NAME).prebuilt
 
-$(TMP_ELF): $(KBUILD_ZEPHYR_APP) linker.cmd $(KERNEL_NAME).lnk
+$(TMP_ELF): $(zephyr-deps) $(KBUILD_ZEPHYR_APP) linker.cmd $(KERNEL_NAME).lnk
 	$(Q)$(LD) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
 
 quiet_cmd_gen_idt = SIDT    $@
       cmd_gen_idt =									\
 (											\
-	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j intList $< isrList.bin;	\
-	$(GENIDT) -i isrList.bin -n $(CONFIG_IDT_NUM_VECTORS) -o staticIdt.bin 	\
+	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j intList $< isrList.bin;		\
+	$(GENIDT) -i isrList.bin -n $(CONFIG_IDT_NUM_VECTORS) -o staticIdt.bin 		\
 	-b int_vector_alloc.bin -m irq_int_vector_map.bin;				\
 	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 			\
 	--rename-section .data=staticIdt staticIdt.bin staticIdt.o;			\
@@ -787,7 +787,7 @@ $(KERNEL_ELF_NAME): staticIdt.o final-linker.cmd
 	$(call cmd,lnk_elf)
 else
 $(KERNEL_ELF_NAME): $(TMP_ELF)
-	@mv $(TMP_ELF) $(KERNEL_ELF_NAME)
+	@cp $(TMP_ELF) $(KERNEL_ELF_NAME)
 endif
 
 
