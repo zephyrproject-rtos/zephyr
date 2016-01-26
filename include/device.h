@@ -119,6 +119,23 @@ extern "C" {
  */
 #define DEVICE_GET(name) (&DEVICE_NAME_GET(name))
 
+ /** @def DEVICE_DECLARE
+  *
+  * @brief Declare a device object
+  *
+  * This macro can be used at the top-level to declare a device, such
+  * that DEVICE_GET() may be used before the full declaration in
+  * DEVICE_INIT(), or reference the device in another C file.
+  *
+  * This is often useful when configuring interrupts statically in a
+  * device's init or per-instance config function, as the init function
+  * itself is required by DEVICE_INIT() and use of DEVICE_GET()
+  * inside it creates a circular dependeny.
+  *
+  * @param name Device name
+  */
+#define DEVICE_DECLARE(name) extern struct device DEVICE_NAME_GET(name)
+
 /* Common Error Codes devices can provide */
 #define DEV_OK			0  /* No error */
 #define DEV_FAIL		1 /* General operation failure */
