@@ -31,7 +31,7 @@
 #include "rpc.h"
 
 /* TODO: check size */
-#define NBLE_IPC_COUNT	1
+#define NBLE_IPC_COUNT	2
 #define NBLE_BUF_SIZE	100
 
 static struct nano_fifo rx;
