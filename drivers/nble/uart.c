@@ -107,7 +107,7 @@ void rpc_transmit_cb(uint8_t *p_buf, uint16_t length)
 	poll_out(&hdr, sizeof(hdr));
 
 	/* Send data */
-	poll_out(buf->data, buf->len);
+	poll_out(buf->data, length);
 
 	net_buf_unref(buf);
 }
