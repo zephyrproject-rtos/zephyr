@@ -107,6 +107,8 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 				_nano_timeout_add(_nanokernel.current, (pq), (ticks));   \
 			}                                                            \
 		} while (0)
+	#define _NANO_TIMEOUT_SET_TASK_TIMEOUT(ticks) \
+		_nanokernel.task_timeout = (ticks)
 #else
 	#define _nano_timeout_tcs_init(tcs) do { } while ((0))
 	#define _nano_timeout_abort(tcs) do { } while ((0))
@@ -114,6 +116,7 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 
 	#define _NANO_TIMEOUT_TICK_GET()  0
 	#define _NANO_TIMEOUT_ADD(pq, ticks) do { } while (0)
+	#define _NANO_TIMEOUT_SET_TASK_TIMEOUT(ticks) do { } while ((0))
 #endif
 
 #ifdef __cplusplus

@@ -162,9 +162,12 @@ void *nano_task_lifo_get(struct nano_lifo *lifo, int32_t timeout_in_ticks)
 		}
 
 		if (timeout_in_ticks != TICKS_NONE) {
-			/* see explanation in nano_stack.c:nano_task_stack_pop() */
 
+			_NANO_TIMEOUT_SET_TASK_TIMEOUT(timeout_in_ticks);
+
+			/* see explanation in nano_stack.c:nano_task_stack_pop() */
 			nano_cpu_atomic_idle(imask);
+
 			imask = irq_lock();
 			cur_ticks = _NANO_TIMEOUT_TICK_GET();
 		}

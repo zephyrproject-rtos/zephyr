@@ -52,6 +52,7 @@ void task_sleep(int32_t timeout_in_ticks)
 	limit = cur_ticks + timeout_in_ticks;
 
 	while (cur_ticks < limit) {
+		_NANO_TIMEOUT_SET_TASK_TIMEOUT(timeout_in_ticks);
 		nano_cpu_atomic_idle(key);
 
 		key = irq_lock();

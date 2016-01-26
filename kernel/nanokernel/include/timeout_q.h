@@ -151,7 +151,9 @@ static inline uint32_t _nano_get_earliest_timeouts_deadline(void)
 	sys_dlist_t *q = &_nanokernel.timeout_q;
 	struct _nano_timeout *t = (struct _nano_timeout *)sys_dlist_peek_head(q);
 
-	return t ? t->delta_ticks_from_prev : TICKS_UNLIMITED;
+	return t ? min((uint32_t)t->delta_ticks_from_prev,
+					(uint32_t)_nanokernel.task_timeout)
+			 : (uint32_t)_nanokernel.task_timeout;
 }
 
 #ifdef __cplusplus

@@ -158,6 +158,7 @@ static inline void handle_expired_nano_timeouts(int32_t ticks)
 	struct _nano_timeout *head =
 		(struct _nano_timeout *)sys_dlist_peek_head(&_nanokernel.timeout_q);
 
+	_nanokernel.task_timeout = TICKS_UNLIMITED;
 	if (head) {
 		head->delta_ticks_from_prev -= ticks;
 		_nano_timeout_handle_timeouts();
