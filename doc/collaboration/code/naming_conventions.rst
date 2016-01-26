@@ -28,6 +28,9 @@ to the Namespace`_ for details.
 +-------------------+---------------------------------------------------------+
 | atomic\_          | Denotes an atomic operation (e.g. atomic_inc).          |
 +-------------------+---------------------------------------------------------+
+| device\_          | Denotes an API relating to devices and their            |
+|                   | initialization                                          |
++-------------------+---------------------------------------------------------+
 | fiber\_           | Denotes an operation invoked by a fiber; typically a    |
 |                   | microkernel operation (e.g. fiber_event_send).          |
 +-------------------+---------------------------------------------------------+
