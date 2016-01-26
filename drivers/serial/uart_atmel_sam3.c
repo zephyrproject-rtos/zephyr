@@ -131,7 +131,7 @@ static struct uart_driver_api uart_sam3_driver_api;
  *
  * This routine set the given baud rate for the UART.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param baudrate Baud rate
  * @param sys_clk_freq_hz System clock frequency in Hz
  *
@@ -162,7 +162,7 @@ static void baudrate_set(struct device *dev,
  * This routine is called to reset the chip in a quiescent state.
  * It is assumed that this function is called only once per UART.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return DEV_OK
  */
@@ -201,7 +201,7 @@ static int uart_sam3_init(struct device *dev)
 /**
  * @brief Poll the device for input.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param c Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
@@ -226,7 +226,7 @@ static int uart_sam3_poll_in(struct device *dev, unsigned char *c)
  * Checks if the transmitter is empty. If empty, a character is written to
  * the data register.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param c Character to send
  *
  * @return Sent character

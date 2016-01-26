@@ -117,7 +117,7 @@ struct uart_driver_api {
 /**
  * @brief Check whether an error was detected
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return one of UART_ERROR_OVERRUN, UART_ERROR_PARITY, UART_ERROR_FRAMING,
  * UART_ERROR_BREAK if an error was detected, 0 otherwise.
@@ -137,7 +137,7 @@ static inline int uart_err_check(struct device *dev)
 /**
  * @brief Poll the device for input.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param p_char Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty,
@@ -160,7 +160,7 @@ static inline int uart_poll_in(struct device *dev, unsigned char *p_char)
  * If the hardware flow control is enabled then the handshake signal CTS has to
  * be asserted in order to send a character.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param out_char Character to send
  *
  * @return Sent character
@@ -180,7 +180,7 @@ static inline unsigned char uart_poll_out(struct device *dev,
 /**
  * @brief Fill FIFO with data
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param tx_data Data to transmit
  * @param size Number of bytes to send
  *
@@ -202,7 +202,7 @@ static inline int uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 /**
  * @brief Read data from FIFO
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param rx_data Data container
  * @param size Container size
  *
@@ -224,7 +224,7 @@ static inline int uart_fifo_read(struct device *dev, uint8_t *rx_data,
 /**
  * @brief Enable TX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -240,7 +240,7 @@ static inline void uart_irq_tx_enable(struct device *dev)
 /**
  * @brief Disable TX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -257,7 +257,7 @@ static inline void uart_irq_tx_disable(struct device *dev)
 /**
  * @brief Check if Tx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -276,7 +276,7 @@ static inline int uart_irq_tx_ready(struct device *dev)
 /**
  * @brief Enable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -293,7 +293,7 @@ static inline void uart_irq_rx_enable(struct device *dev)
 /**
  * @brief Disable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -310,7 +310,7 @@ static inline void uart_irq_rx_disable(struct device *dev)
 /**
  * @brief Check if nothing remains to be transmitted
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if nothing remains to be transmitted, 0 otherwise
  */
@@ -329,7 +329,7 @@ static inline int uart_irq_tx_empty(struct device *dev)
 /**
  * @brief Check if Rx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -347,7 +347,7 @@ static inline int uart_irq_rx_ready(struct device *dev)
 /**
  * @brief Enable error interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -364,7 +364,7 @@ static inline void uart_irq_err_enable(struct device *dev)
 /**
  * @brief Disable error interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -381,7 +381,7 @@ static inline void uart_irq_err_disable(struct device *dev)
 /**
  * @brief Check if any IRQ is pending
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is pending, 0 otherwise
  */
@@ -401,7 +401,7 @@ static inline int uart_irq_is_pending(struct device *dev)
 /**
  * @brief Update cached contents of IIR
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return always 1
  */
@@ -424,7 +424,7 @@ static inline int uart_irq_update(struct device *dev)
  * character.  It allows the detection of a character escape sequence that may
  * be used to override the behavior of the ISR handler.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct
  * @param byte Byte to process
  *
  * @return 1 if character processing must stop, 0 or if it is to continue
@@ -445,7 +445,7 @@ static inline int uart_irq_input_hook(struct device *dev, uint8_t byte)
 /**
  * @brief Set the UART input hook routine
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct
  * @param hook Routine to use as UART input hook
  *
  * @return N/A
@@ -469,7 +469,7 @@ static inline void uart_irq_input_hook_set(struct device *dev,
 /**
  * @brief Manipualte line control for UART.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct
  * @param ctrl The line control to be manipulated
  * @param val Value to set the line control
  *
@@ -499,7 +499,7 @@ static inline int uart_line_ctrl_set(struct device *dev,
  * Implementation and accepted commands are driver specific.
  * Refer to driver for more information.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct
  * @param cmd Command to driver
  * @param p Parameter to the command
  *

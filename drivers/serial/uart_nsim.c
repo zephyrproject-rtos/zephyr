@@ -41,7 +41,7 @@ static struct uart_driver_api uart_nsim_driver_api;
 /**
  * @brief Initialize fake serial port
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return DEV_OK
  */
@@ -55,7 +55,7 @@ static int uart_nsim_init(struct device *dev)
 /*
  * @brief Output a character to serial port
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param c character to output
  */
 unsigned char uart_nsim_poll_out(struct device *dev, unsigned char c)

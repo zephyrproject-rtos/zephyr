@@ -55,7 +55,7 @@ static struct uart_driver_api uart_k20_driver_api;
  * This routine is called to reset the chip in a quiescent state.
  * It is assumed that this function is called only once per UART.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return DEV_OK
  */
@@ -98,7 +98,7 @@ static int uart_k20_init(struct device *dev)
 /**
  * @brief Poll the device for input.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param c Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
@@ -125,7 +125,7 @@ static int uart_k20_poll_in(struct device *dev, unsigned char *c)
  * If the hardware flow control is enabled then the handshake signal CTS has to
  * be asserted in order to send a character.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param c Character to send
  *
  * @return sent character
@@ -149,7 +149,7 @@ static unsigned char uart_k20_poll_out(struct device *dev,
 /**
  * @brief Fill FIFO with data
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param tx_data Data to transmit
  * @param len Number of bytes to send
  *
@@ -171,7 +171,7 @@ static int uart_k20_fifo_fill(struct device *dev, const uint8_t *tx_data,
 /**
  * @brief Read data from FIFO
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param rx_data Pointer to data container
  * @param size Container size in bytes
  *
@@ -193,7 +193,7 @@ static int uart_k20_fifo_read(struct device *dev, uint8_t *rx_data,
 /**
  * @brief Enable TX interrupt
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -207,7 +207,7 @@ static void uart_k20_irq_tx_enable(struct device *dev)
 /**
  * @brief Disable TX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -221,7 +221,7 @@ static void uart_k20_irq_tx_disable(struct device *dev)
 /**
  * @brief Check if Tx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -236,7 +236,7 @@ static int uart_k20_irq_tx_ready(struct device *dev)
 /**
  * @brief Enable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -250,7 +250,7 @@ static void uart_k20_irq_rx_enable(struct device *dev)
 /**
  * @brief Disable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -264,7 +264,7 @@ static void uart_k20_irq_rx_disable(struct device *dev)
 /**
  * @brief Check if Rx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -279,7 +279,7 @@ static int uart_k20_irq_rx_ready(struct device *dev)
 /**
  * @brief Enable error interrupt
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -298,7 +298,7 @@ static void uart_k20_irq_err_enable(struct device *dev)
 /**
  * @brief Disable error interrupt
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -317,7 +317,7 @@ static void uart_k20_irq_err_disable(struct device *dev)
 /**
  * @brief Check if Tx or Rx IRQ is pending
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
@@ -330,7 +330,7 @@ static int uart_k20_irq_is_pending(struct device *dev)
 /**
  * @brief Update IRQ status
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return always 1
  */

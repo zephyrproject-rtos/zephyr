@@ -279,7 +279,7 @@ static inline int ns16550_pci_uart_scan(struct device *dev)
  *
  * This routine is called to reset the chip in a quiescent state.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return DEV_OK if successful, failed othersie
  */
@@ -337,7 +337,7 @@ static int uart_ns16550_init(struct device *dev)
 /**
  * @brief Poll the device for input.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param c Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
@@ -362,7 +362,7 @@ static int uart_ns16550_poll_in(struct device *dev, unsigned char *c)
  * If the hardware flow control is enabled then the handshake signal CTS has to
  * be asserted in order to send a character.
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param c Character to send
  *
  * @return Sent character
@@ -382,7 +382,7 @@ static unsigned char uart_ns16550_poll_out(struct device *dev,
 /**
  * @brief Check if an error was received
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return one of UART_ERROR_OVERRUN, UART_ERROR_PARITY, UART_ERROR_FRAMING,
  * UART_ERROR_BREAK if an error was detected, 0 otherwise.
@@ -397,7 +397,7 @@ static int uart_ns16550_err_check(struct device *dev)
 /**
  * @brief Fill FIFO with data
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param tx_data Data to transmit
  * @param size Number of bytes to send
  *
@@ -417,7 +417,7 @@ static int uart_ns16550_fifo_fill(struct device *dev, const uint8_t *tx_data,
 /**
  * @brief Read data from FIFO
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  * @param rxData Data container
  * @param size Container size
  *
@@ -438,7 +438,7 @@ static int uart_ns16550_fifo_read(struct device *dev, uint8_t *rx_data,
 /**
  * @brief Enable TX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -450,7 +450,7 @@ static void uart_ns16550_irq_tx_enable(struct device *dev)
 /**
  * @brief Disable TX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -462,7 +462,7 @@ static void uart_ns16550_irq_tx_disable(struct device *dev)
 /**
  * @brief Check if Tx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -474,7 +474,7 @@ static int uart_ns16550_irq_tx_ready(struct device *dev)
 /**
  * @brief Check if nothing remains to be transmitted
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if nothing remains to be transmitted, 0 otherwise
  */
@@ -486,7 +486,7 @@ static int uart_ns16550_irq_tx_empty(struct device *dev)
 /**
  * @brief Enable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -498,7 +498,7 @@ static void uart_ns16550_irq_rx_enable(struct device *dev)
 /**
  * @brief Disable RX interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -510,7 +510,7 @@ static void uart_ns16550_irq_rx_disable(struct device *dev)
 /**
  * @brief Check if Rx IRQ has been raised
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -522,7 +522,7 @@ static int uart_ns16550_irq_rx_ready(struct device *dev)
 /**
  * @brief Enable error interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return N/A
  */
@@ -534,7 +534,7 @@ static void uart_ns16550_irq_err_enable(struct device *dev)
 /**
  * @brief Disable error interrupt in IER
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -546,7 +546,7 @@ static void uart_ns16550_irq_err_disable(struct device *dev)
 /**
  * @brief Check if any IRQ is pending
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return 1 if an IRQ is pending, 0 otherwise
  */
@@ -558,7 +558,7 @@ static int uart_ns16550_irq_is_pending(struct device *dev)
 /**
  * @brief Update cached contents of IIR
  *
- * @param dev UART device struct (of type struct uart_device_config)
+ * @param dev UART device struct
  *
  * @return Always 1
  */
@@ -576,7 +576,7 @@ static int uart_ns16550_irq_update(struct device *dev)
 /**
  * @brief Manipulate line control for UART.
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct
  * @param ctrl The line control to be manipulated
  * @param val Value to set the line control
  *
@@ -621,7 +621,7 @@ static int uart_ns16550_line_ctrl_set(struct device *dev,
 /**
  * @brief Send extra command to driver
  *
- * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param dev UART device struct
  * @param cmd Command to driver
  * @param p Parameter to the command
  *
