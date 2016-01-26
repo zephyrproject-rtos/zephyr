@@ -110,7 +110,7 @@ typedef struct {
 	/** Microkernel semaphore used for task context */
 	struct _k_sem_struct _t_sem;
 	ksem_t t_sem;
-	bool caller_is_task;
+	bool waiter_is_task;
 #endif
 } device_sync_call_t;
 
@@ -127,7 +127,7 @@ static inline void device_sync_call_init(device_sync_call_t *sync)
 	sync->_t_sem.waiters = NULL;
 	sync->_t_sem.level = sync->_t_sem.count = 0;
 	sync->t_sem = (ksem_t)&sync->_t_sem;
-	sync->caller_is_task = false;
+	sync->waiter_is_task = false;
 #endif
 }
 
@@ -144,24 +144,24 @@ static inline void device_sync_call_wait(device_sync_call_t *sync)
 {
 	if ((sys_execution_context_type_get() == NANO_CTX_TASK) &&
 	    (task_priority_get() < CONFIG_NUM_TASK_PRIORITIES - 1)) {
-		sync->caller_is_task = true;
+		sync->waiter_is_task = true;
 		task_sem_take(sync->t_sem, TICKS_UNLIMITED);
 	} else {
-		sync->caller_is_task = false;
+		sync->waiter_is_task = false;
 		nano_sem_take(&sync->f_sem, TICKS_NONE);
 	}
 }
 
 /**
- * @brief Signal the caller about synchronization completion
- * Note: In a microkernel built this function will take care of the caller
+ * @brief Signal the waiter about synchronization completion
+ * Note: In a microkernel built this function will take care of the waiter
  * context and thus use the right attribute to signale the completion.
  *
  * @param sync A pointer to a valid device_sync_call_t
  */
 static inline void device_sync_call_complete(device_sync_call_t *sync)
 {
-	if (sync->caller_is_task) {
+	if (sync->waiter_is_task) {
 		task_sem_give(sync->t_sem);
 	} else {
 		nano_isr_sem_give(&sync->f_sem);
@@ -182,7 +182,7 @@ static inline void device_sync_call_wait(device_sync_call_t *sync)
 }
 
 /**
- * @brief Signal the caller about synchronization completion
+ * @brief Signal the waiter about synchronization completion
  * Note: It will simply release the internal semaphore
  *
  * @param sync A pointer to a valid device_sync_call_t
