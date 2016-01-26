@@ -50,10 +50,8 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 		return DEV_INVALID_CONF;
 	}
 
-	if (qm_i2c_set_config(QM_I2C_0, &qm_cfg) != QM_RC_OK) {
-		clk_periph_disable(CLK_PERIPH_I2C_M0_REGISTER);
+	if (qm_i2c_set_config(QM_I2C_0, &qm_cfg) != QM_RC_OK)
 		return DEV_FAIL;
-	}
 
 	return DEV_OK;
 }
