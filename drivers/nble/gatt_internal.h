@@ -28,7 +28,7 @@ struct ble_core_response;
 /* Max number of service supported, if changed update BLE core needs to be
  * updated too!
  */
-#define BLE_GATTS_MAX_SERVICES (CONFIG_BT_GATT_BLE_MAX_SERVICES)
+#define BLE_GATTS_MAX_SERVICES 10
 
 /*
  * Internal APIs used between host and BLE controller
@@ -427,22 +427,20 @@ void ble_gattc_discover_req(const struct ble_core_discover_params *req,
 void on_ble_gattc_discover_rsp(const struct ble_gattc_disc_rsp *rsp,
 			       const uint8_t *data, uint8_t len);
 
+
 /** GATT Attribute stream structure.
  *
  * This structure is a "compressed" copy of @ref bt_gatt_attr.
  * UUID pointer and user_data pointer are used as offset into buffer itself.
  * The offset is from the beginning of the buffer. therefore a value of 0
- * means that UUID or user_data is not present.
- */
+ * means that UUID or user_data is not present. */
 struct ble_gatt_attr {
-	/** Attribute UUID offset */
-	uint16_t uuid_offset;
-	/** Attribute user data offset */
-	uint16_t user_data_offset;
-	/**< User data max length */
-	uint16_t max_len;
 	/** Attribute permissions */
 	uint16_t perm;
+	/** Attribute variable data size */
+	uint16_t data_size;
+	/** Attribute variable data: always starts with the UUID and data follows */
+	uint8_t data[0];
 };
 
 struct ble_gattc_read_params {
