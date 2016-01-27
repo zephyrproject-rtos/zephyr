@@ -21,7 +21,7 @@
 #define N_FIBERS 2
 
 #define STACK_SIZE 256
-static char stacks[N_FIBERS][STACK_SIZE];
+static __stack char stacks[N_FIBERS][STACK_SIZE];
 
 static int errno_values[N_FIBERS + 1] = {
 	0xbabef00d,

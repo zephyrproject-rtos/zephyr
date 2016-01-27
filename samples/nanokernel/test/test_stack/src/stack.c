@@ -69,9 +69,9 @@ typedef struct {
 } ISR_STACK_INFO;
 
 
-char fiberStack1[STACKSIZE];
-char fiberStack2[STACKSIZE];
-char fiberStack3[STACKSIZE];
+char __stack fiberStack1[STACKSIZE];
+char __stack fiberStack2[STACKSIZE];
+char __stack fiberStack3[STACKSIZE];
 
 struct nano_timer timer;
 struct nano_stack nanoStackObj;

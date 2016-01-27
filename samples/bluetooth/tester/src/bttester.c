@@ -30,7 +30,7 @@
 #include "bttester.h"
 
 #define STACKSIZE 2048
-static char stack[STACKSIZE];
+static char __stack stack[STACKSIZE];
 
 #define CMD_QUEUED 2
 static uint8_t cmd_buf[CMD_QUEUED * BTP_MTU];

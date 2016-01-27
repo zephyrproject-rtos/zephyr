@@ -284,7 +284,7 @@ void test_nano_timeouts(void)
 
 #define TEST_NANO_TIMERS_DELAY 4
 static struct nano_sem test_nano_timers_sem;
-static char test_nano_timers_stack[512];
+static char __stack test_nano_timers_stack[512];
 static void test_nano_timers(int unused1, int unused2)
 {
 	struct nano_timer timer;
