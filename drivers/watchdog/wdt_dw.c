@@ -168,7 +168,7 @@ int wdt_dw_init(struct device *dev)
 {
 	dev->driver_api = &wdt_dw_funcs;
 
-	irq_connect(CONFIG_WDT_DW_IRQ, CONFIG_WDT_DW_IRQ_PRI, wdt_dw_isr,
+	IRQ_CONNECT(CONFIG_WDT_DW_IRQ, CONFIG_WDT_DW_IRQ_PRI, wdt_dw_isr,
 		    DEVICE_GET(wdt), 0);
 	irq_enable(CONFIG_WDT_DW_IRQ);
 

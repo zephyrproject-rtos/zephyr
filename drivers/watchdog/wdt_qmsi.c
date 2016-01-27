@@ -85,7 +85,7 @@ void wdt_qmsi_isr(void *arg)
 
 static int init(struct device *dev)
 {
-	irq_connect(CONFIG_WDT_QMSI_IRQ, CONFIG_WDT_QMSI_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_WDT_QMSI_IRQ, CONFIG_WDT_QMSI_IRQ_PRI,
 		    wdt_qmsi_isr, 0, IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask watchdog interrupt */

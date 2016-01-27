@@ -171,7 +171,7 @@ typedef struct s_isrList {
  * _IntExitWithEoi which does EOI to the interrupt controller, restores
  * context, and finally does 'iret'.
  *
- * This is only intended to be used by the irq_connect() macro.
+ * This is only intended to be used by the IRQ_CONNECT() macro.
  */
 #if CONFIG_X86_IAMCU
 #define _IRQ_STUB_ASM \
@@ -208,7 +208,7 @@ typedef struct s_isrList {
  * On MVIC, the mapping is fixed; the vector to use is just the irq line
  * number plus 0x20. The priority argument supplied by the user is discarded.
  *
- * These macros are only intended to be used by irq_connect() macro.
+ * These macros are only intended to be used by IRQ_CONNECT() macro.
  */
 #if CONFIG_MVIC
 #define _PRIORITY_ARG(irq_p, priority_p)	((irq_p + 0x20) / 16)
@@ -250,7 +250,7 @@ typedef struct s_isrList {
  *
  * @return The vector assigned to this interrupt
  */
-#define irq_connect(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	__asm__ __volatile__(							\
 		"jmp 2f\n\t" \
@@ -524,7 +524,7 @@ extern int _SysIntVecAlloc(unsigned int irq,
  * This routine programs the interrupt controller with the given vector
  * based on the given IRQ parameter.
  *
- * Drivers call this routine instead of irq_connect() when interrupts are
+ * Drivers call this routine instead of IRQ_CONNECT() when interrupts are
  * configured statically.
  *
  */

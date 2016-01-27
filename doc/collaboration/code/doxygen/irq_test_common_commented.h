@@ -62,7 +62,7 @@ typedef void (*vvpfn)(void *);
  * Opcode for generating a software interrupt.  The ISR associated with each
  * of these software interrupts will call either nano_isr_lifo_put() or
  * nano_isr_lifo_get().  The imm8 data in the opcode sequence will need to be
- * filled in after calling irq_connect().
+ * filled in after calling IRQ_CONNECT().
  */
 
 static char sw_isr_trigger_0[] =
@@ -125,7 +125,7 @@ static int initIRQ
 
 	if (i->isr[0])
 	{
-	vector = irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[0],
+	vector = IRQ_CONNECT(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[0],
 			      i->arg[0], nanoIntStub1, 0);
 	if (-1 == vector)
 	    {
@@ -137,7 +137,7 @@ static int initIRQ
 #if NUM_SW_IRQS >= 2
 	if (i->isr[1])
 	{
-	vector = irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[1],
+	vector = IRQ_CONNECT(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[1],
 			      i->arg[1], nanoIntStub2, 0);
 	if (-1 == vector)
 	    {
@@ -150,12 +150,12 @@ static int initIRQ
 #if defined(CONFIG_CPU_CORTEX_M)
 	if (i->isr[0])
 	{
-		(void) irq_connect (0, IRQ_PRIORITY, i->isr[0], i->arg[0], 0);
+		(void) IRQ_CONNECT(0, IRQ_PRIORITY, i->isr[0], i->arg[0], 0);
 	irq_enable (0);
 	}
 	if (i->isr[1])
 	{
-		(void) irq_connect (1, IRQ_PRIORITY, i->isr[1], i->arg[1], 0);
+		(void) IRQ_CONNECT(1, IRQ_PRIORITY, i->isr[1], i->arg[1], 0);
 	irq_enable (1);
 	}
 #endif /* CONFIG_CPU_CORTEX_M */

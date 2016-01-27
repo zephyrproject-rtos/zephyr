@@ -277,7 +277,7 @@ For example, if 3 bits are implemented, use 1, 2, and 3,
 not 0x20h, 0x40h, and 0x60h.
 
 Interrupt priority is set using the *prio* parameter of
-:c:macro:`irq_connect()` or :c:func:`irq_connect_dynamic()`.
+:c:macro:`IRQ_CONNECT()` or :c:func:`irq_connect_dynamic()`.
 
 The range of available priorities is different if using Zero Latency Interrupts
 (ZLI) or not.

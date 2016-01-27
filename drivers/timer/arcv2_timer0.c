@@ -319,7 +319,7 @@ int _sys_clock_driver_init(struct device *device)
 
 	cycles_per_tick = sys_clock_hw_cycles_per_tick;
 
-	irq_connect(CONFIG_ARCV2_TIMER0_INT_LVL, CONFIG_ARCV2_TIMER0_INT_PRI,
+	IRQ_CONNECT(CONFIG_ARCV2_TIMER0_INT_LVL, CONFIG_ARCV2_TIMER0_INT_PRI,
 		    _timer_int_handler, 0, 0);
 
 	/*

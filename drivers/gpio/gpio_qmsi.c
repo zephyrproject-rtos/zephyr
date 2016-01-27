@@ -258,7 +258,7 @@ int gpio_qmsi_init(struct device *port)
 	sys_write32(0, reg + INTEN);
 	sys_write32(~(0), reg + PORTA_EOI);
 
-	irq_connect(CONFIG_GPIO_QMSI_0_IRQ, CONFIG_GPIO_QMSI_0_PRI, qm_gpio_isr_0,
+	IRQ_CONNECT(CONFIG_GPIO_QMSI_0_IRQ, CONFIG_GPIO_QMSI_0_PRI, qm_gpio_isr_0,
 		    0, IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Enable GPIO IRQ and unmask interrupts for Lakemont. */

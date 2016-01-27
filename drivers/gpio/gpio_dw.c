@@ -477,7 +477,7 @@ void gpio_config_0_irq(struct device *port)
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	ARG_UNUSED(shared_irq_dev);
-	irq_connect(CONFIG_GPIO_DW_0_IRQ, CONFIG_GPIO_DW_0_PRI, gpio_dw_isr,
+	IRQ_CONNECT(CONFIG_GPIO_DW_0_IRQ, CONFIG_GPIO_DW_0_PRI, gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_0), GPIO_DW_0_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_0_IRQ_SHARED)
@@ -551,7 +551,7 @@ void gpio_config_1_irq(struct device *port)
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	ARG_UNUSED(shared_irq_dev);
-	irq_connect(CONFIG_GPIO_DW_1_IRQ, CONFIG_GPIO_DW_1_PRI, gpio_dw_isr,
+	IRQ_CONNECT(CONFIG_GPIO_DW_1_IRQ, CONFIG_GPIO_DW_1_PRI, gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_1), GPIO_DW_1_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_1_IRQ_SHARED)

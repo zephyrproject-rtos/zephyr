@@ -64,7 +64,7 @@ static void uart1_init(void)
 {
 	uart1_dev = device_get_binding("UART_1");
 
-	irq_connect(UART1_IRQ, UART1_IRQ_PRI, uart1_isr, 0, UART_IRQ_FLAGS);
+	IRQ_CONNECT(UART1_IRQ, UART1_IRQ_PRI, uart1_isr, 0, UART_IRQ_FLAGS);
 
 	irq_enable(UART1_IRQ);
 

@@ -372,7 +372,7 @@ static void console_input_init(void)
 
 	uart_irq_rx_disable(uart_console_dev);
 	uart_irq_tx_disable(uart_console_dev);
-	irq_connect(CONFIG_UART_CONSOLE_IRQ, CONFIG_UART_CONSOLE_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_UART_CONSOLE_IRQ, CONFIG_UART_CONSOLE_IRQ_PRI,
 		    uart_console_isr, 0, UART_IRQ_FLAGS);
 	irq_enable(CONFIG_UART_CONSOLE_IRQ);
 

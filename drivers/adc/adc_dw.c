@@ -535,11 +535,11 @@ DEVICE_INIT(adc_dw_0, CONFIG_ADC_DW_NAME_0, &adc_dw_init,
 
 static void adc_config_0_irq(void)
 {
-	irq_connect(CONFIG_ADC_DW_0_RX_IRQ, CONFIG_ADC_DW_0_PRI, adc_dw_rx_isr,
+	IRQ_CONNECT(CONFIG_ADC_DW_0_RX_IRQ, CONFIG_ADC_DW_0_PRI, adc_dw_rx_isr,
 		    DEVICE_GET(adc_dw_0), 0);
 	irq_enable(CONFIG_ADC_DW_0_RX_IRQ);
 
-	irq_connect(CONFIG_ADC_DW_0_ERR_IRQ, CONFIG_ADC_DW_0_PRI,
+	IRQ_CONNECT(CONFIG_ADC_DW_0_ERR_IRQ, CONFIG_ADC_DW_0_PRI,
 		    adc_dw_err_isr, DEVICE_GET(adc_dw_0), 0);
 	irq_enable(CONFIG_ADC_DW_0_ERR_IRQ);
 }

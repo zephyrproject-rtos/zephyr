@@ -56,7 +56,7 @@ extern void _IntExit(void);
 #define DO_CONCAT(x, y) x ## y
 #define CONCAT(x, y) DO_CONCAT(x, y)
 
-/* internal routine documented in C file, needed by irq_connect() macro */
+/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void _irq_priority_set(unsigned int irq, unsigned int prio);
 
 
@@ -89,7 +89,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
  *
  * @return The vector assigned to this interrupt
  */
-#define irq_connect(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	enum { IRQ = irq_p }; \
 	static struct _IsrTableEntry _CONCAT(_isr_irq, irq_p) \

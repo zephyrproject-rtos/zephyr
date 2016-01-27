@@ -612,7 +612,7 @@ int _sys_clock_driver_init(struct device *device)
 	 * Although the stub has already been "connected", the vector number
 	 * still has to be programmed into the interrupt controller.
 	 */
-	irq_connect(CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
+	IRQ_CONNECT(CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
 		   _timer_int_handler, 0, HPET_IOAPIC_FLAGS);
 
 	/* enable the IRQ in the interrupt controller */

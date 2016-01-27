@@ -474,7 +474,7 @@ DEVICE_INIT(spi_intel_port_0, CONFIG_SPI_INTEL_PORT_0_DRV_NAME, spi_intel_init,
 
 void spi_config_0_irq(void)
 {
-	irq_connect(CONFIG_SPI_INTEL_PORT_0_IRQ, CONFIG_SPI_INTEL_PORT_0_PRI,
+	IRQ_CONNECT(CONFIG_SPI_INTEL_PORT_0_IRQ, CONFIG_SPI_INTEL_PORT_0_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_0),
 		    SPI_INTEL_IRQ_FLAGS);
 }
@@ -511,7 +511,7 @@ DEVICE_INIT(spi_intel_port_1, CONFIG_SPI_INTEL_PORT_1_DRV_NAME, spi_intel_init,
 
 void spi_config_1_irq(void);
 {
-	irq_connect(CONFIG_SPI_INTEL_PORT_1_IRQ, CONFIG_SPI_INTEL_PORT_1_PRI,
+	IRQ_CONNECT(CONFIG_SPI_INTEL_PORT_1_IRQ, CONFIG_SPI_INTEL_PORT_1_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_1),
 		    SPI_INTEL_IRQ_FLAGS);
 }

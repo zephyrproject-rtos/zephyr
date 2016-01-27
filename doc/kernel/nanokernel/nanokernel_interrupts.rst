@@ -107,7 +107,7 @@ Example
    void my_isr_installer(void)
    {
       ...
-      irq_connect(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG, MY_IRQ_FLAGS);
+      IRQ_CONNECT(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG, MY_IRQ_FLAGS);
       irq_enable(MY_DEV_IRQ);            /* enable IRQ */
       ...
    }
@@ -254,6 +254,6 @@ Macros
 
 These are the macros used to install a static ISR.
 
-:c:macro:`irq_connect()`
+:c:macro:`IRQ_CONNECT()`
    Registers a static ISR with the IDT.
 

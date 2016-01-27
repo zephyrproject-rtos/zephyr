@@ -131,7 +131,7 @@ int _SysIntVecAlloc(
  * This routine programs the interrupt controller with the given vector
  * based on the given IRQ parameter.
  *
- * Drivers call this routine instead of irq_connect() when interrupts are
+ * Drivers call this routine instead of IRQ_CONNECT() when interrupts are
  * configured statically.
  *
  * The Galileo board virtualizes IRQs as follows:

@@ -588,7 +588,7 @@ DEVICE_INIT(spi_dw_port_0, CONFIG_SPI_DW_PORT_0_DRV_NAME, spi_dw_init,
 
 void spi_config_0_irq(void)
 {
-	irq_connect(CONFIG_SPI_DW_PORT_0_IRQ, CONFIG_SPI_DW_PORT_0_PRI,
+	IRQ_CONNECT(CONFIG_SPI_DW_PORT_0_IRQ, CONFIG_SPI_DW_PORT_0_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_0),
 		    SPI_DW_IRQ_FLAGS);
 	irq_enable(CONFIG_SPI_DW_PORT_0_IRQ);
@@ -619,7 +619,7 @@ DEVICE_INIT(spi_dw_port_1, CONFIG_SPI_DW_PORT_1_DRV_NAME, spi_dw_init,
 
 void spi_config_1_irq(void)
 {
-	irq_connect(CONFIG_SPI_DW_PORT_1_IRQ, CONFIG_SPI_DW_PORT_1_PRI,
+	IRQ_CONNECT(CONFIG_SPI_DW_PORT_1_IRQ, CONFIG_SPI_DW_PORT_1_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_1),
 		    SPI_DW_IRQ_FLAGS);
 	irq_enable(CONFIG_SPI_DW_PORT_1_IRQ);

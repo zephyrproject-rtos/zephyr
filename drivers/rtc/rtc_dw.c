@@ -206,7 +206,7 @@ DEVICE_INIT(rtc, CONFIG_RTC_DRV_NAME, &rtc_dw_init,
 
 int rtc_dw_init(struct device *dev)
 {
-	irq_connect(CONFIG_RTC_IRQ, CONFIG_RTC_IRQ_PRI, rtc_dw_isr,
+	IRQ_CONNECT(CONFIG_RTC_IRQ, CONFIG_RTC_IRQ_PRI, rtc_dw_isr,
 		    DEVICE_GET(rtc), 0);
 	irq_enable(CONFIG_RTC_IRQ);
 

@@ -166,7 +166,7 @@ DEVICE_INIT(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME, shared_irq_initialize,
 
 void shared_irq_config_0_irq(void)
 {
-	irq_connect(CONFIG_SHARED_IRQ_0_IRQ, CONFIG_SHARED_IRQ_0_PRI,
+	IRQ_CONNECT(CONFIG_SHARED_IRQ_0_IRQ, CONFIG_SHARED_IRQ_0_PRI,
 		    shared_irq_isr, DEVICE_GET(shared_irq_0),
 		    SHARED_IRQ_0_FLAGS);
 }
@@ -206,7 +206,7 @@ DEVICE_INIT(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME, shared_irq_initialize,
 
 void shared_irq_config_1_irq(void)
 {
-	irq_connect(CONFIG_SHARED_IRQ_1_IRQ, CONFIG_SHARED_IRQ_1_PRI,
+	IRQ_CONNECT(CONFIG_SHARED_IRQ_1_IRQ, CONFIG_SHARED_IRQ_1_PRI,
 		    shared_irq_isr, DEVICE_GET(shared_irq_1),
 		    SHARED_IRQ_1_FLAGS);
 }

@@ -53,7 +53,7 @@ extern "C" {
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 
 /*
- * The irq_connect() API connects to a (virtualized) IRQ and the
+ * The IRQ_CONNECT() API connects to a (virtualized) IRQ and the
  * associated interrupt controller is programmed with the allocated vector.
  * The Quark board virtualizes IRQs as follows:
  *

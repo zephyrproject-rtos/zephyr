@@ -60,7 +60,7 @@
  *
  * @brief Inform the kernel of an interrupt
  *
- * This function is called from the interrupt stub created by irq_connect()
+ * This function is called from the interrupt stub created by IRQ_CONNECT()
  * to inform the kernel of an interrupt.  This routine increments
  * _nanokernel.nested (to support interrupt nesting), switches to the
  * base of the interrupt stack, if not already on the interrupt stack, and then
@@ -132,7 +132,7 @@ SECTION_FUNC(TEXT, _IntEnt)
 	/*
 	 * Volatile registers are now saved it is safe to start measuring
 	 * how long interrupt are disabled.
-	 * The interrupt gate created by irq_connect disables the
+	 * The interrupt gate created by IRQ_CONNECT disables the
 	 * interrupt.
 	 *
 	 * Preserve EAX as it contains the stub return address.
@@ -253,7 +253,7 @@ SECTION_FUNC(TEXT, _IntExitWithEoi)
  *
  * @brief Inform the kernel of an interrupt exit
  *
- * This function is called from the interrupt stub created by irq_connect()
+ * This function is called from the interrupt stub created by IRQ_CONNECT()
  * to inform the kernel that the processing of an interrupt has
  * completed.  This routine decrements _nanokernel.nested (to support interrupt
  * nesting), restores the volatile integer registers, and then switches

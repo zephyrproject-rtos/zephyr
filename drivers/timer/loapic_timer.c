@@ -567,7 +567,7 @@ int _sys_clock_driver_init(struct device *device)
 	initial_count_register_set(cycles_per_tick - 1);
 	periodic_mode_set();
 
-	irq_connect(CONFIG_LOAPIC_TIMER_IRQ, CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
+	IRQ_CONNECT(CONFIG_LOAPIC_TIMER_IRQ, CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
 		    _timer_int_handler, 0, 0);
 
 	/* Everything has been configured. It is now safe to enable the

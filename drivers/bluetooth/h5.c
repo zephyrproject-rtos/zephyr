@@ -752,7 +752,7 @@ static int h5_open(void)
 	uart_irq_rx_disable(h5_dev);
 	uart_irq_tx_disable(h5_dev);
 
-	irq_connect(CONFIG_BLUETOOTH_UART_IRQ, CONFIG_BLUETOOTH_UART_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_BLUETOOTH_UART_IRQ, CONFIG_BLUETOOTH_UART_IRQ_PRI,
 		    bt_uart_isr, 0, UART_IRQ_FLAGS);
 	irq_enable(CONFIG_BLUETOOTH_UART_IRQ);
 

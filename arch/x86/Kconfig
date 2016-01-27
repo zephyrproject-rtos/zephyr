@@ -228,7 +228,7 @@ config NUM_DYNAMIC_STUBS
 	default 0
 	help
 	This option specifies the number of interrupt handlers that can be
-	installed dynamically using irq_connect().
+	installed dynamically using irq_connect_dynamic().
 
 config NUM_DYNAMIC_EXC_STUBS
 	int "Number of dynamic exception stubs"
