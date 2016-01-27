@@ -40,6 +40,7 @@
 #include <nano_private.h>
 #include <misc/__assert.h>
 #include <idtEnt.h>
+#include <misc/printk.h>
 
 extern void _SpuriousIntHandler(void *);
 extern void _SpuriousIntNoErrCodeHandler(void *);
@@ -64,6 +65,61 @@ void *__attribute__((section(".spurIsr"))) MK_ISR_NAME(_SpuriousIntHandler) =
 void *__attribute__((section(".spurNoErrIsr")))
 	MK_ISR_NAME(_SpuriousIntNoErrCodeHandler) =
 		&_SpuriousIntNoErrCodeHandler;
+
+#if CONFIG_DEBUG_IRQS
+/**
+ *
+ * @brief Dump out the IDT for debugging purposes
+ *
+ * The IDT has a strange structure which confounds direct examination in
+ * a debugger. This function will print out its contents in human-readable
+ * form. If unused, gc-sections will strip this function from the binary.
+ */
+void irq_debug_dump_idt(void)
+{
+	int i;
+	IDT_ENTRY *idt = (IDT_ENTRY *)_idt_base_address;
+
+	printk("Installed interrupt handlers (spurious omitted):\n");
+	for (i = 0; i < CONFIG_IDT_NUM_VECTORS; i++) {
+		uint32_t addr = idt[i].offset_low + (idt[i].offset_high << 16);
+
+		if ((void *)addr == &_SpuriousIntNoErrCodeHandler ||
+		    (void *)addr == &_SpuriousIntHandler) {
+			continue;
+		}
+
+		printk("IDT 0x%x: CS=0x%x ADDR=0x%x DPL=0x%x ",
+			 i, idt[i].segment_selector, addr,
+			 idt[i].dpl);
+		if (idt[i].present) {
+			printk("present ");
+		}
+
+		if (idt[i].gate_size) {
+			printk("32-bit ");
+		} else {
+			printk("16-bit ");
+		}
+
+		switch (idt[i].type) {
+		case 0x5:
+			printk("task gate");
+			break;
+		case 0x6:
+			printk("IRQ gate");
+			break;
+		case 0x7:
+			printk("trap gate");
+			break;
+		default:
+			printk("Garbage type (0x%x)", idt[i].type);
+			break;
+		}
+		printk("\n");
+	}
+}
+#endif
 
 /**
  *

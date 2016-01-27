@@ -538,6 +538,18 @@ extern void	_IntVecMarkAllocated(unsigned int vector);
 
 extern void	_IntVecMarkFree(unsigned int vector);
 
+#if CONFIG_DEBUG_IRQS
+/**
+ *
+ * @brief Dump out the IDT for debugging purposes
+ *
+ * The IDT has a strange structure which confounds direct examination in
+ * a debugger. This function will print out its contents in human-readable
+ * form. If unused, gc-sections will strip this function from the binary.
+ */
+void irq_debug_dump_idt(void);
+#endif /* CONFIG_DEBUG_IRQS */
+
 #endif /* !_ASMLANGUAGE */
 
 /* Segment selector definitions are shared */
