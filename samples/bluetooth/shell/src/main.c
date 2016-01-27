@@ -51,7 +51,6 @@ static struct bt_conn *pairing_conn;
 
 static struct nano_fifo data_fifo;
 static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL, 0);
-static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 
 static const char *current_prompt(void)
 {
@@ -1375,6 +1374,7 @@ static void cmd_l2cap_disconnect(int argc, char *argv[])
 
 static void cmd_l2cap_send(int argc, char *argv[])
 {
+	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 	int err, len, count = 1;
 	struct net_buf *buf;
 
