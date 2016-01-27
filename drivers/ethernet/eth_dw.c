@@ -310,7 +310,7 @@ DEVICE_DEFINE(eth_dw_0, &eth_0_runtime, NANOKERNEL,
 
 static int eth_net_tx(struct net_buf *buf)
 {
-	return eth_tx(&__initconfig_eth_dw_0, buf);
+	return eth_tx(DEVICE_GET(eth_dw_0), buf);
 }
 
 static void eth_config_0_irq(struct device *port)
