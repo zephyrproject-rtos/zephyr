@@ -25,6 +25,7 @@
 #include <bluetooth/conn.h>
 
 #include <misc/byteorder.h>
+#include <misc/util.h>
 
 #include "bttester.h"
 
@@ -148,7 +149,9 @@ static void set_connectable(uint8_t *data, uint16_t len)
 }
 
 static uint8_t ad_flags = BT_LE_AD_NO_BREDR;
-static struct bt_data ad = BT_DATA(BT_DATA_FLAGS, &ad_flags, sizeof(ad_flags));
+static struct bt_data ad[10] = {
+	BT_DATA(BT_DATA_FLAGS, &ad_flags, sizeof(ad_flags)),
+};
 
 static void set_discoverable(uint8_t *data, uint16_t len)
 {
@@ -186,12 +189,8 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 {
 	const struct gap_start_advertising_cmd *cmd = (void *) data;
 	struct gap_start_advertising_rp rp;
-	uint8_t adv_type;
-
-	/* TODO
-	 * convert adv_data and scan_rsp and pass them
-	 */
-	ARG_UNUSED(cmd);
+	uint8_t adv_type, adv_len;
+	int i;
 
 	if (atomic_test_bit(&current_settings, GAP_SETTINGS_CONNECTABLE)) {
 		adv_type = BT_LE_ADV_IND;
@@ -199,10 +198,21 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 		adv_type = BT_LE_ADV_NONCONN_IND;
 	}
 
-	if (bt_le_adv_start(BT_LE_ADV(adv_type), &ad, 1, NULL, 0) < 0) {
-		tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-		return;
+	for (i = 0, adv_len = 1; i < cmd->adv_data_len; adv_len++) {
+		if (adv_len >= ARRAY_SIZE(ad)) {
+			BTTESTER_DBG("ad[] Out of memory");
+			goto fail;
+		}
+
+		ad[adv_len].type = cmd->adv_data[i++];
+		ad[adv_len].data_len = cmd->adv_data[i++];
+		ad[adv_len].data = &cmd->adv_data[i];
+		i += ad[adv_len].data_len;
+	}
+
+	if (bt_le_adv_start(BT_LE_ADV(adv_type), ad, adv_len, NULL, 0) < 0) {
+		BTTESTER_DBG("Failed to start advertising");
+		goto fail;
 	}
 
 	atomic_set_bit(&current_settings, GAP_SETTINGS_ADVERTISING);
@@ -210,6 +220,10 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING, CONTROLLER_INDEX,
 		    (uint8_t *) &rp, sizeof(rp));
+	return;
+fail:
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void stop_advertising(const uint8_t *data, uint16_t len)
