@@ -19,6 +19,7 @@
 #include <init.h>
 #include <nanokernel.h>
 #include <spi.h>
+#include <gpio.h>
 
 #include "qm_scss.h"
 #include "qm_spi.h"
@@ -33,9 +34,12 @@ static struct pending_transfer pending_transfers[QM_SPI_NUM];
 
 struct spi_qmsi_config {
 	qm_spi_t spi;
+	char *cs_port;
+	uint32_t cs_pin;
 };
 
 struct spi_qmsi_runtime {
+	struct device *gpio_cs;
 	device_sync_call_t sync;
 	qm_spi_config_t cfg;
 	qm_rc_t rc;
@@ -54,6 +58,18 @@ static inline qm_spi_bmode_t config_to_bmode(uint8_t mode)
 	default:
 		return QM_SPI_BMODE_0;
 	}
+}
+
+static void spi_control_cs(struct device *dev, bool active)
+{
+	struct spi_qmsi_runtime *context = dev->driver_data;
+	struct spi_qmsi_config *config = dev->config->config_info;
+	struct device *gpio = context->gpio_cs;
+
+	if (!gpio)
+		return;
+
+	gpio_pin_write(gpio, config->cs_pin, !active);
 }
 
 static int spi_qmsi_configure(struct device *dev,
@@ -94,6 +110,8 @@ static void pending_transfer_complete(uint32_t id, qm_rc_t rc)
 	*/
 	if (cfg->transfer_mode == QM_SPI_TMOD_TX_RX && pending->counter == 1)
 		return;
+
+	spi_control_cs(dev, false);
 
 	pending->dev = NULL;
 	pending->counter = 0;
@@ -186,6 +204,8 @@ static int spi_qmsi_transceive(struct device *dev,
 	if (rc != QM_RC_OK)
 		return DEV_FAIL;
 
+	spi_control_cs(dev, true);
+
 	device_sync_call_wait(&context->sync);
 
 	return context->rc ? DEV_FAIL : DEV_OK;
@@ -210,6 +230,23 @@ static struct spi_driver_api spi_qmsi_api = {
 	.suspend = spi_qmsi_suspend,
 	.resume = spi_qmsi_resume,
 };
+
+static struct device *gpio_cs_init(struct spi_qmsi_config *config)
+{
+	struct device *gpio;
+
+	if (!config->cs_port)
+		return NULL;
+
+	gpio = device_get_binding(config->cs_port);
+	if (!gpio)
+		return NULL;
+
+	gpio_pin_configure(gpio, config->cs_pin, GPIO_DIR_OUT);
+	gpio_pin_write(gpio, config->cs_pin, 1);
+
+	return gpio;
+}
 
 static int spi_qmsi_init(struct device *dev)
 {
@@ -239,6 +276,8 @@ static int spi_qmsi_init(struct device *dev)
 		return DEV_FAIL;
 	}
 
+	context->gpio_cs = gpio_cs_init(spi_config);
+
 	device_sync_call_init(&context->sync);
 
 	return DEV_OK;
@@ -247,6 +286,10 @@ static int spi_qmsi_init(struct device *dev)
 #ifdef CONFIG_SPI_QMSI_PORT_0
 static struct spi_qmsi_config spi_qmsi_mst_0_config = {
 	.spi = QM_SPI_MST_0,
+#ifdef CONFIG_SPI_QMSI_CS_GPIO
+	.cs_port = CONFIG_SPI_QMSI_PORT_0_CS_GPIO_PORT,
+	.cs_pin = CONFIG_SPI_QMSI_PORT_0_CS_GPIO_PIN,
+#endif
 };
 
 static struct spi_qmsi_runtime spi_qmsi_mst_0_runtime;
@@ -260,6 +303,10 @@ DEVICE_INIT(spi_master_0, CONFIG_SPI_QMSI_PORT_0_DRV_NAME,
 
 static struct spi_qmsi_config spi_qmsi_mst_1_config = {
 	.spi = QM_SPI_MST_1,
+#ifdef CONFIG_SPI_QMSI_CS_GPIO
+	.cs_port = CONFIG_SPI_QMSI_PORT_1_CS_GPIO_PORT,
+	.cs_pin = CONFIG_SPI_QMSI_PORT_1_CS_GPIO_PIN,
+#endif
 };
 
 static struct spi_qmsi_runtime spi_qmsi_mst_1_runtime;
