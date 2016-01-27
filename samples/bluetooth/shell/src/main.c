@@ -1265,7 +1265,7 @@ static void cmd_auth_pincode(int argc, char *argv[])
 	bt_conn_auth_pincode_entry(conn, argv[1]);
 }
 
-
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
@@ -1399,6 +1399,7 @@ static void cmd_l2cap_send(int argc, char *argv[])
 		}
 	}
 }
+#endif
 
 static void cmd_bredr_discoverable(int argc, char *argv[])
 {
@@ -1485,10 +1486,12 @@ struct shell_cmd commands[] = {
 	{ "gatt-write-signed", cmd_gatt_write_signed },
 	{ "gatt-subscribe", cmd_gatt_subscribe },
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe },
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	{ "l2cap-register", cmd_l2cap_register },
 	{ "l2cap-connect", cmd_l2cap_connect },
 	{ "l2cap-disconnect", cmd_l2cap_disconnect },
 	{ "l2cap-send", cmd_l2cap_send },
+#endif
 	{ "br-iscan", cmd_bredr_discoverable },
 	{ "br-pscan", cmd_bredr_connectable },
 	{ NULL, NULL }
