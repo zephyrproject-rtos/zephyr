@@ -129,10 +129,15 @@ static void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 		return;
 	}
 
-	if (info.type == BT_CONN_TYPE_BR) {
+	switch (info.type) {
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, len);
-	} else if (info.type == BT_CONN_TYPE_LE) {
+		break;
+#endif
+	case BT_CONN_TYPE_LE:
 		bt_addr_le_to_str(info.le.dst, addr, len);
+		break;
 	}
 }
 
@@ -1082,6 +1087,7 @@ static void auth_cancel(struct bt_conn *conn)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
 static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 {
 	char addr[BT_ADDR_STR_LEN];
@@ -1111,12 +1117,15 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 		pairing_conn = bt_conn_ref(conn);
 	}
 }
+#endif
 
 static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
+#if defined(CONFIG_BLUETOOTH_BREDR)
 	.pincode_entry = auth_pincode_entry,
+#endif
 	.cancel = auth_cancel,
 };
 
@@ -1124,7 +1133,9 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = auth_passkey_confirm,
+#if defined(CONFIG_BLUETOOTH_BREDR)
 	.pincode_entry = auth_pincode_entry,
+#endif
 	.cancel = auth_cancel,
 };
 
@@ -1132,7 +1143,9 @@ static struct bt_conn_auth_cb auth_cb_input = {
 	.passkey_display = NULL,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = NULL,
+#if defined(CONFIG_BLUETOOTH_BREDR)
 	.pincode_entry = auth_pincode_entry,
+#endif
 	.cancel = auth_cancel,
 };
 
@@ -1140,7 +1153,9 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = auth_passkey_confirm,
+#if defined(CONFIG_BLUETOOTH_BREDR)
 	.pincode_entry = auth_pincode_entry,
+#endif
 	.cancel = auth_cancel,
 };
 
@@ -1230,6 +1245,7 @@ static void cmd_auth_passkey(int argc, char *argv[])
 	bt_conn_auth_passkey_entry(default_conn, passkey);
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
 static void cmd_auth_pincode(int argc, char *argv[])
 {
 	struct bt_conn *conn;
@@ -1263,6 +1279,7 @@ static void cmd_auth_pincode(int argc, char *argv[])
 
 	bt_conn_auth_pincode_entry(conn, argv[1]);
 }
+#endif
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -1401,6 +1418,7 @@ static void cmd_l2cap_send(int argc, char *argv[])
 }
 #endif
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
 static void cmd_bredr_discoverable(int argc, char *argv[])
 {
 	int err;
@@ -1458,6 +1476,7 @@ static void cmd_bredr_connectable(int argc, char *argv[])
 
 	printk("BR/EDR set/reset connectable done\n");
 }
+#endif
 
 struct shell_cmd commands[] = {
 	{ "init", cmd_init },
@@ -1472,7 +1491,9 @@ struct shell_cmd commands[] = {
 	{ "auth-cancel", cmd_auth_cancel },
 	{ "auth-passkey", cmd_auth_passkey },
 	{ "auth-confirm", cmd_auth_passkey_confirm },
+#if defined(CONFIG_BLUETOOTH_BREDR)
 	{ "auth-pincode", cmd_auth_pincode },
+#endif
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu },
 	{ "gatt-discover-primary", cmd_gatt_discover },
 	{ "gatt-discover-secondary", cmd_gatt_discover },
@@ -1492,8 +1513,10 @@ struct shell_cmd commands[] = {
 	{ "l2cap-disconnect", cmd_l2cap_disconnect },
 	{ "l2cap-send", cmd_l2cap_send },
 #endif
+#if defined(CONFIG_BLUETOOTH_BREDR)
 	{ "br-iscan", cmd_bredr_discoverable },
 	{ "br-pscan", cmd_bredr_connectable },
+#endif
 	{ NULL, NULL }
 };
 
