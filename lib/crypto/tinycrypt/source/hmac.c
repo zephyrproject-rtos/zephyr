@@ -31,6 +31,7 @@
  */
 
 #include <tinycrypt/hmac.h>
+#include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 
 static void rekey(uint8_t *key, const uint8_t *new_key, uint32_t key_size)
@@ -140,6 +141,9 @@ int32_t tc_hmac_final(uint8_t *tag, uint32_t taglen, TCHmacState_t ctx)
 				TC_SHA256_BLOCK_SIZE);
 	(void)tc_sha256_update(&ctx->hash_state, tag, TC_SHA256_DIGEST_SIZE);
 	(void)tc_sha256_final(tag, &ctx->hash_state);
+
+	/* destroy the current state */
+	_set(ctx, 0, sizeof(*ctx));
 
 	return TC_SUCCESS;
 }

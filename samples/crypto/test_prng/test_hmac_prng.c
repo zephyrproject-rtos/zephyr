@@ -40,11 +40,12 @@
   - HMAC-PRNG generate)
 */
 
+#include <tinycrypt/hmac_prng.h>
+#include <tinycrypt/constants.h>
+
+#include <stdio.h>
 #include <tc_util.h>
 #include <drivers/system_timer.h>
-#include <stdio.h>
-
-#include <tinycrypt/hmac_prng.h>
 
 /*
  * Main task to test AES

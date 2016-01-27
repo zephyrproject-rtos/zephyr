@@ -41,16 +41,17 @@
   - AES128 NIST variable-key and fixed-text
 */
 
-#include <test_utils.h>
 #include <tinycrypt/aes.h>
+#include <tinycrypt/constants.h>
+#include <test_utils.h>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <stdint.h>
 #include <stddef.h>
 #include <misc/printk.h>
-
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #define NUM_OF_NIST_KEYS 16
 #define NUM_OF_FIXED_KEYS 128

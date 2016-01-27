@@ -75,6 +75,8 @@
 extern "C" {
 #endif
 
+#define TC_HMAC_PRNG_RESEED_REQ -1
+
 struct tc_hmac_prng_struct {
 	/* the HMAC instance for this PRNG */
 	struct tc_hmac_state_struct h;
@@ -142,7 +144,7 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed,
  *  @brief HMAC-PRNG generate procedure
  *  Generates outlen pseudo-random bytes into out buffer, updates prng
  *  @return returns TC_SUCCESS (1)
- *          returns TC_RESEED_REQ (-1) if a reseed is needed
+ *          returns TC_HMAC_PRNG_RESEED_REQ (-1) if a reseed is needed
  *             returns TC_FAIL (0) if:
  *                out == NULL,
  *                prng == NULL,

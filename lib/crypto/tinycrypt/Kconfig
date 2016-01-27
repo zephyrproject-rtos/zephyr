@@ -50,6 +50,24 @@ config  TINYCRYPT_SHA256_HMAC_PRNG
           This option enables support for psudeo-random number
           generator.
 
+config  TINYCRYPT_ECC_DH
+        bool
+        prompt "ECC_DH anonymous key agreement protocol"
+        depends on TINYCRYPT
+        default n
+        help
+          This option enables support for the Elliptic curve
+          Diffie-Helman anonymous key agreement protocol.
+
+config  TINYCRYPT_ECC_DSA
+        bool
+        prompt "ECC_DSA digital signature algorithm"
+        depends on TINYCRYPT
+        default n
+        help
+          This option enables support for the Elliptic Curbe Digital
+          Signature Algorithm (ECDSA).
+
 config  TINYCRYPT_AES
         bool
         prompt "AES-128 decrypt/encrypt"
@@ -73,3 +91,19 @@ config  TINYCRYPT_AES_CTR
         default n
         help
           This option enables support for AES-128 counter mode.
+
+config  TINYCRYPT_AES_CCM
+        bool
+        prompt "AES-128 CCM mode"
+        depends on TINYCRYPT_AES
+        default n
+        help
+          This option enables support for AES-128 CCM mode.
+
+config  TINYCRYPT_AES_CMAC
+        bool
+        prompt "AES-128 CMAC mode"
+        depends on TINYCRYPT_AES
+        default n
+        help
+          This option enables support for AES-128 CMAC mode.

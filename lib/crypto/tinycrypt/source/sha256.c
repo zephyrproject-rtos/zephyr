@@ -31,6 +31,7 @@
  */
 
 #include <tinycrypt/sha256.h>
+#include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 
 static void compress(uint32_t *iv, const uint8_t *data);
@@ -129,6 +130,9 @@ int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s)
 		*digest++ = (uint8_t)(t >> 8);
 		*digest++ = (uint8_t)(t);
 	}
+
+	/* destroy the current state */
+	_set(s, 0, sizeof(*s));
 
 	return TC_SUCCESS;
 }

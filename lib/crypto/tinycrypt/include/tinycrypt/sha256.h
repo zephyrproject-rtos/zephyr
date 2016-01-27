@@ -119,7 +119,7 @@ int32_t tc_sha256_update(TCSha256State_t s,
  *  @warning The state buffer 'leftover' is left in memory after processing
  *           If your application intends to have sensitive data in this
  *           buffer, remind to erase it after the data has been processed
- *  @param digest unigned eight bit integer
+ *  @param digest unsigned eight bit integer
  *  @param Sha256 state struct
  */
 int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s);

@@ -49,7 +49,7 @@
 #ifndef __TC_AES_H__
 #define __TC_AES_H__
 
-#include<stdint.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,7 +74,7 @@ typedef struct tc_aes_key_sched_struct *TCAesKeySched_t;
  *  @note       This implementation skips the additional steps required for keys
  *              larger than 128 bits, and must not be used for AES-192 or
  *              AES-256 key schedule -- see FIPS 197 for details
- *  @param      s IN/OUT -- inited struct tc_aes_key_sched_struct
+ *  @param      s IN/OUT -- initialized struct tc_aes_key_sched_struct
  *  @param      k IN -- points to the AES key
  */
 int32_t tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k);
@@ -106,7 +106,7 @@ int32_t tc_aes_encrypt(uint8_t *out,
  *  @warning    This routine skips the additional steps required for keys larger
  *              than 128, and must not be used for AES-192 or AES-256 key
  *              schedule -- see FIPS 197 for details
- *  @param s  IN/OUT -- inited struct tc_aes_key_sched_struct
+ *  @param s  IN/OUT -- initialized struct tc_aes_key_sched_struct
  *  @param k  IN -- points to the AES key
  */
 int32_t tc_aes128_set_decrypt_key(TCAesKeySched_t s, const uint8_t *k);

@@ -33,6 +33,7 @@
 #define __TEST_UTILS_H__
 
 #include <tc_util.h>
+#include <tinycrypt/constants.h>
 
 static inline void show_str(const char *label, const uint8_t *s, size_t len)
 {

@@ -32,6 +32,7 @@
 
 #include <tinycrypt/aes.h>
 #include <tinycrypt/utils.h>
+#include <tinycrypt/constants.h>
 
 static const uint8_t sbox[256] = {
 	0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
@@ -182,7 +183,9 @@ int32_t tc_aes_encrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 	add_round_key(state, s->words + Nb*(i+1));
 
 	(void)_copy(out, sizeof(state), state, sizeof(state));
-	_set(state, 0x00, sizeof(state));
+
+	/* zeroing out the state buffer */
+	_set(state, TC_ZERO_BYTE, sizeof(state));
 
 	return TC_SUCCESS;
 }

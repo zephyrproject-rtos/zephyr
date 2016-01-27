@@ -31,6 +31,7 @@
  */
 
 #include <tinycrypt/aes.h>
+#include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 
 #define ZERO_BYTE 0x00

@@ -38,8 +38,9 @@
   - HMAC tests (RFC 4231 test vectors)
 */
 
-#include <test_utils.h>
 #include <tinycrypt/hmac.h>
+#include <tinycrypt/constants.h>
+#include <test_utils.h>
 
 uint32_t do_hmac_test(TCHmacState_t h, uint32_t testnum, const uint8_t *data,
 		      size_t datalen, const uint8_t *expected,

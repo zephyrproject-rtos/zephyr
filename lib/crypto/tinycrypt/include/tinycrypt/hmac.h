@@ -129,7 +129,7 @@ int32_t tc_hmac_update(TCHmacState_t ctx,
  *  state has been initialized by tc_hmac_init
  *  @param tag IN/OUT -- buffer to receive computed HMAC tag
  *  @param taglen IN -- size of tag in bytes
- *  @param ctx IN -- the HMAC state for computing tag
+ *  @param ctx IN/OUT -- the HMAC state for computing tag
  */
 int32_t tc_hmac_final(uint8_t *tag, uint32_t taglen, TCHmacState_t ctx);
 

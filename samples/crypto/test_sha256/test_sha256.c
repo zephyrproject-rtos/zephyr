@@ -39,6 +39,7 @@
 */
 
 #include <tinycrypt/sha256.h>
+#include <tinycrypt/constants.h>
 #include <test_utils.h>
 
 #include <stdio.h>

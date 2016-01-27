@@ -1,0 +1,5 @@
+% Application       : test AES128-CCM mode TinyCrypt APIs
+
+% TASK NAME          PRIO ENTRY           STACK GROUPS
+% ====================================================
+  TASK tStartTask       5 mainloop         1024 [EXE]

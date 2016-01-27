@@ -114,7 +114,7 @@ int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
 /**
  * @brief CBC decryption procedure
  * CBC decrypts inlen bytes of the in buffer into the out buffer
- * using the encryption key schedule provided by a
+ * using the provided encryption key schedule
  * @return returns TC_SUCCESS (1)
  *         returns TC_FAIL (0) if:
  *                out == NULL or

@@ -32,6 +32,7 @@
 
 #include <tinycrypt/hmac_prng.h>
 #include <tinycrypt/hmac.h>
+#include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 
 /*
@@ -155,16 +156,17 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng,
 		if (additionallen == 0 ||
 		    additionallen > MAX_ALEN) {
 			return TC_FAIL;
-		}
+		} else {
 		/* call update for the seed and additional_input */
 		update(prng, seed, seedlen);
 		update(prng, additional_input, additionallen);
+		}
 	} else {
 		/* call update only for the seed */
 		update(prng, seed, seedlen);
 	}
 
-	/* ... and enable hmac_prng_get */
+	/* ... and enable hmac_prng_generate */
 	prng->countdown = MAX_GENS;
 
 	return TC_SUCCESS;
@@ -181,7 +183,7 @@ int32_t tc_hmac_prng_generate(uint8_t *out, uint32_t outlen, TCHmacPrng_t prng)
 	    outlen > MAX_OUT) {
 		return TC_FAIL;
 	} else if (prng->countdown == 0) {
-		return TC_RESEED_REQ;
+		return TC_HMAC_PRNG_RESEED_REQ;
 	}
 
 	prng->countdown--;

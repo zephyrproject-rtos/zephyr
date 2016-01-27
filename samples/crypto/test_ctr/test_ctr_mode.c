@@ -39,6 +39,7 @@
 */
 
 #include <tinycrypt/ctr_mode.h>
+#include <tinycrypt/constants.h>
 #include <test_utils.h>
 
 #include <stdio.h>

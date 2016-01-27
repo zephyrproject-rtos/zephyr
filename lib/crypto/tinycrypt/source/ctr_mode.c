@@ -30,6 +30,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <tinycrypt/constants.h>
 #include <tinycrypt/ctr_mode.h>
 #include <tinycrypt/utils.h>
 
