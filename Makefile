@@ -510,7 +510,7 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 	$(Q)$(MAKE) $(build)=$(@)
 
 
-core-y := lib/ arch/ kernel/ misc/ net/ boards/
+core-y := lib/ kernel/ misc/ net/ boards/ arch/
 drivers-y := drivers/
 
 ifneq ($(strip $(PROJECT)),)
@@ -722,7 +722,7 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
-export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y) $(app-y)
+export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(libs-y) $(app-y) $(core-y)
 export LDFLAGS_zephyr
 
 zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_MAIN)
