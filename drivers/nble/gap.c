@@ -59,7 +59,7 @@ int bt_enable(bt_ready_cb_t cb)
 
 	gpio = device_get_binding(CONFIG_GPIO_DW_0_NAME);
 	if (!gpio) {
-		BT_ERR("Cannot find %", CONFIG_GPIO_DW_0_NAME);
+		BT_ERR("Cannot find %s", CONFIG_GPIO_DW_0_NAME);
 		return -ENODEV;
 	}
 
