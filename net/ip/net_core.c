@@ -68,9 +68,9 @@ void net_context_set_receiver_registered(struct net_context *context);
  * FIXME: stack size needs fine-tuning
  */
 #define STACKSIZE_UNIT 1024
-static char __noinit rx_fiber_stack[STACKSIZE_UNIT * 1];
-static char __noinit tx_fiber_stack[STACKSIZE_UNIT * 1];
-static char __noinit timer_fiber_stack[STACKSIZE_UNIT * 3 / 2];
+static char __noinit __stack rx_fiber_stack[STACKSIZE_UNIT * 1];
+static char __noinit __stack tx_fiber_stack[STACKSIZE_UNIT * 1];
+static char __noinit __stack timer_fiber_stack[STACKSIZE_UNIT * 3 / 2];
 
 static struct net_dev {
 	/* Queue for incoming packets from driver */

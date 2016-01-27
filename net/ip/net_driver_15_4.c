@@ -43,13 +43,13 @@
  * FIXME: stack size needs fine-tuning
  */
 #define STACKSIZE_UNIT 1024
-static char __noinit rx_fiber_stack[STACKSIZE_UNIT * 1];
+static char __noinit __stack rx_fiber_stack[STACKSIZE_UNIT * 1];
 
 #if NET_802154_TX_STACK_SIZE
 /* The 802.15.4 loopback test app (test_15_4) needs bigger stack. */
-static char __noinit tx_fiber_stack[NET_802154_TX_STACK_SIZE];
+static char __noinit __stack tx_fiber_stack[NET_802154_TX_STACK_SIZE];
 #else
-static char __noinit tx_fiber_stack[STACKSIZE_UNIT * 3 / 2];
+static char __noinit __stack tx_fiber_stack[STACKSIZE_UNIT * 3 / 2];
 #endif
 
 /* Queue for incoming packets from hw driver */
