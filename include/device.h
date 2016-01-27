@@ -22,6 +22,72 @@
 extern "C" {
 #endif
 
+/**
+ * @def DEVICE_INIT
+ *
+ * @brief create device object and set it up for boot time initialization
+ *
+ * @details This macro defines a device object that is automatically
+ * configured by the kernel during system initialization.
+ *
+ * @param dev_name Device name.
+ *
+ * @param drv_name The name this instance of the driver exposes to
+ * the system.
+ *
+ * @param init_fn Address to the init function of the driver.
+ *
+ * @param data Pointer to the device's configuration data.
+ *
+ * @param cfg_info The address to the structure containing the
+ * configuration information for this instance of the driver.
+ *
+ * @param level The initialization level at which configuration occurs.
+ * Must be one of the following symbols, which are listed in the order
+ * they are performed by the kernel:
+ *
+ * PRIMARY: Used for devices that have no dependencies, such as those
+ * that rely solely on hardware present in the processor/SOC. These devices
+ * cannot use any kernel services during configuration, since they are not
+ * yet available.
+ *
+ * SECONDARY: Used for devices that rely on the initialization of devices
+ * initialized as part of the PRIMARY level. These devices cannot use any
+ * kernel services during configuration, since they are not yet available.
+ *
+ * NANOKERNEL: Used for devices that require nanokernel services during
+ * configuration.
+ *
+ * MICROKERNEL: Used for devices that require microkernel services during
+ * configuration.
+ *
+ * APPLICATION: Used for application components (i.e. non-kernel components)
+ * that need automatic configuration. These devices can use all services
+ * provided by the kernel during configuration.
+ *
+ * @param prio The initialization priority of the device, relative to
+ * other devices of the same initialization level. Specified as an integer
+ * value in the range 0 to 99; lower values indicate earlier initialization.
+ * Must be a decimal integer literal without leading zeroes or sign (e.g. 32),
+ * or an equivalent symbolic name (e.g. #define MY_INIT_PRIO 32); symbolic
+ * expressions are *not* permitted
+ * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
+ */
+
+#define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
+	\
+	static struct device_config __config_##dev_name __used \
+	__attribute__((__section__(".devconfig.init"))) = { \
+		.name = drv_name, .init = (init_fn), \
+		.config_info = (cfg_info) \
+	}; \
+	\
+	static struct device (__initconfig_##dev_name) __used \
+	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
+		 .config = &(__config_##dev_name), \
+		 .driver_data = data \
+	}
+
 /** @def DEVICE_DEFINE
  *
  *  @brief Define device object
