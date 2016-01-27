@@ -35,6 +35,9 @@
 	GDATA(_idt_base_address)
 	GDATA(_interrupt_stack)
 	GDATA(_Idt)
+#ifndef CONFIG_GDT_DYNAMIC
+	GDATA(_gdt)
+#endif
 
 
 #if defined(CONFIG_SSE)
@@ -88,7 +91,7 @@ SECTION_FUNC(TEXT_START, __start)
 	 * booted operating systems to setup their own IDT and GDT.
 	 */
 
-	lgdt	_GdtRom		/* load 32-bit operand size GDT */
+	lgdt	_gdt_rom		/* load 32-bit operand size GDT */
 	lidt	_Idt		/* load 32-bit operand size IDT */
 
 
@@ -297,10 +300,10 @@ memInitDone:
 
 	andl	$0xfffffffc, %esp
 
+#ifdef CONFIG_GDT_DYNAMIC
 	/* activate RAM-based Global Descriptor Table (GDT) */
-
 	lgdt	%ds:_gdt
-
+#endif
 
 
 #if defined (CONFIG_ADVANCED_IDLE)
@@ -379,9 +382,12 @@ _Idt:
 #endif /* CONFIG_BOOTLOADER_UNKNOWN */
 
 
-_GdtRom:
-	.word _GdtRomEnd - _GdtRomEntries - 1   /* Limit on GDT */
-	.long _GdtRomEntries			/* table address: _GdtRomEntries */
+#ifndef CONFIG_GDT_DYNAMIC
+_gdt:
+#endif
+_gdt_rom:
+	.word _gdt_rom_end - _gdt_rom_entries - 1   /* Limit on GDT */
+	.long _gdt_rom_entries			/* table address: _gdt_rom_entries */
 
 
 	.balign 16,0x90
@@ -401,7 +407,7 @@ _GdtRom:
 	 * in ROM, since such use is not planned for this platform.
 	 */
 
-_GdtRomEntries:
+_gdt_rom_entries:
 
 	/* Entry 0 (selector=0x0000): The "NULL descriptor" */
 
@@ -430,7 +436,7 @@ _GdtRomEntries:
 	.byte   0xcf		/* limit: fxxxx, Page Gra, 32bit */
 	.byte   0x00		/* base : 00xxxxxx */
 
-_GdtRomEnd:
+_gdt_rom_end:
 
 #ifdef CONFIG_ADVANCED_IDLE
 	.section .NOINIT

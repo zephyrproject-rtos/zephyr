@@ -92,6 +92,14 @@ config ROM_SIZE
 
 	The default value is specified by the platform.
 
+config GDT_DYNAMIC
+	bool
+	prompt "Store GDT in RAM so that it can be modified"
+	default n
+	help
+	This option stores the GDT in RAM instead of ROM, so that it may
+	be modified at runtime at the expense of some memory.
+
 endmenu
 
 endmenu

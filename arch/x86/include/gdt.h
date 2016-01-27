@@ -63,8 +63,10 @@ typedef struct __packed s_gdtHeader
 
 /* externs */
 
-extern tGdtHeader _gdt; /* GDT is implemented in arch/x86/core/gdt.c */
-
+/* This is either the ROM-based GDT in crt0.S or RAM-based in gdt.c,
+ * depending on CONFIG_GDT_DYNAMIC
+ */
+extern tGdtHeader _gdt;
 
 #endif /* _ASMLANGUAGE */
 
