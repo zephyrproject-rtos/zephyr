@@ -50,9 +50,8 @@
 	#define INTERRUPT_VECTORS_ALLOCATED . += ((CONFIG_IDT_NUM_VECTORS + 31) / 32);
 	/*
 	 * Both IRQs and interrupt vectors may be in the range of 0..255 inclusive.
-	 * Save 256 bytes for the IRQ to interrupt vector mapping.
 	 */
-	#define IRQ_TO_INTERRUPT_VECTOR . += 256;
+	#define IRQ_TO_INTERRUPT_VECTOR . += CONFIG_MAX_IRQ_LINES;
 #endif
 
 /*

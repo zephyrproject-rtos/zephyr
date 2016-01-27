@@ -274,14 +274,21 @@ typedef struct s_isrList {
 	_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
-extern unsigned char _irq_to_interrupt_vector[];
+#ifdef CONFIG_MVIC
+/* Fixed vector-to-irq association mapping.
+ * No need for the table at all.
+ */
+#define _IRQ_TO_INTERRUPT_VECTOR(irq) (irq + 0x20)
+#else
 /**
  * @brief Convert a statically connected IRQ to its interrupt vector number
  *
  * @param irq IRQ number
  */
+extern unsigned char _irq_to_interrupt_vector[];
 #define _IRQ_TO_INTERRUPT_VECTOR(irq)                       \
 			((unsigned int) _irq_to_interrupt_vector[irq])
+#endif
 
 
 /**

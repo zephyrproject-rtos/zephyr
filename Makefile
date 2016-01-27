@@ -769,19 +769,21 @@ $(TMP_ELF): $(zephyr-deps) $(KBUILD_ZEPHYR_APP) linker.cmd $(KERNEL_NAME).lnk
 	$(Q)$(LD) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
 
 quiet_cmd_gen_idt = SIDT    $@
-      cmd_gen_idt =									\
-(											\
-	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j intList $< isrList.bin;		\
-	$(GENIDT) -i isrList.bin -n $(CONFIG_IDT_NUM_VECTORS) -o staticIdt.bin 		\
-	-b int_vector_alloc.bin -m irq_int_vector_map.bin;				\
-	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 			\
-	--rename-section .data=staticIdt staticIdt.bin staticIdt.o;			\
-	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 			\
-	--rename-section .data=int_vector_alloc int_vector_alloc.bin int_vector_alloc.o;\
-	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 			\
-	--rename-section .data=irq_int_vector_map irq_int_vector_map.bin 		\
-		irq_int_vector_map.o;							\
-	rm staticIdt.bin irq_int_vector_map.bin int_vector_alloc.bin isrList.bin 	\
+      cmd_gen_idt =								\
+(										\
+	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j intList $< isrList.bin &&	\
+	$(GENIDT) -i isrList.bin -n $(CONFIG_IDT_NUM_VECTORS) -o staticIdt.bin 	\
+		-b int_vector_alloc.bin -m irq_int_vector_map.bin		\
+		-l $(CONFIG_MAX_IRQ_LINES) &&					\
+	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
+		--rename-section .data=staticIdt staticIdt.bin staticIdt.o &&	\
+	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
+		--rename-section .data=int_vector_alloc int_vector_alloc.bin	\
+		int_vector_alloc.o &&						\
+	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
+	--rename-section .data=irq_int_vector_map irq_int_vector_map.bin 	\
+		irq_int_vector_map.o &&						\
+	rm staticIdt.bin irq_int_vector_map.bin int_vector_alloc.bin isrList.bin\
 )
 
 staticIdt.o: $(TMP_ELF)

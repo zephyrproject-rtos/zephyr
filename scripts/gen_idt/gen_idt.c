@@ -117,6 +117,7 @@ static int fds[NUSERFILES] = {-1, -1};
 static char *filenames[NFILES];
 static unsigned int num_vectors = (unsigned int)-1;
 static struct version version = {KERNEL_VERSION, 1, 1, 6};
+static unsigned int num_irq_lines = -1;
 
 int main(int argc, char *argv[])
 {
@@ -136,7 +137,7 @@ static void get_options(int argc, char *argv[])
 	char *endptr;
 	int ii, opt;
 
-	while ((opt = getopt(argc, argv, "hb:i:o:m:n:v")) != -1) {
+	while ((opt = getopt(argc, argv, "hb:i:o:m:n:vl:")) != -1) {
 		switch (opt) {
 		case 'b':
 			filenames[BFILE] = optarg;
@@ -153,6 +154,13 @@ static void get_options(int argc, char *argv[])
 		case 'h':
 			usage(LONG_USAGE);
 			exit(0);
+		case 'l':
+			num_irq_lines = (unsigned int) strtoul(optarg, &endptr, 10);
+			if ((*optarg == '\0') || (*endptr != '\0')) {
+				usage(SHORT_USAGE);
+				exit(-1);
+				}
+			break;
 		case 'n':
 			num_vectors = (unsigned int) strtoul(optarg, &endptr, 10);
 			if ((*optarg == '\0') || (*endptr != '\0')) {
@@ -170,6 +178,11 @@ static void get_options(int argc, char *argv[])
 	}
 
 	if (num_vectors > MAX_NUM_VECTORS) {
+		usage(SHORT_USAGE);
+		exit(-1);
+	}
+
+	if (num_irq_lines > MAX_IRQS) {
 		usage(SHORT_USAGE);
 		exit(-1);
 	}
@@ -418,20 +431,20 @@ static void validate_irq(void)
 			continue;
 		}
 
-		if (supplied_entry[i].irq >= MAX_IRQS) {
+		if (supplied_entry[i].irq >= num_irq_lines) {
 			/*
 			 * If code to support the PIC is re-introduced, then this
 			 * check will need to be updated.
 			 */
 			fprintf(stderr, "IRQ must be between 0 and %d inclusive.\n",
-					MAX_IRQS - 1);
+					num_irq_lines - 1);
 			show_entry(&supplied_entry[i]);
 			clean_exit(-1);
 		}
 		num_irqs[i]++;
 	}
 
-	for (i = 0; i < MAX_IRQS; i++) {
+	for (i = 0; i < num_irq_lines; i++) {
 		if (num_irqs[i] > 1) {
 			fprintf(stderr, "Multiple requests for IRQ %d detected.\n", i);
 			clean_exit(-1);
@@ -600,7 +613,7 @@ static void generate_interrupt_vector_bitmap(void)
 		clean_exit(-1);
 	}
 
-	bytes_to_write = sizeof(map_irq_to_vector_id);
+	bytes_to_write = num_irq_lines;
 	bytes_written = write(fds[MFILE], map_irq_to_vector_id, bytes_to_write);
 	if (bytes_written != bytes_to_write) {
 		fprintf(stderr, "Failed to write all data to '%s'.\n",
@@ -646,6 +659,8 @@ static void usage(int len)
 	    "        [Mandatory] The IRQ to interrupt vector output file\n\n"
 	    "    -n <n>\n\n"
 	    "        [Mandatory] Number of vectors\n\n"
+	    "    -l <n>\n\n"
+	    "        [Mandatory] Number of IRQ lines\n\n"
 	    "    -v  Display version.\n\n"
 	    "    -h  Display this help.\n\n"
 	    "\nReturns -1 on error, 0 on success\n\n");

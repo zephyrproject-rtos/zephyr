@@ -48,6 +48,18 @@ config IDT_NUM_VECTORS
 	Interrupt Descriptor Table (IDT). By default all 256 vectors are
 	supported in an IDT requiring 2048 bytes of memory.
 
+config MAX_IRQ_LINES
+	int
+	prompt "Number of IRQ lines"
+	default 128
+	range 0 256
+	help
+	This option specifies the number of IRQ lines in the system.
+	It can be tuned to save some bytes in ROM, as it determines the
+	size of the _irq_to_interrupt_vector_table, which is used at runtime
+	to program to the PIC the association between vectors and
+	interrupts.
+
 config PHYS_LOAD_ADDR
 	hex "Physical load address"
 	# Default value must be supplied by platform
