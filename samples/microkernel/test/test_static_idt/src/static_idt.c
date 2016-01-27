@@ -116,14 +116,14 @@ int nanoIdtStubTest(void)
 	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (TEST_SOFT_INT << 3));
 
 	offset = (uint16_t)((uint32_t)(&nanoIntStub) & 0xFFFF);
-	if (pIdtEntry->lowOffset != offset) {
+	if (pIdtEntry->offset_low != offset) {
 		TC_ERROR("Failed to find low offset of nanoIntStub "
 				 "(0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
 		return TC_FAIL;
 	}
 
 	offset = (uint16_t)((uint32_t)(&nanoIntStub) >> 16);
-	if (pIdtEntry->hiOffset != offset) {
+	if (pIdtEntry->offset_high != offset) {
 		TC_ERROR("Failed to find high offset of nanoIntStub "
 				 "(0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
 		return TC_FAIL;
@@ -133,14 +133,14 @@ int nanoIdtStubTest(void)
 	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (IV_DIVIDE_ERROR << 3));
 
 	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) & 0xFFFF);
-	if (pIdtEntry->lowOffset != offset) {
+	if (pIdtEntry->offset_low != offset) {
 		TC_ERROR("Failed to find low offset of exc stub "
 				 "(0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
 		return TC_FAIL;
 	}
 
 	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) >> 16);
-	if (pIdtEntry->hiOffset != offset) {
+	if (pIdtEntry->offset_high != offset) {
 		TC_ERROR("Failed to find high offset of exc stub "
 				 "(0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
 		return TC_FAIL;

@@ -96,8 +96,8 @@ uint8_t _stub_idx_from_vector(int vector)
 	 * the dynamic stubs
 	 */
 	idt_entry = (IDT_ENTRY *)(_idt_base_address + (vector << 3));
-	stub_addr = (uint8_t *)((uint32_t)idt_entry->lowOffset +
-		     ((uint32_t)idt_entry->hiOffset << 16));
+	stub_addr = (uint8_t *)((uint32_t)idt_entry->offset_low +
+		     ((uint32_t)idt_entry->offset_high << 16));
 
 	/*
 	 * Return the specific byte in the handler code which contains

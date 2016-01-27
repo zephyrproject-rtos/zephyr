@@ -46,22 +46,34 @@ extern "C" {
 #define _EXC_ERROR_CODE_FAULTS	0x27d00
 
 
-/*
- * Interrupt Descriptor Table (IDT) entry structure
+/**
+ * @brief Interrupt Descriptor Table (IDT) entry structure
  *
- * (This is taken from Intel documentation, so don't try to interpret it
- * too deeply.)
+ * See section 6.11 in x86 CPU manual vol. 3A
  */
-
-typedef struct idtEntry {
-	unsigned short	lowOffset;
-	unsigned short	segmentSelector;
-	unsigned short	reserved:5;
-	unsigned short	intGateIndicator:8;
-	unsigned short	descPrivLevel:2;
-	unsigned short	present:1;
-	unsigned short	hiOffset;
-	} __packed IDT_ENTRY;
+typedef struct idt_entry {
+	union {
+		uint16_t offset_low;
+		uint16_t reserved_task_gate_0;
+	};
+	uint16_t segment_selector;
+	union {
+		struct {
+			uint8_t reserved:5;
+			uint8_t always_0_0:3;
+		};
+		uint8_t reserved_task_gate_1;
+	};
+	uint8_t type:3;		/* task:101, irq:110, trap:111 */
+	uint8_t gate_size:1;	/* size of gate, 1: 32-bit, 0:16-bit */
+	uint8_t always_0_1:1;
+	uint8_t dpl:2;		/* Descriptor privilege level */
+	uint8_t present:1;	/* present yes/no */
+	union {
+		uint16_t offset_high;
+		uint16_t reserved_task_gate_2;
+	};
+} __packed IDT_ENTRY;
 
 /**
  *
