@@ -17,6 +17,7 @@
  */
 
 #include <nanokernel.h>
+#include <sections.h>
 
 #include <board.h>
 #include <init.h>
