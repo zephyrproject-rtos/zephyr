@@ -42,7 +42,7 @@ Pin Names
 * LED_RED = PTB22
 * LED_GREEN = PTE26
 * LED_BLUE = PTB21
-* mbed Original LED Naming
+* Original LED Naming
 
   * LED1 = LED_RED
   * LED2 = LED_GREEN
@@ -462,7 +462,7 @@ Procedures
 
 Use the following procedures:
 
-* `Loading a Project Image with mbed`_
+* `Loading a Project Image with FRDM K64F firmware`_
 
 * `Installing Hardware Debug Support on the Host and Target`_
 
@@ -472,29 +472,30 @@ Use the following procedures:
 
 * `Programming Flash with J-link`_
 
-Loading a Project Image with mbed
-=================================
+Loading a Project Image with FRDM K64F Firmware
+===============================================
 
-Load a project image with mbed firmware if you only need
-to load and run an image without debug tools. mbed firmware
-is available for the board (and may already be pre-installed).
+Load a project image with FRDM K64F firmware from the mbed project
+if you only need to load and run an image without debug tools.
+FRDM K64F firmware is available for the board (and may already be
+pre-installed).
 
 
 Prerequisite
 ------------
 
-Although mbed firmware may be pre-installed on the
+Although FRDM K64F firmware may be pre-installed on the
 FRDM_K64F, you must replace it with the latest version.
 
 Steps
 -----
 
-1. Go to the `mbed firmware instructions
+1. Go to the `FRDM K64F firmware instructions
    <http://developer.mbed.org/handbook/Firmware-FRDM-K64F>`_.
 
-2. Download the lastest version of the mbed firmware.
+2. Download the lastest version of the FRDM K64F firmware from the mbed project.
 
-3. Update the mbed firmware using the following `online
+3. Update the FRDM K64F firmware using the following `online
    instructions <http://developer.mbed.org/handbook/Firmware-FRDM-K64F>`_:
 
     a) *Enter Bootloader mode*.
@@ -513,7 +514,7 @@ Steps
     a) *Install a Terminal Application*.
     b) *Setup the Connection Use COMx at 8-N-1 with 115200 baud*.
 
-   The Status light on the mbed Microcontroller flickers
+   The Status light on the FRDM K64F Microcontroller flickers
    when you type in the terminal application.
 
 5. Configure the host to run a progam binary using the online instructions
@@ -531,8 +532,8 @@ Installing Hardware Debug Support on the Host and Target
 ========================================================
 
 .. Caution::
-   Debug firmware and mbed firmware cannot be used together.
-   Debug firmware overwrites mbed firmware when installed.
+   Debug firmware and FRDM K64F firmware cannot be used together.
+   Debug firmware overwrites FRDM K64F firmware when installed.
 
 
 Install hardware debug support on the host and target to use debug tools.
