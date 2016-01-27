@@ -202,8 +202,10 @@ config ADC_DW_SAMPLE_WIDTH
 	default 31
 	help
 	Defines ADC device data sample width (resolution):
-	0 = 1 bit resolution
-	31 = 32 bits resolution
+	0 = 6 bits resolution
+	1 = 8 bits resolution
+	2 = 10 bits resolution
+	3 = 12 bits resolution
 
 config ADC_DW_SERIAL_DELAY
 	int "Serial Delay"
