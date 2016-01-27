@@ -48,5 +48,6 @@ The following sections provide details on the respective platforms:
    basic_minuteia.rst
    frdm_k64f.rst
    galileo.rst
+   arduino_101.rst
    arduino_due.rst
 
