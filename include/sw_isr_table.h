@@ -41,7 +41,12 @@ struct _IsrTableEntry {
 
 typedef struct _IsrTableEntry _IsrTableEntry_t;
 
+#ifdef CONFIG_ARC
+extern _IsrTableEntry_t _sw_isr_table[CONFIG_NUM_IRQS - 16];
+#else
 extern _IsrTableEntry_t _sw_isr_table[CONFIG_NUM_IRQS];
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
