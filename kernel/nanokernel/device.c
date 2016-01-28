@@ -23,7 +23,7 @@ static struct device *config_levels[] = {
  * @brief Execute all the device initialization functions at a given level
  *
  * @details Invokes the initialization routine for each device object
- * created by the DEVICE_DEFINE() macro using the specified level.
+ * created by the DEVICE_INIT() macro using the specified level.
  * The linker script places the device objects in memory in the order
  * they need to be invoked, with symbols indicating where one level leaves
  * off and the next one begins.
@@ -44,7 +44,7 @@ void _sys_device_do_config_level(int level)
 /**
  * @brief Retrieve the device structure for a driver by name
  *
- * @details Device objects are created via the DEVICE_DEFINE() macro and
+ * @details Device objects are created via the DEVICE_INIT() macro and
  * placed in memory by the linker. If a driver needs to bind to another driver
  * it can use this function to retrieve the device structure of the lower level
  * driver by the name the driver exposes to the system.
