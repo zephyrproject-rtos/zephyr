@@ -1,4 +1,4 @@
-BOARD = galileo
+BOARD ?= galileo
 KERNEL_TYPE = nano
 CONF_FILE = prj_$(ARCH).conf
 
