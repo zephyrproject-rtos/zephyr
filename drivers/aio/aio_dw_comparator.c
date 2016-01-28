@@ -201,17 +201,13 @@ struct dw_aio_cmp_dev_cfg_t dw_aio_cmp_dev_config = {
 	.config_func = dw_aio_cmp_config,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(dw_aio_cmp,
-			   AIO_DW_CMP_DRV_NAME,
-			   &dw_aio_cmp_init,
-			   &dw_aio_cmp_dev_config);
-
 struct dw_aio_cmp_dev_data_t dw_aio_cmp_dev_data = {
 	.num_cmp = AIO_DW_CMP_COUNT,
 };
 
-DEVICE_DEFINE(dw_aio_cmp, &dw_aio_cmp_dev_data, SECONDARY,
-	CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(dw_aio_cmp, AIO_DW_CMP_DRV_NAME, &dw_aio_cmp_init,
+			&dw_aio_cmp_dev_data, &dw_aio_cmp_dev_config,
+			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 static int dw_aio_cmp_config(struct device *dev)
 {

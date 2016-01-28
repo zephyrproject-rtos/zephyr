@@ -602,13 +602,9 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_0 = {
 	.baud_rate = CONFIG_UART_STELLARIS_PORT_0_BAUD_RATE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(uart_stellaris0,
-			   CONFIG_UART_STELLARIS_PORT_0_NAME,
-			   &uart_stellaris_init,
-			   &uart_stellaris_dev_cfg_0);
-
-DEVICE_DEFINE(uart_stellaris0, &uart_stellaris_dev_data_0, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(uart_stellaris0, CONFIG_UART_STELLARIS_PORT_0_NAME, &uart_stellaris_init,
+			&uart_stellaris_dev_data_0, &uart_stellaris_dev_cfg_0,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_0 */
 
@@ -623,13 +619,9 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_1 = {
 	.baud_rate = CONFIG_UART_STELLARIS_PORT_1_BAUD_RATE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(uart_stellaris1,
-			   CONFIG_UART_STELLARIS_PORT_1_NAME,
-			   &uart_stellaris_init,
-			   &uart_stellaris_dev_cfg_1);
-
-DEVICE_DEFINE(uart_stellaris1, &uart_stellaris_dev_data_1, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(uart_stellaris1, CONFIG_UART_STELLARIS_PORT_1_NAME, &uart_stellaris_init,
+			&uart_stellaris_dev_data_1, &uart_stellaris_dev_cfg_1,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_1 */
 
@@ -644,12 +636,8 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_2 = {
 	.baud_rate = CONFIG_UART_STELLARIS_PORT_2_BAUD_RATE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(uart_stellaris2,
-			   CONFIG_UART_STELLARIS_PORT_2_NAME,
-			   &uart_stellaris_init,
-			   &uart_stellaris_dev_cfg_2);
-
-DEVICE_DEFINE(uart_stellaris2, &uart_stellaris_dev_data_2, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(uart_stellaris2, CONFIG_UART_STELLARIS_PORT_2_NAME, &uart_stellaris_init,
+			&uart_stellaris_dev_data_2, &uart_stellaris_dev_cfg_2,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_STELLARIS_PORT_2 */

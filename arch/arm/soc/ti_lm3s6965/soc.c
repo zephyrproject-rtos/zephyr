@@ -56,6 +56,6 @@ static int ti_lm3s6965_init(struct device *arg)
 	return 0;
 }
 
-DEVICE_INIT_CONFIG_DEFINE(ti_lm3_0, "", ti_lm3s6965_init, NULL);
-DEVICE_DEFINE(ti_lm3_0, NULL, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_INIT(ti_lm3_0, "", ti_lm3s6965_init,
+				NULL, NULL,
+				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

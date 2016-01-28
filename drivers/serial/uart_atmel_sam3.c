@@ -259,10 +259,6 @@ static struct uart_sam3_dev_data_t uart_sam3_dev_data_0 = {
 	.baud_rate = CONFIG_UART_ATMEL_SAM3_BAUD_RATE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(uart_sam3_0,
-			   CONFIG_UART_ATMEL_SAM3_NAME,
-			   &uart_sam3_init,
-			   &uart_sam3_dev_cfg_0);
-
-DEVICE_DEFINE(uart_sam3_0, &uart_sam3_dev_data_0,
-		  PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(uart_sam3_0, CONFIG_UART_ATMEL_SAM3_NAME, &uart_sam3_init,
+			&uart_sam3_dev_data_0, &uart_sam3_dev_cfg_0,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

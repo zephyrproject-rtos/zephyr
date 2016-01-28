@@ -194,5 +194,6 @@ static int atmel_sam3_init(struct device *arg)
 	return 0;
 }
 
-DEVICE_INIT_CONFIG_DEFINE(atmel_sam3_0, "", atmel_sam3_init, NULL);
-DEVICE_DEFINE(atmel_sam3_0, NULL, PRIMARY, 0);
+DEVICE_INIT(atmel_sam3_0, "", atmel_sam3_init,
+				NULL, NULL,
+				PRIMARY, 0);

@@ -101,13 +101,11 @@ struct quark_se_clock_control_config clock_quark_se_peripheral_config = {
 	.base_address = CLOCK_PERIPHERAL_BASE_ADDR
 };
 
-DEVICE_INIT_CONFIG_DEFINE(clock_quark_se_peripheral,
-			   CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME,
-			   &quark_se_clock_control_init,
-			   &clock_quark_se_peripheral_config);
-
-DEVICE_DEFINE(clock_quark_se_peripheral, NULL, PRIMARY,
-					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(clock_quark_se_peripheral,
+			CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME,
+			&quark_se_clock_control_init,
+			NULL, &clock_quark_se_peripheral_config,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL */
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL
@@ -116,13 +114,11 @@ struct quark_se_clock_control_config clock_quark_se_external_config = {
 	.base_address = CLOCK_EXTERNAL_BASE_ADDR
 };
 
-DEVICE_INIT_CONFIG_DEFINE(clock_quark_se_external,
-			   CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME,
-			   &quark_se_clock_control_init,
-			   &clock_quark_se_external_config);
-
-DEVICE_DEFINE(clock_quark_se_external, NULL, PRIMARY,
-					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(clock_quark_se_external,
+			CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME,
+			&quark_se_clock_control_init,
+			NULL, &clock_quark_se_external_config,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL */
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR
@@ -131,11 +127,10 @@ struct quark_se_clock_control_config clock_quark_se_sensor_config = {
 	.base_address = CLOCK_SENSOR_BASE_ADDR
 };
 
-DEVICE_INIT_CONFIG_DEFINE(clock_quark_se_sensor,
-			   CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME,
-			   &quark_se_clock_control_init,
-			   &clock_quark_se_sensor_config);
+DEVICE_INIT(clock_quark_se_sensor,
+			CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME,
+			&quark_se_clock_control_init,
+			NULL, &clock_quark_se_sensor_config,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-DEVICE_DEFINE(clock_quark_se_sensor, NULL, PRIMARY,
-					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR */

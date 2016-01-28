@@ -790,6 +790,6 @@ static int _bt_uart_init(struct device *unused)
 	return DEV_OK;
 }
 
-DEVICE_INIT_CONFIG_DEFINE(bt_uart, "", _bt_uart_init, NULL);
-DEVICE_DEFINE(bt_uart, NULL, NANOKERNEL,
-					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(bt_uart, "", _bt_uart_init,
+				NULL, NULL,
+				NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

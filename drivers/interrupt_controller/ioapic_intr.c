@@ -314,6 +314,6 @@ static void _IoApicRedUpdateLo(unsigned int irq,
 	ioApicRedSetLo(irq, (ioApicRedGetLo(irq) & ~mask) | (value & mask));
 }
 
-DEVICE_INIT_CONFIG_DEFINE(ioapic_0, "", _ioapic_init, NULL);
-DEVICE_DEFINE(ioapic_0, NULL, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_INIT(ioapic_0, "", _ioapic_init,
+				NULL, NULL,
+				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

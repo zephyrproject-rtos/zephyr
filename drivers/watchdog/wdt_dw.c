@@ -160,11 +160,9 @@ struct wdt_dw_dev_config wdt_dev = {
 #endif
 };
 
-DEVICE_INIT_CONFIG_DEFINE(wdt, CONFIG_WDT_DW_DRV_NAME,
-			   &wdt_dw_init, &wdt_dev);
-
-DEVICE_DEFINE(wdt, &wdt_runtime, SECONDARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(wdt, CONFIG_WDT_DW_DRV_NAME, &wdt_dw_init,
+			&wdt_runtime, &wdt_dev,
+			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 int wdt_dw_init(struct device *dev)
 {

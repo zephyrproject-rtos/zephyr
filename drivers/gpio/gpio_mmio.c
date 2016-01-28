@@ -338,12 +338,9 @@ static struct gpio_mmio_config gpio_mmio_0_cfg = {
 #endif
 };
 
-DEVICE_INIT_CONFIG_DEFINE(gpio_mmio_0,
-			   CONFIG_GPIO_MMIO_0_DEV_NAME,
-			   gpio_mmio_init,
-			   &gpio_mmio_0_cfg);
-DEVICE_DEFINE(gpio_mmio_0, (void *)0, SECONDARY,
-		  CONFIG_GPIO_MMIO_INIT_PRIORITY);
+DEVICE_INIT(gpio_mmio_0, CONFIG_GPIO_MMIO_0_DEV_NAME, gpio_mmio_init,
+				(void *)0, &gpio_mmio_0_cfg,
+				SECONDARY, CONFIG_GPIO_MMIO_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_MMIO_0 */
 
@@ -371,11 +368,8 @@ static struct gpio_mmio_config gpio_mmio_1_cfg = {
 #endif
 };
 
-DEVICE_INIT_CONFIG_DEFINE(gpio_mmio_1,
-			   CONFIG_GPIO_MMIO_1_DEV_NAME,
-			   gpio_mmio_init,
-			   &gpio_mmio_1_cfg);
-DEVICE_DEFINE(gpio_mmio_1, (void *)0, SECONDARY,
-		  CONFIG_GPIO_MMIO_INIT_PRIORITY);
+DEVICE_INIT(gpio_mmio_1, CONFIG_GPIO_MMIO_1_DEV_NAME, gpio_mmio_init,
+				(void *)0, &gpio_mmio_1_cfg,
+				SECONDARY, CONFIG_GPIO_MMIO_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_MMIO_1 */

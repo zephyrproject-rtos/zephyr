@@ -529,13 +529,9 @@ struct adc_config adc_config_dev_0 = {
 		.config_func  = adc_config_0_irq,
 	};
 
-DEVICE_INIT_CONFIG_DEFINE(adc_dw_0,	/* config name*/
-			CONFIG_ADC_DW_NAME_0,	/* driver name*/
-			&adc_dw_init,	/* init function*/
-			&adc_config_dev_0); /* config options*/
-
-DEVICE_DEFINE(adc_dw_0, &adc_info_dev_0, SECONDARY,
-					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_INIT(adc_dw_0, CONFIG_ADC_DW_NAME_0, &adc_dw_init,
+			&adc_info_dev_0, &adc_config_dev_0,
+			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static void adc_config_0_irq(void)
 {

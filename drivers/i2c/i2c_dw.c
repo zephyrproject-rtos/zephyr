@@ -773,12 +773,9 @@ struct i2c_dw_dev_config i2c_0_runtime = {
 	.app_config.raw = CONFIG_I2C_DW_0_DEFAULT_CFG,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(i2c_0,
-			   CONFIG_I2C_DW_0_NAME,
-			   &i2c_dw_initialize,
-			   &i2c_config_dw_0);
-
-DEVICE_DEFINE(i2c_0, &i2c_0_runtime, SECONDARY, CONFIG_I2C_INIT_PRIORITY);
+DEVICE_INIT(i2c_0, CONFIG_I2C_DW_0_NAME, &i2c_dw_initialize,
+			&i2c_0_runtime, &i2c_config_dw_0,
+			SECONDARY, CONFIG_I2C_INIT_PRIORITY);
 
 void i2c_config_0(struct device *port)
 {
@@ -826,13 +823,9 @@ struct i2c_dw_dev_config i2c_1_runtime = {
 	.app_config.raw = CONFIG_I2C_DW_1_DEFAULT_CFG,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(i2c_1,
-			   CONFIG_I2C_DW_1_NAME,
-			   &i2c_dw_initialize,
-			   &i2c_config_dw_1);
-
-DEVICE_DEFINE(i2c_1, &i2c_1_runtime, SECONDARY,
-					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_INIT(i2c_1, CONFIG_I2C_DW_1_NAME, &i2c_dw_initialize,
+			&i2c_1_runtime, &i2c_config_dw_1,
+			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 void i2c_config_1(struct device *port)
 {

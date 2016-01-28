@@ -345,9 +345,6 @@ struct pinmux_config board_pmux = {
 	.base_address = CONFIG_PINMUX_BASE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(pmux,			/* config name */
-			   PINMUX_NAME,			/* driver name */
-			   &pinmux_initialize,		/* init function */
-			   &board_pmux);		/* config options*/
-
-DEVICE_DEFINE(pmux, NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_INIT(pmux, PINMUX_NAME, &pinmux_initialize,
+			NULL, &board_pmux,
+			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

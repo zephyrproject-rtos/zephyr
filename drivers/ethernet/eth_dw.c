@@ -303,10 +303,9 @@ static struct eth_config eth_config_0 = {
 
 static struct eth_runtime eth_0_runtime;
 
-DEVICE_INIT_CONFIG_DEFINE(eth_dw_0, CONFIG_ETH_DW_0_NAME,
-			   eth_initialize, &eth_config_0);
-DEVICE_DEFINE(eth_dw_0, &eth_0_runtime, NANOKERNEL,
-					CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(eth_dw_0, CONFIG_ETH_DW_0_NAME, eth_initialize,
+				&eth_0_runtime, &eth_config_0,
+				NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 static int eth_net_tx(struct net_buf *buf)
 {

@@ -62,6 +62,6 @@ int _i8259_init(struct device *unused)
 	return 0;
 }
 
-DEVICE_INIT_CONFIG_DEFINE(pic_0, "", _i8259_init, NULL);
-DEVICE_DEFINE(pic_0, NULL, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_INIT(pic_0, "", _i8259_init,
+				NULL, NULL,
+				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

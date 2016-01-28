@@ -765,11 +765,6 @@ struct pinmux_config galileo_pmux = {
 	.base_address = 0x00000000,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(pmux,
-			  PINMUX_NAME,
-			  &pinmux_galileo_initialize,
-			  &galileo_pmux);
-
 struct galileo_data galileo_pinmux_driver = {
 	.exp0 = NULL,
 	.exp1 = NULL,
@@ -784,5 +779,6 @@ struct galileo_data galileo_pinmux_driver = {
  * 1 - PCA9535 and PCAL9685
  * 2 - pinmux
  */
-DEVICE_DEFINE(pmux, &galileo_pinmux_driver, SECONDARY,
-		  CONFIG_PINMUX_INIT_PRIORITY);
+DEVICE_INIT(pmux, PINMUX_NAME, &pinmux_galileo_initialize,
+			&galileo_pinmux_driver, &galileo_pmux,
+			SECONDARY, CONFIG_PINMUX_INIT_PRIORITY);

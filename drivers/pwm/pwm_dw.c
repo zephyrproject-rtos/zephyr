@@ -246,11 +246,8 @@ static struct pwm_dw_config pwm_dw_cfg = {
 	.num_ports = CONFIG_PWM_DW_NUM_PORTS,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(pwm_dw_0,
-			   CONFIG_PWM_DW_DEV_NAME,
-			   pwm_dw_init, &pwm_dw_cfg);
-
-DEVICE_DEFINE(pwm_dw_0, NULL, SECONDARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(pwm_dw_0, CONFIG_PWM_DW_DEV_NAME, pwm_dw_init,
+			NULL, &pwm_dw_cfg,
+			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_PWM_DW */

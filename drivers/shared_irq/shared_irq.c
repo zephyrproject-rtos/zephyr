@@ -144,10 +144,9 @@ struct shared_irq_config shared_irq_config_0 = {
 
 struct shared_irq_runtime shared_irq_0_runtime;
 
-DEVICE_INIT_CONFIG_DEFINE(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME,
-			   shared_irq_initialize, &shared_irq_config_0);
-DEVICE_DEFINE(shared_irq_0, &shared_irq_0_runtime, SECONDARY,
-		  CONFIG_SHARED_IRQ_INIT_PRIORITY);
+DEVICE_INIT(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME, shared_irq_initialize,
+				&shared_irq_0_runtime, &shared_irq_config_0,
+				SECONDARY, CONFIG_SHARED_IRQ_INIT_PRIORITY);
 
 #if defined(CONFIG_IOAPIC)
 #if defined(CONFIG_SHARED_IRQ_0)
@@ -185,10 +184,9 @@ struct shared_irq_config shared_irq_config_1 = {
 
 struct shared_irq_runtime shared_irq_1_runtime;
 
-DEVICE_INIT_CONFIG_DEFINE(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME,
-			   shared_irq_initialize, &shared_irq_config_1);
-DEVICE_DEFINE(shared_irq_1, &shared_irq_1_runtime, SECONDARY,
-		  CONFIG_SHARED_IRQ_INIT_PRIORITY);
+DEVICE_INIT(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME, shared_irq_initialize,
+				&shared_irq_1_runtime, &shared_irq_config_1,
+				SECONDARY, CONFIG_SHARED_IRQ_INIT_PRIORITY);
 
 #if defined(CONFIG_IOAPIC)
 #if defined(CONFIG_SHARED_IRQ_1)

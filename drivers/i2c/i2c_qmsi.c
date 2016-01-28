@@ -115,7 +115,6 @@ static int i2c_qmsi_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_INIT_CONFIG_DEFINE(i2c_qmsi_0, CONFIG_I2C_QMSI_0_NAME, i2c_qmsi_init,
-			   NULL);
-
-DEVICE_DEFINE(i2c_qmsi_0, 0, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(i2c_qmsi_0, CONFIG_I2C_QMSI_0_NAME, i2c_qmsi_init,
+			0, NULL,
+			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

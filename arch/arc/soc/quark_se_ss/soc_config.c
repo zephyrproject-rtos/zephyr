@@ -33,10 +33,9 @@ static int arc_quark_se_ipm_init(void)
 static struct quark_se_ipm_controller_config_info ipm_controller_config = {
 	.controller_init = arc_quark_se_ipm_init
 };
-DEVICE_INIT_CONFIG_DEFINE(quark_se_ipm, "", quark_se_ipm_controller_initialize,
-			   &ipm_controller_config);
-DEVICE_DEFINE(quark_se_ipm, NULL, SECONDARY,
-					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_INIT(quark_se_ipm, "", quark_se_ipm_controller_initialize,
+				NULL, &ipm_controller_config,
+				SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #if CONFIG_IPM_CONSOLE_SENDER
 #include <console/ipm_console.h>
@@ -46,10 +45,9 @@ struct ipm_console_sender_config_info quark_se_ipm_sender_config = {
 	.bind_to = "quark_se_ipm4",
 	.flags = IPM_CONSOLE_PRINTK | IPM_CONSOLE_STDOUT,
 };
-DEVICE_INIT_CONFIG_DEFINE(ipm_console, "ipm_console",
-			   ipm_console_sender_init,
-			   &quark_se_ipm_sender_config);
-DEVICE_DEFINE(ipm_console, NULL, SECONDARY, CONFIG_IPM_CONSOLE_PRIORITY);
+DEVICE_INIT(ipm_console, "ipm_console", ipm_console_sender_init,
+				NULL, &quark_se_ipm_sender_config,
+				SECONDARY, CONFIG_IPM_CONSOLE_PRIORITY);
 
 #endif /* CONFIG_IPM_CONSOLE_SENDER */
 #endif /* CONFIG_IPM_QUARK_SE */
@@ -73,8 +71,8 @@ static int uart_ns16550_init(struct device *dev)
 	return DEV_OK;
 }
 
-DEVICE_INIT_CONFIG_DEFINE(uart_ns16550_init, "", uart_ns16550_init, NULL);
-DEVICE_DEFINE(uart_ns16550_init, NULL, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_INIT(uart_ns16550_init, "", uart_ns16550_init,
+				NULL, NULL,
+				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_UART_NS16550 */

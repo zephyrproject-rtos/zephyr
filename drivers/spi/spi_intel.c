@@ -467,12 +467,10 @@ struct spi_intel_config spi_intel_config_0 = {
 	.config_func = spi_config_0_irq
 };
 
-DEVICE_INIT_CONFIG_DEFINE(spi_intel_port_0, CONFIG_SPI_INTEL_PORT_0_DRV_NAME,
-			   spi_intel_init, &spi_intel_config_0);
-
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
-DEVICE_DEFINE(spi_intel_port_0, &spi_intel_data_port_0, SECONDARY,
-		  CONFIG_SPI_INTEL_INIT_PRIORITY);
+DEVICE_INIT(spi_intel_port_0, CONFIG_SPI_INTEL_PORT_0_DRV_NAME, spi_intel_init,
+			&spi_intel_data_port_0, &spi_intel_config_0,
+			SECONDARY, CONFIG_SPI_INTEL_INIT_PRIORITY);
 
 void spi_config_0_irq(void)
 {
@@ -506,12 +504,10 @@ struct spi_intel_config spi_intel_config_1 = {
 	.config_func = spi_config_1_irq
 };
 
-DEVICE_INIT_CONFIG_DEFINE(spi_intel_port_1, CONFIG_SPI_INTEL_PORT_1_DRV_NAME,
-			   spi_intel_init, &spi_intel_config_1);
-
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
-DEVICE_DEFINE(spi_intel_port_1, &spi_intel_data_port_1, SECONDARY,
-		  CONFIG_SPI_INTEL_INIT_PRIORITY);
+DEVICE_INIT(spi_intel_port_1, CONFIG_SPI_INTEL_PORT_1_DRV_NAME, spi_intel_init,
+			&spi_intel_data_port_1, &spi_intel_config_1,
+			SECONDARY, CONFIG_SPI_INTEL_INIT_PRIORITY);
 
 void spi_config_1_irq(void);
 {

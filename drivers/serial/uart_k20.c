@@ -376,13 +376,9 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_0 = {
 	.baud_rate = CONFIG_UART_K20_PORT_0_BAUD_RATE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(uart_k20_0,
-			   CONFIG_UART_K20_PORT_0_NAME,
-			   &uart_k20_init,
-			   &uart_k20_dev_cfg_0);
-
-DEVICE_DEFINE(uart_k20_0, &uart_k20_dev_data_0, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(uart_k20_0, CONFIG_UART_K20_PORT_0_NAME, &uart_k20_init,
+			&uart_k20_dev_data_0, &uart_k20_dev_cfg_0,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_0 */
 
@@ -397,13 +393,9 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_1 = {
 	.baud_rate = CONFIG_UART_K20_PORT_1_BAUD_RATE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(uart_k20_1,
-			   CONFIG_UART_K20_PORT_1_NAME,
-			   &uart_k20_init,
-			   &uart_k20_dev_cfg_1);
-
-DEVICE_DEFINE(uart_k20_1, &uart_k20_dev_data_1, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(uart_k20_1, CONFIG_UART_K20_PORT_1_NAME, &uart_k20_init,
+			&uart_k20_dev_data_1, &uart_k20_dev_cfg_1,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_1 */
 
@@ -418,13 +410,9 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_2 = {
 	.baud_rate = CONFIG_UART_K20_PORT_2_BAUD_RATE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(uart_k20_2,
-			   CONFIG_UART_K20_PORT_2_NAME,
-			   &uart_k20_init,
-			   &uart_k20_dev_cfg_2);
-
-DEVICE_DEFINE(uart_k20_2, &uart_k20_dev_data_2, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(uart_k20_2, CONFIG_UART_K20_PORT_2_NAME, &uart_k20_init,
+			&uart_k20_dev_data_2, &uart_k20_dev_cfg_2,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_2 */
 
@@ -439,13 +427,9 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_3 = {
 	.baud_rate = CONFIG_UART_K20_PORT_3_BAUD_RATE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(uart_k20_3,
-			   CONFIG_UART_K20_PORT_3_NAME,
-			   &uart_k20_init,
-			   &uart_k20_dev_cfg_3);
-
-DEVICE_DEFINE(uart_k20_3, &uart_k20_dev_data_3, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(uart_k20_3, CONFIG_UART_K20_PORT_3_NAME, &uart_k20_init,
+			&uart_k20_dev_data_3, &uart_k20_dev_cfg_3,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_3 */
 
@@ -460,12 +444,8 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_4 = {
 	.baud_rate = CONFIG_UART_K20_PORT_4_BAUD_RATE,
 };
 
-DEVICE_INIT_CONFIG_DEFINE(uart_k20_4,
-			   CONFIG_UART_K20_PORT_4_NAME,
-			   &uart_k20_init,
-			   &uart_k20_dev_cfg_4);
-
-DEVICE_DEFINE(uart_k20_4, &uart_k20_dev_data_4, PRIMARY,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT(uart_k20_4, CONFIG_UART_K20_PORT_4_NAME, &uart_k20_init,
+			&uart_k20_dev_data_4, &uart_k20_dev_cfg_4,
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #endif /* CONFIG_UART_K20_PORT_4 */

@@ -48,6 +48,6 @@ static int quark_se_arc_init(struct device *arg)
 	shared_data->flags |= ARC_READY;
 	return 0;
 }
-DEVICE_INIT_CONFIG_DEFINE(quark_se_arc_0, "", quark_se_arc_init, NULL);
-DEVICE_DEFINE(quark_se_arc_0, NULL, PRIMARY,
-					CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_INIT(quark_se_arc_0, "", quark_se_arc_init,
+				NULL, NULL,
+				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

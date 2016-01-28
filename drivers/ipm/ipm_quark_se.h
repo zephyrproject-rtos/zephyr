@@ -137,11 +137,9 @@ int quark_se_ipm_controller_initialize(struct device *d);
 		.direction = dir \
 	}; \
 	struct quark_se_ipm_driver_data quark_se_ipm_runtime_##name; \
-	DEVICE_INIT_CONFIG_DEFINE(name, _STRINGIFY(name), \
-				   quark_se_ipm_initialize, \
-				   &quark_se_ipm_config_##name); \
-	DEVICE_DEFINE(name, &quark_se_ipm_runtime_##name, SECONDARY, \
-						CONFIG_KERNEL_INIT_PRIORITY_DEFAULT)
+	DEVICE_INIT(name, _STRINGIFY(name), quark_se_ipm_initialize, \
+				&quark_se_ipm_runtime_##name, &quark_se_ipm_config_##name, \
+				SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT)
 
 #ifdef __cplusplus
 }
