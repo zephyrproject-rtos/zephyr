@@ -82,7 +82,7 @@ extern "C" {
 		.config_info = (cfg_info) \
 	}; \
 	\
-	static struct device (__initconfig_##dev_name) __used \
+	static struct device (__device_##dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		 .config = &(__config_##dev_name), \
 		 .driver_data = data \
@@ -103,7 +103,7 @@ extern "C" {
  *
  * @return The exanded name of the device object created by DEVICE_INIT()
  */
-#define DEVICE_NAME_GET(name) (_CONCAT(__initconfig_, name))
+#define DEVICE_NAME_GET(name) (_CONCAT(__device_, name))
 
 /**
  * @def DEVICE_GET
