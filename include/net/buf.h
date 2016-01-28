@@ -204,6 +204,18 @@ void net_buf_add_le16(struct net_buf *buf, uint16_t value);
  */
 void *net_buf_push(struct net_buf *buf, size_t len);
 
+/** @brief Push 16-bit value to the beginning of the buffer
+ *
+ *  Adds 16-bit value in little endian format to the beginning of the
+ *  buffer.
+ *
+ *  @param buf Buffer to update.
+ *  @param value 16-bit value to be pushed to the buffer.
+ *
+ *  @return void
+ */
+void net_buf_push_le16(struct net_buf *buf, uint16_t value);
+
 /** @brief Remove data from the beginning of the buffer.
  *
  *  Removes data from the beginnig of the buffer by modifying the data
