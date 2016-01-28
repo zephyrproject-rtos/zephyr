@@ -38,6 +38,9 @@ extern "C" {
 #define _SYS_INIT_LEVEL_MICROKERNEL  3
 #define _SYS_INIT_LEVEL_APPLICATION  4
 
+#define SYS_INIT(init_fn, level, prio) \
+	DEVICE_INIT(sys_init_##init_fn, "", init_fn, NULL, NULL, level, prio)
+
 #ifdef __cplusplus
 }
 #endif
