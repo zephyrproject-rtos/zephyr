@@ -16,20 +16,53 @@
 
 #include <device.h>
 #include <i2c.h>
-#include <init.h>
+#include <ioapic.h>
 
 #include "qm_i2c.h"
 #include "qm_scss.h"
 
-/* Convenient macro to get the controller instance from the 'config_info'
- * field defined in the 'struct device_config'.
- */
+/* Convenient macros to get the controller instance and the driver data. */
 #define GET_CONTROLLER_INSTANCE(dev) \
 	(((struct i2c_qmsi_config_info *)dev->config->config_info)->instance)
+#define GET_DRIVER_DATA(dev) \
+	((struct i2c_qmsi_driver_data *)dev->driver_data)
 
 struct i2c_qmsi_config_info {
 	qm_i2c_t instance; /* Controller instance. */
 };
+
+struct i2c_qmsi_driver_data {
+	device_sync_call_t sync;
+	qm_rc_t transfer_status;
+};
+
+static int i2c_qmsi_init(struct device *dev);
+
+#ifdef CONFIG_I2C_QMSI_0
+
+static struct i2c_qmsi_driver_data driver_data_0;
+
+static struct i2c_qmsi_config_info config_info_0 = {
+	.instance = QM_I2C_0,
+};
+
+DEVICE_INIT(i2c_0, CONFIG_I2C_QMSI_0_NAME, i2c_qmsi_init, &driver_data_0,
+	    &config_info_0, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_I2C_QMSI_0 */
+
+#ifdef CONFIG_I2C_QMSI_1
+
+static struct i2c_qmsi_driver_data driver_data_1;
+
+static struct i2c_qmsi_config_info config_info_1 = {
+	.instance = QM_I2C_1,
+};
+
+DEVICE_INIT(i2c_1, CONFIG_I2C_QMSI_1_NAME, i2c_qmsi_init, &driver_data_1,
+	    &config_info_1, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#endif /* CONFIG_I2C_QMSI_1 */
 
 static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 {
@@ -67,15 +100,45 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 	return DEV_OK;
 }
 
-/* FIXME: This function is implemented using QMSI polling APIs since
- * the interrupt API (qm_i2c_master_irq_transfer) seems not to be
- * working properly. Once this issue is solved, we should change this
- * function to use the interrupt API and sleep the current thread while
- * the I2C transfer is carried out.
- */
+static void transfer_complete(uint32_t id, qm_rc_t status)
+{
+	struct device *dev;
+	struct i2c_qmsi_driver_data *driver_data;
+
+	switch (id) {
+#ifdef CONFIG_I2C_QMSI_0
+	case QM_I2C_0:
+		dev = DEVICE_GET(i2c_0);
+		break;
+#endif
+#ifdef CONFIG_I2C_QMSI_1
+	case QM_I2C_1:
+		dev = DEVICE_GET(i2c_1);
+		break;
+#endif
+	default:
+		return;
+	}
+
+	driver_data = GET_DRIVER_DATA(dev);
+	driver_data->transfer_status = status;
+	device_sync_call_complete(&driver_data->sync);
+}
+
+static void complete_cb(uint32_t id, uint32_t len)
+{
+	transfer_complete(id, QM_RC_OK);
+}
+
+static void err_cb(uint32_t id, qm_i2c_status_t status)
+{
+	transfer_complete(id, status);
+}
+
 static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 			     uint8_t num_msgs, uint16_t addr)
 {
+	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	qm_rc_t rc;
 
@@ -90,12 +153,30 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 		uint32_t len = msgs[i].len;
 		uint8_t op =  msgs[i].flags & I2C_MSG_RW_MASK;
 		bool stop = (msgs[i].flags & I2C_MSG_STOP) == I2C_MSG_STOP;
+		qm_i2c_transfer_t xfer = { 0 };
 
-		rc = (op == I2C_MSG_WRITE) ?
-			qm_i2c_master_write(instance, addr, buf, len, stop) :
-			qm_i2c_master_read(instance, addr, buf, len, stop);
+		if (op == I2C_MSG_WRITE) {
+			xfer.tx = buf;
+			xfer.tx_len = len;
+			xfer.tx_callback = complete_cb;
+		} else {
+			xfer.rx = buf;
+			xfer.rx_len = len;
+			xfer.rx_callback = complete_cb;
+		}
 
+		xfer.id = instance;
+		xfer.stop = stop;
+		xfer.err_callback = err_cb;
+
+		rc = qm_i2c_master_irq_transfer(instance, &xfer, addr);
 		if (rc != QM_RC_OK)
+			return DEV_FAIL;
+
+		/* Block current thread until the I2C transfer completes. */
+		device_sync_call_wait(&driver_data->sync);
+
+		if (driver_data->transfer_status != QM_RC_OK)
 			return DEV_FAIL;
 	}
 
@@ -121,41 +202,37 @@ static struct i2c_driver_api api = {
 
 static int i2c_qmsi_init(struct device *dev)
 {
+	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 
 	switch (instance) {
 	case QM_I2C_0:
+		/* Register interrupt handler, unmask IRQ and route it
+		 * to Lakemont core.
+		 */
+		IRQ_CONNECT(CONFIG_I2C_QMSI_0_IRQ,
+			    CONFIG_I2C_QMSI_0_INT_PRIORITY, qm_i2c_0_isr, NULL,
+			    (IOAPIC_LEVEL | IOAPIC_HIGH));
+		irq_enable(CONFIG_I2C_QMSI_0_IRQ);
+		QM_SCSS_INT->int_i2c_mst_0_mask &= ~BIT(0);
+
 		clk_periph_enable(CLK_PERIPH_I2C_M0_REGISTER);
 		break;
 	case QM_I2C_1:
+		IRQ_CONNECT(CONFIG_I2C_QMSI_1_IRQ,
+			    CONFIG_I2C_QMSI_1_INT_PRIORITY, qm_i2c_1_isr, NULL,
+			    (IOAPIC_LEVEL | IOAPIC_HIGH));
+		irq_enable(CONFIG_I2C_QMSI_1_IRQ);
+		QM_SCSS_INT->int_i2c_mst_1_mask &= ~BIT(0);
+
 		clk_periph_enable(CLK_PERIPH_I2C_M1_REGISTER);
 		break;
 	default:
 		return DEV_FAIL;
 	}
 
+	device_sync_call_init(&driver_data->sync);
+
 	dev->driver_api = &api;
 	return DEV_OK;
 }
-
-#ifdef CONFIG_I2C_QMSI_0
-
-static struct i2c_qmsi_config_info config_info_0 = {
-	.instance = QM_I2C_0,
-};
-
-DEVICE_INIT(i2c_0, CONFIG_I2C_QMSI_0_NAME, i2c_qmsi_init, 0, &config_info_0,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-
-#endif /* CONFIG_I2C_QMSI_0 */
-
-#ifdef CONFIG_I2C_QMSI_1
-
-static struct i2c_qmsi_config_info config_info_1 = {
-	.instance = QM_I2C_1,
-};
-
-DEVICE_INIT(i2c_1, CONFIG_I2C_QMSI_1_NAME, i2c_qmsi_init, 0, &config_info_1,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-
-#endif /* CONFIG_I2C_QMSI_1 */

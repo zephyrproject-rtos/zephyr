@@ -315,6 +315,14 @@ config I2C_QMSI_0_NAME
 	depends on I2C_QMSI_0
 	default "I2C0"
 
+config I2C_QMSI_0_IRQ
+	int "IRQ number from I2C_0 controller"
+	depends on I2C_QMSI_0
+
+config I2C_QMSI_0_INT_PRIORITY
+	int "Interrupt priority from I2C_0 controller"
+	depends on I2C_QMSI_0
+
 config I2C_QMSI_1
 	bool "Enable I2C_1 controller"
 	default n
@@ -324,3 +332,11 @@ config I2C_QMSI_1_NAME
 	string "I2C_1 device name"
 	depends on I2C_QMSI_1
 	default "I2C1"
+
+config I2C_QMSI_1_IRQ
+	int "IRQ number from I2C_1 controller"
+	depends on I2C_QMSI_1
+
+config I2C_QMSI_1_INT_PRIORITY
+	int "Interrupt priority from I2C_1 controller"
+	depends on I2C_QMSI_1

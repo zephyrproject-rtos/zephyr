@@ -152,6 +152,20 @@ config I2C_DW_1_IRQ
 	default 1
 endif # I2C_DW
 
+if I2C_QMSI
+
+config I2C_QMSI_0_IRQ
+	default 0
+config I2C_QMSI_0_INT_PRIORITY
+	default 2
+
+config I2C_QMSI_1_IRQ
+	default 1
+config I2C_QMSI_1_INT_PRIORITY
+	default 2
+
+endif # I2C_QMSI
+
 endif # I2C
 
 if CLOCK_CONTROL
