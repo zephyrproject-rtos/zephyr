@@ -138,6 +138,7 @@ void _irq_handler_set(
 	int key = irq_lock();
 	int index = irq - 16;
 
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ number too high");
 	_sw_isr_table[index].isr = new;
 	_sw_isr_table[index].arg = arg;
 
