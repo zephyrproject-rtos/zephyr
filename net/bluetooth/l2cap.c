@@ -1169,28 +1169,29 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_chan *chan,
 					     struct net_buf *buf,
-					     uint16_t len)
+					     bool first_packet)
 {
 	struct net_buf *seg;
 	size_t headroom;
+	uint16_t len;
 
 	/* Segment if data is bigger than MPS */
-	if (buf->len + (len ? sizeof(len) : 0) > chan->tx.mps) {
+	if (buf->len + (first_packet ? 2 : 0) > chan->tx.mps) {
 		goto segment;
 	}
 
 	/* Check if original buffer has enough headroom */
 	headroom = sizeof(struct bt_hci_acl_hdr) + sizeof(struct bt_l2cap_hdr);
 
-	if (len) {
-		headroom += sizeof(len);
+	if (first_packet) {
+		headroom += 2;
 	}
 
 	if (net_buf_headroom(buf) >= headroom) {
-		if (len) {
+		if (first_packet) {
 			/* Push SDU length if set */
-			memcpy(net_buf_push(buf, sizeof(len)),
-			       &sys_cpu_to_le16(len), sizeof(len));
+			memcpy(net_buf_push(buf, 2),
+			       &sys_cpu_to_le16(buf->len), 2);
 		}
 		return net_buf_ref(buf);
 	}
@@ -1201,11 +1202,11 @@ segment:
 		return NULL;
 	}
 
-	if (len) {
-		net_buf_add_le16(seg, len);
+	if (first_packet) {
+		net_buf_add_le16(seg, buf->len);
 	}
 
-	len = min(min(buf->len, L2CAP_LE_MIN_MTU - (len ? sizeof(len) : 0)),
+	len = min(min(buf->len, L2CAP_LE_MIN_MTU - (first_packet ? 2 : 0)),
 		  chan->tx.mps);
 	memcpy(net_buf_add(seg, len), buf->data, len);
 	net_buf_pull(buf, len);
@@ -1216,12 +1217,14 @@ segment:
 }
 
 static int l2cap_chan_le_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
-			      uint16_t len)
+			      bool first_packet)
 {
+	int len;
+
 	/* Wait for credits */
 	nano_sem_take(&chan->tx.credits, TICKS_UNLIMITED);
 
-	buf = l2cap_chan_create_seg(chan, buf, len);
+	buf = l2cap_chan_create_seg(chan, buf, first_packet);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -1254,14 +1257,14 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_chan *chan,
 	total_len = buf->len;
 
 	/* Add SDU length for the first segment */
-	ret = l2cap_chan_le_send(chan, buf, buf->len);
+	ret = l2cap_chan_le_send(chan, buf, true);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Send remaining segments */
 	for (sent = ret; sent < total_len; sent += ret) {
-		ret = l2cap_chan_le_send(chan, buf, 0);
+		ret = l2cap_chan_le_send(chan, buf, false);
 		if (ret < 0) {
 			return ret;
 		}
