@@ -296,7 +296,8 @@ static struct spi_qmsi_runtime spi_qmsi_mst_0_runtime;
 
 DEVICE_INIT(spi_master_0, CONFIG_SPI_QMSI_PORT_0_DRV_NAME,
 	    spi_qmsi_init, &spi_qmsi_mst_0_runtime, &spi_qmsi_mst_0_config,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    SECONDARY, CONFIG_SPI_QMSI_INIT_PRIORITY);
+
 
 #endif /* CONFIG_SPI_QMSI_PORT_0 */
 #ifdef CONFIG_SPI_QMSI_PORT_1
@@ -313,6 +314,6 @@ static struct spi_qmsi_runtime spi_qmsi_mst_1_runtime;
 
 DEVICE_INIT(spi_master_1, CONFIG_SPI_QMSI_PORT_1_DRV_NAME,
 	    spi_qmsi_init, &spi_qmsi_mst_1_runtime, &spi_qmsi_mst_1_config,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    SECONDARY, CONFIG_SPI_QMSI_INIT_PRIORITY);
 
 #endif /* CONFIG_SPI_QMSI_PORT_1 */
