@@ -1,2 +1,7 @@
 First serial line is multiplexed with qemu monitor and bluetooth shell
 (btshell) is running there. Use help to check list of commands.
+
+For building shell with Nordic Bluetooth Low Energy stack (NBLE)
+use prj_nble.conf:
+
+$ make CONF_FILE=prj_nble.conf BOARD=arduino_101

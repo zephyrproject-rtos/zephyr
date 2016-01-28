@@ -1,0 +1,4 @@
+For building shell with Nordic Bluetooth Low Energy stack (NBLE)
+use prj_nble.conf:
+
+$ make CONF_FILE=prj_nble.conf BOARD=arduino_101
