@@ -57,7 +57,7 @@
 #else
 #define int_unmask(...) { ; }
 #endif
-static void adc_config_0_irq(void);
+static void adc_config_irq(void);
 
 #ifdef CONFIG_ADC_DW_CALIBRATION
 static void calibration_command(uint8_t command)
@@ -460,9 +460,9 @@ void adc_dw_err_isr(void *arg)
 	device_sync_call_complete(&info->sync);
 }
 
-#ifdef CONFIG_ADC_DW_0
+#ifdef CONFIG_ADC_DW
 
-struct adc_info adc_info_dev_0 = {
+struct adc_info adc_info_dev = {
 		.state = ADC_STATE_IDLE,
 #ifdef CONFIG_ADC_DW_CALIBRATION
 		.calibration_value = ADC_NONE_CALIBRATION,
@@ -472,7 +472,7 @@ struct adc_info adc_info_dev_0 = {
 #endif
 	};
 
-struct adc_config adc_config_dev_0 = {
+struct adc_config adc_config_dev = {
 		.reg_base = PERIPH_ADDR_BASE_ADC,
 		.reg_irq_mask = SCSS_REGISTER_BASE + INT_SS_ADC_IRQ_MASK,
 		.reg_err_mask = SCSS_REGISTER_BASE + INT_SS_ADC_ERR_MASK,
@@ -494,21 +494,21 @@ struct adc_config adc_config_dev_0 = {
 		.sample_width = CONFIG_ADC_DW_SAMPLE_WIDTH,
 		.clock_ratio  = CONFIG_ADC_DW_CLOCK_RATIO,
 		.serial_dly   = CONFIG_ADC_DW_SERIAL_DELAY,
-		.config_func  = adc_config_0_irq,
+		.config_func  = adc_config_irq,
 	};
 
-DEVICE_INIT(adc_dw_0, CONFIG_ADC_DW_NAME_0, &adc_dw_init,
-			&adc_info_dev_0, &adc_config_dev_0,
+DEVICE_INIT(adc_dw, CONFIG_ADC_DW_NAME, &adc_dw_init,
+			&adc_info_dev, &adc_config_dev,
 			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-static void adc_config_0_irq(void)
+static void adc_config_irq(void)
 {
-	IRQ_CONNECT(CONFIG_ADC_DW_0_RX_IRQ, CONFIG_ADC_DW_0_PRI, adc_dw_rx_isr,
-		    DEVICE_GET(adc_dw_0), 0);
-	irq_enable(CONFIG_ADC_DW_0_RX_IRQ);
+	IRQ_CONNECT(CONFIG_ADC_DW_RX_IRQ, CONFIG_ADC_DW_PRI, adc_dw_rx_isr,
+		    DEVICE_GET(adc_dw), 0);
+	irq_enable(CONFIG_ADC_DW_RX_IRQ);
 
-	IRQ_CONNECT(CONFIG_ADC_DW_0_ERR_IRQ, CONFIG_ADC_DW_0_PRI,
-		    adc_dw_err_isr, DEVICE_GET(adc_dw_0), 0);
-	irq_enable(CONFIG_ADC_DW_0_ERR_IRQ);
+	IRQ_CONNECT(CONFIG_ADC_DW_ERR_IRQ, CONFIG_ADC_DW_PRI,
+		    adc_dw_err_isr, DEVICE_GET(adc_dw), 0);
+	irq_enable(CONFIG_ADC_DW_ERR_IRQ);
 }
 #endif
