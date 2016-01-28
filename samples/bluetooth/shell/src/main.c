@@ -206,15 +206,56 @@ static struct bt_conn_cb conn_callbacks = {
 	.security_changed = security_changed,
 };
 
+static int read_string(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		       void *buf, uint16_t len, uint16_t offset)
+{
+	const char *str = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, str,
+				 strlen(str));
+}
+
+static uint16_t appearance_value = 0x0001;
+
+static int read_appearance(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, void *buf,
+			   uint16_t len, uint16_t offset)
+{
+	uint16_t appearance = sys_cpu_to_le16(appearance_value);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
+				 sizeof(appearance));
+}
+
+static struct bt_gatt_attr attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
+			   read_string, NULL, DEVICE_NAME),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
+			   read_appearance, NULL, NULL),
+};
+
+static void bt_ready(int err)
+{
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	printk("Bluetooth initialized\n");
+
+	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
+}
+
 static void cmd_init(int argc, char *argv[])
 {
 	int err;
 
-	err = bt_enable(NULL);
+	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-	} else {
-		printk("Bluetooth initialized\n");
 	}
 }
 
@@ -1008,37 +1049,6 @@ static void cmd_gatt_unsubscribe(int argc, char *argv[])
 	}
 }
 
-static int read_string(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		       void *buf, uint16_t len, uint16_t offset)
-{
-	const char *str = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, str,
-				 strlen(str));
-}
-
-static uint16_t appearance_value = 0x0001;
-
-static int read_appearance(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
-{
-	uint16_t appearance = sys_cpu_to_le16(appearance_value);
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
-				 sizeof(appearance));
-}
-
-static struct bt_gatt_attr attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
-			   read_string, NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
-			   read_appearance, NULL, NULL),
-};
-
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -1528,8 +1538,6 @@ void main(void)
 #endif
 {
 	bt_conn_cb_register(&conn_callbacks);
-
-	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
 	net_buf_pool_init(data_pool);
 
