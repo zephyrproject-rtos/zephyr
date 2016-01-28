@@ -47,7 +47,10 @@ void on_nble_up(void)
 
 void on_ble_get_version_rsp(const struct ble_version_response *rsp)
 {
-	BT_DBG("");
+	const struct version_header *ver = &rsp->version;
+
+	BT_DBG("VERSION: %d.%d.%d %.20s", ver->major, ver->minor, ver->patch,
+	       ver->version_string);
 }
 
 int bt_enable(bt_ready_cb_t cb)
