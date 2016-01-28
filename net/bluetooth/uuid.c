@@ -20,48 +20,40 @@
 #include <toolchain.h>
 #include <string.h>
 #include <errno.h>
+#include <misc/byteorder.h>
 
 #include <bluetooth/uuid.h>
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 #include <stdio.h>
-#include <misc/byteorder.h>
 #endif /* CONFIG_BLUETOOTH_DEBUG */
 
 #define UUID_16_BASE_OFFSET 12
 
 /* TODO: Decide wether to continue using BLE format or switch to RFC 4122 */
-static const struct bt_uuid uuid128_base = {
-	.type = BT_UUID_128,
-	.u128 = { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10,
-		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-
+static const struct bt_uuid_128 uuid128_base = {
+	.uuid.type = BT_UUID_TYPE_128,
+	.val = { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
+		 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
 };
 
-static inline void cpu_to_uuid128(void *dst, const void *src, int len)
+static inline void u16_to_uuid128(void *dst, uint16_t u16)
 {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	int i;
-
-	for (i = 0; i < len; i++) {
-		((uint8_t *)dst)[i] = ((uint8_t *)src)[(len - 1) - i];
-	}
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	memcpy(dst, src, len);
-#else
-#error "Unknown byte order"
+	u16 = bswap_16(u16);
 #endif
+	memcpy(dst, &u16, 2);
 }
 
-static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid *dst)
+static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid_128 *dst)
 {
 	switch (src->type) {
-	case BT_UUID_16:
+	case BT_UUID_TYPE_16:
 		*dst = uuid128_base;
-		cpu_to_uuid128(&dst->u128[UUID_16_BASE_OFFSET], &src->u16,
-			       sizeof(src->u16));
+		u16_to_uuid128(&dst->val[UUID_16_BASE_OFFSET],
+			       BT_UUID_16(src)->val);
 		return;
-	case BT_UUID_128:
+	case BT_UUID_TYPE_128:
 		memcpy(dst, src, sizeof(*dst));
 		return;
 	}
@@ -69,12 +61,12 @@ static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid *dst)
 
 static int uuid128_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 {
-	struct bt_uuid uuid1, uuid2;
+	struct bt_uuid_128 uuid1, uuid2;
 
 	uuid_to_uuid128(u1, &uuid1);
 	uuid_to_uuid128(u2, &uuid2);
 
-	return memcmp(uuid1.u128, uuid2.u128, sizeof(uuid1.u128));
+	return memcmp(uuid1.val, uuid2.val, 16);
 }
 
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
@@ -84,10 +76,10 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 		return uuid128_cmp(u1, u2);
 
 	switch (u1->type) {
-	case BT_UUID_16:
-		return (int)u1->u16 - (int)u2->u16;
-	case BT_UUID_128:
-		return memcmp(u1->u128, u2->u128, sizeof(u1->u128));
+	case BT_UUID_TYPE_16:
+		return (int)BT_UUID_16(u1)->val - (int)BT_UUID_16(u2)->val;
+	case BT_UUID_TYPE_128:
+		return memcmp(BT_UUID_128(u1)->val, BT_UUID_128(u2)->val, 16);
 	}
 
 	return -EINVAL;
@@ -96,9 +88,9 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 void bt_uuid_copy(struct bt_uuid *dst, const struct bt_uuid *src)
 {
 	switch (src->type) {
-	case BT_UUID_16:
+	case BT_UUID_TYPE_16:
 		/* Copy only the necessary data */
-		memcpy(dst, src, sizeof(struct __bt_uuid_16));
+		memcpy(dst, src, sizeof(struct bt_uuid_16));
 		return;
 	default:
 		memcpy(dst, src, sizeof(*dst));
@@ -112,16 +104,16 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 	uint16_t tmp0, tmp2, tmp3, tmp4;
 
 	switch (uuid->type) {
-	case BT_UUID_16:
-		snprintf(str, len, "%.4x", uuid->u16);
+	case BT_UUID_TYPE_16:
+		snprintf(str, len, "%.4x", BT_UUID_16(uuid)->val);
 		break;
-	case BT_UUID_128:
-		memcpy(&tmp0, &uuid->u128[0], sizeof(tmp0));
-		memcpy(&tmp1, &uuid->u128[2], sizeof(tmp1));
-		memcpy(&tmp2, &uuid->u128[6], sizeof(tmp2));
-		memcpy(&tmp3, &uuid->u128[8], sizeof(tmp3));
-		memcpy(&tmp4, &uuid->u128[10], sizeof(tmp4));
-		memcpy(&tmp5, &uuid->u128[12], sizeof(tmp5));
+	case BT_UUID_TYPE_128:
+		memcpy(&tmp0, &BT_UUID_128(uuid)->val[0], sizeof(tmp0));
+		memcpy(&tmp1, &BT_UUID_128(uuid)->val[2], sizeof(tmp1));
+		memcpy(&tmp2, &BT_UUID_128(uuid)->val[6], sizeof(tmp2));
+		memcpy(&tmp3, &BT_UUID_128(uuid)->val[8], sizeof(tmp3));
+		memcpy(&tmp4, &BT_UUID_128(uuid)->val[10], sizeof(tmp4));
+		memcpy(&tmp5, &BT_UUID_128(uuid)->val[12], sizeof(tmp5));
 
 		snprintf(str, len, "%.8x-%.4x-%.4x-%.4x-%.8x%.4x",
 			 tmp5, tmp4, tmp3, tmp2, tmp1, tmp0);

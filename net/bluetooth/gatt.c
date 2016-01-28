@@ -146,15 +146,15 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
 {
 	struct bt_uuid *uuid = attr->user_data;
 
-	if (uuid->type == BT_UUID_16) {
-		uint16_t uuid16 = sys_cpu_to_le16(uuid->u16);
+	if (uuid->type == BT_UUID_TYPE_16) {
+		uint16_t uuid16 = sys_cpu_to_le16(BT_UUID_16(uuid)->val);
 
-		return bt_gatt_attr_read(conn, attr, buf, len, offset, &uuid16,
-					 sizeof(uuid16));
+		return bt_gatt_attr_read(conn, attr, buf, len, offset,
+					 &uuid16, 2);
 	}
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, uuid->u128,
-				 sizeof(uuid->u128));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset,
+				 BT_UUID_128(uuid)->val, 16);
 }
 
 struct gatt_incl {
@@ -180,8 +180,8 @@ int bt_gatt_attr_read_included(struct bt_conn *conn,
 	 * The Service UUID shall only be present when the UUID is a 16-bit
 	 * Bluetooth UUID.
 	 */
-	if (incl->uuid->type == BT_UUID_16) {
-		pdu.uuid16 = sys_cpu_to_le16(incl->uuid->u16);
+	if (incl->uuid->type == BT_UUID_TYPE_16) {
+		pdu.uuid16 = sys_cpu_to_le16(BT_UUID_16(incl->uuid)->val);
 		value_len += sizeof(pdu.uuid16);
 	}
 
@@ -223,12 +223,12 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	}
 	value_len = sizeof(pdu.properties) + sizeof(pdu.value_handle);
 
-	if (chrc->uuid->type == BT_UUID_16) {
-		pdu.uuid16 = sys_cpu_to_le16(chrc->uuid->u16);
-		value_len += sizeof(pdu.uuid16);
+	if (chrc->uuid->type == BT_UUID_TYPE_16) {
+		pdu.uuid16 = sys_cpu_to_le16(BT_UUID_16(chrc->uuid)->val);
+		value_len += 2;
 	} else {
-		memcpy(pdu.uuid, chrc->uuid->u128, sizeof(chrc->uuid->u128));
-		value_len += sizeof(chrc->uuid->u128);
+		memcpy(pdu.uuid, BT_UUID_128(chrc->uuid)->val, 16);
+		value_len += 16;
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
@@ -746,7 +746,6 @@ static int att_find_type(struct bt_conn *conn,
 {
 	struct net_buf *buf;
 	struct bt_att_find_type_req *req;
-	uint16_t *value;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_TYPE_REQ, sizeof(*req));
 	if (!buf) {
@@ -768,14 +767,12 @@ static int att_find_type(struct bt_conn *conn,
 	       params->end_handle);
 
 	switch (params->uuid->type) {
-	case BT_UUID_16:
-		value = net_buf_add(buf, sizeof(*value));
-		*value = sys_cpu_to_le16(params->uuid->u16);
+	case BT_UUID_TYPE_16:
+		net_buf_add_le16(buf, BT_UUID_16(params->uuid)->val);
 		break;
-	case BT_UUID_128:
-		net_buf_add(buf, sizeof(params->uuid->u128));
-		memcpy(req->value, params->uuid->u128,
-		       sizeof(params->uuid->u128));
+	case BT_UUID_TYPE_128:
+		memcpy(net_buf_add(buf, 16),
+		       BT_UUID_128(params->uuid)->val, 16);
 		break;
 	default:
 		BT_ERR("Unknown UUID type %u", params->uuid->type);
@@ -791,21 +788,25 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 			      uint16_t length)
 {
 	const struct bt_att_read_type_rsp *rsp = pdu;
-	struct bt_uuid uuid;
 	uint16_t handle = 0;
 	struct bt_gatt_include value;
+	union {
+		struct bt_uuid uuid;
+		struct bt_uuid_16 u16;
+		struct bt_uuid_128 u128;
+	} u;
 
 	/* Data can be either in UUID16 or UUID128 */
 	switch (rsp->len) {
 	case 8: /* UUID16 */
-		uuid.type = BT_UUID_16;
+		u.uuid.type = BT_UUID_TYPE_16;
 		break;
 	case 6: /* UUID128 */
 		/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part G] page 550
 		 * To get the included service UUID when the included service
 		 * uses a 128-bit UUID, the Read Request is used.
 		 */
-		uuid.type = BT_UUID_128;
+		u.uuid.type = BT_UUID_TYPE_128;
 		break;
 	default:
 		BT_ERR("Invalid data len %u", rsp->len);
@@ -832,22 +833,22 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 		value.start_handle = incl->start_handle;
 		value.end_handle = incl->end_handle;
 
-		switch(uuid.type) {
-		case BT_UUID_16:
-			value.uuid = &uuid;
-			uuid.u16 = sys_le16_to_cpu(incl->uuid16);
+		switch (u.uuid.type) {
+		case BT_UUID_TYPE_16:
+			value.uuid = &u.uuid;
+			u.u16.val = sys_le16_to_cpu(incl->uuid16);
 			break;
-		case BT_UUID_128:
+		case BT_UUID_TYPE_128:
 			/* Data is not available at this point */
 			break;
 		}
 
 		BT_DBG("handle 0x%04x uuid %s start_handle 0x%04x "
-		       "end_handle 0x%04x\n", handle, bt_uuid_str(&uuid),
+		       "end_handle 0x%04x\n", handle, bt_uuid_str(&u.uuid),
 		       value.start_handle, value.end_handle);
 
 		/* Skip if UUID is set but doesn't match */
-		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
+		if (params->uuid && bt_uuid_cmp(&u.uuid, params->uuid)) {
 			continue;
 		}
 
@@ -874,16 +875,20 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 				     uint16_t length)
 {
 	const struct bt_att_read_type_rsp *rsp = pdu;
-	struct bt_uuid uuid;
 	uint16_t handle = 0;
+	union {
+		struct bt_uuid uuid;
+		struct bt_uuid_16 u16;
+		struct bt_uuid_128 u128;
+	} u;
 
 	/* Data can be either in UUID16 or UUID128 */
 	switch (rsp->len) {
 	case 7: /* UUID16 */
-		uuid.type = BT_UUID_16;
+		u.uuid.type = BT_UUID_TYPE_16;
 		break;
 	case 21: /* UUID128 */
-		uuid.type = BT_UUID_128;
+		u.uuid.type = BT_UUID_TYPE_128;
 		break;
 	default:
 		BT_ERR("Invalid data len %u", rsp->len);
@@ -903,24 +908,24 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 			goto done;
 		}
 
-		switch(uuid.type) {
-		case BT_UUID_16:
-			uuid.u16 = sys_le16_to_cpu(chrc->uuid16);
+		switch (u.uuid.type) {
+		case BT_UUID_TYPE_16:
+			u.u16.val = sys_le16_to_cpu(chrc->uuid16);
 			break;
-		case BT_UUID_128:
-			memcpy(uuid.u128, chrc->uuid, sizeof(chrc->uuid));
+		case BT_UUID_TYPE_128:
+			memcpy(u.u128.val, chrc->uuid, sizeof(chrc->uuid));
 			break;
 		}
 
 		BT_DBG("handle 0x%04x uuid %s properties 0x%02x", handle,
-		       bt_uuid_str(&uuid), chrc->properties);
+		       bt_uuid_str(&u.uuid), chrc->properties);
 
 		/* Skip if UUID is set but doesn't match */
-		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
+		if (params->uuid && bt_uuid_cmp(&u.uuid, params->uuid)) {
 			continue;
 		}
 
-		attr = (&(struct bt_gatt_attr)BT_GATT_CHARACTERISTIC(&uuid,
+		attr = (&(struct bt_gatt_attr)BT_GATT_CHARACTERISTIC(&u.uuid,
 					chrc->properties));
 		attr->handle = handle;
 
@@ -1018,13 +1023,17 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 {
 	const struct bt_att_find_info_rsp *rsp = pdu;
 	struct bt_gatt_discover_params *params = user_data;
-	struct bt_uuid uuid;
 	uint16_t handle = 0;
 	uint8_t len;
 	union {
 		const struct bt_att_info_16 *i16;
 		const struct bt_att_info_128 *i128;
 	} info;
+	union {
+		struct bt_uuid uuid;
+		struct bt_uuid_16 u16;
+		struct bt_uuid_128 u128;
+	} u;
 
 	BT_DBG("err 0x%02x", err);
 
@@ -1035,11 +1044,11 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 	/* Data can be either in UUID16 or UUID128 */
 	switch (rsp->format) {
 	case BT_ATT_INFO_16:
-		uuid.type = BT_UUID_16;
+		u.uuid.type = BT_UUID_TYPE_16;
 		len = sizeof(*info.i16);
 		break;
 	case BT_ATT_INFO_128:
-		uuid.type = BT_UUID_128;
+		u.uuid.type = BT_UUID_TYPE_128;
 		len = sizeof(*info.i128);
 		break;
 	default:
@@ -1055,24 +1064,24 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 		info.i16 = pdu;
 		handle = sys_le16_to_cpu(info.i16->handle);
 
-		switch (uuid.type) {
-		case BT_UUID_16:
-			uuid.u16 = sys_le16_to_cpu(info.i16->uuid);
+		switch (u.uuid.type) {
+		case BT_UUID_TYPE_16:
+			u.u16.val = sys_le16_to_cpu(info.i16->uuid);
 			break;
-		case BT_UUID_128:
-			memcpy(uuid.u128, info.i128->uuid, sizeof(uuid.u128));
+		case BT_UUID_TYPE_128:
+			memcpy(u.u128.val, info.i128->uuid, 16);
 			break;
 		}
 
-		BT_DBG("handle 0x%04x uuid %s", handle, bt_uuid_str(&uuid));
+		BT_DBG("handle 0x%04x uuid %s", handle, bt_uuid_str(&u.uuid));
 
 		/* Skip if UUID is set but doesn't match */
-		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
+		if (params->uuid && bt_uuid_cmp(&u.uuid, params->uuid)) {
 			continue;
 		}
 
 		attr = (&(struct bt_gatt_attr)
-			BT_GATT_DESCRIPTOR(&uuid, 0, NULL, NULL, NULL));
+			BT_GATT_DESCRIPTOR(&u.uuid, 0, NULL, NULL, NULL));
 		attr->handle = handle;
 
 		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {

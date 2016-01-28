@@ -626,7 +626,7 @@ fail:
 }
 
 static struct bt_gatt_discover_params discover_params;
-static struct bt_uuid uuid;
+static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
 static void print_chrc_props(uint8_t properties)
 {
@@ -740,10 +740,9 @@ static void cmd_gatt_discover(int argc, char *argv[])
 	}
 
 	/* Only set the UUID if the value is valid (non zero) */
-	uuid.u16 = strtoul(argv[1], NULL, 16);
-	if (uuid.u16) {
-		uuid.type = BT_UUID_16;
-		discover_params.uuid = &uuid;
+	uuid.val = strtoul(argv[1], NULL, 16);
+	if (uuid.val) {
+		discover_params.uuid = &uuid.uuid;
 	}
 
 	if (argc > 2) {

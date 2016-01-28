@@ -20,9 +20,51 @@
 #ifndef __BT_UUID_H
 #define __BT_UUID_H
 
+#include <misc/util.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @brief Bluetooth UUID types */
+enum {
+	BT_UUID_TYPE_16,
+	BT_UUID_TYPE_128,
+};
+
+struct bt_uuid {
+	uint8_t type;
+};
+
+struct bt_uuid_16 {
+	struct bt_uuid uuid;
+	uint16_t val;
+};
+
+struct bt_uuid_128 {
+	struct bt_uuid uuid;
+	uint8_t val[16];
+};
+
+#define BT_UUID_INIT_16(value)		\
+{					\
+	.uuid.type = BT_UUID_TYPE_16,	\
+	.val = (value),			\
+}
+
+#define BT_UUID_INIT_128(value...)	\
+{					\
+	.uuid.type = BT_UUID_TYPE_128,	\
+	.val = { value },		\
+}
+
+#define BT_UUID_DECLARE_16(value) \
+	((struct bt_uuid *) (&(struct bt_uuid_16) BT_UUID_INIT_16(value)))
+#define BT_UUID_DECLARE_128(value...) \
+	((struct bt_uuid *) (&(struct bt_uuid_128) BT_UUID_INIT_128(value)))
+
+#define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
+#define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
 
 /** @def BBT_UUID_GAP
  *  @brief Generic Access
@@ -184,41 +226,6 @@ extern "C" {
  */
 #define BT_UUID_HRS_CONTROL_POINT		BT_UUID_DECLARE_16(0x2a39)
 #define BT_UUID_HRS_CONTROL_POINT_VAL		0x2a39
-
-/** @brief Bluetooth UUID types */
-enum bt_uuid_type {
-	BT_UUID_16,
-	BT_UUID_128,
-};
-
-#define BT_UUID_DECLARE_16(value)					\
-	((struct bt_uuid *) (&(struct __bt_uuid_16) { .type = BT_UUID_16, \
-						   .u16 = value }))
-#define BT_UUID_DECLARE_128(value)					\
-	((struct bt_uuid *) (&(struct __bt_uuid_128) { .type = BT_UUID_128, \
-						    .u128 = value }))
-
-struct __bt_uuid_16 {
-	uint8_t type;
-	uint16_t u16;
-};
-
-struct __bt_uuid_128 {
-	uint8_t type;
-	uint8_t u128[16];
-};
-
-/** @brief Bluetooth UUID structure */
-struct bt_uuid {
-	/** UUID type */
-	uint8_t  type;
-	union {
-		/** UUID 16 bits value */
-		uint16_t u16;
-		/** UUID 128 bits value */
-		uint8_t  u128[16];
-	};
-};
 
 /** @brief Compare Bluetooth UUIDs.
  *

@@ -168,23 +168,17 @@ static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 /* Custom Service Variables */
-static struct bt_uuid vnd_uuid = {
-	.type = BT_UUID_128,
-	.u128 = { 0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
-		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
-};
+static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(
+	0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static struct bt_uuid vnd_enc_uuid = {
-	.type = BT_UUID_128,
-	.u128 = { 0xf1, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
-		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
-};
+static struct bt_uuid_128 vnd_enc_uuid = BT_UUID_INIT_128(
+	0xf1, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static struct bt_uuid vnd_auth_uuid = {
-	.type = BT_UUID_128,
-	.u128 = { 0xf2, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
-		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
-};
+static struct bt_uuid_128 vnd_auth_uuid = BT_UUID_INIT_128(
+	0xf2, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
 static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
@@ -266,11 +260,9 @@ static int flush_long_vnd(struct bt_conn *conn,
 	return -EINVAL;
 }
 
-static const struct bt_uuid vnd_long_uuid = {
-	.type = BT_UUID_128,
-	.u128 = { 0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
-		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
-};
+static const struct bt_uuid_128 vnd_long_uuid = BT_UUID_INIT_128(
+	0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
 static struct bt_gatt_cep vnd_long_cep = {
 	.properties = BT_GATT_CEP_RELIABLE_WRITE,
@@ -301,11 +293,9 @@ static int write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-static const struct bt_uuid vnd_signed_uuid = {
-	.type = BT_UUID_128,
-	.u128 = { 0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x13,
-		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x13 },
-};
+static const struct bt_uuid_128 vnd_signed_uuid = BT_UUID_INIT_128(
+	0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x13,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x13);
 
 static struct bt_gatt_attr gap_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
@@ -370,28 +360,28 @@ static struct bt_gatt_attr dis_attrs[] = {
 static struct bt_gatt_attr vnd_attrs[] = {
 	/* Vendor Primary Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&vnd_uuid),
-	BT_GATT_CHARACTERISTIC(&vnd_enc_uuid,
+	BT_GATT_CHARACTERISTIC(&vnd_enc_uuid.uuid,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	BT_GATT_DESCRIPTOR(&vnd_enc_uuid,
+	BT_GATT_DESCRIPTOR(&vnd_enc_uuid.uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_ENCRYPT |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT,
 			   read_vnd, write_vnd, vnd_value),
-	BT_GATT_CHARACTERISTIC(&vnd_auth_uuid,
+	BT_GATT_CHARACTERISTIC(&vnd_auth_uuid.uuid,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	BT_GATT_DESCRIPTOR(&vnd_auth_uuid,
+	BT_GATT_DESCRIPTOR(&vnd_auth_uuid.uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_AUTHEN |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_AUTHEN,
 			   read_vnd, write_vnd, vnd_value),
-	BT_GATT_CHARACTERISTIC(&vnd_long_uuid, BT_GATT_CHRC_READ |
+	BT_GATT_CHARACTERISTIC(&vnd_long_uuid.uuid, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
-	BT_GATT_LONG_DESCRIPTOR(&vnd_long_uuid,
+	BT_GATT_LONG_DESCRIPTOR(&vnd_long_uuid.uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 			   read_long_vnd, write_long_vnd, flush_long_vnd,
 			   &vnd_long_value),
 	BT_GATT_CEP(&vnd_long_cep),
-	BT_GATT_CHARACTERISTIC(&vnd_signed_uuid, BT_GATT_CHRC_READ |
+	BT_GATT_CHARACTERISTIC(&vnd_signed_uuid.uuid, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_AUTH),
-	BT_GATT_DESCRIPTOR(&vnd_signed_uuid,
+	BT_GATT_DESCRIPTOR(&vnd_signed_uuid.uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 			   read_signed, write_signed, &signed_value),
 };

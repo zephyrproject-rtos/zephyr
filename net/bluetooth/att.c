@@ -274,20 +274,20 @@ static uint8_t find_info_cb(const struct bt_gatt_attr *attr, void *user_data)
 	/* Initialize rsp at first entry */
 	if (!data->rsp) {
 		data->rsp = net_buf_add(data->buf, sizeof(*data->rsp));
-		data->rsp->format = (attr->uuid->type == BT_UUID_16) ?
+		data->rsp->format = (attr->uuid->type == BT_UUID_TYPE_16) ?
 				    BT_ATT_INFO_16 : BT_ATT_INFO_128;
 	}
 
 	switch (data->rsp->format) {
 	case BT_ATT_INFO_16:
-		if (attr->uuid->type != BT_UUID_16) {
+		if (attr->uuid->type != BT_UUID_TYPE_16) {
 			return BT_GATT_ITER_STOP;
 		}
 
 		/* Fast foward to next item position */
 		data->info16 = net_buf_add(data->buf, sizeof(*data->info16));
 		data->info16->handle = sys_cpu_to_le16(attr->handle);
-		data->info16->uuid = sys_cpu_to_le16(attr->uuid->u16);
+		data->info16->uuid = sys_cpu_to_le16(BT_UUID_16(attr->uuid)->val);
 
 		if (att->chan.tx.mtu - data->buf->len > sizeof(*data->info16)) {
 			return BT_GATT_ITER_CONTINUE;
@@ -295,14 +295,14 @@ static uint8_t find_info_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 		break;
 	case BT_ATT_INFO_128:
-		if (attr->uuid->type != BT_UUID_128) {
+		if (attr->uuid->type != BT_UUID_TYPE_128) {
 			return BT_GATT_ITER_STOP;
 		}
 
 		/* Fast foward to next item position */
 		data->info128 = net_buf_add(data->buf, sizeof(*data->info128));
 		data->info128->handle = sys_cpu_to_le16(attr->handle);
-		memcpy(data->info128->uuid, attr->uuid->u128,
+		memcpy(data->info128->uuid, BT_UUID_128(attr->uuid)->val,
 		       sizeof(data->info128->uuid));
 
 		if (att->chan.tx.mtu - data->buf->len >
@@ -511,18 +511,14 @@ static uint8_t att_find_type_req(struct bt_att *att, struct net_buf *buf)
 
 static bool uuid_create(struct bt_uuid *uuid, struct net_buf *buf)
 {
-	if (buf->len > sizeof(uuid->u128)) {
-		return false;
-	}
-
 	switch (buf->len) {
 	case 2:
-		uuid->type = BT_UUID_16;
-		uuid->u16 = net_buf_pull_le16(buf);
+		uuid->type = BT_UUID_TYPE_16;
+		BT_UUID_16(uuid)->val = net_buf_pull_le16(buf);
 		return true;
 	case 16:
-		uuid->type = BT_UUID_128;
-		memcpy(uuid->u128, buf->data, buf->len);
+		uuid->type = BT_UUID_TYPE_128;
+		memcpy(BT_UUID_128(uuid)->val, buf->data, buf->len);
 		return true;
 	}
 
@@ -704,11 +700,14 @@ static uint8_t att_read_type_req(struct bt_att *att, struct net_buf *buf)
 	struct bt_conn *conn = att->chan.conn;
 	struct bt_att_read_type_req *req;
 	uint16_t start_handle, end_handle, err_handle;
-	struct bt_uuid uuid;
+	union {
+		struct bt_uuid uuid;
+		struct bt_uuid_16 u16;
+		struct bt_uuid_128 u128;
+	} u;
 
 	/* Type can only be UUID16 or UUID128 */
-	if (buf->len != sizeof(*req) + sizeof(uuid.u16) &&
-	    buf->len != sizeof(*req) + sizeof(uuid.u128)) {
+	if (buf->len != sizeof(*req) + 2 && buf->len != sizeof(*req) + 16) {
 		return BT_ATT_ERR_INVALID_PDU;
 	}
 
@@ -718,12 +717,12 @@ static uint8_t att_read_type_req(struct bt_att *att, struct net_buf *buf)
 	end_handle = sys_le16_to_cpu(req->end_handle);
 	net_buf_pull(buf, sizeof(*req));
 
-	if (!uuid_create(&uuid, buf)) {
+	if (!uuid_create(&u.uuid, buf)) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x type %s",
-	       start_handle, end_handle, bt_uuid_str(&uuid));
+	       start_handle, end_handle, bt_uuid_str(&u.uuid));
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
 		send_err_rsp(conn, BT_ATT_OP_READ_TYPE_REQ, err_handle,
@@ -731,7 +730,7 @@ static uint8_t att_read_type_req(struct bt_att *att, struct net_buf *buf)
 		return 0;
 	}
 
-	return att_read_type_rsp(att, &uuid, start_handle, end_handle);
+	return att_read_type_rsp(att, &u.uuid, start_handle, end_handle);
 }
 
 struct read_data {
@@ -1006,11 +1005,14 @@ static uint8_t att_read_group_req(struct bt_att *att, struct net_buf *buf)
 	struct bt_conn *conn = att->chan.conn;
 	struct bt_att_read_group_req *req;
 	uint16_t start_handle, end_handle, err_handle;
-	struct bt_uuid uuid;
+	union {
+		struct bt_uuid uuid;
+		struct bt_uuid_16 u16;
+		struct bt_uuid_128 u128;
+	} u;
 
 	/* Type can only be UUID16 or UUID128 */
-	if (buf->len != sizeof(*req) + sizeof(uuid.u16) &&
-	    buf->len != sizeof(*req) + sizeof(uuid.u128)) {
+	if (buf->len != sizeof(*req) + 2 && buf->len != sizeof(*req) + 16) {
 		return BT_ATT_ERR_INVALID_PDU;
 	}
 
@@ -1020,12 +1022,12 @@ static uint8_t att_read_group_req(struct bt_att *att, struct net_buf *buf)
 	end_handle = sys_le16_to_cpu(req->end_handle);
 	net_buf_pull(buf, sizeof(*req));
 
-	if (!uuid_create(&uuid, buf)) {
+	if (!uuid_create(&u.uuid, buf)) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x type %s",
-	       start_handle, end_handle, bt_uuid_str(&uuid));
+	       start_handle, end_handle, bt_uuid_str(&u.uuid));
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
 		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, err_handle,
@@ -1040,14 +1042,14 @@ static uint8_t att_read_group_req(struct bt_att *att, struct net_buf *buf)
 	 * Request. The «Characteristic» grouping type shall not be used in
 	 * the ATT Read By Group Type Request.
 	 */
-	if (bt_uuid_cmp(&uuid, BT_UUID_GATT_PRIMARY) &&
-	    bt_uuid_cmp(&uuid, BT_UUID_GATT_SECONDARY)) {
+	if (bt_uuid_cmp(&u.uuid, BT_UUID_GATT_PRIMARY) &&
+	    bt_uuid_cmp(&u.uuid, BT_UUID_GATT_SECONDARY)) {
 		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, start_handle,
 				     BT_ATT_ERR_UNSUPPORTED_GROUP_TYPE);
 		return 0;
 	}
 
-	return att_read_group_rsp(att, &uuid, start_handle, end_handle);
+	return att_read_group_rsp(att, &u.uuid, start_handle, end_handle);
 }
 
 struct write_data {

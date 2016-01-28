@@ -122,18 +122,17 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern)
 static uint8_t btp2bt_uuid(const uint8_t *uuid, uint8_t len,
 			   struct bt_uuid *bt_uuid)
 {
-	switch (len) {
-	case 0x02: { /* UUID 16 */
-		uint16_t u16;
+	uint16_t le16;
 
-		bt_uuid->type = BT_UUID_16;
-		memcpy(&u16, uuid, sizeof(u16));
-		bt_uuid->u16 = sys_le16_to_cpu(u16);
+	switch (len) {
+	case 0x02: /* UUID 16 */
+		bt_uuid->type = BT_UUID_TYPE_16;
+		memcpy(&le16, uuid, sizeof(le16));
+		BT_UUID_16(bt_uuid)->val = sys_le16_to_cpu(le16);
 		break;
-	}
 	case 0x10: /* UUID 128*/
-		bt_uuid->type = BT_UUID_128;
-		memcpy(&bt_uuid->u128, uuid, sizeof(bt_uuid->u128));
+		bt_uuid->type = BT_UUID_TYPE_128;
+		memcpy(BT_UUID_128(bt_uuid)->val, uuid, 16);
 		break;
 	default:
 		return BTP_STATUS_FAILED;
@@ -839,8 +838,7 @@ static uint8_t disc_prim_uuid_cb(struct bt_conn *conn,
 	struct gatt_service *service;
 	uint8_t uuid_length;
 
-	uuid_length = data->uuid->type == BT_UUID_16 ? sizeof(data->uuid->u16) :
-						       sizeof(data->uuid->u128);
+	uuid_length = data->uuid->type == BT_UUID_TYPE_16 ? 2 : 16;
 
 	service = gatt_buf_reserve(sizeof(*service) + uuid_length);
 	if (!service) {
@@ -858,12 +856,13 @@ static uint8_t disc_prim_uuid_cb(struct bt_conn *conn,
 	service->end_handle = sys_cpu_to_le16(data->end_handle);
 	service->uuid_length = uuid_length;
 
-	if (data->uuid->type == BT_UUID_16) {
-		uint16_t u16 = sys_cpu_to_le16(data->uuid->u16);
+	if (data->uuid->type == BT_UUID_TYPE_16) {
+		uint16_t u16 = sys_cpu_to_le16(BT_UUID_16(data->uuid)->val);
 
 		memcpy(service->uuid, &u16, uuid_length);
 	} else {
-		memcpy(service->uuid, &data->uuid->u128, uuid_length);
+		memcpy(service->uuid, BT_UUID_128(data->uuid)->val,
+		       uuid_length);
 	}
 
 	rp->services_count++;
@@ -936,8 +935,7 @@ static uint8_t find_included_cb(struct bt_conn *conn,
 	struct gatt_included *included;
 	uint8_t uuid_length;
 
-	uuid_length = data->uuid->type == BT_UUID_16 ? sizeof(data->uuid->u16) :
-						       sizeof(data->uuid->u128);
+	uuid_length = data->uuid->type == BT_UUID_TYPE_16 ? 2 : 16;
 
 	included = gatt_buf_reserve(sizeof(*included) + uuid_length);
 	if (!included) {
@@ -956,8 +954,8 @@ static uint8_t find_included_cb(struct bt_conn *conn,
 	included->service.end_handle = sys_cpu_to_le16(data->end_handle);
 	included->service.uuid_length = uuid_length;
 
-	if (data->uuid->type == BT_UUID_16) {
-		uint16_t u16 = sys_cpu_to_le16(data->uuid->u16);
+	if (data->uuid->type == BT_UUID_TYPE_16) {
+		uint16_t u16 = sys_cpu_to_le16(BT_UUID_16(data->uuid)->val);
 
 		memcpy(included->service.uuid, &u16, uuid_length);
 	} else {
@@ -1030,8 +1028,7 @@ static uint8_t disc_chrc_cb(struct bt_conn *conn,
 	struct gatt_characteristic *chrc;
 	uint8_t uuid_length;
 
-	uuid_length = data->uuid->type == BT_UUID_16 ? sizeof(data->uuid->u16) :
-						       sizeof(data->uuid->u128);
+	uuid_length = data->uuid->type == BT_UUID_TYPE_16 ? 2 : 16;
 
 	chrc = gatt_buf_reserve(sizeof(*chrc) + uuid_length);
 	if (!chrc) {
@@ -1050,12 +1047,12 @@ static uint8_t disc_chrc_cb(struct bt_conn *conn,
 	chrc->value_handle = sys_cpu_to_le16(attr->handle + 1);
 	chrc->uuid_length = uuid_length;
 
-	if (data->uuid->type == BT_UUID_16) {
-		uint16_t u16 = sys_cpu_to_le16(data->uuid->u16);
+	if (data->uuid->type == BT_UUID_TYPE_16) {
+		uint16_t u16 = sys_cpu_to_le16(BT_UUID_16(data->uuid)->val);
 
 		memcpy(chrc->uuid, &u16, uuid_length);
 	} else {
-		memcpy(chrc->uuid, &data->uuid->u128, uuid_length);
+		memcpy(chrc->uuid, BT_UUID_128(data->uuid)->val, uuid_length);
 	}
 
 	rp->characteristics_count++;
@@ -1178,8 +1175,7 @@ static uint8_t disc_all_desc_cb(struct bt_conn *conn,
 	struct gatt_descriptor *descriptor;
 	uint8_t uuid_length;
 
-	uuid_length = attr->uuid->type == BT_UUID_16 ? sizeof(attr->uuid->u16) :
-						       sizeof(attr->uuid->u128);
+	uuid_length = attr->uuid->type == BT_UUID_TYPE_16 ? 2 : 16;
 
 	descriptor = gatt_buf_reserve(sizeof(*descriptor) + uuid_length);
 	if (!descriptor) {
@@ -1196,12 +1192,13 @@ static uint8_t disc_all_desc_cb(struct bt_conn *conn,
 	descriptor->descriptor_handle = sys_cpu_to_le16(attr->handle);
 	descriptor->uuid_length = uuid_length;
 
-	if (attr->uuid->type == BT_UUID_16) {
-		uint16_t u16 = sys_cpu_to_le16(attr->uuid->u16);
+	if (attr->uuid->type == BT_UUID_TYPE_16) {
+		uint16_t u16 = sys_cpu_to_le16(BT_UUID_16(attr->uuid)->val);
 
 		memcpy(descriptor->uuid, &u16, uuid_length);
 	} else {
-		memcpy(descriptor->uuid, &attr->uuid->u128, uuid_length);
+		memcpy(descriptor->uuid, BT_UUID_128(attr->uuid)->val,
+		       uuid_length);
 	}
 
 	rp->descriptors_count++;
