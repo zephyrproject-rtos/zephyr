@@ -1420,7 +1420,7 @@ static void cmd_l2cap_send(int argc, char *argv[])
 		memcpy(net_buf_add(buf, len), buf_data, len);
 		ret = bt_l2cap_chan_send(&l2cap_chan, buf);
 		if (ret < 0) {
-			printk("Unable to send: %u\n", -ret);
+			printk("Unable to send: %d\n", -ret);
 			net_buf_unref(buf);
 			break;
 		}
