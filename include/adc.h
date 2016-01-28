@@ -123,8 +123,10 @@ static inline void adc_disable(struct device *dev)
  * @brief Set a read request.
  *
  * This routine sends a read/sampling request to the ADC hardware block.
- * The read request is described by a sequence table. The read data is not
- * available for consumption until it is indicated by a callback.
+ * The read request is described by a sequence table.
+ * The routine returns once the ADC has completed the read sequence.
+ * The sample data can be retrieved from the memory buffers in
+ * the sequence table structure.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param seq_table Pointer to the structure that represents the sequence table
