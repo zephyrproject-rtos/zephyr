@@ -704,7 +704,7 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 	BT_DBG("dcid 0x%04x scid 0x%04x", dcid, scid);
 
-	chan = l2cap_remove_tx_cid(conn, scid);
+	chan = l2cap_remove_tx_cid(conn, dcid);
 	if (!chan) {
 		return;
 	}
