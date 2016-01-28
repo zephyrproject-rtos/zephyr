@@ -32,6 +32,4 @@
 #include <init.h>
 #include <drivers/system_timer.h>
 
-DEVICE_INIT(sys_clock, "sys_clock", _sys_clock_driver_init,
-			NULL, NULL,
-			NANOKERNEL, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(_sys_clock_driver_init, NANOKERNEL, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

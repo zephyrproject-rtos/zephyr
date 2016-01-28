@@ -86,9 +86,7 @@ static int arc_init(struct device *arg)
 	return DEV_OK;
 }
 
-DEVICE_INIT(quark_se_ss_0, "", arc_init,
-				NULL, NULL,
-				SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arc_init, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /*CONFIG_ARC_INIT*/
 
@@ -110,9 +108,7 @@ static int platform_uart_init(struct device *arg)
 	return DEV_OK;
 }
 
-DEVICE_INIT(platform_uart_init, "", platform_uart_init,
-				NULL, NULL,
-				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(platform_uart_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #endif /* CONFIG_UART_NS16550 */

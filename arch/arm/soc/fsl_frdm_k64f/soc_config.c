@@ -71,9 +71,7 @@ static int uart_k20_console_init(struct device *dev)
 	return DEV_OK;
 }
 
-DEVICE_INIT(_uart_k20_console, "", uart_k20_console_init,
-				NULL, NULL,
-				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(uart_k20_console_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif
 #endif /* CONFIG_UART_CONSOLE */

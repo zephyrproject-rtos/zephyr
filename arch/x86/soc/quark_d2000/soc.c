@@ -62,12 +62,8 @@ static int quark_d2000_init(struct device *arg)
 
 	return 0;
 }
-DEVICE_INIT(quark_d2000_0, "", quark_d2000_init,
-				NULL, NULL,
-				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(quark_d2000_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #ifdef CONFIG_MVIC
-DEVICE_INIT(mvic_0, "", _mvic_init,
-				NULL, NULL,
-				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(_mvic_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif /* CONFIG_IOAPIC */

@@ -431,8 +431,7 @@ static int uart_console_init(struct device *arg)
 }
 
 /* UART consloe initializes after the UART device itself */
-DEVICE_INIT(uart_console, "", uart_console_init,
-			NULL, NULL,
+SYS_INIT(uart_console_init,
 #if defined(CONFIG_EARLY_CONSOLE)
 			PRIMARY,
 #else

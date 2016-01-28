@@ -320,6 +320,4 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	return 0;
 }
 
-DEVICE_INIT(fsl_frdm_0, "", fsl_frdm_k64f_init,
-				NULL, NULL,
-				PRIMARY, 0);
+SYS_INIT(fsl_frdm_k64f_init, PRIMARY, 0);

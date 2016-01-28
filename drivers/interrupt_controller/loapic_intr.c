@@ -444,9 +444,7 @@ int _loapic_isr_vector_get(void)
 	return 0;
 }
 
-DEVICE_INIT(loapic_0, "", _loapic_init,
-				NULL, NULL,
-				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(_loapic_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR
 extern void _loapic_spurious_handler(void);

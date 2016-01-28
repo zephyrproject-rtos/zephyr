@@ -107,8 +107,6 @@ static int init_cache(struct device *unused)
 	return 0;
 }
 
-DEVICE_INIT(cache, "", init_cache,
-				NULL, NULL,
-				PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(init_cache, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_CLFLUSH_DETECT || CONFIG_CACHE_LINE_SIZE_DETECT */
