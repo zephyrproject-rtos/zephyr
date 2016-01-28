@@ -1402,7 +1402,7 @@ static void cmd_l2cap_disconnect(int argc, char *argv[])
 static void cmd_l2cap_send(int argc, char *argv[])
 {
 	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
-	int err, len, count = 1;
+	int ret, len, count = 1;
 	struct net_buf *buf;
 
 	if (argc > 1) {
@@ -1419,9 +1419,9 @@ static void cmd_l2cap_send(int argc, char *argv[])
 		}
 
 		memcpy(net_buf_add(buf, len), buf_data, len);
-		err = bt_l2cap_chan_send(&l2cap_chan, buf);
-		if (err) {
-			printk("Unable to send: %u\n", -err);
+		ret = bt_l2cap_chan_send(&l2cap_chan, buf);
+		if (ret < 0) {
+			printk("Unable to send: %u\n", -ret);
 			net_buf_unref(buf);
 			break;
 		}
