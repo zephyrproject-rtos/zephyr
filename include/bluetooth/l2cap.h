@@ -149,7 +149,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  credits to send data therefore it shall be used from a fiber to be able to
  *  receive credits when necessary.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
