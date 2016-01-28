@@ -81,7 +81,7 @@ config	NETWORKING_IPV6_NO_ND
 	prompt "Disable IPv6 neighbor discovery"
 	depends on NETWORKING
 	depends on NETWORKING_WITH_IPV6
-	default y
+	default n
 	help
 	  Normally ND should be enabled but in order to simplify
 	  the network setup, it is currently turned off.
