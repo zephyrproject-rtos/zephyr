@@ -232,20 +232,20 @@ int ti_adc108s102_init(struct device *dev)
 	return DEV_OK;
 }
 
-#ifdef CONFIG_ADC_TI_ADC108S102_0
+#ifdef CONFIG_ADC_TI_ADC108S102
 
-struct ti_adc108s102_data adc108s102_0_data;
+struct ti_adc108s102_data adc108s102_data;
 
-struct ti_adc108s102_config adc108s102_0_config = {
-	.spi_port = CONFIG_ADC_TI_ADC108S102_0_SPI_PORT_NAME,
-	.spi_config_flags = CONFIG_ADC_TI_ADC108S102_0_SPI_CONFIGURATION,
-	.spi_freq = CONFIG_ADC_TI_ADC108S102_0_SPI_MAX_FREQ,
-	.spi_slave = CONFIG_ADC_TI_ADC108S102_0_SPI_SLAVE,
+struct ti_adc108s102_config adc108s102_config = {
+	.spi_port = CONFIG_ADC_TI_ADC108S102_SPI_PORT_NAME,
+	.spi_config_flags = CONFIG_ADC_TI_ADC108S102_SPI_CONFIGURATION,
+	.spi_freq = CONFIG_ADC_TI_ADC108S102_SPI_MAX_FREQ,
+	.spi_slave = CONFIG_ADC_TI_ADC108S102_SPI_SLAVE,
 };
 
-DEVICE_INIT(adc108s102_0, CONFIG_ADC_TI_ADC108S102_0_DRV_NAME,
+DEVICE_INIT(adc108s102, CONFIG_ADC_TI_ADC108S102_DRV_NAME,
 			ti_adc108s102_init,
-			&adc108s102_0_data, &adc108s102_0_config,
+			&adc108s102_data, &adc108s102_config,
 			SECONDARY, CONFIG_ADC_TI_ADC108S102_INIT_PRIORITY);
 
-#endif /* CONFIG_ADC_TI_ADC108S102_0 */
+#endif /* CONFIG_ADC_TI_ADC108S102 */
