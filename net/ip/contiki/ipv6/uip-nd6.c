@@ -310,7 +310,7 @@ create_na:
   UIP_ICMP_BUF(buf)->icmpchksum = 0;
   UIP_ICMP_BUF(buf)->icmpchksum = ~uip_icmp6chksum(buf);
 
-  uip_len(buf) =
+  uip_len(buf) = buf->len =
     UIP_IPH_LEN + UIP_ICMPH_LEN + UIP_ND6_NA_LEN + UIP_ND6_OPT_LLAO_LEN;
 
   UIP_STAT(++uip_stat.nd6.sent);
