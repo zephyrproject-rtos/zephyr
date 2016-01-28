@@ -1228,6 +1228,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
 
 	/* Channel may have been disconnected while waiting for credits */
 	if (!chan->conn) {
+		net_buf_unref(buf);
 		return -ECONNRESET;
 	}
 
