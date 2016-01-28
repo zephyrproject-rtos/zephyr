@@ -63,6 +63,10 @@ static int pci_legacy_bridge_irq_config(struct device *unused)
 		pci_legacy_bridge_configure(&info, 1, PCI_INTB, 17);
 		pci_legacy_bridge_configure(&info, 1, PCI_INTC, 18);
 		pci_legacy_bridge_configure(&info, 1, PCI_INTD, 19);
+		pci_legacy_bridge_configure(&info, 0, PCI_INTA, 17);
+		pci_legacy_bridge_configure(&info, 0, PCI_INTB, 18);
+		pci_legacy_bridge_configure(&info, 0, PCI_INTC, 19);
+		pci_legacy_bridge_configure(&info, 0, PCI_INTD, 16);
 	}
 	return 0;
 }

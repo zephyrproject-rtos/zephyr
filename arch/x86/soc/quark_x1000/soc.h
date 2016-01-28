@@ -95,30 +95,23 @@ extern "C" {
  * INTC (pin 3) -> IRQ 18
  * INTD (pin 4) -> IRQ 19
  *
+ * In case a mini-PCIe card is used, the IRQs are swizzled:
+ * INTA (pin 1) -> IRQ 17
+ * INTB (pin 2) -> IRQ 18
+ * INTC (pin 3) -> IRQ 19
+ * INTD (pin 4) -> IRQ 16
+ *
  * @return IRQ number, -1 if the result is incorrect
  *
  */
 
-static inline int pci_pin2irq(int pin)
+static inline int pci_pin2irq(int bus, int dev, int pin)
 {
+	if (bus < 0 || bus > 1)
+		return -1;
 	if ((pin < PCI_INTA) || (pin > PCI_INTD))
 		return -1;
-	return NUM_STD_IRQS + pin - 1;
-}
-
-/**
- *
- * @brief Convert IRQ to PCI interrupt pin
- *
- * @return pin number, -1 if the result is incorrect
- *
- */
-
-static inline int pci_irq2pin(int irq)
-{
-	if ((irq < NUM_STD_IRQS) || (irq > NUM_STD_IRQS + PCI_INTD - 1))
-		return -1;
-	return irq - NUM_STD_IRQS + 1;
+	return NUM_STD_IRQS + ((pin - 1 + bus) & 3);
 }
 
 #ifdef __cplusplus

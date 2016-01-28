@@ -314,13 +314,16 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 				   lookup.baridx != lookup.info.bar) {
 				continue;
 			} else {
+				dev_info->bus = lookup.bus;
+				dev_info->dev = lookup.dev;
 				dev_info->vendor_id =
 					pci_dev_header.field.vendor_id;
 				dev_info->device_id =
 					pci_dev_header.field.device_id;
 				dev_info->class_type =
 					pci_dev_header.field.class;
-				dev_info->irq = pci_pin2irq(
+				dev_info->irq = pci_pin2irq(dev_info->bus,
+					dev_info->dev,
 					pci_dev_header.field.interrupt_pin);
 				dev_info->function = lookup.func;
 				dev_info->bar = lookup.baridx;
@@ -395,12 +398,8 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 			pci_ctrl_addr.field.bus = lookup.bus;
 			pci_ctrl_addr.field.device = lookup.dev;
 
-			if (pci_dev_scan(pci_ctrl_addr, dev_info)) {
-				dev_info->bus = lookup.bus;
-				dev_info->dev = lookup.dev;
-
+			if (pci_dev_scan(pci_ctrl_addr, dev_info))
 				return 1;
-			}
 
 			if (lookup.info.function != PCI_FUNCTION_ANY) {
 				lookup.func = lookup.info.function;
