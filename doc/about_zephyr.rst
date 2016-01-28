@@ -10,7 +10,7 @@ wireless gateways.
 
 It is designed to be supported by multiple architectures, including
 ARM Cortex-M, Intel x86, and ARC. The full list of supported platforms
-can be found :ref:`here <platform>`.
+can be found :ref:`here <board>`.
 
 Licensing
 *********
