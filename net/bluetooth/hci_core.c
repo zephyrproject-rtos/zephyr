@@ -899,6 +899,15 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 		return;
 	}
 
+	/*
+	 * Update keys with last pairing info for proper sec level update.
+	 * This is done only for LE transport, for BR/EDR keys are updated on
+	 * HCI 'Link Key Notification Event'
+	 */
+	if (conn->type == BT_CONN_TYPE_LE) {
+		bt_smp_update_keys(conn);
+	}
+
 	update_sec_level(conn);
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
