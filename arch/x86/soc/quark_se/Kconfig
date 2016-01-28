@@ -191,6 +191,7 @@ endif
 if SPI
 config SPI_DW
 	def_bool y
+if SPI_DW
 config SPI_DW_CLOCK_GATE
 	def_bool n
 config SPI_DW_CLOCK_GATE_DRV_NAME
@@ -215,6 +216,21 @@ config SPI_DW_PORT_1_REGS
 	default 0xb0001400
 config SPI_DW_PORT_1_IRQ
 	default 3
+endif # SPI_DW
+
+config SPI_QMSI
+       def_bool n
+
+if SPI_QMSI
+config SPI_QMSI_PORT_0
+	def_bool y
+config SPI_QMSI_PORT_0_IRQ
+	default 2
+config SPI_QMSI_PORT_1
+	def_bool y
+config SPI_QMSI_PORT_1_IRQ
+	default 3
+endif # SPI_QMSI
 endif
 
 if WATCHDOG

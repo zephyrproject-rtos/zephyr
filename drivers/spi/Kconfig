@@ -239,6 +239,7 @@ config SPI_DW_CS_GPIO
 
 config SPI_DW_INIT_PRIORITY
 	int "Init priority"
+	depends on SPI_DW
 	default 60
 	help
 	  Device driver initialization priority.
@@ -374,6 +375,67 @@ config  SPI_DW_PORT_1_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_DW_PORT_1
+	default 2
+
+config	SPI_QMSI
+	bool "QMSI driver for SPI controller"
+	depends on SPI && QMSI_DRIVERS
+	default n
+	help
+	  SPI driver implementation using QMSI library. QMSI is the
+	  Quark Microcontroller Software Interface, providing a common
+	  interface to the Quark family of microcontrollers.
+
+config	SPI_QMSI_PORT_0
+	bool
+	prompt "QMSI SPI port 0"
+	depends on SPI_QMSI
+	default n
+	help
+	  Enable QMSI's SPI controller port 0.
+
+config  SPI_QMSI_PORT_0_DRV_NAME
+	string
+	prompt "QMSI SPI port 0 device name"
+	depends on SPI_QMSI_PORT_0
+	default "spi_0"
+
+config  SPI_QMSI_PORT_0_IRQ
+	int
+	prompt "Port 0 interrupt"
+	depends on SPI_QMSI_PORT_0
+	default 0
+
+config  SPI_QMSI_PORT_0_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_QMSI_PORT_0
+	default 2
+
+config  SPI_QMSI_PORT_1
+	bool
+	prompt "QMSI SPI port 1"
+	depends on SPI_QMSI
+	default n
+	help
+	  Enable QMSI's SPI controller port 1.
+
+config  SPI_QMSI_PORT_1_DRV_NAME
+	string
+	prompt "QMSI SPI port 1 device name"
+	depends on SPI_QMSI_PORT_1
+	default "spi_1"
+
+config  SPI_QMSI_PORT_1_IRQ
+	int
+	prompt "Port 1 interrupt"
+	depends on SPI_QMSI_PORT_1
+	default 0
+
+config  SPI_QMSI_PORT_1_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_QMSI_PORT_1
 	default 2
 
 endif
