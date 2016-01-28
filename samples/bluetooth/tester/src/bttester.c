@@ -194,7 +194,7 @@ void tester_init(void)
 	task_fiber_start(stack, STACKSIZE, cmd_handler, 0, 0, 7, 0);
 
 	uart_pipe_register(nano_fifo_get(&avail_queue, TICKS_NONE),
-			BTP_MTU, recv_cb);
+			   BTP_MTU, recv_cb);
 
 	printk("BT tester initialized\n");
 }
