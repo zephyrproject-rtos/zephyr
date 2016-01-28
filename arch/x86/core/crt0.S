@@ -308,17 +308,19 @@ memInitDone:
 
 #if defined (CONFIG_ADVANCED_IDLE)
 	/*
-	 * Invoke _AdvIdleStart(_Cstart, _gdt, _GlobalTss) by jumping to it.
+	 * Invoke _AdvIdleStart(_Cstart, _gdt) by jumping to it.
 	 * If it's a cold boot, this routine jumps to _Cstart and the normal
-	 * kernel boot sequence continues; otherwise, it uses the TSS info
-	 * saved in the GDT to resumes kernel processing at the point it was
-	 * when the system went into deep sleep; that is, _AdvIdleFunc()
-	 * completes and returns a non-zero value.
+	 * kernel boot sequence continues; otherwise, it resumes execution
+	 * at the point where system went into deep sleep (in _AdvIdleFunc)
 	 */
 
-	pushl	$_GlobalTss
+#if CONFIG_X86_IAMCU
+	movl	$_Cstart, %eax
+	movl	$_gdt, %edx
+#else
 	pushl	$_gdt
 	pushl	$_Cstart
+#endif
 	call	_AdvIdleStart
 #else
 	/* Jump to C portion of kernel initialization and never return */

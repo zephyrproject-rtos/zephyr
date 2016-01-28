@@ -56,11 +56,10 @@ extern int _AdvIdleCheckSleep(void);
  *
  * @param _Cstart the address of the _Cstart function
  * @param _gdt the address of the global descriptor table in RAM
- * @param _GlobalTss the address of the TSS descriptor
  *
  * @return does not return to caller
  */
-extern void _AdvIdleStart(void (*_Cstart)(void), void *_gdt, void *_GlobalTss);
+extern void _AdvIdleStart(void (*_Cstart)(void), void *_gdt);
 
 /**
  * @brief Perform advanced sleep
