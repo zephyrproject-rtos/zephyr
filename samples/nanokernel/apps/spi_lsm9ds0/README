@@ -1,0 +1,21 @@
+SPI Test Application
+
+This application just retrieves the 'WHO AM I' register from the
+Accelerometer from a LSM9DS0 connected via API.
+
+The device datasheet can be found here:
+https://www.adafruit.com/datasheets/LSM9DS0.pdf
+
+Wiring information:
+
+| LSM9DS0 pin | Quark SE Devboard  |
+|             |	pin		   |
+|-------------+--------------------|
+| VIN         | VDD_HDR_3P3        |
+| CS_G        | GPIO24_SPI0_M_nCS0 |
+| CS_XM       | VDD_HDR_3P3        |
+| SCL         | GPIO24_SPI0_M_SCLK |
+| SDO_G       | GPIO24_SPI0_M_MISO |
+| SDO_XM      | Ground             |
+| SDA         | GPIO24_SPI0_M_MISO |
+| GND         | Ground             |
