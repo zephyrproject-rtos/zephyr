@@ -753,8 +753,7 @@ struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
 			continue;
 		}
 
-		if (bt_addr_le_cmp(peer, BT_ADDR_LE_ANY) &&
-		    bt_addr_le_cmp(peer, &conns[i].le.dst)) {
+		if (peer && bt_addr_le_cmp(peer, &conns[i].le.dst)) {
 			continue;
 		}
 

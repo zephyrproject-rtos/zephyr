@@ -1303,7 +1303,7 @@ int bt_le_scan_update(bool fast_scan)
 	}
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
-	conn = bt_conn_lookup_state_le(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
 	if (!conn) {
 		return 0;
 	}
