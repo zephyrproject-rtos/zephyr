@@ -1245,11 +1245,13 @@ static int l2cap_chan_le_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_chan *chan,
 				  struct net_buf *buf)
 {
-	int ret, len;
+	int ret, sent, total_len;
 
 	if (buf->len > chan->tx.mtu) {
 		return -EMSGSIZE;
 	}
+
+	total_len = buf->len;
 
 	/* Add SDU length for the first segment */
 	ret = l2cap_chan_le_send(chan, buf, buf->len);
@@ -1258,18 +1260,18 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_chan *chan,
 	}
 
 	/* Send remaining segments */
-	for (len = ret; buf->len > 0 && buf->len != ret; len += ret) {
+	for (sent = ret; sent < total_len; sent += ret) {
 		ret = l2cap_chan_le_send(chan, buf, 0);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	BT_DBG("chan %p cid 0x%04x len %u\n", chan, chan->tx.cid, len);
+	BT_DBG("chan %p cid 0x%04x sent %u\n", chan, chan->tx.cid, sent);
 
 	net_buf_unref(buf);
 
-	return len;
+	return sent;
 }
 
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
