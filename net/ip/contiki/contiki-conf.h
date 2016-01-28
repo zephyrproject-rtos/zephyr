@@ -19,6 +19,7 @@ typedef unsigned int uip_stats_t;
 /* It is either IPv6 or IPv4 but not both at the same time. */
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 #define NETSTACK_CONF_WITH_IPV6 1
+#define UIP_CONF_ICMP6 1
 #elif CONFIG_NETWORKING_WITH_IPV4
 #define NETSTACK_CONF_WITH_IPV6 0
 #else
