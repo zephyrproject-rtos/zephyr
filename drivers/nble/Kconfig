@@ -16,7 +16,24 @@
 # limitations under the License.
 #
 
-if !BLUETOOTH
+config NBLE
+	bool "Support for custom Nordic Semiconductor BLE protocol"
+	default n
+	select BLUETOOTH_PERIPHERAL
+	select BLUETOOTH_CENTRAL
+	select BLUETOOTH_GATT_CLIENT
+	select BLUETOOTH_SMP
+	select BLUETOOTH_DEBUG
+	select UART_INTERRUPT_DRIVEN
+	select NANO_TIMEOUTS
+	select NET_BUF
+	help
+	  Enables support for using Nordic Semiconductor nRF51 Bluetooth
+	  LE chips with a custom firmware. The API for this is a subset of
+	  the normal Bluetooth API (include/bluetooth/*.h). This driver can
+	  only be enabled if CONFIG_BLUETOOTH has not been enabled.
+
+if !BLUETOOTH && NBLE
 config BLUETOOTH_PERIPHERAL
 	bool
 	default n
@@ -64,20 +81,4 @@ config  NBLE_UART_IRQ_PRI
 	  This option specifies the IRQ priority of UART device to be used
 	  for Nordic BLE.
 
-config NBLE
-	bool "Support for custom Nordic Semiconductor BLE protocol"
-	default n
-	select BLUETOOTH_PERIPHERAL
-	select BLUETOOTH_CENTRAL
-	select BLUETOOTH_GATT_CLIENT
-	select BLUETOOTH_SMP
-	select BLUETOOTH_DEBUG
-	select UART_INTERRUPT_DRIVEN
-	select NANO_TIMEOUTS
-	select NET_BUF
-	help
-	  Enables support for using Nordic Semiconductor nRF51 Bluetooth
-	  LE chips with a custom firmware. The API for this is a subset of
-	  the normal Bluetooth API (include/bluetooth/*.h). This driver can
-	  only be enabled if CONFIG_BLUETOOTH has not been enabled.
 endif
