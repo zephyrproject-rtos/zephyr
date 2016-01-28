@@ -23,7 +23,6 @@ config NBLE
 	select BLUETOOTH_CENTRAL
 	select BLUETOOTH_GATT_CLIENT
 	select BLUETOOTH_SMP
-	select BLUETOOTH_DEBUG
 	select UART_INTERRUPT_DRIVEN
 	select NANO_TIMEOUTS
 	select NET_BUF
@@ -55,7 +54,7 @@ config	BLUETOOTH_MAX_PAIRED
 	default 7
 
 config BLUETOOTH_DEBUG
-	bool
+	bool "Enable Debug"
 	default n
 	select STDOUT_CONSOLE
 
