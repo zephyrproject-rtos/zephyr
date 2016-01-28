@@ -36,6 +36,7 @@
 struct gpio_sch_config {
 	uint32_t regs;
 	uint8_t bits;
+	uint8_t stride[3];
 };
 
 #define GPIO_SCH_POLLING_STACK_SIZE 1024
@@ -45,7 +46,6 @@ struct gpio_sch_data {
 	char __stack polling_stack[GPIO_SCH_POLLING_STACK_SIZE];
 	gpio_callback_t callback;
 	struct nano_timer poll_timer;
-	uint8_t poll;
 
 	struct {
 		uint32_t gtpe;
@@ -54,6 +54,8 @@ struct gpio_sch_data {
 
 	uint32_t cb_enabled;
 	uint8_t port_cb;
+	uint8_t poll;
+	uint8_t stride[2];
 };
 
 #endif /* __GPIO_SCH_H__ */

@@ -45,6 +45,7 @@ struct spi_intel_config {
 struct spi_intel_data {
 	device_sync_call_t sync;
 	uint8_t error;
+	uint8_t padding[3];
 #ifdef CONFIG_SPI_INTEL_CS_GPIO
 	struct device *cs_gpio_port;
 #endif /* CONFIG_SPI_INTEL_CS_GPIO */

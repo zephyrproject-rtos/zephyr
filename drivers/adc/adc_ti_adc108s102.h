@@ -55,12 +55,14 @@ struct ti_adc108s102_chan {
 
 struct ti_adc108s102_data {
 	uint16_t cmd_buffer[ADC108S102_CMD_BUFFER_SIZE];
-	uint8_t cmd_buf_len;
 	uint16_t sampling_buffer[ADC108S102_SAMPLING_BUFFER_SIZE];
-	uint8_t sampling_buf_len;
 	struct device *spi;
 	struct ti_adc108s102_chan chans[ADC108S102_CHANNELS];
 	struct adc_seq_table *seq_table;
+
+	uint8_t cmd_buf_len;
+	uint8_t sampling_buf_len;
+	uint8_t stride[2];
 };
 
 #ifdef __cplusplus

@@ -113,18 +113,18 @@ struct i2c_dw_dev_config {
 	device_sync_call_t	sync;
 	union dev_config	app_config;
 
-	volatile uint8_t	state;  /* last direction of transfer */
-
-	uint8_t			request_bytes;
-	uint8_t			xfr_flags;
 
 	uint8_t			*xfr_buf;
 	uint32_t		xfr_len;
 	uint32_t		rx_pending;
 
-	bool			support_hs_mode;
 	uint16_t		hcnt;
 	uint16_t		lcnt;
+
+	volatile uint8_t	state;  /* last direction of transfer */
+	uint8_t			request_bytes;
+	uint8_t			xfr_flags;
+	bool			support_hs_mode;
 };
 
 #ifdef __cplusplus

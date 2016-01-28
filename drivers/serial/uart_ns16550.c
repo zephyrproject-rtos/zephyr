@@ -210,6 +210,7 @@ struct uart_ns16550_dev_data_t {
 
 	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
 	uint8_t dlf;		/**< DLF value */
+	uint8_t stride;		/**< structure stride padding */
 };
 
 static struct uart_driver_api uart_ns16550_driver_api;

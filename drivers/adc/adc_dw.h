@@ -175,6 +175,7 @@ struct adc_config {
 	uint8_t  serial_dly;
 	/**Sample width*/
 	uint8_t  sample_width;
+	uint8_t  padding[3];
 	/**Clock ratio*/
 	uint32_t clock_ratio;
 	/**Config handler*/
@@ -188,14 +189,14 @@ struct adc_config {
  */
 struct adc_info {
 	device_sync_call_t sync;
-	/**State of execution of the driver*/
-	uint8_t  state;
 #ifdef CONFIG_ADC_DW_REPETITIVE
 	/**Current reception buffer index*/
 	uint8_t  index[BUFS_NUM];
 #endif
 	/**Sequence entries' array*/
 	struct adc_seq_entry *entries;
+	/**State of execution of the driver*/
+	uint8_t  state;
 	/**Sequence size*/
 	uint8_t seq_size;
 #ifdef CONFIG_ADC_DW_CALIBRATION

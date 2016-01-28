@@ -43,6 +43,7 @@ struct pwm_pca9685_config {
 
 	/** The slave address of the chip */
 	uint16_t i2c_slave_addr;
+	uint8_t stride[2];
 };
 
 /** Runtime driver data */

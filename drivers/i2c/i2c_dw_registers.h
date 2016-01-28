@@ -257,7 +257,7 @@ struct i2c_dw_registers {
 	uint32_t ic_fs_spklen;		/* offset 0xA0 */
 	uint32_t ic_hs_spklen;		/* offset 0xA4 */
 	uint16_t ic_clr_restart_det;	/* offset 0xA8 */
-	uint8_t	 filler[72];
+	uint8_t	 filler[74];
 	union ic_comp_param_1_register ic_comp_param_1;	/* offset 0xF4 */
 	uint32_t ic_comp_version;	/* offset 0xF8 */
 	uint32_t ic_comp_type;		/* offset 0xFC */

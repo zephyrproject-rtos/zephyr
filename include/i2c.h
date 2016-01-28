@@ -64,6 +64,7 @@ struct i2c_msg {
 
 	/* Flags for this message */
 	uint8_t		flags;
+	uint8_t		stride[3];
 };
 
 union dev_config {
