@@ -44,3 +44,9 @@ config AIO_DW_COMPARATOR_BASE_ADDR
 	help
 	Base address for memory mapped registers.
 
+config AIO_DW_COMPARATOR_IRQ_PRI
+	int "IRQ Priority for DesignWare AIO/comparator"
+	default 3
+	depends on AIO_DW_COMPARATOR
+	help
+	IRQ Priority for the DesignWare AIO/comparator.
