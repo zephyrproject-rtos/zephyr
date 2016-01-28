@@ -1190,8 +1190,7 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_chan *chan,
 	if (net_buf_headroom(buf) >= headroom) {
 		if (first_packet) {
 			/* Push SDU length if set */
-			memcpy(net_buf_push(buf, 2),
-			       &sys_cpu_to_le16(buf->len), 2);
+			net_buf_push_le16(buf, buf->len);
 		}
 		return net_buf_ref(buf);
 	}
