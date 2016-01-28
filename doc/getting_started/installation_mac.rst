@@ -3,12 +3,12 @@
 Development Environment Setup on Mac OS
 #######################################
 
-This section describes how to build the kernel in a development system.
+This section describes how to set up a Mac OS development system.
 
-This guide was tested by compiling and running the Zephyr Kernel's sample
+After completing these steps, you will be able to compile and run your Zephyr
 applications on the following Mac OS version:
 
-* Mac OS X 10.11 (El Capitan)
+Mac OS X 10.11 (El Capitan)
 
 Update Your Operating System
 ****************************
@@ -24,19 +24,27 @@ To install the software components required to build the Zephyr kernel on a
 Mac, you will need to build a cross compiler for the target devices you wish to
 build for and install tools that the build system requires.
 
+.. note::
+   Minor version updates of the listed required packages might also
+   work.
+
+.. attention::
+   Check your firewall and proxy configurations to ensure that Internet
+   access is available before attempting to install the required packages.
+
 First, install the :program:`Homebrew` (The missing package manager for
 OS X). Homebrew is a free and open-source software package management system
 that simplifies the installation of software on Apple's OS X operating
 system.
 
-To install :program:`Homebrew`, visit the site `<http://brew.sh/>`_ and follow the
+To install :program:`Homebrew`, visit the `Homebrew site`_ and follow the
 installation instructions on the site.
 
 To complete the Homebrew installation, you might be prompted to install some
 missing dependency. If so, follow please follow the instructions provided.
 
-After Homebrew was successfuly installed, install the following tools using the
-brew command line.
+After Homebrew was successfully installed, install the following tools using
+the brew command line.
 
 .. code-block:: console
 
@@ -51,7 +59,7 @@ brew command line.
    $ brew install crosstool-ng
 
 Alternatively you can install the latest version of :program:`crosstool-ng`
-from source. Download the latest version from http://crosstool-ng.org. The
+from source. Download the latest version from the `crosstool-ng site`_. The
 latest version usually supports the latest released compilers.
 
 .. code-block:: console
@@ -69,10 +77,17 @@ latest version usually supports the latest released compilers.
 
    $ make install
 
+.. _setting_up_mac_toolchain:
+
+Setting Up the Toolchain
+************************
+
+Creating a Case-sensitive File System
+=====================================
 
 Building the compiler requires a case-senstive file system. Therefore, use
 :program:`diskutil` to create an 8 GB blank sparse image making sure you select
-case-senstive file system (OS X Extended (Case-sensitive, Journaled) and
+case-sensitive file system (OS X Extended (Case-sensitive, Journaled) and
 mount it.
 
 Alternatively you can use the script below to create the image:
@@ -84,7 +99,6 @@ Alternatively you can use the script below to create the image:
    && true hdiutil create ${ImageName} -volname ${ImageName} -type SPARSE
    -size 8g -fs HFSX hdiutil mount ${ImageNameExt} cd /Volumes/$ImageName
 
-
 When mounted, the file system of the image will be available under
 :file:`/Volumes`. Change to the mounted directory:
 
@@ -95,6 +109,9 @@ When mounted, the file system of the image will be available under
    $ mkdir build
 
    $ cd build
+
+Setting the Toolchain Options
+=============================
 
 In the Zephyr kernel source tree we provide two configurations for
 both ARM and X86 that can be used to pre-select the options needed
@@ -112,17 +129,16 @@ yourself using the configuration menus:
 
    $ ct-ng menuconfig
 
-To build a kernel image for your desired architecture and platform, perform
-these steps:
+Verifying the Configuration of the Toolchain
+============================================
 
-1. Select the architecture for which you are building the kernel.
-2. Select the target platform on which that kernel will run.
-3. Save the configuration.
-4. Build the toolchain with the saved configuration.
-5. Ensure that the build and installation directories are set correctly.
-6. Open the generated :file:`.config` file and verify the following (assuming
-   the sparse image was mounted under :file:`/Volumes/CrossToolNG`):
+Before building the toolchain it is advisable to perform a quick verification
+of the configuration set for the toolchain.
 
+1. Open the generated :file:`.config` file.
+
+2. Verify the following lines are present, assuming the sparse image was
+   mounted under :file:`/Volumes/CrossToolNG`:
 
 .. code-block:: bash
 
@@ -134,9 +150,13 @@ these steps:
    CT_INSTALL_DIR="${CT_PREFIX_DIR}"
    ...
 
-Now you are ready to build the toolchain:
+Building the Toolchain
+======================
+
+To build the toolchain, enter:
 
 .. code-block:: console
+
    $ ct-ng build
 
 The above process takes a while. When finished, the toolchain will be available
@@ -153,3 +173,7 @@ and use the target location where the toolchain was installed, type:
 
    $ export ZEPHYR_SDK_INSTALL_DIR=/Volumes/CrossToolNG/x-tools
 
+
+.. _Homebrew site: http://brew.sh/
+
+.. _crosstool-ng site: http://crosstool-ng.org

@@ -8,7 +8,7 @@ Getting Started
    :maxdepth: 1
 
    about_zephyr.rst
-   quick_start/quick_start.rst
+   getting_started/getting_started.rst
    kernel/kernel.rst
 
 

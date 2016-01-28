@@ -10,7 +10,7 @@ Before you build
 ----------------
 
 * Check that your Linux host meets the minimum requirements specified in the
-  :ref:`quick_start`.
+  :ref:`getting_started`.
 
 * Check that environment variables have been configured correctly as outlined
   in :ref:`apps_common_procedures`.

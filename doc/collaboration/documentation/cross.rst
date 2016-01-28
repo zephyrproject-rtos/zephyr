@@ -31,7 +31,7 @@ These are some examples of proper labels:
 
 .. code-block:: rst
 
-   .. _quick_start:
+   .. _getting_started:
 
    .. _gerrit_access:
 

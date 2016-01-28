@@ -25,8 +25,8 @@ Make sure to subscribe to the `mailing list`_ by filling out the
 
 .. _mailing list: foss-rtos-collab@lists.01.org
 
-Follow the steps available at :ref:`access_source` for information about how to access the source
-code using Git and Gerrit.
+Follow the steps available at :ref:`code_check_out` for information about how
+to access the source code using Git and Gerrit.
 
 Gerrit is a review system, and as such, assigns the following roles to
 users:
@@ -55,7 +55,7 @@ Currently, Gerrit is only one method to submit a change for review.
 
 Before submitting, please ensure each commit conforms with coding
 and contribution guidelines. Directions for building the source code
-are beyond the scope of this document. Please see the :ref:`quick_start`
+are beyond the scope of this document. Please see the :ref:`getting_started`
 for further detail.
 
 When a change is ready for submission, Gerrit requires that the
