@@ -1169,26 +1169,23 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_chan *chan,
 					     struct net_buf *buf,
-					     bool first_packet)
+					     size_t sdu_hdr_len)
 {
 	struct net_buf *seg;
-	size_t headroom;
+	uint16_t headroom;
 	uint16_t len;
 
-	/* Segment if data is bigger than MPS */
-	if (buf->len + (first_packet ? 2 : 0) > chan->tx.mps) {
+	/* Segment if data (+ data headroom) is bigger than MPS */
+	if (buf->len + sdu_hdr_len > chan->tx.mps) {
 		goto segment;
 	}
 
+	headroom = sizeof(struct bt_hci_acl_hdr) +
+		   sizeof(struct bt_l2cap_hdr) + sdu_hdr_len;
+
 	/* Check if original buffer has enough headroom */
-	headroom = sizeof(struct bt_hci_acl_hdr) + sizeof(struct bt_l2cap_hdr);
-
-	if (first_packet) {
-		headroom += 2;
-	}
-
 	if (net_buf_headroom(buf) >= headroom) {
-		if (first_packet) {
+		if (sdu_hdr_len) {
 			/* Push SDU length if set */
 			net_buf_push_le16(buf, buf->len);
 		}
@@ -1201,12 +1198,11 @@ segment:
 		return NULL;
 	}
 
-	if (first_packet) {
+	if (sdu_hdr_len) {
 		net_buf_add_le16(seg, buf->len);
 	}
 
-	len = min(min(buf->len, L2CAP_LE_MIN_MTU - (first_packet ? 2 : 0)),
-		  chan->tx.mps);
+	len = min(min(buf->len, L2CAP_LE_MIN_MTU - sdu_hdr_len), chan->tx.mps);
 	memcpy(net_buf_add(seg, len), buf->data, len);
 	net_buf_pull(buf, len);
 
@@ -1216,14 +1212,14 @@ segment:
 }
 
 static int l2cap_chan_le_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
-			      bool first_packet)
+			      uint16_t sdu_hdr_len)
 {
 	int len;
 
 	/* Wait for credits */
 	nano_sem_take(&chan->tx.credits, TICKS_UNLIMITED);
 
-	buf = l2cap_chan_create_seg(chan, buf, first_packet);
+	buf = l2cap_chan_create_seg(chan, buf, sdu_hdr_len);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -1256,14 +1252,14 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_chan *chan,
 	total_len = buf->len;
 
 	/* Add SDU length for the first segment */
-	ret = l2cap_chan_le_send(chan, buf, true);
+	ret = l2cap_chan_le_send(chan, buf, BT_L2CAP_SDU_HDR_LEN);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Send remaining segments */
 	for (sent = ret; sent < total_len; sent += ret) {
-		ret = l2cap_chan_le_send(chan, buf, false);
+		ret = l2cap_chan_le_send(chan, buf, 0);
 		if (ret < 0) {
 			return ret;
 		}
