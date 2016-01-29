@@ -674,7 +674,7 @@ static void net_timer_fiber(void)
 				/* Print stack usage every 10 sec */
 				if (!last_print ||
 				    (last_print +
-				     10 * sys_clock_hw_cycles_per_tick) <
+				     10 * sys_clock_hw_cycles_per_sec) <
 				    clock_get_cycle()) {
 					net_analyze_stack("timer fiber",
 							  timer_fiber_stack,
