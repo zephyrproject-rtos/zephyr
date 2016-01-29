@@ -4,4 +4,17 @@ if BOARD_ARDUINO_DUE
 config BOARD
 	default arduino_due
 
+if PINMUX
+
+# The pinmux driver does not care
+# base address or pin counts.
+# So define both as 0.
+config PINMUX_BASE
+	default 0
+
+config PINMUX_NUM_PINS
+	default 0
+
+endif # PINMUX
+
 endif # BOARD_ARDUINO_DUE
