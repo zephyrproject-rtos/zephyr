@@ -555,6 +555,14 @@ struct bt_hci_evt_encrypt_key_refresh_complete {
 	uint16_t handle;
 } __packed;
 
+#define BT_HCI_EVT_IO_CAPA_RESP			0x32
+struct bt_hci_evt_io_capa_resp {
+	bt_addr_t bdaddr;
+	uint8_t   capability;
+	uint8_t   oob_data;
+	uint8_t   authentication;
+} __packed;
+
 #define BT_HCI_EVT_LE_META_EVENT		0x3e
 struct bt_hci_evt_le_meta_event {
 	uint8_t  subevent;

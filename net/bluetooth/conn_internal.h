@@ -52,6 +52,8 @@ struct bt_conn_le {
 #if defined(CONFIG_BLUETOOTH_BREDR)
 struct bt_conn_br {
 	bt_addr_t		dst;
+	uint8_t			remote_io_capa;
+	uint8_t			remote_auth;
 };
 #endif
 

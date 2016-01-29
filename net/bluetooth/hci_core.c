@@ -1114,6 +1114,25 @@ static void link_key_req(struct net_buf *buf)
 
 	link_key_reply(&evt->bdaddr, keys->link_key.val);
 }
+
+static void io_capa_resp(struct net_buf *buf)
+{
+	struct bt_hci_evt_io_capa_resp *evt = (void *)buf->data;
+	struct bt_conn *conn;
+
+	BT_DBG("remote %s, IOcapa 0x%02x, auth 0x%02x",
+	       bt_addr_str(&evt->bdaddr), evt->capability, evt->authentication);
+
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	conn->br.remote_io_capa = evt->capability;
+	conn->br.remote_auth = evt->authentication;
+	bt_conn_unref(conn);
+}
 #endif
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
@@ -1794,6 +1813,9 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_LINK_KEY_REQ:
 		link_key_req(buf);
 		break;
+	case BT_HCI_EVT_IO_CAPA_RESP:
+		io_capa_resp(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2253,6 +2275,7 @@ static int set_event_mask(void)
 	ev->events[2] |= 0x20; /* Pin Code Request */
 	ev->events[2] |= 0x40; /* Link Key Request */
 	ev->events[2] |= 0x80; /* Link Key Notif */
+	ev->events[6] |= 0x02; /* IO Capability Response */
 #endif
 	ev->events[1] |= 0x20; /* Command Complete */
 	ev->events[1] |= 0x40; /* Command Status */
