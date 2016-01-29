@@ -1153,6 +1153,26 @@ static void io_capa_req(struct net_buf *buf)
 	cp->reason = BT_HCI_ERR_PAIRING_NOT_ALLOWED;
 	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY, resp_buf, NULL);
 }
+
+static void ssp_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_ssp_complete *evt = (void *)buf->data;
+	struct bt_conn *conn;
+
+	BT_DBG("status %u", evt->status);
+
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	if (evt->status) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+	}
+
+	bt_conn_unref(conn);
+}
 #endif
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
@@ -1839,6 +1859,9 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_IO_CAPA_REQ:
 		io_capa_req(buf);
 		break;
+	case BT_HCI_EVT_SSP_COMPLETE:
+		ssp_complete(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2300,6 +2323,7 @@ static int set_event_mask(void)
 	ev->events[2] |= 0x80; /* Link Key Notif */
 	ev->events[6] |= 0x01; /* IO Capability Request */
 	ev->events[6] |= 0x02; /* IO Capability Response */
+	ev->events[6] |= 0x20; /* Simple Pairing Complete */
 #endif
 	ev->events[1] |= 0x20; /* Command Complete */
 	ev->events[1] |= 0x40; /* Command Status */

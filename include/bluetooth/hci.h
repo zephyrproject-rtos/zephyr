@@ -583,6 +583,12 @@ struct bt_hci_evt_io_capa_resp {
 	uint8_t   authentication;
 } __packed;
 
+#define BT_HCI_EVT_SSP_COMPLETE			0x36
+struct bt_hci_evt_ssp_complete {
+	uint8_t   status;
+	bt_addr_t bdaddr;
+} __packed;
+
 #define BT_HCI_EVT_LE_META_EVENT		0x3e
 struct bt_hci_evt_le_meta_event {
 	uint8_t  subevent;
