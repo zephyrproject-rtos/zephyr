@@ -22,6 +22,6 @@ KERNEL_TYPE = micro
 BOARD ?= qemu_x86
 CONF_FILE = prj_$(ARCH)_$(NET_INTF).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/echo_server/src/
-QEMU_EXTRA_FLAGS = -serial unix:/tmp/slip.sock
 
 include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/samples/net/echo_server/Makefile.ipstack

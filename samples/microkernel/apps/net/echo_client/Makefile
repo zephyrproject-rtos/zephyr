@@ -22,6 +22,5 @@ BOARD ?= qemu_x86
 CONF_FILE = prj_$(ARCH).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/echo_client/src/
 
-QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
-
 include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/samples/net/echo_server/Makefile.ipstack
