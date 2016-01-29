@@ -55,7 +55,7 @@ config SRAM_SIZE
 	default 96 if SOC_ATMEL_SAM3X8E
 
 config SRAM_BASE_ADDRESS
-	default 0x20000000
+	default 0x20000000 if !SOC_ATMEL_SAM3X8E
 	default 0x20070000 if SOC_ATMEL_SAM3X8E
 
 #
