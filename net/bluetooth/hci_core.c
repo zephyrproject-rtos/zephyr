@@ -1133,6 +1133,26 @@ static void io_capa_resp(struct net_buf *buf)
 	conn->br.remote_auth = evt->authentication;
 	bt_conn_unref(conn);
 }
+
+static void io_capa_req(struct net_buf *buf)
+{
+	struct bt_hci_evt_io_capa_req *evt = (void *)buf->data;
+	struct net_buf *resp_buf;
+	struct bt_hci_cp_io_capability_neg_reply *cp;
+
+	BT_DBG("");
+
+	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY,
+				     sizeof(*cp));
+	if (!resp_buf) {
+		return;
+	}
+
+	cp = net_buf_add(resp_buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);
+	cp->reason = BT_HCI_ERR_PAIRING_NOT_ALLOWED;
+	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY, resp_buf, NULL);
+}
 #endif
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
@@ -1816,6 +1836,9 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_IO_CAPA_RESP:
 		io_capa_resp(buf);
 		break;
+	case BT_HCI_EVT_IO_CAPA_REQ:
+		io_capa_req(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2275,6 +2298,7 @@ static int set_event_mask(void)
 	ev->events[2] |= 0x20; /* Pin Code Request */
 	ev->events[2] |= 0x40; /* Link Key Request */
 	ev->events[2] |= 0x80; /* Link Key Notif */
+	ev->events[6] |= 0x01; /* IO Capability Request */
 	ev->events[6] |= 0x02; /* IO Capability Response */
 #endif
 	ev->events[1] |= 0x20; /* Command Complete */

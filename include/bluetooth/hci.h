@@ -66,6 +66,7 @@ static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 #define BT_HCI_ERR_AUTHENTICATION_FAIL		0x05
 #define BT_HCI_ERR_INSUFFICIENT_RESOURCES	0x0d
 #define BT_HCI_ERR_REMOTE_USER_TERM_CONN	0x13
+#define BT_HCI_ERR_PAIRING_NOT_ALLOWED		0x18
 #define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE	0x1a
 #define BT_HCI_ERR_INVALID_LL_PARAMS		0x1e
 #define BT_HCI_ERR_UNSPECIFIED			0x1f
@@ -205,6 +206,20 @@ struct bt_hci_cp_pin_code_neg_reply {
 struct bt_hci_rp_pin_code_neg_reply {
 	uint8_t   status;
 	bt_addr_t bdaddr;
+} __packed;
+
+#define BT_HCI_OP_IO_CAPABILITY_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x002b)
+struct bt_hci_cp_io_capability_reply {
+	bt_addr_t bdaddr;
+	uint8_t   capability;
+	uint8_t   oob_data;
+	uint8_t   authentication;
+} __packed;
+
+#define BT_HCI_OP_IO_CAPABILITY_NEG_REPLY	BT_OP(BT_OGF_LINK_CTRL, 0x0034)
+struct bt_hci_cp_io_capability_neg_reply {
+	bt_addr_t bdaddr;
+	uint8_t   reason;
 } __packed;
 
 #define BT_HCI_OP_SET_EVENT_MASK		BT_OP(BT_OGF_BASEBAND, 0x0001)
@@ -553,6 +568,11 @@ struct bt_hci_ev_link_key_notify {
 struct bt_hci_evt_encrypt_key_refresh_complete {
 	uint8_t  status;
 	uint16_t handle;
+} __packed;
+
+#define BT_HCI_EVT_IO_CAPA_REQ			0x31
+struct bt_hci_evt_io_capa_req {
+	bt_addr_t bdaddr;
 } __packed;
 
 #define BT_HCI_EVT_IO_CAPA_RESP			0x32
