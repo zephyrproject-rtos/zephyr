@@ -354,7 +354,7 @@ FUNC_NO_FP atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
 	key = irq_lock();
 
 	ret = *target;
-	*target = !(*target & value);
+	*target = ~(*target & value);
 
 	irq_unlock(key);
 
