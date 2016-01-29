@@ -15,15 +15,15 @@
  */
 
 /**
- * @file Sample app to utilize GPIO on Arduino 101.
+ * @file Sample app to utilize GPIO on Arduino 101 and Arduino Due.
  *
- * x86
+ * Arduino 101 - x86
  * --------------------
  *
  * On x86 side of Arduino 101:
  * 1. GPIO_16 is on IO8
  * 2. GPIO_19 is on IO4
-
+ *
  * The gpio_dw driver is being used.
  *
  * This sample app toggles GPIO_16/IO8. It also waits for
@@ -38,8 +38,8 @@
  *     GPIO_19 triggered
  * "
  *
- * Sensor Subsystem
- * --------------------
+ * Arduino 101 - Sensor Subsystem
+ * ------------------------------
  *
  * On Sensor Subsystem of Arduino 101:
  * 1. GPIO_SS[ 2] is on A00
@@ -69,6 +69,27 @@
  *     Toggling GPIO_SS_2
  *     GPIO_SS_3 triggered
  * "
+ *
+ * Arduino Due
+ * -----------
+ *
+ * On Arduino Due:
+ * 1. IO_2 is PB25
+ * 2. IO_13 is PB27 (linked to the LED marked "L")
+ *
+ * The gpio_atmel_sam3 driver is being used.
+ *
+ * This sample app toggles IO_2. It also waits for
+ * IO_13 to go high and display a message.
+ *
+ * If IO_2 and IO_13 are connected together, the GPIO should
+ * triggers every 2 seconds. And you should see this repeatedly
+ * on console:
+ * "
+ *     Toggling GPIO_25
+ *     Toggling GPIO_25
+ *     GPIO_27 triggered
+ * "
  */
 
 #include <zephyr.h>
@@ -87,20 +108,26 @@
 
 #define SLEEPTICKS	SECONDS(1)
 
-#ifdef CONFIG_SOC_QUARK_SE_SS
+#if defined(CONFIG_SOC_QUARK_SE_SS)
 #define GPIO_OUT_PIN	2
 #define GPIO_INT_PIN	3
 #define GPIO_NAME	"GPIO_SS_"
-#else
+#elif defined(CONFIG_SOC_QUARK_SE)
 #define GPIO_OUT_PIN	16
 #define GPIO_INT_PIN	19
 #define GPIO_NAME	"GPIO_"
+#elif defined(CONFIG_SOC_ATMEL_SAM3)
+#define GPIO_OUT_PIN	25
+#define GPIO_INT_PIN	27
+#define GPIO_NAME	"GPIO_"
 #endif
 
-#ifdef CONFIG_GPIO_DW_0
+#if defined(CONFIG_GPIO_DW_0)
 #define GPIO_DRV_NAME CONFIG_GPIO_DW_0_NAME
-#elif CONFIG_GPIO_QMSI_0
+#elif defined(CONFIG_GPIO_QMSI_0)
 #define GPIO_DRV_NAME CONFIG_GPIO_QMSI_0_NAME
+#elif defined(CONFIG_GPIO_ATMEL_SAM3)
+#define GPIO_DRV_NAME CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME
 #else
 #error "Unsupported GPIO driver"
 #endif
