@@ -201,9 +201,13 @@ static inline void handle_expired_nano_timers(int ticks)
  */
 void _nano_sys_clock_tick_announce(int32_t ticks)
 {
+	unsigned int  key;
+
+	key = irq_lock();
 	_sys_clock_tick_count += ticks;
 	handle_expired_nano_timeouts(ticks);
 	handle_expired_nano_timers(ticks);
+	irq_unlock(key);
 }
 
 /* get closest nano timers deadline expiry, (uint32_t)TICKS_UNLIMITED if none */
