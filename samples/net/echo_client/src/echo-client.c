@@ -385,8 +385,6 @@ void taskA(void)
 
 	ipsum_len = strlen(lorem_ipsum);
 
-	nano_sem_init(&flag);
-
 	if (!get_context(&unicast, &multicast)) {
 		PRINT("%s: Cannot get network context\n", __func__);
 		return;
