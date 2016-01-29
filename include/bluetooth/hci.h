@@ -129,6 +129,20 @@ struct bt_hci_cmd_hdr {
 #define BT_HCI_LE_CONN_PARAM_REQ_PROC		0x02
 #define BT_HCI_LE_SLAVE_FEATURES		0x08
 
+/* Bonding/authentication types */
+#define BT_HCI_NO_BONDING			0x00
+#define BT_HCI_NO_BONDING_MITM			0x01
+#define BT_HCI_DEDICATED_BONDING		0x02
+#define BT_HCI_DEDICATED_BONDING_MITM		0x03
+#define BT_HCI_GENERAL_BONDING			0x04
+#define BT_HCI_GENERAL_BONDING_MITM		0x05
+
+/* I/O capabilities */
+#define BT_IO_DISPLAY_ONLY			0x00
+#define BT_IO_DISPLAY_YESNO			0x01
+#define BT_IO_KEYBOARD_ONLY			0x02
+#define BT_IO_NO_INPUT_OUTPUT			0x03
+
 /* Defined GAP timers */
 #define BT_GAP_SCAN_FAST_INTERVAL		0x0060	/* 60 ms    */
 #define BT_GAP_SCAN_FAST_WINDOW			0x0030  /* 30 ms    */
