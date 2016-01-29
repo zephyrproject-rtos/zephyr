@@ -379,7 +379,7 @@ endif
 
 if IPM_CONSOLE_RECEIVER
 config QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32
-	int
+	int "IPM Console Ring Buffer Size"
 	default 256
 	help
 	Size of the buffer for the console reciever, for incoming
