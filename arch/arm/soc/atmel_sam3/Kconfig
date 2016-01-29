@@ -155,4 +155,20 @@ config UART_CONSOLE_IRQ_PRI
 
 endif # UART_CONSOLE
 
+if GPIO_ATMEL_SAM3
+
+config GPIO_ATMEL_SAM3_PORTA
+	default y
+
+config GPIO_ATMEL_SAM3_PORTB
+	default y
+
+config GPIO_ATMEL_SAM3_PORTC
+	default y
+
+config GPIO_ATMEL_SAM3_PORTD
+	default y
+
+endif # GPIO_ATMEL_SAM3
+
 endif # SOC_ATMEL_SAM3

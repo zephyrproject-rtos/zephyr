@@ -1,0 +1,93 @@
+config GPIO_ATMEL_SAM3
+	bool "Atmel SAM3 PIO Controllers"
+	depends on GPIO && SOC_ATMEL_SAM3
+	default n
+	help
+	Enable config options to support the PIO controllers
+	on Atmel SAM3 family processors.
+
+	Says n if not sure.
+
+config GPIO_ATMEL_SAM3_PORTA
+	bool "Enable driver for Atmel SAM3 PIO Port A"
+	depends on GPIO_ATMEL_SAM3
+	default n
+	help
+	Build the driver to utilize PIO controller Port A.
+
+config GPIO_ATMEL_SAM3_PORTA_DEV_NAME
+	string "Device name for Port A"
+	depends on GPIO_ATMEL_SAM3_PORTA
+	default "PIOA"
+	help
+	Device name for Port A.
+
+config GPIO_ATMEL_SAM3_PORTA_IRQ_PRI
+	int "Interrupt Priority for Port A"
+	depends on GPIO_ATMEL_SAM3_PORTA
+	default 3
+	help
+	Interrupt priority for Port A.
+
+config GPIO_ATMEL_SAM3_PORTB
+	bool "Enable driver for Atmel SAM3 PIO Port B"
+	depends on GPIO_ATMEL_SAM3
+	default n
+	help
+	Build the driver to utilize PIO controller Port B.
+
+config GPIO_ATMEL_SAM3_PORTB_DEV_NAME
+	string "Device name for Port B"
+	depends on GPIO_ATMEL_SAM3_PORTB
+	default "PIOB"
+	help
+	Device name for Port B.
+
+config GPIO_ATMEL_SAM3_PORTB_IRQ_PRI
+	int "Interrupt Priority for Port B"
+	depends on GPIO_ATMEL_SAM3_PORTB
+	default 3
+	help
+	Interrupt priority for Port B.
+
+config GPIO_ATMEL_SAM3_PORTC
+	bool "Enable driver for Atmel SAM3 PIO Port C"
+	depends on GPIO_ATMEL_SAM3
+	default n
+	help
+	Build the driver to utilize PIO controller Port C.
+
+config GPIO_ATMEL_SAM3_PORTC_DEV_NAME
+	string "Device name for Port C"
+	depends on GPIO_ATMEL_SAM3_PORTC
+	default "PIOC"
+	help
+	Device name for Port C.
+
+config GPIO_ATMEL_SAM3_PORTC_IRQ_PRI
+	int "Interrupt Priority for Port C"
+	depends on GPIO_ATMEL_SAM3_PORTC
+	default 3
+	help
+	Interrupt priority for Port C.
+
+config GPIO_ATMEL_SAM3_PORTD
+	bool "Enable driver for Atmel SAM3 PIO Port D"
+	depends on GPIO_ATMEL_SAM3
+	default n
+	help
+	Build the driver to utilize PIO controller Port D.
+
+config GPIO_ATMEL_SAM3_PORTD_DEV_NAME
+	string "Device name for Port D"
+	depends on GPIO_ATMEL_SAM3_PORTD
+	default "PIOD"
+	help
+	Device name for Port D.
+
+config GPIO_ATMEL_SAM3_PORTD_IRQ_PRI
+	int "Interrupt Priority for Port D"
+	depends on GPIO_ATMEL_SAM3_PORTD
+	default 3
+	help
+	Interrupt priority for Port D.

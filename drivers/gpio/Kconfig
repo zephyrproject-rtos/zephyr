@@ -703,4 +703,6 @@ config GPIO_SCH_1_BITS
 	help
 	  The total of pins the controller can manage (CPU dependent)
 
+source "drivers/gpio/Kconfig.atmel_sam3"
+
 endif # GPIO
