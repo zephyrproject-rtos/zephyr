@@ -21,8 +21,6 @@
 #include <device.h>
 #include <aio_comparator.h>
 
-#define AIO_DW_CMP_DRV_NAME		"dw_aio_cmp"
-
 /**
  * @brief Number of AIO/Comparator on board
  */

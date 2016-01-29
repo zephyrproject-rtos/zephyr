@@ -205,7 +205,7 @@ struct dw_aio_cmp_dev_data_t dw_aio_cmp_dev_data = {
 	.num_cmp = AIO_DW_CMP_COUNT,
 };
 
-DEVICE_INIT(dw_aio_cmp, AIO_DW_CMP_DRV_NAME, &dw_aio_cmp_init,
+DEVICE_INIT(dw_aio_cmp, CONFIG_AIO_DW_COMPARATOR_DEV_NAME, &dw_aio_cmp_init,
 			&dw_aio_cmp_dev_data, &dw_aio_cmp_dev_config,
 			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 

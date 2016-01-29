@@ -31,6 +31,13 @@ config AIO_DW_COMPARATOR
 	help
 	DesignWare AIO/Comparator driver.
 
+config AIO_DW_COMPARATOR_DEV_NAME
+	string "Device name for DesignWare AIO/comparator"
+	default "AIO_CMP"
+	depends on AIO_DW_COMPARATOR
+	help
+	Device name for the DesignWare AIO/comparator.
+
 config AIO_DW_COMPARATOR_BASE_ADDR
 	hex "Base address for DesignWare AIO/comparator"
 	depends on AIO_DW_COMPARATOR
