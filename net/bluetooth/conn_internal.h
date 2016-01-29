@@ -124,6 +124,8 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
 
 void bt_conn_pin_code_req(struct bt_conn *conn);
+uint8_t bt_conn_get_io_capa(void);
+uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
 #endif
 
 /* Look up an existing connection */

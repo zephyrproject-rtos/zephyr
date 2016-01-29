@@ -1175,6 +1175,7 @@ static void io_capa_resp(struct net_buf *buf)
 
 	conn->br.remote_io_capa = evt->capability;
 	conn->br.remote_auth = evt->authentication;
+	atomic_set_bit(conn->flags, BT_CONN_BR_PAIRING);
 	bt_conn_unref(conn);
 }
 
@@ -1182,20 +1183,32 @@ static void io_capa_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_io_capa_req *evt = (void *)buf->data;
 	struct net_buf *resp_buf;
-	struct bt_hci_cp_io_capability_neg_reply *cp;
+	struct bt_conn *conn;
+	struct bt_hci_cp_io_capability_reply *cp;
 
 	BT_DBG("");
 
-	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY,
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY,
 				     sizeof(*cp));
 	if (!resp_buf) {
+		BT_ERR("Out of command buffers");
+		bt_conn_unref(conn);
 		return;
 	}
 
 	cp = net_buf_add(resp_buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);
-	cp->reason = BT_HCI_ERR_PAIRING_NOT_ALLOWED;
-	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY, resp_buf, NULL);
+	cp->capability = bt_conn_get_io_capa();
+	cp->authentication = bt_conn_ssp_get_auth(conn);
+	cp->oob_data = 0;
+	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_REPLY, resp_buf, NULL);
+	bt_conn_unref(conn);
 }
 
 static void ssp_complete(struct net_buf *buf)

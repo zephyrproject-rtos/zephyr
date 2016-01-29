@@ -62,6 +62,23 @@ const struct bt_conn_auth_cb *bt_auth;
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+enum pairing_method {
+	JUST_WORKS,		/* JustWorks pairing */
+	PASSKEY_INPUT,		/* Passkey Entry input */
+	PASSKEY_DISPLAY,	/* Passkey Entry display */
+	PASSKEY_CONFIRM,	/* Passkey confirm */
+};
+
+/* based on table 5.7, Core Spec 4.2, Vol.3 Part C, 5.2.2.6 */
+static const uint8_t ssp_method[4 /* remote */][4 /* local */] = {
+	      { JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS },
+	      { JUST_WORKS, PASSKEY_CONFIRM, PASSKEY_INPUT, JUST_WORKS },
+	      { PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS },
+	      { JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS },
+};
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 #if defined(CONFIG_BLUETOOTH_DEBUG_CONN)
 static const char *state2str(bt_conn_state_t state)
 {
@@ -754,6 +771,50 @@ void bt_conn_pin_code_req(struct bt_conn *conn)
 	} else {
 		pin_code_neg_reply(&conn->br.dst);
 	}
+}
+
+uint8_t bt_conn_get_io_capa(void)
+{
+	if (!bt_auth) {
+		return BT_IO_NO_INPUT_OUTPUT;
+	}
+
+	if (bt_auth->passkey_confirm && bt_auth->passkey_display) {
+		return BT_IO_DISPLAY_YESNO;
+	}
+
+	if (bt_auth->passkey_entry) {
+		return BT_IO_KEYBOARD_ONLY;
+	}
+
+	if (bt_auth->passkey_display) {
+		return BT_IO_DISPLAY_ONLY;
+	}
+
+	return BT_IO_NO_INPUT_OUTPUT;
+}
+
+static uint8_t ssp_pair_method(const struct bt_conn *conn)
+{
+	return ssp_method[conn->br.remote_io_capa][bt_conn_get_io_capa()];
+}
+
+uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn)
+{
+	/* Validate no bond auth request, and if valid use it. */
+	if ((conn->br.remote_auth == BT_HCI_NO_BONDING) ||
+	    ((conn->br.remote_auth == BT_HCI_NO_BONDING_MITM) &&
+	     (ssp_pair_method(conn) > JUST_WORKS))) {
+		return conn->br.remote_auth;
+	}
+
+	/* Local & remote have enough IO capabilities to get MITM protection. */
+	if (ssp_pair_method(conn) > JUST_WORKS) {
+		return conn->br.remote_auth | BT_MITM;
+	}
+
+	/* No MITM protection possible so ignore remote MITM requirement. */
+	return (conn->br.remote_auth & ~BT_MITM);
 }
 #endif
 

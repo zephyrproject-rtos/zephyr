@@ -138,6 +138,12 @@ struct bt_hci_cmd_hdr {
 #define BT_HCI_GENERAL_BONDING			0x04
 #define BT_HCI_GENERAL_BONDING_MITM		0x05
 
+/*
+ * MITM protection is enabled in SSP authentication requirements octet when
+ * LSB bit is set.
+ */
+#define BT_MITM					0x01
+
 /* I/O capabilities */
 #define BT_IO_DISPLAY_ONLY			0x00
 #define BT_IO_DISPLAY_YESNO			0x01
