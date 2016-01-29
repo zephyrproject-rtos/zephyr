@@ -53,7 +53,7 @@ question is not answered there, send your question to the
 `mailing list`_. For hyphenation, spelling, or terminology usage
 questions look in the Merriam-Webster's Collegiate Dictionary.
 
-.. _mailing list: mailto:foss-rtos-collab@lists.01.org
+.. _mailing list: mailto:devel@lists.zephyrproject.org
 
 If the question is answered in the existing style guide or dictionary,
 the solution is implemented and enforced as described.

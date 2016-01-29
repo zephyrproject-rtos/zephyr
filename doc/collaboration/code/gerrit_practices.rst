@@ -17,8 +17,6 @@ the branch that interests you, click on :guilabel:`gitweb` located on the
 right-hand side.  Now, :program:`gitweb` loads your selection on the Git web
 interface and redirects appropriately.
 
-.. _Gerrit: http://oic-review.01.org/gerrit/
-
 Watching a Project
 ******************
 
@@ -47,7 +45,9 @@ is one time use.  Use the following command as an example:
 
 .. code-block:: console
 
-   $ scp -p -P 29418 GERRIT-SERVER:hooks/commit-msg REPODIR/.git/hooks/
+   $ scp -p -P 29418 gerrit.zephyrproject.org:hooks/commit-msg LOCALREPODIR/.git/hooks/
+
+.. note:: replace LOCALREPODIR with the directory where you cloned the project.
 
 The command above needs to be entered only once.
 
@@ -182,13 +182,12 @@ Finding Available Topics
 
 .. code-block:: console
 
-   $ ssh -p 29418 oic-review.01.org gerrit query \ status:open project:forto-collab branch:master \
+   $ ssh -p 29418 gerrit.zephyrproject.org gerrit query \ status:open project:zephyr branch:master \
    | grep topic: | sort -u
 
-* *oic-review.01.org* Is the current URL where the project is hosted
-* *status* Indicates the topic's current status: open , merged, abandoned,
-  draft, merge conflict.
-* *project* Refers to the current name of the project, in this case forto-collab
+* *gerrit.zephyrproject.org* Is the current URL where the project is hosted.
+* *status* Indicates the topic's current status: open , merged, abandoned, draft, merge conflict.
+* *project* Refers to the current name of the project, in this case zephyr.
 * *branch* The topic is searched at this branch.
 * *topic* The name of an specific topic, leave it blank to include them all.
 * *sort* Sorts the found topics, in this case by update (-u).
@@ -418,3 +417,5 @@ you must add the path option :option:`–-global` to :command:`config` as follow
    $ git config –-global log.abbrevCommit true
    $ git config –-global log.abbrev 5
    $ git config –-global format.pretty oneline
+
+.. _Gerrit: http://gerrit.zephyrproject.org
