@@ -1,13 +1,13 @@
-.. _basic_minuteia:
+.. _qemu_x86:
 
-Board Configuration: basic_minuteia
-######################################
+Board Configuration: QEMU X86 (qemu_x86)
+########################################
 
 Overview
 ********
 
-The Zephyr Kernel uses the basic_minuteia board configuration
-to emulate the galileo board (or something similar) running on QEMU.
+The Zephyr Kernel uses the qemu_x86 board configuration to emulate pentium-class
+systems running on QEMU.
 It provides support for an x86 Minute IA CPU and the following devices:
 
 * HPET
@@ -20,16 +20,12 @@ It provides support for an x86 Minute IA CPU and the following devices:
    This board configuration makes no claims about its suitability for use
    with actual galileo hardware, or any other hardware.
 
-Supported Boards
-****************
-
-The basic_minuteia board configuration has been tested on QEMU 2.1.
+The qemu_x86 board configuration has been tested on QEMU 2.1.
 
 Supported Features
 ******************
 
-The basic_minuteia board configuration supports the following
-hardware features:
+The qemu_x86 board configuration supports the following hardware features:
 
 +--------------+------------+-----------------------+
 | Interface    | Controller | Driver/Component      |
@@ -44,27 +40,18 @@ hardware features:
 
 The kernel currently does not support other hardware features on this platform.
 
-Interrupt Controller
-====================
-
-Refer to the :ref:`galileo`.
-
-.. note::
-   The basic_minuteia board configuration does not support PCI.
-
 HPET System Clock Support
 =========================
 
-The basic_minuteia board configuration uses an HPET clock frequency
-of 25 MHz.
+The qemu_x86 board configuration uses an HPET clock frequency of 25 MHz.
 
 Serial Port
 ===========
 
-The basic_minuteia board configuration uses a single serial
-communication channel that uses the NS16550 serial driver
-operating in polling mode. To override, enable the UART_INTERRUPT_DRIVEN
-Kconfig option, which allows the system to be interrupt-driven.
+The qemu_x86 board configuration uses a single serial communication channel that
+uses the NS16550 serial driver operating in polling mode. To override, enable
+the UART_INTERRUPT_DRIVEN Kconfig option, which allows the system to be
+interrupt-driven.
 
 Known Problems or Limitations
 *****************************
@@ -78,4 +65,3 @@ The following platform features are unsupported:
 * Inter-Integrated Circuit (I2C)
 * Ethernet
 * Supervisor Mode Execution Protection (SMEP)
-* PCI

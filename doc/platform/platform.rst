@@ -45,7 +45,7 @@ The following sections provide details on the respective platforms:
 
    minnowboard.rst
    qemu_cortex_m3.rst
-   basic_minuteia.rst
+   qemu_x86.rst
    frdm_k64f.rst
    galileo.rst
    arduino_101.rst
