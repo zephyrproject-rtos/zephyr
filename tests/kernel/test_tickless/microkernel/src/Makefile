@@ -1,4 +1,4 @@
-ccflags-y += -I${srctree}/samples/include
+ccflags-y += -I${srctree}/tests/include
 
 obj-y =  test_tickless.o 
 ifeq ($(ARCH),arm)

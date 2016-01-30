@@ -1,5 +1,5 @@
 ccflags-y += -I$(CURDIR)/misc/generated/sysgen
-ccflags-y += -I$(srctree)/samples/include
+ccflags-y += -I$(srctree)/tests/include
 ccflags-$(CONFIG_SOC_QUARK_D2000) += -DSTACKSIZE=256
 
 obj-y = main.o \

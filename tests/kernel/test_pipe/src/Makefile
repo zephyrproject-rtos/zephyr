@@ -1,3 +1,3 @@
-ccflags-y += -I${srctree}/samples/include
+ccflags-y += -I${srctree}/tests/include
 
 obj-y = main.o pipe.o
