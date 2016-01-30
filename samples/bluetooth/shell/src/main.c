@@ -543,8 +543,7 @@ static void cmd_gatt_exchange_mtu(int argc, char *argv[])
 }
 
 static const struct bt_data ad_discov[] = {
-	BT_DATA(BT_DATA_FLAGS,
-		BT_BYTES(BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR), 1),
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
 
 static const struct bt_data sd[] = {

@@ -73,9 +73,8 @@ static struct bt_gatt_attr attrs[] = {
 };
 
 static const struct bt_data ad[] = {
-	BT_DATA(BT_DATA_FLAGS,
-		BT_BYTES(BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR), 1),
-	BT_DATA(BT_DATA_UUID16_ALL, BT_BYTES(0x0a, 0x18), 2),
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x0a, 0x18),
 };
 
 static const struct bt_data sd[] = {

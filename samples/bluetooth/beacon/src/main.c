@@ -26,9 +26,9 @@
 
 /* Set Advertisement data */
 static const struct bt_data ad[] = {
-	BT_DATA(BT_DATA_UUID16_ALL, BT_BYTES(0xd8, 0xfe), 2),
-	BT_DATA(BT_DATA_SVC_DATA16,
-		BT_BYTES(0xd8, 0xfe, 0x00, 0x20, 0x02, '0', '1', 0x08), 8)
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xd8, 0xfe),
+	BT_DATA_BYTES(BT_DATA_SVC_DATA16,
+		      0xd8, 0xfe, 0x00, 0x20, 0x02, '0', '1', 0x08)
 };
 
 /* Set Scan Response data */

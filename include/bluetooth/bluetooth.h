@@ -60,9 +60,6 @@ struct bt_data {
 	const uint8_t *data;
 };
 
-/** Helper to declare inline byte arrays */
-#define BT_BYTES(bytes...) ((uint8_t []) { bytes })
-
 /** Helper to declare elements of bt_data arrays */
 #define BT_DATA(_type, _data, _data_len) \
 				{ \
@@ -70,6 +67,10 @@ struct bt_data {
 					.data_len = _data_len, \
 					.data = _data, \
 				}
+
+#define BT_DATA_BYTES(_type, _bytes...) \
+	BT_DATA(_type, ((uint8_t []) { _bytes }), \
+		sizeof((uint8_t []) { _bytes }))
 
 /** Local advertising address type */
 enum {
