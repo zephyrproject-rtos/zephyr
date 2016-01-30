@@ -60,14 +60,30 @@ struct bt_data {
 	const uint8_t *data;
 };
 
-/** Helper to declare elements of bt_data arrays */
+/** @brief Helper to declare elements of bt_data arrays
+ *
+ *  This macro is mainly for creating an array of struct bt_data
+ *  elements which is then passed to bt_le_adv_start().
+ *
+ *  @param _type Type of advertising data field
+ *  @param _data Pointer to the data field payload
+ *  @param _data_len Number of bytes behind the _data pointer
+ */
 #define BT_DATA(_type, _data, _data_len) \
-				{ \
-					.type = _type, \
-					.data_len = _data_len, \
-					.data = _data, \
-				}
+	{ \
+		.type = (_type), \
+		.data_len = (_data_len), \
+		.data = (_data), \
+	}
 
+/** @brief Helper to declare elements of bt_data arrays
+ *
+ *  This macro is mainly for creating an array of struct bt_data
+ *  elements which is then passed to bt_le_adv_start().
+ *
+ *  @param _type Type of advertising data field
+ *  @param _bytes Variable number of single-byte parameters
+ */
 #define BT_DATA_BYTES(_type, _bytes...) \
 	BT_DATA(_type, ((uint8_t []) { _bytes }), \
 		sizeof((uint8_t []) { _bytes }))
