@@ -12,13 +12,16 @@ O ?= $(PROJECT_BASE)/outdir
 # Turn O into an absolute path; we call the main Kbuild with $(MAKE) -C
 # which changes the working directory, relative paths don't work right.
 # Need to create the directory first to make realpath happy
+
+ifneq ($(MAKECMDGOALS),help)
 $(shell mkdir -p $(O))
 override O := $(realpath $(O))
+endif
 
 export ARCH MDEF_FILE QEMU_EXTRA_FLAGS PROJECT_BASE
 
 KERNEL_TYPE ?= micro
-CONF_FILE_LOCAL = $(strip $(subst $(DQUOTE),,$(CONF_FILE)))
+override CONF_FILE := $(strip $(subst $(DQUOTE),,$(CONF_FILE)))
 
 ifdef BOARD
 KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/boards/$(BOARD)/$(BOARD)_defconfig
@@ -74,15 +77,18 @@ initconfig: $(DOTCONFIG)
 menuconfig: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)
 
+help:
+	$(Q)$(MAKE) -s -C $(ZEPHYR_BASE) $@
+
 # Catch all
 %:
 	$(Q)$(call zephyrmake,$(O),$@)
 
 KERNEL_CONFIG = $(ZEPHYR_BASE)/kernel/configs/$(KERNEL_TYPE).config
 
-$(DOTCONFIG): $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE_LOCAL)
+$(DOTCONFIG): $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE)
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
-		-q -m -O $(O) $(KBUILD_DEFCONFIG_PATH) $(KERNEL_CONFIG) $(CONF_FILE_LOCAL)
+		-q -m -O $(O) $(KBUILD_DEFCONFIG_PATH) $(KERNEL_CONFIG) $(CONF_FILE)
 	$(Q)$(MAKE) $(S) -C $(ZEPHYR_BASE) O=$(O) PROJECT=$(PROJECT_BASE) oldnoconfig
 
 pristine:
