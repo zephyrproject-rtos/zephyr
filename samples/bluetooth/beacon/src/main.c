@@ -24,6 +24,9 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
+#define DEVICE_NAME "Test beacon"
+#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
+
 /* Set Advertisement data */
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xd8, 0xfe),
@@ -33,7 +36,7 @@ static const struct bt_data ad[] = {
 
 /* Set Scan Response data */
 static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, "Test beacon", 11),
+	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
 static void bt_ready(int err)

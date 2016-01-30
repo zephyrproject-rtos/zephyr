@@ -35,7 +35,7 @@
 #include <net/net_socket.h>
 
 #define DEVICE_NAME		"Test IPSP node"
-#define DEVICE_NAME_LEN		14
+#define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define UNKNOWN_APPEARANCE	0x0000
 
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */

@@ -38,7 +38,7 @@
 #include <misc/shell.h>
 
 #define DEVICE_NAME		"test shell"
-#define DEVICE_NAME_LEN		10
+#define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define AD_SHORT_NAME		0x08
 #define AD_COMPLETE_NAME	0x09
 #define CREDITS			10

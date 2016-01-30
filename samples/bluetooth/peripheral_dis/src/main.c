@@ -31,7 +31,7 @@
 #include <bluetooth/gatt.h>
 
 #define DEVICE_NAME	"DIS peripheral"
-#define DEVICE_NAME_LEN	14
+#define DEVICE_NAME_LEN	(sizeof(DEVICE_NAME) - 1)
 #define APPEARANCE	0x0000
 
 static int read_appearance(struct bt_conn *conn,
