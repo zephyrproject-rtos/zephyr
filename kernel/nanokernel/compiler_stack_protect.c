@@ -28,8 +28,6 @@
 
 #include <toolchain.h> /* compiler specific configurations */
 
-#if defined(CONFIG_STACK_CANARIES)
-
 #include <nano_private.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -50,10 +48,6 @@ void FUNC_NORETURN _StackCheckHandler(void)
 	_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, &_default_esf);
 }
 
-#endif /* CONFIG_STACK_CANARIES */
-
-#ifdef CONFIG_STACK_CANARIES
-
 /* Global variable */
 
 /*
@@ -70,4 +64,3 @@ void __noinit *__stack_chk_guard;
  * a buffer overflow or stack corruption problem.
  */
 FUNC_ALIAS(_StackCheckHandler, __stack_chk_fail, void);
-#endif
