@@ -1,7 +1,7 @@
 .. _minnowboard:
 
-Board Configuration: Minnowboard Max
-#######################################
+Board Configuration: Minnowboard Max (minnowboard)
+##################################################
 
 Overview
 ********
@@ -20,16 +20,10 @@ provides support for an x86 Atom CPU and the following devices:
    This board configuration makes no claims about its suitability for use
    with an actual Atom N28xx hardware system, or any other hardware system.
 
-Supported Boards
-****************
-
-The minnowboard board configuration has been tested on QEMU 2.1.
-
 Supported Features
 ******************
 
-The minnowboard board configuration supports the following
-hardware features:
+The minnowboard board configuration supports the following hardware features:
 
 +--------------+------------+-----------------------+
 | Interface    | Controller | Driver/Component      |
@@ -43,13 +37,6 @@ hardware features:
 +--------------+------------+-----------------------+
 
 The kernel currently does not support other hardware features on this platform.
-
-Interrupt Controller
-====================
-Refer to the :ref:`galileo`.
-
-.. note::
-   The minnowboard board configuration does not support PCI.
 
 HPET System Clock Support
 =========================
