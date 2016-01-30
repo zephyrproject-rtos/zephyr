@@ -20,7 +20,7 @@ Developer Guides
 
    reference/kbuild/kbuild.rst
    application/application.rst
-   platform/platform.rst
+   board/board.rst
    collaboration/collaboration
 
 Reference Guides
