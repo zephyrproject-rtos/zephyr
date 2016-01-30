@@ -1,6 +1,6 @@
 KERNEL_TYPE = nano
 BOARD ?= qemu_x86
-SOURCE_DIR = $(ZEPHYR_BASE)/samples/microkernel/apps/cpp_synchronization/src/
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/cpp_synchronization/microkernel/src/
 CONF_FILE = prj.conf
 
 
