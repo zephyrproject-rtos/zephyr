@@ -75,7 +75,7 @@ void main(void)
 		       getsize, gettype, getval,
 		       sys_ring_buf_space_get(&ring_buf));
 
-		if (memcmp((char*)getdata, data, getsize * sizeof(uint32_t))) {
+		if (memcmp((char *)getdata, data, getsize * sizeof(uint32_t))) {
 			printk("data corrupted\n");
 			goto done;
 		}
