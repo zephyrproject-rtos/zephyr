@@ -752,6 +752,7 @@ quiet_cmd_create-lnk = LINK    $@
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms"; 				\
 	echo "-e __start"; 						 	\
 	echo "--start-group";							\
+	echo "--whole-archive $(KBUILD_ZEPHYR_APP) --no-whole-archive";         \
 	echo "$(KBUILD_ZEPHYR_MAIN)";						\
 	echo "$(objtree)/arch/$(ARCH)/core/offsets/offsets.o"; 			\
 	echo "--end-group"; 							\
