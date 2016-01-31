@@ -7,6 +7,12 @@ NAME 		   = Zephyr Kernel
 
 export SOURCE_DIR PROJECT MDEF_FILE
 
+ifneq ($(MAKECMDGOALS),help)
+ifeq ($(PROJECT),)
+$(error Invoking make from top-level kernel directory is not supported)
+endif
+endif
+
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
 # More info can be located in ./README
@@ -1001,10 +1007,19 @@ help:
 	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
-	@echo  '* zephyr	  - Build the bare kernel'
-	@echo  '  qemu		  - Build the bare kernel and runs the emulation with qemu'
+	@echo  '* zephyr	  - Build a zephyr application'
+	@echo  '  qemu		  - Build a zephyr application and run it in qemu'
+	@echo  '  flash		  - Build and flash an application'
 	@echo  ''
 	@echo  'Supported Boards:'
+	@echo  ''
+	@echo  '  To build an image for one of the supported boards below, run:'
+	@echo  ''
+	@echo  '  make BOARD=<BOARD NAME>'
+	@echo  '  in the application directory.'
+	@echo  '  To flash the image (if supported), run:'
+	@echo  ''
+	@echo  '  make BOARD=<BOARD NAME> flash'
 	@echo  ''
 	@$(if $(boards), \
 		$(foreach b, $(boards), \
