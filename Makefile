@@ -764,12 +764,12 @@ $(KERNEL_NAME).lnk:
 linker.cmd: $(zephyr-deps)
 	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
 	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -I$(srctree)/include \
-	-I$(objtree)/include/generated $(KBUILD_LDS) -o $@
+	-I$(objtree)/include/generated $(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
 
 final-linker.cmd: $(zephyr-deps)
 	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
 	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -DFINAL_LINK -I$(srctree)/include \
-	-I$(objtree)/include/generated $(KBUILD_LDS) -o $@
+	-I$(objtree)/include/generated $(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
 
 TMP_ELF = .tmp_$(KERNEL_NAME).prebuilt
 
