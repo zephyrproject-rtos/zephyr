@@ -50,7 +50,7 @@ void pci_enumerate(void)
 #ifdef CONFIG_MICROKERNEL
 
 
-static int done = 0;
+static int done;
 
 void task_enum_pci(void)
 {
