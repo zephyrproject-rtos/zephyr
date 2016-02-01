@@ -100,10 +100,9 @@ stub_num = 0
 
 			pushl %edx
 
-
 			/*
-			 * 2-byte push imm8. Consumed by
-			 * common_dynamic_handler(), see intconnect.c
+			 * _common_dynamic_irq_handler() uses this to determine
+			 * which ISR/param to use, see intconnect.c
 			 */
 			movl $stub_num, %edx
 
