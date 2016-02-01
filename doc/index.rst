@@ -21,6 +21,7 @@ Developer Guides
    reference/kbuild/kbuild.rst
    application/application.rst
    board/board.rst
+   api/api.rst
    collaboration/collaboration
 
 Reference Guides
@@ -29,7 +30,6 @@ Reference Guides
 .. toctree::
    :maxdepth: 1
 
-   reference/api.rst
    reference/kconfig/index.rst
 
 Indices and tables
