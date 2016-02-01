@@ -1,0 +1,37 @@
+% Application       : maximal Microkernel footprint
+
+% TASK NAME      PRIO  ENTRY           STACK GROUPS
+% ==================================================
+  TASK fgTask    10    fgTaskEntry      1024 [EXE]
+
+% EVENT NAME     ENTRY
+% ====================
+  EVENT MYEVENT  NULL
+
+% MUTEX NAME
+% ==============
+  MUTEX MY_MUTEX
+
+% SEMA NAME
+% ===========
+  SEMA MYSEMA
+
+% FIFO NAME      DEPTH WIDTH
+% ==========================
+  FIFO MYFIFO        1    4
+
+% PIPE    NAME     BUFFERSIZE
+% ===========================
+  PIPE    MYPIPE            0
+
+% MAILBOX NAME
+% ==============
+  MAILBOX MYMBOX
+
+% MAP  NAME    BLOCKS  BLOCKSIZE
+% ==============================
+  MAP  MYMAP        1          4
+
+% POOL NAME    MIN  MAX     NMAX
+% ==============================
+  POOL MYPOOL    4    4        1

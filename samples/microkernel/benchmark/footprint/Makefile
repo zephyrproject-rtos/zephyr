@@ -4,9 +4,13 @@ BOARD ?= qemu_x86
 
 MDEF_FILE = micro_${TEST}.mdef
 KERNEL_TYPE = micro
-CONF_FILE = $(or $(wildcard prj_${TEST}_${ARCH}_${BOARD}.conf), \
-                 $(wildcard prj_${TEST}_${ARCH}.conf))
-CFLAGS += -DTEST_${TEST}
+CONF_FILE = $(or $(wildcard $(TEST)/$(BOARD).conf), \
+                 $(wildcard $(TEST)/$(ARCH).conf))
+ifeq ($(TEST),float)
+CFLAGS += -DTEST_max
+else
+CFLAGS += -DTEST_$(TEST)
+endif
 
 include ${ZEPHYR_BASE}/Makefile.inc
 
