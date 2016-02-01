@@ -1230,6 +1230,21 @@ static void ssp_complete(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
+
+static void user_confirm_req(struct net_buf *buf)
+{
+	struct bt_hci_evt_user_confirm_req *evt = (void *)buf->data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	bt_conn_ssp_auth(conn, sys_le32_to_cpu(evt->passkey));
+	bt_conn_unref(conn);
+}
 #endif
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
@@ -1911,6 +1926,9 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_SSP_COMPLETE:
 		ssp_complete(buf);
 		break;
+	case BT_HCI_EVT_USER_CONFIRM_REQ:
+		user_confirm_req(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2374,6 +2392,7 @@ static int set_event_mask(void)
 	ev->events[2] |= 0x80; /* Link Key Notif */
 	ev->events[6] |= 0x01; /* IO Capability Request */
 	ev->events[6] |= 0x02; /* IO Capability Response */
+	ev->events[6] |= 0x04; /* User Confirmation Request */
 	ev->events[6] |= 0x20; /* Simple Pairing Complete */
 #endif
 	ev->events[1] |= 0x20; /* Command Complete */

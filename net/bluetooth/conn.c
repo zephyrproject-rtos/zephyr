@@ -816,6 +816,60 @@ uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn)
 	/* No MITM protection possible so ignore remote MITM requirement. */
 	return (conn->br.remote_auth & ~BT_MITM);
 }
+
+static int ssp_confirm_reply(struct bt_conn *conn)
+{
+	struct bt_hci_cp_user_confirm_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_CONFIRM_REPLY, buf, NULL);
+}
+
+static int ssp_confirm_neg_reply(struct bt_conn *conn)
+{
+	struct bt_hci_cp_user_confirm_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_CONFIRM_NEG_REPLY, buf,
+				    NULL);
+}
+
+void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
+{
+	conn->br.ssp_method = ssp_pair_method(conn);
+
+	/* TODO: As pairing acceptor call user pairing consent API callback. */
+
+	/* Start interactive authentication if valid, default to justworks. */
+	switch (conn->br.ssp_method) {
+	case PASSKEY_CONFIRM:
+		bt_auth->passkey_confirm(conn, passkey);
+		break;
+	default:
+		ssp_confirm_reply(conn);
+		break;
+	}
+}
 #endif
 
 static void timeout_fiber(int arg1, int arg2)
@@ -1344,6 +1398,11 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 		return bt_smp_auth_passkey_confirm(conn);
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		return ssp_confirm_reply(conn);
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	return -EINVAL;
 }
@@ -1363,6 +1422,10 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 		/* Allow user cancel authentication, then reset user state. */
 		if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_USER)) {
 			return -EPERM;
+		}
+
+		if (conn->br.ssp_method == PASSKEY_CONFIRM) {
+			return ssp_confirm_neg_reply(conn);
 		}
 
 		return pin_code_neg_reply(&conn->br.dst);

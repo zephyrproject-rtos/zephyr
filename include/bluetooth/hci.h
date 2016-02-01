@@ -282,6 +282,16 @@ struct bt_hci_cp_io_capability_reply {
 	uint8_t   authentication;
 } __packed;
 
+#define BT_HCI_OP_USER_CONFIRM_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x002c)
+#define BT_HCI_OP_USER_CONFIRM_NEG_REPLY	BT_OP(BT_OGF_LINK_CTRL, 0x002d)
+struct bt_hci_cp_user_confirm_reply {
+	bt_addr_t bdaddr;
+} __packed;
+struct bt_hci_rp_user_confirm_reply {
+	uint8_t   status;
+	bt_addr_t bdaddr;
+} __packed;
+
 #define BT_HCI_OP_IO_CAPABILITY_NEG_REPLY	BT_OP(BT_OGF_LINK_CTRL, 0x0034)
 struct bt_hci_cp_io_capability_neg_reply {
 	bt_addr_t bdaddr;
@@ -688,6 +698,12 @@ struct bt_hci_evt_io_capa_resp {
 	uint8_t   capability;
 	uint8_t   oob_data;
 	uint8_t   authentication;
+} __packed;
+
+#define BT_HCI_EVT_USER_CONFIRM_REQ		0x33
+struct bt_hci_evt_user_confirm_req {
+	bt_addr_t bdaddr;
+	uint32_t  passkey;
 } __packed;
 
 #define BT_HCI_EVT_SSP_COMPLETE			0x36
