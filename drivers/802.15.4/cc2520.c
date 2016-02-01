@@ -1141,5 +1141,5 @@ static int cc2520_init(struct device *dev)
 }
 
 DEVICE_INIT(cc2520, CONFIG_CC2520_DRV_NAME,
-	    cc2520_init, &cc2520_config, NULL,
+	    cc2520_init, NULL, &cc2520_config,
 	    NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
