@@ -37,8 +37,10 @@
 
 /** Configuration data */
 struct gpio_k64_config {
-	/* base address */
-	uint32_t base_addr;
+	/* GPIO module base address */
+	uint32_t gpio_base_addr;
+	/* Port Control module base address */
+	uint32_t port_base_addr;
 };
 
 #endif /* _GPIO_K64_H_ */

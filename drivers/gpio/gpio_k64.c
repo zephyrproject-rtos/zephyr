@@ -22,6 +22,9 @@
 #include <device.h>
 #include <init.h>
 #include <gpio.h>
+#include <sys_io.h>
+
+#include <pinmux/pinmux_k64.h>
 
 #include "gpio_k64.h"
 
@@ -30,7 +33,16 @@ static int gpio_k64_config(struct device *dev, int access_op,
 					       uint32_t pin, int flags)
 {
 	const struct gpio_k64_config * const cfg = dev->config->config_info;
-	uint32_t value = 0;
+	uint32_t value;
+	uint32_t setting;
+	uint8_t i;
+
+	/* check for an invalid pin configuration */
+
+	if (flags & GPIO_INT) {
+		/* interrupts not supported */
+		return DEV_INVALID_OP;
+	}
 
 	/*
 	 * Setup direction register:
@@ -40,20 +52,68 @@ static int gpio_k64_config(struct device *dev, int access_op,
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 
 		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-			sys_clear_bit((cfg->base_addr + GPIO_K64_DIR_OFFSET), pin);
-		} else {
-			sys_set_bit((cfg->base_addr + GPIO_K64_DIR_OFFSET), pin);
+			sys_clear_bit((cfg->gpio_base_addr + GPIO_K64_DIR_OFFSET), pin);
+		} else {  /* GPIO_DIR_OUT */
+			sys_set_bit((cfg->gpio_base_addr + GPIO_K64_DIR_OFFSET), pin);
 		}
 
 	} else {	/* GPIO_ACCESS_BY_PORT */
 
 		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
 			value = 0x0;
-		} else {
+		} else {  /* GPIO_DIR_OUT */
 			value = 0xFFFFFFFF;
 		}
-		sys_write32(value, (cfg->base_addr + GPIO_K64_DIR_OFFSET));
+		sys_write32(value, (cfg->gpio_base_addr + GPIO_K64_DIR_OFFSET));
 
+	}
+
+	/*
+	 * Set up pullup/pulldown configuration, in Port Control module:
+	 */
+
+	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
+		setting = (K64_PINMUX_PULL_ENABLE | K64_PINMUX_PULL_UP);
+	} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
+		setting = (K64_PINMUX_PULL_ENABLE | K64_PINMUX_PULL_DN);
+	} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_NORMAL) {
+		setting = K64_PINMUX_PULL_DISABLE;
+	} else {
+		return DEV_INVALID_OP;
+	}
+
+	/* write pull-up/-down configuration settings */
+
+	if (access_op == GPIO_ACCESS_BY_PIN) {
+
+		value = sys_read32((cfg->port_base_addr + K64_PINMUX_CTRL_OFFSET(pin)));
+
+		/* clear, then set configuration values */
+
+		value &= ~(K64_PINMUX_PULL_EN_MASK | K64_PINMUX_PULL_SEL_MASK);
+
+		value |= setting;
+
+		sys_write32(value,
+					(cfg->port_base_addr + K64_PINMUX_CTRL_OFFSET(pin)));
+
+	} else {  /* GPIO_ACCESS_BY_PORT */
+
+		for (i = 0; i < K64_PINMUX_NUM_PINS; i++) {
+
+			/* clear, then set configuration values */
+
+			value = sys_read32((cfg->port_base_addr +
+								K64_PINMUX_CTRL_OFFSET(i)));
+
+			value &= ~(K64_PINMUX_PULL_EN_MASK | K64_PINMUX_PULL_SEL_MASK);
+
+			value |= setting;
+
+			sys_write32(value,
+						(cfg->port_base_addr + K64_PINMUX_CTRL_OFFSET(i)));
+
+		}
 	}
 
 	return DEV_OK;
@@ -68,14 +128,16 @@ static int gpio_k64_write(struct device *dev, int access_op,
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 
 		if (value) {
-			sys_set_bit((cfg->base_addr + GPIO_K64_DATA_OUT_OFFSET), pin);
+			sys_set_bit((cfg->gpio_base_addr + GPIO_K64_DATA_OUT_OFFSET),
+						pin);
 		} else {
-			sys_clear_bit((cfg->base_addr + GPIO_K64_DATA_OUT_OFFSET), pin);
+			sys_clear_bit((cfg->gpio_base_addr + GPIO_K64_DATA_OUT_OFFSET),
+						  pin);
 		}
 
 	} else {	/* GPIO_ACCESS_BY_PORT */
 
-		sys_write32(value, (cfg->base_addr + GPIO_K64_DATA_OUT_OFFSET));
+		sys_write32(value, (cfg->gpio_base_addr + GPIO_K64_DATA_OUT_OFFSET));
 
 	}
 
@@ -88,7 +150,7 @@ static int gpio_k64_read(struct device *dev, int access_op,
 {
 	const struct gpio_k64_config * const cfg = dev->config->config_info;
 
-	*value = sys_read32((cfg->base_addr + GPIO_K64_DATA_IN_OFFSET));
+	*value = sys_read32((cfg->gpio_base_addr + GPIO_K64_DATA_IN_OFFSET));
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		*value = (*value & (1 << pin)) >> pin;
@@ -171,7 +233,8 @@ int gpio_k64_init(struct device *dev)
 #ifdef CONFIG_GPIO_K64_A
 
 static struct gpio_k64_config gpio_k64_A_cfg = {
-	.base_addr = CONFIG_GPIO_K64_A_BASE_ADDR,
+	.gpio_base_addr = CONFIG_GPIO_K64_A_BASE_ADDR,
+	.port_base_addr = CONFIG_PORT_K64_A_BASE_ADDR,
 };
 
 DEVICE_INIT(gpio_k64_A, CONFIG_GPIO_K64_A_DEV_NAME, gpio_k64_init,
@@ -184,7 +247,8 @@ DEVICE_INIT(gpio_k64_A, CONFIG_GPIO_K64_A_DEV_NAME, gpio_k64_init,
 #ifdef CONFIG_GPIO_K64_B
 
 static struct gpio_k64_config gpio_k64_B_cfg = {
-	.base_addr = CONFIG_GPIO_K64_B_BASE_ADDR,
+	.gpio_base_addr = CONFIG_GPIO_K64_B_BASE_ADDR,
+	.port_base_addr = CONFIG_PORT_K64_B_BASE_ADDR,
 };
 
 DEVICE_INIT(gpio_k64_B, CONFIG_GPIO_K64_B_DEV_NAME, gpio_k64_init,
@@ -197,7 +261,8 @@ DEVICE_INIT(gpio_k64_B, CONFIG_GPIO_K64_B_DEV_NAME, gpio_k64_init,
 #ifdef CONFIG_GPIO_K64_C
 
 static struct gpio_k64_config gpio_k64_C_cfg = {
-	.base_addr = CONFIG_GPIO_K64_C_BASE_ADDR,
+	.gpio_base_addr = CONFIG_GPIO_K64_C_BASE_ADDR,
+	.port_base_addr = CONFIG_PORT_K64_C_BASE_ADDR,
 };
 
 DEVICE_INIT(gpio_k64_C, CONFIG_GPIO_K64_C_DEV_NAME, gpio_k64_init,
@@ -210,7 +275,8 @@ DEVICE_INIT(gpio_k64_C, CONFIG_GPIO_K64_C_DEV_NAME, gpio_k64_init,
 #ifdef CONFIG_GPIO_K64_D
 
 static struct gpio_k64_config gpio_k64_D_cfg = {
-	.base_addr = CONFIG_GPIO_K64_D_BASE_ADDR,
+	.gpio_base_addr = CONFIG_GPIO_K64_D_BASE_ADDR,
+	.port_base_addr = CONFIG_PORT_K64_D_BASE_ADDR,
 };
 
 DEVICE_INIT(gpio_k64_D, CONFIG_GPIO_K64_D_DEV_NAME, gpio_k64_init,
@@ -223,7 +289,8 @@ DEVICE_INIT(gpio_k64_D, CONFIG_GPIO_K64_D_DEV_NAME, gpio_k64_init,
 #ifdef CONFIG_GPIO_K64_E
 
 static struct gpio_k64_config gpio_k64_E_cfg = {
-	.base_addr = CONFIG_GPIO_K64_E_BASE_ADDR,
+	.gpio_base_addr = CONFIG_GPIO_K64_E_BASE_ADDR,
+	.port_base_addr = CONFIG_PORT_K64_E_BASE_ADDR,
 };
 
 DEVICE_INIT(gpio_k64_E, CONFIG_GPIO_K64_E_DEV_NAME, gpio_k64_init,

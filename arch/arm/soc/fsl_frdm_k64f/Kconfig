@@ -154,6 +154,9 @@ endif
 config GPIO
 	def_bool y
 
+config PINMUX
+	def_bool y
+
 if GPIO
 
 config GPIO_K64
@@ -176,34 +179,66 @@ config GPIO_K64_E
 
 endif
 
-if GPIO_K64
-config PORT_K64_BASE_ADDR
-    default 0x40049000
-endif
-
-if GPIO_K64_A
 config GPIO_K64_A_BASE_ADDR
-    default 0x400FF000
-endif
+	default 0x400FF000
 
-if GPIO_K64_B
+config PORT_K64_A_BASE_ADDR
+	default 0x40049000
+
 config GPIO_K64_B_BASE_ADDR
-    default 0x400FF040
-endif
+	default 0x400FF040
 
-if GPIO_K64_C
+config PORT_K64_B_BASE_ADDR
+	default 0x4004A000
+
 config GPIO_K64_C_BASE_ADDR
-    default 0x400FF080
-endif
+	default 0x400FF080
 
-if GPIO_K64_D
+config PORT_K64_C_BASE_ADDR
+	default 0x4004B000
+
 config GPIO_K64_D_BASE_ADDR
-    default 0x400FF0C0
-endif
+	default 0x400FF0C0
 
-if GPIO_K64_E
+config PORT_K64_D_BASE_ADDR
+	default 0x4004C000
+
 config GPIO_K64_E_BASE_ADDR
-    default 0x400FF100
-endif
+	default 0x400FF100
+
+config PORT_K64_E_BASE_ADDR
+	default 0x4004D000
+
+
+if PINMUX
+
+config PINMUX_K64
+	def_bool y
+config PINMUX_BASE
+	default 0x00000000
+config PINMUX_NUM_PINS
+	default 160
+config PINMUX_K64_GPIO_A_NAME
+	default GPIO_K64_A_DEV_NAME
+config PINMUX_K64_GPIO_B_NAME
+	default GPIO_K64_B_DEV_NAME
+config PINMUX_K64_GPIO_C_NAME
+	default GPIO_K64_C_DEV_NAME
+config PINMUX_K64_GPIO_D_NAME
+	default GPIO_K64_D_DEV_NAME
+config PINMUX_K64_GPIO_E_NAME
+	default GPIO_K64_E_DEV_NAME
+
+config PRESERVE_JTAG_IO_PINS
+	bool "Freescale FRDM-K64F JTAG pin usage"
+	depends on PINMUX
+	default y
+	help
+	The FRDM-K64F board routes the PTA0/1/2 pins as JTAG/SWD signals that
+	are used for the OpenSDAv2 debug interface.  These pins are also routed to
+	the Arduino header as D8, D3 and D5, respectively.
+	Enable this option to preserve these pins for the debug interface.
+
+endif #PINMUX
 
 endif

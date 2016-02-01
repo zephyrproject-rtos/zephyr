@@ -725,7 +725,11 @@ config GPIO_K64_A_DEV_NAME
 	Specify the device name.
 
 config GPIO_K64_A_BASE_ADDR
-	hex "Freescale K64-based GPIO Port A base address"
+	hex # Freescale K64-based GPIO Port A base address
+	depends on GPIO_K64_A
+
+config PORT_K64_A_BASE_ADDR
+	hex # Freescale K64-based Port Control Port A base address
 	depends on GPIO_K64_A
 
 config GPIO_K64_B
@@ -743,7 +747,11 @@ config GPIO_K64_B_DEV_NAME
 	Specify the device name.
 
 config GPIO_K64_B_BASE_ADDR
-	hex "Freescale K64-based GPIO Port B base address"
+	hex # Freescale K64-based GPIO Port B base address
+	depends on GPIO_K64_B
+
+config PORT_K64_B_BASE_ADDR
+	hex # Freescale K64-based Port Control Port B base address
 	depends on GPIO_K64_B
 
 config GPIO_K64_C
@@ -761,7 +769,11 @@ config GPIO_K64_C_DEV_NAME
 	Specify the device name.
 
 config GPIO_K64_C_BASE_ADDR
-	hex "Freescale K64-based GPIO Port C base address"
+	hex # Freescale K64-based GPIO Port C base address
+	depends on GPIO_K64_C
+
+config PORT_K64_C_BASE_ADDR
+	hex # Freescale K64-based Port Control Port C base address
 	depends on GPIO_K64_C
 
 config GPIO_K64_D
@@ -779,7 +791,11 @@ config GPIO_K64_D_DEV_NAME
 	Specify the device name.
 
 config GPIO_K64_D_BASE_ADDR
-	hex "Freescale K64-based GPIO Port D base address"
+	hex # Freescale K64-based GPIO Port D base address
+	depends on GPIO_K64_D
+
+config PORT_K64_D_BASE_ADDR
+	hex # Freescale K64-based Port Control Port D base address
 	depends on GPIO_K64_D
 
 config GPIO_K64_E
@@ -797,7 +813,11 @@ config GPIO_K64_E_DEV_NAME
 	Specify the device name.
 
 config GPIO_K64_E_BASE_ADDR
-	hex "Freescale K64-based GPIO Port E base address"
+	hex # Freescale K64-based GPIO Port E base address
+	depends on GPIO_K64_E
+
+config PORT_K64_E_BASE_ADDR
+	hex # Freescale K64-based Port Control Port E base address
 	depends on GPIO_K64_E
 
 source "drivers/gpio/Kconfig.atmel_sam3"
