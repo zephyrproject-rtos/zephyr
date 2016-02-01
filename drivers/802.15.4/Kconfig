@@ -68,6 +68,14 @@ config	TI_CC2520_SPI_SLAVE
 	  This option sets the SPI slave number SPI controller has to switch
 	  to when dealing with CC2520 chip.
 
+config	TI_CC2520_FIBER_STACK_SIZE
+	int "Driver's internal fiber stack size"
+	default 640
+	help
+	  This option sets the driver's stack size for its internal fiber.
+	  The default value should be sufficient, but it case it prooves to be
+	  a too little, this option makes it easy to play with the size.
+
 endif
 
 endmenu

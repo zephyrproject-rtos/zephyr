@@ -59,6 +59,8 @@
 
 #define CONFIG_CC2520_DRV_NAME "CC2520"
 
+#define CC2520_READING_STACK_SIZE CONFIG_TI_CC2520_FIBER_STACK_SIZE
+
 struct cc2520_gpio_config {
 	struct device *gpio;
 };
@@ -67,6 +69,7 @@ struct cc2520_config {
 	struct cc2520_gpio_config **gpios;
 	struct device *spi;
 	uint32_t spi_slave;
+	struct nano_sem read_lock;
 };
 
 extern struct cc2520_gpio_config cc2520_gpio_config[CC2520_GPIO_IDX_LAST_ENTRY];

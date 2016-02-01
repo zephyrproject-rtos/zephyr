@@ -43,6 +43,7 @@
 
 #include <board.h>
 #include <init.h>
+#include <sections.h>
 
 #include <802.15.4/cc2520.h>
 
@@ -781,6 +782,8 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 
 	getrxbyte(&len);
 
+	DBG("Incoming packet length: %d\n", len);
+
 	if (len > CC2520_MAX_PACKET_LEN) {
 		/* Oops, we must be out of sync. */
 		flushrx();
@@ -870,8 +873,33 @@ static void read_packet(void)
 	}
 }
 
+/* Reading incoming packet, so through SPI, cannot be done directly
+ * the gpio callback since it's running in ISR context. Thus doing
+ * it in an internal fiber
+ */
+static char __noinit __stack cc2520_read_stack[CC2520_READING_STACK_SIZE];
+
+static void reading_packet_fiber(int unused1, int unused2)
+{
+	struct cc2520_config *info = cc2520_sgl_dev->config->config_info;
+
+	while (1) {
+		nano_fiber_sem_take(&info->read_lock, TICKS_UNLIMITED);
+
+		read_packet();
+
+		last_packet_timestamp = cc2520_sfd_start_time;
+		cc2520_packets_seen++;
+
+		net_analyze_stack("CC2520 Rx Fiber stack", cc2520_read_stack,
+				  CC2520_READING_STACK_SIZE);
+	}
+}
+
 static void cc2520_gpio_int_handler(struct device *port, uint32_t pin)
 {
+	struct cc2520_config *info = cc2520_sgl_dev->config->config_info;
+
 	DBG("%s: RX interrupt in pin %d\n", __func__, pin);
 
 	/* In order to make this driver available for 2+ instances
@@ -881,11 +909,7 @@ static void cc2520_gpio_int_handler(struct device *port, uint32_t pin)
 
 	CC2520_CLEAR_FIFOP_INT();
 
-	read_packet();
-
-	last_packet_timestamp = cc2520_sfd_start_time;
-
-	cc2520_packets_seen++;
+	nano_isr_sem_give(&info->read_lock);
 }
 
 void cc2520_set_txpower(uint8_t power)
@@ -1127,11 +1151,15 @@ static int cc2520_init(struct device *dev)
 	info->gpios = cc2520_gpio_configure();
 	info->spi = cc2520_spi_configure();
 	info->spi_slave = CONFIG_TI_CC2520_SPI_SLAVE;
+	nano_sem_init(&info->read_lock);
 
 	cc2520_configure(dev);
 
 	if (init_ok) {
 		DBG("%s initialized on device: %p\n", DRIVER_STR, dev);
+
+		task_fiber_start(cc2520_read_stack, CC2520_READING_STACK_SIZE,
+				 reading_packet_fiber, 0, 0, 0, 0);
 	} else {
 		cc2520_sgl_dev = NULL;
 		DBG("%s initialization failed\n", DRIVER_STR);
