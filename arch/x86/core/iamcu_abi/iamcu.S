@@ -58,13 +58,10 @@ SECTION_FUNC(TEXT, _irq_sw_handler)
 #endif
 
 #if ALL_DYN_IRQ_STUBS > 0
-
-
-
 BRANCH_LABEL(_DynIntStubCommon)
 	pushl %eax
 	pushl %ecx
-	movl _common_dynamic_irq_handler, %eax
+	movl $_common_dynamic_irq_handler, %eax
 	call _execute_handler
 	/* Clean up and call IRET */
 	pop %ecx
