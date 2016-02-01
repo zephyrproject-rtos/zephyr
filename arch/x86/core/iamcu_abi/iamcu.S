@@ -49,7 +49,8 @@ SECTION_FUNC(TEXT, _irq_sw_handler)
 	pushl %eax
 	pushl %edx
 	pushl %ecx
-	call _irq_do_offload
+	movl $_irq_do_offload, %eax
+	call _execute_handler
 	pop %ecx
 	pop %edx
 	pop %eax
