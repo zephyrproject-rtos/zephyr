@@ -24,14 +24,8 @@
 #include "qm_gpio.h"
 #include "qm_scss.h"
 
-#define INTEN           0x30
-#define INTMASK         0x34
-#define PORTA_EOI       0x4c
-#define INT_GPIO_MASK   0x6c
-
 struct gpio_qmsi_config {
 	qm_gpio_t gpio;
-	void *addr;
 	uint8_t num_pins;
 };
 
@@ -46,7 +40,6 @@ int gpio_qmsi_init(struct device *dev);
 #ifdef CONFIG_GPIO_QMSI_0
 static struct gpio_qmsi_config gpio_0_config = {
 	.gpio = QM_GPIO_0,
-	.addr = &QM_GPIO[0],
 	.num_pins = QM_NUM_GPIO_PINS,
 };
 
@@ -60,7 +53,6 @@ DEVICE_INIT(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
 #ifdef CONFIG_GPIO_QMSI_AON
 static struct gpio_qmsi_config gpio_aon_config = {
 	.gpio = QM_AON_GPIO_0,
-	.addr = (qm_gpio_reg_t *) QM_AON_GPIO_BASE,
 	.num_pins = QM_NUM_AON_GPIO_PINS,
 };
 
@@ -137,17 +129,13 @@ static void qmsi_write_bit(uint32_t *target, uint8_t bit, uint8_t value)
 static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 {
 	struct gpio_qmsi_config *gpio_config = port->config->config_info;
-	qm_gpio_reg_t *gpio_reg = gpio_config->addr;
 	qm_gpio_t gpio = gpio_config->gpio;
 
 	/* Save int mask and mask this pin while we configure the port.
 	 * We do this to avoid "spurious interrupts", which is a behavior
 	 * we have observed on QMSI and that still needs investigation.
 	 */
-	uint32_t intmask = gpio_reg->gpio_intmask;
 	qm_gpio_port_config_t cfg = { 0 };
-
-	sys_set_bit((uint32_t) gpio_reg + INTMASK, pin);
 
 	qm_gpio_get_config(gpio, &cfg);
 
@@ -173,9 +161,6 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 	}
 
 	qm_gpio_set_config(gpio, &cfg);
-
-	/* Recover the original interrupt mask for this port. */
-	sys_write32(intmask, (uint32_t) gpio_reg + INTMASK);
 }
 
 static inline void qmsi_port_config(struct device *port, int flags)
@@ -252,12 +237,7 @@ static inline int gpio_qmsi_set_callback(struct device *port,
 static inline int gpio_qmsi_enable_callback(struct device *port, int access_op,
 					  uint32_t pin)
 {
-	struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	struct gpio_qmsi_runtime *context = port->driver_data;
-	uint32_t reg = (uint32_t) gpio_config->addr;
-
-	sys_set_bit(reg + PORTA_EOI, pin);
-	sys_clear_bit(reg + INTMASK, pin);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		context->pin_callbacks |= BIT(pin);
@@ -271,11 +251,7 @@ static inline int gpio_qmsi_enable_callback(struct device *port, int access_op,
 static inline int gpio_qmsi_disable_callback(struct device *port, int access_op,
 					   uint32_t pin)
 {
-	struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	struct gpio_qmsi_runtime *context = port->driver_data;
-	uint32_t reg = (uint32_t) gpio_config->addr;
-
-	sys_set_bit(reg + INTMASK, pin);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		context->pin_callbacks &= ~BIT(pin);
@@ -310,7 +286,6 @@ static struct gpio_driver_api api_funcs = {
 int gpio_qmsi_init(struct device *port)
 {
 	struct gpio_qmsi_config *gpio_config = port->config->config_info;
-	uint32_t reg = (uint32_t) gpio_config->addr;
 
 	switch (gpio_config->gpio) {
 	case QM_GPIO_0:
@@ -333,11 +308,6 @@ int gpio_qmsi_init(struct device *port)
 	default:
 		return DEV_FAIL;
 	}
-
-	/* mask and disable interrupts */
-	sys_write32(~(0), reg + INTMASK);
-	sys_write32(0, reg + INTEN);
-	sys_write32(~(0), reg + PORTA_EOI);
 
 	port->driver_api = &api_funcs;
 	return DEV_OK;
