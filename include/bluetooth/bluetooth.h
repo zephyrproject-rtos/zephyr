@@ -90,8 +90,11 @@ struct bt_data {
 
 /** Local advertising address type */
 enum {
-	/** Use local public address for advertising */
-	BT_LE_ADV_ADDR_PUBLIC,
+	/** Use local identity address for advertising. Unless a static
+	  * random address has been configured this will be the public
+	  * address.
+	  */
+	BT_LE_ADV_ADDR_IDENTITY,
 
 	/** Use local Non-resolvable Private Address (NRPA) for advertising */
 	BT_LE_ADV_ADDR_NRPA,
@@ -127,7 +130,7 @@ struct bt_le_adv_param {
 			.interval_max = (_int_max), \
 		 })
 
-#define BT_LE_ADV(t) BT_LE_ADV_PARAM(t, BT_LE_ADV_ADDR_PUBLIC, \
+#define BT_LE_ADV(t) BT_LE_ADV_PARAM(t, BT_LE_ADV_ADDR_IDENTITY, \
 				     BT_GAP_ADV_FAST_INT_MIN_2, \
 				     BT_GAP_ADV_FAST_INT_MAX_2)
 

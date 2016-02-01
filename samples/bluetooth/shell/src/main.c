@@ -575,12 +575,12 @@ static void cmd_advertise(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "on")) {
 		param.type = BT_LE_ADV_IND;
-		param.addr_type = BT_LE_ADV_ADDR_PUBLIC;
+		param.addr_type = BT_LE_ADV_ADDR_IDENTITY;
 		scan_rsp = sd;
 		scan_rsp_len = ARRAY_SIZE(sd);
 	} else if (!strcmp(argv[1], "scan")) {
 		param.type = BT_LE_ADV_SCAN_IND;
-		param.addr_type = BT_LE_ADV_ADDR_PUBLIC;
+		param.addr_type = BT_LE_ADV_ADDR_IDENTITY;
 		scan_rsp = sd;
 		scan_rsp_len = ARRAY_SIZE(sd);
 	} else if (!strcmp(argv[1], "nconn")) {
