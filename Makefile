@@ -29,6 +29,7 @@ UNAME := $(shell uname)
 ifeq (MINGW, $(findstring MINGW, $(UNAME)))
 HOST_OS=MINGW
 PWD_OPT=-W
+DISABLE_TRYRUN=y
 else ifeq (Linux, $(findstring Linux, $(UNAME)))
 HOST_OS=Linux
 else ifeq (Darwin, $(findstring Darwin, $(UNAME)))
