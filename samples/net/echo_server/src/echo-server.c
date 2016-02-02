@@ -16,12 +16,6 @@
  * limitations under the License.
  */
 
-/*
- * Note that both the nano and microkernel images in this example
- * have a dummy fiber/task that does nothing. This is just here to
- * simulate a multi application scenario.
- */
-
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define PRINT           printf
@@ -31,10 +25,15 @@
 #endif
 
 #include <zephyr.h>
+#include <sections.h>
 
 #include <net/ip_buf.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
+
+#include <contiki/ipv6/uip-ds6-route.h>
+#include <contiki/ip/uip.h>
+#include <contiki/ipv6/uip-ds6.h>
 
 #ifndef CONFIG_ETHERNET
 /* The peer is the client in our case. Just invent a mac
@@ -51,9 +50,13 @@ static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
 #define MY_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x1 } } }
+#define PEER_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
 
 /* admin-local, dynamically allocated multicast address */
 #define MCAST_IPADDR { { { 0xff,0x84,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
+
+static const struct in6_addr in6addr_peer = PEER_IPADDR;
+static struct in6_addr in6addr_my = MY_IPADDR;
 #else
 /* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
 #define MY_IPADDR { { { 192,0,2,2 } } }
@@ -76,6 +79,30 @@ static inline void init_server()
 		uip_ipaddr_t addr;
 		uip_ipaddr(&addr, 192,0,2,2);
 		uip_sethostaddr(&addr);
+	}
+#else /* IPv6 */
+	{
+		uip_ipaddr_t *addr;
+
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+		/* Set the routes and neighbor cache only if we do not have
+		 * neighbor discovery enabled. This setting should only be
+		 * used if running in qemu and using slip (tun device).
+		 */
+		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&peer_mac;
+
+		addr = (uip_ipaddr_t *)&in6addr_peer;
+		uip_ds6_defrt_add(addr, 0);
+
+		/* We cannot send to peer unless it is in neighbor
+		 * cache. Neighbor cache should be populated automatically
+		 * but do it here so that test works from first packet.
+		 */
+		uip_ds6_nbr_add(addr, lladdr, 0, NBR_REACHABLE);
+#endif
+
+		addr = (uip_ipaddr_t *)&in6addr_my;
+		uip_ds6_addr_add(addr, 0, ADDR_MANUAL);
 	}
 #endif
 }
@@ -160,7 +187,6 @@ static inline bool get_context(struct net_context **recv,
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 	static const struct in6_addr in6addr_mcast = MCAST_IPADDR;
-	static struct in6_addr in6addr_my = MY_IPADDR;
 
 	mcast_addr.in6_addr = in6addr_mcast;
 	mcast_addr.family = AF_INET6;
@@ -205,34 +231,12 @@ static inline bool get_context(struct net_context **recv,
 	return true;
 }
 
-#ifdef CONFIG_MICROKERNEL
-
-void task_receive(void)
-{
-	static struct net_context *recv;
-	static struct net_context *mcast_recv;
-
-	net_init();
-
-	init_server();
-
-	if (!get_context(&recv, &mcast_recv)) {
-		PRINT("%s: Cannot get network contexts\n", __func__);
-		return;
-	}
-
-	while (1) {
-		receive_and_reply(__func__, recv, mcast_recv);
-	}
-}
-
-#else /*  CONFIG_NANOKERNEL */
-
+#ifdef CONFIG_NANOKERNEL
 #define STACKSIZE 2000
+char __noinit __stack fiberStack[STACKSIZE];
+#endif
 
-char fiberStack[STACKSIZE];
-
-void fiber_receive(void)
+void receive(void)
 {
 	static struct net_context *recv;
 	static struct net_context *mcast_recv;
@@ -253,8 +257,10 @@ void main(void)
 
 	init_server();
 
+#ifdef CONFIG_MICROKERNEL
+	receive();
+#else
 	task_fiber_start (&fiberStack[0], STACKSIZE,
-			(nano_fiber_entry_t)fiber_receive, 0, 0, 7, 0);
+			(nano_fiber_entry_t)receive, 0, 0, 7, 0);
+#endif
 }
-
-#endif /* CONFIG_MICROKERNEL ||  CONFIG_NANOKERNEL */

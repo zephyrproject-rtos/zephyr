@@ -1,5 +1,5 @@
-% Application       : Network echo server
+% Application       : echo server
 
 % TASK NAME  PRIO ENTRY STACK GROUPS
 % ==================================
-  TASK TASKA    7 task_receive  2048 [EXE]
+  TASK MAIN  7    main  2048 [EXE]
