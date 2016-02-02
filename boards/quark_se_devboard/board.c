@@ -28,7 +28,7 @@ struct cc2520_gpio_config **cc2520_gpio_configure(void)
 {
 	struct device *gpio;
 
-	int flags_int = GPIO_INT | GPIO_INT_LEVEL |
+	int flags_int = GPIO_INT | GPIO_INT_EDGE |
 			GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE;
 	int flags_int_in = flags_int | GPIO_DIR_IN;
 	int flags_noint_out = GPIO_DIR_OUT;
