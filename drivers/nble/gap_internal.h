@@ -702,12 +702,9 @@ struct ble_gap_cancel_connect_params {
  * The response to this request is received through
  * @ref on_ble_gap_cancel_connect_rsp
  *
- * @param par Contains address of device for which the connection shall
- * be canceled
  * @param user_data Pointer to user data
  */
-void ble_gap_cancel_connect_req(const struct ble_gap_cancel_connect_params *par,
-				void *priv);
+void ble_gap_cancel_connect_req(void *user_data);
 
 /**
  * Response to @ref ble_gap_cancel_connect_req.

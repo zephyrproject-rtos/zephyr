@@ -46,10 +46,17 @@ enum BLE_GATT_IND_TYPES {
 };
 
 /** GATT Register structure for one service */
-struct ble_gatt_register {
-	/**< Index of service data base, used in response to match request */
-	uint8_t service_idx;
+struct ble_gatt_register_req {
+	/**< Base address of the attribute table in the Quark mem space */
+	struct bt_gatt_attr *attr_base;
 	uint8_t attr_count; /**< Number of of attributes in this service */
+};
+
+/** GATT Register structure for one service */
+struct ble_gatt_register_rsp {
+	int status;			/**< Status of the registration op */
+	struct bt_gatt_attr *attr_base;	/**< Pointer to the registered table */
+	uint8_t attr_count;		/**< Number of attributes  added */
 };
 
 /** Service index and Attribute index mapping structure.
@@ -92,6 +99,23 @@ struct ble_gatt_wr_evt {
 	uint16_t attr_handle;		/**< handle of attribute to write */
 	uint16_t offset;		/**< offset in attribute buffer */
 	uint8_t op;			/**< @ref BLE_GATTS_WR_OPS */
+};
+
+/**
+ * Read event context data structure.
+ */
+struct nble_gatt_rd_evt {
+	struct bt_gatt_attr *attr;	/**< GATT Attribute */
+	uint16_t conn_handle;		/**< Connection handle */
+	uint16_t attr_handle;		/**< handle of attribute to write */
+	uint16_t offset;		/**< offset in attribute buffer */
+};
+
+struct ble_gatts_rw_reply_params {
+	int status;			/**< Reply status, from errno */
+	uint16_t conn_handle;		/**< Connection handle */
+	uint16_t offset;		/**< Offset in attribute buffer */
+	uint8_t write_reply;		/**< 0 if read reply, otherwise rsp */
 };
 
 /**
@@ -155,7 +179,13 @@ struct ble_gattc_prim_svc {
  */
 struct ble_gattc_rsp {
 	int status;
-	uint16_t conn_handle;			/**< GAP connection handle */
+	uint16_t conn_handle;		/**< GAP connection handle */
+};
+
+struct ble_gattc_disc_rsp {
+	int status;
+	uint16_t conn_handle;
+	uint8_t type;			/**< @ref BLE_GATT_DISC_TYPES */
 };
 
 struct ble_gattc_evt {
@@ -289,7 +319,7 @@ void on_ble_gatts_send_svc_changed_rsp(const struct ble_core_response *par);
  * @param attr Serialized attribute buffer
  * @param attr_len Length of buffer
  */
-void ble_gatt_register_req(const struct ble_gatt_register *par,
+void ble_gatt_register_req(const struct ble_gatt_register_req *par,
 			   uint8_t *buf, uint16_t len);
 
 /**
@@ -297,8 +327,8 @@ void ble_gatt_register_req(const struct ble_gatt_register *par,
  *
  * This is returned as a table on registering.
  */
-struct ble_gatt_attr_idx_entry {
-	uint16_t handle;	/* handle from ble contr should be sufficient */
+struct ble_gatt_attr_handles {
+	uint16_t handle; /* handle from ble controller should be sufficient */
 };
 
 /** Response to registering a BLE GATT Service.
@@ -308,10 +338,10 @@ struct ble_gatt_attr_idx_entry {
  *
  * @param par Parameters of attribute data base
  * @param attr Returned attributes index list
- * @param attr_len Length of buffer
+ * @param len Length of buffer
  */
-void on_ble_gatt_register_rsp(const struct ble_gatt_register *par,
-			      const struct ble_gatt_attr_idx_entry *attr,
+void on_ble_gatt_register_rsp(const struct ble_gatt_register_rsp *par,
+			      const struct ble_gatt_attr_handles *attr,
 			      uint8_t len);
 
 /**
@@ -390,13 +420,12 @@ void ble_gattc_discover_req(const struct ble_core_discover_params *req,
 /**
  * Response to @ref ble_gattc_discover_req.
  *
- * @param ev Pointer to the event structure
+ * @param rsp Response
  * @param data Pointer to the data
- * @param data_len Length of the data
+ * @param len Length of the data
  */
-void on_ble_gattc_discover_rsp(const struct ble_gattc_evt *ev,
-			       const struct ble_gattc_attr *data,
-			       uint8_t data_len);
+void on_ble_gattc_discover_rsp(const struct ble_gattc_disc_rsp *rsp,
+			       const uint8_t *data, uint8_t len);
 
 /** GATT Attribute stream structure.
  *

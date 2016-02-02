@@ -186,16 +186,15 @@ void on_ble_gatts_get_attribute_value_rsp(const struct ble_gatts_attribute_respo
 	BT_DBG("");
 }
 
-void on_ble_gatt_register_rsp(const struct ble_gatt_register *par,
-			      const struct ble_gatt_attr_idx_entry *attr,
+void on_ble_gatt_register_rsp(const struct ble_gatt_register_rsp *rsp,
+			      const struct ble_gatt_attr_handles *handles,
 			      uint8_t len)
 {
 	BT_DBG("");
 }
 
-void on_ble_gattc_discover_rsp(const struct ble_gattc_evt *ev,
-			       const struct ble_gattc_attr *data,
-			       uint8_t data_len)
+void on_ble_gattc_discover_rsp(const struct ble_gattc_disc_rsp *rsp,
+			       const uint8_t *data, uint8_t len)
 {
 	BT_DBG("");
 }

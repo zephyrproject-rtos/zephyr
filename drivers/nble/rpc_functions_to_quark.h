@@ -37,29 +37,19 @@
 		 const struct ble_gap_timout_evt *)		\
 	FN_SIG_S(on_ble_gap_rssi_evt,				\
 		 const struct ble_gap_rssi_evt *)		\
-	FN_SIG_S(on_ble_gap_service_read_rsp,			\
+	FN_SIG_S(on_ble_common_rsp,				\
+		 const struct ble_core_response *)		\
+	FN_SIG_S(on_ble_gap_connect_rsp,			\
+		 const struct ble_core_response *)		\
+	FN_SIG_S(on_ble_gap_cancel_connect_rsp,			\
 		 const struct ble_core_response *)		\
 	FN_SIG_S(on_ble_gap_read_bda_rsp,			\
 		 const struct ble_service_read_bda_response *)	\
 	FN_SIG_S(on_ble_gap_disconnect_rsp,			\
 		 const struct ble_core_response *)		\
-	FN_SIG_S(on_ble_gap_sm_pairing_rsp,			\
-		 const struct ble_core_response *)		\
 	FN_SIG_S(on_ble_gap_sm_config_rsp,			\
 		 struct ble_gap_sm_config_rsp *)		\
-	FN_SIG_S(on_ble_gap_clr_white_list_rsp,			\
-		 const struct ble_core_response *)		\
 	FN_SIG_S(on_ble_gap_sm_passkey_reply_rsp,		\
-		 const struct ble_core_response *)		\
-	FN_SIG_S(on_ble_gap_connect_rsp,			\
-		 const struct ble_core_response *)		\
-	FN_SIG_S(on_ble_gap_start_scan_rsp,			\
-		 const struct ble_core_response *)		\
-	FN_SIG_S(on_ble_gap_stop_scan_rsp,			\
-		 const struct ble_core_response *)		\
-	FN_SIG_S(on_ble_gap_cancel_connect_rsp,			\
-		 const struct ble_core_response *)		\
-	FN_SIG_S(on_ble_gap_set_option_rsp,			\
 		 const struct ble_core_response *)		\
 	FN_SIG_S(on_ble_gap_generic_cmd_rsp,			\
 		 const struct ble_core_response *)		\
@@ -72,8 +62,6 @@
 	FN_SIG_S(on_ble_set_enable_config_rsp,			\
 		 const struct ble_core_response *)		\
 	FN_SIG_S(on_ble_gap_set_rssi_report_rsp,		\
-		 const struct ble_core_response *)		\
-	FN_SIG_S(on_ble_gap_wr_white_list_rsp,			\
 		 const struct ble_core_response *)		\
 	FN_SIG_S(on_ble_gap_dbg_rsp,				\
 		 const struct debug_response *)			\
@@ -88,7 +76,9 @@
 	FN_SIG_S(on_ble_gap_start_advertise_rsp,		\
 		 const struct ble_core_response *)		\
 	FN_SIG_S(on_ble_gap_stop_advertise_rsp,			\
-		 const struct ble_core_response *)
+		 const struct ble_core_response *)		\
+	FN_SIG_S(on_ble_gatts_read_evt,				\
+		 const struct nble_gatt_rd_evt *)
 
 #define LIST_FN_SIG_P						\
 	FN_SIG_P(on_ble_gap_dtm_init_rsp, void *)
@@ -106,12 +96,12 @@
 		   const struct ble_gatts_attribute_response *,	\
 		   uint8_t *, uint8_t)				\
 	FN_SIG_S_B(on_ble_gatt_register_rsp,			\
-		   const struct ble_gatt_register *,		\
-		   const struct ble_gatt_attr_idx_entry *,	\
+		   const struct ble_gatt_register_rsp *,	\
+		   const struct ble_gatt_attr_handles *,	\
 		   uint8_t)					\
 	FN_SIG_S_B(on_ble_gattc_discover_rsp,			\
-		   const struct ble_gattc_evt *,		\
-		   const struct ble_gattc_attr *, uint8_t)
+		   const struct ble_gattc_disc_rsp *,		\
+		   const uint8_t *, uint8_t)
 
 #define LIST_FN_SIG_B_B_P
 

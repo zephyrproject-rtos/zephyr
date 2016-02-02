@@ -28,18 +28,22 @@
 	FN_SIG_P(ble_gap_clr_white_list_req, void *)			\
 	FN_SIG_P(ble_gap_stop_scan_req, void *)				\
 	FN_SIG_P(ble_gap_sm_clear_bonds_req, void *)			\
+	FN_SIG_P(ble_gap_cancel_connect_req, void *)			\
 	FN_SIG_P(ble_get_bonded_device_list_req, void *)
 
 #define LIST_FN_SIG_S_B							\
 	FN_SIG_S_B(ble_gatt_register_req,				\
-		   const struct ble_gatt_register *,			\
+		   const struct ble_gatt_register_req *,		\
 		   uint8_t *, uint16_t)					\
 	FN_SIG_S_B(ble_gatt_send_notif_req,				\
 		   const struct ble_gatt_send_notif_ind_params *,	\
 		   uint8_t *, uint16_t)					\
 	FN_SIG_S_B(ble_gatt_send_ind_req,				\
 		   const struct ble_gatt_send_notif_ind_params *,	\
-		   uint8_t *, uint8_t)
+		   uint8_t *, uint8_t)					\
+	FN_SIG_S_B(nble_gatts_rw_authorize_reply_req,			\
+		   const struct ble_gatts_rw_reply_params *,		\
+		   uint8_t *, uint16_t)
 
 #define LIST_FN_SIG_B_B_P						\
 	FN_SIG_B_B_P(ble_gap_wr_white_list_req, bt_addr_le_t *,		\
@@ -61,8 +65,6 @@
 		   const struct ble_gap_connect_req_params *, void *)	\
 	FN_SIG_S_P(ble_gap_start_scan_req,				\
 		   const struct ble_gap_scan_params *, void *)		\
-	FN_SIG_S_P(ble_gap_cancel_connect_req,				\
-		   const struct ble_gap_cancel_connect_params *, void *)\
 	FN_SIG_S_P(ble_gap_generic_cmd_req,				\
 		   const struct ble_gap_gen_cmd_params *, void *)	\
 	FN_SIG_S_P(ble_gap_set_option_req,				\
