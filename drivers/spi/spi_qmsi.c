@@ -200,11 +200,13 @@ static int spi_qmsi_transceive(struct device *dev,
 	if (rc != QM_RC_OK)
 		return DEV_INVALID_CONF;
 
-	rc = qm_spi_irq_transfer(spi, xfer);
-	if (rc != QM_RC_OK)
-		return DEV_FAIL;
-
 	spi_control_cs(dev, true);
+
+	rc = qm_spi_irq_transfer(spi, xfer);
+	if (rc != QM_RC_OK) {
+		spi_control_cs(dev, false);
+		return DEV_FAIL;
+	}
 
 	device_sync_call_wait(&context->sync);
 
