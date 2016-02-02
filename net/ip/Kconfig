@@ -84,7 +84,8 @@ config	NETWORKING_IPV6_NO_ND
 	default n
 	help
 	  Normally ND should be enabled but in order to simplify
-	  the network setup, it is currently turned off.
+	  the network setup it can be turned off if using
+	  slip and tun device.
 endif
 
 config	NETWORKING_WITH_RPL
