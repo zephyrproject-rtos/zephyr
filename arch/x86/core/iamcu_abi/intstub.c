@@ -34,11 +34,27 @@ static inline void enable_nested_interrupts(void){};
 static inline void disable_nested_interrupts(void){};
 #endif
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
+extern void _sys_k_event_logger_interrupt(void);
+#else
+#define _sys_k_event_logger_interrupt()
+#endif
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
+extern void _sys_k_event_logger_exit_sleep(void);
+#else
+#define _sys_k_event_logger_exit_sleep()
+#endif
+
 typedef void (*int_handler_t) (int context);
 
 void _execute_handler(int_handler_t function, int context)
 {
 	_int_latency_start();
+
+	_sys_k_event_logger_interrupt();
+
+	_sys_k_event_logger_exit_sleep();
 
 #ifdef CONFIG_NESTED_INTERRUPTS
 	if (!_nanokernel.nested)

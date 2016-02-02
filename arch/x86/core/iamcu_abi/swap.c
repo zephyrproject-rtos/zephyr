@@ -18,6 +18,12 @@
 #include <sections.h>
 #include <nano_private.h>
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
+extern void _sys_k_event_logger_context_switch(void);
+#else
+#define _sys_k_event_logger_context_switch()
+#endif
+
 unsigned int _Swap(unsigned int eflags)
 {
 	struct tcs *next;
@@ -34,6 +40,8 @@ unsigned int _Swap(unsigned int eflags)
 	/* save the stack pointer into the current context structure */
 	__asm__ volatile("mov %%esp, %0"
 			 :"=m" (_nanokernel.current->coopReg.esp));
+
+	_sys_k_event_logger_context_switch();
 
 	/* find the next context to run */
 	if (_nanokernel.fiber) {
