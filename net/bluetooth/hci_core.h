@@ -161,21 +161,18 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
 					uint16_t latency, uint16_t timeout)
 {
-	uint16_t max_latency;
-
 	if (min > max || min < 6 || max > 3200) {
 		return false;
 	}
 
-	if (timeout < 10 || timeout > 3200) {
+	/* Limits according to BT Core spec 4.2 [Vol 2, Part E, 7.8.12] */
+	if (timeout < 10 || timeout > 3200 ||
+	    (2 * timeout) < ((1 + latency) * max * 5)) {
 		return false;
 	}
 
-	/* calculation based on BT spec 4.2 [Vol3, PartA, 4.20]
-	 * max_latency = ((timeout * 10)/(max * 1.25 * 2)) - 1;
-	 */
-	max_latency = (timeout * 4 / max) - 1;
-	if (latency > 499 || latency > max_latency) {
+	/* Limits according to BT Core spec 4.2 [Vol 6, Part B, 4.5.1] */
+	if (latency > 499 || ((latency + 1) * max) > (timeout * 4)) {
 		return false;
 	}
 
