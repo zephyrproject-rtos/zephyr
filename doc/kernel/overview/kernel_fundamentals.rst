@@ -33,7 +33,7 @@ IoT wireless gateways.
 
 Related sections:
 
-* :ref:`common_kernel_services`
+* :ref:`common`
 * :ref:`nanokernel`
 * :ref:`microkernel`
 
@@ -121,7 +121,7 @@ not provided by nanokernel timers, such as a periodic expiration mode.
 
 Related sections:
 
-* :ref:`kernel_clocks`
+* :ref:`common_kernel_clocks`
 * :ref:`Nanokernel Timer Services <nanokernel_timers>`
 * :ref:`Microkernel Timers Services <microkernel_timers>`
 
@@ -231,8 +231,8 @@ The nanokernel does not provide any support for dynamic memory allocation.
 
 For additional information see:
 
-* :ref:`Microkernel Memory Maps <memory_maps>`
-* :ref:`Microkernel Pools <memory_pools>`
+* :ref:`Microkernel Memory Maps <microkernel_memory_maps>`
+* :ref:`Microkernel Pools <microkernel_memory_pools>`
 
 Public and Private Microkernel Objects
 **************************************

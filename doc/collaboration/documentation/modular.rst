@@ -38,7 +38,7 @@ modularization is still a work in progress and new content must be
 structured following this guidelines.
 
 .. note::
-   The guidelines presented in :ref:`basic_writing` still apply to
+   The guidelines presented in :ref:`basic` still apply to
    modular writing, except where specifically noted to the contrary.
 
 Module Types

@@ -1,4 +1,4 @@
-.. _variable_documentation:
+.. _variables:
 
 Variable Documentation
 ######################
@@ -67,5 +67,5 @@ comment is only a sentence fragment.
 Notice that the variable comments also apply for more complex types like
 structs. The comments on lines 4 and 7 apply only to the specific
 variable and not to the whole struct. Complex types must be documented
-wherever they are defined. See :ref:`structure_documentation` and
-:ref:`type_definition_documentation` for further details.
+wherever they are defined. See :ref:`structs` and
+:ref:`typedefs` for further details.

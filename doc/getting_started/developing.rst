@@ -10,11 +10,11 @@ you with multiple resources:
 The :ref:`application` section collects all the information you need to
 develop, run and build your Zephyr applications.
 
-The :ref:`contributing_code` section collects all the project's guidelines
+The :ref:`code` section collects all the project's guidelines
 regarding code collaboration, code style and Gerrit use. Be sure to test your
 development before submitting it to Gerrit.
 
-The :ref:`zephyr_primer` section contains detailed information regarding
+The :ref:`kernel` section contains detailed information regarding
 micro- and nanokernel services and their functionality.
 
 The :ref:`api` section contains the detailed information of all the available

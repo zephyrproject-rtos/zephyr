@@ -1,4 +1,4 @@
-.. _common_kernel_services:
+.. _common:
 
 Common Kernel Services
 ######################

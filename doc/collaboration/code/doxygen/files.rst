@@ -1,4 +1,4 @@
-.. _file_header_documentation:
+.. _files:
 
 File Header Documentation
 #########################

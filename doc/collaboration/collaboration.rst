@@ -1,4 +1,4 @@
-.. _collaboration_guidelines:
+.. _collaboration:
 
 Collaboration Guidelines
 ########################

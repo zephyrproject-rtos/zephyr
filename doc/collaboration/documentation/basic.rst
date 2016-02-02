@@ -1,5 +1,4 @@
-.. _basic_writing:
-
+.. _basic:
 Basic Writing Style Guidelines
 ##############################
 

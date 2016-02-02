@@ -1,4 +1,4 @@
-.. _crypto:
+.. _tinycrypt:
 
 TinyCrypt Cryptographic Library v1.0
 ####################################

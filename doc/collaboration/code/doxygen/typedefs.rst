@@ -1,4 +1,4 @@
-.. _type_definition_documentation:
+.. _typedefs:
 
 Type Definition Documentation
 #############################

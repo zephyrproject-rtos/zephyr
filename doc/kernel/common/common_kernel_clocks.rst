@@ -1,4 +1,4 @@
-.. _kernel_clocks:
+.. _common_kernel_clocks:
 
 Kernel Clocks
 #############

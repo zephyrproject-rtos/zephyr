@@ -1,4 +1,4 @@
-.. _contributing_code:
+.. _code:
 
 Contributing Code
 #################

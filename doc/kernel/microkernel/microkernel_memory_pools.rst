@@ -1,4 +1,4 @@
-.. _memory_pools:
+.. _microkernel_memory_pools:
 
 Memory Pools
 ############

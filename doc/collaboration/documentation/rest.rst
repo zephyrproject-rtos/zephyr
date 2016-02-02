@@ -1,4 +1,4 @@
-.. _restructured:
+.. _rest:
 
 Restructured Text Guidelines
 ############################

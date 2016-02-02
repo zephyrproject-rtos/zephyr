@@ -3,7 +3,7 @@
 Microkernel Object Configuration
 ################################
 
-Microkernel objects are explained fully in the :ref:`zephyr_primer`.
+Microkernel objects are explained fully in the :ref:`kernel`.
 See :ref:`microkernel` for example MDEF entries.
 
 Procedure

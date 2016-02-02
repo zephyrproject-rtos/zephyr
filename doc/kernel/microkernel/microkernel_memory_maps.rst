@@ -1,4 +1,4 @@
-.. _memory_maps:
+.. _microkernel_memory_maps:
 
 Memory Maps
 ###########

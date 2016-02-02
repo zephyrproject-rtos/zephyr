@@ -39,7 +39,7 @@ Common Services
 
 For a complete list of services common to both the nanokernel and
 microkernel, including a description of each with code examples,
-see :ref:`common_kernel_services`.
+see :ref:`common`.
 
 
 Procedures and Conventions
@@ -104,7 +104,7 @@ Steps
 1. Create a directory structure for your source code in :file:`src`
    and add your source code files to it.
 
-  For many useful code examples, see :ref:`common_kernel_services`,
+  For many useful code examples, see :ref:`common`,
   :ref:`microkernel`, and :ref:`nanokernel`.
 
 2. Create a :file:`Makefile` for each :file:`src` directory.

@@ -1,4 +1,4 @@
-.. _define_documentation:
+.. _defines:
 
 Define Documentation
 ####################

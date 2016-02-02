@@ -1,4 +1,4 @@
-.. _function_documentation:
+.. _functions:
 
 Function Documentation
 ######################
@@ -128,7 +128,7 @@ Lines 13 and 16 contain two comments that will not be included by Doxygen
 in the documentation. To include that information, use the brief description or the detailed
 description inside the comment block.
 Remember that variables must be documented separately. See
-:ref:`variable_documentation` for more details.
+:ref:`variables` for more details.
 
 .. literalinclude:: hello_commented.c
    :language: c

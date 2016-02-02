@@ -1,4 +1,4 @@
-.. _zephyr_primer:
+.. _kernel:
 
 Zephyr Kernel Primer
 ####################

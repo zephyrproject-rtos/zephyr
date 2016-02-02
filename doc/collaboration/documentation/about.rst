@@ -1,4 +1,4 @@
-.. _about_docs_style:
+.. _about:
 
 About the Documentation Style Guide
 ###################################

@@ -1,4 +1,4 @@
-.. _float_services:
+.. _common_float:
 
 Floating Point Services
 #######################

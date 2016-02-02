@@ -1,4 +1,4 @@
-.. _atomic_services:
+.. _common_atomic:
 
 Atomic Services
 ###############

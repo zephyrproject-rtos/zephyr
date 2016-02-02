@@ -1,4 +1,4 @@
-.. _license_guidelines:
+.. _licenses:
 
 License Guidelines
 ##################

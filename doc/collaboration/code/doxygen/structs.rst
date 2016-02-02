@@ -1,4 +1,4 @@
-.. _structure_documentation:
+.. _structs:
 
 Structure Documentation
 #######################

@@ -1,4 +1,4 @@
-.. _simple_english:
+.. _simple:
 
 Simple English
 ##############

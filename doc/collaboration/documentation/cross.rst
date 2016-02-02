@@ -47,14 +47,14 @@ Do not use labels like these:
 
    .. _building:
 
-This is an internal reference to the beginning of :ref:`restructured`.
+This is an internal reference to the beginning of :ref:`rest`.
 
 Observe that the ``:ref:`` markup is replaced with the title's text.
 Similarly, it will be replaced with the figure's caption. If a different
 text is needed the ``:ref:`` markup can still be used.
 
 This is an internal reference to the beginning of
-:ref:`this module <restructured>`.
+:ref:`this module <rest>`.
 
 Use the following templates to insert internal cross references properly.
 
@@ -109,8 +109,9 @@ reference to a documented code element.
    :c:type:`type_name`
 
 .. caution::
+
    References to in-code documentation only work if the element has been
-   documented in the code following the :ref:`contributing_code`.
+   documented in the code following the :ref:`code`.
 
 External References
 ===================
