@@ -16,11 +16,11 @@
 # limitations under the License.
 #
 
-NET_INTF ?= slip
+NET_IFACE ?= slip
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 BOARD ?= qemu_x86
-CONF_FILE = prj_$(ARCH)_$(NET_INTF).conf
+CONF_FILE = prj_$(NET_IFACE).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/echo_server/src/
 
 include $(ZEPHYR_BASE)/Makefile.inc
