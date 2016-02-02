@@ -227,17 +227,8 @@ int irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	 */
 
 	vector = _SysIntVecAlloc(irq, priority, flags);
-#if defined(DEBUG)
-	/*
-	 * The return value from _SysIntVecAlloc() will be -1 if an invalid
-	 * <irq> or <priority> was specified, or if a vector could not be
-	 * allocated to honour the requested priority (for the boards that can
-	 * support programming the interrupt vector for each IRQ).
-	 */
-
-	if (vector == -1)
-		return (-1);
-#endif /* DEBUG */
+	__ASSERT(vector != -1, "Unable to request a vector for irq %d with priority %d",
+		 irq, priority);
 
 	stub_idx = _stub_alloc(&next_irq_stub, ALL_DYN_IRQ_STUBS);
 	__ASSERT(stub_idx != -1, "No available interrupt stubs found");
@@ -340,15 +331,10 @@ int _IntVecAlloc(unsigned int requested_priority)
 	static unsigned int mask[2] = {0x0000ffff, 0xffff0000};
 
 	vector_block = requested_priority + 2;
-#if defined(DEBUG)
-	/*
-	 * check whether the IDT was configured with sufficient vectors to
-	 * satisfy the priority request.
-	 */
 
-	if (((vector_block << 4) + 15) > CONFIG_IDT_NUM_VECTORS)
-		return (-1);
-#endif /* DEBUG */
+	__ASSERT(((vector_block << 4) + 15) <= CONFIG_IDT_NUM_VECTORS,
+		 "IDT too small (%d entries) to use priority %d",
+		 CONFIG_IDT_NUM_VECTORS, requested_priority);
 
 	/*
 	 * Atomically allocate a vector from the _interrupt_vectors_allocated[]
@@ -377,14 +363,8 @@ int _IntVecAlloc(unsigned int requested_priority)
 	search_set = mask[vector_block & 1] & _interrupt_vectors_allocated[entryToScan];
 	fsb = find_lsb_set(search_set);
 
-#if defined(DEBUG)
-	if (fsb == 0) {
-		/* All vectors for this priority have been allocated. */
-
-		irq_unlock(key);
-		return (-1);
-	}
-#endif /* DEBUG */
+	__ASSERT(fsb != 0, "No remaning vectors for priority level %d",
+		 requested_priority);
 
 	/*
 	 * An available vector of the requested priority was found.
