@@ -137,8 +137,13 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
 void bt_conn_set_param_le(struct bt_conn *conn,
 			  const struct bt_le_conn_param *param);
 
-int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
-			   uint16_t latency, uint16_t timeout);
+int bt_conn_update_param_le(struct bt_conn *conn,
+			    const struct bt_le_conn_param *param);
+
+int bt_conn_le_conn_update(struct bt_conn *conn,
+			   const struct bt_le_conn_param *param);
+
+void notify_le_param_updated(struct bt_conn *conn);
 
 #if defined(CONFIG_BLUETOOTH_SMP)
 /* rand and ediv should be in BT order */

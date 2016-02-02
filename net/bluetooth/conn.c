@@ -104,6 +104,19 @@ static void notify_disconnected(struct bt_conn *conn)
 	}
 }
 
+void notify_le_param_updated(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->le_param_updated) {
+			cb->le_param_updated(conn, conn->le.interval,
+					     conn->le.latency,
+					     conn->le.timeout);
+		}
+	}
+}
+
 #if defined(CONFIG_BLUETOOTH_SMP)
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 {
@@ -858,6 +871,12 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 	return 0;
 }
 
+int bt_conn_le_param_update(struct bt_conn *conn,
+			    const struct bt_le_conn_param *param)
+{
+	return bt_conn_update_param_le(conn, param);
+}
+
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
@@ -991,8 +1010,8 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 }
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
-int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
-			   uint16_t latency, uint16_t timeout)
+int bt_conn_le_conn_update(struct bt_conn *conn,
+			   const struct bt_le_conn_param *param)
 {
 	struct hci_cp_le_conn_update *conn_update;
 	struct net_buf *buf;
@@ -1006,10 +1025,10 @@ int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 	conn_update = net_buf_add(buf, sizeof(*conn_update));
 	memset(conn_update, 0, sizeof(*conn_update));
 	conn_update->handle = sys_cpu_to_le16(conn->handle);
-	conn_update->conn_interval_min = sys_cpu_to_le16(min);
-	conn_update->conn_interval_max = sys_cpu_to_le16(max);
-	conn_update->conn_latency = sys_cpu_to_le16(latency);
-	conn_update->supervision_timeout = sys_cpu_to_le16(timeout);
+	conn_update->conn_interval_min = sys_cpu_to_le16(param->interval_min);
+	conn_update->conn_interval_max = sys_cpu_to_le16(param->interval_max);
+	conn_update->conn_latency = sys_cpu_to_le16(param->latency);
+	conn_update->supervision_timeout = sys_cpu_to_le16(param->timeout);
 
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }

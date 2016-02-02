@@ -493,30 +493,15 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 	return 0;
 }
 
-static int update_conn_params(struct bt_conn *conn)
+static int update_conn_param(struct bt_conn *conn)
 {
-	BT_DBG("conn %p features 0x%x", conn, conn->le.features[0]);
+	const struct bt_le_conn_param *param;
 
-	/* Check if there's a need to update conn params */
-	if (conn->le.interval >= conn->le.interval_min &&
-	    conn->le.interval <= conn->le.interval_max) {
-		return -EALREADY;
-	}
-
-	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
-	    !(bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
-		return bt_l2cap_update_conn_param(conn);
-	}
-
-	if ((conn->le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
-	    (bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
-		return bt_conn_le_conn_update(conn, conn->le.interval_min,
-					      conn->le.interval_max,
-					      conn->le.latency,
-					      conn->le.timeout);
-	}
-
-	return -EBUSY;
+	param = BT_LE_CONN_PARAM(conn->le.interval_min,
+				 conn->le.interval_max,
+				 conn->le.latency,
+				 conn->le.timeout);
+	return bt_conn_update_param_le(conn, param);
 }
 
 static void le_conn_complete(struct net_buf *buf)
@@ -605,7 +590,7 @@ static void le_conn_complete(struct net_buf *buf)
 		}
 	}
 
-	update_conn_params(conn);
+	update_conn_param(conn);
 
 done:
 	bt_conn_unref(conn);
@@ -629,7 +614,7 @@ static void le_remote_feat_complete(struct net_buf *buf)
 		       sizeof(conn->le.features));
 	}
 
-	update_conn_params(conn);
+	update_conn_param(conn);
 
 	bt_conn_unref(conn);
 }
@@ -708,10 +693,9 @@ static void le_conn_update_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_conn_update_complete *evt = (void *)buf->data;
 	struct bt_conn *conn;
-	uint16_t handle, interval;
+	uint16_t handle;
 
 	handle = sys_le16_to_cpu(evt->handle);
-	interval = sys_le16_to_cpu(evt->interval);
 
 	BT_DBG("status %u, handle %u", evt->status, handle);
 
@@ -722,10 +706,11 @@ static void le_conn_update_complete(struct net_buf *buf)
 	}
 
 	if (!evt->status) {
-		conn->le.interval = interval;
+		conn->le.interval = sys_le16_to_cpu(evt->interval);
+		conn->le.latency = sys_le16_to_cpu(evt->latency);
+		conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
+		notify_le_param_updated(conn);
 	}
-
-	/* TODO Notify about connection */
 
 	bt_conn_unref(conn);
 }
@@ -808,6 +793,33 @@ void bt_conn_set_param_le(struct bt_conn *conn,
 	conn->le.latency = param->latency;
 	conn->le.timeout = param->timeout;
 }
+
+int bt_conn_update_param_le(struct bt_conn *conn,
+			    const struct bt_le_conn_param *param)
+{
+	BT_DBG("conn %p features 0x%x params (%d-%d %d %d)", conn,
+	       conn->le.features[0], param->interval_min, param->interval_max,
+	       param->latency, param->timeout);
+
+	/* Check if there's a need to update conn params */
+	if (conn->le.interval >= param->interval_min &&
+	    conn->le.interval <= param->interval_max) {
+		return -EALREADY;
+	}
+
+	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
+	    !(bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+		return bt_l2cap_update_conn_param(conn, param);
+	}
+
+	if ((conn->le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
+	    (bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+		return bt_conn_le_conn_update(conn, param);
+	}
+
+	return -EBUSY;
+}
+
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)

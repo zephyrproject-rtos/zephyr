@@ -283,6 +283,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 				     struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.conn;
+	const struct bt_le_conn_param *param;
 	uint16_t min, max, latency, timeout;
 	bool params_valid;
 	struct bt_l2cap_sig_hdr *hdr;
@@ -303,6 +304,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	max = sys_le16_to_cpu(req->max_interval);
 	latency = sys_le16_to_cpu(req->latency);
 	timeout = sys_le16_to_cpu(req->timeout);
+	param = BT_LE_CONN_PARAM(min, max, latency, timeout);
 
 	BT_DBG("min 0x%4.4x max 0x%4.4x latency: 0x%4.4x timeout: 0x%4.4x",
 	       min, max, latency, timeout);
@@ -329,7 +331,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	bt_l2cap_send(l2cap->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
 
 	if (params_valid) {
-		bt_conn_le_conn_update(conn, min, max, latency, timeout);
+		bt_conn_le_conn_update(conn, param);
 	}
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
@@ -963,7 +965,8 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-int bt_l2cap_update_conn_param(struct bt_conn *conn)
+int bt_l2cap_update_conn_param(struct bt_conn *conn,
+			       const struct bt_le_conn_param *param)
 {
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_conn_param_req *req;
@@ -980,10 +983,10 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn)
 	hdr->len = sys_cpu_to_le16(sizeof(*req));
 
 	req = net_buf_add(buf, sizeof(*req));
-	req->min_interval = sys_cpu_to_le16(conn->le.interval_min);
-	req->max_interval = sys_cpu_to_le16(conn->le.interval_max);
-	req->latency = sys_cpu_to_le16(conn->le.latency);
-	req->timeout = sys_cpu_to_le16(conn->le.timeout);
+	req->min_interval = sys_cpu_to_le16(param->interval_min);
+	req->max_interval = sys_cpu_to_le16(param->interval_max);
+	req->latency = sys_cpu_to_le16(param->latency);
+	req->timeout = sys_cpu_to_le16(param->timeout);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 

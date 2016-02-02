@@ -43,6 +43,12 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	return -ENOSYS;
 }
 
+int bt_conn_le_param_update(struct bt_conn *conn,
+			    const struct bt_le_conn_param *param)
+{
+	return -ENOSYS;
+}
+
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	return -ENOSYS;

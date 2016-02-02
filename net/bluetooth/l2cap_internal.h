@@ -144,7 +144,8 @@ void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf);
 void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf);
 
 /* Perform connection parameter update request */
-int bt_l2cap_update_conn_param(struct bt_conn *conn);
+int bt_l2cap_update_conn_param(struct bt_conn *conn,
+			       const struct bt_le_conn_param *param);
 
 /* Initialize L2CAP and supported channels */
 void bt_l2cap_init(void);

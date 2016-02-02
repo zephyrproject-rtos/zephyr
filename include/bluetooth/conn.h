@@ -149,6 +149,16 @@ struct bt_conn_info {
  */
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
 
+/** @brief Update the connection parameters.
+ *
+ *  @param conn Connection object.
+ *  @param param Updated connection parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_param_update(struct bt_conn *conn,
+			    const struct bt_le_conn_param *param);
+
 /** @brief Disconnect from a remote device or cancel pending connection.
  *
  *  Disconnect an active connection with the specified reason code or cancel
@@ -265,6 +275,8 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
 struct bt_conn_cb {
 	void (*connected)(struct bt_conn *conn, uint8_t err);
 	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
+	void (*le_param_updated)(struct bt_conn *conn, uint16_t interval,
+				 uint16_t latency, uint16_t timeout);
 #if defined(CONFIG_BLUETOOTH_SMP)
 	void (*identity_resolved)(struct bt_conn *conn,
 				  const bt_addr_le_t *rpa,
