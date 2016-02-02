@@ -16,10 +16,10 @@
 # limitations under the License.
 #
 
-MDEF_FILE = prj.mdef
+NET_IFACE ?= slip
 KERNEL_TYPE = nano
 BOARD ?= qemu_x86
-CONF_FILE = prj_$(ARCH).conf
+CONF_FILE = prj_$(NET_IFACE).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
 include $(ZEPHYR_BASE)/samples/net/echo_server/Makefile.ipstack
