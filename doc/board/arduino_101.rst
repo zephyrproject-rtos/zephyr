@@ -15,8 +15,8 @@ flash an ARC and an X86 image to use both.  Developers can use the
 **arduino_101** and **arduino_101_sss** board configurations to build a Zephyr
 Kernel that can be flashed and run on the Arduino 101 platform.  The default
 configuration for Arduino 101 boards can be found in
-:file:`boards/arduino_101_defconfig` for the X86 and
-:file:`boards/arduino_101_sss_defconfig` for the ARC.
+:file:`boards/arduino_101/arduino_101_defconfig` for the X86 and
+:file:`boards/arduino_101/arduino_101_sss_defconfig` for the ARC.
 
 Board Layout
 ************
@@ -283,7 +283,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
    at connecting and controlling the hardware.
 
     This can be done by editing the
-    :file:`samples/nanokernel/app/hello_world/prj_x86.conf` to include:
+    :file:`samples/nanokernel/apps/hello_world/prj.conf` to include:
 
    .. code-block:: console
 
