@@ -177,14 +177,20 @@ static void supported_commands(uint8_t *data, uint16_t len)
 static struct bt_gatt_attr svc_pri = BT_GATT_PRIMARY_SERVICE(NULL);
 static struct bt_gatt_attr svc_sec = BT_GATT_SECONDARY_SERVICE(NULL);
 
+union uuid {
+	struct bt_uuid uuid;
+	struct bt_uuid_16 u16;
+	struct bt_uuid_128 u128;
+};
+
 static void add_service(uint8_t *data, uint16_t len)
 {
 	const struct gatt_add_service_cmd *cmd = (void *) data;
 	struct gatt_add_service_rp rp;
 	struct bt_gatt_attr *attr_svc;
-	struct bt_uuid uuid;
+	union uuid uuid;
 
-	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid.uuid)) {
 		goto fail;
 	}
 
@@ -300,9 +306,9 @@ static uint8_t add_characteristic_cb(const struct bt_gatt_attr *attr,
 	struct gatt_add_characteristic_rp rp;
 	struct bt_gatt_attr *attr_chrc, *attr_value;
 	struct bt_gatt_chrc chrc;
-	struct bt_uuid uuid;
+	union uuid uuid;
 
-	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid.uuid)) {
 		goto fail;
 	}
 
@@ -440,15 +446,15 @@ static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
 	const struct gatt_add_descriptor_cmd *cmd = user_data;
 	struct gatt_add_descriptor_rp rp;
 	struct bt_gatt_attr *attr_desc;
-	struct bt_uuid uuid;
+	union uuid uuid;
 
-	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid.uuid)) {
 		goto fail;
 	}
 
-	if (!bt_uuid_cmp(&uuid, cep.uuid)) {
+	if (!bt_uuid_cmp(&uuid.uuid, cep.uuid)) {
 		attr_desc = add_cep(attr);
-	} else if (!bt_uuid_cmp(&uuid, ccc.uuid)) {
+	} else if (!bt_uuid_cmp(&uuid.uuid, ccc.uuid)) {
 		attr_desc = add_ccc(attr);
 	} else {
 		attr_desc = gatt_db_add(dsc);
@@ -805,7 +811,7 @@ fail:
 }
 
 static struct bt_gatt_discover_params discover_params;
-static struct bt_uuid uuid;
+static union uuid uuid;
 
 static void discover_destroy(void *user_data)
 {
@@ -880,7 +886,7 @@ static void disc_prim_uuid(uint8_t *data, uint16_t len)
 		goto fail_conn;
 	}
 
-	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid.uuid)) {
 		goto fail;
 	}
 
@@ -888,7 +894,7 @@ static void disc_prim_uuid(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	discover_params.uuid = &uuid;
+	discover_params.uuid = &uuid.uuid;
 	discover_params.start_handle = 0x0001;
 	discover_params.end_handle = 0xffff;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
@@ -1121,7 +1127,7 @@ static void disc_chrc_uuid(uint8_t *data, uint16_t len)
 		goto fail_conn;
 	}
 
-	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid)) {
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid.uuid)) {
 		goto fail;
 	}
 
@@ -1129,7 +1135,7 @@ static void disc_chrc_uuid(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	discover_params.uuid = &uuid;
+	discover_params.uuid = &uuid.uuid;
 	discover_params.start_handle = sys_le16_to_cpu(cmd->start_handle);
 	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
