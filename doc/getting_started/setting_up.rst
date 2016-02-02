@@ -11,7 +11,7 @@ Setting up your development environment for Zephyr is done in two steps:
 Access the Code
 ***************
 
-The code is hosted at Linux Foundation and code review is done using
+The code is hosted at the Linux Foundation and code review is done using
 Gerrit. Therefore, a Linux Foundation account is needed to contribute to the
 code. Follow these steps to create an account if you don't have one already:
 
@@ -37,7 +37,17 @@ code. Follow these steps to create an account if you don't have one already:
 #. Verify the browser displays the message :guilabel:`You have successfully
    validated your e-mail address`.
 
-#. Access `Gerrit`_.
+#. Access `Gerrit`_ by selecting :guilabel:`Sign In`:
+
+   .. figure:: figures/setting_up03.png
+      :scale: 75 %
+      :alt: Gerrit without being signed in
+
+#. Use your Linux Foundation ID to Sign In:
+
+   .. figure:: figures/setting_up04.png
+      :scale: 75 %
+      :alt: Gerrit sign in screen
 
 Configuring Gerrit to Use SSH
 =============================
@@ -113,10 +123,20 @@ Checking Out the Source Code
 
 #. Clone the repository:
 
-   .. code-block:: console
+   a. Use your Linux Foundation ID:
 
-      $ git clone
-      ssh://LFID@gerrit.zephyrproject.org:29418/zephyr zephyr-project
+      .. code-block:: console
+
+         $ git clone
+         ssh://LFID@gerrit.zephyrproject.org:29418/zephyr zephyr-project
+
+   .. note:: LFID should be replaced with your Linux Foundation ID.
+
+   b. Alternatively you can clone anonymously:
+
+      .. code-block:: console
+
+         $ git clone https://gerrit.zephyrproject.org/zephyr zephyr-project
 
 You have successfully checked out a copy of the source code to your local
 machine.
