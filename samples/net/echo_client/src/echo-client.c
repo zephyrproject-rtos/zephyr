@@ -164,8 +164,12 @@ static inline void reverse(unsigned char *buf, int len)
 	}
 }
 
+#if 0
 #define WAIT_TIME  1
 #define WAIT_TICKS (WAIT_TIME * sys_clock_ticks_per_sec)
+#else
+#define WAIT_TICKS TICKS_UNLIMITED
+#endif
 
 static inline bool send_packet(const char *name,
 			       struct net_context *ctx,
@@ -413,40 +417,31 @@ void taskB(void)
 
 #define STACKSIZE 2000
 
-static char fiberStack_sending[STACKSIZE];
 static char fiberStack_receiving[STACKSIZE];
 
-/* The other fiber is sending and the other one is receiving. */
 void fiber_sending(void)
 {
-	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
-	bool send_unicast = true;
+	static bool send_unicast = true;
 
-	nano_timer_init(&timer, data);
+	PRINT("%s: Sending packet\n", __func__);
 
-	while (1) {
-		PRINT("%s: Sending packet\n", __func__);
+	expecting = sys_rand32_get() % ipsum_len;
 
-		expecting = sys_rand32_get() % ipsum_len;
-
-		if (send_unicast) {
-			if (send_packet(__func__, unicast, ipsum_len,
-					expecting)) {
-				PRINT("Unicast sending %d bytes FAIL\n",
-				      ipsum_len - expecting);
-			}
-		} else {
-			if (send_packet(__func__, multicast, ipsum_len,
-					expecting)) {
-				PRINT("Multicast sending %d bytes FAIL\n",
-				      ipsum_len - expecting);
-			}
+	if (send_unicast) {
+		if (send_packet(__func__, unicast, ipsum_len,
+				expecting)) {
+			PRINT("Unicast sending %d bytes FAIL\n",
+			      ipsum_len - expecting);
 		}
-
-		send_unicast = !send_unicast;
-		fiber_sleep(10);
+	} else {
+		if (send_packet(__func__, multicast, ipsum_len,
+				expecting)) {
+			PRINT("Multicast sending %d bytes FAIL\n",
+			      ipsum_len - expecting);
+		}
 	}
+
+	send_unicast = !send_unicast;
 }
 
 void fiber_receiving(void)
@@ -455,6 +450,8 @@ void fiber_receiving(void)
 	uint32_t data[2] = {0, 0};
 
 	nano_timer_init(&timer, data);
+
+	fiber_sending();
 
 	while (1) {
 		PRINT("%s: Waiting packet\n", __func__);
@@ -465,7 +462,7 @@ void fiber_receiving(void)
 			      ipsum_len - expecting);
 		}
 
-		fiber_sleep(10);
+		fiber_sending();
 	}
 }
 
@@ -481,9 +478,6 @@ void main(void)
 		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
-
-	task_fiber_start(&fiberStack_sending[0], STACKSIZE,
-			(nano_fiber_entry_t)fiber_sending, 0, 0, 7, 0);
 
 	task_fiber_start(&fiberStack_receiving[0], STACKSIZE,
 			(nano_fiber_entry_t)fiber_receiving, 0, 0, 7, 0);
