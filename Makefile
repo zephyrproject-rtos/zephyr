@@ -761,12 +761,12 @@ quiet_cmd_create-lnk = LINK    $@
 $(KERNEL_NAME).lnk:
 	$(call cmd,create-lnk)
 
-linker.cmd:
+linker.cmd: $(zephyr-deps)
 	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
 	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -I$(srctree)/include \
 	-I$(objtree)/include/generated $(KBUILD_LDS) -o $@
 
-final-linker.cmd:
+final-linker.cmd: $(zephyr-deps)
 	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
 	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -DFINAL_LINK -I$(srctree)/include \
 	-I$(objtree)/include/generated $(KBUILD_LDS) -o $@
