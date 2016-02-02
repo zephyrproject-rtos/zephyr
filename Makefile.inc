@@ -68,6 +68,8 @@ qemu: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 endif
 
+debug:	$(DOTCONFIG)
+	$(Q)$(call zephyrmake,$(O),$@)
 
 flash: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)

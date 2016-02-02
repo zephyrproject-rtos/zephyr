@@ -1120,9 +1120,13 @@ qemu: zephyr
 	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_ELF_NAME)
 
 -include $(srctree)/boards/$(BOARD_NAME)/Makefile.board
+
 flash: zephyr
 	@echo "Flashing $(BOARD_NAME)"
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/support/$(FLASH_SCRIPT) flash
+
+debug: zephyr
+	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/support/$(FLASH_SCRIPT) debug
 
 # Single targets
 # ---------------------------------------------------------------------------
