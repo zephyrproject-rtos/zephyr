@@ -79,13 +79,13 @@ application that invokes QEMU once the build process is completed.
 
       $ make qemu
 
-To run an application using the x86 minnowboard board configuration, type:
+To run an application using the x86 emulation board configuration (qemu_x86), type:
 
 .. code-block:: console
 
    $ make BOARD=qemu_x86 qemu
 
-To run an application using the ARM basic_cortex_m3 board configuration, type:
+To run an application using the ARM qemu_cortex_m3 board configuration, type:
 
 .. code-block:: console
 

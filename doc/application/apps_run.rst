@@ -21,8 +21,7 @@ Prerequisites
 -------------
 
 * You must have already generated a .elf image file for a
-  QEMU-supported board configuration, such as
-  basic_cortex_m3 or basic_minuteia.
+  QEMU-supported board configuration, such as qemu_cortex_m3 or qemu_x86.
 
 * The environment variable must be set for each console
   terminal using :ref:`apps_common_procedures`.
