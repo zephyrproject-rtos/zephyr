@@ -11,25 +11,33 @@ Setting up your development environment for Zephyr is done in two steps:
 Access the Code
 ***************
 
-Currently, the code is hosted at 01.org and code review is done using Gerrit.
-Therefore, a 01.org account is needed to access the code. Follow these steps
-to gain access to the code in Gerrit:
+The code is hosted at Linux Foundation and code review is done using
+Gerrit. Therefore, a Linux Foundation account is needed to contribute to the
+code. Follow these steps to create an account if you don't have one already:
 
-#. `Create`_ or `update`_ a `01.org`_ account.
+#. Go to the `Linux Foundation ID website`_.
 
-#. Request access by contacting the Zephyr project team.
+#. Select the option :guilabel:`I need to create a Linux Foundation ID`.
 
-#. Once access is granted, `access Gerrit`_.
+   .. figure:: figures/setting_up01.png
+      :scale: 75 %
+      :alt: linuxfoundation.org identity page
 
-#. Log in using your 01.org account credentials.
+#. Fill out the form that appears:
 
-.. _Create: https://01.org/user/register
+   .. figure:: figures/setting_up02.png
+      :scale: 75 %
+      :alt: New account form
 
-.. _update: https://01.org/user/login
+#. Open your email account and look for a message with the subject line:
+   "Validate your Linux Foundation ID email".
 
-.. _access Gerrit: https://oic-review.01.org/gerrit/
+#. Open the received URL to validate your email address.
 
-.. _01.org: https://01.org/
+#. Verify the browser displays the message :guilabel:`You have successfully
+   validated your e-mail address`.
+
+#. Access `Gerrit`_.
 
 Configuring Gerrit to Use SSH
 =============================
@@ -68,7 +76,7 @@ Once the key-pair has been generated, the public key must be added to Gerrit.
 Follow these steps to add your public key :file:`id_rsa.pub` to the Gerrit
 account:
 
-1. Go to `access Gerrit`_.
+1. Go to `Gerrit`_.
 
 2. Click on your account name in the upper right corner.
 
@@ -108,7 +116,7 @@ Checking Out the Source Code
    .. code-block:: console
 
       $ git clone
-      ssh://01ORGUSERNAME@oic-review.01.org:29418/forto-collab zephyr-project
+      ssh://LFID@gerrit.zephyrproject.org:29418/zephyr zephyr-project
 
 You have successfully checked out a copy of the source code to your local
 machine.
@@ -140,3 +148,7 @@ Perform the steps in the procedures in the order they appear.
 
    installation_linux.rst
    installation_mac.rst
+
+.. _Linux Foundation ID website: https://identity.linuxfoundation.org
+
+.. _Gerrit: https://gerrit.zephyrproject.org/
