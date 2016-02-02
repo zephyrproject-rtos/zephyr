@@ -306,13 +306,15 @@ void _irq_handler_set(unsigned int vector, void (*routine)(void *parameter),
  * This routine assumes that the relationship between interrupt priority and
  * interrupt vector is :
  *
- *      priority = vector / 16;
+ *      priority = (vector / 16) - 2;
  *
- * Since vectors 0 to 31 are reserved by the IA-32 architecture, the priorities
- * of user defined interrupts range from 2 to 15.  Each interrupt priority level
- * contains 16 vectors, and the prioritization of interrupts within a priority
- * level is determined by the vector number; the higher the vector number, the
- * higher the priority within that priority level.
+ * Vectors 0 to 31 are reserved for CPU exceptions and do NOT fall under
+ * the priority scheme. The first vector used for priority level 0 will be 32.
+ *
+ * Each interrupt priority level  contains 16 vectors, and the prioritization
+ * of interrupts within a priority  level is determined by the vector number;
+ * the higher the vector number, the higher the priority within that priority
+ * level.
  *
  * It is also assumed that the interrupt controllers are capable of managing
  * interrupt requests on a per-vector level as opposed to a per-priority level.
@@ -326,23 +328,25 @@ void _irq_handler_set(unsigned int vector, void (*routine)(void *parameter),
  * vectors remaining in the specified <priority> level.
  */
 
-int _IntVecAlloc(unsigned int priority)
+int _IntVecAlloc(unsigned int requested_priority)
 {
 	unsigned int key;
 	unsigned int entryToScan;
 	unsigned int fsb; /* first set bit in entry */
 	unsigned int search_set;
+	int vector_block;
 	int vector;
 
 	static unsigned int mask[2] = {0x0000ffff, 0xffff0000};
 
+	vector_block = requested_priority + 2;
 #if defined(DEBUG)
 	/*
 	 * check whether the IDT was configured with sufficient vectors to
 	 * satisfy the priority request.
 	 */
 
-	if (((priority << 4) + 15) > CONFIG_IDT_NUM_VECTORS)
+	if (((vector_block << 4) + 15) > CONFIG_IDT_NUM_VECTORS)
 		return (-1);
 #endif /* DEBUG */
 
@@ -356,7 +360,7 @@ int _IntVecAlloc(unsigned int priority)
 	 * 'gen_idt' tool for allocating interrupt vectors.
 	 */
 
-	entryToScan = priority >> 1;
+	entryToScan = vector_block >> 1;
 
 	/*
 	 * The _interrupt_vectors_allocated[] entry indexed by 'entryToScan' is a
@@ -370,7 +374,7 @@ int _IntVecAlloc(unsigned int priority)
 
 	key = irq_lock();
 
-	search_set = mask[priority & 1] & _interrupt_vectors_allocated[entryToScan];
+	search_set = mask[vector_block & 1] & _interrupt_vectors_allocated[entryToScan];
 	fsb = find_lsb_set(search_set);
 
 #if defined(DEBUG)

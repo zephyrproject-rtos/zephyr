@@ -211,7 +211,7 @@ typedef struct s_isrList {
  * These macros are only intended to be used by IRQ_CONNECT() macro.
  */
 #if CONFIG_MVIC
-#define _PRIORITY_ARG(irq_p, priority_p)	((irq_p + 0x20) / 16)
+#define _PRIORITY_ARG(irq_p, priority_p)	(-1)
 #define _VECTOR_ARG(irq_p)			(irq_p + 0x20)
 #else
 #define _PRIORITY_ARG(irq_p, priority_p)	(priority_p)

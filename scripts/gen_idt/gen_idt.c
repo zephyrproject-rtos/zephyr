@@ -65,7 +65,7 @@
 #endif
 
 #define MAX_NUM_VECTORS           256
-#define MAX_PRIORITIES            16
+#define MAX_PRIORITIES            14
 #define MAX_VECTORS_PER_PRIORITY  16
 #define MAX_IRQS                  256
 
@@ -248,15 +248,9 @@ static void open_files(void)
 
 static void show_entry(struct genidt_entry_s *entry)
 {
-	fprintf(stderr,
-			"ISR Address: %p\n"
-			"IRQ: %d\n"
-			"Priority: %d\n"
-			"Vector ID: %d\n"
-			"DPL: %d\n"
-			"---------------\n",
-			entry->isr, entry->irq, entry->priority,
-			entry->vector_id, entry->dpl);
+	fprintf(stderr, "Vector %3d: ISR %10p IRQ %3d PRI %2d DPL %2x\n",
+			entry->vector_id, entry->isr, entry->irq, entry->priority,
+			entry->dpl);
 }
 
 static void read_input_file(void)
@@ -294,7 +288,6 @@ static void read_input_file(void)
 
 	for (i = 0; i < genidt_header.num_entries; i++) {
 		show_entry(&supplied_entry[i]);
-		fprintf(stderr, "----------------------------\n");
 	}
 #endif
 	return;
@@ -352,21 +345,8 @@ static void validate_vector_id(void)
 static void validate_priority(void)
 {
 	int  i;
-	int  num_priorities[MAX_PRIORITIES] = {0};
-	unsigned int expected_priority;
-
-	/*
-	 * Treat all out-of-range vectors as if they were used.  This ensures
-	 * that all we can easily detect all cases where we try to allocate more
-	 * vectors for a given priority level than there are slots available.
-	 */
-
-	for (i = num_vectors; i < MAX_NUM_VECTORS; i++) {
-		num_priorities[i / MAX_VECTORS_PER_PRIORITY]++;
-	}
 
 	/* Validate the priority. */
-
 	for (i = 0; i < genidt_header.num_entries; i++) {
 		if (supplied_entry[i].priority == UNSPECIFIED_PRIORITY) {
 			if (supplied_entry[i].vector_id == UNSPECIFIED_INT_VECTOR) {
@@ -375,40 +355,10 @@ static void validate_priority(void)
 				show_entry(&supplied_entry[i]);
 				clean_exit(-1);
 			}
-
-			/*
-			 * A vector ID was specified; calculate and update its priority
-			 * so as not to unnecesarily burden the user.
-			 */
-			supplied_entry[i].priority =
-				supplied_entry[i].vector_id / MAX_VECTORS_PER_PRIORITY;
-		}
-
-		if (supplied_entry[i].priority >= MAX_PRIORITIES) {
+		} else if (supplied_entry[i].priority >= MAX_PRIORITIES) {
 			fprintf(stderr, "Priority must not exceed %d.\n",
 					MAX_PRIORITIES - 1);
 			show_entry(&supplied_entry[i]);
-			clean_exit(-1);
-		}
-
-		if (supplied_entry[i].vector_id != UNSPECIFIED_INT_VECTOR) {
-			expected_priority = supplied_entry[i].vector_id /
-								MAX_VECTORS_PER_PRIORITY;
-
-			if (expected_priority != supplied_entry[i].priority) {
-				supplied_entry[i].priority = expected_priority;
-				fprintf(stderr,
-						"Warning! Overriding IRQ %d priority to %d!\n",
-						supplied_entry[i].irq, supplied_entry[i].priority);
-			}
-		}
-
-		num_priorities[supplied_entry[i].priority]++;
-	}
-
-	for (i = 0; i < MAX_PRIORITIES; i++) {
-		if (num_priorities[i] > MAX_VECTORS_PER_PRIORITY) {
-			fprintf(stderr, "Too many requests for priority level %d!\n", i);
 			clean_exit(-1);
 		}
 	}
@@ -583,25 +533,23 @@ static void generate_interrupt_vector_bitmap(void)
 			continue;
 		}
 
-		index = supplied_entry[i].priority / 2;
-		mask_index = supplied_entry[i].priority & 1;
+		/* We can assume priority has been explicitly set as
+		 * validate_priority() enforces that you can't use both
+		 * UNSPECIFIED_INT_VECTOR and UNSPECIFIED_INT_PRIORITY
+		 */
+		index = (supplied_entry[i].priority + 2) / 2;
+		mask_index = (supplied_entry[i].priority + 2) & 1;
 		value = interrupt_vector_bitmap[index] & mask[mask_index];
 		bit = find_first_set_lsb(value);
 		if (bit < 0) {
-			/*
-			 * This should not occur due to the previous priority validation.
-			 * However, it is here as a final sanity check.
-			 */
-
 			fprintf(stderr,
-					"No vectors for priority %d are available.\n",
+					"No remaining vectors for priority %d are available.\n",
 					supplied_entry[i].priority);
 			clean_exit(-1);
 		}
 
 		interrupt_vector_bitmap[index] &= ~(1 << bit);
 		map_irq_to_vector_id[supplied_entry[i].irq] = (index * 32) + bit;
-
 		supplied_entry[i].vector_id = (index * 32) + bit;
 	}
 

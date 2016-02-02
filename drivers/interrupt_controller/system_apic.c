@@ -109,7 +109,7 @@ int _SysIntVecAlloc(
 {
 	int vector;
 
-	__ASSERT(priority < 16, "invalid priority");
+	__ASSERT(priority < 14, "invalid priority");
 	__ASSERT(irq >= 0 && irq <= HARDWARE_IRQ_LIMIT, "invalid irq line");
 
 	vector = __LocalIntVecAlloc(irq, priority);
