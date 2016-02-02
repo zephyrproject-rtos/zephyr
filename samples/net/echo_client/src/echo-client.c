@@ -23,12 +23,6 @@
  * back to the originator.
  */
 
-/*
- * Note that both the nano and microkernel images in this example
- * have a dummy fiber/task that does nothing. This is just here to
- * simulate a multi application scenario.
- */
-
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define PRINT           printf
@@ -38,6 +32,7 @@
 #endif
 
 #include <zephyr.h>
+#include <sections.h>
 
 #include <drivers/rand32.h>
 
@@ -63,11 +58,14 @@ static const char *lorem_ipsum =
 static int expecting;
 static int ipsum_len;
 
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
 /* The peer is the server in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
  */
 static uint8_t peer_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+#endif
+
 static uint8_t my_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
@@ -111,9 +109,15 @@ static inline void init_server()
 		uip_ipaddr(&addr, 192,0,2,2);
 		uip_sethostaddr(&addr);
 	}
-#else
+#else /* IPv6 */
 	{
 		uip_ipaddr_t *addr;
+
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+		/* Set the routes and neighbor cache only if we do not have
+		 * neighbor discovery enabled. This setting should only be
+		 * used if running in qemu and using slip (tun device).
+		 */
 		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&peer_mac;
 
 		addr = (uip_ipaddr_t *)&in6addr_peer;
@@ -124,6 +128,7 @@ static inline void init_server()
 		 * but do it here so that test works from first packet.
 		 */
 		uip_ds6_nbr_add(addr, lladdr, 0, NBR_REACHABLE);
+#endif
 
 		addr = (uip_ipaddr_t *)&in6addr_my;
 		uip_ds6_addr_add(addr, 0, ADDR_MANUAL);
@@ -294,110 +299,12 @@ static inline bool get_context(struct net_context **unicast,
 	return true;
 }
 
-#ifdef CONFIG_MICROKERNEL
-
-/* specify delay between turns (in ms); compute equivalent in ticks */
-
-#define SLEEPTIME  100
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
-
-/*
-*
-* \param taskname    task identification string
-* \param mySem       task's own semaphore
-* \param otherSem    other task's semaphore
-*
-*/
-void sending_loop(const char *taskname, ksem_t mySem, ksem_t otherSem)
-{
-	bool send_unicast = true;
-
-	while (1) {
-		task_sem_take(mySem, TICKS_UNLIMITED);
-
-		PRINT("%s: Sending packet\n", __func__);
-
-		expecting = sys_rand32_get() % ipsum_len;
-
-		if (send_unicast) {
-			if (send_packet(__func__, unicast, ipsum_len,
-					expecting)) {
-				PRINT("Unicast sending %d bytes FAIL\n",
-				      ipsum_len - expecting);
-			}
-		} else {
-			if (send_packet(__func__, multicast, ipsum_len,
-					expecting)) {
-				PRINT("Multicast sending %d bytes FAIL\n",
-				      ipsum_len - expecting);
-			}
-		}
-
-		send_unicast = !send_unicast;
-
-		/* wait a while, then let other task have a turn */
-		task_sleep(SLEEPTICKS);
-		task_sem_give(otherSem);
-	}
-}
-
-void receiving_loop(const char *taskname, ksem_t mySem, ksem_t otherSem)
-{
-	while (1) {
-		task_sem_take(mySem, TICKS_UNLIMITED);
-
-		PRINT("%s: Waiting packet\n", __func__);
-
-		if (wait_reply(__func__, unicast, ipsum_len, expecting)) {
-			PRINT("Waiting %d bytes -> FAIL\n",
-			      ipsum_len - expecting);
-		}
-
-		/* wait a while, then let other task have a turn */
-		task_sleep(SLEEPTICKS);
-		task_sem_give(otherSem);
-	}
-}
-
-void taskA(void)
-{
-	net_init();
-
-	init_server();
-
-	ipsum_len = strlen(lorem_ipsum);
-
-	if (!get_context(&unicast, &multicast)) {
-		PRINT("%s: Cannot get network context\n", __func__);
-		return;
-	}
-
-	/* taskA gives its own semaphore, allowing it to say hello right away */
-	task_sem_give(TASKASEM);
-
-	/* invoke routine that allows task to ping-pong hello messages with taskB */
-	sending_loop(__func__, TASKASEM, TASKBSEM);
-}
-
-void taskB(void)
-{
-	/* invoke routine that allows task to ping-pong hello messages with taskA */
-	receiving_loop(__func__, TASKBSEM, TASKASEM);
-}
-
-#else /*  CONFIG_NANOKERNEL */
-
-/*
- * Nanokernel version of this demo has a task and a fiber that utilize
- * semaphores and timers to take turns printing a greeting message at
- * a controlled rate.
- */
-
+#ifdef CONFIG_NANOKERNEL
 #define STACKSIZE 2000
+static char __noinit __stack stack_receiving[STACKSIZE];
+#endif
 
-static char fiberStack_receiving[STACKSIZE];
-
-void fiber_sending(void)
+void sending(void)
 {
 	static bool send_unicast = true;
 
@@ -422,14 +329,9 @@ void fiber_sending(void)
 	send_unicast = !send_unicast;
 }
 
-void fiber_receiving(void)
+void receiving(void)
 {
-	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
-
-	nano_timer_init(&timer, data);
-
-	fiber_sending();
+	sending();
 
 	while (1) {
 		PRINT("%s: Waiting packet\n", __func__);
@@ -440,7 +342,7 @@ void fiber_receiving(void)
 			      ipsum_len - expecting);
 		}
 
-		fiber_sending();
+		sending();
 	}
 }
 
@@ -457,8 +359,10 @@ void main(void)
 		return;
 	}
 
-	task_fiber_start(&fiberStack_receiving[0], STACKSIZE,
-			(nano_fiber_entry_t)fiber_receiving, 0, 0, 7, 0);
+#ifdef CONFIG_MICROKERNEL
+	receiving();
+#else
+	task_fiber_start(&stack_receiving[0], STACKSIZE,
+			(nano_fiber_entry_t)receiving, 0, 0, 7, 0);
+#endif
 }
-
-#endif /* CONFIG_MICROKERNEL ||  CONFIG_NANOKERNEL */
