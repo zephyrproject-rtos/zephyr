@@ -70,6 +70,7 @@ struct cc2520_config {
 	struct device *spi;
 	uint32_t spi_slave;
 	struct nano_sem read_lock;
+	struct nano_sem radio_lock;
 };
 
 extern struct cc2520_gpio_config cc2520_gpio_config[CC2520_GPIO_IDX_LAST_ENTRY];

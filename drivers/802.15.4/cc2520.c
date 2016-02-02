@@ -89,8 +89,12 @@ struct cc2520_config cc2520_config;
 struct device *cc2520_sgl_dev;
 
 /* static int cc2520_authority_level_of_sender; */
-static int cc2520_packets_seen, cc2520_packets_read;
+static int cc2520_packets_seen;
+static int cc2520_packets_read;
 
+static uint8_t lock_on;
+static uint8_t lock_off;
+static uint8_t locked;
 static bool init_ok;
 
 /* max time is in millisecs */
@@ -377,12 +381,53 @@ static void off(void)
 	}
 }
 
+static inline void cc2520_radio_lock(void)
+{
+	struct cc2520_config *info = cc2520_sgl_dev->config->config_info;
+
+	nano_fiber_sem_take(&info->radio_lock, TICKS_UNLIMITED);
+	locked++;
+}
+
+static inline void cc2520_radio_unlock(void)
+{
+	struct cc2520_config *info = cc2520_sgl_dev->config->config_info;
+
+	if (lock_on) {
+		on();
+		lock_on = 0;
+	}
+
+	if (lock_off) {
+		off();
+		lock_off = 0;
+	}
+
+	locked--;
+	nano_fiber_sem_give(&info->radio_lock);
+}
+
 static int cc2520_off(void)
 {
 	/* Don't do anything if we are already turned off. */
-	if (receive_on == 1) {
+	if (!receive_on) {
+		return 1;
+	}
+
+	if (locked) {
+		lock_off = 1;
+		return 1;
+	}
+
+	cc2520_radio_lock();
+
+	if (status() & BIT(CC2520_TX_ACTIVE)) {
+		lock_off = 1;
+	} else {
 		off();
 	}
+
+	cc2520_radio_unlock();
 
 	return 1;
 }
@@ -394,9 +439,20 @@ int cc2520_on(void)
 		return 0;
 	}
 
-	if (!receive_on) {
-		on();
+	if (receive_on) {
+		return 1;
 	}
+
+	if (locked) {
+		lock_on = 1;
+		return 1;
+	}
+
+	cc2520_radio_lock();
+
+	on();
+
+	cc2520_radio_unlock();
 
 	return 1;
 }
@@ -678,9 +734,16 @@ static int cc2520_prepare(const void *payload, unsigned short payload_len)
 static int cc2520_send(struct net_buf *buf, const void *payload,
 		       unsigned short payload_len)
 {
-	cc2520_prepare(payload, payload_len);
+	int ret;
 
-	return cc2520_transmit(buf, payload_len);
+	cc2520_radio_lock();
+
+	cc2520_prepare(payload, payload_len);
+	ret = cc2520_transmit(buf, payload_len);
+
+	cc2520_radio_unlock();
+
+	return ret;
 }
 
 int cc2520_get_channel(void)
@@ -690,7 +753,10 @@ int cc2520_get_channel(void)
 
 int cc2520_set_channel(int c)
 {
+	int ret = RADIO_RESULT_OK;
 	uint16_t f;
+
+	cc2520_radio_lock();
 
 	/*
 	 * Subtract the base channel (11), multiply by 5, which is the
@@ -718,17 +784,21 @@ int cc2520_set_channel(int c)
 		BUSYWAIT_UNTIL((status() & BIT(CC2520_RSSI_VALID)), \
 								WAIT_100ms);
 		if (!(status() & BIT(CC2520_RSSI_VALID))) {
-			return RADIO_RESULT_ERROR;
+			ret = RADIO_RESULT_ERROR;
 		}
 	}
 
-	return RADIO_RESULT_OK;
+	cc2520_radio_unlock();
+
+	return ret;
 }
 
 bool cc2520_set_pan_addr(unsigned pan, unsigned addr,
 			 const uint8_t *ieee_addr)
 {
 	uint8_t tmp[2];
+
+	cc2520_radio_lock();
 
 	/*
 	 * Writing RAM requires crystal oscillator to be stable.
@@ -754,6 +824,8 @@ bool cc2520_set_pan_addr(unsigned pan, unsigned addr,
 
 		cc2520_write_ram(tmp_addr, CC2520RAM_IEEEADDR, 8);
 	}
+
+	cc2520_radio_unlock();
 
 	return true;
 }
@@ -886,7 +958,11 @@ static void reading_packet_fiber(int unused1, int unused2)
 	while (1) {
 		nano_fiber_sem_take(&info->read_lock, TICKS_UNLIMITED);
 
+		cc2520_radio_lock();
+
 		read_packet();
+
+		cc2520_radio_unlock();
 
 		last_packet_timestamp = cc2520_sfd_start_time;
 		cc2520_packets_seen++;
@@ -914,14 +990,18 @@ static void cc2520_gpio_int_handler(struct device *port, uint32_t pin)
 
 void cc2520_set_txpower(uint8_t power)
 {
+	cc2520_radio_lock();
 	set_txpower(power);
+	cc2520_radio_unlock();
 }
 
 int cc2520_get_txpower(void)
 {
 	uint8_t power;
 
+	cc2520_radio_lock();
 	power = getreg(CC2520_TXPOWER);
+	cc2520_radio_unlock();
 
 	return power;
 }
@@ -930,6 +1010,12 @@ int cc2520_rssi(void)
 {
 	int radio_was_off = 0;
 	int rssi;
+
+	if (!locked) {
+		return 0;
+	}
+
+	cc2520_radio_lock();
 
 	if (!receive_on) {
 		radio_was_off = 1;
@@ -943,6 +1029,8 @@ int cc2520_rssi(void)
 		cc2520_off();
 	}
 
+	cc2520_radio_unlock();
+
 	return rssi;
 }
 
@@ -950,7 +1038,13 @@ int cc2520_cca_valid(void)
 {
 	int valid;
 
+	if (locked) {
+		return 0;
+	}
+
+	cc2520_radio_lock();
 	valid = !!(status() & BIT(CC2520_RSSI_VALID));
+	cc2520_radio_unlock();
 
 	return valid;
 }
@@ -958,7 +1052,13 @@ int cc2520_cca_valid(void)
 static int cc2520_cca(void)
 {
 	int radio_was_off = 0;
-	int cca;
+	int cca = 1;
+
+	if (locked) {
+		return 1;
+	}
+
+	cc2520_radio_lock();
 
 	if (!receive_on) {
 		radio_was_off = 1;
@@ -966,16 +1066,12 @@ static int cc2520_cca(void)
 	}
 
 	/* Make sure that the radio really got turned on. */
-	if (!receive_on) {
-		if (radio_was_off) {
-			cc2520_off();
-		}
-		return 1;
+	if (receive_on) {
+		BUSYWAIT_UNTIL(status() & BIT(CC2520_RSSI_VALID), WAIT_10ms);
+		cca = CC2520_CCA_IS_1;
 	}
 
-	BUSYWAIT_UNTIL(status() & BIT(CC2520_RSSI_VALID), WAIT_10ms);
-
-	cca = CC2520_CCA_IS_1;
+	cc2520_radio_unlock();
 
 	if (radio_was_off) {
 		cc2520_off();
@@ -986,7 +1082,9 @@ static int cc2520_cca(void)
 
 void cc2520_set_cca_threshold(int value)
 {
+	cc2520_radio_lock();
 	setreg(CC2520_CCACTRL0, value & 0xff);
+	cc2520_radio_unlock();
 }
 
 static struct device *cc2520_spi_configure(void)
@@ -1152,12 +1250,14 @@ static int cc2520_init(struct device *dev)
 	info->spi = cc2520_spi_configure();
 	info->spi_slave = CONFIG_TI_CC2520_SPI_SLAVE;
 	nano_sem_init(&info->read_lock);
+	nano_sem_init(&info->radio_lock);
 
 	cc2520_configure(dev);
 
 	if (init_ok) {
 		DBG("%s initialized on device: %p\n", DRIVER_STR, dev);
 
+		nano_sem_give(&info->radio_lock);
 		task_fiber_start(cc2520_read_stack, CC2520_READING_STACK_SIZE,
 				 reading_packet_fiber, 0, 0, 0, 0);
 	} else {
