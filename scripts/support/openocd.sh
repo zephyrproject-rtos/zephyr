@@ -41,6 +41,15 @@ do_flash() {
     echo 'Done flashing'
 }
 
+do_debugserver() {
+    test_config
+    test_ports
+    # start OpenOCD as GDB server
+    sh -c "${OPENOCD_CMD} -f '${OPENOCD_CONFIG}' \
+            -c 'init' \
+            -c 'targets' \
+            -c 'reset halt'"
+}
 
 CMD="$1"
 shift
@@ -49,5 +58,8 @@ case "${CMD}" in
   flash)
     echo "Flashing Target Device"
     do_flash "$@"
+    ;;
+  debugserver)
+    do_debugserver "$@"
     ;;
 esac

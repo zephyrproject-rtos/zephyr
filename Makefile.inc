@@ -72,6 +72,16 @@ endif
 flash: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
+ifeq ($(MAKECMDGOALS),debugserver)
+-include $(ZEPHYR_BASE)/boards/$(BOARD)/Makefile.board
+-include $(ZEPHYR_BASE)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
+BOARD_NAME = $(BOARD)
+export BOARD_NAME
+endif
+debugserver: FORCE
+	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/support/$(FLASH_SCRIPT) debugserver
+
+
 initconfig: $(DOTCONFIG)
 
 menuconfig: initconfig
