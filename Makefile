@@ -7,10 +7,8 @@ NAME 		   = Zephyr Kernel
 
 export SOURCE_DIR PROJECT MDEF_FILE
 
-ifneq ($(MAKECMDGOALS),help)
-ifeq ($(PROJECT),)
+ifeq ($(MAKECMDGOALS),)
 $(error Invoking make from top-level kernel directory is not supported)
-endif
 endif
 
 # *DOCUMENTATION*
@@ -450,7 +448,7 @@ endif
 
 version_h := include/generated/version.h
 
-no-dot-config-targets := pristine distclean clean mrproper help \
+no-dot-config-targets := pristine distclean clean mrproper help kconfig-help \
 			 cscope gtags TAGS tags help% %docs check% \
 			 $(version_h) headers_% kernelversion %src-pkg
 
@@ -1006,6 +1004,12 @@ distclean: mrproper
 boards := $(wildcard $(srctree)/boards/*/*_defconfig)
 boards := $(sort $(notdir $(boards)))
 
+kconfig-help:
+	@echo  'Configuration targets:'
+	@echo  ''
+	@$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
+	@echo  ''
+
 help:
 	@echo  'Cleaning targets:'
 	@echo  '  clean		  - Remove most generated files but keep configuration and backup files'
@@ -1014,13 +1018,15 @@ help:
 	@echo  '  pristine	  - Remove the output directory with all generated files'
 	@echo  ''
 	@echo  'Configuration targets:'
-	@$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
+	@echo  ''
+	@echo  '  run <make kconfig-help>'
 	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
 	@echo  '* zephyr	  - Build a zephyr application'
 	@echo  '  qemu		  - Build a zephyr application and run it in qemu'
 	@echo  '  flash		  - Build and flash an application'
+	@echo  '  debug		  - Build and debug an application using GDB'
 	@echo  ''
 	@echo  'Supported Boards:'
 	@echo  ''
@@ -1028,15 +1034,19 @@ help:
 	@echo  ''
 	@echo  '  make BOARD=<BOARD NAME>'
 	@echo  '  in the application directory.'
+	@echo  ''
 	@echo  '  To flash the image (if supported), run:'
 	@echo  ''
 	@echo  '  make BOARD=<BOARD NAME> flash'
 	@echo  ''
 	@$(if $(boards), \
 		$(foreach b, $(boards), \
-		printf "  %-24s - Build for %s\\n" $(b) $(subst _defconfig,,$(b));) \
+		printf "  make BOARD=%-24s - Build for %s\\n" $(subst _defconfig,,$(b)) $(subst _defconfig,,$(b));) \
 		echo '')
 
+	@echo  ''
+	@echo  'Build flags:'
+	@echo  ''
 	@echo  '  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build'
 	@echo  '  make V=2   [targets] 2 => give reason for rebuild of target'
 	@echo  '  make O=dir [targets] Locate all output files in "dir", including .config'
