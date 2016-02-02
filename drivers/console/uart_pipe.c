@@ -65,11 +65,11 @@ void uart_pipe_isr(void *unused)
 
 int uart_pipe_send(const uint8_t *data, int len)
 {
-	if (uart_pipe_dev != NULL) {
-		return uart_fifo_fill(uart_pipe_dev, data, len);
-	} else {
-		return 0;
+	while (len--)  {
+		uart_poll_out(uart_pipe_dev, *data++);
 	}
+
+	return 0;
 }
 
 static void uart_pipe_setup(struct device *uart)
