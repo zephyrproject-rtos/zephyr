@@ -32,6 +32,7 @@ enum {
 	BT_UUID_TYPE_128,
 };
 
+/** @brief This is a 'tentative' type and should be used as a pointer only */
 struct bt_uuid {
 	uint8_t type;
 };
