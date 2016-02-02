@@ -38,10 +38,6 @@ void on_nble_up(void)
 {
 	BT_DBG("");
 
-	if (bt_ready_cb) {
-		bt_ready_cb(0);
-	}
-
 	ble_get_version_req(NULL);
 }
 
@@ -50,6 +46,11 @@ void on_ble_get_version_rsp(const struct ble_version_response *rsp)
 	BT_DBG("VERSION: %d.%d.%d %.20s", rsp->version.major,
 	       rsp->version.minor, rsp->version.patch,
 	       rsp->version.version_string);
+
+	if (bt_ready_cb) {
+		bt_ready_cb(0);
+		bt_ready_cb = NULL;
+	}
 }
 
 int bt_enable(bt_ready_cb_t cb)
