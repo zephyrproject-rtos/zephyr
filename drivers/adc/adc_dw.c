@@ -188,64 +188,13 @@ static void adc_goto_deep_power_down(void)
 	}
 }
 
-#ifdef CONFIG_ADC_DW_DUMMY_CONVERSION
-static void dummy_conversion(struct device *dev, uint32_t op_mode)
-{
-	uint32_t tmp_val;
-	struct adc_config *config = dev->config->config_info;
-	uint32_t adc_base = config->reg_base;
-
-	if (((op_mode & 0xE) >> 1) == 0) {
-		/*Reset Sequence Pointer*/
-		tmp_val = sys_in32(adc_base + ADC_CTRL);
-		tmp_val |= (ADC_SEQ_PTR_RST | ADC_INT_DSB);
-		sys_out32(tmp_val, adc_base + ADC_CTRL);
-		/*Set dummy conversion for a single entry*/
-		tmp_val = sys_in32(adc_base + ADC_SET);
-		tmp_val &= ~(0x3F << SEQ_ENTRIES_POS);
-		tmp_val &= ~(0x3F << THRESHOLD_POS);
-		sys_out32(tmp_val, adc_base + ADC_SET);
-		/*Input Dummy Sequence*/
-		tmp_val = sys_in32(adc_base + ADC_SEQ);
-		tmp_val |= (0xFF & ELEVEN_BITS_SET) << SEQ_DELAY_EVEN_POS;
-		sys_out32(tmp_val, adc_base + ADC_SEQ);
-		/*Reset Sequence Pointer*/
-		tmp_val = sys_in32(adc_base + ADC_CTRL);
-		tmp_val |= (ADC_SEQ_PTR_RST | ADC_INT_DSB);
-		sys_out32(tmp_val, adc_base + ADC_CTRL);
-		/*Start Dummy Conversion*/
-		tmp_val = sys_in32(adc_base + ADC_CTRL);
-		tmp_val |= (START_ADC_SEQ | ADC_INT_DSB);
-		sys_out32(tmp_val, adc_base + ADC_CTRL);
-
-		do {
-			tmp_val = sys_in32(adc_base + ADC_INTSTAT);
-		} while ((tmp_val & 0x1) == 0);
-
-		/*Discard Conversion*/
-		tmp_val = sys_in32(adc_base + ADC_SET);
-		sys_out32(tmp_val|ADC_FLUSH_RX, adc_base + ADC_SET);
-
-		/*Clear Dummy Configuration*/
-		sys_out32(ADC_CLR_DATA_A | ADC_SEQ_PTR_RST, adc_base + ADC_CTRL);
-		sys_out32(RESUME_ADC_CAPTURE, adc_base + ADC_CTRL);
-	}
-}
-#else
-
-#define dummy_conversion(dev, op_mode)
-
-#endif
-
 static void adc_dw_enable(struct device *dev)
 {
 	uint32_t reg_value;
-	uint32_t start_op_mode;
 	struct adc_info *info = dev->driver_data;
 	struct adc_config *config = dev->config->config_info;
 	uint32_t adc_base = config->reg_base;
 
-	start_op_mode = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
 	/*Go to Normal Mode*/
 	sys_out32(ADC_INT_DSB|ENABLE_ADC, adc_base + ADC_CTRL);
 	adc_goto_normal_mode(dev);
@@ -256,7 +205,6 @@ static void adc_dw_enable(struct device *dev)
 	sys_out32(reg_value, PERIPH_ADDR_BASE_CREG_MST0);
 	sys_out32(ENABLE_ADC, adc_base + ADC_CTRL);
 
-	dummy_conversion(dev, start_op_mode);
 	info->state = ADC_STATE_IDLE;
 }
 
@@ -279,7 +227,7 @@ static void adc_dw_disable(struct device *dev)
 	info->state = ADC_STATE_DISABLED;
 }
 
-static int adc_dw_read(struct device *dev, struct adc_seq_table *seq_tbl)
+static int adc_dw_read_request(struct device *dev, struct adc_seq_table *seq_tbl)
 {
 	uint32_t i;
 	uint32_t ctrl;
@@ -349,6 +297,19 @@ static int adc_dw_read(struct device *dev, struct adc_seq_table *seq_tbl)
 	}
 
 	return 0;
+}
+
+static int adc_dw_read(struct device *dev, struct adc_seq_table *seq_tbl)
+{
+	struct adc_info *info = dev->driver_data;
+
+#ifdef CONFIG_ADC_DW_DUMMY_CONVERSION
+	if (info->dummy_conversion == ADC_NONE_DUMMY) {
+		adc_dw_read_request(dev, seq_tbl);
+		info->dummy_conversion = ADC_DONE_DUMMY;
+	}
+#endif
+	return adc_dw_read_request(dev, seq_tbl);
 }
 
 static struct adc_driver_api api_funcs = {
@@ -501,6 +462,9 @@ struct adc_info adc_info_dev_0 = {
 		.state = ADC_STATE_IDLE,
 #ifdef CONFIG_ADC_DW_CALIBRATION
 		.calibration_value = ADC_NONE_CALIBRATION,
+#endif
+#ifdef CONFIG_ADC_DW_DUMMY_CONVERSION
+		.dummy_conversion = ADC_NONE_DUMMY,
 #endif
 	};
 

@@ -95,6 +95,8 @@ extern "C" {
 #define     ADC_INT_DATA_A              (0x1)
 #define     ADC_INT_ERR                 (0x6)
 #define     ADC_NONE_CALIBRATION        (0x80)
+#define     ADC_NONE_DUMMY              (0x00)
+#define     ADC_DONE_DUMMY              (0x01)
 
 #define ADC_STATE_CLOSED        0
 #define ADC_STATE_DISABLED      1
@@ -200,6 +202,10 @@ struct adc_info {
 	/**Calibration value*/
 	uint8_t calibration_value;
 #endif
+#ifdef CONFIG_ADC_DW_DUMMY_CONVERSION
+	uint8_t dummy_conversion;
+#endif
+
 };
 
 
