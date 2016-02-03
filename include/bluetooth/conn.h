@@ -115,6 +115,9 @@ enum {
 struct bt_conn_le_info {
 	const bt_addr_le_t *src; /** Source Address */
 	const bt_addr_le_t *dst; /** Destination Address */
+	uint16_t interval; /** Connection interval */
+	uint16_t latency; /** Connection slave latency */
+	uint16_t timeout; /** Connection supervision timeout */
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)

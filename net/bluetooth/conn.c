@@ -799,6 +799,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 			info->le.src = &conn->le.resp_addr;
 			info->le.dst = &conn->le.init_addr;
 		}
+		info->le.interval = conn->le.interval;
+		info->le.latency = conn->le.latency;
+		info->le.timeout = conn->le.timeout;
 		return 0;
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	case BT_CONN_TYPE_BR:
