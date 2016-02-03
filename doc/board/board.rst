@@ -3,51 +3,48 @@
 Supported Boards
 ################
 
-The Zephyr Kernel supports the board configurations listed in the
-table below. An application can use a board configuration as is,
-or it can customize a board configuration by changing its default
-kernel configuration settings.
+The following boards are currently supported:
 
 .. note::
-   Developers can create new board configurations
-   that allow an application to run on other target systems.
+   Developers can create additional board configurations which allow
+   Zephyr-based applications to run on other target systems.
 
-+----------------------+-----------------+------------------------+
-| Platform             | Instruction Set | Supported              |
-| Configuration        | Architecture    | Target Systems         |
-+======================+=================+========================+
-| minnowboard          | X86             | Minnowboard Max        |
-+----------------------+-----------------+------------------------+
-| qemu_cortex_m3       | ARM v7-M        | QEMU 2.1 + patch       |
-+----------------------+-----------------+------------------------+
-| qemu_x86             | X86             | QEMU 2.1               |
-+----------------------+-----------------+------------------------+
-| quark_d2000_crb      | X86             | Quark D2000 Boards     |
-+----------------------+-----------------+------------------------+
-| quark_se_ctb         | X86             | Quark SE Boards        |
-+----------------------+-----------------+------------------------+
-| arduino_101          | X86             | Arduino 101 Board      |
-+----------------------+-----------------+------------------------+
-| arduino_due          | ARM v7-M        | Arduino Due Board      |
-+----------------------+-----------------+------------------------+
-| frdm_k64f            | ARM v7E-M       | Freescale Freedom      |
-|                      |                 | Development Platform   |
-+----------------------+-----------------+------------------------+
-| galileo              | X86             | | Galileo              |
-|                      |                 | | Galileo (Gen 2)      |
-+----------------------+-----------------+------------------------+
+x86 Instruction Set Architectures
+=================================
+
++------------------------+------------------------+
+| Board Configuration    | Supported              |
+| Reference              | Target Systems         |
++========================+========================+
+| :ref:`minnowboard`     | MinnowBoard Max        |
++------------------------+------------------------+
+| :ref:`qemu_x86`        | QEMU 2.1               |
++------------------------+------------------------+
+| :ref:`quark_d2000_crb` | Quark D2000 Boards     |
++------------------------+------------------------+
+| :ref:`quark_se_ctb`    | Quark SE Boards        |
++------------------------+------------------------+
+| :ref:`arduino_101`     | Arduino 101 Board      |
++------------------------+------------------------+
+| :ref:`galileo`         | Galileo and            |
+|                        | Galileo Gen 2          |
++------------------------+------------------------+
 
 
-The following sections provide details on the respective platforms:
+ARM (v7-M and v7E-M) Instruction Set Architectures
+==================================================
 
-.. toctree::
-   :maxdepth: 1
++------------------------+------------------------+
+| Board Configuration    | Supported              |
+| Reference              | Target Systems         |
++========================+========================+
+| :ref:`qemu_cortex_m3`  | QEMU 2.1 + patch       |
++------------------------+------------------------+
+| :ref:`arduino_due`     | Arduino Due Board      |
++------------------------+------------------------+
+| :ref:`frdm_k64f`       | Freescale Freedom      |
+|                        | Development Platform   |
++------------------------+------------------------+
 
-   minnowboard.rst
-   qemu_cortex_m3.rst
-   qemu_x86.rst
-   frdm_k64f.rst
-   galileo.rst
-   arduino_101.rst
-   arduino_due.rst
-
+For details on how to flash a Zephyr image, see the
+respective board reference documentation.
