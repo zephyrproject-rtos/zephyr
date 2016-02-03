@@ -383,11 +383,11 @@ void adc_dw_rx_isr(void *arg)
 	sys_out32(reg_val | ADC_FLUSH_RX, adc_base + ADC_SET);
 	info->state = ADC_STATE_IDLE;
 
-	device_sync_call_complete(&info->sync);
-
 	/*Clear data A register*/
 	reg_val = sys_in32(adc_base + ADC_CTRL);
 	sys_out32(reg_val | ADC_CLR_DATA_A, adc_base + ADC_CTRL);
+
+	device_sync_call_complete(&info->sync);
 }
 #else /*CONFIG_ADC_DW_REPETITIVE*/
 void adc_dw_rx_isr(void *arg)
@@ -427,8 +427,12 @@ void adc_dw_rx_isr(void *arg)
 		reg_val = sys_in32(adc_base + ADC_SET);
 		sys_out32(reg_val | ADC_FLUSH_RX, adc_base + ADC_SET);
 		info->state = ADC_STATE_IDLE;
+		/*Clear data A register*/
+		reg_val = sys_in32(adc_base + ADC_CTRL);
+		sys_out32(reg_val | ADC_CLR_DATA_A, adc_base + ADC_CTRL);
 
 		device_sync_call_complete(&info->sync);
+		return;
 	}
 
 	/*Clear data A register*/
