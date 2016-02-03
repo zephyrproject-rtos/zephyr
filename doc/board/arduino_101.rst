@@ -96,15 +96,27 @@ Connecting JTAG to Arduino 101
 #. Connect the ARM Micro JTAG Connector to the FlySwatter2.
 
 #. Locate the micro JTAG connector on the Arduino 101 board.  It can be found
-   adjacent to the SCL and SDA pins in the Arduino headers. Next to the micro
-   JTAG header is small white dot that signals the location of pin 0 on the
-   header.
+   adjacent to the SCL and SDA pins in the Arduino headers. It is highlighted
+   as the red square in the figure below.
+
+   .. figure:: figures/arduino_101_01.png
+      :scale: 50 %
+      :alt: Highlight of the JTAG connector.
+
+#. Locate next to the micro JTAG header a small white dot indicating the
+   location of pin 0 on the header. The orange arrow on the figure points to
+   the dot.
+
+   .. figure:: figures/arduino_101_02.png
+      :scale: 50 %
+      :alt: Pointer to the pin 0 of the JTAG connector.
 
 #. Connect the FlySwatter2 to the Arduino 101 micro JTAG connector.
 
 #. Ensure that both the cable and header pin 0 locations line up. The cable
    from the ARM Micro JTAG connector uses a red wire on the cable to denote
-   which end on the cable has the pin 0.
+   which end on the cable has the pin 0.  The orange arrow in the figure below
+   points towards JTAG silkscreen indicator.
 
 #. Plug the USB Type B cable into the FlySwatter2 and your computer. On
    Linux, you should see something similar to the following in your dmesg:
@@ -123,6 +135,9 @@ Connecting JTAG to Arduino 101
       ftdi_sio 1-2.1.1:1.1: FTDI USB Serial Device converter detected
       usb 1-2.1.1: Detected FT2232H
       usb 1-2.1.1: FTDI USB Serial Device converter now attached to ttyUSB1
+
+
+
 
 Making a Backup
 ===============
