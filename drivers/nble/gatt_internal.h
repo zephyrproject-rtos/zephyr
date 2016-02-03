@@ -122,7 +122,7 @@ struct ble_gatts_rw_reply_params {
  * Notification/Indication parameters
  */
 struct ble_gatt_notif_ind_params {
-	uint16_t val_handle;
+	struct bt_gatt_attr *attr;
 	uint16_t offset;
 };
 
@@ -131,6 +131,7 @@ struct ble_gatt_notif_ind_params {
  */
 
 struct ble_gatt_send_notif_ind_params {
+	void *cback;
 	uint16_t conn_handle;
 	struct ble_gatt_notif_ind_params params;
 };

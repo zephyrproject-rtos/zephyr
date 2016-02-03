@@ -348,7 +348,14 @@ int bt_gatt_attr_read_cpf(struct bt_conn *conn,
 int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   const void *data, uint16_t len)
 {
-	return -ENOSYS;
+	struct ble_gatt_send_notif_ind_params notif;
+
+	notif.conn_handle = 0xFFFF;
+	notif.params.attr = (struct bt_gatt_attr *)attr;
+	notif.params.offset = 0;
+
+	ble_gatt_send_notif_req(&notif, (uint8_t *)data, len);
+	return 0;
 }
 
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
