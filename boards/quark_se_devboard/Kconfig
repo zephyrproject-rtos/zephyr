@@ -17,12 +17,35 @@ config TI_CC2520_SPI_FREQ
 	default 32
 config TI_CC2520_SPI_SLAVE
 	default 1
+
+if SPI_DW
 config SPI_DW_CS_GPIO
 	def_bool y
 config SPI_DW_PORT_1_CS_GPIO_PORT
 	default GPIO_DW_0_NAME
 config SPI_DW_PORT_1_CS_GPIO_PIN
 	default 11
+config TI_CC2520_GPIO_CS_NAME
+       default GPIO_DW_0_NAME
+config TI_CC2520_GPIO_AON_NAME
+       default GPIO_DW_1_NAME
+endif
+
+if SPI_QMSI
+config SPI_QMSI_CS_GPIO
+	def_bool y
+config SPI_QMSI_PORT_1_CS_GPIO_PORT
+	default GPIO_QMSI_0_NAME
+config SPI_QMSI_PORT_1_CS_GPIO_PIN
+	default 11
+config TI_CC2520_GPIO_CS_NAME
+       string
+       default GPIO_QMSI_0_NAME
+config TI_CC2520_GPIO_AON_NAME
+       string
+       default GPIO_QMSI_AON_NAME
+endif
+
 endif # NETWORKING_WITH_15_4_TI_CC2520
 
 endif # BOARD_QUARK_SE_DEVBOARD

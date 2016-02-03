@@ -34,7 +34,7 @@ struct cc2520_gpio_config **cc2520_gpio_configure(void)
 	int flags_noint_out = GPIO_DIR_OUT;
 	int flags_noint_in = GPIO_DIR_IN;
 
-	gpio = device_get_binding(CONFIG_GPIO_DW_0_NAME);
+	gpio = device_get_binding(CONFIG_TI_CC2520_GPIO_CS_NAME);
 	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_FIFOP, flags_int_in);
 	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_FIFO, flags_noint_in);
 	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_CCA, flags_noint_in);
@@ -45,7 +45,7 @@ struct cc2520_gpio_config **cc2520_gpio_configure(void)
 	cc2520_gpio_config[CC2520_GPIO_IDX_SFD].gpio = gpio;
 	cc2520_gpio_config[CC2520_GPIO_IDX_CCA].gpio = gpio;
 
-	gpio = device_get_binding(CONFIG_GPIO_DW_1_NAME);
+	gpio = device_get_binding(CONFIG_TI_CC2520_GPIO_AON_NAME);
 	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_VREG, flags_noint_out);
 	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_RESET, flags_noint_out);
 
