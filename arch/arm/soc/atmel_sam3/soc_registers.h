@@ -23,6 +23,26 @@
 #ifndef _ATMEL_SAM3_SOC_REGS_H_
 #define _ATMEL_SAM3_SOC_REGS_H_
 
+/* Peripheral DMA Controller
+ *
+ * DO NOT USE DIRECTLY! This is to be used within individual
+ * peripheral's register struct.
+ *
+ * Starts at offset 0x100.
+ */
+struct __pdc {
+	uint32_t	rpr;	/* 0x100 Receive Pointer       */
+	uint32_t	rcr;	/* 0x104 Receive Counter       */
+	uint32_t	tpr;	/* 0x108 Transmit Pointer      */
+	uint32_t	tcr;	/* 0x10C Transmit Counter      */
+	uint32_t	rnpr;	/* 0x110 Receive Next Pointer  */
+	uint32_t	rncr;	/* 0x114 Receive Next Counter  */
+	uint32_t	tnpr;	/* 0x118 Transmit Next Pointer */
+	uint32_t	tncr;	/* 0x11C Transmit Next Counter */
+	uint32_t	ptcr;	/* 0x120 Transfer Control      */
+	uint32_t	ptsr;	/* 0x124 Transfer Status       */
+};
+
 /* Enhanced Embedded Flash Controller */
 struct __eefc {
 	uint32_t	fmr;	/* 0x00 Flash Mode Register    */

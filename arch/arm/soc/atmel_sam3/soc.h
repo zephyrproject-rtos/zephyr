@@ -183,6 +183,12 @@
 #define EEFC_BANK0_ADDR	0x400E0A00
 #define EEFC_BANK1_ADDR	0x400E0C00
 
+/* Peripheral DMA Controller (PDC) */
+#define PDC_PTCR_RXTEN	(1 << 0)
+#define PDC_PTCR_RXTDIS	(1 << 1)
+#define PDC_PTCR_TXTEN	(1 << 8)
+#define PDC_PTCR_TXTDIS	(1 << 9)
+
 /* PIO Controllers */
 #define PIOA_ADDR	0x400E0E00
 #define PIOB_ADDR	0x400E1000
