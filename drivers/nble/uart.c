@@ -33,7 +33,7 @@
 
 /* TODO: check size */
 #define NBLE_IPC_COUNT	2
-#define NBLE_BUF_SIZE	100
+#define NBLE_BUF_SIZE	384
 
 static struct nano_fifo rx;
 static NET_BUF_POOL(rx_pool, NBLE_IPC_COUNT, NBLE_BUF_SIZE, &rx, NULL, 0);
