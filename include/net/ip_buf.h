@@ -309,69 +309,49 @@ void ip_buf_init(void);
 #include <offsets.h>
 #include <misc/printk.h>
 
-enum {
-	STACK_DIRECTION_UP,
-	STACK_DIRECTION_DOWN,
-};
-
-static inline unsigned net_calculate_unused(const char *stack, unsigned size,
-					    int stack_growth)
-{
-	unsigned i, unused = 0;
-
-	if (stack_growth == STACK_DIRECTION_DOWN) {
-		for (i = __tTCS_SIZEOF; i < size; i++) {
-			if ((unsigned char)stack[i] == 0xaa) {
-				unused++;
-			} else {
-				break;
-			}
-		}
-	} else {
-		for (i = size - 1; i >= __tTCS_SIZEOF; i--) {
-			if ((unsigned char)stack[i] == 0xaa) {
-				unused++;
-			} else {
-				break;
-			}
-		}
-	}
-
-	return unused;
-}
-
-static inline unsigned net_get_stack_dir(struct net_buf *buf,
-					 struct net_buf **ref)
-{
-	if (buf > *ref) {
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
 static inline void net_analyze_stack(const char *name,
 				     unsigned char *stack,
 				     size_t size)
 {
-	unsigned unused;
-	int stack_growth;
-	char *dir;
-	struct net_buf *buf = NULL;
+	unsigned i, stack_offset, pcnt, unused = 0;
 
-	if (net_get_stack_dir(buf, &buf)) {
-		dir = "up";
-		stack_growth = STACK_DIRECTION_UP;
-	} else {
-		dir = "down";
-		stack_growth = STACK_DIRECTION_DOWN;
+	/* The TCS is always placed on a 4-byte aligned boundary - if
+	 * the stack beginning doesn't match that there will be some
+	 * unused bytes in the beginning.
+	 */
+	stack_offset = __tTCS_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
+
+/* TODO
+ * Currently all supported platforms have stack growth down and there is no
+ * Kconfig option to configure it so this always build "else" branch.
+ * When support for platform with stack direction up (or configurable direction)
+ * is added this check should be confirmed that correct Kconfig option is used.
+ */
+#if defined(CONFIG_STACK_GROWS_UP)
+	for (i = size - 1; i >= stack_offset; i--) {
+		if ((unsigned char)stack[i] == 0xaa) {
+			unused++;
+		} else {
+			break;
+		}
 	}
+#else
+	for (i = stack_offset; i < size; i++) {
+		if ((unsigned char)stack[i] == 0xaa) {
+			unused++;
+		} else {
+			break;
+		}
+	}
+#endif
 
-	unused = net_calculate_unused(stack, size, stack_growth);
+	/* Calculate the real size reserved for the stack */
+	size -= stack_offset;
+	pcnt = ((size - unused) * 100) / size;
 
-	printk("net: ip: %s stack grows %s, "
-	       "stack(%p/%u): unused %u bytes\n",
-	       name, dir, stack, size, unused);
+	printk("net: ip: %s stack real size %u "
+	       "unused %u usage %u/%u (%u %%)\n",
+	       name, size + stack_offset, unused, size - unused, size, pcnt);
 }
 #else
 #define net_analyze_stack(...)
