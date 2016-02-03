@@ -171,4 +171,14 @@ config GPIO_ATMEL_SAM3_PORTD
 
 endif # GPIO_ATMEL_SAM3
 
+if I2C_ATMEL_SAM3
+
+config I2C_ATMEL_SAM3_0
+	default y
+
+config I2C_ATMEL_SAM3_1
+	default y
+
+endif # I2C_ATMEL_SAM3
+
 endif # SOC_ATMEL_SAM3

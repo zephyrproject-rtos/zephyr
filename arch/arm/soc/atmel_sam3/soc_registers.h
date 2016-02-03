@@ -211,5 +211,28 @@ struct __supc {
 	uint32_t	sr;	/* 0x14 Status                      */
 };
 
+/* Two-wire Interface (TWI), aka I2C */
+struct __twi {
+	uint32_t	cr;	/* 0x00 Control                     */
+	uint32_t	mmr;	/* 0x04 Master Mode                 */
+	uint32_t	smr;	/* 0x08 Slave Mode                  */
+	uint32_t	iadr;	/* 0x0C Internal Address            */
+	uint32_t	cwgr;	/* 0x10 Clock Waveform Generator    */
+
+	uint32_t	rev0[3];	/* 0x14-0x1C reserved       */
+
+	uint32_t	sr;	/* 0x20 Status                      */
+
+	uint32_t	ier;	/* 0x24 Interrupt Enable            */
+	uint32_t	idr;	/* 0x28 Interrupt Disable           */
+	uint32_t	imr;	/* 0x2C Interrupt Mask              */
+
+	uint32_t	rhr;	/* 0x30 Receive Holding             */
+	uint32_t	thr;	/* 0x34 Transmit Holding            */
+
+	uint32_t	rev1[50];	/* 0x38-0xFC Reserved       */
+
+	struct __pdc	pdc;	/* 0x100 - 0x124 PDC                */
+};
 
 #endif /* _ATMEL_SAM3_SOC_REGS_H_ */

@@ -1,0 +1,89 @@
+config I2C_ATMEL_SAM3
+	bool "Atmel SAM3 I2C Driver"
+	depends on I2C && SOC_ATMEL_SAM3
+	default n
+	help
+	Enable I2C support on the Atmel SAM3 family processor.
+
+	Says y to enable additional options to enable support
+	for individual controllers.
+
+config I2C_ATMEL_SAM3_0
+	bool "Atmel SAM3 I2C Controller 0 (TWI0)"
+	depends on I2C_ATMEL_SAM3
+	default n
+	help
+	Build driver for thw I2C Controller #0 (TWI0).
+
+	Says y if you intend to use the TWI0.
+
+config I2C_ATMEL_SAM3_0_NAME
+	string "Device name for Atmel SAM3 I2C Controller 0"
+	depends on I2C_ATMEL_SAM3_0
+	default "I2C0"
+	help
+	The device name for Atmel SAM3 I2C Controller 0.
+
+	Default is "I2C0".
+
+config I2C_ATMEL_SAM3_0_INT_PRIORITY
+	int "IRQ Priority for Atmel SAM3 I2C Controller 0"
+	depends on I2C_ATMEL_SAM3_0
+	default 2
+	help
+	IRQ priority for Atmel SAM3 I2C Controller 0.
+
+	Default is 2.
+
+config I2C_ATMEL_SAM3_0_DEFAULT_CFG
+	hex "Default configuration for Atmel SAM3 I2C Controller 0"
+	depends on I2C_ATMEL_SAM3_0
+	default 0x12
+	help
+	Allows the I2C port to be brought up with a default configuration.
+	This is useful to set if other drivers depend upon using the I2C bus
+	before the application has a chance to custom configure the port.
+	Setting this value does not prohibit the application from customizing
+	the values later.  Refer to the I2C driver for proper values.
+
+	Default is 0x12 (master mode, standard speed).
+
+config I2C_ATMEL_SAM3_1
+	bool "Atmel SAM3 I2C Controller 1 (TWI1)"
+	depends on I2C_ATMEL_SAM3
+	default n
+	help
+	Build driver for thw I2C Controller #1 (TWI1).
+
+	Says y if you intend to use the TWI1.
+
+config I2C_ATMEL_SAM3_1_NAME
+	string "Device name for Atmel SAM3 I2C Controller 1"
+	depends on I2C_ATMEL_SAM3_1
+	default "I2C1"
+	help
+	The device name for Atmel SAM3 I2C Controller 1.
+
+	Default is "I2C1".
+
+config I2C_ATMEL_SAM3_1_INT_PRIORITY
+	int "IRQ Priority for Atmel SAM3 I2C Controller 1"
+	depends on I2C_ATMEL_SAM3_1
+	default 2
+	help
+	IRQ priority for Atmel SAM3 I2C Controller 1.
+
+	Default is 2.
+
+config I2C_ATMEL_SAM3_1_DEFAULT_CFG
+	hex "Default configuration for Atmel SAM3 I2C Controller 1"
+	depends on I2C_ATMEL_SAM3_1
+	default 0x12
+	help
+	Allows the I2C port to be brought up with a default configuration.
+	This is useful to set if other drivers depend upon using the I2C bus
+	before the application has a chance to custom configure the port.
+	Setting this value does not prohibit the application from customizing
+	the values later.  Refer to the I2C driver for proper values.
+
+	Default is 0x12 (master mode, standard speed).

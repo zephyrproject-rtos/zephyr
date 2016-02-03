@@ -340,3 +340,5 @@ config I2C_QMSI_1_IRQ
 config I2C_QMSI_1_INT_PRIORITY
 	int "Interrupt priority from I2C_1 controller"
 	depends on I2C_QMSI_1
+
+source "drivers/i2c/Kconfig.atmel_sam3"

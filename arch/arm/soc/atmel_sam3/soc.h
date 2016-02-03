@@ -205,6 +205,10 @@
 
 #define SUPC_SR_OSCSEL	(1 << 7)
 
+/* Two-wire Interface (TWI) */
+#define TWI0_ADDR	0x4008C000
+#define TWI1_ADDR	0x40090000
+
 #ifndef _ASMLANGUAGE
 
 #include <device.h>
@@ -233,6 +237,10 @@
 
 /* Supply Controller Register struct */
 #define __SUPC		((volatile struct __supc *)SUPC_ADDR)
+
+/* Two-wire Interface (TWI) */
+#define __TWI0		((volatile struct __twi *)TWI0_ADDR)
+#define __TWI1		((volatile struct __twi *)TWI1_ADDR)
 
 #endif /* !_ASMLANGUAGE */
 
