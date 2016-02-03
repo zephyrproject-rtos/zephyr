@@ -190,7 +190,7 @@ Restoring a Backup
 
   .. code-block:: console
 
-     $ sudo -E ./boards/arduino_101/support/arduino_101_restore.sh
+     $ sudo -E ./boards/arduino_101/support/arduino_101_load.sh
 
   .. note::
 
@@ -232,7 +232,7 @@ zflash to flash the :file:`quark_se_rom.bin` to the board.
 
    .. code-block:: console
 
-      $ sudo -E ./boards/arduino_101/support/flash-rom.sh
+      $ sudo -E ./boards/arduino_101/support/arduino_101_load.sh rom
 
    This script will flash the boot rom located in
    :file:`$ZEPHYR_BASE/boards/arduino_101/support/quark_se_rom.bin` to the
