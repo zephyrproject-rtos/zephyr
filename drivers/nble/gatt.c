@@ -301,7 +301,27 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, const void *buf,
 			   uint16_t len, uint16_t offset)
 {
-	return -ENOSYS;
+	struct _bt_gatt_ccc *ccc = attr->user_data;
+	const uint16_t *data = buf;
+
+	if (offset > sizeof(*data)) {
+		return -EINVAL;
+	}
+
+	if (offset + len > sizeof(*data)) {
+		return -EFBIG;
+	}
+
+	/* We expect to receive this only when the has really changed */
+	ccc->value = sys_le16_to_cpu(*data);
+
+	if (ccc->cfg_changed) {
+		ccc->cfg_changed(ccc->value);
+	}
+
+	BT_DBG("handle 0x%04x value %u", attr->handle, ccc->value);
+
+	return len;
 }
 
 int bt_gatt_attr_read_cep(struct bt_conn *conn,
