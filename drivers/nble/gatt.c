@@ -432,3 +432,28 @@ void on_ble_gatts_send_notif_ind_rsp(const struct ble_gatt_notif_ind_rsp *par)
 {
 	BT_DBG("");
 }
+
+void on_ble_gatts_read_evt(const struct nble_gatt_rd_evt *evt)
+{
+	struct ble_gatts_rw_reply_params reply_data;
+	const struct bt_gatt_attr *attr;
+	/* TODO: Replace the following with net_buf */
+	uint8_t data[NBLE_BUF_SIZE];
+
+	reply_data.status = -EACCES;
+
+	attr = evt->attr;
+
+	BT_DBG("read %p", attr);
+
+	if (attr->read) {
+		reply_data.status = attr->read(NULL, attr, data, sizeof(data),
+					       evt->offset);
+	}
+
+	reply_data.conn_handle = evt->conn_handle;
+	reply_data.offset = evt->offset;
+	reply_data.write_reply = 0;
+
+	nble_gatts_rw_authorize_reply_req(&reply_data, data, reply_data.status);
+}

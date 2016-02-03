@@ -323,6 +323,16 @@ void ble_gatt_register_req(const struct ble_gatt_register_req *par,
 			   uint8_t *buf, uint16_t len);
 
 /**
+ * Reply to an authorize request.
+ *
+ * @param p_params parameters for the reply
+ * @param buf  read value of the attribute
+ * @param buflen length of buf
+ */
+void nble_gatts_rw_authorize_reply_req(const struct ble_gatts_rw_reply_params *params,
+				       uint8_t *buf, uint16_t buflen);
+
+/**
  * Conversion table entry ble_core to host attr index
  *
  * This is returned as a table on registering.
