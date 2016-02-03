@@ -134,19 +134,19 @@ IDE.  On the Arduino 101, this option is not currently functional.
 
 #. Source the :file:`zephyr-env.sh` file.
 
-#. Change directories to $ZEPHYR_BASE.
+#. Change directories to :file:`$ZEPHYR_BASE`.
 
 #. In the termminal window , enter:
 
-   .. code-block:: console
+  .. code-block:: console
 
-      $ sudo -E ./boards/arduino_101/support/arduino_101_backup.sh
+     $ sudo -E ./boards/arduino_101/support/arduino_101_backup.sh
 
-      .. note::
+  .. note::
 
-      This will cause the system to dump two files in your ZEPHYR_BASE:
-      A101_BOOT.bin and A101_OS.bin.  These contain copies of the original
-      flash that can be used to restore the state to factory conditions.
+  This will cause the system to dump two files in your ZEPHYR_BASE:
+  A101_BOOT.bin and A101_OS.bin.  These contain copies of the original
+  flash that can be used to restore the state to factory conditions.
 
 At this point you have now created a backup for the Arduino 101.
 
@@ -164,14 +164,14 @@ Restoring a Backup
 
 #. In the termminal window , enter:
 
-   .. code-block:: console
+  .. code-block:: console
 
-      $ sudo -E ./boards/arduino_101/support/arduino_101_restore.sh
+     $ sudo -E ./boards/arduino_101/support/arduino_101_restore.sh
 
-      .. note::
+  .. note::
 
-      This script expects two files in your ZEPHYR_BASE titles A101_OS.bin
-      and A101_BOOT.bin.
+  This script expects two files in your :file:`$ZEPHYR_BASE` with titles of
+  :file:`A101_OS.bin` and :file:`A101_BOOT.bin`.
 
 Flashing an Application to Arduino 101
 ======================================
@@ -186,9 +186,6 @@ section.
 
 Flashing the ROM
 ================
-
-.. note::
-  This is a one time only requirement.
 
 The default boot ROM used by the Arduino 101 requires that any binary to run
 be authorized.  Currently the Zephyr project is not supported by this ROM.  To
@@ -226,18 +223,15 @@ checkout copy of Zephyr, and run:
    .. code-block:: console
 
       $ source ./zephyr-env.sh
-      $ cd $ZEPHYR_BASE/samples/nanokernel/appls/hello_world
+      $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
 
       $ make pristine && BOARD=arduino_101_sss ARCH=arc
+      $ make BOARD=arduino_101_sss flash
 
 .. note::
 
    When building for the ARC processor, the board type is listed as
    arduino_101_sss and the ARCH type is set to arc.
-
-   .. code-block:: console
-
-      $ make BOARD=arduino_101_sss flash
 
 
 Congratulations you have now flashed the hello_world image to the ARC
@@ -251,17 +245,14 @@ Flashing an x86 Kernel
    .. code-block:: console
 
       $ source ./zephyr-env.sh
-      $ cd $ZEPHYR_BASE/samples/nanokernel/appls/hello_world
+      $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
       $ make pristine && BOARD=arduino_101 ARCH=x86
+      $ make BOARD=arduino_101 flash
 
 .. note::
 
    When building for the x86 processor, the board type is listed as
    arduino_101 and the ARCH type is set to x86.
-
-   .. code-block:: console
-
-     $ make BOARD=arduino_101 flash
 
 Congratulations you have now flashed the hello_world image to the x86
 processor.
@@ -300,28 +291,19 @@ for ARCH=x86 if you wish to debug on the x86 core.
 
 3. In terminal window 1, type:
 
-   .. code-block:: console
+  .. code-block:: console
 
-     $ make BOARD=arduino_101 debug
+    $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
+    $ make BOARD=arduino_101 debug
 
-   Once started, openocd should stay running in the window.
+  These commands will start an openocd session that creates a local telnet
+  server (on port 4444 for direct openocd commands to be issued), and a
+  gdbserver (for gdb access).  The command should not return to a command line
+  interface until you are done debugging, at which point you can press Cntl-C
+  to shutdown everything.
 
 4. Start GDB in terminal window 2
 
-   .. note::
-
-      While debugging on ARC, it will be necessary to use a version of gdb that
-      understands ARC binaries.  Currently this resides in the Zephyr SDK at
-      :envvar:`$ZEPHYR_SDK_INSTALL_DIR`
-      :file:`/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb`.
-
-      It is suggested to create an alias in your shell to run this command,
-      such as:
-
-   .. code-block:: console
-
-      alias arc_gdb= "$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-
-      linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb"
 
    * To debug on x86:
 
@@ -331,19 +313,33 @@ for ARCH=x86 if you wish to debug on the x86 core.
          $ gdb outdir/zephyr.elf
          gdb$  target remote :3333
 
-   * To debug on ARC will require some extra steps and a third terminal:
+   * To debug on ARC:
 
-   On Terminal 2:
+     ARC debugging will require some extra steps and a third terminal.  It is
+     necessary to use a version of gdb that understands ARC binaries.
+     Thankfully one is provided with the Zephyr SDK at
+     :envvar:`$ZEPHYR_SDK_INSTALL_DIR`
+     :file:`/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb`.
 
-      .. code-block:: console
+     It is suggested to create an alias in your shell to run this command,
+     such as:
 
-         $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
-         $ arc_gdb outdir/zephyr.elf
-         gdb$  target remote :3334
+     .. code-block:: console
 
-   At this point you may set the breakpoint needed in the code/function.
+        alias arc_gdb= "$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-
+        linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb"
 
-   On Terminal 3 connect to the X86 side:
+     a) On Terminal 2:
+
+       .. code-block:: console
+
+          $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
+          $ arc_gdb outdir/zephyr.elf
+          gdb$  target remote :3334
+
+     At this point you may set the breakpoint needed in the code/function.
+
+     b) On Terminal 3 connect to the X86 side:
 
       .. code-block:: console
 
@@ -356,7 +352,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
      The gdb ARC server port was 3333 and the X86 port was 3334.  As of SDK
      v0.7.2, the gdb ARC server port is 3334, and the X86 port is 3333.
 
-   The :code`continue` on the X86 side is needed as the ARC_INIT_DEBUG flag has
+   The :code:`continue` on the X86 side is needed as the ARC_INIT_DEBUG flag has
    been set and halts the X86 until the ARC core is ready.  Ready in this case
    is defined as openocd has had a chance to connect, setup registers, and any
    breakpoints.  Unfortunately, there exists no automated method for notifying
