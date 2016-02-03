@@ -830,15 +830,9 @@ bool cc2520_set_pan_addr(unsigned pan, unsigned addr,
 	return true;
 }
 
-#if CONFIG_TI_CC2520_DEBUG
-#define read_packet() read_packet_debug(__func__)
-static void read_packet_debug(const char *caller);
-#else
-static void read_packet(void);
-#endif
-
 static int cc2520_read(void *buf, unsigned short bufsize)
 {
+	struct cc2520_config *info = cc2520_sgl_dev->config->config_info;
 	uint8_t footer[2];
 	uint8_t len;
 
@@ -854,22 +848,16 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 
 	getrxbyte(&len);
 
-	DBG("Incoming packet length: %d\n", len);
+	DBG("%s: Incoming packet length: %d\n", __func__, len);
 
-	if (len > CC2520_MAX_PACKET_LEN) {
-		/* Oops, we must be out of sync. */
-		flushrx();
-		return 0;
-	}
-
-	if (len <= FOOTER_LEN) {
-		flushrx();
-		return 0;
-	}
-
-	if (len - FOOTER_LEN > bufsize) {
-		flushrx();
-		return 0;
+	/* Error cases:
+	 * 1     -> out of sync!
+	 * 2 & 3 -> bogus length
+	 */
+	if ((len > CC2520_MAX_PACKET_LEN) ||
+	    (len - FOOTER_LEN > bufsize) ||
+	    (len <= FOOTER_LEN)) {
+		goto error;
 	}
 
 	getrxdata(buf, len - FOOTER_LEN);
@@ -884,8 +872,7 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 				   cc2520_last_correlation);
 
 	} else {
-		flushrx();
-		len = FOOTER_LEN;
+		goto error;
 	}
 
 	if (cc2520_pending_packet()) {
@@ -896,53 +883,51 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 			 */
 			flushrx();
 		} else {
-			/* Another packet has been received and needs attention. */
-			read_packet();
+			/* Another packet might be waiting
+			 * Let's unlock reading_packet_fiber()
+			 */
+			nano_fiber_sem_give(&info->read_lock);
 		}
-	}
-
-	if (len < FOOTER_LEN) {
-		return 0;
 	}
 
 	return len - FOOTER_LEN;
+
+error:
+	flushrx();
+	return 0;
 }
 
-#if CONFIG_TI_CC2520_DEBUG
-static void read_packet_debug(const char *caller)
-#else
 static void read_packet(void)
-#endif
 {
 	struct net_buf *buf;
+	int len;
 
 	buf = l2_buf_get_reserve(0);
-	if (buf) {
-		int len;
-
-		packetbuf_set_attr(buf, PACKETBUF_ATTR_TIMESTAMP,
-				   last_packet_timestamp);
-
-		len = cc2520_read(packetbuf_dataptr(buf), PACKETBUF_SIZE);
-		if (len < 0) {
-			l2_buf_unref(buf);
-			return;
-		}
-
-		packetbuf_set_datalen(buf, len);
-
-#if CONFIG_TI_CC2520_DEBUG
-		DBG("%s: %s: received %d bytes\n", caller, __func__, len);
-#endif
-
-		if (net_driver_15_4_recv_from_hw(buf) < 0) {
-#if CONFIG_TI_CC2520_DEBUG
-			DBG("%s: %s: rdc input failed, packet discarded\n",
-			       caller, __func__);
-#endif
-			l2_buf_unref(buf);
-		}
+	if (!buf) {
+		DBG("%s: Could not allocate buffer\n", __func__);
+		return;
 	}
+
+	packetbuf_set_attr(buf, PACKETBUF_ATTR_TIMESTAMP,
+			   last_packet_timestamp);
+
+	len = cc2520_read(packetbuf_dataptr(buf), PACKETBUF_SIZE);
+	if (len < 0) {
+		goto out;
+	}
+
+	packetbuf_set_datalen(buf, len);
+
+	DBG("%s: received %d bytes\n", __func__, len);
+
+	if (net_driver_15_4_recv_from_hw(buf) < 0) {
+		DBG("%s: rdc input failed, packet discarded\n", __func__);
+		goto out;
+	}
+
+	return;
+out:
+	l2_buf_unref(buf);
 }
 
 /* Reading incoming packet, so through SPI, cannot be done directly
@@ -959,9 +944,7 @@ static void reading_packet_fiber(int unused1, int unused2)
 		nano_fiber_sem_take(&info->read_lock, TICKS_UNLIMITED);
 
 		cc2520_radio_lock();
-
 		read_packet();
-
 		cc2520_radio_unlock();
 
 		last_packet_timestamp = cc2520_sfd_start_time;
