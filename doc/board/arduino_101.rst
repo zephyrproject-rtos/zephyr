@@ -6,17 +6,23 @@ Board Configuration: arduino 101
 Overview
 ********
 
-Developers can use the arduino_101 board configuration to build a
-Zephyr Kernel that can be flashed and run on the Arduino 101 platform.
+The Arduino 101 board is an Arduino product that uses the Intel Quark SE
+processor.  As an unsupported configuration, the Zephyr Project is able to be
+flashed to an Arduino 101 for experimentation and testing purposes.
 
-This board configuration enables kernel support for the board's Quark SoC.
+As the Quark SE contains both an ARC and an X86 core, a developer will need to
+flash an ARC and an X86 image to use both.  Developers can use the
+**arduino_101** and **arduino_101_sss** board configurations to build a Zephyr
+Kernel that can be flashed and run on the Arduino 101 platform.  The default
+configuration for Arduino 101 boards can be found in
+:file:`boards/arduino_101_defconfig` for the X86 and
+:file:`boards/arduino_101_sss_defconfig` for the ARC.
 
 Board Layout
 ************
 
 General information for the board can be found at the `Arduino website`_,
-which includes both `schematics`_ and EAGLE files.  The site also contains
-some details on the board power.
+which includes both `schematics`_ and BRD files.
 
 Supported Features
 ******************
@@ -75,16 +81,6 @@ pieces of hardware are required.
 
 * :ref:`The Zephyr SDK <zephyr_sdk>`
 
-* The zflash utility
-
-   1. git clone https://oic-review.01.org/gerrit/a/zflash
-   2. cd zflash
-   3. sudo make install
-
-.. note::
-   The zflash tool, while currently the method to flash devices, may not be
-   the final method.  Please do not distribute this tool any further.
-
 Connecting JTAG to Arduino 101
 ==============================
 
@@ -125,77 +121,74 @@ Making a Backup
 Before continuing, it is worth considering the creation of a backup
 image of the ROM device as it stands today.  This would be necessary if you
 ever decide to run Arduino sketches on the hardware again as the Arduino IDE
-requires updating via a USB flashing method that is not currently supported by
-Zephyr.
+requires updating via a USB flashing method that is not currently supported
+by Zephyr.
 
 Typically Arduino hardware can re-program the Bootloader through connecting
-the ICSP header and issuing the "Burn Bootloader" option from the Arduino IDE.
-On the Arduino 101, this option is not currently functional.
+the ICSP header and issuing the "Burn Bootloader" option from the Arduino
+IDE.  On the Arduino 101, this option is not currently functional.
 
 #. Make sure the Zephyr SDK has been installed on your platform.
-   Specifically ensure that openocd is available to you.  This will
-   depend upon where you decided to install the SDK; by default the path
-   is: :file:`/usr/local/zflash/openocd/bin/openocd`.
 
-#. Open two terminal windows
+#. Open a terminal window
 
-#. In terminal window 1, change directories to where you wish the binary ROM
-   files to be saved.
+#. Source the :file:`zephyr-env.sh` file.
 
-#. In termminal window 1, enter:
+#. Change directories to $ZEPHYR_BASE.
+
+#. In the termminal window , enter:
 
    .. code-block:: console
 
-      $ sudo zflash -b arduino_101 -d
+      $ sudo -E ./boards/arduino_101/support/arduino_101_backup.sh
 
       .. note::
 
-      The zflash tool requires a file to be included when attempting to enable
-      the debug server.
+      This will cause the system to dump two files in your ZEPHYR_BASE:
+      A101_BOOT.bin and A101_OS.bin.  These contain copies of the original
+      flash that can be used to restore the state to factory conditions.
 
-   Once started, openocd should stay running in the window.
+At this point you have now created a backup for the Arduino 101.
 
-#. In terminal window 2, enter:
+Restoring a Backup
+==================
 
-   .. code-block:: console
+#. Make sure the Zephyr SDK has been installed on your development
+   environment.
 
-      $ telnet localhost 4444
-      Trying 127.0.0.1...
-      Connected to localhost.
-      Escape character is '^]'.
-      Open On-Chip Debugger
+#. Open a terminal window
 
-#. Save the boot ROM.  In this case, the variable :var:`$ROM` can be
-   replaced with the name of the file you wish to save the image as (e.g.
-   rom.bin).
+#. Source the :file:`zephyr-env.sh` file.
 
-   .. code-block:: console
+#. Change directories to $ZEPHYR_BASE.
 
-     > dump_image $ROM 0xffffe000 8192
-     dumped 8192 bytes in 0.092147s (86.818 KiB/s)
-
-#. Save the current ARC image.  In this case, the variable
-   :var:`$ARC` can be repalced with the name of the file you wish to save the
-   image as (e.g. arc.bin)
+#. In the termminal window , enter:
 
    .. code-block:: console
 
-     > dump_image $ARC 0x40000000 196608
-     dumped 196608 bytes in 2.205578s (87.052 KiB/s)
+      $ sudo -E ./boards/arduino_101/support/arduino_101_restore.sh
 
-#. Save the current X86 image.  In this case, the variable
-   :var:`$X86` can be repalced with the name of the file you wish to save the
-   image as (e.g. x86.bin)
+      .. note::
 
-   .. code-block:: console
+      This script expects two files in your ZEPHYR_BASE titles A101_OS.bin
+      and A101_BOOT.bin.
 
-     > dump_image $X86 0x40030000 196608
-     dumped 196608 bytes in 2.205578s (86.836 KiB/s)
+Flashing an Application to Arduino 101
+======================================
 
-#. At this point you have now created a backup for the Arduino 101.
+By default, the Arduino 101 comes with an X86 and ARC image ready to run.  Both
+images can be replaced by Zephyr OS images following the steps below.  In cases
+where only an X86 image is needed or wanted it is important to disable the
+ARC processor, as the X86 OS will appear to hang waiting for the ARC processor.
+
+Details on how to disable the ARC can be found in the Debugging on Arduino 101
+section.
 
 Flashing the ROM
 ================
+
+.. note::
+  This is a one time only requirement.
 
 The default boot ROM used by the Arduino 101 requires that any binary to run
 be authorized.  Currently the Zephyr project is not supported by this ROM.  To
@@ -207,36 +200,45 @@ zflash to flash the :file:`quark_se_rom.bin` to the board.
     This will cause the Arduino 101 board to no longer run an Arduino sketch
     or work with the Arduino IDE.
 
+#. Source the :file:`zephyr-env.sh` file.
+
+#. Change directories to $ZEPHYR_BASE.
+
+#. The Zephyr Project has included a pre-compiled version of a bootloader for
+   general use on the Arduino 101.  Details about how to build your own
+   bootloader can be found in the
+   :file:`$ZEPHYR_BASE/boards/arduino_101/support/README`
+
    .. code-block:: console
 
-      zflash -r -b arduino_101 $ZFLASH_ROOT/test/quark_se/quark_se_rom.bin
+      $ sudo -E ./boards/arduino_101/support/flash-rom.sh
+
+   This script will flash the boot rom located in
+   :file:`$ZEPHYR_BASE/boards/arduino_101/support/quark_se_rom.bin` to the
+   Arduino 101 device, overwriting the original shipping ROM.
 
 Flashing an ARC Kernel
 ======================
 
-# Make sure the binary image has been built.
+# Make sure the binary image has been built.  Change directories to your local
+checkout copy of Zephyr, and run:
 
    .. code-block:: console
 
-      $ cd $ZEPHYR_HOME
+      $ source ./zephyr-env.sh
+      $ cd $ZEPHYR_BASE/samples/nanokernel/appls/hello_world
 
-      $ make -C
-      samples/nanonkernel/apps/hello_world BOARD=arduino_101_sss ARCH=arc
+      $ make pristine && BOARD=arduino_101_sss ARCH=arc
 
 .. note::
 
    When building for the ARC processor, the board type is listed as
-   arduino_101_sss, and the ARCH type is set to arc.
+   arduino_101_sss and the ARCH type is set to arc.
 
    .. code-block:: console
 
-      $ zflash -c -b arduino_101
-      samples/nanokernel/apps/hello_world/outdir/zephyr.bin
+      $ make BOARD=arduino_101_sss flash
 
-.. note::
-
-   When flashing an ARC kernel, zflash REQUIRES the use of the
-   :option:`-c` flag.
 
 Congratulations you have now flashed the hello_world image to the ARC
 processor.
@@ -248,23 +250,18 @@ Flashing an x86 Kernel
 
    .. code-block:: console
 
-      $ cd $ZEPHYR_HOME
-      $ make -C samples/nanonkernel/apps/hello_world BOARD=arduino_101
+      $ source ./zephyr-env.sh
+      $ cd $ZEPHYR_BASE/samples/nanokernel/appls/hello_world
+      $ make pristine && BOARD=arduino_101 ARCH=x86
 
 .. note::
 
-   When building for the x86 processor, the board type is
-   listed as arduino_101, and no ARCH flag needs to be set.
+   When building for the x86 processor, the board type is listed as
+   arduino_101 and the ARCH type is set to x86.
 
    .. code-block:: console
 
-     $ zflash -b
-     arduino_101 samples/nanokernel/apps/hello_world/outdir/zephyr.bin
-
-.. note::
-
-   When flashing an x86 image, zflash does NOT require the :option:`-c`
-   flag to be used.
+     $ make BOARD=arduino_101 flash
 
 Congratulations you have now flashed the hello_world image to the x86
 processor.
@@ -279,8 +276,8 @@ for ARCH=x86 if you wish to debug on the x86 core.
 1. Build the binary for your application on the architecture you wish to
    debug.  Alternatively, use the instructions above as template for testing.
 
-   When debugging on ARC, you will want to enable the ARC_INIT_DEBUG
-   configuration option in your x86 PRJ file.  Details of this flag can be
+   When debugging on ARC, you will need to enable the ARC_INIT_DEBUG
+   configuration option in your X86 PRJ file.  Details of this flag can be
    found in :file:`arch/x86/soc/quark_se/Kconfig`.  Setting this variable will
    force the ARC processor to halt on bootstrap, giving the debugger a chance
    at connecting and controlling the hardware.
@@ -293,13 +290,19 @@ for ARCH=x86 if you wish to debug on the x86 core.
       CONFIG_ARC_INIT=y
       CONFIG_ARC_INIT_DEBUG=y
 
+   .. note::
+
+       By enabling CONFIG_ARC_INIT, you ::MUST:: flash both an ARC and an X86
+       image to the hardware.  If you do not, the X86 image will appear to hang
+       at boot while it is waiting for the ARC to finish initialization.
+
 2. Open two terminal windows
 
 3. In terminal window 1, type:
 
    .. code-block:: console
 
-     $ sudo zflash -b arduino_101 -d
+     $ make BOARD=arduino_101 debug
 
    Once started, openocd should stay running in the window.
 
@@ -324,8 +327,9 @@ for ARCH=x86 if you wish to debug on the x86 core.
 
        .. code-block:: console
 
-         $ gdb $ZEPHYR_HOME/samples/nanokernel/apps/hello_world/outdir/zephyr.bin
-         gdb$  target remote :3334
+         $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
+         $ gdb outdir/zephyr.elf
+         gdb$  target remote :3333
 
    * To debug on ARC will require some extra steps and a third terminal:
 
@@ -333,8 +337,9 @@ for ARCH=x86 if you wish to debug on the x86 core.
 
       .. code-block:: console
 
-         $ arc_gdb $ZEPHYR_HOME/samples/nanokernel/apps/hello_world/outdir/zephyr.bin
-         gdb$  target remote :3333
+         $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
+         $ arc_gdb outdir/zephyr.elf
+         gdb$  target remote :3334
 
    At this point you may set the breakpoint needed in the code/function.
 
@@ -343,8 +348,13 @@ for ARCH=x86 if you wish to debug on the x86 core.
       .. code-block:: console
 
          $ gdb
-         gdb$  target remote :3334
+         gdb$  target remote :3333
          gdb$  continue
+
+   .. note::
+     In previous versions of the SDK, the gdbserver remote ports were reversed.
+     The gdb ARC server port was 3333 and the X86 port was 3334.  As of SDK
+     v0.7.2, the gdb ARC server port is 3334, and the X86 port is 3333.
 
    The :code`continue` on the X86 side is needed as the ARC_INIT_DEBUG flag has
    been set and halts the X86 until the ARC core is ready.  Ready in this case
@@ -432,6 +442,9 @@ Bibliography
 
 .. _FlySwatter2 JTAG debugger:
    http://www.tincantools.com/JTAG/Flyswatter2.html
+
+.. _Intel Datasheet:
+   http://www.intel.com/content/www/us/en/embedded/products/quark/mcu/se-soc/overview.html
 
 .. _ARM-JTAG-20-10:
    http://www.amazon.com/gp/product/
