@@ -81,6 +81,15 @@ pieces of hardware are required.
 
 * :ref:`The Zephyr SDK <zephyr_sdk>`
 
+* If you wish to grab any data off the serial port, you will need a TTY to USB
+  adaptor.  There are two the Zephyr team has tested and found to work.  Both
+  will require male to male jumper cables to connect to the Arduino 101 board.
+
+  1. USB to TTL Serial Cable - https://adafru.it/954
+
+  2. FTDI USB to TTL Serial Part #TTL-232R-3V3
+     http://www.ftdichip.com/Products/Cables/USBTTLSerial.htm
+
 Connecting JTAG to Arduino 101
 ==============================
 
@@ -361,6 +370,44 @@ for ARCH=x86 if you wish to debug on the x86 core.
    Once you've started the X86 side again, and have configured any debug
    stubs on the ARC side, you will need to have gdb issue the continue
    command for the ARC processor to start.
+
+Connecting Serial Output
+************************
+
+In the default configuration, Zephyr's Arduino 101 images support serial output
+via the UART0 on the board. To read the output, you will need a USB to TTL
+serial cable.  To enable serial output:
+
+* Connect the Serial Cable RX pin, to the Arduino 101's TX->1 pin.
+
+   .. figure:: figures/arduino_101_03.png
+      :scale: 50 %
+      :alt: Image for pin positions and serial output
+
+* Connect the Serial Cable TX pin, to the Arduino 101's RX<-0 pin.
+
+   .. figure:: figures/arduino_101_04.png
+      :scale: 50 %
+      :alt: Image for pin positions and serial output
+
+* Connect the Serial Cable GND pin, to the Arduino 101's GND pin.
+
+   .. figure:: figures/arduino_101_05.png
+      :scale: 50 %
+      :alt: Image for pin positions and serial output
+
+Once connected, on your development environment you will need to:
+
+* Open a serial port emulator (i.e. on Linux minicom, screen, etc)
+
+* Attach to the USB to TTL Serial cable, for example, on Linux this may be
+  :file:`/dev/ttyUSB0`
+
+* Set the communication details to:
+  ** Speed: 115200
+  ** Data: 8 bits
+  ** Parity: None
+  ** Stopbits: 1
 
 
 Arduino 101 Pinout
