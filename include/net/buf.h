@@ -35,7 +35,7 @@ extern "C" {
 
 struct net_buf {
 	/** FIFO uses first 4 bytes itself, reserve space */
-	int __unused;
+	int _unused;
 
 	/** Size of the user data associated with this buffer. */
 	const uint16_t user_data_size;
