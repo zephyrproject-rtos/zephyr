@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <bluetooth/log.h>
+
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
 #define PRINTK(...) printk(__VA_ARGS__)
@@ -171,6 +173,43 @@ static void (*m_fct_s_b_p[])(void *structure, void *buffer, uint8_t length,
 static void (*m_fct_s_b_b_p[])(void *structure, void *buffer1, uint8_t length1,
 			       void *buffer2, uint8_t length2,
 			       void *pointer) = { LIST_FN_SIG_S_B_B_P };
+
+/* Build debug table to help development with this "robust" macro stuff */
+
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+
+#undef FN_SIG_NONE
+#undef FN_SIG_S
+#undef FN_SIG_P
+#undef FN_SIG_S_B
+#undef FN_SIG_B_B_P
+#undef FN_SIG_S_P
+#undef FN_SIG_S_B_P
+#undef FN_SIG_S_B_B_P
+
+#define FN_SIG_NONE(__fn)			#__fn,
+#define FN_SIG_S(__fn, __s)			FN_SIG_NONE(__fn)
+#define FN_SIG_P(__fn, __type)			FN_SIG_NONE(__fn)
+#define FN_SIG_S_B(__fn, __s, __type, __length)				\
+						FN_SIG_NONE(__fn)
+#define FN_SIG_B_B_P(__fn, __type1, __length1, __type2, __length2,	\
+		     __type3)			FN_SIG_NONE(__fn)
+#define FN_SIG_S_P(__fn, __s, __type)		FN_SIG_NONE(__fn)
+#define FN_SIG_S_B_P(__fn, __s, __type, __length, __type_ptr)		\
+						FN_SIG_NONE(__fn)
+#define FN_SIG_S_B_B_P(__fn, __s, __type1, __length1, __type2,		\
+		       __length2, __type3)	FN_SIG_NONE(__fn)
+
+static char *debug_func_none[] = { LIST_FN_SIG_NONE };
+static char *debug_func_s[] = { LIST_FN_SIG_S };
+static char *debug_func_p[] = { LIST_FN_SIG_P };
+static char *debug_func_s_b[] = { LIST_FN_SIG_S_B };
+static char *debug_func_b_b_p[] = { LIST_FN_SIG_B_B_P };
+static char *debug_func_s_p[] = { LIST_FN_SIG_S_P };
+static char *debug_func_s_b_p[] = { LIST_FN_SIG_S_B_P };
+static char *debug_func_s_b_b_p[] = { LIST_FN_SIG_S_B_B_P};
+
+#endif
 
 static void panic(int err)
 {
@@ -478,41 +517,49 @@ void rpc_deserialize(const uint8_t *buf, uint16_t length)
 		switch (sig_type) {
 		case SIG_TYPE_NONE:
 			if (sizeof(m_fct_none)) {
+				BT_DBG("%s", debug_func_none[fn_index]);
 				deserialize_none(fn_index, buf, length);
 			}
 			break;
 		case SIG_TYPE_S:
 			if (sizeof(m_fct_s)) {
+				BT_DBG("%s", debug_func_s[fn_index]);
 				deserialize_s(fn_index, buf, length);
 			}
 			break;
 		case SIG_TYPE_P:
 			if (sizeof(m_fct_p)) {
+				BT_DBG("%s", debug_func_p[fn_index]);
 				deserialize_p(fn_index, buf, length);
 			}
 			break;
 		case SIG_TYPE_S_B:
 			if (sizeof(m_fct_s_b)) {
+				BT_DBG("%s", debug_func_s_b[fn_index]);
 				deserialize_s_b(fn_index, buf, length);
 			}
 			break;
 		case SIG_TYPE_B_B_P:
 			if (sizeof(m_fct_b_b_p)) {
+				BT_DBG("%s", debug_func_b_b_p[fn_index]);
 				deserialize_b_b_p(fn_index, buf, length);
 			}
 			break;
 		case SIG_TYPE_S_P:
 			if (sizeof(m_fct_s_p)) {
+				BT_DBG("%s", debug_func_s_p[fn_index]);
 				deserialize_s_p(fn_index, buf, length);
 			}
 			break;
 		case SIG_TYPE_S_B_P:
 			if (sizeof(m_fct_s_b_p)) {
+				BT_DBG("%s", debug_func_s_b_p[fn_index]);
 				deserialize_s_b_p(fn_index, buf, length);
 			}
 			break;
 		case SIG_TYPE_S_B_B_P:
 			if (sizeof(m_fct_s_b_b_p)) {
+				BT_DBG("%s", debug_func_s_b_b_p[fn_index]);
 				deserialize_s_b_b_p(fn_index, buf, length);
 			}
 			break;
