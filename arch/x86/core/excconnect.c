@@ -193,7 +193,11 @@ void _NanoCpuExcConnectAtDpl(
 	_IntVecSet(vector, _get_dynamic_stub(stub_idx, base_ptr), dpl);
 }
 
+#if CONFIG_X86_IAMCU
+void _common_dynamic_exc_handler(NANO_ESF *pEsf, uint32_t stub_idx)
+#else
 void _common_dynamic_exc_handler(uint32_t stub_idx, NANO_ESF *pEsf)
+#endif
 {
 	exc_handlers[stub_idx](pEsf);
 }

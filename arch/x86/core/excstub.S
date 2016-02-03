@@ -330,8 +330,10 @@ EXC_HANDLER(IV_MACHINE_CHECK)
 #if ALL_DYN_EXC_STUBS > 0
 BRANCH_LABEL(_DynExcStubCommon)
 	call _common_dynamic_exc_handler
+#ifndef CONFIG_X86_IAMCU
 	/* Cleanse the stack of stub_num */
 	pop %eax
+#endif
 	/* Clean up and call IRET */
 	jmp _ExcExit
 
@@ -371,11 +373,15 @@ SECTION_FUNC(TEXT, _DynExcStubsBegin)
 			 */
 			call _ExcEnt
 
+#if CONFIG_X86_IAMCU
+			movl $stub_num, %edx
+#else
 			/*
 			 * 2-byte push imm8. Consumed by
 			 * _common_dynamic_exc_handler(), see excconnect.c
 			 */
 			push $stub_num
+#endif
 
 			/*
 			 * Check to make sure this isn't the last stub in
@@ -417,12 +423,15 @@ SECTION_FUNC(TEXT, _DynExcStubsNoErrBegin)
 			 * stub_num to the irq stack
 			 */
 			call _ExcEntNoErr
-
+#if CONFIG_X86_IAMCU
+			movl $stub_num, %edx
+#else
 			/*
 			 * 2-byte push imm8. Consumed by
 			 * _common_dynamic_exc_handler(), see excconnect.c
 			 */
 			push $stub_num
+#endif
 
 			/*
 			 * Check to make sure this isn't the last stub in
