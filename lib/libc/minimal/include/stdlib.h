@@ -19,7 +19,6 @@
 #ifndef __INC_stdlib_h__
 #define __INC_stdlib_h__
 
-#include <ctype.h>
 #include <bits/null.h>
 #include <bits/size_t.h>
 
