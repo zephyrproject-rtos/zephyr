@@ -80,7 +80,7 @@ static int attr_read(struct bt_gatt_attr *attr, uint8_t *data, size_t len)
 	uint8_t i;
 	int data_size;
 
-	if (!data || len < 0) {
+	if (!data) {
 		return -ENOMEM;
 	}
 
