@@ -36,10 +36,18 @@ hardware features:
 +--------------+------------+----------------------+
 | UART         | on-chip    | serial port          |
 +--------------+------------+----------------------+
+| GPIO         | on-chip    | gpio                 |
++--------------+------------+----------------------+
+| I2C          | on-chip    | i2c                  |
++--------------+------------+----------------------+
 
 Other hardware features are not currently supported by the Zephyr kernel.
 See `Arduino Due website`_ and `Atmel SAM3X8E Datasheet`_ for a complete
 list of Arduino Due board hardware features.
+
+.. note::
+   For I2C, pull-up resistors are required for using SCL1 and SDA1
+   (near IO13).
 
 Interrupt Controller
 ====================
@@ -146,6 +154,9 @@ be found in :file:`$ZEPHYR_BASE/samples/nanokernel/apps/hello_world`.
 
 # Press the Reset button and you should see "Hello World!" in your terminal.
 
+.. note::
+   Make sure your terminal program is closed before flashing the binary image,
+   or it will interfere with the flashing process.
 
 References
 ==========
