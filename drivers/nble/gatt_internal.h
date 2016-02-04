@@ -240,7 +240,7 @@ struct ble_gatts_get_attribute_params {
 struct ble_gatts_attribute_response {
 	int status;			/**< Status of the operation. */
 	uint16_t value_handle;		/* mandatory */
-	void *p_priv;
+	void *priv;
 };
 
 /**
@@ -325,12 +325,12 @@ void ble_gatt_register_req(const struct ble_gatt_register_req *par,
 /**
  * Reply to an authorize request.
  *
- * @param p_params parameters for the reply
+ * @param par parameters for the reply
  * @param buf  read value of the attribute
- * @param buflen length of buf
+ * @param len length of buf
  */
-void nble_gatts_authorize_reply_req(const struct ble_gatts_rw_reply_params *params,
-				    uint8_t *buf, uint16_t buflen);
+void nble_gatts_authorize_reply_req(const struct ble_gatts_rw_reply_params *par,
+				    uint8_t *buf, uint16_t len);
 
 /**
  * Conversion table entry ble_core to host attr index
@@ -359,10 +359,10 @@ void on_ble_gatt_register_rsp(const struct ble_gatt_register_rsp *par,
  *
  * @param ev Pointer to the event structure
  * @param buf Pointer to data buffer
- * @param buflen Buffer length
+ * @param len Buffer length
  */
 void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *ev,
-			    const uint8_t *buf, uint8_t buflen);
+			    const uint8_t *buf, uint8_t len);
 
 /**
  * Retrieves handle based on attribute array and index of attribute
@@ -506,12 +506,12 @@ void on_ble_gattc_read_rsp(const struct ble_gattc_read_rsp *ev,
  *
  * @param params Write parameters
  * @param buf Characteristic value to write.
- * @param buflen Characteristic value length. If length is bigger then ATT MTU
+ * @param len Characteristic value length. If length is bigger then ATT MTU
  * size, the controller fragment buffer itself.
  * @param priv Pointer to private data.
  */
 void ble_gattc_write_req(const struct ble_gattc_write_params *params,
-			 const uint8_t *buf, uint8_t buflen, void *priv);
+			 const uint8_t *buf, uint8_t len, void *priv);
 
 /**
  * Response to @ref ble_gattc_write_req.
@@ -541,10 +541,10 @@ struct ble_gattc_value_evt {
  *
  * @param ev Pointer to the event structure
  * @param buf Pointer to the data byte stream
- * @param buflen Length of the data byte stream
+ * @param len Length of the data byte stream
  */
 void on_ble_gattc_value_evt(const struct ble_gattc_value_evt *ev,
-		uint8_t *buf, uint8_t buflen);
+			    uint8_t *buf, uint8_t len);
 
 struct ble_gattc_to_evt {
 	uint16_t conn_handle;
