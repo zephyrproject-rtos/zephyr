@@ -147,8 +147,8 @@ static inline void reverse(unsigned char *buf, int len)
 	}
 }
 
-#if 0
-#define WAIT_TIME  1
+#if 1
+#define WAIT_TIME  5
 #define WAIT_TICKS (WAIT_TIME * sys_clock_ticks_per_sec)
 #else
 #define WAIT_TICKS TICKS_UNLIMITED
