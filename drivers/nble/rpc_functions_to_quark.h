@@ -67,8 +67,6 @@
 		 const struct debug_response *)			\
 	FN_SIG_S(on_ble_gatts_send_svc_changed_rsp,		\
 		 const struct ble_core_response *)		\
-	FN_SIG_S(on_ble_gatts_set_attribute_value_rsp,		\
-		 const struct ble_gatts_attribute_response *)	\
 	FN_SIG_S(on_ble_gatts_send_notif_ind_rsp,		\
 		 const struct ble_gatt_notif_ind_rsp *)		\
 	FN_SIG_S(on_ble_get_bonded_device_list_rsp,		\

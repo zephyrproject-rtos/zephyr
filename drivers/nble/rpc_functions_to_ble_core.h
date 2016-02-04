@@ -41,7 +41,7 @@
 	FN_SIG_S_B(ble_gatt_send_ind_req,				\
 		   const struct ble_gatt_send_notif_ind_params *,	\
 		   uint8_t *, uint8_t)					\
-	FN_SIG_S_B(nble_gatts_rw_authorize_reply_req,			\
+	FN_SIG_S_B(nble_gatts_authorize_reply_req,			\
 		   const struct ble_gatts_rw_reply_params *,		\
 		   uint8_t *, uint16_t)
 
@@ -91,9 +91,6 @@
 		   void *)
 
 #define LIST_FN_SIG_S_B_P						\
-	FN_SIG_S_B_P(ble_gatts_set_attribute_value_req,			\
-		     const struct ble_gatts_set_attribute_params *,	\
-		     uint8_t *, uint8_t, void *)			\
 	FN_SIG_S_B_P(ble_gattc_write_req,				\
 		     const struct  ble_gattc_write_params *,		\
 		     const uint8_t *, uint8_t, void *)

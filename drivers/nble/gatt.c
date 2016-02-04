@@ -449,8 +449,8 @@ void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *evt,
 		reply_data.offset = evt->offset;
 		reply_data.write_reply = 1;
 
-		nble_gatts_rw_authorize_reply_req(&reply_data, NULL,
-						  reply_data.status);
+		nble_gatts_authorize_reply_req(&reply_data, NULL,
+					       reply_data.status);
 	}
 }
 
@@ -503,5 +503,5 @@ void on_ble_gatts_read_evt(const struct nble_gatt_rd_evt *evt)
 	reply_data.offset = evt->offset;
 	reply_data.write_reply = 0;
 
-	nble_gatts_rw_authorize_reply_req(&reply_data, data, reply_data.status);
+	nble_gatts_authorize_reply_req(&reply_data, data, reply_data.status);
 }
