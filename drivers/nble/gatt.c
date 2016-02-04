@@ -127,6 +127,7 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 	for (i = 0; i < count; i++) {
 		struct bt_gatt_attr *attr = &attrs[i];
 		struct ble_gatt_attr *att;
+		int err;
 
 		if (attr_table_size + sizeof(*att) > sizeof(attr_table)) {
 			return -ENOMEM;
@@ -138,13 +139,14 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 		attr_table_size += sizeof(*att);
 
 		/* Read attribute data */
-		att->data_size = attr_read(attr, att->data,
-					   sizeof(attr_table) -
-					   attr_table_size);
-		if (att->data_size < 0) {
-			BT_ERR("Failed to read attr: %d", att->data_size);
-			return att->data_size;
+		err = attr_read(attr, att->data,
+				sizeof(attr_table) - attr_table_size);
+		if (err < 0) {
+			BT_ERR("Failed to read attr: %d", err);
+			return err;
 		}
+
+		att->data_size = err;
 
 		/* Compute the new element size and align it on upper 4 bytes
 		 * boundary.
