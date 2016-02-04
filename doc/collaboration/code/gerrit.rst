@@ -4,48 +4,31 @@ Working with Gerrit
 ###################
 
 
-Follow these instructions to collaborate on the Zephyr Project using
-the infrastructure within Intel’s Open Source site, ``01.org``. First, let
-us answer a couple of common questions regarding the use of Gerrit
-within the Zephyr Project.
-
-#. Who has access to the Gerrit infrastructure?
-
-   Intel, WindRiver, and other partners who have agreed to collaborate
-   in this project.
-
-#. How long will this infrastructure be used?
-
-   Until the project is transferred to the Linux Foundation.
+Follow these instructions to collaborate on the Zephyr Project through the
+Gerrit review system.
 
 Make sure to subscribe to the `mailing list`_ by filling out the
 `registration form`_.
 
-.. _registration form: https://lists.01.org/mailman/listinfo/foss-rtos-collab
-
-.. _mailing list: foss-rtos-collab@lists.01.org
-
 Follow the steps available at :ref:`code_check_out` for information about how
 to access the source code using Git and Gerrit.
 
-Gerrit is a review system, and as such, assigns the following roles to
-users:
+Gerrit assigns the following roles to users:
 
 * **Submitters**: May submit changes for consideration, review other code
   changes, and make recommendations for acceptance or rejection by voting
   +1 or -1, respectively.
 * **Maintainers**: May approve or reject changes based upon feedback from
   reviewers voting +2 or -2, respectively.
-* **Builders**: May use the build automation infrastructure.
+* **Builders**: May use the build automation infrastructure to verify the
+  change.
 
 A comprehensive walk-through of Gerrit is beyond the scope of this
 document. There are plenty of resources available on the Internet. Good
 summaries can be found here:
 
-* `How to use Gerrit <https://wiki.iotivity.org/how_to_use_gerrit_>`_
-* `Gerrit User Review <https://gerrit-review.googlesource.com/Documentation/user-review-ui.html_>`_
-
-For more detailed information visit: `Gerrit Documentation <http://gerrit-documentation.googlecode.com/svn/Documentation/2.6/intro-quick.html_>`_
+* `How to use Gerrit`_
+* `Gerrit User Guide`_
 
 Commit Message Formatting
 *************************
@@ -109,8 +92,8 @@ Submitting a Change
 
 Currently, Gerrit is the only method to submit a change for review.
 
-Before submitting, please ensure each commit conforms with coding
-and contribution guidelines. Directions for building the source code
+Before submitting, please ensure each commit follows :ref:`contributing_code`
+guidelines. Directions for building the source code
 are beyond the scope of this document. Please see the :ref:`getting_started`
 for further detail.
 
@@ -132,46 +115,45 @@ For the Zephyr Project, the special branch is called :literal:`refs/for/master` 
 
    .. code-block:: bash
 
-      Counting objects: 4, done. Compressing objects: 100% (2/2), done.
-      Writing objects: 100% (3/3), 325 bytes | 0 bytes/s, done. Total 3
-      (delta 1), reused 0 (delta 0) remote: Resolving deltas: 100% (1/1)
-      remote: Processing changes: new: 1, refs: 1, done remote: remote:
-      New Changes: remote: https://oic-review.01.org/gerrit/1045 This is
-      test #1 remote: To ssh://oic-review.01.org:29418/forto-collab
-      * [new branch]      HEAD -> refs/for/master
+      Counting objects: 3, done.
+      Writing objects: 100% (3/3), 306 bytes | 0 bytes/s, done.
+      Total 3 (delta 0), reused 0 (delta 0)
+      remote: Processing changes: new: 1, refs: 1, done
+      remote:
+      remote: New Changes:
+      remote:   https://gerrit.zephyrproject.org/r/6 Test commit
+      remote:
+      To ssh://LFID@gerrit.zephyrproject.org:29418/zephyr
+       * [new branch]      HEAD -> refs/for/master
 
-   The gerrit server generates a
-   `link <https://oic-review.01.org/gerrit/1045>`_ where the change can be
-   tracked.
+
+   The gerrit server generates a link where the change can be tracked.
 
 2. Add reviewers to your change.
 
    a. To specify a list of reviewers via the command line, add
-   *%r=reviewer@project.org* to your push command. For
-   example:
+      *%r=reviewer@project.org* to your push command. For example:
 
-   .. code-block:: bash
+      .. code-block:: bash
 
-      $ git push origin
-      HEAD:refs/for/master%r=rev1@email.com,rev2@notemail.com`
-
+         $ git push origin HEAD:refs/for/master%r=rev1@email.com,rv2@notemail.com
 
    b. Autoconfigure GIT to add a set of reviewers if your commits will
       have the same reviewers all at the time.
 
-      i. In the cloned repo, open the :file:`.git/config` file.
+      (i) In the cloned repo, open the :file:`.git/config` file.
 
-      ii. Add the following line in the
-      :literal:`[ branch “master” ]` section:
+      (ii) Add the following line in the :literal:`[ branch “master” ]` section:
 
-   .. code-block:: bash
+         .. code-block:: bash
 
-         [branch "master"] #.... push =
-         HEAD:refs/for/master%r=rev1@email.com,rev2@notemail.com`
+            [branch "master"] #.... push =
+            HEAD:refs/for/master%r=rev1@email.com,rev2@notemail.com`
 
    .. note::
       In the examples, actual email addresses should be used instead of the
       :literal:`@email.com and @notemail.com` addressses.
+      Don't forget to replace :literal:`origin` with your git remote name.
 
 Reviewing Using Gerrit
 **********************
@@ -204,49 +186,60 @@ Reviewing Using Gerrit
   it as another version of the same change.
 
 * **Status**: Currently, the example change is in review status, as indicated
-  by “Needs Code-Review” in the upper-left corner. The list of
+  by “Needs Verified” in the upper-left corner. The list of
   Reviewers will all emit their opinion, voting +1 if they agree to the
   merge, -1 if they disagree. Gerrit users with a Maintainer role can
   agree to the merge or refuse it by voting +2 or -2 respectively.
 
 Notifications are sent to the email address in your commit message's
-Signed-off-by line. Visit
-`your gerrit page <https://oic-review.01.org/gerrit/#/dashboard/self>`_,
-to check the progress of your requests.
+Signed-off-by line. Visit your `gerrit dashboard`_, to check the progress
+of your requests.
 
-Click on a request and the history tab displays feedback.
+Click on a change and see a history tab similar to the one below:
 
 .. figure:: figures/gerrit02.png
    :scale: 75 %
    :alt: Gerrit Feedback Page
 
-   An example of how feedback is displayed on Gerrit.
+   The history tab in Gerrit will show you the in-line comments and
+   the author of the review.
 
 Viewing Pending Changes
 ***********************
 
-1. Find all pending changes by clicking on the
-   :menuselection:`All --> Changes` link in the upper-left corner, or
-   directly at:
-   `<https://oic-review.01.org/gerrit/#/q/project:forto-collab>`_
+- Find all pending changes by clicking on the
+  :menuselection:`All --> Changes` link in the upper-left corner, or
+  directly at: `<https://gerrit.zephyrproject.org/r/#/q/project:zephyr>`_
 
-   If you collaborate in multiple projects, you may wish to limit searching to
-   the specific branch through the search bar in the upper-right side.
+  If you collaborate in multiple projects, you may wish to limit searching to
+  the specific branch through the search bar in the upper-right side.
 
-   Add the filter *project:forto-collab* to limit the visible changes to
-   only those from the forto-collab project.
+  Add the filter *project:zephyr* to limit the visible changes to
+  only those from the Zephyr Project.
 
-2. List all current changes you submitted, or list just those changes in need
-   of your input by clicking on :menuselection:`My --> Changes` or going to:
-   `Your Dashboard <https://oic-review.01.org/gerrit/#/dashboard/self_>`_
+   .. figure:: figures/gerrit03.png
+      :scale: 75 %
+      :alt: Find pending changes for zephyr repo
+
+      This is an example of a search for all changes of *project:zephyr*.
+
+- List all current changes you submitted, or list just those changes in need
+  of your input by clicking on :menuselection:`My --> Changes` or going to:
+  `gerrit dashboard`_
+
+   .. figure:: figures/gerrit04.png
+      :scale: 75 %
+      :alt: User gerrit dashboard
+
+      View of Gerrit dashboard.
 
 Reviewing a Change
 ******************
 
 1. Click on a link for incoming or outgoing review, such as
-   *“This is test #1”* shown in this figure:
+   *“Add REAME file as test for submit”* shown in this figure:
 
-   .. figure:: figures/gerrit03.png
+   .. figure:: figures/gerrit05.png
       :scale: 75 %
       :alt: Incoming and Outgoing Reviews
 
@@ -254,7 +247,7 @@ Reviewing a Change
 
 2. The details of the change and its current status are loaded:
 
-   .. figure:: figures/gerrit04.png
+   .. figure:: figures/gerrit06.png
       :scale: 75 %
       :alt: Detailed View of a Change in Gerrit
 
@@ -265,7 +258,7 @@ Reviewing a Change
    From left to right:
 
    * **Status:** Displays the current status of the change. In the
-     example below, the status reads: +l Needs Code-Review.
+     example below, the status reads: Needs Verified.
 
    * **Reply:** Click on this button after reviewing to add a final
      review message and a score, -1, 0 or +1.
@@ -279,52 +272,37 @@ Reviewing a Change
      the right copies the line to your clipboard. You can easily paste it
      into your git interface to work with the patch as you prefer.
 
-3. Underneath the commit information, the files that have been changed by
-   this patch are displayed:
+   Underneath the commit information, the files that have been changed by
+   this patch are displayed.
 
-   .. figure:: figures/gerrit05.png
-      :scale: 75 %
-      :alt: Changed Files Example
-
-      Observe the list of the files changed by the patch at the bottom.
-
-4. Click on a filename to review it. Select the code base to differentiate
-   against. The default is :diff: Base and it will generally be
+3. Click on a filename to review it. Select the code base to differentiate
+   against. The default is :guilabel:`Base` and it will generally be
    what is needed.
 
-   .. figure:: figures/gerrit06.png
-      :scale: 75 %
+   .. figure:: figures/gerrit07.png
+      :scale: 50 %
       :alt: Code Base Location
 
-      Shows where to change the comparison base version on the review page.
+      Shows the list of changed files.
 
-5. The review page presents the changes made to the file. At the top of
+4. The review page presents the changes made to the file. At the top of
    the review, the presentation shows some general navigation options.
-   Navigate through the patch set using the highlighted arrows on the top
+   Navigate through the patch set using the arrows on the top
    right corner. It is possible to go to the previous or next file in the
    set or to return to the main change screen. Click on the yellow sticky
    pad to add comments to the whole file.
 
-   .. figure:: figures/gerrit07.png
+   .. figure:: figures/gerrit08.png
       :scale: 75 %
-      :alt: Review Page Navigation Highlights
+      :alt: Review Page Navigation
 
-      Highlights the navigation options of the review page.
-
-
-6. The focus of the page is on the comparison window. The changes made
-   are presented in pink on the left versus the base version on the right.
+   The focus of the page is on the comparison window. The changes made
+   are presented in green on the right versus the base version on the left.
    Double click to highlight the text within the actual change to provide
    feedback on a specific section of the code. Press *c* once the code is
    highlighted to add comments to that section.
 
-   .. figure:: figures/gerrit08.png
-      :scale: 75 %
-      :alt: Commenting on a Code Section
-
-      Shows how to add a comment in the comparison window.
-
-7. After adding the comment, it is saved as a draft.
+5. After adding the comment, it is saved as a *Draft*.
 
    .. figure:: figures/gerrit09.png
       :scale: 75 %
@@ -332,14 +310,14 @@ Reviewing a Change
 
       Shows a comment saved as a draft.
 
-8. After reviewing all files and recommending your changes, click the
-   green up arrow at the top right to return to the main change page. Click
-   the reply button, write some final comments, and submit your score for
-   the patch set. Click post to submit the review of each reviewed file, as
+6. Once you have reviewed all files and provided feedback, click the
+   *green up arrow* at the top right to return to the main change page. Click
+   the :guilabel:`Reply` button, write some final comments, and submit your score for
+   the patch set. Click :guilabel:`Post` to submit the review of each reviewed file, as
    well as your final comment and score. Gerrit sends an email to the
    change-submitter and all listed reviewers. Finally, it logs the review
-   for future reference. All individual comments are saved as Draft until
-   the post button is clicked.
+   for future reference. All individual comments are saved as *Draft* until
+   the :guilabel:`Post` button is clicked.
 
    .. figure:: figures/gerrit10.png
       :scale: 75 %
@@ -347,3 +325,14 @@ Reviewing a Change
 
       Shows the dialog box for submitting the final comment and the review
       score of a change.
+
+
+.. _registration form: https://lists.zephyrproject.org/mailman3/lists/users.lists.zephyrproject.org/
+
+.. _mailing list: users@lists.zephyrproject.org
+
+.. _How to use Gerrit: https://wiki.iotivity.org/how_to_use_gerrit
+
+.. _Gerrit User Guide: https://gerrit-review.googlesource.com/Documentation/intro-user.html
+
+.. _gerrit dashboard: https://gerrit.zephyrproject.org/r/#/dashboard/self
