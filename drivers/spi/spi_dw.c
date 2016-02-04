@@ -37,7 +37,16 @@
 
 #ifndef CONFIG_SPI_DEBUG
 #define DBG(...) {; }
+#define DBG_COUNTER_INIT() {; }
+#define DBG_COUNTER_INC() {; }
+#define DBG_COUNTER_RESULT() {; }
 #else
+#define DBG_COUNTER_INIT()	\
+	uint32_t __cnt = 0
+#define DBG_COUNTER_INC()	\
+	(__cnt++)
+#define DBG_COUNTER_RESULT()	\
+	(__cnt)
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define DBG printf
@@ -221,6 +230,10 @@ out:
 	clear_bit_ssienr(info->regs);
 
 	_spi_control_cs(dev, 0);
+
+	DBG("SPI transaction completed %s error\n",
+	    error ? "with" : "without");
+
 	device_sync_call_complete(&spi->sync);
 }
 
@@ -228,11 +241,9 @@ static void push_data(struct device *dev)
 {
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
-	uint32_t cnt = 0;
 	uint32_t data = 0;
 	uint32_t f_tx;
-
-	DBG("spi: push_data\n");
+	DBG_COUNTER_INIT();
 
 	f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs) -
 					read_rxflr(info->regs) - 1;
@@ -269,28 +280,26 @@ static void push_data(struct device *dev)
 		write_dr(data, info->regs);
 		f_tx--;
 		spi->fifo_diff++;
-		cnt++;
+		DBG_COUNTER_INC();
 	}
 
 	if (!spi->tx_buf_len && !spi->rx_buf_len) {
 		write_txftlr(0, info->regs);
 	}
 
-	DBG("Pushed: %d\n", cnt);
+	DBG("Pushed: %d\n", DBG_COUNTER_RESULT());
 }
 
 static void pull_data(struct device *dev)
 {
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
-	uint32_t cnt = 0;
 	uint32_t data = 0;
-
-	DBG("spi: pull_data\n");
+	DBG_COUNTER_INIT();
 
 	while (read_rxflr(info->regs)) {
 		data = read_dr(info->regs);
-		cnt++;
+		DBG_COUNTER_INC();
 
 		if (spi->rx_buf && spi->rx_buf_len > 0) {
 			switch (spi->dfs) {
@@ -320,7 +329,7 @@ static void pull_data(struct device *dev)
 		write_rxftlr(spi->rx_buf_len - 1, info->regs);
 	}
 
-	DBG("Pulled: %d\n", cnt);
+	DBG("Pulled: %d\n", DBG_COUNTER_RESULT());
 }
 
 static inline bool _spi_dw_is_controller_ready(struct device *dev)
@@ -343,11 +352,11 @@ static int spi_dw_configure(struct device *dev,
 	uint32_t ctrlr0 = 0;
 	uint32_t mode;
 
-	DBG("spi_dw_configure: %p (0x%x), %p\n", dev, info->regs, config);
+	DBG("%s: %p (0x%x), %p\n", __func__, dev, info->regs, config);
 
 	/* Check status */
 	if (!_spi_dw_is_controller_ready(dev)) {
-		DBG("spi_dw_configure: Controller is busy\n");
+		DBG("%s: Controller is busy\n", __func__);
 		return DEV_USED;
 	}
 
@@ -390,6 +399,8 @@ static int spi_dw_slave_select(struct device *dev, uint32_t slave)
 {
 	struct spi_dw_data *spi = dev->driver_data;
 
+	DBG("%s: %p %d\n", __func__, dev, slave);
+
 	if (slave == 0 || slave > 4) {
 		return DEV_INVALID_CONF;
 	}
@@ -407,12 +418,12 @@ static int spi_dw_transceive(struct device *dev,
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t rx_thsld = DW_SPI_RXFTLR_DFLT;
 
-	DBG("spi_dw_transceive: %p, %p, %u, %p, %u\n",
-			dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
+	DBG("%s: %p, %p, %u, %p, %u\n",
+	    __func__, dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 
 	/* Check status */
 	if (!_spi_dw_is_controller_ready(dev)) {
-		DBG("spi_dw_transceive: Controller is busy\n");
+		DBG("%s: Controller is busy\n", __func__);
 		return DEV_USED;
 	}
 
@@ -456,7 +467,7 @@ static int spi_dw_suspend(struct device *dev)
 {
 	struct spi_dw_config *info = dev->config->config_info;
 
-	DBG("spi_dw_suspend: %p\n", dev);
+	DBG("%s: %p\n", __func__, dev);
 
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 	irq_disable(info->irq);
@@ -470,7 +481,7 @@ static int spi_dw_resume(struct device *dev)
 {
 	struct spi_dw_config *info = dev->config->config_info;
 
-	DBG("spi_dw_resume: %p\n", dev);
+	DBG("%se: %p\n", __func__, dev);
 
 	_clock_on(dev);
 
@@ -487,13 +498,11 @@ void spi_dw_isr(void *arg)
 	uint32_t error = 0;
 	uint32_t int_status;
 
-	DBG("spi_dw_isr: %p\n", dev);
-
 	int_status = read_isr(info->regs);
 	test_bit_icr(info->regs);
 
-	DBG("int_status 0x%x - (tx: %d, rx: %d)\n",
-		int_status, read_txflr(info->regs), read_rxflr(info->regs));
+	DBG("SPI int_status 0x%x - (tx: %d, rx: %d)\n",
+	    int_status, read_txflr(info->regs), read_rxflr(info->regs));
 
 	if (int_status & DW_SPI_ISR_ERRORS_MASK) {
 		error = 1;
