@@ -70,20 +70,42 @@ void irq_disable(unsigned int irq)
  *
  * @brief Set an interrupt's priority
  *
- * Valid values are from 1 to 255. Interrupts of priority 1 are not masked when
- * interrupts are locked system-wide, so care must be taken when using them. ISR
- * installed with priority 1 interrupts cannot make kernel calls.
- *
- * Priority 0 is reserved for kernel usage and cannot be used.
- *
- * The priority is verified if ASSERT_ON is enabled.
+ * The priority is verified if ASSERT_ON is enabled. The maximum number
+ * of priority levels is a little complex, as there are some hardware
+ * priority levels which are reserved: three for various types of exceptions,
+ * and possibly one additional to support zero latency interrupts.
  *
  * @return N/A
  */
-void _irq_priority_set(unsigned int irq,
-					     unsigned int prio)
+void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
-	__ASSERT(prio > 0 && prio < 256, "invalid priority!");
+	/* Hardware priority levels 0 and 1 reserved for Kernel use.
+	 * So we add 2 to the requested priority level. If we support
+	 * ZLI, 2 is also reserved so we add 3.
+	 */
+
+#if CONFIG_ZERO_LATENCY_IRQS
+#define IRQ_PRIORITY_OFFSET 3
+	/* If we have zero latency interrupts, that makes priority level 2
+	 * a case with special semantics; it is not masked by irq_lock().
+	 * Our policy is to express priority levels with special properties
+	 * via flags
+	 */
+	if (flags | IRQ_ZERO_LATENCY) {
+		prio = 2;
+	} else {
+		prio += IRQ_PRIORITY_OFFSET;
+	}
+#else
+#define IRQ_PRIORITY_OFFSET 2
+	ARG_UNUSED(flags);
+	prio += IRQ_PRIORITY_OFFSET;
+#endif
+	/* Last priority level reserved for PendSV exception */
+	__ASSERT(prio < ((1 << CONFIG_NUM_IRQ_PRIO_BITS) - 1),
+		 "invalid priority %d! values must be less than %d\n",
+		 prio - IRQ_PRIORITY_OFFSET,
+		 (1 << CONFIG_NUM_IRQ_PRIO_BITS) - (IRQ_PRIORITY_OFFSET + 1));
 	_NvicIrqPrioSet(irq, _EXC_PRIO(prio));
 }
 
@@ -146,7 +168,7 @@ int irq_connect_dynamic(unsigned int irq,
 {
 	ARG_UNUSED(flags);
 	_irq_handler_set(irq, isr, arg);
-	_irq_priority_set(irq, prio);
+	_irq_priority_set(irq, prio, flags);
 	return irq;
 }
 

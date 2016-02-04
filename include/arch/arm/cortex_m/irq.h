@@ -57,7 +57,19 @@ extern void _IntExit(void);
 #define CONCAT(x, y) DO_CONCAT(x, y)
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void _irq_priority_set(unsigned int irq, unsigned int prio);
+extern void _irq_priority_set(unsigned int irq, unsigned int prio,
+			      uint32_t flags);
+
+
+/* Flags for use with IRQ_CONNECT() or irq_connect_dynamic() */
+#if CONFIG_ZERO_LATENCY_IRQS
+/**
+ * Set this interrupt up as a zero-latency IRQ. It has a fixed hardware
+ * priority level (discarding what was supplied in the interrupt's priority
+ * argument), and will run even if irq_lock() is active. Be careful!
+ */
+#define IRQ_ZERO_LATENCY	(1 << 0)
+#endif
 
 
 /**
@@ -85,7 +97,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
  * @param priority_p Interrupt priority
  * @param isr_p Interrupt service routine
  * @param isr_param_p ISR parameter
- * @param flags_p IRQ triggering options (currently unused)
+ * @param flags_p IRQ options
  *
  * @return The vector assigned to this interrupt
  */
@@ -96,7 +108,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
 		__attribute__ ((used)) \
 		__attribute__ ((section(STRINGIFY(_CONCAT(.gnu.linkonce.isr_irq, irq_p))))) = \
 			{isr_param_p, isr_p}; \
-	_irq_priority_set(irq_p, priority_p); \
+	_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
