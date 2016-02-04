@@ -34,8 +34,8 @@ static uint8_t svc_count;
 
 /**
  * Copy a UUID in a buffer using the smallest memory length
- * @param p_buf Pointer to the memory where the UUID shall be copied
- * @param p_uuid Pointer to the UUID to copy
+ * @param buf Pointer to the memory where the UUID shall be copied
+ * @param uuid Pointer to the UUID to copy
  * @return The length required to store the UUID in the memory
  */
 static uint8_t bt_gatt_uuid_memcpy(uint8_t *buf, const struct bt_uuid *uuid)

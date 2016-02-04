@@ -93,12 +93,12 @@ static void poll_out(const void *buf, size_t length)
 	}
 }
 
-void rpc_transmit_cb(uint8_t *p_buf, uint16_t length)
+void rpc_transmit_cb(uint8_t *data, uint16_t length)
 {
-	struct net_buf *buf = CONTAINER_OF(p_buf, struct net_buf, __buf);
+	struct net_buf *buf = CONTAINER_OF(data, struct net_buf, __buf);
 	struct ipc_uart_header hdr;
 
-	BT_DBG("p_buf %p length %u", p_buf, length);
+	BT_DBG("buf %p length %u", data, length);
 
 	hdr.len = length;
 	hdr.channel = 0;
