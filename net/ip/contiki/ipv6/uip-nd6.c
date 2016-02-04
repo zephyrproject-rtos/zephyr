@@ -155,7 +155,7 @@ ns_input(struct net_buf *buf)
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF(" to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
-  PRINTF(" with target address");
+  PRINTF(" with target address ");
   PRINT6ADDR((uip_ipaddr_t *) (&UIP_ND6_NS_BUF(buf)->tgtipaddr));
   PRINTF("\n");
   UIP_STAT(++uip_stat.nd6.recv);
@@ -860,7 +860,7 @@ uip_nd6_rs_output(struct net_buf *buf)
   UIP_ICMP_BUF(buf)->icmpchksum = ~uip_icmp6chksum(buf);
 
   UIP_STAT(++uip_stat.nd6.sent);
-  PRINTF("Sendin RS to ");
+  PRINTF("Sending RS to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
   PRINTF(" from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
