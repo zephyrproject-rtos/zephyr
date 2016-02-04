@@ -93,12 +93,11 @@ enum BLE_GATTS_WR_OPS {
  * Write event context data structure.
  */
 struct ble_gatt_wr_evt {
-	/**< Attribute mapping indexes */
-	struct ble_gatt_attr_handle_mapping attr;
+	struct bt_gatt_attr *attr;	/**< GATT Attribute */
 	uint16_t conn_handle;		/**< Connection handle */
 	uint16_t attr_handle;		/**< handle of attribute to write */
 	uint16_t offset;		/**< offset in attribute buffer */
-	uint8_t op;			/**< @ref BLE_GATTS_WR_OPS */
+	uint8_t reply;			/**< 1 if reply required, 0 otherwise */
 };
 
 /**

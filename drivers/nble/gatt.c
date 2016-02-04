@@ -427,10 +427,27 @@ void on_ble_gattc_value_evt(const struct ble_gattc_value_evt *ev,
 	BT_DBG("");
 }
 
-void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *ev,
+void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *evt,
 			    const uint8_t *buf, uint8_t buflen)
 {
-	BT_DBG("");
+	const struct bt_gatt_attr *attr = evt->attr;
+	struct ble_gatts_rw_reply_params reply_data;
+
+	if (attr->write) {
+		reply_data.status = attr->write(NULL, attr, buf, buflen,
+						evt->offset);
+	}
+
+	BT_DBG("handle 0x%04x buf %p len %u", attr->handle, buf, buflen);
+
+	if (evt->reply) {
+		reply_data.conn_handle = evt->conn_handle;
+		reply_data.offset = evt->offset;
+		reply_data.write_reply = 1;
+
+		nble_gatts_rw_authorize_reply_req(&reply_data, NULL,
+						  reply_data.status);
+	}
 }
 
 void on_ble_gatts_get_attribute_value_rsp(const struct ble_gatts_attribute_response *par,
