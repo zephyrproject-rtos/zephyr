@@ -328,7 +328,11 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint16_t len, uint16_t offset)
 {
-	return -ENOSYS;
+	struct bt_gatt_cep *value = attr->user_data;
+	uint16_t props = sys_cpu_to_le16(value->properties);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &props,
+				 sizeof(props));
 }
 
 int bt_gatt_attr_read_cud(struct bt_conn *conn,
