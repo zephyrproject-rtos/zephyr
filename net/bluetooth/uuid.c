@@ -30,7 +30,17 @@
 
 #define UUID_16_BASE_OFFSET 12
 
-/* TODO: Decide wether to continue using BLE format or switch to RFC 4122 */
+/* TODO: Decide whether to continue using BLE format or switch to RFC 4122 */
+
+/* Base UUID : 0000[0000]-0000-1000-8000-00805F9B34FB ->
+ * { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
+ *   0x00, 0x10, 0x00, 0x00, [0x00, 0x00], 0x00, 0x00 }
+ * 0x2800    : 0000[2800]-0000-1000-8000-00805F9B34FB ->
+ * { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
+ *   0x00, 0x10, 0x00, 0x00, [0x00, 0x28], 0x00, 0x00 }
+ *  little endian 0x2800 : [00 28] -> no swapping required
+ *  big endian 0x2800    : [28 00] -> swapping required
+ */
 static const struct bt_uuid_128 uuid128_base = {
 	.uuid.type = BT_UUID_TYPE_128,
 	.val = { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
@@ -39,7 +49,7 @@ static const struct bt_uuid_128 uuid128_base = {
 
 static inline void u16_to_uuid128(void *dst, uint16_t u16)
 {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	u16 = bswap_16(u16);
 #endif
 	memcpy(dst, &u16, 2);
