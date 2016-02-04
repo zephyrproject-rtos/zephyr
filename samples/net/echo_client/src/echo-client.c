@@ -128,6 +128,12 @@ static inline void init_server()
 		 * but do it here so that test works from first packet.
 		 */
 		uip_ds6_nbr_add(addr, lladdr, 0, NBR_REACHABLE);
+#else
+		/* Hard code the route to peer just in case, not to
+		 * be done in real life applications.
+		 */
+		addr = (uip_ipaddr_t *)&in6addr_peer;
+		uip_ds6_defrt_add(addr, 0);
 #endif
 
 		addr = (uip_ipaddr_t *)&in6addr_my;
