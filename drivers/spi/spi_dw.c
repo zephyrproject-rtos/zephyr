@@ -200,18 +200,19 @@ static void completed(struct device *dev, int error)
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
-	if (spi->fifo_diff) {
-		return;
+	if (error) {
+		goto out;
 	}
 
-	if (!((spi->tx_buf && !spi->tx_buf_len && !spi->rx_buf) ||
+	if (spi->fifo_diff ||
+	    !((spi->tx_buf && !spi->tx_buf_len && !spi->rx_buf) ||
 	      (spi->rx_buf && !spi->rx_buf_len && !spi->tx_buf) ||
 	      (spi->tx_buf && !spi->tx_buf_len &&
-				spi->rx_buf && !spi->rx_buf_len) ||
-	      error)) {
+				spi->rx_buf && !spi->rx_buf_len))) {
 		return;
 	}
 
+out:
 	spi->error = error;
 
 	/* Disabling interrupts */
