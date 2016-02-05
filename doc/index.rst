@@ -1,8 +1,11 @@
 ..
     Zephyr Project documentation master file
 
+Zephyr Project Documentation
+############################
+
 Getting Started
-###############
+***************
 
 .. toctree::
    :maxdepth: 1
@@ -11,9 +14,8 @@ Getting Started
    getting_started/getting_started.rst
    kernel/kernel.rst
 
-
 Developer Guides
-################
+****************
 
 .. toctree::
    :maxdepth: 1
@@ -23,27 +25,24 @@ Developer Guides
    api/api.rst
    collaboration/collaboration
 
-
 Reference Guides
-################
+****************
 
 .. toctree::
    :maxdepth: 1
 
    reference/kconfig/index.rst
 
-
 Supported Boards
-################
+****************
 
 .. toctree::
    :maxdepth: 2
 
    board/board.rst
 
-
-Indices and tables
-##################
+Indices and Tables
+******************
 
 * :ref:`genindex`
 
