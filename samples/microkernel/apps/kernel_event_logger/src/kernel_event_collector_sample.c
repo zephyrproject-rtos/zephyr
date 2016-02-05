@@ -68,6 +68,19 @@ struct sleep_data_t sleep_event_data;
 int is_busy_task_awake;
 int forks_available = 1;
 
+#ifdef CONFIG_MICROKERNEL
+struct tmon_data_t {
+	uint32_t event_type;
+	uint32_t timestamp;
+	uint32_t task_id;
+	uint32_t data;
+};
+
+uint32_t tmon_index;
+
+struct tmon_data_t
+	tmon_summary_data[MAX_BUFFER_CONTEXT_DATA];
+#endif
 
 void register_context_switch_data(uint32_t timestamp, uint32_t thread_id)
 {
@@ -95,7 +108,6 @@ void register_context_switch_data(uint32_t timestamp, uint32_t thread_id)
 	}
 }
 
-
 void register_interrupt_event_data(uint32_t timestamp, uint32_t irq)
 {
 	if ((irq >= 0) && (irq < 255)) {
@@ -120,6 +132,45 @@ void print_context_data(uint32_t thread_id, uint32_t count,
 	PRINTF("\x1b[%d;12H%u    ", 16 + indice, count);
 }
 
+#ifdef CONFIG_MICROKERNEL
+void register_tmon_data(uint32_t event_type, uint32_t timestamp,
+	uint32_t task_id, uint32_t data)
+{
+	tmon_summary_data[tmon_index].event_type = event_type;
+	tmon_summary_data[tmon_index].timestamp = timestamp;
+	tmon_summary_data[tmon_index].task_id = task_id;
+	tmon_summary_data[tmon_index].data = data;
+
+	if (++tmon_index == MAX_BUFFER_CONTEXT_DATA) {
+		tmon_index = 0;
+	}
+}
+
+void print_tmon_status_data(int index)
+{
+	switch (tmon_summary_data[index].event_type) {
+	case KERNEL_EVENT_LOGGER_TASK_MON_TASK_STATE_CHANGE_EVENT_ID:
+		PRINTF("\x1b[%d;64HEVENT    ", 4 + index);
+		break;
+	case KERNEL_EVENT_LOGGER_TASK_MON_CMD_PACKET_EVENT_ID:
+		PRINTF("\x1b[%d;64HPACKET    ", 4 + index);
+		break;
+	case KERNEL_EVENT_LOGGER_TASK_MON_KEVENT_EVENT_ID:
+		PRINTF("\x1b[%d;64HCOMMAND    ", 4 + index);
+		break;
+	}
+	PRINTF("\x1b[%d;76H%u    ", 4 + index,
+		tmon_summary_data[index].timestamp);
+	if (tmon_summary_data[index].task_id != -1) {
+		PRINTF("\x1b[%d;88H0x%x    ", 4 + index,
+			tmon_summary_data[index].task_id);
+	} else {
+		PRINTF("\x1b[%d;88H----------    ", 4 + index);
+	}
+	PRINTF("\x1b[%d;100H0x%x    ", 4 + index,
+		tmon_summary_data[index].data);
+}
+#endif
 
 void fork_manager_entry(void)
 {
@@ -268,6 +319,18 @@ void summary_data_printer(void)
 			}
 		}
 
+#ifdef CONFIG_MICROKERNEL
+		/* Print task monitor status data */
+		PRINTF("\x1b[1;64HTASK MONITOR STATUS DATA");
+		PRINTF("\x1b[2;64H-------------------------");
+		PRINTF("\x1b[3;64HEvento\tTimestamp\tTaskId\tData");
+		for (i = 0; i < MAX_BUFFER_CONTEXT_DATA; i++) {
+			if (tmon_summary_data[i].timestamp != 0) {
+				print_tmon_status_data(i);
+			}
+		}
+#endif
+
 		/* Sleep */
 		fiber_sleep(50);
 	}
@@ -341,6 +404,28 @@ void profiling_data_collector(void)
 				}
 				break;
 #endif
+#ifdef CONFIG_MICROKERNEL
+			case KERNEL_EVENT_LOGGER_TASK_MON_TASK_STATE_CHANGE_EVENT_ID:
+			case KERNEL_EVENT_LOGGER_TASK_MON_CMD_PACKET_EVENT_ID:
+				if (data_length != 3) {
+					PRINTF("\x1b[13;1HError in task monitor message. "
+						"event_id = %d, Expected 3, received %d\n",
+						event_id, data_length);
+				} else {
+					register_tmon_data(event_id, data[0], data[1], data[2]);
+				}
+				break;
+
+			case KERNEL_EVENT_LOGGER_TASK_MON_KEVENT_EVENT_ID:
+				if (data_length != 2) {
+					PRINTF("\x1b[13;1HError in task monitor message. "
+						"event_id = %d, Expected 2, received %d\n",
+						event_id, data_length);
+				} else {
+					register_tmon_data(event_id, data[0], -1, data[1]);
+				}
+				break;
+#endif
 			default:
 				PRINTF("unrecognized event id %d", event_id);
 			}
@@ -387,6 +472,9 @@ int main(void)
 {
 	int i;
 
+#ifdef CONFIG_MICROKERNEL
+	tmon_index = 0;
+#endif
 	kernel_event_logger_fiber_start();
 
 	/* initialize philosopher semaphores */
