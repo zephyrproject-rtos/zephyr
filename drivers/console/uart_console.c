@@ -346,6 +346,7 @@ void uart_console_isr(void *unused)
 				break;
 			case '\r':
 				cmd->line[cur + end] = '\0';
+				uart_poll_out(uart_console_dev, '\r');
 				uart_poll_out(uart_console_dev, '\n');
 				cur = 0;
 				end = 0;
