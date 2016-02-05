@@ -427,6 +427,13 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
+	bt_gatt_register(gap_attrs, ARRAY_SIZE(gap_attrs));
+	bt_gatt_register(hrs_attrs, ARRAY_SIZE(hrs_attrs));
+	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
+	bt_gatt_register(cts_attrs, ARRAY_SIZE(cts_attrs));
+	bt_gatt_register(dis_attrs, ARRAY_SIZE(dis_attrs));
+	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
+
 	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
 					sd, ARRAY_SIZE(sd));
 	if (err) {
@@ -477,13 +484,6 @@ void main(void)
 
 	/* Simulate current time for Current Time Service */
 	generate_current_time(ct);
-
-	bt_gatt_register(gap_attrs, ARRAY_SIZE(gap_attrs));
-	bt_gatt_register(hrs_attrs, ARRAY_SIZE(hrs_attrs));
-	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
-	bt_gatt_register(cts_attrs, ARRAY_SIZE(cts_attrs));
-	bt_gatt_register(dis_attrs, ARRAY_SIZE(dis_attrs));
-	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
 
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_cb_register(&auth_cb_display);
