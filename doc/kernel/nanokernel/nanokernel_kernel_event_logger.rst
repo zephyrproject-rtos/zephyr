@@ -139,6 +139,78 @@ Example:
    data[1] = timestamp woke_up.
    data[2] = interrupt_id.
 
+
+Task Monitor
+------------
+
+The task monitor tracks the activities of the task schedule server
+in the microkernel and it is able to report three different types of
+events related with the scheduler activities:
+
+
+Task Monitor Task State Change Event
+++++++++++++++++++++++++++++++++++++
+
+The Task Monitor Task State Change Event tracks the task's status changes.
+The event data is arranged as three 32 bit blocks:
+
+* The first block contains the timestamp when the task server
+  changed the task status.
+* The second block contains the task ID of the affected task.
+* The thid block contains a 32 bit number with the new status.
+
+Example:
+
+.. code-block:: c
+
+   uint32_t data[3];
+
+   data[0] = timestamp;
+   data[1] = task_id.
+   data[2] = status_data.
+
+Task Monitor Kevent Event
++++++++++++++++++++++++++
+
+The Task Monitor Kevent Event tracks the commands requested to the
+task server by the kernel. The event data is arranged as two blocks
+of 32 bits each:
+
+* The first block contains the timestamp when the task server
+  attended the kernel command.
+* The second block contains the code of the command.
+
+.. code-block:: c
+
+   uint32_t data[3];
+
+   data[0] = timestamp;
+   data[1] = event_code.
+
+Task Monitor Command Packet Event
++++++++++++++++++++++++++++++++++
+
+The Task Monitor Command Packet Event track the command packets sent
+to the task server. The event data is arranged as three blocks of
+32 bits each:
+
+* The first block contains the timestamp when the task server
+  attended the kernel command.
+* The second block contains the task identifier of the task
+  affected by the packet.
+* The thid block contains the memory vector of the routine
+  executed by the task server.
+
+Example:
+
+.. code-block:: c
+
+   uint32_t data[3];
+
+   data[0] = timestamp;
+   data[1] = task_id.
+   data[2] = comm_handler.
+
 Example: Retrieving Profiling Messages
 ======================================
 
@@ -168,6 +240,15 @@ Example: Retrieving Profiling Messages
             break;
          case KERNEL_EVENT_SLEEP_EVENT_ID:
             /* ... Process the data for a sleep event ... */
+            break;
+         case KERNEL_EVENT_LOGGER_TASK_MON_TASK_STATE_CHANGE_EVENT_ID:
+            /* ... Process the data for a task monitor event ... */
+            break;
+         case KERNEL_EVENT_LOGGER_TASK_MON_KEVENT_EVENT_ID:
+            /* ... Process the data for a task monitor command event ... */
+            break;
+         case KERNEL_EVENT_LOGGER_TASK_MON_CMD_PACKET_EVENT_ID:
+            /* ... Process the data for a task monitor packet event ... */
             break;
          default:
             printf("unrecognized event id %d\n", event_id);
