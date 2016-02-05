@@ -130,15 +130,6 @@ struct k_tqhd {
 	struct k_task *tail;
 };
 
-/* Monitor record */
-
-struct k_mrec {
-	uint32_t time;
-	uint32_t data1;
-	uint32_t data2;
-	void     *ptr;
-};
-
 typedef enum {
 	XFER_UNDEFINED,
 	XFER_W2B,
@@ -327,13 +318,6 @@ struct _u1arg {
 	int rval;
 };
 
-struct _z4arg {
-	int Comm;
-	int rind;
-	int nrec;
-	struct k_mrec mrec;
-};
-
 union k_args_args {
 	struct _a1arg a1;
 	struct _c1arg c1;
@@ -347,7 +331,6 @@ union k_args_args {
 	struct _q2arg q2;
 	struct _s1arg s1;
 	struct _u1arg u1;
-	struct _z4arg z4;
 	struct _pipe_xfer_req_arg pipe_xfer_req;
 	struct _pipe_xfer_ack_arg pipe_xfer_ack;
 	struct _pipe_req_arg pipe_req;
