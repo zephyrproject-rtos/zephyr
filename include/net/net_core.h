@@ -29,7 +29,8 @@ extern "C" {
 
 /* Network subsystem logging helpers */
 
-#define NET_DBG(fmt, ...) printk("net: %s: " fmt, __func__, ##__VA_ARGS__)
+#define NET_DBG(fmt, ...) printk("net: %s (%p): " fmt, __func__, \
+				 sys_thread_self_get(), ##__VA_ARGS__)
 #define NET_ERR(fmt, ...) printk("net: %s: " fmt, __func__, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) printk("net: " fmt,  ##__VA_ARGS__)
 #define NET_PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
