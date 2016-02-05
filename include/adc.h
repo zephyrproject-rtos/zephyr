@@ -1,4 +1,7 @@
-/* adc.h - ADC public API */
+/**
+ * @file
+ * @brief ADC public API header file.
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -16,12 +19,6 @@
  * limitations under the License.
  */
 
-/**
- * @file
- *
- * @brief ADC public API header file.
- */
-
 #ifndef __INCLUDE_ADC_H__
 #define __INCLUDE_ADC_H__
 
@@ -33,39 +30,43 @@ extern "C" {
 #endif
 
 /**
- * @brief ADC Interface
- * @defgroup adc_interface ADC Interface
+ * @brief ADC driver APIs
+ * @defgroup adc_interface ADC driver APIs
  * @ingroup io_interfaces
  * @{
  */
 
 /**
- * @brief Sequence entry
+ * @brief ADC driver Sequence entry
  *
- * This structure defines a sequence entry used by the ADC driver
+ * This structure defines a sequence entry used
  * to define a sample from a specific channel.
  */
 struct adc_seq_entry {
-	/** Clock ticks delay before sampling the ADC */
+	/** Clock ticks delay before sampling the ADC. */
 	int32_t sampling_delay;
-	/** Channel ID that should be sampled from the ADC */
+
+	/** Channel ID sampled from the ADC. */
 	uint8_t channel_id;
-	/** Buffer pointer where to write the sample */
+
+	/** Buffer pointer where the sample is written.*/
 	uint8_t *buffer;
-	/** Length of the sampling buffer */
+
+	/** Length of the sampling buffer.*/
 	uint32_t buffer_length;
 };
 
 /**
- * @brief Sequence table
+ * @brief ADC driver Sequence table
  *
- * This structure represents a list of sequence entries that are
- * used by the ADC driver to execute a sequence of samplings.
+ * This structure defines a list of sequence entries
+ * used to execute a sequence of samplings.
  */
 struct adc_seq_table {
-	/* Pointer to a sequence entry array */
+	/* Pointer to a sequence entry array. */
 	struct adc_seq_entry *entries;
-	/* Number of entries in the sequence entry array */
+
+	/* Number of entries in the sequence entry array. */
 	uint8_t num_entries;
 };
 
@@ -75,11 +76,13 @@ struct adc_seq_table {
  * This structure holds all API function pointers.
  */
 struct adc_driver_api {
-	/** Pointer to the enable routine */
+	/** Pointer to the enable routine. */
 	void (*enable)(struct device *dev);
-	/** Pointer to the disable routine */
+
+	/** Pointer to the disable routine. */
 	void (*disable)(struct device *dev);
-	/** Pointer to the read routine */
+
+	/** Pointer to the read routine. */
 	int (*read)(struct device *dev, struct adc_seq_table *seq_table);
 };
 
@@ -89,7 +92,7 @@ struct adc_driver_api {
  * This routine enables the ADC hardware block for data sampling for the
  * specified device.
  *
- * @param dev Pointer to the device structure for the driver instance
+ * @param dev Pointer to the device structure for the driver instance.
  *
  * @return N/A
  */
@@ -107,7 +110,7 @@ static inline void adc_enable(struct device *dev)
  * This routine disables the ADC hardware block for data sampling for the
  * specified device.
  *
- * @param dev Pointer to the device structure for the driver instance
+ * @param dev Pointer to the device structure for the driver instance.
  *
  * @return N/A
  */
@@ -122,16 +125,17 @@ static inline void adc_disable(struct device *dev)
 /**
  * @brief Set a read request.
  *
- * This routine sends a read/sampling request to the ADC hardware block.
- * The read request is described by a sequence table.
- * The routine returns once the ADC has completed the read sequence.
+ * This routine sends a read or sampling request to the ADC hardware block.
+ * A sequence table describes the read request.
+ * The routine returns once the ADC completes the read sequence.
  * The sample data can be retrieved from the memory buffers in
  * the sequence table structure.
  *
- * @param dev Pointer to the device structure for the driver instance
- * @param seq_table Pointer to the structure that represents the sequence table
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param seq_table Pointer to the structure representing the sequence table.
  *
- * @return Returns DEV_OK on success, or else otherwise.
+ * @retval DEV_OK On success
+ * @retval else Otherwise.
  */
 static inline int adc_read(struct device *dev, struct adc_seq_table *seq_table)
 {
