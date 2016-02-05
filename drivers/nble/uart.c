@@ -32,14 +32,15 @@
 #include "rpc.h"
 
 /* TODO: check size */
-#define NBLE_IPC_COUNT	2
-#define NBLE_BUF_SIZE	384
+#define NBLE_TX_BUF_COUNT	2
+#define NBLE_RX_BUF_COUNT	8
+#define NBLE_BUF_SIZE		384
 
 static struct nano_fifo rx;
-static NET_BUF_POOL(rx_pool, NBLE_IPC_COUNT, NBLE_BUF_SIZE, &rx, NULL, 0);
+static NET_BUF_POOL(rx_pool, NBLE_RX_BUF_COUNT, NBLE_BUF_SIZE, &rx, NULL, 0);
 
 static struct nano_fifo tx;
-static NET_BUF_POOL(tx_pool, NBLE_IPC_COUNT, NBLE_BUF_SIZE, &tx, NULL, 0);
+static NET_BUF_POOL(tx_pool, NBLE_TX_BUF_COUNT, NBLE_BUF_SIZE, &tx, NULL, 0);
 
 static BT_STACK_NOINIT(rx_fiber_stack, 2048);
 
