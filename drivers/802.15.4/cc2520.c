@@ -1172,7 +1172,8 @@ static void cc2520_configure(struct device *dev)
 	if (!cc2520_set_pan_addr(0xffff, 0x0000, NULL)) {
 		return;
 	}
-	cc2520_set_channel(26);
+
+	cc2520_set_channel(CONFIG_TI_CC2520_CHANNEL);
 
 	flushrx();
 

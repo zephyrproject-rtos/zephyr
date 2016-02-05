@@ -76,6 +76,14 @@ config	TI_CC2520_FIBER_STACK_SIZE
 	  The default value should be sufficient, but it case it prooves to be
 	  a too little, this option makes it easy to play with the size.
 
+config	TI_CC2520_CHANNEL
+	int "TI CC2520 Channel"
+	default 26
+	range 11 26
+	help
+	  All the 802.15.4 devices that want to connect to each other need
+	  to have same channel. Default channel is 26.
+
 endif
 
 endmenu
