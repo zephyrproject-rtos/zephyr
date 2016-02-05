@@ -1,5 +1,3 @@
-/* gpio.h - public GPIO driver APIs */
-
 /*
  * Copyright (c) 2015 Intel Corporation.
  *
@@ -16,11 +14,16 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ * @brief Public APIs for GPIO drivers
+ */
+
 #ifndef __GPIO_H__
 #define __GPIO_H__
 /**
- * @brief GPIO Interface
- * @defgroup gpio_interface GPIO Interface
+ * @brief GPIO Driver APIs
+ * @defgroup gpio_interface GPIO Driver APIs
  * @ingroup io_interfaces
  * @{
  */
@@ -35,7 +38,7 @@ extern "C" {
 #include <stddef.h>
 #include <device.h>
 
-/* TODO Define flag/config bits */
+/** @brief Define flag/config bits. */
 #define GPIO_DIR_IN		(0 << 0)
 #define GPIO_DIR_OUT		(1 << 0)
 #define GPIO_DIR_MASK		0x1
@@ -50,20 +53,20 @@ extern "C" {
 #define GPIO_INT_EDGE		(1 << 5)
 #define GPIO_INT_DOUBLE_EDGE	(1 << 6)
 
-/* Polarity of the GPIO (1 bit) */
+/** @brief Define the polarity of the GPIO (1 bit). */
 #define GPIO_POL_POS		7
 #define GPIO_POL_NORMAL		(0 << GPIO_POL_POS)
 #define GPIO_POL_INV		(1 << GPIO_POL_POS)
 #define GPIO_POL_MASK		(1 << GPIO_POL_POS)
 
-/* Pull-up/pull-down for GPIO (2 bits) */
 #define GPIO_PUD_POS		8
 #define GPIO_PUD_NORMAL		(0 << GPIO_PUD_POS)
 #define GPIO_PUD_PULL_UP	(1 << GPIO_PUD_POS)
 #define GPIO_PUD_PULL_DOWN	(2 << GPIO_PUD_POS)
 #define GPIO_PUD_MASK		(3 << GPIO_PUD_POS)
 
-/* Pin enable/disable
+/**
+ * @brief Pin enable / disable.
  *
  * Individual pins can be enabled or disabled
  * if the controller supports this operation.
@@ -71,10 +74,15 @@ extern "C" {
 #define GPIO_PIN_ENABLE		(1 << 10)
 #define GPIO_PIN_DISABLE	(1 << 11)
 
-/* application callback function signature*/
+/**
+ * @brief Define the application callback function signature.
+ *
+ */
 typedef void (*gpio_callback_t)(struct device *port, uint32_t pin);
 
-/* driver API definition */
+/**
+ * @brief GPIO driver API definition.
+ */
 typedef int (*gpio_config_t)(struct device *port, int access_op,
 			     uint32_t pin, int flags);
 typedef int (*gpio_write_t)(struct device *port, int access_op,
@@ -104,10 +112,11 @@ struct gpio_driver_api {
 };
 
 /**
- *  @brief Configure a single pin
- *  @param port Pointer to device structure for driver instance.
- *  @param pin Pin number operate on.
- *  @param flags Flags for pin configuration. IN/OUT, interrupt ...
+ * @brief Configure a single pin.
+ * @param port Pointer to device structure for the driver instance.
+ * @param pin Pin number to configure.
+ * @param flags Flags for pin configuration. IN/OUT, interrupt ...
+ *
  */
 static inline int gpio_pin_configure(struct device *port, uint8_t pin,
 				     int flags)
@@ -119,10 +128,10 @@ static inline int gpio_pin_configure(struct device *port, uint8_t pin,
 }
 
 /**
- *  @brief Write data value of a single pin.
- *  @param port Pointer to device structure for driver instance.
- *  @param pin Pin number operate on.
- *  @param value Value to set the pin to.
+ * @brief Write the data value to a single pin.
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number where the data is written.
+ * @param value Value set on the pin.
  */
 static inline int gpio_pin_write(struct device *port, uint32_t pin,
 				 uint32_t value)
@@ -135,10 +144,10 @@ static inline int gpio_pin_write(struct device *port, uint32_t pin,
 }
 
 /**
- *  @brief Read data value of a single pin.
- *  @param port Pointer to device structure for driver instance.
- *  @param pin Pin number operate on.
- *  @param value Integer pointer to receive the output of the read.
+ * @brief Read the data value of a single pin.
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number where data is read.
+ * @param value Integer pointer to receive the data vales from the pin.
  */
 static inline int gpio_pin_read(struct device *port, uint32_t pin,
 				uint32_t *value)
@@ -151,9 +160,9 @@ static inline int gpio_pin_read(struct device *port, uint32_t pin,
 }
 
 /**
- *  @brief Set the application callback..
- *  @param port Pointer to device structure for driver instance.
- *  @param callback Application callback function.
+ * @brief Set the application's callback function.
+ * @param port Pointer to the device structure for the driver instance.
+ * @param callback Application's callback function.
  */
 static inline int gpio_set_callback(struct device *port,
 				    gpio_callback_t callback)
@@ -165,9 +174,9 @@ static inline int gpio_set_callback(struct device *port,
 }
 
 /**
- *  @brief Enable pin callback.
- *  @param port Pointer to device structure for driver instance.
- *  @param pin Pin number operate on.
+ * @brief Enable the callback function for a single pin.
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number where the callback function is enabled.
  */
 static inline int gpio_pin_enable_callback(struct device *port, uint32_t pin)
 {
@@ -179,9 +188,9 @@ static inline int gpio_pin_enable_callback(struct device *port, uint32_t pin)
 }
 
 /**
- *  @brief Disable pin callback.
- *  @param port Pointer to device structure for driver instance.
- *  @param pin Pin number operate on.
+ * @brief Disable the callback function for a single pin.
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number where the callback function is disabled.
  */
 static inline int gpio_pin_disable_callback(struct device *port, uint32_t pin)
 {
@@ -193,9 +202,11 @@ static inline int gpio_pin_disable_callback(struct device *port, uint32_t pin)
 
 
 /**
- *  @brief Configure all pins in the port.
- *  @param port Pointer to device structure for driver instance.
- *  @param flags Flags for port configuration. IN/OUT, interrupt ...
+ * @brief Configure all the pins in the port.
+ *       List out all flags on the detailed description.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param flags Flags for the port configuration. IN/OUT, interrupt ...
  */
 static inline int gpio_port_configure(struct device *port, int flags)
 {
@@ -206,9 +217,9 @@ static inline int gpio_port_configure(struct device *port, int flags)
 }
 
 /**
- *  @brief Write data value to the port.
- *  @param port Pointer to device structure for driver instance.
- *  @param value Value to set the pin to.
+ * @brief Write a data value to the port.
+ * @param port Pointer to the device structure for the driver instance.
+ * @param value Value to set on the port.
  */
 static inline int gpio_port_write(struct device *port, uint32_t value)
 {
@@ -220,9 +231,9 @@ static inline int gpio_port_write(struct device *port, uint32_t value)
 }
 
 /**
- *  @brief Read data value of the port.
- *  @param port Pointer to device structure for driver instance.
- *  @param value Integer pointer to receive the output of the read.
+ * @brief Read data value from the port.
+ * @param port Pointer to the device structure for the driver instance.
+ * @param value Integer pointer to receive the data value from the port.
  */
 static inline int gpio_port_read(struct device *port, uint32_t *value)
 {
@@ -234,8 +245,8 @@ static inline int gpio_port_read(struct device *port, uint32_t *value)
 }
 
 /**
- *  @brief Enable port callback.
- *  @param port Pointer to device structure for driver instance.
+ * @brief Enable port callback.
+ * @param port Pointer to the device structure for the driver instance.
  */
 static inline int gpio_port_enable_callback(struct device *port)
 {
@@ -247,8 +258,8 @@ static inline int gpio_port_enable_callback(struct device *port)
 }
 
 /**
- *  @brief Disable port callback.
- *  @param port Pointer to device structure for driver instance.
+ * @brief Disable the callback function for the port.
+ * @param port Pointer to the device structure for the driver instance.
  */
 static inline int gpio_port_disable_callback(struct device *port)
 {
@@ -259,8 +270,9 @@ static inline int gpio_port_disable_callback(struct device *port)
 }
 
 /**
- *  @brief Save the state of the device and go to low power state
- *  @param port Pointer to device structure for driver instance.
+ * @brief Save the state of the device and make it go to the
+ * low power state.
+ * @param port Pointer to the device structure for the driver instance.
  */
 static inline int gpio_suspend(struct device *port)
 {
@@ -271,8 +283,8 @@ static inline int gpio_suspend(struct device *port)
 }
 
 /**
- *  @brief Restore state stored during suspend and resume operation.
- *  @param port Pointer to device structure for driver instance.
+ * @brief Restore the state stored during suspend and resume operation.
+ * @param port Pointer to the device structure for the driver instance.
  */
 static inline int gpio_resume(struct device *port)
 {
