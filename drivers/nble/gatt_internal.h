@@ -161,19 +161,13 @@ struct ble_core_gatt_handle_range {
 	uint16_t end_handle;
 };
 
-struct ble_gattc_svc {
-	/**< range of characteristic handles within a service */
-	struct ble_core_gatt_handle_range handle_range;
-	struct bt_uuid uuid;			/**< service uuid */
-};
-
 /**
  * Primary service
  */
 struct ble_gattc_prim_svc {
-	struct bt_uuid uuid;			/**< Attribute's UUID */
-	uint16_t handle;			/**< Attribute handle */
+	uint16_t handle;				/**< Attribute handle */
 	struct ble_core_gatt_handle_range handle_range;	/**< handle range */
+	struct bt_uuid_128 uuid;			/**< Attribute's UUID */
 };
 
 /**
@@ -199,25 +193,26 @@ struct ble_gattc_evt {
  * Included service.
  */
 struct ble_gattc_incl_svc {
-	uint16_t incl_handle;		/**< Handle of included service */
-	struct ble_gattc_svc svc;		/**< Included service */
+	uint16_t handle;			/**< Handle of included svc */
 	struct ble_core_gatt_handle_range handle_range;	/**< handle range */
+	struct bt_uuid_128 uuid;			/**< Service UUID */
 };
 
 /* GATTC characteristic */
 struct ble_gattc_characteristic {
-	uint8_t prop;			/**< Charact property */
-	uint16_t decl_handle;		/**< Charact declaration handle */
-	uint16_t value_handle;		/**< Charact value handle */
-	struct bt_uuid uuid;		/**< Charact UUID */
+	uint16_t handle;		/**< Characteristic Definition handle */
+	uint8_t prop;			/**< Characteristic property */
+	uint16_t value_handle;		/**< Characteristic value handle */
+	struct bt_uuid_128 uuid;	/**< Characteristic UUID */
 };
+
 
 /**
  * GATTC descriptor.
  */
 struct ble_gattc_descriptor {
 	uint16_t handle;		/**< descriptor handle */
-	struct bt_uuid uuid;		/**< uuid of the descriptor */
+	struct bt_uuid_128 uuid;		/**< uuid of the descriptor */
 };
 
 struct ble_gattc_attr {
@@ -414,9 +409,9 @@ void on_ble_gatts_send_notif_ind_rsp(const struct ble_gatt_notif_ind_rsp *par);
 
 /** Discover parameters. */
 struct ble_core_discover_params {
-	struct bt_uuid uuid;	/**< Attribute UUID */
+	struct bt_uuid_128 uuid;			/**< Attribute UUID */
 	struct ble_core_gatt_handle_range handle_range;	/**< Discover range */
-	uint16_t conn_handle;	/**< Connection handle */
+	uint16_t conn_handle;				/**< Connection handl */
 	uint8_t type;		/**< Discover type @ref BLE_GATT_DISC_TYPES */
 };
 
