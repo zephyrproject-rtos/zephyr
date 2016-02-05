@@ -148,7 +148,7 @@ config  TASK_MONITOR
 	bool
 	prompt "Task monitoring [EXPERIMENTAL]"
 	default n
-	depends on MICROKERNEL
+	depends on MICROKERNEL && KERNEL_EVENT_LOGGER
 	help
 	This option instructs the kernel to record significant task
 	activities. These can include: task switches, task state changes,

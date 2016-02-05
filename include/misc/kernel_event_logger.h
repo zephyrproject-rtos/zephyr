@@ -43,6 +43,12 @@ extern "C" {
 #define KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID                      0x0003
 #endif
 
+#ifdef CONFIG_TASK_MONITOR
+#define KERNEL_EVENT_LOGGER_TASK_MON_TASK_STATE_CHANGE_EVENT_ID 0x0004
+#define KERNEL_EVENT_LOGGER_TASK_MON_CMD_PACKET_EVENT_ID        0x0005
+#define KERNEL_EVENT_LOGGER_TASK_MON_KEVENT_EVENT_ID            0x0006
+#endif
+
 /**
  * @brief Kernel Event Logger
  * @defgroup nanokernel_event_logger Kernel Event Logger
