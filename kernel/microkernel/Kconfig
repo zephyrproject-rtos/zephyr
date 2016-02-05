@@ -154,15 +154,6 @@ config  TASK_MONITOR
 	activities. These can include: task switches, task state changes,
 	kernel service requests, and the signalling of events.
 
-config  TASK_MONITOR_CAPACITY
-	int
-	prompt "Trace buffer capacity (# of entries)"
-	default 300
-	depends on TASK_MONITOR
-	help
-	This option specifies the number of entries in the task monitor's
-	trace buffer. Each entry requires 12 bytes.
-
 config  TASK_MONITOR_MASK
 	int
 	prompt "Trace buffer mask"
