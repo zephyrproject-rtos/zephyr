@@ -9,9 +9,6 @@ build a Zephyr kernel containing your application and run it. We use the
 `Hello World` sample application as an example. However, the steps needed are
 the same for your own application.
 
-Building and Running an Application
-***********************************
-
 The processes to build and run a Zephyr application are the same across
 operating systems. Nevertheless, the commands needed do differ from one OS to
 the next. The following sections contain the commands used in a Linux
@@ -19,7 +16,7 @@ development environment. If you are using Mac OS please use the appropriate
 commands for your OS.
 
 Building a Sample Application
-=============================
+*****************************
 
 To build an example application follow these steps:
 
@@ -66,7 +63,7 @@ system generates different names for different use cases depending on the
 hardware and platforms used.
 
 Running a Sample Application
-============================
+****************************
 
 To perform rapid testing of an application in the development environment you
 can use QEMU with some of the supported platforms and architecture. This can
