@@ -125,6 +125,8 @@ struct net_buf *l2_buf_get_reserve(uint16_t reserve_head)
 	NET_DBG("buf %p reserve %u ref %d\n", buf, reserve_head, buf->ref);
 #endif
 
+	packetbuf_clear(buf);
+
 	return buf;
 }
 
