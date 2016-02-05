@@ -141,10 +141,12 @@ enum ble_gatts_notif_ind_type {
 };
 
 struct ble_gatt_notif_ind_rsp {
+	/**< Callback function to call on reception of this message */
+	bt_gatt_notify_func_t cback;
 	int status;		/**< Status of the operation. */
 	/**< Connection handle, can be 0xFFFF if value change broadcast */
 	uint16_t conn_handle;
-	uint16_t handle;	/**< Characteristic value handle */
+	struct bt_gatt_attr *attr;    /**< GATT Attribute */
 	/**< MSG_ID_BLE_GATTS_SEND_NOTIF_RSP for notification or
 	 * MSG_ID_BLE_GATTS_SEND_IND_RSP for indication
 	 */

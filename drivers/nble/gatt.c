@@ -486,7 +486,7 @@ void on_ble_gatts_read_evt(const struct nble_gatt_rd_evt *evt)
 
 	attr = evt->attr;
 
-	BT_DBG("read %p", attr);
+	BT_DBG("handle %p", attr);
 
 	if (attr->read) {
 		reply_data.status = attr->read(NULL, attr, data, sizeof(data),
