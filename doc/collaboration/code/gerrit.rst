@@ -47,6 +47,62 @@ summaries can be found here:
 
 For more detailed information visit: `Gerrit Documentation <http://gerrit-documentation.googlecode.com/svn/Documentation/2.6/intro-quick.html_>`_
 
+Commit Message Formatting
+*************************
+
+When preparing to submit a change, each patch set will contain multiple edits
+or modifications to files.  The patch set prefixed by a commit message detailing
+all the changes.  The Zephyr Project has a few best practices for creating
+commit messages to ease the acceptance of the change.
+
+* Don't reference the patch itself.  For example, no "This patch..."
+
+* The first line shall begin with the component being altered followed by a
+  colon.  For example, doc:, i2c:, spi:, microkernel: , etc.  After the
+  colon, a short (less than 70 characters) shall be provided after, detailing
+  the brief basics of the change.  As an example:
+
+   .. code-block:: console
+
+      doc: Updating gerrit commit details
+
+* When adding a new file to the tree, it is important to detail the source of
+  origin on the file, provide attributions, and detail the intended usage.  In
+  cases where the file is an original to Zephyr, the commit message shall
+  include the following:
+
+   .. code-block:: console
+
+      Origin: Original
+
+   In cases where the file is imported from an external project, the commit
+   message shall contain details regarding the original project, the location
+   of the project, the SHA-id of the origin commit the file, the intended
+   purpose, and if the file will be maintained by the Zephyr project, in other
+   words, whether or not the Zephyr project will contain a localized branch or
+   if it is a downstream copy.
+
+   For example a copy of a locally maintained import:
+
+   .. code-block:: console
+
+      Origin: Contiki OS
+      URL: http://www.contiki-os.org/
+      commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
+      Purpose: Introduction of networking stack.
+      Maintained-by: Zephyr
+
+   For example a copy of an externally maintained import:
+
+   .. code-block:: console
+
+      Origin: Tiny Crypt
+      URL: https://github.com/01org/tinycrypt
+      commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
+      Purpose: Introduction of TinyCrypt
+      Maintained-by: External
+
+
 
 Submitting a Change
 *******************
