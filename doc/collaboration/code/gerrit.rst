@@ -107,7 +107,7 @@ commit messages to ease the acceptance of the change.
 Submitting a Change
 *******************
 
-Currently, Gerrit is only one method to submit a change for review.
+Currently, Gerrit is the only method to submit a change for review.
 
 Before submitting, please ensure each commit conforms with coding
 and contribution guidelines. Directions for building the source code
