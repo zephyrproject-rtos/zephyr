@@ -45,32 +45,9 @@
 #endif
 #endif /* CONFIG_IOAPIC */
 
-#define NUM_STD_IRQS 16   /* number of "standard" IRQs on an x86 platform */
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
-
-/*
- * The irq_connect() API connects to a (virtualized) IRQ and the
- * associated interrupt controller is programmed with the allocated vector.
- * The Quark board virtualizes IRQs as follows:
- *
- *   - The first CONFIG_IOAPIC_NUM_RTES IRQs are provided by the IOAPIC
- *   - The remaining IRQs are provided by the LOAPIC.
- *
- * Thus, for example, if the IOAPIC supports 24 IRQs:
- *
- *   - IRQ0 to IRQ23   map to IOAPIC IRQ0 to IRQ23
- *   - IRQ24 to IRQ29  map to LOAPIC LVT entries as follows:
- *
- *       IRQ24 -> LOAPIC_TIMER
- *       IRQ25 -> LOAPIC_THERMAL
- *       IRQ26 -> LOAPIC_PMC
- *       IRQ27 -> LOAPIC_LINT0
- *       IRQ28 -> LOAPIC_LINT1
- *       IRQ29 -> LOAPIC_ERROR
- */
-
 /* PCI definitions */
-#define PCI_BUS_NUMBERS 2
+#define PCI_BUS_NUMBERS 1
 
 #define PCI_CTRL_ADDR_REG 0xCF8
 #define PCI_CTRL_DATA_REG 0xCFC
@@ -80,16 +57,12 @@
 #define PCI_INTC 3
 #define PCI_INTD 4
 
-
 /**
  *
  * @brief Convert PCI interrupt PIN to IRQ
  *
- * The routine uses "standard design consideration" and implies that
- * INTA (pin 1) -> IRQ 16
- * INTB (pin 2) -> IRQ 17
- * INTC (pin 3) -> IRQ 18
- * INTD (pin 4) -> IRQ 19
+ * This file is only used by QEMU, which emulates the i440fx chipset.
+ * INTx are mapped to IRQs 10 and 11 after being swizzled.
  *
  * @return IRQ number, -1 if the result is incorrect
  *
@@ -99,7 +72,7 @@ static inline int pci_pin2irq(int bus, int dev, int pin)
 {
 	if ((pin < PCI_INTA) || (pin > PCI_INTD))
 		return -1;
-	return NUM_STD_IRQS + pin - 1;
+	return 10 + (((pin + dev - 1) >> 1) & 1);
 }
 
 #endif /* __SOC_H_ */
