@@ -1,4 +1,8 @@
-/* i2c.h - public I2C driver API */
+/**
+ * @file
+ *
+ * @brief Public APIs for the I2C drivers.
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -32,27 +36,38 @@ extern "C" {
 #include <stdint.h>
 #include <device.h>
 
-/* I2C speeds */
+/**
+ * @brief I2C speeds.
+ */
 #define I2C_SPEED_STANDARD		(0x1)
 #define I2C_SPEED_FAST			(0x2)
 #define I2C_SPEED_FAST_PLUS		(0x3)
 #define I2C_SPEED_HIGH			(0x4)
 #define I2C_SPEED_ULTRA			(0x5)
 
-/* I2C dev_config bitfields */
+/**
+ * @brief I2C dev_config bitfields.
+ */
 #define I2C_ADDR_10_BITS		(1 << 0)
 #define I2C_SPEED_MASK			(0x7 << 1)	/* 3 bits */
 #define I2C_MODE_MASTER			(1 << 4)
 #define I2C_MODE_SLAVE_READ		(1 << 5)
 
-/* I2C Message Flags */
+/**
+ * @brief I2C Message Flags.
+ */
 #define I2C_MSG_WRITE			(0 << 0)
 #define I2C_MSG_READ			(1 << 0)
 #define I2C_MSG_RW_MASK			(1 << 0)
 
-/* STOP I2C transaction (drive should take care of this) */
+/**
+ * @brief STOP I2C transaction: drive should take care of this.
+ */
 #define I2C_MSG_STOP			(1 << 1)
-/* RESTART I2C transaction */
+
+/**
+ * @brief RESTART I2C transaction
+ */
 #define I2C_MSG_RESTART			(1 << 2)
 
 struct i2c_msg {
@@ -101,13 +116,14 @@ struct i2c_driver_api {
 };
 
 /**
- * @brief Configure a host controllers operation
+ * @brief Configure operation of a host controller.
  *
- * @param dev Pointer to the device structure for the driver instance
+ * @param dev Pointer to the device structure for the driver instance.
  * @param dev_config Bit-packed 32-bit value to the device runtime configuration
- *                   for the I2C controller.
+ * for the I2C controller.
  *
- * @return DEV_OK if successful, another DEV_* code otherwise.
+ * @retval DEV_OK If successful.
+ * @retval DEV_* code otherwise.
  */
 static inline int i2c_configure(struct device *dev, uint32_t dev_config)
 {
@@ -118,16 +134,17 @@ static inline int i2c_configure(struct device *dev, uint32_t dev_config)
 }
 
 /**
- * @brief Write a set amount of data to an I2C device
+ * @brief Write a set amount of data to an I2C device.
  *
- * The function is synchronous.
+ * This routine writes a set amount of data synchronously.
  *
- * @param dev Pointer to the device structure for the driver instance
- * @param buf Memory pool that data should be transferred from
- * @param len Size of the memory pool available for reading from
- * @param addr Address of the I2C device to write to
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param buf Memory pool from which the data is transferred.
+ * @param len Size of the memory pool available for reading.
+ * @param addr Address to the target I2C device for writing.
  *
- * @return DEV_OK if successful, another DEV_* code otherwise.
+ * @retval DEV_OK If successful.
+ * @retval DEV_* code otherwise.
  */
 static inline int i2c_write(struct device *dev, uint8_t *buf,
 			    uint32_t len, uint16_t addr)
@@ -144,16 +161,17 @@ static inline int i2c_write(struct device *dev, uint8_t *buf,
 }
 
 /**
- * @brief Read a set amount of data from an I2C device
+ * @brief Read a set amount of data from an I2C device.
  *
- * The function is synchronous.
+ * This routine reads a set amount of data synchronously.
  *
- * @param dev Pointer to the device structure for the driver instance
- * @param buf Memory pool that data should be transferred to
- * @param len Size of the memory pool available for writing to
- * @param addr Address of the I2C device to read from
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param len Size of the memory pool available for writing.
+ * @param addr Address of the I2C device being read.
  *
- * @return DEV_OK if successful, another DEV_* code otherwise.
+ * @retval DEV_OK If successful.
+ * @retval DEV_* code otherwise.
  */
 static inline int i2c_read(struct device *dev, uint8_t *buf,
 			   uint32_t len, uint16_t addr)
@@ -170,18 +188,19 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
 }
 
 /**
- * @brief Performs data transfer to another I2C device
+ * @brief Perform data transfer to another I2C device.
  *
- * This provides a generic interface to perform data transfer
- * to another I2C device. If a simple read or write is needed,
- * use i2c_read()/i2c_write() instead. The function is synchronous.
+ * This routine provides a generic interface to perform data transfer
+ * to another I2C device synchronously. Use i2c_read()/i2c_write()
+ * for simple read or write.
  *
- * @param dev Pointer to the device structure for the driver instance
- * @param msgs Array of messages
- * @param num_msgs Number of messages
- * @param addr Address of the I2C target device
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param addr Address of the I2C target device.
  *
- * @return DEV_OK if successful, another DEV_* code otherwise.
+ * @retval DEV_OK If successful.
+ * @retval DEV_* code otherwise.
  */
 static inline int i2c_transfer(struct device *dev,
 			       struct i2c_msg *msgs, uint8_t num_msgs,
@@ -194,10 +213,10 @@ static inline int i2c_transfer(struct device *dev,
 }
 
 /**
- * @brief Suspend an I2C driver
- * @param dev Pointer to the device structure for the driver instance
+ * @brief Suspend an I2C driver.
+ * @param dev Pointer to the device structure for the driver instance.
  *
- * @return DEV_OK
+ * @retval DEV_OK If successful.
  */
 static inline int i2c_suspend(struct device *dev)
 {
@@ -208,10 +227,10 @@ static inline int i2c_suspend(struct device *dev)
 }
 
 /**
- * @brief Resume an I2C driver
- * @param dev Pointer to the device structure for the driver instance
+ * @brief Resume an I2C driver.
+ * @param dev Pointer to the device structure for the driver instance.
  *
- * @return DEV_OK
+ * @retval DEV_OK If successful.
  */
 static inline int i2c_resume(struct device *dev)
 {
