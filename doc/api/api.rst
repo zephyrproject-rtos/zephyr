@@ -20,3 +20,4 @@ The use of the Zephyr APIs is the same for all platforms and boards.
    nanokernel_api.rst
    microkernel_api.rst
    io_interfaces.rst
+   event_logger.rst
