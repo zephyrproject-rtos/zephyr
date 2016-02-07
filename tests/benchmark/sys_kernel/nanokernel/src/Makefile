@@ -1,4 +1,4 @@
-ccflags-y = -I$(srctree)/samples/microkernel/benchmark/latency_measure/src
+ccflags-y = -I$(srctree)/tests/benchmark/latency_measure/microkernel/src
 ccflags-y += -I$(CURDIR)/misc/generated/sysgen
 
 obj-y = lifo.o \
