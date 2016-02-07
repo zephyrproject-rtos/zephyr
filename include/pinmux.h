@@ -1,5 +1,3 @@
-/* pinmux.h - the private pinmux driver header */
-
 /*
  * Copyright (c) 2015 Intel Corporation
  *
@@ -15,6 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * @file
+ * Public APIs for Pinmux drivers
+ */
+
 #ifndef __INCLUDE_PINMUX_H
 #define __INCLUDE_PINMUX_H
 
