@@ -1,5 +1,3 @@
-/* uart.h - public UART driver APIs */
-
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.
  *
@@ -14,6 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/**
+ * @file
+ * @brief Public APIs for UART drivers
  */
 
 #ifndef __INCuarth
@@ -38,25 +41,37 @@ extern "C" {
 #include <pci/pci.h>
 #include <pci/pci_mgr.h>
 #endif
-/* options for uart init */
+/**
+ * @brief Options for @a UART initialization.
+ */
 #define UART_OPTION_AFCE 0x01
 
-/** Common line controls for UART */
+/** Common line controls for UART.*/
 #define LINE_CTRL_BAUD_RATE	(1 << 0)
 #define LINE_CTRL_RTS		(1 << 1)
 #define LINE_CTRL_DTR		(1 << 2)
 
-/** Common errors types for UART */
-#define UART_ERROR_OVERRUN  (1 << 0) /* overrun error */
-#define UART_ERROR_PARITY   (1 << 1) /* parity error  */
-#define UART_ERROR_FRAMING  (1 << 2) /* framing error */
-/* A break interrupt was received i.e. whenever the serial input was held at a
- * logic '0' state for longer than the sum of start time + data bits + parity +
- * stop bits.
+/* Common communication errors for UART.*/
+
+/** @brief Overrun error */
+#define UART_ERROR_OVERRUN  (1 << 0)
+
+/** @brief Parity error */
+#define UART_ERROR_PARITY   (1 << 1)
+
+/** @brief Framing error */
+#define UART_ERROR_FRAMING  (1 << 2)
+
+/**
+ * @brief Break interrupt error:
+ *
+ * A break interrupt was received. This happens when the serial input is
+ * held at a logic '0' state for longer than the sum of start time + data bits
+ * + parity + stop bits.
  */
 #define UART_ERROR_BREAK    (1 << 3)
 
-/** UART device configuration */
+/** @brief UART device configuration.*/
 struct uart_device_config {
 	/**
 	 * Base port number
@@ -69,37 +84,65 @@ struct uart_device_config {
 		uint32_t regs;
 	};
 
-	uint32_t sys_clk_freq;	/* System clock frequency in Hz */
+/** System clock frequency in Hz.*/
+	uint32_t sys_clk_freq;
 
 #ifdef CONFIG_PCI
 	struct pci_dev_info  pci_dev;
 #endif /* CONFIG_PCI */
 };
 
-/**< Driver API struct */
+/** @brief Driver API structure. */
 struct uart_driver_api {
-	/* console I/O functions */
+	/** Console I/O function */
 	int (*poll_in)(struct device *dev, unsigned char *p_char);
 	unsigned char (*poll_out)(struct device *dev, unsigned char out_char);
 
+	/** Console I/O function */
 	int (*err_check)(struct device *dev);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-	/* interrupt driven I/O functions */
+	/** Interrupt driven FIFO fill function */
 	int (*fifo_fill)(struct device *dev, const uint8_t *tx_data, int len);
+
+	/** Interrupt driven FIFO read function */
 	int (*fifo_read)(struct device *dev, uint8_t *rx_data, const int size);
+
+	/** Interrupt driven transfer enabling function */
 	void (*irq_tx_enable)(struct device *dev);
+
+	/** Interrupt driven transfer disabling function */
 	void (*irq_tx_disable)(struct device *dev);
+
+	/** Interrupt driven transfer ready function */
 	int (*irq_tx_ready)(struct device *dev);
+
+	/** Interrupt driven receiver enabling function */
 	void (*irq_rx_enable)(struct device *dev);
+
+	/** Interrupt driven receiver disabling function */
 	void (*irq_rx_disable)(struct device *dev);
+
+	/** Interrupt driven transfer empty function */
 	int (*irq_tx_empty)(struct device *dev);
+
+	/** Interrupt driven receiver ready function */
 	int (*irq_rx_ready)(struct device *dev);
+
+	/** Interrupt driven error enabling function */
 	void (*irq_err_enable)(struct device *dev);
+
+	/** Interrupt driven error disabling function */
 	void (*irq_err_disable)(struct device *dev);
+
+	/** Interrupt driven pending status function */
 	int (*irq_is_pending)(struct device *dev);
+
+	/** Interrupt driven interrupt update function */
 	int (*irq_update)(struct device *dev);
+
+	/** Interrupt driven input hook function */
 	int (*irq_input_hook)(struct device *dev, uint8_t byte);
 
 #endif
@@ -115,12 +158,15 @@ struct uart_driver_api {
 };
 
 /**
- * @brief Check whether an error was detected
+ * @brief Check whether an error was detected.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
- * @return one of UART_ERROR_OVERRUN, UART_ERROR_PARITY, UART_ERROR_FRAMING,
- * UART_ERROR_BREAK if an error was detected, 0 otherwise.
+ * @retval UART_ERROR_OVERRUN if an overrun error was detected.
+ * @retval UART_ERROR_PARITY if a parity error was detected.
+ * @retval UART_ERROR_FRAMING if a framing error was detected.
+ * @retval UART_ERROR_BREAK if a break error was detected.
+ * @retval 0 Otherwise.
  */
 static inline int uart_err_check(struct device *dev)
 {
@@ -137,11 +183,12 @@ static inline int uart_err_check(struct device *dev)
 /**
  * @brief Poll the device for input.
  *
- * @param dev UART device struct
- * @param p_char Pointer to character
+ * @param dev UART device structure.
+ * @param p_char Pointer to character.
  *
- * @return 0 if a character arrived, -1 if the input buffer if empty,
- *         -DEV_INVALID_OP if operation not supported.
+ * @retval 0 If a character arrived.
+ * @retval -1 If the input buffer if empty.
+ * @retval DEV_INVALID_OP If the operation is not supported.
  */
 static inline int uart_poll_in(struct device *dev, unsigned char *p_char)
 {
@@ -154,16 +201,17 @@ static inline int uart_poll_in(struct device *dev, unsigned char *p_char)
 /**
  * @brief Output a character in polled mode.
  *
- * Checks if the transmitter is empty. If empty, a character is written to
- * the data register.
+ * This routine checks if the transmitter is empty.
+ * When the transmitter is empty, it writes a character to the data
+ * register.
  *
- * If the hardware flow control is enabled then the handshake signal CTS has to
- * be asserted in order to send a character.
+ * To send a character when hardware flow control is enabled, the handshake
+ * signal CTS must be asserted.
  *
- * @param dev UART device struct
- * @param out_char Character to send
+ * @param dev UART device structure.
+ * @param out_char Character to send.
  *
- * @return Sent character
+ * @retval char Sent character.
  */
 static inline unsigned char uart_poll_out(struct device *dev,
 					  unsigned char out_char)
@@ -178,13 +226,13 @@ static inline unsigned char uart_poll_out(struct device *dev,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 /**
- * @brief Fill FIFO with data
+ * @brief Fill FIFO with data.
  *
- * @param dev UART device struct
- * @param tx_data Data to transmit
- * @param size Number of bytes to send
+ * @param dev UART device structure.
+ * @param tx_data Data to transmit.
+ * @param size Number of bytes to send.
  *
- * @return Number of bytes sent
+ * @return Number of bytes sent.
  */
 static inline int uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 				 int size)
@@ -200,13 +248,13 @@ static inline int uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 }
 
 /**
- * @brief Read data from FIFO
+ * @brief Read data from FIFO.
  *
- * @param dev UART device struct
- * @param rx_data Data container
- * @param size Container size
+ * @param dev UART device structure.
+ * @param rx_data Data container.
+ * @param size Container size.
  *
- * @return Number of bytes read
+ * @return Number of bytes read.
  */
 static inline int uart_fifo_read(struct device *dev, uint8_t *rx_data,
 				 const int size)
@@ -222,9 +270,9 @@ static inline int uart_fifo_read(struct device *dev, uint8_t *rx_data,
 }
 
 /**
- * @brief Enable TX interrupt in IER
+ * @brief Enable TX interrupt in IER.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
  * @return N/A
  */
@@ -238,9 +286,9 @@ static inline void uart_irq_tx_enable(struct device *dev)
 	}
 }
 /**
- * @brief Disable TX interrupt in IER
+ * @brief Disable TX interrupt in IER.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
  * @return N/A
  */
@@ -255,11 +303,12 @@ static inline void uart_irq_tx_disable(struct device *dev)
 }
 
 /**
- * @brief Check if Tx IRQ has been raised
+ * @brief Check if Tx IRQ has been raised.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
- * @return 1 if an IRQ is ready, 0 otherwise
+ * @retval 1 If an IRQ is ready.
+ * @retval 0 Otherwise.
  */
 static inline int uart_irq_tx_ready(struct device *dev)
 {
@@ -274,9 +323,9 @@ static inline int uart_irq_tx_ready(struct device *dev)
 }
 
 /**
- * @brief Enable RX interrupt in IER
+ * @brief Enable RX interrupt in IER.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
  * @return N/A
  */
@@ -291,9 +340,9 @@ static inline void uart_irq_rx_enable(struct device *dev)
 }
 
 /**
- * @brief Disable RX interrupt in IER
+ * @brief Disable RX interrupt in IER.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
  * @return N/A
  */
@@ -310,9 +359,10 @@ static inline void uart_irq_rx_disable(struct device *dev)
 /**
  * @brief Check if nothing remains to be transmitted
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
- * @return 1 if nothing remains to be transmitted, 0 otherwise
+ * @retval 1 If nothing remains to be transmitted.
+ * @retval 0 Otherwise.
  */
 static inline int uart_irq_tx_empty(struct device *dev)
 {
@@ -327,11 +377,12 @@ static inline int uart_irq_tx_empty(struct device *dev)
 }
 
 /**
- * @brief Check if Rx IRQ has been raised
+ * @brief Check if Rx IRQ has been raised.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
- * @return 1 if an IRQ is ready, 0 otherwise
+ * @retval 1 If an IRQ is ready.
+ * @retval 0 Otherwise.
  */
 static inline int uart_irq_rx_ready(struct device *dev)
 {
@@ -345,9 +396,9 @@ static inline int uart_irq_rx_ready(struct device *dev)
 	return 0;
 }
 /**
- * @brief Enable error interrupt in IER
+ * @brief Enable error interrupt in IER.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
  * @return N/A
  */
@@ -362,11 +413,12 @@ static inline void uart_irq_err_enable(struct device *dev)
 }
 
 /**
- * @brief Disable error interrupt in IER
+ * @brief Disable error interrupt in IER.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
- * @return 1 if an IRQ is ready, 0 otherwise
+ * @retval 1 If an IRQ is ready.
+ * @retval 0 Otherwise.
  */
 static inline void uart_irq_err_disable(struct device *dev)
 {
@@ -379,11 +431,12 @@ static inline void uart_irq_err_disable(struct device *dev)
 }
 
 /**
- * @brief Check if any IRQ is pending
+ * @brief Check if any IRQs is pending.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
- * @return 1 if an IRQ is pending, 0 otherwise
+ * @retval 1 If an IRQ is pending.
+ * @retval 0 Otherwise.
  */
 
 static inline int uart_irq_is_pending(struct device *dev)
@@ -399,11 +452,11 @@ static inline int uart_irq_is_pending(struct device *dev)
 }
 
 /**
- * @brief Update cached contents of IIR
+ * @brief Update cached contents of IIR.
  *
- * @param dev UART device struct
+ * @param dev UART device structure.
  *
- * @return always 1
+ * @retval 1 Always.
  */
 static inline int uart_irq_update(struct device *dev)
 {
@@ -418,16 +471,17 @@ static inline int uart_irq_update(struct device *dev)
 }
 
 /**
- * @brief Invoke the UART input hook routine if installed
+ * @brief Invoke the UART input hook routine if it is installed.
  *
  * The input hook is a custom handler invoked by the ISR on each received
- * character.  It allows the detection of a character escape sequence that may
+ * character. It allows the detection of a character escape sequence that can
  * be used to override the behavior of the ISR handler.
  *
- * @param dev UART device struct
- * @param byte Byte to process
+ * @param dev UART device structure.
+ * @param byte Byte to process.
  *
- * @return 1 if character processing must stop, 0 or if it is to continue
+ * @retval 1 If character processing must stop.
+ * @retval 0 If it should continue.
  */
 static inline int uart_irq_input_hook(struct device *dev, uint8_t byte)
 {
@@ -443,10 +497,10 @@ static inline int uart_irq_input_hook(struct device *dev, uint8_t byte)
 }
 
 /**
- * @brief Set the UART input hook routine
+ * @brief Set the UART input hook routine.
  *
- * @param dev UART device struct
- * @param hook Routine to use as UART input hook
+ * @param dev UART device structure.
+ * @param hook Routine to use as UART input hook.
  *
  * @return N/A
  */
@@ -467,13 +521,14 @@ static inline void uart_irq_input_hook_set(struct device *dev,
 #ifdef CONFIG_UART_LINE_CTRL
 
 /**
- * @brief Manipualte line control for UART.
+ * @brief Manipulate line control for UART.
  *
- * @param dev UART device struct
- * @param ctrl The line control to be manipulated
- * @param val Value to set the line control
+ * @param dev UART device structure.
+ * @param ctrl The line control to manipulate.
+ * @param val Value to set to the line control.
  *
- * @return DEV_OK if successful, failed otherwise
+ * @retval DEV_OK If successful.
+ * @retval failed Otherwise.
  */
 static inline int uart_line_ctrl_set(struct device *dev,
 				     uint32_t ctrl, uint32_t val)
@@ -494,16 +549,17 @@ static inline int uart_line_ctrl_set(struct device *dev,
 #ifdef CONFIG_UART_DRV_CMD
 
 /**
- * @brief Send extra command to driver
+ * @brief Send extra command to driver.
  *
  * Implementation and accepted commands are driver specific.
- * Refer to driver for more information.
+ * Refer to the drivers for more information.
  *
- * @param dev UART device struct
- * @param cmd Command to driver
- * @param p Parameter to the command
+ * @param dev UART device structure.
+ * @param cmd Command to driver.
+ * @param p Parameter to the command.
  *
- * @return DEV_OK if successful, failed otherwise
+ * @retval DEV_OK If successful.
+ * @retval failed Otherwise.
  */
 static inline int uart_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 {
