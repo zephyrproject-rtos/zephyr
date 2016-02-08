@@ -888,6 +888,10 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 	return len - FOOTER_LEN;
 
 error:
+	print_exceptions_0();
+	print_exceptions_1();
+	print_errors();
+
 	flushrx();
 	return 0;
 }
