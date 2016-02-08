@@ -1,5 +1,0 @@
-% Application       : DTSL server
-
-% TASK NAME  PRIO ENTRY STACK GROUPS
-% ==================================
-  TASK TASKA    7 startup  3000 [EXE]

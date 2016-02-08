@@ -17,7 +17,8 @@
 #
 
 NET_IFACE ?= slip
-KERNEL_TYPE = nano
+MDEF_FILE = prj.mdef
+KERNEL_TYPE ?= nano
 BOARD ?= qemu_x86
 CONF_FILE = prj_$(NET_IFACE).conf
 
