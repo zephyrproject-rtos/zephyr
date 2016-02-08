@@ -119,8 +119,8 @@ def run_sanity_footprint(commit=None, cwd=os.environ.get('ZEPHYR_BASE'),
                          output_file=None):
     if not output_file:
         output_file = sanity_results_filename(commit)
-    cmd = 'source ./zephyr-env.sh && ./scripts/sanitycheck --inline-logs --all'
-    cmd += ' --build-only --tag footprint -o %s' % output_file
+    cmd = '/bin/bash -c "source ./zephyr-env.sh && ./scripts/sanitycheck --inline-logs --all'
+    cmd += ' --build-only --tag footprint -o %s"' % output_file
     logger.debug('Sanity (%s)   %s' %(commit, cmd))
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
