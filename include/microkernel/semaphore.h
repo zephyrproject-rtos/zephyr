@@ -38,8 +38,8 @@ extern "C" {
 
 extern void _k_sem_struct_value_update(int n, struct _k_sem_struct *S);
 
-/*
- * Initializer for semaphore
+/**
+ * @brief Initializer for a semaphore.
  */
 #define __K_SEMAPHORE_DEFAULT \
 	{ \
@@ -50,7 +50,7 @@ extern void _k_sem_struct_value_update(int n, struct _k_sem_struct *S);
 
 /**
  *
- * @brief Give semaphore (from an ISR).
+ * @brief Give semaphore from an ISR.
  *
  * This routine gives semaphore @a sema from an ISR, rather than a task.
  *
@@ -62,7 +62,7 @@ extern void isr_sem_give(ksem_t sema);
 
 /**
  *
- * @brief Give semaphore (from a fiber).
+ * @brief Give semaphore from a fiber.
  *
  * This routine gives semaphore @a sema from a fiber, rather than a task.
  *
@@ -88,11 +88,11 @@ extern void task_sem_give(ksem_t sema);
  *
  * @brief Give a group of semaphores.
  *
- * This routine gives each semaphore in sempahore group @a semagroup.
+ * This routine gives each semaphore in a semaphore group @a semagroup.
  * This method is faster than giving the semaphores individually, and
  * ensures that all the semaphores are given before any waiting tasks run.
  *
- * @param semagroup Array of semaphore names, terminated by ENDLIST.
+ * @param semagroup Array of semaphore names - terminated by ENDLIST.
  *
  * @return N/A
  */
@@ -102,7 +102,7 @@ extern void task_sem_group_give(ksemg_t semagroup);
  *
  * @brief Read a semaphore's count.
  *
- * This routine reads the current count of semaphore @a sema.
+ * This routine reads the current count of the semaphore @a sema.
  *
  * @param sema Semaphore name.
  *
@@ -112,9 +112,9 @@ extern int task_sem_count_get(ksem_t sema);
 
 /**
  *
- * @brief Reset semaphore count.
+ * @brief Reset the semaphore's count.
  *
- * This routine resets the count of semaphore @a sema to zero.
+ * This routine resets the count of the semaphore @a sema to zero.
  *
  * @param sema Semaphore name.
  *
@@ -124,13 +124,13 @@ extern void task_sem_reset(ksem_t sema);
 
 /**
  *
- * @brief Reset a group of semaphores
+ * @brief Reset a group of semaphores.
  *
- * This routine resets the count for each semaphore in sempahore group
+ * This routine resets the count for each semaphore in the sempahore group
  * @a semagroup to zero. This method is faster than resetting the semaphores
  * individually.
  *
- * @param semagroup Array of semaphore names, terminated by ENDLIST.
+ * @param semagroup Array of semaphore names - terminated by ENDLIST.
  *
  * @return N/A
  */
@@ -138,38 +138,43 @@ extern void task_sem_group_reset(ksemg_t semagroup);
 
 /**
  *
- * @brief Take semaphore or fail.
+ * @brief Take a semaphore or fail.
  *
- * This routine takes semaphore @a sema. If the semaphore's count is zero the
- * routine immediately returns a failure indication.
+ * This routine takes the semaphore @a sema. If the semaphore's count is
+ * zero the routine immediately returns a failure indication.
  *
  * @param sema Semaphore name.
- * @param timeout Affects the action taken should the semaphore be unavailable.
- * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
- * long as necessary. Otherwise wait up to the specified number of ticks before
- * timing out.
+ * @param timeout Determines the action to take when the semaphore is unavailable.
+ *        For TICKS_NONE, return immediately.
+ *        For TICKS_UNLIMITED, wait as long as necessary.
+ *        Otherwise, wait up to the specified number of ticks before timing out.
  *
  * @retval RC_OK Successfully took semaphore
  * @retval RC_TIME Timed out while waiting for semaphore
  * @retval RC_FAIL Failed to immediately take semaphore when
- * @a timeout = TICKS_NONE
+ *         @a timeout = TICKS_NONE
+ *
+ * @sa TICKS_NONE, TICKS_UNLIMITED must be added.
  */
 extern int task_sem_take(ksem_t sema, int32_t timeout);
 
 /**
  *
- * @brief Wait for a semaphore from the semaphore group
+ * @brief Wait for a semaphore from the semaphore group.
  *
- * This routine waits up to @a timeout ticks to take a semaphore from the
+ * This routine waits for the @a timeout ticks to take a semaphore from the
  * semaphore group @a group.
  *
- * @param group Array of semaphore names, terminated by ENDLIST.
- * @param timeout Affects the action taken should no semaphore be available.
- * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait
- * as long as necessary. Otherwise wait up to the specified number of ticks
- * before timing out.
+ * @param group Array of semaphore names - terminated by ENDLIST.
+ * @param timeout Determines the action to take when the semaphore is unavailable.
+ *        For TICKS_NONE, return immediately.
+ *        For TICKS_UNLIMITED, wait as long as necessary.
+ *        Otherwise, wait up to the specified number of ticks before timing out.
  *
- * @return Name of semaphore that was taken if successful, else ENDLIST
+ * @retval sema Name of the semaphore that was taken if successful.
+ * @retval ENDLIST Otherwise.
+ *
+ * @sa TICKS_NONE, TICKS_UNLIMITED must be added.
  */
 extern ksem_t task_sem_group_take(ksemg_t group, int32_t timeout);
 
