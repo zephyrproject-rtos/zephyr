@@ -249,7 +249,7 @@ void main(void)
 			hrm[0] = 0x06; /* uint8, sensor contact */
 			hrm[1] = 90 + (sys_rand32_get() % 20);
 
-			bt_gatt_notify(NULL, &hrs_attrs[3], &hrm, sizeof(hrm));
+			bt_gatt_notify(NULL, &hrs_attrs[2], &hrm, sizeof(hrm));
 		}
 
 		/* Battery level simulation */
@@ -261,7 +261,7 @@ void main(void)
 				battery = 100;
 			}
 
-			bt_gatt_notify(NULL, &bas_attrs[3], &battery,
+			bt_gatt_notify(NULL, &bas_attrs[2], &battery,
 				       sizeof(battery));
 		}
 	}
