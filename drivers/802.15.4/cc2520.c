@@ -577,6 +577,12 @@ static void getrxdata(void *buf, int len)
 static void getrxbyte(uint8_t *byte)
 {
 	cc2520_read_fifo_byte(byte);
+
+	/* Masking useless 7th bit
+	 * Hardware does it for itself when filtering is on for instance
+	 * See end of page 75 of datasheet.
+	 */
+	*byte &= 0x7f;
 }
 
 static inline bool strobe(uint8_t regname)
@@ -851,12 +857,7 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 
 	DBG("%s: Incoming packet length: %d\n", __func__, len);
 
-	/* Error cases:
-	 * 1     -> out of sync!
-	 * 2 & 3 -> bogus length
-	 */
-	if ((len > CC2520_MAX_PACKET_LEN) ||
-	    (len - FOOTER_LEN > bufsize) ||
+	if ((len - FOOTER_LEN > bufsize) ||
 	    (len <= FOOTER_LEN)) {
 		goto error;
 	}
