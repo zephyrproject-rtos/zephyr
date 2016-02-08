@@ -94,6 +94,7 @@ enum {
 	SMP_FLAG_USER,		/* if waiting for user input */
 	SMP_FLAG_BOND,		/* if bonding */
 	SMP_FLAG_SC_DEBUG_KEY,	/* if Secure Connection are using debug key */
+	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
 };
 
 /* SMP channel specific context */
@@ -1112,12 +1113,21 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp, uint8_t remote_io)
 
 	BT_DBG("");
 
+	smp->method = legacy_get_pair_method(smp, remote_io);
+
+	/* ask for consent if pairing is not due to sending SecReq*/
+	if (smp->method == JUST_WORKS &&
+	    !atomic_test_bit(&smp->flags, SMP_FLAG_SEC_REQ) &&
+	    bt_auth && bt_auth->pairing_confirm) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		bt_auth->pairing_confirm(smp->chan.conn);
+		return 0;
+	}
+
 	ret = send_pairing_rsp(smp);
 	if (ret) {
 		return ret;
 	}
-
-	smp->method = legacy_get_pair_method(smp, remote_io);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 
@@ -1310,6 +1320,15 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp, uint8_t remote_io)
 
 	smp->method = legacy_get_pair_method(smp, remote_io);
 
+	/* ask for consent if this is due to received SecReq */
+	if (smp->method == JUST_WORKS &&
+	    atomic_test_bit(&smp->flags, SMP_FLAG_SEC_REQ) &&
+	    bt_auth && bt_auth->pairing_confirm) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		bt_auth->pairing_confirm(smp->chan.conn);
+		return 0;
+	}
+
 	ret = legacy_request_tk(smp);
 	if (ret) {
 		return ret;
@@ -1482,7 +1501,6 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	if ((rsp->auth_req & BT_SMP_AUTH_SC) &&
 	    (req->auth_req & BT_SMP_AUTH_SC)) {
 		atomic_set_bit(&smp->flags, SMP_FLAG_SC);
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
 
 		rsp->init_key_dist &= RECV_KEYS_SC;
 		rsp->resp_key_dist &= SEND_KEYS_SC;
@@ -1514,6 +1532,21 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	}
 #endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
+	if (smp->method == JUST_WORKS) {
+#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+		return BT_SMP_ERR_AUTH_REQUIREMENTS;
+#else
+		/* ask for consent if pairing is not due to sending SecReq*/
+		if (!atomic_test_bit(&smp->flags, SMP_FLAG_SEC_REQ) &&
+		    bt_auth && bt_auth->pairing_confirm) {
+			atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+			bt_auth->pairing_confirm(smp->chan.conn);
+			return 0;
+		}
+#endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
+	}
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
 	return send_pairing_rsp(smp);
 }
 #else
@@ -1649,14 +1682,22 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 
 	smp->method = get_pair_method(smp, rsp->io_capability);
 
-#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-	if (smp->method == JUST_WORKS) {
-		return BT_SMP_ERR_AUTH_REQUIREMENTS;
-	}
-#endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
-
 	smp->local_dist &= SEND_KEYS_SC;
 	smp->remote_dist &= RECV_KEYS_SC;
+
+	if (smp->method == JUST_WORKS) {
+#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+		return BT_SMP_ERR_AUTH_REQUIREMENTS;
+#else
+		/* ask for consent if this is due to received SecReq */
+		if (atomic_test_bit(&smp->flags, SMP_FLAG_SEC_REQ) &&
+		    bt_auth && bt_auth->pairing_confirm) {
+			atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+			bt_auth->pairing_confirm(smp->chan.conn);
+			return 0;
+		}
+#endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
+	}
 
 	if (!sc_local_pkey_valid) {
 		atomic_set_bit(&smp->flags, SMP_FLAG_PKEY_SEND);
@@ -2277,6 +2318,8 @@ pair:
 	if (bt_smp_send_pairing_req(conn) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_SEC_REQ);
 
 	return 0;
 }
@@ -3340,10 +3383,64 @@ int bt_smp_auth_cancel(struct bt_conn *conn)
 	case PASSKEY_CONFIRM:
 		return smp_error(smp, BT_SMP_ERR_CONFIRM_FAILED);
 	case JUST_WORKS:
+		return smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 	default:
 		return 0;
 	}
 }
+
+#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
+{
+	struct bt_smp *smp;
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (conn->role == BT_CONN_ROLE_MASTER) {
+		if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_CONFIRM);
+			return legacy_send_pairing_confirm(smp);
+		}
+
+		if (!sc_local_pkey_valid) {
+			atomic_set_bit(&smp->flags, SMP_FLAG_PKEY_SEND);
+			return 0;
+		}
+
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
+		return sc_send_public_key(smp);
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		return send_pairing_rsp(smp);
+	}
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
+	if (send_pairing_rsp(smp)) {
+		return -EIO;
+	}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+	return 0;
+}
+#else
+int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
+{
+	/* confirm_pairing will never be called in LE SC only mode */
+	return -EINVAL;
+}
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 void bt_smp_update_keys(struct bt_conn *conn)
 {

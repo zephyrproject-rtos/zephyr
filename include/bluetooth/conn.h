@@ -315,6 +315,7 @@ struct bt_conn_auth_cb {
 	void (*passkey_entry)(struct bt_conn *conn);
 	void (*passkey_confirm)(struct bt_conn *conn, unsigned int passkey);
 	void (*cancel)(struct bt_conn *conn);
+	void (*pairing_confirm)(struct bt_conn *conn);
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
@@ -363,6 +364,17 @@ int bt_conn_auth_cancel(struct bt_conn *conn);
  *  @return Zero on success or negative error code otherwise
  */
 int bt_conn_auth_passkey_confirm(struct bt_conn *conn);
+
+/** @brief Reply if incoming pairing was confirmed by user.
+ *
+ *  This function should be called only after pairing_confirm callback from
+ *  bt_conn_auth_cb structure was called if user confirmed incoming pairing.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_conn_auth_pairing_confirm(struct bt_conn *conn);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief Reply with entered PIN code.

@@ -434,9 +434,6 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 		return;
 	}
 
-	/* TODO: As pairing acceptor call user pairing consent API callback. */
-
-	/* Start interactive authentication if valid, default to justworks. */
 	switch (conn->br.pairing_method) {
 	case PASSKEY_CONFIRM:
 		atomic_set_bit(conn->flags, BT_CONN_USER);
@@ -450,8 +447,16 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 		atomic_set_bit(conn->flags, BT_CONN_USER);
 		bt_auth->passkey_entry(conn);
 		break;
-	default:
+	case JUST_WORKS:
+		/* TODO do this only for incoming pairing */
+		if (bt_auth && bt_auth->pairing_confirm) {
+			atomic_set_bit(conn->flags, BT_CONN_USER);
+			bt_auth->pairing_confirm(conn);
+			break;
+		}
 		ssp_confirm_reply(conn);
+		break;
+	default:
 		break;
 	}
 }
@@ -1527,6 +1532,26 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 	return -EINVAL;
+}
+
+int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
+{
+	if (!bt_auth) {
+		return -EINVAL;
+	}
+
+	switch (conn->type) {
+#if defined(CONFIG_BLUETOOTH_SMP)
+	case BT_CONN_TYPE_LE:
+		return bt_smp_auth_pairing_confirm(conn);
+#endif /* CONFIG_BLUETOOTH_SMP */
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	case BT_CONN_TYPE_BR:
+		return ssp_confirm_reply(conn);
+#endif /* CONFIG_BLUETOOTH_BREDR */
+	default:
+		return -EINVAL;
+	}
 }
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 

@@ -354,6 +354,11 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 	return -ENOSYS;
 }
 
+int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
+{
+	return -ENOSYS;
+}
+
 /* Connection related events */
 
 static void notify_connected(struct bt_conn *conn)
