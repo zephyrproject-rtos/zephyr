@@ -33,6 +33,11 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/driver.h>
 
+#if defined(CONFIG_TINYCRYPT_SHA256_HMAC_PRNG)
+#include <tinycrypt/hmac_prng.h>
+#include <tinycrypt/utils.h>
+#endif /* CONFIG_TINYCRYPT_SHA256_HMAC_PRNG */
+
 #include "stack.h"
 
 #include "keys.h"
@@ -96,6 +101,10 @@ static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 static struct nano_fifo avail_hci_evt;
 static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT, EVT_BUF_SIZE,
 		    &avail_hci_evt, NULL, 0);
+
+#if defined(CONFIG_TINYCRYPT_SHA256_HMAC_PRNG)
+static struct tc_hmac_prng_struct prng;
+#endif /* CONFIG_TINYCRYPT_SHA256_HMAC_PRNG */
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 static void report_completed_packet(struct net_buf *buf)
@@ -1183,6 +1192,87 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_TINYCRYPT_SHA256_HMAC_PRNG)
+static int prng_reseed(struct tc_hmac_prng_struct *h)
+{
+	uint8_t seed[32];
+	int64_t extra;
+	int ret, i;
+
+	for (i = 0; i < (sizeof(seed) / 8); i++) {
+		struct bt_hci_rp_le_rand *rp;
+		struct net_buf *rsp;
+
+		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
+		if (ret) {
+			return ret;
+		}
+
+		rp = (void *)rsp->data;
+		memcpy(&seed[i * 8], rp->rand, 8);
+
+		net_buf_unref(rsp);
+	}
+
+	extra = sys_tick_get();
+
+	ret = tc_hmac_prng_reseed(h, seed, sizeof(seed), (uint8_t *)&extra,
+				  sizeof(extra));
+	if (ret == TC_FAIL) {
+		BT_ERR("Failed to re-seed PRNG");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int prng_init(struct tc_hmac_prng_struct *h)
+{
+	struct bt_hci_rp_le_rand *rp;
+	struct net_buf *rsp;
+	int ret;
+
+	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
+	if (ret) {
+		return ret;
+	}
+
+	rp = (void *)rsp->data;
+
+	ret = tc_hmac_prng_init(h, rp->rand, sizeof(rp->rand));
+
+	net_buf_unref(rsp);
+
+	if (ret == TC_FAIL) {
+		BT_ERR("Failed to initialize PRNG");
+		return -EIO;
+	}
+
+	/* re-seed is needed after init */
+	return prng_reseed(h);
+}
+
+int bt_rand(void *buf, size_t len)
+{
+	int ret;
+
+	ret = tc_hmac_prng_generate(buf, len, &prng);
+	if (ret == TC_HMAC_PRNG_RESEED_REQ) {
+		ret = prng_reseed(&prng);
+		if (ret) {
+			return ret;
+		}
+
+		ret = tc_hmac_prng_generate(buf, len, &prng);
+	}
+
+	if (ret == TC_SUCCESS) {
+		return 0;
+	}
+
+	return -EIO;
+}
+#else
 int bt_rand(void *buf, size_t len)
 {
 	uint8_t *ptr = buf;
@@ -1210,6 +1300,7 @@ int bt_rand(void *buf, size_t len)
 
 	return 0;
 }
+#endif /* CONFIG_TINYCRYPT_SHA256_HMAC_PRNG */
 
 static int le_set_nrpa(void)
 {
@@ -2028,6 +2119,13 @@ static int le_init(void)
 		}
 	}
 #endif
+
+#if defined(CONFIG_TINYCRYPT_SHA256_HMAC_PRNG)
+	err = prng_init(&prng);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_TINYCRYPT_SHA256_HMAC_PRNG */
 	return 0;
 }
 
