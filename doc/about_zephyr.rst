@@ -52,7 +52,7 @@ small-footprint OSes:
    * *Interrupt Services* for both compile-time and run-time registration
      of interrupt handlers.
 
-   * *Inter-thread Synchronization Services* for binary sempahores,
+   * *Inter-thread Synchronization Services* for binary semaphores,
      counting semaphores, and mutex semaphores.
 
    * *Inter-thread Data Passing Services* for basic message queues, enhanced
