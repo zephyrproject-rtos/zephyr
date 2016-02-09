@@ -67,37 +67,37 @@ struct bt_uuid_128 {
 #define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
 #define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
 
-/** @def BBT_UUID_GAP
+/** @def BT_UUID_GAP
  *  @brief Generic Access
  */
 #define BT_UUID_GAP				BT_UUID_DECLARE_16(0x1800)
 #define BT_UUID_GAP_VAL				0x1800
-/** @def BBT_UUID_GATT
+/** @def BT_UUID_GATT
  *  @brief Generic Attribute
  */
 #define BT_UUID_GATT				BT_UUID_DECLARE_16(0x1801)
 #define BT_UUID_GATT_VAL			0x1801
-/** @def BBT_UUID_CTS
+/** @def BT_UUID_CTS
  *  @brief Current Time Service
  */
 #define BT_UUID_CTS				BT_UUID_DECLARE_16(0x1805)
 #define BT_UUID_CTS_VAL				0x1805
-/** @def BBT_UUID_DIS
+/** @def BT_UUID_DIS
  *  @brief Device Information Service
  */
 #define BT_UUID_DIS				BT_UUID_DECLARE_16(0x180a)
 #define BT_UUID_DIS_VAL				0x180a
-/** @def BBT_UUID_HRS
+/** @def BT_UUID_HRS
  *  @brief Heart Rate Service
  */
 #define BT_UUID_HRS				BT_UUID_DECLARE_16(0x180d)
 #define BT_UUID_HRS_VAL				0x180d
-/** @def BBT_UUID_BAS
+/** @def BT_UUID_BAS
  *  @brief Battery Service
  */
 #define BT_UUID_BAS				BT_UUID_DECLARE_16(0x180f)
 #define BT_UUID_BAS_VAL				0x180f
-/** @def BT_UUID_IPSP
+/** @def BT_UUID_IPSS
  *  @brief IP Support Service
  */
 #define BT_UUID_IPSS				BT_UUID_DECLARE_16(0x1820)
@@ -212,7 +212,7 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_CTS_CURRENT_TIME		BT_UUID_DECLARE_16(0x2a2b)
 #define BT_UUID_CTS_CURRENT_TIME_VAL		0x2a2b
-/** @def BT_UUID_HR_MEASUREMENT
+/** @def BT_UUID_HRS_MEASUREMENT
  *  @brief HRS Characteristic Measurement Interval
  */
 #define BT_UUID_HRS_MEASUREMENT			BT_UUID_DECLARE_16(0x2a37)
@@ -222,7 +222,7 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_HRS_BODY_SENSOR			BT_UUID_DECLARE_16(0x2a38)
 #define BT_UUID_HRS_BODY_SENSOR_VAL		0x2a38
-/** @def BT_UUID_HR_CONTROL_POINT
+/** @def BT_UUID_HRS_CONTROL_POINT
  *  @brief HRS Characteristic Control Point
  */
 #define BT_UUID_HRS_CONTROL_POINT		BT_UUID_DECLARE_16(0x2a39)
