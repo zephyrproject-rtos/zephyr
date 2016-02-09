@@ -32,4 +32,10 @@
 #include <init.h>
 #include <drivers/system_timer.h>
 
-SYS_INIT(_sys_clock_driver_init, NANOKERNEL, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(_sys_clock_driver_init,
+#ifdef CONFIG_MICROKERNEL
+	MICROKERNEL,
+#else
+	NANOKERNEL,
+#endif
+	CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
