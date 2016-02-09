@@ -235,7 +235,7 @@ static inline void device_sync_call_wait(device_sync_call_t *sync)
 		task_sem_take(sync->t_sem, TICKS_UNLIMITED);
 	} else {
 		sync->waiter_is_task = false;
-		nano_sem_take(&sync->f_sem, TICKS_NONE);
+		nano_sem_take(&sync->f_sem, TICKS_UNLIMITED);
 	}
 }
 
