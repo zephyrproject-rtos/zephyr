@@ -288,7 +288,7 @@ void _sys_power_save_idle(int32_t ticks)
 	 * function returns zero immediately and we do normal idle processing.
 	 */
 
-	if (_AdvIdleFunc(ticks) == 0) {
+	if (_sys_soc_suspend(ticks) == 0) {
 		nano_cpu_set_idle(ticks);
 		nano_cpu_idle();
 	}

@@ -50,7 +50,7 @@
 
 #ifdef CONFIG_ADVANCED_IDLE
 	GDATA(_AdvIdleCheckSleep)
-	GDATA(_AdvIdleStart)
+	GDATA(_sys_soc_resume)
 #endif /* CONFIG_ADVANCED_IDLE */
 
 
@@ -133,7 +133,7 @@ __csSet:
 	 * We use the separate stack here in order to avoid the memory
 	 * corruption if the system recovers from deep sleep
 	 */
-	movl	$_AdvIdleStack, %esp
+	movl	$_soc_resume_stack, %esp
 	addl	$CONFIG_ADV_IDLE_STACK_SIZE, %esp
 
 	/* align to stack boundary: ROUND_DOWN (%esp, 4) */
@@ -308,10 +308,12 @@ memInitDone:
 
 #if defined (CONFIG_ADVANCED_IDLE)
 	/*
-	 * Invoke _AdvIdleStart(_Cstart, _gdt) by jumping to it.
+	 * Invoke _sys_soc_resume(_Cstart, _gdt) by jumping to it.
 	 * If it's a cold boot, this routine jumps to _Cstart and the normal
-	 * kernel boot sequence continues; otherwise, it resumes execution
-	 * at the point where system went into deep sleep (in _AdvIdleFunc)
+	 * kernel boot sequence continues; otherwise, it uses the TSS info
+	 * saved in the GDT to resumes kernel processing at the point it was
+	 * when the system went into deep sleep; that is, _sys_soc_suspend()
+	 * completes and returns a non-zero value.
 	 */
 
 #if CONFIG_X86_IAMCU
@@ -321,7 +323,7 @@ memInitDone:
 	pushl	$_gdt
 	pushl	$_Cstart
 #endif
-	call	_AdvIdleStart
+	call	_sys_soc_resume
 #else
 	/* Jump to C portion of kernel initialization and never return */
 
@@ -443,6 +445,6 @@ _gdt_rom_end:
 #ifdef CONFIG_ADVANCED_IDLE
 	.section .NOINIT
 	.balign 4,0x90
-_AdvIdleStack:
+_soc_resume_stack:
 	.fill CONFIG_ADV_IDLE_STACK_SIZE
 #endif

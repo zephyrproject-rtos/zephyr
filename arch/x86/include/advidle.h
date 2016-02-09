@@ -21,8 +21,8 @@
  *
  * This header file specifies the custom advanced idle management interface.
  * All of the APIs declared here must be supplied by the custom advanced idle
- * management system, namely the _AdvIdleCheckSleep(), _AdvIdleFunc()
- * and _AdvIdleStart() functions.
+ * management system, namely the _AdvIdleCheckSleep(), _sys_soc_suspend()
+ * and _sys_soc_resume() functions.
  */
 
 #ifndef __INCadvidle
@@ -51,7 +51,7 @@ extern int _AdvIdleCheckSleep(void);
  * This routine checks if the system is recovering from advanced sleep and
  * either continues the kernel's cold boot sequence at _Cstart or resumes
  * kernel operation at the point it went to sleep; in the latter case, control
- * passes to the _AdvIdleFunc() that put the system to sleep, which then
+ * passes to the _sys_soc_suspend() that put the system to sleep, which then
  * finishes executing.
  *
  * @param _Cstart the address of the _Cstart function
@@ -59,7 +59,7 @@ extern int _AdvIdleCheckSleep(void);
  *
  * @return does not return to caller
  */
-extern void _AdvIdleStart(void (*_Cstart)(void), void *_gdt);
+extern void _sys_soc_resume(void (*_Cstart)(void), void *_gdt);
 
 /**
  * @brief Perform advanced sleep
@@ -73,7 +73,7 @@ extern void _AdvIdleStart(void (*_Cstart)(void), void *_gdt);
  *
  * @return  non-zero if advanced sleep occurred; otherwise zero
  */
-extern int _AdvIdleFunc(int32_t ticks);
+extern int _sys_soc_suspend(int32_t ticks);
 
 #endif /* CONFIG_ADVANCED_IDLE */
 
