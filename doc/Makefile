@@ -67,6 +67,7 @@ kconfig: scripts/genrest/genrest.py
 
 html: kconfig
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@mkdir -p $(BUILDDIR)/html/api
 	@cp -a html $(BUILDDIR)/html/api
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
