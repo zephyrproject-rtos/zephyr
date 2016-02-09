@@ -51,17 +51,6 @@ static struct bt_conn *conn_new(void)
 	return conn;
 }
 
-static struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
-{
-	struct bt_conn *conn = conn_new();
-
-	if (!conn) {
-		return NULL;
-	}
-
-	return conn;
-}
-
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
 	atomic_inc(&conn->ref);
@@ -181,9 +170,9 @@ void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
 
 	BT_DBG("handle %u", ev->conn_handle);
 
-	conn = bt_conn_add_le(&ev->peer_bda);
+	conn = conn_new();
 	if (!conn) {
-		BT_ERR("Unable to create conn");
+		BT_ERR("Unable to create new bt_conn object");
 		return;
 	}
 
