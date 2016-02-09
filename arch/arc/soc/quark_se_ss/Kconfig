@@ -164,6 +164,39 @@ config UART_CONSOLE_IRQ_PRI
 
 endif
 
+if SPI
+config SPI_DW
+	def_bool y
+config SPI_DW_CLOCK_GATE
+	def_bool n
+
+config SPI_DW_PORT_0
+	def_bool y
+config SPI_DW_PORT_0_PRI
+	default 1
+config SPI_DW_PORT_0_REGS
+	default 0x80010000
+config SPI_DW_PORT_0_ERROR_IRQ
+	default 30
+config SPI_DW_PORT_0_RX_IRQ
+	default 31
+config SPI_DW_PORT_0_TX_IRQ
+	default 32
+
+config SPI_DW_PORT_1
+	def_bool y
+config SPI_DW_PORT_1_PRI
+	default 1
+config SPI_DW_PORT_1_REGS
+	default 0x80010100
+config SPI_DW_PORT_1_ERROR_IRQ
+	default 33
+config SPI_DW_PORT_1_RX_IRQ
+	default 34
+config SPI_DW_PORT_1_TX_IRQ
+	default 35
+endif
+
 config KERNEL_INIT_PRIORITY_DEFAULT
 	default 40
 
@@ -181,5 +214,8 @@ config GPIO_DW_INIT_PRIORITY
 
 config I2C_INIT_PRIORITY
 	default 60
+
+config SPI_DW_INIT_PRIORITY
+	default 70 # It might require GPIO to be ready first
 
 endif #SOC_QUARK_SE_ARC
