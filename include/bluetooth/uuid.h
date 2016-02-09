@@ -236,7 +236,7 @@ struct bt_uuid_128 {
  *  @param u1 First Bluetooth UUID to compare
  *  @param u2 Second Bluetooth UUID to compare
  *
- *  @return negative value if <u1> < <u2>, 0 if <u1> == <u2>, else positive
+ *  @return negative value if @a u1 < @a u2, 0 if @a u1 == @a u2, else positive
  */
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
 
