@@ -204,7 +204,9 @@ void on_ble_gap_disconnect_evt(const struct ble_gap_disconnect_evt *ev)
 
 	BT_DBG("conn %p handle %u", conn, ev->conn_handle);
 
+	/* Drop the reference given by lookup_handle() */
 	bt_conn_unref(conn);
+	/* Drop the initial reference from conn_new() */
 	bt_conn_unref(conn);
 }
 
