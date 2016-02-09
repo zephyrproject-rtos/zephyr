@@ -1,7 +1,7 @@
 ccflags-y +=-I$(srctree)/lib/crypto/tinycrypt/include
 lib-$(CONFIG_TINYCRYPT) := source/utils.o
-lib-$(CONFIG_TINYCRYPT_ECC_DH) += source/ecc_dh.o
-lib-$(CONFIG_TINYCRYPT_ECC_DSA) += source/ecc_dsa.o
+lib-$(CONFIG_TINYCRYPT_ECC_DH) += source/ecc_dh.o source/ecc.o
+lib-$(CONFIG_TINYCRYPT_ECC_DSA) += source/ecc_dsa.o source/ecc.o
 lib-$(CONFIG_TINYCRYPT_AES) += source/aes_decrypt.o
 lib-$(CONFIG_TINYCRYPT_AES) += source/aes_encrypt.o
 lib-$(CONFIG_TINYCRYPT_AES_CBC) += source/cbc_mode.o
