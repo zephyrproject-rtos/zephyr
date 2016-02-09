@@ -115,26 +115,6 @@ extern struct bt_dev bt_dev;
 extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
-static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
-{
-	return memcmp(a, b, sizeof(*a));
-}
-
-static inline int bt_addr_le_cmp(const bt_addr_le_t *a, const bt_addr_le_t *b)
-{
-	return memcmp(a, b, sizeof(*a));
-}
-
-static inline void bt_addr_copy(bt_addr_t *dst, const bt_addr_t *src)
-{
-	memcpy(dst, src, sizeof(*dst));
-}
-
-static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
-{
-	memcpy(dst, src, sizeof(*dst));
-}
-
 static inline bool bt_addr_le_is_rpa(const bt_addr_le_t *addr)
 {
 	if (addr->type != BT_ADDR_LE_RANDOM)

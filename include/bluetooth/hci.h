@@ -20,6 +20,7 @@
 
 #include <toolchain.h>
 #include <stdint.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +40,26 @@ typedef struct {
 
 #define BT_ADDR_ANY    (&(bt_addr_t) {{0, 0, 0, 0, 0, 0} })
 #define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, {0, 0, 0, 0, 0, 0} })
+
+static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
+{
+	return memcmp(a, b, sizeof(*a));
+}
+
+static inline int bt_addr_le_cmp(const bt_addr_le_t *a, const bt_addr_le_t *b)
+{
+	return memcmp(a, b, sizeof(*a));
+}
+
+static inline void bt_addr_copy(bt_addr_t *dst, const bt_addr_t *src)
+{
+	memcpy(dst, src, sizeof(*dst));
+}
+
+static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
+{
+	memcpy(dst, src, sizeof(*dst));
+}
 
 /* HCI Error Codes */
 #define BT_HCI_ERR_UNKNOWN_CONN_ID		0x02
