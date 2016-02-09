@@ -431,12 +431,12 @@ void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *evt,
 	const struct bt_gatt_attr *attr = evt->attr;
 	struct ble_gatts_rw_reply_params reply_data;
 
+	BT_DBG("handle 0x%04x buf %p len %u", attr->handle, buf, buflen);
+
 	if (attr->write) {
 		reply_data.status = attr->write(NULL, attr, buf, buflen,
 						evt->offset);
 	}
-
-	BT_DBG("handle 0x%04x buf %p len %u", attr->handle, buf, buflen);
 
 	if (evt->reply) {
 		reply_data.conn_handle = evt->conn_handle;
