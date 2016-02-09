@@ -47,7 +47,7 @@ config  TINYCRYPT_SHA256_HMAC_PRNG
         depends on TINYCRYPT_SHA256_HMAC
         default n
         help
-          This option enables support for psudeo-random number
+          This option enables support for pseudo-random number
           generator.
 
 config  TINYCRYPT_ECC_DH
@@ -57,7 +57,7 @@ config  TINYCRYPT_ECC_DH
         default n
         help
           This option enables support for the Elliptic curve
-          Diffie-Helman anonymous key agreement protocol.
+          Diffie-Hellman anonymous key agreement protocol.
 
 config  TINYCRYPT_ECC_DSA
         bool
@@ -65,7 +65,7 @@ config  TINYCRYPT_ECC_DSA
         depends on TINYCRYPT
         default n
         help
-          This option enables support for the Elliptic Curbe Digital
+          This option enables support for the Elliptic Curve Digital
           Signature Algorithm (ECDSA).
 
 config  TINYCRYPT_AES
