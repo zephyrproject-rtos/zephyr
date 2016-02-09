@@ -1490,7 +1490,7 @@ def parse_arguments():
             help="Do not delete the outdir before building. Will result in "
                  "faster compilation since builds will be incremental")
     parser.add_argument("-T", "--testcase-root",
-            default="%s/samples" % ZEPHYR_BASE,
+            default=ZEPHYR_BASE,
             help="Base directory to recursively search for test cases. All "
                  "testcase.ini files under here will be processed")
     parser.add_argument("-A", "--arch-root",
