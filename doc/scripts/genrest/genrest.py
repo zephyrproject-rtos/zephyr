@@ -57,8 +57,24 @@ f.write(""".. _configuration:
 Configuration Options Reference Guide
 #####################################
 
-The configuration options' information is extracted directly from :program:`Kconfig` using the
-:file:`~/doc/scripts/genrest/genrest.py` script.
+Introduction
+************
+
+Kconfig files describe the configuration symbols supported in the build
+system, the logical organization and structure that group the symbols in menus
+and sub-menus, and the relationships between the different configuration
+symbols that govern the valid configuration combinations.
+
+The Kconfig files are distributed across the build directory tree. The files
+are organized based on their common characteristics and on what new symbols
+they add to the configuration menus.
+
+The configuration options' information is extracted directly from :program:`Kconfig`
+using the :file:`~/doc/scripts/genrest/genrest.py` script.
+
+
+Supported Options
+*****************
 
 """)
 f.write(".. toctree::\n     :maxdepth: 2\n\n")
