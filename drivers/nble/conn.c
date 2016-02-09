@@ -86,6 +86,18 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 
 struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 {
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (!atomic_get(&conns[i].ref)) {
+			continue;
+		}
+
+		if (!bt_addr_le_cmp(peer, &conns[i].dst)) {
+			return bt_conn_ref(&conns[i]);
+		}
+	}
+
 	return NULL;
 }
 
@@ -177,6 +189,7 @@ void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
 	}
 
 	conn->handle = ev->conn_handle;
+	bt_addr_le_copy(&conn->dst, &ev->peer_bda);
 }
 
 void on_ble_gap_disconnect_evt(const struct ble_gap_disconnect_evt *ev)

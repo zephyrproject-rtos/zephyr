@@ -17,4 +17,5 @@
 struct bt_conn {
 	uint16_t handle;
 	atomic_t ref;
+	bt_addr_le_t dst;
 };
