@@ -103,12 +103,17 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 {
-	return NULL;
+	return &conn->dst;
 }
 
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
-	return -ENOSYS;
+	memset(info, 0, sizeof(*info));
+
+	info->type = BT_CONN_TYPE_LE;
+	info->le.dst = &conn->dst;
+
+	return 0;
 }
 
 int bt_conn_le_param_update(struct bt_conn *conn,
