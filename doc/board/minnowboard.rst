@@ -1,7 +1,7 @@
 .. _minnowboard:
 
-Board Configuration: Minnowboard Max (minnowboard)
-##################################################
+Minnowboard Max
+###############
 
 Overview
 ********

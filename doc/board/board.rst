@@ -9,42 +9,36 @@ The following boards are currently supported:
    Developers can create additional board configurations which allow
    Zephyr-based applications to run on other target systems.
 
-x86 Instruction Set Architectures
-=================================
+x86 Instruction Set
+====================
 
-+------------------------+------------------------+
-| Board Configuration    | Supported              |
-| Reference              | Target Systems         |
-+========================+========================+
-| :ref:`minnowboard`     | MinnowBoard Max        |
-+------------------------+------------------------+
-| :ref:`qemu_x86`        | QEMU 2.1               |
-+------------------------+------------------------+
-| :ref:`quark_d2000_crb` | Quark D2000 Boards     |
-+------------------------+------------------------+
-| :ref:`quark_se_ctb`    | Quark SE Boards        |
-+------------------------+------------------------+
-| :ref:`arduino_101`     | Arduino 101 Board      |
-+------------------------+------------------------+
-| :ref:`galileo`         | Galileo and            |
-|                        | Galileo Gen 2          |
-+------------------------+------------------------+
+.. toctree::
+      :maxdepth: 1
+
+      arduino_101.rst
+      quark_d2000_crb.rst
+      galileo.rst
+      minnowboard.rst
+      qemu_x86.rst
 
 
-ARM (v7-M and v7E-M) Instruction Set Architectures
-==================================================
+ARM (v7-M and v7E-M) Instruction Set
+====================================
 
-+------------------------+------------------------+
-| Board Configuration    | Supported              |
-| Reference              | Target Systems         |
-+========================+========================+
-| :ref:`qemu_cortex_m3`  | QEMU 2.1 + patch       |
-+------------------------+------------------------+
-| :ref:`arduino_due`     | Arduino Due Board      |
-+------------------------+------------------------+
-| :ref:`frdm_k64f`       | Freescale Freedom      |
-|                        | Development Platform   |
-+------------------------+------------------------+
+.. toctree::
+       :maxdepth: 1
 
-For details on how to flash a Zephyr image, see the
-respective board reference documentation.
+       qemu_cortex_m3
+       arduino_due
+       frdm_k64f
+
+ARC EM4 Instruction Set
+====================================
+
+.. toctree::
+       :maxdepth: 1
+
+       arduino_101
+
+For details on how to flash a Zephyr image, see the respective board reference
+documentation.

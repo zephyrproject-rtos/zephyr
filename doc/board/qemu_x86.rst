@@ -1,7 +1,7 @@
 .. _qemu_x86:
 
-Board Configuration: QEMU X86 (qemu_x86)
-########################################
+X86 Emulation (QEMU)
+####################
 
 Overview
 ********

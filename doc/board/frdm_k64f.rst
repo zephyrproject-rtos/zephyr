@@ -1,7 +1,7 @@
 .. _frdm_k64f:
 
-Board Configuration: frdm_k64f
-#####################################
+Freescale FRDM-K64F
+###################
 
 Overview
 ********

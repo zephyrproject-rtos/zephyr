@@ -1,7 +1,7 @@
 .. _arduino_101:
 
-Board Configuration: arduino 101
-################################
+Arduino 101
+###########
 
 Overview
 ********
@@ -16,7 +16,7 @@ flash an ARC and an X86 image to use both.  Developers can use the
 Kernel that can be flashed and run on the Arduino 101 platform.  The default
 configuration for Arduino 101 boards can be found in
 :file:`boards/arduino_101/arduino_101_defconfig` for the X86 and
-:file:`boards/arduino_101/arduino_101_sss_defconfig` for the ARC.
+:file:`boards/arduino_101_sss/arduino_101_sss_defconfig` for the ARC.
 
 Board Layout
 ************

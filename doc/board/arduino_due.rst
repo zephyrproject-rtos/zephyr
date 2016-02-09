@@ -1,7 +1,7 @@
 .. _arduino_due:
 
-Board Configuration: arduino_due
-################################
+Arduino Due
+###########
 
 Overview
 ********

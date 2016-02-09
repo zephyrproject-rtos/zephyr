@@ -1,7 +1,7 @@
 .. _galileo:
 
-Board Configuration: galileo
-###############################
+Galileo Gen1/Gen2
+#################
 
 Overview
 ********
