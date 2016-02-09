@@ -49,7 +49,6 @@
 #endif
 
 #ifdef CONFIG_ADVANCED_IDLE
-	GDATA(_AdvIdleCheckSleep)
 	GDATA(_sys_soc_resume)
 #endif /* CONFIG_ADVANCED_IDLE */
 
@@ -126,34 +125,6 @@ __csSet:
         mov  %edi, __start_tsc+4    	/* high value */
 #endif
 
-#ifdef CONFIG_ADVANCED_IDLE
-
-	/*
-	 * Set up the temporary stack to call the _AdvIdleCheckSleep routine
-	 * We use the separate stack here in order to avoid the memory
-	 * corruption if the system recovers from deep sleep
-	 */
-	movl	$_soc_resume_stack, %esp
-	addl	$CONFIG_ADV_IDLE_STACK_SIZE, %esp
-
-	/* align to stack boundary: ROUND_DOWN (%esp, 4) */
-
-	andl	$0xfffffffc, %esp
-
-	/*
-	 * Invoke _AdvIdleCheckSleep() routine that checks if we are restoring
-	 * from deep sleep or not. The routine returns non-zero if the kernel
-	 * is recovering from deep sleep and to 0 if a cold boot is needed. The
-	 * kernel can skip floating point initialization, BSS initialization,
-	 * and data initialization if recovering from deep sleep.
-	 */
-
-	call	_AdvIdleCheckSleep
-	cmpl	$0, %eax
-	jne	memInitDone
-
-#endif /* CONFIG_ADVANCED_IDLE */
-
 #if !defined(CONFIG_FLOAT)
 	/*
 	 * Force an #NM exception for floating point instructions
@@ -196,6 +167,47 @@ __csSet:
   #endif /* CONFIG_SSE */
 
 #endif /* !CONFIG_FLOAT */
+
+	/*
+	 * Set the stack pointer to the area used for the interrupt stack.
+	 * Note this stack is used during the execution of __start() and
+	 * _Cstart() until the multi-tasking kernel is initialized.  The
+	 * dual-purposing of this area of memory is safe since
+	 * interrupts are disabled until the first context switch.
+	 *
+	 * This is also used to call the _sys_soc_resume() routine
+	 * to avoid memory corruption if the system is resuming from
+	 * deep sleep. It is important that _sys_soc_resume() restores
+	 * the stack pointer to what it was at deep sleep before
+         * enabling interrupts.  This is necessary to avoid
+	 * interfering with interrupt handler use of this stack.
+	 * If it is a cold boot then _sys_soc_resume() should not do
+	 * anything and must return immediately.
+	 */
+
+	movl	$_interrupt_stack, %esp
+	addl	$CONFIG_ISR_STACK_SIZE, %esp
+
+	/* align to stack boundary: ROUND_DOWN (%esp, 4) */
+
+	andl	$0xfffffffc, %esp
+
+#ifdef CONFIG_ADVANCED_IDLE
+	/*
+	 * Invoke _sys_soc_resume() hook to handle resume from deep sleep.
+	 * It should first check whether system is recovering from
+	 * deep sleep state. If it is, then this function should restore
+	 * states and resume at the point system went to deep sleep.
+	 * In this case this function will never return.
+	 *
+	 * If system is not recovering from deep sleep then it is a
+	 * cold boot.  In this case, this function would immediately
+	 * return and execution falls through to cold boot path.
+	 */
+
+	call	_sys_soc_resume
+
+#endif /* CONFIG_ADVANCED_IDLE */
 
 #ifdef CONFIG_XIP
 	/*
@@ -283,53 +295,14 @@ bssWords:
 
 #endif /* CONFIG_SSE */
 
-memInitDone:
-
-	/*
-	 * Set the stack pointer to the area used for the interrupt stack.
-	 * Note this stack is only used during the execution of __start() and
-	 * _Cstart(), i.e. only until the multi-tasking kernel is
-	 * initialized.  The dual-purposing of this area of memory is safe since
-	 * interrupts are disabled until the first context switch.
-	 */
-
-	movl	$_interrupt_stack, %esp
-	addl	$CONFIG_ISR_STACK_SIZE, %esp
-
-	/* align to stack boundary: ROUND_DOWN (%esp, 4) */
-
-	andl	$0xfffffffc, %esp
-
 #ifdef CONFIG_GDT_DYNAMIC
 	/* activate RAM-based Global Descriptor Table (GDT) */
 	lgdt	%ds:_gdt
 #endif
 
-
-#if defined (CONFIG_ADVANCED_IDLE)
-	/*
-	 * Invoke _sys_soc_resume(_Cstart, _gdt) by jumping to it.
-	 * If it's a cold boot, this routine jumps to _Cstart and the normal
-	 * kernel boot sequence continues; otherwise, it uses the TSS info
-	 * saved in the GDT to resumes kernel processing at the point it was
-	 * when the system went into deep sleep; that is, _sys_soc_suspend()
-	 * completes and returns a non-zero value.
-	 */
-
-#if CONFIG_X86_IAMCU
-	movl	$_Cstart, %eax
-	movl	$_gdt, %edx
-#else
-	pushl	$_gdt
-	pushl	$_Cstart
-#endif
-	call	_sys_soc_resume
-#else
 	/* Jump to C portion of kernel initialization and never return */
 
 	jmp	_Cstart
-
-#endif /* CONFIG_ADVANCED_IDLE */
 
 #if defined(CONFIG_SSE)
 
@@ -441,10 +414,3 @@ _gdt_rom_entries:
 	.byte   0x00		/* base : 00xxxxxx */
 
 _gdt_rom_end:
-
-#ifdef CONFIG_ADVANCED_IDLE
-	.section .NOINIT
-	.balign 4,0x90
-_soc_resume_stack:
-	.fill CONFIG_ADV_IDLE_STACK_SIZE
-#endif

@@ -279,21 +279,28 @@ void _sys_power_save_idle(int32_t ticks)
 	}
 #endif /* CONFIG_TICKLESS_IDLE */
 
+	nano_cpu_set_idle(ticks);
 #ifdef CONFIG_ADVANCED_IDLE
 	/*
-	 * Call the advanced sleep function, which checks if the system should
-	 * enter a deep sleep state. If so, the function will return a non-zero
-	 * value when the system resumes here after the deep sleep ends.
-	 * If the time to sleep is too short to go to advanced sleep mode, the
-	 * function returns zero immediately and we do normal idle processing.
+	 * Call the suspend hook function, which checks if the system should
+	 * enter deep sleep or low power state. The function will return a
+	 * non-zero value if system was put in deep sleep or low power state.
+	 * If the time available is too short to go to deep sleep or
+	 * low power state, then the function returns zero immediately
+	 * and we do normal idle processing.
+	 *
+	 * This function can turn off devices without entering deep sleep
+	 * or cpu low power state.  In this case it should return zero to
+	 * let kernel enter its own tickless idle wait.
+	 *
+	 * This function is entered with interrupts disabled. If the function
+	 * returns a non-zero value then it should re-enable interrupts before
+	 * returning.
 	 */
-
 	if (_sys_soc_suspend(ticks) == 0) {
-		nano_cpu_set_idle(ticks);
 		nano_cpu_idle();
 	}
 #else
-	nano_cpu_set_idle(ticks);
 	nano_cpu_idle();
 #endif /* CONFIG_ADVANCED_IDLE */
 }
@@ -310,6 +317,18 @@ void _sys_power_save_idle(int32_t ticks)
  */
 void _sys_power_save_idle_exit(int32_t ticks)
 {
+#ifdef CONFIG_ADVANCED_IDLE
+	/* Any idle wait based on CPU low power state will be exited by
+	 * interrupt. This function is called within that interrupt's
+	 * context.  _sys_soc_resume() needs to be called here mainly
+	 * to handle exit from CPU low power states. This gives an
+	 * oppurtunity for device states altered in _sys_soc_suspend()
+	 * to be restored before the kernel schedules another thread.
+	 * _sys_soc_resume() is not called from here for deep sleep
+	 * exit. Deep sleep recovery happens at cold boot path.
+	 */
+	_sys_soc_resume();
+#endif
 #ifdef CONFIG_TICKLESS_IDLE
 	if ((ticks == TICKS_UNLIMITED) || ticks >= _sys_idle_threshold_ticks) {
 		/* Resume normal periodic system timer interrupts */

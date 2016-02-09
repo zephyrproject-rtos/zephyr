@@ -31,6 +31,7 @@ config ARM
 config X86
 	bool "x86 architecture"
 	select NANOKERNEL_TICKLESS_IDLE_SUPPORTED
+	select ADVANCED_IDLE_SUPPORTED
 
 endchoice
 
