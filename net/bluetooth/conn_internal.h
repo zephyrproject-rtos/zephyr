@@ -31,7 +31,6 @@ enum {
 	BT_CONN_AUTO_CONNECT,
 };
 
-
 struct bt_conn_le {
 	bt_addr_le_t		dst;
 
