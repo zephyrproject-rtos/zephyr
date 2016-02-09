@@ -27,6 +27,7 @@
 #include "conn_internal.h"
 
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_conn_cb *callback_list;
 
 static struct bt_conn *conn_new(void)
 {
@@ -145,6 +146,8 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 
 void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
+	cb->_next = callback_list;
+	callback_list = cb;
 }
 
 int bt_le_set_auto_conn(bt_addr_le_t *addr,
@@ -181,6 +184,28 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn, bool match)
 
 /* Connection related events */
 
+static void notify_connected(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->connected) {
+			cb->connected(conn, 0);
+		}
+	}
+}
+
+static void notify_disconnected(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->disconnected) {
+			cb->disconnected(conn, 0);
+		}
+	}
+}
+
 void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
 {
 	struct bt_conn *conn;
@@ -195,6 +220,8 @@ void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
 
 	conn->handle = ev->conn_handle;
 	bt_addr_le_copy(&conn->dst, &ev->peer_bda);
+
+	notify_connected(conn);
 }
 
 void on_ble_gap_disconnect_evt(const struct ble_gap_disconnect_evt *ev)
@@ -208,6 +235,8 @@ void on_ble_gap_disconnect_evt(const struct ble_gap_disconnect_evt *ev)
 	}
 
 	BT_DBG("conn %p handle %u", conn, ev->conn_handle);
+
+	notify_disconnected(conn);
 
 	/* Drop the reference given by lookup_handle() */
 	bt_conn_unref(conn);
