@@ -51,7 +51,7 @@ config BLUETOOTH_SMP
 
 config	BLUETOOTH_MAX_CONN
 	int
-	default 1
+	default 6
 
 config	BLUETOOTH_MAX_PAIRED
 	int
