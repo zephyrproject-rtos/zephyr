@@ -841,7 +841,7 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 	}
 
 	if (!cc2520_pending_packet()) {
-		return 0;
+		return -EAGAIN;
 	}
 
 	cc2520_packets_read++;
@@ -893,7 +893,7 @@ error:
 	print_errors();
 
 	flushrx();
-	return 0;
+	return -EINVAL;
 }
 
 static void read_packet(void)
