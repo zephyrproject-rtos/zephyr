@@ -245,6 +245,73 @@ void _TimestampClose(void)
 	_TIMESTAMP_CTRL = 0x0;  /* disable oscillator */
 }
 
+#elif defined(CONFIG_SOC_ATMEL_SAM3)
+/* Atmel SAM3 family processor - use RTT (Real-time Timer) */
+
+#include <soc.h>
+
+#define _TIMESTAMP_ADDR (0x400E1A30)
+
+#define _TIMESTAMP_MODE (*((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x00)))
+#define _TIMESTAMP_VAL (*((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x08)))
+
+/**
+ *
+ * @brief Timestamp initialization
+ *
+ * This routine initializes the timestamp timer.
+ *
+ * @return N/A
+ */
+void _TimestampOpen(void)
+{
+	/* enable RTT clock from PMC */
+	__PMC->pcer0 = (1 << PID_RTT);
+
+	/* Reset RTT and set prescaler to 1 */
+	_TIMESTAMP_MODE = (1 << 18) | (1 << 0);
+}
+
+/**
+ *
+ * @brief Timestamp timer read
+ *
+ * This routine returns the timestamp value.
+ *
+ * @return timestamp value
+ */
+uint32_t _TimestampRead(void)
+{
+	static uint32_t last_val;
+	uint32_t tmr_val = _TIMESTAMP_VAL;
+	uint32_t ticks;
+
+	/* handle rollover */
+	if (tmr_val < last_val) {
+		ticks =  ((0xFFFFFFFF - last_val)) + 1 + tmr_val;
+	} else {
+		ticks = tmr_val - last_val;
+	}
+
+	last_val = tmr_val;
+
+	return ticks;
+}
+
+/**
+ *
+ * @brief Timestamp release
+ *
+ * This routine releases the timestamp timer.
+ *
+ * @return N/A
+ */
+void _TimestampClose(void)
+{
+	/* disable RTT clock from PMC */
+	__PMC->pcdr0 = (1 << PID_RTT);
+}
+
 #else
 #error "Unknown platform"
 #endif /* CONFIG_SOC_xxx */
