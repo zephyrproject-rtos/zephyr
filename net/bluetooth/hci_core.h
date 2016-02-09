@@ -102,12 +102,6 @@ struct bt_dev {
 
 	/* Registered HCI driver */
 	struct bt_driver	*drv;
-
-/* TODO check tinycrypt define when ECC is added */
-#if defined(CONFIG_BLUETOOTH_SMP) && !defined(CONFIG_TINYCRYPT_ECC)
-	/* Public Key */
-	uint8_t			pkey[64];
-#endif
 };
 
 extern struct bt_dev bt_dev;

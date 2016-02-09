@@ -177,6 +177,8 @@ static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 static bool sc_supported;
 static bool sc_local_pkey_valid;
 
+static uint8_t sc_pkey[64];
+
 static uint8_t get_io_capa(void)
 {
 	if (!bt_auth) {
@@ -931,7 +933,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 
 	req = net_buf_add(buf, sizeof(*req));
 
-	if (smp_f4(bt_dev.pkey, smp->pkey, smp->prnd, r, req->val)) {
+	if (smp_f4(sc_pkey, smp->pkey, smp->prnd, r, req->val)) {
 		net_buf_unref(buf);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -1585,8 +1587,8 @@ static uint8_t sc_send_public_key(struct bt_smp *smp)
 
 	req = net_buf_add(req_buf, sizeof(*req));
 
-	memcpy(req->x, bt_dev.pkey, sizeof(req->x));
-	memcpy(req->y, &bt_dev.pkey[32], sizeof(req->y));
+	memcpy(req->x, sc_pkey, sizeof(req->x));
+	memcpy(req->y, &sc_pkey[32], sizeof(req->y));
 
 	smp_send(smp, req_buf);
 
@@ -1948,7 +1950,7 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	if (smp_f4(smp->pkey, bt_dev.pkey, smp->rrnd, r, cfm)) {
+	if (smp_f4(smp->pkey, sc_pkey, smp->rrnd, r, cfm)) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1987,7 +1989,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		switch (smp->method) {
 		case PASSKEY_CONFIRM:
 			/* compare passkey before calculating LTK */
-			if (smp_g2(bt_dev.pkey, smp->pkey, smp->prnd, smp->rrnd,
+			if (smp_g2(sc_pkey, smp->pkey, smp->prnd, smp->rrnd,
 				   &passkey)) {
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
@@ -2029,7 +2031,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	switch (smp->method) {
 	case PASSKEY_CONFIRM:
-		if (smp_g2(smp->pkey, bt_dev.pkey, smp->rrnd, smp->prnd,
+		if (smp_g2(smp->pkey, sc_pkey, smp->rrnd, smp->prnd,
 			   &passkey)) {
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -2576,12 +2578,13 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
-void bt_smp_pkey_ready(void)
+void bt_smp_pkey_ready(const uint8_t *pkey)
 {
 	int i;
 
 	BT_DBG("");
 
+	memcpy(sc_pkey, pkey, 64);
 	sc_local_pkey_valid = true;
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {

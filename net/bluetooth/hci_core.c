@@ -1069,8 +1069,7 @@ static void le_pkey_complete(struct net_buf *buf)
 		return;
 	}
 
-	memcpy(bt_dev.pkey, evt->key, sizeof(bt_dev.pkey));
-	bt_smp_pkey_ready();
+	bt_smp_pkey_ready(evt->key);
 }
 
 static void le_dhkey_complete(struct net_buf *buf)
