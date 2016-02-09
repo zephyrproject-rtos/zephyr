@@ -256,22 +256,6 @@ void ble_log(const struct ble_log_s *param, char *format, uint8_t len)
 #endif
 }
 
-void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
-{
-	BT_DBG("handle %u", ev->conn_handle);
-}
-
-void on_ble_gap_disconnect_evt(const struct ble_gap_disconnect_evt *ev)
-{
-	BT_DBG("handle %u", ev->conn_handle);
-}
-
-void on_ble_gap_conn_update_evt(const struct ble_gap_conn_update_evt *ev)
-{
-	BT_DBG("handle %u interval %u", ev->conn_handle,
-	       ev->conn_values.interval);
-}
-
 void on_ble_gap_sm_status_evt(const struct ble_gap_sm_status_evt *ev)
 {
 	BT_DBG("");

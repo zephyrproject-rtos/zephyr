@@ -16,16 +16,83 @@
 
 #include <errno.h>
 
+#include <atomic.h>
+#include <misc/util.h>
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/log.h>
+
+#include "gap_internal.h"
+#include "conn_internal.h"
+
+static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
+
+static struct bt_conn *conn_new(void)
+{
+	struct bt_conn *conn = NULL;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (!atomic_get(&conns[i].ref)) {
+			conn = &conns[i];
+			break;
+		}
+	}
+
+	if (!conn) {
+		return NULL;
+	}
+
+	memset(conn, 0, sizeof(*conn));
+
+	atomic_set(&conn->ref, 1);
+
+	return conn;
+}
+
+static struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
+{
+	struct bt_conn *conn = conn_new();
+
+	if (!conn) {
+		return NULL;
+	}
+
+	return conn;
+}
 
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
-	return NULL;
+	atomic_inc(&conn->ref);
+
+	BT_DBG("handle %u ref %u", conn->handle, atomic_get(&conn->ref));
+
+	return conn;
 }
 
 void bt_conn_unref(struct bt_conn *conn)
 {
+	atomic_dec(&conn->ref);
+
+	BT_DBG("handle %u ref %u", conn->handle, atomic_get(&conn->ref));
+}
+
+struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (!atomic_get(&conns[i].ref)) {
+			continue;
+		}
+
+		if (conns[i].handle == handle) {
+			return bt_conn_ref(&conns[i]);
+		}
+	}
+
+	return NULL;
 }
 
 struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
@@ -104,4 +171,52 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 int bt_conn_auth_passkey_confirm(struct bt_conn *conn, bool match)
 {
 	return -ENOSYS;
+}
+
+/* Connection related events */
+
+void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
+{
+	struct bt_conn *conn;
+
+	BT_DBG("handle %u", ev->conn_handle);
+
+	conn = bt_conn_add_le(&ev->peer_bda);
+	if (!conn) {
+		BT_ERR("Unable to create conn");
+		return;
+	}
+
+	conn->handle = ev->conn_handle;
+}
+
+void on_ble_gap_disconnect_evt(const struct ble_gap_disconnect_evt *ev)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(ev->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
+		return;
+	}
+
+	BT_DBG("conn %p handle %u", conn, ev->conn_handle);
+
+	bt_conn_unref(conn);
+	bt_conn_unref(conn);
+}
+
+void on_ble_gap_conn_update_evt(const struct ble_gap_conn_update_evt *ev)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(ev->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
+		return;
+	}
+
+	BT_DBG("conn %p handle %u", conn, ev->conn_handle);
+
+	bt_conn_unref(conn);
 }
