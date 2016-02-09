@@ -132,7 +132,6 @@ static int nble_read(struct device *uart, uint8_t *buf,
 			break;
 		}
 
-		BT_DBG("read %d remaining %d", rx, len - rx);
 		len -= rx;
 		total += rx;
 		buf += rx;
