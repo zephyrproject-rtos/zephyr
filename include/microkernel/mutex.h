@@ -52,32 +52,33 @@ extern void _task_mutex_unlock(kmutex_t mutex);
 	}
 
 /**
- * @brief Lock mutex
+ * @brief Lock mutex.
  *
- * This routine locks mutex @a mutex. If the mutex is currently locked by
- * another task the routine either waits until it becomes available, or until
- * the specified time limit is reached.
+ * This routine locks mutex @a mutex. When the mutex is locked by another task,
+ * the routine will either wait until it becomes available, or until a specified
+ * time limit is reached.
  *
- * A task is permitted to lock a mutex it has already locked; in such a case
+ * A task is permitted to lock a mutex it has already locked; in such a case,
  * this routine immediately succeeds.
  *
  * @param mutex Mutex name.
- * @param timeout Affects the action taken should the mutex already be locked.
- * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
- * long as necessary. Otherwise wait up to the specified number of ticks before
- * timing out.
+ * @param timeout Determine the action to take when the mutex is already locked.
+ *   For TICKS_NONE, return immediately.
+ *   For TICKS_UNLIMITED, wait as long as necessary.
+ *   Otherwise, wait up to the specified number of ticks before timing out.
  *
- * @retval RC_OK Successfully locked mutex
- * @retval RC_TIME Timed out while waiting for mutex
+ * @retval RC_OK Successfully locked mutex.
+ * @retval RC_TIME Timed out while waiting for mutex.
  * @retval RC_FAIL Failed to immediately lock mutex when
- * @a timeout = TICKS_NONE
+ * @a timeout = TICKS_NONE.
+ * @sa TICKS_NONE, TICKS_UNLIMITED
  */
 extern int task_mutex_lock(kmutex_t mutex, int32_t timeout);
 
 /**
  * @brief Unlock mutex.
  *
- * This routine unlocks mutex @a m. The mutex must currently be locked by the
+ * This routine unlocks mutex @a m. The mutex must already be locked by the
  * requesting task.
  *
  * The mutex cannot be claimed by another task until it has been unlocked by
