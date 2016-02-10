@@ -74,81 +74,81 @@ extern void _task_group_ioctl(ktask_group_t, int);
  */
 
 /**
- * @brief Yield the CPU to another task
+ * @brief Yield the CPU to another task.
  *
- * This routine yields the processor to the next equal priority task that is
- * runnable. Using task_yield(), it is possible to achieve the effect of round
- * robin scheduling. If no task with the same priority is runnable then no task
- * switch occurs and the calling task resumes execution.
+ * This routine yields the processor to the next-equal priority runnable
+ * task. With task_yield(), the effect of round-robin scheduling is
+ * possible. When no task of equal priority is runnable, no task switch
+ * occurs, and the calling task resumes execution.
  *
  * @return N/A
  */
 extern void task_yield(void);
 
 /**
- * @brief Set the priority of a task
+ * @brief Set the priority of a task.
  *
  * This routine changes the priority of the specified task.
  *
- * The call has immediate effect. If the calling task is no longer the highest
- * priority runnable task, a task switch occurs.
+ * The call has immediate effect. When the calling task no longer is the
+ * highest-priority runnable task, a task switch occurs.
  *
- * The priority should be specified in the range 0 to 62. 0 is the highest
- * priority.
+ * Priority can be assigned in the range 0 to 62, where 0 is the
+ * highest priority.
  *
- * @param task Task whose priority is to be set
- * @param prio New priority
+ * @param task Task whose priority is to be set.
+ * @param prio New priority.
  *
  * @return N/A
  */
 extern void task_priority_set(ktask_t task, kpriority_t prio);
 
 /**
- * @brief Set the entry point of a task
+ * @brief Set the entry point of a task.
  *
- * This routine sets the entry point of a task to a given routine. It is only
- * needed if the entry point is different from that specified in the project
- * file. It must be called before task_start() to have any effect, so it
- * cannot work with members of the EXE group or of any group that automatically
- * starts when the application is loaded.
+ * This routine sets the entry point of a task to a given routine. It is
+ * needed only when an entry point differs from what is set in the project
+ * file. In order to have any effect, it must be called before task_start(),
+ * and it cannot work with members of the EXE group or with any group that
+ * starts automatically on application loading.
  *
- * The routine is executed when the task is started
+ * The routine is executed when the task is started.
  *
  * @param task Task to operate on.
- * @param func Entry point
+ * @param func Entry point.
  *
  * @return N/A
  */
 extern void task_entry_set(ktask_t task, void (*func)(void));
 
 /**
- * @brief Install an abort handler
+ * @brief Install an abort handler.
  *
  * This routine installs an abort handler for the calling task.
  *
- * The abort handler is run when the calling task is aborted by a _TaskAbort()
+ * The abort handler runs when the calling task is aborted by a _TaskAbort()
  * or task_group_abort() call.
  *
- * Each call to task_abort_handler_set() replaces the previously installed
+ * Each call to task_abort_handler_set() replaces the previously-installed
  * handler.
  *
  * To remove an abort handler, set the parameter to NULL as below:
  *      task_abort_handler_set (NULL)
  *
- * @param func Abort handler
+ * @param func Abort handler.
  *
  * @return N/A
  */
 extern void task_abort_handler_set(void (*func)(void));
 
 /**
- * @brief Issue a custom call from within the microkernel server fiber
+ * @brief Issue a custom call from within the microkernel server fiber.
  *
  * This routine issues a request to execute a function from within the context
  * of the microkernel server fiber.
  *
- * @param func function to call from within the microkernel server fiber
- * @param argp argument to pass to custom function
+ * @param func Function to call from within the microkernel server fiber.
+ * @param argp Argument to pass to custom function.
  *
  * @return return value from custom @a func call
  */
@@ -173,14 +173,14 @@ extern int task_offload_to_fiber(int (*func)(), void *argp);
 #define TASK_GROUP_UNBLOCK 5
 
 /**
- * @brief Get task identifier
+ * @brief Gets task identifier
  *
  * @return identifier for current task
  */
 extern ktask_t task_id_get(void);
 
 /**
- * @brief Get task priority
+ * @brief Gets task priority
  *
  * @return priority of current task
  */
@@ -312,7 +312,7 @@ extern void task_group_leave(uint32_t groups);
  * @param name Name of the task.
  * @param priority Priority of task.
  * @param entry Entry function.
- * @param stack_size size of stack (in bytes)
+ * @param stack_size Size of stack (in bytes)
  * @param groups Groups this task belong to.
  */
 #define DEFINE_TASK(name, priority, entry, stack_size, groups) \
