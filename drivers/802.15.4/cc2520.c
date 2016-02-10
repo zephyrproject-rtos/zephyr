@@ -866,11 +866,6 @@ static int cc2520_read(void *buf, unsigned short bufsize)
 	if (footer[1] & FOOTER1_CRC_OK) {
 		cc2520_last_rssi = footer[0];
 		cc2520_last_correlation = footer[1] & FOOTER1_CORRELATION;
-
-		packetbuf_set_attr(buf, PACKETBUF_ATTR_RSSI, cc2520_last_rssi);
-		packetbuf_set_attr(buf, PACKETBUF_ATTR_LINK_QUALITY,
-				   cc2520_last_correlation);
-
 	} else {
 		goto error;
 	}
@@ -916,6 +911,9 @@ static void read_packet(void)
 		goto out;
 	}
 
+	packetbuf_set_attr(buf, PACKETBUF_ATTR_RSSI, cc2520_last_rssi);
+	packetbuf_set_attr(buf, PACKETBUF_ATTR_LINK_QUALITY,
+			   cc2520_last_correlation);
 	packetbuf_set_datalen(buf, len);
 
 	DBG("%s: received %d bytes\n", __func__, len);
