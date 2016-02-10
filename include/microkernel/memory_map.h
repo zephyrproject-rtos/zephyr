@@ -57,7 +57,7 @@ extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
  */
 
 /**
- * @brief Read the number of used blocks in a memory map
+ * @brief Read the number of used blocks in a memory map.
  *
  * This routine returns the number of blocks in use for the memory map.
  *
@@ -68,7 +68,7 @@ extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
 extern int task_mem_map_used_get(kmemory_map_t map);
 
 /**
- * @brief Return memory map block
+ * @brief Return memory map block.
  *
  * This routine returns a block to the specified memory map.
  *
@@ -80,32 +80,33 @@ extern int task_mem_map_used_get(kmemory_map_t map);
 #define task_mem_map_free(m, p) _task_mem_map_free(m, p)
 
 /**
- * @brief Allocate memory map block
+ * @brief Allocate memory map block.
  *
  * This routine allocates a block from memory map @a mmap, and saves the
- * block's address in the area indicated by @a mptr. If no block is available
+ * block's address in the area indicated by @a mptr. When no block is available,
  * the routine waits until either one can be allocated, or until the specified
  * time limit is reached.
  *
  * @param mmap Memory map name.
  * @param mptr Pointer to memory block address area.
- * @param timeout Affects the action taken should the memory map be exhausted.
- * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
- * long as necessary. Otherwise wait up to the specified number of ticks before
- * timing out.
+ * @param timeout Determines the action to take when the memory map is exhausted.
+ *   For TICKS_NONE, return immediately.
+ *   For TICKS_UNLIMITED, wait as long as necessary.
+ *   Otherwise, wait up to the specified number of ticks before timing out.
  *
  * @retval RC_OK Successfully allocated memory block.
  * @retval RC_TIME Timed out while waiting for memory block.
  * @retval RC_FAIL Failed to immediately allocate memory block when
- * @a timeout = TICKS_NONE
+ * @a timeout = TICKS_NONE.
+ * @sa TICKS_NONE, TICKS_UNLIMITED
  */
 extern int task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t timeout);
 
 /**
  * @brief Define a private microkernel memory map.
  *
- * @param name       Memory map name.
- * @param blocks     Number of blocks.
+ * @param name Memory map name.
+ * @param blocks Number of blocks.
  * @param block_size Size of each block, in bytes.
  */
 #define DEFINE_MEM_MAP(name, blocks, block_size) \
