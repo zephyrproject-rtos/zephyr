@@ -47,6 +47,16 @@ config BLUETOOTH_TINYCRYPT
 	  "If this option is set TinyCrypt library is used for Bluetooth
 	  cryptographic operations. If not set controller crypto is used"
 
+config BLUETOOTH_TINYCRYPT_ECC
+	bool "Use TinyCrypt library for ECDH"
+	default n
+	depends on BLUETOOTH_TINYCRYPT
+	select TINYCRYPT_ECC_DH
+	help
+	  If this option is set TinyCrypt library is also used for LE Secure
+	  Connections elliptic curve Diffie-Hellman key agreement. If not set
+	  controller crypto is used for ECDH.
+
 config  BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
 	default 2
