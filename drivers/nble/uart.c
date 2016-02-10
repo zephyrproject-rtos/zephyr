@@ -192,14 +192,6 @@ void bt_uart_isr(void *unused)
 			if (!buf) {
 				BT_ERR("No available IPC buffers");
 			}
-#if 0
-			} else {
-				memcpy(net_buf_add(buf, sizeof(hdr)), &hdr,
-				       sizeof(hdr));
-			}
-#endif
-
-			BT_DBG("need to get %u bytes", remaining);
 
 			if (buf && remaining > net_buf_tailroom(buf)) {
 				BT_ERR("Not enough space in buffer");
@@ -219,8 +211,6 @@ void bt_uart_isr(void *unused)
 
 		buf->len += read;
 		remaining -= read;
-
-		BT_DBG("received %d bytes", read);
 
 		if (!remaining) {
 			BT_DBG("full packet received");
