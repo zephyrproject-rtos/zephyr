@@ -73,6 +73,7 @@ static int read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t simulate_blvl = 0;
 static uint8_t battery = 100;
+static uint8_t heartrate = 90;
 
 static void blvl_ccc_cfg_changed(uint16_t value)
 {
@@ -504,8 +505,13 @@ void main(void)
 
 		/* Heartrate measurements simulation */
 		if (simulate_hrm) {
+			heartrate++;
+			if (heartrate == 160) {
+				heartrate = 90;
+			}
+
 			hrm[0] = 0x06; /* uint8, sensor contact */
-			hrm[1] = 90 + (sys_rand32_get() % 20);
+			hrm[1] = heartrate;
 
 			bt_gatt_notify(NULL, &hrs_attrs[2], &hrm, sizeof(hrm));
 		}
