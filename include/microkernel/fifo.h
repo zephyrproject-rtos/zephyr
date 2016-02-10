@@ -66,49 +66,51 @@ extern int _task_fifo_ioctl(kfifo_t queue, int op);
  */
 
 /**
- * @brief FIFO enqueue request
+ * @brief FIFO enqueue request.
  *
- * This routine adds an item to the FIFO queue. If the FIFO is currently full
- * then the routine either waits until space becomes available, or until the
+ * This routine adds an item to the FIFO queue. When the FIFO is full,
+ * the routine will wait either for space to become available, or until the
  * specified time limit is reached.
  *
  * @param queue FIFO queue.
  * @param data Pointer to data to add to queue.
- * @param timeout Affects the action taken should the FIFO be full. If
- * TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as long
- * as necessary. Otherwise wait up to the specified number of ticks before
- * timing out.
+ * @param timeout Determines the action to take when the FIFO is full.
+ * For TICKS_NONE, return immediately.
+ * For TICKS_UNLIMITED, wait as long as necessary.
+ * Otherwise, wait up to the specified number of ticks before timing out.
  *
- * @retval RC_OK Successfully added item to FIFO
- * @retval RC_TIME Timed out while waiting to add item to FIFO
+ * @retval RC_OK Successfully added item to FIFO.
+ * @retval RC_TIME Timed out while waiting to add item to FIFO.
  * @retval RC_FAIL Failed to immediately add item to FIFO when
- * @a timeout = TICKS_NONE
+ * @a timeout = TICKS_NONE.
+ * @sa TICKS_NONE, TICKS_UNLIMITED
  */
 extern int task_fifo_put(kfifo_t queue, void *data, int32_t timeout);
 
 /**
- * @brief FIFO dequeue request
+ * @brief FIFO dequeue request.
  *
- * This routine fetches the oldest item from the FIFO queue. If the FIFO is
- * currently empty then the routine either waits until an item is added to
- * the FIFO before fetching it, or until the specified time limit is reached.
+ * This routine fetches the oldest item from the FIFO queue. When the FIFO is found empty,
+ * the routine will wait either until an item is added to the FIFO queue or until
+ * the specified time limit is reached.
  *
  * @param queue FIFO queue.
  * @param data Pointer to storage location of the FIFO entry.
- * @param timeout Affects the action taken should the FIFO be empty. If
- * TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as long
- * as necessary. Otherwise wait up to the specified number of ticks before
- * timing out.
+ * @param timeout Affects the action to take when the FIFO is empty.
+ * For TICKS_NONE, return immediately.
+ * For TICKS_UNLIMITED, wait as long as necessary.
+ * Otherwise wait up to the specified number of ticks before timing out.
  *
- * @retval RC_OK Successfully fetched item from FIFO
- * @retval RC_TIME Timed out while waiting to fetch item from FIFO
+ * @retval RC_OK Successfully fetched item from FIFO.
+ * @retval RC_TIME Timed out while waiting to fetch item from FIFO.
  * @retval RC_FAIL Failed to immediately fetch item from FIFO when
- * @a timeout = TICKS_NONE
+ * @a timeout = TICKS_NONE.
+ * @sa TICKS_NONE, TICKS_UNLIMITED
  */
 extern int task_fifo_get(kfifo_t queue, void *data, int32_t timeout);
 
 /**
- * @brief Queries the number of FIFO entries.
+ * @brief Query the number of FIFO entries.
  *
  * @param q FIFO queue.
  *
@@ -125,14 +127,14 @@ extern int task_fifo_get(kfifo_t queue, void *data, int32_t timeout);
 
 
 /**
- * @brief Define a private microkernel FIFO
+ * @brief Define a private microkernel FIFO.
  *
  * This declares and initializes a private FIFO. The new FIFO
  * can be passed to the microkernel FIFO functions.
  *
- * @param name Name of the FIFO
- * @param depth Depth of the FIFO
- * @param width Width of the FIFO
+ * @param name Name of the FIFO.
+ * @param depth Depth of the FIFO.
+ * @param width Width of the FIFO.
  */
 #define DEFINE_FIFO(name, depth, width) \
 	static char __noinit __##name_buffer[(depth * width)]; \
