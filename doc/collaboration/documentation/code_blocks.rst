@@ -8,17 +8,16 @@ documentation must include code examples. The code examples can be
 written directly in the documentation or included from a source file.
 Use these guidelines to insert code blocks to your documentation:
 
-* Include code examples from a source file . Only write the code
-  example directly into the documentation if the example is less than 10
+* Include code examples from a source file. Only write the code
+  example directly into the documentation if the example is fewer than 10
   lines long or not part of the code base of the Zephyr Kernel.
 
 * Use the ``:lineos:`` option of the directives to add line numbers to
   your example if it is larger than 12 lines.
 
-* Specify the programing language of your example. Not only will it
-  add syntax highlighting but it also allows the reader to identify code
-  efficiently. Use bash for console commands, asm for assembly code and
-  c for C code.
+* Specify the programming language of your example. It will add syntax
+  highlighting, and also allows the reader to identify code efficiently. Use
+  bash for console commands, asm for assembly code and c for C code.
 
 * Treat all console commands that a user must use as code examples.
 
