@@ -13,8 +13,12 @@ endif
 CROSS_COMPILE_TARGET_arm = arm-poky-eabi
 CROSS_COMPILE_arm=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_TARGET_arm)-
 CROSS_COMPILE_arm_version = $(shell $(CROSS_COMPILE_arm)gcc -dumpversion)
-LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/${CROSS_COMPILE_TARGET_arm}/lib
-LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/lib/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_arm_version)
+
+CROSS_COMPILE_arm_isa_thumb2-y = "thumb/thumb2"
+CROSS_COMPILE_arm_isa = $(CROSS_COMPILE_arm_isa_thumb2-$(CONFIG_ISA_THUMB2))
+
+LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/${CROSS_COMPILE_TARGET_arm}/lib/$(CROSS_COMPILE_arm_isa)
+LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/lib/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_arm_version)/$(CROSS_COMPILE_arm_isa)
 TOOLCHAIN_CFLAGS_arm = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/${CROSS_COMPILE_TARGET_arm}/include
 
 # iamcu
