@@ -1,7 +1,7 @@
 .. _code_examples:
 
 Code Examples
-*************
+#############
 
 Collaborating to the Zephyr Kernel is all about code. Therefore, your
 documentation must include code examples. The code examples can be
@@ -22,7 +22,7 @@ Use these guidelines to insert code blocks to your documentation:
 * Treat all console commands that a user must use as code examples.
 
 Examples
---------
+********
 
 This is a code example included from a file in another directory. Only
 certain lines of the source file are included. Those lines of code are
@@ -120,7 +120,7 @@ Renders as:
 
 
 Templates
----------
+*********
 
 We have included templates for a basic ``.. code-block::`` directive
 and for a ``.. literalinclude::`` directive.

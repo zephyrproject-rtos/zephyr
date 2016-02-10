@@ -1,7 +1,7 @@
 .. _images:
 
 Images
-******
+######
 
 Images grab the reader's attention and convey information that
 sometimes is difficult to explain using words alone. Well-planned
@@ -46,7 +46,7 @@ Follow these guidelines when creating graphics for the Zephyr Project:
   fibers.svg` or :file:`nanokernel_fiber-1.png`.
 
 Examples
-========
+********
 
 These examples follow the guidelines and can be used used as reference.
 
@@ -77,7 +77,7 @@ and linked to make identifying them easier.
    This screenshot shows a code comparison.
 
 Templates
-=========
+*********
 
 Use this template to add a figure to your documentation according to
 these guidelines.

@@ -1,7 +1,7 @@
 .. _rest_tables:
 
 Tables
-******
+######
 
 Tables must only be used for information that is either too numerous or too
 related for a list to be appropriate. The general rule of thumb is that the

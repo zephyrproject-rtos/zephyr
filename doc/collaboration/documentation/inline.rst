@@ -1,7 +1,7 @@
 .. _inline:
 
 Inline Markup
-*************
+#############
 
 Sphinx supports a large number of inline markup elements. The
 documentation of the Zephyr OS only requires the use of the inline

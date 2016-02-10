@@ -1,7 +1,7 @@
 .. _cross:
 
 Cross References
-****************
+################
 
 Sphinx and ReST provide different methods to create both internal and
 external cross references. Use only the following methods to increase the
@@ -10,7 +10,7 @@ consistency of the documents.
 .. _internal_cross:
 
 Internal Cross References
-=========================
+*************************
 
 An internal cross reference is a reference to a location within the Zephyr Project's
 documentation. Use explicit markup labels and the ``:ref:`` markup to
@@ -62,8 +62,8 @@ Use the following templates to insert internal cross references properly.
 
    .. _label_of_target:
 
-   This Is a Heading
-   -----------------
+   This Is a Level Three Heading
+   =============================
 
    This creates a link to the :ref:`label_of_target` using the text of the
    heading.
@@ -75,8 +75,8 @@ The template renders as:
 
 .. _label_of_target:
 
-This Is a Heading
------------------
+This Is a Level Three Heading
+=============================
 
 This creates a link to the :ref:`label_of_target` using the text of the
 heading.
@@ -91,7 +91,7 @@ This creates a link to the :ref:`target <label_of_target>` using the word
    Sphinx builders that support cross references.
 
 Referencing In-code Documentation
-=================================
+*********************************
 
 We have integrated in-code documentation using Sphinx and :program:`Breath`.
 This integration allows us to cross reference functions, variables, macros
@@ -114,7 +114,7 @@ reference to a documented code element.
    documented in the code following the :ref:`code`.
 
 External References
-===================
+*******************
 
 External references or hyperlinks can be added easily with ReST. The allowed
 methods are explicit hyperlinks and hyperlinks with a separated target
