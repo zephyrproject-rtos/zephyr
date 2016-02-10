@@ -21,14 +21,20 @@ Each testcase.ini block can define the following key/value pairs:
     functional domains but can be anything. Command line invocations
     of this script can filter the set of tests to run based on tag.
 
-  skip = <True|False>
+  skip = <True|False> (default False)
     skip testcase unconditionally. This can be used for broken tests.
+
+  slow = <True|False> (default False)
+    Don't run this test case unless --enable-slow was passed in on the
+    command line. Intended for time-consuming test cases that are only
+    run under certain circumstances, like daily builds. These test cases
+    are still compiled.
 
   extra_args = <list of extra arguments>
     Extra arguments to pass to Make when building or running the
     test case.
 
-  build_only = <True|False>
+  build_only = <True|False> (default False)
     If true, don't try to run the test under QEMU even if the
     selected platform supports it.
 
@@ -614,7 +620,7 @@ class MakeGenerator:
                                     run_logfile, qemu_logfile)
 
 
-    def add_test_instance(self, ti, build_only=False):
+    def add_test_instance(self, ti, build_only=False, enable_slow=False):
         """Add a goal to build/test a TestInstance object
 
         @param ti TestInstance object to build. The status dictionary returned
@@ -623,7 +629,8 @@ class MakeGenerator:
         args = ti.test.extra_args[:]
         args.extend(["ARCH=%s" % ti.platform.arch.name,
                      "BOARD=%s" % ti.platform.name])
-        if ti.platform.qemu_support and not ti.build_only and not build_only:
+        if (ti.platform.qemu_support and (not ti.build_only) and
+            (not build_only) and (enable_slow or not ti.test.slow)):
             self.add_qemu_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout)
         else:
@@ -716,6 +723,7 @@ testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "extra_args" : {"type" : "list"},
                        "build_only" : {"type" : "bool", "default" : False},
                        "skip" : {"type" : "bool", "default" : False},
+                       "slow" : {"type" : "bool", "default" : False},
                        "timeout" : {"type" : "int", "default" : 60},
                        "arch_whitelist" : {"type" : "set"},
                        "arch_exclude" : {"type" : "set"},
@@ -965,6 +973,7 @@ class TestCase:
         self.config_whitelist = tc_dict["config_whitelist"]
         self.timeout = tc_dict["timeout"]
         self.build_only = tc_dict["build_only"]
+        self.slow = tc_dict["slow"]
         self.path = os.path.join(workdir, name)
         self.name = self.path # for now
         self.ktype = None
@@ -993,7 +1002,8 @@ class TestInstance:
     @param base_outdir Base directory for all test results. The actual
         out directory used is <outdir>/<platform>/<test case name>
     """
-    def __init__(self, test, platform, base_outdir, build_only=False):
+    def __init__(self, test, platform, base_outdir, build_only=False,
+                 slow=False):
         self.test = test
         self.platform = platform
         self.name = os.path.join(platform.name, test.path)
@@ -1293,10 +1303,10 @@ class TestSuite:
     def add_instance(self, ti):
         self.instances[ti.name] = ti
 
-    def execute(self, cb, cb_context, build_only):
+    def execute(self, cb, cb_context, build_only, enable_slow):
         mg = MakeGenerator(self.outdir)
         for i in self.instances.values():
-            mg.add_test_instance(i, build_only)
+            mg.add_test_instance(i, build_only, enable_slow)
         self.goals = mg.execute(cb, cb_context)
         for name, goal in self.goals.iteritems():
             i = self.instances[name]
@@ -1491,6 +1501,9 @@ def parse_arguments():
             help="Don't run sanity  checks. Instead, produce a report to "
                  "stdout detailing RAM/ROM sizes on the specified filenames. "
                  "All other command line arguments ignored.")
+    parser.add_argument("-S", "--enable-slow", action="store_true",
+            help="Execute time-consuming test cases that have been marked "
+                 "as 'slow' in testcase.ini. Normally these are only built.")
 
     return parser.parse_args()
 
@@ -1605,9 +1618,11 @@ def main():
         return
 
     if VERBOSE or not TERMINAL:
-        goals = ts.execute(chatty_test_cb, ts.instances, args.build_only)
+        goals = ts.execute(chatty_test_cb, ts.instances, args.build_only,
+                           args.enable_slow)
     else:
-        goals = ts.execute(terse_test_cb, ts.instances, args.build_only)
+        goals = ts.execute(terse_test_cb, ts.instances, args.build_only,
+                           args.enable_slow)
         print
 
     deltas = ts.compare_metrics(LAST_SANITY if args.last_metrics
