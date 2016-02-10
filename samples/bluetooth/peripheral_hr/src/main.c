@@ -34,6 +34,8 @@
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define HEART_RATE_APPEARANCE	0x0341
 
+struct bt_conn *default_conn;
+
 static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		     void *buf, uint16_t len, uint16_t offset)
 {
@@ -168,6 +170,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	if (err) {
 		printk("Connection failed (err %u)\n", err);
 	} else {
+		default_conn = bt_conn_ref(conn);
 		printk("Connected\n");
 	}
 }
@@ -183,6 +186,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		printk("Advertising failed to restart\n");
 	}
 #endif
+
+	if (default_conn) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
+	}
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -257,7 +265,8 @@ void main(void)
 			hrm[0] = 0x06; /* uint8, sensor contact */
 			hrm[1] = 90 + (sys_rand32_get() % 20);
 
-			bt_gatt_notify(NULL, &hrs_attrs[2], &hrm, sizeof(hrm));
+			bt_gatt_notify(default_conn, &hrs_attrs[2],
+				       &hrm, sizeof(hrm));
 		}
 
 		/* Battery level simulation */
@@ -269,8 +278,8 @@ void main(void)
 				battery = 100;
 			}
 
-			bt_gatt_notify(NULL, &bas_attrs[2], &battery,
-				       sizeof(battery));
+			bt_gatt_notify(default_conn, &bas_attrs[2],
+				       &battery, sizeof(battery));
 		}
 	}
 }
