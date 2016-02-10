@@ -39,6 +39,11 @@
 #include <tinycrypt/utils.h>
 #endif
 
+#if defined(CONFIG_TINYCRYPT_ECC_DH)
+#include <tinycrypt/ecc.h>
+#include <tinycrypt/ecc_dh.h>
+#endif /* CONFIG_TINYCRYPT_ECC_DH */
+
 #include "hci_core.h"
 #include "keys.h"
 #include "conn_internal.h"
@@ -176,8 +181,11 @@ static NET_BUF_POOL(smp_pool, CONFIG_BLUETOOTH_MAX_CONN,
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 static bool sc_supported;
 static bool sc_local_pkey_valid;
+static uint8_t sc_public_key[64];
 
-static uint8_t sc_pkey[64];
+#if defined(CONFIG_TINYCRYPT_ECC_DH)
+static uint32_t sc_private_key[8];
+#endif /* CONFIG_TINYCRYPT_ECC_DH */
 
 static uint8_t get_io_capa(void)
 {
@@ -933,7 +941,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 
 	req = net_buf_add(buf, sizeof(*req));
 
-	if (smp_f4(sc_pkey, smp->pkey, smp->prnd, r, req->val)) {
+	if (smp_f4(sc_public_key, smp->pkey, smp->prnd, r, req->val)) {
 		net_buf_unref(buf);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
@@ -1587,8 +1595,8 @@ static uint8_t sc_send_public_key(struct bt_smp *smp)
 
 	req = net_buf_add(req_buf, sizeof(*req));
 
-	memcpy(req->x, sc_pkey, sizeof(req->x));
-	memcpy(req->y, &sc_pkey[32], sizeof(req->y));
+	memcpy(req->x, sc_public_key, sizeof(req->x));
+	memcpy(req->y, &sc_public_key[32], sizeof(req->y));
 
 	smp_send(smp, req_buf);
 
@@ -1871,6 +1879,7 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 }
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
+#if !defined(CONFIG_TINYCRYPT_ECC_DH)
 void bt_smp_dhkey_ready(const uint8_t *dhkey)
 {
 	struct bt_smp *smp = NULL;
@@ -1923,6 +1932,7 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 	}
 }
+#endif /* !CONFIG_TINYCRYPT_ECC_DH */
 
 static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 {
@@ -1950,7 +1960,7 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	if (smp_f4(smp->pkey, sc_pkey, smp->rrnd, r, cfm)) {
+	if (smp_f4(smp->pkey, sc_public_key, smp->rrnd, r, cfm)) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1989,8 +1999,8 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		switch (smp->method) {
 		case PASSKEY_CONFIRM:
 			/* compare passkey before calculating LTK */
-			if (smp_g2(sc_pkey, smp->pkey, smp->prnd, smp->rrnd,
-				   &passkey)) {
+			if (smp_g2(sc_public_key, smp->pkey, smp->prnd,
+				   smp->rrnd, &passkey)) {
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
 
@@ -2031,7 +2041,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	switch (smp->method) {
 	case PASSKEY_CONFIRM:
-		if (smp_g2(smp->pkey, sc_pkey, smp->rrnd, smp->prnd,
+		if (smp_g2(smp->pkey, sc_public_key, smp->rrnd, smp->prnd,
 			   &passkey)) {
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -2306,6 +2316,30 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
+#if defined(CONFIG_TINYCRYPT_ECC_DH)
+static uint8_t generate_dhkey(struct bt_smp *smp)
+{
+	uint32_t dh[8];
+	EccPoint pk;
+
+	/* TODO on microkernel offload this to task? */
+
+	memcpy(pk.x, smp->pkey, 32);
+	memcpy(pk.y, &smp->pkey[32], 32);
+
+	if (ecc_valid_public_key(&pk) < 0) {
+		return BT_SMP_ERR_DHKEY_CHECK_FAILED;
+	}
+
+	if (ecdh_shared_secret(dh, &pk, sc_private_key) == TC_FAIL) {
+		return BT_SMP_ERR_DHKEY_CHECK_FAILED;
+	}
+
+	memcpy(smp->dhkey, dh, 32);
+
+	return 0;
+}
+#else
 static uint8_t generate_dhkey(struct bt_smp *smp)
 {
 	struct bt_hci_cp_le_generate_dhkey *cp;
@@ -2326,6 +2360,7 @@ static uint8_t generate_dhkey(struct bt_smp *smp)
 	atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING);
 	return 0;
 }
+#endif /* CONFIG_TINYCRYPT_ECC_DH */
 
 static uint8_t display_passkey(struct bt_smp *smp)
 {
@@ -2578,13 +2613,14 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
+#if !defined(CONFIG_TINYCRYPT_ECC_DH)
 void bt_smp_pkey_ready(const uint8_t *pkey)
 {
 	int i;
 
 	BT_DBG("");
 
-	memcpy(sc_pkey, pkey, 64);
+	memcpy(sc_public_key, pkey, 64);
 	sc_local_pkey_valid = true;
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
@@ -2615,6 +2651,7 @@ void bt_smp_pkey_ready(const uint8_t *pkey)
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 	}
 }
+#endif /* !CONFIG_TINYCRYPT_ECC_DH */
 
 static void bt_smp_connected(struct bt_l2cap_chan *chan)
 {
@@ -3400,12 +3437,27 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-/* TODO check tinycrypt define when ECC is added */
-#if defined(CONFIG_TINYCRYPT_ECC)
+#if defined(CONFIG_TINYCRYPT_ECC_DH)
 static bool le_sc_supported(void)
 {
-	/* TODO */
-	return false;
+	uint32_t random[16];
+	EccPoint pkey;
+
+	if (bt_rand((uint8_t *)random, 64)) {
+		return false;
+	}
+
+	if (ecc_make_key(&pkey, sc_private_key, random) < 0) {
+		BT_ERR("Failed to create ECC public/private pair");
+		return false;
+	}
+
+	memcpy(sc_public_key, pkey.x, 32);
+	memcpy(&sc_public_key[32], pkey.y, 32);
+
+	sc_local_pkey_valid = true;
+
+	return true;
 }
 #else
 static bool le_sc_supported(void)
