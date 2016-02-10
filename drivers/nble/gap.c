@@ -34,9 +34,22 @@
 
 static bt_ready_cb_t bt_ready_cb;
 
+static void send_dm_config(void)
+{
+	struct ble_core_gap_sm_config_params config;
+
+	config.options = 1;	/* bonding */
+	config.io_caps = 3;	/* no input no output */
+	config.key_size = 16;	/* or 7 */
+
+	ble_gap_sm_config_req(&config, NULL);
+}
+
 void on_nble_up(void)
 {
 	BT_DBG("");
+
+	send_dm_config();
 
 	ble_get_version_req(NULL);
 }
