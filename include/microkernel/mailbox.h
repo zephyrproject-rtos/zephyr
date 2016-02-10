@@ -61,55 +61,58 @@ extern void _task_mbox_data_get(struct k_msg *M);
  */
 
 /**
- * @brief Send a message to a mailbox
+ * @brief Send a message to a mailbox.
  *
  * This routine sends a message to a mailbox and looks for a matching receiver.
  *
  * @param mbox Mailbox.
  * @param prio Priority of data transfer.
  * @param M Pointer to message to send.
- * @param timeout Affects the action taken should there not be a waiting
- * receiver. If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
- * wait as long as necessary. Otherwise wait up to the specified number of
- * ticks before timing out.
+ * @param timeout Determines the action to take when there is no waiting receiver.
+ * For TICKS_NONE, return immediately.
+ * For TICKS_UNLIMITED, wait as long as necessary.
+ * Otherwise, wait up to the specified number of ticks before timing out.
  *
- * @return RC_OK Successfully delivered message
- * @return RC_TIME Timed out while waiting to deliver message
+ * @return RC_OK Successfully delivered message.
+ * @return RC_TIME Timed out while waiting to deliver message.
  * @return RC_FAIL Failed to immediately deliver message when
- * @a timeout = TICKS_NONE
+ * @a timeout = TICKS_NONE.
+ * @sa TICKS_NONE, TICKS_UNLIMITED
+ *
  */
 extern int task_mbox_put(kmbox_t mbox, kpriority_t prio,
 				struct k_msg *M, int32_t timeout);
 
 /**
- * @brief Gets struct k_msg message header structure information from
+ * @brief Get @b struct @b k_msg message header structure information from
  * a mailbox and wait with timeout.
  *
- * @param mbox Mailbox
- * @param M Pointer to message
- * @param timeout Affects the action taken should there not be a waiting
- * sender. If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
- * wait as long as necessary. Otherwise wait up to the specified number of
- * ticks before timing out.
+ * @param mbox Mailbox.
+ * @param M Pointer to message.
+ * @param timeout Determines the action to take when there is no waiting receiver.
+ * For TICKS_NONE, return immediately.
+ * For TICKS_UNLIMITED, wait as long as necessary.
+ * Otherwise, wait up to the specified number of ticks before timing out.
  *
- * @return RC_OK Successfully received message
- * @return RC_TIME Timed out while waiting to receive message
+ * @return RC_OK Successfully received message.
+ * @return RC_TIME Timed out while waiting to receive message.
  * @return RC_FAIL Failed to immediately receive message when
- * @a timeout = TICKS_NONE
+ * @a timeout = TICKS_NONE.
+ * @sa TICKS_NONE, TICKS_UNLIMITED
  */
 extern int task_mbox_get(kmbox_t mbox, struct k_msg *M, int32_t timeout);
 
 /**
- * @brief Send a message asynchronously to a mailbox
+ * @brief Send a message asynchronously to a mailbox.
  *
  * This routine sends a message to a mailbox and does not wait for a matching
- * receiver. There is no exchange header returned to the sender. When the data
+ * receiver. No exchange header is returned to the sender. When the data
  * has been transferred to the receiver, the semaphore signaling is performed.
  *
- * @param b mailbox to which to send message
- * @param p priority of data transfer
- * @param m pointer to message to send
- * @param s semaphore to signal when transfer is complete
+ * @param b Mailbox to which to send message.
+ * @param p Priority of data transfer.
+ * @param m Pointer to message to send.
+ * @param s Semaphore to signal when transfer is complete.
  *
  * @return N/A
  */
@@ -117,43 +120,44 @@ extern int task_mbox_get(kmbox_t mbox, struct k_msg *M, int32_t timeout);
 
 
 /**
- * @brief Get message data
+ * @brief Get message data.
  *
- * This routine is called for either of the two following purposes:
- * 1. To transfer data if the call to task_mbox_get() resulted in a non-zero size
- *    field in the struct k_msg header structure.
- * 2. To wake up and release a transmitting task that is blocked on a call to
- *    task_mbox_put[wait|wait_timeout]().
+ * Call this routine for one of two reasons:
+ * 1. To transfer data when the call to @a task_mbox_get() yields an existing
+ *    field in the @b struct @b k_msg header structure.
+ * 2. To wake up and release a transmitting task currently blocked from calling
+ *    @b task_mbox_put[wait|wait_timeout]().
  *
- * @param m message from which to get data
+ * @param m Message from which to get data.
  *
  * @return N/A
  */
 #define task_mbox_data_get(m) _task_mbox_data_get(m)
 
 /**
- * @brief Retrieves message data into a block, with time limited waiting
+ * @brief Retrieve message data into a block, with time-limited waiting.
  *
- * @param M Message from which to get data
- * @param block Block
- * @param pool_id Memory pool name
- * @param timeout Affects the action taken should there not be a waiting
- * sender. If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
- * wait as long as necessary. Otherwise wait up to the specified number of
- * ticks before timing out.
+ * @param M Message from which to get data.
+ * @param block Block.
+ * @param pool_id Memory pool name.
+ * @param timeout Determines the action to take when no waiting sender exists.
+ * For TICKS_NONE, return immediately.
+ * For TICKS_UNLIMITED, wait as long as necessary.
+ * Otherwise, wait up to the specified number of ticks before timing out.
  *
- * @retval RC_OK Successful retrieval of message data
- * @retval RC_TIME Timed out while waiting to receive message data
+ * @retval RC_OK Successful retrieval of message data.
+ * @retval RC_TIME Timed out while waiting to receive message data.
  * @retval RC_FAIL Failed to immediately receive message data when
- * @a timeout = TICKS_NONE
+ * @a timeout = TICKS_NONE.
+ * @sa TICKS_NONE, TICKS_UNLIMITED
  */
 extern int task_mbox_data_block_get(struct k_msg *M, struct k_block *block,
 					kmemory_pool_t pool_id, int32_t timeout);
 
 /**
- * @brief Define a private microkernel mailbox
+ * @brief Define a private microkernel mailbox.
  *
- * This declares and initializes a private mailbox. The new mailbox
+ * This routine declares and initializes a private mailbox. The new mailbox
  * can be passed to the microkernel mailbox functions.
  *
  * @param name Name of the mailbox
