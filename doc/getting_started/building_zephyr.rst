@@ -29,7 +29,7 @@ To build an example application follow these steps:
 
     .. code-block:: console
 
-       $ cd $ZEPHYR_BASE/samples/microkernel/apps/hello_world
+       $ cd $ZEPHYR_BASE/samples/hello_world/microkernel
 
        $ make
 

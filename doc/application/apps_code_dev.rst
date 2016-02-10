@@ -128,7 +128,7 @@ Example src Makefile
 
 This example is taken from the Philosopher's Sample. To
 examine this file in context, navigate to:
-:file:`rootDir/samples/microkernel/apps/philosophers/src`.
+:file:`rootDir/samples/philosophers/microkernel/src`.
 
 .. code-block:: make
 

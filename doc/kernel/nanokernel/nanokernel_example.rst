@@ -4,7 +4,7 @@ Semaphore, Timer, and Fiber Example
 ###################################
 
 The following example is pulled from the file:
-:file:`samples/microkernel/apps/hello_world/src/hello.c`.
+:file:`samples/synchronization/microkernel/src/hello.c`.
 
 Example Code
 ************

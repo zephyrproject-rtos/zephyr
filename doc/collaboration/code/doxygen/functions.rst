@@ -79,7 +79,7 @@ Example 1
 
 Take the very simple function :c:func:`taskA()`:
 
-.. literalinclude:: ../../../../samples/microkernel/apps/hello_world/src/hello.c
+.. literalinclude:: ../../../../samples/synchronization/microkernel/src/hello.c
    :language: c
    :lines: 77-85
    :emphasize-lines: 3, 6
@@ -105,7 +105,7 @@ Example 2
 =========
 Take the more complex function hello_loop():
 
-.. literalinclude:: ../../../../samples/microkernel/apps/hello_world/src/hello.c
+.. literalinclude:: ../../../../samples/synchronization/microkernel/src/hello.c
    :language: c
    :lines: 56-76
    :emphasize-lines: 1, 3-5, 7, 8, 13, 16

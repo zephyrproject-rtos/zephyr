@@ -57,7 +57,7 @@ Flashing Arduino 101 for Zephyr
 *******************************
 
 For the use of this tutorial, the sample application hello_world will be
-used found in :file:`$ZEPHYR_BASE/samples/nanokernel/apps/hello_world`.
+used found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
 
 Use the following procedures for booting an image on a Arduino 101 board.
 
@@ -247,7 +247,7 @@ checkout copy of Zephyr, and run:
    .. code-block:: console
 
       $ source ./zephyr-env.sh
-      $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
+      $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
 
       $ make pristine && BOARD=arduino_101_sss ARCH=arc
       $ make BOARD=arduino_101_sss flash
@@ -269,7 +269,7 @@ Flashing an x86 Kernel
    .. code-block:: console
 
       $ source ./zephyr-env.sh
-      $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
+      $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
       $ make pristine && BOARD=arduino_101 ARCH=x86
       $ make BOARD=arduino_101 flash
 
@@ -298,7 +298,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
    at connecting and controlling the hardware.
 
     This can be done by editing the
-    :file:`samples/nanokernel/apps/hello_world/prj.conf` to include:
+    :file:`samples/hello_world/nanokernel/prj.conf` to include:
 
    .. code-block:: console
 
@@ -317,7 +317,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
 
   .. code-block:: console
 
-    $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
+    $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
     $ make BOARD=arduino_101 debug
 
   These commands will start an openocd session that creates a local telnet
@@ -333,7 +333,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
 
        .. code-block:: console
 
-         $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
+         $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
          $ gdb outdir/zephyr.elf
          gdb$  target remote :3333
 
@@ -357,7 +357,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
 
        .. code-block:: console
 
-          $ cd $ZEPHYR_BASE/samples/nanokernel/apps/hello_world
+          $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
           $ arc_gdb outdir/zephyr.elf
           gdb$  target remote :3334
 

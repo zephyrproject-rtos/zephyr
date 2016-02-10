@@ -124,14 +124,14 @@ that the Arduino specific version is required (branch arduino on GitHub).
 
 
 The sample application hello_world is being used in this tutorial, which can
-be found in :file:`$ZEPHYR_BASE/samples/nanokernel/apps/hello_world`.
+be found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
 
 # To build the Zephyr kernel, enter:
 
    .. code-block:: console
 
       $ cd $ZEPHYR_BASE
-      $ make -C samples/nanokernel/apps/hello_world ARCH=arm BOARD=arduino_due
+      $ make -C samples/hello_world/nanokernel ARCH=arm BOARD=arduino_due
 
 # Connect the Arduino Due to your host computer using the programming port.
 

@@ -63,7 +63,7 @@ ensures that the comment is appropriately linked to the code.
 Incorrect:
 
 .. literalinclude::
-   ../../../../samples/microkernel/apps/philosophers/src/phil.h
+   ../../../../samples/philosophers/microkernel/src/phil.h
 
    :language: c
    :lines: 24-28
