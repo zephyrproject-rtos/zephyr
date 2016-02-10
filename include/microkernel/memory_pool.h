@@ -34,9 +34,9 @@ extern "C" {
  */
 
 /**
- * @brief Return memory pool block
+ * @brief Return memory pool block.
  *
- * This routine returns a block to the memory pool it was allocated from.
+ * This routine returns a block to the memory pool from which it was allocated.
  *
  * @param b Pointer to block descriptor.
  *
@@ -45,12 +45,12 @@ extern "C" {
 extern void task_mem_pool_free(struct k_block *b);
 
 /**
- * @brief Defragment memory pool
+ * @brief Defragment memory pool.
  *
  * This routine concatenates unused blocks that can be merged in memory pool
  * @a p.
  *
- * Doing a complete defragmentation of a memory pool before allocating a set
+ * Doing a full defragmentation of a memory pool before allocating a set
  * of blocks may be more efficient than having the pool do an implicit
  * partial defragmentation each time a block is allocated.
  *
@@ -62,25 +62,26 @@ extern void task_mem_pool_defragment(kmemory_pool_t p);
 
 
 /**
- * @brief Allocate memory pool block
+ * @brief Allocate memory pool block.
  *
  * This routine allocates a block of at least @a reqsize bytes from memory pool
- * @a pool_id, and saves its information in block descriptor @a blockptr. If no
- * such block is available the routine either waits until one can be allocated,
+ * @a pool_id, and saves its information in block descriptor @a blockptr. When no
+ * such block is available, the routine waits either until one can be allocated,
  * or until the specified time limit is reached.
  *
  * @param blockptr Pointer to block descriptor.
  * @param pool_id Memory pool name.
  * @param reqsize Requested block size, in bytes.
- * @param timeout Affects the action taken should the memory pool be exhausted.
- * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
- * long as necessary. Otherwise wait up to the specified number of ticks before
- * timing out.
+ * @param timeout Determines the action to take when the memory pool is exhausted.
+ *   For TICKS_NONE, return immediately.
+ *   For TICKS_UNLIMITED, wait as long as necessary.
+ *   Otherwise, wait up to the specified number of ticks before timing out.
  *
  * @retval RC_OK Successfully allocated memory block
  * @retval RC_TIME Timed out while waiting for memory block
  * @retval RC_FAIL Failed to immediately allocate memory block when
  * @a timeout = TICKS_NONE
+ * @sa TICKS_NONE, TICKS_UNLIMITED
  */
 extern int task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
 							int reqsize, int32_t timeout);
