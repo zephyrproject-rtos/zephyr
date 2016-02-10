@@ -55,55 +55,57 @@ extern "C" {
  */
 
 /**
- * @brief Pipe write request
+ * @brief Pipe write request.
  *
- * Attempt to write data from a memory buffer area to the
+ * Attempt to write data from a memory-buffer area to the
  * specified pipe with a timeout option.
  *
- * @param id Pipe ID
- * @param buffer Buffer
- * @param bytes_to_write Number of bytes to write
- * @param bytes_written Pointer to number of bytes written
- * @param options Pipe options
- * @param timeout Affects the action taken should the pipe be full. If
- * TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as long
- * as necessary. Otherwise wait up to the specified number of ticks before
- * timing out.
+ * @param id Pipe ID.
+ * @param buffer Buffer.
+ * @param bytes_to_write Number of bytes to write.
+ * @param bytes_written Pointer to number of bytes written.
+ * @param options Pipe options.
+ * @param timeout Determines the action to take when the pipe is already full.
+ *  For TICKS_NONE, return immediately.
+ *  For TICKS_UNLIMITED, wait as long as necessary.
+ *  Otherwise, wait up to the specified number of ticks before timing out.
  *
- * @retval RC_OK Successfully wrote data to pipe
- * @retval RC_ALIGNMENT Data is improperly aligned
+ * @retval RC_OK Successfully wrote data to pipe.
+ * @retval RC_ALIGNMENT Data is improperly aligned.
  * @retval RC_INCOMPLETE Only some of the data was written to the pipe when
- * @a options = _ALL_N
- * @retval RC_TIME Timed out waiting to write to pipe
+ * @a options = _ALL_N.
+ * @retval RC_TIME Timed out while waiting to write to pipe.
  * @retval RC_FAIL Failed to immediately write to pipe when
  * @a timeout = TICKS_NONE
+ * @sa TICKS_NONE, TICKS_UNLIMITED
  */
 extern int task_pipe_put(kpipe_t id, void *buffer, int bytes_to_write,
 			int *bytes_written, K_PIPE_OPTION options, int32_t timeout);
 
 /**
- * @brief Pipe read request
+ * @brief Pipe read request.
  *
  * Attempt to read data into a memory buffer area from the
  * specified pipe with a timeout option.
  *
- * @param id Pipe ID
- * @param buffer Buffer
- * @param bytes_to_read Number of bytes to read
- * @param bytes_read Pointer to number of bytes read
- * @param options Pipe options
- * @param timeout Affects the action taken should the pipe be empty. If
- * TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as long
- * as necessary. Otherwise wait up to the specified number of ticks before
- * timing out.
+ * @param id Pipe ID.
+ * @param buffer Buffer.
+ * @param bytes_to_read Number of bytes to read.
+ * @param bytes_read Pointer to number of bytes read.
+ * @param options Pipe options.
+ * @param timeout Determines the action to take when the pipe is already full.
+ *  For TICKS_NONE, return immediately.
+ *  For TICKS_UNLIMITED, wait as long as necessary.
+ *  Otherwise, wait up to the specified number of ticks before timing out.
  *
- * @retval RC_OK Successfully read data from pipe
- * @retval RC_ALIGNMENT Data is improperly aligned
+ * @retval RC_OK Successfully read data from pipe.
+ * @retval RC_ALIGNMENT Data is improperly aligned.
  * @retval RC_INCOMPLETE Only some of the data was read from the pipe when
- * @a options = _ALL_N
- * @retval RC_TIME Timed out waiting to read from pipe
+ * @a options = _ALL_N.
+ * @retval RC_TIME Timed out waiting to read from pipe.
  * @retval RC_FAIL Failed to immediately read from pipe when
- * @a timeout = TICKS_NONE
+ * @a timeout = TICKS_NONE.
+ * @sa TICKS_NONE, TICKS_UNLIMITED
  */
 extern int task_pipe_get(kpipe_t id, void *buffer, int bytes_to_read,
 			int *bytes_read, K_PIPE_OPTION options, int32_t timeout);
@@ -114,16 +116,16 @@ extern int _task_pipe_block_put(kpipe_t id,
 				ksem_t sema);
 
 /**
- * @brief Asynchronous pipe write request
+ * @brief Asynchronous pipe write request.
  *
  * This routine attempts to write data from a memory pool block to the
  * specified pipe. (Note that partial transfers and timeouts are not
  * supported, unlike the case for synchronous write requests.)
  *
- * @param id pipe ID
- * @param block Block
- * @param size Size of data to be transferred
- * @param sema Semphore ID
+ * @param id Pipe ID.
+ * @param block Block.
+ * @param size Size of data to be transferred.
+ * @param sema Semphore ID.
  *
  * @return RC_OK, RC_FAIL, or RC_ALIGNMENT
  */
