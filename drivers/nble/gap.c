@@ -34,6 +34,9 @@
 
 static bt_ready_cb_t bt_ready_cb;
 
+/* Local Bluetooth LE Device Address */
+static bt_addr_le_t bdaddr;
+
 static void send_dm_config(void)
 {
 	struct ble_core_gap_sm_config_params config;
@@ -50,8 +53,6 @@ void on_nble_up(void)
 	BT_DBG("");
 
 	send_dm_config();
-
-	ble_get_version_req(NULL);
 }
 
 void on_ble_get_version_rsp(const struct ble_version_response *rsp)
@@ -301,7 +302,14 @@ void on_ble_gap_service_read_rsp(const struct ble_core_response *rsp)
 
 void on_ble_gap_read_bda_rsp(const struct ble_service_read_bda_response *rsp)
 {
-	BT_DBG("");
+	if (rsp->status) {
+		BT_ERR("Read bdaddr failed, status %d", rsp->status);
+		return;
+	}
+
+	bt_addr_le_copy(&bdaddr, &rsp->bd);
+
+	ble_get_version_req(NULL);
 }
 
 void on_ble_gap_disconnect_rsp(const struct ble_core_response *rsp)
@@ -322,6 +330,9 @@ void on_ble_gap_sm_config_rsp(struct ble_gap_sm_config_rsp *rsp)
 	}
 
 	BT_DBG("state %u", rsp->state);
+
+	/* Get bdaddr queued after SM setup */
+	ble_gap_read_bda_req(NULL);
 }
 
 void on_ble_gap_clr_white_list_rsp(const struct ble_core_response *rsp)
