@@ -36,10 +36,10 @@ extern "C" {
 #endif
 
 /**
- * @brief Set time slicing period and scope
+ * @brief Set time-slicing period and scope
  *
  * This routine controls how task time slicing is performed by the task
- * scheduler, by specifying the maximum time slice length (in ticks) and
+ * scheduler; it specifes the maximum time slice length (in ticks) and
  * the highest priority task level for which time slicing is performed.
  *
  * To enable time slicing, a non-zero time slice length must be specified.
@@ -49,14 +49,14 @@ extern "C" {
  * specified task priority level is exempted, and may execute as long as
  * desired without being pre-empted due to time slicing.)
  *
- * Time slicing only limits that maximum amount of time a task may continuously
+ * Time slicing limits only the maximum amount of time a task may continuously
  * execute. Once the scheduler selects a task for execution, there is no minimum
  * guaranteed time the task will execute before tasks of greater or equal
  * priority are scheduled.
  *
- * If the currently executing task is the only one of that priority eligible
- * for execution this routine has no effect, as that task will be immediately
- * rescheduled once the slice period expires.
+ * When the currently-executing task is the only one of that priority eligible
+ * for execution, this routine has no effect; the task is immediately rescheduled
+ * after the slice period expires.
  *
  * To disable timeslicing, call the API with both parameters set to zero.
  *
@@ -65,7 +65,7 @@ extern "C" {
 extern void sys_scheduler_time_slice_set(int32_t t, kpriority_t p);
 
 /**
- * @brief Allocate a timer and return its object identifier
+ * @brief Allocate a timer and return its object identifier.
  *
  * @return timer identifier
  */
@@ -86,18 +86,18 @@ extern void task_timer_free(ktimer_t timer);
 
 /**
  *
- * @brief Start or restart the specified low resolution timer
+ * @brief Start or restart the specified low-resolution timer
  *
- * This routine starts or restarts the specified low resolution timer.
+ * This routine starts or restarts the specified low-resolution timer.
  *
- * When the specified number of ticks, set by @a duration, expires, the semaphore
- * is signalled.  The timer repeats the expiration/signal cycle each time
- * @a period ticks has elapsed.
+ * Signals the semaphore after a specified number of ticks set by
+ * @a duration expires. The timer repeats the expiration/signal cycle
+ * each time @a period ticks elapses.
  *
  * Setting @a period to 0 stops the timer at the end of the initial delay.
 
- * If either @a duration or @a period is passed a invalid value (@a duration <= 0,
- * @a period < 0), then this kernel API acts like a task_timer_stop(): if the
+ * If either @a duration or @a period is passed an invalid value (@a duration <= 0,
+ * @a period < 0), this kernel API acts like a task_timer_stop(): if the
  * allocated timer was still running (from a previous call), it will be
  * cancelled; if not, nothing will happen.
  *
@@ -116,8 +116,8 @@ extern void task_timer_start(ktimer_t timer,
  *
  * @brief Restart a timer
  *
- * This routine restarts the timer specified by @a timer. The timer must have
- * already been started by a call to task_timer_start().
+ * This routine restarts the timer specified by @a timer. The timer must
+ * have previously been started by a call to task_timer_start().
  *
  * @param timer      Timer to restart.
  * @param duration   Initial delay.
@@ -148,8 +148,7 @@ extern void task_timer_stop(ktimer_t timer);
  * @brief Sleep for a number of ticks
  *
  * This routine suspends the calling task for the specified number of timer
- * ticks.  When the task is awakened, it is rescheduled according to its
- * priority.
+ * ticks. When the suspension expires, the task is rescheduled by priority.
  *
  * @param ticks   Number of ticks for which to sleep.
  *
@@ -167,9 +166,9 @@ extern void task_sleep(int32_t ticks);
  * microkernel during the period set by sys_workload_time_slice_set().
  *
  * IMPORTANT: This workload monitor ignores any time spent servicing ISRs and
- * fibers! Thus, a system which has no meaningful task work to do may spend
- * up to 100% of its time servicing ISRs and fibers, yet report a workload of 0%
- * because the idle task is always the task selected by the microkernel.
+ * fibers! Thus, a system with no meaningful task work to do may spend
+ * up to 100% of its time servicing ISRs and fibers, yet it will report 0%
+ * workload because the microkernel always selects the idle task.
  *
  * @return workload
  */
@@ -180,7 +179,9 @@ extern int task_workload_get(void);
  * @brief Set workload period
  *
  * This routine specifies the workload measuring period for task_workload_get().
+ *
  * @param t Time slice
+ *
  * @return N/A
  */
 extern void sys_workload_time_slice_set(int32_t t);
