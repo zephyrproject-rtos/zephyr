@@ -314,9 +314,14 @@ void on_ble_gap_sm_pairing_rsp(const struct ble_core_response *par)
 	BT_DBG("");
 }
 
-void on_ble_gap_sm_config_rsp(struct ble_gap_sm_config_rsp *par)
+void on_ble_gap_sm_config_rsp(struct ble_gap_sm_config_rsp *rsp)
 {
-	BT_DBG("");
+	if (rsp->status) {
+		BT_ERR("SM config failed, status %d", rsp->status);
+		return;
+	}
+
+	BT_DBG("state %u", rsp->state);
 }
 
 void on_ble_gap_clr_white_list_rsp(const struct ble_core_response *par)
