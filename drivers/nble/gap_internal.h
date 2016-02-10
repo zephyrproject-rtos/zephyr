@@ -630,14 +630,11 @@ enum BLE_GAP_SCAN_OPTIONS {
 	BLE_GAP_SCAN_WHITE_LISTED = 0x02,
 };
 
-struct ble_gap_scan_params {
-	uint16_t timeout;	/**< scan timeout in s, 0 never */
-	/**< interval: 0x4 - 0x4000 (unit: 0.625ms), default: 0xffff (0x0010) */
+struct nble_gap_scan_params {
 	uint16_t interval;
-	/**< Window: 0x4 - 0x4000 (unit: 0.625ms), default 0xffff (= 0x0010) */
 	uint16_t window;
-	/**< scan options, ORed options from @ref BLE_GAP_SCAN_OPTIONS */
-	uint8_t options;
+	uint8_t scan_type;
+	uint8_t use_whitelist;
 };
 
 /**
@@ -647,9 +644,8 @@ struct ble_gap_scan_params {
  * @ref on_ble_gap_start_scan_rsp
  *
  * @param par Scan parameters
- * @param user_data Pointer to user data
  */
-void ble_gap_start_scan_req(const struct ble_gap_scan_params *par, void *priv);
+void nble_gap_start_scan_req(const struct nble_gap_scan_params *par);
 
 /**
  * Response to @ref ble_gap_start_scan_req.
@@ -858,6 +854,12 @@ struct ble_gap_conn_update_evt {
  * @param ev Pointer to the event structure.
  */
 void on_ble_gap_conn_update_evt(const struct ble_gap_conn_update_evt *ev);
+
+struct nble_gap_adv_report_evt {
+	bt_addr_le_t addr;
+	int8_t rssi;
+	uint8_t adv_type;
+};
 
 struct ble_gap_rssi_evt {
 	uint16_t conn_handle;	/**< Connection handle */

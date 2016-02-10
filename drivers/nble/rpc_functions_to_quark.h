@@ -76,7 +76,9 @@
 	FN_SIG_S(on_ble_gap_stop_advertise_rsp,			\
 		 const struct ble_core_response *)		\
 	FN_SIG_S(on_ble_gatts_read_evt,				\
-		 const struct nble_gatt_rd_evt *)
+		 const struct nble_gatt_rd_evt *)		\
+	FN_SIG_S(on_nble_gap_scan_start_stop_rsp,		\
+		 const struct ble_core_response *)
 
 #define LIST_FN_SIG_P						\
 	FN_SIG_P(on_ble_gap_dtm_init_rsp, void *)
@@ -99,6 +101,9 @@
 		   uint8_t)					\
 	FN_SIG_S_B(on_ble_gattc_discover_rsp,			\
 		   const struct ble_gattc_disc_rsp *,		\
+		   const uint8_t *, uint8_t)			\
+	FN_SIG_S_B(on_nble_gap_adv_report_evt,			\
+		   const struct nble_gap_adv_report_evt *,	\
 		   const uint8_t *, uint8_t)
 
 #define LIST_FN_SIG_B_B_P

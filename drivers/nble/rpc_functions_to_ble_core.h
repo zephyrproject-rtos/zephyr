@@ -15,10 +15,14 @@
  */
 
 /* declare the list of functions sorted by signature */
-#define LIST_FN_SIG_NONE
+#define LIST_FN_SIG_NONE						\
+	FN_SIG_NONE(nble_gap_stop_scan_req)
 
 #define LIST_FN_SIG_S							\
-	FN_SIG_S(ble_gap_start_advertise_req, struct ble_gap_adv_params *)
+	FN_SIG_S(ble_gap_start_advertise_req,				\
+		 struct ble_gap_adv_params *)				\
+	FN_SIG_S(nble_gap_start_scan_req,				\
+		 const struct nble_gap_scan_params *)
 
 #define LIST_FN_SIG_P							\
 	FN_SIG_P(ble_get_version_req, void *)				\
@@ -26,7 +30,6 @@
 	FN_SIG_P(ble_gap_read_bda_req, void *)				\
 	FN_SIG_P(ble_gap_stop_advertise_req, void *)			\
 	FN_SIG_P(ble_gap_clr_white_list_req, void *)			\
-	FN_SIG_P(ble_gap_stop_scan_req, void *)				\
 	FN_SIG_P(ble_gap_sm_clear_bonds_req, void *)			\
 	FN_SIG_P(ble_gap_cancel_connect_req, void *)			\
 	FN_SIG_P(ble_get_bonded_device_list_req, void *)
@@ -63,8 +66,6 @@
 		   void *)						\
 	FN_SIG_S_P(ble_gap_connect_req,					\
 		   const struct ble_gap_connect_req_params *, void *)	\
-	FN_SIG_S_P(ble_gap_start_scan_req,				\
-		   const struct ble_gap_scan_params *, void *)		\
 	FN_SIG_S_P(ble_gap_generic_cmd_req,				\
 		   const struct ble_gap_gen_cmd_params *, void *)	\
 	FN_SIG_S_P(ble_gap_set_option_req,				\
