@@ -611,7 +611,6 @@ struct timeout_order_data timeout_order_data[] = {
 #define NUM_TIMEOUT_FIBERS ARRAY_SIZE(timeout_order_data)
 static char __stack timeout_stacks[NUM_TIMEOUT_FIBERS][FIBER_STACKSIZE];
 
-#ifndef CONFIG_ARM
 /* a fiber busy waits, then reports through a fifo */
 static void test_fiber_busy_wait(int ticks, int unused)
 {
@@ -639,7 +638,6 @@ static void test_fiber_busy_wait(int ticks, int unused)
 
 	nano_fiber_sem_give(&reply_timeout);
 }
-#endif
 
 /* a fiber sleeps and times out, then reports through a fifo */
 static void test_fiber_sleep(int timeout, int arg2)
@@ -676,12 +674,6 @@ static int test_timeout(void)
 	int ii;
 	struct timeout_order_data *data;
 
-/*
- * sys_thread_busy_wait() is currently unsupported for ARM
- */
-
-#ifndef CONFIG_ARM
-
 	/* test sys_thread_busy_wait() */
 
 	TC_PRINT("Testing sys_thread_busy_wait()\n");
@@ -696,8 +688,6 @@ static int test_timeout(void)
 		TC_ERROR(" *** task timed out waiting for sys_thread_busy_wait()\n");
 		return TC_FAIL;
 	}
-
-#endif /* CONFIG_ARM */
 
 	/* test fiber_sleep() */
 

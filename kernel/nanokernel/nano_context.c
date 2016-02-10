@@ -94,17 +94,6 @@ int _is_thread_essential(struct tcs *pCtx)
 	return ((pCtx == NULL) ? _nanokernel.current : pCtx)->flags & ESSENTIAL;
 }
 
-/*
- * Don't build sys_thread_busy_wait() for ARM, since intrinsics libraries in
- * current Zephyr SDK use non-Thumb code that isn't supported on Cortex-M CPUs.
- * For the time being any ARM-based application that attempts to use this API
- * will get a link error (which is preferable to a mysterious exception).
- *
- * @param usec_to_wait
- *
- * @return N/A
- */
-#ifndef CONFIG_ARM
 void sys_thread_busy_wait(uint32_t usec_to_wait)
 {
 	/* use 64-bit math to prevent overflow when multiplying */
@@ -124,7 +113,6 @@ void sys_thread_busy_wait(uint32_t usec_to_wait)
 		}
 	}
 }
-#endif /* CONFIG_ARM */
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 
