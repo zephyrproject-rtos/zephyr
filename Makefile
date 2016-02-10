@@ -521,8 +521,16 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 core-y := lib/ kernel/ misc/ net/ boards/ arch/
 drivers-y := drivers/
 
+ifneq ($(strip $(MAKEFILE_APP_DIR)),)
+MAKEFILE_APP := $(realpath $(MAKEFILE_APP_DIR)/Makefile.app)
+endif
+
 ifneq ($(strip $(PROJECT)),)
+ifneq ($(strip $(MAKEFILE_APP)), )
+include $(MAKEFILE_APP)
+else
 -include $(PROJECT)/Makefile.app
+endif
 ifneq ($(strip $(KBUILD_ZEPHYR_APP)),)
 export KBUILD_ZEPHYR_APP
 endif
