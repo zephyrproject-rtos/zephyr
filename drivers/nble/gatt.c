@@ -15,11 +15,13 @@
  */
 
 #include <errno.h>
+#include <atomic.h>
 #include <misc/byteorder.h>
 
 #include <bluetooth/gatt.h>
 #include <bluetooth/log.h>
 
+#include "conn_internal.h"
 #include "gatt_internal.h"
 
 #define NBLE_BUF_SIZE	384
@@ -354,7 +356,12 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	struct ble_gatt_send_notif_ind_params notif;
 
-	notif.conn_handle = 0xFFFF;
+	if (conn) {
+		notif.conn_handle = conn->handle;
+	} else {
+		notif.conn_handle = 0xffff;
+	}
+
 	notif.params.attr = (struct bt_gatt_attr *)attr;
 	notif.params.offset = 0;
 
