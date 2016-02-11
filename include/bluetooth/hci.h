@@ -218,6 +218,7 @@ struct bt_hci_cp_set_event_mask {
 #define BT_BREDR_SCAN_INQUIRY			0x01
 #define BT_BREDR_SCAN_PAGE			0x02
 
+#define BT_HCI_CTL_TO_HOST_FLOW_ENABLE		0x01
 #define BT_HCI_OP_SET_CTL_TO_HOST_FLOW		BT_OP(BT_OGF_BASEBAND, 0x0031)
 
 #define BT_HCI_OP_HOST_BUFFER_SIZE		BT_OP(BT_OGF_BASEBAND, 0x0033)
@@ -336,6 +337,9 @@ struct bt_hci_cp_le_set_scan_rsp_data {
 	uint8_t  len;
 	uint8_t  data[31];
 } __packed;
+
+#define BT_HCI_LE_ADV_DISABLE			0x00
+#define BT_HCI_LE_ADV_ENABLE			0x01
 
 #define BT_HCI_OP_LE_SET_ADV_ENABLE		BT_OP(BT_OGF_LE, 0x000a)
 struct bt_hci_cp_le_set_adv_enable {
