@@ -15,7 +15,7 @@ export ZEPHYR_BASE=$( builtin cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ${MIN
 
 scripts_path=${ZEPHYR_BASE}/scripts
 echo "${PATH}" | grep -q "${scripts_path}"
-[ $? != 0 ] && export PATH=${scripts_path}:${PATH}
+[ $? != 0 ] && export PATH=${PATH}:${scripts_path}
 unset scripts_path
 
 # enable custom environment settings
