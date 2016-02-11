@@ -62,6 +62,17 @@ config BLUETOOTH_DEBUG
 	default n
 	select STDOUT_CONSOLE
 
+if BLUETOOTH_DEBUG
+
+config BLUETOOTH_DEBUG_GATT
+	bool "Bluetooth Generic Attribute Profile (GATT) debug"
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  Generic Attribute Profile (GATT).
+
+endif # BLUETOOTH_DEBUG
+
 config  NBLE_UART_ON_DEV_NAME
 	string "Device Name of UART Device for Nordic BLE"
 	default "UART_0"
