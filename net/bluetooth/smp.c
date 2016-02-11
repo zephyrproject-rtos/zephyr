@@ -1185,17 +1185,6 @@ static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 }
-#else
-static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
-{
-	return BT_SMP_ERR_CMD_NOTSUPP;
-}
-
-static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
-{
-	return BT_SMP_ERR_CMD_NOTSUPP;
-}
-#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 static uint8_t legacy_pairing_rsp(struct bt_smp *smp, uint8_t remote_io)
@@ -1221,6 +1210,17 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp, uint8_t remote_io)
 	return 0;
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
+#else
+static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+
+static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
 static int smp_init(struct bt_smp *smp)
 {
