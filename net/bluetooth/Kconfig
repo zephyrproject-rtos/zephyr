@@ -44,8 +44,8 @@ config BLUETOOTH_TINYCRYPT
 	select TINYCRYPT_SHA256_HMAC
 	select TINYCRYPT_SHA256_HMAC_PRNG
 	help
-	  "If this option is set TinyCrypt library is used for Bluetooth
-	  cryptographic operations. If not set controller crypto is used"
+	  If this option is set TinyCrypt library is used for Bluetooth
+	  cryptographic operations. If not set controller crypto is used.
 
 config BLUETOOTH_TINYCRYPT_ECC
 	bool "Use TinyCrypt library for ECDH"
