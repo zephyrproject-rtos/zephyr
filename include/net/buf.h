@@ -179,6 +179,18 @@ struct net_buf *net_buf_clone(struct net_buf *buf);
  */
 void *net_buf_add(struct net_buf *buf, size_t len);
 
+/** @brief Add (8-bit) byte at the end of the buffer
+ *
+ *  Adds a byte at the end of the buffer. Increments the data length of
+ *  the  buffer to account for more data at the end.
+ *
+ *  @param buf Buffer to update.
+ *  @param value byte value to be added.
+ *
+ *  @return Pointer to the value added
+ */
+uint8_t *net_buf_add_u8(struct net_buf *buf, uint8_t value);
+
 /** @brief Add 16-bit value at the end of the buffer
  *
  *  Adds 16-bit value in little endian format at the end of buffer.

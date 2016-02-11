@@ -119,6 +119,18 @@ void *net_buf_add(struct net_buf *buf, size_t len)
 	return tail;
 }
 
+uint8_t *net_buf_add_u8(struct net_buf *buf, uint8_t value)
+{
+	uint8_t *u8;
+
+	NET_BUF_DBG("buf %p value 0x%02x\n", buf, value);
+
+	u8 = net_buf_add(buf, 1);
+	*u8 = value;
+
+	return u8;
+}
+
 void net_buf_add_le16(struct net_buf *buf, uint16_t value)
 {
 	NET_BUF_DBG("buf %p value %u\n", buf, value);
