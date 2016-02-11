@@ -21,14 +21,6 @@
 
 #include <misc/printk.h>
 
-#if defined(CONFIG_SPI_QMSI_PORT_0_DRV_NAME)
-#define SPI_PORT_0 CONFIG_SPI_QMSI_PORT_0_DRV_NAME
-#elif defined(CONFIG_SPI_DW_PORT_0_DRV_NAME)
-#define SPI_PORT_0 CONFIG_SPI_DW_PORT_0_DRV_NAME
-#else
-#error "Unknown SPI driver implementation"
-#endif
-
 #define LSM9DS0_WHOAMI_G 0xf
 #define LSM9DS0_READ_MASK 0x80
 
@@ -53,7 +45,7 @@ static uint8_t lsm9ds0_read_whoami_g(struct device *dev)
 void main(void)
 {
 	struct spi_config config = { 0 };
-	struct device *spi_mst_0 = device_get_binding(SPI_PORT_0);
+	struct device *spi_mst_0 = device_get_binding("SPI_0");
 	uint8_t id;
 	int err;
 

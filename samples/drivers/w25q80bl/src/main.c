@@ -25,14 +25,6 @@
 #error "This sample requires the GPIO pin as Chip Select feature"
 #endif
 
-#if defined(CONFIG_SPI_QMSI_PORT_0_DRV_NAME)
-#define SPI_PORT_0 CONFIG_SPI_QMSI_PORT_0_DRV_NAME
-#elif defined(CONFIG_SPI_DW_PORT_0_DRV_NAME)
-#define SPI_PORT_0 CONFIG_SPI_DW_PORT_0_DRV_NAME
-#else
-#error "Unknown SPI driver implementation"
-#endif
-
 #define W25Q80BL_MANUFACTURER_ID 0x90
 
 static uint8_t rx_buffer[6], tx_buffer[6];
@@ -62,7 +54,7 @@ int w25q80bl_read_id(struct device *dev, uint8_t *manufacturer, uint8_t *devicei
 int main(void)
 {
 	struct spi_config config = { 0 };
-	struct device *spi_mst_0 = device_get_binding(SPI_PORT_0);
+	struct device *spi_mst_0 = device_get_binding("SPI_0");
 	uint8_t manufacturer, device_id;
 	int err;
 
@@ -92,7 +84,8 @@ int main(void)
 		return DEV_FAIL;
 	}
 
-	printk("SPI Flash Manufacturer %x Device Id %x\n", manufacturer, device_id);
+	printk("SPI Flash Manufacturer %x Device Id %x\n", manufacturer,
+	       device_id);
 
 	return DEV_OK;
 }
