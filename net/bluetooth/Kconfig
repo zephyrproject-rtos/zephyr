@@ -29,28 +29,21 @@ if BLUETOOTH
 config BLUETOOTH_LE
 	bool "Bluetooth Low Energy (LE) support"
 	default n
+	select TINYCRYPT
+	select TINYCRYPT_AES if BLUETOOTH_SMP
+	select TINYCRYPT_AES_CMAC if BLUETOOTH_SMP
+	select TINYCRYPT_SHA256
+	select TINYCRYPT_SHA256_HMAC
+	select TINYCRYPT_SHA256_HMAC_PRNG
 	help
 	  This option enables Bluetooth Low Energy (LE) support.
 	  Currently it is mandatory whenever Bluetooth support
 	  (CONFIG_BLUETOOTH) is enabled.
 
 if BLUETOOTH_LE
-config BLUETOOTH_TINYCRYPT
-	bool "Use TinyCrypt library"
-	default n
-	select TINYCRYPT
-	select TINYCRYPT_AES if BLUETOOTH_SMP
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_SHA256_HMAC
-	select TINYCRYPT_SHA256_HMAC_PRNG
-	help
-	  If this option is set TinyCrypt library is used for Bluetooth
-	  cryptographic operations. If not set controller crypto is used.
-
 config BLUETOOTH_TINYCRYPT_ECC
 	bool "Use TinyCrypt library for ECDH"
 	default n
-	depends on BLUETOOTH_TINYCRYPT
 	select TINYCRYPT_ECC_DH
 	help
 	  If this option is set TinyCrypt library is also used for LE Secure
