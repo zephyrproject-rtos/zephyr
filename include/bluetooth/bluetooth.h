@@ -287,7 +287,7 @@ static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
 /** @brief Converts binary LE Bluetooth address to string.
  *
  *  @param addr Address of buffer containing binary LE Bluetooth address.
- *  @param user_buf Address of user buffer with enough room to store
+ *  @param str Address of user buffer with enough room to store
  *  formatted string containing binary LE address.
  *  @param len Length of data to be copied to user string buffer. Refer to
  *  BT_ADDR_LE_STR_LEN about recommended value.
