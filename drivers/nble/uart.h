@@ -21,37 +21,6 @@
  */
 extern struct driver ipc_uart_ns16550_driver;
 
-enum IPC_UART_RESULT_CODES {
-	IPC_UART_ERROR_OK = 0,
-	IPC_UART_ERROR_DATA_TO_BIG,
-	/**< A transmission is already ongoing, message is NOT sent */
-	IPC_UART_TX_BUSY
-};
-
-/**
- * Definitions valid for NONE sync IPC UART headers.
- */
-
-/**
- * @note this structure must be self-aligned and self-packed
- */
-struct ipc_uart_header {
-	uint16_t len;		/**< Length of IPC message. */
-	uint8_t channel;	/**< Channel number of IPC message. */
-	uint8_t src_cpu_id;	/**< CPU id of IPC sender. */
-};
-
-#define IPC_CHANNEL_STATE_CLOSED	0
-#define IPC_CHANNEL_STATE_OPEN		1
-
-#define IPC_UART_MAX_CHANNEL		1
-
-struct ipc_uart_channels {
-	uint16_t index;
-	uint16_t state;
-	int (*cb)(int chan, int request, int len, void *data);
-};
-
 int nble_open(void);
 
 /**

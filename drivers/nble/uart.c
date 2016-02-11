@@ -31,6 +31,15 @@
 #include "uart.h"
 #include "rpc.h"
 
+/**
+ * @note this structure must be self-aligned and self-packed
+ */
+struct ipc_uart_header {
+	uint16_t len;		/**< Length of IPC message. */
+	uint8_t channel;	/**< Channel number of IPC message. */
+	uint8_t src_cpu_id;	/**< CPU id of IPC sender. */
+} __packed;
+
 /* TODO: check size */
 #define NBLE_TX_BUF_COUNT	2
 #define NBLE_RX_BUF_COUNT	8
@@ -70,7 +79,7 @@ struct net_buf *rpc_alloc_cb(uint16_t length)
 
 	BT_DBG("length %u", length);
 
-	buf = net_buf_get(&tx, 0);
+	buf = net_buf_get(&tx, sizeof(struct ipc_uart_header));
 	if (!buf) {
 		BT_ERR("Unable to get tx buffer");
 		return NULL;
@@ -85,30 +94,21 @@ struct net_buf *rpc_alloc_cb(uint16_t length)
 	return buf;
 }
 
-static void poll_out(const void *buf, size_t length)
-{
-	const uint8_t *ptr = buf;
-
-	while (length--) {
-		uart_poll_out(nble_dev, *ptr++);
-	}
-}
-
 void rpc_transmit_cb(struct net_buf *buf)
 {
-	struct ipc_uart_header hdr;
+	struct ipc_uart_header *hdr;
 
 	BT_DBG("buf %p length %u", buf, buf->len);
 
-	hdr.len = buf->len;
-	hdr.channel = 0;
-	hdr.src_cpu_id = 0;
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->len = buf->len - sizeof(*hdr);
+	hdr->channel = 0;
+	hdr->src_cpu_id = 0;
 
-	/* Send header */
-	poll_out(&hdr, sizeof(hdr));
-
-	/* Send data */
-	poll_out(buf->data, buf->len);
+	while (buf->len) {
+		uart_poll_out(nble_dev, buf->data[0]);
+		net_buf_pull(buf, 1);
+	}
 
 	net_buf_unref(buf);
 }
