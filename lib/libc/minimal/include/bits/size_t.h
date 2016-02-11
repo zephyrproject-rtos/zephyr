@@ -15,7 +15,8 @@
  */
 
 /**
- * @file size_t definition
+ * @file
+ * @brief size_t definition
  */
 
 #if !defined(__size_t_defined)

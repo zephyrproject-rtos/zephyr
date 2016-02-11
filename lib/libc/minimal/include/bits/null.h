@@ -15,7 +15,8 @@
  */
 
 /**
- * @file NULL definition
+ * @file
+ * @brief NULL definition
  */
 
 #if !defined(NULL)

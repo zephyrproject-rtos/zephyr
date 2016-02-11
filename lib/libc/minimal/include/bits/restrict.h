@@ -15,7 +15,8 @@
  */
 
 /**
- * @file _Restrict definition
+ * @file
+ * @brief _Restrict definition
  *
  * The macro "_Restrict" is intended to be private to the minimal libc library.
  * It evaluates to the "restrict" keyword when a C99 compiler is used, and

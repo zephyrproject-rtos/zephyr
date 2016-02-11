@@ -15,7 +15,8 @@
  */
 
 /**
- * @file Header file for NSIM UART driver
+ * @file
+ * @brief Header file for NSIM UART driver
  */
 
 #ifndef _DRIVERS_UART_NSIM_H_

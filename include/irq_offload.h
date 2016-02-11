@@ -15,7 +15,8 @@
  */
 
 /**
- * @file IRQ Offload interface
+ * @file
+ * @brief IRQ Offload interface
  */
 #ifndef _IRQ_OFFLOAD_H_
 #define _IRQ_OFFLOAD_H_
