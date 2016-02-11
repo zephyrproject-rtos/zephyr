@@ -48,19 +48,20 @@
 void nano_fifo_init(struct nano_fifo *fifo)
 {
 	/*
-	 * The wait queue and data queue occupy the same space since there cannot
-	 * be both queued data and pending fibers in the FIFO. Care must be taken
-	 * that, when one of the queues becomes empty, it is reset to a state
-	 * that reflects an empty queue to both the data and wait queues.
+	 * The wait queue and data queue occupy the same space since there
+	 * cannot be both queued data and pending fibers in the FIFO. Care
+	 * must be taken that, when one of the queues becomes empty, it is
+	 * reset to a state that reflects an empty queue to both the data and
+	 * wait queues.
 	 */
 	_nano_wait_q_init(&fifo->wait_q);
 
 	/*
 	 * If the 'stat' field is a positive value, it indicates how many data
-	 * elements reside in the FIFO.  If the 'stat' field is a negative value,
-	 * its absolute value indicates how many fibers are pending on the LIFO
-	 * object.  Thus a value of '0' indicates that there are no data elements
-	 * in the LIFO _and_ there are no pending fibers.
+	 * elements reside in the FIFO.  If the 'stat' field is a negative
+	 * value, its absolute value indicates how many fibers are pending on
+	 * the LIFO object.  Thus a value of '0' indicates that there are no
+	 * data elements in the LIFO _and_ there are no pending fibers.
 	 */
 
 	fifo->stat = 0;
@@ -171,8 +172,8 @@ static inline void *dequeue_data(struct nano_fifo *fifo)
 	if (fifo->stat == 0) {
 		/*
 		 * The data_q and wait_q occupy the same space and have the same
-		 * format, and there is already an API for resetting the wait_q, so
-		 * use it.
+		 * format, and there is already an API for resetting the wait_q,
+		 * so use it.
 		 */
 		_nano_wait_q_reset(&fifo->wait_q);
 	} else {
@@ -221,8 +222,9 @@ void *nano_task_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
 
 	do {
 		/*
-		 * Predict that the branch will be taken to break out of the loop.
-		 * There is little cost to a misprediction since that leads to idle.
+		 * Predict that the branch will be taken to break out of the
+		 * loop.  There is little cost to a misprediction since that
+		 * leads to idle.
 		 */
 
 		if (likely(fifo->stat > 0)) {
@@ -238,7 +240,9 @@ void *nano_task_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
 
 			_NANO_TIMEOUT_SET_TASK_TIMEOUT(timeout_in_ticks);
 
-			/* see explanation in nano_stack.c:nano_task_stack_pop() */
+			/* see explanation in
+			 * nano_stack.c:nano_task_stack_pop()
+			 */
 			nano_cpu_atomic_idle(key);
 
 			key = irq_lock();

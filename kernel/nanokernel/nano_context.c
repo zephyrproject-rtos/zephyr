@@ -85,10 +85,11 @@ void _thread_essential_clear(void)
  * thread.  A NULL thread pointer indicates that the current thread is
  * to be queried.
  *
+ * @param pCtx Pointer to the thread
+ *
  * @return Non-zero if specified thread is essential, zero if it is not
  */
-int _is_thread_essential(struct tcs *pCtx /* pointer to thread */
-					   )
+int _is_thread_essential(struct tcs *pCtx)
 {
 	return ((pCtx == NULL) ? _nanokernel.current : pCtx)->flags & ESSENTIAL;
 }

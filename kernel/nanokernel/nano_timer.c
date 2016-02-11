@@ -41,13 +41,12 @@ FUNC_ALIAS(_timer_start, nano_timer_start, void);
  * This function starts a previously initialized nanokernel timer object.
  * The timer will expire in <ticks> system clock ticks.
  *
+ * @param timer The Timer to start
+ * @param ticks The number of system ticks before expiration
+ *
  * @return N/A
  */
-void _timer_start(struct nano_timer *timer, /* timer to start */
-				       int ticks /* number of system ticks
-						  * before expiry
-						  */
-				       )
+void _timer_start(struct nano_timer *timer, int ticks)
 {
 	unsigned int imask;
 	struct nano_timer *cur;

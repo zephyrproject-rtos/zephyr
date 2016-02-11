@@ -174,8 +174,9 @@ int nano_task_stack_pop(struct nano_stack *stack, uint32_t *pData, int32_t timeo
 
 	while (1) {
 		/*
-		 * Predict that the branch will be taken to break out of the loop.
-		 * There is little cost to a misprediction since that leads to idle.
+		 * Predict that the branch will be taken to break out of the
+		 * loop.  There is little cost to a misprediction since that
+		 * leads to idle.
 		 */
 
 		if (likely(stack->next > stack->base)) {
@@ -190,17 +191,17 @@ int nano_task_stack_pop(struct nano_stack *stack, uint32_t *pData, int32_t timeo
 		}
 
 		/*
-		 * Invoke nano_cpu_atomic_idle() with interrupts still disabled to
-		 * prevent the scenario where an interrupt fires after re-enabling
-		 * interrupts and before executing the "halt" instruction.  If the
-		 * ISR performs a nano_isr_stack_push() on the same stack object,
-		 * the subsequent execution of the "halt" instruction will result
-		 * in the queued data being ignored until the next interrupt, if
-		 * any.
+		 * Invoke nano_cpu_atomic_idle() with interrupts still disabled
+		 * to prevent the scenario where an interrupt fires after
+		 * re-enabling interrupts and before executing the "halt"
+		 * instruction.  If the ISR performs a nano_isr_stack_push() on
+		 * the same stack object, the subsequent execution of the "halt"
+		 * instruction will result in the queued data being ignored
+		 * until the next interrupt, if any.
 		 *
 		 * Thus it should be clear that an architectures implementation
-		 * of nano_cpu_atomic_idle() must be able to atomically re-enable
-		 * interrupts and enter a low-power mode.
+		 * of nano_cpu_atomic_idle() must be able to atomically
+		 * re-enable interrupts and enter a low-power mode.
 		 *
 		 * This explanation is valid for all nanokernel objects: stacks,
 		 * FIFOs, LIFOs, and semaphores, for their

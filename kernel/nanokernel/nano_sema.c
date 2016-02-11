@@ -163,8 +163,9 @@ int nano_task_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks)
 
 	do {
 		/*
-		 * Predict that the branch will be taken to break out of the loop.
-		 * There is little cost to a misprediction since that leads to idle.
+		 * Predict that the branch will be taken to break out of the
+		 * loop.  There is little cost to a misprediction since that
+		 * leads to idle.
 		 */
 
 		if (likely(sem->nsig > 0)) {
@@ -177,7 +178,9 @@ int nano_task_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks)
 
 			_NANO_TIMEOUT_SET_TASK_TIMEOUT(timeout_in_ticks);
 
-			/* see explanation in nano_stack.c:nano_task_stack_pop() */
+			/* see explanation in
+			 * nano_stack.c:nano_task_stack_pop()
+			 */
 			nano_cpu_atomic_idle(key);
 
 			key = irq_lock();

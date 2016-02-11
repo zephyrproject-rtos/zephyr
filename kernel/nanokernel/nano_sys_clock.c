@@ -70,9 +70,9 @@ int64_t sys_tick_get(void)
 {
 	int64_t tmp_sys_clock_tick_count;
 	/*
-	 * Lock the interrupts when reading _sys_clock_tick_count 64-bit variable.
-	 * Some architectures (x86) do not handle 64-bit atomically, so
-	 * we have to lock the timer interrupt that causes change of
+	 * Lock the interrupts when reading _sys_clock_tick_count 64-bit
+	 * variable. Some architectures (x86) do not handle 64-bit atomically,
+	 * so we have to lock the timer interrupt that causes change of
 	 * _sys_clock_tick_count
 	 */
 	unsigned int imask = irq_lock();
@@ -116,9 +116,9 @@ static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
 	int64_t  saved;
 
 	/*
-	 * Lock the interrupts when reading _sys_clock_tick_count 64-bit variable.
-	 * Some architectures (x86) do not handle 64-bit atomically, so
-	 * we have to lock the timer interrupt that causes change of
+	 * Lock the interrupts when reading _sys_clock_tick_count 64-bit
+	 * variable.  Some architectures (x86) do not handle 64-bit atomically,
+	 * so we have to lock the timer interrupt that causes change of
 	 * _sys_clock_tick_count
 	 */
 	unsigned int imask = irq_lock();

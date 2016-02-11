@@ -140,17 +140,18 @@ extern void _main(void);
 static void nano_init(struct tcs *dummyOutContext)
 {
 	/*
-	 * Initialize the current execution thread to permit a level of debugging
-	 * output if an exception should happen during nanokernel initialization.
-	 * However, don't waste effort initializing the fields of the dummy thread
-	 * beyond those needed to identify it as a dummy thread.
+	 * Initialize the current execution thread to permit a level of
+	 * debugging output if an exception should happen during nanokernel
+	 * initialization.
+	 * However, don't waste effort initializing the fields of the dummy
+	 * thread beyond those needed to identify it as a dummy thread.
 	 */
 
 	_nanokernel.current = dummyOutContext;
 
 	/*
-	 * Do not insert dummy execution context in the list of fibers, so that it
-	 * does not get scheduled back in once context-switched out.
+	 * Do not insert dummy execution context in the list of fibers, so that
+	 * it does not get scheduled back in once context-switched out.
 	 */
 	dummyOutContext->link = (struct tcs *)NULL;
 
@@ -185,7 +186,9 @@ static void nano_init(struct tcs *dummyOutContext)
 			    0				 /* options */
 			    );
 
-	/* indicate that failure of this task may be fatal to the entire system */
+	/* indicate that failure of this task may be fatal to the entire
+	 * system
+	 */
 
 	_nanokernel.task->flags |= ESSENTIAL;
 

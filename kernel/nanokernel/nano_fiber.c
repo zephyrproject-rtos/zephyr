@@ -121,8 +121,7 @@ void fiber_yield(void)
 	    (_nanokernel.current->prio >= _nanokernel.fiber->prio)) {
 		/*
 		 * Reinsert current thread into the list of runnable threads,
-		 * and
-		 * then swap to the thread at the head of the fiber list.
+		 * and then swap to the thread at the head of the fiber list.
 		 */
 
 		_nano_fiber_ready(_nanokernel.current);
@@ -158,8 +157,8 @@ FUNC_NORETURN void _nano_fiber_swap(void)
 
 	/*
 	 * Compiler can't know that _Swap() won't return and will issue a
-	 * warning
-	 * unless we explicitly tell it that control never gets this far.
+	 * warning unless we explicitly tell it that control never gets this
+	 * far.
 	 */
 
 	CODE_UNREACHABLE;
