@@ -64,6 +64,13 @@ config BLUETOOTH_DEBUG
 
 if BLUETOOTH_DEBUG
 
+config	BLUETOOTH_DEBUG_DRIVER
+	bool "Bluetooth driver debug"
+	default n
+	help
+	  This option enables debug support for the chosen
+	  Bluetooth UART driver to Nordic chip.
+
 config BLUETOOTH_DEBUG_GATT
 	bool "Bluetooth Generic Attribute Profile (GATT) debug"
 	default n
