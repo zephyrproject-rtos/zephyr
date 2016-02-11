@@ -69,7 +69,7 @@ extern "C" {
  * other devices of the same initialization level. Specified as an integer
  * value in the range 0 to 99; lower values indicate earlier initialization.
  * Must be a decimal integer literal without leading zeroes or sign (e.g. 32),
- * or an equivalent symbolic name (e.g. #define MY_INIT_PRIO 32); symbolic
+ * or an equivalent symbolic name (e.g. \#define MY_INIT_PRIO 32); symbolic
  * expressions are *not* permitted
  * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
@@ -94,7 +94,7 @@ extern "C" {
  * @brief Expands to the full name of a global device object
  *
  * @details Return the full name of a device object symbol created by
- * DEVICE_INIT(), using the @dev_name provided to DEVICE_INIT().
+ * DEVICE_INIT(), using the dev_name provided to DEVICE_INIT().
  *
  * It is meant to be used for declaring extern symbols pointing on device
  * objects before using the DEVICE_GET macro to get the device object.
@@ -111,7 +111,7 @@ extern "C" {
  * @brief Obtain a pointer to a device object by name
  *
  * @details Return the address of a device object created by
- * DEVICE_INIT(), using the @dev_name provided to DEVICE_INIT().
+ * DEVICE_INIT(), using the dev_name provided to DEVICE_INIT().
  *
  * @param name The same as dev_name provided to DEVICE_INIT()
  *
