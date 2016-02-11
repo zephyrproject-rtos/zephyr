@@ -111,7 +111,7 @@ config  SPI_INTEL_PORT_0_DRV_NAME
 	string
 	prompt "Intel SPI port 0 device name"
 	depends on SPI_INTEL_PORT_0
-	default "intel_spi_0"
+	default "SPI_0"
 
 config	SPI_INTEL_PORT_0_BUS
 	int "Port 0 PCI Bus"
@@ -169,7 +169,7 @@ config  SPI_INTEL_PORT_1_DRV_NAME
 	string
 	prompt "Intel SPI port 1 device name"
 	depends on SPI_INTEL_PORT_1
-	default "intel_spi_1"
+	default "SPI_1"
 
 config	SPI_INTEL_PORT_1_BUS
 	int "Port 1 PCI Bus"
@@ -309,7 +309,7 @@ config  SPI_DW_PORT_0_DRV_NAME
 	string
 	prompt "Designware SPI port 0 device name"
 	depends on SPI_DW_PORT_0
-	default "spi_dw_0"
+	default "SPI_0"
 
 config  SPI_DW_PORT_0_REGS
 	hex
@@ -357,7 +357,7 @@ config  SPI_DW_PORT_1_DRV_NAME
 	string
 	prompt "Designware SPI port 1 device name"
 	depends on SPI_DW_PORT_1
-	default "spi_dw_1"
+	default "SPI_1"
 
 config  SPI_DW_PORT_1_REGS
 	hex
@@ -411,7 +411,7 @@ config  SPI_QMSI_PORT_0_DRV_NAME
 	string
 	prompt "QMSI SPI port 0 device name"
 	depends on SPI_QMSI_PORT_0
-	default "spi_0"
+	default "SPI_0"
 
 config  SPI_QMSI_PORT_0_IRQ
 	int
@@ -448,7 +448,7 @@ config  SPI_QMSI_PORT_1_DRV_NAME
 	string
 	prompt "QMSI SPI port 1 device name"
 	depends on SPI_QMSI_PORT_1
-	default "spi_1"
+	default "SPI_1"
 
 config  SPI_QMSI_PORT_1_IRQ
 	int
