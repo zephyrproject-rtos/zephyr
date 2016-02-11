@@ -57,6 +57,7 @@ Perform the steps in the procedures in the order they appear.
 
    installation_linux.rst
    installation_mac.rst
+   installation_win.rst
 
 .. _Linux Foundation ID website: https://identity.linuxfoundation.org
 
