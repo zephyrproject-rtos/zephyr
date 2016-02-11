@@ -85,7 +85,7 @@ pieces of hardware are required.
   adaptor.  There are two the Zephyr team has tested and found to work.  Both
   will require male to male jumper cables to connect to the Arduino 101 board.
 
-  1. USB to TTL Serial Cable - https://adafru.it/954
+  1. `USB to TTL Serial Cable`_
 
   2. FTDI USB to TTL Serial Part #TTL-232R-3V3
      http://www.ftdichip.com/Products/Cables/USBTTLSerial.htm
@@ -507,3 +507,5 @@ Bibliography
 .. _ARM-JTAG-20-10:
    http://www.amazon.com/gp/product/
    B009UEO9ZY/ref=oh_aui_detailpage_o04_s00?ie=UTF8&psc=1
+
+.. _USB to TTL Serial Cable: https://www.adafruit.com/products/954
