@@ -262,7 +262,7 @@ struct net_buf *ip_buf_get_tx(struct net_context *context);
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.
  *
- * @param reserve How many bytes to reserve for headroom.
+ * @param reserve_head How many bytes to reserve for headroom.
  *
  * @return Network buffer if successful, NULL otherwise.
  */

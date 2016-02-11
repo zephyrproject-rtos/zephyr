@@ -39,7 +39,7 @@ extern "C" {
  * 5-tuple (protocol, remote address, remote port, source
  * address and source port).
  *
- * @param protocol Protocol to use. Currently only UDP is supported.
+ * @param ip_proto Protocol to use. Currently only UDP is supported.
  * @param remote_addr Remote IPv6/IPv4 address.
  * @param remote_port Remote UDP/TCP port.
  * @param local_addr Local IPv6/IPv4 address. If the local addres is NULL

@@ -77,7 +77,7 @@ struct net_driver {
  *
  * @details Only one network device can be registered at a time.
  *
- * @param buf Network driver.
+ * @param drv Network driver.
  *
  * @return 0 if ok, < 0 in case of error.
  */
@@ -86,7 +86,7 @@ int net_register_driver(struct net_driver *drv);
 /**
  * @brief Unregister a previously registered network driver.
  *
- * @param buf Network driver.
+ * @param drv Network driver.
  *
  * @details Networking will be disabled if there is no driver
  * available.
