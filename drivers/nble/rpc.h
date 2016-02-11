@@ -15,6 +15,7 @@
  */
 
 #include <stdint.h>
+#include <net/buf.h>
 
 /** Identifiers of the signature supported by the RPC */
 enum {
@@ -39,16 +40,15 @@ enum {
  * @return Pointer to the allocated buffer, the allocation shall not fail,
  * error must be handled internally
  */
-uint8_t *rpc_alloc_cb(uint16_t length);
+struct net_buf *rpc_alloc_cb(uint16_t length);
 
 /**
  * RPC transmission function, must be implemented by the user of the RPC.
  *
- * @param p_buf Pointer to the buffer allocated for transmission
+ * @param buf Pointer to the buffer allocated for transmission
  * by @ref rpc_alloc_cb
- * @param length Length of the buffer to transmit
  */
-void rpc_transmit_cb(uint8_t *p_buf, uint16_t length);
+void rpc_transmit_cb(struct net_buf *buf);
 
 /**
  * RPC serialization function to serialize a function that does not require any

@@ -133,9 +133,9 @@ LIST_FN_SIG_S_B_B_P
 #define FN_INDEX_SIZE		1
 #define POINTER_SIZE		4
 
-static void _send(uint8_t *buf, uint16_t length)
+static void _send(struct net_buf *buf)
 {
-	rpc_transmit_cb(buf, length);
+	rpc_transmit_cb(buf);
 }
 
 static uint16_t encoded_structlen(uint8_t structlen)
@@ -143,14 +143,11 @@ static uint16_t encoded_structlen(uint8_t structlen)
 	return 1 + structlen;
 }
 
-static uint8_t *serialize_struct(uint8_t *p, const uint8_t *struct_data,
-				 uint8_t struct_length)
+static void serialize_struct(struct net_buf *buf, const uint8_t *struct_data,
+			     uint8_t struct_length)
 {
-	*p++ = struct_length;
-	memcpy(p, struct_data, struct_length);
-	p += struct_length;
-
-	return p;
+	net_buf_add_u8(buf, struct_length);
+	memcpy(net_buf_add(buf, struct_length), struct_data, struct_length);
 }
 
 static uint16_t encoded_buflen(const uint8_t *buf, uint16_t buflen)
@@ -166,209 +163,170 @@ static uint16_t encoded_buflen(const uint8_t *buf, uint16_t buflen)
 	}
 }
 
-static uint8_t *serialize_buf(uint8_t *p, const uint8_t *buf, uint16_t buflen)
+static void serialize_buf(struct net_buf *buf, const uint8_t *data,
+			  uint16_t len)
 {
 	uint16_t varint;
+	uint8_t *p;
 
-	if (!buf) {
-		buflen = 0;
+	if (!data) {
+		len = 0;
 	}
 
-	varint = buflen;
+	varint = len;
 
-	*p = varint & 0x7F;
+	p = net_buf_add_u8(buf, (varint & 0x7f));
 	if (varint >= (1 << 7)) {
 		*p |= 0x80;
-		p++;
-		*p = varint >> 7;
+		net_buf_add_u8(buf, (varint >> 7));
 	}
 
-	p++;
-	memcpy(p, buf, buflen);
-	p += buflen;
-
-	return p;
+	memcpy(net_buf_add(buf, len), data, len);
 }
 
-static uint8_t *serialize_p(uint8_t *p, uintptr_t priv)
+static void serialize_p(struct net_buf *buf, void *ptr)
 {
-	*p++ = priv;
-	*p++ = (priv >> 8);
-	*p++ = (priv >> 16);
-	*p++ = (priv >> 24);
+	uintptr_t val = (uintptr_t)ptr;
 
-	return p;
+	memcpy(net_buf_add(buf, sizeof(val)), &val, sizeof(val));
 }
 
 void rpc_serialize_none(uint8_t fn_index)
 {
-	uint16_t length;
-	uint8_t *buf;
-	uint8_t *p;
+	struct net_buf *buf;
 
-	length = SIG_TYPE_SIZE + FN_INDEX_SIZE;
+	buf = rpc_alloc_cb(SIG_TYPE_SIZE + FN_INDEX_SIZE);
 
-	p = buf = rpc_alloc_cb(length);
+	net_buf_add_u8(buf, SIG_TYPE_NONE);
+	net_buf_add_u8(buf, fn_index);
 
-	*p++ = SIG_TYPE_NONE;
-	*p   = fn_index;
-
-	_send(buf, length);
+	_send(buf);
 }
 
 void rpc_serialize_s(uint8_t fn_index, const void *struct_data,
 		     uint8_t struct_length)
 {
-	uint16_t length;
-	uint8_t *buf;
-	uint8_t *p;
+	struct net_buf *buf;
 
-	length = SIG_TYPE_SIZE + FN_INDEX_SIZE +
-				encoded_structlen(struct_length);
+	buf = rpc_alloc_cb(SIG_TYPE_SIZE + FN_INDEX_SIZE +
+			   encoded_structlen(struct_length));
 
-	p = buf = rpc_alloc_cb(length);
+	net_buf_add_u8(buf, SIG_TYPE_S);
+	net_buf_add_u8(buf, fn_index);
 
-	*p++ = SIG_TYPE_S;
-	*p++ = fn_index;
-	p = serialize_struct(p, struct_data, struct_length);
+	serialize_struct(buf, struct_data, struct_length);
 
-	_send(buf, length);
+	_send(buf);
 }
 
-
-void rpc_serialize_p(uint8_t fn_index, void *p_priv)
+void rpc_serialize_p(uint8_t fn_index, void *priv)
 {
-	uint16_t length;
-	uint8_t *buf;
-	uint8_t *p;
-	uintptr_t priv = (uintptr_t) p_priv;
+	struct net_buf *buf;
 
-	length = SIG_TYPE_SIZE + FN_INDEX_SIZE + POINTER_SIZE;
+	buf = rpc_alloc_cb(SIG_TYPE_SIZE + FN_INDEX_SIZE + POINTER_SIZE);
 
-	p = buf = rpc_alloc_cb(length);
+	net_buf_add_u8(buf, SIG_TYPE_P);
+	net_buf_add_u8(buf, fn_index);
+	serialize_p(buf, priv);
 
-	*p++ = SIG_TYPE_P;
-	*p++ = fn_index;
-	p = serialize_p(p, priv);
-
-	_send(buf, length);
+	_send(buf);
 }
 
 void rpc_serialize_s_b(uint8_t fn_index, const void *struct_data,
 		       uint8_t struct_length, const void *vbuf,
 		       uint16_t vbuf_length)
 {
-	uint16_t length;
-	uint8_t *buf;
-	uint8_t *p;
+	struct net_buf *buf;
 
-	length = SIG_TYPE_SIZE + FN_INDEX_SIZE +
-			encoded_structlen(struct_length) +
-			encoded_buflen(vbuf, vbuf_length);
+	buf = rpc_alloc_cb(SIG_TYPE_SIZE + FN_INDEX_SIZE +
+			   encoded_structlen(struct_length) +
+			   encoded_buflen(vbuf, vbuf_length));
 
-	p = buf = rpc_alloc_cb(length);
+	net_buf_add_u8(buf, SIG_TYPE_S_B);
+	net_buf_add_u8(buf, fn_index);
 
-	*p++ = SIG_TYPE_S_B;
-	*p++ = fn_index;
-	p = serialize_struct(p, struct_data, struct_length);
-	p = serialize_buf(p, vbuf, vbuf_length);
+	serialize_struct(buf, struct_data, struct_length);
+	serialize_buf(buf, vbuf, vbuf_length);
 
-	_send(buf, length);
+	_send(buf);
 }
 
 void rpc_serialize_b_b_p(uint8_t fn_index, const void *vbuf1,
 			 uint16_t vbuf1_length, const void *vbuf2,
-			 uint16_t vbuf2_length, void *p_priv)
+			 uint16_t vbuf2_length, void *priv)
 {
-	uint16_t length;
-	uint8_t *buf;
-	uint8_t *p;
-	uintptr_t priv = (uintptr_t) p_priv;
+	struct net_buf *buf;
 
-	length = SIG_TYPE_SIZE + FN_INDEX_SIZE +
-			encoded_buflen(vbuf1, vbuf1_length) +
-			encoded_buflen(vbuf2, vbuf2_length) + POINTER_SIZE;
+	buf = rpc_alloc_cb(SIG_TYPE_SIZE + FN_INDEX_SIZE +
+			   encoded_buflen(vbuf1, vbuf1_length) +
+			   encoded_buflen(vbuf2, vbuf2_length) + POINTER_SIZE);
 
-	p = buf = rpc_alloc_cb(length);
+	net_buf_add_u8(buf, SIG_TYPE_B_B_P);
+	net_buf_add_u8(buf, fn_index);
 
-	*p++ = SIG_TYPE_B_B_P;
-	*p++ = fn_index;
-	p = serialize_buf(p, vbuf1, vbuf1_length);
-	p = serialize_buf(p, vbuf2, vbuf2_length);
-	p = serialize_p(p, priv);
+	serialize_buf(buf, vbuf1, vbuf1_length);
+	serialize_buf(buf, vbuf2, vbuf2_length);
+	serialize_p(buf, priv);
 
-	_send(buf, length);
+	_send(buf);
 }
 
 void rpc_serialize_s_p(uint8_t fn_index, const void *struct_data,
-		       uint8_t struct_length, void *p_priv)
+		       uint8_t struct_length, void *priv)
 {
-	uint16_t length;
-	uint8_t *buf;
-	uint8_t *p;
-	uintptr_t priv = (uintptr_t) p_priv;
+	struct net_buf *buf;
 
-	length = SIG_TYPE_SIZE +
-			FN_INDEX_SIZE + encoded_structlen(struct_length) +
-			POINTER_SIZE;
+	buf = rpc_alloc_cb(SIG_TYPE_SIZE + FN_INDEX_SIZE +
+			   encoded_structlen(struct_length) + POINTER_SIZE);
 
-	p = buf = rpc_alloc_cb(length);
+	net_buf_add_u8(buf, SIG_TYPE_S_P);
+	net_buf_add_u8(buf, fn_index);
 
-	*p++ = SIG_TYPE_S_P;
-	*p++ = fn_index;
-	p = serialize_struct(p, struct_data, struct_length);
-	p = serialize_p(p, priv);
+	serialize_struct(buf, struct_data, struct_length);
+	serialize_p(buf, priv);
 
-	_send(buf, length);
+	_send(buf);
 }
 
 void rpc_serialize_s_b_p(uint8_t fn_index, const void *struct_data,
 			 uint8_t struct_length, const void *vbuf,
-			 uint16_t vbuf_length, void *p_priv)
+			 uint16_t vbuf_length, void *priv)
 {
-	uint16_t length;
-	uint8_t *buf;
-	uint8_t *p;
-	uintptr_t priv = (uintptr_t) p_priv;
+	struct net_buf *buf;
 
-	length = SIG_TYPE_SIZE + FN_INDEX_SIZE +
-			encoded_structlen(struct_length) +
-			encoded_buflen(vbuf, vbuf_length) + POINTER_SIZE;
+	buf = rpc_alloc_cb(SIG_TYPE_SIZE + FN_INDEX_SIZE +
+			   encoded_structlen(struct_length) +
+			   encoded_buflen(vbuf, vbuf_length) + POINTER_SIZE);
 
-	p = buf = rpc_alloc_cb(length);
+	net_buf_add_u8(buf, SIG_TYPE_S_B_P);
+	net_buf_add_u8(buf, fn_index);
 
-	*p++ = SIG_TYPE_S_B_P;
-	*p++ = fn_index;
-	p = serialize_struct(p, struct_data, struct_length);
-	p = serialize_buf(p, vbuf, vbuf_length);
-	p = serialize_p(p, priv);
+	serialize_struct(buf, struct_data, struct_length);
+	serialize_buf(buf, vbuf, vbuf_length);
+	serialize_p(buf, priv);
 
-	_send(buf, length);
+	_send(buf);
 }
 
 void rpc_serialize_s_b_b_p(uint8_t fn_index, const void *struct_data,
 			   uint8_t struct_length, const void *vbuf1,
 			   uint16_t vbuf1_length, const void *vbuf2,
-			   uint16_t vbuf2_length, void *p_priv)
+			   uint16_t vbuf2_length, void *priv)
 {
-	uint16_t length;
-	uint8_t *buf;
-	uint8_t *p;
-	uintptr_t priv = (uintptr_t) p_priv;
+	struct net_buf *buf;
 
-	length = SIG_TYPE_SIZE + FN_INDEX_SIZE +
-			encoded_structlen(struct_length) +
-			encoded_buflen(vbuf1, vbuf1_length) +
-			encoded_buflen(vbuf2, vbuf2_length) + POINTER_SIZE;
+	buf = rpc_alloc_cb(SIG_TYPE_SIZE + FN_INDEX_SIZE +
+			   encoded_structlen(struct_length) +
+			   encoded_buflen(vbuf1, vbuf1_length) +
+			   encoded_buflen(vbuf2, vbuf2_length) + POINTER_SIZE);
 
-	p = buf = rpc_alloc_cb(length);
+	net_buf_add_u8(buf, SIG_TYPE_S_B_B_P);
+	net_buf_add_u8(buf, fn_index);
 
-	*p++ = SIG_TYPE_S_B_B_P;
-	*p++ = fn_index;
-	p = serialize_struct(p, struct_data, struct_length);
-	p = serialize_buf(p, vbuf1, vbuf1_length);
-	p = serialize_buf(p, vbuf2, vbuf2_length);
-	p = serialize_p(p, priv);
+	serialize_struct(buf, struct_data, struct_length);
+	serialize_buf(buf, vbuf1, vbuf1_length);
+	serialize_buf(buf, vbuf2, vbuf2_length);
+	serialize_p(buf, priv);
 
-	_send(buf, length);
+	_send(buf);
 }

@@ -64,7 +64,7 @@ static void rx_fiber(void)
 	}
 }
 
-uint8_t *rpc_alloc_cb(uint16_t length)
+struct net_buf *rpc_alloc_cb(uint16_t length)
 {
 	struct net_buf *buf;
 
@@ -82,7 +82,7 @@ uint8_t *rpc_alloc_cb(uint16_t length)
 		return NULL;
 	}
 
-	return buf->__buf;
+	return buf;
 }
 
 static void poll_out(const void *buf, size_t length)
@@ -94,14 +94,13 @@ static void poll_out(const void *buf, size_t length)
 	}
 }
 
-void rpc_transmit_cb(uint8_t *data, uint16_t length)
+void rpc_transmit_cb(struct net_buf *buf)
 {
-	struct net_buf *buf = CONTAINER_OF(data, struct net_buf, __buf);
 	struct ipc_uart_header hdr;
 
-	BT_DBG("buf %p length %u", data, length);
+	BT_DBG("buf %p length %u", buf, buf->len);
 
-	hdr.len = length;
+	hdr.len = buf->len;
 	hdr.channel = 0;
 	hdr.src_cpu_id = 0;
 
@@ -109,7 +108,7 @@ void rpc_transmit_cb(uint8_t *data, uint16_t length)
 	poll_out(&hdr, sizeof(hdr));
 
 	/* Send data */
-	poll_out(buf->data, length);
+	poll_out(buf->data, buf->len);
 
 	net_buf_unref(buf);
 }
