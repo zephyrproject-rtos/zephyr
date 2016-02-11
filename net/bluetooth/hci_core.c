@@ -33,10 +33,8 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/driver.h>
 
-#if defined(CONFIG_TINYCRYPT_SHA256_HMAC_PRNG)
 #include <tinycrypt/hmac_prng.h>
 #include <tinycrypt/utils.h>
-#endif /* CONFIG_TINYCRYPT_SHA256_HMAC_PRNG */
 
 #include "stack.h"
 
@@ -102,9 +100,7 @@ static struct nano_fifo avail_hci_evt;
 static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT, EVT_BUF_SIZE,
 		    &avail_hci_evt, NULL, 0);
 
-#if defined(CONFIG_TINYCRYPT_SHA256_HMAC_PRNG)
 static struct tc_hmac_prng_struct prng;
-#endif /* CONFIG_TINYCRYPT_SHA256_HMAC_PRNG */
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 static void report_completed_packet(struct net_buf *buf)
@@ -1187,7 +1183,6 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
-#if defined(CONFIG_TINYCRYPT_SHA256_HMAC_PRNG)
 static int prng_reseed(struct tc_hmac_prng_struct *h)
 {
 	uint8_t seed[32];
@@ -1267,35 +1262,6 @@ int bt_rand(void *buf, size_t len)
 
 	return -EIO;
 }
-#else
-int bt_rand(void *buf, size_t len)
-{
-	uint8_t *ptr = buf;
-
-	while (len > 0) {
-		struct bt_hci_rp_le_rand *rp;
-		struct net_buf *rsp;
-		size_t copy;
-		int err;
-
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
-		if (err) {
-			BT_ERR("HCI_LE_Random failed (%d)", err);
-			return err;
-		}
-
-		rp = (void *)rsp->data;
-		copy = min(len, sizeof(rp->rand));
-		memcpy(ptr, rp->rand, copy);
-		net_buf_unref(rsp);
-
-		len -= copy;
-		ptr += copy;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_TINYCRYPT_SHA256_HMAC_PRNG */
 
 static int le_set_nrpa(void)
 {
@@ -2112,13 +2078,7 @@ static int le_init(void)
 	}
 #endif /* CONFIG_BLUETOOTH_SMP && !CONFIG_TINYCRYPT_ECC_DH*/
 
-#if defined(CONFIG_TINYCRYPT_SHA256_HMAC_PRNG)
-	err = prng_init(&prng);
-	if (err) {
-		return err;
-	}
-#endif /* CONFIG_TINYCRYPT_SHA256_HMAC_PRNG */
-	return 0;
+	return prng_init(&prng);
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)

@@ -34,11 +34,9 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 
-#if defined(CONFIG_TINYCRYPT_AES)
 #include <tinycrypt/aes.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/cmac_mode.h>
-#endif
 
 #if defined(CONFIG_TINYCRYPT_ECC_DH)
 #include <tinycrypt/ecc.h>
@@ -290,7 +288,6 @@ static void swap_in_place(uint8_t *buf, uint16_t len)
 	}
 }
 
-#if defined(CONFIG_TINYCRYPT_AES)
 static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 		      uint8_t enc_data[16])
 {
@@ -317,40 +314,6 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 
 	return 0;
 }
-#else
-static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
-		      uint8_t enc_data[16])
-{
-	struct bt_hci_cp_le_encrypt *cp;
-	struct bt_hci_rp_le_encrypt *rp;
-	struct net_buf *buf, *rsp;
-	int err;
-
-	BT_DBG("key %s plaintext %s", h(key, 16), h(plaintext, 16));
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ENCRYPT, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	memcpy(cp->key, key, sizeof(cp->key));
-	memcpy(cp->plaintext, plaintext, sizeof(cp->plaintext));
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ENCRYPT, buf, &rsp);
-	if (err) {
-		return err;
-	}
-
-	rp = (void *)rsp->data;
-	memcpy(enc_data, rp->enc_data, sizeof(rp->enc_data));
-	net_buf_unref(rsp);
-
-	BT_DBG("enc_data %s", h(enc_data, 16));
-
-	return 0;
-}
-#endif
 
 static int smp_ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
 {
