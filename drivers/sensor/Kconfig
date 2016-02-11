@@ -48,6 +48,8 @@ source "drivers/sensor/Kconfig.bma280"
 
 source "drivers/sensor/Kconfig.bmc150_magn"
 
+source "drivers/sensor/Kconfig.bmp280"
+
 source "drivers/sensor/Kconfig.hdc1008"
 
 source "drivers/sensor/Kconfig.isl29035"
