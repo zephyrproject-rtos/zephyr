@@ -39,6 +39,38 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 120000000
 
+config K64_CORE_CLOCK_DIVIDER
+	int
+	prompt "Freescale K64 core clock divider"
+	default 1
+	help
+	This option specifies the divide value for the K64 processor core clock
+	from the system clock.
+
+config K64_BUS_CLOCK_DIVIDER
+	int
+	prompt "Freescale K64 bus clock divider"
+	default 2
+	help
+	This option specifies the divide value for the K64 bus clock from the
+	system clock.
+
+config K64_FLEXBUS_CLOCK_DIVIDER
+	int
+	prompt "Freescale K64 FlexBus clock divider"
+	default 3
+	help
+	This option specifies the divide value for the K64 FlexBus clock from the
+	system clock.
+
+config K64_FLASH_CLOCK_DIVIDER
+	int
+	prompt "Freescale K64 flash clock divider"
+	default 5
+	help
+	This option specifies the divide value for the K64 flash clock from the
+	system clock.
+
 config WDOG_INIT
 	def_bool y
 	# omit prompt to signify a "hidden" option
