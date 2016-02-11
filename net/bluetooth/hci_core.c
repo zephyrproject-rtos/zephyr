@@ -474,11 +474,10 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 		struct net_buf *buf;
-		uint8_t adv_enable = 0x01;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
 		if (buf) {
-			memcpy(net_buf_add(buf, 1), &adv_enable, 1);
+			net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
 			bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_ENABLE, buf);
 		}
 	}
@@ -764,7 +763,6 @@ static int set_flow_control(void)
 {
 	struct bt_hci_cp_host_buffer_size *hbs;
 	struct net_buf *buf;
-	uint8_t *enable;
 	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE,
@@ -789,8 +787,7 @@ static int set_flow_control(void)
 		return -ENOBUFS;
 	}
 
-	enable = net_buf_add(buf, sizeof(*enable));
-	*enable = 0x01;
+	net_buf_add_u8(buf, BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
 }
 
@@ -2461,7 +2458,6 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 {
 	struct net_buf *buf;
 	struct bt_hci_cp_le_set_adv_parameters *set_param;
-	uint8_t adv_enable;
 	int err;
 
 	if (!valid_adv_param(param)) {
@@ -2521,9 +2517,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return -ENOBUFS;
 	}
 
-	adv_enable = 0x01;
-	memcpy(net_buf_add(buf, 1), &adv_enable, 1);
-
+	net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 	if (err) {
 		return err;
@@ -2537,7 +2531,6 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 int bt_le_adv_stop(void)
 {
 	struct net_buf *buf;
-	uint8_t adv_enable;
 	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
@@ -2549,9 +2542,7 @@ int bt_le_adv_stop(void)
 		return -ENOBUFS;
 	}
 
-	adv_enable = 0x00;
-	memcpy(net_buf_add(buf, 1), &adv_enable, 1);
-
+	net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 	if (err) {
 		return err;
@@ -2662,8 +2653,7 @@ static int write_scan_enable(uint8_t scan)
 		return -ENOBUFS;
 	}
 
-	memcpy(net_buf_add(buf, 1), &scan, 1);
-
+	net_buf_add_u8(buf, scan);
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SCAN_ENABLE, buf, NULL);
 	if (err) {
 		return err;
