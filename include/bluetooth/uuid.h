@@ -97,6 +97,11 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_BAS				BT_UUID_DECLARE_16(0x180f)
 #define BT_UUID_BAS_VAL				0x180f
+/** @def BT_UUID_ESS
+ *  @brief Environmental Sensing Service
+ */
+#define BT_UUID_ESS				BT_UUID_DECLARE_16(0x181a)
+#define BT_UUID_ESS_VAL				0x181a
 /** @def BT_UUID_IPSS
  *  @brief IP Support Service
  */
@@ -147,6 +152,26 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_CPF			BT_UUID_DECLARE_16(0x2904)
 #define BT_UUID_GATT_CPF_VAL			0x2904
+/** @def BT_UUID_VALID_RANGE
+ *  @brief Valid Range Descriptor
+ */
+#define BT_UUID_VALID_RANGE			BT_UUID_DECLARE_16(0x2906)
+#define BT_UUID_VALID_RANGE_VAL			0x2906
+/** @def BT_UUID_ES_CONFIGURATION
+ *  @brief Environmental Sensing Configuration Descriptor
+ */
+#define BT_UUID_ES_CONFIGURATION		BT_UUID_DECLARE_16(0x290b)
+#define BT_UUID_ES_CONFIGURATION_VAL		0x290b
+/** @def BT_UUID_ES_MEASUREMENT
+ *  @brief Environmental Sensing Measurement Descriptor
+ */
+#define BT_UUID_ES_MEASUREMENT			BT_UUID_DECLARE_16(0x290c)
+#define BT_UUID_ES_MEASUREMENT_VAL		0x290c
+/** @def BT_UUID_ES_TRIGGER_SETTING
+ *  @brief Environmental Sensing Trigger Setting Descriptor
+ */
+#define BT_UUID_ES_TRIGGER_SETTING		BT_UUID_DECLARE_16(0x290d)
+#define BT_UUID_ES_TRIGGER_SETTING_VAL		0x290d
 /** @def BT_UUID_GAP_DEVICE_NAME
  *  @brief GAP Characteristic Device Name
  */
@@ -212,6 +237,11 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_CTS_CURRENT_TIME		BT_UUID_DECLARE_16(0x2a2b)
 #define BT_UUID_CTS_CURRENT_TIME_VAL		0x2a2b
+/** @def BT_UUID_MAGN_DECLINATION
+ *  @brief Magnetic Declination Characteristic
+ */
+#define BT_UUID_MAGN_DECLINATION		BT_UUID_DECLARE_16(0x2a2c)
+#define BT_UUID_MAGN_DECLINATION_VAL		0x2a2c
 /** @def BT_UUID_HRS_MEASUREMENT
  *  @brief HRS Characteristic Measurement Interval
  */
@@ -227,6 +257,106 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_HRS_CONTROL_POINT		BT_UUID_DECLARE_16(0x2a39)
 #define BT_UUID_HRS_CONTROL_POINT_VAL		0x2a39
+/** @def BT_UUID_ELEVATION
+ *  @brief Elevation Characteristic
+ */
+#define BT_UUID_ELEVATION			BT_UUID_DECLARE_16(0x2a6c)
+#define BT_UUID_ELEVATION_VAL			0x2a6c
+/** @def BT_UUID_PRESSURE
+ *  @brief Pressure Characteristic
+ */
+#define BT_UUID_PRESSURE			BT_UUID_DECLARE_16(0x2a6d)
+#define BT_UUID_PRESSURE_VAL			0x2a6d
+/** @def BT_UUID_TEMPERATURE
+ *  @brief Temperature Characteristic
+ */
+#define BT_UUID_TEMPERATURE			BT_UUID_DECLARE_16(0x2a6e)
+#define BT_UUID_TEMPERATURE_VAL			0x2a6e
+/** @def BT_UUID_HUMIDITY
+ *  @brief Humidity Characteristic
+ */
+#define BT_UUID_HUMIDITY			BT_UUID_DECLARE_16(0x2a6f)
+#define BT_UUID_HUMIDITY_VAL			0x2a6f
+/** @def BT_UUID_TRUE_WIND_SPEED
+ *  @brief True Wind Speed Characteristic
+ */
+#define BT_UUID_TRUE_WIND_SPEED			BT_UUID_DECLARE_16(0x2a70)
+#define BT_UUID_TRUE_WIND_SPEED_VAL		0x2a70
+/** @def BT_UUID_TRUE_WIND_DIR
+ *  @brief True Wind Direction Characteristic
+ */
+#define BT_UUID_TRUE_WIND_DIR			BT_UUID_DECLARE_16(0x2a71)
+#define BT_UUID_TRUE_WIND_DIR_VAL		0x2a71
+/** @def BT_UUID_APPARENT_WIND_SPEED
+ *  @brief Apparent Wind Speed Characteristic
+ */
+#define BT_UUID_APPARENT_WIND_SPEED		BT_UUID_DECLARE_16(0x2a72)
+#define BT_UUID_APPARENT_WIND_SPEED_VAL		0x2a72
+/** @def BT_UUID_APPARENT_WIND_DIR
+ *  @brief Apparent Wind Direction Characteristic
+ */
+#define BT_UUID_APPARENT_WIND_DIR		BT_UUID_DECLARE_16(0x2a73)
+#define BT_UUID_APPARENT_WIND_DIR_VAL		0x2a73
+/** @def BT_UUID_GUST_FACTOR
+ *  @brief Gust Factor Characteristic
+ */
+#define BT_UUID_GUST_FACTOR			BT_UUID_DECLARE_16(0x2a74)
+#define BT_UUID_GUST_FACTOR_VAL			0x2a74
+/** @def BT_UUID_POLLEN_CONCENTRATION
+ *  @brief Pollen Concentration Characteristic
+ */
+#define BT_UUID_POLLEN_CONCENTRATION		BT_UUID_DECLARE_16(0x2a75)
+#define BT_UUID_POLLEN_CONCENTRATION_VAL	0x2a75
+/** @def BT_UUID_UV_INDEX
+ *  @brief UV Index Characteristic
+ */
+#define BT_UUID_UV_INDEX			BT_UUID_DECLARE_16(0x2a76)
+#define BT_UUID_UV_INDEX_VAL			0x2a76
+/** @def BT_UUID_IRRADIANCE
+ *  @brief Irradiance Characteristic
+ */
+#define BT_UUID_IRRADIANCE			BT_UUID_DECLARE_16(0x2a77)
+#define BT_UUID_IRRADIANCE_VAL			0x2a77
+/** @def BT_UUID_RAINFALL
+ *  @brief Rainfall Characteristic
+ */
+#define BT_UUID_RAINFALL			BT_UUID_DECLARE_16(0x2a78)
+#define BT_UUID_RAINFALL_VAL			0x2a78
+/** @def BT_UUID_WIND_CHILL
+ *  @brief Wind Chill Characteristic
+ */
+#define BT_UUID_WIND_CHILL			BT_UUID_DECLARE_16(0x2a79)
+#define BT_UUID_WIND_CHILL_VAL			0x2a79
+/** @def BT_UUID_HEAT_INDEX
+ *  @brief Heat Index Characteristic
+ */
+#define BT_UUID_HEAT_INDEX			BT_UUID_DECLARE_16(0x2a7a)
+#define BT_UUID_HEAT_INDEX_VAL			0x2a7a
+/** @def BT_UUID_DEW_POINT
+ *  @brief Dew Point Characteristic
+ */
+#define BT_UUID_DEW_POINT			BT_UUID_DECLARE_16(0x2a7b)
+#define BT_UUID_DEW_POINT_VAL			0x2a7b
+/** @def BT_UUID_DESC_VALUE_CHANGED
+ *  @brief Descriptor Value Changed Characteristic
+ */
+#define BT_UUID_DESC_VALUE_CHANGED		BT_UUID_DECLARE_16(0x2a7d)
+#define BT_UUID_DESC_VALUE_CHANGED_VAL		0x2a7d
+/** @def BT_UUID_MAGN_FLUX_DENSITY_2D
+ *  @brief Magnetic Flux Density - 2D Characteristic
+ */
+#define BT_UUID_MAGN_FLUX_DENSITY_2D		BT_UUID_DECLARE_16(0x2aa0)
+#define BT_UUID_MAGN_FLUX_DENSITY_2D_VAL	0x2aa0
+/** @def BT_UUID_MAGN_FLUX_DENSITY_3D
+ *  @brief Magnetic Flux Density - 3D Characteristic
+ */
+#define BT_UUID_MAGN_FLUX_DENSITY_3D		BT_UUID_DECLARE_16(0x2aa1)
+#define BT_UUID_MAGN_FLUX_DENSITY_3D_VAL	0x2aa1
+/** @def BT_UUID_BAR_PRESSURE_TREND
+ *  @brief Barometric Pressure Trend Characteristic
+ */
+#define BT_UUID_BAR_PRESSURE_TREND		BT_UUID_DECLARE_16(0x2aa3)
+#define BT_UUID_BAR_PRESSURE_TREND_VAL		0x2aa3
 
 /** @brief Compare Bluetooth UUIDs.
  *
