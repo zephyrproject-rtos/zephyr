@@ -24,6 +24,11 @@
 #include "conn_internal.h"
 #include "gatt_internal.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_GATT)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 #define NBLE_BUF_SIZE	384
 
 struct ble_gatt_service {
