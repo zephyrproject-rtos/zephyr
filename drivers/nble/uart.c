@@ -31,6 +31,11 @@
 #include "uart.h"
 #include "rpc.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 /**
  * @note this structure must be self-aligned and self-packed
  */
