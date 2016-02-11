@@ -802,6 +802,7 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
 	info->type = conn->type;
+	info->role = conn->role;
 
 	switch (conn->type) {
 	case BT_CONN_TYPE_LE:

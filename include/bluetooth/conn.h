@@ -127,10 +127,20 @@ struct bt_conn_br_info {
 };
 #endif
 
+/** Connection role (master or slave) */
+enum {
+	BT_CONN_ROLE_MASTER,
+	BT_CONN_ROLE_SLAVE,
+};
+
 /** Connection Info Structure */
 struct bt_conn_info {
 	/** Connection Type */
 	uint8_t type;
+
+	/** Connection Role */
+	uint8_t role;
+
 	union {
 		/** LE Connection specific Info */
 		struct bt_conn_le_info le;
