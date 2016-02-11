@@ -49,7 +49,7 @@
  * x = foo ();
  * __ASSERT (x != 0, "foo() returned zero!");
  *
- * If __ASSERT() is disabled, then <x> is assigned a value, but never used.
+ * If __ASSERT() is disabled, then 'x' is assigned a value, but never used.
  * This type of situation can be resolved using the __ASSERT_EVAL() macro.
  *
  * __ASSERT_EVAL ((void) foo(),
