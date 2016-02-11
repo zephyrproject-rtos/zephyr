@@ -30,6 +30,7 @@
 #include <microkernel/ticks.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <init.h>
 
 #ifdef CONFIG_TIMESLICING
 static int32_t slice_count = (int32_t)0;
@@ -145,6 +146,26 @@ int _k_ticker(int event)
 
 	return 1;
 }
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+static void _sys_clock_tick_announce_pre_micro_nop(kevent_t e)
+{
+	ARG_UNUSED(e);
+	/* do nothing */
+}
+
+void (*_do_sys_clock_tick_announce)(kevent_t) =
+	_sys_clock_tick_announce_pre_micro_nop;
+
+static int _sys_clock_tick_announce_install(struct device *dev)
+{
+	ARG_UNUSED(dev);
+	_do_sys_clock_tick_announce = isr_event_send;
+	return 0;
+}
+
+SYS_INIT(_sys_clock_tick_announce_install, MICROKERNEL, 0);
+#endif	/* CONFIG_SYS_CLOCK_EXISTS */
 
 #ifdef CONFIG_TIMESLICING
 

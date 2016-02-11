@@ -60,8 +60,9 @@ extern uint32_t _nano_get_earliest_deadline(void);
 extern void _nano_sys_clock_tick_announce(int32_t ticks);
 
 #ifdef CONFIG_MICROKERNEL
+	extern void (*_do_sys_clock_tick_announce)(kevent_t);
 	#define _sys_clock_tick_announce() \
-		isr_event_send(TICK_EVENT)
+		_do_sys_clock_tick_announce(TICK_EVENT)
 #else
 	extern int32_t _sys_idle_elapsed_ticks;
 	#define _sys_clock_tick_announce() \
