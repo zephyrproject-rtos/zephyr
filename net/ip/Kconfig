@@ -46,6 +46,31 @@ config IP_BUF_TX_SIZE
 	Each network buffer will contain one sent IPv6 or IPv4 packet.
 	Each buffer will occupy 1280 bytes of memory.
 
+config IP_RX_STACK_SIZE
+	int "RX fiber stack size"
+	default 1024
+	help
+	  Set the RX fiber stack size in bytes. The RX fiber is waiting
+	  network packets from lower level bearers. It will then run the
+	  packet through IP stack which validates the packet and passes
+	  it eventually to application.
+
+config IP_TX_STACK_SIZE
+	int "TX fiber stack size"
+	default 1024
+	help
+	  Set the TX fiber stack size in bytes. The TX fiber is waiting
+	  data from application. It will then validate the data and push
+	  it to network driver to be sent out.
+
+config IP_TIMER_STACK_SIZE
+	int "Timer fiber stack size"
+	default 1536
+	help
+	  Set the timer fiber stack size in bytes. The timer fiber is
+	  responsible for handling re-transmissions and periodic network
+	  packet sending like IPv6 router solicitations.
+
 choice
 prompt "Internet Protocol version"
 depends on NETWORKING

@@ -68,9 +68,18 @@ void net_context_set_receiver_registered(struct net_context *context);
  * FIXME: stack size needs fine-tuning
  */
 #define STACKSIZE_UNIT 1024
-static char __noinit __stack rx_fiber_stack[STACKSIZE_UNIT * 1];
-static char __noinit __stack tx_fiber_stack[STACKSIZE_UNIT * 1];
-static char __noinit __stack timer_fiber_stack[STACKSIZE_UNIT * 3 / 2];
+#ifndef CONFIG_IP_RX_STACK_SIZE
+#define CONFIG_IP_RX_STACK_SIZE (STACKSIZE_UNIT * 1)
+#endif
+#ifndef CONFIG_IP_TX_STACK_SIZE
+#define CONFIG_IP_TX_STACK_SIZE (STACKSIZE_UNIT * 1)
+#endif
+#ifndef CONFIG_IP_TIMER_STACK_SIZE
+#define CONFIG_IP_TIMER_STACK_SIZE (STACKSIZE_UNIT * 3 / 2)
+#endif
+static char __noinit __stack rx_fiber_stack[CONFIG_IP_RX_STACK_SIZE];
+static char __noinit __stack tx_fiber_stack[CONFIG_IP_TX_STACK_SIZE];
+static char __noinit __stack timer_fiber_stack[CONFIG_IP_TIMER_STACK_SIZE];
 
 static struct net_dev {
 	/* Queue for incoming packets from driver */
@@ -574,7 +583,8 @@ static int check_and_send_packet(struct net_buf *buf)
 
 static void net_tx_fiber(void)
 {
-	NET_DBG("Starting TX fiber\n");
+	NET_DBG("Starting TX fiber (stack %d bytes)\n",
+		sizeof(tx_fiber_stack));
 
 	while (1) {
 		struct net_buf *buf;
@@ -621,7 +631,8 @@ static void net_rx_fiber(void)
 {
 	struct net_buf *buf;
 
-	NET_DBG("Starting RX fiber\n");
+	NET_DBG("Starting RX fiber (stack %d bytes)\n",
+		sizeof(rx_fiber_stack));
 
 	while (1) {
 		buf = nano_fifo_get(&netdev.rx_queue, TICKS_UNLIMITED);
@@ -653,7 +664,8 @@ static void net_timer_fiber(void)
 {
 	clock_time_t next_wakeup;
 
-	NET_DBG("Starting net timer fiber\n");
+	NET_DBG("Starting net timer fiber (stack %d bytes)\n",
+		sizeof(timer_fiber_stack));
 
 	while (1) {
 		/* Run various timers */
