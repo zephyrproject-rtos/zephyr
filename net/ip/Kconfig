@@ -238,6 +238,29 @@ config	NETWORKING_WITH_15_4
 	  it into suitable chunks ready to be sent to the 802.15.4
 	  hw driver
 
+config	15_4_RX_STACK_SIZE
+	int "Stack size of 802.15.4 RX fiber"
+	depends on NETWORKING_WITH_15_4
+	default 1024
+	help
+	  Set the 802.15.4 RX fiber stack size in bytes. The RX fiber
+	  is waiting network packets from 802.15.4 device driver.
+	  It will then run the packet through 6LoWPAN stack which
+	  uncompresses and de-fragments the packet and passes those to
+	  upper layers.
+
+config	15_4_TX_STACK_SIZE
+	int "Stack size of 802.15.4 TX fiber"
+	depends on NETWORKING_WITH_15_4
+	default 4096
+	help
+	  Set the 802.15.4 TX fiber stack size in bytes. The TX fiber
+	  is waiting network packets from IP stack. It then feeds those
+	  to 6LoWPAN stack which compresses and fragments packets before
+	  passing the fragments to 802.15.4 device driver. Note that
+	  this stack needs to be bigger that TX stack because stack is
+	  used to store the fragmented 802.15.4 packets.
+
 config	15_4_BEACON_SUPPORT
 	bool
 	prompt "Enable 802.15.4 beacon support"

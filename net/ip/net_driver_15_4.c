@@ -43,14 +43,15 @@
  * FIXME: stack size needs fine-tuning
  */
 #define STACKSIZE_UNIT 1024
-static char __noinit __stack rx_fiber_stack[STACKSIZE_UNIT * 1];
 
-#if NET_802154_TX_STACK_SIZE
-/* The 802.15.4 loopback test app (test_15_4) needs bigger stack. */
-static char __noinit __stack tx_fiber_stack[NET_802154_TX_STACK_SIZE];
-#else
-static char __noinit __stack tx_fiber_stack[STACKSIZE_UNIT * 4];
+#ifndef CONFIG_15_4_RX_STACK_SIZE
+#define CONFIG_15_4_RX_STACK_SIZE (STACKSIZE_UNIT * 1)
 #endif
+#ifndef CONFIG_15_4_TX_STACK_SIZE
+#define CONFIG_15_4_TX_STACK_SIZE (STACKSIZE_UNIT * 4)
+#endif
+static char __noinit __stack rx_fiber_stack[CONFIG_15_4_RX_STACK_SIZE];
+static char __noinit __stack tx_fiber_stack[CONFIG_15_4_TX_STACK_SIZE];
 
 /* Queue for incoming packets from hw driver */
 static struct nano_fifo rx_queue;
@@ -81,7 +82,8 @@ static int net_driver_15_4_send(struct net_buf *buf)
 
 static void net_tx_15_4_fiber(void)
 {
-	NET_DBG("Starting 15.4 TX fiber\n");
+	NET_DBG("Starting 15.4 TX fiber (stack %d bytes)\n",
+		sizeof(tx_fiber_stack));
 
 	while (1) {
 		struct net_buf *buf;
@@ -116,7 +118,8 @@ static void net_rx_15_4_fiber(void)
 	int byte_count;
 #endif
 
-	NET_DBG("Starting 15.4 RX fiber\n");
+	NET_DBG("Starting 15.4 RX fiber (stack %d bytes)\n",
+		sizeof(rx_fiber_stack));
 
 	while (1) {
 		/* Wait next packet from 15.4 stack */
