@@ -66,6 +66,29 @@ config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
 	  Specify the device name of the I2C master device to which this
 	  PCA9685 chip #0 is binded.
 
+config PWM_QMSI
+	bool "QMSI PWM Driver"
+	depends on QMSI_DRIVERS && PWM
+	default n
+	help
+	  Enable QMSI PWM driver. This driver will use the QMSI library to
+	  access the SOC underlying timer IP block. This driver uses the
+	  DesignWare IP block that can be also handled by the PWM_DW driver
+
+config PWM_QMSI_DEV_NAME
+	string "QMSI PWM Device Name"
+	depends on PWM_QMSI
+	default "PWM"
+	help
+	  Specify the device name for the PWM driver.
+
+config PWM_QMSI_NUM_PORTS
+	int "Number of PWM ports for PWM"
+	depends on PWM_QMSI
+	default 1
+	help
+	  Specify how many PWM ports on the IP block.
+
 config PWM_DW
 	bool "DesignWare PWM"
 	depends on PWM
