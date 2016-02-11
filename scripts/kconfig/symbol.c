@@ -7,7 +7,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
+
+#if !defined(_WIN32) && !defined(__WIN32__)
 #include <sys/utsname.h>
+#define print_dec(buff, value) sprintf(buff, "%lld", value)
+#define print_hex(buff, value) sprintf(buff, "0x%llx", value)
+#else /*if defined(_WIN32) || defined (__WIN32__)*/
+struct utsname {
+	char *release;
+};
+#define uname(uts) { (uts)->release = "0"; }
+#define print_dec(buff, value) sprintf(buff, "%I64d", value)
+#define print_hex(buff, value) sprintf(buff, "0x%I64x", value)
+#endif /*!defined(_WIN32) && !defined(__WIN32__)*/
 
 #include "lkc.h"
 
@@ -180,9 +192,9 @@ static void sym_validate_range(struct symbol *sym)
 			return;
 	}
 	if (sym->type == S_INT)
-		sprintf(str, "%lld", val2);
+		print_dec(str, val2);
 	else
-		sprintf(str, "0x%llx", val2);
+		print_hex(str, val2);
 	sym->curr.val = strdup(str);
 }
 

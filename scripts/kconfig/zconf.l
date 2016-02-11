@@ -8,7 +8,11 @@
  * Released under the terms of the GNU GPL v2.0.
  */
 
+#if defined(_WIN32) || defined(__WIN32__)
+#include <windows.h>
+#else
 #include <glob.h>
+#endif
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -337,6 +341,157 @@ void zconf_nextfile(const char *name)
 	current_file = file;
 }
 
+
+#if defined(_WIN32) || defined(__WIN32__)
+void zconf_nextfiles(const char *wildcard);
+int search_directory_wildcard(const char *path);
+void remove_last_part(char *path);
+void win_process_files(const char *files_path);
+void win_process_directories(char *directories_path, char *remain_path);
+
+
+int search_directory_wildcard(const char *path)
+{
+	int wildcard_found=0;
+	int len=strlen(path);
+	int i;
+
+	for (i=0; i<len; i++) {
+		if(wildcard_found) {
+			if (path[i] == '\\' || path[i] == '/') {
+				return i+1;
+			}
+		} else {
+			if ((path[i] == '?') || (path[i] == '*')) {
+				wildcard_found = 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+void remove_last_part(char *path)
+{
+	int i;
+
+	for(i=strlen(path); i>0; i--) {
+		if (path[i] == '\\' || path[i] == '/') {
+			path[i] = '\0';
+			return;
+		}
+	}
+}
+
+void win_process_files(const char *files_path)
+{
+	WIN32_FIND_DATA FindFileData;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
+	DWORD dwError;
+	char *env, fullname[PATH_MAX+1], path[PATH_MAX+1];
+	const char *expanded=sym_expand_string_value(files_path);
+	TCHAR** lppPart=NULL;
+
+	strcpy(fullname, expanded);
+
+	// Find the first file in the directory.
+	hFind = FindFirstFile(fullname, &FindFileData);
+
+	if (hFind == INVALID_HANDLE_VALUE) {
+		env = getenv(SRCTREE);
+		if (env) {
+			sprintf(fullname, "%s/%s", env, expanded);
+		}
+		hFind = FindFirstFile(fullname, &FindFileData);
+	}
+
+	if (hFind != INVALID_HANDLE_VALUE) {
+		do {
+			GetFullPathName(fullname, PATH_MAX, path, lppPart);
+			strcpy(fullname, path);
+			zconf_nextfile(fullname);
+		} while (FindNextFile(hFind, &FindFileData) != 0);
+
+		dwError = GetLastError();
+		FindClose(hFind);
+		if (dwError != ERROR_NO_MORE_FILES) {
+			printf ("Error processing '%s' #%lu.\n", fullname, dwError);
+		}
+	} else {
+		printf ("Error processing '%s' #%lu.\n", fullname, GetLastError());
+	}
+}
+
+void win_process_directories(char *directories_path, char *remain_path)
+{
+	WIN32_FIND_DATA FindFileData;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
+	DWORD dwError;
+	char *env, fullname[PATH_MAX+1], path[PATH_MAX+1];
+	TCHAR** lppPart=NULL;
+
+	strcpy(fullname, directories_path);
+	// Find the first file/directory in the path.
+	hFind = FindFirstFile(fullname, &FindFileData);
+
+	if (hFind == INVALID_HANDLE_VALUE) {
+		env = getenv(SRCTREE);
+		if (env) {
+			sprintf(path, "%s/%s", env, fullname);
+			strcpy(fullname, path);
+		}
+		hFind = FindFirstFile(fullname, &FindFileData);
+	}
+
+	if (hFind != INVALID_HANDLE_VALUE) {
+		remove_last_part(fullname);
+		do {
+			// Only the directories are processed
+			if ((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+				(strcmp(FindFileData.cFileName, ".") &&
+				strcmp(FindFileData.cFileName, ".."))) {
+				GetFullPathName(fullname, PATH_MAX, path, lppPart);
+				strcpy(fullname, path);
+				sprintf(path, "%s\\%s\\%s", fullname, FindFileData.cFileName, remain_path);
+				zconf_nextfiles(path);
+			}
+		} while (FindNextFile(hFind, &FindFileData) != 0);
+
+		dwError = GetLastError();
+		FindClose(hFind);
+		if (dwError != ERROR_NO_MORE_FILES) {
+			printf ("Error processing '%s' #%lu.\n", fullname, dwError);
+		}
+	} else {
+		printf ("Error processing '%s' #%lu.\n", fullname, GetLastError());
+	}
+}
+
+void zconf_nextfiles(const char *wildcard)
+{
+	int index_remain=0;
+
+	index_remain = search_directory_wildcard(wildcard);
+	if (index_remain) {
+		char *new_section_path=malloc(index_remain + 1);
+		char *new_remain_path=malloc(strlen(wildcard) - index_remain + 1);
+
+		strncpy(new_section_path, wildcard, index_remain);
+		new_section_path[index_remain-1] = '\0';
+
+		strcpy(new_remain_path, &(wildcard[index_remain]));
+
+		win_process_directories(new_section_path, new_remain_path);
+
+		free(new_remain_path);
+		free(new_section_path);
+	} else {
+		win_process_files(wildcard);
+	}
+}
+
+#else /* Linux host */
+
 void zconf_nextfiles(const char *wildcard)
 {
 	glob_t g;
@@ -372,6 +527,7 @@ void zconf_nextfiles(const char *wildcard)
 
 	globfree(&g);
 }
+#endif
 
 static void zconf_endfile(void)
 {
