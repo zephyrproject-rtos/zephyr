@@ -478,49 +478,49 @@ void rpc_deserialize(struct net_buf *buf)
 
 	switch (sig_type) {
 	case SIG_TYPE_NONE:
-		if (sizeof(m_fct_none)) {
+		if (fn_index < ARRAY_SIZE(m_fct_none)) {
 			BT_DBG("%s", debug_func_none[fn_index]);
 			deserialize_none(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S:
-		if (sizeof(m_fct_s)) {
+		if (fn_index < ARRAY_SIZE(m_fct_s)) {
 			BT_DBG("%s", debug_func_s[fn_index]);
 			deserialize_s(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_P:
-		if (sizeof(m_fct_p)) {
+		if (fn_index < ARRAY_SIZE(m_fct_p)) {
 			BT_DBG("%s", debug_func_p[fn_index]);
 			deserialize_p(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S_B:
-		if (sizeof(m_fct_s_b)) {
+		if (fn_index < ARRAY_SIZE(m_fct_s_b)) {
 			BT_DBG("%s", debug_func_s_b[fn_index]);
 			deserialize_s_b(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_B_B_P:
-		if (sizeof(m_fct_b_b_p)) {
+		if (fn_index < ARRAY_SIZE(m_fct_b_b_p)) {
 			BT_DBG("%s", debug_func_b_b_p[fn_index]);
 			deserialize_b_b_p(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S_P:
-		if (sizeof(m_fct_s_p)) {
+		if (fn_index < ARRAY_SIZE(m_fct_s_p)) {
 			BT_DBG("%s", debug_func_s_p[fn_index]);
 			deserialize_s_p(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S_B_P:
-		if (sizeof(m_fct_s_b_p)) {
+		if (fn_index < ARRAY_SIZE(m_fct_s_b_p)) {
 			BT_DBG("%s", debug_func_s_b_p[fn_index]);
 			deserialize_s_b_p(fn_index, buf);
 		}
 		break;
 	case SIG_TYPE_S_B_B_P:
-		if (sizeof(m_fct_s_b_b_p)) {
+		if (fn_index < ARRAY_SIZE(m_fct_s_b_b_p)) {
 			BT_DBG("%s", debug_func_s_b_b_p[fn_index]);
 			deserialize_s_b_b_p(fn_index, buf);
 		}
