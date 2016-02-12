@@ -168,6 +168,16 @@ void *net_buf_pull(struct net_buf *buf, size_t len)
 	return buf->data += len;
 }
 
+uint8_t net_buf_pull_u8(struct net_buf *buf)
+{
+	uint8_t val;
+
+	val = buf->data[0];
+	net_buf_pull(buf, 1);
+
+	return val;
+}
+
 uint16_t net_buf_pull_le16(struct net_buf *buf)
 {
 	uint16_t value;

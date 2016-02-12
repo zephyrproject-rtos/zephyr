@@ -240,6 +240,17 @@ void net_buf_push_le16(struct net_buf *buf, uint16_t value);
  */
 void *net_buf_pull(struct net_buf *buf, size_t len);
 
+/** @brief Remove a 8-bit value from the beginning of the buffer
+ *
+ *  Same idea as with bt_buf_pull(), but a helper for operating on
+ *  8-bit values.
+ *
+ *  @param buf Buffer.
+ *
+ *  @return 8-bit value.
+ */
+uint8_t net_buf_pull_u8(struct net_buf *buf);
+
 /** @brief Remove and convert 16 bits from the beginning of the buffer.
  *
  *  Same idea as with bt_buf_pull(), but a helper for operating on
