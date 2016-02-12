@@ -457,7 +457,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	/* Check if there is a server registered */
 	server = l2cap_server_lookup_psm(psm);
-	if (!psm) {
+	if (!server) {
 		rsp->result = BT_L2CAP_ERR_PSM_NOT_SUPP;
 		goto rsp;
 	}
