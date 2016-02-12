@@ -480,7 +480,7 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 
 	BT_DBG("w %s", h(w, 16));
 	BT_DBG("n1 %s n2 %s", h(n1, 16), h(n2, 16));
-	BT_DBG("r %s io_cap", h(r, 16), h(iocap, 3));
+	BT_DBG("r %s io_cap %s", h(r, 16), h(iocap, 3));
 	BT_DBG("a1 %s a2 %s", h(a1, 7), h(a2, 7));
 
 	swap_buf(m, n1, 16);
