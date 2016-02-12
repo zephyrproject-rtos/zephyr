@@ -1390,13 +1390,12 @@ int bt_le_scan_update(bool fast_scan)
 
 static void le_adv_report(struct net_buf *buf)
 {
-	uint8_t num_reports = buf->data[0];
+	uint8_t num_reports = net_buf_pull_u8(buf);
 	struct bt_hci_ev_le_advertising_info *info;
 
 	BT_DBG("Adv number of reports %u",  num_reports);
 
-	info = net_buf_pull(buf, sizeof(num_reports));
-
+	info = (void *)buf->data;
 	while (num_reports--) {
 		int8_t rssi = info->data[info->length];
 		const bt_addr_le_t *addr;

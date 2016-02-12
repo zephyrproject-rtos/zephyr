@@ -209,8 +209,7 @@ static int h4_send(enum bt_buf_type buf_type, struct net_buf *buf)
 	}
 
 	while (buf->len) {
-		uart_poll_out(h4_dev, buf->data[0]);
-		net_buf_pull(buf, 1);
+		uart_poll_out(h4_dev, net_buf_pull_u8(buf));
 	}
 
 	net_buf_unref(buf);

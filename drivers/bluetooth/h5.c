@@ -584,11 +584,7 @@ void bt_uart_isr(void *unused)
 
 static uint8_t h5_get_type(struct net_buf *buf)
 {
-	uint8_t type = UNALIGNED_GET((uint8_t *)buf->data);
-
-	net_buf_pull(buf, sizeof(type));
-
-	return type;
+	return net_buf_pull_u8(buf);
 }
 
 static int h5_queue(enum bt_buf_type buf_type, struct net_buf *buf)
