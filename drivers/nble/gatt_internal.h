@@ -23,7 +23,7 @@
 #include <bluetooth/gatt.h>
 
 /* Forward declarations */
-struct ble_core_response;
+struct nble_core_response;
 
 /* Max number of service supported, if changed update BLE core needs to be
  * updated too!
@@ -46,14 +46,14 @@ enum BLE_GATT_IND_TYPES {
 };
 
 /** GATT Register structure for one service */
-struct ble_gatt_register_req {
+struct nble_gatt_register_req {
 	/**< Base address of the attribute table in the Quark mem space */
 	struct bt_gatt_attr *attr_base;
 	uint8_t attr_count; /**< Number of of attributes in this service */
 };
 
 /** GATT Register structure for one service */
-struct ble_gatt_register_rsp {
+struct nble_gatt_register_rsp {
 	int status;			/**< Status of the registration op */
 	struct bt_gatt_attr *attr_base;	/**< Pointer to the registered table */
 	uint8_t attr_count;		/**< Number of attributes  added */
@@ -62,9 +62,9 @@ struct ble_gatt_register_rsp {
 /** Service index and Attribute index mapping structure.
  *
  * Mapping index into attribute tables as registered with bt_gatt_register/
- * ble_gatt_register.
+ * nble_gatt_register.
  */
-struct ble_gatt_attr_handle_mapping {
+struct nble_gatt_attr_handle_mapping {
 	uint8_t svc_idx; /**< Service index */
 	uint8_t attr_idx; /**< Attribute index into service attribute table */
 };
@@ -92,7 +92,7 @@ enum BLE_GATTS_WR_OPS {
 /**
  * Write event context data structure.
  */
-struct ble_gatt_wr_evt {
+struct nble_gatt_wr_evt {
 	struct bt_gatt_attr *attr;	/**< GATT Attribute */
 	uint16_t conn_handle;		/**< Connection handle */
 	uint16_t attr_handle;		/**< handle of attribute to write */
@@ -110,7 +110,7 @@ struct nble_gatt_rd_evt {
 	uint16_t offset;		/**< offset in attribute buffer */
 };
 
-struct ble_gatts_rw_reply_params {
+struct nble_gatts_rw_reply_params {
 	int status;			/**< Reply status, from errno */
 	uint16_t conn_handle;		/**< Connection handle */
 	uint16_t offset;		/**< Offset in attribute buffer */
@@ -120,7 +120,7 @@ struct ble_gatts_rw_reply_params {
 /**
  * Notification/Indication parameters
  */
-struct ble_gatt_notif_ind_params {
+struct nble_gatt_notif_ind_params {
 	struct bt_gatt_attr *attr;
 	uint16_t offset;
 };
@@ -129,34 +129,28 @@ struct ble_gatt_notif_ind_params {
  * Indication or notification.
  */
 
-struct ble_gatt_send_notif_ind_params {
+struct nble_gatt_send_notif_ind_params {
 	void *cback;
 	uint16_t conn_handle;
-	struct ble_gatt_notif_ind_params params;
+	struct nble_gatt_notif_ind_params params;
 };
 
-enum ble_gatts_notif_ind_type {
+enum nble_gatts_notif_ind_type {
 	MSG_ID_BLE_GATTS_SEND_NOTIF_RSP,    /**< Notification type */
 	MSG_ID_BLE_GATTS_SEND_IND_RSP,      /**< Indication type */
 };
 
-struct ble_gatt_notif_ind_rsp {
-	/**< Callback function to call on reception of this message */
+struct nble_gatt_notif_ind_rsp {
 	bt_gatt_notify_func_t cback;
-	int status;		/**< Status of the operation. */
-	/**< Connection handle, can be 0xFFFF if value change broadcast */
+	int status;
 	uint16_t conn_handle;
-	struct bt_gatt_attr *attr;    /**< GATT Attribute */
-	/**< MSG_ID_BLE_GATTS_SEND_NOTIF_RSP for notification or
-	 * MSG_ID_BLE_GATTS_SEND_IND_RSP for indication
-	 */
-	uint8_t msg_type;
+	struct bt_gatt_attr *attr;
 };
 
 /**
  * Attribute handle range definition.
  */
-struct ble_core_gatt_handle_range {
+struct nble_gatt_handle_range {
 	uint16_t start_handle;
 	uint16_t end_handle;
 };
@@ -164,27 +158,27 @@ struct ble_core_gatt_handle_range {
 /**
  * Primary service
  */
-struct ble_gattc_prim_svc {
+struct nble_gattc_prim_svc {
 	uint16_t handle;				/**< Attribute handle */
-	struct ble_core_gatt_handle_range handle_range;	/**< handle range */
+	struct nble_gatt_handle_range handle_range;	/**< handle range */
 	struct bt_uuid_128 uuid;			/**< Attribute's UUID */
 };
 
 /**
  * Generic GATTC response message.
  */
-struct ble_gattc_rsp {
+struct nble_gattc_rsp {
 	int status;
 	uint16_t conn_handle;		/**< GAP connection handle */
 };
 
-struct ble_gattc_disc_rsp {
+struct nble_gattc_disc_rsp {
 	int status;
 	uint16_t conn_handle;
 	uint8_t type;			/**< @ref BLE_GATT_DISC_TYPES */
 };
 
-struct ble_gattc_evt {
+struct nble_gattc_evt {
 	uint16_t conn_handle;
 	int status;
 };
@@ -192,14 +186,14 @@ struct ble_gattc_evt {
 /**
  * Included service.
  */
-struct ble_gattc_incl_svc {
+struct nble_gattc_incl_svc {
 	uint16_t handle;			/**< Handle of included svc */
-	struct ble_core_gatt_handle_range handle_range;	/**< handle range */
+	struct nble_gatt_handle_range handle_range;	/**< handle range */
 	struct bt_uuid_128 uuid;			/**< Service UUID */
 };
 
 /* GATTC characteristic */
-struct ble_gattc_characteristic {
+struct nble_gattc_characteristic {
 	uint16_t handle;		/**< Characteristic Definition handle */
 	uint8_t prop;			/**< Characteristic property */
 	uint16_t value_handle;		/**< Characteristic value handle */
@@ -210,31 +204,31 @@ struct ble_gattc_characteristic {
 /**
  * GATTC descriptor.
  */
-struct ble_gattc_descriptor {
+struct nble_gattc_descriptor {
 	uint16_t handle;		/**< descriptor handle */
 	struct bt_uuid_128 uuid;		/**< uuid of the descriptor */
 };
 
-struct ble_gattc_attr {
+struct nble_gattc_attr {
 	uint8_t type;		/**< @ref BLE_GATT_DISC_TYPES */
 	union {
-		struct ble_gattc_prim_svc prim;
-		struct ble_gattc_incl_svc incls;
-		struct ble_gattc_characteristic chars;
-		struct ble_gattc_descriptor desc;
+		struct nble_gattc_prim_svc prim;
+		struct nble_gattc_incl_svc incls;
+		struct nble_gattc_characteristic chars;
+		struct nble_gattc_descriptor desc;
 	};
 };
 
-struct ble_gatts_set_attribute_params {
+struct nble_gatts_set_attribute_params {
 	uint16_t value_handle;		/* mandatory */
 	uint16_t offset;		/* by default 0 */
 };
 
-struct ble_gatts_get_attribute_params {
+struct nble_gatts_get_attribute_params {
 	uint16_t value_handle;		/* mandatory */
 };
 
-struct ble_gatts_attribute_response {
+struct nble_gatts_attribute_response {
 	int status;			/**< Status of the operation. */
 	uint16_t value_handle;		/* mandatory */
 	void *priv;
@@ -251,15 +245,15 @@ struct ble_gatts_attribute_response {
  * @param len Length of attribute value to write
  * @param priv Pointer to private data
  */
-void ble_gatts_set_attribute_value_req(const struct ble_gatts_set_attribute_params *par,
-				       uint8_t *data, uint8_t len, void *priv);
+void nble_gatts_set_attribute_value_req(const struct nble_gatts_set_attribute_params *par,
+					uint8_t *data, uint8_t len, void *priv);
 
 /**
- * Response to @ref ble_gatts_send_svc_changed_req.
+ * Response to @ref nble_gatts_send_svc_changed_req.
  *
  * @param par Response
  */
-void on_ble_gatts_set_attribute_value_rsp(const struct ble_gatts_attribute_response *par);
+void on_ble_gatts_set_attribute_value_rsp(const struct nble_gatts_attribute_response *par);
 
 /**
  * Get an attribute value.
@@ -270,20 +264,20 @@ void on_ble_gatts_set_attribute_value_rsp(const struct ble_gatts_attribute_respo
  * @param par Getting attribute parameters
  * @param priv Pointer to private data
  */
-void ble_gatts_get_attribute_value_req(const struct ble_gatts_get_attribute_params *par,
-				       void *priv);
+void nble_gatts_get_attribute_value_req(const struct nble_gatts_get_attribute_params *par,
+					void *priv);
 
 /**
- * Response to @ref ble_gatts_get_attribute_value_req.
+ * Response to @ref nble_gatts_get_attribute_value_req.
  *
  * @param par Response
  * @param data Attribute value
  * @param length Length of attribute value
  */
-void on_ble_gatts_get_attribute_value_rsp(const struct ble_gatts_attribute_response *par,
+void on_ble_gatts_get_attribute_value_rsp(const struct nble_gatts_attribute_response *par,
 					  uint8_t *data, uint8_t length);
 
-struct ble_gatts_svc_changed_params {
+struct nble_gatts_svc_changed_params {
 	uint16_t conn_handle;
 	uint16_t start_handle;
 	uint16_t end_handle;
@@ -300,15 +294,15 @@ struct ble_gatts_svc_changed_params {
  * @param par Service parameters
  * @param priv Pointer to private data
  */
-void ble_gatts_send_svc_changed_req(const struct ble_gatts_svc_changed_params *par,
-				    void *priv);
+void nble_gatts_send_svc_changed_req(const struct nble_gatts_svc_changed_params *par,
+				     void *priv);
 
 /**
- * Response to @ref ble_gatts_send_svc_changed_req.
+ * Response to @ref nble_gatts_send_svc_changed_req.
  *
  * @param par Response
  */
-void on_ble_gatts_send_svc_changed_rsp(const struct ble_core_response *par);
+void on_ble_gatts_send_svc_changed_rsp(const struct nble_core_response *par);
 
 /** Register a BLE GATT Service.
  *
@@ -316,8 +310,8 @@ void on_ble_gatts_send_svc_changed_rsp(const struct ble_core_response *par);
  * @param attr Serialized attribute buffer
  * @param attr_len Length of buffer
  */
-void ble_gatt_register_req(const struct ble_gatt_register_req *par,
-			   uint8_t *buf, uint16_t len);
+void nble_gatt_register_req(const struct nble_gatt_register_req *par,
+			    uint8_t *buf, uint16_t len);
 
 /**
  * Reply to an authorize request.
@@ -326,30 +320,30 @@ void ble_gatt_register_req(const struct ble_gatt_register_req *par,
  * @param buf  read value of the attribute
  * @param len length of buf
  */
-void nble_gatts_authorize_reply_req(const struct ble_gatts_rw_reply_params *par,
+void nble_gatts_authorize_reply_req(const struct nble_gatts_rw_reply_params *par,
 				    uint8_t *buf, uint16_t len);
 
 /**
- * Conversion table entry ble_core to host attr index
+ * Conversion table entry nble_core to host attr index
  *
  * This is returned as a table on registering.
  */
-struct ble_gatt_attr_handles {
+struct nble_gatt_attr_handles {
 	uint16_t handle; /* handle from ble controller should be sufficient */
 };
 
 /** Response to registering a BLE GATT Service.
  *
- * The returned buffer contains an array (@ref ble_gatt_attr_idx_entry)with the
+ * The returned buffer contains an array (@ref nble_gatt_attr_idx_entry)with the
  * corresponding handles.
  *
  * @param par Parameters of attribute data base
  * @param attr Returned attributes index list
  * @param len Length of buffer
  */
-void on_ble_gatt_register_rsp(const struct ble_gatt_register_rsp *par,
-			      const struct ble_gatt_attr_handles *attr,
-			      uint8_t len);
+void on_nble_gatt_register_rsp(const struct nble_gatt_register_rsp *par,
+			       const struct nble_gatt_attr_handles *attr,
+			       uint8_t len);
 
 /**
  * Function invoked by the BLE core when a write occurs.
@@ -358,7 +352,7 @@ void on_ble_gatt_register_rsp(const struct ble_gatt_register_rsp *par,
  * @param buf Pointer to data buffer
  * @param len Buffer length
  */
-void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *ev,
+void on_ble_gatts_write_evt(const struct nble_gatt_wr_evt *ev,
 			    const uint8_t *buf, uint8_t len);
 
 /**
@@ -369,7 +363,7 @@ void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *ev,
  *
  * @return Handle of attribute or 0 if not found
  */
-uint16_t ble_attr_idx_to_handle(const struct bt_gatt_attr *attrs,
+uint16_t nble_attr_idx_to_handle(const struct bt_gatt_attr *attrs,
 				uint8_t index);
 
 /**
@@ -383,8 +377,8 @@ uint16_t ble_attr_idx_to_handle(const struct bt_gatt_attr *attrs,
  * @param length Length of indication - may be 0, in this case already
  * stored data is sent
  */
-void ble_gatt_send_notif_req(const struct ble_gatt_send_notif_ind_params *par,
-			     uint8_t *data, uint16_t length);
+void nble_gatt_send_notif_req(const struct nble_gatt_send_notif_ind_params *par,
+			      uint8_t *data, uint16_t length);
 
 /**
  * Send indication.
@@ -397,41 +391,42 @@ void ble_gatt_send_notif_req(const struct ble_gatt_send_notif_ind_params *par,
  * @param length Length of indication - may be 0, in this case already
  * stored data is sent
  */
-void ble_gatt_send_ind_req(const struct ble_gatt_send_notif_ind_params *par,
-			   uint8_t *data, uint8_t length);
+void nble_gatt_send_ind_req(const struct nble_gatt_send_notif_ind_params *par,
+			    uint8_t *data, uint8_t length);
 
 /**
- * Response to @ref ble_gatts_send_ind_req and @ref ble_gatts_send_notif_req
+ * Response to @ref nble_gatts_send_ind_req and @ref nble_gatts_send_notif_req
  *
  * @param par Response
  */
-void on_ble_gatts_send_notif_ind_rsp(const struct ble_gatt_notif_ind_rsp *par);
+void on_ble_gatts_send_notif_ind_rsp(const struct nble_gatt_notif_ind_rsp *par);
 
 /** Discover parameters. */
-struct ble_core_discover_params {
+struct nble_discover_params {
 	struct bt_uuid_128 uuid;			/**< Attribute UUID */
-	struct ble_core_gatt_handle_range handle_range;	/**< Discover range */
+	struct nble_gatt_handle_range handle_range;	/**< Discover range */
 	uint16_t conn_handle;				/**< Connection handl */
-	uint8_t type;		/**< Discover type @ref BLE_GATT_DISC_TYPES */
+	/**< Discover type @ref BLE_GATT_DISC_TYPES */
+	uint8_t type;
 };
 
 /**
  * Discover service.
  *
  * @param req Request structure.
- * @param priv Pointer to private data.
+ * @param user_data Pointer to private data.
  */
-void ble_gattc_discover_req(const struct ble_core_discover_params *req,
-			    void *priv);
+void nble_gattc_discover_req(const struct nble_discover_params *req,
+			     void *user_data);
 
 /**
- * Response to @ref ble_gattc_discover_req.
+ * Response to @ref nble_gattc_discover_req.
  *
  * @param rsp Response
  * @param data Pointer to the data
  * @param len Length of the data
  */
-void on_ble_gattc_discover_rsp(const struct ble_gattc_disc_rsp *rsp,
+void on_ble_gattc_discover_rsp(const struct nble_gattc_disc_rsp *rsp,
 			       const uint8_t *data, uint8_t len);
 
 
@@ -441,36 +436,39 @@ void on_ble_gattc_discover_rsp(const struct ble_gattc_disc_rsp *rsp,
  * UUID pointer and user_data pointer are used as offset into buffer itself.
  * The offset is from the beginning of the buffer. therefore a value of 0
  * means that UUID or user_data is not present. */
-struct ble_gatt_attr {
+struct nble_gatt_attr {
 	/** Attribute permissions */
 	uint16_t perm;
 	/** Attribute variable data size */
 	uint16_t data_size;
-	/** Attribute variable data: always starts with the UUID and data follows */
+	/**
+	 * Attribute variable data: always starts with the UUID and
+	 * data follows
+	 */
 	uint8_t data[0];
 };
 
-struct ble_gattc_read_params {
+struct nble_gattc_read_params {
 	uint16_t conn_handle;	/**< Connection handle*/
 	uint16_t char_handle;	/**< Handle of the attribute to be read */
 	uint16_t offset;	/**< Offset into the attr value to be read */
 };
 
-struct ble_gattc_read_rsp {
+struct nble_gattc_read_rsp {
 	uint16_t conn_handle;
 	int status;
 	uint16_t handle;	/**< handle of char attr read */
 	uint16_t offset;	/**< offset of data returned */
 };
 
-struct ble_gattc_write_params {
+struct nble_gattc_write_params {
 	uint16_t conn_handle; /**< Connection handle*/
 	uint16_t char_handle; /**< Handle of the attribute to be read */
 	uint16_t offset;      /**< Offset into the attr value to be write */
 	bool with_resp;       /**< Equal to true is response is needed */
 };
 
-struct ble_gattc_write_rsp {
+struct nble_gattc_write_rsp {
 	uint16_t conn_handle;
 	int status;
 	uint16_t char_handle;
@@ -484,18 +482,18 @@ struct ble_gattc_write_rsp {
  * @param params Request structure.
  * @param priv Pointer to private data.
  */
-void ble_gattc_read_req(const struct ble_gattc_read_params *params,
+void nble_gattc_read_req(const struct nble_gattc_read_params *params,
 			void *priv);
 
 /**
- * Response to @ref ble_gattc_read_req.
+ * Response to @ref nble_gattc_read_req.
  *
  * @param ev Pointer to the event structure
  * @param data Pointer to the data byte stream
  * @param data_len Length of the data byte stream
  * @param priv Pointer to private data.
  */
-void on_ble_gattc_read_rsp(const struct ble_gattc_read_rsp *ev,
+void on_ble_gattc_read_rsp(const struct nble_gattc_read_rsp *ev,
 			   uint8_t *data, uint8_t data_len, void *priv);
 
 /**
@@ -507,16 +505,16 @@ void on_ble_gattc_read_rsp(const struct ble_gattc_read_rsp *ev,
  * size, the controller fragment buffer itself.
  * @param priv Pointer to private data.
  */
-void ble_gattc_write_req(const struct ble_gattc_write_params *params,
+void nble_gattc_write_req(const struct nble_gattc_write_params *params,
 			 const uint8_t *buf, uint8_t len, void *priv);
 
 /**
- * Response to @ref ble_gattc_write_req.
+ * Response to @ref nble_gattc_write_req.
  *
  * @param ev Pointer to the event structure
  * @param priv Pointer to private data.
  */
-void on_ble_gattc_write_rsp(const struct ble_gattc_write_rsp *ev,
+void on_ble_gattc_write_rsp(const struct nble_gattc_write_rsp *ev,
 			    void *priv);
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
@@ -524,7 +522,7 @@ void bt_gatt_connected(struct bt_conn *conn);
 void bt_gatt_disconnected(struct bt_conn *conn);
 #endif
 
-struct ble_gattc_value_evt {
+struct nble_gattc_value_evt {
 	uint16_t conn_handle;
 	int status;
 	/**< handle of characteristic being notified/indicated */
@@ -540,10 +538,10 @@ struct ble_gattc_value_evt {
  * @param buf Pointer to the data byte stream
  * @param len Length of the data byte stream
  */
-void on_ble_gattc_value_evt(const struct ble_gattc_value_evt *ev,
+void on_ble_gattc_value_evt(const struct nble_gattc_value_evt *ev,
 			    uint8_t *buf, uint8_t len);
 
-struct ble_gattc_to_evt {
+struct nble_gattc_to_evt {
 	uint16_t conn_handle;
 	uint16_t reason;	/**< GATT timeout reason */
 };
@@ -553,4 +551,4 @@ struct ble_gattc_to_evt {
  *
  * @param ev Pointer to the event structure
  */
-void on_ble_gattc_to_evt(const struct ble_gattc_to_evt *ev);
+void on_ble_gattc_to_evt(const struct nble_gattc_to_evt *ev);

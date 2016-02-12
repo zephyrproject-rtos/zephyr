@@ -50,13 +50,14 @@ static const char *bt_addr_le_str(const bt_addr_le_t *addr)
 
 static void send_dm_config(void)
 {
-	struct ble_core_gap_sm_config_params config;
+	struct nble_gap_sm_config_params config = {
+		.options = 1,		/* bonding */
+		.io_caps = 3,		/* no input no output */
+		.key_size = 16,		/* or 7 */
+		.oob_present = 0,	/* no oob */
+	};
 
-	config.options = 1;	/* bonding */
-	config.io_caps = 3;	/* no input no output */
-	config.key_size = 16;	/* or 7 */
-
-	ble_gap_sm_config_req(&config, NULL);
+	nble_gap_sm_config_req(&config);
 }
 
 void on_nble_up(void)
@@ -66,7 +67,7 @@ void on_nble_up(void)
 	send_dm_config();
 }
 
-void on_ble_get_version_rsp(const struct ble_version_response *rsp)
+void on_nble_get_version_rsp(const struct nble_version_response *rsp)
 {
 	BT_DBG("VERSION: %d.%d.%d %.20s", rsp->version.major,
 	       rsp->version.minor, rsp->version.patch,
@@ -191,7 +192,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
-	struct ble_gap_adv_params params = { 0 };
+	struct nble_gap_adv_params params = { 0 };
 	int i;
 
 	if (!valid_adv_param(param)) {
@@ -245,7 +246,7 @@ send_set_param:
 	params.interval_min = param->interval_min;
 	params.type = param->type;
 
-	ble_gap_start_advertise_req(&params);
+	nble_gap_start_advertise_req(&params);
 
 	return 0;
 }
@@ -265,12 +266,12 @@ int bt_le_scan_stop(void)
 	return -ENOSYS;
 }
 
-void on_ble_gap_dtm_init_rsp(void *user_data)
+void on_nble_gap_dtm_init_rsp(void *user_data)
 {
 	BT_DBG("");
 }
 
-void ble_log(const struct ble_log_s *param, char *format, uint8_t len)
+void nble_log(const struct nble_log_s *param, char *format, uint8_t len)
 {
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 	/* Build meaningful output */
@@ -281,37 +282,37 @@ void ble_log(const struct ble_log_s *param, char *format, uint8_t len)
 #endif
 }
 
-void on_ble_gap_sm_status_evt(const struct ble_gap_sm_status_evt *ev)
+void on_nble_gap_sm_status_evt(const struct nble_gap_sm_status_evt *ev)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_sm_passkey_display_evt(const struct ble_gap_sm_passkey_disp_evt *ev)
+void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_evt *ev)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_sm_passkey_req_evt(const struct ble_gap_sm_passkey_req_evt *ev)
+void on_nble_gap_sm_passkey_req_evt(const struct nble_gap_sm_passkey_req_evt *ev)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_to_evt(const struct ble_gap_timout_evt *ev)
+void on_nble_gap_to_evt(const struct nble_gap_timout_evt *ev)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_rssi_evt(const struct ble_gap_rssi_evt *ev)
+void on_nble_gap_rssi_evt(const struct nble_gap_rssi_evt *ev)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_service_read_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_service_read_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_read_bda_rsp(const struct ble_service_read_bda_response *rsp)
+void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("Read bdaddr failed, status %d", rsp->status);
@@ -322,20 +323,20 @@ void on_ble_gap_read_bda_rsp(const struct ble_service_read_bda_response *rsp)
 
 	BT_DBG("Local bdaddr: %s", bt_addr_le_str(&bdaddr));
 
-	ble_get_version_req(NULL);
+	nble_get_version_req(NULL);
 }
 
-void on_ble_gap_disconnect_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_disconnect_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_sm_pairing_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_sm_pairing_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_sm_config_rsp(struct ble_gap_sm_config_rsp *rsp)
+void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("SM config failed, status %d", rsp->status);
@@ -345,96 +346,91 @@ void on_ble_gap_sm_config_rsp(struct ble_gap_sm_config_rsp *rsp)
 	BT_DBG("state %u", rsp->state);
 
 	/* Get bdaddr queued after SM setup */
-	ble_gap_read_bda_req(NULL);
+	nble_gap_read_bda_req(NULL);
 }
 
-void on_ble_gap_clr_white_list_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_clr_white_list_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_sm_passkey_reply_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_sm_passkey_reply_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_connect_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_connect_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_start_scan_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_start_scan_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_stop_scan_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_stop_scan_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_cancel_connect_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_cancel_connect_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_set_option_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_set_option_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_generic_cmd_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_generic_cmd_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_conn_update_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_conn_update_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_sm_clear_bonds_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_sm_clear_bonds_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_service_write_rsp(const struct ble_service_write_response *rsp)
+void on_nble_gap_service_write_rsp(const struct nble_service_write_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_set_enable_config_rsp(const struct ble_core_response *rsp)
+void on_ble_set_enable_config_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_set_rssi_report_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_set_rssi_report_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_wr_white_list_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_wr_white_list_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_gap_dbg_rsp(const struct debug_response *rsp)
+void on_nble_gap_dbg_rsp(const struct debug_response *rsp)
 {
 	BT_DBG("");
 }
 
-void on_ble_get_bonded_device_list_rsp(const struct ble_get_bonded_device_list_rsp *rsp)
-{
-	BT_DBG("");
-}
-
-void on_ble_gap_start_advertise_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_start_advertise_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }
 
 
-void on_ble_gap_stop_advertise_rsp(const struct ble_core_response *rsp)
+void on_nble_gap_stop_advertise_rsp(const struct nble_response *rsp)
 {
 	BT_DBG("");
 }

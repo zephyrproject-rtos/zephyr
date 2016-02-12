@@ -206,7 +206,7 @@ static void notify_disconnected(struct bt_conn *conn)
 	}
 }
 
-void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
+void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 {
 	struct bt_conn *conn;
 
@@ -224,7 +224,7 @@ void on_ble_gap_connect_evt(const struct ble_gap_connect_evt *ev)
 	notify_connected(conn);
 }
 
-void on_ble_gap_disconnect_evt(const struct ble_gap_disconnect_evt *ev)
+void on_nble_gap_disconnect_evt(const struct nble_gap_disconnect_evt *ev)
 {
 	struct bt_conn *conn;
 
@@ -244,7 +244,7 @@ void on_ble_gap_disconnect_evt(const struct ble_gap_disconnect_evt *ev)
 	bt_conn_unref(conn);
 }
 
-void on_ble_gap_conn_update_evt(const struct ble_gap_conn_update_evt *ev)
+void on_nble_gap_conn_update_evt(const struct nble_gap_conn_update_evt *ev)
 {
 	struct bt_conn *conn;
 

@@ -31,12 +31,12 @@
 
 #define NBLE_BUF_SIZE	384
 
-struct ble_gatt_service {
+struct nble_gatt_service {
 	const struct bt_gatt_attr *attrs;
 	uint16_t attr_count;
 };
 
-static struct ble_gatt_service svc_db[BLE_GATTS_MAX_SERVICES];
+static struct nble_gatt_service svc_db[BLE_GATTS_MAX_SERVICES];
 static uint8_t svc_count;
 
 /**
@@ -112,7 +112,7 @@ static int attr_read(struct bt_gatt_attr *attr, uint8_t *data, size_t len)
 
 int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 {
-	struct ble_gatt_register_req param;
+	struct nble_gatt_register_req param;
 	size_t i;
 	/* TODO: Replace the following with net_buf */
 	uint8_t attr_table[NBLE_BUF_SIZE];
@@ -133,7 +133,7 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 
 	for (i = 0; i < count; i++) {
 		struct bt_gatt_attr *attr = &attrs[i];
-		struct ble_gatt_attr *att;
+		struct nble_gatt_attr *att;
 		int err;
 
 		if (attr_table_size + sizeof(*att) > sizeof(attr_table)) {
@@ -164,12 +164,12 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 		       att->data_size);
 	}
 
-	ble_gatt_register_req(&param, attr_table, attr_table_size);
+	nble_gatt_register_req(&param, attr_table, attr_table_size);
 	return 0;
 }
 
-void on_ble_gatt_register_rsp(const struct ble_gatt_register_rsp *rsp,
-			      const struct ble_gatt_attr_handles *handles,
+void on_ble_gatt_register_rsp(const struct nble_gatt_register_rsp *rsp,
+			      const struct nble_gatt_attr_handles *handles,
 			      uint8_t len)
 {
 	BT_DBG("status %u", rsp->status);
@@ -359,7 +359,7 @@ int bt_gatt_attr_read_cpf(struct bt_conn *conn,
 int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   const void *data, uint16_t len)
 {
-	struct ble_gatt_send_notif_ind_params notif;
+	struct nble_gatt_send_notif_ind_params notif;
 
 	if (conn) {
 		notif.conn_handle = conn->handle;
@@ -370,7 +370,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	notif.params.attr = (struct bt_gatt_attr *)attr;
 	notif.params.offset = 0;
 
-	ble_gatt_send_notif_req(&notif, (uint8_t *)data, len);
+	nble_gatt_send_notif_req(&notif, (uint8_t *)data, len);
 	return 0;
 }
 
@@ -419,29 +419,29 @@ void bt_gatt_cancel(struct bt_conn *conn)
 {
 }
 
-void on_ble_gattc_write_rsp(const struct ble_gattc_write_rsp *ev,
-			    void *priv)
+void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *ev,
+			     void *priv)
 {
 	BT_DBG("");
 }
 
-void on_ble_gattc_read_rsp(const struct ble_gattc_read_rsp *ev,
-			   uint8_t *data, uint8_t data_len, void *priv)
+void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *ev,
+			    uint8_t *data, uint8_t data_len, void *priv)
 {
 	BT_DBG("");
 }
 
-void on_ble_gattc_value_evt(const struct ble_gattc_value_evt *ev,
-		uint8_t *buf, uint8_t buflen)
+void on_nble_gattc_value_evt(const struct nble_gattc_value_evt *ev,
+			     uint8_t *buf, uint8_t buflen)
 {
 	BT_DBG("");
 }
 
-void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *evt,
-			    const uint8_t *buf, uint8_t buflen)
+void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *evt,
+			     const uint8_t *buf, uint8_t buflen)
 {
 	const struct bt_gatt_attr *attr = evt->attr;
-	struct ble_gatts_rw_reply_params reply_data;
+	struct nble_gatts_rw_reply_params reply_data;
 
 	BT_DBG("handle 0x%04x buf %p len %u", attr->handle, buf, buflen);
 
@@ -460,36 +460,36 @@ void on_ble_gatts_write_evt(const struct ble_gatt_wr_evt *evt,
 	}
 }
 
-void on_ble_gatts_get_attribute_value_rsp(const struct ble_gatts_attribute_response *par,
-					  uint8_t *data, uint8_t length)
+void on_nble_gatts_get_attribute_value_rsp(const struct nble_gatts_attribute_response *par,
+					   uint8_t *data, uint8_t length)
 {
 	BT_DBG("");
 }
 
-void on_ble_gattc_discover_rsp(const struct ble_gattc_disc_rsp *rsp,
-			       const uint8_t *data, uint8_t len)
+void on_nble_gattc_discover_rsp(const struct nble_gattc_disc_rsp *rsp,
+				const uint8_t *data, uint8_t len)
 {
 	BT_DBG("");
 }
 
-void on_ble_gatts_send_svc_changed_rsp(const struct ble_core_response *par)
+void on_nble_gatts_send_svc_changed_rsp(const struct nble_core_response *par)
 {
 	BT_DBG("");
 }
 
-void on_ble_gatts_set_attribute_value_rsp(const struct ble_gatts_attribute_response *par)
+void on_nble_gatts_set_attribute_value_rsp(const struct nble_gatts_attribute_response *par)
 {
 	BT_DBG("");
 }
 
-void on_ble_gatts_send_notif_ind_rsp(const struct ble_gatt_notif_ind_rsp *par)
+void on_nble_gatts_send_notif_ind_rsp(const struct nble_gatt_notif_ind_rsp *par)
 {
 	BT_DBG("");
 }
 
-void on_ble_gatts_read_evt(const struct nble_gatt_rd_evt *evt)
+void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *evt)
 {
-	struct ble_gatts_rw_reply_params reply_data;
+	struct nble_gatts_rw_reply_params reply_data;
 	const struct bt_gatt_attr *attr;
 	/* TODO: Replace the following with net_buf */
 	uint8_t data[NBLE_BUF_SIZE];
