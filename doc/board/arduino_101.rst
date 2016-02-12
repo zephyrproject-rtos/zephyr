@@ -115,8 +115,7 @@ Connecting JTAG to Arduino 101
 
 #. Ensure that both the cable and header pin 0 locations line up. The cable
    from the ARM Micro JTAG connector uses a red wire on the cable to denote
-   which end on the cable has the pin 0.  The orange arrow in the figure below
-   points towards JTAG silkscreen indicator.
+   which end on the cable has the pin 0.
 
 #. Plug the USB Type B cable into the FlySwatter2 and your computer. On
    Linux, you should see something similar to the following in your dmesg:
