@@ -130,7 +130,7 @@ static inline bool cc2520_write_fifo_buf(uint8_t *buffer, int count)
 	uint8_t data[128 + 1];
 
 	if (count > (sizeof(data) - 1)) {
-		DBG("%s: too long data %d, max is %d\n", __func__,
+		DBG("%s: too long data %d, max is %lu\n", __func__,
 		       count, sizeof(data) - 1);
 		return false;
 	}
@@ -172,7 +172,7 @@ static inline bool cc2520_write_ram(uint8_t *buffer, int addr, int count)
 	uint8_t data[128 + 1 + 1];
 
 	if (count > (sizeof(data) - 2)) {
-		DBG("%s: too long data %d, max is %d\n",
+		DBG("%s: too long data %d, max is %lu\n",
 			      __func__, count, sizeof(data) - 2);
 		return false;
 	}

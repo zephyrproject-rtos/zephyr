@@ -957,7 +957,7 @@ static void cc2520_gpio_int_handler(struct device *port, uint32_t pin)
 {
 	struct cc2520_config *info = cc2520_sgl_dev->config->config_info;
 
-	DBG("%s: RX interrupt in pin %d\n", __func__, pin);
+	DBG("%s: RX interrupt in pin %lu\n", __func__, pin);
 
 	/* In order to make this driver available for 2+ instances
 	 * it would require this handler to get access to the concerned
