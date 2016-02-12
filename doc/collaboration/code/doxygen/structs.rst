@@ -3,11 +3,11 @@
 Structure Documentation
 #######################
 
-Structures, or structs for short, require very little documentation.
-Structs must be documented wherever they are defined. Basically,
-structs only require a brief description detailing why they are needed.
-Each variable that composes a struct must be commented. A fully
-simplified syntax is therefore appropriate.
+Structures, or structs for short, require very little documentation,
+and it's best to document them wherever they are defined.
+Structs require only a brief description detailing why they are needed.
+Each variable that composes a struct needs a comment contained within
+the correct syntax. A fully simplified syntax is therefore appropriate.
 
 .. note::
 
@@ -16,7 +16,7 @@ simplified syntax is therefore appropriate.
 
 Structure Comments Template
 ***************************
-Structs only have a simplified template:
+Structs have a simplified template:
 
 .. literalinclude:: ex_struct_pre.c
    :language: c
@@ -34,7 +34,7 @@ Correct:
 
 .. literalinclude:: irq_test_common_commented.h
    :language: c
-   :lines: 117-125
+   :lines: 102-110
    :emphasize-lines: 6
    :linenos:
 
@@ -47,12 +47,13 @@ separates each group of variable and comment.
 
 Incorrect:
 
-.. literalinclude:: ../../../../samples/include/irq_test_common.h
+
+.. literalinclude:: irq_test_common_wrong.h
    :language: c
-   :lines: 112-115
-   :emphasize-lines: 1
+   :lines: 1-7
+   :emphasize-lines: 2
    :linenos:
 
 The struct has no documentation. Developers that want to expand its
 functionality have no way of understanding why the struct is defined
-this way nor what its components are.
+this way, nor what its components are.
