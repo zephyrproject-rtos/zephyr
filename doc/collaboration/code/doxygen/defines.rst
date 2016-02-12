@@ -53,7 +53,7 @@ Correct:
 
 .. literalinclude:: phil_commented.h
    :language: c
-   :lines: 46-54
+   :lines: 32-47
    :emphasize-lines: 2, 3, 5
    :linenos:
 
@@ -62,11 +62,9 @@ ensures that the comment is appropriately linked to the code.
 
 Incorrect:
 
-.. literalinclude::
-   ../../../../samples/philosophers/microkernel/src/phil.h
-
+.. literalinclude:: ../../../../samples/philosophers/microkernel/src/phil.h
    :language: c
-   :lines: 24-28
+   :lines: 25-34
    :emphasize-lines: 2, 5
    :linenos:
 
