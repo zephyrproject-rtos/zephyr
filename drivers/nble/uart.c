@@ -111,8 +111,7 @@ void rpc_transmit_cb(struct net_buf *buf)
 	hdr->src_cpu_id = 0;
 
 	while (buf->len) {
-		uart_poll_out(nble_dev, buf->data[0]);
-		net_buf_pull(buf, 1);
+		uart_poll_out(nble_dev, net_buf_pull_u8(buf));
 	}
 
 	net_buf_unref(buf);
