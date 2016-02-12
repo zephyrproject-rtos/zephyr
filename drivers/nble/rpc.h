@@ -159,4 +159,4 @@ void rpc_serialize_s_b_b_p(uint8_t fn_index, const void *struct_data,
  * @param p_buf Pointer to the received buffer
  * @param length Length of the received buffer
  */
-void rpc_deserialize(const uint8_t *p_buf, uint16_t length);
+void rpc_deserialize(struct net_buf *buf);

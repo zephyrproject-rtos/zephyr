@@ -219,102 +219,95 @@ static void panic(int err)
 	}
 }
 
-static const uint8_t *deserialize_struct(const uint8_t *p,
-					 const uint8_t **pp_struct,
-					 uint8_t *p_struct_length)
+static void deserialize_struct(struct net_buf *buf, const uint8_t **struct_ptr,
+			       uint8_t *struct_length)
 {
-	uint8_t struct_length;
-
-	struct_length = *p++;
-	*pp_struct = p;
-	*p_struct_length = struct_length;
-
-	return p + struct_length;
+	*struct_length = net_buf_pull_u8(buf);
+	*struct_ptr = buf->data;
+	net_buf_pull(buf, *struct_length);
 }
 
-static const uint8_t *deserialize_buf(const uint8_t *p, const uint8_t **pp_buf,
-				      uint16_t *p_buflen)
+static void deserialize_buf(struct net_buf *buf, const uint8_t **buf_ptr,
+			    uint16_t *buf_len)
 {
 	uint8_t b;
-	uint16_t buflen;
 
 	/* Get the current byte */
-	b = *p++;
-	buflen = b & 0x7F;
+	b = net_buf_pull_u8(buf);
+	*buf_len = b & 0x7F;
 	if (b & 0x80) {
 		/* Get the current byte */
-		b = *p++;
-		buflen += (uint16_t)b << 7;
+		b = net_buf_pull_u8(buf);
+		*buf_len += (uint16_t)b << 7;
 	}
 
 	/* Return the values */
-	*pp_buf = p;
-	*p_buflen = buflen;
-	p += buflen;
+	*buf_ptr = buf->data;
 
-	return p;
+	net_buf_pull(buf, *buf_len);
 }
 
-static void deserialize_none(uint8_t fn_index, const uint8_t *buf,
-			     uint16_t length)
+static void deserialize_ptr(struct net_buf *buf, uintptr_t *priv)
+{
+	memcpy(priv, buf->data, sizeof(*priv));
+	net_buf_pull(buf, sizeof(*priv));
+}
+
+static void deserialize_none(uint8_t fn_index, struct net_buf *buf)
 {
 	(void)buf;
 
-	if (length != 0) {
+	if (buf->len != 0) {
 		panic(-1);
 	}
 
 	m_fct_none[fn_index]();
 }
 
-static void deserialize_s(uint8_t fn_index, const uint8_t *buf, uint16_t length)
+static void deserialize_s(uint8_t fn_index, struct net_buf *buf)
 {
-	const uint8_t *p_struct_data;
+	const uint8_t *struct_ptr;
 	uint8_t struct_length;
-	const uint8_t *p;
 
-	p = deserialize_struct(buf, &p_struct_data, &struct_length);
+	deserialize_struct(buf, &struct_ptr, &struct_length);
 
-	if ((length != (p - buf)) || (struct_length != m_size_s[fn_index])) {
+	if (struct_length != m_size_s[fn_index]) {
 		panic(-1);
 	} else {
 		/* Always align structures on word boundary */
 		uintptr_t struct_data[(struct_length +
 				(sizeof(uintptr_t) - 1))/(sizeof(uintptr_t))];
 
-		memcpy(struct_data, p_struct_data, struct_length);
+		memcpy(struct_data, struct_ptr, struct_length);
 
 		m_fct_s[fn_index](struct_data);
 	}
 }
 
-static void deserialize_p(uint8_t fn_index, const uint8_t *buf, uint16_t length)
+static void deserialize_p(uint8_t fn_index, struct net_buf *buf)
 {
 	uintptr_t priv;
 
-	if (length != 4) {
+	if (buf->len != sizeof(priv)) {
 		panic(-1);
 	}
 
-	/* little endian conversion */
-	priv = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+	deserialize_ptr(buf, &priv);
 
 	m_fct_p[fn_index]((void *)priv);
 }
 
-static void deserialize_s_b(uint8_t fn_index, const uint8_t *buf,
-			    uint16_t length)
+static void deserialize_s_b(uint8_t fn_index, struct net_buf *buf)
 {
 	const uint8_t *p_struct_data;
 	uint8_t struct_length;
 	const uint8_t *p_vbuf;
 	uint16_t vbuf_length;
-	const uint8_t *p;
 
-	p = deserialize_struct(buf, &p_struct_data, &struct_length);
-	p = deserialize_buf(p, &p_vbuf, &vbuf_length);
+	deserialize_struct(buf, &p_struct_data, &struct_length);
+	deserialize_buf(buf, &p_vbuf, &vbuf_length);
 
-	if ((length != (p - buf)) || (struct_length != m_size_s_b[fn_index])) {
+	if (struct_length != m_size_s_b[fn_index]) {
 		panic(-1);
 	} else {
 		/* Always align structures on word boundary */
@@ -335,23 +328,19 @@ static void deserialize_s_b(uint8_t fn_index, const uint8_t *buf,
 	}
 }
 
-static void deserialize_b_b_p(uint8_t fn_index, const uint8_t *buf,
-			      uint16_t length)
+static void deserialize_b_b_p(uint8_t fn_index, struct net_buf *buf)
 {
 	const uint8_t *p_vbuf1;
 	uint16_t vbuf1_length;
 	const uint8_t *p_vbuf2;
 	uint16_t vbuf2_length;
 	uintptr_t priv;
-	const uint8_t *p;
 
-	p = deserialize_buf(buf, &p_vbuf1, &vbuf1_length);
-	p = deserialize_buf(p, &p_vbuf2, &vbuf2_length);
-	p += 4;
+	deserialize_buf(buf, &p_vbuf1, &vbuf1_length);
+	deserialize_buf(buf, &p_vbuf2, &vbuf2_length);
+	deserialize_ptr(buf, &priv);
 
-	if (length != (p - buf)) {
-		panic(-1);
-	} else {
+	{
 		/* Always align structures on word boundary */
 		uintptr_t vbuf1[(vbuf1_length +
 				(sizeof(uintptr_t) - 1))/(sizeof(uintptr_t))];
@@ -370,28 +359,21 @@ static void deserialize_b_b_p(uint8_t fn_index, const uint8_t *buf,
 			buf2 = vbuf2;
 		}
 
-		p = p_vbuf2 + vbuf2_length;
-
-		/* little endian conversion */
-		priv = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
-
 		m_fct_b_b_p[fn_index](buf1, vbuf1_length, buf2, vbuf2_length,
 				      (void *)priv);
 	}
 }
 
-static void deserialize_s_p(uint8_t fn_index, const uint8_t *buf,
-			    uint16_t length)
+static void deserialize_s_p(uint8_t fn_index, struct net_buf *buf)
 {
 	const uint8_t *p_struct_data;
 	uint8_t struct_length;
 	uintptr_t priv;
-	const uint8_t *p;
 
-	p = deserialize_struct(buf, &p_struct_data, &struct_length);
-	p += 4;
+	deserialize_struct(buf, &p_struct_data, &struct_length);
+	deserialize_ptr(buf, &priv);
 
-	if ((length != (p - buf)) || (struct_length != m_size_s_p[fn_index])) {
+	if (struct_length != m_size_s_p[fn_index]) {
 		panic(-1);
 	} else {
 		/* Always align structures on word boundary */
@@ -399,30 +381,24 @@ static void deserialize_s_p(uint8_t fn_index, const uint8_t *buf,
 				(sizeof(uintptr_t) - 1))/(sizeof(uintptr_t))];
 
 		memcpy(struct_data, p_struct_data, struct_length);
-		p = p_struct_data + struct_length;
-
-		/* little endian conversion */
-		priv = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
 
 		m_fct_s_p[fn_index](struct_data, (void *)priv);
 	}
 }
 
-static void deserialize_s_b_p(uint8_t fn_index, const uint8_t *buf,
-			      uint16_t length)
+static void deserialize_s_b_p(uint8_t fn_index, struct net_buf *buf)
 {
 	const uint8_t *p_struct_data;
 	uint8_t struct_length;
 	const uint8_t *p_vbuf;
 	uint16_t vbuf_length;
 	uintptr_t priv;
-	const uint8_t *p;
 
-	p = deserialize_struct(buf, &p_struct_data, &struct_length);
-	p = deserialize_buf(p, &p_vbuf, &vbuf_length);
-	p += 4;
+	deserialize_struct(buf, &p_struct_data, &struct_length);
+	deserialize_buf(buf, &p_vbuf, &vbuf_length);
+	deserialize_ptr(buf, &priv);
 
-	if ((length != (p - buf)) || (struct_length != m_size_s_b_p[fn_index])) {
+	if (struct_length != m_size_s_b_p[fn_index]) {
 		panic(-1);
 	} else {
 		/* Always align structures on word boundary */
@@ -438,18 +414,13 @@ static void deserialize_s_b_p(uint8_t fn_index, const uint8_t *buf,
 			memcpy(vbuf, p_vbuf, vbuf_length);
 			buf = vbuf;
 		}
-		p = p_vbuf + vbuf_length;
-
-		/* little endian conversion */
-		priv = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
 
 		m_fct_s_b_p[fn_index](struct_data, buf, vbuf_length,
 				      (void *)priv);
 	}
 }
 
-static void deserialize_s_b_b_p(uint8_t fn_index, const uint8_t *buf,
-				uint16_t length)
+static void deserialize_s_b_b_p(uint8_t fn_index, struct net_buf *buf)
 {
 	const uint8_t *p_struct_data;
 	uint8_t struct_length;
@@ -458,15 +429,13 @@ static void deserialize_s_b_b_p(uint8_t fn_index, const uint8_t *buf,
 	const uint8_t *p_vbuf2;
 	uint16_t vbuf2_length;
 	uintptr_t priv;
-	const uint8_t *p;
 
-	p = deserialize_struct(buf, &p_struct_data, &struct_length);
-	p = deserialize_buf(p, &p_vbuf1, &vbuf1_length);
-	p = deserialize_buf(p, &p_vbuf2, &vbuf2_length);
-	p += 4;
+	deserialize_struct(buf, &p_struct_data, &struct_length);
+	deserialize_buf(buf, &p_vbuf1, &vbuf1_length);
+	deserialize_buf(buf, &p_vbuf2, &vbuf2_length);
+	deserialize_ptr(buf, &priv);
 
-	if ((length != (p - buf)) ||
-	    (struct_length != m_size_s_b_b_p[fn_index])) {
+	if (struct_length != m_size_s_b_b_p[fn_index]) {
 		panic(-1);
 	} else {
 		/* Always align structures on word boundary */
@@ -491,81 +460,73 @@ static void deserialize_s_b_b_p(uint8_t fn_index, const uint8_t *buf,
 			buf2 = vbuf2;
 		}
 
-		p = p_vbuf2 + vbuf2_length;
-
-		/* little endian conversion */
-		priv = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
-
 		m_fct_s_b_b_p[fn_index](struct_data, buf1, vbuf1_length, buf2,
 					vbuf2_length, (void *)priv);
 	}
 }
 
-void rpc_deserialize(const uint8_t *buf, uint16_t length)
+void rpc_deserialize(struct net_buf *buf)
 {
 
 	uint8_t fn_index;
 	uint8_t sig_type;
 
-	if (buf) {
-		sig_type = buf[0];
-		fn_index = buf[1];
+	sig_type = buf->data[0];
+	fn_index = buf->data[1];
 
-		buf += 2;
-		length -= 2;
+	net_buf_pull(buf, 2);
 
-		switch (sig_type) {
-		case SIG_TYPE_NONE:
-			if (sizeof(m_fct_none)) {
-				BT_DBG("%s", debug_func_none[fn_index]);
-				deserialize_none(fn_index, buf, length);
-			}
-			break;
-		case SIG_TYPE_S:
-			if (sizeof(m_fct_s)) {
-				BT_DBG("%s", debug_func_s[fn_index]);
-				deserialize_s(fn_index, buf, length);
-			}
-			break;
-		case SIG_TYPE_P:
-			if (sizeof(m_fct_p)) {
-				BT_DBG("%s", debug_func_p[fn_index]);
-				deserialize_p(fn_index, buf, length);
-			}
-			break;
-		case SIG_TYPE_S_B:
-			if (sizeof(m_fct_s_b)) {
-				BT_DBG("%s", debug_func_s_b[fn_index]);
-				deserialize_s_b(fn_index, buf, length);
-			}
-			break;
-		case SIG_TYPE_B_B_P:
-			if (sizeof(m_fct_b_b_p)) {
-				BT_DBG("%s", debug_func_b_b_p[fn_index]);
-				deserialize_b_b_p(fn_index, buf, length);
-			}
-			break;
-		case SIG_TYPE_S_P:
-			if (sizeof(m_fct_s_p)) {
-				BT_DBG("%s", debug_func_s_p[fn_index]);
-				deserialize_s_p(fn_index, buf, length);
-			}
-			break;
-		case SIG_TYPE_S_B_P:
-			if (sizeof(m_fct_s_b_p)) {
-				BT_DBG("%s", debug_func_s_b_p[fn_index]);
-				deserialize_s_b_p(fn_index, buf, length);
-			}
-			break;
-		case SIG_TYPE_S_B_B_P:
-			if (sizeof(m_fct_s_b_b_p)) {
-				BT_DBG("%s", debug_func_s_b_b_p[fn_index]);
-				deserialize_s_b_b_p(fn_index, buf, length);
-			}
-			break;
-		default:
-			panic(-1);
-			break;
+	switch (sig_type) {
+	case SIG_TYPE_NONE:
+		if (sizeof(m_fct_none)) {
+			BT_DBG("%s", debug_func_none[fn_index]);
+			deserialize_none(fn_index, buf);
 		}
+		break;
+	case SIG_TYPE_S:
+		if (sizeof(m_fct_s)) {
+			BT_DBG("%s", debug_func_s[fn_index]);
+			deserialize_s(fn_index, buf);
+		}
+		break;
+	case SIG_TYPE_P:
+		if (sizeof(m_fct_p)) {
+			BT_DBG("%s", debug_func_p[fn_index]);
+			deserialize_p(fn_index, buf);
+		}
+		break;
+	case SIG_TYPE_S_B:
+		if (sizeof(m_fct_s_b)) {
+			BT_DBG("%s", debug_func_s_b[fn_index]);
+			deserialize_s_b(fn_index, buf);
+		}
+		break;
+	case SIG_TYPE_B_B_P:
+		if (sizeof(m_fct_b_b_p)) {
+			BT_DBG("%s", debug_func_b_b_p[fn_index]);
+			deserialize_b_b_p(fn_index, buf);
+		}
+		break;
+	case SIG_TYPE_S_P:
+		if (sizeof(m_fct_s_p)) {
+			BT_DBG("%s", debug_func_s_p[fn_index]);
+			deserialize_s_p(fn_index, buf);
+		}
+		break;
+	case SIG_TYPE_S_B_P:
+		if (sizeof(m_fct_s_b_p)) {
+			BT_DBG("%s", debug_func_s_b_p[fn_index]);
+			deserialize_s_b_p(fn_index, buf);
+		}
+		break;
+	case SIG_TYPE_S_B_B_P:
+		if (sizeof(m_fct_s_b_b_p)) {
+			BT_DBG("%s", debug_func_s_b_b_p[fn_index]);
+			deserialize_s_b_b_p(fn_index, buf);
+		}
+		break;
+	default:
+		panic(-1);
+		break;
 	}
 }

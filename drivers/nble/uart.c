@@ -72,7 +72,7 @@ static void rx_fiber(void)
 		buf = nano_fifo_get(&rx_queue, TICKS_UNLIMITED);
 		BT_DBG("Got buf %p", buf);
 
-		rpc_deserialize(buf->data, buf->len);
+		rpc_deserialize(buf);
 
 		net_buf_unref(buf);
 	}
