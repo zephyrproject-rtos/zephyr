@@ -239,7 +239,10 @@ static int ehdrLoad(int fd)
 	unsigned  ix = 0x12345678;  /* used to auto-detect endian-ness */
 	size_t    nBytes;           /* number of bytes read from file */
 
-	lseek(fd, 0, SEEK_SET);
+	if (lseek(fd, 0, SEEK_SET) == -1) {
+		fprintf(stderr, "Unable to seek\n");
+		return -1;
+	}
 
 	nBytes = read(fd, &ehdr, sizeof(ehdr));
 	if (nBytes != sizeof(ehdr))
@@ -308,7 +311,10 @@ static int shdrsLoad(int fd)
 	}
 
 	/* Seek to the start of the table of section headers */
-	lseek(fd, ehdr.e_shoff, SEEK_SET);
+	if (lseek(fd, ehdr.e_shoff, SEEK_SET) == -1) {
+		fprintf(stderr, "Unable to seek\n");
+		return -1;
+	}
 
 	for (ix = 0; ix < ehdr.e_shnum; ix++)
 	{
@@ -429,7 +435,10 @@ static int strTblLoad(int fd, unsigned strTblIx, char **ppStringTable)
 		return -1;
 	}
 
-	lseek(fd, shdr[strTblIx].sh_offset, SEEK_SET);
+	if (lseek(fd, shdr[strTblIx].sh_offset, SEEK_SET) == -1) {
+		fprintf(stderr, "Unable to seek\n");
+		return -1;
+	}
 
 	nBytes = read(fd, pTable, shdr[strTblIx].sh_size);
 	if (nBytes != shdr[strTblIx].sh_size)
@@ -499,7 +508,10 @@ static void headerAbsoluteSymbolsDump(int fd, FILE *fp, Elf32_Off symTblOffset,
 	/* context the symbol table: pick out absolute syms */
 
 	numSyms = symTblSize / sizeof(Elf32_Sym);
-	lseek(fd, symTblOffset, SEEK_SET);
+	if (lseek(fd, symTblOffset, SEEK_SET) == -1) {
+		fprintf(stderr, "Unable to seek\n");
+		return;
+	}
 
 	for (ix = 0; ix < numSyms; ++ix)
 	{
