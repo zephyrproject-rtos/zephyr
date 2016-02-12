@@ -118,32 +118,6 @@ void rpc_transmit_cb(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-static int nble_read(struct device *uart, uint8_t *buf,
-		     size_t len, size_t min)
-{
-	int total = 0;
-	int tries = 10;
-
-	while (len) {
-		int rx;
-
-		rx = uart_fifo_read(uart, buf, len);
-		if (rx == 0) {
-			BT_DBG("Got zero bytes from UART");
-			if (total < min && tries--) {
-				continue;
-			}
-			break;
-		}
-
-		len -= rx;
-		total += rx;
-		buf += rx;
-	}
-
-	return total;
-}
-
 static size_t nble_discard(struct device *uart, size_t len)
 {
 	/* FIXME: correct size for nble */
@@ -155,11 +129,12 @@ static size_t nble_discard(struct device *uart, size_t len)
 void bt_uart_isr(void *unused)
 {
 	static struct net_buf *buf;
-	static int remaining;
 
 	ARG_UNUSED(unused);
 
 	while (uart_irq_update(nble_dev) && uart_irq_is_pending(nble_dev)) {
+		static struct ipc_uart_header hdr;
+		static uint8_t hdr_bytes;
 		int read;
 
 		if (!uart_irq_rx_ready(nble_dev)) {
@@ -178,47 +153,42 @@ void bt_uart_isr(void *unused)
 			continue;
 		}
 
-		/* Beginning of a new packet */
-		if (!remaining) {
-			struct ipc_uart_header hdr;
-
+		if (hdr_bytes < sizeof(hdr)) {
 			/* Get packet type */
-			read = nble_read(nble_dev, (uint8_t *)&hdr,
-					 sizeof(hdr), sizeof(hdr));
-			if (read != sizeof(hdr)) {
-				BT_WARN("Unable to read NBLE header");
+			hdr_bytes += uart_fifo_read(nble_dev,
+						    (uint8_t *)&hdr + hdr_bytes,
+						    sizeof(hdr) - hdr_bytes);
+			if (hdr_bytes < sizeof(hdr)) {
 				continue;
 			}
 
-			remaining = hdr.len;
-
-			buf = net_buf_get(&rx, 0);
-			if (!buf) {
-				BT_ERR("No available IPC buffers");
-			}
-
-			if (buf && remaining > net_buf_tailroom(buf)) {
-				BT_ERR("Not enough space in buffer");
-				net_buf_unref(buf);
+			if (hdr.len > NBLE_BUF_SIZE) {
+				BT_ERR("Too much data to fit buffer");
 				buf = NULL;
+			} else {
+				buf = net_buf_get(&rx, 0);
+				if (!buf) {
+					BT_ERR("No available IPC buffers");
+				}
 			}
 		}
 
 		if (!buf) {
-			read = nble_discard(nble_dev, remaining);
-			BT_WARN("Discarded %d bytes", read);
-			remaining -= read;
+			hdr.len -= nble_discard(nble_dev, hdr.len);
+			if (!hdr.len) {
+				hdr_bytes = 0;
+			}
 			continue;
 		}
 
-		read = nble_read(nble_dev, net_buf_tail(buf), remaining, 0);
+		read = uart_fifo_read(nble_dev, net_buf_tail(buf), hdr.len);
 
 		buf->len += read;
-		remaining -= read;
+		hdr.len -= read;
 
-		if (!remaining) {
+		if (!hdr.len) {
 			BT_DBG("full packet received");
-
+			hdr_bytes = 0;
 			/* Pass buffer to the stack */
 			nano_fifo_put(&rx_queue, buf);
 		}
