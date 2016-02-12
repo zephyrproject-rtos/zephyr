@@ -59,11 +59,13 @@ char fiberStack[STACKSIZE];
 #include <net/tinydtls.h>
 #endif
 
-/* The peer is the server in our case. Just invent a mac
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+/* The peer is the client in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
  */
 static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
+#endif
 
 /* This is my mac address
  */
@@ -71,13 +73,12 @@ static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
-#define MY_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
-
-#define PEER_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x1 } } }
+#define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
+#define PEER_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
 #else
 /* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
-#define MY_IPADDR { { { 192,0,2,2 } } }
-#define PEER_IPADDR { { { 192,0,2,1 } } }
+#define MY_IPADDR { { { 192, 0, 2, 2 } } }
+#define PEER_IPADDR { { { 192, 0, 2, 1 } } }
 
 #endif
 
@@ -113,6 +114,12 @@ static inline void init_server()
 #else
 	{
 		uip_ipaddr_t *addr;
+
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+		/* Set the routes and neighbor cache only if we do not have
+		 * neighbor discovery enabled. This setting should only be
+		 * used if running in qemu and using slip (tun device).
+		 */
 		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&peer_mac;
 
 		addr = (uip_ipaddr_t *)&in6addr_peer;
@@ -123,6 +130,14 @@ static inline void init_server()
 		 * but do it here so that test works from first packet.
 		 */
 		uip_ds6_nbr_add(addr, lladdr, 0, NBR_REACHABLE);
+
+#else
+		/* Hard code the route to peer just in case, not to
+		 * be done in real life applications.
+		 */
+		addr = (uip_ipaddr_t *)&in6addr_peer;
+		uip_ds6_defrt_add(addr, 0);
+#endif
 
 		addr = (uip_ipaddr_t *)&in6addr_my;
 		uip_ds6_addr_add(addr, 0, ADDR_MANUAL);
@@ -349,11 +364,9 @@ void startup(void)
 }
 
 #ifdef CONFIG_NANOKERNEL
-
 void main(void)
 {
 	fiber_start(&fiberStack[0], STACKSIZE,
 			(nano_fiber_entry_t)startup, 0, 0, 7, 0);
 }
-
-#endif /* CONFIG_NANOKERNEL */
+#endif
