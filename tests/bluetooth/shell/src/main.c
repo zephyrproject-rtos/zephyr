@@ -44,7 +44,7 @@
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)
 
-static struct bt_conn *default_conn = NULL;
+static struct bt_conn *default_conn;
 
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */
 static struct bt_conn *pairing_conn;
@@ -488,7 +488,7 @@ static void cmd_scan(int argc, char *argv[])
 		return;
 	}
 
-	action = (char*)argv[1];
+	action = argv[1];
 	if (!strcmp(action, "on")) {
 		cmd_active_scan_on();
 	} else if (!strcmp(action, "off")) {
