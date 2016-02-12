@@ -62,6 +62,18 @@ config BLUETOOTH_DEBUG
 	default n
 	select STDOUT_CONSOLE
 
+config  BLUETOOTH_RX_STACK_SIZE
+	int "Size of the receiving fiber stack"
+	default 1024
+	range 1024 65536
+	help
+	  Size of the receiving fiber stack. This is the context from
+	  which all event callbacks to the application occur. The
+	  default value is sufficient for basic operation, but if the
+	  application needs to do advanced things in its callbacks that
+	  require extra stack space, this value can be increased to
+	  accomodate for that.
+
 if BLUETOOTH_DEBUG
 
 config	BLUETOOTH_DEBUG_DRIVER

@@ -76,6 +76,18 @@ config  BLUETOOTH_MAX_EVT_LEN
 	  Commands. It is a 3 byte Command Complete header + 65 byte
 	  return parameters = 68 bytes in total.
 
+config  BLUETOOTH_RX_STACK_SIZE
+	int "Size of the receiving fiber stack"
+	default 1024
+	range 1024 65536
+	help
+	  Size of the receiving fiber stack. This is the context from
+	  which all event callbacks to the application occur. The
+	  default value is sufficient for basic operation, but if the
+	  application needs to do advanced things in its callbacks that
+	  require extra stack space, this value can be increased to
+	  accomodate for that.
+
 config	BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
 	default n

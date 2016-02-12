@@ -56,7 +56,7 @@
 #endif
 
 /* Stacks for the fibers */
-static BT_STACK_NOINIT(rx_fiber_stack, 1024);
+static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 static BT_STACK_NOINIT(rx_prio_fiber_stack, 256);
 static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
 

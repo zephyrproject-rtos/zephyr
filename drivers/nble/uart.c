@@ -56,7 +56,7 @@ static NET_BUF_POOL(rx_pool, NBLE_RX_BUF_COUNT, NBLE_BUF_SIZE, &rx, NULL, 0);
 static struct nano_fifo tx;
 static NET_BUF_POOL(tx_pool, NBLE_TX_BUF_COUNT, NBLE_BUF_SIZE, &tx, NULL, 0);
 
-static BT_STACK_NOINIT(rx_fiber_stack, 2048);
+static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 static struct device *nble_dev;
 
