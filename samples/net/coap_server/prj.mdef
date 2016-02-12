@@ -1,5 +1,5 @@
-% Application       : Network listener
+% Application       : coap server
 
 % TASK NAME         PRIO ENTRY           STACK GROUPS
 % ===================================================
-  TASK MAIN            7 startup	2048 [EXE]
+  TASK MAIN            7 startup         2048 [EXE]
