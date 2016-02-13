@@ -8,12 +8,19 @@ This section describes how to set up a Mac OS development system.
 After completing these steps, you will be able to compile and run your Zephyr
 applications on the following Mac OS version:
 
-Mac OS X 10.11 (El Capitan)
+* Mac OS X 10.11 (El Capitan)
 
-Update Your Operating System
-****************************
+.. _mac_network_configuration:
 
-Before proceeding with the build, ensure your OS is up to date.
+Configuring Network and Proxies
+*******************************
+
+Building the kernel requires the command-line tools of git, ssh, wget,
+curl. Verify that each service can be run as both user and root and that access
+to the Internet and is not impeded by a firewall.
+
+If your network requires proxy access through a proxy, please configure using
+steps similar git, ssh and wget in accordance to your security policies.
 
 .. _mac_requirements:
 
@@ -28,9 +35,7 @@ build for and install tools that the build system requires.
    Minor version updates of the listed required packages might also
    work.
 
-.. attention::
-   Check your firewall and proxy configurations to ensure that Internet
-   access is available before attempting to install the required packages.
+Before proceeding with the build, ensure your OS is up to date.
 
 First, install the :program:`Homebrew` (The missing package manager for
 OS X). Homebrew is a free and open-source software package management system
