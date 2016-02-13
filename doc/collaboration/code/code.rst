@@ -13,10 +13,10 @@ code changes.
 .. toctree::
    :maxdepth: 1
 
+   gerrit_accounts
+   gerrit
    coding_style
    naming_conventions
-   gerrit
-   gerrit_accounts
    gerrit_practices
    changes
    maintainers

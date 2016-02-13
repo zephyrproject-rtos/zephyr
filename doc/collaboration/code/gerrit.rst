@@ -45,46 +45,45 @@ commit messages to ease the acceptance of the change.
   colon, a short (less than 70 characters) shall be provided after, detailing
   the brief basics of the change.  As an example:
 
-   .. code-block:: console
+  .. code-block:: console
 
-      doc: Updating gerrit commit details
+     doc: Updating gerrit commit details
 
 * When adding a new file to the tree, it is important to detail the source of
   origin on the file, provide attributions, and detail the intended usage.  In
   cases where the file is an original to Zephyr, the commit message shall
   include the following:
 
-   .. code-block:: console
+  .. code-block:: console
 
-      Origin: Original
+     Origin: Original
 
-   In cases where the file is imported from an external project, the commit
-   message shall contain details regarding the original project, the location
-   of the project, the SHA-id of the origin commit the file, the intended
-   purpose, and if the file will be maintained by the Zephyr project, in other
-   words, whether or not the Zephyr project will contain a localized branch or
-   if it is a downstream copy.
+  In cases where the file is imported from an external project, the commit
+  message shall contain details regarding the original project, the location
+  of the project, the SHA-id of the origin commit the file, the intended
+  purpose, and if the file will be maintained by the Zephyr project, in other
+  words, whether or not the Zephyr project will contain a localized branch or
+  if it is a downstream copy.
 
-   For example a copy of a locally maintained import:
+  For example a copy of a locally maintained import:
 
-   .. code-block:: console
+  .. code-block:: console
 
-      Origin: Contiki OS
-      URL: http://www.contiki-os.org/
-      commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
-      Purpose: Introduction of networking stack.
-      Maintained-by: Zephyr
+     Origin: Contiki OS
+     URL: http://www.contiki-os.org/
+     commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
+     Purpose: Introduction of networking stack.
+     Maintained-by: Zephyr
 
-   For example a copy of an externally maintained import:
+  For example a copy of an externally maintained import:
 
-   .. code-block:: console
+  .. code-block:: console
 
-      Origin: Tiny Crypt
-      URL: https://github.com/01org/tinycrypt
-      commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
-      Purpose: Introduction of TinyCrypt
-      Maintained-by: External
-
+     Origin: Tiny Crypt
+     URL: https://github.com/01org/tinycrypt
+     commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
+     Purpose: Introduction of TinyCrypt
+     Maintained-by: External
 
 
 Submitting a Change
@@ -131,29 +130,28 @@ For the Zephyr Project, the special branch is called :literal:`refs/for/master` 
 
 2. Add reviewers to your change.
 
-   a. To specify a list of reviewers via the command line, add
-      *%r=reviewer@project.org* to your push command. For example:
+   To specify a list of reviewers via the command line, add
+   *%r=reviewer@project.org* to your push command. For example:
 
-      .. code-block:: bash
+   .. code-block:: bash
 
-         $ git push origin HEAD:refs/for/master%r=rev1@email.com,rv2@notemail.com
+      $ git push origin HEAD:refs/for/master%r=rev1@email.com,rv2@notemail.com
 
-   b. Autoconfigure GIT to add a set of reviewers if your commits will
-      have the same reviewers all at the time.
+   Alternatively, you can auto-configure GIT to add a set of reviewers if your commits will
+   have the same reviewers all at the time.
 
-      (i) In the cloned repo, open the :file:`.git/config` file.
+   To add a list of default reviewers, open the :file:`.git/config` file in the project
+   directory and add the following line in the :literal:`[ branch “master” ]` section:
 
-      (ii) Add the following line in the :literal:`[ branch “master” ]` section:
+   .. code-block:: bash
 
-         .. code-block:: bash
+      [branch "master"] #.... push =
+      HEAD:refs/for/master%r=rev1@email.com,rev2@notemail.com`
 
-            [branch "master"] #.... push =
-            HEAD:refs/for/master%r=rev1@email.com,rev2@notemail.com`
 
-   .. note::
-      In the examples, actual email addresses should be used instead of the
-      :literal:`@email.com and @notemail.com` addressses.
-      Don't forget to replace :literal:`origin` with your git remote name.
+   Make sure to use actual email addresses instead of the :literal:`@email.com and
+   @notemail.com` addressses. Don't forget to replace :literal:`origin` with your git
+   remote name.
 
 Reviewing Using Gerrit
 **********************
@@ -217,7 +215,7 @@ Viewing Pending Changes
   Add the filter *project:zephyr* to limit the visible changes to
   only those from the Zephyr Project.
 
-   .. figure:: figures/gerrit03.png
+  .. figure:: figures/gerrit03.png
       :scale: 75 %
       :alt: Find pending changes for zephyr repo
 
@@ -227,11 +225,11 @@ Viewing Pending Changes
   of your input by clicking on :menuselection:`My --> Changes` or going to:
   `gerrit dashboard`_
 
-   .. figure:: figures/gerrit04.png
-      :scale: 75 %
-      :alt: User gerrit dashboard
+  .. figure:: figures/gerrit04.png
+     :scale: 75 %
+     :alt: User gerrit dashboard
 
-      View of Gerrit dashboard.
+     View of Gerrit dashboard.
 
 Reviewing a Change
 ******************
