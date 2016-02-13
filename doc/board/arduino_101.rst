@@ -249,7 +249,7 @@ checkout copy of Zephyr, and run:
       $ source ./zephyr-env.sh
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
 
-      $ make pristine && BOARD=arduino_101_sss ARCH=arc
+      $ make pristine && make BOARD=arduino_101_sss ARCH=arc
       $ make BOARD=arduino_101_sss flash
 
 .. note::
@@ -270,7 +270,7 @@ Flashing an x86 Kernel
 
       $ source ./zephyr-env.sh
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
-      $ make pristine && BOARD=arduino_101 ARCH=x86
+      $ make pristine && make BOARD=arduino_101 ARCH=x86
       $ make BOARD=arduino_101 flash
 
 .. note::
