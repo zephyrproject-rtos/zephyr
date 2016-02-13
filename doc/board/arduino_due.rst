@@ -26,20 +26,20 @@ Supported Features
 The arduino_due board configuration supports the following
 hardware features:
 
-+--------------+------------+----------------------+
-| Interface    | Controller | Driver/Component     |
-+==============+============+======================+
-| NVIC         | on-chip    | nested vectored      |
-|              |            | interrupt controller |
-+--------------+------------+----------------------+
-| SYSTICK      | on-chip    | system clock         |
-+--------------+------------+----------------------+
-| UART         | on-chip    | serial port          |
-+--------------+------------+----------------------+
-| GPIO         | on-chip    | gpio                 |
-+--------------+------------+----------------------+
-| I2C          | on-chip    | i2c                  |
-+--------------+------------+----------------------+
++-----------+------------+----------------------+
+| Interface | Controller | Driver/Component     |
++===========+============+======================+
+| NVIC      | on-chip    | nested vectored      |
+|           |            | interrupt controller |
++-----------+------------+----------------------+
+| SYSTICK   | on-chip    | system clock         |
++-----------+------------+----------------------+
+| UART      | on-chip    | serial port          |
++-----------+------------+----------------------+
+| GPIO      | on-chip    | gpio                 |
++-----------+------------+----------------------+
+| I2C       | on-chip    | i2c                  |
++-----------+------------+----------------------+
 
 Other hardware features are not currently supported by the Zephyr kernel.
 See `Arduino Due website`_ and `Atmel SAM3X8E Datasheet`_ for a complete
@@ -65,35 +65,35 @@ vector table.
 Handlers are provided for exceptions 1-6, 11-12, and 14-15.
 The table here identifies the handlers used for each exception.
 
-+------+------------+----------------+--------------------------+
-| Exc# | Name       | Remarks        | Used by Zephyr Kernel    |
-+======+============+================+==========================+
-| 1    | Reset      |                | system initialization    |
-+------+------------+----------------+--------------------------+
-| 2    | NMI        |                | system fatal error       |
-+------+------------+----------------+--------------------------+
-| 3    | Hard fault |                | system fatal error       |
-+------+------------+----------------+--------------------------+
-| 4    | MemManage  | MPU fault      | system fatal error       |
-+------+------------+----------------+--------------------------+
-| 5    | Bus        |                | system fatal error       |
-+------+------------+----------------+--------------------------+
-| 6    | Usage      | undefined      | system fatal error       |
-|      | fault      | instruction,   |                          |
-|      |            | or switch      |                          |
-|      |            | attempt to ARM |                          |
-|      |            | mode           |                          |
-+------+------------+----------------+--------------------------+
-| 11   | SVC        |                | context switch and       |
-|      |            |                | software interrupts      |
-+------+------------+----------------+--------------------------+
-| 12   | Debug      |                | system fatal error       |
-|      | monitor    |                |                          |
-+------+------------+----------------+--------------------------+
-| 14   | PendSV     |                | context switch           |
-+------+------------+----------------+--------------------------+
-| 15   | SYSTICK    |                | system clock             |
-+------+------------+----------------+--------------------------+
++------+------------+----------------+-----------------------+
+| Exc# | Name       | Remarks        | Used by Zephyr Kernel |
++======+============+================+=======================+
+| 1    | Reset      |                | system initialization |
++------+------------+----------------+-----------------------+
+| 2    | NMI        |                | system fatal error    |
++------+------------+----------------+-----------------------+
+| 3    | Hard fault |                | system fatal error    |
++------+------------+----------------+-----------------------+
+| 4    | MemManage  | MPU fault      | system fatal error    |
++------+------------+----------------+-----------------------+
+| 5    | Bus        |                | system fatal error    |
++------+------------+----------------+-----------------------+
+| 6    | Usage      | undefined      | system fatal error    |
+|      | fault      | instruction,   |                       |
+|      |            | or switch      |                       |
+|      |            | attempt to ARM |                       |
+|      |            | mode           |                       |
++------+------------+----------------+-----------------------+
+| 11   | SVC        |                | context switch and    |
+|      |            |                | software interrupts   |
++------+------------+----------------+-----------------------+
+| 12   | Debug      |                | system fatal error    |
+|      | monitor    |                |                       |
++------+------------+----------------+-----------------------+
+| 14   | PendSV     |                | context switch        |
++------+------------+----------------+-----------------------+
+| 15   | SYSTICK    |                | system clock          |
++------+------------+----------------+-----------------------+
 
 .. note::
    After a reset, all exceptions have a priority of 0. Interrupts cannot run
@@ -126,21 +126,21 @@ that the Arduino specific version is required (branch arduino on GitHub).
 The sample application hello_world is being used in this tutorial, which can
 be found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
 
-# To build the Zephyr kernel, enter:
+#. To build the Zephyr kernel, enter:
 
    .. code-block:: console
 
       $ cd $ZEPHYR_BASE
-      $ make -C samples/hello_world/nanokernel ARCH=arm BOARD=arduino_due
+      $ make -C samples/hello_world/nanokernel BOARD=arduino_due
 
-# Connect the Arduino Due to your host computer using the programming port.
+#. Connect the Arduino Due to your host computer using the programming port.
 
-# Press the Erase button for more than 220 ms.
+#. Press the Erase button for more than 220 ms.
 
-# Press the Reset button so the board will boot into the SAM-BA bootloader.
+#. Press the Reset button so the board will boot into the SAM-BA bootloader.
 
-# To flash the kernel onto Arduino Due, assuming the bossa tool already
-  exists. Using the command line version of bossa, enter:
+#. To flash the kernel onto Arduino Due, assuming the bossa tool already
+   exists. Using the command line version of bossa, enter:
 
    .. code-block:: console
 
@@ -149,10 +149,10 @@ be found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
    Where :code:`<tty_device>` is where the Arduino Due can be found. For
    example, under Linux, :code:`<tty_device>` should be :code:`/dev/ttyACM0`.
 
-# Run your favorite terminal program to listen for output. For example, under
-  Linux, the terminal should be :code:`/dev/ttyACM0`.
+#. Run your favorite terminal program to listen for output. For example, under
+   Linux, the terminal should be :code:`/dev/ttyACM0`.
 
-# Press the Reset button and you should see "Hello World!" in your terminal.
+#. Press the Reset button and you should see "Hello World!" in your terminal.
 
 .. note::
    Make sure your terminal program is closed before flashing the binary image,
