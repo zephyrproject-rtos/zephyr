@@ -18,11 +18,9 @@ along with the following devices:
 
 * Serial Ports in Polling and Interrupt Driven Modes
 
-See `Procedures`_ for using third-party tools to load an image onto the target.
-
 .. note::
-   This board configuration may work with similar boards
-   that are not officially supported.
+   This board configuration may work with similar boards that are not officially
+   supported.
 
 Supported Boards
 ****************
@@ -194,10 +192,10 @@ GRUB.
 
    .. code-block:: console
 
-    $ sudo apt-get install gnu-efi:i386 bison libopts25 \
-    libselinux1-dev autogen m4 autoconf help2man libopts25-dev flex \
-    libfont-freetype-perl automake autotools-dev libfreetype6-dev \
-    texinfo
+      $ sudo apt-get install gnu-efi:i386 bison libopts25 \
+      libselinux1-dev autogen m4 autoconf help2man libopts25-dev flex \
+      libfont-freetype-perl automake autotools-dev libfreetype6-dev \
+      texinfo
 
    On Fedora, type:
 
@@ -268,11 +266,9 @@ devices.
 
 #. Configure your host system to watch for serial data.
 
-   * On Linux, screen is a popular method for reading serial
-      data.
+   * On Linux, screen is a popular method for reading serial data.
 
-   * On Windows, PuTTY has an option to set up configuration for
-      serial data.
+   * On Windows, PuTTY has an option to set up configuration for serial data.
 
 #. Power on the Galileo board.
 
@@ -323,7 +319,7 @@ Steps
 
    .. code-block:: console
 
-     grub.efi
+      grub.efi
 
    GRUB2 starts and a menu shows entries for the items you added
    to the :file:`file grub.cfg`.
