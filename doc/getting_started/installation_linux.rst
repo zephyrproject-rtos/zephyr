@@ -182,6 +182,16 @@ Follow these steps to install the SDK on your Linux host system.
 
        $ export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
 
+  To use the same toolchain in new sessions in the future you can set the
+  variables in the file :file:`${HOME}/.zephyrrc`, for example:
+
+  .. code-block:: console
+
+     $ cat <<EOF > ~/.zephyrrc
+     export ZEPHYR_GCC_VARIANT=zephyr
+     export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
+     EOF
+
 .. _SDK self-extractable binary:
    https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/0.7.2-i686/zephyr-sdk-0.7.2-i686-setup.run
 

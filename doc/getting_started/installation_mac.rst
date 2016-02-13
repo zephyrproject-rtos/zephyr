@@ -174,6 +174,16 @@ and use the target location where the toolchain was installed, type:
    $ export ZEPHYR_SDK_INSTALL_DIR=/Volumes/CrossToolNG/x-tools
 
 
+To use the same toolchain in new sessions in the future you can set the
+variables in the file :file:`${HOME}/.zephyrrc`, for example:
+
+.. code-block:: console
+
+   $ cat <<EOF > ~/.zephyrrc
+   export ZEPHYR_SDK_INSTALL_DIR=/Volumes/CrossToolNG/x-tools
+   export ZEPHYR_GCC_VARIANT=xtools
+   EOF
+
 .. _Homebrew site: http://brew.sh/
 
 .. _crosstool-ng site: http://crosstool-ng.org

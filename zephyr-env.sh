@@ -20,5 +20,11 @@ unset scripts_path
 
 # enable custom environment settings
 zephyr_answer_file=~/zephyr-env_install.bash
-[ -f ${zephyr_answer_file} ] && . ${zephyr_answer_file}
+[ -f ${zephyr_answer_file} ] && {
+	echo "Warning: Please rename ~/zephyr-env_install.bash to ~/.zephyrrc";
+	. ${zephyr_answer_file};
+}
+unset zephyr_answer_file
+zephyr_answer_file=~/.zephyrrc
+[ -f ${zephyr_answer_file} ] &&  . ${zephyr_answer_file};
 unset zephyr_answer_file
