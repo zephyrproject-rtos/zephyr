@@ -35,22 +35,22 @@ breaks down which drivers and functionality can be found on which architectures:
 +-----------+------------+-----+-----+-----------------------+
 | Interface | Controller | ARC | x86 | Driver/Component      |
 +===========+============+=====+=====+=======================+
-| APIC      | on-chip    |  N  |  Y  | interrupt_controller  |
+| APIC      | on-chip    | N   | Y   | interrupt_controller  |
 +-----------+------------+-----+-----+-----------------------+
-| UART      | on-chip    |  N  |  Y  | serial port-polling;  |
+| UART      | on-chip    | N   | Y   | serial port-polling;  |
 |           |            |     |     | serial port-interrupt |
 +-----------+------------+-----+-----+-----------------------+
-| SPI       | on-chip    |  Y  |  Y  | spi                   |
+| SPI       | on-chip    | Y   | Y   | spi                   |
 +-----------+------------+-----+-----+-----------------------+
-| ADC       | on-chip    |  Y  |  N  | adc                   |
+| ADC       | on-chip    | Y   | N   | adc                   |
 +-----------+------------+-----+-----+-----------------------+
-| I2C       | on-chip    |  Y  |  Y  | i2c                   |
+| I2C       | on-chip    | Y   | Y   | i2c                   |
 +-----------+------------+-----+-----+-----------------------+
-| GPIO      | on-chip    |  Y  |  Y  | gpio                  |
+| GPIO      | on-chip    | Y   | Y   | gpio                  |
 +-----------+------------+-----+-----+-----------------------+
-| PWM       | on-chip    |  Y  |  Y  | pwm                   |
+| PWM       | on-chip    | Y   | Y   | pwm                   |
 +-----------+------------+-----+-----+-----------------------+
-| mailbox   | on-chip    |  Y  |  Y  | ipm                   |
+| mailbox   | on-chip    | Y   | Y   | ipm                   |
 +-----------+------------+-----+-----+-----------------------+
 
 Flashing Arduino 101 for Zephyr
@@ -241,18 +241,18 @@ zflash to flash the :file:`quark_se_rom.bin` to the board.
 Flashing an ARC Kernel
 ======================
 
-# Make sure the binary image has been built.  Change directories to your local
-checkout copy of Zephyr, and run:
+#. Make sure the binary image has been built.  Change directories to your local
+   checkout copy of Zephyr, and run:
 
    .. code-block:: console
 
-      $ source ./zephyr-env.sh
-      $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
-      $ make pristine && make BOARD=arduino_101_sss ARCH=arc
+     $ source ./zephyr-env.sh
+     $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
+     $ make pristine && make BOARD=arduino_101_sss ARCH=arc
 
-# Once the image has been built, flash it with:
+#. Once the image has been built, flash it with:
 
-  .. code-block:: console
+   .. code-block:: console
 
       $ make BOARD=arduino_101_sss flash
 
@@ -268,8 +268,8 @@ processor.
 Flashing an x86 Kernel
 ======================
 
-# Make sure the binary image has been built.  Change directories to your local
-checkout copy of Zephyr, and run:
+#. Make sure the binary image has been built.  Change directories to your local
+   checkout copy of Zephyr, and run:
 
    .. code-block:: console
 
@@ -277,9 +277,9 @@ checkout copy of Zephyr, and run:
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
       $ make pristine && make BOARD=arduino_101 ARCH=x86
 
-# Once the image has been built, flash it with:
+#. Once the image has been built, flash it with:
 
-  .. code-block:: console
+   .. code-block:: console
 
      $ make BOARD=arduino_101 flash
 
@@ -307,8 +307,8 @@ for ARCH=x86 if you wish to debug on the x86 core.
    force the ARC processor to halt on bootstrap, giving the debugger a chance
    at connecting and controlling the hardware.
 
-    This can be done by editing the
-    :file:`samples/hello_world/nanokernel/prj.conf` to include:
+   This can be done by editing the file
+   :file:`samples/hello_world/nanokernel/prj.conf` to include:
 
    .. code-block:: console
 
@@ -325,10 +325,10 @@ for ARCH=x86 if you wish to debug on the x86 core.
 
 3. In terminal window 1, type:
 
-  .. code-block:: console
+   .. code-block:: console
 
-    $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
-    $ make BOARD=arduino_101 debug
+      $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
+      $ make BOARD=arduino_101 debug
 
   These commands will start an openocd session that creates a local telnet
   server (on port 4444 for direct openocd commands to be issued), and a
@@ -341,7 +341,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
 
    * To debug on x86:
 
-       .. code-block:: console
+     .. code-block:: console
 
          $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
          $ gdb outdir/zephyr.elf
@@ -405,19 +405,19 @@ serial cable.  To enable serial output:
 
 * Connect the Serial Cable RX pin, to the Arduino 101's TX->1 pin.
 
-   .. figure:: figures/arduino_101_03.png
+  .. figure:: figures/arduino_101_03.png
       :scale: 50 %
       :alt: Image for pin positions and serial output
 
 * Connect the Serial Cable TX pin, to the Arduino 101's RX<-0 pin.
 
-   .. figure:: figures/arduino_101_04.png
+  .. figure:: figures/arduino_101_04.png
       :scale: 50 %
       :alt: Image for pin positions and serial output
 
 * Connect the Serial Cable GND pin, to the Arduino 101's GND pin.
 
-   .. figure:: figures/arduino_101_05.png
+  .. figure:: figures/arduino_101_05.png
       :scale: 50 %
       :alt: Image for pin positions and serial output
 
@@ -448,47 +448,47 @@ be found in the :file:`boards/arduino_101/pinmux.c`.
 +-------------+----------+------------+
 | Arduino Pin | Function | Zephyr Pin |
 +=============+==========+============+
-| IO-0        | UART1-RX |     17     |
+| IO-0        | UART1-RX | 17         |
 +-------------+----------+------------+
-| IO-1        | UART1-TX |     16     |
+| IO-1        | UART1-TX | 16         |
 +-------------+----------+------------+
-| IO-2        | GPIO     |     52     |
+| IO-2        | GPIO     | 52         |
 +-------------+----------+------------+
-| IO-3        | GPIO     |     51     |
-|             |          |     63     |
+| IO-3        | GPIO     | 51         |
+|             |          | 63         |
 +-------------+----------+------------+
-| IO-4        | GPIO     |     53     |
+| IO-4        | GPIO     | 53         |
 +-------------+----------+------------+
-| IO-5        | GPIO     |     49     |
-|             |          |     64     |
+| IO-5        | GPIO     | 49         |
+|             |          | 64         |
 +-------------+----------+------------+
-| IO-6        | PWM2     |     65     |
+| IO-6        | PWM2     | 65         |
 +-------------+----------+------------+
-| IO-7        | GPIO     |     54     |
+| IO-7        | GPIO     | 54         |
 +-------------+----------+------------+
-| IO-8        | GPIO     |     50     |
+| IO-8        | GPIO     | 50         |
 +-------------+----------+------------+
-| IO-9        | PWM3     |     66     |
+| IO-9        | PWM3     | 66         |
 +-------------+----------+------------+
-| IO-10       | AIN0     |     0      |
+| IO-10       | AIN0     | 0          |
 +-------------+----------+------------+
-| IO-11       | AIN3     |     3      |
+| IO-11       | AIN3     | 3          |
 +-------------+----------+------------+
-| IO-12       | AIN1     |     1      |
+| IO-12       | AIN1     | 1          |
 +-------------+----------+------------+
-| IO-13       | AIN2     |     2      |
+| IO-13       | AIN2     | 2          |
 +-------------+----------+------------+
-| ADC0        | GPIO SS  |     10     |
+| ADC0        | GPIO SS  | 10         |
 +-------------+----------+------------+
-| ADC1        | GPIO SS  |     11     |
+| ADC1        | GPIO SS  | 11         |
 +-------------+----------+------------+
-| ADC2        | GPIO SS  |     12     |
+| ADC2        | GPIO SS  | 12         |
 +-------------+----------+------------+
-| ADC3        | GPIO SS  |     13     |
+| ADC3        | GPIO SS  | 13         |
 +-------------+----------+------------+
-| ADC4        | AIN14    |     14     |
+| ADC4        | AIN14    | 14         |
 +-------------+----------+------------+
-| ADC5        | AIN9     |     9      |
+| ADC5        | AIN9     | 9          |
 +-------------+----------+------------+
 
 .. note::
