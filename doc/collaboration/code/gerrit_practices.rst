@@ -62,9 +62,9 @@ To avoid pushing untested work to Gerrit, we recommend you follow these steps:
    - Change the name of the remote Git tree from *origin* to *another name*.
      This prevents complications when work is unintentionally pushed to Gerrit.
 
-   .. code-block:: console
+     .. code-block:: console
 
-      $ git remote rename origin another-name
+        $ git remote rename origin another-name
 
    - Use `precommit hooks`_ to scan for problematic words in your commit.
      Follow the installation instructions in the :file:`README.rst` for
@@ -82,11 +82,11 @@ To avoid pushing untested work to Gerrit, we recommend you follow these steps:
 Keeping Track of Changes
 ************************
 
-* Set Gerrit to send you email:
+* Set Gerrit to send you emails:
 
-   - Gerrit will subscribe you to the mailing list created for that change if a
-     developer adds you as a reviewer, or if you comment on a specific Patch
-     Set.
+  - Gerrit will add you to the email distribution list for a change if a
+    developer adds you as a reviewer, or if you comment on a specific Patch
+    Set.
 
 * Opening a change in Gerrit's review interface is a quick way to follow that
   change.
@@ -140,30 +140,31 @@ history.
 
 1. To make a cover letter that appears in the history, use this command:
 
-.. code-block:: console
-
-   $ git commit --allow-empty
-
-Edit the commit message, this message then becomes the cover letter.
-The command used doesn't change any files in the source tree.
-
-2. To make a cover letter that doesn't appear in the history follow these steps:
-   * Put the empty commit at the end of your commits list so it can be ignored
-     without having to rebase.
-   * Now add your commits
-
    .. code-block:: console
 
-      $ git commit ...
-      $ git commit ...
-      $ git commit ...
+      $ git commit --allow-empty
+
+   Edit the commit message, this message then becomes the cover letter.
+   The command used doesn't change any files in the source tree.
+
+2. To make a cover letter that doesn't appear in the history follow these steps:
+
+   * Put the empty commit at the end of your commits list so it can be ignored  without having to rebase.
+
+   * Now add your commits
+
+     .. code-block:: console
+
+        $ git commit ...
+        $ git commit ...
+        $ git commit ...
 
    * Finally, push the commits to a topic branch.  The following command is an
      example:
 
-.. code-block:: console
+     .. code-block:: console
 
-   $ git push REMOTE HEAD:refs/for/master/TopicName
+        $ git push REMOTE HEAD:refs/for/master/TopicName
 
 If you already have commits but you want to set a cover letter, create an empty
 commit for the cover letter and move the commit so it becomes the last commit
@@ -284,7 +285,7 @@ You can also push forcibly with review
 
 
 Updating the Version of a Change
-*********************************
+********************************
 
 During the review process, you might be asked to update your change. It is
 possible to submit multiple versions of the same change. Each version of the
