@@ -248,8 +248,12 @@ checkout copy of Zephyr, and run:
 
       $ source ./zephyr-env.sh
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
-
       $ make pristine && make BOARD=arduino_101_sss ARCH=arc
+
+# Once the image has been built, flash it with:
+
+  .. code-block:: console
+
       $ make BOARD=arduino_101_sss flash
 
 .. note::
@@ -264,14 +268,20 @@ processor.
 Flashing an x86 Kernel
 ======================
 
-# Make sure the binary image has been built.
+# Make sure the binary image has been built.  Change directories to your local
+checkout copy of Zephyr, and run:
 
    .. code-block:: console
 
       $ source ./zephyr-env.sh
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
       $ make pristine && make BOARD=arduino_101 ARCH=x86
-      $ make BOARD=arduino_101 flash
+
+# Once the image has been built, flash it with:
+
+  .. code-block:: console
+
+     $ make BOARD=arduino_101 flash
 
 .. note::
 
