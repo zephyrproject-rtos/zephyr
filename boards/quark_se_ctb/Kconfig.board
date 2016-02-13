@@ -1,5 +1,0 @@
-
-config  BOARD_QUARK_SE_CTB
-        bool "Quark SE Test Board"
-        select SOC_QUARK_SE
-	depends on X86

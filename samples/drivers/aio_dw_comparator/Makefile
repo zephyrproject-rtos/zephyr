@@ -1,4 +1,4 @@
-BOARD ?= quark_se_ctb
+BOARD ?= quark_se_devboard
 KERNEL_TYPE = nano
 CONF_FILE = prj.conf
 

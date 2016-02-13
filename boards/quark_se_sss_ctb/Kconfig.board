@@ -1,5 +1,0 @@
-
-config  BOARD_QUARK_SE_SSS_CTB
-        bool "Quark SE Test Board - Sensor Sub System"
-        select SOC_QUARK_SE_SS
-	depends on ARC
