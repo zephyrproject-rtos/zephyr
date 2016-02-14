@@ -18,6 +18,17 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
+/**
+ * @brief Device Driver APIs
+ * @defgroup io_interfaces Device Driver APIs
+ * @{
+ * @}
+ */
+/**
+ * @brief Device Model APIs
+ * @defgroup device_model Device Model APIs
+ * @{
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -345,5 +356,7 @@ static inline void device_sync_call_complete(device_sync_call_t *sync)
 #ifdef __cplusplus
 }
 #endif
-
+/**
+ * @}
+ */
 #endif /* _DEVICE_H_ */
