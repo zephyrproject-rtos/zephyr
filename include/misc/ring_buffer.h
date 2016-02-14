@@ -28,6 +28,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Ring Buffer APIs
+ * @defgroup nanokernel_ringbuffer Ring Bufer
+ * @ingroup nanokernel_services
+ * @{
+ */
+
 #define SIZE32_OF(x) (sizeof((x))/sizeof(uint32_t))
 
 /**
@@ -168,6 +175,10 @@ int sys_ring_buf_put(struct ring_buf *buf, uint16_t type, uint8_t value,
  */
 int sys_ring_buf_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 		     uint32_t *data, uint8_t *size32);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

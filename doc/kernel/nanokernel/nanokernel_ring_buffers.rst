@@ -124,20 +124,20 @@ APIs
 
 The following APIs for ring buffers are provided by :file:`ring_buffer.h`:
 
-:c:func:`sys_ring_buf_init()`
+:cpp:func:`sys_ring_buf_init()`
    Initializes a ring buffer.
 
 :c:func:`SYS_RING_BUF_DECLARE_POW2()`, :c:func:`SYS_RING_BUF_DECLARE_SIZE()`
    Declare and init a file-scope ring buffer.
 
-:c:func:`sys_ring_buf_get_space()`
+:cpp:func:`sys_ring_buf_space_get()`
    Returns the amount of free buffer storage space in 32-bit dwords.
 
-:c:func:`sys_ring_buf_is_empty()`
+:cpp:func:`sys_ring_buf_is_empty()`
    Indicates whether a buffer is empty.
 
-:c:func:`sys_ring_buf_put()`
+:cpp:func:`sys_ring_buf_put()`
    Enqueues an item.
 
-:c:func:`sys_ring_buf_get()`
+:cpp:func:`sys_ring_buf_get()`
    De-queues an item.

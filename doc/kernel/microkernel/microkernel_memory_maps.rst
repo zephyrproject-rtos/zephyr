@@ -167,7 +167,7 @@ APIs
 
 The following Memory Map APIs are provided by :file:`microkernel.h`:
 
-:c:func:`task_mem_map_alloc()`
+:cpp:func:`task_mem_map_alloc()`
    Waits on a block of memory for the period of time defined by the time-out
    parameter.
 

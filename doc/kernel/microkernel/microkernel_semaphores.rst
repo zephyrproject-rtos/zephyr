@@ -206,7 +206,7 @@ The following APIs for an individual semaphore are provided by
 :cpp:func:`task_sem_give()`
    Gives a semaphore.
 
-:c:func:`task_sem_take()`
+:cpp:func:`task_sem_take()`
    Takes a semaphore, with time limited waiting.
 
 :cpp:func:`task_sem_reset()`

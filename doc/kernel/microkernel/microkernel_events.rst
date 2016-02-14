@@ -219,7 +219,7 @@ The following Event APIs are provided by :file:`microkernel.h`:
 :cpp:func:`task_event_send()`
    Signal an event from a task.
 
-:c:func:`task_event_recv()`
+:cpp:func:`task_event_recv()`
    Waits for an event signal for a specified time period.
 
 :cpp:func:`task_event_handler_set()`

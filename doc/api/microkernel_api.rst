@@ -50,6 +50,13 @@ Memory Maps
    :project: Zephyr
    :content-only:
 
+Memory Pools
+************
+
+.. doxygengroup:: microkernel_memorypool
+   :project: Zephyr
+   :content-only:
+
 Mutexes
 *******
 

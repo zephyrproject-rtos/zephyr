@@ -193,12 +193,12 @@ APIs
 
 The following Memory Pools APIs are provided by :file:`microkernel.h`:
 
-:c:func:`task_mem_pool_alloc()`
+:cpp:func:`task_mem_pool_alloc()`
    Waits for a block of memory for the time period defined by the time-out
    parameter.
 
-:c:func:`task_mem_pool_free()`
+:cpp:func:`task_mem_pool_free()`
    Returns a block of memory to a memory pool.
 
-:c:func:`task_mem_pool_defragment()`
+:cpp:func:`task_mem_pool_defragment()`
    Defragments a memory pool.

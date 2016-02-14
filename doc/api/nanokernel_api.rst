@@ -15,6 +15,13 @@ Fibers
    :project: Zephyr
    :content-only:
 
+Tasks
+******
+
+.. doxygengroup:: nanokernel_task
+   :project: Zephyr
+   :content-only:
+
 Semaphores
 **********
 
@@ -33,6 +40,13 @@ FIFOs
 *****
 
 .. doxygengroup:: nanokernel_fifo
+   :project: Zephyr
+   :content-only:
+
+Ring Buffers
+************
+
+.. doxygengroup:: nanokernel_ringbuffer
    :project: Zephyr
    :content-only:
 

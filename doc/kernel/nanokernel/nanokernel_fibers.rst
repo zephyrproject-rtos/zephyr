@@ -290,16 +290,16 @@ by :file:`microkernel.h` and by :file:`nanokernel.h`:
 The following APIs affecting a specified fiber are provided
 by :file:`microkernel.h` and by :file:`nanokernel.h`:
 
-:c:func:`task_fiber_start()`, :cpp:func:`fiber_fiber_start()`,
+:cpp:func:`task_fiber_start()`, :cpp:func:`fiber_fiber_start()`,
 :cpp:func:`fiber_start()`
    Spawn a new fiber.
 
-:c:func:`task_fiber_delayed_start()`,
+:cpp:func:`task_fiber_delayed_start()`,
 :cpp:func:`fiber_fiber_delayed_start()`,
 :cpp:func:`fiber_delayed_start()`
    Spawn a new fiber after a specified time period.
 
-:c:func:`task_fiber_delayed_start_cancel()`,
+:cpp:func:`task_fiber_delayed_start_cancel()`,
 :cpp:func:`fiber_fiber_delayed_start_cancel()`,
 :cpp:func:`fiber_delayed_start_cancel()`
    Cancel spawning of a new fiber, if not already started.

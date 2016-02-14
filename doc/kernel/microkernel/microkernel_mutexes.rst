@@ -181,7 +181,7 @@ APIs
 
 The following Mutex APIs are provided by :file:`microkernel.h`:
 
-:c:func:`task_mutex_lock()`
+:cpp:func:`task_mutex_lock()`
    Waits on a locked mutex for the period of time defined by the timeout
    parameter. If the mutex becomes available during that period, the function
    locks the mutex, and increments the lock count.
