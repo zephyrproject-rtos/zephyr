@@ -15,7 +15,9 @@ which are not described here.
     * architecture-specific nanokernel source files
     * architecture-specific nanokernel include files for private APIs
     * platform-specific code
-    * board configuration files
+
+:file:`boards`
+    Board related code and configuration files.
 
 :file:`doc`
     Zephyr documentation-related material and tools.
@@ -41,6 +43,9 @@ which are not described here.
 :file:`samples`
     Sample applications for the microkernel, nanokernel, Bluetooth stack,
     and networking stacks.
+
+:file:`tests`
+    Test code and benchmarks for the various kernel features.
 
 :file:`scripts`
     Various programs and other files used to build and test Zephyr
