@@ -266,11 +266,6 @@ int bt_le_scan_stop(void)
 	return -ENOSYS;
 }
 
-void on_nble_gap_dtm_init_rsp(void *user_data)
-{
-	BT_DBG("");
-}
-
 void nble_log(const struct nble_log_s *param, char *format, uint8_t len)
 {
 #if defined(CONFIG_BLUETOOTH_DEBUG)
@@ -280,36 +275,6 @@ void nble_log(const struct nble_log_s *param, char *format, uint8_t len)
 	       param->param3);
 	printf("\n");
 #endif
-}
-
-void on_nble_gap_sm_status_evt(const struct nble_gap_sm_status_evt *ev)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_evt *ev)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_sm_passkey_req_evt(const struct nble_gap_sm_passkey_req_evt *ev)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_to_evt(const struct nble_gap_timout_evt *ev)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_rssi_evt(const struct nble_gap_rssi_evt *ev)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_service_read_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
 }
 
 void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
@@ -326,16 +291,6 @@ void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 	nble_get_version_req(NULL);
 }
 
-void on_nble_gap_disconnect_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_sm_pairing_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
 void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *rsp)
 {
 	if (rsp->status) {
@@ -347,90 +302,4 @@ void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *rsp)
 
 	/* Get bdaddr queued after SM setup */
 	nble_gap_read_bda_req(NULL);
-}
-
-void on_nble_gap_clr_white_list_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_sm_passkey_reply_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_connect_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_start_scan_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_stop_scan_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_cancel_connect_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_set_option_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_generic_cmd_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_conn_update_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_sm_clear_bonds_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_service_write_rsp(const struct nble_service_write_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_ble_set_enable_config_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_set_rssi_report_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_wr_white_list_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_dbg_rsp(const struct debug_response *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gap_start_advertise_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
-}
-
-
-void on_nble_gap_stop_advertise_rsp(const struct nble_response *rsp)
-{
-	BT_DBG("");
 }

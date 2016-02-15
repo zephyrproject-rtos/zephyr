@@ -807,13 +807,6 @@ void on_nble_get_version_rsp(const struct nble_version_response *par);
  */
 void nble_gap_dtm_init_req(void *user_data);
 
-/**
- * Response to @ref nble_gap_dtm_init_req.
- *
- * @param user_data Pointer to user data structure
- */
-void on_nble_gap_dtm_init_rsp(void *user_data);
-
 struct nble_gap_connect_evt {
 	uint16_t conn_handle;
 	struct nble_gap_connection_values conn_values;
@@ -978,6 +971,3 @@ struct nble_gap_sm_bond_info_rsp {
 	void *user_data;
 	struct nble_gap_sm_bond_info info;
 };
-
-void on_nble_gap_sm_bond_info_rsp(const struct nble_gap_sm_bond_info_rsp *rsp,
-				  const bt_addr_le_t *peer_addr, uint16_t len);

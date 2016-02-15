@@ -418,23 +418,6 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 
 void bt_gatt_cancel(struct bt_conn *conn)
 {
-}
-
-void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *ev,
-			     void *priv)
-{
-	BT_DBG("");
-}
-
-void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *ev,
-			    uint8_t *data, uint8_t data_len, void *priv)
-{
-	BT_DBG("");
-}
-
-void on_nble_gattc_value_evt(const struct nble_gattc_value_evt *ev,
-			     uint8_t *buf, uint8_t buflen)
-{
 	BT_DBG("");
 }
 
@@ -461,33 +444,6 @@ void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *evt,
 		nble_gatts_authorize_reply_req(&reply_data, NULL,
 					       reply_data.status);
 	}
-}
-
-void on_nble_gatts_get_attribute_value_rsp(const struct nble_gatts_attribute_rsp *rsp,
-					   uint8_t *data, uint8_t length)
-{
-	BT_DBG("");
-}
-
-void on_nble_gattc_discover_rsp(const struct nble_gattc_disc_rsp *rsp,
-				const uint8_t *data, uint8_t len)
-{
-	BT_DBG("");
-}
-
-void on_nble_gatts_send_svc_changed_rsp(const struct nble_core_response *par)
-{
-	BT_DBG("");
-}
-
-void on_nble_gatts_set_attribute_value_rsp(const struct nble_gatts_attribute_rsp *rsp)
-{
-	BT_DBG("");
-}
-
-void on_nble_gatts_send_notif_ind_rsp(const struct nble_gatt_notif_ind_rsp *par)
-{
-	BT_DBG("");
 }
 
 void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *evt)
