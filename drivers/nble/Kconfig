@@ -32,6 +32,11 @@ config NBLE
 	  the normal Bluetooth API (include/bluetooth/*.h). This driver can
 	  only be enabled if CONFIG_BLUETOOTH has not been enabled.
 
+	  A fundamental assumption that the driver makes is that it is
+	  run on an architecture with the same ABI (e.g. struct packing
+	  & endianess) as the nRF51 chip. The driver cannot be used on
+	  any architecture that doesn't fulfill this requirement.
+
 if !BLUETOOTH && NBLE
 config BLUETOOTH_PERIPHERAL
 	bool
