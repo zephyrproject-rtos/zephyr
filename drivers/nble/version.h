@@ -17,13 +17,6 @@
 #include <stdint.h>
 
 /**
- * @defgroup infra_version Binary Version Header
- * Define the content of binary version header
- * @ingroup infra
- * @{
- */
-
-/**
  * Define the content of a 48-bytes binary version header.
  *
  * The binary version header allows to uniquely identify the binary used. Note:
@@ -88,8 +81,3 @@ struct version_header {
 	/** Filled with zeros, can be eventually used for 64 bits support */
 	uint8_t reserved_2[4];
 } __packed;
-
-/** The global version header struct */
-extern const struct version_header version_header;
-
-/** @} */
