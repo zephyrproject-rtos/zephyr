@@ -74,6 +74,7 @@
 
 #define WAIT_100ms 100
 #define WAIT_1000ms 1000
+#define WAIT_500ms 500
 #define WAIT_200ms 200
 #define WAIT_10ms 10
 #define WAIT_1ms 1
@@ -669,7 +670,7 @@ static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 		/* We wait until transmission has ended so that we get an
 		 * accurate measurement of the transmission time.
 		 */
-		BUSYWAIT_UNTIL(!(status() & BIT(CC2520_TX_ACTIVE)), WAIT_100ms);
+		BUSYWAIT_UNTIL(!(status() & BIT(CC2520_TX_ACTIVE)), WAIT_500ms);
 
 		DBG("status 0x%x\n", status());
 
