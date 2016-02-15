@@ -35,7 +35,7 @@
 static bt_ready_cb_t bt_ready_cb;
 
 /* Local Bluetooth LE Device Address */
-static bt_addr_le_t bdaddr;
+bt_addr_le_t nble_bdaddr;
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 static const char *bt_addr_le_str(const bt_addr_le_t *addr)
@@ -319,9 +319,9 @@ void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 		return;
 	}
 
-	bt_addr_le_copy(&bdaddr, &rsp->bd);
+	bt_addr_le_copy(&nble_bdaddr, &rsp->bd);
 
-	BT_DBG("Local bdaddr: %s", bt_addr_le_str(&bdaddr));
+	BT_DBG("Local bdaddr: %s", bt_addr_le_str(&nble_bdaddr));
 
 	nble_get_version_req(NULL);
 }
