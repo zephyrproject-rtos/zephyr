@@ -89,7 +89,7 @@
 		   const struct nble_gatt_wr_evt *,		\
 		   const uint8_t *, uint8_t)			\
 	FN_SIG_S_B(on_nble_gatts_get_attribute_value_rsp,	\
-		   const struct nble_gatts_attribute_response *,\
+		   const struct nble_gatts_attribute_rsp *,	\
 		   uint8_t *, uint8_t)				\
 	FN_SIG_S_B(on_nble_gatt_register_rsp,			\
 		   const struct nble_gatt_register_rsp *,	\

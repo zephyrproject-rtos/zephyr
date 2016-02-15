@@ -228,7 +228,7 @@ struct nble_gatts_get_attribute_params {
 	uint16_t value_handle;		/* mandatory */
 };
 
-struct nble_gatts_attribute_response {
+struct nble_gatts_attribute_rsp {
 	int status;			/**< Status of the operation. */
 	uint16_t value_handle;		/* mandatory */
 	void *priv;
@@ -251,9 +251,9 @@ void nble_gatts_set_attribute_value_req(const struct nble_gatts_set_attribute_pa
 /**
  * Response to @ref nble_gatts_send_svc_changed_req.
  *
- * @param par Response
+ * @param rsp Response
  */
-void on_ble_gatts_set_attribute_value_rsp(const struct nble_gatts_attribute_response *par);
+void on_ble_gatts_set_attribute_value_rsp(const struct nble_gatts_attribute_rsp *rsp);
 
 /**
  * Get an attribute value.
@@ -270,11 +270,11 @@ void nble_gatts_get_attribute_value_req(const struct nble_gatts_get_attribute_pa
 /**
  * Response to @ref nble_gatts_get_attribute_value_req.
  *
- * @param par Response
+ * @param rsp Response
  * @param data Attribute value
  * @param length Length of attribute value
  */
-void on_ble_gatts_get_attribute_value_rsp(const struct nble_gatts_attribute_response *par,
+void on_ble_gatts_get_attribute_value_rsp(const struct nble_gatts_attribute_rsp *rsp,
 					  uint8_t *data, uint8_t length);
 
 struct nble_gatts_svc_changed_params {
@@ -483,7 +483,7 @@ struct nble_gattc_write_rsp {
  * @param priv Pointer to private data.
  */
 void nble_gattc_read_req(const struct nble_gattc_read_params *params,
-			void *priv);
+			 void *priv);
 
 /**
  * Response to @ref nble_gattc_read_req.
@@ -506,7 +506,7 @@ void on_ble_gattc_read_rsp(const struct nble_gattc_read_rsp *ev,
  * @param priv Pointer to private data.
  */
 void nble_gattc_write_req(const struct nble_gattc_write_params *params,
-			 const uint8_t *buf, uint8_t len, void *priv);
+			  const uint8_t *buf, uint8_t len, void *priv);
 
 /**
  * Response to @ref nble_gattc_write_req.

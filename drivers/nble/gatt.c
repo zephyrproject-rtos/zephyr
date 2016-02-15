@@ -460,7 +460,7 @@ void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *evt,
 	}
 }
 
-void on_nble_gatts_get_attribute_value_rsp(const struct nble_gatts_attribute_response *par,
+void on_nble_gatts_get_attribute_value_rsp(const struct nble_gatts_attribute_rsp *rsp,
 					   uint8_t *data, uint8_t length)
 {
 	BT_DBG("");
@@ -477,7 +477,7 @@ void on_nble_gatts_send_svc_changed_rsp(const struct nble_core_response *par)
 	BT_DBG("");
 }
 
-void on_nble_gatts_set_attribute_value_rsp(const struct nble_gatts_attribute_response *par)
+void on_nble_gatts_set_attribute_value_rsp(const struct nble_gatts_attribute_rsp *rsp)
 {
 	BT_DBG("");
 }

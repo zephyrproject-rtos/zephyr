@@ -63,7 +63,8 @@
 
 #define LIST_FN_SIG_S_P							\
 	FN_SIG_S_P(nble_gap_disconnect_req,				\
-		   const struct nble_gap_disconnect_req_params *, void *)\
+		   const struct nble_gap_disconnect_req_params *,	\
+		   void *)						\
 	FN_SIG_S_P(nble_gap_connect_req,				\
 		   const struct nble_gap_connect_req_params *, void *)	\
 	FN_SIG_S_P(nble_gap_generic_cmd_req,				\
