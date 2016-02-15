@@ -498,6 +498,7 @@ void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *evt)
 	uint8_t data[NBLE_BUF_SIZE];
 
 	reply_data.status = -EACCES;
+	memset(data, 0, sizeof(data));
 
 	attr = evt->attr;
 
