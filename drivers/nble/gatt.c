@@ -383,7 +383,34 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params)
 {
-	return -ENOSYS;
+	struct nble_discover_params discover_params;
+
+	if (!conn || !params || !params->func || !params->start_handle ||
+	    !params->end_handle || params->start_handle > params->end_handle) {
+		return -EINVAL;
+	}
+
+	switch (params->type) {
+	case BT_GATT_DISCOVER_PRIMARY:
+	case BT_GATT_DISCOVER_INCLUDE:
+	case BT_GATT_DISCOVER_CHARACTERISTIC:
+	case BT_GATT_DISCOVER_DESCRIPTOR:
+		discover_params.conn_handle = conn->handle;
+		discover_params.type = params->type;
+		/* Always copy a full 128 bit UUID */
+		memcpy(&discover_params.uuid, BT_UUID_128(params->uuid),
+		       sizeof(discover_params.uuid));
+		discover_params.handle_range.start_handle = params->start_handle;
+		discover_params.handle_range.end_handle = params->end_handle;
+
+		nble_gattc_discover_req(&discover_params, NULL);
+		break;
+	default:
+		BT_ERR("Unknown params type %u", params->type);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
