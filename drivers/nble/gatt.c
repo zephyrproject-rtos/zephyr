@@ -369,6 +369,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	notif.params.attr = (struct bt_gatt_attr *)attr;
 	notif.params.offset = 0;
+	notif.cback = NULL;
 
 	nble_gatt_send_notif_req(&notif, (uint8_t *)data, len);
 	return 0;
