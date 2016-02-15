@@ -331,8 +331,6 @@ void sending(void)
 			      ipsum_len - expecting);
 		}
 	}
-
-	send_unicast = !send_unicast;
 }
 
 void receiving(void)
