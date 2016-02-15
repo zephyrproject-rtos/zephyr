@@ -134,7 +134,7 @@ struct nble_gap_connection_params {
 /**
  * Connection scan requested parameters.
  */
-struct nble_core_gap_scan_params {
+struct nble_gap_scan_parameters {
 	uint8_t     active;	/**< If 1, perform active scan (scan req) */
 	uint8_t     selective;	/**< If 1, ignore unknown dev (non whitelist) */
 	/**< Scan interval between 0x0004 and 0x4000 in 0.625ms units
@@ -422,7 +422,7 @@ void on_nble_gap_conn_update_rsp(const struct nble_response *par);
 struct nble_gap_connect_req_params {
 	bt_addr_le_t bda;
 	struct nble_gap_connection_params conn_params;
-	struct nble_core_gap_scan_params scan_params;
+	struct nble_gap_scan_parameters scan_params;
 };
 
 struct nble_gap_disconnect_req_params {
@@ -675,18 +675,18 @@ void on_nble_gap_stop_scan_rsp(const struct nble_response *par);
  *
  * The response to this request is received through @ref on_nble_gap_connect_rsp
  *
- * @param par connection parameters @ref nble_gap_connect_req_params
- * @param priv Pointer to private data
+ * @param req connection parameters @ref nble_gap_connect_req_params
+ * @param user_data Pointer to private user data
  */
-void nble_gap_connect_req(const struct nble_gap_connect_req_params *par,
-			 void *user_data);
+void nble_gap_connect_req(const struct nble_gap_connect_req_params *req,
+			  void *user_data);
 
 /**
  * Response to @ref nble_gap_connect_req.
  *
  * @param par Response
  */
-void on_nble_gap_connect_rsp(const struct nble_response *par);
+void on_nble_gap_connect_rsp(const struct nble_response *rsp);
 
 struct nble_gap_cancel_connect_params {
 	const bt_addr_le_t bd;
