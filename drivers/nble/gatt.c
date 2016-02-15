@@ -449,6 +449,8 @@ void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *evt,
 	if (attr->write) {
 		reply_data.status = attr->write(NULL, attr, buf, buflen,
 						evt->offset);
+	} else {
+		reply_data.status = -EINVAL;
 	}
 
 	if (evt->reply) {
