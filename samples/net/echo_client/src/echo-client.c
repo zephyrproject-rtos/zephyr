@@ -310,13 +310,17 @@ static inline bool get_context(struct net_context **unicast,
 static char __noinit __stack stack_receiving[STACKSIZE];
 #endif
 
-void sending(void)
+void sending(int resend)
 {
 	static bool send_unicast = true;
 
 	PRINT("%s: Sending packet\n", __func__);
 
-	expecting = sys_rand32_get() % ipsum_len;
+	if (resend) {
+		expecting = resend;
+	} else {
+		expecting = sys_rand32_get() % ipsum_len;
+	}
 
 	if (send_unicast) {
 		if (send_packet(__func__, unicast, ipsum_len,
@@ -335,18 +339,27 @@ void sending(void)
 
 void receiving(void)
 {
-	sending();
+	int expecting_len = 0;
+
+	sending(expecting_len);
 
 	while (1) {
 		PRINT("%s: Waiting packet\n", __func__);
 
 		if (wait_reply(__func__, unicast,
 			       ipsum_len, expecting)) {
-			PRINT("Waiting %d bytes -> FAIL\n",
-			      ipsum_len - expecting);
+			if (expecting_len > 0) {
+				PRINT("Resend %d bytes -> FAIL\n",
+				      ipsum_len - expecting);
+				expecting_len = 0;
+			} else {
+				PRINT("Waiting %d bytes -> resending\n",
+				      ipsum_len - expecting);
+				expecting_len = expecting;
+			}
 		}
 
-		sending();
+		sending(expecting_len);
 	}
 }
 
