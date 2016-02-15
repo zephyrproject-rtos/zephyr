@@ -663,6 +663,8 @@ tcpip_ipv6_output(struct net_buf *buf)
     if(nbr == NULL) {
 #if UIP_ND6_SEND_NA
       if((nbr = uip_ds6_nbr_add(nexthop, NULL, 0, NBR_INCOMPLETE)) == NULL) {
+	PRINTF("IP packet buf %p len %d discarded because cannot "
+	       "add neighbor\n", buf, uip_len(buf));
         uip_len(buf) = 0;
         uip_ext_len(buf) = 0;
         return 0;
@@ -673,6 +675,9 @@ tcpip_ipv6_output(struct net_buf *buf)
           memcpy(uip_packetqueue_buf(&nbr->packethandle), UIP_IP_BUF(buf), uip_len(buf));
           uip_packetqueue_set_buflen(&nbr->packethandle, uip_len(buf));
         }
+#else
+	PRINTF("IP packet buf %p len %d discarded because NS is "
+	       "being sent\n", buf, uip_len(buf));
 #endif
       /* RFC4861, 7.2.2:
        * "If the source address of the packet prompting the solicitation is the
@@ -705,6 +710,9 @@ tcpip_ipv6_output(struct net_buf *buf)
           memcpy(uip_packetqueue_buf(&nbr->packethandle), UIP_IP_BUF(buf), uip_len(buf));
           uip_packetqueue_set_buflen(&nbr->packethandle, uip_len(buf));
         }
+#else
+	PRINTF("IP packet buf %p len %d discarded because neighbor info is "
+	       "not yet received\n", buf, uip_len(buf));
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
         uip_len(buf) = 0;
         uip_ext_len(buf) = 0;
