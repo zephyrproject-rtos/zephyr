@@ -1,4 +1,4 @@
-/* main.c - Application main entry point */
+/* ipsp.h - IPSP Service sample */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -16,40 +16,6 @@
  * limitations under the License.
  */
 
-#include <zephyr.h>
-
-#include <bluetooth/bluetooth.h>
-#include <net/net_core.h>
-
-#include "ipss.h"
-
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
-void main(void)
-#endif
-{
-	int err;
-
-	err = bt_enable(NULL);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Bluetooth initialized\n");
-
-	net_init();
-
-	ipss_init();
-
-	err = ipss_advertise();
-	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	printk("Advertising successfully started\n");
-
-	ipss_listen();
-}
+void ipss_init(void);
+int ipss_advertise(void);
+int ipss_listen(void);

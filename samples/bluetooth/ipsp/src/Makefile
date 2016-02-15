@@ -3,4 +3,4 @@ ccflags-y +=-I${srctree}/net/ip/contiki/os/lib
 ccflags-y +=-I${srctree}/net/ip/contiki/os
 ccflags-y +=-I${srctree}/net/ip
 
-obj-y = main.o
+obj-y = main.o ipss.o
