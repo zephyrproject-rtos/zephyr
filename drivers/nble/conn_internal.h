@@ -16,6 +16,12 @@
 
 struct bt_conn {
 	uint16_t handle;
+	uint8_t role;
 	atomic_t ref;
+
 	bt_addr_le_t dst;
+
+	uint16_t interval;
+	uint16_t latency;
+	uint16_t timeout;
 };

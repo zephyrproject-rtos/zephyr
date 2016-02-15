@@ -112,7 +112,11 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	memset(info, 0, sizeof(*info));
 
 	info->type = BT_CONN_TYPE_LE;
+	info->role = conn->role;
 	info->le.dst = &conn->dst;
+	info->le.interval = conn->interval;
+	info->le.latency = conn->latency;
+	info->le.timeout = conn->timeout;
 
 	return 0;
 }
@@ -210,7 +214,7 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 {
 	struct bt_conn *conn;
 
-	BT_DBG("handle %u", ev->conn_handle);
+	BT_DBG("handle %u role %u", ev->conn_handle, ev->role);
 
 	conn = conn_new();
 	if (!conn) {
@@ -219,6 +223,10 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 	}
 
 	conn->handle = ev->conn_handle;
+	conn->role = ev->role;
+	conn->interval = ev->conn_values.interval;
+	conn->latency = ev->conn_values.latency;
+	conn->timeout = ev->conn_values.supervision_to;
 	bt_addr_le_copy(&conn->dst, &ev->peer_bda);
 
 	notify_connected(conn);
