@@ -364,7 +364,7 @@ void on_ble_gatts_write_evt(const struct nble_gatt_wr_evt *ev,
  * @return Handle of attribute or 0 if not found
  */
 uint16_t nble_attr_idx_to_handle(const struct bt_gatt_attr *attrs,
-				uint8_t index);
+				 uint8_t index);
 
 /**
  * Send notification.

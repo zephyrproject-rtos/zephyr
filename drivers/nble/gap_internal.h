@@ -937,12 +937,6 @@ void nble_get_bonded_device_list_req(void *user_data);
 
 /**@brief Structure containing list of bonded devices. */
 struct nble_core_bonded_devices {
-#ifdef CONFIG_TCMD_BLE_DEBUG
-	/**< Pointer to an array of device address pointers, pointing to
-	 * addresses to be used in whitelist. NULL if none are given.
-	 */
-	bt_addr_le_t    addrs[8];
-#endif
 	uint8_t       addr_count;	/**< Count of device addr in array. */
 };
 
