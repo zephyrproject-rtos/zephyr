@@ -28,6 +28,11 @@
 #include "uart.h"
 #include "rpc.h"
 
+#if !defined(CONFIG_NBLE_DEBUG_GAP)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 #define NBLE_SWDIO_PIN	6
 #define NBLE_RESET_PIN	NBLE_SWDIO_PIN
 #define NBLE_BTWAKE_PIN 5
@@ -38,7 +43,7 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 /* Local Bluetooth LE Device Address */
 bt_addr_le_t nble_bdaddr;
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
+#if defined(CONFIG_NBLE_DEBUG_GAP)
 static const char *bt_addr_le_str(const bt_addr_le_t *addr)
 {
 	static char str[BT_ADDR_LE_STR_LEN];

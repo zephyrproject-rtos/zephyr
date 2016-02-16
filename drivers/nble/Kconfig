@@ -95,6 +95,14 @@ config BLUETOOTH_DEBUG_GATT
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
 
+config NBLE_DEBUG_GAP
+	bool "NBLE Generic Access Profile (GAP) debug"
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  Generic Access Profile (GAP) in the interfaces to the
+	  Nordic chip.
+
 endif # BLUETOOTH_DEBUG
 
 config  NBLE_UART_ON_DEV_NAME
