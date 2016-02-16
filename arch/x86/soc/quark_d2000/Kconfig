@@ -168,16 +168,16 @@ endif
 endif
 
 if RTC
-
 config RTC_IRQ
 	default 2
+config RTC_DW
+	def_bool y
 
 if RTC_DW
 config RTC_DW_BASE_ADDR
 	default 0xB0000400
-endif
-
-endif
+endif # RTC_DW
+endif # RTC
 
 if I2C
 config I2C_DW
