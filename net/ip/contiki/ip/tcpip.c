@@ -671,7 +671,7 @@ tcpip_ipv6_output(struct net_buf *buf)
       } else {
 #if UIP_CONF_IPV6_QUEUE_PKT
         /* Copy outgoing pkt in the queuing buffer for later transmit. */
-        if(uip_packetqueue_alloc(&nbr->packethandle, UIP_DS6_NBR_PACKET_LIFETIME) != NULL) {
+        if(uip_packetqueue_alloc(buf, &nbr->packethandle, UIP_DS6_NBR_PACKET_LIFETIME) != NULL) {
           memcpy(uip_packetqueue_buf(&nbr->packethandle), UIP_IP_BUF(buf), uip_len(buf));
           uip_packetqueue_set_buflen(&nbr->packethandle, uip_len(buf));
         }
@@ -706,9 +706,12 @@ tcpip_ipv6_output(struct net_buf *buf)
 #if UIP_CONF_IPV6_QUEUE_PKT
         /* Copy outgoing pkt in the queuing buffer for later transmit and set
            the destination nbr to nbr. */
-        if(uip_packetqueue_alloc(&nbr->packethandle, UIP_DS6_NBR_PACKET_LIFETIME) != NULL) {
+        if(uip_packetqueue_alloc(buf, &nbr->packethandle, UIP_DS6_NBR_PACKET_LIFETIME) != NULL) {
           memcpy(uip_packetqueue_buf(&nbr->packethandle), UIP_IP_BUF(buf), uip_len(buf));
           uip_packetqueue_set_buflen(&nbr->packethandle, uip_len(buf));
+        } else {
+          PRINTF("IP packet buf %p len %d discarded because no space "
+                 "in the queue\n", buf, uip_len(buf));
         }
 #else
 	PRINTF("IP packet buf %p len %d discarded because neighbor info is "
@@ -738,11 +741,35 @@ tcpip_ipv6_output(struct net_buf *buf)
        * to STALE, and you must both send a NA and the queued packet.
        */
       if(uip_packetqueue_buflen(&nbr->packethandle) != 0) {
-        uip_len(buf) = uip_packetqueue_buflen(&nbr->packethandle);
-        memcpy(UIP_IP_BUF(buf), uip_packetqueue_buf(&nbr->packethandle), uip_len(buf));
+        bool allocated_here = false;
+        if (ret != 0) {
+	  /* The IP buf was freed because the send succeed so we need to
+           * allocate a new one here.
+           */
+          buf = ip_buf_get_reserve_tx(0);
+          if (!buf) {
+            PRINTF("%s(): Cannot send queued packet, no net buffers\n", __FUNCTION__);
+            uip_packetqueue_free(&nbr->packethandle);
+	    goto no_buf;
+	  }
+          allocated_here = true;
+        }
+
+        uip_len(buf) = buf->len = uip_packetqueue_buflen(&nbr->packethandle);
+        memcpy(UIP_IP_BUF(buf), uip_packetqueue_buf(&nbr->packethandle),
+               uip_len(buf));
         uip_packetqueue_free(&nbr->packethandle);
-        ret = tcpip_output(uip_ds6_nbr_get_ll(nbr));
+        ret = tcpip_output(buf, uip_ds6_nbr_get_ll(nbr));
+        if (allocated_here && !ret) {
+          /* There was a sending error and the buffer was not released.
+           * We cannot return the buffer to upper layers so just release
+           * it here.
+           */
+          ip_buf_unref(buf);
+          ret = 1; /* This will tell caller that buf is released. */
+        }
       }
+    no_buf:
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
 
       if (ret == 0) {

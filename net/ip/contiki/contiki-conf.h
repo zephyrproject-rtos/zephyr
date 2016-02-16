@@ -49,6 +49,11 @@ typedef unsigned int uip_stats_t;
  */
 #define QUEUEBUF_CONF_NUM (13 + 5)
 
+/* Do not just drop packets because of some other packet is sent.
+ * So queue the packet and send it later.
+ */
+#define UIP_CONF_IPV6_QUEUE_PKT 1
+
 #ifdef SICSLOWPAN_CONF_ENABLE
 /* Min and Max compressible UDP ports */
 #define SICSLOWPAN_UDP_PORT_MIN                     0xF0B0

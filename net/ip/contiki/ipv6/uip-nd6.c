@@ -575,7 +575,7 @@ na_input(struct net_buf *buf)
     return;
     }*/
   if(uip_packetqueue_buflen(&uip_nbr(buf)->packethandle) != 0) {
-    uip_len(buf) = uip_packetqueue_buflen(&uip_nbr(buf)->packethandle);
+    uip_len(buf) = buf->len = uip_packetqueue_buflen(&uip_nbr(buf)->packethandle);
     memcpy(UIP_IP_BUF(buf), uip_packetqueue_buf(&uip_nbr(buf)->packethandle), uip_len(buf));
     uip_packetqueue_free(&uip_nbr(buf)->packethandle);
     return;
@@ -1093,7 +1093,7 @@ ra_input(struct net_buf *buf)
     return;
     }*/
   if(uip_nbr(buf) != NULL && uip_packetqueue_buflen(&uip_nbr(buf)->packethandle) != 0) {
-    uip_len(buf) = uip_packetqueue_buflen(&uip_nbr(buf)->packethandle);
+    uip_len(buf) = buf->len = uip_packetqueue_buflen(&uip_nbr(buf)->packethandle);
     memcpy(UIP_IP_BUF(buf), uip_packetqueue_buf(&uip_nbr(buf)->packethandle), uip_len(buf));
     uip_packetqueue_free(&uip_nbr(buf)->packethandle);
     return;

@@ -9,13 +9,8 @@
 #define MAX_NUM_QUEUED_PACKETS 2
 MEMB(packets_memb, struct uip_packetqueue_packet, MAX_NUM_QUEUED_PACKETS);
 
-#define DEBUG 0
-#if DEBUG
-#include <stdio.h>
-#define PRINTF(...) printf(__VA_ARGS__)
-#else
-#define PRINTF(...)
-#endif
+#define DEBUG DEBUG_NONE
+#include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/
 static void
