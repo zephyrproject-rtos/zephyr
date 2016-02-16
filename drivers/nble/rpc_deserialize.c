@@ -33,6 +33,11 @@
 
 #include "rpc_functions_to_quark.h"
 
+#if !defined(CONFIG_NBLE_DEBUG_RPC)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 /* Build the list of prototypes and check that list are made only of matching
  * signatures
  */
@@ -176,7 +181,7 @@ static void (*m_fct_s_b_b_p[])(void *structure, void *buffer1, uint8_t length1,
 
 /* Build debug table to help development with this "robust" macro stuff */
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
+#if defined(CONFIG_NBLE_DEBUG_RPC)
 
 #undef FN_SIG_NONE
 #undef FN_SIG_S

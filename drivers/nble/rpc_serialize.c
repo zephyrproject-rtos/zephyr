@@ -23,6 +23,11 @@
 
 #include "rpc_functions_to_ble_core.h"
 
+#if !defined(CONFIG_NBLE_DEBUG_RPC)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 /* Build the functions exposed */
 /* Define the functions identifiers per signature */
 #define FN_SIG_NONE(__fn)				fn_index_##__fn,

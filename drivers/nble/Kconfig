@@ -103,6 +103,13 @@ config NBLE_DEBUG_GAP
 	  Generic Access Profile (GAP) in the interfaces to the
 	  Nordic chip.
 
+config NBLE_DEBUG_RPC
+	bool "NBLE RPC debug"
+	default n
+	help
+	  This option enables debug for RPC interface to the Nordic
+	  Bluetooth LE chip.
+
 endif # BLUETOOTH_DEBUG
 
 config  NBLE_UART_ON_DEV_NAME
