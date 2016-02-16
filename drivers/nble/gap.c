@@ -33,6 +33,7 @@
 #define NBLE_BTWAKE_PIN 5
 
 static bt_ready_cb_t bt_ready_cb;
+static bt_le_scan_cb_t *scan_dev_found_cb;
 
 /* Local Bluetooth LE Device Address */
 bt_addr_le_t nble_bdaddr;
@@ -256,14 +257,88 @@ int bt_le_adv_stop(void)
 	return -ENOSYS;
 }
 
+static bool valid_le_scan_param(const struct bt_le_scan_param *param)
+{
+	if (param->type != BT_HCI_LE_SCAN_PASSIVE &&
+	    param->type != BT_HCI_LE_SCAN_ACTIVE) {
+		return false;
+	}
+
+	if (param->filter_dup != BT_HCI_LE_SCAN_FILTER_DUP_DISABLE &&
+	    param->filter_dup != BT_HCI_LE_SCAN_FILTER_DUP_ENABLE) {
+		return false;
+	}
+
+	if (param->interval < 0x0004 || param->interval > 0x4000) {
+		return false;
+	}
+
+	if (param->window < 0x0004 || param->window > 0x4000) {
+		return false;
+	}
+
+	if (param->window > param->interval) {
+		return false;
+	}
+
+	return true;
+}
+
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 {
-	return -ENOSYS;
+	struct nble_gap_scan_params nble_params;
+
+	BT_DBG("");
+
+	/* Check that the parameters have valid values */
+	if (!valid_le_scan_param(param)) {
+		return -EINVAL;
+	}
+
+	nble_params.interval = param->interval;
+	nble_params.window = param->window;
+	nble_params.scan_type = param->type;
+	nble_params.use_whitelist = 0;
+
+	/* Check is scan already enabled */
+
+	scan_dev_found_cb = cb;
+
+	nble_gap_start_scan_req(&nble_params);
+
+	return 0;
+}
+
+void on_nble_gap_adv_report_evt(const struct nble_gap_adv_report_evt *evt,
+				const uint8_t *buf, uint8_t len)
+{
+	BT_DBG("");
+
+	if (scan_dev_found_cb) {
+		scan_dev_found_cb(&evt->addr, evt->rssi, evt->adv_type,
+				  buf, len);
+	}
 }
 
 int bt_le_scan_stop(void)
 {
-	return -ENOSYS;
+	BT_DBG("");
+
+	scan_dev_found_cb = NULL;
+
+	nble_gap_stop_scan_req();
+
+	return 0;
+}
+
+void on_nble_gap_scan_start_stop_rsp(const struct nble_response *rsp)
+{
+	if (rsp->status) {
+		BT_ERR("Unable to stop scan, status %d", rsp->status);
+		return;
+	}
+
+	BT_DBG("");
 }
 
 void nble_log(const struct nble_log_s *param, char *format, uint8_t len)
