@@ -97,6 +97,11 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_BAS				BT_UUID_DECLARE_16(0x180f)
 #define BT_UUID_BAS_VAL				0x180f
+/** @def BT_UUID_CSC
+ *  @brief Cycling Speed and Cadence Service
+ */
+#define BT_UUID_CSC				BT_UUID_DECLARE_16(0x1816)
+#define BT_UUID_CSC_VAL				0x1816
 /** @def BT_UUID_ESS
  *  @brief Environmental Sensing Service
  */
@@ -257,6 +262,26 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_HRS_CONTROL_POINT		BT_UUID_DECLARE_16(0x2a39)
 #define BT_UUID_HRS_CONTROL_POINT_VAL		0x2a39
+/** @def BT_UUID_CSC_MEASUREMENT
+ *  @brief CSC Measurement Characteristic
+ */
+#define BT_UUID_CSC_MEASUREMENT			BT_UUID_DECLARE_16(0x2a5b)
+#define BT_UUID_CSC_MEASUREMENT_VAL		0x2a5b
+/** @def BT_UUID_CSC_FEATURE
+ *  @brief CSC Feature Characteristic
+ */
+#define BT_UUID_CSC_FEATURE			BT_UUID_DECLARE_16(0x2a5c)
+#define BT_UUID_CSC_FEATURE_VAL			0x2a5c
+/** @def BT_UUID_SENSOR_LOCATION
+ *  @brief Sensor Location Characteristic
+ */
+#define BT_UUID_SENSOR_LOCATION			BT_UUID_DECLARE_16(0x2a5d)
+#define BT_UUID_SENSOR_LOCATION_VAL		0x2a5d
+/** @def BT_UUID_SC_CONTROL_POINT
+ *  @brief SC Control Point Characteristic
+ */
+#define BT_UUID_SC_CONTROL_POINT		BT_UUID_DECLARE_16(0x2a55)
+#define BT_UUID_SC_CONTROL_POINT_VAl		0x2a55
 /** @def BT_UUID_ELEVATION
  *  @brief Elevation Characteristic
  */
