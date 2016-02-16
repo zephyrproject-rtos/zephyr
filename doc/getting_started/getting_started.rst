@@ -18,4 +18,4 @@ Configuring Network and Proxies
 
 Setting up your Zephyr development requires Internet access. Verify that
 console commands can be run as both user and administrator and that access to
-the Internet and is not impeded by a firewall.
+the Internet is not impeded by a firewall.
