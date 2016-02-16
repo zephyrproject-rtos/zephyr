@@ -88,7 +88,7 @@ account:
 
 4. On the left side menu, click on :guilabel:`SSH Public Keys`.
 
-5. Paste the contents of your public key :file:`~/.id/id_rsa.pub` and click
+5. Paste the contents of your public key :file:`~/.ssh/id_rsa.pub` and click
    :guilabel:`Add key`.
 
 .. note::
@@ -98,7 +98,7 @@ account:
 
 .. warning::
    Potential Security Risk! Do not copy your private key
-   :file:`~/.ssh/id_rsa` Use only the public :file:`~/.id/id_rsa.pub`.
+   :file:`~/.ssh/id_rsa` Use only the public :file:`~/.ssh/id_rsa.pub`.
 
 .. _code_check_out:
 
