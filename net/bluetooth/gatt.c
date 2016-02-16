@@ -561,9 +561,13 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 			/* Skip if there is another peer connected */
 			tmp = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
-			if (tmp && tmp->state == BT_CONN_CONNECTED) {
+			if (tmp) {
+				if (tmp->state == BT_CONN_CONNECTED) {
+					bt_conn_unref(tmp);
+					return BT_GATT_ITER_CONTINUE;
+				}
+
 				bt_conn_unref(tmp);
-				return BT_GATT_ITER_CONTINUE;
 			}
 		}
 	}
