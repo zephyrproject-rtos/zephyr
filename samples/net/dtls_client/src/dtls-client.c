@@ -79,11 +79,13 @@ static const unsigned char ecdsa_pub_key_y[] = {
 			0xD0, 0x43, 0xB1, 0xFB, 0x03, 0xE2, 0x2F, 0x4D,
 			0x17, 0xDE, 0x43, 0xF9, 0xF9, 0xAD, 0xEE, 0x70};
 
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
 /* The peer is the server in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
  */
 static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
+#endif
 
 /* This is my mac address
  */
@@ -127,7 +129,9 @@ static inline void init_app(void)
 		uip_ipaddr(&addr, 192,0,2,2);
 		uip_sethostaddr(&addr);
 	}
-#else
+#endif
+
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
 	{
 		uip_ipaddr_t *addr;
 		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&peer_mac;

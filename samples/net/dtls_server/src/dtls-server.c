@@ -96,7 +96,9 @@ static inline void init_app(void)
 		uip_ipaddr(&addr, 192,0,2,2);
 		uip_sethostaddr(&addr);
 	}
-#else
+#endif
+
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
 	{
 		uip_ipaddr_t *addr;
 
