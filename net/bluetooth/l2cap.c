@@ -1268,7 +1268,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_chan *chan,
 		}
 	}
 
-	BT_DBG("chan %p cid 0x%04x sent %u\n", chan, chan->tx.cid, sent);
+	BT_DBG("chan %p cid 0x%04x sent %u", chan, chan->tx.cid, sent);
 
 	net_buf_unref(buf);
 
