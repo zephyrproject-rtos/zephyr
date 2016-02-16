@@ -1,7 +1,7 @@
 .. _language:
 
-Laguage Usage Guidelines
-########################
+Language Usage Guidelines
+#########################
 
 This section provides usage guidelines with regard to words,
 punctuation, and grammar. The guidelines are not meant to replace a
