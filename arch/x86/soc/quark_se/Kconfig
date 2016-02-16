@@ -235,6 +235,9 @@ endif # SPI_QMSI
 endif
 
 if WATCHDOG
+config WDT_DW
+	def_bool y
+
 if WDT_DW
 config WDT_DW_CLOCK_GATE
 	def_bool n
@@ -246,8 +249,8 @@ config WDT_DW_BASE_ADDR
 	default 0xB0000000
 config WDT_DW_IRQ
 	default 12
-endif
-endif
+endif # WDT_DW
+endif # WATCHDOG
 
 if RTC
 config RTC_IRQ
