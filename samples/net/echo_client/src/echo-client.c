@@ -70,10 +70,11 @@ static uint8_t my_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
-#define PEER_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x1 } } }
-#define MY_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
+#define PEER_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
+#define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
+
 /* admin-local, dynamically allocated multicast address */
-#define MCAST_IPADDR { { { 0xff,0x84,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
+#define MCAST_IPADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
 
 static const struct in6_addr in6addr_peer = PEER_IPADDR;
 static struct in6_addr in6addr_my = MY_IPADDR;
@@ -83,11 +84,11 @@ static struct in6_addr in6addr_my = MY_IPADDR;
 #error "IPv4 not supported at the moment, fix me!"
 
 /* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
-#define MY_IPADDR { { { 192,0,2,2 } } }
-#define PEER_IPADDR { { { 192,0,2,1 } } }
+#define MY_IPADDR { { { 192, 0, 2, 2 } } }
+#define PEER_IPADDR { { { 192, 0, 2, 1 } } }
 
 /* Organization-local 239.192.0.0/14 */
-#define MCAST_IPADDR { { { 239,192,0,2 } } }
+#define MCAST_IPADDR { { { 239, 192, 0, 2 } } }
 #endif /* CONFIG_NETWORKING_WITH_IPV6 */
 
 #define MY_PORT 8484
