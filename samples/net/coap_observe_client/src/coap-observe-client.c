@@ -93,7 +93,7 @@ static struct in_addr in4addr_peer = PEER_IPADDR;
 static struct in_addr in4addr_my = MY_IPADDR;
 #endif
 
-static inline void init_server()
+static inline void init_app(void)
 {
 	PRINT("%s: run coap observe client\n", __func__);
 
@@ -312,7 +312,7 @@ void startup(void)
 	coap_init_engine();
 	coap_init_mid();
 
-	init_server();
+	init_app();
 
 	coap_ctx = coap_context_new((uip_ipaddr_t *)&in6addr_my, MY_PORT);
 	if (!coap_ctx) {

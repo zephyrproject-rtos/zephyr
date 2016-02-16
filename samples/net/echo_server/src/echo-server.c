@@ -74,7 +74,7 @@ static struct in6_addr in6addr_my = MY_IPADDR;
 #endif
 #define MY_PORT 4242
 
-static inline void init_server()
+static inline void init_app(void)
 {
 	PRINT("%s: run echo server\n", __func__);
 
@@ -271,7 +271,7 @@ void main(void)
 {
 	net_init();
 
-	init_server();
+	init_app();
 
 #if defined(CONFIG_NETWORKING_WITH_BT)
 	if (bt_enable(NULL)) {

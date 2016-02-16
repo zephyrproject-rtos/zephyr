@@ -115,7 +115,7 @@ static struct in_addr in4addr_peer = PEER_IPADDR;
 static struct in_addr in4addr_my = MY_IPADDR;
 #endif
 
-static inline void init_client(void)
+static inline void init_app(void)
 {
 	PRINT("%s: run dtls client\n", __func__);
 
@@ -454,7 +454,7 @@ void startup(void)
 
 	dtls_init();
 
-	init_client();
+	init_app();
 
 	user_data.ctx = get_context();
 	if (!user_data.ctx) {

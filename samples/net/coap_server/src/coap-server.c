@@ -103,7 +103,7 @@ static struct in_addr in4addr_peer = PEER_IPADDR;
 static struct in_addr in4addr_my = MY_IPADDR;
 #endif
 
-static inline void init_server()
+static inline void init_app(void)
 {
 	PRINT("%s: run coap server\n", __func__);
 
@@ -308,7 +308,7 @@ void startup(void)
 	dtls_set_log_level(DTLS_LOG_DEBUG);
 #endif
 
-	init_server();
+	init_app();
 
 	/* Activate the application-specific resources. */
 	rest_activate_resource(&res_plugtest_test, "test");

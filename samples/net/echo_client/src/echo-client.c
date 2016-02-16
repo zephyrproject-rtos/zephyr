@@ -101,7 +101,7 @@ static struct in6_addr in6addr_my = MY_IPADDR;
 
 static struct net_context *unicast, *multicast;
 
-static inline void init_server()
+static inline void init_app(void)
 {
 	PRINT("%s: run mcast tester\n", __func__);
 
@@ -373,7 +373,7 @@ void main(void)
 {
 	net_init();
 
-	init_server();
+	init_app();
 
 	ipsum_len = strlen(lorem_ipsum);
 
