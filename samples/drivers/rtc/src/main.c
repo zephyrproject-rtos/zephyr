@@ -20,7 +20,7 @@
 #include <rtc.h>
 #include <misc/printk.h>
 
-#define ALARM (RTC_ALARM_MINUTE / 6)
+#define ALARM (RTC_ALARM_SECOND)
 
 void test_rtc_interrupt_fn(struct device *rtc_dev)
 {
