@@ -171,6 +171,8 @@ endif # WATCHDOG
 if RTC
 config RTC_IRQ
 	default 2
+config RTC_IRQ_PRI
+	default 0
 config RTC_DW
 	def_bool y
 

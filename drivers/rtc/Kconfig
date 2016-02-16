@@ -29,13 +29,11 @@ if RTC
 
 config RTC_IRQ
 	int "Interrupt number"
-	default 0
 	help
 	RTC interrupt number
 
 config RTC_IRQ_PRI
 	int "Interrupt priority"
-	default 2
 	help
 	RTC interrupt priority.
 
@@ -81,7 +79,6 @@ config RTC_DW_CLOCK_GATE_SUBSYS
 config RTC_DW_BASE_ADDR
 	hex "Base address"
 	depends on RTC_DW
-	default 0x00000000
 	help
 	Base address to access RTC DesignWare controller registers
 
