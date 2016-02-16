@@ -165,7 +165,16 @@ config WDT_DW_BASE_ADDR
 	default 0xB0000000
 config WDT_DW_IRQ
 	default 16
+config WDT_DW_IRQ_PRI
+	default 0
 endif # WDT_DW
+
+if WDT_QMSI
+config WDT_QMSI_IRQ
+	default 16
+config WDT_QMSI_IRQ_PRI
+	default 0
+endif # WDT_QMSI
 endif # WATCHDOG
 
 if RTC
