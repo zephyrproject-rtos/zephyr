@@ -26,6 +26,10 @@ Checking Out the Source Code
 You have successfully checked out a copy of the source code to your local
 machine.
 
+.. note::
+   Once you're ready to start contributing, follow the steps to make yourself
+   a Linux Foundation account at :ref:`gerrit_accounts`.
+
 .. important::
    Linux users need to download the Zephyr SDK even after successfully
    cloning the source code. The SDK contains packages that are not part of
