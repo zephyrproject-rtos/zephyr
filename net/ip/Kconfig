@@ -327,6 +327,7 @@ config	NETWORKING_WITH_BT
 	depends on NETWORKING && NETWORKING_WITH_IPV6
 	depends on BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	select L2_BUFFERS
+	select NETWORKING_IPV6_NO_ND
 	default n
 	help
 	  Enable Bluetooth driver that send and receives IPv6 packets,
