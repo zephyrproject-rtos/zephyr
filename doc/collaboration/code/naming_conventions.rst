@@ -21,41 +21,47 @@ permitted to reference. Symbols that do not begin with a kernel namespace
 prefix are available to applications with a few exceptions. See `Exceptions
 to the Namespace`_ for details.
 
-+-------------------+---------------------------------------------------------+
-| Prefix            | Description                                             |
-+===================+=========================================================+
-| \_                | Denotes a private kernel symbol (e.g. _k_signal_event). |
-+-------------------+---------------------------------------------------------+
-| atomic\_          | Denotes an atomic operation (e.g. atomic_inc).          |
-+-------------------+---------------------------------------------------------+
-| device\_          | Denotes an API relating to devices and their            |
-|                   | initialization                                          |
-+-------------------+---------------------------------------------------------+
-| fiber\_           | Denotes an operation invoked by a fiber; typically a    |
-|                   | microkernel operation (e.g. fiber_event_send).          |
-+-------------------+---------------------------------------------------------+
-| irq\_             | Denotes an IRQ management operation (e.g. ireq_disable).|
-+-------------------+---------------------------------------------------------+
-| isr\_             | Denotes an operation called by an Interrupt Service     |
-|                   | Routine; typically a microkernel operation (e.g.        |
-|                   | isr_event_send).                                        |
-+-------------------+---------------------------------------------------------+
-| k\_               | Microkernel-specific function (e.g. k_memcpy)           |
-+-------------------+---------------------------------------------------------+
-| k_do\_            | Microkernel-specific functions that indicate essential  |
-|                   | operation within the kernel space. Do not use these     |
-|                   | functions unless absolutely necessary.                  |
-+-------------------+---------------------------------------------------------+
-| nano\_            | Denotes an operation provided by the nanokernel;        |
-|                   | typically may be used in a microkernel system, not just |
-|                   | a nanokernel system (e.g. nano_fifo_put).               |
-+-------------------+---------------------------------------------------------+
-| sys\_             | Catch-all for APIs that do not fit into the other       |
-|                   | namespaces.                                             |
-+-------------------+---------------------------------------------------------+
-| task\_            | Denotes an operation invoked by a task; typically a     |
-|                   | microkernel operation (e.g. task_send_event).           |
-+-------------------+---------------------------------------------------------+
++-----------------+--------------------------------------+------------------------+
+| Prefix          | Description                          | Example                |
++=================+======================================+========================+
+| \_              | Denotes a private kernel symbol.     | ``_k_signal_event``    |
++-----------------+--------------------------------------+------------------------+
+| atomic\_        | Denotes an atomic operation.         | ``atomic_inc``         |
++-----------------+--------------------------------------+------------------------+
+| device\_        | Denotes an API relating to devices   | ``device_get_binding`` |
+|                 | and their initialization.            |                        |
++-----------------+--------------------------------------+------------------------+
+|fiber\_          | Denotes an operation invoked by a    | ``fiber_event_send``   |
+|                 | fiber; typically a microkernel       |                        |
+|                 | operation.                           |                        |
++-----------------+--------------------------------------+------------------------+
+| irq\_           | Denotes an IRQ management operation. | ``irq_disable``        |
++-----------------+--------------------------------------+------------------------+
+| isr\_           | Denotes an operation called by an    | ``isr_event_send``     |
+|                 | Interrupt Service Routine; typically |                        |
+|                 | a microkernel operation.             |                        |
++-----------------+--------------------------------------+------------------------+
+| k\_             | Microkernel-specific function.       | ``k_memcpy``           |
++-----------------+--------------------------------------+------------------------+
+| k_do\_          | Microkernel-specific functions       | ``k_do_event_signal``  |
+|                 | indicating essential operation       |                        |
+|                 | within the kernel space. Do not use  |                        |
+|                 | these functions unless absolutely    |                        |
+|                 | necessary.                           |                        |
++-----------------+--------------------------------------+------------------------+
+| nano\_          | Denotes an operation provided by the | ``nano_fifo_put``      |
+|                 | nanokernel; typically used in a      |                        |
+|                 | microkernel system, not just a       |                        |
+|                 | nanokernel system.                   |                        |
++-----------------+--------------------------------------+------------------------+
+| sys\_           | Catch-all for APIs that do not fit   | ``sys_write32``        |
+|                 | into the other namespaces.           |                        |
++-----------------+--------------------------------------+------------------------+
+| task\_          | Denotes an operation invoked by a    | ``task_send_event``    |
+|                 | task; typically a microkernel        |                        |
+|                 | operation.                           |                        |
++-----------------+--------------------------------------+------------------------+
+
 
 If your additional symbol does not fall into the above classification, consider
 renaming it.
@@ -85,9 +91,9 @@ Subsystem Naming Conventions
 
 Generally, any sub-system can define its own naming conventions for symbols.
 However, these should be implemented with their own namespace prefix (for
-example, bt\_ for BlueTooth, or net\_ for IP). This limits possible clashes
-with applications. Following this prefix convention with subsystems keeps a
-consistent interface for all users.
+example, ``bt\_`` for BlueTooth, or ``net\_`` for IP). This limits possible
+clashes with applications. Following this prefix convention with subsystems
+keeps a consistent interface for all users.
 
 Minimize Include Paths
 **********************
