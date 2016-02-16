@@ -35,7 +35,10 @@
 #include <contiki/ip/uip.h>
 #include <contiki/ipv6/uip-ds6.h>
 
-#if !defined(CONFIG_ETHERNET)
+#include <bluetooth/bluetooth.h>
+#include <ipsp/src/ipss.h>
+
+#if !defined(CONFIG_ETHERNET) && !defined(CONFIG_BLUETOOTH)
 /* The peer is the client in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
@@ -70,6 +73,7 @@ static inline void init_server()
 {
 	PRINT("%s: run echo server\n", __func__);
 
+#if !defined(CONFIG_BLUETOOTH)
 #if !defined(CONFIG_ETHERNET)
 	net_set_mac(my_mac, sizeof(my_mac));
 #endif
@@ -111,6 +115,7 @@ static inline void init_server()
 		uip_ds6_addr_add(addr, 0, ADDR_MANUAL);
 	}
 #endif
+#endif
 }
 
 static inline void reverse(unsigned char *buf, int len)
@@ -138,7 +143,7 @@ static inline struct net_buf *prepare_reply(const char *name,
 	 */
 	reverse(ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
-#if !defined(CONFIG_ETHERNET)
+#if !defined(CONFIG_ETHERNET) && !defined(CONFIG_BLUETOOTH)
 	/* Set the mac address of the peer in net_buf because
 	 * there is no radio layer involved in this test app.
 	 * Normally there is no need to do this.
@@ -262,6 +267,15 @@ void main(void)
 	net_init();
 
 	init_server();
+
+#if defined(CONFIG_NETWORKING_WITH_BT)
+	if (bt_enable(NULL)) {
+		PRINT("Bluetooth init failed\n");
+		return;
+	}
+	ipss_init();
+	ipss_advertise();
+#endif
 
 #if defined(CONFIG_MICROKERNEL)
 	receive();

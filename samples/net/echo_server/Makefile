@@ -20,7 +20,12 @@ NET_IFACE ?= slip
 MDEF_FILE = prj.mdef
 KERNEL_TYPE ?= nano
 BOARD ?= qemu_x86
-CONF_FILE = prj_$(NET_IFACE).conf
+CONF_FILE ?= prj_$(NET_IFACE).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
-include $(ZEPHYR_BASE)/samples/net/echo_server/Makefile.ipstack
+
+ifeq ($(CONFIG_NETWORKING_WITH_BT), n)
+	include $(ZEPHYR_BASE)/samples/net/echo_server/Makefile.ipstack
+else
+	QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
+endif
