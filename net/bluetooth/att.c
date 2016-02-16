@@ -1656,8 +1656,8 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", chan, chan->tx.cid);
 
-	memset(att, 0, sizeof(*att));
 	bt_gatt_disconnected(chan->conn);
+	memset(att, 0, sizeof(*att));
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP)
