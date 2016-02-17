@@ -373,11 +373,14 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 {
 	union pci_addr_reg pci_ctrl_addr;
 
-	if (!lookup.info.class_type &&
-	    !lookup.info.vendor_id &&
-	    !lookup.info.device_id &&
-	    lookup.info.bar == PCI_BAR_ANY &&
-	    lookup.info.function == PCI_FUNCTION_ANY) {
+	int init_from_dev_info =
+		!lookup.info.class_type &&
+		!lookup.info.vendor_id &&
+		!lookup.info.device_id &&
+		lookup.info.bar == PCI_BAR_ANY &&
+		lookup.info.function == PCI_FUNCTION_ANY;
+
+	if (init_from_dev_info) {
 		lookup.info.class_type = dev_info->class_type;
 		lookup.info.vendor_id = dev_info->vendor_id;
 		lookup.info.device_id = dev_info->device_id;
