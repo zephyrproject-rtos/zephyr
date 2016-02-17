@@ -1,4 +1,4 @@
-/* att.h - Attribute protocol handling */
+/* att_internal.h - Attribute protocol handling */
 
 /*
  * Copyright (c) 2015 Intel Corporation

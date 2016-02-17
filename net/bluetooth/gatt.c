@@ -36,7 +36,7 @@
 #include "conn_internal.h"
 #include "keys.h"
 #include "l2cap_internal.h"
-#include "att.h"
+#include "att_internal.h"
 #include "smp.h"
 #include "gatt_internal.h"
 

@@ -37,7 +37,7 @@
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "smp.h"
-#include "att.h"
+#include "att_internal.h"
 #include "gatt_internal.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_ATT)
