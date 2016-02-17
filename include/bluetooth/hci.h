@@ -68,6 +68,7 @@ static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 #define BT_HCI_ERR_REMOTE_USER_TERM_CONN	0x13
 #define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE	0x1a
 #define BT_HCI_ERR_INVALID_LL_PARAMS		0x1e
+#define BT_HCI_ERR_UNSPECIFIED			0x1f
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED	0x29
 #define BT_HCI_ERR_UNACCEPT_CONN_PARAMS		0x3b
 

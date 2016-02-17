@@ -746,6 +746,9 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	bt_addr_le_copy(&conn->le.resp_addr, addr);
 
 	if (hci_le_create_conn(conn)) {
+		conn->err = BT_HCI_ERR_UNSPECIFIED;
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_le_scan_update(false);
 		goto done;
 	}
 
