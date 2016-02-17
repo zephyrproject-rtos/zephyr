@@ -31,57 +31,110 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 #define GPIO_ACCESS_BY_PIN 0
 #define GPIO_ACCESS_BY_PORT 1
+/** @endcond */
 
 #include <stdint.h>
 #include <stddef.h>
 #include <device.h>
 
-/** @brief Define flag/config bits. */
+/** GPIO pin to be input. */
 #define GPIO_DIR_IN		(0 << 0)
+
+/** GPIO pin to be output. */
 #define GPIO_DIR_OUT		(1 << 0)
+
+/** For internal use. */
 #define GPIO_DIR_MASK		0x1
 
+/** GPIO pin to trigger interrupt. */
 #define GPIO_INT		(1 << 1)
 
+/** GPIO pin trigger on level low or falling edge. */
 #define GPIO_INT_ACTIVE_LOW	(0 << 2)
+
+/** GPIO pin trigger on level high or rising edge. */
 #define GPIO_INT_ACTIVE_HIGH	(1 << 2)
+
+/** GPIO pin trggier to be synchronized to clock pulses. */
 #define GPIO_INT_CLOCK_SYNC     (1 << 3)
+
+/** Enable GPIO pin debounce. */
 #define GPIO_INT_DEBOUNCE       (1 << 4)
+
+/** Do Level trigger. */
 #define GPIO_INT_LEVEL		(0 << 5)
+
+/** Do Edge trigger. */
 #define GPIO_INT_EDGE		(1 << 5)
+
+/** Interrupt triggers on both rising and falling edge. */
 #define GPIO_INT_DOUBLE_EDGE	(1 << 6)
 
-/** @brief Define the polarity of the GPIO (1 bit). */
+/*
+ * GPIO_POL_* define the polarity of the GPIO (1 bit).
+ */
+
+/** For internal use. */
 #define GPIO_POL_POS		7
+
+/** GPIO pin polarity is normal. */
 #define GPIO_POL_NORMAL		(0 << GPIO_POL_POS)
+
+/** GPIO pin polarity is inverted. */
 #define GPIO_POL_INV		(1 << GPIO_POL_POS)
+
+/** For internal use. */
 #define GPIO_POL_MASK		(1 << GPIO_POL_POS)
 
+/*
+ * GPIO_PUD_* are related to pull-up/pull-down.
+ */
+
+/** For internal use. */
 #define GPIO_PUD_POS		8
+
+/** GPIO pin to have no pull-up or pull-down. */
 #define GPIO_PUD_NORMAL		(0 << GPIO_PUD_POS)
+
+/** Enable GPIO pin pull-up. */
 #define GPIO_PUD_PULL_UP	(1 << GPIO_PUD_POS)
+
+/** Enable GPIO pin pull-down. */
 #define GPIO_PUD_PULL_DOWN	(2 << GPIO_PUD_POS)
+
+/** For internal use. */
 #define GPIO_PUD_MASK		(3 << GPIO_PUD_POS)
 
-/**
- * @brief Pin enable / disable.
+/*
+ * GPIO_PIN_(EN-/DIS-)ABLE are for pin enable / disable.
  *
  * Individual pins can be enabled or disabled
  * if the controller supports this operation.
  */
+
+/** Enable GPIO pin. */
 #define GPIO_PIN_ENABLE		(1 << 10)
+
+/** Disable GPIO pin. */
 #define GPIO_PIN_DISABLE	(1 << 11)
 
 /**
  * @brief Define the application callback function signature.
  *
+ * @param port Device struct for the GPIO device.
+ * @param pin The pin that triggers the callback.
  */
 typedef void (*gpio_callback_t)(struct device *port, uint32_t pin);
 
 /**
- * @brief GPIO driver API definition.
+ * @cond INTERNAL_HIDDEN
+ *
+ * GPIO driver API definition.
+ *
+ * (Internal use only.)
  */
 typedef int (*gpio_config_t)(struct device *port, int access_op,
 			     uint32_t pin, int flags);
@@ -110,6 +163,9 @@ struct gpio_driver_api {
 	gpio_suspend_port_t suspend;
 	gpio_resume_port_t resume;
 };
+/**
+ * @endcond
+ */
 
 /**
  * @brief Configure a single pin.
