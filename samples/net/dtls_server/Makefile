@@ -16,10 +16,11 @@
 # limitations under the License.
 #
 
+NET_IFACE ?= slip
 MDEF_FILE = prj.mdef
 KERNEL_TYPE ?= nano
 BOARD ?= qemu_x86
-CONF_FILE = prj_$(ARCH).conf
+CONF_FILE = prj_$(NET_IFACE).conf
 
 QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
 
