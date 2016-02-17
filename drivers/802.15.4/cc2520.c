@@ -332,20 +332,7 @@ static inline int cc2520_pending_packet(void)
 
 static void flushrx(void)
 {
-	uint8_t dummy;
-
-	cc2520_read_fifo_byte(&dummy);
-	dummy++;
-
 	cc2520_strobe(CC2520_INS_SFLUSHRX);
-	cc2520_strobe(CC2520_INS_SFLUSHRX);
-
-#if 0
-	/* SFLUSHRX causes recalibration so wait small delay after
-	 * it before continuing. Errata chapter 1.3
-	 */
-	clock_delay_usec_busywait(500);
-#endif
 }
 
 static void on(void)
