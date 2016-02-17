@@ -136,7 +136,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 	switch (conn->state) {
 	case BT_CONN_CONNECT:
-		/* TODO: Cancel connecting */
+		nble_gap_cancel_connect_req(conn);
 		return 0;
 	case BT_CONN_CONNECTED:
 		break;
@@ -162,6 +162,16 @@ void on_nble_gap_disconnect_rsp(const struct nble_response *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("Disconnect failed, status %d", rsp->status);
+		return;
+	}
+
+	BT_DBG("conn %p", rsp->user_data);
+}
+
+void on_nble_gap_cancel_connect_rsp(const struct nble_response *rsp)
+{
+	if (rsp->status) {
+		BT_ERR("Cancel connect failed, status %d", rsp->status);
 		return;
 	}
 
