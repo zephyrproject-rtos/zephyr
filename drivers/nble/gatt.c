@@ -168,9 +168,9 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 	return 0;
 }
 
-void on_ble_gatt_register_rsp(const struct nble_gatt_register_rsp *rsp,
-			      const struct nble_gatt_attr_handles *handles,
-			      uint8_t len)
+void on_nble_gatt_register_rsp(const struct nble_gatt_register_rsp *rsp,
+			       const struct nble_gatt_attr_handles *handles,
+			       uint8_t len)
 {
 	BT_DBG("status %u", rsp->status);
 
