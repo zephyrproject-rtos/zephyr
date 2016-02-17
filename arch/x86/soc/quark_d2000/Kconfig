@@ -207,6 +207,14 @@ config I2C_CLOCK_SPEED
 
 endif
 
+if I2C_QMSI
+config I2C_QMSI_0
+	def_bool y
+config I2C_QMSI_0_IRQ
+	default 4
+config I2C_QMSI_0_INT_PRIORITY
+	default 0
+endif # I2C_QMSI
 endif # I2C
 
 endif # SOC_QUARK_D2000

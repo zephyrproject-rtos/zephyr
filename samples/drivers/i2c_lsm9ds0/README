@@ -13,14 +13,14 @@ the datasheet.
 Below follows the wiring information for each board this samples has been
 tested.
 
---------------+--------------------
-| LSM9DS0 pin | Quark SE Devboard |
-|             | pin               |
-|-------------+-------------------|
-| VIN         | P4 pin 1          |
-| GND         | P4 pin 43         |
-| SCL         | P4 pin 31         |
-| SDA         | P4 pin 33         |
-| CSG         | P4 pin 29         |
-| SDOG        | P4 pin 17         |
---------------+--------------------
+--------------+-------------------+------------------
+| LSM9DS0 pin | Quark SE Devboard | Quark D2000 CRB |
+|             | pin               | pin             |
+|-------------+-------------------+-----------------|
+| VIN         | P4 pin 1          | J25 pin 1       |
+| GND         | P4 pin 43         | J25 pin 2       |
+| SCL         | P4 pin 31         | J21 pin 6       |
+| SDA         | P4 pin 33         | J21 pin 5       |
+| CSG         | P4 pin 29         | J25 pin 1       |
+| SDOG        | P4 pin 17         | J25 pin 2       |
+--------------+-------------------+------------------

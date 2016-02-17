@@ -218,6 +218,8 @@ static int i2c_qmsi_init(struct device *dev)
 
 		clk_periph_enable(CLK_PERIPH_I2C_M0_REGISTER);
 		break;
+
+#ifdef CONFIG_I2C_QMSI_1
 	case QM_I2C_1:
 		IRQ_CONNECT(CONFIG_I2C_QMSI_1_IRQ,
 			    CONFIG_I2C_QMSI_1_INT_PRIORITY, qm_i2c_1_isr, NULL,
@@ -227,6 +229,8 @@ static int i2c_qmsi_init(struct device *dev)
 
 		clk_periph_enable(CLK_PERIPH_I2C_M1_REGISTER);
 		break;
+#endif /* CONFIG_I2C_QMSI_1 */
+
 	default:
 		return DEV_FAIL;
 	}
