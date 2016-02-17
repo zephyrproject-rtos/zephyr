@@ -324,6 +324,54 @@ static const bt_addr_le_t *find_id_addr(const bt_addr_le_t *addr)
 	return addr;
 }
 
+static int set_advertise_enable(void)
+{
+	struct net_buf *buf;
+	int err;
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+	return 0;
+}
+
+static int set_advertise_disable(void)
+{
+	struct net_buf *buf;
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+	return 0;
+}
+
 #if defined(CONFIG_BLUETOOTH_CONN)
 static void hci_acl(struct net_buf *buf)
 {
@@ -468,14 +516,8 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-		struct net_buf *buf;
-
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
-		if (buf) {
-			net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
-			bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_ENABLE, buf);
-		}
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+		set_advertise_enable();
 	}
 }
 
@@ -543,6 +585,14 @@ static void le_conn_complete(struct net_buf *buf)
 		bt_conn_unref(conn);
 
 		return;
+	}
+
+	/*
+	 * clear advertising even if we are not able to add connection object
+	 * to keep host in sync with controller state
+	 */
+	if (evt->role == BT_CONN_ROLE_SLAVE) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
 	}
 
 	if (!conn) {
@@ -2473,8 +2523,13 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
 		return -EALREADY;
+	}
+
+	err = set_advertise_disable();
+	if (err) {
+		return err;
 	}
 
 	err = set_ad(BT_HCI_OP_LE_SET_ADV_DATA, ad, ad_len);
@@ -2521,43 +2576,30 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_PARAMETERS, buf);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
+	err = set_advertise_enable();
 	if (err) {
 		return err;
 	}
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+	atomic_set_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
 
 	return 0;
 }
 
 int bt_le_adv_stop(void)
 {
-	struct net_buf *buf;
 	int err;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
 		return -EALREADY;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
+	err = set_advertise_disable();
 	if (err) {
 		return err;
 	}
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
 
 	return 0;
 }
