@@ -54,13 +54,12 @@
 #include "cc2520.h"
 #include "cc2520_arch.h"
 
-#ifndef CC2520_CONF_AUTOACK
-#define CC2520_CONF_AUTOACK 0
-#endif /* CC2520_CONF_AUTOACK */
-
+#define CC2520_CONF_AUTOACK 1
 #define WITH_SEND_CCA 1
 
 #define FOOTER_LEN 2
+/* Len + FCF + SEQ + FCS + PAN ID */
+#define MIN_LENGTH_BEFORE_ACCEPT 10
 
 #define AUTOCRC (1 << 6)
 #define AUTOACK (1 << 5)
@@ -187,6 +186,8 @@ static void print_radio_status(void)
 		DBG("RX_ACTIVE ");
 	}
 	DBG("\n");
+
+	setreg(CC2520_EXCFLAG0, 0);
 }
 
 static inline void print_exceptions_0(void)
@@ -251,6 +252,8 @@ static inline void print_exceptions_1(void)
 		DBG("DPU_DONE_H");
 	}
 	DBG("\n");
+
+	setreg(CC2520_EXCFLAG1, 0);
 }
 
 static inline void print_errors(void)
@@ -280,14 +283,7 @@ static inline void print_errors(void)
 		DBG("RFBUFMOV_TIMEOUT");
 	}
 	DBG("\n");
-}
 
-static void clear_exceptions(void)
-{
-	DBG("Clearing up exceptions & errors\n");
-
-	setreg(CC2520_EXCFLAG0, 0);
-	setreg(CC2520_EXCFLAG1, 0);
 	setreg(CC2520_EXCFLAG2, 0);
 }
 
@@ -308,7 +304,6 @@ static void cc2520_print_gpio_config(void)
 #define print_exceptions_0()
 #define print_exceptions_1()
 #define print_errors()
-#define clear_exceptions()
 #define cc2520_print_gpio_config()
 #endif
 
@@ -487,7 +482,6 @@ static radio_result_t cc2520_set_rx_mode(radio_value_t value)
 	}
 	old_value = value;
 
-#if 1
 	if (receive_on) {
 		cc2520_strobe(CC2520_INS_SRXON);
 
@@ -496,7 +490,6 @@ static radio_result_t cc2520_set_rx_mode(radio_value_t value)
 			return RADIO_RESULT_ERROR;
 		}
 	}
-#endif /* 1/0 */
 
 	return RADIO_RESULT_OK;
 }
@@ -664,7 +657,7 @@ static int cc2520_transmit(struct net_buf *buf, unsigned short payload_len)
 		 */
 		BUSYWAIT_UNTIL(!(status() & BIT(CC2520_TX_ACTIVE)), WAIT_500ms);
 
-		DBG("status 0x%x\n", status());
+		DBG("Transmitted!\n");
 
 		if (!receive_on) {
 			/* We need to explicitly turn off the radio,
@@ -708,18 +701,12 @@ static int cc2520_prepare(const void *payload, unsigned short payload_len)
 
 	DBG("cc2520: sending %d bytes\n", payload_len);
 
-	clear_exceptions();
-
 	/* Write packet to TX FIFO. */
 	strobe(CC2520_INS_SFLUSHTX);
 
 	total_len = payload_len + FOOTER_LEN;
-	DBG("TX FIFO has %u bytes\n", getreg(CC2520_TXFIFOCNT));
 	cc2520_write_fifo_buf(&total_len, 1);
 	cc2520_write_fifo_buf(buf, payload_len);
-	DBG("TX FIFO has %u bytes\n", getreg(CC2520_TXFIFOCNT));
-
-	print_errors();
 
 	return 0;
 }
@@ -823,65 +810,79 @@ bool cc2520_set_pan_addr(unsigned pan, unsigned addr,
 	return true;
 }
 
+static inline uint8_t rxcount(void)
+{
+	return getreg(CC2520_RXFIFOCNT);
+}
+
 static int cc2520_read(void *buf, unsigned short bufsize)
 {
-	struct cc2520_config *info = cc2520_sgl_dev->config->config_info;
 	uint8_t footer[2];
+	uint8_t pkt_len;
 	uint8_t len;
+	uint8_t cnt;
 
 	if (!init_ok) {
 		return -EIO;
 	}
 
-	if (!cc2520_pending_packet()) {
+	cnt = rxcount();
+	if (cnt < MIN_LENGTH_BEFORE_ACCEPT) {
 		return -EAGAIN;
 	}
 
-	cc2520_packets_read++;
+	getrxbyte(&pkt_len);
+	len = pkt_len - FOOTER_LEN;
 
-	getrxbyte(&len);
+	while (1) {
+		if (cnt > len) {
+			cnt = len;
+		}
 
-	DBG("%s: Incoming packet length: %d\n", __func__, len);
+		getrxdata(buf, cnt);
 
-	if ((len - FOOTER_LEN > bufsize) ||
-	    (len <= FOOTER_LEN)) {
-		goto error;
+		buf += cnt;
+		len -= cnt;
+
+		if (len <= 0) {
+			break;
+		}
+
+		while (!(cnt = rxcount())) {
+		};
 	}
 
-	getrxdata(buf, len - FOOTER_LEN);
-	getrxdata(footer, FOOTER_LEN);
+	while (rxcount() < FOOTER_LEN) {
+	};
 
+	getrxdata(footer, FOOTER_LEN);
 	if (footer[1] & FOOTER1_CRC_OK) {
 		cc2520_last_rssi = footer[0];
 		cc2520_last_correlation = footer[1] & FOOTER1_CORRELATION;
 	} else {
-		goto error;
+		DBG("RX: Bad CRC\n");
+		print_exceptions_0();
+		print_exceptions_1();
+
+		return -EINVAL;
 	}
 
 	if (cc2520_pending_packet()) {
+		/* Clean up in case of FIFO overflow!
+		 * This should not happen unless we were too slow to read
+		 * the previous packet. This is signaled by:
+		 * FIFOP = 1 and FIFO = 0
+		 */
 		if (!CC2520_FIFO_IS_1) {
-			/* Clean up in case of FIFO overflow!  This happens
-			 * for every full length frame and is signaled by
-			 * FIFOP = 1 and FIFO = 0
-			 */
+			DBG("RX: Overflow\n");
+			print_exceptions_0();
 			flushrx();
-		} else {
-			/* Another packet might be waiting
-			 * Let's unlock reading_packet_fiber()
-			 */
-			nano_fiber_sem_give(&info->read_lock);
 		}
 	}
 
-	return len - FOOTER_LEN;
+	cc2520_packets_read++;
 
-error:
-	print_exceptions_0();
-	print_exceptions_1();
-	print_errors();
-
-	flushrx();
-	return -EINVAL;
+	return pkt_len - FOOTER_LEN;
 }
 
 static void read_packet(void)
@@ -889,35 +890,34 @@ static void read_packet(void)
 	struct net_buf *buf;
 	int len;
 
-	buf = l2_buf_get_reserve(0);
-	if (!buf) {
-		DBG("%s: Could not allocate buffer\n", __func__);
-		return;
-	}
+	do {
+		buf = l2_buf_get_reserve(0);
+		if (!buf) {
+			DBG("%s: Could not allocate buffer\n", __func__);
+			break;
+		}
 
-	packetbuf_set_attr(buf, PACKETBUF_ATTR_TIMESTAMP,
-			   last_packet_timestamp);
+		packetbuf_set_attr(buf, PACKETBUF_ATTR_TIMESTAMP,
+				   last_packet_timestamp);
 
-	len = cc2520_read(packetbuf_dataptr(buf), PACKETBUF_SIZE);
-	if (len < 0) {
-		goto out;
-	}
+		len = cc2520_read(packetbuf_dataptr(buf), PACKETBUF_SIZE);
+		if (len < 0) {
+			l2_buf_unref(buf);
+			break;
+		}
 
-	packetbuf_set_attr(buf, PACKETBUF_ATTR_RSSI, cc2520_last_rssi);
-	packetbuf_set_attr(buf, PACKETBUF_ATTR_LINK_QUALITY,
-			   cc2520_last_correlation);
-	packetbuf_set_datalen(buf, len);
+		packetbuf_set_attr(buf, PACKETBUF_ATTR_RSSI, cc2520_last_rssi);
+		packetbuf_set_attr(buf, PACKETBUF_ATTR_LINK_QUALITY,
+				   cc2520_last_correlation);
+		packetbuf_set_datalen(buf, len);
 
-	DBG("%s: received %d bytes\n", __func__, len);
+		if (net_driver_15_4_recv_from_hw(buf) < 0) {
+			l2_buf_unref(buf);
+		}
 
-	if (net_driver_15_4_recv_from_hw(buf) < 0) {
-		DBG("%s: rdc input failed, packet discarded\n", __func__);
-		goto out;
-	}
-
-	return;
-out:
-	l2_buf_unref(buf);
+		last_packet_timestamp = cc2520_sfd_start_time;
+		cc2520_packets_seen++;
+	} while (len > 0);
 }
 
 /* Reading incoming packet, so through SPI, cannot be done directly
@@ -937,9 +937,6 @@ static void reading_packet_fiber(int unused1, int unused2)
 		read_packet();
 		cc2520_radio_unlock();
 
-		last_packet_timestamp = cc2520_sfd_start_time;
-		cc2520_packets_seen++;
-
 		net_analyze_stack("CC2520 Rx Fiber stack", cc2520_read_stack,
 				  CC2520_READING_STACK_SIZE);
 	}
@@ -948,8 +945,6 @@ static void reading_packet_fiber(int unused1, int unused2)
 static void cc2520_gpio_int_handler(struct device *port, uint32_t pin)
 {
 	struct cc2520_config *info = cc2520_sgl_dev->config->config_info;
-
-	DBG("%s: RX interrupt in pin %lu\n", __func__, pin);
 
 	/* In order to make this driver available for 2+ instances
 	 * it would require this handler to get access to the concerned
@@ -1145,7 +1140,7 @@ static void cc2520_configure(struct device *dev)
 	/* Set auto CRC on frame. */
 #if CC2520_CONF_AUTOACK
 	setreg(CC2520_FRMCTRL0, AUTOCRC | AUTOACK);
-	setreg(CC2520_FRMFILT0, FRAME_MAX_VERSION|FRAME_FILTER_ENABLE);
+	setreg(CC2520_FRMFILT0, FRAME_MAX_VERSION | FRAME_FILTER_ENABLE);
 #else
 	/* setreg(CC2520_FRMCTRL0,    0x60); */
 	setreg(CC2520_FRMCTRL0, AUTOCRC);
@@ -1155,7 +1150,7 @@ static void cc2520_configure(struct device *dev)
 	/* SET_RXENMASK_ON_TX */
 	setreg(CC2520_FRMCTRL1, 1);
 	/* Set FIFOP threshold to maximum .*/
-	setreg(CC2520_FIFOPCTRL, FIFOP_THR(0x7F));
+	setreg(CC2520_FIFOPCTRL, FIFOP_THR(MIN_LENGTH_BEFORE_ACCEPT));
 
 	if (!cc2520_set_pan_addr(0xffff, 0x0000, NULL)) {
 		return;
