@@ -43,6 +43,11 @@ extern "C" {
 #define BT_ATT_ERR_UNSUPPORTED_GROUP_TYPE	0x10
 #define BT_ATT_ERR_INSUFFICIENT_RESOURCES	0x11
 
+/* Common Profile Error Codes (from CSS) */
+#define BT_ATT_ERR_CCC_IMPROPER_CONF		0xfd
+#define BT_ATT_ERR_PROCEDURE_IN_PROGRESS	0xfe
+#define BT_ATT_ERR_OUT_OF_RANGE			0xff
+
 #ifdef __cplusplus
 }
 #endif
