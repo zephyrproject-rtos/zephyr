@@ -106,16 +106,14 @@ static void gpio_qmsi_0_int_callback(uint32_t status)
 #endif
 }
 
+#ifdef CONFIG_GPIO_QMSI_AON
 static void gpio_qmsi_aon_int_callback(uint32_t status)
 {
-#ifndef CONFIG_GPIO_QMSI_AON
-	return;
-#else
 	struct device *port = DEVICE_GET(gpio_aon);
 
 	gpio_qmsi_callback(port, status);
-#endif
 }
+#endif /* CONFIG_GPIO_QMSI_AON */
 
 static void qmsi_write_bit(uint32_t *target, uint8_t bit, uint8_t value)
 {
@@ -153,9 +151,13 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 	case QM_GPIO_0:
 		cfg.callback = gpio_qmsi_0_int_callback;
 		break;
+
+#ifdef CONFIG_GPIO_QMSI_AON
 	case QM_AON_GPIO_0:
 		cfg.callback = gpio_qmsi_aon_int_callback;
 		break;
+#endif /* CONFIG_GPIO_QMSI_AON */
+
 	default:
 		return;
 	}
@@ -298,6 +300,8 @@ int gpio_qmsi_init(struct device *port)
 		irq_enable(CONFIG_GPIO_QMSI_0_IRQ);
 		QM_SCSS_INT->int_gpio_mask &= ~BIT(0);
 		break;
+
+#ifdef CONFIG_GPIO_QMSI_AON
 	case QM_AON_GPIO_0:
 		IRQ_CONNECT(CONFIG_GPIO_QMSI_AON_IRQ,
 			    CONFIG_GPIO_QMSI_AON_PRI, qm_aon_gpio_isr_0,
@@ -305,6 +309,8 @@ int gpio_qmsi_init(struct device *port)
 		irq_enable(CONFIG_GPIO_QMSI_AON_IRQ);
 		QM_SCSS_INT->int_aon_gpio_mask &= ~BIT(0);
 		break;
+#endif /* CONFIG_GPIO_QMSI_AON */
+
 	default:
 		return DEV_FAIL;
 	}
