@@ -88,6 +88,14 @@ enum sensor_channel {
 	SENSOR_CHAN_GYRO_Z,
 	/** Angular velocity on any axis. */
 	SENSOR_CHAN_GYRO_ANY,
+	/** Magnetic field on the X axis, in Gauss. */
+	SENSOR_CHAN_MAGN_X,
+	/** Magnetic field on the Y axis, in Gauss. */
+	SENSOR_CHAN_MAGN_Y,
+	/** Magnetic field on the Z axis, in Gauss. */
+	SENSOR_CHAN_MAGN_Z,
+	/** Magnetic field on any axis. */
+	SENSOR_CHAN_MAGN_ANY,
 	/** Temperature in degrees Celsius. */
 	SENSOR_CHAN_TEMP,
 	/** Pressure in kilopascal. */
@@ -156,6 +164,8 @@ enum sensor_attribute {
 	SENSOR_ATTR_LOWER_THRESH,
 	/** Upper threshold for trigger. */
 	SENSOR_ATTR_UPPER_THRESH,
+	/** Oversampling factor */
+	SENSOR_ATTR_OVERSAMPLING,
 };
 
 typedef void (*sensor_trigger_handler_t)(struct device *dev,
