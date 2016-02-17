@@ -1277,6 +1277,8 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_chan *chan,
 
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
+	int err;
+
 	BT_DBG("chan %p buf %p len %u", chan, buf, buf->len);
 
 	if (!buf) {
@@ -1288,6 +1290,11 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	/* TODO: Check conn/address type when BR/EDR is introduced */
-	return l2cap_chan_le_send_sdu(chan, buf);
+	err = l2cap_chan_le_send_sdu(chan, buf);
+	if (err < 0) {
+		BT_ERR("failed to send message %d", err);
+	}
+
+	return err;
 }
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
