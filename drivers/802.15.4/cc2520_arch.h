@@ -286,11 +286,6 @@ static inline void cc2520_enable_fifop_int(int enable)
 	}
 }
 
-static inline void cc2520_clear_fifop_int(void)
-{
-	/* Do nothing */
-}
-
 static inline void cc2520_init_fifop_int(cc2520_gpio_int_handler_t handler)
 {
 	gpio_set_callback(CC2520_GPIO(FIFOP), handler);

@@ -111,7 +111,6 @@ static bool init_ok;
 #define CC2520_ENABLE_FIFOP_INT() cc2520_enable_fifop_int(1)
 #define CC2520_DISABLE_FIFOP_INT() cc2520_enable_fifop_int(0)
 #define CC2520_FIFOP_INT_INIT() cc2520_init_fifop_int(cc2520_gpio_int_handler)
-#define CC2520_CLEAR_FIFOP_INT() cc2520_clear_fifop_int()
 #define SET_VREG_ACTIVE() cc2520_set_vreg(1)
 #define SET_VREG_INACTIVE() cc2520_set_vreg(0)
 #define SET_RESET_ACTIVE() cc2520_set_reset(0)
@@ -956,8 +955,6 @@ static void cc2520_gpio_int_handler(struct device *port, uint32_t pin)
 	 * it would require this handler to get access to the concerned
 	 * instance
 	 */
-
-	CC2520_CLEAR_FIFOP_INT();
 
 	nano_isr_sem_give(&info->read_lock);
 }
