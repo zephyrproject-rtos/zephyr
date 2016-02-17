@@ -125,8 +125,7 @@ Follow these steps to install the SDK on your Linux host system.
 
     .. code-block:: console
 
-      $ wget --user=LFID --ask-password \
-      https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/0.7.2-i686/zephyr-sdk-0.7.2-i686-setup.run
+      $ wget --user=LFID --ask-password https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/0.7.2-i686/zephyr-sdk-0.7.2-i686-setup.run
 
 #. Run the installation binary, type:
 
