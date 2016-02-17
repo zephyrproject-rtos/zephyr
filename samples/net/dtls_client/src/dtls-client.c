@@ -84,12 +84,12 @@ static const unsigned char ecdsa_pub_key_y[] = {
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
  */
-static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
+static uint8_t peer_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 #endif
 
 /* This is my mac address
  */
-static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+static uint8_t my_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 #if 0
