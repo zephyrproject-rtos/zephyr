@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#define HEAP_SIZE 4096
+#define HEAP_SIZE CONFIG_NEWLIB_HEAP_SIZE
 unsigned char heap[HEAP_SIZE];
 unsigned int heap_sz;
 
