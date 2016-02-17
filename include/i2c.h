@@ -36,49 +36,72 @@ extern "C" {
 #include <stdint.h>
 #include <device.h>
 
-/**
- * @brief I2C speeds.
+/*
+ * The following #defines are used to configure the I2C controller.
  */
+
+/** I2C Standard Speed */
 #define I2C_SPEED_STANDARD		(0x1)
+
+/** I2C Fast Speed */
 #define I2C_SPEED_FAST			(0x2)
+
+/** I2C Fast Plus Speed */
 #define I2C_SPEED_FAST_PLUS		(0x3)
+
+/** I2C High Speed */
 #define I2C_SPEED_HIGH			(0x4)
+
+/** I2C Ultra Fast Speed */
 #define I2C_SPEED_ULTRA			(0x5)
 
-/**
- * @brief I2C dev_config bitfields.
- */
-#define I2C_ADDR_10_BITS		(1 << 0)
+/** For internal use. */
 #define I2C_SPEED_MASK			(0x7 << 1)	/* 3 bits */
+
+/** Use 10-bit addressing. */
+#define I2C_ADDR_10_BITS		(1 << 0)
+
+/** Controller to act as Master. */
 #define I2C_MODE_MASTER			(1 << 4)
+
+/** Controller to act as Slave. */
 #define I2C_MODE_SLAVE_READ		(1 << 5)
 
-/**
- * @brief I2C Message Flags.
+
+/*
+ * I2C_MSG_* are I2C Message flags.
  */
+
+/** Write message to I2C bus. */
 #define I2C_MSG_WRITE			(0 << 0)
+
+/** Read message from I2C bus. */
 #define I2C_MSG_READ			(1 << 0)
+
+/** For internal use. */
 #define I2C_MSG_RW_MASK			(1 << 0)
 
-/**
- * @brief STOP I2C transaction: drive should take care of this.
- */
+/** Send STOP after this message. */
 #define I2C_MSG_STOP			(1 << 1)
 
-/**
- * @brief RESTART I2C transaction
- */
+/** RESTART I2C transaction for this message. */
 #define I2C_MSG_RESTART			(1 << 2)
 
+/**
+ * @brief One I2C Message.
+ *
+ * This defines one I2C message to transact on the I2C bus.
+ */
 struct i2c_msg {
-	/* Data buffer in bytes */
+	/** Data buffer in bytes */
 	uint8_t		*buf;
 
-	/* Length of buffer in bytes */
+	/** Length of buffer in bytes */
 	uint32_t	len;
 
-	/* Flags for this message */
+	/** Flags for this message */
 	uint8_t		flags;
+
 	uint8_t		stride[3];
 };
 
@@ -93,12 +116,12 @@ union dev_config {
 	} bits;
 };
 
-enum i2c_cb_type {
-	I2C_CB_WRITE            = 1,
-	I2C_CB_READ             = 2,
-	I2C_CB_ERROR		= 3,
-};
-
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * These are for internal use only, so skip these in
+ * public documentation.
+ */
 typedef int (*i2c_api_configure_t)(struct device *dev,
 				   uint32_t dev_config);
 typedef int (*i2c_api_full_io_t)(struct device *dev,
@@ -114,6 +137,9 @@ struct i2c_driver_api {
 	i2c_api_suspend_t suspend;
 	i2c_api_resume_t resume;
 };
+/**
+ * @endcond
+ */
 
 /**
  * @brief Configure operation of a host controller.
