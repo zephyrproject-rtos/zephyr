@@ -114,7 +114,7 @@ struct _k_mbox_struct {
 	struct k_args *readers;
 	int count;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-	struct _k_mbox_struct *next;
+	struct _k_mbox_struct *__next;
 #endif
 };
 
@@ -127,7 +127,7 @@ struct _k_mutex_struct {
 	int count;
 	int num_conflicts;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-	struct _k_mutex_struct *next;
+	struct _k_mutex_struct *__next;
 #endif
 };
 
@@ -140,7 +140,7 @@ struct _k_sem_struct {
 	int level;
 	int count;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-	struct _k_sem_struct *next;
+	struct _k_sem_struct *__next;
 #endif
 } __aligned(4);
 
@@ -156,7 +156,7 @@ struct _k_fifo_struct {
 	int high_watermark;
 	int count;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-	struct _k_fifo_struct *next;
+	struct _k_fifo_struct *__next;
 #endif
 };
 
@@ -220,7 +220,7 @@ struct _k_pipe_struct {
 	struct _k_pipe_desc desc;
 	int count;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-	struct _k_pipe_struct *next;
+	struct _k_pipe_struct *__next;
 #endif
 };
 
@@ -236,7 +236,7 @@ struct _k_mem_map_struct {
 	int high_watermark;
 	int count;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-	struct _k_mem_map_struct *next;
+	struct _k_mem_map_struct *__next;
 #endif
 };
 
@@ -251,20 +251,6 @@ struct _k_event_struct {
 	int count;
 } __aligned(4);
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-struct _k_mbox_struct *_track_list_micro_mbox;
-
-struct _k_mutex_struct *_track_list_micro_mutex;
-
-struct _k_sem_struct *_track_list_micro_sem;
-
-struct _k_fifo_struct *_track_list_micro_fifo;
-
-struct _k_pipe_struct *_track_list_micro_pipe;
-
-struct _k_mem_map_struct *_track_list_micro_mem_map;
-#endif
-
 /**
  * @endcond
  */
@@ -274,7 +260,6 @@ typedef enum {
 	_1_TO_N = 0x00000002,
 	_ALL_N = 0x00000004
 } K_PIPE_OPTION;
-
 
 #ifdef __cplusplus
 }

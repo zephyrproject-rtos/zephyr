@@ -17,6 +17,7 @@
  */
 
 #include <nano_private.h>
+#include <misc/debug/object_tracing_common.h>
 
 struct nano_timer *_nano_timer_list;
 
@@ -25,7 +26,7 @@ void nano_timer_init(struct nano_timer *timer, void *data)
 {
 	nano_lifo_init(&timer->lifo);
 	timer->userData = data;
-	DEBUG_TRACING_OBJ_INIT(struct nano_timer *, timer, _track_list_nano_timer);
+	SYS_TRACING_OBJ_INIT(nano_timer, timer);
 }
 
 

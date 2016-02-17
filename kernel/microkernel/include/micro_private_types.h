@@ -402,10 +402,6 @@ struct pool_struct {
 #endif
 };
 
-#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-struct pool_struct *_track_list_micro_mem_pool;
-#endif
-
 #ifdef __cplusplus
 }
 #endif

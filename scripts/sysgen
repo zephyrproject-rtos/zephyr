@@ -254,6 +254,7 @@ def kernel_main_c_header():
         do_not_edit_warning +
         "\n" +
         "#include <sysgen.h>\n" +
+        "#include <misc/debug/object_tracing_common.h>\n" +
         "#include <micro_private_types.h>\n" +
         "#include <kernel_main.h>\n" +
         "#include <toolchain.h>\n" +
@@ -716,39 +717,39 @@ def kernel_main_c_node_init():
     # mutex object ids
     for mutex in mutex_list:
         name = mutex[0]
-        kernel_main_c_out("\tDEBUG_TRACING_OBJ_INIT(struct _k_mutex_struct *, " +
-            "(&_k_mutex_obj_%s), _track_list_micro_mutex);\n" % (name))
+        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_mutex, " +
+            "&_k_mutex_obj_%s);\n" % (name))
     # semaphore object ids
     for semaphore in sema_list:
         name = semaphore[0]
-        kernel_main_c_out("\tDEBUG_TRACING_OBJ_INIT(struct _k_sem_struct *, " +
-            "(&_k_sem_obj_%s), _track_list_micro_sem);\n" % (name))
+        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_sem, " +
+            "&_k_sem_obj_%s);\n" % (name))
     # fifo object ids
     for fifo in fifo_list:
         name = fifo[0]
-        kernel_main_c_out("\tDEBUG_TRACING_OBJ_INIT(struct _k_fifo_struct *, " +
-            "(&_k_fifo_obj_%s), _track_list_micro_fifo);\n" % (name))
+        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_fifo, " +
+            "&_k_fifo_obj_%s);\n" % (name))
     # mailbox object ids
     for mbx in mbx_list:
         name = mbx[0]
-        kernel_main_c_out("\tDEBUG_TRACING_OBJ_INIT(struct _k_mbox_struct *, " +
-            "(&_k_mbox_obj_%s), _track_list_micro_mbox);\n" % (name))
+        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_mbox, " +
+            "&_k_mbox_obj_%s);\n" % (name))
     # pipe object id
     for pipe in pipe_list:
         name = pipe[0];
-        kernel_main_c_out("\tDEBUG_TRACING_OBJ_INIT(struct _k_pipe_struct *, " +
-            "(&_k_pipe_obj_%s), _track_list_micro_pipe);\n" % (name))
+        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_pipe, " +
+            "&_k_pipe_obj_%s);\n" % (name))
     # memory map object id
     for map in map_list:
         name = map[0];
-        kernel_main_c_out("\tDEBUG_TRACING_OBJ_INIT(struct _k_mem_map_struct *, " +
-            "(&_k_mem_map_obj_%s), _track_list_micro_mem_map);\n" % (name))
+        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_mem_map, " +
+            "&_k_mem_map_obj_%s);\n" % (name))
     # memory pool object id
     pool_count = 0;
     total_pools = len(pool_list);
     while (pool_count < total_pools):
-        kernel_main_c_out("\tDEBUG_TRACING_OBJ_INIT(struct pool_struct *, " +
-            "(&(_k_mem_pool_list[%d])), _track_list_micro_mem_pool);\n" % (pool_count))
+        kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_mem_pool, " +
+            "&(_k_mem_pool_list[%d]));\n" % (pool_count))
         pool_count = pool_count + 1;
     kernel_main_c_out("#endif\n")
 

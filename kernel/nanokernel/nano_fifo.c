@@ -35,6 +35,7 @@
  */
 
 #include <nano_private.h>
+#include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>
@@ -66,7 +67,7 @@ void nano_fifo_init(struct nano_fifo *fifo)
 
 	fifo->stat = 0;
 
-	DEBUG_TRACING_OBJ_INIT(struct nano_fifo *, fifo, _track_list_nano_fifo);
+	SYS_TRACING_OBJ_INIT(nano_fifo, fifo);
 }
 
 FUNC_ALIAS(_fifo_put_non_preemptible, nano_isr_fifo_put, void);

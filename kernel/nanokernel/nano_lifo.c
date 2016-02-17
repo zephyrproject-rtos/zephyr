@@ -34,6 +34,7 @@
  */
 
 #include <nano_private.h>
+#include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>
@@ -48,7 +49,7 @@ void nano_lifo_init(struct nano_lifo *lifo)
 {
 	lifo->list = (void *) 0;
 	_nano_wait_q_init(&lifo->wait_q);
-	DEBUG_TRACING_OBJ_INIT(struct nano_lifo *, lifo, _track_list_nano_lifo);
+	SYS_TRACING_OBJ_INIT(nano_lifo, lifo);
 }
 
 FUNC_ALIAS(_lifo_put_non_preemptible, nano_isr_lifo_put, void);
