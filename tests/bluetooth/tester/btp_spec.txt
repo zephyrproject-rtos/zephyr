@@ -573,7 +573,8 @@ Commands and responses:
 			3	Write with Encryption
 			4	Read with Authentication
 			5	Write with Authentication
-			6	Authorization
+			6	Read with Authorization
+			7	Write with Authorization
 
 		This command is used to add new characteristic to GATT Server.
 		Characteristic ID of characteristic declaration is returned in
