@@ -107,10 +107,12 @@ extern "C" {
 
 static inline int pci_pin2irq(int bus, int dev, int pin)
 {
-	if (bus < 0 || bus > 1)
+	if (bus < 0 || bus > 1) {
 		return -1;
-	if ((pin < PCI_INTA) || (pin > PCI_INTD))
+	}
+	if ((pin < PCI_INTA) || (pin > PCI_INTD)) {
 		return -1;
+	}
 	return NUM_STD_IRQS + ((pin - 1 + bus) & 3);
 }
 

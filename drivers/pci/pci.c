@@ -398,8 +398,9 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 			pci_ctrl_addr.field.bus = lookup.bus;
 			pci_ctrl_addr.field.device = lookup.dev;
 
-			if (pci_dev_scan(pci_ctrl_addr, dev_info))
+			if (pci_dev_scan(pci_ctrl_addr, dev_info)) {
 				return 1;
+			}
 
 			if (lookup.info.function != PCI_FUNCTION_ANY) {
 				lookup.func = lookup.info.function;
