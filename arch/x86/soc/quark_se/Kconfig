@@ -118,8 +118,6 @@ config GPIO_QMSI
 if GPIO_QMSI
 config GPIO_QMSI_0
 	def_bool n
-config GPIO_QMSI_0_NAME
-	default "gpio_0"
 config GPIO_QMSI_0_IRQ
 	default 8
 config GPIO_QMSI_0_PRI
