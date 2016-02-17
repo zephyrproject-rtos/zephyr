@@ -132,7 +132,40 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
-	return -ENOSYS;
+	struct nble_gap_disconnect_req_params req;
+
+	switch (conn->state) {
+	case BT_CONN_CONNECT:
+		/* TODO: Cancel connecting */
+		return 0;
+	case BT_CONN_CONNECTED:
+		break;
+	case BT_CONN_DISCONNECT:
+		BT_ERR("Disconnecting already");
+		return -EBUSY;
+	default:
+		return -ENOTCONN;
+	}
+
+	/* Handle disconnect */
+	req.conn_handle = conn->handle;
+	req.reason = reason;
+
+	conn->state = BT_CONN_DISCONNECT;
+
+	nble_gap_disconnect_req(&req, conn);
+
+	return 0;
+}
+
+void on_nble_gap_disconnect_rsp(const struct nble_response *rsp)
+{
+	if (rsp->status) {
+		BT_ERR("Disconnect failed, status %d", rsp->status);
+		return;
+	}
+
+	BT_DBG("conn %p", rsp->user_data);
 }
 
 static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
