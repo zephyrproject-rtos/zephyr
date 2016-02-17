@@ -50,6 +50,8 @@ source "drivers/sensor/Kconfig.hdc1008"
 
 source "drivers/sensor/Kconfig.isl29035"
 
+source "drivers/sensor/Kconfig.bmc150_magn"
+
 source "drivers/sensor/Kconfig.mcp9808"
 
 source "drivers/sensor/Kconfig.sht3xd"
