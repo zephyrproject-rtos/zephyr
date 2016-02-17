@@ -312,6 +312,7 @@ Commands and responses:
 					0 = LE scan
 					1 = BR/EDR scan
 					2 = Use limited discovery procedure
+					3 = Use active scan type
 
 		This command is used to start discovery.
 

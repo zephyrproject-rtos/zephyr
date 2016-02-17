@@ -167,9 +167,10 @@ struct gap_stop_advertising_rp {
 	uint32_t current_settings;
 } __packed;
 
-#define GAP_DISCOVERY_FLAG_LE		0x01
-#define GAP_DISCOVERY_FLAG_BREDR	0x02
-#define GAP_DISCOVERY_FLAG_LIMITED	0x04
+#define GAP_DISCOVERY_FLAG_LE			0x01
+#define GAP_DISCOVERY_FLAG_BREDR		0x02
+#define GAP_DISCOVERY_FLAG_LIMITED		0x04
+#define GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN	0x08
 
 #define GAP_START_DISCOVERY		0x0c
 struct gap_start_discovery_cmd {

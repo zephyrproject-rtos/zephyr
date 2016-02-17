@@ -280,12 +280,14 @@ static void start_discovery(const uint8_t *data, uint16_t len)
 	uint8_t status;
 
 	/* only LE scan is supported */
-	if (cmd->flags & (~GAP_DISCOVERY_FLAG_LE)) {
+	if (cmd->flags & GAP_DISCOVERY_FLAG_BREDR) {
 		status = BTP_STATUS_FAILED;
 		goto reply;
 	}
 
-	if (bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found) < 0) {
+	if (bt_le_scan_start(cmd->flags & GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN ?
+			     BT_LE_SCAN_ACTIVE : BT_LE_SCAN_PASSIVE,
+			     device_found) < 0) {
 		status = BTP_STATUS_FAILED;
 		goto reply;
 	}
