@@ -200,6 +200,8 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	/* Disable timeout */
 	req.scan_params.timeout = 0;
 
+	conn->state = BT_CONN_CONNECT;
+
 	nble_gap_connect_req(&req, conn);
 
 	return conn;
@@ -306,6 +308,8 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 	conn->timeout = ev->conn_values.supervision_to;
 	bt_addr_le_copy(&conn->dst, &ev->peer_bda);
 
+	conn->state = BT_CONN_CONNECTED;
+
 	notify_connected(conn);
 }
 
@@ -320,6 +324,8 @@ void on_nble_gap_disconnect_evt(const struct nble_gap_disconnect_evt *ev)
 	}
 
 	BT_DBG("conn %p handle %u", conn, ev->conn_handle);
+
+	conn->state = BT_CONN_DISCONNECTED;
 
 	notify_disconnected(conn);
 

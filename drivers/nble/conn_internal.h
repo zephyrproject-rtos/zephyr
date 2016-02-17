@@ -24,4 +24,11 @@ struct bt_conn {
 	uint16_t interval;
 	uint16_t latency;
 	uint16_t timeout;
+
+	enum {
+		BT_CONN_DISCONNECTED,
+		BT_CONN_CONNECT,
+		BT_CONN_CONNECTED,
+		BT_CONN_DISCONNECT,
+	} state;
 };
