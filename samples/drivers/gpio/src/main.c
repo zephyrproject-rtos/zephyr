@@ -90,6 +90,22 @@
  *     Toggling GPIO_25
  *     GPIO_27 triggered
  * "
+ *
+ * Quark D2000 CRB
+ * ---------------
+ *
+ * In order to this sample app work with Quark D2000 CRB you should
+ * use a "jumper cable" connecting the pins as described below:
+ * Header J5 pin 9
+ * Header J6 pin 7
+ *
+ * If the app runs successfully you should see this repeatedly on
+ * console:
+ * "
+ * Toggling GPIO_8
+ * Toggling GPIO_8
+ * GPIO_24 triggered
+ * "
  */
 
 #include <zephyr.h>
@@ -119,6 +135,10 @@
 #elif defined(CONFIG_SOC_ATMEL_SAM3)
 #define GPIO_OUT_PIN	25
 #define GPIO_INT_PIN	27
+#define GPIO_NAME	"GPIO_"
+#elif defined(CONFIG_SOC_QUARK_D2000)
+#define GPIO_OUT_PIN	8
+#define GPIO_INT_PIN	24
 #define GPIO_NAME	"GPIO_"
 #endif
 
