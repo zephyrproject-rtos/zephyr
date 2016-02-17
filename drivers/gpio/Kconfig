@@ -115,39 +115,32 @@ config GPIO_DW_0_NAME
 config GPIO_DW_0_BASE_ADDR
        hex "Controller base address"
        depends on GPIO_DW_0
-       default 0x00000000
 
 config	GPIO_DW_0_BUS
 	int "Port 0 PCI Bus"
 	depends on GPIO_DW_0 && PCI
-	default 0
 
 config	GPIO_DW_0_DEV
 	int "Port 0 PCI Dev"
 	depends on GPIO_DW_0 && PCI
-	default 0
 
 config  GPIO_DW_0_FUNCTION
 	int "PCI function number"
 	depends on GPIO_DW_0 && PCI
-	default 0
 
 config  GPIO_DW_0_BAR
 	int "PCI BAR slot"
 	depends on GPIO_DW_0 && PCI
-	default 0
 
 config GPIO_DW_0_BITS
        int "number of pins controlled"
        depends on GPIO_DW_0
-       default 32
        help
        Number of pins controlled by controller
 
 config GPIO_DW_0_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_0
-	default 0
 
 choice
 	prompt "Port 0 Interrupts via"
@@ -207,14 +200,12 @@ config GPIO_DW_0_IRQ_SHARED_NAME
 config GPIO_DW_0_IRQ
        int "Controller interrupt number"
        depends on GPIO_DW_0 && GPIO_DW_0_IRQ_DIRECT
-       default 0
        help
        IRQ number for the controller
 
 config GPIO_DW_0_PRI
        int "Controller interrupt priority"
        depends on GPIO_DW_0 && GPIO_DW_0_IRQ_DIRECT
-       default 2
        help
        IRQ priority
 
@@ -233,19 +224,16 @@ config GPIO_DW_1_NAME
 config GPIO_DW_1_BASE_ADDR
        hex "Controller base address"
        depends on GPIO_DW_1
-       default 0x00000000
 
 config GPIO_DW_1_BITS
        int "number of pins controlled"
        depends on GPIO_DW_1
-       default 32
        help
        Number of pins controlled by controller
 
 config GPIO_DW_1_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_1
-	default 0
 
 choice
 	prompt "Port 1 Interrupts via"
@@ -278,14 +266,12 @@ config GPIO_DW_1_IRQ_SHARED_NAME
 config GPIO_DW_1_IRQ
        int "Controller interrupt number"
        depends on GPIO_DW_1 && GPIO_DW_1_IRQ_DIRECT
-       default 0
        help
        IRQ number for the controller
 
 config GPIO_DW_1_PRI
        int "Controller interrupt priority"
        depends on GPIO_DW_1 && GPIO_DW_1_IRQ_DIRECT
-       default 2
        help
        IRQ priority
 
@@ -356,7 +342,6 @@ config GPIO_PCAL9535A_0_DEV_NAME
 config GPIO_PCAL9535A_0_I2C_ADDR
 	hex "PCAL9535A GPIO chip #0 I2C slave address"
 	depends on GPIO_PCAL9535A_0
-	default 0x0
 	help
 	  Specify the I2C slave address for the PCAL9535A I2C-based GPIO chip #0.
 
@@ -385,7 +370,6 @@ config GPIO_PCAL9535A_1_DEV_NAME
 config GPIO_PCAL9535A_1_I2C_ADDR
 	hex "PCAL9535A GPIO chip #1 I2C slave address"
 	depends on GPIO_PCAL9535A_1
-	default 0x0
 	help
 	  Specify the I2C slave address for the PCAL9535A I2C-based GPIO chip #1.
 
@@ -414,7 +398,6 @@ config GPIO_PCAL9535A_2_DEV_NAME
 config GPIO_PCAL9535A_2_I2C_ADDR
 	hex "PCAL9535A GPIO chip #2 I2C slave address"
 	depends on GPIO_PCAL9535A_2
-	default 0x0
 	help
 	  Specify the I2C slave address for the PCAL9535A I2C-based GPIO chip #2.
 
@@ -443,7 +426,6 @@ config GPIO_PCAL9535A_3_DEV_NAME
 config GPIO_PCAL9535A_3_I2C_ADDR
 	hex "PCAL9535A GPIO chip #3 I2C slave address"
 	depends on GPIO_PCAL9535A_3
-	default 0x0
 	help
 	  Specify the I2C slave address for the PCAL9535A I2C-based GPIO chip #3.
 
@@ -622,14 +604,12 @@ config GPIO_QMSI_0_NAME
 config GPIO_QMSI_0_IRQ
 	int "Controller interrupt number"
 	depends on GPIO_QMSI_0
-	default 0
 	help
 	  IRQ number for the controller
 
 config GPIO_QMSI_0_PRI
 	int "Controller interrupt priority"
 	depends on GPIO_QMSI_0
-	default 2
 	help
 	  IRQ priority
 
@@ -648,14 +628,12 @@ config GPIO_QMSI_AON_NAME
 config GPIO_QMSI_AON_IRQ
 	int "Controller interrupt number"
 	depends on GPIO_QMSI_AON
-	default 0
 	help
 	  IRQ number for the controller
 
 config GPIO_QMSI_AON_PRI
 	int "Controller interrupt priority"
 	depends on GPIO_QMSI_AON
-	default 2
 	help
 	  IRQ priority
 
@@ -694,14 +672,12 @@ config GPIO_SCH_0_DEV_NAME
 config GPIO_SCH_0_BASE_ADDR
 	hex "SCH GPIO base address"
 	depends on GPIO_SCH_0
-	default 0x0
 	help
 	  The memory address where the memory mapped registers are found
 
 config GPIO_SCH_0_BITS
 	int "Total of GPIO pins controlled"
 	depends on GPIO_SCH_0
-	default 0
 	help
 	  The total of pins the controller can manage (CPU dependent)
 
@@ -718,14 +694,12 @@ config GPIO_SCH_1_DEV_NAME
 config GPIO_SCH_1_BASE_ADDR
 	hex "SCH GPIO base address"
 	depends on GPIO_SCH_1
-	default 0x0
 	help
 	  The memory address where the memory mapped registers are found
 
 config GPIO_SCH_1_BITS
 	int "Total of GPIO pins controlled"
 	depends on GPIO_SCH_1
-	default 0
 	help
 	  The total of pins the controller can manage (CPU dependent)
 
