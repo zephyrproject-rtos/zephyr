@@ -29,6 +29,7 @@ extern "C" {
 #include <misc/util.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
+#include <bluetooth/att.h>
 
 /* GATT attribute permission bit field values */
 
