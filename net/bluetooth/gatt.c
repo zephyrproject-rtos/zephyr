@@ -316,11 +316,11 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	size_t i;
 
 	if (offset > sizeof(*data)) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	if (offset + len > sizeof(*data)) {
-		return -EFBIG;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	if (bt_keys_find_addr(&conn->le.dst))
@@ -348,7 +348,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 
 		if (i == ccc->cfg_len) {
 			BT_WARN("No space to store CCC cfg");
-			return -ENOMEM;
+			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 		}
 	}
 

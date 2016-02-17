@@ -301,7 +301,7 @@ int bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint16_t len, uint16_t offset)
 {
-	return -ENOSYS;
+	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 }
 
 int bt_gatt_attr_write_ccc(struct bt_conn *conn,
@@ -312,11 +312,11 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	const uint16_t *data = buf;
 
 	if (offset > sizeof(*data)) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	if (offset + len > sizeof(*data)) {
-		return -EFBIG;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	/* We expect to receive this only when the has really changed */
@@ -346,14 +346,14 @@ int bt_gatt_attr_read_cud(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint16_t len, uint16_t offset)
 {
-	return -ENOSYS;
+	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 }
 
 int bt_gatt_attr_read_cpf(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint16_t len, uint16_t offset)
 {
-	return -ENOSYS;
+	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 }
 
 int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,

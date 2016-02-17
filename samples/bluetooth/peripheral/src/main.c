@@ -141,7 +141,7 @@ static int write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	uint8_t *value = attr->user_data;
 
 	if (offset + len > sizeof(ct)) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	memcpy(value + offset, buf, len);
@@ -198,7 +198,7 @@ static int write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	uint8_t *value = attr->user_data;
 
 	if (offset + len > sizeof(vnd_value)) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	memcpy(value + offset, buf, len);
@@ -233,7 +233,7 @@ static int write_long_vnd(struct bt_conn *conn,
 	struct vnd_long_value *value = attr->user_data;
 
 	if (offset + len > sizeof(value->buf)) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	/* Copy to buffer */
@@ -258,7 +258,7 @@ static int flush_long_vnd(struct bt_conn *conn,
 		return 0;
 	}
 
-	return -EINVAL;
+	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
 static const struct bt_uuid_128 vnd_long_uuid = BT_UUID_INIT_128(
@@ -286,7 +286,7 @@ static int write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	uint8_t *value = attr->user_data;
 
 	if (offset + len > sizeof(signed_value)) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	memcpy(value + offset, buf, len);

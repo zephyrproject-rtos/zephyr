@@ -238,12 +238,11 @@ static int write_ctrl_point(struct bt_conn *conn,
 	int i;
 
 	if (!ctrl_point_configured) {
-		/* TODO: Return CSC_ERR_CCC_CONFIG */
-		return -EINVAL;
+		return BT_GATT_ERR(CSC_ERR_CCC_CONFIG);
 	}
 
 	if (!len) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	switch (req->op) {

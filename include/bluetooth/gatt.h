@@ -88,6 +88,17 @@ extern "C" {
  */
 #define BT_GATT_FLUSH_SYNC			0x01
 
+/**  @def BT_GATT_ERR
+  *  @brief Construct error return value for attribute read, write and
+  *         flush callbacks.
+  *
+  *  @param _att_err ATT error code
+  *
+  *  @return Appropriate error code for the attribute callbacks.
+  *
+  */
+#define BT_GATT_ERR(_att_err)                  (-(_att_err))
+
 /** @brief GATT Attribute structure. */
 struct bt_gatt_attr {
 	/** Attribute UUID */

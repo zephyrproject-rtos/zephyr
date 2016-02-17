@@ -328,15 +328,16 @@ static int write_temp_trigger_setting(struct bt_conn *conn,
 				      uint16_t offset)
 {
 	const struct write_es_trigger_setting_req *req = buf;
+	const struct es_trigger_setting_reference *ref;
 	struct temperature_sensor *sensor = attr->user_data;
+	uint16_t ref_val;
 
 	if (!len) {
-		return -EFBIG;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	if (req->condition > 0x09) {
-		/* TODO: Return ESS_ERR_COND_NOT_SUPP */
-		return -EINVAL;
+		return BT_GATT_ERR(ESS_ERR_COND_NOT_SUPP);
 	}
 
 	switch (req->condition) {
@@ -345,7 +346,7 @@ static int write_temp_trigger_setting(struct bt_conn *conn,
 		/* fallthrough */
 	case ESS_VALUE_CHANGED:
 		if (len != sizeof(sensor->condition)) {
-			return -EINVAL;
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
 		sensor->condition = req->condition;
@@ -355,30 +356,28 @@ static int write_temp_trigger_setting(struct bt_conn *conn,
 		/* fallthrough */
 	case ESS_NO_LESS_THAN_SPECIFIED_TIME:
 		if (len != sizeof(struct es_trigger_setting_seconds)) {
-			return -EINVAL;
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
 		sensor->condition = req->condition;
 		sensor->seconds = le24_to_int(req->operand);
 		break;
 	/* Reference temperature */
-	default: {
-			const struct es_trigger_setting_reference *req = buf;
-			uint16_t ref_val = sys_le16_to_cpu(req->ref_val);
-
-			if (len != sizeof(*req)) {
-				return -EINVAL;
-			}
-
-			if (sensor->lower_limit > ref_val ||
-			    sensor->upper_limit < ref_val) {
-				/* TODO: Return ERR_OUT_OF_RANGE */
-				return -EINVAL;
-			}
-
-			sensor->condition = req->condition;
-			sensor->ref_val = ref_val;
+	default:
+		if (len != sizeof(*ref)) {
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
+
+		ref = buf;
+		ref_val = sys_le16_to_cpu(ref->ref_val);
+
+		if (sensor->lower_limit > ref_val ||
+		    sensor->upper_limit < ref_val) {
+			return BT_GATT_ERR(BT_ATT_ERR_OUT_OF_RANGE);
+		}
+
+		sensor->condition = req->condition;
+		sensor->ref_val = ref_val;
 	}
 
 	return len;

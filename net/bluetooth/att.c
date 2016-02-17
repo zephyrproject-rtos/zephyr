@@ -571,16 +571,11 @@ static uint8_t err_to_att(int err)
 {
 	BT_DBG("%d", err);
 
-	switch (err) {
-	case -EINVAL:
-		return BT_ATT_ERR_INVALID_OFFSET;
-	case -EFBIG:
-		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
-	case -EACCES:
-		return BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
-	default:
-		return BT_ATT_ERR_UNLIKELY;
+	if (err < 0 && err >= -0xff) {
+		return -err;
 	}
+
+	return BT_ATT_ERR_UNLIKELY;
 }
 
 struct read_type_data {

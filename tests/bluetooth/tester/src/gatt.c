@@ -231,7 +231,7 @@ static int read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	if ((attr->perm & GATT_PERM_ENC_READ_MASK) &&
 	    (value->enc_key_size > bt_conn_enc_key_size(conn))) {
-		return -EACCES;
+		return BT_GATT_ERR(BT_ATT_ERR_ENCRYPTION_KEY_SIZE);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value->data,
@@ -245,7 +245,7 @@ static int write_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	if ((attr->perm & GATT_PERM_ENC_WRITE_MASK) &&
 	    (value->enc_key_size > bt_conn_enc_key_size(conn))) {
-		return -EACCES;
+		return BT_GATT_ERR(BT_ATT_ERR_ENCRYPTION_KEY_SIZE);
 	}
 
 	/*
@@ -254,11 +254,11 @@ static int write_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	 * «Invalid Offset».
 	 */
 	if (offset > value->len) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	if (offset + len > value->len) {
-		return -EFBIG;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	memcpy(value->prep_data + offset, buf, len);
@@ -281,7 +281,7 @@ static int flush_value(struct bt_conn *conn,
 		return 0;
 	}
 
-	return -EINVAL;
+	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
 static struct bt_gatt_attr chr = BT_GATT_CHARACTERISTIC(NULL, 0);
