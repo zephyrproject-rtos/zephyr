@@ -1,4 +1,4 @@
-/* ipsp.c - IPSP sample application */
+/* ipss.c - IP Support Service sample */
 
 /*
  * Copyright (c) 2015 Intel Corporation
