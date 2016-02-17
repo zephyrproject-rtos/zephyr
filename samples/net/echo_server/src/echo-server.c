@@ -35,7 +35,7 @@
 #include <contiki/ip/uip.h>
 #include <contiki/ipv6/uip-ds6.h>
 
-#ifndef CONFIG_ETHERNET
+#if !defined(CONFIG_ETHERNET)
 /* The peer is the client in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
@@ -47,7 +47,7 @@ static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
 static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 #endif
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
 #define MY_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x1 } } }
 #define PEER_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
@@ -70,11 +70,11 @@ static inline void init_server()
 {
 	PRINT("%s: run echo server\n", __func__);
 
-#ifndef CONFIG_ETHERNET
+#if !defined(CONFIG_ETHERNET)
 	net_set_mac(my_mac, sizeof(my_mac));
 #endif
 
-#ifdef CONFIG_NETWORKING_WITH_IPV4
+#if defined(CONFIG_NETWORKING_WITH_IPV4)
 	{
 		uip_ipaddr_t addr;
 		uip_ipaddr(&addr, 192,0,2,2);
@@ -84,7 +84,7 @@ static inline void init_server()
 	{
 		uip_ipaddr_t *addr;
 
-#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
 		/* Set the routes and neighbor cache only if we do not have
 		 * neighbor discovery enabled. This setting should only be
 		 * used if running in qemu and using slip (tun device).
@@ -138,7 +138,7 @@ static inline struct net_buf *prepare_reply(const char *name,
 	 */
 	reverse(ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
-#ifndef CONFIG_ETHERNET
+#if !defined(CONFIG_ETHERNET)
 	/* Set the mac address of the peer in net_buf because
 	 * there is no radio layer involved in this test app.
 	 * Normally there is no need to do this.
@@ -190,7 +190,7 @@ static inline bool get_context(struct net_context **recv,
 	static struct net_addr any_addr;
 	static struct net_addr my_addr;
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 	static const struct in6_addr in6addr_mcast = MCAST_IPADDR;
 
@@ -237,7 +237,7 @@ static inline bool get_context(struct net_context **recv,
 	return true;
 }
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 2000
 char __noinit __stack fiberStack[STACKSIZE];
 #endif
@@ -263,7 +263,7 @@ void main(void)
 
 	init_server();
 
-#ifdef CONFIG_MICROKERNEL
+#if defined(CONFIG_MICROKERNEL)
 	receive();
 #else
 	task_fiber_start (&fiberStack[0], STACKSIZE,
