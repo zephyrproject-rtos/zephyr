@@ -140,7 +140,6 @@ Connecting JTAG to Arduino 101
 
 
 
-
 Making a Backup
 ===============
 
@@ -156,6 +155,13 @@ IDE. On the Arduino 101, this option is not currently functional.
 #. Confirm the Zephyr SDK has been installed on your platform.
 
 #. Open a terminal window.
+
+#. Verify the JTAG debugger is properly attached to the Arduino 101 board and
+   to the host computer.
+
+#. Connect the Arduino 101 to a power source.
+
+#. Open a terminal window
 
 #. Source the :file:`zephyr-env.sh` file.
 
@@ -183,6 +189,13 @@ Restoring a Backup
    environment.
 
 #. Open a terminal window.
+
+#. Verify the JTAG debugger is properly attached to the Arduino 101 board and
+   to the host computer.
+
+#. Connect the Arduino 101 to a power source.
+
+#. Open a terminal window
 
 #. Source the :file:`zephyr-env.sh` file.
 
@@ -233,6 +246,14 @@ needs to be flashed just once. To flash a Zephyr-compatible boot ROM, use
    bootloader can be found in the
    :file:`$ZEPHYR_BASE/boards/arduino_101/support/README`
 
+#. Verify the JTAG debugger is properly attached to the Arduino 101 board and
+   to the host computer.
+
+#. Connect the Arduino 101 to a power source.
+
+#. The Zephyr Project has included a pre-compiled version of a bootloader for
+   general use on the Arduino 101.  Details about how to build your own
+
    .. code-block:: console
 
       $ cd $ZEPHYR_BASE/boards/arduino_101/support
@@ -253,6 +274,10 @@ Flashing an ARC Kernel
      $ source ./zephyr-env.sh
      $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
      $ make pristine && make BOARD=arduino_101_sss ARCH=arc
+
+#. Verify the JTAG debugger is properly attached to the Arduino 101 board.
+
+#. Verify the Arduino 101 has power.
 
 #. Once the image has been built, flash it with:
 
@@ -280,6 +305,10 @@ Flashing an x86 Kernel
       $ source ./zephyr-env.sh
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
       $ make pristine && make BOARD=arduino_101 ARCH=x86
+
+#. Verify the JTAG debugger is properly attached to the Arduino 101 board.
+
+#. Verify the Arduino 101 has power.
 
 #. Once the image has been built, flash it with:
 
