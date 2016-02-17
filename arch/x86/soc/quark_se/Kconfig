@@ -217,6 +217,8 @@ config SPI_DW_PORT_0_REGS
 	default 0xb0001000
 config SPI_DW_PORT_0_IRQ
 	default 2
+config SPI_DW_PORT_0_PRI
+	default 2
 
 config SPI_DW_PORT_1
 	def_bool y
@@ -227,6 +229,8 @@ config SPI_DW_PORT_1_REGS
 	default 0xb0001400
 config SPI_DW_PORT_1_IRQ
 	default 3
+config SPI_DW_PORT_1_PRI
+	default 2
 endif # SPI_DW
 
 config SPI_QMSI
@@ -237,10 +241,14 @@ config SPI_QMSI_PORT_0
 	def_bool y
 config SPI_QMSI_PORT_0_IRQ
 	default 2
+config SPI_QMSI_PORT_0_PRI
+	default 2
 config SPI_QMSI_PORT_1
 	def_bool y
 config SPI_QMSI_PORT_1_IRQ
 	default 3
+config SPI_QMSI_PORT_1_PRI
+	default 2
 endif # SPI_QMSI
 endif
 

@@ -116,35 +116,29 @@ config  SPI_INTEL_PORT_0_DRV_NAME
 config	SPI_INTEL_PORT_0_BUS
 	int "Port 0 PCI Bus"
 	depends on SPI_INTEL_PORT_0 && PCI
-	default 0
 
 config  SPI_INTEL_PORT_0_DEV
 	int "Port 0 PCI Dev"
 	depends on SPI_INTEL_PORT_0 && PCI
-	default 0
 
 config  SPI_INTEL_PORT_0_FUNCTION
 	int "Port 0 PCI function"
 	depends on SPI_INTEL_PORT_0 && PCI
-	default 0
 
 config  SPI_INTEL_PORT_0_REGS
 	hex
 	prompt "Port 0 registers address"
 	depends on SPI_INTEL_PORT_0
-	default 0x00000000
 
 config  SPI_INTEL_PORT_0_IRQ
 	int
 	prompt "Port 0 interrupt"
 	depends on SPI_INTEL_PORT_0
-	default 0
 
 config  SPI_INTEL_PORT_0_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_INTEL_PORT_0
-	default 2
 
 config  SPI_INTEL_PORT_0_CS_GPIO_PORT
 	string
@@ -174,35 +168,29 @@ config  SPI_INTEL_PORT_1_DRV_NAME
 config	SPI_INTEL_PORT_1_BUS
 	int "Port 1 PCI Bus"
 	depends on SPI_INTEL_PORT_1 && PCI
-	default 0
 
 config  SPI_INTEL_PORT_1_DEV
 	int "Port 1 PCI Dev"
 	depends on SPI_INTEL_PORT_1 && PCI
-	default 0
 
 config  SPI_INTEL_PORT_1_FUNCTION
 	int "Port 1 PCI function"
 	depends on SPI_INTEL_PORT_1 && PCI
-	default 0
 
 config  SPI_INTEL_PORT_1_REGS
 	hex
 	prompt "Port 1 registers address"
 	depends on SPI_INTEL_PORT_1
-	default 0x00000000
 
 config  SPI_INTEL_PORT_1_IRQ
 	int
 	prompt "Port 1 interrupt"
 	depends on SPI_INTEL_PORT_1
-	default 0
 
 config  SPI_INTEL_PORT_1_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_INTEL_PORT_1
-	default 2
 
 config  SPI_INTEL_PORT_1_CS_GPIO_PORT
 	string
@@ -308,7 +296,6 @@ config	SPI_DW_PORT_0
 config  SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on SPI_DW_CLOCK_GATE
-	default 0
 
 config  SPI_DW_PORT_0_CS_GPIO_PORT
 	string
@@ -331,12 +318,10 @@ config  SPI_DW_PORT_0_REGS
 	hex
 	prompt "Port 0 registers address"
 	depends on SPI_DW_PORT_0
-	default 0x00000000
 
 config  SPI_DW_PORT_0_IRQ
 	int "Port 0 interrupt"
 	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SINGLE_LINE
-	default 0
 	help
 	  Interrupt number dedicated to the controller. Valid if only the
 	  controller routes all interrupt through a unique line.
@@ -344,7 +329,6 @@ config  SPI_DW_PORT_0_IRQ
 config SPI_DW_PORT_0_ERROR_IRQ
 	int "Port 0 ERROR Interrupt"
 	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	default 0
 	help
 	  Interrupt number dedicated to the ERROR interrupt only. RX and TX
 	  interrupt numbers need to be set as well.
@@ -352,7 +336,6 @@ config SPI_DW_PORT_0_ERROR_IRQ
 config SPI_DW_PORT_0_RX_IRQ
 	int "Port 0 RX Interrupt"
 	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	default 0
 	help
 	  Interrupt number dedicated to the RX interrupt only. TX and ERROR
 	  interrupt numbers need to be set as well.
@@ -360,7 +343,6 @@ config SPI_DW_PORT_0_RX_IRQ
 config SPI_DW_PORT_0_TX_IRQ
 	int "Port 0 TX Interrupt"
 	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	default 0
 	help
 	  Interrupt number dedicated to the TX interrupt only. RX and ERROR
 	  interrupt numbers need to be set as well.
@@ -369,7 +351,6 @@ config  SPI_DW_PORT_0_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_DW_PORT_0
-	default 2
 
 config  SPI_DW_PORT_1
 	bool
@@ -382,7 +363,6 @@ config  SPI_DW_PORT_1
 config  SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on SPI_DW_CLOCK_GATE
-	default 0
 
 config  SPI_DW_PORT_1_CS_GPIO_PORT
 	string
@@ -405,12 +385,10 @@ config  SPI_DW_PORT_1_REGS
 	hex
 	prompt "Port 1 registers address"
 	depends on SPI_DW_PORT_1
-	default 0x00000000
 
 config  SPI_DW_PORT_1_IRQ
 	int "Port 1 interrupt"
 	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SINGLE_LINE
-	default 0
 	help
 	  Interrupt number dedicated to the controller. Valid if only the
 	  controller routes all interrupt through a unique line.
@@ -418,7 +396,6 @@ config  SPI_DW_PORT_1_IRQ
 config SPI_DW_PORT_1_ERROR_IRQ
 	int "Port 1 ERROR Interrupt"
 	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	default 0
 	help
 	  Interrupt number dedicated to the ERROR interrupt only. RX and TX
 	  interrupt numbers need to be set as well.
@@ -426,7 +403,6 @@ config SPI_DW_PORT_1_ERROR_IRQ
 config SPI_DW_PORT_1_RX_IRQ
 	int "Port 1 RX Interrupt"
 	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	default 0
 	help
 	  Interrupt number dedicated to the RX interrupt only. TX and ERROR
 	  interrupt numbers need to be set as well.
@@ -434,7 +410,6 @@ config SPI_DW_PORT_1_RX_IRQ
 config SPI_DW_PORT_1_TX_IRQ
 	int "Port 1 TX Interrupt"
 	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	default 0
 	help
 	  Interrupt number dedicated to the TX interrupt only. RX and ERROR
 	  interrupt numbers need to be set as well.
@@ -443,7 +418,6 @@ config  SPI_DW_PORT_1_PRI
 	int
 	prompt "Port 1 interrupt priority"
 	depends on SPI_DW_PORT_1
-	default 2
 
 config	SPI_QMSI
 	bool "QMSI driver for SPI controller"
@@ -485,13 +459,11 @@ config  SPI_QMSI_PORT_0_IRQ
 	int
 	prompt "Port 0 interrupt"
 	depends on SPI_QMSI_PORT_0
-	default 0
 
 config  SPI_QMSI_PORT_0_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_QMSI_PORT_0
-	default 2
 
 config  SPI_QMSI_PORT_0_CS_GPIO_PORT
 	string
@@ -522,13 +494,11 @@ config  SPI_QMSI_PORT_1_IRQ
 	int
 	prompt "Port 1 interrupt"
 	depends on SPI_QMSI_PORT_1
-	default 0
 
 config  SPI_QMSI_PORT_1_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_QMSI_PORT_1
-	default 2
 
 config  SPI_QMSI_PORT_1_CS_GPIO_PORT
 	string
