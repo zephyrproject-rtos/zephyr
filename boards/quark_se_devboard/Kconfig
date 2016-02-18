@@ -14,7 +14,7 @@ config GPIO
 config TI_CC2520_SPI_DRV_NAME
 	default SPI_DW_PORT_1_DRV_NAME
 config TI_CC2520_SPI_FREQ
-	default 32
+	default 4
 config TI_CC2520_SPI_SLAVE
 	default 1
 
