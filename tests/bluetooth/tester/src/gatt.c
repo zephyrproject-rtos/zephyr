@@ -444,9 +444,9 @@ static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
 		goto fail;
 	}
 
-	if (!bt_uuid_cmp(&uuid.uuid, cep.uuid)) {
+	if (!bt_uuid_cmp(&uuid.uuid, BT_UUID_GATT_CEP)) {
 		attr_desc = add_cep(attr);
-	} else if (!bt_uuid_cmp(&uuid.uuid, ccc.uuid)) {
+	} else if (!bt_uuid_cmp(&uuid.uuid, BT_UUID_GATT_CCC)) {
 		attr_desc = add_ccc(attr);
 	} else {
 		attr_desc = gatt_db_add(dsc);
@@ -508,8 +508,8 @@ static uint8_t get_service_handles(const struct bt_gatt_attr *attr,
 	}
 
 	/* Stop if attribute is a service */
-	if (!bt_uuid_cmp(attr->uuid, svc_pri.uuid) ||
-	    !bt_uuid_cmp(attr->uuid, svc_sec.uuid)) {
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) ||
+	    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -527,8 +527,8 @@ static uint8_t add_included_cb(const struct bt_gatt_attr *attr, void *user_data)
 	struct bt_gatt_include include;
 
 	/* Fail if attribute stored under requested handle is not a service */
-	if (bt_uuid_cmp(attr->uuid, svc_pri.uuid) &&
-	    bt_uuid_cmp(attr->uuid, svc_sec.uuid)) {
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) &&
+	    bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
 		goto fail;
 	}
 
@@ -614,20 +614,20 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 	uint8_t status;
 
 	/* Handle CCC value */
-	if (!bt_uuid_cmp(attr->uuid, ccc.uuid)) {
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC)) {
 		status = set_ccc_value(attr, cmd->value,
 				       sys_le16_to_cpu(cmd->len));
 		goto rsp;
 	}
 
 	/* Set CEP value */
-	if (!bt_uuid_cmp(attr->uuid, cep.uuid)) {
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CEP)) {
 		status = set_cep_value(attr, cmd->value,
 				       sys_le16_to_cpu(cmd->len));
 		goto rsp;
 	}
 
-	if (!bt_uuid_cmp(attr->uuid, chr.uuid)) {
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
 		attr = bt_gatt_attr_next(attr);
 		if (!attr) {
 			status = BTP_STATUS_FAILED;
@@ -717,15 +717,15 @@ static uint8_t set_enc_key_size_cb(const struct bt_gatt_attr *attr,
 	}
 
 	/* Fail if requested attribute is a service */
-	if (!bt_uuid_cmp(attr->uuid, svc_pri.uuid) ||
-	    !bt_uuid_cmp(attr->uuid, svc_sec.uuid) ||
-	    !bt_uuid_cmp(attr->uuid, svc_inc.uuid)) {
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) ||
+	    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY) ||
+	    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_INCLUDE)) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}
 
 	/* Lookup for characteristic value attribute */
-	if (!bt_uuid_cmp(attr->uuid, chr.uuid)) {
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
 		attr = bt_gatt_attr_next(attr);
 		if (!attr) {
 			status = BTP_STATUS_FAILED;
