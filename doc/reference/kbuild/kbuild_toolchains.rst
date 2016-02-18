@@ -1,2 +1,0 @@
-.. _kbuild_toolchains:
-
