@@ -77,16 +77,43 @@ struct bt_l2cap_chan {
 
 /** @brief L2CAP Channel operations structure. */
 struct bt_l2cap_chan_ops {
-	/** Channel connected callback */
+	/** Channel connected callback
+	 *
+	 *  @param chan The channel that has been connected
+	 */
 	void			(*connected)(struct bt_l2cap_chan *chan);
-	/** Channel disconnected callback */
+
+	/** Channel disconnected callback
+	 *
+	 *  @param chan The channel that has been Disconnected
+	 */
 	void			(*disconnected)(struct bt_l2cap_chan *chan);
-	/** Channel encrypt_change callback */
+
+	/** Channel encrypt_change callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  security level changed.
+	 *
+	 *  @param chan The channel which has encryption status changed.
+	 */
 	void			(*encrypt_change)(struct bt_l2cap_chan *chan);
-	/** Channel get_buf callback */
+
+	/** Channel alloc_buf callback
+	 *
+	 *  If this callback is provided the channel will use it to allocate
+	 *  buffers to store incoming data.
+	 *
+	 *  @param chan The channel requesting a buffer.
+	 *
+	 *  @return Allocated buffer.
+	 */
 	struct net_buf		*(*alloc_buf)(struct bt_l2cap_chan *chan);
 
-	/** Channel recv callback */
+	/** Channel recv callback
+	 *
+	 *  @param chan The channel receiving data.
+	 *  @param buf Buffer containing incoming data.
+	 */
 	void			(*recv)(struct bt_l2cap_chan *chan,
 					struct net_buf *buf);
 };
@@ -103,7 +130,13 @@ struct bt_l2cap_server {
 	/** Server PSM */
 	uint16_t		psm;
 
-	/** Server accept callack */
+	/** Server accept callback
+	 *
+	 *  @param conn The connection that is requesting authorization
+	 *  @param chan Pointer to received the allocated channel
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 
 	struct bt_l2cap_server	*_next;
