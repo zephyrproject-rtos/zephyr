@@ -131,7 +131,7 @@ machine.
 Gerrit Commit Message Hook
 **************************
 
-.. include:: ../collaboration/code/gerrit_practices.rst
+.. include:: gerrit_practices.rst
    :start-line: 42
    :end-line: 49
 
