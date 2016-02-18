@@ -83,7 +83,8 @@ enum {
 	SMP_FLAG_PKEY_SEND,	/* if should send Public Key when available */
 	SMP_FLAG_DHKEY_PENDING,	/* if waiting for local DHKey */
 	SMP_FLAG_DHKEY_SEND,	/* if should generate and send DHKey Check */
-	SMP_FLAG_USER		/* if waiting for user input */
+	SMP_FLAG_USER,		/* if waiting for user input */
+	SMP_FLAG_BOND,		/* if bonding */
 };
 
 /* SMP channel specific context */
@@ -792,14 +793,15 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		struct bt_smp_encrypt_info *info;
 		struct bt_smp_master_ident *ident;
 		struct net_buf *buf;
+		uint8_t key[16];
+		uint64_t rand;
+		uint16_t ediv;
 
 		smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
 
-		bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
-
-		bt_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
-		bt_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
-		bt_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
+		bt_rand(key, sizeof(key));
+		bt_rand(&rand, sizeof(rand));
+		bt_rand(&ediv, sizeof(ediv));
 
 		buf = smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
 				     sizeof(*info));
@@ -811,7 +813,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		info = net_buf_add(buf, sizeof(*info));
 
 		/* distributed only enc_size bytes of key */
-		memcpy(info->ltk, keys->slave_ltk.val, keys->enc_size);
+		memcpy(info->ltk, key, keys->enc_size);
 		if (keys->enc_size < sizeof(info->ltk)) {
 			memset(info->ltk + keys->enc_size, 0,
 			       sizeof(info->ltk) - keys->enc_size);
@@ -827,10 +829,19 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		}
 
 		ident = net_buf_add(buf, sizeof(*ident));
-		ident->rand = keys->slave_ltk.rand;
-		ident->ediv = keys->slave_ltk.ediv;
+		ident->rand = rand;
+		ident->ediv = ediv;
 
 		smp_send(smp, buf);
+
+		if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+			bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
+
+			memcpy(keys->slave_ltk.val, key,
+			       sizeof(keys->slave_ltk.val));
+			keys->slave_ltk.rand = rand;
+			keys->slave_ltk.ediv = ediv;
+		}
 	}
 }
 #endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
@@ -859,11 +870,6 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 
 		smp->local_dist &= ~BT_SMP_DIST_SIGN;
 
-		bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
-
-		bt_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
-		keys->local_csrk.cnt = 0;
-
 		buf = smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
 				     sizeof(*info));
 		if (!buf) {
@@ -872,7 +878,14 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		}
 
 		info = net_buf_add(buf, sizeof(*info));
-		memcpy(info->csrk, keys->local_csrk.val, sizeof(info->csrk));
+
+		bt_rand(info->csrk, sizeof(info->csrk));
+
+		if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
+			memcpy(keys->local_csrk.val, info->csrk, 16);
+			keys->local_csrk.cnt = 0;
+		}
 
 		smp_send(smp, buf);
 	}
@@ -1126,20 +1139,23 @@ static void legacy_passkey_entry(struct bt_smp *smp, unsigned int passkey)
 
 static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 {
-	struct bt_conn *conn = smp->chan.conn;
-	struct bt_smp_encrypt_info *req = (void *)buf->data;
-	struct bt_keys *keys;
-
 	BT_DBG("");
 
-	keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
-	if (!keys) {
-		BT_ERR("Unable to get keys for %s",
-		       bt_addr_le_str(&conn->le.dst));
-		return BT_SMP_ERR_UNSPECIFIED;
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+		struct bt_smp_encrypt_info *req = (void *)buf->data;
+		struct bt_conn *conn = smp->chan.conn;
+		struct bt_keys *keys;
+
+		keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
+		if (!keys) {
+			BT_ERR("Unable to get keys for %s",
+			       bt_addr_le_str(&conn->le.dst));
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		memcpy(keys->ltk.val, req->ltk, 16);
 	}
 
-	memcpy(keys->ltk.val, req->ltk, 16);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
 
@@ -1149,22 +1165,25 @@ static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
-	struct bt_smp_master_ident *req = (void *)buf->data;
-	struct bt_keys *keys;
 
 	BT_DBG("");
 
-	keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
-	if (!keys) {
-		BT_ERR("Unable to get keys for %s",
-		       bt_addr_le_str(&conn->le.dst));
-		return BT_SMP_ERR_UNSPECIFIED;
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+		struct bt_smp_master_ident *req = (void *)buf->data;
+		struct bt_keys *keys;
+
+		keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
+		if (!keys) {
+			BT_ERR("Unable to get keys for %s",
+			       bt_addr_le_str(&conn->le.dst));
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		keys->ltk.ediv = req->ediv;
+		keys->ltk.rand = req->rand;
+
+		smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 	}
-
-	keys->ltk.ediv = req->ediv;
-	keys->ltk.rand = req->rand;
-
-	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
@@ -1385,6 +1404,11 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 	smp->method = get_pair_method(smp, req->io_capability);
 
+	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
+	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_BOND);
+	}
+
 #if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC) ||
 	    smp->method == JUST_WORKS) {
@@ -1516,6 +1540,11 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	if ((rsp->auth_req & BT_SMP_AUTH_SC) &&
 	    (req->auth_req & BT_SMP_AUTH_SC)) {
 		atomic_set_bit(&smp->flags, SMP_FLAG_SC);
+	}
+
+	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
+	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_BOND);
 	}
 
 	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
@@ -1946,20 +1975,22 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 #endif
 static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 {
-	struct bt_conn *conn = smp->chan.conn;
-	struct bt_smp_ident_info *req = (void *)buf->data;
-	struct bt_keys *keys;
-
 	BT_DBG("");
 
-	keys = bt_keys_get_type(BT_KEYS_IRK, &conn->le.dst);
-	if (!keys) {
-		BT_ERR("Unable to get keys for %s",
-		       bt_addr_le_str(&conn->le.dst));
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+		struct bt_smp_ident_info *req = (void *)buf->data;
+		struct bt_conn *conn = smp->chan.conn;
+		struct bt_keys *keys;
 
-	memcpy(keys->irk.val, req->irk, 16);
+		keys = bt_keys_get_type(BT_KEYS_IRK, &conn->le.dst);
+		if (!keys) {
+			BT_ERR("Unable to get keys for %s",
+			       bt_addr_le_str(&conn->le.dst));
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		memcpy(keys->irk.val, req->irk, 16);
+	}
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
 
@@ -1970,8 +2001,6 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
-	const bt_addr_le_t *dst;
-	struct bt_keys *keys;
 
 	BT_DBG("identity %s", bt_addr_le_str(&req->addr));
 
@@ -1981,37 +2010,45 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
-	keys = bt_keys_get_type(BT_KEYS_IRK, &conn->le.dst);
-	if (!keys) {
-		BT_ERR("Unable to get keys for %s",
-		       bt_addr_le_str(&conn->le.dst));
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+		const bt_addr_le_t *dst;
+		struct bt_keys *keys;
 
-	/* We can't use conn->dst here as this might already contain identity
-	 * address known from previous pairing. Since all keys are cleared on
-	 * re-pairing we wouldn't store IRK distributed in new pairing.
-	 */
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		dst = &conn->le.resp_addr;
-	} else {
-		dst = &conn->le.init_addr;
-	}
+		keys = bt_keys_get_type(BT_KEYS_IRK, &conn->le.dst);
+		if (!keys) {
+			BT_ERR("Unable to get keys for %s",
+			       bt_addr_le_str(&conn->le.dst));
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
 
-	if (bt_addr_le_is_rpa(dst)) {
-		/* always update last use RPA */
-		bt_addr_copy(&keys->irk.rpa, (bt_addr_t *)&dst->val);
-
-		/* Update connection address and notify about identity
-		 * resolved only if connection wasn't already reported with
-		 * identity address. This may happen if IRK was present before
-		 * ie. due to re-pairing.
+		/*
+		 * We can't use conn->dst here as this might already contain
+		 * identity address known from previous pairing. Since all keys
+		 * are cleared on re-pairing we wouldn't store IRK distributed
+		 * in new pairing.
 		 */
-		if (!bt_addr_le_is_identity(&conn->le.dst)) {
-			bt_addr_le_copy(&keys->addr, &req->addr);
-			bt_addr_le_copy(&conn->le.dst, &req->addr);
+		if (conn->role == BT_HCI_ROLE_MASTER) {
+			dst = &conn->le.resp_addr;
+		} else {
+			dst = &conn->le.init_addr;
+		}
 
-			bt_conn_identity_resolved(conn);
+		if (bt_addr_le_is_rpa(dst)) {
+			/* always update last use RPA */
+			bt_addr_copy(&keys->irk.rpa, (bt_addr_t *)&dst->val);
+
+			/*
+			 * Update connection address and notify about identity
+			 * resolved only if connection wasn't already reported
+			 * with identity address. This may happen if IRK was
+			 * present before ie. due to re-pairing.
+			 */
+			if (!bt_addr_le_is_identity(&conn->le.dst)) {
+				bt_addr_le_copy(&keys->addr, &req->addr);
+				bt_addr_le_copy(&conn->le.dst, &req->addr);
+
+				bt_conn_identity_resolved(conn);
+			}
 		}
 	}
 
@@ -2039,19 +2076,23 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.conn;
-	struct bt_smp_signing_info *req = (void *)buf->data;
-	struct bt_keys *keys;
 
 	BT_DBG("");
 
-	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, &conn->le.dst);
-	if (!keys) {
-		BT_ERR("Unable to get keys for %s",
-		       bt_addr_le_str(&conn->le.dst));
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+		struct bt_smp_signing_info *req = (void *)buf->data;
+		struct bt_keys *keys;
 
-	memcpy(keys->remote_csrk.val, req->csrk, sizeof(keys->remote_csrk.val));
+		keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, &conn->le.dst);
+		if (!keys) {
+			BT_ERR("Unable to get keys for %s",
+			       bt_addr_le_str(&conn->le.dst));
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		memcpy(keys->remote_csrk.val, req->csrk,
+		       sizeof(keys->remote_csrk.val));
+	}
 
 	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
 
@@ -2499,6 +2540,11 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 
 	if (smp->timeout) {
 		fiber_fiber_delayed_start_cancel(smp->timeout);
+	}
+
+	/* No keys indicate no bonding so free keys storage */
+	if (chan->conn->keys && !chan->conn->keys->keys) {
+		bt_keys_clear(chan->conn->keys, BT_KEYS_ALL);
 	}
 
 	memset(smp, 0, sizeof(*smp));
@@ -3198,7 +3244,8 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 * exclusive with legacy pairing. Other keys are added on keys
 	 * distribution.
 	 */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC) &&
+	    atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
 		bt_keys_add_type(conn->keys, BT_KEYS_LTK_P256);
 		memcpy(conn->keys->ltk.val, smp->tk,
 		       sizeof(conn->keys->ltk.val));
