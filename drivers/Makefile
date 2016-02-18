@@ -10,6 +10,7 @@ obj-$(CONFIG_PCI) += pci/
 obj-$(CONFIG_BLUETOOTH) += bluetooth/
 obj-$(CONFIG_SHARED_IRQ) += shared_irq/
 obj-$(CONFIG_SPI) += spi/
+obj-$(CONFIG_FLASH) += flash/
 obj-$(CONFIG_GPIO) += gpio/
 obj-$(CONFIG_I2C) += i2c/
 obj-$(CONFIG_PWM) += pwm/
