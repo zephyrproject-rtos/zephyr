@@ -103,20 +103,57 @@ extern "C" {
 struct bt_gatt_attr {
 	/** Attribute UUID */
 	const struct bt_uuid	*uuid;
-	/** Attribute read callback */
+
+	/** Attribute read callback
+	 *
+	 *  @param conn   The connection that is requesting to read
+	 *  @param attr   The attribute that's being read
+	 *  @param buf    Buffer to place the read result in
+	 *  @param len    Length of data to read
+	 *  @param offset Offset to start reading from
+	 *
+	 *  @return Number fo bytes read, or in case of an error
+	 *          BT_GATT_ERR() with a specific ATT error code.
+	 */
 	int			(*read)(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
 					void *buf, uint16_t len,
 					uint16_t offset);
-	/** Attribute write callback */
+
+	/** Attribute write callback
+	 *
+	 *  @param conn   The connection that is requesting to write
+	 *  @param attr   The attribute that's being read
+	 *  @param buf    Buffer with the data to write
+	 *  @param len    Number of bytes in the buffer
+	 *  @param offset Offset to start writing from
+	 *
+	 *  @return Number of bytes written, or in case of an error
+	 *          BT_GATT_ERR() with a specific ATT error code.
+	 */
 	int			(*write)(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 const void *buf, uint16_t len,
 					 uint16_t offset);
-	/** Attribute flush callback */
+
+	/** Attribute flush callback
+	 *
+	 *  If this callback is provided (non-NULL) every write
+	 *  operation will be followed by a call to it. The expectation
+	 *  is for the attribute implementation to only commit the write
+	 *  result once this is called.
+	 *
+	 *  @param conn   The connection that is requesting to write
+	 *  @param attr   The attribute that's being read
+	 *  @param flags  Flags (BT_GATT_FLUSH_*)
+	 *
+	 *  @return Number of bytes flushed, or in case of an error
+	 *          BT_GATT_ERR() with a specific ATT error code.
+	 */
 	int			(*flush)(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 uint8_t flags);
+
 	/** Attribute user data */
 	void			*user_data;
 	/** Attribute handle */
