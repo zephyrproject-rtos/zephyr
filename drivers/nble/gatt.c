@@ -390,6 +390,10 @@ int bt_gatt_discover(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	if (conn->gatt_discover) {
+		return -EBUSY;
+	}
+
 	switch (params->type) {
 	case BT_GATT_DISCOVER_PRIMARY:
 	case BT_GATT_DISCOVER_INCLUDE:
@@ -402,6 +406,8 @@ int bt_gatt_discover(struct bt_conn *conn,
 		       sizeof(discover_params.uuid));
 		discover_params.handle_range.start_handle = params->start_handle;
 		discover_params.handle_range.end_handle = params->end_handle;
+
+		conn->gatt_discover = params;
 
 		nble_gattc_discover_req(&discover_params, NULL);
 		break;

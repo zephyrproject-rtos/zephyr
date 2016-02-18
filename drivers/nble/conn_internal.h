@@ -31,4 +31,6 @@ struct bt_conn {
 		BT_CONN_CONNECTED,
 		BT_CONN_DISCONNECT,
 	} state;
+
+	void *gatt_discover;
 };
