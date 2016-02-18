@@ -1348,7 +1348,8 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
-static void write_without_rsp(uint8_t *data, uint16_t len)
+static void write_without_rsp(uint8_t *data, uint16_t len, uint8_t op,
+			      bool sign)
 {
 	const struct gatt_write_without_rsp_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
@@ -1363,39 +1364,13 @@ static void write_without_rsp(uint8_t *data, uint16_t len)
 	if (bt_gatt_write_without_response(conn, sys_le16_to_cpu(cmd->handle),
 					   cmd->data,
 					   sys_le16_to_cpu(cmd->data_length),
-					   false) < 0) {
+					   sign) < 0) {
 		status = BTP_STATUS_FAILED;
 	}
 
 	bt_conn_unref(conn);
 rsp:
-	tester_rsp(BTP_SERVICE_ID_GATT, GATT_WRITE_WITHOUT_RSP,
-		   CONTROLLER_INDEX, status);
-}
-
-static void signed_write_without_rsp(uint8_t *data, uint16_t len)
-{
-	const struct gatt_write_without_rsp_cmd *cmd = (void *) data;
-	struct bt_conn *conn;
-	uint8_t status = BTP_STATUS_SUCCESS;
-
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
-	if (!conn) {
-		status = BTP_STATUS_FAILED;
-		goto rsp;
-	}
-
-	if (bt_gatt_write_without_response(conn, sys_le16_to_cpu(cmd->handle),
-					   cmd->data,
-					   sys_le16_to_cpu(cmd->data_length),
-					   true) < 0) {
-		status = BTP_STATUS_FAILED;
-	}
-
-	bt_conn_unref(conn);
-rsp:
-	tester_rsp(BTP_SERVICE_ID_GATT, GATT_SIGNED_WRITE_WITHOUT_RSP,
-		   CONTROLLER_INDEX, status);
+	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
 }
 
 static void write_rsp(struct bt_conn *conn, uint8_t err)
@@ -1679,10 +1654,10 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		read_multiple(data, len);
 		return;
 	case GATT_WRITE_WITHOUT_RSP:
-		write_without_rsp(data, len);
+		write_without_rsp(data, len, opcode, false);
 		return;
 	case GATT_SIGNED_WRITE_WITHOUT_RSP:
-		signed_write_without_rsp(data, len);
+		write_without_rsp(data, len, opcode, true);
 		return;
 	case GATT_WRITE:
 		write(data, len);
