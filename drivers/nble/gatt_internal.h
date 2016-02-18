@@ -169,7 +169,19 @@ struct nble_gattc_prim_svc {
  */
 struct nble_gattc_rsp {
 	int status;
-	uint16_t conn_handle;		/**< GAP connection handle */
+	uint16_t conn_handle;
+};
+
+struct nble_gattc_primary {
+	uint16_t handle;
+	struct nble_gatt_handle_range range;
+	struct bt_uuid_128 uuid;
+};
+
+struct nble_gattc_included {
+	uint16_t handle;
+	struct nble_gatt_handle_range range;
+	struct bt_uuid_128 uuid;
 };
 
 struct nble_gattc_disc_rsp {
@@ -205,7 +217,7 @@ struct nble_gattc_characteristic {
  * GATTC descriptor.
  */
 struct nble_gattc_descriptor {
-	uint16_t handle;		/**< descriptor handle */
+	uint16_t handle;			/**< descriptor handle */
 	struct bt_uuid_128 uuid;		/**< uuid of the descriptor */
 };
 

@@ -21,6 +21,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/log.h>
 
+#include "conn.h"
 #include "conn_internal.h"
 #include "gatt_internal.h"
 
@@ -394,6 +395,9 @@ int bt_gatt_discover(struct bt_conn *conn,
 		return -EBUSY;
 	}
 
+	BT_DBG("conn %p start 0x%04x end 0x%04x", conn, params->start_handle,
+	       params->end_handle);
+
 	switch (params->type) {
 	case BT_GATT_DISCOVER_PRIMARY:
 	case BT_GATT_DISCOVER_INCLUDE:
@@ -418,6 +422,222 @@ int bt_gatt_discover(struct bt_conn *conn,
 
 	return 0;
 }
+
+static uint16_t parse_include(struct bt_conn *conn, const uint8_t *data,
+			      uint8_t len)
+{
+	struct bt_gatt_discover_params *params = conn->gatt_discover;
+	uint16_t end_handle = 0;
+	int i;
+
+	for (i = 0; len > 0; i++) {
+		const struct nble_gattc_included *att = (void *)data;
+		struct bt_gatt_attr *attr = NULL;
+		struct bt_gatt_include gatt_include;
+
+		gatt_include.start_handle = att->range.start_handle;
+		gatt_include.end_handle = att->range.end_handle;
+		end_handle = gatt_include.end_handle;
+
+		BT_DBG("start 0x%04x end 0x%04x", att->range.start_handle,
+		       att->range.end_handle);
+
+		/*
+		 * 4.5.1 If the service UUID is a 16-bit Bluetooth UUID
+		 *  it is also returned in the response.
+		 */
+		switch (att->uuid.uuid.type) {
+		case BT_UUID_TYPE_16:
+			gatt_include.uuid = &att->uuid.uuid;
+			break;
+		case BT_UUID_TYPE_128:
+			/* Data is not available at this point */
+			break;
+		}
+
+		attr = (&(struct bt_gatt_attr)
+			BT_GATT_INCLUDE_SERVICE(&gatt_include));
+		attr->handle = att->handle;
+
+		data += sizeof(*att);
+		len -= sizeof(*att);
+
+		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
+			return 0;
+		}
+	}
+
+	return end_handle;
+}
+
+static uint16_t parse_service(struct bt_conn *conn, const uint8_t *data,
+			      uint8_t len)
+{
+	struct bt_gatt_discover_params *params = conn->gatt_discover;
+	uint16_t end_handle = 0;
+	int i;
+
+	for (i = 0; len > 0; i++) {
+		const struct nble_gattc_primary *att = (void *)data;
+		struct bt_gatt_service gatt_service;
+		struct bt_gatt_attr *attr = NULL;
+
+		gatt_service.end_handle = att->range.end_handle;
+		gatt_service.uuid = params->uuid;
+		end_handle = gatt_service.end_handle;
+
+		attr = (&(struct bt_gatt_attr)
+			BT_GATT_PRIMARY_SERVICE(&gatt_service));
+		attr->handle = att->handle;
+
+		data += sizeof(*att);
+		len -= sizeof(*att);
+
+		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
+			return 0;
+		}
+	}
+
+	return end_handle;
+}
+
+static uint16_t parse_characteristic(struct bt_conn *conn, const uint8_t *data,
+				     uint8_t len)
+{
+	struct bt_gatt_discover_params *params = conn->gatt_discover;
+	uint16_t end_handle = 0;
+	int i;
+
+	for (i = 0; len > 0; i++) {
+		const struct nble_gattc_characteristic *att = (void *)data;
+		struct bt_gatt_attr *attr = NULL;
+
+		attr = (&(struct bt_gatt_attr)
+			BT_GATT_CHARACTERISTIC(&att->uuid.uuid, att->prop));
+		attr->handle = att->handle;
+		end_handle = att->handle;
+
+		data += sizeof(*att);
+		len -= sizeof(*att);
+
+		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
+			return 0;
+		}
+	}
+
+	return end_handle;
+}
+
+static uint16_t parse_descriptor(struct bt_conn *conn, const uint8_t *data,
+				 uint8_t len)
+{
+	struct bt_gatt_discover_params *params = conn->gatt_discover;
+	uint16_t end_handle = 0;
+	int i;
+
+	for (i = 0; len > 0; i++) {
+		const struct nble_gattc_descriptor *att = (void *)data;
+		struct bt_gatt_attr *attr = NULL;
+
+		attr = (&(struct bt_gatt_attr)
+			BT_GATT_DESCRIPTOR(&att->uuid.uuid, 0, NULL, NULL, NULL));
+		attr->handle = att->handle;
+		end_handle = att->handle;
+
+		data += sizeof(*att);
+		len -= sizeof(*att);
+
+		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
+			return 0;
+		}
+	}
+
+	return end_handle;
+}
+
+
+void on_nble_gattc_discover_rsp(const struct nble_gattc_disc_rsp *rsp,
+				const uint8_t *data, uint8_t data_len)
+{
+	uint16_t end_handle = 0;
+	struct bt_gatt_discover_params *params;
+	struct bt_conn *conn;
+	int status;
+
+	conn = bt_conn_lookup_handle(rsp->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", rsp->conn_handle);
+		return;
+	}
+
+	params = conn->gatt_discover;
+
+	/* Status maybe error or indicate end of discovery */
+	if (rsp->status) {
+		BT_DBG("status %d", rsp->status);
+		goto done;
+	}
+
+	BT_DBG("conn %p handle %u status %d len %u", conn, conn->handle,
+	       rsp->status, data_len);
+
+	switch (rsp->type) {
+	case BT_GATT_DISCOVER_INCLUDE:
+		end_handle = parse_include(conn, data, data_len);
+		break;
+	case BT_GATT_DISCOVER_PRIMARY:
+		end_handle = parse_service(conn, data, data_len);
+		break;
+	case BT_GATT_DISCOVER_CHARACTERISTIC:
+		end_handle = parse_characteristic(conn, data, data_len);
+		break;
+	case BT_GATT_DISCOVER_DESCRIPTOR:
+		end_handle = parse_descriptor(conn, data, data_len);
+		break;
+	default:
+		BT_ERR("Wrong discover type %d", rsp->type);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	if (!end_handle) {
+		goto stop;
+	}
+
+	/* Stop if end_handle is over the range */
+	if (end_handle >= params->end_handle) {
+		BT_WARN("Handle goes over the range: 0x%04x >= 0x%04x",
+			end_handle, params->end_handle);
+		goto done;
+	}
+
+	/* Continue discovery from last found handle */
+	params->start_handle = end_handle;
+	if (params->start_handle < UINT16_MAX) {
+		params->start_handle++;
+	}
+
+	/* This pointer would keep new params set in the function below */
+	conn->gatt_discover = NULL;
+
+	status = bt_gatt_discover(conn, params);
+	if (status) {
+		BT_ERR("Unable to continue discovering, status %d", status);
+		goto done;
+	}
+
+	bt_conn_unref(conn);
+	return;
+
+done:
+	/* End of discovery */
+	params->func(conn, NULL, params);
+
+stop:
+	conn->gatt_discover = NULL;
+	bt_conn_unref(conn);
+}
+
 
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 {
