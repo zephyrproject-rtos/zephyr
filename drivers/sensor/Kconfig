@@ -44,6 +44,8 @@ config SENSOR_DEBUG
 	help
 	  This option enables debug output for sensor drivers.
 
+source "drivers/sensor/Kconfig.bma280"
+
 source "drivers/sensor/Kconfig.mcp9808"
 
 source "drivers/sensor/Kconfig.sx9500"
