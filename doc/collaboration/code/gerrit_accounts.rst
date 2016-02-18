@@ -139,8 +139,8 @@ Gerrit Commit Message Hook
 .. toctree::
    :maxdepth: 2
 
-   installation_linux.rst
-   installation_mac.rst
+   ../../getting_started/installation_linux.rst
+   ../../getting_started/installation_mac.rst
 
 .. _Linux Foundation ID website: https://identity.linuxfoundation.org
 
