@@ -96,9 +96,4 @@ void bt_keys_clear(struct bt_keys *keys, int type);
 struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr);
-#else
-static inline struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr)
-{
-	return NULL;
-}
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */

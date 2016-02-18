@@ -306,13 +306,24 @@ static void gatt_ccc_changed(struct _bt_gatt_ccc *ccc)
 	}
 }
 
+static bool is_bonded(const bt_addr_le_t *addr)
+{
+#if defined(CONFIG_BLUETOOTH_SMP)
+	struct bt_keys *keys = bt_keys_find_addr(addr);
+
+	/* if there are any keys stored then device is bonded */
+	return keys && keys->keys;
+#else
+	return false;
+#endif /* defined(CONFIG_BLUETOOTH_SMP) */
+}
+
 int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, const void *buf,
 			   uint16_t len, uint16_t offset)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
 	const uint16_t *data = buf;
-	bool bonded;
 	size_t i;
 
 	if (offset > sizeof(*data)) {
@@ -322,11 +333,6 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	if (offset + len > sizeof(*data)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
-
-	if (bt_keys_find_addr(&conn->le.dst))
-		bonded = true;
-	else
-		bonded = false;
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Check for existing configuration */
@@ -341,7 +347,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			if (!ccc->cfg[i].valid) {
 				bt_addr_le_copy(&ccc->cfg[i].peer, &conn->le.dst);
 				/* Only set valid if bonded */
-				ccc->cfg[i].valid = bonded;
+				ccc->cfg[i].valid = is_bonded(&conn->le.dst);
 				break;
 			}
 		}
@@ -1624,8 +1630,8 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
-	/* If paired don't remove subscriptions */
-	if (bt_keys_find_addr(&conn->le.dst)) {
+	/* If bonded don't remove subscriptions */
+	if (is_bonded(&conn->le.dst)) {
 		return;
 	}
 
