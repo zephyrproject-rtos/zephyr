@@ -274,13 +274,34 @@ config PRESERVE_JTAG_IO_PINS
 	the Arduino header as D8, D3 and D5, respectively.
 	Enable this option to preserve these pins for the debug interface.
 
-endif #PINMUX
+endif # PINMUX
 
 if PWM
+
 config PWM_K64_FTM
 	def_bool y
 config PWM_K64_FTM_0
 	def_bool y
-endif
 
 endif
+
+config SPI
+	def_bool n
+
+if SPI
+
+config SPI_K64
+	def_bool y
+
+config SPI_K64_0
+	def_bool y
+
+config SPI_K64_1
+	def_bool n
+
+config SPI_K64_2
+	def_bool n
+
+endif
+
+endif # SOC_FSL_FRDM_K64F

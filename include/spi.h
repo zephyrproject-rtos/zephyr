@@ -66,7 +66,7 @@ extern "C" {
  *    mode           [ 0 : 2 ]   - Polarity, phase and loop mode.
  *    transfer_mode  [ 3 ]       - LSB or MSB first transfer mode.
  *    word_size      [ 4 : 11 ]  - Size of a data frame in bits.
- *    RESERVED       [ 12 : 31 ] - undefined usage.
+ *    RESERVED       [ 12 : 31 ] - Undefined or device-specific usage.
  *
  * max_sys_freq is the maximum frequency supported by the slave it
  * will deal with. This value depends on the host controller. The driver
