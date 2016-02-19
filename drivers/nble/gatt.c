@@ -360,7 +360,7 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   const void *data, uint16_t len)
 {
-	struct nble_gatt_send_notif_ind_params notif;
+	struct nble_gatt_send_notif_params notif;
 
 	if (conn) {
 		notif.conn_handle = conn->handle;
@@ -419,7 +419,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 
 		conn->gatt_discover = params;
 
-		nble_gattc_discover_req(&discover_params, NULL);
+		nble_gattc_discover_req(&discover_params);
 		break;
 	default:
 		BT_ERR("Unknown params type %u", params->type);
@@ -562,7 +562,7 @@ static uint16_t parse_descriptor(struct bt_conn *conn, const uint8_t *data,
 }
 
 
-void on_nble_gattc_discover_rsp(const struct nble_gattc_disc_rsp *rsp,
+void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 				const uint8_t *data, uint8_t data_len)
 {
 	uint16_t end_handle = 0;

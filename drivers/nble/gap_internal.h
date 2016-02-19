@@ -24,13 +24,8 @@
 #include "bluetooth/hci.h"
 #include "version.h"
 
-/* Must be the same with nble_service_gap_api.h ! */
-
-/**< Maximum security key len (LTK, CSRK) */
+/* Maximum security key len (LTK, CSRK) */
 #define BLE_GAP_SEC_MAX_KEY_LEN		16
-#define BLE_PASSKEY_LEN			6
-
-/* Must be the same with BLE_GAP_SM_OPTIONS ! */
 
 /**
  * GAP security manager options for bonding/authentication procedures,
@@ -43,25 +38,17 @@ enum BLE_CORE_GAP_SM_OPTIONS {
 	BLE_CORE_GAP_OOB = 0x08		/**< SMP supports Out Of Band data */
 };
 
-/* Must be the same with BLE_CORE_GAP_SM_PASSKEY_TYPE ! */
-/**
- * Security manager passkey type.
- */
-enum BLE_CORE_GAP_SM_PASSKEY_TYPE {
-	BLE_CORE_GAP_SM_PK_NONE = 0,	/**< No key (may be used to reject). */
-	BLE_CORE_GAP_SM_PK_PASSKEY,	/**< Sec data is a 6-digit passkey. */
-	BLE_CORE_GAP_SM_PK_OOB,		/**< Sec data is 16 bytes of OOB data */
+enum NBLE_GAP_SM_PASSKEY_TYPE {
+	NBLE_GAP_SM_REJECT = 0,
+	NBLE_GAP_SM_PK_PASSKEY,
+	NBLE_GAP_SM_PK_OOB,
 };
 
-/* Must be the same with BLE_GAP_SM_STATUS ! */
-/**
- * GAP security manager status codes.
- */
-enum BLE_CORE_GAP_SM_STATUS {
-	BLE_CORE_GAP_SM_ST_START_PAIRING,	/*< Pairing has started */
-	BLE_CORE_GAP_SM_ST_BONDING_COMPLETE,	/*< Bonding has completed */
-	BLE_CORE_GAP_SM_ST_LINK_ENCRYPTED,	/*< Link is encrypted */
-	BLE_CORE_GAP_SM_ST_SECURITY_UPDATE,	/*< Link keys updated */
+enum NBLE_GAP_SM_EVT {
+	NBLE_GAP_SM_EVT_START_PAIRING,
+	NBLE_GAP_SM_EVT_BONDING_COMPLETE,
+	NBLE_GAP_SM_EVT_LINK_ENCRYPTED,
+	NBLE_GAP_SM_EVT_LINK_SECURITY_CHANGE,
 };
 
 /* Must be the same with BLE_GAP_RSSI_OPS ! */
@@ -75,45 +62,49 @@ enum BLE_CORE_GAP_RSSI_OPS {
 
 /** Test Mode opcodes. The same with nble_service_gap_api.h */
 enum BLE_CORE_TEST_OPCODE {
-	/**< Put BLE controller in HCI UART DTM test mode */
 	BLE_CORE_TEST_INIT_DTM = 0x01,
-	BLE_CORE_TEST_START_DTM_RX = 0x1d,	/**< LE rcv test HCI op */
-	BLE_CORE_TEST_START_DTM_TX = 0x1e,	/**< LE trans test HCI op */
-	BLE_CORE_TEST_END_DTM = 0x1f,		/**< End LE DTM TEST */
-	/** vendor specific commands start at 0x80
-	 *  Set Tx power. To be called before start of tx test
-	 */
+	BLE_CORE_TEST_START_DTM_RX = 0x1d,
+	BLE_CORE_TEST_START_DTM_TX = 0x1e,
+	BLE_CORE_TEST_END_DTM = 0x1f,
+	/* vendor specific commands start at 0x80 */
+	/* Set Tx power. To be called before start of tx test */
 	BLE_CORE_TEST_SET_TXPOWER = 0x80,
-	BLE_CORE_TEST_START_TX_CARRIER,		/**< Start Tx Carrier Test */
+	BLE_CORE_TEST_START_TX_CARRIER,
 };
 
 struct nble_response {
-	int status;		/**< Status of the operation */
+	int status;
 	void *user_data;
 };
 
 struct nble_gap_device_name {
-	/**< Security mode for writing device name, @ref BLE_GAP_SEC_MODES */
+	/* Security mode for writing device name, @ref BLE_GAP_SEC_MODES */
 	uint8_t sec_mode;
-	/**< 0: no authorization, 1: authorization required */
+	/* 0: no authorization, 1: authorization required */
 	uint8_t authorization;
-	uint8_t len;		/**< Device name length (0-248) */
-	uint8_t name_array[20];	/**< Device */
+	/* Device name length (0-248) */
+	uint8_t len;
+	uint8_t name_array[20];
 };
 
 struct nble_gap_connection_values {
-	uint16_t interval;		/**< Conn interval (unit 1.25 ms) */
-	uint16_t latency;		/**< Conn latency (unit interval) */
-	uint16_t supervision_to;	/**< Conn supervision timeout (10ms) */
+	/* Connection interval (unit 1.25 ms) */
+	uint16_t interval;
+	/* Connection latency (unit interval) */
+	uint16_t latency;
+	/* Connection supervision timeout (unit 10ms)*/
+	uint16_t supervision_to;
 };
 
 
 enum BLE_GAP_SVC_ATTR_TYPE {
-	GAP_SVC_ATTR_NAME = 0,		/**< Device Name, UUID 0x2a00 */
-	GAP_SVC_ATTR_APPEARANCE,	/**< Appearance, UUID 0x2a01 */
-	/**< Peripheral Preferred Connection Parameters (PPCP), UUID 0x2a04 */
+	/* Device Name, UUID 0x2a00 */
+	GAP_SVC_ATTR_NAME = 0,
+	/* Appearance, UUID 0x2a01 */
+	GAP_SVC_ATTR_APPEARANCE,
+	/* Peripheral Preferred Connection Parameters (PPCP), UUID 0x2a04 */
 	GAP_SVC_ATTR_PPCP = 4,
-	/**< Central Address Resolution (CAR), UUID 0x2aa6, BT 4.2 */
+	/* Central Address Resolution (CAR), UUID 0x2aa6, BT 4.2 */
 	GAP_SVC_ATTR_CAR = 0xa6,
 };
 
@@ -121,13 +112,13 @@ enum BLE_GAP_SVC_ATTR_TYPE {
  * Connection requested parameters.
  */
 struct nble_gap_connection_params {
-	/**< minimal conne interval: range 0x0006 to 0x0c80 (unit 1.25ms) */
+	/* minimal connection interval: range 0x0006 to 0x0c80 (unit 1.25ms) */
 	uint16_t interval_min;
-	/**< max conn interv: range 0x0006 to 0x0c80 must be bigger then min */
+	/* maximum connection interval: range 0x0006 to 0x0c80 must be bigger then min! */
 	uint16_t interval_max;
-	/**< maximum connection slave latency: 0x0000 to 0x01f3 */
+	/* maximum connection slave latency: 0x0000 to 0x01f3 */
 	uint16_t slave_latency;
-	/**< link supervision timeout: 0x000a to 0x0c80 (unit 10ms) */
+	/* link supervision timeout: 0x000a to 0x0c80 (unit 10ms) */
 	uint16_t link_sup_to;
 };
 
@@ -135,78 +126,77 @@ struct nble_gap_connection_params {
  * Connection scan requested parameters.
  */
 struct nble_gap_scan_parameters {
-	uint8_t     active;	/**< If 1, perform active scan (scan req) */
-	uint8_t     selective;	/**< If 1, ignore unknown dev (non whitelist) */
-	/**< Scan interval between 0x0004 and 0x4000 in 0.625ms units
-	 * (2.5ms to 10.24s).
-	 */
-	uint16_t    interval;
-	/**< Scan window between 0x0004 and 0x4000 in 0.625ms units
-	 * (2.5ms to 10.24s).
-	 */
-	uint16_t    window;
-	/**< Scan timeout between 0x0001 and 0xFFFF in seconds,
-	 * 0x0000 disables timeout.
-	 */
-	uint16_t    timeout;
+	/* If 1, perform active scanning (scan requests). */
+	uint8_t active;
+	/* If 1, ignore unknown devices (non whitelisted). */
+	uint8_t selective;
+	/* Scan interval between 0x0004 and 0x4000 in 0.625ms units (2.5ms to 10.24s). */
+	uint16_t interval;
+	/* Scan window between 0x0004 and 0x4000 in 0.625ms units (2.5ms to 10.24s). */
+	uint16_t window;
+	/* Scan timeout between 0x0001 and 0xFFFF in seconds, 0x0000 disables timeout. */
+	uint16_t timeout;
 };
 
 struct nble_gap_service_write_params {
-	/**< GAP Characteristics attribute type  @ref BLE_GAP_SVC_ATTR_TYPE */
+	/* GAP Characteristics attribute type  @ref BLE_GAP_SVC_ATTR_TYPE */
 	uint16_t attr_type;
 	union {
 		struct nble_gap_device_name name;
-		uint16_t appearance;			/**< Appearance UUID */
-		/**< Preferred Peripheral Connection Parameters */
+		/* Appearance UUID */
+		uint16_t appearance;
+		/* Preferred Peripheral Connection Parameters */
 		struct nble_gap_connection_params conn_params;
-		/**< Central Address Resolution support 0: no, 1: yes */
+		/* Central Address Resolution support 0: no, 1: yes */
 		uint8_t car;
 	};
 };
 
 struct nble_service_read_bda_response {
-	int status;		/**< Status of the operation */
-	bt_addr_le_t bd;	/**< If @ref status ok */
+	int status;
+	/* If @ref status ok */
+	bt_addr_le_t bd;
 	void *user_data;
 };
 
 struct nble_service_write_response {
-	int status;		/**< Status of the operation */
-	/**< GAP Characteristics attribute type  @ref BLE_GAP_SVC_ATTR_TYPE */
+	int status;
+	/* GAP Characteristics attribute type  @ref BLE_GAP_SVC_ATTR_TYPE */
 	uint16_t attr_type;
-	void *user_data;	/**< Pointer to the user data of the request */
+	void *user_data;
 };
 
 struct nble_gap_service_read_params {
-	/**< Type of GAP data charact to read @ref BLE_GAP_SVC_ATTR_TYPE */
+	/* Type of GAP data characteristic to read @ref BLE_GAP_SVC_ATTR_TYPE */
 	uint16_t attr_type;
 };
 
 struct debug_params {
-	uint32_t u0;	/** user parameter */
-	uint32_t u1;	/** user parameter */
+	uint32_t u0;
+	uint32_t u1;
 };
 
 struct debug_response {
-	int status;		/**< Status of the operation */
-	uint32_t u0;		/** user parameter */
-	uint32_t u1;		/** user parameter */
-	void *user_data;	/**< Pointer to the user data of the request */
+	int status;
+	uint32_t u0;
+	uint32_t u1;
+	void *user_data;
 };
 
-struct nble_wr_config_params {
+typedef void (*nble_set_bda_cb_t)(int status, void *user_data);
+
+struct nble_set_bda_params {
 	bt_addr_le_t bda;
-	uint8_t bda_present;
-	int8_t tx_power;
-	/* Central supported range */
-	struct nble_gap_connection_params central_conn_params;
+	nble_set_bda_cb_t cb;
+	void *user_data;
 };
 
-/**
- * Advertisement parameters.
- */
+struct nble_set_bda_rsp {
+	nble_set_bda_cb_t cb;
+	void *user_data;
+	int status;
+};
 
-/* Complete encoded eir data structure */
 struct bt_eir_data {
 	uint8_t len;
 	uint8_t data[31];
@@ -214,14 +204,20 @@ struct bt_eir_data {
 
 struct nble_gap_adv_params {
 	uint16_t timeout;
-	uint16_t interval_min;	/**< min interval 0xffff: use default 0x0800 */
-	uint16_t interval_max;	/**< max interval 0xffff: use default 0x0800 */
-	uint8_t type;		/**< advertisement types @ref GAP_ADV_TYPES */
-	uint8_t filter_policy;	/**< filter policy to apply with white list */
-	/**< bd address of peer device in case of directed advertisement */
+	/* min interval 0xffff: use default 0x0800 */
+	uint16_t interval_min;
+	/* max interval 0xffff: use default 0x0800 */
+	uint16_t interval_max;
+	/* advertisement types @ref GAP_ADV_TYPES */
+	uint8_t type;
+	/* filter policy to apply with white list */
+	uint8_t filter_policy;
+	/* bd address of peer device in case of directed advertisement */
 	bt_addr_le_t peer_bda;
-	struct bt_eir_data ad;	/**< Advertisement data, maybe 0 (length) */
-	struct bt_eir_data sd;	/**< Scan response data, maybe 0 (length) */
+	/* Advertisement data, maybe 0 (length) */
+	struct bt_eir_data ad;
+	/* Scan response data, maybe 0 (length) */
+	struct bt_eir_data sd;
 };
 
 struct nble_log_s {
@@ -232,8 +228,6 @@ struct nble_log_s {
 };
 
 void nble_log(const struct nble_log_s *p_param, char *p_buf, uint8_t buflen);
-
-void nble_core_delete_conn_params_timer(void);
 
 void on_nble_up(void);
 
@@ -247,7 +241,7 @@ void on_nble_up(void);
  * @param user_data User data
  */
 void nble_gap_service_write_req(const struct nble_gap_service_write_params *par,
-			       void *user_data);
+				void *user_data);
 
 /**
  * Response to @ref nble_gap_read_bda_req.
@@ -281,29 +275,12 @@ void nble_gap_dbg_req(const struct debug_params *par, void *user_data);
 void on_nble_gap_dbg_rsp(const struct debug_response *par);
 
 /**
- * Set Enable configuration parameters (BD address, etc).
- *
- * The response to this request is received through
- * @ref on_nble_set_enable_config_rsp
- *
- * This shall put the controller stack into a usable (enabled) state.
- * Hence this should be called first!
- *
- * @param config BLE write configuration
- * @param user_data User data
- *
- */
-void nble_set_enable_config_req(const struct nble_wr_config_params *config,
-				void *user_data);
-
-/**
  * Start advertising.
  *
  * The response to this request is received through
  * @ref on_nble_gap_start_advertise_rsp
  *
  * @param par Advertisement
- * @param p_adv_data Pointer to advertisement and scan response data
  */
 void nble_gap_start_advertise_req(struct nble_gap_adv_params *par);
 
@@ -345,7 +322,6 @@ struct nble_gap_irk_info {
  * Write white list to the BLE controller.
  *
  * The response to this request is received through
- * @ref on_nble_gap_wr_white_list_rsp
  *
  * Store white in BLE controller. It needs to be done BEFORE starting
  * advertisement or start scanning
@@ -361,33 +337,21 @@ void nble_gap_wr_white_list_req(bt_addr_le_t *bd_array, uint8_t bd_array_size,
 				uint8_t irk_array_size, void *priv);
 
 /**
- * Response to @ref nble_gap_wr_white_list_req.
- *
- * @param par Response
- */
-void on_nble_gap_wr_white_list_rsp(const struct nble_response *par);
-
-/**
  * Clear previously stored white list.
  *
  * The response to this request is received through
- * @ref on_nble_gap_clr_white_list_rsp
  *
  * @param priv Pointer to private data
  */
 void nble_gap_clr_white_list_req(void *priv);
 
-/**
- * Response to @ref nble_gap_clr_white_list_req.
- *
- * @param par Response
- */
-void on_nble_gap_clr_white_list_rsp(const struct nble_response *par);
-
 struct nble_gap_connect_update_params {
 	uint16_t conn_handle;
 	struct nble_gap_connection_params params;
 };
+
+void on_nble_set_bda_rsp(const struct nble_set_bda_rsp *params);
+void nble_set_bda_req(const struct nble_set_bda_params *params);
 
 /**
  * Update connection.
@@ -407,17 +371,8 @@ struct nble_gap_connect_update_params {
  * is called.
  *
  * @param par Connection parameters
- * @param user_data User data
  */
-void nble_gap_conn_update_req(const struct nble_gap_connect_update_params *par,
-			      void *user_data);
-
-/**
- * Response to @ref nble_gap_conn_update_req.
- *
- * @param par Response
- */
-void on_nble_gap_conn_update_rsp(const struct nble_response *par);
+void nble_gap_conn_update_req(const struct nble_gap_connect_update_params *par);
 
 struct nble_gap_connect_req_params {
 	bt_addr_le_t bda;
@@ -426,8 +381,8 @@ struct nble_gap_connect_req_params {
 };
 
 struct nble_gap_disconnect_req_params {
-	uint16_t conn_handle;	/**< Connection handle */
-	uint8_t reason;		/**< Reason of the disconnect */
+	uint16_t conn_handle;
+	uint8_t reason;
 };
 
 /**
@@ -461,26 +416,18 @@ void nble_gap_service_read_req(const struct nble_gap_service_read_params *par,
 			       void *user_data);
 
 /**
- * Response to @ref nble_gap_service_read_req.
- *
- * @param par Response
- */
-void on_nble_gap_service_read_rsp(const struct nble_response *par);
-
-/**
  * Security manager configuration parameters.
  *
  * options and io_caps will define there will be a passkey request or not.
  * It is assumed that io_caps and options are compatible.
  */
 struct nble_gap_sm_config_params {
-	/**< Sec options (@ref BLE_GAP_SM_OPTIONS) */
+	/* Security options (@ref BLE_GAP_SM_OPTIONS) */
 	uint8_t options;
-	/**< I/O Capabilities to allow passkey exchange
-	 * (@ref BLE_GAP_IO_CAPABILITIES)
-	 */
+	/* I/O Capabilities to allow passkey exchange (@ref BLE_GAP_IO_CAPABILITIES) */
 	uint8_t io_caps;
-	uint8_t key_size;	/**< Maximum encryption key size (7-16) */
+	/* Maximum encryption key size (7-16) */
+	uint8_t key_size;
 	uint8_t oob_present;
 };
 
@@ -495,9 +442,9 @@ struct nble_gap_sm_config_params {
 void nble_gap_sm_config_req(const struct nble_gap_sm_config_params *par);
 
 struct nble_gap_sm_config_rsp {
-	void *user_data;	/**< Pointer to user data structure */
-	int status;		/**< Result of sec manager initialization */
-	uint32_t state;		/**< State of bond DB */
+	void *user_data;
+	int status;
+	bool sm_bond_dev_avail;
 };
 
 /**
@@ -507,20 +454,18 @@ struct nble_gap_sm_config_rsp {
  */
 void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *par);
 
-/**
- * Security manager pairing parameters.
- */
-struct nble_core_gap_sm_pairing_params {
-	/**< authentication level see @ref BLE_GAP_SM_OPTIONS */
+
+struct nble_gap_sm_pairing_params {
+	/* authentication level see @ref BLE_GAP_SM_OPTIONS */
 	uint8_t auth_level;
 };
 
 struct nble_gap_sm_security_params {
 	struct bt_conn *conn;
-	/**< Connection on which bonding procedure is executed */
+	/* Connection on which bonding procedure is executed */
 	uint16_t conn_handle;
-	/**< Local authentication/bonding parameters */
-	struct nble_core_gap_sm_pairing_params params;
+	/* Local authentication/bonding parameters */
+	struct nble_gap_sm_pairing_params params;
 };
 
 /**
@@ -533,29 +478,19 @@ struct nble_gap_sm_security_params {
  */
 void nble_gap_sm_security_req(const struct nble_gap_sm_security_params *par);
 
-/**
- * Response to @ref nble_gap_sm_pairing_req.
- *
- * @param par Response
- */
-void on_nble_gap_sm_pairing_rsp(const struct nble_response *par);
-
-/**
- * Security reply to incoming security request.
- */
-struct nble_core_gap_sm_passkey {
-	/**< Security data type in this reply @ref BLE_GAP_SM_PASSKEY_TYPE */
+struct nble_gap_sm_passkey {
 	uint8_t type;
 	union {
-		uint8_t passkey[6];	/**< 6 digits (string) */
-		uint8_t oob[16];	/**< 16 bytes of OOB security data */
+		uint32_t passkey;
+		uint8_t oob[16];
+		uint8_t reason;
 	};
 };
 
 struct nble_gap_sm_key_reply_req_params {
-	/**< Connection on which bonding is going on */
+	struct bt_conn *conn;
 	uint16_t conn_handle;
-	struct nble_core_gap_sm_passkey params;	/**< Bonding security reply */
+	struct nble_gap_sm_passkey params;
 };
 
 /**
@@ -583,13 +518,6 @@ struct nble_gap_sm_clear_bond_req_params {
  */
 void nble_gap_sm_clear_bonds_req(const struct nble_gap_sm_clear_bond_req_params *par);
 
-/**
- * Response to @ref nble_gap_sm_clear_bonds_req.
- *
- * @param par Response
- */
-void on_nble_gap_sm_clear_bonds_rsp(const struct nble_response *par);
-
 struct nble_gap_sm_response {
 	int status;
 	struct bt_conn *conn;
@@ -599,10 +527,12 @@ struct nble_gap_sm_response {
  * RSSI report parameters
  */
 struct nble_rssi_report_params {
-	uint16_t conn_handle;	/**< Connection handle */
-	uint8_t op;		/**< RSSI operation @ref BLE_GAP_RSSI_OPS */
-	uint8_t delta_dBm;	/**< minimum RSSI dBm change report new val */
-	/**< number of delta_dBm changes before sending a new RSSI report */
+	uint16_t conn_handle;
+	/* RSSI operation @ref BLE_GAP_RSSI_OPS */
+	uint8_t op;
+	/* minimum RSSI dBm change to report a new RSSI value */
+	uint8_t delta_dBm;
+	/* number of delta_dBm changes before sending a new RSSI report */
 	uint8_t min_count;
 };
 
@@ -710,17 +640,20 @@ void nble_gap_cancel_connect_req(void *user_data);
 void on_nble_gap_cancel_connect_rsp(const struct nble_response *par);
 
 enum BLE_GAP_SET_OPTIONS {
-	BLE_GAP_SET_CH_MAP = 0,		/**< Set channel map */
+	BLE_GAP_SET_CH_MAP = 0,
 };
 
 struct nble_gap_channel_map {
-	uint16_t conn_handle;	/**< conn on which to change channel map */
-	uint8_t map[5];		/**< 37 bits are used of the 40 bits (LSB) */
+	/* connection on which to change channel map */
+	uint16_t conn_handle;
+	/* 37 bits are used of the 40 bits (LSB) */
+	uint8_t map[5];
 };
 
 
 struct nble_gap_set_option_params {
-	uint8_t op;		/**< Option to set @ref BLE_GAP_SET_OPTIONS */
+	/* Option to set @ref BLE_GAP_SET_OPTIONS */
+	uint8_t op;
 	union {
 		struct nble_gap_channel_map ch_map;
 	};
@@ -730,7 +663,6 @@ struct nble_gap_set_option_params {
  * Set a gap option (channel map etc) on a connection.
  *
  * The response to this request is received through
- * @ref on_nble_gap_set_option_rsp
  *
  * @param par Contains gap options parameters
  * @param user_data Pointer to user data
@@ -738,23 +670,19 @@ struct nble_gap_set_option_params {
 void nble_gap_set_option_req(const struct nble_gap_set_option_params *par,
 			     void *user_data);
 
-/**
- * Response to @ref nble_gap_set_option_req.
- *
- * @param par Response
- */
-void on_nble_gap_set_option_rsp(const struct nble_response *par);
-
-/** Generic request op codes.
+/*
+ *  Generic request op codes.
  * This allows to access some non connection related commands like DTM.
  */
 enum BLE_GAP_GEN_OPS {
-	DUMMY_VALUE = 0,		/**< Not used now. */
+	/* Not used now. */
+	DUMMY_VALUE = 0,
 };
 
 /** Generic command parameters. */
 struct nble_gap_gen_cmd_params {
-	uint8_t op_code;		/**< @ref BLE_GAP_GEN_OPS */
+	/* @ref BLE_GAP_GEN_OPS */
+	uint8_t op_code;
 };
 
 /**
@@ -787,7 +715,7 @@ void nble_get_version_req(void *user_data);
 
 struct nble_version_response {
 	struct version_header version;
-	void *user_data;	/**< Pointer to response data structure */
+	void *user_data;
 };
 
 /**
@@ -810,7 +738,9 @@ void nble_gap_dtm_init_req(void *user_data);
 struct nble_gap_connect_evt {
 	uint16_t conn_handle;
 	struct nble_gap_connection_values conn_values;
-	uint8_t role;
+	/* 0 if connected as master, otherwise as slave */
+	uint8_t role_slave;
+	/* Address of peer device */
 	bt_addr_le_t peer_bda;
 };
 
@@ -822,8 +752,8 @@ struct nble_gap_connect_evt {
 void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev);
 
 struct nble_gap_disconnect_evt {
-	uint16_t conn_handle;	/**< Connection handle */
-	uint8_t hci_reason;	/**< HCI disconnect reason */
+	uint16_t conn_handle;
+	uint8_t hci_reason;
 };
 
 /**
@@ -855,9 +785,17 @@ struct nble_gap_adv_report_evt {
 	uint8_t adv_type;
 };
 
+struct nble_gap_dir_adv_timeout_evt {
+	uint16_t conn_handle;
+	uint16_t error;
+};
+
+void on_nble_gap_dir_adv_timeout_evt(const struct nble_gap_dir_adv_timeout_evt *evt);
+
 struct nble_gap_rssi_evt {
-	uint16_t conn_handle;	/**< Connection handle */
-	int8_t rssi_lvl;	/**< RSSI level (compared to 0 dBm) */
+	uint16_t conn_handle;
+	/* RSSI level (compared to 0 dBm) */
+	int8_t rssi_lvl;
 };
 
 /**
@@ -867,22 +805,8 @@ struct nble_gap_rssi_evt {
  */
 void on_nble_gap_rssi_evt(const struct nble_gap_rssi_evt *ev);
 
-struct nble_gap_timout_evt {
-	uint16_t conn_handle;	/**< Connection handle */
-	/**< reason for timeout @ref BLE_SVC_GAP_TIMEOUT_REASON */
-	int reason;
-};
-
-/**
- * Function invoked by the BLE service upon timeout event.
- *
- * @param ev Pointer to the event structure.
- */
-void on_nble_gap_to_evt(const struct nble_gap_timout_evt *ev);
-
 struct nble_gap_sm_passkey_req_evt {
-	uint16_t conn_handle;	/**< Connection handle */
-	/**< Passkey or OBB data see @ref BLE_GAP_SM_PASSKEY_TYPE */
+	uint16_t conn_handle;
 	uint8_t key_type;
 };
 
@@ -895,23 +819,22 @@ struct nble_gap_sm_passkey_req_evt {
 void on_nble_gap_sm_passkey_req_evt(const struct nble_gap_sm_passkey_req_evt *);
 
 struct nble_gap_sm_passkey_disp_evt {
-	uint16_t conn_handle;			/**< Connection handle */
-	uint8_t passkey[BLE_PASSKEY_LEN];	/**< Passkey to be displayed */
+	uint16_t conn_handle;
+	uint32_t passkey;
 };
 
-/**
- * Function invoked by the BLE service upon security manager display event.
- *
- * @param ev Pointer to the event structure.
- */
-void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_evt *ev);
+void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_evt *evt);
+
+struct nble_link_sec {
+	bt_security_t sec_level;
+	uint8_t enc_size;
+};
 
 struct nble_gap_sm_status_evt {
-	uint16_t conn_handle;	/**< Connection handle */
-	/**< Security manager status @ref BLE_GAP_SM_STATUS */
-	uint8_t status;
-	/**< Result of SM procedure, non-null indicates failure */
-	uint8_t gap_status;
+	uint16_t conn_handle;
+	uint8_t evt_type;
+	int status;
+	struct nble_link_sec enc_link_sec;
 };
 
 /**
@@ -920,25 +843,6 @@ struct nble_gap_sm_status_evt {
  * @param ev Pointer to the event structure.
  */
 void on_nble_gap_sm_status_evt(const struct nble_gap_sm_status_evt *ev);
-
-/**
- * Response to @ref nble_set_enable_config_req.
- *
- * @param par Response
- */
-void on_ble_set_enable_config_rsp(const struct nble_response *par);
-
-/**
- * Get the list of bonded devices
- *
- * @param user_data User Data
- */
-void nble_get_bonded_device_list_req(void *user_data);
-
-/**@brief Structure containing list of bonded devices. */
-struct nble_core_bonded_devices {
-	uint8_t       addr_count;	/**< Count of device addr in array. */
-};
 
 struct nble_gap_sm_bond_info;
 

@@ -33,8 +33,6 @@
 		 const struct nble_gap_sm_passkey_disp_evt *)	\
 	FN_SIG_S(on_nble_gap_sm_passkey_req_evt,		\
 		 const struct nble_gap_sm_passkey_req_evt *)	\
-	FN_SIG_S(on_nble_gap_to_evt,				\
-		 const struct nble_gap_timout_evt *)		\
 	FN_SIG_S(on_nble_gap_rssi_evt,				\
 		 const struct nble_gap_rssi_evt *)		\
 	FN_SIG_S(on_nble_common_rsp,				\
@@ -51,22 +49,24 @@
 		 struct nble_gap_sm_config_rsp *)		\
 	FN_SIG_S(on_nble_gap_generic_cmd_rsp,			\
 		 const struct nble_response *)			\
-	FN_SIG_S(on_nble_gap_conn_update_rsp,			\
-		 const struct nble_response *)			\
 	FN_SIG_S(on_nble_gap_sm_common_rsp,			\
 		 const struct nble_gap_sm_response *)		\
 	FN_SIG_S(on_nble_gap_service_write_rsp,			\
 		 const struct nble_service_write_response *)	\
-	FN_SIG_S(on_nble_set_enable_config_rsp,			\
-		 const struct nble_response *)			\
+	FN_SIG_S(on_nble_set_bda_rsp,				\
+		 const struct nble_set_bda_rsp *)		\
 	FN_SIG_S(on_nble_gap_set_rssi_report_rsp,		\
 		 const struct nble_response *)			\
 	FN_SIG_S(on_nble_gap_dbg_rsp,				\
 		 const struct debug_response *)			\
 	FN_SIG_S(on_nble_gatts_send_svc_changed_rsp,		\
 		 const struct nble_response *)			\
-	FN_SIG_S(on_nble_gatts_send_notif_ind_rsp,		\
-		 const struct nble_gatt_notif_ind_rsp *)	\
+	FN_SIG_S(on_nble_gap_dir_adv_timeout_evt,		\
+		 const struct nble_gap_dir_adv_timeout_evt *)	\
+	FN_SIG_S(on_nble_gatts_send_notif_rsp,			\
+		 const struct nble_gatt_notif_rsp *)		\
+	FN_SIG_S(on_nble_gatts_send_ind_rsp,			\
+		 const struct nble_gatt_ind_rsp *)		\
 	FN_SIG_S(on_nble_gap_start_advertise_rsp,		\
 		 const struct nble_response *)			\
 	FN_SIG_S(on_nble_gap_stop_advertise_rsp,		\
@@ -88,15 +88,12 @@
 	FN_SIG_S_B(on_nble_gatts_write_evt,			\
 		   const struct nble_gatt_wr_evt *,		\
 		   const uint8_t *, uint8_t)			\
-	FN_SIG_S_B(on_nble_gatts_get_attribute_value_rsp,	\
-		   const struct nble_gatts_attribute_rsp *,	\
-		   uint8_t *, uint8_t)				\
 	FN_SIG_S_B(on_nble_gatt_register_rsp,			\
 		   const struct nble_gatt_register_rsp *,	\
 		   const struct nble_gatt_attr_handles *,	\
 		   uint8_t)					\
 	FN_SIG_S_B(on_nble_gattc_discover_rsp,			\
-		   const struct nble_gattc_disc_rsp *,		\
+		   const struct nble_gattc_discover_rsp *,	\
 		   const uint8_t *, uint8_t)			\
 	FN_SIG_S_B(on_nble_gap_adv_report_evt,			\
 		   const struct nble_gap_adv_report_evt *,	\

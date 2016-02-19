@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* for bt_security_t */
+#include <bluetooth/conn.h>
 #include <bluetooth/log.h>
 
 #ifdef CONFIG_PRINTK

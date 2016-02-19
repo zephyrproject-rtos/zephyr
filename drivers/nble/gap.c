@@ -378,7 +378,7 @@ void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *rsp)
 		return;
 	}
 
-	BT_DBG("state %u", rsp->state);
+	BT_DBG("status %u", rsp->status);
 
 	/* Get bdaddr queued after SM setup */
 	nble_gap_read_bda_req(NULL);

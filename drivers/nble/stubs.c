@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/conn.h>
 #include <bluetooth/log.h>
 
 #include "gap_internal.h"

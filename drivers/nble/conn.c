@@ -336,7 +336,7 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 {
 	struct bt_conn *conn;
 
-	BT_DBG("handle %u role %u", ev->conn_handle, ev->role);
+	BT_DBG("handle %u role %u", ev->conn_handle, ev->role_slave);
 
 	conn = conn_new();
 	if (!conn) {
@@ -345,7 +345,7 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 	}
 
 	conn->handle = ev->conn_handle;
-	conn->role = ev->role;
+	conn->role = ev->role_slave;
 	conn->interval = ev->conn_values.interval;
 	conn->latency = ev->conn_values.latency;
 	conn->timeout = ev->conn_values.supervision_to;

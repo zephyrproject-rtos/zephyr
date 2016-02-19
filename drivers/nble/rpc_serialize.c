@@ -16,6 +16,8 @@
 
 #include <string.h>
 
+#include <bluetooth/conn.h>
+
 #include "rpc.h"
 
 #include "gap_internal.h"

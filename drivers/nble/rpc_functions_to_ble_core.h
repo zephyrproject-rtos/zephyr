@@ -32,7 +32,12 @@
 	FN_SIG_S(nble_gap_sm_security_req,				\
 		 const struct nble_gap_sm_security_params *)		\
 	FN_SIG_S(nble_gap_sm_clear_bonds_req,				\
-		 const struct nble_gap_sm_clear_bond_req_params *)
+		 const struct nble_gap_sm_clear_bond_req_params *)	\
+	FN_SIG_S(nble_set_bda_req, const struct nble_set_bda_params *)	\
+	FN_SIG_S(nble_gap_conn_update_req,				\
+		 const struct nble_gap_connect_update_params *)		\
+	FN_SIG_S(nble_gattc_discover_req,				\
+		 const struct nble_discover_params *)
 
 #define LIST_FN_SIG_P							\
 	FN_SIG_P(nble_get_version_req, void *)				\
@@ -47,10 +52,10 @@
 		   const struct nble_gatt_register_req *,		\
 		   uint8_t *, uint16_t)					\
 	FN_SIG_S_B(nble_gatt_send_notif_req,				\
-		   const struct nble_gatt_send_notif_ind_params *,	\
+		   const struct nble_gatt_send_notif_params *,		\
 		   uint8_t *, uint16_t)					\
 	FN_SIG_S_B(nble_gatt_send_ind_req,				\
-		   const struct nble_gatt_send_notif_ind_params *,	\
+		   const struct nble_gatt_send_ind_params *,		\
 		   uint8_t *, uint8_t)					\
 	FN_SIG_S_B(nble_gatts_authorize_reply_req,			\
 		   const struct nble_gatts_rw_reply_params *,		\
@@ -71,28 +76,18 @@
 		   const struct nble_gap_gen_cmd_params *, void *)	\
 	FN_SIG_S_P(nble_gap_set_option_req,				\
 		   const struct nble_gap_set_option_params *, void *)	\
-	FN_SIG_S_P(nble_gap_conn_update_req,				\
-		   const struct nble_gap_connect_update_params *,	\
-		   void *)						\
 	FN_SIG_S_P(nble_gap_service_read_req,				\
 		   const struct nble_gap_service_read_params *, void *)	\
-	FN_SIG_S_P(nble_set_enable_config_req,				\
-		   const struct nble_wr_config_params *, void *)	\
 	FN_SIG_S_P(nble_gap_set_rssi_report_req,			\
 		   const struct nble_rssi_report_params *, void *)	\
 	FN_SIG_S_P(nble_gap_service_write_req,				\
 		   const struct nble_gap_service_write_params *, void *)\
 	FN_SIG_S_P(nble_gap_dbg_req, const struct debug_params *,	\
 		   void *)						\
-	FN_SIG_S_P(nble_gattc_discover_req,				\
-		   const struct nble_discover_params *, void *)	\
 	FN_SIG_S_P(nble_gattc_read_req,					\
 		   const struct nble_gattc_read_params *, void *)	\
 	FN_SIG_S_P(nble_gatts_send_svc_changed_req,			\
-		   const struct nble_gatts_svc_changed_params *, void *)\
-	FN_SIG_S_P(nble_gatts_get_attribute_value_req,			\
-		   const struct nble_gatts_get_attribute_params *,	\
-		   void *)
+		   const struct nble_gatts_svc_changed_params *, void *)
 
 #define LIST_FN_SIG_S_B_P						\
 	FN_SIG_S_B_P(nble_gattc_write_req,				\
