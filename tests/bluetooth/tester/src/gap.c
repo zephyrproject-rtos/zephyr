@@ -76,19 +76,19 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	uint16_t cmds;
 	struct gap_read_supported_commands_rp *rp = (void *) &cmds;
 
-	cmds = 1 << GAP_READ_SUPPORTED_COMMANDS;
-	cmds |= 1 << GAP_READ_CONTROLLER_INDEX_LIST;
-	cmds |= 1 << GAP_READ_CONTROLLER_INFO;
-	cmds |= 1 << GAP_SET_CONNECTABLE;
-	cmds |= 1 << GAP_SET_DISCOVERABLE;
-	cmds |= 1 << GAP_START_ADVERTISING;
-	cmds |= 1 << GAP_STOP_ADVERTISING;
-	cmds |= 1 << GAP_START_DISCOVERY;
-	cmds |= 1 << GAP_STOP_DISCOVERY;
-	cmds |= 1 << GAP_DISCONNECT;
-	cmds |= 1 << GAP_SET_IO_CAP;
-	cmds |= 1 << GAP_PAIR;
-	cmds |= 1 << GAP_PASSKEY_ENTRY;
+	cmds = BIT(GAP_READ_SUPPORTED_COMMANDS);
+	cmds |= BIT(GAP_READ_CONTROLLER_INDEX_LIST);
+	cmds |= BIT(GAP_READ_CONTROLLER_INFO);
+	cmds |= BIT(GAP_SET_CONNECTABLE);
+	cmds |= BIT(GAP_SET_DISCOVERABLE);
+	cmds |= BIT(GAP_START_ADVERTISING);
+	cmds |= BIT(GAP_STOP_ADVERTISING);
+	cmds |= BIT(GAP_START_DISCOVERY);
+	cmds |= BIT(GAP_STOP_DISCOVERY);
+	cmds |= BIT(GAP_DISCONNECT);
+	cmds |= BIT(GAP_SET_IO_CAP);
+	cmds |= BIT(GAP_PAIR);
+	cmds |= BIT(GAP_PASSKEY_ENTRY);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -116,11 +116,11 @@ static void controller_info(uint8_t *data, uint16_t len)
 	memset(&rp, 0, sizeof(rp));
 	memcpy(rp.address, CONTROLLER_ADDR, sizeof(bt_addr_t));
 
-	supported_settings = 1 << GAP_SETTINGS_POWERED;
-	supported_settings |= 1 << GAP_SETTINGS_CONNECTABLE;
-	supported_settings |= 1 << GAP_SETTINGS_BONDABLE;
-	supported_settings |= 1 << GAP_SETTINGS_LE;
-	supported_settings |= 1 << GAP_SETTINGS_ADVERTISING;
+	supported_settings = BIT(GAP_SETTINGS_POWERED);
+	supported_settings |= BIT(GAP_SETTINGS_CONNECTABLE);
+	supported_settings |= BIT(GAP_SETTINGS_BONDABLE);
+	supported_settings |= BIT(GAP_SETTINGS_LE);
+	supported_settings |= BIT(GAP_SETTINGS_ADVERTISING);
 
 	rp.supported_settings = sys_cpu_to_le32(supported_settings);
 	rp.current_settings = sys_cpu_to_le32(current_settings);

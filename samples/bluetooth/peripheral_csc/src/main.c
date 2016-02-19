@@ -78,13 +78,13 @@
 #define SC_CP_RSP_FAILED		0x04
 
 /* CSC Feature */
-#define CSC_FEAT_WHEEL_REV		(1 << 0)
-#define CSC_FEAT_CRANK_REV		(1 << 1)
-#define CSC_FEAT_MULTI_SENSORS		(1 << 2)
+#define CSC_FEAT_WHEEL_REV		BIT(0)
+#define CSC_FEAT_CRANK_REV		BIT(1)
+#define CSC_FEAT_MULTI_SENSORS		BIT(2)
 
 /* CSC Measurement Flags */
-#define CSC_WHEEL_REV_DATA_PRESENT	(1 << 0)
-#define CSC_CRANK_REV_DATA_PRESENT	(1 << 1)
+#define CSC_WHEEL_REV_DATA_PRESENT	BIT(0)
+#define CSC_CRANK_REV_DATA_PRESENT	BIT(1)
 
 /* Generic Access Profile Service declaration */
 

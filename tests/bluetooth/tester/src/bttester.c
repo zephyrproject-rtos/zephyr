@@ -25,6 +25,7 @@
 #include <bluetooth/bluetooth.h>
 #include <misc/printk.h>
 #include <misc/byteorder.h>
+#include <misc/util.h>
 #include <console/uart_pipe.h>
 
 #include "bttester.h"
@@ -43,9 +44,9 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	uint8_t buf[1];
 	struct core_read_supported_commands_rp *rp = (void *) buf;
 
-	buf[0] = 1 << CORE_READ_SUPPORTED_COMMANDS;
-	buf[0] |= 1 << CORE_READ_SUPPORTED_SERVICES;
-	buf[0] |= 1 << CORE_REGISTER_SERVICE;
+	buf[0] = BIT(CORE_READ_SUPPORTED_COMMANDS);
+	buf[0] |= BIT(CORE_READ_SUPPORTED_SERVICES);
+	buf[0] |= BIT(CORE_REGISTER_SERVICE);
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_COMMANDS,
 		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
@@ -56,9 +57,9 @@ static void supported_services(uint8_t *data, uint16_t len)
 	uint8_t buf[1];
 	struct core_read_supported_services_rp *rp = (void *) buf;
 
-	buf[0] = 1 << BTP_SERVICE_ID_CORE;
-	buf[0] |= 1 << BTP_SERVICE_ID_GAP;
-	buf[0] |= 1 << BTP_SERVICE_ID_GATT;
+	buf[0] = BIT(BTP_SERVICE_ID_CORE);
+	buf[0] |= BIT(BTP_SERVICE_ID_GAP);
+	buf[0] |= BIT(BTP_SERVICE_ID_GATT);
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
 		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
