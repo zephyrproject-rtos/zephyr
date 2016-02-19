@@ -78,7 +78,7 @@ static inline int get_free_l2_bufs(void)
 #define dec_free_l2_bufs(...)
 #define inc_free_l2_bufs(...)
 #define get_free_l2_bufs(...)
-#define inc_free_l2_bufs_func NULL
+#define inc_free_l2_bufs_func(...)
 #endif
 
 static struct nano_fifo free_l2_bufs;
