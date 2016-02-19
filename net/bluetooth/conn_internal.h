@@ -31,6 +31,7 @@ enum {
 	BT_CONN_AUTO_CONNECT,
 	BT_CONN_BR_LEGACY_SECURE,	/* 16 digits legacy PIN tracker */
 	BT_CONN_USER,			/* user I/O when pairing */
+	BT_CONN_BR_PAIRING,		/* BR connection in pairing context */
 };
 
 struct bt_conn_le {

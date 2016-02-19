@@ -180,6 +180,16 @@ void bt_conn_security_changed(struct bt_conn *conn)
 
 static int start_security(struct bt_conn *conn)
 {
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING)) {
+			return -EBUSY;
+		}
+
+		return -EPERM;
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 	switch (conn->role) {
 #if defined(CONFIG_BLUETOOTH_CENTRAL) && defined(CONFIG_BLUETOOTH_SMP)
 	case BT_HCI_ROLE_MASTER:
@@ -1153,6 +1163,7 @@ void bt_conn_pin_code_req(struct bt_conn *conn)
 		}
 
 		atomic_set_bit(conn->flags, BT_CONN_USER);
+		atomic_set_bit(conn->flags, BT_CONN_BR_PAIRING);
 		bt_auth->pincode_entry(conn, secure);
 	} else {
 		pin_code_neg_reply(&conn->br.dst);

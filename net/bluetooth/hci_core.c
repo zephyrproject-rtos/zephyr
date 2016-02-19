@@ -1242,6 +1242,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	} else {
 		update_sec_level_br(conn);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 	}
 
