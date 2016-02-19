@@ -740,8 +740,12 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		goto done;
 	}
 
-	/* Continue for the last found handle */
+	/* Continue from the last found handle */
 	params->start_handle = end_handle;
+	if (params->start_handle < UINT16_MAX) {
+		params->start_handle++;
+	}
+
 	if (!bt_gatt_discover(conn, params)) {
 		return;
 	}
