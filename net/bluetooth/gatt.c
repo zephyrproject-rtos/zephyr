@@ -120,9 +120,9 @@ populate:
 	return 0;
 }
 
-int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      void *buf, uint16_t buf_len, uint16_t offset,
-		      const void *value, uint16_t value_len)
+ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t buf_len, uint16_t offset,
+			  const void *value, uint16_t value_len)
 {
 	uint16_t len;
 
@@ -140,9 +140,9 @@ int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-int bt_gatt_attr_read_service(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr,
-			      void *buf, uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
+				  const struct bt_gatt_attr *attr,
+				  void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_uuid *uuid = attr->user_data;
 
@@ -163,9 +163,9 @@ struct gatt_incl {
 	uint16_t uuid16;
 } __packed;
 
-int bt_gatt_attr_read_included(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr,
-			       void *buf, uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
+				   const struct bt_gatt_attr *attr,
+				   void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_include *incl = attr->user_data;
 	struct gatt_incl pdu;
@@ -197,9 +197,9 @@ struct gatt_chrc {
 	};
 } __packed;
 
-int bt_gatt_attr_read_chrc(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_chrc *chrc = attr->user_data;
 	struct gatt_chrc pdu;
@@ -261,9 +261,9 @@ struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 #endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 }
 
-int bt_gatt_attr_read_ccc(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, void *buf,
+			      uint16_t len, uint16_t offset)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
 	uint16_t value;
@@ -318,9 +318,9 @@ static bool is_bonded(const bt_addr_le_t *addr)
 #endif /* defined(CONFIG_BLUETOOTH_SMP) */
 }
 
-int bt_gatt_attr_write_ccc(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, const void *buf,
-			   uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, const void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
 	const uint16_t *data = buf;
@@ -370,9 +370,9 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	return len;
 }
 
-int bt_gatt_attr_read_cep(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, void *buf,
+			      uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_cep *value = attr->user_data;
 	uint16_t props = sys_cpu_to_le16(value->properties);
@@ -381,18 +381,18 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 				 sizeof(props));
 }
 
-int bt_gatt_attr_read_cud(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, void *buf,
+			      uint16_t len, uint16_t offset)
 {
 	char *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value, strlen(value));
 }
 
-int bt_gatt_attr_read_cpf(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, void *buf,
+			      uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_cpf *value = attr->user_data;
 

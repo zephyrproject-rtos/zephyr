@@ -34,8 +34,8 @@
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define HEART_RATE_APPEARANCE	0x0341
 
-static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, uint16_t len, uint16_t offset)
 {
 	const char *name = attr->user_data;
 
@@ -43,9 +43,9 @@ static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(name));
 }
 
-static int read_appearance(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
+static ssize_t read_appearance(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	uint16_t appearance = sys_cpu_to_le16(HEART_RATE_APPEARANCE);
 
@@ -61,8 +61,8 @@ static void hrmc_ccc_cfg_changed(uint16_t value)
 	simulate_hrm = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static int read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, uint16_t len, uint16_t offset)
 {
 	uint8_t value = 0x01;
 
@@ -80,8 +80,8 @@ static void blvl_ccc_cfg_changed(uint16_t value)
 	simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static int read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -126,8 +126,8 @@ static void ct_ccc_cfg_changed(uint16_t value)
 static uint8_t ct[10];
 static uint8_t ct_update = 0;
 
-static int read_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		   void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		       void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -135,8 +135,8 @@ static int read_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(ct));
 }
 
-static int write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		    const void *buf, uint16_t len, uint16_t offset)
+static ssize_t write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			const void *buf, uint16_t len, uint16_t offset)
 {
 	uint8_t *value = attr->user_data;
 
@@ -150,8 +150,8 @@ static int write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		   void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -159,8 +159,8 @@ static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
-static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -183,8 +183,8 @@ static struct bt_uuid_128 vnd_auth_uuid = BT_UUID_INIT_128(
 
 static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
-static int read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		   void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -192,8 +192,8 @@ static int read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
-static int write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     const void *buf, uint16_t len, uint16_t offset)
+static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 const void *buf, uint16_t len, uint16_t offset)
 {
 	uint8_t *value = attr->user_data;
 
@@ -216,9 +216,9 @@ static struct vnd_long_value {
 	.data = { 'V', 'e', 'n', 'd', 'o', 'r' },
 };
 
-static int read_long_vnd(struct bt_conn *conn,
-			 const struct bt_gatt_attr *attr, void *buf,
-			 uint16_t len, uint16_t offset)
+static ssize_t read_long_vnd(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr, void *buf,
+			     uint16_t len, uint16_t offset)
 {
 	struct vnd_long_value *value = attr->user_data;
 
@@ -226,9 +226,9 @@ static int read_long_vnd(struct bt_conn *conn,
 				 sizeof(value->data));
 }
 
-static int write_long_vnd(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, const void *buf,
-			  uint16_t len, uint16_t offset)
+static ssize_t write_long_vnd(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, const void *buf,
+			      uint16_t len, uint16_t offset)
 {
 	struct vnd_long_value *value = attr->user_data;
 
@@ -242,8 +242,8 @@ static int write_long_vnd(struct bt_conn *conn,
 	return len;
 }
 
-static int flush_long_vnd(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, uint8_t flags)
+static ssize_t flush_long_vnd(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, uint8_t flags)
 {
 	struct vnd_long_value *value = attr->user_data;
 
@@ -271,8 +271,8 @@ static struct bt_gatt_cep vnd_long_cep = {
 
 static int signed_value;
 
-static int read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		       void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			   void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -280,8 +280,8 @@ static int read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(signed_value));
 }
 
-static int write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			const void *buf, uint16_t len, uint16_t offset)
+static ssize_t write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			    const void *buf, uint16_t len, uint16_t offset)
 {
 	uint8_t *value = attr->user_data;
 

@@ -88,9 +88,9 @@
 
 /* Generic Access Profile Service declaration */
 
-static int read_device_name(struct bt_conn *conn,
-			    const struct bt_gatt_attr *attr,
-			    void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_device_name(struct bt_conn *conn,
+				const struct bt_gatt_attr *attr,
+				void *buf, uint16_t len, uint16_t offset)
 {
 	const char *name = attr->user_data;
 
@@ -98,9 +98,9 @@ static int read_device_name(struct bt_conn *conn,
 				 strlen(name));
 }
 
-static int read_appearance(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
+static ssize_t read_appearance(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	uint16_t appearance = sys_cpu_to_le16(CSC_APPEARANCE);
 
@@ -120,7 +120,7 @@ static struct bt_gatt_attr gap_attrs[] = {
 
 /* Device Information Service declaration */
 
-static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static ssize_t read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
@@ -129,7 +129,7 @@ static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
-static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static ssize_t read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
@@ -160,8 +160,8 @@ static void blvl_ccc_cfg_changed(uint16_t value)
 	bas_simulate = value == BT_GATT_CCC_NOTIFY;
 }
 
-static int read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -198,7 +198,7 @@ static void ctrl_point_ccc_cfg_changed(uint16_t value)
 	ctrl_point_configured = value == BT_GATT_CCC_INDICATE;
 }
 
-static int read_location(struct bt_conn *conn,
+static ssize_t read_location(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
@@ -208,9 +208,9 @@ static int read_location(struct bt_conn *conn,
 				 sizeof(*value));
 }
 
-static int read_csc_feature(struct bt_conn *conn,
-			    const struct bt_gatt_attr *attr, void *buf,
-			    uint16_t len, uint16_t offset)
+static ssize_t read_csc_feature(struct bt_conn *conn,
+				const struct bt_gatt_attr *attr, void *buf,
+				uint16_t len, uint16_t offset)
 {
 	uint16_t csc_feature = CSC_FEATURE;
 
@@ -229,9 +229,9 @@ struct write_sc_ctrl_point_req {
 	};
 } __packed;
 
-static int write_ctrl_point(struct bt_conn *conn,
-			    const struct bt_gatt_attr *attr, const void *buf,
-			    uint16_t len, uint16_t offset)
+static ssize_t write_ctrl_point(struct bt_conn *conn,
+				const struct bt_gatt_attr *attr,
+				const void *buf, uint16_t len, uint16_t offset)
 {
 	const struct write_sc_ctrl_point_req *req = buf;
 	uint8_t status;

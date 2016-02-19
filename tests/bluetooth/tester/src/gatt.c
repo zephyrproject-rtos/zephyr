@@ -224,8 +224,8 @@ struct gatt_value {
 	bool has_ccc;
 };
 
-static int read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t len, uint16_t offset)
 {
 	const struct gatt_value *value = attr->user_data;
 
@@ -238,8 +238,9 @@ static int read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 value->len);
 }
 
-static int write_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		       const void *buf, uint16_t len, uint16_t offset)
+static ssize_t write_value(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, const void *buf,
+			   uint16_t len, uint16_t offset)
 {
 	struct gatt_value *value = attr->user_data;
 
@@ -266,8 +267,8 @@ static int write_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-static int flush_value(struct bt_conn *conn,
-		       const struct bt_gatt_attr *attr, uint8_t flags)
+static ssize_t flush_value(struct bt_conn *conn,
+			    const struct bt_gatt_attr *attr, uint8_t flags)
 {
 	struct gatt_value *value = attr->user_data;
 

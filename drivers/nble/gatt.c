@@ -214,9 +214,9 @@ struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 	return NULL;
 }
 
-int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      void *buf, uint16_t buf_len, uint16_t offset,
-		      const void *value, uint16_t value_len)
+ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t buf_len, uint16_t offset,
+			  const void *value, uint16_t value_len)
 {
 	uint16_t len;
 
@@ -238,9 +238,9 @@ int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-int bt_gatt_attr_read_service(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr,
-			      void *buf, uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
+				  const struct bt_gatt_attr *attr,
+				  void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_uuid *uuid = attr->user_data;
 
@@ -255,7 +255,7 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
 				 BT_UUID_128(uuid)->val, 16);
 }
 
-int bt_gatt_attr_read_included(struct bt_conn *conn,
+ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
 			       void *buf, uint16_t len, uint16_t offset)
 {
@@ -271,9 +271,9 @@ struct gatt_chrc {
 	};
 } __packed;
 
-int bt_gatt_attr_read_chrc(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_chrc *chrc = attr->user_data;
 	struct gatt_chrc pdu;
@@ -297,16 +297,16 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
 }
 
-int bt_gatt_attr_read_ccc(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, void *buf,
+			      uint16_t len, uint16_t offset)
 {
 	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 }
 
-int bt_gatt_attr_write_ccc(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, const void *buf,
-			   uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr,
+			       const void *buf, uint16_t len, uint16_t offset)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
 	const uint16_t *data = buf;
@@ -331,9 +331,9 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	return len;
 }
 
-int bt_gatt_attr_read_cep(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, void *buf,
+			      uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_cep *value = attr->user_data;
 	uint16_t props = sys_cpu_to_le16(value->properties);
@@ -342,16 +342,16 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 				 sizeof(props));
 }
 
-int bt_gatt_attr_read_cud(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, void *buf,
+			      uint16_t len, uint16_t offset)
 {
 	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 }
 
-int bt_gatt_attr_read_cpf(struct bt_conn *conn,
-			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, void *buf,
+			      uint16_t len, uint16_t offset)
 {
 	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 }

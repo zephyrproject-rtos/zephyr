@@ -73,8 +73,9 @@ static inline uint32_t le24_to_int(const uint8_t *u24)
 		(uint32_t)u24[2] << 16);
 }
 
-static int read_string(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		       void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_string(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, void *buf,
+			   uint16_t len, uint16_t offset)
 {
 	const char *string = attr->user_data;
 
@@ -82,8 +83,8 @@ static int read_string(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(string));
 }
 
-static int read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		    void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			void *buf, uint16_t len, uint16_t offset)
 {
 	const uint16_t *u16 = attr->user_data;
 	uint16_t value = sys_cpu_to_le16(*u16);
@@ -94,9 +95,9 @@ static int read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 /* Generic Access Profile Service Declaration */
 
-static int read_appearance(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
+static ssize_t read_appearance(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	uint16_t value = sys_cpu_to_le16(APPEARANCE_THERMOMETER);
 
@@ -126,8 +127,8 @@ static void blvl_ccc_cfg_changed(uint16_t value)
 	simulate_blvl = value == BT_GATT_CCC_NOTIFY;
 }
 
-static int read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, uint16_t len, uint16_t offset)
 {
 	const uint8_t *value = attr->user_data;
 
@@ -238,9 +239,9 @@ struct read_es_measurement_rp {
 	uint8_t measurement_uncertainty;
 } __packed;
 
-static int read_es_measurement(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr, void *buf,
-			       uint16_t len, uint16_t offset)
+static ssize_t read_es_measurement(struct bt_conn *conn,
+				   const struct bt_gatt_attr *attr, void *buf,
+				   uint16_t len, uint16_t offset)
 {
 	const struct es_measurement *value = attr->user_data;
 	struct read_es_measurement_rp rsp;
@@ -256,9 +257,9 @@ static int read_es_measurement(struct bt_conn *conn,
 				 sizeof(rsp));
 }
 
-static int read_temp_valid_range(struct bt_conn *conn,
-				 const struct bt_gatt_attr *attr, void *buf,
-				 uint16_t len, uint16_t offset)
+static ssize_t read_temp_valid_range(struct bt_conn *conn,
+				     const struct bt_gatt_attr *attr, void *buf,
+				     uint16_t len, uint16_t offset)
 {
 	const struct temperature_sensor *sensor = attr->user_data;
 	uint16_t tmp[] = {sys_cpu_to_le16(sensor->lower_limit),
@@ -278,9 +279,10 @@ struct es_trigger_setting_reference {
 	int16_t ref_val;
 } __packed;
 
-static int read_temp_trigger_setting(struct bt_conn *conn,
-				     const struct bt_gatt_attr *attr, void *buf,
-				     uint16_t len, uint16_t offset)
+static ssize_t read_temp_trigger_setting(struct bt_conn *conn,
+					 const struct bt_gatt_attr *attr,
+					 void *buf, uint16_t len,
+					 uint16_t offset)
 {
 	const struct temperature_sensor *sensor = attr->user_data;
 
@@ -322,10 +324,10 @@ struct write_es_trigger_setting_req {
 	uint8_t operand[];
 } __packed;
 
-static int write_temp_trigger_setting(struct bt_conn *conn,
-				      const struct bt_gatt_attr *attr,
-				      const void *buf, uint16_t len,
-				      uint16_t offset)
+static ssize_t write_temp_trigger_setting(struct bt_conn *conn,
+					  const struct bt_gatt_attr *attr,
+					  const void *buf, uint16_t len,
+					  uint16_t offset)
 {
 	const struct write_es_trigger_setting_req *req = buf;
 	const struct es_trigger_setting_reference *ref;

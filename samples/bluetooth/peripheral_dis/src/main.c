@@ -34,9 +34,9 @@
 #define DEVICE_NAME_LEN	(sizeof(DEVICE_NAME) - 1)
 #define APPEARANCE	0x0000
 
-static int read_appearance(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
+static ssize_t read_appearance(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	uint16_t appearance = sys_cpu_to_le16(APPEARANCE);
 
@@ -44,8 +44,9 @@ static int read_appearance(struct bt_conn *conn,
 				 sizeof(appearance));
 }
 
-static int read_string(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		       void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_string(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, void *buf,
+			   uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 

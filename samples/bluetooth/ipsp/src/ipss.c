@@ -48,8 +48,8 @@
 
 #define UDP_PORT		4242
 
-static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, uint16_t len, uint16_t offset)
 {
 	const char *name = attr->user_data;
 
@@ -57,9 +57,9 @@ static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(name));
 }
 
-static int read_appearance(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
+static ssize_t read_appearance(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	uint16_t appearance = sys_cpu_to_le16(UNKNOWN_APPEARANCE);
 
@@ -67,8 +67,8 @@ static int read_appearance(struct bt_conn *conn,
 				 sizeof(appearance));
 }
 
-static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		   void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -76,8 +76,8 @@ static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
-static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 

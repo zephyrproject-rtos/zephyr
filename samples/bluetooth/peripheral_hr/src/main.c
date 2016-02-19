@@ -36,8 +36,8 @@
 
 struct bt_conn *default_conn;
 
-static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, uint16_t len, uint16_t offset)
 {
 	const char *name = attr->user_data;
 
@@ -45,9 +45,9 @@ static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(name));
 }
 
-static int read_appearance(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
+static ssize_t read_appearance(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	uint16_t appearance = sys_cpu_to_le16(HEART_RATE_APPEARANCE);
 
@@ -63,8 +63,8 @@ static void hrmc_ccc_cfg_changed(uint16_t value)
 	simulate_hrm = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static int read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, uint16_t len, uint16_t offset)
 {
 	uint8_t value = 0x01;
 
@@ -82,8 +82,8 @@ static void blvl_ccc_cfg_changed(uint16_t value)
 	simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static int read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -91,8 +91,8 @@ static int read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(*value));
 }
 
-static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		   void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -100,8 +100,8 @@ static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
-static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 

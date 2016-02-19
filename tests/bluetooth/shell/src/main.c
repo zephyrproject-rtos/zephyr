@@ -206,8 +206,9 @@ static struct bt_conn_cb conn_callbacks = {
 	.security_changed = security_changed,
 };
 
-static int read_string(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		       void *buf, uint16_t len, uint16_t offset)
+static ssize_t read_string(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, void *buf,
+			   uint16_t len, uint16_t offset)
 {
 	const char *str = attr->user_data;
 
@@ -217,9 +218,9 @@ static int read_string(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 static uint16_t appearance_value = 0x0001;
 
-static int read_appearance(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
+static ssize_t read_appearance(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       uint16_t len, uint16_t offset)
 {
 	uint16_t appearance = sys_cpu_to_le16(appearance_value);
 
