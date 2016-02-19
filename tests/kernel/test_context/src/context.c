@@ -749,7 +749,7 @@ static int test_timeout(void)
 	int num_cancellations = ARRAY_SIZE(cancellations);
 	int next_cancellation = 0;
 
-	void *delayed_fibers[NUM_TIMEOUT_FIBERS];
+	nano_thread_id_t delayed_fibers[NUM_TIMEOUT_FIBERS];
 
 	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
 		delayed_fibers[ii] =

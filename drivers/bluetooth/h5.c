@@ -111,9 +111,9 @@ static struct h5 {
 	uint8_t			rx_ack;
 
 	/* delayed rx ack fiber */
-	void			*ack_to;
+	nano_thread_id_t  ack_to;
 	/* delayed retransmit fiber */
-	void			*retx_to;
+	nano_thread_id_t  retx_to;
 
 	enum {
 		UNINIT,

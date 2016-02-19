@@ -178,10 +178,11 @@ FUNC_NORETURN void fiber_abort(void)
 
 #include <wait_q.h>
 
-FUNC_ALIAS(fiber_delayed_start, fiber_fiber_delayed_start, void *);
-FUNC_ALIAS(fiber_delayed_start, task_fiber_delayed_start, void *);
+FUNC_ALIAS(fiber_delayed_start, fiber_fiber_delayed_start, nano_thread_id_t);
+FUNC_ALIAS(fiber_delayed_start, task_fiber_delayed_start, nano_thread_id_t);
 
-void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
+nano_thread_id_t fiber_delayed_start(char *stack,
+			  unsigned int stack_size_in_bytes,
 			  nano_fiber_entry_t entry_point, int param1,
 			  int param2, unsigned int priority,
 			  unsigned int options, int32_t timeout_in_ticks)
@@ -204,9 +205,9 @@ void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 FUNC_ALIAS(fiber_delayed_start_cancel, fiber_fiber_delayed_start_cancel, void);
 FUNC_ALIAS(fiber_delayed_start_cancel, task_fiber_delayed_start_cancel, void);
 
-void fiber_delayed_start_cancel(void *handle)
+void fiber_delayed_start_cancel(nano_thread_id_t handle)
 {
-	struct tcs *cancelled_tcs = (struct tcs *)handle;
+	struct tcs *cancelled_tcs = handle;
 	int key = irq_lock();
 
 	_nano_timeout_abort(cancelled_tcs);

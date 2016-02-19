@@ -93,7 +93,7 @@ struct bt_smp {
 	struct bt_l2cap_chan	chan;
 
 	/* SMP Timeout fiber handle */
-	void			*timeout;
+	nano_thread_id_t  timeout;
 
 	/* Commands that remote is allowed to send */
 	atomic_t		allowed_cmds;

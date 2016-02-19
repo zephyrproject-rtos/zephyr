@@ -277,17 +277,18 @@ extern void task_sleep(int32_t timeout_in_ticks);
  *
  * @return A handle potentially used to cancel the delayed start.
  */
-extern void *fiber_fiber_delayed_start(char *stack,
+extern nano_thread_id_t fiber_fiber_delayed_start(char *stack,
 		unsigned int stack_size_in_bytes,
 		nano_fiber_entry_t entry_point, int param1,
 		int param2, unsigned int priority,
 		unsigned int options, int32_t timeout_in_ticks);
 
-extern void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
+extern nano_thread_id_t fiber_delayed_start(char *stack,
+		unsigned int stack_size_in_bytes,
 		nano_fiber_entry_t entry_point, int param1,
 		int param2, unsigned int priority,
 		unsigned int options, int32_t timeout_in_ticks);
-extern void fiber_delayed_start_cancel(void *handle);
+extern void fiber_delayed_start_cancel(nano_thread_id_t handle);
 
 /**
  * @brief Cancel a delayed fiber start.
@@ -297,7 +298,7 @@ extern void fiber_delayed_start_cancel(void *handle);
  * @return N/A
  * @sa fiber_fiber_delayed_start
  */
-extern void fiber_fiber_delayed_start_cancel(void *handle);
+extern void fiber_fiber_delayed_start_cancel(nano_thread_id_t handle);
 #endif
 
 /**
@@ -328,7 +329,7 @@ extern void task_fiber_start(char *pStack, unsigned int stackSize,
  *
  * @sa fiber_fiber_delayed_start
  */
-extern void *task_fiber_delayed_start(char *stack,
+extern nano_thread_id_t task_fiber_delayed_start(char *stack,
 		unsigned int stack_size_in_bytes,
 		nano_fiber_entry_t entry_point, int param1,
 		int param2, unsigned int priority,
@@ -338,7 +339,7 @@ extern void *task_fiber_delayed_start(char *stack,
  *
  * @sa fiber_fiber_delayed_start_cancel
  */
-extern void task_fiber_delayed_start_cancel(void *handle);
+extern void task_fiber_delayed_start_cancel(nano_thread_id_t handle);
 #endif
 
 /**
