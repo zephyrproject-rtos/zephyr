@@ -17,3 +17,4 @@ applications and nanokernel applications.
    nanokernel_data
    nanokernel_interrupts
    nanokernel_kernel_event_logger
+   nanokernel_example

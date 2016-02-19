@@ -3,8 +3,10 @@
 Semaphore, Timer, and Fiber Example
 ###################################
 
-The following example is pulled from the file:
-:file:`samples/synchronization/microkernel/src/hello.c`.
+The following example is intended to provide a basic picture of how Zephyr's
+semaphores, timers, and fibers work. The actual implementations of the
+standard hello_world are much simpler, see
+:file:`ZEPHYR_BASE/samples/hello_world`
 
 Example Code
 ************
