@@ -29,11 +29,18 @@ extern "C" {
 
 /* Network subsystem logging helpers */
 
+#ifdef CONFIG_NETWORKING_WITH_LOGGING
 #define NET_DBG(fmt, ...) printk("net: %s (%p): " fmt, __func__, \
 				 sys_thread_self_get(), ##__VA_ARGS__)
 #define NET_ERR(fmt, ...) printk("net: %s: " fmt, __func__, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) printk("net: " fmt,  ##__VA_ARGS__)
 #define NET_PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#else
+#define NET_DBG(...)
+#define NET_ERR(...)
+#define NET_INFO(...)
+#define NET_PRINT(...)
+#endif /* CONFIG_NETWORKING_WITH_LOGGING */
 
 struct net_buf;
 struct net_context;

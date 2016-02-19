@@ -65,7 +65,9 @@ static int net_driver_15_4_open(void)
 
 static int net_driver_15_4_send(struct net_buf *buf)
 {
+#ifdef CONFIG_NETWORKING_WITH_LOGGING
 	int orig_len = ip_buf_len(buf);
+#endif
 
 	if (!NETSTACK_COMPRESS.compress(buf)) {
 		NET_DBG("compression failed\n");
