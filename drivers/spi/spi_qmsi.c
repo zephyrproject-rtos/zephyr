@@ -266,6 +266,8 @@ static int spi_qmsi_init(struct device *dev)
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M0_REGISTER);
 		QM_SCSS_INT->int_spi_mst_0_mask &= ~BIT(0);
 		break;
+
+#ifdef CONFIG_SPI_QMSI_PORT_1
 	case QM_SPI_MST_1:
 		IRQ_CONNECT(CONFIG_SPI_QMSI_PORT_1_IRQ,
 			    CONFIG_SPI_QMSI_PORT_1_PRI, qm_spi_master_1_isr,
@@ -274,6 +276,8 @@ static int spi_qmsi_init(struct device *dev)
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M1_REGISTER);
 		QM_SCSS_INT->int_spi_mst_1_mask &= ~BIT(0);
 		break;
+#endif /* CONFIG_SPI_QMSI_PORT_1 */
+
 	default:
 		return DEV_FAIL;
 	}
