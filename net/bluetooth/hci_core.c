@@ -46,9 +46,9 @@
 #include "l2cap_internal.h"
 #endif /* CONFIG_BLUETOOTH_CONN */
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BLUETOOTH_CONN)
 #include "smp.h"
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
 #undef BT_DBG

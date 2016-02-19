@@ -155,10 +155,12 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);
+#endif /* CONFIG_BLUETOOTH_SMP */
 
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 /* Notify higher layers that connection security changed */
 void bt_conn_security_changed(struct bt_conn *conn);
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 /* Prepare a PDU to be sent over a connection */
 struct net_buf *bt_conn_create_pdu(struct nano_fifo *fifo, size_t reserve);

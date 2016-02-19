@@ -62,9 +62,9 @@ struct bt_link_key {
 
 struct bt_keys {
 	bt_addr_le_t		addr;
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	uint8_t			enc_size;
-#endif
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 	atomic_t		flags;
 	uint16_t		keys;
 

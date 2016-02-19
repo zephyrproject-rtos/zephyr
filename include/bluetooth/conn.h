@@ -246,7 +246,7 @@ typedef enum __packed {
 			     */
 } bt_security_t;
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief Set security level for a connection.
  *
  *  This function enable security (encryption) for a connection. If device is
@@ -279,7 +279,7 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
  *  @return Encryption key size.
  */
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 /** Connection callback structure */
 struct bt_conn_cb {
@@ -291,8 +291,10 @@ struct bt_conn_cb {
 	void (*identity_resolved)(struct bt_conn *conn,
 				  const bt_addr_le_t *rpa,
 				  const bt_addr_le_t *identity);
+#endif /* CONFIG_BLUETOOTH_SMP */
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	void (*security_changed)(struct bt_conn *conn, bt_security_t level);
-#endif
+#endif /* defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR) */
 	struct bt_conn_cb *_next;
 };
 

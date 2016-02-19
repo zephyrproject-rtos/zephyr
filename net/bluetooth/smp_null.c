@@ -104,6 +104,10 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
+void bt_smp_update_keys(struct bt_conn *conn)
+{
+}
+
 int bt_smp_init(void)
 {
 	static struct bt_l2cap_fixed_chan chan = {

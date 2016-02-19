@@ -118,11 +118,6 @@ void notify_le_param_updated(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP)
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
-{
-	return conn->keys ? conn->keys->enc_size : 0;
-}
-
 void bt_conn_identity_resolved(struct bt_conn *conn)
 {
 	const bt_addr_le_t *rpa;
@@ -137,17 +132,6 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->identity_resolved) {
 			cb->identity_resolved(conn, rpa, &conn->le.dst);
-		}
-	}
-}
-
-void bt_conn_security_changed(struct bt_conn *conn)
-{
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->security_changed) {
-			cb->security_changed(conn, conn->sec_level);
 		}
 	}
 }
@@ -175,11 +159,29 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
 }
+#endif /* CONFIG_BLUETOOTH_SMP */
+
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
+{
+	return conn->keys ? conn->keys->enc_size : 0;
+}
+
+void bt_conn_security_changed(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->security_changed) {
+			cb->security_changed(conn, conn->sec_level);
+		}
+	}
+}
 
 static int start_security(struct bt_conn *conn)
 {
 	switch (conn->role) {
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
+#if defined(CONFIG_BLUETOOTH_CENTRAL) && defined(CONFIG_BLUETOOTH_SMP)
 	case BT_HCI_ROLE_MASTER:
 	{
 		if (!conn->keys) {
@@ -215,11 +217,11 @@ static int start_security(struct bt_conn *conn)
 						   conn->keys->ltk.val,
 						   conn->keys->enc_size);
 	}
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+#endif /* CONFIG_BLUETOOTH_CENTRAL && CONFIG_BLUETOOTH_SMP */
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL) && defined(CONFIG_BLUETOOTH_SMP)
 	case BT_HCI_ROLE_SLAVE:
 		return bt_smp_send_security_req(conn);
-#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL && CONFIG_BLUETOOTH_SMP */
 	default:
 		return -EINVAL;
 	}
