@@ -565,28 +565,6 @@ static void add_included(uint8_t *data, uint16_t len)
 	bt_gatt_foreach_attr(handle, handle, add_included_cb, data);
 }
 
-static uint8_t set_ccc_value(struct bt_gatt_attr *attr, const void *value,
-			     const uint16_t len)
-{
-	uint16_t ccc_val;
-
-	if (len != sizeof(ccc_val)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	memcpy(&ccc_val, value, sizeof(ccc_val));
-
-	/*
-	 * CCC Data has been already set, so we can only verify if the
-	 * requested data is correct
-	 */
-	if (sys_le16_to_cpu(ccc_val) != 0) {
-		return BTP_STATUS_FAILED;
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
 static uint8_t set_cep_value(struct bt_gatt_attr *attr, const void *value,
 			     const uint16_t len)
 {
@@ -607,10 +585,9 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 	struct gatt_value value;
 	uint8_t status;
 
-	/* Handle CCC value */
+	/* Value has been already set while adding CCC to the gatt_db */
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC)) {
-		status = set_ccc_value(attr, cmd->value,
-				       sys_le16_to_cpu(cmd->len));
+		status = BTP_STATUS_SUCCESS;
 		goto rsp;
 	}
 
