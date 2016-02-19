@@ -51,15 +51,20 @@ static struct {
 	uint8_t buf[MAX_BUFFER_SIZE];
 } gatt_buf;
 
-static void *gatt_buf_reserve(size_t len)
+static void *gatt_buf_add(const void *data, size_t len)
 {
-	void *ptr;
+	void *ptr = gatt_buf.buf + gatt_buf.len;
 
-	if ((len + gatt_buf.len) > ARRAY_SIZE(gatt_buf.buf)) {
+	if ((len + gatt_buf.len) > MAX_BUFFER_SIZE) {
 		return NULL;
 	}
 
-	ptr = memset(gatt_buf.buf + gatt_buf.len, 0, len);
+	if (data) {
+		memcpy(ptr, data, len);
+	} else {
+		memset(ptr, 0, len);
+	}
+
 	gatt_buf.len += len;
 
 	BTTESTER_DBG("%d/%d used", gatt_buf.len, MAX_BUFFER_SIZE);
@@ -67,20 +72,9 @@ static void *gatt_buf_reserve(size_t len)
 	return ptr;
 }
 
-static void *gatt_buf_add(const void *data, size_t len)
+static void *gatt_buf_reserve(size_t len)
 {
-	void *ptr;
-
-	if ((len + gatt_buf.len) > ARRAY_SIZE(gatt_buf.buf)) {
-		return NULL;
-	}
-
-	ptr = memcpy(gatt_buf.buf + gatt_buf.len, data, len);
-	gatt_buf.len += len;
-
-	BTTESTER_DBG("%d/%d used", gatt_buf.len, MAX_BUFFER_SIZE);
-
-	return ptr;
+	return gatt_buf_add(NULL, len);
 }
 
 static void gatt_buf_clear(void)
