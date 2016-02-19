@@ -8,8 +8,8 @@ This section describes how to set up a Linux development system.
 After completing these steps, you will be able to compile and run your Zephyr
 applications on the following Linux distributions:
 
-* Ubuntu 14.04 LTS 64 bit
-* Fedora 22 64 bit
+* Ubuntu 14.04 LTS 64-bit
+* Fedora 22 64-bit
 
 Where needed, alternative instructions are listed for Ubuntu and Fedora.
 
@@ -34,18 +34,6 @@ On Fedora:
 .. code-block:: console
 
    $ sudo dnf update
-
-.. _linux_network_configuration:
-
-Configuring Network and Proxies
-*******************************
-
-Building the kernel requires the command-line tools of git, ssh, wget,
-curl. Verify that each service can be run as both user and root and that access
-to the Internet and is not impeded by a firewall.
-
-If your network requires proxy access through a proxy, please configure using
-steps similar git, ssh and wget in accordance to your security policies.
 
 .. _linux_required_software:
 
