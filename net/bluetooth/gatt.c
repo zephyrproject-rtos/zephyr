@@ -127,7 +127,7 @@ int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	uint16_t len;
 
 	if (offset > value_len) {
-		return -EINVAL;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	len = min(buf_len, value_len - offset);
