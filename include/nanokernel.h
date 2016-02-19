@@ -172,9 +172,10 @@ extern void sys_thread_busy_wait(uint32_t usec_to_wait);
  * @param arg2 2nd entry point parameter.
  * @param prio The fiber's priority.
  * @param options Not used currently.
- * @return N/A
+ * @return nanokernel thread identifier
  */
-void fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
+extern nano_thread_id_t fiber_start(char *stack, unsigned stack_size,
+		nano_fiber_entry_t entry,
 		int arg1, int arg2, unsigned prio, unsigned options);
 
 /* Methods for fibers */
@@ -192,9 +193,9 @@ void fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
  * @param arg2 2nd entry point parameter.
  * @param prio The fiber's priority.
  * @param options Not used currently.
- * @return N/A
+ * @return nanokernel thread identifier
  */
-extern void fiber_fiber_start(char *pStack, unsigned int stackSize,
+extern nano_thread_id_t fiber_fiber_start(char *pStack, unsigned int stackSize,
 		nano_fiber_entry_t entry, int arg1, int arg2, unsigned prio,
 		unsigned options);
 
@@ -319,7 +320,7 @@ extern void fiber_fiber_delayed_start_cancel(nano_thread_id_t handle);
  *
  * @sa fiber_fiber_start
  */
-extern void task_fiber_start(char *pStack, unsigned int stackSize,
+extern nano_thread_id_t task_fiber_start(char *pStack, unsigned int stackSize,
 		nano_fiber_entry_t entry, int arg1, int arg2, unsigned prio,
 		unsigned options);
 #ifdef CONFIG_NANO_TIMEOUTS

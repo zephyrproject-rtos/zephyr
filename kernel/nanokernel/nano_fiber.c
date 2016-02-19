@@ -63,11 +63,11 @@ void _nano_fiber_ready(struct tcs *tcs)
 
 /* currently the fiber and task implementations are identical */
 
-FUNC_ALIAS(_fiber_start, fiber_fiber_start, void);
-FUNC_ALIAS(_fiber_start, task_fiber_start, void);
-FUNC_ALIAS(_fiber_start, fiber_start, void);
+FUNC_ALIAS(_fiber_start, fiber_fiber_start, nano_thread_id_t);
+FUNC_ALIAS(_fiber_start, task_fiber_start, nano_thread_id_t);
+FUNC_ALIAS(_fiber_start, fiber_start, nano_thread_id_t);
 
-void _fiber_start(char *pStack,
+nano_thread_id_t _fiber_start(char *pStack,
 		unsigned stackSize, /* stack size in bytes */
 		nano_fiber_entry_t pEntry,
 		int parameter1,
@@ -111,6 +111,8 @@ void _fiber_start(char *pStack,
 	} else {
 		irq_unlock(imask);
 	}
+
+	return tcs;
 }
 
 void fiber_yield(void)
