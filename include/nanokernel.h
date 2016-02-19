@@ -244,6 +244,42 @@ extern void fiber_abort(void);
  */
 extern void fiber_sleep(int32_t timeout_in_ticks);
 
+/**
+ * @brief Wake the specified fiber from sleep
+ *
+ * This routine wakes the fiber specified by @a fiber from its sleep.
+ * It may only be called from an ISR.
+ *
+ * @param fiber Identifies fiber to wake
+ *
+ * @return N/A
+ */
+extern void isr_fiber_wakeup(nano_thread_id_t fiber);
+
+/**
+ * @brief Wake the specified fiber from sleep
+ *
+ * This routine wakes the fiber specified by @a fiber from its sleep.
+ * It may only be called from a fiber.
+ *
+ * @param fiber Identifies fiber to wake
+ *
+ * @return N/A
+ */
+extern void fiber_fiber_wakeup(nano_thread_id_t fiber);
+
+/**
+ * @brief Wake the specified fiber from sleep
+ *
+ * This routine wakes the fiber specified by @a fiber from its sleep.
+ * It may only be called from a task.
+ *
+ * @param fiber Identifies fiber to wake
+ *
+ * @return N/A
+ */
+extern void task_fiber_wakeup(nano_thread_id_t fiber);
+
 #ifndef CONFIG_MICROKERNEL
 /**
  * @brief Put the task to sleep.

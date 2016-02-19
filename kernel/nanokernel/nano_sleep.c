@@ -41,6 +41,29 @@ void fiber_sleep(int32_t timeout_in_ticks)
 	_Swap(key);
 }
 
+FUNC_ALIAS(_fiber_wakeup, isr_fiber_wakeup, void);
+FUNC_ALIAS(_fiber_wakeup, fiber_fiber_wakeup, void);
+
+void _fiber_wakeup(nano_thread_id_t fiber)
+{
+	int key;
+
+	key = irq_lock();
+	_nano_timeout_abort(fiber);
+	_nano_fiber_ready(fiber);
+	irq_unlock(key);
+}
+
+void task_fiber_wakeup(nano_thread_id_t fiber)
+{
+	int key;
+
+	key = irq_lock();
+	_nano_timeout_abort(fiber);
+	_nano_fiber_ready(fiber);
+	_Swap(key);
+}
+
 #ifndef CONFIG_MICROKERNEL
 void task_sleep(int32_t timeout_in_ticks)
 {
