@@ -1679,9 +1679,5 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 
 uint8_t tester_init_gatt(void)
 {
-	ccc_added = false;
-	gatt_buf_clear();
-	memset(&gatt_db, 0, sizeof(gatt_db));
-
 	return BTP_STATUS_SUCCESS;
 }
