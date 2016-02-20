@@ -3898,7 +3898,7 @@ sub process {
 							$rtrim_before = 1;
 						}
 					}
-					if ($ctx !~ /.x[WEC]/ && $cc !~ /^}/) {
+					if ($ctx !~ /.x[WEC]/ && $cc !~ /^}/ && $cc !~ /^\)/) {
 						if (ERROR("SPACING",
 							  "space required after that '$op' $at\n" . $hereptr)) {
 							$line_fixed = 1;
