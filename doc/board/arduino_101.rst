@@ -255,8 +255,8 @@ Flashing the ROM
 The default boot ROM used by the Arduino 101 requires that any binary
 be authorized. Currently the Zephyr project is not supported by this ROM.  To
 work around this requirement, an alternative boot ROM has been created that
-needs to be flashed just once. To flash a Zephyr-compatible boot ROM, use
-:command:`zflash` to flash the :file:`quark_se_rom.bin` to the board.
+needs to be flashed just once. To flash a Zephyr-compatible boot ROM, follow the
+steps below to flash the :file:`quark_se_rom.bin` to the board.
 
 .. note::
 
