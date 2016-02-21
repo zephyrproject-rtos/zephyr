@@ -94,6 +94,8 @@ The galileo board configuration supports the following hardware features:
 
 * Serial Ports in Polling and Interrupt Driven Modes
 
+* Ethernet in Interrupt Driven Mode
+
 +-----------+------------+-----------------------+
 | Interface | Controller | Driver/Component      |
 +===========+============+=======================+
@@ -105,6 +107,8 @@ The galileo board configuration supports the following hardware features:
 +-----------+------------+-----------------------+
 | UART      | on-chip    | serial port-polling;  |
 |           |            | serial port-interrupt |
++-----------+------------+-----------------------+
+| Ethernet  | on-chip    | Ethernet              |
 +-----------+------------+-----------------------+
 
 The kernel currently does not support other hardware features.
@@ -166,6 +170,17 @@ HPET System Clock Support
 
 Galileo uses HPET timing with legacy-free timer support. The galileo platform
 configuration uses HPET as a system clock timer.
+
+Ethernet Support
+================
+
+The Ethernet driver allocates a Direct Memory Access (DMA)-accessible
+pair of receive and transmit buffers and descriptors.  The driver
+operates the network interface in store-and-forward mode and enables
+the receive interrupt.
+
+For more information, see `Intel® Quark SoC X1000 Datasheet`_,
+section 15.0 10/100 Mbps Ethernet
 
 Procedures
 **********
@@ -336,7 +351,6 @@ At this time, the kernel does not support the following:
 
 * Isolated Memory Regions
 * Serial port in Direct Memory Access (DMA) mode
-* Ethernet
 * Supervisor Mode Execution Protection (SMEP)
 
 Bibliography
