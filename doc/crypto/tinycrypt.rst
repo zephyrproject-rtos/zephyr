@@ -81,15 +81,15 @@ Design Goals
 ************
 
 * Minimize the code size of each cryptographic primitive. This means minimize
- the size of a platform-independent implementation, as presented in TinyCrypt.
- Note that various applications may require further features, optimizations with
- respect to other metrics and countermeasures for particular threats. These
- peculiarities would increase the code size and thus are not considered here.
+  the size of a platform-independent implementation, as presented in TinyCrypt.
+  Note that various applications may require further features, optimizations with
+  respect to other metrics and countermeasures for particular threats. These
+  peculiarities would increase the code size and thus are not considered here.
 
 * Minimize the dependencies among the cryptographic primitives. This means
- that it is unnecessary to build and allocate object code for more primitives
- than the ones strictly required by the intended application. In other words,
- one can select and compile only the primitives required by the application.
+  that it is unnecessary to build and allocate object code for more primitives
+  than the ones strictly required by the intended application. In other words,
+  one can select and compile only the primitives required by the application.
 
 
 Important Remarks
