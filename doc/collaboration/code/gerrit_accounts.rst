@@ -108,17 +108,11 @@ Checking Out the Source Code
 #. Ensure that SSH has been set up properly. See
    `Configuring Gerrit to Use SSH`_ for details.
 
-#. Clone the repository:
+#. Clone the repository with your Linux Foundation ID (<LFID>):
 
-   a. Use your Linux Foundation ID:
+   .. code-block:: console
 
-      .. code-block:: console
-
-         $ git clone
-         ssh://LFID@gerrit.zephyrproject.org:29418/zephyr zephyr-project
-
-   .. note:: LFID should be replaced with your Linux Foundation ID.
-
+      $ git clone ssh://<LFID>@gerrit.zephyrproject.org:29418/zephyr zephyr-project
 
 You have successfully checked out a copy of the source code to your local
 machine.
@@ -134,13 +128,6 @@ Gerrit Commit Message Hook
 .. include:: gerrit_practices.rst
    :start-line: 42
    :end-line: 49
-
-
-.. toctree::
-   :maxdepth: 2
-
-   ../../getting_started/installation_linux.rst
-   ../../getting_started/installation_mac.rst
 
 .. _Linux Foundation ID website: https://identity.linuxfoundation.org
 
