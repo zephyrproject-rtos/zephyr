@@ -201,10 +201,10 @@ IDE. On the Arduino 101, this option is not currently functional.
 
   .. note::
 
-  This command tells the JTAG to dump two files in your :file:`$ZEPHYR_BASE`:
-  directory: :file:`A101_BOOT.bin` and :file:`A101_OS.bin`. These contain copies
-  of the original flash, which can be used to restore the state of the board to
-  factory conditions.
+     This command tells the JTAG to dump two files in your :file:`$ZEPHYR_BASE`:
+     directory: :file:`A101_BOOT.bin` and :file:`A101_OS.bin`. These contain copies
+     of the original flash, which can be used to restore the state of the board to
+     factory conditions.
 
 Done! You have finished creating a backup for the Arduino 101.
 
@@ -235,8 +235,8 @@ Restoring a Backup
 
   .. note::
 
-  This script expects two files in your :file:`$ZEPHYR_BASE` directory
-  named :file:`A101_OS.bin` and :file:`A101_BOOT.bin`.
+     This script expects two files in your :file:`$ZEPHYR_BASE` directory
+     named :file:`A101_OS.bin` and :file:`A101_BOOT.bin`.
 
 Flashing an Application to Arduino 101
 ======================================
