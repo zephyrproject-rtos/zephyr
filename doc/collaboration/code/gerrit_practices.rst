@@ -411,7 +411,7 @@ The command above avoids the insertion of an unnecessary line before the Author
 line.
 
 To make these configuration changes specifically for the current Git user,
-you must add the path option :option:`–-global` to :command:`config` as follows:
+you must add the path option :option:`--global` to :command:`config` as follows:
 
 .. code-block:: console
 

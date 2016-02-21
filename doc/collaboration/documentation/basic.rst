@@ -1,4 +1,5 @@
 .. _basic:
+
 Basic Writing Style Guidelines
 ##############################
 
@@ -59,8 +60,7 @@ commit message or note. You can find more details of the concepts listed here in
 
 * Do abbreviate codenames by using a substitution. For example:
   \|codename\| is defined in the
-  :file:`forto-collab/doc/substitutions.rst` to be replaced by "Zephyr
-  Operating System".
+  :file:`ZEPHYR_BASE/doc/substitutions.rst` to be replaced by "Zephyr Kernel".
 
 * Place figures and tables immediately after related text.
 
