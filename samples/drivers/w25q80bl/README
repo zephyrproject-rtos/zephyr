@@ -1,0 +1,9 @@
+SPI W25Q80BL Sample Application
+===============================
+
+This sample application illustrates how to use the SPI APIs from
+Zephyr. The target device is present in the Quark SE development board
+and requires the use of a GPIO pin as Chip Select to function.
+
+The application is very simple. It simples reads the manufacturer and
+device identification from the device.
