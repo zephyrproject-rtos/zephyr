@@ -63,6 +63,7 @@ static void supported_services(uint8_t *data, uint16_t len)
 	tester_set_bit(buf, BTP_SERVICE_ID_CORE);
 	tester_set_bit(buf, BTP_SERVICE_ID_GAP);
 	tester_set_bit(buf, BTP_SERVICE_ID_GATT);
+	tester_set_bit(buf, BTP_SERVICE_ID_L2CAP);
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
 		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
@@ -138,6 +139,10 @@ static void cmd_handler(int arg1, int arg2)
 			break;
 		case BTP_SERVICE_ID_GATT:
 			tester_handle_gatt(cmd->opcode, cmd->index, cmd->data,
+					    len);
+			break;
+		case BTP_SERVICE_ID_L2CAP:
+			tester_handle_l2cap(cmd->opcode, cmd->index, cmd->data,
 					    len);
 			break;
 		default:

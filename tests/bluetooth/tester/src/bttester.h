@@ -25,6 +25,7 @@
 #define BTP_SERVICE_ID_CORE	0
 #define BTP_SERVICE_ID_GAP	1
 #define BTP_SERVICE_ID_GATT	2
+#define BTP_SERVICE_ID_L2CAP	3
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
@@ -534,3 +535,6 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 uint8_t tester_init_gatt(void);
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			uint16_t len);
+
+void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
+			 uint16_t len);
