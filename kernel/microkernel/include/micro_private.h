@@ -96,10 +96,10 @@ extern void _k_task_call(struct k_args *);
  * Break flags (bits 0..5) are associated with conditions that require an
  * external entity to permit further execution.
  *
- * Spare flags (bits 6..10) are located between the break and wait flags
+ * Spare flags (bits 6..9) are located between the break and wait flags
  * to allow either set to be extended without impacting the other group.
  *
- * Wait flags (bits 11..27) are associated with operations that the task itself
+ * Wait flags (bits 10..27) are associated with operations that the task itself
  * initiated, and for which task execution will resume when the requested
  * operation completes.
  *
@@ -114,6 +114,7 @@ extern void _k_task_call(struct k_args *);
 #define TF_GDBSTOP 0x00000010 /* Stopped by GDB agent */
 #define TF_PRIO 0x00000020    /* Task priority is changing */
 
+#define TF_NANO 0x00000400     /* Waiting on a nanokernel object */
 #define TF_TIME 0x00000800     /* Sleeping */
 #define TF_DRIV 0x00001000     /* Waiting for arch specific driver */
 #define TF_RES0 0x00002000     /* Reserved */
@@ -132,7 +133,7 @@ extern void _k_task_call(struct k_args *);
 #define TF_RECVDATA 0x04000000 /* Waiting to receive data */
 #define TF_SENDDATA 0x08000000 /* Waiting to send data */
 
-#define TF_ALLW 0x0FFFF800 /* Mask of all wait flags */
+#define TF_ALLW 0x0FFFFC00 /* Mask of all wait flags */
 
 #ifdef CONFIG_TASK_DEBUG
 extern int _k_debug_halt;
