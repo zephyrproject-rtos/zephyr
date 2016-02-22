@@ -33,7 +33,7 @@
 
 #include <zephyr.h>
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL)
 #if defined(CONFIG_TINYDTLS)
 /* DTLS needs bigger stack */
 #define STACKSIZE 2500
@@ -55,11 +55,11 @@ char fiberStack[STACKSIZE];
 #include "er-coap.h"
 #include "er-coap-engine.h"
 
-#ifdef CONFIG_TINYDTLS_DEBUG
+#if defined(CONFIG_TINYDTLS_DEBUG)
 #include <net/tinydtls.h>
 #endif
 
-#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
 /* The peer is the client in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
@@ -71,7 +71,7 @@ static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
  */
 static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 #if 0
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
 #define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
@@ -86,14 +86,14 @@ static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 #define PEER_IPADDR { { { 192, 0, 2, 1 } } }
 #endif
 
-#ifdef CONFIG_ER_COAP_WITH_DTLS
+#if defined(CONFIG_ER_COAP_WITH_DTLS)
 #define MY_PORT COAP_DEFAULT_SECURE_PORT
 #else
 #define MY_PORT COAP_DEFAULT_PORT
 #endif
 #define PEER_PORT 0
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 static const struct in6_addr in6addr_peer = PEER_IPADDR;
 static struct in6_addr in6addr_my = MY_IPADDR;
@@ -109,7 +109,7 @@ static inline void init_app(void)
 
 	net_set_mac(my_mac, sizeof(my_mac));
 
-#ifdef CONFIG_NETWORKING_WITH_IPV4
+#if defined(CONFIG_NETWORKING_WITH_IPV4)
 	{
 		uip_ipaddr_t addr;
 		uip_ipaddr(&addr, 192,0,2,2);
@@ -117,7 +117,7 @@ static inline void init_app(void)
 	}
 #endif
 
-#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
 	{
 		uip_ipaddr_t *addr;
 
@@ -142,7 +142,7 @@ static inline void init_app(void)
 #endif
 }
 
-#ifdef DTLS_PSK
+#if defined(DTLS_PSK)
 /* This function is the "key store" for tinyDTLS. It is called to
  * retrieve a key for the given identity within this particular
  * session. */
@@ -192,7 +192,7 @@ static int get_psk_info(struct dtls_context_t *ctx,
 #define get_psk_info NULL
 #endif /* DTLS_PSK */
 
-#ifdef DTLS_ECC
+#if defined(DTLS_ECC)
 const unsigned char ecdsa_priv_key[] = {
 			0xD9, 0xE2, 0x70, 0x7A, 0x72, 0xDA, 0x6A, 0x05,
 			0x04, 0x99, 0x5C, 0x86, 0xED, 0xDB, 0xE3, 0xEF,
@@ -272,7 +272,7 @@ void startup(void)
 	static struct net_addr any_addr;
 	static struct net_addr my_addr;
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 	any_addr.in6_addr = in6addr_any;
 	any_addr.family = AF_INET6;
 
@@ -297,7 +297,7 @@ void startup(void)
 
 	rest_init_engine();
 
-#ifdef CONFIG_TINYDTLS_DEBUG
+#if defined(CONFIG_TINYDTLS_DEBUG)
 	dtls_set_log_level(DTLS_LOG_DEBUG);
 #endif
 
@@ -331,7 +331,7 @@ void startup(void)
 	rest_activate_resource(&res_plugtest_obs, "obs");
 #endif
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 	coap_ctx = coap_init_server((uip_ipaddr_t *)&my_addr.in6_addr,
 				    MY_PORT,
 				    (uip_ipaddr_t *)&any_addr.in6_addr,
@@ -351,7 +351,7 @@ void startup(void)
 	/* Read requests and pass them to rest engine */
 	while (1) {
 		if (coap_context_wait_data(coap_ctx, WAIT_TICKS)) {
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL)
 			/* Print the stack usage only if we did something */
 			net_analyze_stack("CoAP server", fiberStack, STACKSIZE);
 #endif
@@ -360,7 +360,7 @@ void startup(void)
 	}
 }
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL)
 void main(void)
 {
 	fiber_start(&fiberStack[0], STACKSIZE,
