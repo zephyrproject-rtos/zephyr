@@ -77,6 +77,7 @@ enum pairing_method {
 enum {
 	SMP_FLAG_CFM_DELAYED,	/* if confirm should be send when TK is valid */
 	SMP_FLAG_ENC_PENDING,	/* if waiting for an encryption change event */
+	SMP_FLAG_KEYS_DISTR,	/* if keys distribution phase is in progress */
 	SMP_FLAG_PAIRING,	/* if pairing is in progress */
 	SMP_FLAG_TIMEOUT,	/* if SMP timeout occurred */
 	SMP_FLAG_SC,		/* if LE Secure Connections is used */
@@ -584,6 +585,15 @@ static void smp_timeout(int arg1, int arg2)
 	BT_ERR("SMP Timeout");
 
 	smp->timeout = NULL;
+
+	/*
+	 * If SMP timeout occurred during key distribution we should assume
+	 * pairing failed and don't store any keys from this pairing.
+	 */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_KEYS_DISTR) &&
+	    smp->chan.conn->keys) {
+		bt_keys_clear(smp->chan.conn->keys, BT_KEYS_ALL);
+	}
 
 	smp_reset(smp);
 
@@ -1965,6 +1975,15 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 		break;
 	}
 
+	/*
+	 * Pairing Failed command may be sent at any time during the pairing,
+	 * so if there are any keys distributed, shall be cleared.
+	 */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_KEYS_DISTR) &&
+	    smp->chan.conn->keys) {
+		bt_keys_clear(smp->chan.conn->keys, BT_KEYS_ALL);
+	}
+
 	smp_reset(smp);
 
 	/* return no error to avoid sending Pairing Failed in response */
@@ -2585,6 +2604,8 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_KEYS_DISTR);
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	/* Slave distributes it's keys first */
