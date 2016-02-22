@@ -2183,17 +2183,17 @@ static int le_init(void)
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static int br_init(void)
 {
-	struct net_buf *rsp;
+	struct net_buf *buf;
 	int err;
 
 	/* Get BR/EDR buffer size */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &buf);
 	if (err) {
 		return err;
 	}
 
-	read_buffer_size_complete(rsp);
-	net_buf_unref(rsp);
+	read_buffer_size_complete(buf);
+	net_buf_unref(buf);
 
 	return 0;
 }
