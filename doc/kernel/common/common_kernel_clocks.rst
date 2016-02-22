@@ -18,8 +18,8 @@ The kernel supports two distinct clocks.
 
 * A 32-bit *hardware clock*, which is used as the source of the ticks
   for the system clock. This clock is a counter measured in unspecified
-  units (called *cycles*), and increments at a frequency
-  determined by the soc.hardware.
+  units (called *cycles*), and increments at a frequency determined by
+  the hardware.
 
   The kernel allows this clock to be accessed directly by reading
   the timer.
@@ -107,7 +107,8 @@ between two points in time.
 APIs
 ****
 
-The following kernel clock APIs are provided by :file:`microkernel.h`:
+Kernel clock APIs provided by :file:`microkernel.h`
+===================================================
 
 :cpp:func:`sys_tick_get()`, :cpp:func:`sys_tick_get_32()`
    Read the system clock.
@@ -115,8 +116,8 @@ The following kernel clock APIs are provided by :file:`microkernel.h`:
 :cpp:func:`sys_tick_delta()`, :cpp:func:`sys_tick_delta_32()`
    Compute the elapsed time since an earlier system clock reading.
 
-The following kernel clock APIs are provided by :file:`microkernel.h`
-and by :file:`nanokernel.h`:
+Kernel clock APIs common to both :file:`microkernel.h`and :file:`nanokernel.h`
+==============================================================================
 
 :cpp:func:`sys_tick_get()`, :cpp:func:`sys_tick_get_32()`
    Read the system clock.
@@ -125,10 +126,10 @@ and by :file:`nanokernel.h`:
    Compute the elapsed time since an earlier system clock reading.
 
 :cpp:func:`sys_cycle_get_32()`
-   Reads hardware clock.
+   Read hardware clock.
 
-The following kernel clock variables are provided by :file:`microkernel.h`
-and by :file:`nanokernel.h`:
+Kernel clock variables common to both :file:`microkernel.h` and :file:`nanokernel.h`
+====================================================================================
 
 :c:data:`sys_clock_ticks_per_sec`
    The number of system clock ticks in a single second.
