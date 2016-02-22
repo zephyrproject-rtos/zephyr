@@ -1,0 +1,18 @@
+Test Description
+----------------
+
+The object tracing test is a sanity test to verify that the
+object tracing API remains healthy on both the nanokernel and
+microkernel.
+
+It uses the philsophers as a common application that implements
+multiple fibers that are synchronized with semaphores.
+
+The application initializes their objects and starts the philosophers'
+fiber interaction. A specific fiber, called object monitor, accesses
+the object tracing API and reports the number of expected objects.
+
+The sanity test script expects each test to finish its execution
+and then it considers the test completed. For that reason the
+philosophers' threads execute a finite number of iterations. After
+that the application execution ends.

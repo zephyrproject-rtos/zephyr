@@ -1,0 +1,24 @@
+% Application       : DiningPhilosophers
+
+% TASKGROUP NAME
+% ==============
+  TASKGROUP PHI
+  TASKGROUP MON
+
+% TASK NAME        PRIO ENTRY           STACK GROUPS
+% ==================================================
+  TASK phil_task      5 phil_demo         1024 [EXE]
+  TASK phi1_task0     6 phil_entry        1024 [PHI]
+  TASK phil_task1     6 phil_entry        1024 [PHI]
+  TASK phil_task2     6 phil_entry        1024 [PHI]
+  TASK phil_task3     6 phil_entry        1024 [PHI]
+  TASK phil_task4     6 phil_entry        1024 [PHI]
+  TASK monitor_task   7 object_monitor    1024 [MON]
+
+% MUTEX NAME
+% ================
+  MUTEX fork_mutex0
+  MUTEX fork_mutex1
+  MUTEX fork_mutex2
+  MUTEX fork_mutex3
+  MUTEX fork_mutex4
