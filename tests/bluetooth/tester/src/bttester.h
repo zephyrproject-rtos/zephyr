@@ -524,6 +524,13 @@ static inline void tester_set_bit(uint8_t *addr, unsigned int bit)
 	*p |= BIT(bit % 8);
 }
 
+/* L2CAP Service */
+/* commands */
+#define L2CAP_READ_SUPPORTED_COMMANDS	0x01
+struct l2cap_read_supported_commands_rp {
+	uint8_t data[0];
+} __packed;
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
