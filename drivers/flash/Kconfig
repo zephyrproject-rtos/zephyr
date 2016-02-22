@@ -25,3 +25,60 @@ menuconfig FLASH
 	default n
 	help
 	  Enable support for the flash hardware.
+
+config SPI_FLASH_W25QXXDV
+	bool
+	prompt "SPI NOR Flash Winbond W25QXXDV"
+	depends on SPI && FLASH
+
+config SPI_FLASH_W25QXXDV_SPI_NAME
+	string
+	prompt "spi controller device name"
+	depends on SPI_FLASH_W25QXXDV
+	default ""
+
+config SPI_FLASH_W25QXXDV_DRV_NAME
+	string
+	prompt "spi flash device name"
+	depends on SPI_FLASH_W25QXXDV
+	default "W25QXXDV"
+
+config SPI_FLASH_W25QXXDV_INIT_PRIORITY
+	int
+	depends on SPI_FLASH_W25QXXDV
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config  SPI_FLASH_W25QXXDV_SPI_FREQ_0
+	int "SPI system frequency"
+	depends on SPI_FLASH_W25QXXDV
+	default 4
+	help
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
+
+config	SPI_FLASH_W25QXXDV_SPI_SLAVE
+	int "SPI slave linked to spi flash"
+	depends on SPI_FLASH_W25QXXDV
+	help
+	  This option sets the SPI slave number the SPI controller has to switch
+	  to when dealing with WinBond SPI flash chip.
+
+config  SPI_FLASH_W25QXXDV_FLASH_SIZE
+	int "flash size in bytes"
+	depends on SPI_FLASH_W25QXXDV
+	default 2097152
+	help
+	  This is the flash capacity in bytes.
+
+config SPI_FLASH_W25QXXDV_MAX_DATA_LEN
+	int
+	range 1 256
+	depends on SPI_FLASH_W25QXXDV
+	default 256
+	help
+	  Maximum transmit or receive data length in one user data frame.
