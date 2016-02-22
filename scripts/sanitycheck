@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Zephyr Sanity Tests
 
 This script scans for the set of unit test applications in the git
@@ -100,7 +100,7 @@ Most everyday users will run with no arguments.
 import argparse
 import os
 import sys
-import ConfigParser
+import configparser
 import re
 import tempfile
 import subprocess
@@ -162,20 +162,19 @@ class ExecutionError(MakeError):
     pass
 
 # Debug Functions
-
-def debug(what):
-    if VERBOSE >= 1:
-        print what
+def info(what):
+    sys.stdout.write(what + "\n")
 
 def error(what):
     sys.stderr.write(COLOR_RED + what + COLOR_NORMAL + "\n")
 
+def debug(what):
+    if VERBOSE >= 1:
+        info(what)
+
 def verbose(what):
     if VERBOSE >= 2:
-        print what
-
-def info(what):
-    sys.stdout.write(what + "\n")
+        info(what)
 
 # Utility functions
 class QEMUHandler:
@@ -208,7 +207,7 @@ class QEMUHandler:
         # Disable internal buffering, we don't
         # want read() or poll() to ever block if there is data in there
         in_fp = open(fifo_out, "rb", buffering=0)
-        log_out_fp = open(logfile, "w")
+        log_out_fp = open(logfile, "wt")
 
         start_time = time.time()
         timeout_time = start_time + timeout
@@ -223,7 +222,7 @@ class QEMUHandler:
                 out_state = "timeout"
                 break
 
-            c = in_fp.read(1)
+            c = in_fp.read(1).decode("utf-8")
             if c == "":
                 # EOF, this shouldn't happen unless QEMU crashes
                 out_state = "unexpected eof"
@@ -262,7 +261,12 @@ class QEMUHandler:
 
         pid = int(open(pid_fn).read())
         os.unlink(pid_fn)
-        os.kill(pid, signal.SIGTERM)
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            # Oh well, as long as it's dead! User probably sent Ctrl-C
+            pass
+
         os.unlink(fifo_in)
         os.unlink(fifo_out)
 
@@ -333,13 +337,13 @@ class SizeCalculator:
         with open(filename, "rb") as f:
             magic = f.read(4)
 
-        if (magic != "\x7fELF"):
+        if (magic != b'\x7fELF'):
             raise SanityRuntimeError("%s is not an ELF binary" % filename)
 
         # Search for CONFIG_XIP in the ELF's list of symbols using NM and AWK.
         # GREP can not be used as it returns an error if the symbol is not found.
         is_xip_command = "nm " + filename + " | awk '/CONFIG_XIP/ { print $3 }'"
-        is_xip_output = subprocess.check_output(is_xip_command, shell=True)
+        is_xip_output = subprocess.check_output(is_xip_command, shell=True).decode("utf-8")
         self.is_xip = (len(is_xip_output) != 0)
 
         self.filename = filename
@@ -390,7 +394,7 @@ class SizeCalculator:
         """ Calculate RAM and ROM usage by section """
         objdump_command = "objdump -h " + self.filename
         objdump_output = subprocess.check_output(objdump_command,
-                                                 shell=True).splitlines()
+                                        shell=True).decode("utf-8").splitlines()
 
         for line in objdump_output:
             words = line.split()
@@ -652,13 +656,13 @@ class MakeGenerator:
         @return A dictionary mapping goal names to final status.
         """
 
-        with open(self.makefile, "w") as tf, \
+        with open(self.makefile, "wt") as tf, \
                 open(os.devnull, "wb") as devnull, \
-                open(self.logfile, "w") as make_log:
+                open(self.logfile, "wt") as make_log:
             # Create our dynamic Makefile and execute it.
             # Watch stderr output which is where we will keep
             # track of build state
-            for name, goal in self.goals.iteritems():
+            for name, goal in self.goals.items():
                 tf.write(goal.text)
             tf.write("all: %s\n" % (" ".join(self.goals.keys())))
             tf.flush()
@@ -670,6 +674,7 @@ class MakeGenerator:
                                  stdout=devnull)
 
             for line in iter(p.stderr.readline, b''):
+                line = line.decode("utf-8")
                 make_log.write(line)
                 verbose("MAKE: " + repr(line.strip()))
                 m = MakeGenerator.re_make.match(line)
@@ -745,7 +750,7 @@ class SanityConfigParser:
 
         @param filename Source .ini file to read
         """
-        cp = ConfigParser.SafeConfigParser()
+        cp = configparser.SafeConfigParser()
         cp.readfp(open(filename))
         self.filename = filename
         self.cp = cp
@@ -832,7 +837,7 @@ class SanityConfigParser:
                                          % (k, section))
             d[k] = v
 
-        for k, kinfo in valid_keys.iteritems():
+        for k, kinfo in valid_keys.items():
             if k not in d:
                 if "required" in kinfo:
                     required = kinfo["required"]
@@ -852,7 +857,7 @@ class SanityConfigParser:
             else:
                 try:
                     d[k] = self._cast_value(d[k], kinfo["type"])
-                except ValueError, ve:
+                except ValueError as ve:
                     raise ConfigurationError(self.filename,
                                              "bad %s value '%s' for key '%s' in section '%s'"
                                              % (kinfo["type"], d[k], k, section))
@@ -1047,7 +1052,7 @@ def defconfig_cb(context, goals, goal):
         with open(goal.get_error_log()) as fp:
             sys.stdout.write(fp.read())
     else:
-        print "\tsee: " + COLOR_YELLOW + goal.get_error_log() + COLOR_NORMAL
+        info("\tsee: " + COLOR_YELLOW + goal.get_error_log() + COLOR_NORMAL)
 
 
 class TestSuite:
@@ -1133,8 +1138,8 @@ class TestSuite:
 
         mg = MakeGenerator(self.outdir)
         dlist = {}
-        for tc_name, tc in self.testcases.iteritems():
-            for arch_name, arch in self.arches.iteritems():
+        for tc_name, tc in self.testcases.items():
+            for arch_name, arch in self.arches.items():
                 instance_list = []
                 for plat in arch.platforms:
                     instance = TestInstance(tc, plat, self.outdir)
@@ -1189,11 +1194,11 @@ class TestSuite:
         info("Building testcase defconfigs...")
         results = mg.execute(defconfig_cb)
 
-        for name, goal in results.iteritems():
+        for name, goal in results.items():
             if goal.failed:
                 raise SanityRuntimeError("Couldn't build some defconfigs")
 
-        for k, out_config in dlist.iteritems():
+        for k, out_config in dlist.items():
             test, plat, ktype, name = k
             defconfig = {}
             with open(out_config, "r") as fp:
@@ -1204,8 +1209,8 @@ class TestSuite:
                     defconfig[m.group(1)] = m.group(2).strip()
             test.defconfig[plat,ktype] = defconfig
 
-        for tc_name, tc in self.testcases.iteritems():
-            for arch_name, arch in self.arches.iteritems():
+        for tc_name, tc in self.testcases.items():
+            for arch_name, arch in self.arches.items():
                 instance_list = []
                 for plat in arch.platforms:
                     instance = TestInstance(tc, plat, self.outdir)
@@ -1255,7 +1260,7 @@ class TestSuite:
                         continue
 
                     defconfig = {}
-                    for tcase, tdefconfig in tc.defconfig.iteritems():
+                    for tcase, tdefconfig in tc.defconfig.items():
                         p, k = tcase
                         if k == tc.ktype and p == plat:
                             defconfig = tdefconfig
@@ -1317,7 +1322,7 @@ class TestSuite:
         for i in self.instances.values():
             mg.add_test_instance(i, build_only, enable_slow)
         self.goals = mg.execute(cb, cb_context)
-        for name, goal in self.goals.iteritems():
+        for name, goal in self.goals.items():
             i = self.instances[name]
             if goal.failed:
                 continue
@@ -1336,7 +1341,7 @@ class TestSuite:
             fieldnames = ["test", "arch", "platform", "reason"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
-            for instance, reason in self.discards.iteritems():
+            for instance, reason in self.discards.items():
                 rowdict = {"test" : i.test.name,
                            "arch" : i.platform.arch.name,
                            "platform" : i.platform.name,
@@ -1365,7 +1370,7 @@ class TestSuite:
                     d[m] = row[m]
                 saved_metrics[(row["test"], row["platform"])] = d
 
-        for name, goal in self.goals.iteritems():
+        for name, goal in self.goals.items():
             i = self.instances[name]
             mkey = (i.test.name, i.platform.name)
             if mkey not in saved_metrics:
@@ -1387,13 +1392,13 @@ class TestSuite:
         if self.goals == None:
             raise SanityRuntimeException("execute() hasn't been run!")
 
-        with open(filename, "wb") as csvfile:
+        with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "passed", "status",
                           "extra_args", "qemu", "qemu_time", "ram_size",
                           "rom_size"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
-            for name, goal in self.goals.iteritems():
+            for name, goal in self.goals.items():
                 i = self.instances[name]
                 rowdict = {"test" : i.test.name,
                            "arch" : i.platform.arch.name,
@@ -1519,19 +1524,19 @@ def parse_arguments():
 def log_info(filename):
     filename = os.path.relpath(filename)
     if INLINE_LOGS:
-        print "{:-^100}".format(filename)
+        info("{:-^100}".format(filename))
         with open(filename) as fp:
             sys.stdout.write(fp.read())
-        print "{:-^100}".format(filename)
+        info("{:-^100}".format(filename))
     else:
-        print "\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL
+        info("\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
 
 def terse_test_cb(instances, goals, goal):
     total_tests = len(goals)
     total_done = 0
     total_failed = 0
 
-    for k, g in goals.iteritems():
+    for k, g in goals.items():
         if g.finished:
             total_done += 1
         if g.failed:
@@ -1616,7 +1621,7 @@ def main():
         ts.discard_report(args.discard_report)
 
     if VERBOSE:
-        for i, reason in discards.iteritems():
+        for i, reason in discards.items():
             debug("{:<25} {:<50} {}SKIPPED{}: {}".format(i.platform.name,
                   i.test.name, COLOR_YELLOW, COLOR_NORMAL, reason))
 
@@ -1632,7 +1637,7 @@ def main():
     else:
         goals = ts.execute(terse_test_cb, ts.instances, args.build_only,
                            args.enable_slow)
-        print
+        info("")
 
     deltas = ts.compare_metrics(LAST_SANITY if args.last_metrics
                                   else RELEASE_DATA)
@@ -1659,7 +1664,7 @@ def main():
              ("release" if not args.last_metrics else "run"))
 
     failed = 0
-    for name, goal in goals.iteritems():
+    for name, goal in goals.items():
         if goal.failed:
             failed += 1
         elif goal.metrics["unrecognized"]:
