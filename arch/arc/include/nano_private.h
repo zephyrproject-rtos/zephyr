@@ -197,6 +197,9 @@ struct tcs {
 #ifdef CONFIG_ARC_STACK_CHECKING
 	uint32_t stack_top;
 #endif
+#ifdef CONFIG_MICROKERNEL
+	void *uk_task_ptr;
+#endif
 };
 
 struct s_NANO {

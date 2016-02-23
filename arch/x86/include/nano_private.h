@@ -677,6 +677,10 @@ struct tcs {
 	int errno_var;
 #endif
 
+#ifdef CONFIG_MICROKERNEL
+	void *uk_task_ptr;
+#endif
+
 	/*
 	 * The location of all floating point related structures/fields MUST be
 	 * located at the end of struct tcs.  This way only the

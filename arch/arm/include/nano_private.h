@@ -139,6 +139,9 @@ struct tcs {
 #ifdef CONFIG_ERRNO
 	int errno_var;
 #endif
+#ifdef CONFIG_MICROKERNEL
+	void *uk_task_ptr;
+#endif
 };
 
 struct s_NANO {
