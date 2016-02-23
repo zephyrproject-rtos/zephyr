@@ -120,6 +120,33 @@ Connecting JTAG to Arduino 101
    from the ARM Micro JTAG connector uses a red wire on the cable to denote
    which end on the cable has the pin 1.
 
+#. For Linux environments, to control the FlySwatter your user needs to be
+   granted HAL layer interaction permissions.  This is done through the group
+   'plugdev'.  Verifying the group exists and adding your username can
+   be accomplished with the useradd function:
+
+    .. code-block:: console
+
+       $ sudo useradd -G plugdev $USERNAME
+
+#. For Linux environments, verify that udev has the proper rules for giving
+   your user control of the FlySwatter device.  Adding the following rule
+   to udev will give members of the plugdev group control of the FlySwatter.
+
+   .. code-block:: console
+
+      $ su -
+      # cat <<EOF > /etc/udev/rules.d/99-openocd.rules
+      # TinCanTools FlySwatter2
+      ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="664", GROUP="plugdev"
+      EOF
+
+#. Once your udev rules are setup, you will need to reload the rules:
+
+   .. code-block:: console
+
+      $ sudo udevadm control --reload-rules
+
 #. Plug the USB Type B cable into the FlySwatter2 and your computer. On
    Linux, you should see something similar to the following in your dmesg:
 
@@ -137,7 +164,6 @@ Connecting JTAG to Arduino 101
       ftdi_sio 1-2.1.1:1.1: FTDI USB Serial Device converter detected
       usb 1-2.1.1: Detected FT2232H
       usb 1-2.1.1: FTDI USB Serial Device converter now attached to ttyUSB1
-
 
 
 Making a Backup
@@ -171,7 +197,7 @@ IDE. On the Arduino 101, this option is not currently functional.
 
   .. code-block:: console
 
-     $ sudo -E ./boards/arduino_101/support/arduino_101_backup.sh
+     $ ./boards/arduino_101/support/arduino_101_backup.sh
 
   .. note::
 
@@ -205,7 +231,7 @@ Restoring a Backup
 
   .. code-block:: console
 
-     $ sudo -E ./boards/arduino_101/support/arduino_101_load.sh
+     $ ./boards/arduino_101/support/arduino_101_load.sh
 
   .. note::
 
@@ -257,7 +283,7 @@ needs to be flashed just once. To flash a Zephyr-compatible boot ROM, use
    .. code-block:: console
 
       $ cd $ZEPHYR_BASE/boards/arduino_101/support
-      $ sudo -E ./arduino_101_load.sh rom
+      $ ./arduino_101_load.sh rom
 
    This script will flash the boot ROM located in
    :file:`$ZEPHYR_BASE/boards/arduino_101/support/quark_se_rom.bin` to the
