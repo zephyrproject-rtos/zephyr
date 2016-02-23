@@ -242,7 +242,7 @@ static inline int udp_prepare_and_send(struct net_context *context,
 		uip_len(buf) = ip_buf_len(buf);
 	}
 
-	ip_buf_appdata(buf) = &uip_buf(buf)[UIP_IPUDPH_LEN];
+	ip_buf_appdata(buf) = &uip_buf(buf)[UIP_IPUDPH_LEN + UIP_LLH_LEN];
 
 	port = NET_BUF_UDP(buf)->srcport;
 	NET_BUF_UDP(buf)->srcport = NET_BUF_UDP(buf)->destport;
@@ -377,7 +377,7 @@ static void udp_packet_receive(struct simple_udp_connection *c,
 	}
 
 	ip_buf_appdatalen(buf) = datalen;
-	ip_buf_appdata(buf) = &uip_buf(buf)[UIP_IPUDPH_LEN];
+	ip_buf_appdata(buf) = &uip_buf(buf)[UIP_IPUDPH_LEN + UIP_LLH_LEN];
 
 	NET_DBG("packet received context %p len %d "
 		"appdata %p appdatalen %d\n",
@@ -443,7 +443,7 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 		}
 		net_context_set_receiver_registered(context);
 		ret = 0;
-		reserve = UIP_IPUDPH_LEN;
+		reserve = UIP_IPUDPH_LEN + UIP_LLH_LEN;
 		break;
 	case IPPROTO_TCP:
 		NET_DBG("TCP not yet supported\n");
@@ -565,7 +565,8 @@ static int check_and_send_packet(struct net_buf *buf)
 			 * length. The buffer will be discarded if we do not
 			 * set the value correctly.
 			 */
-			uip_appdatalen(buf) = buf->len - UIP_IPUDPH_LEN;
+			uip_appdatalen(buf) = buf->len -
+					      (UIP_IPUDPH_LEN + UIP_LLH_LEN);
 		}
 
 		ret = simple_udp_send(buf, udp, uip_appdata(buf),

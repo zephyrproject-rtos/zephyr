@@ -275,13 +275,13 @@ static struct net_buf *ip_buf_get(enum ip_buf_type type,
 
 	switch (tuple->ip_proto) {
 	case IPPROTO_UDP:
-		reserve = UIP_IPUDPH_LEN;
+		reserve = UIP_IPUDPH_LEN + UIP_LLH_LEN;
 		break;
 	case IPPROTO_TCP:
-		reserve = UIP_IPTCPH_LEN;
+		reserve = UIP_IPTCPH_LEN + UIP_LLH_LEN;
 		break;
 	case IPPROTO_ICMPV6:
-		reserve = UIP_IPICMPH_LEN;
+		reserve = UIP_IPICMPH_LEN + UIP_LLH_LEN;
 		break;
 	}
 
