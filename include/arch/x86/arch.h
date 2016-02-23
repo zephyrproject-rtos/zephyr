@@ -197,6 +197,14 @@ typedef struct s_isrList {
 	"jmp _IntExitWithEoi\n\t"
 #endif /* CONFIG_X86_IAMCU */
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
+#define _IRQ_STUB_LABEL \
+	" .global %[isr]%P[irq]_stub\n\t" \
+	"%[isr]%P[irq]_stub:\n\t"
+#else
+#define _IRQ_STUB_LABEL
+#endif
+
 /**
  * Code snippets for populating the vector ID and priority into the intList
  *
@@ -266,6 +274,7 @@ typedef struct s_isrList {
 		".long 0\n\t"			/* ISR_LIST.dpl */ \
 		".popsection\n\t" \
 		"1:\n\t" \
+		_IRQ_STUB_LABEL \
 		_IRQ_STUB_ASM \
 		"2:\n\t" \
 		: \
