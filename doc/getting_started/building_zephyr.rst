@@ -52,8 +52,8 @@ architecture:
    $ make help
 
 The sample projects for the microkernel and the nanokernel are found
-at :file:`$ZEPHYR_BASE/samples/microkernel/apps` and
-:file:`$ZEPHYR_BASE/samples/nanokernel/apps` respectively.
+at :file:`$ZEPHYR_BASE/samples` with each sample having a microkernel
+and nanokernel specific build.
 After building an application successfully, the results can be found in the
 :file:`outdir` sub-directory under the application root directory.
 

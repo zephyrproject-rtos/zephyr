@@ -266,8 +266,8 @@ Example: Retrieving Profiling Messages
 
 .. note::
 
-   To see an example that shows how to collect the kernel event data, check the sample
-   project: :file:`samples/microkernel/apps/kernel_event_logger_sample`.
+   To see an example that shows how to collect the kernel event data, check the
+   project :file:`samples/kernel_event_logger`.
 
 Example: Adding a Kernel Event Logging Point
 ============================================
