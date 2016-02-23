@@ -71,4 +71,6 @@ source "drivers/flash/Kconfig"
 
 source "drivers/sensor/Kconfig"
 
+source "drivers/counter/Kconfig"
+
 endmenu
