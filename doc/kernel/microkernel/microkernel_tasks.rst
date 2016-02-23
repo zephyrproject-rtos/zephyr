@@ -7,24 +7,23 @@ Concepts
 ********
 
 A task is a preemptible thread of execution that implements a portion of
-an application's processing. It is is normally used to perform processing that
-is too lengthy or complex to be performed by a fiber or an ISR.
+an application's processing. It is normally used for processing that
+is too lengthy or too complex to be performed by a fiber or an ISR.
 
 A microkernel application can define any number of application tasks. Each
 task has a name that uniquely identifies it, allowing it to be directly
-referenced by other tasks. Other properties that must be specified when a task
-is defined include:
+referenced by other tasks. For each microkernel task, the following
+properties must be specified:
 
-* a memory region that is used for its stack and for other execution context
-  information,
-* a function that is invoked when the task starts executing, and
-* a priority that is used by the microkernel scheduler.
+* A **memory region** to be used for stack and execution context information.
+* A **function** to be invoked when the task starts executing.
+* The **priority** to be used by the microkernel scheduler.
 
 A task's entry point function takes no arguments, so there is no need to
 define any argument values for it.
 
 The microkernel automatically defines a system task, known as the *idle task*,
-which has lowest priority. This task is used during system initialization,
+at the lowest priority. This task is used during system initialization,
 and subsequently executes only when there is no other work for the system to do.
 The idle task is anonymous and must not be referenced by application tasks.
 
@@ -54,13 +53,13 @@ such as dereferencing a null pointer. A task can also be explicitly aborted
 using :c:func:`task_abort()`. As with graceful task termination,
 the kernel does not attempt to reclaim system resources owned by the task.
 
-A task may optionally register an *abort handler function* that is invoked
+A task may optionally register an *abort handler function* to be invoked
 by the kernel when the task terminates (including during graceful termination).
 The abort handler can be used to record information about the terminating
 task or to assist in reclaiming system resources owned by the task. The abort
 handler function is invoked by the microkernel server fiber, so it cannot
 directly call kernel APIs that must be invoked by a task; instead, it must
-co-ordindate with another task to invoke such APIs indirectly.
+coordinate with another task to invoke such APIs indirectly.
 
 .. note::
    The kernel does not currently make any claims regarding an application's
@@ -71,24 +70,24 @@ Task Scheduling
 
 The microkernel's scheduler selects which of the system's tasks is allowed
 to execute; this task is known as the *current task*. The nanokernel's scheduler
-permits the current task to execute only when there is no fiber or ISR
-that needs to execute, since fiber and ISR execution takes precedence.
+permits the current task to execute only when no fibers or ISRs are available
+to execute; fiber and ISR executions always take precedence.
 
-The kernel automatically takes care of saving the current task's CPU register
-values when it performs a context switch to a different task, a fiber, or
-an ISR, and restores these values when the task later resumes execution.
+When prompted for a context switch to a different task, fiber, or ISR, the kernel
+automatically saves the current task's CPU register values; these values get
+restored when the task later resumes execution.
 
 Task State
 ----------
 
-A microkernel task has an associated *state* that determines whether or not
-it can be scheduled for execution. The state records all factors that can
-prevent the task from executing, such as:
+Each microkernel task has an associated *state* that determines whether or not
+it can be scheduled for execution. The state records factors that could prevent
+the task from executing, such as:
 
-* the task has not been started
-* the task is waiting for it needs (e.g. a semaphore, a timeout, ...)
-* the task has been suspended
-* the task has terminated
+* The task has not been started.
+* The task is waiting (for a semaphore, for a timeout, ...).
+* The task has been suspended.
+* The task has terminated.
 
 A task whose state has no factors that prevent its execution is said to be
 *executable*.
@@ -110,24 +109,24 @@ Scheduling Algorithm
 --------------------
 
 The microkernel's scheduler always selects the highest priority executable task
-to be the current task. If multiple executable tasks of that priority
-are available the scheduler chooses the one that has been waiting longest.
+to be the current task. When multiple executable tasks of the same priority are
+available, the scheduler chooses the one that has been waiting longest.
 
 Once a task becomes the current task it remains scheduled for execution
 by the microkernel until one of the following occurs:
 
-* The task is supplanted by a higher priority task that becomes ready to
+* The task is supplanted by a higher-priority task that becomes ready to
   execute.
 
-* The task is supplanted by an equal priority task that is ready to execute,
+* The task is supplanted by an equal-priority task that is ready to execute,
   either because the current task explicitly calls :c:func:`task_yield()`
-  or because the kernel implicitly calls :c:func:`task_yield()` because the
-  scheduler's time slice has expired.
+  or because the kernel implicitly calls :c:func:`task_yield()` after the
+  scheduler's time slice expired.
 
-* The task is supplanted by an equal or lower priority task that is ready
-  to execute, because the current task calls a kernel API that blocks its
-  own execution. (For example, the task attempts to take a semaphore that
-  is unavailable.)
+* The task is supplanted by an equal or lower-priority task that is ready
+  to execute because the current task called a kernel API that blocked its
+  own execution. For example, the task attempted to take a semaphore that
+  was unavailable.
 
 * The task terminates itself by returning from its entry point function.
 
@@ -141,20 +140,20 @@ The microkernel's scheduler supports an optional time slicing capability
 that prevents a task from monopolizing the CPU when other tasks of the
 same priority are ready to execute.
 
-The scheduler divides time into a series of *time slices*, whose size is
-measured in system clock ticks. The time slice size is specified by
+The scheduler divides time into a series of *time slices*, where slices
+are measured in system clock ticks. The time slice size is specified with
 the :option:`TIMESLICE_SIZE` configuration option, but this size can also
-be changed dynamically while the application is running.
+be changed dynamically, while the application is running.
 
-At the end of every time slice the scheduler implicitly invokes
-:c:func:`task_yield()` on behalf of the current task, thereby giving
-all other tasks of that priority the opportunity to execute before the
-current task can once again be scheduled. If one or more equal priority
+At the end of every time slice, the scheduler implicitly invokes
+:c:func:`task_yield()` on behalf of the current task; this gives
+any other task of that priority the opportunity to execute before the
+current task can once again be scheduled. If one or more equal-priority
 tasks are ready to execute, the current task is preempted to allow those
-tasks to execute. If no equal priority tasks are ready to execute,
-the current task remains the current task, and continues to execute.
+tasks to execute. If no tasks of equal priority are ready to execute,
+the current task remains the current task, and it continues to execute.
 
-Tasks having a priority higher than that specified by the
+Tasks with a priority higher than that specified by the
 :option:`TIMESLICE_PRIORITY` configuration option are exempt from time
 slicing, and are never preempted by a task of equal priority. This
 capability allows an application to use time slicing only for lower
@@ -162,7 +161,7 @@ priority tasks that are less time-sensitive.
 
 .. note::
    The microkernel's time slicing algorithm does *not* ensure that a set
-   of equal priority tasks will receive an equitable amount of CPU time,
+   of equal-priority tasks will receive an equitable amount of CPU time,
    since it does not measure the amount of time a task actually gets to
    execute. For example, a task may become the current task just before
    the end of a time slice and then immediately have to yield the CPU.
@@ -199,29 +198,31 @@ The kernel supports a maximum of 32 distinct task groups. Each task group
 has a name that uniquely identifies it, allowing it to be directly referenced
 by tasks.
 
-The task groups a task belong to are specified when the task is defined.
+The task groups a task belongs to are specified when the task is defined.
 A task may belong to a single task group, to multiple task groups, or to
 no task group. A task's group memberships can also be changed dynamically
 while the application is running.
 
-The task groups listed below are pre-defined by the kernel; additional
-task groups can be defined by the application.
+The task group designations listed below are pre-defined by the kernel;
+additional task groups can be defined by the application.
 
    :c:macro:`EXE`
-      The set of tasks which are started automatically by the kernel
-      during system intialization.
+      This task group is started automatically by the kernel during system
+      intialization.
 
    :c:macro:`SYS`
-      The set of system tasks which continue executing during system debugging.
+      This task group is a set of system tasks that continues to execute
+      during system debugging.
 
    :c:macro:`FPU`
-      The set of tasks that require the kernel to save x87 FPU and MMX floating
-      point context information during context switches.
+      This task group is a set of tasks that requires the kernel to save
+      x87 FPU and MMX floating point context information during context switches.
 
    :c:macro:`SSE`
-      The set of tasks that require the kernel to save SSE floating point
-      context information during context switches. (Tasks in this group are
-      implicitly members of the :c:macro:`FPU` task group too.)
+      This task group is a set of tasks that requires the kernel to save SSE
+      floating point context information during context switches. (Tasks with
+      this group designation are implicitly members of the :c:macro:`FPU` task
+      group too.)
 
 Usage
 *****
@@ -269,7 +270,7 @@ Define the task in the application's MDEF using the following syntax:
 
 The task groups are specified using a comma-separated list of task group names
 enclosed in square brackets, with no embedded spaces. If the task does not
-belong to any task group specify an empty list; i.e. :literal:`[]`.
+belong to any task group, specify an empty list; i.e. :literal:`[]`.
 
 For example, the file :file:`projName.mdef` defines a system comprised
 of six tasks as follows:
@@ -352,7 +353,7 @@ includes the file :file:`zephyr.h`.
 Example: Starting a Task from Another Task
 ==========================================
 
-This code shows how the currently executing task can start another task.
+This code shows how the currently-executing task can start another task.
 
 .. code-block:: c
 
@@ -371,7 +372,7 @@ This code shows how the currently executing task can start another task.
 Example: Suspending and Resuming a Set of Tasks
 ===============================================
 
-This code shows how the currently executing task can temporarily suspend
+This code shows how the currently-executing task can temporarily suspend
 the execution of all tasks belonging to the designated task groups.
 
 .. code-block:: c
@@ -406,7 +407,7 @@ the execution of all tasks belonging to the designated task groups.
 Example: Offloading Work to the Microkernel Server Fiber
 ========================================================
 
-This code shows how the currently executing task can perform critical section
+This code shows how the currently-executing task can perform critical section
 processing by offloading it to the microkernel server. Since the critical
 section function is being executed by a fiber, once the function begins
 executing it cannot be interrupted by any other fiber or task that wants
@@ -455,8 +456,10 @@ to log an alarm.
 APIs
 ****
 
-The following APIs affecting the currently executing task
-are provided by :file:`microkernel.h`:
+All of the following Microkernel APIs are provided by :file:`microkernel.h`.
+
+APIs Affecting the Currently-Executing Task
+===========================================
 
 :cpp:func:`task_id_get()`
    Gets the task's ID.
@@ -488,8 +491,8 @@ are provided by :file:`microkernel.h`:
 :cpp:func:`task_offload_to_fiber()`
    Instructs the microkernel server fiber to execute a function.
 
-The following APIs affecting a specified task
-are provided by :file:`microkernel.h`:
+APIs Affecting a Specified Task
+===============================
 
 :cpp:func:`task_priority_set()`
    Sets a task's priority.
@@ -515,8 +518,8 @@ are provided by :file:`microkernel.h`:
 :cpp:func:`task_group_leave()`
    Removes a task from the specified task group(s).
 
-The following APIs affecting multiple tasks
-are provided by :file:`microkernel.h`:
+APIs Affecting Multiple Tasks
+=============================
 
 :cpp:func:`sys_scheduler_time_slice_set()`
    Sets the time slice period used in round-robin task scheduling.
