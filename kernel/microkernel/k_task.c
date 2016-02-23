@@ -206,6 +206,7 @@ static void start_task(struct k_task *X, void (*func)(void))
 
 	_new_thread((char *)X->workspace, /* pStackMem */
 			X->worksize,		/* stackSize */
+			X,                  /* microkernel task pointer */
 			(_thread_entry_t)func,  /* pEntry */
 			parameter1,		/* parameter1 */
 			(void *)0,		/* parameter2 */

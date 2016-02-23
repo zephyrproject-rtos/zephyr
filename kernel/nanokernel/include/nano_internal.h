@@ -48,8 +48,9 @@ extern void _thread_entry(_thread_entry_t,
 			     _thread_arg_t);
 
 extern void _new_thread(char *pStack, unsigned stackSize,
-						_thread_entry_t pEntry, _thread_arg_t arg1,
-						_thread_arg_t arg2, _thread_arg_t arg3,
+						void *uk_task_ptr, _thread_entry_t pEntry,
+						_thread_arg_t arg1, _thread_arg_t arg2,
+						_thread_arg_t arg3,
 						int prio, unsigned options);
 
 /* context switching and scheduling-related routines */

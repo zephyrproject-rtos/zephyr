@@ -93,6 +93,9 @@ char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 #endif
 
 #ifdef CONFIG_NANOKERNEL
+
+#define MICROKERNEL_IDLE_TASK_PTR  (NULL)
+
 /**
  *
  * @brief Mainline for nanokernel's background task
@@ -120,6 +123,13 @@ static void _main(void)
 	main();
 }
 #else
+
+typedef int32_t ktask_t;   /* Must match definition in base_api.h */
+
+extern ktask_t _k_task_ptr_idle;
+
+#define MICROKERNEL_IDLE_TASK_PTR  ((void *) _k_task_ptr_idle)
+
 /* microkernel has its own implementation of _main() */
 
 extern void _main(void);
@@ -178,6 +188,7 @@ static void nano_init(struct tcs *dummyOutContext)
 
 	_new_thread(main_task_stack,	/* pStackMem */
 			    CONFIG_MAIN_STACK_SIZE, /* stackSize */
+			    MICROKERNEL_IDLE_TASK_PTR, /* ptr to idle task */
 			    (_thread_entry_t)_main,	 /* pEntry */
 			    (_thread_arg_t)0,	 /* parameter1 */
 			    (_thread_arg_t)0,	 /* parameter2 */

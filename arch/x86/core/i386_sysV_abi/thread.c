@@ -64,7 +64,7 @@ void _thread_entry_wrapper(_thread_entry_t, _thread_arg_t,
  * @return N/A
  */
 static void _new_thread_internal(char *pStackMem, unsigned stackSize,
-				 int priority, unsigned options)
+				 void *uk_task_ptr, int priority, unsigned options)
 {
 	unsigned long *pInitialCtx;
 	/* ptr to the new task's tcs */
@@ -92,6 +92,11 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	tcs->custom_data = NULL;
 #endif
 
+#ifdef CONFIG_MICROKERNEL
+	tcs->uk_task_ptr = uk_task_ptr;
+#else
+	ARG_UNUSED(uk_task_ptr);
+#endif
 
 	/*
 	 * The creation of the initial stack for the task has already been done.
@@ -287,7 +292,8 @@ __asm__("\t.globl _thread_entry\n"
  *
  * @return opaque pointer to initialized TCS structure
  */
-void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
+void _new_thread(char *pStackMem, unsigned stackSize,
+		 void *uk_task_ptr, _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned options)
 {
@@ -347,5 +353,5 @@ void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
 	 * is located at the "low end" of memory set aside for the thread's stack.
 	 */
 
-	_new_thread_internal(pStackMem, stackSize, priority, options);
+	_new_thread_internal(pStackMem, stackSize, uk_task_ptr, priority, options);
 }

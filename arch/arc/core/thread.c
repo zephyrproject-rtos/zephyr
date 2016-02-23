@@ -101,7 +101,8 @@ static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
  *
  * @return N/A
  */
-void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
+void _new_thread(char *pStackMem, unsigned stackSize,
+		 void *uk_task_ptr, _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned options)
 {
@@ -154,6 +155,13 @@ void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
 	 */
 	tcs->entry = (struct __thread_entry *)(pInitCtx);
 #endif
+
+#ifdef CONFIG_MICROKERNEL
+	tcs->uk_task_ptr = uk_task_ptr;
+#else
+	ARG_UNUSED(uk_task_ptr);
+#endif
+
 	/*
 	 * intlock_key is constructed based on ARCv2 ISA Programmer's
 	 * Reference Manual CLRI instruction description:

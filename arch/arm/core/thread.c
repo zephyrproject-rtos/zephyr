@@ -100,7 +100,8 @@ static ALWAYS_INLINE void _thread_monitor_init(struct tcs *tcs /* thread */
  * @return N/A
  */
 
-void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
+void _new_thread(char *pStackMem, unsigned stackSize,
+		 void *uk_task_ptr, _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned options)
 {
@@ -141,6 +142,12 @@ void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
 	 * and the corresponding parameters.
 	 */
 	tcs->entry = (struct __thread_entry *)(pInitCtx);
+#endif
+
+#ifdef CONFIG_MICROKERNEL
+	tcs->uk_task_ptr = uk_task_ptr;
+#else
+	ARG_UNUSED(uk_task_ptr);
 #endif
 
 	tcs->preempReg.psp = (uint32_t)pInitCtx;

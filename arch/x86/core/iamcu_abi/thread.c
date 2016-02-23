@@ -60,9 +60,9 @@ void _thread_entry_wrapper(_thread_entry_t, _thread_arg_t,
  */
 
 void _new_thread(char *stack_memory, unsigned stack_size,
-		 _thread_entry_t thread_func, void *parameter1,
-		 void *parameter2, void *parameter3, int priority,
-		 unsigned options)
+		 void *uk_task_ptr, _thread_entry_t thread_func,
+		 void *parameter1, void *parameter2, void *parameter3,
+		 int priority, unsigned options)
 {
 	unsigned long *thread_context;
 	struct tcs *tcs = (struct tcs *)stack_memory;
@@ -118,6 +118,11 @@ void _new_thread(char *stack_memory, unsigned stack_size,
 	*thread_context = (unsigned long)(thread_context + 4);
 	*--thread_context = 0;
 
+#ifdef CONFIG_MICROKERNEL
+	tcs->uk_task_ptr = uk_task_ptr;
+#else
+	ARG_UNUSED(uk_task_ptr);
+#endif
 	tcs->coopReg.esp = (unsigned long)thread_context;
 #if defined(CONFIG_THREAD_MONITOR)
 	{

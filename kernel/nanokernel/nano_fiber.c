@@ -81,6 +81,7 @@ nano_thread_id_t _fiber_start(char *pStack,
 	tcs = (struct tcs *) pStack;
 	_new_thread(pStack,
 			stackSize,
+			NULL,
 			(_thread_entry_t)pEntry,
 			(void *)parameter1,
 			(void *)parameter2,
@@ -193,7 +194,7 @@ nano_thread_id_t fiber_delayed_start(char *stack,
 	struct tcs *tcs;
 
 	tcs = (struct tcs *)stack;
-	_new_thread(stack, stack_size_in_bytes, (_thread_entry_t)entry_point,
+	_new_thread(stack, stack_size_in_bytes, NULL, (_thread_entry_t)entry_point,
 		(void *)param1, (void *)param2, (void *)0, priority, options);
 
 	key = irq_lock();
