@@ -18,20 +18,13 @@
 
 #include <nanokernel.h>
 #include <i2c.h>
-#include <sensor.h>
 #include <init.h>
-#include <gpio.h>
 #include <misc/byteorder.h>
 #include "sensor_mcp9808.h"
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
+struct mcp9808_data mcp9808_data;
 
-static int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val)
+int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val)
 {
 	int ret;
 
@@ -93,6 +86,8 @@ static int mcp9808_channel_get(struct device *dev,
 static struct sensor_driver_api mcp9808_api_funcs = {
 	.sample_fetch = mcp9808_sample_fetch,
 	.channel_get = mcp9808_channel_get,
+	.attr_set = mcp9808_attr_set,
+	.trigger_set = mcp9808_trigger_set,
 };
 
 int mcp9808_init(struct device *dev)
@@ -110,10 +105,10 @@ int mcp9808_init(struct device *dev)
 
 	data->i2c_slave_addr = CONFIG_MCP9808_I2C_ADDR;
 
+	mcp9808_setup_interrupt(dev);
+
 	return DEV_OK;
 }
-
-static struct mcp9808_data mcp9808_data;
 
 DEVICE_INIT(mcp9808, CONFIG_MCP9808_DEV_NAME, mcp9808_init, &mcp9808_data,
 	    NULL, SECONDARY, CONFIG_MCP9808_INIT_PRIORITY);

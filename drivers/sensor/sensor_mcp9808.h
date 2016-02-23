@@ -19,20 +19,82 @@
 
 #include <stdint.h>
 #include <device.h>
+#include <sensor.h>
 #include <misc/util.h>
 
+#ifndef CONFIG_SENSOR_DEBUG
+#define DBG(...) { ; }
+#else
+#include <misc/printk.h>
+#define DBG printk
+#endif /* CONFIG_SENSOR_DEBUG */
+
+#define MCP9808_REG_CONFIG		0x01
+#define MCP9808_REG_UPPER_LIMIT		0x02
+#define MCP9808_REG_LOWER_LIMIT		0x03
+#define MCP9808_REG_CRITICAL		0x04
 #define MCP9808_REG_TEMP_AMB		0x05
+
+#define MCP9808_ALERT_INT		BIT(0)
+#define MCP9808_ALERT_CNT		BIT(3)
+#define MCP9808_INT_CLEAR		BIT(5)
 
 #define MCP9808_SIGN_BIT		BIT(12)
 #define MCP9808_TEMP_INT_MASK		0x0ff0
 #define MCP9808_TEMP_INT_SHIFT		4
 #define MCP9808_TEMP_FRAC_MASK		0x000f
 
+#define MCP9808_TEMP_MAX		0xffc
+
 struct mcp9808_data {
 	struct device *i2c_master;
 	uint16_t i2c_slave_addr;
 
 	uint16_t reg_val;
+
+#ifdef CONFIG_MCP9808_TRIGGER_OWN_FIBER
+	struct nano_sem sem;
+#endif
+
+#ifdef CONFIG_MCP9808_TRIGGER_GLOBAL_FIBER
+	struct sensor_work work;
+#endif
+
+#ifdef CONFIG_MCP9808_TRIGGER
+	struct sensor_trigger trig;
+	sensor_trigger_handler_t trigger_handler;
+#endif
 };
+
+int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val);
+
+#ifdef CONFIG_MCP9808_TRIGGER
+int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
+		     enum sensor_attribute attr,
+		     const struct sensor_value *val);
+int mcp9808_trigger_set(struct device *dev,
+			const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler);
+void mcp9808_setup_interrupt(struct device *dev);
+#else
+static inline int mcp9808_attr_set(struct device *dev,
+				   enum sensor_channel chan,
+				   enum sensor_attribute attr,
+				   const struct sensor_value *val)
+{
+	return DEV_INVALID_OP;
+}
+
+static inline int mcp9808_trigger_set(struct device *dev,
+				      const struct sensor_trigger *trig,
+				      sensor_trigger_handler_t handler)
+{
+	return DEV_INVALID_OP;
+}
+
+static void mcp9808_setup_interrupt(struct device *dev)
+{
+}
+#endif /* CONFIG_MCP9808_TRIGGER */
 
 #endif /* __SENSOR_MCP9808_H__ */

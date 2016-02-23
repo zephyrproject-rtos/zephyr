@@ -28,6 +28,18 @@
 #define PRINT           printk
 #endif
 
+#ifdef CONFIG_MCP9808_TRIGGER
+static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
+{
+	struct sensor_value temp;
+
+	sensor_sample_fetch(dev);
+	sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
+
+	PRINT("trigger fired, temp %d.%06d\n", temp.val1, temp.val2);
+}
+#endif
+
 void main(void)
 {
 	struct device *dev = device_get_binding("MCP9808");
@@ -40,6 +52,22 @@ void main(void)
 #ifdef DEBUG
 	PRINT("dev %p\n", dev);
 	PRINT("dev %p name %s\n", dev, dev->config->name);
+#endif
+
+#ifdef CONFIG_MCP9808_TRIGGER
+	struct sensor_value val;
+	struct sensor_trigger trig;
+
+	val.type = SENSOR_TYPE_INT;
+	val.val1 = 26;
+
+	sensor_attr_set(dev, SENSOR_CHAN_TEMP,
+			SENSOR_ATTR_UPPER_THRESH, &val);
+
+	trig.type = SENSOR_TRIG_THRESHOLD;
+	trig.chan = SENSOR_CHAN_TEMP;
+
+	sensor_trigger_set(dev, &trig, trigger_handler);
 #endif
 
 	while (1) {
