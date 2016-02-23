@@ -113,13 +113,10 @@ static uint8_t tmpage;
 #define BUF(buf)   ((struct arp_hdr *)&uip_buf(buf)[0])
 #define IPBUF(buf) ((struct ethip_hdr *)&uip_buf(buf)[0])
 
-#define DEBUG 0
-#if DEBUG
-#include <stdio.h>
-#define PRINTF(...) printf(__VA_ARGS__)
-#else
-#define PRINTF(...)
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_IPV4_ARP
+#define DEBUG 1
 #endif
+#include "contiki/ip/uip-debug.h"
 
 /*-----------------------------------------------------------------------------------*/
 /**

@@ -61,6 +61,18 @@ void uip_debug_hex_dump(const unsigned char *buffer, int len);
 #define DEBUG_ANNOTATE  2
 #define DEBUG_FULL      DEBUG_ANNOTATE | DEBUG_PRINT
 
+#if (DEBUG == 1)
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_PRINT)
+#define _DEBUG_ DEBUG_PRINT
+#elif defined(CONFIG_NETWORK_IP_STACK_DEBUG_ANNOTATE)
+#define _DEBUG_ DEBUG_ANNOTATE
+#elif defined(CONFIG_NETWORK_IP_STACK_DEBUG_FULL)
+#define _DEBUG_ DEBUG_FULL
+#else
+#define _DEBUG_ DEBUG_NONE
+#endif
+#endif
+
 /* PRINTA will always print if the debug routines are called directly */
 #ifdef __AVR__
 #include <avr/pgmspace.h>
@@ -69,7 +81,7 @@ void uip_debug_hex_dump(const unsigned char *buffer, int len);
 #define PRINTA(...) PRINT(__VA_ARGS__)
 #endif
 
-#if (DEBUG) & DEBUG_ANNOTATE
+#if (_DEBUG_) & DEBUG_ANNOTATE
 #ifdef __AVR__
 #define ANNOTATE(FORMAT,args...) printf_P(PSTR(FORMAT),##args)
 #else
@@ -77,9 +89,9 @@ void uip_debug_hex_dump(const unsigned char *buffer, int len);
 #endif
 #else
 #define ANNOTATE(...)
-#endif /* (DEBUG) & DEBUG_ANNOTATE */
+#endif /* (_DEBUG_) & DEBUG_ANNOTATE */
 
-#if (DEBUG) & DEBUG_PRINT
+#if (_DEBUG_) & DEBUG_PRINT
 #ifdef __AVR__
 #define PRINTF(FORMAT,args...) printf_P(PSTR(FORMAT),##args)
 #else
@@ -91,6 +103,6 @@ void uip_debug_hex_dump(const unsigned char *buffer, int len);
 #define PRINTF(...)
 #define PRINT6ADDR(addr)
 #define PRINTLLADDR(lladdr)
-#endif /* (DEBUG) & DEBUG_PRINT */
+#endif /* (_DEBUG_) & DEBUG_PRINT */
 
 #endif

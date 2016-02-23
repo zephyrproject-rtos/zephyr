@@ -51,7 +51,9 @@
 #include "contiki/packetbuf.h"
 #include "contiki/ipv6/uip-ds6-nbr.h"
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_IPV6_NBR_CACHE
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #ifdef UIP_CONF_DS6_NEIGHBOR_STATE_CHANGED

@@ -1,0 +1,97 @@
+# Kconfig.debug - IP stack debugging configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig NETWORKING_IP_STACK_DEBUG
+	bool "IP stack Debuggging options"
+	default n
+	help
+	  Enable the menu to select IP stack debugging part by part
+
+if NETWORKING_IP_STACK_DEBUG
+
+choice
+prompt "General debug level"
+help
+	Set the level of debugging you want. This will be generalized,
+	whatever the part you will be debugging.
+default NETWORK_IP_STACK_DEBUG_PRINT
+config NETWORK_IP_STACK_DEBUG_PRINT
+	bool "Print only debug messages"
+config NETWORK_IP_STACK_DEBUG_ANNOTATE
+	bool "Print only annotations"
+config NETWORK_IP_STACK_DEBUG_FULL
+	bool "Print both messages and annotations"
+endchoice
+
+config NETWORK_IP_STACK_DEBUG_IPV6
+	bool "Debug core IPv6"
+	depends on NETWORKING_WITH_IPV6
+	default n
+	help
+	  Enables core IPv6 code part to output debug messages
+
+config NETWORK_IP_STACK_DEBUG_IPV6_DS
+	bool "Debug IPv6 Data Structures"
+	depends on NETWORKING_WITH_IPV6
+	default n
+	help
+	  Enables IPv6 Data Structures code part to output debug messages
+
+config NETWORK_IP_STACK_DEBUG_IPV6_ICMPV6
+	bool "Debug ICMPv6"
+	depends on NETWORKING_WITH_IPV6
+	default n
+	help
+	  Enables ICMPv6 code part to output debug messages
+
+config NETWORK_IP_STACK_DEBUG_IPV6_ND
+	bool "Debug IPv6 Neighbour Discovery"
+	depends on NETWORKING_WITH_IPV6
+	default n
+	help
+	  Enables IPv6 Neighbour Discovery code part to output debug messages
+
+config NETWORK_IP_STACK_DEBUG_IPV6_NBR_CACHE
+	bool "Debug IPv6 neighbour cache"
+	depends on NETWORKING_WITH_IPV6
+	default n
+	help
+	  Enables Neighbour Cache code part to output debug messages
+
+config NETWORK_IP_STACK_DEBUG_IPV6_ROUTE
+	bool "Debug IPv6 route"
+	depends on NETWORKING_WITH_IPV6
+	default n
+	help
+	  Enables IPv6 route code part to output debug messages
+
+config NETWORK_IP_STACK_DEBUG_IPV4
+	bool "Debug core IPv4"
+	depends on NETWORKING_WITH_IPV4
+	default n
+	help
+	  Enables core IPv4 code part to output debug messages
+
+config NETWORK_IP_STACK_DEBUG_IPV4_ARP
+	bool "Debug IPv4 ARP"
+	depends on NETWORKING_WITH_IPV4
+	default n
+	help
+	  Enables core ARP code part to output debug messages
+
+endif

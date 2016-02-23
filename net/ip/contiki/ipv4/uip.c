@@ -76,7 +76,9 @@
 
 #include "contiki/ipv4/uip-neighbor.h"
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_IPV4
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #include <net/ip_buf.h>

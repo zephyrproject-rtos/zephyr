@@ -50,7 +50,9 @@
 #include "contiki/ipv6/uip-ds6.h"
 #include "contiki/ip/uip-packetqueue.h"
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_IPV6_DS
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 struct etimer uip_ds6_timer_periodic;                           /** \brief Timer for maintenance of data structures */

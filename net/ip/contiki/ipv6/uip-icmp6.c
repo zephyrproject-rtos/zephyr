@@ -49,7 +49,9 @@
 #include "contiki/ipv6/uip-icmp6.h"
 #include "contiki-default-conf.h"
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_IPV6_ICMPV6
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #define UIP_IP_BUF(buf)                ((struct uip_ip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
