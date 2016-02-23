@@ -135,13 +135,6 @@ config MINIMAL_LIBC_EXTENDED
         use any of the functions in an application you probably should be
         linking against a full lib c implementation instead.
 
-config NEWLIB_HEAP_SIZE
-	int "Size in bytes of the heap available for Newlib's malloc() function"
-	default 4096
-	depends on NEWLIB_LIBC
-	help
-	Sets the size of the heap available for dynamic memory allocation when
-	using Newlib.
 
 endmenu
 

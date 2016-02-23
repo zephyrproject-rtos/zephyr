@@ -17,10 +17,23 @@
 #include <errno.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <linker-defs.h>
+#include <misc/util.h>
 
-#define HEAP_SIZE CONFIG_NEWLIB_HEAP_SIZE
-unsigned char heap[HEAP_SIZE];
-unsigned int heap_sz;
+#define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
+#if defined(CONFIG_ARM)
+#define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_SRAM_BASE_ADDRESS)
+#define MAX_HEAP_SIZE ((KB(CONFIG_SRAM_SIZE)) - USED_RAM_SIZE)
+#elif defined(CONFIG_ARC)
+#define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_RAM_START)
+#define MAX_HEAP_SIZE ((KB(CONFIG_RAM_SIZE)) - USED_RAM_SIZE)
+#else  /* X86 */
+#define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_PHYS_RAM_ADDR)
+#define MAX_HEAP_SIZE ((KB(CONFIG_RAM_SIZE)) - USED_RAM_SIZE)
+#endif
+
+static unsigned char *heap_base = UINT_TO_POINTER(USED_RAM_END_ADDR);
+static unsigned int heap_sz;
 
 static int _stdout_hook_default(int c)
 {
@@ -126,9 +139,9 @@ int lseek(int file, int ptr, int dir)
 
 void *sbrk(int count)
 {
-	void *ptr = heap + heap_sz;
+	void *ptr = heap_base + heap_sz;
 
-	if ((heap_sz + count) <= HEAP_SIZE) {
+	if ((heap_sz + count) < MAX_HEAP_SIZE) {
 		heap_sz += count;
 		return ptr;
 	} else {
