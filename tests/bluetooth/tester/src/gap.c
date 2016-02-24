@@ -72,22 +72,24 @@ static struct bt_conn_cb conn_callbacks = {
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
-	uint16_t cmds;
+	uint8_t cmds[3];
 	struct gap_read_supported_commands_rp *rp = (void *) &cmds;
 
-	cmds = BIT(GAP_READ_SUPPORTED_COMMANDS);
-	cmds |= BIT(GAP_READ_CONTROLLER_INDEX_LIST);
-	cmds |= BIT(GAP_READ_CONTROLLER_INFO);
-	cmds |= BIT(GAP_SET_CONNECTABLE);
-	cmds |= BIT(GAP_SET_DISCOVERABLE);
-	cmds |= BIT(GAP_START_ADVERTISING);
-	cmds |= BIT(GAP_STOP_ADVERTISING);
-	cmds |= BIT(GAP_START_DISCOVERY);
-	cmds |= BIT(GAP_STOP_DISCOVERY);
-	cmds |= BIT(GAP_DISCONNECT);
-	cmds |= BIT(GAP_SET_IO_CAP);
-	cmds |= BIT(GAP_PAIR);
-	cmds |= BIT(GAP_PASSKEY_ENTRY);
+	memset(cmds, 0, sizeof(cmds));
+
+	tester_set_bit(cmds, GAP_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(cmds, GAP_READ_CONTROLLER_INDEX_LIST);
+	tester_set_bit(cmds, GAP_READ_CONTROLLER_INFO);
+	tester_set_bit(cmds, GAP_SET_CONNECTABLE);
+	tester_set_bit(cmds, GAP_SET_DISCOVERABLE);
+	tester_set_bit(cmds, GAP_START_ADVERTISING);
+	tester_set_bit(cmds, GAP_STOP_ADVERTISING);
+	tester_set_bit(cmds, GAP_START_DISCOVERY);
+	tester_set_bit(cmds, GAP_STOP_DISCOVERY);
+	tester_set_bit(cmds, GAP_DISCONNECT);
+	tester_set_bit(cmds, GAP_SET_IO_CAP);
+	tester_set_bit(cmds, GAP_PAIR);
+	tester_set_bit(cmds, GAP_PASSKEY_ENTRY);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));

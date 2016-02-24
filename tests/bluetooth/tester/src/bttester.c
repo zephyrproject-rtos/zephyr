@@ -43,9 +43,11 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	uint8_t buf[1];
 	struct core_read_supported_commands_rp *rp = (void *) buf;
 
-	buf[0] = BIT(CORE_READ_SUPPORTED_COMMANDS);
-	buf[0] |= BIT(CORE_READ_SUPPORTED_SERVICES);
-	buf[0] |= BIT(CORE_REGISTER_SERVICE);
+	memset(buf, 0, sizeof(buf));
+
+	tester_set_bit(buf, CORE_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(buf, CORE_READ_SUPPORTED_SERVICES);
+	tester_set_bit(buf, CORE_REGISTER_SERVICE);
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_COMMANDS,
 		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
@@ -56,9 +58,11 @@ static void supported_services(uint8_t *data, uint16_t len)
 	uint8_t buf[1];
 	struct core_read_supported_services_rp *rp = (void *) buf;
 
-	buf[0] = BIT(BTP_SERVICE_ID_CORE);
-	buf[0] |= BIT(BTP_SERVICE_ID_GAP);
-	buf[0] |= BIT(BTP_SERVICE_ID_GATT);
+	memset(buf, 0, sizeof(buf));
+
+	tester_set_bit(buf, BTP_SERVICE_ID_CORE);
+	tester_set_bit(buf, BTP_SERVICE_ID_GAP);
+	tester_set_bit(buf, BTP_SERVICE_ID_GATT);
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
 		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
