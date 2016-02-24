@@ -877,6 +877,9 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 		atomic_set_bit(conn->flags, BT_CONN_USER);
 		bt_auth->passkey_confirm(conn, passkey);
 		break;
+	case PASSKEY_DISPLAY:
+		bt_auth->passkey_display(conn, passkey);
+		break;
 	default:
 		ssp_confirm_reply(conn);
 		break;
