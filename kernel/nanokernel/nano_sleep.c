@@ -46,22 +46,27 @@ FUNC_ALIAS(_fiber_wakeup, fiber_fiber_wakeup, void);
 
 void _fiber_wakeup(nano_thread_id_t fiber)
 {
-	int key;
+	int key = irq_lock();
 
-	key = irq_lock();
-	_nano_timeout_abort(fiber);
-	_nano_fiber_ready(fiber);
+	/* verify first if fiber is not waiting on an object */
+	if (!fiber->nano_timeout.wait_q && (_nano_timeout_abort(fiber) == 0)) {
+		_nano_fiber_ready(fiber);
+	}
+
 	irq_unlock(key);
 }
 
 void task_fiber_wakeup(nano_thread_id_t fiber)
 {
-	int key;
+	int key = irq_lock();
 
-	key = irq_lock();
-	_nano_timeout_abort(fiber);
-	_nano_fiber_ready(fiber);
-	_Swap(key);
+	/* verify first if fiber is not waiting on an object */
+	if ((fiber->nano_timeout.wait_q) || (_nano_timeout_abort(fiber) < 0)) {
+		irq_unlock(key);
+	} else {
+		_nano_fiber_ready(fiber);
+		_Swap(key);
+	}
 }
 
 #ifndef CONFIG_MICROKERNEL
