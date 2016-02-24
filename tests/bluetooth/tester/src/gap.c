@@ -86,6 +86,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, GAP_STOP_ADVERTISING);
 	tester_set_bit(cmds, GAP_START_DISCOVERY);
 	tester_set_bit(cmds, GAP_STOP_DISCOVERY);
+	tester_set_bit(cmds, GAP_CONNECT);
 	tester_set_bit(cmds, GAP_DISCONNECT);
 	tester_set_bit(cmds, GAP_SET_IO_CAP);
 	tester_set_bit(cmds, GAP_PAIR);
