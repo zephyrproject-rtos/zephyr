@@ -1,4 +1,4 @@
-/* null_fragmentation.h - NULL fragmentation */
+/* null_fragmentation.h - NULL fragmentation for 802.15.4 */
 
 /*
  * Copyright (c) 2015 Intel Corporation

@@ -1,4 +1,4 @@
-/* compression.h - Header Compression */
+/* null_fragmentation.c - NULL packet fragmentation for 802.15.4 */
 
 /*
  * Copyright (c) 2015 Intel Corporation

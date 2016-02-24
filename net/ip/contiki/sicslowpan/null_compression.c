@@ -1,4 +1,4 @@
-/* compression.h - Header Compression */
+/* null_compression.c - null header compression */
 
 /*
  * Copyright (c) 2015 Intel Corporation

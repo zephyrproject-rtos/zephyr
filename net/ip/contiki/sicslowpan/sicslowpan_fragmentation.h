@@ -1,4 +1,4 @@
-/* null_fragmentation.h - NULL fragmentation */
+/* sicslowpan_fragmentation.h - 802.15.4 6lowpan fragmentation */
 
 /*
  * Copyright (c) 2015 Intel Corporation

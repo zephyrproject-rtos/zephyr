@@ -1,4 +1,4 @@
-/* compression.h - Header Compression */
+/* sicslowpan_fragmentation.c - 802.15.4 6lowpan packet fragmentation */
 
 /*
  * Copyright (c) 2015 Intel Corporation

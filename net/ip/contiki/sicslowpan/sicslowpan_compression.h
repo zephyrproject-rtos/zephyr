@@ -1,4 +1,4 @@
-/* null_compression.h - NULL header Compression */
+/* sicslowpan_compression.h - IPv6 header Compression */
 
 /*
  * Copyright (c) 2015 Intel Corporation
