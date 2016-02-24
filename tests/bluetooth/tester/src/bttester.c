@@ -25,7 +25,6 @@
 #include <bluetooth/bluetooth.h>
 #include <misc/printk.h>
 #include <misc/byteorder.h>
-#include <misc/util.h>
 #include <console/uart_pipe.h>
 
 #include "bttester.h"

@@ -25,7 +25,6 @@
 #include <bluetooth/conn.h>
 
 #include <misc/byteorder.h>
-#include <misc/util.h>
 
 #include "bttester.h"
 

@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <misc/util.h>
+
 #define BTP_MTU 1024
 
 #define BTP_INDEX_NONE		0xff
@@ -343,8 +345,6 @@ struct gatt_set_enc_key_size_cmd {
 } __packed;
 
 /* Gatt Client */
-#define GATT_CLIENT_OP_OFFSET		0x40
-
 struct gatt_service {
 	uint16_t start_handle;
 	uint16_t end_handle;
@@ -371,9 +371,9 @@ struct gatt_descriptor {
 	uint8_t uuid[0];
 } __packed;
 
-#define GATT_EXCHANGE_MTU		0x40
+#define GATT_EXCHANGE_MTU		0x0a
 
-#define GATT_DISC_PRIM_UUID		0x42
+#define GATT_DISC_PRIM_UUID		0x0c
 struct gatt_disc_prim_uuid_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -385,7 +385,7 @@ struct gatt_disc_prim_uuid_rp {
 	struct gatt_service services[0];
 } __packed;
 
-#define GATT_FIND_INCLUDED		0x43
+#define GATT_FIND_INCLUDED		0x0d
 struct gatt_find_included_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -397,7 +397,7 @@ struct gatt_find_included_rp {
 	struct gatt_included included[0];
 } __packed;
 
-#define GATT_DISC_ALL_CHRC		0x44
+#define GATT_DISC_ALL_CHRC		0x0e
 struct gatt_disc_all_chrc_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -409,7 +409,7 @@ struct gatt_disc_chrc_rp {
 	struct gatt_characteristic characteristics[0];
 } __packed;
 
-#define GATT_DISC_CHRC_UUID		0x45
+#define GATT_DISC_CHRC_UUID		0x0f
 struct gatt_disc_chrc_uuid_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -419,7 +419,7 @@ struct gatt_disc_chrc_uuid_cmd {
 	uint8_t uuid[0];
 } __packed;
 
-#define GATT_DISC_ALL_DESC		0x46
+#define GATT_DISC_ALL_DESC		0x10
 struct gatt_disc_all_desc_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -431,7 +431,7 @@ struct gatt_disc_all_desc_rp {
 	struct gatt_descriptor descriptors[0];
 } __packed;
 
-#define GATT_READ			0x47
+#define GATT_READ			0x11
 struct gatt_read_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -443,7 +443,7 @@ struct gatt_read_rp {
 	uint8_t data[0];
 } __packed;
 
-#define GATT_READ_LONG			0x49
+#define GATT_READ_LONG			0x13
 struct gatt_read_long_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -451,7 +451,7 @@ struct gatt_read_long_cmd {
 	uint16_t offset;
 } __packed;
 
-#define GATT_READ_MULTIPLE		0x4a
+#define GATT_READ_MULTIPLE		0x14
 struct gatt_read_multiple_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -459,7 +459,7 @@ struct gatt_read_multiple_cmd {
 	uint16_t handles[0];
 } __packed;
 
-#define GATT_WRITE_WITHOUT_RSP		0x4b
+#define GATT_WRITE_WITHOUT_RSP		0x15
 struct gatt_write_without_rsp_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -468,7 +468,7 @@ struct gatt_write_without_rsp_cmd {
 	uint8_t data[0];
 } __packed;
 
-#define GATT_SIGNED_WRITE_WITHOUT_RSP	0x4c
+#define GATT_SIGNED_WRITE_WITHOUT_RSP	0x16
 struct gatt_signed_write_without_rsp_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -477,7 +477,7 @@ struct gatt_signed_write_without_rsp_cmd {
 	uint8_t data[0];
 } __packed;
 
-#define GATT_WRITE			0x4d
+#define GATT_WRITE			0x17
 struct gatt_write_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -486,7 +486,7 @@ struct gatt_write_cmd {
 	uint8_t data[0];
 } __packed;
 
-#define GATT_WRITE_LONG			0x4e
+#define GATT_WRITE_LONG			0x18
 struct gatt_write_long_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -496,8 +496,8 @@ struct gatt_write_long_cmd {
 	uint8_t data[0];
 } __packed;
 
-#define GATT_CFG_NOTIFY			0x50
-#define GATT_CFG_INDICATE		0x51
+#define GATT_CFG_NOTIFY			0x1a
+#define GATT_CFG_INDICATE		0x1b
 struct gatt_cfg_notify_cmd {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -506,7 +506,7 @@ struct gatt_cfg_notify_cmd {
 } __packed;
 
 /* GATT events */
-#define GATT_EV_NOTIFICATION		0xc0
+#define GATT_EV_NOTIFICATION		0x80
 struct gatt_notification_ev {
 	uint8_t address_type;
 	uint8_t address[6];
@@ -515,6 +515,13 @@ struct gatt_notification_ev {
 	uint16_t data_length;
 	uint8_t data[0];
 } __packed;
+
+static inline void tester_set_bit(uint8_t *addr, unsigned int bit)
+{
+	uint8_t *p = addr + (bit / 8);
+
+	*p |= BIT(bit % 8);
+}
 
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);

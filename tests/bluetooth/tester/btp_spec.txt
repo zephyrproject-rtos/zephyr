@@ -665,9 +665,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x0a -> 0x3f - Reserved for future use
-
-	Opcode 0x40 - Exchange MTU
+	Opcode 0x0a - Exchange MTU
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -680,7 +678,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x41 - Discover All Primary Services
+	Opcode 0x0b - Discover All Primary Services
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -704,7 +702,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x42 - Discover Primary Service by UUID
+	Opcode 0x0c - Discover Primary Service by UUID
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -730,7 +728,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x43 - Find Included Services
+	Opcode 0x0d - Find Included Services
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -763,7 +761,7 @@ Commands and responses:
 		relationships to other services.
 		Services found during discovery are returned in the response.
 
-	Opcode 0x44 - Discover All Characteristics of a Service
+	Opcode 0x0e - Discover All Characteristics of a Service
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -791,7 +789,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x45 - Discover Characteristics by UUID
+	Opcode 0x0f - Discover Characteristics by UUID
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -821,7 +819,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x46 - Discover All Characteristic Descriptors
+	Opcode 0x10 - Discover All Characteristic Descriptors
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -847,7 +845,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x47 - Read Characteristic Value/Descriptor
+	Opcode 0x11 - Read Characteristic Value/Descriptor
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -866,7 +864,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x48 - Read Using Characteristic UUID
+	Opcode 0x12 - Read Using Characteristic UUID
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -892,7 +890,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x49 - Read Long Characteristic Value/Descriptor
+	Opcode 0x13 - Read Long Characteristic Value/Descriptor
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -912,7 +910,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x4a - Read Multiple Characteristic Values
+	Opcode 0x14 - Read Multiple Characteristic Values
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -932,7 +930,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x4b - Write Without Response
+	Opcode 0x15 - Write Without Response
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -948,7 +946,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x4c - Signed Write Without Response
+	Opcode 0x16 - Signed Write Without Response
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -966,7 +964,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x4d - Write Characteristic Value/Descriptor
+	Opcode 0x17 - Write Characteristic Value/Descriptor
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -984,7 +982,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x4e - Write Long Characteristic Value/Descriptor
+	Opcode 0x18 - Write Long Characteristic Value/Descriptor
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -1003,7 +1001,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x4f - Reliable Write
+	Opcode 0x19 - Reliable Write
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -1023,7 +1021,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x50 - Configure Notifications
+	Opcode 0x1a - Configure Notifications
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -1037,7 +1035,7 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
-	Opcode 0x51 - Configure Indications
+	Opcode 0x1b - Configure Indications
 
 		Controller Index:	<controller id>
 		Command parameters:	Address_Type (1 octet)
@@ -1052,9 +1050,7 @@ Commands and responses:
 		In case of an error, the error response will be returned.
 
 Events:
-	Opcode 0x80 -> 0xbf - Reserved for future use
-
-	Opcode 0xc0 - Notification/Indication Received
+	Opcode 0x80 - Notification/Indication Received
 
 		Controller Index:	<controller id>
 		Event parameters:	Address_Type (1 octet)
