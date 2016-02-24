@@ -880,10 +880,51 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 	case PASSKEY_DISPLAY:
 		bt_auth->passkey_display(conn, passkey);
 		break;
+	case  PASSKEY_INPUT:
+		bt_auth->passkey_entry(conn);
+		break;
 	default:
 		ssp_confirm_reply(conn);
 		break;
 	}
+}
+
+static int ssp_passkey_reply(struct bt_conn *conn, unsigned int passkey)
+{
+	struct bt_hci_cp_user_passkey_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+	cp->passkey = sys_cpu_to_le32(passkey);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_PASSKEY_REPLY, buf, NULL);
+}
+
+static int ssp_passkey_neg_reply(struct bt_conn *conn)
+{
+	struct bt_hci_cp_user_passkey_neg_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_PASSKEY_NEG_REPLY, buf,
+				    NULL);
 }
 #endif
 
@@ -1399,6 +1440,13 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 		return 0;
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		if (conn->br.ssp_method == PASSKEY_INPUT) {
+			return ssp_passkey_reply(conn, passkey);
+		}
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	return -EINVAL;
 }
@@ -1446,6 +1494,10 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 
 		if (conn->br.ssp_method == PASSKEY_CONFIRM) {
 			return ssp_confirm_neg_reply(conn);
+		}
+
+		if (conn->br.ssp_method == PASSKEY_INPUT) {
+			return ssp_passkey_neg_reply(conn);
 		}
 
 		return pin_code_neg_reply(&conn->br.dst);

@@ -292,6 +292,17 @@ struct bt_hci_rp_user_confirm_reply {
 	bt_addr_t bdaddr;
 } __packed;
 
+#define BT_HCI_OP_USER_PASSKEY_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x002e)
+struct bt_hci_cp_user_passkey_reply {
+	bt_addr_t bdaddr;
+	uint32_t  passkey;
+} __packed;
+
+#define BT_HCI_OP_USER_PASSKEY_NEG_REPLY	BT_OP(BT_OGF_LINK_CTRL, 0x002f)
+struct bt_hci_cp_user_passkey_neg_reply {
+	bt_addr_t bdaddr;
+} __packed;
+
 #define BT_HCI_OP_IO_CAPABILITY_NEG_REPLY	BT_OP(BT_OGF_LINK_CTRL, 0x0034)
 struct bt_hci_cp_io_capability_neg_reply {
 	bt_addr_t bdaddr;
@@ -704,6 +715,11 @@ struct bt_hci_evt_io_capa_resp {
 struct bt_hci_evt_user_confirm_req {
 	bt_addr_t bdaddr;
 	uint32_t  passkey;
+} __packed;
+
+#define BT_HCI_EVT_USER_PASSKEY_REQ		0x34
+struct bt_hci_evt_user_passkey_req {
+	bt_addr_t bdaddr;
 } __packed;
 
 #define BT_HCI_EVT_SSP_COMPLETE			0x36
