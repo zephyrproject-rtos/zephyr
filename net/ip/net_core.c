@@ -681,27 +681,27 @@ static void net_timer_fiber(void)
 
 #ifdef CONFIG_INIT_STACKS
 			{
-#define PRINT_CYCLE (10 * sys_clock_hw_cycles_per_sec)
+#define PRINT_CYCLE (60 * sys_clock_ticks_per_sec)
 
-				static clock_time_t next_print;
-				uint32_t cycle = clock_get_cycle();
+				static uint32_t next_print;
+				uint32_t curr = sys_tick_get_32();
 
-				/* Print stack usage every 10 sec */
+				/* Print stack usage every n. sec */
 				if (!next_print ||
-				    (next_print < cycle &&
-				     (!((cycle - next_print) > PRINT_CYCLE)))) {
-					clock_time_t new_print;
+				    (next_print < curr &&
+				     (!((curr - next_print) > PRINT_CYCLE)))) {
+					uint32_t new_print;
 
 					net_analyze_stack("timer fiber",
 							  timer_fiber_stack,
 						  sizeof(timer_fiber_stack));
-					new_print = cycle + PRINT_CYCLE;
-					if (new_print > cycle) {
+					new_print = curr + PRINT_CYCLE;
+					if (new_print > curr) {
 						next_print = new_print;
 					} else {
 						/* Overflow */
 						next_print = PRINT_CYCLE -
-							(0xffffffff - cycle);
+							(0xffffffff - curr);
 					}
 				}
 			}
