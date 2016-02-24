@@ -69,6 +69,17 @@ void task_fiber_wakeup(nano_thread_id_t fiber)
 	}
 }
 
+void fiber_wakeup(nano_thread_id_t fiber)
+{
+	static void (*func[3])(nano_thread_id_t) = {
+		isr_fiber_wakeup,
+		fiber_fiber_wakeup,
+		task_fiber_wakeup
+	};
+
+	func[sys_execution_context_type_get()](fiber);
+}
+
 #ifndef CONFIG_MICROKERNEL
 void task_sleep(int32_t timeout_in_ticks)
 {

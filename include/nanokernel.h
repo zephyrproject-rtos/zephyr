@@ -280,6 +280,20 @@ extern void fiber_fiber_wakeup(nano_thread_id_t fiber);
  */
 extern void task_fiber_wakeup(nano_thread_id_t fiber);
 
+/**
+ * @brief Wake the specified fiber from sleep
+ *
+ * This routine is a convenience wrapper for the execution of context-specific
+ * APIs. It is helpful when the exact execution context is not known. However,
+ * it should be avoided when the context is known up-front to avoid
+ * unnecessary overhead.
+ *
+ * @param fiber Identifies fiber to wake
+ *
+ * @return N/A
+ */
+extern void fiber_wakeup(nano_thread_id_t fiber);
+
 #ifndef CONFIG_MICROKERNEL
 /**
  * @brief Put the task to sleep.
