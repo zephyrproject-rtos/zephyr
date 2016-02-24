@@ -119,15 +119,7 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern,
 			return NULL;
 		}
 
-		/* TODO:
-		 * It is needed here to allocate space for characteristic value
-		 * and descriptor user data.
-		 * This check will be removed by one of subsequent patches.
-		 */
-		if (pattern->user_data) {
-			memcpy(attr->user_data, pattern->user_data,
-			       user_data_len);
-		}
+		memcpy(attr->user_data, pattern->user_data, user_data_len);
 	}
 
 	/* Register attribute in GATT database, this will assign it a handle */
@@ -323,6 +315,7 @@ static uint8_t add_characteristic_cb(const struct bt_gatt_attr *attr,
 	struct add_characteristic *data = user_data;
 	struct bt_gatt_attr *attr_chrc, *attr_value;
 	struct bt_gatt_chrc *chrc_data;
+	struct gatt_value value;
 
 	/* Add Characteristic Declaration */
 	attr_chrc = gatt_db_add(&(struct bt_gatt_attr)
@@ -332,11 +325,14 @@ static uint8_t add_characteristic_cb(const struct bt_gatt_attr *attr,
 		return BT_GATT_ITER_STOP;
 	}
 
+	memset(&value, 0, sizeof(value));
+
 	/* Add Characteristic Value */
 	attr_value = gatt_db_add(&(struct bt_gatt_attr)
 				 BT_GATT_LONG_DESCRIPTOR(data->uuid,
 					data->permissions, read_value,
-					write_value, flush_value, NULL), 0);
+					write_value, flush_value, &value),
+					sizeof(value));
 	if (!attr_value) {
 		return BT_GATT_ITER_STOP;
 	}
@@ -420,11 +416,6 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr_chrc)
 		return NULL;
 	}
 
-	value = attr_value->user_data;
-	if (!value) {
-		return NULL;
-	}
-
 	/* Add CCC descriptor to GATT database */
 	attr_desc = gatt_db_add(&ccc, 0);
 	if (!attr_desc) {
@@ -465,17 +456,20 @@ static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
 {
 	struct add_descriptor *data = user_data;
 	struct bt_gatt_attr *attr_desc;
+	struct gatt_value value;
 
 	if (!bt_uuid_cmp(data->uuid, BT_UUID_GATT_CEP)) {
 		attr_desc = add_cep(attr);
 	} else if (!bt_uuid_cmp(data->uuid, BT_UUID_GATT_CCC)) {
 		attr_desc = add_ccc(attr);
 	} else {
+		memset(&value, 0, sizeof(value));
+
 		attr_desc = gatt_db_add(&(struct bt_gatt_attr)
 					BT_GATT_LONG_DESCRIPTOR(data->uuid,
 						data->permissions, read_value,
-						write_value, flush_value, NULL),
-						0);
+						write_value, flush_value,
+						&value), sizeof(value));
 	}
 
 	if (!attr_desc) {
@@ -617,7 +611,7 @@ struct set_value {
 static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 {
 	struct set_value *data = user_data;
-	struct gatt_value value;
+	struct gatt_value *value;
 
 	/* Value has been already set while adding CCC to the gatt_db */
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC)) {
@@ -638,44 +632,32 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 		}
 	}
 
-	value.len = data->len;
+	value = attr->user_data;
 
 	/* Check if attribute value has been already set */
-	if (attr->user_data) {
-		struct gatt_value *gatt_value = attr->user_data;
-
-		/* Fail if value length doesn't match  */
-		if (value.len != gatt_value->len) {
+	if (!value->len) {
+		value->data = gatt_buf_reserve(data->len);
+		if (!value->data) {
 			return BT_GATT_ITER_STOP;
 		}
 
-		memcpy(gatt_value->data, data->value, gatt_value->len);
-
-		if (gatt_value->has_ccc) {
-			bt_gatt_notify(NULL, attr, gatt_value->data,
-				       gatt_value->len);
+		value->prep_data = gatt_buf_reserve(data->len);
+		if (!value->prep_data) {
+			return BT_GATT_ITER_STOP;
 		}
 
-		data->btp_status = BTP_STATUS_SUCCESS;
+		value->len = data->len;
+	}
+
+	/* Fail if value length doesn't match  */
+	if (value->len != data->len) {
 		return BT_GATT_ITER_STOP;
 	}
 
-	value.data = gatt_buf_add(data->value, value.len);
-	if (!value.data) {
-		return BT_GATT_ITER_STOP;
-	}
+	memcpy(value->data, data->value, value->len);
 
-	value.prep_data = gatt_buf_reserve(value.len);
-	if (!value.prep_data) {
-		return BT_GATT_ITER_STOP;
-	}
-
-	value.has_ccc = false;
-	value.enc_key_size = 0x00;
-
-	attr->user_data = gatt_buf_add(&value, sizeof(value));
-	if (!attr->user_data) {
-		return BT_GATT_ITER_STOP;
+	if (value->has_ccc) {
+		bt_gatt_notify(NULL, attr, value->data, value->len);
 	}
 
 	data->btp_status = BTP_STATUS_SUCCESS;
@@ -740,11 +722,6 @@ static uint8_t set_enc_key_size_cb(const struct bt_gatt_attr *attr,
 	/* Fail if permissions are not set */
 	if (!(attr->perm & (GATT_PERM_ENC_READ_MASK |
 			    GATT_PERM_ENC_WRITE_MASK))) {
-		return BT_GATT_ITER_STOP;
-	}
-
-	/* Fail if there is no attribute value */
-	if (!attr->user_data) {
 		return BT_GATT_ITER_STOP;
 	}
 
