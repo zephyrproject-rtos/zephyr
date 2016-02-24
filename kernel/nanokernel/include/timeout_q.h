@@ -41,11 +41,16 @@ static inline void _nano_timeout_tcs_init(struct tcs *tcs)
 	tcs->nano_timeout.delta_ticks_from_prev = -1;
 
 	/*
+	 * Must be initialized here so that the _fiber_wakeup family of APIs can
+	 * verify the fiber is not on a wait queue before aborting a timeout.
+	 */
+	tcs->nano_timeout.wait_q = NULL;
+
+	/*
 	 * These are initialized when enqueing on the timeout queue:
 	 *
 	 *   tcs->nano_timeout.node.next
 	 *   tcs->nano_timeout.node.prev
-	 *   tcs->nano_timeout.wait_q
 	 */
 }
 

@@ -96,6 +96,8 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 			wait_q->tail = prev;
 		}
 	}
+
+	tcs->nano_timeout.wait_q = NULL;
 }
 #include <timeout_q.h>
 
