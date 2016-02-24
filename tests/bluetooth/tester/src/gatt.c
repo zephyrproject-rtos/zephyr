@@ -571,12 +571,14 @@ static uint8_t set_cep_value(struct bt_gatt_attr *attr, const void *value,
 			     const uint16_t len)
 {
 	struct bt_gatt_cep *cep_value = attr->user_data;
+	uint16_t properties;
 
-	if (len != sizeof(cep_value->properties)) {
+	if (len != sizeof(properties)) {
 		return BTP_STATUS_FAILED;
 	}
 
-	memcpy(&cep_value->properties, value, len);
+	memcpy(&properties, value, len);
+	cep_value->properties = sys_le16_to_cpu(properties);
 
 	return BTP_STATUS_SUCCESS;
 }
