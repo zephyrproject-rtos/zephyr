@@ -85,13 +85,13 @@ static inline void _nano_timeout_handle_timeouts(void)
 }
 
 /* abort a timeout for a specific fiber */
-static inline void _nano_timeout_abort(struct tcs *tcs)
+static inline int _nano_timeout_abort(struct tcs *tcs)
 {
 	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
 	struct _nano_timeout *t = &tcs->nano_timeout;
 
 	if (-1 == t->delta_ticks_from_prev) {
-		return;
+		return -1;
 	}
 
 	if (!sys_dlist_is_tail(timeout_q, &t->node)) {
@@ -102,6 +102,8 @@ static inline void _nano_timeout_abort(struct tcs *tcs)
 	}
 	sys_dlist_remove(&t->node);
 	t->delta_ticks_from_prev = -1;
+
+	return 0;
 }
 
 /*
