@@ -80,6 +80,7 @@ void net_context_set_receiver_registered(struct net_context *context);
 static char __noinit __stack rx_fiber_stack[CONFIG_IP_RX_STACK_SIZE];
 static char __noinit __stack tx_fiber_stack[CONFIG_IP_TX_STACK_SIZE];
 static char __noinit __stack timer_fiber_stack[CONFIG_IP_TIMER_STACK_SIZE];
+static nano_thread_id_t timer_fiber_id;
 
 static struct net_dev {
 	/* Queue for incoming packets from driver */
@@ -655,10 +656,9 @@ static void net_rx_fiber(void)
 }
 
 /*
- * Run various Contiki timers. At the moment this is done via polling.
+ * Run various Contiki timers.
  */
-#define DEFAULT_TIMER_WAKEUP 2
-#define MAX_TIMER_WAKEUP 2
+#define MAX_TIMER_WAKEUP 0x7ffffff
 
 static void net_timer_fiber(void)
 {
@@ -672,8 +672,8 @@ static void net_timer_fiber(void)
 		next_wakeup = etimer_request_poll();
 
 		if (next_wakeup == 0) {
-			/* There was no timers, wait a bit */
-			next_wakeup = DEFAULT_TIMER_WAKEUP;
+			/* There was no timers, wait again */
+			next_wakeup = MAX_TIMER_WAKEUP;
 		} else {
 			if (next_wakeup > MAX_TIMER_WAKEUP) {
 				next_wakeup = MAX_TIMER_WAKEUP;
@@ -730,8 +730,15 @@ static void init_tx_queue(void)
 
 static void init_timer_fiber(void)
 {
-	fiber_start(timer_fiber_stack, sizeof(timer_fiber_stack),
-		    (nano_fiber_entry_t)net_timer_fiber, 0, 0, 7, 0);
+	timer_fiber_id = fiber_start(timer_fiber_stack,
+				     sizeof(timer_fiber_stack),
+				     (nano_fiber_entry_t)net_timer_fiber,
+				     0, 0, 7, 0);
+}
+
+void net_timer_check(void)
+{
+	fiber_wakeup(timer_fiber_id);
 }
 
 int net_set_mac(uint8_t *mac, uint8_t len)

@@ -52,6 +52,8 @@
 #include "sys/etimer.h"
 #include "sys/process.h"
 
+extern void net_timer_check(void);
+
 static struct etimer *timerlist;
 static clock_time_t next_expiration;
 
@@ -80,6 +82,8 @@ update_time(void)
     PRINTF("%s():%d next expiration %d\n", __FUNCTION__, __LINE__,
 	   next_expiration);
   }
+
+  net_timer_check();
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(etimer_process, ev, data, buf)
