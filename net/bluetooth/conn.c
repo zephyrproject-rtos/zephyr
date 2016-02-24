@@ -858,6 +858,17 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 {
 	conn->br.ssp_method = ssp_pair_method(conn);
 
+	/*
+	 * If local required security is HIGH then MITM is mandatory.
+	 * MITM protection is no achievable when SSP 'justworks' is applied.
+	 */
+	if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
+	    conn->br.ssp_method == JUST_WORKS) {
+		BT_DBG("MITM protection infeasible for required security");
+		ssp_confirm_neg_reply(conn);
+		return;
+	}
+
 	/* TODO: As pairing acceptor call user pairing consent API callback. */
 
 	/* Start interactive authentication if valid, default to justworks. */
