@@ -874,6 +874,7 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 	/* Start interactive authentication if valid, default to justworks. */
 	switch (conn->br.ssp_method) {
 	case PASSKEY_CONFIRM:
+		atomic_set_bit(conn->flags, BT_CONN_USER);
 		bt_auth->passkey_confirm(conn, passkey);
 		break;
 	default:
@@ -1411,6 +1412,11 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 #endif /* CONFIG_BLUETOOTH_SMP */
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
+		/* Allow user confirm passkey value, then reset user state. */
+		if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_USER)) {
+			return -EPERM;
+		}
+
 		return ssp_confirm_reply(conn);
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
