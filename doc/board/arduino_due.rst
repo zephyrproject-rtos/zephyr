@@ -119,9 +119,11 @@ default, is utilizing this controller.
 Flashing Arduino Due for Zephyr
 ===============================
 
-Flashing the Zephyr kernel onto Arduino Due requires the `bossa tool`_. Note
-that the Arduino specific version is required (branch arduino on GitHub).
+Flashing the Zephyr kernel onto Arduino Due requires the `bossa tool`_.
 
+.. note::
+   The Arduino specific bossa tool is required. Please checkout
+   the `bossa arduino branch`_ on GitHub repository.
 
 The sample application hello_world is being used in this tutorial, which can
 be found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
@@ -166,3 +168,5 @@ References
 .. _Atmel SAM3X8E Datasheet: http://www.atmel.com/devices/sam3x8e.aspx
 
 .. _bossa tool: https://github.com/shumatech/BOSSA
+
+.. _bossa arduino branch: https://github.com/shumatech/BOSSA/tree/arduino
