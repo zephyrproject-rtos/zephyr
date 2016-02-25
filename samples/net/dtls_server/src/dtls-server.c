@@ -34,6 +34,9 @@
 
 #include <net/tinydtls.h>
 
+#include <bluetooth/bluetooth.h>
+#include <ipsp/src/ipss.h>
+
 static const unsigned char ecdsa_priv_key[] = {
 			0xD9, 0xE2, 0x70, 0x7A, 0x72, 0xDA, 0x6A, 0x05,
 			0x04, 0x99, 0x5C, 0x86, 0xED, 0xDB, 0xE3, 0xEF,
@@ -52,6 +55,7 @@ static const unsigned char ecdsa_pub_key_y[] = {
 			0xD0, 0x43, 0xB1, 0xFB, 0x03, 0xE2, 0x2F, 0x4D,
 			0x17, 0xDE, 0x43, 0xF9, 0xF9, 0xAD, 0xEE, 0x70};
 
+#if !defined(CONFIG_BLUETOOTH)
 /* The peer is the client in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
@@ -61,6 +65,7 @@ static const unsigned char ecdsa_pub_key_y[] = {
 /* This is my mac address
  */
 static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+#endif
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
 #if 0
@@ -88,6 +93,7 @@ static inline void init_app(void)
 {
 	PRINT("%s: run dtls server\n", __func__);
 
+#if !defined(CONFIG_BLUETOOTH)
 	net_set_mac(my_mac, sizeof(my_mac));
 
 #if defined(CONFIG_NETWORKING_WITH_IPV4)
@@ -105,6 +111,7 @@ static inline void init_app(void)
 		addr = (uip_ipaddr_t *)&in6addr_my;
 		uip_ds6_addr_add(addr, 0, ADDR_MANUAL);
 	}
+#endif
 #endif
 }
 
@@ -393,6 +400,15 @@ void startup(void)
 	dtls_init();
 
 	init_app();
+
+#if defined(CONFIG_NETWORKING_WITH_BT)
+	if (bt_enable(NULL)) {
+		PRINT("Bluetooth init failed\n");
+		return;
+	}
+	ipss_init();
+	ipss_advertise();
+#endif
 
 	recv = get_context();
 	if (!recv) {
