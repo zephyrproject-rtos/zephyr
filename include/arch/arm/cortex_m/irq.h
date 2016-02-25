@@ -24,6 +24,7 @@
 #ifndef _ARCH_ARM_CORTEXM_IRQ_H_
 #define _ARCH_ARM_CORTEXM_IRQ_H_
 
+#include <irq.h>
 #include <arch/arm/cortex_m/nvic.h>
 #include <sw_isr_table.h>
 
@@ -33,18 +34,18 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 GTEXT(_IntExit);
-GTEXT(irq_connect_dynamic)
-GTEXT(irq_enable)
-GTEXT(irq_disable)
+GTEXT(_arch_irq_connect_dynamic)
+GTEXT(_arch_irq_enable)
+GTEXT(_arch_irq_disable)
 #else
-extern int irq_connect_dynamic(unsigned int irq,
+extern int _arch_irq_connect_dynamic(unsigned int irq,
 			     unsigned int prio,
 			     void (*isr)(void *arg),
 			     void *arg,
 			     uint32_t flags);
 
-extern void irq_enable(unsigned int irq);
-extern void irq_disable(unsigned int irq);
+extern void _arch_irq_enable(unsigned int irq);
+extern void _arch_irq_disable(unsigned int irq);
 
 extern void _IntExit(void);
 
@@ -101,7 +102,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
  *
  * @return The vector assigned to this interrupt
  */
-#define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	enum { IRQ = irq_p }; \
 	static struct _IsrTableEntry _CONCAT(_isr_irq, irq_p) \

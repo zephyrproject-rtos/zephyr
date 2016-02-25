@@ -36,7 +36,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <sw_isr_table.h>
-
+#include <irq.h>
 
 /*
  * @brief Enable an interrupt line
@@ -48,7 +48,7 @@
  * @return N/A
  */
 
-void irq_enable(unsigned int irq)
+void _arch_irq_enable(unsigned int irq)
 {
 	int key = irq_lock();
 
@@ -65,7 +65,7 @@ void irq_enable(unsigned int irq)
  * @return N/A
  */
 
-void irq_disable(unsigned int irq)
+void _arch_irq_disable(unsigned int irq)
 {
 	int key = irq_lock();
 
@@ -158,7 +158,7 @@ void _irq_handler_set(
  * @return the interrupt line number
  */
 
-int irq_connect_dynamic(
+int _arch_irq_connect_dynamic(
 	unsigned int irq,
 	unsigned int prio,
 	void (*isr)(void *arg),

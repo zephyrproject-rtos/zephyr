@@ -26,6 +26,7 @@
 
 #include <arch/arc/v2/aux_regs.h>
 #include <toolchain/common.h>
+#include <irq.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,18 +34,18 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 GTEXT(_irq_exit);
-GTEXT(irq_connect)
-GTEXT(irq_enable)
-GTEXT(irq_disable)
+GTEXT(_arch_irq_connect)
+GTEXT(_arch_irq_enable)
+GTEXT(_arch_irq_disable)
 #else
-extern int irq_connect_dynamic(unsigned int irq,
+extern int _arch_irq_connect_dynamic(unsigned int irq,
 			     unsigned int prio,
 			     void (*isr)(void *arg),
 			     void *arg,
 			     uint32_t flags);
 
-extern void irq_enable(unsigned int irq);
-extern void irq_disable(unsigned int irq);
+extern void _arch_irq_enable(unsigned int irq);
+extern void _arch_irq_disable(unsigned int irq);
 
 extern void _irq_exit(void);
 
@@ -80,7 +81,7 @@ extern void _irq_exit(void);
  * "interrupt disable state" prior to the call.
  */
 
-static ALWAYS_INLINE unsigned int irq_lock(void)
+static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 {
 	unsigned int key;
 
@@ -101,7 +102,7 @@ static ALWAYS_INLINE unsigned int irq_lock(void)
  * @return N/A
  */
 
-static ALWAYS_INLINE void irq_unlock(unsigned int key)
+static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 {
 	__asm__ volatile("seti %0" : : "ir"(key));
 }

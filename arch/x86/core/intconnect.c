@@ -41,6 +41,7 @@
 #include <misc/__assert.h>
 #include <idtEnt.h>
 #include <misc/printk.h>
+#include <irq.h>
 
 extern void _SpuriousIntHandler(void *);
 extern void _SpuriousIntNoErrCodeHandler(void *);
@@ -262,7 +263,7 @@ extern void *_DynIntStubsBegin;
  * vectors remaining in the specified <priority> level.
  */
 
-int irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		void (*routine)(void *parameter), void *parameter,
 		uint32_t flags)
 {

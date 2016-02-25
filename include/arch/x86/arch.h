@@ -24,6 +24,8 @@
 #ifndef _ARCH_IFACE_H
 #define _ARCH_IFACE_H
 
+#include <irq.h>
+
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
 #include <arch/x86/addr_types.h>
@@ -250,7 +252,7 @@ typedef struct s_isrList {
  *
  * @return The vector assigned to this interrupt
  */
-#define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	__asm__ __volatile__(							\
 		"jmp 2f\n\t" \
@@ -404,7 +406,7 @@ void _int_latency_stop(void);
  *
  */
 
-static inline __attribute__((always_inline)) unsigned int irq_lock(void)
+static inline __attribute__((always_inline)) unsigned int _arch_irq_lock(void)
 {
 	unsigned int key = _do_irq_lock();
 
@@ -428,7 +430,7 @@ static inline __attribute__((always_inline)) unsigned int irq_lock(void)
  *
  */
 
-static inline __attribute__((always_inline)) void irq_unlock(unsigned int key)
+static inline __attribute__((always_inline)) void _arch_irq_unlock(unsigned int key)
 {
 	if (!(key & 0x200)) {
 		return;
@@ -460,7 +462,7 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 #endif /* CONFIG_SSE */
 #endif /* CONFIG_FP_SHARING */
 
-extern int	irq_connect_dynamic(unsigned int irq,
+extern int	_arch_irq_connect_dynamic(unsigned int irq,
 					 unsigned int priority,
 					 void (*routine)(void *parameter),
 					 void *parameter,
@@ -470,12 +472,12 @@ extern int	irq_connect_dynamic(unsigned int irq,
  * @brief Enable a specific IRQ
  * @param irq IRQ
  */
-extern void	irq_enable(unsigned int irq);
+extern void	_arch_irq_enable(unsigned int irq);
 /**
  * @brief Disable a specific IRQ
  * @param irq IRQ
  */
-extern void	irq_disable(unsigned int irq);
+extern void	_arch_irq_disable(unsigned int irq);
 
 #ifdef CONFIG_FP_SHARING
 /**

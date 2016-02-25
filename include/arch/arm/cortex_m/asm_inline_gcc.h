@@ -41,6 +41,7 @@ extern "C" {
 #else /* !_ASMLANGUAGE */
 #include <stdint.h>
 #include <arch/arm/cortex_m/nvic.h>
+#include <irq.h>
 
 /**
  *
@@ -136,7 +137,7 @@ static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
  * the two highest priorities from interrupting the CPU.
  */
 
-static ALWAYS_INLINE unsigned int irq_lock(void)
+static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 {
 	unsigned int key;
 
@@ -167,7 +168,7 @@ static ALWAYS_INLINE unsigned int irq_lock(void)
  * @return N/A
  */
 
-static ALWAYS_INLINE void irq_unlock(unsigned int key)
+static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 {
 	__asm__ volatile("msr BASEPRI, %0;\n\t" :  : "r"(key));
 }
