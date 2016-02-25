@@ -43,6 +43,9 @@
 #include "er-coap-engine.h"
 #include "er-coap-observe-client.h"
 
+#include <bluetooth/bluetooth.h>
+#include <ipsp/src/ipss.h>
+
 #if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 2000
 char fiberStack[STACKSIZE];
@@ -50,6 +53,7 @@ char fiberStack[STACKSIZE];
 
 static coap_observee_t *obs;
 
+#if !defined(CONFIG_BLUETOOTH)
 #if defined(CONFIG_NETWORKING_IPV6_NO_ND)
 /* The peer is the server in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
@@ -61,6 +65,7 @@ static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
 /* This is my mac address
  */
 static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+#endif
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
 #if 0
@@ -99,6 +104,7 @@ static inline void init_app(void)
 {
 	PRINT("%s: run coap observe client\n", __func__);
 
+#if !defined(CONFIG_BLUETOOTH)
 	net_set_mac(my_mac, sizeof(my_mac));
 
 #if defined(CONFIG_NETWORKING_WITH_IPV4)
@@ -126,6 +132,7 @@ static inline void init_app(void)
 		addr = (uip_ipaddr_t *)&in6addr_my;
 		uip_ds6_addr_add(addr, 0, ADDR_MANUAL);
 	}
+#endif
 #endif
 }
 
@@ -317,6 +324,15 @@ void startup(void)
 	coap_init_mid();
 
 	init_app();
+
+#if defined(CONFIG_NETWORKING_WITH_BT)
+	if (bt_enable(NULL)) {
+		PRINT("Bluetooth init failed\n");
+		return;
+	}
+	ipss_init();
+	ipss_advertise();
+#endif
 
 	coap_ctx = coap_context_new((uip_ipaddr_t *)&in6addr_my, MY_PORT);
 	if (!coap_ctx) {

@@ -19,8 +19,12 @@
 MDEF_FILE = prj.mdef
 KERNEL_TYPE ?= nano
 BOARD ?= qemu_x86
-CONF_FILE = prj_$(ARCH).conf
-
-QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
+CONF_FILE ?= prj_$(ARCH).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
+
+ifeq ($(CONFIG_NETWORKING_WITH_BT), n)
+	QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
+else
+	QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
+endif
