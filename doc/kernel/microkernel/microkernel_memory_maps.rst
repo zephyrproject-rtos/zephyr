@@ -9,26 +9,29 @@ Concepts
 The microkernel's memory map objects provide dynamic allocation and
 release of fixed-size memory blocks.
 
-Any number of memory maps can be defined in a microkernel system.
-Each memory map has a name that uniquely identifies it.
-In addition, a memory map defines the number of blocks it contains
-and the size of each block in bytes.
-The number of blocks and block size values cannot be zero.
-The block size must be a multiple of the word size on most processors.
+Any number of memory maps can be defined in a microkernel system. Each
+memory map has:
 
-A task that needs to use a memory block simply allocates it from
-a memory map. When all the blocks are currently in use, the task may
-choose to wait for one to become available. When the task is finished
-with a memory block, it must release the block back to the memory map
-that allocated it so that the block can be reused.
+* A **name** that uniquely identifies it.
+* The **number of blocks** it contains.
+* **Block size** of a single block, measured in bytes.
 
-Any number of tasks may wait on an empty memory map simultaneously;
-when a memory block becomes available it is given to the
-highest priority task that has waited the longest.
+The number of blocks and block size values cannot be zero. On most
+processors, the block size must be defined as a multiple of the word size.
+
+A task that needs to use a memory block simply allocates it from a memory
+map. When all the blocks are currently in use, the task can wait
+for one to become available. When the task finishes with a memory block,
+it must release the block back to the memory map that allocated it so that
+the block can be reused.
+
+Any number of tasks can wait on an empty memory map simultaneously; when a
+memory block becomes available, it is given to the highest-priority task that
+has waited the longest.
 
 The microkernel manages memory blocks in an efficient and deterministic
-manner that eliminates the risk of memory fragmentation problems
-which can arise when using variable-size blocks.
+manner that eliminates the risk of memory fragmentation problems which can
+arise when using variable-size blocks.
 
 Unlike a heap, more than one memory map can be defined, if needed. This
 allows for a memory map with smaller blocks and others with larger-sized
@@ -88,25 +91,28 @@ Define the memory map in a source file using the following syntax:
 
    DEFINE_MEMORY_MAP(name, num_blocks, block_size);
 
-For example, the following code defines a private memory map named
-``PRIV_MEM_MAP``.
+
+Example: Defining a Memory Map, Referencing it from Elsewhere in the Application
+================================================================================
+
+This code defines a private memory map named ``PRIV_MEM_MAP``:
 
 .. code-block:: c
 
    DEFINE_MEMORY_MAP(PRIV_MEM_MAP, 6, 200);
 
-To utilize this memory map from a different source file use
-the following syntax:
+To reference the map from a different source file, use the following syntax:
 
 .. code-block:: c
 
    extern const kmemory_map_t PRIV_MEM_MAP;
 
+
 Example: Requesting a Memory Block from a Map with No Conditions
 ================================================================
 
-This code waits indefinitely for a memory block to become
-available if all the memory blocks are in use.
+This code waits indefinitely for a memory block to become available
+when all the memory blocks are in use.
 
 .. code-block:: c
 
@@ -119,7 +125,7 @@ Example: Requesting a Memory Block from a Map with a Conditional Time-out
 =========================================================================
 
 This code waits a specified amount of time for a memory block to become
-available and gives a warning if the memory block does not become available
+available and gives a warning when the memory block does not become available
 in the specified time.
 
 .. code-block:: c
@@ -148,6 +154,7 @@ This code gives an immediate warning when all memory blocks are in use.
     display_warning(); /* and do not allocate memory block*/
   }
 
+
 Example: Freeing a Memory Block back to a Map
 =============================================
 
@@ -168,11 +175,11 @@ APIs
 The following Memory Map APIs are provided by :file:`microkernel.h`:
 
 :cpp:func:`task_mem_map_alloc()`
-   Waits on a block of memory for the period of time defined by the time-out
+   Wait on a block of memory for the period of time defined by the time-out
    parameter.
 
 :c:func:`task_mem_map_free()`
-   Returns a block to a memory map.
+   Return a block to a memory map.
 
 :cpp:func:`task_mem_map_used_get()`
-   Returns the number of used blocks in a memory map.
+   Return the number of used blocks in a memory map.
