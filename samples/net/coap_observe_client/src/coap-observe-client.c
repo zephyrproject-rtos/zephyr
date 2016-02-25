@@ -43,14 +43,14 @@
 #include "er-coap-engine.h"
 #include "er-coap-observe-client.h"
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 2000
 char fiberStack[STACKSIZE];
 #endif
 
 static coap_observee_t *obs;
 
-#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
 /* The peer is the server in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
@@ -62,7 +62,7 @@ static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
  */
 static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 #if 0
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
 #define PEER_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
@@ -87,7 +87,7 @@ static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 /* Toggle interval in seconds */
 #define TOGGLE_INTERVAL 5
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 static const struct in6_addr in6addr_peer = PEER_IPADDR;
 static struct in6_addr in6addr_my = MY_IPADDR;
 #else
@@ -101,7 +101,7 @@ static inline void init_app(void)
 
 	net_set_mac(my_mac, sizeof(my_mac));
 
-#ifdef CONFIG_NETWORKING_WITH_IPV4
+#if defined(CONFIG_NETWORKING_WITH_IPV4)
 	{
 		uip_ipaddr_t addr;
 		uip_ipaddr(&addr, 192,0,2,2);
@@ -109,7 +109,7 @@ static inline void init_app(void)
 	}
 #endif
 
-#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
 	{
 		uip_ipaddr_t *addr;
 		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&peer_mac;
@@ -129,7 +129,7 @@ static inline void init_app(void)
 #endif
 }
 
-#ifdef DTLS_PSK
+#if defined(DTLS_PSK)
 /* This function is the "key store" for tinyDTLS. It is called to
  * retrieve a key for the given identity within this particular
  * session. */
@@ -179,7 +179,7 @@ static int get_psk_info(struct dtls_context_t *ctx,
 #define get_psk_info NULL
 #endif /* DTLS_PSK */
 
-#ifdef DTLS_ECC
+#if defined(DTLS_ECC)
 const unsigned char ecdsa_priv_key[] = {
 			0xD9, 0xE2, 0x70, 0x7A, 0x72, 0xDA, 0x6A, 0x05,
 			0x04, 0x99, 0x5C, 0x86, 0xED, 0xDB, 0xE3, 0xEF,
@@ -356,7 +356,7 @@ void startup(void)
 		}
 
 		if (coap_context_wait_data(coap_ctx, WAIT_TICKS)) {
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL)
 			/* Print the stack usage only if we did something */
 			net_analyze_stack("CoAP observe client",
 					  fiberStack, STACKSIZE);
@@ -368,7 +368,7 @@ void startup(void)
 	coap_context_close(coap_ctx);
 }
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL)
 
 void main(void)
 {
