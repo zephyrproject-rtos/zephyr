@@ -90,6 +90,8 @@ config NETWORKING_WITH_IPV4
 	  Legacy IP.
 endchoice
 
+source "net/ip/Kconfig.debug"
+
 config	NETWORKING_STATISTICS
 	bool
 	prompt "Enable IP statistics gathering"
@@ -158,15 +160,6 @@ config RPL_WITH_OF0
 	help
 	  Objective function zero (OF0).
 endchoice
-
-config	NETWORKING_WITH_LOGGING
-	bool
-	prompt "Enable logging of the uIP stack"
-	depends on NETWORKING
-	select STDOUT_CONSOLE
-	default n
-	help
-	  Enable packet and uIP stack logging
 
 config	NETWORKING_WITH_LOOPBACK
 	bool
@@ -434,7 +427,5 @@ config NET_15_4_LOOPBACK_NUM
        default 0
        help
          Number of times loopback test runs, 0 means infinite.
-
-source "net/ip/Kconfig.debug"
 
 endif

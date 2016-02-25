@@ -33,6 +33,11 @@
 
 #include "ip/uip.h"
 
+#if !defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+#undef NET_DBG
+#define NET_DBG(...)
+#endif
+
 /* Available (free) layer 2 (MAC/L2) buffers queue */
 #ifndef NET_NUM_L2_BUFS
 /* Default value is 13 (receiving side) which means that max. UDP data

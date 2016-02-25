@@ -16,13 +16,14 @@
 # limitations under the License.
 #
 
-menuconfig NETWORKING_IP_STACK_DEBUG
-	bool "IP stack Debuggging options"
+menuconfig NETWORKING_WITH_LOGGING
+	bool "Enable network stack logging"
+	select STDOUT_CONSOLE
 	default n
 	help
-	  Enable the menu to select IP stack debugging part by part
+	  Enable logging in various parts of the network stack.
 
-if NETWORKING_IP_STACK_DEBUG
+if NETWORKING_WITH_LOGGING
 
 choice
 prompt "General debug level"
@@ -37,6 +38,12 @@ config NETWORK_IP_STACK_DEBUG_ANNOTATE
 config NETWORK_IP_STACK_DEBUG_FULL
 	bool "Print both messages and annotations"
 endchoice
+
+config NETWORK_IP_STACK_DEBUG_NET_BUF
+	bool "Debug network buffer allocation"
+	default n
+	help
+	  Enables printing of network buffer allocations and frees.
 
 config NETWORK_IP_STACK_DEBUG_IPV6
 	bool "Debug core IPv6"

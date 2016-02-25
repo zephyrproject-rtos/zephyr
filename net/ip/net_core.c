@@ -22,7 +22,9 @@
  * limitations under the License.
  */
 
-#define DEBUG DEBUG_PRINT
+#ifdef CONFIG_NETWORKING_WITH_LOGGING
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #include <nanokernel.h>

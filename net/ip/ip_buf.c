@@ -33,6 +33,11 @@
 
 #include "ip/uip.h"
 
+#if !defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+#undef NET_DBG
+#define NET_DBG(...)
+#endif
+
 extern struct net_tuple *net_context_get_tuple(struct net_context *context);
 
 /* Available (free) buffers queue */
