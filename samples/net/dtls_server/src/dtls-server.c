@@ -62,7 +62,7 @@ static const unsigned char ecdsa_pub_key_y[] = {
  */
 static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 #if 0
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
 #define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
@@ -76,7 +76,7 @@ static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 
 #define MY_PORT 4242
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 static struct in6_addr in6addr_my = MY_IPADDR;
 #else
@@ -90,7 +90,7 @@ static inline void init_app(void)
 
 	net_set_mac(my_mac, sizeof(my_mac));
 
-#ifdef CONFIG_NETWORKING_WITH_IPV4
+#if defined(CONFIG_NETWORKING_WITH_IPV4)
 	{
 		uip_ipaddr_t addr;
 		uip_ipaddr(&addr, 192,0,2,2);
@@ -98,7 +98,7 @@ static inline void init_app(void)
 	}
 #endif
 
-#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
 	{
 		uip_ipaddr_t *addr;
 
@@ -163,7 +163,7 @@ static inline struct net_context *get_context(void)
 	static struct net_addr my_addr;
 	struct net_context *ctx;
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 	any_addr.in6_addr = in6addr_any;
 	any_addr.family = AF_INET6;
 
@@ -235,7 +235,7 @@ static int send_to_peer(struct dtls_context_t *ctx,
 	/* Note that we have reversed the addresses here
 	 * because net_reply() will reverse them again.
 	 */
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
 	uip_ip6addr_copy(&NET_BUF_IP(buf)->destipaddr,
 			 (uip_ip6addr_t *)&in6addr_my);
 	uip_ip6addr_copy(&NET_BUF_IP(buf)->srcipaddr,
@@ -264,7 +264,7 @@ out:
 	return len;
 }
 
-#ifdef DTLS_PSK
+#if defined(DTLS_PSK)
 /* This function is the "key store" for tinyDTLS. It is called to
  * retrieve a key for the given identity within this particular
  * session. */
@@ -313,7 +313,7 @@ static int get_psk_info(struct dtls_context_t *ctx,
 }
 #endif /* DTLS_PSK */
 
-#ifdef DTLS_ECC
+#if defined(DTLS_ECC)
 static int get_ecdsa_key(struct dtls_context_t *ctx,
 			 const session_t *session,
 			 const dtls_ecdsa_key_t **result)
@@ -362,10 +362,10 @@ static void init_dtls(struct net_context *recv, dtls_context_t **dtls)
 		.write = send_to_peer,
 		.read  = read_from_peer,
 		.event = handle_event,
-#ifdef DTLS_PSK
+#if defined(DTLS_PSK)
 		.get_psk_info = get_psk_info,
 #endif /* DTLS_PSK */
-#ifdef DTLS_ECC
+#if defined(DTLS_ECC)
 		.get_ecdsa_key = get_ecdsa_key,
 		.verify_ecdsa_key = verify_ecdsa_key
 #endif /* DTLS_ECC */
@@ -373,7 +373,7 @@ static void init_dtls(struct net_context *recv, dtls_context_t **dtls)
 
 	PRINT("DTLS server started\n");
 
-#ifdef CONFIG_TINYDTLS_DEBUG
+#if defined(CONFIG_TINYDTLS_DEBUG)
 	dtls_set_log_level(DTLS_LOG_DEBUG);
 #endif
 
@@ -411,7 +411,7 @@ void startup(void)
 	}
 }
 
-#ifdef CONFIG_NANOKERNEL
+#if defined(CONFIG_NANOKERNEL)
 
 #define STACKSIZE 3000
 char fiberStack[STACKSIZE];
