@@ -27,19 +27,28 @@
 #include <bluetooth/uuid.h>
 #include <misc/byteorder.h>
 #include <misc/printk.h>
+#include <net/buf.h>
 
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0
-#define MAX_ATTRIBUTES 50
 #define MAX_BUFFER_SIZE 2048
 
 #define GATT_PERM_ENC_READ_MASK		(BT_GATT_PERM_READ_ENCRYPT | \
 					 BT_GATT_PERM_READ_AUTHEN)
 #define GATT_PERM_ENC_WRITE_MASK	(BT_GATT_PERM_WRITE_ENCRYPT | \
 					 BT_GATT_PERM_WRITE_AUTHEN)
+/* GATT server context */
+#define SERVER_MAX_ATTRIBUTES		50
+#define SERVER_BUF_SIZE			2048
 
-static struct bt_gatt_attr gatt_db[MAX_ATTRIBUTES];
+#define server_buf_push(_len)	net_buf_push(server_buf, ROUND_UP(_len, 4))
+#define server_buf_pull(_len)	net_buf_pull(server_buf, ROUND_UP(_len, 4))
+
+static struct bt_gatt_attr server_db[SERVER_MAX_ATTRIBUTES];
+static struct net_buf *server_buf;
+static struct nano_fifo server_fifo;
+static NET_BUF_POOL(server_pool, 1, SERVER_BUF_SIZE, &server_fifo, NULL, 0);
 
 /*
  * gatt_buf - cache used by a gatt client (to cache data read/discovered)
@@ -91,39 +100,34 @@ union uuid {
 static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern,
 					size_t user_data_len)
 {
-	static struct bt_gatt_attr *attr = gatt_db;
+	static struct bt_gatt_attr *attr = server_db;
 	const union uuid *u = CONTAINER_OF(pattern->uuid, union uuid, uuid);
+	size_t uuid_size = u->uuid.type == BT_UUID_TYPE_16 ? sizeof(u->u16) :
+							     sizeof(u->u128);
 
-	/* Return NULL if gatt_db is full */
-	if (attr == &gatt_db[ARRAY_SIZE(gatt_db)]) {
+	/* Return NULL if database is full */
+	if (attr == &server_db[SERVER_MAX_ATTRIBUTES - 1]) {
 		return NULL;
 	}
 
 	memcpy(attr, pattern, sizeof(*attr));
 
-	/* Store the UUID. Check the type to determine UUID size. */
-	if (u->uuid.type == BT_UUID_TYPE_16) {
-		attr->uuid = gatt_buf_add(&u->uuid, sizeof(u->u16));
-	} else {
-		attr->uuid = gatt_buf_add(&u->uuid, sizeof(u->u128));
-	}
+	/* Store the UUID. */
+	attr->uuid = server_buf_push(uuid_size);
+	memcpy((void *) attr->uuid, &u->uuid, uuid_size);
 
-	if (!attr->uuid) {
-		return NULL;
-	}
-
-	/* Reserve buffer for user data. Copy user data if present. */
+	/* Copy user_data to the buffer. */
 	if (user_data_len) {
-		attr->user_data = gatt_buf_reserve(user_data_len);
-		if (!attr->user_data) {
-			return NULL;
-		}
-
+		attr->user_data = server_buf_push(user_data_len);
 		memcpy(attr->user_data, pattern->user_data, user_data_len);
 	}
 
 	/* Register attribute in GATT database, this will assign it a handle */
 	if (bt_gatt_register(attr, 1)) {
+		if (user_data_len) {
+			server_buf_pull(user_data_len);
+		}
+		server_buf_pull(uuid_size);
 		return NULL;
 	}
 
@@ -637,16 +641,8 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 
 	/* Check if attribute value has been already set */
 	if (!value->len) {
-		value->data = gatt_buf_reserve(data->len);
-		if (!value->data) {
-			return BT_GATT_ITER_STOP;
-		}
-
-		value->prep_data = gatt_buf_reserve(data->len);
-		if (!value->prep_data) {
-			return BT_GATT_ITER_STOP;
-		}
-
+		value->data = server_buf_push(data->len);
+		value->prep_data = server_buf_push(data->len);
 		value->len = data->len;
 	}
 
@@ -1663,5 +1659,12 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 
 uint8_t tester_init_gatt(void)
 {
+	net_buf_pool_init(server_pool);
+
+	server_buf = net_buf_get(&server_fifo, SERVER_BUF_SIZE);
+	if (!server_buf) {
+		return BTP_STATUS_FAILED;
+	}
+
 	return BTP_STATUS_SUCCESS;
 }
