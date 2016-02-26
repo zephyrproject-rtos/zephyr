@@ -189,8 +189,6 @@ static void print_radio_status(void)
 		DBG("RX_ACTIVE ");
 	}
 	DBG("\n");
-
-	setreg(CC2520_EXCFLAG0, 0);
 }
 
 static inline void print_exceptions_0(void)
@@ -223,6 +221,8 @@ static inline void print_exceptions_0(void)
 		DBG("RXENABLE_ZERO");
 	}
 	DBG("\n");
+
+	setreg(CC2520_EXCFLAG0, 0);
 }
 
 static inline void print_exceptions_1(void)
