@@ -6,42 +6,43 @@ Events
 Concepts
 ********
 
-The microkernel's event objects are an implementation of traditional
+The microkernel's :dfn:`event` objects are an implementation of traditional
 binary semaphores.
 
-Any number of events can be defined in a microkernel system. Each event
-has a name that uniquely identifies it.
+Any number of events can be defined in a microkernel system.  An event is
+typically *sent* by a task, fiber, or ISR and *received* by a task, which then
+takes some action in response. Events are the easiest and most efficient way to
+synchronize operations between two different execution contexts.
 
-An event is typically *sent* by a task, fiber, or ISR and *received*
-by a task, which then takes some action in response. Events are the easiest
-and most efficient way to synchronize operations between two different
-execution contexts.
+Each event has a **name** that uniquely identifies it, and an associated
+**event state**. Each event starts off in the ``clear`` state. Once that event
+gets sent, it is placed into the ``set`` state (where it remains) until it is
+received. When the event is received, it reverts back to the ``clear`` state.
 
-Each event starts off in the *clear*  state. Once an event has been sent
-it is placed into the *set* state, and remains in that state until it is
-received; the event's state then reverts back to clear. Sending an event
-that is already set is permitted, but does not affect the event's state
-and does not allow the receiving task to recognize that the event has been sent
-more than once.
+Sending an event that is already set is permitted; however, this does not affect
+the existing state, it and does not allow the receiving task to recognize whether
+the event has been sent more than once.
 
-The receiving task may test an event's state in either a non-blocking or
-blocking manner. The kernel allows only a single receiving task to wait
-for a given event; if a second task attempts to wait its receive operation
-immediately returns a failure indication.
+The receiving task can test the state of an event and decide whether or not
+to block it. The kernel allows only a single receiving task to wait for a given
+event; if a second task attempts to wait, its receive operation immediately
+returns a failure indication.
 
-Each event has an optional *event handler* function, which is executed
-by the microkernel server fiber when the event is sent. This function
-allows an event to be processed more quickly, without requiring the kernel
-to schedule a receiving task. If the event handler determines that the event
-can be ignored, or it is able to process the event without the assistance
-of a task, the event handler returns a value of zero and the event's state
-is left unchanged. If the event handler determines that additional processing
-is required it returns a non-zero value and the event's state is changed
-to set (if it isn't already set).
+Each event also has an optional **event handler** function, which is executed
+by the microkernel server fiber when the event is sent. An event handler
+function lets an event be processed without requiring the kernel to schedule
+a receiving task; this allows an event to be processed more quickly.
+
+When an event handler determines that the event can be ignored, or that it
+can process the event without the assistance of a task, the event handler
+returns a value of zero, and the event's state is left unchanged. When an event
+handler determines that additional processing *is* required, it returns a
+non-zero value, and the event's state is changed to *set* (if it isn't already
+set).
 
 An event handler function can be used to improve the efficiency of event
-processing by the receiving task, and can even eliminate the need for the
-receiving task entirely is some situations. Any event that does not require
+processing by the receiving task. In some situations, event handlers can even
+eliminate the need for a receiving task. Any event that does not require
 an event handler can specify the :c:macro:`NULL` function. The event handler
 function is passed the name of the event being sent each time it is invoked,
 allowing the same function to be shared by multiple events. An event's event
@@ -92,8 +93,7 @@ Define the event in the application's MDEF using the following syntax:
 
    EVENT name handler
 
-For example, the file :file:`projName.mdef` defines two events
-as follows:
+For example, the file :file:`projName.mdef` defines two events as follows:
 
 .. code-block:: console
 
@@ -108,27 +108,32 @@ the file :file:`zephyr.h`.
 Private Event
 -------------
 
-Define the event in a source file using the following syntax:
+Define the event in a source file with the following syntax:
 
 .. code-block:: c
 
    DEFINE_EVENT(name, handler);
 
-For example, the following code defines a private event named ``PRIV_EVENT``,
-which has no associated event handler function.
+
+Example: Defining a Private Event, Enabling it from Elsewhere in the Application
+================================================================================
+
+This code defines a private event named ``PRIV_EVENT`` which has no associated
+event handler function.
 
 .. code-block:: c
 
    DEFINE_EVENT(PRIV_EVENT, NULL);
 
-To utilize this event from a different source file use the following syntax:
+To enable this event from a different source file, use the following syntax:
 
 .. code-block:: c
 
    extern const kevent_t PRIV_EVENT;
 
+
 Example: Signaling an Event from an ISR
-========================================
+=======================================
 
 This code signals an event during the processing of an interrupt.
 
@@ -167,8 +172,8 @@ This code processes events of a single type using a task.
 Example: Filtering Event Signals using an Event Handler
 =======================================================
 
-This code registers an event handler that filters out unwanted events
-so that the receiving task only wakes up when needed.
+This code registers an event handler to filter out unwanted events,
+allowing the receiving task to wake up only when needed.
 
 .. code-block:: c
 
@@ -208,7 +213,8 @@ so that the receiving task only wakes up when needed.
 APIs
 ****
 
-The following Event APIs are provided by :file:`microkernel.h`:
+Event APIs provided by :file:`microkernel.h`
+============================================
 
 :cpp:func:`isr_event_send()`
    Signal an event from an ISR.
@@ -220,7 +226,7 @@ The following Event APIs are provided by :file:`microkernel.h`:
    Signal an event from a task.
 
 :cpp:func:`task_event_recv()`
-   Waits for an event signal for a specified time period.
+   Wait for an event signal for a specified time period.
 
 :cpp:func:`task_event_handler_set()`
-   Registers an event handler function for an event.
+   Register an event handler function for an event.
