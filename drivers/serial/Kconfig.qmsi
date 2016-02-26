@@ -1,0 +1,37 @@
+menuconfig UART_QMSI
+	depends on QMSI_DRIVERS
+	bool "QMSI UART driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the QMSI UART driver.
+
+	  This driver is simply a shim driver based on the UART driver
+	  provided by the QMSI BSP. For more information about QMSI BSP
+	  see CONFIG_QMSI_DRIVERS.
+
+config UART_QMSI_0
+	depends on UART_QMSI
+	bool "Enable UART 0 controller"
+	default n
+
+config UART_QMSI_0_NAME
+	depends on UART_QMSI_0
+	string "UART_0 device name"
+	default "UART_0"
+	help
+	  This option holds the UART_0 device name. If unsure, use the
+	  default name.
+
+config UART_QMSI_1
+	depends on UART_QMSI
+	bool "Enable UART 1 controller"
+	default n
+
+config UART_QMSI_1_NAME
+	depends on UART_QMSI_1
+	string "UART_1 device name"
+	default "UART_1"
+	help
+	  This option holds the UART_1 device name. If unsure, use the
+	  default name.

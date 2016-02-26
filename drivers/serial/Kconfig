@@ -98,4 +98,6 @@ source "drivers/serial/Kconfig.nsim"
 
 source "drivers/serial/Kconfig.atmel_sam3"
 
+source "drivers/serial/Kconfig.qmsi"
+
 endif
