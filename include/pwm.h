@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Intel Corporation.
+ * Copyright (c) 2016 Intel Corporation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,8 @@ typedef int (*pwm_set_values_t)(struct device *dev, int access_op,
 				uint32_t pwm, uint32_t on, uint32_t off);
 typedef int (*pwm_set_duty_cycle_t)(struct device *dev, int access_op,
 				    uint32_t pwm, uint8_t duty);
+typedef int (*pwm_set_phase_t)(struct device *dev, int access_op,
+				    uint32_t pwm, uint8_t phase);
 typedef int (*pwm_suspend_dev_t)(struct device *dev);
 typedef int (*pwm_resume_dev_t)(struct device *dev);
 
@@ -54,6 +56,7 @@ struct pwm_driver_api {
 	pwm_config_t config;
 	pwm_set_values_t set_values;
 	pwm_set_duty_cycle_t set_duty_cycle;
+	pwm_set_phase_t set_phase;
 	pwm_suspend_dev_t suspend;
 	pwm_resume_dev_t resume;
 };
@@ -120,6 +123,32 @@ static inline int pwm_pin_set_duty_cycle(struct device *dev, uint32_t pwm,
 }
 
 /**
+ * @brief Set the phase of a single PWM output.
+ *
+ * This routine sets the delay before pulses.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pwm PWM output.
+ * @param phase The number of clock ticks to delay before the start of pulses.
+ *
+ * @retval DEV_OK If successful.
+ * @retval failed Otherwise.
+ */
+static inline int pwm_pin_set_phase(struct device *dev, uint32_t pwm,
+					 uint8_t phase)
+{
+	struct pwm_driver_api *api;
+
+	api = (struct pwm_driver_api *)dev->driver_api;
+
+	if ((api != NULL) && (api->set_phase != NULL)) {
+		return api->set_phase(dev, PWM_ACCESS_BY_PIN, pwm, phase);
+	}
+
+	return DEV_INVALID_OP;
+}
+
+/**
  * @brief Configure all the PWM outputs.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -173,6 +202,31 @@ static inline int pwm_all_set_duty_cycle(struct device *dev, uint8_t duty)
 
 	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->set_duty_cycle(dev, PWM_ACCESS_ALL, 0, duty);
+}
+
+/**
+ * @brief Set the phase of all PWM outputs.
+ *
+ * This routine sets the delay before pulses.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pwm PWM output.
+ * @param phase The number of clock ticks to delay before the start of pulses.
+ *
+ * @retval DEV_OK If successful.
+ * @retval failed Otherwise.
+ */
+static inline int pwm_all_set_phase(struct device *dev, uint8_t phase)
+{
+	struct pwm_driver_api *api;
+
+	api = (struct pwm_driver_api *)dev->driver_api;
+
+	if ((api != NULL) && (api->set_phase != NULL)) {
+		return api->set_phase(dev, PWM_ACCESS_ALL, 0, phase);
+	}
+
+	return DEV_INVALID_OP;
 }
 
 /**
