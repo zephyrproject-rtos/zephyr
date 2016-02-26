@@ -54,7 +54,10 @@
 #include "cc2520.h"
 #include "cc2520_arch.h"
 
-#define CC2520_CONF_AUTOACK 1
+/* Auto-ACK can prevent the device from sending packets so do not turn it on.
+ * It enables filtering and the feature is currently broken on this driver.
+ */
+#define CC2520_CONF_AUTOACK 0
 #define WITH_SEND_CCA 1
 
 #define FOOTER_LEN 2
