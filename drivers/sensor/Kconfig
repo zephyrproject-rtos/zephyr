@@ -46,6 +46,8 @@ config SENSOR_DEBUG
 
 source "drivers/sensor/Kconfig.bma280"
 
+source "drivers/sensor/Kconfig.hdc1008"
+
 source "drivers/sensor/Kconfig.isl29035"
 
 source "drivers/sensor/Kconfig.mcp9808"
