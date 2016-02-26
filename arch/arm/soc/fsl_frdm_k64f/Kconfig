@@ -157,6 +157,9 @@ config GPIO
 config PINMUX
 	def_bool y
 
+config PWM
+	def_bool n
+
 if GPIO
 
 config GPIO_K64
@@ -240,5 +243,12 @@ config PRESERVE_JTAG_IO_PINS
 	Enable this option to preserve these pins for the debug interface.
 
 endif #PINMUX
+
+if PWM
+config PWM_K64_FTM
+	def_bool y
+config PWM_K64_FTM_0
+	def_bool y
+endif
 
 endif
