@@ -509,7 +509,7 @@ DEVICE_INIT(spi_intel_port_1, CONFIG_SPI_INTEL_PORT_1_DRV_NAME, spi_intel_init,
 			&spi_intel_data_port_1, &spi_intel_config_1,
 			SECONDARY, CONFIG_SPI_INTEL_INIT_PRIORITY);
 
-void spi_config_1_irq(void);
+void spi_config_1_irq(void)
 {
 	IRQ_CONNECT(CONFIG_SPI_INTEL_PORT_1_IRQ, CONFIG_SPI_INTEL_PORT_1_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_1),
