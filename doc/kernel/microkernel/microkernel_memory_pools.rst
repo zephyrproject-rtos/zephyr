@@ -6,64 +6,62 @@ Memory Pools
 Concepts
 ********
 
-The microkernel's memory pool objects provide dynamic allocation and
+The microkernel's :dfn:`memory pool` objects provide dynamic allocation and
 release of variable-size memory blocks.
 
-Unlike a memory map, which only supports memory blocks of a single size,
-a memory pool has the ability to support multiple memory block sizes.
-It does this by subdividing blocks into smaller chunks whenever possible
-to more closely match the actual needs of the requesting task.
+Unlike :ref:`memory map <microkernel_memory_map>` objects, which support
+memory blocks of only a *single* size, a memory pool can support memory blocks
+of *various* sizes. The memory pool does this by subdividing blocks into smaller
+chunks, where possible, to more closely match the actual needs of a requesting
+task.
 
-Any number of memory pools can be defined in a microkernel system.
-Each memory pool has a name that uniquely identifies it.
-In addition, a memory pool defines minimum and maximum memory block sizes
-in bytes and the number of maximum size blocks that the memory pool
-contains.
+Any number of memory pools can be defined in a microkernel system. Each memory
+pool has:
 
-A task that needs to use a memory block simply allocates it from a
-memory pool. If a block of the desired size is unavailable, the task
-may choose to wait for one to become available. Following a successful
-allocation the :c:data:`pointer_to_data` field of the block descriptor
-supplied by the task indicates the starting address of the memory block.
-When the task is finished with a memory block, it must release the block
-back to the memory pool that allocated it so that the block can be
-reused.
+* A **name** that uniquely identifies it.
+* A **minimum** and **maximum** block size, in bytes, of memory blocks
+  within the pool.
+* The **number of maximum-size memory blocks** initially available.
 
-Any number of tasks may wait on a memory pool simultaneously;
-when a memory block becomes available it is given to the highest
-priority task that has waited the longest.
+A task that needs to use a memory block simply allocates it from a memory
+pool. When a block of the desired size is unavailable, the task can wait
+for one to become available. Following a successful allocation, the
+:c:data:`pointer_to_data` field of the block descriptor supplied by the
+task indicates the starting address of the memory block. When the task is
+finished with a memory block, it must release the block back to the memory
+pool that allocated it so that the block can be reused.
+
+Any number of tasks can wait on a memory pool simultaneously; when a
+memory block becomes available, it is given to the highest-priority task
+that has waited the longest.
 
 When a request for memory is sufficiently smaller than an available
-memory pool block, the memory pool will automatically split the
-block into 4 smaller blocks. The resulting smaller
-blocks can also be split repeatedly, until a block just larger
-than the needed size is available, or the minimum block size,
-as specified in the MDEF, is reached.
+memory pool block, the memory pool will automatically split the block into
+4 smaller blocks. The resulting smaller blocks can also be split repeatedly,
+until a block just larger than the needed size is available, or the minimum
+block size, as specified in the MDEF, is reached.
 
-If the memory pool is unable to find an available block
-that is at least the requested size, it will attempt to create
-one by merging adjacent free blocks; if it is unable to create
-a suitable block the request fails.
+If the memory pool cannot find an available block that is at least
+the requested size, it will attempt to create one by merging adjacent
+free blocks. If a suitable block can't be created, the request fails.
 
-Although a memory pool uses efficient algorithms to manage its
-blocks, splitting available blocks and merging free blocks
-takes time and increases the overhead involved in allocating
-a block. The larger the allowable number of splits, the larger
-the overhead. The minimum and maximum block size parameters
-specified for a pool can be used to control the amount of
-splitting, and thus the amount of overhead.
+Although a memory pool uses efficient algorithms to manage its blocks,
+the splitting of available blocks and merging of free blocks takes time
+and increases overhead block allocation. The larger the allowable
+number of splits, the larger the overhead. However, the minimum and maximum
+block-size parameters specified for a pool can be used to control the amount
+of splitting, and thus the amount of overhead.
 
-Unlike a heap, more than one memory pool can be defined, if
-needed. For example, different applications can utilize
-different memory pools so that one application does not
-allocate all of the available blocks.
+Unlike a heap, more than one memory pool can be defined, if needed. For
+example, different applications can utilize different memory pools; this
+can help prevent one application from hijacking resources to allocate all
+of the available blocks.
 
 Purpose
 *******
 Use memory pools to allocate memory in variable-size blocks.
 
-Use memory pool blocks when sending data to a mailbox
-asynchronously.
+Use memory pool blocks when sending data to a mailbox asynchronously.
 
 Usage
 *****
@@ -77,7 +75,7 @@ The following parameters must be defined:
           This specifies a unique name for the memory pool.
 
    *min_block_size*
-          This specifies the minimimum memory block size in bytes.
+          This specifies the minimum memory block size in bytes.
           It should be a multiple of the processor's word size.
 
    *max_block_size*
@@ -92,7 +90,7 @@ The following parameters must be defined:
 Public Memory Pool
 ------------------
 
-Define the memory pool in the application's MDEF using the following
+Define the memory pool in the application's MDEF with the following
 syntax:
 
 .. code-block:: console
@@ -146,7 +144,7 @@ in that time.
       printf('Memory allocation timeout');
   }
 
-Example: Requesting a Memory Block from a Pool with a No Blocking Condition
+Example: Requesting a Memory Block from a Pool with a No-Blocking Condition
 ===========================================================================
 
 This code gives an immediate warning when it can not satisfy the request for
@@ -180,9 +178,9 @@ Example: Manually Defragmenting a Memory Pool
 
 This code instructs the memory pool to concatenate any unused memory blocks
 that can be merged. Doing a full defragmentation of the entire memory pool
-before allocating a number of memory blocks may be more efficient
-than having to do an implicit partial defragmentation of the memory pool
-each time a memory block allocation occurs.
+before allocating a number of memory blocks may be more efficient than doing
+an implicit partial defragmentation of the memory pool each time a memory
+block allocation occurs.
 
 .. code-block:: c
 
@@ -191,14 +189,15 @@ each time a memory block allocation occurs.
 APIs
 ****
 
-The following Memory Pools APIs are provided by :file:`microkernel.h`:
+Memory Pools APIs provided by :file:`microkernel.h`
+===================================================
 
 :cpp:func:`task_mem_pool_alloc()`
-   Waits for a block of memory for the time period defined by the time-out
+   Wait for a block of memory; wait the period of time defined by the time-out
    parameter.
 
 :cpp:func:`task_mem_pool_free()`
-   Returns a block of memory to a memory pool.
+   Return a block of memory to a memory pool.
 
 :cpp:func:`task_mem_pool_defragment()`
-   Defragments a memory pool.
+   Defragment a memory pool.
