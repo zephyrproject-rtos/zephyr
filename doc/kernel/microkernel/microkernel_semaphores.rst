@@ -6,30 +6,28 @@ Semaphores
 Concepts
 ********
 
-The microkernel's semaphore objects are an implementation of traditional
+The microkernel's :dfn:`semaphore` objects are an implementation of traditional
 counting semaphores.
 
 Any number of semaphores can be defined in a microkernel system. Each semaphore
-has a name that uniquely identifies it.
+has a **name** that uniquely identifies it.
 
 A semaphore starts off with a count of zero. This count is incremented each
-time the semaphore is given, and is decremented each time the semaphore
-is taken. However, a semaphore cannot be taken if it is unavailable
-(i.e. has a count of zero).
+time the semaphore is given, and is decremented each time the semaphore is taken.
+However, a semaphore cannot be taken when it has a count of zero; this makes
+it unavailable.
 
 Semaphores may be given by tasks, fibers, or ISRs.
 
-Semaphores may only be taken by tasks. A task that attempts to take
-an unavailable semaphore may choose to wait for the semaphore to be given.
-Any number of tasks may wait on an unavailable semaphore simultaneously;
-when the semaphore becomes available it is given to the highest priority task
-that has waited the longest.
+Semaphores may be taken by tasks only. A task that attempts to take an unavailable
+semaphore may wait for the semaphore to be given. Any number of tasks may wait on
+an unavailable semaphore simultaneously; and when the semaphore becomes available,
+it is given to the highest priority task that has waited the longest.
 
-The kernel allows a task to give multiple semaphores in a single
-operation using a *semaphore group*. The task specifies the members of
-a semaphore group using an array of semaphore names, terminated by the
-symbol :c:macro:`ENDLIST`. This technique allows the task to give the semaphores
-more efficiently than giving them individually.
+The kernel allows a task to give multiple semaphores in a single operation using a
+*semaphore group*. The task specifies the members of a semaphore group with an array
+of semaphore names, terminated by the symbol :c:macro:`ENDLIST`. This technique
+allows the task to give the semaphores more efficiently than giving them individually.
 
 A task can also use a semaphore group to take a single semaphore from a set
 of semaphores in a single operation. This technique allows the task to
@@ -69,7 +67,7 @@ The following parameters must be defined:
 Public Semaphore
 ----------------
 
-Define the semaphore in the application's MDEF using the following syntax:
+Define the semaphore in the application's MDEF with the following syntax:
 
 .. code-block:: console
 
@@ -102,7 +100,7 @@ For example, the following code defines a private semaphore named ``PRIV_SEM``.
 
    DEFINE_SEMAPHORE(PRIV_SEM);
 
-To utilize this semaphore from a different source file use the following syntax:
+To reference this semaphore from a different source file, use the following syntax:
 
 .. code-block:: c
 
@@ -194,34 +192,38 @@ the semaphores used by four other tasks in a single operation.
 APIs
 ****
 
-The following APIs for an individual semaphore are provided by
-:file:`microkernel.h`:
+All of the following APIs are provided by :file:`microkernel.h`:
+
+
+APIs for an individual semaphore
+================================
 
 :cpp:func:`isr_sem_give()`
-   Gives a semaphore (from an ISR).
+   Give a semaphore (from an ISR).
 
 :cpp:func:`fiber_sem_give()`
-   Gives a semaphore (from a fiber).
+   Give a semaphore (from a fiber).
 
 :cpp:func:`task_sem_give()`
-   Gives a semaphore.
+   Give a semaphore.
 
 :cpp:func:`task_sem_take()`
-   Takes a semaphore, with time limited waiting.
+   Take a semaphore, with time limited waiting.
 
 :cpp:func:`task_sem_reset()`
-   Sets the semaphore count to zero.
+   Set the semaphore count to zero.
 
 :cpp:func:`task_sem_count_get()`
-   Reads the count for a semaphore.
+   Read the count for a semaphore.
 
-The following APIs for semaphore groups are provided by microkernel.h.
+APIs for semaphore groups
+=========================
 
 :cpp:func:`task_sem_group_give()`
-   Gives each semaphore in a group.
+   Give each semaphore in a group.
 
 :cpp:func:`task_sem_group_take()`
-   Waits up to a specified time period for a semaphore from a group.
+   Wait up to a specified time period for a semaphore from a group.
 
 :cpp:func:`task_sem_group_reset()`
-   Sets the count to zero for each semaphore in a group.
+   Set the count to zero for each semaphore in a group.
