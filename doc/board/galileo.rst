@@ -238,13 +238,18 @@ application image on a Galileo board. The following instructions apply to both
 devices.
 
 
-#. Set the board configuration to Galileo by changing the :command:`make`
-   command to:
+#. Set the board configuration to Galileo by changing the
+   :command:`make` command that is executed in the app directory
+   (e.g. :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`) to:
 
    .. code-block:: console
 
       $ make BOARD=galileo
 
+   .. note::
+      A stripped project image file named :file:`zephyr.strip` is
+      automatically created when the project is built. This image has
+      removed debug information from the :file:`zephyr.elf` file.
 
 #. Use one of these cables for serial output:
 
@@ -260,7 +265,7 @@ devices.
 
    :file:`kernel`
 
-#. Copy the kernel file :file:`zephyr.strip` to the :file:`$SDCARD/kernel` folder.
+#. Copy the kernel file :file:`outdir/zephyr.strip` to the :file:`$SDCARD/kernel` folder.
 
 #. Copy your built version of GRUB to :file:`$SDCARD/efi/boot/bootia32.efi`
 
@@ -272,74 +277,54 @@ devices.
       set timeout=10
 
       menuentry "Zephyr Kernel" {
-         multiboot /kernel/zephyr.elf
+         multiboot /kernel/zephyr.strip
       }
-
-#. Insert the SDcard in the Galileo board.
-
-#. Connect the board to the host system using the serial cable.
-
-#. Configure your host system to watch for serial data.
-
-   * On Linux, screen is a popular method for reading serial data.
-
-   * On Windows, PuTTY has an option to set up configuration for serial data.
-
-#. Power on the Galileo board.
 
 Booting the Galileo Board
 =========================
 
 Boot the Galileo board from the boot device using GRUB2
-with the boot loader present in the on-board flash.
+with the firmware present in the on-board flash.
 
-.. note::
-   A stripped project image file is automatically created when the
-   project is built. The stripped image has removed debug
-   information from the :file:`ELF` file.
-
-Prerequisites
--------------
-
-* The automatically created stripped Zephyr application image is
-  in the project directory.
-
-* A serial port is available for communication.
-
-  .. note::
-     For details on how to connect and configure the serial port,
-     see the Getting Started guide that you received with the board.
 
 Steps
 -----
 
 1. Insert the prepared boot device (micro-SD card or USB flash
-   drive) into the board and start the board.
+   drive) into the Galileo board.
 
-   The boot process begins and displays a large amount of output.
+2. Connect the board to the host system using the serial cable and
+   configure your host system to watch for serial data.  See
+   `<https://software.intel.com/en-us/articles/intel-galileo-gen-2-board-assembly-using-eclipse-and-intel-xdk-iot-edition>`_
+   for the gen. 2 board,
+   `<https://software.intel.com/en-us/articles/intel-galileo-gen-1-board-assembly-using-eclipse-and-intel-xdk-iot-edition>`_
+   for the gen. 1 board, or the Getting Started guide that you
+   received with the board.
 
-2. When the following output appears, press :kbd:`F7`:
+   .. note::
+      On Windows, PuTTY has an option to set up configuration for
+      serial data.  Use a baud rate of 115200 and the SCO keyboard
+      mode.  The keyboard mode option is in a submenu of the Terminal
+      menu on the left side of the screen.
+
+3. Power on the Galileo board.
+
+4. When the following output appears, press :kbd:`F7`:
 
    .. code-block:: console
 
-     [Bds]BdsWait ...Zzzzzzzzzzzz...
-     [Bds]BdsWait(5)..Zzzz...
-     [Bds]BdsWait(4)..Zzzz...
-     [Bds]Press [Enter] to directly boot.
-     [Bds]Press [F7]    to show boot menu options.
+     Press [Enter] to directly boot.
+     Press [F7]    to show boot menu options.
 
-3. From the menu that appears, select :guilabel:`UEFI Internal Shell`.
-
-4. At the shell prompt enter:
-
-   .. code-block:: console
-
-      grub.efi
+5. From the menu that appears, select :guilabel:`UEFI Misc Device` to
+   boot from a micro-SD card.  To boot from a USB flash drive, select
+   the menu entry that desribes that particular type of USB flash
+   drive.
 
    GRUB2 starts and a menu shows entries for the items you added
-   to the :file:`file grub.cfg`.
+   to the file :file:`grub.cfg`.
 
-5. Select the image you want to boot and press :guilabel:`Enter`.
+6. Select the image you want to boot and press :guilabel:`Enter`.
 
    When the boot process completes, you have finished booting the
    Zephyr application image.
