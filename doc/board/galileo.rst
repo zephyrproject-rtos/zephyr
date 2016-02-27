@@ -210,10 +210,7 @@ GRUB.
 
    .. code-block:: console
 
-      $ sudo apt-get install gnu-efi:i386 bison libopts25 \
-      libselinux1-dev autogen m4 autoconf help2man libopts25-dev flex \
-      libfont-freetype-perl automake autotools-dev libfreetype6-dev \
-      texinfo
+      $ sudo apt-get install bison autoconf libopts25-dev flex automake
 
    On Fedora, type:
 
