@@ -1,5 +1,5 @@
 
 config  BOARD_BASIC_CORTEX_M3
-        bool "Baic Cortex-M3 Board"
+        bool "Basic Cortex-M3 Board"
         select SOC_TI_LM3S6965
 	depends on ARM
