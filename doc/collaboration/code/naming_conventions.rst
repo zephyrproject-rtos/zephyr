@@ -1,11 +1,10 @@
 .. _naming_conventions:
 
-Code Naming Conventions
-#######################
+Code Style and Naming Conventions
+#################################
 
-
-The Purpose of Naming Conventions
-*********************************
+Naming Conventions
+******************
 
 Unlike desktop operating systems, where applications are written in user-space
 and drivers are used to cross the boundary between kernel and user space, *all*
@@ -21,53 +20,53 @@ permitted to reference. Symbols that do not begin with a kernel namespace
 prefix are available to applications with a few exceptions. See `Exceptions
 to the Namespace`_ for details.
 
-+-----------------+--------------------------------------+------------------------+
-| Prefix          | Description                          | Example                |
-+=================+======================================+========================+
-| \_              | Denotes a private kernel symbol.     | ``_k_signal_event``    |
-+-----------------+--------------------------------------+------------------------+
-| atomic\_        | Denotes an atomic operation.         | ``atomic_inc``         |
-+-----------------+--------------------------------------+------------------------+
-| device\_        | Denotes an API relating to devices   | ``device_get_binding`` |
-|                 | and their initialization.            |                        |
-+-----------------+--------------------------------------+------------------------+
-|fiber\_          | Denotes an operation invoked by a    | ``fiber_event_send``   |
-|                 | fiber; typically a microkernel       |                        |
-|                 | operation.                           |                        |
-+-----------------+--------------------------------------+------------------------+
-| irq\_           | Denotes an IRQ management operation. | ``irq_disable``        |
-+-----------------+--------------------------------------+------------------------+
-| isr\_           | Denotes an operation called by an    | ``isr_event_send``     |
-|                 | Interrupt Service Routine; typically |                        |
-|                 | a microkernel operation.             |                        |
-+-----------------+--------------------------------------+------------------------+
-| k\_             | Microkernel-specific function.       | ``k_memcpy``           |
-+-----------------+--------------------------------------+------------------------+
-| k_do\_          | Microkernel-specific functions       | ``k_do_event_signal``  |
-|                 | indicating essential operation       |                        |
-|                 | within the kernel space. Do not use  |                        |
-|                 | these functions unless absolutely    |                        |
-|                 | necessary.                           |                        |
-+-----------------+--------------------------------------+------------------------+
-| nano\_          | Denotes an operation provided by the | ``nano_fifo_put``      |
-|                 | nanokernel; typically used in a      |                        |
-|                 | microkernel system, not just a       |                        |
-|                 | nanokernel system.                   |                        |
-+-----------------+--------------------------------------+------------------------+
-| sys\_           | Catch-all for APIs that do not fit   | ``sys_write32``        |
-|                 | into the other namespaces.           |                        |
-+-----------------+--------------------------------------+------------------------+
-| task\_          | Denotes an operation invoked by a    | ``task_send_event``    |
-|                 | task; typically a microkernel        |                        |
-|                 | operation.                           |                        |
-+-----------------+--------------------------------------+------------------------+
++----------+--------------------------------------+------------------------+
+| Prefix   | Description                          | Example                |
++==========+======================================+========================+
+| \_       | Denotes a private kernel symbol.     | ``_k_signal_event``    |
++----------+--------------------------------------+------------------------+
+| atomic\_ | Denotes an atomic operation.         | ``atomic_inc``         |
++----------+--------------------------------------+------------------------+
+| device\_ | Denotes an API relating to devices   | ``device_get_binding`` |
+|          | and their initialization.            |                        |
++----------+--------------------------------------+------------------------+
+| fiber\_  | Denotes an operation invoked by a    | ``fiber_event_send``   |
+|          | fiber; typically a microkernel       |                        |
+|          | operation.                           |                        |
++----------+--------------------------------------+------------------------+
+| irq\_    | Denotes an IRQ management operation. | ``irq_disable``        |
++----------+--------------------------------------+------------------------+
+| isr\_    | Denotes an operation called by an    | ``isr_event_send``     |
+|          | Interrupt Service Routine; typically |                        |
+|          | a microkernel operation.             |                        |
++----------+--------------------------------------+------------------------+
+| k\_      | Microkernel-specific function.       | ``k_memcpy``           |
++----------+--------------------------------------+------------------------+
+| k_do\_   | Microkernel-specific functions       | ``k_do_event_signal``  |
+|          | indicating essential operation       |                        |
+|          | within the kernel space. Do not use  |                        |
+|          | these functions unless absolutely    |                        |
+|          | necessary.                           |                        |
++----------+--------------------------------------+------------------------+
+| nano\_   | Denotes an operation provided by the | ``nano_fifo_put``      |
+|          | nanokernel; typically used in a      |                        |
+|          | microkernel system, not just a       |                        |
+|          | nanokernel system.                   |                        |
++----------+--------------------------------------+------------------------+
+| sys\_    | Catch-all for APIs that do not fit   | ``sys_write32``        |
+|          | into the other namespaces.           |                        |
++----------+--------------------------------------+------------------------+
+| task\_   | Denotes an operation invoked by a    | ``task_send_event``    |
+|          | task; typically a microkernel        |                        |
+|          | operation.                           |                        |
++----------+--------------------------------------+------------------------+
 
 
 If your additional symbol does not fall into the above classification, consider
 renaming it.
 
 Exceptions to the Namespace
-***************************
+===========================
 
 Some kernel APIs use well-known names that lack prefixes. A few examples are:
 
@@ -87,7 +86,7 @@ In rare cases a few global symbols do not use the normal kernel prefixes;
  :cpp:func:`kernel_version_get()` is one such example.
 
 Subsystem Naming Conventions
-****************************
+============================
 
 Generally, any sub-system can define its own naming conventions for symbols.
 However, these should be implemented with their own namespace prefix (for
@@ -96,7 +95,7 @@ clashes with applications. Following this prefix convention with subsystems
 keeps a consistent interface for all users.
 
 Minimize Include Paths
-**********************
+======================
 
 The current build system uses a series of :file:`defs.objs` files to define the
 common pieces for a given subsystem. For example, common defines for x86
@@ -123,3 +122,5 @@ and :option:`-Iinclude` for your compile, then any code using
 
 is not. Not having :option:`-Iinclude/drivers` forces users to use the second
 form which is more explicit.
+
+.. include:: coding_style.rst

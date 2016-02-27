@@ -1,7 +1,7 @@
 .. _coding_style:
 
 Coding Style
-############
+************
 
 Use this coding guideline to ensure that your development complies with
 the project's style and naming conventions.
@@ -21,7 +21,7 @@ exceptions:
   documentation.
 
 Checking for Conformity Using Checkpatch
-****************************************
+========================================
 
 The Linux kernel GPL-licensed tool :program:`checkpatch` is used to
 check coding style conformity. :program:`Checkpatch` is available in the

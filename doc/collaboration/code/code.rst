@@ -15,10 +15,8 @@ code changes.
 
    gerrit_accounts
    gerrit
-   coding_style
-   naming_conventions
    gerrit_practices
    changes
-   maintainers
+   naming_conventions
    doxygen/doxygen
    error_code_conventions
