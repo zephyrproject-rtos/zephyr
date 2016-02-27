@@ -120,8 +120,11 @@ complete list of Galileo board hardware features, and the
 PCI
 ===
 
-The PCI driver initiates a PCI library scan of the PCI bus for any attached devices.
-When detected, the devices are initialized.
+PCI drivers assume that IO regions and IRQs for devices are
+preconfigured identically by the firmware on all supported devices.
+This configuration is specified in the Kconfig file for the Intel
+Quark X1000 SoC.  The PCI library supports dynamically enumerating PCI
+devices, but that support is disabled by default.
 
 .. note::
    The PCI library does not support 64-bit devices.
