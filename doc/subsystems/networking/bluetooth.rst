@@ -52,25 +52,24 @@ added to QEMU through :makevar:`QEMU_EXTRA_FLAGS` in the Makefile.
 On the Host side, BlueZ allows to "connect" Bluetooth controller through
 a so-called user channel.
 
+#. Make sure that the Bluetooth controller is down
+
 #. Use the btproxy tool to open the listening UNIX socket, type:
 
-    .. code-block:: console
+   .. code-block:: console
 
-        $ sudo tools/btproxy -u
-        Listening on /tmp/bt-server-bredr
+      $ sudo tools/btproxy -u
+      Listening on /tmp/bt-server-bredr
 
-    .. note:: Ensure that the Bluetooth controller is down before using the
-              btproxy command.
+#. Choose one of the Bluetooth sample applications located in
+   :literal:`samples/bluetooth`.
 
+#. To run Bluetooth application in QEMU, type:
 
-#. To run Bluetooth application in the QEMU, go to application folder and type:
+   .. code-block:: console
 
-    .. code-block:: console
+      $ make qemu
 
-        $ make qemu
-
-    .. note:: Bluetooth sample applications are located in
-              :literal:`samples/bluetooth` folder.
 
 Running QEMU now results in a connection with the second serial line to
 :literal:`bt-server-bredr` UNIX socket.
