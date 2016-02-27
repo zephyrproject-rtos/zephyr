@@ -391,12 +391,13 @@ static void validate_irq(void)
 			show_entry(&supplied_entry[i]);
 			clean_exit(-1);
 		}
-		num_irqs[i]++;
+		num_irqs[supplied_entry[i].irq]++;
 	}
 
 	for (i = 0; i < num_irq_lines; i++) {
 		if (num_irqs[i] > 1) {
-			fprintf(stderr, "Multiple requests for IRQ %d detected.\n", i);
+			fprintf(stderr, "Multiple requests (%d) for IRQ %d detected.\n",
+				num_irqs[i], i);
 			clean_exit(-1);
 		}
 	}
