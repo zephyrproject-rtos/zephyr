@@ -14,7 +14,6 @@ and how to use them.
    microkernel/microkernel.rst
    nanokernel/nanokernel.rst
    networking/networking.rst
-   devices/devices.rst
 
 .. rubric:: Abbreviations
 

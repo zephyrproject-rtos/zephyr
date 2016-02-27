@@ -13,6 +13,7 @@ Getting Started
    about_zephyr.rst
    getting_started/getting_started.rst
    kernel/kernel.rst
+   drivers/drivers.rst
 
 Developer Guides
 ****************
