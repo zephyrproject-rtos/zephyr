@@ -293,7 +293,7 @@ config RTC_DW
 
 if RTC_DW
 config RTC_DW_CLOCK_GATE
-	def_bool n
+	def_bool y
 config RTC_DW_CLOCK_GATE_DRV_NAME
 	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
 config RTC_DW_CLOCK_GATE_SUBSYS
