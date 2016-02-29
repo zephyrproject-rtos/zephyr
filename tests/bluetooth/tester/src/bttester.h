@@ -560,6 +560,11 @@ struct l2cap_connect_rp {
 	uint8_t chan_id;
 } __packed;
 
+#define L2CAP_DISCONNECT		0x03
+struct l2cap_disconnect_cmd {
+	uint8_t chan_id;
+} __packed;
+
 /* events */
 #define L2CAP_EV_CONNECTED		0x81
 struct l2cap_connected_ev {

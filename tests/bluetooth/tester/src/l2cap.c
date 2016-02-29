@@ -175,6 +175,26 @@ fail:
 		   BTP_STATUS_FAILED);
 }
 
+static void disconnect(uint8_t *data, uint16_t len)
+{
+	const struct l2cap_disconnect_cmd *cmd = (void *) data;
+	struct channel *chan = &channels[cmd->chan_id];
+	uint8_t status;
+	int err;
+
+	err = bt_l2cap_chan_disconnect(&chan->le.chan);
+	if (err) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	status = BTP_STATUS_SUCCESS;
+
+rsp:
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_DISCONNECT, CONTROLLER_INDEX,
+		   status);
+}
+
 static void supported_commands(uint8_t *data, uint16_t len)
 {
 	uint8_t cmds[1];
@@ -184,6 +204,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 
 	tester_set_bit(cmds, L2CAP_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(cmds, L2CAP_CONNECT);
+	tester_set_bit(cmds, L2CAP_DISCONNECT);
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -198,6 +219,9 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case L2CAP_CONNECT:
 		connect(data, len);
+		return;
+	case L2CAP_DISCONNECT:
+		disconnect(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_L2CAP, opcode, index,
