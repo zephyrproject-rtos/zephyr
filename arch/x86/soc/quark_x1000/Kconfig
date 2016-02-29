@@ -35,6 +35,8 @@ config ROM_SIZE
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000  if HPET_TIMER
 
+config CLFLUSH_DETECT
+	def_bool y if CACHE_FLUSHING
 
 if SHARED_IRQ
 config SHARED_IRQ_0

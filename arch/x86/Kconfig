@@ -53,13 +53,11 @@ default CPU_MINUTEIA
 config CPU_ATOM
 	bool "Atom"
 	select CMOV
-	select CPU_MIGHT_SUPPORT_CLFLUSH if CACHE_FLUSHING
 	help
 	This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	bool "Minute IA"
-	select CPU_MIGHT_SUPPORT_CLFLUSH if CACHE_FLUSHING
 	help
 	This option signifies the use of a CPU from the Minute IA family.
 endchoice
@@ -177,18 +175,10 @@ config CACHE_LINE_SIZE
 
 	Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
 
-config CPU_MIGHT_SUPPORT_CLFLUSH
-	bool
-	depends on CACHE_FLUSHING
-	default n
-	help
-	If a platform uses a processor that possibly implements CLFLUSH, change
-	the default in that platform's config file.
-
 config CLFLUSH_INSTRUCTION_SUPPORTED
 	bool
-	prompt "CLFLUSH instruction supported" if CPU_MIGHT_SUPPORT_CLFLUSH
-	depends on CPU_MIGHT_SUPPORT_CLFLUSH && !CLFLUSH_DETECT
+	prompt "CLFLUSH instruction supported"
+	depends on !CLFLUSH_DETECT && CACHE_FLUSHING
 	default n
 	help
 	An implementation of sys_cache_flush() that uses CLFLUSH is made
@@ -201,8 +191,8 @@ config CLFLUSH_INSTRUCTION_SUPPORTED
 config CLFLUSH_DETECT
 	bool
 	prompt "Detect support of CLFLUSH instruction at runtime"
-	depends on CPU_MIGHT_SUPPORT_CLFLUSH
-	default y
+	depends on CACHE_FLUSHING
+	default n
 	help
 	This option should be enabled if it is not known in advance whether the
 	CPU supports the CLFLUSH instruction or not.
