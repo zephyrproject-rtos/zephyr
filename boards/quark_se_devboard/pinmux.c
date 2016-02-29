@@ -242,7 +242,7 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint8_t func)
 	 * pin.  The value 2 repesents the bits needed for each pin's mode.
 	 */
 	uint32_t pin_mask = MASK_2_BITS << (pin_no << 1);
-	uint32_t mode_mask = mode << (pin_no << 1);
+	uint32_t mode_mask = func << (pin_no << 1);
 	(*(mux_register)) = ((*(mux_register)) & ~pin_mask) | mode_mask;
 
 	return DEV_OK;
