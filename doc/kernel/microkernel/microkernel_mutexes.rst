@@ -6,7 +6,7 @@ Mutexes
 Concepts
 ********
 
-The microkernel's mutex objects provide reentrant mutex
+The microkernel's :dfn:`mutex` objects provide reentrant mutex
 capabilities with basic priority inheritance.
 
 Each mutex allows multiple tasks to safely share an associated
@@ -14,32 +14,33 @@ resource by ensuring mutual exclusivity while the resource is
 being accessed by a task.
 
 Any number of mutexes can be defined in a microkernel system.
-Each mutex has a name that uniquely identifies it. Typically,
-the name should relate to the resource being shared, but this is
-not a requirement.
+Each mutex needs a **name** that uniquely identifies it. Typically,
+the name should relate to the resource being shared, although this
+is not a requirement.
 
-A task that needs to use a shared resource must first gain
-exclusive access by locking the associated mutex. When the mutex
-is already locked by another task, the requesting task may
-choose to wait for the mutex to be unlocked. After obtaining the lock,
-a task can safely use the shared resource for as long as needed.
-When the task no longer needs the resource, it must unlock the
-associated mutex to allow other tasks to use the resource.
+A task that needs to use a shared resource must first gain exclusive
+access by locking the associated mutex. If the mutex is already locked
+by another task, the requesting task can wait for the mutex to be
+unlocked.
 
-Any number of tasks may wait on a locked mutex simultaneously.
-When there is more than one waiting task, the mutex locks the
-resource for the highest priority task that has waited the longest
-first.
+After obtaining the mutex, the task may safely use the shared
+resource for as long as needed. And when the task no longer needs
+the resource, it must release the associated mutex to allow
+other tasks to use the resource.
 
-Priority inheritance occurs whenever a high priority task waits
-on a mutex that is locked by a lower priority task. The priority
-of the lower priority task increases temporarily to the priority
-of the highest priority task that is waiting on a mutex held by
-the lower priority task. This allows the lower priority
-task to complete its work and unlock the mutex as quickly as
-possible. Once the mutex has been unlocked, the lower priority task
-sets its task priority to the priority it had prior to locking that
-mutex.
+Any number of tasks may wait on a locked mutex. When more than one
+task is waiting, the mutex locks the resource for the highest-priority
+task that has waited the longest first; this is known as
+:dfn:`priority-based waiting`. The order is decided when a task decides
+to wait on the object: it is queued in priority order.
+
+The task currently owning the mutex is also eligible for :dfn:`priority inheritance`.
+Priority inheritance is the concept by which a task of lower priority gets its
+priority *temporarily* elevated to the priority of the highest-priority
+task that is waiting on a mutex held by the lower priority task. Thus, the
+lower-priority task can complete its work and release the mutex as quickly
+as possible. Once the mutex has been released, the lower-priority task resets
+its task priority to the priority it had before locking that mutex.
 
 .. note::
 
@@ -49,29 +50,26 @@ mutex.
 
 When two or more tasks wait on a mutex held by a lower priority task, the
 kernel adjusts the owning task's priority each time a task begins waiting
-(or gives up waiting). When the mutex is eventually released the owning
+(or gives up waiting). When the mutex is eventually released, the owning
 task's priority correctly reverts to its original non-elevated priority.
 
-.. note::
+The kernel does *not* fully support priority inheritance when a task holds
+two or more mutexes simultaneously. This situation can result in the task's
+priority not reverting to its original non-elevated priority when all mutexes
+have been released. Preferably, a task holds only a single mutex when multiple
+mutexes are shared between tasks of different priorities.
 
-   The kernel does *not* fully support priority inheritance when a task
-   holds two or more mutexes simultaneously. This situation can result
-   in the task's priority not reverting to its original non-elevated
-   priority when all mutexes have been released. It is recommended that
-   a task hold only a single mutex at a time when multiple mutexes are
-   shared between tasks of different priorities.
-
-The microkernel also allows a task to repeatedly lock a mutex it
-already locked. This ensures that the task can access the resource
-at a point in its execution when the resource may or may not
-already be locked. A mutex that is repeatedly locked must be unlocked
-an equal number of times before the mutex releases the resource
-completely.
+The microkernel also allows a task to repeatedly lock a mutex it has already
+locked. This ensures that the task can access the resource at a point in its
+execution when the resource may or may not already be locked. A mutex that is
+repeatedly locked must be unlocked an equal number of times before the mutex
+can release the resource completely.
 
 Purpose
 *******
-Use mutexes to provide exclusive access to a resource,
-such as a physical device.
+
+Use mutexes to provide exclusive access to a resource, such as a physical
+device.
 
 Usage
 *****
@@ -87,7 +85,7 @@ The following parameters must be defined:
 Public Mutex
 ------------
 
-Define the mutex in the application's MDEF using the following syntax:
+Define the mutex in the application's MDEF file with the following syntax:
 
 .. code-block:: console
 
@@ -119,11 +117,13 @@ For example, the following code defines a private mutex named ``XYZ``.
 
    DEFINE_MUTEX(XYZ);
 
-To utilize this mutex from a different source file use the following syntax:
+The following syntax allows this mutex to be accessed from a different
+source file:
 
 .. code-block:: c
 
    extern const kmutex_t XYZ;
+
 
 Example: Locking a Mutex with No Conditions
 ===========================================
@@ -137,6 +137,7 @@ mutex is in use.
    moveto(100,100);
    lineto(200,100);
    task_mutex_unlock(XYZ);
+
 
 Example: Locking a Mutex with a Conditional Timeout
 ===================================================
@@ -179,13 +180,15 @@ This code gives an immediate warning when a mutex is in use.
 APIs
 ****
 
-The following Mutex APIs are provided by :file:`microkernel.h`:
+Mutex APIs provided by :file:`microkernel.h`
+============================================
 
 :cpp:func:`task_mutex_lock()`
-   Waits on a locked mutex for the period of time defined by the timeout
-   parameter. If the mutex becomes available during that period, the function
-   locks the mutex, and increments the lock count.
+   Wait on a locked mutex for the period of time defined by the timeout
+   parameter. Lock the mutex and increment the lock count if the mutex
+   becomes available during that period.
 
-:c:func:`task_mutex_unlock()`
-   Decrements a mutex lock count, and unlocks the mutex when the count
+:cpp:func:`task_mutex_unlock()`
+   Decrement a mutex lock count, and unlock the mutex when the count
    reaches zero.
+
