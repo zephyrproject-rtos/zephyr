@@ -26,6 +26,7 @@
 #define CONTROLLER_INDEX 0
 #define DATA_MTU 230
 #define CHANNELS 1
+#define SERVERS 1
 
 static struct nano_fifo data_fifo;
 static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL,
@@ -35,6 +36,9 @@ static struct channel {
 	uint8_t chan_id; /* Internal number that identifies L2CAP channel. */
 	struct bt_l2cap_le_chan le;
 } channels[CHANNELS];
+
+/* TODO Extend to support multiple servers */
+static struct bt_l2cap_server servers[SERVERS];
 
 static struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
 {
@@ -195,6 +199,84 @@ rsp:
 		   status);
 }
 
+static struct bt_l2cap_server *get_free_server(void)
+{
+	uint8_t i;
+
+	for (i = 0; i < SERVERS ; i++) {
+		if (servers[i].psm) {
+			continue;
+		}
+
+		return &servers[i];
+	}
+
+	return NULL;
+}
+
+static bool is_free_psm(uint16_t psm)
+{
+	uint8_t i;
+
+	for (i = 0; i < ARRAY_SIZE(servers); i++) {
+		if (servers[i].psm == psm) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
+{
+	struct channel *chan;
+
+	chan = get_free_channel();
+	if (!chan) {
+		return -ENOMEM;
+	}
+
+	chan->le.chan.ops = &l2cap_ops;
+	chan->le.rx.mtu = DATA_MTU;
+
+	*l2cap_chan = &chan->le.chan;
+
+	return 0;
+}
+
+static void listen(uint8_t *data, uint16_t len)
+{
+	const struct l2cap_listen_cmd *cmd = (void *) data;
+	struct bt_l2cap_server *server;
+
+	/* TODO: Handle cmd->transport flag */
+
+	if (!is_free_psm(cmd->psm)) {
+		goto fail;
+	}
+
+	server = get_free_server();
+	if (!server) {
+		goto fail;
+	}
+
+	server->accept = accept;
+	server->psm = cmd->psm;
+
+	if (bt_l2cap_server_register(server) < 0) {
+		server->psm = 0;
+		goto fail;
+	}
+
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_LISTEN, CONTROLLER_INDEX,
+		   BTP_STATUS_SUCCESS);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_LISTEN, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 static void supported_commands(uint8_t *data, uint16_t len)
 {
 	uint8_t cmds[1];
@@ -205,6 +287,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, L2CAP_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(cmds, L2CAP_CONNECT);
 	tester_set_bit(cmds, L2CAP_DISCONNECT);
+	tester_set_bit(cmds, L2CAP_LISTEN);
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -222,6 +305,9 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case L2CAP_DISCONNECT:
 		disconnect(data, len);
+		return;
+	case L2CAP_LISTEN:
+		listen(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_L2CAP, opcode, index,

@@ -565,7 +565,30 @@ struct l2cap_disconnect_cmd {
 	uint8_t chan_id;
 } __packed;
 
+#define L2CAP_TRANSPORT_BREDR		0x00
+#define L2CAP_TRANSPORT_LE		0x01
+
+#define L2CAP_LISTEN			0x05
+struct l2cap_listen_cmd {
+	uint16_t psm;
+	uint8_t transport;
+} __packed;
+
+#define L2CAP_ACCEPT_CONNECTION		0x06
+struct l2cap_accept_connection_cmd {
+	uint8_t chan_id;
+	uint16_t result;
+} __packed;
+
 /* events */
+#define L2CAP_EV_CONNECTION_REQ		0x80
+struct l2cap_connection_req_ev {
+	uint8_t chan_id;
+	uint16_t psm;
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
 #define L2CAP_EV_CONNECTED		0x81
 struct l2cap_connected_ev {
 	uint8_t chan_id;
