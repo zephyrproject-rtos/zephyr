@@ -565,6 +565,13 @@ struct l2cap_disconnect_cmd {
 	uint8_t chan_id;
 } __packed;
 
+#define L2CAP_SEND_DATA			0x04
+struct l2cap_send_data_cmd {
+	uint8_t chan_id;
+	uint16_t data_len;
+	uint8_t data[];
+} __packed;
+
 #define L2CAP_TRANSPORT_BREDR		0x00
 #define L2CAP_TRANSPORT_LE		0x01
 

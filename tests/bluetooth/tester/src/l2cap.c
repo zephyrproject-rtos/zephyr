@@ -199,6 +199,48 @@ rsp:
 		   status);
 }
 
+static void send_data(uint8_t *data, uint16_t len)
+{
+	const struct l2cap_send_data_cmd *cmd = (void *) data;
+	struct channel *chan = &channels[cmd->chan_id];
+	struct net_buf *buf;
+	int ret;
+	uint16_t data_len = sys_le16_to_cpu(cmd->data_len);
+
+	/* FIXME: For now, fail if data length exceeds buffer length */
+	if (data_len > DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE) {
+		goto fail;
+	}
+
+	/* FIXME: For now, fail if data length exceeds remote's L2CAP SDU */
+	if (data_len > chan->le.tx.mtu) {
+		goto fail;
+	}
+
+	buf = net_buf_get_timeout(&data_fifo, BT_L2CAP_CHAN_SEND_RESERVE,
+				  TICKS_UNLIMITED);
+	if (!buf) {
+		SYS_LOG_ERR("Out of buffers");
+		goto fail;
+	}
+
+	memcpy(net_buf_add(buf, data_len), cmd->data, data_len);
+	ret = bt_l2cap_chan_send(&chan->le.chan, buf);
+	if (ret < 0) {
+		SYS_LOG_ERR("Unable to send data: %d", -ret);
+		net_buf_unref(buf);
+		goto fail;
+	}
+
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_SEND_DATA, CONTROLLER_INDEX,
+			BTP_STATUS_SUCCESS);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_SEND_DATA, CONTROLLER_INDEX,
+			BTP_STATUS_FAILED);
+}
+
 static struct bt_l2cap_server *get_free_server(void)
 {
 	uint8_t i;
@@ -288,6 +330,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, L2CAP_CONNECT);
 	tester_set_bit(cmds, L2CAP_DISCONNECT);
 	tester_set_bit(cmds, L2CAP_LISTEN);
+	tester_set_bit(cmds, L2CAP_SEND_DATA);
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -305,6 +348,9 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case L2CAP_DISCONNECT:
 		disconnect(data, len);
+		return;
+	case L2CAP_SEND_DATA:
+		send_data(data, len);
 		return;
 	case L2CAP_LISTEN:
 		listen(data, len);
