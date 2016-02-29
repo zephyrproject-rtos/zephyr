@@ -27,8 +27,6 @@
 #include <cache.h>
 #include <cache_private.h>
 
-#if defined(CONFIG_CACHE_FLUSHING)
-
 #if defined(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED) || \
 	defined(CONFIG_CLFLUSH_DETECT)
 
@@ -82,10 +80,13 @@ static void init_cache_flush(void)
 }
 #else
 #define init_cache_flush() do { } while ((0))
+
+#if defined(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED)
 FUNC_ALIAS(_cache_flush_clflush, sys_cache_flush, void);
 #endif
 
-#endif /* CACHE_FLUSHING */
+#endif /* CONFIG_CLFLUSH_DETECT */
+
 
 #if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
 size_t sys_cache_line_size;
