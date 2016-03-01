@@ -1623,14 +1623,14 @@ class Config(object):
                     prompts_str_rows.append(
                       ' "{0}" if {1}'.format(prompt,
                                              self._expr_val_str(cond_expr)))
-	    prompts_str =  "\n * "
+            prompts_str =  "\n * "
             prompts_str += "\n * ".join(prompts_str_rows)
 
         # Build locations string
         if not sc.def_locations:
             locations_str = "(no locations)"
         else:
-	    locations_str = "\n * "
+            locations_str = "\n * "
             locations_str += "\n * ".join(["{0}:{1}".format(filename, linenr) for
                                       (filename, linenr) in sc.def_locations])
 
@@ -1658,7 +1658,7 @@ class Config(object):
                             ranges_str_rows.append(" [{0}, {1}] if {2}"
                               .format(s(l), s(u),
                                       self._expr_val_str(cond_expr)))
-		    ranges_str = "\n * "
+                    ranges_str = "\n * "
                     ranges_str += "\n * ".join(ranges_str_rows)
 
             # Build default values string
@@ -1672,7 +1672,7 @@ class Config(object):
                     defaults_str_rows.append(row_str)
                     defaults_str_rows.append("  Condition: " +
                                                self._expr_val_str(cond_expr))
-		defaults_str = "\n * "
+                defaults_str = "\n * "
                 defaults_str += "\n * ".join(defaults_str_rows)
 
             # Build selects string
@@ -1687,7 +1687,7 @@ class Config(object):
                         selects_str_rows.append(
                           " :ref:`CONFIG_{0}` if {1}".format(target.name,
                                                self._expr_val_str(cond_expr)))
-		selects_str = "\n * "
+                selects_str = "\n * "
                 selects_str += "\n * ".join(selects_str_rows)
 
             res = _lines(":Symbol:           " +
@@ -1790,7 +1790,7 @@ class Config(object):
                     prompts_str_rows.append(
                       ' "{0}" if {1}'.format(prompt,
                                              self._expr_val_str(cond_expr)))
-	    prompts_str = "\n  * "
+            prompts_str = "\n  * "
             prompts_str += "\n  * ".join(prompts_str_rows)
 
         # Build locations string
@@ -1824,7 +1824,7 @@ class Config(object):
                             ranges_str_rows.append(" [{0}, {1}] if {2}"
                               .format(s(l), s(u),
                                       self._expr_val_str(cond_expr)))
-		    ranges_str = "\n * "
+                    ranges_str = "\n * "
                     ranges_str += "\n * ".join(ranges_str_rows)
 
             # Build default values string
@@ -1838,7 +1838,7 @@ class Config(object):
                     defaults_str_rows.append(row_str)
                     defaults_str_rows.append("  Condition: " +
                                                self._expr_val_str(cond_expr))
-		defaults_str = "\n * "
+                defaults_str = "\n * "
                 defaults_str += "\n * ".join(defaults_str_rows)
 
             # Build selects string
