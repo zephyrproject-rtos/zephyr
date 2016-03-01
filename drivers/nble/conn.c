@@ -23,6 +23,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/log.h>
 
+#include "version.h"
 #include "gap_internal.h"
 #include "conn_internal.h"
 

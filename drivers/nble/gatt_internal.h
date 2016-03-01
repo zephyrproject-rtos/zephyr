@@ -18,10 +18,6 @@
  * limitations under the License.
  */
 
-#include <stdint.h>
-
-#include <bluetooth/gatt.h>
-
 /* Max number of service supported, if changed update BLE core needs to be
  * updated too!
  */

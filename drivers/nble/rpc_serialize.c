@@ -16,10 +16,11 @@
 
 #include <string.h>
 
+#include <bluetooth/gatt.h>
 #include <bluetooth/conn.h>
 
 #include "rpc.h"
-
+#include "version.h"
 #include "gap_internal.h"
 #include "gatt_internal.h"
 

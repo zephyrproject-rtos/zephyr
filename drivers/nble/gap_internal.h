@@ -18,12 +18,6 @@
  * limitations under the License.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-/* For bt_addr_le_t */
-#include "bluetooth/hci.h"
-#include "version.h"
-
 /* Maximum security key len (LTK, CSRK) */
 #define BLE_GAP_SEC_MAX_KEY_LEN		16
 

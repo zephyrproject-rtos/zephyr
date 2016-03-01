@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <bluetooth/gatt.h>
 /* for bt_security_t */
 #include <bluetooth/conn.h>
 #include <bluetooth/log.h>
@@ -29,7 +30,7 @@
 #endif /* CONFIG_PRINTK */
 
 #include "rpc.h"
-
+#include "version.h"
 #include "gap_internal.h"
 #include "gatt_internal.h"
 
