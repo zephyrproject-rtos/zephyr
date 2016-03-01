@@ -22,9 +22,6 @@
 
 #include <bluetooth/gatt.h>
 
-/* Forward declarations */
-struct nble_core_response;
-
 /* Max number of service supported, if changed update BLE core needs to be
  * updated too!
  */
