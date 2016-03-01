@@ -20,6 +20,11 @@
 #include "qm_uart.h"
 #include "qm_scss.h"
 
+#define DIVISOR_LOW(baudrate) \
+	((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / (16 * baudrate)) & 0xFF)
+#define DIVISOR_HIGH(baudrate) \
+	(((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / (16 * baudrate)) & 0xFF00) >> 8)
+
 /* Convenient macro to get the controller instance. */
 #define GET_CONTROLLER_INSTANCE(dev) \
 	(((struct uart_qmsi_config_info *)dev->config->config_info)->instance)
@@ -27,6 +32,7 @@
 struct uart_qmsi_config_info {
 	qm_uart_t instance;
 	clk_periph_t clock_gate;
+	uint32_t baud_divisor;
 };
 
 static int uart_qmsi_init(struct device *dev);
@@ -36,6 +42,10 @@ static int uart_qmsi_init(struct device *dev);
 static struct uart_qmsi_config_info config_info_0 = {
 	.instance = QM_UART_0,
 	.clock_gate = CLK_PERIPH_UARTA_REGISTER,
+	.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(
+				DIVISOR_HIGH(CONFIG_UART_QMSI_0_BAUDRATE),
+				DIVISOR_LOW(CONFIG_UART_QMSI_0_BAUDRATE),
+				0),
 };
 
 DEVICE_INIT(uart_0, CONFIG_UART_QMSI_0_NAME, uart_qmsi_init, NULL,
@@ -46,6 +56,10 @@ DEVICE_INIT(uart_0, CONFIG_UART_QMSI_0_NAME, uart_qmsi_init, NULL,
 static struct uart_qmsi_config_info config_info_1 = {
 	.instance = QM_UART_1,
 	.clock_gate = CLK_PERIPH_UARTB_REGISTER,
+	.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(
+				DIVISOR_HIGH(CONFIG_UART_QMSI_1_BAUDRATE),
+				DIVISOR_LOW(CONFIG_UART_QMSI_1_BAUDRATE),
+				0),
 };
 
 DEVICE_INIT(uart_1, CONFIG_UART_QMSI_1_NAME, uart_qmsi_init, NULL,
@@ -101,7 +115,7 @@ static int uart_qmsi_init(struct device *dev)
 	qm_uart_config_t cfg;
 
 	cfg.line_control = QM_UART_LC_8N1;
-	cfg.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(0, 17, 6); /* 115200 */
+	cfg.baud_divisor = config->baud_divisor;
 	cfg.hw_fc = false;
 	cfg.int_en = false;
 

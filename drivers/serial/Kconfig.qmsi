@@ -23,6 +23,13 @@ config UART_QMSI_0_NAME
 	  This option holds the UART_0 device name. If unsure, use the
 	  default name.
 
+config UART_QMSI_0_BAUDRATE
+	depends on UART_QMSI_0
+	int "UART_0 baud rate"
+	default 115200
+	help
+	  This option sets the baud rate from the UART_0 device.
+
 config UART_QMSI_1
 	depends on UART_QMSI
 	bool "Enable UART 1 controller"
@@ -35,3 +42,10 @@ config UART_QMSI_1_NAME
 	help
 	  This option holds the UART_1 device name. If unsure, use the
 	  default name.
+
+config UART_QMSI_1_BAUDRATE
+	depends on UART_QMSI_1
+	int "UART_1 baud rate"
+	default 115200
+	help
+	  This option sets the baud rate from the UART_1 device.
