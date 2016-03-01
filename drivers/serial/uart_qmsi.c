@@ -103,10 +103,46 @@ static int uart_qmsi_err_check(struct device *dev)
 	return qm_uart_get_status(instance) & QM_UART_LSR_ERROR_BITS;
 }
 
+#ifdef CONFIG_UART_LINE_CTRL
+static int uart_qmsi_line_ctrl_set(struct device *dev, uint32_t ctrl, uint32_t val)
+{
+	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
+	qm_uart_config_t cfg;
+
+	switch (ctrl) {
+	case LINE_CTRL_BAUD_RATE:
+		qm_uart_get_config(instance, &cfg);
+		cfg.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(DIVISOR_HIGH(val),
+							    DIVISOR_LOW(val), 0);
+		qm_uart_set_config(instance, &cfg);
+		break;
+	default:
+		return DEV_NO_SUPPORT;
+	}
+
+	return DEV_OK;
+}
+#endif /* CONFIG_UART_LINE_CTRL */
+
+#ifdef CONFIG_UART_DRV_CMD
+static int uart_qmsi_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
+{
+	return DEV_NO_SUPPORT;
+}
+#endif /* CONFIG_UART_DRV_CMD */
+
 static struct uart_driver_api api = {
 	.poll_in = uart_qmsi_poll_in,
 	.poll_out = uart_qmsi_poll_out,
 	.err_check = uart_qmsi_err_check,
+
+#ifdef CONFIG_UART_LINE_CTRL
+	.line_ctrl_set = uart_qmsi_line_ctrl_set,
+#endif /* CONFIG_UART_LINE_CTR */
+
+#ifdef CONFIG_UART_DRV_CMD
+	.drv_cmd = uart_qmsi_drv_cmd,
+#endif /* CONFIG_UART_DRV_CMD */
 };
 
 static int uart_qmsi_init(struct device *dev)
