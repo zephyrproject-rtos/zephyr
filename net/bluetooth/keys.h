@@ -35,6 +35,7 @@ enum {
 enum {
 	BT_KEYS_AUTHENTICATED,
 	BT_KEYS_BR_LEGACY,
+	BT_KEYS_DEBUG,
 };
 
 struct bt_ltk {

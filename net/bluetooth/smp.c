@@ -86,6 +86,7 @@ enum {
 	SMP_FLAG_DHKEY_SEND,	/* if should generate and send DHKey Check */
 	SMP_FLAG_USER,		/* if waiting for user input */
 	SMP_FLAG_BOND,		/* if bonding */
+	SMP_FLAG_SC_DEBUG_KEY,	/* if Secure Connection are using debug key */
 };
 
 /* SMP channel specific context */
@@ -172,6 +173,21 @@ static const uint8_t gen_method_sc[5 /* remote */][5 /* local */] = {
 	{ JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS },
 	{ PASSKEY_DISPLAY, PASSKEY_CONFIRM, PASSKEY_INPUT, JUST_WORKS,
 	  PASSKEY_CONFIRM },
+};
+
+/* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
+static const uint32_t sc_debug_private_key[8] = {
+	0xcd3c1abd, 0x5899b8a6, 0xeb40b799, 0x4aff607b, 0xd2103f50, 0x74c9b3e3,
+	0xa3c55f38, 0x3f49f6d4
+};
+
+static const uint8_t sc_debug_public_key[64] = {
+	0xe6, 0x9d, 0x35, 0x0e, 0x48, 0x01, 0x03, 0xcc, 0xdb, 0xfd, 0xf4, 0xac,
+	0x11, 0x91, 0xf4, 0xef, 0xb9, 0xa5, 0xf9, 0xe9, 0xa7, 0x83, 0x2c, 0x5e,
+	0x2c, 0xbe, 0x97, 0xf2, 0xd2, 0x03, 0xb0, 0x20, 0x8b, 0xd2, 0x89, 0x15,
+	0xd0, 0x8e, 0x1c, 0x74, 0x24, 0x30, 0xed, 0x8f, 0xc2, 0x45, 0x63, 0x76,
+	0x5c, 0x15, 0x52, 0x5a, 0xbf, 0x9a, 0x32, 0x63, 0x6d, 0xeb, 0x2a, 0x65,
+	0x49, 0x9c, 0x80, 0xdc
 };
 
 /* Pool for outgoing LE signaling packets, MTU is 65 */
@@ -1463,6 +1479,10 @@ static uint8_t sc_send_public_key(struct bt_smp *smp)
 
 	smp_send(smp, req_buf);
 
+#if defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
+	atomic_set_bit(&smp->flags, SMP_FLAG_SC_DEBUG_KEY);
+#endif /* CONFIG_BLUETOOTH_USE_DEBUG_KEYS */
+
 	return 0;
 }
 
@@ -2317,6 +2337,12 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	memcpy(smp->pkey, req->x, 32);
 	memcpy(&smp->pkey[32], req->y, 32);
 
+	/* mark key as debug if remote is using it */
+	if (memcmp(smp->pkey, sc_debug_public_key, 64) == 0) {
+		BT_INFO("Remote is using Debug Public key");
+		atomic_set_bit(&smp->flags, SMP_FLAG_SC_DEBUG_KEY);
+	}
+
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_MASTER) {
 		switch (smp->method) {
@@ -2554,6 +2580,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_keys *keys = chan->conn->keys;
 
 	BT_DBG("chan %p cid 0x%04x", chan, chan->tx.cid);
 
@@ -2561,9 +2588,15 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 		fiber_fiber_delayed_start_cancel(smp->timeout);
 	}
 
-	/* No keys indicate no bonding so free keys storage */
-	if (chan->conn->keys && !chan->conn->keys->keys) {
-		bt_keys_clear(chan->conn->keys, BT_KEYS_ALL);
+	if (keys) {
+		/*
+		 * If debug keys were used for pairing remove them.
+		 * No keys indicate no bonding so free keys storage.
+		 */
+		if (!keys->keys ||
+		    atomic_test_bit(&keys->flags, BT_KEYS_DEBUG)) {
+			bt_keys_clear(keys, BT_KEYS_ALL);
+		}
 	}
 
 	memset(smp, 0, sizeof(*smp));
@@ -3240,6 +3273,11 @@ void bt_smp_update_keys(struct bt_conn *conn)
 		return;
 	}
 
+	/* mark keys as debug */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC_DEBUG_KEY)) {
+		atomic_set_bit(&conn->keys->flags, BT_KEYS_DEBUG);
+	}
+
 	/*
 	 * store key type deducted from pairing method used
 	 * it is important to store it since type is used to determine
@@ -3335,19 +3373,35 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 }
 
 #if defined(CONFIG_TINYCRYPT_ECC_DH)
+#if defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
+static bool le_sc_supported(void)
+{
+	memcpy(sc_private_key, sc_debug_private_key, 32);
+	memcpy(sc_public_key, sc_debug_public_key, 64);
+
+	sc_local_pkey_valid = true;
+
+	return true;
+}
+#else
 static bool le_sc_supported(void)
 {
 	uint32_t random[16];
 	EccPoint pkey;
 
-	if (bt_rand((uint8_t *)random, 64)) {
-		return false;
-	}
+	do {
+		if (bt_rand((uint8_t *)random, 64)) {
+			return false;
+		}
 
-	if (ecc_make_key(&pkey, sc_private_key, random) < 0) {
-		BT_ERR("Failed to create ECC public/private pair");
-		return false;
-	}
+		if (ecc_make_key(&pkey, sc_private_key, random) < 0) {
+			BT_ERR("Failed to create ECC public/private pair");
+
+			return false;
+		}
+
+		/* make sure generated key isn't debug key */
+	} while (memcmp(sc_private_key, sc_debug_private_key, 32) == 0);
 
 	memcpy(sc_public_key, pkey.x, 32);
 	memcpy(&sc_public_key[32], pkey.y, 32);
@@ -3356,6 +3410,7 @@ static bool le_sc_supported(void)
 
 	return true;
 }
+#endif /* CONFIG_BLUETOOTH_USE_DEBUG_KEYS  */
 #else
 static bool le_sc_supported(void)
 {

@@ -168,6 +168,18 @@ config BLUETOOTH_TINYCRYPT_ECC
 	  controller crypto is used for ECDH and if controller doesn't support
 	  required HCI commands LE Secure Connections support will be disabled.
 
+config	BLUETOOTH_USE_DEBUG_KEYS
+	bool "Enable Security Manager Debug Mode"
+	default n
+	depends on BLUETOOTH_TINYCRYPT_ECC
+	help
+	  This option places Security Manager in a Debug Mode. In this mode
+	  predefined Diffie-Hellman private/public key pair is used as described
+	  in Core Specification Vol. 3, Part H, 2.3.5.6.1. This option should
+	  only be enabled for debugging and should never be used in production.
+	  If this option is enabled anyone is able to decipher encrypted air
+	  traffic.
+
 endif # BLUETOOTH_SMP
 
 config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
