@@ -748,6 +748,21 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 
 	BT_DBG("chan %p total credits %u", chan, chan->tx.credits.nsig);
 }
+
+static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
+		       struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.conn;
+	struct bt_l2cap_chan *chan;
+
+	/* Check if there is a outstanding channel */
+	chan = l2cap_remove_ident(conn, ident);
+	if (!chan) {
+		return;
+	}
+
+	l2cap_chan_del(chan);
+}
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -801,6 +816,13 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	case BT_L2CAP_LE_CREDITS:
 		le_credits(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_CMD_REJECT:
+		reject_cmd(l2cap, hdr->ident, buf);
+		break;
+#else
+	case BT_L2CAP_CMD_REJECT:
+		/* Ignored */
 		break;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 	default:
