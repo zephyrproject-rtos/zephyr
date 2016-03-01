@@ -14,7 +14,24 @@
 # limitations under the License.
 #
 
-if [ "X$(basename -z -- "$0")" "==" "Xzephyr-env.sh" ]; then
+# In zsh the value of $0 depends on the FUNCTION_ARGZERO option which is
+# set by default. FUNCTION_ARGZERO, when it is set, sets $0 temporarily
+# to the name of the function/script when executing a shell function or
+# sourcing a script. POSIX_ARGZERO option, when it is set, exposes the
+# original value of $0 in spite of the current FUNCTION_ARGZERO setting.
+if [ -n "$ZSH_VERSION" ]; then
+	if [ $options[posixargzero] != "on" ]; then
+		setopt posixargzero
+		NAME=$(basename -- "$0")
+		setopt posixargzero
+	else
+		NAME=$(basename -- "$0")
+	fi
+else
+	NAME=$(basename -- "$0")
+fi
+
+if [ "X$NAME" "==" "Xzephyr-env.sh" ]; then
     echo "Source this file (do NOT execute it!) to set the Zephyr Kernel environment."
     exit
 fi
