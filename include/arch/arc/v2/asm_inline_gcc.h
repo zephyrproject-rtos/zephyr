@@ -70,7 +70,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	void sys_io_set_bit(io_port_t port, int bit)
+	void sys_io_set_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t reg = 0;
 
@@ -84,7 +84,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	void sys_io_clear_bit(io_port_t port, int bit)
+	void sys_io_clear_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t reg = 0;
 
@@ -98,7 +98,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_io_test_bit(io_port_t port, int bit)
+	int sys_io_test_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t status = _ARC_V2_STATUS32;
 	uint32_t reg = 0;
@@ -116,7 +116,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_io_test_and_set_bit(io_port_t port, int bit)
+	int sys_io_test_and_set_bit(io_port_t port, unsigned int bit)
 {
 	int ret;
 
@@ -127,7 +127,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_io_test_and_clear_bit(io_port_t port, int bit)
+	int sys_io_test_and_clear_bit(io_port_t port, unsigned int bit)
 {
 	int ret;
 
@@ -204,7 +204,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	void sys_set_bit(mem_addr_t addr, int bit)
+	void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	uint32_t reg = 0;
 
@@ -217,7 +217,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	void sys_clear_bit(mem_addr_t addr, int bit)
+	void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	uint32_t reg = 0;
 
@@ -230,7 +230,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_test_bit(mem_addr_t addr, int bit)
+	int sys_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	uint32_t status = _ARC_V2_STATUS32;
 	uint32_t reg = 0;
@@ -248,7 +248,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_test_and_set_bit(mem_addr_t addr, int bit)
+	int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
 
@@ -259,7 +259,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_test_and_clear_bit(mem_addr_t addr, int bit)
+	int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
 
@@ -270,7 +270,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	void sys_bitfield_set_bit(mem_addr_t addr, int bit)
+	void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	/* Doing memory offsets in terms of 32-bit values to prevent
 	 * alignment issues
@@ -279,20 +279,20 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	void sys_bitfield_clear_bit(mem_addr_t addr, int bit)
+	void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	sys_clear_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
 static inline __attribute__((always_inline))
-	int sys_bitfield_test_bit(mem_addr_t addr, int bit)
+	int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	return sys_test_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
 
 static inline __attribute__((always_inline))
-	int sys_bitfield_test_and_set_bit(mem_addr_t addr, int bit)
+	int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
 
@@ -303,7 +303,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_bitfield_test_and_clear_bit(mem_addr_t addr, int bit)
+	int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
 

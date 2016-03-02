@@ -108,7 +108,7 @@ static inline __attribute__((always_inline)) void _do_irq_unlock(void)
 
 static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 {
-	int bitpos;
+	unsigned int bitpos;
 
 	__asm__ volatile (
 
@@ -158,7 +158,7 @@ static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 
 static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 {
-	int bitpos;
+	unsigned int bitpos;
 
 	__asm__ volatile (
 
@@ -304,7 +304,7 @@ static inline __attribute__((always_inline))
 
 
 static inline __attribute__((always_inline))
-	void sys_io_set_bit(io_port_t port, int bit)
+	void sys_io_set_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t reg = 0;
 
@@ -316,7 +316,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	void sys_io_clear_bit(io_port_t port, int bit)
+	void sys_io_clear_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t reg = 0;
 
@@ -328,7 +328,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_io_test_bit(io_port_t port, int bit)
+	int sys_io_test_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t ret;
 
@@ -341,7 +341,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_io_test_and_set_bit(io_port_t port, int bit)
+	int sys_io_test_and_set_bit(io_port_t port, unsigned int bit)
 {
 	int ret;
 
@@ -352,7 +352,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_io_test_and_clear_bit(io_port_t port, int bit)
+	int sys_io_test_and_clear_bit(io_port_t port, unsigned int bit)
 {
 	int ret;
 
@@ -430,7 +430,7 @@ static inline __attribute__((always_inline))
 
 
 static inline __attribute__((always_inline))
-	void sys_set_bit(mem_addr_t addr, int bit)
+	void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	__asm__ volatile("btsl	%1, %0;\n\t"
 			 : "+m" (*(volatile uint32_t *) (addr))
@@ -439,7 +439,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	void sys_clear_bit(mem_addr_t addr, int bit)
+	void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	__asm__ volatile("btrl	%1, %0;\n\t"
 			 : "+m" (*(volatile uint32_t *) (addr))
@@ -447,7 +447,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_test_bit(mem_addr_t addr, int bit)
+	int sys_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
 
@@ -460,7 +460,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_test_and_set_bit(mem_addr_t addr, int bit)
+	int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
 
@@ -473,7 +473,7 @@ static inline __attribute__((always_inline))
 }
 
 static inline __attribute__((always_inline))
-	int sys_test_and_clear_bit(mem_addr_t addr, int bit)
+	int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
 

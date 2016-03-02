@@ -97,7 +97,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_io_set_bit(io_port_t port, int bit)
+ * @fn static inline void sys_io_set_bit(io_port_t port, unsigned int bit)
  * @brief Set the designated bit from port to 1
  *
  * This functions takes the designated bit starting from port and sets it to 1.
@@ -107,7 +107,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_io_clear_bit(io_port_t port, int bit)
+ * @fn static inline void sys_io_clear_bit(io_port_t port, unsigned int bit)
  * @brief Clear the designated bit from port to 0
  *
  * This functions takes the designated bit starting from port and sets it to 0.
@@ -117,7 +117,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_io_test_bit(io_port_t port, int bit)
+ * @fn static inline int sys_io_test_bit(io_port_t port, unsigned int bit)
  * @brief Test the bit from port if it is set or not
  *
  * This functions takes the designated bit starting from port and tests its
@@ -130,7 +130,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_io_test_and_set_bit(io_port_t port, int bit)
+ * @fn static inline int sys_io_test_and_set_bit(io_port_t port, unsigned int bit)
  * @brief Test the bit from port and set it
  *
  * This functions takes the designated bit starting from port, tests its
@@ -143,7 +143,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_io_test_and_clear_bit(io_port_t port, int bit)
+ * @fn static inline int sys_io_test_and_clear_bit(io_port_t port, unsigned int bit)
  * @brief Test the bit from port and clear it
  *
  * This functions takes the designated bit starting from port, tests its
@@ -225,7 +225,7 @@ typedef uint32_t mem_addr_t;
 /* Memory bits manipulation functions */
 
 /**
- * @fn static inline void sys_set_bit(mem_addr_t addr, int bit)
+ * @fn static inline void sys_set_bit(mem_addr_t addr, unsigned int bit)
  * @brief Set the designated bit from addr to 1
  *
  * This functions takes the designated bit starting from addr and sets it to 1.
@@ -235,7 +235,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_clear_bit(mem_addr_t addr, int bit)
+ * @fn static inline void sys_clear_bit(mem_addr_t addr, unsigned int bit)
  * @brief Clear the designated bit from addr to 0
  *
  * This functions takes the designated bit starting from addr and sets it to 0.
@@ -245,7 +245,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_test_bit(mem_addr_t addr, int bit)
+ * @fn static inline int sys_test_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit if it is set or not
  *
  * This functions takes the designated bit starting from addr and tests its
@@ -258,7 +258,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_test_and_set_bit(mem_addr_t addr, int bit)
+ * @fn static inline int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit and set it
  *
  * This functions takes the designated bit starting from addr, tests its
@@ -271,7 +271,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_test_and_clear_bit(mem_addr_t addr, int bit)
+ * @fn static inline int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit and clear it
  *
  * This functions takes the designated bit starting from addr, test its
@@ -284,7 +284,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_bitfield_set_bit(mem_addr_t addr, int bit)
+ * @fn static inline void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
  * @brief Set the designated bit from addr to 1
  *
  * This functions takes the designated bit starting from addr and sets it to 1.
@@ -294,7 +294,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline void sys_bitfield_clear_bit(mem_addr_t addr, int bit)
+ * @fn static inline void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit)
  * @brief Clear the designated bit from addr to 0
  *
  * This functions takes the designated bit starting from addr and sets it to 0.
@@ -304,7 +304,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_bitfield_test_bit(mem_addr_t addr, int bit)
+ * @fn static inline int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit if it is set or not
  *
  * This functions takes the designated bit starting from addr and tests its
@@ -317,7 +317,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_bitfield_test_and_set_bit(mem_addr_t addr, int bit)
+ * @fn static inline int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit and set it
  *
  * This functions takes the designated bit starting from addr, tests its
@@ -330,7 +330,7 @@ typedef uint32_t mem_addr_t;
  */
 
 /**
- * @fn static inline int sys_bitfield_test_and_clear_bit(mem_addr_t addr, int bit)
+ * @fn static inline int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit and clear it
  *
  * This functions takes the designated bit starting from addr, test its
