@@ -32,6 +32,9 @@
 
 #define NBLE_BUF_SIZE	384
 
+/* TODO: Get this value during negotiation */
+#define BLE_GATT_MTU_SIZE 23
+
 struct nble_gatt_service {
 	const struct bt_gatt_attr *attrs;
 	uint16_t attr_count;
@@ -647,7 +650,86 @@ stop:
 
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 {
-	return -ENOSYS;
+	struct nble_gattc_read_params req;
+
+	if (!conn || !params || !params->handle_count || !params->func) {
+		return -EINVAL;
+	}
+
+	if (conn->gatt_private) {
+		return -EBUSY;
+	}
+
+	if (params->handle_count > 1) {
+		BT_ERR("Multiple characteristic read is not supported");
+		return -ENOSYS;
+	}
+
+	BT_DBG("conn %p params %p", conn, params);
+
+	req.conn_handle = conn->handle;
+	req.handle = params->single.handle;
+	req.offset = params->single.offset;
+
+	/* TODO: Passing parameters with function not working now */
+	conn->gatt_private = params;
+
+	nble_gattc_read_req(&req, params);
+
+	return 0;
+}
+
+void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
+			    uint8_t *data, uint8_t len, void *user_data)
+{
+	struct bt_gatt_read_params *params;
+	struct bt_conn *conn;
+
+	if (rsp->status) {
+		BT_ERR("GATT read failed, status %d", rsp->status);
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(rsp->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", rsp->conn_handle);
+		return;
+	}
+
+	/* TODO: Get params from user_data pointer, not working at the moment */
+	params = conn->gatt_private;
+
+	BT_DBG("conn %p params %p", conn, params);
+
+	if (params->func(conn, 0, params, data, len) == BT_GATT_ITER_STOP) {
+		goto done;
+	}
+
+	/*
+	 * Core Spec 4.2, Vol. 3, Part G, 4.8.1
+	 * If the Characteristic Value is greater than (ATT_MTU – 1) octets
+	 * in length, the Read Long Characteristic Value procedure may be used
+	 * if the rest of the Characteristic Value is required.
+	 * The data contain only (ATT_MTU – 1) octets.
+	 */
+	if (len < BLE_GATT_MTU_SIZE) {
+		params->func(conn, 0, params, NULL, 0);
+		goto done;
+	}
+
+	params->single.offset += len;
+
+	/* This pointer would keep new params set in the function below */
+	conn->gatt_private = NULL;
+
+	/* Continue reading the attribute */
+	if (bt_gatt_read(conn, params)) {
+		params->func(conn, BT_ATT_ERR_UNLIKELY, params, NULL, 0);
+	}
+
+done:
+	conn->gatt_private = NULL;
+	bt_conn_unref(conn);
 }
 
 int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
