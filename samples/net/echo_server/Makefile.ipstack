@@ -62,21 +62,6 @@ PIPE_CLIENT_OUT_LINK: ${PIPE_SERVER_OUT}
 .PHONY: setup_pipes_dual_monitor
 setup_pipes_dual_monitor: ${PIPE_SERVER_IN} ${PIPE_SERVER_OUT} ${PIPE_CLIENT_IN} ${PIPE_CLIENT_OUT}
 
-CONFIG_OPTIONS_1="CONFIG_NETWORKING_WITH_15_4=y"
-CONFIG_OPTIONS_2="CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART=y"
-CONFIG_OPTIONS_3="CONFIG_NETWORKING_WITH_6LOWPAN=y"
-CONFIG_OPTIONS_4="CONFIG_NETWORKING_STATISTICS=y"
-
-.PHONY: set_options
-set_options:
-	# Network uart must be turned off as that will prevent communication
-	cp -f ${DOTCONFIG} ${DOTCONFIG}.orig ; true
-	grep -v CONFIG_NETWORKING_UART=y ${DOTCONFIG}.orig > ${DOTCONFIG}
-	echo "${CONFIG_OPTIONS_1}" >> ${DOTCONFIG}
-	echo "${CONFIG_OPTIONS_2}" >> ${DOTCONFIG}
-	echo "${CONFIG_OPTIONS_3}" >> ${DOTCONFIG}
-	echo "${CONFIG_OPTIONS_4}" >> ${DOTCONFIG}
-
 export QEMU_NUM
 export QEMU_EXTRA_FLAGS
 
@@ -94,13 +79,13 @@ start_monitor: ${ZEPHYR_BASE}/net/ip/tools/monitor_15_4
 		${PIPE_BASE}-server ${PIPE_BASE}-client > /dev/null & \
 		echo "$$!" > ${PID_FILE}
 
-server: remove_pipes setup_pipes_dual_monitor $(DOTCONFIG) set_options start_monitor
+server: remove_pipes setup_pipes_dual_monitor $(DOTCONFIG) start_monitor
 	$(Q)$(call zephyrmake,$(O),qemu); true
 	$(Q)kill `cat ${PID_FILE}`
 	$(Q)rm -f ${PID_FILE}
 	-@killall monitor_15_4 > /dev/null 2>&1 ; true
 	$(Q)stty sane
 
-client: setup_pipes_dual_monitor $(DOTCONFIG) set_options
+client: setup_pipes_dual_monitor $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),qemu); true
 	$(Q)stty sane
