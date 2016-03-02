@@ -43,7 +43,9 @@
 #include "er-coap-engine.h"
 #include "er-coap-context.h"
 
-#define DEBUG DEBUG_NONE
+#if CONFIG_NETWORK_IP_STACK_DEBUG_COAP_ENGINE
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 PROCESS(coap_engine, "CoAP Engine");

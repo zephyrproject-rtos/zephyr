@@ -40,7 +40,9 @@
 #include <string.h>
 #include <errno.h>
 
-#define DEBUG DEBUG_NONE
+#if CONFIG_NETWORK_IP_STACK_DEBUG_COAP_CONTEXT
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #ifndef COAP_CONTEXT_CONF_MAX_CONTEXTS

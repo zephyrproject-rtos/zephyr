@@ -178,4 +178,25 @@ config NETWORK_IP_STACK_DEBUG_IPV4_ARP
 	help
 	  Enables core ARP code part to output debug messages
 
+config NETWORK_IP_STACK_DEBUG_COAP_CONTEXT
+	bool "Debug CoAP context"
+	depends on ER_COAP
+	default n
+	help
+	  Enables CoAP context output debug messages
+
+config NETWORK_IP_STACK_DEBUG_COAP_ENGINE
+	bool "Debug CoAP engine"
+	depends on ER_COAP
+	default n
+	help
+	  Enables CoAP engine output debug messages
+
+config NETWORK_IP_STACK_DEBUG_COAP_TRANSACTION
+	bool "Debug CoAP transaction"
+	depends on ER_COAP
+	default n
+	help
+	  Enables CoAP transaction output debug messages
+
 endif
