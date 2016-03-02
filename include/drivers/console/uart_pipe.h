@@ -58,7 +58,7 @@ void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb);
  *  @param data Buffer with data to be send.
  *  @param len Size of data.
  *
- *  @return Number of bytes sent.
+ *  @return 0 on success or negative error
  */
 int uart_pipe_send(const uint8_t *data, int len);
 
