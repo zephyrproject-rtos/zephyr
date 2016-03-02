@@ -24,8 +24,8 @@ CONF_FILE ?= prj_$(NET_IFACE).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
 
-ifeq ($(CONFIG_NETWORKING_WITH_BT), n)
-	include $(ZEPHYR_BASE)/samples/net/echo_server/Makefile.ipstack
-else
+ifeq ($(CONFIG_NETWORKING_WITH_BT), y)
 	QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
+else
+	include $(ZEPHYR_BASE)/samples/net/echo_server/Makefile.ipstack
 endif
