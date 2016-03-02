@@ -45,6 +45,16 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
+
+#ifdef CONFIG_THREAD_MONITOR
+struct __thread_entry {
+	_thread_entry_t pEntry;
+	void *parameter1;
+	void *parameter2;
+	void *parameter3;
+};
+#endif /*CONFIG_THREAD_MONITOR*/
+
 struct coop {
 	/*
 	 * Unused for Cortex-M, which automatically saves the neccesary
@@ -120,6 +130,7 @@ struct tcs {
 	struct coop coopReg;
 	struct preempt preempReg;
 #if defined(CONFIG_THREAD_MONITOR)
+	struct __thread_entry *entry; /* thread entry and parameters description */
 	struct tcs *next_thread; /* next item in list of ALL fiber+tasks */
 #endif
 #ifdef CONFIG_NANO_TIMEOUTS

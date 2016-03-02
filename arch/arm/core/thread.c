@@ -135,6 +135,14 @@ void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
 	tcs->custom_data = NULL;
 #endif
 
+#ifdef CONFIG_THREAD_MONITOR
+	/*
+	 * In debug mode tcs->entry give direct access to the thread entry
+	 * and the corresponding parameters.
+	 */
+	tcs->entry = (struct __thread_entry *)(pInitCtx);
+#endif
+
 	tcs->preempReg.psp = (uint32_t)pInitCtx;
 	tcs->basepri = 0;
 

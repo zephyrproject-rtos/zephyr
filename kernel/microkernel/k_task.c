@@ -181,6 +181,7 @@ void _k_state_bit_set(struct k_task *task_ptr, uint32_t bits)
 static void start_task(struct k_task *X, void (*func)(void))
 {
 	unsigned int task_options;
+	void *parameter1;
 
 	/* Note: the field X->worksize now represents the task size in bytes */
 
@@ -196,10 +197,16 @@ static void start_task(struct k_task *X, void (*func)(void))
 	 * the thread is a task, rather than a fiber.
 	 */
 
+#ifdef CONFIG_THREAD_MONITOR
+	parameter1 = (void *)X;
+#else
+	parameter1 = (void *)0;
+#endif
+
 	_new_thread((char *)X->workspace, /* pStackMem */
 			X->worksize,		/* stackSize */
 			(_thread_entry_t)func,  /* pEntry */
-			(void *)0,		/* parameter1 */
+			parameter1,		/* parameter1 */
 			(void *)0,		/* parameter2 */
 			(void *)0,		/* parameter3 */
 			-1,			/* priority */

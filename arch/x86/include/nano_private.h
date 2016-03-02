@@ -409,6 +409,15 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_THREAD_MONITOR
+struct __thread_entry {
+	_thread_entry_t pEntry;
+	void *parameter1;
+	void *parameter2;
+	void *parameter3;
+};
+#endif /*CONFIG_THREAD_MONITOR*/
+
 /*
  * The following structure defines the set of 'non-volatile' integer registers.
  * These registers must be preserved by a called C function.  These are the
@@ -639,6 +648,7 @@ struct tcs {
 	tPreempReg preempReg; /* volatile integer register storage */
 
 #if defined(CONFIG_THREAD_MONITOR)
+	struct __thread_entry *entry; /* thread entry and parameters description */
 	struct tcs *next_thread; /* next item in list of ALL fiber+tasks */
 #endif
 #ifdef CONFIG_GDB_INFO

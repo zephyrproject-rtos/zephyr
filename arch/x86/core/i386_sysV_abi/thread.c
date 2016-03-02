@@ -103,6 +103,14 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 
 	pInitialCtx = (unsigned long *)STACK_ROUND_DOWN(pStackMem + stackSize);
 
+#ifdef CONFIG_THREAD_MONITOR
+	/*
+	 * In debug mode tcs->entry give direct access to the thread entry
+	 * and the corresponding parameters.
+	 */
+	tcs->entry = (struct __thread_entry *)(pInitialCtx -
+		sizeof(struct __thread_entry));
+#endif
 	/*
 	 * We subtract 11 here to account for the thread entry routine
 	 * parameters

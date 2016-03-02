@@ -48,6 +48,16 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
+
+#ifdef CONFIG_THREAD_MONITOR
+struct __thread_entry {
+	_thread_entry_t pEntry;
+	void *parameter1;
+	void *parameter2;
+	void *parameter3;
+};
+#endif /*CONFIG_THREAD_MONITOR*/
+
 struct coop {
 	/*
 	 * Saved on the stack as part of handling a regular IRQ or by the kernel
@@ -175,6 +185,7 @@ struct tcs {
 	struct coop coopReg;
 	struct preempt preempReg;
 #ifdef CONFIG_THREAD_MONITOR
+	struct __thread_entry *entry; /* thread entry and parameters description */
 	struct tcs *next_thread;  /* next item in list of ALL fiber+tasks */
 #endif
 #ifdef CONFIG_NANO_TIMEOUTS
