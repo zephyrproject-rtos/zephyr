@@ -292,7 +292,6 @@ help
 config	NETWORKING_WITH_15_4_TI_CC2520
 	bool
 	prompt "TI CC2520"
-	select CONFIG_NETWORKING_WITH_15_4
 	help
 	  Enable Texas Instruments CC2520 802.15.4 radio driver.
 
