@@ -485,6 +485,12 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
+#define sys_bitfield_set_bit sys_set_bit
+#define sys_bitfield_clear_bit sys_clear_bit
+#define sys_bitfield_test_bit sys_test_bit
+#define sys_bitfield_test_and_set_bit sys_test_and_set_bit
+#define sys_bitfield_test_and_clear_bit sys_test_and_clear_bit
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

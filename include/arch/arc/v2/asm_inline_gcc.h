@@ -269,6 +269,50 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
+static inline __attribute__((always_inline))
+	void sys_bitfield_set_bit(mem_addr_t addr, int bit)
+{
+	/* Doing memory offsets in terms of 32-bit values to prevent
+	 * alignment issues
+	 */
+	sys_set_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
+}
+
+static inline __attribute__((always_inline))
+	void sys_bitfield_clear_bit(mem_addr_t addr, int bit)
+{
+	sys_clear_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
+}
+
+static inline __attribute__((always_inline))
+	int sys_bitfield_test_bit(mem_addr_t addr, int bit)
+{
+	return sys_test_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
+}
+
+
+static inline __attribute__((always_inline))
+	int sys_bitfield_test_and_set_bit(mem_addr_t addr, int bit)
+{
+	int ret;
+
+	ret = sys_bitfield_test_bit(addr, bit);
+	sys_bitfield_set_bit(addr, bit);
+
+	return ret;
+}
+
+static inline __attribute__((always_inline))
+	int sys_bitfield_test_and_clear_bit(mem_addr_t addr, int bit)
+{
+	int ret;
+
+	ret = sys_bitfield_test_bit(addr, bit);
+	sys_bitfield_clear_bit(addr, bit);
+
+	return ret;
+}
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
