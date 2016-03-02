@@ -44,7 +44,7 @@ config  UART_INTERRUPT_DRIVEN
 choice
 	prompt "UART IRQ Trigger Condition"
 	default UART_IRQ_RISING_EDGE
-	depends on UART_INTERRUPT_DRIVEN
+	depends on UART_INTERRUPT_DRIVEN && !UART_QMSI
 
 config UART_IRQ_FALLING_EDGE
 	bool "Falling Edge"
