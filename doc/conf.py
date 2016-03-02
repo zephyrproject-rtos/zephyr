@@ -128,9 +128,9 @@ html_theme_path = ['./themes']
 # "<project> v<release> documentation".
 html_title = "Zephyr Project Documentation"
 
-# If True permalinks will be added to each header.
-
-html_add_permalinks = False
+# This value determines the text for the permalink; it defaults to "¶".
+# Set it to None or the empty string to disable permalinks.
+html_add_permalinks = ""
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -147,7 +147,7 @@ html_add_permalinks = False
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = []
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
