@@ -141,7 +141,7 @@ done:
 #endif
 
 #if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
-static int uart_send(unsigned char c)
+static void uart_send(unsigned char c)
 {
   uint8_t buf[1] = { c };
 
@@ -150,7 +150,7 @@ static int uart_send(unsigned char c)
 	 __FUNCTION__, buf[0]);
 #endif
 
-  return uart_pipe_send(&buf[0], 1);
+  uart_pipe_send(&buf[0], 1);
 }
 #endif
 
@@ -235,21 +235,11 @@ send(struct net_buf *buf, const void *payload, unsigned short payload_len)
     PRINTF("dummy154radio: sending %d bytes\n", len);
   }
 
-  if(!uart_send(DUMMY_RADIO_15_4_FRAME_TYPE)) { /* Type */
-      PRINTF("uart_send failed (frame type)\n");
-      return RADIO_TX_ERR;
-  }
-
-  if(!uart_send(len)) {  /* Length */
-      PRINTF("uart_send failed (length)\n");
-      return RADIO_TX_ERR;
-  }
+  uart_send(DUMMY_RADIO_15_4_FRAME_TYPE); /* Type */
+  uart_send(len); /* Length */
 
   for (i = 0; i < len; i++) {
-    if (!uart_send(output[i])) {
-      PRINTF("uart_send failed\n");
-      return RADIO_TX_ERR;
-    }
+    uart_send(output[i]);
   }
 
   return RADIO_TX_OK;
