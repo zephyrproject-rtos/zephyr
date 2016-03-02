@@ -397,7 +397,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	if (conn->gatt_discover) {
+	if (conn->gatt_private) {
 		return -EBUSY;
 	}
 
@@ -417,7 +417,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 		discover_params.handle_range.start_handle = params->start_handle;
 		discover_params.handle_range.end_handle = params->end_handle;
 
-		conn->gatt_discover = params;
+		conn->gatt_private = params;
 
 		nble_gattc_discover_req(&discover_params);
 		break;
@@ -432,7 +432,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 static uint16_t parse_include(struct bt_conn *conn, const uint8_t *data,
 			      uint8_t len)
 {
-	struct bt_gatt_discover_params *params = conn->gatt_discover;
+	struct bt_gatt_discover_params *params = conn->gatt_private;
 	uint16_t end_handle = 0;
 	int i;
 
@@ -479,7 +479,7 @@ static uint16_t parse_include(struct bt_conn *conn, const uint8_t *data,
 static uint16_t parse_service(struct bt_conn *conn, const uint8_t *data,
 			      uint8_t len)
 {
-	struct bt_gatt_discover_params *params = conn->gatt_discover;
+	struct bt_gatt_discover_params *params = conn->gatt_private;
 	uint16_t end_handle = 0;
 	int i;
 
@@ -510,7 +510,7 @@ static uint16_t parse_service(struct bt_conn *conn, const uint8_t *data,
 static uint16_t parse_characteristic(struct bt_conn *conn, const uint8_t *data,
 				     uint8_t len)
 {
-	struct bt_gatt_discover_params *params = conn->gatt_discover;
+	struct bt_gatt_discover_params *params = conn->gatt_private;
 	uint16_t end_handle = 0;
 	int i;
 
@@ -537,7 +537,7 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const uint8_t *data,
 static uint16_t parse_descriptor(struct bt_conn *conn, const uint8_t *data,
 				 uint8_t len)
 {
-	struct bt_gatt_discover_params *params = conn->gatt_discover;
+	struct bt_gatt_discover_params *params = conn->gatt_private;
 	uint16_t end_handle = 0;
 	int i;
 
@@ -576,7 +576,7 @@ void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 		return;
 	}
 
-	params = conn->gatt_discover;
+	params = conn->gatt_private;
 
 	/* Status maybe error or indicate end of discovery */
 	if (rsp->status) {
@@ -624,7 +624,7 @@ void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 	}
 
 	/* This pointer would keep new params set in the function below */
-	conn->gatt_discover = NULL;
+	conn->gatt_private = NULL;
 
 	status = bt_gatt_discover(conn, params);
 	if (status) {
@@ -640,7 +640,7 @@ done:
 	params->func(conn, NULL, params);
 
 stop:
-	conn->gatt_discover = NULL;
+	conn->gatt_private = NULL;
 	bt_conn_unref(conn);
 }
 
