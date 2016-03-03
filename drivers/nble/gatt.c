@@ -787,7 +787,29 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 				   const void *data, uint16_t length,
 				   bool sign)
 {
-	return -ENOSYS;
+	struct nble_gattc_write_params req;
+
+	if (!conn || conn->state != BT_CONN_CONNECTED  || !handle) {
+		return -EINVAL;
+	}
+
+	if (conn->gatt_private) {
+		return -EBUSY;
+	}
+
+	BT_DBG("conn %p handle %u len %u data %p sign %d",
+	       conn, handle, length, data, sign);
+
+	/* TODO: Handle signing */
+
+	req.conn_handle = conn->handle;
+	req.handle = handle;
+	req.offset = 0;
+	req.with_resp = 0;
+
+	nble_gattc_write_req(&req, data, length, NULL);
+
+	return 0;
 }
 
 int bt_gatt_subscribe(struct bt_conn *conn,
