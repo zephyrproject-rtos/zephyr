@@ -735,7 +735,52 @@ done:
 int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 		  const void *data, uint16_t length, bt_gatt_rsp_func_t func)
 {
-	return -ENOSYS;
+	struct nble_gattc_write_params req;
+
+	if (!conn || conn->state != BT_CONN_CONNECTED  || !handle || !func) {
+		return -EINVAL;
+	}
+
+	if (conn->gatt_private) {
+		return -EBUSY;
+	}
+
+	BT_DBG("conn %p handle %u offset %u len %u data %p",
+	       conn, handle, offset, length, data);
+
+	req.conn_handle = conn->handle;
+	req.handle = handle;
+	req.offset = offset;
+	req.with_resp = 1;
+
+	conn->gatt_private = func;
+
+	nble_gattc_write_req(&req, data, length, NULL);
+
+	return 0;
+}
+
+void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp,
+			     void *user_data)
+{
+	struct bt_conn *conn;
+	bt_gatt_rsp_func_t func;
+
+	conn = bt_conn_lookup_handle(rsp->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", rsp->conn_handle);
+		return;
+	}
+
+	BT_DBG("conn %p status %d user_data %p", conn, rsp->status, user_data);
+
+	func = conn->gatt_private;
+	if (func) {
+		func(conn, rsp->status);
+		conn->gatt_private = NULL;
+	}
+
+	bt_conn_unref(conn);
 }
 
 int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
