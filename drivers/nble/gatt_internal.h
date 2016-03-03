@@ -354,3 +354,5 @@ struct nble_gattc_value_evt {
 	uint16_t handle;
 	uint8_t type;
 };
+
+void bt_gatt_disconnected(struct bt_conn *conn);

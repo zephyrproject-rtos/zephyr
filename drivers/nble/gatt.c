@@ -43,6 +43,8 @@ struct nble_gatt_service {
 static struct nble_gatt_service svc_db[BLE_GATTS_MAX_SERVICES];
 static uint8_t svc_count;
 
+static struct bt_gatt_subscribe_params *subscriptions;
+
 /**
  * Copy a UUID in a buffer using the smallest memory length
  * @param buf Pointer to the memory where the UUID shall be copied
@@ -812,16 +814,199 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 	return 0;
 }
 
+static void gatt_subscription_add(struct bt_conn *conn,
+				  struct bt_gatt_subscribe_params *params)
+{
+	bt_addr_le_copy(&params->_peer, &conn->dst);
+
+	/* Prepend subscription */
+	params->_next = subscriptions;
+	subscriptions = params;
+}
+
+static void gatt_subscription_remove(struct bt_conn *conn,
+				     struct bt_gatt_subscribe_params *prev,
+				     struct bt_gatt_subscribe_params *params)
+{
+	/* Remove subscription from the list*/
+	if (!prev) {
+		subscriptions = params->_next;
+	} else {
+		prev->_next = params->_next;
+	}
+
+	params->notify(conn, params, NULL, 0);
+}
+
+static void remove_subscriptions(struct bt_conn *conn)
+{
+	struct bt_gatt_subscribe_params *params, *prev;
+
+	/* Lookup existing subscriptions */
+	for (params = subscriptions, prev = NULL; params;
+	     prev = params, params = params->_next) {
+		if (bt_addr_le_cmp(&params->_peer, &conn->dst)) {
+			continue;
+		}
+
+		/* Remove subscription */
+		gatt_subscription_remove(conn, prev, params);
+	}
+}
+
+static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err)
+{
+	BT_DBG("conn %p err %u", conn, err);
+
+	/* TODO: Remove failed subscription */
+}
+
+static int gatt_write_ccc(struct bt_conn *conn,
+			  struct bt_gatt_subscribe_params *params)
+{
+	uint16_t handle = params->ccc_handle;
+	uint16_t value = params->value;
+
+	return bt_gatt_write(conn, handle, 0, &value, sizeof(value),
+			     gatt_write_ccc_rsp);
+
+	return 0;
+}
+
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params)
 {
-	return -ENOSYS;
+	struct bt_gatt_subscribe_params *tmp;
+	bool has_subscription = false;
+
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (!params || !params->notify ||
+	    !params->value || !params->ccc_handle) {
+		return -EINVAL;
+	}
+
+	BT_DBG("conn %p value_handle 0x%04x ccc_handle 0x%04x value 0x%04x",
+	       conn, params->value_handle, params->ccc_handle, params->value);
+
+	/* Lookup existing subscriptions */
+	for (tmp = subscriptions; tmp; tmp = tmp->_next) {
+		/* Fail if entry already exists */
+		if (tmp == params) {
+			return -EALREADY;
+		}
+
+		/* Check if another subscription exists */
+		if (!bt_addr_le_cmp(&tmp->_peer, &conn->dst) &&
+		    tmp->value_handle == params->value_handle &&
+		    tmp->value >= params->value) {
+			has_subscription = true;
+		}
+	}
+
+	/* Skip write if already subscribed */
+	if (!has_subscription) {
+		int err;
+
+		err = gatt_write_ccc(conn, params);
+		if (err) {
+			return err;
+		}
+	}
+
+	/*
+	 * Add subscription before write complete as some implementation were
+	 * reported to send notification before reply to CCC write.
+	 */
+	gatt_subscription_add(conn, params);
+
+	return 0;
+}
+
+void on_nble_gattc_value_evt(const struct nble_gattc_value_evt *ev,
+			     uint8_t *data, uint8_t length)
+{
+	struct bt_gatt_subscribe_params *params;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(ev->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
+		return;
+	}
+
+	BT_DBG("conn %p value handle 0x%04x status %d data len %u",
+	       conn, ev->handle, ev->status, length);
+
+	for (params = subscriptions; params; params = params->_next) {
+		if (ev->handle != params->value_handle) {
+			continue;
+		}
+
+		if (params->notify(conn, params, data, length) ==
+		    BT_GATT_ITER_STOP) {
+			bt_gatt_unsubscribe(conn, params);
+		}
+	}
+
+	bt_conn_unref(conn);
 }
 
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
-	return -ENOSYS;
+	struct bt_gatt_subscribe_params *tmp, *found = NULL;
+	bool has_subscription = false;
+
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (!params) {
+		return -EINVAL;
+	}
+
+	BT_DBG("conn %p value_handle 0x%04x ccc_handle 0x%04x value 0x%04x",
+	       conn, params->value_handle, params->ccc_handle, params->value);
+
+	/* Check head */
+	if (subscriptions == params) {
+		subscriptions = params->_next;
+		found = params;
+	}
+
+	/* Lookup existing subscriptions */
+	for (tmp = subscriptions; tmp; tmp = tmp->_next) {
+		/* Remove subscription */
+		if (tmp->_next == params) {
+			tmp->_next = params->_next;
+			found = params;
+		}
+
+		/* Check if there still remains any other subscription */
+		if (!bt_addr_le_cmp(&tmp->_peer, &conn->dst) &&
+		    tmp->value_handle == params->value_handle) {
+			has_subscription = true;
+		}
+	}
+
+	if (!found) {
+		return -EINVAL;
+	}
+
+	if (has_subscription) {
+		return 0;
+	}
+
+	BT_DBG("Current subscription %p value_handle 0x%04x value 0x%04x",
+	       found, found->value_handle, found->value);
+
+	/* Remove subscription bit */
+	params->value = found->value & ~params->value;
+
+	return gatt_write_ccc(conn, params);
 }
 
 void bt_gatt_cancel(struct bt_conn *conn)
@@ -878,4 +1063,14 @@ void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *evt)
 	reply_data.write_reply = 0;
 
 	nble_gatts_authorize_reply_req(&reply_data, data, reply_data.status);
+}
+
+void bt_gatt_disconnected(struct bt_conn *conn)
+{
+	BT_DBG("conn %p", conn);
+
+	conn->gatt_private = NULL;
+
+	/* TODO: If bonded don't remove subscriptions */
+	remove_subscriptions(conn);
 }

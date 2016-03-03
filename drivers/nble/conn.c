@@ -21,10 +21,12 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/gatt.h>
 #include <bluetooth/log.h>
 
 #include "version.h"
 #include "gap_internal.h"
+#include "gatt_internal.h"
 #include "conn_internal.h"
 
 extern bt_addr_le_t nble_bdaddr;
@@ -325,6 +327,8 @@ static void notify_connected(struct bt_conn *conn)
 static void notify_disconnected(struct bt_conn *conn)
 {
 	struct bt_conn_cb *cb;
+
+	bt_gatt_disconnected(conn);
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->disconnected) {
