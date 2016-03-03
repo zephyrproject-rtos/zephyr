@@ -5,7 +5,7 @@
 *.pyc
 *.swp
 *.swo
-!arch/*/*/*/*.cmd
+!arch/*/*/**/*.cmd
 *~
 cscope.*
 .dir
