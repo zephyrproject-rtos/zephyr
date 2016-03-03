@@ -20,6 +20,7 @@
 # sourcing a script. POSIX_ARGZERO option, when it is set, exposes the
 # original value of $0 in spite of the current FUNCTION_ARGZERO setting.
 if [ -n "$ZSH_VERSION" ]; then
+	DIR="${(%):-%N}"
 	if [ $options[posixargzero] != "on" ]; then
 		setopt posixargzero
 		NAME=$(basename -- "$0")
@@ -28,6 +29,7 @@ if [ -n "$ZSH_VERSION" ]; then
 		NAME=$(basename -- "$0")
 	fi
 else
+	DIR="${BASH_SOURCE[0]}"
 	NAME=$(basename -- "$0")
 fi
 
@@ -43,7 +45,7 @@ fi
 uname | grep -q MINGW && MINGW_OPT="-W"
 
 # identify OS source tree root directory
-export ZEPHYR_BASE=$( builtin cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ${MINGW_OPT})
+export ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" && pwd ${MINGW_OPT})
 
 scripts_path=${ZEPHYR_BASE}/scripts
 echo "${PATH}" | grep -q "${scripts_path}"
