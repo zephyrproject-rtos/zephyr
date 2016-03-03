@@ -343,7 +343,10 @@ class SizeCalculator:
         # Search for CONFIG_XIP in the ELF's list of symbols using NM and AWK.
         # GREP can not be used as it returns an error if the symbol is not found.
         is_xip_command = "nm " + filename + " | awk '/CONFIG_XIP/ { print $3 }'"
-        is_xip_output = subprocess.check_output(is_xip_command, shell=True).decode("utf-8")
+        is_xip_output = subprocess.check_output(is_xip_command, shell=True,
+                            stderr=subprocess.STDOUT).decode("utf-8").strip()
+        if is_xip_output.endswith("no symbols"):
+            raise SanityRuntimeError("%s has no symbol information" % filename)
         self.is_xip = (len(is_xip_output) != 0)
 
         self.filename = filename
