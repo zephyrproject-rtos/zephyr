@@ -133,16 +133,11 @@ static void completed(struct device *dev, uint32_t error)
 	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 
-	if (!((spi->tx_buf == spi->tx_buf_end && !spi->rx_buf) ||
-	      (spi->rx_buf == spi->rx_buf_end && !spi->tx_buf) ||
-	      (spi->tx_buf == spi->tx_buf_end &&
-				spi->rx_buf == spi->rx_buf_end) ||
-	      error)) {
+	/* if received == trans_len, then transmitted == trans_len */
+	if (!(spi->received == spi->trans_len) && !error) {
 		return;
 	}
 
-	spi->tx_buf = spi->rx_buf = spi->tx_buf_end = spi->rx_buf_end = NULL;
-	spi->t_len = spi->r_buf_len = 0;
 	spi->error = error;
 
 	_spi_control_cs(dev, 0);
@@ -163,15 +158,15 @@ static void pull_data(struct device *dev)
 	while (read_sssr(info->regs) & INTEL_SPI_SSSR_RNE) {
 		data = (uint8_t) read_ssdr(info->regs);
 		cnt++;
+		spi->received++;
 
-		if (spi->rx_buf < spi->rx_buf_end) {
+		if ((spi->received - 1) < spi->r_buf_len) {
 			*(uint8_t *)(spi->rx_buf) = data;
 			spi->rx_buf++;
 		}
 	}
 
-	DBG("Pulled: %d (total: %d)\n",
-		cnt, spi->r_buf_len - (spi->rx_buf_end - spi->rx_buf));
+	DBG("Pulled: %d (total: %d)\n",	cnt, spi->received);
 }
 
 static void push_data(struct device *dev)
@@ -180,12 +175,16 @@ static void push_data(struct device *dev)
 	struct spi_intel_data *spi = dev->driver_data;
 	uint32_t cnt = 0;
 	uint8_t data;
+	uint32_t status;
 
-	while (read_sssr(info->regs) & INTEL_SPI_SSSR_TNF) {
-		if (spi->tx_buf < spi->tx_buf_end) {
+	while ((status = read_sssr(info->regs)) & INTEL_SPI_SSSR_TNF) {
+		if (status & INTEL_SPI_SSSR_RFS) {
+			break;
+		}
+		if (spi->tx_buf && (spi->transmitted < spi->t_buf_len)) {
 			data = *(uint8_t *)(spi->tx_buf);
 			spi->tx_buf++;
-		} else if (spi->t_len + cnt < spi->r_buf_len) {
+		} else if (spi->transmitted < spi->trans_len) {
 			data = 0;
 		} else {
 			/* Nothing to push anymore for now */
@@ -195,14 +194,12 @@ static void push_data(struct device *dev)
 		cnt++;
 		DBG("Pushing 1 byte (total: %d)\n", cnt);
 		write_ssdr(data, info->regs);
-
-		pull_data(dev);
+		spi->transmitted++;
 	}
 
-	spi->t_len += cnt;
-	DBG("Pushed: %d (total: %d)\n", cnt, spi->t_len);
+	DBG("Pushed: %d (total: %d)\n", cnt, spi->transmitted);
 
-	if (spi->tx_buf == spi->tx_buf_end) {
+	if (spi->transmitted == spi->trans_len) {
 		clear_bit_sscr1_tie(info->regs);
 	}
 }
@@ -262,9 +259,6 @@ static int spi_intel_configure(struct device *dev,
 	/* Configuring the rate */
 	write_dds_rate(INTEL_SPI_DSS_RATE(config->max_sys_freq), info->regs);
 
-	spi->tx_buf = spi->tx_buf_end = spi->rx_buf = spi->rx_buf_end = NULL;
-	spi->t_len = spi->r_buf_len = 0;
-
 	return DEV_OK;
 }
 
@@ -284,16 +278,14 @@ static int spi_intel_transceive(struct device *dev,
 		return DEV_USED;
 	}
 
-	/* Flushing recv fifo */
-	spi->rx_buf = spi->rx_buf_end = NULL;
-	pull_data(dev);
-
 	/* Set buffers info */
 	spi->tx_buf = tx_buf;
-	spi->tx_buf_end = tx_buf + tx_buf_len;
 	spi->rx_buf = rx_buf;
-	spi->rx_buf_end = rx_buf + rx_buf_len;
+	spi->t_buf_len = tx_buf_len;
 	spi->r_buf_len = rx_buf_len;
+	spi->transmitted = 0;
+	spi->received = 0;
+	spi->trans_len = max(tx_buf_len, rx_buf_len);
 
 	_spi_control_cs(dev, 1);
 

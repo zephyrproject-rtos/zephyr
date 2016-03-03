@@ -52,11 +52,12 @@ struct spi_intel_data {
 	uint32_t sscr0;
 	uint32_t sscr1;
 	uint8_t *tx_buf;
-	uint8_t *tx_buf_end;
 	uint8_t *rx_buf;
-	uint8_t *rx_buf_end;
+	uint32_t t_buf_len;
 	uint32_t r_buf_len;
-	uint32_t t_len;
+	uint32_t transmitted;
+	uint32_t received;
+	uint32_t trans_len;
 };
 
 /* Registers */
