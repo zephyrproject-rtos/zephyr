@@ -1492,6 +1492,13 @@ static uint8_t att_indicate(struct bt_att *att, struct net_buf *buf)
 	return 0;
 }
 
+static uint8_t att_confirm(struct bt_att *att, struct net_buf *buf)
+{
+	BT_DBG("");
+
+	return att_handle_rsp(att, buf->data, buf->len, 0);
+}
+
 static const struct {
 	uint8_t  op;
 	uint8_t  (*func)(struct bt_att *att, struct net_buf *buf);
@@ -1543,6 +1550,7 @@ static const struct {
 	  sizeof(struct bt_att_notify) },
 	{ BT_ATT_OP_INDICATE, att_indicate,
 	  sizeof(struct bt_att_indicate) },
+	{ BT_ATT_OP_CONFIRM, att_confirm, 0 },
 	{ BT_ATT_OP_WRITE_CMD, att_write_cmd,
 	  sizeof(struct bt_att_write_cmd) },
 	{ BT_ATT_OP_SIGNED_WRITE_CMD, att_signed_write_cmd,
