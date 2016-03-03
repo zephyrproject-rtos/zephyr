@@ -149,3 +149,4 @@ config PINMUX_K64_GPIO_E_NAME
         help
         The name of the Port E GPIO referred to as PTE0..PTE31.
 
+source "drivers/pinmux/Kconfig.stm32"
