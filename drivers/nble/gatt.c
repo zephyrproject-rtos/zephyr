@@ -376,6 +376,12 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return 0;
 }
 
+int bt_gatt_indicate(struct bt_conn *conn,
+		     struct bt_gatt_indicate_params *params)
+{
+	return -ENOSYS;
+}
+
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 {
 	return -ENOSYS;

@@ -401,9 +401,11 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 }
 
 struct notify_data {
+	uint16_t type;
+	const struct bt_gatt_attr *attr;
 	const void *data;
-	size_t len;
-	uint16_t handle;
+	uint16_t len;
+	struct bt_gatt_indicate_params *params;
 };
 
 static int att_notify(struct bt_conn *conn, uint16_t handle, const void *data,
@@ -431,6 +433,53 @@ static int att_notify(struct bt_conn *conn, uint16_t handle, const void *data,
 	return 0;
 }
 
+static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
+			      const void *pdu, uint16_t length, void *user_data)
+{
+	struct bt_gatt_indicate_params *params = user_data;
+
+	params->func(conn, params->attr, err);
+}
+
+static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
+		     bt_att_func_t func, void *user_data,
+		     bt_att_destroy_t destroy)
+{
+	int err;
+
+	err = bt_att_send(conn, buf, func, user_data, destroy);
+	if (err) {
+		BT_ERR("Error sending ATT PDU: %d", err);
+		net_buf_unref(buf);
+	}
+
+	return err;
+}
+
+static int att_indicate(struct bt_conn *conn,
+			struct bt_gatt_indicate_params *params)
+{
+	struct net_buf *buf;
+	struct bt_att_indicate *ind;
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE,
+				sizeof(*ind) + params->len);
+	if (!buf) {
+		BT_WARN("No buffer available to send indication");
+		return -ENOMEM;
+	}
+
+	BT_DBG("conn %p handle 0x%04x", conn, params->attr->handle);
+
+	ind = net_buf_add(buf, sizeof(*ind));
+	ind->handle = sys_cpu_to_le16(params->attr->handle);
+
+	net_buf_add(buf, params->len);
+	memcpy(ind->value, params->data, params->len);
+
+	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
+}
+
 static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct notify_data *data = user_data;
@@ -455,9 +504,9 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	/* Notify all peers configured */
 	for (i = 0; i < ccc->cfg_len; i++) {
 		struct bt_conn *conn;
+		int err;
 
-		/* TODO: Handle indications */
-		if (ccc->value != BT_GATT_CCC_NOTIFY) {
+		if (ccc->value != data->type) {
 			continue;
 		}
 
@@ -466,12 +515,18 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 			continue;
 		}
 
-		if (att_notify(conn, data->handle, data->data, data->len) < 0) {
-			bt_conn_unref(conn);
-			return BT_GATT_ITER_STOP;
+		if (data->type == BT_GATT_CCC_INDICATE) {
+			err = att_indicate(conn, data->params);
+		} else {
+			err = att_notify(conn, data->attr->handle, data->data,
+					 data->len);
 		}
 
 		bt_conn_unref(conn);
+
+		if (err < 0) {
+			return BT_GATT_ITER_STOP;
+		}
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -490,11 +545,33 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return att_notify(conn, attr->handle, data, len);
 	}
 
-	nfy.handle = attr->handle;
+	nfy.attr = attr;
+	nfy.type = BT_GATT_CCC_NOTIFY;
 	nfy.data = data;
 	nfy.len = len;
 
 	bt_gatt_foreach_attr(attr->handle, 0xffff, notify_cb, &nfy);
+
+	return 0;
+}
+
+int bt_gatt_indicate(struct bt_conn *conn,
+		     struct bt_gatt_indicate_params *params)
+{
+	struct notify_data nfy;
+
+	if (!params || !params->attr || !params->attr->handle) {
+		return -EINVAL;
+	}
+
+	if (conn) {
+		return att_indicate(conn, params);
+	}
+
+	nfy.type = BT_GATT_CCC_INDICATE;
+	nfy.params = params;
+
+	bt_gatt_foreach_attr(params->attr->handle, 0xffff, notify_cb, &nfy);
 
 	return 0;
 }
@@ -643,21 +720,6 @@ static void gatt_mtu_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 	bt_gatt_rsp_func_t func = user_data;
 
 	func(conn, err);
-}
-
-static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
-		     bt_att_func_t func, void *user_data,
-		     bt_att_destroy_t destroy)
-{
-	int err;
-
-	err = bt_att_send(conn, buf, func, user_data, destroy);
-	if (err) {
-		BT_ERR("Error sending ATT PDU: %d", err);
-		net_buf_unref(buf);
-	}
-
-	return err;
 }
 
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)

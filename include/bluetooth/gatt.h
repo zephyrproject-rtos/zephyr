@@ -731,6 +731,45 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   const void *data, uint16_t len);
 
+/** @brief Indication complete result callback.
+ *
+ *  @param conn Connection object.
+ *  @param attr Attribute object.
+ *  @param err: 0 success, error in the other case
+ */
+typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
+					const struct bt_gatt_attr *attr,
+					int err);
+
+/** @brief GATT Indicate Value parameters */
+struct bt_gatt_indicate_params {
+	/** Indicate Attribute object*/
+	const struct bt_gatt_attr *attr;
+	/** Indicate Value callback */
+	bt_gatt_indicate_func_t func;
+	/** Indicate Value data*/
+	const void *data;
+	/** Indicate Value length*/
+	uint16_t len;
+};
+
+/** @brief Indicate attribute value change.
+ *
+ *  Send an indication of attribute value change.
+ *  Note: This function should only be called if CCC is declared with
+ *  BT_GATT_CCC otherwise it cannot find a valid peer configuration.
+ *
+ *  Note: This procedure is asynchronous therefore the parameters need to
+ *  remains valid while it is active.
+ *
+ *  @param conn Connection object.
+ *  @param params Indicate parameters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_indicate(struct bt_conn *conn,
+		     struct bt_gatt_indicate_params *params);
+
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 /* Client API */
 
