@@ -1,0 +1,101 @@
+# Kconfig - STM32 UART configuration
+#
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig UART_STM32
+	bool "STM32 MCU serial driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	depends on SOC_STM32
+	help
+	  This option enables the UART driver for STM32F10x family of
+	  processors. Say y if you wish to use serial port on STM32F10x
+	  MCU.
+
+# --- port 0 ---
+
+config UART_STM32_PORT_0
+	bool "Enable STM32 USART1 Port"
+	default n
+	depends on UART_STM32
+	help
+	  Enable support for USART1 port in the driver. Say y here
+	  if you want to use USART1 device.
+
+config UART_STM32_PORT_0_NAME
+	string "Device Name for STM32 USART1 Port"
+	default "UART_0"
+	depends on UART_STM32_PORT_0
+	help
+	  This is the device name for USART1 port, and is
+	  included in the device struct.
+
+config UART_STM32_PORT_0_BAUD_RATE
+	int "STM32 USART1 Baud Rate"
+	default 9600
+	depends on UART_STM32_PORT_0
+	help
+	  The baud rate for USART1 port to be set to at boot.
+
+# --- port 1 ---
+
+config UART_STM32_PORT_1
+	bool "Enable STM32 USART2 Port"
+	default n
+	depends on UART_STM32
+	help
+	  Enable support for USART2 port in the driver. Say y here
+	  if you want to use USART2 device.
+
+config UART_STM32_PORT_1_NAME
+	string "Device Name for STM32 USART1 Port"
+	default "UART_1"
+	depends on UART_STM32_PORT_1
+	help
+	  This is the device name for USART2 port, and is
+	  included in the device struct.
+
+config UART_STM32_PORT_1_BAUD_RATE
+	int "STM32 USART1 Baud Rate"
+	default 9600
+	depends on UART_STM32_PORT_1
+	help
+	  The baud rate for USART2 port to be set to at boot.
+
+# --- port 2 ---
+
+config UART_STM32_PORT_2
+	bool "Enable STM32 USART3 Port"
+	default n
+	depends on UART_STM32
+	help
+	  Enable support for USART3 port in the driver. Say y here
+	  if you want to use USART3 device.
+
+config UART_STM32_PORT_2_NAME
+	string "Device Name for STM32 USART1 Port"
+	default "UART_2"
+	depends on UART_STM32_PORT_2
+	help
+	  This is the device name for USART3 port, and is
+	  included in the device struct.
+
+config UART_STM32_PORT_2_BAUD_RATE
+	int "STM32 USART1 Baud Rate"
+	default 9600
+	depends on UART_STM32_PORT_2
+	help
+	  The baud rate for USART3 port to be set to at boot.

@@ -104,4 +104,6 @@ source "drivers/serial/Kconfig.atmel_sam3"
 
 source "drivers/serial/Kconfig.qmsi"
 
+source "drivers/serial/Kconfig.stm32"
+
 endif
