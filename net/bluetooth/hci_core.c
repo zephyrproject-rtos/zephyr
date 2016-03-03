@@ -1055,6 +1055,8 @@ static void link_key_notify(struct net_buf *buf)
 			atomic_set_bit(&conn->keys->flags,
 				       BT_KEYS_AUTHENTICATED);
 		}
+	} else if (evt->key_type == BT_LK_AUTH_COMBINATION_P192) {
+		atomic_set_bit(&conn->keys->flags, BT_KEYS_AUTHENTICATED);
 	}
 
 	bt_conn_unref(conn);
