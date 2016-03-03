@@ -988,6 +988,9 @@ struct nano_stack {
 	nano_thread_id_t fiber;
 	uint32_t *base;
 	uint32_t *next;
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct nano_stack *__next;
+#endif
 };
 
 /**

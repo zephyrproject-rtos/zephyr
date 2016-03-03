@@ -35,6 +35,7 @@
  */
 
 #include <nano_private.h>
+#include <misc/debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <sections.h>
 
@@ -42,6 +43,7 @@ void nano_stack_init(struct nano_stack *stack, uint32_t *data)
 {
 	stack->next = stack->base = data;
 	stack->fiber = (struct tcs *)0;
+	SYS_TRACING_OBJ_INIT(nano_stack, stack);
 }
 
 FUNC_ALIAS(_stack_push_non_preemptible, nano_isr_stack_push, void);
