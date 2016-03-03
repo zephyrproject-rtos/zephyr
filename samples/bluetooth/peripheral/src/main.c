@@ -206,6 +206,23 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
+static struct bt_gatt_ccc_cfg vnd_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static uint8_t simulate_vnd;
+static uint8_t indicating;
+static struct bt_gatt_indicate_params ind_params;
+
+static void vnd_ccc_cfg_changed(uint16_t value)
+{
+	simulate_vnd = (value == BT_GATT_CCC_INDICATE) ? 1 : 0;
+}
+
+static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			int err)
+{
+	printk("Indication %s\n", err < 0 ? "fail" : "success");
+	indicating = 0;
+}
+
 #define MAX_DATA 74
 static struct vnd_long_value {
 	/* TODO: buffer needs to be per connection */
@@ -362,11 +379,13 @@ static struct bt_gatt_attr vnd_attrs[] = {
 	/* Vendor Primary Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&vnd_uuid),
 	BT_GATT_CHARACTERISTIC(&vnd_enc_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
+			       BT_GATT_CHRC_INDICATE),
 	BT_GATT_DESCRIPTOR(&vnd_enc_uuid.uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_ENCRYPT |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT,
 			   read_vnd, write_vnd, vnd_value),
+	BT_GATT_CCC(vnd_ccc_cfg, vnd_ccc_cfg_changed),
 	BT_GATT_CHARACTERISTIC(&vnd_auth_uuid.uuid,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
 	BT_GATT_DESCRIPTOR(&vnd_auth_uuid.uuid,
@@ -527,6 +546,22 @@ void main(void)
 
 			bt_gatt_notify(NULL, &bas_attrs[2], &battery,
 				       sizeof(battery));
+		}
+
+		/* Vendor indication simulation */
+		if (simulate_vnd) {
+			if (indicating) {
+				return;
+			}
+
+			ind_params.attr = &vnd_attrs[2];
+			ind_params.func = indicate_cb;
+			ind_params.data = &indicating;
+			ind_params.len = sizeof(indicating);
+
+			if (bt_gatt_indicate(NULL, &ind_params) == 0) {
+				indicating = 1;
+			}
 		}
 	}
 }
