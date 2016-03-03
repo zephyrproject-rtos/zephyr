@@ -36,6 +36,7 @@
 
 #include <board.h>
 #include <i2c.h>
+#include <sys_clock.h>
 
 #include <misc/util.h>
 
@@ -110,9 +111,10 @@ static uint32_t clk_div_calc(struct device *dev)
 		return 0x0001D0D0;
 	case I2C_SPEED_FAST:
 		/* CKDIV = 0
-		 * CHDIV = CLDIV = 101 = 0x65
+		 * CHDIV = 101 = 0x65
+		 * CLDIV = 106 = 0x6A
 		 */
-		return 0x00006565;
+		return 0x0000656A;
 	default:
 		/* Return 0 as error */
 		return 0;
@@ -126,32 +128,75 @@ static uint32_t clk_div_calc(struct device *dev)
 
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 	uint32_t i2c_clk;
-	uint32_t cldiv, ckdiv;
+	uint32_t cldiv, chdiv, ckdiv;
+	uint32_t i2c_h_min_time, i2c_l_min_time;
+	uint32_t cldiv_min, chdiv_min;
+	uint32_t mck;
 
 	/* The T(low) and T(high) are used to calculate CLDIV and CHDIV.
 	 * Since we treat both clock low and clock high to have same period,
 	 * the I2C clock frequency used for calculation has to be doubled.
+	 *
+	 * The I2C spec has the following minimum timing requirement:
+	 * Standard Speed: High 4000ns, Low 4700ns
+	 * Fast Speed: High 600ns, Low 1300ns
+	 *
+	 * So use these to calculate chdiv_min and cldiv_min.
 	 */
 	switch ((dev_data->dev_config.bits.speed)) {
 	case I2C_SPEED_STANDARD:
 		i2c_clk = 100000 * 2;
+		i2c_h_min_time = 4000;
+		i2c_l_min_time = 4700;
 		break;
 	case I2C_SPEED_FAST:
 		i2c_clk = 400000 * 2;
+		i2c_h_min_time = 600;
+		i2c_l_min_time = 1300;
 		break;
 	default:
 		/* Return 0 as error */
 		return 0;
 	}
 
+	/* Calculate CLDIV (which will be used for CHDIV also) */
 	cldiv = (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) / i2c_clk - 4;
+
+	/* Calculate minimum CHDIV and CLDIV */
+
+	/* Make 1/mck be in micro second */
+	mck = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+	      / MSEC_PER_SEC / USEC_PER_MSEC;
+
+	/* The +1 is to make sure we don't go under the minimum
+	 * after the division. In other words, force rounding up.
+	 */
+	cldiv_min = (i2c_l_min_time * mck / 1000) - 4 + 1;
+	chdiv_min = (i2c_h_min_time * mck / 1000) - 4 + 1;
+
 	ckdiv = 0;
 	while (cldiv > 255) {
 		ckdiv++;
-		cldiv /= 2;
+
+		/* Math is there to round up.
+		 * Rounding up makes the SCL periods longer,
+		 * which makes clock slower.
+		 * This is fine as faster clock may cause
+		 * issues.
+		 */
+		cldiv = (cldiv >> 1) + (cldiv & 0x01);
+
+		cldiv_min = (cldiv_min >> 1) + (cldiv_min & 0x01);
+		chdiv_min = (chdiv_min >> 1) + (chdiv_min & 0x01);
 	}
 
-	return ((ckdiv << TWI_CWGR_CKDIV_POS) + (cldiv << TWI_CWGR_CHDIV_POS)
+	chdiv = cldiv;
+
+	/* Make sure we are above minimum requirements */
+	cldiv = max(cldiv, cldiv_min);
+	chdiv = max(chdiv, chdiv_min);
+
+	return ((ckdiv << TWI_CWGR_CKDIV_POS) + (chdiv << TWI_CWGR_CHDIV_POS)
 		+ (cldiv << TWI_CWGR_CLDIV_POS));
 
 #endif /* CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 84000000 */
