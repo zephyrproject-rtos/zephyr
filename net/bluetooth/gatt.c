@@ -621,7 +621,7 @@ static void gatt_subscription_remove(struct bt_conn *conn,
 	params->notify(conn, params, NULL, 0);
 }
 
-static void remove_subscribtions(struct bt_conn *conn)
+static void remove_subscriptions(struct bt_conn *conn)
 {
 	struct bt_gatt_subscribe_params *params, *prev;
 
@@ -1635,6 +1635,6 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 		return;
 	}
 
-	remove_subscribtions(conn);
+	remove_subscriptions(conn);
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 }
