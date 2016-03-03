@@ -47,4 +47,6 @@ source "drivers/gpio/Kconfig.k64"
 
 source "drivers/gpio/Kconfig.atmel_sam3"
 
+source "drivers/gpio/Kconfig.stm32"
+
 endif # GPIO
