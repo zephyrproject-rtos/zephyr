@@ -1100,18 +1100,29 @@ static void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
 static void link_key_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_link_key_req *evt = (void *)buf->data;
-	struct bt_keys *keys;
+	struct bt_conn *conn;
 
 	BT_DBG("%s", bt_addr_str(&evt->bdaddr));
 
-	keys = bt_keys_find_link_key(&evt->bdaddr);
-	if (!keys) {
-		BT_ERR("Can't find keys for %s", bt_addr_str(&evt->bdaddr));
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (!conn) {
+		BT_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		link_key_neg_reply(&evt->bdaddr);
 		return;
 	}
 
-	link_key_reply(&evt->bdaddr, keys->link_key.val);
+	if (!conn->keys) {
+		conn->keys = bt_keys_find_link_key(&evt->bdaddr);
+	}
+
+	if (!conn->keys) {
+		link_key_neg_reply(&evt->bdaddr);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	link_key_reply(&evt->bdaddr, conn->keys->link_key.val);
+	bt_conn_unref(conn);
 }
 
 static void io_capa_resp(struct net_buf *buf)
