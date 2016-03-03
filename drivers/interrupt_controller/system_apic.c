@@ -26,6 +26,7 @@
 #include <arch/cpu.h>
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
+#include <irq.h>
 
 #if !defined(LOAPIC_IRQ_BASE) && !defined (LOAPIC_IRQ_COUNT)
 
@@ -172,7 +173,7 @@ void _SysIntVecProgram(unsigned int vector, unsigned int irq, uint32_t flags)
  *
  * @return N/A
  */
-void irq_enable(unsigned int irq)
+void _arch_irq_enable(unsigned int irq)
 {
 	if (IS_IOAPIC_IRQ(irq)) {
 		_ioapic_irq_enable(irq);
@@ -192,7 +193,7 @@ void irq_enable(unsigned int irq)
  *
  * @return N/A
  */
-void irq_disable(unsigned int irq)
+void _arch_irq_disable(unsigned int irq)
 {
 	if (IS_IOAPIC_IRQ(irq)) {
 		_ioapic_irq_disable(irq);
