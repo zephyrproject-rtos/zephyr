@@ -1,0 +1,64 @@
+# Kconfig - ST Microelectronics STM32F1 MCU line
+#
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+choice
+prompt "STM32F1x MCU Selection"
+depends on SOC_STM32F1X
+
+config SOC_STM32F103VE
+       bool "STM32F103VE"
+
+config SOC_STM32F103RB
+       bool "STM32F103RB"
+
+endchoice
+
+if SOC_STM32F1X
+
+source "arch/arm/soc/st_stm32/stm32f1/Kconfig.soc.stm32f1*"
+
+
+config SOC
+       default st_stm32/stm32f1
+
+config SRAM_BASE_ADDRESS
+        default 0x20000000
+
+config FLASH_BASE_ADDRESS
+        default 0x08000000
+
+config NUM_IRQ_PRIO_BITS
+        int
+        default 4
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+        default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+        default 50
+
+config UART_CONSOLE_PRIORITY
+        default 60
+
+if UART_CONSOLE
+
+config UART_CONSOLE_ON_DEV_NAME
+        default "UART_0"
+
+endif # UART_CONSOLE
+
+endif # SOC_STM32F1X
