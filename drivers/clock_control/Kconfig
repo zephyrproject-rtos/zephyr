@@ -69,7 +69,7 @@ config  CLOCK_CONTROL_QUARK_SE_EXTERNAL
 config  CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME
        string
        prompt "Quark SE external clock device name"
-       depends on CLOCK_CONTROL_QUARK_SE_PERIPHERAL
+       depends on CLOCK_CONTROL_QUARK_SE_EXTERNAL
        default "clk_external"
 
 config  CLOCK_CONTROL_QUARK_SE_SENSOR
@@ -83,5 +83,5 @@ config  CLOCK_CONTROL_QUARK_SE_SENSOR
 config  CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
        string
        prompt "Quark SE sensor clock device name"
-       depends on CLOCK_CONTROL_QUARK_SE_PERIPHERAL
+       depends on CLOCK_CONTROL_QUARK_SE_SENSOR
        default "clk_sensor"
