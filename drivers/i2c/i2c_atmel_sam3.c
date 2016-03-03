@@ -59,7 +59,11 @@
 #define STATE_BUSY		(1 << 0)
 #define STATE_TX		(1 << 1)
 #define STATE_RX		(1 << 2)
-#define STATE_ERR		(1 << 3)
+
+/* return values for internal functions */
+#define RET_OK			0
+#define RET_ERR			1
+#define RET_NACK		2
 
 
 typedef void (*config_func_t)(struct device *port);
@@ -267,7 +271,7 @@ static inline void transfer_setup(struct device *dev, uint16_t slave_address)
 	cfg->port->iadr = iadr;
 }
 
-static inline void msg_write(struct device *dev)
+static inline int msg_write(struct device *dev)
 {
 	struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
@@ -293,8 +297,7 @@ static inline void msg_write(struct device *dev)
 
 	/* Check for error */
 	if (cfg->port->sr & TWI_IRQ_NACK) {
-		dev_data->state |= STATE_ERR;
-		return;
+		return RET_NACK;
 	}
 
 	/* STOP if needed */
@@ -315,9 +318,11 @@ static inline void msg_write(struct device *dev)
 
 	/* Disable PDC */
 	cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS;
+
+	return RET_OK;
 }
 
-static inline void msg_read(struct device *dev)
+static inline int msg_read(struct device *dev)
 {
 	struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
@@ -340,6 +345,7 @@ static inline void msg_read(struct device *dev)
 	if ((dev_data->xfr_len == 1)
 	    && (dev_data->xfr_flags & I2C_MSG_STOP)) {
 		ctrl_reg |= TWI_CR_STOP;
+		dev_data->xfr_flags &= ~I2C_MSG_STOP;
 	}
 	cfg->port->cr = ctrl_reg;
 
@@ -362,8 +368,14 @@ static inline void msg_read(struct device *dev)
 		} else {
 			last_len = 1;
 
-			/* Set STOP bit for last byte */
-			cfg->port->cr = TWI_CR_STOP;
+			/* Set STOP bit for last byte.
+			 * The extra check here is to prevent setting
+			 * TWI_CR_STOP twice, when the message length
+			 * is 1, as it is already set above.
+			 */
+			if (dev_data->xfr_flags & I2C_MSG_STOP) {
+				cfg->port->cr = TWI_CR_STOP;
+			}
 		}
 		cfg->port->pdc.rcr = last_len;
 
@@ -380,9 +392,12 @@ static inline void msg_read(struct device *dev)
 
 		/* Check for errors */
 		stat_reg = cfg->port->sr;
-		if ((stat_reg & TWI_IRQ_NACK) || (stat_reg & TWI_IRQ_OVRE)) {
-			dev_data->state |= STATE_ERR;
-			return;
+		if (stat_reg & TWI_IRQ_NACK) {
+			return RET_NACK;
+		}
+
+		if (stat_reg & TWI_IRQ_OVRE) {
+			return RET_ERR;
 		}
 
 		/* no more bytes to send */
@@ -402,6 +417,8 @@ static inline void msg_read(struct device *dev)
 	 * So we wait here.
 	 */
 	sr_bits_set_wait(dev, TWI_IRQ_TXCOMP);
+
+	return RET_OK;
 }
 
 static int i2c_sam3_transfer(struct device *dev,
@@ -414,6 +431,7 @@ static int i2c_sam3_transfer(struct device *dev,
 	uint8_t msg_left = num_msgs;
 	uint32_t pflags = 0;
 	int ret = DEV_OK;
+	int xfr_ret;
 
 	/* Why bother processing no messages */
 	if (!msgs || !num_msgs) {
@@ -481,18 +499,29 @@ static int i2c_sam3_transfer(struct device *dev,
 
 		if ((dev_data->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 			dev_data->state |= STATE_TX;
-			msg_write(dev);
+			xfr_ret = msg_write(dev);
 		} else {
 			dev_data->state |= STATE_RX;
-			msg_read(dev);
+			xfr_ret = msg_read(dev);
 		}
 
-		if (dev_data->state & STATE_ERR) {
+		if (xfr_ret == RET_NACK) {
+			/* Disable PDC if NACK is received. */
+			cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS
+					      | PDC_PTCR_RXTDIS;
+
+			ret = DEV_FAIL;
+			goto done;
+		}
+
+		if (xfr_ret == RET_ERR) {
 			/* Error encountered:
 			 * Reset the controller and configure it again.
 			 */
-			cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS | PDC_PTCR_RXTDIS;
-			cfg->port->cr = TWI_CR_SWRST;
+			cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS
+					      | PDC_PTCR_RXTDIS;
+			cfg->port->cr = TWI_CR_SWRST | TWI_CR_MSDIS
+					| TWI_CR_SVDIS;
 
 			i2c_sam3_runtime_configure(dev,
 						   dev_data->dev_config.raw);
