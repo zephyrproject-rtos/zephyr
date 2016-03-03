@@ -71,6 +71,16 @@ extern "C" {
  */
 #define UART_ERROR_BREAK    (1 << 3)
 
+/**
+ * @brief Define the application callback function signature for UART.
+ *
+ * @param port Device struct for the UART device.
+ */
+typedef void (*uart_irq_callback_t)(struct device *port);
+
+/* For configuring IRQ on each individual UART device. Internal use only. */
+typedef void (*uart_irq_config_func_t)(struct device *port);
+
 /** @brief UART device configuration.*/
 struct uart_device_config {
 	/**
@@ -90,6 +100,10 @@ struct uart_device_config {
 #ifdef CONFIG_PCI
 	struct pci_dev_info  pci_dev;
 #endif /* CONFIG_PCI */
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_config_func_t	irq_config_func;
+#endif
 };
 
 /** @brief Driver API structure. */
@@ -144,6 +158,9 @@ struct uart_driver_api {
 
 	/** Interrupt driven input hook function */
 	int (*irq_input_hook)(struct device *dev, uint8_t byte);
+
+	/** Set the callback function */
+	void (*irq_callback_set)(struct device *dev, uart_irq_callback_t cb);
 
 #endif
 
@@ -513,6 +530,30 @@ static inline void uart_irq_input_hook_set(struct device *dev,
 
 	if (api != NULL) {
 		api->irq_input_hook = hook;
+	}
+}
+
+
+/**
+ * @brief Set the IRQ callback function pointer.
+ *
+ * This sets up the callback for IRQ. When an IRQ is triggered,
+ * the specified function will be called.
+ *
+ * @param dev UART device structure.
+ * @param cb Pointer to the callback function.
+ *
+ * @return N/A
+ */
+static inline void uart_irq_callback_set(struct device *dev,
+					 uart_irq_callback_t cb)
+{
+	struct uart_driver_api *api;
+
+	api = (struct uart_driver_api *)dev->driver_api;
+
+	if ((api != NULL) && (api->irq_callback_set != NULL)) {
+		api->irq_callback_set(dev, cb);
 	}
 }
 

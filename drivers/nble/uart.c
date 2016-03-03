@@ -125,7 +125,7 @@ static size_t nble_discard(struct device *uart, size_t len)
 	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
 }
 
-void bt_uart_isr(void *unused)
+static void bt_uart_isr(struct device *unused)
 {
 	static struct net_buf *buf;
 
@@ -206,16 +206,14 @@ int nble_open(void)
 	uart_irq_rx_disable(nble_dev);
 	uart_irq_tx_disable(nble_dev);
 
-	IRQ_CONNECT(CONFIG_NBLE_UART_IRQ, CONFIG_NBLE_UART_IRQ_PRI,
-		    bt_uart_isr, 0, UART_IRQ_FLAGS);
-	irq_enable(CONFIG_NBLE_UART_IRQ);
-
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(nble_dev)) {
 		unsigned char c;
 
 		uart_fifo_read(nble_dev, &c, 1);
 	}
+
+	uart_irq_callback_set(nble_dev, bt_uart_isr);
 
 	uart_irq_rx_enable(nble_dev);
 

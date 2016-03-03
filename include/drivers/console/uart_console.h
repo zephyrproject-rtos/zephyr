@@ -46,8 +46,6 @@ struct uart_console_input {
  */
 void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines);
 
-void uart_console_isr(void *unused);
-
 #ifdef __cplusplus
 }
 #endif

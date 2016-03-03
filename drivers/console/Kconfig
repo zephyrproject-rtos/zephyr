@@ -73,20 +73,6 @@ config UART_CONSOLE_ON_DEV_NAME
 	This option specifies the name of UART device to be used for
 	UART console.
 
-config UART_CONSOLE_IRQ
-	int "IRQ of UART Device for UART Console"
-	depends on UART_CONSOLE
-	help
-	This option specifies the IRQ of UART device to be used for
-	UART console.
-
-config UART_CONSOLE_IRQ_PRI
-	int "IRQ of UART Device for UART Console"
-	depends on UART_CONSOLE
-	help
-	This option specifies the IRQ priorityof UART device to be
-	used for UART console.
-
 config UART_CONSOLE_PRIORITY
 	int
 	prompt "Init priority"
@@ -159,19 +145,5 @@ config  UART_PIPE_ON_DEV_NAME
 	help
 	This option specifies the name of UART device to be used
 	for pipe UART.
-
-config  UART_PIPE_IRQ
-	int "IRQ for pipe UART"
-	depends on UART_PIPE
-	help
-	This option specifies the IRQ of UART device to be used
-	for pipe UART.
-
-config  UART_PIPE_IRQ_PRI
-	int "IRQ Priority for pipe UART"
-	depends on UART_PIPE
-	help
-	This option specifies the IRQ priority of UART device
-	to be used for pipe UART.
 
 endif

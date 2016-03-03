@@ -34,6 +34,8 @@
 #include <uart.h>
 #include <sections.h>
 
+#include "uart_stellaris.h"
+
 /* definitions */
 
 /* Stellaris UART module */
@@ -76,6 +78,10 @@ struct _uart {
 /* Device data structure */
 struct uart_stellaris_dev_data_t {
 	uint32_t baud_rate;	/* Baud rate */
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_callback_t	cb;	/**< Callback function pointer */
+#endif
 };
 
 /* convenience defines */
@@ -270,6 +276,10 @@ static int uart_stellaris_init(struct device *dev)
 		     DEV_CFG(dev)->sys_clk_freq);
 	line_control_defaults_set(dev);
 	enable(dev);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	DEV_CFG(dev)->irq_config_func(dev);
+#endif
 
 	dev->driver_api = &uart_stellaris_driver_api;
 
@@ -565,6 +575,41 @@ static int uart_stellaris_irq_update(struct device *dev)
 	return 1;
 }
 
+/**
+ * @brief Set the callback function pointer for IRQ.
+ *
+ * @param dev UART device struct
+ * @param cb Callback function pointer.
+ *
+ * @return N/A
+ */
+static void uart_stellaris_irq_callback_set(struct device *dev,
+					    uart_irq_callback_t cb)
+{
+	struct uart_stellaris_dev_data_t * const dev_data = DEV_DATA(dev);
+
+	dev_data->cb = cb;
+}
+
+/**
+ * @brief Interrupt service routine.
+ *
+ * This simply calls the callback function, if one exists.
+ *
+ * @param arg Argument to ISR.
+ *
+ * @return N/A
+ */
+void uart_stellaris_isr(void *arg)
+{
+	struct device *dev = arg;
+	struct uart_stellaris_dev_data_t * const dev_data = DEV_DATA(dev);
+
+	if (dev_data->cb) {
+		dev_data->cb(dev);
+	}
+}
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
@@ -586,6 +631,7 @@ static struct uart_driver_api uart_stellaris_driver_api = {
 	.irq_err_disable = uart_stellaris_irq_err_disable,
 	.irq_is_pending = uart_stellaris_irq_is_pending,
 	.irq_update = uart_stellaris_irq_update,
+	.irq_callback_set = uart_stellaris_irq_callback_set,
 
 #endif
 };
@@ -593,9 +639,17 @@ static struct uart_driver_api uart_stellaris_driver_api = {
 
 #ifdef CONFIG_UART_STELLARIS_PORT_0
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_0(struct device *port);
+#endif
+
 static struct uart_device_config uart_stellaris_dev_cfg_0 = {
 	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_0_BASE_ADDR,
 	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_0_CLK_FREQ,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_0,
+#endif
 };
 
 static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_0 = {
@@ -606,13 +660,32 @@ DEVICE_INIT(uart_stellaris0, CONFIG_UART_STELLARIS_PORT_0_NAME, &uart_stellaris_
 			&uart_stellaris_dev_data_0, &uart_stellaris_dev_cfg_0,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_0(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_STELLARIS_PORT_0_IRQ,
+		    CONFIG_UART_STELLARIS_PORT_0_IRQ_PRI,
+		    uart_stellaris_isr, DEVICE_GET(uart_stellaris0),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_STELLARIS_PORT_0_IRQ);
+}
+#endif
+
 #endif /* CONFIG_UART_STELLARIS_PORT_0 */
 
 #ifdef CONFIG_UART_STELLARIS_PORT_1
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_1(struct device *port);
+#endif
+
 static struct uart_device_config uart_stellaris_dev_cfg_1 = {
 	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_1_BASE_ADDR,
 	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_1_CLK_FREQ,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_1,
+#endif
 };
 
 static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_1 = {
@@ -623,13 +696,32 @@ DEVICE_INIT(uart_stellaris1, CONFIG_UART_STELLARIS_PORT_1_NAME, &uart_stellaris_
 			&uart_stellaris_dev_data_1, &uart_stellaris_dev_cfg_1,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_1(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_STELLARIS_PORT_1_IRQ,
+		    CONFIG_UART_STELLARIS_PORT_1_IRQ_PRI,
+		    uart_stellaris_isr, DEVICE_GET(uart_stellaris1),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_STELLARIS_PORT_1_IRQ);
+}
+#endif
+
 #endif /* CONFIG_UART_STELLARIS_PORT_1 */
 
 #ifdef CONFIG_UART_STELLARIS_PORT_2
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_2(struct device *port);
+#endif
+
 static struct uart_device_config uart_stellaris_dev_cfg_2 = {
 	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_2_BASE_ADDR,
 	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_2_CLK_FREQ,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_2,
+#endif
 };
 
 static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_2 = {
@@ -639,5 +731,16 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_2 = {
 DEVICE_INIT(uart_stellaris2, CONFIG_UART_STELLARIS_PORT_2_NAME, &uart_stellaris_init,
 			&uart_stellaris_dev_data_2, &uart_stellaris_dev_cfg_2,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_2(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_STELLARIS_PORT_2_IRQ,
+		    CONFIG_UART_STELLARIS_PORT_2_IRQ_PRI,
+		    uart_stellaris_isr, DEVICE_GET(uart_stellaris2),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_STELLARIS_PORT_2_IRQ);
+}
+#endif
 
 #endif /* CONFIG_UART_STELLARIS_PORT_2 */

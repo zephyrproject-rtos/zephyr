@@ -445,7 +445,7 @@ static void h5_process_complete_packet(uint8_t *hdr)
 	}
 }
 
-void bt_uart_isr(void *unused)
+static void bt_uart_isr(struct device *unused)
 {
 	static int remaining;
 	uint8_t byte;
@@ -748,16 +748,14 @@ static int h5_open(void)
 	uart_irq_rx_disable(h5_dev);
 	uart_irq_tx_disable(h5_dev);
 
-	IRQ_CONNECT(CONFIG_BLUETOOTH_UART_IRQ, CONFIG_BLUETOOTH_UART_IRQ_PRI,
-		    bt_uart_isr, 0, UART_IRQ_FLAGS);
-	irq_enable(CONFIG_BLUETOOTH_UART_IRQ);
-
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(h5_dev)) {
 		unsigned char c;
 
 		uart_fifo_read(h5_dev, &c, 1);
 	}
+
+	uart_irq_callback_set(h5_dev, bt_uart_isr);
 
 	h5_init();
 

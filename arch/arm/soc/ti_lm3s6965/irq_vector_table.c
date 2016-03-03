@@ -31,15 +31,8 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#if defined(CONFIG_CONSOLE_HANDLER)
 #include <soc.h>
-#include <console/uart_console.h>
-#endif /* CONFIG_CONSOLE_HANDLER */
-
-#if defined(CONFIG_BLUETOOTH_UART)
-#include <soc.h>
-#include <bluetooth/uart.h>
-#endif /* CONFIG_BLUETOOTH_UART */
+#include <serial/uart_stellaris.h>
 
 extern void _isr_wrapper(void);
 typedef void (*vth)(void); /* Vector Table Handler */
@@ -54,30 +47,34 @@ vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 
 extern void _irq_spurious(void);
 
-#if defined(CONFIG_CONSOLE_HANDLER)
-static void _uart_console_isr(void)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+static void _uart_stellaris_port_0_isr(void)
 {
-	uart_console_isr(NULL);
+	uart_stellaris_isr(DEVICE_GET(uart_stellaris0));
 	_IntExit();
 }
-#endif /* CONFIG_CONSOLE_HANDLER */
 
-#if defined(CONFIG_BLUETOOTH_UART)
-static void _bt_uart_isr(void)
+static void _uart_stellaris_port_1_isr(void)
 {
-	bt_uart_isr(NULL);
+	uart_stellaris_isr(DEVICE_GET(uart_stellaris1));
 	_IntExit();
 }
-#endif /* CONFIG_BLUETOOTH_UART */
+
+static void _uart_stellaris_port_2_isr(void)
+{
+	uart_stellaris_isr(DEVICE_GET(uart_stellaris2));
+	_IntExit();
+}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 /* placeholders: fill with real ISRs */
 vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)] = _irq_spurious,
-#if defined(CONFIG_CONSOLE_HANDLER)
-	[CONFIG_UART_CONSOLE_IRQ] = _uart_console_isr,
-#endif
-#if defined(CONFIG_BLUETOOTH_UART)
-	[CONFIG_BLUETOOTH_UART_IRQ] = _bt_uart_isr,
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+	[UART_STELLARIS_PORT_0_IRQ] = _uart_stellaris_port_0_isr,
+	[UART_STELLARIS_PORT_1_IRQ] = _uart_stellaris_port_1_isr,
+	[UART_STELLARIS_PORT_2_IRQ] = _uart_stellaris_port_2_isr,
 #endif
 };
 

@@ -62,15 +62,6 @@ void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb);
  */
 int uart_pipe_send(const uint8_t *data, int len);
 
-/** @brief Simple UART interrupt handler.
- *
- *  This function is called from an interrupt and should not be called by
- *  an application directly.
- *
- *  @param unused unused
- */
-void uart_pipe_isr(void *unused);
-
 #ifdef __cplusplus
 }
 #endif

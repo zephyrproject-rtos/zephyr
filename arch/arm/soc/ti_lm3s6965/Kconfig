@@ -66,7 +66,9 @@ if UART_STELLARIS_PORT_0
 config UART_STELLARIS_PORT_0_BASE_ADDR
 	default 0x4000C000
 config UART_STELLARIS_PORT_0_IRQ
-	default 6
+	default 5
+config UART_STELLARIS_PORT_0_IRQ_PRI
+	default 3
 config UART_STELLARIS_PORT_0_BAUD_RATE
 	default 115200
 config UART_STELLARIS_PORT_0_CLK_FREQ
@@ -81,6 +83,8 @@ config UART_STELLARIS_PORT_1_BASE_ADDR
 	default 0x4000D000
 config UART_STELLARIS_PORT_1_IRQ
 	default 6
+config UART_STELLARIS_PORT_1_IRQ_PRI
+	default 3
 config UART_STELLARIS_PORT_1_BAUD_RATE
 	default 115200
 config UART_STELLARIS_PORT_1_CLK_FREQ
@@ -94,6 +98,8 @@ config UART_STELLARIS_PORT_2_BASE_ADDR
 	default 0x4000E000
 config UART_STELLARIS_PORT_2_IRQ
 	default 33
+config UART_STELLARIS_PORT_2_IRQ_PRI
+	default 3
 config UART_STELLARIS_PORT_2_BAUD_RATE
 	default 115200
 config UART_STELLARIS_PORT_2_CLK_FREQ
@@ -106,10 +112,6 @@ if UART_CONSOLE
 
 config UART_CONSOLE_ON_DEV_NAME
 	default "UART_0"
-config UART_CONSOLE_IRQ
-	default 5
-config UART_CONSOLE_IRQ_PRI
-	default 3
 
 endif
 
@@ -117,10 +119,6 @@ if BLUETOOTH_UART
 
 config BLUETOOTH_UART_ON_DEV_NAME
 	default "UART_1"
-config BLUETOOTH_UART_IRQ
-	default 6
-config BLUETOOTH_UART_IRQ_PRI
-	default 3
 
 endif
 
@@ -128,10 +126,6 @@ if UART_PIPE
 
 config UART_PIPE_ON_DEV_NAME
 	default "UART_2"
-config UART_PIPE_IRQ
-	default 33
-config UART_PIPE_IRQ_PRI
-	default 3
 
 endif
 

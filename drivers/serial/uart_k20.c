@@ -31,6 +31,7 @@
 #include <toolchain.h>
 #include <sections.h>
 
+#include "uart_k20.h"
 #include "uart_k20_priv.h"
 
 /* convenience defines */
@@ -45,6 +46,10 @@
 /* Device data structure */
 struct uart_k20_dev_data_t {
 	uint32_t baud_rate;	/* Baud rate */
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_callback_t     cb;     /**< Callback function pointer */
+#endif
 };
 
 static struct uart_driver_api uart_k20_driver_api;
@@ -89,6 +94,10 @@ static int uart_k20_init(struct device *dev)
 
 	/* restore interrupt state */
 	irq_unlock(old_level);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	dev_cfg->irq_config_func(dev);
+#endif
 
 	dev->driver_api = &uart_k20_driver_api;
 
@@ -339,6 +348,41 @@ static int uart_k20_irq_update(struct device *dev)
 	return 1;
 }
 
+/**
+ * @brief Set the callback function pointer for IRQ.
+ *
+ * @param dev UART device struct
+ * @param cb Callback function pointer.
+ *
+ * @return N/A
+ */
+static void uart_k20_irq_callback_set(struct device *dev,
+				      uart_irq_callback_t cb)
+{
+	struct uart_k20_dev_data_t * const dev_data = DEV_DATA(dev);
+
+	dev_data->cb = cb;
+}
+
+/**
+ * @brief Interrupt service routine.
+ *
+ * This simply calls the callback function, if one exists.
+ *
+ * @param arg Argument to ISR.
+ *
+ * @return N/A
+ */
+void uart_k20_isr(void *arg)
+{
+	struct device *dev = arg;
+	struct uart_k20_dev_data_t * const dev_data = DEV_DATA(dev);
+
+	if (dev_data->cb) {
+		dev_data->cb(dev);
+	}
+}
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
@@ -360,6 +404,7 @@ static struct uart_driver_api uart_k20_driver_api = {
 	.irq_err_disable = uart_k20_irq_err_disable,
 	.irq_is_pending = uart_k20_irq_is_pending,
 	.irq_update = uart_k20_irq_update,
+	.irq_callback_set = uart_k20_irq_callback_set,
 
 #endif
 };
@@ -367,9 +412,17 @@ static struct uart_driver_api uart_k20_driver_api = {
 
 #ifdef CONFIG_UART_K20_PORT_0
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_0(struct device *port);
+#endif
+
 static struct uart_device_config uart_k20_dev_cfg_0 = {
 	.base = (uint8_t *)CONFIG_UART_K20_PORT_0_BASE_ADDR,
 	.sys_clk_freq = CONFIG_UART_K20_PORT_0_CLK_FREQ,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_0,
+#endif
 };
 
 static struct uart_k20_dev_data_t uart_k20_dev_data_0 = {
@@ -380,13 +433,32 @@ DEVICE_INIT(uart_k20_0, CONFIG_UART_K20_PORT_0_NAME, &uart_k20_init,
 			&uart_k20_dev_data_0, &uart_k20_dev_cfg_0,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_0(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_K20_PORT_0_IRQ,
+		    CONFIG_UART_K20_PORT_0_IRQ_PRI,
+		    uart_k20_isr, DEVICE_GET(uart_k20_0),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_K20_PORT_0_IRQ);
+}
+#endif
+
 #endif /* CONFIG_UART_K20_PORT_0 */
 
 #ifdef CONFIG_UART_K20_PORT_1
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_1(struct device *port);
+#endif
+
 static struct uart_device_config uart_k20_dev_cfg_1 = {
 	.base = (uint8_t *)CONFIG_UART_K20_PORT_1_BASE_ADDR,
 	.sys_clk_freq = CONFIG_UART_K20_PORT_1_CLK_FREQ,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_1,
+#endif
 };
 
 static struct uart_k20_dev_data_t uart_k20_dev_data_1 = {
@@ -397,13 +469,32 @@ DEVICE_INIT(uart_k20_1, CONFIG_UART_K20_PORT_1_NAME, &uart_k20_init,
 			&uart_k20_dev_data_1, &uart_k20_dev_cfg_1,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_1(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_K20_PORT_1_IRQ,
+		    CONFIG_UART_K20_PORT_1_IRQ_PRI,
+		    uart_k20_isr, DEVICE_GET(uart_k20_1),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_K20_PORT_1_IRQ);
+}
+#endif
+
 #endif /* CONFIG_UART_K20_PORT_1 */
 
 #ifdef CONFIG_UART_K20_PORT_2
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_2(struct device *port);
+#endif
+
 static struct uart_device_config uart_k20_dev_cfg_2 = {
 	.base = (uint8_t *)CONFIG_UART_K20_PORT_2_BASE_ADDR,
 	.sys_clk_freq = CONFIG_UART_K20_PORT_2_CLK_FREQ,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_2,
+#endif
 };
 
 static struct uart_k20_dev_data_t uart_k20_dev_data_2 = {
@@ -414,13 +505,32 @@ DEVICE_INIT(uart_k20_2, CONFIG_UART_K20_PORT_2_NAME, &uart_k20_init,
 			&uart_k20_dev_data_2, &uart_k20_dev_cfg_2,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_2(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_K20_PORT_2_IRQ,
+		    CONFIG_UART_K20_PORT_2_IRQ_PRI,
+		    uart_k20_isr, DEVICE_GET(uart_k20_2),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_K20_PORT_2_IRQ);
+}
+#endif
+
 #endif /* CONFIG_UART_K20_PORT_2 */
 
 #ifdef CONFIG_UART_K20_PORT_3
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_3(struct device *port);
+#endif
+
 static struct uart_device_config uart_k20_dev_cfg_3 = {
 	.base = (uint8_t *)CONFIG_UART_K20_PORT_3_BASE_ADDR,
 	.sys_clk_freq = CONFIG_UART_K20_PORT_3_CLK_FREQ,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_3,
+#endif
 };
 
 static struct uart_k20_dev_data_t uart_k20_dev_data_3 = {
@@ -431,13 +541,32 @@ DEVICE_INIT(uart_k20_3, CONFIG_UART_K20_PORT_3_NAME, &uart_k20_init,
 			&uart_k20_dev_data_3, &uart_k20_dev_cfg_3,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_3(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_K20_PORT_3_IRQ,
+		    CONFIG_UART_K20_PORT_3_IRQ_PRI,
+		    uart_k20_isr, DEVICE_GET(uart_k20_3),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_K20_PORT_3_IRQ);
+}
+#endif
+
 #endif /* CONFIG_UART_K20_PORT_3 */
 
 #ifdef CONFIG_UART_K20_PORT_4
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_4(struct device *port);
+#endif
+
 static struct uart_device_config uart_k20_dev_cfg_4 = {
 	.base = (uint8_t *)CONFIG_UART_K20_PORT_4_BASE_ADDR,
 	.sys_clk_freq = CONFIG_UART_K20_PORT_4_CLK_FREQ,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_4,
+#endif
 };
 
 static struct uart_k20_dev_data_t uart_k20_dev_data_4 = {
@@ -447,5 +576,16 @@ static struct uart_k20_dev_data_t uart_k20_dev_data_4 = {
 DEVICE_INIT(uart_k20_4, CONFIG_UART_K20_PORT_4_NAME, &uart_k20_init,
 			&uart_k20_dev_data_4, &uart_k20_dev_cfg_4,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_4(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_K20_PORT_4_IRQ,
+		    CONFIG_UART_K20_PORT_4_IRQ_PRI,
+		    uart_k20_isr, DEVICE_GET(uart_k20_4),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_K20_PORT_4_IRQ);
+}
+#endif
 
 #endif /* CONFIG_UART_K20_PORT_4 */

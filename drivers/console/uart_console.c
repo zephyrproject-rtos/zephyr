@@ -278,7 +278,7 @@ ansi_cmd:
 	atomic_clear_bit(&esc_state, ESC_ANSI);
 }
 
-void uart_console_isr(void *unused)
+void uart_console_isr(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -373,9 +373,8 @@ static void console_input_init(void)
 
 	uart_irq_rx_disable(uart_console_dev);
 	uart_irq_tx_disable(uart_console_dev);
-	IRQ_CONNECT(CONFIG_UART_CONSOLE_IRQ, CONFIG_UART_CONSOLE_IRQ_PRI,
-		    uart_console_isr, 0, UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_CONSOLE_IRQ);
+
+	uart_irq_callback_set(uart_console_dev, uart_console_isr);
 
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(uart_console_dev)) {

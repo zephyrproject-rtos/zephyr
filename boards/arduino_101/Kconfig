@@ -11,10 +11,6 @@ config GPIO
 
 config NBLE_UART_ON_DEV_NAME
         default UART_NS16550_PORT_0_NAME
-config NBLE_UART_IRQ
-        default UART_NS16550_PORT_0_IRQ
-config NBLE_UART_IRQ_PRI
-        default UART_NS16550_PORT_0_IRQ_PRI
 
 endif
 
@@ -22,10 +18,6 @@ if UART_PIPE
 
 config UART_PIPE_ON_DEV_NAME
 	default UART_NS16550_PORT_1_NAME
-config UART_PIPE_IRQ
-	default UART_NS16550_PORT_1_IRQ
-config UART_PIPE_IRQ_PRI
-	default UART_NS16550_PORT_1_IRQ_PRI
 
 endif
 

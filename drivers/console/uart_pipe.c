@@ -36,7 +36,7 @@ static size_t recv_buf_len;
 static uart_pipe_recv_cb app_cb;
 static size_t recv_off;
 
-void uart_pipe_isr(void *unused)
+static void uart_pipe_isr(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -77,16 +77,14 @@ static void uart_pipe_setup(struct device *uart)
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
 
-	IRQ_CONNECT(CONFIG_UART_PIPE_IRQ, CONFIG_UART_PIPE_IRQ_PRI,
-		    uart_pipe_isr, 0, UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_PIPE_IRQ);
-
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(uart)) {
 		unsigned char c;
 
 		uart_fifo_read(uart, &c, 1);
 	}
+
+	uart_irq_callback_set(uart, uart_pipe_isr);
 
 	uart_irq_rx_enable(uart);
 }

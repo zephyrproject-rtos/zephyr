@@ -210,6 +210,7 @@ struct uart_ns16550_dev_data_t {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
+	uart_irq_callback_t	cb;	/**< Callback function pointer */
 #endif
 
 #ifdef CONFIG_UART_NS16550_DLF
@@ -335,6 +336,10 @@ static int uart_ns16550_init(struct device *dev)
 	OUTBYTE(IER(dev), 0x00);
 
 	irq_unlock(old_level);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	DEV_CFG(dev)->irq_config_func(dev);
+#endif
 
 	dev->driver_api = &uart_ns16550_driver_api;
 
@@ -576,6 +581,41 @@ static int uart_ns16550_irq_update(struct device *dev)
 	return 1;
 }
 
+/**
+ * @brief Set the callback function pointer for IRQ.
+ *
+ * @param dev UART device struct
+ * @param cb Callback function pointer.
+ *
+ * @return N/A
+ */
+static void uart_ns16550_irq_callback_set(struct device *dev,
+					  uart_irq_callback_t cb)
+{
+	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
+
+	dev_data->cb = cb;
+}
+
+/**
+ * @brief Interrupt service routine.
+ *
+ * This simply calls the callback function, if one exists.
+ *
+ * @param arg Argument to ISR.
+ *
+ * @return N/A
+ */
+static void uart_ns16550_isr(void *arg)
+{
+	struct device *dev = arg;
+	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
+
+	if (dev_data->cb) {
+		dev_data->cb(dev);
+	}
+}
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_NS16550_LINE_CTRL
@@ -671,6 +711,7 @@ static struct uart_driver_api uart_ns16550_driver_api = {
 	.irq_err_disable = uart_ns16550_irq_err_disable,
 	.irq_is_pending = uart_ns16550_irq_is_pending,
 	.irq_update = uart_ns16550_irq_update,
+	.irq_callback_set = uart_ns16550_irq_callback_set,
 
 #endif
 
@@ -685,6 +726,10 @@ static struct uart_driver_api uart_ns16550_driver_api = {
 
 #ifdef CONFIG_UART_NS16550_PORT_0
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_0(struct device *port);
+#endif
+
 struct uart_device_config uart_ns16550_dev_cfg_0 = {
 	.port = CONFIG_UART_NS16550_PORT_0_BASE_ADDR,
 	.sys_clk_freq = CONFIG_UART_NS16550_PORT_0_CLK_FREQ,
@@ -698,6 +743,10 @@ struct uart_device_config uart_ns16550_dev_cfg_0 = {
 	.pci_dev.function = CONFIG_UART_NS16550_PORT_0_PCI_FUNC,
 	.pci_dev.bar = CONFIG_UART_NS16550_PORT_0_PCI_BAR,
 #endif /* CONFIG_UART_NS16550_PORT_0_PCI */
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_0,
+#endif
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
@@ -713,9 +762,24 @@ DEVICE_INIT(uart_ns16550_0, CONFIG_UART_NS16550_PORT_0_NAME, &uart_ns16550_init,
 			&uart_ns16550_dev_data_0, &uart_ns16550_dev_cfg_0,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_0(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_NS16550_PORT_0_IRQ,
+		    CONFIG_UART_NS16550_PORT_0_IRQ_PRI,
+		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_0),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_NS16550_PORT_0_IRQ);
+}
+#endif
+
 #endif /* CONFIG_UART_NS16550_PORT_0 */
 
 #ifdef CONFIG_UART_NS16550_PORT_1
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_1(struct device *port);
+#endif
 
 struct uart_device_config uart_ns16550_dev_cfg_1 = {
 	.port = CONFIG_UART_NS16550_PORT_1_BASE_ADDR,
@@ -730,6 +794,10 @@ struct uart_device_config uart_ns16550_dev_cfg_1 = {
 	.pci_dev.function = CONFIG_UART_NS16550_PORT_1_PCI_FUNC,
 	.pci_dev.bar = CONFIG_UART_NS16550_PORT_1_PCI_BAR,
 #endif /* CONFIG_UART_NS16550_PORT_1_PCI */
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_1,
+#endif
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
@@ -744,5 +812,16 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
 DEVICE_INIT(uart_ns16550_1, CONFIG_UART_NS16550_PORT_1_NAME, &uart_ns16550_init,
 			&uart_ns16550_dev_data_1, &uart_ns16550_dev_cfg_1,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_1(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_NS16550_PORT_1_IRQ,
+		    CONFIG_UART_NS16550_PORT_1_IRQ_PRI,
+		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_1),
+		    UART_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_NS16550_PORT_1_IRQ);
+}
+#endif
 
 #endif /* CONFIG_UART_NS16550_PORT_1 */

@@ -31,15 +31,8 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#if defined(CONFIG_CONSOLE_HANDLER)
 #include <soc.h>
-#include <console/uart_console.h>
-#endif /* CONFIG_CONSOLE_HANDLER */
-
-#if defined(CONFIG_BLUETOOTH_UART)
-#include <soc.h>
-#include <bluetooth/uart.h>
-#endif /* CONFIG_BLUETOOTH_UART */
+#include <serial/uart_k20.h>
 
 extern void _isr_wrapper(void);
 typedef void (*vth)(void); /* Vector Table Handler */
@@ -54,10 +47,34 @@ vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 
 extern void _irq_spurious(void);
 
-#if defined(CONFIG_CONSOLE_HANDLER)
-static void _uart_console_isr(void)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+static void _uart_k20_0_isr(void)
 {
-	uart_console_isr(NULL);
+	uart_k20_isr(DEVICE_GET(uart_k20_0));
+	_IntExit();
+}
+
+static void _uart_k20_1_isr(void)
+{
+	uart_k20_isr(DEVICE_GET(uart_k20_1));
+	_IntExit();
+}
+
+static void _uart_k20_2_isr(void)
+{
+	uart_k20_isr(DEVICE_GET(uart_k20_2));
+	_IntExit();
+}
+
+static void _uart_k20_3_isr(void)
+{
+	uart_k20_isr(DEVICE_GET(uart_k20_3));
+	_IntExit();
+}
+
+static void _uart_k20_4_isr(void)
+{
+	uart_k20_isr(DEVICE_GET(uart_k20_4));
 	_IntExit();
 }
 #endif /* CONFIG_CONSOLE_HANDLER */
@@ -73,11 +90,13 @@ static void _bt_uart_isr(void)
 /* placeholders: fill with real ISRs */
 vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)] = _irq_spurious,
-#if defined(CONFIG_CONSOLE_HANDLER)
-	[CONFIG_UART_CONSOLE_IRQ] = _uart_console_isr,
-#endif
-#if defined(CONFIG_BLUETOOTH_UART)
-	[CONFIG_BLUETOOTH_UART_IRQ] = _bt_uart_isr,
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+	[CONFIG_UART_K20_PORT_0_IRQ] = _uart_k20_0_isr,
+	[CONFIG_UART_K20_PORT_1_IRQ] = _uart_k20_1_isr,
+	[CONFIG_UART_K20_PORT_2_IRQ] = _uart_k20_2_isr,
+	[CONFIG_UART_K20_PORT_3_IRQ] = _uart_k20_3_isr,
+	[CONFIG_UART_K20_PORT_4_IRQ] = _uart_k20_4_isr,
 #endif
 };
 

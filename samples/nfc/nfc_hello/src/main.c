@@ -22,8 +22,6 @@
 #include <board.h>
 #include <uart.h>
 
-#define UART1_IRQ CONFIG_UART_NS16550_PORT_1_IRQ
-#define UART1_IRQ_PRI CONFIG_UART_NS16550_PORT_1_IRQ_PRI
 #define BUF_MAXSIZE 256
 
 struct device *uart1_dev;
@@ -53,7 +51,7 @@ static void msg_dump(const char *s, uint8_t *data, unsigned len)
 	printf("(%u bytes)\n", len);
 }
 
-static void uart1_isr(void *x)
+static void uart1_isr(struct device *x)
 {
 	int len = uart_fifo_read(uart1_dev, buf, BUF_MAXSIZE);
 	ARG_UNUSED(x);
@@ -64,9 +62,7 @@ static void uart1_init(void)
 {
 	uart1_dev = device_get_binding("UART_1");
 
-	IRQ_CONNECT(UART1_IRQ, UART1_IRQ_PRI, uart1_isr, 0, UART_IRQ_FLAGS);
-
-	irq_enable(UART1_IRQ);
+	uart_irq_callback_set(uart1_dev, uart1_isr);
 
 	uart_irq_rx_enable(uart1_dev);
 

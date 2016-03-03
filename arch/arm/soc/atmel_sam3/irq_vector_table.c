@@ -32,11 +32,6 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#if defined(CONFIG_CONSOLE_HANDLER)
-#include <soc.h>
-#include <console/uart_console.h>
-#endif /* CONFIG_CONSOLE_HANDLER */
-
 extern void _isr_wrapper(void);
 typedef void (*vth)(void); /* Vector Table Handler */
 
@@ -50,20 +45,9 @@ vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 
 extern void _irq_spurious(void);
 
-#if defined(CONFIG_CONSOLE_HANDLER)
-static void _uart_console_isr(void)
-{
-	uart_console_isr(NULL);
-	_IntExit();
-}
-#endif /* CONFIG_CONSOLE_HANDLER */
-
 /* placeholders: fill with real ISRs */
 vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)] = _irq_spurious,
-#if defined(CONFIG_CONSOLE_HANDLER)
-	[CONFIG_UART_CONSOLE_IRQ] = _uart_console_isr,
-#endif
 };
 
 #endif /* CONFIG_SW_ISR_TABLE */
