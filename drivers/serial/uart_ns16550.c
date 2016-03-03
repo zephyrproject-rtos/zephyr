@@ -208,9 +208,13 @@ struct uart_ns16550_dev_data_t {
 	uint32_t baud_rate;	/**< Baud rate */
 	uint8_t options;	/**< Serial port options */
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
+#endif
+
+#ifdef CONFIG_UART_NS16550_DLF
 	uint8_t dlf;		/**< DLF value */
-	uint8_t stride;		/**< structure stride padding */
+#endif
 };
 
 static struct uart_driver_api uart_ns16550_driver_api;
@@ -295,7 +299,9 @@ static int uart_ns16550_init(struct device *dev)
 		return DEV_INVALID_OP;
 	}
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	dev_data->iir_cache = 0;
+#endif
 
 	old_level = irq_lock();
 
