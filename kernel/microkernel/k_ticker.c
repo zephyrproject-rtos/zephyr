@@ -148,23 +148,28 @@ int _k_ticker(int event)
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-static void _sys_clock_tick_announce_pre_micro_nop(kevent_t e)
+static void _sys_clock_tick_announce_pre_micro(kevent_t e)
 {
 	ARG_UNUSED(e);
-	/* do nothing */
+	/* before k_server starts use nanokernel tick announce function */
+	_nano_sys_clock_tick_announce(_SysIdleElapsedTicksGet());
 }
 
 void (*_do_sys_clock_tick_announce)(kevent_t) =
-	_sys_clock_tick_announce_pre_micro_nop;
+	_sys_clock_tick_announce_pre_micro;
 
-static int _sys_clock_tick_announce_install(struct device *dev)
+static int _sys_clock_microkernel_handler_install(struct device *dev)
 {
 	ARG_UNUSED(dev);
+	extern void (*_do_task_sleep)(int32_t ticks);
+	extern void _micro_task_sleep(int32_t ticks);
+
 	_do_sys_clock_tick_announce = isr_event_send;
+	_do_task_sleep = _micro_task_sleep;
 	return 0;
 }
 
-SYS_INIT(_sys_clock_tick_announce_install, MICROKERNEL, 0);
+SYS_INIT(_sys_clock_microkernel_handler_install, MICROKERNEL, 0);
 #endif	/* CONFIG_SYS_CLOCK_EXISTS */
 
 #ifdef CONFIG_TIMESLICING

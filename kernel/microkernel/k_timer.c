@@ -379,7 +379,7 @@ void _k_task_sleep(struct k_args *P)
 }
 
 
-void task_sleep(int32_t ticks)
+void _micro_task_sleep(int32_t ticks)
 {
 	struct k_args A;
 
@@ -387,3 +387,15 @@ void task_sleep(int32_t ticks)
 	A.Time.ticks = ticks;
 	KERNEL_ENTRY(&A);
 }
+
+#if defined(CONFIG_NANO_TIMEOUTS)
+/*
+ * Enable calling task_sleep() during the system initialization
+ * On k_server() start, _do_task_sleep gets reassigned to
+ * _micro_task_sleep()
+ */
+extern void _nano_task_sleep(int32_t timeout_in_ticks);
+void (*_do_task_sleep)(int32_t ticks) = _nano_task_sleep;
+#else
+void (*_do_task_sleep)(int32_t ticks) = _micro_task_sleep;
+#endif
