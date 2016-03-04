@@ -71,6 +71,7 @@ struct _k_fifo_struct  *_trace_list_micro_fifo;
 struct _k_pipe_struct  *_trace_list_micro_pipe;
 struct pool_struct     *_trace_list_micro_mem_pool;
 struct _k_mem_map_struct *_trace_list_micro_mem_map;
+struct _k_event_struct *_trace_list_micro_event;
 #endif /*CONFIG_MICROKERNEL*/
 
 

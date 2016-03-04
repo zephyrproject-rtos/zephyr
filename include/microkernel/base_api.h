@@ -249,6 +249,9 @@ struct _k_event_struct {
 	kevent_handler_t func;
 	struct k_args *waiter;
 	int count;
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct _k_event_struct *__next;
+#endif
 } __aligned(4);
 
 /**

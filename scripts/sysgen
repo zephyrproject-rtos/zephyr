@@ -751,6 +751,15 @@ def kernel_main_c_node_init():
         kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_mem_pool, " +
             "&(_k_mem_pool_list[%d]));\n" % (pool_count))
         pool_count = pool_count + 1;
+
+    # event map object id
+    for event in event_list:
+        # no need to expose the irq task events
+        if not (event[0].startswith("_TaskIrqEvt")):
+            name = event[0];
+            kernel_main_c_out("\tSYS_TRACING_OBJ_INIT(micro_event, " +
+            "&_k_event_obj_%s);\n" % (name))
+
     kernel_main_c_out("#endif\n")
 
     kernel_main_c_out("}\n")

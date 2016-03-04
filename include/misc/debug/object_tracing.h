@@ -41,6 +41,7 @@ extern struct _k_fifo_struct  *_trace_list_micro_fifo;
 extern struct _k_pipe_struct  *_trace_list_micro_pipe;
 extern struct pool_struct     *_trace_list_micro_mem_pool;
 extern struct _k_mem_map_struct *_trace_list_micro_mem_map;
+extern struct _k_event_struct *_trace_list_micro_event;
 #endif /*CONFIG_MICROKERNEL*/
 
 /**
