@@ -1041,9 +1041,29 @@ struct uip_udp_conn *uip_udp_new(const uip_ipaddr_t *ripaddr, uint16_t rport);
    ((((uint16_t *)addr1)[1] & ((uint16_t *)mask)[1]) ==       \
     (((uint16_t *)addr2)[1] & ((uint16_t *)mask)[1])))
 
-#define uip_ipaddr_prefixcmp(addr1, addr2, length) (memcmp(addr1, addr2, length>>3) == 0)
+#define uip_ipaddr_prefixcmp(addr1, addr2, length) \
+	uip_ipaddr_prefixcmp2((uint8_t *)(addr1), (uint8_t *)(addr2), length)
 
+static inline bool uip_ipaddr_prefixcmp2(uint8_t *addr1,
+					 uint8_t *addr2,
+					 uint8_t length)
+{
+	uint8_t bits = 128 - length;
+	uint8_t bytes = bits / 8;
+	uint8_t remain = bits % 8;
 
+	if (length > 128) {
+		return false;
+	}
+
+	if (memcmp(addr1, addr2, 16 - bytes)) {
+		return false;
+	}
+
+	return ((addr1[16 - bytes] & ((8 - remain) << 8))
+		==
+		(addr2[16 - bytes] & ((8 - remain) << 8)));
+}
 
 /*
  * Check if an address is a broadcast address for a network.
