@@ -127,9 +127,9 @@ echo_request_input(struct net_buf *buf)
    * headers in the request otherwise we need to remove the extension
    * headers and change a few fields
    */
-  PRINTF("Received Echo Request from");
+  PRINTF("Received Echo Request from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
-  PRINTF("to");
+  PRINTF(" to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
   PRINTF("\n");
 
@@ -196,9 +196,9 @@ echo_request_input(struct net_buf *buf)
   UIP_ICMP_BUF(buf)->icmpchksum = 0;
   UIP_ICMP_BUF(buf)->icmpchksum = ~uip_icmp6chksum(buf);
 
-  PRINTF("Sending Echo Reply to");
+  PRINTF("Sending Echo Reply to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
-  PRINTF("from");
+  PRINTF(" from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("\n");
   UIP_STAT(++uip_stat.icmp.sent);
