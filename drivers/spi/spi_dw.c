@@ -103,14 +103,14 @@ static void push_data(struct device *dev)
 		if (spi->tx_buf && spi->tx_buf_len > 0) {
 			switch (spi->dfs) {
 			case 1:
-				data = *(uint8_t *)(spi->tx_buf);
+				data = UNALIGNED_GET((uint8_t *)(spi->tx_buf));
 				break;
 			case 2:
-				data = *(uint16_t *)(spi->tx_buf);
+				data = UNALIGNED_GET((uint16_t *)(spi->tx_buf));
 				break;
 #ifndef CONFIG_ARC
 			case 4:
-				data = *(uint32_t *)(spi->tx_buf);
+				data = UNALIGNED_GET((uint32_t *)(spi->tx_buf));
 				break;
 #endif
 			}
@@ -156,14 +156,14 @@ static void pull_data(struct device *dev)
 		if (spi->rx_buf && spi->rx_buf_len > 0) {
 			switch (spi->dfs) {
 			case 1:
-				*(uint8_t *)(spi->rx_buf) = (uint8_t)data;
+				UNALIGNED_PUT(data, (uint8_t *)spi->rx_buf);
 				break;
 			case 2:
-				*(uint16_t *)(spi->rx_buf) = (uint16_t)data;
+				UNALIGNED_PUT(data, (uint16_t *)spi->rx_buf);
 				break;
 #ifndef CONFIG_ARC
 			case 4:
-				*(uint32_t *)(spi->rx_buf) = (uint32_t)data;
+				UNALIGNED_PUT(data, (uint32_t *)spi->rx_buf);
 				break;
 #endif
 			}
