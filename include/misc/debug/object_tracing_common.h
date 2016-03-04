@@ -60,6 +60,7 @@ struct nano_lifo  *_trace_list_nano_lifo;
 struct nano_sem   *_trace_list_nano_sem;
 struct nano_timer *_trace_list_nano_timer;
 struct nano_stack *_trace_list_nano_stack;
+struct ring_buf *_trace_list_sys_ring_buf;
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel/base_api.h>

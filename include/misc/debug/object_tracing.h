@@ -29,6 +29,8 @@ extern struct nano_lifo  *_trace_list_nano_lifo;
 extern struct nano_sem   *_trace_list_nano_sem;
 extern struct nano_timer *_trace_list_nano_timer;
 extern struct nano_stack *_trace_list_nano_stack;
+extern struct ring_buf *_trace_list_sys_ring_buf;
+
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel/base_api.h>
