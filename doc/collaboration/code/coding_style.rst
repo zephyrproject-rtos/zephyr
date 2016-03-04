@@ -12,11 +12,9 @@ exceptions:
 * Add braces to every ``if`` and ``else`` body, even for single-line code
   blocks. Use the :option:`--ignore BRACES` flag to make :program:`checkpatch`
   stop complaining.
-* Use hard tab stops. Set the tab width to either 4 or 8 spaces. Train
-  :program:`checkpatch` to only warn when lines are over 100
-  characters. In general, break lines at 80 characters where possible.
-  If you are trying to align comments after declarations, use spaces
-  instead of tabs to align them.
+* Use hard tab stops. Set the tab width 8 spaces. Break lines at 80 characters.
+  If you are trying to align comments after declarations, use spaces instead of
+  tabs to align them.
 * Use C89-style single line comments, :literal:`/* */`. The C99-style
   single line comment, //, is not allowed.
 * Use :literal:`/**  */` for any comments that need to appear in the
