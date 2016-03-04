@@ -216,7 +216,7 @@ static int spi_intel_configure(struct device *dev,
 
 	/* Check status */
 	if (test_bit_sscr0_sse(info->regs) && test_bit_sssr_bsy(info->regs)) {
-		DBG("spi_intel_transceive: Controller is busy\n");
+		DBG("spi_intel_configure: Controller is busy\n");
 		return DEV_USED;
 	}
 
