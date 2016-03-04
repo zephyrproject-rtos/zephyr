@@ -186,10 +186,11 @@ config IRQ_VECTOR_TABLE_CUSTOM
 	the least overhead when handling an interrupt.
 
 	Downsides:
+
 	- ISRs cannot have a parameter
 	- ISRs cannot be connected at runtime
 	- ISRs must notify the kernel manually by invoking _IntExit() when
-		then are about to return.
+	  then are about to return.
 
 config IRQ_VECTOR_TABLE_SOC
 	bool

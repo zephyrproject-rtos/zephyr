@@ -153,6 +153,7 @@ config KERNEL_EVENT_LOGGER_SLEEP
 	help
 	Enable low power condition event messages. These messages provide the
 	following information:
+
 		- When the CPU went to sleep mode.
 		- When the CPU woke up.
 		- The ID of the interrupt that woke the CPU up.

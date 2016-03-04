@@ -97,6 +97,7 @@ config	NUM_REGULAR_IRQ_PRIO_LEVELS
 	 This represents the number of Regular Interrupt priorities, which
 	 does NOT include the Fast (FIRQ) priority.
 	 The Regular Interrupt priorities available will be
+
 	  (NUM_IRQ_PRIO_LEVELS - NUM_REGULAR_IRQ_PRIO_LEVELS) to
 	  (NUM_REGULAR_IRQ_PRIO_LEVELS - 1).
 
@@ -157,6 +158,7 @@ config NSIM
 	default n
 	help
 	For running on nSIM simulator.
+
 	a) Uses non-XIP to run in RAM.
 	b) Linked at address 0x4000 with 0x4000 of RAM so that it works with
 	   a pc_size of 16 (default).
@@ -220,10 +222,11 @@ config  IRQ_VECTOR_TABLE_CUSTOM
 	  the least overhead when handling an interrupt.
 
 	  Downsides:
+
 	  - ISRs cannot have a parameter
 	  - ISRs cannot be connected at runtime
 	  - ISRs must notify the kernel manually by invoking _ExcExit() when
-		then are about to return.
+	    then are about to return.
 
 config	IRQ_VECTOR_TABLE_BSP
 	bool
