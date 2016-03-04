@@ -45,15 +45,6 @@
 	__attribute__((section(#segment ",\"wa\",@nobits#")))
 #endif
 
-#define UNALIGNED_READ(p) (*(p))
-
-#define UNALIGNED_WRITE(p, v)						\
-	do  {								\
-		unsigned int __attribute__((__may_alias__)) *pp = (unsigned int *)(p); \
-		*pp = (v);						\
-	}								\
-	while (0)
-
 /* Unaligned access */
 #define UNALIGNED_GET(p)						\
 __extension__ ({							\
