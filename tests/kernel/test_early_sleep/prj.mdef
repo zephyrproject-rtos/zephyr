@@ -1,0 +1,10 @@
+% Application       : test microkernel early sleep functionality
+
+% TASK NAME         PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK REGRESSTASK    5 RegressionTask    1024 [EXE]
+  TASK ALTERTASK     10 AlternateTask     1024 [EXE]
+
+% SEMA NAME
+% ================
+  SEMA TEST_FIBER_SEM
