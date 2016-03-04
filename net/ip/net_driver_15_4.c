@@ -131,7 +131,6 @@ static void net_rx_15_4_fiber(void)
 		byte_count = uip_pkt_buflen(buf);
 #endif
 		if (!NETSTACK_RDC.input(buf)) {
-			NET_DBG("RDC input failed\n");
 			l2_buf_unref(buf);
 		} else {
 #if NET_MAC_CONF_STATS
@@ -184,7 +183,6 @@ int net_driver_15_4_init(void)
 int net_driver_15_4_recv(struct net_buf *buf)
 {
 	if (!NETSTACK_COMPRESS.uncompress(buf)) {
-		NET_DBG("uncompression failed \n");
 		return -EINVAL;
 	}
 
