@@ -60,6 +60,7 @@ extern struct k_tqhd _k_task_priority_list[];
 extern struct pool_struct _k_mem_pool_list[];
 
 extern int _k_mem_pool_count;
+extern const kmemory_pool_t _heap_mem_pool_id;
 
 extern struct k_task *_k_current_task;
 extern uint32_t _k_task_priority_bitmap[];

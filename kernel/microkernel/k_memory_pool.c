@@ -561,6 +561,50 @@ int task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
 	return A.Time.rcode;
 }
 
+#define MALLOC_ALIGN (sizeof(uint32_t))
+
+/**
+ * @brief Allocate memory from heap pool
+ *
+ * This routine  provides traditional malloc semantics; internally it uses
+ * the microkernel pool APIs on a dedicated HEAP pool
+ *
+ * @param size Size of memory requested by the caller.
+ *
+ * @retval address of the block if successful otherwise returns NULL
+ */
+void *task_malloc(uint32_t size)
+{
+	uint32_t new_size;
+	uint32_t *aligned_addr;
+	void *pool_ptr;
+
+	/* The address pool returns, may not be aligned. Also
+	*  pool_free requires both start address and size. So
+	*  we end up needing 2 slots to save the size and
+	*  start address in addition to padding space
+	*/
+	new_size =  size + (sizeof(uint32_t) << 1) + MALLOC_ALIGN - 1;
+
+	if (_do_task_mem_pool_alloc(_heap_mem_pool_id, new_size, TICKS_NONE,
+					&pool_ptr) != RC_OK) {
+		return NULL;
+	}
+
+	/* Get the next aligned address following the address returned by pool*/
+	aligned_addr = (uint32_t *) ROUND_UP(pool_ptr, MALLOC_ALIGN);
+
+	/* Save the size requested to the pool API, to be used while freeing */
+	*aligned_addr = new_size;
+
+	/* Save the original unaligned_addr pointer too */
+	aligned_addr++;
+	*((void **) aligned_addr) = pool_ptr;
+
+	/* return the subsequent address */
+	return ++aligned_addr;
+}
+
 /**
  *
  * @brief Perform return memory pool block request
@@ -641,5 +685,28 @@ void task_mem_pool_free(struct k_block *blockptr)
 	A.args.p1.req_size = blockptr->req_size;
 	A.args.p1.rep_poolptr = blockptr->address_in_pool;
 	A.args.p1.rep_dataptr = blockptr->pointer_to_data;
+	KERNEL_ENTRY(&A);
+}
+
+/**
+ * @brief Free memory allocated through task_malloc
+ *
+ * @param ptr pointer to be freed
+ *
+ * @return NA
+ */
+void task_free(void *ptr)
+{
+	struct k_args A;
+
+	A.Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
+
+	A.args.p1.pool_id = _heap_mem_pool_id;
+
+	/* Fetch the pointer returned by the pool API */
+	A.args.p1.rep_poolptr = *((void **) ((uint32_t *)ptr - 1));
+	/* Further fetch the size asked from pool */
+	A.args.p1.req_size = *((uint32_t *)ptr - 2);
+
 	KERNEL_ENTRY(&A);
 }

@@ -87,6 +87,36 @@ extern int task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
 							int reqsize, int32_t timeout);
 
 /**
+ * @brief Allocate memory
+ *
+ * This routine  provides traditional malloc semantics and is a wrapper on top
+ * of microkernel pool alloc API.
+ * It returns an aligned memory address which points to the start of a memory
+ * block of at least @size bytes.
+ * This memory comes from heap memory pool, consequently the app should
+ * specify its intention to use a heap pool via the HEAP_SIZE keyword in
+ * MDEF file, if it uses this API.
+ * When not enough free memory is available in the heap pool, it returns NULL
+ *
+ * @param size Size of memory requested by the caller.
+ *
+ * @retval address of the block if successful otherwise returns NULL
+ */
+extern void *task_malloc(uint32_t size);
+
+/**
+ * @brief Free memory allocated through task_malloc
+ *
+ * This routine  provides traditional free semantics and is intended to free
+ * memory allocated using task_malloc API.
+ *
+ * @param ptr pointer to be freed
+ *
+ * @return NA
+ */
+extern void task_free(void *ptr);
+
+/**
  * @}
  */
 #ifdef __cplusplus

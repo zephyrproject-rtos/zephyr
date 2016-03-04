@@ -34,6 +34,8 @@ import subprocess
 
 # global variables describing system
 
+MIN_HEAP = 64
+heap_pos_in_pool_list = -1
 num_kargs = 0
 num_timers = 0
 num_prios = 0
@@ -118,6 +120,8 @@ def mdef_parse():
     global num_kargs
     global num_timers
     global num_prios
+    global MIN_HEAP
+    global heap_pos_in_pool_list
 
     # read file contents in a single shot
     with open(sys.argv[1], 'r') as infile:
@@ -210,8 +214,17 @@ def mdef_parse():
                               int(words[4])))
             continue
 
+        if (words[0] == "HEAP_SIZE"):
+            if (len(words) != 2):
+                error_arg_count(line)
+            heap_size = int(words[1])
+            heap_pos_in_pool_list = len(pool_list)
+            pool_list.append(("_HEAP_MEM_POOL", MIN_HEAP, heap_size, 1))
+            continue
+
         sysgen_error("unrecognized keyword %s on following line\n%s" %
                      (words[0], line))
+
 
 
 #
@@ -598,6 +611,7 @@ def kernel_main_c_maps():
 
 def kernel_main_c_pools():
     """ Generate memory pool variables """
+    global heap_pos_in_pool_list
 
     total_pools = len(pool_list)
 
@@ -608,6 +622,10 @@ def kernel_main_c_pools():
     if (total_pools == 0):
         kernel_main_c_out("\nstruct pool_struct * _k_mem_pool_list = NULL;\n")
         return
+    #  Heap pool if present can be indexed using the below variable
+    if (heap_pos_in_pool_list != -1):
+        kernel_main_c_out("\nconst kmemory_pool_t _heap_mem_pool_id = %d;\n" \
+                                                     %(heap_pos_in_pool_list))
 
     # start accumulating memory pool descriptor info
 
