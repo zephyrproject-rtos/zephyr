@@ -27,22 +27,14 @@
 #include <i2c.h>
 #include <display/grove_lcd.h>
 
+#define SYS_LOG_DOMAIN "Grove LCD"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_GROVE_LEVEL
+#include <misc/sys_log.h>
+
 #define SLEEP_IN_US(_x_)	((_x_) * 1000)
 
 #define GROVE_LCD_DISPLAY_ADDR		(0x3E)
 #define GROVE_RGB_BACKLIGHT_ADDR	(0x62)
-
-#ifndef CONFIG_GROVE_DEBUG
-#define DBG(...) { ; }
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG	printf
-#else
-#include <misc/printk.h>
-#define DBG	printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_GROVE_DEBUG */
 
 struct command {
 	uint8_t control;
@@ -168,7 +160,7 @@ void glcd_clear(struct device *port)
 	uint8_t clear[] = { 0, GLCD_CMD_SCREEN_CLEAR };
 
 	i2c_write(dev->i2c, clear, sizeof(clear), rom->lcd_addr);
-	DBG("Grove LCD: clear, delay 20 ms\n");
+	SYS_LOG_DBG("clear, delay 20 ms");
 	_sleep(20);
 }
 
@@ -185,7 +177,7 @@ void glcd_display_state_set(struct device *port, uint8_t opt)
 
 	i2c_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
 
-	DBG("Grove LCD: set display_state options, delay 5 ms\n");
+	SYS_LOG_DBG("set display_state options, delay 5 ms");
 	_sleep(5);
 }
 
@@ -209,7 +201,7 @@ void glcd_input_state_set(struct device *port, uint8_t opt)
 
 	i2c_write(dev->i2c, &dev->input_set, sizeof(dev->input_set),
 		  rom->lcd_addr);
-	DBG("Grove LCD: set the input_set, no delay\n");
+	SYS_LOG_DBG("set the input_set, no delay");
 }
 
 
@@ -223,12 +215,10 @@ uint8_t glcd_input_state_get(struct device *port)
 
 void glcd_color_select(struct device *port, uint8_t color)
 {
-#if CONFIG_GROVE_DEBUG
 	if (color > 3) {
-		DBG("%s : selected color is too high a value\n", __func__);
+		SYS_LOG_WRN("selected color is too high a value");
 		return;
 	}
-#endif
 	glcd_color_set(port, color_define[color][0],
 			     color_define[color][1],
 			     color_define[color][2]);
@@ -256,7 +246,7 @@ void glcd_function_set(struct device *port, uint8_t opt)
 
 	i2c_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
 
-	DBG("Grove LCD: set function options, delay 5 ms\n");
+	SYS_LOG_DBG("set function options, delay 5 ms");
 	_sleep(5);
 }
 
@@ -274,7 +264,7 @@ int glcd_initialize(struct device *port)
 	struct glcd_data *dev = port->driver_data;
 	uint8_t cmd;
 
-	DBG("Grove LCD: initialize called\n");
+	SYS_LOG_DBG("initialize called");
 
 	dev->input_set = 0;
 	dev->display_switch = 0;
@@ -310,7 +300,7 @@ int glcd_initialize(struct device *port)
 	 * We're here!  Let's just make sure we've had enough time for the
 	 * VDD to power on, so pause a little here, 30 ms min, so we go 50
 	 */
-	DBG("Grove LCD: delay 50 ms while the VDD powers on\n");
+	SYS_LOG_DBG("delay 50 ms while the VDD powers on");
 	_sleep(50);
 
 	/* Configure everything for the display function first */
@@ -331,13 +321,13 @@ int glcd_initialize(struct device *port)
 	glcd_input_state_set(port, cmd);
 
 	/* Now power on the background RGB control */
-	DBG("Grove LCD: configuring the RGB background\n");
+	SYS_LOG_INF("configuring the RGB background");
 	_rgb_reg_set(dev->i2c, 0x00, 0x00);
 	_rgb_reg_set(dev->i2c, 0x01, 0x05);
 	_rgb_reg_set(dev->i2c, 0x08, 0xAA);
 
 	/* Now set the background color to white */
-	DBG("Grove LCD: background set to white\n");
+	SYS_LOG_DBG("background set to white");
 	_rgb_reg_set(dev->i2c, REGISTER_R, color_define[GROVE_RGB_WHITE][0]);
 	_rgb_reg_set(dev->i2c, REGISTER_G, color_define[GROVE_RGB_WHITE][1]);
 	_rgb_reg_set(dev->i2c, REGISTER_B, color_define[GROVE_RGB_WHITE][2]);

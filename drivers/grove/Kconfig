@@ -22,13 +22,23 @@ menuconfig GROVE
         prompt "Grove Device Drivers"
         default n
         help
-        Check this box to enable the Seeed Grove device drivers
+	  Check this box to enable the Seeed Grove device drivers
 
-config GROVE_DEBUG
-        bool
-        prompt "Enable Grove debug messagings"
-        default n
-        depends on GROVE
+
+config SYS_LOG_GROVE_LEVEL
+	int
+	prompt "Grove Log level"
+	depends on SYS_LOG && GROVE
+	default 0
+	range 0 4
+	help
+	  Sets log level for Grove Device Drivers.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in adition to previous level
+	  3 INFO, write SYS_LOG_INF in adition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
 config GROVE_LCD_RGB
         bool
