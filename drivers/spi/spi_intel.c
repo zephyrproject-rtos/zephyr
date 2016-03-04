@@ -263,8 +263,8 @@ static int spi_intel_configure(struct device *dev,
 }
 
 static int spi_intel_transceive(struct device *dev,
-				uint8_t *tx_buf, uint32_t tx_buf_len,
-				uint8_t *rx_buf, uint32_t rx_buf_len)
+				const void *tx_buf, uint32_t tx_buf_len,
+				void *rx_buf, uint32_t rx_buf_len)
 {
 	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;

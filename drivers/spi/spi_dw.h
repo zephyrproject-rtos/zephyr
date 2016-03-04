@@ -53,7 +53,7 @@ struct spi_dw_data {
 #ifdef CONFIG_SPI_DW_CS_GPIO
 	struct device *cs_gpio_port;
 #endif /* CONFIG_SPI_DW_CS_GPIO */
-	uint8_t *tx_buf;
+	const uint8_t *tx_buf;
 	uint32_t tx_buf_len;
 	uint8_t *rx_buf;
 	uint32_t rx_buf_len;

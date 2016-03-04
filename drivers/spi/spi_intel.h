@@ -51,7 +51,7 @@ struct spi_intel_data {
 #endif /* CONFIG_SPI_INTEL_CS_GPIO */
 	uint32_t sscr0;
 	uint32_t sscr1;
-	uint8_t *tx_buf;
+	const uint8_t *tx_buf;
 	uint8_t *rx_buf;
 	uint32_t t_buf_len;
 	uint32_t r_buf_len;

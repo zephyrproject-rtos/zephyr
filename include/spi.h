@@ -81,8 +81,8 @@ typedef int (*spi_api_configure)(struct device *dev,
 				 struct spi_config *config);
 typedef int (*spi_api_slave_select)(struct device *dev, uint32_t slave);
 typedef int (*spi_api_io)(struct device *dev,
-			  uint8_t *tx_buf, uint32_t tx_buf_len,
-			  uint8_t *rx_buf, uint32_t rx_buf_len);
+			  const void *tx_buf, uint32_t tx_buf_len,
+			  void *rx_buf, uint32_t rx_buf_len);
 typedef int (*spi_api_control)(struct device *dev);
 
 struct spi_driver_api {
@@ -143,7 +143,7 @@ static inline int spi_slave_select(struct device *dev, uint32_t slave)
  * @retval DEV_OK If successful.
  * @retval DEV_* Code otherwise.
  */
-static inline int spi_read(struct device *dev, uint8_t *buf, uint32_t len)
+static inline int spi_read(struct device *dev, void *buf, uint32_t len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
 
@@ -159,7 +159,7 @@ static inline int spi_read(struct device *dev, uint8_t *buf, uint32_t len)
  * @retval DEV_OK If successful.
  * @retval DEV_* Code otherwise.
  */
-static inline int spi_write(struct device *dev, uint8_t *buf, uint32_t len)
+static inline int spi_write(struct device *dev, const void *buf, uint32_t len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
 
@@ -181,8 +181,8 @@ static inline int spi_write(struct device *dev, uint8_t *buf, uint32_t len)
  * @retval DEV_* Code otherwise.
  */
 static inline int spi_transceive(struct device *dev,
-			  uint8_t *tx_buf, uint32_t tx_buf_len,
-			  uint8_t *rx_buf, uint32_t rx_buf_len)
+			  const void *tx_buf, uint32_t tx_buf_len,
+			  void *rx_buf, uint32_t rx_buf_len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
 

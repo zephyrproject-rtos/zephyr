@@ -156,8 +156,8 @@ static inline uint8_t frame_size_to_dfs(qm_spi_frame_size_t frame_size)
 }
 
 static int spi_qmsi_transceive(struct device *dev,
-			     uint8_t *tx_buf, uint32_t tx_buf_len,
-			     uint8_t *rx_buf, uint32_t rx_buf_len)
+			     const void *tx_buf, uint32_t tx_buf_len,
+			     void *rx_buf, uint32_t rx_buf_len)
 {
 	struct spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_spi_t spi = spi_config->spi;

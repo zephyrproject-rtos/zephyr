@@ -42,11 +42,10 @@ static inline int _ti_adc108s102_sampling(struct device *dev)
 	DBG("Sampling!\n");
 
 	/* SPI deals with uint8_t buffers so multiplying by 2 the length */
-	return spi_transceive(adc->spi,
-			      (uint8_t *) adc->cmd_buffer,
-			      adc->cmd_buf_len*2,
-			      (uint8_t *) adc->sampling_buffer,
-			      adc->sampling_buf_len*2);
+	return spi_transceive(adc->spi, adc->cmd_buffer,
+			      adc->cmd_buf_len * 2,
+			      adc->sampling_buffer,
+			      adc->sampling_buf_len * 2);
 }
 
 static inline void _ti_adc108s102_handle_result(struct device *dev)

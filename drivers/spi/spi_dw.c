@@ -257,8 +257,8 @@ static int spi_dw_slave_select(struct device *dev, uint32_t slave)
 }
 
 static int spi_dw_transceive(struct device *dev,
-			     uint8_t *tx_buf, uint32_t tx_buf_len,
-			     uint8_t *rx_buf, uint32_t rx_buf_len)
+			     const void *tx_buf, uint32_t tx_buf_len,
+			     void *rx_buf, uint32_t rx_buf_len)
 {
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
