@@ -504,6 +504,16 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn->handle = 0;
 
 	if (conn->type != BT_CONN_TYPE_LE) {
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		/*
+		 * If only for one connection session bond was set, clear keys
+		 * database row for this connection.
+		 */
+		if (conn->type == BT_CONN_TYPE_BR &&
+		    atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_NOBOND)) {
+			bt_keys_clear(conn->keys, BT_KEYS_LINK_KEY);
+		}
+#endif
 		bt_conn_unref(conn);
 		return;
 	}
@@ -1041,7 +1051,15 @@ static void link_key_notify(struct net_buf *buf)
 		return;
 	}
 
-	memcpy(conn->keys->link_key.val, evt->link_key, 16);
+	/*
+	 * Populate key storage with link key if bonding is required. Mark
+	 * no-bond link key flag for connection on the contrary.
+	 */
+	if (bt_conn_ssp_get_auth(conn) > BT_HCI_NO_BONDING_MITM) {
+		memcpy(conn->keys->link_key.val, evt->link_key, 16);
+	} else {
+		atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
+	}
 
 	if (evt->key_type == BT_LK_COMBINATION) {
 		atomic_set_bit(&conn->keys->flags, BT_KEYS_BR_LEGACY);
