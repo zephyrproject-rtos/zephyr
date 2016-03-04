@@ -32,15 +32,18 @@ static const char *banner2 = "Character read:\n";
 #define UART_DEVICE "UART_0"
 #endif
 
+static volatile bool data_transmitted;
+static volatile bool data_arrived;
+static char new_data;
+
 static void write_string(struct device *dev, const char *str, int len)
 {
 	for (int i = 0; i < len; i++)
 		uart_poll_out(dev, str[i]);
 }
 
-void main(void)
+static void test_by_polling(struct device *dev)
 {
-	struct device *dev = device_get_binding(UART_DEVICE);
 	unsigned char data;
 
 	write_string(dev, banner1, strlen(banner1));
@@ -52,4 +55,67 @@ void main(void)
 	write_string(dev, banner2, strlen(banner2));
 	write_string(dev, &data, 1);
 	write_string(dev, "\n", 1);
+}
+
+static void interrupt_handler(struct device *dev)
+{
+	uart_irq_update(dev);
+
+	if (uart_irq_tx_ready(dev)) {
+		data_transmitted = true;
+	}
+
+	if (uart_irq_rx_ready(dev)) {
+		uart_fifo_read(dev, &new_data, 1);
+		data_arrived = true;
+	}
+}
+
+static void read_char_irq(struct device *dev, char *data)
+{
+	uart_irq_rx_enable(dev);
+
+	data_arrived = false;
+	while (data_arrived == false)
+		;
+	*data = new_data;
+
+	uart_irq_rx_disable(dev);
+}
+
+static void write_buf_irq(struct device *dev, const char *buf, int len)
+{
+	int i;
+
+	uart_irq_tx_enable(dev);
+
+	for (i = 0; i < len; i++) {
+		data_transmitted = false;
+		uart_fifo_fill(dev, &buf[i], 1);
+		while (data_transmitted == false)
+			;
+	}
+
+	uart_irq_tx_disable(dev);
+}
+
+static void test_by_irq(struct device *dev)
+{
+	char data;
+
+	uart_irq_callback_set(dev, interrupt_handler);
+
+	write_buf_irq(dev, banner1, strlen(banner1));
+	read_char_irq(dev, &data);
+	write_buf_irq(dev, banner2, strlen(banner2));
+	write_buf_irq(dev, &data, sizeof(data));
+	write_buf_irq(dev, "\n", 1);
+}
+
+void main(void)
+{
+	struct device *dev = device_get_binding(UART_DEVICE);
+
+	test_by_polling(dev);
+	test_by_irq(dev);
 }
