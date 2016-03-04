@@ -63,6 +63,14 @@ __extension__ ({							\
 	__p->__v;							\
 })
 
+#define UNALIGNED_PUT(v, p)                                             \
+do {                                                                    \
+	struct __attribute__((__packed__)) {                            \
+		__typeof__(*p) __v;                                     \
+	} *__p = (__typeof__(__p)) (p);                                 \
+	__p->__v = (v);                                               \
+} while (0)
+
 #define _GENERIC_SECTION(segment) __attribute__((section(#segment)))
 
 #ifndef __packed
