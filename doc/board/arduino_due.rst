@@ -20,6 +20,9 @@ More information about the board can be found at the `Arduino Due website`_.
 The `Atmel SAM3X8E Datasheet`_ has the information and the datasheet about
 the processor.
 
+.. note::
+   This configuration is not supported by Arduino.
+
 Supported Features
 ******************
 
@@ -44,6 +47,9 @@ hardware features:
 Other hardware features are not currently supported by the Zephyr kernel.
 See `Arduino Due website`_ and `Atmel SAM3X8E Datasheet`_ for a complete
 list of Arduino Due board hardware features.
+
+The default configuration can be found in the Kconfig
+:file:`boards/arduino_due/arduino_due_defconfig`.
 
 .. note::
    For I2C, pull-up resistors are required for using SCL1 and SDA1
@@ -117,13 +123,47 @@ which provides USB-to-TTL serial function. The Zephyr console output, by
 default, is utilizing this controller.
 
 Flashing Arduino Due for Zephyr
-===============================
+*******************************
+
+BOSSA tool
+==========
 
 Flashing the Zephyr kernel onto Arduino Due requires the `bossa tool`_.
 
-.. note::
-   The Arduino specific bossa tool is required. Please checkout
-   the `bossa arduino branch`_ on GitHub repository.
+There are GUI and command line versions of the bossa tool. The following
+section provides the steps to build the command line version. Please
+refer to the bossa tool's README file on how to build the GUI version.
+
+Building BOSSA Command Line Tool
+---------------------------------
+
+To build the bossa tool, follow these steps:
+
+#. Checkout the bossa tool's code from the repository.
+
+  .. code-block:: console
+
+     $ git clone https://github.com/shumatech/BOSSA.git
+     $ cd BOSSA
+
+#. Checkout the arduino branch. The code on the master branch does not
+   work with Arduino Due.
+
+  .. code-block:: console
+
+     $ git checkout arduino
+
+#. Build the command line version of the bossa tool.
+
+  .. code-block:: console
+
+     $ make bin/bossac
+
+#. The resulting binary is available at :file:`bin/bossac`.
+
+
+Flashing an Application to Arduino Due
+======================================
 
 The sample application hello_world is being used in this tutorial, which can
 be found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
@@ -149,10 +189,18 @@ be found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
       $ bossac -p <tty_device> -e -w -v -b outdir/zephyr.bin
 
    Where :code:`<tty_device>` is where the Arduino Due can be found. For
-   example, under Linux, :code:`<tty_device>` should be :code:`/dev/ttyACM0`.
+   example, under Linux, :code:`<tty_device>` should be :code:`ttyACM0`.
+   Note that the path :file:`/dev/` is omitted.
 
 #. Run your favorite terminal program to listen for output. For example, under
-   Linux, the terminal should be :code:`/dev/ttyACM0`.
+   Linux, the terminal should be :code:`/dev/ttyACM0`. For example:
+
+   .. code-block:: console
+
+      $ minicom -D /dev/ttyACM0 -o
+
+   The :option:`-o` option tells minicom not to send the modem initialization
+   string.
 
 #. Press the Reset button and you should see "Hello World!" in your terminal.
 
@@ -161,7 +209,7 @@ be found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
    or it will interfere with the flashing process.
 
 References
-==========
+**********
 
 .. _Arduino Due website: https://www.arduino.cc/en/Main/ArduinoBoardDue
 
