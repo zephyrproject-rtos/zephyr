@@ -83,7 +83,8 @@ static inline int quark_se_clock_control_off(struct device *dev,
 
 static struct clock_control_driver_api quark_se_clock_control_api = {
 	.on = quark_se_clock_control_on,
-	.off = quark_se_clock_control_off
+	.off = quark_se_clock_control_off,
+	.get_rate = NULL,
 };
 
 int quark_se_clock_control_init(struct device *dev)
