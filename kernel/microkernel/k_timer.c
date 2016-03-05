@@ -23,6 +23,7 @@
 
 #include <micro_private.h>
 #include <drivers/system_timer.h>
+#include <misc/debug/object_tracing_common.h>
 
 extern struct k_timer _k_timer_blocks[];
 
@@ -98,6 +99,7 @@ void _k_timeout_alloc(struct k_args *P)
 	T->args = P;
 	_k_timer_enlist(T);
 	P->Time.timer = T;
+	SYS_TRACING_OBJ_INIT_DLL(micro_timer, T);
 }
 
 /**
@@ -133,6 +135,7 @@ void _k_timeout_free(struct k_timer *T)
 	if (T->duration != -1)
 		_k_timer_delist(T);
 	FREETIMER(T);
+	SYS_TRACING_OBJ_REMOVE_DLL(micro_timer, T);
 }
 
 /**
@@ -203,6 +206,7 @@ void _k_timer_alloc(struct k_args *P)
 	GETARGS(A);
 	T->args = A;
 	T->duration = -1; /* -1 indicates that timer is disabled */
+	SYS_TRACING_OBJ_INIT_DLL(micro_timer, T);
 }
 
 
@@ -235,6 +239,7 @@ void _k_timer_dealloc(struct k_args *P)
 
 	FREETIMER(T);
 	FREEARGS(A);
+	SYS_TRACING_OBJ_REMOVE_DLL(micro_timer, T);
 }
 
 
@@ -345,6 +350,7 @@ void _k_task_wakeup(struct k_args *P)
 
 	FREETIMER(T);
 	_k_state_bit_reset(X, TF_TIME);
+	SYS_TRACING_OBJ_REMOVE_DLL(micro_timer, T);
 }
 
 /**
@@ -376,6 +382,7 @@ void _k_task_sleep(struct k_args *P)
 
 	_k_timer_enlist(T);
 	_k_state_bit_set(_k_current_task, TF_TIME);
+	SYS_TRACING_OBJ_INIT_DLL(micro_timer, T);
 }
 
 

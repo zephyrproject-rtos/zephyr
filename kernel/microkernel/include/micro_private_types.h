@@ -37,6 +37,11 @@ struct k_timer {
 	int32_t duration;
 	int32_t period;
 	struct k_args *args;
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	/*List all user allocated timers*/
+	struct k_timer *__next;
+	struct k_timer *__prev;
+#endif
 };
 
 /* Kernel server command codes */

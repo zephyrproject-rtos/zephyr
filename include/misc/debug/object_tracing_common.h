@@ -25,6 +25,8 @@
 #ifndef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 
 #define SYS_TRACING_OBJ_INIT(name, obj) do { } while ((0))
+#define SYS_TRACING_OBJ_INIT_DLL(name, obj) do { } while ((0))
+#define SYS_TRACING_OBJ_REMOVE_DLL(name, obj) do { } while ((0))
 
 #else
 
@@ -51,6 +53,66 @@
 	}					\
 	while (0)
 
+/**
+ * @def SYS_TRACING_OBJ_INIT_DLL
+ *
+ * @brief Adds a new object into the trace list
+ * as a double linked list.
+ *
+ * @details The object is added for tracing into
+ * a trace list. This is usually called at the
+ * moment of object initialization. This list is
+ * used for objects that can be removed from the
+ * tracing list dynamically.
+ *
+ * @param name Name of the trace list.
+ * @param obj Object to be added in the trace list.
+ */
+#define SYS_TRACING_OBJ_INIT_DLL(name, obj)	\
+	do {					\
+		unsigned int key;		\
+						\
+		key = irq_lock();		\
+		if (_trace_list_##name) {	\
+			_trace_list_##name->__prev = (obj);\
+		}				\
+		(obj)->__next = _trace_list_##name;\
+		(obj)->__prev = NULL;		\
+		_trace_list_##name = obj;       \
+		irq_unlock(key);		\
+	}					\
+	while (0)
+
+/**
+ * @def SYS_TRACING_OBJ_REMOVE_DLL
+ *
+ * @brief Removes an object from a double linked
+ * trace list.
+ *
+ * @details The object is remove from the trace list.
+ * It needs to be used with DEBUG_TRACING_OBJ_INIT_DLL
+ * as a pair.
+ *
+ * @param name Name of the trace list.
+ * @param obj Object to be removed from the trace list.
+ */
+#define SYS_TRACING_OBJ_REMOVE_DLL(name, obj)	\
+	do {						\
+		unsigned int key;			\
+							\
+		key = irq_lock();			\
+		if (obj->__next) {			\
+			obj->__next->__prev = (obj)->__prev;\
+		}					\
+		if (obj->__prev) {			\
+			obj->__prev->__next = (obj)->__next;\
+		} else {				\
+			_trace_list_##name = (obj)->__next;\
+		}					\
+		irq_unlock(key);			\
+	}						\
+	while (0)
+
 /*
  * Lists for object tracing.
  */
@@ -72,6 +134,7 @@ struct _k_pipe_struct  *_trace_list_micro_pipe;
 struct pool_struct     *_trace_list_micro_mem_pool;
 struct _k_mem_map_struct *_trace_list_micro_mem_map;
 struct _k_event_struct *_trace_list_micro_event;
+struct k_timer         *_trace_list_micro_timer;
 #endif /*CONFIG_MICROKERNEL*/
 
 

@@ -34,6 +34,7 @@ extern struct ring_buf *_trace_list_sys_ring_buf;
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel/base_api.h>
+#include <micro_private_types.h>
 extern struct _k_mbox_struct  *_trace_list_micro_mbox;
 extern struct _k_mutex_struct *_trace_list_micro_mutex;
 extern struct _k_sem_struct   *_trace_list_micro_sem;
@@ -42,6 +43,7 @@ extern struct _k_pipe_struct  *_trace_list_micro_pipe;
 extern struct pool_struct     *_trace_list_micro_mem_pool;
 extern struct _k_mem_map_struct *_trace_list_micro_mem_map;
 extern struct _k_event_struct *_trace_list_micro_event;
+extern struct k_timer         *_trace_list_micro_timer;
 #endif /*CONFIG_MICROKERNEL*/
 
 /**
