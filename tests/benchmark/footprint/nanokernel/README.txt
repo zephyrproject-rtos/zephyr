@@ -37,9 +37,6 @@ maximal (a "complex" image that has support for many kernel capabilities)
 - Adds floating point support (for x87 FPU, including SSE).
 
 
-NOTE:
-- These configurations utilize standard security only.
-
 --------------------------------------------------------------------------------
 
 Building and Running Project:
