@@ -6,14 +6,14 @@ Mailboxes
 Concepts
 ********
 
-The microkernel's mailbox object type is an implementation of a traditional
-message queue.
+The microkernel's :dfn:`mailbox` object type is an implementation of a
+traditional message queue.
 
-A mailbox allows tasks to exchange messages. A task that sends a message
-is known as the *sending task*, while a task that receives the message
-is known as the *receiving task*. Messages may not be sent or received
-by fibers or ISRs, nor may a given message be received by more than one task
-(i.e. point-to-multipoint messaging is not supported).
+A mailbox allows tasks to exchange messages. A task that sends a message is
+known as the *sending task*, while a task that receives the message is known
+as the *receiving task*. Messages may not be sent or received by fibers or
+ISRs, nor may a given message be received by more than one task;
+point-to-multipoint messaging is not supported.
 
 A mailbox has a queue of messages that have been sent, but not yet received.
 The messages in the queue are sorted by priority, allowing a higher priority
@@ -21,45 +21,45 @@ message to be received before a lower priority message that was sent earlier.
 Messages of equal priority are handled in a first in, first out manner.
 
 Any number of mailboxes can be defined in a microkernel system. Each mailbox
-has a name that uniquely identifies it. A mailbox does not limit the number
-of messages it can queue, nor does it place limits on the size of the messages
-it handles.
+needs a **name** that uniquely identifies it. A mailbox does not limit the
+number of messages it can queue, nor does it place limits on the size of the
+message it handles.
 
 The content of a message is stored in an array of bytes, called the
 *message data*. The size and format of the message data is application-defined,
-and can vary from one message to the next. Message data may be stored
-in a buffer provided by the task that sends or receives the message,
-or in a memory pool block. The message data portion of a message is optional;
-a message without any message data is called an *empty message*.
+and can vary from one message to the next. Message data may be stored in a
+buffer provided by the task that sends or receives the message, or in a memory
+pool block. The message data portion of a message is optional; a message without
+any message data is called an *empty message*.
 
-The lifecycle of a message is fairly simple. A message is created when it
+The life cycle of a message is fairly simple. A message is created when it
 is given to a mailbox by the sending task. The message is then owned
 by the mailbox until it is given to a receiving task. The receiving task may
 retrieve the message data when it receives the message from the mailbox,
 or it may perform data retrieval during a second, subsequent mailbox operation.
-Only when data retrieval has been performed is the message deleted
-by the mailbox.
+Only when data retrieval has been performed is the message deleted by the
+mailbox.
 
-Messages can be exchanged non-anonymously or anonymously. A sending task
-can specify the name of the task to which the message is being sent,
-or it can specify that any task may receive the message. Likewise, a receiving
-task can specify the name of the task it wishes to receive a message from,
-or it can specify that it is willing to receive a message from any task.
-A message is exchanged only if the requirements of both the sending task and
-receiving task can both be satisfied; such tasks are said to be *compatible*.
+A message can be exchanged non-anonymously or anonymously between a :dfn:`sending`
+and :dfn:`receiving` task. A sending task can specify the name of the task to which
+the message is being sent, or it can specify that any task may receive the message.
+Likewise, a receiving task can specify the name of the task from which it wishes to
+receive a message, or it can specify that it is willing to receive a message from
+any task. A message is exchanged only when the requirements for both the sending task
+and receiving task are satisfied; such tasks are said to be *compatible*.
 
-For example, if task A sends a message to task B it will be received by task B
-if the latter tries to receive a message from task A (or from any task), but
-not if task B tries to receive a message from task C. The message can never
-be received by task C, even if it is trying to receive a message from task A
-(or from any task).
+For example, task A sends a message to task B, but it will be received by task B
+only if the latter tries to receive a message from task A (or from any task). The
+exchange will not occur if task B tries to receive a message from task C. The message
+can never be received by task C, even if it is trying to receive a message from task
+A (or from any task).
 
-Messages can be exchanged sychronously or asynchronously. In a synchronous
-exchange the sending task blocks until the message has been fully processed
-by the receiving task. In an asynchronous exchange the sending task does not
-wait until the message has been received by another task before continuing,
-thereby allowing the task to do other work (such as gathering data that will be
-used in the next message) before the message is given to a receiving task and
+Messages can be exchanged :dfn:`synchronously` or :dfn:`asynchronously`. In a
+synchronous exchange, the sending task blocks until the message has been fully
+processed by the receiving task. In an asynchronous exchange, the sending task
+does not wait until the message has been received by another task before continuing;
+this allows the task to do other work (such as gather data that will be used
+in the next message) *before* the message is given to a receiving task and
 fully processed. The technique used for a given message exchange is determined
 by the sending task.
 
@@ -72,12 +72,12 @@ if a previously sent message still exists before sending a subsequent message.
 Message Descriptor
 ==================
 
-A message descriptor is a data structure that specifies where a message's data
-is located and how the message is to be handled by the mailbox. Both the
+A :dfn:`message descriptor` is a data structure that specifies where a message's
+data is located, and how the message is to be handled by the mailbox. Both the
 sending task and the receiving task pass a message descriptor to the mailbox
 when accessing a mailbox. The mailbox uses both message descriptors to perform
 a message exchange between compatible sending and receiving tasks. The mailbox
-also updates some fields of the descriptors during the exchange to allow both
+also updates some fields of the descriptors during the exchange, allowing both
 tasks to know what occurred.
 
 A message descriptor is a structure of type :c:type:`struct k_msg`. The fields
@@ -85,7 +85,7 @@ listed below are available for application use; all other fields are for
 kernel use only.
 
    :c:option:`info`
-      A 32 bit value that is exchanged by the message sender and receiver,
+      A 32-bit value that is exchanged by the message sender and receiver,
       and whose meaning is defined by the application. This exchange is
       bi-directional, allowing the sender to pass a value to the receiver
       during any message exchange, and allowing the receiver to pass a value
@@ -129,27 +129,27 @@ Sending a Message
 =================
 
 A task sends a message by first creating the message data to be sent (if any).
-The data may be placed in a message buffer---such as an array or structure
-variable---whose contents are copied to an area supplied by the receiving task
+The data may be placed in a message buffer -- such as an array or structure
+variable -- whose contents are copied to an area supplied by the receiving task
 during the message exchange. Alternatively, the data may be placed in a block
-allocated from a memory pool, which is handed off to the receiving task
-during the exchange. A message buffer is typically used when the amount of
-data involved is small, and the cost of copying the data is less than the cost
-of allocating and freeing a memory pool block. A memory pool block *must*
+allocated from a memory pool, which gets handed off to the receiving task
+during the exchange. A message buffer is typically used when the data volume
+flowing through is small, and the cost of copying the data is less than the
+cost of allocating and freeing a memory pool block. A memory pool block *must*
 be used when a non-empty message is sent asynchronously.
 
 Next, the task creates a message descriptor that characterizes the message
 to be sent, as described in the previous section.
 
-Finally, the task calls one of the mailbox send APIs to initiate the message
-exchange. The message is immediately given to a compatible receiving task,
-if one is currently waiting for a message. Otherwise, the message is added
+Finally, the task calls one of the mailbox send APIs to initiate the
+message exchange. The message is immediately given to a compatible receiving
+task, if one is currently waiting for a message. Otherwise, the message is added
 to the mailbox's queue of messages, according to the priority specified by
 the sending task. Typically, a sending task sets the message priority to
 its own task priority level, allowing messages sent by higher priority tasks
 to take precedence over those sent by lower priority tasks.
 
-For a synchronous send operation the operation normally completes when a
+For a synchronous send operation, the operation normally completes when a
 receiving task has both received the message and retrieved the message data.
 If the message is not received before the waiting period specified by the
 sending task is reached, the message is removed from the mailbox's queue
@@ -159,18 +159,18 @@ which task received the message and how much data was exchanged, as well as
 the application-defined info value supplied by the receiving task.
 
 .. note::
-   A synchronous send operation may block the sending task indefinitely---even
-   when the task specifies a maximum waiting period---since the waiting period
+   A synchronous send operation may block the sending task indefinitely -- even
+   when the task specifies a maximum waiting period -- since the waiting period
    only limits how long the mailbox waits before the message is received
    by another task. Once a message is received there is no limit to the time
    the receiving task may take to retrieve the message data and unblock
    the sending task.
 
-For an asynchronous send operation the operation always completes immediately.
+For an asynchronous send operation, the operation always completes immediately.
 This allows the sending task to continue processing regardless of whether the
 message is immediately given to a receiving task or is queued by the mailbox.
 The sending task may optionally specify a semaphore that the mailbox gives
-when the message is deleted by the mailbox (i.e. when the message has been
+when the message is deleted by the mailbox (for example, when the message has been
 received and its data retrieved by a receiving task). The use of a semaphore
 allows the sending task to easily implement a flow control mechanism that
 ensures that the mailbox holds no more than an application-specified number
@@ -192,12 +192,12 @@ successfully the receiving task can examine the message descriptor
 to determine which task sent the message, how much data was exchanged,
 and the application-defined info value supplied by the sending task.
 
-The receiving task controls both the amount of data it retrieves from an
+The receiving task controls both the quantity of data it retrieves from an
 incoming message and where the data ends up. The task may choose to take
 all of the data in the message, to take only the initial part of the data,
 or to take no data at all. Similarly, the task may choose to have the data
 copied into a buffer area of its choice or to have it placed in a memory
-pool block. A message buffer is typically used when the amount of data
+pool block. A message buffer is typically used when the volume of data
 involved is small, and the cost of copying the data is less than the cost
 of allocating and freeing a memory pool block.
 
@@ -363,7 +363,7 @@ For example, the following code defines a private mailbox named ``PRIV_MBX``.
 The mailbox ``PRIV_MBX`` can be used in the same style as those
 defined in the MDEF.
 
-To utilize this mailbox from a different source file use the following syntax:
+To use this mailbox from a different source file use the following syntax:
 
 .. code-block:: c
 
@@ -536,10 +536,10 @@ Example: Sending an Asynchronous Mailbox Message
 ================================================
 
 This code uses a mailbox to send asynchronous messages using memory blocks
-obtained from TXPOOL, thereby eliminating unneeded data copying when exchanging
-large messages. The optional semaphore capability is used to hold off
+obtained from ``TXPOOL``, thereby eliminating unneeded data copying when
+exchanging large messages. The optional semaphore capability is used to hold off
 the sending of a new message until the previous message has been consumed,
-so that a backlog of messages doesn't build up if the consuming task is unable
+so that a backlog of messages doesn't build up when the consuming task is unable
 to keep up.
 
 .. code-block:: c
@@ -620,7 +620,7 @@ a large message.
 .. note::
    An incoming message that was sent synchronously is also processed correctly
    by this algorithm, since the mailbox automatically creates a memory block
-   containing the message data using RXPOOL. However, the performance benefit
+   containing the message data using ``RXPOOL``. However, the performance benefit
    of using the asynchronous approach is lost.
 
 APIs
@@ -629,16 +629,16 @@ APIs
 The following APIs for mailbox operations are provided by the kernel:
 
 :c:func:`task_mbox_put()`
-   Sends synchronous message to a receiving task, with time limited waiting.
+   Send synchronous message to a receiving task, with time limited waiting.
 
 :c:func:`task_mbox_block_put()`
-   Sends asynchrnonous message to a receiving task, or to a mailbox queue.
+   Send asynchronous message to a receiving task, or to a mailbox queue.
 
 :c:func:`task_mbox_get()`
-   Gets message from a mailbox, with time limited waiting.
+   Get message from a mailbox, with time limited waiting.
 
 :c:func:`task_mbox_data_get()`
-   Retrieves message data into a buffer.
+   Retrieve message data into a buffer.
 
 :c:func:`task_mbox_data_block_get()`
-   Retrieves message data into a block, with time limited waiting.
+   Retrieve message data into a block, with time limited waiting.
