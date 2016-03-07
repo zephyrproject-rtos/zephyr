@@ -52,7 +52,6 @@ config RTC_QMSI
 	Build QMSI RTC driver.
 
 config RTC_DW
-	depends on !RTC_QMSI
 	bool "Build Designware RTC Driver"
 	default n
 	help
