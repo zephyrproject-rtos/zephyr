@@ -141,8 +141,7 @@ static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
 	}
 
 	/* Limits according to BT Core spec 4.2 [Vol 2, Part E, 7.8.12] */
-	if (timeout < 10 || timeout > 3200 ||
-	    (2 * timeout) < ((1 + latency) * max * 5)) {
+	if (timeout < 10 || timeout > 3200) {
 		return false;
 	}
 
