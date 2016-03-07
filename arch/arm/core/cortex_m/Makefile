@@ -5,7 +5,8 @@ asflags-y = $(ccflags-y)
 
 obj-y = vector_table.o reset.o \
 	prep_c.o scs.o scb.o nmi.o \
-	sw_isr_table.o exc_manage.o exc_wrapper.o
+	exc_manage.o exc_wrapper.o
 
 obj-$(CONFIG_ERRNO) += errno.o
 obj-$(CONFIG_IRQ_VECTOR_TABLE_SOC) += irq_vector_table.o
+obj-$(CONFIG_SW_ISR_TABLE) += sw_isr_table.o
