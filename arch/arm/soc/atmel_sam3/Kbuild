@@ -1,3 +1,1 @@
 obj-y += soc.o nmi_on_reset.o
-
-obj-$(CONFIG_IRQ_VECTOR_TABLE_SOC) += irq_vector_table.o

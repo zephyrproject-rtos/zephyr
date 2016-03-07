@@ -8,3 +8,4 @@ obj-y = vector_table.o reset.o \
 	sw_isr_table.o exc_manage.o exc_wrapper.o
 
 obj-$(CONFIG_ERRNO) += errno.o
+obj-$(CONFIG_IRQ_VECTOR_TABLE_SOC) += irq_vector_table.o
