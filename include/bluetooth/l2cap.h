@@ -79,11 +79,18 @@ struct bt_l2cap_chan {
 struct bt_l2cap_chan_ops {
 	/** Channel connected callback
 	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  connection completes.
+	 *
 	 *  @param chan The channel that has been connected
 	 */
 	void			(*connected)(struct bt_l2cap_chan *chan);
 
 	/** Channel disconnected callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  channel is disconnected, including when a connection gets
+	 *  rejected.
 	 *
 	 *  @param chan The channel that has been Disconnected
 	 */
@@ -132,6 +139,9 @@ struct bt_l2cap_server {
 
 	/** Server accept callback
 	 *
+	 *  This callback is called whenever a new incoming connection requires
+	 *  authorization.
+	 *
 	 *  @param conn The connection that is requesting authorization
 	 *  @param chan Pointer to received the allocated channel
 	 *
@@ -144,7 +154,9 @@ struct bt_l2cap_server {
 
 /** @brief Register L2CAP server.
  *
- *  Register L2CAP server for a PSM.
+ *  Register L2CAP server for a PSM, each new connection is authorized using
+ *  the accept() callback which in case of success shall allocate the channel
+ *  structure to be used by the new connection.
  *
  *  @param server Server structure.
  *
@@ -154,7 +166,9 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server);
 
 /** @brief Connect L2CAP channel
  *
- *  Connect L2CAP channel by PSM.
+ *  Connect L2CAP channel by PSM, once the connection is completed channel
+ *  connected() callback will be called. If the connection is rejected
+ *  disconnected() callback is called instead.
  *
  *  @param conn Connection object.
  *  @param chan Channel object.
@@ -168,7 +182,7 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 /** @brief Disconnect L2CAP channel
  *
  *  Disconnect L2CAP channel, if the connection is pending it will be
- *  canceled.
+ *  canceled and as a result the channel disconnected() callback is called.
  *
  *  @param chan Channel object.
  *
