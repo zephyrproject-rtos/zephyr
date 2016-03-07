@@ -502,6 +502,9 @@ coap_context_close(coap_context_t *coap_ctx)
   if(coap_ctx->buf && uip_udp_conn(coap_ctx->buf) != NULL) {
     uip_udp_remove(uip_udp_conn(coap_ctx->buf));
   }
+
+  net_context_put(coap_ctx->net_ctx);
+
   coap_ctx->is_used = 0;
 }
 /*---------------------------------------------------------------------------*/
