@@ -45,7 +45,9 @@
 #include "er-coap.h"
 #include "er-coap-transactions.h"
 
-#define DEBUG DEBUG_NONE
+#if CONFIG_NETWORK_IP_STACK_DEBUG_COAP_INTERNAL
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/

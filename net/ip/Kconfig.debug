@@ -199,4 +199,11 @@ config NETWORK_IP_STACK_DEBUG_COAP_TRANSACTION
 	help
 	  Enables CoAP transaction output debug messages
 
+config NETWORK_IP_STACK_DEBUG_COAP_INTERNAL
+	bool "Debug CoAP internals"
+	depends on ER_COAP
+	default n
+	help
+	  Enables CoAP internals output debug messages
+
 endif
