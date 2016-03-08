@@ -409,27 +409,35 @@ int bt_gatt_discover(struct bt_conn *conn,
 	BT_DBG("conn %p start 0x%04x end 0x%04x", conn, params->start_handle,
 	       params->end_handle);
 
+	memset(&discover_params, 0, sizeof(discover_params));
+
 	switch (params->type) {
 	case BT_GATT_DISCOVER_PRIMARY:
 	case BT_GATT_DISCOVER_INCLUDE:
+		if (params->uuid) {
+			/* Always copy a full 128 bit UUID */
+			memcpy(&discover_params.uuid, BT_UUID_128(params->uuid),
+			       sizeof(discover_params.uuid));
+			discover_params.flags = DISCOVER_FLAGS_UUID_PRESENT;
+		}
+
+		break;
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 	case BT_GATT_DISCOVER_DESCRIPTOR:
-		discover_params.conn_handle = conn->handle;
-		discover_params.type = params->type;
-		/* Always copy a full 128 bit UUID */
-		memcpy(&discover_params.uuid, BT_UUID_128(params->uuid),
-		       sizeof(discover_params.uuid));
-		discover_params.handle_range.start_handle = params->start_handle;
-		discover_params.handle_range.end_handle = params->end_handle;
-
-		conn->gatt_private = params;
-
-		nble_gattc_discover_req(&discover_params);
 		break;
 	default:
 		BT_ERR("Unknown params type %u", params->type);
 		return -EINVAL;
 	}
+
+	discover_params.conn_handle = conn->handle;
+	discover_params.type = params->type;
+	discover_params.handle_range.start_handle = params->start_handle;
+	discover_params.handle_range.end_handle = params->end_handle;
+
+	conn->gatt_private = params;
+
+	nble_gattc_discover_req(&discover_params);
 
 	return 0;
 }
