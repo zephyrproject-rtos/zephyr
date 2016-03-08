@@ -188,20 +188,10 @@ config  SW_ISR_TABLE_DYNAMIC
 	  SRAM so that it is writable. This has the side-effect of removing
 	  write-protection on the ISR table.
 
-config  SW_ISR_TABLE_STATIC_CUSTOM
-	bool
-	prompt "Projects provide a custom static software ISR table"
-	depends on SW_ISR_TABLE && !SW_ISR_TABLE_DYNAMIC
-	default n
-	help
-	  Projects, not the BSP, provide a software table of ISR and their
-	  parameters. The table is static, and thus ISRs cannot be connected
-	  at runtime.
-
 config	SW_ISR_TABLE_BSP
 	bool
 	# omit prompt to signify a "hidden" option
-	depends on SW_ISR_TABLE_DYNAMIC || (SW_ISR_TABLE && !SW_ISR_TABLE_STATIC_CUSTOM)
+	depends on SW_ISR_TABLE_DYNAMIC || SW_ISR_TABLE
 	default y
 	help
 	  Not user-selectable, helps build system logic.
