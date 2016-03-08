@@ -285,9 +285,9 @@ uip_icmp6_error_output(struct net_buf *buf, uint8_t type, uint8_t code, uint32_t
 
   UIP_STAT(++uip_stat.icmp.sent);
 
-  PRINTF("Sending ICMPv6 ERROR message type %d code %d to", type, code);
+  PRINTF("Sending ICMPv6 ERROR message type %d code %d to ", type, code);
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
-  PRINTF("from");
+  PRINTF(" from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("\n");
   return;
