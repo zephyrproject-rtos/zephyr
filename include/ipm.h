@@ -99,7 +99,7 @@ struct ipm_driver_api {
  * @retval 0        On success.
  */
 static inline int ipm_send(struct device *ipmdev, int wait, uint32_t id,
-			   void *data, int size)
+			   const void *data, int size)
 {
 	struct ipm_driver_api *api;
 
