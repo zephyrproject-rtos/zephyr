@@ -1,5 +1,11 @@
+/**
+ * @file
+ *
+ * @brief NMI routines for ARM Cortex M series
+ */
+
 /*
- * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2015 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +20,14 @@
  * limitations under the License.
  */
 
-/**
- * @file
- * @brief Default basic NMI handler before the kernel is up
- *
- * Provide a default handler for NMI before the system is up. The default action
- * is to hard hang, sleeping.
- *
- * This might be preferable than rebooting to help debugging, or because
- * rebooting might trigger the exact same problem over and over.
- */
+#ifndef __CORTEX_M_NMI_H
+#define __CORTEX_M_NMI_H
 
-#define _ASMLANGUAGE
+#ifdef CONFIG_RUNTIME_NMI
+extern void _NmiInit(void);
+#define NMI_INIT() _NmiInit()
+#else
+#define NMI_INIT()
+#endif
 
-#include <toolchain.h>
-#include <sections.h>
-
-_ASM_FILE_PROLOGUE
-
-GTEXT(_SysNmiOnReset)
-
-SECTION_FUNC(TEXT, _SysNmiOnReset)
-    wfi
-    b _SysNmiOnReset
+#endif /* __CORTEX_M_NMI_H */

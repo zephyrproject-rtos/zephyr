@@ -1,1 +1,1 @@
-obj-y += soc.o nmi_on_reset.o
+obj-y += soc.o

@@ -51,6 +51,7 @@ extern "C" {
 #include <arch/arm/cortex_m/asm_inline.h>
 #include <arch/arm/cortex_m/addr_types.h>
 #include <arch/arm/cortex_m/sys_io.h>
+#include <arch/arm/cortex_m/nmi.h>
 #endif
 
 #define STACK_ALIGN  4

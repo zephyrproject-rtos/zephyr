@@ -27,12 +27,7 @@
 #include <init.h>
 #include <soc.h>
 
-#ifdef CONFIG_RUNTIME_NMI
-extern void _NmiInit(void);
-#define NMI_INIT() _NmiInit()
-#else
-#define NMI_INIT()
-#endif
+#include <arch/cpu.h>
 
 /**
  *
