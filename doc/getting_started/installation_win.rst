@@ -59,7 +59,7 @@ Configure Python's folder location in the environmental variable :envvar:`PATH`.
 
 .. code-block:: console
 
-   export PATH=$PATH:{PYTHON_PATH}
+   export PATH=$PATH:${PYTHON_PATH}
 
 .. note:: The format of the path for this variable (PYTHON_PATH) must to be in
    the linux format. For example, :file:`C:\python27` would be written as
