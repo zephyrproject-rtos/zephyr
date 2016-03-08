@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 #if defined(CONFIG_STDOUT_CONSOLE)
-  #include <stdio.h>
+#include <stdio.h>
 #else
-  #include <misc/printk.h>
+#include <misc/printk.h>
 #endif
 
 #define N_PHILOSOPHERS	6
@@ -27,7 +27,8 @@
  * Therefore use puts() instead of printf().
  */
 #if defined(CONFIG_STDOUT_CONSOLE)
-  #define PRINTF(...) {char output[256]; sprintf(output, __VA_ARGS__); puts(output);}
+#define PRINTF(...) { char output[256]; \
+		      sprintf(output, __VA_ARGS__); puts(output); }
 #else
-  #define PRINTF(...) printk(__VA_ARGS__)
+#define PRINTF(...) printk(__VA_ARGS__)
 #endif

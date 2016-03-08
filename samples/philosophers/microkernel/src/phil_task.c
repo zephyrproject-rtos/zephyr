@@ -23,13 +23,12 @@
 	"\x1b[2J\x1b[15;1H"   \
 	"Demo Description\n"  \
 	"----------------\n"  \
-	"An implementation of a solution to the Dining Philosophers problem\n"  \
-	"(a classic multi-thread synchronization problem).  This particular\n"  \
-	"implementation demonstrates the usage of multiple (6) %s\n"            \
+	"An implementation of a solution to the Dining Philosophers problem\n" \
+	"(a classic multi-thread synchronization problem).  This particular\n" \
+	"implementation demonstrates the usage of multiple (6) %s\n"           \
 	"of differing priorities and the %s semaphores and timers."
 
 #ifdef CONFIG_NANOKERNEL
-
 #define STSIZE 1024
 
 /* externs */
@@ -62,7 +61,7 @@ int main(void)
 	/* create philosopher fibers */
 	for (i = 0; i < N_PHILOSOPHERS; i++) {
 		task_fiber_start(&philStack[i][0], STSIZE,
-						(nano_fiber_entry_t) philEntry, 0, 0, 6, 0);
+				 (nano_fiber_entry_t) philEntry, 0, 0, 6, 0);
 	}
 
 	/* wait forever */
@@ -71,7 +70,6 @@ int main(void)
 		nano_cpu_idle();
 	}
 }
-
 #else
 /**
  *

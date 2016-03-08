@@ -19,25 +19,26 @@
 #include "phil.h"
 
 #ifdef CONFIG_NANOKERNEL
-  #define FORK(x) &forks[x]
-  #define TAKE(x) nano_fiber_sem_take(x, TICKS_UNLIMITED)
-  #define GIVE(x) nano_fiber_sem_give(x)
+#define FORK(x) (&forks[x])
+#define TAKE(x) nano_fiber_sem_take(x, TICKS_UNLIMITED)
+#define GIVE(x) nano_fiber_sem_give(x)
 #else  /* ! CONFIG_NANOKERNEL */
-  #define FORK(x) forks[x]
-  #define TAKE(x) task_mutex_lock(x, TICKS_UNLIMITED)
-  #define GIVE(x) task_mutex_unlock(x)
+#define FORK(x) forks[x]
+#define TAKE(x) task_mutex_lock(x, TICKS_UNLIMITED)
+#define GIVE(x) task_mutex_unlock(x)
 #endif /*  CONFIG_NANOKERNEL */
 
 #define RANDDELAY(x) myDelay(((sys_tick_get_32() * ((x) + 1)) & 0x1f) + 1)
 
-#define PRINT(x,y)	myPrint(x,y)
+#define PRINT(x, y)	myPrint(x, y)
 
 #ifdef CONFIG_NANOKERNEL
 /* externs */
 
 extern struct nano_sem forks[N_PHILOSOPHERS];
 #else  /* ! CONFIG_NANOKERNEL */
-kmutex_t forks[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3, forkMutex4, forkMutex5};
+kmutex_t forks[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3, forkMutex4,
+		    forkMutex5};
 #endif /*  CONFIG_NANOKERNEL */
 
 /**
