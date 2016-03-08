@@ -142,7 +142,7 @@ void bt_smp_pkey_ready(const uint8_t *pkey);
 int bt_smp_init(void);
 
 int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
-int bt_smp_auth_passkey_confirm(struct bt_conn *conn, bool match);
+int bt_smp_auth_passkey_confirm(struct bt_conn *conn);
 int bt_smp_auth_cancel(struct bt_conn *conn);
 
 /** brief Verify signed message

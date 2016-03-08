@@ -1206,21 +1206,12 @@ static void cmd_auth_cancel(int argc, char *argv[])
 
 static void cmd_auth_passkey_confirm(int argc, char *argv[])
 {
-	bool match;
-
 	if (!default_conn) {
 		printk("Not connected\n");
 		return;
 	}
 
-	if (argc < 2) {
-		printk("true/false required\n");
-		return;
-	}
-
-	match = !strcmp(argv[1], "true");
-
-	bt_conn_auth_passkey_confirm(default_conn, match);
+	bt_conn_auth_passkey_confirm(default_conn);
 }
 
 static void cmd_auth_passkey(int argc, char *argv[])

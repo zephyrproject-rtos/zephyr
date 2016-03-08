@@ -3186,7 +3186,7 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 	return 0;
 }
 
-int bt_smp_auth_passkey_confirm(struct bt_conn *conn, bool match)
+int bt_smp_auth_passkey_confirm(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
 
@@ -3197,12 +3197,6 @@ int bt_smp_auth_passkey_confirm(struct bt_conn *conn, bool match)
 
 	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
 		return -EINVAL;
-	}
-
-	/* if passkey doen't match abort pairing */
-	if (!match) {
-		smp_error(smp, BT_SMP_ERR_CONFIRM_FAILED);
-		return 0;
 	}
 
 	/* wait for DHKey being generated */
@@ -3242,7 +3236,20 @@ int bt_smp_auth_cancel(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	return smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+		return -EINVAL;
+	}
+
+	switch (smp->method) {
+	case PASSKEY_INPUT:
+	case PASSKEY_DISPLAY:
+		return smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+	case PASSKEY_CONFIRM:
+		return smp_error(smp, BT_SMP_ERR_CONFIRM_FAILED);
+	case JUST_WORKS:
+	default:
+		return 0;
+	}
 }
 
 void bt_smp_update_keys(struct bt_conn *conn)

@@ -351,18 +351,16 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
  */
 int bt_conn_auth_cancel(struct bt_conn *conn);
 
-/** @brief Reply if passkey was confirmed by user.
+/** @brief Reply if passkey was confirmed to match by user.
  *
  *  This function should be called only after passkey_confirm callback from
- *  bt_conn_auth_cb structure was called. If passkey is confirmed to match
- *  then match should be true. Otherwise match should be false.
+ *  bt_conn_auth_cb structure was called.
  *
  *  @param conn Connection object.
- *  @param match True if passkey was confirmed to match, false otherwise.
  *
  *  @return Zero on success or negative error code otherwise
  */
-int bt_conn_auth_passkey_confirm(struct bt_conn *conn, bool match);
+int bt_conn_auth_passkey_confirm(struct bt_conn *conn);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief Reply with entered PIN code.

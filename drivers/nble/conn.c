@@ -304,7 +304,7 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 	return -ENOSYS;
 }
 
-int bt_conn_auth_passkey_confirm(struct bt_conn *conn, bool match)
+int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 {
 	return -ENOSYS;
 }

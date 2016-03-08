@@ -1173,14 +1173,14 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 	return -EINVAL;
 }
 
-int bt_conn_auth_passkey_confirm(struct bt_conn *conn, bool match)
+int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 {
 	if (!bt_auth) {
 		return -EINVAL;
 	};
 #if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
-		return bt_smp_auth_passkey_confirm(conn, match);
+		return bt_smp_auth_passkey_confirm(conn);
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
 
