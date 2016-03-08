@@ -48,6 +48,9 @@ ${PIPE_CLIENT_IN}:
 	mkfifo $@
 ${PIPE_CLIENT_OUT}:
 	mkfifo $@
+LINK_CLIENT_PIPES:
+	ln ${PIPE_SERVER_IN} ${PIPE_CLIENT_OUT}
+	ln ${PIPE_SERVER_OUT} ${PIPE_CLIENT_IN}
 
 .PHONY: PIPE_CLIENT_IN_LINK
 PIPE_CLIENT_IN_LINK: ${PIPE_SERVER_IN}
@@ -61,6 +64,11 @@ PIPE_CLIENT_OUT_LINK: ${PIPE_SERVER_OUT}
 # between them and saving data to pcap via help of monitor applicaiton)
 .PHONY: setup_pipes_dual_monitor
 setup_pipes_dual_monitor: ${PIPE_SERVER_IN} ${PIPE_SERVER_OUT} ${PIPE_CLIENT_IN} ${PIPE_CLIENT_OUT}
+
+# Setup the dual qemu test case with (two qemus passing data
+# between them)
+.PHONY: setup_pipes
+setup_pipes: ${PIPE_SERVER_IN} ${PIPE_SERVER_OUT} LINK_CLIENT_PIPES
 
 export QEMU_NUM
 export QEMU_EXTRA_FLAGS
@@ -79,13 +87,10 @@ start_monitor: ${ZEPHYR_BASE}/net/ip/tools/monitor_15_4
 		${PIPE_BASE}-server ${PIPE_BASE}-client > /dev/null & \
 		echo "$$!" > ${PID_FILE}
 
-server: remove_pipes setup_pipes_dual_monitor $(DOTCONFIG) start_monitor
+server: remove_pipes setup_pipes $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),qemu); true
-	$(Q)kill `cat ${PID_FILE}`
-	$(Q)rm -f ${PID_FILE}
-	-@killall monitor_15_4 > /dev/null 2>&1 ; true
 	$(Q)stty sane
 
-client: setup_pipes_dual_monitor $(DOTCONFIG)
+client: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),qemu); true
 	$(Q)stty sane
