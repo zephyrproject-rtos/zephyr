@@ -31,14 +31,54 @@
 #ifdef CONFIG_NANOKERNEL
 #define OBJ_LIST_NAME nano_sem
 #define OBJ_LIST_TYPE struct nano_sem
+/* We expect N_PHILOSPHERS fibers and:
+ *	1 Background task
+ *	1 The object monitor fiber
+ */
+#define DELTA_THREADS 2
 #else  /*CONFIG_MICROKERNEL*/
 #define OBJ_LIST_NAME micro_mutex
 #define OBJ_LIST_TYPE struct _k_mutex_struct
+/* We expect N_PHILOSPHERS tasks and:
+ *	1 Phil demo task
+ *	1 The object monitor task
+ *	1 Task scheduler fiber
+ */
+#define DELTA_THREADS 3
 #endif  /*CONFIG_NANOKERNEL*/
+
+static inline int test_thread_monitor(void)
+{
+	int obj_counter = 0;
+	struct tcs *thread_list = NULL;
+
+	thread_list   = (struct tcs *)SYS_THREAD_MONITOR_HEAD;
+	while (thread_list != NULL) {
+		if (thread_list->prio == -1) {
+			TC_PRINT("TASK: %p FLAGS: 0x%x\n",
+			thread_list, thread_list->flags);
+		} else {
+			TC_PRINT("FIBER: %p FLAGS: 0x%x\n",
+			thread_list, thread_list->flags);
+		}
+		thread_list = (struct tcs *)SYS_THREAD_MONITOR_NEXT(thread_list);
+		obj_counter++;
+	}
+	TC_PRINT("THREAD QUANTITY: %d\n", obj_counter);
+
+	if (obj_counter == N_PHILOSOPHERS + DELTA_THREADS) {
+		TC_END_RESULT(TC_PASS);
+		return 1;
+	}
+
+	TC_END_RESULT(TC_FAIL);
+	return 0;
+}
 
 void object_monitor(void)
 {
 	int obj_counter;
+	int test_counter = 0;
 	void *obj_list   = NULL;
 
 	TC_START("OBJECT TRACING TEST");
@@ -54,9 +94,16 @@ void object_monitor(void)
 
 	if (obj_counter == N_PHILOSOPHERS) {
 		TC_END_RESULT(TC_PASS);
-		TC_END_REPORT(TC_PASS);
+		test_counter++;
 	} else {
 		TC_END_RESULT(TC_FAIL);
+	}
+
+	test_counter += test_thread_monitor();
+
+	if (test_counter == 2) {
+		TC_END_REPORT(TC_PASS);
+	} else {
 		TC_END_REPORT(TC_FAIL);
 	}
 }
