@@ -102,7 +102,7 @@ int mcp9808_init(struct device *dev)
 	if (!data->i2c_master) {
 		DBG("mcp9808: i2c master not found: %s\n",
 		    CONFIG_MCP9808_I2C_DEV_NAME);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	data->i2c_slave_addr = CONFIG_MCP9808_I2C_ADDR;

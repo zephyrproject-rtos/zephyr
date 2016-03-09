@@ -392,7 +392,7 @@ static int _i2c_qse_ss_setup(struct device *dev, uint16_t addr)
 	default:
 		DBG("I2C: invalid speed requested\n");
 		/* TODO change */
-		rc = DEV_INVALID_CONF;
+		rc = -EINVAL;
 		goto done;
 	}
 
@@ -584,7 +584,7 @@ static int i2c_qse_ss_runtime_configure(struct device *dev, uint32_t config)
 		break;
 	default:
 		/* TODO change */
-		rc = DEV_INVALID_CONF;
+		rc = -EINVAL;
 	}
 
 	/*

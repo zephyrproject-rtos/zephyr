@@ -183,7 +183,7 @@ static inline int gpio_qmsi_config(struct device *port, int access_op,
 {
 	if (((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) ||
 	    ((flags & GPIO_DIR_IN) && (flags & GPIO_DIR_OUT))) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {

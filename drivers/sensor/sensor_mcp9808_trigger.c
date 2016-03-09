@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <i2c.h>
 #include <gpio.h>
@@ -76,7 +78,7 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 
 #ifdef CONFIG_SENSOR_DEBUG
 	if (chan != SENSOR_CHAN_TEMP) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 #endif
 
@@ -92,7 +94,7 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 		reg_val |= val->val1 << 4;
 		break;
 	default:
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	switch (attr) {
@@ -103,7 +105,7 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 		reg_addr = MCP9808_REG_UPPER_LIMIT;
 		break;
 	default:
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	return mcp9808_reg_write(data, reg_addr, reg_val);

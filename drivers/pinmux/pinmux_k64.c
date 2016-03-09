@@ -310,35 +310,35 @@ int pinmux_fsl_k64_initialize(struct device *port)
 #ifdef CONFIG_GPIO_K64_A
 	data->gpio_a = device_get_binding(CONFIG_PINMUX_K64_GPIO_A_NAME);
 	if (!data->gpio_a) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 #endif
 
 #ifdef CONFIG_GPIO_K64_B
 	data->gpio_b = device_get_binding(CONFIG_PINMUX_K64_GPIO_B_NAME);
 	if (!data->gpio_b) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 #endif
 
 #ifdef CONFIG_GPIO_K64_C
 	data->gpio_c = device_get_binding(CONFIG_PINMUX_K64_GPIO_C_NAME);
 	if (!data->gpio_c) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 #endif
 
 #ifdef CONFIG_GPIO_K64_D
 	data->gpio_d = device_get_binding(CONFIG_PINMUX_K64_GPIO_D_NAME);
 	if (!data->gpio_d) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 #endif
 
 #ifdef CONFIG_GPIO_K64_E
 	data->gpio_e = device_get_binding(CONFIG_PINMUX_K64_GPIO_E_NAME);
 	if (!data->gpio_e) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 #endif
 

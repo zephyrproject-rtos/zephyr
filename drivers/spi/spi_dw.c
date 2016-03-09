@@ -250,7 +250,7 @@ static int spi_dw_slave_select(struct device *dev, uint32_t slave)
 	DBG("%s: %p %d\n", __func__, dev, slave);
 
 	if (slave == 0 || slave > 4) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	spi->slave = 1 << (slave - 1);

@@ -112,7 +112,7 @@ static int gpio_mmio_config(struct device *dev, int access_op,
 	/* Setup direction register */
 
 	if (!cfg->reg.dir) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	if (cfg->cfg_flags & GPIO_MMIO_CFG_DIR_MASK) {
@@ -197,7 +197,7 @@ static int gpio_mmio_write(struct device *dev, int access_op,
 		dev->config->config_info;
 
 	if (!cfg->reg.output) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	switch (access_op) {
@@ -231,7 +231,7 @@ static int gpio_mmio_read(struct device *dev, int access_op,
 		dev->config->config_info;
 
 	if (!cfg->reg.input) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	switch (access_op) {

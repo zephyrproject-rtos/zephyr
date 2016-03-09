@@ -776,7 +776,7 @@ static int _bt_uart_init(struct device *unused)
 	h5_dev = device_get_binding(CONFIG_BLUETOOTH_UART_ON_DEV_NAME);
 
 	if (h5_dev == NULL) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	bt_driver_register(&drv);

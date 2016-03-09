@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <misc/ring_buffer.h>
 #include <misc/printk.h>
@@ -102,13 +104,13 @@ int ipm_console_receiver_init(struct device *d)
 	if (!ipm) {
 		printk("unable to bind IPM console receiver to '%s'\n",
 		       __func__, config_info->bind_to);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	if (ipm_max_id_val_get(ipm) < 0xFF) {
 		printk("IPM driver %s doesn't support 8-bit id values",
 		       config_info->bind_to);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	nano_sem_init(&driver_data->sem);

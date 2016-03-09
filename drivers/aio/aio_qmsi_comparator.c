@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <stdio.h>
 #include <nanokernel.h>
 #include <board.h>
@@ -45,11 +47,11 @@ static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 	qm_ac_config_t config;
 
 	if (qm_ac_get_config(&config) != QM_RC_OK) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	if (index >= AIO_QMSI_CMP_COUNT) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* Disable interrupt to host */
@@ -60,7 +62,7 @@ static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 	config.power &= ~(1 << index);
 
 	if (qm_ac_set_config(&config) != QM_RC_OK) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	return 0;
@@ -77,11 +79,11 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 	qm_ac_config_t config;
 
 	if (qm_ac_get_config(&config) != QM_RC_OK) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	if (index >= AIO_QMSI_CMP_COUNT) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	aio_qmsi_cmp_disable(dev, index);
@@ -107,7 +109,7 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 	config.power |= (1 << index);
 
 	if (qm_ac_set_config(&config) != QM_RC_OK) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* Enable Interrupts to host for an specific comparator */

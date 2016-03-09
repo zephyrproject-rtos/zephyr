@@ -143,7 +143,7 @@ static int gpio_sch_config(struct device *dev,
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (pin >= info->bits) {
-			return DEV_INVALID_CONF;
+			return -EINVAL;
 		}
 
 		_gpio_pin_config(dev, pin, flags);

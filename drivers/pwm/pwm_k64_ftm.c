@@ -94,7 +94,7 @@ static int pwm_ftm_clk_enable(uint8_t ftm_num)
 	if (ftm_num > 3) {
 		DBG("ERROR: Illegal FTM number (%d).\n"
 		    "  Cannot enable PWM clock\n", ftm_num);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* enabling the FTM by setting one of the bits SIM_SCGC6[26:24] */
@@ -339,7 +339,7 @@ static int pwm_ftm_set_values(struct device *dev, int access_op,
 			/* If phase != 0 enable combine mode */
 			if (channel % 2 != 0) {
 				DBG("If Phase is non-zero pwm must be 0, 2, 4, 6.\n");
-				return DEV_INVALID_CONF;
+				return -EINVAL;
 			}
 
 			DBG("Note: Enabling phase on pwm%d therefore "
@@ -352,14 +352,14 @@ static int pwm_ftm_set_values(struct device *dev, int access_op,
 			case 0:
 				if (!config->phase_enable0) {
 					DBG("Error: Phase capability must be enabled on FTM0\n");
-					return DEV_INVALID_CONF;
+					return -EINVAL;
 				}
 				break;
 
 			case 1:
 				if (!config->phase_enable2) {
 					DBG("Error: Phase capability must be enabled on FTM2\n");
-					return DEV_INVALID_CONF;
+					return -EINVAL;
 				}
 				drv_data->phase[1] = on;
 				break;
@@ -367,19 +367,19 @@ static int pwm_ftm_set_values(struct device *dev, int access_op,
 			case 2:
 				if (!config->phase_enable4) {
 					DBG("Error: Phase capability must be enabled on FTM4\n");
-					return DEV_INVALID_CONF;
+					return -EINVAL;
 				}
 				break;
 
 			case 3:
 				if (!config->phase_enable6) {
 					DBG("Error: Phase capability must be enabled on FTM0\n");
-					return DEV_INVALID_CONF;
+					return -EINVAL;
 				}
 				break;
 
 			default:
-				return DEV_INVALID_CONF;
+				return -EINVAL;
 			}
 
 			drv_data->phase[pwm_pair] = on;
@@ -406,7 +406,7 @@ static int pwm_ftm_set_values(struct device *dev, int access_op,
 			sys_write32(off, PWM_K64_FTM_CNV(config->reg_base, channel+1));
 #else /*COMBINE_MODE_SUPPORT*/
 			DBG("Error: \"on\" value must be zero. Phase is not supported\n");
-			return DEV_INVALID_CONF;
+			return -EINVAL;
 #endif /*COMBINE_MODE_SUPPORT*/
 
 		} else {

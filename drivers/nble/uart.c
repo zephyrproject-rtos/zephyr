@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <sections.h>
 
@@ -226,7 +228,7 @@ static int _bt_nble_init(struct device *unused)
 
 	nble_dev = device_get_binding(CONFIG_NBLE_UART_ON_DEV_NAME);
 	if (!nble_dev) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	net_buf_pool_init(rx_pool);

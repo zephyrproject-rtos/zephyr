@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <i2c.h>
 #include <sensor.h>
@@ -56,7 +58,7 @@ int sx9500_trigger_set(struct device *dev,
 		break;
 
 	default:
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	return 0;
@@ -145,7 +147,7 @@ int sx9500_setup_interrupt(struct device *dev)
 	if (!gpio) {
 		DBG("sx9500: gpio controller %s not found\n",
 		    CONFIG_SX9500_GPIO_CONTROLLER);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	gpio_pin_configure(gpio, CONFIG_SX9500_GPIO_PIN,

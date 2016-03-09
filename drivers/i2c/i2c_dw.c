@@ -375,7 +375,7 @@ static int _i2c_dw_setup(struct device *dev, uint16_t slave_address)
 		break;
 	case I2C_SPEED_HIGH:
 		if (!dw->support_hs_mode) {
-			return DEV_INVALID_CONF;
+			return -EINVAL;
 		}
 
 		DBG("I2C: speed set to HIGH\n");
@@ -386,7 +386,7 @@ static int _i2c_dw_setup(struct device *dev, uint16_t slave_address)
 		break;
 	default:
 		DBG("I2C: invalid speed requested\n");
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	DBG("I2C: lcnt = %d\n", dw->lcnt);
@@ -605,12 +605,12 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 
 			dw->hcnt = value;
 		} else {
-			rc = DEV_INVALID_CONF;
+			rc = -EINVAL;
 		}
 		break;
 	default:
 		/* TODO change */
-		rc = DEV_INVALID_CONF;
+		rc = -EINVAL;
 	}
 
 	/*

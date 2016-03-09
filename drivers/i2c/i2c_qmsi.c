@@ -76,7 +76,7 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 
 	/* This driver only supports master mode. */
 	if (!cfg.bits.is_master_device)
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 
 	qm_cfg.mode = QM_I2C_MASTER;
 	qm_cfg.address_mode = (cfg.bits.use_10_bit_addr) ? QM_I2C_10_BIT :
@@ -93,7 +93,7 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 		qm_cfg.speed = QM_I2C_SPEED_FAST_PLUS;
 		break;
 	default:
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	if (qm_i2c_set_config(instance, &qm_cfg) != QM_RC_OK)

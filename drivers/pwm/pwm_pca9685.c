@@ -88,13 +88,13 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
 	uint8_t buf[] = { 0, 0, 0, 0, 0};
 
 	if (!_has_i2c_master(dev)) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	switch (access_op) {
 	case PWM_ACCESS_BY_PIN:
 		if (pwm > MAX_PWM_OUT) {
-			return DEV_INVALID_CONF;
+			return -EINVAL;
 		}
 		buf[0] = REG_LED_ON_L(pwm);
 		break;
@@ -159,7 +159,7 @@ static int pwm_pca9685_set_duty_cycle(struct device *dev, int access_op,
 static int pwm_pca9685_suspend(struct device *dev)
 {
 	if (!_has_i2c_master(dev)) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	return -ENOTSUP;
@@ -168,7 +168,7 @@ static int pwm_pca9685_suspend(struct device *dev)
 static int pwm_pca9685_resume(struct device *dev)
 {
 	if (!_has_i2c_master(dev)) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	return -ENOTSUP;
@@ -203,7 +203,7 @@ int pwm_pca9685_init(struct device *dev)
 	/* Find out the device struct of the I2C master */
 	i2c_master = device_get_binding((char *)config->i2c_master_dev_name);
 	if (!i2c_master) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 	drv_data->i2c_master = i2c_master;
 

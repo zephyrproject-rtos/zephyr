@@ -258,7 +258,7 @@ static inline int ns16550_pci_uart_scan(struct device *dev)
 	struct uart_device_config * const dev_cfg = DEV_CFG(dev);
 
 	if (dev_cfg->pci_dev.vendor_id == 0x0000) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	pci_bus_scan_init();

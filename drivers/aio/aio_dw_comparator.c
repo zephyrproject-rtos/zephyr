@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <errno.h>
 #include <stdio.h>
 
 #include <nanokernel.h>
@@ -35,7 +36,7 @@ static int dw_aio_cmp_disable(struct device *dev, uint8_t index)
 	    (struct dw_aio_cmp_t *)config->base_address;
 
 	if (index >= AIO_DW_CMP_COUNT) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* Disable interrupt to host */
@@ -64,16 +65,16 @@ static int dw_aio_cmp_configure(struct device *dev, uint8_t index,
 
 	/* index out of range */
 	if (index >= AIO_DW_CMP_COUNT) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* make sure reference makes sense */
 	if ((refsel != AIO_CMP_REF_A) && (refsel != AIO_CMP_REF_B))
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 
 	/* make sure polarity makes sense */
 	if ((polarity != AIO_CMP_POL_RISE) && (polarity != AIO_CMP_POL_FALL))
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 
 	dev_data->cb[index].cb = cb;
 	dev_data->cb[index].param = param;
@@ -162,7 +163,7 @@ int dw_aio_cmp_init(struct device *dev)
 	int i;
 
 	if ((config->base_address == 0) || (config->interrupt_num == 0))
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 
 	if (config->config_func) {
 		i =  config->config_func(dev);

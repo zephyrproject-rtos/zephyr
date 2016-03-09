@@ -184,7 +184,7 @@ static int ti_adc108s102_read(struct device *dev,
 	memset(adc->chans, 0, ADC108S102_CHANNELS_SIZE);
 
 	if (_verify_entries(seq_table) == 0) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	adc->seq_table = seq_table;

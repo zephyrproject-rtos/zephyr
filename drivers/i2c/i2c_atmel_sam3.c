@@ -216,13 +216,13 @@ static int i2c_sam3_runtime_configure(struct device *dev, uint32_t config)
 
 	/* Currently support master mode only */
 	if (dev_data->dev_config.bits.is_slave_read) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* Calculate clock dividers */
 	clk = clk_div_calc(dev);
 	if (!clk) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* Disable controller first before changing anything */
@@ -628,7 +628,7 @@ static int i2c_sam3_init(struct device *dev)
 	    != 0) {
 		DBG("I2C: Cannot set default configuration 0x%x\n",
 		    dev_data->dev_config.raw);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	return 0;

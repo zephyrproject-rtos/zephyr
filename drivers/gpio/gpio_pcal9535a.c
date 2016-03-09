@@ -385,7 +385,7 @@ static int gpio_pcal9535a_config(struct device *dev, int access_op,
 #endif
 
 	if (!_has_i2c_master(dev)) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	ret = _setup_pin_dir(dev, access_op, pin, flags);
@@ -434,7 +434,7 @@ static int gpio_pcal9535a_write(struct device *dev, int access_op,
 	int ret;
 
 	if (!_has_i2c_master(dev)) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* Invert input value for pins configurated as active low. */
@@ -490,7 +490,7 @@ static int gpio_pcal9535a_read(struct device *dev, int access_op,
 	int ret;
 
 	if (!_has_i2c_master(dev)) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	ret = _read_port_regs(dev, REG_INPUT_PORT0, &buf);
@@ -546,7 +546,7 @@ static int gpio_pcal9535a_disable_callback(struct device *dev,
 static int gpio_pcal9535a_suspend_port(struct device *dev)
 {
 	if (!_has_i2c_master(dev)) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	return -ENOTSUP;
@@ -555,7 +555,7 @@ static int gpio_pcal9535a_suspend_port(struct device *dev)
 static int gpio_pcal9535a_resume_port(struct device *dev)
 {
 	if (!_has_i2c_master(dev)) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	return -ENOTSUP;
@@ -591,7 +591,7 @@ int gpio_pcal9535a_init(struct device *dev)
 	/* Find out the device struct of the I2C master */
 	i2c_master = device_get_binding((char *)config->i2c_master_dev_name);
 	if (!i2c_master) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 	drv_data->i2c_master = i2c_master;
 

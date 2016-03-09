@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <misc/printk.h>
 #include <ipm.h>
@@ -51,7 +53,7 @@ int ipm_console_sender_init(struct device *d)
 	if (!ipm_console_device) {
 		printk("unable to bind IPM console sender to '%s'\n",
 		       config_info->bind_to);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	if (config_info->flags & IPM_CONSOLE_STDOUT) {

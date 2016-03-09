@@ -170,7 +170,7 @@ int sx9500_init(struct device *dev)
 	if (!data->i2c_master) {
 		DBG("sx9500: i2c master not found: %s\n",
 		    CONFIG_SX9500_I2C_DEV_NAME);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	data->i2c_slave_addr = CONFIG_SX9500_I2C_ADDR;

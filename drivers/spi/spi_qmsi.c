@@ -200,7 +200,7 @@ static int spi_qmsi_transceive(struct device *dev,
 
 	rc = qm_spi_set_config(spi, cfg);
 	if (rc != QM_RC_OK)
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 
 	spi_control_cs(dev, true);
 
