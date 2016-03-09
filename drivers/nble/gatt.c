@@ -202,8 +202,8 @@ void on_nble_gatt_register_rsp(const struct nble_gatt_register_rsp *rsp,
 
 				bt_uuid_to_str(rsp->attr_base[idx].uuid,
 					       uuid, sizeof(uuid));
-				BT_DBG("handle %u uuid %s", handles[idx].handle,
-				       uuid);
+				BT_DBG("handle 0x%04x uuid %s",
+				       handles[idx].handle, uuid);
 			}
 		}
 	}
@@ -585,7 +585,7 @@ void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 
 	conn = bt_conn_lookup_handle(rsp->conn_handle);
 	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u", rsp->conn_handle);
+		BT_ERR("Unable to find conn, handle 0x%04x", rsp->conn_handle);
 		return;
 	}
 
@@ -597,8 +597,8 @@ void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 		goto done;
 	}
 
-	BT_DBG("conn %p handle %u status %d len %u", conn, conn->handle,
-	       rsp->status, data_len);
+	BT_DBG("conn %p conn handle 0x%04x status %d len %u", conn,
+	       conn->handle, rsp->status, data_len);
 
 	switch (rsp->type) {
 	case BT_GATT_DISCOVER_INCLUDE:
@@ -702,7 +702,7 @@ void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 
 	conn = bt_conn_lookup_handle(rsp->conn_handle);
 	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u", rsp->conn_handle);
+		BT_ERR("Unable to find conn, handle 0x%04x", rsp->conn_handle);
 		return;
 	}
 
@@ -755,7 +755,7 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 		return -EBUSY;
 	}
 
-	BT_DBG("conn %p handle %u offset %u len %u data %p",
+	BT_DBG("conn %p handle 0x%04x offset 0x%04x len %u data %p",
 	       conn, handle, offset, length, data);
 
 	req.conn_handle = conn->handle;
@@ -778,7 +778,7 @@ void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp,
 
 	conn = bt_conn_lookup_handle(rsp->conn_handle);
 	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u", rsp->conn_handle);
+		BT_ERR("Unable to find conn, handle 0x%04x", rsp->conn_handle);
 		return;
 	}
 
@@ -807,7 +807,7 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 		return -EBUSY;
 	}
 
-	BT_DBG("conn %p handle %u len %u data %p sign %d",
+	BT_DBG("conn %p handle 0x%04x len %u data %p sign %d",
 	       conn, handle, length, data, sign);
 
 	/* TODO: Handle signing */
@@ -877,8 +877,6 @@ static int gatt_write_ccc(struct bt_conn *conn,
 
 	return bt_gatt_write(conn, handle, 0, &value, sizeof(value),
 			     gatt_write_ccc_rsp);
-
-	return 0;
 }
 
 int bt_gatt_subscribe(struct bt_conn *conn,
@@ -941,7 +939,7 @@ void on_nble_gattc_value_evt(const struct nble_gattc_value_evt *ev,
 
 	conn = bt_conn_lookup_handle(ev->conn_handle);
 	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
+		BT_ERR("Unable to find conn, handle 0x%04x", ev->conn_handle);
 		return;
 	}
 
