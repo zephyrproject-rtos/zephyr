@@ -109,13 +109,13 @@ static int spi_flash_wb_reg_write(struct device *dev, uint8_t *data)
 	return DEV_OK;
 }
 
-static int spi_flash_wb_read(struct device *dev, size_t offset, void *data,
+static int spi_flash_wb_read(struct device *dev, off_t offset, void *data,
 			     size_t len)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t *buf = driver_data->buf;
 
-	if (len > CONFIG_SPI_FLASH_W25QXXDV_MAX_DATA_LEN) {
+	if (len > CONFIG_SPI_FLASH_W25QXXDV_MAX_DATA_LEN || offset < 0) {
 		return DEV_NO_SUPPORT;
 	}
 
@@ -148,13 +148,13 @@ static int spi_flash_wb_read(struct device *dev, size_t offset, void *data,
 	return DEV_OK;
 }
 
-static int spi_flash_wb_write(struct device *dev, size_t offset,
+static int spi_flash_wb_write(struct device *dev, off_t offset,
 			      const void *data, size_t len)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t *buf = driver_data->buf;
 
-	if (len > CONFIG_SPI_FLASH_W25QXXDV_MAX_DATA_LEN) {
+	if (len > CONFIG_SPI_FLASH_W25QXXDV_MAX_DATA_LEN || offset < 0) {
 		return DEV_INVALID_OP;
 	}
 
@@ -225,12 +225,16 @@ static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
 }
 
 static inline int spi_flash_wb_erase_internal(struct device *dev,
-					      size_t offset, size_t size)
+					      off_t offset, size_t size)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t buf[W25QXXDV_LEN_CMD_ADDRESS];
 	uint8_t erase_opcode;
 	uint32_t len;
+
+	if (offset < 0) {
+		return DEV_INVALID_OP;
+	}
 
 	wait_for_flash_idle(dev);
 
@@ -270,7 +274,7 @@ static inline int spi_flash_wb_erase_internal(struct device *dev,
 	return spi_write(driver_data->spi, buf, len);
 }
 
-static int spi_flash_wb_erase(struct device *dev, size_t offset, size_t size)
+static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t *buf = driver_data->buf;
@@ -278,7 +282,8 @@ static int spi_flash_wb_erase(struct device *dev, size_t offset, size_t size)
 	uint32_t new_offset = offset;
 	uint32_t size_remaining = size;
 
-	if (((size + offset) >= CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE) ||
+	if ((offset < 0) ||
+	    ((size + offset) >= CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE) ||
 	    ((size & W25QXXDV_SECTOR_MASK) != 0)) {
 		return DEV_NO_SUPPORT;
 	}
