@@ -881,6 +881,7 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 		bt_auth->passkey_display(conn, passkey);
 		break;
 	case  PASSKEY_INPUT:
+		atomic_set_bit(conn->flags, BT_CONN_USER);
 		bt_auth->passkey_entry(conn);
 		break;
 	default:
@@ -1442,6 +1443,11 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 #endif /* CONFIG_BLUETOOTH_SMP */
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
+		/* User entered passkey, reset user state. */
+		if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_USER)) {
+			return -EPERM;
+		}
+
 		if (conn->br.ssp_method == PASSKEY_INPUT) {
 			return ssp_passkey_reply(conn, passkey);
 		}
