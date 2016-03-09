@@ -180,7 +180,7 @@ static int _i2c_dw_data_send(struct device *dev)
 		dw->xfr_buf++;
 
 		if (regs->ic_intr_stat.bits.tx_abrt) {
-			return DEV_FAIL;
+			return -EIO;
 		}
 	}
 
@@ -445,7 +445,7 @@ static int i2c_dw_transfer(struct device *dev,
 
 	/* First step, check if there is current activity */
 	if ((regs->ic_status.bits.activity) || (dw->state & I2C_DW_BUSY)) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	dw->state |= I2C_DW_BUSY;
@@ -503,13 +503,13 @@ static int i2c_dw_transfer(struct device *dev,
 		device_sync_call_wait(&dw->sync);
 
 		if (dw->state & I2C_DW_CMD_ERROR) {
-			ret = DEV_FAIL;
+			ret = -EIO;
 			break;
 		}
 
 		/* Something wrong if there is something left to do */
 		if (dw->xfr_len > 0) {
-			ret = DEV_FAIL;
+			ret = -EIO;
 			break;
 		}
 

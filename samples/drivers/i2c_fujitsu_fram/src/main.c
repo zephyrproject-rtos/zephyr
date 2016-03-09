@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <zephyr.h>
 
 #include <misc/printk.h>
@@ -154,7 +156,7 @@ void main(void)
 		/* printk("0x%X ?= 0x%X\n", cmp_data[i], data[i]); */
 		if (cmp_data[i] != data[i]) {
 			printk("Data comparison failed @ %d.\n", i);
-			ret = DEV_FAIL;
+			ret = -EIO;
 		}
 	}
 	if (ret == 0) {

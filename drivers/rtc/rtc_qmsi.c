@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <device.h>
 #include <drivers/ioapic.h>
 #include <init.h>
@@ -54,14 +56,14 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	user_callback = cfg->cb_fn;
 
 	if (qm_rtc_set_config(QM_RTC_0, &qm_cfg) != QM_RC_OK)
-		return DEV_FAIL;
+		return -EIO;
 
 	return 0;
 }
 
 static int rtc_qmsi_set_alarm(struct device *dev, const uint32_t alarm_val)
 {
-	return qm_rtc_set_alarm(QM_RTC_0, alarm_val) == QM_RC_OK ? 0 : DEV_FAIL;
+	return qm_rtc_set_alarm(QM_RTC_0, alarm_val) == QM_RC_OK ? 0 : -EIO;
 }
 
 static uint32_t rtc_qmsi_read(struct device *dev)

@@ -27,6 +27,8 @@
  * Accessing load count 2 registers, thus, requires some special treatment.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 
 #include <pwm.h>
@@ -171,7 +173,7 @@ static int pwm_dw_set_values(struct device *dev, int access_op,
 	case PWM_ACCESS_BY_PIN:
 		/* make sure the PWM port exists */
 		if (pwm >= cfg->num_ports) {
-			return DEV_FAIL;
+			return -EIO;
 		}
 
 		return __set_one_port(dev, pwm, on, off);

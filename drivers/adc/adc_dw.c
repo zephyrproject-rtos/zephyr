@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <init.h>
 #include <nanokernel.h>
 #include <string.h>
@@ -293,7 +295,7 @@ static int adc_dw_read_request(struct device *dev, struct adc_seq_table *seq_tbl
 
 	if (info->state == ADC_STATE_ERROR) {
 		info->state = ADC_STATE_IDLE;
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	return 0;

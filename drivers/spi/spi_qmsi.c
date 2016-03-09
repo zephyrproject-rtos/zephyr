@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <device.h>
 #include <drivers/ioapic.h>
 #include <init.h>
@@ -139,7 +141,7 @@ static int spi_qmsi_slave_select(struct device *dev, uint32_t slave)
 	struct spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_spi_t spi = spi_config->spi;
 
-	return qm_spi_slave_select(spi, 1 << (slave - 1)) ? DEV_FAIL : 0;
+	return qm_spi_slave_select(spi, 1 << (slave - 1)) ? -EIO : 0;
 }
 
 static inline uint8_t frame_size_to_dfs(qm_spi_frame_size_t frame_size)
@@ -205,12 +207,12 @@ static int spi_qmsi_transceive(struct device *dev,
 	rc = qm_spi_irq_transfer(spi, xfer);
 	if (rc != QM_RC_OK) {
 		spi_control_cs(dev, false);
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	device_sync_call_wait(&context->sync);
 
-	return context->rc ? DEV_FAIL : 0;
+	return context->rc ? -EIO : 0;
 }
 
 static int spi_qmsi_suspend(struct device *dev)
@@ -279,7 +281,7 @@ static int spi_qmsi_init(struct device *dev)
 #endif /* CONFIG_SPI_QMSI_PORT_1 */
 
 	default:
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	context->gpio_cs = gpio_cs_init(spi_config);

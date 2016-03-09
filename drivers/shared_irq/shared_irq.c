@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <device.h>
 #include <shared_irq.h>
@@ -45,7 +47,7 @@ static int isr_register(struct device *dev, isr_t isr_func,
 			return 0;
 		}
 	}
-	return DEV_FAIL;
+	return -EIO;
 }
 
 /**
@@ -66,7 +68,7 @@ static inline int enable(struct device *dev, struct device *isr_dev)
 			return 0;
 		}
 	}
-	return DEV_FAIL;
+	return -EIO;
 }
 
 static int last_enabled_isr(struct shared_irq_runtime *clients, int count)
@@ -100,7 +102,7 @@ static inline int disable(struct device *dev, struct device *isr_dev)
 			return 0;
 		}
 	}
-	return DEV_FAIL;
+	return -EIO;
 }
 
 void shared_irq_isr(struct device *dev)

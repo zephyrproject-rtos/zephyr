@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <device.h>
 #include <i2c.h>
 #include <ioapic.h>
@@ -95,7 +97,7 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 	}
 
 	if (qm_i2c_set_config(instance, &qm_cfg) != QM_RC_OK)
-		return DEV_FAIL;
+		return -EIO;
 
 	return 0;
 }
@@ -171,13 +173,13 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 
 		rc = qm_i2c_master_irq_transfer(instance, &xfer, addr);
 		if (rc != QM_RC_OK)
-			return DEV_FAIL;
+			return -EIO;
 
 		/* Block current thread until the I2C transfer completes. */
 		device_sync_call_wait(&driver_data->sync);
 
 		if (driver_data->transfer_status != QM_RC_OK)
-			return DEV_FAIL;
+			return -EIO;
 	}
 
 	return 0;
@@ -232,7 +234,7 @@ static int i2c_qmsi_init(struct device *dev)
 #endif /* CONFIG_I2C_QMSI_1 */
 
 	default:
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	device_sync_call_init(&driver_data->sync);

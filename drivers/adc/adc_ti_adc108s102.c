@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <misc/util.h>
 #include <string.h>
@@ -171,11 +173,11 @@ static int ti_adc108s102_read(struct device *dev,
 	nano_timer_init(&timer, data);
 
 	if (spi_configure(adc->spi, &spi_conf)) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	if (spi_slave_select(adc->spi, config->spi_slave)) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* Resetting all internal channel data */

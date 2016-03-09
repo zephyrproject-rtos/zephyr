@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <init.h>
 #include <clock_control.h>
@@ -126,7 +128,7 @@ static int wdt_dw_set_config(struct device *dev, struct wdt_config *config)
 		sys_clear_bit(wdt_dev->base_address + WDT_CR, 1);
 	} else {
 		if (!config->interrupt_fn) {
-			return DEV_FAIL;
+			return -EIO;
 		}
 
 		context->cb_fn = config->interrupt_fn;

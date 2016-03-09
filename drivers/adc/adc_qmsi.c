@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <init.h>
 #include <nanokernel.h>
 #include <string.h>
@@ -147,7 +149,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 		 * the number of samples required has been captured
 		 */
 		if (qm_adc_convert(QM_ADC_0, &xfer) != QM_RC_OK) {
-			ret =  DEV_FAIL;
+			ret =  -EIO;
 			adc_unlock(info);
 			break;
 		}
@@ -200,7 +202,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 		 */
 		if (qm_adc_irq_convert(QM_ADC_0, &xfer) != QM_RC_OK) {
 			adc_context = NULL;
-			ret =  DEV_FAIL;
+			ret =  -EIO;
 			adc_unlock(info);
 			break;
 		}
@@ -209,7 +211,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 		device_sync_call_wait(&info->sync);
 
 		if (info->state == ADC_STATE_ERROR) {
-			ret =  DEV_FAIL;
+			ret =  -EIO;
 			adc_unlock(info);
 			break;
 		}

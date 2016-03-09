@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <pwm.h>
 #include <device.h>
@@ -57,7 +59,7 @@ static int __set_one_port(qm_pwm_t id, uint32_t pwm, uint32_t on, uint32_t off)
 	cfg.lo_count = off;
 
 	if (qm_pwm_set_config(id, pwm, &cfg) != QM_RC_OK) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 	/* Enable timer so it starts running and counting */
 	qm_pwm_start(id, pwm);
@@ -93,7 +95,7 @@ static int pwm_qmsi_set_values(struct device *dev, int access_op,
 	case PWM_ACCESS_BY_PIN:
 		/* make sure the PWM port exists */
 		if (pwm >= CONFIG_PWM_QMSI_NUM_PORTS) {
-			return DEV_FAIL;
+			return -EIO;
 		}
 		return __set_one_port(QM_PWM_0, pwm, on, off);
 

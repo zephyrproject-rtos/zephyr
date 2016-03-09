@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <device.h>
 #include <drivers/ioapic.h>
 #include <gpio.h>
@@ -312,7 +314,7 @@ int gpio_qmsi_init(struct device *port)
 #endif /* CONFIG_GPIO_QMSI_AON */
 
 	default:
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	port->driver_api = &api_funcs;

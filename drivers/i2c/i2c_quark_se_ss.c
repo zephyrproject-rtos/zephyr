@@ -21,6 +21,7 @@
  * but with a different register set and different workflow.
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -254,7 +255,7 @@ static int _i2c_qse_ss_data_send(struct device *dev)
 		dw->xfr_buf++;
 
 		if (_i2c_qse_ss_check_irq(dev, IC_INTR_TX_ABRT)) {
-			return DEV_FAIL;
+			return -EIO;
 		}
 
 	}
@@ -496,13 +497,13 @@ static int i2c_qse_ss_intr_transfer(struct device *dev,
 		/* Wait for transfer to be done */
 		device_sync_call_wait(&dw->sync);
 		if (dw->state & I2C_QSE_SS_CMD_ERROR) {
-			ret = DEV_FAIL;
+			ret = -EIO;
 			break;
 		}
 
 		/* Something wrong if there is something left to do */
 		if (dw->xfr_len > 0) {
-			ret = DEV_FAIL;
+			ret = -EIO;
 			break;
 		}
 

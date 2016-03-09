@@ -32,6 +32,8 @@
  *    the Fujitsu I2C-based FRAM MB85RC256V.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 
 #include <board.h>
@@ -485,7 +487,7 @@ static int i2c_sam3_transfer(struct device *dev,
 
 	/* Device is busy servicing another transfer */
 	if (dev_data->state & STATE_BUSY) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	dev_data->state = STATE_BUSY;
@@ -555,7 +557,7 @@ static int i2c_sam3_transfer(struct device *dev,
 			cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS
 					      | PDC_PTCR_RXTDIS;
 
-			ret = DEV_FAIL;
+			ret = -EIO;
 			goto done;
 		}
 
@@ -571,7 +573,7 @@ static int i2c_sam3_transfer(struct device *dev,
 			i2c_sam3_runtime_configure(dev,
 						   dev_data->dev_config.raw);
 
-			ret = DEV_FAIL;
+			ret = -EIO;
 			goto done;
 		}
 

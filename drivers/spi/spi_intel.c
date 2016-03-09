@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
@@ -300,7 +302,7 @@ static int spi_intel_transceive(struct device *dev,
 
 	if (spi->error) {
 		spi->error = 0;
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	return 0;

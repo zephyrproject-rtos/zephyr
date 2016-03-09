@@ -1262,7 +1262,7 @@ static int cc2520_init(struct device *dev)
 		cc2520_sgl_dev = NULL;
 		DBG("%s initialization failed\n", DRIVER_STR);
 
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	return 0;
