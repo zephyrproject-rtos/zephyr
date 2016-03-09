@@ -427,4 +427,13 @@ config NET_15_4_LOOPBACK_NUM
        help
          Number of times loopback test runs, 0 means infinite.
 
+config	NET_TESTING
+	bool
+	prompt "Enable network testing setup"
+	depends on NETWORKING
+	default n
+	help
+	  Setup the network stack such a way that it is suitable for
+	  testing with Qemu and slip.
+
 endif
