@@ -67,4 +67,33 @@ extern struct _k_mem_map_struct *_trace_list_micro_mem_map;
 #define SYS_TRACING_NEXT(type, name, obj) (((type *)obj)->__next)
 
 #endif /*CONFIG_DEBUG_TRACING_KERNEL_OBJECTS*/
+
+#ifdef CONFIG_THREAD_MONITOR
+
+#include <nano_private.h>
+
+/**
+ * @def SYS_THREAD_MONITOR_HEAD
+ *
+ * @brief Head element of the thread monitor list.
+ *
+ * @details Access the head element of the thread monitor list.
+ *
+ */
+#define SYS_THREAD_MONITOR_HEAD ((struct tcs *)(_nanokernel.threads))
+
+/**
+ * @def SYS_THREAD_MONITOR_NEXT
+ *
+ * @brief Gets a thread node's next element.
+ *
+ * @details Given a node in a thread monitor list, gets the next
+ * element in the list.
+ *
+ * @param obj Object to get the next element from.
+ */
+#define SYS_THREAD_MONITOR_NEXT(obj) (((struct tcs *)obj)->next_thread)
+
+#endif /*CONFIG_THREAD_MONITOR*/
+
 #endif /*_OBJECT_TRACING_H_*/
