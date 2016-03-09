@@ -127,6 +127,11 @@ void _exit(int status)
 	}
 }
 
+int open(const char *name, int mode)
+{
+	return -1;
+}
+
 int close(int file)
 {
 	return -1;
