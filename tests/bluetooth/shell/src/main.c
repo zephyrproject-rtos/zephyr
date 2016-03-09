@@ -1038,6 +1038,9 @@ static void cmd_gatt_unsubscribe(int argc, char *argv[])
 	} else {
 		printk("Unsubscribe success\n");
 	}
+
+	/* Clear subscribe_params to reuse it */
+	memset(&subscribe_params, 0, sizeof(subscribe_params));
 }
 
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
