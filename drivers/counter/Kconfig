@@ -21,3 +21,45 @@ menuconfig COUNTER
 	default n
 	help
 	  Enable support for counter and timer.
+
+config  AON_COUNTER_QMSI
+	bool
+	prompt "AON counter driver"
+	depends on COUNTER && QMSI_DRIVERS
+	default n
+	help
+	  Enable support for AON counter.
+
+config AON_COUNTER_QMSI_DEV_NAME
+	string "QMSI AON Counter Device Name"
+	depends on AON_COUNTER_QMSI
+	default "AON_COUNTER"
+	help
+	 Specify the device name for AON counter driver.
+
+config  AON_TIMER_QMSI
+	bool
+	prompt "AON periodic timer driver"
+	depends on COUNTER && QMSI_DRIVERS
+	default n
+	help
+	  Enable support for AON periodic timer.
+
+config AON_TIMER_QMSI_DEV_NAME
+	string "QMSI AON Timer Device Name"
+	depends on AON_TIMER_QMSI
+	default "AON_TIMER"
+	help
+	 Specify the device name for AON timer driver.
+
+config AON_TIMER_IRQ
+	int "Interrupt number"
+	depends on AON_TIMER_QMSI
+	help
+	 aon timer interrupt number
+
+config AON_TIMER_IRQ_PRI
+	int "Interrupt priority"
+	depends on AON_TIMER_QMSI
+	help
+	 aon timer interrupt priority.

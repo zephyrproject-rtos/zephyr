@@ -5,4 +5,13 @@ if BOARD_QUARK_D2000_CRB
 config BOARD
 	default "quark_d2000_crb"
 
+if COUNTER
+
+config AON_TIMER_IRQ
+	default 3
+config AON_TIMER_IRQ_PRI
+	default 2
+
+endif
+
 endif # BOARD_QUARK_D2000_CRB

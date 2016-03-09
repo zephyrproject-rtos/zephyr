@@ -32,4 +32,13 @@ config SPI_FLASH_W25QXXDV_SPI_SLAVE
 
 endif
 
+if COUNTER
+
+config AON_TIMER_IRQ
+	default 28
+config AON_TIMER_IRQ_PRI
+	default 2
+
+endif
+
 endif # BOARD_ARDUINO_101
