@@ -102,6 +102,8 @@ static struct bt_gatt_attr attrs[] = {
 			       BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_PERM_READ,
 			   read_manuf, NULL, "Manufacturer"),
+	/* IP Support Service Declaration */
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_IPSS),
 };
 
 static const struct bt_data ad[] = {
