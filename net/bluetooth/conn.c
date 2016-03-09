@@ -612,6 +612,97 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 
 	return conn;
 }
+
+static int pin_code_neg_reply(const bt_addr_t *bdaddr)
+{
+	struct bt_hci_cp_pin_code_neg_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
+}
+
+static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
+{
+	struct bt_hci_cp_pin_code_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+	cp->pin_len = len;
+	strncpy(cp->pin_code, pin, sizeof(cp->pin_code));
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_REPLY, buf, NULL);
+}
+
+int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
+{
+	size_t len;
+
+	if (!bt_auth) {
+		return -EINVAL;
+	}
+
+	if (conn->type != BT_CONN_TYPE_BR) {
+		return -EINVAL;
+	}
+
+	len = strlen(pin);
+	if (len > 16) {
+		return -EINVAL;
+	}
+
+	if (conn->required_sec_level == BT_SECURITY_HIGH && len < 16) {
+		BT_WARN("PIN code for %s is not 16 bytes wide",
+			bt_addr_str(&conn->br.dst));
+		return -EPERM;
+	}
+
+	/* Allow user send entered PIN to remote, then reset user state. */
+	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_USER)) {
+		return -EPERM;
+	}
+
+	if (len == 16) {
+		atomic_set_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
+	}
+
+	return pin_code_reply(conn, pin, len);
+}
+
+void bt_conn_pin_code_req(struct bt_conn *conn)
+{
+	if (bt_auth && bt_auth->pincode_entry) {
+		bool secure = false;
+
+		if (conn->required_sec_level == BT_SECURITY_HIGH) {
+			secure = true;
+		}
+
+		atomic_set_bit(conn->flags, BT_CONN_USER);
+		atomic_set_bit(conn->flags, BT_CONN_BR_PAIRING);
+		bt_auth->pincode_entry(conn, secure);
+	} else {
+		pin_code_neg_reply(&conn->br.dst);
+	}
+}
 #endif
 
 static void timeout_fiber(int arg1, int arg2)
@@ -1077,99 +1168,6 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 	bt_auth = cb;
 	return 0;
 }
-
-#if defined(CONFIG_BLUETOOTH_BREDR)
-static int pin_code_neg_reply(const bt_addr_t *bdaddr)
-{
-	struct bt_hci_cp_pin_code_neg_reply *cp;
-	struct net_buf *buf;
-
-	BT_DBG("");
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_NEG_REPLY, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, bdaddr);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
-}
-
-static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
-{
-	struct bt_hci_cp_pin_code_reply *cp;
-	struct net_buf *buf;
-
-	BT_DBG("");
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_REPLY, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-
-	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
-	cp->pin_len = len;
-	strncpy(cp->pin_code, pin, sizeof(cp->pin_code));
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_REPLY, buf, NULL);
-}
-
-int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
-{
-	size_t len;
-
-	if (!bt_auth) {
-		return -EINVAL;
-	}
-
-	if (conn->type != BT_CONN_TYPE_BR) {
-		return -EINVAL;
-	}
-
-	len = strlen(pin);
-	if (len > 16) {
-		return -EINVAL;
-	}
-
-	if (conn->required_sec_level == BT_SECURITY_HIGH && len < 16) {
-		BT_WARN("PIN code for %s is not 16 bytes wide",
-			bt_addr_str(&conn->br.dst));
-		return -EPERM;
-	}
-
-	/* Allow user send entered PIN to remote, then reset user state. */
-	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_USER)) {
-		return -EPERM;
-	}
-
-	if (len == 16) {
-		atomic_set_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
-	}
-
-	return pin_code_reply(conn, pin, len);
-}
-
-void bt_conn_pin_code_req(struct bt_conn *conn)
-{
-	if (bt_auth && bt_auth->pincode_entry) {
-		bool secure = false;
-
-		if (conn->required_sec_level == BT_SECURITY_HIGH) {
-			secure = true;
-		}
-
-		atomic_set_bit(conn->flags, BT_CONN_USER);
-		atomic_set_bit(conn->flags, BT_CONN_BR_PAIRING);
-		bt_auth->pincode_entry(conn, secure);
-	} else {
-		pin_code_neg_reply(&conn->br.dst);
-	}
-}
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 {
