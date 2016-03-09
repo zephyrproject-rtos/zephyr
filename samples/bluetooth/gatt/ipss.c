@@ -48,6 +48,7 @@
 
 #define UDP_PORT		4242
 
+#if !defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
@@ -84,8 +85,10 @@ static ssize_t read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 strlen(value));
 }
+#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 
 static struct bt_gatt_attr attrs[] = {
+#if !defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
@@ -102,6 +105,7 @@ static struct bt_gatt_attr attrs[] = {
 			       BT_GATT_CHRC_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_PERM_READ,
 			   read_manuf, NULL, "Manufacturer"),
+#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 	/* IP Support Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_IPSS),
 };
