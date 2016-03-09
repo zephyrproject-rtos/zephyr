@@ -443,7 +443,7 @@ static int i2c_qse_ss_intr_transfer(struct device *dev,
 
 	/* First step, check if device is idle */
 	if (_i2c_qse_ss_is_busy(dev) || (dw->state & I2C_QSE_SS_BUSY)) {
-		return DEV_USED;
+		return -EBUSY;
 	}
 
 	dw->state |= I2C_QSE_SS_BUSY;

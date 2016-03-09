@@ -219,7 +219,7 @@ static int spi_intel_configure(struct device *dev,
 	/* Check status */
 	if (test_bit_sscr0_sse(info->regs) && test_bit_sssr_bsy(info->regs)) {
 		DBG("spi_intel_configure: Controller is busy\n");
-		return DEV_USED;
+		return -EBUSY;
 	}
 
 	/* Pre-configuring the registers to a clean state*/
@@ -277,7 +277,7 @@ static int spi_intel_transceive(struct device *dev,
 	/* Check status */
 	if (test_bit_sscr0_sse(info->regs) && test_bit_sssr_bsy(info->regs)) {
 		DBG("spi_intel_transceive: Controller is busy\n");
-		return DEV_USED;
+		return -EBUSY;
 	}
 
 	/* Set buffers info */

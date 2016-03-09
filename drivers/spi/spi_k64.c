@@ -601,7 +601,7 @@ static int spi_k64_transceive(struct device *dev,
 		((sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TFFF) == 0)) {
 
 		DBG("spi_k64_transceive: Tx FIFO is already full\n");
-		return DEV_USED;
+		return -EBUSY;
 	}
 
 	/* Set buffers info */

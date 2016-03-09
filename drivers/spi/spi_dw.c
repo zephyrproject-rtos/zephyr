@@ -211,7 +211,7 @@ static int spi_dw_configure(struct device *dev,
 	/* Check status */
 	if (!_spi_dw_is_controller_ready(dev)) {
 		DBG("%s: Controller is busy\n", __func__);
-		return DEV_USED;
+		return -EBUSY;
 	}
 
 	/* Word size */
@@ -272,7 +272,7 @@ static int spi_dw_transceive(struct device *dev,
 	/* Check status */
 	if (!_spi_dw_is_controller_ready(dev)) {
 		DBG("%s: Controller is busy\n", __func__);
-		return DEV_USED;
+		return -EBUSY;
 	}
 
 	/* Set buffers info */

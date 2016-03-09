@@ -170,7 +170,7 @@ static int spi_qmsi_transceive(struct device *dev,
 	qm_rc_t rc;
 
 	if (pending_transfers[spi].dev)
-		return DEV_USED;
+		return -EBUSY;
 
 	pending_transfers[spi].dev = dev;
 	xfer = &pending_transfers[spi].xfer;

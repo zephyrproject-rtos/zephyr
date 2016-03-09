@@ -145,7 +145,7 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 	qm_rc_t rc;
 
 	if (qm_i2c_get_status(instance) != QM_I2C_IDLE)
-		return DEV_USED;
+		return -EBUSY;
 
 	if  (msgs == NULL || num_msgs == 0)
 		return -ENOTSUP;
