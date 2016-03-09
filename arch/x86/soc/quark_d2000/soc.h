@@ -115,9 +115,6 @@ struct scss_interrupt {
 #define LOAPIC_IRQ_COUNT		1
 #define LOAPIC_LVT_REG_SPACING  0x10
 
-/* UART uses level triggered interrupt, low level */
-#define UART_IOAPIC_FLAGS       (IOAPIC_LEVEL)
-
 /* Watchdog */
 #define WDT_DW_INT_MASK			(SCSS_INT_BASE + 0x7C)
 #define SCSS_PERIPH_CFG0		0x4

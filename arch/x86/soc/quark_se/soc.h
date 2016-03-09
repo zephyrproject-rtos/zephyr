@@ -50,14 +50,6 @@
 
 /* serial port (aka COM port) information */
 
-#ifdef CONFIG_UART_NS16550
-
-/* UART uses level triggered interrupt, low level */
-#define UART_IOAPIC_FLAGS       (IOAPIC_LEVEL | IOAPIC_LOW)
-
-#endif /* CONFIG_UART_NS16550 */
-
-
 #ifndef _ASMLANGUAGE
 
 /* Core system registers */
