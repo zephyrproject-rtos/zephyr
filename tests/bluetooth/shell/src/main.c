@@ -980,7 +980,7 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 	int err;
 
 	if (subscribe_params.value_handle) {
-		printk("Cannot subscribe: subscription to %u already exists\n",
+		printk("Cannot subscribe: subscription to %x already exists\n",
 		       subscribe_params.value_handle);
 		return;
 	}
