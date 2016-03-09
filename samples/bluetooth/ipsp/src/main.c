@@ -21,7 +21,7 @@
 #include <bluetooth/bluetooth.h>
 #include <net/net_core.h>
 
-#include "ipss.h"
+#include <gatt/ipss.h>
 
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)

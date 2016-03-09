@@ -44,7 +44,7 @@
 #include "er-coap-observe-client.h"
 
 #include <bluetooth/bluetooth.h>
-#include <ipsp/src/ipss.h>
+#include <gatt/ipss.h>
 
 #if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 2000

@@ -41,7 +41,7 @@
 #include <net/net_socket.h>
 
 #include <bluetooth/bluetooth.h>
-#include <ipsp/src/ipss.h>
+#include <gatt/ipss.h>
 
 #if defined(CONFIG_NET_TESTING)
 #include <net_testing.h>

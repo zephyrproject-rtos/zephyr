@@ -35,7 +35,7 @@
 #include <net/tinydtls.h>
 
 #include <bluetooth/bluetooth.h>
-#include <ipsp/src/ipss.h>
+#include <gatt/ipss.h>
 
 static const unsigned char ecdsa_priv_key[] = {
 			0xD9, 0xE2, 0x70, 0x7A, 0x72, 0xDA, 0x6A, 0x05,

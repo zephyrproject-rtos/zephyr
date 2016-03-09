@@ -11,7 +11,7 @@ ccflags-y +=-I${srctree}/samples/bluetooth/
 obj-y = coap-server.o
 
 ifeq ($(CONFIG_NETWORKING_WITH_BT), y)
-	obj-y += ../../../bluetooth/ipsp/src/ipss.o
+	obj-y += ../../../bluetooth/gatt/ipss.o
 endif
 
 obj-y += \

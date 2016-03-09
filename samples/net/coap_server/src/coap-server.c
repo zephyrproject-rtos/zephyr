@@ -60,7 +60,7 @@ char fiberStack[STACKSIZE];
 #endif
 
 #include <bluetooth/bluetooth.h>
-#include <ipsp/src/ipss.h>
+#include <gatt/ipss.h>
 
 #if !defined(CONFIG_BLUETOOTH)
 #if defined(CONFIG_NETWORKING_IPV6_NO_ND)

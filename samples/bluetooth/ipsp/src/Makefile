@@ -2,5 +2,6 @@ ccflags-y +=-I${srctree}/net/ip/contiki
 ccflags-y +=-I${srctree}/net/ip/contiki/os/lib
 ccflags-y +=-I${srctree}/net/ip/contiki/os
 ccflags-y +=-I${srctree}/net/ip
+ccflags-y +=-I${srctree}/samples/bluetooth
 
-obj-y = main.o ipss.o
+obj-y = main.o ../../gatt/ipss.o
