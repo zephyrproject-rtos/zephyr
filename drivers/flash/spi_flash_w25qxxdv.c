@@ -109,8 +109,8 @@ static int spi_flash_wb_reg_write(struct device *dev, uint8_t *data)
 	return DEV_OK;
 }
 
-static int spi_flash_wb_read(struct device *dev, uint32_t offset,
-			     unsigned int len, uint8_t *data)
+static int spi_flash_wb_read(struct device *dev, size_t offset, size_t len,
+			     void *data)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t *buf = driver_data->buf;
@@ -148,8 +148,8 @@ static int spi_flash_wb_read(struct device *dev, uint32_t offset,
 	return DEV_OK;
 }
 
-static int spi_flash_wb_write(struct device *dev, uint32_t offset,
-			      unsigned int len, uint8_t *data)
+static int spi_flash_wb_write(struct device *dev, size_t offset,
+			      size_t len, const void *data)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t *buf = driver_data->buf;
@@ -224,7 +224,8 @@ static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
 	return DEV_OK;
 }
 
-static inline int spi_flash_wb_erase_internal(struct device *dev, uint32_t offset, uint32_t size)
+static inline int spi_flash_wb_erase_internal(struct device *dev,
+					      size_t offset, size_t size)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t buf[W25QXXDV_LEN_CMD_ADDRESS];
@@ -269,7 +270,7 @@ static inline int spi_flash_wb_erase_internal(struct device *dev, uint32_t offse
 	return spi_write(driver_data->spi, buf, len);
 }
 
-static int spi_flash_wb_erase(struct device *dev, uint32_t offset, uint32_t size)
+static int spi_flash_wb_erase(struct device *dev, size_t offset, size_t size)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t *buf = driver_data->buf;

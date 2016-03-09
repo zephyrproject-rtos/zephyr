@@ -37,12 +37,12 @@
 extern "C" {
 #endif
 
-typedef int (*flash_api_read)(struct device *dev, uint32_t offset,
-				  unsigned int len, uint8_t *data);
-typedef int (*flash_api_write)(struct device *dev, uint32_t offset,
-				   unsigned int len, uint8_t *data);
-typedef int (*flash_api_erase)(struct device *dev, uint32_t offset,
-			       uint32_t size);
+typedef int (*flash_api_read)(struct device *dev, size_t offset,
+			      size_t len, void *data);
+typedef int (*flash_api_write)(struct device *dev, size_t offset,
+			       size_t len, const void *data);
+typedef int (*flash_api_erase)(struct device *dev, size_t offset,
+			       size_t size);
 typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
 
 struct flash_driver_api {
@@ -62,8 +62,8 @@ struct flash_driver_api {
  *
  *  @return  DEV_OK on success else DEV_* code
  */
-static inline int flash_read(struct device *dev, uint32_t offset,
-			     unsigned int len, uint8_t *data)
+static inline int flash_read(struct device *dev, size_t offset, size_t len,
+			     void *data)
 {
 	struct flash_driver_api *api = (struct flash_driver_api *)dev->driver_api;
 
@@ -80,8 +80,8 @@ static inline int flash_read(struct device *dev, uint32_t offset,
  *
  *  @return  DEV_OK on success else DEV_* code
  */
-static inline int flash_write(struct device *dev, uint32_t offset,
-			      unsigned int len, uint8_t *data)
+static inline int flash_write(struct device *dev, size_t offset, size_t len,
+			      const void *data)
 {
 	struct flash_driver_api *api = (struct flash_driver_api *)dev->driver_api;
 
@@ -100,7 +100,7 @@ static inline int flash_write(struct device *dev, uint32_t offset,
  *
  *  @return  DEV_OK on success else DEV_* code
  */
-static inline int flash_erase(struct device *dev, uint32_t offset, uint32_t size)
+static inline int flash_erase(struct device *dev, size_t offset, size_t size)
 {
 	struct flash_driver_api *api = (struct flash_driver_api *)dev->driver_api;
 
