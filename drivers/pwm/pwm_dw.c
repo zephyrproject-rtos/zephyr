@@ -185,7 +185,7 @@ static int pwm_dw_set_values(struct device *dev, int access_op,
 		return 0;
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int pwm_dw_set_duty_cycle(struct device *dev, int access_op,
@@ -200,21 +200,21 @@ static int pwm_dw_set_duty_cycle(struct device *dev, int access_op,
 	ARG_UNUSED(pwm);
 	ARG_UNUSED(duty);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int pwm_dw_suspend(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int pwm_dw_resume(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static struct pwm_driver_api pwm_dw_drv_api_funcs = {

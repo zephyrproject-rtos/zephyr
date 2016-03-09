@@ -157,7 +157,7 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 	uint8_t *buf = driver_data->buf;
 
 	if (len > CONFIG_SPI_FLASH_W25QXXDV_MAX_DATA_LEN || offset < 0) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	nano_sem_take(&driver_data->sem, TICKS_UNLIMITED);
@@ -235,7 +235,7 @@ static inline int spi_flash_wb_erase_internal(struct device *dev,
 	uint32_t len;
 
 	if (offset < 0) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	wait_for_flash_idle(dev);

@@ -84,7 +84,7 @@ static int __set_one_port(qm_pwm_t id, uint32_t pwm, uint32_t on, uint32_t off)
  * on: Duration for pin to stay high (must be >= 2)
  * off: Duration for pin to stay low (must be >= 2)
  *
- * return 0, DEV_INVALID_OP
+ * return 0, -ENOTSUP
  */
 static int pwm_qmsi_set_values(struct device *dev, int access_op,
 				  uint32_t pwm, uint32_t on, uint32_t off)
@@ -105,7 +105,7 @@ static int pwm_qmsi_set_values(struct device *dev, int access_op,
 		}
 	break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -124,7 +124,7 @@ static int pwm_qmsi_set_duty_cycle(struct device *dev, int access_op,
 	ARG_UNUSED(pwm);
 	ARG_UNUSED(duty);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 /*
@@ -133,13 +133,13 @@ static int pwm_qmsi_set_duty_cycle(struct device *dev, int access_op,
  *
  * Parameters
  * dev: Device struct
- * return DEV_INVALID_OP
+ * return -ENOTSUP
  */
 static int pwm_qmsi_suspend(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 /*
@@ -148,13 +148,13 @@ static int pwm_qmsi_suspend(struct device *dev)
  *
  * Parameters
  * dev: Device struct
- * return DEV_INVALID_OP
+ * return -ENOTSUP
  */
 static int pwm_qmsi_resume(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static struct pwm_driver_api pwm_qmsi_drv_api_funcs = {

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <sections.h>
@@ -70,7 +72,7 @@ unsigned char uart_nsim_poll_out(struct device *dev, unsigned char c)
 
 static int uart_nsim_poll_in(struct device *dev, unsigned char *c)
 {
-	return -DEV_INVALID_OP;
+	return -ENOTSUP;
 
 }
 

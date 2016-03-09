@@ -438,7 +438,7 @@ static int i2c_qse_ss_intr_transfer(struct device *dev,
 
 	/* Why bother processing no messages */
 	if (!msgs || !num_msgs) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/* First step, check if device is idle */

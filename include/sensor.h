@@ -201,7 +201,7 @@ static inline int sensor_attr_set(struct device *dev,
 
 	api = (struct sensor_driver_api *)dev->driver_api;
 	if (!api->attr_set) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	return api->attr_set(dev, chan, attr, val);
@@ -230,7 +230,7 @@ static inline int sensor_trigger_set(struct device *dev,
 
 	api = (struct sensor_driver_api *)dev->driver_api;
 	if (!api->trigger_set) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	return api->trigger_set(dev, trig, handler);

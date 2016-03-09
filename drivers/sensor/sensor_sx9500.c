@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <i2c.h>
 #include <sensor.h>
@@ -108,7 +110,7 @@ static int sx9500_channel_get(struct device *dev,
 
 #ifdef CONFIG_SENSOR_DEBUG
 	if (chan != SENSOR_CHAN_PROX) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 #endif
 

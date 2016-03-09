@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <i2c.h>
 #include <init.h>
@@ -66,7 +68,7 @@ static int mcp9808_channel_get(struct device *dev,
 
 #ifdef CONFIG_SENSOR_DEBUG
 	if (chan != SENSOR_CHAN_TEMP) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 #endif
 

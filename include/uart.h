@@ -33,6 +33,7 @@
 extern "C" {
 #endif
 
+#include <errno.h>
 #include <stddef.h>
 
 #include <device.h>
@@ -205,7 +206,7 @@ static inline int uart_err_check(struct device *dev)
  *
  * @retval 0 If a character arrived.
  * @retval -1 If the input buffer if empty.
- * @retval DEV_INVALID_OP If the operation is not supported.
+ * @retval -ENOTSUP If the operation is not supported.
  */
 static inline int uart_poll_in(struct device *dev, unsigned char *p_char)
 {
@@ -582,7 +583,7 @@ static inline int uart_line_ctrl_set(struct device *dev,
 		return api->line_ctrl_set(dev, ctrl, val);
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 #endif /* CONFIG_UART_LINE_CTRL */
@@ -612,7 +613,7 @@ static inline int uart_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 		return api->drv_cmd(dev, cmd, p);
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 #endif /* CONFIG_UART_DRV_CMD */

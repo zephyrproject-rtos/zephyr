@@ -42,6 +42,8 @@
  * - CONFIG_PWM_K64_FTM_x_PHASE_ENABLE_3 support non-zero phase on channel 3
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 
 #include <board.h>
@@ -199,7 +201,7 @@ static int pwm_ftm_configure(struct device *dev, int access_op,
 	default:
 		/* Illegal prescale value. Default to 1. */
 		prescale = PWM_K64_FTM_SC_PS_D1;
-		return_val = DEV_INVALID_OP;
+		return_val = -ENOTSUP;
 		break;
 	}
 
@@ -294,9 +296,9 @@ static int pwm_ftm_set_values(struct device *dev, int access_op,
 	case PWM_ACCESS_BY_PIN:
 		break;
 	case PWM_ACCESS_ALL:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/* If either ON and/or OFF > max ticks, treat PWM as 100%.
@@ -523,7 +525,7 @@ static int pwm_ftm_set_duty_cycle(struct device *dev, int access_op,
 
 		/* check for valid off value */
 		if (off > config->period)
-			return  DEV_INVALID_OP;
+			return  -ENOTSUP;
 	}
 
 	return pwm_ftm_set_values(dev, access_op, channel, on, off);
@@ -567,36 +569,36 @@ static int pwm_ftm_set_phase(struct device *dev, int access_op,
 	DBG("pwm_ftm_set_phase...\n");
 
 	if ((phase < 0) || (phase > config->period))
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 
 	switch (channel) {
 	case 0:
 		if (!config->phase_enable0)
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		drv_data->phase[0] = phase;
 		break;
 
 	case 2:
 		if (!config->phase_enable2)
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		drv_data->phase[1] = phase;
 		break;
 
 	case 4:
 		if (!config->phase_enable4)
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		drv_data->phase[2] = phase;
 		break;
 
 	case 6:
 		if (!config->phase_enable6)
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		drv_data->phase[3] = phase;
 		break;
 
 	default:
 		/* channel must be 0, 2, 4, or 6 */
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	DBG("pwm_ftm_set_phase done.\n");
@@ -611,7 +613,7 @@ static int pwm_ftm_set_phase(struct device *dev, int access_op,
 
 	DBG("ERROR: non-zero phase is not supported.\n");
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 #endif /*COMBINE_MODE_SUPPORT*/
 }
 

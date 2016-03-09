@@ -17,6 +17,8 @@
 #ifndef __SENSOR_MCP9808_H__
 #define __SENSOR_MCP9808_H__
 
+#include <errno.h>
+
 #include <stdint.h>
 #include <device.h>
 #include <sensor.h>
@@ -82,14 +84,14 @@ static inline int mcp9808_attr_set(struct device *dev,
 				   enum sensor_attribute attr,
 				   const struct sensor_value *val)
 {
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static inline int mcp9808_trigger_set(struct device *dev,
 				      const struct sensor_trigger *trig,
 				      sensor_trigger_handler_t handler)
 {
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static void mcp9808_setup_interrupt(struct device *dev)

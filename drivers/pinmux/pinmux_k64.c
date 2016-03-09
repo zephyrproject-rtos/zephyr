@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <stdbool.h>
 #include <nanokernel.h>
 #include <device.h>
@@ -168,7 +170,7 @@ static int _fsl_k64_set_pin(struct device *dev,
 
 	if (pin_id >= CONFIG_PINMUX_NUM_PINS) {
 
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	if ((func & K64_PINMUX_ALT_MASK) == K64_PINMUX_FUNC_GPIO) {
@@ -235,7 +237,7 @@ static int _fsl_k64_get_pin(struct device *dev,
 	uint32_t status;
 
 	if (pin_id >= CONFIG_PINMUX_NUM_PINS) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/* determine the pin's port register base address */

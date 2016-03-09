@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <board.h>
 #include <init.h>
@@ -159,7 +161,7 @@ static int gpio_sch_write(struct device *dev,
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (pin >= info->bits) {
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		}
 
 		_set_bit_glvl(info->regs, pin, value);
@@ -179,7 +181,7 @@ static int gpio_sch_read(struct device *dev,
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (pin >= info->bits) {
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		}
 
 		*value = !!(*value & BIT(pin));
@@ -272,7 +274,7 @@ static int gpio_sch_enable_callback(struct device *dev,
 		uint32_t bits = BIT(pin);
 
 		if (pin >= info->bits) {
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		}
 
 		gpio->cb_enabled |= bits;
@@ -298,7 +300,7 @@ static int gpio_sch_disable_callback(struct device *dev,
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (pin >= info->bits) {
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		}
 
 		gpio->cb_enabled &= ~BIT(pin);

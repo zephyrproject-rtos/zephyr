@@ -18,6 +18,8 @@
  * @file Driver for PCA9685 I2C-based PWM driver.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 
 #include <i2c.h>
@@ -100,7 +102,7 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
 		buf[0] = REG_ALL_LED_ON_L;
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/* If either ON and/or OFF > max ticks, treat PWM as 100%.
@@ -160,7 +162,7 @@ static int pwm_pca9685_suspend(struct device *dev)
 		return DEV_INVALID_CONF;
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int pwm_pca9685_resume(struct device *dev)
@@ -169,7 +171,7 @@ static int pwm_pca9685_resume(struct device *dev)
 		return DEV_INVALID_CONF;
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static struct pwm_driver_api pwm_pca9685_drv_api_funcs = {

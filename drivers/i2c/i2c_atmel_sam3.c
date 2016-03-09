@@ -482,7 +482,7 @@ static int i2c_sam3_transfer(struct device *dev,
 
 	/* Why bother processing no messages */
 	if (!msgs || !num_msgs) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/* Device is busy servicing another transfer */

@@ -115,7 +115,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 	struct adc_info *info = dev->driver_data;
 
 	if (qm_adc_get_config(QM_ADC_0, &cfg) != QM_RC_OK) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	for (i = 0; i < seq_tbl->num_entries; i++) {
@@ -170,7 +170,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 	struct adc_info *info = dev->driver_data;
 
 	if (qm_adc_get_config(QM_ADC_0, &cfg) != QM_RC_OK) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	for (i = 0; i < seq_tbl->num_entries; i++) {

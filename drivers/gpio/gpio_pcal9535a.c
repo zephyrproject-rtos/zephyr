@@ -18,6 +18,8 @@
  * @file Driver for PCAL9535A I2C-based GPIO driver.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 
 #include <gpio.h>
@@ -203,7 +205,7 @@ static int _setup_pin_dir(struct device *dev, int access_op,
 		}
 		break;
 	default:
-		ret = DEV_INVALID_OP;
+		ret = -ENOTSUP;
 		goto done;
 	}
 
@@ -264,7 +266,7 @@ static int _setup_pin_pullupdown(struct device *dev, int access_op,
 		}
 		break;
 	default:
-		ret = DEV_INVALID_OP;
+		ret = -ENOTSUP;
 		goto done;
 	}
 
@@ -296,7 +298,7 @@ en_dis:
 		}
 		break;
 	default:
-		ret = DEV_INVALID_OP;
+		ret = -ENOTSUP;
 		goto done;
 	}
 
@@ -348,7 +350,7 @@ static int _setup_pin_polarity(struct device *dev, int access_op,
 		}
 		break;
 	default:
-		ret = DEV_INVALID_OP;
+		ret = -ENOTSUP;
 		goto done;
 	}
 
@@ -461,7 +463,7 @@ static int gpio_pcal9535a_write(struct device *dev, int access_op,
 
 		break;
 	default:
-		ret = DEV_INVALID_OP;
+		ret = -ENOTSUP;
 		goto done;
 	}
 
@@ -504,7 +506,7 @@ static int gpio_pcal9535a_read(struct device *dev, int access_op,
 		*value = buf.all;
 		break;
 	default:
-		ret = DEV_INVALID_OP;
+		ret = -ENOTSUP;
 		break;
 	}
 
@@ -518,7 +520,7 @@ static int gpio_pcal9535a_set_callback(struct device *dev,
 	ARG_UNUSED(dev);
 	ARG_UNUSED(callback);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int gpio_pcal9535a_enable_callback(struct device *dev,
@@ -528,7 +530,7 @@ static int gpio_pcal9535a_enable_callback(struct device *dev,
 	ARG_UNUSED(access_op);
 	ARG_UNUSED(pin);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int gpio_pcal9535a_disable_callback(struct device *dev,
@@ -538,7 +540,7 @@ static int gpio_pcal9535a_disable_callback(struct device *dev,
 	ARG_UNUSED(access_op);
 	ARG_UNUSED(pin);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int gpio_pcal9535a_suspend_port(struct device *dev)
@@ -547,7 +549,7 @@ static int gpio_pcal9535a_suspend_port(struct device *dev)
 		return DEV_INVALID_CONF;
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int gpio_pcal9535a_resume_port(struct device *dev)
@@ -556,7 +558,7 @@ static int gpio_pcal9535a_resume_port(struct device *dev)
 		return DEV_INVALID_CONF;
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {

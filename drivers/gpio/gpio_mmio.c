@@ -18,6 +18,8 @@
  * @file Driver for the MMIO-based GPIO driver.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 
 #include <gpio.h>
@@ -141,7 +143,7 @@ static int gpio_mmio_config(struct device *dev, int access_op,
 		cfg->access.write(cfg->reg.dir, 0, value);
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/*
@@ -172,7 +174,7 @@ static int gpio_mmio_config(struct device *dev, int access_op,
 		cfg->access.write(cfg->reg.en, 0, value);
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -206,7 +208,7 @@ static int gpio_mmio_write(struct device *dev, int access_op,
 		cfg->access.write(cfg->reg.output, 0, value);
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -241,7 +243,7 @@ static int gpio_mmio_read(struct device *dev, int access_op,
 		*value = cfg->access.read(cfg->reg.input, 0, 0);
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -253,7 +255,7 @@ static int gpio_mmio_set_callback(struct device *dev,
 	ARG_UNUSED(dev);
 	ARG_UNUSED(callback);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int gpio_mmio_enable_callback(struct device *dev,
@@ -263,7 +265,7 @@ static int gpio_mmio_enable_callback(struct device *dev,
 	ARG_UNUSED(access_op);
 	ARG_UNUSED(pin);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int gpio_mmio_disable_callback(struct device *dev,
@@ -273,21 +275,21 @@ static int gpio_mmio_disable_callback(struct device *dev,
 	ARG_UNUSED(access_op);
 	ARG_UNUSED(pin);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int gpio_mmio_suspend_port(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int gpio_mmio_resume_port(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static struct gpio_driver_api gpio_mmio_drv_api_funcs = {

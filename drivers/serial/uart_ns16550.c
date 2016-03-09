@@ -30,6 +30,8 @@
  *  UART_REG_ADDR_INTERVAL
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <stdint.h>
@@ -297,7 +299,7 @@ static int uart_ns16550_init(struct device *dev)
 	uint8_t mdc = 0;
 
 	if (!ns16550_pci_uart_scan(dev)) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -658,7 +660,7 @@ static int uart_ns16550_line_ctrl_set(struct device *dev,
 		return 0;
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 #endif /* CONFIG_UART_NS16550_LINE_CTRL */
@@ -686,7 +688,7 @@ static int uart_ns16550_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 #endif /* CONFIG_UART_NS16550_DRV_CMD */

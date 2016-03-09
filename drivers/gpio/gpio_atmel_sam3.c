@@ -18,6 +18,8 @@
  * @file Driver for the Atmel SAM3 PIO Controller.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 
 #include <device.h>
@@ -121,7 +123,7 @@ static int gpio_sam3_config(struct device *dev, int access_op,
 		_config(dev, (0xFFFFFFFF), flags);
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -162,7 +164,7 @@ static int gpio_sam3_write(struct device *dev, int access_op,
 		}
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -192,7 +194,7 @@ static int gpio_sam3_read(struct device *dev, int access_op,
 	case GPIO_ACCESS_BY_PORT:
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -250,7 +252,7 @@ static int gpio_sam3_enable_callback(struct device *dev,
 		mask = 0xFFFFFFFF;
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	cfg->enabled_cb |= mask;
@@ -273,7 +275,7 @@ static int gpio_sam3_disable_callback(struct device *dev,
 		mask = 0xFFFFFFFF;
 		break;
 	default:
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	cfg->enabled_cb &= ~mask;
@@ -286,14 +288,14 @@ static int gpio_sam3_suspend_port(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int gpio_sam3_resume_port(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static struct gpio_driver_api gpio_sam3_drv_api_funcs = {

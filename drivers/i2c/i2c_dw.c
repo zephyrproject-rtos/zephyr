@@ -440,7 +440,7 @@ static int i2c_dw_transfer(struct device *dev,
 
 	/* Why bother processing no messages */
 	if (!msgs || !num_msgs) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/* First step, check if there is current activity */

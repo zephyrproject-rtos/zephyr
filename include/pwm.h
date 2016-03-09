@@ -36,6 +36,7 @@ extern "C" {
 #define PWM_ACCESS_BY_PIN	0
 #define PWM_ACCESS_ALL		1
 
+#include <errno.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <device.h>
@@ -145,7 +146,7 @@ static inline int pwm_pin_set_phase(struct device *dev, uint32_t pwm,
 		return api->set_phase(dev, PWM_ACCESS_BY_PIN, pwm, phase);
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 /**
@@ -226,7 +227,7 @@ static inline int pwm_all_set_phase(struct device *dev, uint8_t phase)
 		return api->set_phase(dev, PWM_ACCESS_ALL, 0, phase);
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 /**

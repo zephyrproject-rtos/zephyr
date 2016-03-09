@@ -148,7 +148,7 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 		return DEV_USED;
 
 	if  (msgs == NULL || num_msgs == 0)
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 
 	for (int i = 0; i < num_msgs; i++) {
 		uint8_t *buf = msgs[i].buf;

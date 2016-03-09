@@ -18,6 +18,8 @@
  * @file Driver for the Freescale K64 GPIO module.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <device.h>
 #include <init.h>
@@ -41,7 +43,7 @@ static int gpio_k64_config(struct device *dev, int access_op,
 
 	if (((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) ||
 		((flags & GPIO_DIR_IN) && (flags & GPIO_DIR_OUT))) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/*
@@ -79,7 +81,7 @@ static int gpio_k64_config(struct device *dev, int access_op,
 	} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_NORMAL) {
 		setting = K64_PINMUX_PULL_DISABLE;
 	} else {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/*
@@ -243,7 +245,7 @@ static int gpio_k64_suspend_port(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 
@@ -251,7 +253,7 @@ static int gpio_k64_resume_port(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 
