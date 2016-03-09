@@ -86,6 +86,18 @@ return an error. All three functions retrieve messages via a FIFO method. The :l
 and :literal:`wait_timeout` functions allow the caller to pend until a new message is
 logged, or until the timeout expires.
 
+Timestamp
+*********
+
+The timestamp used by the kernel event logger is 32-bit LSB of platform HW timer (for example
+Lakemont APIC timer for Quark SE). This timer period is very small and leads to timestamp
+wraparound happening quite often (e.g. every 134s for Quark SE).
+
+see :option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC`
+
+This wraparound must be considered when analyzing kernel event logger data and care must be
+taken when tickless idle is enabled and sleep duration can exceed maximum HW timer value.
+
 Message Formats
 ***************
 
