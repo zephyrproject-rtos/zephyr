@@ -109,8 +109,8 @@ static int spi_flash_wb_reg_write(struct device *dev, uint8_t *data)
 	return DEV_OK;
 }
 
-static int spi_flash_wb_read(struct device *dev, size_t offset, size_t len,
-			     void *data)
+static int spi_flash_wb_read(struct device *dev, size_t offset, void *data,
+			     size_t len)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t *buf = driver_data->buf;
@@ -149,7 +149,7 @@ static int spi_flash_wb_read(struct device *dev, size_t offset, size_t len,
 }
 
 static int spi_flash_wb_write(struct device *dev, size_t offset,
-			      size_t len, const void *data)
+			      const void *data, size_t len)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	uint8_t *buf = driver_data->buf;

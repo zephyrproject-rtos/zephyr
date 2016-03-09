@@ -38,9 +38,9 @@ extern "C" {
 #endif
 
 typedef int (*flash_api_read)(struct device *dev, size_t offset,
-			      size_t len, void *data);
+			      void *data, size_t len);
 typedef int (*flash_api_write)(struct device *dev, size_t offset,
-			       size_t len, const void *data);
+			       const void *data, size_t len);
 typedef int (*flash_api_erase)(struct device *dev, size_t offset,
 			       size_t size);
 typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
@@ -57,17 +57,17 @@ struct flash_driver_api {
  *
  *  @param  dev             : flash dev
  *  @param  offset          : Offset (byte aligned) to read
- *  @param  len             : Number of bytes to read.
  *  @param  data            : Buffer to store read data
+ *  @param  len             : Number of bytes to read.
  *
  *  @return  DEV_OK on success else DEV_* code
  */
-static inline int flash_read(struct device *dev, size_t offset, size_t len,
-			     void *data)
+static inline int flash_read(struct device *dev, size_t offset, void *data,
+			     size_t len)
 {
 	struct flash_driver_api *api = (struct flash_driver_api *)dev->driver_api;
 
-	return api->read(dev, offset, len, data);
+	return api->read(dev, offset, data, len);
 }
 
 /**
@@ -75,17 +75,17 @@ static inline int flash_read(struct device *dev, size_t offset, size_t len,
  *
  *  @param  dev             : flash device
  *  @param  offset          : starting offset for the write
- *  @param  len             : Number of bytes to write
  *  @param  data            : data to write
+ *  @param  len             : Number of bytes to write
  *
  *  @return  DEV_OK on success else DEV_* code
  */
-static inline int flash_write(struct device *dev, size_t offset, size_t len,
-			      const void *data)
+static inline int flash_write(struct device *dev, size_t offset,
+			      const void *data, size_t len)
 {
 	struct flash_driver_api *api = (struct flash_driver_api *)dev->driver_api;
 
-	return api->write(dev, offset, len, data);
+	return api->write(dev, offset, data, len);
 }
 
 /**
