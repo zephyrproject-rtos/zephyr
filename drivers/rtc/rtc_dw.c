@@ -138,7 +138,7 @@ static int rtc_dw_set_alarm(struct device *dev, const uint32_t alarm_val)
 
 	sys_write32(alarm_val, rtc_dev->base_address + RTC_CMR);
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -167,7 +167,7 @@ static int rtc_dw_set_config(struct device *dev, struct rtc_config *config)
 		sys_clear_bit(rtc_dev->base_address + RTC_CCR, 0);
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -216,6 +216,6 @@ int rtc_dw_init(struct device *dev)
 
 	dev->driver_api = &funcs;
 
-	return DEV_OK;
+	return 0;
 }
 

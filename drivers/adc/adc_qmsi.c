@@ -106,7 +106,7 @@ static void adc_qmsi_disable(struct device *dev)
 #if (CONFIG_ADC_QMSI_POLL)
 static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 {
-	int i, ret = DEV_OK;
+	int i, ret = 0;
 	qm_adc_xfer_t xfer;
 	qm_adc_config_t cfg;
 
@@ -161,7 +161,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 #else
 static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 {
-	int i, ret = DEV_OK;
+	int i, ret = 0;
 	qm_adc_xfer_t xfer;
 	qm_adc_config_t cfg;
 
@@ -263,7 +263,7 @@ int adc_qmsi_init(struct device *dev)
 
 	adc_config_irq();
 
-	return DEV_OK;
+	return 0;
 }
 
 struct adc_info adc_info_dev;

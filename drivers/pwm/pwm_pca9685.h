@@ -32,7 +32,7 @@ extern "C" {
  * @brief Initialization function for PCA9685
  *
  * @param dev Device struct
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 extern int pwm_pca9685_init(struct device *dev);
 

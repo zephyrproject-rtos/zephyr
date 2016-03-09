@@ -50,7 +50,7 @@ static inline int stm32f10x_clock_control_on(struct device *dev,
 	} else {
 		rcc->apb1enr |= subsys;
 	}
-	return DEV_OK;
+	return 0;
 }
 
 static inline int stm32f10x_clock_control_off(struct device *dev,
@@ -67,7 +67,7 @@ static inline int stm32f10x_clock_control_off(struct device *dev,
 	} else {
 		rcc->apb1enr &= ~subsys;
 	}
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -187,7 +187,7 @@ static int stm32f10x_clock_control_get_subsys_rate(struct device *clock,
 
 	*rate = __get_apb_clock(ahb_clock, prescaler);
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct clock_control_driver_api stm32f10x_clock_control_api = {
@@ -257,7 +257,7 @@ int stm32f10x_clock_control_init(struct device *dev)
 	}
 
 	dev->driver_api = &stm32f10x_clock_control_api;
-	return DEV_OK;
+	return 0;
 }
 
 static struct stm32f10x_rcc_data stm32f10x_rcc_data = {

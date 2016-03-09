@@ -232,7 +232,7 @@ static int _bt_nble_init(struct device *unused)
 	net_buf_pool_init(rx_pool);
 	net_buf_pool_init(tx_pool);
 
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(bt_nble, "", _bt_nble_init, NULL, NULL, NANOKERNEL,

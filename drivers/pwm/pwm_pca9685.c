@@ -71,7 +71,7 @@ static int pwm_pca9685_configure(struct device *dev, int access_op,
 	ARG_UNUSED(pwm);
 	ARG_UNUSED(flags);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int pwm_pca9685_set_values(struct device *dev, int access_op,
@@ -184,7 +184,7 @@ static struct pwm_driver_api pwm_pca9685_drv_api_funcs = {
  * @brief Initialization function of PCA9685
  *
  * @param dev Device struct
- * @return DEV_OK if successful, failed otherwise.
+ * @return 0 if successful, failed otherwise.
  */
 int pwm_pca9685_init(struct device *dev)
 {
@@ -211,11 +211,11 @@ int pwm_pca9685_init(struct device *dev)
 	buf[1] = (1 << 5); /* register addr auto increment */
 
 	ret = i2c_write(i2c_master, buf, 2, config->i2c_slave_addr);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		return DEV_NOT_CONFIG;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 /* Initialization for PWM_PCA9685_0 */

@@ -147,7 +147,7 @@
  * @brief Initialization function for FlexTimer Module FTM (PWM mode)
  *
  * @param dev Device struct
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 extern int pwm_ftm_init(struct device *dev);
 

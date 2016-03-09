@@ -42,7 +42,7 @@ static int ram_console_init(struct device *d)
 	__printk_hook_install(ram_console_out);
 	__stdout_hook_install(ram_console_out);
 
-	return DEV_OK;
+	return 0;
 }
 
 SYS_INIT(ram_console_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

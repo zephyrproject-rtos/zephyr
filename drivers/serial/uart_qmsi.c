@@ -315,7 +315,7 @@ static int uart_qmsi_line_ctrl_set(struct device *dev, uint32_t ctrl, uint32_t v
 		return DEV_NO_SUPPORT;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 #endif /* CONFIG_UART_LINE_CTRL */
 
@@ -377,5 +377,5 @@ static int uart_qmsi_init(struct device *dev)
 
 	dev->driver_api = &api;
 
-	return DEV_OK;
+	return 0;
 }

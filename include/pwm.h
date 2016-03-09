@@ -68,7 +68,7 @@ struct pwm_driver_api {
  * @param pwm PWM output.
  * @param flags PWM configuration flags.
  *
- * @retval DEV_OK If successful,
+ * @retval 0 If successful,
  * @retval failed Otherwise.
  */
 static inline int pwm_pin_configure(struct device *dev, uint8_t pwm,
@@ -88,7 +88,7 @@ static inline int pwm_pin_configure(struct device *dev, uint8_t pwm,
  * @param on ON value set to the PWM.
  * @param off OFF value set to the PWM.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int pwm_pin_set_values(struct device *dev, uint32_t pwm,
@@ -110,7 +110,7 @@ static inline int pwm_pin_set_values(struct device *dev, uint32_t pwm,
  * @param duty Duty cycle to set to the PWM in %, for example,
  *        50 sets to 50%.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int pwm_pin_set_duty_cycle(struct device *dev, uint32_t pwm,
@@ -131,7 +131,7 @@ static inline int pwm_pin_set_duty_cycle(struct device *dev, uint32_t pwm,
  * @param pwm PWM output.
  * @param phase The number of clock ticks to delay before the start of pulses.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int pwm_pin_set_phase(struct device *dev, uint32_t pwm,
@@ -154,7 +154,7 @@ static inline int pwm_pin_set_phase(struct device *dev, uint32_t pwm,
  * @param dev Pointer to the device structure for the driver instance.
  * @param flags PWM configuration flags.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int pwm_all_configure(struct device *dev, int flags)
@@ -172,7 +172,7 @@ static inline int pwm_all_configure(struct device *dev, int flags)
  * @param on ON value set to the PWM.
  * @param off OFF value set to the PWM.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int pwm_all_set_values(struct device *dev,
@@ -193,7 +193,7 @@ static inline int pwm_all_set_values(struct device *dev,
  * @param duty Duty cycle to set to the PWM in %, for example,
  *        50 sets to 50%.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int pwm_all_set_duty_cycle(struct device *dev, uint8_t duty)
@@ -213,7 +213,7 @@ static inline int pwm_all_set_duty_cycle(struct device *dev, uint8_t duty)
  * @param pwm PWM output.
  * @param phase The number of clock ticks to delay before the start of pulses.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int pwm_all_set_phase(struct device *dev, uint8_t phase)
@@ -235,7 +235,7 @@ static inline int pwm_all_set_phase(struct device *dev, uint8_t phase)
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int pwm_suspend(struct device *dev)
@@ -251,7 +251,7 @@ static inline int pwm_suspend(struct device *dev)
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int pwm_resume(struct device *dev)

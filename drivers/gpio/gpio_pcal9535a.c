@@ -89,7 +89,7 @@ static inline int _has_i2c_master(struct device *dev)
  * @param reg Register to read (the PORT0 of the pair of registers).
  * @param buf Buffer to read data into.
  *
- * @return DEV_OK if successful, failed otherwise.
+ * @return 0 if successful, failed otherwise.
  */
 static int _read_port_regs(struct device *dev, uint8_t reg,
 			   union gpio_pcal9535a_port_data *buf)
@@ -135,7 +135,7 @@ error:
  * @param reg Register to write into (the PORT0 of the pair of registers).
  * @param buf Buffer to write data from.
  *
- * @return DEV_OK if successful, failed otherwise.
+ * @return 0 if successful, failed otherwise.
  */
 static int _write_port_regs(struct device *dev, uint8_t reg,
 			    union gpio_pcal9535a_port_data *buf)
@@ -169,7 +169,7 @@ static int _write_port_regs(struct device *dev, uint8_t reg,
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int _setup_pin_dir(struct device *dev, int access_op,
 			  uint32_t pin, int flags)
@@ -221,7 +221,7 @@ done:
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int _setup_pin_pullupdown(struct device *dev, int access_op,
 				 uint32_t pin, int flags)
@@ -314,7 +314,7 @@ done:
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int _setup_pin_polarity(struct device *dev, int access_op,
 			       uint32_t pin, int flags)
@@ -369,7 +369,7 @@ done:
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int gpio_pcal9535a_config(struct device *dev, int access_op,
 				 uint32_t pin, int flags)
@@ -419,7 +419,7 @@ done:
  * @param pin The pin number
  * @param value Value to set (0 or 1)
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int gpio_pcal9535a_write(struct device *dev, int access_op,
 				uint32_t pin, uint32_t value)
@@ -479,7 +479,7 @@ done:
  * @param pin The pin number
  * @param value Value of input pin(s)
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int gpio_pcal9535a_read(struct device *dev, int access_op,
 			       uint32_t pin, uint32_t *value)
@@ -492,7 +492,7 @@ static int gpio_pcal9535a_read(struct device *dev, int access_op,
 	}
 
 	ret = _read_port_regs(dev, REG_INPUT_PORT0, &buf);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		goto done;
 	}
 
@@ -574,7 +574,7 @@ static struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {
  * @brief Initialization function of PCAL9535A
  *
  * @param dev Device struct
- * @return DEV_OK if successful, failed otherwise.
+ * @return 0 if successful, failed otherwise.
  */
 int gpio_pcal9535a_init(struct device *dev)
 {
@@ -595,7 +595,7 @@ int gpio_pcal9535a_init(struct device *dev)
 
 	nano_timer_init(&drv_data->timer, (void *) 0);
 
-	return DEV_OK;
+	return 0;
 }
 
 /* Initialization for PCAL9535A_0 */

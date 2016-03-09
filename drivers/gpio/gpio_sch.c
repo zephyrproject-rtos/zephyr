@@ -149,7 +149,7 @@ static int gpio_sch_config(struct device *dev,
 		_gpio_port_config(dev, flags);
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_sch_write(struct device *dev,
@@ -167,7 +167,7 @@ static int gpio_sch_write(struct device *dev,
 		_write_glvl(info->regs, value);
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_sch_read(struct device *dev,
@@ -185,7 +185,7 @@ static int gpio_sch_read(struct device *dev,
 		*value = !!(*value & BIT(pin));
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static void _gpio_sch_poll_status(int data, int unused)
@@ -259,7 +259,7 @@ static int gpio_sch_set_callback(struct device *dev,
 		gpio->poll = 0;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_sch_enable_callback(struct device *dev,
@@ -287,7 +287,7 @@ static int gpio_sch_enable_callback(struct device *dev,
 
 	gpio_sch_set_callback(dev, gpio->callback);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_sch_disable_callback(struct device *dev,
@@ -313,17 +313,17 @@ static int gpio_sch_disable_callback(struct device *dev,
 
 	gpio_sch_set_callback(dev, gpio->callback);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_sch_suspend(struct device *dev)
 {
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_sch_resume(struct device *dev)
 {
-	return DEV_OK;
+	return 0;
 }
 
 static struct gpio_driver_api gpio_sch_api = {
@@ -347,7 +347,7 @@ int gpio_sch_init(struct device *dev)
 
 	DBG("SCH GPIO Intel Driver initialized on device: %p\n", dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 #if CONFIG_GPIO_SCH_0

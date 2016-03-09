@@ -80,7 +80,7 @@
  *
  * @param ftm_num index indicating which FTM
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 
 static int pwm_ftm_clk_enable(uint8_t ftm_num)
@@ -99,7 +99,7 @@ static int pwm_ftm_clk_enable(uint8_t ftm_num)
 
 	sim->scgc6 |= 1 << (24 + ftm_num);
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -114,13 +114,13 @@ static int pwm_ftm_clk_enable(uint8_t ftm_num)
  * @param channel The pwm channel number
  * @param flags Device flags (unused)
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 
 static int pwm_ftm_configure(struct device *dev, int access_op,
 			     uint32_t channel, int flags)
 {
-	int return_val = DEV_OK;
+	int return_val = 0;
 
 	uint32_t clock_source;
 	uint32_t prescale;
@@ -274,7 +274,7 @@ static int pwm_ftm_configure(struct device *dev, int access_op,
  *            signal will be off (low if positive polarity) for the rest of
  *            the cycle.
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 
 static int pwm_ftm_set_values(struct device *dev, int access_op,
@@ -440,7 +440,7 @@ static int pwm_ftm_set_values(struct device *dev, int access_op,
 
 	DBG("pwm_ftm_set_values done.\n");
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -453,7 +453,7 @@ static int pwm_ftm_set_values(struct device *dev, int access_op,
  * @param channel The pwm channel number
  * @param duty Percentage of time signal is on (value between 0 and 100)
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 
 static int pwm_ftm_set_duty_cycle(struct device *dev, int access_op,
@@ -549,7 +549,7 @@ static int pwm_ftm_set_duty_cycle(struct device *dev, int access_op,
  * @param channel The pwm channel number
  * @param phase Clock ticks of delay before start of the pulse (must be 0)
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 
 static int pwm_ftm_set_phase(struct device *dev, int access_op,
@@ -601,7 +601,7 @@ static int pwm_ftm_set_phase(struct device *dev, int access_op,
 
 	DBG("pwm_ftm_set_phase done.\n");
 
-	return DEV_OK;
+	return 0;
 #else /*COMBINE_MODE_SUPPORT*/
 
 	ARG_UNUSED(dev);
@@ -623,7 +623,7 @@ static int pwm_ftm_set_phase(struct device *dev, int access_op,
  *
  * @param dev Device struct
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 
 static int pwm_ftm_suspend(struct device *dev)
@@ -647,7 +647,7 @@ static int pwm_ftm_suspend(struct device *dev)
 
 	DBG("pwm_ftm_suspend done.\n");
 
-	return DEV_OK;
+	return 0;
 
 }
 
@@ -660,7 +660,7 @@ static int pwm_ftm_suspend(struct device *dev)
  *
  * @param dev Device struct
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 
 static int pwm_ftm_resume(struct device *dev)
@@ -688,7 +688,7 @@ static int pwm_ftm_resume(struct device *dev)
 
 	DBG("pwm_ftm_resume done.\n");
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct pwm_driver_api pwm_ftm_drv_api_funcs = {
@@ -704,7 +704,7 @@ static struct pwm_driver_api pwm_ftm_drv_api_funcs = {
  * @brief Initialization function of FTM
  *
  * @param dev Device struct
- * @return DEV_OK if successful, failed otherwise.
+ * @return 0 if successful, failed otherwise.
  */
 int pwm_ftm_init(struct device *dev)
 {
@@ -713,7 +713,7 @@ int pwm_ftm_init(struct device *dev)
 
 	dev->driver_api = &pwm_ftm_drv_api_funcs;
 
-	return DEV_OK;
+	return 0;
 }
 
 /* Initialization for PWM_K64_FTM_0 */

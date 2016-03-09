@@ -42,7 +42,7 @@ static int isr_register(struct device *dev, isr_t isr_func,
 		if (!clients->client[i].isr_dev) {
 			clients->client[i].isr_dev = isr_dev;
 			clients->client[i].isr_func = isr_func;
-			return DEV_OK;
+			return 0;
 		}
 	}
 	return DEV_FAIL;
@@ -63,7 +63,7 @@ static inline int enable(struct device *dev, struct device *isr_dev)
 		if (clients->client[i].isr_dev == isr_dev) {
 			clients->client[i].enabled = 1;
 			irq_enable(config->irq_num);
-			return DEV_OK;
+			return 0;
 		}
 	}
 	return DEV_FAIL;
@@ -97,7 +97,7 @@ static inline int disable(struct device *dev, struct device *isr_dev)
 			if (last_enabled_isr(clients, config->client_count)) {
 				irq_disable(config->irq_num);
 			}
-			return DEV_OK;
+			return 0;
 		}
 	}
 	return DEV_FAIL;

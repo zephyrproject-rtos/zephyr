@@ -156,7 +156,7 @@ static int _i2c_dw_data_send(struct device *dev)
 
 		dw->state &= ~I2C_DW_CMD_SEND;
 
-		return DEV_OK;
+		return 0;
 	}
 
 	while (regs->ic_status.bits.tfnf && (dw->xfr_len > 0)) {
@@ -184,7 +184,7 @@ static int _i2c_dw_data_send(struct device *dev)
 		}
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static inline void _i2c_dw_transfer_complete(struct device *dev)
@@ -208,7 +208,7 @@ void i2c_dw_isr(struct device *port)
 	struct i2c_dw_dev_config * const dw = port->driver_data;
 	union ic_interrupt_register intr_stat;
 	uint32_t value;
-	int ret = DEV_OK;
+	int ret = 0;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
@@ -275,7 +275,7 @@ void i2c_dw_isr(struct device *port)
 			 */
 			if (((dw->xfr_len == 0)
 			     && !(dw->xfr_flags & I2C_MSG_STOP))
-			    || (ret != DEV_OK)) {
+			    || (ret != 0)) {
 				goto done;
 			}
 		}
@@ -421,7 +421,7 @@ static int _i2c_dw_setup(struct device *dev, uint16_t slave_address)
 		regs->ic_sar.bits.ic_sar = slave_address;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int i2c_dw_transfer(struct device *dev,
@@ -527,7 +527,7 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	uint32_t	value = 0;
-	uint32_t	rc = DEV_OK;
+	uint32_t	rc = 0;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
@@ -632,7 +632,7 @@ static int i2c_dw_suspend(struct device *dev)
 {
 	DBG("I2C: suspend called - function not yet implemented\n");
 	/* TODO - add this code */
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -640,7 +640,7 @@ static int i2c_dw_resume(struct device *dev)
 {
 	DBG("I2C: resume called - function not yet implemented\n");
 	/* TODO - add this code */
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -718,7 +718,7 @@ int i2c_dw_initialize(struct device *port)
 
 	rom->config_func(port);
 
-	if (i2c_dw_runtime_configure(port, dev->app_config.raw) != DEV_OK) {
+	if (i2c_dw_runtime_configure(port, dev->app_config.raw) != 0) {
 		DBG("I2C: Cannot set default configuration 0x%x\n",
 		    dev->app_config.raw);
 		return DEV_NOT_CONFIG;
@@ -726,7 +726,7 @@ int i2c_dw_initialize(struct device *port)
 
 	dev->state = I2C_DW_STATE_READY;
 
-	return DEV_OK;
+	return 0;
 }
 
 #if defined(CONFIG_IOAPIC)

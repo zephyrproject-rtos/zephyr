@@ -238,7 +238,7 @@ static int spi_dw_configure(struct device *dev,
 	/* Configuring the rate */
 	write_baudr(config->max_sys_freq, info->regs);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int spi_dw_slave_select(struct device *dev, uint32_t slave)
@@ -253,7 +253,7 @@ static int spi_dw_slave_select(struct device *dev, uint32_t slave)
 
 	spi->slave = 1 << (slave - 1);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int spi_dw_transceive(struct device *dev,
@@ -310,7 +310,7 @@ static int spi_dw_transceive(struct device *dev,
 		return DEV_FAIL;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int spi_dw_suspend(struct device *dev)
@@ -319,7 +319,7 @@ static int spi_dw_suspend(struct device *dev)
 
 	_clock_off(dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int spi_dw_resume(struct device *dev)
@@ -328,7 +328,7 @@ static int spi_dw_resume(struct device *dev)
 
 	_clock_on(dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 void spi_dw_isr(void *arg)
@@ -398,7 +398,7 @@ int spi_dw_init(struct device *dev)
 
 	DBG("Designware SPI driver initialized on device: %p\n", dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 #if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)

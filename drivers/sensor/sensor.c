@@ -51,7 +51,7 @@ static int sensor_init(struct device *dev)
 			  sensor_fiber_main, 0, 0,
 			  CONFIG_SENSOR_DELAYED_WORK_PRIORITY, 0);
 
-	return DEV_OK;
+	return 0;
 }
 
 SYS_INIT(sensor_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

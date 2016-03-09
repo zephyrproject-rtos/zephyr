@@ -112,7 +112,7 @@ static int pwm_dw_configure(struct device *dev, int access_op,
 	ARG_UNUSED(pwm);
 	ARG_UNUSED(flags);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int __set_one_port(struct device *dev, uint32_t pwm,
@@ -127,7 +127,7 @@ static int __set_one_port(struct device *dev, uint32_t pwm,
 
 	if ((off == 0) || (on == 0)) {
 		/* stop PWM if so specified */
-		return DEV_OK;
+		return 0;
 	}
 
 	/* write timer for pin to stay low */
@@ -139,7 +139,7 @@ static int __set_one_port(struct device *dev, uint32_t pwm,
 	/* Enable timer so it starts running and counting */
 	sys_write32((TIMER_INIT_CTRL | 0x01), (reg_addr + REG_TMR_CTRL));
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -158,7 +158,7 @@ static int __set_one_port(struct device *dev, uint32_t pwm,
  * @param on Duration for pin to stay high (must be >= 2)
  * @param off Duration for pin to stay low (must be >= 2)
  *
- * @return DEV_OK
+ * @return 0
  */
 static int pwm_dw_set_values(struct device *dev, int access_op,
 				  uint32_t pwm, uint32_t on, uint32_t off)
@@ -180,7 +180,7 @@ static int pwm_dw_set_values(struct device *dev, int access_op,
 			__set_one_port(dev, i, on, off);
 		}
 
-		return DEV_OK;
+		return 0;
 	}
 
 	return DEV_INVALID_OP;
@@ -227,13 +227,13 @@ static struct pwm_driver_api pwm_dw_drv_api_funcs = {
  * @brief Initialization function of PCA9685
  *
  * @param dev Device struct
- * @return DEV_OK if successful, failed otherwise.
+ * @return 0 if successful, failed otherwise.
  */
 int pwm_dw_init(struct device *dev)
 {
 	dev->driver_api = &pwm_dw_drv_api_funcs;
 
-	return DEV_OK;
+	return 0;
 }
 
 /* Initialization for PWM_DW */

@@ -215,7 +215,7 @@ int quark_se_ipm_controller_initialize(struct device *d)
 	if (config->controller_init) {
 		return config->controller_init();
 	}
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -229,7 +229,7 @@ int quark_se_ipm_initialize(struct device *d)
 		inbound_channels |= (0x3 << (config->channel * 2));
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 

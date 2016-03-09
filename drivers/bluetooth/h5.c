@@ -781,7 +781,7 @@ static int _bt_uart_init(struct device *unused)
 
 	bt_driver_register(&drv);
 
-	return DEV_OK;
+	return 0;
 }
 
 SYS_INIT(_bt_uart_init, NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

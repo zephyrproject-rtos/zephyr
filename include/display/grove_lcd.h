@@ -162,7 +162,7 @@ void glcd_color_set(struct device *port, uint8_t r, uint8_t g, uint8_t b);
  *
  *  @param port Pointer to device structure for driver instance.
  *
- *  @return Returns DEV_OK if all passes
+ *  @return Returns 0 if all passes
  */
 int glcd_initialize(struct device *port);
 

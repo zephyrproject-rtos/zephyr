@@ -91,7 +91,7 @@ void main(void)
 	nano_timer_init(&timer, data);
 	adc_enable(adc);
 	while (1) {
-		if (adc_read(adc, &table) != DEV_OK) {
+		if (adc_read(adc, &table) != 0) {
 			DBG("Sampling could not proceed, an error occurred\n");
 		} else {
 			DBG("Sampling is done\n");

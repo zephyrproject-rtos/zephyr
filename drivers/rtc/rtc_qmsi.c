@@ -56,12 +56,12 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	if (qm_rtc_set_config(QM_RTC_0, &qm_cfg) != QM_RC_OK)
 		return DEV_FAIL;
 
-	return DEV_OK;
+	return 0;
 }
 
 static int rtc_qmsi_set_alarm(struct device *dev, const uint32_t alarm_val)
 {
-	return qm_rtc_set_alarm(QM_RTC_0, alarm_val) == QM_RC_OK ? DEV_OK : DEV_FAIL;
+	return qm_rtc_set_alarm(QM_RTC_0, alarm_val) == QM_RC_OK ? 0 : DEV_FAIL;
 }
 
 static uint32_t rtc_qmsi_read(struct device *dev)
@@ -89,7 +89,7 @@ static int rtc_qmsi_init(struct device *dev)
 	QM_SCSS_INT->int_rtc_mask &= ~BIT(0);
 
 	dev->driver_api = &api;
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(rtc, CONFIG_RTC_DRV_NAME, &rtc_qmsi_init,

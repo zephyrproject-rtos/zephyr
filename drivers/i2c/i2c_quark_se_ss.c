@@ -230,7 +230,7 @@ static int _i2c_qse_ss_data_send(struct device *dev)
 
 		dw->state &= ~I2C_QSE_SS_CMD_SEND;
 
-		return DEV_OK;
+		return 0;
 	}
 
 	while (_i2c_qse_ss_is_tfnf(dev) && (dw->xfr_len > 0)) {
@@ -259,7 +259,7 @@ static int _i2c_qse_ss_data_send(struct device *dev)
 
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static inline void _i2c_qse_ss_transfer_complete(struct device *dev)
@@ -279,7 +279,7 @@ void i2c_qse_ss_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
 	uint32_t ic_intr_stat;
-	int ret = DEV_OK;
+	int ret = 0;
 
 	/*
 	 * Causes of an intterrupts:
@@ -328,7 +328,7 @@ void i2c_qse_ss_isr(void *arg)
 		 */
 		if (((dw->xfr_len == 0)
 		     && !(dw->xfr_flags & I2C_MSG_STOP))
-		    || (ret != DEV_OK)) {
+		    || (ret != 0)) {
 			goto done;
 		}
 	}
@@ -349,7 +349,7 @@ static int _i2c_qse_ss_setup(struct device *dev, uint16_t addr)
 {
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
 	uint32_t ic_con;
-	int rc = DEV_OK;
+	int rc = 0;
 
 	/* Disable the device controller but enable clock
 	 * so we can setup the controller.
@@ -518,7 +518,7 @@ static int i2c_qse_ss_runtime_configure(struct device *dev, uint32_t config)
 {
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
 	uint32_t	value = 0;
-	uint32_t	rc = DEV_OK;
+	uint32_t	rc = 0;
 	uint32_t	ic_con;
 	uint32_t	spklen;
 
@@ -598,14 +598,14 @@ static int i2c_qse_ss_suspend(struct device *dev)
 {
 	DBG("I2C_SS: suspend called - function not yet implemented\n");
 	/* TODO - add this code */
-	return DEV_OK;
+	return 0;
 }
 
 static int i2c_qse_ss_resume(struct device *dev)
 {
 	DBG("I2C_SS: resume called - function not yet implemented\n");
 	/* TODO - add this code */
-	return DEV_OK;
+	return 0;
 }
 
 static struct i2c_driver_api ss_funcs = {
@@ -631,7 +631,7 @@ int i2c_qse_ss_initialize(struct device *dev)
 
 	device_sync_call_init(&dw->sync);
 
-	if (i2c_qse_ss_runtime_configure(dev, dw->app_config.raw) != DEV_OK) {
+	if (i2c_qse_ss_runtime_configure(dev, dw->app_config.raw) != 0) {
 		DBG("I2C_SS: Cannot set default configuration 0x%x\n",
 		    dw->app_config.raw);
 		return DEV_NOT_CONFIG;
@@ -639,7 +639,7 @@ int i2c_qse_ss_initialize(struct device *dev)
 
 	dw->state = I2C_QSE_SS_STATE_READY;
 
-	return DEV_OK;
+	return 0;
 }
 
 #if CONFIG_I2C_QUARK_SE_SS_0

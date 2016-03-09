@@ -63,7 +63,7 @@ static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 		return DEV_INVALID_CONF;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
@@ -113,7 +113,7 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 	/* Enable Interrupts to host for an specific comparator */
 	QM_SCSS_INT->int_comparators_host_mask &= ~(1 << index);
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct aio_cmp_driver_api aio_cmp_funcs = {
@@ -147,7 +147,7 @@ int aio_qmsi_cmp_init(struct device *dev)
 
 	irq_enable(INT_AIO_CMP_IRQ);
 
-	return DEV_OK;
+	return 0;
 }
 
 void aio_qmsi_cmp_isr(struct device *dev)
@@ -186,5 +186,5 @@ static int aio_cmp_config(struct device *dev)
 	IRQ_CONNECT(INT_AIO_CMP_IRQ, CONFIG_AIO_COMPARATOR_IRQ_PRI,
 		    aio_qmsi_cmp_isr, DEVICE_GET(aio_qmsi_cmp), 0);
 
-	return DEV_OK;
+	return 0;
 }

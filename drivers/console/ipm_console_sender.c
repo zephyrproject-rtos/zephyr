@@ -61,6 +61,6 @@ int ipm_console_sender_init(struct device *d)
 		__printk_hook_install(consoleOut);
 	}
 
-	return DEV_OK;
+	return 0;
 }
 

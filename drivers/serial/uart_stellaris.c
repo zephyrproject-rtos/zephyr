@@ -267,7 +267,7 @@ static inline void line_control_defaults_set(struct device *dev)
  *
  * @param dev UART device struct
  *
- * @return DEV_OK
+ * @return 0
  */
 static int uart_stellaris_init(struct device *dev)
 {
@@ -283,7 +283,7 @@ static int uart_stellaris_init(struct device *dev)
 
 	dev->driver_api = &uart_stellaris_driver_api;
 
-	return DEV_OK;
+	return 0;
 }
 
 /**

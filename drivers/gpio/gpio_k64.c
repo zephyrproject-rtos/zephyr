@@ -153,7 +153,7 @@ static int gpio_k64_config(struct device *dev, int access_op,
 		}
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -178,7 +178,7 @@ static int gpio_k64_write(struct device *dev, int access_op,
 
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -195,7 +195,7 @@ static int gpio_k64_read(struct device *dev, int access_op,
 
 	/* nothing more to do for GPIO_ACCESS_BY_PORT */
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -205,7 +205,7 @@ static int gpio_k64_set_callback(struct device *dev, gpio_callback_t callback)
 
 	data->callback_func = callback;
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -220,7 +220,7 @@ static int gpio_k64_enable_callback(struct device *dev, int access_op,
 		data->port_callback_enable = 1;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -235,7 +235,7 @@ static int gpio_k64_disable_callback(struct device *dev, int access_op,
 		data->port_callback_enable = 0;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -325,13 +325,13 @@ static struct gpio_driver_api gpio_k64_drv_api_funcs = {
  * @brief Initialization function of Freescale K64-based GPIO port
  *
  * @param dev Device structure pointer
- * @return DEV_OK if successful, failed otherwise.
+ * @return 0 if successful, failed otherwise.
  */
 int gpio_k64_init(struct device *dev)
 {
 	dev->driver_api = &gpio_k64_drv_api_funcs;
 
-	return DEV_OK;
+	return 0;
 }
 
 /* Initialization for Port A */

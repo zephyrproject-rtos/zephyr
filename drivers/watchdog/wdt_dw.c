@@ -138,7 +138,7 @@ static int wdt_dw_set_config(struct device *dev, struct wdt_config *config)
 
 	wdt_dw_reload(dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct wdt_driver_api wdt_dw_funcs = {

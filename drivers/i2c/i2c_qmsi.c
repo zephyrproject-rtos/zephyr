@@ -97,7 +97,7 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 	if (qm_i2c_set_config(instance, &qm_cfg) != QM_RC_OK)
 		return DEV_FAIL;
 
-	return DEV_OK;
+	return 0;
 }
 
 static void transfer_complete(uint32_t id, qm_rc_t status)
@@ -180,7 +180,7 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 			return DEV_FAIL;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int i2c_qmsi_suspend(struct device *dev)
@@ -238,5 +238,5 @@ static int i2c_qmsi_init(struct device *dev)
 	device_sync_call_init(&driver_data->sync);
 
 	dev->driver_api = &api;
-	return DEV_OK;
+	return 0;
 }

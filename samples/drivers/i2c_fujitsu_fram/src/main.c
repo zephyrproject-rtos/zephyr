@@ -148,7 +148,7 @@ void main(void)
 		printk("Read %d bytes from address 0x00.\n", sizeof(data));
 	}
 
-	ret = DEV_OK;
+	ret = 0;
 	for (i = 0; i < sizeof(cmp_data); i++) {
 		/* uncomment below if you want to see all the bytes */
 		/* printk("0x%X ?= 0x%X\n", cmp_data[i], data[i]); */
@@ -157,7 +157,7 @@ void main(void)
 			ret = DEV_FAIL;
 		}
 	}
-	if (ret == DEV_OK) {
+	if (ret == 0) {
 		printk("Data comparison successful.\n");
 	}
 }

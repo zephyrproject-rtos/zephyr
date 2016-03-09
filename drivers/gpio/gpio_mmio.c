@@ -98,7 +98,7 @@ static uint32_t _io_write(uint32_t addr, uint32_t bit, uint32_t value)
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int gpio_mmio_config(struct device *dev, int access_op,
 					 uint32_t pin, int flags)
@@ -153,7 +153,7 @@ static int gpio_mmio_config(struct device *dev, int access_op,
 	 */
 
 	if (!cfg->reg.en) {
-		return DEV_OK;
+		return 0;
 	}
 
 	if (cfg->cfg_flags & GPIO_MMIO_CFG_EN_MASK) {
@@ -175,7 +175,7 @@ static int gpio_mmio_config(struct device *dev, int access_op,
 		return DEV_INVALID_OP;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -186,7 +186,7 @@ static int gpio_mmio_config(struct device *dev, int access_op,
  * @param pin The pin number
  * @param value Value to set (0 or 1)
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int gpio_mmio_write(struct device *dev, int access_op,
 			   uint32_t pin, uint32_t value)
@@ -209,7 +209,7 @@ static int gpio_mmio_write(struct device *dev, int access_op,
 		return DEV_INVALID_OP;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -220,7 +220,7 @@ static int gpio_mmio_write(struct device *dev, int access_op,
  * @param pin The pin number
  * @param value Value of input pin(s)
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int gpio_mmio_read(struct device *dev, int access_op,
 				       uint32_t pin, uint32_t *value)
@@ -244,7 +244,7 @@ static int gpio_mmio_read(struct device *dev, int access_op,
 		return DEV_INVALID_OP;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_mmio_set_callback(struct device *dev,
@@ -305,13 +305,13 @@ static struct gpio_driver_api gpio_mmio_drv_api_funcs = {
  * @brief Initialization function of MMIO
  *
  * @param dev Device struct
- * @return DEV_OK if successful, failed otherwise.
+ * @return 0 if successful, failed otherwise.
  */
 int gpio_mmio_init(struct device *dev)
 {
 	dev->driver_api = &gpio_mmio_drv_api_funcs;
 
-	return DEV_OK;
+	return 0;
 }
 
 /* Initialization for MMIO_0 */

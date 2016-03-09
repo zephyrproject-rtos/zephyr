@@ -107,7 +107,7 @@ static inline bool spi_transfer(struct device *dev,
 	spi_slave_select(dev, CC2520_SPI_SLAVE());
 	ret = spi_transceive(dev, data_out, out_len, data_in, in_len);
 
-	return (ret == DEV_OK);
+	return (ret == 0);
 }
 
 static inline bool cc2520_read_fifo_buf(uint8_t *buffer, uint32_t count)

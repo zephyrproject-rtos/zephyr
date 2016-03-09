@@ -148,7 +148,7 @@ struct i2c_driver_api {
  * @param dev_config Bit-packed 32-bit value to the device runtime configuration
  * for the I2C controller.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval DEV_* code otherwise.
  */
 static inline int i2c_configure(struct device *dev, uint32_t dev_config)
@@ -169,7 +169,7 @@ static inline int i2c_configure(struct device *dev, uint32_t dev_config)
  * @param len Size of the memory pool available for reading.
  * @param addr Address to the target I2C device for writing.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval DEV_* code otherwise.
  */
 static inline int i2c_write(struct device *dev, uint8_t *buf,
@@ -196,7 +196,7 @@ static inline int i2c_write(struct device *dev, uint8_t *buf,
  * @param len Size of the memory pool available for writing.
  * @param addr Address of the I2C device being read.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval DEV_* code otherwise.
  */
 static inline int i2c_read(struct device *dev, uint8_t *buf,
@@ -225,7 +225,7 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
  * @param num_msgs Number of messages to transfer.
  * @param addr Address of the I2C target device.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval DEV_* code otherwise.
  */
 static inline int i2c_transfer(struct device *dev,
@@ -242,7 +242,7 @@ static inline int i2c_transfer(struct device *dev,
  * @brief Suspend an I2C driver.
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  */
 static inline int i2c_suspend(struct device *dev)
 {
@@ -256,7 +256,7 @@ static inline int i2c_suspend(struct device *dev)
  * @brief Resume an I2C driver.
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  */
 static inline int i2c_resume(struct device *dev)
 {

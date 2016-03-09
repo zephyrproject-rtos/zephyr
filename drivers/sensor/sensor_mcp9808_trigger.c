@@ -59,7 +59,7 @@ static int mcp9808_reg_update(struct mcp9808_data *data, uint8_t reg,
 	new_val |= val;
 
 	if (new_val == old_val) {
-		return DEV_OK;
+		return 0;
 	}
 
 	return mcp9808_reg_write(data, reg, new_val);

@@ -137,7 +137,7 @@ static inline void adc_disable(struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param seq_table Pointer to the structure representing the sequence table.
  *
- * @retval DEV_OK On success
+ * @retval 0 On success
  * @retval else Otherwise.
  */
 static inline int adc_read(struct device *dev, struct adc_seq_table *seq_table)

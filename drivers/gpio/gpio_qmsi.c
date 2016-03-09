@@ -189,7 +189,7 @@ static inline int gpio_qmsi_config(struct device *port, int access_op,
 	} else {
 		qmsi_port_config(port, flags);
 	}
-	return DEV_OK;
+	return 0;
 }
 
 static inline int gpio_qmsi_write(struct device *port, int access_op,
@@ -208,7 +208,7 @@ static inline int gpio_qmsi_write(struct device *port, int access_op,
 		qm_gpio_write_port(gpio, value);
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static inline int gpio_qmsi_read(struct device *port, int access_op,
@@ -223,7 +223,7 @@ static inline int gpio_qmsi_read(struct device *port, int access_op,
 		*value = qm_gpio_read_port(gpio);
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static inline int gpio_qmsi_set_callback(struct device *port,
@@ -233,7 +233,7 @@ static inline int gpio_qmsi_set_callback(struct device *port,
 
 	context->callback = callback;
 
-	return DEV_OK;
+	return 0;
 }
 
 static inline int gpio_qmsi_enable_callback(struct device *port, int access_op,
@@ -247,7 +247,7 @@ static inline int gpio_qmsi_enable_callback(struct device *port, int access_op,
 		context->port_callback = 1;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static inline int gpio_qmsi_disable_callback(struct device *port, int access_op,
@@ -261,7 +261,7 @@ static inline int gpio_qmsi_disable_callback(struct device *port, int access_op,
 		context->port_callback = 0;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static inline int gpio_qmsi_suspend_port(struct device *port)
@@ -316,5 +316,5 @@ int gpio_qmsi_init(struct device *port)
 	}
 
 	port->driver_api = &api_funcs;
-	return DEV_OK;
+	return 0;
 }

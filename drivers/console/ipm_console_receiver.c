@@ -122,6 +122,6 @@ int ipm_console_receiver_init(struct device *d)
 			 IPM_CONSOLE_PRI, 0);
 	ipm_set_enabled(ipm, 1);
 
-	return DEV_OK;
+	return 0;
 }
 

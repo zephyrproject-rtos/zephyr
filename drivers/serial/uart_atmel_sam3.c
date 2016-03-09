@@ -164,7 +164,7 @@ static void baudrate_set(struct device *dev,
  *
  * @param dev UART device struct
  *
- * @return DEV_OK
+ * @return 0
  */
 static int uart_sam3_init(struct device *dev)
 {
@@ -195,7 +195,7 @@ static int uart_sam3_init(struct device *dev)
 
 	dev->driver_api = &uart_sam3_driver_api;
 
-	return DEV_OK;
+	return 0;
 }
 
 /**

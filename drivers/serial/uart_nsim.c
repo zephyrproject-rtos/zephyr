@@ -43,13 +43,13 @@ static struct uart_driver_api uart_nsim_driver_api;
  *
  * @param dev UART device struct
  *
- * @return DEV_OK
+ * @return 0
  */
 static int uart_nsim_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 /*

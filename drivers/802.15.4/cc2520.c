@@ -1265,7 +1265,7 @@ static int cc2520_init(struct device *dev)
 		return DEV_FAIL;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(cc2520, CONFIG_CC2520_DRV_NAME,

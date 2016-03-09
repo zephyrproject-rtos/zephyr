@@ -229,7 +229,7 @@ static int i2c_sam3_runtime_configure(struct device *dev, uint32_t config)
 	/* Setup clock wavefore generator */
 	cfg->port->cwgr = clk;
 
-	return DEV_OK;
+	return 0;
 }
 
 static void i2c_sam3_isr(void *arg)
@@ -475,7 +475,7 @@ static int i2c_sam3_transfer(struct device *dev,
 	struct i2c_msg *cur_msg = msgs;
 	uint8_t msg_left = num_msgs;
 	uint32_t pflags = 0;
-	int ret = DEV_OK;
+	int ret = 0;
 	int xfr_ret;
 
 	/* Why bother processing no messages */
@@ -592,13 +592,13 @@ done:
 static int i2c_sam3_suspend(struct device *dev)
 {
 	/* TODO - add this code */
-	return DEV_OK;
+	return 0;
 }
 
 static int i2c_sam3_resume(struct device *dev)
 {
 	/* TODO - add this code */
-	return DEV_OK;
+	return 0;
 }
 
 static struct i2c_driver_api api_funcs = {
@@ -623,13 +623,13 @@ static int i2c_sam3_init(struct device *dev)
 	cfg->config_func(dev);
 
 	if (i2c_sam3_runtime_configure(dev, dev_data->dev_config.raw)
-	    != DEV_OK) {
+	    != 0) {
 		DBG("I2C: Cannot set default configuration 0x%x\n",
 		    dev_data->dev_config.raw);
 		return DEV_INVALID_CONF;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 #ifdef CONFIG_I2C_ATMEL_SAM3_0

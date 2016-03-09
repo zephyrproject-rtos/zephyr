@@ -62,7 +62,7 @@ static struct uart_driver_api uart_k20_driver_api;
  *
  * @param dev UART device struct
  *
- * @return DEV_OK
+ * @return 0
  */
 static int uart_k20_init(struct device *dev)
 {
@@ -101,7 +101,7 @@ static int uart_k20_init(struct device *dev)
 
 	dev->driver_api = &uart_k20_driver_api;
 
-	return DEV_OK;
+	return 0;
 }
 
 /**

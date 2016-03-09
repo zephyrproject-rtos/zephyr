@@ -287,7 +287,7 @@ static inline int ns16550_pci_uart_scan(struct device *dev)
  *
  * @param dev UART device struct
  *
- * @return DEV_OK if successful, failed othersie
+ * @return 0 if successful, failed othersie
  */
 static int uart_ns16550_init(struct device *dev)
 {
@@ -343,7 +343,7 @@ static int uart_ns16550_init(struct device *dev)
 
 	dev->driver_api = &uart_ns16550_driver_api;
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -627,7 +627,7 @@ static void uart_ns16550_isr(void *arg)
  * @param ctrl The line control to be manipulated
  * @param val Value to set the line control
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int uart_ns16550_line_ctrl_set(struct device *dev,
 				      uint32_t ctrl, uint32_t val)
@@ -637,7 +637,7 @@ static int uart_ns16550_line_ctrl_set(struct device *dev,
 	switch (ctrl) {
 	case LINE_CTRL_BAUD_RATE:
 		set_baud_rate(dev, val);
-		return DEV_OK;
+		return 0;
 
 	case LINE_CTRL_RTS:
 	case LINE_CTRL_DTR:
@@ -655,7 +655,7 @@ static int uart_ns16550_line_ctrl_set(struct device *dev,
 			mdc &= ~(chg);
 		}
 		OUTBYTE(MDC(dev), mdc);
-		return DEV_OK;
+		return 0;
 	}
 
 	return DEV_INVALID_OP;
@@ -672,7 +672,7 @@ static int uart_ns16550_line_ctrl_set(struct device *dev,
  * @param cmd Command to driver
  * @param p Parameter to the command
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int uart_ns16550_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 {
@@ -681,7 +681,7 @@ static int uart_ns16550_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 #ifdef CONFIG_UART_NS16550_DLF
 	case CMD_SET_DLF:
 		set_dlf(dev, p);
-		return DEV_OK;
+		return 0;
 #endif
 
 	}

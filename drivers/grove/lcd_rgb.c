@@ -339,7 +339,7 @@ int glcd_initialize(struct device *port)
 	_rgb_reg_set(dev->i2c, REGISTER_G, color_define[GROVE_RGB_WHITE][1]);
 	_rgb_reg_set(dev->i2c, REGISTER_B, color_define[GROVE_RGB_WHITE][2]);
 
-	return DEV_OK;
+	return 0;
 }
 
 struct glcd_driver grove_lcd_config = {

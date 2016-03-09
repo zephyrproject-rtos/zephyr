@@ -425,7 +425,7 @@ static uint32_t spi_k64_set_delay(enum spi_k64_delay_id delay_id,
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to the application provided configuration
  *
- * @return DEV_OK if successful, another DEV_* code otherwise.
+ * @return 0 if successful, another DEV_* code otherwise.
  */
 static int spi_k64_configure(struct device *dev, struct spi_config *config)
 {
@@ -528,7 +528,7 @@ static int spi_k64_configure(struct device *dev, struct spi_config *config)
 
 	spi_data->cont_pcs_sel = SPI_CONT_PCS_GET(flags);
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -543,7 +543,7 @@ static int spi_k64_configure(struct device *dev, struct spi_config *config)
  * Select inactive state setting, MCR[PCSIS], determined by the configuration
  * data parameter to spi_configure()/spi_k64_configure().
  *
- * @return DEV_OK if successful, another DEV_* code otherwise.
+ * @return 0 if successful, another DEV_* code otherwise.
  */
 static int spi_k64_slave_select(struct device *dev, uint32_t slave)
 {
@@ -562,7 +562,7 @@ static int spi_k64_slave_select(struct device *dev, uint32_t slave)
 
 	spi_data->pcs = (uint8_t)slave;
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -574,7 +574,7 @@ static int spi_k64_slave_select(struct device *dev, uint32_t slave)
  * @param rx_buf Memory buffer that data should be transferred to
  * @param rx_buf_len Size of the memory buffer available for writing to
  *
- * @return DEV_OK if successful, another DEV_* code otherwise.
+ * @return 0 if successful, another DEV_* code otherwise.
  */
 static int spi_k64_transceive(struct device *dev,
 				const void *tx_buf, uint32_t tx_buf_len,
@@ -645,13 +645,13 @@ static int spi_k64_transceive(struct device *dev,
 		return DEV_FAIL;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
  * @brief Suspend SPI host controller operations.
  * @param dev Pointer to the device structure for the driver instance
- * @return DEV_OK if successful, another DEV_* code otherwise.
+ * @return 0 if successful, another DEV_* code otherwise.
  */
 static int spi_k64_suspend(struct device *dev)
 {
@@ -669,13 +669,13 @@ static int spi_k64_suspend(struct device *dev)
 		DBG("SPI Controller dev %p is running.  Waiting to stop.\n", dev);
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
  * @brief Resume SPI host controller operations.
  * @param dev Pointer to the device structure for the driver instance
- * @return DEV_OK if successful, another DEV_* code otherwise.
+ * @return 0 if successful, another DEV_* code otherwise.
  */
 static int spi_k64_resume(struct device *dev)
 {
@@ -689,7 +689,7 @@ static int spi_k64_resume(struct device *dev)
 
 	irq_enable(info->irq);
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -1027,7 +1027,7 @@ int spi_k64_init(struct device *dev)
 
 	/* operation remains disabled (MCR[HALT] = 1)*/
 
-	return DEV_OK;
+	return 0;
 }
 
 /* system bindings */

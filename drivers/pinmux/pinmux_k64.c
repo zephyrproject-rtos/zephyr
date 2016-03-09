@@ -47,7 +47,7 @@ struct fsl_k64_data {
 static inline int config_port_a(mem_addr_t *addr)
 {
 	*addr = CONFIG_PORT_K64_A_BASE_ADDR;
-	return DEV_OK;
+	return 0;
 }
 #else
 #define config_port_a(addr) DEV_NO_ACCESS
@@ -57,7 +57,7 @@ static inline int config_port_a(mem_addr_t *addr)
 static inline int config_port_b(mem_addr_t *addr)
 {
 	*addr = CONFIG_PORT_K64_B_BASE_ADDR;
-	return DEV_OK;
+	return 0;
 }
 #else
 #define config_port_b(addr) DEV_NO_ACCESS
@@ -67,7 +67,7 @@ static inline int config_port_b(mem_addr_t *addr)
 static inline int config_port_c(mem_addr_t *addr)
 {
 	*addr = CONFIG_PORT_K64_C_BASE_ADDR;
-	return DEV_OK;
+	return 0;
 }
 #else
 #define config_port_c(addr) DEV_NO_ACCESS
@@ -77,7 +77,7 @@ static inline int config_port_c(mem_addr_t *addr)
 static inline int config_port_d(mem_addr_t *addr)
 {
 	*addr = CONFIG_PORT_K64_D_BASE_ADDR;
-	return DEV_OK;
+	return 0;
 }
 #else
 #define config_port_d(addr) DEV_NO_ACCESS
@@ -87,7 +87,7 @@ static inline int config_port_d(mem_addr_t *addr)
 static inline int config_port_e(mem_addr_t *addr)
 {
 	*addr = CONFIG_PORT_K64_E_BASE_ADDR;
-	return DEV_OK;
+	return 0;
 }
 #else
 #define config_port_e(addr) DEV_NO_ACCESS
@@ -151,7 +151,7 @@ static int _fsl_k64_get_gpio_dev(struct device *dev,
 		return DEV_NO_ACCESS;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -179,7 +179,7 @@ static int _fsl_k64_set_pin(struct device *dev,
 
 	status = _fsl_k64_get_port_addr(pin_id, &port_base_addr);
 
-	if (status != DEV_OK) {
+	if (status != 0) {
 		return status;
 	}
 
@@ -193,7 +193,7 @@ static int _fsl_k64_set_pin(struct device *dev,
 
 		status = _fsl_k64_get_gpio_dev(dev, port_base_addr, &gpio_dev);
 
-		if (status != DEV_OK) {
+		if (status != 0) {
 			return status;
 		} else if (gpio_dev == NULL) {
 			return DEV_NOT_CONFIG;
@@ -207,7 +207,7 @@ static int _fsl_k64_set_pin(struct device *dev,
 
 		status = gpio_pin_configure(gpio_dev, port_pin, gpio_setting);
 
-		if (status != DEV_OK) {
+		if (status != 0) {
 			return status;
 		}
 
@@ -220,7 +220,7 @@ static int _fsl_k64_set_pin(struct device *dev,
 
 	sys_write32(func, port_base_addr + K64_PINMUX_CTRL_OFFSET(port_pin));
 
-	return DEV_OK;
+	return 0;
 }
 
 static int _fsl_k64_get_pin(struct device *dev,
@@ -242,7 +242,7 @@ static int _fsl_k64_get_pin(struct device *dev,
 
 	status = _fsl_k64_get_port_addr(pin_id, &port_base_addr);
 
-	if (status != DEV_OK) {
+	if (status != 0) {
 		return status;
 	}
 
@@ -260,7 +260,7 @@ static int _fsl_k64_get_pin(struct device *dev,
 
 		status = _fsl_k64_get_gpio_dev(dev, port_base_addr, &gpio_dev);
 
-		if (status != DEV_OK) {
+		if (status != 0) {
 			return status;
 		} else if (gpio_dev == NULL) {
 			return DEV_NOT_CONFIG;
@@ -275,7 +275,7 @@ static int _fsl_k64_get_pin(struct device *dev,
 		}
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int fsl_k64_dev_set(struct device *dev,
@@ -340,7 +340,7 @@ int pinmux_fsl_k64_initialize(struct device *port)
 	}
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 

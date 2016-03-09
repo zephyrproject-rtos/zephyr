@@ -30,7 +30,7 @@ static int pwm_qmsi_configure(struct device *dev, int access_op,
 	ARG_UNUSED(pwm);
 	ARG_UNUSED(flags);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int __set_one_port(qm_pwm_t id, uint32_t pwm, uint32_t on, uint32_t off)
@@ -42,7 +42,7 @@ static int __set_one_port(qm_pwm_t id, uint32_t pwm, uint32_t on, uint32_t off)
 
 	if ((off == 0) || (on == 0)) {
 		/* stop PWM if so specified */
-		return DEV_OK;
+		return 0;
 	}
 
 	/* PWM mode, user-defined count mode, timer disabled */
@@ -62,7 +62,7 @@ static int __set_one_port(qm_pwm_t id, uint32_t pwm, uint32_t on, uint32_t off)
 	/* Enable timer so it starts running and counting */
 	qm_pwm_start(id, pwm);
 
-	return DEV_OK;
+	return 0;
 }
 
 /*
@@ -82,7 +82,7 @@ static int __set_one_port(qm_pwm_t id, uint32_t pwm, uint32_t on, uint32_t off)
  * on: Duration for pin to stay high (must be >= 2)
  * off: Duration for pin to stay low (must be >= 2)
  *
- * return DEV_OK, DEV_INVALID_OP
+ * return 0, DEV_INVALID_OP
  */
 static int pwm_qmsi_set_values(struct device *dev, int access_op,
 				  uint32_t pwm, uint32_t on, uint32_t off)
@@ -106,7 +106,7 @@ static int pwm_qmsi_set_values(struct device *dev, int access_op,
 		return DEV_INVALID_OP;
 	}
 
-	return DEV_OK;
+	return 0;
 
 }
 
@@ -167,7 +167,7 @@ static int pwm_qmsi_init(struct device *dev)
 {
 	dev->driver_api = &pwm_qmsi_drv_api_funcs;
 	clk_periph_enable(CLK_PERIPH_PWM_REGISTER | CLK_PERIPH_CLK);
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,

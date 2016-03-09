@@ -52,7 +52,7 @@ static int set_config(struct device *dev, struct wdt_config *cfg)
 	qm_wdt_set_config(QM_WDT_0, &qm_cfg);
 	qm_wdt_start(QM_WDT_0);
 
-	return DEV_OK;
+	return 0;
 }
 
 static void reload(struct device *dev)

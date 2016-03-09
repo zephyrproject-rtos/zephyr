@@ -29,13 +29,13 @@ static void read_who_am_i(struct device *dev)
 	uint8_t data;
 
 	data = WHO_AM_I_REG;
-	if (i2c_write(dev, &data, sizeof(data), GYRO_I2C_ADDR) != DEV_OK) {
+	if (i2c_write(dev, &data, sizeof(data), GYRO_I2C_ADDR) != 0) {
 		printk("Error on i2c_write()\n");
 		return;
 	}
 
 	data = 0;
-	if (i2c_read(dev, &data, sizeof(data), GYRO_I2C_ADDR) != DEV_OK) {
+	if (i2c_read(dev, &data, sizeof(data), GYRO_I2C_ADDR) != 0) {
 		printk("Error on i2c_read()\n");
 		return;
 	}
@@ -60,7 +60,7 @@ static void read_who_am_i_by_transfer(struct device *dev)
 	msg[1].buf = &read_data;
 	msg[1].len = sizeof(read_data);
 
-	if (i2c_transfer(dev, msg, 2, GYRO_I2C_ADDR) != DEV_OK) {
+	if (i2c_transfer(dev, msg, 2, GYRO_I2C_ADDR) != 0) {
 		printk("Error on i2c_transfer()\n");
 		return;
 	}
@@ -89,7 +89,7 @@ void main(void)
 		return;
 	}
 
-	if (i2c_configure(dev, cfg.raw) != DEV_OK) {
+	if (i2c_configure(dev, cfg.raw) != 0) {
 		printk("Error on i2c_configure()\n");
 		return;
 	}

@@ -46,7 +46,7 @@ static int dw_aio_cmp_disable(struct device *dev, uint8_t index)
 	/* Disable power in comparator <index> */
 	regs->pwr &= ~(1 << index);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int dw_aio_cmp_configure(struct device *dev, uint8_t index,
@@ -116,7 +116,7 @@ static int dw_aio_cmp_configure(struct device *dev, uint8_t index,
 	/* Enable interrupt to host */
 	SCSS_INTERRUPT->int_comparators_host_mask &= ~(1 << index);
 
-	return DEV_OK;
+	return 0;
 }
 
 void dw_aio_cmp_isr(struct device *dev)
@@ -166,7 +166,7 @@ int dw_aio_cmp_init(struct device *dev)
 
 	if (config->config_func) {
 		i =  config->config_func(dev);
-		if (i != DEV_OK)
+		if (i != 0)
 			return i;
 	}
 
@@ -192,7 +192,7 @@ int dw_aio_cmp_init(struct device *dev)
 
 	irq_enable(config->interrupt_num);
 
-	return DEV_OK;
+	return 0;
 }
 
 struct dw_aio_cmp_dev_cfg_t dw_aio_cmp_dev_config = {
@@ -216,5 +216,5 @@ static int dw_aio_cmp_config(struct device *dev)
 	IRQ_CONNECT(INT_AIO_CMP_IRQ, CONFIG_AIO_DW_COMPARATOR_IRQ_PRI,
 		    dw_aio_cmp_isr,
 		    DEVICE_GET(dw_aio_cmp), 0);
-	return DEV_OK;
+	return 0;
 }

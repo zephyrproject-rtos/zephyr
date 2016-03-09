@@ -87,7 +87,7 @@ static int spi_qmsi_configure(struct device *dev,
 	cfg->clk_divider = config->max_sys_freq;
 
 	/* Will set the configuration before the transfer starts */
-	return DEV_OK;
+	return 0;
 }
 
 static void pending_transfer_complete(uint32_t id, qm_rc_t rc)
@@ -139,7 +139,7 @@ static int spi_qmsi_slave_select(struct device *dev, uint32_t slave)
 	struct spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_spi_t spi = spi_config->spi;
 
-	return qm_spi_slave_select(spi, 1 << (slave - 1)) ? DEV_FAIL : DEV_OK;
+	return qm_spi_slave_select(spi, 1 << (slave - 1)) ? DEV_FAIL : 0;
 }
 
 static inline uint8_t frame_size_to_dfs(qm_spi_frame_size_t frame_size)
@@ -210,7 +210,7 @@ static int spi_qmsi_transceive(struct device *dev,
 
 	device_sync_call_wait(&context->sync);
 
-	return context->rc ? DEV_FAIL : DEV_OK;
+	return context->rc ? DEV_FAIL : 0;
 }
 
 static int spi_qmsi_suspend(struct device *dev)
@@ -286,7 +286,7 @@ static int spi_qmsi_init(struct device *dev)
 
 	device_sync_call_init(&context->sync);
 
-	return DEV_OK;
+	return 0;
 }
 
 #ifdef CONFIG_SPI_QMSI_PORT_0

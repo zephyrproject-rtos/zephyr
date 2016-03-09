@@ -568,7 +568,7 @@ static inline void uart_irq_callback_set(struct device *dev,
  * @param ctrl The line control to manipulate.
  * @param val Value to set to the line control.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int uart_line_ctrl_set(struct device *dev,
@@ -599,7 +599,7 @@ static inline int uart_line_ctrl_set(struct device *dev,
  * @param cmd Command to driver.
  * @param p Parameter to the command.
  *
- * @retval DEV_OK If successful.
+ * @retval 0 If successful.
  * @retval failed Otherwise.
  */
 static inline int uart_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)

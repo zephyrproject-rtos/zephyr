@@ -48,7 +48,7 @@ int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val)
 
 	*val = sys_be16_to_cpu(*val);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int mcp9808_sample_fetch(struct device *dev)
@@ -80,7 +80,7 @@ static int mcp9808_channel_get(struct device *dev,
 		val->val1 -= 256;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct sensor_driver_api mcp9808_api_funcs = {
@@ -107,7 +107,7 @@ int mcp9808_init(struct device *dev)
 
 	mcp9808_setup_interrupt(dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(mcp9808, CONFIG_MCP9808_DEV_NAME, mcp9808_init, &mcp9808_data,

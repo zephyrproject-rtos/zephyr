@@ -87,5 +87,5 @@ int main(void)
 	printk("SPI Flash Manufacturer %x Device Id %x\n", manufacturer,
 	       device_id);
 
-	return DEV_OK;
+	return 0;
 }

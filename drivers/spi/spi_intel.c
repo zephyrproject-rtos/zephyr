@@ -259,7 +259,7 @@ static int spi_intel_configure(struct device *dev,
 	/* Configuring the rate */
 	write_dds_rate(INTEL_SPI_DSS_RATE(config->max_sys_freq), info->regs);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int spi_intel_transceive(struct device *dev,
@@ -303,7 +303,7 @@ static int spi_intel_transceive(struct device *dev,
 		return DEV_FAIL;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int spi_intel_suspend(struct device *dev)
@@ -315,7 +315,7 @@ static int spi_intel_suspend(struct device *dev)
 	clear_bit_sscr0_sse(info->regs);
 	irq_disable(info->irq);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int spi_intel_resume(struct device *dev)
@@ -327,7 +327,7 @@ static int spi_intel_resume(struct device *dev)
 	set_bit_sscr0_sse(info->regs);
 	irq_enable(info->irq);
 
-	return DEV_OK;
+	return 0;
 }
 
 void spi_intel_isr(void *arg)
@@ -417,7 +417,7 @@ int spi_intel_init(struct device *dev)
 
 	DBG("SPI Intel Driver initialized on device: %p\n", dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 #ifdef CONFIG_IOAPIC

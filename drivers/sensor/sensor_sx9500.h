@@ -76,7 +76,7 @@ int sx9500_trigger_set(struct device *dev,
 #else
 static inline int sx9500_setup_interrupt(struct device *dev)
 {
-	return DEV_OK;
+	return 0;
 }
 #endif
 

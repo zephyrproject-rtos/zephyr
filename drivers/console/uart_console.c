@@ -417,7 +417,7 @@ void uart_console_hook_install(void)
  *
  * @brief Initialize one UART as the console/debug port
  *
- * @return DEV_OK if successful, otherwise failed.
+ * @return 0 if successful, otherwise failed.
  */
 static int uart_console_init(struct device *arg)
 {
@@ -427,7 +427,7 @@ static int uart_console_init(struct device *arg)
 
 	uart_console_hook_install();
 
-	return DEV_OK;
+	return 0;
 }
 
 /* UART consloe initializes after the UART device itself */

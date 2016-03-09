@@ -108,7 +108,7 @@ static void _config(struct device *dev, uint32_t mask, int flags)
  * @param pin The pin number
  * @param flags Flags of pin or port
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int gpio_sam3_config(struct device *dev, int access_op,
 			    uint32_t pin, int flags)
@@ -124,7 +124,7 @@ static int gpio_sam3_config(struct device *dev, int access_op,
 		return DEV_INVALID_OP;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -135,7 +135,7 @@ static int gpio_sam3_config(struct device *dev, int access_op,
  * @param pin The pin number
  * @param value Value to set (0 or 1)
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int gpio_sam3_write(struct device *dev, int access_op,
 			   uint32_t pin, uint32_t value)
@@ -165,7 +165,7 @@ static int gpio_sam3_write(struct device *dev, int access_op,
 		return DEV_INVALID_OP;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 /**
@@ -176,7 +176,7 @@ static int gpio_sam3_write(struct device *dev, int access_op,
  * @param pin The pin number
  * @param value Value of input pin(s)
  *
- * @return DEV_OK if successful, failed otherwise
+ * @return 0 if successful, failed otherwise
  */
 static int gpio_sam3_read(struct device *dev, int access_op,
 				       uint32_t pin, uint32_t *value)
@@ -195,7 +195,7 @@ static int gpio_sam3_read(struct device *dev, int access_op,
 		return DEV_INVALID_OP;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static void gpio_sam3_isr(void *arg)
@@ -233,7 +233,7 @@ static int gpio_sam3_set_callback(struct device *dev,
 
 	cfg->cb = callback;
 
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_sam3_enable_callback(struct device *dev,
@@ -256,7 +256,7 @@ static int gpio_sam3_enable_callback(struct device *dev,
 	cfg->enabled_cb |= mask;
 	cfg->port->ier |= mask;
 
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_sam3_disable_callback(struct device *dev,
@@ -279,7 +279,7 @@ static int gpio_sam3_disable_callback(struct device *dev,
 	cfg->enabled_cb &= ~mask;
 	cfg->port->idr |= mask;
 
-	return DEV_OK;
+	return 0;
 }
 
 static int gpio_sam3_suspend_port(struct device *dev)
@@ -311,7 +311,7 @@ static struct gpio_driver_api gpio_sam3_drv_api_funcs = {
  * @brief Initialization function of MMIO
  *
  * @param dev Device struct
- * @return DEV_OK if successful, failed otherwise.
+ * @return 0 if successful, failed otherwise.
  */
 int gpio_sam3_init(struct device *dev)
 {
@@ -321,7 +321,7 @@ int gpio_sam3_init(struct device *dev)
 
 	cfg->config_func(dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 /* Port A */

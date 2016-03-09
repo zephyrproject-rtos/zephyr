@@ -55,7 +55,7 @@ static inline int quark_se_clock_control_on(struct device *dev,
 		DBG("Enabling all clock gates on dev %p\n", dev);
 		sys_write32(0xffffffff, info->base_address);
 
-		return DEV_OK;
+		return 0;
 	}
 
 	DBG("Enabling clock gate on dev %p subsystem %u\n", dev, subsys);
@@ -73,7 +73,7 @@ static inline int quark_se_clock_control_off(struct device *dev,
 		DBG("Disabling all clock gates on dev %p\n", dev);
 		sys_write32(0x00000000, info->base_address);
 
-		return DEV_OK;
+		return 0;
 	}
 
 	DBG("clock gate on dev %p subsystem %u\n", dev, subsys);
@@ -93,7 +93,7 @@ int quark_se_clock_control_init(struct device *dev)
 
 	DBG("Quark Se clock controller driver initialized on device: %p\n",
 									dev);
-	return DEV_OK;
+	return 0;
 }
 
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL

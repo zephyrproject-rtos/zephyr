@@ -59,7 +59,7 @@ int sx9500_trigger_set(struct device *dev,
 		return DEV_INVALID_CONF;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
@@ -160,5 +160,5 @@ int sx9500_setup_interrupt(struct device *dev)
 			  CONFIG_SX9500_FIBER_PRIORITY, 0);
 #endif
 
-	return DEV_OK;
+	return 0;
 }

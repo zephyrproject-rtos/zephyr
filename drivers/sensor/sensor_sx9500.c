@@ -87,7 +87,7 @@ int sx9500_update_bits(struct sx9500_data *data, uint8_t reg,
 	new_val = (old_val & ~mask) | (val & mask);
 
 	if (new_val == old_val) {
-		return DEV_OK;
+		return 0;
 	}
 
 	return sx9500_reg_write(data, reg, new_val);
@@ -116,7 +116,7 @@ static int sx9500_channel_get(struct device *dev,
 	val->val1 = !!(data->prox_stat &
 		       (1 << (4 + CONFIG_SX9500_PROX_CHANNEL)));
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct sensor_driver_api sx9500_api_funcs = {
@@ -185,7 +185,7 @@ int sx9500_init(struct device *dev)
 		return ret;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(sx9500, CONFIG_SX9500_DEV_NAME, sx9500_init, &sx9500_data,
