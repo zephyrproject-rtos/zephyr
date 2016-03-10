@@ -281,6 +281,30 @@ coap_init_connection(uip_ipaddr_t *server_addr, uint16_t server_port,
 {
   coap_context_t *coap_ctx;
 
+  if (!server_addr) {
+    PRINTF("%s: local endpoint is missing\n", __func__);
+    return NULL;
+  }
+
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
+  {
+    const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+
+    if (!memcmp(server_addr, &in6addr_any, sizeof(in6addr_any))) {
+      uip_ds6_addr_t *uip_addr;
+
+      uip_addr = uip_ds6_get_global(-1);
+      if (!uip_addr) {
+        uip_addr = uip_ds6_get_link_local(-1);
+      }
+      if (!uip_addr) {
+        return NULL;
+      }
+      memcpy(server_addr, uip_addr, sizeof(*server_addr));
+    }
+  }
+#endif
+
   coap_ctx = coap_context_new(server_addr, server_port);
   if (!coap_context_listen(coap_ctx, peer_addr, peer_port)) {
     return NULL;
