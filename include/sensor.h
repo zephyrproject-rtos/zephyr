@@ -176,6 +176,8 @@ enum sensor_attribute {
 	SENSOR_ATTR_SLOPE_DUR,
 	/** Oversampling factor */
 	SENSOR_ATTR_OVERSAMPLING,
+	/** Full-scale value. */
+	SENSOR_ATTR_FULL_SCALE,
 };
 
 typedef void (*sensor_trigger_handler_t)(struct device *dev,
