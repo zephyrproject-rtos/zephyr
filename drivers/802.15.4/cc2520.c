@@ -50,6 +50,7 @@
 #include <net/l2_buf.h>
 #include "packetbuf.h"
 #include "net_driver_15_4.h"
+#include "random.h"
 
 #include "cc2520.h"
 #include "cc2520_arch.h"
@@ -1074,6 +1075,27 @@ static struct device *cc2520_spi_configure(void)
 	return spi;
 }
 
+static void cc2520_set_mac_address(void)
+{
+	static unsigned char mac[8];
+	int i;
+
+	/* TI OUI */
+	mac[0] = 0x00;
+	mac[1] = 0x12;
+	mac[2] = 0x4b;
+
+	for (i = 3; i < 8; i++) {
+		mac[i] = random_rand();
+	}
+
+	/* clear the group bit, and set the locally administered bit */
+	mac[7] &= ~0x01;
+	mac[7] |= 0x02;
+
+	net_set_mac(mac, 8);
+}
+
 static void cc2520_configure(struct device *dev)
 {
 	CC2520_DISABLE_FIFOP_INT();
@@ -1164,6 +1186,8 @@ static void cc2520_configure(struct device *dev)
 	}
 
 	cc2520_set_channel(CONFIG_TI_CC2520_CHANNEL);
+
+	cc2520_set_mac_address();
 
 	flushrx();
 
