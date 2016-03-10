@@ -258,6 +258,16 @@ send_set_param:
 	return 0;
 }
 
+void on_nble_gap_start_advertise_rsp(const struct nble_response *rsp)
+{
+	if (rsp->status) {
+		BT_ERR("Start advertise falied, status %d", rsp->status);
+		return;
+	}
+
+	BT_DBG("status %u", rsp->status);
+}
+
 int bt_le_adv_stop(void)
 {
 	return -ENOSYS;
