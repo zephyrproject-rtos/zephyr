@@ -60,7 +60,7 @@ struct flash_driver_api {
  *  @param  data            : Buffer to store read data
  *  @param  len             : Number of bytes to read.
  *
- *  @return  0 on success else DEV_* code
+ *  @return  0 on success, negative errno code on fail.
  */
 static inline int flash_read(struct device *dev, off_t offset, void *data,
 			     size_t len)
@@ -78,7 +78,7 @@ static inline int flash_read(struct device *dev, off_t offset, void *data,
  *  @param  data            : data to write
  *  @param  len             : Number of bytes to write
  *
- *  @return  0 on success else DEV_* code
+ *  @return  0 on success, negative errno code on fail.
  */
 static inline int flash_write(struct device *dev, off_t offset,
 			      const void *data, size_t len)
@@ -98,7 +98,7 @@ static inline int flash_write(struct device *dev, off_t offset,
  *  @param  offset          : erase area starting offset
  *  @param  size            : size of area to be erased
  *
- *  @return  0 on success else DEV_* code
+ *  @return  0 on success, negative errno code on fail.
  */
 static inline int flash_erase(struct device *dev, off_t offset, size_t size)
 {
@@ -113,7 +113,7 @@ static inline int flash_erase(struct device *dev, off_t offset, size_t size)
  *  @param  dev             : flash device
  *  @param  enable          : enable or disable flash write protection
  *
- *  @return  0 on success else DEV_* code
+ *  @return  0 on success, negative errno code on fail.
  */
 static inline int flash_write_protection_set(struct device *dev, bool enable)
 {

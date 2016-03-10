@@ -149,7 +149,7 @@ struct i2c_driver_api {
  * for the I2C controller.
  *
  * @retval 0 If successful.
- * @retval DEV_* code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int i2c_configure(struct device *dev, uint32_t dev_config)
 {
@@ -170,7 +170,7 @@ static inline int i2c_configure(struct device *dev, uint32_t dev_config)
  * @param addr Address to the target I2C device for writing.
  *
  * @retval 0 If successful.
- * @retval DEV_* code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int i2c_write(struct device *dev, uint8_t *buf,
 			    uint32_t len, uint16_t addr)
@@ -197,7 +197,7 @@ static inline int i2c_write(struct device *dev, uint8_t *buf,
  * @param addr Address of the I2C device being read.
  *
  * @retval 0 If successful.
- * @retval DEV_* code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int i2c_read(struct device *dev, uint8_t *buf,
 			   uint32_t len, uint16_t addr)
@@ -226,7 +226,7 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
  * @param addr Address of the I2C target device.
  *
  * @retval 0 If successful.
- * @retval DEV_* code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int i2c_transfer(struct device *dev,
 			       struct i2c_msg *msgs, uint8_t num_msgs,

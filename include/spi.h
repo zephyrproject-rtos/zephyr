@@ -99,7 +99,7 @@ struct spi_driver_api {
  * @param config Pointer to the configuration provided by the application.
  *
  * @retval 0 If successful.
- * @retval DEV_* Code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int spi_configure(struct device *dev,
 				struct spi_config *config)
@@ -121,7 +121,7 @@ static inline int spi_configure(struct device *dev,
  * @param slave An integer identifying the slave
  *
  * @retval 0 If successful.
- * @retval DEV_* Code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int spi_slave_select(struct device *dev, uint32_t slave)
 {
@@ -141,7 +141,7 @@ static inline int spi_slave_select(struct device *dev, uint32_t slave)
  * @param len Size of the memory buffer available for writing.
  *
  * @retval 0 If successful.
- * @retval DEV_* Code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int spi_read(struct device *dev, void *buf, uint32_t len)
 {
@@ -157,7 +157,7 @@ static inline int spi_read(struct device *dev, void *buf, uint32_t len)
  * @param len Size of the memory buffer available for reading.
  *
  * @retval 0 If successful.
- * @retval DEV_* Code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int spi_write(struct device *dev, const void *buf, uint32_t len)
 {
@@ -178,7 +178,7 @@ static inline int spi_write(struct device *dev, const void *buf, uint32_t len)
  * @param rx_buf_len Size of the memory buffer available for writing.
  *
  * @retval 0 If successful.
- * @retval DEV_* Code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int spi_transceive(struct device *dev,
 			  const void *tx_buf, uint32_t tx_buf_len,
@@ -194,7 +194,7 @@ static inline int spi_transceive(struct device *dev,
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval DEV_* Code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int spi_suspend(struct device *dev)
 {
@@ -208,7 +208,7 @@ static inline int spi_suspend(struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval DEV_* Code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int spi_resume(struct device *dev)
 {

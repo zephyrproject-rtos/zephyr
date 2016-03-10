@@ -190,7 +190,7 @@ struct sensor_driver_api {
  * @param attr The attribute to set
  * @param val The value to set the attribute to
  *
- * @return 0 if successful, another DEV_* code otherwise.
+ * @return 0 if successful, negative errno code if failure.
  */
 static inline int sensor_attr_set(struct device *dev,
 				  enum sensor_channel chan,
@@ -220,7 +220,7 @@ static inline int sensor_attr_set(struct device *dev,
  * @param handler The function that should be called when the trigger
  * fires
  *
- * @return 0 if successful, another DEV_* code otherwise.
+ * @return 0 if successful, negative errno code if failure.
  */
 static inline int sensor_trigger_set(struct device *dev,
 				     struct sensor_trigger *trig,
@@ -250,7 +250,7 @@ static inline int sensor_trigger_set(struct device *dev,
  *
  * @param dev Pointer to the sensor device
  *
- * @return 0 if successful, another DEV_* code otherwise.
+ * @return 0 if successful, negative errno code if failure.
  */
 static inline int sensor_sample_fetch(struct device *dev)
 {
@@ -275,7 +275,7 @@ static inline int sensor_sample_fetch(struct device *dev)
  * @param chan The channel to read
  * @param val Where to store the value
  *
- * @return 0 if successful, another DEV_* code otherwise.
+ * @return 0 if successful, negative errno code if failure.
  */
 static inline int sensor_channel_get(struct device *dev,
 				     enum sensor_channel chan,
