@@ -445,6 +445,10 @@ int bt_gatt_discover(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	if (conn->gatt_private) {
 		return -EBUSY;
 	}
@@ -709,6 +713,10 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 		return -EINVAL;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	if (conn->gatt_private) {
 		return -EBUSY;
 	}
@@ -790,8 +798,12 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 {
 	struct nble_gattc_write_params req;
 
-	if (!conn || conn->state != BT_CONN_CONNECTED  || !handle || !func) {
+	if (!conn || !handle || !func) {
 		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	if (conn->gatt_private) {
@@ -842,8 +854,12 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 {
 	struct nble_gattc_write_params req;
 
-	if (!conn || conn->state != BT_CONN_CONNECTED  || !handle) {
+	if (!conn || !handle) {
 		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	if (conn->gatt_private) {
@@ -928,13 +944,13 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false;
 
-	if (!conn || conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
-	}
-
-	if (!params || !params->notify ||
+	if (!conn || !params || !params->notify ||
 	    !params->value || !params->ccc_handle) {
 		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	BT_DBG("conn %p value_handle 0x%04x ccc_handle 0x%04x value 0x%04x",
@@ -1009,12 +1025,12 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	struct bt_gatt_subscribe_params *tmp, *found = NULL;
 	bool has_subscription = false;
 
-	if (!conn || conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
+	if (!conn || !params) {
+		return -EINVAL;
 	}
 
-	if (!params) {
-		return -EINVAL;
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
 	BT_DBG("conn %p value_handle 0x%04x ccc_handle 0x%04x value 0x%04x",
