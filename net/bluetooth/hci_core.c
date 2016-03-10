@@ -63,6 +63,13 @@ struct bt_dev bt_dev;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static bt_br_discovery_cb_t *discovery_cb;
+struct bt_br_discovery_result *discovery_results;
+static size_t discovery_results_size;
+static size_t discovery_results_count;
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 struct cmd_data {
 	/** The command OpCode that the buffer contains */
 	uint16_t opcode;
@@ -1305,7 +1312,18 @@ static void user_passkey_req(struct net_buf *buf)
 	bt_conn_ssp_auth(conn, 0);
 	bt_conn_unref(conn);
 }
-#endif
+
+static void inquiry_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_inquiry_complete *evt = (void *)buf->data;
+
+	BT_DBG("status %u", evt->status);
+
+	if (evt->status) {
+		BT_ERR("Failed to complete inquiry");
+	}
+}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 static void update_sec_level(struct bt_conn *conn)
@@ -1587,6 +1605,12 @@ static void hci_reset_complete(struct net_buf *buf)
 	}
 
 	scan_dev_found_cb = NULL;
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	discovery_cb = NULL;
+	discovery_results = NULL;
+	discovery_results_size = 0;
+	discovery_results_count = 0;
+#endif /* CONFIG_BLUETOOTH_BREDR */
 	atomic_set(bt_dev.flags, 0);
 }
 
@@ -1995,6 +2019,9 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_USER_PASSKEY_REQ:
 		user_passkey_req(buf);
 		break;
+	case BT_HCI_EVT_INQUIRY_COMPLETE:
+		inquiry_complete(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2387,7 +2414,8 @@ static int le_init(void)
 static int br_init(void)
 {
 	struct net_buf *buf;
-	struct bt_hci_cp_write_ssp_mode *cp;
+	struct bt_hci_cp_write_ssp_mode *ssp_cp;
+	struct bt_hci_cp_write_inquiry_mode *inq_cp;
 	int err;
 
 	/* Get BR/EDR buffer size */
@@ -2400,14 +2428,27 @@ static int br_init(void)
 	net_buf_unref(buf);
 
 	/* Set SSP mode */
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SSP_MODE, sizeof(*cp));
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SSP_MODE, sizeof(*ssp_cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	cp->mode = 0x01;
+	ssp_cp = net_buf_add(buf, sizeof(*ssp_cp));
+	ssp_cp->mode = 0x01;
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SSP_MODE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	/* Enable Inquiry results with RSSI or extended Inquiry */
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_INQUIRY_MODE, sizeof(*inq_cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	inq_cp = net_buf_add(buf, sizeof(*inq_cp));
+	inq_cp->mode = 0x02;
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_INQUIRY_MODE, buf, NULL);
 	if (err) {
 		return err;
 	}
@@ -2451,6 +2492,7 @@ static int set_event_mask(void)
 	memset(ev, 0, sizeof(*ev));
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+	ev->events[0] |= 0x01; /* Inquiry Complete  */
 	ev->events[0] |= 0x04; /* Connection Complete */
 	ev->events[0] |= 0x08; /* Connection Request */
 	ev->events[2] |= 0x20; /* Pin Code Request */
@@ -2925,6 +2967,85 @@ struct net_buf *bt_buf_get_acl(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+static int br_start_inquiry(bool limited)
+{
+	const uint8_t iac[3] = { 0x33, 0x8b, 0x9e };
+	struct bt_hci_op_inquiry *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_INQUIRY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	/* do inquiry for maximum allowed time without results limit */
+	cp->length = 0x30;
+	cp->num_rsp = 0x00;
+
+	memcpy(cp->lap, iac, 3);
+	if (limited) {
+		cp->lap[0] = 0x00;
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY, buf, NULL);
+}
+
+int bt_br_discovery_start(const struct bt_br_discovery_param *param,
+			  struct bt_br_discovery_result *results, size_t cnt,
+			  bt_br_discovery_cb_t cb)
+{
+	int err;
+
+	BT_DBG("");
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return -EALREADY;
+	}
+
+	err = br_start_inquiry(param->limited_discovery);
+	if (err) {
+		return err;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY);
+
+	memset(results, 0, sizeof(*results) * cnt);
+
+	discovery_cb = cb;
+	discovery_results = results;
+	discovery_results_size = cnt;
+	discovery_results_count = 0;
+
+	return 0;
+}
+
+int bt_br_discovery_stop(void)
+{
+	int err;
+
+	BT_DBG("");
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return -EALREADY;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
+	if (err) {
+		return err;
+	}
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
+
+	discovery_cb = NULL;
+	discovery_results = NULL;
+	discovery_results_size = 0;
+	discovery_results_count = 0;
+
+	return 0;
+}
+
 static int write_scan_enable(uint8_t scan)
 {
 	struct net_buf *buf;

@@ -247,6 +247,67 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  */
 int bt_le_scan_stop(void);
 
+/** @brief BR/EDR discovery result structure */
+struct bt_br_discovery_result {
+	/** Remote device address */
+	bt_addr_t addr;
+
+	/** RSSI from inquiry */
+	int8_t rssi;
+
+	/** Class of Device */
+	uint8_t cod[3];
+
+	/** Extended Inquiry Response */
+	uint8_t eir[240];
+};
+
+/** @brief Define a type allowing user to implement a function that can
+ *  be used to get back BR/EDR discovery (inquiry) results.
+ *
+ *  A function of this type will be called back when user application
+ *  triggers BR/EDR discovery and discovery process completes.
+ *
+ *  @param results Storage used for discovery results
+ *  @param count Number of valid discovery results.
+ */
+typedef void bt_br_discovery_cb_t(struct bt_br_discovery_result *results,
+				  size_t count);
+
+/** BR/EDR discovery parameters */
+struct bt_br_discovery_param {
+	/** True if limited discovery procedure is to be used. */
+	bool limited_discovery;
+};
+
+/** @brief Start BR/EDR discovery
+ *
+ *  Start BR/EDR discovery (inquiry) and provide results through the specified
+ *  callback. When bt_br_discovery_cb_t is called it indicates that discovery
+ *  has completed.
+ *
+ *  @param param Discovery parameters.
+ *  @param results Storage for discovery results.
+ *  @param count Number of results in storage
+ *  @param cb Callback to notify discovery results.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_br_discovery_start(const struct bt_br_discovery_param *param,
+			  struct bt_br_discovery_result *results, size_t count,
+			  bt_br_discovery_cb_t cb);
+
+/** @brief Stop BR/EDR discovery.
+ *
+ *  Stops ongoing BR/EDR discovery. If discovery was stopped by this call
+ *  results won't be reported
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_br_discovery_stop(void);
+
 /** @def BT_ADDR_STR_LEN
  *
  *  @brief Recommended length of user string buffer for Bluetooth address
