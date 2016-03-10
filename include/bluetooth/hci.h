@@ -173,6 +173,15 @@ struct bt_hci_cmd_hdr {
 /* Construct OpCode from OGF and OCF */
 #define BT_OP(ogf, ocf)				((ocf) | ((ogf) << 10))
 
+#define BT_HCI_OP_INQUIRY			BT_OP(BT_OGF_LINK_CTRL, 0x0001)
+struct bt_hci_op_inquiry {
+	uint8_t lap[3];
+	uint8_t length;
+	uint8_t num_rsp;
+} __packed;
+
+#define BT_HCI_OP_INQUIRY_CANCEL		BT_OP(BT_OGF_LINK_CTRL, 0x0002)
+
 #define BT_HCI_OP_DISCONNECT			BT_OP(BT_OGF_LINK_CTRL, 0x0006)
 struct bt_hci_cp_disconnect {
 	uint16_t handle;
@@ -268,6 +277,11 @@ struct bt_hci_handle_count {
 struct bt_hci_cp_host_num_completed_packets {
 	uint8_t  num_handles;
 	struct bt_hci_handle_count h[0];
+} __packed;
+
+#define BT_HCI_OP_WRITE_INQUIRY_MODE		BT_OP(BT_OGF_BASEBAND, 0x0045)
+struct bt_hci_cp_write_inquiry_mode {
+	uint8_t  mode;
 } __packed;
 
 #define BT_HCI_OP_WRITE_SSP_MODE		BT_OP(BT_OGF_BASEBAND, 0x0056)
@@ -501,6 +515,11 @@ struct bt_hci_cp_le_generate_dhkey {
 
 /* Event definitions */
 
+#define BT_HCI_EVT_INQUIRY_COMPLETE		0x01
+struct bt_hci_evt_inquiry_complete {
+	uint8_t status;
+} __packed;
+
 #define BT_HCI_EVT_CONN_COMPLETE		0x03
 struct bt_hci_evt_conn_complete {
 	uint8_t   status;
@@ -576,6 +595,27 @@ struct bt_hci_ev_link_key_notify {
 	bt_addr_t bdaddr;
 	uint8_t   link_key[16];
 	uint8_t   key_type;
+} __packed;
+
+#define BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI	0x22
+struct bt_hci_evt_inquiry_result_with_rssi {
+	bt_addr_t addr;
+	uint8_t   pscan_rep_mode;
+	uint8_t   reserved;
+	uint8_t   cod[3];
+	uint16_t  clock_offset;
+	int8_t    rssi;
+} __packed;
+
+#define BT_HCI_EVT_EXTENDED_INQUIRY_RESULT	0x2f
+struct bt_hci_evt_extended_inquiry_result {
+	bt_addr_t addr;
+	uint8_t   pscan_rep_mode;
+	uint8_t   reserved;
+	uint8_t   cod[3];
+	uint16_t  clock_offset;
+	int8_t    rssi;
+	uint8_t   eir[240];
 } __packed;
 
 #define BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE	0x30
