@@ -24,7 +24,12 @@ extern void _sys_k_event_logger_context_switch(void);
 #define _sys_k_event_logger_context_switch()
 #endif
 
-unsigned int _Swap(unsigned int eflags)
+/* Stack protector disabled here; we switch stacks, so the sentinel
+ * placed by the stack protection code isn't there when it checks for it
+ * at the end of the function
+ */
+unsigned int __attribute__((optimize("-fno-stack-protector")))
+_Swap(unsigned int eflags)
 {
 	struct tcs *next;
 	int rv;
