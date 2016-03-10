@@ -150,7 +150,7 @@ uint32_t sys_tick_delta_32(int64_t *reftime)
 
 /* handle the expired timeouts in the nano timeout queue */
 
-#ifdef CONFIG_NANO_TIMEOUTS
+#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 #include <wait_q.h>
 
 static inline void handle_expired_nano_timeouts(int32_t ticks)
@@ -166,27 +166,6 @@ static inline void handle_expired_nano_timeouts(int32_t ticks)
 }
 #else
 	#define handle_expired_nano_timeouts(ticks) do { } while ((0))
-#endif
-
-/* handle the expired nano timers in the nano timers queue */
-#ifdef CONFIG_NANO_TIMERS
-#include <sys_clock.h>
-static inline void handle_expired_nano_timers(int ticks)
-{
-	if (_nano_timer_list) {
-		_nano_timer_list->ticks -= ticks;
-
-		while (_nano_timer_list && (!_nano_timer_list->ticks)) {
-			struct nano_timer *expired = _nano_timer_list;
-			struct nano_lifo *lifo = &expired->lifo;
-
-			_nano_timer_list = expired->link;
-			nano_isr_lifo_put(lifo, expired->userData);
-		}
-	}
-}
-#else
-	#define handle_expired_nano_timers(ticks) do { } while ((0))
 #endif
 
 /**
@@ -206,22 +185,8 @@ void _nano_sys_clock_tick_announce(int32_t ticks)
 	key = irq_lock();
 	_sys_clock_tick_count += ticks;
 	handle_expired_nano_timeouts(ticks);
-	handle_expired_nano_timers(ticks);
 	irq_unlock(key);
 }
-
-/* get closest nano timers deadline expiry, (uint32_t)TICKS_UNLIMITED if none */
-#ifdef CONFIG_NANO_TIMERS
-static inline uint32_t _nano_get_earliest_timers_deadline(void)
-{
-	return _nano_timer_list ? _nano_timer_list->ticks : TICKS_UNLIMITED;
-}
-#else
-static inline uint32_t _nano_get_earliest_timers_deadline(void)
-{
-	return TICKS_UNLIMITED;
-}
-#endif
 
 /*
  * Get closest nano timeouts/timers deadline expiry, (uint32_t)TICKS_UNLIMITED
@@ -229,6 +194,5 @@ static inline uint32_t _nano_get_earliest_timers_deadline(void)
  */
 uint32_t _nano_get_earliest_deadline(void)
 {
-	return min(_nano_get_earliest_timeouts_deadline(),
-				_nano_get_earliest_timers_deadline());
+	return _nano_get_earliest_timeouts_deadline();
 }

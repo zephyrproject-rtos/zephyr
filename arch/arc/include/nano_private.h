@@ -221,7 +221,7 @@ struct s_NANO {
 	 */
 
 	struct firq_regs firq_regs;
-#ifdef CONFIG_NANO_TIMEOUTS
+#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;
 	int32_t task_timeout;
 #endif

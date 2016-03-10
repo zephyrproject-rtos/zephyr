@@ -159,7 +159,7 @@ struct s_NANO {
 	int32_t idle; /* Number of ticks for kernel idling */
 #endif		      /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
-#ifdef CONFIG_NANO_TIMEOUTS
+#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;
 	int32_t task_timeout;
 #endif

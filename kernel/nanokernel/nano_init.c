@@ -82,7 +82,7 @@ char __noinit __stack main_task_stack[CONFIG_MAIN_STACK_SIZE];
 
 char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
-#ifdef CONFIG_NANO_TIMEOUTS
+#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	#include <misc/dlist.h>
 	#define initialize_nano_timeouts() do { \
 		sys_dlist_init(&_nanokernel.timeout_q); \

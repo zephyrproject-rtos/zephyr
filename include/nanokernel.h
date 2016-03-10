@@ -43,6 +43,8 @@
 extern "C" {
 #endif
 
+struct tcs;
+
 /*
  * @cond internal
  * nanokernel private APIs that are exposed via the public API
@@ -59,14 +61,13 @@ struct _nano_queue {
 
 struct _nano_timeout {
 	sys_dlist_t node;
+	struct tcs *tcs;
 	struct _nano_queue *wait_q;
 	int32_t delta_ticks_from_prev;
 };
 /**
  * @endcond
  */
-
-struct tcs;
 
 /* architecture-independent nanokernel public APIs */
 
@@ -1190,10 +1191,13 @@ extern void *sys_thread_custom_data_get(void);
  */
 
 struct nano_timer {
-	struct nano_timer *link;
-	uint32_t ticks;
-	struct nano_lifo lifo;
-	void *userData;
+	struct _nano_timeout timeout_data;
+	void *user_data;
+	/*
+	 * User data pointer in backup for cases when nanokernel_timer_test()
+	 * has to return NULL
+	 */
+	void *user_data_backup;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 	struct nano_timer *__next;
 #endif
@@ -1249,18 +1253,13 @@ extern void nano_timer_start(struct nano_timer *timer, int ticks);
  *        not expired.
  *        For TICKS_NONE, return immediately.
  *        For TICKS_UNLIMITED, wait as long as necessary.
- *        Otherwise, wait up to the specified number of ticks before timing
- *        out.
  *
  * @return N/A
  *
  * @warning If called from an ISR, then @a timeout_in_ticks must be TICKS_NONE.
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline void *nano_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
-{
-	return nano_lifo_get(&timer->lifo, timeout_in_ticks);
-}
+extern void *nano_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks);
 
 /**
  * @brief Stop a nanokernel timer.
@@ -1304,10 +1303,7 @@ extern void nano_isr_timer_start(struct nano_timer *timer, int ticks);
  * @return Pointer to timer initialization data.
  * @retval NULL If timer not expired.
  */
-static inline void *nano_isr_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
-{
-	return nano_isr_lifo_get(&timer->lifo, timeout_in_ticks);
-}
+extern void *nano_isr_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks);
 
 /**
  * @brief Stop a nanokernel timer from an ISR.
@@ -1347,18 +1343,13 @@ extern void nano_fiber_timer_start(struct nano_timer *timer, int ticks);
  *        not expired.
  *        For TICKS_NONE, return immediately.
  *        For TICKS_UNLIMITED, wait as long as necessary.
- *        Otherwise, wait up to the specified number of ticks before timing
- *        out.
  *
  * @return Pointer to timer initialization data
  * @retval NULL If timer has not expired.
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline void *nano_fiber_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
-{
-	return nano_fiber_lifo_get(&timer->lifo, timeout_in_ticks);
-}
+extern void *nano_fiber_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks);
 
 /**
  * @brief Stop a nanokernel timer.
@@ -1398,18 +1389,13 @@ extern void nano_task_timer_start(struct nano_timer *timer, int ticks);
  *        not expired.
  *        For TICKS_NONE, return immediately.
  *        For TICKS_UNLIMITED, wait as long as necessary.
- *        Otherwise, wait up to the specified number of ticks before timing
- *        out.
  *
  * @return Pointer to timer initialization data.
  * @retval NULL If timer has not expired.
  *
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-static inline void *nano_task_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
-{
-	return nano_task_lifo_get(&timer->lifo, timeout_in_ticks);
-}
+extern void *nano_task_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks);
 
 /**
  * @brief Stop a nanokernel timer from a task.
@@ -1421,6 +1407,16 @@ static inline void *nano_task_timer_test(struct nano_timer *timer, int32_t timeo
  * @return N/A
  */
 extern void nano_task_timer_stop(struct nano_timer *timer);
+
+/**
+ * @brief Get nanokernel timer remaining ticks.
+ *
+ * This function returns the remaining ticks of the previously
+ * started nanokernel timer object.
+ *
+ * @return remaining ticks or 0 if the timer has expired
+ */
+extern int32_t nano_timer_ticks_remain(struct nano_timer *timer);
 
 /* Methods for tasks and fibers for handling time and ticks */
 

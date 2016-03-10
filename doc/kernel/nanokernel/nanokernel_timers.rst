@@ -169,3 +169,6 @@ APIs for a nanokernel timer provided by :file:`nanokernel.h`
 :cpp:func:`nano_task_timer_stop()`, :cpp:func:`nano_fiber_timer_stop()`,
 :cpp:func:`nano_isr_timer_stop()`, :cpp:func:`nano_timer_stop()`
    Force timer expiration, if not already expired.
+
+:cpp:func:`nano_timer_ticks_remain()`
+   Return timer ticks before timer expiration.

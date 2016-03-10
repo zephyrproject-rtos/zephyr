@@ -51,10 +51,17 @@
 #define DEBUG DEBUG_NONE
 #include "contiki/ip/uip-debug.h"
 
+/*
+ * Code indicates that the timer has expired.
+ * nano_timer_test(), called by timer_expired() returns it
+ * on timer expiration instead of NULL if timer is still running
+ */
+#define TIMER_EXPIRED_CODE ((void *)0xfede0123)
+
 static inline void do_init(struct timer *t)
 {
   if (t && !t->init_done) {
-    nano_timer_init(&t->nano_timer, NULL);
+    nano_timer_init(&t->nano_timer, TIMER_EXPIRED_CODE);
     t->init_done = true;
   }
 }
@@ -174,7 +181,7 @@ timer_expired(struct timer *t)
 {
   do_init(t);
 
-  return t->nano_timer.ticks == 0;
+  return (nano_timer_test(&t->nano_timer, TICKS_NONE) != NULL);
 }
 /*---------------------------------------------------------------------------*/
 bool timer_is_triggered(struct timer *t)
@@ -200,7 +207,7 @@ void timer_set_triggered(struct timer *t)
 clock_time_t
 timer_remaining(struct timer *t)
 {
-  return t->nano_timer.ticks;
+  return nano_timer_ticks_remain(&t->nano_timer);
 }
 /*---------------------------------------------------------------------------*/
 bool timer_stop(struct timer *t)

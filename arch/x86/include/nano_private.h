@@ -727,7 +727,7 @@ typedef struct s_NANO {
 
 	struct tcs *current_fp; /* thread (fiber or task) that owns the FP regs */
 #endif			  /* CONFIG_FP_SHARING */
-#ifdef CONFIG_NANO_TIMEOUTS
+#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;
 	int32_t task_timeout;
 #endif

@@ -1,7 +1,7 @@
 /* nano_timer.c - timer for nanokernel-only systems */
 
 /*
- * Copyright (c) 1997-2014 Wind River Systems, Inc.
+ * Copyright (c) 1997-2016 Wind River Systems, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,24 @@
 
 #include <nano_private.h>
 #include <misc/debug/object_tracing_common.h>
-
-struct nano_timer *_nano_timer_list;
-
+#include <wait_q.h>
 
 void nano_timer_init(struct nano_timer *timer, void *data)
 {
-	nano_lifo_init(&timer->lifo);
-	timer->userData = data;
+	/* initialize timer in expired state */
+	timer->timeout_data.delta_ticks_from_prev = -1;
+
+	/* initialize to no object to wait on */
+	timer->timeout_data.wait_q = NULL;
+
+	/* initialize to no fiber waiting for the timer expire */
+	timer->timeout_data.tcs = NULL;
+
+	/* nano_timer_test() returns NULL on timer that was not started */
+	timer->user_data = NULL;
+
+	timer->user_data_backup = data;
+
 	SYS_TRACING_OBJ_INIT(nano_timer, timer);
 }
 
@@ -49,76 +59,16 @@ FUNC_ALIAS(_timer_start, nano_timer_start, void);
  */
 void _timer_start(struct nano_timer *timer, int ticks)
 {
-	unsigned int imask;
-	struct nano_timer *cur;
-	struct nano_timer *prev = NULL;
+	int key = irq_lock();
 
-	timer->ticks = ticks;
-
-	imask = irq_lock();
-
-	cur = _nano_timer_list;
-
-	while (cur && (timer->ticks > cur->ticks)) {
-		timer->ticks -= cur->ticks;
-		prev = cur;
-		cur = cur->link;
-	}
-
-	timer->link = cur;
-	if (cur != NULL)
-		cur->ticks -= timer->ticks;
-
-	if (prev != NULL)
-		prev->link = timer;
-	else
-		_nano_timer_list = timer;
-
-	irq_unlock(imask);
-}
-
-/**
- * @brief Stop a nanokernel timer (generic implementation)
- *
- * This function stops a previously started nanokernel timer object.
- * @param timer Timer to stop
- * @return N/A
- */
-static void _timer_stop(struct nano_timer *timer)
-{
-	unsigned int imask;
-	struct nano_timer *cur;
-	struct nano_timer *prev = NULL;
-
-	imask = irq_lock();
-
-	cur = _nano_timer_list;
-
-	/* find prev */
-	while (cur && cur != timer) {
-		prev = cur;
-		cur = cur->link;
-	}
-
-	/* if found it, remove it */
-	if (cur) {
-		/* if it was first */
-		if (prev == NULL) {
-			_nano_timer_list = timer->link;
-			/* if not last */
-			if (_nano_timer_list)
-				_nano_timer_list->ticks += timer->ticks;
-		} else {
-			prev->link = timer->link;
-			/* if not last */
-			if (prev->link)
-				prev->link->ticks += timer->ticks;
-		}
-	}
-
-	/* now the timer can't expire since it is removed from the list */
-
-	irq_unlock(imask);
+	/*
+	 * Once timer is started nano_timer_test() returns
+	 * the pointer to user data
+	 */
+	timer->user_data = timer->user_data_backup;
+	_nano_timer_timeout_add(&timer->timeout_data,
+				NULL, ticks);
+	irq_unlock(key);
 }
 
 
@@ -126,24 +76,47 @@ FUNC_ALIAS(_timer_stop_non_preemptible, nano_isr_timer_stop, void);
 FUNC_ALIAS(_timer_stop_non_preemptible, nano_fiber_timer_stop, void);
 void _timer_stop_non_preemptible(struct nano_timer *timer)
 {
-	extern void _lifo_put_non_preemptible(struct nano_lifo *lifo, void *data);
+	struct _nano_timeout *t = &timer->timeout_data;
+	struct tcs *tcs = t->tcs;
+	int key = irq_lock();
 
-	_timer_stop(timer);
-
-	/* if there was a waiter, kick it */
-	if (timer->lifo.wait_q.head) {
-		_lifo_put_non_preemptible(&timer->lifo, (void *)0);
+	/*
+	 * Verify first if fiber is not waiting on an object,
+	 * timer is not expired and there is a fiber waiting
+	 * on it
+	 */
+	if (!t->wait_q && (_nano_timer_timeout_abort(t) == 0) &&
+	    tcs != NULL) {
+		_nano_fiber_ready(tcs);
 	}
+
+	/*
+	 * After timer gets aborted nano_timer_test() should
+	 * return NULL until timer gets restarted
+	 */
+	timer->user_data = NULL;
+	irq_unlock(key);
 }
 
 void nano_task_timer_stop(struct nano_timer *timer)
 {
+	struct _nano_timeout *t = &timer->timeout_data;
+	struct tcs *tcs = t->tcs;
+	int key = irq_lock();
 
-	_timer_stop(timer);
+	timer->user_data = NULL;
 
-	/* if there was a waiter, kick it */
-	if (timer->lifo.wait_q.head) {
-		nano_task_lifo_put(&timer->lifo, (void *)0);
+	/*
+	 * Verify first if fiber is not waiting on an object,
+	 * timer is not expired and there is a fiber waiting
+	 * on it
+	 */
+	if (!t->wait_q && (_nano_timer_timeout_abort(t) == 0) &&
+	    tcs != NULL) {
+		_nano_fiber_ready(tcs);
+		_Swap(key);
+	} else {
+		irq_unlock(key);
 	}
 }
 
@@ -156,4 +129,132 @@ void nano_timer_stop(struct nano_timer *timer)
 	};
 
 	func[sys_execution_context_type_get()](timer);
+}
+
+/**
+ *
+ * @brief Test nano timer for cases when the calling thread does not wait
+ *
+ * @param timer Timer to check
+ * @param timeout_in_ticks Determines the action to take when the timer has
+ *        not expired.
+ *        For TICKS_NONE, return immediately.
+ *        For TICKS_UNLIMITED, wait as long as necessary.
+ * @param user_data_ptr Pointer to user data if the timer is expired
+ *        it's set to timer->user_data. Otherwise it's set to NULL
+ *
+ * @return 1 if the thread waits for timer to expire and 0 otherwise
+ */
+
+static int _nano_timer_expire_wait(struct nano_timer *timer,
+				    int32_t timeout_in_ticks,
+				    void **user_data_ptr)
+{
+	struct _nano_timeout *t = &timer->timeout_data;
+
+	/* check if the timer has expired */
+	if (t->delta_ticks_from_prev == -1) {
+		*user_data_ptr = timer->user_data;
+		timer->user_data = NULL;
+	/* if the thread should not wait, return immediately */
+	} else if (timeout_in_ticks == TICKS_NONE) {
+		*user_data_ptr = NULL;
+	} else {
+		return 1;
+	}
+	return 0;
+}
+
+void *nano_isr_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
+{
+	int key = irq_lock();
+	void *user_data;
+
+	if (_nano_timer_expire_wait(timer, timeout_in_ticks, &user_data)) {
+		/* since ISR can not wait, return NULL */
+		user_data = NULL;
+	}
+	irq_unlock(key);
+	return user_data;
+}
+
+void *nano_fiber_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
+{
+	int key = irq_lock();
+	struct _nano_timeout *t = &timer->timeout_data;
+	void *user_data;
+
+	if (_nano_timer_expire_wait(timer, timeout_in_ticks, &user_data)) {
+		t->tcs = _nanokernel.current;
+		_Swap(key);
+		key = irq_lock();
+		user_data = timer->user_data;
+		timer->user_data = NULL;
+	}
+	irq_unlock(key);
+	return user_data;
+}
+
+void *nano_task_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
+{
+	int key = irq_lock();
+	struct _nano_timeout *t = &timer->timeout_data;
+	void *user_data;
+
+	if (_nano_timer_expire_wait(timer, timeout_in_ticks, &user_data)) {
+		/* task goes to busy waiting loop */
+		while (t->delta_ticks_from_prev != -1) {
+			_nanokernel.task_timeout =
+				nano_timer_ticks_remain(timer);
+			nano_cpu_atomic_idle(key);
+			key = irq_lock();
+		}
+		user_data = timer->user_data;
+		timer->user_data = NULL;
+	}
+	irq_unlock(key);
+	return user_data;
+}
+
+void *nano_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
+{
+	static void *(*func[3])(struct nano_timer *, int32_t) = {
+		nano_isr_timer_test,
+		nano_fiber_timer_test,
+		nano_task_timer_test,
+	};
+
+	return func[sys_execution_context_type_get()](timer, timeout_in_ticks);
+}
+
+int32_t nano_timer_ticks_remain(struct nano_timer *timer)
+{
+	int key = irq_lock();
+	int32_t remaining_ticks;
+	struct _nano_timeout *t = &timer->timeout_data;
+	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
+	struct _nano_timeout *iterator;
+
+	if (t->delta_ticks_from_prev == -1) {
+		remaining_ticks = 0;
+	} else {
+		/*
+		 * As nanokernel timeouts are stored in a linked list with
+		 * delta_ticks_from_prev, to get the actual number of ticks
+		 * remaining for the timer, walk through the timeouts list
+		 * and accumulate all the delta_ticks_from_prev values up to
+		 * the timer.
+		 */
+		iterator =
+			(struct _nano_timeout *)sys_dlist_peek_head(timeout_q);
+		remaining_ticks = iterator->delta_ticks_from_prev;
+		while (iterator != t) {
+			iterator = (struct _nano_timeout *)sys_dlist_peek_next(
+				timeout_q, &iterator->node);
+			remaining_ticks += iterator->delta_ticks_from_prev;
+		}
+	}
+
+	irq_unlock(key);
+	return remaining_ticks;
 }
