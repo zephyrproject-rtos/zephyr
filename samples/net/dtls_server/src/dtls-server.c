@@ -37,6 +37,10 @@
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
 
+#if defined(CONFIG_NET_TESTING)
+#include <net_testing.h>
+#endif
+
 static const unsigned char ecdsa_priv_key[] = {
 			0xD9, 0xE2, 0x70, 0x7A, 0x72, 0xDA, 0x6A, 0x05,
 			0x04, 0x99, 0x5C, 0x86, 0xED, 0xDB, 0xE3, 0xEF,
@@ -55,63 +59,14 @@ static const unsigned char ecdsa_pub_key_y[] = {
 			0xD0, 0x43, 0xB1, 0xFB, 0x03, 0xE2, 0x2F, 0x4D,
 			0x17, 0xDE, 0x43, 0xF9, 0xF9, 0xAD, 0xEE, 0x70};
 
-#if !defined(CONFIG_BLUETOOTH)
-/* The peer is the client in our case. Just invent a mac
- * address for it because lower parts of the stack cannot set it
- * in this test as we do not have any radios.
- */
-//static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
-
-/* This is my mac address
- */
-static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
-#endif
-
-#if defined(CONFIG_NETWORKING_WITH_IPV6)
-#if 0
-/* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
-#define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
-#else
-#define MY_IPADDR { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0x08, 0xbe, 0xef, 0x15, 0xf0, 0x0d, 0 } } }
-#endif
-#else /* ipv6 */
-/* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
-#define MY_IPADDR { { { 192, 0, 2, 2 } } }
-#endif
-
 #define MY_PORT 4242
-
-#if defined(CONFIG_NETWORKING_WITH_IPV6)
-static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
-static struct in6_addr in6addr_my = MY_IPADDR;
-#else
-static const struct in_addr in4addr_any = { { { 0 } } };
-static struct in_addr in4addr_my = MY_IPADDR;
-#endif
 
 static inline void init_app(void)
 {
 	PRINT("%s: run dtls server\n", __func__);
 
-#if !defined(CONFIG_BLUETOOTH)
-	net_set_mac(my_mac, sizeof(my_mac));
-
-#if defined(CONFIG_NETWORKING_WITH_IPV4)
-	{
-		uip_ipaddr_t addr;
-		uip_ipaddr(&addr, 192,0,2,2);
-		uip_sethostaddr(&addr);
-	}
-#endif
-
-#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
-	{
-		uip_ipaddr_t *addr;
-
-		addr = (uip_ipaddr_t *)&in6addr_my;
-		uip_ds6_addr_add(addr, 0, ADDR_MANUAL);
-	}
-#endif
+#if defined(CONFIG_NET_TESTING)
+	net_testing_setup();
 #endif
 }
 
@@ -164,6 +119,12 @@ static inline void receive_message(const char *name,
 	}
 }
 
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
+static struct in6_addr in6addr_my = IN6ADDR_ANY_INIT;
+#else
+static struct in_addr in4addr_my = { { { 0 } } };
+#endif
+
 static inline struct net_context *get_context(void)
 {
 	static struct net_addr any_addr;
@@ -171,12 +132,16 @@ static inline struct net_context *get_context(void)
 	struct net_context *ctx;
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
+	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+
 	any_addr.in6_addr = in6addr_any;
 	any_addr.family = AF_INET6;
 
 	my_addr.in6_addr = in6addr_my;
 	my_addr.family = AF_INET6;
 #else
+	static const struct in_addr in4addr_any = { { { 0 } } };
+
 	any_addr.in_addr = in4addr_any;
 	any_addr.family = AF_INET;
 
