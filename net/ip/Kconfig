@@ -231,6 +231,25 @@ config	NETWORKING_WITH_15_4
 	  it into suitable chunks ready to be sent to the 802.15.4
 	  hw driver
 
+choice
+	prompt "802.15.4 MAC Driver"
+	depends on NETWORKING && NETWORKING_WITH_15_4
+	help
+	 The 802.15.4 layer can support nullmac or csma.
+config	NETWORKING_WITH_15_4_MAC_NULL
+	bool
+	prompt "nullmac driver"
+	help
+	  Enable nullmac driver. All packets go straight through.
+
+config	NETWORKING_WITH_15_4_MAC_CSMA
+	bool
+	prompt "csma driver"
+	help
+	  Enable csma driver. Will queue packets and retry transmissions.
+
+endchoice
+
 config	15_4_RX_STACK_SIZE
 	int "Stack size of 802.15.4 RX fiber"
 	depends on NETWORKING_WITH_15_4

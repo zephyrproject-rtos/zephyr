@@ -77,8 +77,7 @@ ifeq ($(CONFIG_NETWORKING_WITH_6LOWPAN),y)
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/sicslowpan/sicslowpan_fragmentation.o
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/sicslowmac/sicslowmac.o
 else
-     obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/nullmac.o \
-					contiki/mac/framer-nullmac.o \
+     obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/framer-nullmac.o \
 					contiki/mac/nullrdc.o \
 					contiki/sicslowpan/null_compression.o \
 					contiki/sicslowpan/null_fragmentation.o
@@ -98,8 +97,10 @@ obj-$(CONFIG_NETWORKING_WITH_15_4) += net_driver_15_4.o \
 					contiki/mac/framer.o \
 					contiki/mac/frame802154.o \
 					contiki/mac/framer-802154.o \
-					contiki/mac/csma.o \
 					contiki/mac/mac-sequence.o
+
+obj-$(CONFIG_NETWORKING_WITH_15_4_MAC_NULL) += contiki/mac/nullmac.o
+obj-$(CONFIG_NETWORKING_WITH_15_4_MAC_CSMA) += contiki/mac/csma.o
 
 obj-$(CONFIG_15_4_BEACON_SUPPORT) += contiki/mac/handler-802154.o
 

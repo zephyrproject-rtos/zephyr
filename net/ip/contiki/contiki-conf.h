@@ -93,7 +93,12 @@ typedef unsigned int uip_stats_t;
 #ifdef CONFIG_NETWORKING_WITH_6LOWPAN
 #define NETSTACK_CONF_RDC	sicslowmac_driver
 #endif /* CONFIG_NETWORKING_WITH_6LOWPAN */
+#ifdef CONFIG_NETWORKING_WITH_15_4_MAC_NULL
+#define NETSTACK_CONF_MAC	nullmac_driver
+#endif
+#ifdef CONFIG_NETWORKING_WITH_15_4_MAC_CSMA
 #define NETSTACK_CONF_MAC	csma_driver
+#endif
 #define LINKADDR_CONF_SIZE      8
 #define UIP_CONF_LL_802154	1
 #define SICSLOWPAN_CONF_MAX_ADDR_CONTEXTS 1
