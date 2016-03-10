@@ -1313,15 +1313,119 @@ static void user_passkey_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+static void report_discovery_results(void)
+{
+	/* TODO resolve names if missing */
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
+
+	discovery_cb(discovery_results, discovery_results_count);
+
+	discovery_cb = NULL;
+	discovery_results = NULL;
+	discovery_results_size = 0;
+	discovery_results_count = 0;
+}
+
 static void inquiry_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_inquiry_complete *evt = (void *)buf->data;
 
-	BT_DBG("status %u", evt->status);
-
 	if (evt->status) {
 		BT_ERR("Failed to complete inquiry");
 	}
+
+	report_discovery_results();
+}
+
+static void discovery_results_full(void)
+{
+	int err;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
+	if (err) {
+		BT_ERR("Failed to cancel discovery (%d)", err);
+		return;
+	}
+
+	report_discovery_results();
+}
+
+static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr)
+{
+	size_t i;
+
+	/* check if already present in results */
+	for (i = 0; i < discovery_results_count; i++) {
+		if (!bt_addr_cmp(addr, &discovery_results[i].addr)) {
+			return &discovery_results[i];
+		}
+	}
+
+	/* get new slot from results */
+	if (discovery_results_count < discovery_results_size) {
+		bt_addr_copy(&discovery_results[discovery_results_count].addr,
+			     addr);
+		return &discovery_results[discovery_results_count++];
+	}
+
+	discovery_results_full();
+
+	return NULL;
+}
+
+static void inquiry_result_with_rssi(struct net_buf *buf)
+{
+	struct bt_hci_evt_inquiry_result_with_rssi *evt;
+	uint8_t num_reports = net_buf_pull_u8(buf);
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return;
+	}
+
+	BT_DBG("number of results: %u", num_reports);
+
+	evt = (void *)buf->data;
+	while (num_reports--) {
+		struct bt_br_discovery_result *result;
+
+		BT_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
+
+		result = get_result_slot(&evt->addr);
+		if (!result) {
+			return;
+		}
+
+		memcpy(result->cod, evt->cod, 3);
+		result->rssi = evt->rssi;
+
+		/*
+		 * Get next report iteration by moving pointer to right offset
+		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.33.
+		 */
+		evt = net_buf_pull(buf, sizeof(*evt));
+	}
+}
+
+static void extended_inquiry_result(struct net_buf *buf)
+{
+	struct bt_hci_evt_extended_inquiry_result *evt = (void *)buf->data;
+	struct bt_br_discovery_result *result;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return;
+	}
+
+	BT_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
+
+	result = get_result_slot(&evt->addr);
+	if (!result) {
+		return;
+	}
+
+	result->rssi = evt->rssi;
+	memcpy(result->cod, evt->cod, 3);
+	memcpy(result->eir, evt->eir, sizeof(result->eir));
 }
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
@@ -2022,6 +2126,12 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_INQUIRY_COMPLETE:
 		inquiry_complete(buf);
 		break;
+	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
+		inquiry_result_with_rssi(buf);
+		break;
+	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
+		extended_inquiry_result(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2498,6 +2608,8 @@ static int set_event_mask(void)
 	ev->events[2] |= 0x20; /* Pin Code Request */
 	ev->events[2] |= 0x40; /* Link Key Request */
 	ev->events[2] |= 0x80; /* Link Key Notif */
+	ev->events[4] |= 0x02; /* Inquiry Result With RSSI */
+	ev->events[5] |= 0x40; /* Extended Inquiry Result */
 	ev->events[6] |= 0x01; /* IO Capability Request */
 	ev->events[6] |= 0x02; /* IO Capability Response */
 	ev->events[6] |= 0x04; /* User Confirmation Request */
