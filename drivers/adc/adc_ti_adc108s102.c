@@ -223,7 +223,7 @@ int ti_adc108s102_init(struct device *dev)
 
 	adc->spi = device_get_binding((char *)config->spi_port);
 	if (!adc->spi) {
-		return DEV_NOT_CONFIG;
+		return -EPERM;
 	}
 
 	DBG("ADC108s102 initialized\n");

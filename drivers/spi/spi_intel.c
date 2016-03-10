@@ -406,7 +406,7 @@ int spi_intel_init(struct device *dev)
 	dev->driver_api = &intel_spi_api;
 
 	if (!spi_intel_setup(dev)) {
-		return DEV_NOT_CONFIG;
+		return -EPERM;
 	}
 
 	info->config_func();

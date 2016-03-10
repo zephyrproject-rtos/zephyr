@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <gpio.h>
 #include "gpio_dw.h"
@@ -390,7 +392,7 @@ int gpio_dw_initialize(struct device *port)
 	uint32_t base_addr;
 
 	if (!gpio_dw_setup(port)) {
-		return DEV_NOT_CONFIG;
+		return -EPERM;
 	}
 
 	base_addr = config->base_addr;

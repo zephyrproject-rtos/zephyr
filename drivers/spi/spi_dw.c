@@ -382,7 +382,7 @@ int spi_dw_init(struct device *dev)
 #ifndef CONFIG_SOC_QUARK_SE_SS
 	if (read_ssi_comp_version(info->regs) != DW_SSI_COMP_VERSION) {
 		_clock_off(dev);
-		return DEV_NOT_CONFIG;
+		return -EPERM;
 	}
 #endif
 

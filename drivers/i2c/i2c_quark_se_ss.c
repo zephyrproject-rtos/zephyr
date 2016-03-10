@@ -635,7 +635,7 @@ int i2c_qse_ss_initialize(struct device *dev)
 	if (i2c_qse_ss_runtime_configure(dev, dw->app_config.raw) != 0) {
 		DBG("I2C_SS: Cannot set default configuration 0x%x\n",
 		    dw->app_config.raw);
-		return DEV_NOT_CONFIG;
+		return -EPERM;
 	}
 
 	dw->state = I2C_QSE_SS_STATE_READY;

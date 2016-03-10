@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <sys_io.h>
 #include <board.h>
@@ -207,7 +209,7 @@ static int eth_initialize(struct device *port)
 	} mac_addr;
 
 	if (!eth_setup(port))
-		return DEV_NOT_CONFIG;
+		return -EPERM;
 
 	base_addr = config->base_addr;
 

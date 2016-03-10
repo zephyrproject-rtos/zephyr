@@ -214,7 +214,7 @@ int pwm_pca9685_init(struct device *dev)
 
 	ret = i2c_write(i2c_master, buf, 2, config->i2c_slave_addr);
 	if (ret != 0) {
-		return DEV_NOT_CONFIG;
+		return -EPERM;
 	}
 
 	return 0;

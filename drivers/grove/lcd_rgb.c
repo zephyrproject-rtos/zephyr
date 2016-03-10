@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
@@ -285,7 +288,7 @@ int glcd_initialize(struct device *port)
 			CONFIG_GROVE_LCD_RGB_I2C_MASTER_DEV_NAME);
 
 	if (!dev->i2c) {
-		return DEV_NOT_CONFIG;
+		return -EPERM;
 	}
 
 	/*

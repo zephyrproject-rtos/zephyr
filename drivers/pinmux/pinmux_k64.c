@@ -198,7 +198,7 @@ static int _fsl_k64_set_pin(struct device *dev,
 		if (status != 0) {
 			return status;
 		} else if (gpio_dev == NULL) {
-			return DEV_NOT_CONFIG;
+			return -EPERM;
 		}
 
 		if (func & K64_PINMUX_GPIO_DIR_OUTPUT) {
@@ -265,7 +265,7 @@ static int _fsl_k64_get_pin(struct device *dev,
 		if (status != 0) {
 			return status;
 		} else if (gpio_dev == NULL) {
-			return DEV_NOT_CONFIG;
+			return -EPERM;
 		}
 
 		cfg = gpio_dev->config->config_info;
