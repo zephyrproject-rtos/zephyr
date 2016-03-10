@@ -183,6 +183,7 @@ config PWM_K64_FTM_0_PERIOD
 	Specify the FTM0 PWM period in ticks
 
 menu "K64 FTM0 Clock Source"
+depends on PWM_K64_FTM_0
 
 choice PWM_K64_FTM_0_CLOCK_SOURCE_CHOICE
 	prompt "Choose the K64 FTM0 clock source"
@@ -210,6 +211,7 @@ endmenu
 config PWM_K64_FTM_0_CLOCK_SOURCE
 	int
 	# Omit prompt to signify "hidden" option
+	depends on PWM_K64_FTM_0
 	default 0 if PWM_K64_FTM_0_CLOCK_SOURCE_NONE
 	default 1 if PWM_K64_FTM_0_CLOCK_SOURCE_SYSTEM
 	default 2 if PWM_K64_FTM_0_CLOCK_SOURCE_FIXED
@@ -298,6 +300,7 @@ config PWM_K64_FTM_1_PERIOD
 	Specify the FTM1 PWM period in ticks
 
 menu "K64 FTM1 Clock Source"
+depends on PWM_K64_FTM_1
 
 choice PWM_K64_FTM_1_CLOCK_SOURCE_CHOICE
 	prompt "Choose the FTM1 clock source"
@@ -325,6 +328,7 @@ endmenu
 config PWM_K64_FTM_1_CLOCK_SOURCE
 	int
 	# Omit prompt to signify "hidden" option
+	depends on PWM_K64_FTM_1
 	default 0 if PWM_K64_FTM_1_CLOCK_SOURCE_NONE
 	default 1 if PWM_K64_FTM_1_CLOCK_SOURCE_SYSTEM
 	default 2 if PWM_K64_FTM_1_CLOCK_SOURCE_FIXED
@@ -413,6 +417,7 @@ config PWM_K64_FTM_2_PERIOD
 	Specify the FTM2 PWM period in ticks
 
 menu "K64 FTM2 Clock Source"
+depends on PWM_K64_FTM_2
 
 choice PWM_K64_FTM_2_CLOCK_SOURCE_CHOICE
 	prompt "Choose the FTM2 clock source"
@@ -440,6 +445,7 @@ endmenu
 config PWM_K64_FTM_2_CLOCK_SOURCE
 	int
 	# Omit prompt to signify "hidden" option
+	depends on PWM_K64_FTM_2
 	default 0 if PWM_K64_FTM_2_CLOCK_SOURCE_NONE
 	default 1 if PWM_K64_FTM_2_CLOCK_SOURCE_SYSTEM
 	default 2 if PWM_K64_FTM_2_CLOCK_SOURCE_FIXED
@@ -528,6 +534,7 @@ config PWM_K64_FTM_3_PERIOD
 	Specify the FTM3 PWM period in ticks
 
 menu "K64 FTM3 Clock Source"
+depends on PWM_K64_FTM_3
 
 choice PWM_K64_FTM_3_CLOCK_SOURCE_CHOICE
 	prompt "Choose the FTM3 clock source"
@@ -555,6 +562,7 @@ endmenu
 config PWM_K64_FTM_3_CLOCK_SOURCE
 	int
 	# Omit prompt to signify "hidden" option
+	depends on PWM_K64_FTM_3
 	default 0 if PWM_K64_FTM_3_CLOCK_SOURCE_NONE
 	default 1 if PWM_K64_FTM_3_CLOCK_SOURCE_SYSTEM
 	default 2 if PWM_K64_FTM_3_CLOCK_SOURCE_FIXED
