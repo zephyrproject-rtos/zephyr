@@ -1304,7 +1304,109 @@ static void cmd_connect_bredr(int argc, char *argv[])
 		bt_conn_unref(conn);
 	}
 }
-#endif
+
+static void br_device_found(const bt_addr_t *addr, int8_t rssi,
+				  const uint8_t cod[3], const uint8_t eir[240])
+{
+	char br_addr[BT_ADDR_STR_LEN];
+	char name[240];
+	int len = 240;
+
+	memset(name, 0, sizeof(name));
+
+	while (len) {
+		if (len < 2) {
+			break;
+		};
+
+		/* Look for early termination */
+		if (!eir[0]) {
+			break;
+		}
+
+		/* Check if field length is correct */
+		if (eir[0] > len - 1) {
+			break;
+		}
+
+		switch (eir[1]) {
+		case AD_SHORT_NAME:
+		case AD_COMPLETE_NAME:
+			if (eir[0] > sizeof(name) - 1) {
+				memcpy(name, &eir[2], sizeof(name) - 1);
+			} else {
+				memcpy(name, &eir[2], eir[0] - 1);
+			}
+			break;
+		default:
+			break;
+		}
+
+		/* Parse next AD Structure */
+		len -= eir[0] + 1;
+		eir += eir[0] + 1;
+	}
+
+	bt_addr_to_str(addr, br_addr, sizeof(br_addr));
+
+	printk("[DEVICE]: %s, RSSI %i %s\n", br_addr, rssi, name);
+}
+
+static struct bt_br_discovery_result br_discovery_results[5];
+
+static void br_discovery_complete(struct bt_br_discovery_result *results,
+				  size_t count)
+{
+	size_t i;
+
+	printk("BR/EDR discovery complete\n");
+
+	for (i = 0; i < count; i++) {
+		br_device_found(&results[i].addr, results[i].rssi,
+				results[i].cod, results[i].eir);
+	}
+}
+
+static void cmd_bredr_discovery(int argc, char *argv[])
+{
+	const char *action;
+
+	if (argc < 2) {
+		printk("Discovery [on/off] parameter required\n");
+		return;
+	}
+
+	action = argv[1];
+	if (!strcmp(action, "on")) {
+		struct bt_br_discovery_param param;
+
+		param.limited_discovery = false;
+
+		if (argc > 2 && !strcmp(argv[2], "limited")) {
+			param.limited_discovery = true;
+		}
+
+		if (bt_br_discovery_start(&param, br_discovery_results,
+					  ARRAY_SIZE(br_discovery_results),
+					  br_discovery_complete) < 0) {
+			printk("Failed to start discovery\n");
+			return;
+		}
+
+		printk("Discovery started\n");
+	} else if (!strcmp(action, "off")) {
+		if (bt_br_discovery_stop()) {
+			printk("Failed to stop discovery\n");
+			return;
+		}
+
+		printk("Discovery stopped\n");
+	} else {
+		printk("Discovery [on/off] parameter required\n");
+	}
+}
+
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -1543,6 +1645,7 @@ struct shell_cmd commands[] = {
 	{ "br-iscan", cmd_bredr_discoverable },
 	{ "br-pscan", cmd_bredr_connectable },
 	{ "br-connect", cmd_connect_bredr },
+	{ "br-discovery", cmd_bredr_discovery },
 #endif
 	{ NULL, NULL }
 };
