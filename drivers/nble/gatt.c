@@ -384,7 +384,50 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params)
 {
-	return -ENOSYS;
+	struct nble_gatt_send_ind_params ind;
+
+	BT_DBG("conn %p", conn);
+
+	if (!params) {
+		return -EINVAL;
+	}
+
+	if (conn) {
+		ind.conn_handle = conn->handle;
+	} else {
+		ind.conn_handle = 0xffff;
+	}
+
+	ind.params.attr = (void *)params->attr;
+	ind.params.offset = 0;
+	ind.cback = params->func;
+
+	nble_gatt_send_ind_req(&ind, (void *)params->data, params->len);
+
+	return 0;
+}
+
+/* Response to bt_gatt_indicate() */
+void on_nble_gatts_send_ind_rsp(const struct nble_gatt_ind_rsp *rsp)
+{
+	struct bt_conn *conn;
+
+	if (rsp->status) {
+		BT_ERR("Send indication failed, status %d", rsp->status);
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(rsp->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn, handle 0x%04x", rsp->conn_handle);
+		return;
+	}
+
+	if (rsp->cback) {
+		rsp->cback(conn, rsp->attr, rsp->status);
+	}
+
+	bt_conn_unref(conn);
 }
 
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
