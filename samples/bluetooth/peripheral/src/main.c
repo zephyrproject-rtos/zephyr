@@ -551,7 +551,7 @@ void main(void)
 		/* Vendor indication simulation */
 		if (simulate_vnd) {
 			if (indicating) {
-				return;
+				continue;
 			}
 
 			ind_params.attr = &vnd_attrs[2];
