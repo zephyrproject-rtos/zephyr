@@ -104,6 +104,9 @@ struct k_task {
 	int worksize;
 	void (*fn_abort)(void);
 	struct k_args *args;
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct k_task *__next;
+#endif
 };
 
 /**

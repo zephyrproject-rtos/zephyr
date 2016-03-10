@@ -44,6 +44,7 @@ extern struct pool_struct     *_trace_list_micro_mem_pool;
 extern struct _k_mem_map_struct *_trace_list_micro_mem_map;
 extern struct _k_event_struct *_trace_list_micro_event;
 extern struct k_timer         *_trace_list_micro_timer;
+extern struct k_task          *_trace_list_micro_task;
 #endif /*CONFIG_MICROKERNEL*/
 
 /**

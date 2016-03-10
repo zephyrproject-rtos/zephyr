@@ -27,6 +27,7 @@
 #include <micro_private.h>
 #include <nano_private.h>
 #include <start_task_arch.h>
+#include <misc/debug/object_tracing_common.h>
 
 extern ktask_t _k_task_ptr_start[];
 extern ktask_t _k_task_ptr_end[];
@@ -289,6 +290,7 @@ void _k_task_op(struct k_args *A)
 	switch (A->args.g1.opt) {
 	case TASK_START:
 		start_task(X, X->fn_start);
+		SYS_TRACING_OBJ_INIT(micro_task, X);
 		break;
 	case TASK_ABORT:
 		abort_task(X);
@@ -354,6 +356,7 @@ void _k_task_group_op(struct k_args *A)
 			switch (opt) {
 			case TASK_GROUP_START:
 				start_task(X, X->fn_start);
+				SYS_TRACING_OBJ_INIT(micro_task, X);
 				break;
 			case TASK_GROUP_ABORT:
 				abort_task(X);
