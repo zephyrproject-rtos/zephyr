@@ -118,6 +118,7 @@ static inline void write_dr(uint32_t data, uint32_t addr)
 static inline uint32_t read_dr(uint32_t addr)
 {
 	write_dr_b(DW_SPI_DR_READ, addr);
+	__asm__("nop\n");
 	return read_dr_b(addr);
 }
 
