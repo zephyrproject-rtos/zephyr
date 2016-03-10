@@ -52,7 +52,7 @@ static inline int config_port_a(mem_addr_t *addr)
 	return 0;
 }
 #else
-#define config_port_a(addr) DEV_NO_ACCESS
+#define config_port_a(addr) -EACCES
 #endif
 
 #ifdef CONFIG_GPIO_K64_B
@@ -62,7 +62,7 @@ static inline int config_port_b(mem_addr_t *addr)
 	return 0;
 }
 #else
-#define config_port_b(addr) DEV_NO_ACCESS
+#define config_port_b(addr) -EACCES
 #endif
 
 #ifdef CONFIG_GPIO_K64_C
@@ -72,7 +72,7 @@ static inline int config_port_c(mem_addr_t *addr)
 	return 0;
 }
 #else
-#define config_port_c(addr) DEV_NO_ACCESS
+#define config_port_c(addr) -EACCES
 #endif
 
 #ifdef CONFIG_GPIO_K64_D
@@ -82,7 +82,7 @@ static inline int config_port_d(mem_addr_t *addr)
 	return 0;
 }
 #else
-#define config_port_d(addr) DEV_NO_ACCESS
+#define config_port_d(addr) -EACCES
 #endif
 
 #ifdef CONFIG_GPIO_K64_E
@@ -92,7 +92,7 @@ static inline int config_port_e(mem_addr_t *addr)
 	return 0;
 }
 #else
-#define config_port_e(addr) DEV_NO_ACCESS
+#define config_port_e(addr) -EACCES
 #endif
 
 static int _fsl_k64_get_port_addr(uint8_t pin_id, mem_addr_t *port_addr_ptr)
@@ -150,7 +150,7 @@ static int _fsl_k64_get_gpio_dev(struct device *dev,
 		*gpio_dev_ptr = data->gpio_e;
 		break;
 	default:
-		return DEV_NO_ACCESS;
+		return -EACCES;
 	}
 
 	return 0;
