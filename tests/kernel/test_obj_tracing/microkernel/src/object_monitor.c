@@ -28,6 +28,9 @@
  * the kernel objects in the philosophers application.
  *
  */
+
+#define TOTAL_TEST_NUMBER 3
+
 #ifdef CONFIG_NANOKERNEL
 #define OBJ_LIST_NAME nano_sem
 #define OBJ_LIST_TYPE struct nano_sem
@@ -36,6 +39,12 @@
  *	1 The object monitor fiber
  */
 #define DELTA_THREADS 2
+
+static inline int test_task_tracing(void)
+{
+	return 1;
+}
+
 #else  /*CONFIG_MICROKERNEL*/
 #define OBJ_LIST_NAME micro_mutex
 #define OBJ_LIST_TYPE struct _k_mutex_struct
@@ -45,6 +54,32 @@
  *	1 Task scheduler fiber
  */
 #define DELTA_THREADS 3
+
+static inline int test_task_tracing(void)
+{
+	int obj_counter = 0;
+	struct k_task *task_list = NULL;
+
+	task_list   = (struct k_task *)SYS_TRACING_HEAD(struct k_task, micro_task);
+	while (task_list != NULL) {
+		TC_PRINT("TASK ID: 0x%x, PRIORITY: %d, GROUP %d\n",
+			task_list->id, task_list->priority, task_list->group);
+		task_list = (struct k_task *)SYS_TRACING_NEXT
+				(struct k_task, micro_task, task_list);
+		obj_counter++;
+	}
+	TC_PRINT("TASK QUANTITY: %d\n", obj_counter);
+
+	/*k_server fiber does not have a k_task structure*/
+	if (obj_counter == N_PHILOSOPHERS + DELTA_THREADS - 1) {
+		TC_END_RESULT(TC_PASS);
+		return 1;
+	}
+
+	TC_END_RESULT(TC_FAIL);
+	return 0;
+}
+
 #endif  /*CONFIG_NANOKERNEL*/
 
 static inline int test_thread_monitor(void)
@@ -101,7 +136,9 @@ void object_monitor(void)
 
 	test_counter += test_thread_monitor();
 
-	if (test_counter == 2) {
+	test_counter += test_task_tracing();
+
+	if (test_counter == TOTAL_TEST_NUMBER) {
 		TC_END_REPORT(TC_PASS);
 	} else {
 		TC_END_REPORT(TC_FAIL);
