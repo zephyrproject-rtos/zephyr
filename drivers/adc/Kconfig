@@ -262,12 +262,14 @@ config ADC_QMSI_CALIBRATION
 config ADC_QMSI_CLOCK_RATIO
 	int "Clock Ratio"
 	default 100
+	depends on ADC_QMSI
 	help
 	ADC Clock Ratio
 
 config ADC_QMSI_SERIAL_DELAY
 	int "Serial Delay"
 	default 1
+	depends on ADC_QMSI
 	help
 	Number of ADC clock ticks that the first bit of
 	the serial output is delayed after the conversion
