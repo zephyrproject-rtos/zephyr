@@ -68,7 +68,8 @@ config  BLUETOOTH_HCI_EVT_COUNT
 
 config  BLUETOOTH_MAX_EVT_LEN
 	int "Maximum supported HCI event length"
-	default 68
+	default 68 if !BLUETOOTH_BREDR
+	default 255 if BLUETOOTH_BREDR
 	range 68 255
 	help
 	  Maximum size of each HCI event buffer. E.g. one big event
