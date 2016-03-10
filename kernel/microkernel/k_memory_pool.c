@@ -527,6 +527,32 @@ void _k_mem_pool_block_get(struct k_args *A)
 	}
 }
 
+
+/**
+ * @brief Helper function invoking POOL_BLOCK_GET command
+ *
+ * Info: Since the _k_mem_pool_block_get() invoked here is returning the
+ * same pointer in both  A->args.p1.rep_poolptr and A->args.p1.rep_dataptr, we
+ * are passing down only one address (in alloc_mem)
+ *
+ * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ */
+int _do_task_mem_pool_alloc(kmemory_pool_t pool_id, int reqsize,
+				 int32_t timeout, void **alloc_mem)
+{
+	struct k_args A;
+
+	A.Comm = _K_SVC_MEM_POOL_BLOCK_GET;
+	A.Time.ticks = timeout;
+	A.args.p1.pool_id = pool_id;
+	A.args.p1.req_size = reqsize;
+
+	KERNEL_ENTRY(&A);
+	*alloc_mem = A.args.p1.rep_poolptr;
+
+	return A.Time.rcode;
+}
+
 /**
  *
  * @brief Allocate memory pool block request
@@ -544,21 +570,18 @@ void _k_mem_pool_block_get(struct k_args *A)
 int task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
 			 int reqsize, int32_t timeout)
 {
-	struct k_args A;
+	void *pool_ptr;
+	int retval;
 
-	A.Comm = _K_SVC_MEM_POOL_BLOCK_GET;
-	A.Time.ticks = timeout;
-	A.args.p1.pool_id = pool_id;
-	A.args.p1.req_size = reqsize;
-
-	KERNEL_ENTRY(&A);
+	retval = _do_task_mem_pool_alloc(pool_id, reqsize, timeout,
+				 &pool_ptr);
 
 	blockptr->pool_id = pool_id;
-	blockptr->address_in_pool = A.args.p1.rep_poolptr;
-	blockptr->pointer_to_data = A.args.p1.rep_dataptr;
+	blockptr->address_in_pool = pool_ptr;
+	blockptr->pointer_to_data = pool_ptr;
 	blockptr->req_size = reqsize;
 
-	return A.Time.rcode;
+	return retval;
 }
 
 #define MALLOC_ALIGN (sizeof(uint32_t))
