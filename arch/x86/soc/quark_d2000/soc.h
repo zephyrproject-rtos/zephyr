@@ -126,6 +126,9 @@ struct scss_interrupt {
 /* I2C MST 0 */
 #define I2C_MST_0_INT_MASK		(SCSS_INT_BASE + 0x48)
 
+/* Comparator */
+#define INT_AIO_CMP_IRQ			(0x0E)
+
 #ifdef CONFIG_MVIC
 #include <drivers/ioapic.h>
 #if defined(CONFIG_UART_IRQ_FALLING_EDGE)
