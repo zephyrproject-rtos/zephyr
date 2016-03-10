@@ -268,12 +268,12 @@ static inline int gpio_qmsi_disable_callback(struct device *port, int access_op,
 
 static inline int gpio_qmsi_suspend_port(struct device *port)
 {
-	return DEV_NO_SUPPORT;
+	return -ENODEV;
 }
 
 static inline int gpio_qmsi_resume_port(struct device *port)
 {
-	return DEV_NO_SUPPORT;
+	return -ENODEV;
 }
 
 static struct gpio_driver_api api_funcs = {

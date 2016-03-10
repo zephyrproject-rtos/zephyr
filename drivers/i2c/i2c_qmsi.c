@@ -187,12 +187,12 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 
 static int i2c_qmsi_suspend(struct device *dev)
 {
-	return DEV_NO_SUPPORT;
+	return -ENODEV;
 }
 
 static int i2c_qmsi_resume(struct device *dev)
 {
-	return DEV_NO_SUPPORT;
+	return -ENODEV;
 }
 
 static struct i2c_driver_api api = {

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <device.h>
 #include <ioapic.h>
 #include <uart.h>
@@ -312,7 +314,7 @@ static int uart_qmsi_line_ctrl_set(struct device *dev, uint32_t ctrl, uint32_t v
 		qm_uart_set_config(instance, &cfg);
 		break;
 	default:
-		return DEV_NO_SUPPORT;
+		return -ENODEV;
 	}
 
 	return 0;
@@ -322,7 +324,7 @@ static int uart_qmsi_line_ctrl_set(struct device *dev, uint32_t ctrl, uint32_t v
 #ifdef CONFIG_UART_DRV_CMD
 static int uart_qmsi_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
 {
-	return DEV_NO_SUPPORT;
+	return -ENODEV;
 }
 #endif /* CONFIG_UART_DRV_CMD */
 

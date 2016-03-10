@@ -41,7 +41,7 @@ static inline int spi_flash_wb_id(struct device *dev)
 	temp_data |= (uint32_t) buf[3];
 
 	if (temp_data != W25QXXDV_RDID_VALUE) {
-		return DEV_NO_SUPPORT;
+		return -ENODEV;
 	}
 
 	return 0;
@@ -118,7 +118,7 @@ static int spi_flash_wb_read(struct device *dev, off_t offset, void *data,
 	uint8_t *buf = driver_data->buf;
 
 	if (len > CONFIG_SPI_FLASH_W25QXXDV_MAX_DATA_LEN || offset < 0) {
-		return DEV_NO_SUPPORT;
+		return -ENODEV;
 	}
 
 	nano_sem_take(&driver_data->sem, TICKS_UNLIMITED);
@@ -287,7 +287,7 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 	if ((offset < 0) ||
 	    ((size + offset) >= CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE) ||
 	    ((size & W25QXXDV_SECTOR_MASK) != 0)) {
-		return DEV_NO_SUPPORT;
+		return -ENODEV;
 	}
 
 	nano_sem_take(&driver_data->sem, TICKS_UNLIMITED);
