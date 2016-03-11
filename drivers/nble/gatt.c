@@ -460,7 +460,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 
 	switch (params->type) {
 	case BT_GATT_DISCOVER_PRIMARY:
-	case BT_GATT_DISCOVER_INCLUDE:
+	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		if (params->uuid) {
 			/* Always copy a full 128 bit UUID */
 			memcpy(&discover_params.uuid, BT_UUID_128(params->uuid),
@@ -469,7 +469,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 		}
 
 		break;
-	case BT_GATT_DISCOVER_CHARACTERISTIC:
+	case BT_GATT_DISCOVER_INCLUDE:
 	case BT_GATT_DISCOVER_DESCRIPTOR:
 		break;
 	default:
