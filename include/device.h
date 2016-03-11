@@ -149,7 +149,11 @@ extern "C" {
   */
 #define DEVICE_DECLARE(name) extern struct device DEVICE_NAME_GET(name)
 
-/* Common Error Codes devices can provide */
+/*
+ * DEPRECATED.
+ *
+ * DEV_* error codes are deprecated. Use error codes from errno.h instead.
+ */
 #define DEV_OK			0  /* No error */
 #define DEV_FAIL		(-EIO) /* General operation failure */
 #define DEV_INVALID_OP		(-ENOTSUP) /* Invalid operation */
