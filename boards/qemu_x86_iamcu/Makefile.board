@@ -1,0 +1,6 @@
+arch-cflags  = $(call cc-option,-msoft-float)
+
+KBUILD_CFLAGS += $(arch-cflags)
+KBUILD_CXXFLAGS += $(arch-cflags)
+KBUILD_AFLAGS += $(arch-cflags)
+

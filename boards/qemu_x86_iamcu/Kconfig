@@ -1,0 +1,10 @@
+
+if BOARD_QEMU_X86_IAMCU
+
+config BOARD
+        default qemu_x86_iamcu
+
+config TOOLCHAIN_VARIANT
+	default "iamcu"
+
+endif # BOARD_QEMU_X86
