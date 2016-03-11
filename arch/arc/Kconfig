@@ -130,6 +130,14 @@ config	FIRQ_STACK_SIZE
 	  FIRQs and regular IRQs have different stacks so that a FIRQ can start
 	  running without doing stack switching in software.
 
+config	ARC_STACK_CHECKING
+	bool "Enable Stack Checking"
+	depends on CPU_ARCV2
+	default n
+	help
+	  ARCV2 has a special feature allowing to check stack overflows. This
+	  enables code that allows using this debug feature
+
 config	FAULT_DUMP
 	int
 	prompt "Fault dump level"

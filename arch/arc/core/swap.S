@@ -86,6 +86,11 @@ SECTION_FUNC(TEXT, _Swap)
 	 */
 	lr r3, [_ARC_V2_STATUS32]
 	push_s r3
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/* disable stack checking during swap */
+	bclr r3, r3, _ARC_V2_STATUS32_SC_BIT
+	kflag r3
+#endif
 	push_s blink
 
 	_save_callee_saved_regs
@@ -118,7 +123,13 @@ _finish_swapping_to_thread:
 	ld r3, [r2, __tTCS_flags_OFFSET]
 	st r3, [r1, __tNANO_flags_OFFSET]
 #endif
-
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/* Use stack top and down registers from restored context */
+	add r3, r2, __tTCS_NOFLOAT_SIZEOF
+	sr r3, [_ARC_V2_KSTACK_TOP]
+	ld r3, [r2, __tTCS_stack_top_OFFSET]
+	sr r3, [_ARC_V2_KSTACK_BASE]
+#endif
 	/* XXX - can be moved to delay slot of _CAUSE_RIRQ ? */
 	st r2, [r1, __tNANO_current_OFFSET]
 
@@ -168,11 +179,23 @@ _swap_return_from_firq:
 	bbit1 ilink, _ARC_V2_STATUS32_AE_BIT, _return_from_exc
 
 	ld ilink, [sp, -4] /* status32 into ilink */
+#ifdef CONFIG_ARC_STACK_CHECKING
+	and ilink, ilink, 0x7fffbffe // keep SC off till we stop using under SP
+#else
 	and ilink, ilink, 0x7ffffffe // keep interrupts disabled until seti
+#endif
 	kflag ilink
 
 	ld ilink, [sp, -8] /* pc into ilink */
 
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/* Enable stack checking now it is safe */
+	push_s r3
+	lr r3, [_ARC_V2_STATUS32]
+	bset r3, r3, _ARC_V2_STATUS32_SC_BIT
+	flag r3
+	pop_s r3
+#endif
 	j.d [ilink]
 	seti (_ARC_V2_DEF_IRQ_LEVEL | (1 << 4))
 

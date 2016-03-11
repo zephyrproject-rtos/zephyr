@@ -51,6 +51,12 @@ GTEXT(_rirq_exit)
 SECTION_FUNC(TEXT, _rirq_enter)
 
 	mov r1, _nanokernel
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/* disable stack checking */
+	lr r2, [_ARC_V2_STATUS32]
+	bclr r2, r2, _ARC_V2_STATUS32_SC_BIT
+	kflag r2
+#endif
 	ld r2, [r1, __tNANO_current_OFFSET]
 #if CONFIG_NUM_REGULAR_IRQ_PRIO_LEVELS == 1
 	st sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
@@ -126,6 +132,13 @@ _rirq_reschedule:
 	ld r3, [r2, __tTCS_link_OFFSET]
 	st r3, [r1, __tNANO_fiber_OFFSET]
 
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/* Use stack top and down registers from restored context */
+	add r3, r2, __tTCS_NOFLOAT_SIZEOF
+	sr r3, [_ARC_V2_KSTACK_TOP]
+	ld r3, [r2, __tTCS_stack_top_OFFSET]
+	sr r3, [_ARC_V2_KSTACK_BASE]
+#endif
 	/*
 	 * _load_callee_saved_regs expects incoming thread in r2.
 	 * _load_callee_saved_regs restores the stack pointer.

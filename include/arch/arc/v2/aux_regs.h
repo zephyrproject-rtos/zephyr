@@ -46,6 +46,8 @@ extern "C" {
 #define _ARC_V2_IRQ_PRIO_PEND 0x200
 #define _ARC_V2_AUX_IRQ_HINT 0x201
 #define _ARC_V2_IRQ_PRIORITY 0x206
+#define _ARC_V2_KSTACK_TOP 0x264
+#define _ARC_V2_KSTACK_BASE 0x265
 #define _ARC_V2_ERET 0x400
 #define _ARC_V2_ERSTATUS 0x402
 #define _ARC_V2_ECR 0x403
@@ -71,7 +73,8 @@ extern "C" {
 #define _ARC_V2_STATUS32_Z (1 << 11)
 #define _ARC_V2_STATUS32_L (1 << 12)
 #define _ARC_V2_STATUS32_DZ (1 << 13)
-#define _ARC_V2_STATUS32_SC (1 << 14)
+#define _ARC_V2_STATUS32_SC_BIT 14
+#define _ARC_V2_STATUS32_SC (1 << _ARC_V2_STATUS32_SC_BIT)
 #define _ARC_V2_STATUS32_ES (1 << 15)
 #define _ARC_V2_STATUS32_RB(x) ((x) << 16)
 #define _ARC_V2_STATUS32_IE (1 << 31)

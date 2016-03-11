@@ -131,8 +131,12 @@ void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
 	 * enable the interrupts based on intlock_key
 	 * value.
 	 */
+#ifdef CONFIG_ARC_STACK_CHECKING
+	pInitCtx->status32 = _ARC_V2_STATUS32_SC | _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+	tcs->stack_top = (uint32_t) stackEnd;
+#else
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
-
+#endif
 	tcs->link = NULL;
 	tcs->flags = priority == -1 ? TASK | PREEMPTIBLE : FIBER;
 	tcs->prio = priority;

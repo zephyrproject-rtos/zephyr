@@ -48,8 +48,8 @@ SECTION_VAR(NOINIT, _firq_stack)
  * LP_COUNT/LP_END registers, which are not banked.
  *
  * If all FIRQ ISRs are programmed such that there are no use of the LP
- * registers (ie. no LPcc instruction), then the kernel can be configured to
- * remove the use of _firq_enter().
+ * registers (ie. no LPcc instruction), and CONFIG_ARC_STACK_CHECKING is
+ * not set, then the kernel can be configured to remove the use of _firq_enter().
  *
  * When entering a FIRQ, interrupts might as well be locked: the processor is
  * running at its highest priority, and cannot be preempted by anything.
@@ -60,6 +60,13 @@ SECTION_VAR(NOINIT, _firq_stack)
  */
 
 SECTION_FUNC(TEXT, _firq_enter)
+
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/* disable stack checking */
+	lr r2, [_ARC_V2_STATUS32]
+	bclr r2, r2, _ARC_V2_STATUS32_SC_BIT
+	kflag r2
+#endif
 
 #ifndef CONFIG_FIRQ_NO_LPCC
 	/*
@@ -184,6 +191,13 @@ _firq_reschedule:
 	ld r3, [r2, __tTCS_link_OFFSET]
 	st r3, [r1, __tNANO_fiber_OFFSET]
 
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/* Use stack top and down registers from restored context */
+	add r3, r2, __tTCS_NOFLOAT_SIZEOF
+	sr r3, [_ARC_V2_KSTACK_TOP]
+	ld r3, [r2, __tTCS_stack_top_OFFSET]
+	sr r3, [_ARC_V2_KSTACK_BASE]
+#endif
 	/*
 	 * _load_callee_saved_regs expects incoming thread in r2.
 	 * _load_callee_saved_regs restores the stack pointer.

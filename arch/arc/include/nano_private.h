@@ -194,6 +194,9 @@ struct tcs {
 #ifdef CONFIG_ERRNO
 	int errno_var;
 #endif
+#ifdef CONFIG_ARC_STACK_CHECKING
+	uint32_t stack_top;
+#endif
 };
 
 struct s_NANO {

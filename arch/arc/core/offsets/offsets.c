@@ -48,6 +48,9 @@ GEN_OFFSET_SYM(tNANO, idle);
 GEN_OFFSET_SYM(tTCS, intlock_key);
 GEN_OFFSET_SYM(tTCS, relinquish_cause);
 GEN_OFFSET_SYM(tTCS, return_value);
+#ifdef CONFIG_ARC_STACK_CHECKING
+GEN_OFFSET_SYM(tTCS, stack_top);
+#endif
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 GEN_OFFSET_SYM(tTCS, custom_data);
 #endif
