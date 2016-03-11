@@ -42,8 +42,8 @@ extern "C" {
  * @param ip_proto Protocol to use. Currently only UDP is supported.
  * @param remote_addr Remote IPv6/IPv4 address.
  * @param remote_port Remote UDP/TCP port.
- * @param local_addr Local IPv6/IPv4 address. If the local addres is NULL
- * or set to be anyaddr (all zeros), the IP stack will use the link
+ * @param local_addr Local IPv6/IPv4 address. If the local address is
+ * set to be anyaddr (all zeros), the IP stack will use the link
  * local address defined for the system.
  * @param local_port Local UDP/TCP port. If the local port is 0,
  * then a random port will be allocated.
@@ -53,7 +53,7 @@ extern "C" {
 struct net_context *net_context_get(enum ip_protocol ip_proto,
 				    const struct net_addr *remote_addr,
 				    uint16_t remote_port,
-				    const struct net_addr *local_addr,
+				    struct net_addr *local_addr,
 				    uint16_t local_port);
 
 /**

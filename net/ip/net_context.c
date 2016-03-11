@@ -94,7 +94,7 @@ static int context_port_used(enum ip_protocol ip_proto, uint16_t local_port,
 struct net_context *net_context_get(enum ip_protocol ip_proto,
 					const struct net_addr *remote_addr,
 					uint16_t remote_port,
-					const struct net_addr *local_addr,
+					struct net_addr *local_addr,
 					uint16_t local_port)
 {
 #ifdef CONFIG_NETWORKING_WITH_IPV6
@@ -103,11 +103,15 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	uip_ipaddr_t ipaddr;
 #endif
 	int i;
-	static struct net_addr laddr;
 	struct net_context *context = NULL;
 
+	/* User must provide storage for the local address. */
+	if (!local_addr) {
+		return NULL;
+	}
+
 #ifdef CONFIG_NETWORKING_WITH_IPV6
-	if (!local_addr || memcmp(&local_addr->in6_addr, &in6addr_any,
+	if (memcmp(&local_addr->in6_addr, &in6addr_any,
 				  sizeof(in6addr_any)) == 0) {
 		uip_addr = uip_ds6_get_global(-1);
 		if (!uip_addr) {
@@ -117,15 +121,12 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 			return NULL;
 		}
 
-		memcpy(&laddr, local_addr, sizeof(struct net_addr));
-		laddr.in6_addr = *(struct in6_addr *)&uip_addr->ipaddr;
-		local_addr = (const struct net_addr *)&laddr;
+		memcpy(&local_addr->in6_addr, &uip_addr->ipaddr,
+		       sizeof(struct in6_addr));
 	}
 #else
-	if (!local_addr || local_addr->in_addr.s_addr == INADDR_ANY) {
-		memcpy(&laddr, local_addr, sizeof(struct net_addr));
-		uip_gethostaddr((uip_ipaddr_t *)&laddr.in_addr);
-		local_addr = (const struct net_addr *)&laddr;
+	if (local_addr->in_addr.s_addr == INADDR_ANY) {
+		uip_gethostaddr((uip_ipaddr_t *)&local_addr->in_addr);
 	}
 #endif
 
