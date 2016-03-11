@@ -6,7 +6,7 @@ Pipes
 Concepts
 ********
 
-The microkernel's pipe object type is an implementation of a traditional
+The microkernel's :dfn:`pipe` object type is an implementation of a traditional
 anonymous pipe.
 
 A pipe allows a task to send a byte stream to another task. The pipe can be
@@ -15,26 +15,28 @@ but not yet received; alternatively, the pipe may have no ring buffer.
 Pipes can be used to transfer chunks of data in whole or in part, and either
 synchronously or asynchronously.
 
-Any number of pipes can be defined in a microkernel system. Each pipe has a
-name that uniquely identifies it. In addition, a pipe defines the size of
-its ring buffer; a size of zero defines a pipe with no ring buffer.
+Any number of pipes can be defined in a microkernel system. Each pipe needs
+* A **name** to uniquely identify it.
+* A **size**, in bytes, of the ring buffer. Note that a size of zero defines
+  a pipe with no ring buffer.
 
 Sending Data
 ============
 
 A task sends data to a pipe by specifying a pointer to the data bytes
 to be sent. It also specifies both the number of data bytes available
-and a *pipe option* that indicates the minimum number of data bytes
+and a :dfn:`pipe option` that indicates the minimum number of data bytes
 the pipe must accept. The following pipe option values are supported:
 
    :option:`_ALL_N`
-      Specifies that all available data bytes must be accepted by the pipe;
-      otherwise the send request fails or performs a partial send.
+      Specifies that **all** available data bytes must be accepted by the pipe.
+      When this requirement is not fulfilled, the send request either fails or
+      performs a partial send.
    :option:`_1_TO_N`
-      Specifies that at least one data byte must be accepted by the pipe;
-      otherwise the send request fails.
+      Specifies that **at least one** data byte must be accepted by the pipe.
+      When this requirement is not fulfilled, the send request fails.
    :option:`_0_TO_N`
-      Specifies that any number of data bytes, including zero, may be accepted
+      Specifies that **any number** of data bytes, including zero, may be accepted
       by the pipe; the send request never fails.
 
 The pipe accepts data bytes from the sending task if they can be delivered
@@ -43,16 +45,17 @@ to wait, or has waited as long as it can, the pipe can also accept data bytes
 by copying them to its ring buffer for later delivery. The ring buffer is used
 only when necessary to minimize copying of data bytes.
 
-Upon completion of a send operation a return code is provided to indicate
-if the send request was satisfied. The sending task can also read the *bytes
-written* argument to determine how many data bytes were accepted by the pipe,
-allowing it to deal with any unsent data bytes.
+Upon the completion of a send operation, a :dfn:`return code` is provided to
+indicate whether the send request was satisfied. The sending task can also read
+the ``bytes written`` argument attribute to determine how many data bytes were
+accepted by the pipe, and subsequently allowing it to deal with any unsent data
+bytes.
 
 Data sent to a pipe that does not have a ring buffer is sent synchronously;
-that is, when the send operation is complete the sending task knows that the
+that is, when the send operation is complete, the sending task knows that the
 receiving task has received the data that was sent. Data sent to a pipe
 that has a ring buffer is sent asynchronously; that is, when the send operation
-is complete some or all of the data that was sent may still be in the pipe
+is complete, some or all of the data that was sent may still be in the pipe
 waiting for the receiving task to receive it.
 
 Incomplete Send Requests
@@ -60,15 +63,15 @@ Incomplete Send Requests
 
 Although a pipe endeavors to accept all available data bytes when the
 :option:`_ALL_N` pipe option is specified, it does not guarantee that the
-data bytes will be accepted in an "all or nothing" manner. If the pipe
-is able to accept at least one data byte it returns :option:`RC_INCOMPLETE`
-to notify the sending task that its request was not fully satisfied; if
-the pipe is unable to accept any data bytes it returns :option:`RC_FAIL`.
+data bytes will be accepted in an "all or nothing" manner. When the pipe
+is able to accept at least one data byte, it returns :option:`RC_INCOMPLETE`
+to notify the sending task that its request was not fully satisfied. When
+the pipe is unable to accept any data bytes, it returns :option:`RC_FAIL`.
 
-An example of a situation that can result in an incomplete send is a time
-limited send request through an unbuffered pipe. If the receiving task
-chooses to receive only a subset of the sender's data bytes, and then the
-send operation times out before the receiving task attempts to receive the
+One example of a situation that can result in an incomplete send is a
+time-limited send request through an unbuffered pipe. If the receiving task
+chooses to receive only a subset of the sender's data bytes, and the send
+operation times out before the receiving task attempts to receive the
 remainder, an incomplete send occurs.
 
 Sending using a Memory Pool Block
@@ -79,27 +82,29 @@ its efficiency by placing the data into a memory pool block and sending
 the block. The pipe treats the memory block as a temporary addition to
 its ring buffer, allowing it to immediately accept the data bytes without
 copying them. Once all of the data bytes in the block have been delivered
-to the receiving task the pipe automatically frees the block back to the
+to the receiving task, the pipe automatically frees the block back to the
 memory pool.
 
 Data sent using a memory pool block is always sent asynchronously, even for
 a pipe with no ring buffer of its own. Likewise, the pipe always accepts all
-of the available data in the block---a partial transfer never occurs.
+of the available data in the block -- a partial transfer never occurs.
 
 Receiving Data
 ==============
 
 A task receives from a pipe by specifying a pointer to an area to receive
 the data bytes that were sent. It also specifies both the desired number
-of data bytes and a *pipe option* that indicates the minimum number of data
-bytes the pipe must deliver. The following pipe option values are supported:
+of data bytes and a :dfn:`pipe option` that indicates the minimum number of
+data bytes the pipe must deliver. The following pipe option values
+are supported:
 
    :option:`_ALL_N`
-      Specifies that all desired number of data bytes must be received;
-      otherwise the receive request fails or performs a partial receive.
+      Specifies that all desired number of data bytes must be received.
+      When this requirement is not fulfilled, the receive request either fails or
+      performs a partial receive.
    :option:`_1_TO_N`
-      Specifies that at least one data byte must be received; otherwise
-      the receive request fails.
+      Specifies that at least one data byte must be received. When this requirement
+      is not fulfilled, the receive request fails.
    :option:`_0_TO_N`
       Specifies that any number of data bytes (including zero) may be
       received; the receive request never fails.
@@ -108,27 +113,27 @@ The pipe delivers data bytes by copying them directly from the sending task
 or from the pipe's ring buffer. Data bytes taken from the ring buffer are
 delivered in a first in, first out manner.
 
-When a pipe is unable to deliver the specified minimum number of data bytes
+When a pipe is unable to deliver the specified minimum number of data bytes,
 the receiving task may choose to wait until they can be delivered.
 
-Upon completion of a receive operation a return code is provided to indicate
-if the receive request was satisfied. The receiving task can also read the
-*bytes read* argument to determine how many data bytes were delivered
-by the pipe.
+Upon completion of a receive operation, a :dfn:`return code` is provided to
+indicate whether the receive request was satisfied. The receiving task also
+can read the ``bytes read`` argument attribute to determine how many
+data bytes were delivered by the pipe.
 
 Incomplete Receive Requests
 ---------------------------
 
 Although a pipe endeavors to deliver all desired data bytes when the
 :option:`_ALL_N` pipe option is specified, it does not guarantee that the
-data bytes will be delivered in an "all or nothing" manner. If the pipe
-is able to deliver at least one data byte it returns :option:`RC_INCOMPLETE`
-to notify the receiving task that its request was not fully satisfied; if
-the pipe is unable to deliver any data bytes it returns :option:`RC_FAIL`.
+data bytes will be delivered in an "all or nothing" manner. When the pipe
+is able to deliver at least one data byte, it returns :option:`RC_INCOMPLETE`
+to notify the receiving task that its request was not fully satisfied. When
+the pipe is unable to deliver any data bytes, it returns :option:`RC_FAIL`.
 
-An example of a situation that can result in an incomplete receive is a time
-limited recieve request through an unbuffered pipe. If the sending task
-sends fewer than the desired number of data bytes, and then the receive
+An example of a situation that can result in an incomplete receive is a
+time-limited receive request through an unbuffered pipe. If the sending task
+sends fewer than the desired number of data bytes, and the receive
 operation times out before the sending task attempts to send the remainder,
 an incomplete receive occurs.
 
@@ -208,7 +213,7 @@ For example, the following code defines a private pipe named ``PRIV_PIPE``.
 
    DEFINE_PIPE(PRIV_PIPE, 1024);
 
-To utilize this pipe from a different source file use the following syntax:
+To use this pipe from a different source file use the following syntax:
 
 .. code-block:: c
 
@@ -302,13 +307,14 @@ unprocessed data bytes in the pipe.
 APIs
 ****
 
-The following Pipe APIs are provided by :file:`microkernel.h`:
+Pipe APIs provided by :file:`microkernel.h`
+===========================================
 
 :c:func:`task_pipe_put()`
-   Writes data to a pipe, with time limited waiting.
+   Write data to a pipe, with time limited waiting.
 
 :c:func:`task_pipe_block_put()`
-   Writes data to a pipe from a memory pool block.
+   Write data to a pipe from a memory pool block.
 
 :c:func:`task_pipe_get()`
-   Reads data from a pipe, or fails and continues if data isn't there.
+   Read data from a pipe, or fails and continues if data isn't there.
