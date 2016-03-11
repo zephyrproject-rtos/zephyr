@@ -81,10 +81,7 @@ void fiber_wakeup(nano_thread_id_t fiber)
 }
 
 #ifndef CONFIG_MICROKERNEL
-FUNC_ALIAS(_nano_task_sleep, task_sleep, void);
-#endif
-
-void _nano_task_sleep(int32_t timeout_in_ticks)
+void task_sleep(int32_t timeout_in_ticks)
 {
 	int64_t  cur_ticks, limit;
 	int  key;
@@ -103,3 +100,4 @@ void _nano_task_sleep(int32_t timeout_in_ticks)
 
 	irq_unlock(key);
 }
+#endif

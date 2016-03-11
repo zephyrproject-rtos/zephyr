@@ -154,12 +154,7 @@ extern void task_timer_stop(ktimer_t timer);
  *
  * @return N/A
  */
-static inline void task_sleep(int32_t ticks)
-{
-	extern void (*_do_task_sleep)(int32_t ticks);
-
-	_do_task_sleep(ticks);
-}
+extern void task_sleep(int32_t ticks);
 
 /**
  *
