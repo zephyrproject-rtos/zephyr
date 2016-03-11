@@ -49,7 +49,7 @@
 #endif
 
 #ifdef WITH_CONTIKI
-#include <net/buf.h>
+#include <net/ip_buf.h>
 #endif
 
 /* This buffer is used when constructing an encrypted message to
