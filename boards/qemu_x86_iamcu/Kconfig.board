@@ -1,6 +1,0 @@
-
-config  BOARD_QEMU_X86_IAMCU
-        bool "QEMU x86"
-        select SOC_IA32
-	select X86_IAMCU
-	depends on X86
