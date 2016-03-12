@@ -24,7 +24,7 @@ KERNEL_TYPE ?= micro
 override CONF_FILE := $(strip $(subst $(DQUOTE),,$(CONF_FILE)))
 
 ifdef BOARD
-KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/boards/$(BOARD)/$(BOARD)_defconfig
+KBUILD_DEFCONFIG_PATH=$(wildcard $(ZEPHYR_BASE)/boards/*/$(BOARD)_defconfig)
 export KBUILD_DEFCONFIG_PATH
 else
 $(error BOARD is not defined!)
