@@ -123,9 +123,148 @@ static inline void __uart_stm32_get_clock(struct device *dev)
 	ddata->clock = clk;
 }
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+static int uart_stm32_fifo_fill(struct device *dev, const uint8_t *tx_data,
+				  int size)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+	size_t num_tx = 0;
+
+	/* FIXME: DMA maybe? */
+	while ((size - num_tx > 0) && (uart->sr.bit.txe)) {
+		uart->dr.bit.dr = tx_data[num_tx++];
+	}
+
+	return num_tx;
+}
+
+static int uart_stm32_fifo_read(struct device *dev, uint8_t *rx_data,
+				  const int size)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+	size_t num_rx = 0;
+
+	while ((size - num_rx > 0) && (uart->sr.bit.rxne)) {
+		rx_data[num_rx++] = (uint8_t) uart->dr.bit.dr;
+	}
+	return num_rx;
+}
+
+static void uart_stm32_irq_tx_enable(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	uart->cr1.bit.txeie = 1;
+}
+
+static void uart_stm32_irq_tx_disable(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	uart->cr1.bit.txeie = 0;
+}
+
+static int uart_stm32_irq_tx_ready(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	return uart->sr.bit.txe;
+}
+
+static int uart_stm32_irq_tx_empty(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	return uart->sr.bit.txe;
+}
+
+static void uart_stm32_irq_rx_enable(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	uart->cr1.bit.rxneie = 1;
+}
+
+static void uart_stm32_irq_rx_disable(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	uart->cr1.bit.rxneie = 0;
+}
+
+static int uart_stm32_irq_rx_ready(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	return uart->sr.bit.rxne;
+}
+
+static void uart_stm32_irq_err_enable(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	uart->cr3.bit.eie = 1;
+}
+
+static void uart_stm32_irq_err_disable(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	uart->cr3.bit.eie = 0;
+}
+
+static int uart_stm32_irq_is_pending(struct device *dev)
+{
+	volatile struct uart_stm32 *uart = UART_STRUCT(dev);
+
+	return uart->sr.bit.rxne || uart->sr.bit.txe;
+}
+
+static int uart_stm32_irq_update(struct device *dev)
+{
+	return 1;
+}
+
+static void uart_stm32_irq_callback_set(struct device *dev,
+				       uart_irq_callback_t cb)
+{
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	data->user_cb = cb;
+}
+
+static void uart_stm32_isr(void *arg)
+{
+	struct device *dev = arg;
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	if (data->user_cb) {
+		data->user_cb(dev);
+	}
+}
+
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 static struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill = uart_stm32_fifo_fill,
+	.fifo_read = uart_stm32_fifo_read,
+	.irq_tx_enable = uart_stm32_irq_tx_enable,
+	.irq_tx_disable = uart_stm32_irq_tx_disable,
+	.irq_tx_ready = uart_stm32_irq_tx_ready,
+	.irq_tx_empty = uart_stm32_irq_tx_empty,
+	.irq_rx_enable = uart_stm32_irq_rx_enable,
+	.irq_rx_disable = uart_stm32_irq_rx_disable,
+	.irq_rx_ready = uart_stm32_irq_rx_ready,
+	.irq_err_enable = uart_stm32_irq_err_enable,
+	.irq_err_disable = uart_stm32_irq_err_disable,
+	.irq_is_pending = uart_stm32_irq_is_pending,
+	.irq_update = uart_stm32_irq_update,
+	.irq_callback_set = uart_stm32_irq_callback_set,
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 /**
@@ -172,14 +311,24 @@ static int uart_stm32_init(struct device *dev)
 
 	dev->driver_api = &uart_stm32_driver_api;
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	cfg->uconf.irq_config_func(dev);
+#endif
 	return 0;
 }
 
 #ifdef CONFIG_UART_STM32_PORT_0
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_stm32_irq_config_func_0(struct device *dev);
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+
 static struct uart_stm32_config uart_stm32_dev_cfg_0 = {
 	.uconf = {
 		.base = (uint8_t *)USART1_ADDR,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		.irq_config_func = uart_stm32_irq_config_func_0,
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 	},
 #ifdef CONFIG_SOC_STM32F1X
 	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART1),
@@ -194,13 +343,34 @@ DEVICE_INIT(uart_stm32_0, CONFIG_UART_STM32_PORT_0_NAME, &uart_stm32_init,
 	    &uart_stm32_dev_data_0, &uart_stm32_dev_cfg_0,
 	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_stm32_irq_config_func_0(struct device *dev)
+{
+#ifdef CONFIG_SOC_STM32F1X
+#define PORT_0_IRQ STM32F1_IRQ_USART1
+#endif
+	IRQ_CONNECT(PORT_0_IRQ,
+		CONFIG_UART_STM32_PORT_0_IRQ_PRI,
+		uart_stm32_isr, DEVICE_GET(uart_stm32_0),
+		0);
+	irq_enable(PORT_0_IRQ);
+}
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+
 #endif	/* CONFIG_UART_STM32_PORT_0 */
 
 #ifdef CONFIG_UART_STM32_PORT_1
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_stm32_irq_config_func_1(struct device *dev);
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+
 static struct uart_stm32_config uart_stm32_dev_cfg_1 = {
 	.uconf = {
 		.base = (uint8_t *)USART2_ADDR,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		.irq_config_func = uart_stm32_irq_config_func_1,
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 	},
 #ifdef CONFIG_SOC_STM32F1X
 	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART2),
@@ -215,13 +385,34 @@ DEVICE_INIT(uart_stm32_1, CONFIG_UART_STM32_PORT_1_NAME, &uart_stm32_init,
 	    &uart_stm32_dev_data_1, &uart_stm32_dev_cfg_1,
 	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_stm32_irq_config_func_1(struct device *dev)
+{
+#ifdef CONFIG_SOC_STM32F1X
+#define PORT_1_IRQ STM32F1_IRQ_USART2
+#endif
+	IRQ_CONNECT(PORT_1_IRQ,
+		CONFIG_UART_STM32_PORT_1_IRQ_PRI,
+		uart_stm32_isr, DEVICE_GET(uart_stm32_1),
+		0);
+	irq_enable(PORT_1_IRQ);
+}
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+
 #endif	/* CONFIG_UART_STM32_PORT_1 */
 
 #ifdef CONFIG_UART_STM32_PORT_2
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_stm32_irq_config_func_2(struct device *dev);
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+
 static struct uart_stm32_config uart_stm32_dev_cfg_2 = {
 	.uconf = {
 		.base = (uint8_t *)USART3_ADDR,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		.irq_config_func = uart_stm32_irq_config_func_2,
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 	},
 #ifdef CONFIG_SOC_STM32F1X
 	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART3),
@@ -235,5 +426,19 @@ static struct uart_stm32_data uart_stm32_dev_data_2 = {
 DEVICE_INIT(uart_stm32_2, CONFIG_UART_STM32_PORT_2_NAME, &uart_stm32_init,
 	    &uart_stm32_dev_data_2, &uart_stm32_dev_cfg_2,
 	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_stm32_irq_config_func_2(struct device *dev)
+{
+#ifdef CONFIG_SOC_STM32F1X
+#define PORT_2_IRQ STM32F1_IRQ_USART3
+#endif
+	IRQ_CONNECT(PORT_2_IRQ,
+		CONFIG_UART_STM32_PORT_2_IRQ_PRI,
+		uart_stm32_isr, DEVICE_GET(uart_stm32_2),
+		0);
+	irq_enable(PORT_2_IRQ);
+}
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #endif	/* CONFIG_UART_STM32_PORT_2 */

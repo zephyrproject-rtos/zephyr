@@ -161,6 +161,9 @@ struct uart_stm32_data {
 	uint32_t baud_rate;
 	/* clock device */
 	struct device *clock;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_callback_t user_cb;
+#endif
 };
 
 #endif	/* _STM32_UART_H_ */
