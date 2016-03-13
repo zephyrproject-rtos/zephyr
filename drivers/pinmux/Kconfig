@@ -21,7 +21,6 @@
 #
 menuconfig PINMUX
         bool "Enable platform pinmux driver"
-        depends on GPIO
         default n
 
 config PINMUX_BASE
