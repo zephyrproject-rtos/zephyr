@@ -73,6 +73,8 @@ enum stm32f10x_pin_config_mode {
 	STM32F10X_PIN_CONFIG_AF_OPEN_DRAIN,
 };
 
+#include "soc_irq.h"
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F1_SOC_H_ */
