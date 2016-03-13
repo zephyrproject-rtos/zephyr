@@ -41,14 +41,14 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 
 /* boot banner items */
 
-#define BOOT_BANNER "****** BOOTING ZEPHYR OS ******"
+#define BOOT_BANNER "BOOTING ZEPHYR OS"
 
 #if !defined(CONFIG_BOOT_BANNER)
 #define PRINT_BOOT_BANNER() do { } while (0)
 #elif !defined(CONFIG_BUILD_TIMESTAMP)
-#define PRINT_BOOT_BANNER() printk(BOOT_BANNER "\n")
+#define PRINT_BOOT_BANNER() printk("***** " BOOT_BANNER " *****\n")
 #else
-#define PRINT_BOOT_BANNER() printk(BOOT_BANNER " %s\n", build_timestamp)
+#define PRINT_BOOT_BANNER() printk("***** " BOOT_BANNER " - %s *****\n", build_timestamp)
 #endif
 
 /* boot time measurement items */
