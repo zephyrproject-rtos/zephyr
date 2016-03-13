@@ -190,8 +190,10 @@ config STACK_CANARIES
 endmenu
 
 endmenu
+
 source "kernel/nanokernel/Kconfig"
 
+menu "Power Management"
 config ADVANCED_POWER_MANAGEMENT
 	bool
 	prompt "Advanced power management"
@@ -243,6 +245,8 @@ config TICKLESS_IDLE_THRESH
 	for only a short period of time. It specifies the minimum number of
 	ticks that must occur before the next kernel timer expires in order
 	for suppression to happen.
+
+endmenu
 
 endmenu
 
