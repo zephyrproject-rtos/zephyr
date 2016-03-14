@@ -62,33 +62,8 @@ char fiberStack[STACKSIZE];
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
 
-#if !defined(CONFIG_BLUETOOTH)
-#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
-/* The peer is the client in our case. Just invent a mac
- * address for it because lower parts of the stack cannot set it
- * in this test as we do not have any radios.
- */
-static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
-#endif
-
-/* This is my mac address
- */
-static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
-#endif
-
-#if defined(CONFIG_NETWORKING_WITH_IPV6)
-#if 0
-/* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
-#define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
-#define PEER_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
-#else
-#define PEER_IPADDR { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0x17, 0x0a, 0xbe, 0xef, 0xf0, 0x0d, 0 } } }
-#define MY_IPADDR { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0x08, 0xbe, 0xef, 0x15, 0xf0, 0x0d, 0 } } }
-#endif
-#else /* ipv6 */
-/* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
-#define MY_IPADDR { { { 192, 0, 2, 2 } } }
-#define PEER_IPADDR { { { 192, 0, 2, 1 } } }
+#if defined(CONFIG_NET_TESTING)
+#include <net_testing.h>
 #endif
 
 #if defined(CONFIG_ER_COAP_WITH_DTLS)
@@ -96,56 +71,15 @@ static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 #else
 #define MY_PORT COAP_DEFAULT_PORT
 #endif
-#define PEER_PORT 0
 
-#if defined(CONFIG_NETWORKING_WITH_IPV6)
-static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
-static const struct in6_addr in6addr_peer = PEER_IPADDR;
-static struct in6_addr in6addr_my = MY_IPADDR;
-#else
-static const struct in_addr in4addr_any = { { { 0 } } };
-static struct in_addr in4addr_peer = PEER_IPADDR;
-static struct in_addr in4addr_my = MY_IPADDR;
-#endif
+#define PEER_PORT 0
 
 static inline void init_app(void)
 {
 	PRINT("%s: run coap server\n", __func__);
 
-#if !defined(CONFIG_BLUETOOTH)
-	net_set_mac(my_mac, sizeof(my_mac));
-
-#if defined(CONFIG_NETWORKING_WITH_IPV4)
-	{
-		uip_ipaddr_t addr;
-		uip_ipaddr(&addr, 192,0,2,2);
-		uip_sethostaddr(&addr);
-	}
-#endif
-
-#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
-	{
-		uip_ipaddr_t *addr;
-
-		/* Set the routes and neighbor cache only if we do not have
-		 * neighbor discovery enabled. This setting should only be
-		 * used if running in qemu and using slip (tun device).
-		 */
-		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&peer_mac;
-
-		addr = (uip_ipaddr_t *)&in6addr_peer;
-		uip_ds6_defrt_add(addr, 0);
-
-		/* We cannot send to peer unless it is in neighbor
-		 * cache. Neighbor cache should be populated automatically
-		 * but do it here so that test works from first packet.
-		 */
-		uip_ds6_nbr_add(addr, lladdr, 0, NBR_REACHABLE);
-
-		addr = (uip_ipaddr_t *)&in6addr_my;
-		uip_ds6_addr_add(addr, 0, ADDR_MANUAL);
-	}
-#endif
+#if defined(CONFIG_NET_TESTING)
+	net_testing_setup();
 #endif
 }
 
@@ -280,6 +214,9 @@ void startup(void)
 	static struct net_addr my_addr;
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
+	static const struct in6_addr in6addr_my = IN6ADDR_ANY_INIT;
+	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+
 	any_addr.in6_addr = in6addr_any;
 	any_addr.family = AF_INET6;
 

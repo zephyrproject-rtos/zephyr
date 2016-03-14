@@ -46,6 +46,10 @@
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
 
+#if defined(CONFIG_NET_TESTING)
+#include <net_testing.h>
+#endif
+
 #if defined(CONFIG_NANOKERNEL)
 #define STACKSIZE 2000
 char fiberStack[STACKSIZE];
@@ -53,34 +57,29 @@ char fiberStack[STACKSIZE];
 
 static coap_observee_t *obs;
 
-#if !defined(CONFIG_BLUETOOTH)
-#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
-/* The peer is the server in our case. Just invent a mac
- * address for it because lower parts of the stack cannot set it
- * in this test as we do not have any radios.
- */
-static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
-#endif
-
-/* This is my mac address
- */
-static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
-#endif
-
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
-#if 0
-/* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
+/* admin-local, dynamically allocated multicast address */
+#define MCAST_IPADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
+
+/* Define the peer IP address where to send messages */
+#if !defined(CONFIG_NET_TESTING)
 #define PEER_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 #define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
-#else
-#define MY_IPADDR { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0x17, 0x0a, 0xbe, 0xef, 0xf0, 0x0d, 0 } } }
-#define PEER_IPADDR { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0x08, 0xbe, 0xef, 0x15, 0xf0, 0x0d, 0 } } }
+
 #endif
-#else /* ipv6 */
-/* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
-#define MY_IPADDR { { { 192, 0, 2, 2 } } }
+
+#else /* CONFIG_NETWORKING_WITH_IPV6 */
+
+#error "IPv4 not supported at the moment, fix me!"
+
+/* Organization-local 239.192.0.0/14 */
+#define MCAST_IPADDR { { { 239, 192, 0, 2 } } }
+
+#if !defined(CONFIG_NET_TESTING)
 #define PEER_IPADDR { { { 192, 0, 2, 1 } } }
 #endif
+
+#endif /* CONFIG_NETWORKING_WITH_IPV6 */
 
 #define MY_PORT 8484
 #define PEER_PORT COAP_DEFAULT_PORT
@@ -104,35 +103,8 @@ static inline void init_app(void)
 {
 	PRINT("%s: run coap observe client\n", __func__);
 
-#if !defined(CONFIG_BLUETOOTH)
-	net_set_mac(my_mac, sizeof(my_mac));
-
-#if defined(CONFIG_NETWORKING_WITH_IPV4)
-	{
-		uip_ipaddr_t addr;
-		uip_ipaddr(&addr, 192,0,2,2);
-		uip_sethostaddr(&addr);
-	}
-#endif
-
-#if defined(CONFIG_NETWORKING_IPV6_NO_ND)
-	{
-		uip_ipaddr_t *addr;
-		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&peer_mac;
-
-		addr = (uip_ipaddr_t *)&in6addr_peer;
-		uip_ds6_defrt_add(addr, 0);
-
-		/* We cannot send to peer unless it is in neighbor
-		 * cache. Neighbor cache should be populated automatically
-		 * but do it here so that test works from first packet.
-		 */
-		uip_ds6_nbr_add(addr, lladdr, 0, NBR_REACHABLE);
-
-		addr = (uip_ipaddr_t *)&in6addr_my;
-		uip_ds6_addr_add(addr, 0, ADDR_MANUAL);
-	}
-#endif
+#if defined(CONFIG_NET_TESTING)
+	net_testing_setup();
 #endif
 }
 
