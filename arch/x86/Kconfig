@@ -22,17 +22,6 @@ menu "x86 architecture"
 config ARCH
         default "x86"
 
-config X86_IAMCU
-	bool
-	default n
-	prompt "IAMCU calling convention"
-	help
-	The IAMCU calling convention changes the X86 C calling convention to
-	pass some arguments via registers allowing for code size and performance
-	improvements.  Great care needs to be taken if you have assembly code
-	that will be called from C or C code called from assembly code, the
-	assembly code will need to be updated to conform to the new calling
-	convention.  If in doubt say N
 
 config ARCH_DEFCONFIG
 	string
@@ -64,6 +53,19 @@ endchoice
 
 
 menu "Processor Capabilities"
+
+config X86_IAMCU
+	bool
+	default n
+	prompt "IAMCU calling convention"
+	help
+	The IAMCU calling convention changes the X86 C calling convention to
+	pass some arguments via registers allowing for code size and performance
+	improvements.  Great care needs to be taken if you have assembly code
+	that will be called from C or C code called from assembly code, the
+	assembly code will need to be updated to conform to the new calling
+	convention.  If in doubt say N
+
 menu "Floating Point Options"
 
 config  FLOAT
@@ -114,6 +116,7 @@ config SSE_FP_MATH
 
 	Disabling this option means that the compiler utilizes only the
 	x87 instruction set for floating point operations.
+endmenu
 
 choice
 prompt "Reboot implementation"
@@ -128,7 +131,6 @@ config REBOOT_RST_CNT
 
 endchoice
 
-endmenu
 
 config ISA_IA32
 	bool
