@@ -1,4 +1,4 @@
-# Makefile - Simple loopback network app Makefile for nanokernel
+# Makefile - Simple loopback network app Makefile
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -17,8 +17,8 @@
 #
 
 MDEF_FILE = prj.mdef
-KERNEL_TYPE = nano
+KERNEL_TYPE ?= nano
 BOARD ?= qemu_x86
-CONF_FILE = prj_$(ARCH).conf
+CONF_FILE ?= prj.conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
