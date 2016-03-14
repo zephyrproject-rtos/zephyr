@@ -83,20 +83,10 @@ config RING_BUFFER
 	their own buffer memory and can store arbitrary data. For optimal
 	performance, use buffer sizes that are a power of 2.
 
-config EVENT_LOGGER
-	bool
-	prompt "Enable event logger"
-	default n
-	select RING_BUFFER
-	help
-	Enable event logging feature. Allow the usage of a ring buffer to
-	transmit event messages with a single interface to collect them.
-
 config KERNEL_EVENT_LOGGER
 	bool
 	prompt "Enable kernel event logger features"
 	default n
-	select EVENT_LOGGER
 	help
 	This feature enables the usage of the profiling logger. Provides the
 	logging of sleep events (either entering or leaving low power conditions),
