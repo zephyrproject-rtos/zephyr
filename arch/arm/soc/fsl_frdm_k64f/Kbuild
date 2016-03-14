@@ -1,3 +1,4 @@
 obj-y += soc_config.o
 obj-y += soc.o
 obj-y += wdog.o
+obj-y += pinmux.o
