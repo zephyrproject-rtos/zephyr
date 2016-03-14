@@ -1505,15 +1505,6 @@ static void hci_cmd_complete(struct net_buf *buf)
 	 */
 	status = buf->data[0];
 
-	switch (opcode) {
-	case BT_HCI_OP_RESET:
-		hci_reset_complete(buf);
-		break;
-	default:
-		BT_DBG("Unhandled opcode 0x%04x", opcode);
-		break;
-	}
-
 	hci_cmd_done(opcode, status, buf);
 
 	if (evt->ncmd && !bt_dev.ncmd) {
@@ -2092,10 +2083,12 @@ static int common_init(void)
 	int err;
 
 	/* Send HCI_RESET */
-	err = bt_hci_cmd_send(BT_HCI_OP_RESET, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
 	if (err) {
 		return err;
 	}
+	hci_reset_complete(rsp);
+	net_buf_unref(rsp);
 
 	/* Read Local Supported Features */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
