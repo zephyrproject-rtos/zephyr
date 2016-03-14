@@ -379,6 +379,41 @@ int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/** Connection parameters for BR/EDR connections */
+struct bt_br_conn_param {
+	bool allow_role_switch;
+};
+
+/** Helper to declare BR/EDR connection parameters inline
+  *
+  * @param role_switch True if role switch is allowed
+  */
+#define BT_BR_CONN_PARAM(role_switch) \
+	(&(struct bt_br_conn_param) { \
+		.allow_role_switch = (role_switch), \
+	 })
+
+/** Default BR/EDR connection parameters:
+  *   Role switch allowed
+  */
+#define BT_BR_CONN_PARAM_DEFAULT BT_BR_CONN_PARAM(true)
+
+
+/** @brief Initiate an BR/EDR connection to a remote device.
+ *
+ *  Allows initiate new BR/EDR link to remote peer using its address.
+ *  Returns a new reference that the the caller is responsible for managing.
+ *
+ *  @param peer  Remote address.
+ *  @param param Initial connection parameters.
+ *
+ *  @return Valid connection object on success or NULL otherwise.
+ */
+struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
+				  const struct bt_br_conn_param *param);
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 #ifdef __cplusplus
 }
 #endif

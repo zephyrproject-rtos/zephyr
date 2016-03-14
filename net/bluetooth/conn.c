@@ -578,6 +578,58 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
+				  const struct bt_br_conn_param *param)
+{
+	struct bt_hci_cp_connect *cp;
+	struct bt_conn *conn;
+	struct net_buf *buf;
+
+	conn = bt_conn_lookup_addr_br(peer);
+	if (conn) {
+		switch (conn->state) {
+			return conn;
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return conn;
+		default:
+			bt_conn_unref(conn);
+			return NULL;
+		}
+	}
+
+	conn = bt_conn_add_br(peer);
+	if (!conn) {
+		return NULL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT, sizeof(*cp));
+	if (!buf) {
+		bt_conn_unref(conn);
+		return NULL;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	memset(cp, 0, sizeof(*cp));
+
+	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
+	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
+	cp->pscan_rep_mode = 0x02; /* R2 */
+	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
+	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
+
+	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
+		bt_conn_unref(conn);
+		return NULL;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	conn->role = BT_CONN_ROLE_MASTER;
+
+	return conn;
+}
+
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 {
 	int i;
@@ -978,6 +1030,37 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static int bt_hci_connect_br_cancel(struct bt_conn *conn)
+{
+	struct bt_hci_cp_connect_cancel *cp;
+	struct bt_hci_rp_connect_cancel *rp;
+	struct net_buf *buf, *rsp;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT_CANCEL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+
+	err = rp->status ? -EIO : 0;
+
+	net_buf_unref(rsp);
+
+	return err;
+}
+#endif
+
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
@@ -1003,6 +1086,12 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 		bt_le_scan_update(false);
 		return 0;
 	case BT_CONN_CONNECT:
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		if (conn->type == BT_CONN_TYPE_BR) {
+			return bt_hci_connect_br_cancel(conn);
+		}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 		return bt_hci_connect_le_cancel(conn);
 	case BT_CONN_CONNECTED:
 		return bt_hci_disconnect(conn, reason);
