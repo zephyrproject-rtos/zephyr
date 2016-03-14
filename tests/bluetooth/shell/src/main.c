@@ -1246,6 +1246,64 @@ static void cmd_auth_pincode(int argc, char *argv[])
 
 	bt_conn_auth_pincode_entry(conn, argv[1]);
 }
+
+static int str2bt_addr(const char *str, bt_addr_t *addr)
+{
+	int i, j;
+	uint8_t tmp;
+
+	if (strlen(str) != 17) {
+		return -EINVAL;
+	}
+
+	for (i = 5, j = 1; *str != '\0'; str++, j++) {
+		if (!(j % 3) && (*str != ':')) {
+			return -EINVAL;
+		} else if (*str == ':') {
+			i--;
+			continue;
+		}
+
+		addr->val[i] = addr->val[i] << 4;
+
+		if (char2hex(str, &tmp) < 0) {
+			return -EINVAL;
+		}
+
+		addr->val[i] |= tmp;
+	}
+
+	return 0;
+}
+
+static void cmd_connect_bredr(int argc, char *argv[])
+{
+	struct bt_conn *conn;
+	bt_addr_t addr;
+	int err;
+
+	if (argc < 2) {
+		printk("Peer address required\n");
+		return;
+	}
+
+	err = str2bt_addr(argv[1], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return;
+	}
+
+	conn = bt_conn_create_br(&addr, BT_BR_CONN_PARAM_DEFAULT);
+	if (!conn) {
+		printk("Connection failed\n");
+	} else {
+
+		printk("Connection pending\n");
+
+		/* unref connection obj in advance as app user */
+		bt_conn_unref(conn);
+	}
+}
 #endif
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -1484,6 +1542,7 @@ struct shell_cmd commands[] = {
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	{ "br-iscan", cmd_bredr_discoverable },
 	{ "br-pscan", cmd_bredr_connectable },
+	{ "br-connect", cmd_connect_bredr },
 #endif
 	{ NULL, NULL }
 };
