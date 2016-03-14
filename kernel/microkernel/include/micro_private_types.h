@@ -403,7 +403,7 @@ struct pool_struct {
 
 	char *bufblock;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
-	struct pool_struct *next;
+	struct pool_struct *__next;
 #endif
 };
 
