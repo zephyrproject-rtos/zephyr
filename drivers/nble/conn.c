@@ -263,9 +263,38 @@ void on_nble_gap_connect_rsp(const struct nble_response *rsp)
 	BT_DBG("conn %p", rsp->user_data);
 }
 
+#define BT_SMP_AUTH_NONE			0x00
+#define BT_SMP_AUTH_BONDING			0x01
+#define BT_SMP_AUTH_MITM			0x04
+#define BT_SMP_AUTH_SC				0x08
+
 int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 {
-	return -ENOSYS;
+	struct nble_gap_sm_security_params params = {
+			.conn = conn,
+			.conn_handle = conn->handle,
+	};
+
+	BT_DBG("conn %p sec %u", conn, sec);
+
+	switch (sec) {
+	case BT_SECURITY_LOW:
+		params.params.auth_level = BT_SMP_AUTH_NONE;
+		break;
+	case BT_SECURITY_MEDIUM:
+		params.params.auth_level = BT_SMP_AUTH_BONDING;
+		break;
+	case BT_SECURITY_HIGH:
+		params.params.auth_level = BT_SMP_AUTH_BONDING |
+						BT_SMP_AUTH_MITM;
+		break;
+	case BT_SECURITY_FIPS:
+		params.params.auth_level = BT_SMP_AUTH_BONDING | BT_SMP_AUTH_SC;
+	}
+
+	nble_gap_sm_security_req(&params);
+
+	return 0;
 }
 
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
