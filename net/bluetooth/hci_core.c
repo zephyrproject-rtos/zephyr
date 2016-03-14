@@ -1127,6 +1127,24 @@ static void link_key_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+static void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
+{
+	struct bt_hci_cp_io_capability_neg_reply *cp;
+	struct net_buf *resp_buf;
+
+	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY,
+				     sizeof(*cp));
+	if (!resp_buf) {
+		BT_ERR("Out of command buffers");
+		return;
+	}
+
+	cp = net_buf_add(resp_buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+	cp->reason = reason;
+	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY, resp_buf, NULL);
+}
+
 static void io_capa_resp(struct net_buf *buf)
 {
 	struct bt_hci_evt_io_capa_resp *evt = (void *)buf->data;
@@ -1134,6 +1152,20 @@ static void io_capa_resp(struct net_buf *buf)
 
 	BT_DBG("remote %s, IOcapa 0x%02x, auth 0x%02x",
 	       bt_addr_str(&evt->bdaddr), evt->capability, evt->authentication);
+
+	if (evt->authentication > BT_HCI_GENERAL_BONDING_MITM) {
+		BT_ERR("Invalid remote authentication requirements");
+		io_capa_neg_reply(&evt->bdaddr,
+				  BT_HCI_ERR_UNSUPP_FEATURE_PARAMS_VAL);
+		return;
+	}
+
+	if (evt->capability > BT_IO_NO_INPUT_OUTPUT) {
+		BT_ERR("Invalid remote io capability requirements");
+		io_capa_neg_reply(&evt->bdaddr,
+				  BT_HCI_ERR_UNSUPP_FEATURE_PARAMS_VAL);
+		return;
+	}
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
