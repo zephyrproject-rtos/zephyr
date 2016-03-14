@@ -58,6 +58,9 @@
 /* EXTI */
 #define EXTI_BASE            (APB2PERIPH_BASE + 0x0400)
 
+/* AFIO */
+#define AFIO_BASE            (APB2PERIPH_BASE + 0x0000)
+
 #ifndef _ASMLANGUAGE
 
 #include <device.h>
