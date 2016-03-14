@@ -1,5 +1,4 @@
 
 config  BOARD_BASIC_MINUTEIA
         bool "Basic Minute-IA Board"
-        select SOC_IA32
-	depends on X86
+        depends on SOC_IA32

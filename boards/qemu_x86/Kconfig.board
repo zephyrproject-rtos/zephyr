@@ -1,5 +1,4 @@
 
 config  BOARD_QEMU_X86
         bool "QEMU x86"
-        select SOC_IA32
-	depends on X86
+        depends on SOC_IA32
