@@ -172,6 +172,13 @@ config	NETWORKING_WITH_LOOPBACK
 	  neighbor cache. All packets transmitted are
 	  looped back to the receiving fifo/fiber.
 
+config	NETWORK_LOOPBACK_TEST_COUNT
+	int "How many packets the loopback test passes"
+	depends on NETWORKING_WITH_LOOPBACK
+	default 0
+	help
+	  If set to 0, then the loopback test runs forever.
+
 choice
 prompt "Wired networking support"
 depends on NETWORKING

@@ -70,6 +70,14 @@ static nano_thread_id_t receiver_id;
 static bool failure;
 static int appdatalen;
 
+/* How many packets to send/receive */
+#if defined(CONFIG_NETWORK_LOOPBACK_TEST_COUNT)
+#define TEST_COUNT CONFIG_NETWORK_LOOPBACK_TEST_COUNT
+#else
+#define TEST_COUNT 0
+#endif
+static unsigned long count = TEST_COUNT;
+
 void fiber_receiver(void)
 {
 	struct nano_timer timer;
@@ -108,6 +116,9 @@ void fiber_receiver(void)
 			ip_buf_unref(buf);
 		}
 
+		if (count && (count < received)) {
+			break;
+		}
 
 		fiber_wakeup(sender_id);
 		fiber_sleep(SLEEPTICKS);
@@ -167,6 +178,9 @@ void fiber_sender(void)
 			failure = true;
 		}
 
+		if (count && (count < sent)) {
+			break;
+		}
 	}
 
 	if (failure) {
