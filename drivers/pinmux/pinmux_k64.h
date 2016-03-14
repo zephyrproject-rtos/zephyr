@@ -30,19 +30,6 @@
 
 #define K64_PINMUX_CTRL_OFFSET(pin)	(pin * 4)
 
-
-/*
- * Pin direction configuration, for GPIO function (PINMUX_FUNC_GPIO):
- * At reset, all GPIO pins are set as input.
- *
- * NOTE: This bit field is a software-defined construct and does not
- * intentionally match any hardware register bit field.
- */
-
-#define K64_PINMUX_GPIO_DIR_MASK	(0x1 << 20)		/* GPIO pin direction */
-#define K64_PINMUX_GPIO_DIR_INPUT	(0x0 << 20)		/* input GPIO pin */
-#define K64_PINMUX_GPIO_DIR_OUTPUT  (0x1 << 20)		/* output GPIO pin */
-
 /*
  * The following pin settings match the K64 PORT module's
  * Pin Control Register bit fields.

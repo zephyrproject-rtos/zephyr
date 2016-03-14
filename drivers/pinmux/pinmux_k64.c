@@ -36,14 +36,6 @@
 /* port pin number conversion from pin ID */
 #define PIN_FROM_ID(pin_id)	(pin_id % K64_PINMUX_NUM_PINS)
 
-struct fsl_k64_data {
-	struct device *gpio_a;  /* port A */
-	struct device *gpio_b;  /* port B */
-	struct device *gpio_c;  /* port C */
-	struct device *gpio_d;  /* port D */
-	struct device *gpio_e;  /* port E */
-};
-
 #ifdef CONFIG_GPIO_K64_A
 static inline int config_port_a(mem_addr_t *addr)
 {
@@ -123,54 +115,15 @@ static int _fsl_k64_get_port_addr(uint8_t pin_id, mem_addr_t *port_addr_ptr)
 
 }
 
-static int _fsl_k64_get_gpio_dev(struct device *dev,
-				 mem_addr_t port_base_addr,
-				 struct device **gpio_dev_ptr)
-{
-	struct fsl_k64_data * const data = dev->driver_data;
-
-	/* determine the gpio device associated with the port base address */
-
-	switch (port_base_addr) {
-	case CONFIG_PORT_K64_A_BASE_ADDR:
-		*gpio_dev_ptr = data->gpio_a;
-		break;
-	case CONFIG_PORT_K64_B_BASE_ADDR:
-		*gpio_dev_ptr = data->gpio_b;
-		break;
-	case CONFIG_PORT_K64_C_BASE_ADDR:
-		*gpio_dev_ptr = data->gpio_c;
-		break;
-	case CONFIG_PORT_K64_D_BASE_ADDR:
-		*gpio_dev_ptr = data->gpio_d;
-		break;
-	case CONFIG_PORT_K64_E_BASE_ADDR:
-		*gpio_dev_ptr = data->gpio_e;
-		break;
-	default:
-		return -EACCES;
-	}
-
-	return 0;
-}
-
 static int _fsl_k64_set_pin(struct device *dev, uint32_t pin_id,
 			    uint32_t func)
 {
 	mem_addr_t port_base_addr;
 	uint8_t port_pin;
 	uint32_t status;
-	struct device *gpio_dev = NULL;
-	bool is_gpio = false;
-	int gpio_setting;
 
 	if (pin_id >= CONFIG_PINMUX_NUM_PINS) {
-
 		return -ENOTSUP;
-	}
-
-	if ((func & K64_PINMUX_ALT_MASK) == K64_PINMUX_FUNC_GPIO) {
-		is_gpio = true;
 	}
 
 	/* determine the pin's port register base address */
@@ -182,33 +135,6 @@ static int _fsl_k64_set_pin(struct device *dev, uint32_t pin_id,
 
 	/* extract the pin number within its port */
 	port_pin = PIN_FROM_ID(pin_id);
-
-	if (is_gpio) {
-
-		/* set GPIO direction */
-		status = _fsl_k64_get_gpio_dev(dev, port_base_addr, &gpio_dev);
-
-		if (status != 0) {
-			return status;
-		} else if (gpio_dev == NULL) {
-			return -EPERM;
-		}
-
-		if (func & K64_PINMUX_GPIO_DIR_OUTPUT) {
-			gpio_setting = GPIO_DIR_OUT;
-		} else {
-			gpio_setting = GPIO_DIR_IN;
-		}
-
-		status = gpio_pin_configure(gpio_dev, port_pin, gpio_setting);
-
-		if (status != 0) {
-			return status;
-		}
-
-		/* remove GPIO direction info from the pin configuration */
-		func &= ~K64_PINMUX_GPIO_DIR_MASK;
-	}
 
 	/* set pin function and control settings */
 	sys_write32(func, port_base_addr + K64_PINMUX_CTRL_OFFSET(port_pin));
@@ -221,9 +147,6 @@ static int _fsl_k64_get_pin(struct device *dev, uint32_t pin_id,
 {
 	mem_addr_t port_base_addr;
 	uint8_t port_pin;
-	struct device *gpio_dev = NULL;
-	const struct gpio_k64_config *cfg;
-	uint32_t gpio_port_dir;
 	uint32_t status;
 
 	if (pin_id >= CONFIG_PINMUX_NUM_PINS) {
@@ -232,7 +155,6 @@ static int _fsl_k64_get_pin(struct device *dev, uint32_t pin_id,
 
 	/* determine the pin's port register base address */
 	status = _fsl_k64_get_port_addr(pin_id, &port_base_addr);
-
 	if (status != 0) {
 		return status;
 	}
@@ -243,30 +165,11 @@ static int _fsl_k64_get_pin(struct device *dev, uint32_t pin_id,
 	/* get pin function and control settings */
 	*func = sys_read32(port_base_addr + K64_PINMUX_CTRL_OFFSET(port_pin));
 
-	/* get pin direction, if GPIO */
-	if ((*func & K64_PINMUX_ALT_MASK) == K64_PINMUX_FUNC_GPIO) {
-
-		status = _fsl_k64_get_gpio_dev(dev, port_base_addr, &gpio_dev);
-
-		if (status != 0) {
-			return status;
-		} else if (gpio_dev == NULL) {
-			return -EPERM;
-		}
-
-		cfg = gpio_dev->config->config_info;
-
-		gpio_port_dir = sys_read32(cfg->gpio_base_addr + GPIO_K64_DIR_OFFSET);
-
-		if (gpio_port_dir & (1 << port_pin)) {
-			*func |= K64_PINMUX_GPIO_DIR_OUTPUT;
-		}
-	}
-
 	return 0;
 }
 
-static int fsl_k64_dev_set(struct device *dev, uint32_t pin, uint32_t func)
+static int fsl_k64_dev_set(struct device *dev, uint32_t pin,
+			   uint32_t func)
 {
 	return _fsl_k64_set_pin(dev, pin, func);
 }
@@ -283,46 +186,7 @@ static struct pinmux_driver_api api_funcs = {
 
 int pinmux_fsl_k64_initialize(struct device *port)
 {
-	struct fsl_k64_data *data = port->driver_data;
-
 	port->driver_api = &api_funcs;
-
-	/* get the GPIO ports, by name */
-
-#ifdef CONFIG_GPIO_K64_A
-	data->gpio_a = device_get_binding(CONFIG_PINMUX_K64_GPIO_A_NAME);
-	if (!data->gpio_a) {
-		return -EINVAL;
-	}
-#endif
-
-#ifdef CONFIG_GPIO_K64_B
-	data->gpio_b = device_get_binding(CONFIG_PINMUX_K64_GPIO_B_NAME);
-	if (!data->gpio_b) {
-		return -EINVAL;
-	}
-#endif
-
-#ifdef CONFIG_GPIO_K64_C
-	data->gpio_c = device_get_binding(CONFIG_PINMUX_K64_GPIO_C_NAME);
-	if (!data->gpio_c) {
-		return -EINVAL;
-	}
-#endif
-
-#ifdef CONFIG_GPIO_K64_D
-	data->gpio_d = device_get_binding(CONFIG_PINMUX_K64_GPIO_D_NAME);
-	if (!data->gpio_d) {
-		return -EINVAL;
-	}
-#endif
-
-#ifdef CONFIG_GPIO_K64_E
-	data->gpio_e = device_get_binding(CONFIG_PINMUX_K64_GPIO_E_NAME);
-	if (!data->gpio_e) {
-		return -EINVAL;
-	}
-#endif
 
 	return 0;
 }
@@ -331,15 +195,7 @@ struct pinmux_config fsl_k64_pmux = {
 	.base_address = 0x00000000,
 };
 
-struct fsl_k64_data fsl_k64_pinmux_driver = {
-	.gpio_a = NULL,
-	.gpio_b = NULL,
-	.gpio_c = NULL,
-	.gpio_d = NULL,
-	.gpio_e = NULL
-};
-
 /* must be initialized after GPIO */
 DEVICE_INIT(pmux, PINMUX_NAME, &pinmux_fsl_k64_initialize,
-	    &fsl_k64_pinmux_driver, &fsl_k64_pmux,
+	    NULL, &fsl_k64_pmux,
 	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
