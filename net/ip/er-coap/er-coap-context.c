@@ -635,7 +635,7 @@ coap_context_connect(coap_context_t *coap_ctx, uip_ipaddr_t *addr, uint16_t port
   coap_ctx->net_ctx = net_context_get(IPPROTO_UDP,
 				      (const struct net_addr *)&coap_ctx->addr,
 				      coap_ctx->port,
-				      (const struct net_addr *)&coap_ctx->my_addr,
+				      (struct net_addr *)&coap_ctx->my_addr,
 				      coap_ctx->my_port);
   if (!coap_ctx->net_ctx) {
     PRINTF("%s: Cannot get network context\n", __FUNCTION__);
@@ -671,7 +671,7 @@ int coap_context_listen(coap_context_t *coap_ctx, uip_ipaddr_t *peer_addr,
   coap_ctx->net_ctx = net_context_get(IPPROTO_UDP,
 				      (const struct net_addr *)&coap_ctx->addr,
 				      coap_ctx->port,
-				      (const struct net_addr *)&coap_ctx->my_addr,
+				      (struct net_addr *)&coap_ctx->my_addr,
 				      coap_ctx->my_port);
   if (!coap_ctx->net_ctx) {
     PRINTF("%s: Cannot get network context\n", __FUNCTION__);
