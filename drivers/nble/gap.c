@@ -27,6 +27,7 @@
 #include "version.h"
 #include "gap_internal.h"
 #include "uart.h"
+#include "conn.h"
 #include "rpc.h"
 
 #if !defined(CONFIG_NBLE_DEBUG_GAP)
@@ -382,6 +383,8 @@ void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 	nble_get_version_req(NULL);
 }
 
+/* Security Manager event handling */
+
 void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *rsp)
 {
 	if (rsp->status) {
@@ -393,4 +396,54 @@ void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *rsp)
 
 	/* Get bdaddr queued after SM setup */
 	nble_gap_read_bda_req(NULL);
+}
+
+void on_nble_gap_sm_common_rsp(const struct nble_gap_sm_response *rsp)
+{
+	if (rsp->status) {
+		BT_ERR("GAP SM request failed:  conn %p err %d", rsp->conn,
+		       rsp->status);
+
+		/* TODO: Handle error */
+		return;
+	}
+}
+
+void on_nble_gap_sm_status_evt(const struct nble_gap_sm_status_evt *ev)
+{
+	struct bt_conn *conn;
+
+	if (ev->status) {
+		BT_ERR("SM request failed, status %d", ev->status);
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(ev->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
+		return;
+	}
+
+	BT_DBG("conn %p status %d evt_type %d", conn, ev->status, ev->evt_type);
+
+	/* TODO Handle events */
+	switch (ev->evt_type) {
+	case NBLE_GAP_SM_EVT_START_PAIRING:
+		BT_DBG("Start pairing");
+		break;
+	case NBLE_GAP_SM_EVT_BONDING_COMPLETE:
+		BT_DBG("Bonding complete");
+		break;
+	case NBLE_GAP_SM_EVT_LINK_ENCRYPTED:
+		BT_DBG("Link encrypted");
+		break;
+	case NBLE_GAP_SM_EVT_LINK_SECURITY_CHANGE:
+		BT_DBG("Security change");
+		break;
+	default:
+		BT_ERR("Unknown event %d", ev->evt_type);
+		break;
+	}
+
+	bt_conn_unref(conn);
 }
