@@ -182,10 +182,29 @@ struct bt_hci_op_inquiry {
 
 #define BT_HCI_OP_INQUIRY_CANCEL		BT_OP(BT_OGF_LINK_CTRL, 0x0002)
 
+#define BT_HCI_OP_CONNECT			BT_OP(BT_OGF_LINK_CTRL, 0x0005)
+struct bt_hci_cp_connect {
+	bt_addr_t bdaddr;
+	uint16_t  packet_type;
+	uint8_t   pscan_rep_mode;
+	uint8_t   reserved;
+	uint16_t  clock_offset;
+	uint8_t   allow_role_switch;
+} __packed;
+
 #define BT_HCI_OP_DISCONNECT			BT_OP(BT_OGF_LINK_CTRL, 0x0006)
 struct bt_hci_cp_disconnect {
 	uint16_t handle;
 	uint8_t  reason;
+} __packed;
+
+#define BT_HCI_OP_CONNECT_CANCEL		BT_OP(BT_OGF_LINK_CTRL, 0x0008)
+struct bt_hci_cp_connect_cancel {
+	bt_addr_t bdaddr;
+} __packed;
+struct bt_hci_rp_connect_cancel {
+	uint8_t   status;
+	bt_addr_t bdaddr;
 } __packed;
 
 #define BT_HCI_OP_ACCEPT_CONN_REQ		BT_OP(BT_OGF_LINK_CTRL, 0x0009)
