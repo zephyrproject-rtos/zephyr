@@ -36,11 +36,28 @@
 
 #if defined(CONFIG_NET_TESTING)
 #include <net_testing.h>
+#else
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
+#include <contiki/ipv6/uip-ds6.h>
+#endif
 #endif
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
 /* admin-local, dynamically allocated multicast address */
 #define MCAST_IPADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
+
+/* Define my IP address where to expect messages */
+#if !defined(CONFIG_NET_TESTING)
+#define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
+#define MY_PREFIX_LEN 64
+#endif
+
+#if defined(CONFIG_NET_TESTING)
+static const struct in6_addr in6addr_my = IN6ADDR_ANY_INIT;
+#else
+static const struct in6_addr in6addr_my = MY_IPADDR;
+#endif
+
 #else
 /* Organization-local 239.192.0.0/14 */
 #define MCAST_IPADDR { { { 239, 192, 0, 2 } } }
@@ -54,6 +71,10 @@ static inline void init_app(void)
 
 #if defined(CONFIG_NET_TESTING)
 	net_testing_setup();
+#else
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
+	uip_ds6_prefix_add((uip_ipaddr_t *)&in6addr_my, MY_PREFIX_LEN, 0);
+#endif
 #endif
 }
 
@@ -131,7 +152,6 @@ static inline bool get_context(struct net_context **recv,
 	static struct net_addr my_addr;
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
-	static const struct in6_addr in6addr_my = IN6ADDR_ANY_INIT;
 	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 	static const struct in6_addr in6addr_mcast = MCAST_IPADDR;
 
