@@ -1,4 +1,6 @@
-/* ipss.c - IP Support Service sample */
+/** @file
+ *  @brief IP Support Service sample
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation

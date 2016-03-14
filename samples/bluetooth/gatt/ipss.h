@@ -1,4 +1,6 @@
-/* ipsp.h - IPSP Service sample */
+/** @file
+ *  @brief IPSP Service sample
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation
