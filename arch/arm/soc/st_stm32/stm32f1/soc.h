@@ -55,6 +55,9 @@
 /* base address for where GPIO registers start */
 #define GPIO_PORTS_BASE       (GPIOA_BASE)
 
+/* EXTI */
+#define EXTI_BASE            (APB2PERIPH_BASE + 0x0400)
+
 #ifndef _ASMLANGUAGE
 
 #include <device.h>

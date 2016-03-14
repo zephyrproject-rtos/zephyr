@@ -1,0 +1,75 @@
+# Kconfig - STM32 EXTI configuration
+#
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_STM32
+
+config EXTI_STM32
+	bool "External Interrupt/Event Controller (EXTI) Driver for STM32 family of MCUs"
+	default y if SOC_STM32
+	help
+	 Enable EXTI driver for STM32 line of MCUs
+
+config EXTI_STM32_EXTI0_IRQ_PRI
+	int "EXTI0 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI0 interrupt
+
+config EXTI_STM32_EXTI1_IRQ_PRI
+	int "EXTI1 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI1 interrupt
+
+config EXTI_STM32_EXTI2_IRQ_PRI
+	int "EXTI2 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI2 interrupt
+
+config EXTI_STM32_EXTI3_IRQ_PRI
+	int "EXTI3 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI3 interrupt
+
+config EXTI_STM32_EXTI4_IRQ_PRI
+	int "EXTI4 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI4 interrupt
+
+config EXTI_STM32_EXTI9_5_IRQ_PRI
+	int "EXTI9:5 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI9:5 interrupt
+
+config EXTI_STM32_EXTI15_10_IRQ_PRI
+	int "EXTI15:10 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI15:10 interrupt
+
+endif # SOC_STM32
