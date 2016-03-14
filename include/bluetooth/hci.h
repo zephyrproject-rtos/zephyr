@@ -630,6 +630,7 @@ struct bt_hci_evt_inquiry_result_with_rssi {
 
 #define BT_HCI_EVT_EXTENDED_INQUIRY_RESULT	0x2f
 struct bt_hci_evt_extended_inquiry_result {
+	uint8_t   num_reports;
 	bt_addr_t addr;
 	uint8_t   pscan_rep_mode;
 	uint8_t   reserved;
