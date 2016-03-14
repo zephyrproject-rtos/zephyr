@@ -334,7 +334,7 @@ coap_obs_request_registration(coap_context_t *coap_ctx,
     if(obs) {
       t->callback = handle_obs_registration_response;
       t->callback_data = obs;
-      t->packet_len = coap_serialize_message(request, t->packet);
+      t->packet_len = coap_serialize_message(request, uip_appdata(coap_ctx->buf));
       uip_len(coap_ctx->buf) = t->packet_len;
       net_buf_add(coap_ctx->buf, uip_len(coap_ctx->buf));
       coap_send_transaction(t);
