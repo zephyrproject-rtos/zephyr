@@ -1659,6 +1659,9 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", chan, chan->tx.cid);
 
+	/* Notify client if request is pending */
+	att_handle_rsp(att, NULL, 0, BT_ATT_ERR_UNLIKELY);
+
 	bt_gatt_disconnected(chan->conn);
 	memset(att, 0, sizeof(*att));
 }
