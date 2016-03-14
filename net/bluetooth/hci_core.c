@@ -181,7 +181,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	struct bt_hci_cmd_hdr *hdr;
 	struct net_buf *buf;
 
-	BT_DBG("opcode %x param_len %u", opcode, param_len);
+	BT_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
 	buf = net_buf_get(&avail_hci_cmd, CONFIG_BLUETOOTH_HCI_SEND_RESERVE);
 	if (!buf) {
@@ -210,7 +210,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		}
 	}
 
-	BT_DBG("opcode %x len %u", opcode, buf->len);
+	BT_DBG("opcode 0x%04x len %u", opcode, buf->len);
 
 	/* Host Number of Completed Packets can ignore the ncmd value
 	 * and does not generate any cmd complete/status events.
@@ -245,7 +245,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		}
 	}
 
-	BT_DBG("opcode %x len %u", opcode, buf->len);
+	BT_DBG("opcode 0x%04x len %u", opcode, buf->len);
 
 	nano_sem_init(&sync_sem);
 	cmd(buf)->sync = &sync_sem;
@@ -1496,7 +1496,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
 	uint8_t status;
 
-	BT_DBG("opcode %x", opcode);
+	BT_DBG("opcode 0x%04x", opcode);
 
 	net_buf_pull(buf, sizeof(*evt));
 
@@ -1510,7 +1510,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 		hci_reset_complete(buf);
 		break;
 	default:
-		BT_DBG("Unhandled opcode %x", opcode);
+		BT_DBG("Unhandled opcode 0x%04x", opcode);
 		break;
 	}
 
@@ -1528,13 +1528,13 @@ static void hci_cmd_status(struct net_buf *buf)
 	struct bt_hci_evt_cmd_status *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
 
-	BT_DBG("opcode %x", opcode);
+	BT_DBG("opcode 0x%04x", opcode);
 
 	net_buf_pull(buf, sizeof(*evt));
 
 	switch (opcode) {
 	default:
-		BT_DBG("Unhandled opcode %x", opcode);
+		BT_DBG("Unhandled opcode 0x%04x", opcode);
 		break;
 	}
 
@@ -1917,7 +1917,7 @@ static void hci_cmd_tx_fiber(void)
 
 		bt_dev.sent_cmd = net_buf_ref(buf);
 
-		BT_DBG("Sending command %x (buf %p) to driver",
+		BT_DBG("Sending command 0x%04x (buf %p) to driver",
 		       cmd(buf)->opcode, buf);
 
 		err = drv->send(BT_CMD, buf);
