@@ -27,5 +27,5 @@ include $(ZEPHYR_BASE)/Makefile.inc
 ifeq ($(CONFIG_NETWORKING_WITH_BT), y)
 	QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
 else
-	include $(ZEPHYR_BASE)/samples/net/echo_server/Makefile.ipstack
+	include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
 endif

@@ -23,4 +23,4 @@ BOARD ?= qemu_x86
 CONF_FILE = prj_$(NET_IFACE).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
-include $(ZEPHYR_BASE)/samples/net/echo_server/Makefile.ipstack
+include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
