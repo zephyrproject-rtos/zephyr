@@ -34,8 +34,6 @@ struct pinmux_config {
 	uint32_t	base_address;
 };
 
-extern int pinmux_initialize(struct device *port);
-
 #ifdef __cplusplus
 }
 #endif

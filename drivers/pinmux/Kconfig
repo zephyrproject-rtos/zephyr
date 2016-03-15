@@ -39,15 +39,6 @@ config PINMUX_NUM_PINS
         help
         Select the number of pins for the pinmux to operate on.
 
-config PINMUX_DEV
-        bool "Configure pinmux for early board testing"
-        depends on PINMUX
-        default n
-        help
-        Enables the use of the pinmux_set and pinmux_get functions for early
-        prototyping on new hardware.  WARNING: When using these options, it
-        is possible to permanently damage the hardware.
-
 config PINMUX_INIT_PRIORITY
 	int
 	prompt "Init priority"
