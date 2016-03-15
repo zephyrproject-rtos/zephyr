@@ -116,35 +116,35 @@ config PINMUX_K64
 
 config PINMUX_K64_GPIO_A_NAME
         string "Name of the Port A GPIO"
-        depends on PINMUX && GPIO_K64
+        depends on PINMUX_K64 && GPIO_K64
         default "GPIO_A"
         help
         The name of the Port A GPIO referred to as PTA0..PTA31.
 
 config PINMUX_K64_GPIO_B_NAME
         string "Name of the Port B GPIO"
-        depends on PINMUX && GPIO_K64
+        depends on PINMUX_K64 && GPIO_K64
         default "GPIO_B"
         help
         The name of the Port B GPIO referred to as PTB0..PTB31.
 
 config PINMUX_K64_GPIO_C_NAME
         string "Name of the Port C GPIO"
-        depends on PINMUX && GPIO_K64
+        depends on PINMUX_K64 && GPIO_K64
         default "GPIO_C"
         help
         The name of the Port C GPIO referred to as PTC0..PTC31.
 
 config PINMUX_K64_GPIO_D_NAME
         string "Name of the Port D GPIO"
-        depends on PINMUX && GPIO_K64
+        depends on PINMUX_K64 && GPIO_K64
         default "GPIO_D"
         help
         The name of the Port D GPIO referred to as PTD0..PTD31.
 
 config PINMUX_K64_GPIO_E_NAME
         string "Name of the Port E GPIO"
-        depends on PINMUX && GPIO_K64
+        depends on PINMUX_K64 && GPIO_K64
         default "GPIO_E"
         help
         The name of the Port E GPIO referred to as PTE0..PTE31.
