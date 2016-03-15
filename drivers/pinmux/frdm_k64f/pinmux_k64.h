@@ -280,4 +280,9 @@
 #define K64_PIN_PTE30	158
 #define K64_PIN_PTE31	159
 
+int _fsl_k64_set_pin(uint32_t pin_id, uint32_t func);
+
+int _fsl_k64_get_pin(uint32_t pin_id, uint32_t *func);
+
+
 #endif /* __INCLUDE_PINMUX_K64_H */

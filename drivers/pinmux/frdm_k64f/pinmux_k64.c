@@ -18,20 +18,14 @@
 
 #include <errno.h>
 
-#include <stdbool.h>
 #include <nanokernel.h>
 #include <device.h>
 #include <init.h>
 #include <sys_io.h>
-
 #include <pinmux.h>
-#include <i2c.h>
-#include <gpio.h>
-#include <pwm.h>
-
-#include <gpio/gpio_k64.h>
 #include <pinmux/pinmux.h>
-#include <pinmux/pinmux_k64.h>
+
+#include "pinmux_k64.h"
 
 /* port pin number conversion from pin ID */
 #define PIN_FROM_ID(pin_id)	(pin_id % K64_PINMUX_NUM_PINS)
@@ -89,9 +83,11 @@ static inline int config_port_e(mem_addr_t *addr)
 static int _fsl_k64_get_port_addr(uint8_t pin_id, mem_addr_t *port_addr_ptr)
 {
 
-	/* determine the port base address associated with the pin identifier */
+	/* determine the port base address associated with the
+	 * pin identifier
+	 */
 
-	if (pin_id < K64_PIN_PTB0) {		   /* Port A pin */
+	if (pin_id < K64_PIN_PTB0) {		/* Port A pin */
 
 		return config_port_a(port_addr_ptr);
 
@@ -115,8 +111,7 @@ static int _fsl_k64_get_port_addr(uint8_t pin_id, mem_addr_t *port_addr_ptr)
 
 }
 
-static int _fsl_k64_set_pin(struct device *dev, uint32_t pin_id,
-			    uint32_t func)
+int _fsl_k64_set_pin(uint32_t pin_id, uint32_t func)
 {
 	mem_addr_t port_base_addr;
 	uint8_t port_pin;
@@ -142,8 +137,7 @@ static int _fsl_k64_set_pin(struct device *dev, uint32_t pin_id,
 	return 0;
 }
 
-static int _fsl_k64_get_pin(struct device *dev, uint32_t pin_id,
-			    uint32_t *func)
+int _fsl_k64_get_pin(uint32_t pin_id, uint32_t *func)
 {
 	mem_addr_t port_base_addr;
 	uint8_t port_pin;
@@ -167,35 +161,3 @@ static int _fsl_k64_get_pin(struct device *dev, uint32_t pin_id,
 
 	return 0;
 }
-
-static int fsl_k64_dev_set(struct device *dev, uint32_t pin,
-			   uint32_t func)
-{
-	return _fsl_k64_set_pin(dev, pin, func);
-}
-
-static int fsl_k64_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
-{
-	return _fsl_k64_get_pin(dev, pin, func);
-}
-
-static struct pinmux_driver_api api_funcs = {
-	.set = fsl_k64_dev_set,
-	.get = fsl_k64_dev_get
-};
-
-int pinmux_fsl_k64_initialize(struct device *port)
-{
-	port->driver_api = &api_funcs;
-
-	return 0;
-}
-
-struct pinmux_config fsl_k64_pmux = {
-	.base_address = 0x00000000,
-};
-
-/* must be initialized after GPIO */
-DEVICE_INIT(pmux, PINMUX_NAME, &pinmux_fsl_k64_initialize,
-	    NULL, &fsl_k64_pmux,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

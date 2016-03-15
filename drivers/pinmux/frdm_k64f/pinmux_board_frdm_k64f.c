@@ -1,4 +1,4 @@
-/* pinmux.c - pin out mapping for the Freescale FRDM K64F SoC */
+/* pinmux_board_frdm_k64f.c - pin out mapping for the Freescale FRDM-K64F board */
 
 /*
  * Copyright (c) 2016 Intel Corporation
@@ -16,16 +16,18 @@
  * limitations under the License.
  */
 
-#include <board.h>
+#include <nanokernel.h>
 #include <device.h>
-#include <gpio.h>
 #include <init.h>
+#include <sys_io.h>
 #include <pinmux.h>
 #include <pinmux/pinmux.h>
-#include <pinmux/pinmux_k64.h>
-#include <pwm.h>
 
-#include "pinmux/pinmux.h"
+#include "pinmux_k64.h"
+
+/*
+ * I/O pin configuration
+ */
 
 /*
  * Number of default pin settings, used for Arduino Rev 3 pinout.
@@ -82,27 +84,16 @@ struct pin_config mux_config[NUM_DFLT_PINS_SET] = {
 	{ K64_PIN_PTC10, K64_PINMUX_FUNC_ANALOG },  /* ADC1_SE6b/Analog In 5 */
 };
 
-
 int fsl_frdm_k64f_pin_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
-	struct device *pmux;
-	int i;
-
-	pmux = device_get_binding(PINMUX_NAME);
-
-	if (!pmux) {
-		return -EPERM;
-	}
 
 	/* configure the pins from the default mapping above */
-
-	for (i = 0; i < NUM_DFLT_PINS_SET; i++) {
-		pinmux_pin_set(pmux, mux_config[i].pin_num, mux_config[i].mode);
+	for (int i = 0; i < NUM_DFLT_PINS_SET; i++) {
+		_fsl_k64_set_pin(mux_config[i].pin_num, mux_config[i].mode);
 	}
 
 	return 0;
 }
 
-DEVICE_INIT(frdm_k64f_pmux, "", fsl_frdm_k64f_pin_init, NULL, NULL,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(fsl_frdm_k64f_pin_init, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
