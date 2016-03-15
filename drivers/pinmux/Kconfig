@@ -25,6 +25,8 @@ menuconfig PINMUX
 
 if PINMUX
 
+source "drivers/pinmux/dev/Kconfig"
+
 config PINMUX_BASE
         hex "Base Address"
 	depends on PINMUX
