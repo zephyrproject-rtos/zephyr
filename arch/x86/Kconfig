@@ -35,22 +35,25 @@ prompt "SoC Selection"
 source "arch/x86/soc/*/Kconfig.soc"
 endchoice
 
-choice
-prompt "Intel Processor"
-default CPU_MINUTEIA
-
+#
+# Hidden CPU family configs which are to be selected by
+# individual SoC.
+#
 config CPU_ATOM
-	bool "Atom"
+	# Hidden
+	bool
 	select CMOV
 	help
 	This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
-	bool "Minute IA"
+	# Hidden
+	bool
 	help
 	This option signifies the use of a CPU from the Minute IA family.
-endchoice
-
+#
+# End hidden CPU family configs
+#
 
 menu "Processor Capabilities"
 
