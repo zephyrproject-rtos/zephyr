@@ -39,3 +39,10 @@ config PINMUX_DEV_ATMEL_SAM3X
        Enables the pinmux dev driver for boards based on the
        Atmel SAM3X family of microcontrollers.
        default n
+
+config PINMUX_DEV_FRDM_K64F
+       bool "Enable the pinmux dev driver for Freescale FRDM K64F"
+       depends on PINMUX_DEV && SOC_FSL_FRDM_K64F
+       help
+       Enables the pinmux dev driver for Freescale FRDM K64F.
+       default n
