@@ -53,3 +53,11 @@ config PINMUX_DEV_GALILEO
        help
        Enables the pinmux dev driver for the Galileo board.
        default n
+
+config PINMUX_DEV_QUARK_MCU
+       bool "Enable the generic pinmux dev driver for Quark MCUs"
+       depends on PINMUX_DEV && (SOC_QUARK_D2000 || SOC_QUARK_SE)
+       help
+       Enables the pinmux dev driver for Quark family of microcontrollers, currently,
+       Quark D2000 and Quark SE.
+       default n
