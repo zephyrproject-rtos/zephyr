@@ -265,7 +265,21 @@ void on_nble_gap_start_advertise_rsp(const struct nble_response *rsp)
 
 int bt_le_adv_stop(void)
 {
-	return -ENOSYS;
+	BT_DBG("");
+
+	nble_gap_stop_advertise_req(NULL);
+
+	return 0;
+}
+
+void on_nble_gap_stop_advertise_rsp(const struct nble_response *rsp)
+{
+	if (rsp->status) {
+		BT_ERR("Stop advertise failed, status %d", rsp->status);
+		return;
+	}
+
+	BT_DBG("status %d", rsp->status);
 }
 
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)
