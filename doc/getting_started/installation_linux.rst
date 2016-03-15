@@ -106,22 +106,31 @@ following architectures:
 
 Follow these steps to install the SDK on your Linux host system.
 
-#. Download the `SDK self-extractable binary`_.
+#. Download the latest SDK self-extractable binary.
 
-   .. hint::
-      Visit the `Zephyr SDK archive`_ to find a list with all the available versions.
+    Visit the `Zephyr SDK archive`_ to find all available SDK versions,
+    including the latest version.
 
-    .. code-block:: console
-
-      $ wget https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/0.7.2-i686/zephyr-sdk-0.7.2-i686-setup.run
-
-#. Run the installation binary, type:
+    Alternatively, you can use the following command to download the desired
+    version:
 
     .. code-block:: console
 
-       $ chmod +x zephyr-sdk-0.7.2-i686-setup.run
+      $ wget https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/<version>-i686/zephyr-sdk-<version>-i686-setup.run
 
-       $ sudo ./zephyr-sdk-0.7.2-i686-setup.run
+   .. note::
+      Replace <version> with the version number you wish to download.
+
+#. Run the installation binary, follow this example:
+
+    .. code-block:: console
+
+       $ chmod +x zephyr-sdk-<version>-i686-setup.run
+
+       $ sudo ./zephyr-sdk-<version>-i686-setup.run
+
+   .. note::
+      Replace <version> with the version number of the SDK that you downloaded.
 
    .. note::
       There is no need for `sudo` if the SDK is installed in the current
@@ -178,9 +187,6 @@ Follow these steps to install the SDK on your Linux host system.
      export ZEPHYR_GCC_VARIANT=zephyr
      export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
      EOF
-
-.. _SDK self-extractable binary:
-   https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/0.7.2-i686/zephyr-sdk-0.7.2-i686-setup.run
 
 .. _Zephyr SDK archive:
    https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/
