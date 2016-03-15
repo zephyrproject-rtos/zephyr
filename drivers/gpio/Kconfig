@@ -45,6 +45,7 @@ config GPIO_DW_IO_ACCESS
 	prompt "I/O register access"
 	default y if ARC
 	default n
+	depends on GPIO_DW
 	bool
 	help
 	  Driver access configuration register by
@@ -85,6 +86,7 @@ config	GPIO_DW_CLASS
 config GPIO_DW_INIT_PRIORITY
 	int
 	default 60
+	depends on GPIO_DW
 	prompt "Init priority"
 	help
 	  Device driver initialization priority.
