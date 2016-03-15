@@ -183,6 +183,10 @@ endmenu
 
 source "kernel/nanokernel/Kconfig"
 
+if MICROKERNEL
+source "kernel/microkernel/Kconfig"
+endif
+
 menu "Power Management"
 config ADVANCED_POWER_MANAGEMENT
 	bool
@@ -239,7 +243,3 @@ config TICKLESS_IDLE_THRESH
 endmenu
 
 endmenu
-
-if MICROKERNEL
-source "kernel/microkernel/Kconfig"
-endif
