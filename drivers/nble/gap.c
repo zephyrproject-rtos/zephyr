@@ -491,6 +491,28 @@ void on_nble_gap_sm_status_evt(const struct nble_gap_sm_status_evt *ev)
 	bt_conn_unref(conn);
 }
 
+void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_evt *ev)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(ev->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
+		return;
+	}
+
+	BT_DBG("conn %p passkey %u", conn, ev->passkey);
+
+	/* TODO: Check shall we store io_caps globally */
+	if (get_io_capa() == BT_SMP_IO_DISPLAY_YESNO) {
+		bt_auth->passkey_confirm(conn, ev->passkey);
+	} else {
+		bt_auth->passkey_display(conn, ev->passkey);
+	}
+
+	bt_conn_unref(conn);
+}
+
 void on_nble_up(void)
 {
 	BT_DBG("");
