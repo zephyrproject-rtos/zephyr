@@ -34,6 +34,8 @@ extern bt_addr_le_t nble_bdaddr;
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
+const struct bt_conn_auth_cb *bt_auth;
+
 static struct bt_conn *conn_new(void)
 {
 	struct bt_conn *conn = NULL;
@@ -322,7 +324,23 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 {
-	return -ENOSYS;
+	if (!cb) {
+		bt_auth = NULL;
+		return 0;
+	}
+
+	/* cancel callback should always be provided */
+	if (!cb->cancel) {
+		return -EINVAL;
+	}
+
+	if (bt_auth) {
+		return -EALREADY;
+	}
+
+	bt_auth = cb;
+
+	return 0;
 }
 
 int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
