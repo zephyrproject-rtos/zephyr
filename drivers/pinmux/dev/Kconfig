@@ -61,3 +61,10 @@ config PINMUX_DEV_QUARK_MCU
        Enables the pinmux dev driver for Quark family of microcontrollers, currently,
        Quark D2000 and Quark SE.
        default n
+
+config PINMUX_DEV_QMSI
+       bool "Enable QMSI pinmux dev driver"
+       depends on PINMUX_DEV && QMSI_DRIVERS
+       help
+       Enables the pinmux dev driver for QMSI supported platforms.
+       default n
