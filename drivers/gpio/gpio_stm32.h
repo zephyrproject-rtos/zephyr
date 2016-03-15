@@ -24,6 +24,7 @@
 
 #include <clock_control/stm32_clock_control.h>
 #include <pinmux/pinmux_stm32.h>
+#include <gpio.h>
 
 /**
  * @brief configuration of GPIO device
@@ -35,6 +36,16 @@ struct gpio_stm32_config {
 	enum stm32_pin_port port;
 	/* clock subsystem */
 	clock_control_subsys_t clock_subsys;
+};
+
+/**
+ * @brief driver data
+ */
+struct gpio_stm32_data {
+	/* user ISR cb */
+	gpio_callback_t cb;
+	/* mask of enabled pins */
+	uint32_t enabled_mask;
 };
 
 /**
@@ -73,5 +84,12 @@ int stm32_gpio_set(uint32_t *base, int pin, int value);
  * @return pin value
  */
 int stm32_gpio_get(uint32_t *base, int pin);
+
+/**
+ * @brief enable interrupt source for GPIO pin
+ * @param port
+ * @param pin
+ */
+int stm32_gpio_enable_int(int port, int pin);
 
 #endif /* _STM32_GPIO_H_ */
