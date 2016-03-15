@@ -21,6 +21,11 @@
 /* Maximum security key len (LTK, CSRK) */
 #define BLE_GAP_SEC_MAX_KEY_LEN		16
 
+#define BT_SMP_AUTH_NONE			0x00
+#define BT_SMP_AUTH_BONDING			0x01
+#define BT_SMP_AUTH_MITM			0x04
+#define BT_SMP_AUTH_SC				0x08
+
 /**
  * GAP security manager options for bonding/authentication procedures,
  * see Vol 3: Part H, 3.5.

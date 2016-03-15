@@ -45,6 +45,19 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 /* Local Bluetooth LE Device Address */
 bt_addr_le_t nble_bdaddr;
 
+extern const struct bt_conn_auth_cb *bt_auth;
+
+#define BT_SMP_IO_DISPLAY_ONLY			0x00
+#define BT_SMP_IO_DISPLAY_YESNO			0x01
+#define BT_SMP_IO_KEYBOARD_ONLY			0x02
+#define BT_SMP_IO_NO_INPUT_OUTPUT		0x03
+#define BT_SMP_IO_KEYBOARD_DISPLAY		0x04
+
+#define BT_SMP_OOB_NOT_PRESENT			0x00
+#define BT_SMP_OOB_PRESENT			0x01
+
+#define BT_SMP_MAX_ENC_KEY_SIZE			16
+
 #if defined(CONFIG_NBLE_DEBUG_GAP)
 static const char *bt_addr_le_str(const bt_addr_le_t *addr)
 {
@@ -55,25 +68,6 @@ static const char *bt_addr_le_str(const bt_addr_le_t *addr)
 	return str;
 }
 #endif /* CONFIG_BLUETOOTH_DEBUG */
-
-static void send_dm_config(void)
-{
-	struct nble_gap_sm_config_params config = {
-		.options = 1,		/* bonding */
-		.io_caps = 3,		/* no input no output */
-		.key_size = 16,		/* or 7 */
-		.oob_present = 0,	/* no oob */
-	};
-
-	nble_gap_sm_config_req(&config);
-}
-
-void on_nble_up(void)
-{
-	BT_DBG("");
-
-	send_dm_config();
-}
 
 void on_nble_get_version_rsp(const struct nble_version_response *rsp)
 {
@@ -385,6 +379,55 @@ void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 
 /* Security Manager event handling */
 
+static uint8_t get_io_capa(void)
+{
+	if (!bt_auth) {
+		return BT_SMP_IO_NO_INPUT_OUTPUT;
+	}
+
+	/* Passkey Confirmation is valid only for LE SC */
+	if (bt_auth->passkey_display && bt_auth->passkey_entry &&
+	    bt_auth->passkey_confirm) {
+		return BT_SMP_IO_KEYBOARD_DISPLAY;
+	}
+
+	/* DisplayYesNo is useful only for LE SC */
+	if (bt_auth->passkey_display &&
+	    bt_auth->passkey_confirm) {
+		return BT_SMP_IO_DISPLAY_YESNO;
+	}
+
+	if (bt_auth->passkey_entry) {
+		return BT_SMP_IO_KEYBOARD_ONLY;
+	}
+
+	if (bt_auth->passkey_display) {
+		return BT_SMP_IO_DISPLAY_ONLY;
+	}
+
+	return BT_SMP_IO_NO_INPUT_OUTPUT;
+}
+
+static void send_dm_config(void)
+{
+	struct nble_gap_sm_config_params config = {
+		.key_size = BT_SMP_MAX_ENC_KEY_SIZE,
+		.oob_present = BT_SMP_OOB_NOT_PRESENT,
+	};
+
+	config.io_caps = get_io_capa();
+
+	if (config.io_caps == BT_SMP_IO_NO_INPUT_OUTPUT) {
+		config.options = BT_SMP_AUTH_MITM;
+	} else {
+		config.options = BT_SMP_AUTH_BONDING | BT_SMP_AUTH_MITM;
+	}
+
+	BT_DBG("io_caps %u options %u", config.io_caps, config.options);
+
+	nble_gap_sm_config_req(&config);
+}
+
 void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *rsp)
 {
 	if (rsp->status) {
@@ -446,4 +489,11 @@ void on_nble_gap_sm_status_evt(const struct nble_gap_sm_status_evt *ev)
 	}
 
 	bt_conn_unref(conn);
+}
+
+void on_nble_up(void)
+{
+	BT_DBG("");
+
+	send_dm_config();
 }

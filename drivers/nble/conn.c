@@ -265,11 +265,6 @@ void on_nble_gap_connect_rsp(const struct nble_response *rsp)
 	BT_DBG("conn %p", rsp->user_data);
 }
 
-#define BT_SMP_AUTH_NONE			0x00
-#define BT_SMP_AUTH_BONDING			0x01
-#define BT_SMP_AUTH_MITM			0x04
-#define BT_SMP_AUTH_SC				0x08
-
 int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 {
 	struct nble_gap_sm_security_params params = {
