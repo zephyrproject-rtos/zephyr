@@ -6,3 +6,4 @@ obj-$(CONFIG_BOARD_ARDUINO_101) += quark_mcu/pinmux_board_arduino_101.o
 obj-$(CONFIG_BOARD_ARDUINO_DUE) += sam3x/pinmux_board_arduino_due.o
 obj-$(CONFIG_BOARD_GALILEO) += galileo/pinmux_board_galileo.o galileo/pinmux_galileo.o
 obj-$(CONFIG_BOARD_QUARK_D2000_CRB) += quark_mcu/pinmux_board_quark_d2000_crb.o
+obj-$(CONFIG_BOARD_QUARK_SE_DEVBOARD) += quark_mcu/pinmux_board_quark_se_dev.o
