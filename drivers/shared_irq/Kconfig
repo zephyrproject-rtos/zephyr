@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-config SHARED_IRQ
+menuconfig SHARED_IRQ
 	bool
 	prompt "Shared interrupt driver"
 	default n
@@ -97,7 +97,7 @@ endchoice
 
 config SHARED_IRQ_1
 	bool "Shared interrupt instance 1"
-	select SHARED_IRQ
+	depends on SHARED_IRQ
 	help
 	 Provide an instance of the shared interrupt driver when system
 	 configuration requires that multiple devices share an interrupt.
