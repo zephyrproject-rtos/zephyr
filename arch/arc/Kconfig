@@ -15,7 +15,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-menu "ARC architecture"
+
+choice
+	prompt "ARC SoC Selection"
+	depends on ARC
+
+	source "arch/arc/soc/*/Kconfig.soc"
+endchoice
+
+menu "ARC Options"
 	depends on ARC
 
 config ARCH
@@ -24,11 +32,6 @@ config ARCH
 config ARCH_DEFCONFIG
 	string
 	default "arch/arc/defconfig"
-
-choice
-prompt "SoC Selection"
-source "arch/arc/soc/*/Kconfig.soc"
-endchoice
 
 menu "ARC EM4 processor options"
 

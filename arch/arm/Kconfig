@@ -16,8 +16,15 @@
 # limitations under the License.
 #
 
+choice
+	prompt "ARM SoC Selection"
+	default SOC_FSL_FRDM_K64F
+	depends on ARM
 
-menu "ARM architecture"
+	source "arch/arm/soc/*/Kconfig.soc"
+endchoice
+
+menu "ARM Options"
 	depends on ARM
 
 config ARCH
@@ -27,12 +34,6 @@ config ARCH_DEFCONFIG
 	string
 	default "arch/arm/defconfig"
 
-
-choice
-prompt "SoC Selection"
-default SOC_FSL_FRDM_K64F
-source "arch/arm/soc/*/Kconfig.soc"
-endchoice
 
 menu "General Platform Configuration"
 

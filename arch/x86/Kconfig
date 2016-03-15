@@ -16,7 +16,14 @@
 # limitations under the License.
 #
 
-menu "x86 architecture"
+choice
+	prompt "x86 SoC Selection"
+	depends on X86
+
+	source "arch/x86/soc/*/Kconfig.soc"
+endchoice
+
+menu "x86 Options"
 	depends on X86
 
 config ARCH
@@ -29,11 +36,6 @@ config ARCH_DEFCONFIG
 
 
 source "arch/x86/core/Kconfig"
-
-choice
-prompt "SoC Selection"
-source "arch/x86/soc/*/Kconfig.soc"
-endchoice
 
 #
 # Hidden CPU family configs which are to be selected by
