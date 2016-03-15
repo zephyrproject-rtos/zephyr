@@ -184,7 +184,7 @@ static void _pinmux_defaults(uint32_t base)
 
 static inline void _pinmux_pullups(uint32_t base_address) { };
 
-static uint32_t _quark_se_set_mux(uint32_t base, uint32_t pin, uint8_t func)
+static int _quark_se_set_mux(uint32_t base, uint32_t pin, uint8_t func)
 {
 	/*
 	 * the registers are 32-bit wide, but each pin requires 1 bit
@@ -214,7 +214,7 @@ static uint32_t _quark_se_set_mux(uint32_t base, uint32_t pin, uint8_t func)
 }
 
 #ifdef CONFIG_PINMUX_DEV
-static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
+static int pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	const struct pinmux_config *pmux = dev->config->config_info;
 
@@ -248,7 +248,7 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 	return DEV_OK;
 }
 
-static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
+static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	const struct pinmux_config *pmux = dev->config->config_info;
 
@@ -284,7 +284,7 @@ static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 	return DEV_OK;
 }
 #else
-static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
+static int pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
@@ -295,7 +295,7 @@ static uint32_t pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 	return DEV_NOT_CONFIG;
 }
 
-static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
+static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
@@ -307,7 +307,7 @@ static uint32_t pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 }
 #endif /* CONFIG_PINMUX_DEV */
 
-static uint32_t pinmux_dev_pullup(struct device *dev,
+static int pinmux_dev_pullup(struct device *dev,
 				  uint32_t pin,
 				  uint8_t func)
 {
@@ -318,7 +318,7 @@ static uint32_t pinmux_dev_pullup(struct device *dev,
 
 	return DEV_OK;
 }
-static uint32_t pinmux_dev_input(struct device *dev,
+static int pinmux_dev_input(struct device *dev,
 				 uint32_t pin, uint8_t func)
 {
 	const struct pinmux_config *pmux = dev->config->config_info;

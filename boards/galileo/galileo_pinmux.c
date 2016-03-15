@@ -538,7 +538,7 @@ struct mux_path _galileo_path[CONFIG_PINMUX_NUM_PINS * NUM_PIN_FUNCS] = {
 };
 
 
-uint8_t _galileo_set_pin(struct device *port, uint8_t pin, uint8_t func)
+int _galileo_set_pin(struct device *port, uint8_t pin, uint8_t func)
 {
 	struct galileo_data * const drv_data = port->driver_data;
 
@@ -628,7 +628,7 @@ uint8_t _galileo_set_pin(struct device *port, uint8_t pin, uint8_t func)
 }
 
 #ifdef CONFIG_PINMUX_DEV
-static uint32_t galileo_dev_set(struct device *dev,
+static int galileo_dev_set(struct device *dev,
 				uint32_t pin,
 				uint32_t func)
 {
@@ -641,7 +641,7 @@ static uint32_t galileo_dev_set(struct device *dev,
 	return _galileo_set_pin(dev, pin, (uint8_t)func);
 }
 
-static uint32_t galileo_dev_get(struct device *dev,
+static int galileo_dev_get(struct device *dev,
 				uint32_t pin,
 				uint32_t *func)
 {
@@ -654,7 +654,7 @@ static uint32_t galileo_dev_get(struct device *dev,
 	return DEV_OK;
 }
 #else
-static uint32_t galileo_dev_set(struct device *dev,
+static int galileo_dev_set(struct device *dev,
 				uint32_t pin,
 				uint32_t func)
 {
@@ -665,7 +665,7 @@ static uint32_t galileo_dev_set(struct device *dev,
 	return DEV_INVALID_OP;
 }
 
-static uint32_t galileo_dev_get(struct device *dev,
+static int galileo_dev_get(struct device *dev,
 				uint32_t pin,
 				uint32_t *func)
 {
@@ -677,7 +677,7 @@ static uint32_t galileo_dev_get(struct device *dev,
 }
 #endif
 
-static uint32_t galileo_dev_pullup(struct device *dev,
+static int galileo_dev_pullup(struct device *dev,
 				   uint32_t pin,
 				   uint8_t func)
 {
@@ -689,7 +689,7 @@ static uint32_t galileo_dev_pullup(struct device *dev,
 	return DEV_OK;
 }
 
-static uint32_t galileo_dev_input_enable(struct device *dev,
+static int galileo_dev_input_enable(struct device *dev,
 					 uint32_t pin,
 					 uint8_t func)
 {

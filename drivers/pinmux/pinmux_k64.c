@@ -155,7 +155,7 @@ static int _fsl_k64_get_gpio_dev(struct device *dev,
 }
 
 
-static uint32_t _fsl_k64_set_pin(struct device *dev,
+static int _fsl_k64_set_pin(struct device *dev,
 								   uint32_t pin_id,
 								   uint32_t func)
 {
@@ -223,7 +223,7 @@ static uint32_t _fsl_k64_set_pin(struct device *dev,
 	return DEV_OK;
 }
 
-static uint32_t _fsl_k64_get_pin(struct device *dev,
+static int _fsl_k64_get_pin(struct device *dev,
 								   uint32_t pin_id,
 								   uint32_t *func)
 {
@@ -278,14 +278,14 @@ static uint32_t _fsl_k64_get_pin(struct device *dev,
 	return DEV_OK;
 }
 
-static uint32_t fsl_k64_dev_set(struct device *dev,
+static int fsl_k64_dev_set(struct device *dev,
 								  uint32_t pin,
 								  uint32_t func)
 {
 	return _fsl_k64_set_pin(dev, pin, func);
 }
 
-static uint32_t fsl_k64_dev_get(struct device *dev,
+static int fsl_k64_dev_get(struct device *dev,
 								  uint32_t pin,
 								  uint32_t *func)
 {
