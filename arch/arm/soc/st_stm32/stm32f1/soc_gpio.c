@@ -171,3 +171,30 @@ int stm32_gpio_get(uint32_t *base, int pin)
 
 	return (gpio->idr >> pin) & 0x1;
 }
+
+int stm32_gpio_enable_int(int port, int pin)
+{
+	volatile struct stm32f10x_afio *afio =
+		(struct stm32f10x_afio *)AFIO_BASE;
+	volatile union __afio_exticr *exticr;
+	int shift = 0;
+
+	if (pin <= 3) {
+		exticr = &afio->exticr1;
+	} else if (pin <= 7) {
+		exticr = &afio->exticr2;
+	} else if (pin <= 11) {
+		exticr = &afio->exticr3;
+	} else if (pin <= 15) {
+		exticr = &afio->exticr4;
+	} else {
+		return -EINVAL;
+	}
+
+	shift = 4 * (pin % 4);
+
+	exticr->val &= ~(0xf << shift);
+	exticr->val |= port << shift;
+
+	return 0;
+}
