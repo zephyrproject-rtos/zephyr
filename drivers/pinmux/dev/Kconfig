@@ -46,3 +46,10 @@ config PINMUX_DEV_FRDM_K64F
        help
        Enables the pinmux dev driver for Freescale FRDM K64F.
        default n
+
+config PINMUX_DEV_GALILEO
+       bool "Enable pinmux dev driver for Galileo"
+       depends on PINMUX_DEV && BOARD_GALILEO
+       help
+       Enables the pinmux dev driver for the Galileo board.
+       default n
