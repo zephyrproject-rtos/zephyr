@@ -1,3 +1,5 @@
+/* pinmux_board_arduino_due.c - Arduino Due pinmux driver */
+
 /*
  * Copyright (c) 2016 Intel Corporation
  *
@@ -13,14 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nanokernel.h>
-#include <board.h>
 
 #include <device.h>
 #include <init.h>
+#include <nanokernel.h>
 #include <pinmux.h>
+#include <soc.h>
+#include <sys_io.h>
 
-#include <misc/util.h>
+#include "pinmux/pinmux.h"
 
 /**
  * @brief Pinmux driver for Arduino due
@@ -121,135 +124,6 @@
  * IO_50 : PC13
  * IO_51 : PC12
  */
-
-#ifndef CONFIG_PINMUX_DEV
-#define PRINT(...) {; }
-#else
-#if defined(CONFIG_PRINTK)
-#include <misc/printk.h>
-#define PRINT printk
-#elif defined(CONFIG_STDOUT_CONSOLE)
-#define PRINT printf
-#endif /* CONFIG_PRINTK */
-#endif /*CONFIG_PINMUX_DEV */
-
-static volatile struct __pio *_get_port(uint32_t pin)
-{
-	uint32_t port_num = pin / 32;
-
-	switch (port_num) {
-	case 0:
-		return __PIOA;
-	case 1:
-		return __PIOB;
-	case 2:
-		return __PIOC;
-	case 3:
-		return __PIOD;
-	default:
-		/* return null if pin is outside range */
-		return NULL;
-	}
-}
-
-#ifdef CONFIG_PINMUX_DEV
-static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
-{
-	volatile struct __pio *port = _get_port(pin);
-	uint32_t tmp;
-
-	ARG_UNUSED(dev);
-
-	if (!port) {
-		return -EINVAL;
-	}
-
-	tmp = port->absr;
-	if (func) {
-		tmp |= (1 << (pin % 32));
-	} else {
-		tmp &= ~(1 << (pin % 32));
-	}
-	port->absr = tmp;
-
-	return 0;
-}
-
-static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
-{
-	volatile struct __pio *port = _get_port(pin);
-
-	ARG_UNUSED(dev);
-
-	if (!port) {
-		return -EINVAL;
-	}
-
-	*func = (port->absr & (1 << (pin % 32))) ? 1 : 0;
-
-	return 0;
-}
-#else
-static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(func);
-
-	PRINT("ERROR: %s is not enabled", __func__);
-
-	return -EPERM;
-}
-
-static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(func);
-
-	PRINT("ERROR: %s is not enabled", __func__);
-
-	return -EPERM;
-}
-#endif /* CONFIG_PINMUX_DEV */
-
-static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
-{
-	volatile struct __pio *port = _get_port(pin);
-
-	ARG_UNUSED(dev);
-
-	if (!port) {
-		return -EINVAL;
-	}
-
-	if (func) {
-		port->puer = (1 << (pin % 32));
-	} else {
-		port->pudr = (1 << (pin % 32));
-	}
-
-	return 0;
-}
-static int pinmux_input(struct device *dev, uint32_t pin, uint8_t func)
-{
-	volatile struct __pio *port = _get_port(pin);
-
-	ARG_UNUSED(dev);
-
-	if (!port) {
-		return -EINVAL;
-	}
-
-	if (func) {
-		port->odr = (1 << (pin % 32));
-	} else {
-		port->oer = (1 << (pin % 32));
-	}
-
-	return 0;
-}
-
 
 #define N_PIOA 0
 #define N_PIOB 1
@@ -418,21 +292,13 @@ static void __pinmux_defaults(void)
 	__PIOD->pudr = ~(pull_up[N_PIOD]);
 }
 
-static struct pinmux_driver_api api_funcs = {
-	.set = pinmux_set,
-	.get = pinmux_get,
-	.pullup = pinmux_pullup,
-	.input = pinmux_input
-};
-
-int pinmux_init(struct device *port)
+static int pinmux_init(struct device *port)
 {
-	port->driver_api = &api_funcs;
+	ARG_UNUSED(port);
 
 	__pinmux_defaults();
 
 	return 0;
 }
 
-DEVICE_INIT(pmux, PINMUX_NAME, &pinmux_init, NULL, NULL,
-	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(pinmux_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
