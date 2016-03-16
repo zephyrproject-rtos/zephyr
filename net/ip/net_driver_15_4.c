@@ -39,6 +39,11 @@
 #include "contiki/netstack.h"
 #include <net_driver_15_4.h>
 
+#if !defined(CONFIG_NETWORK_IP_STACK_DEBUG_15_4_NET_DRIVER)
+#undef NET_DBG
+#define NET_DBG(...)
+#endif
+
 /* Stacks for the tx & rx fibers.
  * FIXME: stack size needs fine-tuning
  */
@@ -65,7 +70,7 @@ static int net_driver_15_4_open(void)
 
 static int net_driver_15_4_send(struct net_buf *buf)
 {
-#ifdef CONFIG_NETWORKING_WITH_LOGGING
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_15_4_NET_DRIVER)
 	int orig_len = ip_buf_len(buf);
 #endif
 
@@ -131,6 +136,8 @@ static void net_rx_15_4_fiber(void)
 		byte_count = uip_pkt_buflen(buf);
 #endif
 		if (!NETSTACK_RDC.input(buf)) {
+			NET_DBG("802.15.4 RDC input failed, "
+				"buf %p discarded\n", buf);
 			l2_buf_unref(buf);
 		} else {
 #if NET_MAC_CONF_STATS
