@@ -44,7 +44,6 @@ struct fsl_k64_data {
 	struct device *gpio_e;  /* port E */
 };
 
-
 #ifdef CONFIG_GPIO_K64_A
 static inline int config_port_a(mem_addr_t *addr)
 {
@@ -116,7 +115,7 @@ static int _fsl_k64_get_port_addr(uint8_t pin_id, mem_addr_t *port_addr_ptr)
 
 		return config_port_d(port_addr_ptr);
 
-	} else {						/* Port E pin */
+	} else {				/* Port E pin */
 
 		return config_port_e(port_addr_ptr);
 
@@ -124,10 +123,9 @@ static int _fsl_k64_get_port_addr(uint8_t pin_id, mem_addr_t *port_addr_ptr)
 
 }
 
-
 static int _fsl_k64_get_gpio_dev(struct device *dev,
-								   mem_addr_t port_base_addr,
-								   struct device **gpio_dev_ptr)
+				 mem_addr_t port_base_addr,
+				 struct device **gpio_dev_ptr)
 {
 	struct fsl_k64_data * const data = dev->driver_data;
 
@@ -156,10 +154,8 @@ static int _fsl_k64_get_gpio_dev(struct device *dev,
 	return 0;
 }
 
-
-static int _fsl_k64_set_pin(struct device *dev,
-								   uint32_t pin_id,
-								   uint32_t func)
+static int _fsl_k64_set_pin(struct device *dev, uint32_t pin_id,
+			    uint32_t func)
 {
 	mem_addr_t port_base_addr;
 	uint8_t port_pin;
@@ -178,7 +174,6 @@ static int _fsl_k64_set_pin(struct device *dev,
 	}
 
 	/* determine the pin's port register base address */
-
 	status = _fsl_k64_get_port_addr(pin_id, &port_base_addr);
 
 	if (status != 0) {
@@ -186,13 +181,11 @@ static int _fsl_k64_set_pin(struct device *dev,
 	}
 
 	/* extract the pin number within its port */
-
 	port_pin = PIN_FROM_ID(pin_id);
 
 	if (is_gpio) {
 
 		/* set GPIO direction */
-
 		status = _fsl_k64_get_gpio_dev(dev, port_base_addr, &gpio_dev);
 
 		if (status != 0) {
@@ -214,20 +207,17 @@ static int _fsl_k64_set_pin(struct device *dev,
 		}
 
 		/* remove GPIO direction info from the pin configuration */
-
 		func &= ~K64_PINMUX_GPIO_DIR_MASK;
 	}
 
 	/* set pin function and control settings */
-
 	sys_write32(func, port_base_addr + K64_PINMUX_CTRL_OFFSET(port_pin));
 
 	return 0;
 }
 
-static int _fsl_k64_get_pin(struct device *dev,
-								   uint32_t pin_id,
-								   uint32_t *func)
+static int _fsl_k64_get_pin(struct device *dev, uint32_t pin_id,
+			    uint32_t *func)
 {
 	mem_addr_t port_base_addr;
 	uint8_t port_pin;
@@ -241,7 +231,6 @@ static int _fsl_k64_get_pin(struct device *dev,
 	}
 
 	/* determine the pin's port register base address */
-
 	status = _fsl_k64_get_port_addr(pin_id, &port_base_addr);
 
 	if (status != 0) {
@@ -249,15 +238,12 @@ static int _fsl_k64_get_pin(struct device *dev,
 	}
 
 	/* extract the pin number within its port */
-
 	port_pin = PIN_FROM_ID(pin_id);
 
 	/* get pin function and control settings */
-
 	*func = sys_read32(port_base_addr + K64_PINMUX_CTRL_OFFSET(port_pin));
 
 	/* get pin direction, if GPIO */
-
 	if ((*func & K64_PINMUX_ALT_MASK) == K64_PINMUX_FUNC_GPIO) {
 
 		status = _fsl_k64_get_gpio_dev(dev, port_base_addr, &gpio_dev);
@@ -280,16 +266,12 @@ static int _fsl_k64_get_pin(struct device *dev,
 	return 0;
 }
 
-static int fsl_k64_dev_set(struct device *dev,
-								  uint32_t pin,
-								  uint32_t func)
+static int fsl_k64_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	return _fsl_k64_set_pin(dev, pin, func);
 }
 
-static int fsl_k64_dev_get(struct device *dev,
-								  uint32_t pin,
-								  uint32_t *func)
+static int fsl_k64_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 {
 	return _fsl_k64_get_pin(dev, pin, func);
 }
@@ -345,7 +327,6 @@ int pinmux_fsl_k64_initialize(struct device *port)
 	return 0;
 }
 
-
 struct pinmux_config fsl_k64_pmux = {
 	.base_address = 0x00000000,
 };
@@ -360,5 +341,5 @@ struct fsl_k64_data fsl_k64_pinmux_driver = {
 
 /* must be initialized after GPIO */
 DEVICE_INIT(pmux, PINMUX_NAME, &pinmux_fsl_k64_initialize,
-			&fsl_k64_pinmux_driver, &fsl_k64_pmux,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    &fsl_k64_pinmux_driver, &fsl_k64_pmux,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
