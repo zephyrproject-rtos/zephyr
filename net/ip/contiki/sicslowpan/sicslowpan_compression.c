@@ -73,7 +73,9 @@
 #include "dev/watchdog.h"
 #include "contiki/ipv6/uip-ds6.h"
 
-#define DEBUG 0
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_6LOWPAN_COMPRESSION
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 #if DEBUG
 /* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
