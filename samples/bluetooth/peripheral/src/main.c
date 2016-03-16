@@ -31,32 +31,15 @@
 #include <bluetooth/gatt.h>
 
 #include <gatt/gap.h>
+#include <gatt/hrs.h>
 
 #define DEVICE_NAME		"Test peripheral"
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define HEART_RATE_APPEARANCE	0x0341
 
-static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-static uint8_t simulate_hrm = 0;
-
-static void hrmc_ccc_cfg_changed(uint16_t value)
-{
-	simulate_hrm = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
-}
-
-static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
-{
-	uint8_t value = 0x01;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
-				 sizeof(value));
-}
-
 static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t simulate_blvl = 0;
 static uint8_t battery = 100;
-static uint8_t heartrate = 90;
 
 static void blvl_ccc_cfg_changed(uint16_t value)
 {
@@ -298,22 +281,6 @@ static const struct bt_uuid_128 vnd_signed_uuid = BT_UUID_INIT_128(
 	0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x13,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x13);
 
-/* Heart Rate Service Declaration */
-static struct bt_gatt_attr hrs_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_HRS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_MEASUREMENT, BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(BT_UUID_HRS_MEASUREMENT, BT_GATT_PERM_READ, NULL,
-			   NULL, NULL),
-	BT_GATT_CCC(hrmc_ccc_cfg, hrmc_ccc_cfg_changed),
-	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_BODY_SENSOR, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_HRS_BODY_SENSOR, BT_GATT_PERM_READ,
-			   read_blsc, NULL, NULL),
-	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_CONTROL_POINT, BT_GATT_CHRC_WRITE),
-	/* TODO: Add write permission and callback */
-	BT_GATT_DESCRIPTOR(BT_UUID_HRS_CONTROL_POINT, BT_GATT_PERM_READ, NULL,
-			   NULL, NULL),
-};
-
 /* Battery Service Declaration */
 static struct bt_gatt_attr bas_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_BAS),
@@ -421,7 +388,7 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	gap_init(DEVICE_NAME, HEART_RATE_APPEARANCE);
-	bt_gatt_register(hrs_attrs, ARRAY_SIZE(hrs_attrs));
+	hrs_init(0x01);
 	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
 	bt_gatt_register(cts_attrs, ARRAY_SIZE(cts_attrs));
 	bt_gatt_register(dis_attrs, ARRAY_SIZE(dis_attrs));
@@ -485,8 +452,6 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		static uint8_t hrm[2];
-
 		task_sleep(sys_clock_ticks_per_sec);
 
 		/* Current Time Service updates only when time is changed */
@@ -496,17 +461,7 @@ void main(void)
 		}
 
 		/* Heartrate measurements simulation */
-		if (simulate_hrm) {
-			heartrate++;
-			if (heartrate == 160) {
-				heartrate = 90;
-			}
-
-			hrm[0] = 0x06; /* uint8, sensor contact */
-			hrm[1] = heartrate;
-
-			bt_gatt_notify(NULL, &hrs_attrs[2], &hrm, sizeof(hrm));
-		}
+		hrs_notify();
 
 		/* Battery level simulation */
 		if (simulate_blvl) {

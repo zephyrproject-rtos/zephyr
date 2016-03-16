@@ -31,6 +31,7 @@
 #include <bluetooth/gatt.h>
 
 #include <gatt/gap.h>
+#include <gatt/hrs.h>
 
 #define DEVICE_NAME		"Zephyr Heartrate Sensor"
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
@@ -38,27 +39,9 @@
 
 struct bt_conn *default_conn;
 
-static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-static uint8_t simulate_hrm;
-
-static void hrmc_ccc_cfg_changed(uint16_t value)
-{
-	simulate_hrm = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
-}
-
-static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
-{
-	uint8_t value = 0x01;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
-				 sizeof(value));
-}
-
 static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t simulate_blvl;
 static uint8_t battery = 100;
-static uint8_t heartrate = 90;
 
 static void blvl_ccc_cfg_changed(uint16_t value)
 {
@@ -91,18 +74,6 @@ static ssize_t read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 strlen(value));
 }
-
-/* Heart Rate Service Declaration */
-static struct bt_gatt_attr hrs_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_HRS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_MEASUREMENT, BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(BT_UUID_HRS_MEASUREMENT, BT_GATT_PERM_READ, NULL,
-			   NULL, NULL),
-	BT_GATT_CCC(hrmc_ccc_cfg, hrmc_ccc_cfg_changed),
-	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_BODY_SENSOR, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_HRS_BODY_SENSOR, BT_GATT_PERM_READ,
-			   read_blsc, NULL, NULL),
-};
 
 /* Battery Service Declaration */
 static struct bt_gatt_attr bas_attrs[] = {
@@ -170,7 +141,7 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	gap_init(DEVICE_NAME, HEART_RATE_APPEARANCE);
-	bt_gatt_register(hrs_attrs, ARRAY_SIZE(hrs_attrs));
+	hrs_init(0x01);
 	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
 	bt_gatt_register(dis_attrs, ARRAY_SIZE(dis_attrs));
 
@@ -218,23 +189,10 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		static uint8_t hrm[2];
-
 		task_sleep(sys_clock_ticks_per_sec);
 
 		/* Heartrate measurements simulation */
-		if (simulate_hrm) {
-			heartrate++;
-			if (heartrate == 160) {
-				heartrate = 90;
-			}
-
-			hrm[0] = 0x06; /* uint8, sensor contact */
-			hrm[1] = heartrate;
-
-			bt_gatt_notify(default_conn, &hrs_attrs[2],
-				       &hrm, sizeof(hrm));
-		}
+		hrs_notify();
 
 		/* Battery level simulation */
 		if (simulate_blvl) {
