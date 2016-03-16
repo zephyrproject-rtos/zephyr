@@ -6,46 +6,46 @@ Fiber Services
 Concepts
 ********
 
-A fiber is a lightweight, non-preemptible thread of execution that implements
-a portion of an application's processing. It is is normally used when writing
-device drivers and other performance critical work.
+A :dfn:`fiber` is a lightweight, non-preemptible thread of execution that
+implements a portion of an application's processing. Fibers are often
+used in device drivers and for performance-critical work.
 
 Fibers can be used by microkernel applications, as well as by nanokernel
-applications. However, fibers can only interact with microkernel object types
-to a very limited degree; for more information see
-:ref:`Microkernel Fiber Services <microkernel_fibers>`.
+applications. However, fibers can interact with microkernel object types
+to only a limited degree; for more information see :ref:`microkernel_fibers`.
 
 An application can use any number of fibers. Each fiber is anonymous, and
 cannot be directly referenced by other fibers or tasks once it has started
 executing. The properties that must be specified when a fiber is spawned
 include:
 
-* a memory region that is used for its stack and for other execution context
-  information,
-* a function that is invoked when the fiber starts executing,
-* a pair of arguments that are passed to that entry point function,
-* a priority that is used by the nanokernel scheduler, and
-* a set of options that apply to the fiber.
+* A **memory region** to be used for stack and execution context information.
+* A **function** to be invoked when the fiber starts executing.
+* A **pair of arguments** to be passed to that entry point function.
+* A **priority** to be used by the nanokernel scheduler.
+* A **set of options** that will apply to the fiber.
 
 The kernel may automatically spawn zero or more system fibers during system
-initialization. The specific set of fibers spawned depends on the kernel
-capabilities that have been configured by the application and by the
-board configuration used to build the application image.
+initialization. The specific set of fibers spawned depends upon both:
+
+#. The kernel capabilities that have been configured by the application.
+#. The board configuration used to build the application image.
+
 
 Fiber Lifecycle
 ===============
 
 A fiber can be spawned by another fiber, by a task, or by the kernel itself
 during system initialization. A fiber typically becomes executable immediately;
-however it is possible to delay the scheduling of a newly spawned fiber
-for a specified time period---for example, to allow device hardware which
-the fiber uses to become available. The kernel also supports a delayed start
-cancellation capability, which prevents a newly spawned fiber from executing
-if the fiber becomes unnecessary before its full delay period is reached.
+however, it is possible to delay the scheduling of a newly-spawned fiber for a
+specified time period. For example, scheduling can be delayed to allow device
+hardware which the fiber uses to become available. The kernel also supports a
+delayed start cancellation capability, which prevents a newly-spawned fiber from
+executing if the fiber becomes unnecessary before its full delay period is reached.
 
 Once a fiber is started it normally executes forever. A fiber may terminate
-itself gracefully by simply returning from its entry point function. If it
-does, it is the fiber's responsibility to release any system resources it may
+itself gracefully by simply returning from its entry point function. When this
+happens, it is the fiber's responsibility to release any system resources it may
 own (such as a nanokernel semaphore being used in a mutex-like manner) prior
 to returning, since the kernel does *not* attempt to reclaim them so they can
 be reused.
@@ -64,18 +64,18 @@ Fiber Scheduling
 ================
 
 The nanokernel's scheduler selects which of the system's threads is allowed
-to execute; this thread is known as the *current context*. The nanokernel's
-scheduler permits threads to execute only when there is no ISR that needs
-to execute, since ISR execution takes precedence.
+to execute; this thread is known as the :dfn:`current context`. The nanokernel's
+scheduler permits threads to execute only when no ISR needs to execute; execution
+of ISRs take precedence.
 
 When executing threads, the nanokernel's scheduler gives fiber execution
 precedence over task execution. The scheduler preempts task execution
 whenever a fiber needs to execute, but never preempts the execution of a fiber
-to allow another fiber to execute---even if it is a higher priority fiber.
+to allow another fiber to execute -- even if it is a higher priority fiber.
 
-The kernel automatically takes care of saving an executing fiber's CPU register
-values when it performs a context switch to a different fiber, a task, or
-an ISR, and restores these values when the fiber later resumes execution.
+The kernel automatically saves an executing fiber's CPU register values when
+making a context switch to a different fiber, a task, or an ISR; these values
+get restored when the fiber later resumes execution.
 
 Fiber State
 -----------
@@ -84,9 +84,9 @@ A fiber has an implicit *state* that determines whether or not it can be
 scheduled for execution. The state records all factors that can prevent
 the fiber from executing, such as:
 
-* the fiber has not been spawned
-* the fiber is waiting for it needs (e.g. a semaphore, a timeout, ...)
-* the fiber has terminated
+* The fiber has not been spawned.
+* The fiber is waiting for a kernel service, for example, a semaphore or a timer.
+* The fiber has terminated.
 
 A fiber whose state has no factors that prevent its execution is said to be
 *executable*.
@@ -104,17 +104,19 @@ spawned.
 Fiber Scheduling Algorithm
 --------------------------
 
-The nanokernel's scheduler selects the highest priority executable fiber
-to be the current context, if possible. If multiple executable fibers
-of that priority are available the scheduler chooses the one that has been
+Whenever possible, the nanokernel's scheduler selects the highest priority
+executable fiber to be the current context. When multiple executable fibers
+of that priority are available, the scheduler chooses the one that has been
 waiting longest.
 
-If no executable fibers exist the scheduler selects the current task
-to be the current context. In a nanokernel application the current task is
-the background task, while in a microkernel application it is the current task
-selected by the microkernel's scheduler. The current task is always executable.
+When no executable fibers exist, the scheduler selects the current task
+to be the current context. The current task selected depends upon whether the
+application is a nanokernel application or a microkernel application. In nanokernel
+applications, the current task is always the background task. In microkernel
+applications, the current task is the current task selected by the microkernel's
+scheduler. The current task is always executable.
 
-Once a fiber becomes the current context it remains scheduled for execution
+Once a fiber becomes the current context, it remains scheduled for execution
 by the nanokernel until one of the following occurs:
 
 * The fiber is supplanted by another thread because it calls a kernel API
@@ -126,11 +128,11 @@ by the nanokernel until one of the following occurs:
 * The fiber aborts itself by performing an operation that causes a fatal error,
   or by calling :cpp:func:`fiber_abort()`.
 
-Once the current task becomes the current context it remains scheduled for
+Once the current task becomes the current context, it remains scheduled for
 execution by the nanokernel until is supplanted by a fiber.
 
 .. note::
-   The current task is never directly supplanted by another task, since the
+   The current task is **never** directly supplanted by another task, since the
    microkernel scheduler uses the microkernel server fiber to initiate a
    change from one microkernel task to another.
 
@@ -140,7 +142,7 @@ Cooperative Time Slicing
 Due to the non-preemptive nature of the nanokernel's scheduler, a fiber that
 performs lengthy computations may cause an unacceptable delay in the scheduling
 of other fibers, including higher priority and equal priority ones. To overcome
-such problems the fiber can choose to voluntarily relinquish the CPU from time
+such problems, the fiber can choose to voluntarily relinquish the CPU from time
 to time to permit other fibers to execute.
 
 A fiber can relinquish the CPU in two ways:
@@ -162,12 +164,12 @@ A fiber can relinquish the CPU in two ways:
 Fiber Options
 =============
 
-The kernel supports several *fiber options* that inform the kernel about
-special treatment the fiber requires.
+The kernel supports several :dfn:`fiber options` that may be used to inform
+the kernel of special treatment the fiber requires.
 
 The set of kernel options associated with a fiber are specified when the fiber
-is spawned. If the fiber uses multiple options they are separated using
-:literal:`|`; i.e. the logical OR operator. A fiber that does not use any
+is spawned. If the fiber uses multiple options, they are separated with
+:literal:`|`, the logical ``OR`` operator. A fiber that does not use any
 options is spawned using an options value of 0.
 
 The fiber options listed below are pre-defined by the kernel.
@@ -178,8 +180,8 @@ The fiber options listed below are pre-defined by the kernel.
 
 :c:macro:`USE_SSE`
       Instructs the kernel to save the fiber's SSE floating point context
-      information during context switches. (A fiber using this option
-      implicitly uses the :c:macro:`USE_FP` option too.)
+      information during context switches. A fiber with this option
+      implicitly uses the :c:macro:`USE_FP` option, as well.
 
 Usage
 *****
@@ -275,20 +277,20 @@ each dedicated to processing data from a different communication channel.
 APIs
 ****
 
-The following APIs affecting the currently executing fiber are provided
+APIs affecting the currently-executing fiber are provided
 by :file:`microkernel.h` and by :file:`nanokernel.h`:
 
 :cpp:func:`fiber_yield()`
-   Yields CPU to higher priority and equal priority fibers.
+   Yield the CPU to higher priority and equal priority fibers.
 
 :cpp:func:`fiber_sleep()`
-   Yields CPU for a specified time period.
+   Yield the CPU for a specified time period.
 
 :cpp:func:`fiber_abort()`
-   Terminates fiber execution.
+   Terminate fiber execution.
 
-The following APIs affecting a specified fiber are provided
-by :file:`microkernel.h` and by :file:`nanokernel.h`:
+APIs affecting a specified fiber are provided by
+:file:`microkernel.h` and by :file:`nanokernel.h`:
 
 :cpp:func:`task_fiber_start()`, :cpp:func:`fiber_fiber_start()`,
 :cpp:func:`fiber_start()`
