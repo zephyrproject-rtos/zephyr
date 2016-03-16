@@ -91,7 +91,11 @@ typedef unsigned int uip_stats_t;
 #endif /* CONFIG_NETWORKING_WITH_15_4_PAN_ID */
 #define NETSTACK_CONF_FRAMER	framer_802154
 #ifdef CONFIG_NETWORKING_WITH_6LOWPAN
+#if defined(CONFIG_NETWORKING_WITH_15_4_RDC_SICSLOWMAC)
 #define NETSTACK_CONF_RDC	sicslowmac_driver
+#elif defined(CONFIG_NETWORKING_WITH_15_4_RDC_NULL)
+#define NETSTACK_CONF_RDC	nullrdc_driver
+#endif /* RDC driver */
 #endif /* CONFIG_NETWORKING_WITH_6LOWPAN */
 #ifdef CONFIG_NETWORKING_WITH_15_4_MAC_NULL
 #define NETSTACK_CONF_MAC	nullmac_driver

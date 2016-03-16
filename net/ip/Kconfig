@@ -257,6 +257,24 @@ config	NETWORKING_WITH_15_4_MAC_CSMA
 
 endchoice
 
+choice
+	prompt "802.15.4 RDC Driver"
+	depends on NETWORKING && NETWORKING_WITH_15_4
+	help
+	 The 802.15.4 RDC (Radio Duty Cycle) layer can use either
+	 sicslowmac or nullrdc.
+config	NETWORKING_WITH_15_4_RDC_SICSLOWMAC
+	bool
+	prompt "sicslowmac driver"
+	help
+	  Enable sicslowmac driver.
+config	NETWORKING_WITH_15_4_RDC_NULL
+	bool
+	prompt "nullrdc driver"
+	help
+	  Enable nullrdc driver.
+endchoice
+
 config	15_4_RX_STACK_SIZE
 	int "Stack size of 802.15.4 RX fiber"
 	depends on NETWORKING_WITH_15_4

@@ -75,12 +75,20 @@ ifeq ($(CONFIG_NETWORKING_WITH_6LOWPAN),y)
      ccflags-y += -DSICSLOWPAN_CONF_ENABLE
      obj-y += contiki/sicslowpan/sicslowpan_compression.o
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/sicslowpan/sicslowpan_fragmentation.o
-     obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/sicslowmac/sicslowmac.o
 else
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/framer-nullmac.o \
 					contiki/mac/nullrdc.o \
 					contiki/sicslowpan/null_compression.o \
 					contiki/sicslowpan/null_fragmentation.o
+endif
+
+# RDC driver
+ifeq ($(CONFIG_NETWORKING_WITH_15_4_RDC_SICSLOWMAC),y)
+     obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/sicslowmac/sicslowmac.o
+else
+     ifeq ($(CONFIG_NETWORKING_WITH_15_4_RDC_NULL),y)
+          obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/nullrdc.o
+     endif
 endif
 
 ccflags-$(CONFIG_NETWORKING_WITH_LOGGING) += -DUIP_CONF_LOGGING=1
