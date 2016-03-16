@@ -206,4 +206,11 @@ config NETWORK_IP_STACK_DEBUG_COAP_INTERNAL
 	help
 	  Enables CoAP internals output debug messages
 
+config NETWORK_IP_STACK_DEBUG_REST_ENGINE
+	bool "Debug REST engine"
+	depends on ER_COAP
+	default n
+	help
+	  Enables REST engine output debug messages
+
 endif

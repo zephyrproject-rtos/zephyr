@@ -42,7 +42,9 @@
 #include "contiki.h"
 #include "rest-engine.h"
 
-#define DEBUG DEBUG_NONE
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_REST_ENGINE)
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 PROCESS(rest_engine_process, "REST Engine");
