@@ -83,13 +83,22 @@ ${ZEPHYR_BASE}/net/ip/tools/monitor_15_4:
 .PHONY: start_monitor
 start_monitor: ${ZEPHYR_BASE}/net/ip/tools/monitor_15_4
 	${ZEPHYR_BASE}/net/ip/tools/monitor_15_4 \
-		server-client-monitor.pcap \
+		${PCAP} \
 		${PIPE_BASE}-server ${PIPE_BASE}-client > /dev/null & \
 		echo "$$!" > ${PID_FILE}
 
+ifeq ($(PCAP),)
 server: remove_pipes setup_pipes $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),qemu); true
 	$(Q)stty sane
+else
+server: remove_pipes setup_pipes_dual_monitor start_monitor $(DOTCONFIG)
+	$(Q)$(call zephyrmake,$(O),qemu); true
+	$(Q)kill `cat ${PID_FILE}`
+	$(Q)rm -f ${PID_FILE}
+	-@killall monitor_15_4 > /dev/null 2>&1 ; true
+	$(Q)stty sane
+endif
 
 client: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),qemu); true
