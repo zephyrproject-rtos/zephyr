@@ -390,6 +390,7 @@ packet_sent(struct net_buf *buf, void *ptr, int status, int transmissions)
   const linkaddr_t *dest = packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER);
   uip_ds6_link_neighbor_callback(dest, status, transmissions);
   uip_last_tx_status(buf) = status;
+  l2_buf_unref(buf);
 }
 
 /*--------------------------------------------------------------------*/
@@ -467,10 +468,8 @@ static int fragment(struct net_buf *buf, void *ptr)
   if((int)uip_len(buf) <= max_payload) {
     /* The packet does not need to be fragmented, send buf */
     packetbuf_copyfrom(mbuf, uip_buf(buf), uip_len(buf));
-    packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER,
-		       &ip_buf_ll_dest(buf));
+    send_packet(mbuf, &ip_buf_ll_dest(buf), true, ptr);
     ip_buf_unref(buf);
-    NETSTACK_LLSEC.send(mbuf, &packet_sent, true, ptr);
     return 1;
    }
 
@@ -521,6 +520,7 @@ static int fragment(struct net_buf *buf, void *ptr)
       PRINTFO("could not allocate queuebuf for first fragment, dropping packet\n");
       goto fail;
     }
+    net_buf_ref(mbuf);
     send_packet(mbuf, &ip_buf_ll_dest(buf), last_fragment, ptr);
     queuebuf_to_packetbuf(mbuf, q);
     queuebuf_free(q);
@@ -567,6 +567,7 @@ static int fragment(struct net_buf *buf, void *ptr)
         PRINTFO("could not allocate queuebuf, dropping fragment\n");
         goto fail;
       }
+      net_buf_ref(mbuf);
       send_packet(mbuf, &ip_buf_ll_dest(buf), last_fragment, ptr);
       queuebuf_to_packetbuf(mbuf, q);
       queuebuf_free(q);
@@ -583,6 +584,7 @@ static int fragment(struct net_buf *buf, void *ptr)
     }
 
     ip_buf_unref(buf);
+    l2_buf_unref(mbuf);
     return 1;
 
 fail:

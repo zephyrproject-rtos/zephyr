@@ -189,7 +189,6 @@ free_packet(struct net_buf *buf, struct neighbor_queue *n, struct rdc_buf_list *
       /* This was the last packet in the queue, we free the neighbor */
       list_remove(uip_neighbor_list(buf), n);
       memb_free(&neighbor_memb, n);
-      l2_buf_unref(buf);
     }
   }
 }
