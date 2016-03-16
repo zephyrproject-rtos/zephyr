@@ -534,6 +534,8 @@ struct bt_hci_cp_le_generate_dhkey {
 
 /* Event definitions */
 
+#define BT_HCI_EVT_VENDOR			0xff
+
 #define BT_HCI_EVT_INQUIRY_COMPLETE		0x01
 struct bt_hci_evt_inquiry_complete {
 	uint8_t status;
