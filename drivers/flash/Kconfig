@@ -82,3 +82,38 @@ config SPI_FLASH_W25QXXDV_MAX_DATA_LEN
 	default 256
 	help
 	  Maximum transmit or receive data length in one user data frame.
+
+config SOC_FLASH_QMSI
+	bool
+	prompt "QMSI flash driver"
+	depends on QMSI_DRIVERS && FLASH
+	default n
+	help
+	  Enable QMSI quark flash driver.
+
+config SOC_FLASH_QMSI_DEV_NAME
+	string "QMSI flash device name"
+	depends on SOC_FLASH_QMSI
+	default "QUARK_FLASH"
+	help
+	  Specify the device name for the flash driver.
+
+config SOC_FLASH_QMSI_CLK_COUNT_US
+	int "system clk count per microsecond"
+	depends on SOC_FLASH_QMSI
+	default 32
+	help
+	  Specify the system clk cycles per microsecond.
+
+config SOC_FLASH_QMSI_WAIT_STATES
+	int "The number of flash wait states"
+	depends on SOC_FLASH_QMSI
+	default 1
+	help
+	  Specify the number of wait states for quark flash.
+
+config SOC_FLASH_QMSI_SYS_SIZE
+	hex "SOC system flash size"
+	depends on SOC_FLASH_QMSI
+	help
+	  Specify system flash size on the quark SOC.

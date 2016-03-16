@@ -430,4 +430,9 @@ config AON_TIMER_IRQ_PRI
 
 endif # AON_TIMER_QMSI
 
+if SOC_FLASH_QMSI
+config SOC_FLASH_QMSI_SYS_SIZE
+       default 0x60000
+endif # SOC_FLASH_QMSI
+
 endif # SOC_QUARK_SE
