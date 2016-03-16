@@ -60,6 +60,8 @@ source "drivers/sensor/Kconfig.lis3dh"
 
 source "drivers/sensor/Kconfig.lsm9ds0_gyro"
 
+source "drivers/sensor/Kconfig.lsm9ds0_mfd"
+
 source "drivers/sensor/Kconfig.mcp9808"
 
 source "drivers/sensor/Kconfig.sht3xd"
