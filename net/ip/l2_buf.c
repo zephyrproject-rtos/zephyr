@@ -131,6 +131,9 @@ struct net_buf *l2_buf_get_reserve(uint16_t reserve_head)
 #endif
 
 	packetbuf_clear(buf);
+#if defined(CONFIG_NETWORKING_WITH_15_4)
+	LIST_STRUCT_INIT(((struct l2_buf *)net_buf_user_data((buf))), neighbor_list);
+#endif
 
 	return buf;
 }

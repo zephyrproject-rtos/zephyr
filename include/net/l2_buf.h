@@ -34,6 +34,7 @@
 #include "contiki/ip/uipopt.h"
 #include "contiki/ip/uip.h"
 #include "contiki/packetbuf.h"
+#include "contiki/os/lib/list.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +67,9 @@ struct l2_buf {
 	int packetbuf_payload_len;
 	uint8_t uncomp_hdr_len;
 	int last_tx_status;
+#if defined(CONFIG_NETWORKING_WITH_15_4)
+	LIST_STRUCT(neighbor_list);
+#endif
 
 	struct packetbuf_attr pkt_packetbuf_attrs[PACKETBUF_NUM_ATTRS];
 	struct packetbuf_addr pkt_packetbuf_addrs[PACKETBUF_NUM_ADDRS];
@@ -86,6 +90,10 @@ struct l2_buf {
 	(((struct l2_buf *)net_buf_user_data((buf)))->uncomp_hdr_len)
 #define uip_last_tx_status(buf) \
 	(((struct l2_buf *)net_buf_user_data((buf)))->last_tx_status)
+#if defined(CONFIG_NETWORKING_WITH_15_4)
+#define uip_neighbor_list(buf) \
+	(((struct l2_buf *)net_buf_user_data((buf)))->neighbor_list)
+#endif
 #define uip_pkt_buflen(buf) \
 	(((struct l2_buf *)net_buf_user_data((buf)))->pkt_buflen)
 #define uip_pkt_bufptr(buf) \

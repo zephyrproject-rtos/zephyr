@@ -132,16 +132,15 @@ struct neighbor_queue {
 MEMB(neighbor_memb, struct neighbor_queue, CSMA_MAX_NEIGHBOR_QUEUES);
 MEMB(packet_memb, struct rdc_buf_list, MAX_QUEUED_PACKETS);
 MEMB(metadata_memb, struct qbuf_metadata, MAX_QUEUED_PACKETS);
-LIST(neighbor_list);
 
 static void packet_sent(struct net_buf *buf, void *ptr, int status, int num_transmissions);
 static void transmit_packet_list(struct net_buf *buf, void *ptr);
 
 /*---------------------------------------------------------------------------*/
 static struct neighbor_queue *
-neighbor_queue_from_addr(const linkaddr_t *addr)
+neighbor_queue_from_addr(struct net_buf *buf, const linkaddr_t *addr)
 {
-  struct neighbor_queue *n = list_head(neighbor_list);
+  struct neighbor_queue *n = list_head(uip_neighbor_list(buf));
   while(n != NULL) {
     if(linkaddr_cmp(&n->addr, addr)) {
       return n;
@@ -188,7 +187,7 @@ free_packet(struct net_buf *buf, struct neighbor_queue *n, struct rdc_buf_list *
       transmit_packet_list(buf, n);
     } else {
       /* This was the last packet in the queue, we free the neighbor */
-      list_remove(neighbor_list, n);
+      list_remove(uip_neighbor_list(buf), n);
       memb_free(&neighbor_memb, n);
       l2_buf_unref(buf);
     }
@@ -354,7 +353,7 @@ send_packet(struct net_buf *buf, mac_callback_t sent, bool last_fragment, void *
   packetbuf_set_attr(buf, PACKETBUF_ATTR_MAC_SEQNO, seqno++);
 
   /* Look for the neighbor entry */
-  n = neighbor_queue_from_addr(addr);
+  n = neighbor_queue_from_addr(buf, addr);
   if(n == NULL) {
     /* Allocate a new neighbor entry */
     n = memb_alloc(&neighbor_memb);
@@ -367,7 +366,7 @@ send_packet(struct net_buf *buf, mac_callback_t sent, bool last_fragment, void *
       /* Init packet list for this neighbor */
       LIST_STRUCT_INIT(n, queued_packet_list);
       /* Add neighbor to the list */
-      list_add(neighbor_list, n);
+      list_add(uip_neighbor_list(buf), n);
     }
   }
 
@@ -416,7 +415,7 @@ send_packet(struct net_buf *buf, mac_callback_t sent, bool last_fragment, void *
       }
       /* The packet allocation failed. Remove and free neighbor entry if empty. */
       if(list_length(n->queued_packet_list) == 0) {
-        list_remove(neighbor_list, n);
+        list_remove(uip_neighbor_list(buf), n);
         memb_free(&neighbor_memb, n);
       }
     } else {
