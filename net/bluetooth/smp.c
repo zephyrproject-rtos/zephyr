@@ -27,6 +27,7 @@
 #include <atomic.h>
 #include <misc/util.h>
 #include <misc/byteorder.h>
+#include <misc/stack.h>
 
 #include <net/buf.h>
 #include <bluetooth/log.h>
@@ -48,7 +49,6 @@
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "smp.h"
-#include "stack.h"
 
 #define SMP_TIMEOUT (30 * sys_clock_ticks_per_sec)
 

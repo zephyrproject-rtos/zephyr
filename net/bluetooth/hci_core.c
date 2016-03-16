@@ -26,6 +26,7 @@
 #include <atomic.h>
 #include <misc/util.h>
 #include <misc/byteorder.h>
+#include <misc/stack.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
@@ -35,8 +36,6 @@
 
 #include <tinycrypt/hmac_prng.h>
 #include <tinycrypt/utils.h>
-
-#include "stack.h"
 
 #include "keys.h"
 #include "hci_core.h"
