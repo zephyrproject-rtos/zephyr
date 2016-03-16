@@ -18,14 +18,17 @@
 
 config NBLE
 	bool "Support for custom Nordic Semiconductor BLE protocol"
+	default y if BLUETOOTH_STACK_NBLE
 	default n
 	select BLUETOOTH_PERIPHERAL
 	select BLUETOOTH_CENTRAL
 	select BLUETOOTH_GATT_CLIENT
 	select BLUETOOTH_SMP
+	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 	select NANO_TIMEOUTS
 	select NET_BUF
+	depends on BLUETOOTH_STACK_NBLE
 	help
 	  Enables support for using Nordic Semiconductor nRF51 Bluetooth
 	  LE chips with a custom firmware. The API for this is a subset of
@@ -37,7 +40,7 @@ config NBLE
 	  & endianess) as the nRF51 chip. The driver cannot be used on
 	  any architecture that doesn't fulfill this requirement.
 
-if !BLUETOOTH && NBLE
+if NBLE
 config BLUETOOTH_PERIPHERAL
 	bool
 	default n

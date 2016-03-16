@@ -19,8 +19,14 @@
 #
 # Bluetooth options
 #
-menu "Bluetooth HCI Driver Options"
-depends on BLUETOOTH
+
+if BLUETOOTH
+
+menu "Bluetooth Drivers"
+
+if BLUETOOTH_STACK_HCI
+
+comment "Bluetooth HCI Driver Options"
 
 config BLUETOOTH_UART
 	bool
@@ -28,11 +34,11 @@ config BLUETOOTH_UART
 
 choice
 	prompt "Bluetooth HCI driver"
-	depends on BLUETOOTH
 	default BLUETOOTH_H4
 
 config	BLUETOOTH_H4
 	bool "H:4 UART"
+	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 	select BLUETOOTH_UART
 	help
@@ -41,6 +47,7 @@ config	BLUETOOTH_H4
 
 config BLUETOOTH_H5
 	bool "H:5 UART [EXPERIMENTAL]"
+	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 	select BLUETOOTH_UART
 	help
@@ -77,7 +84,6 @@ config  BLUETOOTH_UART_ON_DEV_NAME
 # Needed headroom for outgoing buffers (to controller)
 config BLUETOOTH_HCI_SEND_RESERVE
 	int
-	depends on BLUETOOTH
 	default 0 if BLUETOOTH_H4
 	default 1 if BLUETOOTH_H5
 	# Even if no driver is selected the following default is still
@@ -87,11 +93,16 @@ config BLUETOOTH_HCI_SEND_RESERVE
 # Needed headroom for incoming buffers (from controller)
 config BLUETOOTH_HCI_RECV_RESERVE
 	int
-	depends on BLUETOOTH
 	default 0 if BLUETOOTH_H4
 	default 0 if BLUETOOTH_H5
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
 
+endif # BLUETOOTH_STACK_HCI
+
+source "drivers/nble/Kconfig"
+
 endmenu
+
+endif # BLUETOOTH

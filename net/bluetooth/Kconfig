@@ -21,11 +21,34 @@ menuconfig BLUETOOTH
 	default n
 	select NANO_TIMEOUTS
 	select NET_BUF
-	select BLUETOOTH_LE
+	select BLUETOOTH_LE if !BLUETOOTH_STACK_NBLE
 	help
 	  This option enables Bluetooth support.
 
+choice
+	prompt "Bluetooth Stack Selection"
+	depends on BLUETOOTH
+	default BLUETOOTH_STACK_HCI
+	help
+	  Select the Bluetooth stack to compile.
+
+config BLUETOOTH_STACK_HCI
+	bool "HCI Stack"
+	help
+	  Select the Bluetooth stack to use with HCI drivers.
+
+config BLUETOOTH_STACK_NBLE
+	bool "Nordic BLE Stack"
+	help
+	  Select the Bluetooth stack to use with Nordic BLE drivers.
+
+endchoice
+
 if BLUETOOTH
+
+comment "HCI Stack Configurations"
+	depends on BLUETOOTH_STACK_HCI
+
 config BLUETOOTH_LE
 	bool "Bluetooth Low Energy (LE) support"
 	default n
@@ -35,6 +58,7 @@ config BLUETOOTH_LE
 	select TINYCRYPT_SHA256
 	select TINYCRYPT_SHA256_HMAC
 	select TINYCRYPT_SHA256_HMAC_PRNG
+	depends on BLUETOOTH_STACK_HCI
 	help
 	  This option enables Bluetooth Low Energy (LE) support.
 	  Currently it is mandatory whenever Bluetooth support
