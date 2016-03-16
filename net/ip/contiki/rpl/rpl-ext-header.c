@@ -52,7 +52,9 @@
 #include "contiki/rpl/rpl-private.h"
 #include "contiki/packetbuf.h"
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_RPL_ICMPV6
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #include <limits.h>
