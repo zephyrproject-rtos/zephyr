@@ -1,0 +1,64 @@
+# Kconfig - STM32 IWDG configuration
+#
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_STM32
+
+config IWDG_STM32
+	bool "Independent Watchdog (IWDG) Driver for STM32 family of MCUs"
+	help
+	 Enable IWDG driver for STM32 line of MCUs
+
+config IWDG_STM32_PRESCALER
+	int "Prescaler divider for clock feeding the IWDG"
+	depends on IWDG_STM32
+	default 4
+	range 4 256
+	help
+	 Set the prescaler divider for the clock feeding the Independent
+	 Watchdog. Higher values indicate that the watchdog will need to
+	 be reloaded more frequently. Allowed values: 4, 8, 16, 32, 64,
+	 128, 256. This setting combined with reload counter defines the
+	 watchdog countdown time.
+
+config IWDG_STM32_RELOAD_COUNTER
+	int "Value for IWDG counter"
+	depends on IWDG_STM32
+	default 2048
+	range 0 4095
+	help
+	 Configure the value to be loaded into the watchdog's counter each
+	 time a reload operation is performed. This value combined with
+	 prescaler setting defines the watchdog countdown time.
+
+config IWDG_STM32_START_AT_BOOT
+	bool "Start IWDG during boot"
+	depends on IWDG_STM32
+	default n
+	help
+	 Enable this setting to allow IWDG to be automatically started
+	 during device initialization. Note that once IWDG is started
+	 it must be reloaded before the counter reaches 0, otherwise
+	 the MCU will be reset.
+
+config IWDG_STM32_DEVICE_NAME
+	string "Device name for Independent Watchdog (IWDG)"
+	depends on IWDG_STM32
+	default "IWDG"
+	help
+	 Set the name used by IWDG device during registration.
+
+endif # SOC_STM32

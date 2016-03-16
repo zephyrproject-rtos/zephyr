@@ -106,4 +106,6 @@ config WDT_QMSI_IRQ_PRI
 	help
 	Watchdog interrupt priority
 
+source "drivers/watchdog/Kconfig.stm32"
+
 endif
