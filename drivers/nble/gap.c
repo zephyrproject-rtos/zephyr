@@ -527,6 +527,23 @@ void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_ev
 	bt_conn_unref(conn);
 }
 
+void on_nble_gap_sm_passkey_req_evt(const struct nble_gap_sm_passkey_req_evt *ev)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(ev->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
+		return;
+	}
+
+	if (ev->key_type == NBLE_GAP_SM_PK_PASSKEY) {
+		bt_auth->passkey_entry(conn);
+	}
+
+	bt_conn_unref(conn);
+}
+
 void on_nble_up(void)
 {
 	BT_DBG("");
