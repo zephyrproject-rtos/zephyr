@@ -81,9 +81,10 @@ parse(struct net_buf *buf)
     packetbuf_set_addr(buf, PACKETBUF_ADDR_RECEIVER, &(hdr->receiver));
 
     PRINTF("PNULLMAC-IN: ");
-    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
-    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
-    PRINTF("%u (%u)\n", packetbuf_datalen(buf), sizeof(struct nullmac_hdr));
+    PRINTLLADDR((const uip_lladdr_t *)packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
+    PRINTF(" ");
+    PRINTLLADDR((const uip_lladdr_t *)packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
+    PRINTF(" %u (%u)\n", packetbuf_datalen(buf), sizeof(struct nullmac_hdr));
 
     return sizeof(struct nullmac_hdr);
   }

@@ -355,7 +355,7 @@ packet_input(struct net_buf *buf)
   } else
 #endif /* NULLRDC_802154_AUTOACK */
   if(NETSTACK_FRAMER.parse(buf) < 0) {
-    PRINTF("nullrdc: failed to parse %u\n", packetbuf_datalen(buf));
+    PRINTF("nullrdc: failed to parse msg len %u\n", packetbuf_datalen(buf));
 #if NULLRDC_ADDRESS_FILTER
   } else if(!linkaddr_cmp(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER),
                                          &linkaddr_node_addr) &&

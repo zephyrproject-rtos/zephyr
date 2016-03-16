@@ -210,9 +210,9 @@ create_frame(struct net_buf *buf, int do_create)
   } else if(packetbuf_hdralloc(buf, hdr_len)) {
     frame802154_create(&params, packetbuf_hdrptr(buf), hdr_len);
 
-    PRINTF("15.4-OUT: %2X", params.fcf.frame_type);
-    PRINTLLADDR(params.dest_addr);
-    PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(buf), packetbuf_totlen(buf));
+    PRINTF("15.4-OUT: %2X ", params.fcf.frame_type);
+    PRINTLLADDR((const uip_lladdr_t *)params.dest_addr);
+    PRINTF(" %d %u (%u)\n", hdr_len, packetbuf_datalen(buf), packetbuf_totlen(buf));
 
     return hdr_len;
   } else {
@@ -248,7 +248,8 @@ parse(struct net_buf *buf)
       if(frame.dest_pid != mac_src_pan_id &&
           frame.dest_pid != FRAME802154_BROADCASTPANDID) {
         /* Packet to another PAN */
-        PRINTF("15.4: for another pan %u\n", frame.dest_pid);
+        PRINTF("15.4: for another pan %u (0x%x)\n", frame.dest_pid,
+               frame.dest_pid);
         return FRAMER_FAILED;
       }
       if(!is_broadcast_addr(frame.fcf.dest_addr_mode, frame.dest_addr)) {
@@ -273,10 +274,11 @@ parse(struct net_buf *buf)
     }
 #endif /* LLSEC802154_SECURITY_LEVEL */
 
-    PRINTF("15.4-IN: %2X", frame.fcf.frame_type);
-    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
-    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
-    PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(buf), packetbuf_totlen(buf));
+    PRINTF("15.4-IN: %2X ", frame.fcf.frame_type);
+    PRINTLLADDR((const uip_lladdr_t *)packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
+    PRINTF(" ");
+    PRINTLLADDR((const uip_lladdr_t *)packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
+    PRINTF(" %d %u (%u)\n", hdr_len, packetbuf_datalen(buf), packetbuf_totlen(buf));
 
 #ifdef FRAMER_802154_HANDLER
     if(FRAMER_802154_HANDLER(&frame)) {
