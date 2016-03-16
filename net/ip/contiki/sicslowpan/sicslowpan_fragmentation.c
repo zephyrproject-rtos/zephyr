@@ -76,7 +76,9 @@
 
 #include "contiki/ipv6/uip-ds6-nbr.h"
 
-#define DEBUG 0
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_15_4_6LOWPAN_FRAG
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 #if DEBUG
 /* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
