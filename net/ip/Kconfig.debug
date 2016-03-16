@@ -150,6 +150,13 @@ config NETWORK_IP_STACK_DEBUG_RPL_OF
 	help
 	  Enables RPL Objective Function related debug messages
 
+config NETWORK_IP_STACK_DEBUG_RPL_TIMERS
+	bool "Debug RPL timer functionality"
+	depends on NETWORKING_WITH_RPL
+	default n
+	help
+	  Enables RPL timers related debug messages
+
 config NETWORK_IP_STACK_DEBUG_IPV4
 	bool "Debug core IPv4"
 	depends on NETWORKING_WITH_IPV4
