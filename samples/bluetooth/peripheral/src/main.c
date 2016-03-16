@@ -34,71 +34,11 @@
 #include <gatt/hrs.h>
 #include <gatt/dis.h>
 #include <gatt/bas.h>
+#include <gatt/cts.h>
 
 #define DEVICE_NAME		"Test peripheral"
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define HEART_RATE_APPEARANCE	0x0341
-
-static void generate_current_time(uint8_t *buf)
-{
-	uint16_t year;
-
-	/* 'Exact Time 256' contains 'Day Date Time' which contains
-	 * 'Date Time' - characteristic contains fields for:
-	 * year, month, day, hours, minutes and seconds.
-	 */
-
-	year = sys_cpu_to_le16(2015);
-	memcpy(buf,  &year, 2); /* year */
-	buf[2] = 5; /* months starting from 1 */
-	buf[3] = 30; /* day */
-	buf[4] = 12; /* hours */
-	buf[5] = 45; /* minutes */
-	buf[6] = 30; /* seconds */
-
-	/* 'Day of Week' part of 'Day Date Time' */
-	buf[7] = 1; /* day of week starting from 1 */
-
-	/* 'Fractions 256 part of 'Exact Time 256' */
-	buf[8] = 0;
-
-	/* Adjust reason */
-	buf[9] = 0; /* No update, change, etc */
-}
-
-static struct bt_gatt_ccc_cfg ct_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-
-static void ct_ccc_cfg_changed(uint16_t value)
-{
-	/* TODO: Handle value */
-}
-
-static uint8_t ct[10];
-static uint8_t ct_update = 0;
-
-static ssize_t read_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		       void *buf, uint16_t len, uint16_t offset)
-{
-	const char *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(ct));
-}
-
-static ssize_t write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			const void *buf, uint16_t len, uint16_t offset)
-{
-	uint8_t *value = attr->user_data;
-
-	if (offset + len > sizeof(ct)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	}
-
-	memcpy(value + offset, buf, len);
-	ct_update = 1;
-
-	return len;
-}
 
 /* Custom Service Variables */
 static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(
@@ -247,17 +187,6 @@ static const struct bt_uuid_128 vnd_signed_uuid = BT_UUID_INIT_128(
 	0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x13,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x13);
 
-/* Current Time Service Declaration */
-static struct bt_gatt_attr cts_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_CTS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_CTS_CURRENT_TIME, BT_GATT_CHRC_READ |
-			       BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE),
-	BT_GATT_DESCRIPTOR(BT_UUID_CTS_CURRENT_TIME,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_ct, write_ct, ct),
-	BT_GATT_CCC(ct_ccc_cfg, ct_ccc_cfg_changed),
-};
-
 /* Vendor Primary Service Declaration */
 static struct bt_gatt_attr vnd_attrs[] = {
 	/* Vendor Primary Service Declaration */
@@ -334,7 +263,7 @@ static void bt_ready(int err)
 	gap_init(DEVICE_NAME, HEART_RATE_APPEARANCE);
 	hrs_init(0x01);
 	bas_init();
-	bt_gatt_register(cts_attrs, ARRAY_SIZE(cts_attrs));
+	cts_init();
 	dis_init(CONFIG_SOC, "Manufacturer");
 	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
 
@@ -386,9 +315,6 @@ void main(void)
 		return;
 	}
 
-	/* Simulate current time for Current Time Service */
-	generate_current_time(ct);
-
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_cb_register(&auth_cb_display);
 
@@ -399,10 +325,7 @@ void main(void)
 		task_sleep(sys_clock_ticks_per_sec);
 
 		/* Current Time Service updates only when time is changed */
-		if (ct_update) {
-			ct_update = 0;
-			bt_gatt_notify(NULL, &cts_attrs[3], &ct, sizeof(ct));
-		}
+		cts_notify();
 
 		/* Heartrate measurements simulation */
 		hrs_notify();
