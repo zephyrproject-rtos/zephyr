@@ -32,6 +32,7 @@
 #include <bluetooth/gatt.h>
 
 #include <gatt/gap.h>
+#include <gatt/dis.h>
 
 #define DEVICE_NAME				"ESP peripheral"
 #define DEVICE_NAME_LEN				(sizeof(DEVICE_NAME) - 1)
@@ -75,16 +76,6 @@ static inline uint32_t le24_to_int(const uint8_t *u24)
 		(uint32_t)u24[2] << 16);
 }
 
-static ssize_t read_string(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, void *buf,
-			   uint16_t len, uint16_t offset)
-{
-	const char *string = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, string,
-				 strlen(string));
-}
-
 static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
@@ -122,19 +113,6 @@ static struct bt_gatt_attr bas_attrs[] = {
 	BT_GATT_DESCRIPTOR(BT_UUID_BAS_BATTERY_LEVEL, BT_GATT_PERM_READ,
 			   read_blvl, NULL, &blvl),
 	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
-};
-
-/* Device Information Service Declaration */
-
-static struct bt_gatt_attr dis_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_PERM_READ,
-			   read_string, NULL, CONFIG_SOC),
-	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MANUFACTURER_NAME,
-			       BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_PERM_READ,
-			   read_string, NULL, "ACME"),
 };
 
 /* Environmental Sensing Service Declaration */
@@ -526,7 +504,7 @@ static void bt_ready(int err)
 	gap_init(DEVICE_NAME, APPEARANCE_THERMOMETER);
 	bt_gatt_register(ess_attrs, ARRAY_SIZE(ess_attrs));
 	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
-	bt_gatt_register(dis_attrs, ARRAY_SIZE(dis_attrs));
+	dis_init(CONFIG_SOC, "ACME");
 
 	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
 			       sd, ARRAY_SIZE(sd));

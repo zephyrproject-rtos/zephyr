@@ -32,6 +32,7 @@
 
 #include <gatt/gap.h>
 #include <gatt/hrs.h>
+#include <gatt/dis.h>
 
 #define DEVICE_NAME		"Test peripheral"
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
@@ -114,24 +115,6 @@ static ssize_t write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	ct_update = 1;
 
 	return len;
-}
-
-static ssize_t read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			  void *buf, uint16_t len, uint16_t offset)
-{
-	const char *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 strlen(value));
-}
-
-static ssize_t read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			  void *buf, uint16_t len, uint16_t offset)
-{
-	const char *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 strlen(value));
 }
 
 /* Custom Service Variables */
@@ -302,18 +285,6 @@ static struct bt_gatt_attr cts_attrs[] = {
 	BT_GATT_CCC(ct_ccc_cfg, ct_ccc_cfg_changed),
 };
 
-/* Device Information Service Declaration */
-static struct bt_gatt_attr dis_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_PERM_READ,
-			   read_model, NULL, CONFIG_SOC),
-	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MANUFACTURER_NAME,
-			       BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_PERM_READ,
-			   read_manuf, NULL, "Manufacturer"),
-};
-
 /* Vendor Primary Service Declaration */
 static struct bt_gatt_attr vnd_attrs[] = {
 	/* Vendor Primary Service Declaration */
@@ -391,7 +362,7 @@ static void bt_ready(int err)
 	hrs_init(0x01);
 	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
 	bt_gatt_register(cts_attrs, ARRAY_SIZE(cts_attrs));
-	bt_gatt_register(dis_attrs, ARRAY_SIZE(dis_attrs));
+	dis_init(CONFIG_SOC, "Manufacturer");
 	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
 
 	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
