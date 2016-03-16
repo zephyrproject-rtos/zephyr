@@ -143,6 +143,13 @@ config NETWORK_IP_STACK_DEBUG_RPL_ICMPV6
 	help
 	  Enables RPL ICMPv6 debug messages
 
+config NETWORK_IP_STACK_DEBUG_RPL_OF
+	bool "Debug RPL objective function messages"
+	depends on NETWORKING_WITH_RPL
+	default n
+	help
+	  Enables RPL Objective Function related debug messages
+
 config NETWORK_IP_STACK_DEBUG_IPV4
 	bool "Debug core IPv4"
 	depends on NETWORKING_WITH_IPV4

@@ -43,7 +43,9 @@
 
 #include "contiki/rpl/rpl-private.h"
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_RPL_OF
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 static void reset(rpl_dag_t *);
