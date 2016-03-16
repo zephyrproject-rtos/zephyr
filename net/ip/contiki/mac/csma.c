@@ -65,7 +65,9 @@ void uip_log(char *msg);
 #define UIP_LOG(m)
 #endif
 
-#define DEBUG 0
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_15_4_MAC
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING

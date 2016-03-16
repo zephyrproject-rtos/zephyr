@@ -52,7 +52,9 @@
 #include "lib/simEnvChange.h"
 #endif /* CONTIKI_TARGET_COOJA */
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_15_4_MAC
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #ifdef NULLRDC_CONF_ADDRESS_FILTER

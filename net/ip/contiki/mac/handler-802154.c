@@ -48,7 +48,9 @@
 #include <string.h>
 #include <stdio.h>
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_15_4_MAC
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #define CHANNEL_LOW  11
