@@ -33,6 +33,7 @@
 
 #include <gatt/gap.h>
 #include <gatt/dis.h>
+#include <gatt/bas.h>
 
 #define DEVICE_NAME				"ESP peripheral"
 #define DEVICE_NAME_LEN				(sizeof(DEVICE_NAME) - 1)
@@ -85,35 +86,6 @@ static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
 				 sizeof(value));
 }
-
-/* Battery Service Declaration */
-
-static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-static bool simulate_blvl;
-static uint8_t blvl = 100;
-
-static void blvl_ccc_cfg_changed(uint16_t value)
-{
-	simulate_blvl = value == BT_GATT_CCC_NOTIFY;
-}
-
-static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
-{
-	const uint8_t *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(*value));
-}
-
-static struct bt_gatt_attr bas_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_BAS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_LEVEL,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(BT_UUID_BAS_BATTERY_LEVEL, BT_GATT_PERM_READ,
-			   read_blvl, NULL, &blvl),
-	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
-};
 
 /* Environmental Sensing Service Declaration */
 
@@ -503,7 +475,7 @@ static void bt_ready(int err)
 
 	gap_init(DEVICE_NAME, APPEARANCE_THERMOMETER);
 	bt_gatt_register(ess_attrs, ARRAY_SIZE(ess_attrs));
-	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
+	bas_init();
 	dis_init(CONFIG_SOC, "ACME");
 
 	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
@@ -566,16 +538,6 @@ void main(void)
 		}
 
 		/* Battery level simulation */
-		if (simulate_blvl) {
-			blvl -= 1;
-
-			if (!blvl) {
-				/* Software eco battery charger */
-				blvl = 100;
-			}
-
-			bt_gatt_notify(NULL, &bas_attrs[2], &blvl,
-				       sizeof(blvl));
-		}
+		bas_notify();
 	}
 }

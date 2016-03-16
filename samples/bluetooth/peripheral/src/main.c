@@ -33,28 +33,11 @@
 #include <gatt/gap.h>
 #include <gatt/hrs.h>
 #include <gatt/dis.h>
+#include <gatt/bas.h>
 
 #define DEVICE_NAME		"Test peripheral"
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define HEART_RATE_APPEARANCE	0x0341
-
-static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-static uint8_t simulate_blvl = 0;
-static uint8_t battery = 100;
-
-static void blvl_ccc_cfg_changed(uint16_t value)
-{
-	simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
-}
-
-static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
-{
-	const char *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(*value));
-}
 
 static void generate_current_time(uint8_t *buf)
 {
@@ -264,16 +247,6 @@ static const struct bt_uuid_128 vnd_signed_uuid = BT_UUID_INIT_128(
 	0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x13,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x13);
 
-/* Battery Service Declaration */
-static struct bt_gatt_attr bas_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_BAS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_LEVEL,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(BT_UUID_BAS_BATTERY_LEVEL, BT_GATT_PERM_READ,
-			   read_blvl, NULL, &battery),
-	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
-};
-
 /* Current Time Service Declaration */
 static struct bt_gatt_attr cts_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CTS),
@@ -360,7 +333,7 @@ static void bt_ready(int err)
 
 	gap_init(DEVICE_NAME, HEART_RATE_APPEARANCE);
 	hrs_init(0x01);
-	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
+	bas_init();
 	bt_gatt_register(cts_attrs, ARRAY_SIZE(cts_attrs));
 	dis_init(CONFIG_SOC, "Manufacturer");
 	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
@@ -435,17 +408,7 @@ void main(void)
 		hrs_notify();
 
 		/* Battery level simulation */
-		if (simulate_blvl) {
-			battery -= 1;
-
-			if (!battery) {
-				/* Software eco battery charger */
-				battery = 100;
-			}
-
-			bt_gatt_notify(NULL, &bas_attrs[2], &battery,
-				       sizeof(battery));
-		}
+		bas_notify();
 
 		/* Vendor indication simulation */
 		if (simulate_vnd) {

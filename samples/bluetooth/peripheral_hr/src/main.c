@@ -33,40 +33,13 @@
 #include <gatt/gap.h>
 #include <gatt/hrs.h>
 #include <gatt/dis.h>
+#include <gatt/bas.h>
 
 #define DEVICE_NAME		"Zephyr Heartrate Sensor"
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define HEART_RATE_APPEARANCE	0x0341
 
 struct bt_conn *default_conn;
-
-static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-static uint8_t simulate_blvl;
-static uint8_t battery = 100;
-
-static void blvl_ccc_cfg_changed(uint16_t value)
-{
-	simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
-}
-
-static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
-{
-	const char *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(*value));
-}
-
-/* Battery Service Declaration */
-static struct bt_gatt_attr bas_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_BAS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_LEVEL,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(BT_UUID_BAS_BATTERY_LEVEL, BT_GATT_PERM_READ,
-			   read_blvl, NULL, &battery),
-	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
-};
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -113,7 +86,7 @@ static void bt_ready(int err)
 
 	gap_init(DEVICE_NAME, HEART_RATE_APPEARANCE);
 	hrs_init(0x01);
-	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
+	bas_init();
 	dis_init(CONFIG_SOC, "Manufacturer");
 
 	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
@@ -166,16 +139,6 @@ void main(void)
 		hrs_notify();
 
 		/* Battery level simulation */
-		if (simulate_blvl) {
-			battery -= 1;
-
-			if (!battery) {
-				/* Software eco battery charger */
-				battery = 100;
-			}
-
-			bt_gatt_notify(default_conn, &bas_attrs[2],
-				       &battery, sizeof(battery));
-		}
+		bas_notify();
 	}
 }

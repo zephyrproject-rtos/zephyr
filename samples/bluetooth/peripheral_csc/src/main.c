@@ -33,6 +33,7 @@
 
 #include <gatt/gap.h>
 #include <gatt/dis.h>
+#include <gatt/bas.h>
 
 #define DEVICE_NAME			"CSC peripheral"
 #define DEVICE_NAME_LEN			(sizeof(DEVICE_NAME) - 1)
@@ -88,35 +89,6 @@
 /* CSC Measurement Flags */
 #define CSC_WHEEL_REV_DATA_PRESENT	BIT(0)
 #define CSC_CRANK_REV_DATA_PRESENT	BIT(1)
-
-/* Battery Service declaration */
-
-static struct bt_gatt_ccc_cfg blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-static bool bas_simulate;
-static uint8_t blvl = 100;
-
-static void blvl_ccc_cfg_changed(uint16_t value)
-{
-	bas_simulate = value == BT_GATT_CCC_NOTIFY;
-}
-
-static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
-{
-	const char *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(*value));
-}
-
-static struct bt_gatt_attr bas_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_BAS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_LEVEL,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(BT_UUID_BAS_BATTERY_LEVEL, BT_GATT_PERM_READ,
-			   read_blvl, NULL, &blvl),
-	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
-};
 
 /* Cycling Speed and Cadence Service declaration */
 
@@ -421,7 +393,7 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	gap_init(DEVICE_NAME, CSC_APPEARANCE);
-	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
+	bas_init();
 	dis_init(CONFIG_SOC, "ACME");
 	bt_gatt_register(csc_attrs, ARRAY_SIZE(csc_attrs));
 
@@ -460,17 +432,6 @@ void main(void)
 		}
 
 		/* Battery level simulation */
-		if (bas_simulate) {
-			blvl -= 1;
-
-			if (!blvl) {
-				/* Software eco battery charger */
-				blvl = 100;
-			}
-
-			bt_gatt_notify(NULL, &bas_attrs[2], &blvl,
-				       sizeof(blvl));
-		}
-
+		bas_notify();
 	}
 }
