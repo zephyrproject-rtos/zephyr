@@ -39,16 +39,10 @@
 #include "contiki/mac/framer-nullmac.h"
 #include "contiki/packetbuf.h"
 
-#define DEBUG 0
-
-#if DEBUG
-#include <stdio.h>
-#define PRINTF(...) printf(__VA_ARGS__)
-#define PRINTADDR(addr) PRINTF(" %02x%02x:%02x%02x:%02x%02x:%02x%02x ", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7])
-#else
-#define PRINTF(...)
-#define PRINTADDR(addr)
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_15_4_FRAMING
+#define DEBUG 1
 #endif
+#include "contiki/ip/uip-debug.h"
 
 struct nullmac_hdr {
   linkaddr_t receiver;
@@ -87,8 +81,8 @@ parse(struct net_buf *buf)
     packetbuf_set_addr(buf, PACKETBUF_ADDR_RECEIVER, &(hdr->receiver));
 
     PRINTF("PNULLMAC-IN: ");
-    PRINTADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
-    PRINTADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
+    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
+    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
     PRINTF("%u (%u)\n", packetbuf_datalen(buf), sizeof(struct nullmac_hdr));
 
     return sizeof(struct nullmac_hdr);

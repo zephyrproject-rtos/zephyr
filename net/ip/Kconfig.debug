@@ -100,6 +100,13 @@ config NETWORK_IP_STACK_DEBUG_15_4_MAC
 	help
 	  Enables 802.15.4 MAC layer to output debug messages
 
+config NETWORK_IP_STACK_DEBUG_15_4_FRAMING
+	bool "Debug 802.15.4 packet framing"
+	depends on NETWORKING_WITH_15_4
+	default n
+	help
+	  Enables 802.15.4 packet framing to output debug messages
+
 config NETWORK_IP_STACK_DEBUG_15_4_6LOWPAN_FRAG
 	bool "Debug 802.15.4 6LoWPAN fragmentation"
 	depends on NETWORKING_WITH_15_4

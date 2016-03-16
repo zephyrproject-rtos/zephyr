@@ -45,7 +45,9 @@
 #include "lib/random.h"
 #include <string.h>
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_15_4_FRAMING
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 /**  \brief The 16-bit identifier of the PAN on which the device is
