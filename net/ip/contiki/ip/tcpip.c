@@ -51,7 +51,9 @@
 
 #include <string.h>
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_RECV_SEND
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 #if UIP_LOGGING

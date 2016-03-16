@@ -45,6 +45,12 @@ config NETWORK_IP_STACK_DEBUG_NET_BUF
 	help
 	  Enables printing of network buffer allocations and frees.
 
+config NETWORK_IP_STACK_DEBUG_RECV_SEND
+	bool "Debug network generic receive and send functions"
+	default n
+	help
+	  Enables generic debug printing when receiving and sending data.
+
 config NETWORK_IP_STACK_DEBUG_IPV6
 	bool "Debug core IPv6"
 	depends on NETWORKING_WITH_IPV6
