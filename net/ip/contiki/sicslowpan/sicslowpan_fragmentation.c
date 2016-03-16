@@ -456,6 +456,7 @@ static int fragment(struct net_buf *buf, void *ptr)
   if (!mbuf) {
      goto fail;
   }
+	uip_last_tx_status(mbuf) = MAC_TX_OK;
 
   /*
    * The destination address will be tagged to each outbound
