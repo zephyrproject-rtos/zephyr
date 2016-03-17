@@ -24,8 +24,6 @@
 
 uint32_t wdt_fired;
 
-#define WDT_DRIVER CONFIG_WDT_DW_DRV_NAME
-
 /* WDT Requires a callback, there is no interrupt enable / disable. */
 void wdt_example_cb(struct device *dev)
 {
@@ -46,7 +44,7 @@ void main(void)
 	wr_cfg.interrupt_fn = wdt_example_cb;
 
 	wdt_fired = 0;
-	wdt_dev = device_get_binding(WDT_DRIVER);
+	wdt_dev = device_get_binding("WATCHDOG");
 
 	wdt_enable(wdt_dev);
 	wdt_set_config(wdt_dev, &wr_cfg);
