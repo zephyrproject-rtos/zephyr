@@ -1,12 +1,14 @@
 BOARD ?= qemu_x86
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
-CONF_quark_d2000_crb	= prj_minuteia.conf
-CONF_quark_se_test_board	= prj_minuteia.conf
-CONF_qemu_x86           = prj_minuteia.conf
-CONF_minnowboard         = prj_atom.conf
-CONF_galileo            = prj_minuteia.conf
+
+# Boards where we want to exercise this test case with floating point
+# and SSE instructions
+CONF_minnowboard = prj_fp.conf
 
 CONF_FILE = ${CONF_${BOARD}}
+ifeq ($(CONF_FILE),)
+CONF_FILE = prj_no_fp.conf
+endif
 
 include ${ZEPHYR_BASE}/Makefile.inc
