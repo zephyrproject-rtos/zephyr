@@ -1,7 +1,7 @@
 # Kconfig - AIO/Comparator configuration options
 #
 #
-# Copyright (c) 2015 Intel Corporation
+# Copyright (c) 2015-2016 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ menuconfig AIO_COMPARATOR
 	prompt "AIO/Comparator Configuration"
 	default n
 
-config AIO_DW_COMPARATOR
-	bool "Enable DesignWare AIO/comparator driver"
+if AIO_COMPARATOR
+
+menuconfig AIO_DW_COMPARATOR
+	bool "DesignWare AIO/comparator driver"
 	default n
 	depends on AIO_COMPARATOR
 	help
@@ -51,7 +53,7 @@ config AIO_DW_COMPARATOR_IRQ_PRI
 	help
 	IRQ Priority for the DesignWare AIO/comparator.
 
-config AIO_QMSI_COMPARATOR
+menuconfig AIO_QMSI_COMPARATOR
 	bool "Enable QMSI AIO/comparator driver"
 	default n
 	depends on AIO_COMPARATOR && QMSI_DRIVERS
@@ -71,3 +73,5 @@ config AIO_COMPARATOR_IRQ_PRI
 	depends on AIO_QMSI_COMPARATOR
 	help
 	IRQ Priority for the QMSI AIO/comparator.
+
+endif # AIO_COMPARATOR
