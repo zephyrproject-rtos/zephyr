@@ -30,6 +30,9 @@
 #include "conn.h"
 #include "rpc.h"
 
+/* Set the firmware compatible with Nordic BLE RPC */
+static uint8_t compatibe_firmware[4] = { '0', '3', '1', '7' };
+
 #if !defined(CONFIG_NBLE_DEBUG_GAP)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
@@ -74,6 +77,16 @@ void on_nble_get_version_rsp(const struct nble_version_response *rsp)
 	BT_DBG("VERSION: %d.%d.%d %.20s", rsp->version.major,
 	       rsp->version.minor, rsp->version.patch,
 	       rsp->version.version_string);
+
+	if (memcmp(&rsp->version.version_string[sizeof(rsp->version.version_string) -
+		   sizeof(compatibe_firmware)], compatibe_firmware,
+		   sizeof(compatibe_firmware))) {
+		BT_ERR("\n\n"
+		       "Incompatible firmware: %.20s, please use version %.4s"
+		       "\n\n",
+		       rsp->version.version_string, compatibe_firmware);
+		/* TODO: shall we allow to continue */
+	}
 
 	if (bt_ready_cb) {
 		bt_ready_cb(0);
