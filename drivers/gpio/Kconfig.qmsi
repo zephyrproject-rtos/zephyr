@@ -1,0 +1,77 @@
+# Kconfig.qmsi - QMSI GPIO configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig GPIO_QMSI
+	bool "QMSI GPIO driver"
+	depends on GPIO && QMSI_DRIVERS
+	default n
+	help
+	  Enable the GPIO driver found on Intel Microcontroller
+	  platforms, using the QMSI library.
+
+if GPIO_QMSI
+
+config GPIO_QMSI_0
+	bool "QMSI GPIO block 0"
+	depends on GPIO_QMSI
+	default n
+	help
+	  Include support for the GPIO port 0 using QMSI.
+
+config GPIO_QMSI_0_NAME
+	string "Driver name"
+	depends on GPIO_QMSI_0
+	default "GPIO_0"
+
+config GPIO_QMSI_0_IRQ
+	int "Controller interrupt number"
+	depends on GPIO_QMSI_0
+	help
+	  IRQ number for the controller
+
+config GPIO_QMSI_0_PRI
+	int "Controller interrupt priority"
+	depends on GPIO_QMSI_0
+	help
+	  IRQ priority
+
+config GPIO_QMSI_AON
+	bool "QMSI GPIO block AON"
+	depends on GPIO_QMSI
+	default n
+	help
+	  Include support for the GPIO AON (always on) port using QMSI.
+
+config GPIO_QMSI_AON_NAME
+	string "Driver name"
+	depends on GPIO_QMSI_AON
+	default "gpio_aon"
+
+config GPIO_QMSI_AON_IRQ
+	int "Controller interrupt number"
+	depends on GPIO_QMSI_AON
+	help
+	  IRQ number for the controller
+
+config GPIO_QMSI_AON_PRI
+	int "Controller interrupt priority"
+	depends on GPIO_QMSI_AON
+	help
+	  IRQ priority
+
+endif # GPIO_QMSI

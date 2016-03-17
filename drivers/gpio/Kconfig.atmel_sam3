@@ -1,4 +1,22 @@
-config GPIO_ATMEL_SAM3
+# Kconfig.atmel_sam3 - Atmel SAM3 GPIO configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig GPIO_ATMEL_SAM3
 	bool "Atmel SAM3 PIO Controllers"
 	depends on GPIO && SOC_ATMEL_SAM3
 	default n
@@ -7,6 +25,8 @@ config GPIO_ATMEL_SAM3
 	on Atmel SAM3 family processors.
 
 	Says n if not sure.
+
+if GPIO_ATMEL_SAM3
 
 config GPIO_ATMEL_SAM3_PORTA
 	bool "Enable driver for Atmel SAM3 PIO Port A"
@@ -91,3 +111,5 @@ config GPIO_ATMEL_SAM3_PORTD_IRQ_PRI
 	default 3
 	help
 	Interrupt priority for Port D.
+
+endif # GPIO_ATMEL_SAM3
