@@ -1,0 +1,186 @@
+# Kconfig.k64 - K64 SPI driver configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2016 Wind River Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig SPI_K64
+	bool
+	prompt "Freescale K64-based SPI controller driver"
+	depends on SPI
+	default n
+	help
+	  Enable support for Freescale K64-based SPI controllers.
+
+if SPI_K64
+
+config SPI_K64_0
+	bool "Freescale K64-based SPI Module 0"
+	depends on SPI_K64
+	default n
+	help
+	  Enable config options for Freescale K64-based SPI Module 0.
+
+config SPI_K64_0_DEV_NAME
+	string "Freescale K64-based SPI Module 0 device name"
+	depends on SPI_K64_0
+	default "SPI_K64_0"
+	help
+	  Specify the device name.
+
+config SPI_K64_0_BASE_ADDR
+	hex "Freescale K64-based SPI Module 0 base address"
+	depends on SPI_K64_0
+	default 0x4002C000
+
+config SPI_K64_0_PCS_NUM
+	int "Freescale K64-based SPI Module 0 peripheral chip selects"
+	depends on SPI_K64_0
+	default 6
+	help
+	  Number of peripheral chip selects for K64 SPI Module 0
+
+config SPI_K64_0_CLK_GATE_REG_ADDR
+	hex "Freescale K64-based SPI Module 0 clock gate register address"
+	depends on SPI_K64_0
+	default 0x4004803C
+
+config SPI_K64_0_CLK_GATE_REG_BIT
+	int "Freescale K64-based SPI Module 0 clock gate register bit"
+	depends on SPI_K64_0
+	default 12
+	help
+	  Bit position enable bit in the clock gate register for K64 SPI Module 0
+
+config SPI_K64_0_IRQ
+	int "Freescale K64-based SPI Module 0 interrupt number"
+	depends on SPI_K64_0
+	default 26
+	help
+	  K64 SPI Module 0 IRQ number for the interrupt controller
+
+config SPI_K64_0_PRI
+	int "Freescale K64-based SPI Module 0 interrupt priority"
+	depends on SPI_K64_0
+	default 2
+	help
+	  K64 SPI Module 0 IRQ priority
+
+config SPI_K64_1
+	bool "Freescale K64-based SPI Module 1"
+	depends on SPI_K64
+	default n
+	help
+	  Enable config options for Freescale K64-based SPI Module 1.
+
+config SPI_K64_1_DEV_NAME
+	string "Freescale K64-based SPI Module 1 device name"
+	depends on SPI_K64_1
+	default "SPI_K64_1"
+	help
+	  Specify the device name.
+
+config SPI_K64_1_BASE_ADDR
+	hex "Freescale K64-based SPI Module 1 base address"
+	depends on SPI_K64_1
+	default 0x4002D000
+
+config SPI_K64_1_PCS_NUM
+	int "Freescale K64-based SPI Module 1 peripheral chip selects"
+	depends on SPI_K64_1
+	default 4
+	help
+	  Number of peripheral chip selects for K64 SPI Module 1
+
+config SPI_K64_1_CLK_GATE_REG_ADDR
+	hex "Freescale K64-based SPI Module 1 clock gate register address"
+	depends on SPI_K64_1
+	default 0x4004803C
+
+config SPI_K64_1_CLK_GATE_REG_BIT
+	int "Freescale K64-based SPI Module 0 clock gate register bit"
+	depends on SPI_K64_1
+	default 13
+	help
+	  Bit position enable bit in the clock gate register for K64 SPI Module 1
+
+config SPI_K64_1_IRQ
+	int "Freescale K64-based SPI Module 1 interrupt number"
+	depends on SPI_K64_1
+	default 27
+	help
+	  K64 SPI Module 1 IRQ number for the interrupt controller
+
+config SPI_K64_1_PRI
+	int "Freescale K64-based SPI Module 1 interrupt priority"
+	depends on SPI_K64_1
+	default 2
+	help
+	  K64 SPI Module 1 IRQ priority
+
+config SPI_K64_2
+	bool "Freescale K64-based SPI Module 2"
+	depends on SPI_K64
+	default n
+	help
+	  Enable config options for Freescale K64-based SPI Module 2.
+
+config SPI_K64_2_DEV_NAME
+	string "Freescale K64-based SPI Module 2 device name"
+	depends on SPI_K64_2
+	default "SPI_K64_2"
+	help
+	  Specify the device name.
+
+config SPI_K64_2_BASE_ADDR
+	hex "Freescale K64-based SPI Module 2 base address"
+	depends on SPI_K64_2
+	default 0x400AC000
+
+config SPI_K64_2_PCS_NUM
+	int "Freescale K64-based SPI Module 2 peripheral chip selects"
+	depends on SPI_K64_2
+	default 2
+	help
+	  Number of peripheral chip selects for K64 SPI Module 2
+
+config SPI_K64_2_CLK_GATE_REG_ADDR
+	hex "Freescale K64-based SPI Module 2 clock gate register address"
+	depends on SPI_K64_2
+	default 0x40048030
+
+config SPI_K64_2_CLK_GATE_REG_BIT
+	int "Freescale K64-based SPI Module 2 clock gate register bit"
+	depends on SPI_K64_2
+	default 12
+	help
+	  Bit position enable bit in the clock gate register for K64 SPI Module 2
+
+config SPI_K64_2_IRQ
+	int "Freescale K64-based SPI Module 2 interrupt number"
+	depends on SPI_K64_2
+	default 65
+	help
+	  K64 SPI Module 2 IRQ number for the interrupt controller
+
+config SPI_K64_2_PRI
+	int "Freescale K64-based SPI Module 2 interrupt priority"
+	depends on SPI_K64_2
+	default 2
+	help
+	  K64 SPI Module 0 IRQ priority
+
+endif # SPI_K64

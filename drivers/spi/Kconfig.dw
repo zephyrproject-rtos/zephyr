@@ -1,0 +1,237 @@
+# Kconfig.dw - DesignWare SPI driver configuration options
+#
+#
+# Copyright (c) 2015-2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig SPI_DW
+	bool
+	prompt "Designware SPI controller driver"
+	depends on SPI
+	default n
+	help
+	  Enable support for Designware's SPI controllers.
+
+if SPI_DW
+
+config SPI_DW_ARC_AUX_REGS
+	bool "Registers are part of ARC auxiliary registers"
+	depends on SPI_DW && ARC
+	default y
+	help
+	  SPI IP block registers are part of user extended auxiliary
+	  registers and thus their access is different than memory
+	  mapped registers.
+
+config SPI_DW_CS_GPIO
+	bool "SPI port CS pin is controlled via a GPIO port"
+	depends on SPI_DW && GPIO
+	default n
+
+config SPI_DW_INIT_PRIORITY
+	int "Init priority"
+	depends on SPI_DW
+	default 60
+	help
+	  Device driver initialization priority.
+
+choice
+depends on SPI_DW && (IOAPIC || MVIC)
+prompt "DesignWare SPI interrupt trigger condition"
+default SPI_DW_RISING_EDGE
+
+config SPI_DW_FALLING_EDGE
+	bool "Falling edge"
+	help
+	  "DesignWare SPI uses falling edge interrupt"
+
+config SPI_DW_RISING_EDGE
+	bool "Rising edge"
+	help
+	  "DesignWare SPI uses rising edge interrupt"
+
+config SPI_DW_LEVEL_HIGH
+	bool "Level high"
+	help
+	  "DesignWare SPI uses level high interrupt"
+
+config SPI_DW_LEVEL_LOW
+	bool "Level low"
+	help
+	  "DesignWare SPI uses level low interrupt"
+endchoice
+
+choice
+depends on SPI_DW
+prompt "DesignWare SPI interrupt management logic"
+default SPI_DW_INTERRUPT_SINGLE_LINE
+
+config SPI_DW_INTERRUPT_SINGLE_LINE
+	bool "Single interrupt line for all interrupts"
+	help
+	  Only one line is used to trigger interrupts: RX, TX and ERROR
+	  interrupt go all through that line, undifferentiated.
+config SPI_DW_INTERRUPT_SEPARATED_LINES
+	bool "One line per-interrupt type (RX, TX and ERROR)"
+	help
+	  Each interrupt gets a dedicated line
+endchoice
+
+config  SPI_DW_CLOCK_GATE
+	bool "Enable glock gating"
+	depends on SPI_DW && SOC_QUARK_SE
+	select CLOCK_CONTROL
+	default n
+
+config	SPI_DW_CLOCK_GATE_DRV_NAME
+	string
+	depends on SPI_DW_CLOCK_GATE
+	default ""
+
+config	SPI_DW_PORT_0
+	bool
+	prompt "Designware SPI port 0"
+	depends on SPI_DW
+	default n
+	help
+	  Enable Designware SPI controller port 0.
+
+config  SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+	depends on SPI_DW_CLOCK_GATE
+
+config  SPI_DW_PORT_0_CS_GPIO_PORT
+	string
+	prompt "The GPIO port which is used to control CS"
+	depends on SPI_DW_PORT_0 && SPI_DW_CS_GPIO
+	default GPIO_DW_0_NAME
+
+config  SPI_DW_PORT_0_CS_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	depends on SPI_DW_PORT_0 && SPI_DW_CS_GPIO
+	default 0
+
+config  SPI_DW_PORT_0_DRV_NAME
+	string
+	prompt "Designware SPI port 0 device name"
+	depends on SPI_DW_PORT_0
+	default "SPI_0"
+
+config  SPI_DW_PORT_0_REGS
+	hex
+	prompt "Port 0 registers address"
+	depends on SPI_DW_PORT_0
+
+config  SPI_DW_PORT_0_IRQ
+	int "Port 0 interrupt"
+	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SINGLE_LINE
+	help
+	  Interrupt number dedicated to the controller. Valid if only the
+	  controller routes all interrupt through a unique line.
+
+config SPI_DW_PORT_0_ERROR_IRQ
+	int "Port 0 ERROR Interrupt"
+	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	help
+	  Interrupt number dedicated to the ERROR interrupt only. RX and TX
+	  interrupt numbers need to be set as well.
+
+config SPI_DW_PORT_0_RX_IRQ
+	int "Port 0 RX Interrupt"
+	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	help
+	  Interrupt number dedicated to the RX interrupt only. TX and ERROR
+	  interrupt numbers need to be set as well.
+
+config SPI_DW_PORT_0_TX_IRQ
+	int "Port 0 TX Interrupt"
+	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	help
+	  Interrupt number dedicated to the TX interrupt only. RX and ERROR
+	  interrupt numbers need to be set as well.
+
+config  SPI_DW_PORT_0_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_DW_PORT_0
+
+config  SPI_DW_PORT_1
+	bool
+	prompt "Designware SPI port 1"
+	depends on SPI_DW
+	default n
+	help
+	  Enable Designware SPI controller port 1.
+
+config  SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+	depends on SPI_DW_CLOCK_GATE
+
+config  SPI_DW_PORT_1_CS_GPIO_PORT
+	string
+	prompt "The GPIO port which is used to control CS"
+	depends on SPI_DW_PORT_0 && SPI_DW_CS_GPIO
+	default GPIO_DW_0_NAME
+
+config  SPI_DW_PORT_1_CS_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	depends on SPI_DW_PORT_0 && SPI_DW_CS_GPIO
+	default 0
+
+config  SPI_DW_PORT_1_DRV_NAME
+	string
+	prompt "Designware SPI port 1 device name"
+	depends on SPI_DW_PORT_1
+	default "SPI_1"
+
+config  SPI_DW_PORT_1_REGS
+	hex
+	prompt "Port 1 registers address"
+	depends on SPI_DW_PORT_1
+
+config  SPI_DW_PORT_1_IRQ
+	int "Port 1 interrupt"
+	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SINGLE_LINE
+	help
+	  Interrupt number dedicated to the controller. Valid if only the
+	  controller routes all interrupt through a unique line.
+
+config SPI_DW_PORT_1_ERROR_IRQ
+	int "Port 1 ERROR Interrupt"
+	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	help
+	  Interrupt number dedicated to the ERROR interrupt only. RX and TX
+	  interrupt numbers need to be set as well.
+
+config SPI_DW_PORT_1_RX_IRQ
+	int "Port 1 RX Interrupt"
+	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	help
+	  Interrupt number dedicated to the RX interrupt only. TX and ERROR
+	  interrupt numbers need to be set as well.
+
+config SPI_DW_PORT_1_TX_IRQ
+	int "Port 1 TX Interrupt"
+	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
+	help
+	  Interrupt number dedicated to the TX interrupt only. RX and ERROR
+	  interrupt numbers need to be set as well.
+
+config  SPI_DW_PORT_1_PRI
+	int
+	prompt "Port 1 interrupt priority"
+	depends on SPI_DW_PORT_1
+
+endif # SPI_DW
