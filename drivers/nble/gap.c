@@ -176,8 +176,8 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 
 	switch (param->addr_type) {
 	case BT_LE_ADV_ADDR_IDENTITY:
+	case BT_LE_ADV_ADDR_NRPA:
 		break;
-	case BT_LE_ADV_ADDR_NRPA: /* nble doesn't support NRPAs (for now) */
 	default:
 		return false;
 	}
