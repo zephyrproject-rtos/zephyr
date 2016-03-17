@@ -77,18 +77,12 @@
 #define DEBUG 1
 #endif
 #include "contiki/ip/uip-debug.h"
+
 #if DEBUG
-/* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
-uint8_t p;
-#include <stdio.h>
-#define PRINTFI(...) PRINTF(__VA_ARGS__)
-#define PRINTFO(...) PRINTF(__VA_ARGS__)
-#define PRINTPACKETBUF() PRINTF("packetbuf buffer: "); for(p = 0; p < packetbuf_datalen(); p++){PRINTF("%.2X", *(packetbuf_ptr + p));} PRINTF("\n")
-#define PRINTUIPBUF() PRINTF("UIP buffer: "); for(p = 0; p < uip_len; p++){PRINTF("%.2X", uip_buf[p]);}PRINTF("\n")
-#define PRINTSICSLOWPANBUF() PRINTF("SICSLOWPAN buffer: "); for(p = 0; p < sicslowpan_len; p++){PRINTF("%.2X", sicslowpan_buf[p]);}PRINTF("\n")
+#define PRINTPACKETBUF() do { uint8_t p; PRINTF("packetbuf buffer: "); for(p = 0; p < packetbuf_datalen(); p++){PRINTF("%.2X", *(packetbuf_ptr + p));} PRINTF("\n"); } while(0)
+#define PRINTUIPBUF() do { uint8_t p; PRINTF("UIP buffer: "); for(p = 0; p < uip_len; p++){PRINTF("%.2X", uip_buf[p]);}PRINTF("\n"); } while(0)
+#define PRINTSICSLOWPANBUF() do { uint8_t p; PRINTF("SICSLOWPAN buffer: "); for(p = 0; p < sicslowpan_len; p++){PRINTF("%.2X", sicslowpan_buf[p]);}PRINTF("\n"); } while(0)
 #else
-#define PRINTFI(...)
-#define PRINTFO(...)
 #define PRINTPACKETBUF()
 #define PRINTUIPBUF()
 #define PRINTSICSLOWPANBUF()
@@ -970,7 +964,7 @@ static int uncompress(struct net_buf *buf)
 
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPHC
   if((PACKETBUF_HC1_PTR(mbuf)[PACKETBUF_HC1_DISPATCH] & 0xe0) == SICSLOWPAN_DISPATCH_IPHC) {
-    PRINTFO("uncompress: IPHC\n");
+    PRINTF("uncompress: IPHC\n");
     if(!uncompress_hdr_iphc(mbuf, buf)) {
        goto fail;
     }
@@ -978,7 +972,7 @@ static int uncompress(struct net_buf *buf)
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPHC */
   {
       /* unknown header */
-      PRINTFO("uncompress: unknown dispatch: %x--%x\n",
+      PRINTF("uncompress: unknown dispatch: %x--%x\n",
              PACKETBUF_HC1_PTR(mbuf)[PACKETBUF_HC1_DISPATCH], *uip_buf(buf));
       goto fail;
   }
@@ -987,7 +981,7 @@ static int uncompress(struct net_buf *buf)
   /* Check if memmove would go past the end of the buffer */
   if ((uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf)) >
       net_buf_tailroom(buf)) {
-    PRINTFO("uncompress: not enough space to store uncompressed headers\n");
+    PRINTF("uncompress: not enough space to store uncompressed headers\n");
     goto fail;
   }
   memmove(uip_buf(buf) + uip_uncomp_hdr_len(mbuf),

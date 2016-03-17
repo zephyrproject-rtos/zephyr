@@ -80,18 +80,12 @@
 #define DEBUG 1
 #endif
 #include "contiki/ip/uip-debug.h"
+
 #if DEBUG
-/* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
-uint8_t p;
-#include <stdio.h>
-#define PRINTFI(...) PRINTF(__VA_ARGS__)
-#define PRINTFO(...) PRINTF(__VA_ARGS__)
-#define PRINTPACKETBUF() PRINTF("packetbuf buffer: "); for(p = 0; p < packetbuf_datalen(); p++){PRINTF("%.2X", *(packetbuf_ptr + p));} PRINTF("\n")
-#define PRINTUIPBUF() PRINTF("UIP buffer: "); for(p = 0; p < uip_len; p++){PRINTF("%.2X", uip_buf[p]);}PRINTF("\n")
-#define PRINTSICSLOWPANBUF() PRINTF("SICSLOWPAN buffer: "); for(p = 0; p < sicslowpan_len; p++){PRINTF("%.2X", sicslowpan_buf[p]);}PRINTF("\n")
+#define PRINTPACKETBUF() do { uint8_t p; PRINTF("packetbuf buffer: "); for(p = 0; p < packetbuf_datalen(); p++){PRINTF("%.2X", *(packetbuf_ptr + p));} PRINTF("\n"); } while(0)
+#define PRINTUIPBUF() do { uint8_t p; PRINTF("UIP buffer: "); for(p = 0; p < uip_len; p++){PRINTF("%.2X", uip_buf[p]);}PRINTF("\n"); } while(0)
+#define PRINTSICSLOWPANBUF() do { uint8_t p; PRINTF("SICSLOWPAN buffer: "); for(p = 0; p < sicslowpan_len; p++){PRINTF("%.2X", sicslowpan_buf[p]);}PRINTF("\n"); } while(0)
 #else
-#define PRINTFI(...)
-#define PRINTFO(...)
 #define PRINTPACKETBUF()
 #define PRINTUIPBUF()
 #define PRINTSICSLOWPANBUF()
@@ -371,7 +365,7 @@ static struct net_buf *copy_buf(struct net_buf *mbuf)
   linkaddr_copy(&ip_buf_ll_src(buf),
 		packetbuf_addr(mbuf, PACKETBUF_ADDR_SENDER));
 
-  PRINTFI("%s: mbuf datalen %d dataptr %p buf %p\n", __FUNCTION__,
+  PRINTF("%s: mbuf datalen %d dataptr %p buf %p\n", __FUNCTION__,
 	  packetbuf_datalen(mbuf), packetbuf_dataptr(mbuf), uip_buf(buf));
   if(packetbuf_datalen(mbuf) > 0 &&
      packetbuf_datalen(mbuf) <= UIP_BUFSIZE - UIP_LLH_LEN) {
@@ -453,7 +447,7 @@ static int fragment(struct net_buf *buf, void *ptr)
 #endif /* USE_FRAMER_HDRLEN */
   max_payload = MAC_MAX_PAYLOAD - framer_hdrlen - NETSTACK_LLSEC.get_overhead();
 
-  PRINTFO("max_payload: %d, framer_hdrlen: %d \n",max_payload, framer_hdrlen);
+  PRINTF("max_payload: %d, framer_hdrlen: %d \n",max_payload, framer_hdrlen);
 
   mbuf = l2_buf_get_reserve(0);
   if (!mbuf) {
@@ -483,7 +477,7 @@ static int fragment(struct net_buf *buf, void *ptr)
     packetbuf_set_attr(mbuf, PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS,
                                      SICSLOWPAN_MAX_MAC_TRANSMISSIONS);
 
-    PRINTFO("fragmentation: total packet len %d\n", uip_len(buf));
+    PRINTF("fragmentation: total packet len %d\n", uip_len(buf));
 
     /*
      * The outbound IPv6 packet is too large to fit into a single 15.4
@@ -494,9 +488,9 @@ static int fragment(struct net_buf *buf, void *ptr)
      */
     int estimated_fragments = ((int)uip_len(buf)) / ((int)MAC_MAX_PAYLOAD - SICSLOWPAN_FRAGN_HDR_LEN) + 1;
     int freebuf = queuebuf_numfree(mbuf) - 1;
-    PRINTFO("uip_len: %d, fragments: %d, free bufs: %d\n", uip_len(buf), estimated_fragments, freebuf);
+    PRINTF("uip_len: %d, fragments: %d, free bufs: %d\n", uip_len(buf), estimated_fragments, freebuf);
     if(freebuf < estimated_fragments) {
-      PRINTFO("Dropping packet, not enough free bufs\n");
+      PRINTF("Dropping packet, not enough free bufs\n");
       goto fail;
     }
 
@@ -506,12 +500,12 @@ static int fragment(struct net_buf *buf, void *ptr)
 
     frag_tag = my_tag++;
     SET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_TAG, frag_tag);
-    PRINTFO("fragmentation: fragment %d \n", frag_tag);
+    PRINTF("fragmentation: fragment %d \n", frag_tag);
 
     /* Copy payload and send */
     uip_packetbuf_hdr_len(mbuf) += SICSLOWPAN_FRAG1_HDR_LEN;
     uip_packetbuf_payload_len(mbuf) = (max_payload - uip_packetbuf_hdr_len(mbuf)) & 0xfffffff8;
-    PRINTFO("(payload len %d, hdr len %d, tag %d)\n",
+    PRINTF("(payload len %d, hdr len %d, tag %d)\n",
                uip_packetbuf_payload_len(mbuf), uip_packetbuf_hdr_len(mbuf), frag_tag);
 
     memcpy(uip_packetbuf_ptr(mbuf) + uip_packetbuf_hdr_len(mbuf),
@@ -519,7 +513,7 @@ static int fragment(struct net_buf *buf, void *ptr)
     packetbuf_set_datalen(mbuf, uip_packetbuf_payload_len(mbuf) + uip_packetbuf_hdr_len(mbuf));
     q = queuebuf_new_from_packetbuf(mbuf);
     if(q == NULL) {
-      PRINTFO("could not allocate queuebuf for first fragment, dropping packet\n");
+      PRINTF("could not allocate queuebuf for first fragment, dropping packet\n");
       goto fail;
     }
     net_buf_ref(mbuf);
@@ -532,7 +526,7 @@ static int fragment(struct net_buf *buf, void *ptr)
     if((uip_last_tx_status(mbuf) == MAC_TX_COLLISION) ||
        (uip_last_tx_status(mbuf) == MAC_TX_ERR) ||
        (uip_last_tx_status(mbuf) == MAC_TX_ERR_FATAL)) {
-      PRINTFO("error in fragment tx, dropping subsequent fragments.\n");
+      PRINTF("error in fragment tx, dropping subsequent fragments.\n");
       goto fail;
     }
 
@@ -550,7 +544,7 @@ static int fragment(struct net_buf *buf, void *ptr)
     uip_packetbuf_payload_len(mbuf) = (max_payload - uip_packetbuf_hdr_len(mbuf)) & 0xfffffff8;
 
     while(processed_ip_out_len < uip_len(buf)) {
-      PRINTFO("fragmentation: fragment:%d, processed_ip_out_len:%d \n", my_tag, processed_ip_out_len);
+      PRINTF("fragmentation: fragment:%d, processed_ip_out_len:%d \n", my_tag, processed_ip_out_len);
       uip_packetbuf_ptr(mbuf)[PACKETBUF_FRAG_OFFSET] = processed_ip_out_len >> 3;
 
       /* Copy payload and send */
@@ -559,14 +553,14 @@ static int fragment(struct net_buf *buf, void *ptr)
         last_fragment = true;
         uip_packetbuf_payload_len(mbuf) = uip_len(buf) - processed_ip_out_len;
       }
-      PRINTFO("(offset %d, len %d, tag %d)\n",
+      PRINTF("(offset %d, len %d, tag %d)\n",
              processed_ip_out_len >> 3, uip_packetbuf_payload_len(mbuf), my_tag);
       memcpy(uip_packetbuf_ptr(mbuf) + uip_packetbuf_hdr_len(mbuf),
              (uint8_t *)UIP_IP_BUF(buf) + processed_ip_out_len, uip_packetbuf_payload_len(mbuf));
       packetbuf_set_datalen(mbuf, uip_packetbuf_payload_len(mbuf) + uip_packetbuf_hdr_len(mbuf));
       q = queuebuf_new_from_packetbuf(mbuf);
       if(q == NULL) {
-        PRINTFO("could not allocate queuebuf, dropping fragment\n");
+        PRINTF("could not allocate queuebuf, dropping fragment\n");
         goto fail;
       }
       net_buf_ref(mbuf);
@@ -580,7 +574,7 @@ static int fragment(struct net_buf *buf, void *ptr)
       if((uip_last_tx_status(mbuf) == MAC_TX_COLLISION) ||
          (uip_last_tx_status(mbuf) == MAC_TX_ERR) ||
          (uip_last_tx_status(mbuf) == MAC_TX_ERR_FATAL)) {
-        PRINTFO("error in fragment tx, dropping subsequent fragments.\n");
+        PRINTF("error in fragment tx, dropping subsequent fragments.\n");
         goto fail;
       }
     }
@@ -626,12 +620,12 @@ static int reassemble(struct net_buf *mbuf)
    */
   switch((GET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_DISPATCH_SIZE) & 0xf800) >> 8) {
     case SICSLOWPAN_DISPATCH_FRAG1:
-      PRINTFI("reassemble: FRAG1 ");
+      PRINTF("reassemble: FRAG1 ");
       frag_offset = 0;
       frag_size = GET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_DISPATCH_SIZE) & 0x07ff;
       frag_tag = GET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_TAG);
 
-      PRINTFI("size %d, tag %d, offset %d\n", frag_size, frag_tag, frag_offset);
+      PRINTF("size %d, tag %d, offset %d\n", frag_size, frag_tag, frag_offset);
 
       uip_packetbuf_hdr_len(mbuf) += SICSLOWPAN_FRAG1_HDR_LEN;
       first_fragment = 1;
@@ -650,12 +644,12 @@ static int reassemble(struct net_buf *mbuf)
        * set offset, tag, size
        * Offset is in units of 8 bytes
        */
-      PRINTFI("reassemble: FRAGN ");
+      PRINTF("reassemble: FRAGN ");
       frag_offset = uip_packetbuf_ptr(mbuf)[PACKETBUF_FRAG_OFFSET];
       frag_tag = GET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_TAG);
       frag_size = GET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_DISPATCH_SIZE) & 0x07ff;
 
-      PRINTFI("reassemble: size %d, tag %d, offset %d\n", frag_size, frag_tag, frag_offset);
+      PRINTF("reassemble: size %d, tag %d, offset %d\n", frag_size, frag_tag, frag_offset);
 
       uip_packetbuf_hdr_len(mbuf) += SICSLOWPAN_FRAGN_HDR_LEN;
 
@@ -739,7 +733,7 @@ static int reassemble(struct net_buf *mbuf)
       uip_len(buf) = uip_packetbuf_payload_len(mbuf) + uip_uncomp_hdr_len(mbuf);
     }
 
-    PRINTFI("reassemble: IP packet ready (length %d)\n", uip_len(buf));
+    PRINTF("reassemble: IP packet ready (length %d)\n", uip_len(buf));
 
     if(net_driver_15_4_recv(buf) < 0) {
       goto fail;
