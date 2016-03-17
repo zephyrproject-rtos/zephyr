@@ -283,6 +283,8 @@ void on_nble_gap_start_advertise_rsp(const struct nble_response *rsp)
 		return;
 	}
 
+	nble.keep_adv = true;
+
 	BT_DBG("status %u", rsp->status);
 }
 
@@ -301,6 +303,8 @@ void on_nble_gap_stop_advertise_rsp(const struct nble_response *rsp)
 		BT_ERR("Stop advertise failed, status %d", rsp->status);
 		return;
 	}
+
+	nble.keep_adv = false;
 
 	BT_DBG("status %d", rsp->status);
 }

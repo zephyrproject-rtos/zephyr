@@ -535,6 +535,7 @@ struct nble {
 	/* Local Bluetooth LE Device Address */
 	bt_addr_le_t addr;
 	const struct bt_conn_auth_cb *auth;
+	bool keep_adv;
 };
 
 extern struct nble nble;

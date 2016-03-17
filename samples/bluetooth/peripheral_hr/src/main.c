@@ -176,14 +176,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason %u)\n", reason);
 
-#if defined(CONFIG_NBLE)
-	/* FIXME: Remove this once nble is capable restarting advertising */
-	if (bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
-			    sd, ARRAY_SIZE(sd))) {
-		printk("Advertising failed to restart\n");
-	}
-#endif
-
 	if (default_conn) {
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
