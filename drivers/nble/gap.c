@@ -190,30 +190,45 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 	return true;
 }
 
-int bt_le_adv_start(const struct bt_le_adv_param *param,
-		    const struct bt_data *ad, size_t ad_len,
-		    const struct bt_data *sd, size_t sd_len)
+static int set_ad(struct bt_eir_data *eir, const struct bt_data *ad,
+		  size_t ad_len)
 {
-	struct nble_gap_adv_params params = { 0 };
 	int i;
-
-	if (!valid_adv_param(param)) {
-		return -EINVAL;
-	}
 
 	for (i = 0; i < ad_len; i++) {
 		uint8_t *p;
 
 		/* Check if ad fit in the remaining buffer */
-		if (params.ad.len + ad[i].data_len + 2 > 31) {
-			break;
+		if (eir->len + ad[i].data_len + 2 > 31) {
+			return -ENOMEM;
 		}
 
-		p = &params.ad.data[params.ad.len];
+		p = &eir->data[eir->len];
 		*p++ = ad[i].data_len + 1;
 		*p++ = ad[i].type;
 		memcpy(p, ad[i].data, ad[i].data_len);
-		params.ad.len += ad[i].data_len + 2;
+		eir->len += ad[i].data_len + 2;
+	}
+
+	return 0;
+}
+
+int bt_le_adv_start(const struct bt_le_adv_param *param,
+		    const struct bt_data *ad, size_t ad_len,
+		    const struct bt_data *sd, size_t sd_len)
+{
+	struct nble_gap_adv_params params = { 0 };
+	struct nble_gap_ad_data_params data = { 0 };
+	int err;
+
+	if (!valid_adv_param(param)) {
+		return -EINVAL;
+	}
+
+	err = set_ad(&data.ad, ad, ad_len);
+	if (err) {
+		BT_ERR("Error setting ad data %d", err);
+		return err;
 	}
 
 	/*
@@ -221,26 +236,20 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	 * a scannable one.
 	 */
 	if (param->type != BT_LE_ADV_IND && param->type != BT_LE_ADV_SCAN_IND) {
-		goto send_set_param;
+		goto set_adv;
 	}
 
-	for (i = 0; i < sd_len; i++) {
-		uint8_t *p;
-
-		/* Check if sd fit in the remaining buffer */
-		if (params.sd.len + sd[i].data_len + 2 > 31) {
-			break;
-		}
-
-		p = &params.sd.data[params.sd.len];
-		*p++ = sd[i].data_len + 1;
-		*p++ = sd[i].type;
-		memcpy(p, sd[i].data, sd[i].data_len);
-		params.sd.len += sd[i].data_len + 2;
+	err = set_ad(&data.sd, sd, sd_len);
+	if (err) {
+		BT_ERR("Error setting scan response data %d", err);
+		return err;
 	}
 
-send_set_param:
-	/* Timeout is handled by application timer */
+set_adv:
+	/* Set advertising data */
+	nble_gap_set_adv_data_req(&data);
+
+	/* TODO: Timeout is handled by application timer */
 	params.timeout = 0;
 	/* forced to none currently (no whitelist support) */
 	params.filter_policy = 0;
@@ -248,7 +257,11 @@ send_set_param:
 	params.interval_min = param->interval_min;
 	params.type = param->type;
 
-	nble_gap_start_advertise_req(&params);
+	/* Set advertising parameters */
+	nble_gap_set_adv_params_req(&params);
+
+	/* Start advertising */
+	nble_gap_start_adv_req();
 
 	return 0;
 }
@@ -267,7 +280,7 @@ int bt_le_adv_stop(void)
 {
 	BT_DBG("");
 
-	nble_gap_stop_advertise_req(NULL);
+	nble_gap_stop_adv_req(NULL);
 
 	return 0;
 }

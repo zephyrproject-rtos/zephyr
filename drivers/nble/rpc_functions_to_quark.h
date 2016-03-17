@@ -69,19 +69,21 @@
 		 const struct nble_gatt_ind_rsp *)		\
 	FN_SIG_S(on_nble_gap_start_advertise_rsp,		\
 		 const struct nble_response *)			\
-	FN_SIG_S(on_nble_gap_stop_advertise_rsp,		\
+	FN_SIG_S(on_nble_gap_scan_start_stop_rsp,		\
 		 const struct nble_response *)			\
 	FN_SIG_S(on_nble_gatts_read_evt,			\
 		 const struct nble_gatt_rd_evt *)		\
-	FN_SIG_S(on_nble_gap_scan_start_stop_rsp,		\
-		 const struct nble_response *)
+	FN_SIG_S(on_nble_gatts_write_exec_evt,			\
+		 const struct nble_gatt_wr_exec_evt *)		\
+	FN_SIG_S(on_nble_uas_bucket_change,			\
+		 const struct nble_uas_bucket_change *)
 
 #define LIST_FN_SIG_P						\
 	FN_SIG_P(on_nble_gap_dtm_init_rsp, void *)
 
 #define LIST_FN_SIG_S_B						\
-	FN_SIG_S_B(nble_log, const struct nble_log_s *,		\
-		   char *, uint8_t)				\
+	FN_SIG_S_B(nble_log, const struct nble_log_s *, char *,	\
+		   uint8_t)					\
 	FN_SIG_S_B(on_nble_gattc_value_evt,			\
 		   const struct nble_gattc_value_evt *,		\
 		   uint8_t *, uint8_t)				\

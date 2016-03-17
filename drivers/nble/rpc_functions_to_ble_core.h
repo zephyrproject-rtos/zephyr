@@ -16,10 +16,13 @@
 
 /* declare the list of functions sorted by signature */
 #define LIST_FN_SIG_NONE						\
+	FN_SIG_NONE(nble_gap_start_adv_req)				\
 	FN_SIG_NONE(nble_gap_stop_scan_req)
 
 #define LIST_FN_SIG_S							\
-	FN_SIG_S(nble_gap_start_advertise_req,				\
+	FN_SIG_S(nble_gap_set_adv_data_req,				\
+		 struct nble_gap_ad_data_params *)			\
+	FN_SIG_S(nble_gap_set_adv_params_req,				\
 		 struct nble_gap_adv_params *)				\
 	FN_SIG_S(nble_gap_start_scan_req,				\
 		 const struct nble_gap_scan_params *)			\
@@ -37,13 +40,17 @@
 	FN_SIG_S(nble_gap_conn_update_req,				\
 		 const struct nble_gap_connect_update_params *)		\
 	FN_SIG_S(nble_gattc_discover_req,				\
-		 const struct nble_discover_params *)
+		 const struct nble_discover_params *)			\
+	FN_SIG_S(nble_gatts_wr_reply_req,				\
+		 const struct nble_gatts_wr_reply_params *)		\
+	FN_SIG_S(nble_uas_rssi_calibrate_req,				\
+		 const struct nble_uas_rssi_calibrate *)
 
 #define LIST_FN_SIG_P							\
 	FN_SIG_P(nble_get_version_req, void *)				\
 	FN_SIG_P(nble_gap_dtm_init_req, void *)				\
 	FN_SIG_P(nble_gap_read_bda_req, void *)				\
-	FN_SIG_P(nble_gap_stop_advertise_req, void *)			\
+	FN_SIG_P(nble_gap_stop_adv_req, void *)				\
 	FN_SIG_P(nble_gap_clr_white_list_req, void *)			\
 	FN_SIG_P(nble_gap_cancel_connect_req, void *)
 
@@ -53,12 +60,12 @@
 		   uint8_t *, uint16_t)					\
 	FN_SIG_S_B(nble_gatt_send_notif_req,				\
 		   const struct nble_gatt_send_notif_params *,		\
-		   uint8_t *, uint16_t)					\
+		   const uint8_t *, uint16_t)				\
 	FN_SIG_S_B(nble_gatt_send_ind_req,				\
 		   const struct nble_gatt_send_ind_params *,		\
-		   uint8_t *, uint8_t)					\
-	FN_SIG_S_B(nble_gatts_authorize_reply_req,			\
-		   const struct nble_gatts_rw_reply_params *,		\
+		   const uint8_t *, uint8_t)				\
+	FN_SIG_S_B(nble_gatts_rd_reply_req,				\
+		   const struct nble_gatts_rd_reply_params *,		\
 		   uint8_t *, uint16_t)
 
 #define LIST_FN_SIG_B_B_P						\

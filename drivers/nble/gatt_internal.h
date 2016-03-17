@@ -49,32 +49,42 @@ struct nble_gatt_register_rsp {
 	uint8_t attr_count;
 };
 
+enum nble_gatt_wr_flag {
+	NBLE_GATT_WR_FLAG_REPLY	= 1,
+	NBLE_GATT_WR_FLAG_PREP	= 2,
+};
+
 struct nble_gatt_wr_evt {
 	struct bt_gatt_attr *attr;
 	uint16_t conn_handle;
-	uint16_t attr_handle;
 	uint16_t offset;
-	/* 1 if reply required, 0 otherwise */
-	uint8_t reply;
+	uint8_t flag;		/* Cf. enum nble_gatt_wr_flag */
+};
+
+struct nble_gatt_wr_exec_evt {
+	uint16_t conn_handle;
+	uint8_t flag;
 };
 
 struct nble_gatt_rd_evt {
 	struct bt_gatt_attr *attr;
 	uint16_t conn_handle;
-	uint16_t attr_handle;
 	uint16_t offset;
 };
 
-struct nble_gatts_rw_reply_params {
-	int status;
+struct nble_gatts_rd_reply_params {
 	uint16_t conn_handle;
 	uint16_t offset;
-	/* 0 if read reply, otherwise write reply */
-	uint8_t write_reply;
+	int32_t status;
+};
+
+struct nble_gatts_wr_reply_params {
+	uint16_t conn_handle;
+	int32_t status;
 };
 
 struct nble_gatt_notif_ind_params {
-	struct bt_gatt_attr *attr;
+	const struct bt_gatt_attr *attr;
 	uint16_t offset;
 };
 
@@ -136,7 +146,7 @@ struct nble_gattc_descriptor {
 };
 
 struct nble_gattc_discover_rsp {
-	int status;
+	int32_t status;
 	void *user_data;
 	uint16_t conn_handle;
 	uint8_t type;
@@ -151,8 +161,10 @@ struct nble_gatts_svc_changed_params {
 void nble_gatts_send_svc_changed_req(const struct nble_gatts_svc_changed_params *par,
 				     void *priv);
 
-void nble_gatts_authorize_reply_req(const struct nble_gatts_rw_reply_params *par,
-				    uint8_t *buf, uint16_t len);
+void nble_gatts_rd_reply_req(const struct nble_gatts_rd_reply_params *,
+			     uint8_t *, uint16_t);
+
+void nble_gatts_wr_reply_req(const struct nble_gatts_wr_reply_params *p_params);
 
 void nble_gatt_register_req(const struct nble_gatt_register_req *par,
 			    uint8_t *buf, uint16_t len);
@@ -169,10 +181,10 @@ void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *ev,
 			     const uint8_t *buf, uint8_t len);
 
 void nble_gatt_send_notif_req(const struct nble_gatt_send_notif_params *par,
-			      uint8_t *data, uint16_t length);
+			      const uint8_t *data, uint16_t length);
 
 void nble_gatt_send_ind_req(const struct nble_gatt_send_ind_params *par,
-			    uint8_t *data, uint8_t length);
+			    const uint8_t *data, uint8_t length);
 
 #define DISCOVER_FLAGS_UUID_PRESENT 1
 
@@ -239,11 +251,11 @@ void nble_gattc_read_req(const struct nble_gattc_read_params *params,
 void nble_gattc_write_req(const struct nble_gattc_write_params *params,
 			  const uint8_t *buf, uint8_t len, void *priv);
 
+void bt_gatt_disconnected(struct bt_conn *conn);
+
 struct nble_gattc_value_evt {
 	uint16_t conn_handle;
 	int status;
 	uint16_t handle;
 	uint8_t type;
 };
-
-void bt_gatt_disconnected(struct bt_conn *conn);

@@ -185,6 +185,9 @@ struct nble_gap_adv_params {
 	uint8_t filter_policy;
 	/* bd address of peer device in case of directed advertisement */
 	bt_addr_le_t peer_bda;
+};
+
+struct nble_gap_ad_data_params {
 	/* Advertisement data, maybe 0 (length) */
 	struct bt_eir_data ad;
 	/* Scan response data, maybe 0 (length) */
@@ -217,13 +220,15 @@ void on_nble_set_bda_rsp(const struct nble_set_bda_rsp *par);
 
 void nble_set_bda_req(const struct nble_set_bda_params *par);
 
-void nble_gap_start_advertise_req(struct nble_gap_adv_params *par);
+void nble_gap_set_adv_data_req(struct nble_gap_ad_data_params *ad_data_params);
 
-void on_nble_gap_start_advertise_rsp(const struct nble_response *par);
+void nble_gap_set_adv_params_req(struct nble_gap_adv_params *adv_params);
 
-void nble_gap_stop_advertise_req(void *user_data);
+void nble_gap_start_adv_req(void);
 
-void on_nble_gap_stop_advertise_rsp(const struct nble_response *par);
+void on_nble_gap_start_advertise_rsp(const struct nble_response *params);
+
+void nble_gap_stop_adv_req(void *user_data);
 
 void nble_gap_read_bda_req(void *priv);
 
@@ -402,6 +407,16 @@ struct nble_gap_gen_cmd_params {
 
 void nble_gap_generic_cmd_req(const struct nble_gap_gen_cmd_params *par,
 			      void *priv);
+
+struct nble_uas_rssi_calibrate {
+	float distance;
+};
+void nble_uas_rssi_calibrate_req(const struct nble_uas_rssi_calibrate *);
+
+struct nble_uas_bucket_change {
+	uint8_t distance;
+};
+void on_nble_uas_bucket_change(const struct nble_uas_bucket_change *);
 
 void on_nble_gap_generic_cmd_rsp(const struct nble_response *par);
 

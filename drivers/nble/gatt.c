@@ -1079,55 +1079,57 @@ void bt_gatt_cancel(struct bt_conn *conn)
 	BT_DBG("");
 }
 
-void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *evt,
+void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *ev,
 			     const uint8_t *buf, uint8_t buflen)
 {
-	const struct bt_gatt_attr *attr = evt->attr;
-	struct nble_gatts_rw_reply_params reply_data;
+	const struct bt_gatt_attr *attr = ev->attr;
+	struct nble_gatts_wr_reply_params reply_data;
 
 	BT_DBG("handle 0x%04x buf %p len %u", attr->handle, buf, buflen);
 
 	if (attr->write) {
 		reply_data.status = attr->write(NULL, attr, buf, buflen,
-						evt->offset);
+						ev->offset);
 	} else {
 		reply_data.status = -EINVAL;
 	}
 
-	if (evt->reply) {
-		reply_data.conn_handle = evt->conn_handle;
-		reply_data.offset = evt->offset;
-		reply_data.write_reply = 1;
+	if (ev->flag & NBLE_GATT_WR_FLAG_REPLY) {
+		reply_data.conn_handle = ev->conn_handle;
 
-		nble_gatts_authorize_reply_req(&reply_data, NULL,
-					       reply_data.status);
+		nble_gatts_wr_reply_req(&reply_data);
 	}
 }
 
-void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *evt)
+void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *ev)
 {
-	struct nble_gatts_rw_reply_params reply_data;
+	struct nble_gatts_rd_reply_params reply_data;
 	const struct bt_gatt_attr *attr;
 	/* TODO: Replace the following with net_buf */
 	uint8_t data[NBLE_BUF_SIZE];
+	int len = 0;
 
 	reply_data.status = -EACCES;
 	memset(data, 0, sizeof(data));
 
-	attr = evt->attr;
+	attr = ev->attr;
 
 	BT_DBG("attr %p", attr);
 
 	if (attr->read) {
-		reply_data.status = attr->read(NULL, attr, data, sizeof(data),
-					       evt->offset);
+		len = attr->read(NULL, attr, data, sizeof(data), ev->offset);
 	}
 
-	reply_data.conn_handle = evt->conn_handle;
-	reply_data.offset = evt->offset;
-	reply_data.write_reply = 0;
+	if (len >= 0) {
+		reply_data.status = 0;
+		reply_data.offset = ev->offset;
+	} else {
+		reply_data.status = len;
+	}
 
-	nble_gatts_authorize_reply_req(&reply_data, data, reply_data.status);
+	reply_data.conn_handle = ev->conn_handle;
+
+	nble_gatts_rd_reply_req(&reply_data, data, len);
 }
 
 void bt_gatt_disconnected(struct bt_conn *conn)
