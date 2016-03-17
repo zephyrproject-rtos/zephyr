@@ -1,7 +1,7 @@
 # Kconfig - Clock controller driver configuration options
 
 #
-# Copyright (c) 2015 Intel Corporation
+# Copyright (c) 2015-2016 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 if SOC_QUARK_SE
 
-config  CLOCK_CONTROL_QUARK_SE
+menuconfig  CLOCK_CONTROL_QUARK_SE
        bool
        prompt "Quark SE Clock controller support"
        depends on CLOCK_CONTROL && SOC_QUARK_SE
