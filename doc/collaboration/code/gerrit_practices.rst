@@ -45,9 +45,12 @@ is one time use.  Use the following command as an example:
 
 .. code-block:: console
 
-   $ scp -p -P 29418 gerrit.zephyrproject.org:hooks/commit-msg LOCALREPODIR/.git/hooks/
+   $ scp -p -P 29418 <LFID>@gerrit.zephyrproject.org:hooks/commit-msg LOCALREPODIR/.git/hooks/
 
-.. note:: replace LOCALREPODIR with the directory where you cloned the project.
+.. note::
+
+   replace <LFID> with your Linux Foundation ID.
+   replace LOCALREPODIR with the directory where you cloned the project.
 
 The command above needs to be entered only once.
 
