@@ -250,6 +250,23 @@ struct bt_hci_rp_pin_code_neg_reply {
 	bt_addr_t bdaddr;
 } __packed;
 
+#define BT_HCI_OP_REMOTE_NAME_REQUEST		BT_OP(BT_OGF_LINK_CTRL, 0x0019)
+struct bt_hci_cp_remote_name_request {
+	bt_addr_t bdaddr;
+	uint8_t   pscan_rep_mode;
+	uint8_t   reserved;
+	uint16_t  clock_offset;
+} __packed;
+
+#define BT_HCI_OP_REMOTE_NAME_CANCEL		BT_OP(BT_OGF_LINK_CTRL, 0x001a)
+struct bt_hci_cp_remote_name_cancel {
+	bt_addr_t bdaddr;
+} __packed;
+struct bt_hci_rp_remote_name_cancel {
+	uint8_t status;
+	bt_addr_t bdaddr;
+} __packed;
+
 #define BT_HCI_OP_IO_CAPABILITY_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x002b)
 struct bt_hci_cp_io_capability_reply {
 	bt_addr_t bdaddr;
@@ -562,6 +579,13 @@ struct bt_hci_evt_disconn_complete {
 	uint8_t  status;
 	uint16_t handle;
 	uint8_t  reason;
+} __packed;
+
+#define BT_HCI_EVT_REMOTE_NAME_REQ_COMPLETE	0x07
+struct bt_hci_evt_remote_name_req_complete {
+	uint8_t status;
+	bt_addr_t bdaddr;
+	uint8_t name[248];
 } __packed;
 
 #define BT_HCI_EVT_ENCRYPT_CHANGE		0x08
