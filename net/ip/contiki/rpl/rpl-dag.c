@@ -426,6 +426,9 @@ check_prefix(rpl_prefix_t *last_prefix, rpl_prefix_t *new_prefix)
      uip_ipaddr_prefixcmp(&last_prefix->prefix, &new_prefix->prefix, new_prefix->length) &&
      last_prefix->flags == new_prefix->flags) {
     /* Nothing has changed. */
+    PRINTF("RPL: same prefix ");
+    PRINT6ADDR(&new_prefix->prefix);
+    PRINTF(" len %d flags 0x%x\n", new_prefix->length, new_prefix->flags);
     return;
   }
 
