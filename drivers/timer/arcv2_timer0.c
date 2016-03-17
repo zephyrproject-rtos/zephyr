@@ -60,6 +60,7 @@
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
 #include <stdbool.h>
+#include <misc/__assert.h>
 
 /*
  * A board support package's board.h header must provide definitions for the
@@ -173,6 +174,10 @@ void _timer_int_handler(void *unused)
 
 #if defined(CONFIG_TICKLESS_IDLE)
 	timer0_limit_register_set(cycles_per_tick - 1);
+	__ASSERT_EVAL({},
+		      uint32_t timer_count = timer0_count_register_get(),
+		      timer_count <= (cycles_per_tick - 1),
+		      "timer_count: %d, limit %d\n", timer_count, cycles_per_tick - 1);
 
 	_sys_idle_elapsed_ticks = 1;
 #endif
@@ -233,6 +238,10 @@ void _timer_idle_enter(int32_t ticks)
 	if (status & _ARC_V2_TMR_CTRL_IP) {
 		straddled_tick_on_idle_enter = true;
 	}
+	__ASSERT_EVAL({},
+		      uint32_t timer_count = timer0_count_register_get(),
+		      timer_count <= programmed_limit,
+		      "timer_count: %d, limit %d\n", timer_count, programmed_limit);
 }
 
 /*
@@ -250,6 +259,10 @@ void _timer_idle_exit(void)
 	if (straddled_tick_on_idle_enter) {
 		/* Aborting the tickless idle due to a straddled tick. */
 		straddled_tick_on_idle_enter = false;
+		__ASSERT_EVAL({},
+			      uint32_t timer_count = timer0_count_register_get(),
+			      timer_count <= programmed_limit,
+			      "timer_count: %d, limit %d\n", timer_count, programmed_limit);
 		return;
 	}
 
@@ -269,6 +282,10 @@ void _timer_idle_exit(void)
 		update_accumulated_count();
 		_sys_clock_tick_announce();
 
+		__ASSERT_EVAL({},
+			      uint32_t timer_count = timer0_count_register_get(),
+			      timer_count <= programmed_limit,
+			      "timer_count: %d, limit %d\n", timer_count, programmed_limit);
 		return;
 	}
 
@@ -288,6 +305,11 @@ void _timer_idle_exit(void)
 	 */
 	timer0_limit_register_set(cycles_per_tick - 1);
 	timer0_count_register_set(current_count % cycles_per_tick);
+
+	__ASSERT_EVAL({},
+		      uint32_t timer_count = timer0_count_register_get(),
+		      timer_count <= (cycles_per_tick - 1),
+		      "timer_count: %d, limit %d\n", timer_count, cycles_per_tick-1);
 }
 #else
 static void tickless_idle_init(void) {}
