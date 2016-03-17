@@ -1,0 +1,193 @@
+# Kconfig.dw - DesignWare I2C configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig I2C_DW
+        bool "Design Ware I2C support"
+	depends on I2C
+        default n
+	help
+	Enable Design Ware I2C support on the selected platform
+
+if I2C_DW
+
+choice
+	prompt "IRQ Trigger Condition"
+	default I2C_DW_IRQ_RISING_EDGE
+	depends on I2C_DW
+
+config I2C_DW_IRQ_FALLING_EDGE
+	bool "Falling Edge"
+	help
+	  This option signifies that the controller
+	  uses falling edge interrupt.
+
+config I2C_DW_IRQ_RISING_EDGE
+	bool "Rising Edge"
+	help
+	  This option signifies that the controller
+	  uses rising edge interrupt.
+
+config I2C_DW_IRQ_LEVEL_HIGH
+	bool "Level High"
+	help
+	  This option signifies that the controller
+	  uses level high interrupt.
+
+config I2C_DW_IRQ_LEVEL_LOW
+	bool "Level Low"
+	help
+	  This option signifies that the controller
+	  uses level low interrupt.
+
+endchoice
+
+config I2C_DW_SHARED_IRQ
+	bool
+	default n
+	depends on I2C_DW
+
+config I2C_DW_VENDOR_ID
+	hex "PCI Vendor ID of the controllers"
+	depends on I2C_DW && PCI
+	default 0x8086
+
+config I2C_DW_DEVICE_ID
+	hex "PCI Device ID of the controllers"
+	depends on I2C_DW && PCI
+	default 0x934
+
+config I2C_DW_CLASS
+	hex "PCI device class"
+	depends on I2C_DW && PCI
+	default 0x0C
+
+config I2C_DW_0
+        bool "Enable I2C0"
+        default n
+	depends on I2C_DW
+
+config I2C_DW_0_BASE
+        hex "Base address for I2C0"
+        depends on I2C_DW_0
+
+config I2C_DW_0_NAME
+        string "Select a name for finding the device"
+        depends on I2C_DW_0
+        default "I2C0"
+
+choice
+	prompt "I2C0 Interrupts via"
+	default I2C_DW_0_IRQ_DIRECT
+	depends on I2C_DW_0
+
+config I2C_DW_0_IRQ_DIRECT
+	bool "Direct Hardware Interrupt"
+	help
+	  When interrupts fire, the driver's ISR function is being called directly.
+
+config I2C_DW_0_IRQ_SHARED
+	bool "Shared IRQ"
+	depends on SHARED_IRQ
+	select I2C_DW_SHARED_IRQ
+	help
+	  When interrupts fire, the shared IRQ driver is notified. Then the shared IRQ
+	  driver dispatches the interrupt to other drivers.
+
+endchoice
+
+config I2C_DW_0_IRQ_SHARED_NAME
+	string "Device name for Shared IRQ"
+	depends on I2C_DW_0 && I2C_DW_0_IRQ_SHARED
+	help
+	  Specify the device name for the shared IRQ driver. It is used to register
+	  this driver with the shared IRQ driver, so interrupts can be dispatched
+	  correctly.
+
+config I2C_DW_0_IRQ
+	int "Controller interrupt"
+	depends on I2C_DW_0 && I2C_DW_0_IRQ_DIRECT
+
+config I2C_DW_0_INT_PRIORITY
+        int "Controller interrupt priority"
+        depends on I2C_DW_0 && I2C_DW_0_IRQ_DIRECT
+        help
+        IRQ priority
+
+config I2C_DW_0_DEFAULT_CFG
+	hex "I2C default configuration"
+        depends on I2C_DW_0
+        default 0x0
+        help
+        Allows the I2C port to be brought up with a default configuration.
+        This is useful to set if other drivers depend upon using the I2C bus
+        before the application has a chance to custom configure the port.
+        Setting this value does not prohibit the application from customizing
+        the values later.  Refer to the I2C datasheet for proper values.
+
+config I2C_DW_0_BUS
+	int "PCI Bus number"
+	depends on I2C_DW_0 && PCI
+
+config I2C_DW_0_DEV
+	int "PCI device number"
+	depends on I2C_DW_0 && PCI
+
+config I2C_DW_0_FUNCTION
+	int "PCI function number"
+	depends on I2C_DW_0 && PCI
+
+config I2C_DW_0_BAR
+	int "PCI BAR number"
+	depends on I2C_DW_0 && PCI
+
+config I2C_DW_1
+        bool "Enable I2C1"
+        default n
+	depends on I2C_DW
+
+config I2C_DW_1_BASE
+        hex "Base address for I2C1"
+        depends on I2C_DW_1
+
+config I2C_DW_1_NAME
+        string "Select a name for finding the device"
+        depends on I2C_DW_1
+        default "I2C1"
+
+config I2C_DW_1_IRQ
+	int "Controller interrupt"
+	depends on I2C_DW_1
+
+config I2C_DW_1_INT_PRIORITY
+        int "Controller interrupt priority"
+        depends on I2C_DW_1
+        help
+        IRQ priority
+
+config I2C_DW_1_DEFAULT_CFG
+	hex "I2C default configuration"
+        depends on I2C_DW_1
+        default 0x0
+        help
+        Allows the I2C port to be brought up with a default configuration.
+        This is useful to set if other drivers depend upon using the I2C bus
+        before the application has a chance to custom configure the port.
+        Setting this value does not prohibit the application from customizing
+        the values later.  Refer to the I2C datasheet for proper values.
+
+endif # I2C_DW
