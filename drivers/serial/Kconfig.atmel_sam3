@@ -1,4 +1,4 @@
-config UART_ATMEL_SAM3
+menuconfig UART_ATMEL_SAM3
 	bool "Atmel SAM3 family processor UART driver"
 	default n
 	select SERIAL_HAS_DRIVER

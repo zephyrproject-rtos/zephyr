@@ -1,4 +1,4 @@
-config UART_STELLARIS
+menuconfig UART_STELLARIS
 	bool "Stellaris serial driver"
 	default n
 	select SERIAL_HAS_DRIVER

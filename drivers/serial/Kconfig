@@ -25,6 +25,8 @@ menuconfig SERIAL
 
 if SERIAL
 
+comment "Capabilities"
+
 config SERIAL_HAS_DRIVER
 	bool
 	default n
@@ -87,6 +89,8 @@ config UART_DRV_CMD
 	This allows drivers to expose hardware specific functions.
 
 	Says no if not sure.
+
+comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.ns16550"
 
