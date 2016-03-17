@@ -1,0 +1,509 @@
+# Kconfig.k64 - K64_FTM PWM configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2016 Wind River Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+################################################
+# K64 Flex Timer Module (FTM)
+################################################
+
+menuconfig PWM_K64_FTM
+	bool "PWM with Freescale K64 Flex Timer Module (FTM)"
+	depends on PWM
+	default n
+	help
+	Enable Pulse Width Modulation driver for Freescale
+	K64 Flex Timer Module (FTM).
+
+if PWM_K64_FTM
+
+config PWM_K64_FTM_DEBUG
+	bool "Enable Debugging for pwm_ftm driver"
+	depends on PWM_K64_FTM
+	default n
+	help
+	Enable debugging for pwm_ftm driver.
+
+#### FTM0 #####
+
+config PWM_K64_FTM_0
+	bool "K64 FTM PWM Module 0"
+	depends on PWM_K64_FTM
+	default n
+	help
+	Enable config PWM options for FTM0 source module.
+
+config PWM_K64_FTM_0_DEV_NAME
+	string "K64 FTM PWM Module 0 Device Name"
+	depends on PWM_K64_FTM_0
+	default "PWM_K64_FTM0"
+	help
+	Specify the device name for the FTM0 source module.
+
+config PWM_K64_FTM_0_REG_BASE
+	hex "K64 FTM0 Register Base Address"
+	depends on PWM_K64_FTM_0
+	default 0x40038000
+	help
+	Specify the memory mapped base address of FTM0.  This is the address
+	of FTM0_SC which is the first register of the module
+
+config PWM_K64_FTM_0_PRESCALE
+	int "K64 FTM0 prescale value"
+	default 1
+	depends on PWM_K64_FTM_0
+	help
+	Specify the FTM timer prescale value.  The valid values are
+	1, 2, 4, 8, 16, 32, 64, or 128.
+
+config PWM_K64_FTM_0_PERIOD
+	int "K64 FTM0 period value"
+	default 65535
+	depends on PWM_K64_FTM_0
+	help
+	Specify the FTM0 PWM period in ticks
+
+menu "K64 FTM0 Clock Source"
+depends on PWM_K64_FTM_0
+
+choice PWM_K64_FTM_0_CLOCK_SOURCE_CHOICE
+	prompt "Choose the K64 FTM0 clock source"
+	default PWM_K64_FTM_0_CLOCK_SOURCE_SYSTEM
+
+config  PWM_K64_FTM_0_CLOCK_SOURCE_NONE
+	bool "No clock selected (FTM counter disable)"
+
+config  PWM_K64_FTM_0_CLOCK_SOURCE_SYSTEM
+	bool "System clock"
+
+config  PWM_K64_FTM_0_CLOCK_SOURCE_FIXED
+	bool "Fixed Frequency Clock"
+
+config  PWM_K64_FTM_0_CLOCK_SOURCE_EXTERNAL
+	bool "External Clock"
+
+config  PWM_K64_FTM_0_CLOCK_SOURCE_QUAD
+	bool "Quadrature Decoder"
+
+endchoice
+
+endmenu
+
+config PWM_K64_FTM_0_CLOCK_SOURCE
+	int
+	# Omit prompt to signify "hidden" option
+	depends on PWM_K64_FTM_0
+	default 0 if PWM_K64_FTM_0_CLOCK_SOURCE_NONE
+	default 1 if PWM_K64_FTM_0_CLOCK_SOURCE_SYSTEM
+	default 2 if PWM_K64_FTM_0_CLOCK_SOURCE_FIXED
+	default 3 if PWM_K64_FTM_0_CLOCK_SOURCE_EXTERNAL
+	default 4 if PWM_K64_FTM_0_CLOCK_SOURCE_QUAD
+	help
+	Specify K64 FTM0 clock source
+
+config PWM_K64_FTM_0_PHASE_ENABLE_0
+	bool "FTM0 Enable Phase for channel 0"
+	depends on PWM_K64_FTM_0
+	default n
+	help
+	Allow a phase offset on FTM0 channel 0.  This configures
+	channels 0 and 1 to be in combine mode therefore
+	channel 1 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_K64_FTM_0_PHASE_ENABLE_2
+	bool "FTM0 Enable Phase for channel 2"
+	depends on PWM_K64_FTM_0
+	default n
+	help
+	Allow a phase offset on FTM0 channel 2.  This configures
+	channels 2 and 3 to be in combine mode therefore
+	channel 3 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_K64_FTM_0_PHASE_ENABLE_4
+	bool "FTM0 Enable Phase for channel 4"
+	depends on PWM_K64_FTM_0
+	default n
+	help
+	Allow a phase offset on FTM0 channel 4.  This configures
+	channels 4 and 5 to be in combine mode therefore
+	channel 5 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_K64_FTM_0_PHASE_ENABLE_6
+	bool "FTM0 Enable Phase for channel 6"
+	depends on PWM_K64_FTM_0
+	default n
+	help
+	Allow a phase offset on FTM0 channel 6.  This configures
+	channels 6 and 7 to be in combine mode therefore
+	channel 7 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+#### FTM1 #####
+
+config PWM_K64_FTM_1
+	bool "K64 FTM PWM Module 1"
+	depends on PWM_K64_FTM
+	default n
+	help
+	Enable config PWM options for FTM1 source module.
+
+config PWM_K64_FTM_1_DEV_NAME
+	string "K64 FTM PWM Module 1 Device Name"
+	depends on PWM_K64_FTM_1
+	default "PWM_K64_FTM1"
+	help
+	Specify the device name for the FTM1 source module.
+
+config PWM_K64_FTM_1_REG_BASE
+	hex "K64 FTM1 Register Base Address"
+	depends on PWM_K64_FTM_1
+	default 0x40039000
+	help
+	Specify the memory mapped base address of FTM1.  This is the address
+	of FTM1_SC which is the first register of the module
+
+config PWM_K64_FTM_1_PRESCALE
+	int "FTM1 prescale value"
+	default 1
+	depends on PWM_K64_FTM_1
+	help
+	Specify the FTM1 timer prescale value.  The valid values are
+	1, 2, 4, 8, 16, 32, 64, or 128
+
+config PWM_K64_FTM_1_PERIOD
+	int "FTM1 period value"
+	default 65535
+	depends on PWM_K64_FTM_1
+	help
+	Specify the FTM1 PWM period in ticks
+
+menu "K64 FTM1 Clock Source"
+depends on PWM_K64_FTM_1
+
+choice PWM_K64_FTM_1_CLOCK_SOURCE_CHOICE
+	prompt "Choose the FTM1 clock source"
+	default PWM_K64_FTM_1_CLOCK_SOURCE_SYSTEM
+
+config  PWM_K64_FTM_1_CLOCK_SOURCE_NONE
+	bool "No clock selected (FTM counter disable)"
+
+config  PWM_K64_FTM_1_CLOCK_SOURCE_SYSTEM
+	bool "System clock"
+
+config  PWM_K64_FTM_1_CLOCK_SOURCE_FIXED
+	bool "Fixed Frequency Clock"
+
+config  PWM_K64_FTM_1_CLOCK_SOURCE_EXTERNAL
+	bool "External Clock"
+
+config  PWM_K64_FTM_1_CLOCK_SOURCE_QUAD
+	bool "Quadrature Decoder"
+
+endchoice
+
+endmenu
+
+config PWM_K64_FTM_1_CLOCK_SOURCE
+	int
+	# Omit prompt to signify "hidden" option
+	depends on PWM_K64_FTM_1
+	default 0 if PWM_K64_FTM_1_CLOCK_SOURCE_NONE
+	default 1 if PWM_K64_FTM_1_CLOCK_SOURCE_SYSTEM
+	default 2 if PWM_K64_FTM_1_CLOCK_SOURCE_FIXED
+	default 3 if PWM_K64_FTM_1_CLOCK_SOURCE_EXTERNAL
+	default 4 if PWM_K64_FTM_1_CLOCK_SOURCE_QUAD
+	help
+	Specify K64 FTM1 clock source
+
+config PWM_K64_FTM_1_PHASE_ENABLE_0
+	bool "FTM1 Enable Phase for channel 0"
+	depends on PWM_K64_FTM_1
+	default n
+	help
+	Allow a phase offset on FTM1 channel 0.  This configures
+	channels 0 and 1 to be in combine mode therefore
+	channel 1 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_FTM_1_PHASE_ENABLE_2
+	bool "FTM1 Enable Phase for channel 2"
+	depends on PWM_K64_FTM_1
+	default n
+	help
+	Allow a phase offset on FTM1 channel 2.  This configures
+	channels 2 and 3 to be in combine mode therefore
+	channel 3 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_FTM_1_PHASE_ENABLE_4
+	bool "FTM1 Enable Phase for channel 4"
+	depends on PWM_K64_FTM_1
+	default n
+	help
+	Allow a phase offset on FTM1 channel 4.  This configures
+	channels 4 and 5 to be in combine mode therefore
+	channel 5 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_FTM_1_PHASE_ENABLE_6
+	bool "FTM1 Enable Phase for channel 6"
+	depends on PWM_K64_FTM_1
+	default n
+	help
+	Allow a phase offset on FTM1 channel 6.  This configures
+	channels 6 and 7 to be in combine mode therefore
+	channel 7 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+#### FTM2 #####
+
+config PWM_K64_FTM_2
+	bool "K64 FTM PWM Module 2"
+	depends on PWM_K64_FTM
+	default n
+	help
+	Enable config PWM options for FTM2 source module.
+
+config PWM_K64_FTM_2_DEV_NAME
+	string "K64 FTM PWM Module 2 Device Name"
+	depends on PWM_K64_FTM_2
+	default "PWM_K64_FTM2"
+	help
+	Specify the device name for the FTM2 source module.
+
+config PWM_K64_FTM_2_REG_BASE
+	hex "K64 FTM2 Register Base Address"
+	depends on PWM_K64_FTM_2
+	default 0x4003A000
+	help
+	Specify the memory mapped base address of FTM2.  This is the address
+	of FTM2_SC which is the first register of the module
+
+config PWM_K64_FTM_2_PRESCALE
+	int "FTM2 prescale value"
+	default 1
+	depends on PWM_K64_FTM_2
+	help
+	Specify the FTM2 timer prescale value.  The valid values are
+	1, 2, 4, 8, 16, 32, 64, or 128
+
+config PWM_K64_FTM_2_PERIOD
+	int "FTM2 period value"
+	default 65535
+	depends on PWM_K64_FTM_2
+	help
+	Specify the FTM2 PWM period in ticks
+
+menu "K64 FTM2 Clock Source"
+depends on PWM_K64_FTM_2
+
+choice PWM_K64_FTM_2_CLOCK_SOURCE_CHOICE
+	prompt "Choose the FTM2 clock source"
+	default PWM_K64_FTM_2_CLOCK_SOURCE_SYSTEM
+
+config  PWM_K64_FTM_2_CLOCK_SOURCE_NONE
+	bool "No clock selected (FTM counter disable)"
+
+config  PWM_K64_FTM_2_CLOCK_SOURCE_SYSTEM
+	bool "System clock"
+
+config  PWM_K64_FTM_2_CLOCK_SOURCE_FIXED
+	bool "Fixed Frequency Clock"
+
+config  PWM_K64_FTM_2_CLOCK_SOURCE_EXTERNAL
+	bool "External Clock"
+
+config  PWM_K64_FTM_2_CLOCK_SOURCE_QUAD
+	bool "Quadrature Decoder"
+
+endchoice
+
+endmenu
+
+config PWM_K64_FTM_2_CLOCK_SOURCE
+	int
+	# Omit prompt to signify "hidden" option
+	depends on PWM_K64_FTM_2
+	default 0 if PWM_K64_FTM_2_CLOCK_SOURCE_NONE
+	default 1 if PWM_K64_FTM_2_CLOCK_SOURCE_SYSTEM
+	default 2 if PWM_K64_FTM_2_CLOCK_SOURCE_FIXED
+	default 3 if PWM_K64_FTM_2_CLOCK_SOURCE_EXTERNAL
+	default 4 if PWM_K64_FTM_2_CLOCK_SOURCE_QUAD
+	help
+	Specify K64 FTM2 clock source
+
+config PWM_K64_FTM_2_PHASE_ENABLE_0
+	bool "FTM2 Enable Phase for channel 0"
+	depends on PWM_K64_FTM_2
+	default n
+	help
+	Allow a phase offset on FTM2 channel 0.  This configures
+	channels 0 and 1 to be in combine mode therefore
+	channel 1 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_K64_FTM_2_PHASE_ENABLE_2
+	bool "FTM2 Enable Phase for channel 2"
+	depends on PWM_K64_FTM_2
+	default n
+	help
+	Allow a phase offset on FTM2 channel 2.  This configures
+	channels 2 and 3 to be in combine mode therefore
+	channel 3 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_K64_FTM_2_PHASE_ENABLE_4
+	bool "FTM2 Enable Phase for channel 4"
+	depends on PWM_K64_FTM_2
+	default n
+	help
+	Allow a phase offset on FTM2 channel 4.  This configures
+	channels 4 and 5 to be in combine mode therefore
+	channel 5 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_K64_FTM_2_PHASE_ENABLE_6
+	bool "FTM2 Enable Phase for channel 6"
+	depends on PWM_K64_FTM_2
+	default n
+	help
+	Allow a phase offset on FTM2 channel 6.  This configures
+	channels 6 and 7 to be in combine mode therefore
+	channel 7 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+#### FTM3 #####
+
+config PWM_K64_FTM_3
+	bool "K64 FTM PWM Module 3"
+	depends on PWM_K64_FTM
+	default n
+	help
+	Enable config PWM options for K64 FTM3 source module.
+
+config PWM_K64_FTM_3_DEV_NAME
+	string "K64 FTM PWM Module 3 Device Name"
+	depends on PWM_K64_FTM_3
+	default "PWM_K64_FTM3"
+	help
+	Specify the device name for the FTM3 source module.
+
+config PWM_K64_FTM_3_REG_BASE
+	hex "K64 FTM3 Register Base Address"
+	depends on PWM_K64_FTM_3
+	default 0x400B9000
+	help
+	Specify the memory mapped base address of FTM3.  This is the address
+	of FTM3_SC which is the first register of the module
+
+config PWM_K64_FTM_3_PRESCALE
+	int "FTM3 prescale value"
+	default 3
+	depends on PWM_K64_FTM_3
+	help
+	Specify the FTM timer prescale value.  The valid values are
+	1, 2, 4, 8, 16, 32, 64, or 128
+
+config PWM_K64_FTM_3_PERIOD
+	int "FTM3 period value"
+	default 65535
+	depends on PWM_K64_FTM_3
+	help
+	Specify the FTM3 PWM period in ticks
+
+menu "K64 FTM3 Clock Source"
+depends on PWM_K64_FTM_3
+
+choice PWM_K64_FTM_3_CLOCK_SOURCE_CHOICE
+	prompt "Choose the FTM3 clock source"
+	default PWM_K64_FTM_3_CLOCK_SOURCE_SYSTEM
+
+config  PWM_K64_FTM_3_CLOCK_SOURCE_NONE
+	bool "No clock selected (FTM counter disable)"
+
+config  PWM_K64_FTM_3_CLOCK_SOURCE_SYSTEM
+	bool "System clock"
+
+config  PWM_K64_FTM_3_CLOCK_SOURCE_FIXED
+	bool "Fixed Frequency Clock"
+
+config  PWM_K64_FTM_3_CLOCK_SOURCE_EXTERNAL
+	bool "External Clock"
+
+config  PWM_K64_FTM_3_CLOCK_SOURCE_QUAD
+	bool "Quadrature Decoder"
+
+endchoice
+
+endmenu
+
+config PWM_K64_FTM_3_CLOCK_SOURCE
+	int
+	# Omit prompt to signify "hidden" option
+	depends on PWM_K64_FTM_3
+	default 0 if PWM_K64_FTM_3_CLOCK_SOURCE_NONE
+	default 1 if PWM_K64_FTM_3_CLOCK_SOURCE_SYSTEM
+	default 2 if PWM_K64_FTM_3_CLOCK_SOURCE_FIXED
+	default 3 if PWM_K64_FTM_3_CLOCK_SOURCE_EXTERNAL
+	default 4 if PWM_K64_FTM_3_CLOCK_SOURCE_QUAD
+	help
+	Specify K64 FTM3 clock source
+
+config PWM_K64_FTM_3_PHASE_ENABLE_0
+	bool "FTM3 Enable Phase for channel 0"
+	depends on PWM_K64_FTM_3
+	default n
+	help
+	Allow a phase offset on FTM3 channel 0.  This configures
+	channels 0 and 1 to be in combine mode therefore
+	channel 1 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_K64_FTM_3_PHASE_ENABLE_2
+	bool "FTM3 Enable Phase for channel 2"
+	depends on PWM_K64_FTM_3
+	default n
+	help
+	Allow a phase offset on FTM3 channel 2.  This configures
+	channels 2 and 3 to be in combine mode therefore
+	channel 3 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_K64_FTM_3_PHASE_ENABLE_4
+	bool "FTM3 Enable Phase for channel 4"
+	depends on PWM_K64_FTM_3
+	default n
+	help
+	Allow a phase offset on FTM3 channel 4.  This configures
+	channels 4 and 5 to be in combine mode therefore
+	channel 5 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+config PWM_K64_FTM_3_PHASE_ENABLE_6
+	bool "FTM3 Enable Phase for channel 6"
+	depends on PWM_K64_FTM_3
+	default n
+	help
+	Allow a phase offset on FTM3 channel 6.  This configures
+	channels 6 and 7 to be in combine mode therefore
+	channel 7 is not valid as an output signal.
+	Note: phase is an unsupported feature.
+
+endif # PWM_K64_FTM
