@@ -9,7 +9,10 @@
 #define MAX_NUM_QUEUED_PACKETS 2
 MEMB(packets_memb, struct uip_packetqueue_packet, MAX_NUM_QUEUED_PACKETS);
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_PACKET_QUEUE
+#define DEBUG 1
+#endif
+
 #include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/

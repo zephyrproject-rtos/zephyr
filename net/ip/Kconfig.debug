@@ -129,6 +129,13 @@ config NETWORK_IP_STACK_DEBUG_6LOWPAN_COMPRESSION
 	  Enables generic (802.15.4 or Bluetooth) 6LoWPAN compression
 	  to output debug messages
 
+config NETWORK_IP_STACK_DEBUG_PACKET_QUEUE
+	bool "Debug uip packet queue"
+	depends on NETWORKING_WITH_IPV6
+	default n
+	help
+	  Enables uip packet queue output debug messages
+
 config NETWORK_IP_STACK_DEBUG_RPL
 	bool "Debug RPL messages"
 	depends on NETWORKING_WITH_RPL
