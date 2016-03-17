@@ -249,6 +249,9 @@ int bt_le_scan_stop(void);
 
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
+	/** private */
+	uint8_t private[4];
+
 	/** Remote device address */
 	bt_addr_t addr;
 

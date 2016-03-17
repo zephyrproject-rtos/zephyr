@@ -1313,9 +1313,99 @@ static void user_passkey_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+struct discovery_priv {
+	uint16_t clock_offset;
+	uint8_t pscan_rep_mode;
+	uint8_t resolving;
+} __packed;
+
+static int request_name(const bt_addr_t *addr, uint8_t pscan, uint16_t offset)
+{
+	struct bt_hci_cp_remote_name_request *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_REMOTE_NAME_REQUEST, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	bt_addr_copy(&cp->bdaddr, addr);
+	cp->pscan_rep_mode = pscan;
+	cp->reserved = 0x00; /* reserver, should be set to 0x00 */
+	cp->clock_offset = offset;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_REQUEST, buf, NULL);
+}
+
+#define EIR_SHORT_NAME		0x08
+#define EIR_COMPLETE_NAME	0x09
+
+static bool eir_has_name(const uint8_t *eir)
+{
+	int len = 240;
+
+	while (len) {
+		if (len < 2) {
+			break;
+		};
+
+		/* Look for early termination */
+		if (!eir[0]) {
+			break;
+		}
+
+		/* Check if field length is correct */
+		if (eir[0] > len - 1) {
+			break;
+		}
+
+		switch (eir[1]) {
+		case EIR_SHORT_NAME:
+		case EIR_COMPLETE_NAME:
+			if (eir[0] > 1) {
+				return true;
+			}
+			break;
+		default:
+			break;
+		}
+
+		/* Parse next AD Structure */
+		len -= eir[0] + 1;
+		eir += eir[0] + 1;
+	}
+
+	return false;
+}
+
 static void report_discovery_results(void)
 {
-	/* TODO resolve names if missing */
+	bool resolving_names = false;
+	int i;
+
+	for (i = 0; i < discovery_results_count; i++) {
+		struct discovery_priv *priv;
+
+		priv = (struct discovery_priv *)&discovery_results[i].private;
+
+		if (eir_has_name(discovery_results[i].eir)) {
+			continue;
+		}
+
+		if (request_name(&discovery_results[i].addr,
+				 priv->pscan_rep_mode, priv->clock_offset)) {
+			continue;
+		}
+
+		priv->resolving = 1;
+		resolving_names = true;
+	}
+
+	if (resolving_names) {
+		return;
+	}
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
@@ -1388,6 +1478,7 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 	evt = (void *)buf->data;
 	while (num_reports--) {
 		struct bt_br_discovery_result *result;
+		struct discovery_priv *priv;
 
 		BT_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
 
@@ -1395,6 +1486,10 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 		if (!result) {
 			return;
 		}
+
+		priv = (struct discovery_priv *)&result->private;
+		priv->pscan_rep_mode = evt->pscan_rep_mode;
+		priv->clock_offset = evt->clock_offset;
 
 		memcpy(result->cod, evt->cod, 3);
 		result->rssi = evt->rssi;
@@ -1411,6 +1506,7 @@ static void extended_inquiry_result(struct net_buf *buf)
 {
 	struct bt_hci_evt_extended_inquiry_result *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
+	struct discovery_priv *priv;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return;
@@ -1423,9 +1519,96 @@ static void extended_inquiry_result(struct net_buf *buf)
 		return;
 	}
 
+	priv = (struct discovery_priv *)&result->private;
+	priv->pscan_rep_mode = evt->pscan_rep_mode;
+	priv->clock_offset = evt->clock_offset;
+
 	result->rssi = evt->rssi;
 	memcpy(result->cod, evt->cod, 3);
 	memcpy(result->eir, evt->eir, sizeof(result->eir));
+}
+
+static void  remote_name_request_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_remote_name_req_complete *evt = (void *)buf->data;
+	struct bt_br_discovery_result *result;
+	struct discovery_priv *priv;
+	int eir_len = 240;
+	uint8_t *eir;
+	int i;
+
+	result = get_result_slot(&evt->bdaddr);
+	if (!result) {
+		return;
+	}
+
+	priv = (struct discovery_priv *)&result->private;
+	priv->resolving = 0;
+
+	if (evt->status) {
+		goto check_names;
+	}
+
+	eir = result->eir;
+
+	while (eir_len) {
+		if (eir_len < 2) {
+			break;
+		};
+
+		/* Look for early termination */
+		if (!eir[0]) {
+			size_t name_len;
+
+			eir_len -= 2;
+
+			/* name is null terminated */
+			name_len = strlen(evt->name);
+
+			if (name_len > eir_len) {
+				eir[0] = eir_len + 1;
+				eir[1] = EIR_SHORT_NAME;
+			} else {
+				eir[0] = name_len + 1;
+				eir[1] = EIR_SHORT_NAME;
+			}
+
+			memcpy(&eir[2], evt->name, eir[0] - 1);
+
+			break;
+		}
+
+		/* Check if field length is correct */
+		if (eir[0] > eir_len - 1) {
+			break;
+		}
+
+		/* next EIR Structure */
+		eir_len -= eir[0] + 1;
+		eir += eir[0] + 1;
+	}
+
+check_names:
+	/* if still waiting for names */
+	for (i = 0; i < discovery_results_count; i++) {
+		struct discovery_priv *priv;
+
+		priv = (struct discovery_priv *)&discovery_results[i].private;
+
+		if (priv->resolving) {
+			return;
+		}
+	}
+
+	/* all names resolved, report discovery results */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
+
+	discovery_cb(discovery_results, discovery_results_count);
+
+	discovery_cb = NULL;
+	discovery_results = NULL;
+	discovery_results_size = 0;
+	discovery_results_count = 0;
 }
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
@@ -2132,6 +2315,9 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		extended_inquiry_result(buf);
 		break;
+	case BT_HCI_EVT_REMOTE_NAME_REQ_COMPLETE:
+		remote_name_request_complete(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2605,6 +2791,7 @@ static int set_event_mask(void)
 	ev->events[0] |= 0x01; /* Inquiry Complete  */
 	ev->events[0] |= 0x04; /* Connection Complete */
 	ev->events[0] |= 0x08; /* Connection Request */
+	ev->events[0] |= 0x40; /* Remote Name Request Complete */
 	ev->events[2] |= 0x20; /* Pin Code Request */
 	ev->events[2] |= 0x40; /* Link Key Request */
 	ev->events[2] |= 0x80; /* Link Key Notif */
@@ -3136,6 +3323,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 int bt_br_discovery_stop(void)
 {
 	int err;
+	int i;
 
 	BT_DBG("");
 
@@ -3146,6 +3334,29 @@ int bt_br_discovery_stop(void)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
 	if (err) {
 		return err;
+	}
+
+	for (i = 0; i < discovery_results_count; i++) {
+		struct discovery_priv *priv;
+		struct bt_hci_cp_remote_name_cancel *cp;
+		struct net_buf *buf;
+
+		priv = (struct discovery_priv *)&discovery_results[i].private;
+
+		if (!priv->resolving) {
+			continue;
+		}
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_REMOTE_NAME_CANCEL,
+					sizeof(*cp));
+		if (!buf) {
+			continue;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		bt_addr_copy(&cp->bdaddr, &discovery_results[i].addr);
+
+		bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_CANCEL, buf, NULL);
 	}
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
