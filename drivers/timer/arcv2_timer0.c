@@ -276,9 +276,6 @@ void _timer_idle_exit(void)
 	 * A non-timer interrupt occurred.  Announce any
 	 * ticks that have elapsed during the tickless idle.
 	 */
-
-	uint32_t remaining_cycles = programmed_limit - current_count;
-
 	_sys_idle_elapsed_ticks = current_count / cycles_per_tick;
 	if (_sys_idle_elapsed_ticks > 0) {
 		update_accumulated_count();
@@ -289,11 +286,8 @@ void _timer_idle_exit(void)
 	 * Ensure the timer will expire at the end of the next tick in case
 	 * the ISR makes any tasks and/or fibers ready to run.
 	 */
-
-	if (remaining_cycles >= cycles_per_tick) {
-		timer0_count_register_set(programmed_limit -
-			((remaining_cycles - 1) % cycles_per_tick) - 1);
-	}
+	timer0_limit_register_set(cycles_per_tick - 1);
+	timer0_count_register_set(current_count % cycles_per_tick);
 }
 #else
 static void tickless_idle_init(void) {}
