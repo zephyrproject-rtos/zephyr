@@ -21,7 +21,7 @@ packet_timedout(struct net_buf *buf, void *ptr)
 {
   struct uip_packetqueue_handle *h = ptr;
 
-  PRINTF("uip_packetqueue_free timed out %p\n", h);
+  PRINTF("uip_packetqueue_free timed out handle %p, packet %p\n", h, h->packet);
   memb_free(&packets_memb, h->packet);
   h->packet = NULL;
 }
@@ -38,11 +38,12 @@ uip_packetqueue_alloc(struct net_buf *buf, struct uip_packetqueue_handle *handle
 {
   PRINTF("uip_packetqueue_alloc %p\n", handle);
   if(handle->packet != NULL) {
-    PRINTF("alloced\n");
+    PRINTF("handle->packet != NULL, so failed to alloc\n");
     return NULL;
   }
   handle->packet = memb_alloc(&packets_memb);
   if(handle->packet != NULL) {
+    PRINTF("uip_packetqueue_alloc packet %p\n", handle->packet);
     ctimer_set(buf, &handle->packet->lifetimer, lifetime,
                packet_timedout, handle);
   } else {
@@ -56,6 +57,7 @@ uip_packetqueue_free(struct uip_packetqueue_handle *handle)
 {
   PRINTF("uip_packetqueue_free %p\n", handle);
   if(handle->packet != NULL) {
+    PRINTF("uip_packetqueue_free packet %p\n", handle->packet);
     ctimer_stop(&handle->packet->lifetimer);
     memb_free(&packets_memb, handle->packet);
     handle->packet = NULL;
