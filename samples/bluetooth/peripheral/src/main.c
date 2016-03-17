@@ -30,28 +30,11 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
+#include <gatt/gap.h>
+
 #define DEVICE_NAME		"Test peripheral"
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define HEART_RATE_APPEARANCE	0x0341
-
-static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
-{
-	const char *name = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
-				 strlen(name));
-}
-
-static ssize_t read_appearance(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr, void *buf,
-			       uint16_t len, uint16_t offset)
-{
-	uint16_t appearance = sys_cpu_to_le16(HEART_RATE_APPEARANCE);
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
-				 sizeof(appearance));
-}
 
 static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t simulate_hrm = 0;
@@ -315,16 +298,6 @@ static const struct bt_uuid_128 vnd_signed_uuid = BT_UUID_INIT_128(
 	0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x13,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x13);
 
-static struct bt_gatt_attr gap_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
-			   read_name, NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
-			   read_appearance, NULL, NULL),
-};
-
 /* Heart Rate Service Declaration */
 static struct bt_gatt_attr hrs_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HRS),
@@ -447,7 +420,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bt_gatt_register(gap_attrs, ARRAY_SIZE(gap_attrs));
+	gap_init(DEVICE_NAME, HEART_RATE_APPEARANCE);
 	bt_gatt_register(hrs_attrs, ARRAY_SIZE(hrs_attrs));
 	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
 	bt_gatt_register(cts_attrs, ARRAY_SIZE(cts_attrs));

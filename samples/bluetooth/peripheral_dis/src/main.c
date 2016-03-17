@@ -30,19 +30,11 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
+#include <gatt/gap.h>
+
 #define DEVICE_NAME	"DIS peripheral"
 #define DEVICE_NAME_LEN	(sizeof(DEVICE_NAME) - 1)
 #define APPEARANCE	0x0000
-
-static ssize_t read_appearance(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr, void *buf,
-			       uint16_t len, uint16_t offset)
-{
-	uint16_t appearance = sys_cpu_to_le16(APPEARANCE);
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
-				 sizeof(appearance));
-}
 
 static ssize_t read_string(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
@@ -55,13 +47,6 @@ static ssize_t read_string(struct bt_conn *conn,
 }
 
 static struct bt_gatt_attr attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
-			   read_string, NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
-			   read_appearance, NULL, NULL),
 	/* Device Information Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ),
@@ -117,6 +102,7 @@ void main(void)
 
 	printk("Bluetooth initialized\n");
 
+	gap_init(DEVICE_NAME, APPEARANCE);
 	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
 	bt_conn_cb_register(&conn_callbacks);

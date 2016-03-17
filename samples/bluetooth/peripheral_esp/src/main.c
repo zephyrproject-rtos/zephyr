@@ -31,6 +31,8 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
+#include <gatt/gap.h>
+
 #define DEVICE_NAME				"ESP peripheral"
 #define DEVICE_NAME_LEN				(sizeof(DEVICE_NAME) - 1)
 #define SENSOR_1_NAME				"Temperature Sensor 1"
@@ -92,29 +94,6 @@ static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
 				 sizeof(value));
 }
-
-/* Generic Access Profile Service Declaration */
-
-static ssize_t read_appearance(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr, void *buf,
-			       uint16_t len, uint16_t offset)
-{
-	uint16_t value = sys_cpu_to_le16(APPEARANCE_THERMOMETER);
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
-				 sizeof(value));
-}
-
-static struct bt_gatt_attr gap_attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
-			   read_string, NULL, DEVICE_NAME),
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
-			   read_appearance, NULL, NULL),
-};
 
 /* Battery Service Declaration */
 
@@ -544,7 +523,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bt_gatt_register(gap_attrs, ARRAY_SIZE(gap_attrs));
+	gap_init(DEVICE_NAME, APPEARANCE_THERMOMETER);
 	bt_gatt_register(ess_attrs, ARRAY_SIZE(ess_attrs));
 	bt_gatt_register(bas_attrs, ARRAY_SIZE(bas_attrs));
 	bt_gatt_register(dis_attrs, ARRAY_SIZE(dis_attrs));
