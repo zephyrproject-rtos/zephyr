@@ -7,3 +7,9 @@ and requires the use of a GPIO pin as Chip Select to function.
 
 The application is very simple. It simples reads the manufacturer and
 device identification from the device.
+
+
+Output
+=======
+SPI Example application
+SPI Flash Manufacturer 000000ef Device Id 00000013
