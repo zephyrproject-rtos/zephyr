@@ -984,6 +984,17 @@ static int uncompress(struct net_buf *buf)
     PRINTF("uncompress: not enough space to store uncompressed headers\n");
     goto fail;
   }
+
+  /* If the packet contains some garbage, then it is possible that
+   * the frame checker and fragmenter might still have accepted it.
+   * We need to check here that the memmove() will contain sane length
+   * value.
+   */
+  if (uip_len(buf) <= uip_packetbuf_hdr_len(mbuf)) {
+    PRINTF("uncompress: buf len (%d) <= hdr len (%d), packet discarded.\n",
+           uip_len(buf), uip_packetbuf_hdr_len(mbuf));
+    goto fail;
+  }
   memmove(uip_buf(buf) + uip_uncomp_hdr_len(mbuf),
                 uip_buf(buf) + uip_packetbuf_hdr_len(mbuf),
                 uip_len(buf) - uip_packetbuf_hdr_len(mbuf));
