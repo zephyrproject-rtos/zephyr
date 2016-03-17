@@ -33,7 +33,7 @@ config  ADC_DEBUG
 	help
 	Enable debug output for ADC drivers
 
-config  ADC_TI_ADC108S102
+menuconfig  ADC_TI_ADC108S102
 	bool "TI adc108s102 chip driver"
 	depends on ADC
 	select SPI
@@ -41,6 +41,8 @@ config  ADC_TI_ADC108S102
 	default n
 	help
 	Enable support for TI's ADC chip adc108s102 driver.
+
+if ADC_TI_ADC108S102
 
 config ADC_TI_ADC108S102_INIT_PRIORITY
 	int
@@ -85,7 +87,9 @@ config  ADC_TI_ADC108S102_SPI_SLAVE
 	help
 	adc108s102 chip's SPI slave number on master SPI port.
 
-config ADC_DW
+endif # ADC_TI_ADC108S102
+
+menuconfig ADC_DW
 	bool "ARC Designware Driver"
 	depends on ADC && ARC
 	default n
@@ -210,12 +214,14 @@ config ADC_DW_CLOCK_RATIO
 
 endif
 
-config ADC_QMSI
+menuconfig ADC_QMSI
 	bool "QMSI ADC Driver"
 	depends on QMSI_DRIVERS && ADC
 	default n
 	help
 	Enable the driver implementation of the QMSI ADC IP.
+
+if ADC_QMSI
 
 config ADC_QMSI_NAME
 	string "Select a name to lookup the device"
@@ -285,3 +291,5 @@ config ADC_QMSI_SAMPLE_WIDTH
 	1 = 8 bits resolution
 	2 = 10 bits resolution
 	3 = 12 bits resolution
+
+endif # ADC_QMSI
