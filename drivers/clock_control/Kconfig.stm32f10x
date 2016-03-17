@@ -17,7 +17,7 @@
 
 if SOC_STM32F1X
 
-config CLOCK_CONTROL_STM32F10X
+menuconfig CLOCK_CONTROL_STM32F10X
 	bool
 	prompt "STM32F10x Reset & Clock Control"
 	depends on CLOCK_CONTROL && SOC_STM32F1X
