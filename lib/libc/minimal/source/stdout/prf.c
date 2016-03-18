@@ -586,8 +586,15 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 				c = *format++;
 			}
 
-			if (width > MAXFLD)
+			/*
+			 * If <width> is INT_MIN, then its absolute value can
+			 * not be expressed as a positive number using 32-bit
+			 * two's complement.  To cover that case, cast it to
+			 * an unsigned before comparing it against MAXFLD.
+			 */
+			if ((unsigned) width > MAXFLD) {
 				width = MAXFLD;
+			}
 
 			if (c == '.') {
 				c = *format++;
