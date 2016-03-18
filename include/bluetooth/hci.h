@@ -262,6 +262,12 @@ struct bt_hci_cp_auth_requested {
 	uint16_t handle;
 } __packed;
 
+#define BT_HCI_OP_SET_CONN_ENCRYPT		BT_OP(BT_OGF_LINK_CTRL, 0x0013)
+struct bt_hci_cp_set_conn_encrypt {
+	uint16_t handle;
+	uint8_t  encrypt;
+} __packed;
+
 #define BT_HCI_OP_REMOTE_NAME_REQUEST		BT_OP(BT_OGF_LINK_CTRL, 0x0019)
 struct bt_hci_cp_remote_name_request {
 	bt_addr_t bdaddr;

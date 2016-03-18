@@ -1708,6 +1708,26 @@ check_names:
 	discovery_results_count = 0;
 }
 
+static void link_encr(const uint16_t handle)
+{
+	struct bt_hci_cp_set_conn_encrypt *encr;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CONN_ENCRYPT, sizeof(*encr));
+	if (!buf) {
+		BT_ERR("Out of command buffers");
+		return;
+	}
+
+	encr = net_buf_add(buf, sizeof(*encr));
+	encr->handle = sys_cpu_to_le16(handle);
+	encr->encrypt = 0x01;
+
+	bt_hci_cmd_send_sync(BT_HCI_OP_SET_CONN_ENCRYPT, buf, NULL);
+}
+
 static void auth_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_auth_complete *evt = (void *)buf->data;
@@ -1732,6 +1752,8 @@ static void auth_complete(struct net_buf *buf)
 
 		/* Reset required security level to current operational */
 		conn->required_sec_level = conn->sec_level;
+	} else {
+		link_encr(handle);
 	}
 
 	bt_conn_unref(conn);
