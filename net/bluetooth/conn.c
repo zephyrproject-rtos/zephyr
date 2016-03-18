@@ -527,6 +527,26 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn)
 
 	return err;
 }
+
+static int conn_auth(struct bt_conn *conn)
+{
+	struct bt_hci_cp_auth_requested *auth;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_AUTH_REQUESTED, sizeof(*auth));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	auth = net_buf_add(buf, sizeof(*auth));
+	auth->handle = sys_cpu_to_le16(conn->handle);
+
+	atomic_set_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_AUTH_REQUESTED, buf, NULL);
+}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 #if defined(CONFIG_BLUETOOTH_SMP)
@@ -598,7 +618,16 @@ static int start_security(struct bt_conn *conn)
 			return -EBUSY;
 		}
 
-		return -EPERM;
+		if (conn->required_sec_level > BT_SECURITY_HIGH) {
+			return -ENOTSUP;
+		}
+
+		if (bt_conn_get_io_capa() == BT_IO_NO_INPUT_OUTPUT &&
+		    conn->required_sec_level > BT_SECURITY_MEDIUM) {
+			return -EINVAL;
+		}
+
+		return conn_auth(conn);
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 

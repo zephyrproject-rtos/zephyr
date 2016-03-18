@@ -1227,6 +1227,17 @@ static void link_key_req(struct net_buf *buf)
 		return;
 	}
 
+	/*
+	 * Enforce regenerate by controller stronger link key since found one
+	 * in database not covers requested security level.
+	 */
+	if (!atomic_test_bit(&conn->keys->flags, BT_KEYS_AUTHENTICATED) &&
+	    conn->required_sec_level > BT_SECURITY_MEDIUM) {
+		link_key_neg_reply(&evt->bdaddr);
+		bt_conn_unref(conn);
+		return;
+	}
+
 	link_key_reply(&evt->bdaddr, conn->keys->link_key.val);
 	bt_conn_unref(conn);
 }
@@ -1289,6 +1300,7 @@ static void io_capa_req(struct net_buf *buf)
 	struct net_buf *resp_buf;
 	struct bt_conn *conn;
 	struct bt_hci_cp_io_capability_reply *cp;
+	uint8_t auth;
 
 	BT_DBG("");
 
@@ -1306,10 +1318,26 @@ static void io_capa_req(struct net_buf *buf)
 		return;
 	}
 
+	/*
+	 * Set authentication requirements when acting as pairing initiator to
+	 * 'dedicated bond' with MITM protection set if local IO capa
+	 * potentially allows it, and for acceptor, based on local IO capa and
+	 * remote's authentication set.
+	 */
+	if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR)) {
+		if (bt_conn_get_io_capa() != BT_IO_NO_INPUT_OUTPUT) {
+			auth = BT_HCI_DEDICATED_BONDING_MITM;
+		} else {
+			auth = BT_HCI_DEDICATED_BONDING;
+		}
+	} else {
+		auth = bt_conn_ssp_get_auth(conn);
+	}
+
 	cp = net_buf_add(resp_buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);
 	cp->capability = bt_conn_get_io_capa();
-	cp->authentication = bt_conn_ssp_get_auth(conn);
+	cp->authentication = auth;
 	cp->oob_data = 0;
 	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_REPLY, resp_buf, NULL);
 	bt_conn_unref(conn);
@@ -1679,6 +1707,35 @@ check_names:
 	discovery_results_size = 0;
 	discovery_results_count = 0;
 }
+
+static void auth_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_auth_complete *evt = (void *)buf->data;
+	struct bt_conn *conn;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+
+	BT_DBG("status %u, handle %u", evt->status, handle);
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Can't find conn for handle %u", handle);
+		return;
+	}
+
+	if (evt->status) {
+		/*
+		 * Clear pairing flag since authentication failed for some
+		 * reasons.
+		 */
+		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
+
+		/* Reset required security level to current operational */
+		conn->required_sec_level = conn->sec_level;
+	}
+
+	bt_conn_unref(conn);
+}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
@@ -1749,6 +1806,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 	} else {
 		update_sec_level_br(conn);
 		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 	}
 
@@ -2441,6 +2499,9 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_REMOTE_NAME_REQ_COMPLETE:
 		remote_name_request_complete(buf);
 		break;
+	case BT_HCI_EVT_AUTH_COMPLETE:
+		auth_complete(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2916,6 +2977,7 @@ static int set_event_mask(void)
 	ev->events[0] |= 0x01; /* Inquiry Complete  */
 	ev->events[0] |= 0x04; /* Connection Complete */
 	ev->events[0] |= 0x08; /* Connection Request */
+	ev->events[0] |= 0x20; /* Authentication Complete */
 	ev->events[0] |= 0x40; /* Remote Name Request Complete */
 	ev->events[2] |= 0x20; /* Pin Code Request */
 	ev->events[2] |= 0x40; /* Link Key Request */
