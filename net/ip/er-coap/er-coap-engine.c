@@ -75,7 +75,7 @@ coap_engine_receive(coap_context_t *coap_ctx)
 
     PRINTF("receiving UDP datagram from: ");
     PRINT6ADDR(&UIP_IP_BUF(coap_ctx->buf)->srcipaddr);
-    PRINTF(":%u\n  Length: %u (payload %u)\n",
+    PRINTF(":%u\n  Length: %u\n",
 	   uip_ntohs(UIP_UDP_BUF(coap_ctx->buf)->srcport),
            uip_appdatalen(coap_ctx->buf));
 
