@@ -22,37 +22,38 @@
 
 #if defined(CONFIG_NETWORKING_WITH_15_4_TI_CC2520)
 
-#include <802.15.4/cc2520_arch.h>
+#include <gpio.h>
 
-struct cc2520_gpio_config **cc2520_gpio_configure(void)
+static struct device *cc2520_gpio_config[CC2520_GPIO_IDX_LAST_ENTRY];
+
+struct device **cc2520_configure_gpios(void)
 {
 	struct device *gpio;
 
-	int flags_int = GPIO_INT | GPIO_INT_EDGE |
-			GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE;
-	int flags_int_in = flags_int | GPIO_DIR_IN;
-	int flags_noint_out = GPIO_DIR_OUT;
-	int flags_noint_in = GPIO_DIR_IN;
+	const int flags_noint_out = GPIO_DIR_OUT;
+	const int flags_noint_in = GPIO_DIR_IN;
+	const int flags_int_in = (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
+				  GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
-	gpio = device_get_binding(CONFIG_TI_CC2520_GPIO_CS_NAME);
+	gpio = device_get_binding(CONFIG_TI_CC2520_GPIO_AON_NAME);
+	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_VREG_EN, flags_noint_out);
+	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_RESET, flags_noint_out);
+
+	cc2520_gpio_config[CC2520_GPIO_IDX_VREG_EN] = gpio;
+	cc2520_gpio_config[CC2520_GPIO_IDX_RESET] = gpio;
+
+	gpio = device_get_binding(CONFIG_TI_CC2520_GPIO_NAME);
+	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_SFD, flags_int_in);
 	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_FIFOP, flags_int_in);
 	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_FIFO, flags_noint_in);
 	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_CCA, flags_noint_in);
-	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_SFD, flags_noint_in);
 
-	cc2520_gpio_config[CC2520_GPIO_IDX_FIFOP].gpio = gpio;
-	cc2520_gpio_config[CC2520_GPIO_IDX_FIFO].gpio = gpio;
-	cc2520_gpio_config[CC2520_GPIO_IDX_SFD].gpio = gpio;
-	cc2520_gpio_config[CC2520_GPIO_IDX_CCA].gpio = gpio;
+	cc2520_gpio_config[CC2520_GPIO_IDX_FIFOP] = gpio;
+	cc2520_gpio_config[CC2520_GPIO_IDX_FIFO] = gpio;
+	cc2520_gpio_config[CC2520_GPIO_IDX_SFD] = gpio;
+	cc2520_gpio_config[CC2520_GPIO_IDX_CCA] = gpio;
 
-	gpio = device_get_binding(CONFIG_TI_CC2520_GPIO_AON_NAME);
-	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_VREG, flags_noint_out);
-	gpio_pin_configure(gpio, CONFIG_CC2520_GPIO_RESET, flags_noint_out);
-
-	cc2520_gpio_config[CC2520_GPIO_IDX_VREG].gpio = gpio;
-	cc2520_gpio_config[CC2520_GPIO_IDX_RESET].gpio = gpio;
-
-	return (struct cc2520_gpio_config **)&cc2520_gpio_config;
+	return cc2520_gpio_config;
 }
 
 #endif /* CONFIG_NETWORKING_WITH_15_4_TI_CC2520 */

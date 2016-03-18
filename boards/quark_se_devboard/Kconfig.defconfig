@@ -41,7 +41,7 @@ endif # SPI_DW_PORT_1 && SPI_DW_CS_GPIO
 
 if GPIO_DW
 
-config TI_CC2520_GPIO_CS_NAME
+config TI_CC2520_GPIO_NAME
        default GPIO_DW_0_NAME
 config TI_CC2520_GPIO_AON_NAME
        default GPIO_DW_1_NAME
@@ -57,7 +57,7 @@ config SPI_QMSI_PORT_1_CS_GPIO_PORT
 	default GPIO_QMSI_0_NAME
 config SPI_QMSI_PORT_1_CS_GPIO_PIN
 	default 11
-config TI_CC2520_GPIO_CS_NAME
+config TI_CC2520_GPIO_NAME
        string
        default GPIO_QMSI_0_NAME
 config TI_CC2520_GPIO_AON_NAME

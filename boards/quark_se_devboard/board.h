@@ -22,24 +22,24 @@
 #if defined(CONFIG_NETWORKING_WITH_15_4_TI_CC2520)
 
 /* GPIO numbers where the TI cc2520 chip is connected to */
-#define CONFIG_CC2520_GPIO_VREG        0  /* PIN ?, ATP_AON_INT0 (out) */
-#define CONFIG_CC2520_GPIO_RESET       1  /* PIN ?, ATP_AON_INT1 (out) */
-#define CONFIG_CC2520_GPIO_FIFO        4  /* PIN 4, GPIO4 (in) */
-#define CONFIG_CC2520_GPIO_FIFOP       5  /* PIN 5, GPIO5 (in) */
-#define CONFIG_CC2520_GPIO_CCA         6  /* PIN 6, GPIO6 (in) */
-#define CONFIG_CC2520_GPIO_SFD         29 /* PIN 33, GPIO29 (in) */
+#define CONFIG_CC2520_GPIO_VREG_EN	0  /* PIN ?, ATP_AON_INT0 (out) */
+#define CONFIG_CC2520_GPIO_RESET	1  /* PIN ?, ATP_AON_INT1 (out) */
+#define CONFIG_CC2520_GPIO_FIFO		4  /* PIN 4, GPIO4 (in) */
+#define CONFIG_CC2520_GPIO_FIFOP	5  /* PIN 5, GPIO5 (in) */
+#define CONFIG_CC2520_GPIO_CCA		6  /* PIN 6, GPIO6 (in) */
+#define CONFIG_CC2520_GPIO_SFD		29 /* PIN 33, GPIO29 (in) */
 
 enum cc2520_gpio_index {
 	/* If all the GPIOs can be served by same driver, then you
 	 * can set the values to be the same. The first enum should
 	 * always have a value of 0.
 	 */
-	CC2520_GPIO_IDX_RESET = 0,
-	CC2520_GPIO_IDX_VREG  = 0,
-	CC2520_GPIO_IDX_SFD   = 1,
-	CC2520_GPIO_IDX_CCA   = 1,
-	CC2520_GPIO_IDX_FIFOP = 1,
-	CC2520_GPIO_IDX_FIFO  = 1,
+	CC2520_GPIO_IDX_RESET	= 0,
+	CC2520_GPIO_IDX_VREG_EN	= 0,
+	CC2520_GPIO_IDX_SFD	= 1,
+	CC2520_GPIO_IDX_CCA	= 1,
+	CC2520_GPIO_IDX_FIFOP	= 1,
+	CC2520_GPIO_IDX_FIFO	= 1,
 
 	CC2520_GPIO_IDX_LAST_ENTRY
 };
