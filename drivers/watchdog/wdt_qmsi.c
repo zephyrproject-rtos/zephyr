@@ -62,7 +62,7 @@ static void reload(struct device *dev)
 
 static void enable(struct device *dev)
 {
-	clk_periph_enable(CLK_PERIPH_WDT_REGISTER);
+	clk_periph_enable(CLK_PERIPH_WDT_REGISTER | CLK_PERIPH_CLK);
 }
 
 static void disable(struct device *dev)

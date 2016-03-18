@@ -295,7 +295,8 @@ int gpio_qmsi_init(struct device *port)
 	case QM_GPIO_0:
 		clk_periph_enable(CLK_PERIPH_GPIO_REGISTER |
 				  CLK_PERIPH_GPIO_INTERRUPT |
-				  CLK_PERIPH_GPIO_DB);
+				  CLK_PERIPH_GPIO_DB |
+				  CLK_PERIPH_CLK);
 		IRQ_CONNECT(CONFIG_GPIO_QMSI_0_IRQ,
 			    CONFIG_GPIO_QMSI_0_PRI, qm_gpio_isr_0,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);

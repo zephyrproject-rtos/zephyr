@@ -218,7 +218,7 @@ static int i2c_qmsi_init(struct device *dev)
 		irq_enable(CONFIG_I2C_QMSI_0_IRQ);
 		QM_SCSS_INT->int_i2c_mst_0_mask &= ~BIT(0);
 
-		clk_periph_enable(CLK_PERIPH_I2C_M0_REGISTER);
+		clk_periph_enable(CLK_PERIPH_I2C_M0_REGISTER | CLK_PERIPH_CLK);
 		break;
 
 #ifdef CONFIG_I2C_QMSI_1
@@ -229,7 +229,7 @@ static int i2c_qmsi_init(struct device *dev)
 		irq_enable(CONFIG_I2C_QMSI_1_IRQ);
 		QM_SCSS_INT->int_i2c_mst_1_mask &= ~BIT(0);
 
-		clk_periph_enable(CLK_PERIPH_I2C_M1_REGISTER);
+		clk_periph_enable(CLK_PERIPH_I2C_M1_REGISTER | CLK_PERIPH_CLK);
 		break;
 #endif /* CONFIG_I2C_QMSI_1 */
 
