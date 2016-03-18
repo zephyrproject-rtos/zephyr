@@ -160,7 +160,7 @@ SECTION_FUNC(TEXT, __svc)
 
     ldr r0, [r0, #24]   /* grab address of PC from stack frame */
     /* SVC is a two-byte instruction, point to it and read  encoding */
-    ldr r0, [r0, #-2]
+    ldrh r0, [r0, #-2]
 
    /*
     * grab service call number: if zero, it's a context switch;  if not,
