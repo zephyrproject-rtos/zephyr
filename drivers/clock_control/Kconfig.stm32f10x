@@ -59,27 +59,39 @@ endchoice
 
 choice
 prompt "STM32F10x PLL Clock Source"
-depends on CLOCK_CONTROL_STM32F10X
+depends on CLOCK_CONTROL_STM32F10X && CLOCK_STM32F10X_SYSCLK_SRC_PLL
 
 config CLOCK_STM32F10X_PLL_SRC_HSI
 	bool "HSI"
 	help
 	 Use HSI as source of PLL
 
-config CLOCK_STM32F10X_PLL_SRC_PREDIV1
-	bool "PREDIV1"
+config CLOCK_STM32F10X_PLL_SRC_HSE
+	bool "HSE"
 	help
-	 Use PREDIV1 as source of PLL
+	 Use HSE as source of PLL
 
 endchoice
 
+config CLOCK_STM32F10X_HSE_BYPASS
+	bool "HSE bypass"
+	depends on CLOCK_CONTROL_STM32F10X && (CLOCK_STM32F10X_PLL_SRC_HSE || CLOCK_STM32F10X_SYSCLK_SRC_HSE)
+	help
+	 Enable this option to bypass external high-speed clock (HSE).
+
+config CLOCK_STM32F10X_PLL_XTPRE
+	bool "HSE to PLL /2 prescaler"
+	depends on CLOCK_CONTROL_STM32F10X && CLOCK_STM32F10X_PLL_SRC_HSE
+	help
+	 Enable this option to enable /2 prescaler on HSE to PLL clock signal
+
 config CLOCK_STM32F10X_PLL_MULTIPLIER
 	int "PLL multiplier"
-	depends on CLOCK_CONTROL_STM32F10X
+	depends on CLOCK_CONTROL_STM32F10X && CLOCK_STM32F10X_SYSCLK_SRC_PLL
 	default 9
 	range 2 16
 	help
-	 PLL multiplier, allowed values: 2-16
+	 PLL multiplier, allowed values: 2-16. PLL output must not exceed 72MHz.
 
 config CLOCK_STM32F10X_AHB_PRESCALER
 	int "AHB prescaler"
@@ -97,7 +109,7 @@ config CLOCK_STM32F10X_APB1_PRESCALER
 	range 0 16
 	help
 	 APB1 Low speed clock (PCLK1) prescaler, allowed values:
-	 0, 2, 4, 8, 16
+	 0, 2, 4, 8, 16. The APB1 clock must not exceed 36MHz.
 
 config CLOCK_STM32F10X_APB2_PRESCALER
 	int "APB2 prescaler"

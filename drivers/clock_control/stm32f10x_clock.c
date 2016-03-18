@@ -130,6 +130,7 @@ static int __ahb_prescaler(int prescaler)
 	return map_reg_val(map, ARRAY_SIZE(map), prescaler);
 }
 
+#ifdef CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER
 /**
  * @brief map PLL multiplier setting to register value
  */
@@ -145,7 +146,7 @@ static int __pllmul(int mul)
 	 */
 	return mul - 2;
 }
-
+#endif	/* CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER */
 
 
 uint32_t __get_ahb_clock(uint32_t sysclk)
@@ -196,30 +197,86 @@ static struct clock_control_driver_api stm32f10x_clock_control_api = {
 	.get_rate = stm32f10x_clock_control_get_subsys_rate,
 };
 
+/**
+ * @brief setup embedded flash controller
+ *
+ * Configure flash access time latency depending on SYSCLK.
+ */
+static inline void __setup_flash(void)
+{
+	volatile struct stm32f10x_flash *flash =
+		(struct stm32f10x_flash *)(FLASH_BASE);
+
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 24000000) {
+		flash->acr.bit.latency = STM32F10X_FLASH_LATENCY_0;
+	} else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 48000000) {
+		flash->acr.bit.latency = STM32F10X_FLASH_LATENCY_1;
+	} else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC <= 72000000) {
+		flash->acr.bit.latency = STM32F10X_FLASH_LATENCY_2;
+	}
+}
+
 int stm32f10x_clock_control_init(struct device *dev)
 {
 	struct stm32f10x_rcc_data *data = dev->driver_data;
 	volatile struct stm32f10x_rcc *rcc =
 		(struct stm32f10x_rcc *)(data->base);
+	/* SYSCLK source defaults to HSI */
+	int sysclk_src = STM32F10X_RCC_CFG_SYSCLK_SRC_HSI;
+	uint32_t hpre = __ahb_prescaler(CONFIG_CLOCK_STM32F10X_AHB_PRESCALER);
+	uint32_t ppre1 = __apb_prescaler(CONFIG_CLOCK_STM32F10X_APB1_PRESCALER);
+	uint32_t ppre2 = __apb_prescaler(CONFIG_CLOCK_STM32F10X_APB2_PRESCALER);
+#ifdef CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER
+	uint32_t pllmul = __pllmul(CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER);
+#endif	/* CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER */
 
+	/* disable PLL */
+	rcc->cr.bit.pllon = 0;
+	/* disable HSE */
+	rcc->cr.bit.hseon = 0;
+
+#ifdef CONFIG_CLOCK_STM32F10X_HSE_BYPASS
+	/* HSE is disabled, HSE bypass can be enabled*/
+	rcc->cr.bit.hsebyp = 1;
+#endif
+
+#ifdef CONFIG_CLOCK_STM32F10X_PLL_SRC_HSI
 	/* enable HSI clock */
 	rcc->cr.bit.hsion = 1;
 	/* this should end after one test */
 	while (rcc->cr.bit.hsirdy != 1) {
 	}
 
-	/* disable PLL */
-	rcc->cr.bit.pllon = 0;
-
-#ifdef CONFIG_CLOCK_STM32F10X_PLL_SRC_HSI
 	/* PLL input from HSI/2 = 4MHz */
 	rcc->cfgr.bit.pllsrc = STM32F10X_RCC_CFG_PLL_SRC_HSI;
-#elif defined(CONFIG_CLOCK_STM32F10X_PLL_SRC_PREDIV1)
-	#error PREDIV1 as PLL source is not supported
-	rcc->cfgr.bit.pllsrc = STM32F10X_RCC_CFG_PLL_SRC_PREDIV1;
-#endif
+#endif	/* CONFIG_CLOCK_STM32F10X_PLL_SRC_HSI */
 
-	uint32_t pllmul = __pllmul(CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER);
+#ifdef CONFIG_CLOCK_STM32F10X_PLL_SRC_HSE
+
+	/* wait for to become ready */
+	rcc->cr.bit.hseon = 1;
+	while (rcc->cr.bit.hserdy != 1) {
+	}
+
+#ifdef CONFIG_CLOCK_STM32F10X_PLL_XTPRE
+	rcc->cfgr.bit.pllxtpre = STM32F10X_RCC_CFG_PLL_XTPRE_DIV_2;
+#else
+	rcc->cfgr.bit.pllxtpre = STM32F10X_RCC_CFG_PLL_XTPRE_DIV_0;
+#endif	/* CONFIG_CLOCK_STM32F10X_PLL_XTPRE */
+
+	rcc->cfgr.bit.pllsrc = STM32F10X_RCC_CFG_PLL_SRC_HSE;
+#endif	/* CONFIG_CLOCK_STM32F10X_PLL_SRC_HSE */
+
+	/* setup AHB prescaler */
+	rcc->cfgr.bit.hpre = hpre;
+
+	/* setup APB1, must not exceed 36MHz */
+	rcc->cfgr.bit.ppre1 = ppre1;
+
+	/* setup APB2  */
+	rcc->cfgr.bit.ppre2 = ppre2;
+
+#ifdef CONFIG_CLOCK_STM32F10X_SYSCLK_SRC_PLL
 	/* setup PLL multiplication (PLL must be disabled) */
 	rcc->cfgr.bit.pllmul = pllmul;
 
@@ -230,25 +287,21 @@ int stm32f10x_clock_control_init(struct device *dev)
 	while (rcc->cr.bit.pllrdy != 1) {
 	}
 
-	uint32_t hpre = __ahb_prescaler(CONFIG_CLOCK_STM32F10X_AHB_PRESCALER);
-	/* setup AHB prescaler */
-	rcc->cfgr.bit.hpre = hpre;
-
-	uint32_t ppre1 = __apb_prescaler(CONFIG_CLOCK_STM32F10X_APB1_PRESCALER);
-	/* setup APB1, must not exceed 36MHz, prescaler set to 0 */
-	rcc->cfgr.bit.ppre1 = ppre1;
-
-	uint32_t ppre2 = __apb_prescaler(CONFIG_CLOCK_STM32F10X_APB2_PRESCALER);
-	/* setup APB2 to use 36MHz, prescaler set to 0 */
-	rcc->cfgr.bit.ppre2 = ppre2;
-
-	/* setup SYSCLK source, default to HSI */
-	int sysclk_src = STM32F10X_RCC_CFG_SYSCLK_SRC_HSI;
-#ifdef CONFIG_CLOCK_STM32F10X_SYSCLK_SRC_PLL
 	sysclk_src = STM32F10X_RCC_CFG_SYSCLK_SRC_PLL;
 #elif defined(CONFIG_CLOCK_STM32F10X_SYSCLK_SRC_HSE)
+	/* wait for to become ready */
+	rcc->cr.bit.hseon = 1;
+	while (rcc->cr.bit.hserdy != 1) {
+	}
+
 	sysclk_src = STM32F10X_RCC_CFG_SYSCLK_SRC_HSE;
 #endif
+
+	/* configure flash access latency before SYSCLK source
+	 * switch
+	 */
+	__setup_flash();
+
 	/* set SYSCLK clock value */
 	rcc->cfgr.bit.sw = sysclk_src;
 

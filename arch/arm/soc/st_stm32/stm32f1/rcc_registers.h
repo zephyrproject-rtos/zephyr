@@ -31,7 +31,12 @@
 /* 8.3.1 Clock control register (RCC_CR) */
 enum {
 	STM32F10X_RCC_CFG_PLL_SRC_HSI	  = 0x0,
-	STM32F10X_RCC_CFG_PLL_SRC_PREDIV1 = 0x1,
+	STM32F10X_RCC_CFG_PLL_SRC_HSE     = 0x1,
+};
+
+enum {
+	STM32F10X_RCC_CFG_PLL_XTPRE_DIV_0  = 0x0,
+	STM32F10X_RCC_CFG_PLL_XTPRE_DIV_2  = 0x1,
 };
 
 enum {
