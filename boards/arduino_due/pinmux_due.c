@@ -161,7 +161,7 @@ static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
 	ARG_UNUSED(dev);
 
 	if (!port) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	tmp = port->absr;
@@ -172,7 +172,7 @@ static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
 	}
 	port->absr = tmp;
 
-	return DEV_OK;
+	return 0;
 }
 
 static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
@@ -182,12 +182,12 @@ static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
 	ARG_UNUSED(dev);
 
 	if (!port) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	*func = (port->absr & (1 << (pin % 32))) ? 1 : 0;
 
-	return DEV_OK;
+	return 0;
 }
 #else
 static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
@@ -198,7 +198,7 @@ static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
 
 	PRINT("ERROR: %s is not enabled", __func__);
 
-	return DEV_NOT_CONFIG;
+	return -EPERM;
 }
 
 static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
@@ -209,7 +209,7 @@ static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
 
 	PRINT("ERROR: %s is not enabled", __func__);
 
-	return DEV_NOT_CONFIG;
+	return -EPERM;
 }
 #endif /* CONFIG_PINMUX_DEV */
 
@@ -220,7 +220,7 @@ static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
 	ARG_UNUSED(dev);
 
 	if (!port) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	if (func) {
@@ -229,7 +229,7 @@ static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
 		port->pudr = (1 << (pin % 32));
 	}
 
-	return DEV_OK;
+	return 0;
 }
 static int pinmux_input(struct device *dev, uint32_t pin, uint8_t func)
 {
@@ -238,7 +238,7 @@ static int pinmux_input(struct device *dev, uint32_t pin, uint8_t func)
 	ARG_UNUSED(dev);
 
 	if (!port) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	if (func) {
@@ -247,7 +247,7 @@ static int pinmux_input(struct device *dev, uint32_t pin, uint8_t func)
 		port->oer = (1 << (pin % 32));
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -431,7 +431,7 @@ int pinmux_init(struct device *port)
 
 	__pinmux_defaults();
 
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(pmux, PINMUX_NAME, &pinmux_init, NULL, NULL,

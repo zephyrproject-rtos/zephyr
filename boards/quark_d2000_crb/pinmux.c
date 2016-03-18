@@ -181,7 +181,7 @@ static int pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 
 	(*(mux_register)) = ((*(mux_register)) & ~pin_mask) | mode_mask;
 
-	return DEV_OK;
+	return 0;
 }
 
 static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
@@ -215,7 +215,7 @@ static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 
 	*func = mode;
 
-	return DEV_OK;
+	return 0;
 }
 #else
 static int pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
@@ -226,7 +226,7 @@ static int pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 
 	PRINT("ERROR: %s is not enabled", __func__);
 
-	return DEV_NOT_CONFIG;
+	return -EPERM;
 }
 
 static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
@@ -237,7 +237,7 @@ static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 
 	PRINT("ERROR: %s is not enabled", __func__);
 
-	return DEV_NOT_CONFIG;
+	return -EPERM;
 }
 #endif /* CONFIG_PINMUX_DEV */
 
@@ -249,7 +249,7 @@ static int pinmux_pullup_set(struct device *dev, uint32_t pin,
 	_quark_d2000_set_mux(pmux->base_address + PINMUX_PULLUP_OFFSET, pin,
 			     func);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int pinmux_input_enable(struct device *dev, uint32_t pin,
@@ -260,7 +260,7 @@ static int pinmux_input_enable(struct device *dev, uint32_t pin,
 	_quark_d2000_set_mux(pmux->base_address + PINMUX_INPUT_OFFSET, pin,
 			     func);
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct pinmux_driver_api api_funcs = {
@@ -281,7 +281,7 @@ int pinmux_initialize(struct device *port)
 	/* Enable the UART RX pin to receive input */
 	_quark_d2000_set_mux(pmux->base_address + PINMUX_INPUT_OFFSET, 5, 0x1);
 
-	return DEV_OK;
+	return 0;
 }
 
 struct pinmux_config board_pmux = {

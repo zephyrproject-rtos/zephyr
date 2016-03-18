@@ -547,7 +547,7 @@ int _galileo_set_pin(struct device *port, uint8_t pin, uint8_t func)
 	struct mux_path *enable = NULL;
 
 	if (pin > CONFIG_PINMUX_NUM_PINS) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/* NUM_PIN_FUNCS being the number of alt functions */
@@ -624,7 +624,7 @@ int _galileo_set_pin(struct device *port, uint8_t pin, uint8_t func)
 		}
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 #ifdef CONFIG_PINMUX_DEV
@@ -633,7 +633,7 @@ static int galileo_dev_set(struct device *dev,
 				uint32_t func)
 {
 	if (pin > CONFIG_PINMUX_NUM_PINS) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	mux_config[pin].mode = func;
@@ -646,12 +646,12 @@ static int galileo_dev_get(struct device *dev,
 				uint32_t *func)
 {
 	if (pin > CONFIG_PINMUX_NUM_PINS) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	*func = mux_config[pin].mode;
 
-	return DEV_OK;
+	return 0;
 }
 #else
 static int galileo_dev_set(struct device *dev,
@@ -662,7 +662,7 @@ static int galileo_dev_set(struct device *dev,
 	ARG_UNUSED(pin);
 	ARG_UNUSED(func);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int galileo_dev_get(struct device *dev,
@@ -673,7 +673,7 @@ static int galileo_dev_get(struct device *dev,
 	ARG_UNUSED(pin);
 	ARG_UNUSED(func);
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 #endif
 
@@ -686,7 +686,7 @@ static int galileo_dev_pullup(struct device *dev,
 	 * On Galileo the pullup operation is handled through the selection
 	 * of an actual pin
 	 */
-	return DEV_OK;
+	return 0;
 }
 
 static int galileo_dev_input_enable(struct device *dev,
@@ -698,7 +698,7 @@ static int galileo_dev_input_enable(struct device *dev,
 	 * On Galileo select a pin for input enabling is handled through the
 	 * selection of an actual pin user configuration.
 	 */
-	return DEV_OK;
+	return 0;
 }
 
 static struct pinmux_driver_api api_funcs = {
@@ -718,33 +718,33 @@ int pinmux_galileo_initialize(struct device *port)
 	/* Grab the EXP0, EXP1, EXP2, and PWM0 now by name */
 	dev->exp0 = device_get_binding(CONFIG_PINMUX_GALILEO_EXP0_NAME);
 	if (!dev->exp0) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 	dev->exp1 = device_get_binding(CONFIG_PINMUX_GALILEO_EXP1_NAME);
 	if (!dev->exp1) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 	dev->exp2 = device_get_binding(CONFIG_PINMUX_GALILEO_EXP2_NAME);
 	if (!dev->exp2) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 	dev->pwm0 = device_get_binding(CONFIG_PINMUX_GALILEO_PWM0_NAME);
 	if (!dev->pwm0) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 	dev->gpio_dw = device_get_binding(CONFIG_PINMUX_GALILEO_GPIO_DW_NAME);
 	if (!dev->gpio_dw) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 	dev->gpio_core = device_get_binding(
 			    CONFIG_PINMUX_GALILEO_GPIO_INTEL_CW_NAME);
 	if (!dev->gpio_core) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 	dev->gpio_resume = device_get_binding(
 			    CONFIG_PINMUX_GALILEO_GPIO_INTEL_RW_NAME);
 	if (!dev->gpio_resume) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/*
@@ -757,7 +757,7 @@ int pinmux_galileo_initialize(struct device *port)
 				 mux_config[i].mode);
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 

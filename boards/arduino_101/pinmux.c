@@ -218,7 +218,7 @@ static int _quark_se_set_mux(uint32_t base, uint32_t pin, uint8_t func)
 	(*(mux_register)) = ((*(mux_register)) & ~(0x1 << pin_offset)) |
 		((func & 0x01) << pin_offset);
 
-	return DEV_OK;
+	return 0;
 }
 
 static inline void _pinmux_pullups(uint32_t base_address)
@@ -259,7 +259,7 @@ static int pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 	uint32_t mode_mask = func << (pin_no << 1);
 	(*(mux_register)) = ((*(mux_register)) & ~pin_mask) | mode_mask;
 
-	return DEV_OK;
+	return 0;
 }
 
 static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
@@ -294,7 +294,7 @@ static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 
 	*func = mode;
 
-	return DEV_OK;
+	return 0;
 }
 #else
 static int pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
@@ -305,7 +305,7 @@ static int pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 
 	PRINT("ERROR: %s is not enabled", __func__);
 
-	return DEV_NOT_CONFIG;
+	return -EPERM;
 }
 
 static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
@@ -316,7 +316,7 @@ static int pinmux_dev_get(struct device *dev, uint32_t pin, uint32_t *func)
 
 	PRINT("ERROR: %s is not enabled", __func__);
 
-	return DEV_NOT_CONFIG;
+	return -EPERM;
 }
 #endif /* CONFIG_PINMUX_DEV */
 
@@ -328,7 +328,7 @@ static int pinmux_dev_pullup(struct device *dev,
 
 	_quark_se_set_mux(pmux->base_address + PINMUX_PULLUP_OFFSET, pin, func);
 
-	return DEV_OK;
+	return 0;
 }
 static int pinmux_dev_input(struct device *dev, uint32_t pin, uint8_t func)
 {
@@ -336,7 +336,7 @@ static int pinmux_dev_input(struct device *dev, uint32_t pin, uint8_t func)
 
 	_quark_se_set_mux(pmux->base_address + PINMUX_INPUT_OFFSET, pin, func);
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct pinmux_driver_api api_funcs = {
@@ -355,7 +355,7 @@ int pinmux_initialize(struct device *port)
 	_pinmux_defaults(pmux->base_address);
 	_pinmux_pullups(pmux->base_address);
 
-	return DEV_OK;
+	return 0;
 }
 
 struct pinmux_config board_pmux = {

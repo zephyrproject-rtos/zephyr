@@ -56,7 +56,7 @@
  *
  * @param dev The UART device struct
  *
- * @return DEV_OK if successful, otherwise failed.
+ * @return 0 if successful, otherwise failed.
  */
 static int uart_k20_console_init(struct device *dev)
 {
@@ -80,7 +80,7 @@ static int uart_k20_console_init(struct device *dev)
 	port_pcr_p->port[port].pcr[rxPin] = pcr;
 	port_pcr_p->port[port].pcr[txPin] = pcr;
 
-	return DEV_OK;
+	return 0;
 }
 
 SYS_INIT(uart_k20_console_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
@@ -124,7 +124,7 @@ static int uart_k20_init(struct device *dev)
 	sim->scgc1.field.uart4_clk_en = 1;
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(_uart_k20_init, "", uart_k20_init,
@@ -204,7 +204,7 @@ int fsl_frdm_k64f_pin_init(struct device *arg)
 	pmux = device_get_binding(PINMUX_NAME);
 
 	if (!pmux) {
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* configure the pins from the default mapping above */
@@ -213,7 +213,7 @@ int fsl_frdm_k64f_pin_init(struct device *arg)
 		pinmux_pin_set(pmux, mux_config[i].pin_num, mux_config[i].mode);
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(frdm_k64f_pmux, "", fsl_frdm_k64f_pin_init, NULL, NULL,
