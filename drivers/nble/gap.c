@@ -417,6 +417,16 @@ void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 	nble_get_version_req(NULL);
 }
 
+void on_nble_common_rsp(const struct nble_response *rsp)
+{
+	if (rsp->status) {
+		BT_ERR("Last request failed, error %d", rsp->status);
+		return;
+	}
+
+	BT_DBG("status %d", rsp->status);
+}
+
 /* Security Manager event handling */
 
 static uint8_t get_io_capa(void)
