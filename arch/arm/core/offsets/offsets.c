@@ -40,9 +40,9 @@
 /* ARM-specific tNANO structure member offsets */
 
 GEN_OFFSET_SYM(tNANO, flags);
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 GEN_OFFSET_SYM(tNANO, idle);
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif
 
 /* ARM-specific struct tcs structure member offsets */
 

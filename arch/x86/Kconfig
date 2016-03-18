@@ -237,13 +237,6 @@ config CACHE_FLUSHING
 endmenu
 
 menu "Platform Capabilities"
-config ADVANCED_IDLE_SUPPORTED
-	bool "Advanced Idle Supported"
-	default n
-	help
-	This option signifies that the target supports the ADVANCED_IDLE
-	configuration option.
-
 config NUM_DYNAMIC_STUBS
 	int "Number of dynamic int stubs"
 	default 0

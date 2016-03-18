@@ -155,9 +155,9 @@ struct s_NANO {
 	struct tcs *current_fp; /* thread (fiber or task) that owns the FP regs */
 #endif			  /* CONFIG_FP_SHARING */
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 	int32_t idle; /* Number of ticks for kernel idling */
-#endif		      /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif
 
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;

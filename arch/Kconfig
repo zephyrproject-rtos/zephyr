@@ -31,9 +31,31 @@ config ARM
 config X86
 	bool "x86 architecture"
 	select NANOKERNEL_TICKLESS_IDLE_SUPPORTED
-	select ADVANCED_IDLE_SUPPORTED
 
 endchoice
+
+#
+# Hidden PM feature configs which are to be selected by
+# individual SoC.
+#
+config SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	# Hidden
+        bool
+        default n
+        help
+        This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
+        configuration option.
+
+config SYS_POWER_DEEP_SLEEP_SUPPORTED
+	# Hidden
+        bool
+        default n
+        help
+        This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
+        configuration option.
+#
+# End hidden PM feature configs
+#
 
 config ARCH
 	string

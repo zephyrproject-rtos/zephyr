@@ -46,9 +46,9 @@
 
 GEN_OFFSET_SYM(tNANO, nested);
 GEN_OFFSET_SYM(tNANO, common_isp);
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 GEN_OFFSET_SYM(tNANO, idle);
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif
 
 /* Intel-specific struct tcs structure member offsets */
 

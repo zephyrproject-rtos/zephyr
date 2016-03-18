@@ -15,6 +15,7 @@
  */
 
 #include <zephyr.h>
+#include <power.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
@@ -28,7 +29,7 @@
 #define SLEEPTICKS	SECONDS(5)
 #define P_LVL2		0xb0800504
 
-static int pm_state; /* 1 = LPS; 2 = Tickless Idle */
+static int pm_state; /* 1 = LPS; 2 = Device suspend only */
 static void quark_low_power(void);
 static struct device *rtc_dev;
 static uint32_t start_time, end_time;
@@ -65,7 +66,7 @@ static int check_pm_policy(int32_t ticks)
 	 *
 	 * 0 = no power saving operation
 	 * 1 = low power state
-	 * 2 = tickless idle power saving
+	 * 2 = device suspend only
 	 *
 	 */
 	policy = (policy > 2 ? 0 : policy);
@@ -73,63 +74,63 @@ static int check_pm_policy(int32_t ticks)
 	return policy++;
 }
 
-static int do_low_power(int32_t ticks)
+static int low_power_state_entry(int32_t ticks)
 {
-	PRINT("\n\nGoing to low power state!\n");
+	PRINT("\n\nLow power state policy entry!\n");
 
 	/* Turn off peripherals/clocks here */
 
 	quark_low_power();
 
-	return 1; /* non-zero so kernel does not do idle wait */
+	return SYS_PM_LOW_POWER_STATE;
 }
 
-static int do_tickless_idle(int32_t ticks)
+static int device_suspend_only_entry(int32_t ticks)
 {
-	PRINT("Tickless idle power saving!\n");
+	PRINT("Device suspend only policy entry!\n");
 
 	/* Turn off peripherals/clocks here */
 
-	return 0; /* zero to let kernel do idle wait */
+	return SYS_PM_DEVICE_SUSPEND_ONLY;
 }
 
 int _sys_soc_suspend(int32_t ticks)
 {
-	int ret = 0;
+	int ret = SYS_PM_NOT_HANDLED;
 
 	pm_state = check_pm_policy(ticks);
 
 	switch (pm_state) {
 	case 1:
 		start_time = rtc_read(rtc_dev);
-		ret = do_low_power(ticks);
+		ret = low_power_state_entry(ticks);
 		break;
 	case 2:
 		start_time = rtc_read(rtc_dev);
-		ret = do_tickless_idle(ticks);
+		ret = device_suspend_only_entry(ticks);
 		break;
 	default:
 		/* No PM operations */
-		ret = 0;
+		ret = SYS_PM_NOT_HANDLED;
 		break;
 	}
 
 	return ret;
 }
 
-static void low_power_resume(void)
+static void low_power_state_exit(void)
 {
 	end_time = rtc_read(rtc_dev);
-	PRINT("\nResume from low power state\n");
+	PRINT("\nLow power state policy exit!\n");
 	PRINT("Total Elapsed From Suspend To Resume = %d RTC Cycles\n",
 			end_time - start_time);
 }
 
-static void tickless_idle_resume(void)
+static void device_suspend_only_exit(void)
 {
 	end_time = rtc_read(rtc_dev);
-	PRINT("\nExit from tickless idle\n");
-	PRINT("Total Elapsed From Suspend To Tickless Resume = %d RTC Cycles\n",
+	PRINT("\nDevice suspend only policy exit!\n");
+	PRINT("Total Elapsed From Suspend To Resume = %d RTC Cycles\n",
 			end_time - start_time);
 }
 
@@ -137,10 +138,10 @@ void _sys_soc_resume(void)
 {
 	switch (pm_state) {
 	case 1:
-		low_power_resume();
+		low_power_state_exit();
 		break;
 	case 2:
-		tickless_idle_resume();
+		device_suspend_only_exit();
 		break;
 	default:
 		break;

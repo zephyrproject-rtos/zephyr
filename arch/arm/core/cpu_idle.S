@@ -33,7 +33,7 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(_CpuIdleInit)
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 GTEXT(_NanoIdleValGet)
 GTEXT(_NanoIdleValClear)
 #endif
@@ -62,7 +62,7 @@ SECTION_FUNC(TEXT, _CpuIdleInit)
     str r2, [r1]
     bx lr
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 
 /**
  *
@@ -101,7 +101,7 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
     str r1, [r0, #__tNANO_idle_OFFSET]
     bx lr
 
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 /**
  *

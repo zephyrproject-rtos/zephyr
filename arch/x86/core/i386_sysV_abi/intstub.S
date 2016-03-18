@@ -47,13 +47,13 @@
 
 	GTEXT(_Swap)
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 	GTEXT(_power_save_idle_exit)
 #else
 	GTEXT(_sys_power_save_idle_exit)
-#endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE */
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif
+#endif
 
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
@@ -185,11 +185,11 @@ SECTION_FUNC(TEXT, _IntEnt)
 
 	pushl	%edx			/* Save stack pointer */
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 	cmpl	$0, __tNANO_idle_OFFSET(%ecx)
 	jne	_HandleIdle
 	/* fast path is !idle, in the pipeline */
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif
 
 
 	/* fall through to nested case */
@@ -206,7 +206,7 @@ BRANCH_LABEL(alreadyOnIntStack)
 #endif
 	jmp	*%eax		/* "return" back to stub */
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 BRANCH_LABEL(_HandleIdle)
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 	pushl	%eax
@@ -232,7 +232,7 @@ BRANCH_LABEL(_HandleIdle)
 	sti			/* re-enable interrupts */
 	popl	%eax
 	jmp	*%eax		/* "return" back to stub */
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 /**
  * @brief Perform EOI, clean up stack, and do interrupt exit

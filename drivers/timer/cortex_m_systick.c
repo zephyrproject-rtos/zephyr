@@ -89,15 +89,15 @@ static uint32_t clock_accumulated_count;
 extern uint32_t _hw_irq_to_c_handler_latency;
 #endif
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern int32_t _NanoIdleValGet(void);
 extern void _NanoIdleValClear(void);
 extern void _sys_power_save_idle_exit(int32_t ticks);
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif
 
 #ifdef CONFIG_TICKLESS_IDLE
 extern int32_t _sys_idle_elapsed_ticks;
-#endif /* CONFIG_TICKLESS_IDLE */
+#endif
 
 #ifdef CONFIG_TICKLESS_IDLE
 static uint32_t __noinit default_load_value; /* default count */
@@ -249,7 +249,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	}
 #endif
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 	int32_t numIdleTicks;
 
 	/*
@@ -333,7 +333,7 @@ void _TIMER_INT_HANDLER(void *unused)
 
 	__asm__(" cpsie i"); /* re-enable interrupts (PRIMASK = 0) */
 
-#else /* !CONFIG_ADVANCED_POWER_MANAGEMENT */
+#else /* !CONFIG_SYS_POWER_MANAGEMENT */
 
 	/* accumulate total counter value */
 	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
@@ -344,7 +344,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	 */
 	_sys_clock_tick_announce();
 
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 	extern void _ExcExit(void);
 	_ExcExit();

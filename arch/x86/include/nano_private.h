@@ -710,9 +710,9 @@ typedef struct s_NANO {
 	unsigned nested;  /* nested interrupt count */
 	char *common_isp; /* interrupt stack pointer base */
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 	int32_t idle; /* Number of ticks for kernel idling */
-#endif		      /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif
 
 
 #ifdef CONFIG_FP_SHARING

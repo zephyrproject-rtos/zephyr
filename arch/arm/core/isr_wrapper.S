@@ -69,7 +69,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	pop {lr}
 #endif
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 	/*
 	 * All interrupts are disabled when handling idle wakeup.  For tickless
 	 * idle, this ensures that the calculation and programming of the device
@@ -90,7 +90,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 		blxne	_sys_power_save_idle_exit
 
 	cpsie i		/* re-enable interrupts (PRIMASK = 0) */
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif
 
 	mrs r0, IPSR	/* get exception number */
 	sub r0, r0, #16	/* get IRQ number */

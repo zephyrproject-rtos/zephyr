@@ -1,3 +1,4 @@
 
 config SOC_QUARK_SE_SS
         bool "Intel Quark SE - Sensor Sub System"
+	select SYS_POWER_LOW_POWER_STATE_SUPPORTED

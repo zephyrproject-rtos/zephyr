@@ -23,6 +23,7 @@ choice
 	source "arch/arc/soc/*/Kconfig.soc"
 endchoice
 
+
 menu "ARC Options"
 	depends on ARC
 

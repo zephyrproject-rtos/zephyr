@@ -7,9 +7,10 @@ power management infrastructure.
 
 This app will cycle through the various power schemes at every call
 to _sys_soc_suspend() hook function.
-It will cycle through following states
+It will cycle through following policies
 1. Low Power State (LPS) - puts the CPU in C2 state
-2. Tickless Idle - demonstrates hooks into tickless idle entry and exit
+2. Device suspend only - demonstrates hooks into kernel idle entry and exit
+that can be used to only suspend devices without CPU or SOC PM operations.
 3. No-op - no operation and letting kernel do its idle
 
 --------------------------------------------------------------------------------
@@ -44,13 +45,13 @@ Sample Output:
 
 Power Management Demo
 
-Going to low power state!
+Low power state policy entry!
 
-Resume from low power state
+Low power state policy exit!
 Total Elapsed From Suspend To Resume = 163838 RTC Cycles
-Tickless idle power saving!
+Device suspend only policy entry!
 
-Exit from tickless idle
-Total Elapsed From Suspend To Tickless Resume = 163838 RTC Cycles
+Device suspend only policy exit!
+Total Elapsed From Suspend To Resume = 163838 RTC Cycles
 
 ...

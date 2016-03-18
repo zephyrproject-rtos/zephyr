@@ -209,7 +209,7 @@ struct s_NANO {
 	struct tcs *current_fp; /* thread (fiber or task) that owns the FP regs */
 #endif
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 	int32_t idle; /* Number of ticks for kernel idling */
 #endif
 

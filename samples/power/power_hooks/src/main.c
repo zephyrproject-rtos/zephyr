@@ -15,7 +15,7 @@
  */
 
 #include <zephyr.h>
-#include <advidle.h>
+#include <power.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>

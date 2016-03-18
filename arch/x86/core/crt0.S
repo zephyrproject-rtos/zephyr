@@ -42,15 +42,15 @@
 
 #if defined(CONFIG_SSE)
 	GDATA(_sse_mxcsr_default_value)
-#endif /* CONFIG_SSE */
+#endif
 
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
 	GDATA(__start_tsc)
 #endif
 
-#ifdef CONFIG_ADVANCED_IDLE
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	GDATA(_sys_soc_resume)
-#endif /* CONFIG_ADVANCED_IDLE */
+#endif
 
 
 	/* processor is executing in 32-bit protected mode */
@@ -192,7 +192,7 @@ __csSet:
 
 	andl	$0xfffffffc, %esp
 
-#ifdef CONFIG_ADVANCED_IDLE
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	/*
 	 * Invoke _sys_soc_resume() hook to handle resume from deep sleep.
 	 * It should first check whether system is recovering from
@@ -207,7 +207,7 @@ __csSet:
 
 	call	_sys_soc_resume
 
-#endif /* CONFIG_ADVANCED_IDLE */
+#endif
 
 #ifdef CONFIG_XIP
 	/*

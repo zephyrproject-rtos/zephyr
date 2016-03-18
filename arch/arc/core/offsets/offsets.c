@@ -40,9 +40,9 @@
 /* ARCv2-specific tNANO structure member offsets */
 GEN_OFFSET_SYM(tNANO, rirq_sp);
 GEN_OFFSET_SYM(tNANO, firq_regs);
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 GEN_OFFSET_SYM(tNANO, idle);
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#endif
 
 /* ARCv2-specific struct tcs structure member offsets */
 GEN_OFFSET_SYM(tTCS, intlock_key);

@@ -235,12 +235,14 @@ void sys_workload_time_slice_set(int32_t t)
 
 unsigned char _sys_power_save_flag = 1;
 
-#if defined(CONFIG_ADVANCED_POWER_MANAGEMENT)
+#if defined(CONFIG_SYS_POWER_MANAGEMENT)
 
 #include <nanokernel.h>
 #include <microkernel/base_api.h>
-#ifdef CONFIG_ADVANCED_IDLE
-#include <advidle.h>
+#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
+	defined(CONFIG_SYS_POWER_DEEP_SLEEP) || \
+	defined(CONFIG_DEVICE_POWER_MANAGEMENT))
+#include <power.h>
 #endif
 #if defined(CONFIG_TICKLESS_IDLE)
 #include <drivers/system_timer.h>
@@ -280,29 +282,37 @@ void _sys_power_save_idle(int32_t ticks)
 #endif /* CONFIG_TICKLESS_IDLE */
 
 	nano_cpu_set_idle(ticks);
-#ifdef CONFIG_ADVANCED_IDLE
+#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
+	defined(CONFIG_SYS_POWER_DEEP_SLEEP) || \
+	defined(CONFIG_DEVICE_POWER_MANAGEMENT))
 	/*
 	 * Call the suspend hook function, which checks if the system should
-	 * enter deep sleep or low power state. The function will return a
-	 * non-zero value if system was put in deep sleep or low power state.
-	 * If the time available is too short to go to deep sleep or
-	 * low power state, then the function returns zero immediately
-	 * and we do normal idle processing.
+	 * enter deep sleep, low power state or only suspend devices.
+	 * If the time available is too short for any PM operation then
+	 * the function returns SYS_PM_NOT_HANDLED immediately and kernel
+	 * does normal idle processing. Otherwise it will return the code
+	 * corresponding to the action taken.
 	 *
-	 * This function can turn off devices without entering deep sleep
-	 * or cpu low power state.  In this case it should return zero to
-	 * let kernel enter its own tickless idle wait.
+	 * This function can just suspend devices without entering
+	 * deep sleep or cpu low power state.  In this case it should return
+	 * SYS_PM_DEVICE_SUSPEND_ONLY and kernel would do normal idle
+	 * processing.
 	 *
 	 * This function is entered with interrupts disabled. If the function
-	 * returns a non-zero value then it should re-enable interrupts before
-	 * returning.
+	 * returns either SYS_PM_LOW_POWER_STATE or SYS_PM_DEEP_SLEEP then
+	 * it should ensure interrupts are re-enabled before returning.
+	 * This is because the kernel does not do its own idle processing in
+	 * these cases i.e. skips nano_cpu_idle(). The kernel's idle
+	 * processing re-enables interrupts which is essential for kernel's
+	 * scheduling logic.
 	 */
-	if (_sys_soc_suspend(ticks) == 0) {
+	if (!(_sys_soc_suspend(ticks) &
+			(SYS_PM_DEEP_SLEEP | SYS_PM_LOW_POWER_STATE))) {
 		nano_cpu_idle();
 	}
 #else
 	nano_cpu_idle();
-#endif /* CONFIG_ADVANCED_IDLE */
+#endif
 }
 
 /**
@@ -317,12 +327,14 @@ void _sys_power_save_idle(int32_t ticks)
  */
 void _sys_power_save_idle_exit(int32_t ticks)
 {
-#ifdef CONFIG_ADVANCED_IDLE
+#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
+	defined(CONFIG_SYS_POWER_DEEP_SLEEP) || \
+	defined(CONFIG_DEVICE_POWER_MANAGEMENT))
 	/* Any idle wait based on CPU low power state will be exited by
 	 * interrupt. This function is called within that interrupt's
-	 * context.  _sys_soc_resume() needs to be called here mainly
+	 * ISR context.  _sys_soc_resume() needs to be called here
 	 * to handle exit from CPU low power states. This gives an
-	 * oppurtunity for device states altered in _sys_soc_suspend()
+	 * opportunity for device states altered in _sys_soc_suspend()
 	 * to be restored before the kernel schedules another thread.
 	 * _sys_soc_resume() is not called from here for deep sleep
 	 * exit. Deep sleep recovery happens at cold boot path.
@@ -378,7 +390,7 @@ static void _power_save(void)
 	if (_sys_power_save_flag) {
 		for (;;) {
 			irq_lock();
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 			_sys_power_save_idle(_get_next_timer_expiry());
 #else
 			/*
