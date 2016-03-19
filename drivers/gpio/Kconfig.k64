@@ -19,7 +19,7 @@
 
 menuconfig GPIO_K64
 	bool "Freescale K64-based GPIO driver"
-	depends on GPIO
+	depends on GPIO && SOC_FSL_FRDM_K64F
 	default n
 	help
 	Enable driver for Freescale K64-based GPIOs.
