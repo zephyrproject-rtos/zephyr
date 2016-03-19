@@ -15,49 +15,41 @@
 # limitations under the License.
 #
 
-if SOC_STM32
-
-config GPIO_STM32
+menuconfig GPIO_STM32
 	bool "GPIO Driver for STM32 family of MCUs"
-	depends on GPIO
+	depends on GPIO && SOC_STM32
 	default n
 	help
-         Enable GPIO driver for STM32 line of MCUs
+        Enable GPIO driver for STM32 line of MCUs
+
+if GPIO_STM32
 
 config GPIO_STM32_PORTA
 	bool "Enable GPIO port A support"
-	depends on GPIO && GPIO_STM32
 	default n
 
 config GPIO_STM32_PORTB
 	bool "Enable GPIO port B support"
-	depends on GPIO && GPIO_STM32
 	default n
 
 config GPIO_STM32_PORTC
 	bool "Enable GPIO port C support"
-	depends on GPIO && GPIO_STM32
 	default n
 
 config GPIO_STM32_PORTD
 	bool "Enable GPIO port D support"
-	depends on GPIO && GPIO_STM32
 	default n
 
 config GPIO_STM32_PORTE
 	bool "Enable GPIO port E support"
-	depends on GPIO && GPIO_STM32
 	default n
 
 config GPIO_STM32_PORTF
 	bool "Enable GPIO port F support"
-	depends on GPIO && GPIO_STM32
 	default n
 
 config GPIO_STM32_PORTG
 	bool "Enable GPIO port G support"
-	depends on GPIO && GPIO_STM32
 	default n
 
-
-endif # SOC_STM32
+endif # GPIO_STM32
