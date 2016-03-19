@@ -61,8 +61,8 @@ int bma280_reg_update(struct bma280_data *drv_data,
 	uint8_t old_val = 0;
 	uint8_t new_val;
 
-	if (bma280_reg_read(drv_data, reg, &old_val) != DEV_OK) {
-		return DEV_FAIL;
+	if (bma280_reg_read(drv_data, reg, &old_val) != 0) {
+		return -EIO;
 	}
 
 	new_val = old_val & ~mask;
@@ -83,9 +83,9 @@ static int bma280_sample_fetch(struct device *dev)
 	 * a burst read can be used to read all the samples
 	 */
 	rc = bma280_reg_burst_read(drv_data, BMA280_REG_ACCEL_X_LSB, buf, 6);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Could not read accel axis data\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	lsb = (buf[0] & BMA280_ACCEL_LSB_MASK) >> BMA280_ACCEL_LSB_SHIFT;
@@ -98,12 +98,12 @@ static int bma280_sample_fetch(struct device *dev)
 	drv_data->z_sample = (((int8_t)buf[5]) << BMA280_ACCEL_LSB_BITS) + lsb;
 
 	rc = bma280_reg_read(drv_data, BMA280_REG_TEMP, (uint8_t *)&drv_data->temp_sample);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Could not read temperature data\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int bma280_channel_get(struct device *dev,
@@ -128,9 +128,9 @@ static int bma280_channel_get(struct device *dev,
 		val->type = SENSOR_TYPE_INT_PLUS_MICRO;
 		val->val1 = (drv_data->temp_sample >> 1) + 23;
 		val->val2 = 500000 * (drv_data->temp_sample & 1);
-		return DEV_OK;
+		return 0;
 	} else {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	/* accel_val = sample * BMA280_ACCEL_SCALE / 1000 */
@@ -145,7 +145,7 @@ static int bma280_channel_get(struct device *dev,
 		val->val2 += 1000000;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct sensor_driver_api bma280_driver_api = {
@@ -169,46 +169,46 @@ int bma280_init(struct device *dev)
 	if (drv_data->i2c == NULL) {
 		DBG("Could not get pointer to %s device\n",
 		    CONFIG_BMA280_I2C_MASTER_DEV_NAME);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* read device ID */
 	rc = bma280_reg_read(drv_data, BMA280_REG_CHIP_ID, &id);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Could not read chip id\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	if (id != BMA280_CHIP_ID) {
 		DBG("Unexpected chip id (%x)\n", id);
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* set the data filter bandwidth */
 	rc = bma280_reg_write(drv_data, BMA280_REG_PMU_BW,
 			      BMA280_PMU_BW);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Could not set data filter bandwidth\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* set g-range */
 	rc = bma280_reg_write(drv_data, BMA280_REG_PMU_RANGE,
 			      BMA280_PMU_RANGE);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Could not set data g-range\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 #ifdef CONFIG_BMA280_TRIGGER
 	rc = bma280_init_interrupt(dev);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Could not initialize interrupts\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 struct bma280_data bma280_driver;

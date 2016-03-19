@@ -58,18 +58,18 @@ int isl29035_attr_set(struct device *dev,
 		lsb_reg = ISL29035_INT_LT_LSB_REG;
 		msb_reg = ISL29035_INT_LT_MSB_REG;
 	} else {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	raw_val = isl29035_lux_processed_to_raw(val);
 
-	if (isl29035_write_reg(drv_data, lsb_reg, raw_val & 0xFF) != DEV_OK ||
-	    isl29035_write_reg(drv_data, msb_reg, raw_val >> 8) != DEV_OK) {
+	if (isl29035_write_reg(drv_data, lsb_reg, raw_val & 0xFF) != 0 ||
+	    isl29035_write_reg(drv_data, msb_reg, raw_val >> 8) != 0) {
 		DBG("Failed to set attribute.\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static void isl29035_gpio_callback(struct device *dev, uint32_t pin)
@@ -129,7 +129,7 @@ int isl29035_trigger_set(struct device *dev,
 	/* enable interrupt callback */
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_ISL29035_GPIO_PIN_NUM);
 
-	return DEV_OK;
+	return 0;
 }
 
 int isl29035_init_interrupt(struct device *dev)
@@ -141,16 +141,16 @@ int isl29035_init_interrupt(struct device *dev)
 	ret = isl29035_update_reg(drv_data,
 				  ISL29035_COMMAND_I_REG, ISL29035_INT_PRST_MASK,
 				  ISL29035_INT_PRST_IDX << ISL29035_INT_PRST_SHIFT);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		DBG("Failed to set interrupt persistence cycles.\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* setup gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_ISL29035_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
 		DBG("Failed to get GPIO device.\n");
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	gpio_pin_configure(drv_data->gpio, CONFIG_ISL29035_GPIO_PIN_NUM,
@@ -158,9 +158,9 @@ int isl29035_init_interrupt(struct device *dev)
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
 	ret = gpio_set_callback(drv_data->gpio, isl29035_gpio_callback);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		DBG("Failed to set gpio callback.\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 #if defined(CONFIG_ISL29035_TRIGGER_OWN_FIBER)
@@ -174,5 +174,5 @@ int isl29035_init_interrupt(struct device *dev)
 	drv_data->work.arg = dev;
 #endif
 
-	return DEV_OK;
+	return 0;
 }

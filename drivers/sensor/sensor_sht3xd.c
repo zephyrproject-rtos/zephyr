@@ -95,27 +95,27 @@ static int sht3xd_sample_fetch(struct device *dev)
 	};
 
 	rc = i2c_transfer(drv_data->i2c, msgs, 2, SHT3XD_I2C_ADDRESS);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Failed to read data sample!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	t_sample = (rx_buf[0] << 8) | rx_buf[1];
 	if (sht3xd_compute_crc(t_sample) != rx_buf[2]) {
 		DBG("Received invalid temperature CRC!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	rh_sample = (rx_buf[3] << 8) | rx_buf[4];
 	if (sht3xd_compute_crc(rh_sample) != rx_buf[5]) {
 		DBG("Received invalid relative humidity CRC!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	drv_data->t_sample = t_sample;
 	drv_data->rh_sample = rh_sample;
 
-	return DEV_OK;
+	return 0;
 }
 
 static int sht3xd_channel_get(struct device *dev,
@@ -142,10 +142,10 @@ static int sht3xd_channel_get(struct device *dev,
 		val->val1 = tmp / 0xFFFF;
 		val->val2 = (1000000 * (tmp % 0xFFFF)) / 0xFFFF;
 	} else {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct sensor_driver_api sht3xd_driver_api = {
@@ -168,14 +168,14 @@ static int sht3xd_init(struct device *dev)
 	if (drv_data->i2c == NULL) {
 		DBG("Failed to get pointer to %s device!\n",
 		    CONFIG_SHT3XD_I2C_MASTER_DEV_NAME);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	/* clear status register */
 	rc = sht3xd_write_command(drv_data, SHT3XD_CMD_CLEAR_STATUS);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Failed to clear status register!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	sys_thread_busy_wait(SHT3XD_CLEAR_STATUS_WAIT_USEC);
@@ -183,22 +183,22 @@ static int sht3xd_init(struct device *dev)
 	/* set periodic measurement mode */
 	rc = sht3xd_write_command(drv_data,
 		sht3xd_measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX]);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Failed to set measurement mode!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	sys_thread_busy_wait(sht3xd_measure_wait[SHT3XD_REPEATABILITY_IDX]);
 
 #ifdef CONFIG_SHT3XD_TRIGGER
 	rc = sht3xd_init_interrupt(dev);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Failed to initialize interrupt\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 struct sht3xd_data sht3xd_driver;

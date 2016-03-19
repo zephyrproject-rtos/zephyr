@@ -60,8 +60,8 @@ int isl29035_update_reg(struct isl29035_driver_data *drv_data,
 	uint8_t old_val = 0;
 	uint8_t new_val;
 
-	if (isl29035_read_reg(drv_data, reg, &old_val) != DEV_OK) {
-		return DEV_FAIL;
+	if (isl29035_read_reg(drv_data, reg, &old_val) != 0) {
+		return -EIO;
 	}
 
 	new_val = old_val & ~mask;
@@ -77,18 +77,18 @@ static int isl29035_sample_fetch(struct device *dev)
 	int ret;
 
 	ret = isl29035_read_reg(drv_data, ISL29035_DATA_MSB_REG, &msb);
-	if (ret != DEV_OK) {
-		return DEV_FAIL;
+	if (ret != 0) {
+		return -EIO;
 	}
 
 	ret = isl29035_read_reg(drv_data, ISL29035_DATA_LSB_REG, &lsb);
-	if (ret != DEV_OK) {
-		return DEV_FAIL;
+	if (ret != 0) {
+		return -EIO;
 	}
 
 	drv_data->data_sample = (msb << 8) + lsb;
 
-	return DEV_OK;
+	return 0;
 }
 
 static int isl29035_channel_get(struct device *dev,
@@ -111,7 +111,7 @@ static int isl29035_channel_get(struct device *dev,
 	val->val1 = drv_data->data_sample;
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct sensor_driver_api isl29035_api = {
@@ -131,7 +131,7 @@ static int isl29035_init(struct device *dev)
 	drv_data->i2c = device_get_binding(CONFIG_ISL29035_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
 		DBG("Failed to get I2C device.\n");
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	dev->driver_api = &isl29035_api;
@@ -140,20 +140,20 @@ static int isl29035_init(struct device *dev)
 	/* clear blownout status bit */
 	ret = isl29035_update_reg(drv_data, ISL29035_ID_REG,
 				  ISL29035_BOUT_MASK, 0);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		DBG("Failed to clear blownout status bit.\n");
 		return ret;
 	}
 
 	/* set command registers to set default attributes */
 	ret = isl29035_write_reg(drv_data, ISL29035_COMMAND_I_REG, 0);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		DBG("Failed to clear COMMAND-I.\n");
 		return ret;
 	}
 
 	ret = isl29035_write_reg(drv_data, ISL29035_COMMAND_II_REG, 0);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		DBG("Failed to clear COMMAND-II.\n");
 		return ret;
 	}
@@ -162,7 +162,7 @@ static int isl29035_init(struct device *dev)
 	ret = isl29035_update_reg(drv_data,
 				  ISL29035_COMMAND_I_REG, ISL29035_OPMODE_MASK,
 				  ISL29035_ACTIVE_OPMODE << ISL29035_OPMODE_SHIFT);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		DBG("Failed to set opmode.\n");
 		return ret;
 	}
@@ -171,7 +171,7 @@ static int isl29035_init(struct device *dev)
 	ret = isl29035_update_reg(drv_data,
 				  ISL29035_COMMAND_II_REG, ISL29035_LUX_RANGE_MASK,
 				  ISL29035_LUX_RANGE_IDX << ISL29035_LUX_RANGE_SHIFT);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		DBG("Failed to set lux range.\n");
 		return ret;
 	}
@@ -180,20 +180,20 @@ static int isl29035_init(struct device *dev)
 	ret = isl29035_update_reg(drv_data,
 				  ISL29035_COMMAND_II_REG, ISL29035_ADC_RES_MASK,
 				  ISL29035_ADC_RES_IDX << ISL29035_ADC_RES_SHIFT);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		DBG("Failed to set ADC resolution.\n");
 		return ret;
 	}
 
 #ifdef CONFIG_ISL29035_TRIGGER
 	ret = isl29035_init_interrupt(dev);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		DBG("Failed to initialize interrupt.\n");
 		return ret;
 	}
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 struct isl29035_driver_data isl29035_data;

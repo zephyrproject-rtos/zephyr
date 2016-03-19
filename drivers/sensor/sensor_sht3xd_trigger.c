@@ -66,7 +66,7 @@ int sht3xd_attr_set(struct device *dev,
 
 	if (val->type != SENSOR_TYPE_INT &&
 	    val->type != SENSOR_TYPE_INT_PLUS_MICRO) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	if (attr == SENSOR_ATTR_LOWER_THRESH) {
@@ -75,7 +75,7 @@ int sht3xd_attr_set(struct device *dev,
 		} else if (chan == SENSOR_CHAN_HUMIDITY) {
 			drv_data->rh_low = sht3xd_rh_processed_to_raw(val);
 		} else {
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		}
 
 		set_cmd = SHT3XD_CMD_WRITE_TH_LOW_SET;
@@ -88,7 +88,7 @@ int sht3xd_attr_set(struct device *dev,
 		} else if (chan == SENSOR_CHAN_HUMIDITY) {
 			drv_data->rh_high = sht3xd_rh_processed_to_raw(val);
 		} else {
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		}
 
 		set_cmd = SHT3XD_CMD_WRITE_TH_HIGH_SET;
@@ -96,18 +96,18 @@ int sht3xd_attr_set(struct device *dev,
 		temp = drv_data->t_high;
 		rh = drv_data->rh_high;
 	} else {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	reg_val = (rh & 0xFE00) | ((temp & 0xFF80) >> 7);
 
-	if (sht3xd_write_reg(drv_data, set_cmd, reg_val) != DEV_OK ||
-	    sht3xd_write_reg(drv_data, clear_cmd, reg_val) != DEV_OK) {
+	if (sht3xd_write_reg(drv_data, set_cmd, reg_val) != 0 ||
+	    sht3xd_write_reg(drv_data, clear_cmd, reg_val) != 0) {
 		DBG("Failed to write threshold value!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static void sht3xd_gpio_callback(struct device *dev, uint32_t pin)
@@ -155,7 +155,7 @@ int sht3xd_trigger_set(struct device *dev,
 	struct sht3xd_data *drv_data = dev->driver_data;
 
 	if (trig->type != SENSOR_TRIG_THRESHOLD) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	gpio_pin_disable_callback(drv_data->gpio, CONFIG_SHT3XD_GPIO_PIN_NUM);
@@ -163,7 +163,7 @@ int sht3xd_trigger_set(struct device *dev,
 	drv_data->trigger = *trig;
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_SHT3XD_GPIO_PIN_NUM);
 
-	return DEV_OK;
+	return 0;
 }
 
 int sht3xd_init_interrupt(struct device *dev)
@@ -178,28 +178,28 @@ int sht3xd_init_interrupt(struct device *dev)
 
 	/* set alert thresholds to match reamsurement ranges */
 	rc = sht3xd_write_reg(drv_data, SHT3XD_CMD_WRITE_TH_HIGH_SET, 0xFFFF);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Failed to write threshold high set value!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	rc = sht3xd_write_reg(drv_data, SHT3XD_CMD_WRITE_TH_HIGH_CLEAR,
 			      0xFFFF);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Failed to write threshold high clear value!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	rc = sht3xd_write_reg(drv_data, SHT3XD_CMD_WRITE_TH_LOW_SET, 0);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Failed to write threshold low set value!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	rc = sht3xd_write_reg(drv_data, SHT3XD_CMD_WRITE_TH_LOW_SET, 0);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Failed to write threshold low clear value!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* setup gpio interrupt */
@@ -207,7 +207,7 @@ int sht3xd_init_interrupt(struct device *dev)
 	if (drv_data->gpio == NULL) {
 		DBG("Failed to get pointer to %s device!\n",
 		    CONFIG_SHT3XD_GPIO_DEV_NAME);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	gpio_pin_configure(drv_data->gpio, CONFIG_SHT3XD_GPIO_PIN_NUM,
@@ -215,9 +215,9 @@ int sht3xd_init_interrupt(struct device *dev)
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
 	rc = gpio_set_callback(drv_data->gpio, sht3xd_gpio_callback);
-	if (rc != DEV_OK) {
+	if (rc != 0) {
 		DBG("Failed to set gpio callback!\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_FIBER)
@@ -231,5 +231,5 @@ int sht3xd_init_interrupt(struct device *dev)
 	drv_data->work.arg = dev;
 #endif
 
-	return DEV_OK;
+	return 0;
 }

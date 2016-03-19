@@ -122,14 +122,14 @@ static int bmc150_magn_update_bits(struct device *dev, uint8_t reg,
 {
 	uint8_t old_val, new_val;
 
-	if (bmc150_magn_reg_read(dev, reg, &old_val) != DEV_OK) {
-		return DEV_FAIL;
+	if (bmc150_magn_reg_read(dev, reg, &old_val) != 0) {
+		return -EIO;
 	}
 
 	new_val = (old_val & ~mask) | (val & mask);
 
 	if (new_val == old_val) {
-		return DEV_OK;
+		return 0;
 	}
 
 	return bmc150_magn_reg_write(dev, reg, new_val);
@@ -156,12 +156,12 @@ static int bmc150_magn_set_power_mode(struct device *dev,
 	case BMC150_MAGN_POWER_MODE_SUSPEND:
 		if (bmc150_magn_update_bits(dev, BMC150_MAGN_REG_POWER,
 					    BMC150_MAGN_MASK_POWER_CTL, !state)
-					    != DEV_OK) {
-			return DEV_FAIL;
+					    != 0) {
+			return -EIO;
 		}
 		sys_thread_busy_wait(5 * USEC_PER_MSEC);
 
-		return DEV_OK;
+		return 0;
 	case BMC150_MAGN_POWER_MODE_SLEEP:
 		return bmc150_magn_update_bits(dev,
 					       BMC150_MAGN_REG_OPMODE_ODR,
@@ -178,7 +178,7 @@ static int bmc150_magn_set_power_mode(struct device *dev,
 		break;
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 static int bmc150_magn_set_odr(struct device *dev, uint8_t val)
@@ -196,7 +196,7 @@ static int bmc150_magn_set_odr(struct device *dev, uint8_t val)
 		}
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 
 #if defined(BMC150_MAGN_SET_ATTR)
@@ -205,13 +205,13 @@ static int bmc150_magn_read_rep_xy(struct device *dev)
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
 	uint8_t reg_val;
 
-	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_REP_XY, &reg_val) != DEV_OK) {
-		return DEV_FAIL;
+	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_REP_XY, &reg_val) != 0) {
+		return -EIO;
 	}
 
 	data->rep_xy = BMC150_MAGN_REGVAL_TO_REPXY((int)(reg_val));
 
-	return DEV_OK;
+	return 0;
 }
 
 static int bmc150_magn_read_rep_z(struct device *dev)
@@ -219,13 +219,13 @@ static int bmc150_magn_read_rep_z(struct device *dev)
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
 	uint8_t reg_val;
 
-	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_REP_Z, &reg_val) != DEV_OK) {
-		return DEV_FAIL;
+	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_REP_Z, &reg_val) != 0) {
+		return -EIO;
 	}
 
 	data->rep_z = BMC150_MAGN_REGVAL_TO_REPZ((int)(reg_val));
 
-	return DEV_OK;
+	return 0;
 }
 
 static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy, int rep_z, int *max_odr)
@@ -234,8 +234,8 @@ static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy, int rep_z
 
 	if (rep_xy == 0) {
 		if (data->rep_xy <= 0) {
-			if (bmc150_magn_read_rep_xy(dev) != DEV_OK) {
-				return DEV_FAIL;
+			if (bmc150_magn_read_rep_xy(dev) != 0) {
+				return -EIO;
 			}
 		}
 		rep_xy = data->rep_xy;
@@ -243,8 +243,8 @@ static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy, int rep_z
 
 	if (rep_z == 0) {
 		if (data->rep_z <= 0) {
-			if (bmc150_magn_read_rep_z(dev) != DEV_OK) {
-				return DEV_FAIL;
+			if (bmc150_magn_read_rep_z(dev) != 0) {
+				return -EIO;
 			}
 		}
 		rep_z = data->rep_z;
@@ -252,7 +252,7 @@ static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy, int rep_z
 
 	*max_odr = 1000000 / (145 * rep_xy + 500 * rep_z + 980);
 
-	return DEV_OK;
+	return 0;
 }
 #endif
 
@@ -262,8 +262,8 @@ static int bmc150_magn_read_odr(struct device *dev)
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
 	uint8_t i, odr_val, reg_val;
 
-	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_OPMODE_ODR, &reg_val) != DEV_OK) {
-		return DEV_FAIL;
+	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_OPMODE_ODR, &reg_val) != 0) {
+		return -EIO;
 	}
 
 	odr_val = (reg_val & BMC150_MAGN_MASK_ODR) >> BMC150_MAGN_SHIFT_ODR;
@@ -271,11 +271,11 @@ static int bmc150_magn_read_odr(struct device *dev)
 	for (i = 0; i < ARRAY_SIZE(bmc150_magn_samp_freq_table); ++i) {
 		if (bmc150_magn_samp_freq_table[i].reg_val == odr_val) {
 			data->odr = bmc150_magn_samp_freq_table[i].freq;
-			return DEV_OK;
+			return 0;
 		}
 	}
 
-	return DEV_INVALID_OP;
+	return -ENOTSUP;
 }
 #endif
 
@@ -287,13 +287,13 @@ static int bmc150_magn_write_rep_xy(struct device *dev, int val)
 	if (bmc150_magn_update_bits(dev,
 				    BMC150_MAGN_REG_REP_XY,
 				    BMC150_MAGN_REG_REP_DATAMASK,
-				    BMC150_MAGN_REPXY_TO_REGVAL(val)) != DEV_OK) {
-		return DEV_FAIL;
+				    BMC150_MAGN_REPXY_TO_REGVAL(val)) != 0) {
+		return -EIO;
 	}
 
 	data->rep_xy = val;
 
-	return DEV_OK;
+	return 0;
 }
 #endif
 
@@ -305,13 +305,13 @@ static int bmc150_magn_write_rep_z(struct device *dev, int val)
 	if (bmc150_magn_update_bits(dev,
 				      BMC150_MAGN_REG_REP_Z,
 				      BMC150_MAGN_REG_REP_DATAMASK,
-				      BMC150_MAGN_REPZ_TO_REGVAL(val)) != DEV_OK) {
-		return DEV_FAIL;
+				      BMC150_MAGN_REPZ_TO_REGVAL(val)) != 0) {
+		return -EIO;
 	}
 
 	data->rep_z = val;
 
-	return DEV_OK;
+	return 0;
 }
 #endif
 
@@ -377,9 +377,9 @@ static int bmc150_magn_sample_fetch(struct device *dev)
 	uint16_t rhall;
 
 	if (bmc150_magn_reg_bulk_read(dev, BMC150_MAGN_REG_X_L,
-					(uint8_t *)values, sizeof(values)) != DEV_OK) {
+					(uint8_t *)values, sizeof(values)) != 0) {
 		sensor_dbg("failed to read sample\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	raw_x = (int16_t)sys_le16_to_cpu(values[BMC150_MAGN_AXIS_X]) >> BMC150_MAGN_SHIFT_XY_L;
@@ -391,7 +391,7 @@ static int bmc150_magn_sample_fetch(struct device *dev)
 	data->sample_y = bmc150_magn_compensate_xy(&data->tregs, raw_y, rhall, false);
 	data->sample_z = bmc150_magn_compensate_z(&data->tregs, raw_z, rhall);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int bmc150_magn_channel_get(struct device *dev,
@@ -412,10 +412,10 @@ static int bmc150_magn_channel_get(struct device *dev,
 		val->dval = (double)(data->sample_z) * (1.0/1600.0);
 		break;
 	default:
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 #if defined(BMC150_MAGN_SET_ATTR_REP)
@@ -431,55 +431,55 @@ static inline int bmc150_magn_attr_set_oversampling(struct device *dev,
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 		if (val->val1 < 1 || val->val1 > 511) {
-			return DEV_INVALID_CONF;
+			return -EINVAL;
 		}
 
-		if (bmc150_magn_compute_max_odr(dev, val->val1, 0, &max_odr) != DEV_OK) {
-			return DEV_FAIL;
+		if (bmc150_magn_compute_max_odr(dev, val->val1, 0, &max_odr) != 0) {
+			return -EIO;
 		}
 
 		if (data->odr <= 0) {
-			if (bmc150_magn_read_odr(dev) != DEV_OK) {
-				return DEV_FAIL;
+			if (bmc150_magn_read_odr(dev) != 0) {
+				return -EIO;
 			}
 		}
 
 		if (data->odr > max_odr) {
-			return DEV_INVALID_CONF;
+			return -EINVAL;
 		}
 
-		if (bmc150_magn_write_rep_xy(dev, val->val1) != DEV_OK) {
-			return DEV_FAIL;
+		if (bmc150_magn_write_rep_xy(dev, val->val1) != 0) {
+			return -EIO;
 		}
 		break;
 #endif
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_Z)
 	case SENSOR_CHAN_MAGN_Z:
 		if (val->val1 < 1 || val->val1 > 256) {
-			return DEV_INVALID_CONF;
+			return -EINVAL;
 		}
 
-		if (bmc150_magn_compute_max_odr(dev, 0, val->val1, &max_odr) != DEV_OK) {
-			return DEV_FAIL;
+		if (bmc150_magn_compute_max_odr(dev, 0, val->val1, &max_odr) != 0) {
+			return -EIO;
 		}
 
 		if (data->odr <= 0) {
-			if (bmc150_magn_read_odr(dev) != DEV_OK) {
-				return DEV_FAIL;
+			if (bmc150_magn_read_odr(dev) != 0) {
+				return -EIO;
 			}
 		}
 
 		if (data->odr > max_odr) {
-			return DEV_INVALID_CONF;
+			return -EINVAL;
 		}
 
-		if (bmc150_magn_write_rep_z(dev, val->val1) != DEV_OK) {
-			return DEV_FAIL;
+		if (bmc150_magn_write_rep_z(dev, val->val1) != 0) {
+			return -EIO;
 		}
 		break;
 #endif
 	default:
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 }
 #endif
@@ -497,22 +497,22 @@ static int bmc150_magn_attr_set(struct device *dev,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		if (val->type != SENSOR_TYPE_INT) {
 			sensor_dbg("invalid parameter type for SENSOR_ATTR_SAMPLING_FREQUENCY\n");
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		}
 
 		if (data->max_odr <= 0) {
-			if (bmc150_magn_compute_max_odr(dev, 0, 0, &data->max_odr) != DEV_OK) {
-				return DEV_FAIL;
+			if (bmc150_magn_compute_max_odr(dev, 0, 0, &data->max_odr) != 0) {
+				return -EIO;
 			}
 		}
 
 		if (data->max_odr < val->val1) {
 			sensor_dbg("sampling rate not supported with current oversampling factor\n");
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		}
 
-		if (bmc150_magn_set_odr(dev, (uint8_t)(val->val1)) != DEV_OK) {
-			return DEV_FAIL;
+		if (bmc150_magn_set_odr(dev, (uint8_t)(val->val1)) != 0) {
+			return -EIO;
 		}
 		break;
 #endif
@@ -520,7 +520,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 	case SENSOR_ATTR_OVERSAMPLING:
 		if (val->type != SENSOR_TYPE_INT) {
 			sensor_dbg("invalid parameter type for SENSOR_ATTR_OVERSAMPLING\n");
-			return DEV_INVALID_OP;
+			return -ENOTSUP;
 		}
 
 		bmc150_magn_attr_set_oversampling(dev, chan, val);
@@ -528,10 +528,10 @@ static int bmc150_magn_attr_set(struct device *dev,
 		break;
 #endif
 	default:
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 #endif
 
@@ -561,16 +561,16 @@ static int bmc150_magn_trigger_set(struct device *dev,
 		if (!bmc150_magn_update_bits(dev, BMC150_MAGN_REG_INT_DRDY,
 					     BMC150_MAGN_MASK_DRDY_EN,
 					     state << BMC150_MAGN_SHIFT_DRDY_EN)
-					     != DEV_OK) {
+					     != 0) {
 			sensor_dbg("failed to set DRDY interrupt\n");
-			return DEV_FAIL;
+			return -EIO;
 		}
 
 		gpio_pin_enable_callback(data->gpio_drdy, config->gpio_drdy_int_pin);
 	}
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 #endif
 
@@ -591,7 +591,7 @@ static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
 	while (1) {
 		nano_fiber_sem_take(&data->sem, TICKS_UNLIMITED);
 
-		while (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_INT_STATUS, &reg_val) != DEV_OK) {
+		while (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_INT_STATUS, &reg_val) != 0) {
 			sensor_dbg("failed to clear data ready interrupt\n");
 		}
 
@@ -624,12 +624,12 @@ static int bmc150_magn_init_chip(struct device *dev)
 	bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_NORMAL, 0);
 	bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_SUSPEND, 1);
 
-	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_SUSPEND, 0) != DEV_OK) {
+	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_SUSPEND, 0) != 0) {
 		sensor_dbg("failed to bring up device from suspend mode\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_CHIP_ID, &chip_id) != DEV_OK) {
+	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_CHIP_ID, &chip_id) != 0) {
 		sensor_dbg("failed reading chip id\n");
 		goto err_poweroff;
 	}
@@ -640,48 +640,48 @@ static int bmc150_magn_init_chip(struct device *dev)
 	sensor_dbg("chip id 0x%x\n", chip_id);
 
 	preset = bmc150_magn_presets_table[BMC150_MAGN_DEFAULT_PRESET];
-	if (bmc150_magn_set_odr(dev, preset.odr) != DEV_OK) {
+	if (bmc150_magn_set_odr(dev, preset.odr) != 0) {
 		sensor_dbg("failed to set ODR to %d\n",
 			    preset.odr);
 		goto err_poweroff;
 	}
 
 	if (bmc150_magn_reg_write(dev, BMC150_MAGN_REG_REP_XY,
-				  BMC150_MAGN_REPXY_TO_REGVAL(preset.rep_xy)) != DEV_OK) {
+				  BMC150_MAGN_REPXY_TO_REGVAL(preset.rep_xy)) != 0) {
 		sensor_dbg("failed to set REP XY to %d\n",
 			   preset.rep_xy);
 		goto err_poweroff;
 	}
 
 	if (bmc150_magn_reg_write(dev, BMC150_MAGN_REG_REP_Z,
-				  BMC150_MAGN_REPZ_TO_REGVAL(preset.rep_z)) != DEV_OK) {
+				  BMC150_MAGN_REPZ_TO_REGVAL(preset.rep_z)) != 0) {
 		sensor_dbg("failed to set REP Z to %d\n",
 			    preset.rep_z);
 		goto err_poweroff;
 	}
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	if (bmc150_magn_set_drdy_polarity(dev, 0) != DEV_OK) {
+	if (bmc150_magn_set_drdy_polarity(dev, 0) != 0) {
 		sensor_dbg("failed to set DR polarity\n");
 		goto err_poweroff;
 	}
 
 	if (bmc150_magn_update_bits(dev, BMC150_MAGN_REG_INT_DRDY,
 				      BMC150_MAGN_MASK_DRDY_EN,
-				      0 << BMC150_MAGN_SHIFT_DRDY_EN) != DEV_OK) {
+				      0 << BMC150_MAGN_SHIFT_DRDY_EN) != 0) {
 		sensor_dbg("failed to update data ready interrupt enabled bit\n");
 		goto err_poweroff;
 	}
 #endif
 
-	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_NORMAL, 1) != DEV_OK) {
+	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_NORMAL, 1) != 0) {
 		sensor_dbg("failed to power on device\n");
 		goto err_poweroff;
 	}
 
 	if (bmc150_magn_reg_bulk_read(dev, BMC150_MAGN_REG_TRIM_START,
 				      (uint8_t *)&data->tregs, sizeof(data->tregs))
-				      != DEV_OK) {
+				      != 0) {
 		sensor_dbg("failed to read trim regs\n");
 		goto err_poweroff;
 	}
@@ -704,12 +704,12 @@ static int bmc150_magn_init_chip(struct device *dev)
 	data->tregs.z3 = sys_le16_to_cpu(data->tregs.z3);
 	data->tregs.z4 = sys_le16_to_cpu(data->tregs.z4);
 
-	return DEV_OK;
+	return 0;
 
 err_poweroff:
 	bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_NORMAL, 0);
 	bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_SUSPEND, 1);
-	return DEV_FAIL;
+	return -EIO;
 }
 
 int bmc150_magn_init(struct device *dev)
@@ -723,12 +723,12 @@ int bmc150_magn_init(struct device *dev)
 	if (!data->i2c_master) {
 		sensor_dbg("i2c master not found: %s\n",
 			   config->i2c_master_dev_name);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
-	if (bmc150_magn_init_chip(dev) != DEV_OK) {
+	if (bmc150_magn_init_chip(dev) != 0) {
 		sensor_dbg("failed to initialize chip\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
@@ -741,19 +741,19 @@ int bmc150_magn_init(struct device *dev)
 	if (!data->gpio_drdy) {
 		sensor_dbg("gpio controller %s not found\n",
 			   config->gpio_drdy_dev_name);
-		return DEV_INVALID_CONF;
+		return -EINVAL;
 	}
 
 	gpio_pin_configure(data->gpio_drdy, config->gpio_drdy_int_pin,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
-	if (gpio_set_callback(data->gpio_drdy, bmc150_magn_gpio_drdy_callback) != DEV_OK) {
+	if (gpio_set_callback(data->gpio_drdy, bmc150_magn_gpio_drdy_callback) != 0) {
 		sensor_dbg("failed to set gpio callback\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct bmc150_magn_config bmc150_magn_config = {
