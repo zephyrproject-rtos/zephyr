@@ -22,7 +22,6 @@
  */
 
 #include <zephyr.h>
-#include <drivers/loapic.h>
 
 #include "timestamp.h"
 #include "utils.h"

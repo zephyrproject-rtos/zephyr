@@ -1,4 +1,4 @@
-/* Intel x86 GCC specific test inline assembler functions and macros */
+/* GCC specific test inline assembler functions and macros */
 
 /*
  * Copyright (c) 2015, Wind River Systems, Inc.
@@ -19,10 +19,11 @@
 #ifndef _TEST_ASM_INLINE_GCC_H
 #define _TEST_ASM_INLINE_GCC_H
 
-#if !defined(__GNUC__) || !defined(CONFIG_X86)
-#error test_asm_inline_gcc.h goes only with x86 GCC
+#if !defined(__GNUC__)
+#error test_asm_inline_gcc.h goes only with GCC
 #endif
 
+#if defined(CONFIG_X86)
 static inline void timestamp_serialize(void)
 {
 	__asm__ __volatile__ (/* serialize */
@@ -32,5 +33,18 @@ static inline void timestamp_serialize(void)
 	:
 	: "%eax", "%ebx", "%ecx", "%edx");
 }
+#elif defined(CONFIG_CPU_CORTEX_M)
+static inline void timestamp_serialize(void)
+{
+	/* isb is avaialble in all Cortex-M  */
+	__asm__ __volatile__ (
+	"isb;\n\t"
+	:
+	:
+	: "memory");
+}
+#else
+#error implementation of timestamp_serialize() not provided for your CPU target
+#endif
 
 #endif /* _TEST_ASM_INLINE_GCC_H */
