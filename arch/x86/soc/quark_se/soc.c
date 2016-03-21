@@ -22,6 +22,8 @@
  * hardware for the Quark SE BSP.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <misc/printk.h>
 #include <misc/__assert.h>
@@ -57,7 +59,7 @@ static int arc_init(struct device *arg)
 	if (!SCSS_REG_VAL(SCSS_SS_STS)) {
 		/* ARC shouldn't already be running! */
 		printk("ARC core already running!");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* Address of ARC side __reset stored in the first 4 bytes of arc.bin,
@@ -91,7 +93,7 @@ static int arc_init(struct device *arg)
 skip_arc_init:
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 SYS_INIT(arc_init, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
@@ -113,7 +115,7 @@ static int platform_uart_init(struct device *arg)
 	SCSS_INTERRUPT->int_uart_mask[1] &= INT_UNMASK_IA;
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 SYS_INIT(platform_uart_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

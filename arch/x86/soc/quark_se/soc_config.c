@@ -32,7 +32,7 @@ static int x86_quark_se_ipm_init(void)
 	IRQ_CONNECT(QUARK_SE_IPM_INTERRUPT, QUARK_SE_IPM_INTERRUPT_PRI,
 		    quark_se_ipm_isr, NULL, 0);
 	irq_enable(QUARK_SE_IPM_INTERRUPT);
-	return DEV_OK;
+	return 0;
 }
 
 static struct quark_se_ipm_controller_config_info ipm_controller_config = {

@@ -48,7 +48,7 @@ static int uart_stellaris_init(struct device *dev)
 	RCGC1 |= RCGC1_UART2_EN;
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 SYS_INIT(uart_stellaris_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
