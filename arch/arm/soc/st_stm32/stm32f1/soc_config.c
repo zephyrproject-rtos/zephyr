@@ -17,7 +17,7 @@
 #include "soc.h"
 #include <device.h>
 #include <misc/util.h>
-#include <pinmux/pinmux_stm32.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
 static const stm32_pin_func_t pin_pa9_funcs[] = {

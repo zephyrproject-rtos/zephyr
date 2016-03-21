@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <clock_control.h>
-#include "pinmux.h"
+#include "pinmux/pinmux.h"
 
 /**
  * @brief numerical IDs for IO ports
@@ -258,8 +258,11 @@ clock_control_subsys_t stm32_get_port_clock(int port);
  *
  * @param pin IO pin, STM32PIN() encoded
  * @param func IO function encoded
+ * @param clk clock control device, for enabling/disabling clock gate
+ * for the port
  */
-int stm32_pin_configure(int pin, int func);
+int _pinmux_stm32_set(uint32_t pin, uint32_t func,
+		      struct device *clk);
 
 /**
  * @brief helper for obtaining pin configuration for the board
@@ -274,7 +277,8 @@ int stm32_pin_configure(int pin, int func);
  *
  * @return array of pin assignments
  */
-const struct pin_config *stm32_board_get_pinconf(size_t *pins);
+void stm32_setup_pins(const struct pin_config *pinconf,
+		      size_t pins);
 
 /* common pinmux device name for all STM32 chips */
 #define STM32_PINMUX_NAME "stm32-pinmux"

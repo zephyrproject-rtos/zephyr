@@ -26,8 +26,9 @@
 #include <soc.h>
 #include "pinmux.h"
 #include <pinmux.h>
-#include <pinmux/pinmux_stm32.h>
+#include <gpio/gpio_stm32.h>
 #include <clock_control/stm32_clock_control.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 
 /**
  * @brief enable IO port clock
@@ -49,6 +50,18 @@ static int enable_port(uint32_t port, struct device *clk)
 	return clock_control_on(clk, subsys);
 }
 
+static int stm32_pin_configure(int pin, int func)
+{
+	/* determine IO port registers location */
+	uint32_t offset = STM32_PORT(pin) * GPIO_REG_SIZE;
+	uint8_t *port_base = (uint8_t *)(GPIO_PORTS_BASE + offset);
+
+	/* not much here, on STM32F10x the alternate function is
+	 * controller by setting up GPIO pins in specific mode.
+	 */
+	return stm32_gpio_configure((uint32_t *)port_base, STM32_PIN(pin), func);
+}
+
 /**
  * @brief pin setup
  *
@@ -58,7 +71,7 @@ static int enable_port(uint32_t port, struct device *clk)
  *
  * @return 0 on success, error otherwise
  */
-static inline int __pinmux_stm32_set(uint32_t pin, uint32_t func,
+int _pinmux_stm32_set(uint32_t pin, uint32_t func,
 				struct device *clk)
 {
 	int config;
@@ -74,49 +87,14 @@ static inline int __pinmux_stm32_set(uint32_t pin, uint32_t func,
 	return stm32_pin_configure(pin, config);
 }
 
-static int pinmux_stm32_set(struct device *dev,
-				 uint32_t pin, uint32_t func)
-{
-	ARG_UNUSED(dev);
-
-	return __pinmux_stm32_set(pin, func, NULL);
-}
-
-static int pinmux_stm32_get(struct device *dev,
-				 uint32_t pin, uint32_t *func)
-{
-	return -ENOTSUP;
-}
-
-static int pinmux_stm32_input(struct device *dev,
-				uint32_t pin,
-				uint8_t func)
-{
-	return -ENOTSUP;
-}
-
-static int pinmux_stm32_pullup(struct device *dev,
-				uint32_t pin,
-				uint8_t func)
-{
-	return -ENOTSUP;
-}
-
-static struct pinmux_driver_api pinmux_stm32_api = {
-	.set = pinmux_stm32_set,
-	.get = pinmux_stm32_get,
-	.pullup = pinmux_stm32_pullup,
-	.input = pinmux_stm32_input,
-};
-
 /**
  * @brief setup pins according to their assignments
  *
  * @param pinconf  board pin configuration array
  * @param pins     array size
  */
-static inline void __setup_pins(const struct pin_config *pinconf,
-				size_t pins)
+void stm32_setup_pins(const struct pin_config *pinconf,
+		      size_t pins)
 {
 	struct device *clk;
 	int i;
@@ -124,39 +102,7 @@ static inline void __setup_pins(const struct pin_config *pinconf,
 	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	for (i = 0; i < pins; i++) {
-		__pinmux_stm32_set(pinconf[i].pin_num,
-				pinconf[i].mode, clk);
+		_pinmux_stm32_set(pinconf[i].pin_num,
+				  pinconf[i].mode, clk);
 	}
 }
-
-int pinmux_stm32_init(struct device *port)
-{
-	size_t pins = 0;
-	const struct pin_config *pinconf;
-
-	pinconf = stm32_board_get_pinconf(&pins);
-
-	if (pins != 0) {
-		/* configure pins */
-		__setup_pins(pinconf, pins);
-	}
-
-	port->driver_api = &pinmux_stm32_api;
-	return 0;
-}
-
-static struct pinmux_config pinmux_stm32_cfg = {
-#ifdef CONFIG_SOC_STM32F1X
-	.base_address = GPIO_PORTS_BASE,
-#endif
-};
-
-/**
- * @brief device init
- *
- * Device priority set to 2, so that we come after clock_control and
- * before any other devices
- */
-DEVICE_INIT(pinmux_stm32, STM32_PINMUX_NAME, &pinmux_stm32_init,
-	    NULL, &pinmux_stm32_cfg,
-	    PRIMARY, CONFIG_PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY);
