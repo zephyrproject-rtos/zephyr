@@ -21,3 +21,4 @@ code changes.
    changes
    maintainers
    doxygen/doxygen
+   error_code_conventions
