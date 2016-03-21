@@ -878,6 +878,12 @@ ext_hdr_options_process(struct net_buf *buf)
   * 8 bytes, excluding the first 8 bytes
   * length field in an option : the length of data in the option
   */
+  if (((UIP_EXT_BUF(buf)->len << 3) + 8) > buf->len) {
+    PRINTF("Corrupted packet, extension header %d too long (max %d bytes)\n",
+	   (UIP_EXT_BUF(buf)->len << 3) + 8, buf->len);
+    return 1; /* invalid packet, drop it */
+  }
+
   uip_ext_opt_offset(buf) = 2;
   while(uip_ext_opt_offset(buf) < ((UIP_EXT_BUF(buf)->len << 3) + 8)) {
     switch(UIP_EXT_HDR_OPT_BUF(buf)->type) {
