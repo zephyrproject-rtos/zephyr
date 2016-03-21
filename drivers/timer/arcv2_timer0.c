@@ -220,7 +220,7 @@ void _timer_idle_enter(int32_t ticks)
 	}
 
 	programmed_ticks = ticks;
-	programmed_limit = (programmed_ticks * cycles_per_tick);
+	programmed_limit = (programmed_ticks * cycles_per_tick) - 1;
 
 	timer0_limit_register_set(programmed_limit);
 
