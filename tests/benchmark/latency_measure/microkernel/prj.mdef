@@ -4,8 +4,8 @@
 % TASK NAME          PRIO ENTRY           STACK GROUPS
 % ====================================================
   TASK TESTTASK      10   microMain        1024 [EXE]
-  TASK INTTASK       11   microInt         1024 [EXE]
-  TASK YIELDTASK     10   yieldingTask     1024 []
+  TASK INTTASK       11   microInt         512  [EXE]
+  TASK YIELDTASK     10   yieldingTask     512  []
 
 % SEMA NAME
 % ===============

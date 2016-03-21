@@ -34,7 +34,7 @@
 /* number of context switches */
 #define NCTXSWITCH   10000
 #ifndef STACKSIZE
-#define STACKSIZE    2000
+#define STACKSIZE    512
 #endif
 
 /* stack used by the fibers */
