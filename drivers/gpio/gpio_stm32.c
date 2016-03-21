@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <device.h>
 #include <soc.h>
@@ -63,7 +65,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	int map_res;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return DEV_NO_SUPPORT;
+		return -ENODEV;
 	}
 
 	/* figure out if we can map the requested GPIO
@@ -208,7 +210,7 @@ static struct gpio_driver_api gpio_stm32_driver = {
  *
  * @param dev GPIO device struct
  *
- * @return DEV_OK
+ * @return 0
  */
 static int gpio_stm32_init(struct device *device)
 {

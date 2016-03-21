@@ -54,7 +54,7 @@ struct gpio_stm32_data {
  * @param flags GPIO encoded flags
  * @param out conf SoC specific pin config
  *
- * @return DEV_OK if flags were mapped to SoC pin config
+ * @return 0 if flags were mapped to SoC pin config
  */
 int stm32_gpio_flags_to_conf(int flags, int *conf);
 
