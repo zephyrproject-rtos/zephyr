@@ -52,6 +52,8 @@ source "drivers/sensor/Kconfig.hdc1008"
 
 source "drivers/sensor/Kconfig.isl29035"
 
+source "drivers/sensor/Kconfig.lis3dh"
+
 source "drivers/sensor/Kconfig.lsm9ds0_gyro"
 
 source "drivers/sensor/Kconfig.mcp9808"
