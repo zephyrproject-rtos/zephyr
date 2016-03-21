@@ -878,6 +878,7 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 		bt_auth->passkey_confirm(conn, passkey);
 		break;
 	case PASSKEY_DISPLAY:
+		atomic_set_bit(conn->flags, BT_CONN_USER);
 		bt_auth->passkey_display(conn, passkey);
 		break;
 	case  PASSKEY_INPUT:
@@ -1505,6 +1506,11 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 
 		if (conn->br.ssp_method == PASSKEY_INPUT) {
 			return ssp_passkey_neg_reply(conn);
+		}
+
+		if (conn->br.ssp_method == PASSKEY_DISPLAY) {
+			return bt_conn_disconnect(conn,
+						  BT_HCI_ERR_AUTHENTICATION_FAIL);
 		}
 
 		return pin_code_neg_reply(&conn->br.dst);
