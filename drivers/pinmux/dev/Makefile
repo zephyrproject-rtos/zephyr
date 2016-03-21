@@ -9,3 +9,4 @@ obj-$(CONFIG_PINMUX_DEV_FRDM_K64F) += pinmux_dev_frdm_k64f.o
 obj-$(CONFIG_PINMUX_DEV_GALILEO) += pinmux_dev_galileo.o
 obj-$(CONFIG_PINMUX_DEV_QUARK_MCU) += pinmux_dev_quark_mcu.o
 obj-$(CONFIG_PINMUX_DEV_QMSI) += pinmux_dev_qmsi.o
+obj-$(CONFIG_PINMUX_DEV_STM32) += pinmux_dev_stm32.o
