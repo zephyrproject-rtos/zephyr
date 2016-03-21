@@ -18,8 +18,6 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
-#include <errno.h>
-
 /**
  * @brief Device Driver APIs
  * @defgroup io_interfaces Device Driver APIs
@@ -242,27 +240,6 @@ extern struct device_pm_ops device_pm_ops_nop;
   * @param name Device name
   */
 #define DEVICE_DECLARE(name) extern struct device DEVICE_NAME_GET(name)
-
-/**
- * @cond DEPRECATED_HIDDEN
- *
- * Hide these from showing in public documentation as these are
- * being deprecated.
- */
-/*
- * DEPRECATED.
- *
- * DEV_* error codes are deprecated. Use error codes from errno.h instead.
- */
-#define DEV_OK			0  /* No error */
-#define DEV_FAIL		(-EIO) /* General operation failure */
-#define DEV_INVALID_OP		(-ENOTSUP) /* Invalid operation */
-#define DEV_INVALID_CONF	(-EINVAL) /* Invalid configuration */
-#define DEV_USED		(-EBUSY) /* Device controller in use */
-#define DEV_NO_ACCESS		(-EACCES) /* Controller not accessible */
-#define DEV_NO_SUPPORT		(-ENODEV) /* Device type not supported */
-#define DEV_NOT_CONFIG		(-EPERM) /* Device not configured */
-/** @endcond */
 
 struct device;
 
