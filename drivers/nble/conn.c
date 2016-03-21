@@ -32,8 +32,6 @@
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
-const struct bt_conn_auth_cb *bt_auth;
-
 static struct bt_conn *conn_new(void)
 {
 	struct bt_conn *conn = NULL;
@@ -318,7 +316,7 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 {
 	if (!cb) {
-		bt_auth = NULL;
+		nble.auth = NULL;
 		return 0;
 	}
 
@@ -327,11 +325,11 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 		return -EINVAL;
 	}
 
-	if (bt_auth) {
+	if (nble.auth) {
 		return -EALREADY;
 	}
 
-	bt_auth = cb;
+	nble.auth = cb;
 
 	return 0;
 }

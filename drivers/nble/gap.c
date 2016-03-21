@@ -47,8 +47,6 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 
 struct nble nble;
 
-extern const struct bt_conn_auth_cb *bt_auth;
-
 #define BT_SMP_IO_DISPLAY_ONLY			0x00
 #define BT_SMP_IO_DISPLAY_YESNO			0x01
 #define BT_SMP_IO_KEYBOARD_ONLY			0x02
@@ -430,27 +428,27 @@ void on_nble_common_rsp(const struct nble_response *rsp)
 
 static uint8_t get_io_capa(void)
 {
-	if (!bt_auth) {
+	if (!nble.auth) {
 		return BT_SMP_IO_NO_INPUT_OUTPUT;
 	}
 
 	/* Passkey Confirmation is valid only for LE SC */
-	if (bt_auth->passkey_display && bt_auth->passkey_entry &&
-	    bt_auth->passkey_confirm) {
+	if (nble.auth->passkey_display && nble.auth->passkey_entry &&
+	    nble.auth->passkey_confirm) {
 		return BT_SMP_IO_KEYBOARD_DISPLAY;
 	}
 
 	/* DisplayYesNo is useful only for LE SC */
-	if (bt_auth->passkey_display &&
-	    bt_auth->passkey_confirm) {
+	if (nble.auth->passkey_display &&
+	    nble.auth->passkey_confirm) {
 		return BT_SMP_IO_DISPLAY_YESNO;
 	}
 
-	if (bt_auth->passkey_entry) {
+	if (nble.auth->passkey_entry) {
 		return BT_SMP_IO_KEYBOARD_ONLY;
 	}
 
-	if (bt_auth->passkey_display) {
+	if (nble.auth->passkey_display) {
 		return BT_SMP_IO_DISPLAY_ONLY;
 	}
 
@@ -554,9 +552,9 @@ void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_ev
 
 	/* TODO: Check shall we store io_caps globally */
 	if (get_io_capa() == BT_SMP_IO_DISPLAY_YESNO) {
-		bt_auth->passkey_confirm(conn, ev->passkey);
+		nble.auth->passkey_confirm(conn, ev->passkey);
 	} else {
-		bt_auth->passkey_display(conn, ev->passkey);
+		nble.auth->passkey_display(conn, ev->passkey);
 	}
 
 	bt_conn_unref(conn);
@@ -573,7 +571,7 @@ void on_nble_gap_sm_passkey_req_evt(const struct nble_gap_sm_passkey_req_evt *ev
 	}
 
 	if (ev->key_type == NBLE_GAP_SM_PK_PASSKEY) {
-		bt_auth->passkey_entry(conn);
+		nble.auth->passkey_entry(conn);
 	}
 
 	bt_conn_unref(conn);
