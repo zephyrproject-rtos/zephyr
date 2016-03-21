@@ -257,7 +257,7 @@ struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 	return attr->_next;
 #else
 	return ((attr < db || attr > &db[attr_count - 2]) ? NULL :
-		(struct bt_gatt_attr *) &attr[1]);
+		(struct bt_gatt_attr *)&attr[1]);
 #endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 }
 

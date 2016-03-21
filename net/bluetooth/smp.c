@@ -596,6 +596,7 @@ static void smp_reset(struct bt_smp *smp)
 static void smp_timeout(int arg1, int arg2)
 {
 	struct bt_smp *smp = (struct bt_smp *)arg1;
+
 	ARG_UNUSED(arg2);
 
 	BT_ERR("SMP Timeout");
@@ -623,7 +624,7 @@ static void smp_restart_timer(struct bt_smp *smp)
 	}
 
 	smp->timeout = fiber_delayed_start(smp->stack, sizeof(smp->stack),
-					   smp_timeout, (int) smp, 0, 7, 0,
+					   smp_timeout, (int)smp, 0, 7, 0,
 					   SMP_TIMEOUT);
 }
 
@@ -1181,7 +1182,6 @@ static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 
 		memcpy(keys->ltk.val, req->ltk, 16);
 	}
-
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
 
@@ -2733,7 +2733,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	       h(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
 
 	err = smp_sign_buf(keys->remote_csrk.val, buf->data,
-			      buf->len - sizeof(sig));
+			   buf->len - sizeof(sig));
 	if (err) {
 		BT_ERR("Unable to create signature for %s",
 		       bt_addr_le_str(&conn->le.dst));
@@ -2880,7 +2880,7 @@ static int smp_aes_cmac_test(void)
 }
 
 static int sign_test(const char *prefix, const uint8_t *key, const uint8_t *m,
-		       uint16_t len, const uint8_t *sig)
+		     uint16_t len, const uint8_t *sig)
 {
 	uint8_t msg[len + sizeof(uint32_t) + 8];
 	uint8_t orig[len + sizeof(uint32_t) + 8];

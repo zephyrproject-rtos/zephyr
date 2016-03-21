@@ -82,7 +82,7 @@ struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr)
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 		if ((key_pool[i].keys & type) &&
-		     !bt_addr_le_cmp(&key_pool[i].addr, addr)) {
+		    !bt_addr_le_cmp(&key_pool[i].addr, addr)) {
 			return &key_pool[i];
 		}
 	}

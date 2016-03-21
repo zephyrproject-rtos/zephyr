@@ -2717,7 +2717,7 @@ static int set_ad(uint16_t hci_op, const struct bt_data *ad, size_t ad_len)
 		set_data->data[set_data->len++] = ad[i].type;
 
 		memcpy(&set_data->data[set_data->len], ad[i].data,
-				ad[i].data_len);
+		       ad[i].data_len);
 		set_data->len += ad[i].data_len;
 	}
 

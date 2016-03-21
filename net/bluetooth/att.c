@@ -1040,7 +1040,7 @@ static uint8_t att_read_group_req(struct bt_att *att, struct net_buf *buf)
 	if (bt_uuid_cmp(&u.uuid, BT_UUID_GATT_PRIMARY) &&
 	    bt_uuid_cmp(&u.uuid, BT_UUID_GATT_SECONDARY)) {
 		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, start_handle,
-				     BT_ATT_ERR_UNSUPPORTED_GROUP_TYPE);
+			     BT_ATT_ERR_UNSUPPORTED_GROUP_TYPE);
 		return 0;
 	}
 

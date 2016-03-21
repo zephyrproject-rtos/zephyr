@@ -116,7 +116,7 @@ static inline bool bt_addr_le_is_rpa(const bt_addr_le_t *addr)
 		return false;
 
 	if ((addr->val[5] & 0xc0) == 0x40)
-	       return true;
+		return true;
 
 	return false;
 }
@@ -134,7 +134,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 }
 
 static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
-					uint16_t latency, uint16_t timeout)
+					   uint16_t latency, uint16_t timeout)
 {
 	if (min > max || min < 6 || max > 3200) {
 		return false;

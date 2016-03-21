@@ -932,6 +932,7 @@ static int ssp_passkey_neg_reply(struct bt_conn *conn)
 static void timeout_fiber(int arg1, int arg2)
 {
 	struct bt_conn *conn = (struct bt_conn *)arg1;
+
 	ARG_UNUSED(arg2);
 
 	conn->timeout = NULL;
@@ -977,7 +978,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	}
 
 	/* Actions needed for entering the new state */
-	switch (conn->state){
+	switch (conn->state) {
 	case BT_CONN_CONNECTED:
 		nano_fifo_init(&conn->tx_queue);
 		fiber_start(conn->stack, sizeof(conn->stack), conn_tx_fiber,
