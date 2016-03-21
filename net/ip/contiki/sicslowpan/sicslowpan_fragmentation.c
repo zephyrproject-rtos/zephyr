@@ -627,6 +627,12 @@ static int reassemble(struct net_buf *mbuf)
 
       PRINTF("size %d, tag %d, offset %d\n", frag_size, frag_tag, frag_offset);
 
+      if (frag_size > IP_BUF_MAX_DATA) {
+        PRINTF("Too big packet %d bytes (max %d), fragment discarded\n",
+	       frag_size, IP_BUF_MAX_DATA);
+	goto fail;
+      }
+
       uip_packetbuf_hdr_len(mbuf) += SICSLOWPAN_FRAG1_HDR_LEN;
       first_fragment = 1;
       is_fragment = 1;
