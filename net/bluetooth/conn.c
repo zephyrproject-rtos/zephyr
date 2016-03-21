@@ -136,6 +136,394 @@ void notify_le_param_updated(struct bt_conn *conn)
 	}
 }
 
+static struct bt_conn *conn_new(void)
+{
+	struct bt_conn *conn = NULL;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (!atomic_get(&conns[i].ref)) {
+			conn = &conns[i];
+			break;
+		}
+	}
+
+	if (!conn) {
+		return NULL;
+	}
+
+	memset(conn, 0, sizeof(*conn));
+
+	atomic_set(&conn->ref, 1);
+
+	return conn;
+}
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
+				  const struct bt_br_conn_param *param)
+{
+	struct bt_hci_cp_connect *cp;
+	struct bt_conn *conn;
+	struct net_buf *buf;
+
+	conn = bt_conn_lookup_addr_br(peer);
+	if (conn) {
+		switch (conn->state) {
+			return conn;
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return conn;
+		default:
+			bt_conn_unref(conn);
+			return NULL;
+		}
+	}
+
+	conn = bt_conn_add_br(peer);
+	if (!conn) {
+		return NULL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT, sizeof(*cp));
+	if (!buf) {
+		bt_conn_unref(conn);
+		return NULL;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	memset(cp, 0, sizeof(*cp));
+
+	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
+	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
+	cp->pscan_rep_mode = 0x02; /* R2 */
+	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
+	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
+
+	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
+		bt_conn_unref(conn);
+		return NULL;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	conn->role = BT_CONN_ROLE_MASTER;
+
+	return conn;
+}
+
+struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (!atomic_get(&conns[i].ref)) {
+			continue;
+		}
+
+		if (conns[i].type != BT_CONN_TYPE_BR) {
+			continue;
+		}
+
+		if (!bt_addr_cmp(peer, &conns[i].br.dst)) {
+			return bt_conn_ref(&conns[i]);
+		}
+	}
+
+	return NULL;
+}
+
+struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
+{
+	struct bt_conn *conn = conn_new();
+
+	if (!conn) {
+		return NULL;
+	}
+
+	bt_addr_copy(&conn->br.dst, peer);
+	conn->type = BT_CONN_TYPE_BR;
+
+	return conn;
+}
+
+static int pin_code_neg_reply(const bt_addr_t *bdaddr)
+{
+	struct bt_hci_cp_pin_code_neg_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
+}
+
+static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
+{
+	struct bt_hci_cp_pin_code_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+	cp->pin_len = len;
+	strncpy(cp->pin_code, pin, sizeof(cp->pin_code));
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_REPLY, buf, NULL);
+}
+
+int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
+{
+	size_t len;
+
+	if (!bt_auth) {
+		return -EINVAL;
+	}
+
+	if (conn->type != BT_CONN_TYPE_BR) {
+		return -EINVAL;
+	}
+
+	len = strlen(pin);
+	if (len > 16) {
+		return -EINVAL;
+	}
+
+	if (conn->required_sec_level == BT_SECURITY_HIGH && len < 16) {
+		BT_WARN("PIN code for %s is not 16 bytes wide",
+			bt_addr_str(&conn->br.dst));
+		return -EPERM;
+	}
+
+	/* Allow user send entered PIN to remote, then reset user state. */
+	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_USER)) {
+		return -EPERM;
+	}
+
+	if (len == 16) {
+		atomic_set_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
+	}
+
+	return pin_code_reply(conn, pin, len);
+}
+
+void bt_conn_pin_code_req(struct bt_conn *conn)
+{
+	if (bt_auth && bt_auth->pincode_entry) {
+		bool secure = false;
+
+		if (conn->required_sec_level == BT_SECURITY_HIGH) {
+			secure = true;
+		}
+
+		atomic_set_bit(conn->flags, BT_CONN_USER);
+		atomic_set_bit(conn->flags, BT_CONN_BR_PAIRING);
+		bt_auth->pincode_entry(conn, secure);
+	} else {
+		pin_code_neg_reply(&conn->br.dst);
+	}
+}
+
+uint8_t bt_conn_get_io_capa(void)
+{
+	if (!bt_auth) {
+		return BT_IO_NO_INPUT_OUTPUT;
+	}
+
+	if (bt_auth->passkey_confirm && bt_auth->passkey_display) {
+		return BT_IO_DISPLAY_YESNO;
+	}
+
+	if (bt_auth->passkey_entry) {
+		return BT_IO_KEYBOARD_ONLY;
+	}
+
+	if (bt_auth->passkey_display) {
+		return BT_IO_DISPLAY_ONLY;
+	}
+
+	return BT_IO_NO_INPUT_OUTPUT;
+}
+
+static uint8_t ssp_pair_method(const struct bt_conn *conn)
+{
+	return ssp_method[conn->br.remote_io_capa][bt_conn_get_io_capa()];
+}
+
+uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn)
+{
+	/* Validate no bond auth request, and if valid use it. */
+	if ((conn->br.remote_auth == BT_HCI_NO_BONDING) ||
+	    ((conn->br.remote_auth == BT_HCI_NO_BONDING_MITM) &&
+	     (ssp_pair_method(conn) > JUST_WORKS))) {
+		return conn->br.remote_auth;
+	}
+
+	/* Local & remote have enough IO capabilities to get MITM protection. */
+	if (ssp_pair_method(conn) > JUST_WORKS) {
+		return conn->br.remote_auth | BT_MITM;
+	}
+
+	/* No MITM protection possible so ignore remote MITM requirement. */
+	return (conn->br.remote_auth & ~BT_MITM);
+}
+
+static int ssp_confirm_reply(struct bt_conn *conn)
+{
+	struct bt_hci_cp_user_confirm_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_CONFIRM_REPLY, buf, NULL);
+}
+
+static int ssp_confirm_neg_reply(struct bt_conn *conn)
+{
+	struct bt_hci_cp_user_confirm_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_CONFIRM_NEG_REPLY, buf,
+				    NULL);
+}
+
+void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
+{
+	conn->br.pairing_method = ssp_pair_method(conn);
+
+	/*
+	 * If local required security is HIGH then MITM is mandatory.
+	 * MITM protection is no achievable when SSP 'justworks' is applied.
+	 */
+	if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
+	    conn->br.pairing_method == JUST_WORKS) {
+		BT_DBG("MITM protection infeasible for required security");
+		ssp_confirm_neg_reply(conn);
+		return;
+	}
+
+	/* TODO: As pairing acceptor call user pairing consent API callback. */
+
+	/* Start interactive authentication if valid, default to justworks. */
+	switch (conn->br.pairing_method) {
+	case PASSKEY_CONFIRM:
+		atomic_set_bit(conn->flags, BT_CONN_USER);
+		bt_auth->passkey_confirm(conn, passkey);
+		break;
+	case PASSKEY_DISPLAY:
+		atomic_set_bit(conn->flags, BT_CONN_USER);
+		bt_auth->passkey_display(conn, passkey);
+		break;
+	case PASSKEY_INPUT:
+		atomic_set_bit(conn->flags, BT_CONN_USER);
+		bt_auth->passkey_entry(conn);
+		break;
+	default:
+		ssp_confirm_reply(conn);
+		break;
+	}
+}
+
+static int ssp_passkey_reply(struct bt_conn *conn, unsigned int passkey)
+{
+	struct bt_hci_cp_user_passkey_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+	cp->passkey = sys_cpu_to_le32(passkey);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_PASSKEY_REPLY, buf, NULL);
+}
+
+static int ssp_passkey_neg_reply(struct bt_conn *conn)
+{
+	struct bt_hci_cp_user_passkey_neg_reply *cp;
+	struct net_buf *buf;
+
+	BT_DBG("");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_PASSKEY_NEG_REPLY, buf,
+				    NULL);
+}
+
+static int bt_hci_connect_br_cancel(struct bt_conn *conn)
+{
+	struct bt_hci_cp_connect_cancel *cp;
+	struct bt_hci_rp_connect_cancel *rp;
+	struct net_buf *buf, *rsp;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT_CANCEL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+
+	err = rp->status ? -EIO : 0;
+
+	net_buf_unref(rsp);
+
+	return err;
+}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 #if defined(CONFIG_BLUETOOTH_SMP)
 void bt_conn_identity_resolved(struct bt_conn *conn)
 {
@@ -562,29 +950,6 @@ static void conn_tx_fiber(int arg1, int arg2)
 	bt_conn_unref(conn);
 }
 
-static struct bt_conn *conn_new(void)
-{
-	struct bt_conn *conn = NULL;
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(conns); i++) {
-		if (!atomic_get(&conns[i].ref)) {
-			conn = &conns[i];
-			break;
-		}
-	}
-
-	if (!conn) {
-		return NULL;
-	}
-
-	memset(conn, 0, sizeof(*conn));
-
-	atomic_set(&conn->ref, 1);
-
-	return conn;
-}
-
 struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = conn_new();
@@ -604,342 +969,6 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 
 	return conn;
 }
-
-#if defined(CONFIG_BLUETOOTH_BREDR)
-struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
-				  const struct bt_br_conn_param *param)
-{
-	struct bt_hci_cp_connect *cp;
-	struct bt_conn *conn;
-	struct net_buf *buf;
-
-	conn = bt_conn_lookup_addr_br(peer);
-	if (conn) {
-		switch (conn->state) {
-			return conn;
-		case BT_CONN_CONNECT:
-		case BT_CONN_CONNECTED:
-			return conn;
-		default:
-			bt_conn_unref(conn);
-			return NULL;
-		}
-	}
-
-	conn = bt_conn_add_br(peer);
-	if (!conn) {
-		return NULL;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT, sizeof(*cp));
-	if (!buf) {
-		bt_conn_unref(conn);
-		return NULL;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-
-	memset(cp, 0, sizeof(*cp));
-
-	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
-	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
-	cp->pscan_rep_mode = 0x02; /* R2 */
-	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
-	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
-
-	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
-		bt_conn_unref(conn);
-		return NULL;
-	}
-
-	bt_conn_set_state(conn, BT_CONN_CONNECT);
-	conn->role = BT_CONN_ROLE_MASTER;
-
-	return conn;
-}
-
-struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(conns); i++) {
-		if (!atomic_get(&conns[i].ref)) {
-			continue;
-		}
-
-		if (conns[i].type != BT_CONN_TYPE_BR) {
-			continue;
-		}
-
-		if (!bt_addr_cmp(peer, &conns[i].br.dst)) {
-			return bt_conn_ref(&conns[i]);
-		}
-	}
-
-	return NULL;
-}
-
-struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
-{
-	struct bt_conn *conn = conn_new();
-
-	if (!conn) {
-		return NULL;
-	}
-
-	bt_addr_copy(&conn->br.dst, peer);
-	conn->type = BT_CONN_TYPE_BR;
-
-	return conn;
-}
-
-static int pin_code_neg_reply(const bt_addr_t *bdaddr)
-{
-	struct bt_hci_cp_pin_code_neg_reply *cp;
-	struct net_buf *buf;
-
-	BT_DBG("");
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_NEG_REPLY, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, bdaddr);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
-}
-
-static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
-{
-	struct bt_hci_cp_pin_code_reply *cp;
-	struct net_buf *buf;
-
-	BT_DBG("");
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_REPLY, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-
-	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
-	cp->pin_len = len;
-	strncpy(cp->pin_code, pin, sizeof(cp->pin_code));
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_REPLY, buf, NULL);
-}
-
-int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
-{
-	size_t len;
-
-	if (!bt_auth) {
-		return -EINVAL;
-	}
-
-	if (conn->type != BT_CONN_TYPE_BR) {
-		return -EINVAL;
-	}
-
-	len = strlen(pin);
-	if (len > 16) {
-		return -EINVAL;
-	}
-
-	if (conn->required_sec_level == BT_SECURITY_HIGH && len < 16) {
-		BT_WARN("PIN code for %s is not 16 bytes wide",
-			bt_addr_str(&conn->br.dst));
-		return -EPERM;
-	}
-
-	/* Allow user send entered PIN to remote, then reset user state. */
-	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_USER)) {
-		return -EPERM;
-	}
-
-	if (len == 16) {
-		atomic_set_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
-	}
-
-	return pin_code_reply(conn, pin, len);
-}
-
-void bt_conn_pin_code_req(struct bt_conn *conn)
-{
-	if (bt_auth && bt_auth->pincode_entry) {
-		bool secure = false;
-
-		if (conn->required_sec_level == BT_SECURITY_HIGH) {
-			secure = true;
-		}
-
-		atomic_set_bit(conn->flags, BT_CONN_USER);
-		atomic_set_bit(conn->flags, BT_CONN_BR_PAIRING);
-		bt_auth->pincode_entry(conn, secure);
-	} else {
-		pin_code_neg_reply(&conn->br.dst);
-	}
-}
-
-uint8_t bt_conn_get_io_capa(void)
-{
-	if (!bt_auth) {
-		return BT_IO_NO_INPUT_OUTPUT;
-	}
-
-	if (bt_auth->passkey_confirm && bt_auth->passkey_display) {
-		return BT_IO_DISPLAY_YESNO;
-	}
-
-	if (bt_auth->passkey_entry) {
-		return BT_IO_KEYBOARD_ONLY;
-	}
-
-	if (bt_auth->passkey_display) {
-		return BT_IO_DISPLAY_ONLY;
-	}
-
-	return BT_IO_NO_INPUT_OUTPUT;
-}
-
-static uint8_t ssp_pair_method(const struct bt_conn *conn)
-{
-	return ssp_method[conn->br.remote_io_capa][bt_conn_get_io_capa()];
-}
-
-uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn)
-{
-	/* Validate no bond auth request, and if valid use it. */
-	if ((conn->br.remote_auth == BT_HCI_NO_BONDING) ||
-	    ((conn->br.remote_auth == BT_HCI_NO_BONDING_MITM) &&
-	     (ssp_pair_method(conn) > JUST_WORKS))) {
-		return conn->br.remote_auth;
-	}
-
-	/* Local & remote have enough IO capabilities to get MITM protection. */
-	if (ssp_pair_method(conn) > JUST_WORKS) {
-		return conn->br.remote_auth | BT_MITM;
-	}
-
-	/* No MITM protection possible so ignore remote MITM requirement. */
-	return (conn->br.remote_auth & ~BT_MITM);
-}
-
-static int ssp_confirm_reply(struct bt_conn *conn)
-{
-	struct bt_hci_cp_user_confirm_reply *cp;
-	struct net_buf *buf;
-
-	BT_DBG("");
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_CONFIRM_REPLY, buf, NULL);
-}
-
-static int ssp_confirm_neg_reply(struct bt_conn *conn)
-{
-	struct bt_hci_cp_user_confirm_reply *cp;
-	struct net_buf *buf;
-
-	BT_DBG("");
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_NEG_REPLY, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_CONFIRM_NEG_REPLY, buf,
-				    NULL);
-}
-
-void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
-{
-	conn->br.pairing_method = ssp_pair_method(conn);
-
-	/*
-	 * If local required security is HIGH then MITM is mandatory.
-	 * MITM protection is no achievable when SSP 'justworks' is applied.
-	 */
-	if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
-	    conn->br.pairing_method == JUST_WORKS) {
-		BT_DBG("MITM protection infeasible for required security");
-		ssp_confirm_neg_reply(conn);
-		return;
-	}
-
-	/* TODO: As pairing acceptor call user pairing consent API callback. */
-
-	/* Start interactive authentication if valid, default to justworks. */
-	switch (conn->br.pairing_method) {
-	case PASSKEY_CONFIRM:
-		atomic_set_bit(conn->flags, BT_CONN_USER);
-		bt_auth->passkey_confirm(conn, passkey);
-		break;
-	case PASSKEY_DISPLAY:
-		atomic_set_bit(conn->flags, BT_CONN_USER);
-		bt_auth->passkey_display(conn, passkey);
-		break;
-	case  PASSKEY_INPUT:
-		atomic_set_bit(conn->flags, BT_CONN_USER);
-		bt_auth->passkey_entry(conn);
-		break;
-	default:
-		ssp_confirm_reply(conn);
-		break;
-	}
-}
-
-static int ssp_passkey_reply(struct bt_conn *conn, unsigned int passkey)
-{
-	struct bt_hci_cp_user_passkey_reply *cp;
-	struct net_buf *buf;
-
-	BT_DBG("");
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_REPLY, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
-	cp->passkey = sys_cpu_to_le32(passkey);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_PASSKEY_REPLY, buf, NULL);
-}
-
-static int ssp_passkey_neg_reply(struct bt_conn *conn)
-{
-	struct bt_hci_cp_user_passkey_neg_reply *cp;
-	struct net_buf *buf;
-
-	BT_DBG("");
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_NEG_REPLY, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_USER_PASSKEY_NEG_REPLY, buf,
-				    NULL);
-}
-#endif
 
 static void timeout_fiber(int arg1, int arg2)
 {
@@ -1214,37 +1243,6 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 
 	return 0;
 }
-
-#if defined(CONFIG_BLUETOOTH_BREDR)
-static int bt_hci_connect_br_cancel(struct bt_conn *conn)
-{
-	struct bt_hci_cp_connect_cancel *cp;
-	struct bt_hci_rp_connect_cancel *rp;
-	struct net_buf *buf, *rsp;
-	int err;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT_CANCEL, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, buf, &rsp);
-	if (err) {
-		return err;
-	}
-
-	rp = (void *)rsp->data;
-
-	err = rp->status ? -EIO : 0;
-
-	net_buf_unref(rsp);
-
-	return err;
-}
-#endif
 
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
