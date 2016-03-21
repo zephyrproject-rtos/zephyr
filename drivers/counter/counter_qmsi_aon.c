@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <device.h>
 #include <init.h>
 
@@ -24,17 +26,17 @@
 static int aon_counter_qmsi_start(struct device *dev)
 {
 	if (qm_aonc_enable(QM_SCSS_AON_0) != QM_RC_OK) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int aon_counter_qmsi_stop(struct device *dev)
 {
 	qm_aonc_disable(QM_SCSS_AON_0);
 
-	return DEV_OK;
+	return 0;
 }
 
 static uint32_t aon_counter_qmsi_read(void)
@@ -46,7 +48,7 @@ static int aon_counter_qmsi_set_alarm(struct device *dev,
 				      counter_callback_t callback,
 				      uint32_t count, void *user_data)
 {
-	return DEV_NO_SUPPORT;
+	return -ENODEV;
 }
 
 struct counter_driver_api aon_counter_qmsi_api = {
@@ -60,7 +62,7 @@ static int aon_counter_init(struct device *dev)
 {
 	dev->driver_api = &aon_counter_qmsi_api;
 
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(aon_counter, CONFIG_AON_COUNTER_QMSI_DEV_NAME,

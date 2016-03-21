@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <device.h>
 #include <init.h>
 #include <drivers/ioapic.h>
@@ -46,10 +48,10 @@ static int aon_timer_qmsi_start(struct device *dev)
 
 	if (qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg) !=
 	    QM_RC_OK) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int aon_timer_qmsi_stop(struct device *dev)
@@ -62,7 +64,7 @@ static int aon_timer_qmsi_stop(struct device *dev)
 
 	qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg);
 
-	return DEV_OK;
+	return 0;
 }
 
 static uint32_t aon_timer_qmsi_read(void)
@@ -81,7 +83,7 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 
 	/* Check if timer has been started */
 	if (qmsi_cfg.count == 0) {
-		return DEV_INVALID_OP;
+		return -ENOTSUP;
 	}
 
 	driver_data->timer_callback = callback;
@@ -95,10 +97,10 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 	    QM_RC_OK) {
 		driver_data->timer_callback = NULL;
 		driver_data->callback_user_data = NULL;
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static struct counter_driver_api aon_timer_qmsi_api = {
@@ -125,7 +127,7 @@ static int aon_timer_init(struct device *dev)
 
 	QM_SCSS_INT->int_aon_timer_mask &= ~BIT(0);
 
-	return DEV_OK;
+	return 0;
 }
 
 DEVICE_INIT(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME,

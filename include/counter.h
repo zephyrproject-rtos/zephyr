@@ -61,8 +61,8 @@ struct counter_driver_api {
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval DEV_OK If successful.
- * @retval DEV_* Code otherwise.
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
  */
 static inline int counter_start(struct device *dev)
 {
@@ -77,8 +77,8 @@ static inline int counter_start(struct device *dev)
  * @brief Stop counter device.
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval DEV_OK If successful.
- * @retval DEV_NO_SUPPORT if the device doesn't support stopping the
+ * @retval 0 If successful.
+ * @retval -ENODEV if the device doesn't support stopping the
  *                        counter.
  */
 static inline int counter_stop(struct device *dev)
@@ -113,11 +113,11 @@ static inline uint32_t counter_read(struct device *dev)
  * @param count Number of counter ticks.
  * @param user_data Pointer to user data.
  *
- * @retval DEV_OK If successful.
- * @retval DEV_INVALID_OP if the counter was not started yet.
- * @retval DEV_NO_SUPPORT if the device doesn't support interrupt (e.g. free
+ * @retval 0 If successful.
+ * @retval -ENOTSUP if the counter was not started yet.
+ * @retval -ENODEV if the device doesn't support interrupt (e.g. free
  *                        running counters).
- * @retval DEV_* Code otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int counter_set_alarm(struct device *dev,
 				    counter_callback_t callback,

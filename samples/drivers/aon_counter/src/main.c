@@ -53,7 +53,7 @@ static void free_running_counter_example(void)
 
 	printk("Always-on free running counter example app\n");
 
-	if (counter_start(aon_counter_dev) != DEV_OK) {
+	if (counter_start(aon_counter_dev) != 0) {
 		printk("Counter device enabling fail!\n");
 		return;
 	}
@@ -76,7 +76,7 @@ static void free_running_counter_example(void)
 	}
 
 	if (counter_set_alarm(aon_counter_dev, NULL, counter_initial_value,
-			      (void *)&dummy_data) != DEV_OK) {
+			      (void *)&dummy_data) != 0) {
 		printk("Always-on counter does not support alarm!\n");
 	}
 
@@ -124,7 +124,7 @@ static void periodic_timer_example(void)
 
 	if (counter_set_alarm(aon_periodic_timer_dev, aonpt_example_callback,
 			      timer_initial_value, (void *)&dummy_data)
-			      != DEV_OK) {
+			      != 0) {
 		printk("Periodic Timer was not started yet\n");
 		return;
 	}
@@ -138,7 +138,7 @@ static void periodic_timer_example(void)
 	/* callback is turned off */
 	if (counter_set_alarm(aon_periodic_timer_dev, NULL,
 			      timer_initial_value, (void *)&dummy_data)
-			      != DEV_OK) {
+			      != 0) {
 		printk("Periodic timer was not started yet\n");
 		return;
 	}
