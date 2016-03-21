@@ -530,3 +530,10 @@ struct nble_gap_sm_bond_info_rsp {
 	void *user_data;
 	struct nble_gap_sm_bond_info info;
 };
+
+struct nble {
+	/* Local Bluetooth LE Device Address */
+	bt_addr_le_t addr;
+};
+
+extern struct nble nble;

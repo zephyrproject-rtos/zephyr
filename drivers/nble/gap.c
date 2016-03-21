@@ -45,8 +45,7 @@ static uint8_t compatibe_firmware[4] = { '0', '3', '1', '7' };
 static bt_ready_cb_t bt_ready_cb;
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
-/* Local Bluetooth LE Device Address */
-bt_addr_le_t nble_bdaddr;
+struct nble nble;
 
 extern const struct bt_conn_auth_cb *bt_auth;
 
@@ -410,9 +409,9 @@ void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 		return;
 	}
 
-	bt_addr_le_copy(&nble_bdaddr, &rsp->bd);
+	bt_addr_le_copy(&nble.addr, &rsp->bd);
 
-	BT_DBG("Local bdaddr: %s", bt_addr_le_str(&nble_bdaddr));
+	BT_DBG("Local bdaddr: %s", bt_addr_le_str(&nble.addr));
 
 	nble_get_version_req(NULL);
 }

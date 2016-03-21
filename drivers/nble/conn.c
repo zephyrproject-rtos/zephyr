@@ -29,8 +29,6 @@
 #include "gatt_internal.h"
 #include "conn_internal.h"
 
-extern bt_addr_le_t nble_bdaddr;
-
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
@@ -121,7 +119,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	info->type = BT_CONN_TYPE_LE;
 	info->role = conn->role;
 	info->le.dst = &conn->dst;
-	info->le.src = &nble_bdaddr;
+	info->le.src = &nble.addr;
 	info->le.interval = conn->interval;
 	info->le.latency = conn->latency;
 	info->le.timeout = conn->timeout;
