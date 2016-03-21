@@ -65,6 +65,7 @@ static struct bt_conn_cb *callback_list;
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 enum pairing_method {
+	LEGACY,			/* Legacy (pre-SSP) pairing */
 	JUST_WORKS,		/* JustWorks pairing */
 	PASSKEY_INPUT,		/* Passkey Entry input */
 	PASSKEY_DISPLAY,	/* Passkey Entry display */
@@ -1510,20 +1511,20 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 			return -EPERM;
 		}
 
-		if (conn->br.pairing_method == PASSKEY_CONFIRM) {
+		switch (conn->br.pairing_method) {
+		case JUST_WORKS:
+		case PASSKEY_CONFIRM:
 			return ssp_confirm_neg_reply(conn);
-		}
-
-		if (conn->br.pairing_method == PASSKEY_INPUT) {
+		case PASSKEY_INPUT:
 			return ssp_passkey_neg_reply(conn);
-		}
-
-		if (conn->br.pairing_method == PASSKEY_DISPLAY) {
+		case PASSKEY_DISPLAY:
 			return bt_conn_disconnect(conn,
 						  BT_HCI_ERR_AUTHENTICATION_FAIL);
+		case LEGACY:
+			return pin_code_neg_reply(&conn->br.dst);
+		default:
+			break;
 		}
-
-		return pin_code_neg_reply(&conn->br.dst);
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
