@@ -1052,10 +1052,12 @@ static void link_key_notify(struct net_buf *buf)
 	}
 
 	/*
-	 * Populate key storage with link key if bonding is required. Mark
-	 * no-bond link key flag for connection on the contrary.
+	 * Populate key storage with link key if SSP persistent bond is required
+	 * or legacy link key is generated. Mark no-bond link key flag for
+	 * connection on the contrary.
 	 */
-	if (bt_conn_ssp_get_auth(conn) > BT_HCI_NO_BONDING_MITM) {
+	if (evt->key_type == BT_LK_COMBINATION ||
+	    bt_conn_ssp_get_auth(conn) > BT_HCI_NO_BONDING_MITM) {
 		memcpy(conn->keys->link_key.val, evt->link_key, 16);
 	} else {
 		atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
