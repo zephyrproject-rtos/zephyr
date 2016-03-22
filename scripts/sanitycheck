@@ -1117,7 +1117,8 @@ class TestSuite:
         return result
 
     def apply_filters(self, platform_filter, arch_filter, tag_filter,
-                      config_filter, testcase_filter, last_failed):
+                      config_filter, testcase_filter, last_failed, all_plats,
+                      platform_limit):
         instances = []
         discards = {}
         verbose("platform filter: " + str(platform_filter))
@@ -1128,16 +1129,15 @@ class TestSuite:
         if last_failed:
             failed_tests = self.get_last_failed()
 
-        if not platform_filter or "default" in platform_filter:
+        default_platforms = False
+
+        if all_plats:
+            info("Selecting all possible platforms per test case")
+            # When --all used, any --platform arguments ignored
+            platform_filter = []
+        elif not platform_filter:
             info("Selecting default platforms per test case")
             default_platforms = True
-            platform_filter = []
-        else:
-            default_platforms = False
-
-        if "all" in platform_filter:
-            info("Selecting all possible platforms per test case")
-            platform_filter = []
 
         mg = MakeGenerator(self.outdir)
         dlist = {}
@@ -1308,17 +1308,17 @@ class TestSuite:
                     continue
 
                 if default_platforms:
-                    self.add_instance(instance_list[0])
-                    for instance in instance_list[1:]:
-                        discards[instance] = "Not in default set for arch"
+                    self.add_instances(instance_list[:platform_limit])
+                    for instance in instance_list[platform_limit:]:
+                        discards[instance] = "Not in first %d platform(s) for arch" % platform_limit
                 else:
-                    for instance in instance_list:
-                        self.add_instance(instance)
+                    self.add_instances(instance_list)
         self.discards = discards
         return discards
 
-    def add_instance(self, ti):
-        self.instances[ti.name] = ti
+    def add_instances(self, ti_list):
+        for ti in ti_list:
+            self.instances[ti.name] = ti
 
     def execute(self, cb, cb_context, build_only, enable_slow):
         mg = MakeGenerator(self.outdir)
@@ -1426,11 +1426,18 @@ def parse_arguments():
                                      formatter_class = argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("-p", "--platform", action="append",
-            help="Platform filter for testing. If unspecified, default to the "
-                 "set of default platforms in the arch configuration files for "
-                 "the selected arches. May also specify 'all' to match all "
-                 "platforms for the selected arches.  Multiple invocations "
-                 "are treated as a logical 'or' relationship")
+            help="Platform filter for testing. This option may be used multiple "
+                 "times. Testcases will only be built/run on the platforms "
+                 "specified. If this option is not used, then N platforms will "
+                 "automatically be chosen from each arch to build and test, "
+                 "where N is provided by the --platform-limit option.")
+    parser.add_argument("-L", "--platform-limit", action="store", type=int,
+            metavar="N", default=1,
+            help="Controls what platforms are tested if --platform or "
+                 "--all are not used. For each architecture specified by "
+                 "--arch (defaults to all of them), choose the first "
+                 "N platforms to test in the arch-specific .ini file "
+                 "'platforms' list. Defaults to 1.")
     parser.add_argument("-a", "--arch", action="append",
             help="Arch filter for testing. Takes precedence over --platform. "
                  "If unspecified, test all arches. Multiple invocations "
@@ -1455,7 +1462,8 @@ def parse_arguments():
                  "<path to test project relative to "
                  "--testcase-root>/<testcase.ini section name>")
     parser.add_argument("-l", "--all", action="store_true",
-            help="Same as --platform all")
+            help="Build/test on all platforms. Any --platform arguments "
+                 "ignored.")
 
     parser.add_argument("-o", "--testcase-report",
             help="Output a CSV spreadsheet containing results of the test run")
@@ -1609,8 +1617,6 @@ def main():
     INLINE_LOGS = args.inline_logs
     if args.jobs:
         PARALLEL = args.jobs
-    if args.all:
-        args.platform = ["all"]
 
     if os.path.exists(args.outdir) and not args.no_clean:
         info("Cleaning output directory " + args.outdir)
@@ -1618,7 +1624,8 @@ def main():
 
     ts = TestSuite(args.arch_root, args.testcase_root, args.outdir)
     discards = ts.apply_filters(args.platform, args.arch, args.tag, args.config,
-                                args.test, args.only_failed)
+                                args.test, args.only_failed, args.all,
+                                args.platform_limit)
 
     if args.discard_report:
         ts.discard_report(args.discard_report)
