@@ -831,7 +831,8 @@ class SanityConfigParser:
         cp = self.cp
 
         if not cp.has_section(section):
-            raise ConfigurationError(self.filename, "Missing section '%s'" % section)
+            # Just fill it with defaults
+            cp.add_section(section)
 
         for k, v in cp.items(section):
             if k not in valid_keys:
