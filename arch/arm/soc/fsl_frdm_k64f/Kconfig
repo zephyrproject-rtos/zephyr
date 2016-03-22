@@ -189,9 +189,6 @@ config GPIO
 config PINMUX
 	def_bool y
 
-config PWM
-	def_bool n
-
 if GPIO
 
 config GPIO_K64
