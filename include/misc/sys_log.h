@@ -82,10 +82,25 @@ extern "C" {
 #define SYS_LOG_DOMAIN "general"
 #endif /* SYS_LOG_DOMAIN */
 
+/**
+ * @def SYS_LOG_NO_NEWLINE
+ *
+ * @brief Specifies whether SYS_LOG should add newline at the end of line
+ * or not.
+ *
+ * @details User can define SYS_LOG_NO_NEWLINE no prevent the header file
+ * from adding newline if the debug print already has a newline character.
+ */
+#if !defined(SYS_LOG_NO_NEWLINE)
+#define SYS_LOG_NL "\n"
+#else
+#define SYS_LOG_NL ""
+#endif
+
 /* [domain] [level] function: */
 #define LOG_LAYOUT "[%s]%s %s: %s"
 #define LOG_BACKEND_CALL(log_lv, log_color, log_format, color_off, ...)	\
-	SYS_LOG_BACKEND_FN(LOG_LAYOUT log_format "%s\n",		\
+	SYS_LOG_BACKEND_FN(LOG_LAYOUT log_format "%s" SYS_LOG_NL,	\
 	SYS_LOG_DOMAIN, log_lv, __func__, log_color, ##__VA_ARGS__, color_off)
 
 #define LOG_NO_COLOR(log_lv, log_format, ...)				\
