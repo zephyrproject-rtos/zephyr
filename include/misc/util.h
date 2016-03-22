@@ -79,6 +79,8 @@ static inline int is_power_of_two(unsigned int x)
 
 #define BIT(n)  (1UL << (n))
 
+#define BIT_MASK(n) (BIT(n) - 1)
+
 #ifdef __cplusplus
 }
 #endif
