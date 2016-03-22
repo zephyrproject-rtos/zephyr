@@ -448,8 +448,14 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 		bt_auth->passkey_entry(conn);
 		break;
 	case JUST_WORKS:
-		/* TODO do this only for incoming pairing */
-		if (bt_auth && bt_auth->pairing_confirm) {
+		/*
+		 * When local host works as pairing acceptor and 'justworks'
+		 * model is applied then notify user about such pairing request.
+		 * [BT Core 4.2 table 5.7, Vol 3, Part C, 5.2.2.6]
+		 */
+		if (bt_auth && bt_auth->pairing_confirm &&
+		    !atomic_test_bit(conn->flags,
+				     BT_CONN_BR_PAIRING_INITIATOR)) {
 			atomic_set_bit(conn->flags, BT_CONN_USER);
 			bt_auth->pairing_confirm(conn);
 			break;
