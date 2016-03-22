@@ -2668,8 +2668,18 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 {
 	switch (param->type) {
 	case BT_LE_ADV_IND:
+		break;
 	case BT_LE_ADV_SCAN_IND:
 	case BT_LE_ADV_NONCONN_IND:
+		/*
+		 * BT Core 4.2 [Vol 2, Part E, 7.8.5]
+		 * The Advertising_Interval_Min and Advertising_Interval_Max
+		 * shall not be set to less than 0x00A0 (100 ms) if the
+		 * Advertising_Type is set to ADV_SCAN_IND or ADV_NONCONN_IND.
+		 */
+		if (param->interval_min < 0x00a0) {
+			return false;
+		}
 		break;
 	default:
 		return false;
