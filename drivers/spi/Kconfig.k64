@@ -20,7 +20,7 @@
 menuconfig SPI_K64
 	bool
 	prompt "Freescale K64-based SPI controller driver"
-	depends on SPI
+	depends on SPI && SOC_FSL_FRDM_K64F
 	default n
 	help
 	  Enable support for Freescale K64-based SPI controllers.
