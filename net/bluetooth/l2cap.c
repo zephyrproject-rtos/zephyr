@@ -1301,11 +1301,11 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	int err;
 
-	BT_DBG("chan %p buf %p len %u", chan, buf, buf->len);
-
 	if (!buf) {
 		return -EINVAL;
 	}
+
+	BT_DBG("chan %p buf %p len %u", chan, buf, buf->len);
 
 	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
