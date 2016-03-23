@@ -97,8 +97,7 @@ static inline void _set_data_reg(uint32_t *reg, uint8_t pin, uint8_t set)
 	*reg |= (set << pin) & BIT(pin);
 }
 
-static void _gpio_pin_config(struct device *dev,
-				    uint32_t pin, int flags)
+static void _gpio_pin_config(struct device *dev, uint32_t pin, int flags)
 {
 	struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
@@ -116,7 +115,7 @@ static void _gpio_pin_config(struct device *dev,
 		}
 
 		DBG("Setting up pin %d to active_high %d and active_low %d\n",
-						active_high, active_low);
+		    active_high, active_low);
 	}
 
 	/* We store the gtpe/gtne settings. These will be used once
@@ -137,7 +136,7 @@ static inline void _gpio_port_config(struct device *dev, int flags)
 }
 
 static int gpio_sch_config(struct device *dev,
-			    int access_op, uint32_t pin, int flags)
+			   int access_op, uint32_t pin, int flags)
 {
 	struct gpio_sch_config *info = dev->config->config_info;
 
@@ -155,7 +154,7 @@ static int gpio_sch_config(struct device *dev,
 }
 
 static int gpio_sch_write(struct device *dev,
-			   int access_op, uint32_t pin, uint32_t value)
+			  int access_op, uint32_t pin, uint32_t value)
 {
 	struct gpio_sch_config *info = dev->config->config_info;
 
@@ -240,8 +239,7 @@ loop:
 	}
 }
 
-static int gpio_sch_set_callback(struct device *dev,
-					  gpio_callback_t callback)
+static int gpio_sch_set_callback(struct device *dev, gpio_callback_t callback)
 {
 	struct gpio_sch_data *gpio = dev->driver_data;
 
@@ -265,7 +263,7 @@ static int gpio_sch_set_callback(struct device *dev,
 }
 
 static int gpio_sch_enable_callback(struct device *dev,
-				     int access_op, uint32_t pin)
+				    int access_op, uint32_t pin)
 {
 	struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
@@ -293,7 +291,7 @@ static int gpio_sch_enable_callback(struct device *dev,
 }
 
 static int gpio_sch_disable_callback(struct device *dev,
-				      int access_op, uint32_t pin)
+				     int access_op, uint32_t pin)
 {
 	struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
@@ -362,8 +360,8 @@ struct gpio_sch_config gpio_sch_0_config = {
 struct gpio_sch_data gpio_data_0;
 
 DEVICE_INIT(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME, gpio_sch_init,
-				&gpio_data_0, &gpio_sch_0_config,
-				SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
+	    &gpio_data_0, &gpio_sch_0_config,
+	    SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_SCH_0 */
 #if CONFIG_GPIO_SCH_1
@@ -376,7 +374,7 @@ struct gpio_sch_config gpio_sch_1_config = {
 struct gpio_sch_data gpio_data_1;
 
 DEVICE_INIT(gpio_1, CONFIG_GPIO_SCH_1_DEV_NAME, gpio_sch_init,
-				&gpio_data_1, &gpio_sch_1_config,
-				SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
+	    &gpio_data_1, &gpio_sch_1_config,
+	    SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_SCH_1 */

@@ -117,7 +117,7 @@ static int gpio_sam3_config(struct device *dev, int access_op,
 {
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		_config(dev, (1 << pin), flags);
+		_config(dev, BIT(pin), flags);
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		_config(dev, (0xFFFFFFFF), flags);
@@ -148,10 +148,10 @@ static int gpio_sam3_write(struct device *dev, int access_op,
 	case GPIO_ACCESS_BY_PIN:
 		if (value) {
 			/* set the pin */
-			cfg->port->sodr = (1 << pin);
+			cfg->port->sodr = BIT(pin);
 		} else {
 			/* clear the pin */
-			cfg->port->codr = (1 << pin);
+			cfg->port->codr = BIT(pin);
 		}
 		break;
 	case GPIO_ACCESS_BY_PORT:
@@ -221,7 +221,7 @@ static void gpio_sam3_isr(void *arg)
 
 		int_stat &= cfg->enabled_cb;
 		for (bit = 0; bit < 32; bit++) {
-			if (int_stat & (1 << bit)) {
+			if (int_stat & BIT(bit)) {
 				cfg->cb(dev, bit);
 			}
 		}
@@ -246,7 +246,7 @@ static int gpio_sam3_enable_callback(struct device *dev,
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		mask = (1 << pin);
+		mask = BIT(pin);
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		mask = 0xFFFFFFFF;
@@ -269,7 +269,7 @@ static int gpio_sam3_disable_callback(struct device *dev,
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		mask = (1 << pin);
+		mask = BIT(pin);
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		mask = 0xFFFFFFFF;
@@ -343,7 +343,7 @@ DEVICE_INIT(gpio_sam3_a, CONFIG_GPIO_ATMEL_SAM3_PORTA_DEV_NAME,
 void gpio_sam3_config_a(struct device *dev)
 {
 	/* Enable clock for PIO controller */
-	__PMC->pcer0 = (1 << PID_PIOA);
+	__PMC->pcer0 = BIT(PID_PIOA);
 
 	IRQ_CONNECT(IRQ_PIOA, CONFIG_GPIO_ATMEL_SAM3_PORTA_IRQ_PRI,
 		    gpio_sam3_isr, DEVICE_GET(gpio_sam3_a), 0);
@@ -368,7 +368,7 @@ DEVICE_INIT(gpio_sam3_b, CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME,
 void gpio_sam3_config_b(struct device *dev)
 {
 	/* Enable clock for PIO controller */
-	__PMC->pcer0 = (1 << PID_PIOB);
+	__PMC->pcer0 = BIT(PID_PIOB);
 
 	IRQ_CONNECT(IRQ_PIOB, CONFIG_GPIO_ATMEL_SAM3_PORTB_IRQ_PRI,
 		    gpio_sam3_isr, DEVICE_GET(gpio_sam3_b), 0);
@@ -393,7 +393,7 @@ DEVICE_INIT(gpio_sam3_c, CONFIG_GPIO_ATMEL_SAM3_PORTC_DEV_NAME,
 void gpio_sam3_config_c(struct device *dev)
 {
 	/* Enable clock for PIO controller */
-	__PMC->pcer0 = (1 << PID_PIOC);
+	__PMC->pcer0 = BIT(PID_PIOC);
 
 	IRQ_CONNECT(IRQ_PIOC, CONFIG_GPIO_ATMEL_SAM3_PORTC_IRQ_PRI,
 		    gpio_sam3_isr, DEVICE_GET(gpio_sam3_c), 0);
@@ -418,7 +418,7 @@ DEVICE_INIT(gpio_sam3_d, CONFIG_GPIO_ATMEL_SAM3_PORTD_DEV_NAME,
 void gpio_sam3_config_d(struct device *dev)
 {
 	/* Enable clock for PIO controller */
-	__PMC->pcer0 = (1 << PID_PIOD);
+	__PMC->pcer0 = BIT(PID_PIOD);
 
 	IRQ_CONNECT(IRQ_PIOD, CONFIG_GPIO_ATMEL_SAM3_PORTD_IRQ_PRI,
 		    gpio_sam3_isr, DEVICE_GET(gpio_sam3_d), 0);

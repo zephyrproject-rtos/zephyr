@@ -33,17 +33,17 @@ extern "C" {
  * NORMAL: 0 - disable, 1 - enable
  * INV: 0 - enable, 1 - disable
  */
-#define GPIO_MMIO_CFG_EN_NORMAL		(0 << 0)
-#define GPIO_MMIO_CFG_EN_INV		(1 << 0)
-#define GPIO_MMIO_CFG_EN_MASK		(1 << 0)
+#define GPIO_MMIO_CFG_EN_NORMAL		(0)
+#define GPIO_MMIO_CFG_EN_INV		BIT(0)
+#define GPIO_MMIO_CFG_EN_MASK		BIT(0)
 
 /* For direction register:
  * NORMAL: 0 - pin is output, 1 - pin is input
  * INV: 0 - pin is input, 1 - pin is output
  */
-#define GPIO_MMIO_CFG_DIR_NORMAL	(0 << 1)
-#define GPIO_MMIO_CFG_DIR_INV		(1 << 1)
-#define GPIO_MMIO_CFG_DIR_MASK		(1 << 1)
+#define GPIO_MMIO_CFG_DIR_NORMAL	(0)
+#define GPIO_MMIO_CFG_DIR_INV		BIT(1)
+#define GPIO_MMIO_CFG_DIR_MASK		BIT(1)
 
 /**
  * @brief Initialization function for GPIO driver

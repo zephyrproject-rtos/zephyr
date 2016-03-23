@@ -102,8 +102,8 @@ static uint32_t _io_write(uint32_t addr, uint32_t bit, uint32_t value)
  *
  * @return 0 if successful, failed otherwise
  */
-static int gpio_mmio_config(struct device *dev, int access_op,
-					 uint32_t pin, int flags)
+static int gpio_mmio_config(struct device *dev,
+			    int access_op, uint32_t pin, int flags)
 {
 	const struct gpio_mmio_config * const cfg =
 		dev->config->config_info;
@@ -224,8 +224,8 @@ static int gpio_mmio_write(struct device *dev, int access_op,
  *
  * @return 0 if successful, failed otherwise
  */
-static int gpio_mmio_read(struct device *dev, int access_op,
-				       uint32_t pin, uint32_t *value)
+static int gpio_mmio_read(struct device *dev,
+			  int access_op, uint32_t pin, uint32_t *value)
 {
 	const struct gpio_mmio_config * const cfg =
 		dev->config->config_info;
@@ -237,7 +237,7 @@ static int gpio_mmio_read(struct device *dev, int access_op,
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
 		*value = cfg->access.read(cfg->reg.input, 0, 0);
-		*value &= (1 << pin) >> pin;
+		*value &= BIT(pin) >> pin;
 		break;
 	case GPIO_ACCESS_BY_PORT:
 		*value = cfg->access.read(cfg->reg.input, 0, 0);
@@ -249,8 +249,7 @@ static int gpio_mmio_read(struct device *dev, int access_op,
 	return 0;
 }
 
-static int gpio_mmio_set_callback(struct device *dev,
-					       gpio_callback_t callback)
+static int gpio_mmio_set_callback(struct device *dev, gpio_callback_t callback)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(callback);
@@ -259,7 +258,7 @@ static int gpio_mmio_set_callback(struct device *dev,
 }
 
 static int gpio_mmio_enable_callback(struct device *dev,
-						  int access_op, uint32_t pin)
+				     int access_op, uint32_t pin)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(access_op);
@@ -269,7 +268,7 @@ static int gpio_mmio_enable_callback(struct device *dev,
 }
 
 static int gpio_mmio_disable_callback(struct device *dev,
-						   int access_op, uint32_t pin)
+				      int access_op, uint32_t pin)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(access_op);
@@ -341,8 +340,8 @@ static struct gpio_mmio_config gpio_mmio_0_cfg = {
 };
 
 DEVICE_INIT(gpio_mmio_0, CONFIG_GPIO_MMIO_0_DEV_NAME, gpio_mmio_init,
-				(void *)0, &gpio_mmio_0_cfg,
-				SECONDARY, CONFIG_GPIO_MMIO_INIT_PRIORITY);
+	    NULL, &gpio_mmio_0_cfg,
+	    SECONDARY, CONFIG_GPIO_MMIO_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_MMIO_0 */
 
@@ -371,7 +370,7 @@ static struct gpio_mmio_config gpio_mmio_1_cfg = {
 };
 
 DEVICE_INIT(gpio_mmio_1, CONFIG_GPIO_MMIO_1_DEV_NAME, gpio_mmio_init,
-				(void *)0, &gpio_mmio_1_cfg,
-				SECONDARY, CONFIG_GPIO_MMIO_INIT_PRIORITY);
+	    NULL, &gpio_mmio_1_cfg,
+	    SECONDARY, CONFIG_GPIO_MMIO_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_MMIO_1 */

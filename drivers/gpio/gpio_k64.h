@@ -26,13 +26,12 @@
 #include <gpio.h>
 
 /* GPIO Port Register offsets */
-
-#define GPIO_K64_DATA_OUT_OFFSET	0x00  /* Port Data Output Reg. offset */
-#define GPIO_K64_SET_OUT_OFFSET		0x04  /* Port Set Output Reg. offset */
-#define GPIO_K64_CLR_OUT_OFFSET		0x08  /* Port Clear Output Reg. offset */
-#define GPIO_K64_TOGGLE_OUT_OFFSET	0x0C  /* Port Toggle Output  Reg. offset */
-#define GPIO_K64_DATA_IN_OFFSET		0x10  /* Port Data Input Reg. offset */
-#define GPIO_K64_DIR_OFFSET			0x14  /* Port Data Direction Reg. offset */
+#define GPIO_K64_DATA_OUT_OFFSET	0x00  /* Port Data Output */
+#define GPIO_K64_SET_OUT_OFFSET		0x04  /* Port Set Output */
+#define GPIO_K64_CLR_OUT_OFFSET		0x08  /* Port Clear Output */
+#define GPIO_K64_TOGGLE_OUT_OFFSET	0x0C  /* Port Toggle Output */
+#define GPIO_K64_DATA_IN_OFFSET		0x10  /* Port Data Input */
+#define GPIO_K64_DIR_OFFSET		0x14  /* Port Data Direction */
 
 
 /** Configuration data */

@@ -45,7 +45,7 @@ static void gpio_stm32_isr(int line, void *arg)
 		return;
 	}
 
-	is_enabled = data->enabled_mask & (1 << line);
+	is_enabled = data->enabled_mask & BIT(line);
 
 	if (!is_enabled) {
 		return;
@@ -91,12 +91,14 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 			int edge = 0;
 
 			if (flags & GPIO_INT_DOUBLE_EDGE) {
-				edge = STM32_EXTI_TRIG_RISING | STM32_EXTI_TRIG_FALLING;
+				edge = STM32_EXTI_TRIG_RISING |
+					STM32_EXTI_TRIG_FALLING;
 			} else if (flags & GPIO_INT_ACTIVE_HIGH) {
 				edge = STM32_EXTI_TRIG_RISING;
 			} else {
 				edge = STM32_EXTI_TRIG_FALLING;
 			}
+
 			stm32_exti_trigger(exti, pin, edge);
 		}
 
@@ -110,7 +112,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
  * @brief Set the pin or port output
  */
 static int gpio_stm32_write(struct device *dev, int access_op,
-			   uint32_t pin, uint32_t value)
+			    uint32_t pin, uint32_t value)
 {
 	struct gpio_stm32_config *cfg = dev->config->config_info;
 
@@ -157,7 +159,7 @@ static int gpio_stm32_enable_callback(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	data->enabled_mask |= 1 << pin;
+	data->enabled_mask |= BIT(pin);
 
 	return 0;
 }
@@ -171,7 +173,7 @@ static int gpio_stm32_disable_callback(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	data->enabled_mask &= ~(1 << pin);
+	data->enabled_mask &= ~BIT(pin);
 
 	return 0;
 }
@@ -235,12 +237,12 @@ static struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {		\
 };									\
 static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
 DEVICE_INIT(gpio_stm32_## __suffix,					\
-	__name,								\
-	gpio_stm32_init,						\
-	&gpio_stm32_data_## __suffix,					\
-	&gpio_stm32_cfg_## __suffix,					\
-	SECONDARY,							\
-	CONFIG_KERNEL_INIT_PRIORITY_DEVICE)
+	    __name,							\
+	    gpio_stm32_init,						\
+	    &gpio_stm32_data_## __suffix,				\
+	    &gpio_stm32_cfg_## __suffix,				\
+	    SECONDARY,							\
+	    CONFIG_KERNEL_INIT_PRIORITY_DEVICE)
 
 #ifdef CONFIG_GPIO_STM32_PORTA
 GPIO_DEVICE_INIT("GPIOA", a, GPIOA_BASE, STM32_PORTA,

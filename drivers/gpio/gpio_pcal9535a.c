@@ -22,6 +22,7 @@
 
 #include <nanokernel.h>
 
+#include <misc/util.h>
 #include <gpio.h>
 #include <i2c.h>
 
@@ -330,11 +331,11 @@ static int _setup_pin_polarity(struct device *dev, int access_op,
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		bit_mask = 1 << pin;
+		bit_mask = BIT(pin);
 
 		/* normal == 0, invert == 1 */
 		if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
-			new_value = 1 << pin;
+			new_value = BIT(pin);
 		}
 
 		port->all &= ~bit_mask;
@@ -440,7 +441,7 @@ static int gpio_pcal9535a_write(struct device *dev, int access_op,
 	/* Invert input value for pins configurated as active low. */
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		bit_mask = 1 << pin;
+		bit_mask = BIT(pin);
 
 		new_value = (value << pin) & bit_mask;
 		new_value ^= (drv_data->out_pol_inv & bit_mask);
@@ -621,9 +622,9 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_0_drvdata = {
 
 /* This has to init after I2C master */
 DEVICE_INIT(gpio_pcal9535a_0, CONFIG_GPIO_PCAL9535A_0_DEV_NAME,
-			gpio_pcal9535a_init,
-			&gpio_pcal9535a_0_drvdata, &gpio_pcal9535a_0_cfg,
-			SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    gpio_pcal9535a_init,
+	    &gpio_pcal9535a_0_drvdata, &gpio_pcal9535a_0_cfg,
+	    SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_0 */
 
@@ -648,9 +649,9 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_1_drvdata = {
 
 /* This has to init after I2C master */
 DEVICE_INIT(gpio_pcal9535a_1, CONFIG_GPIO_PCAL9535A_1_DEV_NAME,
-			gpio_pcal9535a_init,
-			&gpio_pcal9535a_1_drvdata, &gpio_pcal9535a_1_cfg,
-			SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    gpio_pcal9535a_init,
+	    &gpio_pcal9535a_1_drvdata, &gpio_pcal9535a_1_cfg,
+	    SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_1 */
 
@@ -675,9 +676,9 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_2_drvdata = {
 
 /* This has to init after I2C master */
 DEVICE_INIT(gpio_pcal9535a_2, CONFIG_GPIO_PCAL9535A_2_DEV_NAME,
-			gpio_pcal9535a_init,
-			&gpio_pcal9535a_2_drvdata, &gpio_pcal9535a_2_cfg,
-			SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    gpio_pcal9535a_init,
+	    &gpio_pcal9535a_2_drvdata, &gpio_pcal9535a_2_cfg,
+	    SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_2 */
 
@@ -702,9 +703,8 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_3_drvdata = {
 
 /* This has to init after I2C master */
 DEVICE_INIT(gpio_pcal9535a_3, CONFIG_GPIO_PCAL9535A_3_DEV_NAME,
-			gpio_pcal9535a_init,
-			&gpio_pcal9535a_3_drvdata, &gpio_pcal9535a_3_cfg,
-			SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
-
+	    gpio_pcal9535a_init,
+	    &gpio_pcal9535a_3_drvdata, &gpio_pcal9535a_3_cfg,
+	    SECONDARY, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
 
 #endif /* CONFIG_GPIO_PCAL9535A_3 */

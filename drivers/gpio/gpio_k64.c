@@ -31,8 +31,8 @@
 #include "gpio_k64.h"
 
 
-static int gpio_k64_config(struct device *dev, int access_op,
-					       uint32_t pin, int flags)
+static int gpio_k64_config(struct device *dev,
+			   int access_op, uint32_t pin, int flags)
 {
 	const struct gpio_k64_config * const cfg = dev->config->config_info;
 	uint32_t value;
@@ -40,9 +40,8 @@ static int gpio_k64_config(struct device *dev, int access_op,
 	uint8_t i;
 
 	/* check for an invalid pin configuration */
-
 	if (((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) ||
-		((flags & GPIO_DIR_IN) && (flags & GPIO_DIR_OUT))) {
+	    ((flags & GPIO_DIR_IN) && (flags & GPIO_DIR_OUT))) {
 		return -ENOTSUP;
 	}
 
@@ -50,30 +49,27 @@ static int gpio_k64_config(struct device *dev, int access_op,
 	 * Setup direction register:
 	 * 0 - pin is input, 1 - pin is output
 	 */
-
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-
 		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-			sys_clear_bit((cfg->gpio_base_addr + GPIO_K64_DIR_OFFSET), pin);
+			sys_clear_bit((cfg->gpio_base_addr +
+				       GPIO_K64_DIR_OFFSET), pin);
 		} else {  /* GPIO_DIR_OUT */
-			sys_set_bit((cfg->gpio_base_addr + GPIO_K64_DIR_OFFSET), pin);
+			sys_set_bit((cfg->gpio_base_addr +
+				     GPIO_K64_DIR_OFFSET), pin);
 		}
-
 	} else {	/* GPIO_ACCESS_BY_PORT */
-
 		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
 			value = 0x0;
 		} else {  /* GPIO_DIR_OUT */
 			value = 0xFFFFFFFF;
 		}
-		sys_write32(value, (cfg->gpio_base_addr + GPIO_K64_DIR_OFFSET));
 
+		sys_write32(value, (cfg->gpio_base_addr + GPIO_K64_DIR_OFFSET));
 	}
 
 	/*
 	 * Set up pullup/pulldown configuration, in Port Control module:
 	 */
-
 	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
 		setting = (K64_PINMUX_PULL_ENABLE | K64_PINMUX_PULL_UP);
 	} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
@@ -87,13 +83,9 @@ static int gpio_k64_config(struct device *dev, int access_op,
 	/*
 	 * Set up interrupt configuration, in Port Control module:
 	 */
-
 	if (flags & GPIO_INT) {
-
 		/* edge or level */
-
 		if (flags & GPIO_INT_EDGE) {
-
 			if (flags & GPIO_INT_ACTIVE_HIGH) {
 				setting |= K64_PINMUX_INT_RISING;
 			} else if (flags & GPIO_INT_DOUBLE_EDGE) {
@@ -101,26 +93,21 @@ static int gpio_k64_config(struct device *dev, int access_op,
 			} else {
 				setting |= K64_PINMUX_INT_FALLING;
 			}
-
-		} else {  /* GPIO_INT_LEVEL */
-
+		} else { /* GPIO_INT_LEVEL */
 			if (flags & GPIO_INT_ACTIVE_HIGH) {
 				setting |= K64_PINMUX_INT_HIGH;
 			} else {
 				setting |= K64_PINMUX_INT_LOW;
 			}
-
 		}
 	}
 
 	/* write pull-up/-down and, if set, interrupt configuration settings */
-
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-
-		value = sys_read32((cfg->port_base_addr + K64_PINMUX_CTRL_OFFSET(pin)));
+		value = sys_read32((cfg->port_base_addr +
+				    K64_PINMUX_CTRL_OFFSET(pin)));
 
 		/* clear, then set configuration values */
-
 		value &= ~(K64_PINMUX_PULL_EN_MASK | K64_PINMUX_PULL_SEL_MASK);
 
 		if (flags & GPIO_INT) {
@@ -129,19 +116,16 @@ static int gpio_k64_config(struct device *dev, int access_op,
 
 		value |= setting;
 
-		sys_write32(value,
-					(cfg->port_base_addr + K64_PINMUX_CTRL_OFFSET(pin)));
-
+		sys_write32(value, (cfg->port_base_addr +
+				    K64_PINMUX_CTRL_OFFSET(pin)));
 	} else {  /* GPIO_ACCESS_BY_PORT */
-
 		for (i = 0; i < K64_PINMUX_NUM_PINS; i++) {
-
 			/* clear, then set configuration values */
-
 			value = sys_read32((cfg->port_base_addr +
-								K64_PINMUX_CTRL_OFFSET(i)));
+					    K64_PINMUX_CTRL_OFFSET(i)));
 
-			value &= ~(K64_PINMUX_PULL_EN_MASK | K64_PINMUX_PULL_SEL_MASK);
+			value &= ~(K64_PINMUX_PULL_EN_MASK |
+				   K64_PINMUX_PULL_SEL_MASK);
 
 			if (flags & GPIO_INT) {
 				value &= ~K64_PINMUX_INT_MASK;
@@ -149,9 +133,8 @@ static int gpio_k64_config(struct device *dev, int access_op,
 
 			value |= setting;
 
-			sys_write32(value,
-						(cfg->port_base_addr + K64_PINMUX_CTRL_OFFSET(i)));
-
+			sys_write32(value, (cfg->port_base_addr +
+					    K64_PINMUX_CTRL_OFFSET(i)));
 		}
 	}
 
@@ -159,40 +142,37 @@ static int gpio_k64_config(struct device *dev, int access_op,
 }
 
 
-static int gpio_k64_write(struct device *dev, int access_op,
-							uint32_t pin, uint32_t value)
+static int gpio_k64_write(struct device *dev,
+			  int access_op, uint32_t pin, uint32_t value)
 {
 	const struct gpio_k64_config * const cfg = dev->config->config_info;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-
 		if (value) {
-			sys_set_bit((cfg->gpio_base_addr + GPIO_K64_DATA_OUT_OFFSET),
-						pin);
+			sys_set_bit((cfg->gpio_base_addr +
+				     GPIO_K64_DATA_OUT_OFFSET), pin);
 		} else {
-			sys_clear_bit((cfg->gpio_base_addr + GPIO_K64_DATA_OUT_OFFSET),
-						  pin);
+			sys_clear_bit((cfg->gpio_base_addr +
+				       GPIO_K64_DATA_OUT_OFFSET), pin);
 		}
-
-	} else {	/* GPIO_ACCESS_BY_PORT */
-
-		sys_write32(value, (cfg->gpio_base_addr + GPIO_K64_DATA_OUT_OFFSET));
-
+	} else { /* GPIO_ACCESS_BY_PORT */
+		sys_write32(value, (cfg->gpio_base_addr +
+				    GPIO_K64_DATA_OUT_OFFSET));
 	}
 
 	return 0;
 }
 
 
-static int gpio_k64_read(struct device *dev, int access_op,
-							uint32_t pin, uint32_t *value)
+static int gpio_k64_read(struct device *dev,
+			 int access_op, uint32_t pin, uint32_t *value)
 {
 	const struct gpio_k64_config * const cfg = dev->config->config_info;
 
 	*value = sys_read32((cfg->gpio_base_addr + GPIO_K64_DATA_IN_OFFSET));
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = (*value & (1 << pin)) >> pin;
+		*value = (*value & BIT(pin)) >> pin;
 	}
 
 	/* nothing more to do for GPIO_ACCESS_BY_PORT */
@@ -211,13 +191,13 @@ static int gpio_k64_set_callback(struct device *dev, gpio_callback_t callback)
 }
 
 
-static int gpio_k64_enable_callback(struct device *dev, int access_op,
-									uint32_t pin)
+static int gpio_k64_enable_callback(struct device *dev,
+				    int access_op, uint32_t pin)
 {
 	struct gpio_k64_data *data = dev->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		data->pin_callback_enables |= (1 << pin);
+		data->pin_callback_enables |= BIT(pin);
 	} else {
 		data->port_callback_enable = 1;
 	}
@@ -226,13 +206,13 @@ static int gpio_k64_enable_callback(struct device *dev, int access_op,
 }
 
 
-static int gpio_k64_disable_callback(struct device *dev, int access_op,
-										uint32_t pin)
+static int gpio_k64_disable_callback(struct device *dev,
+				     int access_op, uint32_t pin)
 {
 	struct gpio_k64_data *data = dev->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		data->pin_callback_enables &= ~(1 << pin);
+		data->pin_callback_enables &= ~BIT(pin);
 	} else {
 		data->port_callback_enable = 0;
 	}
@@ -276,38 +256,30 @@ static void gpio_k64_port_isr(void *dev)
 	}
 
 	int_status_reg_addr = config->port_base_addr +
-						   CONFIG_PORT_K64_INT_STATUS_OFFSET;
+		CONFIG_PORT_K64_INT_STATUS_OFFSET;
 
 	int_status = sys_read32(int_status_reg_addr);
 
 	if (data->port_callback_enable) {
-
 		data->callback_func(port, int_status);
-
 	} else if (data->pin_callback_enables) {
-
-		/* perform callback for each callback-enabled pin with an interrupt */
-
+		/* perform callback for each callback-enabled pin with
+		 * an interrupt
+		 */
 		enabled_int = int_status & data->pin_callback_enables;
 
 		while ((pin = find_lsb_set(enabled_int))) {
-
 			pin--;	/* normalize the pin number */
 
-			data->callback_func(port, (1 << pin));
+			data->callback_func(port, BIT(pin));
 
 			/* clear the interrupt status */
-
-			enabled_int &= ~(1 << pin);
-
+			enabled_int &= ~BIT(pin);
 		}
-
 	}
 
 	/* clear the port interrupts */
-
 	sys_write32(0xFFFFFFFF, int_status_reg_addr);
-
 }
 
 
@@ -349,13 +321,13 @@ static struct gpio_k64_config gpio_k64_A_cfg = {
 static struct gpio_k64_data gpio_data_A;
 
 DEVICE_INIT(gpio_k64_A, CONFIG_GPIO_K64_A_DEV_NAME, gpio_k64_A_init,
-			&gpio_data_A, &gpio_k64_A_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    &gpio_data_A, &gpio_k64_A_cfg,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static int gpio_k64_A_init(struct device *dev)
 {
 	IRQ_CONNECT(CONFIG_GPIO_K64_PORTA_IRQ, CONFIG_GPIO_K64_PORTA_PRI,
-				gpio_k64_port_isr, DEVICE_GET(gpio_k64_A), 0);
+		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_A), 0);
 
 	irq_enable(CONFIG_GPIO_K64_PORTA_IRQ);
 
@@ -377,13 +349,13 @@ static struct gpio_k64_config gpio_k64_B_cfg = {
 static struct gpio_k64_data gpio_data_B;
 
 DEVICE_INIT(gpio_k64_B, CONFIG_GPIO_K64_B_DEV_NAME, gpio_k64_B_init,
-			&gpio_data_B, &gpio_k64_B_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    &gpio_data_B, &gpio_k64_B_cfg,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static int gpio_k64_B_init(struct device *dev)
 {
 	IRQ_CONNECT(CONFIG_GPIO_K64_PORTB_IRQ, CONFIG_GPIO_K64_PORTB_PRI,
-				gpio_k64_port_isr, DEVICE_GET(gpio_k64_B), 0);
+		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_B), 0);
 
 	irq_enable(CONFIG_GPIO_K64_PORTB_IRQ);
 
@@ -405,13 +377,13 @@ static struct gpio_k64_config gpio_k64_C_cfg = {
 static struct gpio_k64_data gpio_data_C;
 
 DEVICE_INIT(gpio_k64_C, CONFIG_GPIO_K64_C_DEV_NAME, gpio_k64_C_init,
-			&gpio_data_C, &gpio_k64_C_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    &gpio_data_C, &gpio_k64_C_cfg,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static int gpio_k64_C_init(struct device *dev)
 {
 	IRQ_CONNECT(CONFIG_GPIO_K64_PORTC_IRQ, CONFIG_GPIO_K64_PORTC_PRI,
-				gpio_k64_port_isr, DEVICE_GET(gpio_k64_C), 0);
+		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_C), 0);
 
 	irq_enable(CONFIG_GPIO_K64_PORTC_IRQ);
 
@@ -433,13 +405,13 @@ static struct gpio_k64_config gpio_k64_D_cfg = {
 static struct gpio_k64_data gpio_data_D;
 
 DEVICE_INIT(gpio_k64_D, CONFIG_GPIO_K64_D_DEV_NAME, gpio_k64_D_init,
-			&gpio_data_D, &gpio_k64_D_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    &gpio_data_D, &gpio_k64_D_cfg,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static int gpio_k64_D_init(struct device *dev)
 {
 	IRQ_CONNECT(CONFIG_GPIO_K64_PORTD_IRQ, CONFIG_GPIO_K64_PORTD_PRI,
-				gpio_k64_port_isr, DEVICE_GET(gpio_k64_D), 0);
+		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_D), 0);
 
 	irq_enable(CONFIG_GPIO_K64_PORTD_IRQ);
 
@@ -461,13 +433,13 @@ static struct gpio_k64_config gpio_k64_E_cfg = {
 static struct gpio_k64_data gpio_data_E;
 
 DEVICE_INIT(gpio_k64_E, CONFIG_GPIO_K64_E_DEV_NAME, gpio_k64_E_init,
-			&gpio_data_E, &gpio_k64_E_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    &gpio_data_E, &gpio_k64_E_cfg,
+	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static int gpio_k64_E_init(struct device *dev)
 {
 	IRQ_CONNECT(CONFIG_GPIO_K64_PORTE_IRQ, CONFIG_GPIO_K64_PORTE_PRI,
-				gpio_k64_port_isr, DEVICE_GET(gpio_k64_E), 0);
+		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_E), 0);
 
 	irq_enable(CONFIG_GPIO_K64_PORTE_IRQ);
 
