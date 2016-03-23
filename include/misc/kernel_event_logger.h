@@ -163,8 +163,8 @@ void sys_k_event_logger_put_timed(uint16_t event_id);
  */
 #define sys_k_event_logger_get_wait_timeout(event_id, dropped, buffer, buffer_size, \
 				      timeout) \
-	sys_event_logger_get_wait_timeout(event_id, dropped, \
-					  &sys_k_event_logger, buffer, \
+	sys_event_logger_get_wait_timeout(&sys_k_event_logger, event_id, \
+					  dropped, buffer, \
 					  buffer_size, timeout)
 #endif /* CONFIG_NANO_TIMEOUTS */
 
