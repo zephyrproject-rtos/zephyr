@@ -90,11 +90,14 @@ struct bt_keys *bt_keys_get_link_key(const bt_addr_t *addr);
 struct bt_keys *bt_keys_find_link_key(const bt_addr_t *addr);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr);
-void bt_keys_add_type(struct bt_keys *keys, int type);
-void bt_keys_clear(struct bt_keys *keys, int type);
 struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr);
+#endif /* CONFIG_BLUETOOTH_SMP */
+
+void bt_keys_add_type(struct bt_keys *keys, int type);
+void bt_keys_clear(struct bt_keys *keys, int type);
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */

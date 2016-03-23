@@ -37,6 +37,7 @@
 
 static struct bt_keys key_pool[CONFIG_BLUETOOTH_MAX_PAIRED];
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
@@ -62,18 +63,6 @@ struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 
 	return NULL;
 }
-
-void bt_keys_clear(struct bt_keys *keys, int type)
-{
-	BT_DBG("keys for %s type %d", bt_addr_le_str(&keys->addr), type);
-
-	keys->keys &= ~type;
-
-	if (!keys->keys) {
-		memset(keys, 0, sizeof(*keys));
-	}
-}
-
 struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr)
 {
 	int i;
@@ -88,11 +77,6 @@ struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr)
 	}
 
 	return NULL;
-}
-
-void bt_keys_add_type(struct bt_keys *keys, int type)
-{
-	keys->keys |= type;
 }
 
 struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr)
@@ -176,6 +160,23 @@ struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr)
 	}
 
 	return NULL;
+}
+#endif /* CONFIG_BLUETOOTH_SMP */
+
+void bt_keys_add_type(struct bt_keys *keys, int type)
+{
+	keys->keys |= type;
+}
+
+void bt_keys_clear(struct bt_keys *keys, int type)
+{
+	BT_DBG("keys for %s type %d", bt_addr_le_str(&keys->addr), type);
+
+	keys->keys &= ~type;
+
+	if (!keys->keys) {
+		memset(keys, 0, sizeof(*keys));
+	}
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
