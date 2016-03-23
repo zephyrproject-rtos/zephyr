@@ -14,4 +14,6 @@ ifeq ($(CONFIG_BLUETOOTH_CONN),y)
 	else
 		obj-y += smp_null.o
 	endif
+
+	obj-$(CONFIG_BLUETOOTH_BREDR) += keys.o
 endif
