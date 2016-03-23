@@ -44,7 +44,7 @@ struct gpio_sch_config {
 
 struct gpio_sch_data {
 	char __stack polling_stack[GPIO_SCH_POLLING_STACK_SIZE];
-	gpio_callback_t callback;
+	sys_slist_t callbacks;
 	struct nano_timer poll_timer;
 
 	struct {
@@ -53,9 +53,8 @@ struct gpio_sch_data {
 	} int_regs;
 
 	uint32_t cb_enabled;
-	uint8_t port_cb;
 	uint8_t poll;
-	uint8_t stride[2];
+	uint8_t stride[3];
 };
 
 #endif /* __GPIO_SCH_H__ */

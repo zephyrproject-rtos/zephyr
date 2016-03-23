@@ -127,6 +127,14 @@ SECTIONS
 		__devconfig_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	SECTION_PROLOGUE(gpio_compat, (OPTIONAL),)
+	{
+		__gpio_compat_start = .;
+		*(".gpio_compat.*")
+		KEEP(*(SORT_BY_NAME(".gpio_compat*")))
+		__gpio_compat_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
 	SECTION_PROLOGUE(.ARM.exidx,,)
 	{
 	/*

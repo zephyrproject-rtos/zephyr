@@ -30,7 +30,8 @@
 #include <pinmux/frdm_k64f/pinmux_k64.h>
 
 #include "gpio_k64.h"
-
+#include "gpio_utils.h"
+#include "gpio_api_compat.h"
 
 static int gpio_k64_config(struct device *dev,
 			   int access_op, uint32_t pin, int flags)
@@ -182,11 +183,12 @@ static int gpio_k64_read(struct device *dev,
 }
 
 
-static int gpio_k64_set_callback(struct device *dev, gpio_callback_t callback)
+static int gpio_k64_manage_callback(struct device *dev,
+				    struct gpio_callback *callback, bool set)
 {
 	struct gpio_k64_data *data = dev->driver_data;
 
-	data->callback_func = callback;
+	_gpio_manage_callback(&data->callbacks, callback, set);
 
 	return 0;
 }
@@ -198,9 +200,11 @@ static int gpio_k64_enable_callback(struct device *dev,
 	struct gpio_k64_data *data = dev->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
+		_gpio_enable_callback(dev, BIT(pin));
 		data->pin_callback_enables |= BIT(pin);
 	} else {
-		data->port_callback_enable = 1;
+		_gpio_enable_callback(dev, 0xFFFFFFFF);
+		data->pin_callback_enables = 0xFFFFFFFF;
 	}
 
 	return 0;
@@ -213,9 +217,11 @@ static int gpio_k64_disable_callback(struct device *dev,
 	struct gpio_k64_data *data = dev->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
+		_gpio_disable_callback(dev, BIT(pin));
 		data->pin_callback_enables &= ~BIT(pin);
 	} else {
-		data->port_callback_enable = 0;
+		_gpio_disable_callback(dev, 0xFFFFFFFF);
+		data->pin_callback_enables = 0;
 	}
 
 	return 0;
@@ -234,34 +240,15 @@ static void gpio_k64_port_isr(void *dev)
 	struct gpio_k64_data *data = port->driver_data;
 	struct gpio_k64_config *config = port->config->config_info;
 	mem_addr_t int_status_reg_addr;
-	uint32_t enabled_int, int_status, pin;
-
-	if (!data->callback_func) {
-		return;
-	}
+	uint32_t enabled_int, int_status;
 
 	int_status_reg_addr = config->port_base_addr +
 		CONFIG_PORT_K64_INT_STATUS_OFFSET;
 
 	int_status = sys_read32(int_status_reg_addr);
+	enabled_int = int_status & data->pin_callback_enables;
 
-	if (data->port_callback_enable) {
-		data->callback_func(port, int_status);
-	} else if (data->pin_callback_enables) {
-		/* perform callback for each callback-enabled pin with
-		 * an interrupt
-		 */
-		enabled_int = int_status & data->pin_callback_enables;
-
-		while ((pin = find_lsb_set(enabled_int))) {
-			pin--;	/* normalize the pin number */
-
-			data->callback_func(port, BIT(pin));
-
-			/* clear the interrupt status */
-			enabled_int &= ~BIT(pin);
-		}
-	}
+	_gpio_fire_callbacks(&data->callbacks, port, enabled_int);
 
 	/* clear the port interrupts */
 	sys_write32(0xFFFFFFFF, int_status_reg_addr);
@@ -272,7 +259,7 @@ static struct gpio_driver_api gpio_k64_drv_api_funcs = {
 	.config = gpio_k64_config,
 	.write = gpio_k64_write,
 	.read = gpio_k64_read,
-	.set_callback = gpio_k64_set_callback,
+	.manage_callback = gpio_k64_manage_callback,
 	.enable_callback = gpio_k64_enable_callback,
 	.disable_callback = gpio_k64_disable_callback,
 };
@@ -293,6 +280,7 @@ DEVICE_AND_API_INIT(gpio_k64_A, CONFIG_GPIO_K64_A_DEV_NAME, gpio_k64_A_init,
 		    &gpio_data_A, &gpio_k64_A_cfg,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
+GPIO_SETUP_COMPAT_DEV(gpio_k64_A);
 
 static int gpio_k64_A_init(struct device *dev)
 {
@@ -322,6 +310,7 @@ DEVICE_AND_API_INIT(gpio_k64_B, CONFIG_GPIO_K64_B_DEV_NAME, gpio_k64_B_init,
 		    &gpio_data_B, &gpio_k64_B_cfg,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
+GPIO_SETUP_COMPAT_DEV(gpio_k64_B);
 
 static int gpio_k64_B_init(struct device *dev)
 {
@@ -351,6 +340,7 @@ DEVICE_AND_API_INIT(gpio_k64_C, CONFIG_GPIO_K64_C_DEV_NAME, gpio_k64_C_init,
 		    &gpio_data_C, &gpio_k64_C_cfg,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
+GPIO_SETUP_COMPAT_DEV(gpio_k64_C);
 
 static int gpio_k64_C_init(struct device *dev)
 {
@@ -380,6 +370,7 @@ DEVICE_AND_API_INIT(gpio_k64_D, CONFIG_GPIO_K64_D_DEV_NAME, gpio_k64_D_init,
 		    &gpio_data_D, &gpio_k64_D_cfg,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
+GPIO_SETUP_COMPAT_DEV(gpio_k64_D);
 
 static int gpio_k64_D_init(struct device *dev)
 {
@@ -409,6 +400,7 @@ DEVICE_AND_API_INIT(gpio_k64_E, CONFIG_GPIO_K64_E_DEV_NAME, gpio_k64_E_init,
 		    &gpio_data_E, &gpio_k64_E_cfg,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_k64_drv_api_funcs);
+GPIO_SETUP_COMPAT_DEV(gpio_k64_E);
 
 static int gpio_k64_E_init(struct device *dev)
 {

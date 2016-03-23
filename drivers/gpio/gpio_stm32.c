@@ -27,6 +27,9 @@
 #include <misc/util.h>
 #include <interrupt_controller/exti_stm32.h>
 
+#include "gpio_utils.h"
+#include "gpio_api_compat.h"
+
 /**
  * @brief Common GPIO driver for STM32 MCUs. Each SoC must implement a
  * SoC specific integration glue
@@ -39,19 +42,8 @@ static void gpio_stm32_isr(int line, void *arg)
 {
 	struct device *dev = arg;
 	struct gpio_stm32_data *data = dev->driver_data;
-	int is_enabled;
 
-	if (!data->cb) {
-		return;
-	}
-
-	is_enabled = data->enabled_mask & BIT(line);
-
-	if (!is_enabled) {
-		return;
-	}
-
-	data->cb(dev, line);
+	_gpio_fire_callbacks(&data->cb, dev, BIT(line));
 }
 
 /**
@@ -140,12 +132,13 @@ static int gpio_stm32_read(struct device *dev, int access_op,
 	return 0;
 }
 
-static int gpio_stm32_set_callback(struct device *dev,
-				   gpio_callback_t callback)
+static int gpio_stm32_manage_callback(struct device *dev,
+				      struct gpio_callback *callback,
+				      bool set)
 {
 	struct gpio_stm32_data *data = dev->driver_data;
 
-	data->cb = callback;
+	_gpio_manage_callback(&data->cb, callback, set);
 
 	return 0;
 }
@@ -153,13 +146,11 @@ static int gpio_stm32_set_callback(struct device *dev,
 static int gpio_stm32_enable_callback(struct device *dev,
 				      int access_op, uint32_t pin)
 {
-	struct gpio_stm32_data *data = dev->driver_data;
-
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	data->enabled_mask |= BIT(pin);
+	_gpio_enable_callback(dev, BIT(pin));
 
 	return 0;
 }
@@ -167,13 +158,11 @@ static int gpio_stm32_enable_callback(struct device *dev,
 static int gpio_stm32_disable_callback(struct device *dev,
 				       int access_op, uint32_t pin)
 {
-	struct gpio_stm32_data *data = dev->driver_data;
-
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	data->enabled_mask &= ~BIT(pin);
+	_gpio_disable_callback(dev, BIT(pin));
 
 	return 0;
 }
@@ -182,7 +171,7 @@ static struct gpio_driver_api gpio_stm32_driver = {
 	.config = gpio_stm32_config,
 	.write = gpio_stm32_write,
 	.read = gpio_stm32_read,
-	.set_callback = gpio_stm32_set_callback,
+	.manage_callback = gpio_stm32_manage_callback,
 	.enable_callback = gpio_stm32_enable_callback,
 	.disable_callback = gpio_stm32_disable_callback,
 
@@ -225,7 +214,8 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 		    &gpio_stm32_cfg_## __suffix,			\
 		    SECONDARY,						\
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
-		    &gpio_stm32_driver)
+		    &gpio_stm32_driver);				\
+GPIO_SETUP_COMPAT_DEV(gpio_stm32_## __suffix)
 
 #ifdef CONFIG_GPIO_STM32_PORTA
 GPIO_DEVICE_INIT("GPIOA", a, GPIOA_BASE, STM32_PORTA,

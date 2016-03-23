@@ -28,6 +28,8 @@
 #include <soc.h>
 
 #include <gpio.h>
+#include "gpio_utils.h"
+#include "gpio_api_compat.h"
 
 typedef void (*config_func_t)(struct device *port);
 
@@ -36,8 +38,7 @@ struct gpio_sam3_config {
 	volatile struct __pio	*port;
 
 	/* callbacks */
-	gpio_callback_t		cb;
-	uint32_t		enabled_cb;
+	sys_slist_t		cb;
 
 	config_func_t		config_func;
 };
@@ -205,35 +206,19 @@ static void gpio_sam3_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	struct gpio_sam3_config *cfg = dev->config->config_info;
 	uint32_t int_stat;
-	uint8_t bit;
 
 	int_stat = cfg->port->isr;
 
-	if (!cfg->cb) {
-		return;
-	}
-
-	if (cfg->enabled_cb) {
-		if (cfg->enabled_cb == 0xFFFFFFFF) {
-			cfg->cb(dev, int_stat);
-			return;
-		}
-
-		int_stat &= cfg->enabled_cb;
-		for (bit = 0; bit < 32; bit++) {
-			if (int_stat & BIT(bit)) {
-				cfg->cb(dev, bit);
-			}
-		}
-	}
+	_gpio_fire_callbacks(&cfg->cb, dev, int_stat);
 }
 
-static int gpio_sam3_set_callback(struct device *dev,
-				  gpio_callback_t callback)
+static int gpio_sam3_manage_callback(struct device *dev,
+				     struct gpio_callback *callback,
+				     bool set)
 {
 	struct gpio_sam3_config *cfg = dev->config->config_info;
 
-	cfg->cb = callback;
+	_gpio_manage_callback(&cfg->cb, callback, set);
 
 	return 0;
 }
@@ -255,7 +240,7 @@ static int gpio_sam3_enable_callback(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	cfg->enabled_cb |= mask;
+	_gpio_enable_callback(dev, mask);
 	cfg->port->ier |= mask;
 
 	return 0;
@@ -278,7 +263,7 @@ static int gpio_sam3_disable_callback(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	cfg->enabled_cb &= ~mask;
+	_gpio_disable_callback(dev, mask);
 	cfg->port->idr |= mask;
 
 	return 0;
@@ -288,7 +273,7 @@ static struct gpio_driver_api gpio_sam3_drv_api_funcs = {
 	.config = gpio_sam3_config,
 	.write = gpio_sam3_write,
 	.read = gpio_sam3_read,
-	.set_callback = gpio_sam3_set_callback,
+	.manage_callback = gpio_sam3_manage_callback,
 	.enable_callback = gpio_sam3_enable_callback,
 	.disable_callback = gpio_sam3_disable_callback,
 };
@@ -322,6 +307,7 @@ DEVICE_AND_API_INIT(gpio_sam3_a, CONFIG_GPIO_ATMEL_SAM3_PORTA_DEV_NAME,
 		    gpio_sam3_init, NULL, &gpio_sam3_a_cfg,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
+GPIO_SETUP_COMPAT_DEV(gpio_sam3_a);
 
 void gpio_sam3_config_a(struct device *dev)
 {
@@ -348,6 +334,7 @@ DEVICE_AND_API_INIT(gpio_sam3_b, CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME,
 		    gpio_sam3_init, NULL, &gpio_sam3_b_cfg,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
+GPIO_SETUP_COMPAT_DEV(gpio_sam3_b);
 
 void gpio_sam3_config_b(struct device *dev)
 {
@@ -374,6 +361,7 @@ DEVICE_AND_API_INIT(gpio_sam3_c, CONFIG_GPIO_ATMEL_SAM3_PORTC_DEV_NAME,
 		    gpio_sam3_init, NULL, &gpio_sam3_c_cfg,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
+GPIO_SETUP_COMPAT_DEV(gpio_sam3_c);
 
 void gpio_sam3_config_c(struct device *dev)
 {
@@ -400,6 +388,7 @@ DEVICE_AND_API_INIT(gpio_sam3_d, CONFIG_GPIO_ATMEL_SAM3_PORTD_DEV_NAME,
 		    gpio_sam3_init, NULL, &gpio_sam3_d_cfg,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
+GPIO_SETUP_COMPAT_DEV(gpio_sam3_d);
 
 void gpio_sam3_config_d(struct device *dev)
 {

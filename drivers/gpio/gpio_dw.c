@@ -19,6 +19,9 @@
 #include <nanokernel.h>
 #include <gpio.h>
 #include "gpio_dw.h"
+#include "gpio_utils.h"
+#include "gpio_api_compat.h"
+
 #include <board.h>
 #include <sys_io.h>
 #include <init.h>
@@ -243,12 +246,13 @@ static inline int gpio_dw_read(struct device *port, int access_op,
 	return 0;
 }
 
-static inline int gpio_dw_set_callback(struct device *port,
-				       gpio_callback_t callback)
+static inline int gpio_dw_manage_callback(struct device *port,
+					  struct gpio_callback *callback,
+					  bool set)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
 
-	context->callback = callback;
+	_gpio_manage_callback(&context->callbacks, callback, set);
 
 	return 0;
 }
@@ -257,17 +261,17 @@ static inline int gpio_dw_enable_callback(struct device *port, int access_op,
 					  uint32_t pin)
 {
 	struct gpio_dw_config *config = port->config->config_info;
-	struct gpio_dw_runtime *context = port->driver_data;
 	uint32_t base_addr = config->base_addr;
 
 	if (GPIO_ACCESS_BY_PIN == access_op) {
-		context->enabled_callbacks |= BIT(pin);
+		dw_write(base_addr, PORTA_EOI, BIT(pin));
+		dw_set_bit(base_addr, INTMASK, pin, 0);
+		_gpio_enable_callback(port, BIT(pin));
 	} else {
-		context->port_callback = 1;
+		dw_write(base_addr, PORTA_EOI, BIT_MASK(config->bits));
+		dw_write(base_addr, INTMASK, 0);
+		_gpio_enable_callback(port, BIT_MASK(config->bits));
 	}
-
-	dw_write(base_addr, PORTA_EOI, BIT(pin));
-	dw_set_bit(base_addr, INTMASK, pin, 0);
 
 	return 0;
 }
@@ -276,16 +280,15 @@ static inline int gpio_dw_disable_callback(struct device *port, int access_op,
 					   uint32_t pin)
 {
 	struct gpio_dw_config *config = port->config->config_info;
-	struct gpio_dw_runtime *context = port->driver_data;
 	uint32_t base_addr = config->base_addr;
 
 	if (GPIO_ACCESS_BY_PIN == access_op) {
-		context->enabled_callbacks &= ~(BIT(pin));
+		dw_set_bit(base_addr, INTMASK, pin, 1);
+		_gpio_disable_callback(port, BIT(pin));
 	} else {
-		context->port_callback = 0;
+		dw_write(base_addr, INTMASK, BIT_MASK(config->bits));
+		_gpio_disable_callback(port, BIT_MASK(config->bits));
 	}
-
-	dw_set_bit(base_addr, INTMASK, pin, 1);
 
 	return 0;
 }
@@ -326,7 +329,7 @@ void gpio_dw_isr(void *arg)
 	struct gpio_dw_runtime *context = port->driver_data;
 	struct gpio_dw_config *config = port->config->config_info;
 	uint32_t base_addr = config->base_addr;
-	uint32_t enabled_int, int_status, bit;
+	uint32_t int_status;
 
 	int_status = dw_read(base_addr, INTSTATUS);
 
@@ -342,30 +345,14 @@ void gpio_dw_isr(void *arg)
 
 	dw_write(base_addr, PORTA_EOI, int_status);
 
-	if (!context->callback) {
-		return;
-	}
-	if (context->port_callback) {
-		context->callback(port, int_status);
-		return;
-	}
-
-	if (context->enabled_callbacks) {
-		enabled_int = int_status & context->enabled_callbacks;
-		for (bit = 0; bit < config->bits; bit++) {
-			if (enabled_int & BIT(bit)) {
-				context->callback(port, bit);
-			}
-		}
-	}
-
+	_gpio_fire_callbacks(&context->callbacks, port, int_status);
 }
 
 static struct gpio_driver_api api_funcs = {
 	.config = gpio_dw_config,
 	.write = gpio_dw_write,
 	.read = gpio_dw_read,
-	.set_callback = gpio_dw_set_callback,
+	.manage_callback = gpio_dw_manage_callback,
 	.enable_callback = gpio_dw_enable_callback,
 	.disable_callback = gpio_dw_disable_callback,
 };
@@ -475,6 +462,7 @@ DEVICE_AND_API_INIT(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
 		    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
+GPIO_SETUP_COMPAT_DEV(gpio_dw_0);
 
 void gpio_config_0_irq(struct device *port)
 {
@@ -495,7 +483,6 @@ void gpio_config_0_irq(struct device *port)
 #endif
 	gpio_dw_unmask_int(GPIO_DW_PORT_0_INT_MASK);
 }
-
 #endif /* CONFIG_GPIO_DW_0 */
 
 
@@ -540,6 +527,7 @@ DEVICE_AND_API_INIT(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
 		    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
+GPIO_SETUP_COMPAT_DEV(gpio_dw_1);
 
 void gpio_config_1_irq(struct device *port)
 {

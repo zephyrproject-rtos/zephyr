@@ -25,6 +25,8 @@
 #include <misc/util.h>
 
 #include "gpio_sch.h"
+#include "gpio_utils.h"
+#include "gpio_api_compat.h"
 
 #ifndef CONFIG_GPIO_DEBUG
 #define DBG(...)
@@ -36,7 +38,7 @@
 #include <misc/printk.h>
 #define DBG printk
 #endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_SPI_DEBUG */
+#endif /* CONFIG_GPIO_DEBUG */
 
 /* Define GPIO_SCH_LEGACY_IO_PORTS_ACCESS
  * inside soc.h if the GPIO controller
@@ -208,31 +210,13 @@ static void _gpio_sch_poll_status(int data, int unused)
 	while (gpio->poll) {
 		uint32_t status;
 
-		if (!gpio->callback) {
-			goto loop;
-		}
-
 		status = _read_gts(info->regs);
 		if (!status) {
 			goto loop;
 		}
 
-		if (gpio->port_cb) {
-			gpio->callback(dev, status);
-			goto ack;
-		}
+		_gpio_fire_callbacks(&gpio->callbacks, dev, status);
 
-		if (gpio->cb_enabled) {
-			uint32_t valid_int = status & gpio->cb_enabled;
-			int i;
-
-			for (i = 0; i < info->bits; i++) {
-				if (valid_int & BIT(i)) {
-					gpio->callback(dev, i);
-				}
-			}
-		}
-ack:
 		/* It's not documented but writing the same status value
 		 * into GTS tells to the controller it got handled.
 		 */
@@ -244,25 +228,33 @@ loop:
 	}
 }
 
-static int gpio_sch_set_callback(struct device *dev, gpio_callback_t callback)
+static void _gpio_sch_manage_callback(struct device *dev)
 {
 	struct gpio_sch_data *gpio = dev->driver_data;
 
-	gpio->callback = callback;
-
 	/* Start the fiber only when relevant */
-	if (callback && (gpio->cb_enabled || gpio->port_cb)) {
+	if (!sys_slist_is_empty(&gpio->callbacks) && gpio->cb_enabled) {
 		if (!gpio->poll) {
 			DBG("Starting SCH GPIO polling fiber\n");
 			gpio->poll = 1;
 			fiber_start(gpio->polling_stack,
-					GPIO_SCH_POLLING_STACK_SIZE,
-					_gpio_sch_poll_status,
-					POINTER_TO_INT(dev), 0, 0, 0);
+				    GPIO_SCH_POLLING_STACK_SIZE,
+				    _gpio_sch_poll_status,
+				    POINTER_TO_INT(dev), 0, 0, 0);
 		}
 	} else {
 		gpio->poll = 0;
 	}
+}
+
+static int gpio_sch_manage_callback(struct device *dev,
+				    struct gpio_callback *callback, bool set)
+{
+	struct gpio_sch_data *gpio = dev->driver_data;
+
+	_gpio_manage_callback(&gpio->callbacks, callback, set);
+
+	_gpio_sch_manage_callback(dev);
 
 	return 0;
 }
@@ -280,17 +272,19 @@ static int gpio_sch_enable_callback(struct device *dev,
 			return -ENOTSUP;
 		}
 
-		gpio->cb_enabled |= bits;
 		_set_bit_gtpe(info->regs, pin, !!(bits & gpio->int_regs.gtpe));
 		_set_bit_gtne(info->regs, pin, !!(bits & gpio->int_regs.gtne));
-	} else {
-		gpio->port_cb = 1;
 
+		gpio->cb_enabled |= bits;
+	} else {
 		_write_gtpe(gpio->int_regs.gtpe, info->regs);
 		_write_gtne(gpio->int_regs.gtne, info->regs);
+
+		gpio->cb_enabled = BIT_MASK(info->bits);
 	}
 
-	gpio_sch_set_callback(dev, gpio->callback);
+	_gpio_enable_callback(dev, gpio->cb_enabled);
+	_gpio_sch_manage_callback(dev);
 
 	return 0;
 }
@@ -306,17 +300,20 @@ static int gpio_sch_disable_callback(struct device *dev,
 			return -ENOTSUP;
 		}
 
-		gpio->cb_enabled &= ~BIT(pin);
 		_set_bit_gtpe(info->regs, pin, 0);
 		_set_bit_gtne(info->regs, pin, 0);
-	} else {
-		gpio->port_cb = 0;
 
+		gpio->cb_enabled &= ~BIT(pin);
+		_gpio_disable_callback(dev, BIT(pin));
+	} else {
 		_write_gtpe(0, info->regs);
 		_write_gtne(0, info->regs);
+
+		gpio->cb_enabled = 0;
+		_gpio_disable_callback(dev, BIT_MASK(info->bits));
 	}
 
-	gpio_sch_set_callback(dev, gpio->callback);
+	_gpio_sch_manage_callback(dev);
 
 	return 0;
 }
@@ -325,7 +322,7 @@ static struct gpio_driver_api gpio_sch_api = {
 	.config = gpio_sch_config,
 	.write = gpio_sch_write,
 	.read = gpio_sch_read,
-	.set_callback = gpio_sch_set_callback,
+	.manage_callback = gpio_sch_manage_callback,
 	.enable_callback = gpio_sch_enable_callback,
 	.disable_callback = gpio_sch_disable_callback,
 };
@@ -355,6 +352,7 @@ struct gpio_sch_data gpio_data_0;
 DEVICE_INIT(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME, gpio_sch_init,
 	    &gpio_data_0, &gpio_sch_0_config,
 	    SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
+GPIO_SETUP_COMPAT_DEV(gpio_0);
 
 #endif /* CONFIG_GPIO_SCH_0 */
 #if CONFIG_GPIO_SCH_1
@@ -369,5 +367,6 @@ struct gpio_sch_data gpio_data_1;
 DEVICE_INIT(gpio_1, CONFIG_GPIO_SCH_1_DEV_NAME, gpio_sch_init,
 	    &gpio_data_1, &gpio_sch_1_config,
 	    SECONDARY, CONFIG_GPIO_SCH_INIT_PRIORITY);
+GPIO_SETUP_COMPAT_DEV(gpio_1);
 
 #endif /* CONFIG_GPIO_SCH_1 */

@@ -26,10 +26,8 @@ menuconfig GPIO
 if GPIO
 
 config GPIO_DEBUG
-	bool
-	prompt "Debug output for GPIO drivers"
+	bool "Debug output for GPIO drivers"
 	default n
-	depends on GPIO
 	help
 	  Enable the debug output for GPIO drivers
 

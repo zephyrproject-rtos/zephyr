@@ -515,11 +515,13 @@ done:
 	return ret;
 }
 
-static int gpio_pcal9535a_set_callback(struct device *dev,
-				       gpio_callback_t callback)
+static int gpio_pcal9535a_manage_callback(struct device *dev,
+					  struct gpio_callback *callback,
+					  bool set)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(callback);
+	ARG_UNUSED(set);
 
 	return -ENOTSUP;
 }
@@ -548,7 +550,7 @@ static struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {
 	.config = gpio_pcal9535a_config,
 	.write = gpio_pcal9535a_write,
 	.read = gpio_pcal9535a_read,
-	.set_callback = gpio_pcal9535a_set_callback,
+	.manage_callback = gpio_pcal9535a_manage_callback,
 	.enable_callback = gpio_pcal9535a_enable_callback,
 	.disable_callback = gpio_pcal9535a_disable_callback,
 };

@@ -249,10 +249,12 @@ static int gpio_mmio_read(struct device *dev,
 	return 0;
 }
 
-static int gpio_mmio_set_callback(struct device *dev, gpio_callback_t callback)
+static int gpio_mmio_manage_callback(struct device *dev,
+				     struct gpio_callback *callback, bool set)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(callback);
+	ARG_UNUSED(set);
 
 	return -ENOTSUP;
 }
@@ -281,7 +283,7 @@ static struct gpio_driver_api gpio_mmio_drv_api_funcs = {
 	.config = gpio_mmio_config,
 	.write = gpio_mmio_write,
 	.read = gpio_mmio_read,
-	.set_callback = gpio_mmio_set_callback,
+	.manage_callback = gpio_mmio_manage_callback,
 	.enable_callback = gpio_mmio_enable_callback,
 	.disable_callback = gpio_mmio_disable_callback,
 };

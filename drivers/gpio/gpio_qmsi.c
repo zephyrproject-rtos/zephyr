@@ -25,6 +25,8 @@
 
 #include "qm_gpio.h"
 #include "qm_scss.h"
+#include "gpio_utils.h"
+#include "gpio_api_compat.h"
 
 struct gpio_qmsi_config {
 	qm_gpio_t gpio;
@@ -32,9 +34,8 @@ struct gpio_qmsi_config {
 };
 
 struct gpio_qmsi_runtime {
-	gpio_callback_t callback;
+	sys_slist_t callbacks;
 	uint32_t pin_callbacks;
-	uint8_t port_callback;
 };
 
 int gpio_qmsi_init(struct device *dev);
@@ -50,6 +51,8 @@ static struct gpio_qmsi_runtime gpio_0_runtime;
 DEVICE_INIT(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
 	    &gpio_0_runtime, &gpio_0_config,
 	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+GPIO_SETUP_COMPAT_DEV(gpio_0);
+
 #endif /* CONFIG_GPIO_QMSI_0 */
 
 #ifdef CONFIG_GPIO_QMSI_AON
@@ -63,6 +66,7 @@ static struct gpio_qmsi_runtime gpio_aon_runtime;
 DEVICE_INIT(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
 	    &gpio_aon_runtime, &gpio_aon_config,
 	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+GPIO_SETUP_COMPAT_DEV(gpio_aon);
 
 #endif /* CONFIG_GPIO_QMSI_AON */
 
@@ -74,28 +78,11 @@ DEVICE_INIT(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
  */
 static void gpio_qmsi_callback(struct device *port, uint32_t status)
 {
-	struct gpio_qmsi_config *config = port->config->config_info;
 	struct gpio_qmsi_runtime *context = port->driver_data;
 	const uint32_t enabled_mask = context->pin_callbacks & status;
-	int bit;
 
-	if (!context->callback) {
-		return;
-	}
-
-	if (context->port_callback) {
-		context->callback(port, status);
-		return;
-	}
-
-	if (!enabled_mask) {
-		return;
-	}
-
-	for (bit = 0; bit < config->num_pins; bit++) {
-		if (enabled_mask & BIT(bit)) {
-			context->callback(port, bit);
-		}
+	if (enabled_mask) {
+		_gpio_fire_callbacks(&context->callbacks, port, enabled_mask);
 	}
 }
 
@@ -233,12 +220,13 @@ static inline int gpio_qmsi_read(struct device *port,
 	return 0;
 }
 
-static inline int gpio_qmsi_set_callback(struct device *port,
-					 gpio_callback_t callback)
+static inline int gpio_qmsi_manage_callback(struct device *port,
+					    struct gpio_callback *callback,
+					    bool set)
 {
 	struct gpio_qmsi_runtime *context = port->driver_data;
 
-	context->callback = callback;
+	_gpio_manage_callback(&context->callbacks, callback, set);
 
 	return 0;
 }
@@ -249,9 +237,11 @@ static inline int gpio_qmsi_enable_callback(struct device *port,
 	struct gpio_qmsi_runtime *context = port->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
+		_gpio_enable_callback(port, BIT(pin));
 		context->pin_callbacks |= BIT(pin);
 	} else {
-		context->port_callback = 1;
+		_gpio_enable_callback(port, 0xffffffff);
+		context->pin_callbacks = 0xffffffff;
 	}
 
 	return 0;
@@ -263,9 +253,11 @@ static inline int gpio_qmsi_disable_callback(struct device *port,
 	struct gpio_qmsi_runtime *context = port->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
+		_gpio_disable_callback(port, BIT(pin));
 		context->pin_callbacks &= ~BIT(pin);
 	} else {
-		context->port_callback = 0;
+		_gpio_disable_callback(port, 0xffffffff);
+		context->pin_callbacks = 0;
 	}
 
 	return 0;
@@ -275,7 +267,7 @@ static struct gpio_driver_api api_funcs = {
 	.config = gpio_qmsi_config,
 	.write = gpio_qmsi_write,
 	.read = gpio_qmsi_read,
-	.set_callback = gpio_qmsi_set_callback,
+	.manage_callback = gpio_qmsi_manage_callback,
 	.enable_callback = gpio_qmsi_enable_callback,
 	.disable_callback = gpio_qmsi_disable_callback,
 };

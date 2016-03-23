@@ -43,9 +43,7 @@ struct gpio_stm32_config {
  */
 struct gpio_stm32_data {
 	/* user ISR cb */
-	gpio_callback_t cb;
-	/* mask of enabled pins */
-	uint32_t enabled_mask;
+	sys_slist_t cb;
 };
 
 /**
