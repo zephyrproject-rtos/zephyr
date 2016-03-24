@@ -58,11 +58,57 @@ Each testcase.ini block can define the following key/value pairs:
   platform_exclude = <list of platforms>
     Set of platforms that this test case should not run on.
 
-  config_whitelist = <list of config options>
-    Config options can either be config names like CONFIG_FOO which
-    match if the configuration is defined to any value, or key/value
-    pairs like CONFIG_FOO=bar which match if it is set to a specific
-    value. May prepend a '!' to invert the match.
+  filter = <expression>
+    Filter whether the testcase should be run by evaluating an expression
+    against an environment containing the following values:
+
+    { ARCH : <architecture>,
+      PLATFORM : <platform>,
+      <all CONFIG_* key/value pairs in the test's generated defconfig>
+    }
+
+    The grammar for the expression language is as follows:
+
+    expression ::= expression "and" expression
+                 | expression "or" expression
+                 | "not" expression
+                 | "(" expression ")"
+                 | symbol "==" constant
+                 | symbol "!=" constant
+                 | symbol "<" number
+                 | symbol ">" number
+                 | symbol ">=" number
+                 | symbol "<=" number
+                 | symbol "in" list
+                 | symbol
+
+    list ::= "[" list_contents "]"
+
+    list_contents ::= constant
+                    | list_contents "," constant
+
+    constant ::= number
+               | string
+
+
+    For the case where expression ::= symbol, it evaluates to true
+    if the symbol is defined to a non-empty string.
+
+    Operator precedence, starting from lowest to highest:
+
+        or (left associative)
+        and (left associative)
+        not (right associative)
+        all comparison operators (non-associative)
+
+    arch_whitelist, arch_exclude, platform_whitelist, platform_exclude
+    are all syntactic sugar for these expressions. For instance
+
+        arch_exclude = x86 arc
+
+    Is the same as:
+
+        filter = not ARCH in ["x86", "arc"]
 
 Architectures and platforms are defined in an archtecture configuration
 file which are stored by default in scripts/sanity_chk/arches/. These
@@ -120,6 +166,11 @@ if "ZEPHYR_BASE" not in os.environ:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
     exit(1)
 ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
+
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
+
+import expr_parser
+
 VERBOSE = 0
 LAST_SANITY = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                            "last_sanity.csv")
@@ -745,7 +796,7 @@ testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "arch_exclude" : {"type" : "set"},
                        "platform_exclude" : {"type" : "set"},
                        "platform_whitelist" : {"type" : "set"},
-                       "config_whitelist" : {"type" : "set"}}
+                       "filter" : {"type" : "str"}}
 
 
 class SanityConfigParser:
@@ -953,7 +1004,7 @@ class TestCase:
     """
     makefile_re = re.compile("\s*KERNEL_TYPE\s*[?=]+\s*(micro|nano)\s*")
 
-    def __init__(self, testcase_root, workdir, name, tc_dict):
+    def __init__(self, testcase_root, workdir, name, tc_dict, inifile):
         """TestCase constructor.
 
         This gets called by TestSuite as it finds and reads testcase.ini files.
@@ -988,7 +1039,7 @@ class TestCase:
         self.kernel = tc_dict["kernel"]
         self.platform_exclude = tc_dict["platform_exclude"]
         self.platform_whitelist = tc_dict["platform_whitelist"]
-        self.config_whitelist = tc_dict["config_whitelist"]
+        self.tc_filter = tc_dict["filter"]
         self.timeout = tc_dict["timeout"]
         self.build_only = tc_dict["build_only"]
         self.slow = tc_dict["slow"]
@@ -997,6 +1048,7 @@ class TestCase:
         self.name = self.path # for now
         self.defconfig = {}
         self.ktype = None
+        self.inifile = inifile
 
         if self.kernel:
             self.ktype = self.kernel
@@ -1064,7 +1116,7 @@ def defconfig_cb(context, goals, goal):
 
 
 class TestSuite:
-    config_re = re.compile('(CONFIG_[A-Z0-9_]+)[=](.+)$')
+    config_re = re.compile('(CONFIG_[A-Z0-9_]+)[=]\"?([^\"]*)\"?$')
 
     def __init__(self, arch_root, testcase_roots, outdir):
         # Keep track of which test cases we've filtered out and why
@@ -1090,12 +1142,14 @@ class TestSuite:
                 if "testcase.ini" in filenames:
                     verbose("Found test case in " + dirpath)
                     dirnames[:] = []
-                    cp = SanityConfigParser(os.path.join(dirpath, "testcase.ini"))
+                    ini_path = os.path.join(dirpath, "testcase.ini")
+                    cp = SanityConfigParser(ini_path)
                     workdir = os.path.relpath(dirpath, testcase_root)
 
                     for section in cp.sections():
                         tc_dict = cp.get_section(section, testcase_valid_keys)
-                        tc = TestCase(testcase_root, workdir, section, tc_dict)
+                        tc = TestCase(testcase_root, workdir, section, tc_dict,
+                                      ini_path)
                         self.testcases[tc.name] = tc
 
         debug("Reading architecture configuration files under %s..." % arch_root)
@@ -1189,7 +1243,7 @@ class TestSuite:
                     if not plat.microkernel_support and tc.ktype == "micro":
                         continue
 
-                    for cw in tc.config_whitelist:
+                    if tc.tc_filter:
                         args = tc.extra_args[:]
                         args.extend(["ARCH=" + plat.arch.name,
                                 "BOARD=" + plat.name, "initconfig"])
@@ -1217,6 +1271,8 @@ class TestSuite:
                 for line in fp.readlines():
                     m = TestSuite.config_re.match(line)
                     if not m:
+                        if line.strip() and not line.startswith("#"):
+                            sys.stderr.write("Unrecognized line %s\n" % line)
                         continue
                     defconfig[m.group(1)] = m.group(2).strip()
             test.defconfig[plat,ktype] = defconfig
@@ -1271,44 +1327,23 @@ class TestSuite:
                         discards[instance] = "No microkernel support for platform"
                         continue
 
-                    defconfig = {}
+                    defconfig = {"ARCH" : arch.name, "PLATFORM" : plat.name}
                     for tcase, tdefconfig in tc.defconfig.items():
                         p, k = tcase
                         if k == tc.ktype and p == plat:
-                            defconfig = tdefconfig
+                            defconfig.update(tdefconfig)
                             break
 
-                    config_pass = True
-
-                    # FIXME this is kind of gross clean it up
-                    for cw in tc.config_whitelist:
-                        invert = (cw[0] == "!")
-                        if invert:
-                            cw = cw[1:]
-
-                        if "=" in cw:
-                            k, v = cw.split("=")
-                            testval = k not in defconfig or defconfig[k] != v
-                            if invert:
-                                testval = not testval
-                            if testval:
-                                discards[instance] = "%s%s in platform defconfig" % (
-                                        cw, " not" if not invert else "")
-                                config_pass = False
-                                break
-                        else:
-                            testval = cw not in defconfig
-                            if invert:
-                                testval = not testval
-                            if testval:
-                                discards[instance] = "%s%s set in platform defconfig" % (
-                                        cw, " not" if not invert else "")
-                                config_pass = False
-                                break
-
-                    if not config_pass:
-                        continue
-
+                    if tc.tc_filter:
+                        try:
+                            res = expr_parser.parse(tc.tc_filter, defconfig)
+                        except SyntaxError as se:
+                            sys.stderr.write("Failed processing %s\n" % tc.inifile)
+                            raise se
+                        if not res:
+                            discards[instance] = ("defconfig doesn't satisfy expression '%s'" %
+                                    tc.tc_filter)
+                            continue
 
                     instance_list.append(instance)
 
