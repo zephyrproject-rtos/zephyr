@@ -352,7 +352,10 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
-	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
+	char *value = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 strlen(value));
 }
 
 ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
