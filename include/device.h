@@ -87,6 +87,7 @@ extern "C" {
  * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
 
+#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
 	\
 	static struct device_config __config_##dev_name __used \
@@ -100,6 +101,88 @@ extern "C" {
 		 .config = &(__config_##dev_name), \
 		 .driver_data = data \
 	}
+#else
+/**
+ * @def DEVICE_INIT_PM
+ *
+ * @brief create device object and set it up for boot time initialization
+ *
+ * @details This macro defines a device object that is automatically
+ * configured by the kernel during system initialization.
+ *
+ * @param dev_name Device name.
+ *
+ * @param drv_name The name this instance of the driver exposes to
+ * the system.
+ *
+ * @param init_fn Address to the init function of the driver.
+ *
+ * @param device_pm_ops Address to the device_pm_ops structure of the driver.
+ *
+ * @param data Pointer to the device's configuration data.
+ *
+ * @param cfg_info The address to the structure containing the
+ * configuration information for this instance of the driver.
+ *
+ * @param level The initialization level at which configuration occurs.
+ * Must be one of the following symbols, which are listed in the order
+ * they are performed by the kernel:
+ *
+ * PRIMARY: Used for devices that have no dependencies, such as those
+ * that rely solely on hardware present in the processor/SOC. These devices
+ * cannot use any kernel services during configuration, since they are not
+ * yet available.
+ *
+ * SECONDARY: Used for devices that rely on the initialization of devices
+ * initialized as part of the PRIMARY level. These devices cannot use any
+ * kernel services during configuration, since they are not yet available.
+ *
+ * NANOKERNEL: Used for devices that require nanokernel services during
+ * configuration.
+ *
+ * MICROKERNEL: Used for devices that require microkernel services during
+ * configuration.
+ *
+ * APPLICATION: Used for application components (i.e. non-kernel components)
+ * that need automatic configuration. These devices can use all services
+ * provided by the kernel during configuration.
+ *
+ * @param prio The initialization priority of the device, relative to
+ * other devices of the same initialization level. Specified as an integer
+ * value in the range 0 to 99; lower values indicate earlier initialization.
+ * Must be a decimal integer literal without leading zeroes or sign (e.g. 32),
+ * or an equivalent symbolic name (e.g. \#define MY_INIT_PRIO 32); symbolic
+ * expressions are *not* permitted
+ * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
+ */
+
+#define DEVICE_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
+			data, cfg_info, level, prio) \
+	\
+	static struct device_config __config_##dev_name __used \
+	__attribute__((__section__(".devconfig.init"))) = { \
+		.name = drv_name, .init = (init_fn), \
+		.dev_pm_ops = (device_pm_ops), \
+		.config_info = (cfg_info) \
+	}; \
+	\
+	static struct device (__device_##dev_name) __used \
+	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
+		 .config = &(__config_##dev_name), \
+		 .driver_data = data \
+	}
+
+	/*
+	 * Create a default device_pm_ops for devices that do not call the
+	 * DEVICE_INIT_PM macro so that caller of hook functions
+	 * need not check dev_pm_ops != NULL.
+	 */
+extern struct device_pm_ops device_pm_ops_nop;
+#define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
+			DEVICE_INIT_PM(dev_name, drv_name, init_fn, \
+					&device_pm_ops_nop, data, cfg_info, \
+					level, prio)
+#endif
 
 /**
  * @def DEVICE_NAME_GET
@@ -165,6 +248,13 @@ extern "C" {
 
 struct device;
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+struct device_pm_ops {
+	int (*suspend)(struct device *device, int pm_policy);
+	int (*resume)(struct device *device, int pm_policy);
+};
+#endif
+
 /**
  * @brief Static device information (In ROM) Per driver instance
  * @param name name of the device
@@ -174,6 +264,9 @@ struct device;
 struct device_config {
 	char	*name;
 	int (*init)(struct device *device);
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	struct device_pm_ops *dev_pm_ops;
+#endif
 	void *config_info;
 };
 
@@ -192,6 +285,74 @@ struct device {
 
 void _sys_device_do_config_level(int level);
 struct device* device_get_binding(char *name);
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+/**
+ * Device PM functions
+ */
+
+/**
+ * @brief No-op function to initialize unimplemented pm hooks
+ *
+ * This function should be used to initialize device pm hooks
+ * for which a device has no operation.
+ *
+ * @param unused_device
+ * @param unused_policy
+ *
+ * @retval Always returns 0
+ */
+int device_pm_nop(struct device *unused_device, int unused_policy);
+
+/**
+ * @brief Call the suspend function of a device
+ *
+ * Called by the Power Manager application to let the device do
+ * any policy based PM suspend operations.
+ *
+ * @param device Pointer to device structure of the driver instance.
+ * @param pm_policy PM policy for which this call is made.
+ *
+ * @retval 0 If successful.
+ * @retval -EBUSY If device is busy
+ * @retval Other negative errno code if failure.
+ */
+static inline int device_suspend(struct device *device, int pm_policy)
+{
+	return device->config->dev_pm_ops->suspend(device, pm_policy);
+}
+
+/**
+ * @brief Call the resume function of a device
+ *
+ * Called by the Power Manager application to let the device do
+ * any policy based PM resume operations.
+ *
+ * @param device Pointer to device structure of the driver instance.
+ * @param pm_policy PM policy for which this call is made.
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int device_resume(struct device *device, int pm_policy)
+{
+	return device->config->dev_pm_ops->resume(device, pm_policy);
+}
+
+/**
+ * @brief Gets the device structure list array and device count
+ *
+ * Called by the Power Manager application to get the list of
+ * device structures associated with the devices in the system.
+ * The PM app would use this list to create its own sorted list
+ * based on the order it wishes to suspend or resume the devices.
+ *
+ * @param device_list Pointer to receive the device list array
+ * @param device_count Pointer to receive the device count
+ */
+void device_list_get(struct device **device_list, int *device_count);
+
+#endif
 
 /**
  * Synchronous calls API

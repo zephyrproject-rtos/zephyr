@@ -284,20 +284,6 @@ static int gpio_sam3_disable_callback(struct device *dev,
 	return 0;
 }
 
-static int gpio_sam3_suspend_port(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
-
-static int gpio_sam3_resume_port(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
-
 static struct gpio_driver_api gpio_sam3_drv_api_funcs = {
 	.config = gpio_sam3_config,
 	.write = gpio_sam3_write,
@@ -305,8 +291,6 @@ static struct gpio_driver_api gpio_sam3_drv_api_funcs = {
 	.set_callback = gpio_sam3_set_callback,
 	.enable_callback = gpio_sam3_enable_callback,
 	.disable_callback = gpio_sam3_disable_callback,
-	.suspend = gpio_sam3_suspend_port,
-	.resume = gpio_sam3_resume_port,
 };
 
 /**

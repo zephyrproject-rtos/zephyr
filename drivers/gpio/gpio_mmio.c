@@ -277,20 +277,6 @@ static int gpio_mmio_disable_callback(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int gpio_mmio_suspend_port(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
-
-static int gpio_mmio_resume_port(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
-
 static struct gpio_driver_api gpio_mmio_drv_api_funcs = {
 	.config = gpio_mmio_config,
 	.write = gpio_mmio_write,
@@ -298,8 +284,6 @@ static struct gpio_driver_api gpio_mmio_drv_api_funcs = {
 	.set_callback = gpio_mmio_set_callback,
 	.enable_callback = gpio_mmio_enable_callback,
 	.disable_callback = gpio_mmio_disable_callback,
-	.suspend = gpio_mmio_suspend_port,
-	.resume = gpio_mmio_resume_port,
 };
 
 /**

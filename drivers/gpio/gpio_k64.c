@@ -221,22 +221,6 @@ static int gpio_k64_disable_callback(struct device *dev,
 }
 
 
-static int gpio_k64_suspend_port(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
-
-
-static int gpio_k64_resume_port(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
-
-
 /**
  * @brief Handler for port interrupts
  * @param dev Pointer to device structure for driver instance
@@ -290,8 +274,6 @@ static struct gpio_driver_api gpio_k64_drv_api_funcs = {
 	.set_callback = gpio_k64_set_callback,
 	.enable_callback = gpio_k64_enable_callback,
 	.disable_callback = gpio_k64_disable_callback,
-	.suspend = gpio_k64_suspend_port,
-	.resume = gpio_k64_resume_port,
 };
 
 

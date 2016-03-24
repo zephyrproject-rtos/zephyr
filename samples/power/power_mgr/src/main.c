@@ -24,6 +24,7 @@
 #include <misc/printk.h>
 #define PRINT           printk
 #endif
+#include <string.h>
 #include <rtc.h>
 
 #define SLEEPTICKS	SECONDS(5)
@@ -33,6 +34,15 @@ static int pm_state; /* 1 = LPS; 2 = Device suspend only */
 static void quark_low_power(void);
 static struct device *rtc_dev;
 static uint32_t start_time, end_time;
+static void create_device_list(void);
+static void suspend_devices(int pm_policy);
+static void resume_devices(int pm_policy);
+
+#define DEVICE_POLICY_MAX 10
+static struct device *device_list;
+static int device_count;
+static char device_policy_list[DEVICE_POLICY_MAX];
+static char device_retval[DEVICE_POLICY_MAX];
 
 void main(void)
 {
@@ -48,6 +58,8 @@ void main(void)
 	rtc_dev = device_get_binding(CONFIG_RTC_DRV_NAME);
 	rtc_enable(rtc_dev);
 	rtc_set_config(rtc_dev, &config);
+
+	create_device_list();
 
 	while (1) {
 		task_sleep(SLEEPTICKS);
@@ -79,6 +91,7 @@ static int low_power_state_entry(int32_t ticks)
 	PRINT("\n\nLow power state policy entry!\n");
 
 	/* Turn off peripherals/clocks here */
+	suspend_devices(SYS_PM_LOW_POWER_STATE);
 
 	quark_low_power();
 
@@ -90,6 +103,7 @@ static int device_suspend_only_entry(int32_t ticks)
 	PRINT("Device suspend only policy entry!\n");
 
 	/* Turn off peripherals/clocks here */
+	suspend_devices(SYS_PM_DEVICE_SUSPEND_ONLY);
 
 	return SYS_PM_DEVICE_SUSPEND_ONLY;
 }
@@ -120,6 +134,8 @@ int _sys_soc_suspend(int32_t ticks)
 
 static void low_power_state_exit(void)
 {
+	resume_devices(SYS_PM_LOW_POWER_STATE);
+
 	end_time = rtc_read(rtc_dev);
 	PRINT("\nLow power state policy exit!\n");
 	PRINT("Total Elapsed From Suspend To Resume = %d RTC Cycles\n",
@@ -128,6 +144,8 @@ static void low_power_state_exit(void)
 
 static void device_suspend_only_exit(void)
 {
+	resume_devices(SYS_PM_DEVICE_SUSPEND_ONLY);
+
 	end_time = rtc_read(rtc_dev);
 	PRINT("\nDevice suspend only policy exit!\n");
 	PRINT("Total Elapsed From Suspend To Resume = %d RTC Cycles\n",
@@ -163,4 +181,49 @@ static void quark_low_power(void)
 			"movl (%%eax), %%eax\n\t"
 			::"a"(P_LVL2));
 
+}
+
+static void suspend_devices(int pm_policy)
+{
+	int i;
+
+	for (i = 0; i < device_count; i++) {
+		int idx = device_policy_list[i];
+
+		device_retval[i] = device_suspend(&device_list[idx], pm_policy);
+	}
+}
+
+static void resume_devices(int pm_policy)
+{
+	int i;
+
+	for (i = device_count - 1; i >= 0; i--) {
+		if (!device_retval[i]) {
+			int idx = device_policy_list[i];
+
+			device_resume(&device_list[idx], pm_policy);
+		}
+	}
+}
+
+static void create_device_list(void)
+{
+	int count;
+	int i;
+
+	/*
+	 * Create a list of devices that will be suspended.
+	 * For the demo we will create a simple list containing
+	 * gpio devices.
+	 */
+	device_list_get(&device_list, &count);
+
+	for (i = 0; (i < count) && (device_count < DEVICE_POLICY_MAX); i++) {
+		if (!strcmp(device_list[i].config->name, CONFIG_GPIO_DW_0_NAME) ||
+				!strcmp(device_list[i].config->name,
+					CONFIG_GPIO_DW_1_NAME)) {
+			device_policy_list[device_count++] = i;
+		}
+	}
 }

@@ -271,16 +271,6 @@ static inline int gpio_qmsi_disable_callback(struct device *port,
 	return 0;
 }
 
-static inline int gpio_qmsi_suspend_port(struct device *port)
-{
-	return -ENODEV;
-}
-
-static inline int gpio_qmsi_resume_port(struct device *port)
-{
-	return -ENODEV;
-}
-
 static struct gpio_driver_api api_funcs = {
 	.config = gpio_qmsi_config,
 	.write = gpio_qmsi_write,
@@ -288,8 +278,6 @@ static struct gpio_driver_api api_funcs = {
 	.set_callback = gpio_qmsi_set_callback,
 	.enable_callback = gpio_qmsi_enable_callback,
 	.disable_callback = gpio_qmsi_disable_callback,
-	.suspend = gpio_qmsi_suspend_port,
-	.resume = gpio_qmsi_resume_port
 };
 
 int gpio_qmsi_init(struct device *port)

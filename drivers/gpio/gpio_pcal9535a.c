@@ -544,24 +544,6 @@ static int gpio_pcal9535a_disable_callback(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int gpio_pcal9535a_suspend_port(struct device *dev)
-{
-	if (!_has_i2c_master(dev)) {
-		return -EINVAL;
-	}
-
-	return -ENOTSUP;
-}
-
-static int gpio_pcal9535a_resume_port(struct device *dev)
-{
-	if (!_has_i2c_master(dev)) {
-		return -EINVAL;
-	}
-
-	return -ENOTSUP;
-}
-
 static struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {
 	.config = gpio_pcal9535a_config,
 	.write = gpio_pcal9535a_write,
@@ -569,8 +551,6 @@ static struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {
 	.set_callback = gpio_pcal9535a_set_callback,
 	.enable_callback = gpio_pcal9535a_enable_callback,
 	.disable_callback = gpio_pcal9535a_disable_callback,
-	.suspend = gpio_pcal9535a_suspend_port,
-	.resume = gpio_pcal9535a_resume_port,
 };
 
 /**

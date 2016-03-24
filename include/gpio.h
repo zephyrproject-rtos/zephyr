@@ -150,8 +150,6 @@ typedef int (*gpio_enable_callback_t)(struct device *port,
 typedef int (*gpio_disable_callback_t)(struct device *port,
 				       int access_op,
 				       uint32_t pin);
-typedef int (*gpio_suspend_port_t)(struct device *port);
-typedef int (*gpio_resume_port_t)(struct device *port);
 
 struct gpio_driver_api {
 	gpio_config_t config;
@@ -160,8 +158,6 @@ struct gpio_driver_api {
 	gpio_set_callback_t set_callback;
 	gpio_enable_callback_t enable_callback;
 	gpio_disable_callback_t disable_callback;
-	gpio_suspend_port_t suspend;
-	gpio_resume_port_t resume;
 };
 /**
  * @endcond
@@ -323,31 +319,6 @@ static inline int gpio_port_disable_callback(struct device *port)
 
 	api = (struct gpio_driver_api *) port->driver_api;
 	return api->disable_callback(port, GPIO_ACCESS_BY_PORT, 0);
-}
-
-/**
- * @brief Save the state of the device and make it go to the
- * low power state.
- * @param port Pointer to the device structure for the driver instance.
- */
-static inline int gpio_suspend(struct device *port)
-{
-	struct gpio_driver_api *api;
-
-	api = (struct gpio_driver_api *) port->driver_api;
-	return api->suspend(port);
-}
-
-/**
- * @brief Restore the state stored during suspend and resume operation.
- * @param port Pointer to the device structure for the driver instance.
- */
-static inline int gpio_resume(struct device *port)
-{
-	struct gpio_driver_api *api;
-
-	api = (struct gpio_driver_api *) port->driver_api;
-	return api->resume(port);
 }
 
 #ifdef __cplusplus

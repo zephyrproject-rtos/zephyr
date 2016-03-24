@@ -35,6 +35,10 @@ static struct device *config_levels[] = {
 	__device_init_end,
 };
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+struct device_pm_ops device_pm_ops_nop = {device_pm_nop, device_pm_nop};
+#endif
+
 /**
  * @brief Execute all the device initialization functions at a given level
  *
@@ -81,3 +85,17 @@ struct device *device_get_binding(char *name)
 
 	return NULL;
 }
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+int device_pm_nop(struct device *unused_device, int unused_policy)
+{
+	return 0;
+}
+
+void device_list_get(struct device **device_list, int *device_count)
+{
+
+	*device_list = __device_init_start;
+	*device_count = __device_init_end - __device_init_start;
+}
+#endif

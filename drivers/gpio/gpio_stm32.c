@@ -178,20 +178,6 @@ static int gpio_stm32_disable_callback(struct device *dev,
 	return 0;
 }
 
-static int gpio_stm32_suspend_port(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
-
-static int gpio_stm32_resume_port(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
-
 static struct gpio_driver_api gpio_stm32_driver = {
 	.config = gpio_stm32_config,
 	.write = gpio_stm32_write,
@@ -199,8 +185,6 @@ static struct gpio_driver_api gpio_stm32_driver = {
 	.set_callback = gpio_stm32_set_callback,
 	.enable_callback = gpio_stm32_enable_callback,
 	.disable_callback = gpio_stm32_disable_callback,
-	.suspend = gpio_stm32_suspend_port,
-	.resume = gpio_stm32_resume_port,
 
 };
 

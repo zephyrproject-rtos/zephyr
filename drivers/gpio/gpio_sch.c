@@ -316,16 +316,6 @@ static int gpio_sch_disable_callback(struct device *dev,
 	return 0;
 }
 
-static int gpio_sch_suspend(struct device *dev)
-{
-	return 0;
-}
-
-static int gpio_sch_resume(struct device *dev)
-{
-	return 0;
-}
-
 static struct gpio_driver_api gpio_sch_api = {
 	.config = gpio_sch_config,
 	.write = gpio_sch_write,
@@ -333,8 +323,6 @@ static struct gpio_driver_api gpio_sch_api = {
 	.set_callback = gpio_sch_set_callback,
 	.enable_callback = gpio_sch_enable_callback,
 	.disable_callback = gpio_sch_disable_callback,
-	.suspend = gpio_sch_suspend,
-	.resume = gpio_sch_resume
 };
 
 int gpio_sch_init(struct device *dev)

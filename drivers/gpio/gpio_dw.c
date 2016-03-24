@@ -34,6 +34,10 @@
 #include <drivers/ioapic.h>
 #endif
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#include <power.h>
+#endif
+
 /*
  * ARC architecture configure IP through IO auxiliary registers.
  * Other architectures as ARM and x86 configure IP through MMIO registers
@@ -286,19 +290,21 @@ static inline int gpio_dw_disable_callback(struct device *port, int access_op,
 	return 0;
 }
 
-static inline int gpio_dw_suspend_port(struct device *port)
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static inline int gpio_dw_suspend_port(struct device *port, int pm_policy)
 {
 	_gpio_dw_clock_off(port);
 
 	return 0;
 }
 
-static inline int gpio_dw_resume_port(struct device *port)
+static inline int gpio_dw_resume_port(struct device *port, int pm_policy)
 {
 	_gpio_dw_clock_on(port);
 
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_SOC_QUARK_SE
 static inline void gpio_dw_unmask_int(uint32_t mask_addr)
@@ -362,8 +368,6 @@ static struct gpio_driver_api api_funcs = {
 	.set_callback = gpio_dw_set_callback,
 	.enable_callback = gpio_dw_enable_callback,
 	.disable_callback = gpio_dw_disable_callback,
-	.suspend = gpio_dw_suspend_port,
-	.resume = gpio_dw_resume_port
 };
 
 #ifdef CONFIG_PCI
@@ -456,9 +460,20 @@ struct gpio_dw_config gpio_config_0 = {
 
 struct gpio_dw_runtime gpio_0_runtime;
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+struct device_pm_ops gpio_dev_pm_ops = {
+		.suspend = gpio_dw_suspend_port,
+		.resume = gpio_dw_resume_port
+};
+
+DEVICE_INIT_PM(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
+	       &gpio_dev_pm_ops, &gpio_0_runtime, &gpio_config_0,
+	       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
+#else
 DEVICE_INIT(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
 	    &gpio_0_runtime, &gpio_config_0,
 	    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
+#endif
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 #ifdef CONFIG_IOAPIC
@@ -531,9 +546,15 @@ struct gpio_dw_config gpio_dw_config_1 = {
 
 struct gpio_dw_runtime gpio_1_runtime;
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+DEVICE_INIT_PM(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
+	       &gpio_dev_pm_ops, &gpio_1_runtime, &gpio_dw_config_1,
+	       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
+#else
 DEVICE_INIT(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
 	    &gpio_1_runtime, &gpio_dw_config_1,
 	    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
+#endif
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 #ifdef CONFIG_IOAPIC
