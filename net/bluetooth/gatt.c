@@ -609,12 +609,6 @@ static uint8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-void bt_gatt_connected(struct bt_conn *conn)
-{
-	BT_DBG("conn %p", conn);
-	bt_gatt_foreach_attr(0x0001, 0xffff, connected_cb, conn);
-}
-
 static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct bt_conn *conn = user_data;
@@ -1688,7 +1682,35 @@ void bt_gatt_cancel(struct bt_conn *conn)
 	bt_att_cancel(conn);
 }
 
+static void add_subscriptions(struct bt_conn *conn)
+{
+	struct bt_gatt_subscribe_params *params, *prev;
+
+	/* Lookup existing subscriptions */
+	for (params = subscriptions, prev = NULL; params;
+	     prev = params, params = params->_next) {
+		if (bt_addr_le_cmp(&params->_peer, &conn->le.dst)) {
+			continue;
+		}
+
+		/* Force write to CCC to workaround devices that don't track
+		 * it properly.
+		 */
+		gatt_write_ccc(conn, params->ccc_handle, params->value,
+			       NULL, NULL);
+	}
+}
+
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+
+void bt_gatt_connected(struct bt_conn *conn)
+{
+	BT_DBG("conn %p", conn);
+	bt_gatt_foreach_attr(0x0001, 0xffff, connected_cb, conn);
+#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+	add_subscriptions(conn);
+#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+}
 
 void bt_gatt_disconnected(struct bt_conn *conn)
 {
