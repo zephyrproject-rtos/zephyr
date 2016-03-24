@@ -74,14 +74,14 @@ int uart_pipe_send(const uint8_t *data, int len)
 
 static void uart_pipe_setup(struct device *uart)
 {
+	uint8_t c;
+
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
 
 	/* Drain the fifo */
-	while (uart_irq_rx_ready(uart)) {
-		unsigned char c;
-
-		uart_fifo_read(uart, &c, 1);
+	while (uart_fifo_read(uart, &c, 1)) {
+		continue;
 	}
 
 	uart_irq_callback_set(uart, uart_pipe_isr);
