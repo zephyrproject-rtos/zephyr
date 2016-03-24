@@ -788,7 +788,7 @@ static void cmd_gatt_read(int argc, char *argv[])
 	}
 }
 
-void cmd_gatt_mread(int argc, char *argv[])
+static void cmd_gatt_mread(int argc, char *argv[])
 {
 	uint16_t h[8];
 	int i, err;
