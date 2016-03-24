@@ -422,6 +422,7 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr_chrc)
 		return NULL;
 	}
 
+	value = attr_value->user_data;
 	value->has_ccc = true;
 	ccc_added = true;
 
