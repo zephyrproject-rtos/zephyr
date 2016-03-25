@@ -22,6 +22,10 @@
 
 #include <net/buf.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum bt_buf_type {
 	BT_CMD,			/** HCI command */
 	BT_EVT,			/** HCI event */
@@ -34,10 +38,6 @@ struct net_buf *bt_buf_get_evt(void);
 
 /* Allocate a buffer for incoming ACL data */
 struct net_buf *bt_buf_get_acl(void);
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Receive data from the controller/HCI driver */
 void bt_recv(struct net_buf *buf);
