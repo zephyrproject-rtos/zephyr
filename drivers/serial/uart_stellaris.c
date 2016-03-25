@@ -644,8 +644,8 @@ static void irq_config_func_0(struct device *port);
 #endif
 
 static struct uart_device_config uart_stellaris_dev_cfg_0 = {
-	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_0_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_0_CLK_FREQ,
+	.base = (uint8_t *)UART_STELLARIS_PORT_0_BASE_ADDR,
+	.sys_clk_freq = UART_STELLARIS_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_0,
@@ -663,11 +663,11 @@ DEVICE_INIT(uart_stellaris0, CONFIG_UART_STELLARIS_PORT_0_NAME, &uart_stellaris_
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_STELLARIS_PORT_0_IRQ,
+	IRQ_CONNECT(UART_STELLARIS_PORT_0_IRQ,
 		    CONFIG_UART_STELLARIS_PORT_0_IRQ_PRI,
 		    uart_stellaris_isr, DEVICE_GET(uart_stellaris0),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_STELLARIS_PORT_0_IRQ);
+	irq_enable(UART_STELLARIS_PORT_0_IRQ);
 }
 #endif
 
@@ -680,8 +680,8 @@ static void irq_config_func_1(struct device *port);
 #endif
 
 static struct uart_device_config uart_stellaris_dev_cfg_1 = {
-	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_1_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_1_CLK_FREQ,
+	.base = (uint8_t *)UART_STELLARIS_PORT_1_BASE_ADDR,
+	.sys_clk_freq = UART_STELLARIS_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_1,
@@ -699,11 +699,11 @@ DEVICE_INIT(uart_stellaris1, CONFIG_UART_STELLARIS_PORT_1_NAME, &uart_stellaris_
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_STELLARIS_PORT_1_IRQ,
+	IRQ_CONNECT(UART_STELLARIS_PORT_1_IRQ,
 		    CONFIG_UART_STELLARIS_PORT_1_IRQ_PRI,
 		    uart_stellaris_isr, DEVICE_GET(uart_stellaris1),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_STELLARIS_PORT_1_IRQ);
+	irq_enable(UART_STELLARIS_PORT_1_IRQ);
 }
 #endif
 
@@ -716,8 +716,8 @@ static void irq_config_func_2(struct device *port);
 #endif
 
 static struct uart_device_config uart_stellaris_dev_cfg_2 = {
-	.base = (uint8_t *)CONFIG_UART_STELLARIS_PORT_2_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_STELLARIS_PORT_2_CLK_FREQ,
+	.base = (uint8_t *)UART_STELLARIS_PORT_2_BASE_ADDR,
+	.sys_clk_freq = UART_STELLARIS_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_2,
@@ -735,11 +735,11 @@ DEVICE_INIT(uart_stellaris2, CONFIG_UART_STELLARIS_PORT_2_NAME, &uart_stellaris_
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_STELLARIS_PORT_2_IRQ,
+	IRQ_CONNECT(UART_STELLARIS_PORT_2_IRQ,
 		    CONFIG_UART_STELLARIS_PORT_2_IRQ_PRI,
 		    uart_stellaris_isr, DEVICE_GET(uart_stellaris2),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_STELLARIS_PORT_2_IRQ);
+	irq_enable(UART_STELLARIS_PORT_2_IRQ);
 }
 #endif
 

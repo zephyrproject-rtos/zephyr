@@ -25,24 +25,6 @@ config UART_STELLARIS_PORT_0_NAME
 	  This is the device name for UART, and is included in the device
 	  struct.
 
-config UART_STELLARIS_PORT_0_BASE_ADDR
-	hex
-	prompt "Port 0 Base Address"
-	default 0x00000000
-	depends on UART_STELLARIS_PORT_0
-	help
-	  The base address of UART port.
-
-	  Leave this at 0x00000000 to skip initialization at boot.
-
-config UART_STELLARIS_PORT_0_IRQ
-	int "Port 0 Interrupt Vector"
-	default 0
-	depends on UART_STELLARIS_PORT_0
-	help
-	  The interrupt vector for UART port. This is used for interrupt driven
-	  transfers.
-
 config UART_STELLARIS_PORT_0_IRQ_PRI
 	int "Port 0 Interrupt Priority"
 	default 0
@@ -58,13 +40,6 @@ config UART_STELLARIS_PORT_0_BAUD_RATE
 	  The baud rate for UART port to be set to at boot.
 
 	  Leave at 0 to skip initialization.
-
-config UART_STELLARIS_PORT_0_CLK_FREQ
-	int "Port 0 Clock Frequency"
-	default 0
-	depends on UART_STELLARIS_PORT_0
-	help
-	  The clock frequency for UART port.
 
 # ---------- Port 1 ----------
 
@@ -84,24 +59,6 @@ config UART_STELLARIS_PORT_1_NAME
 	  This is the device name for UART, and is included in the device
 	  struct.
 
-config UART_STELLARIS_PORT_1_BASE_ADDR
-	hex
-	prompt "Port 1 Base Address"
-	default 0x00000000
-	depends on UART_STELLARIS_PORT_1
-	help
-	  The base address of UART port.
-
-	  Leave this at 0x00000000 to skip initialization at boot.
-
-config UART_STELLARIS_PORT_1_IRQ
-	int "Port 1 Interrupt Vector"
-	default 0
-	depends on UART_STELLARIS_PORT_1
-	help
-	  The interrupt vector for UART port. This is used for interrupt driven
-	  transfers.
-
 config UART_STELLARIS_PORT_1_IRQ_PRI
 	int "Port 1 Interrupt Priority"
 	default 0
@@ -117,13 +74,6 @@ config UART_STELLARIS_PORT_1_BAUD_RATE
 	  The baud rate for UART port to be set to at boot.
 
 	  Leave at 0 to skip initialization.
-
-config UART_STELLARIS_PORT_1_CLK_FREQ
-	int "Port 1 Clock Frequency"
-	default 0
-	depends on UART_STELLARIS_PORT_1
-	help
-	  The clock frequency for UART port.
 
 # ---------- Port 2 ----------
 
@@ -143,24 +93,6 @@ config UART_STELLARIS_PORT_2_NAME
 	  This is the device name for UART, and is included in the device
 	  struct.
 
-config UART_STELLARIS_PORT_2_BASE_ADDR
-	hex
-	prompt "Port 2 Base Address"
-	default 0x00000000
-	depends on UART_STELLARIS_PORT_2
-	help
-	  The base address of UART port.
-
-	  Leave this at 0x00000000 to skip initialization at boot.
-
-config UART_STELLARIS_PORT_2_IRQ
-	int "Port 2 Interrupt Vector"
-	default 0
-	depends on UART_STELLARIS_PORT_2
-	help
-	  The interrupt vector for UART port. This is used for interrupt driven
-	  transfers.
-
 config UART_STELLARIS_PORT_2_IRQ_PRI
 	int "Port 2 Interrupt Priority"
 	default 0
@@ -176,10 +108,3 @@ config UART_STELLARIS_PORT_2_BAUD_RATE
 	  The baud rate for UART port to be set to at boot.
 
 	  Leave at 0 to skip initialization.
-
-config UART_STELLARIS_PORT_2_CLK_FREQ
-	int "Port 2 Clock Frequency"
-	default 0
-	depends on UART_STELLARIS_PORT_2
-	help
-	  The clock frequency for UART port.
