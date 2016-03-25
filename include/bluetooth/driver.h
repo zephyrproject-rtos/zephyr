@@ -46,7 +46,7 @@ struct bt_driver {
 	/* Open the HCI transport */
 	int (*open)(void);
 
-	/* Send buffer command to controller */
+	/* Send HCI buffer to controller */
 	int (*send)(enum bt_buf_type type, struct net_buf *buf);
 };
 
