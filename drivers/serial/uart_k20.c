@@ -417,8 +417,8 @@ static void irq_config_func_0(struct device *port);
 #endif
 
 static struct uart_device_config uart_k20_dev_cfg_0 = {
-	.base = (uint8_t *)CONFIG_UART_K20_PORT_0_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_K20_PORT_0_CLK_FREQ,
+	.base = (uint8_t *)UART_K20_PORT_0_BASE_ADDR,
+	.sys_clk_freq = UART_K20_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_0,
@@ -436,11 +436,11 @@ DEVICE_INIT(uart_k20_0, CONFIG_UART_K20_PORT_0_NAME, &uart_k20_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_K20_PORT_0_IRQ,
+	IRQ_CONNECT(UART_K20_PORT_0_IRQ,
 		    CONFIG_UART_K20_PORT_0_IRQ_PRI,
 		    uart_k20_isr, DEVICE_GET(uart_k20_0),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_K20_PORT_0_IRQ);
+	irq_enable(UART_K20_PORT_0_IRQ);
 }
 #endif
 
@@ -453,8 +453,8 @@ static void irq_config_func_1(struct device *port);
 #endif
 
 static struct uart_device_config uart_k20_dev_cfg_1 = {
-	.base = (uint8_t *)CONFIG_UART_K20_PORT_1_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_K20_PORT_1_CLK_FREQ,
+	.base = (uint8_t *)UART_K20_PORT_1_BASE_ADDR,
+	.sys_clk_freq = UART_K20_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_1,
@@ -472,11 +472,11 @@ DEVICE_INIT(uart_k20_1, CONFIG_UART_K20_PORT_1_NAME, &uart_k20_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_K20_PORT_1_IRQ,
+	IRQ_CONNECT(UART_K20_PORT_1_IRQ,
 		    CONFIG_UART_K20_PORT_1_IRQ_PRI,
 		    uart_k20_isr, DEVICE_GET(uart_k20_1),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_K20_PORT_1_IRQ);
+	irq_enable(UART_K20_PORT_1_IRQ);
 }
 #endif
 
@@ -489,8 +489,8 @@ static void irq_config_func_2(struct device *port);
 #endif
 
 static struct uart_device_config uart_k20_dev_cfg_2 = {
-	.base = (uint8_t *)CONFIG_UART_K20_PORT_2_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_K20_PORT_2_CLK_FREQ,
+	.base = (uint8_t *)UART_K20_PORT_2_BASE_ADDR,
+	.sys_clk_freq = UART_K20_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_2,
@@ -508,11 +508,11 @@ DEVICE_INIT(uart_k20_2, CONFIG_UART_K20_PORT_2_NAME, &uart_k20_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_K20_PORT_2_IRQ,
+	IRQ_CONNECT(UART_K20_PORT_2_IRQ,
 		    CONFIG_UART_K20_PORT_2_IRQ_PRI,
 		    uart_k20_isr, DEVICE_GET(uart_k20_2),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_K20_PORT_2_IRQ);
+	irq_enable(UART_K20_PORT_2_IRQ);
 }
 #endif
 
@@ -525,8 +525,8 @@ static void irq_config_func_3(struct device *port);
 #endif
 
 static struct uart_device_config uart_k20_dev_cfg_3 = {
-	.base = (uint8_t *)CONFIG_UART_K20_PORT_3_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_K20_PORT_3_CLK_FREQ,
+	.base = (uint8_t *)UART_K20_PORT_3_BASE_ADDR,
+	.sys_clk_freq = UART_K20_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_3,
@@ -544,11 +544,11 @@ DEVICE_INIT(uart_k20_3, CONFIG_UART_K20_PORT_3_NAME, &uart_k20_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_K20_PORT_3_IRQ,
+	IRQ_CONNECT(UART_K20_PORT_3_IRQ,
 		    CONFIG_UART_K20_PORT_3_IRQ_PRI,
 		    uart_k20_isr, DEVICE_GET(uart_k20_3),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_K20_PORT_3_IRQ);
+	irq_enable(UART_K20_PORT_3_IRQ);
 }
 #endif
 
@@ -561,8 +561,8 @@ static void irq_config_func_4(struct device *port);
 #endif
 
 static struct uart_device_config uart_k20_dev_cfg_4 = {
-	.base = (uint8_t *)CONFIG_UART_K20_PORT_4_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_K20_PORT_4_CLK_FREQ,
+	.base = (uint8_t *)UART_K20_PORT_4_BASE_ADDR,
+	.sys_clk_freq = UART_K20_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_4,
@@ -580,11 +580,11 @@ DEVICE_INIT(uart_k20_4, CONFIG_UART_K20_PORT_4_NAME, &uart_k20_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_4(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_K20_PORT_4_IRQ,
+	IRQ_CONNECT(UART_K20_PORT_4_IRQ,
 		    CONFIG_UART_K20_PORT_4_IRQ_PRI,
 		    uart_k20_isr, DEVICE_GET(uart_k20_4),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_K20_PORT_4_IRQ);
+	irq_enable(UART_K20_PORT_4_IRQ);
 }
 #endif
 
