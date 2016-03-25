@@ -2,6 +2,7 @@
 
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,3 +30,12 @@ source "net/Kconfig"
 
 source "misc/Kconfig"
 
+#
+# The following are for Kconfig files for default values only.
+# These should be parsed at the end.
+#
+# Board defaults should be parsed before SoC defaults
+# because board usually overrides them.
+#
+source "boards/*/Kconfig.defconfig"
+source "arch/*/soc/*/Kconfig.defconfig"

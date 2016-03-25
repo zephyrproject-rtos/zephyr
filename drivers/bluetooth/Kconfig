@@ -84,20 +84,20 @@ config  BLUETOOTH_UART_ON_DEV_NAME
 # Needed headroom for outgoing buffers (to controller)
 config BLUETOOTH_HCI_SEND_RESERVE
 	int
-	default 0 if BLUETOOTH_H4
-	default 1 if BLUETOOTH_H5
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
+	default 0 if BLUETOOTH_H4
+	default 1 if BLUETOOTH_H5
 
 # Needed headroom for incoming buffers (from controller)
 config BLUETOOTH_HCI_RECV_RESERVE
 	int
-	default 0 if BLUETOOTH_H4
-	default 0 if BLUETOOTH_H5
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
+	default 0 if BLUETOOTH_H4
+	default 0 if BLUETOOTH_H5
 
 endif # BLUETOOTH_STACK_HCI
 

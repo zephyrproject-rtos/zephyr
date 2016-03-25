@@ -26,12 +26,14 @@ config SHARED_IRQ
 	def_bool y
 
 if PINMUX
+
 config PINMUX_BASE
 	default 0x00000000
 config PINMUX_NUM_PINS
         default 20
 config PINMUX_BASE
         default 0x00000000
+
 config PINMUX_GALILEO_EXP0_NAME
         default GPIO_PCAL9535A_0_DEV_NAME
 config PINMUX_GALILEO_EXP1_NAME
@@ -46,26 +48,39 @@ config PINMUX_GALILEO_GPIO_INTEL_CW_NAME
 	default GPIO_SCH_0_DEV_NAME
 config PINMUX_GALILEO_GPIO_INTEL_RW_NAME
 	default GPIO_SCH_1_DEV_NAME
-endif
+
+endif # PINMUX
 
 if ADC
+
 config ADC_TI_ADC108S102
 	def_bool y
+
+if ADC_TI_ADC108S102
+
 config ADC_TI_ADC108S102_SPI_PORT_NAME
 	default "SPI0"
 config ADC_TI_ADC108S102_SPI_CONFIGURATION
 	default 0x81
 config ADC_TI_ADC108S102_SPI_MAX_FREQ
 	default 0x20000000
-endif
+
+endif # ADC_TI_AC108S102
+
+endif # ADC
 
 if GPIO && I2C
 
 config GPIO_PCAL9535A
 	def_bool y
 
+if GPIO_PCAL9535A
+
 config GPIO_PCAL9535A_0
 	def_bool y
+
+if GPIO_PCAL9535A_0
+
 config GPIO_PCAL9535A_0_DEV_NAME
 	default "EXP0"
 config GPIO_PCAL9535A_0_I2C_ADDR
@@ -73,8 +88,13 @@ config GPIO_PCAL9535A_0_I2C_ADDR
 config GPIO_PCAL9535A_0_I2C_MASTER_DEV_NAME
 	default I2C_DW_0_NAME
 
+endif # GPIO_PCAL9535A_0
+
 config GPIO_PCAL9535A_1
 	def_bool y
+
+if GPIO_PCAL9535A_1
+
 config GPIO_PCAL9535A_1_DEV_NAME
 	default "EXP1"
 config GPIO_PCAL9535A_1_I2C_ADDR
@@ -82,20 +102,32 @@ config GPIO_PCAL9535A_1_I2C_ADDR
 config GPIO_PCAL9535A_1_I2C_MASTER_DEV_NAME
 	default I2C_DW_0_NAME
 
+endif # GPIO_PCAL9535A_1
+
 config GPIO_PCAL9535A_2
 	def_bool y
+
+if GPIO_PCAL9535A_2
+
 config GPIO_PCAL9535A_2_DEV_NAME
 	default "EXP2"
 config GPIO_PCAL9535A_2_I2C_ADDR
 	default 0x27
 config GPIO_PCAL9535A_2_I2C_MASTER_DEV_NAME
 	default I2C_DW_0_NAME
-endif
 
-if PWM
+endif # GPIO_PCAL9535A_2
+
+endif # GPIO_PCAL9535A
+
+endif # GPIO && I2C
+
+if PWM && I2C
 
 config PWM_PCA9685
 	def_bool y
+
+if PWM_PCA9685
 
 config PWM_PCA9685_0
 	def_bool y
@@ -109,8 +141,9 @@ config PWM_PCA9685_0_I2C_ADDR
 config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
 	default I2C_DW_0_NAME
 
-endif
-endif
+endif # PWM_PCA9685_0
+endif # PWM_PCA9685
+endif # PWM && I2C
 
 
 # TI ADC108S102 uses SPI bus, thus

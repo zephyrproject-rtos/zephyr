@@ -27,7 +27,7 @@ struct utsname {
  * return P_DEFAULT that are parsed later in Kconfig
  * files.
  */
-#define PREFER_LATER_DEFAULTS		0
+#define PREFER_LATER_DEFAULTS		1
 
 struct symbol symbol_yes = {
 	.name = "y",

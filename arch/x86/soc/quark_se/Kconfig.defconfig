@@ -1,0 +1,496 @@
+# Kconfig - Quark SE configuration options
+
+#
+# Copyright (c) 2015-2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_QUARK_SE
+
+config SOC
+        default quark_se
+
+config  PHYS_RAM_ADDR
+	default 0xA8006400
+
+config  PHYS_LOAD_ADDR
+	default 0x40030000 if XIP
+
+config RAM_SIZE
+        default 55
+
+config ROM_SIZE
+        default 144
+
+config	SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32000000
+
+config IOAPIC_NUM_RTES
+	default 64 if IOAPIC
+
+config LOAPIC_TIMER_IRQ
+	default 64 if LOAPIC_TIMER
+
+config TOOLCHAIN_VARIANT
+	default "iamcu"
+
+config PINMUX_BASE
+        default 0xb0800900 if PINMUX
+
+config AIO_DW_COMPARATOR_BASE_ADDR
+	default 0xb0800300 if AIO_COMPARATOR && AIO_DW_COMPARATOR
+
+if GPIO
+
+config GPIO_DW
+	def_bool y
+
+if GPIO_DW
+
+config GPIO_DW_BOTHEDGES_SUPPORT
+	def_bool y
+
+config GPIO_DW_CLOCK_GATE
+	def_bool n
+
+if GPIO_DW_CLOCK_GATE
+
+config GPIO_DW_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
+
+endif # GPIO_DW_CLOCK_GATE
+
+config GPIO_DW_0
+	def_bool y
+
+if GPIO_DW_0
+
+config GPIO_DW_0_BASE_ADDR
+	default 0xb0000C00
+config GPIO_DW_0_IRQ
+	default 8
+config GPIO_DW_0_PRI
+	default 2
+config GPIO_DW_0_BITS
+	default 32
+config GPIO_DW_0_CLOCK_GATE_SUBSYS
+	default 13
+	depends on GPIO_DW_CLOCK_GATE
+
+endif # GPIO_DW_0
+
+config GPIO_DW_1
+	def_bool y
+
+if GPIO_DW_1
+
+config GPIO_DW_1_BASE_ADDR
+	default 0xb0800b00
+config GPIO_DW_1_IRQ
+	default 31
+config GPIO_DW_1_PRI
+	default 2
+config GPIO_DW_1_BITS
+	default 6
+
+endif # GPIO_DW_1
+
+endif # GPIO_DW
+
+if QMSI_DRIVERS
+
+config GPIO_QMSI
+	def_bool n
+
+if GPIO_QMSI
+
+config GPIO_QMSI_0
+	def_bool n
+
+if GPIO_QMSI_0
+
+config GPIO_QMSI_0_IRQ
+	default 8
+config GPIO_QMSI_0_PRI
+	default 2
+
+endif # GPIO_QMSI_0
+
+config GPIO_QMSI_AON
+	def_bool n
+config GPIO_QMSI_AON_NAME
+	default "gpio_aon"
+config GPIO_QMSI_AON_IRQ
+	default 31
+config GPIO_QMSI_AON_PRI
+	default 2
+
+endif # GPIO_QMSI
+
+endif # QMSI_DRIVERS
+
+endif # GPIO
+
+if I2C
+
+config I2C_DW
+	def_bool y
+
+if I2C_DW
+
+config I2C_DW_0
+        def_bool y
+
+if I2C_DW_0
+
+config I2C_DW_0_BASE
+        default 0xb0002800
+config I2C_DW_0_NAME
+        default "I2C0"
+config I2C_DW_0_IRQ
+	default 0
+config I2C_DW_0_INT_PRIORITY
+	default 2
+
+endif # I2C_DW_0
+
+config I2C_DW_1
+        def_bool y
+
+if I2C_DW_1
+
+config I2C_DW_1_BASE
+        default 0xb0002c00
+config I2C_DW_1_NAME
+        default "I2C1"
+config I2C_DW_1_IRQ
+	default 1
+config I2C_DW_1_INT_PRIORITY
+	default 2
+
+endif # I2C_DW_1
+
+endif # I2C_DW
+
+if I2C_QMSI
+
+config I2C_QMSI_0
+	def_bool y
+
+if I2C_QMSI_0
+
+config I2C_QMSI_0_IRQ
+	default 0
+config I2C_QMSI_0_INT_PRIORITY
+	default 2
+
+endif # I2C_QMSI_0
+
+config I2C_QMSI_1
+	def_bool y
+
+if I2C_QMSI_1
+
+config I2C_QMSI_1_IRQ
+	default 1
+config I2C_QMSI_1_INT_PRIORITY
+	default 2
+
+endif # I2C_QMSI_1
+
+endif # I2C_QMSI
+
+endif # I2C
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_QUARK_SE
+	def_bool y
+
+if CLOCK_CONTROL_QUARK_SE
+
+config CLOCK_CONTROL_QUARK_SE_PERIPHERAL
+	def_bool y
+config CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
+	default "clk_peripheral"
+
+config  CLOCK_CONTROL_QUARK_SE_EXTERNAL
+       def_bool y
+config CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME
+	default "clk_external"
+
+config  CLOCK_CONTROL_QUARK_SE_SENSOR
+       def_bool y
+config CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
+	default "clk_sensor"
+
+endif # CLOCK_CONTROL_QUARK_SE
+
+endif # CLOCK_CONTROL
+
+if SPI
+
+config SPI_DW
+	def_bool y
+
+if SPI_DW
+
+config SPI_DW_CLOCK_GATE
+	def_bool n
+
+if SPI_DW_CLOCK_GATE
+
+config SPI_DW_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
+
+endif # SPI_DW_CLOCK_GATE
+
+config SPI_DW_PORT_0
+	def_bool y
+
+if SPI_DW_PORT_0
+
+config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
+	default 14
+	depends on SPI_DW_CLOCK_GATE
+config SPI_DW_PORT_0_REGS
+	default 0xb0001000
+config SPI_DW_PORT_0_IRQ
+	default 2
+config SPI_DW_PORT_0_PRI
+	default 2
+
+endif # SPI_DW_PORT_0
+
+config SPI_DW_PORT_1
+	def_bool y
+
+if SPI_DW_PORT_1
+
+config SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
+	default 15
+	depends on SPI_DW_CLOCK_GATE
+config SPI_DW_PORT_1_REGS
+	default 0xb0001400
+config SPI_DW_PORT_1_IRQ
+	default 3
+config SPI_DW_PORT_1_PRI
+	default 2
+
+endif # SPI_DW_PORT_1
+
+endif # SPI_DW
+
+config SPI_QMSI
+       def_bool n
+
+if SPI_QMSI
+
+config SPI_QMSI_PORT_0
+	def_bool y
+
+if SPI_QMSI_PORT_0
+
+config SPI_QMSI_PORT_0_IRQ
+	default 2
+config SPI_QMSI_PORT_0_PRI
+	default 2
+
+endif # SPI_QMSI_PORT_0
+
+config SPI_QMSI_PORT_1
+	def_bool y
+
+if SPI_QMSI_PORT_1
+
+config SPI_QMSI_PORT_1_IRQ
+	default 3
+config SPI_QMSI_PORT_1_PRI
+	default 2
+
+endif # SPI_QMSI_PORT_1
+
+endif # SPI_QMSI
+
+endif # SPI
+
+if WATCHDOG
+config WDT_DW
+	def_bool y
+
+if WDT_DW
+config WDT_DW_CLOCK_GATE
+	def_bool n
+config WDT_DW_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
+config WDT_DW_CLOCK_GATE_SUBSYS
+	default 10
+config WDT_DW_BASE_ADDR
+	default 0xB0000000
+config WDT_DW_IRQ
+	default 12
+config WDT_DW_IRQ_PRI
+	default 2
+endif # WDT_DW
+
+if WDT_QMSI
+config WDT_QMSI_IRQ
+	default 12
+config WDT_QMSI_IRQ_PRI
+	default 2
+endif # WDT_QMSI
+endif # WATCHDOG
+
+if RTC
+config RTC_IRQ
+	default 11
+config RTC_IRQ_PRI
+	default 2
+config RTC_DW
+	def_bool y
+
+if RTC_DW
+config RTC_DW_CLOCK_GATE
+	def_bool y
+config RTC_DW_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
+config RTC_DW_CLOCK_GATE_SUBSYS
+	default 11
+config RTC_DW_BASE_ADDR
+	default 0xB0000400
+endif # RTC_DW
+endif # RTC
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+
+config UART_CONSOLE_PRIORITY
+	default 60
+
+config IPM_CONSOLE_PRIORITY
+	default 60
+
+config GPIO_DW_INIT_PRIORITY
+	default 60
+
+config I2C_INIT_PRIORITY
+	default 60
+
+config SPI_DW_INIT_PRIORITY
+	default 70 # It might require GPIO to be ready first
+
+if UART_NS16550
+
+config UART_NS16550_PORT_0
+	def_bool y
+
+if UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_0_NAME
+	default "UART_0"
+config UART_NS16550_PORT_0_BASE_ADDR
+	default 0xB0002000
+config UART_NS16550_PORT_0_IRQ
+	default 5
+config UART_NS16550_PORT_0_IRQ_PRI
+	default 3
+config UART_NS16550_PORT_0_BAUD_RATE
+	default 115200
+config UART_NS16550_PORT_0_CLK_FREQ
+	default 32000000
+config UART_NS16550_PORT_0_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_1
+	def_bool y
+
+if UART_NS16550_PORT_1
+
+config UART_NS16550_PORT_1_NAME
+	default "UART_1"
+config UART_NS16550_PORT_1_BASE_ADDR
+	default 0xB0002400
+config UART_NS16550_PORT_1_IRQ
+	default 6
+config UART_NS16550_PORT_1_IRQ_PRI
+	default 3
+config UART_NS16550_PORT_1_BAUD_RATE
+	default 115200
+config UART_NS16550_PORT_1_CLK_FREQ
+	default 32000000
+config UART_NS16550_PORT_1_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_1
+
+endif # UART_NS16550
+
+if UART_QMSI
+
+config UART_QMSI_0
+	def_bool y
+
+if UART_QMSI_0
+
+config UART_QMSI_0_IRQ
+	default 5
+config UART_QMSI_0_IRQ_PRI
+	default 3
+
+endif # UART_QMSI_0
+
+config UART_QMSI_1
+	def_bool y
+
+if UART_QMSI_1
+
+config UART_QMSI_1_IRQ
+	default 6
+config UART_QMSI_1_IRQ_PRI
+	default 3
+
+endif # UART_QMSI_1
+
+endif # UART_QMSI
+
+if UART_CONSOLE
+
+config UART_CONSOLE_ON_DEV_NAME
+	default "UART_1"
+
+endif
+
+if BLUETOOTH_UART
+
+config BLUETOOTH_UART_ON_DEV_NAME
+	default "UART_1"
+
+endif
+
+if PWM_DW
+
+config PWM_DW_BASE_ADDR
+	default 0xB0000800
+
+config PWM_DW_NUM_PORTS
+	default 4
+
+endif # PWM_DW
+
+endif # SOC_QUARK_SE

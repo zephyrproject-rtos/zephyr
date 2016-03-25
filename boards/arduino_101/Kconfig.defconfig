@@ -25,20 +25,25 @@ if FLASH
 
 config SPI_FLASH_W25QXXDV
 	def_bool y
+
+if SPI_FLASH_W25QXXDV
+
 config SPI_FLASH_W25QXXDV_SPI_NAME
 	default SPI_DW_PORT_0_DRV_NAME
 config SPI_FLASH_W25QXXDV_SPI_SLAVE
 	default 1
 
-endif
+endif # SPI_FLASH_W25QXXDV
 
-if COUNTER
+endif # FLASH
+
+if COUNTER && AON_TIMER_QMSI
 
 config AON_TIMER_IRQ
 	default 28
 config AON_TIMER_IRQ_PRI
 	default 2
 
-endif
+endif # COUNTER && AON_TIMER_QMSI
 
 endif # BOARD_ARDUINO_101

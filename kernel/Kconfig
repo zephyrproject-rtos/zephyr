@@ -47,8 +47,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config  SYS_CLOCK_EXISTS
 	bool
 	# omit prompt to signify a "hidden" option
-	default n if (SYS_CLOCK_TICKS_PER_SEC = 0)
 	default y
+	default n if (SYS_CLOCK_TICKS_PER_SEC = 0)
 	help
 	This option specifies that the kernel lacks timer support.
 

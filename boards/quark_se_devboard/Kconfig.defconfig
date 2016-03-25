@@ -19,17 +19,29 @@ config TI_CC2520_SPI_SLAVE
 	default 1
 
 if SPI_DW
+
 config SPI_DW_CS_GPIO
 	def_bool y
+
+if SPI_DW_PORT_1 && SPI_DW_CS_GPIO
+
 config SPI_DW_PORT_1_CS_GPIO_PORT
 	default GPIO_DW_0_NAME
 config SPI_DW_PORT_1_CS_GPIO_PIN
 	default 11
+
+endif # SPI_DW_PORT_1 && SPI_DW_CS_GPIO
+
+if GPIO_DW
+
 config TI_CC2520_GPIO_CS_NAME
        default GPIO_DW_0_NAME
 config TI_CC2520_GPIO_AON_NAME
        default GPIO_DW_1_NAME
-endif
+
+endif # GPIO_DW
+
+endif # SPI_DW
 
 if SPI_QMSI
 config SPI_QMSI_CS_GPIO

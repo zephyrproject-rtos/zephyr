@@ -277,7 +277,7 @@ config IRQ_OFFLOAD
 config IRQ_OFFLOAD_VECTOR
 	int "IDT vector to use for IRQ offload"
 	default 63 if MVIC
-	default 32
+	default 32 if !MVIC
 	range 32 255
 	depends on IRQ_OFFLOAD
 	help

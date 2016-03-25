@@ -28,8 +28,8 @@ if GPIO_DW
 
 config GPIO_DW_IO_ACCESS
 	prompt "I/O register access"
-	default y if ARC
 	default n
+	default y if ARC
 	depends on GPIO_DW
 	bool
 	help

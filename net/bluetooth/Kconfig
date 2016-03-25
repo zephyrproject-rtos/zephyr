@@ -82,7 +82,7 @@ config  BLUETOOTH_MAX_CMD_LEN
 config  BLUETOOTH_HCI_EVT_COUNT
 	int "Number of HCI event buffers"
 	default 8 if BLUETOOTH_CONN
-	default 4
+	default 4 if !BLUETOOTH_CONN
 	range 2 64
 	help
 	  Number of buffers available for HCI events. This number should
@@ -152,7 +152,7 @@ config  BLUETOOTH_ATT_MTU
 	int "Attribute Protocol (ATT) channel MTU"
 	default 50 if BLUETOOTH_SMP # BLUETOOTH_L2CAP_IN_MTU is big enough
 				    # for two complete ACL packets
-	default 23
+	default 23 if !BLUETOOTH_SMP
 	range 23 BLUETOOTH_L2CAP_IN_MTU
 	help
 	  The MTU for the ATT channel. The minimum and default is 23,

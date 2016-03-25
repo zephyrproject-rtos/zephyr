@@ -74,7 +74,7 @@ config NUM_TIMER_PACKETS
 	int
 	prompt "Number of timer packets" if SYS_CLOCK_EXISTS
 	default 0 if !SYS_CLOCK_EXISTS
-	default 10
+	default 10 if SYS_CLOCK_EXISTS
 	depends on MICROKERNEL
 	help
 	This option specifies the number of timer packets to create. Each

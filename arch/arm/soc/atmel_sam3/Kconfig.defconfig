@@ -1,0 +1,116 @@
+# Kconfig - Atmel SAM3 family processor configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if SOC_ATMEL_SAM3
+
+config SOC
+	default atmel_sam3
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 3
+
+#
+# SAM3X8E has total 45 peripherals capable of
+# generating interrupts.
+#
+config NUM_IRQS
+	int
+	default 45
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 84000000
+
+#
+# SRAM address depends on the processor.
+#
+# SAM3X8E has two SRAM banks:
+#   64K @ 0x20000000
+#   32K @ 0x20080000
+# The first 64K is mirrored at 0x20070000
+# to provide one continuous 96K block.
+#
+config SRAM_SIZE
+	default 96 if SOC_ATMEL_SAM3X8E
+
+config SRAM_BASE_ADDRESS
+	default 0x20000000 if !SOC_ATMEL_SAM3X8E
+	default 0x20070000 if SOC_ATMEL_SAM3X8E
+
+#
+# Atmel SAM3 family has flash starting @ 0x00080000.
+#
+# SAM3X8E has 512K of flash.
+#
+config FLASH_SIZE
+	default 512 if SOC_ATMEL_SAM3X8E
+
+config FLASH_BASE_ADDRESS
+	default 0x00080000
+
+config KERNEL_INIT_PRIORITY_DEFAULT
+	default 40
+
+config KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+
+config UART_CONSOLE_PRIORITY
+	default 60
+
+if UART_ATMEL_SAM3
+
+config UART_ATMEL_SAM3_BAUD_RATE
+	default 115200
+
+config UART_ATMEL_SAM3_CLK_FREQ
+	default 84000000
+
+endif # UART_ATMEL_SAM3
+
+config UART_CONSOLE_ON_DEV_NAME
+	default "UART_0" if UART_CONSOLE
+
+if GPIO_ATMEL_SAM3
+
+config GPIO_ATMEL_SAM3_PORTA
+	default y
+
+config GPIO_ATMEL_SAM3_PORTB
+	default y
+
+config GPIO_ATMEL_SAM3_PORTC
+	default y
+
+config GPIO_ATMEL_SAM3_PORTD
+	default y
+
+endif # GPIO_ATMEL_SAM3
+
+if I2C_ATMEL_SAM3
+
+config I2C_ATMEL_SAM3_0
+	default y
+
+config I2C_ATMEL_SAM3_1
+	default y
+
+endif # I2C_ATMEL_SAM3
+
+endif # SOC_ATMEL_SAM3

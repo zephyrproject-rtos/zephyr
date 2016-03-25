@@ -5,7 +5,7 @@ if BOARD_QUARK_D2000_CRB
 config BOARD
 	default "quark_d2000_crb"
 
-if COUNTER
+if COUNTER && AON_TIMER_QMSI
 
 config AON_TIMER_IRQ
 	default 3

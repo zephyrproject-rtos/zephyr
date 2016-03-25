@@ -33,7 +33,11 @@
 #include <spi.h>
 #ifdef CONFIG_SPI_INTEL
 #include <spi/spi_intel.h>
+#if defined(CONFIG_SPI_INTEL_PORT_1)
 #define SPI_DRV_NAME CONFIG_SPI_INTEL_PORT_1_DRV_NAME
+#elif defined(CONFIG_SPI_INTEL_PORT_0)
+#define SPI_DRV_NAME CONFIG_SPI_INTEL_PORT_0_DRV_NAME
+#endif
 #define SPI_SLAVE 0
 #elif defined(CONFIG_SPI_DW)
 #define SPI_MAX_CLK_FREQ_250KHZ 128
