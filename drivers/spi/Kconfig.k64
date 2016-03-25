@@ -41,37 +41,6 @@ config SPI_K64_0_DEV_NAME
 	help
 	  Specify the device name.
 
-config SPI_K64_0_BASE_ADDR
-	hex "Freescale K64-based SPI Module 0 base address"
-	depends on SPI_K64_0
-	default 0x4002C000
-
-config SPI_K64_0_PCS_NUM
-	int "Freescale K64-based SPI Module 0 peripheral chip selects"
-	depends on SPI_K64_0
-	default 6
-	help
-	  Number of peripheral chip selects for K64 SPI Module 0
-
-config SPI_K64_0_CLK_GATE_REG_ADDR
-	hex "Freescale K64-based SPI Module 0 clock gate register address"
-	depends on SPI_K64_0
-	default 0x4004803C
-
-config SPI_K64_0_CLK_GATE_REG_BIT
-	int "Freescale K64-based SPI Module 0 clock gate register bit"
-	depends on SPI_K64_0
-	default 12
-	help
-	  Bit position enable bit in the clock gate register for K64 SPI Module 0
-
-config SPI_K64_0_IRQ
-	int "Freescale K64-based SPI Module 0 interrupt number"
-	depends on SPI_K64_0
-	default 26
-	help
-	  K64 SPI Module 0 IRQ number for the interrupt controller
-
 config SPI_K64_0_PRI
 	int "Freescale K64-based SPI Module 0 interrupt priority"
 	depends on SPI_K64_0
@@ -93,37 +62,6 @@ config SPI_K64_1_DEV_NAME
 	help
 	  Specify the device name.
 
-config SPI_K64_1_BASE_ADDR
-	hex "Freescale K64-based SPI Module 1 base address"
-	depends on SPI_K64_1
-	default 0x4002D000
-
-config SPI_K64_1_PCS_NUM
-	int "Freescale K64-based SPI Module 1 peripheral chip selects"
-	depends on SPI_K64_1
-	default 4
-	help
-	  Number of peripheral chip selects for K64 SPI Module 1
-
-config SPI_K64_1_CLK_GATE_REG_ADDR
-	hex "Freescale K64-based SPI Module 1 clock gate register address"
-	depends on SPI_K64_1
-	default 0x4004803C
-
-config SPI_K64_1_CLK_GATE_REG_BIT
-	int "Freescale K64-based SPI Module 0 clock gate register bit"
-	depends on SPI_K64_1
-	default 13
-	help
-	  Bit position enable bit in the clock gate register for K64 SPI Module 1
-
-config SPI_K64_1_IRQ
-	int "Freescale K64-based SPI Module 1 interrupt number"
-	depends on SPI_K64_1
-	default 27
-	help
-	  K64 SPI Module 1 IRQ number for the interrupt controller
-
 config SPI_K64_1_PRI
 	int "Freescale K64-based SPI Module 1 interrupt priority"
 	depends on SPI_K64_1
@@ -144,37 +82,6 @@ config SPI_K64_2_DEV_NAME
 	default "SPI_K64_2"
 	help
 	  Specify the device name.
-
-config SPI_K64_2_BASE_ADDR
-	hex "Freescale K64-based SPI Module 2 base address"
-	depends on SPI_K64_2
-	default 0x400AC000
-
-config SPI_K64_2_PCS_NUM
-	int "Freescale K64-based SPI Module 2 peripheral chip selects"
-	depends on SPI_K64_2
-	default 2
-	help
-	  Number of peripheral chip selects for K64 SPI Module 2
-
-config SPI_K64_2_CLK_GATE_REG_ADDR
-	hex "Freescale K64-based SPI Module 2 clock gate register address"
-	depends on SPI_K64_2
-	default 0x40048030
-
-config SPI_K64_2_CLK_GATE_REG_BIT
-	int "Freescale K64-based SPI Module 2 clock gate register bit"
-	depends on SPI_K64_2
-	default 12
-	help
-	  Bit position enable bit in the clock gate register for K64 SPI Module 2
-
-config SPI_K64_2_IRQ
-	int "Freescale K64-based SPI Module 2 interrupt number"
-	depends on SPI_K64_2
-	default 65
-	help
-	  K64 SPI Module 2 IRQ number for the interrupt controller
 
 config SPI_K64_2_PRI
 	int "Freescale K64-based SPI Module 2 interrupt priority"

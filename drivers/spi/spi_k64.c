@@ -1040,10 +1040,10 @@ void spi_config_0_irq(void);
 struct spi_k64_data spi_k64_data_port_0;
 
 struct spi_k64_config spi_k64_config_0 = {
-	.regs = CONFIG_SPI_K64_0_BASE_ADDR,
-	.clk_gate_reg = CONFIG_SPI_K64_0_CLK_GATE_REG_ADDR,
-	.clk_gate_bit = CONFIG_SPI_K64_0_CLK_GATE_REG_BIT,
-	.irq = CONFIG_SPI_K64_0_IRQ,
+	.regs = SPI_K64_0_BASE_ADDR,
+	.clk_gate_reg = SPI_K64_0_CLK_GATE_REG_ADDR,
+	.clk_gate_bit = SPI_K64_0_CLK_GATE_REG_BIT,
+	.irq = SPI_K64_0_IRQ,
 	.config_func = spi_config_0_irq
 };
 
@@ -1054,7 +1054,7 @@ DEVICE_INIT(spi_k64_port_0, CONFIG_SPI_K64_0_DEV_NAME, spi_k64_init,
 
 void spi_config_0_irq(void)
 {
-	IRQ_CONNECT(CONFIG_SPI_K64_0_IRQ, CONFIG_SPI_K64_0_PRI,
+	IRQ_CONNECT(SPI_K64_0_IRQ, CONFIG_SPI_K64_0_PRI,
 		    spi_k64_isr, DEVICE_GET(spi_k64_port_0), 0);
 }
 
@@ -1068,10 +1068,10 @@ void spi_config_1_irq(void);
 struct spi_k64_data spi_k64_data_port_1;
 
 struct spi_k64_config spi_k64_config_1 = {
-	.regs = CONFIG_SPI_K64_1_BASE_ADDR,
-	.clk_gate_reg = CONFIG_SPI_K64_1_CLK_GATE_REG_ADDR,
-	.clk_gate_bit = CONFIG_SPI_K64_1_CLK_GATE_REG_BIT,
-	.irq = CONFIG_SPI_K64_1_IRQ,
+	.regs = SPI_K64_1_BASE_ADDR,
+	.clk_gate_reg = SPI_K64_1_CLK_GATE_REG_ADDR,
+	.clk_gate_bit = SPI_K64_1_CLK_GATE_REG_BIT,
+	.irq = SPI_K64_1_IRQ,
 	.config_func = spi_config_1_irq
 };
 
@@ -1082,7 +1082,7 @@ DEVICE_INIT(spi_k64_port_1, CONFIG_SPI_K64_1_DEV_NAME, spi_k64_init,
 
 void spi_config_1_irq(void)
 {
-	IRQ_CONNECT(CONFIG_SPI_K64_1_IRQ, CONFIG_SPI_K64_1_PRI,
+	IRQ_CONNECT(SPI_K64_1_IRQ, CONFIG_SPI_K64_1_PRI,
 		    spi_k64_isr, DEVICE_GET(spi_k64_port_1), 0);
 }
 
@@ -1096,10 +1096,10 @@ void spi_config_2_irq(void);
 struct spi_k64_data spi_k64_data_port_2;
 
 struct spi_k64_config spi_k64_config_2 = {
-	.regs = CONFIG_SPI_K64_2_BASE_ADDR,
-	.clk_gate_reg = CONFIG_SPI_K64_2_CLK_GATE_REG_ADDR,
-	.clk_gate_bit = CONFIG_SPI_K64_2_CLK_GATE_REG_BIT,
-	.irq = CONFIG_SPI_K64_2_IRQ,
+	.regs = SPI_K64_2_BASE_ADDR,
+	.clk_gate_reg = SPI_K64_2_CLK_GATE_REG_ADDR,
+	.clk_gate_bit = SPI_K64_2_CLK_GATE_REG_BIT,
+	.irq = SPI_K64_2_IRQ,
 	.config_func = spi_config_2_irq
 };
 
@@ -1110,7 +1110,7 @@ DEVICE_INIT(spi_k64_port_2, CONFIG_SPI_K64_2_DEV_NAME, spi_k64_init,
 
 void spi_config_2_irq(void)
 {
-	IRQ_CONNECT(CONFIG_SPI_K64_2_IRQ, CONFIG_SPI_K64_2_PRI,
+	IRQ_CONNECT(SPI_K64_2_IRQ, CONFIG_SPI_K64_2_PRI,
 		    spi_k64_isr, DEVICE_GET(spi_k64_port_2), 0);
 }
 

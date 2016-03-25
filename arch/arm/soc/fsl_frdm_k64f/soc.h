@@ -213,6 +213,32 @@ extern "C" {
 #define PORT_K64_D_BASE_ADDR	0x4004C000
 #define PORT_K64_E_BASE_ADDR	0x4004D000
 
+/*
+ * SPI configuration settings
+ */
+#if defined(CONFIG_SPI_K64)
+
+#define SPI_K64_0_BASE_ADDR		0x4002C000
+#define SPI_K64_0_IRQ			IRQ_SPI0
+#define SPI_K64_0_PCS_NUM		6
+#define SPI_K64_0_CLK_GATE_REG_ADDR	0x4004803C
+#define SPI_K64_0_CLK_GATE_REG_BIT	12
+
+#define SPI_K64_1_BASE_ADDR		0x4002D000
+#define SPI_K64_1_IRQ			IRQ_SPI1
+#define SPI_K64_1_PCS_NUM		4
+#define SPI_K64_1_CLK_GATE_REG_ADDR	0x4004803C
+#define SPI_K64_1_CLK_GATE_REG_BIT	13
+
+#define SPI_K64_2_BASE_ADDR		0x400AC000
+#define SPI_K64_2_IRQ			IRQ_SPI2
+#define SPI_K64_2_PCS_NUM		2
+#define SPI_K64_2_CLK_GATE_REG_ADDR	0x40048030
+#define SPI_K64_2_CLK_GATE_REG_BIT	12
+
+#endif /* CONFIG_SPI_K64 */
+
+
 #endif /* !_ASMLANGUAGE */
 
 #ifdef __cplusplus
