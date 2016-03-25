@@ -10,6 +10,9 @@
 
 #include "lkc.h"
 
+/* Set to 1 to print out the defaults in menuconfig/xconfig */
+#define DEBUG_PRINT_DEFAULTS	0
+
 static const char nohelp_text[] = "There is no help available for this option.";
 
 struct menu rootmenu;
@@ -664,6 +667,19 @@ void get_symbol_str(struct gstr *r, struct symbol *sym,
 		expr_gstr_print(sym->rev_dep.expr, r);
 		str_append(r, "\n");
 	}
+
+#if DEBUG_PRINT_DEFAULTS
+	for_all_properties(sym, prop, P_DEFAULT) {
+		str_append(r, "  Defaults: ");
+		expr_gstr_print(prop->expr, r);
+		if (!expr_is_yes(prop->visible.expr)) {
+			str_append(r, " if ");
+			expr_gstr_print(prop->visible.expr, r);
+		}
+		str_append(r, "\n");
+	}
+#endif
+
 	str_append(r, "\n\n");
 }
 
