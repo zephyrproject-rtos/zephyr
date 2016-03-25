@@ -21,6 +21,7 @@
 #include <nanokernel.h>
 #include <device.h>
 #include <init.h>
+#include <soc.h>
 #include <sys_io.h>
 #include <pinmux.h>
 #include <pinmux/pinmux.h>
@@ -33,7 +34,7 @@
 #ifdef CONFIG_GPIO_K64_A
 static inline int config_port_a(mem_addr_t *addr)
 {
-	*addr = CONFIG_PORT_K64_A_BASE_ADDR;
+	*addr = PORT_K64_A_BASE_ADDR;
 	return 0;
 }
 #else
@@ -43,7 +44,7 @@ static inline int config_port_a(mem_addr_t *addr)
 #ifdef CONFIG_GPIO_K64_B
 static inline int config_port_b(mem_addr_t *addr)
 {
-	*addr = CONFIG_PORT_K64_B_BASE_ADDR;
+	*addr = PORT_K64_B_BASE_ADDR;
 	return 0;
 }
 #else
@@ -53,7 +54,7 @@ static inline int config_port_b(mem_addr_t *addr)
 #ifdef CONFIG_GPIO_K64_C
 static inline int config_port_c(mem_addr_t *addr)
 {
-	*addr = CONFIG_PORT_K64_C_BASE_ADDR;
+	*addr = PORT_K64_C_BASE_ADDR;
 	return 0;
 }
 #else
@@ -63,7 +64,7 @@ static inline int config_port_c(mem_addr_t *addr)
 #ifdef CONFIG_GPIO_K64_D
 static inline int config_port_d(mem_addr_t *addr)
 {
-	*addr = CONFIG_PORT_K64_D_BASE_ADDR;
+	*addr = PORT_K64_D_BASE_ADDR;
 	return 0;
 }
 #else
@@ -73,7 +74,7 @@ static inline int config_port_d(mem_addr_t *addr)
 #ifdef CONFIG_GPIO_K64_E
 static inline int config_port_e(mem_addr_t *addr)
 {
-	*addr = CONFIG_PORT_K64_E_BASE_ADDR;
+	*addr = PORT_K64_E_BASE_ADDR;
 	return 0;
 }
 #else

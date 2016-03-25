@@ -24,6 +24,7 @@
 #include <device.h>
 #include <init.h>
 #include <gpio.h>
+#include <soc.h>
 #include <sys_io.h>
 
 #include <pinmux/frdm_k64f/pinmux_k64.h>
@@ -296,8 +297,8 @@ int gpio_k64_init(struct device *dev)
 static int gpio_k64_A_init(struct device *dev);
 
 static struct gpio_k64_config gpio_k64_A_cfg = {
-	.gpio_base_addr = CONFIG_GPIO_K64_A_BASE_ADDR,
-	.port_base_addr = CONFIG_PORT_K64_A_BASE_ADDR,
+	.gpio_base_addr = GPIO_K64_A_BASE_ADDR,
+	.port_base_addr = PORT_K64_A_BASE_ADDR,
 };
 
 static struct gpio_k64_data gpio_data_A;
@@ -308,10 +309,10 @@ DEVICE_INIT(gpio_k64_A, CONFIG_GPIO_K64_A_DEV_NAME, gpio_k64_A_init,
 
 static int gpio_k64_A_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_K64_PORTA_IRQ, CONFIG_GPIO_K64_PORTA_PRI,
+	IRQ_CONNECT(GPIO_K64_A_IRQ, CONFIG_GPIO_K64_PORTA_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_A), 0);
 
-	irq_enable(CONFIG_GPIO_K64_PORTA_IRQ);
+	irq_enable(GPIO_K64_A_IRQ);
 
 	return gpio_k64_init(dev);
 }
@@ -324,8 +325,8 @@ static int gpio_k64_A_init(struct device *dev)
 static int gpio_k64_B_init(struct device *dev);
 
 static struct gpio_k64_config gpio_k64_B_cfg = {
-	.gpio_base_addr = CONFIG_GPIO_K64_B_BASE_ADDR,
-	.port_base_addr = CONFIG_PORT_K64_B_BASE_ADDR,
+	.gpio_base_addr = GPIO_K64_B_BASE_ADDR,
+	.port_base_addr = PORT_K64_B_BASE_ADDR,
 };
 
 static struct gpio_k64_data gpio_data_B;
@@ -336,10 +337,10 @@ DEVICE_INIT(gpio_k64_B, CONFIG_GPIO_K64_B_DEV_NAME, gpio_k64_B_init,
 
 static int gpio_k64_B_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_K64_PORTB_IRQ, CONFIG_GPIO_K64_PORTB_PRI,
+	IRQ_CONNECT(GPIO_K64_B_IRQ, CONFIG_GPIO_K64_PORTB_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_B), 0);
 
-	irq_enable(CONFIG_GPIO_K64_PORTB_IRQ);
+	irq_enable(GPIO_K64_B_IRQ);
 
 	return gpio_k64_init(dev);
 }
@@ -352,8 +353,8 @@ static int gpio_k64_B_init(struct device *dev)
 static int gpio_k64_C_init(struct device *dev);
 
 static struct gpio_k64_config gpio_k64_C_cfg = {
-	.gpio_base_addr = CONFIG_GPIO_K64_C_BASE_ADDR,
-	.port_base_addr = CONFIG_PORT_K64_C_BASE_ADDR,
+	.gpio_base_addr = GPIO_K64_C_BASE_ADDR,
+	.port_base_addr = PORT_K64_C_BASE_ADDR,
 };
 
 static struct gpio_k64_data gpio_data_C;
@@ -364,10 +365,10 @@ DEVICE_INIT(gpio_k64_C, CONFIG_GPIO_K64_C_DEV_NAME, gpio_k64_C_init,
 
 static int gpio_k64_C_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_K64_PORTC_IRQ, CONFIG_GPIO_K64_PORTC_PRI,
+	IRQ_CONNECT(GPIO_K64_C_IRQ, CONFIG_GPIO_K64_PORTC_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_C), 0);
 
-	irq_enable(CONFIG_GPIO_K64_PORTC_IRQ);
+	irq_enable(GPIO_K64_C_IRQ);
 
 	return gpio_k64_init(dev);
 }
@@ -380,8 +381,8 @@ static int gpio_k64_C_init(struct device *dev)
 static int gpio_k64_D_init(struct device *dev);
 
 static struct gpio_k64_config gpio_k64_D_cfg = {
-	.gpio_base_addr = CONFIG_GPIO_K64_D_BASE_ADDR,
-	.port_base_addr = CONFIG_PORT_K64_D_BASE_ADDR,
+	.gpio_base_addr = GPIO_K64_D_BASE_ADDR,
+	.port_base_addr = PORT_K64_D_BASE_ADDR,
 };
 
 static struct gpio_k64_data gpio_data_D;
@@ -392,10 +393,10 @@ DEVICE_INIT(gpio_k64_D, CONFIG_GPIO_K64_D_DEV_NAME, gpio_k64_D_init,
 
 static int gpio_k64_D_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_K64_PORTD_IRQ, CONFIG_GPIO_K64_PORTD_PRI,
+	IRQ_CONNECT(GPIO_K64_D_IRQ, CONFIG_GPIO_K64_PORTD_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_D), 0);
 
-	irq_enable(CONFIG_GPIO_K64_PORTD_IRQ);
+	irq_enable(GPIO_K64_D_IRQ);
 
 	return gpio_k64_init(dev);
 }
@@ -408,8 +409,8 @@ static int gpio_k64_D_init(struct device *dev)
 static int gpio_k64_E_init(struct device *dev);
 
 static struct gpio_k64_config gpio_k64_E_cfg = {
-	.gpio_base_addr = CONFIG_GPIO_K64_E_BASE_ADDR,
-	.port_base_addr = CONFIG_PORT_K64_E_BASE_ADDR,
+	.gpio_base_addr = GPIO_K64_E_BASE_ADDR,
+	.port_base_addr = PORT_K64_E_BASE_ADDR,
 };
 
 static struct gpio_k64_data gpio_data_E;
@@ -420,10 +421,10 @@ DEVICE_INIT(gpio_k64_E, CONFIG_GPIO_K64_E_DEV_NAME, gpio_k64_E_init,
 
 static int gpio_k64_E_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_K64_PORTE_IRQ, CONFIG_GPIO_K64_PORTE_PRI,
+	IRQ_CONNECT(GPIO_K64_E_IRQ, CONFIG_GPIO_K64_PORTE_PRI,
 		    gpio_k64_port_isr, DEVICE_GET(gpio_k64_E), 0);
 
-	irq_enable(CONFIG_GPIO_K64_PORTE_IRQ);
+	irq_enable(GPIO_K64_E_IRQ);
 
 	return gpio_k64_init(dev);
 }

@@ -134,56 +134,6 @@ config GPIO_K64_D
 config GPIO_K64_E
 	def_bool y
 
-if GPIO_K64_A
-
-config GPIO_K64_A_BASE_ADDR
-	default 0x400FF000
-
-config PORT_K64_A_BASE_ADDR
-	default 0x40049000
-
-endif # GPIO_K64_A
-
-if GPIO_K64_B
-
-config GPIO_K64_B_BASE_ADDR
-	default 0x400FF040
-
-config PORT_K64_B_BASE_ADDR
-	default 0x4004A000
-
-endif # GPIO_K64_B
-
-if GPIO_K64_C
-
-config GPIO_K64_C_BASE_ADDR
-	default 0x400FF080
-
-config PORT_K64_C_BASE_ADDR
-	default 0x4004B000
-
-endif # GPIO_K64_C
-
-if GPIO_K64_D
-
-config GPIO_K64_D_BASE_ADDR
-	default 0x400FF0C0
-
-config PORT_K64_D_BASE_ADDR
-	default 0x4004C000
-
-endif # GPIO_K64_D
-
-if GPIO_K64_E
-
-config GPIO_K64_E_BASE_ADDR
-	default 0x400FF100
-
-config PORT_K64_E_BASE_ADDR
-	default 0x4004D000
-
-endif # GPIO_K64_E
-
 endif # GPIO_K64
 
 endif # GPIO

@@ -45,21 +45,6 @@ config GPIO_K64_A_DEV_NAME
 	help
 	Specify the device name.
 
-config GPIO_K64_A_BASE_ADDR
-	hex # Freescale K64-based GPIO Port A base address
-	depends on GPIO_K64_A
-
-config PORT_K64_A_BASE_ADDR
-	hex # Freescale K64-based Port Control Port A base address
-	depends on GPIO_K64_A
-
-config GPIO_K64_PORTA_IRQ
-	int "Freescale K64-based Port A interrupt number"
-	depends on GPIO_K64_A
-	default 59
-	help
-	  K64 Port A IRQ number for the interrupt controller
-
 config GPIO_K64_PORTA_PRI
 	int "Freescale K64-based Port A interrupt priority"
 	depends on GPIO_K64_A
@@ -80,21 +65,6 @@ config GPIO_K64_B_DEV_NAME
 	default "GPIO_1"
 	help
 	Specify the device name.
-
-config GPIO_K64_B_BASE_ADDR
-	hex # Freescale K64-based GPIO Port B base address
-	depends on GPIO_K64_B
-
-config PORT_K64_B_BASE_ADDR
-	hex # Freescale K64-based Port Control Port B base address
-	depends on GPIO_K64_B
-
-config GPIO_K64_PORTB_IRQ
-	int "Freescale K64-based Port B interrupt number"
-	depends on GPIO_K64_B
-	default 60
-	help
-	K64 Port B IRQ number for the interrupt controller
 
 config GPIO_K64_PORTB_PRI
 	int "Freescale K64-based Port B interrupt priority"
@@ -117,21 +87,6 @@ config GPIO_K64_C_DEV_NAME
 	help
 	Specify the device name.
 
-config GPIO_K64_C_BASE_ADDR
-	hex # Freescale K64-based GPIO Port C base address
-	depends on GPIO_K64_C
-
-config PORT_K64_C_BASE_ADDR
-	hex # Freescale K64-based Port Control Port C base address
-	depends on GPIO_K64_C
-
-config GPIO_K64_PORTC_IRQ
-	int "Freescale K64-based Port C interrupt number"
-	depends on GPIO_K64_C
-	default 61
-	help
-	  K64 Port C IRQ number for the interrupt controller
-
 config GPIO_K64_PORTC_PRI
 	int "Freescale K64-based Port C interrupt priority"
 	depends on GPIO_K64_C
@@ -153,21 +108,6 @@ config GPIO_K64_D_DEV_NAME
 	help
 	Specify the device name.
 
-config GPIO_K64_D_BASE_ADDR
-	hex # Freescale K64-based GPIO Port D base address
-	depends on GPIO_K64_D
-
-config PORT_K64_D_BASE_ADDR
-	hex # Freescale K64-based Port Control Port D base address
-	depends on GPIO_K64_D
-
-config GPIO_K64_PORTD_IRQ
-	int "Freescale K64-based Port D interrupt number"
-	depends on GPIO_K64_D
-	default 62
-	help
-	K64 Port D IRQ number for the interrupt controller
-
 config GPIO_K64_PORTD_PRI
 	int "Freescale K64-based Port D interrupt priority"
 	depends on GPIO_K64_D
@@ -188,21 +128,6 @@ config GPIO_K64_E_DEV_NAME
 	default "GPIO_4"
 	help
 	Specify the device name.
-
-config GPIO_K64_E_BASE_ADDR
-	hex # Freescale K64-based GPIO Port E base address
-	depends on GPIO_K64_E
-
-config PORT_K64_E_BASE_ADDR
-	hex # Freescale K64-based Port Control Port E base address
-	depends on GPIO_K64_E
-
-config GPIO_K64_PORTE_IRQ
-	int "Freescale K64-based Port E interrupt number"
-	depends on GPIO_K64_E
-	default 63
-	help
-	K64 Port E IRQ number for the interrupt controller
 
 config GPIO_K64_PORTE_PRI
 	int "Freescale K64-based Port E interrupt priority"
