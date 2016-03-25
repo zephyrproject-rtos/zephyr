@@ -78,8 +78,6 @@ SECTION_FUNC(TEXT, _firq_enter)
 	/* save LP_START/LP_COUNT/LP_END variables */
 	mov_s r1, _nanokernel
 
-	/* cannot store lp_count directly to memory */
-	mov r2, lp_count
 	st lp_count, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_count_OFFSET]
 
 	lr r2, [_ARC_V2_LP_START]
