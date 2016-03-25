@@ -23,6 +23,12 @@ struct utsname {
 
 #include "lkc.h"
 
+/* When this is set to 1, sym_get_default_prop() will
+ * return P_DEFAULT that are parsed later in Kconfig
+ * files.
+ */
+#define PREFER_LATER_DEFAULTS		0
+
 struct symbol symbol_yes = {
 	.name = "y",
 	.curr = { "y", yes },
@@ -124,6 +130,28 @@ struct property *sym_get_env_prop(struct symbol *sym)
 	return NULL;
 }
 
+#if PREFER_LATER_DEFAULTS
+struct property *sym_get_default_prop(struct symbol *sym)
+{
+	struct property *prop;
+	struct property *ret_prop = NULL;
+
+	for_all_defaults(sym, prop) {
+		prop->visible.tri = expr_calc_value(prop->visible.expr);
+		if (prop->visible.tri != no) {
+			if (prop->type == P_DEFAULT) {
+				/* Prefer P_DEFAULT that are parsed
+				 * later in all Kconfig files.
+				 */
+				ret_prop = prop;
+				continue;
+			}
+			return prop;
+		}
+	}
+	return ret_prop;
+}
+#else
 struct property *sym_get_default_prop(struct symbol *sym)
 {
 	struct property *prop;
@@ -135,6 +163,7 @@ struct property *sym_get_default_prop(struct symbol *sym)
 	}
 	return NULL;
 }
+#endif
 
 static struct property *sym_get_range_prop(struct symbol *sym)
 {
