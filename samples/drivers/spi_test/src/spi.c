@@ -26,26 +26,21 @@
 #define PRINT printk
 #endif
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
-
 #include <string.h>
 #include <spi.h>
+#define SPI_DRV_NAME "SPI_0"
+
 #ifdef CONFIG_SPI_INTEL
 #include <spi/spi_intel.h>
 #if defined(CONFIG_SPI_INTEL_PORT_1)
-#define SPI_DRV_NAME CONFIG_SPI_INTEL_PORT_1_DRV_NAME
-#elif defined(CONFIG_SPI_INTEL_PORT_0)
-#define SPI_DRV_NAME CONFIG_SPI_INTEL_PORT_0_DRV_NAME
+#define SPI_DRV_NAME "SPI_1"
 #endif
 #define SPI_SLAVE 0
 #elif defined(CONFIG_SPI_DW)
 #define SPI_MAX_CLK_FREQ_250KHZ 128
-#define SPI_DRV_NAME CONFIG_SPI_DW_PORT_0_DRV_NAME
 #define SPI_SLAVE 2
 #elif defined(CONFIG_SPI_QMSI)
 #define SPI_MAX_CLK_FREQ_250KHZ 128
-#define SPI_DRV_NAME CONFIG_SPI_QMSI_PORT_0_DRV_NAME
 #define SPI_SLAVE 1
 #endif
 
