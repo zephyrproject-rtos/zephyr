@@ -11,6 +11,7 @@ UNKNOWN, BOOL, TRISTATE, STRING, HEX, INT = range(6)
 TYPENAME = {UNKNOWN: "unknown", BOOL: "bool", TRISTATE: "tristate",
             STRING: "string", HEX: "hex", INT: "int"}
 
+done = []
 
 def print_with_indent(s, indent):
     print((" " * indent) + s)
@@ -28,18 +29,20 @@ def print_items(items, outdir, indent):
             #print_with_indent("config {0}".format(item.get_name()), indent)
 
             var = "CONFIG_%s" %item.get_name()
-            f.write("     %s.rst\n" %var)
-            config = open("%s/%s.rst" % (outdir, var), "w")
-            config.write("\n.. _CONFIG_%s:\n" %item.get_name())
-            config.write("\n%s\n" %var)
-            config.write("%s\n\n" %(len("%s" %var) * '#' ))
-            if text:
-                config.write("\n%s\n\n" %text)
-            else:
-                config.write("\nThe configuration item %s:\n\n" %var)
-            config.write(item.rest())
+            if not var in done:
+                done.append(var)
+                f.write("     %s.rst\n" %var)
+                config = open("%s/%s.rst" % (outdir, var), "w")
+                config.write("\n.. _CONFIG_%s:\n" %item.get_name())
+                config.write("\n%s\n" %var)
+                config.write("%s\n\n" %(len("%s" %var) * '#' ))
+                if text:
+                    config.write("\n%s\n\n" %text)
+                else:
+                    config.write("\nThe configuration item %s:\n\n" %var)
+                config.write(item.rest())
 
-            config.close()
+                config.close()
         elif item.is_menu():
             #print_with_indent('menu "{0}"'.format(item.get_title()), indent)
             print_items(item.get_items(), outdir, indent + 2)
