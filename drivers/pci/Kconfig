@@ -17,19 +17,17 @@
 #
 
 
-menu "PCI Settings"
-	depends on X86
-config PCI
-	bool "Enable PCI"
-	default n
+menuconfig PCI
+	bool
+	prompt "PCI Settings"
 	depends on X86
 	help
 	This options enables support of PCI bus for device drivers.
 
+if PCI
 config PCI_ENUMERATION
 	bool
 	prompt "Enable PCI device enumeration"
-	depends on PCI
 	default n
 	help
 	This option enables the PCI enumeration for device drivers.
@@ -41,7 +39,6 @@ config PCI_ENUMERATION
 config PCI_LEGACY_BRIDGE
 	bool
 	prompt "PCI legacy bridge device support"
-	depends on PCI
 	default n
 	help
 	This option adds support for PCI legacy bridge device, that
@@ -71,9 +68,9 @@ config PCI_LEGACY_BRIDGE_DEVICE_ID
 config PCI_DEBUG
 	bool
 	prompt "Enable PCI debugging"
-	depends on PCI
 	default n
 	help
 	This options enables PCI debigging functions
 
-endmenu
+endif
+
