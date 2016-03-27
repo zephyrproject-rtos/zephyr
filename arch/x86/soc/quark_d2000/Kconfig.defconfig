@@ -52,6 +52,12 @@ config PHYS_RAM_ADDR
 config TOOLCHAIN_VARIANT
         default "iamcu"
 
+config QMSI
+	def_bool y
+
+config QMSI_BUILTIN
+	def_bool y
+
 if UART_NS16550
 
 config UART_NS16550_DLF

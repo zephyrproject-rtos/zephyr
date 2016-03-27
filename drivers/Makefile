@@ -1,5 +1,11 @@
 subdir-ccflags-y += -I$(srctree)/include/drivers
 
+subdir-ccflags-$(CONFIG_QMSI_DRIVERS) += -I$(CONFIG_QMSI_INSTALL_PATH)/include
+subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/drivers/qmsi/include
+subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/drivers/qmsi/drivers/include
+subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/drivers/qmsi/soc/$(SOC_NAME)/include/
+
+
 obj-y = console/
 obj-y += random/
 obj-y += serial/
@@ -25,3 +31,4 @@ obj-$(CONFIG_IPM) += ipm/
 obj-$(CONFIG_SENSOR) += sensor/
 obj-y += aio/
 obj-$(CONFIG_PINMUX) += pinmux/
+obj-$(CONFIG_QMSI_BUILTIN) += qmsi/

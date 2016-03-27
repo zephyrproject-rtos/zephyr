@@ -15,16 +15,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+config QMSI_BUILTIN
+	bool "Enable QMSI drivers through integrated sources"
+	default n
+	select QMSI
+	help
+	Link with local QMSI sources instead of external library.
 
 config QMSI_DRIVERS
-	depends on CPU_MINUTEIA
-	bool "Enable QMSI drivers"
+	bool "Enable QMSI drivers using external library"
 	default n
+	select QMSI
 	help
 	This option enables QMSI device drivers. These drivers are actually shim
 	drivers based on drivers provided by QMSI BSP. The BSP provides a static
 	library (libqmsi) which implements several drivers for peripherals from
 	Intel MCUs (e.g. Quark SE and Quark D2000).
+
+config QMSI
+	bool
+	default n
+	help
+	automatically set when either of QMSI_DRIVERS or QMSI_BUILTIN
+	is selected.
 
 config QMSI_INSTALL_PATH
 	depends on QMSI_DRIVERS

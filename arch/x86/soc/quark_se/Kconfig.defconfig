@@ -45,6 +45,12 @@ config LOAPIC_TIMER_IRQ
 config TOOLCHAIN_VARIANT
 	default "iamcu"
 
+config QMSI
+	def_bool y
+
+config QMSI_BUILTIN
+	def_bool y
+
 if GPIO
 
 config GPIO_DW

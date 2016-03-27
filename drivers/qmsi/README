@@ -1,0 +1,6 @@
+The sources in this directory are imported from QMSI project
+at https://github.com/01org/qmsi.
+
+The current version supported in Zephyr is QMSI 1.0.1. See
+   https://github.com/01org/qmsi/releases/tag/v1.0.1
+for more details.
