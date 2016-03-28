@@ -122,9 +122,9 @@
 #define INT_ENABLE_ARC					~(0x00000001 << 8)
 #define INT_ENABLE_ARC_BIT_POS				(8)
 
-#if defined(CONFIG_I2C)
-
-#if defined(CONFIG_I2C_QUARK_SE_SS_0)
+/*
+ * I2C
+ */
 #define I2C_SS_0_ERR_VECTOR				22
 #define I2C_SS_0_ERR_MASK				0x410
 #define I2C_SS_0_RX_VECTOR				23
@@ -133,9 +133,7 @@
 #define I2C_SS_0_TX_MASK				0x418
 #define I2C_SS_0_STOP_VECTOR				25
 #define I2C_SS_0_STOP_MASK				0x41C
-#endif
 
-#if defined(CONFIG_I2C_QUARK_SE_SS_1)
 #define I2C_SS_1_ERR_VECTOR				26
 #define I2C_SS_1_ERR_MASK				0x420
 #define I2C_SS_1_RX_VECTOR				27
@@ -144,21 +142,22 @@
 #define I2C_SS_1_TX_MASK				0x428
 #define I2C_SS_1_STOP_VECTOR				29
 #define I2C_SS_1_STOP_MASK				0x42C
-#endif
 
-#endif /* CONFIG_I2C */
-
-#if defined(CONFIG_GPIO_DW)
+/*
+ * GPIO
+ */
 #define GPIO_DW_PORT_0_INT_MASK				(SCSS_REGISTER_BASE + 0x408)
 #define GPIO_DW_PORT_1_INT_MASK				(SCSS_REGISTER_BASE + 0x40C)
-#endif /* CONFIG_GPIO_DW */
 
-#if defined(CONFIG_UART_NS16550)
+/*
+ * UART
+ */
 #define UART_NS16550_0_INT_MASK				0x460
 #define UART_NS16550_1_INT_MASK				0x464
-#endif /* CONFIG_UART_NS16550 */
 
-#if defined(CONFIG_SPI_DW)
+/*
+ * SPI
+ */
 #define SPI_DW_PORT_0_ERROR_INT_MASK			(SCSS_REGISTER_BASE + 0x430)
 #define SPI_DW_PORT_0_RX_INT_MASK			(SCSS_REGISTER_BASE + 0x434)
 #define SPI_DW_PORT_0_TX_INT_MASK			(SCSS_REGISTER_BASE + 0x438)
@@ -166,7 +165,6 @@
 #define SPI_DW_PORT_1_ERROR_INT_MASK			(SCSS_REGISTER_BASE + 0x43C)
 #define SPI_DW_PORT_1_RX_INT_MASK			(SCSS_REGISTER_BASE + 0x440)
 #define SPI_DW_PORT_1_TX_INT_MASK			(SCSS_REGISTER_BASE + 0x444)
-#endif
 
 #endif /* !_ASMLANGUAGE */
 
