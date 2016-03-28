@@ -649,7 +649,7 @@ int i2c_qse_ss_initialize(struct device *dev)
 void _i2c_qse_ss_config_irq_0(struct device *port);
 
 struct i2c_qse_ss_rom_config i2c_config_ss_0 = {
-	.base_address =  CONFIG_I2C_QUARK_SE_SS_0_BASE,
+	.base_address = I2C_QUARK_SE_SS_0_BASE_ADDR,
 
 	.config_func = _i2c_qse_ss_config_irq_0,
 };
@@ -710,7 +710,7 @@ void _i2c_qse_ss_config_irq_0(struct device *port)
 void _i2c_qse_ss_config_irq_1(struct device *port);
 
 struct i2c_qse_ss_rom_config i2c_config_ss_1 = {
-	.base_address =  CONFIG_I2C_QUARK_SE_SS_1_BASE,
+	.base_address = I2C_QUARK_SE_SS_1_BASE_ADDR,
 
 	.config_func = _i2c_qse_ss_config_irq_1,
 };

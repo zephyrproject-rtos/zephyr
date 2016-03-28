@@ -32,10 +32,6 @@ config I2C_QUARK_SE_SS_0
 	depends on I2C_QUARK_SE_SS
 	default n
 
-config I2C_QUARK_SE_SS_0_BASE
-	hex "Base address for Quark SE SS I2C Port 0"
-	depends on I2C_QUARK_SE_SS_0
-
 config I2C_QUARK_SE_SS_0_NAME
 	string "Select a name for finding the device"
 	depends on I2C_QUARK_SE_SS_0
@@ -56,10 +52,6 @@ config I2C_QUARK_SE_SS_1
 	bool "Enable Quark SE SS I2C Port 1"
 	depends on I2C_QUARK_SE_SS
 	default n
-
-config I2C_QUARK_SE_SS_1_BASE
-	hex "Base address for Quark SE SS I2C Port 1"
-	depends on I2C_QUARK_SE_SS_1
 
 config I2C_QUARK_SE_SS_1_NAME
 	string "Select a name for finding the device"
