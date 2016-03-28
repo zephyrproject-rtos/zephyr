@@ -43,7 +43,7 @@ config SPI_DW_CS_GPIO
 config SPI_DW_INIT_PRIORITY
 	int "Init priority"
 	depends on SPI_DW
-	default 60
+	default 70
 	help
 	  Device driver initialization priority.
 

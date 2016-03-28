@@ -138,16 +138,6 @@ endif # PWM_PCA9685_0
 endif # PWM_PCA9685
 endif # PWM && I2C
 
-
-# TI ADC108S102 uses SPI bus, thus
-# initialized after SPI driver
-config ADC_TI_ADC108S102_INIT_PRIORITY
-	default 80 if ADC_TI_ADC108S102
-
-# PCA9685 uses I2C, thus initialized after it
-config PWM_PCA9685_INIT_PRIORITY
-	default 70 if PWM_PCA9685
-
 # Pin multiplexer uses PCAL9535A, needs to be initialized after it
 config PINMUX_INIT_PRIORITY
 	default 80 if PINMUX

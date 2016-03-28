@@ -65,7 +65,7 @@ struct ipm_console_receiver_config_info quark_se_ipm_receiver_config = {
 struct ipm_console_receiver_runtime_data quark_se_ipm_receiver_driver_data;
 DEVICE_INIT(ipm_console0, "ipm_console0", ipm_console_receiver_init,
 				&quark_se_ipm_receiver_driver_data, &quark_se_ipm_receiver_config,
-				SECONDARY, CONFIG_IPM_CONSOLE_PRIORITY);
+				SECONDARY, CONFIG_IPM_CONSOLE_INIT_PRIORITY);
 
 #endif /* CONFIG_PRINTK && CONFIG_IPM_CONSOLE_RECEIVER */
 #endif /* CONFIG_IPM_QUARK_SE */

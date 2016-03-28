@@ -47,7 +47,7 @@ struct ipm_console_sender_config_info quark_se_ipm_sender_config = {
 };
 DEVICE_INIT(ipm_console, "ipm_console", ipm_console_sender_init,
 				NULL, &quark_se_ipm_sender_config,
-				SECONDARY, CONFIG_IPM_CONSOLE_PRIORITY);
+				SECONDARY, CONFIG_IPM_CONSOLE_INIT_PRIORITY);
 
 #endif /* CONFIG_IPM_CONSOLE_SENDER */
 #endif /* CONFIG_IPM_QUARK_SE */

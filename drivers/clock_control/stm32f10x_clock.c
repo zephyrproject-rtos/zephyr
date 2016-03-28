@@ -326,4 +326,4 @@ static struct stm32f10x_rcc_data stm32f10x_rcc_data = {
 DEVICE_INIT(rcc_stm32f10x, STM32_CLOCK_CONTROL_NAME,
 	    &stm32f10x_clock_control_init,
 	    &stm32f10x_rcc_data, NULL,
-	    PRIMARY, CONFIG_CLOCK_CONTROL_STM32F10X_DEVICE_PRIORITY);
+	    PRIMARY, CONFIG_CLOCK_CONTROL_STM32F10X_DEVICE_INIT_PRIORITY);

@@ -26,7 +26,7 @@ menuconfig CLOCK_CONTROL_STM32F10X
 	 Enable driver for Reset & Clock Control subsystem found
 	 in STM32F1 family of MCUs
 
-config CLOCK_CONTROL_STM32F10X_DEVICE_PRIORITY
+config CLOCK_CONTROL_STM32F10X_DEVICE_INIT_PRIORITY
 	int "Clock Control Device Priority"
 	default 1
 	depends on CLOCK_CONTROL_STM32F10X

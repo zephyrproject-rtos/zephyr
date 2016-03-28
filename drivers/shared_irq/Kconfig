@@ -37,7 +37,7 @@ config SHARED_IRQ_NUM_CLIENTS
 config SHARED_IRQ_INIT_PRIORITY
 	int
 	depends on SHARED_IRQ
-	default 50
+	default 45
 	prompt "Shared IRQ init priority"
 	help
 	 Shared IRQ are initialized on SECONDARY init level. They

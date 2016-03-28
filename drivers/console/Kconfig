@@ -73,7 +73,7 @@ config UART_CONSOLE_ON_DEV_NAME
 	This option specifies the name of UART device to be used for
 	UART console.
 
-config UART_CONSOLE_PRIORITY
+config UART_CONSOLE_INIT_PRIORITY
 	int
 	prompt "Init priority"
 	default 60
@@ -117,7 +117,7 @@ config IPM_CONSOLE_RECEIVER
 	help
 	Enable the receiving side of IPM console
 
-config IPM_CONSOLE_PRIORITY
+config IPM_CONSOLE_INIT_PRIORITY
 	int
 	prompt "IPM console init priority"
 	default 60
