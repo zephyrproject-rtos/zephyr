@@ -46,7 +46,7 @@ config I2C_ATMEL_SAM3_0_NAME
 
 	Default is "I2C0".
 
-config I2C_ATMEL_SAM3_0_INT_PRIORITY
+config I2C_ATMEL_SAM3_0_IRQ_PRI
 	int "IRQ Priority for Atmel SAM3 I2C Controller 0"
 	depends on I2C_ATMEL_SAM3_0
 	default 2
@@ -86,7 +86,7 @@ config I2C_ATMEL_SAM3_1_NAME
 
 	Default is "I2C1".
 
-config I2C_ATMEL_SAM3_1_INT_PRIORITY
+config I2C_ATMEL_SAM3_1_IRQ_PRI
 	int "IRQ Priority for Atmel SAM3 I2C Controller 1"
 	depends on I2C_ATMEL_SAM3_1
 	default 2
