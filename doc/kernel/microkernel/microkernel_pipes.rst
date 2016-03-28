@@ -310,11 +310,11 @@ APIs
 Pipe APIs provided by :file:`microkernel.h`
 ===========================================
 
-:c:func:`task_pipe_put()`
+:cpp:func:`task_pipe_put()`
    Write data to a pipe, with time limited waiting.
 
 :c:func:`task_pipe_block_put()`
    Write data to a pipe from a memory pool block.
 
-:c:func:`task_pipe_get()`
+:cpp:func:`task_pipe_get()`
    Read data from a pipe, or fails and continues if data isn't there.

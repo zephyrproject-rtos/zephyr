@@ -111,5 +111,5 @@ Task IRQ APIs provided by :file:`microkernel.h`
 :cpp:func:`task_irq_ack()`
    Acknowledge an interrupt and re-enable the interrupt.
 
-:c:func:`task_irq_wait()`
+:cpp:func:`task_irq_wait()`
    Wait for an interrupt to occur within a specified time period.

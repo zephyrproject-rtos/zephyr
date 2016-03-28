@@ -177,11 +177,11 @@ APIs
 FIFO APIs provided by :file:`microkernel.h`
 ===========================================
 
-:c:func:`task_fifo_put()`
+:cpp:func:`task_fifo_put()`
    Write item to a FIFO, or wait for a specified time period if the FIFO is
    full.
 
-:c:func:`task_fifo_get()`
+:cpp:func:`task_fifo_get()`
    Read item from a FIFO, or wait for a specified time period if the FIFO is
    empty.
 

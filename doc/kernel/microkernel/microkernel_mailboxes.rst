@@ -628,17 +628,17 @@ APIs
 
 The following APIs for mailbox operations are provided by the kernel:
 
-:c:func:`task_mbox_put()`
+:cpp:func:`task_mbox_put()`
    Send synchronous message to a receiving task, with time limited waiting.
 
 :c:func:`task_mbox_block_put()`
    Send asynchronous message to a receiving task, or to a mailbox queue.
 
-:c:func:`task_mbox_get()`
+:cpp:func:`task_mbox_get()`
    Get message from a mailbox, with time limited waiting.
 
 :c:func:`task_mbox_data_get()`
    Retrieve message data into a buffer.
 
-:c:func:`task_mbox_data_block_get()`
+:cpp:func:`task_mbox_data_block_get()`
    Retrieve message data into a block, with time limited waiting.
