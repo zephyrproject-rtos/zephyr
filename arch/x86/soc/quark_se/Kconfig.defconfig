@@ -454,4 +454,13 @@ config PWM_DW_NUM_PORTS
 
 endif # PWM_DW
 
+if AON_TIMER_QMSI
+
+config AON_TIMER_IRQ
+	default 28
+config AON_TIMER_IRQ_PRI
+	default 2
+
+endif # AON_TIMER_QMSI
+
 endif # SOC_QUARK_SE

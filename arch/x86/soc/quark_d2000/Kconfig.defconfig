@@ -221,4 +221,11 @@ config SPI_QMSI_PORT_0_PRI
 	default 0
 endif # SPI_QMSI
 
+if AON_TIMER_QMSI
+config AON_TIMER_IRQ
+	default 3
+config AON_TIMER_IRQ_PRI
+	default 0
+endif # AON_TIMER_QMSI
+
 endif # SOC_QUARK_D2000
