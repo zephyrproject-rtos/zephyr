@@ -122,7 +122,7 @@ config I2C_DW_0_IRQ
 	int "Controller interrupt"
 	depends on I2C_DW_0 && I2C_DW_0_IRQ_DIRECT
 
-config I2C_DW_0_INT_PRIORITY
+config I2C_DW_0_IRQ_PRI
         int "Controller interrupt priority"
         depends on I2C_DW_0 && I2C_DW_0_IRQ_DIRECT
         help
@@ -173,7 +173,7 @@ config I2C_DW_1_IRQ
 	int "Controller interrupt"
 	depends on I2C_DW_1
 
-config I2C_DW_1_INT_PRIORITY
+config I2C_DW_1_IRQ_PRI
         int "Controller interrupt priority"
         depends on I2C_DW_1
         help

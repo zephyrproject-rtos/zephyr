@@ -101,7 +101,7 @@ config I2C_DW_0_BASE
 	default 0x90007000
 config I2C_DW_0_IRQ
 	default 18
-config I2C_DW_0_INT_PRIORITY
+config I2C_DW_0_IRQ_PRI
 	default 2
 config I2C_DW_0_BUS
 	default 0

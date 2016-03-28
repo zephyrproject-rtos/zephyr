@@ -784,7 +784,7 @@ void i2c_config_0(struct device *port)
 
 #if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONNECT(CONFIG_I2C_DW_0_IRQ, CONFIG_I2C_DW_0_INT_PRIORITY,
+	IRQ_CONNECT(CONFIG_I2C_DW_0_IRQ, CONFIG_I2C_DW_0_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_0), I2C_DW_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
@@ -833,7 +833,7 @@ void i2c_config_1(struct device *port)
 	struct device *shared_irq_dev;
 
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONNECT(CONFIG_I2C_DW_1_IRQ, CONFIG_I2C_DW_1_INT_PRIORITY,
+	IRQ_CONNECT(CONFIG_I2C_DW_1_IRQ, CONFIG_I2C_DW_1_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_1), I2C_DW_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 }

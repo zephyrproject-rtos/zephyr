@@ -199,7 +199,7 @@ config I2C_DW_0_NAME
 config I2C_DW_0_IRQ
         default 4
 
-config I2C_DW_0_INT_PRIORITY
+config I2C_DW_0_IRQ_PRI
         default 0
 
 config I2C_DW_0_DEFAULT_CFG
