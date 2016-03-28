@@ -36,24 +36,32 @@ for native Windows applications. The Zephyr build system will execute on top of
 this tool set.
 
 To install :program:`MinGW`, visit the site `MinGW Home`_ and install the
-following packages:
+following packages with their installler `mingw-get-setup.exe`:
 
 * mingw-developer-toolkit
 * mingw32-base
 * msys-base
 * msys-binutils
+* msys-console
 * msys-w32api
 
-In the :program:`MSYS console` enable MinGW tools in MSYS. Edit the
-file :file:`/etc/fstab` and add the following lines:
+Launch the `MSYS console`. The installer does not create shortcuts for you,
+but the script to launch it is in :file:`C:\MinGW\msys\1.0\msys.bat.`.
+We need the following line in :file:`/etc/fstab`:
 
 .. code-block:: console
 
    #Win32_Path     Mount_Point
    c:/mingw             /mingw
 
-Alternatively, you can copy the file :file:`fstab.sample` as :file:`fstab`
-and confirm that the these lines are in the new :file:`fstab` file.
+The easiest way to do this is just copy the file :file:`fstab.sample` as
+:file:`fstab` and confirm that the these lines are in the new
+:file:`fstab` file.
+
+.. code-block:: console
+
+   $ cp /etc/fstab.sample /etc/fstab
+   $ cat /etc/fstab
 
 Configure Python's folder location in the environmental variable :envvar:`PATH`.
 
