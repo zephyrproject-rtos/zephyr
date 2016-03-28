@@ -357,5 +357,4 @@ void _Fault(const NANO_ESF *esf)
 void _FaultInit(void)
 {
 	_ScbDivByZeroFaultEnable();
-	_ScbUnalignedFaultEnable();
 }
