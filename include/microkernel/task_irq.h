@@ -53,7 +53,7 @@ extern "C" {
  * @return assigned interrupt vector if successful, INVALID_VECTOR if not
  */
 extern uint32_t task_irq_alloc(kirq_t irq_obj, uint32_t irq, uint32_t priority,
-			       uint32_t flags);
+			       uint32_t flags) __attribute__((deprecated));
 
 /**
  *
@@ -65,7 +65,7 @@ extern uint32_t task_irq_alloc(kirq_t irq_obj, uint32_t irq, uint32_t priority,
  *
  * @return N/A
  */
-extern void task_irq_ack(kirq_t irq_obj);
+extern void task_irq_ack(kirq_t irq_obj) __attribute__((deprecated));
 
 /**
  * @brief Wait for task IRQ to signal an interrupt.
@@ -85,7 +85,8 @@ extern void task_irq_ack(kirq_t irq_obj);
  * @a timeout = TICKS_NONE.
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-extern int task_irq_wait(kirq_t irq_obj, int32_t timeout);
+extern int task_irq_wait(kirq_t irq_obj, int32_t timeout)
+	__attribute__((deprecated));
 
 /**
  * @}

@@ -16,4 +16,3 @@ nanokernel applications.
    microkernel_memory
    microkernel_synchronization
    microkernel_data
-   microkernel_task_irqs.rst
