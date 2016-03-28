@@ -25,12 +25,7 @@
 volatile int i = 0;
 #endif
 
-#if defined(__GNUC__)
-#include <test_asm_inline_gcc.h>
-#else
-#include <test_asm_inline_other.h>
-#endif /* __GNUC__ */
-
+#define IRQ_LINE          10
 #define IRQ_PRIORITY      3
 #define TEST_SOFT_INT	  64
 #define TEST_IRQ_OFFLOAD_VECTOR	32
@@ -85,39 +80,10 @@ volatile pfunc func_array[] = {
 
 };
 
-#ifdef CONFIG_STATIC_ISR
-/* ISR stub data structure */
-static void isrDummyIntStub(void *);
-NANO_CPU_INT_REGISTER(isrDummyIntStub, TEST_SOFT_INT, 0, TEST_IRQ_OFFLOAD_VECTOR, 0);
-#endif
-
 void dummyIsr(void *unused)
 {
 	ARG_UNUSED(unused);
 }
-
-#ifdef CONFIG_STATIC_ISR
-/**
- *
- * @brief Static interrupt stub that invokes dummy ISR
- *
- * NOTE: This is typically coded in assembly language, rather than C,
- * to avoid the preamble code the compiler automatically generates. However,
- * the unwanted preamble has an insignificant impact on total footprint.
- *
- * @return N/A
- */
-static void isrDummyIntStub(void *unused)
-{
-	ARG_UNUSED(unused);
-
-	isr_dummy();
-
-	CODE_UNREACHABLE;
-}
-
-#endif
-
 
 #ifdef CONFIG_OBJECTS_FIBER
 
@@ -145,9 +111,13 @@ void main(void)
 	printk("Using printk\n");
 #endif
 
+#if CONFIG_STATIC_ISR
+	IRQ_CONNECT(IRQ_LINE, IRQ_PRIORITY, dummyIsr, NULL, 0);
+#endif
+
 #ifdef CONFIG_DYNAMIC_ISR
 	/* dynamically link in dummy ISR */
-	irq_connect_dynamic(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
+	irq_connect_dynamic(IRQ_LINE, IRQ_PRIORITY, dummyIsr,
 		    (void *) 0, 0);
 #endif
 

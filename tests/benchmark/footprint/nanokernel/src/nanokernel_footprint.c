@@ -26,14 +26,7 @@ volatile int i = 0;		/* counter used by background task */
 #include <misc/printk.h>
 #include <stdio.h>
 
-#ifdef TEST_reg
-#if defined(__GNUC__)
-#include <test_asm_inline_gcc.h>
-#else
-#include <test_asm_inline_other.h>
-#endif /* __GNUC__ */
-#endif /* TEST_reg */
-
+#define IRQ_LINE          10  /* just some random value w/o driver conflicts */
 #define IRQ_PRIORITY      3
 #define TEST_SOFT_INT	  64
 
@@ -50,14 +43,6 @@ volatile int i = 0;		/* counter used by background task */
 #endif /* TEST_max */
 
 typedef void* (*pfunc) (void*);
-
-/* variables */
-
-/* ISR stub data structure */
-#ifndef TEST_max
-static void isrDummyIntStub(void *);
-NANO_CPU_INT_REGISTER(isrDummyIntStub, -1, -1, TEST_SOFT_INT, 0);
-#endif /* TEST_max */
 
 /* stack used by fiber */
 static char __stack pStack[FIBER_STACK_SIZE];
@@ -100,28 +85,6 @@ void dummyIsr(void *unused)
 	ARG_UNUSED(unused);
 }
 
-#ifdef TEST_reg
-/**
- *
- * @brief Static interrupt stub that invokes dummy ISR
- *
- * NOTE: This is typically coded in assembly language, rather than C,
- * to avoid the preamble code the compiler automatically generates. However,
- * the unwanted preamble has an insignificant impact on total footprint.
- *
- * @return N/A
- */
-
-static void isrDummyIntStub(void *unused)
-{
-	ARG_UNUSED(unused);
-
-	isr_dummy();
-
-	CODE_UNREACHABLE;
-}
-#endif /* TEST_reg */
-
 /**
  *
  * @brief Trivial fiber
@@ -159,9 +122,12 @@ void main(void)
 {
 #ifdef TEST_max
 	/* dynamically link in dummy ISR */
-	irq_connect_dynamic(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
+	irq_connect_dynamic(IRQ_LINE, IRQ_PRIORITY, dummyIsr,
 		    (void *) 0, 0);
 #endif /* TEST_max */
+#ifdef TEST_reg
+	IRQ_CONNECT(IRQ_LINE, IRQ_PRIORITY, dummyIsr, NULL, 0);
+#endif
 #ifndef TEST_min
 	/* start a trivial fiber */
 	task_fiber_start(pStack, FIBER_STACK_SIZE, fiberEntry, (int) MESSAGE,

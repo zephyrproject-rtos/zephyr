@@ -28,14 +28,7 @@
 #include <misc/printk.h>
 #include <stdio.h>
 
-#ifdef TEST_reg
-#if defined(__GNUC__)
-#include <test_asm_inline_gcc.h>
-#else
-#include <test_asm_inline_other.h>
-#endif /* __GNUC__ */
-#endif /* TEST_reg */
-
+#define IRQ_LINE          10  /* just some random value w/o driver conflicts */
 #define IRQ_PRIORITY      3
 #define TEST_SOFT_INT	  64
 
@@ -50,12 +43,6 @@ typedef void* (*pfunc) (void*);
 /* variables */
 
 volatile int i = 0;		/* counter used by foreground task */
-
-/* ISR stub data structure */
-#ifndef TEST_max
-static void isrDummyIntStub(void *);
-NANO_CPU_INT_REGISTER(isrDummyIntStub, -1, -1, TEST_SOFT_INT, 0);
-#endif /* TEST_max */
 
 /* pointer array ensures specified functions are linked into the image */
 static pfunc func_array[] = {
@@ -123,27 +110,6 @@ void dummyIsr(void *unused)
 	ARG_UNUSED(unused);
 }
 
-#ifdef TEST_reg
-/**
- *
- * @brief Static interrupt stub that invokes dummy ISR
- *
- * NOTE: This is typically coded in assembly language, rather than C,
- * to avoid the preamble code the compiler automatically generates. However,
- * the unwanted preamble has an insignificant impact on total footprint.
- *
- * @return N/A
- */
-static void isrDummyIntStub(void *unused)
-{
-	ARG_UNUSED(unused);
-
-	isr_dummy();
-
-	CODE_UNREACHABLE;
-}
-#endif /* TEST_reg */
-
 /**
  *
  * @brief Entry function for foreground task
@@ -157,9 +123,11 @@ void fgTaskEntry(void)
 {
 #ifdef TEST_max
 	/* dynamically link in dummy ISR */
-	irq_connect_dynamic(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr, (void *) 0, 0);
+	irq_connect_dynamic(IRQ_LINE, IRQ_PRIORITY, dummyIsr, (void *) 0, 0);
 #endif /* TEST_max */
-
+#ifdef TEST_reg
+	IRQ_CONNECT(IRQ_LINE, IRQ_PRIORITY, dummyIsr, NULL, 0);
+#endif
 	/* note: referencing "func_array" ensures it isn't optimized out */
 #ifdef TEST_max
 	printf((char *)MESSAGE, func_array);
