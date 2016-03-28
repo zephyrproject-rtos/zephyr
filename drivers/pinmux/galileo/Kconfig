@@ -1,0 +1,70 @@
+# Kconfig - Galileo Pinmux configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+comment "Galileo Pinmux Options"
+
+config PINMUX_GALILEO_EXP0_NAME
+        string "Name of the GPIO expander 0"
+        depends on PINMUX && BOARD_GALILEO
+        default "EXP0"
+        help
+        The name of the GPIO expander labelled as EXP0 in the schematic.
+
+config PINMUX_GALILEO_EXP1_NAME
+        string "Name of the GPIO expander 1"
+        depends on PINMUX && BOARD_GALILEO
+        default "EXP1"
+        help
+        The name of the GPIO expander labelled as EXP1 in the schematic.
+
+config PINMUX_GALILEO_EXP2_NAME
+        string "Name of the GPIO expander 2"
+        depends on PINMUX && BOARD_GALILEO
+        default "EXP2"
+        help
+        The name of the GPIO expander labelled as EXP2 in the schematic.
+
+config PINMUX_GALILEO_PWM0_NAME
+        string "Name of the PWM LED expander 0"
+        depends on PINMUX && BOARD_GALILEO
+        default "PWM0"
+        help
+        The name of the PWM LED expander labelled as PWM0 in the schematic.
+
+config PINMUX_GALILEO_GPIO_DW_NAME
+        string "Name of the DesignWare GPIO"
+        depends on PINMUX && BOARD_GALILEO
+        default "GPIO_0"
+        help
+        The name of the DesignWare GPIO with GPIO<0>..GPIO<7> in the schematic.
+
+config PINMUX_GALILEO_GPIO_INTEL_CW_NAME
+        string "Name of the Legacy Bridge Core Well GPIO"
+        depends on PINMUX && BOARD_GALILEO
+        default "GPIO_M0"
+        help
+        The name of the Legacy Bridge Core Well GPIO with GPIO<8>..GPIO<9>
+        in the schematic.
+
+config PINMUX_GALILEO_GPIO_INTEL_RW_NAME
+        string "Name of the Legacy Bridge Resume Well GPIO"
+        depends on PINMUX && BOARD_GALILEO
+        default "GPIO_M1"
+        help
+        The name of the Legacy Bridge Resume Well GPIO with
+        GPIO_SUS<0>..GPIO_SUS<5> in the schematic.
