@@ -213,7 +213,7 @@ static int i2c_qmsi_init(struct device *dev)
 		 * to Lakemont core.
 		 */
 		IRQ_CONNECT(CONFIG_I2C_QMSI_0_IRQ,
-			    CONFIG_I2C_QMSI_0_INT_PRIORITY, qm_i2c_0_isr, NULL,
+			    CONFIG_I2C_QMSI_0_IRQ_PRI, qm_i2c_0_isr, NULL,
 			    (IOAPIC_LEVEL | IOAPIC_HIGH));
 		irq_enable(CONFIG_I2C_QMSI_0_IRQ);
 		QM_SCSS_INT->int_i2c_mst_0_mask &= ~BIT(0);
@@ -224,7 +224,7 @@ static int i2c_qmsi_init(struct device *dev)
 #ifdef CONFIG_I2C_QMSI_1
 	case QM_I2C_1:
 		IRQ_CONNECT(CONFIG_I2C_QMSI_1_IRQ,
-			    CONFIG_I2C_QMSI_1_INT_PRIORITY, qm_i2c_1_isr, NULL,
+			    CONFIG_I2C_QMSI_1_IRQ_PRI, qm_i2c_1_isr, NULL,
 			    (IOAPIC_LEVEL | IOAPIC_HIGH));
 		irq_enable(CONFIG_I2C_QMSI_1_IRQ);
 		QM_SCSS_INT->int_i2c_mst_1_mask &= ~BIT(0);

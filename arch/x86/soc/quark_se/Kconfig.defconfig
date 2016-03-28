@@ -189,7 +189,7 @@ if I2C_QMSI_0
 
 config I2C_QMSI_0_IRQ
 	default 0
-config I2C_QMSI_0_INT_PRIORITY
+config I2C_QMSI_0_IRQ_PRI
 	default 2
 
 endif # I2C_QMSI_0
@@ -201,7 +201,7 @@ if I2C_QMSI_1
 
 config I2C_QMSI_1_IRQ
 	default 1
-config I2C_QMSI_1_INT_PRIORITY
+config I2C_QMSI_1_IRQ_PRI
 	default 2
 
 endif # I2C_QMSI_1

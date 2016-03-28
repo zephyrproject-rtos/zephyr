@@ -43,7 +43,7 @@ config I2C_QMSI_0_IRQ
 	int "IRQ number from I2C_0 controller"
 	depends on I2C_QMSI_0
 
-config I2C_QMSI_0_INT_PRIORITY
+config I2C_QMSI_0_IRQ_PRI
 	int "Interrupt priority from I2C_0 controller"
 	depends on I2C_QMSI_0
 
@@ -61,7 +61,7 @@ config I2C_QMSI_1_IRQ
 	int "IRQ number from I2C_1 controller"
 	depends on I2C_QMSI_1
 
-config I2C_QMSI_1_INT_PRIORITY
+config I2C_QMSI_1_IRQ_PRI
 	int "Interrupt priority from I2C_1 controller"
 	depends on I2C_QMSI_1
 
