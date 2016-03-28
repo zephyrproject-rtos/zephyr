@@ -69,7 +69,7 @@ struct mux_path {
 	struct mux_pin	path[5];
 };
 
-static struct mux_path _galileo_path[CONFIG_PINMUX_NUM_PINS * NUM_PIN_FUNCS] = {
+static struct mux_path _galileo_path[PINMUX_NUM_PINS * NUM_PIN_FUNCS] = {
 	{0, PINMUX_FUNC_A, {{ EXP1,  0,  PIN_HIGH, (GPIO_DIR_OUT) }, /* GPIO3 out */
 			    { EXP1,  1,   PIN_LOW, (GPIO_DIR_OUT) },
 			    { G_DW,  3,   PIN_LOW, (GPIO_DIR_OUT) },
@@ -500,7 +500,7 @@ int _galileo_pinmux_set_pin(struct device *port, uint8_t pin, uint32_t func)
 	struct mux_path *enable = NULL;
 	struct pin_config *mux_config = drv_data->mux_config;
 
-	if (pin > CONFIG_PINMUX_NUM_PINS) {
+	if (pin > PINMUX_NUM_PINS) {
 		return -ENOTSUP;
 	}
 

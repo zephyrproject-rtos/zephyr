@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include <nanokernel.h>
+#include <board.h>
 #include <device.h>
 #include <init.h>
 #include <pinmux.h>
@@ -160,8 +161,8 @@ static inline void _pinmux_pullups(uint32_t base_address)
 
 static int pinmux_initialize(struct device *port)
 {
-	_pinmux_defaults(CONFIG_PINMUX_BASE);
-	_pinmux_pullups(CONFIG_PINMUX_BASE);
+	_pinmux_defaults(PINMUX_BASE_ADDR);
+	_pinmux_pullups(PINMUX_BASE_ADDR);
 
 	return 0;
 }

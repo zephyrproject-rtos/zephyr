@@ -118,7 +118,7 @@ int _fsl_k64_set_pin(uint32_t pin_id, uint32_t func)
 	uint8_t port_pin;
 	uint32_t status;
 
-	if (pin_id >= CONFIG_PINMUX_NUM_PINS) {
+	if (pin_id >= PINMUX_NUM_PINS) {
 		return -ENOTSUP;
 	}
 
@@ -144,7 +144,7 @@ int _fsl_k64_get_pin(uint32_t pin_id, uint32_t *func)
 	uint8_t port_pin;
 	uint32_t status;
 
-	if (pin_id >= CONFIG_PINMUX_NUM_PINS) {
+	if (pin_id >= PINMUX_NUM_PINS) {
 		return -ENOTSUP;
 	}
 

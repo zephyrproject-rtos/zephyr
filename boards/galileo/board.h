@@ -19,4 +19,13 @@
 
 #include <soc.h>
 
+/*
+ * PINMUX configuration settings
+ */
+#if defined(CONFIG_PINMUX)
+
+#define PINMUX_NUM_PINS		20
+
+#endif /* CONFIG_PINMUX */
+
 #endif /* __INC_BOARD_H */

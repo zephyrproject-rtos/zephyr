@@ -27,20 +27,6 @@ if PINMUX
 
 source "drivers/pinmux/dev/Kconfig"
 
-config PINMUX_BASE
-        hex "Base Address"
-	depends on PINMUX
-        help
-        On platforms where there is a base pinmux register, set this value to
-        enable the driver to directly access the memory.
-
-config PINMUX_NUM_PINS
-	int "Number of Pins to configure"
-	default 0
-	depends on PINMUX
-        help
-        Select the number of pins for the pinmux to operate on.
-
 config PINMUX_INIT_PRIORITY
 	int
 	prompt "Init priority"

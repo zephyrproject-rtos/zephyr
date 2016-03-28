@@ -17,6 +17,7 @@
  */
 
 #include <nanokernel.h>
+#include <board.h>
 #include <device.h>
 #include <init.h>
 
@@ -33,7 +34,7 @@
  * boards.  Specifically change the PINMUX_FUNC_* value to represent the
  * functionaltiy desired
  */
-static struct pin_config mux_config[CONFIG_PINMUX_NUM_PINS] = {
+static struct pin_config mux_config[PINMUX_NUM_PINS] = {
 	/* pin, selected mode    <mode A, mode B, mode C, mode D> */
 	/* Analog Inputs */
 	{ 0,  PINMUX_FUNC_C }, /* GPIO3 (out), GPIO3 (in), UART0_RXD, NA */
@@ -107,7 +108,7 @@ static int pinmux_galileo_initialize(struct device *port)
 	 * Now that we have everything, let us start parsing everything
 	 * from the above mapping as selected by the end user
 	 */
-	for (i = 0; i < CONFIG_PINMUX_NUM_PINS; i++) {
+	for (i = 0; i < PINMUX_NUM_PINS; i++) {
 		_galileo_pinmux_set_pin(port,
 				 mux_config[i].pin_num,
 				 mux_config[i].mode);

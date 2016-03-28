@@ -135,7 +135,7 @@ static int pinmux_dev_initialize(struct device *port)
 }
 
 static struct pinmux_config board_pmux = {
-	.base_address = CONFIG_PINMUX_BASE,
+	.base_address = PINMUX_BASE_ADDR,
 };
 
 DEVICE_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME, &pinmux_dev_initialize,

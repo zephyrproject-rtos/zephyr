@@ -146,7 +146,7 @@ static int pinmux_initialize(struct device *port)
 {
 	ARG_UNUSED(port);
 
-	_pinmux_defaults(CONFIG_PINMUX_BASE);
+	_pinmux_defaults(PINMUX_BASE_ADDR);
 
 	return 0;
 }

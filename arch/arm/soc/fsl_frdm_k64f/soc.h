@@ -238,6 +238,14 @@ extern "C" {
 
 #endif /* CONFIG_SPI_K64 */
 
+/*
+ * PINMUX configuration settings
+ */
+#if defined(CONFIG_PINMUX)
+
+#define PINMUX_NUM_PINS			160
+
+#endif /* CONFIG_PINMUX */
 
 #endif /* !_ASMLANGUAGE */
 

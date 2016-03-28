@@ -188,6 +188,14 @@ struct scss_interrupt {
 #define ARC_RUN				(ARC_HALT_INT_REDIR | ARC_RUN_REQ_A)
 #define ARC_HALT			(ARC_HALT_INT_REDIR | ARC_HALT_REQ_A)
 
+/*
+ * PINMUX configuration settings
+ */
+#if defined(CONFIG_PINMUX)
+
+#define PINMUX_BASE_ADDR		0xb0800900
+
+#endif
 
 #endif /*  _ASMLANGUAGE */
 

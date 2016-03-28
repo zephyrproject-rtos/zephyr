@@ -27,13 +27,6 @@ config SHARED_IRQ
 
 if PINMUX
 
-config PINMUX_BASE
-	default 0x00000000
-config PINMUX_NUM_PINS
-        default 20
-config PINMUX_BASE
-        default 0x00000000
-
 config PINMUX_GALILEO_EXP0_NAME
         default GPIO_PCAL9535A_0_DEV_NAME
 config PINMUX_GALILEO_EXP1_NAME

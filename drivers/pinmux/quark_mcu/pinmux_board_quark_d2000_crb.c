@@ -24,6 +24,7 @@
  */
 
 #include <nanokernel.h>
+#include <board.h>
 #include <device.h>
 #include <init.h>
 #include <pinmux.h>
@@ -100,10 +101,10 @@ static int pinmux_initialize(struct device *port)
 {
 	ARG_UNUSED(port);
 
-	_pinmux_defaults(CONFIG_PINMUX_BASE);
+	_pinmux_defaults(PINMUX_BASE_ADDR);
 
 	/* Enable the UART RX pin to receive input */
-	_quark_mcu_set_mux(CONFIG_PINMUX_BASE + PINMUX_INPUT_OFFSET, 5, 0x1);
+	_quark_mcu_set_mux(PINMUX_BASE_ADDR + PINMUX_INPUT_OFFSET, 5, 0x1);
 
 	return 0;
 }

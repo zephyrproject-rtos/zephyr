@@ -65,7 +65,7 @@ static int galileo_dev_set(struct device *dev,
 				uint32_t pin,
 				uint32_t func)
 {
-	if (pin > CONFIG_PINMUX_NUM_PINS) {
+	if (pin > PINMUX_NUM_PINS) {
 		return -EINVAL;
 	}
 
@@ -76,7 +76,7 @@ static int galileo_dev_get(struct device *dev,
 				uint32_t pin,
 				uint32_t *func)
 {
-	if (pin > CONFIG_PINMUX_NUM_PINS) {
+	if (pin > PINMUX_NUM_PINS) {
 		return -EINVAL;
 	}
 

@@ -142,4 +142,14 @@ struct scss_interrupt {
 #endif
 #endif /* CONFIG_MVIC */
 
+/*
+ * PINMUX configuration settings
+ */
+#if defined(CONFIG_PINMUX)
+
+#define PINMUX_BASE_ADDR		0xb0800900
+#define PINMUX_NUM_PINS			25
+
+#endif /* CONFIG_PINMUX */
+
 #endif /* __SOC_H_ */

@@ -142,10 +142,6 @@ if PINMUX
 
 config PINMUX_K64
 	def_bool y
-config PINMUX_BASE
-	default 0x00000000
-config PINMUX_NUM_PINS
-	default 160
 
 if PINMUX_K64
 
