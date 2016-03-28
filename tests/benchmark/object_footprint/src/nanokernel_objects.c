@@ -115,12 +115,6 @@ void main(void)
 	IRQ_CONNECT(IRQ_LINE, IRQ_PRIORITY, dummyIsr, NULL, 0);
 #endif
 
-#ifdef CONFIG_DYNAMIC_ISR
-	/* dynamically link in dummy ISR */
-	irq_connect_dynamic(IRQ_LINE, IRQ_PRIORITY, dummyIsr,
-		    (void *) 0, 0);
-#endif
-
 #ifdef CONFIG_OBJECTS_FIBER
 	/* start a trivial fiber */
 	task_fiber_start(pStack, FIBER_STACK_SIZE, fiberEntry, (int) MESSAGE,

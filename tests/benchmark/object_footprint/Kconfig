@@ -51,7 +51,3 @@ config STATIC_ISR
 	bool "static isr"
 	default y
 
-config DYNAMIC_ISR
-	bool "dynamic isr"
-	default n
-

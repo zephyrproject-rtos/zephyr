@@ -117,10 +117,6 @@ void dummyIsr(void *unused)
  */
 void fgTaskEntry(void)
 {
-#ifdef TEST_max
-	/* dynamically link in dummy ISR */
-	irq_connect_dynamic(IRQ_LINE, IRQ_PRIORITY, dummyIsr, (void *) 0, 0);
-#endif /* TEST_max */
 #ifdef TEST_reg
 	IRQ_CONNECT(IRQ_LINE, IRQ_PRIORITY, dummyIsr, NULL, 0);
 #endif

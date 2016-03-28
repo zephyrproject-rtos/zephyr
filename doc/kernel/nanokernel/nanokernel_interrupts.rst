@@ -25,9 +25,6 @@ Each ISR has the following properties:
 An :abbr:`IDT (Interrupt Descriptor Table)` is used to associate a given interrupt
 source with a given ISR.
 Only a single ISR can be associated with a specific IRQ at any given time.
-An ISR can be incorporated into the IDT when the Zephyr project is built
-(a "static ISR") or bound to the IDT when the system is up and running
-(a "dynamic ISR").
 
 Multiple ISRs can utilize the same function to process interrupts,
 allowing a single function to service a device that generates
@@ -66,27 +63,10 @@ response, and which can be done quickly and without blocking.
 Installing an ISR
 *****************
 
-Use one of the following procedures to install an ISR:
-
-* `Installing a Static ISR`_
-* `Installing a Dynamic ISR`_
-
-Installing a Static ISR
-=======================
-
-Use a static ISR to register an interrupt handler when the interrupt
-parameters are known during the build time and the device is always
-present in the system.
-
-.. note::
-
-   There is no API method to uninstall a static ISR; however, it is
-   possible to replace it by installing a dynamic ISR.
-
-Prerequisites
--------------
-
-* Ensure that the platform used by the project supports static ISRs.
+It's important to note that IRQ_CONNECT() is not a C function and does
+some inline assembly magic behind the scenes. All its arguments must be known
+at build time. Drivers that have multiple instances may need to define
+per-instance config functions to configure the interrupt for that instance.
 
 Example
 -------
@@ -112,51 +92,6 @@ Example
       ...
    }
 
-Installing a Dynamic ISR
-========================
-
-Use a dynamic ISR to register an interrupt handler when the interrupt
-parameters can be found out only at runtime, or when a device is not always
-present in the system.
-
-Prerequisites
--------------
-
-* Ensure that the platform used by the project supports dynamic ISRs.
-
-* (x86 only) Set the :option:`NUM_DYNAMIC_STUBS` configuration option
-  to specify the maximum number of dynamic ISRs allowed in the project.
-
-* (ARC & ARM only) Enable the :option:`SW_ISR_TABLE_DYNAMIC` so that
-  interrupts may be connected at runtime.
-
-Example
--------
-
-This is an example of a dynamic interrupt for x86:
-
-.. code-block:: c
-
-   #define MY_DEV_IRQ 24        /* device uses IRQ 24 */
-   #define MY_DEV_PRIO 2        /* device uses interrupt priority 2 */
-   #define MY_ISR_ARG 17        /* argument passed to my_isr() */
-   /* IRQ flags. Interrupt is triggered by low level signal */
-   #define MY_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-
-   void my_isr(void *arg)
-   {
-      ... /* ISR code */
-   }
-
-   void my_isr_installer(void)
-   {
-       ...
-       irq_connect_dynamic(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG,
-                           MY_IRQ_FLAGS);
-       ...
-       irq_enable(MY_DEV_IRQ);
-       ...
-   }
 
 Working with Interrupts
 ***********************
@@ -221,21 +156,10 @@ Additional intermediate context switches may be required
 to execute any currently executing fiber or any higher-priority tasks
 that are scheduled to run.
 
-IDT Security
-============
-
-Ideally, the IDT memory area should be protected against accidental
-modification, in the same way that text and read-only data areas
-are protected. If no dynamic interrupts are in use, i.e.
-:option:`NUM_DYNAMIC_STUBS` is 0, the IDT will be located in ROM.
-
 APIs
 ****
 
 These are the interrupt-related Application Program Interfaces.
-
-:c:func:`irq_connect_dynamic()`
-   Registers a dynamic ISR with the IDT and interrupt controller.
 
 :c:func:`irq_enable()`
    Enables interrupts from a specific IRQ.

@@ -24,6 +24,11 @@
 /* Pull in the arch-specific implementations */
 #include <arch/cpu.h>
 
+#ifndef _ASMLANGUAGE
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 /**
  * Configure a static interrupt.
  *
@@ -52,9 +57,18 @@
  *
  * @return The vector assigned to this interrupt
  */
-#define irq_connect_dynamic(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-	_arch_irq_connect_dynamic(irq_p, priority_p, isr_p, isr_param_p, \
-				  flags_p)
+extern int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(void *parameter), void *parameter,
+			     uint32_t flags);
+
+static inline int  __attribute__((deprecated))
+irq_connect_dynamic(unsigned int irq, unsigned int priority,
+		    void (*routine)(void *parameter), void *parameter,
+		    uint32_t flags)
+{
+	return _arch_irq_connect_dynamic(irq, priority, routine, parameter, flags);
+}
+
 
 
 /**
@@ -122,5 +136,9 @@
  */
 #define irq_disable(irq) _arch_irq_disable(irq)
 
+#ifdef __cplusplus
+}
+#endif
 
+#endif /* ASMLANGUAGE */
 #endif /* _IRQ_H_ */
