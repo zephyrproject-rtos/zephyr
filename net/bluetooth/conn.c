@@ -866,14 +866,14 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 
 void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 {
-	conn->br.ssp_method = ssp_pair_method(conn);
+	conn->br.pairing_method = ssp_pair_method(conn);
 
 	/*
 	 * If local required security is HIGH then MITM is mandatory.
 	 * MITM protection is no achievable when SSP 'justworks' is applied.
 	 */
 	if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
-	    conn->br.ssp_method == JUST_WORKS) {
+	    conn->br.pairing_method == JUST_WORKS) {
 		BT_DBG("MITM protection infeasible for required security");
 		ssp_confirm_neg_reply(conn);
 		return;
@@ -882,7 +882,7 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
 	/* TODO: As pairing acceptor call user pairing consent API callback. */
 
 	/* Start interactive authentication if valid, default to justworks. */
-	switch (conn->br.ssp_method) {
+	switch (conn->br.pairing_method) {
 	case PASSKEY_CONFIRM:
 		atomic_set_bit(conn->flags, BT_CONN_USER);
 		bt_auth->passkey_confirm(conn, passkey);
@@ -1460,7 +1460,7 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 			return -EPERM;
 		}
 
-		if (conn->br.ssp_method == PASSKEY_INPUT) {
+		if (conn->br.pairing_method == PASSKEY_INPUT) {
 			return ssp_passkey_reply(conn, passkey);
 		}
 	}
@@ -1510,15 +1510,15 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 			return -EPERM;
 		}
 
-		if (conn->br.ssp_method == PASSKEY_CONFIRM) {
+		if (conn->br.pairing_method == PASSKEY_CONFIRM) {
 			return ssp_confirm_neg_reply(conn);
 		}
 
-		if (conn->br.ssp_method == PASSKEY_INPUT) {
+		if (conn->br.pairing_method == PASSKEY_INPUT) {
 			return ssp_passkey_neg_reply(conn);
 		}
 
-		if (conn->br.ssp_method == PASSKEY_DISPLAY) {
+		if (conn->br.pairing_method == PASSKEY_DISPLAY) {
 			return bt_conn_disconnect(conn,
 						  BT_HCI_ERR_AUTHENTICATION_FAIL);
 		}

@@ -56,7 +56,7 @@ struct bt_conn_br {
 	bt_addr_t		dst;
 	uint8_t			remote_io_capa;
 	uint8_t			remote_auth;
-	uint8_t			ssp_method;
+	uint8_t			pairing_method;
 };
 #endif
 
