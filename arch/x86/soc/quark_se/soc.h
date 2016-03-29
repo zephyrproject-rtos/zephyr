@@ -197,6 +197,11 @@ struct scss_interrupt {
 #define UART_IRQ_FLAGS			(IOAPIC_EDGE | IOAPIC_HIGH)
 #endif /* CONFIG_IOAPIC */
 
+/*
+ * AIO/Comparator
+ */
+#define AIO_DW_COMPARATOR_BASE_ADDR	0xb0800300
+
 #endif /*  _ASMLANGUAGE */
 
 #endif /* __SOC_H_ */

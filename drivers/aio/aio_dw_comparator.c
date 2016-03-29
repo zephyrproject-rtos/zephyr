@@ -197,7 +197,7 @@ int dw_aio_cmp_init(struct device *dev)
 }
 
 struct dw_aio_cmp_dev_cfg_t dw_aio_cmp_dev_config = {
-	.base_address = CONFIG_AIO_DW_COMPARATOR_BASE_ADDR,
+	.base_address = AIO_DW_COMPARATOR_BASE_ADDR,
 	.interrupt_num = INT_AIO_CMP_IRQ,
 	.config_func = dw_aio_cmp_config,
 };

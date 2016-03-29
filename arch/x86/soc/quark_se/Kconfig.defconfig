@@ -45,9 +45,6 @@ config LOAPIC_TIMER_IRQ
 config TOOLCHAIN_VARIANT
 	default "iamcu"
 
-config AIO_DW_COMPARATOR_BASE_ADDR
-	default 0xb0800300 if AIO_COMPARATOR && AIO_DW_COMPARATOR
-
 if GPIO
 
 config GPIO_DW
