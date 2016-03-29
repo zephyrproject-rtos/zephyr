@@ -78,8 +78,10 @@ extern "C" {
  */
 #define DYN_STUB_IDX_OFFSET	6
 
-/* Size of the periodic jmp instruction to the common handler */
-#define DYN_STUB_JMP_SIZE	5
+/* Every DYN_STUB_PER_BLOCK stubs, there is a long jump instead of
+ * a short jump. Define the extra amount of bytes for this.
+ */
+#define DYN_STUB_LONG_JMP_EXTRA_SIZE	3
 
 /*
  * How many consecutive stubs we have until we encounter a periodic

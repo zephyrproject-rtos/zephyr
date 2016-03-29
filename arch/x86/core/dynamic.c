@@ -69,7 +69,7 @@ void *_get_dynamic_stub(int stub_idx, void *base_ptr)
 	 * a larger jump instruction to common dynamic IRQ handling code
 	 */
 	offset = (stub_idx * DYN_STUB_SIZE) + ((stub_idx / DYN_STUB_PER_BLOCK) *
-					       DYN_STUB_JMP_SIZE);
+					       DYN_STUB_LONG_JMP_EXTRA_SIZE);
 
 	return (void *)((uint32_t)base_ptr + offset);
 }
