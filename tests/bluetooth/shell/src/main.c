@@ -1309,7 +1309,7 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi,
 				  const uint8_t cod[3], const uint8_t eir[240])
 {
 	char br_addr[BT_ADDR_STR_LEN];
-	char name[240];
+	char name[239];
 	int len = 240;
 
 	memset(name, 0, sizeof(name));
