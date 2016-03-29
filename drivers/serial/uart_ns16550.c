@@ -193,17 +193,15 @@
 
 #define IIRC(dev)	(DEV_DATA(dev)->iir_cache)
 
-#ifdef CONFIG_UART_NS16550_ACCESS_IOPORT
+#ifdef UART_NS16550_ACCESS_IOPORT
 #define INBYTE(x) sys_in8(x)
 #define OUTBYTE(x, d) sys_out8(d, x)
 #define UART_REG_ADDR_INTERVAL 1 /* address diff of adjacent regs. */
-#endif /* CONFIG_UART_NS16550_ACCESS_IOPORT */
-
-#ifdef CONFIG_UART_NS16550_ACCESS_MMIO
+#else
 #define INBYTE(x) sys_read8(x)
 #define OUTBYTE(x, d) sys_write8(d, x)
 #define UART_REG_ADDR_INTERVAL 4 /* address diff of adjacent regs. */
-#endif /* CONFIG_UART_NS16550_ACCESS_MMIO */
+#endif /* UART_NS16550_ACCESS_IOPORT */
 
 /** Device data structure */
 struct uart_ns16550_dev_data_t {
@@ -733,17 +731,17 @@ static void irq_config_func_0(struct device *port);
 #endif
 
 struct uart_device_config uart_ns16550_dev_cfg_0 = {
-	.port = CONFIG_UART_NS16550_PORT_0_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_NS16550_PORT_0_CLK_FREQ,
+	.port = UART_NS16550_PORT_0_BASE_ADDR,
+	.sys_clk_freq = UART_NS16550_PORT_0_CLK_FREQ,
 
 #ifdef CONFIG_UART_NS16550_PORT_0_PCI
-	.pci_dev.class_type = CONFIG_UART_NS16550_PORT_0_PCI_CLASS,
-	.pci_dev.bus = CONFIG_UART_NS16550_PORT_0_PCI_BUS,
-	.pci_dev.dev = CONFIG_UART_NS16550_PORT_0_PCI_DEV,
-	.pci_dev.vendor_id = CONFIG_UART_NS16550_PORT_0_PCI_VENDOR_ID,
-	.pci_dev.device_id = CONFIG_UART_NS16550_PORT_0_PCI_DEVICE_ID,
-	.pci_dev.function = CONFIG_UART_NS16550_PORT_0_PCI_FUNC,
-	.pci_dev.bar = CONFIG_UART_NS16550_PORT_0_PCI_BAR,
+	.pci_dev.class_type = UART_NS16550_PORT_0_PCI_CLASS,
+	.pci_dev.bus = UART_NS16550_PORT_0_PCI_BUS,
+	.pci_dev.dev = UART_NS16550_PORT_0_PCI_DEV,
+	.pci_dev.vendor_id = UART_NS16550_PORT_0_PCI_VENDOR_ID,
+	.pci_dev.device_id = UART_NS16550_PORT_0_PCI_DEVICE_ID,
+	.pci_dev.function = UART_NS16550_PORT_0_PCI_FUNC,
+	.pci_dev.bar = UART_NS16550_PORT_0_PCI_BAR,
 #endif /* CONFIG_UART_NS16550_PORT_0_PCI */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -767,11 +765,11 @@ DEVICE_INIT(uart_ns16550_0, CONFIG_UART_NS16550_PORT_0_NAME, &uart_ns16550_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_NS16550_PORT_0_IRQ,
+	IRQ_CONNECT(UART_NS16550_PORT_0_IRQ,
 		    CONFIG_UART_NS16550_PORT_0_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_0),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_NS16550_PORT_0_IRQ);
+	irq_enable(UART_NS16550_PORT_0_IRQ);
 }
 #endif
 
@@ -784,17 +782,17 @@ static void irq_config_func_1(struct device *port);
 #endif
 
 struct uart_device_config uart_ns16550_dev_cfg_1 = {
-	.port = CONFIG_UART_NS16550_PORT_1_BASE_ADDR,
-	.sys_clk_freq = CONFIG_UART_NS16550_PORT_1_CLK_FREQ,
+	.port = UART_NS16550_PORT_1_BASE_ADDR,
+	.sys_clk_freq = UART_NS16550_PORT_1_CLK_FREQ,
 
 #ifdef CONFIG_UART_NS16550_PORT_1_PCI
-	.pci_dev.class_type = CONFIG_UART_NS16550_PORT_1_PCI_CLASS,
-	.pci_dev.bus = CONFIG_UART_NS16550_PORT_1_PCI_BUS,
-	.pci_dev.dev = CONFIG_UART_NS16550_PORT_1_PCI_DEV,
-	.pci_dev.vendor_id = CONFIG_UART_NS16550_PORT_1_PCI_VENDOR_ID,
-	.pci_dev.device_id = CONFIG_UART_NS16550_PORT_1_PCI_DEVICE_ID,
-	.pci_dev.function = CONFIG_UART_NS16550_PORT_1_PCI_FUNC,
-	.pci_dev.bar = CONFIG_UART_NS16550_PORT_1_PCI_BAR,
+	.pci_dev.class_type = UART_NS16550_PORT_1_PCI_CLASS,
+	.pci_dev.bus = UART_NS16550_PORT_1_PCI_BUS,
+	.pci_dev.dev = UART_NS16550_PORT_1_PCI_DEV,
+	.pci_dev.vendor_id = UART_NS16550_PORT_1_PCI_VENDOR_ID,
+	.pci_dev.device_id = UART_NS16550_PORT_1_PCI_DEVICE_ID,
+	.pci_dev.function = UART_NS16550_PORT_1_PCI_FUNC,
+	.pci_dev.bar = UART_NS16550_PORT_1_PCI_BAR,
 #endif /* CONFIG_UART_NS16550_PORT_1_PCI */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -818,11 +816,11 @@ DEVICE_INIT(uart_ns16550_1, CONFIG_UART_NS16550_PORT_1_NAME, &uart_ns16550_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_NS16550_PORT_1_IRQ,
+	IRQ_CONNECT(UART_NS16550_PORT_1_IRQ,
 		    CONFIG_UART_NS16550_PORT_1_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_1),
 		    UART_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_NS16550_PORT_1_IRQ);
+	irq_enable(UART_NS16550_PORT_1_IRQ);
 }
 #endif
 

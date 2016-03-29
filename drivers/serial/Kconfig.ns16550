@@ -17,30 +17,10 @@ config UART_NS16550_PCI
 	  This option enables the driver to auto-detect the device
 	  configuration required to access those ports.
 
-choice
-	prompt "Controller Registers Access Method"
-	depends on UART_NS16550
-	default UART_NS16550_ACCESS_IOPORT if SOC_IA32
-	default UART_NS16550_ACCESS_MMIO
-
-	config UART_NS16550_ACCESS_MMIO
-		bool "Memory mapped I/O"
-		help
-		  The UART controller is mapped to memory space, and can be directly
-		  access through memory manipulation.
-
-	config UART_NS16550_ACCESS_IOPORT
-		bool "I/O Port"
-		depends on !UART_NS16550_PCI
-		help
-		  The UART controller is accessed through I/O port.
-
-endchoice
-
 config UART_NS16550_DLF
 	bool "Enable Divisor Latch Fraction (DLF) support"
 	default n
-	depends on UART_NS16550 && UART_NS16550_ACCESS_MMIO
+	depends on UART_NS16550
 	help
 	  This enables support for divisor latch fraction (DLF).
 	  It is used to limit frequency error.
@@ -84,29 +64,6 @@ config UART_NS16550_PORT_0_NAME
 	  This is the device name for UART, and is included in the device
 	  struct.
 
-config UART_NS16550_PORT_0_BASE_ADDR
-	hex "Port 0 Base Address or I/O Port"
-	default 0x00000000
-	depends on UART_NS16550_PORT_0
-	help
-	  The base address of UART port.
-
-	  Leave this at 0x00000000 to skip initialization at boot.
-
-	  For PCI device, this value is from PCI configuration space, so just
-	  leave it at 0x00000000.
-
-config UART_NS16550_PORT_0_IRQ
-	int "Port 0 Interrupt Vector"
-	default 0
-	depends on UART_NS16550_PORT_0
-	help
-	  The interrupt vector for UART port. This is used for interrupt driven
-	  transfers.
-
-	  For PCI device, this value is from PCI configuration space, so just
-	  leave it at 0x00.
-
 config UART_NS16550_PORT_0_IRQ_PRI
 	int "Port 0 Interrupt Priority"
 	default 0
@@ -122,13 +79,6 @@ config UART_NS16550_PORT_0_BAUD_RATE
 	  The baud rate for UART port to be set to at boot.
 
 	  Leave at 0 to skip initialization.
-
-config UART_NS16550_PORT_0_CLK_FREQ
-	int "Port 0 Clock Frequency"
-	default 0
-	depends on UART_NS16550_PORT_0
-	help
-	  The clock frequency for UART port.
 
 config UART_NS16550_PORT_0_OPTIONS
 	int "Port 0 Options"
@@ -151,57 +101,6 @@ config UART_NS16550_PORT_0_PCI
 	help
 	  Obtain port information from PCI.
 
-config UART_NS16550_PORT_0_PCI_CLASS
-	hex "Port 0 PCI Class"
-	default 0x07
-	depends on UART_NS16550_PORT_0_PCI
-	help
-	  Needed for PCI based UART port.
-
-	  Value 0x07 is for simple communication controllers.
-
-config UART_NS16550_PORT_0_PCI_BUS
-	int "Port 0 PCI Bus Number"
-	default 0
-	depends on UART_NS16550_PORT_0_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_0_PCI_DEV
-	int "Port 0 PCI Device Number"
-	default 0
-	depends on UART_NS16550_PORT_0_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_0_PCI_VENDOR_ID
-	hex "Port 0 PCI Vendor ID"
-	default 0x0000
-	depends on UART_NS16550_PORT_0_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_0_PCI_DEVICE_ID
-	hex "Port 0 PCI Device ID"
-	default 0x0000
-	depends on UART_NS16550_PORT_0_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_0_PCI_FUNC
-	int "Port 0 PCI Function"
-	default 0
-	depends on UART_NS16550_PORT_0_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_0_PCI_BAR
-	int "Port 0 PCI BAR"
-	default 0
-	depends on UART_NS16550_PORT_0_PCI
-	help
-	  Needed for PCI based UART port.
-
 # ---------- Port 1 ----------
 
 menuconfig UART_NS16550_PORT_1
@@ -220,29 +119,6 @@ config UART_NS16550_PORT_1_NAME
 	  This is the device name for UART, and is included in the device
 	  struct.
 
-config UART_NS16550_PORT_1_BASE_ADDR
-	hex "Port 1 Base Address or I/O Port"
-	default 0x00000000
-	depends on UART_NS16550_PORT_1
-	help
-	  The base address of UART port.
-
-	  Leave this at 0x00000000 to skip initialization at boot.
-
-	  For PCI device, this value is from PCI configuration space, so just
-	  leave it at 0x00000000.
-
-config UART_NS16550_PORT_1_IRQ
-	int "Port 1 Interrupt Vector"
-	default 0
-	depends on UART_NS16550_PORT_1
-	help
-	  The interrupt vector for UART port. This is used for interrupt driven
-	  transfers.
-
-	  For PCI device, this value is from PCI configuration space, so just
-	  leave it at 0x00.
-
 config UART_NS16550_PORT_1_IRQ_PRI
 	int "Port 1 Interrupt Priority"
 	default 0
@@ -259,13 +135,6 @@ config UART_NS16550_PORT_1_BAUD_RATE
 
 	  Leave at 0 to skip initialization.
 
-config UART_NS16550_PORT_1_CLK_FREQ
-	int "Port 1 Clock Frequency"
-	default 0
-	depends on UART_NS16550_PORT_1
-	help
-	  The clock frequency for UART port.
-
 config UART_NS16550_PORT_1_OPTIONS
 	int "Port 1 Options"
 	default 0
@@ -279,61 +148,3 @@ config UART_NS16550_PORT_1_DLF
 	depends on UART_NS16550_PORT_1 && UART_NS16550_DLF
 	help
 	  Value for DLF register.
-
-config UART_NS16550_PORT_1_PCI
-	bool "Port 1 is PCI-based"
-	default n
-	depends on UART_NS16550_PCI && UART_NS16550_PORT_1
-	help
-	  Obtain port information from PCI.
-
-config UART_NS16550_PORT_1_PCI_CLASS
-	hex "Port 1 PCI Class"
-	default 0x07
-	depends on UART_NS16550_PORT_1_PCI
-	help
-	  Needed for PCI based UART port.
-
-	  Value 0x07 is for simple communication controllers.
-
-config UART_NS16550_PORT_1_PCI_BUS
-	int "Port 1 PCI Bus Number"
-	default 0
-	depends on UART_NS16550_PORT_1_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_1_PCI_DEV
-	int "Port 1 PCI Device Number"
-	default 0
-	depends on UART_NS16550_PORT_1_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_1_PCI_VENDOR_ID
-	hex "Port 1 PCI Vendor ID"
-	default 0x0000
-	depends on UART_NS16550_PORT_1_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_1_PCI_DEVICE_ID
-	hex "Port 1 PCI Device ID"
-	default 0x0000
-	depends on UART_NS16550_PORT_1_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_1_PCI_FUNC
-	int "Port 1 PCI Function"
-	default 0
-	depends on UART_NS16550_PORT_1_PCI
-	help
-	  Needed for PCI based UART port.
-
-config UART_NS16550_PORT_1_PCI_BAR
-	int "Port 1 PCI BAR"
-	default 0
-	depends on UART_NS16550_PORT_1_PCI
-	help
-	  Needed for PCI based UART port.

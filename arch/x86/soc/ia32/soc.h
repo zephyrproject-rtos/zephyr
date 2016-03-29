@@ -45,6 +45,19 @@
 #endif
 #endif /* CONFIG_IOAPIC */
 
+/*
+ * UART
+ */
+#define UART_NS16550_ACCESS_IOPORT
+
+#define UART_NS16550_PORT_0_BASE_ADDR		0x03F8
+#define UART_NS16550_PORT_0_IRQ			4
+#define UART_NS16550_PORT_0_CLK_FREQ		1843200
+
+#define UART_NS16550_PORT_1_BASE_ADDR		0x02F8
+#define UART_NS16550_PORT_1_IRQ			3
+#define UART_NS16550_PORT_1_CLK_FREQ		1843200
+
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 /* PCI definitions */
 #define PCI_BUS_NUMBERS 1

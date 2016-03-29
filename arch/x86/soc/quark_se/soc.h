@@ -197,6 +197,17 @@ struct scss_interrupt {
 
 #endif
 
+/*
+ * UART
+ */
+#define UART_NS16550_PORT_0_BASE_ADDR	0xB0002000
+#define UART_NS16550_PORT_0_IRQ		5
+#define UART_NS16550_PORT_0_CLK_FREQ	MHZ(32)
+
+#define UART_NS16550_PORT_1_BASE_ADDR	0xB0002400
+#define UART_NS16550_PORT_1_IRQ		6
+#define UART_NS16550_PORT_1_CLK_FREQ	MHZ(32)
+
 #endif /*  _ASMLANGUAGE */
 
 #endif /* __SOC_H_ */
