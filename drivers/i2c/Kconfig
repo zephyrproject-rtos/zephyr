@@ -34,11 +34,6 @@ config I2C_INIT_PRIORITY
 	help
 	  I2C device driver initialization priority.
 
-config I2C_STATUS_DELAY
-	int "Delay for controller response"
-	depends on I2C
-	default 1000
-
 config I2C_CLOCK_SPEED
 	int "Set the clock speed for I2C"
 	default 32
