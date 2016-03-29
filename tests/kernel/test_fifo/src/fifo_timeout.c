@@ -184,7 +184,7 @@ static void test_fiber_pend_and_get_data(int data, int unused)
 
 /* the task spins fibers that get fifo data in time, except the last one */
 static int test_multiple_fibers_get_data(struct timeout_order_data *test_data,
-											int test_data_size)
+					int test_data_size)
 {
 	struct timeout_order_data *data;
 	int ii;
@@ -323,8 +323,7 @@ int test_fifo_timeout(void)
 						timeout,
 						FIBER_PRIORITY, 0);
 
-	packet = nano_task_fifo_get(&fifo_timeout[0],
-												(int)(timeout + 5));
+	packet = nano_task_fifo_get(&fifo_timeout[0], (int)(timeout + 5));
 	if (!packet) {
 		TC_ERROR(" *** data put in time did not return valid pointer.\n");
 		TC_END_RESULT(TC_FAIL);
@@ -429,8 +428,8 @@ int test_fifo_timeout(void)
 	scratch_packet = get_scratch_packet();
 	nano_task_fifo_put(&fifo_timeout[0], scratch_packet);
 	task_fiber_start(timeout_stacks[0], FIBER_STACKSIZE,
-						test_fiber_ticks_special_values,
-						(int)&reply_packet, TICKS_UNLIMITED, FIBER_PRIORITY, 0);
+			test_fiber_ticks_special_values,
+			(int)&reply_packet, TICKS_UNLIMITED, FIBER_PRIORITY, 0);
 	put_scratch_packet(scratch_packet);
 
 	if (!nano_task_fifo_get(&timeout_order_fifo, TICKS_NONE)) {

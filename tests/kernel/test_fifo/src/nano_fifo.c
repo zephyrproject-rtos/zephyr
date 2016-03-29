@@ -66,10 +66,10 @@
 #define TCERR2         TC_ERROR("Didn't get back correct FIFO\n")
 #define TCERR3         TC_ERROR("The queue should be empty!\n")
 
-typedef struct {
+struct isr_fifo_info {
 	struct nano_fifo *fifo_ptr;  /* FIFO */
 	void *data;     /* pointer to data to add */
-} ISR_FIFO_INFO;
+};
 
 char __stack fiberStack1[FIBER_STACKSIZE];
 char __stack fiberStack2[FIBER_STACKSIZE];
@@ -112,7 +112,7 @@ void * const pPutList2[NUM_FIFO_ELEMENT] = {
 
 int retCode = TC_PASS;
 
-static ISR_FIFO_INFO  isrFifoInfo = {&nanoFifoObj, NULL};
+static struct isr_fifo_info isrFifoInfo = {&nanoFifoObj, NULL};
 
 void fiber1(void);
 void fiber2(void);
@@ -137,7 +137,7 @@ extern int test_fifo_timeout(void);
 
 void isr_fifo_put(void *parameter)
 {
-	ISR_FIFO_INFO *pInfo = (ISR_FIFO_INFO *) parameter;
+	struct isr_fifo_info *pInfo = (struct isr_fifo_info *) parameter;
 
 	nano_isr_fifo_put(pInfo->fifo_ptr, pInfo->data);
 }
@@ -162,7 +162,7 @@ static void _trigger_nano_isr_fifo_put(void)
 
 void isr_fifo_get(void *parameter)
 {
-	ISR_FIFO_INFO *pInfo = (ISR_FIFO_INFO *) parameter;
+	struct isr_fifo_info *pInfo = (struct isr_fifo_info *) parameter;
 
 	pInfo->data = nano_isr_fifo_get(pInfo->fifo_ptr, TICKS_NONE);
 }
@@ -229,7 +229,7 @@ void fiber1(void)
 	 */
 	TC_PRINT("Test Fiber FIFO Put\n");
 	TC_PRINT("\nFIBER FIFO Put Order: ");
-	for (int i=0; i<NUM_FIFO_ELEMENT; i++) {
+	for (int i = 0; i < NUM_FIFO_ELEMENT; i++) {
 		nano_fiber_fifo_put(&nanoFifoObj, pPutList2[i]);
 		TC_PRINT(" %p,", pPutList2[i]);
 	}
@@ -331,7 +331,7 @@ void testIsrFifoFromFiber(void)
 
 	/* Put more item into queue */
 	TC_PRINT("\nISR FIFO (running in fiber) Put Order:\n");
-	for (int i=0; i<NUM_FIFO_ELEMENT; i++) {
+	for (int i = 0; i < NUM_FIFO_ELEMENT; i++) {
 		isrFifoInfo.data = pPutList1[i];
 		TC_PRINT(" %p,", pPutList1[i]);
 		_trigger_nano_isr_fifo_put();
@@ -398,10 +398,9 @@ void testIsrFifoFromTask(void)
 		retCode = TC_FAIL;
 		TCERR2;
 		return;
-	} else {
-		TC_PRINT("\nTest ISR FIFO (invoked from Task) - put %p and get back %p\n",
-				 pPutData, pGetData);
 	}
+	TC_PRINT("\nTest ISR FIFO (invoked from Task) - put %p and get back %p\n",
+		pPutData, pGetData);
 
 	TC_END_RESULT(retCode);
 }  /* testIsrFifoFromTask */
@@ -658,7 +657,7 @@ void main(void)
 
 	TC_PRINT("Test Task FIFO Put\n");
 	TC_PRINT("\nTASK FIFO Put Order: ");
-	for (int i=0; i<NUM_FIFO_ELEMENT; i++) {
+	for (int i = 0; i < NUM_FIFO_ELEMENT; i++) {
 		nano_task_fifo_put(&nanoFifoObj, pPutList1[i]);
 		TC_PRINT(" %p,", pPutList1[i]);
 	}

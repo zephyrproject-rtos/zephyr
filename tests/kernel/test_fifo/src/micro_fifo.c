@@ -38,11 +38,7 @@
 
 #define MULTIPLIER              100     /* Used to initialize myData */
 #define NUM_OF_ELEMENT          5       /* Number of elements in myData array */
-#define DEPTH_OF_FIFO_QUEUE     2       /*
-                                         * Depth of FIFO queue, this has to
-										 * be aligned with the number in
-                                         * prj.mdef file
-                                         */
+#define DEPTH_OF_FIFO_QUEUE     2       /* FIFO queue depth--see prj.mdef */
 
 #define SPECIAL_DATA            999     /* Special number to put in queue */
 
