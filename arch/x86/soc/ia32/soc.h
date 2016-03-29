@@ -32,19 +32,6 @@
 #include <drivers/rand32.h>
 #endif
 
-#ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
-#if defined(CONFIG_UART_IRQ_FALLING_EDGE)
-	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-#elif defined(CONFIG_UART_IRQ_RISING_EDGE)
-	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-#elif defined(CONFIG_UART_IRQ_LEVEL_HIGH)
-	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-#elif defined(CONFIG_UART_IRQ_LEVEL_LOW)
-	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-#endif
-#endif /* CONFIG_IOAPIC */
-
 /*
  * UART
  */
@@ -57,6 +44,12 @@
 #define UART_NS16550_PORT_1_BASE_ADDR		0x02F8
 #define UART_NS16550_PORT_1_IRQ			3
 #define UART_NS16550_PORT_1_CLK_FREQ		1843200
+
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+#define UART_IRQ_FLAGS				(IOAPIC_EDGE | IOAPIC_HIGH)
+#endif /* CONFIG_IOAPIC */
+
 
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 /* PCI definitions */

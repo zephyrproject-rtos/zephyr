@@ -129,19 +129,6 @@ struct scss_interrupt {
 /* Comparator */
 #define INT_AIO_CMP_IRQ			(0x0E)
 
-#ifdef CONFIG_MVIC
-#include <drivers/ioapic.h>
-#if defined(CONFIG_UART_IRQ_FALLING_EDGE)
-	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-#elif defined(CONFIG_UART_IRQ_RISING_EDGE)
-	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-#elif defined(CONFIG_UART_IRQ_LEVEL_HIGH)
-	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-#elif defined(CONFIG_UART_IRQ_LEVEL_LOW)
-	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-#endif
-#endif /* CONFIG_MVIC */
-
 /*
  * PINMUX configuration settings
  */
@@ -162,5 +149,10 @@ struct scss_interrupt {
 #define UART_NS16550_PORT_1_BASE_ADDR	0xB0002400
 #define UART_NS16550_PORT_1_IRQ		6
 #define UART_NS16550_PORT_1_CLK_FREQ	MHZ(32)
+
+#ifdef CONFIG_MVIC
+#include <drivers/ioapic.h>
+#define UART_IRQ_FLAGS			(IOAPIC_EDGE | IOAPIC_HIGH)
+#endif /* CONFIG_MVIC */
 
 #endif /* __SOC_H_ */

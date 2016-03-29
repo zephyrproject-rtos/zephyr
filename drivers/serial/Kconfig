@@ -43,33 +43,6 @@ config  UART_INTERRUPT_DRIVEN
 	This option enables interrupt support for UART allowing console
 	input and other UART based drivers.
 
-choice
-	prompt "UART IRQ Trigger Condition"
-	default UART_IRQ_RISING_EDGE
-	depends on UART_INTERRUPT_DRIVEN && !UART_QMSI
-
-config UART_IRQ_FALLING_EDGE
-	bool "Falling Edge"
-	help
-	This option signifies that the UART uses falling edge interrupt.
-
-config UART_IRQ_RISING_EDGE
-	bool "Rising Edge"
-	help
-	This option signifies that the UART uses rising edge interrupt.
-
-config UART_IRQ_LEVEL_HIGH
-	bool "Level High"
-	help
-	This option signifies that the UART uses level high interrupt.
-
-config UART_IRQ_LEVEL_LOW
-	bool "Level Low"
-	help
-	This option signifies that the UART uses level low interrupt.
-
-endchoice
-
 config UART_LINE_CTRL
 	bool "Enable Serial Line Control API"
 	default n

@@ -32,19 +32,6 @@
 #include <drivers/rand32.h>
 #endif
 
-#ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
-#if defined(CONFIG_UART_IRQ_FALLING_EDGE)
-	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-#elif defined(CONFIG_UART_IRQ_RISING_EDGE)
-	#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-#elif defined(CONFIG_UART_IRQ_LEVEL_HIGH)
-	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-#elif defined(CONFIG_UART_IRQ_LEVEL_LOW)
-	#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-#endif
-#endif /* CONFIG_IOAPIC */
-
 /*
  * UART
  */
@@ -71,6 +58,11 @@
 #define UART_NS16550_PORT_1_PCI_DEVICE_ID	0x0936
 #define UART_NS16550_PORT_1_PCI_FUNC		5
 #define UART_NS16550_PORT_1_PCI_BAR		0
+
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+#define UART_IRQ_FLAGS				(IOAPIC_LEVEL | IOAPIC_LOW)
+#endif /* CONFIG_IOAPIC */
 
 
 #ifdef __cplusplus
