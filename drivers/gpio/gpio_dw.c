@@ -340,7 +340,7 @@ void gpio_dw_isr(void *arg)
 	}
 #endif
 
-	dw_write(base_addr, PORTA_EOI, -1);
+	dw_write(base_addr, PORTA_EOI, int_status);
 
 	if (!context->callback) {
 		return;
