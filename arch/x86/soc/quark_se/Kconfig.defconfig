@@ -180,6 +180,8 @@ config I2C_QMSI_0_IRQ
 	default 0
 config I2C_QMSI_0_IRQ_PRI
 	default 2
+config I2C_QMSI_0_DEFAULT_CFG
+	default 0x12
 
 endif # I2C_QMSI_0
 
@@ -192,6 +194,8 @@ config I2C_QMSI_1_IRQ
 	default 1
 config I2C_QMSI_1_IRQ_PRI
 	default 2
+config I2C_QMSI_1_DEFAULT_CFG
+	default 0x12
 
 endif # I2C_QMSI_1
 

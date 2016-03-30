@@ -194,6 +194,8 @@ config I2C_QMSI_0_IRQ
 	default 4
 config I2C_QMSI_0_IRQ_PRI
 	default 0
+config I2C_QMSI_0_DEFAULT_CFG
+	default 0x12
 endif # I2C_QMSI
 endif # I2C
 

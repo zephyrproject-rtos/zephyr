@@ -45,6 +45,15 @@ config I2C_QMSI_0_IRQ_PRI
 	int "Interrupt priority from I2C_0 controller"
 	depends on I2C_QMSI_0
 
+config I2C_QMSI_0_DEFAULT_CFG
+	hex "I2C_0 default configuration"
+	depends on I2C_QMSI_0
+	default 0x0
+	help
+	This option specifies a default configuration for I2C_0 device
+	(e.g. addressing mode and bus speed) which is set during driver
+	initialization. Refer to I2C API for proper values.
+
 config I2C_QMSI_1
 	bool "Enable I2C_1 controller"
 	default n
@@ -62,3 +71,12 @@ config I2C_QMSI_1_IRQ
 config I2C_QMSI_1_IRQ_PRI
 	int "Interrupt priority from I2C_1 controller"
 	depends on I2C_QMSI_1
+
+config I2C_QMSI_1_DEFAULT_CFG
+	hex "I2C_1 default configuration"
+	depends on I2C_QMSI_1
+	default 0x0
+	help
+	This option specifies a default configuration for I2C_1 device
+	(e.g. addressing mode and bus speed) which is set during driver
+	initialization. Refer to I2C API for proper values.

@@ -31,6 +31,7 @@
 
 struct i2c_qmsi_config_info {
 	qm_i2c_t instance; /* Controller instance. */
+	union dev_config default_cfg;
 };
 
 struct i2c_qmsi_driver_data {
@@ -46,6 +47,7 @@ static struct i2c_qmsi_driver_data driver_data_0;
 
 static struct i2c_qmsi_config_info config_info_0 = {
 	.instance = QM_I2C_0,
+	.default_cfg.raw = CONFIG_I2C_QMSI_0_DEFAULT_CFG,
 };
 
 DEVICE_INIT(i2c_0, CONFIG_I2C_QMSI_0_NAME, i2c_qmsi_init, &driver_data_0,
@@ -59,6 +61,7 @@ static struct i2c_qmsi_driver_data driver_data_1;
 
 static struct i2c_qmsi_config_info config_info_1 = {
 	.instance = QM_I2C_1,
+	.default_cfg.raw = CONFIG_I2C_QMSI_1_DEFAULT_CFG,
 };
 
 DEVICE_INIT(i2c_1, CONFIG_I2C_QMSI_1_NAME, i2c_qmsi_init, &driver_data_1,
@@ -205,7 +208,9 @@ static struct i2c_driver_api api = {
 static int i2c_qmsi_init(struct device *dev)
 {
 	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
+	struct i2c_qmsi_config_info *config = dev->config->config_info;
 	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
+	int err;
 
 	switch (instance) {
 	case QM_I2C_0:
@@ -235,6 +240,11 @@ static int i2c_qmsi_init(struct device *dev)
 
 	default:
 		return -EIO;
+	}
+
+	err = i2c_qmsi_configure(dev, config->default_cfg.raw);
+	if (err < 0) {
+		return err;
 	}
 
 	device_sync_call_init(&driver_data->sync);
