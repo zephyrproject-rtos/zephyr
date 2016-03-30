@@ -58,11 +58,9 @@
 
 #include <util_test_common.h>
 
-#ifndef FIBER_STACKSIZE
-#define FIBER_STACKSIZE               2048
-#endif
-#define NUM_FIFO_ELEMENT        4
-#define INVALID_DATA            NULL
+#define FIBER_STACKSIZE		256
+#define NUM_FIFO_ELEMENT	4
+#define INVALID_DATA		NULL
 
 #define TCERR1(count)  TC_ERROR("Didn't get back correct FIFO, count %d\n", count)
 #define TCERR2         TC_ERROR("Didn't get back correct FIFO\n")
