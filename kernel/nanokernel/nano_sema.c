@@ -57,6 +57,7 @@ void nano_sem_init(struct nano_sem *sem)
 	sem->nsig = 0;
 	_nano_wait_q_init(&sem->wait_q);
 	SYS_TRACING_OBJ_INIT(nano_sem, sem);
+	_TASK_PENDQ_INIT(&sem->task_q);
 }
 
 FUNC_ALIAS(_sem_give_non_preemptible, nano_isr_sem_give, void);
@@ -84,6 +85,7 @@ void _sem_give_non_preemptible(struct nano_sem *sem)
 	tcs = _nano_wait_q_remove(&sem->wait_q);
 	if (!tcs) {
 		sem->nsig++;
+		_NANO_UNPEND_TASKS(&sem->task_q);
 	} else {
 		_nano_timeout_abort(tcs);
 		set_sem_available(tcs);
@@ -107,6 +109,7 @@ void nano_task_sem_give(struct nano_sem *sem)
 	}
 
 	sem->nsig++;
+	_TASK_NANO_UNPEND_TASKS(&sem->task_q);
 
 	irq_unlock(imask);
 }
@@ -176,15 +179,8 @@ int nano_task_sem_take(struct nano_sem *sem, int32_t timeout_in_ticks)
 		}
 
 		if (timeout_in_ticks != TICKS_NONE) {
-
-			_NANO_TIMEOUT_SET_TASK_TIMEOUT(timeout_in_ticks);
-
-			/* see explanation in
-			 * nano_stack.c:nano_task_stack_pop()
-			 */
-			nano_cpu_atomic_idle(key);
-
-			key = irq_lock();
+			_NANO_OBJECT_WAIT(&sem->task_q, &sem->nsig,
+					timeout_in_ticks, key);
 			cur_ticks = _NANO_TIMEOUT_TICK_GET();
 		}
 	} while (cur_ticks < limit);

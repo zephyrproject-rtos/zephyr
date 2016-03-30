@@ -50,6 +50,7 @@ void nano_lifo_init(struct nano_lifo *lifo)
 	lifo->list = (void *) 0;
 	_nano_wait_q_init(&lifo->wait_q);
 	SYS_TRACING_OBJ_INIT(nano_lifo, lifo);
+	_TASK_PENDQ_INIT(&lifo->task_q);
 }
 
 FUNC_ALIAS(_lifo_put_non_preemptible, nano_isr_lifo_put, void);
@@ -75,6 +76,7 @@ void _lifo_put_non_preemptible(struct nano_lifo *lifo, void *data)
 	} else {
 		*(void **) data = lifo->list;
 		lifo->list = data;
+		_NANO_UNPEND_TASKS(&lifo->task_q);
 	}
 
 	irq_unlock(imask);
@@ -96,6 +98,7 @@ void nano_task_lifo_put(struct nano_lifo *lifo, void *data)
 
 	*(void **) data = lifo->list;
 	lifo->list = data;
+	_TASK_NANO_UNPEND_TASKS(&lifo->task_q);
 
 	irq_unlock(imask);
 }
@@ -164,15 +167,8 @@ void *nano_task_lifo_get(struct nano_lifo *lifo, int32_t timeout_in_ticks)
 		}
 
 		if (timeout_in_ticks != TICKS_NONE) {
-
-			_NANO_TIMEOUT_SET_TASK_TIMEOUT(timeout_in_ticks);
-
-			/* see explanation in
-			 * nano_stack.c:nano_task_stack_pop()
-			 */
-			nano_cpu_atomic_idle(imask);
-
-			imask = irq_lock();
+			_NANO_OBJECT_WAIT(&lifo->task_q, &lifo->list,
+					timeout_in_ticks, imask);
 			cur_ticks = _NANO_TIMEOUT_TICK_GET();
 		}
 	} while (cur_ticks < limit);

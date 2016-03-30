@@ -71,7 +71,6 @@ void _timer_start(struct nano_timer *timer, int ticks)
 	irq_unlock(key);
 }
 
-
 FUNC_ALIAS(_timer_stop_non_preemptible, nano_isr_timer_stop, void);
 FUNC_ALIAS(_timer_stop_non_preemptible, nano_fiber_timer_stop, void);
 void _timer_stop_non_preemptible(struct nano_timer *timer)
@@ -87,7 +86,11 @@ void _timer_stop_non_preemptible(struct nano_timer *timer)
 	 */
 	if (!t->wait_q && (_nano_timer_timeout_abort(t) == 0) &&
 	    tcs != NULL) {
-		_nano_fiber_ready(tcs);
+		if (_IS_MICROKERNEL_TASK(tcs)) {
+			_NANO_TIMER_TASK_READY(tcs);
+		} else {
+			_nano_fiber_ready(tcs);
+		}
 	}
 
 	/*
@@ -97,6 +100,15 @@ void _timer_stop_non_preemptible(struct nano_timer *timer)
 	timer->user_data = NULL;
 	irq_unlock(key);
 }
+
+#ifdef CONFIG_MICROKERNEL
+extern void _task_nano_timer_task_ready(void *uk_task_ptr);
+
+#define _TASK_NANO_TIMER_TASK_READY(tcs)  \
+		_task_nano_timer_task_ready(tcs->uk_task_ptr)
+#else
+#define _TASK_NANO_TIMER_TASK_READY(tcs)  do { } while (0)
+#endif
 
 void nano_task_timer_stop(struct nano_timer *timer)
 {
@@ -113,11 +125,14 @@ void nano_task_timer_stop(struct nano_timer *timer)
 	 */
 	if (!t->wait_q && (_nano_timer_timeout_abort(t) == 0) &&
 	    tcs != NULL) {
-		_nano_fiber_ready(tcs);
-		_Swap(key);
-	} else {
-		irq_unlock(key);
+		if (!_IS_MICROKERNEL_TASK(tcs)) {
+			_nano_fiber_ready(tcs);
+			_Swap(key);
+			return;
+		}
+		_TASK_NANO_TIMER_TASK_READY(tcs);
 	}
+	irq_unlock(key);
 }
 
 void nano_timer_stop(struct nano_timer *timer)
@@ -195,6 +210,28 @@ void *nano_fiber_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
 	return user_data;
 }
 
+#define IDLE_TASK_TIMER_PEND(timer, key) \
+	do {                                                                \
+		_nanokernel.task_timeout = nano_timer_ticks_remain(timer);  \
+		nano_cpu_atomic_idle(key);                                  \
+		key = irq_lock();                                           \
+	} while (0)
+
+#ifdef CONFIG_MICROKERNEL
+extern void _task_nano_timer_pend_task(struct nano_timer *timer);
+
+#define NANO_TASK_TIMER_PEND(timer, key)                                      \
+	do {                                                                  \
+		if (task_priority_get() == CONFIG_NUM_TASK_PRIORITIES - 1) {  \
+			IDLE_TASK_TIMER_PEND(timer, key);                     \
+		} else {                                                      \
+			_task_nano_timer_pend_task(timer);                    \
+		}                                                             \
+	} while (0)
+#else
+#define NANO_TASK_TIMER_PEND(timer, key)  IDLE_TASK_TIMER_PEND(timer, key)
+#endif
+
 void *nano_task_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
 {
 	int key = irq_lock();
@@ -204,10 +241,7 @@ void *nano_task_timer_test(struct nano_timer *timer, int32_t timeout_in_ticks)
 	if (_nano_timer_expire_wait(timer, timeout_in_ticks, &user_data)) {
 		/* task goes to busy waiting loop */
 		while (t->delta_ticks_from_prev != -1) {
-			_nanokernel.task_timeout =
-				nano_timer_ticks_remain(timer);
-			nano_cpu_atomic_idle(key);
-			key = irq_lock();
+			NANO_TASK_TIMER_PEND(timer, key);
 		}
 		user_data = timer->user_data;
 		timer->user_data = NULL;

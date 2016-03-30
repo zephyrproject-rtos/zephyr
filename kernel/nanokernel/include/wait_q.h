@@ -128,6 +128,32 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(
 	#define _NANO_TIMEOUT_SET_TASK_TIMEOUT(ticks) do { } while ((0))
 #endif
 
+#ifdef CONFIG_MICROKERNEL
+	extern void _task_nano_pend_task(struct _nano_queue *, int32_t);
+	extern uint32_t task_priority_get(void);
+
+	#define _NANO_OBJECT_WAIT(queue, data, timeout, key)                  \
+		do {                                                          \
+			if (task_priority_get() == CONFIG_NUM_TASK_PRIORITIES \
+							- 1) {                \
+				_NANO_TIMEOUT_SET_TASK_TIMEOUT(timeout);      \
+				nano_cpu_atomic_idle(key);                    \
+				key = irq_lock();                             \
+			} else {                                              \
+				_task_nano_pend_task(queue, timeout);         \
+			}                                                     \
+		} while (0)
+
+#else
+	#define _NANO_OBJECT_WAIT(queue, data, timeout, key)     \
+		do {                                             \
+			_NANO_TIMEOUT_SET_TASK_TIMEOUT(timeout); \
+			nano_cpu_atomic_idle(key);               \
+			key = irq_lock();                        \
+		} while (0)
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif

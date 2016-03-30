@@ -405,8 +405,11 @@ extern void task_fiber_delayed_start_cancel(nano_thread_id_t handle);
  * @{
  */
 struct nano_fifo {
-	struct _nano_queue wait_q;
+	struct _nano_queue wait_q;          /* waiting fibers */
 	struct _nano_queue data_q;
+#ifdef CONFIG_MICROKERNEL
+	struct _nano_queue task_q;          /* waiting tasks */
+#endif
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 	struct nano_fifo *__next;
 #endif
@@ -607,6 +610,9 @@ extern void *nano_task_fifo_get(struct nano_fifo *fifo,
 struct nano_lifo {
 	struct _nano_queue wait_q;
 	void *list;
+#ifdef CONFIG_MICROKERNEL
+	struct _nano_queue task_q;          /* waiting tasks */
+#endif
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 	struct nano_lifo *__next;
 #endif
@@ -794,6 +800,9 @@ extern void *nano_task_lifo_get(struct nano_lifo *lifo,
 struct nano_sem {
 	struct _nano_queue wait_q;
 	int nsig;
+#ifdef CONFIG_MICROKERNEL
+	struct _nano_queue task_q;          /* waiting tasks */
+#endif
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 	struct nano_sem *__next;
 #endif

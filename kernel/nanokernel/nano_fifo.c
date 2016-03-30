@@ -76,6 +76,8 @@ void nano_fifo_init(struct nano_fifo *fifo)
 	_nano_wait_q_init(&fifo->wait_q);
 	data_q_init(&fifo->data_q);
 
+	_TASK_PENDQ_INIT(&fifo->task_q);
+
 	SYS_TRACING_OBJ_INIT(nano_fifo, fifo);
 }
 
@@ -133,6 +135,7 @@ void _fifo_put_non_preemptible(struct nano_fifo *fifo, void *data)
 		fiberRtnValueSet(tcs, (unsigned int)data);
 	} else {
 		enqueue_data(fifo, data);
+		_NANO_UNPEND_TASKS(&fifo->task_q);
 	}
 
 	irq_unlock(key);
@@ -153,6 +156,7 @@ void nano_task_fifo_put(struct nano_fifo *fifo, void *data)
 	}
 
 	enqueue_data(fifo, data);
+	_TASK_NANO_UNPEND_TASKS(&fifo->task_q);
 
 	irq_unlock(key);
 }
@@ -237,15 +241,8 @@ void *nano_task_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
 		}
 
 		if (timeout_in_ticks != TICKS_NONE) {
-
-			_NANO_TIMEOUT_SET_TASK_TIMEOUT(timeout_in_ticks);
-
-			/* see explanation in
-			 * nano_stack.c:nano_task_stack_pop()
-			 */
-			nano_cpu_atomic_idle(key);
-
-			key = irq_lock();
+			_NANO_OBJECT_WAIT(&fifo->task_q, &fifo->data_q.head,
+					timeout_in_ticks, key);
 			cur_ticks = _NANO_TIMEOUT_TICK_GET();
 		}
 	} while (cur_ticks < limit);

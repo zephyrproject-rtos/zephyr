@@ -81,6 +81,41 @@ struct nano_lifo;
 
 extern void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo);
 
+#ifdef CONFIG_MICROKERNEL
+extern void _task_nop(void);
+extern void _nano_nop(void);
+extern int  _nano_unpend_tasks(struct _nano_queue *queue);
+extern void _nano_task_ready(void *ptr);
+extern void _nano_timer_task_ready(void *task);
+
+#define _TASK_PENDQ_INIT(queue)		_nano_wait_q_init(queue)
+#define _NANO_UNPEND_TASKS(queue)                        \
+	do {                                             \
+		if (_nano_unpend_tasks(queue) != 0) {    \
+			_nano_nop();                     \
+		}                                        \
+	} while (0)
+
+
+#define _TASK_NANO_UNPEND_TASKS(queue)	                 \
+	do {                                             \
+		if (_nano_unpend_tasks(queue) != 0) {    \
+			_task_nop();                     \
+		}                                        \
+	} while (0)
+
+#define _NANO_TASK_READY(tcs)		_nano_task_ready(tcs->uk_task_ptr)
+#define _NANO_TIMER_TASK_READY(tcs)	_nano_timer_task_ready(tcs->uk_task_ptr)
+#define _IS_MICROKERNEL_TASK(tcs)	((tcs)->uk_task_ptr != NULL)
+#else
+#define _TASK_PENDQ_INIT(queue)		do { } while (0)
+#define _NANO_UNPEND_TASKS(queue)	do { } while (0)
+#define _TASK_NANO_UNPEND_TASKS(queue)	do { } while (0)
+#define _NANO_TASK_READY(tcs)		do { } while (0)
+#define _NANO_TIMER_TASK_READY(tcs)	do { } while (0)
+#define _IS_MICROKERNEL_TASK(tcs)	(0)
+#endif
+
 #ifdef __cplusplus
 }
 #endif

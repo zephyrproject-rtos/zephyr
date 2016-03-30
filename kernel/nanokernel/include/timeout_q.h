@@ -120,7 +120,11 @@ static inline struct _nano_timeout *_nano_timeout_handle_one_timeout(
 
 	if (tcs != NULL) {
 		_nano_timeout_object_dequeue(tcs, t);
-		_nano_fiber_ready(tcs);
+		if (_IS_MICROKERNEL_TASK(tcs)) {
+			_NANO_TASK_READY(tcs);
+		} else {
+			_nano_fiber_ready(tcs);
+		}
 	}
 	t->delta_ticks_from_prev = -1;
 
