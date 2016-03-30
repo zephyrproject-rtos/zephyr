@@ -63,3 +63,10 @@ UART Interface
 .. doxygengroup:: uart_interface
    :project: Zephyr
    :content-only:
+
+Sensor Interface
+****************
+
+.. doxygengroup:: sensor_interface
+   :project: Zephyr
+   :content-only:
