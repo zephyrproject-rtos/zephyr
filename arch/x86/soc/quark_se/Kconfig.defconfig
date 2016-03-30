@@ -148,12 +148,8 @@ config I2C_DW_0
 
 if I2C_DW_0
 
-config I2C_DW_0_BASE
-        default 0xb0002800
 config I2C_DW_0_NAME
         default "I2C0"
-config I2C_DW_0_IRQ
-	default 0
 config I2C_DW_0_IRQ_PRI
 	default 2
 
@@ -164,12 +160,8 @@ config I2C_DW_1
 
 if I2C_DW_1
 
-config I2C_DW_1_BASE
-        default 0xb0002c00
 config I2C_DW_1_NAME
         default "I2C1"
-config I2C_DW_1_IRQ
-	default 1
 config I2C_DW_1_IRQ_PRI
 	default 2
 

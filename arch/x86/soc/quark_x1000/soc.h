@@ -32,6 +32,29 @@
 #include <drivers/rand32.h>
 #endif
 
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+#endif
+
+/*
+ * I2C
+ */
+#define I2C_DW_PCI_VENDOR_ID			0x8086
+#define I2C_DW_PCI_DEVICE_ID			0x0934
+#define I2C_DW_PCI_CLASS			0x0C
+
+#define I2C_DW_0_BASE_ADDR			0x90007000
+#define I2C_DW_0_IRQ				18
+
+#define I2C_DW_0_PCI_BUS			0
+#define I2C_DW_0_PCI_DEV			21
+#define I2C_DW_0_PCI_FUNCTION			2
+#define I2C_DW_0_PCI_BAR			0
+
+#if defined(CONFIG_IOAPIC)
+#define I2C_DW_IRQ_FLAGS			(IOAPIC_LEVEL | IOAPIC_LOW)
+#endif
+
 /*
  * UART
  */
@@ -60,7 +83,6 @@
 #define UART_NS16550_PORT_1_PCI_BAR		0
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
 #define UART_IRQ_FLAGS				(IOAPIC_LEVEL | IOAPIC_LOW)
 #endif /* CONFIG_IOAPIC */
 

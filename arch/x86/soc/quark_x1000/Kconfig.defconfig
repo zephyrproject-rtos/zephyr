@@ -81,13 +81,6 @@ config I2C_DW
 
 if I2C_DW
 
-config I2C_DW_VENDOR_ID
-        default 0x8086
-config I2C_DW_DEVICE_ID
-        default 0x934
-config I2C_DW_CLASS
-        default 0x0C
-
 config I2C_DW_0
         def_bool y
 
@@ -97,20 +90,8 @@ config I2C_DW_0_NAME
         default "I2C0"
 config I2C_DW_0_DEFAULT_CFG
         default 0x12
-config I2C_DW_0_BASE
-	default 0x90007000
-config I2C_DW_0_IRQ
-	default 18
 config I2C_DW_0_IRQ_PRI
 	default 2
-config I2C_DW_0_BUS
-	default 0
-config I2C_DW_0_DEV
-	default 21
-config I2C_DW_0_FUNCTION
-	default 2
-config I2C_DW_0_BAR
-	default 0
 config I2C_DW_0_IRQ_SHARED_NAME
 	default SHARED_IRQ_0_NAME if SHARED_IRQ
 

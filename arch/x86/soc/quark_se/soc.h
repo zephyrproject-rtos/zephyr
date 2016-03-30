@@ -202,6 +202,19 @@ struct scss_interrupt {
  */
 #define AIO_DW_COMPARATOR_BASE_ADDR	0xb0800300
 
+/*
+ * I2C
+ */
+#define I2C_DW_0_BASE_ADDR		0xb0002800
+#define I2C_DW_0_IRQ			0
+
+#define I2C_DW_1_BASE_ADDR		0xb0002c00
+#define I2C_DW_1_IRQ			1
+
+#if defined(CONFIG_IOAPIC)
+#define I2C_DW_IRQ_FLAGS		(IOAPIC_EDGE | IOAPIC_HIGH)
+#endif
+
 #endif /*  _ASMLANGUAGE */
 
 #endif /* __SOC_H_ */

@@ -729,28 +729,14 @@ int i2c_dw_initialize(struct device *port)
 	return 0;
 }
 
-#if defined(CONFIG_IOAPIC)
-	#if defined(CONFIG_I2C_DW_IRQ_FALLING_EDGE)
-		#define I2C_DW_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-	#elif defined(CONFIG_I2C_DW_IRQ_RISING_EDGE)
-		#define I2C_DW_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-	#elif defined(CONFIG_I2C_DW_IRQ_LEVEL_HIGH)
-		#define I2C_DW_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-	#elif defined(CONFIG_I2C_DW_IRQ_LEVEL_LOW)
-		#define I2C_DW_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-	#endif
-#else
-	#define I2C_DW_IRQ_FLAGS 0
-#endif /* CONFIG_IOAPIC */
-
 /* system bindings */
 #if CONFIG_I2C_DW_0
 void i2c_config_0(struct device *port);
 
 struct i2c_dw_rom_config i2c_config_dw_0 = {
-	.base_address = CONFIG_I2C_DW_0_BASE,
+	.base_address = I2C_DW_0_BASE_ADDR,
 #ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
-	.irq_num = CONFIG_I2C_DW_0_IRQ,
+	.irq_num = I2C_DW_0_IRQ,
 #endif
 	.config_func = i2c_config_0,
 
@@ -759,13 +745,13 @@ struct i2c_dw_rom_config i2c_config_dw_0 = {
 #endif
 
 #if CONFIG_PCI
-	.pci_dev.class_type = CONFIG_I2C_DW_CLASS,
-	.pci_dev.bus = CONFIG_I2C_DW_0_BUS,
-	.pci_dev.dev = CONFIG_I2C_DW_0_DEV,
-	.pci_dev.vendor_id = CONFIG_I2C_DW_VENDOR_ID,
-	.pci_dev.device_id = CONFIG_I2C_DW_DEVICE_ID,
-	.pci_dev.function = CONFIG_I2C_DW_0_FUNCTION,
-	.pci_dev.bar = CONFIG_I2C_DW_0_BAR,
+	.pci_dev.class_type = I2C_DW_PCI_CLASS,
+	.pci_dev.bus = I2C_DW_0_PCI_BUS,
+	.pci_dev.dev = I2C_DW_0_PCI_DEV,
+	.pci_dev.vendor_id = I2C_DW_PCI_VENDOR_ID,
+	.pci_dev.device_id = I2C_DW_PCI_DEVICE_ID,
+	.pci_dev.function = I2C_DW_0_PCI_FUNCTION,
+	.pci_dev.bar = I2C_DW_0_PCI_BAR,
 #endif
 };
 
@@ -784,7 +770,7 @@ void i2c_config_0(struct device *port)
 
 #if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONNECT(CONFIG_I2C_DW_0_IRQ, CONFIG_I2C_DW_0_IRQ_PRI,
+	IRQ_CONNECT(I2C_DW_0_IRQ, CONFIG_I2C_DW_0_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_0), I2C_DW_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
@@ -804,18 +790,18 @@ void i2c_config_0(struct device *port)
 void i2c_config_1(struct device *port);
 
 struct i2c_dw_rom_config i2c_config_dw_1 = {
-	.base_address = CONFIG_I2C_DW_1_BASE,
-	.irq_num = CONFIG_I2C_DW_1_IRQ,
+	.base_address = I2C_DW_1_BASE_ADDR,
+	.irq_num = I2C_DW_1_IRQ,
 	.config_func = i2c_config_1,
 
 #if CONFIG_PCI
-	.pci_dev.class_type = CONFIG_I2C_DW_CLASS,
-	.pci_dev.bus = CONFIG_I2C_DW_1_BUS,
-	.pci_dev.dev = CONFIG_I2C_DW_1_DEV,
-	.pci_dev.vendor_id = CONFIG_I2C_DW_VENDOR_ID,
-	.pci_dev.device_id = CONFIG_I2C_DW_DEVICE_ID,
-	.pci_dev.function = CONFIG_I2C_DW_1_FUNCTION,
-	.pci_dev.bar = CONFIG_I2C_DW_1_BAR,
+	.pci_dev.class_type = I2C_DW_PCI_CLASS,
+	.pci_dev.bus = I2C_DW_1_PCI_BUS,
+	.pci_dev.dev = I2C_DW_1_PCI_DEV,
+	.pci_dev.vendor_id = I2C_DW_PCI_VENDOR_ID,
+	.pci_dev.device_id = I2C_DW_PCI_DEVICE_ID,
+	.pci_dev.function = I2C_DW_1_PCI_FUNCTION,
+	.pci_dev.bar = I2C_DW_1_PCI_BAR,
 #endif
 };
 
@@ -833,7 +819,7 @@ void i2c_config_1(struct device *port)
 	struct device *shared_irq_dev;
 
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONNECT(CONFIG_I2C_DW_1_IRQ, CONFIG_I2C_DW_1_IRQ_PRI,
+	IRQ_CONNECT(I2C_DW_1_IRQ, CONFIG_I2C_DW_1_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_1), I2C_DW_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 }

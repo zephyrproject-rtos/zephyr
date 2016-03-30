@@ -123,8 +123,17 @@ struct scss_interrupt {
 #define RTC_DW_INT_MASK			(SCSS_INT_BASE + 0x78)
 #define CCU_RTC_CLK_DIV_OFFSET          0x3
 
-/* I2C MST 0 */
+/*
+ * I2C
+ */
 #define I2C_MST_0_INT_MASK		(SCSS_INT_BASE + 0x48)
+
+#define I2C_DW_0_BASE_ADDR		0xB0002800
+#define I2C_DW_0_IRQ			4
+
+#if defined(CONFIG_MVIC)
+#define I2C_DW_IRQ_FLAGS		(IOAPIC_EDGE | IOAPIC_HIGH)
+#endif
 
 /* Comparator */
 #define INT_AIO_CMP_IRQ			(0x0E)
