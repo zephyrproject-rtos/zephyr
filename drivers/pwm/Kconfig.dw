@@ -34,19 +34,4 @@ config PWM_DW_DEV_NAME
 	help
 	  Specify the device name for the DesignWare PWM driver.
 
-config PWM_DW_BASE_ADDR
-	hex "DesignWare PWM Base Address"
-	depends on PWM_DW
-	help
-	  Specify the base address for registers for DesignWare PWM.
-
-config PWM_DW_NUM_PORTS
-	int "Number of PWM ports for DesignWare PWM"
-	depends on PWM_DW
-	default 1
-	help
-	  Specify how many PWM ports on the IP block.
-
-	  Default is 1.
-
 endif # PWM_DW

@@ -30,7 +30,7 @@
 #include <errno.h>
 
 #include <nanokernel.h>
-
+#include <board.h>
 #include <pwm.h>
 
 /* Register for component version */
@@ -244,8 +244,8 @@ int pwm_dw_init(struct device *dev)
 #include <init.h>
 
 static struct pwm_dw_config pwm_dw_cfg = {
-	.addr = CONFIG_PWM_DW_BASE_ADDR,
-	.num_ports = CONFIG_PWM_DW_NUM_PORTS,
+	.addr = PWM_DW_BASE_ADDR,
+	.num_ports = PWM_DW_NUM_PORTS,
 };
 
 DEVICE_INIT(pwm_dw_0, CONFIG_PWM_DW_DEV_NAME, pwm_dw_init,

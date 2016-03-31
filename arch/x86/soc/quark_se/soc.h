@@ -215,6 +215,12 @@ struct scss_interrupt {
 #define I2C_DW_IRQ_FLAGS		(IOAPIC_EDGE | IOAPIC_HIGH)
 #endif
 
+/*
+ * PWM
+ */
+#define PWM_DW_BASE_ADDR		0xB0000800
+#define PWM_DW_NUM_PORTS		4
+
 #endif /*  _ASMLANGUAGE */
 
 #endif /* __SOC_H_ */
