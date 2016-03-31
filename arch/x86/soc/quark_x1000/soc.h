@@ -37,6 +37,17 @@
 #endif
 
 /*
+ * GPIO
+ */
+#define GPIO_SCH_LEGACY_IO_PORTS_ACCESS
+
+#define GPIO_SCH_0_BASE_ADDR			0x1080
+#define GPIO_SCH_0_BITS				2
+
+#define GPIO_SCH_1_BASE_ADDR			0x10A0
+#define GPIO_SCH_1_BITS				6
+
+/*
  * I2C
  */
 #define I2C_DW_PCI_VENDOR_ID			0x8086

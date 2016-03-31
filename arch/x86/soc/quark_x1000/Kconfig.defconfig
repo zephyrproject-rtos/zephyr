@@ -119,10 +119,6 @@ if GPIO_SCH_0
 
 config GPIO_SCH_0_DEV_NAME
 	default "GPIO_CW"
-config GPIO_SCH_0_BASE_ADDR
-	default 0x1080
-config GPIO_SCH_0_BITS
-	default 2
 
 endif # GPIO_SCH_0
 
@@ -130,10 +126,6 @@ if GPIO_SCH_1
 
 config GPIO_SCH_1_DEV_NAME
 	default "GPIO_RW"
-config GPIO_SCH_1_BASE_ADDR
-	default 0x10A0
-config GPIO_SCH_1_BITS
-	default 6
 
 endif # GPIO_SCH_1
 

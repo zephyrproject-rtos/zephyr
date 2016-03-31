@@ -38,7 +38,12 @@
 #endif /* CONFIG_STDOUT_CONSOLE */
 #endif /* CONFIG_SPI_DEBUG */
 
-#ifdef CONFIG_GPIO_SCH_LEGACY_IO_PORTS_ACCESS
+/* Define GPIO_SCH_LEGACY_IO_PORTS_ACCESS
+ * inside soc.h if the GPIO controller
+ * requires I/O port access instead of
+ * memory mapped I/O.
+ */
+#ifdef GPIO_SCH_LEGACY_IO_PORTS_ACCESS
 #define _REG_READ sys_in32
 #define _REG_WRITE sys_out32
 #define _REG_SET_BIT sys_io_set_bit
@@ -341,8 +346,8 @@ int gpio_sch_init(struct device *dev)
 #if CONFIG_GPIO_SCH_0
 
 struct gpio_sch_config gpio_sch_0_config = {
-	.regs = CONFIG_GPIO_SCH_0_BASE_ADDR,
-	.bits = CONFIG_GPIO_SCH_0_BITS,
+	.regs = GPIO_SCH_0_BASE_ADDR,
+	.bits = GPIO_SCH_0_BITS,
 };
 
 struct gpio_sch_data gpio_data_0;
@@ -355,8 +360,8 @@ DEVICE_INIT(gpio_0, CONFIG_GPIO_SCH_0_DEV_NAME, gpio_sch_init,
 #if CONFIG_GPIO_SCH_1
 
 struct gpio_sch_config gpio_sch_1_config = {
-	.regs = CONFIG_GPIO_SCH_1_BASE_ADDR,
-	.bits = CONFIG_GPIO_SCH_1_BITS,
+	.regs = GPIO_SCH_1_BASE_ADDR,
+	.bits = GPIO_SCH_1_BITS,
 };
 
 struct gpio_sch_data gpio_data_1;
