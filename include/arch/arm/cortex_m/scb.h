@@ -527,7 +527,7 @@ static inline void _ScbUnalignedFaultEnable(void)
  *
  * @brief Ignore unaligned access errors
  *
- * This routine disables the divide by zero fault.
+ * This routine disables the unaligned fault.
  * This is the default behavior.
  *
  * @return N/A
