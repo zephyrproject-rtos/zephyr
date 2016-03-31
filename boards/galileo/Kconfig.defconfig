@@ -138,6 +138,11 @@ endif # PWM_PCA9685_0
 endif # PWM_PCA9685
 endif # PWM && I2C
 
+# SPI uses GPIO pin for CS, so it needs to be initialized after
+# the gpio_dw driver
+config SPI_INTEL_INIT_PRIORITY
+	default 70 if SPI_INTEL
+
 # Pin multiplexer uses PCAL9535A, needs to be initialized after it
 config PINMUX_INIT_PRIORITY
 	default 80 if PINMUX
