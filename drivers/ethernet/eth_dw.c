@@ -69,15 +69,15 @@ static void eth_rx(struct device *port)
 		goto release_desc;
 	}
 
-	buf = ip_buf_get_reserve_rx(0);
-	if (buf == NULL) {
-		ETH_ERR("Failed to obtain RX buffer.\n");
-		goto release_desc;
-	}
-
 	frm_len = context->rx_desc.frm_len;
 	if (frm_len > UIP_BUFSIZE) {
 		ETH_ERR("Frame too large: %u.\n", frm_len);
+		goto release_desc;
+	}
+
+	buf = ip_buf_get_reserve_rx(0);
+	if (buf == NULL) {
+		ETH_ERR("Failed to obtain RX buffer.\n");
 		goto release_desc;
 	}
 
