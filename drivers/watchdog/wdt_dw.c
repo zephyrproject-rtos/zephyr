@@ -156,7 +156,7 @@ int wdt_dw_init(struct device *dev);
 struct wdt_dw_runtime wdt_runtime;
 
 struct wdt_dw_dev_config wdt_dev = {
-	.base_address = CONFIG_WDT_DW_BASE_ADDR,
+	.base_address = WDT_DW_BASE_ADDR,
 #ifdef CONFIG_WDT_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_WDT_DW_CLOCK_GATE_SUBSYS),
 #endif
@@ -170,9 +170,9 @@ int wdt_dw_init(struct device *dev)
 {
 	dev->driver_api = &wdt_dw_funcs;
 
-	IRQ_CONNECT(CONFIG_WDT_DW_IRQ, CONFIG_WDT_DW_IRQ_PRI, wdt_dw_isr,
+	IRQ_CONNECT(WDT_DW_IRQ, CONFIG_WDT_DW_IRQ_PRI, wdt_dw_isr,
 		    DEVICE_GET(wdt), 0);
-	irq_enable(CONFIG_WDT_DW_IRQ);
+	irq_enable(WDT_DW_IRQ);
 
 	_wdt_dw_int_unmask();
 

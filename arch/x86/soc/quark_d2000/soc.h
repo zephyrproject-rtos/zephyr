@@ -164,4 +164,10 @@ struct scss_interrupt {
 #define UART_IRQ_FLAGS			(IOAPIC_EDGE | IOAPIC_HIGH)
 #endif /* CONFIG_MVIC */
 
+/*
+ * WDT/Watchdog
+ */
+#define WDT_DW_BASE_ADDR		0xB0000000
+#define WDT_DW_IRQ			16
+
 #endif /* __SOC_H_ */

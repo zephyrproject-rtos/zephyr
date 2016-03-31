@@ -221,6 +221,12 @@ struct scss_interrupt {
 #define PWM_DW_BASE_ADDR		0xB0000800
 #define PWM_DW_NUM_PORTS		4
 
+/*
+ * WDT/Watchdog
+ */
+#define WDT_DW_BASE_ADDR		0xB0000000
+#define WDT_DW_IRQ			12
+
 #endif /*  _ASMLANGUAGE */
 
 #endif /* __SOC_H_ */
