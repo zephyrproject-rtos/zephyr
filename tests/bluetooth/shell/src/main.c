@@ -1660,6 +1660,9 @@ void main(void)
 
 	net_buf_pool_init(data_pool);
 
+	printk("Type \"help\" for supported commands.\n");
+	printk("Before any Bluetooth commands you must run \"init\".\n");
+
 	shell_init("btshell> ", commands);
 
 	shell_register_prompt_handler(current_prompt);
