@@ -41,9 +41,7 @@ This module tests the following CPU and thread related routines:
   #include <board.h>
 #endif
 
-#ifndef FIBER_STACKSIZE
-#define FIBER_STACKSIZE    2000
-#endif
+#define FIBER_STACKSIZE    256
 #define FIBER_PRIORITY     4
 
 #define THREAD_SELF_CMD    0
