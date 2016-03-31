@@ -345,13 +345,14 @@ endif
 USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
 
 SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
+SOC_FAMILY = $(subst $(DQUOTE),,$(CONFIG_SOC_FAMILY))
 override ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 BOARD_NAME = $(subst $(DQUOTE),,$(CONFIG_BOARD))
 KERNEL_NAME = $(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 KERNEL_ELF_NAME = $(KERNEL_NAME).elf
 KERNEL_BIN_NAME = $(KERNEL_NAME).bin
 
-export SOC_NAME BOARD_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME
+export SOC_FAMILY SOC_NAME BOARD_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME
 # Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 ZEPHYRINCLUDE    = \
