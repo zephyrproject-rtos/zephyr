@@ -27,11 +27,14 @@
  * FTM0, FTM1, FTM2, or FTM3.)
  *
  * - CONFIG_PWM_K64_FTM_x_DEV_NAME: string representing the device name
- * - CONFIG_PWM_K64_FTM_x_REG_BASE: the base address of FTM (FTMx_SC)
  * - CONFIG_PWM_K64_FTM_x_PRESCALE: the clock prescaler value
  * - CONFIG_PWM_K64_FTM_x_CLOCK_SOURCE: the clock source
  * - CONFIG_PWM_K64_FTM_DEBUG: enable debug log output for the driver
  * - CONFIG_STDOUT_CONSOLE: choose debug logs using printf of printk
+ *
+ * The following configuration options need to be defined in
+ * soc.h or board.h ("x" can be 0, 1, 2 or 3).
+ * - PWM_K64_FTM_x_REG_BASE: the base address of FTM (FTMx_SC)
  *
  * The following configuration options are not supported.  These are place
  * holders for future functionality
@@ -725,7 +728,7 @@ int pwm_ftm_init(struct device *dev)
 
 static struct pwm_ftm_config pwm_ftm_0_cfg = {
 	.ftm_num       = 0,
-	.reg_base      = CONFIG_PWM_K64_FTM_0_REG_BASE,
+	.reg_base      = PWM_K64_FTM_0_REG_BASE,
 	.prescale      = CONFIG_PWM_K64_FTM_0_PRESCALE,
 	.clock_source  = CONFIG_PWM_K64_FTM_0_CLOCK_SOURCE,
 
@@ -771,7 +774,7 @@ DEVICE_INIT(pwm_ftm_0, CONFIG_PWM_K64_FTM_0_DEV_NAME, pwm_ftm_init,
 
 static struct pwm_ftm_config pwm_ftm_1_cfg = {
 	.ftm_num       = 1,
-	.reg_base      = CONFIG_PWM_K64_FTM_1_REG_BASE,
+	.reg_base      = PWM_K64_FTM_1_REG_BASE,
 	.prescale      = CONFIG_PWM_K64_FTM_1_PRESCALE,
 	.clock_source  = CONFIG_PWM_K64_FTM_1_CLOCK_SOURCE,
 
@@ -817,7 +820,7 @@ DEVICE_INIT(pwm_ftm_1, CONFIG_PWM_K64_FTM_1_DEV_NAME, pwm_ftm_init,
 
 static struct pwm_ftm_config pwm_ftm_2_cfg = {
 	.ftm_num       = 2,
-	.reg_base      = CONFIG_PWM_K64_FTM_2_REG_BASE,
+	.reg_base      = PWM_K64_FTM_2_REG_BASE,
 	.prescale      = CONFIG_PWM_K64_FTM_2_PRESCALE,
 	.clock_source  = CONFIG_PWM_K64_FTM_2_CLOCK_SOURCE,
 
@@ -863,7 +866,7 @@ DEVICE_INIT(pwm_ftm_2, CONFIG_PWM_K64_FTM_2_DEV_NAME, pwm_ftm_init,
 
 static struct pwm_ftm_config pwm_ftm_3_cfg = {
 	.ftm_num       = 3,
-	.reg_base      = CONFIG_PWM_K64_FTM_3_REG_BASE,
+	.reg_base      = PWM_K64_FTM_3_REG_BASE,
 	.prescale      = CONFIG_PWM_K64_FTM_3_PRESCALE,
 	.clock_source  = CONFIG_PWM_K64_FTM_3_CLOCK_SOURCE,
 

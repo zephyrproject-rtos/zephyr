@@ -214,6 +214,14 @@ extern "C" {
 #define PORT_K64_E_BASE_ADDR	0x4004D000
 
 /*
+ * PWM/FTM configuration settings
+ */
+#define PWM_K64_FTM_0_REG_BASE	0x40038000
+#define PWM_K64_FTM_1_REG_BASE	0x40039000
+#define PWM_K64_FTM_2_REG_BASE	0x4003A000
+#define PWM_K64_FTM_3_REG_BASE	0x400B9000
+
+/*
  * SPI configuration settings
  */
 #if defined(CONFIG_SPI_K64)

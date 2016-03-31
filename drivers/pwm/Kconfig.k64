@@ -54,14 +54,6 @@ config PWM_K64_FTM_0_DEV_NAME
 	help
 	Specify the device name for the FTM0 source module.
 
-config PWM_K64_FTM_0_REG_BASE
-	hex "K64 FTM0 Register Base Address"
-	depends on PWM_K64_FTM_0
-	default 0x40038000
-	help
-	Specify the memory mapped base address of FTM0.  This is the address
-	of FTM0_SC which is the first register of the module
-
 config PWM_K64_FTM_0_PRESCALE
 	int "K64 FTM0 prescale value"
 	default 1
@@ -170,14 +162,6 @@ config PWM_K64_FTM_1_DEV_NAME
 	default "PWM_K64_FTM1"
 	help
 	Specify the device name for the FTM1 source module.
-
-config PWM_K64_FTM_1_REG_BASE
-	hex "K64 FTM1 Register Base Address"
-	depends on PWM_K64_FTM_1
-	default 0x40039000
-	help
-	Specify the memory mapped base address of FTM1.  This is the address
-	of FTM1_SC which is the first register of the module
 
 config PWM_K64_FTM_1_PRESCALE
 	int "FTM1 prescale value"
@@ -288,14 +272,6 @@ config PWM_K64_FTM_2_DEV_NAME
 	help
 	Specify the device name for the FTM2 source module.
 
-config PWM_K64_FTM_2_REG_BASE
-	hex "K64 FTM2 Register Base Address"
-	depends on PWM_K64_FTM_2
-	default 0x4003A000
-	help
-	Specify the memory mapped base address of FTM2.  This is the address
-	of FTM2_SC which is the first register of the module
-
 config PWM_K64_FTM_2_PRESCALE
 	int "FTM2 prescale value"
 	default 1
@@ -404,14 +380,6 @@ config PWM_K64_FTM_3_DEV_NAME
 	default "PWM_K64_FTM3"
 	help
 	Specify the device name for the FTM3 source module.
-
-config PWM_K64_FTM_3_REG_BASE
-	hex "K64 FTM3 Register Base Address"
-	depends on PWM_K64_FTM_3
-	default 0x400B9000
-	help
-	Specify the memory mapped base address of FTM3.  This is the address
-	of FTM3_SC which is the first register of the module
 
 config PWM_K64_FTM_3_PRESCALE
 	int "FTM3 prescale value"
