@@ -176,8 +176,18 @@ enum sensor_attribute {
 	SENSOR_ATTR_SLOPE_DUR,
 	/** Oversampling factor */
 	SENSOR_ATTR_OVERSAMPLING,
-	/** Full-scale value. */
+	/** Sensor range, in SI units. */
 	SENSOR_ATTR_FULL_SCALE,
+	/**
+	 * The sensor value returned will be altered by the amount indicated by
+	 * offset: final_value = sensor_value + offset.
+	 */
+	SENSOR_ATTR_OFFSET,
+	/**
+	 * Calibration target. This will be used by the internal chip's
+	 * algorithms to calibrate itself on a certain axis, or all of them.
+	 */
+	SENSOR_ATTR_CALIB_TARGET,
 };
 
 typedef void (*sensor_trigger_handler_t)(struct device *dev,
