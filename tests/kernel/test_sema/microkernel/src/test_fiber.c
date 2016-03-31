@@ -26,7 +26,7 @@ semaphore signaling
 
 #define N_TESTS 10 /* number of tests to run */
 #define FIBER_PRIORITY 6
-#define FIBER_STACK_SIZE 1024
+#define FIBER_STACK_SIZE 256
 
 /* exports */
 struct nano_sem fiberSem; /* semaphore that allows test control the fiber */

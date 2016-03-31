@@ -2,14 +2,14 @@
 
 % TASK NAME         PRIO ENTRY           STACK GROUPS
 % ===================================================
-  TASK TASK10        10 Task10            2048 [EXE]
-  TASK TASK15        15 Task15            2048 [EXE]
-  TASK TASK20        20 Task20            2048 [EXE]
-  TASK TASK25        25 Task25            2048 [EXE]
-  TASK TASK30        30 Task30            2048 [EXE]
-  TASK TASK45        45 Task45            2048 [EXE]
-  TASK TASK50        50 Task50            2048 []
-  TASK REGRESSTASK   40 RegressionTask    2048 [EXE]
+  TASK TASK10        10 Task10            512  [EXE]
+  TASK TASK15        15 Task15            512  [EXE]
+  TASK TASK20        20 Task20            512  [EXE]
+  TASK TASK25        25 Task25            512  [EXE]
+  TASK TASK30        30 Task30            512  [EXE]
+  TASK TASK45        45 Task45            512  [EXE]
+  TASK TASK50        50 Task50            512  []
+  TASK REGRESSTASK   40 RegressionTask    512  [EXE]
 
 % MUTEX NAME
 % ============
