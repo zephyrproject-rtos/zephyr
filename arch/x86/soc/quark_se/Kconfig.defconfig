@@ -339,10 +339,14 @@ endif # WDT_QMSI
 endif # WATCHDOG
 
 if RTC
-config RTC_IRQ
+
+if RTC_QMSI
+config RTC_QMSI_IRQ
 	default 11
-config RTC_IRQ_PRI
+config RTC_QMSI_IRQ_PRI
 	default 2
+endif # RTC_QMSI
+
 config RTC_DW
 	def_bool y
 
@@ -353,8 +357,8 @@ config RTC_DW_CLOCK_GATE_DRV_NAME
 	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
 config RTC_DW_CLOCK_GATE_SUBSYS
 	default 11
-config RTC_DW_BASE_ADDR
-	default 0xB0000400
+config RTC_DW_IRQ_PRI
+	default 2
 endif # RTC_DW
 endif # RTC
 

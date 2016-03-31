@@ -81,11 +81,11 @@ static struct rtc_driver_api api = {
 
 static int rtc_qmsi_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_RTC_IRQ, CONFIG_RTC_IRQ_PRI, qm_rtc_isr_0, 0,
+	IRQ_CONNECT(CONFIG_RTC_QMSI_IRQ, CONFIG_RTC_IRQ_PRI, qm_rtc_isr_0, 0,
 		    IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask RTC interrupt */
-	irq_enable(CONFIG_RTC_IRQ);
+	irq_enable(CONFIG_RTC_QMSI_IRQ);
 
 	/* Route RTC interrupt to Lakemont */
 	QM_SCSS_INT->int_rtc_mask &= ~BIT(0);

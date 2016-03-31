@@ -222,6 +222,12 @@ struct scss_interrupt {
 #define PWM_DW_NUM_PORTS		4
 
 /*
+ * RTC (Real Time Clock)
+ */
+#define RTC_DW_BASE_ADDR		0xB0000400
+#define RTC_DW_IRQ			11
+
+/*
  * WDT/Watchdog
  */
 #define WDT_DW_BASE_ADDR		0xB0000000

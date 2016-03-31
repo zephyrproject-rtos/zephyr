@@ -149,6 +149,12 @@ struct scss_interrupt {
 #endif /* CONFIG_PINMUX */
 
 /*
+ * RTC (Real Time Clock)
+ */
+#define RTC_DW_BASE_ADDR		0xB0000400
+#define RTC_DW_IRQ			2
+
+/*
  * UART
  */
 #define UART_NS16550_PORT_0_BASE_ADDR	0xB0002000

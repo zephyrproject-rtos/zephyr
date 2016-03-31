@@ -194,7 +194,7 @@ int rtc_dw_init(struct device *dev);
 struct rtc_dw_runtime rtc_runtime;
 
 struct rtc_dw_dev_config rtc_dev = {
-	.base_address = CONFIG_RTC_DW_BASE_ADDR,
+	.base_address = RTC_DW_BASE_ADDR,
 #ifdef CONFIG_RTC_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_RTC_DW_CLOCK_GATE_SUBSYS),
 #endif
@@ -206,9 +206,9 @@ DEVICE_INIT(rtc, CONFIG_RTC_DRV_NAME, &rtc_dw_init,
 
 int rtc_dw_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_RTC_IRQ, CONFIG_RTC_IRQ_PRI, rtc_dw_isr,
+	IRQ_CONNECT(RTC_DW_IRQ, CONFIG_RTC_DW_IRQ_PRI, rtc_dw_isr,
 		    DEVICE_GET(rtc), 0);
-	irq_enable(CONFIG_RTC_IRQ);
+	irq_enable(RTC_DW_IRQ);
 
 	_rtc_dw_int_unmask();
 
