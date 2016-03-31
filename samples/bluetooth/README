@@ -51,8 +51,8 @@ $ echo-client -i bt0 <ip>
 There is smoke test application in nanokernel and microkernel test
 directories which gets run in sanity check script:
 
-$ scripts/sanity_chk/sanity_chk [-P <platform>]
+$ scripts/sanity_chk/sanitycheck [-P <platform>]
 
-For quick regression test use bt_regression, it only check Bluetooth test
+To only run Bluetooth tests use the -t bluetooth switch:
 
-$ samples/bluetooth/bt_regression.sh
+$ scripts/sanity_chk/sanitycheck -t bluetooth
