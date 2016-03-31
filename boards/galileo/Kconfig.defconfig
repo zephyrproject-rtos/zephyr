@@ -25,6 +25,9 @@ config ADC
 config SHARED_IRQ
 	def_bool y
 
+config PCI_ENUMERATION
+	def_bool y
+
 if PINMUX
 
 config PINMUX_GALILEO_EXP0_NAME
