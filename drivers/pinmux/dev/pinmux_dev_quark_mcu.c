@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include <nanokernel.h>
+#include <board.h>
 #include <device.h>
 #include <init.h>
 #include <pinmux.h>
