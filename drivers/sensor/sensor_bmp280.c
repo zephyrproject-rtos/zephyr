@@ -151,8 +151,9 @@ static int bmp280_channel_get(struct device *dev,
 		 * 24674867/256 = 96386.2 Pa = 963.862 hPa
 		 */
 		val->type = SENSOR_TYPE_INT_PLUS_MICRO;
-		val->val1 = data->comp_press >> 8;
-		val->val2 = ((data->comp_press & 0xff) * 1000000) >> 8;
+		val->val1 = (data->comp_press >> 8) / 1000;
+		val->val2 = (data->comp_press >> 8) % 1000 * 1000 +
+			(((data->comp_press & 0xff) * 1000) >> 8);
 		break;
 	default:
 		return -EINVAL;
