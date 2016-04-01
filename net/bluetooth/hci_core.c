@@ -116,9 +116,14 @@ static void report_completed_packet(struct net_buf *buf)
 	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 
-	BT_DBG("Reporting completed packet for handle %u", handle);
-
 	nano_fifo_put(buf->free, buf);
+
+	/* Do nothing if controller to host flow control is not supported */
+	if (!(bt_dev.supported_commands[10] & 0x20)) {
+		return;
+	}
+
+	BT_DBG("Reporting completed packet for handle %u", handle);
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
 				sizeof(*cp) + sizeof(*hc));
@@ -829,6 +834,12 @@ static int set_flow_control(void)
 	struct bt_hci_cp_host_buffer_size *hbs;
 	struct net_buf *buf;
 	int err;
+
+	/* Check if host flow control is actually supported */
+	if (!(bt_dev.supported_commands[10] & 0x20)) {
+		BT_WARN("Controller to host flow control not supported");
+		return 0;
+	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE,
 				sizeof(*hbs));
