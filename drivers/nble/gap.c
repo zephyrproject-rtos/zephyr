@@ -47,6 +47,8 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 
 struct nble nble;
 
+static struct bt_storage *storage;
+
 #define BT_SMP_IO_DISPLAY_ONLY			0x00
 #define BT_SMP_IO_DISPLAY_YESNO			0x01
 #define BT_SMP_IO_KEYBOARD_ONLY			0x02
@@ -596,4 +598,9 @@ void on_nble_up(void)
 	BT_DBG("");
 
 	send_dm_config();
+}
+
+void bt_register_storage(struct bt_storage *bt_storage)
+{
+	storage = bt_storage;
 }

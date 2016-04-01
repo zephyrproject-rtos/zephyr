@@ -33,6 +33,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/driver.h>
+#include <bluetooth/storage.h>
 
 #include <tinycrypt/hmac_prng.h>
 #include <tinycrypt/utils.h>
@@ -57,6 +58,8 @@ static BT_STACK_NOINIT(rx_prio_fiber_stack, 256);
 static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
 
 struct bt_dev bt_dev;
+
+static struct bt_storage *storage;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
@@ -3516,3 +3519,8 @@ int bt_br_set_discoverable(bool enable)
 	}
 }
 #endif /* CONFIG_BLUETOOTH_BREDR */
+
+void bt_register_storage(struct bt_storage *bt_storage)
+{
+	storage = bt_storage;
+}
