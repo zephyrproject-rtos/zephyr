@@ -26,6 +26,7 @@
 
 #include <zephyr.h>
 #include <sections.h>
+#include <errno.h>
 
 #include <net/ip_buf.h>
 #include <net/net_core.h>
@@ -91,17 +92,20 @@ static inline void reverse(unsigned char *buf, int len)
 
 static inline struct net_buf *prepare_reply(const char *name,
 					    const char *type,
-					    struct net_buf *buf)
+					    struct net_buf *buf,
+					    int proto)
 {
-	PRINT("%s: %sreceived %d bytes\n", name, type,
+	PRINT("%s: %sreceived %d bytes data\n", name, type,
 	      ip_buf_appdatalen(buf));
 
-	/* In this test we reverse the received bytes.
-	 * We could just pass the data back as is but
-	 * this way it is possible to see how the app
-	 * can manipulate the received data.
-	 */
-	reverse(ip_buf_appdata(buf), ip_buf_appdatalen(buf));
+	if (proto != IPPROTO_TCP) {
+		/* In this test we reverse the received bytes.
+		 * We could just pass the data back as is but
+		 * this way it is possible to see how the app
+		 * can manipulate the received data.
+		 */
+		reverse(ip_buf_appdata(buf), ip_buf_appdatalen(buf));
+	}
 
 #if defined(CONFIG_NET_TESTING)
 	net_testing_set_reply_address(buf);
@@ -111,23 +115,26 @@ static inline struct net_buf *prepare_reply(const char *name,
 }
 
 /* How many tics to wait for a network packet */
-#if 0
-#define WAIT_TIME 1
-#define WAIT_TICKS (WAIT_TIME * sys_clock_ticks_per_sec)
+#if 1
+#define WAIT_TIME 0
+#define WAIT_TICKS (WAIT_TIME * sys_clock_ticks_per_sec / 10)
 #else
 #define WAIT_TICKS TICKS_UNLIMITED
 #endif
 
-static inline void receive_and_reply(const char *name, struct net_context *recv,
+struct nano_fifo *net_context_get_queue(struct net_context *context);
+static inline void receive_and_reply(const char *name,
+				     struct net_context *udp_recv,
+				     struct net_context *tcp_recv,
 				     struct net_context *mcast_recv)
 {
 	struct net_buf *buf;
 
-	buf = net_receive(recv, WAIT_TICKS);
+	buf = net_receive(udp_recv, WAIT_TICKS);
 	if (buf) {
-		prepare_reply(name, "unicast ", buf);
+		prepare_reply(name, "unicast ", buf, IPPROTO_UDP);
 
-		if (net_reply(recv, buf)) {
+		if (net_reply(udp_recv, buf)) {
 			ip_buf_unref(buf);
 		}
 		return;
@@ -135,22 +142,52 @@ static inline void receive_and_reply(const char *name, struct net_context *recv,
 
 	buf = net_receive(mcast_recv, WAIT_TICKS);
 	if (buf) {
-		prepare_reply(name, "multicast ", buf);
+		prepare_reply(name, "multicast ", buf, IPPROTO_UDP);
 
 		if (net_reply(mcast_recv, buf)) {
 			ip_buf_unref(buf);
 		}
 		return;
 	}
+
+#if defined(CONFIG_NETWORKING_WITH_TCP)
+	if (tcp_recv) {
+		static struct net_buf *tcpbuf;
+
+		if (tcpbuf) {
+			int ret;
+		reply:
+			ret = net_reply(tcp_recv, tcpbuf);
+			if (ret && ret != -EAGAIN) {
+				ip_buf_unref(tcpbuf);
+				tcpbuf = NULL;
+			} else if (!ret) {
+				tcpbuf = NULL;
+			} else {
+				PRINT("Retrying to send packet %p\n", tcpbuf);
+			}
+		} else {
+			tcpbuf = net_receive(tcp_recv, WAIT_TICKS);
+			if (tcpbuf) {
+				PRINT("Received packet %p len %d\n",
+				      tcpbuf, ip_buf_appdatalen(tcpbuf));
+				prepare_reply(name, "tcp ", tcpbuf, IPPROTO_TCP);
+				goto reply;
+			}
+		}
+	}
+#endif
+
+	fiber_sleep(50);
 }
 
-static inline bool get_context(struct net_context **recv,
+static inline bool get_context(struct net_context **udp_recv,
+			       struct net_context **tcp_recv,
 			       struct net_context **mcast_recv)
 {
 	static struct net_addr mcast_addr;
 	static struct net_addr any_addr;
 	static struct net_addr my_addr;
-	int proto = IPPROTO_UDP;
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
 	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
@@ -179,17 +216,25 @@ static inline bool get_context(struct net_context **recv,
 	my_addr.family = AF_INET;
 #endif
 
-#ifdef CONFIG_NETWORKING_WITH_TCP
-	proto = IPPROTO_TCP;
-#endif /* CONFIG_NETWORKING_WITH_TCP */
-
-	*recv = net_context_get(proto,
-				&any_addr, 0,
-				&my_addr, MY_PORT);
-	if (!*recv) {
+	*udp_recv = net_context_get(IPPROTO_UDP,
+				    &any_addr, 0,
+				    &my_addr, MY_PORT);
+	if (!*udp_recv) {
 		PRINT("%s: Cannot get network context\n", __func__);
 		return NULL;
 	}
+
+#if defined(CONFIG_NETWORKING_WITH_TCP)
+	if (tcp_recv) {
+		*tcp_recv = net_context_get(IPPROTO_TCP,
+					    &any_addr, 0,
+					    &my_addr, MY_PORT);
+		if (!*tcp_recv) {
+			PRINT("%s: Cannot get network context\n", __func__);
+			return NULL;
+		}
+	}
+#endif
 
 	*mcast_recv = net_context_get(IPPROTO_UDP,
 				      &any_addr, 0,
@@ -210,16 +255,16 @@ char __noinit __stack fiberStack[STACKSIZE];
 
 void receive(void)
 {
-	static struct net_context *recv;
+	static struct net_context *udp_recv, *tcp_recv;
 	static struct net_context *mcast_recv;
 
-	if (!get_context(&recv, &mcast_recv)) {
+	if (!get_context(&udp_recv, &tcp_recv, &mcast_recv)) {
 		PRINT("%s: Cannot get network contexts\n", __func__);
 		return;
 	}
 
 	while (1) {
-		receive_and_reply(__func__, recv, mcast_recv);
+		receive_and_reply(__func__, udp_recv, tcp_recv, mcast_recv);
 	}
 }
 
