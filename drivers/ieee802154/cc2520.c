@@ -45,7 +45,7 @@
 #include <init.h>
 #include <sections.h>
 
-#include <802.15.4/cc2520.h>
+#include <ieee802154/cc2520.h>
 
 #include <net/l2_buf.h>
 #include "packetbuf.h"
