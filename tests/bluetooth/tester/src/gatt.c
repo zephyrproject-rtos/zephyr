@@ -42,6 +42,8 @@
 #define SERVER_MAX_ATTRIBUTES		50
 #define SERVER_BUF_SIZE			2048
 
+#define LAST_DB_ATTR (server_db + (attr_count - 1))
+
 #define server_buf_push(_len)	net_buf_push(server_buf, ROUND_UP(_len, 4))
 #define server_buf_pull(_len)	net_buf_pull(server_buf, ROUND_UP(_len, 4))
 
@@ -49,6 +51,10 @@ static struct bt_gatt_attr server_db[SERVER_MAX_ATTRIBUTES];
 static struct net_buf *server_buf;
 static struct nano_fifo server_fifo;
 static NET_BUF_POOL(server_pool, 1, SERVER_BUF_SIZE, &server_fifo, NULL, 0);
+
+static uint8_t attr_count;
+static uint8_t svc_attr_count;
+static uint8_t svc_count;
 
 /*
  * gatt_buf - cache used by a gatt client (to cache data read/discovered)
@@ -110,6 +116,11 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern,
 		return NULL;
 	}
 
+	/* First attribute in db must be service */
+	if (!svc_count) {
+		return NULL;
+	}
+
 	memcpy(attr, pattern, sizeof(*attr));
 
 	/* Store the UUID. */
@@ -122,16 +133,10 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern,
 		memcpy(attr->user_data, pattern->user_data, user_data_len);
 	}
 
-	/* Register attribute in GATT database, this will assign it a handle */
-	if (bt_gatt_register(attr, 1)) {
-		if (user_data_len) {
-			server_buf_pull(user_data_len);
-		}
-		server_buf_pull(uuid_size);
-		return NULL;
-	}
-
 	BTTESTER_DBG("handle 0x%04x", attr->handle);
+
+	attr_count++;
+	svc_attr_count++;
 
 	return attr++;
 }
@@ -209,6 +214,17 @@ static void add_service(uint8_t *data, uint16_t len)
 	uuid_size = uuid.uuid.type == BT_UUID_TYPE_16 ? sizeof(uuid.u16) :
 							sizeof(uuid.u128);
 
+	/* Register last defined service */
+	if (svc_count) {
+		if (bt_gatt_register(server_db + (attr_count - svc_attr_count),
+				     svc_attr_count)) {
+			goto fail;
+		}
+	}
+
+	svc_count++;
+	svc_attr_count = 0;
+
 	switch (cmd->type) {
 	case GATT_SERVICE_PRIMARY:
 		attr_svc = gatt_db_add(&(struct bt_gatt_attr)
@@ -223,6 +239,7 @@ static void add_service(uint8_t *data, uint16_t len)
 	}
 
 	if (!attr_svc) {
+		svc_count--;
 		goto fail;
 	}
 
@@ -313,10 +330,8 @@ struct add_characteristic {
 	const struct bt_uuid *uuid;
 };
 
-static uint8_t add_characteristic_cb(const struct bt_gatt_attr *attr,
-				     void *user_data)
+static int alloc_characteristic(struct add_characteristic *ch)
 {
-	struct add_characteristic *data = user_data;
 	struct bt_gatt_attr *attr_chrc, *attr_value;
 	struct bt_gatt_chrc *chrc_data;
 	struct gatt_value value;
@@ -326,27 +341,30 @@ static uint8_t add_characteristic_cb(const struct bt_gatt_attr *attr,
 				BT_GATT_CHARACTERISTIC(NULL, 0),
 				sizeof(*chrc_data));
 	if (!attr_chrc) {
-		return BT_GATT_ITER_STOP;
+		return -EINVAL;
 	}
 
 	memset(&value, 0, sizeof(value));
 
 	/* Add Characteristic Value */
 	attr_value = gatt_db_add(&(struct bt_gatt_attr)
-				 BT_GATT_LONG_DESCRIPTOR(data->uuid,
-					data->permissions, read_value,
+				 BT_GATT_LONG_DESCRIPTOR(ch->uuid,
+					ch->permissions, read_value,
 					write_value, flush_value, &value),
 					sizeof(value));
 	if (!attr_value) {
-		return BT_GATT_ITER_STOP;
+		server_buf_pull(sizeof(*chrc_data));
+		/* Characteristic attribute uuid has constant length */
+		server_buf_pull(sizeof(BT_UUID_GATT_CHRC_VAL));
+		return -EINVAL;
 	}
 
 	chrc_data = attr_chrc->user_data;
-	chrc_data->properties = data->properties;
+	chrc_data->properties = ch->properties;
 	chrc_data->uuid = attr_value->uuid;
 
-	data->char_id = attr_chrc->handle;
-	return BT_GATT_ITER_STOP;
+	ch->char_id = attr_chrc->handle;
+	return 0;
 }
 
 static void add_characteristic(uint8_t *data, uint16_t len)
@@ -363,24 +381,26 @@ static void add_characteristic(uint8_t *data, uint16_t len)
 	cmd_data.uuid = &uuid.uuid;
 
 	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid.uuid)) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-		return;
+		goto fail;
 	}
 
-	bt_gatt_foreach_attr(sys_le16_to_cpu(cmd->svc_id),
-			     sys_le16_to_cpu(cmd->svc_id),
-			     add_characteristic_cb, &cmd_data);
+	/* characterisic must be added only sequential */
+	if (cmd->svc_id) {
+		goto fail;
+	}
 
-	if (!cmd_data.char_id) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-		return;
+	if (alloc_characteristic(&cmd_data)) {
+		goto fail;
 	}
 
 	rp.char_id = sys_cpu_to_le16(cmd_data.char_id);
 	tester_send(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
 		    CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
+		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static bool ccc_added;
@@ -394,14 +414,19 @@ static void ccc_cfg_changed(uint16_t value)
 
 static struct bt_gatt_attr ccc = BT_GATT_CCC(ccc_cfg, ccc_cfg_changed);
 
-static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr_chrc)
+static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr)
 {
-	struct bt_gatt_attr *attr_desc, *attr_value;
-	struct bt_gatt_chrc *chrc = attr_chrc->user_data;
+	struct bt_gatt_attr *attr_desc;
+	struct bt_gatt_chrc *chrc = (struct bt_gatt_chrc *)(attr - 1);
 	struct gatt_value *value;
 
 	/* Fail if another CCC already exist on server */
 	if (ccc_added) {
+		return NULL;
+	}
+
+	/* Characteristic should be last but one attr in sequential db */
+	if (bt_uuid_cmp(chrc->uuid, BT_UUID_GATT_CHRC)) {
 		return NULL;
 	}
 
@@ -411,22 +436,13 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr_chrc)
 		return NULL;
 	}
 
-	/*
-	 * Look for characteristic value (stored under next handle) to set
-	 * 'has_ccc' flag
-	 */
-	attr_value = bt_gatt_attr_next(attr_chrc);
-	if (!attr_value) {
-		return NULL;
-	}
-
 	/* Add CCC descriptor to GATT database */
 	attr_desc = gatt_db_add(&ccc, 0);
 	if (!attr_desc) {
 		return NULL;
 	}
 
-	value = attr_value->user_data;
+	value = attr->user_data;
 	value->has_ccc = true;
 	ccc_added = true;
 
@@ -435,7 +451,7 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr_chrc)
 
 static struct bt_gatt_attr *add_cep(const struct bt_gatt_attr *attr_chrc)
 {
-	struct bt_gatt_chrc *chrc = attr_chrc->user_data;
+	struct bt_gatt_chrc *chrc = (attr_chrc - 1)->user_data;
 	struct bt_gatt_cep cep_value;
 
 	/* Extended Properties bit shall be set */
@@ -456,33 +472,32 @@ struct add_descriptor {
 	const struct bt_uuid *uuid;
 };
 
-static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
-				 void *user_data)
+static int alloc_descriptor(const struct bt_gatt_attr *attr,
+			    struct add_descriptor *d)
 {
-	struct add_descriptor *data = user_data;
 	struct bt_gatt_attr *attr_desc;
 	struct gatt_value value;
 
-	if (!bt_uuid_cmp(data->uuid, BT_UUID_GATT_CEP)) {
+	if (!bt_uuid_cmp(d->uuid, BT_UUID_GATT_CEP)) {
 		attr_desc = add_cep(attr);
-	} else if (!bt_uuid_cmp(data->uuid, BT_UUID_GATT_CCC)) {
+	} else if (!bt_uuid_cmp(d->uuid, BT_UUID_GATT_CCC)) {
 		attr_desc = add_ccc(attr);
 	} else {
 		memset(&value, 0, sizeof(value));
 
 		attr_desc = gatt_db_add(&(struct bt_gatt_attr)
-					BT_GATT_LONG_DESCRIPTOR(data->uuid,
-						data->permissions, read_value,
+					BT_GATT_LONG_DESCRIPTOR(d->uuid,
+						d->permissions, read_value,
 						write_value, flush_value,
 						&value), sizeof(value));
 	}
 
 	if (!attr_desc) {
-		return BT_GATT_ITER_STOP;
+		return -EINVAL;
 	}
 
-	data->desc_id = attr_desc->handle;
-	return BT_GATT_ITER_STOP;
+	d->desc_id = attr_desc->handle;
+	return 0;
 }
 
 static void add_descriptor(uint8_t *data, uint16_t len)
@@ -492,103 +507,114 @@ static void add_descriptor(uint8_t *data, uint16_t len)
 	struct add_descriptor cmd_data;
 	union uuid uuid;
 
+	/* Must be declared first svc or at least 3 attrs (svc+char+char val) */
+	if (!svc_count || attr_count < 3) {
+		goto fail;
+	}
+
 	/* Pre-set desc_id */
 	cmd_data.desc_id = 0;
 	cmd_data.permissions = cmd->permissions;
 	cmd_data.uuid = &uuid.uuid;
 
 	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid.uuid)) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_DESCRIPTOR,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-		return;
+		goto fail;
 	}
 
-	bt_gatt_foreach_attr(sys_le16_to_cpu(cmd->char_id),
-			     sys_le16_to_cpu(cmd->char_id),
-			     add_descriptor_cb, &cmd_data);
+	/* descriptor can be added only sequential */
+	if (cmd->char_id) {
+		goto fail;
+	}
 
-	if (!cmd_data.desc_id) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_DESCRIPTOR,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-		return;
+	if (alloc_descriptor(LAST_DB_ATTR, &cmd_data)) {
+		goto fail;
 	}
 
 	rp.desc_id = sys_cpu_to_le16(cmd_data.desc_id);
 	tester_send(BTP_SERVICE_ID_GATT, GATT_ADD_DESCRIPTOR, CONTROLLER_INDEX,
 		    (uint8_t *) &rp, sizeof(rp));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_DESCRIPTOR,
+		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
-static uint8_t get_service_handles(const struct bt_gatt_attr *attr,
-				   void *user_data)
+static void get_service_end_handle(const struct bt_gatt_attr *attr,
+				   struct bt_gatt_include *include,
+				   uint16_t svc_start_handle)
 {
-	struct bt_gatt_include *include = user_data;
-
 	/* Skip first attribute found, it is a service declaration. */
-	if (attr->handle == include->start_handle) {
-		return BT_GATT_ITER_CONTINUE;
+	while (++attr < server_db + attr_count) {
+		/* Stop if attribute is a service */
+		if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) ||
+		    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
+			include->end_handle = svc_start_handle;
+			return;
+		}
+
+		svc_start_handle++;
 	}
 
-	/* Stop if attribute is a service */
-	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) ||
-	    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
-		return BT_GATT_ITER_STOP;
-	}
-
-	include->end_handle = attr->handle;
-
-	return BT_GATT_ITER_CONTINUE;
+	/* Last attribute in db */
+	include->end_handle = attr_count;
 }
 
-static uint8_t add_included_cb(const struct bt_gatt_attr *attr, void *user_data)
+static int alloc_included(const struct bt_gatt_attr *attr,
+			  uint16_t *included_service_id, uint16_t svc_handle)
 {
 	struct bt_gatt_attr *attr_incl;
 	struct bt_gatt_include include;
-	uint16_t *included_service_id = user_data;
-
-	/* Fail if attribute stored under requested handle is not a service */
-	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) &&
-	    bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
-		return BT_GATT_ITER_STOP;
-	}
 
 	include.uuid = attr->user_data;
-	include.start_handle = attr->handle;
-	include.end_handle = attr->handle;
+	include.start_handle = svc_handle;
+	include.end_handle = svc_handle;
 
 	attr_incl = gatt_db_add(&(struct bt_gatt_attr)
 				BT_GATT_INCLUDE_SERVICE(&include),
 				sizeof(include));
 	if (!attr_incl) {
-		return BT_GATT_ITER_STOP;
+		return -EINVAL;
 	}
 
-	/* Lookup for service end handle */
-	bt_gatt_foreach_attr(attr->handle, 0xffff, get_service_handles,
-			     attr_incl->user_data);
+	/* Get included end handle */
+	get_service_end_handle(attr, attr_incl->user_data, svc_handle);
 
 	*included_service_id = attr_incl->handle;
-	return BT_GATT_ITER_STOP;
+	return 0;
 }
 
 static void add_included(uint8_t *data, uint16_t len)
 {
 	const struct gatt_add_included_service_cmd *cmd = (void *) data;
 	struct gatt_add_included_service_rp rp;
+	struct bt_gatt_attr *svc;
 	uint16_t included_service_id = 0;
 
-	bt_gatt_foreach_attr(sys_le16_to_cpu(cmd->svc_id),
-			     sys_le16_to_cpu(cmd->svc_id), add_included_cb,
-			     &included_service_id);
+	if (!svc_count || !cmd->svc_id) {
+		goto fail;
+	}
 
-	if (!included_service_id) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_INCLUDED_SERVICE,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-		return;
+	svc = &server_db[cmd->svc_id - 1];
+
+	/* Fail if attribute stored under requested handle is not a service */
+	if (bt_uuid_cmp(svc->uuid, BT_UUID_GATT_PRIMARY) &&
+	    bt_uuid_cmp(svc->uuid, BT_UUID_GATT_SECONDARY)) {
+		goto fail;
+	}
+
+	if (alloc_included(svc, &included_service_id, cmd->svc_id)) {
+		goto fail;
 	}
 
 	rp.included_service_id = sys_cpu_to_le16(included_service_id);
 	tester_send(BTP_SERVICE_ID_GATT, GATT_ADD_INCLUDED_SERVICE,
 		    CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_INCLUDED_SERVICE,
+		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static uint8_t set_cep_value(struct bt_gatt_attr *attr, const void *value,
@@ -610,31 +636,20 @@ static uint8_t set_cep_value(struct bt_gatt_attr *attr, const void *value,
 struct set_value {
 	const uint8_t *value;
 	uint16_t len;
-	uint8_t btp_status;
 };
 
-static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
+static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 {
-	struct set_value *data = user_data;
 	struct gatt_value *value;
 
 	/* Value has been already set while adding CCC to the gatt_db */
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC)) {
-		data->btp_status = BTP_STATUS_SUCCESS;
-		return BT_GATT_ITER_STOP;
+		return BTP_STATUS_SUCCESS;
 	}
 
 	/* Set CEP value */
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CEP)) {
-		data->btp_status = set_cep_value(attr, data->value, data->len);
-		return BT_GATT_ITER_STOP;
-	}
-
-	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
-		attr = bt_gatt_attr_next(attr);
-		if (!attr) {
-			return BT_GATT_ITER_STOP;
-		}
+		return set_cep_value(attr, data->value, data->len);
 	}
 
 	value = attr->user_data;
@@ -648,7 +663,7 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 
 	/* Fail if value length doesn't match  */
 	if (value->len != data->len) {
-		return BT_GATT_ITER_STOP;
+		return BTP_STATUS_FAILED;
 	}
 
 	memcpy(value->data, data->value, value->len);
@@ -657,93 +672,113 @@ static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 		bt_gatt_notify(NULL, attr, value->data, value->len);
 	}
 
-	data->btp_status = BTP_STATUS_SUCCESS;
-	return BT_GATT_ITER_STOP;
+	return BTP_STATUS_SUCCESS;
 }
 
 static void set_value(uint8_t *data, uint16_t len)
 {
 	const struct gatt_set_value_cmd *cmd = (void *) data;
 	struct set_value cmd_data;
+	uint8_t status;
 
 	/* Pre-set btp_status */
-	cmd_data.btp_status = BTP_STATUS_FAILED,
-	cmd_data.value = cmd->value,
-	cmd_data.len = sys_le16_to_cpu(cmd->len),
+	cmd_data.value = cmd->value;
+	cmd_data.len = sys_le16_to_cpu(cmd->len);
 
-	bt_gatt_foreach_attr(sys_le16_to_cpu(cmd->attr_id),
-			     sys_le16_to_cpu(cmd->attr_id),
-			     (bt_gatt_attr_func_t) set_value_cb, &cmd_data);
+	if (!cmd->attr_id) {
+		status = alloc_value(LAST_DB_ATTR, &cmd_data);
+	} else {
+		/* set value of local attr, corrected by pre set attr handles */
+		status = alloc_value(&server_db[cmd->attr_id -
+				     server_db[0].handle], &cmd_data);
+	}
 
 	tester_rsp(BTP_SERVICE_ID_GATT, GATT_SET_VALUE, CONTROLLER_INDEX,
-		   cmd_data.btp_status);
+		   status);
+}
+
+static void update_incl_svc_offset(uint16_t db_attr_off)
+{
+	struct bt_gatt_attr *attr = server_db;
+	struct bt_gatt_include *incl;
+
+	while (attr++ < server_db + attr_count) {
+		if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_INCLUDE)) {
+			incl = attr->user_data;
+			incl->start_handle += db_attr_off;
+			incl->end_handle += db_attr_off;
+		}
+	}
 }
 
 static void start_server(uint8_t *data, uint16_t len)
 {
+	uint16_t db_attr_off;
+
+	/* Register last defined service */
+	if (bt_gatt_register(server_db + (attr_count - svc_attr_count),
+			     svc_attr_count)) {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_START_SERVER,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		return;
+	}
+
+	/* All handles of gatt db are now assigned by bt_gatt_register */
+	db_attr_off = server_db[0].handle - 1;
+
+	update_incl_svc_offset(db_attr_off);
+
 	tester_rsp(BTP_SERVICE_ID_GATT, GATT_START_SERVER,
 		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
 }
 
-struct set_enc_key_size {
-	uint8_t btp_status;
-	uint8_t key_size;
-};
-
-static uint8_t set_enc_key_size_cb(const struct bt_gatt_attr *attr,
-				   void *user_data)
+static int set_attr_enc_key_size(const struct bt_gatt_attr *attr,
+				 uint8_t key_size)
 {
-	struct set_enc_key_size *data = user_data;
 	struct gatt_value *value;
-
-	/* Fail if requested key size is invalid */
-	if (data->key_size < 0x07 || data->key_size > 0x0f) {
-		return BT_GATT_ITER_STOP;
-	}
 
 	/* Fail if requested attribute is a service */
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) ||
 	    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY) ||
 	    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_INCLUDE)) {
-		return BT_GATT_ITER_STOP;
-	}
-
-	/* Lookup for characteristic value attribute */
-	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
-		attr = bt_gatt_attr_next(attr);
-		if (!attr) {
-			return BT_GATT_ITER_STOP;
-		}
+		return -EINVAL;
 	}
 
 	/* Fail if permissions are not set */
 	if (!(attr->perm & (GATT_PERM_ENC_READ_MASK |
 			    GATT_PERM_ENC_WRITE_MASK))) {
-		return BT_GATT_ITER_STOP;
+		return -EINVAL;
 	}
 
 	value = attr->user_data;
-	value->enc_key_size = data->key_size;
+	value->enc_key_size = key_size;
 
-	data->btp_status = BTP_STATUS_SUCCESS;
-	return BT_GATT_ITER_STOP;
+	return 0;
 }
 
 static void set_enc_key_size(uint8_t *data, uint16_t len)
 {
 	const struct gatt_set_enc_key_size_cmd *cmd = (void *) data;
-	struct set_enc_key_size cmd_data;
+	uint8_t status;
 
-	/* Pre-set btp_status */
-	cmd_data.btp_status = BTP_STATUS_FAILED;
-	cmd_data.key_size = cmd->key_size;
+	/* Fail if requested key size is invalid */
+	if (cmd->key_size < 0x07 || cmd->key_size > 0x0f) {
+		status = BTP_STATUS_FAILED;
+		goto fail;
+	}
 
-	bt_gatt_foreach_attr(sys_le16_to_cpu(cmd->attr_id),
-			     sys_le16_to_cpu(cmd->attr_id),
-			     set_enc_key_size_cb, &cmd_data);
+	if (!cmd->attr_id) {
+		status = set_attr_enc_key_size(LAST_DB_ATTR, cmd->key_size);
+	} else {
+		/* set value of local attr, corrected by pre set attr handles */
+		status = set_attr_enc_key_size(&server_db[cmd->attr_id -
+					       server_db[0].handle],
+					       cmd->key_size);
+	}
 
+fail:
 	tester_rsp(BTP_SERVICE_ID_GATT, GATT_SET_ENC_KEY_SIZE, CONTROLLER_INDEX,
-		   cmd_data.btp_status);
+		   status);
 }
 
 static void exchange_mtu_rsp(struct bt_conn *conn, uint8_t err)
