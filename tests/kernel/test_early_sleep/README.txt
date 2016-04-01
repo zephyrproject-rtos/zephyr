@@ -42,10 +42,13 @@ tc_start() - Test early and regular task and fiber sleep functionality
 
 Test fiber_sleep() call during the system initialization
 Test task_sleep() call during the system initialization
+- At SECONDARY level
+- At NANOKERNEL level
+- At MICROKERNEL level
+- At APPLICATION level
 Test task_sleep() call on a running system
 Test fiber_sleep() call on a running system
 ===================================================================
 PASS - RegressionTask.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL
-

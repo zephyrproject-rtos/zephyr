@@ -40,6 +40,9 @@
 
 /* time that the task was actually sleeping */
 static int task_actual_sleep_ticks;
+static int task_actual_sleep_nano_ticks;
+static int task_actual_sleep_micro_ticks;
+static int task_actual_sleep_app_ticks;
 
 /* time that the fiber was actually sleeping */
 static volatile int fiber_actual_sleep_ticks;
@@ -99,6 +102,8 @@ int test_fiber_sleep(int ticks_to_sleep)
  *
  * @brief Early task sleep test
  *
+ * Note: it will be used to test the early sleep at SECONDARY level too
+ *
  * Call task_sleep() and checks the time sleep actually
  * took to make sure that task actually slept
  *
@@ -113,6 +118,62 @@ static int test_early_task_sleep(struct device *unused)
 
 SYS_INIT(test_early_task_sleep, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
+/**
+ *
+ * @brief Early task sleep test in NANOKERNEL level only
+ *
+ * Call task_sleep() and checks the time sleep actually
+ * took to make sure that task actually slept
+ *
+ * @return 0
+ */
+static int test_early_task_sleep_in_nanokernel_level(struct device *unused)
+{
+	ARG_UNUSED(unused);
+	task_actual_sleep_nano_ticks = test_task_sleep(TASK_TICKS_TO_SLEEP);
+	return 0;
+}
+
+SYS_INIT(test_early_task_sleep_in_nanokernel_level,
+	 NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+/**
+ *
+ * @brief Early task sleep test in MICROKERNEL level only
+ *
+ * Call task_sleep() and checks the time sleep actually
+ * took to make sure that task actually slept
+ *
+ * @return 0
+ */
+static int test_early_task_sleep_in_microkernel_level(struct device *unused)
+{
+	ARG_UNUSED(unused);
+	task_actual_sleep_micro_ticks = test_task_sleep(TASK_TICKS_TO_SLEEP);
+	return 0;
+}
+
+SYS_INIT(test_early_task_sleep_in_microkernel_level,
+	 MICROKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+/**
+ *
+ * @brief Early task sleep test in APPLICATION level only
+ *
+ * Call task_sleep() and checks the time sleep actually
+ * took to make sure that task actually slept
+ *
+ * @return 0
+ */
+static int test_early_task_sleep_in_application_level(struct device *unused)
+{
+	ARG_UNUSED(unused);
+	task_actual_sleep_app_ticks = test_task_sleep(TASK_TICKS_TO_SLEEP);
+	return 0;
+}
+
+SYS_INIT(test_early_task_sleep_in_application_level,
+	 APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 /**
  *
@@ -213,6 +274,7 @@ void RegressionTask(void)
 	 * amount of time
 	 */
 	TC_PRINT("Test task_sleep() call during the system initialization\n");
+	TC_PRINT("- At SECONDARY level\n");
 
 	if ((task_actual_sleep_ticks + 1) < TASK_TICKS_TO_SLEEP) {
 		TC_ERROR("task_sleep() time is is too small: %d\n",
@@ -220,6 +282,44 @@ void RegressionTask(void)
 		goto error_out;
 	}
 
+	/*
+	 * Check that the task_sleep() called during the system
+	 * initialization at NANOKERNEL level puts the task to sleep for
+	 * the specified amount of time
+	 */
+	TC_PRINT("- At NANOKERNEL level\n");
+
+	if ((task_actual_sleep_nano_ticks + 1) < TASK_TICKS_TO_SLEEP) {
+		TC_ERROR("task_sleep() time is is too small: %d\n",
+			task_actual_sleep_nano_ticks);
+		goto error_out;
+	}
+
+	/*
+	 * Check that the task_sleep() called during the system
+	 * initialization at MICROKERNEL level puts the task to sleep for
+	 * the specified amount of time
+	 */
+	TC_PRINT("- At MICROKERNEL level\n");
+
+	if ((task_actual_sleep_micro_ticks + 1) < TASK_TICKS_TO_SLEEP) {
+		TC_ERROR("task_sleep() time is is too small: %d\n",
+			task_actual_sleep_micro_ticks);
+		goto error_out;
+	}
+
+	/*
+	 * Check that the task_sleep() called during the system
+	 * initialization at APPLICATION level puts the task to sleep for
+	 * the specified amount of time
+	 */
+	TC_PRINT("- At APPLICATION level\n");
+
+	if ((task_actual_sleep_app_ticks + 1) < TASK_TICKS_TO_SLEEP) {
+		TC_ERROR("task_sleep() time is is too small: %d\n",
+			task_actual_sleep_app_ticks);
+		goto error_out;
+	}
 
 	/*
 	 * Check that the task_sleep() called during the normal
