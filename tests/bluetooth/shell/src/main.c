@@ -1606,7 +1606,7 @@ static void cmd_bredr_connectable(int argc, char *argv[])
 }
 #endif
 
-struct shell_cmd commands[] = {
+static const struct shell_cmd commands[] = {
 	{ "init", cmd_init },
 	{ "connect", cmd_connect_le },
 	{ "disconnect", cmd_disconnect },
