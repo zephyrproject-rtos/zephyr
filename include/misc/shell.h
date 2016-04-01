@@ -38,7 +38,7 @@ struct shell_cmd {
  *  @param prompt Prompt to be printed on serial console.
  *  @param cmds Commands to register
  */
-void shell_init(const char *prompt, struct shell_cmd *cmds);
+void shell_init(const char *prompt, const struct shell_cmd *cmds);
 
 /** @brief Optionally register an app default cmd handler.
  *

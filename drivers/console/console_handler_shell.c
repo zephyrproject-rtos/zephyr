@@ -33,7 +33,7 @@
 /* maximum number of command parameters */
 #define ARGC_MAX 10
 
-static struct shell_cmd *commands;
+static const struct shell_cmd *commands;
 
 static const char *prompt;
 
@@ -188,7 +188,7 @@ static void shell(int arg1, int arg2)
 	}
 }
 
-void shell_init(const char *str, struct shell_cmd *cmds)
+void shell_init(const char *str, const struct shell_cmd *cmds)
 {
 	nano_fifo_init(&cmds_queue);
 	nano_fifo_init(&avail_queue);
