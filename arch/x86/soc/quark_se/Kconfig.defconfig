@@ -70,14 +70,8 @@ config GPIO_DW_0
 
 if GPIO_DW_0
 
-config GPIO_DW_0_BASE_ADDR
-	default 0xb0000C00
-config GPIO_DW_0_IRQ
-	default 8
 config GPIO_DW_0_PRI
 	default 2
-config GPIO_DW_0_BITS
-	default 32
 config GPIO_DW_0_CLOCK_GATE_SUBSYS
 	default 13
 	depends on GPIO_DW_CLOCK_GATE
@@ -89,14 +83,8 @@ config GPIO_DW_1
 
 if GPIO_DW_1
 
-config GPIO_DW_1_BASE_ADDR
-	default 0xb0800b00
-config GPIO_DW_1_IRQ
-	default 31
 config GPIO_DW_1_PRI
 	default 2
-config GPIO_DW_1_BITS
-	default 6
 
 endif # GPIO_DW_1
 

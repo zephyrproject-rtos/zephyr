@@ -60,14 +60,8 @@ config GPIO_DW_0
 
 if GPIO_DW_0
 
-config GPIO_DW_0_BASE_ADDR
-	default 0x80017800
-config GPIO_DW_0_IRQ
-	default 20
 config GPIO_DW_0_PRI
 	default 2
-config GPIO_DW_0_BITS
-	default 8
 
 endif # GPIO_DW_0
 
@@ -76,14 +70,8 @@ config GPIO_DW_1
 
 if GPIO_DW_1
 
-config GPIO_DW_1_BASE_ADDR
-	default 0x80017900
-config GPIO_DW_1_IRQ
-	default 21
 config GPIO_DW_1_PRI
 	default 2
-config GPIO_DW_1_BITS
-	default 8
 
 endif # GPIO_DW_1
 

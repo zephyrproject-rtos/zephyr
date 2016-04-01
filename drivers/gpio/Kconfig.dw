@@ -26,16 +26,6 @@ menuconfig GPIO_DW
 
 if GPIO_DW
 
-config GPIO_DW_IO_ACCESS
-	prompt "I/O register access"
-	default n
-	default y if ARC
-	depends on GPIO_DW
-	bool
-	help
-	  Driver access configuration register by
-	  I/O or auxiliary registers.
-
 config GPIO_DW_BOTHEDGES_SUPPORT
 	bool
 	prompt "Interrupt on Both Edges"
@@ -52,21 +42,6 @@ config GPIO_DW_SHARED_IRQ
 	bool
 	default n
 	depends on GPIO_DW
-
-config	GPIO_DW_VENDOR_ID
-	hex "PCI Vendor ID"
-	depends on GPIO_DW && PCI
-	default 0x8086
-
-config	GPIO_DW_DEVICE_ID
-	hex "PCI Device ID"
-	depends on GPIO_DW && PCI
-	default 0x934
-
-config	GPIO_DW_CLASS
-	hex "PCI class"
-	depends on GPIO_DW && PCI
-	default 0x0C
 
 config GPIO_DW_INIT_PRIORITY
 	int
@@ -99,32 +74,6 @@ config GPIO_DW_0_NAME
        depends on GPIO_DW_0
        default "GPIO_0"
 
-config GPIO_DW_0_BASE_ADDR
-       hex "Controller base address"
-       depends on GPIO_DW_0
-
-config	GPIO_DW_0_BUS
-	int "Port 0 PCI Bus"
-	depends on GPIO_DW_0 && PCI
-
-config	GPIO_DW_0_DEV
-	int "Port 0 PCI Dev"
-	depends on GPIO_DW_0 && PCI
-
-config  GPIO_DW_0_FUNCTION
-	int "PCI function number"
-	depends on GPIO_DW_0 && PCI
-
-config  GPIO_DW_0_BAR
-	int "PCI BAR slot"
-	depends on GPIO_DW_0 && PCI
-
-config GPIO_DW_0_BITS
-       int "Number of pins controlled"
-       depends on GPIO_DW_0
-       help
-       Number of pins controlled by controller
-
 config GPIO_DW_0_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_0
@@ -149,33 +98,6 @@ config GPIO_DW_0_IRQ_SHARED
 
 endchoice
 
-choice
-prompt "DW GPIO port 0 trigger condition"
-default GPIO_DW_0_RISING_EDGE
-depends on GPIO_DW_0 && GPIO_DW_0_IRQ_DIRECT
-
-config GPIO_DW_0_FALLING_EDGE
-	bool "Falling edge"
-	help
-	  DW GPIO port 0 uses falling edge interrupt
-
-config GPIO_DW_0_RISING_EDGE
-	bool "Rising edge"
-	help
-	  DW GPIO port 0 uses rising edge interrupt
-
-config GPIO_DW_0_LEVEL_HIGH
-	bool "Level high"
-	help
-	  DW GPIO port 0 uses level high interrupt
-
-config GPIO_DW_0_LEVEL_LOW
-	bool "Level low"
-	help
-	  DW GPIO port 0 uses level low interrupt
-
-endchoice
-
 config GPIO_DW_0_IRQ_SHARED_NAME
 	string "Device name for Shared IRQ"
 	depends on GPIO_DW_0 && GPIO_DW_0_IRQ_SHARED
@@ -183,12 +105,6 @@ config GPIO_DW_0_IRQ_SHARED_NAME
 	  Specify the device name for the shared IRQ driver. It is used to register
 	  this driver with the shared IRQ driver, so interrupts can be dispatched
 	  correctly.
-
-config GPIO_DW_0_IRQ
-       int "Controller interrupt number"
-       depends on GPIO_DW_0 && GPIO_DW_0_IRQ_DIRECT
-       help
-       IRQ number for the controller
 
 config GPIO_DW_0_PRI
        int "Controller interrupt priority"
@@ -207,16 +123,6 @@ config GPIO_DW_1_NAME
        string "Driver name"
        depends on GPIO_DW_1
        default "GPIO_1"
-
-config GPIO_DW_1_BASE_ADDR
-       hex "Controller base address"
-       depends on GPIO_DW_1
-
-config GPIO_DW_1_BITS
-       int "Number of pins controlled"
-       depends on GPIO_DW_1
-       help
-       Number of pins controlled by controller
 
 config GPIO_DW_1_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
@@ -250,43 +156,10 @@ config GPIO_DW_1_IRQ_SHARED_NAME
 	  this driver with the shared IRQ driver, so interrupts can be dispatched
 	  correctly.
 
-config GPIO_DW_1_IRQ
-       int "Controller interrupt number"
-       depends on GPIO_DW_1 && GPIO_DW_1_IRQ_DIRECT
-       help
-       IRQ number for the controller
-
 config GPIO_DW_1_PRI
        int "Controller interrupt priority"
        depends on GPIO_DW_1 && GPIO_DW_1_IRQ_DIRECT
        help
        IRQ priority
-
-choice
-prompt "DW GPIO port 1 trigger condition"
-default GPIO_DW_1_RISING_EDGE
-depends on GPIO_DW_1 && GPIO_DW_1_IRQ_DIRECT
-
-config GPIO_DW_1_FALLING_EDGE
-	bool "Falling edge"
-	help
-	  DW GPIO port 1 uses falling edge interrupt
-
-config GPIO_DW_1_RISING_EDGE
-	bool "Rising edge"
-	help
-	  DW GPIO port 1 uses rising edge interrupt
-
-config GPIO_DW_1_LEVEL_HIGH
-	bool "Level high"
-	help
-	  DW GPIO port 1 uses level high interrupt
-
-config GPIO_DW_1_LEVEL_LOW
-	bool "Level low"
-	help
-	  DW GPIO port 1 uses level low interrupt
-
-endchoice
 
 endif # GPIO_DW

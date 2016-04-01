@@ -42,7 +42,7 @@
  * ARC architecture configure IP through IO auxiliary registers.
  * Other architectures as ARM and x86 configure IP through MMIO registers
  */
-#ifdef CONFIG_GPIO_DW_IO_ACCESS
+#ifdef GPIO_DW_IO_ACCESS
 static inline uint32_t dw_read(uint32_t base_addr, uint32_t offset)
 {
 	return sys_in32(base_addr + offset);
@@ -434,19 +434,19 @@ int gpio_dw_initialize(struct device *port)
 void gpio_config_0_irq(struct device *port);
 
 struct gpio_dw_config gpio_config_0 = {
-	.base_addr = CONFIG_GPIO_DW_0_BASE_ADDR,
-	.bits = CONFIG_GPIO_DW_0_BITS,
+	.base_addr = GPIO_DW_0_BASE_ADDR,
+	.bits = GPIO_DW_0_BITS,
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
-	.irq_num = CONFIG_GPIO_DW_0_IRQ,
+	.irq_num = GPIO_DW_0_IRQ,
 #endif
 #if CONFIG_PCI
-	.pci_dev.class_type = CONFIG_GPIO_DW_CLASS,
-	.pci_dev.bus = CONFIG_GPIO_DW_0_BUS,
-	.pci_dev.dev = CONFIG_GPIO_DW_0_DEV,
-	.pci_dev.vendor_id = CONFIG_GPIO_DW_VENDOR_ID,
-	.pci_dev.device_id = CONFIG_GPIO_DW_DEVICE_ID,
-	.pci_dev.function = CONFIG_GPIO_DW_0_FUNCTION,
-	.pci_dev.bar = CONFIG_GPIO_DW_0_BAR,
+	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
+	.pci_dev.bus = GPIO_DW_0_PCI_BUS,
+	.pci_dev.dev = GPIO_DW_0_PCI_DEV,
+	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
+	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
+	.pci_dev.function = GPIO_DW_0_PCI_FUNCTION,
+	.pci_dev.bar = GPIO_DW_0_PCI_BAR,
 #endif
 
 	.config_func = gpio_config_0_irq,
@@ -475,24 +475,6 @@ DEVICE_INIT(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
 	    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
 #endif
 
-#ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
-#ifdef CONFIG_IOAPIC
-#ifdef CONFIG_GPIO_DW_0
-	#if defined(CONFIG_GPIO_DW_0_FALLING_EDGE)
-		#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-	#elif defined(CONFIG_GPIO_DW_0_RISING_EDGE)
-		#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-	#elif defined(CONFIG_GPIO_DW_0_LEVEL_HIGH)
-		#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-	#elif defined(CONFIG_GPIO_DW_0_LEVEL_LOW)
-		#define GPIO_DW_0_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-	#endif
-#endif /* CONFIG_GPIO_DW_0 */
-#else
-	#define GPIO_DW_0_IRQ_FLAGS 0
-#endif
-#endif
-
 void gpio_config_0_irq(struct device *port)
 {
 	struct gpio_dw_config *config = port->config->config_info;
@@ -500,7 +482,7 @@ void gpio_config_0_irq(struct device *port)
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONNECT(CONFIG_GPIO_DW_0_IRQ, CONFIG_GPIO_DW_0_PRI, gpio_dw_isr,
+	IRQ_CONNECT(GPIO_DW_0_IRQ, CONFIG_GPIO_DW_0_PRI, gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_0), GPIO_DW_0_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_0_IRQ_SHARED)
@@ -520,19 +502,19 @@ void gpio_config_0_irq(struct device *port)
 void gpio_config_1_irq(struct device *port);
 
 struct gpio_dw_config gpio_dw_config_1 = {
-	.base_addr = CONFIG_GPIO_DW_1_BASE_ADDR,
-	.bits = CONFIG_GPIO_DW_1_BITS,
+	.base_addr = GPIO_DW_1_BASE_ADDR,
+	.bits = GPIO_DW_1_BITS,
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
-	.irq_num = CONFIG_GPIO_DW_1_IRQ,
+	.irq_num = GPIO_DW_1_IRQ,
 #endif
 #if CONFIG_PCI
-	.pci_dev.class_type = CONFIG_GPIO_DW_CLASS,
-	.pci_dev.bus = CONFIG_GPIO_DW_1_BUS,
-	.pci_dev.dev = CONFIG_GPIO_DW_1_DEV,
-	.pci_dev.vendor_id = CONFIG_GPIO_DW_VENDOR_ID,
-	.pci_dev.device_id = CONFIG_GPIO_DW_DEVICE_ID,
-	.pci_dev.function = CONFIG_GPIO_DW_1_FUNCTION,
-	.pci_dev.bar = CONFIG_GPIO_DW_1_BAR,
+	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
+	.pci_dev.bus = GPIO_DW_1_PCI_BUS,
+	.pci_dev.dev = GPIO_DW_1_PCI_DEV,
+	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
+	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
+	.pci_dev.function = GPIO_DW_1_PCI_FUNCTION,
+	.pci_dev.bar = GPIO_DW_1_PCI_BAR,
 #endif
 	.config_func = gpio_config_1_irq,
 
@@ -556,24 +538,6 @@ DEVICE_INIT(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
 	    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
 #endif
 
-#ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
-#ifdef CONFIG_IOAPIC
-#ifdef CONFIG_GPIO_DW_1
-	#if defined(CONFIG_GPIO_DW_1_FALLING_EDGE)
-		#define GPIO_DW_1_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-	#elif defined(CONFIG_GPIO_DW_1_RISING_EDGE)
-		#define GPIO_DW_1_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-	#elif defined(CONFIG_GPIO_DW_1_LEVEL_HIGH)
-		#define GPIO_DW_1_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-	#elif defined(CONFIG_GPIO_DW_1_LEVEL_LOW)
-		#define GPIO_DW_1_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-	#endif
-#endif /* CONFIG_GPIO_DW_1 */
-#else
-	#define GPIO_DW_1_IRQ_FLAGS 0
-#endif
-#endif
-
 void gpio_config_1_irq(struct device *port)
 {
 	struct gpio_dw_config *config = port->config->config_info;
@@ -581,7 +545,7 @@ void gpio_config_1_irq(struct device *port)
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONNECT(CONFIG_GPIO_DW_1_IRQ, CONFIG_GPIO_DW_1_PRI, gpio_dw_isr,
+	IRQ_CONNECT(GPIO_DW_1_IRQ, CONFIG_GPIO_DW_1_PRI, gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_1), GPIO_DW_1_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_1_IRQ_SHARED)

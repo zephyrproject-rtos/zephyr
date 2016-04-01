@@ -144,20 +144,6 @@ if GPIO_DW_0
 
 config GPIO_DW_0_NAME
 	default "GPIO_0"
-config GPIO_DW_0_BUS
-	default 0
-config GPIO_DW_0_DEV
-	default 21
-config GPIO_DW_0_FUNCTION
-	default 2
-config GPIO_DW_0_BAR
-	default 1
-config GPIO_DW_0_BITS
-	default 8
-config GPIO_DW_0_BASE_ADDR
-	default 0x90006000
-config GPIO_DW_0_IRQ
-	default 18
 config GPIO_DW_0_PRI
 	default 2
 config GPIO_DW_0_IRQ_SHARED_NAME
