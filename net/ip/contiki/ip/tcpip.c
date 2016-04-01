@@ -490,17 +490,23 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
 #if UIP_TCP
     case TCP_POLL:
       if(data != NULL) {
+        uint8_t ret = 0;
         uip_poll_conn(buf, data);
 #if NETSTACK_CONF_WITH_IPV6
-        tcpip_ipv6_output(buf);
+        ret = tcpip_ipv6_output(buf);
 #else /* NETSTACK_CONF_WITH_IPV6 */
         if(uip_len(buf) > 0) {
 	  PRINTF("tcpip_output from tcp poll len %d\n", uip_len(buf));
-          tcpip_output(buf, NULL);
+          ret = tcpip_output(buf, NULL);
         }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
         /* Start the periodic polling, if it isn't already active. */
         start_periodic_tcp_timer();
+
+	if (!ret) {
+          /* Packet was not sent properly */
+          ip_buf_unref(buf);
+	}
       }
       break;
 #endif /* UIP_TCP */
@@ -829,7 +835,9 @@ tcpip_poll_udp(struct uip_udp_conn *conn)
 void
 tcpip_poll_tcp(struct uip_conn *conn)
 {
-  process_post(&tcpip_process, TCP_POLL, conn);
+  /* We are sending here the initial SYN */
+  struct net_buf *buf = ip_buf_get_tx(conn->appstate.state);
+  process_post_synch(&tcpip_process, TCP_POLL, conn, buf);
 }
 #endif /* UIP_TCP */
 /*---------------------------------------------------------------------------*/

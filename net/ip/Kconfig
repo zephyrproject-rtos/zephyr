@@ -123,6 +123,17 @@ config	NETWORKING_WITH_TCP
 	help
 	  Enable Transmission and Control Protocol (TCP) support.
 
+config	TCP_DISABLE_ACTIVE_OPEN
+	bool
+	prompt "Disallow host to initiate connection attempt"
+	depends on NETWORKING_WITH_TCP
+	default n
+	help
+	  By default application is allowed to initiate a TCP
+	  connection attempt. If the application is only acting
+	  as a server, then some memory can be saved by disabling
+	  the client role.
+
 config	TCP_MSS
 	int
 	prompt "TCP maximum segment size"

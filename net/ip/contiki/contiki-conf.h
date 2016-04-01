@@ -48,6 +48,12 @@ typedef unsigned int uip_stats_t;
 #ifdef CONFIG_NETWORKING_WITH_TCP
 #define UIP_CONF_TCP 1
 
+#ifdef CONFIG_TCP_DISABLE_ACTIVE_OPEN
+#define UIP_CONF_ACTIVE_OPEN 0
+#else /* CONFIG_TCP_DISABLE_ACTIVE_OPEN */
+#define UIP_CONF_ACTIVE_OPEN 1
+#endif /* CONFIG_TCP_DISABLE_ACTIVE_OPEN */
+
 #if CONFIG_TCP_MSS > 0
 #define UIP_CONF_TCP_MSS CONFIG_TCP_MSS
 #endif /* CONFIG_TCP_MSS */
@@ -56,8 +62,6 @@ typedef unsigned int uip_stats_t;
 #define UIP_CONF_RECEIVE_WINDOW CONFIG_TCP_RECEIVE_WINDOW
 #endif /* CONFIG_TCP_RECEIVE_WINDOW */
 
-/* Currently we can only be a TCP listener (server) */
-#define UIP_CONF_ACTIVE_OPEN 0
 #else
 #define UIP_CONF_TCP 0
 #endif
