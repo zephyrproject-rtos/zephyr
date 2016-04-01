@@ -339,6 +339,10 @@ struct gatt_add_included_service_rp {
 } __packed;
 
 #define GATT_START_SERVER		0x07
+struct gatt_start_server_rp {
+	uint16_t db_attr_off;
+	uint8_t db_attr_cnt;
+} __packed;
 
 #define GATT_SET_ENC_KEY_SIZE		0x09
 struct gatt_set_enc_key_size_cmd {

@@ -685,6 +685,7 @@ static void update_incl_svc_offset(uint16_t db_attr_off)
 
 static void start_server(uint8_t *data, uint16_t len)
 {
+	struct gatt_start_server_rp rp;
 	uint16_t db_attr_off;
 
 	/* Register last defined service */
@@ -699,9 +700,11 @@ static void start_server(uint8_t *data, uint16_t len)
 	db_attr_off = server_db[0].handle - 1;
 
 	update_incl_svc_offset(db_attr_off);
+	rp.db_attr_off = sys_cpu_to_le16(db_attr_off);
+	rp.db_attr_cnt = attr_count;
 
-	tester_rsp(BTP_SERVICE_ID_GATT, GATT_START_SERVER,
-		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
+	tester_send(BTP_SERVICE_ID_GATT, GATT_START_SERVER, CONTROLLER_INDEX,
+		    (uint8_t *) &rp, sizeof(rp));
 }
 
 static int set_attr_enc_key_size(const struct bt_gatt_attr *attr,

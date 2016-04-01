@@ -654,10 +654,13 @@ Commands and responses:
 
 		Controller Index:	<controller id>
 		Command parameters:	<none>
-		Response parameters:	<none>
+		Response parameters:	Database_Attribute_Offset (2 octets)
+					Database_Attribute_Count (1 octet)
 
 		This command is used to start server with previously prepared
-		attributes database.
+		attributes database. Device database may contain predefined
+		attributes. Predefined attributes should be registered before
+		attempt to register sequential database.
 		Subsequent calls of this command shall return an error.
 
 		In case of an error, the error response will be returned.
