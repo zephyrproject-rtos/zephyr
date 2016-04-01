@@ -127,7 +127,7 @@ SECTIONS
 		__devconfig_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-    SECTION_PROLOGUE(.ARM.exidx,,)
+	SECTION_PROLOGUE(.ARM.exidx,,)
 	{
 	/*
 	 * This section, related to stack and exception unwinding, is placed
