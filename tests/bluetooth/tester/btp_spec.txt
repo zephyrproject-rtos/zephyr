@@ -553,6 +553,15 @@ Commands and responses:
 					UUID (2 or 16 octets)
 		Response parameters:	Characteristic_ID (2 octets)
 
+		Possible values for Service_ID:
+					0x0000 = Add in sequence
+					0x0001-0xffff = Add to service
+
+		Possible response parameters:
+					0x0000 = Relative ID, will be set after
+					start_server
+					0x0001-0xffff = ID in db
+
 		Possible values for the Properties parameter are a bit-wise
 		of the following bits:
 
@@ -595,6 +604,15 @@ Commands and responses:
 					UUID (2 or 16 octets)
 		Response parameters:	Descriptor_ID (2 octets)
 
+		Possible values for Characteristic_ID:
+					0x0000 = Add in sequence
+					0x0001-0xffff = Add to characteristic
+
+		Possible response parameters:
+					0x0000 = Relative ID, will be set after
+					start_server
+					0x0001-0xffff = ID in db
+
 		This command is used to add new characteristic descriptor
 		to GATT Server. The command shall be used right after
 		Add Characteristic or previous Add Descriptor command.
@@ -621,6 +639,11 @@ Commands and responses:
 					Value_Length (2 octet)
 					Value (1-512 octets)
 		Response parameters:	<none>
+
+		Possible values for Characteristic_ID:
+					0x0000 = Set last attribute in db value
+					0x0001-0xffff = Set value of attribute
+					under ID
 
 		This command is used to set the value of characteristic
 		or descriptor.
@@ -655,6 +678,12 @@ Commands and responses:
 		Command parameters:	Attribute_ID (2 octets)
 					Encryption_Key_Size (1 octet)
 		Response parameters:	<none>
+
+		Possible values for Attribute_ID:
+					0x0000 = Set encryption key of last
+					added attribute
+					0x0001-0xffff = Set enctryption of
+					attribute under ID
 
 		This command is used to set required Encryption Key Size of an
 		attribute. It shall be used only if encryption or authentication
