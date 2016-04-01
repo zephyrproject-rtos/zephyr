@@ -21,14 +21,6 @@
 #include <string.h>
 #include <errno.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
 #include <net/net_core.h>
 #include <net/ip_buf.h>
 
