@@ -35,7 +35,7 @@ static void shell_cmd_highticks(int argc, char *argv[])
 }
 
 
-struct shell_cmd commands[] = {
+const struct shell_cmd commands[] = {
 	{ "ping", shell_cmd_ping },
 	{ "ticks", shell_cmd_ticks },
 	{ "highticks", shell_cmd_highticks },
