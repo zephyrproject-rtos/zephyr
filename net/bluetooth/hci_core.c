@@ -2579,6 +2579,15 @@ static int common_init(void)
 	read_bdaddr_complete(rsp);
 	net_buf_unref(rsp);
 
+	/* Read Local Supported Commands */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_SUPPORTED_COMMANDS, NULL,
+				   &rsp);
+	if (err) {
+		return err;
+	}
+	read_supported_commands_complete(rsp);
+	net_buf_unref(rsp);
+
 #if defined(CONFIG_BLUETOOTH_CONN)
 	err = set_flow_control();
 	if (err) {
@@ -2610,15 +2619,6 @@ static int le_init(void)
 		return err;
 	}
 	read_le_features_complete(rsp);
-	net_buf_unref(rsp);
-
-	/* Read Local Supported Commands */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_SUPPORTED_COMMANDS, NULL,
-				   &rsp);
-	if (err) {
-		return err;
-	}
-	read_supported_commands_complete(rsp);
 	net_buf_unref(rsp);
 
 	/* Read LE Buffer Size */
