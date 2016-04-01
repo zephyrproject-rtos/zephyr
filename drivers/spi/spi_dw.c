@@ -58,6 +58,9 @@
 #endif /* CONFIG_STDOUT_CONSOLE */
 #endif /* CONFIG_SPI_DEBUG */
 
+#define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
+		((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / ssi_clk_hz) & 0xFFFF)
+
 static void completed(struct device *dev, int error)
 {
 	struct spi_dw_config *info = dev->config->config_info;
@@ -237,8 +240,21 @@ static int spi_dw_configure(struct device *dev,
 	/* Installing the configuration */
 	write_ctrlr0(ctrlr0, info->regs);
 
-	/* Configuring the rate */
-	write_baudr(config->max_sys_freq, info->regs);
+	/*
+	 * Configure the rate. Use this small hack to allow the user to call
+	 * spi_configure() with both a divider (as the driver was initially
+	 * written) and a frequency (as the SPI API suggests to). The clock
+	 * divider is a 16bit value, hence we can fairly, and safely, assume
+	 * that everything above this value is a frequency. The trade-off is
+	 * that if one wants to use a bus frequency of 64kHz (or less), it has
+	 * the use a divider...
+	 */
+	if (config->max_sys_freq > 0xffff) {
+		write_baudr(SPI_DW_CLK_DIVIDER(config->max_sys_freq),
+			    info->regs);
+	} else {
+		write_baudr(config->max_sys_freq, info->regs);
+	}
 
 	return 0;
 }
