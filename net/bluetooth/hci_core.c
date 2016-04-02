@@ -2904,6 +2904,60 @@ static int set_event_mask(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 }
 
+static int set_static_addr(void)
+{
+	struct net_buf *buf;
+	ssize_t err;
+
+	if (storage) {
+		err = storage->read(NULL, BT_STORAGE_ID_ADDR, &bt_dev.id_addr,
+				    sizeof(bt_dev.id_addr));
+		if (err == sizeof(bt_dev.id_addr)) {
+			goto set_addr;
+		}
+	}
+
+	BT_DBG("Generating new static random address");
+
+	bt_dev.id_addr.type = BT_ADDR_LE_RANDOM;
+
+	err = bt_rand(bt_dev.id_addr.val, 6);
+	if (err) {
+		return err;
+	}
+
+	/* Make sure the address bits indicate static address */
+	bt_dev.id_addr.val[5] |= 0xc0;
+
+	if (storage) {
+		err = storage->write(NULL, BT_STORAGE_ID_ADDR, &bt_dev.id_addr,
+				     sizeof(bt_dev.id_addr));
+		if (err != sizeof(bt_dev.id_addr)) {
+			BT_ERR("Unable to store static address");
+		}
+	} else {
+		BT_WARN("Using temporary static random address");
+	}
+
+set_addr:
+	if (bt_dev.id_addr.type != BT_ADDR_LE_RANDOM ||
+	    (bt_dev.id_addr.val[5] & 0xc0) != 0xc0) {
+		BT_ERR("Only static random address supported as identity");
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS,
+				sizeof(bt_dev.id_addr.val));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	memcpy(net_buf_add(buf, sizeof(bt_dev.id_addr.val)),
+	       bt_dev.id_addr.val, sizeof(bt_dev.id_addr.val));
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
+}
+
 static int hci_init(void)
 {
 	int err;
@@ -2930,6 +2984,15 @@ static int hci_init(void)
 	err = set_event_mask();
 	if (err) {
 		return err;
+	}
+
+	if (!bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY)) {
+		BT_DBG("No public address. Trying to set static random.");
+		err = set_static_addr();
+		if (err) {
+			BT_ERR("Unable to set identity address");
+			return err;
+		}
 	}
 
 	BT_DBG("HCI ver %u rev %u, manufacturer %u", bt_dev.hci_version,
