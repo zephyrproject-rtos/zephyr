@@ -3101,7 +3101,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *sd, size_t sd_len)
 {
 	struct net_buf *buf;
-	struct bt_hci_cp_le_set_adv_parameters *set_param;
+	struct bt_hci_cp_le_set_adv_param *set_param;
 	int err;
 
 	if (!valid_adv_param(param)) {
@@ -3133,7 +3133,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		}
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAMETERS,
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM,
 				sizeof(*set_param));
 	if (!buf) {
 		return -ENOBUFS;
@@ -3159,7 +3159,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		set_param->own_addr_type = BT_ADDR_LE_PUBLIC;
 	}
 
-	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_PARAMETERS, buf);
+	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_PARAM, buf);
 
 	err = set_advertise_enable();
 	if (err) {

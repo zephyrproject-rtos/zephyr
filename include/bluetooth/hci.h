@@ -428,8 +428,8 @@ struct bt_hci_rp_le_read_local_features {
 /* Needed in advertising reports when getting info about */
 #define BT_LE_ADV_SCAN_RSP			0x04
 
-#define BT_HCI_OP_LE_SET_ADV_PARAMETERS		BT_OP(BT_OGF_LE, 0x0006)
-struct bt_hci_cp_le_set_adv_parameters {
+#define BT_HCI_OP_LE_SET_ADV_PARAM		BT_OP(BT_OGF_LE, 0x0006)
+struct bt_hci_cp_le_set_adv_param {
 	uint16_t     min_interval;
 	uint16_t     max_interval;
 	uint8_t      type;
