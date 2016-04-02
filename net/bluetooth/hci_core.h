@@ -59,8 +59,14 @@ struct bt_dev_br {
 
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
-	/* Local Bluetooth Device Address */
-	bt_addr_t		bdaddr;
+	/* Local Identity Address */
+	bt_addr_le_t		id_addr;
+
+	/* Current local Random Address */
+	bt_addr_le_t		random_addr;
+
+	/* Current advertising address type */
+	uint8_t			adv_addr_type;
 
 	/* Controller version & manufacturer information */
 	uint8_t			hci_version;

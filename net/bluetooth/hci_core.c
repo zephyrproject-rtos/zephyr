@@ -472,6 +472,7 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	cp->scan_window = cp->scan_interval;
 
 	bt_addr_le_copy(&cp->peer_addr, &conn->le.resp_addr);
+	cp->own_addr_type = conn->le.init_addr.type;
 	cp->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
 	cp->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
 	cp->conn_latency = sys_cpu_to_le16(conn->le.latency);
@@ -574,7 +575,6 @@ static void le_conn_complete(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	const bt_addr_le_t *id_addr;
 	struct bt_conn *conn;
-	bt_addr_le_t src;
 	int err;
 
 	BT_DBG("status %u handle %u role %u %s", evt->status, handle,
@@ -629,18 +629,23 @@ static void le_conn_complete(struct net_buf *buf)
 	conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 	conn->role = evt->role;
 
-	src.type = BT_ADDR_LE_PUBLIC;
-	memcpy(src.val, bt_dev.bdaddr.val, sizeof(bt_dev.bdaddr.val));
-
 	/* use connection address (instead of identity address) as initiator
 	 * or responder address
 	 */
 	if (conn->role == BT_HCI_ROLE_MASTER) {
-		bt_addr_le_copy(&conn->le.init_addr, &src);
 		bt_addr_le_copy(&conn->le.resp_addr, &evt->peer_addr);
+		/* init_addr doesn't need updating here since it was
+		 * already set during previous steps.
+		 */
 	} else {
 		bt_addr_le_copy(&conn->le.init_addr, &evt->peer_addr);
-		bt_addr_le_copy(&conn->le.resp_addr, &src);
+		if (bt_dev.adv_addr_type == BT_ADDR_LE_PUBLIC) {
+			bt_addr_le_copy(&conn->le.resp_addr,
+					&bt_dev.id_addr);
+		} else {
+			bt_addr_le_copy(&conn->le.resp_addr,
+					&bt_dev.random_addr);
+		}
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
@@ -812,6 +817,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 	bt_addr_le_copy(&conn->le.resp_addr, addr);
+	bt_addr_le_copy(&conn->le.init_addr, &bt_dev.id_addr);
 
 	if (hci_le_create_conn(conn)) {
 		conn->err = BT_HCI_ERR_UNSPECIFIED;
@@ -897,6 +903,24 @@ int bt_conn_update_param_le(struct bt_conn *conn,
 	}
 
 	return -EBUSY;
+}
+
+static void le_create_conn_status(uint8_t status)
+{
+	struct bt_hci_cp_le_create_conn *cp = (void *)bt_dev.sent_cmd->data;
+	struct bt_conn *conn;
+
+	/* No updates needed for failures or public address connections */
+	if (status || cp->own_addr_type == BT_ADDR_LE_PUBLIC) {
+		return;
+	}
+
+	/* Set exact random address used for the connection */
+	conn = bt_conn_lookup_state_le(&cp->peer_addr, BT_CONN_CONNECT);
+	if (conn) {
+		bt_addr_le_copy(&conn->le.init_addr, &bt_dev.random_addr);
+		bt_conn_unref(conn);
+	}
 }
 
 #endif /* CONFIG_BLUETOOTH_CONN */
@@ -1941,6 +1965,34 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	}
 }
 
+static void set_random_address_complete(struct net_buf *buf)
+{
+	bt_addr_le_t *random_addr = (void *)bt_dev.sent_cmd->data;
+	uint8_t *status = (void *)buf->data;
+
+	BT_DBG("status 0x%02x", *status);
+
+	if (*status) {
+		return;
+	}
+
+	bt_addr_le_copy(&bt_dev.random_addr, random_addr);
+}
+
+static void set_adv_param_complete(struct net_buf *buf)
+{
+	struct bt_hci_cp_le_set_adv_param *cp = (void *)bt_dev.sent_cmd->data;
+	uint8_t *status = (void *)buf->data;
+
+	BT_DBG("status 0x%02x", *status);
+
+	if (*status) {
+		return;
+	}
+
+	bt_dev.adv_addr_type = cp->own_addr_type;
+}
+
 static void hci_cmd_complete(struct net_buf *buf)
 {
 	struct hci_evt_cmd_complete *evt = (void *)buf->data;
@@ -1955,6 +2007,15 @@ static void hci_cmd_complete(struct net_buf *buf)
 	 * beginning, so we can safely make this generalization.
 	 */
 	status = buf->data[0];
+
+	switch (opcode) {
+	case BT_HCI_OP_LE_SET_RANDOM_ADDRESS:
+		set_random_address_complete(buf);
+		break;
+	case BT_HCI_OP_LE_SET_ADV_PARAM:
+		set_adv_param_complete(buf);
+		break;
+	}
 
 	hci_cmd_done(opcode, status, buf);
 
@@ -1975,6 +2036,11 @@ static void hci_cmd_status(struct net_buf *buf)
 	net_buf_pull(buf, sizeof(*evt));
 
 	switch (opcode) {
+#if defined(CONFIG_BLUETOOTH_CONN)
+	case BT_HCI_OP_LE_CREATE_CONN:
+		le_create_conn_status(evt->status);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONN */
 	default:
 		BT_DBG("Unhandled opcode 0x%04x", opcode);
 		break;
@@ -2464,7 +2530,8 @@ static void read_bdaddr_complete(struct net_buf *buf)
 
 	BT_DBG("status %u", rp->status);
 
-	bt_addr_copy(&bt_dev.bdaddr, &rp->bdaddr);
+	bt_addr_copy((bt_addr_t *)&bt_dev.id_addr.val, &rp->bdaddr);
+	bt_dev.id_addr.type = BT_ADDR_LE_PUBLIC;
 }
 
 static void read_le_features_complete(struct net_buf *buf)
@@ -3153,7 +3220,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 
 		set_param->own_addr_type = BT_ADDR_LE_RANDOM;
 	} else {
-		set_param->own_addr_type = BT_ADDR_LE_PUBLIC;
+		set_param->own_addr_type = bt_dev.id_addr.type;
 	}
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_PARAM, buf);
