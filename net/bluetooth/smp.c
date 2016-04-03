@@ -2670,6 +2670,31 @@ bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 	return !memcmp(addr->val, hash, 3);
 }
 
+int bt_smp_create_rpa(const uint8_t irk[16], bt_addr_le_t *rpa)
+{
+	int err;
+
+	err = bt_rand(rpa->val + 3, 3);
+	if (err) {
+		return err;
+	}
+
+	/* Set the two most significant bits to 01 (indicating an RPA) */
+	rpa->val[5] &= 0x3f;
+	rpa->val[5] |= 0x40;
+
+	err = smp_ah(irk, rpa->val + 3, rpa->val);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("Created RPA %s", bt_addr_str((bt_addr_t *)rpa->val));
+
+	rpa->type = BT_ADDR_LE_RANDOM;
+
+	return 0;
+}
+
 #if defined(CONFIG_BLUETOOTH_SIGNING)
 /* Sign message using msg as a buffer, len is a size of the message,
  * msg buffer contains message itself, 32 bit count and signature,
