@@ -17,6 +17,10 @@
 
 if SOC_STM32F103VE
 
+config SOC
+	string
+	default stm32f103ve
+
 config SRAM_SIZE
        default 64
 

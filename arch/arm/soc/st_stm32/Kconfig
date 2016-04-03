@@ -20,4 +20,10 @@ config SOC_FAMILY_STM32
 	# omit prompt to signify a "hidden" option
 	default n
 
-source "arch/arm/soc/st_stm32/*/Kconfig.soc.family"
+if SOC_FAMILY_STM32
+config SOC_FAMILY
+	string
+	default st_stm32
+endif
+
+source "arch/arm/soc/st_stm32/*/Kconfig.soc"

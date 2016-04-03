@@ -1,4 +1,4 @@
-# Kconfig - ST Microelectronics STM32F103RB MCU
+# Kconfig - ST Microelectronics STM32F1 MCU line
 #
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 #
@@ -15,20 +15,21 @@
 # limitations under the License.
 #
 
-if SOC_STM32F103RB
+if SOC_SERIES_STM32F1X
 
-config SOC
-	string
-	default stm32f103rb
-config SRAM_SIZE
-       default 20
+source "arch/arm/soc/st_stm32/stm32f1/Kconfig.defconfig.stm32f1*"
 
-config FLASH_SIZE
-       default 128
+config SOC_SERIES
+       default stm32f1
 
-config NUM_IRQS
+config SRAM_BASE_ADDRESS
+        default 0x20000000
+
+config FLASH_BASE_ADDRESS
+        default 0x08000000
+
+config NUM_IRQ_PRIO_BITS
         int
-        default 59
+        default 4
 
-endif # SOC_STM32F103RB
-
+endif # SOC_SERIES_STM32F1X
