@@ -1,6 +1,6 @@
 KBUILD_CFLAGS += $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
 
-include $(srctree)/arch/$(ARCH)/soc/$(SOC_NAME)/Makefile
+include $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/Makefile
 
 cflags-$(CONFIG_LTO) += $(call cc-option,-flto,)
 

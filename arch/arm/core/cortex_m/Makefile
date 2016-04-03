@@ -1,5 +1,5 @@
 ccflags-y +=-I$(srctree)/include/drivers
-ccflags-y +=-I$(srctree)/arch/$(ARCH)/platforms/$(SOC_NAME)
+ccflags-y +=-I$(srctree)/arch/arm/soc/$(SOC_PATH)
 
 asflags-y = $(ccflags-y)
 

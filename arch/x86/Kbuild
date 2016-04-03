@@ -1,4 +1,3 @@
 obj-y += core/
-obj-y += soc/$(SOC_NAME)/
-
 obj-$(CONFIG_GDB_SERVER) += debug/
+obj-y += soc/$(SOC_PATH)/

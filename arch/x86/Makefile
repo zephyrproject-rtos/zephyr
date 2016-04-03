@@ -20,7 +20,7 @@ ifneq ($(CONFIG_SSE_FP_MATH),y)
 cflags-y += -mno-sse
 endif
 
-include $(srctree)/arch/$(ARCH)/soc/$(SOC_NAME)/Makefile
+include $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/Makefile
 
 KBUILD_CXXFLAGS += $(cflags-y)
 KBUILD_CFLAGS += $(cflags-y)

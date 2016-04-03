@@ -345,19 +345,22 @@ endif
 USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
 
 SOC_NAME = $(subst $(DQUOTE),,$(CONFIG_SOC))
+SOC_SERIES = $(subst $(DQUOTE),,$(CONFIG_SOC_SERIES))
 SOC_FAMILY = $(subst $(DQUOTE),,$(CONFIG_SOC_FAMILY))
+
 override ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 BOARD_NAME = $(subst $(DQUOTE),,$(CONFIG_BOARD))
 KERNEL_NAME = $(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 KERNEL_ELF_NAME = $(KERNEL_NAME).elf
 KERNEL_BIN_NAME = $(KERNEL_NAME).bin
 
-export SOC_FAMILY SOC_NAME BOARD_NAME ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME
+export SOC_FAMILY SOC_SERIES SOC_PATH SOC_NAME BOARD_NAME
+export ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME
 # Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 ZEPHYRINCLUDE    = \
 		-I$(srctree)/arch/$(ARCH)/include \
-		-I$(srctree)/arch/$(ARCH)/soc/$(SOC_NAME) \
+		-I$(srctree)/arch/$(ARCH)/soc/$(SOC_PATH) \
 		-I$(srctree)/boards/$(BOARD_NAME) \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
@@ -625,6 +628,11 @@ KBUILD_CFLAGS += $(subst $(DQUOTE),,$(CONFIG_COMPILER_OPT))
 
 export LDFLAG_LINKERCMD
 
+ifeq ($(SOC_SERIES),)
+SOC_PATH = $(SOC_NAME)
+else
+SOC_PATH = $(SOC_FAMILY)/$(SOC_SERIES)
+endif
 include arch/$(ARCH)/Makefile
 
 KBUILD_CFLAGS += $(CFLAGS)
@@ -705,7 +713,7 @@ KBUILD_LDS := $(srctree)/boards/$(BOARD_NAME)/linker.cmd
 
 # If not available, try an SoC specific linker file
 ifeq ($(wildcard $(KBUILD_LDS)),)
-KBUILD_LDS         := $(srctree)/arch/$(ARCH)/soc/$(SOC_NAME)/linker.cmd
+KBUILD_LDS         := $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/linker.cmd
 endif
 endif
 
