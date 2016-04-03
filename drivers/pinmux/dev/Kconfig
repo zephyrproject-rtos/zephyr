@@ -71,7 +71,7 @@ config PINMUX_DEV_QMSI
 
 config PINMUX_DEV_STM32
        bool "Enable pinmux dev driver for the ST STM32 family."
-       depends on PINMUX_DEV && SOC_STM32
+       depends on PINMUX_DEV && SOC_FAMILY_STM32
        help
        Enables the STM32 pinmux dev driver.
        default n

@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-if SOC_STM32
+if SOC_FAMILY_STM32
 
 config IWDG_STM32
 	bool "Independent Watchdog (IWDG) Driver for STM32 family of MCUs"
@@ -61,4 +61,4 @@ config IWDG_STM32_DEVICE_NAME
 	help
 	 Set the name used by IWDG device during registration.
 
-endif # SOC_STM32
+endif # SOC_FAMILY_STM32
