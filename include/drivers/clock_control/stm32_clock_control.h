@@ -21,7 +21,7 @@
 /* common clock control device name for all STM32 chips */
 #define STM32_CLOCK_CONTROL_NAME "stm32-cc"
 
-#ifdef CONFIG_SOC_STM32F1X
+#ifdef CONFIG_SOC_SERIES_STM32F1X
 #include "stm32f1_clock_control.h"
 #endif
 

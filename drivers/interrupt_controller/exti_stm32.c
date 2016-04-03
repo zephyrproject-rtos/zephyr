@@ -52,7 +52,7 @@ struct __exti_cb {
 	void *data;
 };
 
-#ifdef CONFIG_SOC_STM32F1X
+#ifdef CONFIG_SOC_SERIES_STM32F1X
 #define EXTI_LINES 19
 #endif
 
@@ -75,7 +75,7 @@ void stm32_exti_enable(struct device *dev, int line)
 
 	exti->imr |= 1 << line;
 
-#ifdef CONFIG_SOC_STM32F1X
+#ifdef CONFIG_SOC_SERIES_STM32F1X
 	if (line >= 5 && line <= 9) {
 		irqnum = STM32F1_IRQ_EXTI9_5;
 	} else if (line >= 10 && line <= 15) {
@@ -246,7 +246,7 @@ DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
  */
 static void __stm32_exti_connect_irqs(struct device *dev)
 {
-#ifdef CONFIG_SOC_STM32F1X
+#ifdef CONFIG_SOC_SERIES_STM32F1X
 	IRQ_CONNECT(STM32F1_IRQ_EXTI0,
 		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
 		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),

@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-if SOC_STM32F1X
+if SOC_SERIES_STM32F1X
 
 source "arch/arm/soc/st_stm32/stm32f1/Kconfig.defconfig.stm32f1*"
 
@@ -32,4 +32,4 @@ config NUM_IRQ_PRIO_BITS
         int
         default 4
 
-endif # SOC_STM32F1X
+endif # SOC_SERIES_STM32F1X
