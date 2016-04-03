@@ -16,29 +16,11 @@
 # limitations under the License.
 #
 
-if SOC_FSL_FRDM_K64F
+if SOC_MK64F12
 
 config SOC
-	default fsl_frdm_k64f
-
-config SRAM_BASE_ADDRESS
-	default 0x20000000
-
-config FLASH_BASE_ADDRESS
-	default 0x00000000
-
-config NUM_IRQ_PRIO_BITS
-	int
-	default 4
-
-config NUM_IRQS
-	int
-	# must be >= the highest interrupt number used
-	default 86
-
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
-	default 120000000
+	string
+	default mk64f12
 
 if UART_K20
 
@@ -185,4 +167,4 @@ endif # SPI_K64
 
 endif # SPI
 
-endif # SOC_FSL_FRDM_K64F
+endif # SOC_MK64F12

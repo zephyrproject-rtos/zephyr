@@ -1,7 +1,5 @@
-# Kconfig - ARM architecture configuration options
-
 #
-# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,30 +14,15 @@
 # limitations under the License.
 #
 
-choice
-	prompt "ARM SoC Selection"
-	default SOC_SERIES_KINETIS_K6X
-	depends on ARM
+config SOC_FAMILY_KINETIS
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
 
-	source "arch/arm/soc/*/Kconfig.soc"
-endchoice
-
-menu "ARM Options"
-	depends on ARM
-
-config ARCH
-	default "arm"
-
-config ARCH_DEFCONFIG
+if SOC_FAMILY_KINETIS
+config SOC_FAMILY
 	string
-	default "arch/arm/defconfig"
+	default "nxp_kinetis"
+endif
 
-
-source "arch/arm/core/Kconfig"
-
-menu "Platform Configuration"
-
-source "arch/arm/soc/*/Kconfig"
-
-endmenu
-endmenu
+source "arch/arm/soc/nxp_kinetis/*/Kconfig.soc"

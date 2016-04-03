@@ -19,7 +19,7 @@
 
 menuconfig PINMUX_K64
         bool "Freescale K64-based Pin multiplexer driver"
-        depends on PINMUX && SOC_FSL_FRDM_K64F
+        depends on PINMUX && SOC_MK64F12
         default n
         help
         Enable driver for Freescale K64-based Pin multiplexer.

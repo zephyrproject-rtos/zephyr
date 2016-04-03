@@ -42,7 +42,7 @@ config PINMUX_DEV_ATMEL_SAM3X
 
 config PINMUX_DEV_FRDM_K64F
        bool "Enable the pinmux dev driver for Freescale FRDM K64F"
-       depends on PINMUX_DEV && SOC_FSL_FRDM_K64F
+       depends on PINMUX_DEV && SOC_MK64F12
        help
        Enables the pinmux dev driver for Freescale FRDM K64F.
        default n

@@ -1,7 +1,7 @@
-# Kconfig - ARM architecture configuration options
+# Kconfig - Kinetis K6x series configuration options
 
 #
-# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2014-2016 Wind River Systems, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,30 +16,26 @@
 # limitations under the License.
 #
 
-choice
-	prompt "ARM SoC Selection"
-	default SOC_SERIES_KINETIS_K6X
-	depends on ARM
+if SOC_SERIES_KINETIS_K6X
 
-	source "arch/arm/soc/*/Kconfig.soc"
-endchoice
+config SOC_SERIES
+	default k6x
 
-menu "ARM Options"
-	depends on ARM
+config SRAM_BASE_ADDRESS
+	default 0x20000000
 
-config ARCH
-	default "arm"
+config FLASH_BASE_ADDRESS
+	default 0x00000000
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/arm/defconfig"
+config NUM_IRQ_PRIO_BITS
+	int
+	default 4
 
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 86
 
-source "arch/arm/core/Kconfig"
+source "arch/arm/soc/nxp_kinetis/k6x/Kconfig.defconfig.mk*"
 
-menu "Platform Configuration"
-
-source "arch/arm/soc/*/Kconfig"
-
-endmenu
-endmenu
+endif # SOC_SERIES_KINETIS_K6X

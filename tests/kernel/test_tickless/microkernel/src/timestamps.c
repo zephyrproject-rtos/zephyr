@@ -138,7 +138,7 @@ void _TimestampClose(void)
 	_CLKGATECTRL &= ~_CLKGATECTRL_TIMESTAMP_EN;
 }
 
-#elif defined(CONFIG_SOC_FSL_FRDM_K64F)
+#elif defined(CONFIG_SOC_MK64F12)
 /* Freescale FRDM-K64F target - use RTC (prescale value) */
 
 #define _COUNTDOWN_TIMER false

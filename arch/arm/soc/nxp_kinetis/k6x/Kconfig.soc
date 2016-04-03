@@ -1,7 +1,6 @@
-# Kconfig - FSL FRDM K64F platform configuration options
-
+# Kconfig - Kinetis K6X MCU line
 #
-# Copyright (c) 2014-2016 Wind River Systems, Inc.
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +15,16 @@
 # limitations under the License.
 #
 
-if SOC_FSL_FRDM_K64F
+choice
+prompt "Kinetis K6x MCU Selection"
+depends on SOC_SERIES_KINETIS_K6X
+
+config SOC_MK64F12
+       bool "SOC_MK64F12"
+
+endchoice
+
+if SOC_SERIES_KINETIS_K6X
 
 config K64_CORE_CLOCK_DIVIDER
 	int
@@ -59,7 +67,7 @@ config WDOG_INIT
 	during reset handling.
 
 config PRESERVE_JTAG_IO_PINS
-	bool "Freescale FRDM-K64F JTAG pin usage"
+	bool "Kinetis K6x JTAG pin usage"
 	depends on PINMUX
 	default y
 	help
@@ -68,4 +76,4 @@ config PRESERVE_JTAG_IO_PINS
 	the Arduino header as D8, D3 and D5, respectively.
 	Enable this option to preserve these pins for the debug interface.
 
-endif # SOC_FSL_FRDM_K64F
+endif # SOC_SERIES_KINETIS_K6X

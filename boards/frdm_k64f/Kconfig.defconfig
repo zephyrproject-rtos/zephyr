@@ -10,4 +10,4 @@ config FLASH_SIZE
 config SRAM_SIZE
 	default 192
 
-endif # BOARD_FSL_FRDM_K64F
+endif # BOARD_FRDM_K64F

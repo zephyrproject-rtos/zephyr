@@ -23,7 +23,7 @@
 
 menuconfig PWM_K64_FTM
 	bool "PWM with Freescale K64 Flex Timer Module (FTM)"
-	depends on PWM && SOC_FSL_FRDM_K64F
+	depends on PWM && SOC_MK64F12
 	default n
 	help
 	Enable Pulse Width Modulation driver for Freescale

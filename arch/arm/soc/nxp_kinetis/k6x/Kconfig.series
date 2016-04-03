@@ -1,7 +1,6 @@
-# Kconfig - ARM architecture configuration options
-
+# Kconfig - Kinetis K6X MCU line
 #
-# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,30 +15,11 @@
 # limitations under the License.
 #
 
-choice
-	prompt "ARM SoC Selection"
-	default SOC_SERIES_KINETIS_K6X
-	depends on ARM
-
-	source "arch/arm/soc/*/Kconfig.soc"
-endchoice
-
-menu "ARM Options"
-	depends on ARM
-
-config ARCH
-	default "arm"
-
-config ARCH_DEFCONFIG
-	string
-	default "arch/arm/defconfig"
-
-
-source "arch/arm/core/Kconfig"
-
-menu "Platform Configuration"
-
-source "arch/arm/soc/*/Kconfig"
-
-endmenu
-endmenu
+config SOC_SERIES_KINETIS_K6X
+	bool "Kinetis K6x Series MCU"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M4
+	select SOC_FAMILY_KINETIS
+	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	help
+	 Enable support for Kinetis K6x MCU series
