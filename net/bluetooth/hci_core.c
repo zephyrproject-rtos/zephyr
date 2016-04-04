@@ -489,7 +489,7 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	cp->scan_window = cp->scan_interval;
 
 	if (conn->le.init_addr.type == BT_ADDR_LE_RANDOM) {
-		if (set_random_address((bt_addr_t *)conn->le.init_addr.val)) {
+		if (set_random_address(&conn->le.init_addr.a)) {
 			return -EIO;
 		}
 	}
@@ -841,8 +841,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
 	if (bt_addr_le_is_bonded(id_addr)) {
-		if (bt_smp_create_rpa(bt_dev.irk,
-				      (bt_addr_t *)conn->le.init_addr.val)) {
+		if (bt_smp_create_rpa(bt_dev.irk, &conn->le.init_addr.a)) {
 			return;
 		}
 		conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
@@ -2578,7 +2577,7 @@ static void read_bdaddr_complete(struct net_buf *buf)
 
 	BT_DBG("status %u", rp->status);
 
-	bt_addr_copy((bt_addr_t *)&bt_dev.id_addr.val, &rp->bdaddr);
+	bt_addr_copy(&bt_dev.id_addr.a, &rp->bdaddr);
 	bt_dev.id_addr.type = BT_ADDR_LE_PUBLIC;
 }
 
@@ -2966,13 +2965,13 @@ static int set_static_addr(void)
 
 	bt_dev.id_addr.type = BT_ADDR_LE_RANDOM;
 
-	err = bt_rand(bt_dev.id_addr.val, 6);
+	err = bt_rand(bt_dev.id_addr.a.val, 6);
 	if (err) {
 		return err;
 	}
 
 	/* Make sure the address bits indicate static address */
-	bt_dev.id_addr.val[5] |= 0xc0;
+	bt_dev.id_addr.a.val[5] |= 0xc0;
 
 	if (storage) {
 		err = storage->write(NULL, BT_STORAGE_ID_ADDR, &bt_dev.id_addr,
@@ -2986,19 +2985,19 @@ static int set_static_addr(void)
 
 set_addr:
 	if (bt_dev.id_addr.type != BT_ADDR_LE_RANDOM ||
-	    (bt_dev.id_addr.val[5] & 0xc0) != 0xc0) {
+	    (bt_dev.id_addr.a.val[5] & 0xc0) != 0xc0) {
 		BT_ERR("Only static random address supported as identity");
 		return -EINVAL;
 	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS,
-				sizeof(bt_dev.id_addr.val));
+				sizeof(bt_dev.id_addr.a));
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	memcpy(net_buf_add(buf, sizeof(bt_dev.id_addr.val)),
-	       bt_dev.id_addr.val, sizeof(bt_dev.id_addr.val));
+	bt_addr_copy(net_buf_add(buf, sizeof(bt_dev.id_addr.a)),
+		     &bt_dev.id_addr.a);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
 }

@@ -264,13 +264,13 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 			continue;
 		}
 
-		addr->val[i] = addr->val[i] << 4;
+		addr->a.val[i] = addr->a.val[i] << 4;
 
 		if (char2hex(str, &tmp) < 0) {
 			return -EINVAL;
 		}
 
-		addr->val[i] |= tmp;
+		addr->a.val[i] |= tmp;
 	}
 
 	if (!strcmp(type, "public") || !strcmp(type, "(public)")) {

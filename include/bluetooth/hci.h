@@ -34,12 +34,12 @@ typedef struct {
 } bt_addr_t;
 
 typedef struct {
-	uint8_t  type;
-	uint8_t  val[6];
+	uint8_t   type;
+	bt_addr_t a;
 } bt_addr_le_t;
 
 #define BT_ADDR_ANY    (&(bt_addr_t) {{0, 0, 0, 0, 0, 0} })
-#define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, {0, 0, 0, 0, 0, 0} })
+#define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, { {0, 0, 0, 0, 0, 0} } })
 
 static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
 {

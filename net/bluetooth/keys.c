@@ -115,8 +115,7 @@ struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr)
 			continue;
 		}
 
-		if (!bt_addr_cmp((bt_addr_t *)addr->val,
-				 &key_pool[i].irk.rpa)) {
+		if (!bt_addr_cmp(&addr->a, &key_pool[i].irk.rpa)) {
 			BT_DBG("cached RPA %s for %s",
 			       bt_addr_str(&key_pool[i].irk.rpa),
 			       bt_addr_le_str(&key_pool[i].addr));
@@ -129,14 +128,12 @@ struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr)
 			continue;
 		}
 
-		if (bt_smp_irk_matches(key_pool[i].irk.val,
-				       (bt_addr_t *)addr->val)) {
+		if (bt_smp_irk_matches(key_pool[i].irk.val, &addr->a)) {
 			BT_DBG("RPA %s matches %s",
 			       bt_addr_str(&key_pool[i].irk.rpa),
 			       bt_addr_le_str(&key_pool[i].addr));
 
-			bt_addr_copy(&key_pool[i].irk.rpa,
-				     (bt_addr_t *)addr->val);
+			bt_addr_copy(&key_pool[i].irk.rpa, &addr->a);
 
 			return &key_pool[i];
 		}
@@ -196,7 +193,7 @@ static struct bt_keys *bt_keys_get_addr_br(const bt_addr_t *addr)
 		 * as the BR/EDR address.
 		 */
 		if (keys->addr.type == BT_ADDR_LE_PUBLIC &&
-		    !bt_addr_cmp((const bt_addr_t *)keys->addr.val, addr)) {
+		    !bt_addr_cmp(&keys->addr.a, addr)) {
 			return keys;
 		}
 
@@ -206,7 +203,7 @@ static struct bt_keys *bt_keys_get_addr_br(const bt_addr_t *addr)
 		 * BT_ADDR_LE_PUBLIC.
 		 */
 		if (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
-			bt_addr_copy((bt_addr_t *)keys->addr.val, addr);
+			bt_addr_copy(&keys->addr.a, addr);
 			BT_DBG("created %p for %s", keys, bt_addr_str(addr));
 			return keys;
 		}
@@ -234,7 +231,7 @@ struct bt_keys *bt_keys_find_link_key(const bt_addr_t *addr)
 		 */
 		if (keys->addr.type == BT_ADDR_LE_PUBLIC &&
 		    (keys->keys & BT_KEYS_LINK_KEY) &&
-		    !bt_addr_cmp((const bt_addr_t *)keys->addr.val, addr)) {
+		    !bt_addr_cmp(&keys->addr.a, addr)) {
 			return keys;
 		}
 	}

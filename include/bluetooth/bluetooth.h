@@ -381,8 +381,8 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 	}
 
 	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X (%s)",
-			addr->val[5], addr->val[4], addr->val[3],
-			addr->val[2], addr->val[1], addr->val[0], type);
+			addr->a.val[5], addr->a.val[4], addr->a.val[3],
+			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)

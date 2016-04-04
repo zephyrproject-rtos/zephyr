@@ -46,7 +46,7 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	memcpy(ev.address, addr->val, sizeof(ev.address));
+	memcpy(ev.address, addr->a.val, sizeof(ev.address));
 	ev.address_type = addr->type;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_CONNECTED,
@@ -58,7 +58,7 @@ static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 	struct gap_device_disconnected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
-	memcpy(ev.address, addr->val, sizeof(ev.address));
+	memcpy(ev.address, addr->a.val, sizeof(ev.address));
 	ev.address_type = addr->type;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_DISCONNECTED,
@@ -253,7 +253,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 
 	ev = (void*) buf;
 
-	memcpy(ev->address, addr->val, sizeof(ev->address));
+	memcpy(ev->address, addr->a.val, sizeof(ev->address));
 	ev->address_type = addr->type;
 
 	ev->flags = GAP_DEVICE_FOUND_FLAG_RSSI;
@@ -358,7 +358,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 	struct gap_passkey_display_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
-	memcpy(ev.address, addr->val, sizeof(ev.address));
+	memcpy(ev.address, addr->a.val, sizeof(ev.address));
 	ev.address_type = addr->type;
 	ev.passkey = sys_cpu_to_le32(passkey);
 
@@ -371,7 +371,7 @@ static void auth_passkey_entry(struct bt_conn *conn)
 	struct gap_passkey_entry_req_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
-	memcpy(ev.address, addr->val, sizeof(ev.address));
+	memcpy(ev.address, addr->a.val, sizeof(ev.address));
 	ev.address_type = addr->type;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_PASSKEY_ENTRY_REQ,

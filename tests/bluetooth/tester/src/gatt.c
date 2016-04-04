@@ -1444,7 +1444,7 @@ static uint8_t notify_func(struct bt_conn *conn,
 	ev->handle = sys_cpu_to_le16(subscribe_params.value_handle);
 	ev->data_length = sys_cpu_to_le16(length);
 	memcpy(ev->data, data, length);
-	memcpy(ev->address, addr->val, sizeof(ev->address));
+	memcpy(ev->address, addr->a.val, sizeof(ev->address));
 	ev->address_type = addr->type;
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_EV_NOTIFICATION,

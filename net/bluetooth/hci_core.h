@@ -127,7 +127,7 @@ static inline bool bt_addr_le_is_rpa(const bt_addr_le_t *addr)
 	if (addr->type != BT_ADDR_LE_RANDOM)
 		return false;
 
-	if ((addr->val[5] & 0xc0) == 0x40)
+	if ((addr->a.val[5] & 0xc0) == 0x40)
 		return true;
 
 	return false;
@@ -139,7 +139,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 		return true;
 
 	/* Check for Random Static address type */
-	if ((addr->val[5] & 0xc0) == 0xc0)
+	if ((addr->a.val[5] & 0xc0) == 0xc0)
 		return true;
 
 	return false;

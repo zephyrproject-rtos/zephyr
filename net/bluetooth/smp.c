@@ -466,9 +466,9 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	swap_buf(m + 5, n1, 16);
 	swap_buf(m + 21, n2, 16);
 	m[37] = a1->type;
-	swap_buf(m + 38, a1->val, 6);
+	swap_buf(m + 38, a1->a.val, 6);
 	m[44] = a2->type;
-	swap_buf(m + 45, a2->val, 6);
+	swap_buf(m + 45, a2->a.val, 6);
 
 	err = bt_smp_aes_cmac(t, m, sizeof(m), mackey);
 	if (err) {
@@ -513,12 +513,12 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	swap_buf(m + 48, iocap, 3);
 
 	m[51] = a1->type;
-	memcpy(m + 52, a1->val, 6);
-	swap_buf(m + 52, a1->val, 6);
+	memcpy(m + 52, a1->a.val, 6);
+	swap_buf(m + 52, a1->a.val, 6);
 
 	m[58] = a2->type;
-	memcpy(m + 59, a2->val, 6);
-	swap_buf(m + 59, a2->val, 6);
+	memcpy(m + 59, a2->a.val, 6);
+	swap_buf(m + 59, a2->a.val, 6);
 
 	swap_buf(ws, w, 16);
 
@@ -757,8 +757,8 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	}
 
 	/* ra is concatenated with ia and padding to generate p2 */
-	memcpy(p2, ra->val, 6);
-	memcpy(p2 + 6, ia->val, 6);
+	memcpy(p2, ra->a.val, 6);
+	memcpy(p2 + 6, ia->a.val, 6);
 	memset(p2 + 12, 0, 4);
 
 	BT_DBG("p2 %s", h(p2, 16));
@@ -2114,7 +2114,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 		if (bt_addr_le_is_rpa(dst)) {
 			/* always update last use RPA */
-			bt_addr_copy(&keys->irk.rpa, (bt_addr_t *)&dst->val);
+			bt_addr_copy(&keys->irk.rpa, &dst->a);
 
 			/*
 			 * Update connection address and notify about identity
@@ -3079,9 +3079,9 @@ static int smp_f5_test(void)
 	uint8_t n2[16] = { 0xcf, 0xc4, 0x3d, 0xff, 0xf7, 0x83, 0x65, 0x21,
 			   0x6e, 0x5f, 0xa7, 0x25, 0xcc, 0xe7, 0xe8, 0xa6 };
 	bt_addr_le_t a1 = { .type = 0x00,
-			    .val = { 0xce, 0xbf, 0x37, 0x37, 0x12, 0x56 } };
+			    .a.val = { 0xce, 0xbf, 0x37, 0x37, 0x12, 0x56 } };
 	bt_addr_le_t a2 = { .type = 0x00,
-			    .val = {0xc1, 0xcf, 0x2d, 0x70, 0x13, 0xa7 } };
+			    .a.val = {0xc1, 0xcf, 0x2d, 0x70, 0x13, 0xa7 } };
 	uint8_t exp_ltk[16] = { 0x38, 0x0a, 0x75, 0x94, 0xb5, 0x22, 0x05,
 				0x98, 0x23, 0xcd, 0xd7, 0x69, 0x11, 0x79,
 				0x86, 0x69 };
@@ -3115,9 +3115,9 @@ static int smp_f6_test(void)
 			  0x54, 0xbb, 0x53, 0xb4, 0x3b, 0x34, 0xa3, 0x12 };
 	uint8_t io_cap[3] = { 0x02, 0x01, 0x01 };
 	bt_addr_le_t a1 = { .type = 0x00,
-			    .val = { 0xce, 0xbf, 0x37, 0x37, 0x12, 0x56 } };
+			    .a.val = { 0xce, 0xbf, 0x37, 0x37, 0x12, 0x56 } };
 	bt_addr_le_t a2 = { .type = 0x00,
-			    .val = {0xc1, 0xcf, 0x2d, 0x70, 0x13, 0xa7 } };
+			    .a.val = {0xc1, 0xcf, 0x2d, 0x70, 0x13, 0xa7 } };
 	uint8_t exp[16] = { 0x61, 0x8f, 0x95, 0xda, 0x09, 0x0b, 0x6c, 0xd2,
 			    0xc5, 0xe8, 0xd0, 0x9c, 0x98, 0x73, 0xc4, 0xe3 };
 	uint8_t res[16];

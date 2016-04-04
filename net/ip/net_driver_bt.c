@@ -71,7 +71,7 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 		src, dst);
 
 	/* Swap bytes since net_set_mac expect big endian address */
-	memswap(addr.u8, info.le.src->val, sizeof(addr.u8));
+	memswap(addr.u8, info.le.src->a.val, sizeof(addr.u8));
 
 	net_set_mac(addr.u8, sizeof(addr));
 }
@@ -92,8 +92,8 @@ static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	bt_conn_get_info(chan->conn, &info);
 
 	/* Swap bytes since linkaddr_copy expect big endian address */
-	memswap(src.u8, info.le.src->val, sizeof(src));
-	memswap(dst.u8, info.le.dst->val, sizeof(dst));
+	memswap(src.u8, info.le.src->a.val, sizeof(src));
+	memswap(dst.u8, info.le.dst->a.val, sizeof(dst));
 
 	/* Add MAC addresses to the buffer */
 	linkaddr_copy(&ip_buf_ll_dest(buf), &src);
