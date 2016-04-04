@@ -386,7 +386,7 @@ void _k_task_sleep(struct k_args *P)
 }
 
 
-void _micro_task_sleep(int32_t ticks)
+static inline void _do_micro_task_sleep(int32_t ticks)
 {
 	struct k_args A;
 
@@ -402,7 +402,22 @@ void _micro_task_sleep(int32_t ticks)
  * _micro_task_sleep()
  */
 extern void _nano_task_sleep(int32_t timeout_in_ticks);
+
+void _micro_task_sleep(int32_t ticks)
+{
+	if (task_priority_get() == (CONFIG_NUM_TASK_PRIORITIES - 1)) {
+		_nano_task_sleep(ticks);
+	} else {
+		_do_micro_task_sleep(ticks);
+	}
+}
+
 void (*_do_task_sleep)(int32_t ticks) = _nano_task_sleep;
 #else
+void _micro_task_sleep(int32_t ticks)
+{
+	_do_micro_task_sleep(ticks);
+}
+
 void (*_do_task_sleep)(int32_t ticks) = _micro_task_sleep;
 #endif
