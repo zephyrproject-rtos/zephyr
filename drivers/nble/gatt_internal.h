@@ -170,7 +170,7 @@ void nble_gatt_register_req(const struct nble_gatt_register_req *par,
 			    uint8_t *buf, uint16_t len);
 
 struct nble_gatt_attr_handles {
-	uint16_t handle; /* handle from ble controller should be sufficient */
+	uint16_t handle;
 };
 
 void on_nble_gatt_register_rsp(const struct nble_gatt_register_rsp *par,
@@ -218,16 +218,31 @@ struct nble_gatt_attr {
 };
 
 struct nble_gattc_read_params {
+	void *user_data;
 	uint16_t conn_handle;
 	uint16_t handle;
 	uint16_t offset;
 };
 
 struct nble_gattc_read_rsp {
-	uint16_t conn_handle;
 	int status;
+	void *user_data;
+	uint16_t conn_handle;
 	uint16_t handle;
 	uint16_t offset;
+};
+
+/* forward declaration */
+struct bt_gatt_write_params;
+
+typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
+		     const struct bt_gatt_write_params *wr_params);
+
+struct bt_gatt_write_params {
+	/* Function invoked upon write response */
+	bt_att_func_t func;
+	/* User specific data */
+	void *user_data[2];
 };
 
 struct nble_gattc_write_params {
@@ -236,6 +251,7 @@ struct nble_gattc_write_params {
 	uint16_t offset;
 	/* different than 0 if response required */
 	uint8_t with_resp;
+	struct bt_gatt_write_params wr_params;
 };
 
 struct nble_gattc_write_rsp {
@@ -243,13 +259,13 @@ struct nble_gattc_write_rsp {
 	int status;
 	uint16_t handle;
 	uint16_t len;
+	struct bt_gatt_write_params wr_params;
 };
 
-void nble_gattc_read_req(const struct nble_gattc_read_params *params,
-			 void *priv);
+void nble_gattc_read_req(const struct nble_gattc_read_params *);
 
 void nble_gattc_write_req(const struct nble_gattc_write_params *params,
-			  const uint8_t *buf, uint8_t len, void *priv);
+			  const uint8_t *buf, uint8_t len);
 
 void bt_gatt_disconnected(struct bt_conn *conn);
 

@@ -154,7 +154,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 	conn->state = BT_CONN_DISCONNECT;
 
-	nble_gap_disconnect_req(&req, conn);
+	nble_gap_disconnect_req(&req);
 
 	return 0;
 }

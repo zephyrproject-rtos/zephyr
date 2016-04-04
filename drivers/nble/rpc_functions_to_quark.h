@@ -43,24 +43,16 @@
 		 const struct nble_response *)			\
 	FN_SIG_S(on_nble_gap_read_bda_rsp,			\
 		 const struct nble_service_read_bda_response *)	\
-	FN_SIG_S(on_nble_gap_disconnect_rsp,			\
-		 const struct nble_response *)			\
 	FN_SIG_S(on_nble_gap_sm_config_rsp,			\
 		 struct nble_gap_sm_config_rsp *)		\
-	FN_SIG_S(on_nble_gap_generic_cmd_rsp,			\
-		 const struct nble_response *)			\
 	FN_SIG_S(on_nble_gap_sm_common_rsp,			\
 		 const struct nble_gap_sm_response *)		\
-	FN_SIG_S(on_nble_gap_service_write_rsp,			\
-		 const struct nble_service_write_response *)	\
 	FN_SIG_S(on_nble_set_bda_rsp,				\
 		 const struct nble_set_bda_rsp *)		\
 	FN_SIG_S(on_nble_gap_set_rssi_report_rsp,		\
 		 const struct nble_response *)			\
 	FN_SIG_S(on_nble_gap_dbg_rsp,				\
-		 const struct debug_response *)			\
-	FN_SIG_S(on_nble_gatts_send_svc_changed_rsp,		\
-		 const struct nble_response *)			\
+		 const struct nble_debug_resp *)		\
 	FN_SIG_S(on_nble_gap_dir_adv_timeout_evt,		\
 		 const struct nble_gap_dir_adv_timeout_evt *)	\
 	FN_SIG_S(on_nble_gatts_send_notif_rsp,			\
@@ -76,7 +68,9 @@
 	FN_SIG_S(on_nble_gatts_write_exec_evt,			\
 		 const struct nble_gatt_wr_exec_evt *)		\
 	FN_SIG_S(on_nble_uas_bucket_change,			\
-		 const struct nble_uas_bucket_change *)
+		 const struct nble_uas_bucket_change *)		\
+	FN_SIG_S(on_nble_gattc_write_rsp,			\
+		 const struct nble_gattc_write_rsp *)
 
 #define LIST_FN_SIG_P						\
 	FN_SIG_P(on_nble_gap_dtm_init_rsp, void *)
@@ -102,17 +96,15 @@
 		   const uint8_t *, uint8_t)			\
 	FN_SIG_S_B(on_nble_gap_sm_bond_info_rsp,		\
 		   const struct nble_gap_sm_bond_info_rsp *,	\
-		   const bt_addr_le_t *, uint16_t)
+		   const bt_addr_le_t *, uint16_t)		\
+	FN_SIG_S_B(on_nble_gattc_read_rsp,			\
+		   const struct nble_gattc_read_rsp *,		\
+		   uint8_t *, uint8_t)
 
 #define LIST_FN_SIG_B_B_P
 
-#define LIST_FN_SIG_S_P						\
-	FN_SIG_S_P(on_nble_gattc_write_rsp,			\
-		   const struct nble_gattc_write_rsp *, void *)
+#define LIST_FN_SIG_S_P
 
-#define LIST_FN_SIG_S_B_P					\
-	FN_SIG_S_B_P(on_nble_gattc_read_rsp,			\
-		     const struct nble_gattc_read_rsp *,	\
-		     uint8_t *, uint8_t, void *)
+#define LIST_FN_SIG_S_B_P
 
 #define LIST_FN_SIG_S_B_B_P

@@ -741,7 +741,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 	/* TODO: Passing parameters with function not working now */
 	conn->gatt_private = params;
 
-	nble_gattc_read_req(&req, params);
+	nble_gattc_read_req(&req);
 
 	return 0;
 }
@@ -826,7 +826,7 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 
 	conn->gatt_private = func;
 
-	nble_gattc_write_req(&req, data, length, NULL);
+	nble_gattc_write_req(&req, data, length);
 
 	return 0;
 }
@@ -882,7 +882,7 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 	req.offset = 0;
 	req.with_resp = 0;
 
-	nble_gattc_write_req(&req, data, length, NULL);
+	nble_gattc_write_req(&req, data, length);
 
 	return 0;
 }

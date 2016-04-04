@@ -30,7 +30,7 @@
 #include "rpc.h"
 
 /* Set the firmware compatible with Nordic BLE RPC */
-static uint8_t compatibe_firmware[4] = { '0', '3', '1', '7' };
+static uint8_t compatibe_firmware[4] = { '0', '4', '0', '4' };
 
 #if !defined(CONFIG_NBLE_DEBUG_GAP)
 #undef BT_DBG

@@ -26,17 +26,6 @@
 #define BT_SMP_AUTH_MITM			0x04
 #define BT_SMP_AUTH_SC				0x08
 
-/**
- * GAP security manager options for bonding/authentication procedures,
- * see Vol 3: Part H, 3.5.
- */
-enum BLE_CORE_GAP_SM_OPTIONS {
-	BLE_CORE_GAP_BONDING = 0x01,	/**< SMP supports bonding */
-	/**< SMP requires Man In The Middle protection */
-	BLE_CORE_GAP_MITM = 0x04,
-	BLE_CORE_GAP_OOB = 0x08		/**< SMP supports Out Of Band data */
-};
-
 enum NBLE_GAP_SM_PASSKEY_TYPE {
 	NBLE_GAP_SM_REJECT = 0,
 	NBLE_GAP_SM_PK_PASSKEY,
@@ -72,17 +61,6 @@ struct nble_gap_connection_values {
 	uint16_t latency;
 	/* Connection supervision timeout (unit 10ms)*/
 	uint16_t supervision_to;
-};
-
-enum BLE_GAP_SVC_ATTR_TYPE {
-	/* Device Name, UUID 0x2a00 */
-	GAP_SVC_ATTR_NAME = 0,
-	/* Appearance, UUID 0x2a01 */
-	GAP_SVC_ATTR_APPEARANCE,
-	/* Peripheral Preferred Connection Parameters (PPCP), UUID 0x2a04 */
-	GAP_SVC_ATTR_PPCP = 4,
-	/* Central Address Resolution (CAR), UUID 0x2aa6, BT 4.2 */
-	GAP_SVC_ATTR_CAR = 0xa6,
 };
 
 struct nble_gap_connection_params {
@@ -142,12 +120,12 @@ struct nble_gap_service_read_params {
 	uint16_t attr_type;
 };
 
-struct debug_params {
+struct nble_debug_params {
 	uint32_t u0;
 	uint32_t u1;
 };
 
-struct debug_response {
+struct nble_debug_resp {
 	int status;
 	uint32_t u0;
 	uint32_t u1;
@@ -205,16 +183,15 @@ void nble_log(const struct nble_log_s *param, char *buf, uint8_t buflen);
 
 void on_nble_up(void);
 
-void nble_gap_service_write_req(const struct nble_gap_service_write_params *par,
-				void *user_data);
+void nble_gap_service_write_req(const struct nble_gap_service_write_params *);
 
 void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *par);
 
 void on_nble_gap_service_write_rsp(const struct nble_service_write_response *par);
 
-void nble_gap_dbg_req(const struct debug_params *par, void *user_data);
+void nble_gap_dbg_req(const struct nble_debug_params *par, void *user_data);
 
-void on_nble_gap_dbg_rsp(const struct debug_response *par);
+void on_nble_gap_dbg_rsp(const struct nble_debug_resp *rsp);
 
 void on_nble_set_bda_rsp(const struct nble_set_bda_rsp *par);
 
@@ -262,8 +239,7 @@ struct nble_gap_disconnect_req_params {
 	uint8_t reason;
 };
 
-void nble_gap_disconnect_req(const struct nble_gap_disconnect_req_params *par,
-			     void *user_data);
+void nble_gap_disconnect_req(const struct nble_gap_disconnect_req_params *);
 
 void on_nble_gap_disconnect_rsp(const struct nble_response *par);
 
@@ -335,6 +311,8 @@ struct nble_rssi_report_params {
 	uint16_t conn_handle;
 	/* RSSI operation @ref BLE_GAP_RSSI_OPS */
 	uint8_t op;
+	/* Channel for RSSI enabling */
+	uint8_t channel;
 	/* minimum RSSI dBm change to report a new RSSI value */
 	uint8_t delta_dBm;
 	/* number of delta_dBm changes before sending a new RSSI report */
@@ -469,10 +447,10 @@ struct nble_gap_dir_adv_timeout_evt {
 
 void on_nble_gap_dir_adv_timeout_evt(const struct nble_gap_dir_adv_timeout_evt *evt);
 
+#define BLE_GAP_RSSI_EVT_SIZE	32
 struct nble_gap_rssi_evt {
 	uint16_t conn_handle;
-	/* RSSI level (compared to 0 dBm) */
-	int8_t rssi_lvl;
+	int8_t rssi_data[BLE_GAP_RSSI_EVT_SIZE];
 };
 
 void on_nble_gap_rssi_evt(const struct nble_gap_rssi_evt *ev);
