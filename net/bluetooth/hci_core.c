@@ -3156,6 +3156,18 @@ int bt_enable(bt_ready_cb_t cb)
 	return 0;
 }
 
+bool bt_addr_le_is_bonded(const bt_addr_le_t *addr)
+{
+#if defined(CONFIG_BLUETOOTH_SMP)
+	struct bt_keys *keys = bt_keys_find_addr(addr);
+
+	/* if there are any keys stored then device is bonded */
+	return keys && keys->keys;
+#else
+	return false;
+#endif /* defined(CONFIG_BLUETOOTH_SMP) */
+}
+
 static bool valid_adv_param(const struct bt_le_adv_param *param)
 {
 	switch (param->type) {

@@ -176,3 +176,5 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr);
 int bt_rand(void *buf, size_t len);
 
 int bt_le_scan_update(bool fast_scan);
+
+bool bt_addr_le_is_bonded(const bt_addr_le_t *addr);
