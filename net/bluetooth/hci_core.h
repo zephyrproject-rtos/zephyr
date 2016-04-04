@@ -110,6 +110,11 @@ struct bt_dev {
 
 	/* Registered HCI driver */
 	struct bt_driver	*drv;
+
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+	/* Local Identity Resolving Key */
+	uint8_t			irk[16];
+#endif
 };
 
 extern struct bt_dev bt_dev;

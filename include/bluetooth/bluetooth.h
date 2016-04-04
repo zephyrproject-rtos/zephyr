@@ -98,6 +98,11 @@ enum {
 
 	/** Use local Non-resolvable Private Address (NRPA) for advertising */
 	BT_LE_ADV_ADDR_NRPA,
+
+	/** Use Resolvable Private Address (RPA) for advertising.
+	 *  Requires that an Identity Resolving Key is available.
+	 */
+	BT_LE_ADV_ADDR_RPA,
 };
 
 /** LE Advertising Parameters. */

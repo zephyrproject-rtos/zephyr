@@ -108,6 +108,11 @@ void bt_smp_update_keys(struct bt_conn *conn)
 {
 }
 
+int bt_smp_create_rpa(const uint8_t irk[16], bt_addr_t *rpa)
+{
+	return -ENOTSUP;
+}
+
 int bt_smp_init(void)
 {
 	static struct bt_l2cap_fixed_chan chan = {

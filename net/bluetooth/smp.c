@@ -53,12 +53,18 @@
 #define SMP_TIMEOUT (30 * sys_clock_ticks_per_sec)
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
-#define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
-#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
+#define SIGN_DIST BT_SMP_DIST_SIGN
 #else
-#define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY)
-#define SEND_KEYS (BT_SMP_DIST_ENC_KEY)
-#endif /* CONFIG_BLUETOOTH_SIGNING */
+#define SIGN_DIST 0
+#endif
+
+#define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY | SIGN_DIST)
+
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | SIGN_DIST)
+#else
+#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | SIGN_DIST)
+#endif
 
 #define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_LINK_KEY))
 #define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_LINK_KEY))
@@ -889,6 +895,40 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		legacy_distribute_keys(smp);
 	}
 #endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
+
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+	if (smp->local_dist & BT_SMP_DIST_ID_KEY) {
+		struct bt_smp_ident_info *id_info;
+		struct bt_smp_ident_addr_info *id_addr_info;
+		struct net_buf *buf;
+
+		smp->local_dist &= ~BT_SMP_DIST_ID_KEY;
+
+		buf = smp_create_pdu(conn, BT_SMP_CMD_IDENT_INFO,
+				     sizeof(*id_info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Ident Info buffer");
+			return;
+		}
+
+		id_info = net_buf_add(buf, sizeof(*id_info));
+		memcpy(id_info->irk, bt_dev.irk, 16);
+
+		smp_send(smp, buf);
+
+		buf = smp_create_pdu(conn, BT_SMP_CMD_IDENT_ADDR_INFO,
+				     sizeof(*id_addr_info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Ident Addr Info buffer");
+			return;
+		}
+
+		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
+		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr);
+
+		smp_send(smp, buf);
+	}
+#endif /* CONFIG_BLUETOOTH_PRIVACY */
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
 	if (smp->local_dist & BT_SMP_DIST_SIGN) {
@@ -2670,7 +2710,8 @@ bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 	return !memcmp(addr->val, hash, 3);
 }
 
-int bt_smp_create_rpa(const uint8_t irk[16], bt_addr_le_t *rpa)
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+int bt_smp_create_rpa(const uint8_t irk[16], bt_addr_t *rpa)
 {
 	int err;
 
@@ -2690,10 +2731,15 @@ int bt_smp_create_rpa(const uint8_t irk[16], bt_addr_le_t *rpa)
 
 	BT_DBG("Created RPA %s", bt_addr_str((bt_addr_t *)rpa->val));
 
-	rpa->type = BT_ADDR_LE_RANDOM;
-
 	return 0;
 }
+#else
+int bt_smp_create_rpa(const uint8_t irk[16], bt_addr_t *rpa)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BLUETOOTH_PRIVACY */
+
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
 /* Sign message using msg as a buffer, len is a size of the message,

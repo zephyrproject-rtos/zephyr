@@ -166,6 +166,13 @@ config BLUETOOTH_SMP
 	  (SMP), making it possible to pair devices over LE.
 
 if BLUETOOTH_SMP
+config BLUETOOTH_PRIVACY
+	bool "Privacy Feature"
+	default n
+	help
+	  Enable local Privacy Feature support. This makes it possible
+	  to use Resolvable Private Addresses (RPAs).
+
 config BLUETOOTH_SIGNING
 	bool "Data signing support"
 	default n

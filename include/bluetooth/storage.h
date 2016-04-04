@@ -31,7 +31,8 @@ extern "C" {
 
 /** Well known storage keys */
 enum {
-	BT_STORAGE_ID_ADDR,
+	BT_STORAGE_ID_ADDR,        /** Identity Address */
+	BT_STORAGE_LOCAL_IRK,      /** Local Identity Resolving Key */
 };
 
 struct bt_storage {
