@@ -73,15 +73,15 @@ choice
 
 config LSM9DS0_GYRO_FULLSCALE_245
 	bool
-	prompt "245 dps"
+	prompt "245 DPS"
 
 config LSM9DS0_GYRO_FULLSCALE_500
 	bool
-	prompt "500 dps"
+	prompt "500 DPS"
 
 config LSM9DS0_GYRO_FULLSCALE_2000
 	bool
-	prompt "2000 dps"
+	prompt "2000 DPS"
 
 endchoice
 

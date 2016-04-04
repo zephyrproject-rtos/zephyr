@@ -273,11 +273,11 @@ static int lsm9ds0_gyro_attr_set(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_TYPE_INT) {
+		if (val->type != SENSOR_TYPE_INT && val->type != SENSOR_TYPE_INT_PLUS_MICRO) {
 			return -ENOTSUP;
 		}
 
-		if (lsm9ds0_gyro_set_fs(dev, val->val1) != 0) {
+		if (lsm9ds0_gyro_set_fs(dev, sensor_rad_to_degrees(val)) != 0) {
 			sensor_dbg("full-scale value not supported\n");
 			return -EIO;
 		}
