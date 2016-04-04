@@ -387,6 +387,11 @@ static int set_random_address(const bt_addr_t *addr)
 {
 	struct net_buf *buf;
 
+	/* Do nothing if we already have the right address */
+	if (!bt_addr_cmp(addr, &bt_dev.random_addr.a)) {
+		return 0;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(*addr));
 	if (!buf) {
 		return -ENOBUFS;
@@ -476,6 +481,13 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	struct net_buf *buf;
 	struct bt_hci_cp_le_create_conn *cp;
 
+	if (conn->le.init_addr.type == BT_ADDR_LE_RANDOM &&
+	    bt_addr_le_cmp(&conn->le.init_addr, &bt_dev.random_addr)) {
+		if (set_random_address(&conn->le.init_addr.a)) {
+			return -EIO;
+		}
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
@@ -487,12 +499,6 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	/* Interval == window for continuous scanning */
 	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
 	cp->scan_window = cp->scan_interval;
-
-	if (conn->le.init_addr.type == BT_ADDR_LE_RANDOM) {
-		if (set_random_address(&conn->le.init_addr.a)) {
-			return -EIO;
-		}
-	}
 
 	bt_addr_le_copy(&cp->peer_addr, &conn->le.resp_addr);
 	cp->own_addr_type = conn->le.init_addr.type;
