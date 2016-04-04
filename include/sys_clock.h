@@ -93,12 +93,15 @@ extern int sys_clock_hw_cycles_per_tick;
 extern int64_t _sys_clock_tick_count;
 
 /*
- * Number of ticks for x seconds. NOTE: With MSEC(), since it does an integer
- * division, x must be greater or equal to 1000/sys_clock_ticks_per_sec to get
- * a non-zero value.
+ * Number of ticks for x seconds. NOTE: With MSEC() or USEC(),
+ * since it does an integer division, x must be greater or equal to
+ * 1000/sys_clock_ticks_per_sec to get a non-zero value.
+ * You may want to raise CONFIG_SYS_CLOCK_TICKS_PER_SEC depending on
+ * your requirements.
  */
-#define SECONDS(x) ((x) * sys_clock_ticks_per_sec)
-#define MSEC(x)    (SECONDS(x) / 1000)
+#define SECONDS(x)	((x) * sys_clock_ticks_per_sec)
+#define MSEC(x)		(SECONDS(x) / MSEC_PER_SEC)
+#define USEC(x)		(MSEC(x) / USEC_PER_MSEC)
 
 #endif /* !_ASMLANGUAGE */
 
