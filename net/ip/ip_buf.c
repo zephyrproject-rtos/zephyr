@@ -80,7 +80,11 @@ static inline void inc_free_rx_bufs(struct net_buf *buf)
 		return;
 	}
 
-	num_free_rx_bufs++;
+	if (num_free_rx_bufs > IP_BUF_RX_SIZE) {
+		num_free_rx_bufs = IP_BUF_RX_SIZE;
+	} else {
+		num_free_rx_bufs++;
+	}
 }
 
 static inline void dec_free_tx_bufs(struct net_buf *buf)
@@ -102,7 +106,11 @@ static inline void inc_free_tx_bufs(struct net_buf *buf)
 		return;
 	}
 
-	num_free_tx_bufs++;
+	if (num_free_tx_bufs > IP_BUF_TX_SIZE) {
+		num_free_tx_bufs = IP_BUF_TX_SIZE;
+	} else {
+		num_free_tx_bufs++;
+	}
 }
 
 static inline int get_frees(enum ip_buf_type type)
