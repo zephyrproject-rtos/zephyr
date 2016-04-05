@@ -2,7 +2,7 @@ ccflags-y += -I$(srctree)/kernel/nanokernel/include
 ccflags-y += -I$(srctree)/kernel/microkernel/include
 
 # see explanation for flags in arch/x86/core/Makefile
-ifeq ($(COMPILER),clang)
+ifeq ($(COMPILER)$(CONFIG_X86_IAMCU),clang)
 KBUILD_AFLAGS += -no-integrated-as
 endif
 KBUILD_AFLAGS += -Wa,--divide

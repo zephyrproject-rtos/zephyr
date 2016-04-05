@@ -281,15 +281,6 @@ KBUILD_BUILTIN := 1
 export KBUILD_BUILTIN
 export KBUILD_CHECKSRC KBUILD_SRC
 
-ifneq ($(CC),)
-ifeq ($(shell $(CC) -v 2>&1 | grep -c "clang version"), 1)
-COMPILER := clang
-else
-COMPILER := gcc
-endif
-export COMPILER
-endif
-
 # Look for make include files relative to root of kernel src
 MAKEFLAGS += --include-dir=$(srctree)
 
@@ -579,6 +570,15 @@ $(if $(CROSS_COMPILE),, \
      $(error ZEPHYR_GCC_VARIANT is not set. ))
 endif
 
+ifneq ($(CC),)
+ifeq ($(shell $(CC) -v 2>&1 | grep -Ec "clang version|icx version"), 1)
+COMPILER := clang
+else
+COMPILER := gcc
+endif
+export COMPILER
+endif
+
 ifdef CONFIG_QMSI_LIBRARY
 LIB_INCLUDE_DIR += -L$(CONFIG_QMSI_INSTALL_PATH:"%"=%)/lib
 ALL_LIBS += qmsi
@@ -641,7 +641,6 @@ KBUILD_AFLAGS += $(CFLAGS)
 
 
 ifeq ($(COMPILER),clang)
-KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
 KBUILD_CPPFLAGS += $(call cc-option,-Wno-unknown-warning-option,)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
 KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)

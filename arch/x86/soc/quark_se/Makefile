@@ -1,4 +1,8 @@
+ifeq ($(COMPILER),clang)
+arch-cflags = $(call cc-option,-msoft-float, -march=pentium)
+else
 arch-cflags = $(call cc-option,-march=lakemont -mtune=lakemont -msoft-float, -march=pentium)
+endif
 
 ifeq ($(CONFIG_X86_IAMCU),y)
 arch-cflags += $(call cc-option,-miamcu)

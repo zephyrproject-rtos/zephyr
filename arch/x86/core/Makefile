@@ -1,7 +1,7 @@
 ccflags-y += -I$(srctree)/kernel/nanokernel/include
 ccflags-y += -I$(srctree)/kernel/microkernel/include
 
-ifeq ($(COMPILER),clang)
+ifeq ($(COMPILER)$(CONFIG_X86_IAMCU),clang)
 # We rely on GAS for assembling, so don't use the integrated assembler
 KBUILD_AFLAGS += -no-integrated-as
 endif
