@@ -403,8 +403,6 @@ int spi_intel_init(struct device *dev)
 	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 
-	dev->driver_api = &intel_spi_api;
-
 	if (!spi_intel_setup(dev)) {
 		return -EPERM;
 	}
@@ -418,6 +416,8 @@ int spi_intel_init(struct device *dev)
 	irq_enable(info->irq);
 
 	DBG("SPI Intel Driver initialized on device: %p\n", dev);
+
+	dev->driver_api = &intel_spi_api;
 
 	return 0;
 }
