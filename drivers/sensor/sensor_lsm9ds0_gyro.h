@@ -253,8 +253,8 @@ struct lsm9ds0_gyro_data {
 
 	int sample_x, sample_y, sample_z;
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
-	int sample_fs;
-	int fs;
+	uint8_t sample_fs;
+	uint8_t fs;
 #endif
 };
 

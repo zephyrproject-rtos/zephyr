@@ -54,14 +54,11 @@ static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
 				   state);
 }
 
-static int lsm9ds0_gyro_set_fs_raw(struct device *dev, int fs)
+static int lsm9ds0_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 {
-#if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
 	struct lsm9ds0_gyro_config *config = dev->config->config_info;
-#endif
 
-#if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				LSM9DS0_GYRO_REG_CTRL_REG4_G,
 				LSM9DS0_GYRO_MASK_CTRL_REG4_G_FS,
@@ -69,6 +66,7 @@ static int lsm9ds0_gyro_set_fs_raw(struct device *dev, int fs)
 		return -EIO;
 	}
 
+#if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	data->fs = fs;
 #endif
 
@@ -76,22 +74,28 @@ static int lsm9ds0_gyro_set_fs_raw(struct device *dev, int fs)
 }
 
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
+static const struct {
+	int fs;
+	uint8_t reg_val;
+} lsm9ds0_gyro_fs_table[] = { {245, 0},
+			      {500, 1},
+			      {2000, 2} };
+
 static int lsm9ds0_gyro_set_fs(struct device *dev, int fs)
 {
-	switch (fs) {
-	case 245:
-		return lsm9ds0_gyro_set_fs_raw(dev, 0);
-	case 500:
-		return lsm9ds0_gyro_set_fs_raw(dev, 1);
-	case 2000:
-		return lsm9ds0_gyro_set_fs_raw(dev, 2);
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(lsm9ds0_gyro_fs_table); ++i) {
+		if (fs <= lsm9ds0_gyro_fs_table[i].fs) {
+			return lsm9ds0_gyro_set_fs_raw(dev, lsm9ds0_gyro_fs_table[i].reg_val);
+		}
 	}
 
 	return -ENOTSUP;
 }
 #endif
 
-static inline int lsm9ds0_gyro_set_odr_raw(struct device *dev, int odr)
+static inline int lsm9ds0_gyro_set_odr_raw(struct device *dev, uint8_t odr)
 {
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
 	struct lsm9ds0_gyro_config *config = dev->config->config_info;
@@ -103,17 +107,24 @@ static inline int lsm9ds0_gyro_set_odr_raw(struct device *dev, int odr)
 }
 
 #if defined(CONFIG_LSM9DS0_GYRO_SAMPLING_RATE_RUNTIME)
+static const struct {
+	int freq;
+	uint8_t reg_val;
+} lsm9ds0_gyro_samp_freq_table[] = { {95, 0},
+				     {190, 1},
+				     {380, 2},
+				     {760, 3} };
+
 static int lsm9ds0_gyro_set_odr(struct device *dev, int odr)
 {
-	switch (odr) {
-	case 95:
-		return lsm9ds0_gyro_set_odr_raw(dev, 0);
-	case 190:
-		return lsm9ds0_gyro_set_odr_raw(dev, 1);
-	case 380:
-		return lsm9ds0_gyro_set_odr_raw(dev, 2);
-	case 760:
-		return lsm9ds0_gyro_set_odr_raw(dev, 3);
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(lsm9ds0_gyro_samp_freq_table); ++i) {
+		if (odr <= lsm9ds0_gyro_samp_freq_table[i].freq) {
+			return lsm9ds0_gyro_set_odr_raw(dev,
+							lsm9ds0_gyro_samp_freq_table[i].
+							reg_val);
+		}
 	}
 
 	return -ENOTSUP;

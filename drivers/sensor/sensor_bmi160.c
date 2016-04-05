@@ -207,8 +207,9 @@ static int bmi160_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(bmi160_odr_map); i++) {
-		if (freq_int == bmi160_odr_map[i].freq_int &&
-		    freq_milli == bmi160_odr_map[i].freq_milli) {
+		if (freq_int < bmi160_odr_map[i].freq_int ||
+		    (freq_int == bmi160_odr_map[i].freq_int &&
+		     freq_milli <= bmi160_odr_map[i].freq_milli)) {
 			return i;
 		}
 	}
@@ -269,7 +270,7 @@ static int32_t bmi160_range_to_reg_val(uint16_t range,
 	int i;
 
 	for (i = 0; i < range_map_size; i++) {
-		if (range == range_map[i].range) {
+		if (range <= range_map[i].range) {
 			return range_map[i].reg_val;
 		}
 	}

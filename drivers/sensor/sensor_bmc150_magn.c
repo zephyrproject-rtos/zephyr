@@ -126,7 +126,7 @@ static int bmc150_magn_set_odr(struct device *dev, uint8_t val)
 	uint8_t i;
 
 	for (i = 0; i < ARRAY_SIZE(bmc150_magn_samp_freq_table); ++i) {
-		if (bmc150_magn_samp_freq_table[i].freq == val) {
+		if (val <= bmc150_magn_samp_freq_table[i].freq) {
 			return i2c_reg_update_byte(data->i2c_master,
 						config->i2c_slave_addr,
 						BMC150_MAGN_REG_OPMODE_ODR,
@@ -444,7 +444,8 @@ static inline int bmc150_magn_attr_set_rep(struct device *dev,
 	default:
 		return -EINVAL;
 	}
-	return -EINVAL;
+
+	return 0;
 }
 #endif
 
