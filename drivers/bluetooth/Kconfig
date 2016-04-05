@@ -103,6 +103,14 @@ endif # BLUETOOTH_STACK_HCI
 
 source "drivers/bluetooth/nble/Kconfig"
 
+config BLUETOOTH_NRF51_PM
+	bool "NRF51 Power Management for Nordic BLE [EXPERIMENTAL]"
+	depends on BLUETOOTH_H4 || NBLE
+	select GPIO
+	help
+	  Power Management support for Nordic BLE nRF51 chip. Allows to enable,
+	  disable the chip and handle wakeups.
+
 endmenu
 
 endif # BLUETOOTH
