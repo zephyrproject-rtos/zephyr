@@ -34,14 +34,14 @@
 #include "uart.h"
 #include "rpc.h"
 
+#if defined(CONFIG_BLUETOOTH_NRF51_PM)
+#include "nrf51_pm.h"
+#endif
+
 #if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
 #endif
-
-#define NBLE_SWDIO_PIN	6
-#define NBLE_RESET_PIN	NBLE_SWDIO_PIN
-#define NBLE_BTWAKE_PIN 5
 
 /**
  * @note this structure must be self-aligned and self-packed
@@ -201,95 +201,22 @@ static void bt_uart_isr(struct device *unused)
 	}
 }
 
-static int nble_disable(void)
+static int pre_init(void)
 {
-#if defined(CONFIG_BOARD_ARDUINO_101) || defined(CONFIG_BOARD_QUARK_SE_DEVBOARD)
-	int ret;
-	struct device *gpio;
-
-	gpio = device_get_binding(CONFIG_GPIO_DW_0_NAME);
-	if (!gpio) {
-		BT_ERR("Cannot find %s", CONFIG_GPIO_DW_0_NAME);
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_configure(gpio, NBLE_RESET_PIN, GPIO_DIR_OUT);
-	if (ret) {
-		BT_ERR("Error configuring pin %d", NBLE_RESET_PIN);
-		return -ENODEV;
-	}
-
-	/* Reset hold time is 0.2us (normal) or 100us (SWD debug) */
-	ret = gpio_pin_write(gpio, NBLE_RESET_PIN, 0);
-	if (ret) {
-		BT_ERR("Error pin write %d", NBLE_RESET_PIN);
-		return -EINVAL;
-	}
-
-	ret = gpio_pin_configure(gpio, NBLE_BTWAKE_PIN, GPIO_DIR_OUT);
-	if (ret) {
-		BT_ERR("Error configuring pin %d", NBLE_BTWAKE_PIN);
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_write(gpio, NBLE_BTWAKE_PIN, 1);
-	if (ret) {
-		BT_ERR("Error pin write %d", NBLE_BTWAKE_PIN);
-		return -EINVAL;
-	}
-
-	/**
-	 * NBLE reset is achieved by asserting low the SWDIO pin.
-	 * However, the BLE Core chip can be in SWD debug mode,
-	 * and NRF_POWER->RESET = 0 due to, other constraints: therefore,
-	 * this reset might not work everytime, especially after
-	 * flashing or debugging.
-	 */
-
-	/* sleep 1ms depending on context */
-	switch (sys_execution_context_type_get()) {
-	case NANO_CTX_FIBER:
-		fiber_sleep(MSEC(1));
-		break;
-	case NANO_CTX_TASK:
-		task_sleep(MSEC(1));
-		break;
-	default:
-		BT_ERR("ISR context is not supported");
-		return -EINVAL;
-	}
-#endif /* CONFIG_BOARD_ARDUINO_101 || CONFIG_BOARD_QUARK_SE_DEVBOARD */
-
+#if defined(CONFIG_BLUETOOTH_NRF51_PM)
+	return nrf51_disable();
+#else
 	return 0;
+#endif
 }
 
-int nble_enable(void)
+static int post_init(void)
 {
-#if defined(CONFIG_BOARD_ARDUINO_101) || defined(CONFIG_BOARD_QUARK_SE_DEVBOARD)
-	int ret;
-	struct device *gpio;
-
-	gpio = device_get_binding(CONFIG_GPIO_DW_0_NAME);
-	if (!gpio) {
-		BT_ERR("Cannot find %s", CONFIG_GPIO_DW_0_NAME);
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_write(gpio, NBLE_RESET_PIN, 1);
-	if (ret) {
-		BT_ERR("Error pin write %d", NBLE_RESET_PIN);
-		return -EINVAL;
-	}
-
-	/* Set back GPIO to input to avoid interfering with external debugger */
-	ret = gpio_pin_configure(gpio, NBLE_RESET_PIN, GPIO_DIR_IN);
-	if (ret) {
-		BT_ERR("Error configuring pin %d", NBLE_RESET_PIN);
-		return -ENODEV;
-	}
-#endif /* CONFIG_BOARD_ARDUINO_101 || CONFIG_BOARD_QUARK_SE_DEVBOARD */
-
+#if defined(CONFIG_BLUETOOTH_NRF51_PM)
+	return nrf51_enable();
+#else
 	return 0;
+#endif
 }
 
 int nble_open(void)
@@ -303,7 +230,7 @@ int nble_open(void)
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    (nano_fiber_entry_t)rx_fiber, 0, 0, 7, 0);
 
-	ret = nble_disable();
+	ret = pre_init();
 	if (ret < 0) {
 		return ret;
 	}
@@ -322,7 +249,7 @@ int nble_open(void)
 
 	uart_irq_rx_enable(nble_dev);
 
-	return nble_enable();
+	return post_init();
 }
 
 static int _bt_nble_init(struct device *unused)
