@@ -75,6 +75,15 @@ struct bt_storage {
 
 void bt_storage_register(struct bt_storage *storage);
 
+/** Clear all storage keys for a specific address
+  *
+  * @param addr  Remote address, NULL for local storage or
+  *              BT_ADDR_LE_ANY to clear all remote devices.
+  *
+  * @return 0 on success or negative error value on failure.
+  */
+int bt_storage_clear(bt_addr_le_t *addr);
+
 #ifdef __cplusplus
 }
 #endif
