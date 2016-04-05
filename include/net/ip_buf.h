@@ -108,6 +108,7 @@ struct ip_buf {
 	linkaddr_t src;
 #if defined(CONFIG_NETWORKING_WITH_TCP)
 	int8_t sent_status; /* tells if the TCP packet was sent ok or not */
+	uint8_t tcp_retry_count;
 #endif
 
 	/* Neighbor discovery vars. Note that we are using void pointers here
@@ -207,6 +208,7 @@ struct ip_buf {
 #define ip_buf_context(buf) (((struct ip_buf *)net_buf_user_data((buf)))->context)
 #define ip_buf_type(ptr) (((struct ip_buf *)net_buf_user_data((ptr)))->type)
 #define ip_buf_sent_status(ptr) (((struct ip_buf *)net_buf_user_data((ptr)))->sent_status)
+#define ip_buf_tcp_retry_count(ptr) (((struct ip_buf *)net_buf_user_data((ptr)))->tcp_retry_count)
 /* @endcond */
 
 /** NET_BUF_IP

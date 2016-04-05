@@ -101,29 +101,43 @@ static struct net_dev {
 /* Called by application to send a packet */
 int net_send(struct net_buf *buf)
 {
+	int ret = 0;
+
 	if (ip_buf_len(buf) == 0) {
 		return -ENODATA;
 	}
 
 #ifdef CONFIG_NETWORKING_WITH_TCP
+#define MAX_TCP_RETRY_COUNT 5
 	net_context_tcp_init(ip_buf_context(buf), NET_TCP_TYPE_CLIENT);
 	if (ip_buf_context(buf)) {
-		int ret;
+		if (ip_buf_tcp_retry_count(buf) < MAX_TCP_RETRY_COUNT) {
+			int ret;
 
-		if (net_context_get_tuple(ip_buf_context(buf))->ip_proto ==
-							    IPPROTO_TCP) {
-			if (uip_conn(buf) && uip_conn(buf)->len > 0) {
-				/* There is already pending packet to be sent.
-				 * Application needs to try to send data
-				 * a bit later.
-				 */
-				return -EAGAIN;
+			if (net_context_get_tuple(
+				    ip_buf_context(buf))->ip_proto ==
+							IPPROTO_TCP) {
+				if (uip_conn(buf) && uip_conn(buf)->len > 0) {
+					/* There is already pending packet to
+					 * be sent. Application needs to try to
+					 * send data a bit later.
+					 * Do not wait forever thou so that
+					 * the connection can proceed if
+					 * needed.
+					 */
+					ip_buf_tcp_retry_count(buf)++;
+					return -EAGAIN;
+				}
+				ret = net_context_get_connection_status(
+					ip_buf_context(buf));
+				if (ret < 0) {
+					ip_buf_tcp_retry_count(buf)++;
+					return ret;
+				}
 			}
-			ret = net_context_get_connection_status(
-				ip_buf_context(buf));
-			if (ret < 0) {
-				return ret;
-			}
+		} else {
+			ip_buf_tcp_retry_count(buf) = 0;
+			ret = -EAGAIN;
 		}
 	}
 #endif
@@ -133,7 +147,7 @@ int net_send(struct net_buf *buf)
 	/* Tell the IP stack it can proceed with the packet */
 	fiber_wakeup(tx_fiber_id);
 
-	return 0;
+	return ret;
 }
 
 #ifdef CONFIG_NETWORKING_STATISTICS
