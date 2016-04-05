@@ -482,3 +482,69 @@ void net_context_set_receiver_registered(struct net_context *context)
 
 	context->receiver_registered = true;
 }
+
+int net_context_get_connection_status(struct net_context *context)
+{
+	if (!context) {
+		return -ENOENT;
+	}
+
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
+	return 0;
+#else
+	if (context->tuple.ip_proto == IPPROTO_TCP) {
+		return context->connection_status;
+	} else {
+		return 0;
+	}
+#endif
+}
+
+void net_context_set_connection_status(struct net_context *context,
+				      int status)
+{
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
+	return;
+#else
+	if (!context) {
+		return;
+	}
+
+	if (context->tuple.ip_proto == IPPROTO_TCP) {
+		context->connection_status = status;
+	}
+#endif
+}
+
+void *net_context_get_internal_connection(struct net_context *context)
+{
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
+	return NULL;
+#else
+	if (!context) {
+		return NULL;
+	}
+
+	if (context->tuple.ip_proto == IPPROTO_TCP) {
+		return context->conn;
+	} else {
+		return NULL;
+	}
+#endif
+}
+
+void net_context_set_internal_connection(struct net_context *context,
+					 void *conn)
+{
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
+	return;
+#else
+	if (!context) {
+		return;
+	}
+
+	if (context->tuple.ip_proto == IPPROTO_TCP) {
+		context->conn = conn;
+	}
+#endif
+}

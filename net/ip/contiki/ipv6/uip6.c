@@ -84,6 +84,15 @@
 
 #include <string.h>
 
+/* Need to set the connection status in context when TCP connection is
+ * established.
+ */
+extern void net_context_set_connection_status(struct net_context *context,
+					      int status);
+void *net_context_get_internal_connection(struct net_context *context);
+void net_context_set_internal_connection(struct net_context *context,
+					 void *conn);
+
 /*---------------------------------------------------------------------------*/
 /* For Debug, logging, statistics                                            */
 /*---------------------------------------------------------------------------*/

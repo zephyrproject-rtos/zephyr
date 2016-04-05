@@ -143,6 +143,19 @@ int net_recv(struct net_buf *buf);
 
 void net_context_init(void);
 
+/**
+ * @brief Get current status of the TCP connection.
+ *
+ * @details Application can call this to get the current status
+ * of TCP connection. The returned value maps to errno values.
+ * Value 0 means ok. For UDP context 0 is always returned.
+ *
+ * @param context Network context
+ *
+ * @return 0 if ok, < 0 connection status
+ */
+int net_context_get_connection_status(struct net_context *context);
+
 #ifdef __cplusplus
 }
 #endif
