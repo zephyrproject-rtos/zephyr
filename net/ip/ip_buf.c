@@ -352,7 +352,7 @@ void ip_buf_unref(struct net_buf *buf)
 
 #ifdef DEBUG_IP_BUFS
        NET_DBG("%s [%d] buf %p ref %d (%s():%d)\n",
-	       type2str(ip_buf_type(buf)), get_frees(ip_buf_type(buf)) + 1,
+	       type2str(ip_buf_type(buf)), get_frees(ip_buf_type(buf)),
 	       buf, buf->ref - 1, caller, line);
 #else
        NET_DBG("%s buf %p ref %d\n",
