@@ -33,6 +33,7 @@
 
 #include <zephyr.h>
 #include <sections.h>
+#include <errno.h>
 
 #include <drivers/rand32.h>
 
@@ -130,13 +131,32 @@ static inline void reverse(unsigned char *buf, int len)
 #define WAIT_TICKS TICKS_UNLIMITED
 #endif
 
-static inline bool send_packet(const char *name,
-			       struct net_context *ctx,
-			       int ipsum_len,
-			       int pos)
+static inline int send_packet(const char *name,
+			      struct net_context *ctx,
+			      int ipsum_len,
+			      int pos)
 {
-	struct net_buf *buf;
-	bool fail = false;
+	static struct net_buf *buf;
+	int ret = 0;
+
+	if (buf) {
+		/* We have a pending packet that needs to be sent
+		 * first.
+		 */
+		ret = net_send(buf);
+		if (ret == -EAGAIN) {
+			PRINT("%s: packet %p needs to be re-sent\n",
+			      name, buf);
+			return ret;
+		} else if (ret < 0) {
+			ip_buf_unref(buf);
+			buf = NULL;
+			return ret;
+		} else {
+			buf = NULL;
+			return 0;
+		}
+	}
 
 	buf = ip_buf_get_tx(ctx);
 	if (buf) {
@@ -147,20 +167,25 @@ static inline bool send_packet(const char *name,
 		memcpy(ptr, lorem_ipsum + pos, sending_len);
 		sending_len = buf->len;
 
-		if (net_send(buf) < 0) {
-			PRINT("%s: sending %d bytes failed\n",
-			      __func__, sending_len);
-			ip_buf_unref(buf);
-			fail = true;
-			goto out;
+		ret = net_send(buf);
+		if (ret < 0) {
+			if (ret == -EAGAIN) {
+				PRINT("%s: no connection, try again later\n",
+				      __func__);
+			} else {
+				PRINT("%s: sending %d bytes failed\n",
+				      __func__, sending_len);
+				ip_buf_unref(buf);
+				buf = NULL;
+			}
 		} else {
 			PRINT("%s: sent %d bytes\n", __func__,
 			      sending_len);
+			buf = NULL;
 		}
 	}
 
-out:
-	return fail;
+	return ret;
 }
 
 static inline bool wait_reply(const char *name,
@@ -173,6 +198,53 @@ static inline bool wait_reply(const char *name,
 	int expected_len = ipsum_len - pos;
 
 	/* Wait for the answer */
+#if defined(CONFIG_NETWORKING_WITH_TCP)
+again:
+	buf = net_receive(ctx, WAIT_TICKS);
+	if (buf) {
+		int total_len = expected_len, sum = 0, count = 0;
+
+		if (ip_buf_appdatalen(buf) < expected_len) {
+			if (memcmp(lorem_ipsum + pos, ip_buf_appdata(buf),
+				   ip_buf_appdatalen(buf))) {
+				PRINT("%s: received %d bytes (total %d), "
+				      "partial data mismatch\n",
+				      name, ip_buf_appdatalen(buf),
+				      expected_len);
+				fail = true;
+				goto free_buf;
+			}
+			/* So far everything is ok, more data to come,
+			 * wait it all.
+			 */
+			pos += ip_buf_appdatalen(buf);
+			expected_len -= ip_buf_appdatalen(buf);
+			sum += ip_buf_appdatalen(buf);
+			ip_buf_unref(buf);
+			count++;
+			goto again;
+		} else {
+			/* Did we get all the data back?
+			 */
+			sum += ip_buf_appdatalen(buf);
+
+			if (memcmp(lorem_ipsum + pos, ip_buf_appdata(buf),
+				   expected_len)) {
+				PRINT("%s: received data mismatch in "
+				      "last packet.\n", name);
+				fail = true;
+				goto free_buf;
+			}
+
+			if (total_len != sum) {
+				PRINT("Received %d bytes, expected %d\n",
+				      sum, total_len);
+			} else {
+				PRINT("Received %d bytes (in %d messages)\n",
+				      total_len, count + 1);
+			}
+		}
+#else
 	buf = net_receive(ctx, WAIT_TICKS);
 	if (buf) {
 		if (ip_buf_appdatalen(buf) != expected_len) {
@@ -199,7 +271,8 @@ static inline bool wait_reply(const char *name,
 		}
 
 		PRINT("%s: received %d bytes\n", __func__,
-			      expected_len);
+		      expected_len);
+#endif
 
 	free_buf:
 		ip_buf_unref(buf);
@@ -268,6 +341,7 @@ static inline bool get_context(struct net_context **unicast,
 		return false;
 	}
 
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
 	*multicast = net_context_get(IPPROTO_UDP,
 				     &mcast_addr, PEER_PORT,
 				     &my_addr, MY_PORT);
@@ -276,7 +350,9 @@ static inline bool get_context(struct net_context **unicast,
 		      __func__);
 		return false;
 	}
-
+#else
+	*multicast = NULL;
+#endif
 	return true;
 }
 
@@ -288,6 +364,12 @@ static char __noinit __stack stack_receiving[STACKSIZE];
 void sending(int resend)
 {
 	static bool send_unicast = true;
+	int ret;
+#if defined(CONFIG_NETWORKING_WITH_TCP)
+	static const char *type = "TCP";
+#else
+	static const char *type = "Unicast";
+#endif
 
 	PRINT("%s: Sending packet\n", __func__);
 
@@ -298,17 +380,28 @@ void sending(int resend)
 	}
 
 	if (send_unicast) {
-		if (send_packet(__func__, unicast, ipsum_len,
-				expecting)) {
-			PRINT("Unicast sending %d bytes FAIL\n",
+	again:
+		ret = send_packet(__func__, unicast, ipsum_len,
+				  expecting);
+		if (ret == -EAGAIN) {
+			fiber_sleep(100);
+			PRINT("retrying...\n");
+			goto again;
+		} else if (ret < 0) {
+			PRINT("%s sending %d bytes FAIL\n", type,
+			      ipsum_len - expecting);
+		} else {
+			PRINT("%s sent %d bytes\n", type,
 			      ipsum_len - expecting);
 		}
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
 	} else {
 		if (send_packet(__func__, multicast, ipsum_len,
 				expecting)) {
 			PRINT("Multicast sending %d bytes FAIL\n",
 			      ipsum_len - expecting);
 		}
+#endif
 	}
 }
 
@@ -319,7 +412,7 @@ void receiving(void)
 	sending(expecting_len);
 
 	while (1) {
-		PRINT("%s: Waiting packet\n", __func__);
+		PRINT("Waiting packet\n");
 
 		if (wait_reply(__func__, unicast,
 			       ipsum_len, expecting)) {
