@@ -65,3 +65,5 @@ source "drivers/sensor/Kconfig.mcp9808"
 source "drivers/sensor/Kconfig.sht3xd"
 
 source "drivers/sensor/Kconfig.sx9500"
+
+source "drivers/sensor/Kconfig.tmp007"
