@@ -529,7 +529,7 @@ void on_nble_up(void)
 	send_dm_config();
 }
 
-void bt_register_storage(struct bt_storage *bt_storage)
+void bt_storage_register(struct bt_storage *bt_storage)
 {
 	storage = bt_storage;
 }

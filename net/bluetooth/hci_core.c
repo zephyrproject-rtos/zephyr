@@ -3703,7 +3703,7 @@ int bt_br_set_discoverable(bool enable)
 }
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-void bt_register_storage(struct bt_storage *storage)
+void bt_storage_register(struct bt_storage *storage)
 {
 	bt_storage = storage;
 }
