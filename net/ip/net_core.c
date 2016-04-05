@@ -85,7 +85,7 @@ int net_context_tcp_send(struct net_buf *buf);
 static char __noinit __stack rx_fiber_stack[CONFIG_IP_RX_STACK_SIZE];
 static char __noinit __stack tx_fiber_stack[CONFIG_IP_TX_STACK_SIZE];
 static char __noinit __stack timer_fiber_stack[CONFIG_IP_TIMER_STACK_SIZE];
-static nano_thread_id_t timer_fiber_id;
+static nano_thread_id_t timer_fiber_id, tx_fiber_id;
 
 static struct net_dev {
 	/* Queue for incoming packets from driver */
@@ -122,6 +122,9 @@ int net_send(struct net_buf *buf)
 #endif
 
 	nano_fifo_put(&netdev.tx_queue, buf);
+
+	/* Tell the IP stack it can proceed with the packet */
+	fiber_wakeup(tx_fiber_id);
 
 	return 0;
 }
@@ -883,8 +886,9 @@ static void init_tx_queue(void)
 {
 	nano_fifo_init(&netdev.tx_queue);
 
-	fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
-		    (nano_fiber_entry_t)net_tx_fiber, 0, 0, 7, 0);
+	tx_fiber_id = fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
+				  (nano_fiber_entry_t)net_tx_fiber,
+				  0, 0, 7, 0);
 }
 
 static void init_timer_fiber(void)
