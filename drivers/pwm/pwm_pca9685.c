@@ -198,8 +198,6 @@ int pwm_pca9685_init(struct device *dev)
 	uint8_t buf[] = {0, 0};
 	int ret;
 
-	dev->driver_api = &pwm_pca9685_drv_api_funcs;
-
 	/* Find out the device struct of the I2C master */
 	i2c_master = device_get_binding((char *)config->i2c_master_dev_name);
 	if (!i2c_master) {
@@ -216,6 +214,8 @@ int pwm_pca9685_init(struct device *dev)
 	if (ret != 0) {
 		return -EPERM;
 	}
+
+	dev->driver_api = &pwm_pca9685_drv_api_funcs;
 
 	return 0;
 }
