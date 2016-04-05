@@ -51,6 +51,8 @@ static int uart_nsim_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	dev->driver_api = &uart_nsim_driver_api;
+
 	return 0;
 }
 
