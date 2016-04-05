@@ -1005,6 +1005,22 @@ uip_process(struct net_buf *buf, uint8_t flag)
      particular connection. */
 #if UIP_TCP
   if(flag == UIP_POLL_REQUEST || flag == UIP_TCP_SEND_CONN) {
+
+    /* If the connection is not found, and we are initiating the
+     * connection, try to get it.
+     */
+    if (!uip_connr) {
+      uip_connr = net_context_get_internal_connection(ip_buf_context(buf));
+      if (!uip_connr) {
+        PRINTF("No matching connection found for buf %p\n", buf);
+        ip_buf_sent_status(buf) = -ENOTCONN;
+	return 0;
+      } else {
+        uip_set_conn(buf) = uip_connr;
+        PRINTF("Using connection %p for buf %p\n", uip_conn(buf), buf);
+      }
+    }
+
     if((uip_connr->tcpstateflags & UIP_TS_MASK) == UIP_ESTABLISHED &&
        !uip_outstanding(uip_connr)) {
       if (flag == UIP_POLL) {
@@ -1029,10 +1045,12 @@ uip_process(struct net_buf *buf, uint8_t flag)
         ip_buf_sent_status(buf) = -ECONNABORTED;
 	goto drop;
       }
+
       if (uip_outstanding(uip_connr)) {
         ip_buf_sent_status(buf) = -EAGAIN;
-        PRINTF("Retry to send packet len %d, outstanding data len %d\n",
-	       uip_len(buf), uip_outstanding(uip_connr));
+        PRINTF("Retry to send packet len %d, outstanding data len %d, "
+	       "conn %p\n", uip_len(buf), uip_outstanding(uip_connr),
+		uip_connr);
         return 0;
       }
     }
@@ -1848,6 +1866,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
   uip_connr->snd_nxt[2] = iss[2];
   uip_connr->snd_nxt[3] = iss[3];
   uip_connr->len = 1;
+  uip_connr->buf = ip_buf_ref(buf);
 
   /* rcv_nxt should be the seqno from the incoming packet + 1. */
   uip_connr->rcv_nxt[3] = UIP_TCP_BUF(buf)->seqno[3];
@@ -2093,6 +2112,18 @@ tcp_send_syn:
         uip_connr->len = 0;
         uip_len(buf) = 0;
         uip_slen(buf) = 0;
+	ip_buf_sent_status(buf) = 0;
+	uip_set_conn(buf) = uip_connr;
+	if (uip_connr->buf) {
+          /* Now that we know the original connection request, clear
+           * the buf in connr
+           */
+          net_context_set_connection_status(ip_buf_context(uip_connr->buf), 0);
+          net_context_set_internal_connection(ip_buf_context(uip_connr->buf),
+					      uip_connr);
+          ip_buf_unref(uip_connr->buf);
+          uip_connr->buf = NULL;
+	}
         UIP_APPCALL(buf);
         goto appsend;
       }
@@ -2251,6 +2282,10 @@ tcp_send_syn:
             /* Remember how much data we send out now so that we know
                when everything has been acknowledged. */
             uip_connr->len = uip_slen(buf);
+
+	    PRINTF("Setting connection %p to pending length %d\n",
+		   uip_connr, uip_connr->len);
+
           } else {
 
             /* If the application already had unacknowledged data, we
@@ -2437,6 +2472,21 @@ tcp_send_syn:
   uip_ext_len(buf) = 0;
   uip_ext_bitmap(buf) = 0;
   uip_flags(buf) = 0;
+
+#if UIP_TCP
+  /* Clear any pending packet */
+  if (uip_connr->buf) {
+    switch (uip_connr->tcpstateflags & UIP_TS_MASK) {
+    case UIP_FIN_WAIT_1:
+    case UIP_FIN_WAIT_2:
+    case UIP_CLOSING:
+    case UIP_TIME_WAIT:
+      ip_buf_unref(uip_connr->buf);
+      uip_connr->buf = NULL;
+    }
+  }
+#endif
+
   return 0;
 }
 /*---------------------------------------------------------------------------*/
@@ -2483,8 +2533,6 @@ uip_send(struct net_buf *buf, const void *data, int len)
        if (!ret) {
          PRINTF("Packet %p sending failed.\n", buf);
          ip_buf_unref(buf);
-       } else {
-         ip_buf_sent_status(buf) = 0;
        }
     }
   }

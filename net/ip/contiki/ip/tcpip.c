@@ -837,6 +837,8 @@ tcpip_poll_tcp(struct uip_conn *conn)
 {
   /* We are sending here the initial SYN */
   struct net_buf *buf = ip_buf_get_tx(conn->appstate.state);
+  uip_set_conn(buf) = conn;
+  conn->buf = ip_buf_ref(buf);
   process_post_synch(&tcpip_process, TCP_POLL, conn, buf);
 }
 #endif /* UIP_TCP */

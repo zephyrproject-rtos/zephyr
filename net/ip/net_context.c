@@ -68,6 +68,9 @@ struct net_context {
 			struct psock ps;
 			struct process tcp;
 			enum net_tcp_type tcp_type;
+			int connection_status;
+			void *conn;
+			struct net_buf *last_sent;
 		};
 #endif
 	};
@@ -270,11 +273,51 @@ static int handle_tcp_connection(struct psock *p, enum tcp_event_type type,
 int net_context_tcp_send(struct net_buf *buf)
 {
 	/* Prepare data to be sent */
+
+	/* If we have already tried to send this buf, then set the flag
+	 * accordingly so that psock can actually try to send the data.
+	 */
+	if (ip_buf_context(buf)->last_sent == buf) {
+		uip_flags(buf) |= UIP_REXMIT;
+	} else {
+		ip_buf_context(buf)->last_sent = buf;
+	}
+
+	ip_buf_ref(buf);
+
 	process_post_synch(&ip_buf_context(buf)->tcp,
 			   tcpip_event,
 			   INT_TO_POINTER(TCP_WRITE_EVENT),
 			   buf);
 
+	/* If the buffer ref is 1, then the buffer was sent and it
+	 * is cleared already.
+	 */
+	if (buf->ref == 1) {
+		ip_buf_unref(buf);
+		return 0;
+	}
+
+	ip_buf_unref(buf);
+
+	/* If we get -EAGAIN, then we need to retry the packet sending
+	 * after we have received ACK from peer. Store the packet to be
+	 * sent out later.
+	 */
+	if (ip_buf_sent_status(buf) == -EAGAIN) {
+		if (!uip_conn(buf)) {
+			;
+		} else if (!uip_conn(buf)->buf) {
+			uip_conn(buf)->buf = ip_buf_ref(buf);
+		} else {
+			/* We just could not send the packet and thus need to
+			 * discard it.
+			 */
+			ip_buf_sent_status(buf) = -EBUSY;
+		}
+	}
+
+	ip_buf_context(buf)->connection_status = ip_buf_sent_status(buf);
 
 	return ip_buf_sent_status(buf);
 }
@@ -296,6 +339,8 @@ PROCESS_THREAD(tcp, ev, data, buf, user_data)
 			if (!context) {
 				continue;
 			}
+
+			context->connection_status = ip_buf_sent_status(buf);
 
 			do {
 				context = user_data;
@@ -375,6 +420,8 @@ PROCESS_THREAD(tcp, ev, data, buf, user_data)
 
 			nano_fifo_put(net_context_get_queue(user_data), clone);
 
+			ip_buf_sent_status(buf) = 1;
+
 			/* We let the application to read the data now */
 			fiber_yield();
 		}
@@ -416,6 +463,7 @@ int net_context_tcp_init(struct net_context *context,
 #if UIP_ACTIVE_OPEN
 	} else {
 		context->tcp.name = "TCP client";
+		context->connection_status = -EAGAIN;
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 		NET_DBG("Connecting to ");

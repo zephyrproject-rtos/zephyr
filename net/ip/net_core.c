@@ -108,6 +108,8 @@ int net_send(struct net_buf *buf)
 #ifdef CONFIG_NETWORKING_WITH_TCP
 	net_context_tcp_init(ip_buf_context(buf), NET_TCP_TYPE_CLIENT);
 	if (ip_buf_context(buf)) {
+		int ret;
+
 		if (net_context_get_tuple(ip_buf_context(buf))->ip_proto ==
 							    IPPROTO_TCP) {
 			if (uip_conn(buf) && uip_conn(buf)->len > 0) {
@@ -116,6 +118,11 @@ int net_send(struct net_buf *buf)
 				 * a bit later.
 				 */
 				return -EAGAIN;
+			}
+			ret = net_context_get_connection_status(
+				ip_buf_context(buf));
+			if (ret < 0) {
+				return ret;
 			}
 		}
 	}
@@ -411,9 +418,10 @@ static inline int tcp_prepare_and_send(struct net_context *context,
 	NET_DBG("Packet output len %d\n", uip_len(buf));
 
 	ret = net_context_tcp_send(buf);
-	if (ret && ret != -EAGAIN) {
+	if (ret < 0 && ret != -EAGAIN) {
 		NET_DBG("Packet could not be sent properly.\n");
 	}
+	ip_buf_sent_status(buf) = 0;
 
 #ifdef CONFIG_NETWORKING_IPV6_NO_ND
 	if (!route_old && route_new) {
@@ -727,8 +735,17 @@ static int check_and_send_packet(struct net_buf *buf)
 			uip_len(buf) = buf->len;
 		}
 		ret = net_context_tcp_send(buf);
-		if (ret && ret != -EAGAIN) {
+		if (ret < 0 && ret != -EAGAIN) {
 			NET_DBG("Packet could not be sent properly.\n");
+			ip_buf_unref(buf);
+		} else if (ret == 0) {
+			/* For TCP the return status 0 means that the packet
+			 * is released already. The caller of this function
+			 * expects return value of > 0 in this case.
+			 */
+			ret = 1;
+		} else {
+			ip_buf_sent_status(buf) = 0;
 		}
 #else
 		NET_DBG("TCP not supported\n");
