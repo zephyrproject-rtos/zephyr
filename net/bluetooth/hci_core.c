@@ -59,7 +59,7 @@ static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
 
 struct bt_dev bt_dev;
 
-static struct bt_storage *storage;
+const struct bt_storage *bt_storage;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
@@ -2959,9 +2959,9 @@ static int set_static_addr(void)
 	struct net_buf *buf;
 	ssize_t err;
 
-	if (storage) {
-		err = storage->read(NULL, BT_STORAGE_ID_ADDR, &bt_dev.id_addr,
-				    sizeof(bt_dev.id_addr));
+	if (bt_storage) {
+		err = bt_storage->read(NULL, BT_STORAGE_ID_ADDR,
+				       &bt_dev.id_addr, sizeof(bt_dev.id_addr));
 		if (err == sizeof(bt_dev.id_addr)) {
 			goto set_addr;
 		}
@@ -2979,9 +2979,10 @@ static int set_static_addr(void)
 	/* Make sure the address bits indicate static address */
 	bt_dev.id_addr.a.val[5] |= 0xc0;
 
-	if (storage) {
-		err = storage->write(NULL, BT_STORAGE_ID_ADDR, &bt_dev.id_addr,
-				     sizeof(bt_dev.id_addr));
+	if (bt_storage) {
+		err = bt_storage->write(NULL, BT_STORAGE_ID_ADDR,
+					&bt_dev.id_addr,
+					sizeof(bt_dev.id_addr));
 		if (err != sizeof(bt_dev.id_addr)) {
 			BT_ERR("Unable to store static address");
 		}
@@ -3109,9 +3110,9 @@ static int irk_init(void)
 {
 	ssize_t err;
 
-	if (storage) {
-		err = storage->read(NULL, BT_STORAGE_LOCAL_IRK, &bt_dev.irk,
-				    sizeof(bt_dev.irk));
+	if (bt_storage) {
+		err = bt_storage->read(NULL, BT_STORAGE_LOCAL_IRK, &bt_dev.irk,
+				       sizeof(bt_dev.irk));
 		if (err == sizeof(bt_dev.irk)) {
 			return 0;
 		}
@@ -3124,9 +3125,9 @@ static int irk_init(void)
 		return err;
 	}
 
-	if (storage) {
-		err = storage->write(NULL, BT_STORAGE_LOCAL_IRK, bt_dev.irk,
-				     sizeof(bt_dev.irk));
+	if (bt_storage) {
+		err = bt_storage->write(NULL, BT_STORAGE_LOCAL_IRK, bt_dev.irk,
+					sizeof(bt_dev.irk));
 		if (err != sizeof(bt_dev.irk)) {
 			BT_ERR("Unable to store IRK");
 		}
@@ -3702,7 +3703,7 @@ int bt_br_set_discoverable(bool enable)
 }
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-void bt_register_storage(struct bt_storage *bt_storage)
+void bt_register_storage(struct bt_storage *storage)
 {
-	storage = bt_storage;
+	bt_storage = storage;
 }

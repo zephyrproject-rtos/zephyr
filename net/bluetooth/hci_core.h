@@ -118,6 +118,7 @@ struct bt_dev {
 };
 
 extern struct bt_dev bt_dev;
+extern const struct bt_storage *bt_storage;
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
