@@ -71,14 +71,14 @@ void _sys_device_do_config_level(int level)
  *
  * @param name device name to search for.
  *
- * @return pointer to device structure, or NULL if not found.
+ * @return pointer to device structure; NULL if not found or cannot be used.
  */
 struct device *device_get_binding(char *name)
 {
 	struct device *info;
 
 	for (info = __device_init_start; info != __device_init_end; info++) {
-		if (!strcmp(name, info->config->name)) {
+		if (info->driver_api && !strcmp(name, info->config->name)) {
 			return info;
 		}
 	}
