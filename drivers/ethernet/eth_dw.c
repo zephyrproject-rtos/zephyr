@@ -283,18 +283,18 @@ static int eth_initialize(struct device *port)
 static void eth_config_0_irq(struct device *port);
 
 static struct eth_config eth_config_0 = {
-	.base_addr		= CONFIG_ETH_DW_0_BASE_ADDR,
+	.base_addr		= ETH_DW_0_BASE_ADDR,
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
-	.irq_num		= CONFIG_ETH_DW_0_IRQ,
+	.irq_num		= ETH_DW_0_IRQ,
 #endif
 #if CONFIG_PCI
-	.pci_dev.class_type	= CONFIG_ETH_DW_CLASS,
-	.pci_dev.bus		= CONFIG_ETH_DW_0_BUS,
-	.pci_dev.dev		= CONFIG_ETH_DW_0_DEV,
-	.pci_dev.vendor_id	= CONFIG_ETH_DW_VENDOR_ID,
-	.pci_dev.device_id	= CONFIG_ETH_DW_DEVICE_ID,
-	.pci_dev.function	= CONFIG_ETH_DW_0_FUNCTION,
-	.pci_dev.bar		= CONFIG_ETH_DW_0_BAR,
+	.pci_dev.class_type	= ETH_DW_PCI_CLASS,
+	.pci_dev.bus		= ETH_DW_0_PCI_BUS,
+	.pci_dev.dev		= ETH_DW_0_PCI_DEV,
+	.pci_dev.vendor_id	= ETH_DW_PCI_VENDOR_ID,
+	.pci_dev.device_id	= ETH_DW_PCI_DEVICE_ID,
+	.pci_dev.function	= ETH_DW_0_PCI_FUNCTION,
+	.pci_dev.bar		= ETH_DW_0_PCI_BAR,
 #endif
 	.config_func		= eth_config_0_irq,
 
@@ -321,9 +321,9 @@ static void eth_config_0_irq(struct device *port)
 
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONNECT(CONFIG_ETH_DW_0_IRQ, CONFIG_ETH_DW_0_PRI, eth_dw_isr,
+	IRQ_CONNECT(ETH_DW_0_IRQ, CONFIG_ETH_DW_0_IRQ_PRI, eth_dw_isr,
 		    DEVICE_GET(eth_dw_0), 0);
-	irq_enable(CONFIG_ETH_DW_0_IRQ);
+	irq_enable(ETH_DW_0_IRQ);
 #elif defined(CONFIG_ETH_DW_0_IRQ_SHARED)
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
 	__ASSERT(shared_irq_dev != NULL, "Failed to get eth_dw device binding");

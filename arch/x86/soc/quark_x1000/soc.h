@@ -37,6 +37,21 @@
 #endif
 
 /*
+ * Ethernet (DesignWare)
+ */
+#define ETH_DW_PCI_VENDOR_ID			0x8086
+#define ETH_DW_PCI_DEVICE_ID			0x0937
+#define ETH_DW_PCI_CLASS			0x02
+
+#define ETH_DW_0_BASE_ADDR			0x90002000
+#define ETH_DW_0_IRQ				18
+
+#define ETH_DW_0_PCI_BUS			0
+#define ETH_DW_0_PCI_DEV			20
+#define ETH_DW_0_PCI_FUNCTION			6
+#define ETH_DW_0_PCI_BAR			0
+
+/*
  * GPIO
  */
 #define GPIO_SCH_LEGACY_IO_PORTS_ACCESS
