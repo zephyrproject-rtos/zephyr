@@ -1,2 +1,3 @@
 obj-$(CONFIG_BLUETOOTH_H4) += h4.o
 obj-$(CONFIG_BLUETOOTH_H5) += h5.o
+obj-$(CONFIG_NBLE) += nble/

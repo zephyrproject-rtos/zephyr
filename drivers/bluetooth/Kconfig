@@ -101,7 +101,7 @@ config BLUETOOTH_HCI_RECV_RESERVE
 
 endif # BLUETOOTH_STACK_HCI
 
-source "drivers/nble/Kconfig"
+source "drivers/bluetooth/nble/Kconfig"
 
 endmenu
 

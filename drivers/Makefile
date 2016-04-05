@@ -22,7 +22,6 @@ obj-$(CONFIG_WATCHDOG) += watchdog/
 obj-$(CONFIG_RTC) += rtc/
 obj-$(CONFIG_CLOCK_CONTROL) += clock_control/
 obj-$(CONFIG_IPM) += ipm/
-obj-$(CONFIG_NBLE) += nble/
 obj-$(CONFIG_SENSOR) += sensor/
 obj-y += aio/
 obj-$(CONFIG_PINMUX) += pinmux/
