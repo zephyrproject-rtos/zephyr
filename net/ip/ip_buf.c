@@ -354,6 +354,33 @@ void ip_buf_unref(struct net_buf *buf)
        net_buf_unref(buf);
 }
 
+#ifdef DEBUG_IP_BUFS
+struct net_buf *ip_buf_ref_debug(struct net_buf *buf, const char *caller, int line)
+#else
+struct net_buf *ip_buf_ref(struct net_buf *buf)
+#endif
+{
+	if (!buf) {
+#ifdef DEBUG_IP_BUFS
+		NET_DBG("*** ERROR *** buf %p (%s():%d)\n", buf, caller, line);
+#else
+		NET_DBG("*** ERROR *** buf %p\n", buf);
+#endif
+		return NULL;
+	}
+
+#ifdef DEBUG_IP_BUFS
+	NET_DBG("%s [%d] buf %p ref %d (%s():%d)\n",
+		type2str(ip_buf_type(buf)), get_frees(ip_buf_type(buf)),
+		buf, buf->ref + 1, caller, line);
+#else
+	NET_DBG("%s buf %p ref %d\n",
+		type2str(ip_buf_type(buf)), buf, buf->ref + 1);
+#endif
+
+	return net_buf_ref(buf);
+}
+
 void ip_buf_init(void)
 {
 	NET_DBG("Allocating %d RX and %d TX buffers for IP stack\n",

@@ -300,6 +300,22 @@ void ip_buf_unref_debug(struct net_buf *buf, const char *caller, int line);
 void ip_buf_unref(struct net_buf *buf);
 #endif
 
+/**
+ * @brief Increase the ref count
+ *
+ * @details Mark the buffer to be used still.
+ *
+ * @param buf Network buffer to ref.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
+#ifdef DEBUG_IP_BUFS
+#define ip_buf_ref(buf) ip_buf_ref_debug(buf, __func__, __LINE__)
+struct net_buf *ip_buf_ref_debug(struct net_buf *buf, const char *caller, int line);
+#else
+struct net_buf *ip_buf_ref(struct net_buf *buf);
+#endif
+
 /** @cond ignore */
 void ip_buf_init(void);
 /* @endcond */
