@@ -567,8 +567,6 @@ int gpio_pcal9535a_init(struct device *dev)
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
 	struct device *i2c_master;
 
-	dev->driver_api = &gpio_pcal9535a_drv_api_funcs;
-
 	/* Find out the device struct of the I2C master */
 	i2c_master = device_get_binding((char *)config->i2c_master_dev_name);
 	if (!i2c_master) {
@@ -577,6 +575,8 @@ int gpio_pcal9535a_init(struct device *dev)
 	drv_data->i2c_master = i2c_master;
 
 	nano_timer_init(&drv_data->timer, (void *) 0);
+
+	dev->driver_api = &gpio_pcal9535a_drv_api_funcs;
 
 	return 0;
 }
