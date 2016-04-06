@@ -47,10 +47,17 @@ static struct pin_config mux_config[PINMUX_NUM_PINS] = {
 	{ 7,  PINMUX_FUNC_A }, /* EXP1.P0_6 (out), EXP1.P0_6 (in), NA, NA */
 	{ 8,  PINMUX_FUNC_A }, /* EXP1.P1_0 (out), EXP1.P1_0 (in), NA, NA */
 	{ 9,  PINMUX_FUNC_B }, /* GPIO_SUS2 (out), GPIO_SUS2 (in), PWM.LED7, NA */
+#if defined(CONFIG_SPI_INTEL_PORT_1)
+	{ 10, PINMUX_FUNC_A }, /* GPIO2 (out), GPIO2 (in), PWM.LED11, NA */
+	{ 11, PINMUX_FUNC_D }, /* GPIO_SUS3 (out), GPIO_SUS3 (in), PWM.LED9, SPI1_MOSI */
+	{ 12, PINMUX_FUNC_C }, /* GPIO7 (out), GPIO7 (in), SPI1_MISO, NA */
+	{ 13, PINMUX_FUNC_C }, /* GPIO_SUS5 (out), GPIO_SUS5(in), SPI1_SCK, NA */
+#else
 	{ 10, PINMUX_FUNC_B }, /* GPIO2 (out), GPIO2 (in), PWM.LED11, NA */
 	{ 11, PINMUX_FUNC_B }, /* GPIO_SUS3 (out), GPIO_SUS3 (in), PWM.LED9, SPI1_MOSI */
 	{ 12, PINMUX_FUNC_B }, /* GPIO7 (out), GPIO7 (in), SPI1_MISO, NA */
 	{ 13, PINMUX_FUNC_B }, /* GPIO_SUS5 (out), GPIO_SUS5(in), SPI1_SCK, NA */
+#endif
 	{ 14, PINMUX_FUNC_B }, /* EXP2.P0_0 (out)/ADC.IN0, EXP2.P0_0 (in)/ADC.IN0, NA, NA */
 	{ 15, PINMUX_FUNC_B }, /* EXP2.P0_2 (out)/ADC.IN1, EXP2.P0_2 (in)/ADC.IN1, NA, NA */
 	{ 16, PINMUX_FUNC_B }, /* EXP2.P0_4 (out)/ADC.IN2, EXP2.P0_4 (in)/ADC.IN2, NA, NA */
