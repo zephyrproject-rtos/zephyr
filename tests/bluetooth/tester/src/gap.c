@@ -544,10 +544,12 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 	}
 }
 
-uint8_t tester_init_gap(void)
+static void tester_init_gap_cb(int err)
 {
-	if (bt_enable(NULL) < 0) {
-		return BTP_STATUS_FAILED;
+	if (err) {
+		tester_rsp(BTP_SERVICE_ID_CORE, CORE_REGISTER_SERVICE,
+			   BTP_INDEX_NONE, BTP_STATUS_FAILED);
+		return;
 	}
 
 	atomic_clear(&current_settings);
@@ -557,6 +559,16 @@ uint8_t tester_init_gap(void)
 	atomic_set_bit(&current_settings, GAP_SETTINGS_LE);
 
 	bt_conn_cb_register(&conn_callbacks);
+
+	tester_rsp(BTP_SERVICE_ID_CORE, CORE_REGISTER_SERVICE, BTP_INDEX_NONE,
+		   BTP_STATUS_SUCCESS);
+}
+
+uint8_t tester_init_gap(void)
+{
+	if (bt_enable(tester_init_gap_cb) < 0) {
+		return BTP_STATUS_FAILED;
+	}
 
 	return BTP_STATUS_SUCCESS;
 }

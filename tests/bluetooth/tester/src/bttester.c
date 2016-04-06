@@ -77,7 +77,11 @@ static void register_service(uint8_t *data, uint16_t len)
 	switch (cmd->id) {
 	case BTP_SERVICE_ID_GAP:
 		status = tester_init_gap();
-		break;
+		/* Rsp with success status will be handled by bt enable cb */
+		if (status == BTP_STATUS_FAILED) {
+			goto rsp;
+		}
+		return;
 	case BTP_SERVICE_ID_GATT:
 		status = tester_init_gatt();
 		break;
@@ -86,6 +90,7 @@ static void register_service(uint8_t *data, uint16_t len)
 		break;
 	}
 
+rsp:
 	tester_rsp(BTP_SERVICE_ID_CORE, CORE_REGISTER_SERVICE, BTP_INDEX_NONE,
 		   status);
 }
