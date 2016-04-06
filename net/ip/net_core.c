@@ -111,6 +111,10 @@ int net_send(struct net_buf *buf)
 #define MAX_TCP_RETRY_COUNT 5
 	net_context_tcp_init(ip_buf_context(buf), NET_TCP_TYPE_CLIENT);
 	if (ip_buf_context(buf)) {
+		if (net_context_get_connection_status(
+			    ip_buf_context(buf)) == -ETIMEDOUT) {
+			return -ETIMEDOUT;
+		}
 		if (ip_buf_tcp_retry_count(buf) < MAX_TCP_RETRY_COUNT) {
 			int ret;
 
@@ -750,8 +754,8 @@ static int check_and_send_packet(struct net_buf *buf)
 		}
 		ret = net_context_tcp_send(buf);
 		if (ret < 0 && ret != -EAGAIN) {
-			NET_DBG("Packet could not be sent properly.\n");
-			ip_buf_unref(buf);
+			NET_DBG("Packet could not be sent properly "
+				"(err %d)\n", ret);
 		} else if (ret == 0) {
 			/* For TCP the return status 0 means that the packet
 			 * is released already. The caller of this function

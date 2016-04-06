@@ -361,6 +361,10 @@ PROCESS_THREAD(tcp, ev, data, buf, user_data)
 
 				PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
 
+				if (uip_timedout(buf)) {
+					break;
+				}
+
 				if (POINTER_TO_INT(data) != TCP_WRITE_EVENT) {
 					goto read_data;
 				}
@@ -369,6 +373,14 @@ PROCESS_THREAD(tcp, ev, data, buf, user_data)
 				  uip_timedout(buf)));
 
 			context = user_data;
+
+			if (uip_timedout(buf)) {
+				ip_buf_sent_status(buf) = -ETIMEDOUT;
+				if (context) {
+					context->connection_status = -ETIMEDOUT;
+				}
+				continue;
+			}
 
 			if (context &&
 			    context->tcp_type == NET_TCP_TYPE_CLIENT) {

@@ -493,6 +493,10 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
         uint8_t ret = 0;
         uip_poll_conn(buf, data);
 #if NETSTACK_CONF_WITH_IPV6
+	if (!uip_len(buf) && buf->len) {
+          /* Make sure we are sending something if needed. */
+          uip_len(buf) = buf->len;
+	}
         ret = tcpip_ipv6_output(buf);
 #else /* NETSTACK_CONF_WITH_IPV6 */
         if(uip_len(buf) > 0) {
@@ -845,6 +849,11 @@ tcpip_poll_tcp(struct uip_conn *conn)
 #if UIP_ACTIVE_OPEN
 void tcpip_resend_syn(struct uip_conn *conn, struct net_buf *buf)
 {
+  /* The network driver will unref the buf so in order not to loose the
+   * buffer, we need to ref it here.
+   */
+  ip_buf_ref(buf);
+
   /* We are re-sending here the SYN */
   process_post_synch(&tcpip_process, TCP_POLL, conn, buf);
 }

@@ -979,6 +979,32 @@ ext_hdr_options_process(struct net_buf *buf)
   return 0;
 }
 
+#if UIP_TCP
+static inline void handle_tcp_retransmit_timer(struct net_buf *not_used,
+					       void *ptr)
+{
+  struct uip_conn *conn = ptr;
+
+  PRINTF("%s: connection %p buf %p\n", __func__, conn, conn ? conn->buf : 0);
+  if (conn && conn->buf) {
+    conn->timer = 0;
+    if (uip_process(conn->buf, UIP_TIMER)) {
+      tcpip_resend_syn(conn, conn->buf);
+    }
+  }
+}
+
+static inline void tcp_set_retrans_timer(struct uip_conn *conn)
+{
+  ctimer_set(NULL, &conn->retransmit_timer, CLOCK_SECOND,
+	     &handle_tcp_retransmit_timer, conn);
+}
+
+static inline void tcp_cancel_retrans_timer(struct uip_conn *conn)
+{
+  ctimer_stop(&conn->retransmit_timer);
+}
+#endif /* UIP_TCP */
 
 /*---------------------------------------------------------------------------*/
 uint8_t
@@ -1030,6 +1056,14 @@ uip_process(struct net_buf *buf, uint8_t flag)
       goto appsend;
 #if UIP_ACTIVE_OPEN
     } else if((uip_connr->tcpstateflags & UIP_TS_MASK) == UIP_SYN_SENT) {
+      if (uip_connr->nrtx > UIP_MAXSYNRTX) {
+        /* SYN has been sent too many times, just stop the connection.
+	 */
+	PRINTF("Too many SYN sent, dropping connection %p\n", uip_connr);
+	net_context_set_connection_status(ip_buf_context(buf), -ETIMEDOUT);
+	goto drop;
+      }
+
       /* In the SYN_SENT state, we retransmit out SYN. */
       UIP_TCP_BUF(buf)->flags = 0;
       goto tcp_send_syn;
@@ -1051,7 +1085,8 @@ uip_process(struct net_buf *buf, uint8_t flag)
         PRINTF("Retry to send packet len %d, outstanding data len %d, "
 	       "conn %p\n", uip_len(buf), uip_outstanding(uip_connr),
 		uip_connr);
-        return 0;
+	flag = UIP_TIMER;
+	goto tcp_retry;
       }
     }
     goto drop;
@@ -1076,7 +1111,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
         }
       }
     }
-    
+  tcp_retry:
     /*
      * Check if the connection is in a state in which we simply wait
      * for the connection to time out. If so, we increase the
@@ -1915,6 +1950,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
 
 tcp_send_syn:
   UIP_TCP_BUF(buf)->flags |= TCP_SYN;
+  tcp_set_retrans_timer(uip_connr);
 #else /* UIP_ACTIVE_OPEN */
  tcp_send_synack:
   UIP_TCP_BUF(buf)->flags = TCP_SYN | TCP_ACK;
@@ -2121,6 +2157,7 @@ tcp_send_syn:
           net_context_set_connection_status(ip_buf_context(uip_connr->buf), 0);
           net_context_set_internal_connection(ip_buf_context(uip_connr->buf),
 					      uip_connr);
+          tcp_cancel_retrans_timer(uip_connr);
           ip_buf_unref(uip_connr->buf);
           uip_connr->buf = NULL;
 	}
@@ -2394,6 +2431,7 @@ tcp_send_syn:
   if (flag != UIP_TCP_SEND_CONN) {
     PRINTF("In tcp_send_nodata\n");
     uip_len(buf) = UIP_IPTCPH_LEN;
+    buf->len = UIP_IPTCPH_LEN;
   }
 
  tcp_send_noopts:
@@ -2476,6 +2514,7 @@ tcp_send_syn:
 #if UIP_TCP
   /* Clear any pending packet */
   if (uip_connr->buf) {
+    tcp_cancel_retrans_timer(uip_connr);
     switch (uip_connr->tcpstateflags & UIP_TS_MASK) {
     case UIP_FIN_WAIT_1:
     case UIP_FIN_WAIT_2:

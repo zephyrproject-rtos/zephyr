@@ -1341,6 +1341,11 @@ struct uip_conn {
 
   /* buffer holding the data to this connection */
   struct net_buf *buf;
+
+#if UIP_ACTIVE_OPEN
+  /* re-send SYN in active open connection */
+  struct ctimer retransmit_timer;
+#endif
 };
 
 
