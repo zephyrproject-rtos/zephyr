@@ -138,9 +138,9 @@ int isl29035_init_interrupt(struct device *dev)
 	int ret;
 
 	/* set interrupt persistence */
-	ret = isl29035_update_reg(drv_data,
-				  ISL29035_COMMAND_I_REG, ISL29035_INT_PRST_MASK,
-				  ISL29035_INT_PRST_IDX << ISL29035_INT_PRST_SHIFT);
+	ret = isl29035_update_reg(drv_data, ISL29035_COMMAND_I_REG,
+				  ISL29035_INT_PRST_MASK,
+				  ISL29035_INT_PRST_BITS);
 	if (ret != 0) {
 		DBG("Failed to set interrupt persistence cycles.\n");
 		return -EIO;

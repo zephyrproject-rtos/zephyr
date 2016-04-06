@@ -159,27 +159,27 @@ static int isl29035_init(struct device *dev)
 	}
 
 	/* set operation mode */
-	ret = isl29035_update_reg(drv_data,
-				  ISL29035_COMMAND_I_REG, ISL29035_OPMODE_MASK,
-				  ISL29035_ACTIVE_OPMODE << ISL29035_OPMODE_SHIFT);
+	ret = isl29035_update_reg(drv_data, ISL29035_COMMAND_I_REG,
+				  ISL29035_OPMODE_MASK,
+				  ISL29035_ACTIVE_OPMODE_BITS);
 	if (ret != 0) {
 		DBG("Failed to set opmode.\n");
 		return ret;
 	}
 
 	/* set lux range */
-	ret = isl29035_update_reg(drv_data,
-				  ISL29035_COMMAND_II_REG, ISL29035_LUX_RANGE_MASK,
-				  ISL29035_LUX_RANGE_IDX << ISL29035_LUX_RANGE_SHIFT);
+	ret = isl29035_update_reg(drv_data, ISL29035_COMMAND_II_REG,
+				  ISL29035_LUX_RANGE_MASK,
+				  ISL29035_LUX_RANGE_BITS);
 	if (ret != 0) {
 		DBG("Failed to set lux range.\n");
 		return ret;
 	}
 
 	/* set ADC resolution */
-	ret = isl29035_update_reg(drv_data,
-				  ISL29035_COMMAND_II_REG, ISL29035_ADC_RES_MASK,
-				  ISL29035_ADC_RES_IDX << ISL29035_ADC_RES_SHIFT);
+	ret = isl29035_update_reg(drv_data, ISL29035_COMMAND_II_REG,
+				  ISL29035_ADC_RES_MASK,
+				  ISL29035_ADC_RES_BITS);
 	if (ret != 0) {
 		DBG("Failed to set ADC resolution.\n");
 		return ret;

@@ -64,7 +64,8 @@ static void lis3dh_fiber_cb(void *arg)
 	struct lis3dh_data *drv_data = dev->driver_data;
 
 	if (drv_data->data_ready_handler != NULL) {
-		drv_data->data_ready_handler(dev, &drv_data->data_ready_trigger);
+		drv_data->data_ready_handler(dev,
+					     &drv_data->data_ready_trigger);
 	}
 
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_LIS3DH_GPIO_PIN_NUM);

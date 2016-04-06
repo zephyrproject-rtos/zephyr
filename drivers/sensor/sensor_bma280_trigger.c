@@ -81,14 +81,16 @@ static void bma280_fiber_cb(void *arg)
 	bma280_reg_read(drv_data, BMA280_REG_INT_STATUS_1, &status);
 	if (status & BMA280_BIT_DATA_INT_STATUS &&
 	    drv_data->data_ready_handler != NULL) {
-		drv_data->data_ready_handler(dev, &drv_data->data_ready_trigger);
+		drv_data->data_ready_handler(dev,
+					     &drv_data->data_ready_trigger);
 	}
 
 	/* check for any motion */
 	bma280_reg_read(drv_data, BMA280_REG_INT_STATUS_0, &status);
 	if (status & BMA280_BIT_SLOPE_INT_STATUS &&
 	    drv_data->any_motion_handler != NULL) {
-		drv_data->any_motion_handler(dev, &drv_data->data_ready_trigger);
+		drv_data->any_motion_handler(dev,
+					     &drv_data->data_ready_trigger);
 
 		/* clear latched interrupt */
 		bma280_reg_update(drv_data, BMA280_REG_INT_RST_LATCH,
@@ -160,7 +162,8 @@ int bma280_trigger_set(struct device *dev,
 
 		/* enable any-motion interrupt */
 		rc = bma280_reg_update(drv_data, BMA280_REG_INT_EN_0,
-				       BMA280_SLOPE_EN_XYZ, BMA280_SLOPE_EN_XYZ);
+				       BMA280_SLOPE_EN_XYZ,
+				       BMA280_SLOPE_EN_XYZ);
 		if (rc != 0) {
 			DBG("Could not enable data ready interrupt\n");
 			return -EIO;
