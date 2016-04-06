@@ -94,6 +94,11 @@ int bt_enable(bt_ready_cb_t cb)
 
 	BT_DBG("");
 
+	if (!cb) {
+		/* With nble the callback is mandatory */
+		return -EINVAL;
+	}
+
 	ret = nble_open();
 	if (ret) {
 		return ret;
