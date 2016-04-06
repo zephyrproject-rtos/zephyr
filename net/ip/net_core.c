@@ -437,7 +437,7 @@ static inline int tcp_prepare_and_send(struct net_context *context,
 
 	ret = net_context_tcp_send(buf);
 	if (ret < 0 && ret != -EAGAIN) {
-		NET_DBG("Packet could not be sent properly.\n");
+		NET_DBG("Packet could not be sent properly (err %d)\n", ret);
 	}
 	ip_buf_sent_status(buf) = 0;
 
