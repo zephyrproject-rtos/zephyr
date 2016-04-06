@@ -217,6 +217,27 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 {
+	uint16_t i;
+
+	for (i = 0; i < svc_count; i++) {
+		if (attr >= svc_db[i].attrs &&
+		    attr < svc_db[i].attrs + svc_db[i].attr_count) {
+			uint8_t attr_i;
+
+			attr_i = (attr - svc_db[i].attrs) + 1;
+
+			/* Return next element of current service */
+			if (attr_i < svc_db[i].attr_count) {
+				return (struct bt_gatt_attr *)&attr[1];
+			}
+
+			/* Return next service as next attribute */
+			if (i < (svc_count - 1)) {
+				return (struct bt_gatt_attr *)svc_db[i+1].attrs;
+			}
+		}
+	}
+
 	return NULL;
 }
 
