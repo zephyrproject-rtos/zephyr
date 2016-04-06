@@ -29,7 +29,6 @@
 
 #include "sensor_bmc150_magn.h"
 
-static struct bmc150_magn_data bmc150_magn_data;
 
 #ifdef CONFIG_SENSOR_DEBUG
 #include <misc/printk.h>
@@ -575,11 +574,20 @@ static int bmc150_magn_trigger_set(struct device *dev,
 #endif
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-static void bmc150_magn_gpio_drdy_callback(struct device *dev, uint32_t pin)
+static void bmc150_magn_gpio_drdy_callback(struct device *dev,
+					   struct gpio_callback *cb,
+					   uint32_t pins)
 {
-	gpio_pin_disable_callback(dev, pin);
+	struct bmc150_magn_data *data =
+		CONTAINER_OF(cb, struct bmc150_magn_data, gpio_cb);
+	const struct bmc150_magn_config * const config =
+		data->dev->config->config_info;
 
-	nano_isr_sem_give(&bmc150_magn_data.sem);
+	ARG_UNUSED(pins);
+
+	gpio_pin_disable_callback(dev, config->gpio_drdy_int_pin);
+
+	nano_isr_sem_give(&data->sem);
 }
 
 static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
@@ -747,10 +755,17 @@ int bmc150_magn_init(struct device *dev)
 	gpio_pin_configure(data->gpio_drdy, config->gpio_drdy_int_pin,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
-	if (gpio_set_callback(data->gpio_drdy, bmc150_magn_gpio_drdy_callback) != 0) {
+
+	gpio_init_callback(&data->gpio_cb,
+			   bmc150_magn_gpio_drdy_callback,
+			   BIT(config->gpio_drdy_int_pin));
+
+	if (gpio_add_callback(data->gpio_drdy, &data->gpio_cb) != 0) {
 		sensor_dbg("failed to set gpio callback\n");
 		return -EIO;
 	}
+
+	data->dev = dev;
 #endif
 
 	return 0;
@@ -764,6 +779,8 @@ static struct bmc150_magn_config bmc150_magn_config = {
 	.gpio_drdy_int_pin = CONFIG_BMC150_MAGN_GPIO_DRDY_INT_PIN,
 #endif
 };
+
+struct bmc150_magn_data bmc150_magn_data;
 
 DEVICE_INIT(bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME, bmc150_magn_init, &bmc150_magn_data,
 	    &bmc150_magn_config, NANOKERNEL, CONFIG_BMC150_MAGN_INIT_PRIORITY);

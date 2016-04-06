@@ -15,14 +15,11 @@
  */
 
 #include <device.h>
-#include <gpio.h>
 #include <misc/util.h>
 #include <nanokernel.h>
 #include <sensor.h>
 
 #include "sensor_bma280.h"
-
-extern struct bma280_data bma280_driver;
 
 int bma280_attr_set(struct device *dev,
 		    enum sensor_channel chan,
@@ -62,14 +59,20 @@ int bma280_attr_set(struct device *dev,
 	return 0;
 }
 
-static void bma280_gpio_callback(struct device *dev, uint32_t pin)
+static void bma280_gpio_callback(struct device *dev,
+				 struct gpio_callback *cb, uint32_t pins)
 {
-	gpio_pin_disable_callback(dev, pin);
+	struct bma280_data *drv_data =
+		CONTAINER_OF(cb, struct bma280_data, gpio_cb);
+
+	ARG_UNUSED(pins);
+
+	gpio_pin_disable_callback(dev, CONFIG_BMA280_GPIO_PIN_NUM);
 
 #if defined(CONFIG_BMA280_TRIGGER_OWN_FIBER)
-	nano_sem_give(&bma280_driver.gpio_sem);
+	nano_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &bma280_driver.work);
+	nano_isr_fifo_put(sensor_get_work_fifo(), &drv_data->work);
 #endif
 }
 
@@ -203,7 +206,11 @@ int bma280_init_interrupt(struct device *dev)
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
-	rc = gpio_set_callback(drv_data->gpio, bma280_gpio_callback);
+	gpio_init_callback(&drv_data->gpio_cb,
+			   bma280_gpio_callback,
+			   BIT(CONFIG_BMA280_GPIO_PIN_NUM));
+
+	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
 	if (rc != 0) {
 		DBG("Could not set gpio callback\n");
 		return -EIO;

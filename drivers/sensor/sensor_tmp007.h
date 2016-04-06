@@ -72,6 +72,7 @@ struct tmp007_data {
 
 #ifdef CONFIG_TMP007_TRIGGER
 	struct device *gpio;
+	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t drdy_handler;
 	struct sensor_trigger drdy_trigger;

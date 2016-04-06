@@ -15,14 +15,11 @@
  */
 
 #include <device.h>
-#include <gpio.h>
 #include <misc/util.h>
 #include <nanokernel.h>
 #include <sensor.h>
 
 #include "sensor_sht3xd.h"
-
-extern struct sht3xd_data sht3xd_driver;
 
 static uint16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
 {
@@ -110,14 +107,20 @@ int sht3xd_attr_set(struct device *dev,
 	return 0;
 }
 
-static void sht3xd_gpio_callback(struct device *dev, uint32_t pin)
+static void sht3xd_gpio_callback(struct device *dev,
+				 struct gpio_callback *cb, uint32_t pins)
 {
-	gpio_pin_disable_callback(dev, pin);
+	struct sht3xd_data *drv_data =
+		CONTAINER_OF(cb, struct sht3xd_data, gpio_cb);
+
+	ARG_UNUSED(pins);
+
+	gpio_pin_disable_callback(dev, CONFIG_SHT3XD_GPIO_PIN_NUM);
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_FIBER)
-	nano_sem_give(&sht3xd_driver.gpio_sem);
+	nano_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &sht3xd_driver.work);
+	nano_isr_fifo_put(sensor_get_work_fifo(), &drv_data->work);
 #endif
 }
 
@@ -214,7 +217,11 @@ int sht3xd_init_interrupt(struct device *dev)
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
-	rc = gpio_set_callback(drv_data->gpio, sht3xd_gpio_callback);
+	gpio_init_callback(&drv_data->gpio_cb,
+			   sht3xd_gpio_callback,
+			   BIT(CONFIG_SHT3XD_GPIO_PIN_NUM));
+
+	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
 	if (rc != 0) {
 		DBG("Failed to set gpio callback!\n");
 		return -EIO;

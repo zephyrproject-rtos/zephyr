@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-#include <gpio.h>
 #include <misc/util.h>
 #include <nanokernel.h>
 
@@ -72,14 +71,20 @@ int isl29035_attr_set(struct device *dev,
 	return 0;
 }
 
-static void isl29035_gpio_callback(struct device *dev, uint32_t pin)
+static void isl29035_gpio_callback(struct device *dev,
+				   struct gpio_callback *cb, uint32_t pins)
 {
-	gpio_pin_disable_callback(dev, pin);
+	struct isl29035_driver_data *drv_data =
+		CONTAINER_OF(cb, struct isl29035_driver_data, gpio_cb);
+
+	ARG_UNUSED(pins);
+
+	gpio_pin_disable_callback(dev, CONFIG_ISL29035_GPIO_PIN_NUM);
 
 #if defined(CONFIG_ISL29035_TRIGGER_OWN_FIBER)
-	nano_sem_give(&isl29035_data.gpio_sem);
+	nano_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &isl29035_data.work);
+	nano_isr_fifo_put(sensor_get_work_fifo(), &drv_data->work);
 #endif
 }
 
@@ -157,7 +162,11 @@ int isl29035_init_interrupt(struct device *dev)
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
-	ret = gpio_set_callback(drv_data->gpio, isl29035_gpio_callback);
+	gpio_init_callback(&drv_data->gpio_cb,
+			   isl29035_gpio_callback,
+			   BIT(CONFIG_ISL29035_GPIO_PIN_NUM));
+
+	ret = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
 	if (ret != 0) {
 		DBG("Failed to set gpio callback.\n");
 		return -EIO;

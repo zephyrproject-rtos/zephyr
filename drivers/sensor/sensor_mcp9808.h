@@ -23,6 +23,7 @@
 #include <device.h>
 #include <sensor.h>
 #include <misc/util.h>
+#include <gpio.h>
 
 #ifndef CONFIG_SENSOR_DEBUG
 #define DBG(...) { ; }
@@ -53,6 +54,8 @@ struct mcp9808_data {
 	uint16_t i2c_slave_addr;
 
 	uint16_t reg_val;
+
+	struct gpio_callback gpio_cb;
 
 #ifdef CONFIG_MCP9808_TRIGGER_OWN_FIBER
 	struct nano_sem sem;

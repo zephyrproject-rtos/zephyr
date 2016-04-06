@@ -48,8 +48,6 @@ static uint8_t sx9500_reg_defaults[] = {
 	0x00,	/* No stuck timeout, no periodic compensation. */
 };
 
-struct sx9500_data sx9500_data;
-
 int sx9500_reg_read(struct sx9500_data *data, uint8_t reg, uint8_t *val)
 {
 	struct i2c_msg msgs[2] = {
@@ -189,6 +187,8 @@ int sx9500_init(struct device *dev)
 
 	return 0;
 }
+
+struct sx9500_data sx9500_data;
 
 DEVICE_INIT(sx9500, CONFIG_SX9500_DEV_NAME, sx9500_init, &sx9500_data,
 	    NULL, SECONDARY, CONFIG_SX9500_INIT_PRIORITY);

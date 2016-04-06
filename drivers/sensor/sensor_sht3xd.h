@@ -19,6 +19,7 @@
 
 #include <device.h>
 #include <nanokernel.h>
+#include <gpio.h>
 
 #ifndef CONFIG_SENSOR_DEBUG
 #define DBG(...) { ; }
@@ -84,6 +85,7 @@ struct sht3xd_data {
 
 #ifdef CONFIG_SHT3XD_TRIGGER
 	struct device *gpio;
+	struct gpio_callback gpio_cb;
 
 	uint16_t t_low;
 	uint16_t t_high;

@@ -19,6 +19,7 @@
 #include <gpio.h>
 #include <nanokernel.h>
 #include <sensor.h>
+#include <misc/util.h>
 
 #include "sensor_hdc1008.h"
 
@@ -29,12 +30,17 @@
 #define DBG printk
 #endif /* CONFIG_SENSOR_DEBUG */
 
-static struct hdc1008_data hdc1008_driver;
 
-static void hdc1008_gpio_callback(struct device *dev, uint32_t pin)
+static void hdc1008_gpio_callback(struct device *dev,
+				  struct gpio_callback *cb, uint32_t pins)
 {
-	gpio_pin_disable_callback(dev, pin);
-	nano_sem_give(&hdc1008_driver.data_sem);
+	struct hdc1008_data *drv_data =
+		CONTAINER_OF(cb, struct hdc1008_data, gpio_cb);
+
+	ARG_UNUSED(pins);
+
+	gpio_pin_disable_callback(dev, CONFIG_HDC1008_GPIO_PIN_NUM);
+	nano_sem_give(&drv_data->data_sem);
 }
 
 static int hdc1008_sample_fetch(struct device *dev)
@@ -131,7 +137,11 @@ int hdc1008_init(struct device *dev)
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
-	rc = gpio_set_callback(drv_data->gpio, hdc1008_gpio_callback);
+	gpio_init_callback(&drv_data->gpio_cb,
+			   hdc1008_gpio_callback,
+			   BIT(CONFIG_HDC1008_GPIO_PIN_NUM));
+
+	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
 	if (rc != 0) {
 		DBG("Failed to set GPIO callback\n");
 		return -EIO;
@@ -140,5 +150,7 @@ int hdc1008_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_INIT(hdc1008, CONFIG_HDC1008_NAME, hdc1008_init, &hdc1008_driver,
+struct hdc1008_data hdc1008_data;
+
+DEVICE_INIT(hdc1008, CONFIG_HDC1008_NAME, hdc1008_init, &hdc1008_data,
 	    NULL, SECONDARY, CONFIG_HDC1008_INIT_PRIORITY);

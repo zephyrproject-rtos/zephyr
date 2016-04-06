@@ -23,8 +23,6 @@
 #include <misc/util.h>
 #include "sensor_sx9500.h"
 
-extern struct sx9500_data sx9500_data;
-
 #ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
 static char __stack sx9500_fiber_stack[CONFIG_SX9500_FIBER_STACK_SIZE];
 #endif
@@ -66,9 +64,15 @@ int sx9500_trigger_set(struct device *dev,
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
 
-static void sx9500_gpio_cb(struct device *port, uint32_t pin)
+static void sx9500_gpio_cb(struct device *port,
+			   struct gpio_callback *cb, uint32_t pin)
 {
-	nano_isr_sem_give(&sx9500_data.sem);
+	struct sx9500_data *data =
+		CONTAINER_OF(cb, struct sx9500_data, gpio_cb);
+
+	ARG_UNUSED(pins);
+
+	nano_isr_sem_give(&data->sem);
 }
 
 static void sx9500_fiber_main(int arg1, int unused)
@@ -101,9 +105,13 @@ static void sx9500_fiber_main(int arg1, int unused)
 
 #else /* CONFIG_SX9500_TRIGGER_GLOBAL_FIBER */
 
-static void sx9500_gpio_cb(struct device *port, uint32_t pin)
+static void sx9500_gpio_cb(struct device *port,
+			   struct gpio_callback *cb, uint32_t pins)
 {
-	struct sx9500_data *data = &sx9500_data;
+	struct sx9500_data *data =
+		CONTAINER_OF(cb, struct sx9500_data, gpio_cb);
+
+	ARG_UNUSED(pins);
 
 	nano_isr_fifo_put(sensor_get_work_fifo(), &data->work);
 }
@@ -153,7 +161,12 @@ int sx9500_setup_interrupt(struct device *dev)
 	gpio_pin_configure(gpio, CONFIG_SX9500_GPIO_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
-	gpio_set_callback(gpio, sx9500_gpio_cb);
+
+	gpio_init_callback(&data->gpio_cb,
+			   sx9500_gpio_cb,
+			   BIT(CONFIG_SX9500_GPIO_PIN));
+
+	gpio_add_callback(gpio, &data->gpio_cb);
 	gpio_pin_enable_callback(gpio, CONFIG_SX9500_GPIO_PIN);
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER

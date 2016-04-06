@@ -20,6 +20,7 @@
 #include <device.h>
 #include <misc/util.h>
 #include <stdint.h>
+#include <gpio.h>
 
 #ifndef CONFIG_SENSOR_DEBUG
 #define DBG(...) { ; }
@@ -107,6 +108,7 @@ struct lis3dh_data {
 
 #ifdef CONFIG_LIS3DH_TRIGGER
 	struct device *gpio;
+	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;

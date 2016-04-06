@@ -35,6 +35,7 @@
 struct hdc1008_data {
 	struct device *i2c;
 	struct device *gpio;
+	struct gpio_callback gpio_cb;
 	uint16_t t_sample;
 	uint16_t rh_sample;
 	struct nano_sem data_sem;

@@ -46,6 +46,8 @@ struct sx9500_data {
 	uint16_t i2c_slave_addr;
 	uint8_t prox_stat;
 
+	struct gpio_callback gpio_cb;
+
 #ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
 	struct nano_sem sem;
 #endif

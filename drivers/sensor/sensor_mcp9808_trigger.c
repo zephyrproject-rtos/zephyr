@@ -17,14 +17,11 @@
  */
 
 #include <errno.h>
-
 #include <nanokernel.h>
 #include <i2c.h>
-#include <gpio.h>
 #include <misc/byteorder.h>
-#include "sensor_mcp9808.h"
 
-extern struct mcp9808_data mcp9808_data;
+#include "sensor_mcp9808.h"
 
 static int mcp9808_reg_write(struct mcp9808_data *data, uint8_t reg, uint16_t val)
 {
@@ -126,9 +123,13 @@ int mcp9808_trigger_set(struct device *dev,
 
 #ifdef CONFIG_MCP9808_TRIGGER_OWN_FIBER
 
-static void mcp9808_gpio_cb(struct device *dev, uint32_t pin)
+static void mcp9808_gpio_cb(struct device *dev,
+			    struct gpio_callback *cb, uint32_t pins)
 {
-	struct mcp9808_data *data = &mcp9808_data;
+	struct mcp9808_data *data =
+		CONTAINER_OF(cb, struct mcp9808_data, gpio_cb);
+
+	ARG_UNUSED(pins);
 
 	nano_isr_sem_give(&data->sem);
 }
@@ -152,9 +153,13 @@ static char __stack mcp9808_fiber_stack[CONFIG_MCP9808_FIBER_STACK_SIZE];
 
 #else /* CONFIG_MCP9808_TRIGGER_GLOBAL_FIBER */
 
-static void mcp9808_gpio_cb(struct device *dev, uint32_t pin)
+static void mcp9808_gpio_cb(struct device *dev,
+			    struct gpio_callback *cb, uint32_t pins)
 {
-	struct mcp9808_data *data = &mcp9808_data;
+	struct mcp9808_data *data =
+		CONTAINER_OF(cb, struct mcp9808_data, gpio_cb);
+
+	ARG_UNUSED(pins);
 
 	nano_isr_fifo_put(sensor_get_work_fifo(), &data->work);
 }
@@ -198,6 +203,11 @@ void mcp9808_setup_interrupt(struct device *dev)
 	gpio_pin_configure(gpio, CONFIG_MCP9808_GPIO_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
-	gpio_set_callback(gpio, mcp9808_gpio_cb);
+
+	gpio_init_callback(&data->gpio_cb,
+			   mcp9808_gpio_cb,
+			   BIT(CONFIG_MCP9808_GPIO_PIN));
+
+	gpio_add_callback(gpio, &data->gpio_cb);
 	gpio_pin_enable_callback(gpio, CONFIG_MCP9808_GPIO_PIN);
 }

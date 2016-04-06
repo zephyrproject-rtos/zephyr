@@ -27,8 +27,6 @@
 
 #include "sensor_lsm9ds0_gyro.h"
 
-static struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
-
 #ifdef CONFIG_SENSOR_DEBUG
 #include <misc/printk.h>
 #define sensor_dbg(fmt, ...) printk("lsm9ds0_gyro: " fmt, ##__VA_ARGS__)
@@ -344,11 +342,17 @@ static int lsm9ds0_gyro_trigger_set(struct device *dev,
 #endif
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
-static void lsm9ds0_gyro_gpio_drdy_callback(struct device *dev, uint32_t pin)
+static void lsm9ds0_gyro_gpio_drdy_callback(struct device *dev,
+					    struct gpio_callback *cb, uint32_t pins)
 {
-	gpio_pin_disable_callback(dev, pin);
+	struct lsm9ds0_gyro_data *data =
+		CONTAINER_OF(cb, struct lsm9ds0_gyro_data, gpio_cb);
+	const struct lsm9ds0_gyro_config * const config =
+		data->dev->config->config_info;
 
-	nano_isr_sem_give(&lsm9ds0_gyro_data.sem);
+	gpio_pin_disable_callback(dev, config->gpio_drdy_int_pin);
+
+	nano_isr_sem_give(&data->sem);
 }
 
 static void lsm9ds0_gyro_fiber_main(int arg1, int gpio_pin)
@@ -464,11 +468,18 @@ int lsm9ds0_gyro_init(struct device *dev)
 
 	gpio_pin_configure(data->gpio_drdy, config->gpio_drdy_int_pin,
 			   GPIO_DIR_IN | GPIO_INT |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
-	if (gpio_set_callback(data->gpio_drdy, lsm9ds0_gyro_gpio_drdy_callback) != 0) {
+			  GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+
+	gpio_init_callback(&data->gpio_cb,
+			   lsm9ds0_gyro_gpio_drdy_callback,
+			   BIT(config->gpio_drdy_int_pin));
+
+	if (gpio_add_callback(data->gpio_drdy, &data->gpio_cb) != 0) {
 		sensor_dbg("failed to set gpio callback\n");
 		return -EINVAL;
 	}
+
+	data->dev = dev;
 #endif
 
 	return 0;
@@ -482,6 +493,8 @@ static struct lsm9ds0_gyro_config lsm9ds0_gyro_config = {
 	.gpio_drdy_int_pin = CONFIG_LSM9DS0_GYRO_GPIO_DRDY_INT_PIN,
 #endif
 };
+
+struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 
 DEVICE_INIT(lsm9ds0_gyro, CONFIG_LSM9DS0_GYRO_DEV_NAME, lsm9ds0_gyro_init, &lsm9ds0_gyro_data,
 	    &lsm9ds0_gyro_config, SECONDARY, CONFIG_LSM9DS0_GYRO_INIT_PRIORITY);

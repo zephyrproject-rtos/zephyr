@@ -56,14 +56,18 @@ int tmp007_attr_set(struct device *dev,
 	return 0;
 }
 
-static void tmp007_gpio_callback(struct device *dev, uint32_t pin)
+static void tmp007_gpio_callback(struct device *dev,
+				 struct gpio_callback *cb, uint32_t pins)
 {
-	gpio_pin_disable_callback(dev, pin);
+	struct tmp007_data *drv_data =
+		CONTAINER_OF(cb, struct tmp007_data, gpio_cb);
+
+	gpio_pin_disable_callback(dev, CONFIG_TMP007_GPIO_PIN_NUM);
 
 #if defined(CONFIG_TMP007_TRIGGER_OWN_FIBER)
-	nano_sem_give(&tmp007_driver.gpio_sem);
+	nano_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &tmp007_driver.work);
+	nano_isr_fifo_put(sensor_get_work_fifo(), &drv_data->work);
 #endif
 }
 
@@ -150,7 +154,11 @@ int tmp007_init_interrupt(struct device *dev)
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
-	rc = gpio_set_callback(drv_data->gpio, tmp007_gpio_callback);
+	gpio_init_callback(&drv_data->gpio_cb,
+			   tmp007_gpio_callback,
+			   BIT(CONFIG_TMP007_GPIO_PIN_NUM));
+
+	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
 	if (rc != 0) {
 		DBG("Failed to set gpio callback!\n");
 		return -EIO;

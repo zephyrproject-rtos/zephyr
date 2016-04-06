@@ -130,6 +130,8 @@ struct bmc150_magn_data {
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	char __stack bmc150_magn_fiber_stack[CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK];
 	struct device *gpio_drdy;
+	struct device *dev;
+	struct gpio_callback gpio_cb;
 	struct sensor_trigger trigger_drdy;
 	sensor_trigger_handler_t handler_drdy;
 #endif
