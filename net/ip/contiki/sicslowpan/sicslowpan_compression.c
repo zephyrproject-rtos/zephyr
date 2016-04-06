@@ -897,6 +897,15 @@ static int compress(struct net_buf *buf)
   struct net_buf *mbuf;
   int ret;
 
+#if UIP_TCP
+  if(UIP_IP_BUF(buf)->proto == UIP_PROTO_TCP) {
+    /* Right now do not touch TCP packets. Because we modify the IPv6 header
+     * then the packet cannot be re-sent properly later. To be fixed later.
+     */
+    return 1;
+  }
+#endif
+
   if(uip_len(buf) >= COMPRESSION_THRESHOLD) {
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6
     return compress_hdr_ipv6(buf);
