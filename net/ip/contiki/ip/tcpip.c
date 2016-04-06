@@ -841,6 +841,14 @@ tcpip_poll_tcp(struct uip_conn *conn)
   conn->buf = ip_buf_ref(buf);
   process_post_synch(&tcpip_process, TCP_POLL, conn, buf);
 }
+
+#if UIP_ACTIVE_OPEN
+void tcpip_resend_syn(struct uip_conn *conn, struct net_buf *buf)
+{
+  /* We are re-sending here the SYN */
+  process_post_synch(&tcpip_process, TCP_POLL, conn, buf);
+}
+#endif /* UIP_ACTIVE_OPEN */
 #endif /* UIP_TCP */
 /*---------------------------------------------------------------------------*/
 void

@@ -182,6 +182,8 @@ CCIF struct uip_conn *tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port,
  */
 void tcpip_poll_tcp(struct uip_conn *conn);
 
+void tcpip_resend_syn(struct uip_conn *conn, struct net_buf *buf);
+
 /** @} */
 
 /**
