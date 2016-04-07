@@ -88,11 +88,13 @@
 	#define BMC150_MAGN_I2C_ADDR		0x13
 #endif
 
-#if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_XY) || defined(CONFIG_BMC150_MAGN_SAMPLING_REP_Z)
+#if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_XY) || \
+	defined(CONFIG_BMC150_MAGN_SAMPLING_REP_Z)
 	#define BMC150_MAGN_SET_ATTR_REP
 #endif
 
-#if defined(CONFIG_BMC150_MAGN_SAMPLING_RATE_RUNTIME) || defined(BMC150_MAGN_SET_ATTR_REP)
+#if defined(CONFIG_BMC150_MAGN_SAMPLING_RATE_RUNTIME) || \
+	defined(BMC150_MAGN_SET_ATTR_REP)
 	#define BMC150_MAGN_SET_ATTR
 #endif
 
@@ -128,7 +130,7 @@ struct bmc150_magn_data {
 	struct nano_sem sem;
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	char __stack bmc150_magn_fiber_stack[CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK];
+	char __stack fiber_stack[CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK];
 	struct device *gpio_drdy;
 	struct device *dev;
 	struct gpio_callback gpio_cb;

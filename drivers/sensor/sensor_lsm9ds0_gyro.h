@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <misc/util.h>
 
-#define DEG2RAD					0.0174532925199432957692369076848861271344
+#define DEG2RAD					0.017453292519943295769236907684
 
 #define LSM9DS0_GYRO_REG_WHO_AM_I_G		0x0F
 #define LSM9DS0_GYRO_VAL_WHO_AM_I_G		0xD4
@@ -242,8 +242,9 @@ struct lsm9ds0_gyro_data {
 #endif
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
-	char __stack lsm9ds0_gyro_fiber_stack[CONFIG_LSM9DS0_GYRO_FIBER_STACK_SIZE];
+	char __stack fiber_stack[CONFIG_LSM9DS0_GYRO_FIBER_STACK_SIZE];
 	struct device *dev;
+
 	struct device *gpio_drdy;
 	struct gpio_callback gpio_cb;
 	struct sensor_trigger trigger_drdy;

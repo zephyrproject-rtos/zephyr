@@ -3,7 +3,8 @@
 /*
  * Copyright (c) 2016 Intel Corporation
  *
- * This code is based on bmm050.c from https://github.com/BoschSensortec/BMM050_driver
+ * This code is based on bmm050.c from:
+ * https://github.com/BoschSensortec/BMM050_driver
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,11 +127,12 @@ static int bmc150_magn_set_odr(struct device *dev, uint8_t val)
 	for (i = 0; i < ARRAY_SIZE(bmc150_magn_samp_freq_table); ++i) {
 		if (bmc150_magn_samp_freq_table[i].freq == val) {
 			return i2c_reg_update_byte(data->i2c_master,
-						   config->i2c_slave_addr,
-						   BMC150_MAGN_REG_OPMODE_ODR,
-						   BMC150_MAGN_MASK_ODR,
-						   bmc150_magn_samp_freq_table[i].
-						   reg_val << BMC150_MAGN_SHIFT_ODR);
+						config->i2c_slave_addr,
+						BMC150_MAGN_REG_OPMODE_ODR,
+						BMC150_MAGN_MASK_ODR,
+						bmc150_magn_samp_freq_table[i].
+						reg_val <<
+						BMC150_MAGN_SHIFT_ODR);
 		}
 	}
 
@@ -140,7 +142,7 @@ static int bmc150_magn_set_odr(struct device *dev, uint8_t val)
 #if defined(BMC150_MAGN_SET_ATTR)
 static int bmc150_magn_read_rep_xy(struct device *dev)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t reg_val;
 
@@ -156,7 +158,7 @@ static int bmc150_magn_read_rep_xy(struct device *dev)
 
 static int bmc150_magn_read_rep_z(struct device *dev)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t reg_val;
 
@@ -170,9 +172,10 @@ static int bmc150_magn_read_rep_z(struct device *dev)
 	return 0;
 }
 
-static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy, int rep_z, int *max_odr)
+static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy,
+				       int rep_z, int *max_odr)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 
 	if (rep_xy == 0) {
 		if (data->rep_xy <= 0) {
@@ -201,7 +204,7 @@ static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy, int rep_z
 #if defined(BMC150_MAGN_SET_ATTR_REP)
 static int bmc150_magn_read_odr(struct device *dev)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t i, odr_val, reg_val;
 
@@ -226,7 +229,7 @@ static int bmc150_magn_read_odr(struct device *dev)
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_XY)
 static int bmc150_magn_write_rep_xy(struct device *dev, int val)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 	struct bmc150_magn_config *config = dev->config->config_info;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -245,7 +248,7 @@ static int bmc150_magn_write_rep_xy(struct device *dev, int val)
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_Z)
 static int bmc150_magn_write_rep_z(struct device *dev, int val)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 	struct bmc150_magn_config *config = dev->config->config_info;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -265,8 +268,8 @@ static int bmc150_magn_write_rep_z(struct device *dev, int val)
  * Datasheet part 4.3.4, provided by Bosch here:
  * https://github.com/BoschSensortec/BMM050_driver
  */
-static int32_t bmc150_magn_compensate_xy(struct bmc150_magn_trim_regs *tregs, int16_t xy,
-					uint16_t rhall, bool is_x)
+static int32_t bmc150_magn_compensate_xy(struct bmc150_magn_trim_regs *tregs,
+					int16_t xy, uint16_t rhall, bool is_x)
 {
 	int8_t txy1, txy2;
 	int16_t val;
@@ -289,17 +292,17 @@ static int32_t bmc150_magn_compensate_xy(struct bmc150_magn_trim_regs *tregs, in
 
 	val = ((int16_t)(((uint16_t)((((int32_t)tregs->xyz1) << 14) / rhall)) -
 	      ((uint16_t)0x4000)));
-	val = ((int16_t)((((int32_t)xy) * ((((((((int32_t)tregs->xy2) * ((((int32_t)val) *
-	      ((int32_t)val)) >> 7)) + (((int32_t)val) *
-	      ((int32_t)(((int16_t)tregs->xy1) << 7)))) >> 9) + ((int32_t)0x100000)) *
-	      ((int32_t)(((int16_t)txy2) + ((int16_t)0xA0)))) >> 12)) >> 13)) +
-	      (((int16_t)txy1) << 3);
+	val = ((int16_t)((((int32_t)xy) * ((((((((int32_t)tregs->xy2) *
+	      ((((int32_t)val) * ((int32_t)val)) >> 7)) + (((int32_t)val) *
+	      ((int32_t)(((int16_t)tregs->xy1) << 7)))) >> 9) +
+	      ((int32_t)0x100000)) * ((int32_t)(((int16_t)txy2) +
+	      ((int16_t)0xA0)))) >> 12)) >> 13)) + (((int16_t)txy1) << 3);
 
 	return (int32_t)val;
 }
 
-static int32_t bmc150_magn_compensate_z(struct bmc150_magn_trim_regs *tregs, int16_t z,
-					uint16_t rhall)
+static int32_t bmc150_magn_compensate_z(struct bmc150_magn_trim_regs *tregs,
+					int16_t z, uint16_t rhall)
 {
 	int32_t val;
 
@@ -317,7 +320,7 @@ static int32_t bmc150_magn_compensate_z(struct bmc150_magn_trim_regs *tregs, int
 
 static int bmc150_magn_sample_fetch(struct device *dev)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 	struct bmc150_magn_config *config = dev->config->config_info;
 	uint16_t values[BMC150_MAGN_AXIS_XYZR_MAX];
 	int16_t raw_x, raw_y, raw_z;
@@ -330,13 +333,19 @@ static int bmc150_magn_sample_fetch(struct device *dev)
 		return -EIO;
 	}
 
-	raw_x = (int16_t)sys_le16_to_cpu(values[BMC150_MAGN_AXIS_X]) >> BMC150_MAGN_SHIFT_XY_L;
-	raw_y = (int16_t)sys_le16_to_cpu(values[BMC150_MAGN_AXIS_Y]) >> BMC150_MAGN_SHIFT_XY_L;
-	raw_z = (int16_t)sys_le16_to_cpu(values[BMC150_MAGN_AXIS_Z]) >> BMC150_MAGN_SHIFT_Z_L;
-	rhall = sys_le16_to_cpu(values[BMC150_MAGN_RHALL]) >> BMC150_MAGN_SHIFT_RHALL_L;
+	raw_x = (int16_t)sys_le16_to_cpu(values[BMC150_MAGN_AXIS_X]) >>
+		BMC150_MAGN_SHIFT_XY_L;
+	raw_y = (int16_t)sys_le16_to_cpu(values[BMC150_MAGN_AXIS_Y]) >>
+		BMC150_MAGN_SHIFT_XY_L;
+	raw_z = (int16_t)sys_le16_to_cpu(values[BMC150_MAGN_AXIS_Z]) >>
+		BMC150_MAGN_SHIFT_Z_L;
+	rhall = sys_le16_to_cpu(values[BMC150_MAGN_RHALL]) >>
+		BMC150_MAGN_SHIFT_RHALL_L;
 
-	data->sample_x = bmc150_magn_compensate_xy(&data->tregs, raw_x, rhall, true);
-	data->sample_y = bmc150_magn_compensate_xy(&data->tregs, raw_y, rhall, false);
+	data->sample_x = bmc150_magn_compensate_xy(&data->tregs, raw_x, rhall,
+						   true);
+	data->sample_y = bmc150_magn_compensate_xy(&data->tregs, raw_y, rhall,
+						   false);
 	data->sample_z = bmc150_magn_compensate_z(&data->tregs, raw_z, rhall);
 
 	return 0;
@@ -346,7 +355,7 @@ static int bmc150_magn_channel_get(struct device *dev,
 				   enum sensor_channel chan,
 				   struct sensor_value *val)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 
 	val->type = SENSOR_TYPE_DOUBLE;
 	switch (chan) {
@@ -367,11 +376,11 @@ static int bmc150_magn_channel_get(struct device *dev,
 }
 
 #if defined(BMC150_MAGN_SET_ATTR_REP)
-static inline int bmc150_magn_attr_set_oversampling(struct device *dev,
-						    enum sensor_channel chan,
-						    const struct sensor_value *val)
+static inline int bmc150_magn_attr_set_rep(struct device *dev,
+					   enum sensor_channel chan,
+					   const struct sensor_value *val)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 	int max_odr;
 
 	switch (chan) {
@@ -382,7 +391,8 @@ static inline int bmc150_magn_attr_set_oversampling(struct device *dev,
 			return -EINVAL;
 		}
 
-		if (bmc150_magn_compute_max_odr(dev, val->val1, 0, &max_odr) != 0) {
+		if (bmc150_magn_compute_max_odr(dev, val->val1, 0,
+						&max_odr) != 0) {
 			return -EIO;
 		}
 
@@ -407,7 +417,8 @@ static inline int bmc150_magn_attr_set_oversampling(struct device *dev,
 			return -EINVAL;
 		}
 
-		if (bmc150_magn_compute_max_odr(dev, 0, val->val1, &max_odr) != 0) {
+		if (bmc150_magn_compute_max_odr(dev, 0, val->val1,
+						&max_odr) != 0) {
 			return -EIO;
 		}
 
@@ -429,6 +440,7 @@ static inline int bmc150_magn_attr_set_oversampling(struct device *dev,
 	default:
 		return -EINVAL;
 	}
+	return -EINVAL;
 }
 #endif
 
@@ -438,24 +450,25 @@ static int bmc150_magn_attr_set(struct device *dev,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 
 	switch (attr) {
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		if (val->type != SENSOR_TYPE_INT) {
-			sensor_dbg("invalid parameter type for SENSOR_ATTR_SAMPLING_FREQUENCY\n");
+			sensor_dbg("invalid parameter type\n");
 			return -ENOTSUP;
 		}
 
 		if (data->max_odr <= 0) {
-			if (bmc150_magn_compute_max_odr(dev, 0, 0, &data->max_odr) != 0) {
+			if (bmc150_magn_compute_max_odr(dev, 0, 0,
+							&data->max_odr) != 0) {
 				return -EIO;
 			}
 		}
 
 		if (data->max_odr < val->val1) {
-			sensor_dbg("sampling rate not supported with current oversampling factor\n");
+			sensor_dbg("not supported with current oversampling\n");
 			return -ENOTSUP;
 		}
 
@@ -467,11 +480,11 @@ static int bmc150_magn_attr_set(struct device *dev,
 #if defined(BMC150_MAGN_SET_ATTR_REP)
 	case SENSOR_ATTR_OVERSAMPLING:
 		if (val->type != SENSOR_TYPE_INT) {
-			sensor_dbg("invalid parameter type for SENSOR_ATTR_OVERSAMPLING\n");
+			sensor_dbg("invalid parameter type\n");
 			return -ENOTSUP;
 		}
 
-		bmc150_magn_attr_set_oversampling(dev, chan, val);
+		bmc150_magn_attr_set_rep(dev, chan, val);
 
 		break;
 #endif
@@ -489,14 +502,16 @@ static int bmc150_magn_trigger_set(struct device *dev,
 				   sensor_trigger_handler_t handler)
 {
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *)dev->driver_data;
-	const struct bmc150_magn_config * const config = dev->config->config_info;
+	struct bmc150_magn_data *data = dev->driver_data;
+	const struct bmc150_magn_config * const config =
+					dev->config->config_info;
 	uint8_t state;
 #endif
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
-		gpio_pin_disable_callback(data->gpio_drdy, config->gpio_drdy_int_pin);
+		gpio_pin_disable_callback(data->gpio_drdy,
+					  config->gpio_drdy_int_pin);
 
 		state = 0;
 		if (handler) {
@@ -516,7 +531,8 @@ static int bmc150_magn_trigger_set(struct device *dev,
 			return -EIO;
 		}
 
-		gpio_pin_enable_callback(data->gpio_drdy, config->gpio_drdy_int_pin);
+		gpio_pin_enable_callback(data->gpio_drdy,
+					 config->gpio_drdy_int_pin);
 	}
 #endif
 
@@ -544,7 +560,7 @@ static void bmc150_magn_gpio_drdy_callback(struct device *dev,
 static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
 {
 	struct device *dev = (struct device *) arg1;
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *)dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t reg_val;
 
@@ -580,7 +596,7 @@ static struct sensor_driver_api bmc150_magn_api_funcs = {
 
 static int bmc150_magn_init_chip(struct device *dev)
 {
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_data *data = dev->driver_data;
 	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t chip_id;
 	struct bmc150_magn_preset preset;
@@ -588,7 +604,8 @@ static int bmc150_magn_init_chip(struct device *dev)
 	bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_NORMAL, 0);
 	bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_SUSPEND, 1);
 
-	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_SUSPEND, 0) != 0) {
+	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_SUSPEND, 0)
+				       != 0) {
 		sensor_dbg("failed to bring up device from suspend mode\n");
 		return -EIO;
 	}
@@ -638,12 +655,13 @@ static int bmc150_magn_init_chip(struct device *dev)
 				BMC150_MAGN_REG_INT_DRDY,
 				BMC150_MAGN_MASK_DRDY_EN,
 				0 << BMC150_MAGN_SHIFT_DRDY_EN) != 0) {
-		sensor_dbg("failed to update data ready interrupt enabled bit\n");
+		sensor_dbg("failed to set data ready interrupt enabled bit\n");
 		goto err_poweroff;
 	}
 #endif
 
-	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_NORMAL, 1) != 0) {
+	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_NORMAL, 1)
+				       != 0) {
 		sensor_dbg("failed to power on device\n");
 		goto err_poweroff;
 	}
@@ -683,12 +701,13 @@ err_poweroff:
 
 int bmc150_magn_init(struct device *dev)
 {
-	const struct bmc150_magn_config * const config = dev->config->config_info;
+	const struct bmc150_magn_config * const config =
+					  dev->config->config_info;
 	struct bmc150_magn_data *data = dev->driver_data;
 
 	dev->driver_api = &bmc150_magn_api_funcs;
 
-	data->i2c_master = device_get_binding((char *)config->i2c_master_dev_name);
+	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {
 		sensor_dbg("i2c master not found: %s\n",
 			   config->i2c_master_dev_name);
@@ -703,8 +722,10 @@ int bmc150_magn_init(struct device *dev)
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	nano_sem_init(&data->sem);
 
-	task_fiber_start(data->bmc150_magn_fiber_stack, CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK,
-			 bmc150_magn_fiber_main, (int) dev, config->gpio_drdy_int_pin, 10, 0);
+	task_fiber_start(data->fiber_stack,
+			 CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK,
+			 bmc150_magn_fiber_main, (int) dev,
+			 config->gpio_drdy_int_pin, 10, 0);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {
@@ -743,5 +764,6 @@ static struct bmc150_magn_config bmc150_magn_config = {
 
 struct bmc150_magn_data bmc150_magn_data;
 
-DEVICE_INIT(bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME, bmc150_magn_init, &bmc150_magn_data,
-	    &bmc150_magn_config, NANOKERNEL, CONFIG_BMC150_MAGN_INIT_PRIORITY);
+DEVICE_INIT(bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME, bmc150_magn_init,
+	    &bmc150_magn_data, &bmc150_magn_config, NANOKERNEL,
+	    CONFIG_BMC150_MAGN_INIT_PRIORITY);
