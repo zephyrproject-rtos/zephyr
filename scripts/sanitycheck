@@ -112,6 +112,8 @@ import threading
 import time
 import csv
 import glob
+import concurrent
+import concurrent.futures
 
 os.environ["DISABLE_TRYRUN"] = "1"
 if "ZEPHYR_BASE" not in os.environ:
@@ -123,7 +125,7 @@ LAST_SANITY = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                            "last_sanity.csv")
 RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
-PARALLEL = multiprocessing.cpu_count() * 2
+CPU_COUNTS = multiprocessing.cpu_count()
 
 if os.isatty(sys.stdout.fileno()):
     TERMINAL = True
@@ -672,7 +674,7 @@ class MakeGenerator:
 
             # os.environ["CC"] = "ccache gcc" FIXME doesn't work
 
-            cmd = ["make", "-k", "-j", str(PARALLEL), "-f", tf.name, "all"]
+            cmd = ["make", "-k", "-j", str(CPU_COUNTS * 2), "-f", tf.name, "all"]
             p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
                                  stdout=devnull)
 
@@ -1322,19 +1324,27 @@ class TestSuite:
             self.instances[ti.name] = ti
 
     def execute(self, cb, cb_context, build_only, enable_slow):
+
+        def calc_one_elf_size(name, goal):
+            if not goal.failed:
+                i = self.instances[name]
+                sc = i.calculate_sizes()
+                goal.metrics["ram_size"] = sc.get_ram_size()
+                goal.metrics["rom_size"] = sc.get_rom_size()
+                goal.metrics["unrecognized"] = sc.unrecognized_sections()
+                goal.metrics["mismatched"] = sc.mismatched_sections()
+
         mg = MakeGenerator(self.outdir)
         for i in self.instances.values():
             mg.add_test_instance(i, build_only, enable_slow)
         self.goals = mg.execute(cb, cb_context)
-        for name, goal in self.goals.items():
-            i = self.instances[name]
-            if goal.failed:
-                continue
-            sc = i.calculate_sizes()
-            goal.metrics["ram_size"] = sc.get_ram_size()
-            goal.metrics["rom_size"] = sc.get_rom_size()
-            goal.metrics["unrecognized"] = sc.unrecognized_sections()
-            goal.metrics["mismatched"] = sc.mismatched_sections()
+
+        # Parallelize size calculation
+        executor = concurrent.futures.ThreadPoolExecutor(CPU_COUNTS)
+        futures = [executor.submit(calc_one_elf_size, name, goal) \
+                        for name, goal in self.goals.items()]
+        concurrent.futures.wait(futures)
+
         return self.goals
 
     def discard_report(self, filename):
@@ -1606,7 +1616,7 @@ def size_report(sc):
 
 def main():
     start_time = time.time()
-    global VERBOSE, INLINE_LOGS, PARALLEL
+    global VERBOSE, INLINE_LOGS, CPU_COUNTS
     args = parse_arguments()
 
     if args.size:
@@ -1617,7 +1627,7 @@ def main():
     VERBOSE += args.verbose
     INLINE_LOGS = args.inline_logs
     if args.jobs:
-        PARALLEL = args.jobs
+        CPU_COUNTS = args.jobs
 
     if os.path.exists(args.outdir) and not args.no_clean:
         info("Cleaning output directory " + args.outdir)
