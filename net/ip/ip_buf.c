@@ -350,6 +350,16 @@ void ip_buf_unref(struct net_buf *buf)
                return;
        }
 
+	if (!buf->ref) {
+#ifdef DEBUG_IP_BUFS
+		NET_DBG("*** ERROR *** buf %p is freed already (%s():%d)\n",
+			buf, caller, line);
+#else
+		NET_DBG("*** ERROR *** buf %p is freed already\n", buf);
+#endif
+		return;
+	}
+
 #ifdef DEBUG_IP_BUFS
        NET_DBG("%s [%d] buf %p ref %d (%s():%d)\n",
 	       type2str(ip_buf_type(buf)), get_frees(ip_buf_type(buf)),
