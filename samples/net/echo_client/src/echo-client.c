@@ -361,7 +361,7 @@ static inline bool get_context(struct net_context **unicast,
 static char __noinit __stack stack_receiving[STACKSIZE];
 #endif
 
-void sending(int resend)
+static bool sending(int resend)
 {
 	static bool send_unicast = true;
 	int ret;
@@ -387,6 +387,9 @@ void sending(int resend)
 			fiber_sleep(100);
 			PRINT("retrying...\n");
 			goto again;
+		} else if (ret == -ETIMEDOUT) {
+			PRINT("Connection timed out\n");
+			return false;
 		} else if (ret < 0) {
 			PRINT("%s sending %d bytes FAIL\n", type,
 			      ipsum_len - expecting);
@@ -403,15 +406,15 @@ void sending(int resend)
 		}
 #endif
 	}
+
+	return true;
 }
 
 void receiving(void)
 {
 	int expecting_len = 0;
 
-	sending(expecting_len);
-
-	while (1) {
+	while (sending(expecting_len)) {
 		PRINT("Waiting packet\n");
 
 		if (wait_reply(__func__, unicast,
@@ -426,8 +429,6 @@ void receiving(void)
 				expecting_len = expecting;
 			}
 		}
-
-		sending(expecting_len);
 	}
 }
 
