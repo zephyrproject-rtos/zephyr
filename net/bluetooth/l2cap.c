@@ -44,6 +44,8 @@
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
 #define L2CAP_LE_CREDITS_THRESHOLD	(L2CAP_LE_MAX_CREDITS / 2)
 
+#define L2CAP_BR_MIN_MTU		48
+
 #define L2CAP_LE_DYN_CID_START	0x0040
 #define L2CAP_LE_DYN_CID_END	0x007f
 #define L2CAP_BR_DYN_CID_START	0x0040
@@ -81,7 +83,12 @@ static NET_BUF_POOL(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static struct bt_l2cap_fixed_chan *br_channels;
-#endif /* CONFIG_BLUETOOTH_BREDR) */
+
+/* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
+static struct nano_fifo br_sig;
+static NET_BUF_POOL(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), &br_sig, NULL, 0);
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 /* L2CAP signalling channel specific context */
 struct bt_l2cap {
@@ -1079,6 +1086,15 @@ void bt_l2cap_init(void)
 		.cid	= BT_L2CAP_CID_LE_SIG,
 		.accept	= l2cap_accept,
 	};
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	static struct bt_l2cap_fixed_chan chan_br = {
+		.cid	= BT_L2CAP_CID_BR_SIG,
+		.accept = l2cap_accept,
+	};
+
+	net_buf_pool_init(br_sig_pool);
+	bt_l2cap_br_fixed_chan_register(&chan_br);
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	net_buf_pool_init(le_sig_pool);
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
