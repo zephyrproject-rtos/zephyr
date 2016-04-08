@@ -135,6 +135,19 @@ struct scss_interrupt {
 #define I2C_DW_IRQ_FLAGS		(IOAPIC_EDGE | IOAPIC_HIGH)
 #endif
 
+/*
+ * GPIO
+ */
+#define GPIO_DW_PORT_0_INT_MASK		(SCSS_INT_BASE + 0x6C)
+
+#define GPIO_DW_0_BASE_ADDR		0xB0000C00
+#define GPIO_DW_0_IRQ			15
+#define GPIO_DW_0_BITS			26
+
+#if defined(CONFIG_MVIC)
+#define GPIO_DW_0_IRQ_FLAGS		(IOAPIC_EDGE | IOAPIC_HIGH)
+#endif
+
 /* Comparator */
 #define INT_AIO_CMP_IRQ			(0x0E)
 
