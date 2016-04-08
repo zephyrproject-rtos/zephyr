@@ -179,9 +179,31 @@ timer_restart(struct timer *t)
 int
 timer_expired(struct timer *t)
 {
+  void *user_data;
+  bool init_done = t->init_done;
+
   do_init(t);
 
-  return (nano_timer_test(&t->nano_timer, TICKS_NONE) != NULL);
+  user_data = nano_timer_test(&t->nano_timer, TICKS_NONE);
+
+  /* If user data is returned, then we are definitely expired. */
+  if (user_data == TIMER_EXPIRED_CODE) {
+    return true;
+  }
+
+  /* If TICKS_NONE is used, then the system returns NULL when the
+   * timer has not yet run. In this case we return true value so
+   * that the caller can schedule the timer again.
+   *
+   * Note that it is absolutely mandatory that timer struct is
+   * initialized before use. The init_done must reflect the real
+   * status of the timer.
+   */
+  if (!init_done && user_data == NULL) {
+    return true;
+  }
+
+  return false;
 }
 /*---------------------------------------------------------------------------*/
 bool timer_is_triggered(struct timer *t)
