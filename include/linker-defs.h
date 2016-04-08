@@ -45,6 +45,24 @@
 
 #ifdef _LINKER
 
+
+/*
+ * Space for storing per device busy bitmap. Since we do not know beforehand
+ * the number of devices, we go through the below mechanism to allocate the
+ * required space.
+ */
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#define DEVICE_COUNT	((__device_init_end - __device_init_start) / __DEVICE_STR_SIZEOF)
+#define DEV_BUSY_SZ	(((DEVICE_COUNT + 31) / 32) * 4)
+#define DEVICE_BUSY_BITFIELD()			\
+		FILL(0x00) ;			\
+		__device_busy_start = .;	\
+		. = . + DEV_BUSY_SZ;		\
+		__device_busy_end = .;
+#else
+#define DEVICE_BUSY_BITFIELD()
+#endif
+
 /*
  * generate a symbol to mark the start of the device initialization objects for
  * the specified level, then link all of those objects (sorted by priority);
@@ -69,7 +87,8 @@
 		DEVICE_INIT_LEVEL(NANOKERNEL)	\
 		DEVICE_INIT_LEVEL(MICROKERNEL)	\
 		DEVICE_INIT_LEVEL(APPLICATION)	\
-		__device_init_end = .;			\
+		__device_init_end = .;		\
+		DEVICE_BUSY_BITFIELD()		\
 
 
 /* define a section for undefined device initialization levels */

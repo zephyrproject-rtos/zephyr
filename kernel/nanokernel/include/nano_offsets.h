@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <device.h>
 
 #ifndef _NANO_OFFSETS__H_
 #define _NANO_OFFSETS__H_
@@ -63,5 +64,8 @@ GEN_OFFSET_SYM(tTCS, errno_var);
 /* size of the entire struct tcs structure */
 
 GEN_ABSOLUTE_SYM(__tTCS_SIZEOF, sizeof(tTCS));
+
+/* size of the device structure. Used by linker scripts */
+GEN_ABSOLUTE_SYM(__DEVICE_STR_SIZEOF, sizeof(struct device));
 
 #endif /* _NANO_OFFSETS__H_ */
