@@ -3519,7 +3519,7 @@ int bt_smp_init(void)
 
 	net_buf_pool_init(smp_pool);
 
-	bt_l2cap_fixed_chan_register(&chan);
+	bt_l2cap_le_fixed_chan_register(&chan);
 
 	BT_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
 

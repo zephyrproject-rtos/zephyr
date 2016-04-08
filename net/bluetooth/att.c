@@ -1735,7 +1735,7 @@ void bt_att_init(void)
 
 	net_buf_pool_init(att_pool);
 
-	bt_l2cap_fixed_chan_register(&chan);
+	bt_l2cap_le_fixed_chan_register(&chan);
 }
 
 uint16_t bt_att_get_mtu(struct bt_conn *conn)

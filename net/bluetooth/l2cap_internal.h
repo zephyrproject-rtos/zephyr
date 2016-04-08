@@ -123,7 +123,7 @@ struct bt_l2cap_fixed_chan {
 };
 
 /* Register a fixed L2CAP channel for L2CAP */
-void bt_l2cap_fixed_chan_register(struct bt_l2cap_fixed_chan *chan);
+void bt_l2cap_le_fixed_chan_register(struct bt_l2cap_fixed_chan *chan);
 
 /* Notify L2CAP channels of a new connection */
 void bt_l2cap_connected(struct bt_conn *conn);

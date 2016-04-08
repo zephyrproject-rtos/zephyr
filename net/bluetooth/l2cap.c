@@ -60,7 +60,7 @@
 #define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 
-static struct bt_l2cap_fixed_chan *channels;
+static struct bt_l2cap_fixed_chan *le_channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_server *servers;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
@@ -120,12 +120,12 @@ static uint8_t get_ident(struct bt_conn *conn)
 	return l2cap->ident;
 }
 
-void bt_l2cap_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
+void bt_l2cap_le_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 {
 	BT_DBG("CID 0x%04x", chan->cid);
 
-	chan->_next = channels;
-	channels = chan;
+	chan->_next = le_channels;
+	le_channels = chan;
 }
 
 static void l2cap_chan_alloc_cid(struct bt_conn *conn,
@@ -179,7 +179,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		return;
 	}
 
-	for (fchan = channels; fchan; fchan = fchan->_next) {
+	for (fchan = le_channels; fchan; fchan = fchan->_next) {
 		if (fchan->accept(conn, &chan) < 0) {
 			continue;
 		}
@@ -1067,7 +1067,7 @@ void bt_l2cap_init(void)
 	net_buf_pool_init(le_data_pool);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-	bt_l2cap_fixed_chan_register(&chan);
+	bt_l2cap_le_fixed_chan_register(&chan);
 }
 
 struct bt_l2cap_chan *bt_l2cap_lookup_tx_cid(struct bt_conn *conn,
