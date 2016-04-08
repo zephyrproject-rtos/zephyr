@@ -46,6 +46,11 @@
 
 #include <string.h>
 
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_UDP_PACKET
+#define DEBUG 1
+#endif
+#include "contiki/ip/uip-debug.h"
+
 /*---------------------------------------------------------------------------*/
 uint8_t
 uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *data, int len)

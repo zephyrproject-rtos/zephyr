@@ -58,6 +58,18 @@ config NETWORK_IP_STACK_DEBUG_IPV6
 	help
 	  Enables core IPv6 code part to output debug messages
 
+config NETWORK_IP_STACK_DEBUG_SIMPLE_UDP
+	bool "Debug simple udp"
+	default n
+	help
+	  Enables network simple udp debug messages
+
+config NETWORK_IP_STACK_DEBUG_UDP_PACKET
+	bool "Debug uip udp packet"
+	default n
+	help
+	  Enables network uip udp packet debug messages
+
 config NETWORK_IP_STACK_DEBUG_IPV6_DS
 	bool "Debug IPv6 Data Structures"
 	depends on NETWORKING_WITH_IPV6
