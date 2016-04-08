@@ -691,8 +691,6 @@ static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	uint8_t ext_addr[8];
 	int idx;
 
-	DBG("%s: %p\n", __func__, ieee_addr);
-
 	for (idx = 0; idx < 8; idx++) {
 		ext_addr[idx] = ieee_addr[7 - idx];
 	}
@@ -701,6 +699,11 @@ static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 		DBG("%s: FAILED\n", __func__);
 		return DEV_FAIL;
 	}
+
+	DBG("%s: IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	    __func__,
+	    ieee_addr[0], ieee_addr[1], ieee_addr[2], ieee_addr[3],
+	    ieee_addr[4], ieee_addr[5], ieee_addr[6], ieee_addr[7]);
 
 	return DEV_OK;
 }
@@ -877,7 +880,21 @@ static int cc2520_stop(struct device *dev)
 
 static int cc2520_initialize(void)
 {
-	net_set_mac((uint8_t *) cc2520_get_mac(cc2520_sglt), 8);
+	const uint8_t *mac = cc2520_get_mac(cc2520_sglt);
+	uint16_t short_addr;
+
+	/** That is not great either, basically ieee802154/net stack,
+	 * should get the mac, then set what's relevant. It's not up
+	 * to the driver to do such thing.
+	 */
+	net_set_mac((uint8_t *)mac, 8);
+
+	/* Setting short address... */
+	short_addr = (mac[0] << 8) + mac[1];
+	cc2520_set_short_addr(cc2520_sglt, short_addr);
+
+	/* ... And ieee address */
+	cc2520_set_ieee_addr(cc2520_sglt, mac);
 
 	return 1;
 }
