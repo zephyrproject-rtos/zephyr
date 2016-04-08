@@ -40,7 +40,9 @@
 #include <string.h>
 #include "er-coap-observe.h"
 
-#define DEBUG DEBUG_NONE
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_COAP_OBSERVE
+#define DEBUG 1
+#endif
 #include "contiki/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/

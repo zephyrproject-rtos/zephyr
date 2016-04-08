@@ -218,6 +218,20 @@ config NETWORK_IP_STACK_DEBUG_COAP_INTERNAL
 	help
 	  Enables CoAP internals output debug messages
 
+config NETWORK_IP_STACK_DEBUG_COAP_OBSERVE
+	bool "Debug CoAP observe"
+	depends on ER_COAP
+	default n
+	help
+	  Enables CoAP observe output debug messages
+
+config NETWORK_IP_STACK_DEBUG_COAP_WELL_KNOWN
+	bool "Debug CoAP well known core"
+	depends on ER_COAP
+	default n
+	help
+	  Enables CoAP resource well known core ouput debug messages
+
 config NETWORK_IP_STACK_DEBUG_REST_ENGINE
 	bool "Debug REST engine"
 	depends on ER_COAP
