@@ -30,7 +30,7 @@ Zephyr API exposes 1 type and 3 inline functions to solve this issue.
 :cpp:func:`device_sync_call_init()`
 
    This function initializes the ``device_sync_call_t`` type semaphores and the
-   marker. Such function should be used only once in the device driver's instance
+   marker. This function should be used only once in the device driver's instance
    lifetime. Thus, the driver's initialization function is the best place for
    calling it.
 
@@ -46,5 +46,4 @@ Zephyr API exposes 1 type and 3 inline functions to solve this issue.
 
    This function releases the relevant semaphore and thus will unlock the blocking
    function. Most frequently will it be called in the driver's ISR handler. It is
-   used to signal the completion of the synchronous call, whatever fate would be
-   (error or success).
+   used to signal the completion of the synchronous call (error or success).
