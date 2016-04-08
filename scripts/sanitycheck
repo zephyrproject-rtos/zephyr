@@ -1481,6 +1481,9 @@ def parse_arguments():
     parser.add_argument("-d", "--discard-report",
             help="Output a CSV spreadhseet showing tests that were skipped "
                  "and why")
+    parser.add_argument("--compare-report",
+            help="Use this report file for size comparision")
+
     parser.add_argument("-y", "--dry-run", action="store_true",
             help="Create the filtered list of test cases, but don't actually "
                  "run them. Useful if you're just interested in "
@@ -1660,8 +1663,15 @@ def main():
                            args.enable_slow)
         info("")
 
-    deltas = ts.compare_metrics(LAST_SANITY if args.last_metrics
-                                  else RELEASE_DATA)
+    # figure out which report to use for size comparison
+    if args.compare_report:
+        report_to_use = args.compare_report
+    elif args.last_metrics:
+        report_to_use = LAST_SANITY
+    else:
+        report_to_use = RELEASE_DATA
+
+    deltas = ts.compare_metrics(report_to_use)
     warnings = 0
     if deltas:
         for i, metric, value, delta, lower_better in deltas:
