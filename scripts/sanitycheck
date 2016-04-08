@@ -991,7 +991,8 @@ class TestCase:
         self.timeout = tc_dict["timeout"]
         self.build_only = tc_dict["build_only"]
         self.slow = tc_dict["slow"]
-        self.path = os.path.join(workdir, name)
+        self.path = os.path.join(os.path.basename(os.path.abspath(testcase_root)),
+                                 workdir, name)
         self.name = self.path # for now
         self.defconfig = {}
         self.ktype = None
