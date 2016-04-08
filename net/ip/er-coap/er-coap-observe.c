@@ -250,7 +250,7 @@ coap_notify_observers_sub(resource_t *resource, char *subpath)
         coap_set_token(notification, obs->token, obs->token_len);
 
         transaction->packet_len =
-          coap_serialize_message(notification, transaction->packet);
+          coap_serialize_message(notification, uip_appdata(obs->coap_ctx->buf));
 
         coap_send_transaction(transaction);
       }
