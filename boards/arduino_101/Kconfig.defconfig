@@ -6,6 +6,9 @@ config BOARD
 
 if NBLE
 
+config BLUETOOTH_NRF51_PM
+	def_bool y
+
 config GPIO
 	def_bool y
 
