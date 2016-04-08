@@ -222,7 +222,15 @@ coap_notify_observers_sub(resource_t *resource, char *subpath)
        && strncmp(url, obs->url, strlen(url)) == 0) {
       coap_transaction_t *transaction = NULL;
 
-      /*TODO implement special transaction for CON, sharing the same buffer to allow for more observers */
+      obs->coap_ctx->buf = ip_buf_get_tx(obs->coap_ctx->net_ctx);
+      if(!obs->coap_ctx->buf) {
+          PRINTF("Failed to get buffer, discard observe message\n");
+          return;
+      }
+      uip_set_udp_conn(obs->coap_ctx->buf) = NULL;
+      uip_ipaddr_copy(&net_context_get_udp_connection(obs->coap_ctx->net_ctx)->remote_addr, &obs->addr);
+      net_context_get_udp_connection(obs->coap_ctx->net_ctx)->remote_port = uip_ntohs(obs->port);
+
       if((transaction = coap_new_transaction(coap_get_mid(), obs->coap_ctx,
                                              &obs->addr, obs->port))) {
         if(obs->obs_counter % COAP_OBSERVE_REFRESH_INTERVAL == 0) {
