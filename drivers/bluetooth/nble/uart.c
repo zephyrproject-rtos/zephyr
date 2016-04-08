@@ -201,28 +201,8 @@ static void bt_uart_isr(struct device *unused)
 	}
 }
 
-static int pre_init(void)
-{
-#if defined(CONFIG_BLUETOOTH_NRF51_PM)
-	return nrf51_disable();
-#else
-	return 0;
-#endif
-}
-
-static int post_init(void)
-{
-#if defined(CONFIG_BLUETOOTH_NRF51_PM)
-	return nrf51_enable();
-#else
-	return 0;
-#endif
-}
-
 int nble_open(void)
 {
-	int ret;
-
 	BT_DBG("");
 
 	/* Initialize receive queue and start rx_fiber */
@@ -230,10 +210,11 @@ int nble_open(void)
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    (nano_fiber_entry_t)rx_fiber, 0, 0, 7, 0);
 
-	ret = pre_init();
-	if (ret < 0) {
-		return ret;
+#if defined(CONFIG_BLUETOOTH_NRF51_PM)
+	if (nrf51_init() < 0) {
+		return -EIO;
 	}
+#endif /* CONFIG_BLUETOOTH_NRF51_PM */
 
 	uart_irq_rx_disable(nble_dev);
 	uart_irq_tx_disable(nble_dev);
@@ -249,7 +230,7 @@ int nble_open(void)
 
 	uart_irq_rx_enable(nble_dev);
 
-	return post_init();
+	return 0;
 }
 
 static int _bt_nble_init(struct device *unused)

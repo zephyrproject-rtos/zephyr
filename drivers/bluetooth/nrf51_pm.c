@@ -24,39 +24,53 @@
 #define NBLE_RESET_PIN	NBLE_SWDIO_PIN
 #define NBLE_BTWAKE_PIN 5
 
+static struct device *nrf51_gpio;
+
+int nrf51_enable(void)
+{
+	return gpio_pin_write(nrf51_gpio, NBLE_BTWAKE_PIN, 1);
+}
+
 int nrf51_disable(void)
 {
-	int ret;
-	struct device *gpio;
+	return gpio_pin_write(nrf51_gpio, NBLE_BTWAKE_PIN, 0);
+}
 
-	gpio = device_get_binding(CONFIG_GPIO_DW_0_NAME);
-	if (!gpio) {
+static inline void sleep_ms(unsigned int ms)
+{
+	switch (sys_execution_context_type_get()) {
+	case NANO_CTX_FIBER:
+		fiber_sleep(MSEC(ms));
+		return;
+	case NANO_CTX_TASK:
+		task_sleep(MSEC(ms));
+		return;
+	default:
+		BT_ERR("ISR context is not supported");
+		return;
+	}
+}
+
+int nrf51_init(void)
+{
+	int ret;
+
+	nrf51_gpio = device_get_binding(CONFIG_GPIO_DW_0_NAME);
+	if (!nrf51_gpio) {
 		BT_ERR("Cannot find %s", CONFIG_GPIO_DW_0_NAME);
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_configure(gpio, NBLE_RESET_PIN, GPIO_DIR_OUT);
+	ret = gpio_pin_configure(nrf51_gpio, NBLE_RESET_PIN, GPIO_DIR_OUT);
 	if (ret) {
 		BT_ERR("Error configuring pin %d", NBLE_RESET_PIN);
 		return -ENODEV;
 	}
 
 	/* Reset hold time is 0.2us (normal) or 100us (SWD debug) */
-	ret = gpio_pin_write(gpio, NBLE_RESET_PIN, 0);
+	ret = gpio_pin_write(nrf51_gpio, NBLE_RESET_PIN, 0);
 	if (ret) {
 		BT_ERR("Error pin write %d", NBLE_RESET_PIN);
-		return -EINVAL;
-	}
-
-	ret = gpio_pin_configure(gpio, NBLE_BTWAKE_PIN, GPIO_DIR_OUT);
-	if (ret) {
-		BT_ERR("Error configuring pin %d", NBLE_BTWAKE_PIN);
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_write(gpio, NBLE_BTWAKE_PIN, 1);
-	if (ret) {
-		BT_ERR("Error pin write %d", NBLE_BTWAKE_PIN);
 		return -EINVAL;
 	}
 
@@ -69,44 +83,26 @@ int nrf51_disable(void)
 	 */
 
 	/* sleep 1ms depending on context */
-	switch (sys_execution_context_type_get()) {
-	case NANO_CTX_FIBER:
-		fiber_sleep(MSEC(1));
-		break;
-	case NANO_CTX_TASK:
-		task_sleep(MSEC(1));
-		break;
-	default:
-		BT_ERR("ISR context is not supported");
-		return -EINVAL;
-	}
+	sleep_ms(1);
 
-	return 0;
-}
-
-int nrf51_enable(void)
-{
-	int ret;
-	struct device *gpio;
-
-	gpio = device_get_binding(CONFIG_GPIO_DW_0_NAME);
-	if (!gpio) {
-		BT_ERR("Cannot find %s", CONFIG_GPIO_DW_0_NAME);
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_write(gpio, NBLE_RESET_PIN, 1);
+	ret = gpio_pin_write(nrf51_gpio, NBLE_RESET_PIN, 1);
 	if (ret) {
 		BT_ERR("Error pin write %d", NBLE_RESET_PIN);
 		return -EINVAL;
 	}
 
 	/* Set back GPIO to input to avoid interfering with external debugger */
-	ret = gpio_pin_configure(gpio, NBLE_RESET_PIN, GPIO_DIR_IN);
+	ret = gpio_pin_configure(nrf51_gpio, NBLE_RESET_PIN, GPIO_DIR_IN);
 	if (ret) {
 		BT_ERR("Error configuring pin %d", NBLE_RESET_PIN);
 		return -ENODEV;
 	}
 
-	return 0;
+	ret = gpio_pin_configure(nrf51_gpio, NBLE_BTWAKE_PIN, GPIO_DIR_OUT);
+	if (ret) {
+		BT_ERR("Error configuring pin %d", NBLE_BTWAKE_PIN);
+		return -ENODEV;
+	}
+
+	return nrf51_enable();
 }

@@ -221,37 +221,18 @@ static int h4_send(enum bt_buf_type buf_type, struct net_buf *buf)
 	return 0;
 }
 
-static int pre_init(void)
-{
-#if defined(CONFIG_BLUETOOTH_NRF51_PM)
-	return nrf51_disable();
-#else
-	return 0;
-#endif
-}
-
-static int post_init(void)
-{
-#if defined(CONFIG_BLUETOOTH_NRF51_PM)
-	return nrf51_enable();
-#else
-	return 0;
-#endif
-}
-
 static int h4_open(void)
 {
-	int ret;
-
 	BT_DBG("");
 
 	uart_irq_rx_disable(h4_dev);
 	uart_irq_tx_disable(h4_dev);
 
-	ret = pre_init();
-	if (ret < 0) {
-		return ret;
+#if defined(CONFIG_BLUETOOTH_NRF51_PM)
+	if (nrf51_init() < 0) {
+		return -EIO;
 	}
+#endif /* CONFIG_BLUETOOTH_NRF51_PM */
 
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(h4_dev)) {
@@ -264,7 +245,7 @@ static int h4_open(void)
 
 	uart_irq_rx_enable(h4_dev);
 
-	return post_init();
+	return 0;
 }
 
 static struct bt_driver drv = {
