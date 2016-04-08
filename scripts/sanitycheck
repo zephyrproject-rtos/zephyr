@@ -1064,7 +1064,7 @@ def defconfig_cb(context, goals, goal):
 class TestSuite:
     config_re = re.compile('(CONFIG_[A-Z0-9_]+)[=](.+)$')
 
-    def __init__(self, arch_root, testcase_root, outdir):
+    def __init__(self, arch_root, testcase_roots, outdir):
         # Keep track of which test cases we've filtered out and why
         discards = {}
         self.arches = {}
@@ -1076,21 +1076,25 @@ class TestSuite:
         self.discards = None
 
         arch_root = os.path.abspath(arch_root)
-        testcase_root = os.path.abspath(testcase_root)
 
-        debug("Reading test case configuration files under %s..." % testcase_root)
-        for dirpath, dirnames, filenames in os.walk(testcase_root,
-                                                    topdown=True):
-            if "testcase.ini" in filenames:
-                verbose("Found test case in " + dirpath)
-                dirnames[:] = []
-                cp = SanityConfigParser(os.path.join(dirpath, "testcase.ini"))
-                workdir = os.path.relpath(dirpath, testcase_root)
+        for testcase_root in testcase_roots:
+            testcase_root = os.path.abspath(testcase_root)
 
-                for section in cp.sections():
-                    tc_dict = cp.get_section(section, testcase_valid_keys)
-                    tc = TestCase(testcase_root, workdir, section, tc_dict)
-                    self.testcases[tc.name] = tc
+            debug("Reading test case configuration files under %s..." %
+                  testcase_root)
+            for dirpath, dirnames, filenames in os.walk(testcase_root,
+                                                        topdown=True):
+                verbose("scanning %s" % dirpath)
+                if "testcase.ini" in filenames:
+                    verbose("Found test case in " + dirpath)
+                    dirnames[:] = []
+                    cp = SanityConfigParser(os.path.join(dirpath, "testcase.ini"))
+                    workdir = os.path.relpath(dirpath, testcase_root)
+
+                    for section in cp.sections():
+                        tc_dict = cp.get_section(section, testcase_valid_keys)
+                        tc = TestCase(testcase_root, workdir, section, tc_dict)
+                        self.testcases[tc.name] = tc
 
         debug("Reading architecture configuration files under %s..." % arch_root)
         for dirpath, dirnames, filenames in os.walk(arch_root):
@@ -1528,10 +1532,11 @@ def parse_arguments():
     parser.add_argument("-n", "--no-clean", action="store_true",
             help="Do not delete the outdir before building. Will result in "
                  "faster compilation since builds will be incremental")
-    parser.add_argument("-T", "--testcase-root",
-            default=ZEPHYR_BASE,
+    parser.add_argument("-T", "--testcase-root", action="append", default=[],
             help="Base directory to recursively search for test cases. All "
-                 "testcase.ini files under here will be processed")
+                 "testcase.ini files under here will be processed. May be "
+                 "called multiple times. Defaults to the 'samples' and "
+                 "'tests' directories in the Zephyr tree.")
     parser.add_argument("-A", "--arch-root",
             default="%s/scripts/sanity_chk/arches" % ZEPHYR_BASE,
             help="Directory to search for arch configuration files. All .ini "
@@ -1635,6 +1640,10 @@ def main():
     if os.path.exists(args.outdir) and not args.no_clean:
         info("Cleaning output directory " + args.outdir)
         shutil.rmtree(args.outdir)
+
+    if not args.testcase_root:
+        args.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
+                              os.path.join(ZEPHYR_BASE, "samples")]
 
     ts = TestSuite(args.arch_root, args.testcase_root, args.outdir)
     discards = ts.apply_filters(args.platform, args.arch, args.tag, args.config,
