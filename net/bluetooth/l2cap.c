@@ -77,6 +77,10 @@ static NET_BUF_POOL(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU), &le_data, NULL, 0);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static struct bt_l2cap_fixed_chan *br_channels;
+#endif /* CONFIG_BLUETOOTH_BREDR) */
+
 /* L2CAP signalling channel specific context */
 struct bt_l2cap {
 	/* The channel this context is associated with */
@@ -1320,3 +1324,13 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return err;
 }
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
+{
+	BT_DBG("CID 0x%04x", chan->cid);
+
+	chan->_next = br_channels;
+	br_channels = chan;
+}
+#endif /* CONFIG_BLUETOOTH_BREDR */

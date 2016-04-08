@@ -157,3 +157,8 @@ struct bt_l2cap_chan *bt_l2cap_lookup_tx_cid(struct bt_conn *conn,
 /* Lookup channel by Receiver CID */
 struct bt_l2cap_chan *bt_l2cap_lookup_rx_cid(struct bt_conn *conn,
 					     uint16_t cid);
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/* Register a fixed L2CAP channel for BR/EDR connection transport */
+void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan);
+#endif /* CONFIG_BLUETOOTH_BREDR */
