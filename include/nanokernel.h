@@ -405,11 +405,8 @@ extern void task_fiber_delayed_start_cancel(nano_thread_id_t handle);
  * @{
  */
 struct nano_fifo {
-	union {
-		struct _nano_queue wait_q;
-		struct _nano_queue data_q;
-	};
-	int stat;
+	struct _nano_queue wait_q;
+	struct _nano_queue data_q;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 	struct nano_fifo *__next;
 #endif
@@ -423,17 +420,6 @@ struct nano_fifo {
  * structure.
  *
  * It can be called from either a fiber or task.
- *
- * The wait queue and data queue occupy the same space since there cannot
- * be both queued data and pending fibers in the FIFO. Ensure
- * that, when one of the queues becomes empty, the FIFO is reset to a state
- * that reflects an empty queue to both the data and wait queues.
- *
- * If the 'stat' field is a positive value, it indicates how many data
- * elements reside in the FIFO. If the 'stat' field is a negative value,
- * its absolute value indicates how many fibers are pending on the FIFO
- * object. Thus a value of '0' indicates that there are no data elements
- * in the FIFO and there are no pending fibers.
  *
  * @param fifo FIFO to initialize.
  *

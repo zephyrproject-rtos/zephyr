@@ -40,6 +40,31 @@
 #include <sections.h>
 #include <wait_q.h>
 
+struct fifo_node {
+	void *next;
+};
+
+/**
+ * @brief Internal routine to append data to a fifo
+ *
+ * @return N/A
+ */
+static inline void data_q_init(struct _nano_queue *q)
+{
+	q->head = NULL;
+	q->tail = &q->head;
+}
+
+/**
+ * @brief Internal routine to test if queue is empty
+ *
+ * @return N/A
+ */
+static inline int is_q_empty(struct _nano_queue *q)
+{
+	return q->head == NULL;
+}
+
 /*
  * INTERNAL
  * Although the existing implementation will support invocation from an ISR
@@ -48,24 +73,8 @@
  */
 void nano_fifo_init(struct nano_fifo *fifo)
 {
-	/*
-	 * The wait queue and data queue occupy the same space since there
-	 * cannot be both queued data and pending fibers in the FIFO. Care
-	 * must be taken that, when one of the queues becomes empty, it is
-	 * reset to a state that reflects an empty queue to both the data and
-	 * wait queues.
-	 */
 	_nano_wait_q_init(&fifo->wait_q);
-
-	/*
-	 * If the 'stat' field is a positive value, it indicates how many data
-	 * elements reside in the FIFO.  If the 'stat' field is a negative
-	 * value, its absolute value indicates how many fibers are pending on
-	 * the LIFO object.  Thus a value of '0' indicates that there are no
-	 * data elements in the LIFO _and_ there are no pending fibers.
-	 */
-
-	fifo->stat = 0;
+	data_q_init(&fifo->data_q);
 
 	SYS_TRACING_OBJ_INIT(nano_fifo, fifo);
 }
@@ -81,9 +90,12 @@ FUNC_ALIAS(_fifo_put_non_preemptible, nano_fiber_fifo_put, void);
  */
 static inline void enqueue_data(struct nano_fifo *fifo, void *data)
 {
-	*(void **)fifo->data_q.tail = data;
-	fifo->data_q.tail = data;
-	*(int *)data = 0;
+	struct fifo_node *node = data;
+	struct fifo_node *tail = fifo->data_q.tail;
+
+	tail->next = node;
+	fifo->data_q.tail = node;
+	node->next = NULL;
 }
 
 /**
@@ -110,42 +122,39 @@ static inline void enqueue_data(struct nano_fifo *fifo, void *data)
  */
 void _fifo_put_non_preemptible(struct nano_fifo *fifo, void *data)
 {
-	unsigned int imask;
+	struct tcs *tcs;
+	unsigned int key;
 
-	imask = irq_lock();
+	key = irq_lock();
 
-	fifo->stat++;
-	if (fifo->stat <= 0) {
-		struct tcs *tcs = _nano_wait_q_remove_no_check(&fifo->wait_q);
-
+	tcs = _nano_wait_q_remove(&fifo->wait_q);
+	if (tcs) {
 		_nano_timeout_abort(tcs);
 		fiberRtnValueSet(tcs, (unsigned int)data);
 	} else {
 		enqueue_data(fifo, data);
 	}
 
-	irq_unlock(imask);
+	irq_unlock(key);
 }
 
 void nano_task_fifo_put(struct nano_fifo *fifo, void *data)
 {
-	unsigned int imask;
+	struct tcs *tcs;
+	unsigned int key;
 
-	imask = irq_lock();
-
-	fifo->stat++;
-	if (fifo->stat <= 0) {
-		struct tcs *tcs = _nano_wait_q_remove_no_check(&fifo->wait_q);
-
+	key = irq_lock();
+	tcs = _nano_wait_q_remove(&fifo->wait_q);
+	if (tcs) {
 		_nano_timeout_abort(tcs);
 		fiberRtnValueSet(tcs, (unsigned int)data);
-		_Swap(imask);
+		_Swap(key);
 		return;
 	}
 
 	enqueue_data(fifo, data);
 
-	irq_unlock(imask);
+	irq_unlock(key);
 }
 
 
@@ -168,20 +177,14 @@ void nano_fifo_put(struct nano_fifo *fifo, void *data)
  */
 static inline void *dequeue_data(struct nano_fifo *fifo)
 {
-	void *data = fifo->data_q.head;
+	struct fifo_node *head = fifo->data_q.head;
 
-	if (fifo->stat == 0) {
-		/*
-		 * The data_q and wait_q occupy the same space and have the same
-		 * format, and there is already an API for resetting the wait_q,
-		 * so use it.
-		 */
-		_nano_wait_q_reset(&fifo->wait_q);
-	} else {
-		fifo->data_q.head = *(void **)data;
+	fifo->data_q.head = head->next;
+	if (fifo->data_q.tail == head) {
+		fifo->data_q.tail = &fifo->data_q.head;
 	}
 
-	return data;
+	return head;
 }
 
 FUNC_ALIAS(_fifo_get, nano_isr_fifo_get, void *);
@@ -194,11 +197,9 @@ void *_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
 
 	key = irq_lock();
 
-	if (likely(fifo->stat > 0)) {
-		fifo->stat--;
+	if (likely(!is_q_empty(&fifo->data_q))) {
 		data = dequeue_data(fifo);
 	} else if (timeout_in_ticks != TICKS_NONE) {
-		fifo->stat--;
 		_NANO_TIMEOUT_ADD(&fifo->wait_q, timeout_in_ticks);
 		_nano_wait_q_put(&fifo->wait_q);
 		data = (void *)_Swap(key);
@@ -228,11 +229,9 @@ void *nano_task_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
 		 * leads to idle.
 		 */
 
-		if (likely(fifo->stat > 0)) {
-			void *data;
+		if (likely(!is_q_empty(&fifo->data_q))) {
+			void *data = dequeue_data(fifo);
 
-			fifo->stat--;
-			data = dequeue_data(fifo);
 			irq_unlock(key);
 			return data;
 		}
