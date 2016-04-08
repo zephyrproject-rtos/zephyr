@@ -178,12 +178,15 @@ void bt_l2cap_connected(struct bt_conn *conn)
 	struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
-	/* TODO Add support for fixed channels on BR/EDR transport */
-	if (conn->type !=  BT_CONN_TYPE_LE) {
-		return;
-	}
+	fchan = le_channels;
 
-	for (fchan = le_channels; fchan; fchan = fchan->_next) {
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		fchan = br_channels;
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
+	for (; fchan; fchan = fchan->_next) {
 		if (fchan->accept(conn, &chan) < 0) {
 			continue;
 		}
