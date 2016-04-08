@@ -14,6 +14,7 @@ Getting Started
    getting_started/getting_started.rst
    kernel/kernel.rst
    drivers/drivers.rst
+   subsystems/subsystems.rst
 
 Developer Guides
 ****************
