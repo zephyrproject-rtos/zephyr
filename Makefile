@@ -586,7 +586,7 @@ endif
 
 ifdef CONFIG_NEWLIB_LIBC
 ZEPHYRINCLUDE += $(TOOLCHAIN_CFLAGS)
-ALL_LIBS += c m
+ALL_LIBS += m c
 endif
 
 QEMU_BIN_PATH	?= /usr/bin
