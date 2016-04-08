@@ -560,6 +560,7 @@ remove_ext_hdr(struct net_buf *buf)
 	    uip_len(buf) - UIP_IPH_LEN - uip_ext_len(buf));
 
     uip_len(buf) -= uip_ext_len(buf);
+    ip_buf_len(buf) = uip_len(buf);
 
     /* Update the IP length. */
     UIP_IP_BUF(buf)->len[0] = (uip_len(buf) - UIP_IPH_LEN) >> 8;
