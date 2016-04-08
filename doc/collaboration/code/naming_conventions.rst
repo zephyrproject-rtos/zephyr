@@ -23,7 +23,7 @@ to the Namespace`_ for details.
 +----------+--------------------------------------+------------------------+
 | Prefix   | Description                          | Example                |
 +==========+======================================+========================+
-| \_       | Denotes a private kernel symbol.     | ``_k_signal_event``    |
+| \_       | Denotes a private symbol.            | ``_k_signal_event``    |
 +----------+--------------------------------------+------------------------+
 | atomic\_ | Denotes an atomic operation.         | ``atomic_inc``         |
 +----------+--------------------------------------+------------------------+
