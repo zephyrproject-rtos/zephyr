@@ -106,6 +106,13 @@ config NBLE_DEBUG_GAP
 	  Generic Access Profile (GAP) in the interfaces to the
 	  Nordic chip.
 
+config NBLE_DEBUG_CONN
+	bool "NBLE connection debug"
+	default n
+	help
+	  This option enables debug support for Bluetooth
+	  connections in the nble driver.
+
 config NBLE_DEBUG_RPC
 	bool "NBLE RPC debug"
 	default n

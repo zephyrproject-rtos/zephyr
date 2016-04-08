@@ -29,6 +29,11 @@
 #include "gatt_internal.h"
 #include "conn_internal.h"
 
+#if !defined(CONFIG_NBLE_DEBUG_CONN)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
