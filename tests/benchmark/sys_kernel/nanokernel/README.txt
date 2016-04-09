@@ -38,7 +38,7 @@ Each test below are repeated 5000 times and the average
 time for one iteration is displayed.
 
 TEST CASE: Semaphore #1
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_sem_init
 	nano_fiber_sem_take(TICKS_UNLIMITED)
 	nano_fiber_sem_give
@@ -48,7 +48,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: Semaphore #2
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_sem_init
 	nano_fiber_sem_take(TICKS_NONE)
 	fiber_yield
@@ -59,7 +59,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: Semaphore #3
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_sem_init
 	nano_fiber_sem_take(TICKS_UNLIMITED)
 	nano_fiber_sem_give
@@ -71,7 +71,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: LIFO #1
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_lifo_init
 	nano_fiber_lifo_get(TICKS_UNLIMITED)
 	nano_fiber_lifo_put
@@ -81,7 +81,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: LIFO #2
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_lifo_init
 	nano_fiber_lifo_get(TICKS_UNLIMITED)
 	nano_fiber_lifo_get(TICKS_NONE)
@@ -93,7 +93,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: LIFO #3
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_lifo_init
 	nano_fiber_lifo_get(TICKS_UNLIMITED)
 	nano_fiber_lifo_put
@@ -105,7 +105,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: FIFO #1
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_fifo_init
 	nano_fiber_fifo_get(TICKS_UNLIMITED)
 	nano_fiber_fifo_put
@@ -115,7 +115,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: FIFO #2
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_fifo_init
 	nano_fiber_fifo_get(TICKS_UNLIMITED)
 	nano_fiber_fifo_get
@@ -127,7 +127,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: FIFO #3
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_fifo_init
 	nano_fiber_fifo_get(TICKS_UNLIMITED)
 	nano_fiber_fifo_put
@@ -139,7 +139,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: Stack #1
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_stack_init
 	nano_fiber_stack_pop(TICKS_UNLIMITED)
 	nano_fiber_stack_push
@@ -149,7 +149,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: Stack #2
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_stack_init
 	nano_fiber_stack_pop(TICKS_UNLIMITED)
 	nano_fiber_stack_pop
@@ -161,7 +161,7 @@ DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
 TEST CASE: Stack #3
-TEST COVERAGE: 
+TEST COVERAGE:
 	nano_stack_init
 	nano_fiber_stack_pop(TICKS_UNLIMITED)
 	nano_fiber_stack_push
