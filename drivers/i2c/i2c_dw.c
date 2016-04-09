@@ -459,6 +459,20 @@ static int i2c_dw_transfer(struct device *dev,
 	/* Enable controller */
 	regs->ic_enable.bits.enable = 1;
 
+	/*
+	 * While waiting at device_sync_call_wait(), kernel can switch to idle
+	 * task which in turn can call _sys_soc_suspend() hook of Power
+	 * Management App (PMA).
+	 * device_busy_set() call here, would indicate to PMA that it should not
+	 * execute PM policies that would turn off this ip block, causing an
+	 * ongoing hw transaction to be left in an inconsistent state.
+	 * Note : This is just a sample to show a possible use of the API, it is
+	 * upto the driver expert to see, if he actually needs it here, or
+	 * somewhere else, or not needed as the driver's suspend()/resume()
+	 * can handle everything
+	 */
+	device_busy_set(dev);
+
 		/* Process all the messages */
 	while (msg_left > 0) {
 		pflags = dw->xfr_flags;
@@ -516,6 +530,8 @@ static int i2c_dw_transfer(struct device *dev,
 		cur_msg++;
 		msg_left--;
 	}
+
+	device_busy_clear(dev);
 
 	dw->state = I2C_DW_STATE_READY;
 

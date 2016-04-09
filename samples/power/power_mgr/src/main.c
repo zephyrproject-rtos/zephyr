@@ -79,9 +79,10 @@ static int check_pm_policy(int32_t ticks)
 	 * 0 = no power saving operation
 	 * 1 = low power state
 	 * 2 = device suspend only
+	 * 3 = deep sleep
 	 *
 	 */
-	policy = (policy > 2 ? 0 : policy);
+	policy = (policy > 3 ? 0 : policy);
 
 	return policy++;
 }
@@ -123,6 +124,15 @@ int _sys_soc_suspend(int32_t ticks)
 		start_time = rtc_read(rtc_dev);
 		ret = device_suspend_only_entry(ticks);
 		break;
+	case 3:
+		/*
+		 * if the policy manager chooses to go to deep sleep, we need to
+		 * check if any device is in the middle of a transaction
+		 */
+		if (!device_any_busy_check()) {
+			/* Do deep sleep operations */
+			/* break; (fall through for now) */
+		}
 	default:
 		/* No PM operations */
 		ret = SYS_PM_NOT_HANDLED;
@@ -190,6 +200,10 @@ static void suspend_devices(int pm_policy)
 	for (i = 0; i < device_count; i++) {
 		int idx = device_policy_list[i];
 
+		/* If necessary  the policy manager can check if a specific
+		 * device in the policy list is busy as shown below :
+		 * if(device_busy_check(&device_list[idx])) {do something}
+		 */
 		device_retval[i] = device_suspend(&device_list[idx], pm_policy);
 	}
 }
