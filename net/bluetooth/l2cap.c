@@ -797,14 +797,14 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	uint16_t len;
 
 	if (buf->len < sizeof(*hdr)) {
-		BT_ERR("Too small L2CAP LE signaling PDU");
+		BT_ERR("Too small L2CAP signaling PDU");
 		return;
 	}
 
 	len = sys_le16_to_cpu(hdr->len);
 	net_buf_pull(buf, sizeof(*hdr));
 
-	BT_DBG("LE signaling code 0x%02x ident %u len %u", hdr->code,
+	BT_DBG("Signaling code 0x%02x ident %u len %u", hdr->code,
 	       hdr->ident, len);
 
 	if (buf->len != len) {
