@@ -25,6 +25,10 @@
 #define BT_L2CAP_CID_LE_SIG		0x0005
 #define BT_L2CAP_CID_SMP		0x0006
 
+/* Supported BR/EDR fixed channels mask (first octet) */
+#define BT_L2CAP_MASK_BR_SIG		0x02
+#define BT_L2CAP_MASK_SMP		0x80
+
 struct bt_l2cap_hdr {
 	uint16_t len;
 	uint16_t cid;
@@ -117,6 +121,11 @@ struct bt_l2cap_le_credits {
 
 struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	/* Supported channels mask (first octet). Only for BR/EDR. */
+	uint8_t			mask;
+#endif
 
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 
