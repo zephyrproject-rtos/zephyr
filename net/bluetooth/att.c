@@ -89,7 +89,7 @@ static struct bt_att bt_att_pool[CONFIG_BLUETOOTH_MAX_CONN];
 static struct nano_fifo att_buf;
 static NET_BUF_POOL(att_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
-		    &att_buf, NULL, 0);
+		    &att_buf, NULL, BT_BUF_USER_DATA_MIN);
 
 static void att_req_destroy(struct bt_att_req *req)
 {

@@ -71,6 +71,9 @@ static size_t discovery_results_count;
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 struct cmd_data {
+	/** BT_BUF_CMD */
+	uint8_t  type;
+
 	/** The command OpCode that the buffer contains */
 	uint16_t opcode;
 
@@ -83,6 +86,9 @@ struct cmd_data {
 };
 
 struct acl_data {
+	/** BT_BUF_ACL_IN */
+	uint8_t  type;
+
 	/** ACL connection handle */
 	uint16_t handle;
 };
@@ -98,17 +104,19 @@ static struct nano_fifo avail_hci_cmd;
 static NET_BUF_POOL(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    &avail_hci_cmd, NULL, sizeof(struct cmd_data));
 
+#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 /* HCI event buffers */
 #define EVT_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RECV_RESERVE + \
 		      sizeof(struct bt_hci_evt_hdr) + \
 		      CONFIG_BLUETOOTH_MAX_EVT_LEN)
 static struct nano_fifo avail_hci_evt;
 static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT, EVT_BUF_SIZE,
-		    &avail_hci_evt, NULL, 0);
+		    &avail_hci_evt, NULL, BT_BUF_USER_DATA_MIN);
+#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 static struct tc_hmac_prng_struct prng;
 
-#if defined(CONFIG_BLUETOOTH_CONN)
+#if defined(CONFIG_BLUETOOTH_CONN) && defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 static void report_completed_packet(struct net_buf *buf)
 {
 
@@ -147,17 +155,7 @@ static NET_BUF_POOL(acl_in_pool, CONFIG_BLUETOOTH_ACL_IN_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_L2CAP_IN_MTU),
 		    &avail_acl_in, report_completed_packet,
 		    sizeof(struct acl_data));
-#endif /* CONFIG_BLUETOOTH_CONN */
-
-/* Incoming buffer type lookup helper */
-static enum bt_buf_type bt_type(struct net_buf *buf)
-{
-	if (buf->free == &avail_hci_evt) {
-		return BT_EVT;
-	} else {
-		return BT_ACL_IN;
-	}
-}
+#endif /* CONFIG_BLUETOOTH_CONN && CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
@@ -202,6 +200,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("buf %p", buf);
 
+	cmd(buf)->type = BT_BUF_CMD;
 	cmd(buf)->opcode = opcode;
 	cmd(buf)->sync = NULL;
 
@@ -229,7 +228,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
 		int err;
 
-		err = bt_dev.drv->send(BT_CMD, buf);
+		err = bt_dev.drv->send(buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)", err);
 			net_buf_unref(buf);
@@ -2502,7 +2501,7 @@ static void hci_cmd_tx_fiber(void)
 		BT_DBG("Sending command 0x%04x (buf %p) to driver",
 		       cmd(buf)->opcode, buf);
 
-		err = drv->send(BT_CMD, buf);
+		err = drv->send(buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)", err);
 			nano_fiber_sem_give(&bt_dev.ncmd_sem);
@@ -2525,10 +2524,11 @@ static void rx_prio_fiber(void)
 		BT_DBG("calling fifo_get_wait");
 		buf = nano_fifo_get(&bt_dev.rx_prio_queue, TICKS_UNLIMITED);
 
-		BT_DBG("buf %p type %u len %u", buf, bt_type(buf), buf->len);
+		BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
+		       buf->len);
 
-		if (bt_type(buf) != BT_EVT) {
-			BT_ERR("Unknown buf type %u", bt_type(buf));
+		if (bt_buf_get_type(buf) != BT_BUF_EVT) {
+			BT_ERR("Unknown buf type %u", bt_buf_get_type(buf));
 			net_buf_unref(buf);
 			continue;
 		}
@@ -3054,21 +3054,27 @@ static int hci_init(void)
 
 /* Interface to HCI driver layer */
 
-void bt_recv(struct net_buf *buf)
+int bt_recv(struct net_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr;
 
 	BT_DBG("buf %p len %u", buf, buf->len);
 
-	if (bt_type(buf) == BT_ACL_IN) {
-		nano_fifo_put(&bt_dev.rx_queue, buf);
-		return;
+	if (buf->user_data_size < BT_BUF_USER_DATA_MIN) {
+		BT_ERR("Too small user data size");
+		net_buf_unref(buf);
+		return -EINVAL;
 	}
 
-	if (bt_type(buf) != BT_EVT) {
-		BT_ERR("Invalid buf type %u", bt_type(buf));
+	if (bt_buf_get_type(buf) == BT_BUF_ACL_IN) {
+		nano_fifo_put(&bt_dev.rx_queue, buf);
+		return 0;
+	}
+
+	if (bt_buf_get_type(buf) != BT_BUF_EVT) {
+		BT_ERR("Invalid buf type %u", bt_buf_get_type(buf));
 		net_buf_unref(buf);
-		return;
+		return -EINVAL;
 	}
 
 	/* Command Complete/Status events have their own cmd_rx queue,
@@ -3079,10 +3085,11 @@ void bt_recv(struct net_buf *buf)
 	    hdr->evt == BT_HCI_EVT_CMD_STATUS ||
 	    hdr->evt == BT_HCI_EVT_NUM_COMPLETED_PACKETS) {
 		nano_fifo_put(&bt_dev.rx_prio_queue, buf);
-		return;
+		return 0;
 	}
 
 	nano_fifo_put(&bt_dev.rx_queue, buf);
+	return 0;
 }
 
 int bt_driver_register(struct bt_driver *drv)
@@ -3186,19 +3193,20 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 		BT_DBG("calling fifo_get_wait");
 		buf = nano_fifo_get(&bt_dev.rx_queue, TICKS_UNLIMITED);
 
-		BT_DBG("buf %p type %u len %u", buf, bt_type(buf), buf->len);
+		BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
+		       buf->len);
 
-		switch (bt_type(buf)) {
+		switch (bt_buf_get_type(buf)) {
 #if defined(CONFIG_BLUETOOTH_CONN)
-		case BT_ACL_IN:
+		case BT_BUF_ACL_IN:
 			hci_acl(buf);
 			break;
 #endif /* CONFIG_BLUETOOTH_CONN */
-		case BT_EVT:
+		case BT_BUF_EVT:
 			hci_event(buf);
 			break;
 		default:
-			BT_ERR("Unknown buf type %u", bt_type(buf));
+			BT_ERR("Unknown buf type %u", bt_buf_get_type(buf));
 			net_buf_unref(buf);
 			break;
 		}
@@ -3215,10 +3223,12 @@ int bt_enable(bt_ready_cb_t cb)
 
 	/* Initialize the buffer pools */
 	net_buf_pool_init(hci_cmd_pool);
+#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 	net_buf_pool_init(hci_evt_pool);
 #if defined(CONFIG_BLUETOOTH_CONN)
 	net_buf_pool_init(acl_in_pool);
 #endif /* CONFIG_BLUETOOTH_CONN */
+#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 	/* Give cmd_sem allowing to send first HCI_Reset cmd */
 	bt_dev.ncmd = 1;
@@ -3512,19 +3522,35 @@ int bt_le_scan_stop(void)
 	return bt_le_scan_update(false);
 }
 
+#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 struct net_buf *bt_buf_get_evt(void)
 {
-	return net_buf_get(&avail_hci_evt, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+	struct net_buf *buf;
+
+	buf = net_buf_get(&avail_hci_evt, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+	if (buf) {
+		bt_buf_set_type(buf, BT_BUF_EVT);
+	}
+
+	return buf;
 }
 
 struct net_buf *bt_buf_get_acl(void)
 {
 #if defined(CONFIG_BLUETOOTH_CONN)
-	return net_buf_get(&avail_acl_in, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+	struct net_buf *buf;
+
+	buf = net_buf_get(&avail_acl_in, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+	if (buf) {
+		bt_buf_set_type(buf, BT_BUF_ACL_IN);
+	}
+
+	return buf;
 #else
 	return NULL;
 #endif /* CONFIG_BLUETOOTH_CONN */
 }
+#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static int br_start_inquiry(bool limited)

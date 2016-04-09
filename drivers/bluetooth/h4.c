@@ -202,13 +202,16 @@ static void bt_uart_isr(struct device *unused)
 	}
 }
 
-static int h4_send(enum bt_buf_type buf_type, struct net_buf *buf)
+static int h4_send(struct net_buf *buf)
 {
-	if (buf_type == BT_ACL_OUT) {
+	switch (bt_buf_get_type(buf)) {
+	case BT_BUF_ACL_OUT:
 		uart_poll_out(h4_dev, H4_ACL);
-	} else if (buf_type == BT_CMD) {
+		break;
+	case BT_BUF_CMD:
 		uart_poll_out(h4_dev, H4_CMD);
-	} else {
+		break;
+	default:
 		return -EINVAL;
 	}
 

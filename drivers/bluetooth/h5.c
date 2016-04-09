@@ -586,19 +586,19 @@ static uint8_t h5_get_type(struct net_buf *buf)
 	return net_buf_pull_u8(buf);
 }
 
-static int h5_queue(enum bt_buf_type buf_type, struct net_buf *buf)
+static int h5_queue(struct net_buf *buf)
 {
 	uint8_t type;
 
-	switch (buf_type) {
-	case BT_CMD:
+	switch (bt_buf_get_type(buf)) {
+	case BT_BUF_CMD:
 		type = HCI_COMMAND_PKT;
 		break;
-	case BT_ACL_OUT:
+	case BT_BUF_ACL_OUT:
 		type = HCI_ACLDATA_PKT;
 		break;
 	default:
-		BT_ERR("Unknown packet type %u", buf_type);
+		BT_ERR("Unknown packet type %u", bt_buf_get_type(buf));
 		return -1;
 	}
 

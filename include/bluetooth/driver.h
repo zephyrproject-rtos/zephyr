@@ -21,33 +21,43 @@
 #define __BT_DRIVER_H
 
 #include <net/buf.h>
+#include <bluetooth/buf.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-enum bt_buf_type {
-	BT_CMD,			/** HCI command */
-	BT_EVT,			/** HCI event */
-	BT_ACL_OUT,		/** Outgoing ACL data */
-	BT_ACL_IN,		/** Incoming ACL data */
-};
+#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 
-/* Allocate a buffer for an HCI event */
+/** Allocate a buffer for an HCI event
+ *
+ *  This will set the BT_BUF_EVT buffer type so bt_buf_set_type()
+ *  doesn't need to be explicitly called.
+ *
+ *  @return A new buffer with the BT_BUF_EVT type.
+ */
 struct net_buf *bt_buf_get_evt(void);
 
-/* Allocate a buffer for incoming ACL data */
+/** Allocate a buffer for incoming ACL data
+ *
+ *  This will set the BT_BUF_ACL_IN buffer type so bt_buf_set_type()
+ *  doesn't need to be explicitly called.
+ *
+ *  @return A new buffer with the BT_BUF_ACL_IN type.
+ */
 struct net_buf *bt_buf_get_acl(void);
 
+#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
+
 /* Receive data from the controller/HCI driver */
-void bt_recv(struct net_buf *buf);
+int bt_recv(struct net_buf *buf);
 
 struct bt_driver {
 	/* Open the HCI transport */
 	int (*open)(void);
 
 	/* Send HCI buffer to controller */
-	int (*send)(enum bt_buf_type type, struct net_buf *buf);
+	int (*send)(struct net_buf *buf);
 };
 
 /* Register a new HCI driver to the Bluetooth stack */

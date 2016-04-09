@@ -72,13 +72,15 @@ static struct bt_l2cap_server *servers;
 /* Pool for outgoing LE signaling packets, MTU is 23 */
 static struct nano_fifo le_sig;
 static NET_BUF_POOL(le_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU), &le_sig, NULL, 0);
+		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU), &le_sig, NULL,
+		    BT_BUF_USER_DATA_MIN);
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /* Pool for outgoing LE data packets, MTU is 23 */
 static struct nano_fifo le_data;
 static NET_BUF_POOL(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU), &le_data, NULL, 0);
+		    BT_L2CAP_BUF_SIZE(L2CAP_LE_MIN_MTU), &le_data, NULL,
+		    BT_BUF_USER_DATA_MIN);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
@@ -87,7 +89,8 @@ static struct bt_l2cap_fixed_chan *br_channels;
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
 static struct nano_fifo br_sig;
 static NET_BUF_POOL(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), &br_sig, NULL, 0);
+		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), &br_sig, NULL,
+		    BT_BUF_USER_DATA_MIN);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 /* L2CAP signalling channel specific context */

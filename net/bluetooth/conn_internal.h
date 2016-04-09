@@ -113,7 +113,7 @@ struct bt_conn {
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 
 /* Send data over a connection */
-void bt_conn_send(struct bt_conn *conn, struct net_buf *buf);
+int bt_conn_send(struct bt_conn *conn, struct net_buf *buf);
 
 /* Add a new LE connection */
 struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer);

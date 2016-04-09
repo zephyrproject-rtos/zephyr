@@ -34,6 +34,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/buf.h>
 
 #include <tinycrypt/aes.h>
 #include <tinycrypt/utils.h>
@@ -199,7 +200,8 @@ static const uint8_t sc_debug_public_key[64] = {
 /* Pool for outgoing LE signaling packets, MTU is 65 */
 static struct nano_fifo smp_buf;
 static NET_BUF_POOL(smp_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(65), &smp_buf, NULL, 0);
+		    BT_L2CAP_BUF_SIZE(65), &smp_buf, NULL,
+		    BT_BUF_USER_DATA_MIN);
 
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 static bool sc_supported;

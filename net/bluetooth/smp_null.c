@@ -27,6 +27,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/buf.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -38,7 +39,8 @@ static struct bt_l2cap_chan bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 /* Pool for outgoing SMP signaling packets, MTU is 23 */
 static struct nano_fifo smp_buf;
 static NET_BUF_POOL(smp_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(23), &smp_buf, NULL, 0);
+		    BT_L2CAP_BUF_SIZE(23), &smp_buf, NULL,
+		    BT_BUF_USER_DATA_MIN);
 
 int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 {

@@ -46,7 +46,8 @@
 
 /* Pool for outgoing ACL fragments */
 static struct nano_fifo frag_buf;
-static NET_BUF_POOL(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), &frag_buf, NULL, 0);
+static NET_BUF_POOL(frag_pool, 1, BT_L2CAP_BUF_SIZE(23), &frag_buf, NULL,
+		    BT_BUF_USER_DATA_MIN);
 
 /* Pool for dummy buffers to wake up the tx fibers */
 static struct nano_fifo dummy;
@@ -389,17 +390,24 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	bt_l2cap_recv(conn, buf);
 }
 
-void bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
+int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	BT_DBG("conn handle %u buf len %u", conn->handle, buf->len);
+
+	if (buf->user_data_size < BT_BUF_USER_DATA_MIN) {
+		BT_ERR("Too small user data size");
+		net_buf_unref(buf);
+		return -EINVAL;
+	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("not connected!");
 		net_buf_unref(buf);
-		return;
+		return -ENOTCONN;
 	}
 
 	nano_fifo_put(&conn->tx_queue, buf);
+	return 0;
 }
 
 static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
@@ -423,8 +431,10 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
+	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+
 	BT_DBG("passing buf %p len %u to driver", buf, buf->len);
-	err = bt_dev.drv->send(BT_ACL_OUT, buf);
+	err = bt_dev.drv->send(buf);
 	if (err) {
 		BT_ERR("Unable to send to driver (err %d)", err);
 		goto fail;

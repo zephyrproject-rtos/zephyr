@@ -34,7 +34,7 @@ static int driver_open(void)
 	return EXPECTED_ERROR;
 }
 
-static int driver_send(enum bt_buf_type type, struct net_buf *buf)
+static int driver_send(struct net_buf *buf)
 {
 	return 0;
 }
