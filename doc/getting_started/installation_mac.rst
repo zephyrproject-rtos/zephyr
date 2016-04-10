@@ -10,18 +10,6 @@ applications on the following Mac OS version:
 
 * Mac OS X 10.11 (El Capitan)
 
-.. _mac_network_configuration:
-
-Configuring Network and Proxies
-*******************************
-
-Building the kernel requires the command-line tools of git, ssh, wget,
-curl. Verify that each service can be run as both user and root and that access
-to the Internet and is not impeded by a firewall.
-
-If your network requires proxy access through a proxy, please configure using
-steps similar git, ssh and wget in accordance to your security policies.
-
 .. _mac_requirements:
 
 Installing Requirements and Dependencies
