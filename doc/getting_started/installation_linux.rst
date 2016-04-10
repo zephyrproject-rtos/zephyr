@@ -42,10 +42,6 @@ Installing Requirements and Dependencies
 
 Install the following with either apt-get or dnf.
 
-.. note::
-   Minor version updates of the listed required packages might also
-   work.
-
 Install the required packages in a Ubuntu host system with:
 
 .. code-block:: console
@@ -60,10 +56,6 @@ Install the required packages in a Fedora host system with:
    $ sudo dnf group install "Development Tools"
    $ sudo dnf install git make gcc glib-devel.i686 glib2-devel.i686 \
      glibc-static libstdc++-static glibc-devel.i686
-
-.. important::
-   Ensure that at least the 32 bit versions of the packages are installed.
-   Ideally, both the 32 and 64 bit versions should be installed.
 
 .. _zephyr_sdk:
 
@@ -86,18 +78,15 @@ Follow these steps to install the SDK on your Linux host system.
 
 #. Download the latest SDK self-extractable binary.
 
-    Visit the `Zephyr SDK archive`_ to find all available SDK versions,
-    including the latest version.
+   Visit the `Zephyr SDK archive`_ to find all available SDK versions,
+   including the latest version.
 
-    Alternatively, you can use the following command to download the desired
-    version:
+   Alternatively, you can use the following command to download the desired
+   version, replacing <version> with the version number you wish to download.
 
    .. code-block:: console
 
       $ wget https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/<version>-i686/zephyr-sdk-<version>-i686-setup.run
-
-   .. note::
-      Replace <version> with the version number you wish to download.
 
 #. Run the installation binary, follow this example:
 
@@ -105,13 +94,15 @@ Follow these steps to install the SDK on your Linux host system.
 
       $ chmod +x zephyr-sdk-<version>-i686-setup.run
 
-      $ sudo ./zephyr-sdk-<version>-i686-setup.run
+      $ ./zephyr-sdk-<version>-i686-setup.run
 
    There is no need for `sudo` if the SDK is installed in the current
    user's home directory.
 
 #. Follow the installation instructions on the screen. The
    toolchain's default installation location is :file:`/opt/zephyr-sdk/`.
+   To install in the default installation location, you will need to use sudo. It is recommended
+   to install the SDK in your home directory and not in a system directory.
 
 #. To use the Zephyr SDK, export the following environment variables and
    use the target location where SDK was installed, type:
