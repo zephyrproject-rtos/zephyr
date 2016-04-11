@@ -111,6 +111,8 @@ enum sensor_channel {
 	SENSOR_CHAN_LIGHT,
 	/** Illuminance in infra-red spectrum, in lux. */
 	SENSOR_CHAN_IR,
+	/** All channels. */
+	SENSOR_CHAN_ALL,
 };
 
 /**
@@ -200,7 +202,8 @@ typedef int (*sensor_attr_set_t)(struct device *dev,
 typedef int (*sensor_trigger_set_t)(struct device *dev,
 				    const struct sensor_trigger *trig,
 				    sensor_trigger_handler_t handler);
-typedef int (*sensor_sample_fetch_t)(struct device *dev);
+typedef int (*sensor_sample_fetch_t)(struct device *dev,
+				     enum sensor_channel chan);
 typedef int (*sensor_channel_get_t)(struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val);
@@ -290,7 +293,36 @@ static inline int sensor_sample_fetch(struct device *dev)
 
 	api = (struct sensor_driver_api *)dev->driver_api;
 
-	return api->sample_fetch(dev);
+	return api->sample_fetch(dev, SENSOR_CHAN_ALL);
+}
+
+/**
+ * @brief Fetch a sample from the sensor and store it in an internal
+ * driver buffer
+ *
+ * Read and compute compensation for one type of sensor data (magnetometer,
+ * accelerometer, etc). The user may then get individual channel values by
+ * calling @ref sensor_channel_get.
+ *
+ * This is mostly implemented by multi function devices enabling reading at
+ * different sampling rates.
+ *
+ * Since the function communicates with the sensor device, it is unsafe
+ * to call it in an ISR if the device is connected via I2C or SPI.
+ *
+ * @param dev Pointer to the sensor device
+ * @param chan The channel that needs updated
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_sample_fetch_chan(struct device *dev,
+					   enum sensor_channel type)
+{
+	struct sensor_driver_api *api;
+
+	api = (struct sensor_driver_api *)dev->driver_api;
+
+	return api->sample_fetch(dev, type);
 }
 
 /**
@@ -298,10 +330,11 @@ static inline int sensor_sample_fetch(struct device *dev)
  *
  * Return a useful value for a particular channel, from the driver's
  * internal data.  Before calling this function, a sample must be
- * obtained by calling @ref sensor_sample_fetch.  It is guaranteed that
- * two subsequent calls of this function for the same channels will
- * yield the same value, if @ref sensor_sample_fetch has not been called
- * in the meantime.
+ * obtained by calling @ref sensor_sample_fetch or
+ * @ref sensor_sample_fetch_chan. It is guaranteed that two subsequent
+ * calls of this function for the same channels will yield the same
+ * value, if @ref sensor_sample_fetch or @ref sensor_sample_fetch_chan
+ * has not been called in the meantime.
  *
  * @param dev Pointer to the sensor device
  * @param chan The channel to read

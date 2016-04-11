@@ -20,6 +20,7 @@
 #include <nanokernel.h>
 #include <sensor.h>
 #include <misc/util.h>
+#include <misc/__assert.h>
 
 #include "sensor_hdc1008.h"
 
@@ -43,11 +44,13 @@ static void hdc1008_gpio_callback(struct device *dev,
 	nano_sem_give(&drv_data->data_sem);
 }
 
-static int hdc1008_sample_fetch(struct device *dev)
+static int hdc1008_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct hdc1008_data *drv_data = dev->driver_data;
 	uint8_t buf[4];
 	int rc;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL);
 
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_HDC1008_GPIO_PIN_NUM);
 

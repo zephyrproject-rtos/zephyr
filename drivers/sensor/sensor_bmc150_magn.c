@@ -25,6 +25,7 @@
 #include <init.h>
 #include <i2c.h>
 #include <misc/byteorder.h>
+#include <misc/__assert.h>
 
 #include <gpio.h>
 
@@ -318,13 +319,16 @@ static int32_t bmc150_magn_compensate_z(struct bmc150_magn_trim_regs *tregs,
 	return val;
 }
 
-static int bmc150_magn_sample_fetch(struct device *dev)
+static int bmc150_magn_sample_fetch(struct device *dev,
+				    enum sensor_channel chan)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	struct bmc150_magn_config *config = dev->config->config_info;
 	uint16_t values[BMC150_MAGN_AXIS_XYZR_MAX];
 	int16_t raw_x, raw_y, raw_z;
 	uint16_t rhall;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_MAGN_ANY);
 
 	if (i2c_burst_read(data->i2c_master, config->i2c_slave_addr,
 			   BMC150_MAGN_REG_X_L, (uint8_t *)values,

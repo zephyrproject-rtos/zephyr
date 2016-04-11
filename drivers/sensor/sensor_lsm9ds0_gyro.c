@@ -22,6 +22,7 @@
 #include <init.h>
 #include <i2c.h>
 #include <misc/byteorder.h>
+#include <misc/__assert.h>
 
 #include <gpio.h>
 
@@ -119,11 +120,14 @@ static int lsm9ds0_gyro_set_odr(struct device *dev, int odr)
 }
 #endif
 
-static int lsm9ds0_gyro_sample_fetch(struct device *dev)
+static int lsm9ds0_gyro_sample_fetch(struct device *dev,
+				     enum sensor_channel chan)
 {
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
 	struct lsm9ds0_gyro_config *config = dev->config->config_info;
 	uint8_t x_l, x_h, y_l, y_h, z_l, z_h;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GYRO_ANY);
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_GYRO_REG_OUT_X_L_G, &x_l) != 0 ||

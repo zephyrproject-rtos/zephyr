@@ -17,15 +17,18 @@
 #include <i2c.h>
 #include <init.h>
 #include <sensor.h>
+#include <misc/__assert.h>
 
 #include "sensor_bma280.h"
 
-static int bma280_sample_fetch(struct device *dev)
+static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct bma280_data *drv_data = dev->driver_data;
 	uint8_t buf[6];
 	uint8_t lsb;
 	int rc;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL);
 
 	/*
 	 * since all accel data register addresses are consecutive,

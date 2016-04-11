@@ -128,7 +128,7 @@ int lis3dh_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
-int lis3dh_sample_fetch(struct device *dev);
+int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan);
 
 int lis3dh_init_interrupt(struct device *dev);
 #endif

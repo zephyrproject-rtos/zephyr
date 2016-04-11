@@ -23,14 +23,17 @@
 #include <nanokernel.h>
 #include <sensor.h>
 #include <zephyr.h>
+#include <misc/__assert.h>
 
 #include "sensor_isl29035.h"
 
-static int isl29035_sample_fetch(struct device *dev)
+static int isl29035_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 	uint8_t msb, lsb;
 	int ret;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL);
 
 	ret = i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 				ISL29035_DATA_MSB_REG, &msb);

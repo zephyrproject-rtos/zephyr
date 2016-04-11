@@ -23,6 +23,8 @@
 #include <sensor.h>
 #include <init.h>
 #include <gpio.h>
+#include <misc/__assert.h>
+
 #include "sensor_sx9500.h"
 
 static uint8_t sx9500_reg_defaults[] = {
@@ -48,9 +50,11 @@ static uint8_t sx9500_reg_defaults[] = {
 	0x00,	/* No stuck timeout, no periodic compensation. */
 };
 
-static int sx9500_sample_fetch(struct device *dev)
+static int sx9500_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX);
 
 	return i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 				 SX9500_REG_STAT, &data->prox_stat);

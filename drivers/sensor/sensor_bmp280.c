@@ -22,6 +22,8 @@
 #include <init.h>
 #include <gpio.h>
 #include <misc/byteorder.h>
+#include <misc/__assert.h>
+
 #include "sensor_bmp280.h"
 
 #ifndef CONFIG_SENSOR_DEBUG
@@ -76,12 +78,14 @@ static void bmp280_compensate_press(struct bmp280_data *data, int32_t adc_press)
 	data->comp_press = (uint32_t)p;
 }
 
-static int bmp280_sample_fetch(struct device *dev)
+static int bmp280_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct bmp280_data *data = dev->driver_data;
 	uint8_t buf[6];
 	int32_t adc_press, adc_temp;
 	int ret;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL);
 
 	ret = i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
 			     BMP280_REG_PRESS_MSB, buf, sizeof(buf));

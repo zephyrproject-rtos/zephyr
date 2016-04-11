@@ -118,7 +118,7 @@ int lis3dh_init_interrupt(struct device *dev)
 	}
 
 	/* clear data ready interrupt line by reading sample data */
-	rc = lis3dh_sample_fetch(dev);
+	rc = lis3dh_sample_fetch(dev, SENSOR_CHAN_ALL);
 	if (rc != 0) {
 		DBG("Could not clear data ready interrupt line.\n");
 		return -EIO;

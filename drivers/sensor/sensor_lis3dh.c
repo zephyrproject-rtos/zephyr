@@ -17,6 +17,7 @@
 #include <i2c.h>
 #include <init.h>
 #include <sensor.h>
+#include <misc/__assert.h>
 
 #include "sensor_lis3dh.h"
 
@@ -52,11 +53,13 @@ static int lis3dh_channel_get(struct device *dev,
 	return 0;
 }
 
-int lis3dh_sample_fetch(struct device *dev)
+int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct lis3dh_data *drv_data = dev->driver_data;
 	uint8_t buf[6];
 	int rc;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_ACCEL_ANY);
 
 	/*
 	 * since all accel data register addresses are consecutive,

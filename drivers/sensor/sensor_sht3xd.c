@@ -18,6 +18,7 @@
 #include <i2c.h>
 #include <nanokernel.h>
 #include <sensor.h>
+#include <misc/__assert.h>
 
 #include "sensor_sht3xd.h"
 
@@ -69,12 +70,14 @@ int sht3xd_write_reg(struct sht3xd_data *drv_data, uint16_t cmd,
 			 SHT3XD_I2C_ADDRESS);
 }
 
-static int sht3xd_sample_fetch(struct device *dev)
+static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct sht3xd_data *drv_data = dev->driver_data;
 	uint8_t rx_buf[6];
 	uint16_t t_sample, rh_sample;
 	int rc;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL);
 
 	uint8_t tx_buf[2] = {
 		SHT3XD_CMD_FETCH >> 8,

@@ -22,6 +22,8 @@
 #include <i2c.h>
 #include <init.h>
 #include <misc/byteorder.h>
+#include <misc/__assert.h>
+
 #include "sensor_mcp9808.h"
 
 
@@ -52,9 +54,11 @@ int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val)
 	return 0;
 }
 
-static int mcp9808_sample_fetch(struct device *dev)
+static int mcp9808_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct mcp9808_data *data = dev->driver_data;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_TEMP);
 
 	return mcp9808_reg_read(data, MCP9808_REG_TEMP_AMB, &data->reg_val);
 }

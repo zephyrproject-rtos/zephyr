@@ -20,6 +20,7 @@
 #include <misc/byteorder.h>
 #include <nanokernel.h>
 #include <sensor.h>
+#include <misc/__assert.h>
 
 #include "sensor_tmp007.h"
 
@@ -71,11 +72,13 @@ int tmp007_reg_update(struct tmp007_data *drv_data, uint8_t reg,
 	return tmp007_reg_write(drv_data, reg, new_val);
 }
 
-static int tmp007_sample_fetch(struct device *dev)
+static int tmp007_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
 	uint16_t val;
 	int rc;
+
+	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_TEMP);
 
 	rc = tmp007_reg_read(drv_data, TMP007_REG_TOBJ, &val);
 	if (rc != 0 || val & TMP007_DATA_INVALID_BIT) {
