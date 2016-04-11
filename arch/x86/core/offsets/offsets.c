@@ -46,6 +46,9 @@
 
 GEN_OFFSET_SYM(tNANO, nested);
 GEN_OFFSET_SYM(tNANO, common_isp);
+#ifdef CONFIG_DEBUG_INFO
+GEN_OFFSET_SYM(tNANO, isf);
+#endif
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 GEN_OFFSET_SYM(tNANO, idle);
 #endif

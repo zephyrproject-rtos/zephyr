@@ -41,10 +41,10 @@ tNANO _nanokernel = {0};
 
 /* forward declaration */
 
-#ifdef CONFIG_GDB_INFO
+#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
 void _thread_entry_wrapper(_thread_entry_t, _thread_arg_t,
 			   _thread_arg_t, _thread_arg_t);
-#endif /* CONFIG_GDB_INFO */
+#endif
 
 /**
  *
@@ -199,7 +199,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	_nano_timeout_tcs_init(tcs);
 }
 
-#ifdef CONFIG_GDB_INFO
+#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
 /**
  *
  * @brief Adjust stack before invoking _thread_entry
@@ -263,7 +263,7 @@ __asm__("\t.globl _thread_entry\n"
 				    */
 	"\tmovl $0, (%esp)\n" /* zero initialEFLAGS location */
 	"\tjmp _thread_entry\n");
-#endif /* CONFIG_GDB_INFO */
+#endif /* defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) */
 
 /**
  *
@@ -320,7 +320,7 @@ void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
 
 	*--pInitialThread = (EflagsGet() & ~EFLAGS_MASK) | EFLAGS_INITIAL;
 
-#ifdef CONFIG_GDB_INFO
+#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
 
 	/*
 	 * Arrange for the _thread_entry_wrapper() function to be called
@@ -329,11 +329,11 @@ void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
 
 	*--pInitialThread = (unsigned long)_thread_entry_wrapper;
 
-#else /* CONFIG_GDB_INFO */
+#else /* defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) */
 
 	*--pInitialThread = (unsigned long)_thread_entry;
 
-#endif /* CONFIG_GDB_INFO */
+#endif /* defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) */
 
 	/*
 	 * note: stack area for edi, esi, ebx, ebp, and eax registers can be

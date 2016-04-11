@@ -132,6 +132,21 @@ SECTION_FUNC(TEXT, _IntEnt)
 	pushl	%ecx
 	pushl	%edx
 
+#ifdef CONFIG_DEBUG_INFO
+	/*
+	 * Push the cooperative registers on the existing stack as they are
+	 * required by debug tools.
+	 */
+
+	pushl	%edi
+	pushl	%esi
+	pushl	%ebx
+	pushl	%ebp
+
+	leal	44(%esp), %ecx   /* Calculate ESP before interrupt occurred */
+	pushl	%ecx             /* Save calculated ESP */
+#endif
+
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	/*
 	 * Volatile registers are now saved it is safe to start measuring
@@ -173,7 +188,11 @@ SECTION_FUNC(TEXT, _IntEnt)
 
 	incl	__tNANO_nested_OFFSET(%ecx)	/* inc interrupt nest count */
 	cmpl	$1, __tNANO_nested_OFFSET(%ecx)	/* use int stack if !nested */
+#ifdef CONFIG_DEBUG_INFO
+	jne	nested_save_isf
+#else
 	jne	alreadyOnIntStack
+#endif
 
 	/* switch to base of the interrupt stack */
 
@@ -185,12 +204,30 @@ SECTION_FUNC(TEXT, _IntEnt)
 
 	pushl	%edx			/* Save stack pointer */
 
+#ifdef CONFIG_DEBUG_INFO
+	/*
+	 * The saved stack pointer happens to match the address of the
+	 * interrupt stack frame.  To simplify the exit case, push a dummy ISF
+	 * for the "old" ISF and save it to the _nanokernel.isf.
+	 */
+	pushl	%edx
+	movl	%edx, __tNANO_isf_OFFSET(%ecx)
+#endif
+
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	cmpl	$0, __tNANO_idle_OFFSET(%ecx)
 	jne	_HandleIdle
 	/* fast path is !idle, in the pipeline */
 #endif
 
+#ifdef CONFIG_DEBUG_INFO
+	jmp alreadyOnIntStack
+
+BRANCH_LABEL(nested_save_isf)
+	movl	__tNANO_isf_OFFSET(%ecx), %edx	/* Get old ISF */
+	movl	%esp, __tNANO_isf_OFFSET(%ecx)	/* Save new ISF */
+	pushl	%edx                            /* Save old ISF */
+#endif
 
 	/* fall through to nested case */
 
@@ -290,6 +327,9 @@ BRANCH_LABEL(_IntExit)
 	/* determine whether exiting from a nested interrupt */
 
 	movl	$_nanokernel, %ecx
+#ifdef CONFIG_DEBUG_INFO
+	popl	__tNANO_isf_OFFSET(%ecx)    /* Restore old ISF */
+#endif
 	decl	__tNANO_nested_OFFSET(%ecx)	/* dec interrupt nest count */
 	jne	nestedInterrupt                 /* 'iret' if nested case */
 
@@ -330,6 +370,14 @@ BRANCH_LABEL(_IntExit)
 	 */
 
 	popl	%esp		/* switch back to kernel stack */
+
+#ifdef CONFIG_DEBUG_INFO
+	popl	%ebp        /* Discard saved ESP */
+	popl	%ebp
+	popl	%ebx
+	popl	%esi
+	popl	%edi
+#endif
 
 	pushfl			/* push KERNEL_LOCK_KEY argument */
 	call	_Swap
@@ -397,6 +445,15 @@ BRANCH_LABEL(nestedInterrupt)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
 #endif
+
+#ifdef CONFIG_DEBUG_INFO
+	popl	%ebp        /* Discard saved ESP */
+	popl	%ebp
+	popl	%ebx
+	popl	%esi
+	popl	%edi
+#endif
+
 	popl	%edx		/* pop volatile registers in reverse order */
 	popl	%ecx
 	popl	%eax

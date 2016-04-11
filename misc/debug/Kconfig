@@ -63,3 +63,17 @@ config MEM_SAFE_NUM_EXTRA_REGIONS
 	memory outside of the image's boundaries.
 
 endmenu
+
+#
+# Generic Debugging Options
+#
+
+config DEBUG_INFO
+	bool "Enable system debugging information"
+	default n
+	depends on X86 && !X86_IAMCU
+	help
+	This option enables the addition of various information that can be used
+	by debuggers in debugging the system.
+
+	NOTE: Does not currently work with the x86 IAMCU ABI.

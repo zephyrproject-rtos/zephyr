@@ -333,9 +333,19 @@ typedef struct nanoEsf {
  *
  * The interrupt stack frame includes the volatile registers EAX, ECX, and EDX
  * pushed on the stack by _IntEnt().
+ *
+ * Only target-based debug tools such as GDB require the 5 non-volatile
+ * registers (EDI, ESI, EBX, EBP and ESP) to be preserved during an interrupt.
  */
 
 typedef struct nanoIsf {
+#ifdef CONFIG_DEBUG_INFO
+	unsigned int esp;
+	unsigned int ebp;
+	unsigned int ebx;
+	unsigned int esi;
+	unsigned int edi;
+#endif /* CONFIG_DEBUG_INFO */
 	unsigned int edx;
 	unsigned int ecx;
 	unsigned int eax;
