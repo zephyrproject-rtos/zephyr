@@ -127,7 +127,7 @@ enum sensor_trigger_type {
 	/**
 	 * Trigger fires when the selected channel varies significantly.
 	 * This includes any-motion detection when the channel is
-	 * acceleration of gyro. If detection is based on slope between
+	 * acceleration or gyro. If detection is based on slope between
 	 * successive channel readings, the slope threshold is configured
 	 * via the @ref SENSOR_ATTR_SLOPE_TH and @ref SENSOR_ATTR_SLOPE_DUR
 	 * attributes.
