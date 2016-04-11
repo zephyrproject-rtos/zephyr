@@ -263,6 +263,19 @@ struct uip_udp_conn *udp_broadcast_new(uint16_t port, void *appstate);
 #define udp_bind(conn, port) uip_udp_bind(conn, port)
 
 /**
+ * Unbind a UDP connection.
+ *
+ * This function unbinds a UDP connection.
+ *
+ * When a connection is created with udp_new(), it gets a local port
+ * number assigned automatically. If the application needs to unbind the
+ * connection from local port, this function should be used.
+ *
+ * \param conn A pointer to the UDP connection that is to be bound.
+ */
+#define udp_unbind(conn) uip_udp_remove(conn)
+
+/**
  * Cause a specified UDP connection to be polled.
  *
  * This function causes uIP to poll the specified UDP connection. The

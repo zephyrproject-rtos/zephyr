@@ -34,6 +34,8 @@
 #include "contiki/os/lib/random.h"
 #include "contiki/ipv6/uip-ds6.h"
 
+int net_context_get_receiver_registered(struct net_context *context);
+
 struct net_context {
 	/* Connection tuple identifies the connection */
 	struct net_tuple tuple;
@@ -172,7 +174,19 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 
 void net_context_put(struct net_context *context)
 {
+	if (!context) {
+		return;
+	}
+
 	nano_sem_take(&contexts_lock, TICKS_UNLIMITED);
+
+	if (context->tuple.ip_proto == IPPROTO_UDP) {
+		if (net_context_get_receiver_registered(context)) {
+			struct simple_udp_connection *udp =
+				net_context_get_udp_connection(context);
+				simple_udp_unregister(udp);
+		}
+	}
 
 	memset(&context->tuple, 0, sizeof(context->tuple));
 	memset(&context->udp, 0, sizeof(context->udp));

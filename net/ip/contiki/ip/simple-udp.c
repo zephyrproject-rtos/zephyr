@@ -148,11 +148,25 @@ simple_udp_register(struct simple_udp_connection *c,
   return 1;
 }
 /*---------------------------------------------------------------------------*/
+int
+simple_udp_unregister(struct simple_udp_connection *c)
+{
+	if (c) {
+		c->local_port = 0;
+		if (c->udp_conn) {
+			udp_unbind(c->udp_conn);
+		}
+		return 0;
+	}
+	return 1;
+}
+
+/*---------------------------------------------------------------------------*/
 PROCESS_THREAD(simple_udp_process, ev, data, buf)
 {
   struct simple_udp_connection *c;
   PROCESS_BEGIN();
-  
+
   while(1) {
     PROCESS_WAIT_EVENT();
     if(ev == tcpip_event) {
