@@ -35,6 +35,14 @@ config SPI_QMSI
 	  Quark Microcontroller Software Interface, providing a common
 	  interface to the Quark family of microcontrollers.
 
+config SPI_QMSI_SS
+        bool "QMSI driver for SPI controller on Sensor Subsystem"
+        depends on SPI && QMSI
+        default n
+        help
+          SPI driver implementation using QMSI library. This instance is
+          for the Sensor Subsystem.
+
 config SPI_K64
 	bool
 	prompt "Freescale K64-based SPI controller driver"
