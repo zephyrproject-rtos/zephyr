@@ -63,12 +63,6 @@ static struct device *cc2520_sglt;
 #define CC2520_AUTOMATISM		(0)
 #endif
 
-#if defined(CONFIG_TI_CC2520_AUTO_ACK)
-#define CC2520_FRAME_FILTERING		(FRMFILT0_FRAME_FILTER_EN)
-#else
-#define CC2520_FRAME_FILTERING		(0)
-#endif
-
 #define CC2520_TX_THRESHOLD		(0x7F)
 #define CC2520_FCS_LENGTH		(2)
 
@@ -1075,8 +1069,10 @@ static int power_on_and_setup(struct device *dev)
 	    !write_reg_frmctrl0(&cc2520->spi, CC2520_AUTOMATISM) ||
 	    !write_reg_frmctrl1(&cc2520->spi, FRMCTRL1_IGNORE_TX_UNDERF |
 				FRMCTRL1_SET_RXENMASK_ON_TX) ||
-	    !write_reg_frmfilt0(&cc2520->spi, CC2520_FRAME_FILTERING |
+	    !write_reg_frmfilt0(&cc2520->spi, FRMFILT0_FRAME_FILTER_EN |
 				FRMFILT0_MAX_FRAME_VERSION(3)) ||
+	    !write_reg_frmfilt1(&cc2520->spi, FRMFILT1_ACCEPT_ALL) ||
+	    !write_reg_srcmatch(&cc2520->spi, SRCMATCH_DEFAULTS) ||
 	    !write_reg_fifopctrl(&cc2520->spi,
 				 FIFOPCTRL_FIFOP_THR(CC2520_TX_THRESHOLD))) {
 		return DEV_FAIL;
