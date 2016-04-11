@@ -30,6 +30,8 @@
 #include <asmPrv.h>
 #include <drivers/loapic.h>
 
+__weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
+
 /*
  * Define a default ESF for use with _NanoFatalErrorHandler() in the event
  * the caller does not have a NANO_ESF to pass
@@ -68,6 +70,7 @@ const NANO_ESF _default_esf = {
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
+	_debug_fatal_hook(pEsf);
 
 #ifdef CONFIG_PRINTK
 
