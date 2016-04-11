@@ -1240,7 +1240,7 @@ static void att_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 	 * in length, the Read Long Characteristic Value procedure may be used
 	 * if the rest of the Characteristic Value is required.
 	 */
-	if (length < bt_att_get_mtu(conn)) {
+	if (length < (bt_att_get_mtu(conn) - 1)) {
 		params->func(conn, 0, params, NULL, 0);
 		return;
 	}
