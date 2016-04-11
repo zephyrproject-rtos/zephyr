@@ -144,6 +144,20 @@ char *strcat(char *_Restrict dest, const char *_Restrict src)
 	return dest;
 }
 
+char *strncat(char *_Restrict dest, const char *_Restrict src, size_t n)
+{
+	char *orig_dest = dest;
+	size_t len = strlen(dest);
+
+	dest += len;
+	while ((n-- > 0) && (*src != '\0')) {
+		*dest++ = *src++;
+	}
+	*dest = '\0';
+
+	return orig_dest;
+}
+
 /**
  *
  * @brief Compare two memory areas
