@@ -415,7 +415,7 @@ static void send_dm_config(void)
 	config.io_caps = get_io_capa();
 
 	if (config.io_caps == BT_SMP_IO_NO_INPUT_OUTPUT) {
-		config.options = BT_SMP_AUTH_MITM;
+		config.options = BT_SMP_AUTH_BONDING;
 	} else {
 		config.options = BT_SMP_AUTH_BONDING | BT_SMP_AUTH_MITM;
 	}
