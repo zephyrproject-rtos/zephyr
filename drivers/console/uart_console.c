@@ -44,6 +44,24 @@
 
 static struct device *uart_console_dev;
 
+#ifdef CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS
+static UART_CONSOLE_OUT_DEBUG_HOOK_SIG(debug_hook_out_nop)
+{
+	ARG_UNUSED(c);
+	return !UART_CONSOLE_DEBUG_HOOK_HANDLED;
+}
+
+static uart_console_out_debug_hook_t *debug_hook_out = debug_hook_out_nop;
+void uart_console_out_debug_hook_install(uart_console_out_debug_hook_t *hook)
+{
+	debug_hook_out = hook;
+}
+#define HANDLE_DEBUG_HOOK_OUT(c) \
+	(debug_hook_out(c) == UART_CONSOLE_DEBUG_HOOK_HANDLED)
+#else
+#define HANDLE_DEBUG_HOOK_OUT(c) 0
+#endif /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
+
 #if 0 /* NOTUSED */
 /**
  *
@@ -77,6 +95,12 @@ static int console_in(void)
 
 static int console_out(int c)
 {
+	int handled_by_debug_server = HANDLE_DEBUG_HOOK_OUT(c);
+
+	if (handled_by_debug_server) {
+		return c;
+	}
+
 	uart_poll_out(uart_console_dev, (unsigned char)c);
 	if ('\n' == c) {
 		uart_poll_out(uart_console_dev, (unsigned char)'\r');

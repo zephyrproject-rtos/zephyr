@@ -83,6 +83,18 @@ config UART_CONSOLE_INIT_PRIORITY
 	  Console has to be initialized after the UART driver
 	  it uses.
 
+config UART_CONSOLE_DEBUG_SERVER_HOOKS
+	bool
+	prompt "Debug server hooks in debug console"
+	default n
+	depends on UART_CONSOLE
+	help
+	This option allows a debug server agent such as GDB to take over the
+	handling of traffic that goes through the console logic. The debug
+	server looks at characters received and decides to handle them itself if
+	they are some sort of control characters, or let the regular console
+	code handle them if they are of no special significance to it.
+
 config RAM_CONSOLE
 	bool
 	prompt "Use RAM console"

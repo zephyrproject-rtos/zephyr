@@ -46,6 +46,19 @@ struct uart_console_input {
  */
 void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines);
 
+/*
+ * Allows having debug hooks in the console driver for handling incoming
+ * control characters, and letting other ones through.
+ */
+#ifdef CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS
+#define UART_CONSOLE_DEBUG_HOOK_HANDLED 1
+#define UART_CONSOLE_OUT_DEBUG_HOOK_SIG(x) int(x)(char c)
+typedef UART_CONSOLE_OUT_DEBUG_HOOK_SIG(uart_console_out_debug_hook_t);
+
+extern void uart_console_out_debug_hook_install(
+				uart_console_out_debug_hook_t *hook);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
