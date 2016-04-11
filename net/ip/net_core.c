@@ -675,8 +675,8 @@ static void net_timer_fiber(void)
 		next_wakeup = etimer_request_poll();
 
 		if (next_wakeup == 0) {
-			/* There was no timers, wait for fiber_wakeup */
-			next_wakeup = TICKS_UNLIMITED;
+			/* There was no timers, wait again */
+			next_wakeup = MAX_TIMER_WAKEUP;
 		} else {
 			if (next_wakeup > MAX_TIMER_WAKEUP) {
 				next_wakeup = MAX_TIMER_WAKEUP;
