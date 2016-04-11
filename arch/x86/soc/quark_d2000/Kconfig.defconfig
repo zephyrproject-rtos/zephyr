@@ -185,6 +185,27 @@ endif # I2C_DW_0
 
 endif # I2C_DW
 
+if GPIO
+
+config GPIO_DW
+	def_bool y
+
+if GPIO_DW
+
+config GPIO_DW_0
+	def_bool y
+
+if GPIO_DW_0
+
+config GPIO_DW_0_PRI
+	default 2
+
+endif # GPIO_DW_0
+
+endif # GPIO_DW
+
+endif # GPIO
+
 if I2C_QMSI
 config I2C_QMSI_0
 	def_bool y
