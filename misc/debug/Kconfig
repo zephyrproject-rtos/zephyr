@@ -30,6 +30,7 @@ config MEM_SAFE
 
 choice
 prompt "Safe memory access implementation"
+depends on MEM_SAFE
 default MEM_SAFE_CHECK_BOUNDARIES
 
 config MEM_SAFE_CHECK_BOUNDARIES
