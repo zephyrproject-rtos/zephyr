@@ -80,11 +80,11 @@ static int lis3dh_channel_get(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* val = raw_val * LIS3DH_ACCEL_SCALE / (1000 * (2^16 - 1)) */
+	/* val = raw_val * LIS3DH_ACCEL_SCALE / (10^6 * (2^16 - 1)) */
 	val->type = SENSOR_TYPE_INT_PLUS_MICRO;
-	raw_val = raw_val * LIS3DH_ACCEL_SCALE;
-	val->val1 = raw_val / (1000 * 0xFFFF);
-	val->val2 = (raw_val % (1000 * 0xFFFF)) * 1000000 / (1000 * 0xFFFF);
+	raw_val = raw_val * LIS3DH_ACCEL_SCALE / 1000000;
+	val->val1 = raw_val / 0xFFFF;
+	val->val2 = (raw_val % 0xFFFF) * 1000000 / 0xFFFF;
 
 	/* normalize val to make sure val->val2 is positive */
 	if (val->val2 < 0) {

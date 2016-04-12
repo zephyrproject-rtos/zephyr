@@ -57,26 +57,25 @@
 #endif
 
 /*
- * accel and slope scale measured in nano-m/s^2 instead
+ * accel and slope scale measured in pico-m/s^2 instead
  * of m/s^2 to avoid using struct sensor_value for it
  */
-#define GRAVITY_CONST			9807
 #define BMA280_REG_PMU_RANGE		0x0F
 #if CONFIG_BMA280_PMU_RANGE_2G
 	#define BMA280_PMU_RANGE	0x03
-	#define BMA280_ACCEL_SCALE	(244 * GRAVITY_CONST)
+	#define BMA280_ACCEL_SCALE	(244 * SENSOR_G)
 	#define BMA280_SLOPE_TH_SCALE	3910
 #elif CONFIG_BMA280_PMU_RANGE_4G
 	#define BMA280_PMU_RANGE	0x05
-	#define BMA280_ACCEL_SCALE	(488 * GRAVITY_CONST)
+	#define BMA280_ACCEL_SCALE	(488 * SENSOR_G)
 	#define BMA280_SLOPE_TH_SCALE	7810
 #elif CONFIG_BMA280_PMU_RANGE_8G
 	#define BMA280_PMU_RANGE	0x08
-	#define BMA280_ACCEL_SCALE	(977 * GRAVITY_CONST)
+	#define BMA280_ACCEL_SCALE	(977 * SENSOR_G)
 	#define BMA280_SLOPE_TH_SCALE	15630
 #elif CONFIG_BMA280_PMU_RANGE_16G
 	#define BMA280_PMU_RANGE	0x0C
-	#define BMA280_ACCEL_SCALE	(1953 * GRAVITY_CONST)
+	#define BMA280_ACCEL_SCALE	(1953 * SENSOR_G)
 	#define BMA280_SLOPE_TH_SCALE	31250
 #endif
 
