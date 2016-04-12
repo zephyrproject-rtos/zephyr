@@ -819,7 +819,7 @@ static const uint8_t *cc2520_get_mac(struct device *dev)
 		cc2520->mac_addr[2] = 0x4b;
 
 		cc2520->mac_addr[3] = 0x00;
-		UNALIGNED_PUT(sys_rand32_get(),
+		UNALIGNED_PUT(sys_cpu_to_be32(sys_rand32_get()),
 			      (uint32_t *) ((void *)cc2520->mac_addr+4));
 
 		cc2520->mac_addr[7] = (cc2520->mac_addr[7] & ~0x01) | 0x02;
