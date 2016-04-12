@@ -31,6 +31,7 @@ ARM (v7-M and v7E-M) Instruction Set
        qemu_cortex_m3
        arduino_due
        frdm_k64f
+       olimexino_stm32
 
 ARC EM4 Instruction Set
 ====================================
