@@ -352,6 +352,7 @@ static int spi_flash_init(struct device *dev)
 {
 	struct device *spi_dev;
 	struct spi_flash_data *data = dev->driver_data;
+	int ret;
 
 	spi_dev = device_get_binding(CONFIG_SPI_FLASH_W25QXXDV_SPI_NAME);
 	if (!spi_dev) {
@@ -360,12 +361,15 @@ static int spi_flash_init(struct device *dev)
 
 	data->spi = spi_dev;
 
-	dev->driver_api = &spi_flash_api;
-
 	nano_sem_init(&data->sem);
 	nano_sem_give(&data->sem);
 
-	return spi_flash_wb_config(dev);
+	ret = spi_flash_wb_config(dev);
+	if (!ret) {
+		dev->driver_api = &spi_flash_api;
+	}
+
+	return ret;
 }
 
 struct spi_flash_data spi_flash_memory_data;
