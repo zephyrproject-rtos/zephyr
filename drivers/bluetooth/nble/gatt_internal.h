@@ -272,6 +272,9 @@ void nble_gattc_read_req(const struct nble_gattc_read_params *);
 void nble_gattc_write_req(const struct nble_gattc_write_params *params,
 			  const uint8_t *buf, uint8_t len);
 
+void nble_gattc_read_multiple_req(const struct nble_gattc_read_multiple_params *params,
+				  const uint16_t *data, uint16_t data_len);
+
 void bt_gatt_disconnected(struct bt_conn *conn);
 
 struct nble_gattc_value_evt {

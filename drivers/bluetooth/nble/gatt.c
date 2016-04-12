@@ -731,6 +731,18 @@ stop:
 	bt_conn_unref(conn);
 }
 
+static int gatt_read_multiple(struct bt_conn *conn,
+			      struct bt_gatt_read_params *params)
+{
+	struct nble_gattc_read_multiple_params mutiple_req;
+
+	mutiple_req.conn_handle = conn->handle;
+	mutiple_req.user_data = params;
+
+	nble_gattc_read_multiple_req(&mutiple_req, params->handles, 2 * params->handle_count);
+
+	return 0;
+}
 
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 {
@@ -748,9 +760,10 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 		return -EBUSY;
 	}
 
+	conn->gatt_private = params;
+
 	if (params->handle_count > 1) {
-		BT_ERR("Multiple characteristic read is not supported");
-		return -ENOSYS;
+		return gatt_read_multiple(conn, params);
 	}
 
 	BT_DBG("conn %p params %p", conn, params);
@@ -758,9 +771,6 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 	req.conn_handle = conn->handle;
 	req.handle = params->single.handle;
 	req.offset = params->single.offset;
-
-	/* TODO: Passing parameters with function not working now */
-	conn->gatt_private = params;
 
 	nble_gattc_read_req(&req);
 
