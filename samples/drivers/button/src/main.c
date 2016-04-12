@@ -17,6 +17,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <gpio.h>
+#include <misc/util.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
@@ -36,10 +37,13 @@
 #define EDGE    (GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW)
 
 
-void button_pressed(struct device *gpiob, uint32_t pin)
+void button_pressed(struct device *gpiob,
+		    struct gpio_callback *cb, uint32_t pins)
 {
 	PRINT("Button pressed at %d\n", sys_tick_get_32());
 }
+
+static struct gpio_callback gpio_cb;
 
 void main(void)
 {
@@ -51,7 +55,10 @@ void main(void)
 			GPIO_DIR_IN | GPIO_INT
 			| EDGE
 			| PULL_UP);
-	gpio_set_callback(gpiob, button_pressed);
+
+	gpio_init_callback(&gpio_cb, button_pressed, BIT(PIN));
+
+	gpio_add_callback(gpiob, &gpio_cb);
 	gpio_pin_enable_callback(gpiob, PIN);
 
 	while (1) {

@@ -121,6 +121,7 @@
 #include <device.h>
 #include <gpio.h>
 #include <sys_clock.h>
+#include <misc/util.h>
 
 #define SLEEPTICKS	SECONDS(1)
 
@@ -152,10 +153,13 @@
 #error "Unsupported GPIO driver"
 #endif
 
-void gpio_callback(struct device *port, uint32_t pin)
+void gpio_callback(struct device *port,
+		   struct gpio_callback *cb, uint32_t pins)
 {
-	PRINT(GPIO_NAME "%d triggered\n", pin);
+	PRINT(GPIO_NAME "%d triggered\n", GPIO_INT_PIN);
 }
+
+static struct gpio_callback gpio_cb;
 
 void main(void)
 {
@@ -186,7 +190,9 @@ void main(void)
 		PRINT("Error configuring " GPIO_NAME "%d!\n", GPIO_INT_PIN);
 	}
 
-	ret = gpio_set_callback(gpio_dev, gpio_callback);
+	gpio_init_callback(&gpio_cb, gpio_callback, BIT(GPIO_INT_PIN));
+
+	ret = gpio_add_callback(gpio_dev, &gpio_cb);
 	if (ret) {
 		PRINT("Cannot setup callback!\n");
 	}
