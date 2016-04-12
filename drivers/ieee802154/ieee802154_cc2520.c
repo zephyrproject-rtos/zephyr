@@ -332,9 +332,11 @@ static inline uint32_t get_cca(struct cc2520_context *cc2520)
 	return pin_value;
 }
 
-static inline void sfd_int_handler(struct device *port, uint32_t pin)
+static inline void sfd_int_handler(struct device *port,
+				   struct gpio_callback *cb, uint32_t pins)
 {
-	struct cc2520_context *cc2520 = cc2520_sglt->driver_data;
+	struct cc2520_context *cc2520 =
+		CONTAINER_OF(cb, struct cc2520_context, sfd_cb);
 
 	if (atomic_get(&cc2520->tx) == 1) {
 		atomic_set(&cc2520->tx, 0);
@@ -342,9 +344,11 @@ static inline void sfd_int_handler(struct device *port, uint32_t pin)
 	}
 }
 
-static inline void fifop_int_handler(struct device *port, uint32_t pin)
+static inline void fifop_int_handler(struct device *port,
+				     struct gpio_callback *cb, uint32_t pins)
 {
-	struct cc2520_context *cc2520 = cc2520_sglt->driver_data;
+	struct cc2520_context *cc2520 =
+		CONTAINER_OF(cb, struct cc2520_context, fifop_cb);
 
 	/* Note: Errata document - 1.2 */
 	if (!get_fifop(cc2520) && !get_fifop(cc2520)) {
@@ -356,15 +360,6 @@ static inline void fifop_int_handler(struct device *port, uint32_t pin)
 	}
 
 	nano_isr_sem_give(&cc2520->rx_lock);
-}
-
-static void gpio_int_handler(struct device *port, uint32_t pin)
-{
-	if (pin == CONFIG_CC2520_GPIO_SFD) {
-		sfd_int_handler(port, pin);
-	} else if (pin == CONFIG_CC2520_GPIO_FIFOP) {
-		fifop_int_handler(port, pin);
-	}
 }
 
 static void enable_fifop_interrupt(struct cc2520_context *cc2520,
@@ -395,10 +390,15 @@ static inline void setup_gpio_callbacks(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	gpio_set_callback(cc2520->gpios[CC2520_GPIO_IDX_FIFOP],
-			  gpio_int_handler);
-	gpio_set_callback(cc2520->gpios[CC2520_GPIO_IDX_SFD],
-			  gpio_int_handler);
+	gpio_init_callback(&cc2520->sfd_cb,
+			   sfd_int_handler, BIT(CONFIG_CC2520_GPIO_SFD));
+	gpio_add_callback(cc2520->gpios[CC2520_GPIO_IDX_SFD],
+			  &cc2520->sfd_cb);
+
+	gpio_init_callback(&cc2520->fifop_cb,
+			   fifop_int_handler, BIT(CONFIG_CC2520_GPIO_FIFOP));
+	gpio_add_callback(cc2520->gpios[CC2520_GPIO_IDX_FIFOP],
+			  &cc2520->fifop_cb);
 }
 
 

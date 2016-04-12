@@ -53,6 +53,8 @@ struct cc2520_spi {
 struct cc2520_context {
 	/**************************/
 	struct device **gpios;
+	struct gpio_callback sfd_cb;
+	struct gpio_callback fifop_cb;
 	struct cc2520_spi spi;
 	uint8_t mac_addr[8];
 	/************TX************/
