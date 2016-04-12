@@ -224,6 +224,11 @@ struct nble_gattc_read_params {
 	uint16_t offset;
 };
 
+struct nble_gattc_read_multiple_params {
+	void *user_data;
+	uint16_t conn_handle;
+};
+
 struct nble_gattc_read_rsp {
 	int status;
 	void *user_data;

@@ -74,7 +74,10 @@
 		   uint8_t *, uint16_t)					\
 	FN_SIG_S_B(nble_gattc_write_req,				\
 		   const struct nble_gattc_write_params *,		\
-		   const uint8_t *, uint8_t)
+		   const uint8_t *, uint8_t)				\
+	FN_SIG_S_B(nble_gattc_read_multiple_req,			\
+		   const struct nble_gattc_read_multiple_params *,	\
+		   const uint16_t *, uint16_t)
 
 #define LIST_FN_SIG_B_B_P
 

@@ -99,6 +99,9 @@
 		   const bt_addr_le_t *, uint16_t)		\
 	FN_SIG_S_B(on_nble_gattc_read_rsp,			\
 		   const struct nble_gattc_read_rsp *,		\
+		   uint8_t *, uint8_t)				\
+	FN_SIG_S_B(on_nble_gattc_read_multiple_rsp,		\
+		   const struct nble_gattc_read_rsp *,		\
 		   uint8_t *, uint8_t)
 
 #define LIST_FN_SIG_B_B_P
