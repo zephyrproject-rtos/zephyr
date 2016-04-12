@@ -540,45 +540,17 @@ fail:
 		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
-static void get_service_end_handle(const struct bt_gatt_attr *attr,
-				   struct bt_gatt_include *include,
-				   uint16_t svc_start_handle)
-{
-	/* Skip first attribute found, it is a service declaration. */
-	while (++attr < server_db + attr_count) {
-		/* Stop if attribute is a service */
-		if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) ||
-		    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
-			include->end_handle = svc_start_handle;
-			return;
-		}
-
-		svc_start_handle++;
-	}
-
-	/* Last attribute in db */
-	include->end_handle = attr_count;
-}
-
 static int alloc_included(const struct bt_gatt_attr *attr,
 			  uint16_t *included_service_id, uint16_t svc_handle)
 {
 	struct bt_gatt_attr *attr_incl;
-	struct bt_gatt_include include;
-
-	include.uuid = attr->user_data;
-	include.start_handle = svc_handle;
-	include.end_handle = svc_handle;
 
 	attr_incl = gatt_db_add(&(struct bt_gatt_attr)
-				BT_GATT_INCLUDE_SERVICE(&include),
-				sizeof(include));
+				BT_GATT_INCLUDE_SERVICE(&attr),
+				sizeof(attr));
 	if (!attr_incl) {
 		return -EINVAL;
 	}
-
-	/* Get included end handle */
-	get_service_end_handle(attr, attr_incl->user_data, svc_handle);
 
 	*included_service_id = attr_incl->handle;
 	return 0;

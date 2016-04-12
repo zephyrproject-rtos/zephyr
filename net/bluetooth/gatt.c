@@ -163,27 +163,48 @@ struct gatt_incl {
 	uint16_t uuid16;
 } __packed;
 
+static uint8_t get_service_handles(const struct bt_gatt_attr *attr,
+				   void *user_data)
+{
+	struct gatt_incl *include = user_data;
+
+	/* Stop if attribute is a service */
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) ||
+	    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	include->end_handle = attr->handle;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
 ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_gatt_include *incl = attr->user_data;
+	struct bt_gatt_attr *incl = attr->user_data;
+	struct bt_uuid *uuid = incl->user_data;
 	struct gatt_incl pdu;
 	uint8_t value_len;
 
-	pdu.start_handle = sys_cpu_to_le16(incl->start_handle);
-	pdu.end_handle = sys_cpu_to_le16(incl->end_handle);
+	/* first attr points to the start handle */
+	pdu.start_handle = sys_cpu_to_le16(incl->handle);
 	value_len = sizeof(pdu.start_handle) + sizeof(pdu.end_handle);
 
 	/*
 	 * Core 4.2, Vol 3, Part G, 3.2,
-	 * The Service UUID shall only be present when the UUID is a 16-bit
-	 * Bluetooth UUID.
+	 * The Service UUID shall only be present when the UUID is a
+	 * 16-bit Bluetooth UUID.
 	 */
-	if (incl->uuid->type == BT_UUID_TYPE_16) {
-		pdu.uuid16 = sys_cpu_to_le16(BT_UUID_16(incl->uuid)->val);
+	if (uuid->type == BT_UUID_TYPE_16) {
+		pdu.uuid16 = sys_cpu_to_le16(BT_UUID_16(uuid)->val);
 		value_len += sizeof(pdu.uuid16);
 	}
+
+	/* Lookup for service end handle */
+	bt_gatt_foreach_attr(incl->handle + 1, 0xffff, get_service_handles,
+			     &pdu);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
 }
@@ -911,7 +932,9 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 			continue;
 		}
 
-		attr = (&(struct bt_gatt_attr)BT_GATT_INCLUDE_SERVICE(&value));
+		attr = (&(struct bt_gatt_attr) {
+			.uuid = BT_UUID_GATT_INCLUDE,
+			.user_data = &value, });
 		attr->handle = handle;
 
 		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {

@@ -450,16 +450,16 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 /** @def BT_GATT_INCLUDE_SERVICE
  *  @brief Include Service Declaration Macro.
  *
- *  Helper macro to declare a include service attribute.
+ *  Helper macro to declare database internal include service attribute.
  *
- *  @param _service Service attribute value.
+ *  @param _service_incl, the first service attribute of service to include
  */
-#define BT_GATT_INCLUDE_SERVICE(_service)				\
+#define BT_GATT_INCLUDE_SERVICE(_service_incl)				\
 {									\
 	.uuid = BT_UUID_GATT_INCLUDE,					\
 	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_included,				\
-	.user_data = _service,						\
+	.user_data = _service_incl,					\
 }
 
 /** @brief Read Characteristic Attribute helper.

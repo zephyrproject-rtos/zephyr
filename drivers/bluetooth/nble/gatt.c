@@ -283,10 +283,19 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 }
 
 ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr,
-			       void *buf, uint16_t len, uint16_t offset)
+				   const struct bt_gatt_attr *attr,
+				   void *buf, uint16_t len, uint16_t offset)
 {
-	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
+	struct bt_gatt_attr *incl = attr->user_data;
+
+	/* nble gatt register case reading user_data. */
+	if (!conn) {
+		return bt_gatt_attr_read(conn, attr, buf, len, offset, incl,
+				sizeof(incl));
+	}
+
+	/* nble handles gattc reads internally */
+	return -EINVAL;
 }
 
 struct gatt_chrc {
@@ -550,8 +559,9 @@ static uint16_t parse_include(struct bt_conn *conn, const uint8_t *data,
 			break;
 		}
 
-		attr = (&(struct bt_gatt_attr)
-			BT_GATT_INCLUDE_SERVICE(&gatt_include));
+		attr = (&(struct bt_gatt_attr) {
+			.uuid = BT_UUID_GATT_INCLUDE,
+			.user_data = &gatt_include, });
 		attr->handle = att->handle;
 
 		data += sizeof(*att);
