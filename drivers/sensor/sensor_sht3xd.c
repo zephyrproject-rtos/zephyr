@@ -162,8 +162,6 @@ static int sht3xd_init(struct device *dev)
 	struct sht3xd_data *drv_data = dev->driver_data;
 	int rc;
 
-	dev->driver_api = &sht3xd_driver_api;
-
 	drv_data->i2c = device_get_binding(CONFIG_SHT3XD_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
 		DBG("Failed to get pointer to %s device!\n",
@@ -197,6 +195,8 @@ static int sht3xd_init(struct device *dev)
 		return -EIO;
 	}
 #endif
+
+	dev->driver_api = &sht3xd_driver_api;
 
 	return 0;
 }

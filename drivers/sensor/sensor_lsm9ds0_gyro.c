@@ -393,8 +393,6 @@ int lsm9ds0_gyro_init(struct device *dev)
 					   dev->config->config_info;
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
 
-	dev->driver_api = &lsm9ds0_gyro_api_funcs;
-
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {
 		sensor_dbg("i2c master not found: %s\n",
@@ -437,6 +435,8 @@ int lsm9ds0_gyro_init(struct device *dev)
 
 	data->dev = dev;
 #endif
+
+	dev->driver_api = &lsm9ds0_gyro_api_funcs;
 
 	return 0;
 }

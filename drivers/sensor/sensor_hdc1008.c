@@ -114,8 +114,6 @@ int hdc1008_init(struct device *dev)
 	struct hdc1008_data *drv_data = dev->driver_data;
 	int rc;
 
-	dev->driver_api = &hdc1008_driver_api;
-
 	drv_data->i2c = device_get_binding(CONFIG_HDC1008_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
 		DBG("Failed to get pointer to %s device!\n",
@@ -146,6 +144,8 @@ int hdc1008_init(struct device *dev)
 		DBG("Failed to set GPIO callback\n");
 		return -EIO;
 	}
+
+	dev->driver_api = &hdc1008_driver_api;
 
 	return 0;
 }

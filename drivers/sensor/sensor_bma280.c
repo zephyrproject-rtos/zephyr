@@ -119,8 +119,6 @@ int bma280_init(struct device *dev)
 	uint8_t id = 0;
 	int rc;
 
-	dev->driver_api = &bma280_driver_api;
-
 	drv_data->i2c = device_get_binding(CONFIG_BMA280_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
 		DBG("Could not get pointer to %s device\n",
@@ -164,6 +162,8 @@ int bma280_init(struct device *dev)
 		return -EIO;
 	}
 #endif
+
+	dev->driver_api = &bma280_driver_api;
 
 	return 0;
 }

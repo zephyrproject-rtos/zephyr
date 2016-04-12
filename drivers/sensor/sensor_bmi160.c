@@ -837,8 +837,6 @@ int bmi160_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	dev->driver_api = &bmi160_api;
-
 	/* reboot the chip */
 	if (bmi160_byte_write(dev, BMI160_REG_CMD, BMI160_CMD_SOFT_RESET) < 0) {
 		SYS_LOG_DBG("Cannot reboot chip.");
@@ -926,6 +924,8 @@ int bmi160_init(struct device *dev)
 		return -EINVAL;
 	}
 #endif
+
+	dev->driver_api = &bmi160_api;
 
 	return 0;
 }

@@ -92,7 +92,6 @@ static int isl29035_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	dev->driver_api = &isl29035_api;
 	drv_data->data_sample = 0;
 
 	/* clear blownout status bit */
@@ -155,6 +154,8 @@ static int isl29035_init(struct device *dev)
 		return ret;
 	}
 #endif
+
+	dev->driver_api = &isl29035_api;
 
 	return 0;
 }

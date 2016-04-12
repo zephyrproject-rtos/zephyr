@@ -186,8 +186,6 @@ int bmp280_init(struct device *dev)
 	struct bmp280_data *data = dev->driver_data;
 	int ret;
 
-	dev->driver_api = &bmp280_api_funcs;
-
 	data->i2c_master = device_get_binding(CONFIG_BMP280_I2C_MASTER_DEV_NAME);
 	if (!data->i2c_master) {
 		DBG("bmp280: i2c master not found: %s\n",
@@ -201,6 +199,8 @@ int bmp280_init(struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	dev->driver_api = &bmp280_api_funcs;
 
 	return 0;
 }

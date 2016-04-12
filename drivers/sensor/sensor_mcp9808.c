@@ -95,8 +95,6 @@ int mcp9808_init(struct device *dev)
 {
 	struct mcp9808_data *data = dev->driver_data;
 
-	dev->driver_api = &mcp9808_api_funcs;
-
 	data->i2c_master = device_get_binding(CONFIG_MCP9808_I2C_DEV_NAME);
 	if (!data->i2c_master) {
 		DBG("mcp9808: i2c master not found: %s\n",
@@ -107,6 +105,8 @@ int mcp9808_init(struct device *dev)
 	data->i2c_slave_addr = CONFIG_MCP9808_I2C_ADDR;
 
 	mcp9808_setup_interrupt(dev);
+
+	dev->driver_api = &mcp9808_api_funcs;
 
 	return 0;
 }

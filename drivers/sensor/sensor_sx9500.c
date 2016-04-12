@@ -121,8 +121,6 @@ int sx9500_init(struct device *dev)
 	struct sx9500_data *data = dev->driver_data;
 	int ret;
 
-	dev->driver_api = &sx9500_api_funcs;
-
 	data->i2c_master = device_get_binding(CONFIG_SX9500_I2C_DEV_NAME);
 	if (!data->i2c_master) {
 		DBG("sx9500: i2c master not found: %s\n",
@@ -143,6 +141,8 @@ int sx9500_init(struct device *dev)
 		DBG("sx9500: failed to setup interrupt err %d\n", ret);
 		return ret;
 	}
+
+	dev->driver_api = &sx9500_api_funcs;
 
 	return 0;
 }
