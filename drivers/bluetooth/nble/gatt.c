@@ -739,7 +739,8 @@ static int gatt_read_multiple(struct bt_conn *conn,
 	mutiple_req.conn_handle = conn->handle;
 	mutiple_req.user_data = params;
 
-	nble_gattc_read_multiple_req(&mutiple_req, params->handles, 2 * params->handle_count);
+	nble_gattc_read_multiple_req(&mutiple_req, params->handles,
+				     2 * params->handle_count);
 
 	return 0;
 }
