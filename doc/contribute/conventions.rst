@@ -1,6 +1,6 @@
 .. _naming_conventions:
 
-Code Style and Naming Conventions
+Coding Style and Conventions
 #################################
 
 Naming Conventions
@@ -122,5 +122,7 @@ and :option:`-Iinclude` for your compile, then any code using
 
 is not. Not having :option:`-Iinclude/drivers` forces users to use the second
 form which is more explicit.
+
+.. include:: error_code_conventions.rst
 
 .. include:: coding_style.rst

@@ -1,7 +1,7 @@
 .. _error_code_conventions:
 
-Returning Code Conventions
-##########################
+Return Codes
+************
 
 Zephyr uses the standard codes in :file:`errno.h` for all APIs.
 

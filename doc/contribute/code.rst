@@ -17,6 +17,5 @@ code changes.
    gerrit
    gerrit_practices
    changes
-   naming_conventions
+   conventions
    doxygen/doxygen
-   error_code_conventions
