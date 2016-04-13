@@ -19,6 +19,7 @@
 #include <gpio.h>
 
 #include <bluetooth/log.h>
+#include <errno.h>
 
 #define NBLE_SWDIO_PIN	6
 #define NBLE_RESET_PIN	NBLE_SWDIO_PIN
