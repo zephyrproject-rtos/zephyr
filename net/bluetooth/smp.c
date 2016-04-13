@@ -961,6 +961,27 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 #endif /* CONFIG_BLUETOOTH_SIGNING */
 }
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+static uint8_t send_pairing_rsp(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.conn;
+	struct bt_smp_pairing *rsp;
+	struct net_buf *rsp_buf;
+
+	rsp_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RSP, sizeof(*rsp));
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
+	memcpy(rsp, smp->prsp + 1, sizeof(*rsp));
+
+	smp_send(smp, rsp_buf);
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
 		  const uint8_t r2[16], uint8_t out[16])
@@ -1087,7 +1108,14 @@ static uint8_t legacy_send_pairing_confirm(struct bt_smp *smp)
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 static uint8_t legacy_pairing_req(struct bt_smp *smp, uint8_t remote_io)
 {
+	uint8_t ret;
+
 	BT_DBG("");
+
+	ret = send_pairing_rsp(smp);
+	if (ret) {
+		return ret;
+	}
 
 	smp->method = legacy_get_pair_method(smp, remote_io);
 
@@ -1420,10 +1448,8 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 
 static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 {
-	struct bt_conn *conn = smp->chan.conn;
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_smp_pairing *rsp;
-	struct net_buf *rsp_buf;
 	int ret;
 
 	BT_DBG("");
@@ -1438,12 +1464,13 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		return ret;
 	}
 
-	rsp_buf = smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RSP, sizeof(*rsp));
-	if (!rsp_buf) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
+	/* Store req for later use */
+	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
+	memcpy(smp->preq + 1, req, sizeof(*req));
 
-	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
+	/* create rsp, it will be used later on */
+	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
+	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
 
 	rsp->auth_req = get_auth(req->auth_req);
 	rsp->io_capability = get_io_capa();
@@ -1464,37 +1491,30 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	smp->local_dist = rsp->resp_key_dist;
 	smp->remote_dist = rsp->init_key_dist;
 
-	/* Store req/rsp for later use */
-	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
-	memcpy(smp->preq + 1, req, sizeof(*req));
-	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
-	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
-
-	smp->method = get_pair_method(smp, req->io_capability);
-
 	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
 	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
 		atomic_set_bit(&smp->flags, SMP_FLAG_BOND);
 	}
 
+	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
+
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
 #if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC) ||
-	    smp->method == JUST_WORKS) {
-		net_buf_unref(rsp_buf);
+		return BT_SMP_ERR_AUTH_REQUIREMENTS;
+#else
+		return legacy_pairing_req(smp, req->io_capability);
+#endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
+	}
+
+	smp->method = get_pair_method(smp, req->io_capability);
+
+#if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+	if (smp->method == JUST_WORKS) {
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 	}
 #endif/* CONFIG_BLUETOOTH_SMP_SC_ONLY */
-	smp_send(smp, rsp_buf);
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
-
-#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
-		return legacy_pairing_req(smp, req->io_capability);
-	}
-#endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
-
-	return 0;
+	return send_pairing_rsp(smp);
 }
 #else
 static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
