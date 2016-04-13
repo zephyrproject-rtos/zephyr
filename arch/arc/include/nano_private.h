@@ -278,6 +278,21 @@ static ALWAYS_INLINE int _IS_IN_ISR(void)
 	return ((act & 0xffff) != 0);
 }
 
+/**
+ *
+ * @bried Indicates the interrupt number of the highest priority
+ * active interrupt
+ *
+ * @return IRQ number
+ */
+static ALWAYS_INLINE int _INTERRUPT_CAUSE(void)
+{
+	uint32_t irq_num = _arc_v2_aux_reg_read(_ARC_V2_ICAUSE);
+
+	return irq_num;
+}
+
+
 extern void nanoCpuAtomicIdle(unsigned int);
 extern void _thread_entry_wrapper(void);
 

@@ -211,6 +211,22 @@ SECTION_FUNC(TEXT, _isr_enter)
 
 	j_s.nd [r2]
 
+#if defined(CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT)
+GTEXT(_sys_k_event_logger_interrupt)
+
+.macro log_interrupt_k_event
+	clri r0 /* do not interrupt event logger operations */
+	push_s r0
+	push_s blink
+	jl _sys_k_event_logger_interrupt
+	pop_s blink
+	pop_s r0
+	seti r0
+.endm
+#else
+	#define log_interrupt_k_event
+#endif
+
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 .macro exit_tickless_idle
 	clri r0 /* do not interrupt exiting tickless idle operations */
@@ -232,6 +248,7 @@ SECTION_FUNC(TEXT, _isr_demux)
 	/* cannot be done before this point because we must be able to run C */
 	/* r0 is available to be stomped here, and exit_tickless_idle uses it */
 	exit_tickless_idle
+	log_interrupt_k_event
 
 	lr r0, [_ARC_V2_ICAUSE]
 	sub r0, r0, 16
