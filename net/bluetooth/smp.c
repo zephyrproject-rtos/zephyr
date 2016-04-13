@@ -28,6 +28,7 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
+#include <misc/nano_work.h>
 
 #include <net/buf.h>
 #include <bluetooth/log.h>
@@ -102,9 +103,6 @@ struct bt_smp {
 	/* The channel this context is associated with */
 	struct bt_l2cap_chan	chan;
 
-	/* SMP Timeout fiber handle */
-	nano_thread_id_t  timeout;
-
 	/* Commands that remote is allowed to send */
 	atomic_t		allowed_cmds;
 
@@ -156,8 +154,8 @@ struct bt_smp {
 	/* Remote key distribution */
 	uint8_t			remote_dist;
 
-	/* stack for timeout fiber */
-	BT_STACK(stack, 128);
+	/* Delayed work for timeout handling */
+	struct nano_delayed_work work;
 };
 
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
@@ -568,13 +566,7 @@ static void smp_reset(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.conn;
 
-	if (smp->timeout) {
-		fiber_fiber_delayed_start_cancel(smp->timeout);
-		smp->timeout = NULL;
-
-		stack_analyze("smp timeout stack", smp->stack,
-			      sizeof(smp->stack));
-	}
+	nano_delayed_work_cancel(&smp->work);
 
 	smp->method = JUST_WORKS;
 	atomic_set(&smp->allowed_cmds, 0);
@@ -598,15 +590,11 @@ static void smp_reset(struct bt_smp *smp)
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 }
 
-static void smp_timeout(int arg1, int arg2)
+static void smp_timeout(struct nano_work *work)
 {
-	struct bt_smp *smp = (struct bt_smp *)arg1;
-
-	ARG_UNUSED(arg2);
+	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
 
 	BT_ERR("SMP Timeout");
-
-	smp->timeout = NULL;
 
 	/*
 	 * If SMP timeout occurred during key distribution we should assume
@@ -620,17 +608,6 @@ static void smp_timeout(int arg1, int arg2)
 	smp_reset(smp);
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_TIMEOUT);
-}
-
-static void smp_restart_timer(struct bt_smp *smp)
-{
-	if (smp->timeout) {
-		fiber_fiber_delayed_start_cancel(smp->timeout);
-	}
-
-	smp->timeout = fiber_delayed_start(smp->stack, sizeof(smp->stack),
-					   smp_timeout, (int)smp, 0, 7, 0,
-					   SMP_TIMEOUT);
 }
 
 static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
@@ -653,7 +630,7 @@ static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
 static void smp_send(struct bt_smp *smp, struct net_buf *buf)
 {
 	bt_l2cap_send(smp->chan.conn, BT_L2CAP_CID_SMP, buf);
-	smp_restart_timer(smp);
+	nano_delayed_work_submit(&smp->work, SMP_TIMEOUT);
 }
 
 static int smp_error(struct bt_smp *smp, uint8_t reason)
@@ -1354,7 +1331,7 @@ static int smp_init(struct bt_smp *smp)
 {
 	/* Initialize SMP context without clearing L2CAP channel context */
 	memset((uint8_t *)smp + sizeof(smp->chan), 0,
-	       sizeof(*smp) - sizeof(smp->chan));
+	       sizeof(*smp) - (sizeof(smp->chan) + sizeof(smp->work)));
 
 	/* Generate local random number */
 	if (bt_rand(smp->prnd, 16)) {
@@ -2653,6 +2630,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", chan, chan->tx.cid);
 
+	nano_delayed_work_init(&smp->work, smp_timeout);
 	smp_reset(smp);
 }
 
@@ -2663,9 +2641,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", chan, chan->tx.cid);
 
-	if (smp->timeout) {
-		fiber_fiber_delayed_start_cancel(smp->timeout);
-	}
+	nano_delayed_work_cancel(&smp->work);
 
 	if (keys) {
 		/*
