@@ -17,6 +17,7 @@
 #include <board.h>
 
 #include <device.h>
+#include <errno.h>
 #include <init.h>
 #include <pinmux.h>
 #include <soc.h>
