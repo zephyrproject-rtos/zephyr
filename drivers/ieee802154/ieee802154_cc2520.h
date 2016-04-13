@@ -171,17 +171,39 @@ static inline bool _cc2520_command_strobe(struct cc2520_spi *spi,
 	return (spi_write(spi->dev, &instruction, 1) == DEV_OK);
 }
 
+static inline bool _cc2520_command_strobe_snop(struct cc2520_spi *spi,
+					       uint8_t instruction)
+{
+	uint8_t ins[2] = {
+		instruction,
+		CC2520_INS_SNOP
+	};
+
+	spi_slave_select(spi->dev, spi->slave);
+
+	return (spi_write(spi->dev, ins, 2) == DEV_OK);
+}
+
 #define DEFINE_STROBE_INSTRUCTION(__ins_name, __ins)			\
 	static inline bool instruct_##__ins_name(struct cc2520_spi *spi) \
 	{								\
 		return _cc2520_command_strobe(spi, __ins);		\
 	}
 
+#define DEFINE_STROBE_SNOP_INSTRUCTION(__ins_name, __ins)			\
+	static inline bool instruct_##__ins_name(struct cc2520_spi *spi) \
+	{								\
+		return _cc2520_command_strobe_snop(spi, __ins);		\
+	}
+
 DEFINE_STROBE_INSTRUCTION(srxon, CC2520_INS_SRXON)
-DEFINE_STROBE_INSTRUCTION(sroff, CC2520_INS_SRXON)
+DEFINE_STROBE_INSTRUCTION(srfoff, CC2520_INS_SRFOFF)
 DEFINE_STROBE_INSTRUCTION(stxon, CC2520_INS_STXON)
 DEFINE_STROBE_INSTRUCTION(stxoncca, CC2520_INS_STXONCCA)
 DEFINE_STROBE_INSTRUCTION(sflushrx, CC2520_INS_SFLUSHRX)
 DEFINE_STROBE_INSTRUCTION(sflushtx, CC2520_INS_SFLUSHTX)
+DEFINE_STROBE_INSTRUCTION(sxoscoff, CC2520_INS_SXOSCOFF)
+
+DEFINE_STROBE_SNOP_INSTRUCTION(sxoscon, CC2520_INS_SXOSCON)
 
 #endif /* __IEEE802154_CC2520_H__ */

@@ -831,7 +831,8 @@ static int cc2520_start(struct device *dev)
 
 	DBG("%s\n", __func__);
 
-	if (!instruct_srxon(&cc2520->spi) ||
+	if (!instruct_sxoscon(&cc2520->spi) ||
+	    !instruct_srxon(&cc2520->spi) ||
 	    !verify_osc_stabilization(cc2520)) {
 		return DEV_FAIL;
 	}
@@ -853,7 +854,8 @@ static int cc2520_stop(struct device *dev)
 	enable_fifop_interrupt(cc2520, false);
 	enable_sfd_interrupt(cc2520, false);
 
-	if (!instruct_sroff(&cc2520->spi)) {
+	if (!instruct_srfoff(&cc2520->spi) ||
+	    !instruct_sxoscoff(&cc2520->spi)) {
 		return DEV_FAIL;
 	}
 
