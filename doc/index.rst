@@ -22,6 +22,7 @@ Developer Guides
 .. toctree::
    :maxdepth: 1
 
+   contribute/code.rst
    reference/kbuild/kbuild.rst
    application/application.rst
    api/api.rst

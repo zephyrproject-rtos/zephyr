@@ -9,6 +9,5 @@ best ways to collaborate with the team. Read them carefully before submitting an
 .. toctree::
    :maxdepth: 1
 
-   code/code
    communication/communication
    documentation/documentation
