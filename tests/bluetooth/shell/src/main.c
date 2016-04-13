@@ -1063,6 +1063,15 @@ static void auth_cancel(struct bt_conn *conn)
 	}
 }
 
+static void auth_pairing_confirm(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Confirm pairing for %s\n", addr);
+}
+
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 {
@@ -1103,6 +1112,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.cancel = auth_cancel,
+	.pairing_confirm = auth_pairing_confirm,
 };
 
 static struct bt_conn_auth_cb auth_cb_display_yes_no = {
@@ -1113,6 +1123,7 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.cancel = auth_cancel,
+	.pairing_confirm = auth_pairing_confirm,
 };
 
 static struct bt_conn_auth_cb auth_cb_input = {
@@ -1123,6 +1134,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.cancel = auth_cancel,
+	.pairing_confirm = auth_pairing_confirm,
 };
 
 static struct bt_conn_auth_cb auth_cb_all = {
@@ -1133,6 +1145,7 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.cancel = auth_cancel,
+	.pairing_confirm = auth_pairing_confirm,
 };
 
 static void cmd_auth(int argc, char *argv[])
@@ -1187,6 +1200,16 @@ static void cmd_auth_passkey_confirm(int argc, char *argv[])
 	}
 
 	bt_conn_auth_passkey_confirm(default_conn);
+}
+
+static void cmd_auth_pairing_confirm(int argc, char *argv[])
+{
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
+	bt_conn_auth_pairing_confirm(default_conn);
 }
 
 static void cmd_auth_passkey(int argc, char *argv[])
@@ -1619,6 +1642,7 @@ static const struct shell_cmd commands[] = {
 	{ "auth-cancel", cmd_auth_cancel },
 	{ "auth-passkey", cmd_auth_passkey },
 	{ "auth-confirm", cmd_auth_passkey_confirm },
+	{ "auth-pairing", cmd_auth_pairing_confirm },
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	{ "auth-pincode", cmd_auth_pincode },
 #endif
