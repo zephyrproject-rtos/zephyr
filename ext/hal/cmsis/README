@@ -1,0 +1,15 @@
+The ARM Cortex Microcontroller Software Interface Standard (CMSIS) defines a
+set of standard interfaces to ARM Cortex-M SOCs. In particular, the CMSIS-CORE
+component standardizes the software interface to core and peripheral registers,
+as well as exception names and the system clock frequency. Multiple SOC
+vendors, including NXP and Nordic Semiconductor, include the CMSIS-CORE header
+files in their SOC header files. These SOC header files are in turn used by
+the vendor's peripheral drivers.
+
+http://www.arm.com/products/processors/cortex-m/cortex-microcontroller-software-interface-standard.php
+
+The sources in this directory are imported from
+https://github.com/ARM-software/CMSIS.git
+
+The current version supported in Zephyr is 
+https://github.com/ARM-software/CMSIS/releases/tag/v4.5.0
