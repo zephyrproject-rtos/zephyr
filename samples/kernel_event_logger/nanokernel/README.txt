@@ -11,8 +11,8 @@ allowing or preventing the system to go idle.
 
 Building and Running Project:
 
-This microkernel project outputs to the console. It can be built and executed
-on QEMU as follows:
+This nanokernel project outputs to the console. It can be built and executed
+on QEMU as follows (only x86 and ARM platforms):
 
     make qemu
 
