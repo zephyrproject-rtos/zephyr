@@ -5,10 +5,10 @@ config BOARD
         default "quark_se_devboard"
 
 if NBLE
-config GPIO
-	def_bool y
+
 config NBLE_UART_ON_DEV_NAME
 	default UART_NS16550_PORT_0_NAME
+
 endif
 
 if NETWORKING_WITH_15_4_TI_CC2520
