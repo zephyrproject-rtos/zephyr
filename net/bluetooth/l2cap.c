@@ -277,8 +277,24 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 	struct bt_l2cap_cmd_reject *rej;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct net_buf *buf;
+	uint16_t cid;
 
-	buf = bt_l2cap_create_pdu(&le_sig);
+	switch (conn->type) {
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	case BT_CONN_TYPE_BR:
+		cid = BT_L2CAP_CID_BR_SIG;
+		buf = bt_l2cap_create_pdu(&br_sig);
+		break;
+#endif /* CONFIG_BLUETOOTH_BREDR */
+	case BT_CONN_TYPE_LE:
+		cid = BT_L2CAP_CID_LE_SIG;
+		buf = bt_l2cap_create_pdu(&le_sig);
+		break;
+	default:
+		buf = NULL;
+		break;
+	}
+
 	if (!buf) {
 		return;
 	}
@@ -291,7 +307,7 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 	rej = net_buf_add(buf, sizeof(*rej));
 	rej->reason = sys_cpu_to_le16(reason);
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	bt_l2cap_send(conn, cid, buf);
 }
 
 static void le_conn_param_rsp(struct bt_l2cap *l2cap, struct net_buf *buf)
