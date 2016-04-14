@@ -186,7 +186,7 @@ static int quark_se_ipm_set_enabled(struct device *d, int enable)
 	return 0;
 }
 
-static struct ipm_driver_api api_funcs = {
+struct ipm_driver_api ipm_quark_se_api_funcs = {
 	.send = quark_se_ipm_send,
 	.register_callback = quark_se_ipm_register_callback,
 	.max_data_size_get = quark_se_ipm_max_data_size_get,
@@ -224,7 +224,6 @@ int quark_se_ipm_initialize(struct device *d)
 	struct quark_se_ipm_config_info *config = d->config->config_info;
 
 	device_by_channel[config->channel] = d;
-	d->driver_api = &api_funcs;
 	if (config->direction == QUARK_SE_IPM_INBOUND) {
 		inbound_channels |= (0x3 << (config->channel * 2));
 	}

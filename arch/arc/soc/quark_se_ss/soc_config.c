@@ -33,9 +33,10 @@ static int arc_quark_se_ipm_init(void)
 static struct quark_se_ipm_controller_config_info ipm_controller_config = {
 	.controller_init = arc_quark_se_ipm_init
 };
-DEVICE_INIT(quark_se_ipm, "", quark_se_ipm_controller_initialize,
+DEVICE_AND_API_INIT(quark_se_ipm, "", quark_se_ipm_controller_initialize,
 				NULL, &ipm_controller_config,
-				SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+				SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+				&ipm_quark_se_api_funcs);
 
 #if CONFIG_IPM_CONSOLE_SENDER
 #include <console/ipm_console.h>
