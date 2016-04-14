@@ -309,7 +309,6 @@ int stm32f10x_clock_control_init(struct device *dev)
 	while (rcc->cfgr.bit.sws != sysclk_src) {
 	}
 
-	dev->driver_api = &stm32f10x_clock_control_api;
 	return 0;
 }
 
@@ -323,7 +322,9 @@ static struct stm32f10x_rcc_data stm32f10x_rcc_data = {
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
  */
-DEVICE_INIT(rcc_stm32f10x, STM32_CLOCK_CONTROL_NAME,
-	    &stm32f10x_clock_control_init,
-	    &stm32f10x_rcc_data, NULL,
-	    PRIMARY, CONFIG_CLOCK_CONTROL_STM32F10X_DEVICE_INIT_PRIORITY);
+DEVICE_AND_API_INIT(rcc_stm32f10x, STM32_CLOCK_CONTROL_NAME,
+		    &stm32f10x_clock_control_init,
+		    &stm32f10x_rcc_data, NULL,
+		    PRIMARY,
+		    CONFIG_CLOCK_CONTROL_STM32F10X_DEVICE_INIT_PRIORITY,
+		    &stm32f10x_clock_control_api);
