@@ -181,7 +181,7 @@ static uint32_t rtc_dw_read(struct device *dev)
 	return sys_read32(rtc_dev->base_address + RTC_CCVR);
 }
 
-static struct rtc_driver_api funcs = {
+static struct rtc_driver_api api_funcs = {
 	.set_config = rtc_dw_set_config,
 	.read = rtc_dw_read,
 	.enable = rtc_dw_enable,
@@ -200,9 +200,10 @@ struct rtc_dw_dev_config rtc_dev = {
 #endif
 };
 
-DEVICE_INIT(rtc, CONFIG_RTC_DRV_NAME, &rtc_dw_init,
-			&rtc_runtime, &rtc_dev,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(rtc, CONFIG_RTC_DRV_NAME, &rtc_dw_init,
+		    &rtc_runtime, &rtc_dev,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &api_funcs);
 
 int rtc_dw_init(struct device *dev)
 {
@@ -213,8 +214,6 @@ int rtc_dw_init(struct device *dev)
 	_rtc_dw_int_unmask();
 
 	_rtc_dw_clock_config(dev);
-
-	dev->driver_api = &funcs;
 
 	return 0;
 }
