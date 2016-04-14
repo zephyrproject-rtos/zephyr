@@ -233,8 +233,6 @@ static struct pwm_driver_api pwm_dw_drv_api_funcs = {
  */
 int pwm_dw_init(struct device *dev)
 {
-	dev->driver_api = &pwm_dw_drv_api_funcs;
-
 	return 0;
 }
 
@@ -248,8 +246,9 @@ static struct pwm_dw_config pwm_dw_cfg = {
 	.num_ports = PWM_DW_NUM_PORTS,
 };
 
-DEVICE_INIT(pwm_dw_0, CONFIG_PWM_DW_DEV_NAME, pwm_dw_init,
-			NULL, &pwm_dw_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(pwm_dw_0, CONFIG_PWM_DW_DEV_NAME, pwm_dw_init,
+		    NULL, &pwm_dw_cfg,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &pwm_dw_drv_api_funcs);
 
 #endif /* CONFIG_PWM_DW */
