@@ -402,6 +402,7 @@ int gpio_dw_initialize(struct device *port)
 	uint32_t base_addr;
 
 	if (!gpio_dw_setup(port)) {
+		port->driver_api = NULL;
 		return -EPERM;
 	}
 
@@ -421,8 +422,6 @@ int gpio_dw_initialize(struct device *port)
 	dw_write(base_addr, INTMASK, ~(0));
 	dw_write(base_addr, INTEN, 0);
 	dw_write(base_addr, PORTA_EOI, ~(0));
-
-	port->driver_api = &api_funcs;
 
 	config->config_func(port);
 
@@ -466,13 +465,15 @@ struct device_pm_ops gpio_dev_pm_ops = {
 		.resume = gpio_dw_resume_port
 };
 
-DEVICE_INIT_PM(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
-	       &gpio_dev_pm_ops, &gpio_0_runtime, &gpio_config_0,
-	       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
+DEVICE_AND_API_INIT_PM(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
+		       &gpio_dev_pm_ops, &gpio_0_runtime, &gpio_config_0,
+		       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
+		       &api_funcs);
 #else
-DEVICE_INIT(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
-	    &gpio_0_runtime, &gpio_config_0,
-	    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
+DEVICE_AND_API_INIT(gpio_dw_0, CONFIG_GPIO_DW_0_NAME, gpio_dw_initialize,
+		    &gpio_0_runtime, &gpio_config_0,
+		    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
+		    &api_funcs);
 #endif
 
 void gpio_config_0_irq(struct device *port)
@@ -529,13 +530,15 @@ struct gpio_dw_config gpio_dw_config_1 = {
 struct gpio_dw_runtime gpio_1_runtime;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_INIT_PM(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
-	       &gpio_dev_pm_ops, &gpio_1_runtime, &gpio_dw_config_1,
-	       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
+DEVICE_AND_API_INIT_PM(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
+		       &gpio_dev_pm_ops, &gpio_1_runtime, &gpio_dw_config_1,
+		       SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
+		       &api_funcs);
 #else
-DEVICE_INIT(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
-	    &gpio_1_runtime, &gpio_dw_config_1,
-	    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY);
+DEVICE_AND_API_INIT(gpio_dw_1, CONFIG_GPIO_DW_1_NAME, gpio_dw_initialize,
+		    &gpio_1_runtime, &gpio_dw_config_1,
+		    SECONDARY, CONFIG_GPIO_DW_INIT_PRIORITY,
+		    &api_funcs);
 #endif
 
 void gpio_config_1_irq(struct device *port)
