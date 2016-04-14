@@ -34,6 +34,7 @@ Sections
    drivers/drivers.rst
    subsystems/subsystems.rst
    contribute/code.rst
+   porting/porting.rst
    reference/kbuild/kbuild.rst
    application/application.rst
    api/api.rst
