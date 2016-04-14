@@ -615,8 +615,6 @@ static int i2c_sam3_init(struct device *dev)
 	struct i2c_sam3_dev_config * const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 
-	dev->driver_api = &api_funcs;
-
 	device_sync_call_init(&dev_data->sync);
 
 	/* Disable all interrupts */
@@ -647,9 +645,10 @@ static struct i2c_sam3_dev_data dev_data_0 = {
 	.dev_config.raw = CONFIG_I2C_ATMEL_SAM3_0_DEFAULT_CFG,
 };
 
-DEVICE_INIT(i2c_sam3_0, CONFIG_I2C_ATMEL_SAM3_0_NAME, &i2c_sam3_init,
-	    &dev_data_0, &dev_config_0,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(i2c_sam3_0, CONFIG_I2C_ATMEL_SAM3_0_NAME, &i2c_sam3_init,
+		    &dev_data_0, &dev_config_0,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &api_funcs);
 
 static void config_func_0(struct device *dev)
 {
@@ -676,9 +675,10 @@ static struct i2c_sam3_dev_data dev_data_1 = {
 	.dev_config.raw = CONFIG_I2C_ATMEL_SAM3_1_DEFAULT_CFG,
 };
 
-DEVICE_INIT(i2c_sam3_1, CONFIG_I2C_ATMEL_SAM3_1_NAME, &i2c_sam3_init,
-	    &dev_data_1, &dev_config_1,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(i2c_sam3_1, CONFIG_I2C_ATMEL_SAM3_1_NAME, &i2c_sam3_init,
+		    &dev_data_1, &dev_config_1,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &api_funcs);
 
 static void config_func_1(struct device *dev)
 {
