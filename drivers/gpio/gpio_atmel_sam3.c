@@ -303,8 +303,6 @@ int gpio_sam3_init(struct device *dev)
 {
 	struct gpio_sam3_config *cfg = dev->config->config_info;
 
-	dev->driver_api = &gpio_sam3_drv_api_funcs;
-
 	cfg->config_func(dev);
 
 	return 0;
@@ -320,9 +318,10 @@ static struct gpio_sam3_config gpio_sam3_a_cfg = {
 	.config_func = gpio_sam3_config_a,
 };
 
-DEVICE_INIT(gpio_sam3_a, CONFIG_GPIO_ATMEL_SAM3_PORTA_DEV_NAME,
-	    gpio_sam3_init, NULL, &gpio_sam3_a_cfg,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(gpio_sam3_a, CONFIG_GPIO_ATMEL_SAM3_PORTA_DEV_NAME,
+		    gpio_sam3_init, NULL, &gpio_sam3_a_cfg,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &gpio_sam3_drv_api_funcs);
 
 void gpio_sam3_config_a(struct device *dev)
 {
@@ -345,9 +344,10 @@ static struct gpio_sam3_config gpio_sam3_b_cfg = {
 	.config_func = gpio_sam3_config_b,
 };
 
-DEVICE_INIT(gpio_sam3_b, CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME,
-	    gpio_sam3_init, NULL, &gpio_sam3_b_cfg,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(gpio_sam3_b, CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME,
+		    gpio_sam3_init, NULL, &gpio_sam3_b_cfg,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &gpio_sam3_drv_api_funcs);
 
 void gpio_sam3_config_b(struct device *dev)
 {
@@ -370,9 +370,10 @@ static struct gpio_sam3_config gpio_sam3_c_cfg = {
 	.config_func = gpio_sam3_config_c,
 };
 
-DEVICE_INIT(gpio_sam3_c, CONFIG_GPIO_ATMEL_SAM3_PORTC_DEV_NAME,
-	    gpio_sam3_init, NULL, &gpio_sam3_c_cfg,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(gpio_sam3_c, CONFIG_GPIO_ATMEL_SAM3_PORTC_DEV_NAME,
+		    gpio_sam3_init, NULL, &gpio_sam3_c_cfg,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &gpio_sam3_drv_api_funcs);
 
 void gpio_sam3_config_c(struct device *dev)
 {
@@ -395,9 +396,10 @@ static struct gpio_sam3_config gpio_sam3_d_cfg = {
 	.config_func = gpio_sam3_config_d,
 };
 
-DEVICE_INIT(gpio_sam3_d, CONFIG_GPIO_ATMEL_SAM3_PORTD_DEV_NAME,
-	    gpio_sam3_init, NULL, &gpio_sam3_d_cfg,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(gpio_sam3_d, CONFIG_GPIO_ATMEL_SAM3_PORTD_DEV_NAME,
+		    gpio_sam3_init, NULL, &gpio_sam3_d_cfg,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &gpio_sam3_drv_api_funcs);
 
 void gpio_sam3_config_d(struct device *dev)
 {
