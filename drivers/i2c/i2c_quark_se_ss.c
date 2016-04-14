@@ -609,7 +609,7 @@ static int i2c_qse_ss_resume(struct device *dev)
 	return 0;
 }
 
-static struct i2c_driver_api ss_funcs = {
+static struct i2c_driver_api api_funcs = {
 	.configure = i2c_qse_ss_runtime_configure,
 	.transfer = i2c_qse_ss_intr_transfer,
 	.suspend = i2c_qse_ss_suspend,
@@ -620,8 +620,6 @@ int i2c_qse_ss_initialize(struct device *dev)
 {
 	struct i2c_qse_ss_rom_config * const rom = dev->config->config_info;
 	struct i2c_qse_ss_dev_config * const dw = dev->driver_data;
-
-	dev->driver_api = &ss_funcs;
 
 	if (rom->config_func) {
 		rom->config_func(dev);
@@ -658,9 +656,11 @@ struct i2c_qse_ss_dev_config i2c_ss_0_runtime = {
 	.app_config.raw = CONFIG_I2C_QUARK_SE_SS_0_DEFAULT_CFG,
 };
 
-DEVICE_INIT(i2c_ss_0, CONFIG_I2C_QUARK_SE_SS_0_NAME, &i2c_qse_ss_initialize,
-			&i2c_ss_0_runtime, &i2c_config_ss_0,
-			SECONDARY, CONFIG_I2C_INIT_PRIORITY);
+DEVICE_AND_API_INIT(i2c_ss_0, CONFIG_I2C_QUARK_SE_SS_0_NAME,
+		    &i2c_qse_ss_initialize,
+		    &i2c_ss_0_runtime, &i2c_config_ss_0,
+		    SECONDARY, CONFIG_I2C_INIT_PRIORITY,
+		    &api_funcs);
 
 void _i2c_qse_ss_config_irq_0(struct device *port)
 {
@@ -719,9 +719,11 @@ struct i2c_qse_ss_dev_config i2c_qse_ss_1_runtime = {
 	.app_config.raw = CONFIG_I2C_QUARK_SE_SS_1_DEFAULT_CFG,
 };
 
-DEVICE_INIT(i2c_ss_1, CONFIG_I2C_QUARK_SE_SS_1_NAME, &i2c_qse_ss_initialize,
-			&i2c_qse_ss_1_runtime, &i2c_config_ss_1,
-			SECONDARY, CONFIG_I2C_INIT_PRIORITY);
+DEVICE_AND_API_INIT(i2c_ss_1, CONFIG_I2C_QUARK_SE_SS_1_NAME,
+		    &i2c_qse_ss_initialize,
+		    &i2c_qse_ss_1_runtime, &i2c_config_ss_1,
+		    SECONDARY, CONFIG_I2C_INIT_PRIORITY);
+		    &api_funcs);
 
 
 void _i2c_qse_ss_config_irq_1(struct device *port)
