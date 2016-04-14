@@ -27,6 +27,8 @@
 #include <i2c.h>
 #include <display/grove_lcd.h>
 
+#include <misc/util.h>
+
 #define SYS_LOG_DOMAIN "Grove LCD"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_GROVE_LEVEL
 #include <misc/sys_log.h>
@@ -280,6 +282,17 @@ int glcd_initialize(struct device *port)
 	if (!dev->i2c) {
 		return -EPERM;
 	}
+
+	/* Since device_get_binding() will not return any
+	 * reference to a driver instance if port->driver_api
+	 * is NULL and grove_lcd does not have any API struct,
+	 * just populate it with some magic number
+	 * so grove_lcd can be referenced.
+	 *
+	 * Since dev is probably still in registers.
+	 * use that to minimize code addition.
+	 */
+	port->driver_api = (void *)dev;
 
 	/*
 	 * Initialization sequence from the data sheet:
