@@ -530,7 +530,7 @@ static uint16_t parse_include(struct bt_conn *conn, const uint8_t *data,
 
 		gatt_include.start_handle = att->range.start_handle;
 		gatt_include.end_handle = att->range.end_handle;
-		end_handle = gatt_include.end_handle;
+		end_handle = att->handle;
 
 		BT_DBG("start 0x%04x end 0x%04x", att->range.start_handle,
 		       att->range.end_handle);
