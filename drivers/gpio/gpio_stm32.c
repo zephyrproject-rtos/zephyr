@@ -208,8 +208,6 @@ static int gpio_stm32_init(struct device *device)
 
 	clock_control_on(clk, cfg->clock_subsys);
 
-	device->driver_api = &gpio_stm32_driver;
-
 	return 0;
 }
 
@@ -220,13 +218,14 @@ static struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {		\
 	.clock_subsys = UINT_TO_POINTER(__clock),			\
 };									\
 static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
-DEVICE_INIT(gpio_stm32_## __suffix,					\
-	    __name,							\
-	    gpio_stm32_init,						\
-	    &gpio_stm32_data_## __suffix,				\
-	    &gpio_stm32_cfg_## __suffix,				\
-	    SECONDARY,							\
-	    CONFIG_KERNEL_INIT_PRIORITY_DEVICE)
+DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
+		    __name,						\
+		    gpio_stm32_init,					\
+		    &gpio_stm32_data_## __suffix,			\
+		    &gpio_stm32_cfg_## __suffix,			\
+		    SECONDARY,						\
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+		    &gpio_stm32_driver)
 
 #ifdef CONFIG_GPIO_STM32_PORTA
 GPIO_DEVICE_INIT("GPIOA", a, GPIOA_BASE, STM32_PORTA,
