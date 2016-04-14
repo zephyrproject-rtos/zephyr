@@ -328,8 +328,6 @@ int adc_dw_init(struct device *dev)
 	uint32_t adc_base = config->reg_base;
 	struct adc_info *info = dev->driver_data;
 
-	dev->driver_api = &api_funcs;
-
 	sys_out32(ADC_INT_DSB | ADC_CLK_ENABLE, adc_base + ADC_CTRL);
 
 	tmp_val = sys_in32(adc_base + ADC_SET);
@@ -499,9 +497,10 @@ struct adc_config adc_config_dev = {
 		.config_func  = adc_config_irq,
 	};
 
-DEVICE_INIT(adc_dw, CONFIG_ADC_DW_NAME, &adc_dw_init,
-			&adc_info_dev, &adc_config_dev,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(adc_dw, CONFIG_ADC_DW_NAME, &adc_dw_init,
+		    &adc_info_dev, &adc_config_dev,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &api_funcs);
 
 static void adc_config_irq(void)
 {
