@@ -309,8 +309,6 @@ static int uart_stm32_init(struct device *dev)
 	/* enable */
 	uart->cr1.bit.ue = 1;
 
-	dev->driver_api = &uart_stm32_driver_api;
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	cfg->uconf.irq_config_func(dev);
 #endif
@@ -339,9 +337,11 @@ static struct uart_stm32_data uart_stm32_dev_data_0 = {
 	.baud_rate = CONFIG_UART_STM32_PORT_0_BAUD_RATE,
 };
 
-DEVICE_INIT(uart_stm32_0, CONFIG_UART_STM32_PORT_0_NAME, &uart_stm32_init,
-	    &uart_stm32_dev_data_0, &uart_stm32_dev_cfg_0,
-	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(uart_stm32_0, CONFIG_UART_STM32_PORT_0_NAME,
+		    &uart_stm32_init,
+		    &uart_stm32_dev_data_0, &uart_stm32_dev_cfg_0,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_stm32_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_stm32_irq_config_func_0(struct device *dev)
@@ -381,9 +381,11 @@ static struct uart_stm32_data uart_stm32_dev_data_1 = {
 	.baud_rate = CONFIG_UART_STM32_PORT_1_BAUD_RATE,
 };
 
-DEVICE_INIT(uart_stm32_1, CONFIG_UART_STM32_PORT_1_NAME, &uart_stm32_init,
-	    &uart_stm32_dev_data_1, &uart_stm32_dev_cfg_1,
-	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(uart_stm32_1, CONFIG_UART_STM32_PORT_1_NAME,
+		    &uart_stm32_init,
+		    &uart_stm32_dev_data_1, &uart_stm32_dev_cfg_1,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_stm32_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_stm32_irq_config_func_1(struct device *dev)
@@ -423,9 +425,11 @@ static struct uart_stm32_data uart_stm32_dev_data_2 = {
 	.baud_rate = CONFIG_UART_STM32_PORT_2_BAUD_RATE,
 };
 
-DEVICE_INIT(uart_stm32_2, CONFIG_UART_STM32_PORT_2_NAME, &uart_stm32_init,
-	    &uart_stm32_dev_data_2, &uart_stm32_dev_cfg_2,
-	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(uart_stm32_2, CONFIG_UART_STM32_PORT_2_NAME,
+		    &uart_stm32_init,
+		    &uart_stm32_dev_data_2, &uart_stm32_dev_cfg_2,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_stm32_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_stm32_irq_config_func_2(struct device *dev)
