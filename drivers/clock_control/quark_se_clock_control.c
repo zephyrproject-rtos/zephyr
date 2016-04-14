@@ -89,8 +89,6 @@ static struct clock_control_driver_api quark_se_clock_control_api = {
 
 int quark_se_clock_control_init(struct device *dev)
 {
-	dev->driver_api = &quark_se_clock_control_api;
-
 	DBG("Quark Se clock controller driver initialized on device: %p\n",
 									dev);
 	return 0;
@@ -102,11 +100,12 @@ struct quark_se_clock_control_config clock_quark_se_peripheral_config = {
 	.base_address = CLOCK_PERIPHERAL_BASE_ADDR
 };
 
-DEVICE_INIT(clock_quark_se_peripheral,
+DEVICE_AND_API_INIT(clock_quark_se_peripheral,
 			CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME,
 			&quark_se_clock_control_init,
 			NULL, &clock_quark_se_peripheral_config,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			&quark_se_clock_control_api);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL */
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL
@@ -115,11 +114,12 @@ struct quark_se_clock_control_config clock_quark_se_external_config = {
 	.base_address = CLOCK_EXTERNAL_BASE_ADDR
 };
 
-DEVICE_INIT(clock_quark_se_external,
+DEVICE_AND_API_INIT(clock_quark_se_external,
 			CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME,
 			&quark_se_clock_control_init,
 			NULL, &clock_quark_se_external_config,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			&quark_se_clock_control_api);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL */
 #ifdef CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR
@@ -128,10 +128,11 @@ struct quark_se_clock_control_config clock_quark_se_sensor_config = {
 	.base_address = CLOCK_SENSOR_BASE_ADDR
 };
 
-DEVICE_INIT(clock_quark_se_sensor,
+DEVICE_AND_API_INIT(clock_quark_se_sensor,
 			CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME,
 			&quark_se_clock_control_init,
 			NULL, &clock_quark_se_sensor_config,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			&quark_se_clock_control_api);
 
 #endif /* CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR */
