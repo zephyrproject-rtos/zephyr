@@ -784,11 +784,6 @@ void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 	struct bt_gatt_read_params *params;
 	struct bt_conn *conn;
 
-	if (rsp->status) {
-		BT_ERR("GATT read failed, status %d", rsp->status);
-		return;
-	}
-
 	conn = bt_conn_lookup_handle(rsp->conn_handle);
 	if (!conn) {
 		BT_ERR("Unable to find conn, handle 0x%04x", rsp->conn_handle);
@@ -799,6 +794,11 @@ void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 	params = conn->gatt_private;
 
 	BT_DBG("conn %p params %p", conn, params);
+
+	if (rsp->status) {
+		params->func(conn, rsp->status, params, NULL, 0);
+		goto done;
+	}
 
 	if (params->func(conn, 0, params, data, len) == BT_GATT_ITER_STOP) {
 		goto done;
