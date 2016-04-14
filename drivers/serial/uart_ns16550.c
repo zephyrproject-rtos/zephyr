@@ -297,6 +297,7 @@ static int uart_ns16550_init(struct device *dev)
 	uint8_t mdc = 0;
 
 	if (!ns16550_pci_uart_scan(dev)) {
+		dev->driver_api = NULL;
 		return -ENOTSUP;
 	}
 
@@ -340,8 +341,6 @@ static int uart_ns16550_init(struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	DEV_CFG(dev)->irq_config_func(dev);
 #endif
-
-	dev->driver_api = &uart_ns16550_driver_api;
 
 	return 0;
 }
@@ -758,9 +757,10 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
 #endif
 };
 
-DEVICE_INIT(uart_ns16550_0, CONFIG_UART_NS16550_PORT_0_NAME, &uart_ns16550_init,
-			&uart_ns16550_dev_data_0, &uart_ns16550_dev_cfg_0,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(uart_ns16550_0, CONFIG_UART_NS16550_PORT_0_NAME, &uart_ns16550_init,
+		    &uart_ns16550_dev_data_0, &uart_ns16550_dev_cfg_0,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&uart_ns16550_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_0(struct device *dev)
@@ -809,9 +809,10 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
 #endif
 };
 
-DEVICE_INIT(uart_ns16550_1, CONFIG_UART_NS16550_PORT_1_NAME, &uart_ns16550_init,
-			&uart_ns16550_dev_data_1, &uart_ns16550_dev_cfg_1,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(uart_ns16550_1, CONFIG_UART_NS16550_PORT_1_NAME, &uart_ns16550_init,
+		    &uart_ns16550_dev_data_1, &uart_ns16550_dev_cfg_1,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&uart_ns16550_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_1(struct device *dev)
