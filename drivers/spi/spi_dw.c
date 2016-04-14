@@ -397,12 +397,11 @@ int spi_dw_init(struct device *dev)
 
 #ifndef CONFIG_SOC_QUARK_SE_SS
 	if (read_ssi_comp_version(info->regs) != DW_SSI_COMP_VERSION) {
+		dev->driver_api = NULL;
 		_clock_off(dev);
 		return -EPERM;
 	}
 #endif
-
-	dev->driver_api = &dw_spi_api;
 
 	info->config_func();
 
@@ -450,9 +449,10 @@ struct spi_dw_config spi_dw_config_0 = {
 	.config_func = spi_config_0_irq
 };
 
-DEVICE_INIT(spi_dw_port_0, CONFIG_SPI_DW_PORT_0_DRV_NAME, spi_dw_init,
-			&spi_dw_data_port_0, &spi_dw_config_0,
-			SECONDARY, CONFIG_SPI_DW_INIT_PRIORITY);
+DEVICE_AND_API_INIT(spi_dw_port_0, CONFIG_SPI_DW_PORT_0_DRV_NAME, spi_dw_init,
+		    &spi_dw_data_port_0, &spi_dw_config_0,
+		    SECONDARY, CONFIG_SPI_DW_INIT_PRIORITY,
+		    &dw_spi_api);
 
 void spi_config_0_irq(void)
 {
@@ -496,9 +496,10 @@ struct spi_dw_config spi_dw_config_1 = {
 	.config_func = spi_config_1_irq
 };
 
-DEVICE_INIT(spi_dw_port_1, CONFIG_SPI_DW_PORT_1_DRV_NAME, spi_dw_init,
-			&spi_dw_data_port_1, &spi_dw_config_1,
-			SECONDARY, CONFIG_SPI_DW_INIT_PRIORITY);
+DEVICE_AND_API_INIT(spi_dw_port_1, CONFIG_SPI_DW_PORT_1_DRV_NAME, spi_dw_init,
+		    &spi_dw_data_port_1, &spi_dw_config_1,
+		    SECONDARY, CONFIG_SPI_DW_INIT_PRIORITY,
+		    &dw_spi_api);
 
 void spi_config_1_irq(void)
 {
