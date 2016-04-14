@@ -811,7 +811,7 @@ void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 	 * if the rest of the Characteristic Value is required.
 	 * The data contain only (ATT_MTU – 1) octets.
 	 */
-	if (len < BLE_GATT_MTU_SIZE) {
+	if (len < (BLE_GATT_MTU_SIZE - 1)) {
 		params->func(conn, 0, params, NULL, 0);
 		goto done;
 	}
