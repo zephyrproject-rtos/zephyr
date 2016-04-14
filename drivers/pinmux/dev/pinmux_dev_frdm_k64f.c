@@ -48,11 +48,11 @@ static struct pinmux_driver_api api_funcs = {
 
 int pinmux_fsl_k64_initialize(struct device *port)
 {
-	port->driver_api = &api_funcs;
-
 	return 0;
 }
 
 /* must be initialized after GPIO */
-DEVICE_INIT(pmux, PINMUX_NAME, &pinmux_fsl_k64_initialize, NULL, NULL,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(pmux, PINMUX_NAME, &pinmux_fsl_k64_initialize,
+		    NULL, NULL,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &api_funcs);

@@ -67,11 +67,11 @@ static struct pinmux_driver_api api_funcs = {
 
 static int pinmux_dev_initialize(struct device *port)
 {
-	port->driver_api = &api_funcs;
-
 	return 0;
 }
 
-DEVICE_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME, &pinmux_dev_initialize,
-			NULL, NULL,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME,
+		    &pinmux_dev_initialize,
+		    NULL, NULL,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &api_funcs);

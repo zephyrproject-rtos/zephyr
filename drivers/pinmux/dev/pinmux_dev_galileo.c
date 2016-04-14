@@ -93,8 +93,6 @@ static struct pinmux_driver_api api_funcs = {
 
 static int pinmux_dev_galileo_initialize(struct device *port)
 {
-	port->driver_api = &api_funcs;
-
 	return 0;
 }
 
@@ -105,6 +103,8 @@ static int pinmux_dev_galileo_initialize(struct device *port)
  * 1 - PCA9535 and PCAL9685
  * 2 - pinmux
  */
-DEVICE_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME, &pinmux_dev_galileo_initialize,
-			&galileo_pinmux_driver, NULL,
-			SECONDARY, CONFIG_PINMUX_INIT_PRIORITY);
+DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME,
+		    &pinmux_dev_galileo_initialize,
+		    &galileo_pinmux_driver, NULL,
+		    SECONDARY, CONFIG_PINMUX_INIT_PRIORITY,
+		    &api_funcs);
