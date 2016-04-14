@@ -193,8 +193,6 @@ static int uart_sam3_init(struct device *dev)
 	/* Enable receiver and transmitter */
 	uart->cr = UART_CR_RXEN | UART_CR_TXEN;
 
-	dev->driver_api = &uart_sam3_driver_api;
-
 	return 0;
 }
 
@@ -259,6 +257,7 @@ static struct uart_sam3_dev_data_t uart_sam3_dev_data_0 = {
 	.baud_rate = CONFIG_UART_ATMEL_SAM3_BAUD_RATE,
 };
 
-DEVICE_INIT(uart_sam3_0, CONFIG_UART_ATMEL_SAM3_NAME, &uart_sam3_init,
-			&uart_sam3_dev_data_0, &uart_sam3_dev_cfg_0,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(uart_sam3_0, CONFIG_UART_ATMEL_SAM3_NAME, &uart_sam3_init,
+		    &uart_sam3_dev_data_0, &uart_sam3_dev_cfg_0,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_sam3_driver_api);
