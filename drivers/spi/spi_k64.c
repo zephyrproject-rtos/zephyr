@@ -962,8 +962,6 @@ int spi_k64_init(struct device *dev)
 	struct spi_k64_data *data = dev->driver_data;
 	uint32_t mcr;
 
-	dev->driver_api = &k64_spi_api;
-
 	/* Enable module clocking */
 
 	sys_set_bit(info->clk_gate_reg, info->clk_gate_bit);
@@ -1047,9 +1045,10 @@ struct spi_k64_config spi_k64_config_0 = {
 	.config_func = spi_config_0_irq
 };
 
-DEVICE_INIT(spi_k64_port_0, CONFIG_SPI_K64_0_DEV_NAME, spi_k64_init,
-			&spi_k64_data_port_0, &spi_k64_config_0,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(spi_k64_port_0, CONFIG_SPI_K64_0_DEV_NAME, spi_k64_init,
+		    &spi_k64_data_port_0, &spi_k64_config_0,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &k64_spi_api);
 
 
 void spi_config_0_irq(void)
@@ -1075,9 +1074,10 @@ struct spi_k64_config spi_k64_config_1 = {
 	.config_func = spi_config_1_irq
 };
 
-DEVICE_INIT(spi_k64_port_1, CONFIG_SPI_K64_1_DEV_NAME, spi_k64_init,
-			&spi_k64_data_port_1, &spi_k64_config_1,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(spi_k64_port_1, CONFIG_SPI_K64_1_DEV_NAME, spi_k64_init,
+		    &spi_k64_data_port_1, &spi_k64_config_1,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &k64_spi_api);
 
 
 void spi_config_1_irq(void)
@@ -1103,9 +1103,10 @@ struct spi_k64_config spi_k64_config_2 = {
 	.config_func = spi_config_2_irq
 };
 
-DEVICE_INIT(spi_k64_port_2, CONFIG_SPI_K64_2_DEV_NAME, spi_k64_init,
-			&spi_k64_data_port_2, &spi_k64_config_2,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(spi_k64_port_2, CONFIG_SPI_K64_2_DEV_NAME, spi_k64_init,
+		    &spi_k64_data_port_2, &spi_k64_config_2,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &k64_spi_api);
 
 
 void spi_config_2_irq(void)
