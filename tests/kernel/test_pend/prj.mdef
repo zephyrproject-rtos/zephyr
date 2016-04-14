@@ -1,0 +1,7 @@
+% Application       : test microkernel tasks pending on nanokernel objects
+
+% TASK NAME         PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK TASK_HIGH     5   task_high         2048 [EXE]
+  TASK TASK_LOW      7   task_low          2048 [EXE]
+  TASK TASK_MONITOR  9   task_monitor      2048 [EXE]
