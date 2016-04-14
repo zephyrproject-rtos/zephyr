@@ -115,10 +115,10 @@ static int iwdg_stm32_init(struct device *dev)
 	iwdg_stm32_enable(dev);
 #endif
 
-	dev->driver_api = &iwdg_stm32_api;
 	return 0;
 }
 
-DEVICE_INIT(iwdg_stm32, CONFIG_IWDG_STM32_DEVICE_NAME, iwdg_stm32_init,
-	    NULL, NULL,
-	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(iwdg_stm32, CONFIG_IWDG_STM32_DEVICE_NAME, iwdg_stm32_init,
+		    NULL, NULL,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &iwdg_stm32_api);
