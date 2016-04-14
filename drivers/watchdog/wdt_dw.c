@@ -162,14 +162,13 @@ struct wdt_dw_dev_config wdt_dev = {
 #endif
 };
 
-DEVICE_INIT(wdt, CONFIG_WDT_DW_DRV_NAME, &wdt_dw_init,
-			&wdt_runtime, &wdt_dev,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(wdt, CONFIG_WDT_DW_DRV_NAME, &wdt_dw_init,
+		    &wdt_runtime, &wdt_dev,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &wdt_dw_funcs);
 
 int wdt_dw_init(struct device *dev)
 {
-	dev->driver_api = &wdt_dw_funcs;
-
 	IRQ_CONNECT(WDT_DW_IRQ, CONFIG_WDT_DW_IRQ_PRI, wdt_dw_isr,
 		    DEVICE_GET(wdt), 0);
 	irq_enable(WDT_DW_IRQ);
