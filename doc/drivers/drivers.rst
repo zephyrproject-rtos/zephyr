@@ -28,6 +28,11 @@ applications.
 :c:func:`DEVICE_INIT()`
    create device object and set it up for boot time initialization.
 
+:c:func:`DEVICE_AND_API_INIT()`
+   Create device object and set it up for boot time initialization.
+   This also takes a pointer to driver API struct for link time
+   pointer assignment.
+
 :c:func:`DEVICE_NAME_GET()`
    Expands to the full name of a global device object.
 
