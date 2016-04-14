@@ -36,20 +36,20 @@ extern "C" {
 /** @brief Sensor value types. */
 enum sensor_value_type {
 	/** val1 contains an integer value, val2 is unused. */
-	SENSOR_TYPE_INT,
+	SENSOR_VALUE_TYPE_INT,
 	/**
 	 * val1 contains an integer value, val2 is the fractional value.
 	 * To obtain the final value, use the formula: val1 + val2 *
 	 * 10^(-6).
 	 */
-	SENSOR_TYPE_INT_PLUS_MICRO,
+	SENSOR_VALUE_TYPE_INT_PLUS_MICRO,
 	/**
 	 * @brief val1 contains a Q16.16 representation, val2 is
 	 * unused.
 	 */
-	SENSOR_TYPE_Q16_16,
+	SENSOR_VALUE_TYPE_Q16_16,
 	/** @brief dval contains a floating point value. */
-	SENSOR_TYPE_DOUBLE,
+	SENSOR_VALUE_TYPE_DOUBLE,
 };
 
 /**
@@ -415,7 +415,7 @@ static inline int32_t sensor_ms2_to_g(const struct sensor_value *ms2)
  */
 static inline void sensor_g_to_ms2(int32_t g, struct sensor_value *ms2)
 {
-	ms2->type = SENSOR_TYPE_INT_PLUS_MICRO;
+	ms2->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	ms2->val1 = ((int64_t)g * SENSOR_G) / 1000000LL;
 	ms2->val2 = ((int64_t)g * SENSOR_G) % 1000000LL;
 }
@@ -446,7 +446,7 @@ static inline int32_t sensor_rad_to_degrees(const struct sensor_value *rad)
  */
 static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
 {
-	rad->type = SENSOR_TYPE_INT_PLUS_MICRO;
+	rad->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	rad->val1 = ((int64_t)d * SENSOR_PI / 180LL) / 1000000LL;
 	rad->val2 = ((int64_t)d * SENSOR_PI / 180LL) % 1000000LL;
 }

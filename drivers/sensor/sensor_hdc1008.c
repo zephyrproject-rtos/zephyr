@@ -91,13 +91,13 @@ static int hdc1008_channel_get(struct device *dev,
 	if (chan == SENSOR_CHAN_TEMP) {
 		/* val = -40 + 165 * sample / 2^16 */
 		tmp = 165 * (uint64_t)drv_data->t_sample;
-		val->type = SENSOR_TYPE_INT_PLUS_MICRO;
+		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 		val->val1 = (int32_t)(tmp >> 16) - 40;
 		val->val2 = (1000000 * (tmp & 0xFFFF)) >> 16;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 		/* val = 100000 * sample / 2^16 */
 		tmp = 100000 * (uint64_t)drv_data->rh_sample;
-		val->type = SENSOR_TYPE_INT_PLUS_MICRO;
+		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 		val->val1 = tmp >> 16;
 		val->val2 = (1000000 * (tmp & 0xFFFF)) >> 16;
 	} else {

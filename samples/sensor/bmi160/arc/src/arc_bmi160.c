@@ -46,9 +46,9 @@
  *   X = +2.349435, Y = +0.488070. Z = -1.351970
  */
 static struct sensor_value accel_offsets[] = {
-	{SENSOR_TYPE_INT_PLUS_MICRO, { {2, 349435} } },   /* X */
-	{SENSOR_TYPE_INT_PLUS_MICRO, { {0, 488070} } },   /* Y */
-	{SENSOR_TYPE_INT_PLUS_MICRO, { {-1, -351970} } }, /* Z */
+	{SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {2, 349435} } },   /* X */
+	{SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, 488070} } },   /* Y */
+	{SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {-1, -351970} } }, /* Z */
 };
 
 /*
@@ -56,9 +56,9 @@ static struct sensor_value accel_offsets[] = {
  * converge to 0 (with the device standing still).
  */
 static struct sensor_value gyro_offsets[] = {
-	{SENSOR_TYPE_INT_PLUS_MICRO, { {0, 3195} } }, /* X */
-	{SENSOR_TYPE_INT_PLUS_MICRO, { {0, 3195} } }, /* Y */
-	{SENSOR_TYPE_INT_PLUS_MICRO, { {0, -4260} } },/* Z */
+	{SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, 3195} } }, /* X */
+	{SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, 3195} } }, /* Y */
+	{SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, -4260} } },/* Z */
 };
 
 static int manual_calibration(struct device *bmi160)
@@ -90,9 +90,9 @@ static int manual_calibration(struct device *bmi160)
  * device has to stay still for about 500ms = 250ms(accel) + 250ms(gyro).
  */
 struct sensor_value acc_calib[] = {
-	{SENSOR_TYPE_INT_PLUS_MICRO, { {0, 0} } },      /* X */
-	{SENSOR_TYPE_INT_PLUS_MICRO, { {0, 0} } },      /* Y */
-	{SENSOR_TYPE_INT_PLUS_MICRO, { {9, 806650} } }, /* Z */
+	{SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, 0} } },      /* X */
+	{SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, 0} } },      /* Y */
+	{SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {9, 806650} } }, /* Z */
 };
 static int auto_calibration(struct device *bmi160)
 {
@@ -179,7 +179,7 @@ static void test_polling_mode(struct device *bmi160)
 
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
 	/* set sampling frequency to 800Hz for accel */
-	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	attr.val1 = 800;
 	attr.val2 = 0;
 
@@ -192,7 +192,7 @@ static void test_polling_mode(struct device *bmi160)
 
 #if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME)
 	/* set sampling frequency to 3200Hz for gyro */
-	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	attr.val1 = 3200;
 	attr.val2 = 0;
 
@@ -271,7 +271,7 @@ static void test_anymotion_trigger(struct device *bmi160)
 	 * bigger than half the range. For example, for a 16G range, the
 	 * threshold must not exceed 8G.
 	 */
-	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	attr.val1 = 0;
 	attr.val2 = 980665;
 	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
@@ -286,7 +286,7 @@ static void test_anymotion_trigger(struct device *bmi160)
 	 *
 	 * Allowed values are from 1 to 4.
 	 */
-	attr.type = SENSOR_TYPE_INT;
+	attr.type = SENSOR_VALUE_TYPE_INT;
 	attr.val1 = 2;
 	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
 			    SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
@@ -361,7 +361,7 @@ static void test_trigger_mode(struct device *bmi160)
 
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
 	/* set sampling frequency to 100Hz for accel */
-	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	attr.val1 = 100;
 	attr.val2 = 0;
 
@@ -374,7 +374,7 @@ static void test_trigger_mode(struct device *bmi160)
 
 #if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME)
 	/* set sampling frequency to 100Hz for gyro */
-	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	attr.val1 = 100;
 	attr.val2 = 0;
 

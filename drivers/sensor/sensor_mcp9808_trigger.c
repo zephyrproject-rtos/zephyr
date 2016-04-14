@@ -80,14 +80,14 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 #endif
 
 	switch (val->type) {
-	case SENSOR_TYPE_INT_PLUS_MICRO:
+	case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
 		val2 = val->val2;
 		while (val2 > 0) {
 			reg_val += (1 << 2);
 			val2 -= 250000;
 		}
 		/* Fall through. */
-	case SENSOR_TYPE_INT:
+	case SENSOR_VALUE_TYPE_INT:
 		reg_val |= val->val1 << 4;
 		break;
 	default:

@@ -361,7 +361,7 @@ static int bmc150_magn_channel_get(struct device *dev,
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 
-	val->type = SENSOR_TYPE_DOUBLE;
+	val->type = SENSOR_VALUE_TYPE_DOUBLE;
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
 		val->dval = (double)(data->sample_x) * (1.0/1600.0);
@@ -459,7 +459,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_TYPE_INT) {
+		if (val->type != SENSOR_VALUE_TYPE_INT) {
 			sensor_dbg("invalid parameter type\n");
 			return -ENOTSUP;
 		}
@@ -483,7 +483,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 #endif
 #if defined(BMC150_MAGN_SET_ATTR_REP)
 	case SENSOR_ATTR_OVERSAMPLING:
-		if (val->type != SENSOR_TYPE_INT) {
+		if (val->type != SENSOR_VALUE_TYPE_INT) {
 			sensor_dbg("invalid parameter type\n");
 			return -ENOTSUP;
 		}

@@ -102,7 +102,7 @@ static int tmp007_channel_get(struct device *dev,
 	}
 
 	uval = (int32_t)drv_data->sample * TMP007_TEMP_SCALE;
-	val->type = SENSOR_TYPE_INT_PLUS_MICRO;
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = uval / 1000000;
 	val->val2 = uval % 1000000;
 

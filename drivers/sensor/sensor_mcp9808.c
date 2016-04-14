@@ -75,7 +75,7 @@ static int mcp9808_channel_get(struct device *dev,
 	}
 #endif
 
-	val->type = SENSOR_TYPE_INT_PLUS_MICRO;
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 
 	val->val1 = (data->reg_val & MCP9808_TEMP_INT_MASK) >>
 		     MCP9808_TEMP_INT_SHIFT;

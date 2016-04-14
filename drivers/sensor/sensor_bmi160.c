@@ -366,7 +366,7 @@ static int bmi160_acc_ofs_set(struct device *dev, enum sensor_channel chan,
 	}
 
 	for (i = 0; i < 3; i++, ofs++) {
-		if (ofs->type != SENSOR_TYPE_INT_PLUS_MICRO) {
+		if (ofs->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 
@@ -443,7 +443,7 @@ static int bmi160_acc_config(struct device *dev, enum sensor_channel chan,
 	switch (attr) {
 #if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_TYPE_INT_PLUS_MICRO) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 
@@ -451,7 +451,7 @@ static int bmi160_acc_config(struct device *dev, enum sensor_channel chan,
 #endif
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_TYPE_INT_PLUS_MICRO) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 
@@ -605,7 +605,7 @@ static int bmi160_gyr_config(struct device *dev, enum sensor_channel chan,
 	switch (attr) {
 #if defined(CONFIG_BMI160_GYRO_RANGE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		if (val->type != SENSOR_TYPE_INT_PLUS_MICRO) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 
@@ -613,7 +613,7 @@ static int bmi160_gyr_config(struct device *dev, enum sensor_channel chan,
 #endif
 #if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		if (val->type != SENSOR_TYPE_INT_PLUS_MICRO) {
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
 			return -EINVAL;
 		}
 
@@ -694,7 +694,7 @@ static void bmi160_to_fixed_point(int16_t raw_val, uint16_t scale,
 {
 	int32_t converted_val;
 
-	val->type = SENSOR_TYPE_INT_PLUS_MICRO;
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 
 	/*
 	 * maximum converted value we can get is: max(raw_val) * max(scale)
@@ -779,7 +779,7 @@ static int bmi160_temp_channel_get(struct device *dev, struct sensor_value *val)
 	/* the scale is 1/2^9/LSB = 1953 micro degrees */
 	temp_micro = BMI160_TEMP_OFFSET * 1000000ULL + temp_raw * 1953ULL;
 
-	val->type = SENSOR_TYPE_INT_PLUS_MICRO;
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = temp_micro / 1000000ULL;
 	val->val2 = temp_micro % 1000000ULL;
 

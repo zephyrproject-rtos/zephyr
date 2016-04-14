@@ -29,7 +29,7 @@ static uint16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 	uint64_t raw_val, ival, uval;
 
 	ival = val->val1;
-	if (val->type == SENSOR_TYPE_INT) {
+	if (val->type == SENSOR_VALUE_TYPE_INT) {
 		uval = 0;
 	} else {
 		uval = val->val2;

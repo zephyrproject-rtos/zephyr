@@ -58,7 +58,7 @@ void main(void)
 	struct sensor_value val;
 	struct sensor_trigger trig;
 
-	val.type = SENSOR_TYPE_INT;
+	val.type = SENSOR_VALUE_TYPE_INT;
 	val.val1 = 26;
 
 	sensor_attr_set(dev, SENSOR_CHAN_TEMP,
@@ -81,4 +81,3 @@ void main(void)
 		task_sleep(sys_clock_ticks_per_sec);
 	}
 }
-

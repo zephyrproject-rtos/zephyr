@@ -114,7 +114,7 @@ static int bmp280_channel_get(struct device *dev,
 		 * data->comp_temp has a resolution of 0.01 degC.  So
 		 * 5123 equals 51.23 degC.
 		 */
-		val->type = SENSOR_TYPE_INT_PLUS_MICRO;
+		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 		val->val1 = data->comp_temp / 100;
 		val->val2 = data->comp_temp % 100 * 10000;
 		break;
@@ -124,7 +124,7 @@ static int bmp280_channel_get(struct device *dev,
 		 * fractional.  Output value of 24674867 represents
 		 * 24674867/256 = 96386.2 Pa = 963.862 hPa
 		 */
-		val->type = SENSOR_TYPE_INT_PLUS_MICRO;
+		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 		val->val1 = (data->comp_press >> 8) / 1000;
 		val->val2 = (data->comp_press >> 8) % 1000 * 1000 +
 			(((data->comp_press & 0xff) * 1000) >> 8);
