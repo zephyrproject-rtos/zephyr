@@ -686,6 +686,7 @@ int i2c_dw_initialize(struct device *port)
 	volatile struct i2c_dw_registers *regs;
 
 	if (!i2c_dw_pci_setup(port)) {
+		port->driver_api = NULL;
 		return -EPERM;
 	}
 
@@ -700,8 +701,6 @@ int i2c_dw_initialize(struct device *port)
 		DBG(" Stopping initialization\n");
 		return -EPERM;
 	}
-
-	port->driver_api = &funcs;
 
 	/*
 	 * grab the default value on initialization.  This should be set to the
@@ -759,9 +758,10 @@ struct i2c_dw_dev_config i2c_0_runtime = {
 	.app_config.raw = CONFIG_I2C_DW_0_DEFAULT_CFG,
 };
 
-DEVICE_INIT(i2c_0, CONFIG_I2C_DW_0_NAME, &i2c_dw_initialize,
-			&i2c_0_runtime, &i2c_config_dw_0,
-			SECONDARY, CONFIG_I2C_INIT_PRIORITY);
+DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_DW_0_NAME, &i2c_dw_initialize,
+		    &i2c_0_runtime, &i2c_config_dw_0,
+		    SECONDARY, CONFIG_I2C_INIT_PRIORITY,
+		    &funcs);
 
 void i2c_config_0(struct device *port)
 {
@@ -809,9 +809,10 @@ struct i2c_dw_dev_config i2c_1_runtime = {
 	.app_config.raw = CONFIG_I2C_DW_1_DEFAULT_CFG,
 };
 
-DEVICE_INIT(i2c_1, CONFIG_I2C_DW_1_NAME, &i2c_dw_initialize,
-			&i2c_1_runtime, &i2c_config_dw_1,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_DW_1_NAME, &i2c_dw_initialize,
+		    &i2c_1_runtime, &i2c_config_dw_1,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &funcs);
 
 void i2c_config_1(struct device *port)
 {
