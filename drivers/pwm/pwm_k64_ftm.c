@@ -716,8 +716,6 @@ int pwm_ftm_init(struct device *dev)
 
 	DBG("pwm_ftm_init...\n");
 
-	dev->driver_api = &pwm_ftm_drv_api_funcs;
-
 	return 0;
 }
 
@@ -761,9 +759,10 @@ static struct pwm_ftm_config pwm_ftm_0_cfg = {
 
 static struct pwm_ftm_drv_data pwm_ftm_0_drvdata;
 
-DEVICE_INIT(pwm_ftm_0, CONFIG_PWM_K64_FTM_0_DEV_NAME, pwm_ftm_init,
-			&pwm_ftm_0_drvdata, &pwm_ftm_0_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(pwm_ftm_0, CONFIG_PWM_K64_FTM_0_DEV_NAME, pwm_ftm_init,
+		    &pwm_ftm_0_drvdata, &pwm_ftm_0_cfg,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &pwm_ftm_drv_api_funcs);
 
 #endif /* CONFIG_PWM_K64_FTM_0 */
 
@@ -806,9 +805,10 @@ static struct pwm_ftm_config pwm_ftm_1_cfg = {
 
 static struct pwm_ftm_drv_data pwm_ftm_1_drvdata;
 
-DEVICE_INIT(pwm_ftm_1, CONFIG_PWM_K64_FTM_1_DEV_NAME, pwm_ftm_init,
-			&pwm_ftm_1_drvdata, &pwm_ftm_1_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(pwm_ftm_1, CONFIG_PWM_K64_FTM_1_DEV_NAME, pwm_ftm_init,
+		    &pwm_ftm_1_drvdata, &pwm_ftm_1_cfg,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &pwm_ftm_drv_api_funcs);
 
 #endif /* CONFIG_PWM_K64_FTM_1 */
 
@@ -852,9 +852,10 @@ static struct pwm_ftm_config pwm_ftm_2_cfg = {
 
 static struct pwm_ftm_drv_data pwm_ftm_2_drvdata;
 
-DEVICE_INIT(pwm_ftm_2, CONFIG_PWM_K64_FTM_2_DEV_NAME, pwm_ftm_init,
-			&pwm_ftm_2_drvdata, &pwm_ftm_2_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(pwm_ftm_2, CONFIG_PWM_K64_FTM_2_DEV_NAME, pwm_ftm_init,
+		    &pwm_ftm_2_drvdata, &pwm_ftm_2_cfg,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &pwm_ftm_drv_api_funcs);
 
 #endif /* CONFIG_PWM_K64_FTM_2 */
 
@@ -898,8 +899,9 @@ static struct pwm_ftm_config pwm_ftm_3_cfg = {
 
 static struct pwm_ftm_drv_data pwm_ftm_3_drvdata;
 
-DEVICE_INIT(pwm_ftm_3, CONFIG_PWM_K64_FTM_3_DEV_NAME, pwm_ftm_init,
-			&pwm_ftm_3_drvdata, &pwm_ftm_3_cfg,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_AND_API_INIT(pwm_ftm_3, CONFIG_PWM_K64_FTM_3_DEV_NAME, pwm_ftm_init,
+		    &pwm_ftm_3_drvdata, &pwm_ftm_3_cfg,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &pwm_ftm_drv_api_funcs);
 
 #endif /* CONFIG_PWM_K64_FTM_3 */
