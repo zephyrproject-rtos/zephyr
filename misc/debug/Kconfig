@@ -68,6 +68,16 @@ endmenu
 # Generic Debugging Options
 #
 
+config DEBUGGER_OWNS_FATAL_PROG_EXC_HANDLERS
+	bool "Debugger provides handlers for some fatal programmer exceptions"
+	default n
+	depends on X86 && !X86_IAMCU
+	help
+	Give control to a target debugger such as GDB over the divide-by-zero
+	and page fault exceptions.
+
+	NOTE: Does not currently work with the x86 IAMCU ABI.
+
 config DEBUG_INFO
 	bool "Enable system debugging information"
 	default n
