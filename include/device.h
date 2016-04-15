@@ -243,6 +243,12 @@ extern struct device_pm_ops device_pm_ops_nop;
   */
 #define DEVICE_DECLARE(name) extern struct device DEVICE_NAME_GET(name)
 
+/**
+ * @cond DEPRECATED_HIDDEN
+ *
+ * Hide these from showing in public documentation as these are
+ * being deprecated.
+ */
 /*
  * DEPRECATED.
  *
@@ -256,6 +262,7 @@ extern struct device_pm_ops device_pm_ops_nop;
 #define DEV_NO_ACCESS		(-EACCES) /* Controller not accessible */
 #define DEV_NO_SUPPORT		(-ENODEV) /* Device type not supported */
 #define DEV_NOT_CONFIG		(-EPERM) /* Device not configured */
+/** @endcond */
 
 struct device;
 
