@@ -25,6 +25,12 @@
 #ifndef __KERNEL_EVENT_LOGGER_H__
 #define __KERNEL_EVENT_LOGGER_H__
 
+/**
+ * @brief Kernel Event Logger
+ * @defgroup nanokernel_event_logger Kernel Event Logger
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,12 +54,6 @@ extern "C" {
 #define KERNEL_EVENT_LOGGER_TASK_MON_CMD_PACKET_EVENT_ID        0x0005
 #define KERNEL_EVENT_LOGGER_TASK_MON_KEVENT_EVENT_ID            0x0006
 #endif
-
-/**
- * @brief Kernel Event Logger
- * @defgroup nanokernel_event_logger Kernel Event Logger
- * @{
- */
 
 #ifndef _ASMLANGUAGE
 
@@ -204,14 +204,14 @@ static inline void _sys_k_event_logger_enter_sleep(void) {};
 
 #endif /* _ASMLANGUAGE */
 
-/**
-* @}
-*/
-
 #endif /* CONFIG_KERNEL_EVENT_LOGGER */
 
 #ifdef __cplusplus
 }
 #endif
+
+/**
+* @}
+*/
 
 #endif /* __KERNEL_EVENT_LOGGER_H__ */
