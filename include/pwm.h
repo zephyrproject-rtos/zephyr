@@ -211,7 +211,6 @@ static inline int pwm_all_set_duty_cycle(struct device *dev, uint8_t duty)
  * This routine sets the delay before pulses.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param pwm PWM output.
  * @param phase The number of clock ticks to delay before the start of pulses.
  *
  * @retval 0 If successful.
