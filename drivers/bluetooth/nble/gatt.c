@@ -824,7 +824,11 @@ void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 	/* Continue reading the attribute */
 	if (bt_gatt_read(conn, params)) {
 		params->func(conn, BT_ATT_ERR_UNLIKELY, params, NULL, 0);
+		goto done;
 	}
+
+	bt_conn_unref(conn);
+	return;
 
 done:
 	conn->gatt_private = NULL;
