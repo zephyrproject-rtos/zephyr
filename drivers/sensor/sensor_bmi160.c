@@ -113,7 +113,7 @@ static int bmi160_reg_field_update(struct device *dev, uint8_t reg_addr,
 	}
 
 	return  bmi160_byte_write(dev, reg_addr,
-				  (old_val & ~mask) | (val << pos));
+				  (old_val & ~mask) | ((val << pos) & mask));
 }
 
 static int bmi160_pmu_set(struct device *dev, union bmi160_pmu_status *pmu_sts)
