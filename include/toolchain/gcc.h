@@ -73,6 +73,7 @@ do {                                                                    \
 #define __may_alias     __attribute__((__may_alias__))
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
 #define __used		__attribute__((__used__))
+#define __deprecated	__attribute__((deprecated))
 #define ARG_UNUSED(x) (void)(x)
 
 #define likely(x)   __builtin_expect((long)!!(x), 1L)
