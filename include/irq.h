@@ -49,11 +49,11 @@ extern "C" {
 /**
  * Configure a dynamic interrupt.
  *
- * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
- * @param isr_p Interrupt service routine
- * @param isr_param_p ISR parameter
- * @param flags_p Arch-specific IRQ configuration flags
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flags
  *
  * @return The vector assigned to this interrupt
  */
