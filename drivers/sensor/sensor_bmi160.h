@@ -404,4 +404,10 @@ struct bmi160_device_data {
 	struct bmi160_scale scale;
 };
 
+#ifndef CONFIG_SENSOR_DEBUG
+#define DBG(...) { ; }
+#else
+#include <misc/printk.h>
+#define DBG(...) printk(CONFIG_BMI160_NAME ": " __VA_ARGS__)
+#endif /* CONFIG_SENSOR_DEBUG */
 #endif /* _BMI160_H_ */

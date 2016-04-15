@@ -27,13 +27,6 @@
 
 #include "sensor_bmi160.h"
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG(...) printk(CONFIG_BMI160_NAME ": " __VA_ARGS__)
-#endif /* CONFIG_SENSOR_DEBUG */
-
 struct bmi160_device_data bmi160_data;
 
 static int bmi160_transceive(struct device *dev, uint8_t *tx_buf,
