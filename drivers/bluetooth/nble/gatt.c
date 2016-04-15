@@ -835,6 +835,38 @@ done:
 	bt_conn_unref(conn);
 }
 
+void on_nble_gattc_read_multiple_rsp(const struct nble_gattc_read_rsp *rsp,
+				     uint8_t *data, uint8_t len)
+{
+	struct bt_gatt_read_params *params;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(rsp->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn, handle 0x%04x", rsp->conn_handle);
+		return;
+	}
+
+	/* TODO: Get params from user_data pointer, not working at the moment */
+	params = conn->gatt_private;
+
+	BT_DBG("conn %p params %p status 0x%02x", conn, params, rsp->status);
+
+	if (rsp->status) {
+		params->func(conn, rsp->status, params, NULL, 0);
+		goto done;
+	}
+
+	params->func(conn, 0, params, data, len);
+
+	/* mark read as complete since read multiple is single response */
+	params->func(conn, 0, params, NULL, 0);
+
+done:
+	conn->gatt_private = NULL;
+	bt_conn_unref(conn);
+}
+
 int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 		  const void *data, uint16_t length, bt_gatt_rsp_func_t func)
 {
