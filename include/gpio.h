@@ -274,7 +274,8 @@ static inline int gpio_pin_read(struct device *port, uint32_t pin,
  *       by gpio_add_callback() and gpio_remove_callback().
  *       Using this function will not collide with the new ones.
  */
-int gpio_set_callback(struct device *port, gpio_callback_t callback);
+int __deprecated gpio_set_callback(struct device *port,
+				   gpio_callback_t callback);
 
 /**
  * @brief Helper to initialize a struct gpio_callback properly
