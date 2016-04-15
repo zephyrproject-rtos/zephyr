@@ -21,7 +21,7 @@
 #include <sensor.h>
 #include <misc/util.h>
 
-#define MAX_TEST_TIME	MSEC(30000)
+#define MAX_TEST_TIME	MSEC(15000)
 #define SLEEPTIME	MSEC(300)
 
 /* uncomment next line for setting offsets manually */
@@ -120,23 +120,71 @@ static int auto_calibration(struct device *bmi160)
 }
 #endif
 
+#if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
+static void print_gyro_data(struct device *bmi160)
+{
+	struct sensor_value val[3];
+
+	if (sensor_channel_get(bmi160, SENSOR_CHAN_GYRO_ANY, val) < 0) {
+		printf("Cannot read bmi160 gyro channels.\n");
+		return;
+	}
+
+	printf("Gyro (rad/s): X=%f, Y=%f, Z=%f\n",
+	       val[0].val1 + val[0].val2 / 1000000.0,
+	       val[1].val1 + val[1].val2 / 1000000.0,
+	       val[2].val1 + val[2].val2 / 1000000.0);
+}
+#endif
+
+#if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
+static void print_accel_data(struct device *bmi160)
+{
+	struct sensor_value val[3];
+
+	if (sensor_channel_get(bmi160,
+			       SENSOR_CHAN_ACCEL_ANY, val) < 0) {
+		printf("Cannot read bmi160 accel channels.\n");
+		return;
+	}
+
+	printf("Acc (m/s^2): X=%f, Y=%f, Z=%f\n",
+	       val[0].val1 + val[0].val2 / 1000000.0,
+	       val[1].val1 + val[1].val2 / 1000000.0,
+	       val[2].val1 + val[2].val2 / 1000000.0);
+}
+#endif
+
+static void print_temp_data(struct device *bmi160)
+{
+	struct sensor_value val;
+
+	if (sensor_channel_get(bmi160, SENSOR_CHAN_TEMP, &val) < 0) {
+		printf("Temperature channel read error.\n");
+		return;
+	}
+
+	printf("Temperature (Celsius): %f\n",
+	       val.val1 + val.val2 / 1000000.0);
+}
+
 static void test_polling_mode(struct device *bmi160)
 {
 	uint32_t timer_data[2] = {0, 0};
 	int32_t remaining_test_time = MAX_TEST_TIME;
 	struct nano_timer timer;
-	struct sensor_value val[3];
+	struct sensor_value attr;
 
 	nano_timer_init(&timer, timer_data);
 
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
 	/* set sampling frequency to 800Hz for accel */
-	val[0].type = SENSOR_TYPE_INT_PLUS_MICRO;
-	val[0].val1 = 800;
-	val[0].val2 = 0;
+	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.val1 = 800;
+	attr.val2 = 0;
 
 	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &val[0]) < 0) {
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
 		printf("Cannot set sampling frequency for accelerometer.\n");
 		return;
 	}
@@ -144,12 +192,12 @@ static void test_polling_mode(struct device *bmi160)
 
 #if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME)
 	/* set sampling frequency to 3200Hz for gyro */
-	val[0].type = SENSOR_TYPE_INT_PLUS_MICRO;
-	val[0].val1 = 3200;
-	val[0].val2 = 0;
+	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.val1 = 3200;
+	attr.val2 = 0;
 
 	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &val[0]) < 0) {
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
 		printf("Cannot set sampling frequency for gyroscope.\n");
 		return;
 	}
@@ -163,36 +211,12 @@ static void test_polling_mode(struct device *bmi160)
 		}
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-		if (sensor_channel_get(bmi160, SENSOR_CHAN_GYRO_ANY, val) < 0) {
-			printf("Cannot read bmi160 gyro channels.\n");
-			return;
-		}
-
-		printf("Gyro (rad/s): X=%f, Y=%f, Z=%f\n",
-			 val[0].val1 + val[0].val2 / 1000000.0,
-			 val[1].val1 + val[1].val2 / 1000000.0,
-			 val[2].val1 + val[2].val2 / 1000000.0);
+		print_gyro_data(bmi160);
 #endif
-
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-		if (sensor_channel_get(bmi160,
-				       SENSOR_CHAN_ACCEL_ANY, val) < 0) {
-			printf("Cannot read bmi160 accel channels.\n");
-			return;
-		}
-
-		printf("Acc (m/s^2): X=%f, Y=%f, Z=%f\n",
-			 val[0].val1 + val[0].val2 / 1000000.0,
-			 val[1].val1 + val[1].val2 / 1000000.0,
-			 val[2].val1 + val[2].val2 / 1000000.0);
+		print_accel_data(bmi160);
 #endif
-		if (sensor_channel_get(bmi160, SENSOR_CHAN_TEMP, &val[0]) < 0) {
-			printf("Temperature channel read error.\n");
-			return;
-		}
-
-		printf("Temperature (Celsius): %f\n",
-			val[0].val1 + val[0].val2 / 1000000.0);
+		print_temp_data(bmi160);
 
 		/* wait a while */
 		nano_task_timer_start(&timer, SLEEPTIME);
@@ -202,6 +226,173 @@ static void test_polling_mode(struct device *bmi160)
 	} while (remaining_test_time > 0);
 }
 
+#ifdef CONFIG_BMI160_TRIGGER
+static void trigger_hdlr(struct device *bmi160,
+			 struct sensor_trigger *trigger)
+{
+	if (trigger->type != SENSOR_TRIG_DELTA &&
+	    trigger->type != SENSOR_TRIG_DATA_READY) {
+		return;
+	}
+
+	if (sensor_sample_fetch(bmi160) < 0) {
+		printf("Sample update error.\n");
+		return;
+	}
+
+#if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
+	if (trigger->chan == SENSOR_CHAN_GYRO_ANY) {
+		print_gyro_data(bmi160);
+	}
+#endif
+
+#if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
+	if (trigger->chan == SENSOR_CHAN_ACCEL_ANY) {
+		print_accel_data(bmi160);
+	}
+#endif
+}
+
+static void test_anymotion_trigger(struct device *bmi160)
+{
+	int32_t remaining_test_time = MAX_TEST_TIME;
+	uint32_t timer_data[2] = {0, 0};
+	struct nano_timer timer;
+	struct sensor_value attr;
+	struct sensor_trigger trig;
+
+	nano_timer_init(&timer, timer_data);
+
+	/* set up anymotion trigger */
+
+	/*
+	 * Set slope threshold to 0.1G (0.1 * 9.80665 = 4.903325 m/s^2).
+	 * This depends on the chosen range. One cannot choose a threshold
+	 * bigger than half the range. For example, for a 16G range, the
+	 * threshold must not exceed 8G.
+	 */
+	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.val1 = 0;
+	attr.val2 = 980665;
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+			    SENSOR_ATTR_SLOPE_TH, &attr) < 0) {
+		printf("Cannot set anymotion slope threshold.\n");
+		return;
+	}
+
+	/*
+	 * Set slope duration to 2 consecutive samples (after which the
+	 * anymotion interrupt will trigger.
+	 *
+	 * Allowed values are from 1 to 4.
+	 */
+	attr.type = SENSOR_TYPE_INT;
+	attr.val1 = 2;
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+			    SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
+		printf("Cannot set anymotion slope duration.\n");
+		return;
+	}
+
+	/* enable anymotion trigger */
+	trig.type = SENSOR_TRIG_DELTA;
+	trig.chan = SENSOR_CHAN_ACCEL_ANY;
+
+	if (sensor_trigger_set(bmi160, &trig, trigger_hdlr) < 0) {
+		printf("Cannot enable anymotion trigger.\n");
+		return;
+	}
+
+	printf("Anymotion test: shake the device to get anymotion events.\n");
+	do {
+		/* wait a while */
+		nano_task_timer_start(&timer, SLEEPTIME);
+		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+
+		remaining_test_time -= SLEEPTIME;
+	} while (remaining_test_time > 0);
+
+	printf("Anymotion test: finished, removing anymotion trigger...\n");
+
+	if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
+		printf("Cannot remove anymotion trigger.\n");
+		return;
+	}
+}
+
+static void test_data_ready_trigger(struct device *bmi160)
+{
+	int32_t remaining_test_time = MAX_TEST_TIME;
+	uint32_t timer_data[2] = {0, 0};
+	struct nano_timer timer;
+	struct sensor_trigger trig;
+
+	nano_timer_init(&timer, timer_data);
+
+	/* enable data ready trigger */
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_ACCEL_ANY;
+
+	if (sensor_trigger_set(bmi160, &trig, trigger_hdlr) < 0) {
+		printf("Cannot enable data ready trigger.\n");
+		return;
+	}
+
+	printf("Data ready test:\n");
+	do {
+		/* wait a while */
+		nano_task_timer_start(&timer, SLEEPTIME);
+		nano_task_timer_test(&timer, TICKS_UNLIMITED);
+
+		remaining_test_time -= SLEEPTIME;
+	} while (remaining_test_time > 0);
+
+	printf("Data ready test: finished, removing data ready trigger...\n");
+
+	if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
+		printf("Cannot remove data ready trigger.\n");
+		return;
+	}
+}
+
+static void test_trigger_mode(struct device *bmi160)
+{
+	struct sensor_value attr;
+
+#if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
+	/* set sampling frequency to 100Hz for accel */
+	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.val1 = 100;
+	attr.val2 = 0;
+
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_ACCEL_ANY,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
+		printf("Cannot set sampling frequency for accelerometer.\n");
+		return;
+	}
+#endif
+
+#if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME)
+	/* set sampling frequency to 100Hz for gyro */
+	attr.type = SENSOR_TYPE_INT_PLUS_MICRO;
+	attr.val1 = 100;
+	attr.val2 = 0;
+
+	if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
+		printf("Cannot set sampling frequency for gyroscope.\n");
+		return;
+	}
+#endif
+
+	test_anymotion_trigger(bmi160);
+
+	test_data_ready_trigger(bmi160);
+}
+#endif /* CONFIG_BMI160_TRIGGER */
+
+extern uint8_t pbuf[1024];
+extern uint8_t *pos;
 void main(void)
 {
 	struct device *bmi160;
@@ -261,7 +452,13 @@ void main(void)
 	}
 #endif
 
-	printf("Gyro: Testing the polling mode.\n");
+	printf("Testing the polling mode.\n");
 	test_polling_mode(bmi160);
-	printf("Gyro: Testing the polling mode finished.\n");
+	printf("Testing the polling mode finished.\n");
+
+#ifdef CONFIG_BMI160_TRIGGER
+	printf("Testing the trigger mode.\n");
+	test_trigger_mode(bmi160);
+	printf("Testing the trigger mode finished.\n");
+#endif
 }
