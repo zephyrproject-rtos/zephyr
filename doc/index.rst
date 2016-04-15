@@ -4,8 +4,10 @@
 Zephyr Project Documentation
 ############################
 
-Getting Started
-***************
+Welcome to the Zephyr Project's documentation version |version|!
+
+Sections
+********
 
 .. toctree::
    :maxdepth: 1
@@ -15,34 +17,15 @@ Getting Started
    kernel/kernel.rst
    drivers/drivers.rst
    subsystems/subsystems.rst
-
-Developer Guides
-****************
-
-.. toctree::
-   :maxdepth: 1
-
    contribute/code.rst
    reference/kbuild/kbuild.rst
    application/application.rst
    api/api.rst
    collaboration/collaboration
-
-Reference Guides
-****************
-
-.. toctree::
-   :maxdepth: 1
-
    reference/kconfig/index.rst
-
-Supported Boards
-****************
-
-.. toctree::
-   :maxdepth: 2
-
    board/board.rst
+
+You can find further information on the `Zephyr Project Wiki`_.
 
 Indices and Tables
 ******************
@@ -50,3 +33,5 @@ Indices and Tables
 * :ref:`genindex`
 
 * :ref:`search`
+
+.. _Zephyr Project Wiki: https://wiki.zephyrproject.org/view/Main_Page
