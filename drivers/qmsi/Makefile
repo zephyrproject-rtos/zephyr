@@ -17,3 +17,4 @@ obj-$(CONFIG_SOC_FLASH_QMSI) += drivers/qm_flash.o
 obj-$(CONFIG_PINMUX_DEV_QMSI) += drivers/qm_pinmux.o
 obj-$(CONFIG_SPI_QMSI_SS) += drivers/sensor/qm_ss_spi.o
 obj-$(CONFIG_GPIO_QMSI_SS) += drivers/sensor/qm_ss_gpio.o
+obj-$(CONFIG_I2C_QMSI_SS) += drivers/sensor/qm_ss_i2c.o
