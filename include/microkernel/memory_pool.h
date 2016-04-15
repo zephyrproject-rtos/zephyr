@@ -92,7 +92,7 @@ extern int task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
  * This routine  provides traditional malloc semantics and is a wrapper on top
  * of microkernel pool alloc API.
  * It returns an aligned memory address which points to the start of a memory
- * block of at least @size bytes.
+ * block of at least \p size bytes.
  * This memory comes from heap memory pool, consequently the app should
  * specify its intention to use a heap pool via the HEAP_SIZE keyword in
  * MDEF file, if it uses this API.
