@@ -21,7 +21,6 @@
 #include <init.h>
 #include <sensor.h>
 #include <spi.h>
-#include <gpio.h>
 #include <misc/byteorder.h>
 #include <nanokernel.h>
 
@@ -101,6 +100,17 @@ int bmi160_byte_write(struct device *dev, uint8_t reg_addr, uint8_t byte)
 	uint8_t tx_buf[2] = {reg_addr & 0x7F, byte};
 
 	return bmi160_transceive(dev, tx_buf, 2, NULL, 0);
+}
+
+int bmi160_word_write(struct device *dev, uint8_t reg_addr, uint16_t word)
+{
+	uint8_t tx_buf[3] = {
+		reg_addr & 0x7F,
+		(uint8_t)(word & 0xff),
+		(uint8_t)(word >> 8)
+	};
+
+	return bmi160_transceive(dev, tx_buf, 3, NULL, 0);
 }
 
 int bmi160_reg_field_update(struct device *dev, uint8_t reg_addr,
@@ -450,6 +460,11 @@ static int bmi160_acc_config(struct device *dev, enum sensor_channel chan,
 		return bmi160_acc_ofs_set(dev, chan, val);
 	case SENSOR_ATTR_CALIB_TARGET:
 		return bmi160_acc_calibrate(dev, chan, val);
+#if defined(CONFIG_BMI160_TRIGGER)
+	case SENSOR_ATTR_SLOPE_TH:
+	case SENSOR_ATTR_SLOPE_DUR:
+		return bmi160_acc_slope_config(dev, attr, val);
+#endif
 	default:
 		DBG("Accel attribute not supported.\n");
 		return -ENOTSUP;
@@ -801,6 +816,9 @@ static int bmi160_channel_get(struct device *dev,
 
 struct sensor_driver_api bmi160_api = {
 	.attr_set = bmi160_attr_set,
+#ifdef CONFIG_BMI160_TRIGGER
+	.trigger_set = bmi160_trigger_set,
+#endif
 	.sample_fetch = bmi160_sample_fetch,
 	.channel_get = bmi160_channel_get,
 };
@@ -901,6 +919,13 @@ int bmi160_init(struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_BMI160_TRIGGER
+	if (bmi160_trigger_mode_init(dev) < 0) {
+		DBG("Cannot set up trigger mode.\n");
+		return -EINVAL;
+	}
+#endif
+
 	return 0;
 }
 
@@ -908,6 +933,10 @@ struct bmi160_device_config bmi160_config = {
 	.spi_port = CONFIG_BMI160_SPI_PORT_NAME,
 	.spi_freq = CONFIG_BMI160_SPI_BUS_FREQ,
 	.spi_slave = CONFIG_BMI160_SLAVE,
+#if defined(CONFIG_BMI160_TRIGGER) && defined(CONFIG_BMI160_TRIGGER_SOURCE_GPIO)
+	.gpio_port = CONFIG_BMI160_GPIO_DEV_NAME,
+	.int_pin = CONFIG_BMI160_GPIO_PIN_NUM,
+#endif
 };
 
 DEVICE_INIT(bmi160, CONFIG_BMI160_NAME, bmi160_init, &bmi160_data,
