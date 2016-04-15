@@ -17,7 +17,9 @@
 #define _STM32F1_CLOCK_CONTROL_H_
 
 /**
- * @file clock subsystem IDs for STM32F1 family
+ * @file
+ *
+ * @brief Clock subsystem IDs for STM32F1 family
  */
 
 enum {
