@@ -677,6 +677,9 @@ void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 
 	params = conn->gatt_private;
 
+	/* This pointer would keep new params set in the function below */
+	conn->gatt_private = NULL;
+
 	/* Status maybe error or indicate end of discovery */
 	if (rsp->status) {
 		BT_DBG("status %d", rsp->status);
@@ -722,9 +725,6 @@ void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 		params->start_handle++;
 	}
 
-	/* This pointer would keep new params set in the function below */
-	conn->gatt_private = NULL;
-
 	status = bt_gatt_discover(conn, params);
 	if (status) {
 		BT_ERR("Unable to continue discovering, status %d", status);
@@ -739,7 +739,6 @@ done:
 	params->func(conn, NULL, params);
 
 stop:
-	conn->gatt_private = NULL;
 	bt_conn_unref(conn);
 }
 
