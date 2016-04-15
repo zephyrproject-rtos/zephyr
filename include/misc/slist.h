@@ -50,9 +50,9 @@ typedef struct _slist sys_slist_t;
  *
  * User _MUST_ add the loop statement curly braces enclosing its own code:
  *
- * SYS_SLIST_FOR_EACH_NODE(l, n) {
+ *     SYS_SLIST_FOR_EACH_NODE(l, n) {
  *         <user code>
- * }
+ *     }
  *
  * @param __sl A pointer on a sys_list_t to iterate on
  * @param __sn A sys_snode_t pointer to peek each node of the list
@@ -67,9 +67,9 @@ typedef struct _slist sys_slist_t;
  *
  * User _MUST_ add the loop statement curly braces enclosing its own code:
  *
- * SYS_SLIST_FOR_EACH_NODE_SAFE(l, n, s) {
+ *     SYS_SLIST_FOR_EACH_NODE_SAFE(l, n, s) {
  *         <user code>
- * }
+ *     }
  *
  * @param __sl A pointer on a sys_list_t to iterate on
  * @param __sn A sys_snode_t pointer to peek each node of the list
