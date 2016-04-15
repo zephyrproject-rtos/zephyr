@@ -101,6 +101,16 @@ config KERNEL_EVENT_LOGGER_BUFFER_SIZE
 	help
 	Buffer size in 32-bit words.
 
+config KERNEL_EVENT_LOGGER_DYNAMIC
+	bool
+	prompt "Kernel event logger dynamic enabling"
+	default n
+	depends on KERNEL_EVENT_LOGGER
+	help
+	If enabled, kernel event logger is not logging any data to the ring buffer
+	It is up to the application to set the appropriate flags to enable/disable the
+	logging of each event type.
+
 config  THREAD_MONITOR
 	bool
 	prompt "Task and fiber monitoring [EXPERIMENTAL]"

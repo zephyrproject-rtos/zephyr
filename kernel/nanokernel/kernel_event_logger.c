@@ -36,6 +36,9 @@ void *_collector_fiber;
 uint32_t _sys_k_event_logger_sleep_start_time;
 #endif
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+int _sys_k_event_logger_mask;
+#endif
 
 /**
  * @brief Initialize the kernel event logger system.
@@ -78,6 +81,10 @@ void _sys_k_event_logger_context_switch(void)
 		uint16_t event_id,
 		uint32_t *event_data,
 		uint8_t data_size);
+
+	if (!sys_k_must_log_event(KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID)) {
+		return;
+	}
 
 	/* if the kernel event logger has not been initialized, we do nothing */
 	if (sys_k_event_logger.ring_buf.buf == NULL) {
@@ -123,6 +130,10 @@ void _sys_k_event_logger_interrupt(void)
 {
 	uint32_t data[2];
 
+	if (!sys_k_must_log_event(KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID)) {
+		return;
+	}
+
 	/* if the kernel event logger has not been initialized, we do nothing */
 	if (sys_k_event_logger.ring_buf.buf == NULL) {
 		return;
@@ -140,12 +151,20 @@ void _sys_k_event_logger_interrupt(void)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 void _sys_k_event_logger_enter_sleep(void)
 {
+	if (!sys_k_must_log_event(KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID)) {
+		return;
+	}
+
 	_sys_k_event_logger_sleep_start_time = sys_cycle_get_32();
 }
 
 void _sys_k_event_logger_exit_sleep(void)
 {
 	uint32_t data[3];
+
+	if (!sys_k_must_log_event(KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID)) {
+		return;
+	}
 
 	if (_sys_k_event_logger_sleep_start_time != 0) {
 		data[0] = sys_cycle_get_32();

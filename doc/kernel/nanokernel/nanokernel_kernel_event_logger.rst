@@ -49,6 +49,12 @@ Profiling points configuration:
     * Which thread is leaving the CPU.
     * Timestamp when the event has occurred.
 
+* :option:`KERNEL_EVENT_LOGGER_DYNAMIC`
+
+  Allows modifying at runtime the events to record. At boot no event is recorded if enabled
+  This flag adds functions allowing to enable/disable recoding of kernel event logger and
+  task monitor events.
+
 Adding a Kernel Event Logging Point
 ***********************************
 
@@ -85,6 +91,21 @@ the provided buffer. When the buffer size is smaller than the message, the funct
 return an error. All three functions retrieve messages via a FIFO method. The :literal:`wait`
 and :literal:`wait_timeout` functions allow the caller to pend until a new message is
 logged, or until the timeout expires.
+
+Enabling/disabling event recording
+**********************************
+
+If KERNEL_EVENT_LOGGER_DYNAMIC is enabled, following functions must be checked for
+dynamically enabling/disabling event recording at runtime:
+
+* :cpp:func:`sys_k_event_logger_set_mask()`
+* :cpp:func:`sys_k_event_logger_get_mask()`
+* :cpp:func:`sys_k_event_logger_set_monitor_mask()`
+* :cpp:func:`sys_k_event_logger_get_monitor_mask()`
+
+Each mask bit corresponds to the corresponding event ID (mask is starting at bit 1 not bit 0).
+
+More details are provided in function description.
 
 Timestamp
 *********
@@ -288,16 +309,20 @@ Example: Adding a Kernel Event Logging Point
 
    uint32_t data[2];
 
-   data[0] = custom_data_1;
-   data[1] = custom_data_2;
+   if (sys_k_must_log_event(KERNEL_EVENT_LOGGER_CUSTOM_ID)) {
+      data[0] = custom_data_1;
+      data[1] = custom_data_2;
 
-   sys_k_event_logger_put(KERNEL_EVENT_LOGGER_CUSTOM_ID, data, ARRAY_SIZE(data));
+      sys_k_event_logger_put(KERNEL_EVENT_LOGGER_CUSTOM_ID, data, ARRAY_SIZE(data));
+   }
 
 Use the following function to register only the time of an event.
 
 .. code-block:: c
 
-   sys_k_event_logger_put_timed(KERNEL_EVENT_LOGGER_CUSTOM_ID);
+   if (sys_k_must_log_event(KERNEL_EVENT_LOGGER_CUSTOM_ID)) {
+      sys_k_event_logger_put_timed(KERNEL_EVENT_LOGGER_CUSTOM_ID);
+   }
 
 APIs
 ****
@@ -321,3 +346,20 @@ The following APIs are provided by the :file:`k_event_logger.h` file:
 
 :c:func:`sys_k_event_logger_get_wait_timeout()`
    De-queue a kernel event logger message. Wait if the buffer is empty until the timeout expires.
+
+:cpp:func:`sys_k_must_log_event()`
+   Check if an event type has to be logged or not
+
+In case KERNEL_EVENT_LOGGER_DYNAMIC is enabled:
+
+:cpp:func:`sys_k_event_logger_set_mask()`
+   Set kernel event logger event mask
+
+:cpp:func:`sys_k_event_logger_get_mask()`
+   Get kernel event logger event mask
+
+:cpp:func:`sys_k_event_logger_set_monitor_mask()`
+   Set task monitor event mask
+
+:cpp:func:`sys_k_event_logger_get_monitor_mask()`
+   Get task monitor event mask

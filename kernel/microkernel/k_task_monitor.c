@@ -19,7 +19,11 @@
 #include <micro_private.h>
 #include <misc/kernel_event_logger.h>
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+int _k_monitor_mask;
+#else
 const int _k_monitor_mask = CONFIG_TASK_MONITOR_MASK;
+#endif
 
 k_task_monitor_hook_t _k_task_switch_callback;
 

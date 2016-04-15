@@ -63,6 +63,124 @@ extern "C" {
  */
 struct event_logger sys_k_event_logger;
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+
+extern int _sys_k_event_logger_mask;
+
+/**
+ * @brief Set kernel event logger filtering mask
+ *
+ * @details Calling this macro sets the mask used to select which events
+ * to store in the kernel event logger ring buffer. This flag can be set
+ * at runtime and at any moment.
+ * This capability is only available when CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+ * is set. If enabled, no event is enabled for logging at initialization.
+ * The mask bits shall be set according to events ID defined in
+ * kernel_event_logger.h
+ * For example, to enable interrupt logging the following shall be done:
+ * sys_k_event_logger_set_mask(sys_k_event_logger_get_mask |
+ *                (1 << (KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID - 1)))
+ * To disable it:
+ * sys_k_event_logger_set_mask(sys_k_event_logger_get_mask &
+ *                ~(1 << (KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID - 1)))
+ *
+ * WARNING: task monitor events are not covered by this API. Please refer
+ * to sys_k_event_logger_set_monitor_mask / sys_k_event_logger_get_monitor_mask
+ */
+static inline void sys_k_event_logger_set_mask(int value)
+{
+	_sys_k_event_logger_mask = value;
+}
+
+/**
+ * @brief Get kernel event logger filtering mask
+ *
+ * @details Calling this macro permits to read the mask used to select which
+ * events are stored in the kernel event logger ring buffer. This macro can be
+ * used at runtime and at any moment.
+ * This capability is only available when CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+ * is set. If enabled, no event is enabled for logging at initialization.
+ *
+ * @see sys_k_event_logger_set_mask(value) for details
+ *
+ * WARNING: task monitor events are not covered by this API. Please refer
+ * to sys_k_event_logger_set_monitor_mask / sys_k_event_logger_get_monitor_mask
+ */
+static inline int sys_k_event_logger_get_mask(void)
+{
+	return _sys_k_event_logger_mask;
+}
+
+#ifdef CONFIG_TASK_MONITOR
+
+extern int _k_monitor_mask;
+
+/**
+ * @brief Set task monitor filtering mask
+ *
+ * @details Calling this function sets the mask used to select which task monitor
+ * events to store in the kernel event logger ring buffer. This flag can be set
+ * at runtime and at any moment.
+ * This capability is only available when CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+ * is set. If enabled, no event is enabled for logging at initialization
+ * so CONFIG_TASK_MONITOR_MASK is ignored
+ *
+ * The mask bits shall be set according to monitor events defined in
+ * micro_private.h
+ *
+ * For example, to enable k_swapper cmd logging the following shall be done:
+ * sys_k_event_logger_set_monitor_mask(sys_k_event_logger_get_monitor_mask |
+ *                (1 << (MON_KSERV - 1)))
+ * To disable it:
+ * sys_k_event_logger_set_mask(sys_k_event_logger_get_mask &
+ *                ~(1 << (MON_KSERV - 1)))
+ *
+ */
+static inline void sys_k_event_logger_set_monitor_mask(int value)
+{
+	_k_monitor_mask = value;
+}
+
+/**
+ * @brief Get task monitor filtering mask
+ *
+ * @details Calling this function permits to read the mask used to select which
+ * task monitor events to store in the kernel event logger ring buffer. This
+ * function can be used at runtime and at any moment.
+ * This capability is only available when CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+ * is set. If enabled, no event is enabled for logging at initialization
+ * so CONFIG_TASK_MONITOR_MASK is ignored
+ *
+ * @see sys_k_event_logger_set_monitor_mask() for details
+ *
+ */
+static inline int sys_k_event_logger_get_monitor_mask(void)
+{
+	return _k_monitor_mask;
+}
+
+#endif /* CONFIG_TASK_MONITOR */
+#endif /* CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC */
+
+/**
+ * @brief Check if an event type has to be logged or not
+ *
+ * @details This function must be used before calling any sys_k_event_logger_put*
+ * function. In case CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC is enabled, that function
+ * permits to enable or disable the logging of each individual event at runtime
+ *
+ * @param event_type   The identification of the event.
+ *
+ */
+
+static inline int sys_k_must_log_event(int event_type)
+{
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+	return !!(_sys_k_event_logger_mask & (1 << (event_type - 1)));
+#else
+	return 1;
+#endif
+}
 
 /**
  * @brief Sends a event message to the kernel event logger.

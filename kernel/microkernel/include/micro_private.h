@@ -155,7 +155,11 @@ extern void _k_task_monitor(struct k_task *, uint32_t d2);
 extern void _k_task_monitor_args(struct k_args *);
 extern void _k_task_monitor_read(struct k_args *);
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+extern int _k_monitor_mask;
+#else
 extern const int _k_monitor_mask;
+#endif
 
 /* task level monitor bits */
 
