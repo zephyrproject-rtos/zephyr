@@ -404,6 +404,12 @@ struct bmi160_device_data {
 	struct bmi160_scale scale;
 };
 
+int bmi160_read(struct device *dev, uint8_t reg_addr,
+		uint8_t *data, uint8_t len);
+int bmi160_byte_read(struct device *dev, uint8_t reg_addr, uint8_t *byte);
+int bmi160_byte_write(struct device *dev, uint8_t reg_addr, uint8_t byte);
+int bmi160_reg_field_update(struct device *dev, uint8_t reg_addr,
+			    uint8_t pos, uint8_t mask, uint8_t val);
 int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
 int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);
 

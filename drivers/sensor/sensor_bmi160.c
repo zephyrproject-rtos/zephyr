@@ -54,16 +54,16 @@ static int bmi160_transceive(struct device *dev, uint8_t *tx_buf,
 			      rx_buf, rx_buf_len);
 }
 
-static int bmi160_read(struct device *dev, uint8_t reg_addr,
-		       uint8_t *data, uint8_t len)
+int bmi160_read(struct device *dev, uint8_t reg_addr,
+		uint8_t *data, uint8_t len)
 {
 	uint8_t tx = reg_addr | (1 << 7);
 
 	return bmi160_transceive(dev, &tx, 1, data, len);
 }
 
-static int bmi160_byte_read(struct device *dev, uint8_t reg_addr,
-			    uint8_t *byte)
+int bmi160_byte_read(struct device *dev, uint8_t reg_addr,
+		     uint8_t *byte)
 {
 	uint8_t rx_buf[2];
 
@@ -96,15 +96,15 @@ static int bmi160_word_read(struct device *dev, uint8_t reg_addr,
 	return 0;
 }
 
-static int bmi160_byte_write(struct device *dev, uint8_t reg_addr, uint8_t byte)
+int bmi160_byte_write(struct device *dev, uint8_t reg_addr, uint8_t byte)
 {
 	uint8_t tx_buf[2] = {reg_addr & 0x7F, byte};
 
 	return bmi160_transceive(dev, tx_buf, 2, NULL, 0);
 }
 
-static int bmi160_reg_field_update(struct device *dev, uint8_t reg_addr,
-				   uint8_t pos, uint8_t mask, uint8_t val)
+int bmi160_reg_field_update(struct device *dev, uint8_t reg_addr,
+			    uint8_t pos, uint8_t mask, uint8_t val)
 {
 	uint8_t old_val;
 
