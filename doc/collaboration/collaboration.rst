@@ -10,4 +10,3 @@ best ways to collaborate with the team. Read them carefully before submitting an
    :maxdepth: 1
 
    communication/communication
-   documentation/documentation
