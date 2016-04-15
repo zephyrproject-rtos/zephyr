@@ -132,7 +132,7 @@ typedef unsigned int uip_stats_t;
 #endif /* CONFIG_15_4_BEACON_STATS */
 #else /* CONFIG_NETWORKING_WITH_15_4 */
 #define NETSTACK_CONF_FRAMER	framer_nullmac
-#define NETSTACK_CONF_RDC	nullrdc_driver
+#define NETSTACK_CONF_RDC	simplerdc_driver
 #define NETSTACK_CONF_MAC	nullmac_driver
 #define LINKADDR_CONF_SIZE      6
 #ifdef CONFIG_NETWORKING_WITH_BT

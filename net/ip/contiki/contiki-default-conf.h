@@ -61,12 +61,12 @@
 #endif /* NETSTACK_CONF_FRAMER */
 
 /* NETSTACK_CONF_RDC specifies the Radio Duty Cycling (RDC) layer. The
-   nullrdc_driver never turns the radio off and is compatible with all
+   simplerdc_driver never turns the radio off and is compatible with all
    radios, but consumes a lot of power. The contikimac_driver is
    highly power-efficent and allows sleepy routers, but is not
    compatible with all radios. */
 #ifndef NETSTACK_CONF_RDC
-#define NETSTACK_CONF_RDC   nullrdc_driver
+#define NETSTACK_CONF_RDC   simplerdc_driver
 /* #define NETSTACK_CONF_RDC   contikimac_driver */
 #endif /* NETSTACK_CONF_RDC */
 

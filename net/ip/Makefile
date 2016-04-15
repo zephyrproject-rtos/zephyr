@@ -77,7 +77,7 @@ ifeq ($(CONFIG_NETWORKING_WITH_6LOWPAN),y)
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/sicslowpan/sicslowpan_fragmentation.o
 else
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/framer-nullmac.o \
-					contiki/mac/nullrdc.o \
+					contiki/mac/simplerdc.o \
 					contiki/sicslowpan/null_compression.o \
 					contiki/sicslowpan/null_fragmentation.o
 endif
@@ -129,7 +129,7 @@ obj-$(CONFIG_NETWORKING_WITH_BT) += net_driver_bt.o \
 ifeq ($(CONFIG_NETWORKING_WITH_15_4),)
      obj-y += contiki/mac/nullmac.o \
 		contiki/mac/framer-nullmac.o \
-		contiki/mac/nullrdc.o
+		contiki/mac/simplerdc.o
 endif
 
 obj-$(CONFIG_NETWORKING_UART) += contiki/os/dev/slip.o \
