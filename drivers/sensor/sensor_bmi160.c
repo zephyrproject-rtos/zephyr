@@ -282,6 +282,18 @@ static int32_t bmi160_reg_val_to_range(uint8_t reg_val,
 	return -EINVAL;
 }
 
+int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val)
+{
+	return bmi160_reg_val_to_range(reg_val, bmi160_acc_range_map,
+				       BMI160_ACC_RANGE_MAP_SIZE);
+}
+
+int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val)
+{
+	return bmi160_reg_val_to_range(reg_val, bmi160_gyr_range_map,
+				       BMI160_GYR_RANGE_MAP_SIZE);
+}
+
 static int bmi160_do_calibration(struct device *dev, uint8_t foc_conf)
 {
 	if (bmi160_byte_write(dev, BMI160_REG_FOC_CONF, foc_conf) < 0) {
@@ -858,9 +870,7 @@ int bmi160_init(struct device *dev)
 		return -EIO;
 	}
 
-	acc_range = bmi160_reg_val_to_range(BMI160_DEFAULT_RANGE_ACC,
-					    bmi160_acc_range_map,
-					    BMI160_ACC_RANGE_MAP_SIZE);
+	acc_range = bmi160_acc_reg_val_to_range(BMI160_DEFAULT_RANGE_ACC);
 
 	bmi160->scale.acc = BMI160_ACC_SCALE(acc_range);
 
@@ -871,9 +881,7 @@ int bmi160_init(struct device *dev)
 		return -EIO;
 	}
 
-	gyr_range = bmi160_reg_val_to_range(BMI160_DEFAULT_RANGE_GYR,
-					    bmi160_gyr_range_map,
-					    BMI160_GYR_RANGE_MAP_SIZE);
+	gyr_range = bmi160_gyr_reg_val_to_range(BMI160_DEFAULT_RANGE_GYR);
 
 	bmi160->scale.gyr = BMI160_GYR_SCALE(gyr_range);
 

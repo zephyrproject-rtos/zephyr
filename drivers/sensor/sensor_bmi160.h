@@ -404,6 +404,9 @@ struct bmi160_device_data {
 	struct bmi160_scale scale;
 };
 
+int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
+int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);
+
 #ifndef CONFIG_SENSOR_DEBUG
 #define DBG(...) { ; }
 #else
