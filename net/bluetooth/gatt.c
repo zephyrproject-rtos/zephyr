@@ -1202,11 +1202,9 @@ int bt_gatt_discover(struct bt_conn *conn,
 
 	switch (params->type) {
 	case BT_GATT_DISCOVER_PRIMARY:
-		return att_find_type(conn, params);
 	case BT_GATT_DISCOVER_SECONDARY:
 		return att_find_type(conn, params);
 	case BT_GATT_DISCOVER_INCLUDE:
-		return att_read_type(conn, params);
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		return att_read_type(conn, params);
 	case BT_GATT_DISCOVER_DESCRIPTOR:
