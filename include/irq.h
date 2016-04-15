@@ -25,6 +25,7 @@
 #include <arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
+#include <toolchain/gcc.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +62,7 @@ extern int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(void *parameter), void *parameter,
 			     uint32_t flags);
 
-static inline int  __attribute__((deprecated))
+static inline int  __deprecated
 irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		    void (*routine)(void *parameter), void *parameter,
 		    uint32_t flags)
