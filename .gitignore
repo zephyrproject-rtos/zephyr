@@ -19,9 +19,9 @@ scripts/kconfig/zconf.hash.c
 scripts/kconfig/zconf.lex.c
 scripts/kconfig/zconf.tab.c
 doc/_build
-xml
-html/
-doc/latex/
+doc/xml
+doc/html
+doc/latex
 sanity-out/
 scripts/grub
 doc/reference/kconfig/CONFIG_*
