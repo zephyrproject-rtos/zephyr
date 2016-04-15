@@ -93,8 +93,21 @@ typedef unsigned int uip_stats_t;
 #ifdef CONFIG_NETWORKING_WITH_6LOWPAN
 #if defined(CONFIG_NETWORKING_WITH_15_4_RDC_SICSLOWMAC)
 #define NETSTACK_CONF_RDC	sicslowmac_driver
-#elif defined(CONFIG_NETWORKING_WITH_15_4_RDC_NULL)
-#define NETSTACK_CONF_RDC	nullrdc_driver
+#elif defined(CONFIG_NETWORKING_WITH_15_4_RDC_SIMPLE)
+#define NETSTACK_CONF_RDC	simplerdc_driver
+
+/* Simple RDC config*/
+#ifdef CONFIG_TI_CC2520_AUTO_ACK
+#define SIMPLERDC_802154_AUTOACK	1
+#else
+#define SIMPLERDC_802154_SEND_ACK	1
+#endif
+
+#ifdef CONFIG_NETWORKING_WITH_15_4_ALWAYS_ACK
+#define SIMPLERDC_802154_ACK_REQ	1
+#endif
+#define SIMPLERDC_MAX_RETRANSMISSIONS	3
+
 #endif /* RDC driver */
 #endif /* CONFIG_NETWORKING_WITH_6LOWPAN */
 #ifdef CONFIG_NETWORKING_WITH_15_4_MAC_NULL

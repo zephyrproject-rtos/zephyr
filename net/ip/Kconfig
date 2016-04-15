@@ -238,6 +238,16 @@ config	NETWORKING_WITH_15_4
 	  it into suitable chunks ready to be sent to the 802.15.4
 	  hw driver
 
+config  NETWORKING_WITH_15_4_ALWAYS_ACK
+	bool
+	prompt "Always request 802.15.4 packet acknowledgment"
+	depends on NETWORKING_WITH_15_4
+	default n
+	help
+	  This is meant to be used for testing only. Requesting an
+	  acknowledgment on all data packet will draw power resource.
+	  Use case for this option it for testing only.
+
 choice
 	prompt "802.15.4 MAC Driver"
 	depends on NETWORKING && NETWORKING_WITH_15_4
@@ -262,17 +272,17 @@ choice
 	depends on NETWORKING && NETWORKING_WITH_15_4
 	help
 	 The 802.15.4 RDC (Radio Duty Cycle) layer can use either
-	 sicslowmac or nullrdc.
+	 sicslowmac or simplerdc.
+config	NETWORKING_WITH_15_4_RDC_SIMPLE
+	bool
+	prompt "simplerdc driver"
+	help
+	  Enable simplerdc driver.
 config	NETWORKING_WITH_15_4_RDC_SICSLOWMAC
 	bool
 	prompt "sicslowmac driver"
 	help
 	  Enable sicslowmac driver.
-config	NETWORKING_WITH_15_4_RDC_NULL
-	bool
-	prompt "nullrdc driver"
-	help
-	  Enable nullrdc driver.
 endchoice
 
 config	15_4_RX_STACK_SIZE

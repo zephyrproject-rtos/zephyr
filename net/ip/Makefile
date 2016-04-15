@@ -86,8 +86,8 @@ endif
 ifeq ($(CONFIG_NETWORKING_WITH_15_4_RDC_SICSLOWMAC),y)
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/sicslowmac/sicslowmac.o
 else
-     ifeq ($(CONFIG_NETWORKING_WITH_15_4_RDC_NULL),y)
-          obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/nullrdc.o
+     ifeq ($(CONFIG_NETWORKING_WITH_15_4_RDC_SIMPLE),y)
+          obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/simplerdc.o
      endif
 endif
 
