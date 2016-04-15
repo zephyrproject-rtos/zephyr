@@ -25,6 +25,7 @@
 /**
  * @brief COUNTER Interface
  * @defgroup counter_interface COUNTER Interface
+ * @ingroup io_interfaces
  * @{
  */
 
