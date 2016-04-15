@@ -15,7 +15,9 @@
  */
 
 /**
- * @file Header where single linked list utility code is found
+ * @file
+ *
+ * @brief Header where single linked list utility code is found
  */
 
 #ifndef __SLIST_H__
