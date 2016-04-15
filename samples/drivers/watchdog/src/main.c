@@ -21,13 +21,9 @@
 #include "board.h"
 #include <misc/printk.h>
 
-
-uint32_t wdt_fired;
-
 /* WDT Requires a callback, there is no interrupt enable / disable. */
 void wdt_example_cb(struct device *dev)
 {
-	wdt_fired++;
 	printk("watchdog fired\n");
 	wdt_reload(dev);
 }
@@ -43,7 +39,6 @@ void main(void)
 	wr_cfg.mode = WDT_MODE_INTERRUPT_RESET;
 	wr_cfg.interrupt_fn = wdt_example_cb;
 
-	wdt_fired = 0;
 	wdt_dev = device_get_binding("WATCHDOG");
 
 	wdt_enable(wdt_dev);
@@ -53,4 +48,3 @@ void main(void)
 	printk("timeout: %d\n", cfg.timeout);
 	printk("mode: %d\n", cfg.mode);
 }
-
