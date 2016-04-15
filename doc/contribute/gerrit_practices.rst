@@ -36,6 +36,7 @@ shows the format and content expected in a commit message:::
    Summary of the changes made referencing why, what and how.
    For documented code reference what part of the code the change is applied.
 
+   Jira: ZEP-100
    Change-Id: LONGHEXHASH
    Signed-off-by: Your Name your.email@example.org
    AnotherExampleHeader: An Example of another Value
