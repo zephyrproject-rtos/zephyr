@@ -333,27 +333,10 @@ endif # WDT_QMSI
 endif # WATCHDOG
 
 if RTC
-
-if RTC_QMSI
-config RTC_QMSI_IRQ
-	default 11
+config RTC_QMSI
+	def_bool y
 config RTC_QMSI_IRQ_PRI
 	default 2
-endif # RTC_QMSI
-
-config RTC_DW
-	def_bool y
-
-if RTC_DW
-config RTC_DW_CLOCK_GATE
-	def_bool y
-config RTC_DW_CLOCK_GATE_DRV_NAME
-	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
-config RTC_DW_CLOCK_GATE_SUBSYS
-	default 11
-config RTC_DW_IRQ_PRI
-	default 2
-endif # RTC_DW
 endif # RTC
 
 if UART_NS16550

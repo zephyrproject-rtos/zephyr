@@ -151,18 +151,11 @@ endif # WDT_QMSI
 endif # WATCHDOG
 
 if RTC
+config RTC_QMSI
+	def_bool y
 
-if RTC_QMSI
-config RTC_QMSI_IRQ
-	default 2
 config RTC_QMSI_IRQ_PRI
 	default 0
-endif # RTC_QMSI
-
-config RTC_DW
-	def_bool y
-config RTC_DW_IRQ_PRI
-	default 0 if RTC_DW
 
 endif # RTC
 
