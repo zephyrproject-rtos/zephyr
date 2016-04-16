@@ -290,18 +290,18 @@ int gpio_qmsi_init(struct device *port)
 				  CLK_PERIPH_GPIO_INTERRUPT |
 				  CLK_PERIPH_GPIO_DB |
 				  CLK_PERIPH_CLK);
-		IRQ_CONNECT(CONFIG_GPIO_QMSI_0_IRQ,
+		IRQ_CONNECT(QM_IRQ_GPIO_0,
 			    CONFIG_GPIO_QMSI_0_PRI, qm_gpio_isr_0,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(CONFIG_GPIO_QMSI_0_IRQ);
+		irq_enable(QM_IRQ_GPIO_0);
 		QM_SCSS_INT->int_gpio_mask &= ~BIT(0);
 		break;
 #ifdef CONFIG_GPIO_QMSI_AON
 	case QM_AON_GPIO_0:
-		IRQ_CONNECT(CONFIG_GPIO_QMSI_AON_IRQ,
+		IRQ_CONNECT(QM_IRQ_AONGPIO_0,
 			    CONFIG_GPIO_QMSI_AON_PRI, qm_aon_gpio_isr_0,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(CONFIG_GPIO_QMSI_AON_IRQ);
+		irq_enable(QM_IRQ_AONGPIO_0);
 		QM_SCSS_INT->int_aon_gpio_mask &= ~BIT(0);
 		break;
 #endif /* CONFIG_GPIO_QMSI_AON */

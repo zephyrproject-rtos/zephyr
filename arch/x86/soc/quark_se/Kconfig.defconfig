@@ -57,82 +57,21 @@ config PWM_QMSI
 endif
 
 if GPIO
-
-config GPIO_DW
-	def_bool y
-
-if GPIO_DW
-
-config GPIO_DW_BOTHEDGES_SUPPORT
-	def_bool y
-
-config GPIO_DW_CLOCK_GATE
-	def_bool n
-
-if GPIO_DW_CLOCK_GATE
-
-config GPIO_DW_CLOCK_GATE_DRV_NAME
-	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
-
-endif # GPIO_DW_CLOCK_GATE
-
-config GPIO_DW_0
-	def_bool y
-
-if GPIO_DW_0
-
-config GPIO_DW_0_PRI
-	default 2
-config GPIO_DW_0_CLOCK_GATE_SUBSYS
-	default 13
-	depends on GPIO_DW_CLOCK_GATE
-
-endif # GPIO_DW_0
-
-config GPIO_DW_1
-	def_bool y
-
-if GPIO_DW_1
-
-config GPIO_DW_1_PRI
-	default 2
-
-endif # GPIO_DW_1
-
-endif # GPIO_DW
-
-if QMSI_DRIVERS
-
 config GPIO_QMSI
-	def_bool n
-
-if GPIO_QMSI
+	def_bool y
 
 config GPIO_QMSI_0
-	def_bool n
+	def_bool y
 
-if GPIO_QMSI_0
-
-config GPIO_QMSI_0_IRQ
-	default 8
 config GPIO_QMSI_0_PRI
 	default 2
-
-endif # GPIO_QMSI_0
 
 config GPIO_QMSI_AON
 	def_bool n
 config GPIO_QMSI_AON_NAME
 	default "gpio_aon"
-config GPIO_QMSI_AON_IRQ
-	default 31
 config GPIO_QMSI_AON_PRI
 	default 2
-
-endif # GPIO_QMSI
-
-endif # QMSI_DRIVERS
-
 endif # GPIO
 
 if I2C
@@ -381,7 +320,6 @@ config UART_CONSOLE_ON_DEV_NAME
 	default "UART_1"
 
 endif
-
 
 if SOC_FLASH_QMSI
 config SOC_FLASH_QMSI_SYS_SIZE

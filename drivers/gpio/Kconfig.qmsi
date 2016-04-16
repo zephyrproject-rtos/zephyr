@@ -18,7 +18,7 @@
 
 menuconfig GPIO_QMSI
 	bool "QMSI GPIO driver"
-	depends on GPIO && QMSI_DRIVERS
+	depends on GPIO && QMSI
 	default n
 	help
 	  Enable the GPIO driver found on Intel Microcontroller
@@ -38,12 +38,6 @@ config GPIO_QMSI_0_NAME
 	depends on GPIO_QMSI_0
 	default "GPIO_0"
 
-config GPIO_QMSI_0_IRQ
-	int "Controller interrupt number"
-	depends on GPIO_QMSI_0
-	help
-	  IRQ number for the controller
-
 config GPIO_QMSI_0_PRI
 	int "Controller interrupt priority"
 	depends on GPIO_QMSI_0
@@ -61,12 +55,6 @@ config GPIO_QMSI_AON_NAME
 	string "Driver name"
 	depends on GPIO_QMSI_AON
 	default "gpio_aon"
-
-config GPIO_QMSI_AON_IRQ
-	int "Controller interrupt number"
-	depends on GPIO_QMSI_AON
-	help
-	  IRQ number for the controller
 
 config GPIO_QMSI_AON_PRI
 	int "Controller interrupt priority"
