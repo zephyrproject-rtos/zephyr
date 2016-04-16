@@ -18,14 +18,13 @@
 
 menuconfig I2C_QMSI
 	bool "QMSI I2C driver"
-	depends on QMSI_DRIVERS && I2C
+	depends on I2C && QMSI
 	default n
 	help
 	This option enable the QMSI I2C driver.
 
 	This driver is simply a shim driver based on the I2C driver
-	provided by the QMSI BSP. For more information about QMSI BSP
-	see CONFIG_QMSI_DRIVERS.
+	provided by the QMSI BSP.
 
 config I2C_QMSI_0
 	bool "Enable I2C_0 controller"
@@ -36,10 +35,6 @@ config I2C_QMSI_0_NAME
 	string "I2C_0 device name"
 	depends on I2C_QMSI_0
 	default "I2C0"
-
-config I2C_QMSI_0_IRQ
-	int "IRQ number from I2C_0 controller"
-	depends on I2C_QMSI_0
 
 config I2C_QMSI_0_IRQ_PRI
 	int "Interrupt priority from I2C_0 controller"
@@ -63,10 +58,6 @@ config I2C_QMSI_1_NAME
 	string "I2C_1 device name"
 	depends on I2C_QMSI_1
 	default "I2C1"
-
-config I2C_QMSI_1_IRQ
-	int "IRQ number from I2C_1 controller"
-	depends on I2C_QMSI_1
 
 config I2C_QMSI_1_IRQ_PRI
 	int "Interrupt priority from I2C_1 controller"
