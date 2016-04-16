@@ -148,9 +148,6 @@ struct scss_interrupt {
 #define GPIO_DW_0_IRQ_FLAGS		(IOAPIC_EDGE | IOAPIC_HIGH)
 #endif
 
-/* Comparator */
-#define INT_AIO_CMP_IRQ			(0x0E)
-
 /*
  * PINMUX configuration settings
  */

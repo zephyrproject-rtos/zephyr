@@ -277,6 +277,13 @@ endif # SPI_QMSI
 
 endif # SPI
 
+
+if AIO_COMPARATOR
+config AIO_QMSI_COMPARATOR
+        def_bool y
+endif
+
+
 if WATCHDOG
 config WDT_QMSI
 	def_bool y

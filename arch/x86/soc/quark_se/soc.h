@@ -174,9 +174,6 @@ struct scss_interrupt {
 #define GPIO_DW_1_IRQ_FLAGS		(IOAPIC_EDGE | IOAPIC_HIGH)
 #endif
 
-/* Comparator */
-#define INT_AIO_CMP_IRQ			(0x16)
-
 /*ARC INIT*/
 #define RESET_VECTOR                   	0x40000000
 #define SCSS_SS_CFG                    	0x0600
@@ -211,11 +208,6 @@ struct scss_interrupt {
 #include <drivers/ioapic.h>
 #define UART_IRQ_FLAGS			(IOAPIC_EDGE | IOAPIC_HIGH)
 #endif /* CONFIG_IOAPIC */
-
-/*
- * AIO/Comparator
- */
-#define AIO_DW_COMPARATOR_BASE_ADDR	0xb0800300
 
 /*
  * I2C

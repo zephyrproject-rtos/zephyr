@@ -147,7 +147,7 @@ int aio_qmsi_cmp_init(struct device *dev)
 		dev_data->cb[i].param = NULL;
 	}
 
-	irq_enable(INT_AIO_CMP_IRQ);
+	irq_enable(QM_IRQ_AC);
 
 	return 0;
 }
@@ -185,7 +185,7 @@ static int aio_cmp_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(INT_AIO_CMP_IRQ, CONFIG_AIO_COMPARATOR_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_AC, CONFIG_AIO_COMPARATOR_IRQ_PRI,
 		    aio_qmsi_cmp_isr, DEVICE_GET(aio_qmsi_cmp), 0);
 
 	return 0;
