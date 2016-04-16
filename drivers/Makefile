@@ -5,7 +5,6 @@ subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/drivers/qmsi/include
 subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/drivers/qmsi/drivers/include
 subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/drivers/qmsi/soc/$(SOC_NAME)/include/
 
-
 obj-y = console/
 obj-y += random/
 obj-y += serial/

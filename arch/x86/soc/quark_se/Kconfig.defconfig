@@ -310,26 +310,11 @@ endif # SPI_QMSI
 endif # SPI
 
 if WATCHDOG
-config WDT_DW
+config WDT_QMSI
 	def_bool y
 
-if WDT_DW
-config WDT_DW_CLOCK_GATE
-	def_bool n
-config WDT_DW_CLOCK_GATE_DRV_NAME
-	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
-config WDT_DW_CLOCK_GATE_SUBSYS
-	default 10
-config WDT_DW_IRQ_PRI
-	default 2
-endif # WDT_DW
-
-if WDT_QMSI
-config WDT_QMSI_IRQ
-	default 12
 config WDT_QMSI_IRQ_PRI
 	default 2
-endif # WDT_QMSI
 endif # WATCHDOG
 
 if RTC

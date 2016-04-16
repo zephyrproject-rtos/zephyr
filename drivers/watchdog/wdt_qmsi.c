@@ -85,11 +85,11 @@ void wdt_qmsi_isr(void *arg)
 
 static int init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_WDT_QMSI_IRQ, CONFIG_WDT_QMSI_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_WDT_0, CONFIG_WDT_QMSI_IRQ_PRI,
 		    wdt_qmsi_isr, 0, IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask watchdog interrupt */
-	irq_enable(CONFIG_WDT_QMSI_IRQ);
+	irq_enable(QM_IRQ_WDT_0);
 
 	/* Route watchdog interrupt to Lakemont */
 	QM_SCSS_INT->int_watchdog_mask &= ~BIT(0);
@@ -98,8 +98,7 @@ static int init(struct device *dev)
 	return 0;
 }
 
-DEVICE_INIT(wdt, CONFIG_WDT_QMSI_DRV_NAME, init,
-			0, 0,
+DEVICE_INIT(wdt, CONFIG_WDT_DRV_NAME, init, 0, 0,
 			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 /* Define 'struct device' variable which is passed to the ISR. Even if it

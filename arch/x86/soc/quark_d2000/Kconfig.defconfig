@@ -134,20 +134,11 @@ config BLUETOOTH_MONITOR_ON_DEV_NAME
 	default "UART_1" if BLUETOOTH_DEBUG_MONITOR
 
 if WATCHDOG
-config WDT_DW
+config WDT_QMSI
 	def_bool y
 
-if WDT_DW
-config WDT_DW_IRQ_PRI
-	default 0
-endif # WDT_DW
-
-if WDT_QMSI
-config WDT_QMSI_IRQ
-	default 16
 config WDT_QMSI_IRQ_PRI
 	default 0
-endif # WDT_QMSI
 endif # WATCHDOG
 
 if RTC
