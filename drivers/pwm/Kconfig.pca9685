@@ -47,7 +47,7 @@ config PWM_PCA9685_0
 config PWM_PCA9685_0_DEV_NAME
 	string "PCA9685 PWM chip #0 Device Name"
 	depends on PWM_PCA9685_0
-	default "PWM_P0"
+	default "PWM_0"
 	help
 	  Specify the device name for the PCA9685 I2C-based PWM chip #0.
 

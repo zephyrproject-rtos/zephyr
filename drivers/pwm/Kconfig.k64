@@ -50,7 +50,7 @@ config PWM_K64_FTM_0
 config PWM_K64_FTM_0_DEV_NAME
 	string "K64 FTM PWM Module 0 Device Name"
 	depends on PWM_K64_FTM_0
-	default "PWM_K64_FTM0"
+	default "PWM_0"
 	help
 	Specify the device name for the FTM0 source module.
 
@@ -159,7 +159,7 @@ config PWM_K64_FTM_1
 config PWM_K64_FTM_1_DEV_NAME
 	string "K64 FTM PWM Module 1 Device Name"
 	depends on PWM_K64_FTM_1
-	default "PWM_K64_FTM1"
+	default "PWM_1"
 	help
 	Specify the device name for the FTM1 source module.
 
@@ -268,7 +268,7 @@ config PWM_K64_FTM_2
 config PWM_K64_FTM_2_DEV_NAME
 	string "K64 FTM PWM Module 2 Device Name"
 	depends on PWM_K64_FTM_2
-	default "PWM_K64_FTM2"
+	default "PWM_2"
 	help
 	Specify the device name for the FTM2 source module.
 
@@ -377,7 +377,7 @@ config PWM_K64_FTM_3
 config PWM_K64_FTM_3_DEV_NAME
 	string "K64 FTM PWM Module 3 Device Name"
 	depends on PWM_K64_FTM_3
-	default "PWM_K64_FTM3"
+	default "PWM_3"
 	help
 	Specify the device name for the FTM3 source module.
 

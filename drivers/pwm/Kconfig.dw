@@ -27,10 +27,10 @@ menuconfig PWM_DW
 
 if PWM_DW
 
-config PWM_DW_DEV_NAME
+config PWM_DW_0_DRV_NAME
 	string "DesignWare PWM Device Name"
 	depends on PWM_DW
-	default "PWM_DW"
+	default "PWM_0"
 	help
 	  Specify the device name for the DesignWare PWM driver.
 

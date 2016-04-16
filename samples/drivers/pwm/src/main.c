@@ -58,12 +58,6 @@
 
 #define SLEEPTICKS	SECONDS(4)
 
-#if defined(CONFIG_PWM_DW)
-#define PWM_DEV_NAME	CONFIG_PWM_DW_DEV_NAME
-#elif defined(CONFIG_PWM_K64_FTM_0)
-#define PWM_DEV_NAME	CONFIG_PWM_K64_FTM_0_DEV_NAME
-#endif
-
 void main(void)
 {
 	struct nano_timer timer;
@@ -74,11 +68,11 @@ void main(void)
 
 	nano_timer_init(&timer, timer_data);
 
-	PRINT("PWM_DW demo app\n");
+	PRINT("PWM demo app\n");
 
-	pwm_dev = device_get_binding(PWM_DEV_NAME);
+	pwm_dev = device_get_binding("PWM_0");
 	if (!pwm_dev) {
-		PRINT("Cannot find %s!\n", PWM_DEV_NAME);
+		PRINT("Cannot find PWM_0!\n");
 	}
 
 	period = MAX_PERIOD;
