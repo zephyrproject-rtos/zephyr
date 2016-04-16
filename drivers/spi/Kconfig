@@ -27,6 +27,12 @@ menuconfig SPI
 	  Enable support for the SPI hardware bus.
 
 if SPI
+config SPI_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  Device driver initialization priority.
+
 config  SPI_DEBUG
 	bool
 	prompt "SPI drivers debug output"

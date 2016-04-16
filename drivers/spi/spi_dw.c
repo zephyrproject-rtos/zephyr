@@ -451,7 +451,7 @@ struct spi_dw_config spi_dw_config_0 = {
 
 DEVICE_AND_API_INIT(spi_dw_port_0, CONFIG_SPI_DW_PORT_0_DRV_NAME, spi_dw_init,
 		    &spi_dw_data_port_0, &spi_dw_config_0,
-		    SECONDARY, CONFIG_SPI_DW_INIT_PRIORITY,
+		    SECONDARY, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
 
 void spi_config_0_irq(void)
@@ -498,7 +498,7 @@ struct spi_dw_config spi_dw_config_1 = {
 
 DEVICE_AND_API_INIT(spi_dw_port_1, CONFIG_SPI_DW_PORT_1_DRV_NAME, spi_dw_init,
 		    &spi_dw_data_port_1, &spi_dw_config_1,
-		    SECONDARY, CONFIG_SPI_DW_INIT_PRIORITY,
+		    SECONDARY, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
 
 void spi_config_1_irq(void)

@@ -27,14 +27,6 @@ menuconfig SPI_QMSI
 
 if SPI_QMSI
 
-config SPI_QMSI_INIT_PRIORITY
-	int
-	prompt "QMSI driver init priority"
-	depends on SPI_QMSI
-	default 60
-	help
-	  Device driver initialization priority.
-
 config	SPI_QMSI_PORT_0
 	bool
 	prompt "QMSI SPI port 0"

@@ -143,8 +143,8 @@ endif # PWM && I2C
 
 # SPI uses GPIO pin for CS, so it needs to be initialized after
 # the gpio_dw driver ( and the pinmux driver for port 1)
-config SPI_INTEL_INIT_PRIORITY
-	default 90 if SPI_INTEL
+config SPI_INIT_PRIORITY
+       default 90 if SPI_INTEL
 
 # Pin multiplexer uses PCAL9535A, needs to be initialized after it
 config PINMUX_INIT_PRIORITY

@@ -74,14 +74,6 @@ config  SPI_INTEL_CS_GPIO
 	depends on SPI_INTEL && GPIO
 	default n
 
-config SPI_INTEL_INIT_PRIORITY
-	int
-	prompt "Init priority"
-	depends on SPI_INTEL
-	default 60
-	help
-	  Device driver initialization priority.
-
 config	SPI_INTEL_PORT_0
 	bool
 	prompt "Intel SPI port 0"

@@ -40,13 +40,6 @@ config SPI_DW_CS_GPIO
 	depends on SPI_DW && GPIO
 	default n
 
-config SPI_DW_INIT_PRIORITY
-	int "Init priority"
-	depends on SPI_DW
-	default 70
-	help
-	  Device driver initialization priority.
-
 choice
 depends on SPI_DW && (IOAPIC || MVIC)
 prompt "DesignWare SPI interrupt trigger condition"
