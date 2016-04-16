@@ -119,11 +119,11 @@ static int aon_timer_init(struct device *dev)
 	driver_data->callback_user_data = NULL;
 	driver_data->timer_callback = NULL;
 
-	IRQ_CONNECT(CONFIG_AON_TIMER_IRQ,
+	IRQ_CONNECT(QM_IRQ_AONPT_0,
 		    CONFIG_AON_TIMER_IRQ_PRI, qm_aonpt_isr_0,
 		    NULL, IOAPIC_EDGE | IOAPIC_HIGH);
 
-	irq_enable(CONFIG_AON_TIMER_IRQ);
+	irq_enable(QM_IRQ_AONPT_0);
 
 	QM_SCSS_INT->int_aon_timer_mask &= ~BIT(0);
 

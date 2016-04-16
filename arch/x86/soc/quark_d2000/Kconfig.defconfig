@@ -197,6 +197,15 @@ config AIO_QMSI_COMPARATOR
 	def_bool y
 endif
 
+if COUNTER
+config AON_COUNTER_QMSI
+	def_bool y
+config AON_TIMER_QMSI
+	def_bool y
+config AON_TIMER_IRQ_PRI
+	default 0
+endif
+
 if GPIO_QMSI
 config GPIO_QMSI_0
 	def_bool y
@@ -215,12 +224,6 @@ config SPI_QMSI_PORT_0_PRI
 	default 0
 endif # SPI_QMSI
 
-if AON_TIMER_QMSI
-config AON_TIMER_IRQ
-	default 3
-config AON_TIMER_IRQ_PRI
-	default 0
-endif # AON_TIMER_QMSI
 
 if SOC_FLASH_QMSI
 config SOC_FLASH_QMSI_SYS_SIZE
