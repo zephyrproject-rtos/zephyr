@@ -261,20 +261,20 @@ static int spi_qmsi_init(struct device *dev)
 
 	switch (spi_config->spi) {
 	case QM_SPI_MST_0:
-		IRQ_CONNECT(CONFIG_SPI_QMSI_PORT_0_IRQ,
+		IRQ_CONNECT(QM_IRQ_SPI_MASTER_0,
 			    CONFIG_SPI_QMSI_PORT_0_PRI, qm_spi_master_0_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(CONFIG_SPI_QMSI_PORT_0_IRQ);
+		irq_enable(QM_IRQ_SPI_MASTER_0);
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M0_REGISTER);
 		QM_SCSS_INT->int_spi_mst_0_mask &= ~BIT(0);
 		break;
 
 #ifdef CONFIG_SPI_QMSI_PORT_1
 	case QM_SPI_MST_1:
-		IRQ_CONNECT(CONFIG_SPI_QMSI_PORT_1_IRQ,
+		IRQ_CONNECT(QM_IRQ_SPI_MASTER_1,
 			    CONFIG_SPI_QMSI_PORT_1_PRI, qm_spi_master_1_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
-		irq_enable(CONFIG_SPI_QMSI_PORT_1_IRQ);
+		irq_enable(QM_IRQ_SPI_MASTER_1);
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M1_REGISTER);
 		QM_SCSS_INT->int_spi_mst_1_mask &= ~BIT(0);
 		break;

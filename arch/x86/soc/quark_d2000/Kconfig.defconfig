@@ -153,14 +153,14 @@ config ADC_QMSI
 	def_bool y
 endif
 
-if SPI_QMSI
+if SPI
+config SPI_QMSI
+	def_bool y
 config SPI_QMSI_PORT_0
 	def_bool y
-config SPI_QMSI_PORT_0_IRQ
-	default 7
 config SPI_QMSI_PORT_0_PRI
 	default 0
-endif # SPI_QMSI
+endif # SPI
 
 if SOC_FLASH_QMSI
 config SOC_FLASH_QMSI_SYS_SIZE

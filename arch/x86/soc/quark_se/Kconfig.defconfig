@@ -143,88 +143,20 @@ endif
 
 
 if SPI
-
-config SPI_DW
-	def_bool y
-
-if SPI_DW
-
-config SPI_DW_CLOCK_GATE
-	def_bool n
-
-if SPI_DW_CLOCK_GATE
-
-config SPI_DW_CLOCK_GATE_DRV_NAME
-	default CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
-
-endif # SPI_DW_CLOCK_GATE
-
-config SPI_DW_PORT_0
-	def_bool y
-
-if SPI_DW_PORT_0
-
-config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
-	default 14
-	depends on SPI_DW_CLOCK_GATE
-config SPI_DW_PORT_0_REGS
-	default 0xb0001000
-config SPI_DW_PORT_0_IRQ
-	default 2
-config SPI_DW_PORT_0_PRI
-	default 2
-
-endif # SPI_DW_PORT_0
-
-config SPI_DW_PORT_1
-	def_bool y
-
-if SPI_DW_PORT_1
-
-config SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
-	default 15
-	depends on SPI_DW_CLOCK_GATE
-config SPI_DW_PORT_1_REGS
-	default 0xb0001400
-config SPI_DW_PORT_1_IRQ
-	default 3
-config SPI_DW_PORT_1_PRI
-	default 2
-
-endif # SPI_DW_PORT_1
-
-endif # SPI_DW
-
 config SPI_QMSI
-       def_bool n
-
-if SPI_QMSI
+       def_bool y
 
 config SPI_QMSI_PORT_0
 	def_bool y
 
-if SPI_QMSI_PORT_0
-
-config SPI_QMSI_PORT_0_IRQ
-	default 2
 config SPI_QMSI_PORT_0_PRI
 	default 2
-
-endif # SPI_QMSI_PORT_0
 
 config SPI_QMSI_PORT_1
 	def_bool y
 
-if SPI_QMSI_PORT_1
-
-config SPI_QMSI_PORT_1_IRQ
-	default 3
 config SPI_QMSI_PORT_1_PRI
 	default 2
-
-endif # SPI_QMSI_PORT_1
-
-endif # SPI_QMSI
 
 endif # SPI
 

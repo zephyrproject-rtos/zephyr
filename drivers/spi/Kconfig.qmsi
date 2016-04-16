@@ -18,7 +18,7 @@
 
 menuconfig SPI_QMSI
 	bool "QMSI driver for SPI controller"
-	depends on SPI && QMSI_DRIVERS
+	depends on SPI && QMSI
 	default n
 	help
 	  SPI driver implementation using QMSI library. QMSI is the
@@ -45,11 +45,6 @@ config  SPI_QMSI_PORT_0_DRV_NAME
 	prompt "QMSI SPI port 0 device name"
 	depends on SPI_QMSI_PORT_0
 	default "SPI_0"
-
-config  SPI_QMSI_PORT_0_IRQ
-	int
-	prompt "Port 0 interrupt"
-	depends on SPI_QMSI_PORT_0
 
 config  SPI_QMSI_PORT_0_PRI
 	int
@@ -80,11 +75,6 @@ config  SPI_QMSI_PORT_1_DRV_NAME
 	prompt "QMSI SPI port 1 device name"
 	depends on SPI_QMSI_PORT_1
 	default "SPI_1"
-
-config  SPI_QMSI_PORT_1_IRQ
-	int
-	prompt "Port 1 interrupt"
-	depends on SPI_QMSI_PORT_1
 
 config  SPI_QMSI_PORT_1_PRI
 	int
