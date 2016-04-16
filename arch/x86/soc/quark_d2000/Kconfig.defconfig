@@ -172,6 +172,11 @@ endif # GPIO_DW
 
 endif # GPIO
 
+if PWM
+config PWM_QMSI
+        def_bool y
+endif
+
 if I2C
 config I2C_QMSI
 	def_bool y

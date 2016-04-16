@@ -51,6 +51,11 @@ config QMSI
 config QMSI_BUILTIN
 	def_bool y
 
+if PWM
+config PWM_QMSI
+	def_bool y
+endif
+
 if GPIO
 
 config GPIO_DW
@@ -158,7 +163,6 @@ config I2C_QMSI_1_DEFAULT_CFG
 endif # I2C_QMSI_1
 
 endif # I2C
-
 
 
 if CLOCK_CONTROL
