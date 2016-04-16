@@ -21,7 +21,6 @@ Sections
    reference/kbuild/kbuild.rst
    application/application.rst
    api/api.rst
-   collaboration/collaboration
    reference/kconfig/index.rst
    board/board.rst
 
