@@ -220,9 +220,9 @@ static void create_device_list(void)
 	device_list_get(&device_list, &count);
 
 	for (i = 0; (i < count) && (device_count < DEVICE_POLICY_MAX); i++) {
-		if (!strcmp(device_list[i].config->name, CONFIG_GPIO_DW_0_NAME) ||
+		if (!strcmp(device_list[i].config->name, "GPIO_0") ||
 				!strcmp(device_list[i].config->name,
-					CONFIG_GPIO_DW_1_NAME)) {
+					"GPIO_1")) {
 			device_policy_list[device_count++] = i;
 		}
 	}
