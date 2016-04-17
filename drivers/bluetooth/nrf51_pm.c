@@ -56,9 +56,9 @@ int nrf51_init(void)
 {
 	int ret;
 
-	nrf51_gpio = device_get_binding(CONFIG_GPIO_DW_0_NAME);
+	nrf51_gpio = device_get_binding("GPIO_0");
 	if (!nrf51_gpio) {
-		BT_ERR("Cannot find %s", CONFIG_GPIO_DW_0_NAME);
+		BT_ERR("Cannot find GPIO_0");
 		return -ENODEV;
 	}
 
