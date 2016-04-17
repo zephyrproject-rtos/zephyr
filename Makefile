@@ -664,6 +664,7 @@ endif
 
 # arch Makefile may override CC so keep this after arch Makefile is included
 NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+NOSTDINC_FLAGS += -isystem $(shell $(CC) -print-file-name=include-fixed)
 CHECKFLAGS     += $(NOSTDINC_FLAGS)
 
 # disable pointer signed / unsigned warnings in gcc 4.0
