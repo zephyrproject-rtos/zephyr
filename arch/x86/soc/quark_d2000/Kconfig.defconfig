@@ -58,60 +58,13 @@ config QMSI
 config QMSI_BUILTIN
 	def_bool y
 
-if UART_NS16550
-
-config UART_NS16550_DLF
-	def_bool y
-
-config UART_NS16550_PORT_0
-	def_bool y
-
-if UART_NS16550_PORT_0
-
-config UART_NS16550_PORT_0_NAME
-	default "UART_0"
-config UART_NS16550_PORT_0_IRQ_PRI
-	default 3
-config UART_NS16550_PORT_0_BAUD_RATE
-	default 115200
-config UART_NS16550_PORT_0_OPTIONS
-	default 0
-config UART_NS16550_PORT_0_DLF
-	default 0x06
-
-endif # UART_NS16550_PORT_0
-
-config UART_NS16550_PORT_1
-	def_bool y
-
-if UART_NS16550_PORT_1
-
-config UART_NS16550_PORT_1_NAME
-	default "UART_1"
-config UART_NS16550_PORT_1_IRQ_PRI
-	default 3
-config UART_NS16550_PORT_1_BAUD_RATE
-	default 115200
-config UART_NS16550_PORT_1_OPTIONS
-	default 0
-config UART_NS16550_PORT_1_DLF
-	default 0x06
-
-endif # UART_NS16550_PORT_1
-
-endif # UART_NS16550
-
 if UART_QMSI
 config UART_QMSI_0
 	def_bool y
-config UART_QMSI_0_IRQ
-	default 8
 config UART_QMSI_0_IRQ_PRI
 	default 0
 config UART_QMSI_1
 	def_bool y
-config UART_QMSI_1_IRQ
-	default 6
 config UART_QMSI_1_IRQ_PRI
 	default 0
 endif # UART_QMSI

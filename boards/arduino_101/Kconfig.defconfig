@@ -13,7 +13,7 @@ config BLUETOOTH_NRF51_PM
 	def_bool y
 
 config NBLE_UART_ON_DEV_NAME
-        default UART_NS16550_PORT_0_NAME
+        default UART_QMSI_0_NAME
 
 endif
 
@@ -29,19 +29,19 @@ config BLUETOOTH_WAIT_NOP
 	def_bool y
 
 config BLUETOOTH_UART_ON_DEV_NAME
-        default UART_NS16550_PORT_0_NAME
+        default UART_QMSI_0_NAME
 
 endif
 
 if UART_PIPE
 
 config UART_PIPE_ON_DEV_NAME
-	default UART_NS16550_PORT_1_NAME
+	default UART_QMSI_1_NAME
 
 endif
 
 config BLUETOOTH_MONITOR_ON_DEV_NAME
-	default UART_NS16550_PORT_1_NAME if BLUETOOTH_DEBUG_MONITOR
+	default UART_QMSI_1_NAME if BLUETOOTH_DEBUG_MONITOR
 
 if FLASH && SPI
 

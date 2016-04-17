@@ -100,25 +100,3 @@ SYS_INIT(arc_init, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /*CONFIG_ARC_INIT*/
 
-#ifdef CONFIG_UART_NS16550
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-
-static int platform_uart_init(struct device *arg)
-{
-	ARG_UNUSED(arg);
-
-#ifdef CONFIG_UART_NS16550_PORT_0
-	SCSS_INTERRUPT->int_uart_mask[0] &= INT_UNMASK_IA;
-#endif
-
-#ifdef CONFIG_UART_NS16550_PORT_1
-	SCSS_INTERRUPT->int_uart_mask[1] &= INT_UNMASK_IA;
-#endif
-
-	return 0;
-}
-
-SYS_INIT(platform_uart_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-#endif /* CONFIG_UART_NS16550 */

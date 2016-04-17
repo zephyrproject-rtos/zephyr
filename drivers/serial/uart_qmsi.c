@@ -280,10 +280,10 @@ static void uart_qmsi_isr(void *arg)
 #ifdef CONFIG_UART_QMSI_0
 static void irq_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_QMSI_0_IRQ, CONFIG_UART_QMSI_0_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_UART_0, CONFIG_UART_QMSI_0_IRQ_PRI,
 		    uart_qmsi_isr, DEVICE_GET(uart_0),
 		    (IOAPIC_LEVEL | IOAPIC_HIGH));
-	irq_enable(CONFIG_UART_QMSI_0_IRQ);
+	irq_enable(QM_IRQ_UART_0);
 	QM_SCSS_INT->int_uart_0_mask &= ~BIT(0);
 }
 #endif /* CONFIG_UART_QMSI_0 */
@@ -291,10 +291,10 @@ static void irq_config_func_0(struct device *dev)
 #ifdef CONFIG_UART_QMSI_1
 static void irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_QMSI_1_IRQ, CONFIG_UART_QMSI_1_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_UART_1, CONFIG_UART_QMSI_1_IRQ_PRI,
 		    uart_qmsi_isr, DEVICE_GET(uart_1),
 		    (IOAPIC_LEVEL | IOAPIC_HIGH));
-	irq_enable(CONFIG_UART_QMSI_1_IRQ);
+	irq_enable(QM_IRQ_UART_1);
 	QM_SCSS_INT->int_uart_1_mask &= ~BIT(0);
 }
 #endif /* CONFIG_UART_QMSI_1 */
