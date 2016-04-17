@@ -33,11 +33,7 @@
 #define SLEEPTIME  2
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec)
 
-#if defined(CONFIG_ADC_DW)
-#define ADC_DEVICE_NAME CONFIG_ADC_DW_NAME
-#elif defined(CONFIG_ADC_TI_ADC108S102)
-#define ADC_DEVICE_NAME CONFIG_ADC_TI_ADC108S102_DRV_NAME
-#endif
+#define ADC_DEVICE_NAME "ADC_0"
 
 /*
  * The analog input pin and channel number mapping

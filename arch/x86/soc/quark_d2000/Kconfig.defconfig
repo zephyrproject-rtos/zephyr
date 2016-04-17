@@ -195,6 +195,10 @@ config AON_TIMER_IRQ_PRI
 	default 0
 endif
 
+if ADC
+config ADC_QMSI
+	def_bool y
+endif
 
 if SPI_QMSI
 config SPI_QMSI_PORT_0

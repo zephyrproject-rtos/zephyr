@@ -57,7 +57,7 @@ config ADC_TI_ADC108S102_INIT_PRIORITY
 config  ADC_TI_ADC108S102_DRV_NAME
 	string "Driver's name"
 	depends on ADC_TI_ADC108S102
-	default "ADC"
+	default "ADC_0"
 
 config  ADC_TI_ADC108S102_SPI_PORT_NAME
 	string "Master SPI port name"
@@ -98,9 +98,9 @@ menuconfig ADC_DW
 
 if ADC_DW
 
-config ADC_DW_NAME
+config ADC_DW_DRV_NAME
 	string "Select a name to lookup the device"
-	default "ADC"
+	default "ADC_0"
 	depends on ADC_DW
 
 config ADC_DW_RX_IRQ
@@ -115,7 +115,7 @@ config ADC_DW_ERR_IRQ
         depends on ADC_DW
         default 18
 
-config ADC_DW_PRI
+config ADC_DW_IRQ_PRI
         int
         prompt "ADC interrupt priority"
         depends on ADC_DW
@@ -216,25 +216,19 @@ endif
 
 menuconfig ADC_QMSI
 	bool "QMSI ADC Driver"
-	depends on QMSI_DRIVERS && ADC
+	depends on QMSI && ADC
 	default n
 	help
 	Enable the driver implementation of the QMSI ADC IP.
 
 if ADC_QMSI
 
-config ADC_QMSI_NAME
+config ADC_QMSI_0_DRV_NAME
 	string "Select a name to lookup the device"
-	default "ADC"
+	default "ADC_0"
 	depends on ADC_QMSI
 
-config ADC_IRQ
-	int
-	prompt "ADC interrupt request"
-	depends on ADC_QMSI
-	default 9
-
-config ADC_PRI
+config ADC_QMSI_0_IRQ_PRI
 	int
 	prompt "ADC interrupt priority"
 	depends on ADC_QMSI

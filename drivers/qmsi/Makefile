@@ -6,3 +6,4 @@ obj-$(CONFIG_PWM_QMSI) += drivers/qm_pwm.o
 obj-$(CONFIG_AIO_QMSI_COMPARATOR) += drivers/qm_comparator.o
 obj-$(CONFIG_AON_COUNTER_QMSI) += drivers/qm_aon_counters.o
 obj-$(CONFIG_GPIO_QMSI) += drivers/qm_gpio.o
+obj-$(CONFIG_ADC_QMSI) += drivers/qm_adc.o

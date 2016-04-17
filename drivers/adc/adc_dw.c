@@ -497,18 +497,18 @@ struct adc_config adc_config_dev = {
 		.config_func  = adc_config_irq,
 	};
 
-DEVICE_AND_API_INIT(adc_dw, CONFIG_ADC_DW_NAME, &adc_dw_init,
+DEVICE_AND_API_INIT(adc_dw, CONFIG_ADC_DW_DRV_NAME, &adc_dw_init,
 		    &adc_info_dev, &adc_config_dev,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);
 
 static void adc_config_irq(void)
 {
-	IRQ_CONNECT(CONFIG_ADC_DW_RX_IRQ, CONFIG_ADC_DW_PRI, adc_dw_rx_isr,
+	IRQ_CONNECT(CONFIG_ADC_DW_RX_IRQ, CONFIG_ADC_DW_IRQ_PRI, adc_dw_rx_isr,
 		    DEVICE_GET(adc_dw), 0);
 	irq_enable(CONFIG_ADC_DW_RX_IRQ);
 
-	IRQ_CONNECT(CONFIG_ADC_DW_ERR_IRQ, CONFIG_ADC_DW_PRI,
+	IRQ_CONNECT(CONFIG_ADC_DW_ERR_IRQ, CONFIG_ADC_DW_IRQ_PRI,
 		    adc_dw_err_isr, DEVICE_GET(adc_dw), 0);
 	irq_enable(CONFIG_ADC_DW_ERR_IRQ);
 }
