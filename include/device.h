@@ -426,27 +426,12 @@ int device_busy_check(struct device *chk_dev);
 #include <microkernel.h>
 #endif
 
-#ifdef CONFIG_MICROKERNEL
-enum device_sync_waiter {
-	DEVICE_SYNC_WAITER_NONE,
-	DEVICE_SYNC_WAITER_FIBER,
-	DEVICE_SYNC_WAITER_TASK,
-};
-#endif
-
 /**
  * Specific type for synchronizing calls among the 2 possible contexts
  */
 typedef struct {
 	/** Nanokernel semaphore used for fiber context */
 	struct nano_sem f_sem;
-#ifdef CONFIG_MICROKERNEL
-	/** Microkernel semaphore used for task context */
-	struct _k_sem_struct _t_sem;
-	ksem_t t_sem;
-	enum device_sync_waiter waiter;
-	bool device_ready;
-#endif
 } device_sync_call_t;
 
 
@@ -458,105 +443,7 @@ typedef struct {
 static inline void device_sync_call_init(device_sync_call_t *sync)
 {
 	nano_sem_init(&sync->f_sem);
-#ifdef CONFIG_MICROKERNEL
-	sync->_t_sem.waiters = NULL;
-	sync->_t_sem.level = sync->_t_sem.count = 0;
-	sync->t_sem = (ksem_t)&sync->_t_sem;
-	sync->waiter = DEVICE_SYNC_WAITER_NONE;
-	sync->device_ready = false;
-#endif
 }
-
-#ifdef CONFIG_MICROKERNEL
-
-/*
- * The idle task cannot block and is used during boot, and thus polls a
- * nanokernel semaphore instead of waiting on a microkernel semaphore.
- */
-static inline bool _is_blocking_task(void)
-{
-	bool is_task = sys_execution_context_type_get() == NANO_CTX_TASK;
-	bool is_idle_task = task_priority_get() == (CONFIG_NUM_TASK_PRIORITIES - 1);
-
-	return is_task && !is_idle_task;
-}
-
-/**
- * @brief Wait for the isr to complete the synchronous call
- * Note: In a microkernel built this function will take care of the caller
- * context and thus use the right attribute to handle the synchronization.
- *
- * @param sync A pointer to a valid device_sync_call_t
- */
-static inline void device_sync_call_wait(device_sync_call_t *sync)
-{
-	/* protect the state of device_ready and waiter fields */
-	int key = irq_lock();
-
-	if (sync->device_ready) {
-		sync->device_ready = false;
-		/*
-		 * If device_ready was set, the waiter field had to be NONE, so we
-		 * don't have to reset it.
-		 */
-		irq_unlock(key);
-		return;
-	}
-
-	if (_is_blocking_task()) {
-		sync->waiter = DEVICE_SYNC_WAITER_TASK;
-		irq_unlock(key);
-		task_sem_take(sync->t_sem, TICKS_UNLIMITED);
-	} else {
-		sync->waiter = DEVICE_SYNC_WAITER_FIBER;
-		irq_unlock(key);
-		nano_sem_take(&sync->f_sem, TICKS_UNLIMITED);
-	}
-
-	sync->waiter = DEVICE_SYNC_WAITER_NONE;
-
-	/* if we get here, device_ready was not set: we don't have to reset it */
-}
-
-/**
- * @brief Signal the waiter about synchronization completion
- * Note: In a microkernel built this function will take care of the waiter
- * context and thus use the right attribute to signale the completion.
- *
- * @param sync A pointer to a valid device_sync_call_t
- */
-static inline void device_sync_call_complete(device_sync_call_t *sync)
-{
-	static void (*func[3])(ksem_t sema) = {
-		isr_sem_give,
-		fiber_sem_give,
-		task_sem_give
-	};
-
-	/* protect the state of device_ready and waiter fields */
-	int key = irq_lock();
-
-	if (sync->waiter == DEVICE_SYNC_WAITER_NONE) {
-		sync->device_ready = true;
-		irq_unlock(key);
-		return;
-	}
-
-	/*
-	 * It's safe to unlock interrupts here since we know there was a waiter,
-	 * and only one thread is allowed to wait on the object, so the state of
-	 * waiter will not change and the device_ready flag will not get set.
-	 */
-	irq_unlock(key);
-
-	if (sync->waiter == DEVICE_SYNC_WAITER_TASK) {
-		func[sys_execution_context_type_get()](sync->t_sem);
-	} else /* fiber */ {
-		nano_sem_give(&sync->f_sem);
-	}
-}
-
-#else
 
 /**
  * @brief Wait for the isr to complete the synchronous call
@@ -579,8 +466,6 @@ static inline void device_sync_call_complete(device_sync_call_t *sync)
 {
 	nano_sem_give(&sync->f_sem);
 }
-
-#endif /* CONFIG_MICROKERNEL || CONFIG_NANOKERNEL */
 
 #ifdef __cplusplus
 }
