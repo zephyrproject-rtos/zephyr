@@ -92,7 +92,7 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 	/* indicate that failure of this fiber may be fatal to the entire system
 	 */
 
-	_nanokernel.current->flags |= ESSENTIAL;
+	_thread_essential_set();
 
 	while (1) { /* forever */
 		(void) nano_fiber_stack_pop(&_k_command_stack, (uint32_t *)&pArgs,

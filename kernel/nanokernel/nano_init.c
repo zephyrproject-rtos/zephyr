@@ -188,6 +188,9 @@ static void nano_init(struct tcs *dummyOutContext)
 
 	/* indicate that failure of this task may be fatal to the entire
 	 * system
+	 *
+	 * Warning: _thread_essential_set() doesn't do the same thing. That
+	 * operates on _nanokernel.current, not _nanokernel.task ...
 	 */
 
 	_nanokernel.task->flags |= ESSENTIAL;
