@@ -7,6 +7,20 @@ menuconfig BMI160
 	Enable Bosch BMI160 inertial measurement unit that provides acceleration
 	and angular rate measurements.
 
+config BMI160_SYS_LOG_LEVEL
+	int "BMI160 Log level"
+	depends on SYS_LOG && BMI160
+	default 0
+	range 0 4
+	help
+	  Sets log level for BMI160 driver.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in adition to previous level
+	  3 INFO, write SYS_LOG_INF in adition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in adition to previous levels
+
 config BMI160_INIT_PRIORITY
 	int
 	prompt "BMI160 Init priority"

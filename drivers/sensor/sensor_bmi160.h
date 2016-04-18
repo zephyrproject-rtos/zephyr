@@ -491,10 +491,7 @@ int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
 int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG(...) printk(CONFIG_BMI160_NAME ": " __VA_ARGS__)
-#endif /* CONFIG_SENSOR_DEBUG */
+#define SYS_LOG_DOMAIN "BMI160"
+#define SYS_LOG_LEVEL CONFIG_BMI160_SYS_LOG_LEVEL
+#include <misc/sys_log.h>
 #endif /* _BMI160_H_ */
