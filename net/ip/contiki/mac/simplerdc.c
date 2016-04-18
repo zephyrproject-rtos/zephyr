@@ -117,7 +117,7 @@ static inline bool send_ack_packet(struct net_buf *buf, uint8_t *status)
 static inline bool prepare_for_ack(struct net_buf *buf)
 {
 	if (packetbuf_attr(buf, PACKETBUF_ATTR_MAC_ACK) != 0) {
-		PRINTF("simplerdc: ACK requested");
+		PRINTF("simplerdc: ACK requested\n");
 
 		nano_sem_init(&ack_lock);
 		ack_received = false;
