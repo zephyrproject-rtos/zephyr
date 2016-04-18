@@ -3227,10 +3227,16 @@ int bt_enable(bt_ready_cb_t cb)
 #endif /* CONFIG_BLUETOOTH_CONN */
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
-	/* Give cmd_sem allowing to send first HCI_Reset cmd */
-	bt_dev.ncmd = 1;
 	nano_sem_init(&bt_dev.ncmd_sem);
+
+	/* Give cmd_sem allowing to send first HCI_Reset cmd, the only
+	 * exception is if the controller requests to wait for an
+	 * initial Command Complete for NOP.
+	 */
+#if !defined(CONFIG_BLUETOOTH_WAIT_NOP)
+	bt_dev.ncmd = 1;
 	nano_task_sem_give(&bt_dev.ncmd_sem);
+#endif /* !CONFIG_BLUETOOTH_WAIT_NOP */
 
 	/* TX fiber */
 	nano_fifo_init(&bt_dev.cmd_tx_queue);
