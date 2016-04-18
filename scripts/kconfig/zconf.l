@@ -407,8 +407,13 @@ void win_process_files(const char *files_path)
 
 	if (hFind != INVALID_HANDLE_VALUE) {
 		do {
+			char *strfile;
 			GetFullPathName(fullname, PATH_MAX, path, lppPart);
 			strcpy(fullname, path);
+			strfile = strrchr(fullname, '\\');
+			if(strfile){
+				sprintf(strfile, "\\%s", FindFileData.cFileName);
+			}
 			zconf_nextfile(fullname);
 		} while (FindNextFile(hFind, &FindFileData) != 0);
 
@@ -417,8 +422,6 @@ void win_process_files(const char *files_path)
 		if (dwError != ERROR_NO_MORE_FILES) {
 			printf ("Error processing '%s' #%lu.\n", fullname, dwError);
 		}
-	} else {
-		printf ("Error processing '%s' #%lu.\n", fullname, GetLastError());
 	}
 }
 
