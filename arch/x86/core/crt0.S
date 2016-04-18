@@ -89,8 +89,9 @@ SECTION_FUNC(TEXT_START, __start)
 	 * and a Global Descriptor Table (GDT), the specification encourages
 	 * booted operating systems to setup their own IDT and GDT.
 	 */
-
+#if CONFIG_SET_GDT
 	lgdt	_gdt_rom		/* load 32-bit operand size GDT */
+#endif
 	lidt	_Idt		/* load 32-bit operand size IDT */
 
 
@@ -358,7 +359,7 @@ _Idt:
 	.long	-(0x1BADB002 + 0)
 #endif /* CONFIG_BOOTLOADER_UNKNOWN */
 
-
+#ifdef CONFIG_SET_GDT
 #ifndef CONFIG_GDT_DYNAMIC
 _gdt:
 #endif
@@ -414,3 +415,4 @@ _gdt_rom_entries:
 	.byte   0x00		/* base : 00xxxxxx */
 
 _gdt_rom_end:
+#endif

@@ -63,10 +63,12 @@ typedef struct __packed s_gdtHeader
 
 /* externs */
 
+#ifdef CONFIG_SET_GDT
 /* This is either the ROM-based GDT in crt0.S or RAM-based in gdt.c,
  * depending on CONFIG_GDT_DYNAMIC
  */
 extern tGdtHeader _gdt;
+#endif
 
 #endif /* _ASMLANGUAGE */
 
