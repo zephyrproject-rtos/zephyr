@@ -181,6 +181,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 			      const bt_addr_le_t *identity)
 {
@@ -192,7 +193,9 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 
 	printk("Identity resolved %s -> %s\n", addr_rpa, addr_identity);
 }
+#endif
 
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 static void security_changed(struct bt_conn *conn, bt_security_t level)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -200,12 +203,17 @@ static void security_changed(struct bt_conn *conn, bt_security_t level)
 	conn_addr_str(conn, addr, sizeof(addr));
 	printk("Security changed: %s level %u\n", addr, level);
 }
+#endif
 
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
+#if defined(CONFIG_BLUETOOTH_SMP)
 	.identity_resolved = identity_resolved,
+#endif
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	.security_changed = security_changed,
+#endif
 };
 
 static uint16_t appearance_value = 0x0001;
@@ -471,6 +479,7 @@ static void cmd_scan(int argc, char *argv[])
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 static void cmd_security(int argc, char *argv[])
 {
 	int err, sec;
@@ -492,6 +501,7 @@ static void cmd_security(int argc, char *argv[])
 		printk("Setting security failed (err %d)\n", err);
 	}
 }
+#endif
 
 static void exchange_rsp(struct bt_conn *conn, uint8_t err)
 {
@@ -1015,6 +1025,7 @@ static void cmd_gatt_unsubscribe(int argc, char *argv[])
 	memset(&subscribe_params, 0, sizeof(subscribe_params));
 }
 
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -1234,6 +1245,7 @@ static void cmd_auth_passkey(int argc, char *argv[])
 
 	bt_conn_auth_passkey_entry(default_conn, passkey);
 }
+#endif /* CONFIG_BLUETOOTH_SMP) || CONFIG_BLUETOOTH_BREDR */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static void cmd_auth_pincode(int argc, char *argv[])
@@ -1637,6 +1649,7 @@ static const struct shell_cmd commands[] = {
 	{ "select", cmd_select },
 	{ "scan", cmd_scan },
 	{ "advertise", cmd_advertise },
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	{ "security", cmd_security },
 	{ "auth", cmd_auth },
 	{ "auth-cancel", cmd_auth_cancel },
@@ -1645,7 +1658,8 @@ static const struct shell_cmd commands[] = {
 	{ "auth-pairing", cmd_auth_pairing_confirm },
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	{ "auth-pincode", cmd_auth_pincode },
-#endif
+#endif /* CONFIG_BLUETOOTH_BREDR */
+#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR) */
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu },
 	{ "gatt-discover-primary", cmd_gatt_discover },
 	{ "gatt-discover-secondary", cmd_gatt_discover },
