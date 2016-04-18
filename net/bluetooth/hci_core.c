@@ -28,6 +28,10 @@
 #include <misc/byteorder.h>
 #include <misc/stack.h>
 
+#ifdef CONFIG_MICROKERNEL
+#include <microkernel.h>
+#endif
+
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
@@ -2117,6 +2121,16 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 		struct bt_hci_rp_le_rand *rp;
 		struct net_buf *rsp;
 
+#if defined(CONFIG_BOARD_ARDUINO_101)
+		/* FIXME: Temporary hack for MyNewt HCI firmware which
+		 * crashes if it receives too rapid LE_Rand commands.
+		 */
+		if (sys_execution_context_type_get() == NANO_CTX_FIBER) {
+			fiber_sleep(1);
+		} else {
+			task_sleep(1);
+		}
+#endif
 		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
 		if (ret) {
 			return ret;
