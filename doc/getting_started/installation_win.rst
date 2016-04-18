@@ -100,17 +100,16 @@ To install ISSM use the link provided to download from the Intel Developer Zone:
 `ISSM 2016 Download`_ and install it into your system.
 
 Finally, configure your environment variables for the ISSM 2016 toolchain.
-For example, using the installation path for ISSM as:
-:file:`/c/IntelSWTools/ISSM_2016`
+For example, using the default installation path for ISSM:
+:file:`C:/IntelSWTools/ISSM_2016`
 
 .. code-block:: console
 
     export ZEPHYR_GCC_VARIANT=issm
-    export ISSM_INSTALLATION_PATH=/c/IntelSWTools/ISSM_2016
+    export ISSM_INSTALLATION_PATH=C:/IntelSWTools/ISSM_2016
 
-.. note:: The format of the location for the toolchain installation directory
-   (e.g. :envvar:`ISSM_INSTALLATION_PATH`) must be in the linux format. E.g.
-   :file:`C:\toolchain` would be written as :file:`/c/toolchain/`.
+.. note:: The format of the location for the ISSM installation directory
+   (e.g. :envvar:`ISSM_INSTALLATION_PATH`) must be in the windows format.
 
 .. _GIT Download: https://git-scm.com/download/win
 .. _Python Download: https://www.python.org/downloads/
