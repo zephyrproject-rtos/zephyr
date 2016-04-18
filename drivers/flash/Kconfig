@@ -86,7 +86,7 @@ config SPI_FLASH_W25QXXDV_MAX_DATA_LEN
 config SOC_FLASH_QMSI
 	bool
 	prompt "QMSI flash driver"
-	depends on QMSI_DRIVERS && FLASH
+	depends on QMSI && FLASH
 	default n
 	help
 	  Enable QMSI quark flash driver.
