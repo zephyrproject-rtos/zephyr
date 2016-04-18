@@ -341,14 +341,14 @@ void ip_buf_unref_debug(struct net_buf *buf, const char *caller, int line)
 void ip_buf_unref(struct net_buf *buf)
 #endif
 {
-       if (!buf) {
+	if (!buf) {
 #ifdef DEBUG_IP_BUFS
-               NET_DBG("*** ERROR *** buf %p (%s():%d)\n", buf, caller, line);
+		NET_DBG("*** ERROR *** buf %p (%s():%d)\n", buf, caller, line);
 #else
-               NET_DBG("*** ERROR *** buf %p\n", buf);
+		NET_DBG("*** ERROR *** buf %p\n", buf);
 #endif
-               return;
-       }
+		return;
+	}
 
 	if (!buf->ref) {
 #ifdef DEBUG_IP_BUFS
@@ -361,15 +361,15 @@ void ip_buf_unref(struct net_buf *buf)
 	}
 
 #ifdef DEBUG_IP_BUFS
-       NET_DBG("%s [%d] buf %p ref %d (%s():%d)\n",
-	       type2str(ip_buf_type(buf)), get_frees(ip_buf_type(buf)),
-	       buf, buf->ref - 1, caller, line);
+	NET_DBG("%s [%d] buf %p ref %d (%s():%d)\n",
+		type2str(ip_buf_type(buf)), get_frees(ip_buf_type(buf)),
+		buf, buf->ref - 1, caller, line);
 #else
-       NET_DBG("%s buf %p ref %d\n",
-	       type2str(ip_buf_type(buf)), buf, buf->ref - 1);
+	NET_DBG("%s buf %p ref %d\n",
+		type2str(ip_buf_type(buf)), buf, buf->ref - 1);
 #endif
 
-       net_buf_unref(buf);
+	net_buf_unref(buf);
 }
 
 #ifdef DEBUG_IP_BUFS
