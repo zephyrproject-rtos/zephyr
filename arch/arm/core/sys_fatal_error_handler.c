@@ -74,7 +74,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF * pEsf)
 	ARG_UNUSED(reason);
 	ARG_UNUSED(pEsf);
 
-	if ((curCtx == NANO_CTX_ISR) || _is_thread_essential(NULL)) {
+	if ((curCtx == NANO_CTX_ISR) || _is_thread_essential()) {
 		PRINTK("Fatal fault in %s ! Spinning...\n",
 		       NANO_CTX_ISR == curCtx
 			       ? "ISR"

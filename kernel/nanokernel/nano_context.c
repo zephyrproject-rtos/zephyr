@@ -52,7 +52,7 @@ nano_context_type_t sys_execution_context_type_get(void)
  * @brief Mark thread as essential to system
  *
  * This function tags the running fiber or task as essential to system
- * option; exceptions raised by this thread will be treated as a fatal
+ * operation; exceptions raised by this thread will be treated as a fatal
  * system error.
  *
  * @return N/A
@@ -67,7 +67,7 @@ void _thread_essential_set(void)
  * @brief Mark thread as not essential to system
  *
  * This function tags the running fiber or task as not essential to system
- * option; exceptions raised by this thread may be recoverable.
+ * operation; exceptions raised by this thread may be recoverable.
  * (This is the default tag for a thread.)
  *
  * @return N/A
@@ -81,17 +81,14 @@ void _thread_essential_clear(void)
  *
  * @brief Is the specified thread essential?
  *
- * This routine indicates if the specified thread is an essential system
- * thread.  A NULL thread pointer indicates that the current thread is
- * to be queried.
+ * This routine indicates if the running fiber or task is an essential system
+ * thread.
  *
- * @param pCtx Pointer to the thread
- *
- * @return Non-zero if specified thread is essential, zero if it is not
+ * @return Non-zero if current thread is essential, zero if it is not
  */
-int _is_thread_essential(struct tcs *pCtx)
+int _is_thread_essential(void)
 {
-	return ((pCtx == NULL) ? _nanokernel.current : pCtx)->flags & ESSENTIAL;
+	return _nanokernel.current->flags & ESSENTIAL;
 }
 
 void sys_thread_busy_wait(uint32_t usec_to_wait)
@@ -221,7 +218,7 @@ FUNC_NORETURN void _thread_entry(_thread_entry_t pEntry,
 
 	/* Determine if thread can legally terminate itself via "return" */
 
-	if (_is_thread_essential(NULL)) {
+	if (_is_thread_essential()) {
 #ifdef CONFIG_NANOKERNEL
 		/*
 		 * Nanokernel's background task must always be present,

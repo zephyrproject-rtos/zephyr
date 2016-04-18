@@ -61,7 +61,7 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 	ARG_UNUSED(reason);
 	ARG_UNUSED(pEsf);
 
-	if ((curCtx != NANO_CTX_ISR) && !_is_thread_essential(NULL)) {
+	if ((curCtx != NANO_CTX_ISR) && !_is_thread_essential()) {
 #ifdef CONFIG_MICROKERNEL
 		if (curCtx == NANO_CTX_TASK) {
 			extern FUNC_NORETURN void _TaskAbort(void);

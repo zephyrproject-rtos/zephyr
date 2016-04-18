@@ -116,7 +116,7 @@ extern nano_thread_id_t sys_thread_self_get(void);
  */
 extern nano_context_type_t sys_execution_context_type_get(void);
 
-extern int _is_thread_essential(nano_thread_id_t pCtx);
+extern int _is_thread_essential(void);
 
 /**
  *
