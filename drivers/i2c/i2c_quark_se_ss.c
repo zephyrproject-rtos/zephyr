@@ -150,7 +150,7 @@ static inline void _i2c_qse_ss_data_ask(struct device *dev)
 		   - _i2c_qse_ss_reg_read(dev, REG_RXFLR);
 	rx_empty -= dw->rx_pending;
 
-	if (rx_empty < 0) {
+	if (rx_empty <= 0) {
 		/* RX FIFO expected to be full.
 		 * So don't request any bytes, yet.
 		 */
