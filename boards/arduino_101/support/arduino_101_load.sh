@@ -22,7 +22,7 @@ echo "About to flash Zephyr comptaible ROM"
 $OPENOCD -s ${OPENOCD_SCRIPT} \
          -f ${ZEPHYR_BASE}/boards/arduino_101/support/restore.cfg \
          -c 'init' \
-         -c 'targets' \
+         -c 'targets 1' \
          -c 'reset halt' \
          -c 'load_image quark_se_rom.bin 0xffffe000 bin' \
          -c 'verify_image quark_se_rom.bin 0xffffe000 bin' \
@@ -48,7 +48,7 @@ echo "About to flash the OS and BOOT binaries"
 $OPENOCD -s ${OPENOCD_SCRIPT} \
          -f ${ZEPHYR_BASE}/boards/arduino_101/support/restore.cfg \
          -c 'init' \
-         -c 'targets' \
+         -c 'targets 1' \
          -c 'reset halt' \
          -c "load_image   A101_OS.bin 0x40000000 bin" \
          -c "verify_image A101_OS.bin 0x40000000 bin" \
