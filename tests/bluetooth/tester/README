@@ -1,2 +1,52 @@
-Tester application uses binary protocol for control and is aimed at automated
-testing.
+Title: Bluetooth tester application
+
+Description:
+
+Tester application uses binary protocol to control Zephyr stack and is aimed at
+automated testing. It requires two serial ports to operate.
+The first serial is used by Bluetooth Testing Protocol (BTP) to drive Bluetooth
+stack. BTP commands and events are received and buffered for further processing
+over the same serial.
+
+--------------------------------------------------------------------------------
+
+Supported Profiles:
+
+GAP, GATT, SM
+--------------------------------------------------------------------------------
+
+Building and running on QEMU:
+
+QEMU should have connection with the external host Bluetooth hardware.
+The btproxy tool from BlueZ can be used to give access to a Bluetooth controller
+attached to the Linux host OS:
+
+$ sudo tools/btproxy -u
+Listening on /tmp/bt-server-bredr
+
+/tmp/bt-server-bredr option is already set in Makefile through QEMU_EXTRA_FLAGS.
+
+To build tester application for QEMU:
+
+$ make pristine && make qemu
+
+'bt-stack-tester' UNIX socket (previously set in Makefile) can be used for now
+to control tester application.
+--------------------------------------------------------------------------------
+
+Building and running on Arduino 101:
+
+Arduino 101 is equipped with Nordic nRF51 Bluetooth LE chip, thus nble
+driver has to be build.
+For building tester application for Arduino 101 board with Nordic Bluetooth Low
+Energy stack (NBLE) use prj_nble.conf:
+
+$ make pristine && make CONF_FILE=prj_nble.conf BOARD=arduino_101 flash
+
+While running tester application on Arduino 101, serial converter, typically
+UART <-> USB is required by BTP to operate. Connect Arduino 101 Tx and Rx lines
+(0 and 1 ports on Arduino 101 board) through the UART converter to the host
+USB port.
+
+Use serial client, e.g. PUTTY to communicate over the serial port
+(typically /dev/ttyUSBx) with the tester using BTP.
