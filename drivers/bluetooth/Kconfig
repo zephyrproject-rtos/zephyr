@@ -120,8 +120,6 @@ source "drivers/bluetooth/nble/Kconfig"
 config BLUETOOTH_NRF51_PM
 	bool "nRF51 Power Management [EXPERIMENTAL]"
 	depends on BLUETOOTH_H4 || NBLE
-	depends on BOARD_ARDUINO_101
-	select GPIO
 	help
 	  Power Management support for Nordic BLE nRF51 chip. Allows to enable,
 	  disable the chip and handle wakeups.
