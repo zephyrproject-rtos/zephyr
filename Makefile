@@ -579,7 +579,7 @@ $(if $(CROSS_COMPILE),, \
      $(error ZEPHYR_GCC_VARIANT is not set. ))
 endif
 
-ifdef CONFIG_QMSI_DRIVERS
+ifdef CONFIG_QMSI_LIBRARY
 LIB_INCLUDE_DIR += -L$(CONFIG_QMSI_INSTALL_PATH:"%"=%)/lib
 ALL_LIBS += qmsi
 endif

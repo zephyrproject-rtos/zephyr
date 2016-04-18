@@ -22,7 +22,7 @@ config QMSI_BUILTIN
 	help
 	Link with local QMSI sources instead of external library.
 
-config QMSI_DRIVERS
+config QMSI_LIBRARY
 	bool "Enable QMSI drivers using external library"
 	default n
 	select QMSI
@@ -36,13 +36,13 @@ config QMSI
 	bool
 	default n
 	help
-	automatically set when either of QMSI_DRIVERS or QMSI_BUILTIN
+	automatically set when either of QMSI_LIBRARY or QMSI_BUILTIN
 	is selected.
 
 config QMSI_INSTALL_PATH
-	depends on QMSI_DRIVERS
+	depends on QMSI_LIBRARY
 	string "QMSI install path"
 	help
 	This option holds the path where the QMSI library and headers are
-	installed. Make sure this option is properly set when QMSI_DRIVERS
+	installed. Make sure this option is properly set when QMSI_LIBRARY
 	is enabled otherwise the build will fail.
