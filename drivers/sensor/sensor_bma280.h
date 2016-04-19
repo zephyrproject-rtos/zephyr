@@ -57,26 +57,22 @@
 #endif
 
 /*
- * accel and slope scale measured in pico-m/s^2 instead
+ * BMA280_PMU_FULL_RANGE measured in mili-m/s^2 instead
  * of m/s^2 to avoid using struct sensor_value for it
  */
 #define BMA280_REG_PMU_RANGE		0x0F
 #if CONFIG_BMA280_PMU_RANGE_2G
 	#define BMA280_PMU_RANGE	0x03
-	#define BMA280_ACCEL_SCALE	(244 * SENSOR_G)
-	#define BMA280_SLOPE_TH_SCALE	(3910 * SENSOR_G)
+	#define BMA280_PMU_FULL_RANGE	(4 * SENSOR_G)
 #elif CONFIG_BMA280_PMU_RANGE_4G
 	#define BMA280_PMU_RANGE	0x05
-	#define BMA280_ACCEL_SCALE	(488 * SENSOR_G)
-	#define BMA280_SLOPE_TH_SCALE	(7810 * SENSOR_G)
+	#define BMA280_PMU_FULL_RANGE	(8 * SENSOR_G)
 #elif CONFIG_BMA280_PMU_RANGE_8G
 	#define BMA280_PMU_RANGE	0x08
-	#define BMA280_ACCEL_SCALE	(977 * SENSOR_G)
-	#define BMA280_SLOPE_TH_SCALE	(15630 * SENSOR_G)
+	#define BMA280_PMU_FULL_RANGE	(16 * SENSOR_G)
 #elif CONFIG_BMA280_PMU_RANGE_16G
 	#define BMA280_PMU_RANGE	0x0C
-	#define BMA280_ACCEL_SCALE	(1953 * SENSOR_G)
-	#define BMA280_SLOPE_TH_SCALE	(31250 * SENSOR_G)
+	#define BMA280_PMU_FULL_RANGE	(32 * SENSOR_G)
 #endif
 
 #define BMA280_REG_TEMP			0x08

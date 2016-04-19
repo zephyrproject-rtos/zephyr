@@ -134,9 +134,13 @@ static int bma280_channel_get(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* accel_val = sample * BMA280_ACCEL_SCALE / 10^12 */
+	/*
+	 * accel_val = (sample * BMA280_PMU_FULL_RAGE) /
+	 *             (2^data_width * 10^6)
+	 */
 	val->type = SENSOR_TYPE_INT_PLUS_MICRO;
-	raw_val = raw_val * BMA280_ACCEL_SCALE / 1000000;
+	raw_val = (raw_val * BMA280_PMU_FULL_RANGE) /
+		  (1 << (8 + BMA280_ACCEL_LSB_BITS));
 	val->val1 = raw_val / 1000000;
 	val->val2 = raw_val % 1000000;
 

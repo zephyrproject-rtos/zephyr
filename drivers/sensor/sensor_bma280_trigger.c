@@ -38,9 +38,9 @@ int bma280_attr_set(struct device *dev,
 	}
 
 	if (attr == SENSOR_ATTR_SLOPE_TH) {
-		/* slope_th = val * 10^12 / BMA280_SLOPE_TH_SCALE */
+		/* slope_th = (val * 10^6 * 2^10) / BMA280_PMU_FULL_RAGE */
 		slope_th = (uint64_t)val->val1 * 1000000 + (uint64_t)val->val2;
-		slope_th = (slope_th * 1000000) / BMA280_SLOPE_TH_SCALE;
+		slope_th = (slope_th * (1 << 10)) / BMA280_PMU_FULL_RANGE;
 		rc = bma280_reg_write(drv_data, BMA280_REG_SLOPE_TH,
 				      (uint8_t)slope_th);
 		if (rc != 0) {
