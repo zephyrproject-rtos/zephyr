@@ -1,0 +1,65 @@
+# Kconfig.qmsi_ss - QMSI SENSOR GPIO configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig GPIO_QMSI_SS
+	bool "QMSI SENSOR GPIO driver"
+	depends on GPIO && QMSI && ARC
+	default n
+	help
+	  Enable the driver for GPIO found on sensor system,
+	  using the QMSI library.
+
+if GPIO_QMSI_SS
+
+config GPIO_QMSI_SS_0
+	bool
+	prompt "QMSI GPIO block 0"
+	default n
+	help
+	  Include support for the GPIO port 0 using QMSI.
+
+config GPIO_QMSI_SS_0_NAME
+	string "Driver name"
+	depends on GPIO_QMSI_SS_0
+	default "GPIO_0"
+
+config GPIO_QMSI_SS_0_PRI
+	int "Controller interrupt priority"
+	depends on GPIO_QMSI_SS_0
+	help
+	  IRQ priority
+
+config GPIO_QMSI_SS_1
+	bool
+	prompt "QMSI GPIO block 1"
+	default n
+	help
+	  Include support for the GPIO port 1 using QMSI.
+
+config GPIO_QMSI_SS_1_NAME
+	string "Driver name"
+	depends on GPIO_QMSI_SS_1
+	default "GPIO_1"
+
+config GPIO_QMSI_SS_1_PRI
+	int "Controller interrupt priority"
+	depends on GPIO_QMSI_SS_1
+	help
+	  IRQ priority
+
+endif # GPIO_QMSI_SS
