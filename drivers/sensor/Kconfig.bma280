@@ -18,19 +18,42 @@
 
 menuconfig BMA280
 	bool
-	prompt "BMA280 Three Axis Accelerometer"
+	prompt "BMA280 Three Axis Accelerometer Family"
 	depends on SENSOR && I2C
 	default n
 	help
-	  Enable driver for BMA280 I2C-based triaxial accelerometer sensor.
+	  Enable driver for BMA280 I2C-based triaxial accelerometer sensor
+	  family.
+
+choice
+	prompt "Chip type"
+	depends on BMA280
+	default BMA280_CHIP_BMA280
+	help
+	  Choose desired chip type from the BMA280 family.
+
+config BMA280_CHIP_BMA280
+	bool
+	prompt "BMA280"
+	help
+	  Choose this option to enable the BMA280 chip.
+
+config BMA280_CHIP_BMC150_ACCEL
+	bool
+	prompt "BMC150_ACCEL"
+	help
+	  Choose this option to enable the accelerometer of the BMC150 chip.
+
+endchoice
 
 config BMA280_NAME
 	string
 	prompt "Driver name"
-	default "BMA280"
+	default "BMA280" if BMA280_CHIP_BMA280
+	default "BMC150_ACCEL" if BMA280_CHIP_BMC150_ACCEL
 	depends on BMA280
 	help
-	  Device name with which the BMA280 sensor is identified.
+	  Device name with which the sensor is identified.
 
 config BMA280_INIT_PRIORITY
 	int
@@ -43,19 +66,36 @@ config BMA280_INIT_PRIORITY
 choice
 	prompt "I2C address"
 	depends on BMA280
-	default BMA280_I2C_ADDR_0x18
+	default BMA280_I2C_ADDR_0x18 if BMA280_CHIP_BMA280
+	default BMA280_I2C_ADDR_0x10 if BMA280_CHIP_BMC150_ACCEL
 	help
 	  I2C address of the BMA280 sensor.
+
+config BMA280_I2C_ADDR_0x10
+	bool
+	prompt "0x10"
+	depends on BMA280_CHIP_BMC150_ACCEL
+	help
+	  Choose this option if the SDO pin is pulled to GND.
+
+config BMA280_I2C_ADDR_0x11
+	bool
+	prompt "0x11"
+	depends on BMA280_CHIP_BMC150_ACCEL
+	help
+	  Choose this option if the SDO pin is pulled to VDDIO.
 
 config BMA280_I2C_ADDR_0x18
 	bool
 	prompt "0x18"
+	depends on BMA280_CHIP_BMA280
 	help
 	  Choose this option if the SDO pin is pulled to GND.
 
 config BMA280_I2C_ADDR_0x19
 	bool
 	prompt "0x19"
+	depends on BMA280_CHIP_BMA280
 	help
 	  Choose this option if the SDO pin is pulled to VDDIO.
 
@@ -63,11 +103,11 @@ endchoice
 
 config BMA280_I2C_MASTER_DEV_NAME
 	string
-	prompt "I2C master where BMA280 is connected"
+	prompt "I2C master device name"
 	depends on BMA280
 	default "I2C0"
 	help
-	  Specify the device name of the I2C master device to which BMA280 is
+	  Specify the device name of the I2C master device to which chip is
 	  connected.
 
 choice
@@ -106,7 +146,7 @@ config BMA280_GPIO_DEV_NAME
 	default "GPIO_0"
 	depends on BMA280 && BMA280_TRIGGER
 	help
-	  The device name of the GPIO device to which the BMA280 interrupt pins
+	  The device name of the GPIO device to which the chip's interrupt pins
 	  are connected.
 
 config BMA280_GPIO_PIN_NUM
@@ -115,8 +155,8 @@ config BMA280_GPIO_PIN_NUM
 	default 0
 	depends on BMA280 && BMA280_TRIGGER
 	help
-	  The number of the GPIO on which the interrupt signal from the BMA280
-	  chip will be received.
+	  The number of the GPIO on which the interrupt signal from the chip
+	  will be received.
 
 config BMA280_FIBER_PRIORITY
 	int
