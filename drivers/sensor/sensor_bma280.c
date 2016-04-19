@@ -89,13 +89,13 @@ static int bma280_sample_fetch(struct device *dev)
 	}
 
 	lsb = (buf[0] & BMA280_ACCEL_LSB_MASK) >> BMA280_ACCEL_LSB_SHIFT;
-	drv_data->x_sample = (((int8_t)buf[1]) << BMA280_ACCEL_LSB_BITS) + lsb;
+	drv_data->x_sample = (((int8_t)buf[1]) << BMA280_ACCEL_LSB_BITS) | lsb;
 
 	lsb = (buf[2] & BMA280_ACCEL_LSB_MASK) >> BMA280_ACCEL_LSB_SHIFT;
-	drv_data->y_sample = (((int8_t)buf[3]) << BMA280_ACCEL_LSB_BITS) + lsb;
+	drv_data->y_sample = (((int8_t)buf[3]) << BMA280_ACCEL_LSB_BITS) | lsb;
 
 	lsb = (buf[4] & BMA280_ACCEL_LSB_MASK) >> BMA280_ACCEL_LSB_SHIFT;
-	drv_data->z_sample = (((int8_t)buf[5]) << BMA280_ACCEL_LSB_BITS) + lsb;
+	drv_data->z_sample = (((int8_t)buf[5]) << BMA280_ACCEL_LSB_BITS) | lsb;
 
 	rc = bma280_reg_read(drv_data, BMA280_REG_TEMP,
 			     (uint8_t *)&drv_data->temp_sample);
