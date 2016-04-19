@@ -590,6 +590,8 @@ static int h5_queue(struct net_buf *buf)
 {
 	uint8_t type;
 
+	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_tupe(buf), buf->len);
+
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_CMD:
 		type = HCI_COMMAND_PKT;
