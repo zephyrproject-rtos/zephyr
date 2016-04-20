@@ -41,11 +41,13 @@ the brew command line.
 
 .. code-block:: console
 
-   $ brew install gettext qemu help2man mpfr gmp coreutils wget
+   $ brew install gettext qemu help2man mpfr gmp coreutils wget python3
 
    $ brew tap homebrew/dupes
 
    $ brew install grep --default-names
+
+   $ pip3 install ply
 
 .. code-block:: console
 

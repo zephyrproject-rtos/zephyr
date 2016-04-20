@@ -47,7 +47,7 @@ Install the required packages in a Ubuntu host system with:
 .. code-block:: console
 
    $ sudo apt-get install git make gcc gcc-multilib g++ libc6-dev-i386 \
-     g++-multilib
+     g++-multilib python3-ply
 
 Install the required packages in a Fedora host system with:
 
@@ -55,7 +55,7 @@ Install the required packages in a Fedora host system with:
 
    $ sudo dnf group install "Development Tools"
    $ sudo dnf install git make gcc glib-devel.i686 glib2-devel.i686 \
-     glibc-static libstdc++-static glibc-devel.i686
+     glibc-static libstdc++-static glibc-devel.i686 python3-ply
 
 .. _zephyr_sdk:
 
