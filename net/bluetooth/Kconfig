@@ -253,21 +253,42 @@ endif # BLUETOOTH_CONN
 
 endif # BLUETOOTH_LE
 
-config	BLUETOOTH_DEBUG
-	bool "Bluetooth debug support"
-	select STDOUT_CONSOLE
+config  BLUETOOTH_DEBUG
+	bool
 	default n
+
+choice
+	prompt "Bluetooth debug type"
+	depends on BLUETOOTH
+	default BLUETOOTH_DEBUG_NONE
+
+config BLUETOOTH_DEBUG_NONE
+	bool "No debug log"
+	help
+	  Select this to disable all Bluetooth debug logs.
+
+config	BLUETOOTH_DEBUG_STDOUT
+	bool "Normal printf-style to console"
+	select BLUETOOTH_DEBUG
+	select STDOUT_CONSOLE
 	help
 	  This option enables Bluetooth debug going to standard
 	  serial console.
 
-if BLUETOOTH_DEBUG
+
+endchoice
+
+if BLUETOOTH_DEBUG_STDOUT
+
 config  BLUETOOTH_DEBUG_COLOR
 	bool "Use colored logs"
 	default y
 	help
 	  Use color in the logs. This requires an ANSI capable terminal.
 
+endif # BLUETOOTH_DEBUG_STDOUT
+
+if BLUETOOTH_DEBUG
 config	BLUETOOTH_DEBUG_HCI_CORE
 	bool "Bluetooth HCI core debug"
 	depends on BLUETOOTH_STACK_HCI
