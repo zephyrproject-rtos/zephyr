@@ -225,7 +225,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
 		int err;
 
-		err = bt_dev.drv->send(buf);
+		err = bt_send(buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)", err);
 			net_buf_unref(buf);
@@ -2552,8 +2552,6 @@ static void hci_event(struct net_buf *buf)
 
 static void hci_cmd_tx_fiber(void)
 {
-	struct bt_driver *drv = bt_dev.drv;
-
 	BT_DBG("started");
 
 	while (1) {
@@ -2581,7 +2579,7 @@ static void hci_cmd_tx_fiber(void)
 		BT_DBG("Sending command 0x%04x (buf %p) to driver",
 		       cmd(buf)->opcode, buf);
 
-		err = drv->send(buf);
+		err = bt_send(buf);
 		if (err) {
 			BT_ERR("Unable to send to driver (err %d)", err);
 			nano_fiber_sem_give(&bt_dev.ncmd_sem);
@@ -3131,6 +3129,13 @@ static int hci_init(void)
 	       bt_dev.hci_revision, bt_dev.manufacturer);
 
 	return 0;
+}
+
+int bt_send(struct net_buf *buf)
+{
+	BT_DBG("buf %p len %u type %u", buf, buf->len, bt_buf_get_type(buf));
+
+	return bt_dev.drv->send(buf);
 }
 
 /* Interface to HCI driver layer */

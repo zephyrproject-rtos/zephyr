@@ -862,8 +862,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 
 	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 
-	BT_DBG("passing buf %p len %u to driver", buf, buf->len);
-	err = bt_dev.drv->send(buf);
+	err = bt_send(buf);
 	if (err) {
 		BT_ERR("Unable to send to driver (err %d)", err);
 		goto fail;
