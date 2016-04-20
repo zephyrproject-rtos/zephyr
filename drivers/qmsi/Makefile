@@ -10,3 +10,4 @@ obj-$(CONFIG_ADC_QMSI) += drivers/qm_adc.o
 obj-$(CONFIG_UART_QMSI) += drivers/qm_uart.o
 obj-$(CONFIG_SPI_QMSI) += drivers/qm_spi.o
 obj-$(CONFIG_SOC_FLASH_QMSI) += drivers/qm_flash.o
+obj-$(CONFIG_PINMUX_DEV_QMSI) += drivers/qm_pinmux.o
