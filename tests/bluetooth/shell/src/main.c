@@ -659,6 +659,26 @@ fail:
 	return -EINVAL;
 }
 
+static int cmd_oob(int argc, char *argv[])
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	struct bt_le_oob oob;
+	int err;
+
+	err = bt_le_oob_get_local(&oob);
+	if (err) {
+		printk("OOB data failed\n");
+		return 0;
+	}
+
+	bt_addr_le_to_str(&oob.connectable_addr, addr, sizeof(addr));
+
+	printk("OOB data:\n");
+	printk("  addr %s\n", addr);
+
+	return 0;
+}
+
 static struct bt_gatt_discover_params discover_params;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
@@ -1926,6 +1946,26 @@ static int cmd_bredr_connectable(int argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_bredr_oob(int argc, char *argv[])
+{
+	char addr[BT_ADDR_STR_LEN];
+	struct bt_br_oob oob;
+	int err;
+
+	err = bt_br_oob_get_local(&oob);
+	if (err) {
+		printk("BR/EDR OOB data failed\n");
+		return 0;
+	}
+
+	bt_addr_to_str(&oob.addr, addr, sizeof(addr));
+
+	printk("BR/EDR OOB data:\n");
+	printk("  addr %s\n", addr);
+
+	return 0;
+}
 #endif
 
 #define HELP_NONE "[none]"
@@ -1940,6 +1980,7 @@ static const struct shell_cmd commands[] = {
 	{ "scan", cmd_scan, "<value: on, off>" },
 	{ "advertise", cmd_advertise,
 	"<type: off, on, scan, nconn> <mode: discov, non_discov>"  },
+	{ "oob", cmd_oob },
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	{ "security", cmd_security, "<security level: 0, 1, 2, 3>" },
 	{ "auth", cmd_auth,
@@ -1989,6 +2030,7 @@ static const struct shell_cmd commands[] = {
 	{ "br-discovery", cmd_bredr_discovery,
 	  "<value: on, off> [mode: limited]"  },
 	{ "br-l2cap-register", cmd_bredr_l2cap_register, "<psm>" },
+	{ "br-oob", cmd_bredr_oob },
 #endif
 	{ NULL, NULL }
 };
