@@ -40,8 +40,10 @@
 #else
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
 #include <contiki/ipv6/uip-ds6.h>
-#endif
-#endif
+#else
+#include <contiki/ip/uipaddr.h>
+#endif /* IPv6 */
+#endif /* CONFIG_NET_TESTING */
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
 /* admin-local, dynamically allocated multicast address */
@@ -59,10 +61,33 @@ static const struct in6_addr in6addr_my = IN6ADDR_ANY_INIT;
 static const struct in6_addr in6addr_my = MY_IPADDR;
 #endif
 
-#else
+#else /* IPv6 */
+
 /* Organization-local 239.192.0.0/14 */
 #define MCAST_IPADDR { { { 239, 192, 0, 2 } } }
-#endif
+
+#if !defined(CONFIG_NET_TESTING)
+/* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
+#define UIP_IPADDR0 192
+#define UIP_IPADDR1 0
+#define UIP_IPADDR2 2
+#define UIP_IPADDR3 1
+
+#define UIP_DRIPADDR0 UIP_IPADDR0
+#define UIP_DRIPADDR1 UIP_IPADDR1
+#define UIP_DRIPADDR2 UIP_IPADDR2
+#define UIP_DRIPADDR3 42
+
+#define MY_IPADDR { { { UIP_IPADDR0, UIP_IPADDR1, UIP_IPADDR2, UIP_IPADDR3 } } }
+
+uip_ipaddr_t uip_hostaddr = { { UIP_IPADDR0, UIP_IPADDR1,
+				UIP_IPADDR2, UIP_IPADDR3 } };
+uip_ipaddr_t uip_draddr = { { UIP_DRIPADDR0, UIP_DRIPADDR1,
+			      UIP_DRIPADDR2, UIP_DRIPADDR3 } };
+uip_ipaddr_t uip_netmask = { { 255, 255, 255, 0 } };
+#endif /* CONFIG_NET_TESTING */
+
+#endif /* IPv6 */
 
 #define MY_PORT 4242
 
