@@ -275,18 +275,39 @@ config	BLUETOOTH_DEBUG_STDOUT
 	  This option enables Bluetooth debug going to standard
 	  serial console.
 
+config  BLUETOOTH_DEBUG_MONITOR
+	bool "Monitor protocol over UART"
+	depends on BLUETOOTH_STACK_HCI
+	select BLUETOOTH_DEBUG
+	select CONSOLE_HAS_DRIVER
+	help
+	  Use a custom logging protocol over the console UART
+	  instead of plain-text output. Requires a special application
+	  on the host side that can decode this protocol. Currently
+	  the 'btmon' tool from BlueZ is capable of doing this.
+
+	  If the target platform has two or more external UARTs it is
+	  possible to keep using UART_CONSOLE together with this option,
+	  however if there is only a single external UART then
+	  UART_CONSOLE needs to be disabled (in which case printk/printf
+	  will get encoded into the monitor protocol).
 
 endchoice
 
-if BLUETOOTH_DEBUG_STDOUT
-
 config  BLUETOOTH_DEBUG_COLOR
 	bool "Use colored logs"
+	depends on BLUETOOTH_DEBUG_STDOUT
 	default y
 	help
 	  Use color in the logs. This requires an ANSI capable terminal.
 
-endif # BLUETOOTH_DEBUG_STDOUT
+config  BLUETOOTH_MONITOR_ON_DEV_NAME
+	string "Device Name of Bluetooth monitor logging UART"
+	depends on BLUETOOTH_DEBUG_MONITOR
+	default "UART_0"
+	help
+	 This option specifies the name of UART device to be used
+	 for the Bluetooth monitor logging.
 
 if BLUETOOTH_DEBUG
 config	BLUETOOTH_DEBUG_HCI_CORE

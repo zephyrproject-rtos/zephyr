@@ -124,6 +124,9 @@ config UART_PIPE_ON_DEV_NAME
 
 endif
 
+config BLUETOOTH_MONITOR_ON_DEV_NAME
+	default "UART_1" if BLUETOOTH_DEBUG_MONITOR
+
 if WATCHDOG
 config WDT_DW
 	def_bool y

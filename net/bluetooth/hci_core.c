@@ -39,6 +39,7 @@
 #include <tinycrypt/utils.h>
 
 #include "keys.h"
+#include "monitor.h"
 #include "hci_core.h"
 
 #if defined(CONFIG_BLUETOOTH_CONN)
@@ -3024,6 +3025,8 @@ int bt_send(struct net_buf *buf)
 {
 	BT_DBG("buf %p len %u type %u", buf, buf->len, bt_buf_get_type(buf));
 
+	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+
 	return bt_dev.drv->send(buf);
 }
 
@@ -3032,6 +3035,8 @@ int bt_send(struct net_buf *buf)
 int bt_recv(struct net_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr;
+
+	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);
 
@@ -3089,6 +3094,9 @@ int bt_driver_register(struct bt_driver *drv)
 	}
 
 	bt_dev.drv = drv;
+
+	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_MONITOR_BUS_UART,
+			     BT_ADDR_ANY, "bt0");
 
 	return 0;
 }
@@ -3162,6 +3170,7 @@ static int bt_init(void)
 	}
 #endif
 
+	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_le_scan_update(false);
 
