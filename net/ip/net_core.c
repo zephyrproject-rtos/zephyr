@@ -931,6 +931,10 @@ int net_set_mac(uint8_t *mac, uint8_t len)
 	}
 #else
 	memcpy(&uip_lladdr, mac, len);
+
+	NET_DBG("IPv4 address ");
+	PRINT6ADDR(&uip_hostaddr);
+	PRINTF("\n");
 #endif
 	return 0;
 }
