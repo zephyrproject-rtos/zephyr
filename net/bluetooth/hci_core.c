@@ -3244,25 +3244,28 @@ static int bt_init(void)
 	}
 
 	err = hci_init();
+	if (err) {
+		return err;
+	}
 
 #if defined(CONFIG_BLUETOOTH_CONN)
-	if (!err) {
-		err = bt_conn_init();
+	err = bt_conn_init();
+	if (err) {
+		return err;
 	}
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
-	if (!err) {
-		err = irk_init();
+	err = irk_init();
+	if (err) {
+		return err;
 	}
 #endif
 
-	if (!err) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-		bt_le_scan_update(false);
-	}
+	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	bt_le_scan_update(false);
 
-	return err;
+	return 0;
 }
 
 static void hci_rx_fiber(bt_ready_cb_t ready_cb)
