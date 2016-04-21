@@ -239,6 +239,151 @@ static inline int i2c_transfer(struct device *dev,
 }
 
 /**
+ * @brief Read multiple bytes from an internal address of an I2C device.
+ *
+ * This routine reads multiple bytes from an internal address of an
+ * I2C device synchronously.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param dev_addr Address of the I2C device for reading.
+ * @param start_addr Internal address from which the data is being read.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes being read.
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int i2c_burst_read(struct device *dev, uint16_t dev_addr,
+				 uint8_t start_addr, uint8_t *buf,
+				 uint8_t num_bytes)
+{
+	struct i2c_driver_api *api;
+	struct i2c_msg msg[2];
+
+	msg[0].buf = &start_addr;
+	msg[0].len = 1;
+	msg[0].flags = I2C_MSG_WRITE | I2C_MSG_RESTART;
+
+	msg[1].buf = buf;
+	msg[1].len = num_bytes;
+	msg[1].flags = I2C_MSG_READ | I2C_MSG_STOP;
+
+	api = (struct i2c_driver_api *)dev->driver_api;
+	return api->transfer(dev, msg, 2, dev_addr);
+}
+
+/**
+ * @brief Write multiple bytes to an internal address of an I2C device.
+ *
+ * This routine writes multiple bytes to an internal address of an
+ * I2C device synchronously.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param dev_addr Address of the I2C device for writing.
+ * @param start_addr Internal address to which the data is being written.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes being written.
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int i2c_burst_write(struct device *dev, uint16_t dev_addr,
+				  uint8_t start_addr, uint8_t *buf,
+				  uint8_t num_bytes)
+{
+	struct i2c_driver_api *api;
+	struct i2c_msg msg[2];
+
+	msg[0].buf = &start_addr;
+	msg[0].len = 1;
+	msg[0].flags = I2C_MSG_WRITE;
+
+	msg[1].buf = buf;
+	msg[1].len = num_bytes;
+	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	api = (struct i2c_driver_api *)dev->driver_api;
+	return api->transfer(dev, msg, 2, dev_addr);
+}
+
+/**
+ * @brief Read internal register of an I2C device.
+ *
+ * This routine reads the value of an 8-bit internal register of an I2C
+ * device synchronously.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param dev_addr Address of the I2C device for reading.
+ * @param reg_addr Address of the internal register being read.
+ * @param value Memory pool that stores the retrieved register value.
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int i2c_reg_read_byte(struct device *dev, uint16_t dev_addr,
+				    uint8_t reg_addr, uint8_t *value)
+{
+	return i2c_burst_read(dev, dev_addr, reg_addr, value, 1);
+}
+
+/**
+ * @brief Write internal register of an I2C device.
+ *
+ * This routine writes a value to an 8-bit internal register of an I2C
+ * device synchronously.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param dev_addr Address of the I2C device for writing.
+ * @param reg_addr Address of the internal register being written.
+ * @param value Value to be written to internal register.
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int i2c_reg_write_byte(struct device *dev, uint16_t dev_addr,
+				     uint8_t reg_addr, uint8_t value)
+{
+	uint8_t tx_buf[2] = {reg_addr, value};
+
+	return i2c_write(dev, tx_buf, 2, dev_addr);
+}
+
+/**
+ * @brief Update internal register of an I2C device.
+ *
+ * This routine updates the value of a set of bits from an 8-bit internal
+ * register of an I2C device synchronously.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param dev_addr Address of the I2C device for updating.
+ * @param reg_addr Address of the internal register being updated.
+ * @param value Value for updating internal register.
+ * @param mask Bitmask for updating internal register.
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int i2c_reg_update_byte(struct device *dev, uint8_t dev_addr,
+				      uint8_t reg_addr, uint8_t value,
+				      uint8_t mask)
+{
+	uint8_t old_value, new_value;
+	int rc;
+
+	rc = i2c_reg_read_byte(dev, reg_addr, dev_addr, &old_value);
+	if (rc != 0) {
+		return rc;
+	}
+
+	new_value = (old_value & ~mask) | (value & mask);
+	if (new_value == old_value) {
+		return 0;
+	}
+
+	return i2c_reg_write_byte(dev, dev_addr, reg_addr, new_value);
+}
+
+/**
  * @brief Suspend an I2C driver.
  * @param dev Pointer to the device structure for the driver instance.
  *
