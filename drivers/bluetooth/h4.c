@@ -204,7 +204,7 @@ static void bt_uart_isr(struct device *unused)
 
 static int h4_send(struct net_buf *buf)
 {
-	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_tupe(buf), buf->len);
+	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
