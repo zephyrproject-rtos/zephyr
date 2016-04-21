@@ -849,14 +849,10 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
-	if (bt_addr_le_is_bonded(id_addr)) {
-		if (bt_smp_create_rpa(bt_dev.irk, &conn->le.init_addr.a)) {
-			return;
-		}
-		conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
-	} else {
-		bt_addr_le_copy(&conn->le.init_addr, &bt_dev.id_addr);
+	if (bt_smp_create_rpa(bt_dev.irk, &conn->le.init_addr.a)) {
+		return;
 	}
+	conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
 #else
 	bt_addr_le_copy(&conn->le.init_addr, &bt_dev.id_addr);
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
