@@ -1,0 +1,15 @@
+# @testcase dynamic
+# @tags kernel:nano
+#
+# @eval console-rx %(console)s:10 Philosopher 0 EATING
+# @eval console-rx %(console)s:10 Philosopher 0 THINKING
+# @eval console-rx %(console)s:10 Philosopher 1 EATING
+# @eval console-rx %(console)s:10 Philosopher 1 THINKING
+# @eval console-rx %(console)s:10 Philosopher 2 EATING
+# @eval console-rx %(console)s:10 Philosopher 2 THINKING
+# @eval console-rx %(console)s:10 Philosopher 3 EATING
+# @eval console-rx %(console)s:10 Philosopher 3 THINKING
+# @eval console-rx %(console)s:10 Philosopher 4 EATING
+# @eval console-rx %(console)s:10 Philosopher 4 THINKING
+# @eval console-rx %(console)s:10 Philosopher 5 EATING
+# @eval console-rx %(console)s:10 Philosopher 5 THINKING

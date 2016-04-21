@@ -59,7 +59,7 @@ void task_enum_pci(void)
 	}
 
 	pci_enumerate();
-
+	PRINT("Enumeration complete on %s", CONFIG_ARCH);
 	done = 1;
 }
 
@@ -68,6 +68,7 @@ void task_enum_pci(void)
 void main(void)
 {
 	pci_enumerate();
+	PRINT("Enumeration complete on %s", CONFIG_ARCH);
 }
 
 #endif /* CONFIG_MICROKERNEL */

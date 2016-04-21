@@ -1,0 +1,8 @@
+# @testcase dynamic
+# No configuration?
+# @targets \
+#   board:(?!quark_se_ctb) \
+#   board:(?!quark_d2000_crb) \
+#
+# @eval console-rx %(console)s:15 received [0-9]+ bytes
+# @eval console-rx %(console)s:15 sent [0-9]+ bytes

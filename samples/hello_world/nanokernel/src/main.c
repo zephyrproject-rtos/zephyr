@@ -34,6 +34,6 @@
 
 void main(void)
 {
-	PRINT("Hello World!\n");
+	PRINT("Hello World! %s\n", CONFIG_ARCH);
 }
 

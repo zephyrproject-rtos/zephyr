@@ -1,0 +1,4 @@
+#
+# this is a very lousy test on the output, we need to look for more precise
+# information that informs that this is working.
+# @eval console-rx %(console)s:10 System tick count : [0-9]+

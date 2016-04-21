@@ -1,0 +1,4 @@
+# @testcase dynamic
+# @tags kernel:nano
+#
+# @eval console-rx %(console)s:15 Hello World! %(bsp)s

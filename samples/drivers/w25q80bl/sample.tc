@@ -1,0 +1,18 @@
+# @testcase dynamic
+
+# @targets \
+#    board:(?!arduino_101) \
+#    board:(?!arduino_101_sss) \
+#    board:(?!arduino_due) \
+#    board:(?!basic_cortex_m3) \
+#    board:(?!basic_minuteia) \
+#    board:(?!frdm_k64f) \
+#    board:(?!galileo) \
+#    board:(?!minnowboard) \
+#    board:(?!qemu_cortex_m3) \
+#    board:(?!qemu_x86) \
+#    board:(?!quark_d2000_crb) \
+#    board:(?!quark_se_devboard) \
+#    board:(?!quark_se_sss_devboard) \
+#
+# @eval console-rx %(console)s:15 SPI Flash Manufacturer [0-9a-zA-Z]+ Device Id [0-9a-zA-Z]+

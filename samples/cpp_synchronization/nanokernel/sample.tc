@@ -1,0 +1,5 @@
+# @testcase dynamic
+#
+# @eval console-rx %(console)s:20 Create semaphore
+# @eval console-rx %(console)s:20 main: Hello World!
+# @eval console-rx %(console)s:20 fiber_entry: Hello World!

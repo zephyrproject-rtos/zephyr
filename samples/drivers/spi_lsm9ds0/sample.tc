@@ -1,0 +1,5 @@
+# @testcase dynamic
+# @targets \
+#    board:(?!quark_se_sss_devboard) \
+#
+# @eval console-rx %(console)s:15 LSM9DS0 Who Am I

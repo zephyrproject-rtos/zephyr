@@ -1,0 +1,7 @@
+# @testcase dynamic
+# @tags kernel:micro
+# @targets \
+#    board:(?!arduino_101_sss) \
+#    board:(?!quark_se_sss_devboard)
+#
+# @eval console-rx %(console)s:5 Hello World! %(bsp)s

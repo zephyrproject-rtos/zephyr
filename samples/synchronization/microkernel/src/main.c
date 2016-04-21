@@ -51,7 +51,7 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 		task_sem_take(mySem, TICKS_UNLIMITED);
 
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", taskname);
+		PRINT("%s: Hello World from %s!\n", taskname, CONFIG_ARCH);
 
 		/* wait a while, then let other task have a turn */
 		task_sleep(SLEEPTICKS);
