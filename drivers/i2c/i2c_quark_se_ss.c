@@ -609,7 +609,7 @@ static int i2c_qse_ss_resume(struct device *dev)
 	return 0;
 }
 
-static struct i2c_driver_api api_funcs = {
+static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_qse_ss_runtime_configure,
 	.transfer = i2c_qse_ss_intr_transfer,
 	.suspend = i2c_qse_ss_suspend,
@@ -644,25 +644,25 @@ int i2c_qse_ss_initialize(struct device *dev)
 #if CONFIG_I2C_QUARK_SE_SS_0
 #include <init.h>
 
-void _i2c_qse_ss_config_irq_0(struct device *port);
+static void _i2c_qse_ss_config_irq_0(struct device *port);
 
-struct i2c_qse_ss_rom_config i2c_config_ss_0 = {
+static const struct i2c_qse_ss_rom_config i2c_config_ss_0 = {
 	.base_address = I2C_QUARK_SE_SS_0_BASE_ADDR,
 
 	.config_func = _i2c_qse_ss_config_irq_0,
 };
 
-struct i2c_qse_ss_dev_config i2c_ss_0_runtime = {
+static struct i2c_qse_ss_dev_config i2c_ss_0_runtime = {
 	.app_config.raw = CONFIG_I2C_QUARK_SE_SS_0_DEFAULT_CFG,
 };
 
 DEVICE_AND_API_INIT(i2c_ss_0, CONFIG_I2C_QUARK_SE_SS_0_NAME,
 		    &i2c_qse_ss_initialize,
-		    &i2c_ss_0_runtime, &i2c_config_ss_0,
+		    &i2c_ss_0_runtime, (void *)&i2c_config_ss_0,
 		    SECONDARY, CONFIG_I2C_INIT_PRIORITY,
-		    &api_funcs);
+		    (void *)&api_funcs);
 
-void _i2c_qse_ss_config_irq_0(struct device *port)
+static void _i2c_qse_ss_config_irq_0(struct device *port)
 {
 	uint32_t mask = 0;
 
@@ -707,26 +707,26 @@ void _i2c_qse_ss_config_irq_0(struct device *port)
 #if CONFIG_I2C_QUARK_SE_SS_1
 #include <init.h>
 
-void _i2c_qse_ss_config_irq_1(struct device *port);
+static void _i2c_qse_ss_config_irq_1(struct device *port);
 
-struct i2c_qse_ss_rom_config i2c_config_ss_1 = {
+static const struct i2c_qse_ss_rom_config i2c_config_ss_1 = {
 	.base_address = I2C_QUARK_SE_SS_1_BASE_ADDR,
 
 	.config_func = _i2c_qse_ss_config_irq_1,
 };
 
-struct i2c_qse_ss_dev_config i2c_qse_ss_1_runtime = {
+static struct i2c_qse_ss_dev_config i2c_qse_ss_1_runtime = {
 	.app_config.raw = CONFIG_I2C_QUARK_SE_SS_1_DEFAULT_CFG,
 };
 
 DEVICE_AND_API_INIT(i2c_ss_1, CONFIG_I2C_QUARK_SE_SS_1_NAME,
 		    &i2c_qse_ss_initialize,
-		    &i2c_qse_ss_1_runtime, &i2c_config_ss_1,
+		    &i2c_qse_ss_1_runtime, (void *)&i2c_config_ss_1,
 		    SECONDARY, CONFIG_I2C_INIT_PRIORITY);
-		    &api_funcs);
+		    (void *)&api_funcs);
 
 
-void _i2c_qse_ss_config_irq_1(struct device *port)
+static void _i2c_qse_ss_config_irq_1(struct device *port)
 {
 	uint32_t mask = 0;
 
