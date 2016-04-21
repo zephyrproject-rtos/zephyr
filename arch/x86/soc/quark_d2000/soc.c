@@ -23,46 +23,9 @@
  */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
-#include <misc/printk.h>
-#include <misc/__assert.h>
 #include "soc.h"
 #include <drivers/mvic.h>
 #include <init.h>
-
-/**
- *
- * _InitHardware - perform basic hardware initialization
- *
- * Initialize the Quark D2000 Interrupt Controller (MVIC) device driver and the
- * Intel 8250 UART device driver.
- * Also initialize the timer device driver, if required.
- *
- * RETURNS: N/A
- */
-static int quark_d2000_init(struct device *arg)
-{
-	ARG_UNUSED(arg);
-
-#ifdef CONFIG_UART_NS16550
-	/* enable clock gating */
-#ifdef CONFIG_UART_NS16550_PORT_0
-	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 17);
-#endif
-#ifdef CONFIG_UART_NS16550_PORT_1
-	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 18);
-#endif
-	sys_set_bit(CLOCK_PERIPHERAL_BASE_ADDR, 1);
-#endif /* CONFIG_UART_NS16550 */
-
-#ifdef CONFIG_I2C_DW_0
-	/* Unmask interrupt */
-	sys_clear_bit(I2C_MST_0_INT_MASK, 0);
-#endif
-
-	return 0;
-}
-SYS_INIT(quark_d2000_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #ifdef CONFIG_MVIC
 SYS_INIT(_mvic_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
