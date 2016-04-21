@@ -33,10 +33,6 @@ extern "C" {
 #include <device.h>
 #include <errno.h>
 
-#ifdef CONFIG_SENSOR_WORKQUEUE
-#include <misc/nano_work.h>
-#endif
-
 /** @brief Sensor value types. */
 enum sensor_value_type {
 	/** val1 contains an integer value, val2 is unused. */
@@ -466,6 +462,79 @@ static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
 	rad->val1 = ((int64_t)d * SENSOR_PI / 180LL) / 1000000LL;
 	rad->val2 = ((int64_t)d * SENSOR_PI / 180LL) % 1000000LL;
 }
+
+/**
+ * @brief configuration parameters for sensor triggers.
+ */
+enum sensor_trigger_mode {
+	/** Do not use triggering. */
+	SENSOR_TRIG_MODE_NONE,
+	/**
+	 * Driver should start a workqueue specifically for this
+	 * device.  See @ref sensor_trig_or_wq_config for instruction on
+	 * how to specify the parameters of the workqueue.
+	 */
+	SENSOR_TRIG_MODE_OWN_WQ,
+	/** Use the system workqueue. */
+	SENSOR_TRIG_MODE_GLOBAL_WQ,
+};
+
+struct sensor_trigger_config {
+	/**
+	 * This is always set to NULL when using a @ref
+	 * sensor_trigger_config.  See the comment in @ref
+	 * sensor_trig_or_wq_config.
+	 */
+	void *always_null;
+	enum sensor_trigger_mode mode;
+};
+
+/**
+ * @brief Structure used for sensor trigger configuration.
+ *
+ * If @ref fiber_config.stack is non-NULL, the driver should start its
+ * on fiber based on @fiber_config.  Otherwise, use @ref
+ * trig_config.mode to decide if and how to use triggering.
+ */
+union sensor_trig_or_wq_config {
+	struct fiber_config fiber_config;
+	struct sensor_trigger_config trig_config;
+};
+
+#define SENSOR_DECLARE_TRIG_CONFIG		\
+	union sensor_trig_or_wq_config trig_or_wq_config
+
+#define SENSOR_TRIG_WQ_OWN(_stack, _prio)			\
+	.trig_or_wq_config = {					\
+		.fiber_config = {				\
+			.stack = (_stack),			\
+			.stack_size = sizeof(_stack),		\
+			.prio = (_prio),			\
+		}						\
+	}
+
+#define SENSOR_TRIG_WQ_GLOBAL					\
+	.trig_or_wq_config = {					\
+		.trig_config = {				\
+			.always_null = NULL,			\
+			.mode = SENSOR_TRIG_MODE_GLOBAL_WQ,	\
+		}						\
+	}
+
+#define SENSOR_TRIG_NONE					\
+	.trig_or_wq_config = {					\
+		.trig_config = {				\
+			.always_null = NULL,			\
+			.mode = SENSOR_TRIG_MODE_NONE,		\
+		}						\
+	}
+
+#define SENSOR_GET_TRIG_MODE(_conf)				\
+	(!(_conf)->trig_or_wq_config.fiber_config.stack		\
+	 ? SENSOR_TRIG_MODE_OWN_WQ :				\
+	 (_conf)->trig_or_wq_config.trig_config.mode)
+#define SENSOR_GET_WQ_CONFIG(_conf)				\
+	((_conf)->trig_or_wq_config.fiber_config)
 
 #ifdef __cplusplus
 }
