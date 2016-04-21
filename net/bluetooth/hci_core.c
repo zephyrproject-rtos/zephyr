@@ -3445,9 +3445,11 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		set_param->own_addr_type = BT_ADDR_LE_RANDOM;
 		break;
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
-	default:
+	case BT_LE_ADV_ADDR_IDENTITY:
 		set_param->own_addr_type = bt_dev.id_addr.type;
 		break;
+	default:
+		return -EINVAL;
 	}
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_PARAM, buf, NULL);
