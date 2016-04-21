@@ -382,6 +382,7 @@ static int set_advertise_disable(void)
 static int set_random_address(const bt_addr_t *addr)
 {
 	struct net_buf *buf;
+	int err;
 
 	/* Do nothing if we already have the right address */
 	if (!bt_addr_cmp(addr, &bt_dev.random_addr.a)) {
@@ -395,7 +396,14 @@ static int set_random_address(const bt_addr_t *addr)
 
 	memcpy(net_buf_add(buf, sizeof(*addr)), addr, sizeof(*addr));
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	bt_addr_copy(&bt_dev.random_addr.a, addr);
+	bt_dev.random_addr.type = BT_ADDR_LE_RANDOM;
+	return 0;
 }
 
 #if defined(CONFIG_BLUETOOTH_CONN)
@@ -2082,20 +2090,6 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	}
 }
 
-static void set_random_address_complete(struct net_buf *buf)
-{
-	bt_addr_le_t *random_addr = (void *)bt_dev.sent_cmd->data;
-	uint8_t *status = (void *)buf->data;
-
-	BT_DBG("status 0x%02x", *status);
-
-	if (*status) {
-		return;
-	}
-
-	bt_addr_le_copy(&bt_dev.random_addr, random_addr);
-}
-
 static void set_adv_param_complete(struct net_buf *buf)
 {
 	struct bt_hci_cp_le_set_adv_param *cp = (void *)bt_dev.sent_cmd->data;
@@ -2126,9 +2120,6 @@ static void hci_cmd_complete(struct net_buf *buf)
 	status = buf->data[0];
 
 	switch (opcode) {
-	case BT_HCI_OP_LE_SET_RANDOM_ADDRESS:
-		set_random_address_complete(buf);
-		break;
 	case BT_HCI_OP_LE_SET_ADV_PARAM:
 		set_adv_param_complete(buf);
 		break;
