@@ -411,6 +411,22 @@ static inline int i2c_resume(struct device *dev)
 	return api->resume(dev);
 }
 
+struct i2c_client_config {
+	char *i2c_master;
+	uint16_t i2c_addr;
+};
+
+#define I2C_DECLARE_CLIENT_CONFIG	struct i2c_client_config i2c_client
+
+#define I2C_CLIENT(_master, _addr)		\
+	.i2c_client = {				\
+		.i2c_master = (_master),	\
+		.i2c_addr = (_addr),		\
+	}
+
+#define I2C_GET_MASTER(_conf)		((_conf)->i2c_client.i2c_master)
+#define I2C_GET_ADDR(_conf)		((_conf)->i2c_client.i2c_addr)
+
 #ifdef __cplusplus
 }
 #endif
