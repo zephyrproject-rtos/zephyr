@@ -152,15 +152,6 @@ struct nble_gattc_discover_rsp {
 	uint8_t type;
 };
 
-struct nble_gatts_svc_changed_params {
-	uint16_t conn_handle;
-	uint16_t start_handle;
-	uint16_t end_handle;
-};
-
-void nble_gatts_send_svc_changed_req(const struct nble_gatts_svc_changed_params *par,
-				     void *priv);
-
 void nble_gatts_rd_reply_req(const struct nble_gatts_rd_reply_params *,
 			     uint8_t *, uint16_t);
 

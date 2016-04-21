@@ -115,11 +115,6 @@ struct nble_service_write_response {
 	void *user_data;
 };
 
-struct nble_gap_service_read_params {
-	/* Type of GAP data characteristic to read @ref BLE_GAP_SVC_ATTR_TYPE */
-	uint16_t attr_type;
-};
-
 struct nble_debug_params {
 	uint32_t u0;
 	uint32_t u1;
@@ -187,8 +182,6 @@ void nble_gap_service_write_req(const struct nble_gap_service_write_params *);
 
 void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *par);
 
-void on_nble_gap_service_write_rsp(const struct nble_service_write_response *par);
-
 void nble_gap_dbg_req(const struct nble_debug_params *par, void *user_data);
 
 void on_nble_gap_dbg_rsp(const struct nble_debug_resp *rsp);
@@ -213,18 +206,10 @@ struct nble_gap_irk_info {
 	uint8_t irk[BLE_GAP_SEC_MAX_KEY_LEN];
 };
 
-void nble_gap_wr_white_list_req(bt_addr_le_t *bd_array, uint8_t bd_array_size,
-				struct nble_gap_irk_info *irk_array,
-				uint8_t irk_array_size, void *priv);
-
-void nble_gap_clr_white_list_req(void *priv);
-
 struct nble_gap_connect_update_params {
 	uint16_t conn_handle;
 	struct nble_gap_connection_params params;
 };
-
-void nble_set_bda_req(const struct nble_set_bda_params *params);
 
 void nble_gap_conn_update_req(const struct nble_gap_connect_update_params *par);
 
@@ -240,11 +225,6 @@ struct nble_gap_disconnect_req_params {
 };
 
 void nble_gap_disconnect_req(const struct nble_gap_disconnect_req_params *);
-
-void on_nble_gap_disconnect_rsp(const struct nble_response *par);
-
-void nble_gap_service_read_req(const struct nble_gap_service_read_params *par,
-			       void *user_data);
 
 struct nble_gap_sm_config_params {
 	/* Security options (@ref BLE_GAP_SM_OPTIONS) */
@@ -271,7 +251,6 @@ struct nble_gap_sm_pairing_params {
 
 struct nble_gap_sm_security_params {
 	struct bt_conn *conn;
-	/* Connection on which bonding procedure is executed */
 	uint16_t conn_handle;
 	/* Local authentication/bonding parameters */
 	struct nble_gap_sm_pairing_params params;
@@ -357,35 +336,6 @@ struct nble_gap_channel_map {
 	uint8_t map[5];
 };
 
-struct nble_gap_set_option_params {
-	/* Option to set @ref BLE_GAP_SET_OPTIONS */
-	uint8_t op;
-	union {
-		struct nble_gap_channel_map ch_map;
-	};
-};
-
-void nble_gap_set_option_req(const struct nble_gap_set_option_params *par,
-			     void *user_data);
-
-/*
- * Generic request op codes.
- * This allows to access some non connection related commands like DTM.
- */
-enum BLE_GAP_GEN_OPS {
-	/* Not used now. */
-	DUMMY_VALUE = 0,
-};
-
-/** Generic command parameters. */
-struct nble_gap_gen_cmd_params {
-	/* @ref BLE_GAP_GEN_OPS */
-	uint8_t op_code;
-};
-
-void nble_gap_generic_cmd_req(const struct nble_gap_gen_cmd_params *par,
-			      void *priv);
-
 struct nble_uas_rssi_calibrate {
 	float distance;
 };
@@ -395,8 +345,6 @@ struct nble_uas_bucket_change {
 	uint8_t distance;
 };
 void on_nble_uas_bucket_change(const struct nble_uas_bucket_change *);
-
-void on_nble_gap_generic_cmd_rsp(const struct nble_response *par);
 
 void nble_get_version_req(void *user_data);
 
