@@ -20,7 +20,15 @@
 #define __SENSOR_BMC150_MAGN_H__
 
 #include <stdint.h>
+#include <i2c.h>
 #include <misc/util.h>
+
+#ifdef CONFIG_SENSOR_DEBUG
+#include <misc/printk.h>
+#define sensor_dbg(fmt, ...) printk("bmc150_magn: " fmt, ##__VA_ARGS__)
+#else
+#define sensor_dbg(fmt, ...) do { } while (0)
+#endif /* CONFIG_SENSOR_DEBUG */
 
 #define BMC150_MAGN_REG_CHIP_ID		0x40
 #define BMC150_MAGN_CHIP_ID_VAL		0x32
@@ -129,8 +137,11 @@ struct bmc150_magn_data {
 	struct device *i2c_master;
 	struct nano_sem sem;
 
-#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
+#if defined(CONFIG_BMC150_MAGN_TRIGGER)
 	char __stack fiber_stack[CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK];
+#endif
+
+#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	struct device *gpio_drdy;
 	struct device *dev;
 	struct gpio_callback gpio_cb;
@@ -174,5 +185,13 @@ enum bmc150_magn_axis {
 	BMC150_MAGN_AXIS_XYZ_MAX = BMC150_MAGN_RHALL,
 	BMC150_MAGN_AXIS_XYZR_MAX,
 };
+
+#if defined(CONFIG_BMC150_MAGN_TRIGGER)
+int bmc150_magn_trigger_set(struct device *dev,
+			    const struct sensor_trigger *trig,
+			    sensor_trigger_handler_t handler);
+
+int bmc150_magn_init_interrupt(struct device *dev);
+#endif
 
 #endif /* __SENSOR_BMC150_MAGN_H__ */

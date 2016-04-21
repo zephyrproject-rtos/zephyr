@@ -113,7 +113,7 @@ config BMC150_MAGN_SAMPLING_REP_Z
 
 endmenu
 
-config BMC150_MAGN_TRIGGERS
+config BMC150_MAGN_TRIGGER
 	bool "Enable triggers"
 	depends on BMC150_MAGN && GPIO
 	default n
@@ -122,14 +122,14 @@ config BMC150_MAGN_TRIGGERS
 
 config BMC150_MAGN_TRIGGER_FIBER_STACK
 	int "Fiber stack size"
-	depends on BMC150_MAGN_TRIGGERS
+	depends on BMC150_MAGN_TRIGGER
 	default 1024
 	help
 	  Specify the internal fiber stack size.
 
 config BMC150_MAGN_TRIGGER_DRDY
 	bool "Enable data ready trigger"
-	depends on BMC150_MAGN_TRIGGERS
+	depends on BMC150_MAGN_TRIGGER
 	default n
 	help
 	  Enable data ready interrupt for BMC150 magnetometer

@@ -23,21 +23,12 @@
 #include <nanokernel.h>
 #include <device.h>
 #include <init.h>
-#include <i2c.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
 #include <gpio.h>
 
 #include "sensor_bmc150_magn.h"
-
-
-#ifdef CONFIG_SENSOR_DEBUG
-#include <misc/printk.h>
-#define sensor_dbg(fmt, ...) printk("bmc150_magn: " fmt, ##__VA_ARGS__)
-#else
-#define sensor_dbg(fmt, ...) do { } while (0)
-#endif /* CONFIG_SENSOR_DEBUG */
 
 static const struct {
 	int freq;
@@ -61,23 +52,6 @@ static const struct bmc150_magn_preset {
 	[ENHANCED_REGULAR_PRESET] = {15, 27, 10},
 	[HIGH_ACCURACY_PRESET] = {47, 83, 20}
 };
-
-#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-static int bmc150_magn_set_drdy_polarity(struct device *dev, int state)
-{
-	struct bmc150_magn_data *data = dev->driver_data;
-	struct bmc150_magn_config *config = dev->config->config_info;
-
-	if (state) {
-		state = 1;
-	}
-
-	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				   BMC150_MAGN_REG_INT_DRDY,
-				   BMC150_MAGN_MASK_DRDY_DR_POLARITY,
-				   state << BMC150_MAGN_SHIFT_DRDY_DR_POLARITY);
-}
-#endif
 
 static int bmc150_magn_set_power_mode(struct device *dev,
 				      enum bmc150_magn_power_modes mode,
@@ -501,100 +475,13 @@ static int bmc150_magn_attr_set(struct device *dev,
 }
 #endif
 
-#if defined(CONFIG_BMC150_MAGN_TRIGGERS)
-static int bmc150_magn_trigger_set(struct device *dev,
-				   const struct sensor_trigger *trig,
-				   sensor_trigger_handler_t handler)
-{
-#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config * const config =
-					dev->config->config_info;
-	uint8_t state;
-#endif
-
-#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	if (trig->type == SENSOR_TRIG_DATA_READY) {
-		gpio_pin_disable_callback(data->gpio_drdy,
-					  config->gpio_drdy_int_pin);
-
-		state = 0;
-		if (handler) {
-			state = 1;
-		}
-
-		data->handler_drdy = handler;
-		data->trigger_drdy = *trig;
-
-		if (i2c_reg_update_byte(data->i2c_master,
-					config->i2c_slave_addr,
-					BMC150_MAGN_REG_INT_DRDY,
-					BMC150_MAGN_MASK_DRDY_EN,
-					state << BMC150_MAGN_SHIFT_DRDY_EN)
-					!= 0) {
-			sensor_dbg("failed to set DRDY interrupt\n");
-			return -EIO;
-		}
-
-		gpio_pin_enable_callback(data->gpio_drdy,
-					 config->gpio_drdy_int_pin);
-	}
-#endif
-
-	return 0;
-}
-#endif
-
-#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-static void bmc150_magn_gpio_drdy_callback(struct device *dev,
-					   struct gpio_callback *cb,
-					   uint32_t pins)
-{
-	struct bmc150_magn_data *data =
-		CONTAINER_OF(cb, struct bmc150_magn_data, gpio_cb);
-	const struct bmc150_magn_config * const config =
-		data->dev->config->config_info;
-
-	ARG_UNUSED(pins);
-
-	gpio_pin_disable_callback(dev, config->gpio_drdy_int_pin);
-
-	nano_isr_sem_give(&data->sem);
-}
-
-static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
-{
-	struct device *dev = (struct device *) arg1;
-	struct bmc150_magn_data *data = dev->driver_data;
-	struct bmc150_magn_config *config = dev->config->config_info;
-	uint8_t reg_val;
-
-	while (1) {
-		nano_fiber_sem_take(&data->sem, TICKS_UNLIMITED);
-
-		while (i2c_reg_read_byte(data->i2c_master,
-					 config->i2c_slave_addr,
-					 BMC150_MAGN_REG_INT_STATUS,
-					 &reg_val) != 0) {
-			sensor_dbg("failed to clear data ready interrupt\n");
-		}
-
-		if (data->handler_drdy) {
-			data->handler_drdy(dev, &data->trigger_drdy);
-		}
-
-		gpio_pin_enable_callback(data->gpio_drdy, gpio_pin);
-	}
-}
-#endif
-
 static struct sensor_driver_api bmc150_magn_api_funcs = {
 #if defined(BMC150_MAGN_SET_ATTR)
 	.attr_set = bmc150_magn_attr_set,
 #endif
 	.sample_fetch = bmc150_magn_sample_fetch,
 	.channel_get = bmc150_magn_channel_get,
-#if defined(CONFIG_BMC150_MAGN_TRIGGERS)
+#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	.trigger_set = bmc150_magn_trigger_set,
 #endif
 };
@@ -650,21 +537,6 @@ static int bmc150_magn_init_chip(struct device *dev)
 		goto err_poweroff;
 	}
 
-#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	if (bmc150_magn_set_drdy_polarity(dev, 0) != 0) {
-		sensor_dbg("failed to set DR polarity\n");
-		goto err_poweroff;
-	}
-
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				BMC150_MAGN_REG_INT_DRDY,
-				BMC150_MAGN_MASK_DRDY_EN,
-				0 << BMC150_MAGN_SHIFT_DRDY_EN) != 0) {
-		sensor_dbg("failed to set data ready interrupt enabled bit\n");
-		goto err_poweroff;
-	}
-#endif
-
 	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_NORMAL, 1)
 				       != 0) {
 		sensor_dbg("failed to power on device\n");
@@ -685,10 +557,6 @@ static int bmc150_magn_init_chip(struct device *dev)
 	data->sample_x = 0;
 	data->sample_y = 0;
 	data->sample_z = 0;
-
-#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	data->handler_drdy = NULL;
-#endif
 
 	data->tregs.xyz1 = sys_le16_to_cpu(data->tregs.xyz1);
 	data->tregs.z1 = sys_le16_to_cpu(data->tregs.z1);
@@ -723,34 +591,10 @@ int bmc150_magn_init(struct device *dev)
 	}
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	nano_sem_init(&data->sem);
-
-	task_fiber_start(data->fiber_stack,
-			 CONFIG_BMC150_MAGN_TRIGGER_FIBER_STACK,
-			 bmc150_magn_fiber_main, (int) dev,
-			 config->gpio_drdy_int_pin, 10, 0);
-
-	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
-	if (!data->gpio_drdy) {
-		sensor_dbg("gpio controller %s not found\n",
-			   config->gpio_drdy_dev_name);
+	if (bmc150_magn_init_interrupt(dev) != 0) {
+		sensor_dbg("failed to initialize interrupts\n");
 		return -EINVAL;
 	}
-
-	gpio_pin_configure(data->gpio_drdy, config->gpio_drdy_int_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
-
-	gpio_init_callback(&data->gpio_cb,
-			   bmc150_magn_gpio_drdy_callback,
-			   BIT(config->gpio_drdy_int_pin));
-
-	if (gpio_add_callback(data->gpio_drdy, &data->gpio_cb) != 0) {
-		sensor_dbg("failed to set gpio callback\n");
-		return -EIO;
-	}
-
-	data->dev = dev;
 #endif
 
 	dev->driver_api = &bmc150_magn_api_funcs;
