@@ -950,24 +950,6 @@ int bt_conn_update_param_le(struct bt_conn *conn,
 	return -EBUSY;
 }
 
-static void le_create_conn_status(uint8_t status)
-{
-	struct bt_hci_cp_le_create_conn *cp = (void *)bt_dev.sent_cmd->data;
-	struct bt_conn *conn;
-
-	/* No updates needed for failures or public address connections */
-	if (status || cp->own_addr_type == BT_ADDR_LE_PUBLIC) {
-		return;
-	}
-
-	/* Set exact random address used for the connection */
-	conn = bt_conn_lookup_state_le(&cp->peer_addr, BT_CONN_CONNECT);
-	if (conn) {
-		bt_addr_le_copy(&conn->le.init_addr, &bt_dev.random_addr);
-		bt_conn_unref(conn);
-	}
-}
-
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
@@ -2122,17 +2104,6 @@ static void hci_cmd_status(struct net_buf *buf)
 	BT_DBG("opcode 0x%04x", opcode);
 
 	net_buf_pull(buf, sizeof(*evt));
-
-	switch (opcode) {
-#if defined(CONFIG_BLUETOOTH_CONN)
-	case BT_HCI_OP_LE_CREATE_CONN:
-		le_create_conn_status(evt->status);
-		break;
-#endif /* CONFIG_BLUETOOTH_CONN */
-	default:
-		BT_DBG("Unhandled opcode 0x%04x", opcode);
-		break;
-	}
 
 	hci_cmd_done(opcode, evt->status, buf);
 
