@@ -1,0 +1,210 @@
+#
+# This file specifies defaults so the testcase running system knows
+# how to build Zephyr apps.
+#
+# It looks all like comments so that it can also put this stuff inside
+# Makefiles, shell scripts, python, C, etc...
+#
+# Things like:
+#
+## ^COMMAND ARGUMENTS
+## @COMMAND ARGUMENTS
+#
+# are what the parser looks for. ^COMMAND means that if it fails or
+# block, the list of COMMANDs will not continue being executed, @
+# means the next commands still will be executed. Note the ## is so
+# that the parser doesn't interpret it as a command, as we are
+# documenting it.
+
+# Variables
+# ---------
+#
+# Every %(VARIABLE)s you are going to use or maybe override has to be
+# defined; otherwise it'll throw a KeyError exception on you.
+#
+# Some are pre-filled by the system (see below), but others are
+# user-defined and some test cases make use of it, so we define a
+# default value (empty) here:
+#
+# @var extra_args
+
+
+# Building
+# --------
+#
+# - we always remove the configuration file to force it being
+#   re-generated. Why? because otherwise, in some cases,
+#   'silentoldconfig' tries to update it with input from the user and
+#   fails. When it is not needed. So before we start mucking with it,
+#   remove it.
+#
+# - then we generate the init config -- why? because to filter which
+#   test cases we can run, we need to see if a CONFIG option is
+#   enabled or not.
+#
+# - We need to put the output of the compilation on a directory
+#   specific to the target and testcase we are building for because:
+#
+#   - two targets, although the same hardware, might have differences
+#     that could be or not specified in the target's tags.
+#
+#   - multiple paralallel builds for the same testcase PATH with
+#     different testcase names (especially those coming from
+#     testcase.ini) files can collide with each other.
+#
+# Thus is the `%(tchash)s` substitution, which is a unique hash
+# for a combination of the testcase name, the target and the
+# bsp_model.
+
+# (1) First build step to generate the configuration:
+#
+# ^build \
+#   rm -f %(srcdir)s/outdir-%(tchash)s-%(board)s/.config; \
+#   mkdir -p %(srcdir)s/outdir-%(tchash)s-%(board)s; \
+#   make -j -C %(srcdir)s/ %(extra_args)s \
+#       BOARD=%(board)s O=outdir-%(tchash)s-%(board)s \
+#       initconfig
+#
+#     Once we have the configuration generated, for Sanity Check test
+#     cases (and others) evaluate if we have to run or not based on
+#     configuration values. This is done by a Python function
+#     (tcfl.tc_tci.action_eval_skip). This looks at CONFIG_ options
+#     and decides if we are to skip for any reason.
+#
+# ^build @tcfl.tc_tci.action_eval_skip %(srcdir)s/outdir-%(tchash)s-%(board)s
+
+
+# (2) Support for building/running multiple core SOC/platforms (like
+#     Quark SE); each core is called 'a BSP'.
+#
+#     Some targets have multiple BSPs and need a stub in BSP1 for BSP2
+#     to work independently, so these first @build rules take care of
+#     that. How we handle this might change in the future.
+#
+#     The hack for altering the configuration is dirty. Looking for
+#     better ones.
+
+# (2.1) For running on Quark SE ARC only, we need to make a stub for
+#       the x86 core to pipe the serial from/to the ARC. It has to
+#       also be deployed, so we add said kernel to @images.
+#
+#    (a) Arduino 101
+#
+# @build [ type == "arduino101" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
+#   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-arduino_101/.config; \
+#   make -j -C $ZEPHYR_BASE/samples/stub \
+#       BOARD=arduino_101 \
+#       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-arduino_101
+#
+# @images [ type == "arduino101" and quark_se_stub == 'yes' and bsp_model == 'arc'] \
+#   kernel-x86:%(srcdir)s/outdir-%(tchash)s-stub-x86-arduino_101/zephyr.bin
+#
+#    (b) For Quark SE Devboard v1
+#
+# @build [ type == "ah" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
+#   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/.config; \
+#   make -j -C $ZEPHYR_BASE/samples/stub \
+#       BOARD=quark_se_devboard \
+#       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard
+#
+# @images [ type == "ah" and quark_se_stub == 'yes' and bsp_model == 'arc'] \
+#   kernel-x86:%(srcdir)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/zephyr.bin
+#
+#    (c) For Quark SE Devboard
+#
+# @build [ type == "ma" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
+#   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/.config; \
+#   make -j -C $ZEPHYR_BASE/samples/stub \
+#       BOARD=quark_se_devboard \
+#       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard
+#
+# @images [ type == "ma" and quark_se_stub == 'yes' and bsp_model == 'arc'] \
+#   kernel-x86:%(srcdir)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/zephyr.bin
+#
+
+# (2.2) On Quark SE, when running the x86 core only we need to make
+#       sure the kernel doesn't wait for the ARC to initialize. So we
+#       do the initial config, pluck the CONFIG_ARC_INIT away and
+#       reconfigure before compiling. UGLY, but it works
+#
+# @build [ quark_se_stub == 'yes'  and bsp_model == 'x86' ] \
+#   sed -i 's/^CONFIG_ARC_INIT.*//' \
+#       %(srcdir)s/outdir-%(tchash)s-%(board)s/.config; \
+#   make -j -C %(srcdir)s/ %(extra_args)s \
+#       BOARD=%(board)s O=outdir-%(tchash)s-%(board)s \
+#       olddefconfig
+
+# (2.3) If we are running both cores at the same time, make sure
+#       ARC_INIT is set
+#
+# @build [ quark_se_stub == 'yes'  and bsp_model == 'x86+arc' ] \
+#   echo CONFIG_ARC_INIT=y >> \
+#       %(srcdir)s/outdir-%(tchash)s-%(board)s/.config; \
+#   make -j -C %(srcdir)s %(extra_args)s \
+#       BOARD=%(board)s O=outdir-%(tchash)s-%(board)s \
+#       %(extra_args)s olddefconfig
+
+# (2.4) Now the basic build and deploy commands that apply to all the
+#       platforms
+#
+#       Note: we pass a RUNID that is a compositon of the RunID passed
+#             with '-i' to 'tcf run' (if passed) TCHASH (which is
+#             unique hash of the target and testcase name) -- this
+#             ensures that succesive test cases ran in the same target
+#             will have a different TC_RUNID. We will in
+#             tests/.tcdefaults (when using TC_PRINT_RUNID /
+#             TC_END_REPORT) to verify that the right image has been
+#             deployed to the target.
+#
+# @build \
+#   make -j -C %(srcdir)s %(extra_args)s \
+#       KCPPFLAGS=-DTC_RUNID=%(runid)s:%(tchash)s \
+#       BOARD=%(board)s O=outdir-%(tchash)s-%(board)s
+#
+#       And deploy the kernel we just built
+#
+# @images kernel-%(bsp)s:%(srcdir)s/outdir-%(tchash)s-%(board)s/%(kernelname)s
+
+
+# Cleaning up
+# -----------
+#
+# This is only invoked when you give `--clean` or `-L` to `tcf run`
+#
+# @clean rm -rf %(srcdir)s/outdir-%(tchash)s-*
+
+
+# Evaluation of the test case
+# ---------------------------
+#
+# These are the steps performed to evaluate a test case / sample for
+# success in execution. In here we only list the general ones that
+# apply to all of them, but each testcase will have it's specific
+# ones.
+#
+# (1) In general, before evaluating, reset/power-cycle/resume the
+#     target.
+#
+#     `one-shot` means only once if we are running multiple BSPs and fail
+#     inmediately if it doesn't work):
+#
+# ^eval [ type:"(?!^emsk.*)" ] target-reset one-shot
+#
+#     EMSKs get their firmware loaded into RAM; if we do a full reset,
+#     it is wiped, so we just do a raw reset (which means a CPU reset
+#     in this case) and resume
+#
+# ^eval [ type:"^emsk.*" ] debug-reset-halt one-shot
+# ^eval [ type:"^emsk.*" ] debug-resume one-shot
+#
+# (2) Fail inmmediately (^) if we find these messages, that's bad
+#     stuff happening in the kernel.
+#
+# ^eval console-rx   %(console)s::fail USAGE FAULT
+# ^eval console-rx   %(console)s::fail fatal fault in fiber
+#
+# For testcases under tests/, the .tcdefaults in there adds more steps
+# to verify; test cases are picked up based on their
+# testcase.ini. Each test case is then free to add more, if
+# needed. Note than in samples, most of that information is going to
+# be in .tc files.
