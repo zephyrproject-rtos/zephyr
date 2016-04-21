@@ -1,0 +1,11 @@
+if SOC_NIOS2E_ZEPHYR
+
+config SOC
+	string
+	default nios2e-zephyr
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 1000000
+
+endif

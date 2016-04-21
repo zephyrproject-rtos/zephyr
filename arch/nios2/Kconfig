@@ -1,0 +1,102 @@
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+choice
+	prompt "Nios II configuration selection"
+	depends on NIOS2
+	source "arch/nios2/soc/*/Kconfig.soc"
+endchoice
+
+menu "Nios II Options"
+	depends on NIOS2
+
+config ARCH
+	string
+	default "nios2"
+
+config ARCH_DEFCONFIG
+	string
+	default "arch/nios2/defconfig"
+
+menu "Nios II Gen 2 Processor Options"
+
+config CPU_NIOS2_GEN2
+	bool
+	default y
+	select ATOMIC_OPERATIONS_C
+	help
+	This option signifies the use of a Nios II Gen 2 CPU
+
+endmenu
+
+menu "Nios II Family Options"
+
+# FIXME default is probably bogus
+config RESET_VECTOR
+	prompt "Nios II reset vector"
+	hex
+	default 0x00000000
+
+# FIXME default is probably bogus
+config EXCEPTION_VECTOR
+	prompt "Nios II exception vector"
+	hex
+	default 0x00000004
+
+config XIP
+	bool
+	default y
+
+config SRAM_SIZE
+	int "SRAM Size in kB"
+	help
+	This option specifies the size of the SRAM in kB.  It is normally set
+	by the platform's defconfig file and the user should generally avoid
+	modifying it via the menu configuration.
+
+config SRAM_BASE_ADDRESS
+	hex "SRAM Base Address"
+	help
+	This option specifies the base address of the SRAM on the platform.  It
+	is normally set by the platform's defconfig file and the user should
+	generally avoid modifying it via the menu configuration.
+
+config FLASH_SIZE
+	int "Flash Size in kB"
+	help
+	This option specifies the size of the flash in kB.  It is normally set
+	by the platform's defconfig file and the user should generally avoid
+	modifying it via the menu configuration.
+
+config FLASH_BASE_ADDRESS
+	hex "Flash Base Address"
+	help
+	This option specifies the base address of the flash on the platform.
+	It is normally set by the platform's defconfig file and the user should
+	generally avoid modifying it via the menu configuration.
+
+config IRQ_OFFLOAD
+	bool "Enable IRQ offload"
+	default n
+	help
+	Enable irq_offload() API which allows functions to be synchronously
+	run in interrupt context. Mainly useful for test cases.
+
+endmenu
+
+source "arch/nios2/soc/*/Kconfig"
+
+endmenu

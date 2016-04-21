@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Wind River Systems, Inc.
+ * Copyright (c) 2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,31 @@
  * limitations under the License.
  */
 
-/**
- * @file
- * @brief size_t definition
+#include <nano_private.h>
+
+void __reset_handler(void)
+{
+	/* stub */
+}
+
+void __exception_handler(void)
+{
+	/* stub */
+}
+
+
+struct vector_table {
+	uint32_t reset;
+	uint32_t exception;
+};
+
+/* FIXME not using CONFIG_RESET_VECTOR or CONFIG_EXCEPTION_VECTOR like we
+ * should
  */
+struct vector_table _vector_table _GENERIC_SECTION(.exc_vector_table) = {
+	(uint32_t)__reset_handler,
+	(uint32_t)__exception_handler
+};
 
-#if !defined(__size_t_defined)
-#define __size_t_defined
+extern struct vector_table __start _ALIAS_OF(_vector_table);
 
-#ifdef __i386
-typedef unsigned long int size_t;
-#elif defined(__ARM_ARCH)
-typedef unsigned int size_t;
-#elif defined(__arc__)
-typedef unsigned int size_t;
-#elif defined(__NIOS2__)
-typedef unsigned int size_t;
-#else
-#error "The minimal libc library does not recognize the architecture!\n"
-#endif
-
-#endif

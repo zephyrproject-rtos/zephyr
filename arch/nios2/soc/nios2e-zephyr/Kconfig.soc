@@ -1,0 +1,3 @@
+config SOC_NIOS2E_ZEPHYR
+	bool "Nios IIe - Zephyr Golden Configuration"
+

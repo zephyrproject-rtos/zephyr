@@ -25,6 +25,8 @@
 #include <arch/arm/arch.h>
 #elif defined(CONFIG_ARC)
 #include <arch/arc/arch.h>
+#elif defined(CONFIG_NIOS2)
+#include <arch/nios2/arch.h>
 #else
 #error "Unknown Architecture"
 #endif

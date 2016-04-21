@@ -141,6 +141,15 @@ config CORTEX_M_SYSTICK
 	This module implements a kernel device driver for the Cortex-M processor
 	SYSTICK timer and provides the standard "system clock driver" interfaces.
 
+config NIOS2_AVALON_TIMER
+	bool "Nios II Avalon Interval Timer"
+	default y
+	depends on NIOS2
+	help
+	This module implements a kernel device driver for the Nios II Avalon
+	Interval Timer as described in the Embedded IP documentation. It
+	provides the standard "system clock driver" interfaces.
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	default n

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Wind River Systems, Inc.
+ * Copyright (c) 2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,7 @@
  */
 
 /**
- * @file
- * @brief size_t definition
+ * @brief Linker script for the Nios II/e CPU with timer and 16550 UART
  */
 
-#if !defined(__size_t_defined)
-#define __size_t_defined
-
-#ifdef __i386
-typedef unsigned long int size_t;
-#elif defined(__ARM_ARCH)
-typedef unsigned int size_t;
-#elif defined(__arc__)
-typedef unsigned int size_t;
-#elif defined(__NIOS2__)
-typedef unsigned int size_t;
-#else
-#error "The minimal libc library does not recognize the architecture!\n"
-#endif
-
-#endif
+#include <arch/nios2/linker.cmd>

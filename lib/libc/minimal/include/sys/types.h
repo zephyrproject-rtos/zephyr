@@ -26,6 +26,8 @@ typedef long int ssize_t;
 typedef int ssize_t;
 #elif defined(__arc__)
 typedef int ssize_t;
+#elif defined(__NIOS2__)
+typedef int ssize_t;
 #else
 #error "The minimal libc library does not recognize the architecture!\n"
 #endif
@@ -40,6 +42,8 @@ typedef long int off_t;
 #elif defined(__ARM_ARCH)
 typedef int off_t;
 #elif defined(__arc__)
+typedef int off_t;
+#elif defined(__NIOS2__)
 typedef int off_t;
 #else
 #error "The minimal libc library does not recognize the architecture!\n"

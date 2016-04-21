@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Wind River Systems, Inc.
+ * Copyright (c) 2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,31 @@
  * limitations under the License.
  */
 
+#include <nanokernel.h>
+#include <arch/cpu.h>
+#include <device.h>
+
+int _sys_clock_driver_init(struct device *device)
+{
+	ARG_UNUSED(device);
+
+	/* STUB */
+
+	return 0;
+}
+
 /**
- * @file
- * @brief size_t definition
+ *
+ * @brief Read the platform's timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock
+ * cycles.
+ *
+ * @return up counter of elapsed clock cycles
  */
+uint32_t sys_cycle_get_32(void)
+{
+	/* STUB */
+	return 0;
+}
 
-#if !defined(__size_t_defined)
-#define __size_t_defined
-
-#ifdef __i386
-typedef unsigned long int size_t;
-#elif defined(__ARM_ARCH)
-typedef unsigned int size_t;
-#elif defined(__arc__)
-typedef unsigned int size_t;
-#elif defined(__NIOS2__)
-typedef unsigned int size_t;
-#else
-#error "The minimal libc library does not recognize the architecture!\n"
-#endif
-
-#endif

@@ -37,6 +37,8 @@
 		OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
 		OUTPUT_ARCH(i386)
 	#endif
+#elif defined(CONFIG_NIOS2)
+	OUTPUT_FORMAT("elf32-littlenios2", "elf32-bignios2", "elf32-littlenios2")
 #else
 	#error Arch not supported.
 #endif

@@ -32,6 +32,9 @@ config X86
 	bool "x86 architecture"
 	select NANOKERNEL_TICKLESS_IDLE_SUPPORTED
 
+config NIOS2
+	bool "Nios II Gen 2 architecture"
+
 endchoice
 
 #
