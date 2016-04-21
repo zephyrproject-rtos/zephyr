@@ -485,8 +485,7 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	struct net_buf *buf;
 	struct bt_hci_cp_le_create_conn *cp;
 
-	if (conn->le.init_addr.type == BT_ADDR_LE_RANDOM &&
-	    bt_addr_le_cmp(&conn->le.init_addr, &bt_dev.random_addr)) {
+	if (conn->le.init_addr.type == BT_ADDR_LE_RANDOM) {
 		if (set_random_address(&conn->le.init_addr.a)) {
 			return -EIO;
 		}
