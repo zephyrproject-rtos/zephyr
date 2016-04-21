@@ -437,6 +437,32 @@ static inline int gpio_port_disable_callback(struct device *port)
 	return api->disable_callback(port, GPIO_ACCESS_BY_PORT, 0);
 }
 
+struct gpio_pin_config {
+	char *gpio_controller;
+	uint32_t gpio_pin;
+};
+
+#define GPIO_DECLARE_PIN_CONFIG_IDX(_idx)	\
+	struct gpio_pin_config gpio_pin_ ##_idx
+#define GPIO_DECLARE_PIN_CONFIG		\
+	GPIO_DECLARE_PIN_CONFIG_IDX()
+
+#define GPIO_PIN_IDX(_idx, _controller, _pin)	\
+	.gpio_pin_ ##_idx = {			\
+		.gpio_controller = (_controller),\
+		.gpio_pin = (_pin),		\
+	}
+#define GPIO_PIN(_controller, _pin)		\
+	GPIO_PIN_IDX(, _controller, _pin)
+
+#define GPIO_GET_CONTROLLER_IDX(_idx, _conf)	\
+	((_conf)->gpio_pin_ ##_idx.gpio_controller)
+#define GPIO_GET_PIN_IDX(_idx, _conf)	\
+	((_conf)->gpio_pin_ ##_idx.gpio_pin)
+
+#define GPIO_GET_CONTROLLER(_conf)	GPIO_GET_CONTROLLER_IDX(, _conf)
+#define GPIO_GET_PIN(_conf)		GPIO_GET_PIN_IDX(, _conf)
+
 #ifdef __cplusplus
 }
 #endif
