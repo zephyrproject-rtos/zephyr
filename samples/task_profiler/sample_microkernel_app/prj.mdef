@@ -1,0 +1,12 @@
+% Application       : Hello demo
+
+% TASK NAME  PRIO ENTRY STACK GROUPS
+% ==================================
+  TASK TASKA    7 taskA  2048 [EXE]
+  TASK TASKB    7 taskB  2048 [EXE]
+  TASK PROF    10 prof    512 [EXE]
+
+% SEMA NAME
+% =============
+  SEMA TASKASEM
+  SEMA TASKBSEM
