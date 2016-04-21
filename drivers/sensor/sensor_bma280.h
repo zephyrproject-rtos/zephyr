@@ -22,13 +22,6 @@
 #include <stdint.h>
 #include <gpio.h>
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
-
 #if CONFIG_BMA280_I2C_ADDR_0x10
 	#define BMA280_I2C_ADDRESS	0x10
 #elif CONFIG_BMA280_I2C_ADDR_0x11
@@ -178,4 +171,7 @@ int bma280_attr_set(struct device *dev,
 int bma280_init_interrupt(struct device *dev);
 #endif
 
+#define SYS_LOG_DOMAIN "BMA280"
+#define SYS_LOG_LEVEL CONFIG_BMA280_SYS_LOG_LEVEL
+#include <misc/sys_log.h>
 #endif /* __SENSOR_BMA280_H__ */

@@ -24,13 +24,6 @@
 #include <sensor.h>
 #include <gpio.h>
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
-
 #define ISL29035_I2C_ADDRESS		0x44
 
 #define ISL29035_COMMAND_I_REG		0x00
@@ -161,4 +154,7 @@ int isl29035_trigger_set(struct device *dev,
 int isl29035_init_interrupt(struct device *dev);
 #endif
 
+#define SYS_LOG_DOMAIN "ISL29035"
+#define SYS_LOG_LEVEL CONFIG_ISL29035_SYS_LOG_LEVEL
+#include <misc/sys_log.h>
 #endif /* _SENSOR_ISL29035_H_ */

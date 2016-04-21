@@ -25,13 +25,6 @@
 #include <misc/util.h>
 #include <gpio.h>
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
-
 #define MCP9808_REG_CONFIG		0x01
 #define MCP9808_REG_UPPER_LIMIT		0x02
 #define MCP9808_REG_LOWER_LIMIT		0x03
@@ -102,4 +95,7 @@ static void mcp9808_setup_interrupt(struct device *dev)
 }
 #endif /* CONFIG_MCP9808_TRIGGER */
 
+#define SYS_LOG_DOMAIN "MCP9808"
+#define SYS_LOG_LEVEL CONFIG_MCP9808_SYS_LOG_LEVEL
+#include <misc/sys_log.h>
 #endif /* __SENSOR_MCP9808_H__ */

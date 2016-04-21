@@ -117,4 +117,7 @@ struct bmp280_data {
 	int32_t t_fine;
 };
 
+#define SYS_LOG_DOMAIN "BMP280"
+#define SYS_LOG_LEVEL CONFIG_BMP280_SYS_LOG_LEVEL
+#include <misc/sys_log.h>
 #endif /* __SENSOR_BMP280_H__ */

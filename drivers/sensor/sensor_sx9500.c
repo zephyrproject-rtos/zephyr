@@ -127,7 +127,7 @@ int sx9500_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(CONFIG_SX9500_I2C_DEV_NAME);
 	if (!data->i2c_master) {
-		DBG("sx9500: i2c master not found: %s\n",
+		SYS_LOG_DBG("sx9500: i2c master not found: %s",
 		    CONFIG_SX9500_I2C_DEV_NAME);
 		return -EINVAL;
 	}
@@ -136,13 +136,13 @@ int sx9500_init(struct device *dev)
 
 	ret = sx9500_init_chip(dev);
 	if (ret) {
-		DBG("sx9500: failed to initialize chip err %d\n", ret);
+		SYS_LOG_DBG("sx9500: failed to initialize chip err %d", ret);
 		return ret;
 	}
 
 	ret = sx9500_setup_interrupt(dev);
 	if (ret) {
-		DBG("sx9500: failed to setup interrupt err %d\n", ret);
+		SYS_LOG_DBG("sx9500: failed to setup interrupt err %d", ret);
 		return ret;
 	}
 

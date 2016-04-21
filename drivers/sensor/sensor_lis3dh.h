@@ -22,13 +22,6 @@
 #include <stdint.h>
 #include <gpio.h>
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
-
 #if CONFIG_LIS3DH_I2C_ADDR_0x18
 	#define LIS3DH_I2C_ADDRESS	0x18
 #elif CONFIG_LIS3DH_I2C_ADDR_0x19
@@ -133,4 +126,7 @@ int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan);
 int lis3dh_init_interrupt(struct device *dev);
 #endif
 
+#define SYS_LOG_DOMAIN "LIS3DH"
+#define SYS_LOG_LEVEL CONFIG_LIS3DH_SYS_LOG_LEVEL
+#include <misc/sys_log.h>
 #endif /* __SENSOR_LIS3DH__ */

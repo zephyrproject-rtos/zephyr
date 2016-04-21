@@ -21,13 +21,6 @@
 #include <gpio.h>
 #include <misc/util.h>
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
-
 #if CONFIG_TMP007_I2C_ADDR_0
 	#define TMP007_I2C_ADDRESS	0x40
 #elif CONFIG_TMP007_I2C_ADDR_1
@@ -110,4 +103,7 @@ int tmp007_trigger_set(struct device *dev,
 int tmp007_init_interrupt(struct device *dev);
 #endif
 
+#define SYS_LOG_DOMAIN "TMP007"
+#define SYS_LOG_LEVEL CONFIG_TMP007_SYS_LOG_LEVEL
+#include <misc/sys_log.h>
 #endif /* _SENSOR_TMP007_ */

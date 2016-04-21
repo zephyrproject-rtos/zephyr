@@ -52,7 +52,7 @@ int bmc150_magn_trigger_set(struct device *dev,
 					BMC150_MAGN_MASK_DRDY_EN,
 					state << BMC150_MAGN_SHIFT_DRDY_EN)
 					!= 0) {
-			sensor_dbg("failed to set DRDY interrupt\n");
+			SYS_LOG_DBG("failed to set DRDY interrupt");
 			return -EIO;
 		}
 
@@ -94,7 +94,7 @@ static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
 					 config->i2c_slave_addr,
 					 BMC150_MAGN_REG_INT_STATUS,
 					 &reg_val) != 0) {
-			sensor_dbg("failed to clear data ready interrupt\n");
+			SYS_LOG_DBG("failed to clear data ready interrupt");
 		}
 
 		if (data->handler_drdy) {
@@ -128,7 +128,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	if (bmc150_magn_set_drdy_polarity(dev, 0) != 0) {
-		sensor_dbg("failed to set DR polarity\n");
+		SYS_LOG_DBG("failed to set DR polarity");
 		return -EIO;
 	}
 
@@ -136,7 +136,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 				BMC150_MAGN_REG_INT_DRDY,
 				BMC150_MAGN_MASK_DRDY_EN,
 				0 << BMC150_MAGN_SHIFT_DRDY_EN) != 0) {
-		sensor_dbg("failed to set data ready interrupt enabled bit\n");
+		SYS_LOG_DBG("failed to set data ready interrupt enabled bit");
 		return -EIO;
 	}
 #endif
@@ -152,8 +152,8 @@ int bmc150_magn_init_interrupt(struct device *dev)
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {
-		sensor_dbg("gpio controller %s not found\n",
-			   config->gpio_drdy_dev_name);
+		SYS_LOG_DBG("gpio controller %s not found",
+			    config->gpio_drdy_dev_name);
 		return -EINVAL;
 	}
 
@@ -166,7 +166,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 			   BIT(config->gpio_drdy_int_pin));
 
 	if (gpio_add_callback(data->gpio_drdy, &data->gpio_cb) != 0) {
-		sensor_dbg("failed to set gpio callback\n");
+		SYS_LOG_DBG("failed to set gpio callback");
 		return -EIO;
 	}
 

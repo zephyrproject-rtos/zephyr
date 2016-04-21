@@ -100,7 +100,7 @@ int sht3xd_attr_set(struct device *dev,
 
 	if (sht3xd_write_reg(drv_data, set_cmd, reg_val) != 0 ||
 	    sht3xd_write_reg(drv_data, clear_cmd, reg_val) != 0) {
-		DBG("Failed to write threshold value!\n");
+		SYS_LOG_DBG("Failed to write threshold value!");
 		return -EIO;
 	}
 
@@ -182,33 +182,33 @@ int sht3xd_init_interrupt(struct device *dev)
 	/* set alert thresholds to match reamsurement ranges */
 	rc = sht3xd_write_reg(drv_data, SHT3XD_CMD_WRITE_TH_HIGH_SET, 0xFFFF);
 	if (rc != 0) {
-		DBG("Failed to write threshold high set value!\n");
+		SYS_LOG_DBG("Failed to write threshold high set value!");
 		return -EIO;
 	}
 
 	rc = sht3xd_write_reg(drv_data, SHT3XD_CMD_WRITE_TH_HIGH_CLEAR,
 			      0xFFFF);
 	if (rc != 0) {
-		DBG("Failed to write threshold high clear value!\n");
+		SYS_LOG_DBG("Failed to write threshold high clear value!");
 		return -EIO;
 	}
 
 	rc = sht3xd_write_reg(drv_data, SHT3XD_CMD_WRITE_TH_LOW_SET, 0);
 	if (rc != 0) {
-		DBG("Failed to write threshold low set value!\n");
+		SYS_LOG_DBG("Failed to write threshold low set value!");
 		return -EIO;
 	}
 
 	rc = sht3xd_write_reg(drv_data, SHT3XD_CMD_WRITE_TH_LOW_SET, 0);
 	if (rc != 0) {
-		DBG("Failed to write threshold low clear value!\n");
+		SYS_LOG_DBG("Failed to write threshold low clear value!");
 		return -EIO;
 	}
 
 	/* setup gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_SHT3XD_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		DBG("Failed to get pointer to %s device!\n",
+		SYS_LOG_DBG("Failed to get pointer to %s device!",
 		    CONFIG_SHT3XD_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
@@ -223,7 +223,7 @@ int sht3xd_init_interrupt(struct device *dev)
 
 	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
 	if (rc != 0) {
-		DBG("Failed to set gpio callback!\n");
+		SYS_LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
 

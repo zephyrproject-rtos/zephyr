@@ -17,9 +17,9 @@ config BMI160_SYS_LOG_LEVEL
 	  Levels are:
 	  0 OFF, do not write
 	  1 ERROR, only write SYS_LOG_ERR
-	  2 WARNING, write SYS_LOG_WRN in adition to previous level
-	  3 INFO, write SYS_LOG_INF in adition to previous levels
-	  4 DEBUG, write SYS_LOG_DBG in adition to previous levels
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config BMI160_INIT_PRIORITY
 	int
@@ -296,4 +296,3 @@ config BMI160_GYRO_ODR_1600
 config BMI160_GYRO_ODR_3200
 	bool "3200 Hz"
 endchoice
-

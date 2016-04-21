@@ -101,7 +101,7 @@ int mcp9808_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(CONFIG_MCP9808_I2C_DEV_NAME);
 	if (!data->i2c_master) {
-		DBG("mcp9808: i2c master not found: %s\n",
+		SYS_LOG_DBG("mcp9808: i2c master not found: %s",
 		    CONFIG_MCP9808_I2C_DEV_NAME);
 		return -EINVAL;
 	}

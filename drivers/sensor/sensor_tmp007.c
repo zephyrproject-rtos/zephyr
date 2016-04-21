@@ -124,14 +124,14 @@ int tmp007_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_TMP007_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		DBG("Failed to get pointer to %s device!\n",
-		    CONFIG_TMP007_I2C_MASTER_DEV_NAME);
+		SYS_LOG_DBG("Failed to get pointer to %s device!",
+			    CONFIG_TMP007_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
 
 #ifdef CONFIG_TMP007_TRIGGER
 	if (tmp007_init_interrupt(dev) != 0) {
-		DBG("Failed to initialize interrupt!\n");
+		SYS_LOG_DBG("Failed to initialize interrupt!");
 		return -EIO;
 	}
 #endif

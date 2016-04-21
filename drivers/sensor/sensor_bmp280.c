@@ -26,13 +26,6 @@
 
 #include "sensor_bmp280.h"
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
-
 /*
  * Compensation code taken from BMP280 datasheet, Section 3.11.3
  * "Compensation formula".
@@ -172,7 +165,7 @@ static int bmp280_chip_init(struct device *dev)
 	i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 			  BMP280_REG_ID, &buf);
 	if (buf != BMP280_CHIP_ID) {
-		DBG("bmp280: bad chip id %x\n", buf);
+		SYS_LOG_DBG("bmp280: bad chip id %x", buf);
 		return -ENOTSUP;
 	}
 
@@ -192,8 +185,8 @@ int bmp280_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(CONFIG_BMP280_I2C_MASTER_DEV_NAME);
 	if (!data->i2c_master) {
-		DBG("bmp280: i2c master not found: %s\n",
-		    CONFIG_BMP280_I2C_MASTER_DEV_NAME);
+		SYS_LOG_DBG("bmp280: i2c master not found: %s",
+			    CONFIG_BMP280_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
 

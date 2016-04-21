@@ -24,14 +24,6 @@
 
 #include "sensor_hdc1008.h"
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
-
-
 static void hdc1008_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
@@ -57,7 +49,7 @@ static int hdc1008_sample_fetch(struct device *dev, enum sensor_channel chan)
 	buf[0] = HDC1008_REG_TEMP;
 	rc = i2c_write(drv_data->i2c, buf, 1, HDC1008_I2C_ADDRESS);
 	if (rc != 0) {
-		DBG("Failed to write address pointer\n");
+		SYS_LOG_DBG("Failed to write address pointer");
 		return -EIO;
 	}
 
@@ -65,7 +57,7 @@ static int hdc1008_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	rc = i2c_read(drv_data->i2c, buf, 4, HDC1008_I2C_ADDRESS);
 	if (rc != 0) {
-		DBG("Failed to read sample data\n");
+		SYS_LOG_DBG("Failed to read sample data");
 		return -EIO;
 	}
 
@@ -119,8 +111,8 @@ int hdc1008_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_HDC1008_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		DBG("Failed to get pointer to %s device!\n",
-		    CONFIG_HDC1008_I2C_MASTER_DEV_NAME);
+		SYS_LOG_DBG("Failed to get pointer to %s device!",
+			    CONFIG_HDC1008_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
 
@@ -129,8 +121,8 @@ int hdc1008_init(struct device *dev)
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_HDC1008_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		DBG("Failed to get pointer to %s device\n",
-		    CONFIG_HDC1008_GPIO_DEV_NAME);
+		SYS_LOG_DBG("Failed to get pointer to %s device",
+			    CONFIG_HDC1008_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
 
@@ -144,7 +136,7 @@ int hdc1008_init(struct device *dev)
 
 	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
 	if (rc != 0) {
-		DBG("Failed to set GPIO callback\n");
+		SYS_LOG_DBG("Failed to set GPIO callback");
 		return -EIO;
 	}
 

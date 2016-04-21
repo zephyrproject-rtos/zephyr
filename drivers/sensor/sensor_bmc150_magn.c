@@ -307,7 +307,7 @@ static int bmc150_magn_sample_fetch(struct device *dev,
 	if (i2c_burst_read(data->i2c_master, config->i2c_slave_addr,
 			   BMC150_MAGN_REG_X_L, (uint8_t *)values,
 			   sizeof(values)) != 0) {
-		sensor_dbg("failed to read sample\n");
+		SYS_LOG_DBG("failed to read sample");
 		return -EIO;
 	}
 
@@ -435,7 +435,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		if (val->type != SENSOR_VALUE_TYPE_INT) {
-			sensor_dbg("invalid parameter type\n");
+			SYS_LOG_DBG("invalid parameter type");
 			return -ENOTSUP;
 		}
 
@@ -447,7 +447,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 		}
 
 		if (data->max_odr < val->val1) {
-			sensor_dbg("not supported with current oversampling\n");
+			SYS_LOG_DBG("not supported with current oversampling");
 			return -ENOTSUP;
 		}
 
@@ -459,7 +459,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 #if defined(BMC150_MAGN_SET_ATTR_REP)
 	case SENSOR_ATTR_OVERSAMPLING:
 		if (val->type != SENSOR_VALUE_TYPE_INT) {
-			sensor_dbg("invalid parameter type\n");
+			SYS_LOG_DBG("invalid parameter type");
 			return -ENOTSUP;
 		}
 
@@ -498,24 +498,24 @@ static int bmc150_magn_init_chip(struct device *dev)
 
 	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_SUSPEND, 0)
 				       != 0) {
-		sensor_dbg("failed to bring up device from suspend mode\n");
+		SYS_LOG_DBG("failed to bring up device from suspend mode");
 		return -EIO;
 	}
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      BMC150_MAGN_REG_CHIP_ID, &chip_id) != 0) {
-		sensor_dbg("failed reading chip id\n");
+		SYS_LOG_DBG("failed reading chip id");
 		goto err_poweroff;
 	}
 	if (chip_id != BMC150_MAGN_CHIP_ID_VAL) {
-		sensor_dbg("invalid chip id 0x%x\n", chip_id);
+		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
 		goto err_poweroff;
 	}
-	sensor_dbg("chip id 0x%x\n", chip_id);
+	SYS_LOG_DBG("chip id 0x%x", chip_id);
 
 	preset = bmc150_magn_presets_table[BMC150_MAGN_DEFAULT_PRESET];
 	if (bmc150_magn_set_odr(dev, preset.odr) != 0) {
-		sensor_dbg("failed to set ODR to %d\n",
+		SYS_LOG_DBG("failed to set ODR to %d",
 			    preset.odr);
 		goto err_poweroff;
 	}
@@ -524,29 +524,29 @@ static int bmc150_magn_init_chip(struct device *dev)
 			       BMC150_MAGN_REG_REP_XY,
 			       BMC150_MAGN_REPXY_TO_REGVAL(preset.rep_xy))
 			       != 0) {
-		sensor_dbg("failed to set REP XY to %d\n",
-			   preset.rep_xy);
+		SYS_LOG_DBG("failed to set REP XY to %d",
+			    preset.rep_xy);
 		goto err_poweroff;
 	}
 
 	if (i2c_reg_write_byte(data->i2c_master, config->i2c_slave_addr,
 			       BMC150_MAGN_REG_REP_Z,
 			       BMC150_MAGN_REPZ_TO_REGVAL(preset.rep_z)) != 0) {
-		sensor_dbg("failed to set REP Z to %d\n",
+		SYS_LOG_DBG("failed to set REP Z to %d",
 			    preset.rep_z);
 		goto err_poweroff;
 	}
 
 	if (bmc150_magn_set_power_mode(dev, BMC150_MAGN_POWER_MODE_NORMAL, 1)
 				       != 0) {
-		sensor_dbg("failed to power on device\n");
+		SYS_LOG_DBG("failed to power on device");
 		goto err_poweroff;
 	}
 
 	if (i2c_burst_read(data->i2c_master, config->i2c_slave_addr,
 			   BMC150_MAGN_REG_TRIM_START, (uint8_t *)&data->tregs,
 			   sizeof(data->tregs)) != 0) {
-		sensor_dbg("failed to read trim regs\n");
+		SYS_LOG_DBG("failed to read trim regs");
 		goto err_poweroff;
 	}
 
@@ -580,19 +580,19 @@ int bmc150_magn_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {
-		sensor_dbg("i2c master not found: %s\n",
+		SYS_LOG_DBG("i2c master not found: %s",
 			   config->i2c_master_dev_name);
 		return -EINVAL;
 	}
 
 	if (bmc150_magn_init_chip(dev) != 0) {
-		sensor_dbg("failed to initialize chip\n");
+		SYS_LOG_DBG("failed to initialize chip");
 		return -EIO;
 	}
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	if (bmc150_magn_init_interrupt(dev) != 0) {
-		sensor_dbg("failed to initialize interrupts\n");
+		SYS_LOG_DBG("failed to initialize interrupts");
 		return -EINVAL;
 	}
 #endif

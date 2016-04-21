@@ -94,7 +94,7 @@ static void sx9500_fiber_main(int arg1, int unused)
 		ret = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 					SX9500_REG_IRQ_SRC, &reg_val);
 		if (ret) {
-			DBG("sx9500: error %d reading IRQ source register\n", ret);
+			SYS_LOG_DBG("sx9500: error %d reading IRQ source register", ret);
 			continue;
 		}
 
@@ -131,7 +131,7 @@ static void sx9500_gpio_fiber_cb(void *arg)
 	ret = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 				SX9500_REG_IRQ_SRC, &reg_val);
 	if (ret) {
-		DBG("sx9500: error %d reading IRQ source register\n", ret);
+		SYS_LOG_DBG("sx9500: error %d reading IRQ source register", ret);
 		return;
 	}
 
@@ -159,8 +159,8 @@ int sx9500_setup_interrupt(struct device *dev)
 
 	gpio = device_get_binding(CONFIG_SX9500_GPIO_CONTROLLER);
 	if (!gpio) {
-		DBG("sx9500: gpio controller %s not found\n",
-		    CONFIG_SX9500_GPIO_CONTROLLER);
+		SYS_LOG_DBG("sx9500: gpio controller %s not found",
+			    CONFIG_SX9500_GPIO_CONTROLLER);
 		return -EINVAL;
 	}
 

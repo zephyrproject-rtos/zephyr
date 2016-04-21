@@ -20,13 +20,6 @@
 #include <stdint.h>
 #include <device.h>
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
-
 #define SX9500_REG_IRQ_SRC		0x00
 #define SX9500_REG_STAT			0x01
 #define SX9500_REG_IRQ_MSK		0x03
@@ -77,4 +70,7 @@ static inline int sx9500_setup_interrupt(struct device *dev)
 }
 #endif
 
+#define SYS_LOG_DOMAIN "SX9500"
+#define SYS_LOG_LEVEL CONFIG_SX9500_SYS_LOG_LEVEL
+#include <misc/sys_log.h>
 #endif /* __SENSOR_SX9500_H__ */

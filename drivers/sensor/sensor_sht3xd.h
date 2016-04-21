@@ -21,13 +21,6 @@
 #include <nanokernel.h>
 #include <gpio.h>
 
-#ifndef CONFIG_SENSOR_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_SENSOR_DEBUG */
-
 #if CONFIG_SHT3XD_I2C_ADDR_A
 	#define SHT3XD_I2C_ADDRESS	0x44
 #elif CONFIG_SHT3XD_I2C_ADDR_B
@@ -123,4 +116,7 @@ int sht3xd_trigger_set(struct device *dev,
 int sht3xd_init_interrupt(struct device *dev);
 #endif
 
+#define SYS_LOG_DOMAIN "SHT3XD"
+#define SYS_LOG_LEVEL CONFIG_SHT3XD_SYS_LOG_LEVEL
+#include <misc/sys_log.h>
 #endif /* _SENSOR_SHT3XD_ */
