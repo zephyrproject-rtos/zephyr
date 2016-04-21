@@ -15,6 +15,7 @@ obj-$(CONFIG_ISL29035_TRIGGER) += sensor_isl29035_trigger.o
 obj-$(CONFIG_LIS3DH) += sensor_lis3dh.o
 obj-$(CONFIG_LIS3DH_TRIGGER) += sensor_lis3dh_trigger.o
 obj-$(CONFIG_LSM9DS0_GYRO) += sensor_lsm9ds0_gyro.o
+obj-$(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY) += sensor_lsm9ds0_gyro_trigger.o
 obj-$(CONFIG_LSM9DS0_MFD) += sensor_lsm9ds0_mfd.o
 obj-$(CONFIG_MCP9808) += sensor_mcp9808.o
 obj-$(CONFIG_MCP9808_TRIGGER) += sensor_mcp9808_trigger.o

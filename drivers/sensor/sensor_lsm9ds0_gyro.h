@@ -20,7 +20,15 @@
 #define __SENSOR_LSM9DS0_GYRO_H__
 
 #include <stdint.h>
+#include <i2c.h>
 #include <misc/util.h>
+
+#ifdef CONFIG_SENSOR_DEBUG
+#include <misc/printk.h>
+#define sensor_dbg(fmt, ...) printk("lsm9ds0_gyro: " fmt, ##__VA_ARGS__)
+#else
+#define sensor_dbg(fmt, ...) do { } while (0)
+#endif /* CONFIG_SENSOR_DEBUG */
 
 #define DEG2RAD					0.017453292519943295769236907684
 
@@ -257,5 +265,13 @@ struct lsm9ds0_gyro_data {
 	uint8_t fs;
 #endif
 };
+
+#if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
+int lsm9ds0_gyro_trigger_set(struct device *dev,
+			     const struct sensor_trigger *trig,
+			     sensor_trigger_handler_t handler);
+
+int lsm9ds0_gyro_init_interrupt(struct device *dev);
+#endif
 
 #endif /* __SENSOR_LSM9DS0_GYRO_H__ */
