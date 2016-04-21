@@ -50,7 +50,9 @@
 	FN_SIG_S(nble_gap_disconnect_req,				\
 		 const struct nble_gap_disconnect_req_params *)		\
 	FN_SIG_S(nble_gattc_read_req,					\
-		 const struct nble_gattc_read_params *)
+		 const struct nble_gattc_read_params *)			\
+	FN_SIG_S(nble_gap_tx_power_req,					\
+		 const struct nble_gap_tx_power_params *)
 
 #define LIST_FN_SIG_P							\
 	FN_SIG_P(nble_get_version_req, void *)				\

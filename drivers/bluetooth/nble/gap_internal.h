@@ -409,6 +409,12 @@ void on_nble_get_version_rsp(const struct nble_version_response *par);
 
 void nble_gap_dtm_init_req(void *user_data);
 
+struct nble_gap_tx_power_params {
+	int8_t tx_power;
+};
+
+void nble_gap_tx_power_req(const struct nble_gap_tx_power_params *params);
+
 struct nble_gap_connect_evt {
 	uint16_t conn_handle;
 	struct nble_gap_connection_values conn_values;

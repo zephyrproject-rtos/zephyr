@@ -70,7 +70,9 @@
 	FN_SIG_S(on_nble_uas_bucket_change,			\
 		 const struct nble_uas_bucket_change *)		\
 	FN_SIG_S(on_nble_gattc_write_rsp,			\
-		 const struct nble_gattc_write_rsp *)
+		 const struct nble_gattc_write_rsp *)		\
+	FN_SIG_S(on_nble_gap_tx_power_rsp,			\
+		 const struct nble_response *)
 
 #define LIST_FN_SIG_P						\
 	FN_SIG_P(on_nble_gap_dtm_init_rsp, void *)
