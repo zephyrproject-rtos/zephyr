@@ -604,8 +604,6 @@ static int h5_queue(struct net_buf *buf)
 		return -1;
 	}
 
-	BT_DBG("buf_type %u type %u", buf_type, type);
-
 	memcpy(net_buf_push(buf, sizeof(type)), &type, sizeof(type));
 
 	nano_fifo_put(&h5.tx_queue, buf);
