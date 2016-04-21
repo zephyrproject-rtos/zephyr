@@ -6,6 +6,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
+DOC_TAG      ?= development
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -66,7 +67,7 @@ kconfig: scripts/genrest/genrest.py
 	srctree=../ SRCARCH=x86 python $< ../Kconfig reference/kconfig/
 
 html: kconfig
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@mkdir -p $(BUILDDIR)/html/api
 	@cp -a html $(BUILDDIR)/html/api
 	@echo

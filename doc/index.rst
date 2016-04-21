@@ -4,7 +4,23 @@
 Zephyr Project Documentation
 ############################
 
-Welcome to the Zephyr Project's documentation version |version|!
+.. only:: release
+
+   Welcome to the Zephyr Project's documentation version |version|!
+
+   Documentation for the development branch of Zephyr can be found at
+   https://www.zephyrproject.org/doc/dev/
+
+.. only:: development
+
+   Welcome to the Zephyr Project's documentation. This is the documentation of the
+   master tree under development.
+
+   Documentation for released versions of Zephyr can be found at
+   ``https://www.zephyrproject.org/doc/<version>``, for example:
+
+   * Documentation for `Zephyr 1.2.0`_
+   * Documentation for `Zephyr 1.1.0`_
 
 Sections
 ********
@@ -34,3 +50,5 @@ Indices and Tables
 * :ref:`search`
 
 .. _Zephyr Project Wiki: https://wiki.zephyrproject.org/view/Main_Page
+.. _Zephyr 1.2.0: https://www.zephyrproject.org/doc/1.2.0/
+.. _Zephyr 1.1.0: https://www.zephyrproject.org/doc/1.1.0/
