@@ -12,3 +12,4 @@ to applications.
    networking/networking.rst
    bluetooth/bluetooth.rst
    sensor
+   power_management.rst

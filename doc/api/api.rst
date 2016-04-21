@@ -3,8 +3,8 @@
 API Documentation
 #################
 
-Welcome to the Zephyr Project's
-:abbr:`API (Application Programing Interface)` documentation.
+Welcome to the Zephyr Project's :abbr:`API (Application Programing Interface)`
+documentation.
 
 This section contains the API documentation automatically extracted from the
 code. To ease navigation, we have split the APis in nanokernel APIs and
@@ -22,3 +22,4 @@ The use of the Zephyr APIs is the same for all platforms and boards.
    device.rst
    io_interfaces.rst
    event_logger.rst
+   power_management_api

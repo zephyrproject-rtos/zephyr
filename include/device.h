@@ -267,10 +267,24 @@ extern struct device_pm_ops device_pm_ops_nop;
 struct device;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+/**
+ * @brief Device Power Management APIs
+ * @defgroup device_power_management_api Device Power Management APIs
+ * @ingroup power_management_api
+ * @{
+ */
+/**
+ * @brief Structure holding handlers for device PM operations
+ * @param suspend Pointer to the handler for suspend operations
+ * @param resume Pointer to the handler for resume operations
+ */
 struct device_pm_ops {
 	int (*suspend)(struct device *device, int pm_policy);
 	int (*resume)(struct device *device, int pm_policy);
 };
+/**
+ * @}
+ */
 #endif
 
 /**
@@ -305,6 +319,13 @@ void _sys_device_do_config_level(int level);
 struct device* device_get_binding(char *name);
 
 /**
+ * @brief Device Power Management APIs
+ * @defgroup device_power_management_api Device Power Management APIs
+ * @ingroup power_management_api
+ * @{
+ */
+
+/**
  * @brief Indicate that the device is in the middle of a transaction
  *
  * Called by a device driver to indicate that it is in the middle of a
@@ -324,7 +345,7 @@ void device_busy_set(struct device *busy_dev);
 void device_busy_clear(struct device *busy_dev);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-/**
+/*
  * Device PM functions
  */
 
@@ -334,10 +355,10 @@ void device_busy_clear(struct device *busy_dev);
  * This function should be used to initialize device pm hooks
  * for which a device has no operation.
  *
- * @param unused_device
- * @param unused_policy
+ * @param unused_device Unused
+ * @param unused_policy Unused
  *
- * @retval Always returns 0
+ * @retval 0 Always returns 0
  */
 int device_pm_nop(struct device *unused_device, int unused_policy);
 
@@ -351,8 +372,7 @@ int device_pm_nop(struct device *unused_device, int unused_policy);
  * @param pm_policy PM policy for which this call is made.
  *
  * @retval 0 If successful.
- * @retval -EBUSY If device is busy
- * @retval Other negative errno code if failure.
+ * @retval Errno Negative errno code if failure.
  */
 static inline int device_suspend(struct device *device, int pm_policy)
 {
@@ -369,7 +389,7 @@ static inline int device_suspend(struct device *device, int pm_policy)
  * @param pm_policy PM policy for which this call is made.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval Errno Negative errno code if failure.
  */
 static inline int device_resume(struct device *device, int pm_policy)
 {
@@ -414,6 +434,10 @@ int device_any_busy_check(void);
 int device_busy_check(struct device *chk_dev);
 
 #endif
+
+/**
+ * @}
+ */
 
 /**
  * Synchronous calls API

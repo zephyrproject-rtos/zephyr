@@ -14,15 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * @brief Power management hooks
- *
- * This header file specifies the Power Management hook interface.
- * All of the APIs declared here must be supplied by the Power Manager
- * application, namely the _sys_soc_suspend() and _sys_soc_resume()
- * functions.
- */
-
 #ifndef __INCpower
 #define __INCpower
 
@@ -37,6 +28,14 @@ extern "C" {
 #define SYS_PM_DEVICE_SUSPEND_ONLY	1 /* Only Devices are suspended */
 #define SYS_PM_LOW_POWER_STATE		2 /* Low Power State */
 #define SYS_PM_DEEP_SLEEP		4 /* Deep Sleep */
+
+/**
+ * @brief Power Management Hook Interface
+ *
+ * @defgroup power_management_hook_interface Power Management Hook Interface
+ * @ingroup power_management_api
+ * @{
+ */
 
 /**
  * @brief Hook function to notify exit of a power policy
@@ -135,6 +134,10 @@ extern void _sys_soc_resume(void);
  * @retval SYS_PM_DEEP_SLEEP If Deep Sleep policy entered.
  */
 extern int _sys_soc_suspend(int32_t ticks);
+
+/**
+ * @}
+ */
 
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
