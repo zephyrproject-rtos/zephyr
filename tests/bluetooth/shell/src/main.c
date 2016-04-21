@@ -571,6 +571,11 @@ static void cmd_advertise(int argc, char *argv[])
 		param.addr_type = BT_LE_ADV_ADDR_NRPA;
 		scan_rsp = NULL;
 		scan_rsp_len = 0;
+	} else if (!strcmp(argv[1], "rpa")) {
+		param.type = BT_LE_ADV_IND;
+		param.addr_type = BT_LE_ADV_ADDR_RPA;
+		scan_rsp = sd;
+		scan_rsp_len = ARRAY_SIZE(sd);
 	} else {
 		goto fail;
 	}
