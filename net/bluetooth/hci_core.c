@@ -2090,20 +2090,6 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	}
 }
 
-static void set_adv_param_complete(struct net_buf *buf)
-{
-	struct bt_hci_cp_le_set_adv_param *cp = (void *)bt_dev.sent_cmd->data;
-	uint8_t *status = (void *)buf->data;
-
-	BT_DBG("status 0x%02x", *status);
-
-	if (*status) {
-		return;
-	}
-
-	bt_dev.adv_addr_type = cp->own_addr_type;
-}
-
 static void hci_cmd_complete(struct net_buf *buf)
 {
 	struct hci_evt_cmd_complete *evt = (void *)buf->data;
@@ -2118,12 +2104,6 @@ static void hci_cmd_complete(struct net_buf *buf)
 	 * beginning, so we can safely make this generalization.
 	 */
 	status = buf->data[0];
-
-	switch (opcode) {
-	case BT_HCI_OP_LE_SET_ADV_PARAM:
-		set_adv_param_complete(buf);
-		break;
-	}
 
 	hci_cmd_done(opcode, status, buf);
 
@@ -3465,8 +3445,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		}
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM,
-				sizeof(*set_param));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(*set_param));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3505,7 +3484,12 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		break;
 	}
 
-	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_PARAM, buf);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_PARAM, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	bt_dev.adv_addr_type = set_param->own_addr_type;
 
 	err = set_advertise_enable();
 	if (err) {
