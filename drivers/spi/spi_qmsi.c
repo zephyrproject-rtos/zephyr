@@ -177,7 +177,7 @@ static int spi_qmsi_transceive(struct device *dev,
 
 	xfer->rx = rx_buf;
 	xfer->rx_len = rx_buf_len / dfs;
-	xfer->tx = tx_buf;
+	xfer->tx = (uint8_t *)tx_buf;
 	xfer->tx_len = tx_buf_len / dfs;
 	xfer->id = spi;
 	xfer->tx_callback = spi_qmsi_tx_callback;
