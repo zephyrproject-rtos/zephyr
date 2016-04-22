@@ -54,7 +54,6 @@
 
 /* Stacks for the fibers */
 static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
-static BT_STACK_NOINIT(rx_prio_fiber_stack, 256);
 static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
 
 struct bt_dev bt_dev;
@@ -536,8 +535,6 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	/* Check stacks usage (no-ops if not enabled) */
 	stack_analyze("rx stack", rx_fiber_stack, sizeof(rx_fiber_stack));
-	stack_analyze("cmd rx stack", rx_prio_fiber_stack,
-		      sizeof(rx_prio_fiber_stack));
 	stack_analyze("cmd tx stack", cmd_tx_fiber_stack,
 		      sizeof(cmd_tx_fiber_stack));
 	stack_analyze("conn tx stack", conn->stack, sizeof(conn->stack));
@@ -2527,51 +2524,6 @@ static void hci_cmd_tx_fiber(void)
 	}
 }
 
-static void rx_prio_fiber(void)
-{
-	struct net_buf *buf;
-
-	BT_DBG("started");
-
-	while (1) {
-		struct bt_hci_evt_hdr *hdr;
-
-		BT_DBG("calling fifo_get_wait");
-		buf = nano_fifo_get(&bt_dev.rx_prio_queue, TICKS_UNLIMITED);
-
-		BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
-		       buf->len);
-
-		if (bt_buf_get_type(buf) != BT_BUF_EVT) {
-			BT_ERR("Unknown buf type %u", bt_buf_get_type(buf));
-			net_buf_unref(buf);
-			continue;
-		}
-
-		hdr = (void *)buf->data;
-		net_buf_pull(buf, sizeof(*hdr));
-
-		switch (hdr->evt) {
-		case BT_HCI_EVT_CMD_COMPLETE:
-			hci_cmd_complete(buf);
-			break;
-		case BT_HCI_EVT_CMD_STATUS:
-			hci_cmd_status(buf);
-			break;
-#if defined(CONFIG_BLUETOOTH_CONN)
-		case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-			hci_num_completed_packets(buf);
-			break;
-#endif /* CONFIG_BLUETOOTH_CONN */
-		default:
-			BT_ERR("Unknown event 0x%02x", hdr->evt);
-			break;
-		}
-
-		net_buf_unref(buf);
-	}
-}
-
 static void read_local_features_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_local_features *rp = (void *)buf->data;
@@ -3100,18 +3052,29 @@ int bt_recv(struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	/* Command Complete/Status events have their own cmd_rx queue,
-	 * all other events go through rx queue.
-	 */
 	hdr = (void *)buf->data;
-	if (hdr->evt == BT_HCI_EVT_CMD_COMPLETE ||
-	    hdr->evt == BT_HCI_EVT_CMD_STATUS ||
-	    hdr->evt == BT_HCI_EVT_NUM_COMPLETED_PACKETS) {
-		nano_fifo_put(&bt_dev.rx_prio_queue, buf);
-		return 0;
+
+	switch (hdr->evt) {
+	case BT_HCI_EVT_CMD_COMPLETE:
+		net_buf_pull(buf, sizeof(*hdr));
+		hci_cmd_complete(buf);
+		break;
+	case BT_HCI_EVT_CMD_STATUS:
+		net_buf_pull(buf, sizeof(*hdr));
+		hci_cmd_status(buf);
+		break;
+#if defined(CONFIG_BLUETOOTH_CONN)
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+		net_buf_pull(buf, sizeof(*hdr));
+		hci_num_completed_packets(buf);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONN */
+	default:
+		nano_fifo_put(&bt_dev.rx_queue, net_buf_ref(buf));
+		break;
 	}
 
-	nano_fifo_put(&bt_dev.rx_queue, buf);
+	net_buf_unref(buf);
 	return 0;
 }
 
@@ -3271,11 +3234,6 @@ int bt_enable(bt_ready_cb_t cb)
 	nano_fifo_init(&bt_dev.cmd_tx_queue);
 	fiber_start(cmd_tx_fiber_stack, sizeof(cmd_tx_fiber_stack),
 		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
-
-	/* RX prio fiber */
-	nano_fifo_init(&bt_dev.rx_prio_queue);
-	fiber_start(rx_prio_fiber_stack, sizeof(rx_prio_fiber_stack),
-		    (nano_fiber_entry_t)rx_prio_fiber, 0, 0, 7, 0);
 
 	/* RX fiber */
 	nano_fifo_init(&bt_dev.rx_queue);
