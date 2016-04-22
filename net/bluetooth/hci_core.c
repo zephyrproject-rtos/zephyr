@@ -3095,7 +3095,7 @@ int bt_driver_register(struct bt_driver *drv)
 
 	bt_dev.drv = drv;
 
-	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_MONITOR_BUS_UART,
+	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, drv->bus,
 			     BT_ADDR_ANY, "bt0");
 
 	return 0;

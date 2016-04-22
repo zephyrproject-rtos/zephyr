@@ -52,7 +52,20 @@ struct net_buf *bt_buf_get_acl(void);
 /* Receive data from the controller/HCI driver */
 int bt_recv(struct net_buf *buf);
 
+enum bt_driver_bus {
+	BT_DRIVER_BUS_VIRTUAL       = 0,
+	BT_DRIVER_BUS_USB           = 1,
+	BT_DRIVER_BUS_PCCARD        = 2,
+	BT_DRIVER_BUS_UART          = 3,
+	BT_DRIVER_BUS_RS232         = 4,
+	BT_DRIVER_BUS_PCI           = 5,
+	BT_DRIVER_BUS_SDIO          = 6,
+};
+
 struct bt_driver {
+	/* Bus of the transport (BT_DRIVER_BUS_*) */
+	enum bt_driver_bus bus;
+
 	/* Open the HCI transport */
 	int (*open)(void);
 

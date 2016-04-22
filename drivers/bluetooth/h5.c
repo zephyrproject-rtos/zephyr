@@ -764,6 +764,7 @@ static int h5_open(void)
 }
 
 static struct bt_driver drv = {
+	.bus		= BT_DRIVER_BUS_UART,
 	.open		= h5_open,
 	.send		= h5_queue,
 };

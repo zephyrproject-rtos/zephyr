@@ -39,14 +39,6 @@
 #define BT_MONITOR_TYPE_PRIMARY	0
 #define BT_MONITOR_TYPE_AMP	1
 
-#define BT_MONITOR_BUS_VIRTUAL	0
-#define BT_MONITOR_BUS_USB	1
-#define BT_MONITOR_BUS_PCCARD	2
-#define BT_MONITOR_BUS_UART	3
-#define BT_MONITOR_BUS_RS232	4
-#define BT_MONITOR_BUS_PCI	5
-#define BT_MONITOR_BUS_SDIO	6
-
 struct bt_monitor_hdr {
 	uint16_t opcode;
 	uint16_t index;
