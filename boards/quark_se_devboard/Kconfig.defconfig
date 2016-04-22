@@ -17,6 +17,22 @@ config NBLE_UART_ON_DEV_NAME
 
 endif
 
+if BLUETOOTH_H4
+
+config GPIO
+	def_bool y
+
+config BLUETOOTH_NRF51_PM
+	def_bool y
+
+config BLUETOOTH_WAIT_NOP
+	def_bool y
+
+config BLUETOOTH_UART_ON_DEV_NAME
+        default UART_NS16550_PORT_0_NAME
+
+endif
+
 if NETWORKING_WITH_15_4_TI_CC2520
 
 config SPI
