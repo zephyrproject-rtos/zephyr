@@ -7,6 +7,11 @@ cmsis
 The ARM Cortex Microcontroller Software Interface Standard (CMSIS) defines a
 set of standard interfaces to ARM Cortex-M SOCs.
 
+ksdk
+-------
+The Kinetis Software Development Kit (KSDK) provides device header files and
+peripheral drivers for Kinetis SOCs.
+
 qmsi
 -------
 Intel® Quark™ Microcontroller Software Interface (QMSI) is a Hardware

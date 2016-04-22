@@ -1,0 +1,6 @@
+The Kinetis Software Development Kit (KSDK) provides device header files and
+peripheral drivers for Kinetis SOCs.
+
+The sources in this directory are imported from kex.nxp.com.
+
+The current version supported in Zephyr is KSDK 2.0.
