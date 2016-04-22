@@ -60,6 +60,8 @@ enum bt_driver_bus {
 	BT_DRIVER_BUS_RS232         = 4,
 	BT_DRIVER_BUS_PCI           = 5,
 	BT_DRIVER_BUS_SDIO          = 6,
+	BT_DRIVER_BUS_SPI           = 7,
+	BT_DRIVER_BUS_I2C           = 8,
 };
 
 struct bt_driver {
