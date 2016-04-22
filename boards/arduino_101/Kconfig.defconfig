@@ -28,7 +28,7 @@ config BLUETOOTH_NRF51_PM
 config BLUETOOTH_WAIT_NOP
 	def_bool y
 
-config NBLE_UART_ON_DEV_NAME
+config BLUETOOTH_UART_ON_DEV_NAME
         default UART_NS16550_PORT_0_NAME
 
 endif
