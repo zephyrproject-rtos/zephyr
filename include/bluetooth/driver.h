@@ -63,6 +63,9 @@ enum bt_driver_bus {
 };
 
 struct bt_driver {
+	/* Name of the driver */
+	const char *name;
+
 	/* Bus of the transport (BT_DRIVER_BUS_*) */
 	enum bt_driver_bus bus;
 

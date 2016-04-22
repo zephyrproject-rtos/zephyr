@@ -3095,8 +3095,10 @@ int bt_driver_register(struct bt_driver *drv)
 
 	bt_dev.drv = drv;
 
+	BT_DBG("Registered %s", drv->name ? drv->name : "");
+
 	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, drv->bus,
-			     BT_ADDR_ANY, "bt0");
+			     BT_ADDR_ANY, drv->name ? drv->name : "bt0");
 
 	return 0;
 }

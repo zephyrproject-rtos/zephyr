@@ -254,6 +254,7 @@ static int h4_open(void)
 }
 
 static struct bt_driver drv = {
+	.name		= "H:4",
 	.bus		= BT_DRIVER_BUS_UART,
 	.open		= h4_open,
 	.send		= h4_send,

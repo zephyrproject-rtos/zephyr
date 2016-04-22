@@ -40,6 +40,7 @@ static int driver_send(struct net_buf *buf)
 }
 
 static struct bt_driver drv = {
+	.name         = "test",
 	.bus          = BT_DRIVER_BUS_VIRTUAL,
 	.open         = driver_open,
 	.send         = driver_send,
