@@ -1,3 +1,5 @@
+ccflags-y +=-I$(srctree)/include/drivers
+
 obj-$(CONFIG_BLUETOOTH_STACK_HCI) = \
 	hci_core.o \
 	uuid.o
