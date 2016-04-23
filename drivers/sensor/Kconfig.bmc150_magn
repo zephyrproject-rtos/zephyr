@@ -56,7 +56,7 @@ endchoice
 config BMC150_MAGN_I2C_MASTER_DEV_NAME
 	string "I2C master where BMC150_MAGN is connected"
 	depends on BMC150_MAGN
-	default "I2C0"
+	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which BMC150_MAGN
 	  is connected.

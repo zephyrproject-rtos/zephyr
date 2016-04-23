@@ -31,17 +31,17 @@ config I2C_DW_SHARED_IRQ
 	depends on I2C_DW
 
 config I2C_DW_0
-        bool "Enable I2C0"
+        bool "Enable I2C_0"
         default n
 	depends on I2C_DW
 
 config I2C_DW_0_NAME
         string "Select a name for finding the device"
         depends on I2C_DW_0
-        default "I2C0"
+        default "I2C_0"
 
 choice
-	prompt "I2C0 Interrupts via"
+	prompt "I2C_0 Interrupts via"
 	default I2C_DW_0_IRQ_DIRECT
 	depends on I2C_DW_0
 
@@ -86,14 +86,14 @@ config I2C_DW_0_DEFAULT_CFG
         the values later.  Refer to the I2C datasheet for proper values.
 
 config I2C_DW_1
-        bool "Enable I2C1"
+        bool "Enable I2C_1"
         default n
 	depends on I2C_DW
 
 config I2C_DW_1_NAME
         string "Select a name for finding the device"
         depends on I2C_DW_1
-        default "I2C1"
+        default "I2C_1"
 
 config I2C_DW_1_IRQ_PRI
         int "Controller interrupt priority"

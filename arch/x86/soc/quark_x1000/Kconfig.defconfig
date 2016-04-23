@@ -87,7 +87,7 @@ config I2C_DW_0
 if I2C_DW_0
 
 config I2C_DW_0_NAME
-        default "I2C0"
+        default "I2C_0"
 config I2C_DW_0_DEFAULT_CFG
         default 0x12
 config I2C_DW_0_IRQ_PRI

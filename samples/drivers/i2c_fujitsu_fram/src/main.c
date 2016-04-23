@@ -88,7 +88,7 @@ void main(void)
 	uint8_t data[16];
 	int i, ret;
 
-	i2c_dev = device_get_binding("I2C0");
+	i2c_dev = device_get_binding("I2C_0");
 	if (!i2c_dev) {
 		printk("I2C: Device not found.\n");
 	}

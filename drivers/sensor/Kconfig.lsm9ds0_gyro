@@ -56,7 +56,7 @@ endchoice
 config LSM9DS0_GYRO_I2C_MASTER_DEV_NAME
 	string "I2C master where LSM9DS0 gyroscope is connected"
 	depends on LSM9DS0_GYRO
-	default "I2C0"
+	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which LSM9DS0_GYRO
 	  is connected.

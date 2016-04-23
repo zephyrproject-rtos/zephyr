@@ -46,7 +46,7 @@ config SX9500_I2C_ADDR
 config SX9500_I2C_DEV_NAME
 	string "I2C master where SX9500 is connected"
 	depends on SX9500
-	default "I2C0"
+	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which SX9500 is
 	  connected.

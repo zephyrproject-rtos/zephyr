@@ -92,7 +92,7 @@ config I2C_QUARK_SE_SS_0
 if I2C_QUARK_SE_SS_0
 
 config I2C_QUARK_SE_SS_0_NAME
-	default "I2C0"
+	default "I2C_0"
 
 config I2C_QUARK_SE_SS_0_DEFAULT_CFG
 	default 0x12
@@ -102,7 +102,7 @@ endif # I2C_QUARK_SE_SS_0
 if I2C_QUARK_SE_SS_1
 
 config I2C_QUARK_SE_SS_1_NAME
-	default "I2C1"
+	default "I2C_1"
 
 config I2C_QUARK_SE_SS_1_DEFAULT_CFG
 	default 0x12

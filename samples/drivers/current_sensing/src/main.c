@@ -96,7 +96,7 @@ void main(void)
 	uint8_t data[2];
 	uint32_t shunt_volt, bus_volt, current, power;
 
-	i2c_dev = device_get_binding("I2C0");
+	i2c_dev = device_get_binding("I2C_0");
 	if (!i2c_dev) {
 		printk("I2C: Device not found.\n");
 	}

@@ -45,7 +45,7 @@ config BMP280_I2C_ADDR
 config BMP280_I2C_MASTER_DEV_NAME
 	string "I2C master where BMP280 is connected"
 	depends on BMP280
-	default "I2C0"
+	default "I2C_0"
 	help
 	 Specify the device name of the I2C master device to which BMP280 is
 	 connected.

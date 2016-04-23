@@ -46,7 +46,7 @@ config MCP9808_I2C_ADDR
 config MCP9808_I2C_DEV_NAME
 	string "I2C master where MCP9808 is connected"
 	depends on MCP9808
-	default "I2C0"
+	default "I2C_0"
 	help
 	 Specify the device name of the I2C master device to which MCP9808 is
 	 connected.

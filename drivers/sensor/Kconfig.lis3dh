@@ -65,7 +65,7 @@ config LIS3DH_I2C_MASTER_DEV_NAME
 	string
 	prompt "I2C master where LIS3DH is connected"
 	depends on LIS3DH
-	default "I2C0"
+	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which LIS3DH is
 	  connected.

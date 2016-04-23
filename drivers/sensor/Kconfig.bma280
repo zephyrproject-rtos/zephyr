@@ -105,7 +105,7 @@ config BMA280_I2C_MASTER_DEV_NAME
 	string
 	prompt "I2C master device name"
 	depends on BMA280
-	default "I2C0"
+	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which chip is
 	  connected.

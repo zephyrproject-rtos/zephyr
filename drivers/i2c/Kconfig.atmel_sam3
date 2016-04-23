@@ -40,11 +40,11 @@ config I2C_ATMEL_SAM3_0
 config I2C_ATMEL_SAM3_0_NAME
 	string "Device name for Atmel SAM3 I2C Controller 0"
 	depends on I2C_ATMEL_SAM3_0
-	default "I2C0"
+	default "I2C_0"
 	help
 	The device name for Atmel SAM3 I2C Controller 0.
 
-	Default is "I2C0".
+	Default is "I2C_0".
 
 config I2C_ATMEL_SAM3_0_IRQ_PRI
 	int "IRQ Priority for Atmel SAM3 I2C Controller 0"
@@ -80,11 +80,11 @@ config I2C_ATMEL_SAM3_1
 config I2C_ATMEL_SAM3_1_NAME
 	string "Device name for Atmel SAM3 I2C Controller 1"
 	depends on I2C_ATMEL_SAM3_1
-	default "I2C1"
+	default "I2C_1"
 	help
 	The device name for Atmel SAM3 I2C Controller 1.
 
-	Default is "I2C1".
+	Default is "I2C_1".
 
 config I2C_ATMEL_SAM3_1_IRQ_PRI
 	int "IRQ Priority for Atmel SAM3 I2C Controller 1"

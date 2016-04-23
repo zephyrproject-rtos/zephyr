@@ -65,7 +65,7 @@ config SHT3XD_I2C_MASTER_DEV_NAME
 	string
 	prompt "I2C master where SHT3xD is connected"
 	depends on SHT3XD
-	default "I2C0"
+	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which the
 	  SHT3xD chip is connected.
