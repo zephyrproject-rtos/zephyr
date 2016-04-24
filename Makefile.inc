@@ -25,7 +25,9 @@ override CONF_FILE := $(strip $(subst $(DQUOTE),,$(CONF_FILE)))
 
 ifdef BOARD
 KBUILD_DEFCONFIG_PATH=$(wildcard $(ZEPHYR_BASE)/boards/*/$(BOARD)_defconfig)
-export KBUILD_DEFCONFIG_PATH
+ifeq ($(KBUILD_DEFCONFIG_PATH),)
+$(error Board $(BOARD) not found!)
+endif
 else
 $(error BOARD is not defined!)
 endif
