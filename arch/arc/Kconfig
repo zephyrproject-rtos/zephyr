@@ -54,14 +54,6 @@ config	CPU_ARCV2
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
 
-config RAM_START
-	prompt "RAM start address"
-	hex
-
-config RAM_SIZE
-	prompt "RAM size (in kB)"
-	int
-
 config NSIM
 	prompt "Running on the MetaWare nSIM simulator"
 	bool
@@ -164,6 +156,47 @@ config	XIP
 	default n if NSIM
 	default y
 
+config DCCM_SIZE
+	int "DCCM Size in kB"
+	help
+	This option specifies the size of the DCCM in kB.  It is normally set by
+	the platform's defconfig file and the user should generally avoid modifying
+	it via the menu configuration.
+
+config DCCM_BASE_ADDRESS
+	hex "DCCM Base Address"
+	help
+	This option specifies the base address of the DCCM on the platform.  It is
+	normally set by the platform's defconfig file and the user should generally
+	avoid modifying it via the menu configuration.
+
+config SRAM_SIZE
+	int "SRAM Size in kB"
+	help
+	This option specifies the size of the SRAM in kB.  It is normally set by
+	the platform's defconfig file and the user should generally avoid modifying
+	it via the menu configuration.
+
+config SRAM_BASE_ADDRESS
+	hex "SRAM Base Address"
+	help
+	This option specifies the base address of the SRAM on the platform.  It is
+	normally set by the platform's defconfig file and the user should generally
+	avoid modifying it via the menu configuration.
+
+config FLASH_SIZE
+	int "Flash Size in kB"
+	help
+	This option specifies the size of the flash in kB.  It is normally set by
+	the platform's defconfig file and the user should generally avoid modifying
+	it via the menu configuration.
+
+config FLASH_BASE_ADDRESS
+	hex "Flash Base Address"
+	help
+	This option specifies the base address of the flash on the platform.  It is
+	normally set by the platform's defconfig file and the user should generally
+	avoid modifying it via the menu configuration.
 config NSIM
 	prompt "Running on the MetaWare nSIM simulator"
 	bool

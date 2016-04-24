@@ -37,13 +37,25 @@ config  NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 
-config RAM_START
+config FLASH_BASE_ADDRESS
+	default 0x40000000
+
+config FLASH_SIZE
+	default 152
+
+config SRAM_BASE_ADDRESS
 	default 0x4000 if NSIM
 	default 0xa8000400
 
-config RAM_SIZE
+config SRAM_SIZE
 	default 16 if NSIM
 	default 24
+
+config DCCM_BASE_ADDRESS
+	default 0x80000000
+
+config DCCM_SIZE
+	default 8
 
 if GPIO
 

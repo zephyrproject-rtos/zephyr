@@ -20,8 +20,8 @@
  */
 
 /* Flash base address and size */
-#define FLASH_START     0x40000000  /* Flash bank 1 */
-#define FLASH_SIZE      152K
+#define FLASH_START     CONFIG_FLASH_BASE_ADDRESS  /* Flash bank 1 */
+#define FLASH_SIZE      CONFIG_FLASH_SIZE
 
 /*
  * SRAM base address and size
@@ -29,11 +29,11 @@
  * Internal SRAM includes the exception vector table at reset, which is at
  * the beginning of the region.
  */
-#define SRAM_START		CONFIG_RAM_START
-#define SRAM_SIZE		CONFIG_RAM_SIZE
+#define SRAM_START		CONFIG_SRAM_BASE_ADDRESS
+#define SRAM_SIZE		CONFIG_SRAM_SIZE
 
 /* Data Closely Coupled Memory (DCCM) base address and size */
-#define DCCM_START		0x80000000
-#define DCCM_SIZE		8K
+#define DCCM_START		CONFIG_DCCM_BASE_ADDRESS
+#define DCCM_SIZE		CONFIG_DCCM_SIZE
 
 #include <arch/arc/v2/linker.cmd>

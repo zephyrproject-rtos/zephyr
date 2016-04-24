@@ -28,7 +28,7 @@
 #include <sections.h>
 #include <arch/cpu.h>
 
-#define _RAM_END (CONFIG_RAM_START + CONFIG_RAM_SIZE * 1024)
+#define _RAM_END (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE * 1024)
 
 GTEXT(__reset)
 
