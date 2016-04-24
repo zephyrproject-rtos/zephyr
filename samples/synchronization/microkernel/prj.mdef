@@ -2,8 +2,8 @@
 
 % TASK NAME  PRIO ENTRY STACK GROUPS
 % ==================================
-  TASK TASKA    7 taskA  2048 [EXE]
-  TASK TASKB    7 taskB  2048 [EXE]
+  TASK TASKA    7 taskA  1024 [EXE]
+  TASK TASKB    7 taskB  1024 [EXE]
 
 % SEMA NAME
 % =============
