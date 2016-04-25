@@ -608,7 +608,7 @@ static void cmd_advertise(int argc, char *argv[])
 
 fail:
 	printk("Usage: advertise <type> <ad mode>\n");
-	printk("type: off, on, scan, nconn\n");
+	printk("type: off, on, scan, nconn, rpa\n");
 	printk("ad mode: discov, non_discov\n");
 }
 
