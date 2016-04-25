@@ -1180,7 +1180,7 @@ void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *ev)
 	struct nble_gatts_rd_reply_params reply_data;
 	const struct bt_gatt_attr *attr;
 	/* TODO: Replace the following with net_buf */
-	uint8_t data[NBLE_BUF_SIZE] = { 0 };
+	uint8_t data[BLE_GATT_MTU_SIZE] = { 0 };
 	int len;
 
 	attr = ev->attr;
