@@ -383,6 +383,7 @@ config BLUETOOTH_BREDR
 	default n
 	depends on BLUETOOTH_STACK_HCI
 	select BLUETOOTH_CONN
+	select BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	help
 	  This option enables Bluetooth BR/EDR support"
 
