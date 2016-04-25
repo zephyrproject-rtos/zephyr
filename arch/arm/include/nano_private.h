@@ -57,9 +57,8 @@ struct __thread_entry {
 
 struct coop {
 	/*
-	 * Unused for Cortex-M, which automatically saves the neccesary
-	 *registers
-	 * in its exception stack frame.
+	 * Unused for Cortex-M, which automatically saves the necessary
+	 * registers in its exception stack frame.
 	 *
 	 * For Cortex-A, this may be:
 	 *
@@ -119,6 +118,28 @@ typedef struct preempt tPreempt;
 #endif
 
 #ifndef _ASMLANGUAGE
+
+#ifdef CONFIG_FLOAT
+struct preemp_float {
+	float  s16;
+	float  s17;
+	float  s18;
+	float  s19;
+	float  s20;
+	float  s21;
+	float  s22;
+	float  s23;
+	float  s24;
+	float  s25;
+	float  s26;
+	float  s27;
+	float  s28;
+	float  s29;
+	float  s30;
+	float  s31;
+};
+#endif
+
 struct tcs {
 	struct tcs *link; /* singly-linked list in _nanokernel.fibers */
 	uint32_t flags;
@@ -141,6 +162,14 @@ struct tcs {
 #endif
 #ifdef CONFIG_MICROKERNEL
 	void *uk_task_ptr;
+#endif
+#ifdef CONFIG_FLOAT
+	/*
+	 * No cooperative floating point register set structure exists for
+	 * the Cortex-M as it automatically saves the necessary registers
+	 * in its exception stack frame.
+	 */
+	struct preemp_float  preemp_float_regs;
 #endif
 };
 

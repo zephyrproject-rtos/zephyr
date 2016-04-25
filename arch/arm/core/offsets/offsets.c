@@ -51,6 +51,10 @@ GEN_OFFSET_SYM(tTCS, basepri);
 GEN_OFFSET_SYM(tTCS, custom_data);
 #endif
 
+#ifdef CONFIG_FLOAT
+GEN_OFFSET_SYM(tTCS, preemp_float_regs);
+#endif
+
 /* ARM-specific ESF structure member offsets */
 
 GEN_OFFSET_SYM(tESF, a1);
