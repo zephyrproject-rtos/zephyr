@@ -370,7 +370,7 @@ static inline int i2c_reg_update_byte(struct device *dev, uint8_t dev_addr,
 	uint8_t old_value, new_value;
 	int rc;
 
-	rc = i2c_reg_read_byte(dev, reg_addr, dev_addr, &old_value);
+	rc = i2c_reg_read_byte(dev, dev_addr, reg_addr, &old_value);
 	if (rc != 0) {
 		return rc;
 	}
