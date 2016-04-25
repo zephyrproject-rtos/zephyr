@@ -41,9 +41,28 @@
  * length for the data to send is 1232 bytes.
  */
 static const char *lorem_ipsum =
-	"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam congue non neque vel tempor. In id porta nibh, ut cursus tortor. Morbi eleifend tristique vehicula. Nunc vitae risus mauris. Praesent vel imperdiet dolor, et ultricies nibh. Aliquam erat volutpat. Maecenas pellentesque dolor vitae dictum tincidunt. Fusce vel nibh nec leo tristique auctor eu a massa. Nam et tellus ac tortor sollicitudin semper vitae nec tortor. Aliquam nec lacus velit. Maecenas ornare ullamcorper justo non auctor. Donec aliquam feugiat turpis, quis elementum sem rutrum ut. Sed eu ullamcorper libero, ut suscipit magna."
+	"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam "
+	"congue non neque vel tempor. In id porta nibh, ut cursus tortor. "
+	"Morbi eleifend tristique vehicula. Nunc vitae risus mauris. "
+	"Praesent vel imperdiet dolor, et ultricies nibh. Aliquam erat "
+	"volutpat. Maecenas pellentesque dolor vitae dictum tincidunt. "
+	"Fusce vel nibh nec leo tristique auctor eu a massa. Nam et tellus "
+	"ac tortor sollicitudin semper vitae nec tortor. Aliquam nec lacus "
+	"velit. Maecenas ornare ullamcorper justo non auctor. Donec "
+	"aliquam feugiat turpis, quis elementum sem rutrum ut. Sed eu "
+	"ullamcorper libero, ut suscipit magna."
 	"\n"
-	"Donec vehicula magna ut varius aliquam. Ut vitae commodo nulla, quis ornare dolor. Nulla tortor sem, venenatis eu iaculis id, commodo ut massa. Sed est lorem, euismod vitae enim sed, hendrerit gravida felis. Donec eros lacus, auctor ut ultricies eget, lobortis quis nisl. Aliquam sit amet blandit eros. Interdum et malesuada fames ac ante ipsum primis in faucibus. Quisque egestas nisl leo, sed consectetur leo ornare eu. Suspendisse vitae urna vel purus maximus finibus. Proin sed sollicitudin turpis. Mauris interdum neque eu tellus pellentesque, id fringilla nisi fermentum. Suspendisse gravida pharetra sodales orci aliquam.";
+	"Donec vehicula magna ut varius aliquam. Ut vitae commodo nulla, "
+	"quis ornare dolor. Nulla tortor sem, venenatis eu iaculis id, "
+	"commodo ut massa. Sed est lorem, euismod vitae enim sed, "
+	"hendrerit gravida felis. Donec eros lacus, auctor ut ultricies "
+	"eget, lobortis quis nisl. Aliquam sit amet blandit eros. "
+	"Interdum et malesuada fames ac ante ipsum primis in faucibus. "
+	"Quisque egestas nisl leo, sed consectetur leo ornare eu. "
+	"Suspendisse vitae urna vel purus maximus finibus. Proin sed "
+	"sollicitudin turpis. Mauris interdum neque eu tellus "
+	"pellentesque, id fringilla nisi fermentum. Suspendisse gravida "
+	"pharetra sodales orci aliquam.";
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 
