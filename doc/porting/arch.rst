@@ -10,7 +10,7 @@ Interface)` that is not currently supported.
 The following are examples of ISAs and ABIs that Zephyr supports:
 
 * x86_32 ISA with System V ABI
-* x86_32 ISA with IMACU ABI
+* x86_32 ISA with IAMCU ABI
 * ARMv7-M ISA with Thumb2 instruction set and ARM Embedded ABI (aeabi).
 * ARCv2 ISA
 
