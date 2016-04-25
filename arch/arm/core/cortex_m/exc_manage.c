@@ -78,6 +78,14 @@ void sys_exc_esf_dump(NANO_ESF *esf)
 	printk("r14/lr: %x\n", esf->lr);
 	printk("r15/pc: %x  ", esf->pc);
 	printk("xpsr:   %x\n", esf->xpsr);
+#ifdef CONFIG_FLOAT
+	for (int i = 0; i < 16; i += 4) {
+		printk("s[%d]:  %x  s[%d]:  %x  s[%d]:  %x  s[%d]:  %x\n",
+			i, esf->s[i], i + 1, esf->s[i + 1],
+			i + 2, esf->s[i + 2], i + 3, esf->s[i + 3]);
+	}
+	printk("fpscr:  %x\n", esf->fpscr);
+#endif
 }
 
 #endif /* CONFIG_XIP */

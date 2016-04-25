@@ -42,6 +42,11 @@ struct __esf {
 	sys_define_gpr_with_alias(lr, r14);
 	sys_define_gpr_with_alias(pc, r15);
 	uint32_t xpsr;
+#ifdef CONFIG_FLOAT
+	float s[16];
+	uint32_t fpscr;
+	uint32_t undefined;
+#endif
 };
 
 typedef struct __esf NANO_ESF;

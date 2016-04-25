@@ -47,6 +47,14 @@ const NANO_ESF _default_esf = {
 	{0xdeaddead}, /* r14/lr */
 	{0xdeaddead}, /* r15/pc */
 	 0xdeaddead,  /* xpsr */
+#ifdef CONFIG_FLOAT
+	{0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead,   /* s0 .. s3 */
+	 0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead,    /* s4 .. s7 */
+	 0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead,    /* s8 .. s11 */
+	 0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead},   /* s12 .. s15 */
+	0xdeaddead,  /* fpscr */
+	0xdeaddead,  /* undefined */
+#endif
 };
 
 /**

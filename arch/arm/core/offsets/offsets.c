@@ -62,6 +62,11 @@ GEN_OFFSET_SYM(tESF, lr);
 GEN_OFFSET_SYM(tESF, pc);
 GEN_OFFSET_SYM(tESF, xpsr);
 
+#ifdef CONFIG_FLOAT
+GEN_OFFSET_SYM(tESF, s);
+GEN_OFFSET_SYM(tESF, fpscr);
+#endif
+
 /* size of the entire tESF structure */
 
 GEN_ABSOLUTE_SYM(__tESF_SIZEOF, sizeof(tESF));
