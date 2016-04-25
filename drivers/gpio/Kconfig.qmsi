@@ -62,7 +62,7 @@ config GPIO_QMSI_AON
 config GPIO_QMSI_AON_NAME
 	string "Driver name"
 	depends on GPIO_QMSI_AON
-	default "gpio_aon"
+	default "GPIO_AON_0"
 
 config GPIO_QMSI_AON_PRI
 	int "Controller interrupt priority"
