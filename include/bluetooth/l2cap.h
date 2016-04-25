@@ -163,6 +163,20 @@ struct bt_l2cap_server {
  */
 int bt_l2cap_server_register(struct bt_l2cap_server *server);
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/** @brief Register L2CAP server on BR/EDR oriented connection.
+ *
+ *  Register L2CAP server for a PSM, each new connection is authorized using
+ *  the accept() callback which in case of success shall allocate the channel
+ *  structure to be used by the new connection.
+ *
+ *  @param server Server structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 /** @brief Connect L2CAP channel
  *
  *  Connect L2CAP channel by PSM, once the connection is completed channel
