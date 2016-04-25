@@ -2,7 +2,7 @@
 
 if [ -z ${ZEPHYR_SDK_INSTALL_DIR} ];
 then
-    echo "ZEPHYR_SDK_INSTLL_DIR is not set.  Unable to continue"
+    echo "ZEPHYR_SDK_INSTALL_DIR is not set.  Unable to continue"
     exit 1
 fi
 
