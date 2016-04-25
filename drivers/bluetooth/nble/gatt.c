@@ -1180,18 +1180,19 @@ void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *ev)
 	struct nble_gatts_rd_reply_params reply_data;
 	const struct bt_gatt_attr *attr;
 	/* TODO: Replace the following with net_buf */
-	uint8_t data[NBLE_BUF_SIZE];
-	int len = 0;
-
-	reply_data.status = -EACCES;
-	memset(data, 0, sizeof(data));
+	uint8_t data[NBLE_BUF_SIZE] = { 0 };
+	int len;
 
 	attr = ev->attr;
 
 	BT_DBG("attr %p", attr);
 
+	memset(&reply_data, 0, sizeof(reply_data));
+
 	if (attr->read) {
 		len = attr->read(NULL, attr, data, sizeof(data), ev->offset);
+	} else {
+		len = BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 	}
 
 	if (len >= 0) {
@@ -1199,6 +1200,7 @@ void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *ev)
 		reply_data.offset = ev->offset;
 	} else {
 		reply_data.status = len;
+		len = 0;
 	}
 
 	reply_data.conn_handle = ev->conn_handle;
