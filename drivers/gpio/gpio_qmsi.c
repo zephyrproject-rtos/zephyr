@@ -50,7 +50,7 @@ static struct gpio_qmsi_runtime gpio_0_runtime;
 
 DEVICE_INIT(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
 	    &gpio_0_runtime, &gpio_0_config,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
 GPIO_SETUP_COMPAT_DEV(gpio_0);
 
 #endif /* CONFIG_GPIO_QMSI_0 */
@@ -65,7 +65,7 @@ static struct gpio_qmsi_runtime gpio_aon_runtime;
 
 DEVICE_INIT(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
 	    &gpio_aon_runtime, &gpio_aon_config,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
 GPIO_SETUP_COMPAT_DEV(gpio_aon);
 
 #endif /* CONFIG_GPIO_QMSI_AON */

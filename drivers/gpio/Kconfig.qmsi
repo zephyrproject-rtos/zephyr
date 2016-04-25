@@ -26,6 +26,14 @@ menuconfig GPIO_QMSI
 
 if GPIO_QMSI
 
+config GPIO_QMSI_INIT_PRIORITY
+        int
+        default 60
+        depends on GPIO_QMSI
+        prompt "Init priority"
+        help
+          Device driver initialization priority.
+
 config GPIO_QMSI_0
 	bool "QMSI GPIO block 0"
 	depends on GPIO_QMSI
