@@ -124,9 +124,6 @@ struct lis3dh_data {
 };
 
 #ifdef CONFIG_LIS3DH_TRIGGER
-int lis3dh_reg_write(struct lis3dh_data *drv_data,
-		     uint8_t reg, uint8_t val);
-
 int lis3dh_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);

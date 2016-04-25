@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include <i2c.h>
 #include <misc/util.h>
 #include <nanokernel.h>
 
@@ -62,8 +63,10 @@ int isl29035_attr_set(struct device *dev,
 
 	raw_val = isl29035_lux_processed_to_raw(val);
 
-	if (isl29035_write_reg(drv_data, lsb_reg, raw_val & 0xFF) != 0 ||
-	    isl29035_write_reg(drv_data, msb_reg, raw_val >> 8) != 0) {
+	if (i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+			       lsb_reg, raw_val & 0xFF) != 0 ||
+	    i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+			       msb_reg, raw_val >> 8) != 0) {
 		DBG("Failed to set attribute.\n");
 		return -EIO;
 	}
@@ -95,7 +98,8 @@ static void isl29035_fiber_cb(void *arg)
 	uint8_t val;
 
 	/* clear interrupt */
-	isl29035_read_reg(drv_data, ISL29035_COMMAND_I_REG, &val);
+	i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+			  ISL29035_COMMAND_I_REG, &val);
 
 	if (drv_data->th_handler != NULL) {
 		drv_data->th_handler(dev, &drv_data->th_trigger);
@@ -143,7 +147,8 @@ int isl29035_init_interrupt(struct device *dev)
 	int ret;
 
 	/* set interrupt persistence */
-	ret = isl29035_update_reg(drv_data, ISL29035_COMMAND_I_REG,
+	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				  ISL29035_COMMAND_I_REG,
 				  ISL29035_INT_PRST_MASK,
 				  ISL29035_INT_PRST_BITS);
 	if (ret != 0) {

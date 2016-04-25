@@ -36,9 +36,11 @@ int sx9500_trigger_set(struct device *dev,
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
-		ret = sx9500_update_bits(data, SX9500_REG_IRQ_MSK,
-					 SX9500_CONV_DONE_IRQ,
-					 SX9500_CONV_DONE_IRQ);
+		ret = i2c_reg_update_byte(data->i2c_master,
+					  data->i2c_slave_addr,
+					  SX9500_REG_IRQ_MSK,
+					  SX9500_CONV_DONE_IRQ,
+					  SX9500_CONV_DONE_IRQ);
 		if (ret)
 			return ret;
 		data->handler_drdy = handler;
@@ -46,9 +48,11 @@ int sx9500_trigger_set(struct device *dev,
 		break;
 
 	case SENSOR_TRIG_NEAR_FAR:
-		ret = sx9500_update_bits(data, SX9500_REG_IRQ_MSK,
-					 SX9500_NEAR_FAR_IRQ,
-					 SX9500_NEAR_FAR_IRQ);
+		ret = i2c_reg_update_byte(data->i2c_master,
+					  data->i2c_slave_addr,
+					  SX9500_REG_IRQ_MSK,
+					  SX9500_NEAR_FAR_IRQ,
+					  SX9500_NEAR_FAR_IRQ);
 		if (ret)
 			return ret;
 		data->handler_near_far = handler;
@@ -87,7 +91,8 @@ static void sx9500_fiber_main(int arg1, int unused)
 	while (1) {
 		nano_fiber_sem_take(&data->sem, TICKS_UNLIMITED);
 
-		ret = sx9500_reg_read(data, SX9500_REG_IRQ_SRC, &reg_val);
+		ret = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+					SX9500_REG_IRQ_SRC, &reg_val);
 		if (ret) {
 			DBG("sx9500: error %d reading IRQ source register\n", ret);
 			continue;
@@ -123,7 +128,8 @@ static void sx9500_gpio_fiber_cb(void *arg)
 	uint8_t reg_val;
 	int ret;
 
-	ret = sx9500_reg_read(data, SX9500_REG_IRQ_SRC, &reg_val);
+	ret = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+				SX9500_REG_IRQ_SRC, &reg_val);
 	if (ret) {
 		DBG("sx9500: error %d reading IRQ source register\n", ret);
 		return;

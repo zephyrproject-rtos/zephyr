@@ -26,62 +26,20 @@
 
 #include "sensor_isl29035.h"
 
-int isl29035_write_reg(struct isl29035_driver_data *drv_data,
-		       uint8_t reg, uint8_t val)
-{
-	uint8_t tx_buf[2] = {reg, val};
-
-	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
-			 ISL29035_I2C_ADDRESS);
-}
-
-int isl29035_read_reg(struct isl29035_driver_data *drv_data,
-		      uint8_t reg, uint8_t *val)
-{
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = val,
-			.len = 1,
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		}
-	};
-
-	return i2c_transfer(drv_data->i2c, msgs, 2, ISL29035_I2C_ADDRESS);
-}
-
-int isl29035_update_reg(struct isl29035_driver_data *drv_data,
-			uint8_t reg, uint8_t mask, uint8_t val)
-{
-	uint8_t old_val = 0;
-	uint8_t new_val;
-
-	if (isl29035_read_reg(drv_data, reg, &old_val) != 0) {
-		return -EIO;
-	}
-
-	new_val = old_val & ~mask;
-	new_val |= val & mask;
-
-	return isl29035_write_reg(drv_data, reg, new_val);
-}
-
 static int isl29035_sample_fetch(struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 	uint8_t msb, lsb;
 	int ret;
 
-	ret = isl29035_read_reg(drv_data, ISL29035_DATA_MSB_REG, &msb);
+	ret = i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				ISL29035_DATA_MSB_REG, &msb);
 	if (ret != 0) {
 		return -EIO;
 	}
 
-	ret = isl29035_read_reg(drv_data, ISL29035_DATA_LSB_REG, &lsb);
+	ret = i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				ISL29035_DATA_LSB_REG, &lsb);
 	if (ret != 0) {
 		return -EIO;
 	}
@@ -138,28 +96,31 @@ static int isl29035_init(struct device *dev)
 	drv_data->data_sample = 0;
 
 	/* clear blownout status bit */
-	ret = isl29035_update_reg(drv_data, ISL29035_ID_REG,
-				  ISL29035_BOUT_MASK, 0);
+	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				  ISL29035_ID_REG, ISL29035_BOUT_MASK, 0);
 	if (ret != 0) {
 		DBG("Failed to clear blownout status bit.\n");
 		return ret;
 	}
 
 	/* set command registers to set default attributes */
-	ret = isl29035_write_reg(drv_data, ISL29035_COMMAND_I_REG, 0);
+	ret = i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				 ISL29035_COMMAND_I_REG, 0);
 	if (ret != 0) {
 		DBG("Failed to clear COMMAND-I.\n");
 		return ret;
 	}
 
-	ret = isl29035_write_reg(drv_data, ISL29035_COMMAND_II_REG, 0);
+	ret = i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				 ISL29035_COMMAND_II_REG, 0);
 	if (ret != 0) {
 		DBG("Failed to clear COMMAND-II.\n");
 		return ret;
 	}
 
 	/* set operation mode */
-	ret = isl29035_update_reg(drv_data, ISL29035_COMMAND_I_REG,
+	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				  ISL29035_COMMAND_I_REG,
 				  ISL29035_OPMODE_MASK,
 				  ISL29035_ACTIVE_OPMODE_BITS);
 	if (ret != 0) {
@@ -168,7 +129,8 @@ static int isl29035_init(struct device *dev)
 	}
 
 	/* set lux range */
-	ret = isl29035_update_reg(drv_data, ISL29035_COMMAND_II_REG,
+	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				  ISL29035_COMMAND_II_REG,
 				  ISL29035_LUX_RANGE_MASK,
 				  ISL29035_LUX_RANGE_BITS);
 	if (ret != 0) {
@@ -177,7 +139,8 @@ static int isl29035_init(struct device *dev)
 	}
 
 	/* set ADC resolution */
-	ret = isl29035_update_reg(drv_data, ISL29035_COMMAND_II_REG,
+	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				  ISL29035_COMMAND_II_REG,
 				  ISL29035_ADC_RES_MASK,
 				  ISL29035_ADC_RES_BITS);
 	if (ret != 0) {

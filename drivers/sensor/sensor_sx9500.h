@@ -65,11 +65,6 @@ struct sx9500_data {
 #endif
 };
 
-int sx9500_reg_read(struct sx9500_data *data, uint8_t reg, uint8_t *val);
-int sx9500_reg_write(struct sx9500_data *data, uint8_t reg, uint8_t val);
-int sx9500_update_bits(struct sx9500_data *data, uint8_t reg,
-		       uint8_t mask, uint8_t val);
-
 #ifdef CONFIG_SX9500_TRIGGER
 int sx9500_setup_interrupt(struct device *dev);
 int sx9500_trigger_set(struct device *dev,

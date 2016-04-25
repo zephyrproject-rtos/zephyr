@@ -48,56 +48,12 @@ static uint8_t sx9500_reg_defaults[] = {
 	0x00,	/* No stuck timeout, no periodic compensation. */
 };
 
-int sx9500_reg_read(struct sx9500_data *data, uint8_t reg, uint8_t *val)
-{
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = val,
-			.len = 1,
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
-	return i2c_transfer(data->i2c_master, msgs, 2, data->i2c_slave_addr);
-}
-
-int sx9500_reg_write(struct sx9500_data *data, uint8_t reg, uint8_t val)
-{
-	uint8_t buf[2] = {reg, val};
-
-	return i2c_write(data->i2c_master, buf, 2, data->i2c_slave_addr);
-}
-
-int sx9500_update_bits(struct sx9500_data *data, uint8_t reg,
-		       uint8_t mask, uint8_t val)
-{
-	uint8_t old_val, new_val;
-	int ret;
-
-	ret = sx9500_reg_read(data, reg, &old_val);
-	if (ret) {
-		return ret;
-	}
-
-	new_val = (old_val & ~mask) | (val & mask);
-
-	if (new_val == old_val) {
-		return 0;
-	}
-
-	return sx9500_reg_write(data, reg, new_val);
-}
-
 static int sx9500_sample_fetch(struct device *dev)
 {
 	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
 
-	return sx9500_reg_read(data, SX9500_REG_STAT, &data->prox_stat);
+	return i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+				 SX9500_REG_STAT, &data->prox_stat);
 }
 
 static int sx9500_channel_get(struct device *dev,
@@ -142,19 +98,22 @@ static int sx9500_init_chip(struct device *dev)
 	/* No interrupts active.  We only activate them when an
 	 * application registers a trigger.
 	 */
-	ret = sx9500_reg_write(data, SX9500_REG_IRQ_MSK, 0);
+	ret = i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
+				 SX9500_REG_IRQ_MSK, 0);
 	if (ret) {
 		return ret;
 	}
 
 	/* Read irq source reg to clear reset status. */
-	ret = sx9500_reg_read(data, SX9500_REG_IRQ_SRC, &val);
+	ret = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+				SX9500_REG_IRQ_SRC, &val);
 	if (ret) {
 		return ret;
 	}
 
-	return sx9500_reg_write(data, SX9500_REG_PROX_CTRL0,
-				1 << CONFIG_SX9500_PROX_CHANNEL);
+	return i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
+				  SX9500_REG_PROX_CTRL0,
+				  1 << CONFIG_SX9500_PROX_CHANNEL);
 }
 
 int sx9500_init(struct device *dev)

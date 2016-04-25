@@ -31,37 +31,6 @@
 #define DBG printk
 #endif /* CONFIG_SENSOR_DEBUG */
 
-static int bmp280_burst_read(struct bmp280_data *data, uint8_t addr,
-			     uint8_t *vals, uint8_t len)
-{
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &addr,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = vals,
-			.len = len,
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
-	return i2c_transfer(data->i2c_master, msgs, 2, data->i2c_slave_addr);
-}
-
-static int bmp280_reg_read(struct bmp280_data *data, uint8_t reg, uint8_t *val)
-{
-	return bmp280_burst_read(data, reg, val, 1);
-}
-
-static int bmp280_reg_write(struct bmp280_data *data, uint8_t reg, uint8_t val)
-{
-	uint8_t buf[2] = {reg, val};
-
-	return i2c_write(data->i2c_master, buf, 2, data->i2c_slave_addr);
-}
-
 /*
  * Compensation code taken from BMP280 datasheet, Section 3.11.3
  * "Compensation formula".
@@ -114,7 +83,8 @@ static int bmp280_sample_fetch(struct device *dev)
 	int32_t adc_press, adc_temp;
 	int ret;
 
-	ret = bmp280_burst_read(data, BMP280_REG_PRESS_MSB, buf, sizeof(buf));
+	ret = i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
+			     BMP280_REG_PRESS_MSB, buf, sizeof(buf));
 	if (ret) {
 		return ret;
 	}
@@ -171,8 +141,9 @@ static void bmp280_read_compensation(struct bmp280_data *data)
 {
 	uint16_t buf[12];
 
-	bmp280_burst_read(data, BMP280_REG_COMP_START,
-			  (uint8_t *)buf, sizeof(buf));
+	i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
+		       BMP280_REG_COMP_START, (uint8_t *)buf,
+		       sizeof(buf));
 
 	data->dig_t1 = sys_le16_to_cpu(buf[0]);
 	data->dig_t2 = sys_le16_to_cpu(buf[1]);
@@ -194,15 +165,18 @@ static int bmp280_chip_init(struct device *dev)
 	struct bmp280_data *data = (struct bmp280_data *) dev->driver_data;
 	uint8_t buf;
 
-	bmp280_reg_read(data, BMP280_REG_ID, &buf);
+	i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+			  BMP280_REG_ID, &buf);
 	if (buf != BMP280_CHIP_ID) {
 		DBG("bmp280: bad chip id %x\n", buf);
 		return -ENOTSUP;
 	}
 
 	bmp280_read_compensation(data);
-	bmp280_reg_write(data, BMP280_REG_CTRL_MEAS, BMP280_CTRL_MEAS_VAL);
-	bmp280_reg_write(data, BMP280_REG_CONFIG, BMP280_CONFIG_VAL);
+	i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
+			   BMP280_REG_CTRL_MEAS, BMP280_CTRL_MEAS_VAL);
+	i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
+			   BMP280_REG_CONFIG, BMP280_CONFIG_VAL);
 
 	return 0;
 }

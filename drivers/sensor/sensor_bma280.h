@@ -166,15 +166,6 @@ struct bma280_data {
 };
 
 #ifdef CONFIG_BMA280_TRIGGER
-int bma280_reg_write(struct bma280_data *drv_data,
-		     uint8_t reg, uint8_t val);
-
-int bma280_reg_read(struct bma280_data *drv_data,
-		    uint8_t reg, uint8_t *val);
-
-int bma280_reg_update(struct bma280_data *drv_data,
-		      uint8_t reg, uint8_t mask, uint8_t val);
-
 int bma280_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);

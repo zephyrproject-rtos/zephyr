@@ -60,88 +60,18 @@ static const struct bmc150_magn_preset {
 	[HIGH_ACCURACY_PRESET] = {47, 83, 20}
 };
 
-static int bmc150_magn_reg_read(struct device *dev, uint8_t reg, uint8_t *val)
-{
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
-	struct bmc150_magn_config *config =
-		(struct bmc150_magn_config *) dev->config->config_info;
-
-	struct i2c_msg msgs[2] = {
-		{
-		       .buf = &reg,
-		       .len = 1,
-		       .flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-		       .buf = val,
-		       .len = 1,
-		       .flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
-	return i2c_transfer(data->i2c_master, msgs, 2, config->i2c_slave_addr);
-}
-
-static int bmc150_magn_reg_bulk_read(struct device *dev, uint8_t reg,
-				     uint8_t *buf, uint32_t len)
-{
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
-	struct bmc150_magn_config *config =
-		(struct bmc150_magn_config *) dev->config->config_info;
-
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = buf,
-			.len = len,
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
-	return i2c_transfer(data->i2c_master, msgs, 2, config->i2c_slave_addr);
-}
-
-static int bmc150_magn_reg_write(struct device *dev, uint8_t reg, uint8_t val)
-{
-	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
-	struct bmc150_magn_config *config =
-		(struct bmc150_magn_config *) dev->config->config_info;
-
-	uint8_t buf[2] = {reg, val};
-
-	return i2c_write(data->i2c_master, buf, 2, config->i2c_slave_addr);
-}
-
-static int bmc150_magn_update_bits(struct device *dev, uint8_t reg,
-				   uint8_t mask, uint8_t val)
-{
-	uint8_t old_val, new_val;
-
-	if (bmc150_magn_reg_read(dev, reg, &old_val) != 0) {
-		return -EIO;
-	}
-
-	new_val = (old_val & ~mask) | (val & mask);
-
-	if (new_val == old_val) {
-		return 0;
-	}
-
-	return bmc150_magn_reg_write(dev, reg, new_val);
-}
-
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 static int bmc150_magn_set_drdy_polarity(struct device *dev, int state)
 {
+	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
+
 	if (state) {
 		state = 1;
 	}
 
-	return bmc150_magn_update_bits(dev, BMC150_MAGN_REG_INT_DRDY,
+	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
+				   BMC150_MAGN_REG_INT_DRDY,
 				   BMC150_MAGN_MASK_DRDY_DR_POLARITY,
 				   state << BMC150_MAGN_SHIFT_DRDY_DR_POLARITY);
 }
@@ -151,29 +81,36 @@ static int bmc150_magn_set_power_mode(struct device *dev,
 				      enum bmc150_magn_power_modes mode,
 				      int state)
 {
+	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
+
 	switch (mode) {
 	case BMC150_MAGN_POWER_MODE_SUSPEND:
-		if (bmc150_magn_update_bits(dev, BMC150_MAGN_REG_POWER,
-					    BMC150_MAGN_MASK_POWER_CTL, !state)
-					    != 0) {
+		if (i2c_reg_update_byte(data->i2c_master,
+					config->i2c_slave_addr,
+					BMC150_MAGN_REG_POWER,
+					BMC150_MAGN_MASK_POWER_CTL,
+					!state) != 0) {
 			return -EIO;
 		}
 		sys_thread_busy_wait(5 * USEC_PER_MSEC);
 
 		return 0;
 	case BMC150_MAGN_POWER_MODE_SLEEP:
-		return bmc150_magn_update_bits(dev,
-					       BMC150_MAGN_REG_OPMODE_ODR,
-					       BMC150_MAGN_MASK_OPMODE,
-					       BMC150_MAGN_MODE_SLEEP <<
-					       BMC150_MAGN_SHIFT_OPMODE);
+		return i2c_reg_update_byte(data->i2c_master,
+					   config->i2c_slave_addr,
+					   BMC150_MAGN_REG_OPMODE_ODR,
+					   BMC150_MAGN_MASK_OPMODE,
+					   BMC150_MAGN_MODE_SLEEP <<
+					   BMC150_MAGN_SHIFT_OPMODE);
 		break;
 	case BMC150_MAGN_POWER_MODE_NORMAL:
-		return bmc150_magn_update_bits(dev,
-					       BMC150_MAGN_REG_OPMODE_ODR,
-					       BMC150_MAGN_MASK_OPMODE,
-					       BMC150_MAGN_MODE_NORMAL <<
-					       BMC150_MAGN_SHIFT_OPMODE);
+		return i2c_reg_update_byte(data->i2c_master,
+					   config->i2c_slave_addr,
+					   BMC150_MAGN_REG_OPMODE_ODR,
+					   BMC150_MAGN_MASK_OPMODE,
+					   BMC150_MAGN_MODE_NORMAL <<
+					   BMC150_MAGN_SHIFT_OPMODE);
 		break;
 	}
 
@@ -182,16 +119,18 @@ static int bmc150_magn_set_power_mode(struct device *dev,
 
 static int bmc150_magn_set_odr(struct device *dev, uint8_t val)
 {
+	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t i;
 
 	for (i = 0; i < ARRAY_SIZE(bmc150_magn_samp_freq_table); ++i) {
 		if (bmc150_magn_samp_freq_table[i].freq == val) {
-			return bmc150_magn_update_bits(dev,
-						       BMC150_MAGN_REG_OPMODE_ODR,
-						       BMC150_MAGN_MASK_ODR,
-						       bmc150_magn_samp_freq_table[i].
-						       reg_val <<
-						       BMC150_MAGN_SHIFT_ODR);
+			return i2c_reg_update_byte(data->i2c_master,
+						   config->i2c_slave_addr,
+						   BMC150_MAGN_REG_OPMODE_ODR,
+						   BMC150_MAGN_MASK_ODR,
+						   bmc150_magn_samp_freq_table[i].
+						   reg_val << BMC150_MAGN_SHIFT_ODR);
 		}
 	}
 
@@ -202,9 +141,11 @@ static int bmc150_magn_set_odr(struct device *dev, uint8_t val)
 static int bmc150_magn_read_rep_xy(struct device *dev)
 {
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t reg_val;
 
-	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_REP_XY, &reg_val) != 0) {
+	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
+			      BMC150_MAGN_REG_REP_XY, &reg_val) != 0) {
 		return -EIO;
 	}
 
@@ -216,9 +157,11 @@ static int bmc150_magn_read_rep_xy(struct device *dev)
 static int bmc150_magn_read_rep_z(struct device *dev)
 {
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t reg_val;
 
-	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_REP_Z, &reg_val) != 0) {
+	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
+			      BMC150_MAGN_REG_REP_Z, &reg_val) != 0) {
 		return -EIO;
 	}
 
@@ -259,9 +202,11 @@ static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy, int rep_z
 static int bmc150_magn_read_odr(struct device *dev)
 {
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t i, odr_val, reg_val;
 
-	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_OPMODE_ODR, &reg_val) != 0) {
+	if (i2c_reg_read(data->i2c_master, config->i2c_slave_addr,
+			 BMC150_MAGN_REG_OPMODE_ODR, &reg_val) != 0) {
 		return -EIO;
 	}
 
@@ -282,11 +227,12 @@ static int bmc150_magn_read_odr(struct device *dev)
 static int bmc150_magn_write_rep_xy(struct device *dev, int val)
 {
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
 
-	if (bmc150_magn_update_bits(dev,
-				    BMC150_MAGN_REG_REP_XY,
-				    BMC150_MAGN_REG_REP_DATAMASK,
-				    BMC150_MAGN_REPXY_TO_REGVAL(val)) != 0) {
+	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
+				BMC150_MAGN_REG_REP_XY,
+				BMC150_MAGN_REG_REP_DATAMASK,
+				BMC150_MAGN_REPXY_TO_REGVAL(val)) != 0) {
 		return -EIO;
 	}
 
@@ -300,11 +246,12 @@ static int bmc150_magn_write_rep_xy(struct device *dev, int val)
 static int bmc150_magn_write_rep_z(struct device *dev, int val)
 {
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
 
-	if (bmc150_magn_update_bits(dev,
-				      BMC150_MAGN_REG_REP_Z,
-				      BMC150_MAGN_REG_REP_DATAMASK,
-				      BMC150_MAGN_REPZ_TO_REGVAL(val)) != 0) {
+	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
+				BMC150_MAGN_REG_REP_Z,
+				BMC150_MAGN_REG_REP_DATAMASK,
+				BMC150_MAGN_REPZ_TO_REGVAL(val)) != 0) {
 		return -EIO;
 	}
 
@@ -371,12 +318,14 @@ static int32_t bmc150_magn_compensate_z(struct bmc150_magn_trim_regs *tregs, int
 static int bmc150_magn_sample_fetch(struct device *dev)
 {
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
 	uint16_t values[BMC150_MAGN_AXIS_XYZR_MAX];
 	int16_t raw_x, raw_y, raw_z;
 	uint16_t rhall;
 
-	if (bmc150_magn_reg_bulk_read(dev, BMC150_MAGN_REG_X_L,
-					(uint8_t *)values, sizeof(values)) != 0) {
+	if (i2c_burst_read(data->i2c_master, config->i2c_slave_addr,
+			   BMC150_MAGN_REG_X_L, (uint8_t *)values,
+			   sizeof(values)) != 0) {
 		sensor_dbg("failed to read sample\n");
 		return -EIO;
 	}
@@ -557,10 +506,12 @@ static int bmc150_magn_trigger_set(struct device *dev,
 		data->handler_drdy = handler;
 		data->trigger_drdy = *trig;
 
-		if (!bmc150_magn_update_bits(dev, BMC150_MAGN_REG_INT_DRDY,
-					     BMC150_MAGN_MASK_DRDY_EN,
-					     state << BMC150_MAGN_SHIFT_DRDY_EN)
-					     != 0) {
+		if (i2c_reg_update_byte(data->i2c_master,
+					config->i2c_slave_addr,
+					BMC150_MAGN_REG_INT_DRDY,
+					BMC150_MAGN_MASK_DRDY_EN,
+					state << BMC150_MAGN_SHIFT_DRDY_EN)
+					!= 0) {
 			sensor_dbg("failed to set DRDY interrupt\n");
 			return -EIO;
 		}
@@ -594,12 +545,16 @@ static void bmc150_magn_fiber_main(int arg1, int gpio_pin)
 {
 	struct device *dev = (struct device *) arg1;
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *)dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t reg_val;
 
 	while (1) {
 		nano_fiber_sem_take(&data->sem, TICKS_UNLIMITED);
 
-		while (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_INT_STATUS, &reg_val) != 0) {
+		while (i2c_reg_read_byte(data->i2c_master,
+					 config->i2c_slave_addr,
+					 BMC150_MAGN_REG_INT_STATUS,
+					 &reg_val) != 0) {
 			sensor_dbg("failed to clear data ready interrupt\n");
 		}
 
@@ -626,6 +581,7 @@ static struct sensor_driver_api bmc150_magn_api_funcs = {
 static int bmc150_magn_init_chip(struct device *dev)
 {
 	struct bmc150_magn_data *data = (struct bmc150_magn_data *) dev->driver_data;
+	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t chip_id;
 	struct bmc150_magn_preset preset;
 
@@ -637,7 +593,8 @@ static int bmc150_magn_init_chip(struct device *dev)
 		return -EIO;
 	}
 
-	if (bmc150_magn_reg_read(dev, BMC150_MAGN_REG_CHIP_ID, &chip_id) != 0) {
+	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
+			      BMC150_MAGN_REG_CHIP_ID, &chip_id) != 0) {
 		sensor_dbg("failed reading chip id\n");
 		goto err_poweroff;
 	}
@@ -654,15 +611,18 @@ static int bmc150_magn_init_chip(struct device *dev)
 		goto err_poweroff;
 	}
 
-	if (bmc150_magn_reg_write(dev, BMC150_MAGN_REG_REP_XY,
-				  BMC150_MAGN_REPXY_TO_REGVAL(preset.rep_xy)) != 0) {
+	if (i2c_reg_write_byte(data->i2c_master, config->i2c_slave_addr,
+			       BMC150_MAGN_REG_REP_XY,
+			       BMC150_MAGN_REPXY_TO_REGVAL(preset.rep_xy))
+			       != 0) {
 		sensor_dbg("failed to set REP XY to %d\n",
 			   preset.rep_xy);
 		goto err_poweroff;
 	}
 
-	if (bmc150_magn_reg_write(dev, BMC150_MAGN_REG_REP_Z,
-				  BMC150_MAGN_REPZ_TO_REGVAL(preset.rep_z)) != 0) {
+	if (i2c_reg_write_byte(data->i2c_master, config->i2c_slave_addr,
+			       BMC150_MAGN_REG_REP_Z,
+			       BMC150_MAGN_REPZ_TO_REGVAL(preset.rep_z)) != 0) {
 		sensor_dbg("failed to set REP Z to %d\n",
 			    preset.rep_z);
 		goto err_poweroff;
@@ -674,9 +634,10 @@ static int bmc150_magn_init_chip(struct device *dev)
 		goto err_poweroff;
 	}
 
-	if (bmc150_magn_update_bits(dev, BMC150_MAGN_REG_INT_DRDY,
-				      BMC150_MAGN_MASK_DRDY_EN,
-				      0 << BMC150_MAGN_SHIFT_DRDY_EN) != 0) {
+	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
+				BMC150_MAGN_REG_INT_DRDY,
+				BMC150_MAGN_MASK_DRDY_EN,
+				0 << BMC150_MAGN_SHIFT_DRDY_EN) != 0) {
 		sensor_dbg("failed to update data ready interrupt enabled bit\n");
 		goto err_poweroff;
 	}
@@ -687,9 +648,9 @@ static int bmc150_magn_init_chip(struct device *dev)
 		goto err_poweroff;
 	}
 
-	if (bmc150_magn_reg_bulk_read(dev, BMC150_MAGN_REG_TRIM_START,
-				      (uint8_t *)&data->tregs, sizeof(data->tregs))
-				      != 0) {
+	if (i2c_burst_read(data->i2c_master, config->i2c_slave_addr,
+			   BMC150_MAGN_REG_TRIM_START, (uint8_t *)&data->tregs,
+			   sizeof(data->tregs)) != 0) {
 		sensor_dbg("failed to read trim regs\n");
 		goto err_poweroff;
 	}

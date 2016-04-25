@@ -20,49 +20,6 @@
 
 #include "sensor_lis3dh.h"
 
-static int lis3dh_i2c_read(struct lis3dh_data *drv_data,
-			   uint8_t cmd, uint8_t *buff,
-			   int buff_len)
-{
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &cmd,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = buff,
-			.len = buff_len,
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
-	return i2c_transfer(drv_data->i2c, msgs, 2, LIS3DH_I2C_ADDRESS);
-}
-
-static inline int lis3dh_reg_burst_read(struct lis3dh_data *drv_data,
-				 uint8_t reg, uint8_t *buff,
-				 int buff_len)
-{
-	reg = reg | LIS3DH_AUTOINCREMENT_ADDR;
-	return lis3dh_i2c_read(drv_data, reg, buff, buff_len);
-}
-
-static inline int lis3dh_reg_read(struct lis3dh_data *drv_data,
-		    uint8_t reg, uint8_t *val)
-{
-	return lis3dh_reg_burst_read(drv_data, reg, val, 1);
-}
-
-int lis3dh_reg_write(struct lis3dh_data *drv_data,
-		     uint8_t reg, uint8_t val)
-{
-	uint8_t tx_buf[2] = {reg, val};
-
-	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
-			 LIS3DH_I2C_ADDRESS);
-}
-
 static int lis3dh_channel_get(struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
@@ -105,7 +62,8 @@ int lis3dh_sample_fetch(struct device *dev)
 	 * since all accel data register addresses are consecutive,
 	 * a burst read can be used to read all the samples
 	 */
-	rc = lis3dh_reg_burst_read(drv_data, LIS3DH_REG_ACCEL_X_LSB, buf, 6);
+	rc = i2c_burst_read(drv_data->i2c, LIS3DH_I2C_ADDRESS,
+			    LIS3DH_REG_ACCEL_X_LSB, buf, 6);
 	if (rc != 0) {
 		DBG("Could not read accel axis data\n");
 		return -EIO;
@@ -141,14 +99,16 @@ int lis3dh_init(struct device *dev)
 	}
 
 	/* enable accel measurements and set power mode and data rate */
-	rc = lis3dh_reg_write(drv_data, LIS3DH_REG_CTRL1, LIS3DH_ACCEL_EN_BITS |
-			      LIS3DH_LP_EN_BIT | LIS3DH_ODR_BITS);
+	rc = i2c_reg_write_byte(drv_data->i2c, LIS3DH_I2C_ADDRESS,
+				LIS3DH_REG_CTRL1, LIS3DH_ACCEL_EN_BITS |
+				LIS3DH_LP_EN_BIT | LIS3DH_ODR_BITS);
 	if (rc != 0) {
 		DBG("Failed to configure chip.\n");
 	}
 
 	/* set full scale range */
-	rc = lis3dh_reg_write(drv_data, LIS3DH_REG_CTRL4, LIS3DH_FS_BITS);
+	rc = i2c_reg_write_byte(drv_data->i2c, LIS3DH_I2C_ADDRESS,
+				LIS3DH_REG_CTRL4, LIS3DH_FS_BITS);
 	if (rc != 0) {
 		DBG("Failed to set full scale range.\n");
 		return -EIO;

@@ -149,15 +149,6 @@ struct isl29035_driver_data {
 };
 
 #ifdef CONFIG_ISL29035_TRIGGER
-int isl29035_write_reg(struct isl29035_driver_data *drv_data,
-		       uint8_t reg, uint8_t val);
-
-int isl29035_read_reg(struct isl29035_driver_data *drv_data,
-		      uint8_t reg, uint8_t *val);
-
-int isl29035_update_reg(struct isl29035_driver_data *drv_data,
-			uint8_t reg, uint8_t mask, uint8_t val);
-
 int isl29035_attr_set(struct device *dev,
 		      enum sensor_channel chan,
 		      enum sensor_attribute attr,

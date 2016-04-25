@@ -15,6 +15,7 @@
  */
 
 #include <device.h>
+#include <i2c.h>
 #include <misc/util.h>
 #include <nanokernel.h>
 #include <sensor.h>
@@ -124,8 +125,8 @@ int lis3dh_init_interrupt(struct device *dev)
 	}
 
 	/* enable data ready interrupt on INT1 line */
-	rc = lis3dh_reg_write(drv_data, LIS3DH_REG_CTRL3,
-			      LIS3DH_EN_DRDY1_INT1);
+	rc = i2c_reg_write_byte(drv_data->i2c, LIS3DH_I2C_ADDRESS,
+				LIS3DH_REG_CTRL3, LIS3DH_EN_DRDY1_INT1);
 	if (rc != 0) {
 		DBG("Failed to enable data ready interrupt.\n");
 		return -EIO;

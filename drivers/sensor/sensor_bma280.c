@@ -20,57 +20,6 @@
 
 #include "sensor_bma280.h"
 
-static int bma280_reg_burst_read(struct bma280_data *drv_data,
-				 uint8_t reg, uint8_t *buff,
-				 int buff_len)
-{
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = buff,
-			.len = buff_len,
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
-	return i2c_transfer(drv_data->i2c, msgs, 2, BMA280_I2C_ADDRESS);
-}
-
-int bma280_reg_read(struct bma280_data *drv_data,
-		    uint8_t reg, uint8_t *val)
-{
-	return bma280_reg_burst_read(drv_data, reg, val, 1);
-}
-
-int bma280_reg_write(struct bma280_data *drv_data,
-		     uint8_t reg, uint8_t val)
-{
-	uint8_t tx_buf[2] = {reg, val};
-
-	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
-			 BMA280_I2C_ADDRESS);
-}
-
-int bma280_reg_update(struct bma280_data *drv_data,
-		      uint8_t reg, uint8_t mask, uint8_t val)
-{
-	uint8_t old_val = 0;
-	uint8_t new_val;
-
-	if (bma280_reg_read(drv_data, reg, &old_val) != 0) {
-		return -EIO;
-	}
-
-	new_val = old_val & ~mask;
-	new_val |= val & mask;
-
-	return bma280_reg_write(drv_data, reg, new_val);
-}
-
 static int bma280_sample_fetch(struct device *dev)
 {
 	struct bma280_data *drv_data = dev->driver_data;
@@ -82,7 +31,8 @@ static int bma280_sample_fetch(struct device *dev)
 	 * since all accel data register addresses are consecutive,
 	 * a burst read can be used to read all the samples
 	 */
-	rc = bma280_reg_burst_read(drv_data, BMA280_REG_ACCEL_X_LSB, buf, 6);
+	rc = i2c_burst_read(drv_data->i2c, BMA280_I2C_ADDRESS,
+			    BMA280_REG_ACCEL_X_LSB, buf, 6);
 	if (rc != 0) {
 		DBG("Could not read accel axis data\n");
 		return -EIO;
@@ -97,8 +47,9 @@ static int bma280_sample_fetch(struct device *dev)
 	lsb = (buf[4] & BMA280_ACCEL_LSB_MASK) >> BMA280_ACCEL_LSB_SHIFT;
 	drv_data->z_sample = (((int8_t)buf[5]) << BMA280_ACCEL_LSB_BITS) | lsb;
 
-	rc = bma280_reg_read(drv_data, BMA280_REG_TEMP,
-			     (uint8_t *)&drv_data->temp_sample);
+	rc = i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+			       BMA280_REG_TEMP,
+			       (uint8_t *)&drv_data->temp_sample);
 	if (rc != 0) {
 		DBG("Could not read temperature data\n");
 		return -EIO;
@@ -178,7 +129,8 @@ int bma280_init(struct device *dev)
 	}
 
 	/* read device ID */
-	rc = bma280_reg_read(drv_data, BMA280_REG_CHIP_ID, &id);
+	rc = i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+			       BMA280_REG_CHIP_ID, &id);
 	if (rc != 0) {
 		DBG("Could not read chip id\n");
 		return -EIO;
@@ -190,16 +142,16 @@ int bma280_init(struct device *dev)
 	}
 
 	/* set the data filter bandwidth */
-	rc = bma280_reg_write(drv_data, BMA280_REG_PMU_BW,
-			      BMA280_PMU_BW);
+	rc = i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+				BMA280_REG_PMU_BW, BMA280_PMU_BW);
 	if (rc != 0) {
 		DBG("Could not set data filter bandwidth\n");
 		return -EIO;
 	}
 
 	/* set g-range */
-	rc = bma280_reg_write(drv_data, BMA280_REG_PMU_RANGE,
-			      BMA280_PMU_RANGE);
+	rc = i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+				BMA280_REG_PMU_RANGE, BMA280_PMU_RANGE);
 	if (rc != 0) {
 		DBG("Could not set data g-range\n");
 		return -EIO;
