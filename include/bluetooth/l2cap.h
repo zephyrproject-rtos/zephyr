@@ -84,7 +84,7 @@ struct bt_l2cap_chan_ops {
 	 *
 	 *  @param chan The channel that has been connected
 	 */
-	void			(*connected)(struct bt_l2cap_chan *chan);
+	void (*connected)(struct bt_l2cap_chan *chan);
 
 	/** Channel disconnected callback
 	 *
@@ -94,7 +94,7 @@ struct bt_l2cap_chan_ops {
 	 *
 	 *  @param chan The channel that has been Disconnected
 	 */
-	void			(*disconnected)(struct bt_l2cap_chan *chan);
+	void (*disconnected)(struct bt_l2cap_chan *chan);
 
 	/** Channel encrypt_change callback
 	 *
@@ -103,7 +103,7 @@ struct bt_l2cap_chan_ops {
 	 *
 	 *  @param chan The channel which has encryption status changed.
 	 */
-	void			(*encrypt_change)(struct bt_l2cap_chan *chan);
+	void (*encrypt_change)(struct bt_l2cap_chan *chan);
 
 	/** Channel alloc_buf callback
 	 *
@@ -114,15 +114,14 @@ struct bt_l2cap_chan_ops {
 	 *
 	 *  @return Allocated buffer.
 	 */
-	struct net_buf		*(*alloc_buf)(struct bt_l2cap_chan *chan);
+	struct net_buf *(*alloc_buf)(struct bt_l2cap_chan *chan);
 
 	/** Channel recv callback
 	 *
 	 *  @param chan The channel receiving data.
 	 *  @param buf Buffer containing incoming data.
 	 */
-	void			(*recv)(struct bt_l2cap_chan *chan,
-					struct net_buf *buf);
+	void (*recv)(struct bt_l2cap_chan *chan, struct net_buf *buf);
 };
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
