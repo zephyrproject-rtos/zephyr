@@ -30,7 +30,6 @@
 #endif /* CONFIG_PRINTK */
 
 #include "rpc.h"
-#include "version.h"
 #include "gap_internal.h"
 #include "gatt_internal.h"
 

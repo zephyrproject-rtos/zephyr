@@ -346,14 +346,29 @@ struct nble_uas_bucket_change {
 };
 void on_nble_uas_bucket_change(const struct nble_uas_bucket_change *);
 
-void nble_get_version_req(void *user_data);
-
-struct nble_version_response {
-	struct version_header version;
-	void *user_data;
+struct nble_version {
+	uint8_t version;
+	uint8_t major;
+	uint8_t minor;
+	uint8_t patch;
+	char version_string[20];
+	uint8_t hash[4];
 };
 
-void on_nble_get_version_rsp(const struct nble_version_response *par);
+typedef void (*ble_get_version_cb_t)(const struct nble_version *ver);
+
+struct nble_gap_get_version_param {
+	ble_get_version_cb_t cb;
+};
+
+struct nble_version_response {
+	struct nble_gap_get_version_param params;
+	struct nble_version ver;
+};
+
+void nble_get_version_req(const struct nble_gap_get_version_param *params);
+
+void on_nble_get_version_rsp(const struct nble_version_response *params);
 
 void nble_gap_dtm_init_req(void *user_data);
 

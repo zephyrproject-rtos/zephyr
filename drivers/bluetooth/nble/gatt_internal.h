@@ -23,18 +23,6 @@
  */
 #define BLE_GATTS_MAX_SERVICES 10
 
-/*
- * Internal APIs used between host and BLE controller
- * Typically they are required if gatt.h APIs can not be mapped 1:1 onto
- * controller API
- */
-
-enum BLE_GATT_IND_TYPES {
-	BLE_GATT_IND_TYPE_NONE = 0,
-	BLE_GATT_IND_TYPE_NOTIFICATION,
-	BLE_GATT_IND_TYPE_INDICATION,
-};
-
 struct nble_gatt_register_req {
 	/* Base address of the attribute table in the Quark mem space */
 	struct bt_gatt_attr *attr_base;

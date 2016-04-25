@@ -23,14 +23,13 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/log.h>
 
-#include "version.h"
 #include "gap_internal.h"
 #include "uart.h"
 #include "conn.h"
 #include "rpc.h"
 
 /* Set the firmware compatible with Nordic BLE RPC */
-static uint8_t compatible_firmware[4] = { '0', '4', '2', '2' };
+static uint8_t compatible_firmware[4] = { '0', '4', '2', '5' };
 
 #if !defined(CONFIG_NBLE_DEBUG_GAP)
 #undef BT_DBG
@@ -68,17 +67,16 @@ static const char *bt_addr_le_str(const bt_addr_le_t *addr)
 
 void on_nble_get_version_rsp(const struct nble_version_response *rsp)
 {
-	BT_DBG("VERSION: %d.%d.%d %.20s", rsp->version.major,
-	       rsp->version.minor, rsp->version.patch,
-	       rsp->version.version_string);
+	BT_DBG("VERSION: %d.%d.%d %.20s", rsp->ver.major, rsp->ver.minor,
+	       rsp->ver.patch, rsp->ver.version_string);
 
-	if (memcmp(&rsp->version.version_string[sizeof(rsp->version.version_string) -
+	if (memcmp(&rsp->ver.version_string[sizeof(rsp->ver.version_string) -
 		   sizeof(compatible_firmware)], compatible_firmware,
 		   sizeof(compatible_firmware))) {
 		BT_ERR("\n\n"
 		       "Incompatible firmware: %.20s, please use version %.4s"
 		       "\n\n",
-		       rsp->version.version_string, compatible_firmware);
+		       rsp->ver.version_string, compatible_firmware);
 		/* TODO: shall we allow to continue */
 	}
 
@@ -352,6 +350,8 @@ void nble_log(const struct nble_log_s *param, char *format, uint8_t len)
 
 void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 {
+	struct nble_gap_get_version_param params;
+
 	if (rsp->status) {
 		BT_ERR("Read bdaddr failed, status %d", rsp->status);
 		return;
@@ -361,7 +361,8 @@ void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 
 	BT_DBG("Local bdaddr: %s", bt_addr_le_str(&nble.addr));
 
-	nble_get_version_req(NULL);
+	params.cb = NULL;
+	nble_get_version_req(&params);
 }
 
 void on_nble_common_rsp(const struct nble_response *rsp)
