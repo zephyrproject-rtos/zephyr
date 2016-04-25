@@ -1190,7 +1190,13 @@ void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *ev)
 	memset(&reply_data, 0, sizeof(reply_data));
 
 	if (attr->read) {
-		len = attr->read(NULL, attr, data, sizeof(data), ev->offset);
+		struct bt_conn *conn = bt_conn_lookup_handle(ev->conn_handle);
+
+		len = attr->read(conn, attr, data, sizeof(data), ev->offset);
+
+		if (conn) {
+			bt_conn_unref(conn);
+		}
 	} else {
 		len = BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 	}
