@@ -42,6 +42,7 @@ struct uart_qmsi_config_info {
 	qm_uart_t instance;
 	clk_periph_t clock_gate;
 	uint32_t baud_divisor;
+	bool hw_fc;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
@@ -67,6 +68,9 @@ static struct uart_qmsi_config_info config_info_0 = {
 				DIVISOR_HIGH(CONFIG_UART_QMSI_0_BAUDRATE),
 				DIVISOR_LOW(CONFIG_UART_QMSI_0_BAUDRATE),
 				0),
+#ifdef CONFIG_UART_QMSI_0_HW_FC
+	.hw_fc = true,
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_0,
@@ -91,6 +95,9 @@ static struct uart_qmsi_config_info config_info_1 = {
 				DIVISOR_HIGH(CONFIG_UART_QMSI_1_BAUDRATE),
 				DIVISOR_LOW(CONFIG_UART_QMSI_1_BAUDRATE),
 				0),
+#ifdef CONFIG_UART_QMSI_1_HW_FC
+	.hw_fc = true,
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_1,
@@ -366,7 +373,7 @@ static int uart_qmsi_init(struct device *dev)
 
 	cfg.line_control = QM_UART_LC_8N1;
 	cfg.baud_divisor = config->baud_divisor;
-	cfg.hw_fc = false;
+	cfg.hw_fc = config->hw_fc;
 	cfg.int_en = false;
 
 	clk_periph_enable(config->clock_gate);

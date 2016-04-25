@@ -29,6 +29,10 @@ config UART_QMSI_0_BAUDRATE
 	help
 	  This option sets the baud rate from the UART_0 device.
 
+config UART_QMSI_0_HW_FC
+	depends on UART_QMSI_0
+	bool "HW flow control for UART_0 controller"
+
 config UART_QMSI_0_IRQ_PRI
 	depends on UART_QMSI_0
 	int "IRQ priority from UART_0 controller"
@@ -52,6 +56,10 @@ config UART_QMSI_1_BAUDRATE
 	default 115200
 	help
 	  This option sets the baud rate from the UART_1 device.
+
+config UART_QMSI_1_HW_FC
+	depends on UART_QMSI_1
+	bool "HW flow control for UART_1 controller"
 
 config UART_QMSI_1_IRQ_PRI
 	depends on UART_QMSI_1
