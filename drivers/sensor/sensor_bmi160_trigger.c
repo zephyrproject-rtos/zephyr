@@ -109,12 +109,16 @@ static void bmi160_fiber_main(int arg1, int unused)
 extern struct bmi160_device_data bmi160_data;
 
 #ifdef CONFIG_BMI160_TRIGGER_SOURCE_GPIO
-static void bmi160_gpio_callback(struct device *port, uint32_t pin)
+static void bmi160_gpio_callback(struct device *port,
+				 struct gpio_callback *cb, uint32_t pin)
 {
+	struct bmi160_device_data *bmi160 =
+		CONTAINER_OF(cb, struct bmi160_device_data, gpio_cb);
+
 #if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
-	nano_sem_give(&bmi160_data.sem);
+	nano_sem_give(&bmi160->sem);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &bmi160_data.work);
+	nano_isr_fifo_put(sensor_get_work_fifo(), &bmi160->work);
 #endif
 }
 #else
@@ -122,10 +126,13 @@ QUARK_SE_IPM_DEFINE(bmi160_ipm, 0, QUARK_SE_IPM_INBOUND);
 
 static void bmi160_ipm_callback(void *context, uint32_t id, volatile void *data)
 {
+	struct bmi160_device_data *bmi160 =
+		CONTAINER_OF(context, struct bmi160_device_data, ipm);
+
 #if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
-	nano_sem_give(&bmi160_data.sem);
+	nano_sem_give(&bmi160->sem);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &bmi160_data.work);
+	nano_isr_fifo_put(sensor_get_work_fifo(), &bmi160->work);
 #endif
 }
 #endif
@@ -325,7 +332,11 @@ int bmi160_trigger_mode_init(struct device *dev)
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
-	gpio_set_callback(bmi160->gpio, bmi160_gpio_callback);
+	gpio_init_callback(&bmi160->gpio_cb,
+			   bmi160_gpio_callback,
+			   BIT(cfg->int_pin));
+
+	gpio_add_callback(bmi160->gpio, &bmi160->gpio_cb);
 	gpio_pin_enable_callback(bmi160->gpio, cfg->int_pin);
 #elif defined(CONFIG_BMI160_TRIGGER_SOURCE_IPM)
 	ipm_register_callback(bmi160->ipm, bmi160_ipm_callback, NULL);

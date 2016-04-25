@@ -443,6 +443,7 @@ struct bmi160_device_data {
 	struct device *spi;
 #if defined(CONFIG_BMI160_TRIGGER) && defined(CONFIG_BMI160_TRIGGER_SOURCE_GPIO)
 	struct device *gpio;
+	struct gpio_callback gpio_cb;
 #elif defined(CONFIG_BMI160_TRIGGER) && \
 				defined(CONFIG_BMI160_TRIGGER_SOURCE_IPM)
 	struct device *ipm;
