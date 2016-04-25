@@ -125,7 +125,8 @@ void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf)
 
 void net_buf_unref(struct net_buf *buf)
 {
-	NET_BUF_DBG("buf %p ref %u fifo %p\n", buf, buf->ref, buf->free);
+	NET_BUF_DBG("buf %p ref %u fifo %p frags %p\n", buf, buf->ref,
+		    buf->free, buf->frags);
 	NET_BUF_ASSERT(buf->ref > 0);
 
 	while (buf && --buf->ref == 0) {
@@ -295,4 +296,31 @@ size_t net_buf_headroom(struct net_buf *buf)
 size_t net_buf_tailroom(struct net_buf *buf)
 {
 	return buf->size - net_buf_headroom(buf) - buf->len;
+}
+
+struct net_buf *net_buf_frag_last(struct net_buf *buf)
+{
+	while (buf->frags) {
+		buf = buf->frags;
+	}
+
+	return buf;
+}
+
+void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag)
+{
+	if (parent->frags) {
+		net_buf_frag_last(frag)->frags = parent->frags;
+	}
+	parent->frags = net_buf_ref(frag);
+}
+
+void net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
+{
+	NET_BUF_ASSERT(parent->frags);
+	NET_BUF_ASSERT(parent->frags == frag);
+
+	parent->frags = frag->frags;
+	frag->frags = NULL;
+	net_buf_unref(frag);
 }

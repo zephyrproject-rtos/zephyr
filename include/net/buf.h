@@ -431,6 +431,26 @@ static inline uint8_t *net_buf_tail(struct net_buf *buf)
 	return buf->data + buf->len;
 }
 
+/** @brief Find the last fragment in the fragment list.
+ *
+ * @return Pointer to last fragment in the list.
+ */
+struct net_buf *net_buf_frag_last(struct net_buf *frags);
+
+/** @brief Insert a new fragment to a chain of bufs.
+ */
+void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag);
+
+/** @def net_buf_frag_add
+ *  @brief Add a new fragment to the end of a chain of bufs.
+ */
+#define net_buf_frag_add(parent, frag) \
+	net_buf_frag_insert(net_buf_frag_last(parent), frag)
+
+/** @brief Delete existing fragment from a chain of bufs.
+ */
+void net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
+
 #ifdef __cplusplus
 }
 #endif
