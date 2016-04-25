@@ -47,7 +47,7 @@ void main(void)
 
 	nano_timer_init(&timer, timer_data);
 
-	aon_gpio = device_get_binding("GPIO_1");
+	aon_gpio = device_get_binding("GPIO_AON_0");
 	if (!aon_gpio) {
 		printf("aon_gpio device not found.\n");
 		return;
