@@ -357,15 +357,15 @@ static inline int i2c_reg_write_byte(struct device *dev, uint16_t dev_addr,
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for updating.
  * @param reg_addr Address of the internal register being updated.
- * @param value Value for updating internal register.
  * @param mask Bitmask for updating internal register.
+ * @param value Value for updating internal register.
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
 static inline int i2c_reg_update_byte(struct device *dev, uint8_t dev_addr,
-				      uint8_t reg_addr, uint8_t value,
-				      uint8_t mask)
+				      uint8_t reg_addr, uint8_t mask,
+				      uint8_t value)
 {
 	uint8_t old_value, new_value;
 	int rc;
