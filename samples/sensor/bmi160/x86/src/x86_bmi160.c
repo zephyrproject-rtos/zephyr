@@ -31,8 +31,10 @@ QUARK_SE_IPM_DEFINE(bmi160_ipm, 0, QUARK_SE_IPM_OUTBOUND);
 #define BMI160_INTERRUPT_PIN		4
 
 struct device *ipm;
+struct gpio_callback cb;
 
-static void aon_gpio_callback(struct device *port, uint32_t pin)
+static void aon_gpio_callback(struct device *port,
+			      struct gpio_callback *cb, uint32_t pins)
 {
 	ipm_send(ipm, 0, 0, NULL, 0);
 }
@@ -57,7 +59,9 @@ void main(void)
 		return;
 	}
 
-	gpio_set_callback(aon_gpio, aon_gpio_callback);
+	gpio_init_callback(&cb, aon_gpio_callback, BIT(BMI160_INTERRUPT_PIN));
+	gpio_add_callback(aon_gpio, &cb);
+
 	gpio_pin_configure(aon_gpio, BMI160_INTERRUPT_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
