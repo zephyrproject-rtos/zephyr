@@ -6,51 +6,48 @@ Bluetooth
 Initialization
 **************
 
-Initialize the Bluetooth subsystem using :c:func:`bt_init()`. Caller shall
-be either task or a fiber. Caller must ensure that function succeeds by
-checking return code for errors.
-
-APIs
-****
-
-The following Bluetooth APIs are provided:
-
-:c:func:`bt_enable()`
-   Enables the Bluetooth subsystem.
-
-:c:func:`bt_le_adv_start()`
-   Sets up advertisement, scans for data, and starts advertising.
-
-.. todo:: Describe all API
+The Bluetooth subsystem is initialized using the :c:func:`bt_init()`
+function. The caller shall be either a task or a fiber. The caller
+should ensure that function succeeds by checking the return code for
+errors. If a function pointer is passed to :c:func:`bt_init()` the
+initialization happens synchronously and the completion is notified
+through the given function.
 
 Bluetooth Application Example
 *****************************
 
 A simple Bluetooth beacon application is shown below. The application
-initializes a Bluetooth Subsystem and enables non-connectable advertising.
-It acts as a Bluetooth Low Energy broadcaster.
+initializes the Bluetooth Subsystem and enables non-connectable
+advertising, effectively acting as a Bluetooth Low Energy broadcaster.
 
 .. literalinclude:: ../../../samples/bluetooth/beacon/src/main.c
    :language: c
    :lines: 19-
    :linenos:
 
+The key APIs employed by the beacon sample are :c:func:`bt_enable()`
+that's used to initialize Bluetooth and then :c:func:`bt_le_adv_start()`
+that's used to start advertising a specific combination of advertising
+and scan response data.
+
 Testing with QEMU
 *****************
 
-A Bluetooth application might be tested with QEMU. In order to do so,
-a Bluetooth controller needs to be connected to the emulator.
+It's possible to test Bluetooth applications using QEMU. In order to do
+so, a Bluetooth controller needs to be exported from the host OS (Linux)
+to the emulator.
 
 Using Host System Bluetooth Controller in QEMU
 ==============================================
 
-The host system's Bluetooth controller is connected to the second QEMU
+The host OS's Bluetooth controller is connected to the second QEMU
 serial line using a UNIX socket. This socket employs the QEMU option
 :literal:`-serial unix:/tmp/bt-server-bredr`. This option is already
-added to QEMU through :makevar:`QEMU_EXTRA_FLAGS` in the Makefile.
+added to QEMU through :makevar:`QEMU_EXTRA_FLAGS` in most Bluetooth
+sample Makefiles' and made available through the 'qemu' make target.
 
-On the Host side, BlueZ allows to "connect" Bluetooth controller through
-a so-called user channel.
+On the host side, BlueZ allows to export its Bluetooth controller
+through a so-called user channel for QEMU to use:
 
 #. Make sure that the Bluetooth controller is down
 
@@ -70,7 +67,6 @@ a so-called user channel.
 
       $ make qemu
 
-
 Running QEMU now results in a connection with the second serial line to
-:literal:`bt-server-bredr` UNIX socket.
-Now, an application can use the Bluetooth device.
+the :literal:`bt-server-bredr` UNIX socket, letting the application
+access the Bluetooth controller.
