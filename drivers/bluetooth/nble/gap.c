@@ -65,6 +65,15 @@ static const char *bt_addr_le_str(const bt_addr_le_t *addr)
 }
 #endif /* CONFIG_BLUETOOTH_DEBUG */
 
+static void clear_bonds(const bt_addr_le_t *addr)
+{
+	struct nble_gap_sm_clear_bond_req_params params = { { 0 }, };
+
+	bt_addr_le_copy(&params.addr, addr);
+
+	nble_gap_sm_clear_bonds_req(&params);
+}
+
 void on_nble_get_version_rsp(const struct nble_version_response *rsp)
 {
 	BT_DBG("VERSION: %d.%d.%d %.20s", rsp->ver.major, rsp->ver.minor,
@@ -79,6 +88,9 @@ void on_nble_get_version_rsp(const struct nble_version_response *rsp)
 		       rsp->ver.version_string, compatible_firmware);
 		/* TODO: shall we allow to continue */
 	}
+
+	/* Make sure the nRF51 persistent memory is cleared */
+	clear_bonds(BT_ADDR_LE_ANY);
 
 	if (bt_ready_cb) {
 		bt_ready_cb(0);
