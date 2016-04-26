@@ -89,8 +89,4 @@ void main(void)
 
 	TC_END_RESULT(rv);
 	TC_END_REPORT(rv);
-
-	for (;;) {
-		nano_cpu_idle();
-	}
 }
