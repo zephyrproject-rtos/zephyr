@@ -126,8 +126,7 @@ QUARK_SE_IPM_DEFINE(bmi160_ipm, 0, QUARK_SE_IPM_INBOUND);
 
 static void bmi160_ipm_callback(void *context, uint32_t id, volatile void *data)
 {
-	struct bmi160_device_data *bmi160 =
-		CONTAINER_OF(context, struct bmi160_device_data, ipm);
+	struct bmi160_device_data *bmi160 = context;
 
 #if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
 	nano_sem_give(&bmi160->sem);
@@ -339,7 +338,7 @@ int bmi160_trigger_mode_init(struct device *dev)
 	gpio_add_callback(bmi160->gpio, &bmi160->gpio_cb);
 	gpio_pin_enable_callback(bmi160->gpio, cfg->int_pin);
 #elif defined(CONFIG_BMI160_TRIGGER_SOURCE_IPM)
-	ipm_register_callback(bmi160->ipm, bmi160_ipm_callback, NULL);
+	ipm_register_callback(bmi160->ipm, bmi160_ipm_callback, bmi160);
 	ipm_set_enabled(bmi160->ipm, 1);
 #endif
 
