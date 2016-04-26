@@ -219,5 +219,5 @@ void isr_event_send(kevent_t event)
 	ASSERT_EVENT_IS_VALID(event, __func__);
 
 	nano_isr_stack_push(&_k_command_stack,
-						(uint32_t)event | KERNEL_CMD_EVENT_TYPE);
+			    (uint32_t)event | KERNEL_CMD_EVENT_TYPE);
 }
