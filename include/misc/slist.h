@@ -178,6 +178,27 @@ static inline void sys_slist_append(sys_slist_t *list,
 }
 
 /**
+ * @brief Insert a node to the given list
+ *
+ * @param list A pointer on the list to affect
+ * @param prev A pointer on the previous node
+ * @param node A pointer on the node to insert
+ */
+static inline void sys_slist_insert(sys_slist_t *list,
+				    sys_snode_t *prev,
+				    sys_snode_t *node)
+{
+	if (!prev) {
+		sys_slist_prepend(list, node);
+	} else if (!prev->next) {
+		sys_slist_append(list, node);
+	} else {
+		node->next = prev->next;
+		prev->next = node;
+	}
+}
+
+/**
  * @brief Remove a node
  *
  * @param list A pointer on the list to affect
