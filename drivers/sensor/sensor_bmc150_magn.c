@@ -208,8 +208,8 @@ static int bmc150_magn_read_odr(struct device *dev)
 	struct bmc150_magn_config *config = dev->config->config_info;
 	uint8_t i, odr_val, reg_val;
 
-	if (i2c_reg_read(data->i2c_master, config->i2c_slave_addr,
-			 BMC150_MAGN_REG_OPMODE_ODR, &reg_val) != 0) {
+	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
+			      BMC150_MAGN_REG_OPMODE_ODR, &reg_val) != 0) {
 		return -EIO;
 	}
 
