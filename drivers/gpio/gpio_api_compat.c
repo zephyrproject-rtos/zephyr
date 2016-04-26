@@ -18,6 +18,8 @@
  * @file Implementation of the API 1.0 GPIO compatibility layer
  */
 
+#include <errno.h>
+
 #include <gpio.h>
 #include <misc/util.h>
 
@@ -63,16 +65,16 @@ int gpio_set_callback(struct device *dev, gpio_callback_t callback)
 	int ret;
 
 	if (!compat) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	ret = gpio_remove_callback(dev, &compat->d->cb);
-	if (ret != DEV_OK) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	if (!callback) {
-		return DEV_OK;
+		return 0;
 	}
 
 	compat->d->handler = callback;
