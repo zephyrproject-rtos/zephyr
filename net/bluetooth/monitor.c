@@ -33,6 +33,12 @@
 
 #include "monitor.h"
 
+/* This is the same default priority as for other console handlers,
+ * except that we're not exporting it as a Kconfig variable until a
+ * clear need arises.
+ */
+#define MONITOR_INIT_PRIORITY 60
+
 static struct device *monitor_dev;
 
 extern int _prf(int (*func)(), void *dest,
@@ -171,4 +177,4 @@ static int bt_monitor_init(struct device *d)
 	return 0;
 }
 
-SYS_INIT(bt_monitor_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(bt_monitor_init, PRIMARY, MONITOR_INIT_PRIORITY);
