@@ -170,7 +170,7 @@ static inline bool _cc2520_command_strobe(struct cc2520_spi *spi,
 {
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, &instruction, 1) == DEV_OK);
+	return (spi_write(spi->dev, &instruction, 1) == 0);
 }
 
 static inline bool _cc2520_command_strobe_snop(struct cc2520_spi *spi,
@@ -183,7 +183,7 @@ static inline bool _cc2520_command_strobe_snop(struct cc2520_spi *spi,
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, ins, 2) == DEV_OK);
+	return (spi_write(spi->dev, ins, 2) == 0);
 }
 
 #define DEFINE_STROBE_INSTRUCTION(__ins_name, __ins)			\

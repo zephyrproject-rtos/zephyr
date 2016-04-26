@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
@@ -222,7 +224,7 @@ uint8_t _cc2520_read_reg(struct cc2520_spi *spi,
 	spi_slave_select(spi->dev, spi->slave);
 
 	if (spi_transceive(spi->dev, spi->cmd_buf, 3,
-			   spi->cmd_buf, 3) == DEV_OK) {
+			   spi->cmd_buf, 3) == 0) {
 		return spi->cmd_buf[2];
 	}
 
@@ -238,7 +240,7 @@ bool _cc2520_write_reg(struct cc2520_spi *spi, bool freg,
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, spi->cmd_buf, 3) == DEV_OK);
+	return (spi_write(spi->dev, spi->cmd_buf, 3) == 0);
 }
 
 bool _cc2520_write_ram(struct cc2520_spi *spi, uint16_t addr,
@@ -251,7 +253,7 @@ bool _cc2520_write_ram(struct cc2520_spi *spi, uint16_t addr,
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, spi->cmd_buf, len + 2) == DEV_OK);
+	return (spi_write(spi->dev, spi->cmd_buf, len + 2) == 0);
 }
 
 static uint8_t _cc2520_status(struct cc2520_spi *spi)
@@ -261,7 +263,7 @@ static uint8_t _cc2520_status(struct cc2520_spi *spi)
 	spi_slave_select(spi->dev, spi->slave);
 
 	if (spi_transceive(spi->dev, spi->cmd_buf, 1,
-			   spi->cmd_buf, 1) == DEV_OK) {
+			   spi->cmd_buf, 1) == 0) {
 		return spi->cmd_buf[0];
 	}
 
@@ -413,7 +415,7 @@ static inline bool write_txfifo_length(struct cc2520_spi *spi,
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, spi->cmd_buf, 2) == DEV_OK);
+	return (spi_write(spi->dev, spi->cmd_buf, 2) == 0);
 }
 
 static inline bool write_txfifo_content(struct cc2520_spi *spi,
@@ -426,7 +428,7 @@ static inline bool write_txfifo_content(struct cc2520_spi *spi,
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, cmd, packetbuf_totlen(buf) + 1) == DEV_OK);
+	return (spi_write(spi->dev, cmd, packetbuf_totlen(buf) + 1) == 0);
 }
 
 static inline bool verify_txfifo_status(struct cc2520_context *cc2520,
@@ -491,7 +493,7 @@ static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
 	spi_slave_select(spi->dev, spi->slave);
 
 	if (spi_transceive(spi->dev, spi->cmd_buf, 1,
-			   spi->cmd_buf, 2) == DEV_OK) {
+			   spi->cmd_buf, 2) == 0) {
 		return spi->cmd_buf[1];
 	}
 
@@ -517,7 +519,7 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	if (spi_transceive(spi->dev, spi->cmd_buf, 1, data, len+1) != DEV_OK) {
+	if (spi_transceive(spi->dev, spi->cmd_buf, 1, data, len+1) != 0) {
 		return false;
 	}
 
@@ -539,7 +541,7 @@ static inline bool read_rxfifo_footer(struct cc2520_spi *spi,
 	spi_slave_select(spi->dev, spi->slave);
 
 	if (spi_transceive(spi->dev, spi->cmd_buf, 1,
-			   spi->cmd_buf, len+1) != DEV_OK) {
+			   spi->cmd_buf, len+1) != 0) {
 		return false;
 	}
 
@@ -633,7 +635,7 @@ static int cc2520_set_channel(struct device *dev, uint16_t channel)
 	DBG("%s: %u\n", __func__, channel);
 
 	if (channel < 11 || channel > 26) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* See chapter 16 */
@@ -641,10 +643,10 @@ static int cc2520_set_channel(struct device *dev, uint16_t channel)
 
 	if (!write_reg_freqctrl(&cc2520->spi, FREQCTRL_FREQ(channel))) {
 		DBG("%s: FAILED\n", __func__);
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int cc2520_set_pan_id(struct device *dev, uint16_t pan_id)
@@ -657,10 +659,10 @@ static int cc2520_set_pan_id(struct device *dev, uint16_t pan_id)
 
 	if (!write_mem_pan_id(&cc2520->spi, (uint8_t *) &pan_id)) {
 		DBG("%s: FAILED\n", __func__);
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int cc2520_set_short_addr(struct device *dev, uint16_t short_addr)
@@ -673,10 +675,10 @@ static int cc2520_set_short_addr(struct device *dev, uint16_t short_addr)
 
 	if (!write_mem_short_addr(&cc2520->spi, (uint8_t *) &short_addr)) {
 		DBG("%s: FAILED\n", __func__);
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
@@ -691,7 +693,7 @@ static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 
 	if (!write_mem_ext_addr(&cc2520->spi, ext_addr)) {
 		DBG("%s: FAILED\n", __func__);
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	DBG("%s: IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -699,7 +701,7 @@ static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	    ieee_addr[0], ieee_addr[1], ieee_addr[2], ieee_addr[3],
 	    ieee_addr[4], ieee_addr[5], ieee_addr[6], ieee_addr[7]);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int cc2520_set_txpower(struct device *dev, short dbm)
@@ -746,10 +748,10 @@ static int cc2520_set_txpower(struct device *dev, short dbm)
 		goto error;
 	}
 
-	return DEV_OK;
+	return 0;
 error:
 	DBG("%s: FAILED\n");
-	return DEV_FAIL;
+	return -EIO;
 }
 
 static int cc2520_tx(struct device *dev, struct net_buf *buf)
@@ -796,13 +798,13 @@ static int cc2520_tx(struct device *dev, struct net_buf *buf)
 
 	enable_reception(cc2520);
 
-	return DEV_OK;
+	return 0;
 error:
 	atomic_set(&cc2520->tx, 0);
 	instruct_sflushtx(&cc2520->spi);
 	enable_reception(cc2520);
 
-	return DEV_FAIL;
+	return -EIO;
 }
 
 static const uint8_t *cc2520_get_mac(struct device *dev)
@@ -834,7 +836,7 @@ static int cc2520_start(struct device *dev)
 	if (!instruct_sxoscon(&cc2520->spi) ||
 	    !instruct_srxon(&cc2520->spi) ||
 	    !verify_osc_stabilization(cc2520)) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	flush_rxfifo(cc2520);
@@ -842,7 +844,7 @@ static int cc2520_start(struct device *dev)
 	enable_fifop_interrupt(cc2520, true);
 	enable_sfd_interrupt(cc2520, true);
 
-	return DEV_OK;
+	return 0;
 }
 
 static int cc2520_stop(struct device *dev)
@@ -856,12 +858,12 @@ static int cc2520_stop(struct device *dev)
 
 	if (!instruct_srfoff(&cc2520->spi) ||
 	    !instruct_sxoscoff(&cc2520->spi)) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	flush_rxfifo(cc2520);
 
-	return DEV_OK;
+	return 0;
 }
 
 
@@ -902,7 +904,7 @@ static int cc2520_prepare(const void *payload, unsigned short payload_len)
 
 static int cc2520_transmit(struct net_buf *buf, unsigned short transmit_len)
 {
-	if (cc2520_tx(cc2520_sglt, buf) != DEV_OK) {
+	if (cc2520_tx(cc2520_sglt, buf) != 0) {
 		return RADIO_TX_ERR;
 	}
 
@@ -939,12 +941,12 @@ static int cc2520_pending_packet(void)
 
 static int cc2520_on(void)
 {
-	return (cc2520_start(cc2520_sglt) == DEV_OK);
+	return (cc2520_start(cc2520_sglt) == 0);
 }
 
 static int cc2520_off(void)
 {
-	return (cc2520_stop(cc2520_sglt) == DEV_OK);
+	return (cc2520_stop(cc2520_sglt) == 0);
 }
 
 static radio_result_t cc2520_get_value(radio_param_t param,
@@ -1043,7 +1045,7 @@ static int power_on_and_setup(struct device *dev)
 	_usleep(150);
 
 	if (!verify_osc_stabilization(cc2520)) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* Default settings to always write (see chapter 28 part 1) */
@@ -1058,7 +1060,7 @@ static int power_on_and_setup(struct device *dev)
 	    !write_reg_adctest0(&cc2520->spi, CC2520_ADCTEST0_DEFAULT) ||
 	    !write_reg_adctest1(&cc2520->spi, CC2520_ADCTEST1_DEFAULT) ||
 	    !write_reg_adctest2(&cc2520->spi, CC2520_ADCTEST2_DEFAULT)) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* EXTCLOCK0: Disabling external clock
@@ -1077,7 +1079,7 @@ static int power_on_and_setup(struct device *dev)
 	    !write_reg_srcmatch(&cc2520->spi, SRCMATCH_DEFAULTS) ||
 	    !write_reg_fifopctrl(&cc2520->spi,
 				 FIFOPCTRL_FIFOP_THR(CC2520_TX_THRESHOLD))) {
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* Cleaning up TX fifo */
@@ -1087,7 +1089,7 @@ static int power_on_and_setup(struct device *dev)
 
 	_cc2520_print_gpio_config(dev);
 
-	return DEV_OK;
+	return 0;
 }
 
 static inline int configure_spi(struct device *dev)
@@ -1102,15 +1104,15 @@ static inline int configure_spi(struct device *dev)
 	if (cc2520->spi.dev) {
 		cc2520->spi.slave = CONFIG_TI_CC2520_SPI_SLAVE;
 
-		if (spi_configure(cc2520->spi.dev, &spi_conf) != DEV_OK ||
+		if (spi_configure(cc2520->spi.dev, &spi_conf) != 0 ||
 		    spi_slave_select(cc2520->spi.dev,
-				     cc2520->spi.slave) != DEV_OK) {
+				     cc2520->spi.slave) != 0) {
 			cc2520->spi.dev = NULL;
-			return DEV_FAIL;
+			return -EIO;
 		}
 	}
 
-	return DEV_OK;
+	return 0;
 }
 
 int cc2520_init(struct device *dev)
@@ -1126,27 +1128,27 @@ int cc2520_init(struct device *dev)
 	cc2520->gpios = cc2520_configure_gpios();
 	if (!cc2520->gpios) {
 		DBG("Configuring GPIOS failed\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
-	if (configure_spi(dev) != DEV_OK) {
+	if (configure_spi(dev) != 0) {
 		DBG("Configuring SPI failed\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	DBG("GPIO and SPI configured\n");
 
-	if (power_on_and_setup(dev) != DEV_OK) {
+	if (power_on_and_setup(dev) != 0) {
 		DBG("Configuring CC2520 failed\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	/* That should not be done here... */
-	if (cc2520_set_pan_id(dev, 0xFFFF) != DEV_OK ||
-	    cc2520_set_short_addr(dev, 0x0000) != DEV_OK ||
-	    cc2520_set_channel(dev, CONFIG_TI_CC2520_CHANNEL) != DEV_OK) {
+	if (cc2520_set_pan_id(dev, 0xFFFF) != 0 ||
+	    cc2520_set_short_addr(dev, 0x0000) != 0 ||
+	    cc2520_set_channel(dev, CONFIG_TI_CC2520_CHANNEL) != 0) {
 		DBG("Could not initialize properly cc2520\n");
-		return DEV_FAIL;
+		return -EIO;
 	}
 
 	task_fiber_start(cc2520->cc2520_rx_stack,
@@ -1158,7 +1160,7 @@ int cc2520_init(struct device *dev)
 	cc2520_sglt = dev;
 #endif
 
-	return DEV_OK;
+	return 0;
 }
 
 struct cc2520_context cc2520_context_data;
