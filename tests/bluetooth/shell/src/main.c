@@ -1579,6 +1579,51 @@ static void cmd_l2cap_send(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+/*
+ * TODO: fill/implement channel startup/callback data when need to be used
+ * similar like for LE case, for now can be empty.
+ */
+static struct bt_l2cap_chan l2cap_bredr_chan = {};
+
+static int l2cap_bredr_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+{
+	printk("Incoming BR/EDR conn %p\n", conn);
+
+	if (l2cap_bredr_chan.conn) {
+		printk("No channels available");
+		return -ENOMEM;
+	}
+
+	*chan = &l2cap_bredr_chan;
+
+	return 0;
+}
+
+static struct bt_l2cap_server br_server = {
+	.accept = l2cap_bredr_accept,
+};
+
+static void cmd_bredr_l2cap_register(int argc, char *argv[])
+{
+	if (argc < 2) {
+		printk("psm required\n");
+		return;
+	}
+
+	if (br_server.psm) {
+		printk("Already registered\n");
+		return;
+	}
+
+	br_server.psm = strtoul(argv[1], NULL, 16);
+
+	if (bt_l2cap_br_server_register(&br_server) < 0) {
+		printk("Unable to register psm\n");
+		server.psm = 0;
+		return;
+	}
+}
+
 static void cmd_bredr_discoverable(int argc, char *argv[])
 {
 	int err;
@@ -1681,6 +1726,7 @@ static const struct shell_cmd commands[] = {
 	{ "br-pscan", cmd_bredr_connectable },
 	{ "br-connect", cmd_connect_bredr },
 	{ "br-discovery", cmd_bredr_discovery },
+	{ "br-l2cap-register", cmd_bredr_l2cap_register },
 #endif
 	{ NULL, NULL }
 };
