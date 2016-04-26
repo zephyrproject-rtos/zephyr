@@ -10,4 +10,5 @@ to applications.
    :maxdepth: 1
 
    networking/networking.rst
+   bluetooth/bluetooth.rst
    sensor

@@ -1,7 +1,7 @@
 .. _bluetooth:
 
-Bluetooth Implementation
-########################
+Bluetooth
+#########
 
 Initialization
 **************
