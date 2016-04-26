@@ -25,6 +25,8 @@
  *            (GPIOs and AFIOs)
  */
 
+#include <errno.h>
+
 #include <device.h>
 #include "soc.h"
 #include "soc_registers.h"

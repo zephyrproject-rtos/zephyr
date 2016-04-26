@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+
 #include "soc.h"
 #include <device.h>
 #include <misc/util.h>
