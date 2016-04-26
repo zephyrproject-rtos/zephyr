@@ -16,9 +16,9 @@
  */
 
 /**
- * @file Atomic ops for ARC EM
+ * @file Atomic ops in pure C
  *
- * This module provides the atomic operators for ARC EM family processors
+ * This module provides the atomic operators for processors
  * which do not support native atomic operations.
  *
  * The atomic operations are guaranteed to be atomic with respect
@@ -30,7 +30,7 @@
 
 #include <atomic.h>
 #include <toolchain.h>
-#include <arch/arc/v2/irq.h>
+#include <arch/cpu.h>
 
 /**
  *

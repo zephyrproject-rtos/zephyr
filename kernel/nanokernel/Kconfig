@@ -106,4 +106,13 @@ config ERRNO
 	include errno.h provided by the C library (libc) to use the errno symbol.
 	The C library must access the per-thread errno via the _get_errno() symbol.
 
+config ATOMIC_OPERATIONS_C
+	bool
+	default n
+	help
+	Use atomic operations routines that are implemented entirely
+	in C by locking interrupts. Selected by architectures which either
+	do not have support for atomic operations in their instruction
+	set, or haven't been implemented yet during bring-up.
+
 endmenu

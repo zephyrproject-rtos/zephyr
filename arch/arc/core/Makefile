@@ -15,10 +15,8 @@ obj-y += prep_c.o \
 obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 obj-$(CONFIG_ERRNO) += errno.o
 
-ifeq ($(CONFIG_ARC_ATOMIC_ASM),y)
+ifneq ($(CONFIG_ATOMIC_OPERATIONS_C),y)
 obj-y += atomic.o
-else
-obj-y += atomic_native.o
 endif
 
 obj-$(CONFIG_IRQ_VECTOR_TABLE_BSP) += irq_vector_table.o

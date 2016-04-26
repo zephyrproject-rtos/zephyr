@@ -40,6 +40,7 @@ config	CPU_ARCEM4
 	bool
 	default y
 	select CPU_ARCV2
+	select ATOMIC_OPERATIONS_C
 	help
 	This option signifies the use of an ARC EM4 CPU
 
@@ -272,19 +273,6 @@ config  ARCH_HAS_NANO_FIBER_ABORT
 	bool
 	# omit prompt to signify a "hidden" option
 	default n
-
-config  ARC_ATOMIC_ASM
-	bool
-	default n
-	depends on !CPU_ARCEM4
-	help
-	  Say y if the processor supports atomic assembly instructions:
-	  LLOCK and SCOND.
-
-	  Say n if not sure.
-
-	  Note that these instructions are not supported on ARC EM family
-	  processors.
 
 endmenu
 
