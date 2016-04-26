@@ -104,18 +104,8 @@ static int _read_port_regs(struct device *dev, uint8_t reg,
 	struct device * const i2c_master = drv_data->i2c_master;
 	uint16_t i2c_addr = config->i2c_slave_addr;
 	int ret;
-	uint8_t cmd[] = { reg };
-	struct i2c_msg msgs[2];
 
-	msgs[0].buf = cmd;
-	msgs[0].len = 1;
-	msgs[0].flags = I2C_MSG_WRITE;
-
-	msgs[1].buf = buf->byte;
-	msgs[1].len = 2;
-	msgs[1].flags = I2C_MSG_READ | I2C_MSG_RESTART;
-
-	ret = i2c_transfer(i2c_master, msgs, 2, i2c_addr);
+	ret = i2c_burst_read(i2c_master, i2c_addr, reg, buf->byte, 2);
 	if (ret) {
 		DBG("PCAL9535A[0x%X]: error reading register 0x%X (%d)\n",
 		    i2c_addr, reg, ret);
@@ -149,13 +139,12 @@ static int _write_port_regs(struct device *dev, uint8_t reg,
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
 	struct device * const i2c_master = drv_data->i2c_master;
 	uint16_t i2c_addr = config->i2c_slave_addr;
-	uint8_t cmd[] = {reg, buf->byte[0], buf->byte[1]};
 	int ret;
 
 	DBG("PCAL9535A[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X\n",
 	    i2c_addr, reg, buf->byte[0], (reg + 1), buf->byte[1]);
 
-	ret = i2c_write(i2c_master, cmd, sizeof(cmd), i2c_addr);
+	ret = i2c_burst_write(i2c_master, i2c_addr, reg, buf->byte, 2);
 	if (ret) {
 		DBG("PCAL9535A[0x%X]: error writing from register 0x%X (%d)\n",
 		    i2c_addr, reg, ret);
