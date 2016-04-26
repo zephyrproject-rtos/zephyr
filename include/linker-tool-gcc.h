@@ -25,18 +25,20 @@
 #ifndef __LINKER_TOOL_GCC_H
 #define __LINKER_TOOL_GCC_H
 
-#if defined(CONFIG_CPU_CORTEX_M)
-OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
+#if defined(CONFIG_ARM)
+	OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
 #elif defined(CONFIG_ARC)
-OUTPUT_FORMAT("elf32-littlearc", "elf32-bigarc", "elf32-littlearc")
+	OUTPUT_FORMAT("elf32-littlearc", "elf32-bigarc", "elf32-littlearc")
+#elif defined(CONFIG_X86)
+	#if  defined(__IAMCU)
+		OUTPUT_FORMAT("elf32-iamcu")
+		OUTPUT_ARCH(iamcu:intel)
+	#else
+		OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
+		OUTPUT_ARCH(i386)
+	#endif
 #else
-#if  defined(__IAMCU)
-OUTPUT_FORMAT("elf32-iamcu")
-OUTPUT_ARCH(iamcu:intel)
-#else
-OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
-OUTPUT_ARCH(i386)
-#endif
+	#error Arch not supported.
 #endif
 
 /*
