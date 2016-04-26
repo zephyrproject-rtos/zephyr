@@ -21,6 +21,8 @@
  * specific part of the driver.
  */
 
+#include <errno.h>
+
 #include <nanokernel.h>
 #include <device.h>
 #include <soc.h>
