@@ -3,70 +3,74 @@
 Bluetooth
 #########
 
-Initialization
-**************
+Zephyr comes integrated with a feature-rich and higly configurable
+Bluetooth stack:
 
-The Bluetooth subsystem is initialized using the :c:func:`bt_init()`
-function. The caller shall be either a task or a fiber. The caller
-should ensure that function succeeds by checking the return code for
-errors. If a function pointer is passed to :c:func:`bt_init()` the
-initialization happens synchronously and the completion is notified
-through the given function.
+ - Bluetooth 4.2 compliant
+ - Generic Access Profile (GAP) with all possible roles
 
-Bluetooth Application Example
-*****************************
+   - Peripheral & Central
+   - Observer & Broadcaster
 
-A simple Bluetooth beacon application is shown below. The application
-initializes the Bluetooth Subsystem and enables non-connectable
-advertising, effectively acting as a Bluetooth Low Energy broadcaster.
+ - GATT (Generic Attribute Profile)
 
-.. literalinclude:: ../../../samples/bluetooth/beacon/src/main.c
-   :language: c
-   :lines: 19-
-   :linenos:
+   - Server (to be a sensor)
+   - Client (to connect to sensors)
 
-The key APIs employed by the beacon sample are :c:func:`bt_enable()`
-that's used to initialize Bluetooth and then :c:func:`bt_le_adv_start()`
-that's used to start advertising a specific combination of advertising
-and scan response data.
+ - Pairing support, including the Secure Connections feature from
+   Bluetooth 4.2
+ - IPSP/6LoWPAN for IPv6 connectivity over Bluetooth LE
 
-Testing with QEMU
-*****************
+   - IPSP node sample application in ``samples/bluetooth/ipsp``
 
-It's possible to test Bluetooth applications using QEMU. In order to do
-so, a Bluetooth controller needs to be exported from the host OS (Linux)
-to the emulator.
+ - Clean HCI driver abstraction
 
-Using Host System Bluetooth Controller in QEMU
-==============================================
+   - 3-Wire (H:5) & 5-Wire (H:4) drivers available
 
-The host OS's Bluetooth controller is connected to the second QEMU
-serial line using a UNIX socket. This socket employs the QEMU option
-:literal:`-serial unix:/tmp/bt-server-bredr`. This option is already
-added to QEMU through :makevar:`QEMU_EXTRA_FLAGS` in most Bluetooth
-sample Makefiles' and made available through the 'qemu' make target.
+ - Verified with multiple popular controllers
+ - Supporting both nano- & micro-kernels
+ - Highly configurable
 
-On the host side, BlueZ allows to export its Bluetooth controller
-through a so-called user channel for QEMU to use:
+   - Features, buffer sizes/counts, stack sizes, etc.
 
-#. Make sure that the Bluetooth controller is down
+Source tree layout
+==================
 
-#. Use the btproxy tool to open the listening UNIX socket, type:
+The stack is split up as follows in the source tree:
 
-   .. code-block:: console
+``net/bluetooth/``
+  The core stack itself. This is where the HCI command & event handling
+  as well as connection tracking happens. The implementation of the
+  core protocols such as L2CAP, ATT & SMP is also here.
 
-      $ sudo tools/btproxy -u
-      Listening on /tmp/bt-server-bredr
+``include/bluetooth/``
+  Public API header files. These are the header files applications need
+  to include in order to use Bluetooth functionality.
 
-#. Choose one of the Bluetooth sample applications located in
-   :literal:`samples/bluetooth`.
+``drivers/bluetooth/``
+  HCI transport drivers. Every HCI transport needs its own driver. E.g.
+  the two common types of UART transport protocols (3-Wire & 5-Wire)
+  have their own drivers.
 
-#. To run Bluetooth application in QEMU, type:
+``samples/bluetooth/``
+  Sample Bluetooth code. This is a good reference to get started with
+  Bluetooth application development.
 
-   .. code-block:: console
+``tests/bluetooth/``
+  Test applications. These applications are used to verify the
+  functionality of the Bluetooth stack, but are not necessary the best
+  source for sample code (see ``samples/bluetooth`` instead).
 
-      $ make qemu
+``doc/bluetooth/``
+  Extra documentation, such as PICS documents.
 
-Running QEMU now results in a connection with the second serial line to
-the :literal:`bt-server-bredr` UNIX socket, letting the application
-access the Bluetooth controller.
+Further reading
+===============
+
+More information on the stack and its usage can be found in the
+following subsections:
+
+.. toctree::
+   :maxdepth: 1
+
+   devel.rst
