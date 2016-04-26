@@ -39,8 +39,10 @@ Starting slist test
  - Appending node 1
  - Prepending node 2
  - Appending node 3
+ - Inserting node 4 after node 2
  - Finding and removing node 1
  - Removing node 3
+ - Removing node 4
  - Removing node 2
 ===================================================================
 PASS - main.

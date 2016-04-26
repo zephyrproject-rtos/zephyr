@@ -23,6 +23,7 @@ static sys_slist_t test_list;
 static sys_snode_t test_node_1;
 static sys_snode_t test_node_2;
 static sys_snode_t test_node_3;
+static sys_snode_t test_node_4;
 
 static inline bool verify_emptyness(sys_slist_t *list)
 {
@@ -212,9 +213,22 @@ void main(void)
 		goto end;
 	}
 
+	TC_PRINT(" - Inserting node 4 after node 2\n");
+	sys_slist_insert(&test_list, &test_node_2, &test_node_4);
+
+	if (!verify_tail_head(&test_list, &test_node_2, &test_node_3, false)) {
+		TC_ERROR("*** test_list head/tail are wrong\n");
+		goto end;
+	}
+
+	if (sys_slist_peek_next(&test_node_2) != &test_node_4) {
+		TC_ERROR("*** test_list node links are wrong\n");
+		goto end;
+	}
+
 	TC_PRINT(" - Finding and removing node 1\n");
 	sys_slist_find_and_remove(&test_list, &test_node_1);
-	if (!verify_content_amount(&test_list, 2)) {
+	if (!verify_content_amount(&test_list, 3)) {
 		TC_ERROR("*** test_list has wrong content\n");
 		goto end;
 	}
@@ -225,7 +239,19 @@ void main(void)
 	}
 
 	TC_PRINT(" - Removing node 3\n");
-	sys_slist_remove(&test_list, &test_node_2, &test_node_3);
+	sys_slist_remove(&test_list, &test_node_4, &test_node_3);
+	if (!verify_content_amount(&test_list, 2)) {
+		TC_ERROR("*** test_list has wrong content\n");
+		goto end;
+	}
+
+	if (!verify_tail_head(&test_list, &test_node_2, &test_node_4, false)) {
+		TC_ERROR("*** test_list head/tail are wrong\n");
+		goto end;
+	}
+
+	TC_PRINT(" - Removing node 4\n");
+	sys_slist_remove(&test_list, &test_node_2, &test_node_4);
 	if (!verify_content_amount(&test_list, 1)) {
 		TC_ERROR("*** test_list has wrong content\n");
 		goto end;
