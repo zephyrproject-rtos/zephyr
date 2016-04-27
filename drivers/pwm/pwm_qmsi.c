@@ -167,12 +167,12 @@ static struct pwm_driver_api pwm_qmsi_drv_api_funcs = {
 
 static int pwm_qmsi_init(struct device *dev)
 {
-	dev->driver_api = &pwm_qmsi_drv_api_funcs;
 	clk_periph_enable(CLK_PERIPH_PWM_REGISTER | CLK_PERIPH_CLK);
 	return 0;
 }
 
-DEVICE_INIT(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
-	    NULL, NULL,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
+		    NULL, NULL,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&pwm_qmsi_drv_api_funcs);
 
