@@ -301,8 +301,8 @@ ifeq ($(USE_CCACHE),1)
 CC		= $(CCACHE) $(CROSS_COMPILE)gcc
 CXX		= $(CCACHE) $(CROSS_COMPILE)g++
 else
-CC		= $(CROSS_COMPILE)gcc
-CXX		= $(CROSS_COMPILE)g++
+CC		?= $(CROSS_COMPILE)gcc
+CXX		?= $(CROSS_COMPILE)g++
 endif
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
