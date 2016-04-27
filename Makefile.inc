@@ -6,7 +6,13 @@ DQUOTE = "
 
 ARCH ?= x86
 
+UNAME := $(shell uname)
+ifeq (MINGW, $(findstring MINGW, $(UNAME)))
+PROJECT_BASE ?= $(shell sh -c "pwd -W")
+else
 PROJECT_BASE ?= $(CURDIR)
+endif
+
 O ?= $(PROJECT_BASE)/outdir
 
 # Turn O into an absolute path; we call the main Kbuild with $(MAKE) -C

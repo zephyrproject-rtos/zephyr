@@ -63,11 +63,13 @@ The easiest way to do this is just copy the file :file:`fstab.sample` as
    $ cp /etc/fstab.sample /etc/fstab
    $ cat /etc/fstab
 
-Configure Python's folder location in the environmental variable :envvar:`PATH`.
+Configure Python's folder location in the environmental variable :envvar:`PATH`
+and the installation path for MinGW.
 
 .. code-block:: console
 
    export PATH=$PATH:${PYTHON_PATH}
+   export MINGW_DIR=C:/MinGW
 
 .. note:: The format of the path for this variable (PYTHON_PATH) must to be in
    the linux format. For example, :file:`C:\python27` would be written as
@@ -79,14 +81,12 @@ GNU Regex C library
 The Zephyr build process has a dependency with the GNU regex library.
 Msys provides its own GNU library implementation that can be downloaded from the
 MinGW and Msys official repository:`MinGW Repository`_.
-Install the library from the Msys console interface and add the library to the
-tools build proccess with the following commands:
+Install the library from the Msys console interface with the following commands:
 
 .. code-block:: console
 
    mingw-get update
    mingw-get install msys-libregex-dev --all-related
-   export HOST_LOADLIBES=-lregex
 
 Toolchain Installation
 ======================

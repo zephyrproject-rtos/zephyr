@@ -11,6 +11,12 @@ else
 Kconfig := Kconfig
 endif
 
+UNAME := $(shell uname)
+ifeq (MINGW, $(findstring MINGW, $(UNAME)))
+HOST_LOADLIBES ?= -lregex
+export HOST_LOADLIBES
+endif
+
 # We need this, in case the user has it in its environment
 unexport CONFIG_
 

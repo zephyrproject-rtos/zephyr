@@ -28,6 +28,9 @@ ifeq (MINGW, $(findstring MINGW, $(UNAME)))
 HOST_OS=MINGW
 PWD_OPT=-W
 DISABLE_TRYRUN=y
+CPATH ?= $(MIGW_DIR)/include
+LIBRARY_PATH ?= $(MINGW_DIR)/lib
+export CPATH LIBRARY_PATH
 else ifeq (Linux, $(findstring Linux, $(UNAME)))
 HOST_OS=Linux
 else ifeq (Darwin, $(findstring Darwin, $(UNAME)))
