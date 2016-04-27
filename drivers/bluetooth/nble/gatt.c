@@ -346,6 +346,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
 	const uint16_t *data = buf;
+	size_t i;
 
 	if (offset > sizeof(*data)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -353,6 +354,32 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 
 	if (offset + len > sizeof(*data)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	for (i = 0; i < ccc->cfg_len; i++) {
+		/* Check for existing configuration */
+		if (!bt_addr_le_cmp(&ccc->cfg[i].peer, &conn->dst)) {
+			break;
+		}
+	}
+
+	if (i == ccc->cfg_len) {
+		for (i = 0; i < ccc->cfg_len; i++) {
+			/* Check for unused configuration */
+			if (ccc->cfg[i].valid) {
+				continue;
+			}
+
+			bt_addr_le_copy(&ccc->cfg[i].peer, &conn->dst);
+			/* TODO: Only set valid if bonded */
+			ccc->cfg[i].valid = true;
+			break;
+		}
+
+		if (i == ccc->cfg_len) {
+			BT_WARN("No space to store CCC cfg");
+			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+		}
 	}
 
 	/* We expect to receive this only when the has really changed */
