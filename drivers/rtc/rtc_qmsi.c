@@ -90,11 +90,11 @@ static int rtc_qmsi_init(struct device *dev)
 	/* Route RTC interrupt to Lakemont */
 	QM_SCSS_INT->int_rtc_mask &= ~BIT(0);
 
-	dev->driver_api = &api;
 	return 0;
 }
 
-DEVICE_INIT(rtc, CONFIG_RTC_DRV_NAME, &rtc_qmsi_init, NULL, NULL,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(rtc, CONFIG_RTC_DRV_NAME, &rtc_qmsi_init, NULL, NULL,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&api);
 
 static struct device *rtc_qmsi_dev = DEVICE_GET(rtc);
