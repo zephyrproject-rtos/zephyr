@@ -1,0 +1,361 @@
+/* Bosch BMG160 gyro driver
+ *
+ * Copyright (c) 2016 Intel Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Datasheet:
+ * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMG160-DS000-09.pdf
+ */
+
+#include <init.h>
+#include <sensor.h>
+#include <misc/byteorder.h>
+#include <nanokernel.h>
+
+#include "sensor_bmg160.h"
+
+struct bmg160_device_data bmg160_data;
+
+static inline int bmg160_bus_config(struct device *dev)
+{
+	struct bmg160_device_config *dev_cfg = dev->config->config_info;
+	struct bmg160_device_data *bmg160 = dev->driver_data;
+	union dev_config i2c_cfg;
+
+	i2c_cfg.raw = 0;
+	i2c_cfg.bits.is_master_device = 1;
+	i2c_cfg.bits.speed = dev_cfg->i2c_speed;
+
+	return i2c_configure(bmg160->i2c, i2c_cfg.raw);
+}
+
+int bmg160_read(struct device *dev, uint8_t reg_addr, uint8_t *data,
+		uint8_t len)
+{
+	struct bmg160_device_config *dev_cfg = dev->config->config_info;
+	struct bmg160_device_data *bmg160 = dev->driver_data;
+	int ret = 0;
+
+	bmg160_bus_config(dev);
+
+	nano_sem_take(&bmg160->sem, TICKS_UNLIMITED);
+
+	if (i2c_burst_read(bmg160->i2c, dev_cfg->i2c_addr,
+			   reg_addr, data, len) < 0) {
+		ret = -EIO;
+	}
+
+	nano_sem_give(&bmg160->sem);
+
+	return ret;
+}
+
+int bmg160_read_byte(struct device *dev, uint8_t reg_addr, uint8_t *byte)
+{
+	return bmg160_read(dev, reg_addr, byte, 1);
+}
+
+static int bmg160_write(struct device *dev, uint8_t reg_addr, uint8_t *data,
+			uint8_t len)
+{
+	struct bmg160_device_config *dev_cfg = dev->config->config_info;
+	struct bmg160_device_data *bmg160 = dev->driver_data;
+	int ret = 0;
+
+	bmg160_bus_config(dev);
+
+	nano_sem_take(&bmg160->sem, TICKS_UNLIMITED);
+
+	if (i2c_burst_write(bmg160->i2c, dev_cfg->i2c_addr,
+			    reg_addr, data, len) < 0) {
+		ret = -EIO;
+	}
+
+	nano_sem_give(&bmg160->sem);
+
+	return ret;
+}
+
+int bmg160_write_byte(struct device *dev, uint8_t reg_addr, uint8_t byte)
+{
+	return bmg160_write(dev, reg_addr, &byte, 1);
+}
+
+int bmg160_update_byte(struct device *dev, uint8_t reg_addr, uint8_t mask,
+		       uint8_t value)
+{
+	struct bmg160_device_config *dev_cfg = dev->config->config_info;
+	struct bmg160_device_data *bmg160 = dev->driver_data;
+	int ret = 0;
+
+	bmg160_bus_config(dev);
+
+	nano_sem_take(&bmg160->sem, TICKS_UNLIMITED);
+
+	if (i2c_reg_update_byte(bmg160->i2c, dev_cfg->i2c_addr,
+				reg_addr, mask, value) < 0) {
+		ret = -EIO;
+	}
+
+	nano_sem_give(&bmg160->sem);
+
+	return ret;
+}
+
+/* Allowed range values, in degrees/sec. */
+static const int16_t bmg160_gyro_range_map[] = {2000, 1000, 500, 250, 125};
+#define BMG160_GYRO_RANGE_MAP_SIZE	ARRAY_SIZE(bmg160_gyro_range_map)
+
+/* Allowed sampling frequencies, in Hz */
+static const int16_t bmg160_sampling_freq_map[] = {2000, 1000, 400, 200, 100};
+#define BMG160_SAMPLING_FREQ_MAP_SIZE	ARRAY_SIZE(bmg160_sampling_freq_map)
+
+static int bmg160_is_val_valid(int16_t val, const int16_t *val_map,
+			       uint16_t map_size)
+{
+	int i;
+
+	for (i = 0; i < map_size; i++) {
+		if (val == val_map[i]) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static int bmg160_attr_set(struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val)
+{
+	struct bmg160_device_data *bmg160 = dev->driver_data;
+	int idx;
+	uint16_t range_dps;
+
+	if (chan != SENSOR_CHAN_GYRO_ANY) {
+		return -ENOTSUP;
+	}
+
+	switch (attr) {
+	case SENSOR_ATTR_FULL_SCALE:
+		if (val->type != SENSOR_VALUE_TYPE_INT_PLUS_MICRO) {
+			return -ENOTSUP;
+		}
+
+		range_dps = sensor_rad_to_degrees(val);
+
+		idx = bmg160_is_val_valid(range_dps,
+					  bmg160_gyro_range_map,
+					  BMG160_GYRO_RANGE_MAP_SIZE);
+		if (idx < 0) {
+			return -ENOTSUP;
+		}
+
+		if (bmg160_write_byte(dev, BMG160_REG_RANGE, idx) < 0) {
+			return -EIO;
+		}
+
+		bmg160->scale = BMG160_RANGE_TO_SCALE(range_dps);
+
+		return 0;
+
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		if (val->type != SENSOR_VALUE_TYPE_INT) {
+			return -ENOTSUP;
+		}
+
+		idx = bmg160_is_val_valid(val->val1,
+					  bmg160_sampling_freq_map,
+					  BMG160_SAMPLING_FREQ_MAP_SIZE);
+		if (idx < 0) {
+			return -ENOTSUP;
+		}
+
+		/*
+		 * The sampling frequencies values start at 1, i.e. a
+		 * sampling frequency of 2000Hz translates to BW value
+		 * of 1. Hence the 1 added to the index received.
+		 */
+		if (bmg160_write_byte(dev, BMG160_REG_BW, idx + 1) < 0) {
+			return -EIO;
+		}
+
+		return 0;
+
+#ifdef CONFIG_BMG160_TRIGGER
+	case SENSOR_ATTR_SLOPE_TH:
+	case SENSOR_ATTR_SLOPE_DUR:
+		return bmg160_slope_config(dev, attr, val);
+#endif
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int bmg160_sample_fetch(struct device *dev, enum sensor_channel chan)
+{
+	struct bmg160_device_data *bmg160 = dev->driver_data;
+	union {
+		uint8_t raw[7];
+		struct {
+			uint16_t x_axis;
+			uint16_t y_axis;
+			uint16_t z_axis;
+			uint8_t temp;
+		};
+	} buf __aligned(2);
+
+	/* do a burst read, to fetch all axis data */
+	if (bmg160_read(dev, BMG160_REG_RATE_X, buf.raw, sizeof(buf)) < 0) {
+		return -EIO;
+	}
+
+	bmg160->raw_gyro_xyz[0] = sys_le16_to_cpu(buf.x_axis);
+	bmg160->raw_gyro_xyz[1] = sys_le16_to_cpu(buf.y_axis);
+	bmg160->raw_gyro_xyz[2] = sys_le16_to_cpu(buf.z_axis);
+	bmg160->raw_temp	= buf.temp;
+
+	return 0;
+}
+
+static void bmg160_to_fixed_point(struct bmg160_device_data *bmg160,
+				  enum sensor_channel chan, int16_t raw,
+				  struct sensor_value *val)
+{
+	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+
+	if (chan == SENSOR_CHAN_TEMP) {
+		val->val1 = 23 + (raw / 2);
+		val->val2 = (raw % 2) * 500000;
+	} else {
+		int32_t converted_val = raw * bmg160->scale;
+
+		val->val1 = converted_val / 1000000;
+		val->val2 = converted_val % 1000000;
+	}
+}
+
+static int bmg160_channel_get(struct device *dev, enum sensor_channel chan,
+			      struct sensor_value *val)
+{
+	struct bmg160_device_data *bmg160 = dev->driver_data;
+	int16_t raw_val;
+	int i;
+
+	switch (chan) {
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+		raw_val = bmg160->raw_gyro_xyz[chan - SENSOR_CHAN_GYRO_X];
+		bmg160_to_fixed_point(bmg160, chan, raw_val, val);
+		return 0;
+
+	case SENSOR_CHAN_GYRO_ANY:
+		/* return all channel values, in one read */
+		for (i = 0; i < 3; i++, val++) {
+			raw_val = bmg160->raw_gyro_xyz[i];
+			bmg160_to_fixed_point(bmg160, chan, raw_val, val);
+		}
+
+		return 0;
+
+	case SENSOR_CHAN_TEMP:
+		bmg160_to_fixed_point(bmg160, chan, bmg160->raw_temp, val);
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
+struct sensor_driver_api bmg160_api = {
+	.attr_set = bmg160_attr_set,
+#ifdef CONFIG_BMG160_TRIGGER
+	.trigger_set = bmg160_trigger_set,
+#endif
+	.sample_fetch = bmg160_sample_fetch,
+	.channel_get = bmg160_channel_get,
+};
+
+int bmg160_init(struct device *dev)
+{
+	struct bmg160_device_config *cfg = dev->config->config_info;
+	struct bmg160_device_data *bmg160 = dev->driver_data;
+	uint8_t chip_id = 0;
+	uint16_t range_dps;
+
+	bmg160->i2c = device_get_binding((char *)cfg->i2c_port);
+	if (!bmg160->i2c) {
+		SYS_LOG_DBG("I2C master controller not found!");
+		return -EINVAL;
+	}
+
+	nano_sem_init(&bmg160->sem);
+	nano_sem_give(&bmg160->sem);
+
+	if (bmg160_read_byte(dev, BMG160_REG_CHIPID, &chip_id) < 0) {
+		SYS_LOG_DBG("Failed to read chip id.");
+		return -EIO;
+	}
+
+	if (chip_id != BMG160_CHIP_ID) {
+		SYS_LOG_DBG("Unsupported chip detected (0x%x)!", chip_id);
+		return -ENODEV;
+	}
+
+	/* reset the chip */
+	bmg160_write_byte(dev, BMG160_REG_BGW_SOFTRESET, BMG160_RESET);
+
+	sys_thread_busy_wait(1000); /* wait for the chip to come up */
+
+	if (bmg160_write_byte(dev, BMG160_REG_RANGE,
+			      BMG160_DEFAULT_RANGE) < 0) {
+		SYS_LOG_DBG("Failed to set range.");
+		return -EIO;
+	}
+
+	range_dps = bmg160_gyro_range_map[BMG160_DEFAULT_RANGE];
+
+	bmg160->scale = BMG160_RANGE_TO_SCALE(range_dps);
+
+	if (bmg160_write_byte(dev, BMG160_REG_BW, BMG160_DEFAULT_ODR) < 0) {
+		SYS_LOG_DBG("Failed to set sampling frequency.");
+		return -EIO;
+	}
+
+	/* disable interrupts */
+	if (bmg160_write_byte(dev, BMG160_REG_INT_EN0, 0) < 0) {
+		SYS_LOG_DBG("Failed to disable all interrupts.");
+		return -EIO;
+	}
+
+#ifdef CONFIG_BMG160_TRIGGER
+	bmg160_trigger_init(dev);
+#endif
+
+	dev->driver_api = &bmg160_api;
+
+	return 0;
+}
+
+struct bmg160_device_config bmg160_config = {
+	.i2c_port = CONFIG_BMG160_I2C_PORT_NAME,
+	.gpio_port = CONFIG_BMG160_GPIO_PORT_NAME,
+	.i2c_addr = CONFIG_BMG160_I2C_ADDR,
+	.i2c_speed = BMG160_BUS_SPEED,
+	.int_pin = CONFIG_BMG160_INT_PIN,
+};
+
+DEVICE_INIT(bmg160, CONFIG_BMG160_DRV_NAME, bmg160_init, &bmg160_data,
+	    &bmg160_config, SECONDARY, CONFIG_BMG160_INIT_PRIORITY);
