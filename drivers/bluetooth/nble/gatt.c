@@ -340,6 +340,25 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 }
 
+static void gatt_ccc_changed(struct _bt_gatt_ccc *ccc)
+{
+	int i;
+	uint16_t value = 0x0000;
+
+	for (i = 0; i < ccc->cfg_len; i++) {
+		if (ccc->cfg[i].value > value) {
+			value = ccc->cfg[i].value;
+		}
+	}
+
+	BT_DBG("ccc %p value 0x%04x", ccc, value);
+
+	if (value != ccc->value) {
+		ccc->value = value;
+		ccc->cfg_changed(value);
+	}
+}
+
 ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
 			       const void *buf, uint16_t len, uint16_t offset)
@@ -382,14 +401,14 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		}
 	}
 
-	/* We expect to receive this only when the has really changed */
-	ccc->value = sys_le16_to_cpu(*data);
+	ccc->cfg[i].value = sys_le16_to_cpu(*data);
 
-	if (ccc->cfg_changed) {
-		ccc->cfg_changed(ccc->value);
+	BT_DBG("handle 0x%04x value %u", attr->handle, ccc->cfg[i].value);
+
+	/* Update cfg if don't match */
+	if (ccc->cfg[i].value != ccc->value) {
+		gatt_ccc_changed(ccc);
 	}
-
-	BT_DBG("handle 0x%04x value %u", attr->handle, ccc->value);
 
 	return len;
 }
