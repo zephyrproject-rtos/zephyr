@@ -68,7 +68,7 @@
 #define APA102C_BRIGHTNESS	0xE2000000
 #define APA102C_BRIGHTNESS_MASK	0xFF000000
 
-#define I2C_DRV_NAME		"I2C0"
+#define I2C_DRV_NAME		"I2C_0"
 #define APDS9960_ADDR		0x39
 
 union rgbc_t {
