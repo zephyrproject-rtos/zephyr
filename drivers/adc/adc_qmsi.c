@@ -242,8 +242,6 @@ int adc_qmsi_init(struct device *dev)
 
 	struct adc_info *info = dev->driver_data;
 
-	dev->driver_api = &api_funcs;
-
 	/* Enable the ADC and set the clock divisor */
 	clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_ADC |
 				CLK_PERIPH_ADC_REGISTER);
@@ -270,9 +268,10 @@ int adc_qmsi_init(struct device *dev)
 
 struct adc_info adc_info_dev;
 
-DEVICE_INIT(adc_qmsi, CONFIG_ADC_QMSI_0_DRV_NAME, &adc_qmsi_init,
+DEVICE_AND_API_INIT(adc_qmsi, CONFIG_ADC_QMSI_0_DRV_NAME, &adc_qmsi_init,
 		    &adc_info_dev, NULL,
-			SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    (void *)&api_funcs);
 
 static void adc_config_irq(void)
 {
