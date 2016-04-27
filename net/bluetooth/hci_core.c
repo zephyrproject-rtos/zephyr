@@ -931,6 +931,16 @@ static int set_flow_control(void)
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+static void reset_pairing(struct bt_conn *conn)
+{
+	atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+	atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
+	atomic_clear_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
+
+	/* Reset required security level to current operational */
+	conn->required_sec_level = conn->sec_level;
+}
+
 static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 {
 	struct bt_hci_cp_reject_conn_req *cp;
@@ -1711,15 +1721,7 @@ static void auth_complete(struct net_buf *buf)
 	}
 
 	if (evt->status) {
-		/*
-		 * Clear pairing flag since authentication failed for some
-		 * reasons.
-		 */
-		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
-		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
-
-		/* Reset required security level to current operational */
-		conn->required_sec_level = conn->sec_level;
+		reset_pairing(conn);
 	} else {
 		link_encr(handle);
 	}
@@ -1770,8 +1772,14 @@ static void hci_encrypt_change(struct net_buf *buf)
 
 	if (evt->status) {
 		/* TODO report error */
-		/* reset required security level in case of error */
-		conn->required_sec_level = conn->sec_level;
+		if (conn->type == BT_CONN_TYPE_LE) {
+			/* reset required security level in case of error */
+			conn->required_sec_level = conn->sec_level;
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		} else {
+			reset_pairing(conn);
+#endif /* CONFIG_BLUETOOTH_BREDR */
+		}
 		bt_conn_unref(conn);
 		return;
 	}
@@ -1795,8 +1803,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	} else {
 		update_sec_level_br(conn);
-		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
-		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
+		reset_pairing(conn);
 #endif /* CONFIG_BLUETOOTH_BREDR */
 	}
 
