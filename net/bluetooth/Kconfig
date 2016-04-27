@@ -268,10 +268,10 @@ config BLUETOOTH_DEBUG_NONE
 	help
 	  Select this to disable all Bluetooth debug logs.
 
-config	BLUETOOTH_DEBUG_STDOUT
+config	BLUETOOTH_DEBUG_LOG
 	bool "Normal printf-style to console"
 	select BLUETOOTH_DEBUG
-	select STDOUT_CONSOLE
+	select SYS_LOG
 	help
 	  This option enables Bluetooth debug going to standard
 	  serial console.
@@ -297,7 +297,8 @@ endchoice
 
 config BLUETOOTH_DEBUG_COLOR
 	bool "Use colored logs"
-	depends on BLUETOOTH_DEBUG_STDOUT
+	depends on BLUETOOTH_DEBUG_LOG
+	select SYS_LOG_SHOW_COLOR
 	default y
 	help
 	  Use color in the logs. This requires an ANSI capable terminal.

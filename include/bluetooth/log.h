@@ -20,13 +20,12 @@
 #ifndef __BT_LOG_H
 #define __BT_LOG_H
 
-#include <stdio.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(CONFIG_BLUETOOTH_DEBUG_MONITOR)
+#include <stdio.h>
 
 /* These defines follow the values used by syslog(2) */
 #define BT_LOG_ERR      3
@@ -49,27 +48,18 @@ void bt_log(int prio, const char *fmt, ...);
 /* Enabling debug increases stack size requirement considerably */
 #define BT_STACK_DEBUG_EXTRA	512
 
-#elif defined(CONFIG_BLUETOOTH_DEBUG_STDOUT)
+#elif defined(CONFIG_BLUETOOTH_DEBUG_LOG)
 
 #include <nanokernel.h>
+#define SYS_LOG_DOMAIN "bt"
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#include <misc/sys_log.h>
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_COLOR)
-#define BT_COLOR_OFF     "\x1B[0m"
-#define BT_COLOR_RED     "\x1B[0;31m"
-#define BT_COLOR_YELLOW  "\x1B[0;33m"
-#else
-#define BT_COLOR_OFF     ""
-#define BT_COLOR_RED     ""
-#define BT_COLOR_YELLOW  ""
-#endif
-
-#define BT_DBG(fmt, ...) printf("bt: %s (%p): " fmt "\n", __func__, \
-				sys_thread_self_get(), ##__VA_ARGS__)
-#define BT_ERR(fmt, ...) printf("bt: %s: %s" fmt "%s\n", __func__, \
-				BT_COLOR_RED, ##__VA_ARGS__, BT_COLOR_OFF)
-#define BT_WARN(fmt, ...) printf("bt: %s: %s" fmt "%s\n", __func__, \
-				 BT_COLOR_YELLOW, ##__VA_ARGS__, BT_COLOR_OFF)
-#define BT_INFO(fmt, ...) printf("bt: " fmt "\n", ##__VA_ARGS__)
+#define BT_DBG(fmt, ...) SYS_LOG_DBG("(%p)" fmt, sys_thread_self_get(), \
+				##__VA_ARGS__)
+#define BT_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
+#define BT_WARN(fmt, ...) SYS_LOG_WRN(fmt, ##__VA_ARGS__)
+#define BT_INFO(fmt, ...) SYS_LOG_INF(fmt, ##__VA_ARGS__)
 #define BT_ASSERT(cond) if (!(cond)) { \
 				BT_ERR("assert: '" #cond "' failed"); \
 			}
