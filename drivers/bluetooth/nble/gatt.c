@@ -400,7 +400,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		notif.conn_handle = 0xffff;
 	}
 
-	notif.params.attr = (struct bt_gatt_attr *)attr;
+	notif.params.attr = attr;
 	notif.params.offset = 0;
 	notif.cback = NULL;
 
