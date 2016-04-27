@@ -110,13 +110,7 @@
 
 #include <zephyr.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
 #include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 #include <device.h>
 #include <gpio.h>
@@ -156,7 +150,7 @@
 void gpio_callback(struct device *port,
 		   struct gpio_callback *cb, uint32_t pins)
 {
-	PRINT(GPIO_NAME "%d triggered\n", GPIO_INT_PIN);
+	printk(GPIO_NAME "%d triggered\n", GPIO_INT_PIN);
 }
 
 static struct gpio_callback gpio_cb;
@@ -173,13 +167,13 @@ void main(void)
 
 	gpio_dev = device_get_binding(GPIO_DRV_NAME);
 	if (!gpio_dev) {
-		PRINT("Cannot find %s!\n", GPIO_DRV_NAME);
+		printk("Cannot find %s!\n", GPIO_DRV_NAME);
 	}
 
 	/* Setup GPIO output */
 	ret = gpio_pin_configure(gpio_dev, GPIO_OUT_PIN, (GPIO_DIR_OUT));
 	if (ret) {
-		PRINT("Error configuring " GPIO_NAME "%d!\n", GPIO_OUT_PIN);
+		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_OUT_PIN);
 	}
 
 	/* Setup GPIO input, and triggers on rising edge. */
@@ -187,27 +181,27 @@ void main(void)
 			(GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
 			 | GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE));
 	if (ret) {
-		PRINT("Error configuring " GPIO_NAME "%d!\n", GPIO_INT_PIN);
+		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_INT_PIN);
 	}
 
 	gpio_init_callback(&gpio_cb, gpio_callback, BIT(GPIO_INT_PIN));
 
 	ret = gpio_add_callback(gpio_dev, &gpio_cb);
 	if (ret) {
-		PRINT("Cannot setup callback!\n");
+		printk("Cannot setup callback!\n");
 	}
 
 	ret = gpio_pin_enable_callback(gpio_dev, GPIO_INT_PIN);
 	if (ret) {
-		PRINT("Error enabling callback!\n");
+		printk("Error enabling callback!\n");
 	}
 
 	while (1) {
-		PRINT("Toggling " GPIO_NAME "%d\n", GPIO_OUT_PIN);
+		printk("Toggling " GPIO_NAME "%d\n", GPIO_OUT_PIN);
 
 		ret = gpio_pin_write(gpio_dev, GPIO_OUT_PIN, toggle);
 		if (ret) {
-			PRINT("Error set " GPIO_NAME "%d!\n", GPIO_OUT_PIN);
+			printk("Error set " GPIO_NAME "%d!\n", GPIO_OUT_PIN);
 		}
 
 		if (toggle) {
