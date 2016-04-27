@@ -394,6 +394,8 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	struct nble_gatt_send_notif_params notif;
 
+	BT_DBG("conn %p", conn);
+
 	if (conn) {
 		notif.conn_handle = conn->handle;
 	} else {
