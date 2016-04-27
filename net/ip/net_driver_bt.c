@@ -101,6 +101,7 @@ static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	/* Initialize uip_len */
 	uip_len(buf) = ip_buf_len(buf);
+	uip_first_frag_len(buf) = 0;
 
 	/* Uncompress data */
 	if (!NETSTACK_COMPRESS.uncompress(buf)) {

@@ -189,8 +189,10 @@ int net_driver_15_4_init(void)
 
 int net_driver_15_4_recv(struct net_buf *buf)
 {
-	if (!NETSTACK_COMPRESS.uncompress(buf)) {
-		return -EINVAL;
+	if (!uip_uncompressed(buf)) {
+		if (!NETSTACK_COMPRESS.uncompress(buf)) {
+			return -EINVAL;
+		}
 	}
 
 	if (net_recv(buf) < 0) {

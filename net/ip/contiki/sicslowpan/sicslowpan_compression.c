@@ -831,11 +831,15 @@ uncompress_hdr_iphc(struct net_buf *mbuf, struct net_buf *ibuf)
 
   uip_packetbuf_hdr_len(mbuf) = iphc_ptr - uip_packetbuf_ptr(mbuf);
 
-  ip_len = uip_len(ibuf) + (uip_uncomp_hdr_len(mbuf) -
-                                 uip_packetbuf_hdr_len(mbuf)) - UIP_IPH_LEN;
-    /* This is not a fragmented packet */
-    SICSLOWPAN_IP_BUF(buf)->len[0] = ip_len >> 8;
-    SICSLOWPAN_IP_BUF(buf)->len[1] = ip_len & 0x00FF;
+  if(uip_first_frag_len(ibuf) > 0) {
+     ip_len = uip_len(ibuf) - UIP_IPH_LEN;
+  } else {
+     ip_len = uip_len(ibuf) + uip_uncomp_hdr_len(mbuf) -
+                                 uip_packetbuf_hdr_len(mbuf) - UIP_IPH_LEN;
+  }
+
+  SICSLOWPAN_IP_BUF(buf)->len[0] = ip_len >> 8;
+  SICSLOWPAN_IP_BUF(buf)->len[1] = ip_len & 0x00FF;
 
   /* length field in UDP header */
   if(SICSLOWPAN_IP_BUF(buf)->proto == UIP_PROTO_UDP) {
@@ -871,7 +875,9 @@ compress_hdr_ipv6(struct net_buf *buf)
   memmove(uip_buf(buf) + SICSLOWPAN_IPV6_HDR_LEN, uip_buf(buf), uip_len(buf));
   *uip_buf(buf) = SICSLOWPAN_DISPATCH_IPV6;
   uip_len(buf)++;
-  buf->len++;
+  ip_buf_len(buf)++;
+  uip_compressed_hdr_len(buf) = UIP_IPH_LEN + SICSLOWPAN_IPV6_HDR_LEN;
+  uip_uncompressed_hdr_len(buf) = UIP_IPH_LEN;
   return 1;
 }
 /** @} */
@@ -881,7 +887,7 @@ static int
 uncompress_hdr_ipv6(struct net_buf *buf)
 {
   uip_len(buf)--;
-  buf->len--;
+  ip_buf_len(buf)--;
   memmove(uip_buf(buf), uip_buf(buf) + SICSLOWPAN_IPV6_HDR_LEN, uip_len(buf));
   return 1;
 }
@@ -946,7 +952,9 @@ static int compress(struct net_buf *buf)
   memmove(uip_buf(buf) + uip_packetbuf_hdr_len(mbuf),
             uip_buf(buf) + uip_uncomp_hdr_len(mbuf), uip_len(buf) - uip_uncomp_hdr_len(mbuf));
   uip_len(buf) -= hdr_diff;
-  buf->len -= hdr_diff;
+  ip_buf_len(buf) -= hdr_diff;
+  uip_compressed_hdr_len(buf) = uip_packetbuf_hdr_len(mbuf);
+  uip_uncompressed_hdr_len(buf) = uip_uncomp_hdr_len(mbuf);
   packetbuf_clear(mbuf);
   l2_buf_unref(mbuf);
   return 1;
@@ -1004,12 +1012,30 @@ static int uncompress(struct net_buf *buf)
            uip_len(buf), uip_packetbuf_hdr_len(mbuf));
     goto fail;
   }
-  memmove(uip_buf(buf) + uip_uncomp_hdr_len(mbuf),
+
+#if defined(CONFIG_NETWORKING_WITH_15_4)
+  if (uip_first_frag_len(buf) > 0) {
+     memmove(uip_buf(buf) + uip_uncomp_hdr_len(mbuf),
+                uip_buf(buf) + uip_packetbuf_hdr_len(mbuf),
+                uip_first_frag_len(buf) - uip_packetbuf_hdr_len(mbuf));
+     memcpy(uip_buf(buf), uip_packetbuf_ptr(mbuf), uip_uncomp_hdr_len(mbuf));
+     ip_buf_len(buf) = uip_len(buf);
+  } else {
+     memmove(uip_buf(buf) + uip_uncomp_hdr_len(mbuf),
                 uip_buf(buf) + uip_packetbuf_hdr_len(mbuf),
                 uip_len(buf) - uip_packetbuf_hdr_len(mbuf));
-  memcpy(uip_buf(buf), uip_packetbuf_ptr(mbuf), uip_uncomp_hdr_len(mbuf));
-  uip_len(buf) += (uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf));
-  buf->len += (uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf));
+     memcpy(uip_buf(buf), uip_packetbuf_ptr(mbuf), uip_uncomp_hdr_len(mbuf));
+     uip_len(buf) += (uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf));
+     ip_buf_len(buf) += (uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf));
+  }
+#elif defined(CONFIG_NETWORKING_WITH_BT)
+     memmove(uip_buf(buf) + uip_uncomp_hdr_len(mbuf),
+                uip_buf(buf) + uip_packetbuf_hdr_len(mbuf),
+                uip_len(buf) - uip_packetbuf_hdr_len(mbuf));
+     memcpy(uip_buf(buf), uip_packetbuf_ptr(mbuf), uip_uncomp_hdr_len(mbuf));
+     uip_len(buf) += (uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf));
+     ip_buf_len(buf) += (uip_uncomp_hdr_len(mbuf) - uip_packetbuf_hdr_len(mbuf));
+#endif
 #endif
 
   l2_buf_unref(mbuf);

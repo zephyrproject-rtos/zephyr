@@ -145,6 +145,8 @@ void uip_log(char *msg);
 #define MAC_MAX_PAYLOAD (127 - 2)
 #endif /* SICSLOWPAN_CONF_MAC_MAX_PAYLOAD */
 
+#define SICSLOWPAN_DISPATCH_IPV6	0x41 /* 01000001 = 65 */
+
 static int last_rssi;
 
 /** Datagram tag to be put in the fragments I send. */
@@ -188,6 +190,8 @@ struct sicslowpan_frag_info {
   uint16_t len;
   /** Current length of reassembled fragments */
   uint16_t reassembled_len;
+  /** Last fragment */
+  uint8_t last_fragment;
   /** Reassembly %process %timer. */
   struct timer reass_timer;
 };
@@ -237,7 +241,7 @@ store_fragment(struct net_buf *mbuf, uint8_t index, uint8_t offset)
       memcpy(frag_buf[i].data, uip_packetbuf_ptr(mbuf) + uip_packetbuf_hdr_len(mbuf),
              packetbuf_datalen(mbuf) - uip_packetbuf_hdr_len(mbuf));
 
-      PRINTF("Fragsize: %d\n", frag_buf[i].len);
+      PRINTF("Fragment payload length: %d\n", frag_buf[i].len);
       /* return the length of the stored fragment */
       return frag_buf[i].len;
     }
@@ -309,6 +313,11 @@ store:
   len = store_fragment(mbuf, i, offset);
   if(len > 0) {
     frag_info[i].reassembled_len += len;
+    if((offset << 3)+ len >= frag_size) {
+      frag_info[i].last_fragment = 1;
+    } else {
+      frag_info[i].last_fragment = 0;
+    }
     return i;
   } else {
     /* should we also clear all fragments since we failed to store this fragment? */
@@ -334,6 +343,16 @@ static struct net_buf *copy_frags2uip(int context)
   linkaddr_copy(&ip_buf_ll_src(buf), &frag_info[context].sender);
 
   for(i = 0; i < SICSLOWPAN_FRAGMENT_BUFFERS; i++) {
+    if(i == 0) {
+       uip_first_frag_len(buf) = frag_buf[i].len;
+       if(frag_buf[i].data[0] == SICSLOWPAN_DISPATCH_IPV6) {
+         memmove(frag_buf[i].data, frag_buf[i].data + 1, frag_buf[i].len - 1);
+         frag_buf[i].len -= 1;
+         uip_uncompressed(buf) = 1;
+        } else {
+         uip_uncompressed(buf) = 0;
+        }
+    }
     /* And also copy all matching fragments */
     if(frag_buf[i].len > 0 && frag_buf[i].index == context) {
       memcpy(uip_buf(buf) + (uint16_t)(frag_buf[i].offset << 3),
@@ -377,6 +396,8 @@ static struct net_buf *copy_buf(struct net_buf *mbuf)
     buf = NULL;
   }
 
+  uip_first_frag_len(buf) = 0;
+  uip_uncompressed(buf) = 0;
   return buf;
 }
 
@@ -429,7 +450,8 @@ static int fragment(struct net_buf *buf, void *ptr)
    int max_payload;
    int framer_hdrlen;
    uint16_t frag_tag;
-
+   uint16_t frag_offset;
+   int hdr_diff;
    /* Number of bytes processed. */
    uint16_t processed_ip_out_len;
    struct net_buf *mbuf;
@@ -486,7 +508,7 @@ static int fragment(struct net_buf *buf, void *ptr)
      * IPv6/HC1/HC06/HC_UDP dispatchs/headers.
      * The following fragments contain only the fragn dispatch.
      */
-    int estimated_fragments = ((int)uip_len(buf)) / ((int)MAC_MAX_PAYLOAD - SICSLOWPAN_FRAGN_HDR_LEN) + 1;
+    int estimated_fragments = ((int)uip_len(buf)) / (max_payload - SICSLOWPAN_FRAGN_HDR_LEN) + 1;
     int freebuf = queuebuf_numfree(mbuf) - 1;
     PRINTF("uip_len: %d, fragments: %d, free bufs: %d\n", uip_len(buf), estimated_fragments, freebuf);
     if(freebuf < estimated_fragments) {
@@ -494,23 +516,28 @@ static int fragment(struct net_buf *buf, void *ptr)
       goto fail;
     }
 
+    hdr_diff = uip_uncompressed_hdr_len(buf) - uip_compressed_hdr_len(buf);
+    PRINTF("fragment: hdr difference %d\n", hdr_diff);
     /* Create 1st Fragment */
     SET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_DISPATCH_SIZE,
-          ((SICSLOWPAN_DISPATCH_FRAG1 << 8) | uip_len(buf)));
+          ((SICSLOWPAN_DISPATCH_FRAG1 << 8) | (uip_len(buf) + hdr_diff)));
 
     frag_tag = my_tag++;
     SET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_TAG, frag_tag);
-    PRINTF("fragmentation: fragment %d \n", frag_tag);
+    PRINTF("fragment: tag %d \n", frag_tag);
 
     /* Copy payload and send */
+    uip_packetbuf_hdr_len(mbuf) = uip_compressed_hdr_len(buf);
     uip_packetbuf_hdr_len(mbuf) += SICSLOWPAN_FRAG1_HDR_LEN;
-    uip_packetbuf_payload_len(mbuf) = (max_payload - uip_packetbuf_hdr_len(mbuf)) & 0xfffffff8;
-    PRINTF("(payload len %d, hdr len %d, tag %d)\n",
+    uip_packetbuf_payload_len(mbuf) = (max_payload - uip_packetbuf_hdr_len(mbuf)) & 0xf8;
+    PRINTF("fragment: payload len %d, hdr len %d, tag %d\n",
                uip_packetbuf_payload_len(mbuf), uip_packetbuf_hdr_len(mbuf), frag_tag);
 
-    memcpy(uip_packetbuf_ptr(mbuf) + uip_packetbuf_hdr_len(mbuf),
-              uip_buf(buf), uip_packetbuf_payload_len(mbuf));
+    memcpy(uip_packetbuf_ptr(mbuf) + SICSLOWPAN_FRAG1_HDR_LEN,
+              uip_buf(buf), uip_packetbuf_payload_len(mbuf) +
+              uip_packetbuf_hdr_len(mbuf));
     packetbuf_set_datalen(mbuf, uip_packetbuf_payload_len(mbuf) + uip_packetbuf_hdr_len(mbuf));
+    PRINTF("fragment: packetbuf_datalen %d\n", packetbuf_datalen(mbuf));
     q = queuebuf_new_from_packetbuf(mbuf);
     if(q == NULL) {
       PRINTF("could not allocate queuebuf for first fragment, dropping packet\n");
@@ -531,8 +558,7 @@ static int fragment(struct net_buf *buf, void *ptr)
     }
 
     /* set processed_ip_out_len to what we already sent from the IP payload*/
-    processed_ip_out_len = uip_packetbuf_payload_len(mbuf);
-
+    processed_ip_out_len = uip_packetbuf_payload_len(mbuf) + uip_compressed_hdr_len(buf);
     /*
      * Create following fragments
      * Datagram tag is already in the buffer, we need to set the
@@ -540,24 +566,25 @@ static int fragment(struct net_buf *buf, void *ptr)
      */
     uip_packetbuf_hdr_len(mbuf) = SICSLOWPAN_FRAGN_HDR_LEN;
     SET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_DISPATCH_SIZE,
-          ((SICSLOWPAN_DISPATCH_FRAGN << 8) | uip_len(buf)));
-    uip_packetbuf_payload_len(mbuf) = (max_payload - uip_packetbuf_hdr_len(mbuf)) & 0xfffffff8;
+          ((SICSLOWPAN_DISPATCH_FRAGN << 8) | (uip_len(buf) + hdr_diff)));
+    uip_packetbuf_payload_len(mbuf) = (max_payload - uip_packetbuf_hdr_len(mbuf)) & 0xf8;
 
     while(processed_ip_out_len < uip_len(buf)) {
-      PRINTF("fragmentation: fragment:%d, processed_ip_out_len:%d \n", my_tag, processed_ip_out_len);
-      uip_packetbuf_ptr(mbuf)[PACKETBUF_FRAG_OFFSET] = processed_ip_out_len >> 3;
-
+      PRINTF("fragment: tag:%d, processed_ip_out_len:%d \n", frag_tag, processed_ip_out_len);
+      frag_offset = processed_ip_out_len + hdr_diff;
+      uip_packetbuf_ptr(mbuf)[PACKETBUF_FRAG_OFFSET] = frag_offset >> 3;
       /* Copy payload and send */
       if(uip_len(buf) - processed_ip_out_len < uip_packetbuf_payload_len(mbuf)) {
         /* last fragment */
         last_fragment = true;
         uip_packetbuf_payload_len(mbuf) = uip_len(buf) - processed_ip_out_len;
       }
-      PRINTF("(offset %d, len %d, tag %d)\n",
-             processed_ip_out_len >> 3, uip_packetbuf_payload_len(mbuf), my_tag);
+      PRINTF("fragment: offset %d, len %d, tag %d\n",
+             frag_offset, uip_packetbuf_payload_len(mbuf), frag_tag);
       memcpy(uip_packetbuf_ptr(mbuf) + uip_packetbuf_hdr_len(mbuf),
              (uint8_t *)UIP_IP_BUF(buf) + processed_ip_out_len, uip_packetbuf_payload_len(mbuf));
       packetbuf_set_datalen(mbuf, uip_packetbuf_payload_len(mbuf) + uip_packetbuf_hdr_len(mbuf));
+      PRINTF("fragment: packetbuf_datalen %d\n", packetbuf_datalen(mbuf));
       q = queuebuf_new_from_packetbuf(mbuf);
       if(q == NULL) {
         PRINTF("could not allocate queuebuf, dropping fragment\n");
@@ -667,7 +694,8 @@ static int reassemble(struct net_buf *mbuf)
         goto fail;
       }
 
-      if(frag_info[frag_context].reassembled_len >= frag_size) {
+      if(frag_info[frag_context].reassembled_len >= frag_size
+         || frag_info[frag_context].last_fragment) {
         last_fragment = 1;
       }
       is_fragment = 1;

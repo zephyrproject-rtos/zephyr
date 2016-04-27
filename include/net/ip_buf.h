@@ -122,6 +122,12 @@ struct ip_buf {
 	uint8_t *nd6_opt_llao;
 	uip_ipaddr_t ipaddr;
 	uint8_t nd6_opt_offset;
+
+	/* 6lowpan specific vars */
+	uint8_t compressed_hdr_len;
+	uint8_t uncompressed_hdr_len;
+	uint8_t first_frag_len;
+	uint8_t uncompressed;
 	/* @endcond */
 };
 
@@ -194,6 +200,14 @@ struct ip_buf {
 	(((struct ip_buf *)net_buf_user_data((buf)))->nd6_opt_llao)
 #define uip_nd6_ipaddr(buf) \
 	(((struct ip_buf *)net_buf_user_data((buf)))->ipaddr)
+#define uip_compressed_hdr_len(buf) \
+	(((struct ip_buf *)net_buf_user_data((buf)))->compressed_hdr_len)
+#define uip_uncompressed_hdr_len(buf) \
+	(((struct ip_buf *)net_buf_user_data((buf)))->uncompressed_hdr_len)
+#define uip_first_frag_len(buf) \
+	(((struct ip_buf *)net_buf_user_data((buf)))->first_frag_len)
+#define uip_uncompressed(buf) \
+	(((struct ip_buf *)net_buf_user_data((buf)))->uncompressed)
 
 /* These two return only the application data and length without
  * IP and UDP header length.

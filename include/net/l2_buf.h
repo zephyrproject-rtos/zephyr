@@ -64,7 +64,7 @@ struct l2_buf {
 	/* 6LoWPAN pointers */
 	uint8_t *packetbuf_ptr;
 	uint8_t packetbuf_hdr_len;
-	int packetbuf_payload_len;
+	uint8_t packetbuf_payload_len;
 	uint8_t uncomp_hdr_len;
 	int last_tx_status;
 #if defined(CONFIG_NETWORKING_WITH_15_4)
