@@ -635,7 +635,7 @@ static int cc2520_set_channel(struct device *dev, uint16_t channel)
 	DBG("%s: %u\n", __func__, channel);
 
 	if (channel < 11 || channel > 26) {
-		return -EIO;
+		return -EINVAL;
 	}
 
 	/* See chapter 16 */
