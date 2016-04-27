@@ -38,7 +38,9 @@
  */
 void _k_nop(struct k_args *A)
 {
-	ARG_UNUSED(A);
+	if (A->alloc) {
+		FREEARGS(A);
+	}
 }
 
 /**
@@ -55,4 +57,23 @@ void _task_nop(void)
 
 	A.Comm = _K_SVC_NOP;
 	KERNEL_ENTRY(&A);
+}
+
+/**
+ * @brief "do nothing" kernel request
+ *
+ * This routine is a request for the _k_server to run a "do nothing" routine.
+ * It is invoked by the nanokernel internals to trigger the microkernel task
+ * scheduler.
+ *
+ * @return N/A
+ */
+void _nano_nop(void)
+{
+	struct k_args *A;
+
+	GETARGS(A);
+	A->Comm = _K_SVC_NOP;
+	A->alloc = true;
+	SENDARGS(A);
 }
