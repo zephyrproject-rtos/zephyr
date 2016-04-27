@@ -110,6 +110,14 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(
 		} while (0)
 	#define _NANO_TIMEOUT_SET_TASK_TIMEOUT(ticks) \
 		_nanokernel.task_timeout = (ticks)
+
+	#define _NANO_TIMEOUT_UPDATE(timeout, limit, cur_ticks)               \
+		do {                                                          \
+			if ((timeout) != TICKS_UNLIMITED) {                   \
+				(timeout) = (int32_t)((limit) - (cur_ticks)); \
+			}                                                     \
+		} while (0)
+
 #elif defined(CONFIG_NANO_TIMERS)
 #include <timeout_q.h>
 	#define _nano_timeout_tcs_init(tcs) do { } while ((0))
@@ -118,6 +126,7 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(
 	#define _NANO_TIMEOUT_TICK_GET()  0
 	#define _NANO_TIMEOUT_ADD(pq, ticks) do { } while (0)
 	#define _NANO_TIMEOUT_SET_TASK_TIMEOUT(ticks) do { } while ((0))
+	#define _NANO_TIMEOUT_UPDATE(timeout, limit, cur_ticks) do { } while (0)
 #else
 	#define _nano_timeout_tcs_init(tcs) do { } while ((0))
 	#define _nano_timeout_abort(tcs) do { } while ((0))
@@ -126,6 +135,7 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(
 	#define _NANO_TIMEOUT_TICK_GET()  0
 	#define _NANO_TIMEOUT_ADD(pq, ticks) do { } while (0)
 	#define _NANO_TIMEOUT_SET_TASK_TIMEOUT(ticks) do { } while ((0))
+	#define _NANO_TIMEOUT_UPDATE(timeout, limit, cur_ticks) do { } while (0)
 #endif
 
 #ifdef CONFIG_MICROKERNEL

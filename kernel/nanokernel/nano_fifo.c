@@ -244,6 +244,8 @@ void *nano_task_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
 			_NANO_OBJECT_WAIT(&fifo->task_q, &fifo->data_q.head,
 					timeout_in_ticks, key);
 			cur_ticks = _NANO_TIMEOUT_TICK_GET();
+			_NANO_TIMEOUT_UPDATE(timeout_in_ticks,
+						limit, cur_ticks);
 		}
 	} while (cur_ticks < limit);
 

@@ -99,6 +99,7 @@ void _nano_task_sleep(int32_t timeout_in_ticks)
 
 		key = irq_lock();
 		cur_ticks = sys_tick_get();
+		_NANO_TIMEOUT_UPDATE(timeout_in_ticks, limit, cur_ticks);
 	}
 
 	irq_unlock(key);
