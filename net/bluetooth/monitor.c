@@ -53,15 +53,13 @@ static void monitor_send(const void *data, size_t len)
 	}
 }
 
-static void send_hdr(uint16_t opcode, uint16_t index, uint16_t len)
+static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint16_t opcode,
+			      uint16_t len)
 {
-	struct bt_monitor_hdr hdr;
-
-	hdr.opcode = sys_cpu_to_le16(opcode);
-	hdr.index = sys_cpu_to_le16(index);
-	hdr.len = sys_cpu_to_le16(len);
-
-	monitor_send(&hdr, sizeof(hdr));
+	hdr->data_len = sys_cpu_to_le16(4 + len);
+	hdr->opcode   = sys_cpu_to_le16(opcode);
+	hdr->flags    = 0;
+	hdr->hdr_len  = 0;
 }
 
 static int log_out(int c, void *unused)
@@ -73,6 +71,7 @@ static int log_out(int c, void *unused)
 void bt_log(int prio, const char *fmt, ...)
 {
 	struct bt_monitor_user_logging log;
+	struct bt_monitor_hdr hdr;
 	const char id[] = "bt";
 	va_list ap;
 	int len, key;
@@ -88,10 +87,12 @@ void bt_log(int prio, const char *fmt, ...)
 	log.priority = prio;
 	log.ident_len = sizeof(id);
 
+	encode_hdr(&hdr, BT_MONITOR_USER_LOGGING,
+		   sizeof(log) + sizeof(id) + len + 1);
+
 	key = irq_lock();
 
-	send_hdr(BT_MONITOR_USER_LOGGING, 0,
-		 sizeof(log) + sizeof(id) + len + 1);
+	monitor_send(&hdr, sizeof(hdr));
 	monitor_send(&log, sizeof(log));
 	monitor_send(id, sizeof(id));
 
@@ -107,11 +108,14 @@ void bt_log(int prio, const char *fmt, ...)
 
 void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
 {
+	struct bt_monitor_hdr hdr;
 	int key;
+
+	encode_hdr(&hdr, opcode, len);
 
 	key = irq_lock();
 
-	send_hdr(opcode, 0, len);
+	monitor_send(&hdr, sizeof(hdr));
 	monitor_send(data, len);
 
 	irq_unlock(key);

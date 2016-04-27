@@ -40,9 +40,10 @@
 #define BT_MONITOR_TYPE_AMP	1
 
 struct bt_monitor_hdr {
-	uint16_t opcode;
-	uint16_t index;
-	uint16_t len;
+	uint16_t  data_len;
+	uint16_t  opcode;
+	uint8_t   flags;
+	uint8_t   hdr_len;
 } __packed;
 
 struct bt_monitor_new_index {
