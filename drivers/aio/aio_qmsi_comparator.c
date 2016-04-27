@@ -131,8 +131,6 @@ int aio_qmsi_cmp_init(struct device *dev)
 
 	aio_cmp_config(dev);
 
-	dev->driver_api = &aio_cmp_funcs;
-
 	/* Disable all comparator interrupts */
 	QM_SCSS_INT->int_comparators_host_mask |= INT_COMPARATORS_MASK;
 
@@ -177,9 +175,10 @@ struct aio_qmsi_cmp_dev_data_t aio_qmsi_cmp_dev_data = {
 		.num_cmp = AIO_QMSI_CMP_COUNT,
 };
 
-DEVICE_INIT(aio_qmsi_cmp, CONFIG_AIO_QMSI_COMPARATOR_DEV_NAME,
-	    &aio_qmsi_cmp_init, &aio_qmsi_cmp_dev_data, NULL,
-	    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(aio_qmsi_cmp, CONFIG_AIO_QMSI_COMPARATOR_DEV_NAME,
+		    &aio_qmsi_cmp_init, &aio_qmsi_cmp_dev_data, NULL,
+		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&aio_cmp_funcs);
 
 static int aio_cmp_config(struct device *dev)
 {
