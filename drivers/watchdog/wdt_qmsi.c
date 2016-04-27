@@ -94,12 +94,12 @@ static int init(struct device *dev)
 	/* Route watchdog interrupt to Lakemont */
 	QM_SCSS_INT->int_watchdog_mask &= ~BIT(0);
 
-	dev->driver_api = &api;
 	return 0;
 }
 
-DEVICE_INIT(wdt, CONFIG_WDT_DRV_NAME, init, 0, 0,
-			PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(wdt, CONFIG_WDT_DRV_NAME, init, 0, 0,
+		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&api);
 
 /* Define 'struct device' variable which is passed to the ISR. Even if it
  * is not used by the ISR code, we require it in order to be able to pass
