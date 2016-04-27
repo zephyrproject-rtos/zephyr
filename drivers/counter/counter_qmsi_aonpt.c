@@ -114,8 +114,6 @@ static int aon_timer_init(struct device *dev)
 {
 	struct aon_timer_data *driver_data = dev->driver_data;
 
-	dev->driver_api = &aon_timer_qmsi_api;
-
 	driver_data->callback_user_data = NULL;
 	driver_data->timer_callback = NULL;
 
@@ -130,9 +128,10 @@ static int aon_timer_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_INIT(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME,
-	    aon_timer_init, &aonpt_driver_data, NULL, SECONDARY,
-	    CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME,
+		    aon_timer_init, &aonpt_driver_data, NULL, SECONDARY,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&aon_timer_qmsi_api);
 
 static void aonpt_int_callback(void)
 {

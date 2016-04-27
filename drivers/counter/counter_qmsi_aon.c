@@ -60,11 +60,10 @@ struct counter_driver_api aon_counter_qmsi_api = {
 
 static int aon_counter_init(struct device *dev)
 {
-	dev->driver_api = &aon_counter_qmsi_api;
-
 	return 0;
 }
 
-DEVICE_INIT(aon_counter, CONFIG_AON_COUNTER_QMSI_DEV_NAME,
-	    aon_counter_init, NULL, NULL, SECONDARY,
-	    CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(aon_counter, CONFIG_AON_COUNTER_QMSI_DEV_NAME,
+		    aon_counter_init, NULL, NULL, SECONDARY,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&aon_counter_qmsi_api);
