@@ -257,8 +257,6 @@ static int spi_qmsi_init(struct device *dev)
 	struct spi_qmsi_config *spi_config = dev->config->config_info;
 	struct spi_qmsi_runtime *context = dev->driver_data;
 
-	dev->driver_api = &spi_qmsi_api;
-
 	switch (spi_config->spi) {
 	case QM_SPI_MST_0:
 		IRQ_CONNECT(QM_IRQ_SPI_MASTER_0,
@@ -287,6 +285,8 @@ static int spi_qmsi_init(struct device *dev)
 	context->gpio_cs = gpio_cs_init(spi_config);
 
 	device_sync_call_init(&context->sync);
+
+	dev->driver_api = &spi_qmsi_api;
 
 	return 0;
 }
