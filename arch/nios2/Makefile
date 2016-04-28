@@ -8,6 +8,11 @@ arch_cflags := $(call cc-option,-G0)
 # warnings as errors. Remove this once the stubs are all implemented
 arch_cflags += $(call cc-option,-Wno-unused-parameter)
 
+# Put functions and data in their own binary sections so that ld can
+# garbage collect them
+arch_cflags += $(call cc-option,-ffunction-sections) \
+	       $(call cc-option,-fdata-sections)
+
 KBUILD_AFLAGS += $(arch_cflags)
 KBUILD_CFLAGS += $(arch_cflags)
 KBUILD_CXXFLAGS += $(arch_cflags)
