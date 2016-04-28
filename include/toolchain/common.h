@@ -102,6 +102,15 @@
 
     #define PERFOPT_ALIGN .balign  4
 
+  #elif defined(CONFIG_NIOS2)
+
+    /* FIXME placeholder value */
+    #define PERFOPT_ALIGN .balign 4
+
+  #else
+
+    #error Architecture unsupported
+
   #endif
 
   #define GC_SECTION(sym) SECTION .text.FUNC(sym), "ax"
