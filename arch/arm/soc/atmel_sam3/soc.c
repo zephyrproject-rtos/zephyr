@@ -38,7 +38,7 @@
  * Assumption:
  * SLCK = 32.768kHz
  */
-static void clock_init(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 	uint32_t tmp;
 
