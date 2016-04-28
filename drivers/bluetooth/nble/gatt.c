@@ -1177,7 +1177,7 @@ void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *ev,
 		reply_data.status = attr->write(NULL, attr, buf, buflen,
 						ev->offset);
 	} else {
-		reply_data.status = -EINVAL;
+		reply_data.status = BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
 	}
 
 	if (ev->flag & NBLE_GATT_WR_FLAG_REPLY) {
