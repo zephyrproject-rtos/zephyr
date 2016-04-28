@@ -38,13 +38,7 @@
 
 #include <zephyr.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
 #include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 #include <device.h>
 #include <pwm.h>
@@ -68,11 +62,11 @@ void main(void)
 
 	nano_timer_init(&timer, timer_data);
 
-	PRINT("PWM demo app\n");
+	printk("PWM demo app\n");
 
 	pwm_dev = device_get_binding("PWM_0");
 	if (!pwm_dev) {
-		PRINT("Cannot find PWM_0!\n");
+		printk("Cannot find PWM_0!\n");
 	}
 
 	period = MAX_PERIOD;
