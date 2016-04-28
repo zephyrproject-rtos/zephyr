@@ -34,13 +34,7 @@
 
 #include <zephyr.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
 #include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 #include <device.h>
 #include <gpio.h>
@@ -101,18 +95,18 @@ void main(void)
 
 	gpio_dev = device_get_binding(GPIO_DRV_NAME);
 	if (!gpio_dev) {
-		PRINT("Cannot find %s!\n", GPIO_DRV_NAME);
+		printk("Cannot find %s!\n", GPIO_DRV_NAME);
 	}
 
 	/* Setup GPIO output */
 	ret = gpio_pin_configure(gpio_dev, GPIO_DATA_PIN, (GPIO_DIR_OUT));
 	if (ret) {
-		PRINT("Error configuring " GPIO_NAME "%d!\n", GPIO_DATA_PIN);
+		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_DATA_PIN);
 	}
 
 	ret = gpio_pin_configure(gpio_dev, GPIO_CLK_PIN, (GPIO_DIR_OUT));
 	if (ret) {
-		PRINT("Error configuring " GPIO_NAME "%d!\n", GPIO_CLK_PIN);
+		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_CLK_PIN);
 	}
 
 	while (1) {
