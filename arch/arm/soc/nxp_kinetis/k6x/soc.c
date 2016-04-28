@@ -91,7 +91,7 @@ uint8_t __security_frdm_k64f_section __security_frdm_k64f[] = {
  *
  */
 
-static void clkInit(void)
+static ALWAYS_INLINE void clkInit(void)
 {
 	uint8_t temp_reg;
 	K20_MCG_t *mcg_p = (K20_MCG_t *)PERIPH_ADDR_BASE_MCG; /* clk gen. ctl */
