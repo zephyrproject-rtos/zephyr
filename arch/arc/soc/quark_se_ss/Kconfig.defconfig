@@ -51,6 +51,12 @@ config SRAM_SIZE
 	default 16 if NSIM
 	default 24
 
+config ICCM_BASE_ADDRESS
+	default 0xFFFFFFFF
+
+config ICCM_SIZE
+	default 0
+
 config DCCM_BASE_ADDRESS
 	default 0x80000000
 

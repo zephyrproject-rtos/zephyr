@@ -157,6 +157,20 @@ config	XIP
 	default n if NSIM
 	default y
 
+config ICCM_SIZE
+	int "ICCM Size in kB"
+	help
+	This option specifies the size of the ICCM in kB.  It is normally set by
+	the platform's defconfig file and the user should generally avoid modifying
+	it via the menu configuration.
+
+config ICCM_BASE_ADDRESS
+	hex "ICCM Base Address"
+	help
+	This option specifies the base address of the ICCM on the platform.  It is
+	normally set by the platform's defconfig file and the user should generally
+	avoid modifying it via the menu configuration.
+
 config DCCM_SIZE
 	int "DCCM Size in kB"
 	help
