@@ -1174,13 +1174,33 @@ void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *ev,
 
 	BT_DBG("handle 0x%04x buf %p len %u", attr->handle, buf, buflen);
 
-	if (attr->write) {
-		reply_data.status = attr->write(conn, attr, buf, buflen,
-						ev->offset);
-	} else {
+	/* Check for write support and flush support in case of prepare */
+	if (!attr->write ||
+	    ((ev->flag & NBLE_GATT_WR_FLAG_PREP) && !attr->flush)) {
 		reply_data.status = BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+
+		goto reply;
 	}
 
+	reply_data.status = attr->write(conn, attr, buf, buflen, ev->offset);
+	if (reply_data.status < 0) {
+
+		goto reply;
+	}
+
+	/* Return an error if not all data has been written */
+	if (reply_data.status != buflen) {
+		reply_data.status = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+
+		goto reply;
+	}
+
+	/* Flush in case of regular write operation */
+	if (attr->flush && !(ev->flag & NBLE_GATT_WR_FLAG_PREP)) {
+		reply_data.status = attr->flush(conn, attr, BT_GATT_FLUSH_SYNC);
+	}
+
+reply:
 	if (ev->flag & NBLE_GATT_WR_FLAG_REPLY) {
 		reply_data.conn_handle = ev->conn_handle;
 
