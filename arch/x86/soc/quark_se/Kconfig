@@ -25,6 +25,13 @@ config EOI_FORWARDING_BUG
 	Quark SE LOAPIC has issues with forwarding EOI to the IOAPIC for level
 	triggered interrupts, this is a SW workaround.
 
+config SS_RESET_VECTOR
+	hex "Sensor Subsystem Reset Vector"
+	default 0x40000000
+	help
+	Sensor subsystem reset vector. This value is needed to init the ARC
+	system on the SoC.
+
 config ARC_INIT
 	bool "Quark SE ARC Kickoff"
 	default n

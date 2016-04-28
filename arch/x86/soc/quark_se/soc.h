@@ -47,7 +47,7 @@
 #define CLOCK_SYSTEM_CLOCK_CONTROL	(SCSS_REGISTER_BASE + SCSS_CCU_SYS_CLK_CTL)
 
 /* ARC INIT */
-#define RESET_VECTOR                   	0x40000000
+#define RESET_VECTOR                   	CONFIG_SS_RESET_VECTOR
 #define SCSS_SS_CFG                    	0x0600
 #define SCSS_SS_STS                    	0x0604
 #define ARC_HALT_INT_REDIR             	(1 << 26)
