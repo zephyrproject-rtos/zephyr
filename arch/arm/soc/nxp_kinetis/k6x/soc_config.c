@@ -39,8 +39,8 @@
 
 #ifdef CONFIG_UART_K20
 
-#if defined(CONFIG_UART_CONSOLE)
-#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
+#if defined(CONFIG_UART_CONSOLE) && \
+	(defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE))
 
 /**
  * @brief Initialize K20 serial port as console
@@ -51,7 +51,7 @@
  *
  * @return 0 if successful, otherwise failed.
  */
-static int uart_k20_console_init(struct device *dev)
+static ALWAYS_INLINE int uart_k20_console_init(void)
 {
 	uint32_t port;
 	uint32_t rxPin;
@@ -76,10 +76,9 @@ static int uart_k20_console_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(uart_k20_console_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif
-#endif /* CONFIG_UART_CONSOLE */
+#else
+#define uart_k20_console_init(...)
+#endif /* CONFIG_UART_CONSOLE && (CONFIG_PRINTK || CONFIG_STDOUT_CONSOLE) */
 
 static int uart_k20_init(struct device *dev)
 {
@@ -116,6 +115,9 @@ static int uart_k20_init(struct device *dev)
 #ifdef CONFIG_UART_K20_PORT_4
 	sim->scgc1.field.uart4_clk_en = 1;
 #endif
+
+	/* Initialize UART port for console if needed */
+	uart_k20_console_init();
 
 	return 0;
 }
