@@ -29,7 +29,7 @@
 	"of differing priorities and the %s semaphores and timers."
 
 #ifdef CONFIG_NANOKERNEL
-#define STSIZE 512
+#define STSIZE 1024
 
 /* externs */
 
