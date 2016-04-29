@@ -35,4 +35,7 @@ KBUILD_CFLAGS += -D$(KSDK_CPU)
 # for every ksdk device.
 obj-y += devices/$(KSDK_DEVICE)/fsl_clock.o
 
+# Build ksdk drivers that can be used for multiple SoC's.
+obj-y += drivers/
+
 endif

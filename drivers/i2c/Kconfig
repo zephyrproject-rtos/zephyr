@@ -74,6 +74,13 @@ config I2C_ATMEL_SAM3
 	Says y to enable additional options to enable support
 	for individual controllers.
 
+config I2C_KSDK
+	bool "KSDK I2C driver"
+	depends on I2C && HAS_KSDK
+	default n
+	help
+	Enable the ksdk I2C driver.
+
 config I2C_INIT_PRIORITY
 	int
 	depends on I2C
