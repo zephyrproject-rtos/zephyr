@@ -275,12 +275,24 @@ uint8_t net_buf_pull_u8(struct net_buf *buf);
  */
 uint16_t net_buf_pull_le16(struct net_buf *buf);
 
+/** @brief Remove and convert 32 bits from the beginning of the buffer.
+ *
+ *  Same idea as with bt_buf_pull(), but a helper for operating on
+ *  32-bit little endian data.
+ *
+ *  @param buf Buffer.
+ *
+ *  @return 32-bit value converted from little endian to host endian.
+ */
+uint32_t net_buf_pull_le32(struct net_buf *buf);
+
 /** @brief Check buffer tailroom.
  *
  *  Check how much free space there is at the end of the buffer.
  *
  *  @return Number of bytes available at the end of the buffer.
  */
+
 size_t net_buf_tailroom(struct net_buf *buf);
 
 /** @brief Check buffer headroom.

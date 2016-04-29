@@ -196,6 +196,16 @@ uint16_t net_buf_pull_le16(struct net_buf *buf)
 	return sys_le16_to_cpu(value);
 }
 
+uint32_t net_buf_pull_le32(struct net_buf *buf)
+{
+	uint32_t value;
+
+	value = UNALIGNED_GET((uint32_t *)buf->data);
+	net_buf_pull(buf, sizeof(value));
+
+	return sys_le32_to_cpu(value);
+}
+
 size_t net_buf_headroom(struct net_buf *buf)
 {
 	return buf->data - buf->__buf;
