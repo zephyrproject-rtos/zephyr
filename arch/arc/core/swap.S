@@ -74,10 +74,10 @@ SECTION_FUNC(TEXT, _Swap)
 	/* interrupts are locked, interrupt key is in r0 */
 
 	mov r1, _nanokernel
-	ld r2, [r1, __tNANO_current_OFFSET]
+	ld_s r2, [r1, __tNANO_current_OFFSET]
 
 	/* save intlock key */
-	st r0, [r2, __tTCS_intlock_key_OFFSET]
+	st_s r0, [r2, __tTCS_intlock_key_OFFSET]
 	st _CAUSE_COOP, [r2, __tTCS_relinquish_cause_OFFSET]
 
 	/*
@@ -95,20 +95,20 @@ SECTION_FUNC(TEXT, _Swap)
 
 	_save_callee_saved_regs
 
-	ld r2, [r1, __tNANO_fiber_OFFSET]
+	ld_s r2, [r1, __tNANO_fiber_OFFSET]
 	breq.nd r2, 0, _swap_to_the_task
 
 .balign 4
 _swap_to_a_fiber:
 
-	ld r3, [r2, __tTCS_link_OFFSET]
+	ld_s r3, [r2, __tTCS_link_OFFSET]
 	b.d _finish_swapping_to_thread    /* always execute delay slot */
-	st r3, [r1, __tNANO_fiber_OFFSET] /* delay slot */
+	st_s r3, [r1, __tNANO_fiber_OFFSET] /* delay slot */
 
 .balign 4
 _swap_to_the_task:
 
-	ld r2, [r1, __tNANO_task_OFFSET]
+	ld_s r2, [r1, __tNANO_task_OFFSET]
 
 	/* fall through */
 
@@ -120,22 +120,22 @@ _finish_swapping_to_thread:
 #if 0
 /* don't save flags in tNANO: slower, error-prone, and might not even give
  * a speed boost where it's supposed to */
-	ld r3, [r2, __tTCS_flags_OFFSET]
-	st r3, [r1, __tNANO_flags_OFFSET]
+	ld_s r3, [r2, __tTCS_flags_OFFSET]
+	st_s r3, [r1, __tNANO_flags_OFFSET]
 #endif
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Use stack top and down registers from restored context */
 	add r3, r2, __tTCS_NOFLOAT_SIZEOF
 	sr r3, [_ARC_V2_KSTACK_TOP]
-	ld r3, [r2, __tTCS_stack_top_OFFSET]
+	ld_s r3, [r2, __tTCS_stack_top_OFFSET]
 	sr r3, [_ARC_V2_KSTACK_BASE]
 #endif
 	/* XXX - can be moved to delay slot of _CAUSE_RIRQ ? */
-	st r2, [r1, __tNANO_current_OFFSET]
+	st_s r2, [r1, __tNANO_current_OFFSET]
 
 	_load_callee_saved_regs
 
-	ld r3, [r2, __tTCS_relinquish_cause_OFFSET]
+	ld_s r3, [r2, __tTCS_relinquish_cause_OFFSET]
 
 	breq.nd r3, _CAUSE_RIRQ, _swap_return_from_rirq
 	nop
@@ -147,9 +147,9 @@ _finish_swapping_to_thread:
 .balign 4
 _swap_return_from_coop:
 
-	ld r1, [r2, __tTCS_intlock_key_OFFSET]
+	ld_s r1, [r2, __tTCS_intlock_key_OFFSET]
 	st  0, [r2, __tTCS_intlock_key_OFFSET]
-	ld r0, [r2, __tTCS_return_value_OFFSET]
+	ld_s r0, [r2, __tTCS_return_value_OFFSET]
 
 	/*
 	 * Adjust the stack here in case we go to _return_from_exc: this allows

@@ -57,7 +57,7 @@ SECTION_FUNC(TEXT, _rirq_enter)
 	bclr r2, r2, _ARC_V2_STATUS32_SC_BIT
 	kflag r2
 #endif
-	ld r2, [r1, __tNANO_current_OFFSET]
+	ld_s r2, [r1, __tNANO_current_OFFSET]
 #if CONFIG_NUM_REGULAR_IRQ_PRIO_LEVELS == 1
 	st sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 	ld sp, [r1, __tNANO_rirq_sp_OFFSET]
@@ -77,7 +77,7 @@ SECTION_FUNC(TEXT, _rirq_enter)
 SECTION_FUNC(TEXT, _rirq_exit)
 
 	mov r1, _nanokernel
-	ld r2, [r1, __tNANO_current_OFFSET]
+	ld_s r2, [r1, __tNANO_current_OFFSET]
 
 #if CONFIG_NUM_REGULAR_IRQ_PRIO_LEVELS > 1
 	/* check if we're a nested interrupt: if so, let the interrupted interrupt
@@ -108,12 +108,12 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	 * b) needs to load it to restore the interrupted context.
 	 */
 
-	ld r0, [r2, __tTCS_flags_OFFSET]
+	ld_s r0, [r2, __tTCS_flags_OFFSET]
 	and.f r0, r0, PREEMPTIBLE
 	bz.d _rirq_no_reschedule
 	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 
-	ld r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
+	ld_s r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
 	cmp r0, 0
 	bz.d _rirq_no_reschedule
 	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
@@ -128,15 +128,15 @@ _rirq_reschedule:
 
 	/* incoming fiber is in r0: it becomes the new 'current' */
 	mov r2, r0
-	st r2, [r1, __tNANO_current_OFFSET]
-	ld r3, [r2, __tTCS_link_OFFSET]
-	st r3, [r1, __tNANO_fiber_OFFSET]
+	st_s r2, [r1, __tNANO_current_OFFSET]
+	ld_s r3, [r2, __tTCS_link_OFFSET]
+	st_s r3, [r1, __tNANO_fiber_OFFSET]
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Use stack top and down registers from restored context */
 	add r3, r2, __tTCS_NOFLOAT_SIZEOF
 	sr r3, [_ARC_V2_KSTACK_TOP]
-	ld r3, [r2, __tTCS_stack_top_OFFSET]
+	ld_s r3, [r2, __tTCS_stack_top_OFFSET]
 	sr r3, [_ARC_V2_KSTACK_BASE]
 #endif
 	/*
@@ -145,7 +145,7 @@ _rirq_reschedule:
 	 */
 	_load_callee_saved_regs
 
-	ld r3, [r2, __tTCS_relinquish_cause_OFFSET]
+	ld_s r3, [r2, __tTCS_relinquish_cause_OFFSET]
 
 	breq.nd r3, _CAUSE_RIRQ, _rirq_return_from_rirq
 	nop
@@ -160,12 +160,12 @@ _rirq_return_from_coop:
 	/* status32 and pc (blink) are already on the stack in the right order */
 
 	/* update status32.ie (explanation in firq_exit:_firq_return_from_coop) */
-	ld r0, [sp, 4]
-	ld r3, [r2, __tTCS_intlock_key_OFFSET]
+	ld_s r0, [sp, 4]
+	ld_s r3, [r2, __tTCS_intlock_key_OFFSET]
 	st  0, [r2, __tTCS_intlock_key_OFFSET]
 	cmp r3, 0
 	or.ne r0, r0, _ARC_V2_STATUS32_IE
-	st r0, [sp, 4]
+	st_s r0, [sp, 4]
 
 	/* carve fake stack */
 
@@ -173,7 +173,7 @@ _rirq_return_from_coop:
 	                                  * b) a real value will be pushed in r0 */
 
 	/* push return value on stack */
-	ld r0, [r2, __tTCS_return_value_OFFSET]
+	ld_s r0, [r2, __tTCS_return_value_OFFSET]
 	push_s r0
 
 	/*

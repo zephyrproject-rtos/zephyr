@@ -81,9 +81,9 @@ SECTION_FUNC(TEXT, _firq_enter)
 	st lp_count, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_count_OFFSET]
 
 	lr r2, [_ARC_V2_LP_START]
-	st r2, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_start_OFFSET]
+	st_s r2, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_start_OFFSET]
 	lr r2, [_ARC_V2_LP_END]
-	st r2, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_end_OFFSET]
+	st_s r2, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_end_OFFSET]
 #endif
 
 	j @_isr_demux
@@ -107,12 +107,12 @@ SECTION_FUNC(TEXT, _firq_exit)
 	/* restore LP_START/LP_COUNT/LP_END variables */
 
 	/* cannot load lp_count from memory */
-	ld r3, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_count_OFFSET]
+	ld_s r3, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_count_OFFSET]
 	mov lp_count, r3
 
-	ld r3, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_start_OFFSET]
+	ld_s r3, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_start_OFFSET]
 	sr r3, [_ARC_V2_LP_START]
-	ld r3, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_end_OFFSET]
+	ld_s r3, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_end_OFFSET]
 	sr r3, [_ARC_V2_LP_END]
 
 	/* exiting here: r1/r2 unchanged, r0/r3 destroyed */
@@ -138,14 +138,14 @@ SECTION_FUNC(TEXT, _firq_exit)
 .balign 4
 _check_if_current_is_the_task:
 
-	ld r0, [r2, __tTCS_flags_OFFSET]
+	ld_s r0, [r2, __tTCS_flags_OFFSET]
 	and.f r0, r0, PREEMPTIBLE
 	bnz.nd _check_if_a_fiber_is_ready
 	rtie
 
 .balign 4
 _check_if_a_fiber_is_ready:
-	ld r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
+	ld_s r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
 	brne.nd r0, 0, _firq_reschedule
 	rtie
 
@@ -177,23 +177,23 @@ _firq_reschedule:
 	st ilink, [sp, __tISF_pc_OFFSET] /* ilink into pc */
 
 	mov_s r1, _nanokernel
-	ld r2, [r1, __tNANO_current_OFFSET]
+	ld_s r2, [r1, __tNANO_current_OFFSET]
 
 	_save_callee_saved_regs
 
 	st _CAUSE_FIRQ, [r2, __tTCS_relinquish_cause_OFFSET]
 
-	ld r2, [r1, __tNANO_fiber_OFFSET]
+	ld_s r2, [r1, __tNANO_fiber_OFFSET]
 
-	st r2, [r1, __tNANO_current_OFFSET]
-	ld r3, [r2, __tTCS_link_OFFSET]
-	st r3, [r1, __tNANO_fiber_OFFSET]
+	st_s r2, [r1, __tNANO_current_OFFSET]
+	ld_s r3, [r2, __tTCS_link_OFFSET]
+	st_s r3, [r1, __tNANO_fiber_OFFSET]
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Use stack top and down registers from restored context */
 	add r3, r2, __tTCS_NOFLOAT_SIZEOF
 	sr r3, [_ARC_V2_KSTACK_TOP]
-	ld r3, [r2, __tTCS_stack_top_OFFSET]
+	ld_s r3, [r2, __tTCS_stack_top_OFFSET]
 	sr r3, [_ARC_V2_KSTACK_BASE]
 #endif
 	/*
@@ -202,7 +202,7 @@ _firq_reschedule:
 	 */
 	_load_callee_saved_regs
 
-	ld r3, [r2, __tTCS_relinquish_cause_OFFSET]
+	ld_s r3, [r2, __tTCS_relinquish_cause_OFFSET]
 
 	breq.nd r3, _CAUSE_RIRQ, _firq_return_from_rirq
 	nop
@@ -214,7 +214,7 @@ _firq_reschedule:
 .balign 4
 _firq_return_from_coop:
 
-	ld r3, [r2, __tTCS_intlock_key_OFFSET]
+	ld_s r3, [r2, __tTCS_intlock_key_OFFSET]
 	st  0, [r2, __tTCS_intlock_key_OFFSET]
 
 	/* pc into ilink */
@@ -233,7 +233,7 @@ _firq_return_from_coop:
 	or.nz r0, r0, _ARC_V2_STATUS32_IE
 	sr r0, [_ARC_V2_STATUS32_P0]
 
-	ld r0, [r2, __tTCS_return_value_OFFSET]
+	ld_s r0, [r2, __tTCS_return_value_OFFSET]
 	rtie
 
 .balign 4
