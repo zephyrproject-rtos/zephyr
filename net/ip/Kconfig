@@ -41,6 +41,11 @@ config NET_UIP
 	bool "uIP"
 	help
 	  Choose this if unsure.
+
+config NET_YAIP
+	bool "New IP stack [EXPERIMENTAL]"
+	help
+	  New IP stack.
 endchoice
 
 if NETWORKING && NET_UIP
@@ -603,6 +608,10 @@ config	NET_TESTING
 endif
 
 if NETWORKING
+
+if NET_YAIP
+source "net/yaip/Kconfig"
+endif
 
 source "net/ip/Kconfig.debug"
 

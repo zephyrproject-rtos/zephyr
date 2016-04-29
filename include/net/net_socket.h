@@ -14,4 +14,8 @@
  * limitations under the License.
  */
 
+#if defined(CONFIG_NET_YAIP)
+#include <net/yaip/net_socket.h>
+#else
 #include <net/uip/net_socket.h>
+#endif
