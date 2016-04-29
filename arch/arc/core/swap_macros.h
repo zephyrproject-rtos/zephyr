@@ -36,7 +36,7 @@ extern "C" {
 	sub_s sp, sp, __tCalleeSaved_SIZEOF
 
 	/* save regs on stack */
-	st r13, [sp, __tCalleeSaved_r13_OFFSET]
+	st_s r13, [sp, __tCalleeSaved_r13_OFFSET]
 	st r14, [sp, __tCalleeSaved_r14_OFFSET]
 	st r15, [sp, __tCalleeSaved_r15_OFFSET]
 	st r16, [sp, __tCalleeSaved_r16_OFFSET]
@@ -62,7 +62,7 @@ extern "C" {
 	/* restore stack pointer from struct tcs */
 	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 
-	ld r13, [sp, __tCalleeSaved_r13_OFFSET]
+	ld_s r13, [sp, __tCalleeSaved_r13_OFFSET]
 	ld r14, [sp, __tCalleeSaved_r14_OFFSET]
 	ld r15, [sp, __tCalleeSaved_r15_OFFSET]
 	ld r16, [sp, __tCalleeSaved_r16_OFFSET]
