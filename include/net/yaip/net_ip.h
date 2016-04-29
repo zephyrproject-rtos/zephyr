@@ -24,6 +24,7 @@
 #define __NET_IP_H
 
 #include <stdint.h>
+#include <misc/byteorder.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +46,11 @@ enum ip_protocol {
 	IPPROTO_UDP = 17,
 	IPPROTO_ICMPV6 = 58,
 };
+
+#define ntohs(x) sys_be16_to_cpu(x)
+#define ntohl(x) sys_be32_to_cpu(x)
+#define htons(x) sys_cpu_to_be16(x)
+#define htonl(x) sys_cpu_to_be32(x)
 
 /** IPv6 address structure */
 struct in6_addr {
