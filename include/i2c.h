@@ -258,11 +258,11 @@ static inline int i2c_burst_read(struct device *dev, uint16_t dev_addr,
 
 	msg[0].buf = &start_addr;
 	msg[0].len = 1;
-	msg[0].flags = I2C_MSG_WRITE | I2C_MSG_RESTART;
+	msg[0].flags = I2C_MSG_WRITE;
 
 	msg[1].buf = buf;
 	msg[1].len = num_bytes;
-	msg[1].flags = I2C_MSG_READ | I2C_MSG_STOP;
+	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
 	return api->transfer(dev, msg, 2, dev_addr);
