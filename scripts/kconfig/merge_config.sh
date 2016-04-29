@@ -130,6 +130,7 @@ for MERGE_FILE in $MERGE_LIST ; do
 			rm $TMP_FILE.bak
 		fi
 	done
+	chmod u+w $TMP_FILE
 	cat $MERGE_FILE >> $TMP_FILE
 done
 
