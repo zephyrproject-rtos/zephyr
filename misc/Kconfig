@@ -51,6 +51,14 @@ config  CUSTOM_LINKER_SCRIPT
 	linker script and avoid having to change the script provided by
 	Zephyr.
 
+config VERSION_HEADER
+	bool "Add a version header to binary"
+	default n
+	help
+	This will add a version header section to the generated binary that
+	can be filled with the software version for example using a post
+	script.
+
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"
 	help

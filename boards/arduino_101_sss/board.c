@@ -19,3 +19,15 @@
 #include <uart.h>
 #include <device.h>
 #include <init.h>
+
+#ifdef CONFIG_VERSION_HEADER
+#include "version_header.h"
+/* The content of this struct is overwritten in a post-build script */
+struct version_header version_header __attribute__((section(".version_header")))
+__attribute__((used)) = {
+	.magic = {'$', 'B', '!', 'N'},
+	.version = 0x01,
+	.reserved_1 = {0, 0, 0, 0},
+	.reserved_2 = {0, 0, 0, 0},
+};
+#endif
