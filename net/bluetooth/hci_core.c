@@ -673,9 +673,9 @@ static void le_conn_complete(struct net_buf *buf)
 		 */
 	} else {
 		bt_addr_le_copy(&conn->le.init_addr, &evt->peer_addr);
-		if (bt_dev.adv_addr_type == BT_ADDR_LE_PUBLIC) {
-			bt_addr_le_copy(&conn->le.resp_addr,
-					&bt_dev.id_addr);
+
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_ID)) {
+			bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr);
 		} else {
 			bt_addr_le_copy(&conn->le.resp_addr,
 					&bt_dev.random_addr);
@@ -3440,11 +3440,13 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	bt_dev.adv_addr_type = set_param->own_addr_type;
-
 	err = set_advertise_enable();
 	if (err) {
 		return err;
+	}
+
+	if (param->addr_type == BT_LE_ADV_ADDR_IDENTITY) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING_ID);
 	}
 
 	atomic_set_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
@@ -3465,6 +3467,7 @@ int bt_le_adv_stop(void)
 		return err;
 	}
 
+	atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING_ID);
 	atomic_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
 
 	return 0;

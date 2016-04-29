@@ -30,6 +30,7 @@ enum {
 
 	BT_DEV_ADVERTISING,
 	BT_DEV_KEEP_ADVERTISING,
+	BT_DEV_ADVERTISING_ID,
 	BT_DEV_SCANNING,
 	BT_DEV_EXPLICIT_SCAN,
 
@@ -64,9 +65,6 @@ struct bt_dev {
 
 	/* Current local Random Address */
 	bt_addr_le_t		random_addr;
-
-	/* Current advertising address type */
-	uint8_t			adv_addr_type;
 
 	/* Controller version & manufacturer information */
 	uint8_t			hci_version;
