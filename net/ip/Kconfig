@@ -30,7 +30,24 @@ menuconfig NETWORKING
 	help
 	  This option enabled generic networking support.
 
-if NETWORKING
+choice
+prompt "IP stack"
+depends on NETWORKING
+help
+	Select what IP stack to use. The legacy stack is
+	Contiki based uIP stack.
+default NET_UIP
+config NET_UIP
+	bool "uIP"
+	help
+	  Choose this if unsure.
+config NET_YAIP
+	bool "New IP stack [EXPERIMENTAL]"
+	help
+	  New IP stack.
+endchoice
+
+if NETWORKING && NET_UIP
 
 config IP_BUF_RX_SIZE
 	int "Number of IP net buffers to use when receiving data"
@@ -570,5 +587,11 @@ config	NET_TESTING
 	help
 	  Setup the network stack such a way that it is suitable for
 	  testing with Qemu and slip.
+
+endif
+
+if NETWORKING && NET_YAIP
+
+source "net/yaip/Kconfig"
 
 endif
