@@ -6,32 +6,32 @@ Bluetooth
 Zephyr comes integrated with a feature-rich and higly configurable
 Bluetooth stack:
 
- - Bluetooth 4.2 compliant
- - Generic Access Profile (GAP) with all possible roles
+* Bluetooth 4.2 compliant
+* Generic Access Profile (GAP) with all possible roles
 
-   - Peripheral & Central
-   - Observer & Broadcaster
+  * Peripheral & Central
+  * Observer & Broadcaster
 
- - GATT (Generic Attribute Profile)
+* GATT (Generic Attribute Profile)
 
-   - Server (to be a sensor)
-   - Client (to connect to sensors)
+  * Server (to be a sensor)
+  * Client (to connect to sensors)
 
- - Pairing support, including the Secure Connections feature from
-   Bluetooth 4.2
- - IPSP/6LoWPAN for IPv6 connectivity over Bluetooth LE
+* Pairing support, including the Secure Connections feature from Bluetooth 4.2
 
-   - IPSP node sample application in ``samples/bluetooth/ipsp``
+* IPSP/6LoWPAN for IPv6 connectivity over Bluetooth LE
 
- - Clean HCI driver abstraction
+  * IPSP node sample application in ``samples/bluetooth/ipsp``
 
-   - 3-Wire (H:5) & 5-Wire (H:4) drivers available
+* Clean HCI driver abstraction
 
- - Verified with multiple popular controllers
- - Supporting both nano- & micro-kernels
- - Highly configurable
+  * 3-Wire (H:5) & 5-Wire (H:4) drivers available
 
-   - Features, buffer sizes/counts, stack sizes, etc.
+* Verified with multiple popular controllers
+* Supporting both nano- & micro-kernels
+* Highly configurable
+
+  * Features, buffer sizes/counts, stack sizes, etc.
 
 Source tree layout
 ==================
