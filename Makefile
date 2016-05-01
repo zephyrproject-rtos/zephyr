@@ -697,11 +697,12 @@ KBUILD_CFLAGS += $(KCFLAGS)
 
 # Use --build-id when available.
 
+LINKFLAGPREFIX ?= -Wl,
 LDFLAGS_zephyr += $(LDFLAGS)
-LDFLAGS_zephyr += $(call ld-option,-X)
-LDFLAGS_zephyr += $(call ld-option,-N)
-LDFLAGS_zephyr += $(call ld-option,--gc-sections)
-LDFLAGS_zephyr += $(call ld-option,--build-id=none)
+LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)-X)
+LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)-N)
+LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)--gc-sections)
+LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)--build-id=none)
 
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
 
@@ -762,15 +763,17 @@ quiet_cmd_create-lnk = LINK    $@
       cmd_create-lnk =								\
 (										\
 	echo $(LDFLAGS_zephyr); 						\
-	echo "-Map ./$(KERNEL_NAME).map"; 					\
+	echo "$(LINKFLAGPREFIX)-Map=$(O)/$(KERNEL_NAME).map"; 			\
 	echo "-L $(objtree)/include/generated";					\
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms"; 				\
 	echo "-e __start"; 						 	\
-	echo "--start-group";							\
-	echo "--whole-archive $(KBUILD_ZEPHYR_APP) --no-whole-archive";         \
+	echo "$(LINKFLAGPREFIX)--start-group";					\
+	echo "$(LINKFLAGPREFIX)--whole-archive";				\
+	echo "$(KBUILD_ZEPHYR_APP)";						\
+	echo "$(LINKFLAGPREFIX)--no-whole-archive";         			\
 	echo "$(KBUILD_ZEPHYR_MAIN)";						\
 	echo "$(objtree)/arch/$(ARCH)/core/offsets/offsets.o"; 			\
-	echo "--end-group"; 							\
+	echo "$(LINKFLAGPREFIX)--end-group"; 					\
 	echo "$(LIB_INCLUDE_DIR) $(LINK_LIBS)";					\
 ) > $@
 
@@ -790,7 +793,7 @@ final-linker.cmd: $(zephyr-deps)
 TMP_ELF = .tmp_$(KERNEL_NAME).prebuilt
 
 $(TMP_ELF): $(zephyr-deps) $(KBUILD_ZEPHYR_APP) linker.cmd $(KERNEL_NAME).lnk
-	$(Q)$(LD) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
+	$(Q)$(CC) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
 
 quiet_cmd_gen_idt = SIDT    $@
       cmd_gen_idt =								\
@@ -816,7 +819,7 @@ staticIdt.o: $(TMP_ELF)
 quiet_cmd_lnk_elf = LINK    $@
       cmd_lnk_elf =									\
 (											\
-	$(LD) -T final-linker.cmd @$(KERNEL_NAME).lnk staticIdt.o int_vector_alloc.o 	\
+	$(CC) -T final-linker.cmd @$(KERNEL_NAME).lnk staticIdt.o int_vector_alloc.o 	\
 	irq_int_vector_map.o -o $@;							\
 	${OBJCOPY} --change-section-address intList=${CONFIG_PHYS_LOAD_ADDR} $@ elf.tmp;\
 	$(OBJCOPY) -R intList elf.tmp $@;						\
