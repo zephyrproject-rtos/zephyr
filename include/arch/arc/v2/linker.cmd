@@ -69,8 +69,8 @@ SECTIONS {
 		KEEP(*(".irq_vector_table.*"))
 
 #ifdef CONFIG_VERSION_HEADER
-                *(.version_header)
-                KEEP(*(".version_header*"))
+		*(.version_header)
+		KEEP(*(".version_header*"))
 #endif
 #ifndef CONFIG_SW_ISR_TABLE_DYNAMIC
 		KEEP(*(.isr_irq*))
