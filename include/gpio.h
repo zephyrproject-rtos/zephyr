@@ -252,7 +252,7 @@ static inline int gpio_pin_write(struct device *port, uint32_t pin,
  * @brief Read the data value of a single pin.
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where data is read.
- * @param value Integer pointer to receive the data vales from the pin.
+ * @param value Integer pointer to receive the data values from the pin.
  */
 static inline int gpio_pin_read(struct device *port, uint32_t pin,
 				uint32_t *value)
