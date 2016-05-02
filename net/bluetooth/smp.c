@@ -722,15 +722,13 @@ static uint8_t get_encryption_key_size(struct bt_smp *smp)
 }
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-typedef struct {
-	uint64_t a;
-	uint64_t b;
-} uint128_t;
-
-static void xor_128(const uint128_t *p, const uint128_t *q, uint128_t *r)
+static void xor_128(const uint8_t p[16], const uint8_t q[16], uint8_t r[16])
 {
-	r->a = p->a ^ q->a;
-	r->b = p->b ^ q->b;
+	size_t len = 16;
+
+	while (len--) {
+		*r++ = *p++ ^ *q++;
+	}
 }
 
 static int smp_c1(const uint8_t k[16], const uint8_t r[16],
@@ -756,7 +754,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	/* c1 = e(k, e(k, r XOR p1) XOR p2) */
 
 	/* Using enc_data as temporary output buffer */
-	xor_128((uint128_t *)r, (uint128_t *)p1, (uint128_t *)enc_data);
+	xor_128(r, p1, enc_data);
 
 	err = le_encrypt(k, enc_data, enc_data);
 	if (err) {
@@ -770,7 +768,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 
 	BT_DBG("p2 %s", h(p2, 16));
 
-	xor_128((uint128_t *)enc_data, (uint128_t *)p2, (uint128_t *)enc_data);
+	xor_128(enc_data, p2, enc_data);
 
 	return le_encrypt(k, enc_data, enc_data);
 }
