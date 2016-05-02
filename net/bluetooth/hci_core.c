@@ -2090,9 +2090,9 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 		 * crashes if it receives too rapid LE_Rand commands.
 		 */
 		if (sys_execution_context_type_get() == NANO_CTX_FIBER) {
-			fiber_sleep(1);
+			fiber_sleep(MSEC(20));
 		} else {
-			task_sleep(1);
+			task_sleep(MSEC(20));
 		}
 #endif
 		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
