@@ -15,17 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nanokernel.h>
-#include <device.h>
-#include <init.h>
+
+#include <errno.h>
 #include <pinmux.h>
-#include <sys_io.h>
-#include "pinmux/pinmux.h"
 
 #include "qm_pinmux.h"
 
+#define MASK_2_BITS	0x3
+
 static int pinmux_dev_set(struct device *dev, uint32_t pin,
-			       uint32_t func)
+			  uint32_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -33,17 +32,41 @@ static int pinmux_dev_set(struct device *dev, uint32_t pin,
 }
 
 static int pinmux_dev_get(struct device *dev, uint32_t pin,
-			       uint32_t *func)
+			  uint32_t *func)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(func);
 
-	return -ENODEV;
+	/*
+	 * pinmux control registers are 32-bit wide, but each pin requires
+	 * 2 bits to set the mode (A, B, C, or D).  As such we only get 16
+	 * pins per register.
+	 */
+	uint32_t reg_offset = pin >> 4;
+
+	/* The pin offset within the register */
+	uint32_t pin_no = pin % 16;
+
+	/*
+	 * Now figure out what is the full address for the register
+	 * we are looking for.
+	 */
+	volatile uint32_t *mux_register = &QM_SCSS_PMUX->pmux_sel[reg_offset];
+
+	/*
+	 * MASK_2_BITS (the value of which is 3) is used because there are
+	 * 2 bits for the mode of each pin.
+	 */
+	uint32_t pin_mask = MASK_2_BITS << (pin_no << 1);
+	uint32_t mode_mask = *mux_register & pin_mask;
+	uint32_t mode = mode_mask >> (pin_no << 1);
+
+	*func = mode;
+
+	return 0;
 }
 
 static int pinmux_dev_pullup(struct device *dev, uint32_t pin,
-				  uint8_t func)
+			     uint8_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -51,7 +74,7 @@ static int pinmux_dev_pullup(struct device *dev, uint32_t pin,
 }
 
 static int pinmux_dev_input(struct device *dev, uint32_t pin,
-				 uint8_t func)
+			    uint8_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -71,7 +94,6 @@ static int pinmux_dev_initialize(struct device *port)
 }
 
 DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_DEV_NAME,
-		    &pinmux_dev_initialize,
-		    NULL, NULL,
+		    &pinmux_dev_initialize, NULL, NULL,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);
