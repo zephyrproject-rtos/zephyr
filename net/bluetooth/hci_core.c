@@ -674,12 +674,11 @@ static void le_conn_complete(struct net_buf *buf)
 	} else {
 		bt_addr_le_copy(&conn->le.init_addr, &evt->peer_addr);
 
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_ID)) {
-			bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr);
-		} else {
-			bt_addr_le_copy(&conn->le.resp_addr,
-					&bt_dev.random_addr);
-		}
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+		bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.random_addr);
+#else
+		bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr);
+#endif /* CONFIG_BLUETOOTH_PRIVACY */
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
@@ -3250,11 +3249,7 @@ bool bt_addr_le_is_bonded(const bt_addr_le_t *addr)
 
 static bool valid_adv_param(const struct bt_le_adv_param *param)
 {
-	switch (param->type) {
-	case BT_LE_ADV_IND:
-		break;
-	case BT_LE_ADV_SCAN_IND:
-	case BT_LE_ADV_NONCONN_IND:
+	if (!(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
 		/*
 		 * BT Core 4.2 [Vol 2, Part E, 7.8.5]
 		 * The Advertising_Interval_Min and Advertising_Interval_Max
@@ -3264,20 +3259,6 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 		if (param->interval_min < 0x00a0) {
 			return false;
 		}
-		break;
-	default:
-		return false;
-	}
-
-	switch (param->addr_type) {
-	case BT_LE_ADV_ADDR_IDENTITY:
-	case BT_LE_ADV_ADDR_NRPA:
-#if defined(CONFIG_BLUETOOTH_PRIVACY)
-	case BT_LE_ADV_ADDR_RPA:
-#endif
-		break;
-	default:
-		return false;
 	}
 
 	if (param->interval_min > param->interval_max ||
@@ -3347,11 +3328,10 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	/*
-	 * Don't bother with scan response if the advertising type isn't
-	 * a scannable one.
+	/* make sure we clear old SCAN_RSP if it will be used but wasn't
+	 * provided.
 	 */
-	if (param->type == BT_LE_ADV_IND || param->type == BT_LE_ADV_SCAN_IND) {
+	if (sd || (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
 		err = set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, sd, sd_len);
 		if (err) {
 			return err;
@@ -3368,21 +3348,10 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	memset(set_param, 0, sizeof(*set_param));
 	set_param->min_interval = sys_cpu_to_le16(param->interval_min);
 	set_param->max_interval = sys_cpu_to_le16(param->interval_max);
-	set_param->type         = param->type;
 	set_param->channel_map  = 0x07;
 
-	switch (param->addr_type) {
-	case BT_LE_ADV_ADDR_NRPA:
-		err = le_set_nrpa();
-		if (err) {
-			net_buf_unref(buf);
-			return err;
-		}
-
-		set_param->own_addr_type = BT_ADDR_LE_RANDOM;
-		break;
+	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
-	case BT_LE_ADV_ADDR_RPA:
 		err = le_set_rpa();
 		if (err) {
 			net_buf_unref(buf);
@@ -3390,13 +3359,28 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		}
 
 		set_param->own_addr_type = BT_ADDR_LE_RANDOM;
-		break;
-#endif /* CONFIG_BLUETOOTH_PRIVACY */
-	case BT_LE_ADV_ADDR_IDENTITY:
+#else
 		set_param->own_addr_type = bt_dev.id_addr.type;
-		break;
-	default:
-		return -EINVAL;
+#endif /* CONFIG_BLUETOOTH_PRIVACY */
+		set_param->type = BT_LE_ADV_IND;
+	} else {
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+		err = le_set_nrpa();
+		if (err) {
+			net_buf_unref(buf);
+			return err;
+		}
+
+		set_param->own_addr_type = BT_ADDR_LE_RANDOM;
+#else
+		set_param->own_addr_type = bt_dev.id_addr.type;
+#endif /* CONFIG_BLUETOOTH_PRIVACY */
+
+		if (sd) {
+			set_param->type = BT_LE_ADV_SCAN_IND;
+		} else {
+			set_param->type = BT_LE_ADV_NONCONN_IND;
+		}
 	}
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_PARAM, buf, NULL);
@@ -3407,10 +3391,6 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	err = set_advertise_enable();
 	if (err) {
 		return err;
-	}
-
-	if (param->addr_type == BT_LE_ADV_ADDR_IDENTITY) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING_ID);
 	}
 
 	atomic_set_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
@@ -3431,7 +3411,6 @@ int bt_le_adv_stop(void)
 		return err;
 	}
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING_ID);
 	atomic_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
 
 	return 0;

@@ -144,7 +144,7 @@ void main(void)
 	bt_conn_auth_cb_register(&auth_cb_display);
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
+	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);

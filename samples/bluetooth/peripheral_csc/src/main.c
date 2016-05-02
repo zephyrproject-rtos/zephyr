@@ -397,8 +397,8 @@ static void bt_ready(int err)
 	dis_init(CONFIG_SOC, "ACME");
 	bt_gatt_register(csc_attrs, ARRAY_SIZE(csc_attrs));
 
-	err = bt_le_adv_start(BT_LE_ADV(BT_LE_ADV_IND), ad, ARRAY_SIZE(ad),
-					sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
+			      sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

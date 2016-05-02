@@ -121,31 +121,17 @@ int bt_enable(bt_ready_cb_t cb)
 
 static bool valid_adv_param(const struct bt_le_adv_param *param)
 {
-	switch (param->type) {
-	case BT_LE_ADV_IND:
-		break;
-	case BT_LE_ADV_SCAN_IND:
-	case BT_LE_ADV_NONCONN_IND:
+	if (!(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
 		/*
 		 * BT Core 4.2 [Vol 2, Part E, 7.8.5]
 		 * The Advertising_Interval_Min and Advertising_Interval_Max
 		 * shall not be set to less than 0x00A0 (100 ms) if the
 		 * Advertising_Type is set to ADV_SCAN_IND or ADV_NONCONN_IND.
 		 */
+
 		if (param->interval_min < 0x00a0) {
 			return false;
 		}
-		break;
-	default:
-		return false;
-	}
-
-	switch (param->addr_type) {
-	case BT_LE_ADV_ADDR_IDENTITY:
-	case BT_LE_ADV_ADDR_NRPA:
-		break;
-	default:
-		return false;
 	}
 
 	if (param->interval_min > param->interval_max ||
@@ -197,12 +183,12 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	/*
-	 * Don't bother with scan response if the advertising type isn't
-	 * a scannable one.
-	 */
-	if (param->type != BT_LE_ADV_IND && param->type != BT_LE_ADV_SCAN_IND) {
-		goto set_adv;
+	if (sd) {
+		err = set_ad(&data.sd, sd, sd_len);
+		if (err) {
+			BT_ERR("Error setting scan response data %d", err);
+			return err;
+		}
 	}
 
 	err = set_ad(&data.sd, sd, sd_len);
@@ -211,7 +197,6 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-set_adv:
 	/* Set advertising data */
 	nble_gap_set_adv_data_req(&data);
 
@@ -221,7 +206,16 @@ set_adv:
 	params.filter_policy = 0;
 	params.interval_max = param->interval_max;
 	params.interval_min = param->interval_min;
-	params.type = param->type;
+
+	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
+		params.type =  BT_LE_ADV_IND;
+	} else {
+		if (sd) {
+			params.type = BT_LE_ADV_SCAN_IND;
+		} else {
+			params.type = BT_LE_ADV_NONCONN_IND;
+		}
+	}
 
 	/* Set advertising parameters */
 	nble_gap_set_adv_params_req(&params);

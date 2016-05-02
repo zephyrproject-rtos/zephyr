@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <misc/util.h>
 #include <bluetooth/hci.h>
 
 #ifdef __cplusplus
@@ -88,30 +89,18 @@ struct bt_data {
 	BT_DATA(_type, ((uint8_t []) { _bytes }), \
 		sizeof((uint8_t []) { _bytes }))
 
-/** Local advertising address type */
+/** Advertising options */
 enum {
-	/** Use local identity address for advertising. Unless a static
-	  * random address has been configured this will be the public
-	  * address.
-	  */
-	BT_LE_ADV_ADDR_IDENTITY,
-
-	/** Use local Non-resolvable Private Address (NRPA) for advertising */
-	BT_LE_ADV_ADDR_NRPA,
-
-	/** Use Resolvable Private Address (RPA) for advertising.
-	 *  Requires that an Identity Resolving Key is available.
+	/** Advertise as connectable. Type of advertising is determined by
+	 * providing SCAN_RSP data and/or enabling local privacy support.
 	 */
-	BT_LE_ADV_ADDR_RPA,
+	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
 };
 
 /** LE Advertising Parameters. */
 struct bt_le_adv_param {
-	/** Advertising type */
-	uint8_t  type;
-
-	/** Which type of own address to use for advertising */
-	uint8_t  addr_type;
+	/** Bit-field of advertising options */
+	uint8_t  options;
 
 	/** Minimum Advertising Interval (N * 0.625) */
 	uint16_t interval_min;
@@ -122,22 +111,23 @@ struct bt_le_adv_param {
 
 /** Helper to declare advertising parameters inline
   *
-  * @param _type      Advertising Type
-  * @param _addr_type Local address type to use for advertising
+  * @param _flags     Advertising Flags
   * @param _int_min   Minimum advertising interval
   * @param _int_max   Maximum advertising interval
   */
-#define BT_LE_ADV_PARAM(_type, _addr_type, _int_min, _int_max) \
+#define BT_LE_ADV_PARAM(_options, _int_min, _int_max) \
 		(&(struct bt_le_adv_param) { \
-			.type = (_type), \
-			.addr_type = (_addr_type), \
+			.options = (_options), \
 			.interval_min = (_int_min), \
 			.interval_max = (_int_max), \
 		 })
 
-#define BT_LE_ADV(t) BT_LE_ADV_PARAM(t, BT_LE_ADV_ADDR_IDENTITY, \
-				     BT_GAP_ADV_FAST_INT_MIN_2, \
-				     BT_GAP_ADV_FAST_INT_MAX_2)
+#define BT_LE_ADV_CONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE, \
+				       BT_GAP_ADV_FAST_INT_MIN_2, \
+				       BT_GAP_ADV_FAST_INT_MAX_2)
+
+#define BT_LE_ADV_NCONN BT_LE_ADV_PARAM(0, BT_GAP_ADV_FAST_INT_MIN_2, \
+					BT_GAP_ADV_FAST_INT_MAX_2)
 
 /** @brief Start advertising
  *

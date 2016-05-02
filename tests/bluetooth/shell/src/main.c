@@ -557,25 +557,17 @@ static void cmd_advertise(int argc, char *argv[])
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
 	if (!strcmp(argv[1], "on")) {
-		param.type = BT_LE_ADV_IND;
-		param.addr_type = BT_LE_ADV_ADDR_IDENTITY;
+		param.options = BT_LE_ADV_OPT_CONNECTABLE;
 		scan_rsp = sd;
 		scan_rsp_len = ARRAY_SIZE(sd);
 	} else if (!strcmp(argv[1], "scan")) {
-		param.type = BT_LE_ADV_SCAN_IND;
-		param.addr_type = BT_LE_ADV_ADDR_IDENTITY;
+		param.options = 0;
 		scan_rsp = sd;
 		scan_rsp_len = ARRAY_SIZE(sd);
 	} else if (!strcmp(argv[1], "nconn")) {
-		param.type = BT_LE_ADV_NONCONN_IND;
-		param.addr_type = BT_LE_ADV_ADDR_NRPA;
+		param.options = 0;
 		scan_rsp = NULL;
 		scan_rsp_len = 0;
-	} else if (!strcmp(argv[1], "rpa")) {
-		param.type = BT_LE_ADV_IND;
-		param.addr_type = BT_LE_ADV_ADDR_RPA;
-		scan_rsp = sd;
-		scan_rsp_len = ARRAY_SIZE(sd);
 	} else {
 		goto fail;
 	}
@@ -608,7 +600,7 @@ static void cmd_advertise(int argc, char *argv[])
 
 fail:
 	printk("Usage: advertise <type> <ad mode>\n");
-	printk("type: off, on, scan, nconn, rpa\n");
+	printk("type: off, on, nconn, scan\n");
 	printk("ad mode: discov, non_discov\n");
 }
 

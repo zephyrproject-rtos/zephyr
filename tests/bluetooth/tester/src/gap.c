@@ -191,14 +191,9 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 {
 	const struct gap_start_advertising_cmd *cmd = (void *) data;
 	struct gap_start_advertising_rp rp;
-	uint8_t adv_type, adv_len;
+	uint8_t adv_len;
+	bool adv_conn;
 	int i;
-
-	if (atomic_test_bit(&current_settings, GAP_SETTINGS_CONNECTABLE)) {
-		adv_type = BT_LE_ADV_IND;
-	} else {
-		adv_type = BT_LE_ADV_NONCONN_IND;
-	}
 
 	for (i = 0, adv_len = 1; i < cmd->adv_data_len; adv_len++) {
 		if (adv_len >= ARRAY_SIZE(ad)) {
@@ -212,7 +207,10 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 		i += ad[adv_len].data_len;
 	}
 
-	if (bt_le_adv_start(BT_LE_ADV(adv_type), ad, adv_len, NULL, 0) < 0) {
+	adv_conn = atomic_test_bit(&current_settings, GAP_SETTINGS_CONNECTABLE);
+
+	if (bt_le_adv_start(adv_conn ? BT_LE_ADV_CONN : BT_LE_ADV_NCONN,
+			    ad, adv_len, NULL, 0) < 0) {
 		BTTESTER_DBG("Failed to start advertising");
 		goto fail;
 	}
