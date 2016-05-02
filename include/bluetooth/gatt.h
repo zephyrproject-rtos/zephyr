@@ -739,7 +739,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
  */
 typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
-					int err);
+					uint8_t err);
 
 /** @brief GATT Indicate Value parameters */
 struct bt_gatt_indicate_params {
@@ -870,7 +870,7 @@ struct bt_gatt_read_params;
  *  @param data Attribute value data. NULL means read has completed.
  *  @param length Attribute value length.
  */
-typedef uint8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, int err,
+typedef uint8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, uint8_t err,
 				       struct bt_gatt_read_params *params,
 				       const void *data, uint16_t length);
 

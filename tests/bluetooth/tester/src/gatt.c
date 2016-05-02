@@ -1187,7 +1187,7 @@ static void read_destroy(struct bt_gatt_read_params *params)
 	gatt_buf_clear();
 }
 
-static uint8_t read_cb(struct bt_conn *conn, int err,
+static uint8_t read_cb(struct bt_conn *conn, uint8_t err,
 		       struct bt_gatt_read_params *params, const void *data,
 		       uint16_t length)
 {

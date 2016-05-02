@@ -89,9 +89,9 @@ static void vnd_ccc_cfg_changed(uint16_t value)
 }
 
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			int err)
+			uint8_t err)
 {
-	printk("Indication %s\n", err < 0 ? "fail" : "success");
+	printk("Indication %s\n", err != 0 ? "fail" : "success");
 	indicating = 0;
 }
 
