@@ -22,7 +22,7 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NETWORKING_WITH_LOGGING
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_CORE
 #define DEBUG 1
 #endif
 
