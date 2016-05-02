@@ -15,3 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+config NET_YAIP_INIT_PRIO
+       int
+       default 99
