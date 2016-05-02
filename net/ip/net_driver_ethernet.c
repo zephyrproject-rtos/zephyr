@@ -81,6 +81,8 @@ static int net_driver_ethernet_send(struct net_buf *buf)
 #else
 	memcpy(eth_hdr->dest.addr, ip_buf_ll_dest(buf).u8, UIP_LLADDR_LEN);
 	memcpy(eth_hdr->src.addr, uip_lladdr.addr, UIP_LLADDR_LEN);
+	eth_hdr->type = UIP_HTONS(UIP_ETHTYPE_IPV6);
+	uip_len(buf) += sizeof(struct uip_eth_hdr);
 #endif
 
 	res = tx_cb(buf);
