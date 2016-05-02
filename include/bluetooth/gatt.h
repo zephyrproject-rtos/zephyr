@@ -735,7 +735,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
  *
  *  @param conn Connection object.
  *  @param attr Attribute object.
- *  @param err: 0 success, error in the other case
+ *  @param err ATT error code
  */
 typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
@@ -776,7 +776,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 /** @brief Response callback function
  *
  *  @param conn Connection object.
- *  @param err Error code.
+ *  @param err ATT error code.
  */
 typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
 
@@ -865,7 +865,7 @@ struct bt_gatt_read_params;
 /** @brief Read callback function
  *
  *  @param conn Connection object.
- *  @param err Error code.
+ *  @param err ATT error code.
  *  @param params Read parameters used.
  *  @param data Attribute value data. NULL means read has completed.
  *  @param length Attribute value length.
