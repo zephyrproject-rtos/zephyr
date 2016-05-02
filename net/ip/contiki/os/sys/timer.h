@@ -97,6 +97,7 @@ struct timer {
   struct nano_timer nano_timer;
   int init_done;
   int started;
+  int expired;
   bool triggered;
 };
 

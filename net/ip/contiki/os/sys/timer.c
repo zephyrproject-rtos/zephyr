@@ -63,6 +63,7 @@ static inline void do_init(struct timer *t)
   if (t && !t->init_done) {
     nano_timer_init(&t->nano_timer, TIMER_EXPIRED_CODE);
     t->init_done = true;
+    t->expired = false;
   }
 }
 
@@ -104,6 +105,7 @@ timer_set(struct timer *t, clock_time_t interval)
   t->interval = interval;
   t->start = clock_time();
   t->triggered = false;
+  t->expired = false;
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -163,6 +165,7 @@ timer_restart(struct timer *t)
   t->started = true;
   t->start = clock_time();
   t->triggered = false;
+  t->expired = false;
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -184,10 +187,15 @@ timer_expired(struct timer *t)
 
   do_init(t);
 
+  if (t->expired) {
+    return true;
+  }
+
   user_data = nano_timer_test(&t->nano_timer, TICKS_NONE);
 
   /* If user data is returned, then we are definitely expired. */
   if (user_data == TIMER_EXPIRED_CODE) {
+    t->expired = true;
     return true;
   }
 
@@ -200,6 +208,7 @@ timer_expired(struct timer *t)
    * status of the timer.
    */
   if (!init_done && user_data == NULL) {
+    t->expired = true;
     return true;
   }
 
