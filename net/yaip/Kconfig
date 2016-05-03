@@ -39,3 +39,10 @@ config NET_TX_STACK_SIZE
 	  Set the TX fiber stack size in bytes. The TX fiber is waiting
 	  data from application. Each network interface will start one
 	  TX fiber for sending network packets destined to it.
+
+config NET_RX_STACK_SIZE
+	int "RX fiber stack size"
+	default 1024
+	help
+	  Set the RX fiber stack size in bytes. The RX fiber is waiting
+	  data from network. There is one RX fiber in the system.
