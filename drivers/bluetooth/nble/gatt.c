@@ -213,6 +213,21 @@ void on_nble_gatt_register_rsp(const struct nble_gatt_register_rsp *rsp,
 void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 			  bt_gatt_attr_func_t func, void *user_data)
 {
+	int i;
+
+	for (i = 0; i < svc_count; i++) {
+		uint16_t attr_count = svc_db[i].attr_count;
+		const struct bt_gatt_attr *attr;
+		int j;
+
+		for (j = 0; j < attr_count; j++) {
+			attr = &svc_db[i].attrs[j];
+
+			if (func(attr, user_data) == BT_GATT_ITER_STOP) {
+				break;
+			}
+		}
+	}
 }
 
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
