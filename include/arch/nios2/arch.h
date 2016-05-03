@@ -70,6 +70,9 @@ struct __esf {
 typedef struct __esf NANO_ESF;
 extern const NANO_ESF _default_esf;
 
+FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
+					 const NANO_ESF *esf);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
