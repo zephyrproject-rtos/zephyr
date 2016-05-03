@@ -451,6 +451,15 @@ def kernel_main_c_events():
 
     # project-specific events
     for event in event_list:
+
+        # if there is a handler function, it needs to be declared
+        # before setting up the object via DEFINE_EVENT()
+        #
+        # in other words, no declaration if handler is NULL or 0
+        handler = event[1].strip().lower()
+        if handler != "null" and handler != "0":
+		kernel_main_c_out("extern int %s(int event);\n"% (event[1]))
+
         kernel_main_c_out("DEFINE_EVENT(%s, %s);\n" % (event[0], event[1]))
 
         if (event[0].startswith("_TaskIrqEvt")):
