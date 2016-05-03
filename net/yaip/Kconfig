@@ -23,3 +23,7 @@ config NET_YAIP_INIT_PRIO
 config NET_IFACE_UNICAST_IPV6_ADDR_COUNT
        int "Max number of unicast IPv6 addresses assigned to network interface"
        default 1
+
+config NET_IFACE_MCAST_IPV6_ADDR_COUNT
+       int "Max number of multicast IPv6 addresses assigned to network interface"
+       default 1
