@@ -31,3 +31,11 @@ config NET_IFACE_MCAST_IPV6_ADDR_COUNT
 config NET_IFACE_IPV6_PREFIX_COUNT
        int "Max number of IPv6 prefixes assigned to network interface"
        default 2
+
+config NET_TX_STACK_SIZE
+	int "TX fiber stack size"
+	default 1024
+	help
+	  Set the TX fiber stack size in bytes. The TX fiber is waiting
+	  data from application. Each network interface will start one
+	  TX fiber for sending network packets destined to it.

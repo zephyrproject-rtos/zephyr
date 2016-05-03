@@ -15,11 +15,46 @@
  */
 
 #include <init.h>
+#include <nanokernel.h>
+#include <sections.h>
+#include <misc/sys_log.h>
 #include <net/net_if.h>
 
 /* net_if dedicated section limiters */
 extern struct net_if __net_if_start[];
 extern struct net_if __net_if_end[];
+
+/* Stack for the TX fiber */
+#ifndef CONFIG_NET_TX_STACK_SIZE
+#define CONFIG_NET_TX_STACK_SIZE 1024
+#endif
+static char __noinit __stack tx_fiber_stack[CONFIG_NET_TX_STACK_SIZE];
+
+static void net_if_tx_fiber(struct net_if *iface)
+{
+	SYS_LOG_DBG("Starting TX fiber (stack %d bytes)\n",
+		    sizeof(tx_fiber_stack));
+
+	while (1) {
+		struct net_buf *buf;
+
+		/* Get next packet from application - wait if necessary */
+		buf = nano_fifo_get(&iface->tx_queue, TICKS_UNLIMITED);
+
+		SYS_LOG_DBG("Processing (buf %p, len %u) network packet\n",
+			    buf, buf->len);
+
+		/* FIXME - Do something with the packet */
+	}
+}
+
+static inline void init_tx_queue(struct net_if *iface)
+{
+	nano_fifo_init(&iface->tx_queue);
+
+	fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
+		    (nano_fiber_entry_t)net_if_tx_fiber, (int)iface, 0, 7, 0);
+}
 
 static int net_if_init(struct device *unused)
 {
@@ -33,6 +68,7 @@ static int net_if_init(struct device *unused)
 
 		if (api && api->init) {
 			api->init(iface);
+			init_tx_queue(iface);
 		}
 	}
 
