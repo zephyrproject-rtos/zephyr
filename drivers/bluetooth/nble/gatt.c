@@ -459,24 +459,100 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 				 sizeof(*value));
 }
 
-int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		   const void *data, uint16_t len)
+static int notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		  const void *data, size_t len)
 {
 	struct nble_gatt_send_notif_params notif;
 
-	BT_DBG("conn %p", conn);
+	BT_DBG("");
 
-	if (conn) {
-		notif.conn_handle = conn->handle;
-	} else {
-		notif.conn_handle = 0xffff;
-	}
-
+	notif.conn_handle = conn->handle;
 	notif.params.attr = attr;
 	notif.params.offset = 0;
 	notif.cback = NULL;
 
 	nble_gatt_send_notif_req(&notif, (uint8_t *)data, len);
+
+	return 0;
+}
+
+struct notify_data {
+	uint16_t type;
+	const struct bt_gatt_attr *attr;
+	const void *data;
+	uint16_t len;
+	struct bt_gatt_indicate_params *params;
+};
+
+static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct notify_data *data = user_data;
+	struct _bt_gatt_ccc *ccc;
+	size_t i;
+
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC)) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	/* Notify all peers configured */
+	for (i = 0; i < ccc->cfg_len; i++) {
+		struct bt_conn *conn;
+		int err;
+
+		if (!ccc->value || ccc->value != data->type)
+			continue;
+
+		conn = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
+		if (!conn || conn->state != BT_CONN_CONNECTED) {
+			continue;
+		}
+
+		if (data->type == BT_GATT_CCC_INDICATE) {
+			err = 0;
+			/* TODO: Imlement */
+		} else {
+			err = notify(conn, data->attr, data->data, data->len);
+		}
+
+		bt_conn_unref(conn);
+
+		if (err < 0) {
+			return BT_GATT_ITER_STOP;
+		}
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		   const void *data, uint16_t len)
+{
+	struct notify_data nfy;
+
+	BT_DBG("conn %p", conn);
+
+	if (!attr) {
+		return -EINVAL;
+	}
+
+	if (conn) {
+		return notify(conn, attr, data, len);
+	}
+
+	nfy.attr = attr;
+	nfy.type = BT_GATT_CCC_NOTIFY;
+	nfy.data = data;
+	nfy.len = len;
+
+	bt_gatt_foreach_attr(1, 0xffff, notify_cb, &nfy);
+
 	return 0;
 }
 
