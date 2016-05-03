@@ -79,6 +79,31 @@ struct net_if_mcast_addr {
 	struct net_addr address;
 };
 
+#if defined(CONFIG_NET_IPV6)
+/**
+ * @brief Network Interface IPv6 prefixes
+ *
+ * Stores the multicast IP addresses assigned to this network interface.
+ *
+ */
+struct net_if_ipv6_prefix {
+	/** Is this prefix used or not */
+	bool is_used;
+
+	/** IPv6 prefix */
+	struct in6_addr prefix;
+
+	/** Prefix length */
+	uint8_t len;
+
+	/** Is the IP prefix valid forever */
+	bool is_infinite;
+
+	/** Prefix lifetime */
+	struct nano_timer lifetime;
+};
+#endif /* CONFIG_NET_IPV6 */
+
 /**
  * @brief Network Interface structure
  *
@@ -105,12 +130,16 @@ struct net_if {
 #if defined(CONFIG_NET_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IFACE_UNICAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IFACE_MCAST_IPV6_ADDR_COUNT
+#define NET_IF_MAX_IPV6_PREFIX CONFIG_NET_IFACE_IPV6_PREFIX_COUNT
 	struct {
 		/** Unicast IP addresses */
 		struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR];
 
 		/** Multicast IP addresses */
 		struct net_if_mcast_addr mcast[NET_IF_MAX_IPV6_MADDR];
+
+		/** Prefixes */
+		struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX];
 	} ipv6;
 
 	uint8_t hop_limit;
