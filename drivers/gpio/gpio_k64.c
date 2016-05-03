@@ -116,7 +116,8 @@ static int gpio_k64_config(struct device *dev,
 			value &= ~K64_PINMUX_INT_MASK;
 		}
 
-		value |= setting;
+		/* Pins must configured as gpio */
+		value |= (setting | K64_PINMUX_FUNC_GPIO);
 
 		sys_write32(value, (cfg->port_base_addr +
 				    K64_PINMUX_CTRL_OFFSET(pin)));
@@ -133,7 +134,8 @@ static int gpio_k64_config(struct device *dev,
 				value &= ~K64_PINMUX_INT_MASK;
 			}
 
-			value |= setting;
+			/* Pins must configured as gpio */
+			value |= (setting | K64_PINMUX_FUNC_GPIO);
 
 			sys_write32(value, (cfg->port_base_addr +
 					    K64_PINMUX_CTRL_OFFSET(i)));
