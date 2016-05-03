@@ -32,6 +32,9 @@
 #include <string.h>
 #include <errno.h>
 
+#include <net/net_if.h>
+#include <net/buf.h>
+
 /* Stack for the rx fiber.
  */
 #if !defined(CONFIG_NET_RX_STACK_SIZE)
@@ -53,6 +56,18 @@ static void init_rx_queue(void)
 
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    net_rx_fiber, 0, 0, 7, 0);
+}
+
+/* Called by driver when an IP packet has been received */
+int net_recv(struct net_if *iface, struct net_buf *buf)
+{
+	if (!buf->frags) {
+		return -ENODATA;
+	}
+
+	nano_fifo_put(&rx_queue, buf);
+
+	return 0;
 }
 
 static int network_initialization(void)
