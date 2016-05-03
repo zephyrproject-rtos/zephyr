@@ -34,6 +34,9 @@
 
 int parseIpString(char *str, int res[])
 {
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+	int after_double_dot = -1;
+#endif
 	uint32_t index = 0;
 
 	if (str == NULL) {
@@ -78,13 +81,24 @@ int parseIpString(char *str, int res[])
 		else if ((unsigned char) *str == SEPARATOR) {
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 			if (str[1] == SEPARATOR) {
-				printk("ERROR! I am sorry but I am not yet able to understand "
-						"the :: syntax!!\n");
-				printk("ERROR! Please expand your @IP or enhance me!!\n");
-				return -1;
+				if (after_double_dot == -1) {
+					if (str[2]) {
+						/* :: is not at the end of the string */
+						after_double_dot = 1;
+					} else {
+						/* :: is at the end of the string */
+						after_double_dot = 0;
+					}
+				} else {
+					printk("ERROR! Found too many ::!!\n");
+					return -1;
+				}
+			} else if (after_double_dot >= 0) {
+				after_double_dot++;
 			}
 #endif
 			index++;
+
 			if (index >= IP_INDEX_MAX) {
 				printk("ERROR! invalid IP address\n");
 				return -1;
@@ -95,17 +109,43 @@ int parseIpString(char *str, int res[])
 		}
 		str++;
 	}
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+	if (after_double_dot >= 1) {
+		int i, j;
+
+		for (i = 0, j = IP_INDEX_MAX - 1; i < after_double_dot; i++, j--) {
+			res[j] = res[index - i];
+			res[index - i] = 0;
+		}
+	}
+#endif
 	return 0;
 }
 
 void print_address(int *value)
 {
 #ifdef CONFIG_NETWORKING_WITH_IPV6
-	printk("%x:%x:%x:%x:%x:%x:%x:%x",
-			value[0], value[1], value[2], value[3],
-			value[4], value[5], value[6], value[7]);
+	int dot = 0; /* :: not yet used */
+
+	for (int i = 0; i < IP_INDEX_MAX; i++) {
+		if (value[i] == 0 && dot != -1) {
+			if (dot == 0) {
+				printf("::");
+				dot = 1; /* :: is now in used */
+			}
+		} else {
+			if (dot == 1) {
+				dot = -1; /* :: has been used */
+				printf("%x", value[i]);
+			} else if (i == 0) {
+				printf("%x", value[i]);
+			} else {
+				printf(":%x", value[i]);
+			}
+		}
+	}
 #else
-	printk("%d.%d.%d.%d", value[0], value[1], value[2], value[3]);
+	printf("%d.%d.%d.%d", value[0], value[1], value[2], value[3]);
 #endif
 }
 

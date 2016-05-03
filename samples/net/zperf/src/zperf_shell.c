@@ -29,6 +29,10 @@
 #include "shell_utils.h"
 #include "zperf_session.h"
 
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
+#include <contiki/ipv6/uip-ds6.h>
+#endif
+
 #define DEVICE_NAME "zperf shell"
 
 static const char *CONFIG = ""
@@ -36,6 +40,9 @@ static const char *CONFIG = ""
 		"microkernel "
 #else
 		"nanokernel "
+#endif
+#ifdef CONFIG_WLAN
+		"wlan "
 #endif
 #ifdef CONFIG_ETH_DW
 		"ethernet "
@@ -47,14 +54,29 @@ static const char *CONFIG = ""
 		"ipv6 "
 #endif
 		"";
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+#define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
+#define DST_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
+#define MY_PREFIX_LEN 64
+#endif
 
 static struct net_addr in_addr_my = {
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 	.family = AF_INET6,
-	.in6_addr = IN6ADDR_ANY_INIT
+	.in6_addr = MY_IPADDR /* IN6ADDR_ANY_INIT */
 #else
 	.family = AF_INET,
 	.in_addr = { { { 0 } } }
+#endif
+};
+
+static struct net_addr in_addr_dst = {
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+	.family = AF_INET6,
+	.in6_addr = DST_IPADDR /* IN6ADDR_ANY_INIT */
+#else
+	.family = AF_INET,
+	.in_addr = { { { 192, 168, 43, 181 } } }
 #endif
 };
 
@@ -63,9 +85,35 @@ static struct net_addr in_addr_my = {
 
 static void shell_cmd_setip(int argc, char *argv[])
 {
-#ifdef CONFIG_NETWORKING_WITH_IPV4
-	uint32_t value[4] = {0};
+	uint32_t value[IP_INDEX_MAX] = { 0 };
 
+#if defined(CONFIG_NETWORKING_WITH_IPV6)
+	int prefix;
+
+	if (argc != 3) {
+		/* Print usage */
+		printk("\nsetip:\n");
+		printk("Usage:\tsetip <my ip> <prefix len>\n");
+		printk("\nExample setip 2001:db8::2 64\n");
+		return;
+	}
+
+	if (parseIpString(argv[1], value) != 0) {
+		printk("[setip] ERROR! Unable to set IP\n");
+		return;
+	}
+
+	prefix = strtoul(argv[2], NULL, 10);
+
+	for (int i = 0; i < IP_INDEX_MAX; i++) {
+		in_addr_my.in6_addr.s6_addr[2*i] = (value[i] & 0xFF00) >> 8;
+		in_addr_my.in6_addr.s6_addr[2*i+1] = value[i] & 0xFF;
+	}
+
+	uip_ds6_addr_add((uip_ipaddr_t *)&in_addr_my.in6_addr, 0, ADDR_MANUAL);
+	uip_ds6_prefix_add((uip_ipaddr_t *)&in_addr_my.in6_addr, prefix, 0);
+
+#else
 	if (argc != 2) {
 		/* Print usage */
 		printk("\nsetip:\n");
@@ -74,21 +122,24 @@ static void shell_cmd_setip(int argc, char *argv[])
 		return;
 	}
 
-	if (parseIpString(argv[1], value) == 0) {
-		printk("[setip] Setting IP address %d.%d.%d.%d\n",
-				value[0], value[1], value[2], value[3]);
-		uip_ipaddr_t uip_ipaddr_local;
-
-		uip_ipaddr(&uip_ipaddr_local,
-				value[0],
-				value[1],
-				value[2],
-				value[3]);
-		uip_sethostaddr(&uip_ipaddr_local);
-	} else {
+	if (parseIpString(argv[1], value) != 0) {
 		printk("[setip] ERROR! Unable to set IP\n");
+		return;
 	}
+
+	uip_ipaddr_t uip_ipaddr_local;
+
+	uip_ipaddr(&uip_ipaddr_local,
+			value[0],
+			value[1],
+			value[2],
+			value[3]);
+	uip_sethostaddr(&uip_ipaddr_local);
 #endif
+
+	printk("[setip] Setting IP address ");
+	print_address(value);
+	printk("\n");
 }
 
 static void shell_cmd_udp_download(int argc, char *argv[])
@@ -123,8 +174,6 @@ static void shell_cmd_udp_download(int argc, char *argv[])
 static void shell_cmd_udp_upload(int argc, char *argv[])
 {
 	int value[IP_INDEX_MAX] = { 0 };
-	static struct net_addr net_addr_remote = { .family = AF_INET, .in_addr = { {
-			{ 192, 168, 43, 181 } } } };
 	unsigned int duration_in_ms, packet_size, rate_in_kbps, client_rate_in_kbps;
 	uint16_t port;
 	zperf_results results = { 0 };
@@ -153,14 +202,14 @@ static void shell_cmd_udp_upload(int argc, char *argv[])
 		printk("\n");
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 		for (int i = 0; i < IP_INDEX_MAX; i++) {
-			net_addr_remote.in6_addr.s6_addr[i] = (value[i] & 0xFF00) >> 8;
-			net_addr_remote.in6_addr.s6_addr[i] = value[i] & 0xFF;
+			in_addr_dst.in6_addr.s6_addr[2*i] = (value[i] & 0xFF00) >> 8;
+			in_addr_dst.in6_addr.s6_addr[2*i+1] = value[i] & 0xFF;
 		}
 #else
-		net_addr_remote.in_addr.s4_addr[0] = value[0];
-		net_addr_remote.in_addr.s4_addr[1] = value[1];
-		net_addr_remote.in_addr.s4_addr[2] = value[2];
-		net_addr_remote.in_addr.s4_addr[3] = value[3];
+		in_addr_dst.in_addr.s4_addr[0] = value[0];
+		in_addr_dst.in_addr.s4_addr[1] = value[1];
+		in_addr_dst.in_addr.s4_addr[2] = value[2];
+		in_addr_dst.in_addr.s4_addr[3] = value[3];
 #endif
 	} else {
 		printk(
@@ -175,7 +224,7 @@ static void shell_cmd_udp_upload(int argc, char *argv[])
 		port = DEF_PORT;
 	}
 
-	net_context = net_context_get(IPPROTO_UDP, &net_addr_remote, port,
+	net_context = net_context_get(IPPROTO_UDP, &in_addr_dst, port,
 			&in_addr_my, MY_SRC_PORT);
 
 	if (!net_context) {
