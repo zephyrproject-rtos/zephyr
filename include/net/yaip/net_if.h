@@ -127,6 +127,9 @@ struct net_if {
 	/** The hardware MTU */
 	uint16_t mtu;
 
+	/** Queue for outgoing packets from apps */
+	struct nano_fifo tx_queue;
+
 #if defined(CONFIG_NET_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IFACE_UNICAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IFACE_MCAST_IPV6_ADDR_COUNT

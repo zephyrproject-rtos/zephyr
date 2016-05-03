@@ -32,12 +32,12 @@
 #include <string.h>
 #include <errno.h>
 
-/* Stacks for the rx fiber.
+/* Stack for the rx fiber.
  */
 #if !defined(CONFIG_NET_RX_STACK_SIZE)
 #define CONFIG_NET_RX_STACK_SIZE 1024
 #endif
-static char __noinit __stack rx_fiber_stack[CONFIG_IP_RX_STACK_SIZE];
+static char __noinit __stack rx_fiber_stack[CONFIG_NET_RX_STACK_SIZE];
 static struct nano_fifo rx_queue;
 
 static void net_rx_fiber(int unused1, int unused2)
