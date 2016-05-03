@@ -1286,7 +1286,27 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
-	return bt_conn_update_param_le(conn, param);
+	BT_DBG("conn %p features 0x%x params (%d-%d %d %d)", conn,
+	       conn->le.features[0], param->interval_min, param->interval_max,
+	       param->latency, param->timeout);
+
+	/* Check if there's a need to update conn params */
+	if (conn->le.interval >= param->interval_min &&
+	    conn->le.interval <= param->interval_max) {
+		return -EALREADY;
+	}
+
+	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
+	    !(bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+		return bt_l2cap_update_conn_param(conn, param);
+	}
+
+	if ((conn->le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
+	    (bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+		return bt_conn_le_conn_update(conn, param);
+	}
+
+	return -EBUSY;
 }
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
@@ -1326,6 +1346,14 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 }
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
+static void bt_conn_set_param_le(struct bt_conn *conn,
+				 const struct bt_le_conn_param *param)
+{
+	conn->le.interval_max = param->interval_max;
+	conn->le.latency = param->latency;
+	conn->le.timeout = param->timeout;
+}
+
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param)
 {

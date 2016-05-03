@@ -600,7 +600,7 @@ static int update_conn_param(struct bt_conn *conn)
 				 conn->le.interval_max,
 				 conn->le.latency,
 				 conn->le.timeout);
-	return bt_conn_update_param_le(conn, param);
+	return bt_conn_le_param_update(conn, param);
 }
 
 static void le_conn_complete(struct net_buf *buf)
@@ -911,42 +911,6 @@ static int set_flow_control(void)
 	net_buf_add_u8(buf, BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
 }
-
-void bt_conn_set_param_le(struct bt_conn *conn,
-			  const struct bt_le_conn_param *param)
-{
-	conn->le.interval_min = param->interval_min;
-	conn->le.interval_max = param->interval_max;
-	conn->le.latency = param->latency;
-	conn->le.timeout = param->timeout;
-}
-
-int bt_conn_update_param_le(struct bt_conn *conn,
-			    const struct bt_le_conn_param *param)
-{
-	BT_DBG("conn %p features 0x%x params (%d-%d %d %d)", conn,
-	       conn->le.features[0], param->interval_min, param->interval_max,
-	       param->latency, param->timeout);
-
-	/* Check if there's a need to update conn params */
-	if (conn->le.interval >= param->interval_min &&
-	    conn->le.interval <= param->interval_max) {
-		return -EALREADY;
-	}
-
-	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
-	    !(bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
-		return bt_l2cap_update_conn_param(conn, param);
-	}
-
-	if ((conn->le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
-	    (bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
-		return bt_conn_le_conn_update(conn, param);
-	}
-
-	return -EBUSY;
-}
-
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
