@@ -593,5 +593,6 @@ endif
 if NETWORKING && NET_YAIP
 
 source "net/yaip/Kconfig"
+source "net/ip/Kconfig.debug"
 
 endif
