@@ -66,6 +66,20 @@ struct net_if_addr {
 };
 
 /**
+ * @brief Network Interface multicast IP addresses
+ *
+ * Stores the multicast IP addresses assigned to this network interface.
+ *
+ */
+struct net_if_mcast_addr {
+	/** Is this multicast IP address used or not */
+	bool is_used;
+
+	/** IP address */
+	struct net_addr address;
+};
+
+/**
  * @brief Network Interface structure
  *
  * Used to handle a network interface on top of a device driver instance.
@@ -90,9 +104,13 @@ struct net_if {
 
 #if defined(CONFIG_NET_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IFACE_UNICAST_IPV6_ADDR_COUNT
+#define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IFACE_MCAST_IPV6_ADDR_COUNT
 	struct {
 		/** Unicast IP addresses */
 		struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR];
+
+		/** Multicast IP addresses */
+		struct net_if_mcast_addr mcast[NET_IF_MAX_IPV6_MADDR];
 	} ipv6;
 
 	uint8_t hop_limit;

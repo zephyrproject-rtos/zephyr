@@ -18,6 +18,4 @@
 #include <net/uip/net_if.h>
 #elif defined(CONFIG_NET_YAIP)
 #include <net/yaip/net_if.h>
-#else
-#error "Either uIP or YAIP needs to be selected."
 #endif
