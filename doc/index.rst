@@ -9,7 +9,7 @@ Zephyr Project Documentation
    Welcome to the Zephyr Project's documentation version |version|!
 
    Documentation for the development branch of Zephyr can be found at
-   https://www.zephyrproject.org/doc/dev/
+   https://www.zephyrproject.org/doc/
 
 .. only:: development
 
