@@ -111,6 +111,21 @@ struct net_tuple {
 	enum ip_protocol ip_proto;
 };
 
+/** How the network address is assigned to network interface */
+enum net_addr_type {
+	NET_ADDR_ANY = 0,
+	NET_ADDR_AUTOCONF,
+	NET_ADDR_DHCP,
+	NET_ADDR_MANUAL,
+};
+
+/** What is the current state of the network address */
+enum net_addr_state {
+	NET_ADDR_TENTATIVE = 0,
+	NET_ADDR_PREFERRED,
+	NET_ADDR_DEPRECATED,
+};
+
 #define NET_UDPH_LEN	8			/* Size of UDP header */
 #define NET_TCPH_LEN	20			/* Size of TCP header */
 #define NET_ICMPH_LEN	4			/* Size of ICMP header */

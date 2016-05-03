@@ -19,3 +19,7 @@
 config NET_YAIP_INIT_PRIO
        int
        default 99
+
+config NET_IFACE_UNICAST_IPV6_ADDR_COUNT
+       int "Max number of unicast IPv6 addresses assigned to network interface"
+       default 1
