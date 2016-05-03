@@ -27,9 +27,6 @@
 
 #define MASK_2_BITS             0x3
 
-#define PINMUX_SELECT_REGISTER(base, reg_offset) \
-	(base + PINMUX_SELECT_OFFSET + (reg_offset << 2))
-
 static int pinmux_dev_set(struct device *dev, uint32_t pin, uint32_t func)
 {
 	const struct pinmux_config *pmux = dev->config->config_info;
