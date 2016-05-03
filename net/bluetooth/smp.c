@@ -3601,7 +3601,7 @@ static bool le_sc_supported(void)
 	EccPoint pkey;
 
 	do {
-		if (bt_rand((uint8_t *)random, 64)) {
+		if (bt_rand((uint8_t *)random, sizeof(random))) {
 			return false;
 		}
 
