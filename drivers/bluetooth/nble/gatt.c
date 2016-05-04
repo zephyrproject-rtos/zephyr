@@ -905,12 +905,6 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 		return -ENOTCONN;
 	}
 
-	if (conn->gatt_private) {
-		return -EBUSY;
-	}
-
-	conn->gatt_private = params;
-
 	if (params->handle_count > 1) {
 		return gatt_read_multiple(conn, params);
 	}
@@ -920,6 +914,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 	req.conn_handle = conn->handle;
 	req.handle = params->single.handle;
 	req.offset = params->single.offset;
+	req.user_data = params;
 
 	nble_gattc_read_req(&req);
 
@@ -929,7 +924,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 			    uint8_t *data, uint8_t len, void *user_data)
 {
-	struct bt_gatt_read_params *params;
+	struct bt_gatt_read_params *params = rsp->user_data;
 	struct bt_conn *conn;
 
 	conn = bt_conn_lookup_handle(rsp->conn_handle);
@@ -937,9 +932,6 @@ void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 		BT_ERR("Unable to find conn, handle 0x%04x", rsp->conn_handle);
 		return;
 	}
-
-	/* TODO: Get params from user_data pointer, not working at the moment */
-	params = conn->gatt_private;
 
 	BT_DBG("conn %p params %p", conn, params);
 
@@ -966,20 +958,12 @@ void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 
 	params->single.offset += len;
 
-	/* This pointer would keep new params set in the function below */
-	conn->gatt_private = NULL;
-
 	/* Continue reading the attribute */
 	if (bt_gatt_read(conn, params)) {
 		params->func(conn, BT_ATT_ERR_UNLIKELY, params, NULL, 0);
-		goto done;
 	}
 
-	bt_conn_unref(conn);
-	return;
-
 done:
-	conn->gatt_private = NULL;
 	bt_conn_unref(conn);
 }
 
