@@ -473,6 +473,7 @@ static inline void enable_reception(struct cc2520_context *cc2520)
 /****************
  * RX functions *
  ***************/
+
 static inline void flush_rxfifo(struct cc2520_context *cc2520)
 {
 	/* Note: Errata document - 1.1 */
@@ -486,6 +487,67 @@ static inline void flush_rxfifo(struct cc2520_context *cc2520)
 	write_reg_excflag0(&cc2520->spi, EXCFLAG0_RESET_RX_FLAGS);
 }
 
+#ifdef CONFIG_SPI_QMSI
+/** This is a workaround, for SPI QMSI drivers as current QMSI API does not
+ * support asymmetric tx/rx buffer lengths.
+ * (i.e.: it's up to the user to handle tx dummy bytes in tx buffer)
+ */
+static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
+{
+	spi->cmd_buf[0] = CC2520_INS_RXBUF;
+	spi->cmd_buf[1] = 0;
+
+	spi_slave_select(spi->dev, spi->slave);
+
+	if (spi_transceive(spi->dev, spi->cmd_buf, 2,
+			   spi->cmd_buf, 2) == 0) {
+		return spi->cmd_buf[1];
+	}
+
+	return 0;
+}
+
+static inline bool read_rxfifo_content(struct cc2520_spi *spi,
+				       struct net_buf *buf, uint8_t len)
+{
+	uint8_t data[128+1];
+
+	data[0] = CC2520_INS_RXBUF;
+	memset(&data[1], 0, len);
+
+	spi_slave_select(spi->dev, spi->slave);
+
+	if (spi_transceive(spi->dev, data, len+1, data, len+1) != 0) {
+		return false;
+	}
+
+	if (read_reg_excflag0(spi) & EXCFLAG0_RX_UNDERFLOW) {
+		return false;
+	}
+
+	memcpy(packetbuf_dataptr(buf), &data[1], len);
+	packetbuf_set_datalen(buf, len);
+
+	return true;
+}
+
+static inline bool read_rxfifo_footer(struct cc2520_spi *spi, uint8_t *buf)
+{
+	spi->cmd_buf[0] = CC2520_INS_RXBUF;
+	memset(&spi->cmd_buf[1], 0, CC2520_FCS_LENGTH);
+
+	spi_slave_select(spi->dev, spi->slave);
+
+	if (spi_transceive(spi->dev, spi->cmd_buf, CC2520_FCS_LENGTH+1,
+			   spi->cmd_buf, CC2520_FCS_LENGTH+1) != 0) {
+		return false;
+	}
+
+	memcpy(buf, &spi->cmd_buf[1], CC2520_FCS_LENGTH);
+
+	return true;
+}
+#else /* CONFIG_SPI_QMSI */
 static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
 {
 	spi->cmd_buf[0] = CC2520_INS_RXBUF;
@@ -498,16 +560,6 @@ static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
 	}
 
 	return 0;
-}
-
-static inline bool verify_rxfifo_validity(struct cc2520_spi *spi,
-					  uint8_t pkt_len)
-{
-	if (pkt_len < 2 || read_reg_rxfifocnt(spi) != pkt_len) {
-		return false;
-	}
-
-	return true;
 }
 
 static inline bool read_rxfifo_content(struct cc2520_spi *spi,
@@ -533,19 +585,29 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 	return true;
 }
 
-static inline bool read_rxfifo_footer(struct cc2520_spi *spi,
-				      uint8_t *buf, uint8_t len)
+static inline bool read_rxfifo_footer(struct cc2520_spi *spi, uint8_t *buf)
 {
 	spi->cmd_buf[0] = CC2520_INS_RXBUF;
 
 	spi_slave_select(spi->dev, spi->slave);
 
 	if (spi_transceive(spi->dev, spi->cmd_buf, 1,
-			   spi->cmd_buf, len+1) != 0) {
+			   spi->cmd_buf, CC2520_FCS_LENGTH+1) != 0) {
 		return false;
 	}
 
 	memcpy(buf, &spi->cmd_buf[1], CC2520_FCS_LENGTH);
+
+	return true;
+}
+#endif /* CONFIG_SPI_QMSI */
+
+static inline bool verify_rxfifo_validity(struct cc2520_spi *spi,
+					  uint8_t pkt_len)
+{
+	if (pkt_len < 2 || read_reg_rxfifocnt(spi) != pkt_len) {
+		return false;
+	}
 
 	return true;
 }
@@ -589,7 +651,7 @@ static void cc2520_rx(int arg, int unused2)
 			goto error;
 		}
 #ifdef CONFIG_TI_CC2520_AUTO_CRC
-		if (!read_rxfifo_footer(&cc2520->spi, buf, CC2520_FCS_LENGTH)) {
+		if (!read_rxfifo_footer(&cc2520->spi, buf)) {
 			DBG("No footer read\n");
 			goto error;
 		}
