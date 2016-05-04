@@ -49,9 +49,17 @@ ktask_t task_id_get(void)
  * @param X Pointer to task
  * @param bits Bitmask of TF_xxx bits to reset
  * @return N/A
+ *
+ * @internal
+ * When operating on microkernel objects, this routine is invoked in the
+ * context of the microkernel server fiber. However, since microkernel tasks
+ * may pend/unpend on nanokernel objects, interrupts must be locked to
+ * prevent data corruption.
+ * @endinternal
  */
 void _k_state_bit_reset(struct k_task *X, uint32_t bits)
 {
+	unsigned int key = irq_lock();
 	uint32_t f_old = X->state;      /* old state bits */
 	uint32_t f_new = f_old & ~bits; /* new state bits */
 
@@ -72,6 +80,8 @@ void _k_state_bit_reset(struct k_task *X, uint32_t bits)
 		_k_task_priority_bitmap[X->priority >> 5] |=
 			(1 << (X->priority & 0x1F));
 	}
+
+	irq_unlock(key);
 
 #ifdef CONFIG_TASK_MONITOR
 	f_new ^= f_old;
@@ -98,9 +108,17 @@ void _k_state_bit_reset(struct k_task *X, uint32_t bits)
  * @param task_ptr Task pointer
  * @param bitmask of TF_xxx bits to set
  * @return N/A
+ *
+ * @internal
+ * When operating on microkernel objects, this routine is invoked in the
+ * context of the microkernel server fiber. However, since microkernel tasks
+ * may pend/unpend on nanokernel objects, interrupts must be locked to
+ * prevent data corruption.
+ * @endinternal
  */
 void _k_state_bit_set(struct k_task *task_ptr, uint32_t bits)
 {
+	unsigned int key = irq_lock();
 	uint32_t old_state_bits = task_ptr->state;
 	uint32_t new_state_bits = old_state_bits | bits;
 
@@ -156,6 +174,8 @@ void _k_state_bit_set(struct k_task *task_ptr, uint32_t bits)
 				~(1 << (task_ptr->priority & 0x1F));
 		}
 	}
+
+	irq_unlock(key);
 
 #ifdef CONFIG_TASK_MONITOR
 	new_state_bits ^= old_state_bits;
