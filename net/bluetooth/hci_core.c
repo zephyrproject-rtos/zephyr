@@ -846,12 +846,12 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 	if (bt_hci_stop_scanning()) {
-		goto done;
+		goto failed;
 	}
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
 	if (bt_smp_create_rpa(bt_dev.irk, &conn->le.init_addr.a)) {
-		goto done;
+		goto failed;
 	}
 	conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
 #else
@@ -861,16 +861,18 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	bt_addr_le_copy(&conn->le.resp_addr, addr);
 
 	if (hci_le_create_conn(conn)) {
-		conn->err = BT_HCI_ERR_UNSPECIFIED;
-		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		bt_le_scan_update(false);
-		goto done;
+		goto failed;
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT);
-
-done:
 	bt_conn_unref(conn);
+	return;
+
+failed:
+	conn->err = BT_HCI_ERR_UNSPECIFIED;
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	bt_conn_unref(conn);
+	bt_le_scan_update(false);
 }
 
 static int set_flow_control(void)
