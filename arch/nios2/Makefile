@@ -13,6 +13,11 @@ arch_cflags += $(call cc-option,-Wno-unused-parameter)
 arch_cflags += $(call cc-option,-ffunction-sections) \
 	       $(call cc-option,-fdata-sections)
 
+# Nios II CPUs are configurable and we need to pull in the generated
+# headers system.h and linker.h which specify what is enabled and where
+# everything is.
+arch_cflags += $(call cc-option,-I$(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/include)
+
 KBUILD_AFLAGS += $(arch_cflags)
 KBUILD_CFLAGS += $(arch_cflags)
 KBUILD_CXXFLAGS += $(arch_cflags)
