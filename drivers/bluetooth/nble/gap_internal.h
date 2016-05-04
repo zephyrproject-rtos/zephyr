@@ -39,9 +39,40 @@ enum NBLE_GAP_SM_EVT {
 	NBLE_GAP_SM_EVT_LINK_SECURITY_CHANGE,
 };
 
+struct nble_log_s {
+	uint8_t param0;
+	uint8_t param1;
+	uint8_t param2;
+	uint8_t param3;
+};
+
+void nble_log(const struct nble_log_s *par, char *buf, uint8_t buflen);
+
+void on_nble_up(void);
+
 struct nble_response {
 	int status;
 	void *user_data;
+};
+
+struct nble_version {
+	uint8_t version;
+	uint8_t major;
+	uint8_t minor;
+	uint8_t patch;
+	char version_string[20];
+	uint8_t hash[4];
+};
+
+typedef void (*ble_get_version_cb_t)(const struct nble_version *ver);
+
+struct nble_gap_get_version_param {
+	ble_get_version_cb_t cb;
+};
+
+struct nble_version_response {
+	struct nble_gap_get_version_param params;
+	struct nble_version ver;
 };
 
 struct nble_gap_device_name {
@@ -166,17 +197,6 @@ struct nble_gap_ad_data_params {
 	/* Scan response data, maybe 0 (length) */
 	struct bt_eir_data sd;
 };
-
-struct nble_log_s {
-	uint8_t param0;
-	uint8_t param1;
-	uint8_t param2;
-	uint8_t param3;
-};
-
-void nble_log(const struct nble_log_s *param, char *buf, uint8_t buflen);
-
-void on_nble_up(void);
 
 void nble_gap_service_write_req(const struct nble_gap_service_write_params *);
 
@@ -345,26 +365,6 @@ struct nble_uas_bucket_change {
 	uint8_t distance;
 };
 void on_nble_uas_bucket_change(const struct nble_uas_bucket_change *);
-
-struct nble_version {
-	uint8_t version;
-	uint8_t major;
-	uint8_t minor;
-	uint8_t patch;
-	char version_string[20];
-	uint8_t hash[4];
-};
-
-typedef void (*ble_get_version_cb_t)(const struct nble_version *ver);
-
-struct nble_gap_get_version_param {
-	ble_get_version_cb_t cb;
-};
-
-struct nble_version_response {
-	struct nble_gap_get_version_param params;
-	struct nble_version ver;
-};
 
 void nble_get_version_req(const struct nble_gap_get_version_param *params);
 
