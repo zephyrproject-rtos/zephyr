@@ -55,8 +55,8 @@ static void latencyTestIsr(void *unused)
  *
  * @brief Software interrupt generating task
  *
- * Lower priority task that, when starts, wats for the semaphore. When gets
- * released by the main task, sets up the interrupt handler and generates the
+ * Lower priority task that, when starts, waits for a semaphore. When gets
+ * it, released by the main task, sets up the interrupt handler and generates the
  * software interrupt
  *
  * @return 0 on success
