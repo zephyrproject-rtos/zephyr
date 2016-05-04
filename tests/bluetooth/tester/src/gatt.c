@@ -1816,7 +1816,8 @@ uint8_t tester_init_gatt(void)
 {
 	net_buf_pool_init(server_pool);
 
-	server_buf = net_buf_get(&server_fifo, SERVER_BUF_SIZE);
+	server_buf = net_buf_get_timeout(&server_fifo, SERVER_BUF_SIZE,
+					 TICKS_NONE);
 	if (!server_buf) {
 		return BTP_STATUS_FAILED;
 	}

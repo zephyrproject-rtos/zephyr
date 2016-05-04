@@ -525,7 +525,8 @@ static void bt_uart_isr(struct device *unused)
 				break;
 			case HCI_3WIRE_LINK_PKT:
 			case HCI_3WIRE_ACK_PKT:
-				h5.rx_buf = net_buf_get(&h5_sig, 0);
+				h5.rx_buf = net_buf_get_timeout(&h5_sig, 0,
+								TICKS_NONE);
 				if (!h5.rx_buf) {
 					BT_WARN("No available signal buffers");
 					h5_reset_rx();

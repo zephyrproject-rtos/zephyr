@@ -172,7 +172,7 @@ static void bt_uart_isr(struct device *unused)
 				BT_ERR("Too much data to fit buffer");
 				buf = NULL;
 			} else {
-				buf = net_buf_get(&rx, 0);
+				buf = net_buf_get_timeout(&rx, 0, TICKS_NONE);
 				if (!buf) {
 					BT_ERR("No available IPC buffers");
 				}

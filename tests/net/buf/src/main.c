@@ -66,7 +66,7 @@ void main(void)
 	for (i = 0; i < ARRAY_SIZE(bufs_pool); i++) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&bufs_fifo, 0);
+		buf = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
 		if (!buf) {
 			printk("Failed to get buffer!\n");
 			return;
