@@ -664,10 +664,10 @@ int bt_gatt_discover(struct bt_conn *conn,
 	return 0;
 }
 
-static uint16_t parse_include(struct bt_conn *conn, const uint8_t *data,
-			      uint8_t len)
+static uint16_t parse_include(struct bt_conn *conn,
+			      struct bt_gatt_discover_params *params,
+			      const uint8_t *data, uint8_t len)
 {
-	struct bt_gatt_discover_params *params = conn->gatt_private;
 	uint16_t end_handle = 0;
 	int i;
 
@@ -712,10 +712,10 @@ static uint16_t parse_include(struct bt_conn *conn, const uint8_t *data,
 	return end_handle;
 }
 
-static uint16_t parse_service(struct bt_conn *conn, const uint8_t *data,
-			      uint8_t len)
+static uint16_t parse_service(struct bt_conn *conn,
+			      struct bt_gatt_discover_params *params,
+			      const uint8_t *data, uint8_t len)
 {
-	struct bt_gatt_discover_params *params = conn->gatt_private;
 	uint16_t end_handle = 0;
 	int i;
 
@@ -743,10 +743,10 @@ static uint16_t parse_service(struct bt_conn *conn, const uint8_t *data,
 	return end_handle;
 }
 
-static uint16_t parse_characteristic(struct bt_conn *conn, const uint8_t *data,
-				     uint8_t len)
+static uint16_t parse_characteristic(struct bt_conn *conn,
+				     struct bt_gatt_discover_params *params,
+				     const uint8_t *data, uint8_t len)
 {
-	struct bt_gatt_discover_params *params = conn->gatt_private;
 	uint16_t end_handle = 0;
 	int i;
 
@@ -770,10 +770,10 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const uint8_t *data,
 	return end_handle;
 }
 
-static uint16_t parse_descriptor(struct bt_conn *conn, const uint8_t *data,
-				 uint8_t len)
+static uint16_t parse_descriptor(struct bt_conn *conn,
+				 struct bt_gatt_discover_params *params,
+				 const uint8_t *data, uint8_t len)
 {
-	struct bt_gatt_discover_params *params = conn->gatt_private;
 	uint16_t end_handle = 0;
 	int i;
 
@@ -828,16 +828,16 @@ void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 
 	switch (rsp->type) {
 	case BT_GATT_DISCOVER_INCLUDE:
-		end_handle = parse_include(conn, data, data_len);
+		end_handle = parse_include(conn, params, data, data_len);
 		break;
 	case BT_GATT_DISCOVER_PRIMARY:
-		end_handle = parse_service(conn, data, data_len);
+		end_handle = parse_service(conn, params, data, data_len);
 		break;
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
-		end_handle = parse_characteristic(conn, data, data_len);
+		end_handle = parse_characteristic(conn, params, data, data_len);
 		break;
 	case BT_GATT_DISCOVER_DESCRIPTOR:
-		end_handle = parse_descriptor(conn, data, data_len);
+		end_handle = parse_descriptor(conn, params, data, data_len);
 		break;
 	default:
 		BT_ERR("Wrong discover type %d", rsp->type);
