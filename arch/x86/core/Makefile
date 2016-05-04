@@ -25,7 +25,6 @@ obj-y += fatal.o cpuhalt.o \
 obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 obj-$(CONFIG_FP_SHARING) += float.o
 obj-$(CONFIG_MICROKERNEL) += strtask.o
-obj-$(CONFIG_ERRNO) += errno.o
 obj-$(CONFIG_GDT_DYNAMIC) += gdt.o
 obj-$(CONFIG_REBOOT_RST_CNT) += reboot_rst_cnt.o
 

@@ -22,19 +22,9 @@
  * context switching.
  */
 
-#define _ASMLANGUAGE
-
 #include <nano_private.h>
-#include <offsets.h>	/* nanokernel structure offset definitions */
 
-_ASM_FILE_PROLOGUE
-
-GTEXT(_nanokernel)
-GTEXT(_get_errno)
-
-SECTION_FUNC(TEXT, _get_errno)
-
-	ldr r0, =_nanokernel
-	ldr r0, [r0, #__tNANO_current_OFFSET]
-	adds.n r0, #__tTCS_errno_var_OFFSET
-	bx lr
+FUNC_NO_FP int *_get_errno(void)
+{
+	return &_nanokernel.current->errno_var;
+}

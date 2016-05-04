@@ -57,10 +57,6 @@ GEN_OFFSET_SYM(tTCS, preempReg); /* start of prempt register set */
 GEN_OFFSET_SYM(tTCS, next_thread);
 #endif
 
-#ifdef CONFIG_ERRNO
-GEN_OFFSET_SYM(tTCS, errno_var);
-#endif
-
 /* size of the entire struct tcs structure */
 
 GEN_ABSOLUTE_SYM(__tTCS_SIZEOF, sizeof(tTCS));
