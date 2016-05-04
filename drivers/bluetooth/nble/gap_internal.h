@@ -118,7 +118,7 @@ struct nble_gap_scan_parameters {
 	uint16_t timeout;
 };
 
-struct nble_gap_service_write_params {
+struct nble_gap_service_req {
 	/* GAP Characteristics attribute type  @ref BLE_GAP_SVC_ATTR_TYPE */
 	uint16_t attr_type;
 	union {
@@ -198,7 +198,7 @@ struct nble_gap_set_adv_data_req {
 	struct bt_eir_data sd;
 };
 
-void nble_gap_service_write_req(const struct nble_gap_service_write_params *);
+void nble_gap_service_req(const struct nble_gap_service_req *);
 
 void on_nble_get_bda_rsp(const struct nble_get_bda_rsp *par);
 
@@ -306,7 +306,7 @@ struct nble_sm_common_rsp {
 	struct bt_conn *conn;
 };
 
-struct nble_rssi_report_params {
+struct nble_gap_set_rssi_report_req {
 	uint16_t conn_handle;
 	/* RSSI operation @ref BLE_GAP_RSSI_OPS */
 	uint8_t op;
@@ -318,7 +318,7 @@ struct nble_rssi_report_params {
 	uint8_t min_count;
 };
 
-void nble_gap_set_rssi_report_req(const struct nble_rssi_report_params *par,
+void nble_gap_set_rssi_report_req(const struct nble_gap_set_rssi_report_req *par,
 				  void *user_data);
 
 void on_nble_gap_set_rssi_report_rsp(const struct nble_common_rsp *par);
@@ -356,10 +356,10 @@ struct nble_gap_channel_map {
 	uint8_t map[5];
 };
 
-struct nble_uas_rssi_calibrate {
+struct nble_uas_rssi_calibrate_req {
 	float distance;
 };
-void nble_uas_rssi_calibrate_req(const struct nble_uas_rssi_calibrate *);
+void nble_uas_rssi_calibrate_req(const struct nble_uas_rssi_calibrate_req *);
 
 struct nble_uas_bucket_change {
 	uint8_t distance;
@@ -372,11 +372,11 @@ void on_nble_get_version_rsp(const struct nble_get_version_rsp *params);
 
 void nble_gap_dtm_init_req(void *user_data);
 
-struct nble_gap_tx_power_params {
+struct nble_gap_set_tx_power_req {
 	int8_t tx_power;
 };
 
-void nble_gap_tx_power_req(const struct nble_gap_tx_power_params *params);
+void nble_gap_tx_power_req(const struct nble_gap_set_tx_power_req *params);
 
 struct nble_gap_connect_evt {
 	uint16_t conn_handle;

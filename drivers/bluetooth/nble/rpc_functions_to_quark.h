@@ -55,18 +55,18 @@
 		 const struct nble_dbg_rsp *)			\
 	FN_SIG_S(on_nble_gap_dir_adv_timeout_evt,		\
 		 const struct nble_gap_dir_adv_timeout_evt *)	\
-	FN_SIG_S(on_nble_gatts_send_notif_rsp,			\
-		 const struct nble_gatt_notif_rsp *)		\
-	FN_SIG_S(on_nble_gatts_send_ind_rsp,			\
-		 const struct nble_gatt_ind_rsp *)		\
+	FN_SIG_S(on_nble_gatts_notify_tx_evt,			\
+		 const struct nble_gatts_notify_tx_evt *)	\
+	FN_SIG_S(on_nble_gatts_indicate_rsp,			\
+		 const struct nble_gatts_indicate_rsp *)	\
 	FN_SIG_S(on_nble_gap_start_adv_rsp,			\
 		 const struct nble_common_rsp *)		\
 	FN_SIG_S(on_nble_gap_scan_start_stop_rsp,		\
 		 const struct nble_common_rsp *)		\
 	FN_SIG_S(on_nble_gatts_read_evt,			\
-		 const struct nble_gatt_rd_evt *)		\
+		 const struct nble_gatts_read_evt *)		\
 	FN_SIG_S(on_nble_gatts_write_exec_evt,			\
-		 const struct nble_gatt_wr_exec_evt *)		\
+		 const struct nble_gatts_write_exec_evt *)	\
 	FN_SIG_S(on_nble_uas_bucket_change,			\
 		 const struct nble_uas_bucket_change *)		\
 	FN_SIG_S(on_nble_gattc_write_rsp,			\
@@ -84,10 +84,10 @@
 		   const struct nble_gattc_value_evt *,		\
 		   uint8_t *, uint8_t)				\
 	FN_SIG_S_B(on_nble_gatts_write_evt,			\
-		   const struct nble_gatt_wr_evt *,		\
+		   const struct nble_gatts_write_evt *,		\
 		   const uint8_t *, uint8_t)			\
-	FN_SIG_S_B(on_nble_gatt_register_rsp,			\
-		   const struct nble_gatt_register_rsp *,	\
+	FN_SIG_S_B(on_nble_gatts_register_rsp,			\
+		   const struct nble_gatts_register_rsp *,	\
 		   const struct nble_gatt_attr_handles *,	\
 		   uint8_t)					\
 	FN_SIG_S_B(on_nble_gattc_discover_rsp,			\
@@ -102,7 +102,7 @@
 	FN_SIG_S_B(on_nble_gattc_read_rsp,			\
 		   const struct nble_gattc_read_rsp *,		\
 		   uint8_t *, uint8_t)				\
-	FN_SIG_S_B(on_nble_gattc_read_multiple_rsp,		\
+	FN_SIG_S_B(on_nble_gattc_read_multi_rsp,		\
 		   const struct nble_gattc_read_rsp *,		\
 		   uint8_t *, uint8_t)
 

@@ -23,14 +23,14 @@
  */
 #define BLE_GATTS_MAX_SERVICES 10
 
-struct nble_gatt_register_req {
+struct nble_gatts_register_req {
 	/* Base address of the attribute table in the Quark mem space */
 	struct bt_gatt_attr *attr_base;
 	/* Number of of attributes in this service */
 	uint8_t attr_count;
 };
 
-struct nble_gatt_register_rsp {
+struct nble_gatts_register_rsp {
 	int status;
 	struct bt_gatt_attr *attr_base;
 	/* Number of attributes successfully added */
@@ -42,31 +42,31 @@ enum nble_gatt_wr_flag {
 	NBLE_GATT_WR_FLAG_PREP	= 2,
 };
 
-struct nble_gatt_wr_evt {
+struct nble_gatts_write_evt {
 	struct bt_gatt_attr *attr;
 	uint16_t conn_handle;
 	uint16_t offset;
 	uint8_t flag;		/* Cf. enum nble_gatt_wr_flag */
 };
 
-struct nble_gatt_wr_exec_evt {
+struct nble_gatts_write_exec_evt {
 	uint16_t conn_handle;
 	uint8_t flag;
 };
 
-struct nble_gatt_rd_evt {
+struct nble_gatts_read_evt {
 	struct bt_gatt_attr *attr;
 	uint16_t conn_handle;
 	uint16_t offset;
 };
 
-struct nble_gatts_rd_reply_params {
+struct nble_gatts_read_reply_req {
 	uint16_t conn_handle;
 	uint16_t offset;
 	int32_t status;
 };
 
-struct nble_gatts_wr_reply_params {
+struct nble_gatts_write_reply_req {
 	uint16_t conn_handle;
 	int32_t status;
 };
@@ -76,28 +76,28 @@ struct nble_gatt_notif_ind_params {
 	uint16_t offset;
 };
 
-struct nble_gatt_send_notif_params {
+struct nble_gatts_notify_req {
 	/* Function to be invoked when buffer is freed */
 	bt_gatt_notify_func_t cback;
 	uint16_t conn_handle;
 	struct nble_gatt_notif_ind_params params;
 };
 
-struct nble_gatt_notif_rsp {
+struct nble_gatts_notify_tx_evt {
 	bt_gatt_notify_func_t cback;
 	int status;
 	uint16_t conn_handle;
 	struct bt_gatt_attr *attr;
 };
 
-struct nble_gatt_send_ind_params {
+struct nble_gatts_indicate_req {
 	/* Function to be invoked when buffer is freed */
 	bt_gatt_indicate_func_t cback;
 	uint16_t conn_handle;
 	struct nble_gatt_notif_ind_params params;
 };
 
-struct nble_gatt_ind_rsp {
+struct nble_gatts_indicate_rsp {
 	bt_gatt_indicate_func_t cback;
 	int status;
 	uint16_t conn_handle;
@@ -140,34 +140,34 @@ struct nble_gattc_discover_rsp {
 	uint8_t type;
 };
 
-void nble_gatts_rd_reply_req(const struct nble_gatts_rd_reply_params *,
-			     uint8_t *, uint16_t);
+void nble_gatts_read_reply_req(const struct nble_gatts_read_reply_req *,
+			       uint8_t *, uint16_t);
 
-void nble_gatts_wr_reply_req(const struct nble_gatts_wr_reply_params *p_params);
+void nble_gatts_write_reply_req(const struct nble_gatts_write_reply_req *req);
 
-void nble_gatt_register_req(const struct nble_gatt_register_req *par,
-			    uint8_t *buf, uint16_t len);
+void nble_gatts_register_req(const struct nble_gatts_register_req *req,
+			     uint8_t *buf, uint16_t len);
 
 struct nble_gatt_attr_handles {
 	uint16_t handle;
 };
 
-void on_nble_gatt_register_rsp(const struct nble_gatt_register_rsp *par,
-			       const struct nble_gatt_attr_handles *attr,
-			       uint8_t len);
+void on_nble_gatts_register_rsp(const struct nble_gatts_register_rsp *par,
+				const struct nble_gatt_attr_handles *attr,
+				uint8_t len);
 
-void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *ev,
+void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 			     const uint8_t *buf, uint8_t len);
 
-void nble_gatt_send_notif_req(const struct nble_gatt_send_notif_params *par,
-			      const uint8_t *data, uint16_t length);
+void nble_gatts_notify_req(const struct nble_gatts_notify_req *par,
+			   const uint8_t *data, uint16_t length);
 
-void nble_gatt_send_ind_req(const struct nble_gatt_send_ind_params *par,
-			    const uint8_t *data, uint8_t length);
+void nble_gatts_indicate_req(const struct nble_gatts_indicate_req *par,
+			     const uint8_t *data, uint8_t length);
 
 #define DISCOVER_FLAGS_UUID_PRESENT 1
 
-struct nble_discover_params {
+struct nble_gattc_discover_req {
 	void *user_data;
 	struct bt_uuid_128 uuid;
 	struct nble_gatt_handle_range handle_range;
@@ -176,7 +176,7 @@ struct nble_discover_params {
 	uint8_t flags;
 };
 
-void nble_gattc_discover_req(const struct nble_discover_params *req);
+void nble_gattc_discover_req(const struct nble_gattc_discover_req *req);
 
 /** GATT Attribute stream structure.
  *
@@ -196,14 +196,14 @@ struct nble_gatt_attr {
 	uint8_t data[0];
 };
 
-struct nble_gattc_read_params {
+struct nble_gattc_read_req {
 	void *user_data;
 	uint16_t conn_handle;
 	uint16_t handle;
 	uint16_t offset;
 };
 
-struct nble_gattc_read_multiple_params {
+struct nble_gattc_read_multi_req {
 	void *user_data;
 	uint16_t conn_handle;
 };
@@ -220,7 +220,7 @@ struct nble_gattc_read_rsp {
 struct bt_gatt_write_params;
 
 typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
-		     const struct bt_gatt_write_params *wr_params);
+			      const struct bt_gatt_write_params *wr_params);
 
 struct bt_gatt_write_params {
 	/* Function invoked upon write response */
@@ -229,7 +229,7 @@ struct bt_gatt_write_params {
 	void *user_data[2];
 };
 
-struct nble_gattc_write_params {
+struct nble_gattc_write_req {
 	uint16_t conn_handle;
 	uint16_t handle;
 	uint16_t offset;
@@ -246,13 +246,13 @@ struct nble_gattc_write_rsp {
 	struct bt_gatt_write_params wr_params;
 };
 
-void nble_gattc_read_req(const struct nble_gattc_read_params *);
+void nble_gattc_read_req(const struct nble_gattc_read_req *);
 
-void nble_gattc_write_req(const struct nble_gattc_write_params *params,
+void nble_gattc_write_req(const struct nble_gattc_write_req *params,
 			  const uint8_t *buf, uint8_t len);
 
-void nble_gattc_read_multiple_req(const struct nble_gattc_read_multiple_params *params,
-				  const uint16_t *data, uint16_t data_len);
+void nble_gattc_read_multi_req(const struct nble_gattc_read_multi_req *params,
+			       const uint16_t *data, uint16_t data_len);
 
 void bt_gatt_disconnected(struct bt_conn *conn);
 

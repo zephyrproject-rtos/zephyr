@@ -118,7 +118,7 @@ static int attr_read(struct bt_gatt_attr *attr, uint8_t *data, size_t len)
 
 int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 {
-	struct nble_gatt_register_req param;
+	struct nble_gatts_register_req param;
 	size_t i;
 	/* TODO: Replace the following with net_buf */
 	uint8_t attr_table[NBLE_BUF_SIZE];
@@ -170,11 +170,11 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 		       att->data_size);
 	}
 
-	nble_gatt_register_req(&param, attr_table, attr_table_size);
+	nble_gatts_register_req(&param, attr_table, attr_table_size);
 	return 0;
 }
 
-void on_nble_gatt_register_rsp(const struct nble_gatt_register_rsp *rsp,
+void on_nble_gatts_register_rsp(const struct nble_gatts_register_rsp *rsp,
 			       const struct nble_gatt_attr_handles *handles,
 			       uint8_t len)
 {
@@ -462,7 +462,7 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 static int notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		  const void *data, size_t len)
 {
-	struct nble_gatt_send_notif_params notif;
+	struct nble_gatts_notify_req notif;
 
 	BT_DBG("");
 
@@ -471,7 +471,7 @@ static int notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	notif.params.offset = 0;
 	notif.cback = NULL;
 
-	nble_gatt_send_notif_req(&notif, (uint8_t *)data, len);
+	nble_gatts_notify_req(&notif, (uint8_t *)data, len);
 
 	return 0;
 }
@@ -559,7 +559,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params)
 {
-	struct nble_gatt_send_ind_params ind;
+	struct nble_gatts_indicate_req ind;
 
 	BT_DBG("conn %p", conn);
 
@@ -577,13 +577,13 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	ind.params.offset = 0;
 	ind.cback = params->func;
 
-	nble_gatt_send_ind_req(&ind, (void *)params->data, params->len);
+	nble_gatts_indicate_req(&ind, (void *)params->data, params->len);
 
 	return 0;
 }
 
 /* Response to bt_gatt_indicate() */
-void on_nble_gatts_send_ind_rsp(const struct nble_gatt_ind_rsp *rsp)
+void on_nble_gatts_indicate_rsp(const struct nble_gatts_indicate_rsp *rsp)
 {
 	struct bt_conn *conn;
 
@@ -613,7 +613,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params)
 {
-	struct nble_discover_params discover_params;
+	struct nble_gattc_discover_req discover_params;
 
 	if (!conn || !params || !params->func || !params->start_handle ||
 	    !params->end_handle || params->start_handle > params->end_handle) {
@@ -882,12 +882,12 @@ stop:
 static int gatt_read_multiple(struct bt_conn *conn,
 			      struct bt_gatt_read_params *params)
 {
-	struct nble_gattc_read_multiple_params req;
+	struct nble_gattc_read_multi_req req;
 
 	req.conn_handle = conn->handle;
 	req.user_data = params;
 
-	nble_gattc_read_multiple_req(&req, params->handles,
+	nble_gattc_read_multi_req(&req, params->handles,
 				     2 * params->handle_count);
 
 	return 0;
@@ -895,7 +895,7 @@ static int gatt_read_multiple(struct bt_conn *conn,
 
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 {
-	struct nble_gattc_read_params req;
+	struct nble_gattc_read_req req;
 
 	if (!conn || !params || !params->handle_count || !params->func) {
 		return -EINVAL;
@@ -983,7 +983,7 @@ done:
 	bt_conn_unref(conn);
 }
 
-void on_nble_gattc_read_multiple_rsp(const struct nble_gattc_read_rsp *rsp,
+void on_nble_gattc_read_multi_rsp(const struct nble_gattc_read_rsp *rsp,
 				     uint8_t *data, uint8_t len)
 {
 	struct bt_gatt_read_params *params;
@@ -1018,7 +1018,7 @@ done:
 int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 		  const void *data, uint16_t length, bt_gatt_rsp_func_t func)
 {
-	struct nble_gattc_write_params req;
+	struct nble_gattc_write_req req;
 
 	if (!conn || !handle || !func) {
 		return -EINVAL;
@@ -1074,7 +1074,7 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 				   const void *data, uint16_t length,
 				   bool sign)
 {
-	struct nble_gattc_write_params req;
+	struct nble_gattc_write_req req;
 
 	if (!conn || !handle) {
 		return -EINVAL;
@@ -1301,12 +1301,12 @@ void bt_gatt_cancel(struct bt_conn *conn)
 	BT_DBG("");
 }
 
-void on_nble_gatts_write_evt(const struct nble_gatt_wr_evt *ev,
+void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 			     const uint8_t *buf, uint8_t buflen)
 {
 	const struct bt_gatt_attr *attr = ev->attr;
 	struct bt_conn *conn = bt_conn_lookup_handle(ev->conn_handle);
-	struct nble_gatts_wr_reply_params reply_data;
+	struct nble_gatts_write_reply_req reply_data;
 
 	BT_DBG("handle 0x%04x buf %p len %u", attr->handle, buf, buflen);
 
@@ -1340,7 +1340,7 @@ reply:
 	if (ev->flag & NBLE_GATT_WR_FLAG_REPLY) {
 		reply_data.conn_handle = ev->conn_handle;
 
-		nble_gatts_wr_reply_req(&reply_data);
+		nble_gatts_write_reply_req(&reply_data);
 	}
 
 	if (conn) {
@@ -1348,9 +1348,9 @@ reply:
 	}
 }
 
-void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *ev)
+void on_nble_gatts_read_evt(const struct nble_gatts_read_evt *ev)
 {
-	struct nble_gatts_rd_reply_params reply_data;
+	struct nble_gatts_read_reply_req reply_data;
 	const struct bt_gatt_attr *attr;
 	/* TODO: Replace the following with net_buf */
 	uint8_t data[BLE_GATT_MTU_SIZE] = { 0 };
@@ -1384,7 +1384,7 @@ void on_nble_gatts_read_evt(const struct nble_gatt_rd_evt *ev)
 
 	reply_data.conn_handle = ev->conn_handle;
 
-	nble_gatts_rd_reply_req(&reply_data, data, len);
+	nble_gatts_read_reply_req(&reply_data, data, len);
 }
 
 void bt_gatt_disconnected(struct bt_conn *conn)
