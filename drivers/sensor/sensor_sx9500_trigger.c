@@ -118,7 +118,7 @@ static void sx9500_gpio_cb(struct device *port,
 
 	ARG_UNUSED(pins);
 
-	nano_isr_fifo_put(sensor_get_work_fifo(), &data->work);
+	nano_work_submit(&data->work);
 }
 
 static void sx9500_gpio_fiber_cb(void *arg)
@@ -145,6 +145,16 @@ static void sx9500_gpio_fiber_cb(void *arg)
 }
 #endif /* CONFIG_SX9500_TRIGGER_GLOBAL_FIBER */
 
+#ifdef CONFIG_SX9500_TRIGGER_GLOBAL_FIBER
+static void sx9500_work_cb(struct nano_work *work)
+{
+	struct sx9500_data *data =
+		CONTAINER_OF(work, struct sx9500_data, work);
+
+	sx9500_gpio_fiber_cb(data->dev);
+}
+#endif
+
 int sx9500_setup_interrupt(struct device *dev)
 {
 	struct sx9500_data *data = dev->driver_data;
@@ -153,8 +163,8 @@ int sx9500_setup_interrupt(struct device *dev)
 #ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
 	nano_sem_init(&data->sem);
 #else
-	data->work.handler = sx9500_gpio_fiber_cb;
-	data->work.arg = dev;
+	data->work.handler = sx9500_work_cb;
+	data->dev = dev;
 #endif
 
 	gpio = device_get_binding(CONFIG_SX9500_GPIO_CONTROLLER);

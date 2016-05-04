@@ -65,6 +65,7 @@ static void bmi160_handle_drdy(struct device *dev, uint8_t status)
 static void bmi160_handle_interrupts(void *arg)
 {
 	struct device *dev = (struct device *)arg;
+
 	union {
 		uint8_t raw[6];
 		struct {
@@ -106,6 +107,16 @@ static void bmi160_fiber_main(int arg1, int unused)
 }
 #endif
 
+#ifdef CONFIG_BMI160_TRIGGER_GLOBAL_FIBER
+static void bmi160_work_handler(struct nano_work *work)
+{
+	struct bmi160_device_data *bmi160 =
+		CONTAINER_OF(work, struct bmi160_device_data, work);
+
+	bmi160_handle_interrupts(bmi160->dev);
+}
+#endif
+
 extern struct bmi160_device_data bmi160_data;
 
 #ifdef CONFIG_BMI160_TRIGGER_SOURCE_GPIO
@@ -118,7 +129,7 @@ static void bmi160_gpio_callback(struct device *port,
 #if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
 	nano_sem_give(&bmi160->sem);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &bmi160->work);
+	nano_work_submit(&bmi160->work);
 #endif
 }
 #else
@@ -131,7 +142,7 @@ static void bmi160_ipm_callback(void *context, uint32_t id, volatile void *data)
 #if defined(CONFIG_BMI160_TRIGGER_OWN_FIBER)
 	nano_sem_give(&bmi160->sem);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &bmi160->work);
+	nano_work_submit(&bmi160->work);
 #endif
 }
 #endif
@@ -316,8 +327,8 @@ int bmi160_trigger_mode_init(struct device *dev)
 		    bmi160_fiber_main, (int)dev, 0,
 		    CONFIG_BMI160_FIBER_PRIORITY, 0);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_FIBER)
-	bmi160->work.handler = bmi160_handle_interrupts;
-	bmi160->work.arg = dev;
+	bmi160->work.handler = bmi160_work_handler;
+	bmi160->dev = dev;
 #endif
 
 	/* map all interrupts to INT1 pin */

@@ -24,6 +24,7 @@
 #include <sensor.h>
 #include <misc/util.h>
 #include <gpio.h>
+#include <misc/nano_work.h>
 
 #define MCP9808_REG_CONFIG		0x01
 #define MCP9808_REG_UPPER_LIMIT		0x02
@@ -55,7 +56,8 @@ struct mcp9808_data {
 #endif
 
 #ifdef CONFIG_MCP9808_TRIGGER_GLOBAL_FIBER
-	struct sensor_work work;
+	struct nano_work work;
+	struct device *dev;
 #endif
 
 #ifdef CONFIG_MCP9808_TRIGGER

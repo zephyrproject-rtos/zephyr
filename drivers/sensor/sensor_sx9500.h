@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <device.h>
+#include <misc/nano_work.h>
 
 #define SX9500_REG_IRQ_SRC		0x00
 #define SX9500_REG_STAT			0x01
@@ -46,7 +47,8 @@ struct sx9500_data {
 #endif
 
 #ifdef CONFIG_SX9500_TRIGGER_GLOBAL_FIBER
-	struct sensor_work work;
+	struct nano_work work;
+	struct device *dev;
 #endif
 
 #ifdef CONFIG_SX9500_TRIGGER

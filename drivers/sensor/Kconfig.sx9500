@@ -83,9 +83,8 @@ config SX9500_TRIGGER_NONE
 	bool "No trigger"
 
 config SX9500_TRIGGER_GLOBAL_FIBER
-	depends on GPIO
+	depends on GPIO && SYSTEM_WORKQUEUE
 	select SX9500_TRIGGER
-	select SENSOR_DELAYED_WORK
 	bool "Use global fiber"
 
 config SX9500_TRIGGER_OWN_FIBER

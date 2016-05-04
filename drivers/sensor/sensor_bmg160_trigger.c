@@ -34,7 +34,7 @@ static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
 #if defined(CONFIG_BMG160_TRIGGER_OWN_FIBER)
 	nano_isr_sem_give(&bmg160->trig_sem);
 #elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &bmg160->work);
+	nano_work_submit(&bmg160->work);
 #endif
 }
 
@@ -193,6 +193,16 @@ static void bmg160_fiber_main(int arg1, int unused)
 }
 #endif
 
+#ifdef CONFIG_BMG160_TRIGGER_GLOBAL_FIBER
+static void bmg160_work_cb(struct nano_work *work)
+{
+	struct bmg160_device_data *bmg160 =
+		CONTAINER_OF(work, struct bmg160_device_data, work);
+
+	bmg160_handle_int(bmg160->dev);
+}
+#endif
+
 int bmg160_trigger_init(struct device *dev)
 {
 	struct bmg160_device_config *cfg = dev->config->config_info;
@@ -236,8 +246,8 @@ int bmg160_trigger_init(struct device *dev)
 	fiber_start(bmg160_fiber_stack, CONFIG_BMG160_FIBER_STACK_SIZE,
 		    bmg160_fiber_main, (int)dev, 0, 10, 0);
 #elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_FIBER)
-	bmg160->work.handler = bmg160_handle_int;
-	bmg160->work.arg = dev;
+	bmg160->work.handler = bmg160_work_cb;
+	bmg160->dev = dev;
 #endif
 
 	gpio_pin_configure(bmg160->gpio, cfg->int_pin,

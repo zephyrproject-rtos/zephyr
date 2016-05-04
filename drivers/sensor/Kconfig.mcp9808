@@ -74,9 +74,8 @@ config MCP9808_TRIGGER_NONE
 	bool "No trigger"
 
 config MCP9808_TRIGGER_GLOBAL_FIBER
-	depends on GPIO
+	depends on GPIO  && SYSTEM_WORKQUEUE
 	select MCP9808_TRIGGER
-	select SENSOR_DELAYED_WORK
 	bool "Use global fiber"
 
 config MCP9808_TRIGGER_OWN_FIBER

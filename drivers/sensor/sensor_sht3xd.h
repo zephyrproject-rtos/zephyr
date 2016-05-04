@@ -20,6 +20,7 @@
 #include <device.h>
 #include <nanokernel.h>
 #include <gpio.h>
+#include <misc/nano_work.h>
 
 #if CONFIG_SHT3XD_I2C_ADDR_A
 	#define SHT3XD_I2C_ADDRESS	0x44
@@ -92,7 +93,8 @@ struct sht3xd_data {
 	char __stack fiber_stack[CONFIG_SHT3XD_FIBER_STACK_SIZE];
 	struct nano_sem gpio_sem;
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_FIBER)
-	struct sensor_work work;
+	struct nano_work work;
+	struct device *dev;
 #endif
 
 #endif /* CONFIG_SHT3XD_TRIGGER */

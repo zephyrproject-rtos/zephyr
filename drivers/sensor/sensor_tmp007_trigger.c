@@ -67,7 +67,7 @@ static void tmp007_gpio_callback(struct device *dev,
 #if defined(CONFIG_TMP007_TRIGGER_OWN_FIBER)
 	nano_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &drv_data->work);
+	nano_work_submit(&drv_data->work);
 #endif
 }
 
@@ -106,6 +106,16 @@ static void tmp007_fiber(int dev_ptr, int unused)
 		nano_fiber_sem_take(&drv_data->gpio_sem, TICKS_UNLIMITED);
 		tmp007_fiber_cb(dev);
 	}
+}
+#endif
+
+#ifdef CONFIG_TMP007_TRIGGER_GLOBAL_FIBER
+static void tmp007_work_cb(struct nano_work *work)
+{
+	struct tmp007_data *drv_data =
+		CONTAINER_OF(work, struct tmp007_data, work);
+
+	tmp007_fiber_cb(drv_data->dev);
 }
 #endif
 
@@ -171,8 +181,8 @@ int tmp007_init_interrupt(struct device *dev)
 		    (nano_fiber_entry_t)tmp007_fiber, POINTER_TO_INT(dev),
 		    0, CONFIG_TMP007_FIBER_PRIORITY, 0);
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_FIBER)
-	drv_data->work.handler = tmp007_fiber_cb;
-	drv_data->work.arg = dev;
+	drv_data->work.handler = tmp007_work_cb;
+	drv_data->dev = dev;
 #endif
 
 	return 0;

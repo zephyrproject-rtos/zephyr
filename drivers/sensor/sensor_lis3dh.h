@@ -21,6 +21,7 @@
 #include <misc/util.h>
 #include <stdint.h>
 #include <gpio.h>
+#include <misc/nano_work.h>
 
 #if CONFIG_LIS3DH_I2C_ADDR_0x18
 	#define LIS3DH_I2C_ADDRESS	0x18
@@ -110,7 +111,8 @@ struct lis3dh_data {
 	char __stack fiber_stack[CONFIG_LIS3DH_FIBER_STACK_SIZE];
 	struct nano_sem gpio_sem;
 #elif defined(CONFIG_LIS3DH_TRIGGER_GLOBAL_FIBER)
-	struct sensor_work work;
+	struct nano_work work;
+	struct device *dev;
 #endif
 
 #endif /* CONFIG_LIS3DH_TRIGGER */

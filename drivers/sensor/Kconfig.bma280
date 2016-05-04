@@ -138,9 +138,8 @@ config BMA280_TRIGGER_NONE
 config BMA280_TRIGGER_GLOBAL_FIBER
 	bool
 	prompt "Use global fiber"
-	depends on GPIO
+	depends on GPIO && SYSTEM_WORKQUEUE
 	select BMA280_TRIGGER
-	select SENSOR_DELAYED_WORK
 
 config BMA280_TRIGGER_OWN_FIBER
 	bool

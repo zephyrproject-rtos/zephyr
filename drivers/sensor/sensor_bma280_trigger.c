@@ -74,7 +74,7 @@ static void bma280_gpio_callback(struct device *dev,
 #if defined(CONFIG_BMA280_TRIGGER_OWN_FIBER)
 	nano_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &drv_data->work);
+	nano_work_submit(&drv_data->work);
 #endif
 }
 
@@ -123,6 +123,16 @@ static void bma280_fiber(int dev_ptr, int unused)
 		nano_fiber_sem_take(&drv_data->gpio_sem, TICKS_UNLIMITED);
 		bma280_fiber_cb(dev);
 	}
+}
+#endif
+
+#ifdef CONFIG_BMA280_TRIGGER_GLOBAL_FIBER
+static void bma280_work_cb(struct nano_work *work)
+{
+	struct bma280_data *drv_data =
+		CONTAINER_OF(work, struct bma280_data, work);
+
+	bma280_fiber_cb(drv_data->dev);
 }
 #endif
 
@@ -272,8 +282,8 @@ int bma280_init_interrupt(struct device *dev)
 		    (nano_fiber_entry_t)bma280_fiber, POINTER_TO_INT(dev),
 		    0, CONFIG_BMA280_FIBER_PRIORITY, 0);
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_FIBER)
-	drv_data->work.handler = bma280_fiber_cb;
-	drv_data->work.arg = dev;
+	drv_data->work.handler = bma280_work_cb;
+	drv_data->dev = dev;
 #endif
 
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_BMA280_GPIO_PIN_NUM);

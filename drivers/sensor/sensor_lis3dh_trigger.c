@@ -58,7 +58,7 @@ static void lis3dh_gpio_callback(struct device *dev,
 #if defined(CONFIG_LIS3DH_TRIGGER_OWN_FIBER)
 	nano_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_LIS3DH_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &drv_data->work);
+	nano_work_submit(&drv_data->work);
 #endif
 }
 
@@ -87,6 +87,16 @@ static void lis3dh_fiber(int dev_ptr, int unused)
 		nano_fiber_sem_take(&drv_data->gpio_sem, TICKS_UNLIMITED);
 		lis3dh_fiber_cb(dev);
 	}
+}
+#endif
+
+#ifdef CONFIG_LIS3DH_TRIGGER_GLOBAL_FIBER
+static void lis3dh_work_cb(struct nano_work *work)
+{
+	struct lis3dh_data *drv_data =
+		CONTAINER_OF(work, struct lis3dh_data, work);
+
+	lis3dh_fiber_cb(drv_data->dev);
 }
 #endif
 
@@ -139,8 +149,8 @@ int lis3dh_init_interrupt(struct device *dev)
 		    (nano_fiber_entry_t)lis3dh_fiber, POINTER_TO_INT(dev),
 		    0, CONFIG_LIS3DH_FIBER_PRIORITY, 0);
 #elif defined(CONFIG_LIS3DH_TRIGGER_GLOBAL_FIBER)
-	drv_data->work.handler = lis3dh_fiber_cb;
-	drv_data->work.arg = dev;
+	drv_data->work.handler = lis3dh_work_cb;
+	drv_data->dev = dev;
 #endif
 
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_LIS3DH_GPIO_PIN_NUM);

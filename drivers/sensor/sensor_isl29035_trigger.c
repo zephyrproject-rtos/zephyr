@@ -87,13 +87,12 @@ static void isl29035_gpio_callback(struct device *dev,
 #if defined(CONFIG_ISL29035_TRIGGER_OWN_FIBER)
 	nano_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &drv_data->work);
+	nano_work_submit(&drv_data->work);
 #endif
 }
 
-static void isl29035_fiber_cb(void *arg)
+static void isl29035_fiber_cb(struct device *dev)
 {
-	struct device *dev = arg;
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 	uint8_t val;
 
@@ -120,6 +119,16 @@ static void isl29035_fiber(int ptr, int unused)
 		nano_fiber_sem_take(&drv_data->gpio_sem, TICKS_UNLIMITED);
 		isl29035_fiber_cb(dev);
 	}
+}
+#endif
+
+#ifdef CONFIG_ISL29035_TRIGGER_GLOBAL_FIBER
+static void isl29035_work_cb(struct nano_work *work)
+{
+	struct isl29035_driver_data *drv_data =
+		CONTAINER_OF(work, struct isl29035_driver_data, work);
+
+	isl29035_fiber_cb(drv_data->dev);
 }
 #endif
 
@@ -184,8 +193,8 @@ int isl29035_init_interrupt(struct device *dev)
 		    (nano_fiber_entry_t)isl29035_fiber, POINTER_TO_INT(dev),
 		    0, CONFIG_ISL29035_FIBER_PRIORITY, 0);
 #elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_FIBER)
-	drv_data->work.handler = isl29035_fiber_cb;
-	drv_data->work.arg = dev;
+	drv_data->work.handler = isl29035_work_cb;
+	drv_data->dev = dev;
 #endif
 
 	return 0;

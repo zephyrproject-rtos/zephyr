@@ -23,20 +23,6 @@ menuconfig SENSOR
 	help
 	  Include sensor drivers in system config
 
-config SENSOR_DELAYED_WORK
-	depends on SENSOR
-	bool
-
-config SENSOR_DELAYED_WORK_STACK_SIZE
-	int "Sensor delayed work fiber stack size"
-	depends on SENSOR && SENSOR_DELAYED_WORK
-	default 1024
-
-config SENSOR_DELAYED_WORK_PRIORITY
-	int "Sensor delayed work fiber priority"
-	depends on SENSOR && SENSOR_DELAYED_WORK
-	default 10
-
 config SENSOR_DEBUG
 	bool "Enable sensor debug output"
 	default n

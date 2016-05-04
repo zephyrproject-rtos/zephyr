@@ -161,13 +161,14 @@ static void mcp9808_gpio_cb(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	nano_isr_fifo_put(sensor_get_work_fifo(), &data->work);
+	nano_work_submit(&data->work);
 }
 
-static void mcp9808_gpio_fiber_cb(void *arg)
+static void mcp9808_gpio_fiber_cb(struct nano_work *work)
 {
-	struct device *dev = arg;
-	struct mcp9808_data *data = dev->driver_data;
+	struct mcp9808_data *data =
+		CONTAINER_OF(work, struct mcp9808_data, work);
+	struct device *dev = data->dev;
 
 	data->trigger_handler(dev, &data->trig);
 	mcp9808_reg_update(data, MCP9808_REG_CONFIG,
@@ -196,7 +197,7 @@ void mcp9808_setup_interrupt(struct device *dev)
 			  CONFIG_MCP9808_FIBER_PRIORITY, 0);
 #else /* CONFIG_MCP9808_TRIGGER_GLOBAL_FIBER */
 	data->work.handler = mcp9808_gpio_fiber_cb;
-	data->work.arg = dev;
+	data->dev = dev;
 #endif
 
 	gpio = device_get_binding(CONFIG_MCP9808_GPIO_CONTROLLER);

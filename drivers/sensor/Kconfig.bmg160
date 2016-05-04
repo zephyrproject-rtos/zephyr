@@ -81,8 +81,8 @@ config BMG160_TRIGGER_NONE
 
 config BMG160_TRIGGER_GLOBAL_FIBER
 	bool "Use global fiber"
+	depends on SYSTEM_WORKQUEUE
 	select BMG160_TRIGGER
-	select SENSOR_DELAYED_WORK
 
 config BMG160_TRIGGER_OWN_FIBER
 	bool "Use own fiber"

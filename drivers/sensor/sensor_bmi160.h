@@ -18,7 +18,9 @@
 #ifndef _BMI160_H_
 #define _BMI160_H_
 
+#include <gpio.h>
 #include <misc/util.h>
+#include <misc/nano_work.h>
 
 /* registers */
 #define BMI160_REG_CHIPID		0x00
@@ -457,7 +459,8 @@ struct bmi160_device_data {
 #endif
 
 #ifdef CONFIG_BMI160_TRIGGER_GLOBAL_FIBER
-	struct sensor_work work;
+	struct nano_work work;
+	struct device *dev;
 #endif
 
 #ifdef CONFIG_BMI160_TRIGGER

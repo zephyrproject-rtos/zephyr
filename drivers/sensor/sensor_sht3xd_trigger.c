@@ -120,7 +120,7 @@ static void sht3xd_gpio_callback(struct device *dev,
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_FIBER)
 	nano_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_FIBER)
-	nano_isr_fifo_put(sensor_get_work_fifo(), &drv_data->work);
+	nano_work_submit(&drv_data->work);
 #endif
 }
 
@@ -148,6 +148,16 @@ static void sht3xd_fiber(int dev_ptr, int unused)
 		nano_fiber_sem_take(&drv_data->gpio_sem, TICKS_UNLIMITED);
 		sht3xd_fiber_cb(dev);
 	}
+}
+#endif
+
+#ifdef CONFIG_SHT3XD_TRIGGER_GLOBAL_FIBER
+static void sht3xd_work_cb(struct nano_work *work)
+{
+	struct sht3xd_data *drv_data =
+		CONTAINER_OF(work, struct sht3xd_data, work);
+
+	sht3xd_fiber_cb(drv_data->dev);
 }
 #endif
 
@@ -234,8 +244,8 @@ int sht3xd_init_interrupt(struct device *dev)
 		    (nano_fiber_entry_t)sht3xd_fiber, POINTER_TO_INT(dev),
 		    0, CONFIG_SHT3XD_FIBER_PRIORITY, 0);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_FIBER)
-	drv_data->work.handler = sht3xd_fiber_cb;
-	drv_data->work.arg = dev;
+	drv_data->work.handler = sht3xd_work_cb;
+	drv_data->dev = dev;
 #endif
 
 	return 0;

@@ -33,6 +33,10 @@ extern "C" {
 #include <device.h>
 #include <errno.h>
 
+#ifdef CONFIG_SENSOR_WORKQUEUE
+#include <misc/nano_work.h>
+#endif
+
 /** @brief Sensor value types. */
 enum sensor_value_type {
 	/** val1 contains an integer value, val2 is unused. */
@@ -353,29 +357,18 @@ static inline int sensor_channel_get(struct device *dev,
 	return api->channel_get(dev, chan, val);
 }
 
-#ifdef CONFIG_SENSOR_DELAYED_WORK
-typedef void (*sensor_work_handler_t)(void *arg);
+#ifdef CONFIG_SENSOR_WORKQUEUE
+
+extern struct nano_workqueue sensor_workqueue;
 
 /**
- * @brief Sensor delayed work descriptor.
- *
- * Used by sensor drivers internally to delay function calls to a fiber
- * context.
+ * @brief Submit a work item to the system-wide sensor workqueue.
  */
-struct sensor_work {
-	sensor_work_handler_t handler;
-	void *arg;
-};
+static inline void sensor_work_submit(struct nano_work *work)
+{
+	nano_work_submit(&sensor_workqueue, work);
+}
 
-/**
- * @brief Get a fifo to which sensor delayed work can be submitted
- *
- * If @ref CONFIG_SENSOR_DELAYED_WORK is enabled, the system creates a
- * global fiber that can execute delayed work on behalf of drivers.
- * This is useful for drivers which need a mechanism of delayed work but
- * do not create their own fibers due to system resource constraints.
- */
-struct nano_fifo *sensor_get_work_fifo(void);
 #endif
 
 /**

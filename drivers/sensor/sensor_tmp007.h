@@ -77,7 +77,8 @@ struct tmp007_data {
 	char __stack fiber_stack[CONFIG_TMP007_FIBER_STACK_SIZE];
 	struct nano_sem gpio_sem;
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_FIBER)
-	struct sensor_work work;
+	struct nano_work work;
+	struct device *dev;
 #endif
 
 #endif /* CONFIG_TMP007_TRIGGER */

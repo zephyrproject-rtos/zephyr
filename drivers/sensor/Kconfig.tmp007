@@ -134,9 +134,8 @@ config TMP007_TRIGGER_NONE
 config TMP007_TRIGGER_GLOBAL_FIBER
 	bool
 	prompt "Use global fiber"
-	depends on GPIO
+	depends on GPIO && SYSTEM_WORKQUEUE
 	select TMP007_TRIGGER
-	select SENSOR_DELAYED_WORK
 
 config TMP007_TRIGGER_OWN_FIBER
 	bool
