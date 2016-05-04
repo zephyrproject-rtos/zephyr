@@ -92,7 +92,7 @@ config BOARD
 	help
 	This option holds the name of the board and is used to located the files
 	related to the board in the source tree (under boards/).
-	The Board is the first location where we search for a linker.cmd file,
+	The Board is the first location where we search for a linker.ld file,
 	if not found we look for the linker file in
 	arch/<arch>/soc/<family>/<series>
 

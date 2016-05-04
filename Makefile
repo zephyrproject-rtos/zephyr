@@ -710,11 +710,11 @@ ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
 KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
 else
 # Try a board specific linker file
-KBUILD_LDS := $(srctree)/boards/$(BOARD_NAME)/linker.cmd
+KBUILD_LDS := $(srctree)/boards/$(BOARD_NAME)/linker.ld
 
 # If not available, try an SoC specific linker file
 ifeq ($(wildcard $(KBUILD_LDS)),)
-KBUILD_LDS         := $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/linker.cmd
+KBUILD_LDS         := $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/linker.ld
 endif
 endif
 

@@ -36,4 +36,4 @@
 #define DCCM_START		CONFIG_DCCM_BASE_ADDRESS
 #define DCCM_SIZE		CONFIG_DCCM_SIZE
 
-#include <arch/arc/v2/linker.cmd>
+#include <arch/arc/v2/linker.ld>

@@ -1,5 +1,7 @@
+/* linker.ld - Linker command/script file */
+
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2014 Wind River Systems, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +16,4 @@
  * limitations under the License.
  */
 
-/**
- * @brief Linker script for the Nios II/e CPU with timer and 16550 UART
- */
-
-#include <arch/nios2/linker.cmd>
+#include <arch/arm/cortex_m/scripts/linker.ld>

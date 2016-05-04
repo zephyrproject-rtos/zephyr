@@ -38,4 +38,4 @@
 	#define SKIP_TO_SECURITY_FRDM_K64F . = 0x400;
 #endif
 
-#include <arch/arm/cortex_m/scripts/linker.cmd>
+#include <arch/arm/cortex_m/scripts/linker.ld>

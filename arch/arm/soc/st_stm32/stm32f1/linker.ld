@@ -1,7 +1,7 @@
-/* linker.cmd - Linker command/script file */
+/* linker.ld - Linker command/script file */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2014-2016 Wind River Systems, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,4 +16,4 @@
  * limitations under the License.
  */
 
-#include <arch/arm/cortex_m/scripts/linker.cmd>
+#include <arch/arm/cortex_m/scripts/linker.ld>
