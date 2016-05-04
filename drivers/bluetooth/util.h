@@ -1,7 +1,7 @@
-/* uart.h - HCI UART Bluetooth driver header */
+/* util.h - Common helpers for Bluetooth drivers */
 
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
  * limitations under the License.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+static inline void bt_uart_drain(struct device *dev)
+{
+	uint8_t c;
 
-void bt_uart_isr(void *);
-
-#ifdef __cplusplus
+	while (uart_fifo_read(dev, &c, 1)) {
+		continue;
+	}
 }
-#endif

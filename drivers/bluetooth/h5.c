@@ -37,6 +37,8 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/driver.h>
 
+#include "util.h"
+
 #if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
@@ -747,12 +749,7 @@ static int h5_open(void)
 	uart_irq_rx_disable(h5_dev);
 	uart_irq_tx_disable(h5_dev);
 
-	/* Drain the fifo */
-	while (uart_irq_rx_ready(h5_dev)) {
-		unsigned char c;
-
-		uart_fifo_read(h5_dev, &c, 1);
-	}
+	bt_uart_drain(h5_dev);
 
 	uart_irq_callback_set(h5_dev, bt_uart_isr);
 

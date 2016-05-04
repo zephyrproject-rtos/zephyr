@@ -34,6 +34,8 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/driver.h>
 
+#include "util.h"
+
 #if !defined(CONFIG_BLUETOOTH_DEBUG_DRIVER)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
@@ -228,23 +230,18 @@ static int h4_send(struct net_buf *buf)
 
 static int h4_open(void)
 {
-	uint8_t c;
-
 	BT_DBG("");
 
 	uart_irq_rx_disable(h4_dev);
 	uart_irq_tx_disable(h4_dev);
 
-	/* Drain the fifo */
-	while (uart_fifo_read(h4_dev, &c, 1)) {
-		continue;
-	}
-
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
 	if (nrf51_init(h4_dev) < 0) {
 		return -EIO;
 	}
-#endif /* CONFIG_BLUETOOTH_NRF51_PM */
+#else
+	bt_uart_drain(h4_dev);
+#endif
 
 	uart_irq_callback_set(h4_dev, bt_uart_isr);
 

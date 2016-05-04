@@ -31,7 +31,7 @@
 
 #include <bluetooth/log.h>
 
-#include "uart.h"
+#include "util.h"
 #include "rpc.h"
 
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
@@ -210,21 +210,16 @@ int nble_open(void)
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    (nano_fiber_entry_t)rx_fiber, 0, 0, 7, 0);
 
+	uart_irq_rx_disable(nble_dev);
+	uart_irq_tx_disable(nble_dev);
+
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
 	if (nrf51_init(nble_dev) < 0) {
 		return -EIO;
 	}
-#endif /* CONFIG_BLUETOOTH_NRF51_PM */
-
-	uart_irq_rx_disable(nble_dev);
-	uart_irq_tx_disable(nble_dev);
-
-	/* Drain the fifo */
-	while (uart_irq_rx_ready(nble_dev)) {
-		unsigned char c;
-
-		uart_fifo_read(nble_dev, &c, 1);
-	}
+#else
+	bt_uart_drain(nble_dev);
+#endif
 
 	uart_irq_callback_set(nble_dev, bt_uart_isr);
 
