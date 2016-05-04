@@ -1,4 +1,5 @@
 ccflags-y +=-I$(srctree)/kernel/microkernel/include
+ccflags-y +=-I$(srctree)/kernel/nanokernel/include
 
 obj-y = k_task.o
 obj-y += k_idle.o
@@ -19,6 +20,7 @@ obj-y += k_semaphore.o
 obj-y += k_timer.o
 obj-y += k_pipe_buffer.o k_pipe.o k_pipe_get.o \
 	k_pipe_put.o k_pipe_util.o k_pipe_xfer.o
+obj-y += k_nano.o
 
 obj-$(CONFIG_MICROKERNEL)  += k_server.o
 obj-$(CONFIG_TASK_MONITOR) += k_task_monitor.o
