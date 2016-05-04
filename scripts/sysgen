@@ -458,7 +458,7 @@ def kernel_main_c_events():
         # in other words, no declaration if handler is NULL or 0
         handler = event[1].strip().lower()
         if handler != "null" and handler != "0":
-		kernel_main_c_out("extern int %s(int event);\n"% (event[1]))
+            kernel_main_c_out("extern int %s(int event);\n" % (event[1]))
 
         kernel_main_c_out("DEFINE_EVENT(%s, %s);\n" % (event[0], event[1]))
 
