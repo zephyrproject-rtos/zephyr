@@ -19,9 +19,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #include <misc/printk.h>
 
 #include <net/buf.h>
+#include <net/net_ip.h>
 
 #if defined(CONFIG_NET_BUF_DEBUG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -42,12 +44,31 @@ struct bt_data {
 	uint8_t type;
 };
 
+struct ipv6_hdr {
+	uint8_t vtc;
+	uint8_t tcflow;
+	uint16_t flow;
+	uint8_t len[2];
+	uint8_t nexthdr;
+	uint8_t hop_limit;
+	struct in6_addr src;
+	struct in6_addr dst;
+} __attribute__((__packed__));
+
+struct udp_hdr {
+	uint16_t src_port;
+	uint16_t dst_port;
+	uint16_t len;
+	uint16_t chksum;
+} __attribute__((__packed__));
+
 static int destroy_called;
 static int frag_destroy_called;
 
 static struct nano_fifo bufs_fifo;
 static struct nano_fifo no_data_buf_fifo;
 static struct nano_fifo frags_fifo;
+static struct nano_fifo big_frags_fifo;
 
 static void buf_destroy(struct net_buf *buf)
 {
@@ -73,6 +94,17 @@ static void frag_destroy(struct net_buf *buf)
 	}
 }
 
+static void frag_destroy_big(struct net_buf *buf)
+{
+	frag_destroy_called++;
+
+	if (buf->free != &big_frags_fifo) {
+		printk("Invalid free big frag pointer in buffer!\n");
+	} else {
+		nano_fifo_put(buf->free, buf);
+	}
+}
+
 static NET_BUF_POOL(bufs_pool, 22, 74, &bufs_fifo, buf_destroy,
 		    sizeof(struct bt_data));
 
@@ -80,6 +112,12 @@ static NET_BUF_POOL(no_data_buf_pool, 1, 0, &no_data_buf_fifo, NULL,
 		    sizeof(struct bt_data));
 
 static NET_BUF_POOL(frags_pool, 13, 128, &frags_fifo, frag_destroy, 0);
+
+static NET_BUF_POOL(big_pool, 1, 1280, &big_frags_fifo, frag_destroy_big, 0);
+
+static const char example_data[] = "0123456789"
+				   "abcdefghijklmnopqrstuvxyz"
+				   "!#¤%&/()=?";
 
 static bool net_buf_test_1(void)
 {
@@ -388,6 +426,153 @@ static bool net_buf_test_4(void)
 	return true;
 }
 
+static bool net_buf_test_big_buf(void)
+{
+	struct net_buf *big_frags[ARRAY_SIZE(big_pool)];
+	struct net_buf *buf, *frag;
+	struct ipv6_hdr *ipv6;
+	struct udp_hdr *udp;
+	int i, len;
+
+	DBG("sizeof(big_pool)       = %u\n", sizeof(big_pool));
+	net_buf_pool_init(big_pool);
+
+	frag_destroy_called = 0;
+
+	/* Example of one big fragment that can hold full IPv6 packet */
+	buf = net_buf_get(&no_data_buf_fifo, 0);
+
+	/* We reserve some space in front of the buffer for protocol
+	 * headers (IPv6 + UDP). Link layer headers are ignored in
+	 * this example.
+	 */
+#define PROTO_HEADERS (sizeof(struct ipv6_hdr) + sizeof(struct udp_hdr))
+	frag = net_buf_get(&big_frags_fifo, PROTO_HEADERS);
+	big_frags[0] = frag;
+
+	DBG("There is %d bytes available for user data.\n",
+	    net_buf_tailroom(frag));
+
+	/* First add some application data */
+	len = strlen(example_data);
+	for (i = 0; i < 2; i++) {
+		DBG("Adding data: %s\n", example_data);
+		if (net_buf_tailroom(frag) < len) {
+			printk("No enough space in the buffer\n");
+			return -1;
+		}
+		memcpy(net_buf_add(frag, len), example_data, len);
+	}
+	DBG("Full data (len %d): %s\n", frag->len, frag->data);
+
+	ipv6 = (struct ipv6_hdr *)(frag->data - net_buf_headroom(frag));
+	udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+
+	DBG("IPv6 hdr starts %p, UDP hdr starts %p, user data %p\n",
+	    ipv6, udp, frag->data);
+
+	net_buf_frag_add(buf, frag);
+	net_buf_unref(buf);
+
+	if (frag_destroy_called != 0) {
+		printk("Wrong big frag destroy callback count\n");
+		return false;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(big_pool); i++) {
+		net_buf_unref(big_frags[i]);
+	}
+
+	if (frag_destroy_called != ARRAY_SIZE(big_pool)) {
+		printk("Incorrect big frag destroy count: %d vs %d\n",
+		       frag_destroy_called, ARRAY_SIZE(big_pool));
+		return false;
+	}
+
+	return true;
+}
+
+static bool net_buf_test_multi_frags(void)
+{
+	struct net_buf *frags[ARRAY_SIZE(frags_pool)];
+	struct net_buf *buf;
+	struct ipv6_hdr *ipv6;
+	struct udp_hdr *udp;
+	int i, len, avail = 0, occupied = 0;
+
+	frag_destroy_called = 0;
+
+	/* Example of multi fragment scenario with IPv6 */
+	buf = net_buf_get(&no_data_buf_fifo, 0);
+
+	/* We reserve some space in front of the buffer for link layer headers.
+	 * In this example, we use min MTU (81 bytes) defined in rfc 4944 ch. 4
+	 *
+	 * Note that with IEEE 802.15.4 we typically cannot have zero-copy
+	 * in sending side because of the IPv6 header compression.
+	 */
+
+#define LL_HEADERS (127 - 81)
+	for (i = 0; i < ARRAY_SIZE(frags_pool) - 1; i++) {
+		frags[i] = net_buf_get(&frags_fifo, LL_HEADERS);
+		avail += net_buf_tailroom(frags[i]);
+		net_buf_frag_add(buf, frags[i]);
+	}
+
+	/* Place the IP + UDP header in the first fragment */
+	frags[i] = net_buf_get(&frags_fifo,
+			       LL_HEADERS +
+			       (sizeof(struct ipv6_hdr) +
+				sizeof(struct udp_hdr)));
+	avail += net_buf_tailroom(frags[i]);
+	net_buf_frag_insert(buf, frags[i]);
+
+	DBG("There is %d bytes available for user data in %d buffers.\n",
+	    avail, i);
+
+	/* First add some application data */
+	len = strlen(example_data);
+	for (i = 0; i < ARRAY_SIZE(frags_pool) - 1; i++) {
+		DBG("Adding data: %s\n", example_data);
+		if (net_buf_tailroom(frags[i]) < len) {
+			printk("No enough space in the buffer\n");
+			return false;
+		}
+		memcpy(net_buf_add(frags[i], len), example_data, len);
+		occupied += frags[i]->len;
+	}
+	DBG("Full data len %d\n", occupied);
+
+	ipv6 = (struct ipv6_hdr *)(frags[i]->data - net_buf_headroom(frags[i]));
+	udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+
+	DBG("Frag %p IPv6 hdr starts %p, UDP hdr starts %p\n",
+	    frags[i], ipv6, udp);
+	for (i = 0; i < ARRAY_SIZE(frags_pool); i++) {
+		DBG("[%d] frag %p user data (%d) at %p\n",
+		       i, frags[i], frags[i]->len, frags[i]->data);
+	}
+
+	net_buf_unref(buf);
+
+	if (frag_destroy_called != 0) {
+		printk("Wrong big frag destroy callback count\n");
+		return false;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(frags_pool); i++) {
+		net_buf_unref(frags[i]);
+	}
+
+	if (frag_destroy_called != ARRAY_SIZE(frags_pool)) {
+		printk("Incorrect big frag destroy count: %d vs %d\n",
+		       frag_destroy_called, ARRAY_SIZE(frags_pool));
+		return false;
+	}
+
+	return true;
+}
+
 static const struct {
 	const char *name;
 	bool (*func)(void);
@@ -396,6 +581,8 @@ static const struct {
 	{ "Test 2", net_buf_test_2, },
 	{ "Test 3", net_buf_test_3, },
 	{ "Test 4", net_buf_test_4, },
+	{ "Test 5 big buf", net_buf_test_big_buf, },
+	{ "Test 6 multi frag", net_buf_test_multi_frags, },
 };
 
 void main(void)
