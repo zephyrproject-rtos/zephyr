@@ -25,6 +25,7 @@
 #define _ARCH_IFACE_H
 
 #include <system.h>
+#include "nios2.h"
 
 #ifdef __cplusplus
 extern "C" {
