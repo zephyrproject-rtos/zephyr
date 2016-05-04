@@ -133,6 +133,16 @@ config	TCP_MSS
 	  not change this but let the IP stack to calculate a best
 	  size for it.
 
+config	TCP_RECEIVE_WINDOW
+	int
+	prompt "TCP receive window size"
+	depends on NETWORKING_WITH_TCP
+	default 0
+	help
+	  Tweak the TCP receive window size. Normally one should
+	  not change this but let the IP stack to calculate a best
+	  size for it.
+
 config	NETWORKING_WITH_RPL
 	bool
 	prompt "Enable RPL (ripple) IPv6 mesh routing protocol"
