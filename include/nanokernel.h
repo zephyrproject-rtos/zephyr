@@ -230,6 +230,45 @@ extern void fiber_yield(void);
  */
 extern void fiber_abort(void);
 
+/**
+ * @brief Fiber configuration structure.
+ *
+ * Parameters such as stack size and fiber priority are often
+ * user configurable.  This structure makes it simple to specify such a
+ * configuration.
+ */
+struct fiber_config {
+	char *stack;
+	unsigned stack_size;
+	unsigned prio;
+};
+
+/**
+ * @brief Start a fiber based on a @ref fiber_config, from fiber context.
+ */
+static inline nano_thread_id_t
+fiber_fiber_start_config(const struct fiber_config *config,
+			 nano_fiber_entry_t entry,
+			 int arg1, int arg2, unsigned options)
+{
+	return fiber_fiber_start(config->stack, config->stack_size,
+				 entry, arg1, arg2, config->prio, options);
+}
+
+/**
+ * @brief Start a fiber based on a @ref fiber_config.
+ *
+ * This routine can be called from either a fiber or a task.
+ */
+static inline nano_thread_id_t
+fiber_start_config(const struct fiber_config *config,
+		   nano_fiber_entry_t entry,
+		   int arg1, int arg2, unsigned options)
+{
+	return fiber_start(config->stack, config->stack_size, entry,
+			   arg1, arg2, config->prio, options);
+}
+
 #ifdef CONFIG_NANO_TIMEOUTS
 
 /**
@@ -374,6 +413,19 @@ extern void fiber_fiber_delayed_start_cancel(nano_thread_id_t handle);
 extern nano_thread_id_t task_fiber_start(char *pStack, unsigned int stackSize,
 		nano_fiber_entry_t entry, int arg1, int arg2, unsigned prio,
 		unsigned options);
+
+/**
+ * @brief Start a fiber based on a @ref fiber_config, from task context.
+ */
+static inline nano_thread_id_t
+task_fiber_start_config(const struct fiber_config *config,
+			nano_fiber_entry_t entry,
+			int arg1, int arg2, unsigned options)
+{
+	return task_fiber_start(config->stack, config->stack_size,
+				entry, arg1, arg2, config->prio, options);
+}
+
 #ifdef CONFIG_NANO_TIMEOUTS
 
 /**
@@ -386,6 +438,7 @@ extern nano_thread_id_t task_fiber_delayed_start(char *stack,
 		nano_fiber_entry_t entry_point, int param1,
 		int param2, unsigned int priority,
 		unsigned int options, int32_t timeout_in_ticks);
+
 /**
  * @brief Cancel a delayed fiber start from a task.
  *
