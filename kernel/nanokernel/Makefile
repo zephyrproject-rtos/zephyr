@@ -19,3 +19,4 @@ obj-$(CONFIG_KERNEL_EVENT_LOGGER) += kernel_event_logger.o
 obj-$(CONFIG_RING_BUFFER) += ring_buffer.o
 obj-$(CONFIG_ATOMIC_OPERATIONS_C) += atomic_c.o
 obj-$(CONFIG_ERRNO) += errno.o
+obj-$(CONFIG_NANO_WORKQUEUE) += nano_work.o
