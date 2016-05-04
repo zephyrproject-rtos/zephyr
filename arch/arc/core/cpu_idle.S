@@ -61,6 +61,11 @@ SECTION_VAR(BSS, nano_cpu_sleep_mode)
 
 SECTION_FUNC(TEXT, nano_cpu_idle)
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
+	push_s blink
+	jl    _sys_k_event_logger_enter_sleep
+	pop_s blink
+#endif
 	enter_tickless_idle
 
 	ld r1, [nano_cpu_sleep_mode]
@@ -77,6 +82,12 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  * void nano_cpu_atomic_idle(unsigned int key)
  */
 SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
+	push_s blink
+	jl    _sys_k_event_logger_enter_sleep
+	pop_s blink
+#endif
 
 	enter_tickless_idle
 
