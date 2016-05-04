@@ -50,7 +50,7 @@ void nble_log(const struct nble_log_s *par, char *buf, uint8_t buflen);
 
 void on_nble_up(void);
 
-struct nble_response {
+struct nble_common_rsp {
 	int status;
 	void *user_data;
 };
@@ -70,7 +70,7 @@ struct nble_gap_get_version_param {
 	ble_get_version_cb_t cb;
 };
 
-struct nble_version_response {
+struct nble_get_version_rsp {
 	struct nble_gap_get_version_param params;
 	struct nble_version ver;
 };
@@ -132,7 +132,7 @@ struct nble_gap_service_write_params {
 	};
 };
 
-struct nble_service_read_bda_response {
+struct nble_get_bda_rsp {
 	int status;
 	/* If @ref status ok */
 	bt_addr_le_t bd;
@@ -151,7 +151,7 @@ struct nble_debug_params {
 	uint32_t u1;
 };
 
-struct nble_debug_resp {
+struct nble_dbg_rsp {
 	int status;
 	uint32_t u0;
 	uint32_t u1;
@@ -160,7 +160,7 @@ struct nble_debug_resp {
 
 typedef void (*nble_set_bda_cb_t)(int status, void *user_data);
 
-struct nble_set_bda_params {
+struct nble_set_bda_req {
 	bt_addr_le_t bda;
 	nble_set_bda_cb_t cb;
 	void *user_data;
@@ -177,7 +177,7 @@ struct bt_eir_data {
 	uint8_t data[31];
 };
 
-struct nble_gap_adv_params {
+struct nble_gap_set_adv_params_req {
 	uint16_t timeout;
 	/* min interval 0xffff: use default 0x0800 */
 	uint16_t interval_min;
@@ -191,7 +191,7 @@ struct nble_gap_adv_params {
 	bt_addr_le_t peer_bda;
 };
 
-struct nble_gap_ad_data_params {
+struct nble_gap_set_adv_data_req {
 	/* Advertisement data, maybe 0 (length) */
 	struct bt_eir_data ad;
 	/* Scan response data, maybe 0 (length) */
@@ -200,23 +200,23 @@ struct nble_gap_ad_data_params {
 
 void nble_gap_service_write_req(const struct nble_gap_service_write_params *);
 
-void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *par);
+void on_nble_get_bda_rsp(const struct nble_get_bda_rsp *par);
 
 void nble_gap_dbg_req(const struct nble_debug_params *par, void *user_data);
 
-void on_nble_gap_dbg_rsp(const struct nble_debug_resp *rsp);
+void on_nble_dbg_rsp(const struct nble_dbg_rsp *rsp);
 
 void on_nble_set_bda_rsp(const struct nble_set_bda_rsp *par);
 
-void nble_set_bda_req(const struct nble_set_bda_params *par);
+void nble_set_bda_req(const struct nble_set_bda_req *par);
 
-void nble_gap_set_adv_data_req(struct nble_gap_ad_data_params *ad_data_params);
+void nble_gap_set_adv_data_req(struct nble_gap_set_adv_data_req *ad_data_params);
 
-void nble_gap_set_adv_params_req(struct nble_gap_adv_params *adv_params);
+void nble_gap_set_adv_params_req(struct nble_gap_set_adv_params_req *adv_params);
 
 void nble_gap_start_adv_req(void);
 
-void on_nble_gap_start_advertise_rsp(const struct nble_response *params);
+void on_nble_gap_start_adv_rsp(const struct nble_common_rsp *params);
 
 void nble_gap_stop_adv_req(void *user_data);
 
@@ -226,27 +226,27 @@ struct nble_gap_irk_info {
 	uint8_t irk[BLE_GAP_SEC_MAX_KEY_LEN];
 };
 
-struct nble_gap_connect_update_params {
+struct nble_gap_conn_update_req {
 	uint16_t conn_handle;
 	struct nble_gap_connection_params params;
 };
 
-void nble_gap_conn_update_req(const struct nble_gap_connect_update_params *par);
+void nble_gap_conn_update_req(const struct nble_gap_conn_update_req *par);
 
-struct nble_gap_connect_req_params {
+struct nble_gap_connect_req {
 	bt_addr_le_t bda;
 	struct nble_gap_connection_params conn_params;
 	struct nble_gap_scan_parameters scan_params;
 };
 
-struct nble_gap_disconnect_req_params {
+struct nble_gap_disconnect_req {
 	uint16_t conn_handle;
 	uint8_t reason;
 };
 
-void nble_gap_disconnect_req(const struct nble_gap_disconnect_req_params *);
+void nble_gap_disconnect_req(const struct nble_gap_disconnect_req *);
 
-struct nble_gap_sm_config_params {
+struct nble_sm_config_req {
 	/* Security options (@ref BLE_GAP_SM_OPTIONS) */
 	uint8_t options;
 	/* I/O Capabilities to allow passkey exchange (@ref BLE_GAP_IO_CAPABILITIES) */
@@ -256,9 +256,9 @@ struct nble_gap_sm_config_params {
 	uint8_t oob_present;
 };
 
-void nble_gap_sm_config_req(const struct nble_gap_sm_config_params *par);
+void nble_sm_config_req(const struct nble_sm_config_req *par);
 
-struct nble_gap_sm_config_rsp {
+struct nble_sm_config_rsp {
 	void *user_data;
 	int status;
 	bool sm_bond_dev_avail;
@@ -269,14 +269,14 @@ struct nble_gap_sm_pairing_params {
 	uint8_t auth_level;
 };
 
-struct nble_gap_sm_security_params {
+struct nble_sm_security_req {
 	struct bt_conn *conn;
 	uint16_t conn_handle;
 	/* Local authentication/bonding parameters */
 	struct nble_gap_sm_pairing_params params;
 };
 
-void nble_gap_sm_security_req(const struct nble_gap_sm_security_params *par);
+void nble_sm_security_req(const struct nble_sm_security_req *par);
 
 struct nble_gap_sm_passkey {
 	uint8_t type;
@@ -287,21 +287,21 @@ struct nble_gap_sm_passkey {
 	};
 };
 
-struct nble_gap_sm_key_reply_req_params {
+struct nble_sm_passkey_reply_req {
 	struct bt_conn *conn;
 	uint16_t conn_handle;
 	struct nble_gap_sm_passkey params;
 };
 
-void nble_gap_sm_passkey_reply_req(const struct nble_gap_sm_key_reply_req_params *par);
+void nble_sm_passkey_reply_req(const struct nble_sm_passkey_reply_req *par);
 
-struct nble_gap_sm_clear_bond_req_params {
+struct nble_sm_clear_bonds_req {
 	bt_addr_le_t addr;
 };
 
-void nble_gap_sm_clear_bonds_req(const struct nble_gap_sm_clear_bond_req_params *par);
+void nble_sm_clear_bonds_req(const struct nble_sm_clear_bonds_req *par);
 
-struct nble_gap_sm_response {
+struct nble_sm_common_rsp {
 	int status;
 	struct bt_conn *conn;
 };
@@ -321,29 +321,29 @@ struct nble_rssi_report_params {
 void nble_gap_set_rssi_report_req(const struct nble_rssi_report_params *par,
 				  void *user_data);
 
-void on_nble_gap_set_rssi_report_rsp(const struct nble_response *par);
+void on_nble_gap_set_rssi_report_rsp(const struct nble_common_rsp *par);
 
-struct nble_gap_scan_params {
+struct nble_gap_start_scan_req {
 	uint16_t interval;
 	uint16_t window;
 	uint8_t scan_type;
 	uint8_t use_whitelist;
 };
 
-void nble_gap_start_scan_req(const struct nble_gap_scan_params *par);
+void nble_gap_start_scan_req(const struct nble_gap_start_scan_req *par);
 
 void nble_gap_stop_scan_req(void);
 
-void on_nble_gap_scan_start_stop_rsp(const struct nble_response *par);
+void on_nble_gap_scan_start_stop_rsp(const struct nble_common_rsp *par);
 
-void nble_gap_connect_req(const struct nble_gap_connect_req_params *req,
+void nble_gap_connect_req(const struct nble_gap_connect_req *req,
 			  void *user_data);
 
-void on_nble_gap_connect_rsp(const struct nble_response *rsp);
+void on_nble_gap_connect_rsp(const struct nble_common_rsp *rsp);
 
 void nble_gap_cancel_connect_req(void *user_data);
 
-void on_nble_gap_cancel_connect_rsp(const struct nble_response *par);
+void on_nble_gap_cancel_connect_rsp(const struct nble_common_rsp *par);
 
 enum BLE_GAP_SET_OPTIONS {
 	BLE_GAP_SET_CH_MAP = 0,
@@ -368,7 +368,7 @@ void on_nble_uas_bucket_change(const struct nble_uas_bucket_change *);
 
 void nble_get_version_req(const struct nble_gap_get_version_param *params);
 
-void on_nble_get_version_rsp(const struct nble_version_response *params);
+void on_nble_get_version_rsp(const struct nble_get_version_rsp *params);
 
 void nble_gap_dtm_init_req(void *user_data);
 
@@ -424,33 +424,33 @@ struct nble_gap_rssi_evt {
 
 void on_nble_gap_rssi_evt(const struct nble_gap_rssi_evt *ev);
 
-struct nble_gap_sm_passkey_req_evt {
+struct nble_sm_passkey_req_evt {
 	uint16_t conn_handle;
 	uint8_t key_type;
 };
 
-void on_nble_gap_sm_passkey_req_evt(const struct nble_gap_sm_passkey_req_evt *);
+void on_nble_sm_passkey_req_evt(const struct nble_sm_passkey_req_evt *);
 
-struct nble_gap_sm_passkey_disp_evt {
+struct nble_sm_passkey_disp_evt {
 	uint16_t conn_handle;
 	uint32_t passkey;
 };
 
-void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_evt *evt);
+void on_nble_sm_passkey_disp_evt(const struct nble_sm_passkey_disp_evt *evt);
 
 struct nble_link_sec {
 	bt_security_t sec_level;
 	uint8_t enc_size;
 };
 
-struct nble_gap_sm_status_evt {
+struct nble_sm_status_evt {
 	uint16_t conn_handle;
 	uint8_t evt_type;
 	int status;
 	struct nble_link_sec enc_link_sec;
 };
 
-void on_nble_gap_sm_status_evt(const struct nble_gap_sm_status_evt *ev);
+void on_nble_sm_status_evt(const struct nble_sm_status_evt *ev);
 
 struct nble_gap_sm_bond_info;
 
@@ -458,13 +458,13 @@ typedef void (*ble_bond_info_cb_t)(const struct nble_gap_sm_bond_info *info,
 				   const bt_addr_le_t *addr, uint16_t len,
 				   void *user_data);
 
-struct nble_gap_sm_bond_info_param {
+struct nble_sm_bond_info_req {
 	ble_bond_info_cb_t cb;
 	void *user_data;
 	bool include_bonded_addrs;
 };
 
-void nble_gap_sm_bond_info_req(const struct nble_gap_sm_bond_info_param *params);
+void nble_sm_bond_info_req(const struct nble_sm_bond_info_req *params);
 
 struct nble_gap_sm_bond_info {
 	int err;
@@ -472,7 +472,7 @@ struct nble_gap_sm_bond_info {
 	uint8_t irk_count;
 };
 
-struct nble_gap_sm_bond_info_rsp {
+struct nble_sm_bond_info_rsp {
 	ble_bond_info_cb_t cb;
 	void *user_data;
 	struct nble_gap_sm_bond_info info;

@@ -67,14 +67,14 @@ static const char *bt_addr_le_str(const bt_addr_le_t *addr)
 
 static void clear_bonds(const bt_addr_le_t *addr)
 {
-	struct nble_gap_sm_clear_bond_req_params params = { { 0 }, };
+	struct nble_sm_clear_bonds_req params = { { 0 }, };
 
 	bt_addr_le_copy(&params.addr, addr);
 
-	nble_gap_sm_clear_bonds_req(&params);
+	nble_sm_clear_bonds_req(&params);
 }
 
-void on_nble_get_version_rsp(const struct nble_version_response *rsp)
+void on_nble_get_version_rsp(const struct nble_get_version_rsp *rsp)
 {
 	BT_DBG("VERSION: %d.%d.%d %.20s", rsp->ver.major, rsp->ver.minor,
 	       rsp->ver.patch, rsp->ver.version_string);
@@ -169,8 +169,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
-	struct nble_gap_adv_params params = { 0 };
-	struct nble_gap_ad_data_params data = { 0 };
+	struct nble_gap_set_adv_params_req params = { 0 };
+	struct nble_gap_set_adv_data_req data = { 0 };
 	int err;
 
 	if (!valid_adv_param(param)) {
@@ -226,7 +226,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	return 0;
 }
 
-void on_nble_gap_start_advertise_rsp(const struct nble_response *rsp)
+void on_nble_gap_start_adv_rsp(const struct nble_common_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("Start advertise falied, status %d", rsp->status);
@@ -247,7 +247,7 @@ int bt_le_adv_stop(void)
 	return 0;
 }
 
-void on_nble_gap_stop_advertise_rsp(const struct nble_response *rsp)
+void on_nble_gap_stop_advertise_rsp(const struct nble_common_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("Stop advertise failed, status %d", rsp->status);
@@ -288,7 +288,7 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 {
-	struct nble_gap_scan_params nble_params;
+	struct nble_gap_start_scan_req nble_params;
 
 	BT_DBG("");
 
@@ -333,7 +333,7 @@ int bt_le_scan_stop(void)
 	return 0;
 }
 
-void on_nble_gap_scan_start_stop_rsp(const struct nble_response *rsp)
+void on_nble_gap_scan_start_stop_rsp(const struct nble_common_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("Unable to stop scan, status %d", rsp->status);
@@ -354,7 +354,7 @@ void nble_log(const struct nble_log_s *param, char *format, uint8_t len)
 #endif
 }
 
-void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
+void on_nble_get_bda_rsp(const struct nble_get_bda_rsp *rsp)
 {
 	struct nble_gap_get_version_param params;
 
@@ -371,7 +371,7 @@ void on_nble_gap_read_bda_rsp(const struct nble_service_read_bda_response *rsp)
 	nble_get_version_req(&params);
 }
 
-void on_nble_common_rsp(const struct nble_response *rsp)
+void on_nble_common_rsp(const struct nble_common_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("Last request failed, error %d", rsp->status);
@@ -414,7 +414,7 @@ static uint8_t get_io_capa(void)
 
 static void send_dm_config(void)
 {
-	struct nble_gap_sm_config_params config = {
+	struct nble_sm_config_req config = {
 		.key_size = BT_SMP_MAX_ENC_KEY_SIZE,
 		.oob_present = BT_SMP_OOB_NOT_PRESENT,
 	};
@@ -429,10 +429,10 @@ static void send_dm_config(void)
 
 	BT_DBG("io_caps %u options %u", config.io_caps, config.options);
 
-	nble_gap_sm_config_req(&config);
+	nble_sm_config_req(&config);
 }
 
-void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *rsp)
+void on_nble_sm_config_rsp(struct nble_sm_config_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("SM config failed, status %d", rsp->status);
@@ -445,7 +445,7 @@ void on_nble_gap_sm_config_rsp(struct nble_gap_sm_config_rsp *rsp)
 	nble_gap_read_bda_req(NULL);
 }
 
-void on_nble_gap_sm_common_rsp(const struct nble_gap_sm_response *rsp)
+void on_nble_sm_common_rsp(const struct nble_sm_common_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("GAP SM request failed:  conn %p err %d", rsp->conn,
@@ -456,7 +456,7 @@ void on_nble_gap_sm_common_rsp(const struct nble_gap_sm_response *rsp)
 	}
 }
 
-void on_nble_gap_sm_status_evt(const struct nble_gap_sm_status_evt *ev)
+void on_nble_sm_status_evt(const struct nble_sm_status_evt *ev)
 {
 	struct bt_conn *conn;
 
@@ -495,7 +495,7 @@ void on_nble_gap_sm_status_evt(const struct nble_gap_sm_status_evt *ev)
 	bt_conn_unref(conn);
 }
 
-void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_evt *ev)
+void on_nble_sm_passkey_disp_evt(const struct nble_sm_passkey_disp_evt *ev)
 {
 	struct bt_conn *conn;
 
@@ -517,7 +517,7 @@ void on_nble_gap_sm_passkey_display_evt(const struct nble_gap_sm_passkey_disp_ev
 	bt_conn_unref(conn);
 }
 
-void on_nble_gap_sm_passkey_req_evt(const struct nble_gap_sm_passkey_req_evt *ev)
+void on_nble_sm_passkey_req_evt(const struct nble_sm_passkey_req_evt *ev)
 {
 	struct bt_conn *conn;
 

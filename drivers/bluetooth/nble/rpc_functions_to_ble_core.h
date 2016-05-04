@@ -21,24 +21,24 @@
 
 #define LIST_FN_SIG_S							\
 	FN_SIG_S(nble_gap_set_adv_data_req,				\
-		 struct nble_gap_ad_data_params *)			\
+		 struct nble_gap_set_adv_data_req *)			\
 	FN_SIG_S(nble_gap_set_adv_params_req,				\
-		 struct nble_gap_adv_params *)				\
+		 struct nble_gap_set_adv_params_req *)			\
 	FN_SIG_S(nble_gap_start_scan_req,				\
-		 const struct nble_gap_scan_params *)			\
-	FN_SIG_S(nble_gap_sm_config_req,				\
-		 const struct nble_gap_sm_config_params *)		\
-	FN_SIG_S(nble_gap_sm_passkey_reply_req,				\
-		 const struct nble_gap_sm_key_reply_req_params *)	\
-	FN_SIG_S(nble_gap_sm_bond_info_req,				\
-		 const struct nble_gap_sm_bond_info_param *)		\
-	FN_SIG_S(nble_gap_sm_security_req,				\
-		 const struct nble_gap_sm_security_params *)		\
-	FN_SIG_S(nble_gap_sm_clear_bonds_req,				\
-		 const struct nble_gap_sm_clear_bond_req_params *)	\
-	FN_SIG_S(nble_set_bda_req, const struct nble_set_bda_params *)	\
+		 const struct nble_gap_start_scan_req *)		\
+	FN_SIG_S(nble_sm_config_req,					\
+		 const struct nble_sm_config_req *)			\
+	FN_SIG_S(nble_sm_passkey_reply_req,				\
+		 const struct nble_sm_passkey_reply_req *)		\
+	FN_SIG_S(nble_sm_bond_info_req,					\
+		 const struct nble_sm_bond_info_req *)			\
+	FN_SIG_S(nble_sm_security_req,					\
+		 const struct nble_sm_security_req *)			\
+	FN_SIG_S(nble_sm_clear_bonds_req,				\
+		 const struct nble_sm_clear_bonds_req *)		\
+	FN_SIG_S(nble_set_bda_req, const struct nble_set_bda_req *)	\
 	FN_SIG_S(nble_gap_conn_update_req,				\
-		 const struct nble_gap_connect_update_params *)		\
+		 const struct nble_gap_conn_update_req *)		\
 	FN_SIG_S(nble_gattc_discover_req,				\
 		 const struct nble_discover_params *)			\
 	FN_SIG_S(nble_gatts_wr_reply_req,				\
@@ -48,7 +48,7 @@
 	FN_SIG_S(nble_gap_service_write_req,				\
 		 const struct nble_gap_service_write_params *)		\
 	FN_SIG_S(nble_gap_disconnect_req,				\
-		 const struct nble_gap_disconnect_req_params *)		\
+		 const struct nble_gap_disconnect_req *)		\
 	FN_SIG_S(nble_gattc_read_req,					\
 		 const struct nble_gattc_read_params *)			\
 	FN_SIG_S(nble_gap_tx_power_req,					\
@@ -86,7 +86,7 @@
 
 #define LIST_FN_SIG_S_P							\
 	FN_SIG_S_P(nble_gap_connect_req,				\
-		   const struct nble_gap_connect_req_params *, void *)	\
+		   const struct nble_gap_connect_req *, void *)		\
 	FN_SIG_S_P(nble_gap_set_rssi_report_req,			\
 		   const struct nble_rssi_report_params *, void *)	\
 	FN_SIG_S_P(nble_gap_dbg_req, const struct nble_debug_params *,	\

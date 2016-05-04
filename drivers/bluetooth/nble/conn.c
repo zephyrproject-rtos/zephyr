@@ -137,7 +137,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
-	struct nble_gap_disconnect_req_params req;
+	struct nble_gap_disconnect_req req;
 
 	switch (conn->state) {
 	case BT_CONN_CONNECT:
@@ -163,7 +163,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	return 0;
 }
 
-void on_nble_gap_disconnect_rsp(const struct nble_response *rsp)
+void on_nble_gap_disconnect_rsp(const struct nble_common_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("Disconnect failed, status %d", rsp->status);
@@ -173,7 +173,7 @@ void on_nble_gap_disconnect_rsp(const struct nble_response *rsp)
 	BT_DBG("conn %p", rsp->user_data);
 }
 
-void on_nble_gap_cancel_connect_rsp(const struct nble_response *rsp)
+void on_nble_gap_cancel_connect_rsp(const struct nble_common_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("Cancel connect failed, status %d", rsp->status);
@@ -207,7 +207,7 @@ static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param)
 {
-	struct nble_gap_connect_req_params req;
+	struct nble_gap_connect_req req;
 	struct bt_conn *conn;
 
 	if (!bt_le_conn_params_valid(param->interval_min, param->interval_max,
@@ -255,7 +255,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	return conn;
 }
 
-void on_nble_gap_connect_rsp(const struct nble_response *rsp)
+void on_nble_gap_connect_rsp(const struct nble_common_rsp *rsp)
 {
 	if (rsp->status) {
 		BT_ERR("Connect failed, status %d", rsp->status);
@@ -267,7 +267,7 @@ void on_nble_gap_connect_rsp(const struct nble_response *rsp)
 
 int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 {
-	struct nble_gap_sm_security_params params = {
+	struct nble_sm_security_req params = {
 			.conn = conn,
 			.conn_handle = conn->handle,
 	};
@@ -289,7 +289,7 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 		params.params.auth_level = BT_SMP_AUTH_BONDING | BT_SMP_AUTH_SC;
 	}
 
-	nble_gap_sm_security_req(&params);
+	nble_sm_security_req(&params);
 
 	return 0;
 }
