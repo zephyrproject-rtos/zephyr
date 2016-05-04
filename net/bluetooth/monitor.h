@@ -39,11 +39,25 @@
 #define BT_MONITOR_TYPE_PRIMARY	0
 #define BT_MONITOR_TYPE_AMP	1
 
+/* Extended header types */
+#define BT_MONITOR_COMMAND_DROPS 1
+#define BT_MONITOR_EVENT_DROPS   2
+#define BT_MONITOR_ACL_RX_DROPS  3
+#define BT_MONITOR_ACL_TX_DROPS  4
+#define BT_MONITOR_SCO_RX_DROPS  5
+#define BT_MONITOR_SCO_TX_DROPS  6
+#define BT_MONITOR_OTHER_DROPS   7
+#define BT_MONITOR_TS32          8
+
 struct bt_monitor_hdr {
 	uint16_t  data_len;
 	uint16_t  opcode;
 	uint8_t   flags;
 	uint8_t   hdr_len;
+
+	/* Extended header */
+	uint8_t   type;
+	uint32_t  ts32;
 } __packed;
 
 struct bt_monitor_new_index {

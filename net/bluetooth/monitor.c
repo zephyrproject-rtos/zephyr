@@ -56,10 +56,17 @@ static void monitor_send(const void *data, size_t len)
 static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint16_t opcode,
 			      uint16_t len)
 {
-	hdr->data_len = sys_cpu_to_le16(4 + len);
+	uint32_t ts32;
+
+	hdr->hdr_len  = sizeof(hdr->type) + sizeof(hdr->ts32);
+	hdr->data_len = sys_cpu_to_le16(4 + hdr->hdr_len + len);
 	hdr->opcode   = sys_cpu_to_le16(opcode);
 	hdr->flags    = 0;
-	hdr->hdr_len  = 0;
+
+	/* Extended header */
+	hdr->type = BT_MONITOR_TS32;
+	ts32 = sys_tick_get_32() * sys_clock_us_per_tick / 100;
+	hdr->ts32 = sys_cpu_to_le32(ts32);
 }
 
 static int log_out(int c, void *unused)
