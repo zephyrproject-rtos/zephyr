@@ -489,12 +489,6 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	struct net_buf *buf;
 	struct bt_hci_cp_le_create_conn *cp;
 
-	if (conn->le.init_addr.type == BT_ADDR_LE_RANDOM) {
-		if (set_random_address(&conn->le.init_addr.a)) {
-			return -EIO;
-		}
-	}
-
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
@@ -825,6 +819,21 @@ static void le_conn_update_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+static int le_set_rpa(void)
+{
+	bt_addr_t rpa;
+	int err;
+
+	err = bt_smp_create_rpa(bt_dev.irk, &rpa);
+	if (err) {
+		return err;
+	}
+
+	return set_random_address(&rpa);
+}
+#endif
+
 static void check_pending_conn(const bt_addr_le_t *id_addr,
 			       const bt_addr_le_t *addr, uint8_t evtype)
 {
@@ -850,10 +859,11 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
-	if (bt_smp_create_rpa(bt_dev.irk, &conn->le.init_addr.a)) {
+	if (le_set_rpa()) {
 		goto failed;
 	}
-	conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
+
+	bt_addr_le_copy(&conn->le.init_addr, &bt_dev.random_addr);
 #else
 	bt_addr_le_copy(&conn->le.init_addr, &bt_dev.id_addr);
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
@@ -2180,21 +2190,6 @@ static int le_set_nrpa(void)
 
 	return set_random_address(&nrpa);
 }
-
-#if defined(CONFIG_BLUETOOTH_PRIVACY)
-static int le_set_rpa(void)
-{
-	bt_addr_t rpa;
-	int err;
-
-	err = bt_smp_create_rpa(bt_dev.irk, &rpa);
-	if (err) {
-		return err;
-	}
-
-	return set_random_address(&rpa);
-}
-#endif
 
 static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 			 uint8_t filter_dup)
