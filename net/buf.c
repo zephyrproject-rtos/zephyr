@@ -43,21 +43,18 @@
 #define NET_BUF_ASSERT(cond)
 #endif /* CONFIG_NET_BUF_DEBUG */
 
-struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
+struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
+				    size_t reserve_head, int32_t timeout)
 {
 	struct net_buf *buf;
 
-	NET_BUF_DBG("fifo %p reserve %u\n", fifo, reserve_head);
+	NET_BUF_DBG("fifo %p reserve %u timeout %d\n", fifo, reserve_head,
+		    timeout);
 
-	buf = nano_fifo_get(fifo, TICKS_NONE);
+	buf = nano_fifo_get(fifo, timeout);
 	if (!buf) {
-		if (sys_execution_context_type_get() == NANO_CTX_ISR) {
-			NET_BUF_ERR("Failed to get free buffer\n");
-			return NULL;
-		}
-
-		NET_BUF_WARN("Low on buffers. Waiting (fifo %p)\n", fifo);
-		buf = nano_fifo_get(fifo, TICKS_UNLIMITED);
+		NET_BUF_ERR("Failed to get free buffer\n");
+		return NULL;
 	}
 
 	buf->ref  = 1;
@@ -67,6 +64,22 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 	NET_BUF_DBG("buf %p fifo %p reserve %u\n", buf, fifo, reserve_head);
 
 	return buf;
+}
+
+struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
+{
+	struct net_buf *buf;
+
+	NET_BUF_DBG("fifo %p reserve %u\n", fifo, reserve_head);
+
+	buf = net_buf_get_timeout(fifo, reserve_head, TICKS_NONE);
+	if (buf || sys_execution_context_type_get() == NANO_CTX_ISR) {
+		return buf;
+	}
+
+	NET_BUF_WARN("Low on buffers. Waiting (fifo %p)\n", fifo);
+
+	return net_buf_get_timeout(fifo, reserve_head, TICKS_UNLIMITED);
 }
 
 void net_buf_unref(struct net_buf *buf)

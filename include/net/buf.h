@@ -127,9 +127,27 @@ struct net_buf {
  *
  *  @warning If there are no available buffers and the function is
  *  called from a task or fiber the call will block until a buffer
- *  becomes available in the pool.
+ *  becomes available in the pool. If you want to make sure no blocking
+ *  happens use net_buf_get_timeout() instead with TICKS_NONE.
  */
 struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head);
+
+/** @brief Get a new buffer from the pool.
+ *
+ *  Get buffer from the available buffers pool with specified type and
+ *  reserved headroom.
+ *
+ *  @param fifo Which FIFO to take the buffer from.
+ *  @param reserve_head How much headroom to reserve.
+ *  @param timeout Affects the action taken should the pool (FIFO) be empty.
+ *         If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
+ *         wait as long as necessary. Otherwise, wait up to the specified
+ *         number of ticks before timing out.
+ *
+ *  @return New buffer or NULL if out of buffers.
+ */
+struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
+				    size_t reserve_head, int32_t timeout);
 
 /** @brief Decrements the reference count of a buffer.
  *
