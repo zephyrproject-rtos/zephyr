@@ -17,6 +17,7 @@
  */
 
 #include <gpio.h>
+#include <uart.h>
 
 #include <bluetooth/log.h>
 #include <errno.h>
@@ -52,8 +53,9 @@ static inline void sleep_ms(unsigned int ms)
 	}
 }
 
-int nrf51_init(void)
+int nrf51_init(struct device *dev)
 {
+	uint8_t c;
 	int ret;
 
 	nrf51_gpio = device_get_binding("GPIO_0");
@@ -73,6 +75,11 @@ int nrf51_init(void)
 	if (ret) {
 		BT_ERR("Error pin write %d", NBLE_RESET_PIN);
 		return -EINVAL;
+	}
+
+	/* Drain the fifo */
+	while (uart_fifo_read(dev, &c, 1)) {
+		continue;
 	}
 
 	/**

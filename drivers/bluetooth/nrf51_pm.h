@@ -18,4 +18,4 @@
 
 int nrf51_disable(void);
 int nrf51_enable(void);
-int nrf51_init(void);
+int nrf51_init(struct device *dev);

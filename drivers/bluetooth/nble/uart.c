@@ -211,7 +211,7 @@ int nble_open(void)
 		    (nano_fiber_entry_t)rx_fiber, 0, 0, 7, 0);
 
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
-	if (nrf51_init() < 0) {
+	if (nrf51_init(nble_dev) < 0) {
 		return -EIO;
 	}
 #endif /* CONFIG_BLUETOOTH_NRF51_PM */

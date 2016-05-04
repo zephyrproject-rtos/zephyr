@@ -228,23 +228,23 @@ static int h4_send(struct net_buf *buf)
 
 static int h4_open(void)
 {
+	uint8_t c;
+
 	BT_DBG("");
 
 	uart_irq_rx_disable(h4_dev);
 	uart_irq_tx_disable(h4_dev);
 
+	/* Drain the fifo */
+	while (uart_fifo_read(h4_dev, &c, 1)) {
+		continue;
+	}
+
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
-	if (nrf51_init() < 0) {
+	if (nrf51_init(h4_dev) < 0) {
 		return -EIO;
 	}
 #endif /* CONFIG_BLUETOOTH_NRF51_PM */
-
-	/* Drain the fifo */
-	while (uart_irq_rx_ready(h4_dev)) {
-		unsigned char c;
-
-		uart_fifo_read(h4_dev, &c, 1);
-	}
 
 	uart_irq_callback_set(h4_dev, bt_uart_isr);
 
