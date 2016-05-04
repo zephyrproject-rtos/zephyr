@@ -851,7 +851,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
 	if (bt_smp_create_rpa(bt_dev.irk, &conn->le.init_addr.a)) {
-		return;
+		goto done;
 	}
 	conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
 #else
