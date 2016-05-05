@@ -679,7 +679,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_INCLUDE:
 		gatt_include = attr->user_data;
 		bt_uuid_to_str(gatt_include->uuid, uuid, sizeof(uuid));
-		printk("Include %s found: handle, start %x, end %x\n",
+		printk("Include %s found: handle %x, start %x, end %x\n",
 		       uuid, attr->handle, gatt_include->start_handle,
 		       gatt_include->end_handle);
 		break;
