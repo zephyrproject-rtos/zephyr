@@ -633,16 +633,17 @@ static void le_conn_complete(struct net_buf *buf)
 		return;
 	}
 
-	/*
-	 * clear advertising even if we are not able to add connection object
-	 * to keep host in sync with controller state
-	 */
 	if (evt->role == BT_CONN_ROLE_SLAVE) {
+		/*
+		 * clear advertising even if we are not able to add connection
+		 * object to keep host in sync with controller state
+		 */
 		atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
-	}
 
-	if (!conn) {
-		conn = bt_conn_add_le(id_addr);
+		/* only for slave we may need to add new connection */
+		if (!conn) {
+			conn = bt_conn_add_le(id_addr);
+		}
 	}
 
 	if (!conn) {
