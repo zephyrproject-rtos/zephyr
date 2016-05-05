@@ -9,7 +9,7 @@ KBUILD_CXXFLAGS += $(cflags-y)
 
 QEMU_CPU_TYPE_arm = cortex-m3
 QEMU_FLAGS_arm = -cpu  $(QEMU_CPU_TYPE_arm) \
-		-machine lm3s6965evb -nographic
+		-machine lm3s6965evb -nographic -vga none
 QEMU_arm = qemu-system-arm
 
 export QEMU_FLAGS_arm QEMU_arm

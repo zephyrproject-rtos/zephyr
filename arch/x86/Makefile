@@ -40,7 +40,7 @@ QEMU_X86_NO_REBOOT_y =
 QEMU_X86_NO_REBOOT_  = -no-reboot
 QEMU_FLAGS_x86 = -m 32 -cpu $(QEMU_CPU_TYPE_x86) \
 		$(QEMU_X86_NO_REBOOT_$(CONFIG_REBOOT)) \
-		-nographic -display none -net none \
+		-nographic -vga none -display none -net none \
 		-clock dynticks -no-acpi -balloon none \
 		-L $(QEMU_BIOS) -bios bios.bin \
 		-machine type=pc-0.14
