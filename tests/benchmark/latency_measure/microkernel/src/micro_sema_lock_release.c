@@ -31,8 +31,8 @@
 
 #include <arch/cpu.h>
 
-/* the number of semaphores used in lock/unlock test */
-#define N_TEST_SEMA (SEMAEND - SEMASTART)
+/* the number of semaphore give/take cycles */
+#define N_TEST_SEMA 1000
 
 /* the number of mutex lock/unlock cycles */
 #define N_TEST_MUTEX 1000
@@ -56,8 +56,8 @@ int microSemaLockUnlock(void)
 				 " that sema");
 	bench_test_start();
 	timestamp = TIME_STAMP_DELTA_GET(0);
-	for (i = SEMASTART; i <= SEMAEND; i++) {
-		task_sem_give(i);
+	for (i = 0; i < N_TEST_SEMA; i++) {
+		task_sem_give(SEMA_LOCK_UNLOCK);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {
@@ -71,8 +71,8 @@ int microSemaLockUnlock(void)
 
 	bench_test_start();
 	timestamp = TIME_STAMP_DELTA_GET(0);
-	for (i = SEMASTART; i <= SEMAEND; i++) {
-		task_sem_take(i, TICKS_UNLIMITED);
+	for (i = 0; i < N_TEST_SEMA; i++) {
+		task_sem_take(SEMA_LOCK_UNLOCK, TICKS_UNLIMITED);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {
