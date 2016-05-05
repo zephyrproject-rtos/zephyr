@@ -232,6 +232,8 @@ extern void *__stack_chk_guard;
 #define _MOVE_INSTR "movl "
 #elif defined(CONFIG_ARM)
 #define _MOVE_INSTR "str "
+#elif defined(CONFIG_ARC)
+#define _MOVE_INSTR "mov "
 #else
 #error "Unknown Architecture type"
 #endif /* CONFIG_X86 */
