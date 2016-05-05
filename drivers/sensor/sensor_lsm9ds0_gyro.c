@@ -159,6 +159,13 @@ static int lsm9ds0_gyro_sample_fetch(struct device *dev,
 	return 0;
 }
 
+static inline void lsm9ds0_gyro_convert(struct sensor_value *val, int raw_val,
+					float numerator)
+{
+	val->type = SENSOR_VALUE_TYPE_DOUBLE;
+	val->dval = (double)(raw_val) * numerator / 1000.0 * DEG2RAD;
+}
+
 static inline int lsm9ds0_gyro_get_channel(enum sensor_channel chan,
 					   struct sensor_value *val,
 					   struct lsm9ds0_gyro_data *data,
@@ -166,16 +173,18 @@ static inline int lsm9ds0_gyro_get_channel(enum sensor_channel chan,
 {
 	switch (chan) {
 	case SENSOR_CHAN_GYRO_X:
-		val->dval = (double)(data->sample_x) *
-			numerator / 1000.0 * DEG2RAD;
+		lsm9ds0_gyro_convert(val, data->sample_x, numerator);
 		break;
 	case SENSOR_CHAN_GYRO_Y:
-		val->dval = (double)(data->sample_y) *
-			numerator / 1000.0 * DEG2RAD;
+		lsm9ds0_gyro_convert(val, data->sample_y, numerator);
 		break;
 	case SENSOR_CHAN_GYRO_Z:
-		val->dval = (double)(data->sample_z) *
-			numerator / 1000.0 * DEG2RAD;
+		lsm9ds0_gyro_convert(val, data->sample_z, numerator);
+		break;
+	case SENSOR_CHAN_GYRO_ANY:
+		lsm9ds0_gyro_convert(val, data->sample_x, numerator);
+		lsm9ds0_gyro_convert(val + 1, data->sample_y, numerator);
+		lsm9ds0_gyro_convert(val + 2, data->sample_z, numerator);
 		break;
 	default:
 		return -ENOTSUP;
@@ -189,8 +198,6 @@ static int lsm9ds0_gyro_channel_get(struct device *dev,
 				    struct sensor_value *val)
 {
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
-
-	val->type = SENSOR_VALUE_TYPE_DOUBLE;
 
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	switch (data->sample_fs) {

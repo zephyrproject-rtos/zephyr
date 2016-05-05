@@ -329,22 +329,32 @@ static int bmc150_magn_sample_fetch(struct device *dev,
 	return 0;
 }
 
+static void bmc150_magn_convert(struct sensor_value *val, int raw_val)
+{
+	val->type = SENSOR_VALUE_TYPE_DOUBLE;
+	val->dval = (double)(raw_val) * (1.0/1600.0);
+}
+
 static int bmc150_magn_channel_get(struct device *dev,
 				   enum sensor_channel chan,
 				   struct sensor_value *val)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 
-	val->type = SENSOR_VALUE_TYPE_DOUBLE;
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
-		val->dval = (double)(data->sample_x) * (1.0/1600.0);
+		bmc150_magn_convert(val, data->sample_x);
 		break;
 	case SENSOR_CHAN_MAGN_Y:
-		val->dval = (double)(data->sample_y) * (1.0/1600.0);
+		bmc150_magn_convert(val, data->sample_y);
 		break;
 	case SENSOR_CHAN_MAGN_Z:
-		val->dval = (double)(data->sample_z) * (1.0/1600.0);
+		bmc150_magn_convert(val, data->sample_z);
+		break;
+	case SENSOR_CHAN_MAGN_ANY:
+		bmc150_magn_convert(val, data->sample_x);
+		bmc150_magn_convert(val + 1, data->sample_y);
+		bmc150_magn_convert(val + 2, data->sample_z);
 		break;
 	default:
 		return -EINVAL;

@@ -61,33 +61,9 @@ static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int bma280_channel_get(struct device *dev,
-			      enum sensor_channel chan,
-			      struct sensor_value *val)
+static void bma280_channel_accel_convert(struct sensor_value *val,
+					int64_t raw_val)
 {
-	struct bma280_data *drv_data = dev->driver_data;
-	int64_t raw_val;
-
-	/*
-	 * See datasheet "Sensor data" section for
-	 * more details on processing sample data.
-	 */
-	if (chan == SENSOR_CHAN_ACCEL_X) {
-		raw_val = drv_data->x_sample;
-	} else if (chan == SENSOR_CHAN_ACCEL_Y) {
-		raw_val = drv_data->y_sample;
-	} else if (chan == SENSOR_CHAN_ACCEL_Z) {
-		raw_val = drv_data->z_sample;
-	} else if (chan == SENSOR_CHAN_TEMP) {
-		/* temperature_val = 23 + sample / 2 */
-		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
-		val->val1 = (drv_data->temp_sample >> 1) + 23;
-		val->val2 = 500000 * (drv_data->temp_sample & 1);
-		return 0;
-	} else {
-		return -ENOTSUP;
-	}
-
 	/*
 	 * accel_val = (sample * BMA280_PMU_FULL_RAGE) /
 	 *             (2^data_width * 10^6)
@@ -102,6 +78,37 @@ static int bma280_channel_get(struct device *dev,
 	if (val->val2 < 0) {
 		val->val1 -= 1;
 		val->val2 += 1000000;
+	}
+}
+
+static int bma280_channel_get(struct device *dev,
+			      enum sensor_channel chan,
+			      struct sensor_value *val)
+{
+	struct bma280_data *drv_data = dev->driver_data;
+
+	/*
+	 * See datasheet "Sensor data" section for
+	 * more details on processing sample data.
+	 */
+	if (chan == SENSOR_CHAN_ACCEL_X) {
+		bma280_channel_accel_convert(val, drv_data->x_sample);
+	} else if (chan == SENSOR_CHAN_ACCEL_Y) {
+		bma280_channel_accel_convert(val, drv_data->y_sample);
+	} else if (chan == SENSOR_CHAN_ACCEL_Z) {
+		bma280_channel_accel_convert(val, drv_data->z_sample);
+	} else if (chan == SENSOR_CHAN_ACCEL_ANY) {
+		bma280_channel_accel_convert(val, drv_data->x_sample);
+		bma280_channel_accel_convert(val + 1, drv_data->y_sample);
+		bma280_channel_accel_convert(val + 2, drv_data->z_sample);
+	} else if (chan == SENSOR_CHAN_TEMP) {
+		/* temperature_val = 23 + sample / 2 */
+		val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+		val->val1 = (drv_data->temp_sample >> 1) + 23;
+		val->val2 = 500000 * (drv_data->temp_sample & 1);
+		return 0;
+	} else {
+		return -ENOTSUP;
 	}
 
 	return 0;

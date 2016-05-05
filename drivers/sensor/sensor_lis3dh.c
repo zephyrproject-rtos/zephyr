@@ -21,23 +21,8 @@
 
 #include "sensor_lis3dh.h"
 
-static int lis3dh_channel_get(struct device *dev,
-			      enum sensor_channel chan,
-			      struct sensor_value *val)
+static void lis3dh_convert(struct sensor_value *val, int64_t raw_val)
 {
-	struct lis3dh_data *drv_data = dev->driver_data;
-	int64_t raw_val;
-
-	if (chan == SENSOR_CHAN_ACCEL_X) {
-		raw_val = drv_data->x_sample;
-	} else if (chan == SENSOR_CHAN_ACCEL_Y) {
-		raw_val = drv_data->y_sample;
-	} else if (chan == SENSOR_CHAN_ACCEL_Z) {
-		raw_val = drv_data->z_sample;
-	} else {
-		return -ENOTSUP;
-	}
-
 	/* val = raw_val * LIS3DH_ACCEL_SCALE / (10^6 * (2^16 - 1)) */
 	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	raw_val = raw_val * LIS3DH_ACCEL_SCALE / 1000000;
@@ -48,6 +33,27 @@ static int lis3dh_channel_get(struct device *dev,
 	if (val->val2 < 0) {
 		val->val1 -= 1;
 		val->val2 += 1000000;
+	}
+}
+
+static int lis3dh_channel_get(struct device *dev,
+			      enum sensor_channel chan,
+			      struct sensor_value *val)
+{
+	struct lis3dh_data *drv_data = dev->driver_data;
+
+	if (chan == SENSOR_CHAN_ACCEL_X) {
+		lis3dh_convert(val, drv_data->x_sample);
+	} else if (chan == SENSOR_CHAN_ACCEL_Y) {
+		lis3dh_convert(val, drv_data->y_sample);
+	} else if (chan == SENSOR_CHAN_ACCEL_Z) {
+		lis3dh_convert(val, drv_data->z_sample);
+	} else if (chan == SENSOR_CHAN_ACCEL_ANY) {
+		lis3dh_convert(val, drv_data->x_sample);
+		lis3dh_convert(val + 1, drv_data->y_sample);
+		lis3dh_convert(val + 2, drv_data->z_sample);
+	} else {
+		return -ENOTSUP;
 	}
 
 	return 0;

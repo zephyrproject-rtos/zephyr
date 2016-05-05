@@ -340,6 +340,10 @@ static inline int sensor_sample_fetch_chan(struct device *dev,
  * value, if @ref sensor_sample_fetch or @ref sensor_sample_fetch_chan
  * has not been called in the meantime.
  *
+ * For vectorial data samples you can request all axes in just one call
+ * by passing the specific channel with _ANY suffix. The sample will be
+ * returned at val[0], val[1] and val[2] (X, Y and Z in that order).
+ *
  * @param dev Pointer to the sensor device
  * @param chan The channel to read
  * @param val Where to store the value

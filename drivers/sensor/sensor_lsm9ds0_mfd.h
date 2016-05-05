@@ -558,10 +558,13 @@ struct lsm9ds0_mfd_data {
 	int sample_temp;
 #endif
 
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
+#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
 	uint8_t accel_fs, sample_accel_fs;
 #endif
+#endif
+
+#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
 	uint8_t magn_fs, sample_magn_fs;
 #endif

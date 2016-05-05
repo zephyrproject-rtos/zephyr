@@ -394,61 +394,82 @@ static int lsm9ds0_mfd_sample_fetch(struct device *dev,
 }
 
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
-static inline int lsm9ds0_mfd_channel_get_accel(struct device *dev,
-						int raw_val,
-						struct sensor_value *val)
+static inline void lsm9ds0_mfd_convert_accel(struct sensor_value *val,
+					     int raw_val,
+					     float scale)
 {
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-#endif
-
 	val->type = SENSOR_VALUE_TYPE_DOUBLE;
+	val->dval = (double)(raw_val) * scale;
+}
 
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
-	switch (data->sample_accel_fs) {
-	case 0:
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME) || \
-	defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_2)
-		val->dval = (double)(raw_val) * 2.0 * 9.807 / 32767.0;
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
+static inline int lsm9ds0_mfd_get_accel_channel(enum sensor_channel chan,
+						struct sensor_value *val,
+						struct lsm9ds0_mfd_data *data,
+						float scale)
+{
+	switch (chan) {
+	case SENSOR_CHAN_GYRO_X:
+		lsm9ds0_mfd_convert_accel(val, data->sample_accel_x, scale);
 		break;
-	case 1:
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME) || \
-	defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_4)
-		val->dval = (double)(raw_val) * 4.0 * 9.807 / 32767.0;
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
+	case SENSOR_CHAN_GYRO_Y:
+		lsm9ds0_mfd_convert_accel(val, data->sample_accel_y, scale);
 		break;
-	case 2:
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME) || \
-	defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_6)
-		val->dval = (double)(raw_val) * 6.0 * 9.807 / 32767.0;
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
+	case SENSOR_CHAN_GYRO_Z:
+		lsm9ds0_mfd_convert_accel(val, data->sample_accel_z, scale);
 		break;
-	case 3:
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME) || \
-	defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_8)
-		val->dval = (double)(raw_val) * 8.0 * 9.807 / 32767.0;
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
-		break;
-	case 4:
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME) || \
-	defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_16)
-		val->dval = (double)(raw_val) * 16.0 * 9.807 / 32767.0;
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
+	case SENSOR_CHAN_GYRO_ANY:
+		lsm9ds0_mfd_convert_accel(val, data->sample_accel_x, scale);
+		lsm9ds0_mfd_convert_accel(val + 1, data->sample_accel_y, scale);
+		lsm9ds0_mfd_convert_accel(val + 2, data->sample_accel_z, scale);
 		break;
 	default:
 		return -ENOTSUP;
 	}
+
+	return 0;
+}
+
+static inline int lsm9ds0_mfd_get_accel(struct device *dev,
+					enum sensor_channel chan,
+					struct sensor_value *val)
+{
+	struct lsm9ds0_mfd_data *data = dev->driver_data;
+
+#if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
+	switch (data->sample_accel_fs) {
+	case 0:
+		return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+						     2.0 * 9.807 / 32767.0);
+	case 1:
+		return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+						     4.0 * 9.807 / 32767.0);
+	case 2:
+		return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+						     6.0 * 9.807 / 32767.0);
+	case 3:
+		return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+						     8.0 * 9.807 / 32767.0);
+	case 4:
+		return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+						     16.0 * 9.807 / 32767.0);
+	default:
+		return -ENOTSUP;
+	}
+#elif defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_2)
+	return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+					     2.0 * 9.807 / 32767.0);
+#elif defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_4)
+	return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+					     4.0 * 9.807 / 32767.0);
+#elif defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_6)
+	return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+					     6.0 * 9.807 / 32767.0);
+#elif defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_8)
+	return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+					     8.0 * 9.807 / 32767.0);
+#elif defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_16)
+	return lsm9ds0_mfd_get_accel_channel(chan, val, data,
+					     16.0 * 9.807 / 32767.0);
 #endif
 
 	return 0;
@@ -456,53 +477,72 @@ static inline int lsm9ds0_mfd_channel_get_accel(struct device *dev,
 #endif
 
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
-static inline int lsm9ds0_mfd_channel_get_magn(struct device *dev,
-					       int raw_val,
-					       struct sensor_value *val)
+static inline void lsm9ds0_mfd_convert_magn(struct sensor_value *val,
+					    int raw_val,
+					    float scale)
 {
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-#endif
-
 	val->type = SENSOR_VALUE_TYPE_DOUBLE;
+	val->dval = (double)(raw_val) * scale;
+}
 
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
-	switch (data->sample_magn_fs) {
-	case 0:
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME) || \
-	defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_2)
-		val->dval = raw_val * 2.0 / 32767.0;
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
+static inline int lsm9ds0_mfd_get_magn_channel(enum sensor_channel chan,
+					       struct sensor_value *val,
+					       struct lsm9ds0_mfd_data *data,
+					       float scale)
+{
+	switch (chan) {
+	case SENSOR_CHAN_GYRO_X:
+		lsm9ds0_mfd_convert_magn(val, data->sample_magn_x, scale);
 		break;
-	case 1:
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME) || \
-	defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_4)
-		val->dval = raw_val * 4.0 / 32767.0;
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
+	case SENSOR_CHAN_GYRO_Y:
+		lsm9ds0_mfd_convert_magn(val, data->sample_magn_y, scale);
 		break;
-	case 2:
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME) || \
-	defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_8)
-		val->dval = raw_val * 8.0 / 32767.0;
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
+	case SENSOR_CHAN_GYRO_Z:
+		lsm9ds0_mfd_convert_magn(val, data->sample_magn_z, scale);
 		break;
-	case 3:
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME) || \
-	defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_12)
-		val->dval = raw_val * 12.0 / 32767.0;
-#endif
-#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
+	case SENSOR_CHAN_GYRO_ANY:
+		lsm9ds0_mfd_convert_magn(val, data->sample_magn_x, scale);
+		lsm9ds0_mfd_convert_magn(val + 1, data->sample_magn_y, scale);
+		lsm9ds0_mfd_convert_magn(val + 2, data->sample_magn_z, scale);
 		break;
 	default:
 		return -ENOTSUP;
 	}
+
+	return 0;
+}
+
+static inline int lsm9ds0_mfd_get_magn(struct device *dev,
+				       enum sensor_channel chan,
+				       struct sensor_value *val)
+{
+	struct lsm9ds0_mfd_data *data = dev->driver_data;
+
+#if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
+	switch (data->sample_magn_fs) {
+	case 0:
+		return lsm9ds0_mfd_get_magn_channel(chan, val, data,
+						    2.0 / 32767.0);
+	case 1:
+		return lsm9ds0_mfd_get_magn_channel(chan, val, data,
+						    4.0 / 32767.0);
+	case 2:
+		return lsm9ds0_mfd_get_magn_channel(chan, val, data,
+						    8.0 / 32767.0);
+	case 3:
+		return lsm9ds0_mfd_get_magn_channel(chan, val, data,
+						    12.0 / 32767.0);
+	default:
+		return -ENOTSUP;
+	}
+#elif defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_2)
+	return lsm9ds0_mfd_get_magn_channel(chan, val, data, 2.0 / 32767.0);
+#elif defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_4)
+	return lsm9ds0_mfd_get_magn_channel(chan, val, data, 4.0 / 32767.0);
+#elif defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_8)
+	return lsm9ds0_mfd_get_magn_channel(chan, val, data, 8.0 / 32767.0);
+#elif defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_12)
+	return lsm9ds0_mfd_get_magn_channel(chan, val, data, 12.0 / 32767.0);
 #endif
 
 	return 0;
@@ -513,30 +553,24 @@ static int lsm9ds0_mfd_channel_get(struct device *dev,
 				   enum sensor_channel chan,
 				   struct sensor_value *val)
 {
+#if !defined(LSM9DS0_MFD_TEMP_DISABLED)
 	struct lsm9ds0_mfd_data *data = dev->driver_data;
+#endif
 
 	switch (chan) {
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
 	case SENSOR_CHAN_ACCEL_X:
-		return lsm9ds0_mfd_channel_get_accel(dev, data->sample_accel_x,
-						     val);
 	case SENSOR_CHAN_ACCEL_Y:
-		return lsm9ds0_mfd_channel_get_accel(dev, data->sample_accel_y,
-						     val);
 	case SENSOR_CHAN_ACCEL_Z:
-		return lsm9ds0_mfd_channel_get_accel(dev, data->sample_accel_z,
-						     val);
+	case SENSOR_CHAN_ACCEL_ANY:
+		return lsm9ds0_mfd_get_accel(dev, chan, val);
 #endif
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
 	case SENSOR_CHAN_MAGN_X:
-		return lsm9ds0_mfd_channel_get_magn(dev, data->sample_magn_x,
-						    val);
 	case SENSOR_CHAN_MAGN_Y:
-		return lsm9ds0_mfd_channel_get_magn(dev, data->sample_magn_y,
-						    val);
 	case SENSOR_CHAN_MAGN_Z:
-		return lsm9ds0_mfd_channel_get_magn(dev, data->sample_magn_z,
-						    val);
+	case SENSOR_CHAN_MAGN_ANY:
+		return lsm9ds0_mfd_get_magn(dev, chan, val);
 #endif
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
 	case SENSOR_CHAN_TEMP:
