@@ -183,14 +183,6 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	if (sd) {
-		err = set_ad(&data.sd, sd, sd_len);
-		if (err) {
-			BT_ERR("Error setting scan response data %d", err);
-			return err;
-		}
-	}
-
 	err = set_ad(&data.sd, sd, sd_len);
 	if (err) {
 		BT_ERR("Error setting scan response data %d", err);
