@@ -658,15 +658,12 @@ static void le_conn_complete(struct net_buf *buf)
 	conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 	conn->role = evt->role;
 
-	/* use connection address (instead of identity address) as initiator
-	 * or responder address
+	/*
+	 * Use connection address (instead of identity address) as initiator
+	 * or responder address. Only slave needs to be updated. For master all
+	 * was set during outgoing connection creation.
 	 */
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		bt_addr_le_copy(&conn->le.resp_addr, &evt->peer_addr);
-		/* init_addr doesn't need updating here since it was
-		 * already set during previous steps.
-		 */
-	} else {
+	if (conn->role == BT_HCI_ROLE_SLAVE) {
 		bt_addr_le_copy(&conn->le.init_addr, &evt->peer_addr);
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
