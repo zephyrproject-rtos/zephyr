@@ -75,4 +75,3 @@ struct vector_table _VectorTable _GENERIC_SECTION(.exc_vector_table) = {
 	0
 };
 
-extern struct vector_table __start _ALIAS_OF(_VectorTable);

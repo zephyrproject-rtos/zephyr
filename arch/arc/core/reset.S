@@ -31,6 +31,7 @@
 #define _RAM_END (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE * 1024)
 
 GTEXT(__reset)
+GTEXT(__start)
 
 /**
  *
@@ -47,6 +48,7 @@ GTEXT(__reset)
  */
 
 SECTION_FUNC(TEXT,__reset)
+SECTION_FUNC(TEXT,__start)
 
 	/* lock interrupts: will get unlocked when switch to main task */
 	clri
