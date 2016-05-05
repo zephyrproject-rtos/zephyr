@@ -69,7 +69,7 @@ int sx9500_trigger_set(struct device *dev,
 #ifdef CONFIG_SX9500_TRIGGER_OWN_FIBER
 
 static void sx9500_gpio_cb(struct device *port,
-			   struct gpio_callback *cb, uint32_t pin)
+			   struct gpio_callback *cb, uint32_t pins)
 {
 	struct sx9500_data *data =
 		CONTAINER_OF(cb, struct sx9500_data, gpio_cb);
