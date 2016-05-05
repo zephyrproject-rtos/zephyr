@@ -351,10 +351,12 @@ int bmg160_init(struct device *dev)
 
 struct bmg160_device_config bmg160_config = {
 	.i2c_port = CONFIG_BMG160_I2C_PORT_NAME,
-	.gpio_port = CONFIG_BMG160_GPIO_PORT_NAME,
 	.i2c_addr = CONFIG_BMG160_I2C_ADDR,
 	.i2c_speed = BMG160_BUS_SPEED,
+#ifdef CONFIG_BMG160_TRIGGER
+	.gpio_port = CONFIG_BMG160_GPIO_PORT_NAME,
 	.int_pin = CONFIG_BMG160_INT_PIN,
+#endif
 };
 
 DEVICE_INIT(bmg160, CONFIG_BMG160_DRV_NAME, bmg160_init, &bmg160_data,
