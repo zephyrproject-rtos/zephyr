@@ -40,23 +40,20 @@ static int hdc1008_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct hdc1008_data *drv_data = dev->driver_data;
 	uint8_t buf[4];
-	int rc;
 
 	__ASSERT(chan == SENSOR_CHAN_ALL);
 
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_HDC1008_GPIO_PIN_NUM);
 
 	buf[0] = HDC1008_REG_TEMP;
-	rc = i2c_write(drv_data->i2c, buf, 1, HDC1008_I2C_ADDRESS);
-	if (rc < 0) {
+	if (i2c_write(drv_data->i2c, buf, 1, HDC1008_I2C_ADDRESS) < 0) {
 		SYS_LOG_DBG("Failed to write address pointer");
 		return -EIO;
 	}
 
 	nano_sem_take(&drv_data->data_sem, TICKS_UNLIMITED);
 
-	rc = i2c_read(drv_data->i2c, buf, 4, HDC1008_I2C_ADDRESS);
-	if (rc < 0) {
+	if (i2c_read(drv_data->i2c, buf, 4, HDC1008_I2C_ADDRESS) < 0) {
 		SYS_LOG_DBG("Failed to read sample data");
 		return -EIO;
 	}
@@ -107,7 +104,6 @@ static struct sensor_driver_api hdc1008_driver_api = {
 int hdc1008_init(struct device *dev)
 {
 	struct hdc1008_data *drv_data = dev->driver_data;
-	int rc;
 
 	drv_data->i2c = device_get_binding(CONFIG_HDC1008_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
@@ -134,8 +130,7 @@ int hdc1008_init(struct device *dev)
 			   hdc1008_gpio_callback,
 			   BIT(CONFIG_HDC1008_GPIO_PIN_NUM));
 
-	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
-	if (rc < 0) {
+	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		SYS_LOG_DBG("Failed to set GPIO callback");
 		return -EIO;
 	}

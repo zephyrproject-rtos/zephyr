@@ -103,7 +103,6 @@ static void lis3dh_work_cb(struct nano_work *work)
 int lis3dh_init_interrupt(struct device *dev)
 {
 	struct lis3dh_data *drv_data = dev->driver_data;
-	int rc;
 
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_LIS3DH_GPIO_DEV_NAME);
@@ -121,23 +120,20 @@ int lis3dh_init_interrupt(struct device *dev)
 			   lis3dh_gpio_callback,
 			   BIT(CONFIG_LIS3DH_GPIO_PIN_NUM));
 
-	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
-	if (rc < 0) {
+	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		SYS_LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
 
 	/* clear data ready interrupt line by reading sample data */
-	rc = lis3dh_sample_fetch(dev, SENSOR_CHAN_ALL);
-	if (rc < 0) {
+	if (lis3dh_sample_fetch(dev, SENSOR_CHAN_ALL) < 0) {
 		SYS_LOG_DBG("Could not clear data ready interrupt line.");
 		return -EIO;
 	}
 
 	/* enable data ready interrupt on INT1 line */
-	rc = i2c_reg_write_byte(drv_data->i2c, LIS3DH_I2C_ADDRESS,
-				LIS3DH_REG_CTRL3, LIS3DH_EN_DRDY1_INT1);
-	if (rc < 0) {
+	if (i2c_reg_write_byte(drv_data->i2c, LIS3DH_I2C_ADDRESS,
+			       LIS3DH_REG_CTRL3, LIS3DH_EN_DRDY1_INT1) < 0) {
 		SYS_LOG_DBG("Failed to enable data ready interrupt.");
 		return -EIO;
 	}

@@ -75,7 +75,6 @@ static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct sht3xd_data *drv_data = dev->driver_data;
 	uint8_t rx_buf[6];
 	uint16_t t_sample, rh_sample;
-	int rc;
 
 	__ASSERT(chan == SENSOR_CHAN_ALL);
 
@@ -97,8 +96,7 @@ static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 		},
 	};
 
-	rc = i2c_transfer(drv_data->i2c, msgs, 2, SHT3XD_I2C_ADDRESS);
-	if (rc < 0) {
+	if (i2c_transfer(drv_data->i2c, msgs, 2, SHT3XD_I2C_ADDRESS) < 0) {
 		SYS_LOG_DBG("Failed to read data sample!");
 		return -EIO;
 	}
@@ -163,7 +161,6 @@ static struct sensor_driver_api sht3xd_driver_api = {
 static int sht3xd_init(struct device *dev)
 {
 	struct sht3xd_data *drv_data = dev->driver_data;
-	int rc;
 
 	drv_data->i2c = device_get_binding(CONFIG_SHT3XD_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
@@ -173,8 +170,7 @@ static int sht3xd_init(struct device *dev)
 	}
 
 	/* clear status register */
-	rc = sht3xd_write_command(drv_data, SHT3XD_CMD_CLEAR_STATUS);
-	if (rc < 0) {
+	if (sht3xd_write_command(drv_data, SHT3XD_CMD_CLEAR_STATUS) < 0) {
 		SYS_LOG_DBG("Failed to clear status register!");
 		return -EIO;
 	}
@@ -182,9 +178,9 @@ static int sht3xd_init(struct device *dev)
 	sys_thread_busy_wait(SHT3XD_CLEAR_STATUS_WAIT_USEC);
 
 	/* set periodic measurement mode */
-	rc = sht3xd_write_command(drv_data,
-		sht3xd_measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX]);
-	if (rc < 0) {
+	if (sht3xd_write_command(drv_data,
+		sht3xd_measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX])
+		< 0) {
 		SYS_LOG_DBG("Failed to set measurement mode!");
 		return -EIO;
 	}
@@ -192,8 +188,7 @@ static int sht3xd_init(struct device *dev)
 	sys_thread_busy_wait(sht3xd_measure_wait[SHT3XD_REPEATABILITY_IDX]);
 
 #ifdef CONFIG_SHT3XD_TRIGGER
-	rc = sht3xd_init_interrupt(dev);
-	if (rc < 0) {
+	if (sht3xd_init_interrupt(dev) < 0) {
 		SYS_LOG_DBG("Failed to initialize interrupt");
 		return -EIO;
 	}

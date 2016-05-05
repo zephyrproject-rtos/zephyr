@@ -153,14 +153,12 @@ int isl29035_trigger_set(struct device *dev,
 int isl29035_init_interrupt(struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
-	int ret;
 
 	/* set interrupt persistence */
-	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-				  ISL29035_COMMAND_I_REG,
-				  ISL29035_INT_PRST_MASK,
-				  ISL29035_INT_PRST_BITS);
-	if (ret < 0) {
+	if (i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				ISL29035_COMMAND_I_REG,
+				ISL29035_INT_PRST_MASK,
+				ISL29035_INT_PRST_BITS) < 0) {
 		SYS_LOG_DBG("Failed to set interrupt persistence cycles.");
 		return -EIO;
 	}
@@ -180,8 +178,7 @@ int isl29035_init_interrupt(struct device *dev)
 			   isl29035_gpio_callback,
 			   BIT(CONFIG_ISL29035_GPIO_PIN_NUM));
 
-	ret = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
-	if (ret < 0) {
+	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		SYS_LOG_DBG("Failed to set gpio callback.");
 		return -EIO;
 	}

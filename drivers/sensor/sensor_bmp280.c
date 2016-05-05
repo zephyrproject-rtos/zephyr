@@ -76,14 +76,12 @@ static int bmp280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct bmp280_data *data = dev->driver_data;
 	uint8_t buf[6];
 	int32_t adc_press, adc_temp;
-	int ret;
 
 	__ASSERT(chan == SENSOR_CHAN_ALL);
 
-	ret = i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
-			     BMP280_REG_PRESS_MSB, buf, sizeof(buf));
-	if (ret) {
-		return ret;
+	if (i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
+			   BMP280_REG_PRESS_MSB, buf, sizeof(buf)) < 0) {
+		return -EIO;
 	}
 
 	adc_press = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4);
@@ -181,7 +179,6 @@ static int bmp280_chip_init(struct device *dev)
 int bmp280_init(struct device *dev)
 {
 	struct bmp280_data *data = dev->driver_data;
-	int ret;
 
 	data->i2c_master = device_get_binding(CONFIG_BMP280_I2C_MASTER_DEV_NAME);
 	if (!data->i2c_master) {
@@ -192,9 +189,8 @@ int bmp280_init(struct device *dev)
 
 	data->i2c_slave_addr = CONFIG_BMP280_I2C_ADDR;
 
-	ret = bmp280_chip_init(dev);
-	if (ret) {
-		return ret;
+	if (bmp280_chip_init(dev) < 0) {
+		return -EINVAL;
 	}
 
 	dev->driver_api = &bmp280_api_funcs;

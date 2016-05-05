@@ -29,7 +29,6 @@ int bma280_attr_set(struct device *dev,
 {
 	struct bma280_data *drv_data = dev->driver_data;
 	uint64_t slope_th;
-	int rc;
 
 	if (chan != SENSOR_CHAN_ACCEL_ANY) {
 		return -ENOTSUP;
@@ -39,18 +38,18 @@ int bma280_attr_set(struct device *dev,
 		/* slope_th = (val * 10^6 * 2^10) / BMA280_PMU_FULL_RAGE */
 		slope_th = (uint64_t)val->val1 * 1000000 + (uint64_t)val->val2;
 		slope_th = (slope_th * (1 << 10)) / BMA280_PMU_FULL_RANGE;
-		rc = i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-					BMA280_REG_SLOPE_TH, (uint8_t)slope_th);
-		if (rc < 0) {
+		if (i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+				       BMA280_REG_SLOPE_TH, (uint8_t)slope_th)
+				       < 0) {
 			SYS_LOG_DBG("Could not set slope threshold");
 			return -EIO;
 		}
 	} else if (attr == SENSOR_ATTR_SLOPE_DUR) {
-		rc = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-					 BMA280_REG_INT_5,
-					 BMA280_SLOPE_DUR_MASK,
-					 val->val1 << BMA280_SLOPE_DUR_SHIFT);
-		if (rc < 0) {
+		if (i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+					BMA280_REG_INT_5,
+					BMA280_SLOPE_DUR_MASK,
+					val->val1 << BMA280_SLOPE_DUR_SHIFT)
+					< 0) {
 			SYS_LOG_DBG("Could not set slope duration");
 			return -EIO;
 		}
@@ -141,14 +140,12 @@ int bma280_trigger_set(struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 	struct bma280_data *drv_data = dev->driver_data;
-	int rc;
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		/* disable data ready interrupt while changing trigger params */
-		rc = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-					 BMA280_REG_INT_EN_1,
-					 BMA280_BIT_DATA_EN, 0);
-		if (rc < 0) {
+		if (i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+					BMA280_REG_INT_EN_1,
+					BMA280_BIT_DATA_EN, 0) < 0) {
 			SYS_LOG_DBG("Could not disable data ready interrupt");
 			return -EIO;
 		}
@@ -160,20 +157,18 @@ int bma280_trigger_set(struct device *dev,
 		drv_data->data_ready_trigger = *trig;
 
 		/* enable data ready interrupt */
-		rc = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-					 BMA280_REG_INT_EN_1,
-					 BMA280_BIT_DATA_EN,
-					 BMA280_BIT_DATA_EN);
-		if (rc < 0) {
+		if (i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+					BMA280_REG_INT_EN_1,
+					BMA280_BIT_DATA_EN,
+					BMA280_BIT_DATA_EN) < 0) {
 			SYS_LOG_DBG("Could not enable data ready interrupt");
 			return -EIO;
 		}
 	} else if (trig->type == SENSOR_TRIG_DELTA) {
 		/* disable any-motion interrupt while changing trigger params */
-		rc = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-					 BMA280_REG_INT_EN_0,
-					 BMA280_SLOPE_EN_XYZ, 0);
-		if (rc < 0) {
+		if (i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+					BMA280_REG_INT_EN_0,
+					BMA280_SLOPE_EN_XYZ, 0) < 0) {
 			SYS_LOG_DBG("Could not disable data ready interrupt");
 			return -EIO;
 		}
@@ -185,11 +180,10 @@ int bma280_trigger_set(struct device *dev,
 		drv_data->any_motion_trigger = *trig;
 
 		/* enable any-motion interrupt */
-		rc = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-					 BMA280_REG_INT_EN_0,
-					 BMA280_SLOPE_EN_XYZ,
-					 BMA280_SLOPE_EN_XYZ);
-		if (rc < 0) {
+		if (i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+					BMA280_REG_INT_EN_0,
+					BMA280_SLOPE_EN_XYZ,
+					BMA280_SLOPE_EN_XYZ) < 0) {
 			SYS_LOG_DBG("Could not enable data ready interrupt");
 			return -EIO;
 		}
@@ -203,14 +197,12 @@ int bma280_trigger_set(struct device *dev,
 int bma280_init_interrupt(struct device *dev)
 {
 	struct bma280_data *drv_data = dev->driver_data;
-	int rc;
 
 	/* set latched interrupts */
-	rc = i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-				BMA280_REG_INT_RST_LATCH,
-				BMA280_BIT_INT_LATCH_RESET |
-				BMA280_INT_MODE_LATCH);
-	if (rc < 0) {
+	if (i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+			       BMA280_REG_INT_RST_LATCH,
+			       BMA280_BIT_INT_LATCH_RESET |
+			       BMA280_INT_MODE_LATCH) < 0) {
 		SYS_LOG_DBG("Could not set latched interrupts");
 		return -EIO;
 	}
@@ -231,46 +223,40 @@ int bma280_init_interrupt(struct device *dev)
 			   bma280_gpio_callback,
 			   BIT(CONFIG_BMA280_GPIO_PIN_NUM));
 
-	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
-	if (rc < 0) {
+	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		SYS_LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
 
 	/* map data ready interrupt to INT1 */
-	rc = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-				 BMA280_REG_INT_MAP_1,
-				 BMA280_INT_MAP_1_BIT_DATA,
-				 BMA280_INT_MAP_1_BIT_DATA);
-	if (rc < 0) {
+	if (i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+				BMA280_REG_INT_MAP_1,
+				BMA280_INT_MAP_1_BIT_DATA,
+				BMA280_INT_MAP_1_BIT_DATA) < 0) {
 		SYS_LOG_DBG("Could not map data ready interrupt pin");
 		return -EIO;
 	}
 
 	/* map any-motion interrupt to INT1 */
-	rc = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-				 BMA280_REG_INT_MAP_0,
-				 BMA280_INT_MAP_0_BIT_SLOPE,
-				 BMA280_INT_MAP_0_BIT_SLOPE);
-	if (rc < 0) {
+	if (i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+				BMA280_REG_INT_MAP_0,
+				BMA280_INT_MAP_0_BIT_SLOPE,
+				BMA280_INT_MAP_0_BIT_SLOPE) < 0) {
 		SYS_LOG_DBG("Could not map any-motion interrupt pin");
 		return -EIO;
 	}
 
-	/* disable data ready interrupt */
-	rc = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-				 BMA280_REG_INT_EN_1,
-				 BMA280_BIT_DATA_EN, 0);
-	if (rc < 0) {
+	if (i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+				BMA280_REG_INT_EN_1,
+				BMA280_BIT_DATA_EN, 0) < 0) {
 		SYS_LOG_DBG("Could not disable data ready interrupt");
 		return -EIO;
 	}
 
 	/* disable any-motion interrupt */
-	rc = i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-				 BMA280_REG_INT_EN_0,
-				 BMA280_SLOPE_EN_XYZ, 0);
-	if (rc < 0) {
+	if (i2c_reg_update_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+				BMA280_REG_INT_EN_0,
+				BMA280_SLOPE_EN_XYZ, 0) < 0) {
 		SYS_LOG_DBG("Could not disable data ready interrupt");
 		return -EIO;
 	}

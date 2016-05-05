@@ -31,19 +31,16 @@ static int isl29035_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 	uint8_t msb, lsb;
-	int ret;
 
 	__ASSERT(chan == SENSOR_CHAN_ALL);
 
-	ret = i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-				ISL29035_DATA_MSB_REG, &msb);
-	if (ret < 0) {
+	if (i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				ISL29035_DATA_MSB_REG, &msb) < 0) {
 		return -EIO;
 	}
 
-	ret = i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-				ISL29035_DATA_LSB_REG, &lsb);
-	if (ret < 0) {
+	if (i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				ISL29035_DATA_LSB_REG, &lsb) < 0) {
 		return -EIO;
 	}
 
@@ -87,7 +84,6 @@ static struct sensor_driver_api isl29035_api = {
 static int isl29035_init(struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
-	int ret;
 
 	drv_data->i2c = device_get_binding(CONFIG_ISL29035_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
@@ -98,63 +94,56 @@ static int isl29035_init(struct device *dev)
 	drv_data->data_sample = 0;
 
 	/* clear blownout status bit */
-	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-				  ISL29035_ID_REG, ISL29035_BOUT_MASK, 0);
-	if (ret < 0) {
+	if (i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				ISL29035_ID_REG, ISL29035_BOUT_MASK, 0) < 0) {
 		SYS_LOG_DBG("Failed to clear blownout status bit.");
-		return ret;
+		return -EIO;
 	}
 
 	/* set command registers to set default attributes */
-	ret = i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-				 ISL29035_COMMAND_I_REG, 0);
-	if (ret < 0) {
+	if (i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+			       ISL29035_COMMAND_I_REG, 0) < 0) {
 		SYS_LOG_DBG("Failed to clear COMMAND-I.");
-		return ret;
+		return -EIO;
 	}
 
-	ret = i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-				 ISL29035_COMMAND_II_REG, 0);
-	if (ret < 0) {
+	if (i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				 ISL29035_COMMAND_II_REG, 0) < 0) {
 		SYS_LOG_DBG("Failed to clear COMMAND-II.");
-		return ret;
+		return -EIO;
 	}
 
 	/* set operation mode */
-	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+	if (i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 				  ISL29035_COMMAND_I_REG,
 				  ISL29035_OPMODE_MASK,
-				  ISL29035_ACTIVE_OPMODE_BITS);
-	if (ret < 0) {
+				  ISL29035_ACTIVE_OPMODE_BITS) < 0) {
 		SYS_LOG_DBG("Failed to set opmode.");
-		return ret;
+		return -EIO;
 	}
 
 	/* set lux range */
-	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-				  ISL29035_COMMAND_II_REG,
-				  ISL29035_LUX_RANGE_MASK,
-				  ISL29035_LUX_RANGE_BITS);
-	if (ret < 0) {
+	if (i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				ISL29035_COMMAND_II_REG,
+				ISL29035_LUX_RANGE_MASK,
+				ISL29035_LUX_RANGE_BITS) < 0) {
 		SYS_LOG_DBG("Failed to set lux range.");
-		return ret;
+		return -EIO;
 	}
 
 	/* set ADC resolution */
-	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-				  ISL29035_COMMAND_II_REG,
-				  ISL29035_ADC_RES_MASK,
-				  ISL29035_ADC_RES_BITS);
-	if (ret < 0) {
+	if (i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+				ISL29035_COMMAND_II_REG,
+				ISL29035_ADC_RES_MASK,
+				ISL29035_ADC_RES_BITS) < 0) {
 		SYS_LOG_DBG("Failed to set ADC resolution.");
-		return ret;
+		return -EIO;
 	}
 
 #ifdef CONFIG_ISL29035_TRIGGER
-	ret = isl29035_init_interrupt(dev);
-	if (ret < 0) {
+	if (isl29035_init_interrupt(dev) < 0) {
 		SYS_LOG_DBG("Failed to initialize interrupt.");
-		return ret;
+		return -EIO;
 	}
 #endif
 

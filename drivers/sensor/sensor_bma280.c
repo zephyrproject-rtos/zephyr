@@ -26,7 +26,6 @@ static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct bma280_data *drv_data = dev->driver_data;
 	uint8_t buf[6];
 	uint8_t lsb;
-	int rc;
 
 	__ASSERT(chan == SENSOR_CHAN_ALL);
 
@@ -34,9 +33,8 @@ static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	 * since all accel data register addresses are consecutive,
 	 * a burst read can be used to read all the samples
 	 */
-	rc = i2c_burst_read(drv_data->i2c, BMA280_I2C_ADDRESS,
-			    BMA280_REG_ACCEL_X_LSB, buf, 6);
-	if (rc < 0) {
+	if (i2c_burst_read(drv_data->i2c, BMA280_I2C_ADDRESS,
+			   BMA280_REG_ACCEL_X_LSB, buf, 6) < 0) {
 		SYS_LOG_DBG("Could not read accel axis data");
 		return -EIO;
 	}
@@ -50,10 +48,9 @@ static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	lsb = (buf[4] & BMA280_ACCEL_LSB_MASK) >> BMA280_ACCEL_LSB_SHIFT;
 	drv_data->z_sample = (((int8_t)buf[5]) << BMA280_ACCEL_LSB_BITS) | lsb;
 
-	rc = i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-			       BMA280_REG_TEMP,
-			       (uint8_t *)&drv_data->temp_sample);
-	if (rc < 0) {
+	if (i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+			      BMA280_REG_TEMP,
+			      (uint8_t *)&drv_data->temp_sample) < 0) {
 		SYS_LOG_DBG("Could not read temperature data");
 		return -EIO;
 	}
@@ -127,7 +124,6 @@ int bma280_init(struct device *dev)
 {
 	struct bma280_data *drv_data = dev->driver_data;
 	uint8_t id = 0;
-	int rc;
 
 	drv_data->i2c = device_get_binding(CONFIG_BMA280_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
@@ -137,9 +133,8 @@ int bma280_init(struct device *dev)
 	}
 
 	/* read device ID */
-	rc = i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-			       BMA280_REG_CHIP_ID, &id);
-	if (rc < 0) {
+	if (i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+			      BMA280_REG_CHIP_ID, &id) < 0) {
 		SYS_LOG_DBG("Could not read chip id");
 		return -EIO;
 	}
@@ -149,25 +144,21 @@ int bma280_init(struct device *dev)
 		return -EIO;
 	}
 
-	/* set the data filter bandwidth */
-	rc = i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-				BMA280_REG_PMU_BW, BMA280_PMU_BW);
-	if (rc < 0) {
+	if (i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+			       BMA280_REG_PMU_BW, BMA280_PMU_BW) < 0) {
 		SYS_LOG_DBG("Could not set data filter bandwidth");
 		return -EIO;
 	}
 
 	/* set g-range */
-	rc = i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
-				BMA280_REG_PMU_RANGE, BMA280_PMU_RANGE);
-	if (rc < 0) {
+	if (i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
+			       BMA280_REG_PMU_RANGE, BMA280_PMU_RANGE) < 0) {
 		SYS_LOG_DBG("Could not set data g-range");
 		return -EIO;
 	}
 
 #ifdef CONFIG_BMA280_TRIGGER
-	rc = bma280_init_interrupt(dev);
-	if (rc < 0) {
+	if (bma280_init_interrupt(dev) < 0) {
 		SYS_LOG_DBG("Could not initialize interrupts");
 		return -EIO;
 	}

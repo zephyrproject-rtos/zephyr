@@ -143,11 +143,9 @@ int tmp007_trigger_set(struct device *dev,
 int tmp007_init_interrupt(struct device *dev)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
-	int rc;
 
-	rc = tmp007_reg_update(drv_data, TMP007_REG_CONFIG,
-			       TMP007_ALERT_EN_BIT, TMP007_ALERT_EN_BIT);
-	if (rc < 0) {
+	if (tmp007_reg_update(drv_data, TMP007_REG_CONFIG,
+			      TMP007_ALERT_EN_BIT, TMP007_ALERT_EN_BIT) < 0) {
 		SYS_LOG_DBG("Failed to enable interrupt pin!");
 		return -EIO;
 	}
@@ -168,8 +166,7 @@ int tmp007_init_interrupt(struct device *dev)
 			   tmp007_gpio_callback,
 			   BIT(CONFIG_TMP007_GPIO_PIN_NUM));
 
-	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
-	if (rc < 0) {
+	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		SYS_LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}

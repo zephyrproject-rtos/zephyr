@@ -90,29 +90,26 @@ static struct sensor_driver_api sx9500_api_funcs = {
 static int sx9500_init_chip(struct device *dev)
 {
 	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
-	int ret;
 	uint8_t val;
 
-	ret = i2c_write(data->i2c_master, sx9500_reg_defaults,
-			sizeof(sx9500_reg_defaults), data->i2c_slave_addr);
-	if (ret) {
-		return ret;
+	if (i2c_write(data->i2c_master, sx9500_reg_defaults,
+		      sizeof(sx9500_reg_defaults), data->i2c_slave_addr)
+		      < 0) {
+		return -EIO;
 	}
 
 	/* No interrupts active.  We only activate them when an
 	 * application registers a trigger.
 	 */
-	ret = i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
-				 SX9500_REG_IRQ_MSK, 0);
-	if (ret) {
-		return ret;
+	if (i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
+			       SX9500_REG_IRQ_MSK, 0) < 0) {
+		return -EIO;
 	}
 
 	/* Read irq source reg to clear reset status. */
-	ret = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-				SX9500_REG_IRQ_SRC, &val);
-	if (ret) {
-		return ret;
+	if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+			      SX9500_REG_IRQ_SRC, &val) < 0) {
+		return -EIO;
 	}
 
 	return i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
@@ -123,7 +120,6 @@ static int sx9500_init_chip(struct device *dev)
 int sx9500_init(struct device *dev)
 {
 	struct sx9500_data *data = dev->driver_data;
-	int ret;
 
 	data->i2c_master = device_get_binding(CONFIG_SX9500_I2C_DEV_NAME);
 	if (!data->i2c_master) {
@@ -134,16 +130,14 @@ int sx9500_init(struct device *dev)
 
 	data->i2c_slave_addr = CONFIG_SX9500_I2C_ADDR;
 
-	ret = sx9500_init_chip(dev);
-	if (ret) {
+	if (sx9500_init_chip(dev) < 0) {
 		SYS_LOG_DBG("sx9500: failed to initialize chip err %d", ret);
-		return ret;
+		return -EINVAL;
 	}
 
-	ret = sx9500_setup_interrupt(dev);
-	if (ret) {
+	if (sx9500_setup_interrupt(dev) < 0) {
 		SYS_LOG_DBG("sx9500: failed to setup interrupt err %d", ret);
-		return ret;
+		return -EINVAL;
 	}
 
 	dev->driver_api = &sx9500_api_funcs;

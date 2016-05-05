@@ -76,12 +76,14 @@ static int tmp007_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
 	uint16_t val;
-	int rc;
 
 	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_TEMP);
 
-	rc = tmp007_reg_read(drv_data, TMP007_REG_TOBJ, &val);
-	if (rc < 0 || val & TMP007_DATA_INVALID_BIT) {
+	if (tmp007_reg_read(drv_data, TMP007_REG_TOBJ, &val) < 0) {
+		return -EIO;
+	}
+
+	if (val & TMP007_DATA_INVALID_BIT) {
 		return -EIO;
 	}
 

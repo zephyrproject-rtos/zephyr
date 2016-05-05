@@ -32,29 +32,28 @@ int sx9500_trigger_set(struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 	struct sx9500_data *data = dev->driver_data;
-	int ret;
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
-		ret = i2c_reg_update_byte(data->i2c_master,
-					  data->i2c_slave_addr,
-					  SX9500_REG_IRQ_MSK,
-					  SX9500_CONV_DONE_IRQ,
-					  SX9500_CONV_DONE_IRQ);
-		if (ret)
-			return ret;
+		if (i2c_reg_update_byte(data->i2c_master,
+					data->i2c_slave_addr,
+					SX9500_REG_IRQ_MSK,
+					SX9500_CONV_DONE_IRQ,
+					SX9500_CONV_DONE_IRQ) < 0) {
+			return -EIO;
+		}
 		data->handler_drdy = handler;
 		data->trigger_drdy = *trig;
 		break;
 
 	case SENSOR_TRIG_NEAR_FAR:
-		ret = i2c_reg_update_byte(data->i2c_master,
-					  data->i2c_slave_addr,
-					  SX9500_REG_IRQ_MSK,
-					  SX9500_NEAR_FAR_IRQ,
-					  SX9500_NEAR_FAR_IRQ);
-		if (ret)
-			return ret;
+		if (i2c_reg_update_byte(data->i2c_master,
+					data->i2c_slave_addr,
+					SX9500_REG_IRQ_MSK,
+					SX9500_NEAR_FAR_IRQ,
+					SX9500_NEAR_FAR_IRQ) < 0) {
+			return -EIO;
+		}
 		data->handler_near_far = handler;
 		data->trigger_near_far = *trig;
 		break;
@@ -84,16 +83,14 @@ static void sx9500_fiber_main(int arg1, int unused)
 	struct device *dev = INT_TO_POINTER(arg1);
 	struct sx9500_data *data = dev->driver_data;
 	uint8_t reg_val;
-	int ret;
 
 	ARG_UNUSED(unused);
 
 	while (1) {
 		nano_fiber_sem_take(&data->sem, TICKS_UNLIMITED);
 
-		ret = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-					SX9500_REG_IRQ_SRC, &reg_val);
-		if (ret) {
+		if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+					SX9500_REG_IRQ_SRC, &reg_val) < 0) {
 			SYS_LOG_DBG("sx9500: error %d reading IRQ source register", ret);
 			continue;
 		}
@@ -126,11 +123,9 @@ static void sx9500_gpio_fiber_cb(void *arg)
 	struct device *dev = arg;
 	struct sx9500_data *data = dev->driver_data;
 	uint8_t reg_val;
-	int ret;
 
-	ret = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-				SX9500_REG_IRQ_SRC, &reg_val);
-	if (ret) {
+	if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
+			      SX9500_REG_IRQ_SRC, &reg_val) < 0) {
 		SYS_LOG_DBG("sx9500: error %d reading IRQ source register", ret);
 		return;
 	}

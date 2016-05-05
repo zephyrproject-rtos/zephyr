@@ -46,12 +46,10 @@ static int mcp9808_reg_write(struct mcp9808_data *data, uint8_t reg, uint16_t va
 static int mcp9808_reg_update(struct mcp9808_data *data, uint8_t reg,
 			      uint16_t mask, uint16_t val)
 {
-	int ret;
 	uint16_t old_val, new_val;
 
-	ret = mcp9808_reg_read(data, reg, &old_val);
-	if (ret) {
-		return ret;
+	if (mcp9808_reg_read(data, reg, &old_val) < 0) {
+		return -EIO;
 	}
 
 	new_val = old_val & ~mask;

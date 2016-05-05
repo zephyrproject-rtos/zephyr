@@ -29,8 +29,6 @@
 
 int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val)
 {
-	int ret;
-
 	struct i2c_msg msgs[2] = {
 		{
 			.buf = &reg,
@@ -44,9 +42,9 @@ int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val)
 		},
 	};
 
-	ret = i2c_transfer(data->i2c_master, msgs, 2, data->i2c_slave_addr);
-	if (ret) {
-		return ret;
+	if (i2c_transfer(data->i2c_master, msgs, 2, data->i2c_slave_addr)
+			 < 0) {
+		return -EIO;
 	}
 
 	*val = sys_be16_to_cpu(*val);
