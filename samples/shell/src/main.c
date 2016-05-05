@@ -44,5 +44,11 @@ const struct shell_cmd commands[] = {
 
 void main(void)
 {
+	uint32_t version = sys_kernel_version_get();
+
+	printk("Zephyr version %d.%d.%d\n",
+		SYS_KERNEL_VER_MAJOR(version),
+		SYS_KERNEL_VER_MINOR(version),
+		SYS_KERNEL_VER_PATCHLEVEL(version));
 	shell_init("shell> ", commands);
 }
