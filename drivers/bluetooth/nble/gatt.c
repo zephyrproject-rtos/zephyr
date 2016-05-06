@@ -139,7 +139,7 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 
 	for (i = 0; i < count; i++) {
 		struct bt_gatt_attr *attr = &attrs[i];
-		struct nble_gatt_attr *att;
+		struct nble_gatts_attr *att;
 		int err;
 
 		if (attr_table_size + sizeof(*att) > sizeof(attr_table)) {
@@ -466,7 +466,7 @@ static int notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	BT_DBG("");
 
-	notif.conn_handle = conn->handle;
+	notif.params.conn_handle = conn->handle;
 	notif.params.attr = attr;
 	notif.params.offset = 0;
 	notif.cback = NULL;
@@ -568,9 +568,9 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	}
 
 	if (conn) {
-		ind.conn_handle = conn->handle;
+		ind.params.conn_handle = conn->handle;
 	} else {
-		ind.conn_handle = 0xffff;
+		ind.params.conn_handle = 0xffff;
 	}
 
 	ind.params.attr = (void *)params->attr;
@@ -922,7 +922,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 }
 
 void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
-			    uint8_t *data, uint8_t len, void *user_data)
+			    uint8_t *data, uint8_t len)
 {
 	struct bt_gatt_read_params *params = rsp->user_data;
 	struct bt_conn *conn;
@@ -1031,8 +1031,7 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 	return 0;
 }
 
-void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp,
-			     void *user_data)
+void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp)
 {
 	struct bt_conn *conn;
 	bt_gatt_rsp_func_t func;
@@ -1043,7 +1042,7 @@ void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp,
 		return;
 	}
 
-	BT_DBG("conn %p status %d user_data %p", conn, rsp->status, user_data);
+	BT_DBG("conn %p status %d", conn, rsp->status);
 
 	func = conn->gatt_private;
 	if (func) {
