@@ -1,1 +1,2 @@
 obj-$(CONFIG_GROVE_LCD_RGB) += lcd_rgb.o
+obj-$(CONFIG_GROVE_LIGHT_SENSOR) += light_sensor.o

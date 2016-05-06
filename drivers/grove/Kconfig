@@ -66,3 +66,48 @@ config GROVE_LCD_RGB_INIT_PRIORITY
 	  Device driver initialization priority.
 	  As the device is connected to I2C bus, its driver has
 	  to be initialized after the I2C one.
+
+config GROVE_LIGHT_SENSOR
+	bool
+	prompt "Enable the Seeed Grove Light Sensor"
+	depends on GROVE && ADC && NEWLIB_LIBC
+	default n
+	help
+	  Setting this value will enable dirver support for the Grove Light
+	  Sensor.
+
+config GROVE_LIGHT_SENSOR_NAME
+	string
+	prompt "Driver name"
+	depends on GROVE_LIGHT_SENSOR
+	default "GROVE_LIGHT_SENSOR"
+	help
+	  Specify the device name with which the sensor is identified.
+
+config GROVE_LIGHT_SENSOR_ADC_DEV_NAME
+	string
+	prompt "ADC where Grove Light Sensor is connected"
+	depends on GROVE_LIGHT_SENSOR
+	default "ADC_0"
+	help
+	  Specify the device name of the ADC to which the Grove Light Sensor
+	  is connected.
+
+config GROVE_LIGHT_SENSOR_ADC_CHANNEL
+	int
+	prompt "ADC channel used by Grove Light Sensor"
+	depends on GROVE_LIGHT_SENSOR
+	default 10
+	help
+	  Specify the channel of the ADC to which the Grove Light Sensor is
+	  connected.
+
+config GROVE_LIGHT_SENSOR_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	default 70
+	depends on GROVE_LIGHT_SENSOR
+	help
+	  Device driver initialization priority.
+	  As the device is connected to an ADC device, its driver has to be
+	  initialized after the ADC device.
