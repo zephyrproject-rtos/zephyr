@@ -63,11 +63,21 @@ static NET_BUF_POOL(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), &br_sig, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
+/* Set of flags applicable on "flags" member of bt_l2cap_br context */
+enum {
+	BT_L2CAP_FLAG_INFO_PENDING,	/* retrieving remote l2cap info */
+	BT_L2CAP_FLAG_INFO_DONE,	/* remote l2cap info is done */
+};
+
 /* BR/EDR L2CAP signalling channel specific context */
 struct bt_l2cap_br {
 	/* The channel this context is associated with */
 	struct bt_l2cap_chan	chan;
+	atomic_t		flags[1];
 	uint8_t			ident;
+	uint8_t			info_ident;
+	uint8_t			info_fixed_chan;
+	uint32_t		info_feat_mask;
 };
 
 static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -110,6 +120,142 @@ static int l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 	BT_DBG("conn %p chan %p cid 0x%04x", conn, chan, chan->rx.cid);
 
 	return 0;
+}
+
+static struct bt_l2cap_br *l2cap_br_chan_get(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan;
+
+	chan = bt_l2cap_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (!chan) {
+		BT_ERR("Unable to find L2CAP Signalling channel");
+		return NULL;
+	}
+
+	return CONTAINER_OF(chan, struct bt_l2cap_br, chan);
+}
+
+static uint8_t l2cap_br_get_ident(struct bt_conn *conn)
+{
+	struct bt_l2cap_br *l2cap;
+
+	l2cap = l2cap_br_chan_get(conn);
+	if (!l2cap) {
+		return 0;
+	}
+
+	l2cap->ident++;
+
+	/* handle integer overflow (0 is not valid) */
+	if (!l2cap->ident) {
+		l2cap->ident++;
+	}
+
+	return l2cap->ident;
+}
+
+static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
+{
+	struct bt_l2cap_info_req *info;
+	struct net_buf *buf;
+	struct bt_l2cap_sig_hdr *hdr;
+
+	BT_DBG("info type %u", info_type);
+
+	if (atomic_test_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_PENDING)) {
+		return;
+	}
+
+	switch (info_type) {
+	case BT_L2CAP_INFO_FEAT_MASK:
+	case BT_L2CAP_INFO_FIXED_CHAN:
+		break;
+	default:
+		BT_WARN("Unsupported info type %u", info_type);
+		return;
+	}
+
+	buf = bt_l2cap_create_pdu(&br_sig);
+	if (!buf) {
+		BT_ERR("No buffers");
+		return;
+	}
+
+	atomic_set_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_PENDING);
+	l2cap->info_ident = l2cap_br_get_ident(l2cap->chan.conn);
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_INFO_REQ;
+	hdr->ident = l2cap->info_ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*info));
+
+	info = net_buf_add(buf, sizeof(*info));
+	info->type = sys_cpu_to_le16(info_type);
+
+	/* TODO: add command timeout guard */
+	bt_l2cap_send(l2cap->chan.conn, BT_L2CAP_CID_BR_SIG, buf);
+}
+
+static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
+			     struct net_buf *buf)
+{
+	struct bt_l2cap_info_rsp *rsp = (void *)buf->data;
+	uint16_t type, result;
+	int err = 0;
+
+	if (atomic_test_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_DONE)) {
+		return 0;
+	}
+
+	atomic_clear_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_PENDING);
+
+	if (buf->len < sizeof(*rsp)) {
+		BT_ERR("Too small info rsp packet size");
+		err = -EINVAL;
+		goto done;
+	}
+
+	if (ident != l2cap->info_ident) {
+		BT_WARN("Idents mismatch");
+		err = -EINVAL;
+		goto done;
+	}
+
+	result = sys_le16_to_cpu(rsp->result);
+	if (result != BT_L2CAP_INFO_SUCCESS) {
+		BT_WARN("Result unsuccessful");
+		err = -EINVAL;
+		goto done;
+	}
+
+	type = sys_le16_to_cpu(rsp->type);
+	net_buf_pull(buf, sizeof(*rsp));
+
+	switch (type) {
+	case BT_L2CAP_INFO_FEAT_MASK:
+		l2cap->info_feat_mask = net_buf_pull_le32(buf);
+		BT_DBG("remote info mask 0x%08x", l2cap->info_feat_mask);
+
+		if (!(l2cap->info_feat_mask & L2CAP_FEAT_FIXED_CHAN_MASK)) {
+			break;
+		}
+
+		l2cap_br_get_info(l2cap, BT_L2CAP_INFO_FIXED_CHAN);
+		return 0;
+	case BT_L2CAP_INFO_FIXED_CHAN:
+		l2cap->info_fixed_chan = net_buf_pull_u8(buf);
+		BT_DBG("remote fixed channel mask 0x%02x",
+		       l2cap->info_fixed_chan);
+		break;
+	default:
+		BT_WARN("type 0x%04x unsupported", type);
+		err = -EINVAL;
+		break;
+	}
+done:
+	atomic_set_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_DONE);
+	l2cap->info_ident = 0;
+	return err;
 }
 
 static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
@@ -195,6 +341,10 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 			chan->ops->connected(chan);
 		}
 	}
+
+	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan);
+
+	l2cap_br_get_info(l2cap, BT_L2CAP_INFO_FEAT_MASK);
 }
 
 static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
@@ -296,6 +446,9 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	switch (hdr->code) {
+	case BT_L2CAP_INFO_RSP:
+		l2cap_br_info_rsp(l2cap, hdr->ident, buf);
+		break;
 	case BT_L2CAP_INFO_REQ:
 		l2cap_br_info_req(l2cap, hdr->ident, buf);
 		break;
@@ -326,9 +479,8 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		}
 
 		l2cap->chan.ops = &ops;
-
 		*chan = &l2cap->chan;
-
+		atomic_set(l2cap->flags, 0);
 		return 0;
 	}
 
