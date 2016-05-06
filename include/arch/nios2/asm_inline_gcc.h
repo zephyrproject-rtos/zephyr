@@ -44,9 +44,9 @@ extern "C" {
 
 static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 {
-	ARG_UNUSED(op);
-	/* STUB */
-	return 0;
+	if (!op)
+		return 0;
+	return 32 - __builtin_clz(op);
 }
 
 /**
@@ -63,256 +63,138 @@ static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 
 static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 {
-	ARG_UNUSED(op);
-	/* STUB */
-	return 0;
+	return __builtin_ffs(op);
 }
 
-/* Implementation of sys_io.h's documented functions */
-
-static inline __attribute__((always_inline))
-	void sys_out8(uint8_t data, io_port_t port)
-{
-	ARG_UNUSED(data);
-	ARG_UNUSED(port);
-	/* STUB */
-}
-
-static inline __attribute__((always_inline))
-	uint8_t sys_in8(io_port_t port)
-{
-	ARG_UNUSED(port);
-	/* STUB */
-	return 0;
-}
-
-static inline __attribute__((always_inline))
-	void sys_out16(uint16_t data, io_port_t port)
-{
-	ARG_UNUSED(data);
-	ARG_UNUSED(port);
-	/* STUB */
-}
-
-static inline __attribute__((always_inline))
-	uint16_t sys_in16(io_port_t port)
-{
-	ARG_UNUSED(port);
-	/* STUB */
-	return 0;
-
-}
-
-static inline __attribute__((always_inline))
-	void sys_out32(uint32_t data, io_port_t port)
-{
-	ARG_UNUSED(data);
-	ARG_UNUSED(port);
-	/* STUB */
-}
-
-static inline __attribute__((always_inline))
-	uint32_t sys_in32(io_port_t port)
-{
-	ARG_UNUSED(port);
-	/* STUB */
-	return 0;
-}
-
-static inline __attribute__((always_inline))
-	void sys_io_set_bit(io_port_t port, unsigned int bit)
-{
-	ARG_UNUSED(port);
-	ARG_UNUSED(bit);
-	/* STUB */
-}
-
-static inline __attribute__((always_inline))
-	void sys_io_clear_bit(io_port_t port, unsigned int bit)
-{
-	ARG_UNUSED(port);
-	ARG_UNUSED(bit);
-	/* STUB */
-}
-
-static inline __attribute__((always_inline))
-	int sys_io_test_bit(io_port_t port, unsigned int bit)
-{
-	ARG_UNUSED(port);
-	ARG_UNUSED(bit);
-	/* STUB */
-	return 0;
-}
-
-static inline __attribute__((always_inline))
-	int sys_io_test_and_set_bit(io_port_t port, unsigned int bit)
-{
-	ARG_UNUSED(port);
-	ARG_UNUSED(bit);
-	/* STUB */
-	return 0;
-}
-
-static inline __attribute__((always_inline))
-	int sys_io_test_and_clear_bit(io_port_t port, unsigned int bit)
-{
-	ARG_UNUSED(port);
-	ARG_UNUSED(bit);
-	/* STUB */
-	return 0;
-}
+/* Using the *io variants of these instructions to prevent issues on
+ * devices that have an instruction/data cache
+ */
 
 static inline __attribute__((always_inline))
 	void sys_write8(uint8_t data, mm_reg_t addr)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(data);
-	/* STUB */
+	__builtin_stbio((void *)addr, data);
 }
 
 static inline __attribute__((always_inline))
 	uint8_t sys_read8(mm_reg_t addr)
 {
-	ARG_UNUSED(addr);
-	/* STUB */
-	return 0;
+	return __builtin_ldbuio((void *)addr);
 }
 
 static inline __attribute__((always_inline))
 	void sys_write16(uint16_t data, mm_reg_t addr)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(data);
-	/* STUB */
+	__builtin_sthio((void *)addr, data);
 }
 
 static inline __attribute__((always_inline))
 	uint16_t sys_read16(mm_reg_t addr)
 {
-	ARG_UNUSED(addr);
-	/* STUB */
-	return 0;
+	return __builtin_ldhuio((void *)addr);
 }
 
 static inline __attribute__((always_inline))
 	void sys_write32(uint32_t data, mm_reg_t addr)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(data);
-	/* STUB */
+	__builtin_stwio((void *)addr, data);
 }
 
 static inline __attribute__((always_inline))
 	uint32_t sys_read32(mm_reg_t addr)
 {
-	ARG_UNUSED(addr);
-	/* STUB */
-	return 0;
+	return __builtin_ldwio((void *)addr);
 }
+
+/* NIOS II does not have any special instructions for manipulating bits,
+ * so just read, modify, write in C
+ */
 
 static inline __attribute__((always_inline))
 	void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
-
-	/* STUB */
+	sys_write32(sys_read32(addr) | (1 << bit), addr);
 }
 
 static inline __attribute__((always_inline))
 	void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
-
-	/* STUB */
+	sys_write32(sys_read32(addr) & ~(1 << bit), addr);
 }
 
 static inline __attribute__((always_inline))
 	int sys_test_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
-
-	/* STUB */
-
-	return 0;
+	return sys_read32(addr) & (1 << bit);
 }
+
+/* These are not required to be atomic, just do it in C */
 
 static inline __attribute__((always_inline))
 	int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
+	int ret;
 
-	/* STUB */
+	ret = sys_test_bit(addr, bit);
+	sys_set_bit(addr, bit);
 
-	return 0;
+	return ret;
 }
 
 static inline __attribute__((always_inline))
 	int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
+	int ret;
 
-	/* STUB */
+	ret = sys_test_bit(addr, bit);
+	sys_clear_bit(addr, bit);
 
-	return 0;
+	return ret;
 }
 
 static inline __attribute__((always_inline))
 	void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
-
-	/* STUB */
+	/* Doing memory offsets in terms of 32-bit values to prevent
+	 * alignment issues
+	 */
+	sys_set_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
 static inline __attribute__((always_inline))
 	void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
-
-	/* STUB */
-
+	sys_clear_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
 static inline __attribute__((always_inline))
 	int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
-
-	/* STUB */
-
-	return 0;
+	return sys_test_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
+
 
 static inline __attribute__((always_inline))
 	int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
+	int ret;
 
-	/* STUB */
+	ret = sys_bitfield_test_bit(addr, bit);
+	sys_bitfield_set_bit(addr, bit);
 
-	return 0;
+	return ret;
 }
 
 static inline __attribute__((always_inline))
 	int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(bit);
+	int ret;
 
-	/* STUB */
+	ret = sys_bitfield_test_bit(addr, bit);
+	sys_bitfield_clear_bit(addr, bit);
 
-	return 0;
+	return ret;
 }
-
 
 #endif /* _ASMLANGUAGE */
 
