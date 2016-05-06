@@ -204,6 +204,19 @@ uint8_t *net_buf_add_u8(struct net_buf *buf, uint8_t value);
  */
 void net_buf_add_le16(struct net_buf *buf, uint16_t value);
 
+/** @brief Add 32-bit value at the end of the buffer
+ *
+ *  Adds 32-bit value in little endian format at the end of buffer.
+ *  Increments the data length of a buffer to account for more data
+ *  at the end.
+ *
+ *  @param buf Buffer to update.
+ *  @param value 32-bit value to be added.
+ *
+ *  @return void
+ */
+void net_buf_add_le32(struct net_buf *buf, uint32_t value);
+
 /** @brief Push data to the beginning of the buffer.
  *
  *  Modifies the data pointer and buffer length to account for more data

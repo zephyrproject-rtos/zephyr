@@ -139,6 +139,14 @@ void net_buf_add_le16(struct net_buf *buf, uint16_t value)
 	memcpy(net_buf_add(buf, sizeof(value)), &value, sizeof(value));
 }
 
+void net_buf_add_le32(struct net_buf *buf, uint32_t value)
+{
+	NET_BUF_DBG("buf %p value %u\n", buf, value);
+
+	value = sys_cpu_to_le32(value);
+	memcpy(net_buf_add(buf, sizeof(value)), &value, sizeof(value));
+}
+
 void *net_buf_push(struct net_buf *buf, size_t len)
 {
 	NET_BUF_DBG("buf %p len %u\n", buf, len);
