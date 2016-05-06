@@ -63,12 +63,14 @@
 #include <misc/__assert.h>
 
 /*
- * A board support package's board.h header must provide definitions for the
- * following constants:
+ * The file(s) arch/arc/soc/<soc>/soc.h must provide a definition for the
+ * following constant:
  *
  *    CONFIG_ARCV2_TIMER0_CLOCK_FREQ
  *
- * This is the sysTick input clock frequency.
+ * This is the ARC CPU input clock frequency.
+ * note: This implementation assumes Timer0 is present. Be sure
+ * to build the ARC CPU with Timer0.
  */
 
 #include <board.h>
