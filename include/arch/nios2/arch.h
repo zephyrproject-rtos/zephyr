@@ -48,15 +48,42 @@ extern "C" {
 
 static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 {
-	/* STUB */
+	unsigned int key;
 
-	return 0;
+	NIOS2_READ_STATUS(key);
+	NIOS2_WRITE_STATUS(key & ~NIOS2_STATUS_PIE_MSK);
+
+	return key;
 }
 
 static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 {
-	/* STUB */
-	ARG_UNUSED(key);
+	/* If the CPU is built without certain features, then
+	 * the only writable bit in the status register is PIE
+	 * in which case we can just write the value stored in key,
+	 * all the other writable bits will be the same.
+	 *
+	 * If not, other stuff could have changed and we need to
+	 * specifically flip just that bit.
+	 */
+
+#if (NIOS2_NUM_OF_SHADOW_REG_SETS > 0) || \
+		(defined NIOS2_EIC_PRESENT) || \
+		(defined NIOS2_MMU_PRESENT) || \
+		(defined NIOS2_MPU_PRESENT)
+	uint32_t status_reg;
+
+	/* Interrupts were already locked when irq_lock() was called,
+	 * so don't do anything
+	 */
+	if (!(key & NIOS2_STATUS_PIE_MSK))
+		return;
+
+	NIOS2_READ_STATUS(status_reg);
+	NIOS2_WRITE_STATUS(status_reg | NIOS2_STATUS_PIE_MSK);
+#else
+	NIOS2_WRITE_STATUS(key);
+#endif
 }
 
 int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
