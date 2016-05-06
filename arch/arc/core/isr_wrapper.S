@@ -272,7 +272,7 @@ SECTION_FUNC(TEXT, _isr_demux)
 	mov r1, _sw_isr_table
 	add3 r0, r1, r0   /* table entries are 8-bytes wide */
 
-	ld r1, [r0, 4] /* ISR into r1 */
+	ld_s r1, [r0, 4] /* ISR into r1 */
 	jl_s.d [r1]
 	ld_s r0, [r0] /* delay slot: ISR parameter into r0  */
 

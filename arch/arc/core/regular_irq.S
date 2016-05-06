@@ -182,7 +182,7 @@ _rirq_return_from_coop:
 	 * IRQ prologue. r13 thus has to be set to its correct value in the IRQ
 	 * stack frame.
 	 */
-	st r13, [sp, __tISF_r13_OFFSET]
+	st_s r13, [sp, __tISF_r13_OFFSET]
 
 	/* stack now has the IRQ stack frame layout, pointing to r0 */
 
