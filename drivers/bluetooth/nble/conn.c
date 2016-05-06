@@ -210,6 +210,8 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	struct nble_gap_connect_req req;
 	struct bt_conn *conn;
 
+	BT_DBG("");
+
 	if (!bt_le_conn_params_valid(param->interval_min, param->interval_max,
 				     param->latency, param->timeout)) {
 		return NULL;

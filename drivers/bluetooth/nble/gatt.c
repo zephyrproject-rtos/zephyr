@@ -933,7 +933,7 @@ void on_nble_gattc_read_rsp(const struct nble_gattc_read_rsp *rsp,
 		return;
 	}
 
-	BT_DBG("conn %p params %p", conn, params);
+	BT_DBG("status %d conn %p params %p", rsp->status, conn, params);
 
 	if (rsp->status) {
 		params->func(conn, rsp->status, params, NULL, 0);
