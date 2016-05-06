@@ -62,6 +62,25 @@ struct bt_l2cap_disconn_rsp {
 	uint16_t scid;
 } __packed;
 
+#define BT_L2CAP_INFO_FEAT_MASK		0x0002
+#define BT_L2CAP_INFO_FIXED_CHAN	0x0003
+
+#define BT_L2CAP_INFO_REQ		0x0a
+struct bt_l2cap_info_req {
+	uint16_t type;
+} __packed;
+
+/* info result */
+#define BT_L2CAP_INFO_SUCCESS		0x0000
+#define BT_L2CAP_INFO_NOTSUPP		0x0001
+
+#define BT_L2CAP_INFO_RSP		0x0b
+struct bt_l2cap_info_rsp {
+	uint16_t type;
+	uint16_t result;
+	uint8_t  data[0];
+} __packed;
+
 #define BT_L2CAP_CONN_PARAM_REQ		0x12
 struct bt_l2cap_conn_param_req {
 	uint16_t min_interval;

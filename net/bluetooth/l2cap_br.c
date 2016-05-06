@@ -48,6 +48,12 @@
 
 #define L2CAP_BR_MIN_MTU	48
 
+/*
+ * L2CAP extended feature mask:
+ * BR/EDR fixed channel support enabled
+ */
+#define L2CAP_FEAT_FIXED_CHAN_MASK	0x00000080
+
 static struct bt_l2cap_server *br_servers;
 static struct bt_l2cap_fixed_chan *br_channels;
 
@@ -102,6 +108,64 @@ static int l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 	chan->conn = conn;
 
 	BT_DBG("conn %p chan %p cid 0x%04x", conn, chan, chan->rx.cid);
+
+	return 0;
+}
+
+static int l2cap_br_info_req(struct bt_l2cap *l2cap, uint8_t ident,
+			     struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.conn;
+	struct bt_l2cap_info_req *req = (void *)buf->data;
+	struct bt_l2cap_info_rsp *rsp;
+	struct net_buf *rsp_buf;
+	struct bt_l2cap_sig_hdr *hdr_info;
+	uint16_t type;
+
+	if (buf->len < sizeof(*req)) {
+		BT_ERR("Too small info req packet size");
+		return -EINVAL;
+	}
+
+	rsp_buf = bt_l2cap_create_pdu(&br_sig);
+	if (!rsp_buf) {
+		BT_ERR("No buffers");
+		return -ENOMEM;
+	}
+
+	type = sys_le16_to_cpu(req->type);
+	BT_DBG("type 0x%04x", type);
+
+	hdr_info = net_buf_add(rsp_buf, sizeof(*hdr_info));
+	hdr_info->code = BT_L2CAP_INFO_RSP;
+	hdr_info->ident = ident;
+
+	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
+
+	switch (type) {
+	case BT_L2CAP_INFO_FEAT_MASK:
+		rsp->type = sys_cpu_to_le16(BT_L2CAP_INFO_FEAT_MASK);
+		rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_SUCCESS);
+		net_buf_add_le32(rsp_buf, L2CAP_FEAT_FIXED_CHAN_MASK);
+		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + sizeof(uint32_t));
+		break;
+	case BT_L2CAP_INFO_FIXED_CHAN:
+		rsp->type = sys_cpu_to_le16(BT_L2CAP_INFO_FIXED_CHAN);
+		rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_SUCCESS);
+		/* fixed channel mask protocol data is 8 octets wide */
+		memset(net_buf_add(rsp_buf, 8), 0, 8);
+		/* signaling channel is mandatory on BR/EDR transport */
+		rsp->data[0] = BT_L2CAP_MASK_BR_SIG;
+		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + 8);
+		break;
+	default:
+		rsp->type = req->type;
+		rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_NOTSUPP);
+		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp));
+		break;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, rsp_buf);
 
 	return 0;
 }
@@ -206,6 +270,7 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 
 static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
+	struct bt_l2cap *l2cap = CONTAINER_OF(chan, struct bt_l2cap, chan);
 	struct bt_l2cap_sig_hdr *hdr = (void *)buf->data;
 	uint16_t len;
 
@@ -231,6 +296,9 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	switch (hdr->code) {
+	case BT_L2CAP_INFO_REQ:
+		l2cap_br_info_req(l2cap, hdr->ident, buf);
+		break;
 	default:
 		BT_WARN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
 		l2cap_br_send_reject(chan->conn, hdr->ident,
