@@ -59,6 +59,20 @@ static struct bt_conn *conn_new(void)
 	return conn;
 }
 
+static struct bt_conn *conn_get(const bt_addr_le_t *peer)
+{
+	struct bt_conn *conn;
+
+	if (peer) {
+		conn = bt_conn_lookup_addr_le(peer);
+		if (conn) {
+			return conn;
+		}
+	}
+
+	return conn_new();
+}
+
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
 	atomic_inc(&conn->ref);
@@ -217,14 +231,9 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
-	conn = bt_conn_lookup_addr_le(peer);
-	if (conn) {
-		return conn;
-	}
-
-	conn = conn_new();
+	conn = conn_get(peer);
 	if (!conn) {
-		BT_ERR("Unable to create new bt_conn object");
+		BT_ERR("Unable to get bt_conn object");
 		return NULL;
 	}
 
@@ -395,9 +404,9 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 
 	BT_DBG("handle %u role %u", ev->conn_handle, ev->role_slave);
 
-	conn = conn_new();
+	conn = conn_get(&ev->peer_bda);
 	if (!conn) {
-		BT_ERR("Unable to create new bt_conn object");
+		BT_ERR("Unable to get bt_conn object");
 		return;
 	}
 
