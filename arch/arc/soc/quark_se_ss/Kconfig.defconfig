@@ -37,6 +37,9 @@ config  NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 
+config HARVARD
+	def_bool n
+
 config FLASH_BASE_ADDRESS
 	default 0x40000000
 

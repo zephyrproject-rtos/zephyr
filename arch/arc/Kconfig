@@ -155,6 +155,14 @@ config	XIP
 	default n if NSIM
 	default y
 
+config HARVARD
+	prompt "Harvard Architecture"
+	bool
+	default n
+	help
+	  The ARC CPU can be configured to have two busses;
+	  one for instruction fetching and another that serves as a data bus.
+
 config ICCM_SIZE
 	int "ICCM Size in kB"
 	help
