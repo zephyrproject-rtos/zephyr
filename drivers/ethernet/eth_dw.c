@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <errno.h>
-
 #include <nanokernel.h>
 #include <sys_io.h>
 #include <board.h>
@@ -23,14 +20,18 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "ethernet.h"
 #include "eth_dw_priv.h"
 #include <net/ip/net_driver_ethernet.h>
 #include <misc/__assert.h>
+#include <errno.h>
 
 #ifdef CONFIG_SHARED_IRQ
 #include <shared_irq.h>
 #endif
+
+#define SYS_LOG_DOMAIN "ETH DW"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
+#include <misc/sys_log.h>
 
 static inline uint32_t eth_read(uint32_t base_addr, uint32_t offset)
 {
@@ -55,7 +56,7 @@ static void eth_rx(struct device *port)
 	 * process the received frame or an error that may have occurred.
 	 */
 	if (context->rx_desc.own == 1) {
-		ETH_ERR("Spurious receive interrupt from Ethernet MAC.\n");
+		SYS_LOG_ERR("Spurious receive interrupt from Ethernet MAC.\n");
 		return;
 	}
 
@@ -64,20 +65,20 @@ static void eth_rx(struct device *port)
 	}
 
 	if (context->rx_desc.err_summary) {
-		ETH_ERR("Error receiving frame: RDES0 = %08x, RDES1 = %08x.\n",
+		SYS_LOG_ERR("Error receiving frame: RDES0 = %08x, RDES1 = %08x.\n",
 			context->rx_desc.rdes0, context->rx_desc.rdes1);
 		goto release_desc;
 	}
 
 	frm_len = context->rx_desc.frm_len;
 	if (frm_len > UIP_BUFSIZE) {
-		ETH_ERR("Frame too large: %u.\n", frm_len);
+		SYS_LOG_ERR("Frame too large: %u.\n", frm_len);
 		goto release_desc;
 	}
 
 	buf = ip_buf_get_reserve_rx(0);
 	if (buf == NULL) {
-		ETH_ERR("Failed to obtain RX buffer.\n");
+		SYS_LOG_ERR("Failed to obtain RX buffer.\n");
 		goto release_desc;
 	}
 
@@ -117,14 +118,14 @@ static int eth_tx(struct device *port, struct net_buf *buf)
 #ifdef CONFIG_ETHERNET_DEBUG
 	/* Check whether an error occurred transmitting the previous frame. */
 	if (context->tx_desc.err_summary) {
-		ETH_ERR("Error transmitting frame: TDES0 = %08x, TDES1 = %08x.\n",
+		SYS_LOG_ERR("Error transmitting frame: TDES0 = %08x, TDES1 = %08x.\n",
 			context->tx_desc.tdes0, context->tx_desc.tdes1);
 	}
 #endif
 
 	/* Transmit the next frame. */
 	if (uip_len(buf) > UIP_BUFSIZE) {
-		ETH_ERR("Frame too large to TX: %u\n", uip_len(buf));
+		SYS_LOG_ERR("Frame too large to TX: %u\n", uip_len(buf));
 
 		return -1;
 	}
@@ -269,7 +270,7 @@ static int eth_initialize(struct device *port)
 		  /* Place the receiver state machine in the Running state. */
 		  OP_MODE_1_START_RX);
 
-	ETH_INFO("Enabled 100M full-duplex mode.\n");
+	SYS_LOG_INF("Enabled 100M full-duplex mode.");
 
 	net_driver_ethernet_register_tx(eth_net_tx);
 
