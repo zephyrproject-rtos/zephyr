@@ -35,17 +35,10 @@
 #include <drivers/ioapic.h>
 #endif
 
-#ifndef CONFIG_SPI_DEBUG
-#define DBG(...) { ; }
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_SPI_DEBUG */
+#define SYS_LOG_DOMAIN "SPI Intel"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
+#include <misc/sys_log.h>
+
 
 #define DEFINE_MM_REG_READ(__reg, __off, __sz)				\
 	static inline uint32_t read_##__reg(uint32_t addr)		\
@@ -168,7 +161,7 @@ static void pull_data(struct device *dev)
 		}
 	}
 
-	DBG("Pulled: %d (total: %d)\n",	cnt, spi->received);
+	SYS_LOG_DBG("Pulled: %d (total: %d)",	cnt, spi->received);
 }
 
 static void push_data(struct device *dev)
@@ -194,12 +187,12 @@ static void push_data(struct device *dev)
 		}
 
 		cnt++;
-		DBG("Pushing 1 byte (total: %d)\n", cnt);
+		SYS_LOG_DBG("Pushing 1 byte (total: %d)", cnt);
 		write_ssdr(data, info->regs);
 		spi->transmitted++;
 	}
 
-	DBG("Pushed: %d (total: %d)\n", cnt, spi->transmitted);
+	SYS_LOG_DBG("Pushed: %d (total: %d)", cnt, spi->transmitted);
 
 	if (spi->transmitted == spi->trans_len) {
 		clear_bit_sscr1_tie(info->regs);
@@ -214,11 +207,11 @@ static int spi_intel_configure(struct device *dev,
 	uint32_t flags = config->config;
 	uint32_t mode;
 
-	DBG("spi_intel_configure: %p (0x%x), %p\n", dev, info->regs, config);
+	SYS_LOG_DBG("spi_intel_configure: %p (0x%x), %p", dev, info->regs, config);
 
 	/* Check status */
 	if (test_bit_sscr0_sse(info->regs) && test_bit_sssr_bsy(info->regs)) {
-		DBG("spi_intel_configure: Controller is busy\n");
+		SYS_LOG_DBG("spi_intel_configure: Controller is busy");
 		return -EBUSY;
 	}
 
@@ -227,7 +220,7 @@ static int spi_intel_configure(struct device *dev,
 	write_sscr0(spi->sscr0, info->regs);
 	write_sscr1(spi->sscr1, info->regs);
 
-	DBG("spi_intel_configure: WS: %d, DDS_RATE: 0x%x SCR: %d\n",
+	SYS_LOG_DBG("spi_intel_configure: WS: %d, DDS_RATE: 0x%x SCR: %d",
 			SPI_WORD_SIZE_GET(flags),
 			INTEL_SPI_DSS_RATE(config->max_sys_freq),
 			INTEL_SPI_SSCR0_SCR(config->max_sys_freq) >> 8);
@@ -271,12 +264,12 @@ static int spi_intel_transceive(struct device *dev,
 	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 
-	DBG("spi_dw_transceive: %p, %p, %u, %p, %u\n",
+	SYS_LOG_DBG("spi_dw_transceive: %p, %p, %u, %p, %u",
 			dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 
 	/* Check status */
 	if (test_bit_sscr0_sse(info->regs) && test_bit_sssr_bsy(info->regs)) {
-		DBG("spi_intel_transceive: Controller is busy\n");
+		SYS_LOG_DBG("spi_intel_transceive: Controller is busy");
 		return -EBUSY;
 	}
 
@@ -312,7 +305,7 @@ static int spi_intel_suspend(struct device *dev)
 {
 	struct spi_intel_config *info = dev->config->config_info;
 
-	DBG("spi_intel_suspend: %p\n", dev);
+	SYS_LOG_DBG("spi_intel_suspend: %p", dev);
 
 	clear_bit_sscr0_sse(info->regs);
 	irq_disable(info->irq);
@@ -324,7 +317,7 @@ static int spi_intel_resume(struct device *dev)
 {
 	struct spi_intel_config *info = dev->config->config_info;
 
-	DBG("spi_intel_resume: %p\n", dev);
+	SYS_LOG_DBG("spi_intel_resume: %p", dev);
 
 	set_bit_sscr0_sse(info->regs);
 	irq_enable(info->irq);
@@ -339,7 +332,7 @@ void spi_intel_isr(void *arg)
 	uint32_t error = 0;
 	uint32_t status;
 
-	DBG("spi_intel_isr: %p\n", dev);
+	SYS_LOG_DBG("spi_intel_isr: %p", dev);
 
 	status = read_sssr(info->regs);
 
@@ -379,7 +372,7 @@ static inline int spi_intel_setup(struct device *dev)
 	pci_bus_scan_init();
 
 	if (!pci_bus_scan(&info->pci_dev)) {
-		DBG("Could not find device\n");
+		SYS_LOG_DBG("Could not find device");
 		return 0;
 	}
 
@@ -415,7 +408,7 @@ int spi_intel_init(struct device *dev)
 
 	irq_enable(info->irq);
 
-	DBG("SPI Intel Driver initialized on device: %p\n", dev);
+	SYS_LOG_DBG("SPI Intel Driver initialized on device: %p", dev);
 
 	dev->driver_api = &intel_spi_api;
 

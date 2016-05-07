@@ -37,26 +37,22 @@
 #include <drivers/ioapic.h>
 #endif
 
-#ifndef CONFIG_SPI_DEBUG
-#define DBG(...) {; }
-#define DBG_COUNTER_INIT() {; }
-#define DBG_COUNTER_INC() {; }
-#define DBG_COUNTER_RESULT() {; }
-#else
+#define SYS_LOG_DOMAIN "SPI DW"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
+#include <misc/sys_log.h>
+
+#if (CONFIG_SYS_LOG_SPI_LEVEL == 4)
 #define DBG_COUNTER_INIT()	\
 	uint32_t __cnt = 0
 #define DBG_COUNTER_INC()	\
 	(__cnt++)
 #define DBG_COUNTER_RESULT()	\
 	(__cnt)
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
 #else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_SPI_DEBUG */
+#define DBG_COUNTER_INIT() {; }
+#define DBG_COUNTER_INC() {; }
+#define DBG_COUNTER_RESULT() {; }
+#endif
 
 #define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
 		((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / ssi_clk_hz) & 0xFFFF)
@@ -88,7 +84,7 @@ out:
 
 	_spi_control_cs(dev, 0);
 
-	DBG("SPI transaction completed %s error\n",
+	SYS_LOG_DBG("SPI transaction completed %s error",
 	    error ? "with" : "without");
 
 	device_sync_call_complete(&spi->sync);
@@ -144,7 +140,7 @@ static void push_data(struct device *dev)
 		write_txftlr(0, info->regs);
 	}
 
-	DBG("Pushed: %d\n", DBG_COUNTER_RESULT());
+	SYS_LOG_DBG("Pushed: %d", DBG_COUNTER_RESULT());
 }
 
 static void pull_data(struct device *dev)
@@ -186,7 +182,7 @@ static void pull_data(struct device *dev)
 		write_rxftlr(spi->rx_buf_len - 1, info->regs);
 	}
 
-	DBG("Pulled: %d\n", DBG_COUNTER_RESULT());
+	SYS_LOG_DBG("Pulled: %d", DBG_COUNTER_RESULT());
 }
 
 static inline bool _spi_dw_is_controller_ready(struct device *dev)
@@ -209,11 +205,11 @@ static int spi_dw_configure(struct device *dev,
 	uint32_t ctrlr0 = 0;
 	uint32_t mode;
 
-	DBG("%s: %p (0x%x), %p\n", __func__, dev, info->regs, config);
+	SYS_LOG_DBG("%s: %p (0x%x), %p", __func__, dev, info->regs, config);
 
 	/* Check status */
 	if (!_spi_dw_is_controller_ready(dev)) {
-		DBG("%s: Controller is busy\n", __func__);
+		SYS_LOG_DBG("%s: Controller is busy", __func__);
 		return -EBUSY;
 	}
 
@@ -263,7 +259,7 @@ static int spi_dw_slave_select(struct device *dev, uint32_t slave)
 {
 	struct spi_dw_data *spi = dev->driver_data;
 
-	DBG("%s: %p %d\n", __func__, dev, slave);
+	SYS_LOG_DBG("%s: %p %d", __func__, dev, slave);
 
 	if (slave == 0 || slave > 4) {
 		return -EINVAL;
@@ -282,12 +278,12 @@ static int spi_dw_transceive(struct device *dev,
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t rx_thsld = DW_SPI_RXFTLR_DFLT;
 
-	DBG("%s: %p, %p, %u, %p, %u\n",
+	SYS_LOG_DBG("%s: %p, %p, %u, %p, %u",
 	    __func__, dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 
 	/* Check status */
 	if (!_spi_dw_is_controller_ready(dev)) {
-		DBG("%s: Controller is busy\n", __func__);
+		SYS_LOG_DBG("%s: Controller is busy", __func__);
 		return -EBUSY;
 	}
 
@@ -333,7 +329,7 @@ static int spi_dw_transceive(struct device *dev,
 
 static int spi_dw_suspend(struct device *dev)
 {
-	DBG("%s: %p\n", __func__, dev);
+	SYS_LOG_DBG("device %p", dev);
 
 	_clock_off(dev);
 
@@ -342,7 +338,7 @@ static int spi_dw_suspend(struct device *dev)
 
 static int spi_dw_resume(struct device *dev)
 {
-	DBG("%se: %p\n", __func__, dev);
+	SYS_LOG_DBG("%p", dev);
 
 	_clock_on(dev);
 
@@ -358,7 +354,7 @@ void spi_dw_isr(void *arg)
 
 	int_status = read_isr(info->regs);
 
-	DBG("SPI int_status 0x%x - (tx: %d, rx: %d)\n",
+	SYS_LOG_DBG("SPI int_status 0x%x - (tx: %d, rx: %d)",
 	    int_status, read_txflr(info->regs), read_rxflr(info->regs));
 
 	if (int_status & DW_SPI_ISR_ERRORS_MASK) {
@@ -413,7 +409,7 @@ int spi_dw_init(struct device *dev)
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 	clear_bit_ssienr(info->regs);
 
-	DBG("Designware SPI driver initialized on device: %p\n", dev);
+	SYS_LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 
 	return 0;
 }
