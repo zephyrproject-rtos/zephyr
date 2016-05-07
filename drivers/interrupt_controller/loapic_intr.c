@@ -90,12 +90,14 @@
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "board.h"
 #include <toolchain.h>
 #include <sections.h>
 #include <drivers/loapic.h> /* public API declarations */
 #include <init.h>
+#include <drivers/sysapic.h>
 
 /* IA32_APIC_BASE MSR Bits */
 
@@ -186,6 +188,14 @@
 #else
 #define LOAPIC_SPURIOUS_VECTOR_ID CONFIG_LOAPIC_SPURIOUS_VECTOR_ID
 #endif
+
+#define LOPIC_SSPND_BITS_PER_IRQ  1  /* Just the one for enable disable*/
+#define LOPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOPIC_SSPND_BITS_PER_IRQ), 32))
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#include <power.h>
+uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
+#endif
+
 
 /**
  *
@@ -444,7 +454,82 @@ int _loapic_isr_vector_get(void)
 	return 0;
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static int loapic_suspend(struct device *port, int pm_policy)
+{
+	volatile int *pLvt; /* pointer to local vector table */
+	int loapic_irq;
+
+	ARG_UNUSED(port);
+
+	if (pm_policy != SYS_PM_DEEP_SLEEP) {
+		return 0;
+	}
+
+	memset(loapic_suspend_buf, 0, (LOPIC_SUSPEND_BITS_REQD >> 3));
+
+	for (loapic_irq = 0; loapic_irq < LOAPIC_IRQ_COUNT; loapic_irq++) {
+
+		if (_irq_to_interrupt_vector[LOAPIC_IRQ_BASE + loapic_irq]) {
+
+			/* Since vector numbers are already present in RAM/ROM,
+			 * We save only the mask bits here.
+			 */
+			pLvt = (volatile int *)
+				(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER +
+				(loapic_irq * 0x10));
+
+			if ((*pLvt & LOAPIC_LVT_MASKED) == 0) {
+				sys_bitfield_set_bit((mem_addr_t)loapic_suspend_buf,
+					loapic_irq);
+			}
+		}
+	}
+	return 0;
+}
+
+int loapic_resume(struct device *port, int pm_policy)
+{
+	int loapic_irq;
+
+	ARG_UNUSED(port);
+
+	if (pm_policy != SYS_PM_DEEP_SLEEP) {
+		return 0;
+	}
+
+	/* Assuming all loapic device registers lose their state, the call to
+	 * _loapic_init(), should bring all the registers to a sane state.
+	 */
+	_loapic_init(NULL);
+
+	for (loapic_irq = 0; loapic_irq < LOAPIC_IRQ_COUNT; loapic_irq++) {
+
+		if (_irq_to_interrupt_vector[LOAPIC_IRQ_BASE + loapic_irq]) {
+			/* Configure vector and enable the required ones*/
+			_loapic_int_vec_set(loapic_irq,
+				_irq_to_interrupt_vector[LOAPIC_IRQ_BASE + loapic_irq]);
+
+			if (sys_bitfield_test_bit((mem_addr_t) loapic_suspend_buf,
+							loapic_irq)) {
+				_loapic_irq_enable(loapic_irq);
+			}
+		}
+	}
+
+	return 0;
+}
+
+struct device_pm_ops loapic_pm_ops = {
+		.suspend = loapic_suspend,
+		.resume = loapic_resume
+};
+SYS_INIT_PM("loapic", _loapic_init, &loapic_pm_ops, PRIMARY,
+	    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#else
 SYS_INIT(_loapic_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR
 extern void _loapic_spurious_handler(void);
