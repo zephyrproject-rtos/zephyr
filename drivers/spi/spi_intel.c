@@ -444,15 +444,15 @@ void spi_config_0_irq(void);
 struct spi_intel_data spi_intel_data_port_0;
 
 struct spi_intel_config spi_intel_config_0 = {
-	.regs = CONFIG_SPI_INTEL_PORT_0_REGS,
-	.irq = CONFIG_SPI_INTEL_PORT_0_IRQ,
+	.regs = SPI_INTEL_PORT_0_REGS,
+	.irq = SPI_INTEL_PORT_0_IRQ,
 #if CONFIG_PCI
-	.pci_dev.class_type = CONFIG_SPI_INTEL_CLASS,
-	.pci_dev.bus = CONFIG_SPI_INTEL_PORT_0_BUS,
-	.pci_dev.dev = CONFIG_SPI_INTEL_PORT_0_DEV,
-	.pci_dev.vendor_id = CONFIG_SPI_INTEL_VENDOR_ID,
-	.pci_dev.device_id = CONFIG_SPI_INTEL_DEVICE_ID,
-	.pci_dev.function = CONFIG_SPI_INTEL_PORT_0_FUNCTION,
+	.pci_dev.class_type = SPI_INTEL_CLASS,
+	.pci_dev.bus = SPI_INTEL_PORT_0_BUS,
+	.pci_dev.dev = SPI_INTEL_PORT_0_DEV,
+	.pci_dev.vendor_id = SPI_INTEL_VENDOR_ID,
+	.pci_dev.device_id = SPI_INTEL_DEVICE_ID,
+	.pci_dev.function = SPI_INTEL_PORT_0_FUNCTION,
 #endif
 #ifdef CONFIG_SPI_INTEL_CS_GPIO
 	.cs_gpio_name = CONFIG_SPI_INTEL_PORT_0_CS_GPIO_PORT,
@@ -468,7 +468,7 @@ DEVICE_INIT(spi_intel_port_0, CONFIG_SPI_INTEL_PORT_0_DRV_NAME, spi_intel_init,
 
 void spi_config_0_irq(void)
 {
-	IRQ_CONNECT(CONFIG_SPI_INTEL_PORT_0_IRQ, CONFIG_SPI_INTEL_PORT_0_PRI,
+	IRQ_CONNECT(SPI_INTEL_PORT_0_IRQ, CONFIG_SPI_INTEL_PORT_0_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_0),
 		    SPI_INTEL_IRQ_FLAGS);
 }
@@ -481,15 +481,15 @@ void spi_config_1_irq(void);
 struct spi_intel_data spi_intel_data_port_1;
 
 struct spi_intel_config spi_intel_config_1 = {
-	.regs = CONFIG_SPI_INTEL_PORT_1_REGS,
-	.irq = CONFIG_SPI_INTEL_PORT_1_IRQ,
+	.regs = SPI_INTEL_PORT_1_REGS,
+	.irq = SPI_INTEL_PORT_1_IRQ,
 #if CONFIG_PCI
-	.pci_dev.class_type = CONFIG_SPI_INTEL_CLASS,
-	.pci_dev.bus = CONFIG_SPI_INTEL_PORT_1_BUS,
-	.pci_dev.dev = CONFIG_SPI_INTEL_PORT_1_DEV,
-	.pci_dev.function = CONFIG_SPI_INTEL_PORT_1_FUNCTION,
-	.pci_dev.vendor_id = CONFIG_SPI_INTEL_VENDOR_ID,
-	.pci_dev.device_id = CONFIG_SPI_INTEL_DEVICE_ID,
+	.pci_dev.class_type = SPI_INTEL_CLASS,
+	.pci_dev.bus = SPI_INTEL_PORT_1_BUS,
+	.pci_dev.dev = SPI_INTEL_PORT_1_DEV,
+	.pci_dev.function = SPI_INTEL_PORT_1_FUNCTION,
+	.pci_dev.vendor_id = SPI_INTEL_VENDOR_ID,
+	.pci_dev.device_id = SPI_INTEL_DEVICE_ID,
 #endif
 #ifdef CONFIG_SPI_INTEL_CS_GPIO
 	.cs_gpio_name = CONFIG_SPI_INTEL_PORT_1_CS_GPIO_PORT,
@@ -505,7 +505,7 @@ DEVICE_INIT(spi_intel_port_1, CONFIG_SPI_INTEL_PORT_1_DRV_NAME, spi_intel_init,
 
 void spi_config_1_irq(void)
 {
-	IRQ_CONNECT(CONFIG_SPI_INTEL_PORT_1_IRQ, CONFIG_SPI_INTEL_PORT_1_PRI,
+	IRQ_CONNECT(SPI_INTEL_PORT_1_IRQ, CONFIG_SPI_INTEL_PORT_1_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_1),
 		    SPI_INTEL_IRQ_FLAGS);
 }

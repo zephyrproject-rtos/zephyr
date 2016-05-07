@@ -54,20 +54,6 @@ config SPI_INTEL_LEVEL_LOW
 	  "Intel SPI uses level low interrupt"
 endchoice
 
-config	SPI_INTEL_VENDOR_ID
-	hex "PCI Vendor ID"
-	depends on SPI_INTEL && PCI
-	default 0x8086
-
-config	SPI_INTEL_DEVICE_ID
-	hex "PCI Device ID"
-	depends on SPI_INTEL && PCI
-	default 0x935
-
-config	SPI_INTEL_CLASS
-	hex "PCI class"
-	depends on SPI_INTEL && PCI
-	default 0x0C
 
 config  SPI_INTEL_CS_GPIO
 	bool "SPI port CS pin is controlled via a GPIO port"
@@ -87,28 +73,6 @@ config  SPI_INTEL_PORT_0_DRV_NAME
 	prompt "Intel SPI port 0 device name"
 	depends on SPI_INTEL_PORT_0
 	default "SPI_0"
-
-config	SPI_INTEL_PORT_0_BUS
-	int "Port 0 PCI Bus"
-	depends on SPI_INTEL_PORT_0 && PCI
-
-config  SPI_INTEL_PORT_0_DEV
-	int "Port 0 PCI Dev"
-	depends on SPI_INTEL_PORT_0 && PCI
-
-config  SPI_INTEL_PORT_0_FUNCTION
-	int "Port 0 PCI function"
-	depends on SPI_INTEL_PORT_0 && PCI
-
-config  SPI_INTEL_PORT_0_REGS
-	hex
-	prompt "Port 0 registers address"
-	depends on SPI_INTEL_PORT_0
-
-config  SPI_INTEL_PORT_0_IRQ
-	int
-	prompt "Port 0 interrupt"
-	depends on SPI_INTEL_PORT_0
 
 config  SPI_INTEL_PORT_0_PRI
 	int
@@ -139,28 +103,6 @@ config  SPI_INTEL_PORT_1_DRV_NAME
 	prompt "Intel SPI port 1 device name"
 	depends on SPI_INTEL_PORT_1
 	default "SPI_1"
-
-config	SPI_INTEL_PORT_1_BUS
-	int "Port 1 PCI Bus"
-	depends on SPI_INTEL_PORT_1 && PCI
-
-config  SPI_INTEL_PORT_1_DEV
-	int "Port 1 PCI Dev"
-	depends on SPI_INTEL_PORT_1 && PCI
-
-config  SPI_INTEL_PORT_1_FUNCTION
-	int "Port 1 PCI function"
-	depends on SPI_INTEL_PORT_1 && PCI
-
-config  SPI_INTEL_PORT_1_REGS
-	hex
-	prompt "Port 1 registers address"
-	depends on SPI_INTEL_PORT_1
-
-config  SPI_INTEL_PORT_1_IRQ
-	int
-	prompt "Port 1 interrupt"
-	depends on SPI_INTEL_PORT_1
 
 config  SPI_INTEL_PORT_1_PRI
 	int

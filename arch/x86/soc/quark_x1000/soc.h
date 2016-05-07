@@ -51,6 +51,26 @@
 #define ETH_DW_0_PCI_FUNCTION			6
 #define ETH_DW_0_PCI_BAR			0
 
+
+/*
+ * SPI
+ */
+#define SPI_INTEL_VENDOR_ID			0x8086
+#define SPI_INTEL_DEVICE_ID			0x935
+#define SPI_INTEL_CLASS				0x0C
+
+#define SPI_INTEL_PORT_0_REGS			0x90009000
+#define SPI_INTEL_PORT_0_IRQ			16
+#define SPI_INTEL_PORT_0_BUS			0
+#define SPI_INTEL_PORT_0_DEV			21
+#define SPI_INTEL_PORT_0_FUNCTION		0
+
+#define SPI_INTEL_PORT_1_REGS			0x90008000
+#define SPI_INTEL_PORT_1_IRQ			17
+#define SPI_INTEL_PORT_1_BUS			0
+#define SPI_INTEL_PORT_1_DEV			21
+#define SPI_INTEL_PORT_1_FUNCTION		1
+
 /*
  * GPIO
  */
