@@ -150,4 +150,7 @@ config SPI_INIT_PRIORITY
 config PINMUX_INIT_PRIORITY
 	default 80 if PINMUX
 
+config ADC_INIT_PRIORITY
+	default 95
+
 endif # BOARD_GALILEO

@@ -33,6 +33,22 @@ config  ADC_DEBUG
 	help
 	Enable debug output for ADC drivers
 
+config ADC_INIT_PRIORITY
+	int
+	default 80
+	prompt "Init priority"
+	help
+	  ADC Device driver initialization priority.
+
+config  ADC_0_NAME
+	string "ADC Driver's name"
+	default "ADC_0"
+
+config ADC_0_IRQ_PRI
+        int
+        prompt "ADC interrupt priority"
+        default 2
+
 menuconfig  ADC_TI_ADC108S102
 	bool "TI adc108s102 chip driver"
 	depends on ADC
@@ -43,21 +59,6 @@ menuconfig  ADC_TI_ADC108S102
 	Enable support for TI's ADC chip adc108s102 driver.
 
 if ADC_TI_ADC108S102
-
-config ADC_TI_ADC108S102_INIT_PRIORITY
-	int
-	depends on ADC_TI_ADC108S102
-	default 95
-	prompt "Init priority"
-	help
-	  Device driver initialization priority.
-	  Device is connected to SPI bus, it has to
-	  be initialized after SPI driver.
-
-config  ADC_TI_ADC108S102_DRV_NAME
-	string "Driver's name"
-	depends on ADC_TI_ADC108S102
-	default "ADC_0"
 
 config  ADC_TI_ADC108S102_SPI_PORT_NAME
 	string "Master SPI port name"
@@ -98,28 +99,6 @@ menuconfig ADC_DW
 
 if ADC_DW
 
-config ADC_DW_DRV_NAME
-	string "Select a name to lookup the device"
-	default "ADC_0"
-	depends on ADC_DW
-
-config ADC_DW_RX_IRQ
-        int
-        prompt "ADC reception interrupt"
-        depends on ADC_DW
-        default 19
-
-config ADC_DW_ERR_IRQ
-        int
-        prompt "ADC error interrupt"
-        depends on ADC_DW
-        default 18
-
-config ADC_DW_IRQ_PRI
-        int
-        prompt "ADC interrupt priority"
-        depends on ADC_DW
-        default 2
 
 config ADC_DW_CALIBRATION
 	bool "Enable Calibration"
@@ -222,17 +201,6 @@ menuconfig ADC_QMSI
 	Enable the driver implementation of the QMSI ADC IP.
 
 if ADC_QMSI
-
-config ADC_QMSI_0_DRV_NAME
-	string "Select a name to lookup the device"
-	default "ADC_0"
-	depends on ADC_QMSI
-
-config ADC_QMSI_0_IRQ_PRI
-	int
-	prompt "ADC interrupt priority"
-	depends on ADC_QMSI
-	default 2
 
 choice
 	prompt "Capturing Mode"

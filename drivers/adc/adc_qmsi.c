@@ -268,7 +268,7 @@ int adc_qmsi_init(struct device *dev)
 
 struct adc_info adc_info_dev;
 
-DEVICE_AND_API_INIT(adc_qmsi, CONFIG_ADC_QMSI_0_DRV_NAME, &adc_qmsi_init,
+DEVICE_AND_API_INIT(adc_qmsi, CONFIG_ADC_0_NAME, &adc_qmsi_init,
 		    &adc_info_dev, NULL,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    (void *)&api_funcs);
