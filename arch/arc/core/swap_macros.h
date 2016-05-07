@@ -37,8 +37,8 @@ extern "C" {
 
 	/* save regs on stack */
 	st_s r13, [sp, __tCalleeSaved_r13_OFFSET]
-	st r14, [sp, __tCalleeSaved_r14_OFFSET]
-	st r15, [sp, __tCalleeSaved_r15_OFFSET]
+	st_s r14, [sp, __tCalleeSaved_r14_OFFSET]
+	st_s r15, [sp, __tCalleeSaved_r15_OFFSET]
 	st r16, [sp, __tCalleeSaved_r16_OFFSET]
 	st r17, [sp, __tCalleeSaved_r17_OFFSET]
 	st r18, [sp, __tCalleeSaved_r18_OFFSET]
@@ -63,8 +63,8 @@ extern "C" {
 	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 
 	ld_s r13, [sp, __tCalleeSaved_r13_OFFSET]
-	ld r14, [sp, __tCalleeSaved_r14_OFFSET]
-	ld r15, [sp, __tCalleeSaved_r15_OFFSET]
+	ld_s r14, [sp, __tCalleeSaved_r14_OFFSET]
+	ld_s r15, [sp, __tCalleeSaved_r15_OFFSET]
 	ld r16, [sp, __tCalleeSaved_r16_OFFSET]
 	ld r17, [sp, __tCalleeSaved_r17_OFFSET]
 	ld r18, [sp, __tCalleeSaved_r18_OFFSET]
@@ -112,9 +112,9 @@ extern "C" {
 
 	mov r0, lp_count
 	st_s r0, [sp, __tISF_lp_count_OFFSET]
-	lr r0, [_ARC_V2_LP_START]
-	st_s r0, [sp, __tISF_lp_start_OFFSET]
+	lr r1, [_ARC_V2_LP_START]
 	lr r0, [_ARC_V2_LP_END]
+	st_s r1, [sp, __tISF_lp_start_OFFSET]
 	st_s r0, [sp, __tISF_lp_end_OFFSET]
 
 .endm
@@ -129,9 +129,9 @@ extern "C" {
 
 	ld_s r0, [sp, __tISF_lp_count_OFFSET]
 	mov lp_count, r0
-	ld_s r0, [sp, __tISF_lp_start_OFFSET]
-	sr r0, [_ARC_V2_LP_START]
+	ld_s r1, [sp, __tISF_lp_start_OFFSET]
 	ld_s r0, [sp, __tISF_lp_end_OFFSET]
+	sr r1, [_ARC_V2_LP_START]
 	sr r0, [_ARC_V2_LP_END]
 
 	ld_s r13, [sp, __tISF_r13_OFFSET]
