@@ -98,7 +98,7 @@ if RTC
 config RTC_QMSI
 	def_bool y
 
-config RTC_QMSI_IRQ_PRI
+config RTC_0_IRQ_PRI
 	default 0
 
 endif # RTC

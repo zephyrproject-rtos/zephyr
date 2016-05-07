@@ -81,7 +81,7 @@ static struct rtc_driver_api api = {
 
 static int rtc_qmsi_init(struct device *dev)
 {
-	IRQ_CONNECT(QM_IRQ_RTC_0, CONFIG_RTC_QMSI_IRQ_PRI, qm_rtc_isr_0, 0,
+	IRQ_CONNECT(QM_IRQ_RTC_0, CONFIG_RTC_0_IRQ_PRI, qm_rtc_isr_0, 0,
 		    IOAPIC_EDGE | IOAPIC_HIGH);
 
 	/* Unmask RTC interrupt */
@@ -93,7 +93,7 @@ static int rtc_qmsi_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(rtc, CONFIG_RTC_DRV_NAME, &rtc_qmsi_init, NULL, NULL,
+DEVICE_AND_API_INIT(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init, NULL, NULL,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&api);
 

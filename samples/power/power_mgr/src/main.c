@@ -55,7 +55,7 @@ void main(void)
 	config.alarm_val = RTC_ALARM_SECOND;
 	config.cb_fn = NULL;
 
-	rtc_dev = device_get_binding(CONFIG_RTC_DRV_NAME);
+	rtc_dev = device_get_binding("RTC_0");
 	rtc_enable(rtc_dev);
 	rtc_set_config(rtc_dev, &config);
 
