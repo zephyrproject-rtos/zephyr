@@ -122,39 +122,6 @@ config  SPI_DW_PORT_0_DRV_NAME
 	depends on SPI_DW_PORT_0
 	default "SPI_0"
 
-config  SPI_DW_PORT_0_REGS
-	hex
-	prompt "Port 0 registers address"
-	depends on SPI_DW_PORT_0
-
-config  SPI_DW_PORT_0_IRQ
-	int "Port 0 interrupt"
-	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SINGLE_LINE
-	help
-	  Interrupt number dedicated to the controller. Valid if only the
-	  controller routes all interrupt through a unique line.
-
-config SPI_DW_PORT_0_ERROR_IRQ
-	int "Port 0 ERROR Interrupt"
-	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	help
-	  Interrupt number dedicated to the ERROR interrupt only. RX and TX
-	  interrupt numbers need to be set as well.
-
-config SPI_DW_PORT_0_RX_IRQ
-	int "Port 0 RX Interrupt"
-	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	help
-	  Interrupt number dedicated to the RX interrupt only. TX and ERROR
-	  interrupt numbers need to be set as well.
-
-config SPI_DW_PORT_0_TX_IRQ
-	int "Port 0 TX Interrupt"
-	depends on SPI_DW_PORT_0 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	help
-	  Interrupt number dedicated to the TX interrupt only. RX and ERROR
-	  interrupt numbers need to be set as well.
-
 config  SPI_DW_PORT_0_PRI
 	int
 	prompt "Port 0 interrupt priority"
@@ -188,39 +155,6 @@ config  SPI_DW_PORT_1_DRV_NAME
 	prompt "Designware SPI port 1 device name"
 	depends on SPI_DW_PORT_1
 	default "SPI_1"
-
-config  SPI_DW_PORT_1_REGS
-	hex
-	prompt "Port 1 registers address"
-	depends on SPI_DW_PORT_1
-
-config  SPI_DW_PORT_1_IRQ
-	int "Port 1 interrupt"
-	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SINGLE_LINE
-	help
-	  Interrupt number dedicated to the controller. Valid if only the
-	  controller routes all interrupt through a unique line.
-
-config SPI_DW_PORT_1_ERROR_IRQ
-	int "Port 1 ERROR Interrupt"
-	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	help
-	  Interrupt number dedicated to the ERROR interrupt only. RX and TX
-	  interrupt numbers need to be set as well.
-
-config SPI_DW_PORT_1_RX_IRQ
-	int "Port 1 RX Interrupt"
-	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	help
-	  Interrupt number dedicated to the RX interrupt only. TX and ERROR
-	  interrupt numbers need to be set as well.
-
-config SPI_DW_PORT_1_TX_IRQ
-	int "Port 1 TX Interrupt"
-	depends on SPI_DW_PORT_1 && SPI_DW_INTERRUPT_SEPARATED_LINES
-	help
-	  Interrupt number dedicated to the TX interrupt only. RX and ERROR
-	  interrupt numbers need to be set as well.
 
 config  SPI_DW_PORT_1_PRI
 	int

@@ -189,14 +189,6 @@ if SPI_DW_PORT_0
 
 config SPI_DW_PORT_0_PRI
 	default 1
-config SPI_DW_PORT_0_REGS
-	default 0x80010000
-config SPI_DW_PORT_0_ERROR_IRQ
-	default 30
-config SPI_DW_PORT_0_RX_IRQ
-	default 31
-config SPI_DW_PORT_0_TX_IRQ
-	default 32
 
 endif # SPI_DW_PORT_0
 
@@ -207,14 +199,6 @@ if SPI_DW_PORT_1
 
 config SPI_DW_PORT_1_PRI
 	default 1
-config SPI_DW_PORT_1_REGS
-	default 0x80010100
-config SPI_DW_PORT_1_ERROR_IRQ
-	default 33
-config SPI_DW_PORT_1_RX_IRQ
-	default 34
-config SPI_DW_PORT_1_TX_IRQ
-	default 35
 
 endif # SPI_DW_PORT_1
 
