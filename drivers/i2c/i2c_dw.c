@@ -746,18 +746,18 @@ int i2c_dw_initialize(struct device *port)
 }
 
 /* system bindings */
-#if CONFIG_I2C_DW_0
+#if CONFIG_I2C_0
 void i2c_config_0(struct device *port);
 
 struct i2c_dw_rom_config i2c_config_dw_0 = {
 	.base_address = I2C_DW_0_BASE_ADDR,
-#ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
+#ifdef CONFIG_I2C_0_IRQ_DIRECT
 	.irq_num = I2C_DW_0_IRQ,
 #endif
 	.config_func = i2c_config_0,
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
-	.shared_irq_dev_name = CONFIG_I2C_DW_0_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = CONFIG_I2C_0_IRQ_SHARED_NAME,
 #endif
 
 #if CONFIG_PCI
@@ -772,10 +772,10 @@ struct i2c_dw_rom_config i2c_config_dw_0 = {
 };
 
 struct i2c_dw_dev_config i2c_0_runtime = {
-	.app_config.raw = CONFIG_I2C_DW_0_DEFAULT_CFG,
+	.app_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
 };
 
-DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_DW_0_NAME, &i2c_dw_initialize,
+DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_0_NAME, &i2c_dw_initialize,
 		    &i2c_0_runtime, &i2c_config_dw_0,
 		    SECONDARY, CONFIG_I2C_INIT_PRIORITY,
 		    &funcs);
@@ -785,25 +785,25 @@ void i2c_config_0(struct device *port)
 	struct i2c_dw_rom_config * const config = port->config->config_info;
 	struct device *shared_irq_dev;
 
-#if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
+#if defined(CONFIG_I2C_0_IRQ_DIRECT)
 	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONNECT(I2C_DW_0_IRQ, CONFIG_I2C_DW_0_IRQ_PRI,
+	IRQ_CONNECT(I2C_DW_0_IRQ, CONFIG_I2C_0_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_0), I2C_DW_IRQ_FLAGS);
 	irq_enable(config->irq_num);
-#elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
+#elif defined(CONFIG_I2C_0_IRQ_SHARED)
 	ARG_UNUSED(config);
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
 	shared_irq_isr_register(shared_irq_dev, (isr_t)i2c_dw_isr, port);
 	shared_irq_enable(shared_irq_dev, port);
 #endif
 }
-#endif /* CONFIG_I2C_DW_0 */
+#endif /* CONFIG_I2C_0 */
 
 
 /*
  * Adding in I2C1
  */
-#if CONFIG_I2C_DW_1
+#if CONFIG_I2C_1
 void i2c_config_1(struct device *port);
 
 struct i2c_dw_rom_config i2c_config_dw_1 = {
@@ -823,10 +823,10 @@ struct i2c_dw_rom_config i2c_config_dw_1 = {
 };
 
 struct i2c_dw_dev_config i2c_1_runtime = {
-	.app_config.raw = CONFIG_I2C_DW_1_DEFAULT_CFG,
+	.app_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
 };
 
-DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_DW_1_NAME, &i2c_dw_initialize,
+DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_1_NAME, &i2c_dw_initialize,
 		    &i2c_1_runtime, &i2c_config_dw_1,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
@@ -835,9 +835,9 @@ void i2c_config_1(struct device *port)
 {
 	struct i2c_dw_rom_config * const config = port->config->config_info;
 
-	IRQ_CONNECT(I2C_DW_1_IRQ, CONFIG_I2C_DW_1_IRQ_PRI,
+	IRQ_CONNECT(I2C_DW_1_IRQ, CONFIG_I2C_1_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_1), I2C_DW_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 }
 
-#endif /* CONFIG_I2C_DW_1 */
+#endif /* CONFIG_I2C_1 */

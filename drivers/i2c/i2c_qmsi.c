@@ -41,33 +41,33 @@ struct i2c_qmsi_driver_data {
 
 static int i2c_qmsi_init(struct device *dev);
 
-#ifdef CONFIG_I2C_QMSI_0
+#ifdef CONFIG_I2C_0
 
 static struct i2c_qmsi_driver_data driver_data_0;
 
 static struct i2c_qmsi_config_info config_info_0 = {
 	.instance = QM_I2C_0,
-	.default_cfg.raw = CONFIG_I2C_QMSI_0_DEFAULT_CFG,
+	.default_cfg.raw = CONFIG_I2C_0_DEFAULT_CFG,
 };
 
-DEVICE_INIT(i2c_0, CONFIG_I2C_QMSI_0_NAME, i2c_qmsi_init, &driver_data_0,
+DEVICE_INIT(i2c_0, CONFIG_I2C_0_NAME, i2c_qmsi_init, &driver_data_0,
 	    &config_info_0, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-#endif /* CONFIG_I2C_QMSI_0 */
+#endif /* CONFIG_I2C_0 */
 
-#ifdef CONFIG_I2C_QMSI_1
+#ifdef CONFIG_I2C_1
 
 static struct i2c_qmsi_driver_data driver_data_1;
 
 static struct i2c_qmsi_config_info config_info_1 = {
 	.instance = QM_I2C_1,
-	.default_cfg.raw = CONFIG_I2C_QMSI_1_DEFAULT_CFG,
+	.default_cfg.raw = CONFIG_I2C_1_DEFAULT_CFG,
 };
 
-DEVICE_INIT(i2c_1, CONFIG_I2C_QMSI_1_NAME, i2c_qmsi_init, &driver_data_1,
+DEVICE_INIT(i2c_1, CONFIG_I2C_1_NAME, i2c_qmsi_init, &driver_data_1,
 	    &config_info_1, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-#endif /* CONFIG_I2C_QMSI_1 */
+#endif /* CONFIG_I2C_1 */
 
 static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 {
@@ -111,12 +111,12 @@ static void transfer_complete(uint32_t id, qm_rc_t status)
 	struct i2c_qmsi_driver_data *driver_data;
 
 	switch (id) {
-#ifdef CONFIG_I2C_QMSI_0
+#ifdef CONFIG_I2C_0
 	case QM_I2C_0:
 		dev = DEVICE_GET(i2c_0);
 		break;
 #endif
-#ifdef CONFIG_I2C_QMSI_1
+#ifdef CONFIG_I2C_1
 	case QM_I2C_1:
 		dev = DEVICE_GET(i2c_1);
 		break;
@@ -218,7 +218,7 @@ static int i2c_qmsi_init(struct device *dev)
 		 * to Lakemont core.
 		 */
 		IRQ_CONNECT(QM_IRQ_I2C_0,
-			    CONFIG_I2C_QMSI_0_IRQ_PRI, qm_i2c_0_isr, NULL,
+			    CONFIG_I2C_0_IRQ_PRI, qm_i2c_0_isr, NULL,
 			    (IOAPIC_LEVEL | IOAPIC_HIGH));
 		irq_enable(QM_IRQ_I2C_0);
 		QM_SCSS_INT->int_i2c_mst_0_mask &= ~BIT(0);
@@ -226,17 +226,17 @@ static int i2c_qmsi_init(struct device *dev)
 		clk_periph_enable(CLK_PERIPH_I2C_M0_REGISTER | CLK_PERIPH_CLK);
 		break;
 
-#ifdef CONFIG_I2C_QMSI_1
+#ifdef CONFIG_I2C_1
 	case QM_I2C_1:
 		IRQ_CONNECT(QM_IRQ_I2C_1,
-			    CONFIG_I2C_QMSI_1_IRQ_PRI, qm_i2c_1_isr, NULL,
+			    CONFIG_I2C_1_IRQ_PRI, qm_i2c_1_isr, NULL,
 			    (IOAPIC_LEVEL | IOAPIC_HIGH));
 		irq_enable(QM_IRQ_I2C_1);
 		QM_SCSS_INT->int_i2c_mst_1_mask &= ~BIT(0);
 
 		clk_periph_enable(CLK_PERIPH_I2C_M1_REGISTER | CLK_PERIPH_CLK);
 		break;
-#endif /* CONFIG_I2C_QMSI_1 */
+#endif /* CONFIG_I2C_1 */
 
 	default:
 		return -EIO;

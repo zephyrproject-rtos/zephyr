@@ -632,7 +632,7 @@ static int i2c_sam3_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_I2C_ATMEL_SAM3_0
+#ifdef CONFIG_I2C_0
 
 static void config_func_0(struct device *port);
 
@@ -642,10 +642,10 @@ static struct i2c_sam3_dev_config dev_config_0 = {
 };
 
 static struct i2c_sam3_dev_data dev_data_0 = {
-	.dev_config.raw = CONFIG_I2C_ATMEL_SAM3_0_DEFAULT_CFG,
+	.dev_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
 };
 
-DEVICE_AND_API_INIT(i2c_sam3_0, CONFIG_I2C_ATMEL_SAM3_0_NAME, &i2c_sam3_init,
+DEVICE_AND_API_INIT(i2c_sam3_0, CONFIG_I2C_0_NAME, &i2c_sam3_init,
 		    &dev_data_0, &dev_config_0,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &api_funcs);
@@ -655,14 +655,14 @@ static void config_func_0(struct device *dev)
 	/* Enable clock for TWI0 controller */
 	__PMC->pcer0 = (1 << PID_TWI0);
 
-	IRQ_CONNECT(IRQ_TWI0, CONFIG_I2C_ATMEL_SAM3_0_IRQ_PRI,
+	IRQ_CONNECT(IRQ_TWI0, CONFIG_I2C_0_IRQ_PRI,
 		    i2c_sam3_isr, DEVICE_GET(i2c_sam3_0), 0);
 	irq_enable(IRQ_TWI0);
 }
 
-#endif /* CONFIG_I2C_ATMEL_SAM3_0 */
+#endif /* CONFIG_I2C_0 */
 
-#ifdef CONFIG_I2C_ATMEL_SAM3_1
+#ifdef CONFIG_I2C_1
 
 static void config_func_1(struct device *port);
 
@@ -672,10 +672,10 @@ static struct i2c_sam3_dev_config dev_config_1 = {
 };
 
 static struct i2c_sam3_dev_data dev_data_1 = {
-	.dev_config.raw = CONFIG_I2C_ATMEL_SAM3_1_DEFAULT_CFG,
+	.dev_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
 };
 
-DEVICE_AND_API_INIT(i2c_sam3_1, CONFIG_I2C_ATMEL_SAM3_1_NAME, &i2c_sam3_init,
+DEVICE_AND_API_INIT(i2c_sam3_1, CONFIG_I2C_1_NAME, &i2c_sam3_init,
 		    &dev_data_1, &dev_config_1,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &api_funcs);
@@ -685,9 +685,9 @@ static void config_func_1(struct device *dev)
 	/* Enable clock for TWI0 controller */
 	__PMC->pcer0 = (1 << PID_TWI1);
 
-	IRQ_CONNECT(IRQ_TWI1, CONFIG_I2C_ATMEL_SAM3_1_IRQ_PRI,
+	IRQ_CONNECT(IRQ_TWI1, CONFIG_I2C_1_IRQ_PRI,
 		    i2c_sam3_isr, DEVICE_GET(i2c_sam3_1), 0);
 	irq_enable(IRQ_TWI1);
 }
 
-#endif /* CONFIG_I2C_ATMEL_SAM3_1 */
+#endif /* CONFIG_I2C_1 */

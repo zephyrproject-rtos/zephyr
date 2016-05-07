@@ -641,7 +641,7 @@ int i2c_qse_ss_initialize(struct device *dev)
 	return 0;
 }
 
-#if CONFIG_I2C_QUARK_SE_SS_0
+#if CONFIG_I2C_0
 #include <init.h>
 
 static void _i2c_qse_ss_config_irq_0(struct device *port);
@@ -653,10 +653,10 @@ static const struct i2c_qse_ss_rom_config i2c_config_ss_0 = {
 };
 
 static struct i2c_qse_ss_dev_config i2c_ss_0_runtime = {
-	.app_config.raw = CONFIG_I2C_QUARK_SE_SS_0_DEFAULT_CFG,
+	.app_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
 };
 
-DEVICE_AND_API_INIT(i2c_ss_0, CONFIG_I2C_QUARK_SE_SS_0_NAME,
+DEVICE_AND_API_INIT(i2c_ss_0, CONFIG_I2C_0_NAME,
 		    &i2c_qse_ss_initialize,
 		    &i2c_ss_0_runtime, (void *)&i2c_config_ss_0,
 		    SECONDARY, CONFIG_I2C_INIT_PRIORITY,
@@ -702,9 +702,9 @@ static void _i2c_qse_ss_config_irq_0(struct device *port)
 	irq_enable(I2C_SS_0_STOP_VECTOR);
 }
 
-#endif /* CONFIG_I2C_QUARK_SE_SS_0 */
+#endif /* CONFIG_I2C_0 */
 
-#if CONFIG_I2C_QUARK_SE_SS_1
+#if CONFIG_I2C_1
 #include <init.h>
 
 static void _i2c_qse_ss_config_irq_1(struct device *port);
@@ -716,10 +716,10 @@ static const struct i2c_qse_ss_rom_config i2c_config_ss_1 = {
 };
 
 static struct i2c_qse_ss_dev_config i2c_qse_ss_1_runtime = {
-	.app_config.raw = CONFIG_I2C_QUARK_SE_SS_1_DEFAULT_CFG,
+	.app_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
 };
 
-DEVICE_AND_API_INIT(i2c_ss_1, CONFIG_I2C_QUARK_SE_SS_1_NAME,
+DEVICE_AND_API_INIT(i2c_ss_1, CONFIG_I2C_1_NAME,
 		    &i2c_qse_ss_initialize,
 		    &i2c_qse_ss_1_runtime, (void *)&i2c_config_ss_1,
 		    SECONDARY, CONFIG_I2C_INIT_PRIORITY);
@@ -766,4 +766,4 @@ static void _i2c_qse_ss_config_irq_1(struct device *port)
 	irq_enable(I2C_SS_1_STOP_VECTOR);
 }
 
-#endif /* CONFIG_I2C_QUARK_SE_SS_1 */
+#endif /* CONFIG_I2C_1 */
