@@ -39,7 +39,7 @@ void main(void)
 	wr_cfg.mode = WDT_MODE_INTERRUPT_RESET;
 	wr_cfg.interrupt_fn = wdt_example_cb;
 
-	wdt_dev = device_get_binding("WATCHDOG");
+	wdt_dev = device_get_binding("WATCHDOG_0");
 
 	wdt_enable(wdt_dev);
 	wdt_set_config(wdt_dev, &wr_cfg);
