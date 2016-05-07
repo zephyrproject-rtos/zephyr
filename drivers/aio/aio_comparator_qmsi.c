@@ -175,7 +175,7 @@ struct aio_qmsi_cmp_dev_data_t aio_qmsi_cmp_dev_data = {
 		.num_cmp = AIO_QMSI_CMP_COUNT,
 };
 
-DEVICE_AND_API_INIT(aio_qmsi_cmp, CONFIG_AIO_QMSI_COMPARATOR_DEV_NAME,
+DEVICE_AND_API_INIT(aio_qmsi_cmp, CONFIG_AIO_COMPARATOR_0_NAME,
 		    &aio_qmsi_cmp_init, &aio_qmsi_cmp_dev_data, NULL,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&aio_cmp_funcs);
@@ -184,7 +184,7 @@ static int aio_cmp_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(QM_IRQ_AC, CONFIG_AIO_COMPARATOR_IRQ_PRI,
+	IRQ_CONNECT(QM_IRQ_AC, CONFIG_AIO_COMPARATOR_0_IRQ_PRI,
 		    aio_qmsi_cmp_isr, DEVICE_GET(aio_qmsi_cmp), 0);
 
 	return 0;

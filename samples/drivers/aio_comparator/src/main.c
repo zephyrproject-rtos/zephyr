@@ -69,7 +69,7 @@ void cb(void *param)
 	struct device *aio_cmp_dev;
 	struct cb_data_t *p = (struct cb_data_t *)param;
 
-	aio_cmp_dev = device_get_binding("AIO_CMP");
+	aio_cmp_dev = device_get_binding("AIO_CMP_0");
 
 	PRINT("*** %s triggered %s.\n", &p->name,
 	      (p->pol == AIO_CMP_POL_RISE) ? "rising" : "falling"
@@ -93,7 +93,7 @@ void main(void)
 
 	nano_timer_init(&timer, timer_data);
 
-	aio_cmp_dev = device_get_binding("AIO_CMP");
+	aio_cmp_dev = device_get_binding("AIO_CMP_0");
 
 	PRINT("===== app started ========\n");
 

@@ -25,25 +25,23 @@ menuconfig AIO_COMPARATOR
 	default n
 
 if AIO_COMPARATOR
-menuconfig AIO_QMSI_COMPARATOR
+menuconfig AIO_COMPARATOR_QMSI
 	bool "Enable QMSI AIO/comparator driver"
 	default n
 	depends on AIO_COMPARATOR && QMSI
 	help
 	QMSI AIO/Comparator driver.
 
-config AIO_QMSI_COMPARATOR_DEV_NAME
-	string "Device name for QMSI AIO/comparator"
-	default "AIO_CMP"
-	depends on AIO_QMSI_COMPARATOR
+config AIO_COMPARATOR_0_NAME
+	string "Device name for AIO/comparator"
+	default "AIO_CMP_0"
 	help
-	Device name for the QMSI AIO/comparator.
+	Device name for the AIO/comparator.
 
-config AIO_COMPARATOR_IRQ_PRI
-	int "IRQ Priority for QMSI AIO/comparator"
+config AIO_COMPARATOR_0_IRQ_PRI
+	int "IRQ Priority for AIO/comparator"
 	default 3
-	depends on AIO_QMSI_COMPARATOR
 	help
-	IRQ Priority for the QMSI AIO/comparator.
+	IRQ Priority for the AIO/comparator.
 
 endif # AIO_COMPARATOR

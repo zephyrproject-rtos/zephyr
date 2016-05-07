@@ -165,7 +165,7 @@ endif
 
 
 if AIO_COMPARATOR
-config AIO_QMSI_COMPARATOR
+config AIO_COMPARATOR_QMSI
         def_bool y
 endif
 
