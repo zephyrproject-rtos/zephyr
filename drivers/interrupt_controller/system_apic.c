@@ -130,6 +130,13 @@ void _SysIntVecProgram(unsigned int vector, unsigned int irq, uint32_t flags)
 	} else {
 		_loapic_int_vec_set(irq - LOAPIC_IRQ_BASE, vector);
 	}
+
+#ifndef CONFIG_MVIC
+#if (ALL_DYN_IRQ_STUBS > 0) && defined(CONFIG_DEVICE_POWER_MANAGEMENT)
+	_irq_to_interrupt_vector[irq] = vector;
+#endif
+#endif
+
 }
 
 /**

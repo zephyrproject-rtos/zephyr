@@ -143,9 +143,18 @@ SECTIONS
 #if ALL_DYN_STUBS == 0
 	IDT_MEMORY
 #endif
+
 #ifndef CONFIG_MVIC
+	/*
+	 * We need not modify irq_to_vector array in the following scenarios
+	 * For Static IRQs with or without PM
+	 * For dynamic IRQs without PM
+	 */
+#if (ALL_DYN_IRQ_STUBS == 0) || !defined(CONFIG_DEVICE_POWER_MANAGEMENT)
 	IRQ_TO_INTERRUPT_VECTOR_MEMORY
 #endif
+#endif
+
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -173,7 +182,11 @@ SECTIONS
 #endif
 #if ALL_DYN_IRQ_STUBS > 0
 	INTERRUPT_VECTORS_ALLOCATED_MEMORY
+#if defined(CONFIG_DEVICE_POWER_MANAGEMENT) && !defined(CONFIG_MVIC)
+	IRQ_TO_INTERRUPT_VECTOR_MEMORY
 #endif
+#endif
+
 	. = ALIGN(4);
 	} GROUP_LINK_IN(RAM)
 
