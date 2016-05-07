@@ -73,9 +73,6 @@ config GPIO_DW
 
 if GPIO_DW
 
-config GPIO_DW_BOTHEDGES_SUPPORT
-	default n
-
 config GPIO_DW_0
 	def_bool y
 
