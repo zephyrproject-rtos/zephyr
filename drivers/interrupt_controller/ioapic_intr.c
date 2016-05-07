@@ -68,10 +68,23 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <init.h>
+#include <string.h>
 
 #include <drivers/ioapic.h> /* public API declarations */
 #include <drivers/loapic.h> /* public API declarations and registers */
 #include "ioapic_priv.h"
+
+#define BITS_PER_IRQ  3
+#define IOAPIC_BITFIELD_HI_LO	0
+#define IOAPIC_BITFIELD_LVL_EDGE 1
+#define IOAPIC_BITFIELD_ENBL_DSBL 2
+#define BIT_POS_FOR_IRQ_OPTION(irq, option) ((irq) * BITS_PER_IRQ + (option))
+#define SUSPEND_BITS_REQD (ROUND_UP((CONFIG_IOAPIC_NUM_RTES * BITS_PER_IRQ), 32))
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#include <power.h>
+uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
+#endif
 
 static uint32_t __IoApicGet(int32_t offset);
 static void __IoApicSet(int32_t offset, uint32_t value);
@@ -156,6 +169,118 @@ void _ioapic_irq_disable(unsigned int irq)
 {
 	_IoApicRedUpdateLo(irq, IOAPIC_INT_MASK, IOAPIC_INT_MASK);
 }
+
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+
+void store_flags(unsigned int irq, uint32_t flags)
+{
+	/* Currently only the following three flags are modified */
+	if (flags & IOAPIC_LOW) {
+		sys_bitfield_set_bit((mem_addr_t) ioapic_suspend_buf,
+			BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO));
+	}
+
+	if (flags & IOAPIC_LEVEL) {
+		sys_bitfield_set_bit((mem_addr_t) ioapic_suspend_buf,
+			BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_LVL_EDGE));
+	}
+
+	if (flags & IOAPIC_INT_MASK) {
+		sys_bitfield_set_bit((mem_addr_t) ioapic_suspend_buf,
+			BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_ENBL_DSBL));
+	}
+}
+
+uint32_t restore_flags(unsigned int irq)
+{
+	uint32_t flags = 0;
+
+	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
+		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO))) {
+		flags |= IOAPIC_LOW;
+	}
+
+	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
+		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_LVL_EDGE))) {
+		flags |= IOAPIC_LEVEL;
+	}
+
+	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
+		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_ENBL_DSBL))) {
+		flags |= IOAPIC_INT_MASK;
+	}
+
+	return flags;
+}
+
+
+int ioapic_suspend(struct device *port, int pm_policy)
+{
+	int irq;
+	uint32_t rte_lo;
+
+	ARG_UNUSED(port);
+
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+
+		memset(ioapic_suspend_buf, 0, (SUSPEND_BITS_REQD >> 3));
+
+		for (irq = 0; irq < CONFIG_IOAPIC_NUM_RTES; irq++) {
+
+			/*
+			 * The following check is to figure out the registered
+			 * IRQ lines, so as to limit ourselves to saving the
+			 * flags for them only.
+			 */
+			if (_irq_to_interrupt_vector[irq]) {
+
+				rte_lo = ioApicRedGetLo(irq);
+				store_flags(irq, rte_lo);
+			}
+		}
+	}
+
+	return 0;
+}
+
+int ioapic_resume(struct device *port, int pm_policy)
+{
+	int irq;
+	uint32_t flags;
+	uint32_t rteValue;
+
+	ARG_UNUSED(port);
+
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+
+		for (irq = 0; irq < CONFIG_IOAPIC_NUM_RTES; irq++) {
+
+			if (_irq_to_interrupt_vector[irq]) {
+				/* Get the saved flags */
+				flags = restore_flags(irq);
+				/* Appending the flags that are never modified */
+				flags = flags | IOAPIC_FIXED | IOAPIC_PHYSICAL;
+
+				rteValue = (_irq_to_interrupt_vector[irq] &
+						IOAPIC_VEC_MASK) | flags;
+			} else {
+				/* Initialize the other RTEs to sane values */
+				rteValue = IOAPIC_EDGE | IOAPIC_HIGH |
+					IOAPIC_FIXED | IOAPIC_INT_MASK |
+					IOAPIC_PHYSICAL | 0 ; /* dummy vector*/
+			}
+
+			ioApicRedSetHi(irq, 0);
+			ioApicRedSetLo(irq, rteValue);
+		}
+	}
+
+	return 0;
+}
+
+
+#endif  /*CONFIG_DEVICE_POWER_MANAGEMENT*/
 
 /**
  *
@@ -314,4 +439,14 @@ static void _IoApicRedUpdateLo(unsigned int irq,
 	ioApicRedSetLo(irq, (ioApicRedGetLo(irq) & ~mask) | (value & mask));
 }
 
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+struct device_pm_ops ioapic_pm_ops = {
+		.suspend = ioapic_suspend,
+		.resume = ioapic_resume
+};
+SYS_INIT_PM("ioapic", _ioapic_init, &ioapic_pm_ops, PRIMARY,
+	    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#else
 SYS_INIT(_ioapic_init, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
