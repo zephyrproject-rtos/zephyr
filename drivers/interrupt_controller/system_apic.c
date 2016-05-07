@@ -26,32 +26,8 @@
 #include <arch/cpu.h>
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
+#include <drivers/sysapic.h>
 #include <irq.h>
-
-#if !defined(LOAPIC_IRQ_BASE) && !defined (LOAPIC_IRQ_COUNT)
-
-/* Default IA32 system APIC definitions with local APIC IRQs after IO APIC. */
-
-#define LOAPIC_IRQ_BASE  CONFIG_IOAPIC_NUM_RTES
-#define LOAPIC_IRQ_COUNT 6  /* Default to LOAPIC_TIMER to LOAPIC_ERROR */
-
-#define IS_IOAPIC_IRQ(irq)  (irq < LOAPIC_IRQ_BASE)
-
-#define HARDWARE_IRQ_LIMIT ((LOAPIC_IRQ_BASE + LOAPIC_IRQ_COUNT) - 1)
-
-#else
-
-/*
-  Assumption for boards that define LOAPIC_IRQ_BASE & LOAPIC_IRQ_COUNT that
-  local APIC IRQs are within IOAPIC RTE range.
-*/
-
-#define IS_IOAPIC_IRQ(irq)  ((irq < LOAPIC_IRQ_BASE) || \
-	(irq >= (LOAPIC_IRQ_BASE + LOAPIC_IRQ_COUNT)))
-
-#define HARDWARE_IRQ_LIMIT (CONFIG_IOAPIC_NUM_RTES - 1)
-
-#endif
 
 
 /* forward declarations */
