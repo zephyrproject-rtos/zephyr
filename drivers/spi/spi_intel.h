@@ -36,19 +36,19 @@ struct spi_intel_config {
 	struct pci_dev_info pci_dev;
 #endif /* CONFIG_PCI */
 	spi_intel_config_t config_func;
-#ifdef CONFIG_SPI_INTEL_CS_GPIO
+#ifdef CONFIG_SPI_CS_GPIO
 	char *cs_gpio_name;
 	uint32_t cs_gpio_pin;
-#endif /* CONFIG_SPI_INTEL_CS_GPIO */
+#endif /* CONFIG_SPI_CS_GPIO */
 };
 
 struct spi_intel_data {
 	device_sync_call_t sync;
 	uint8_t error;
 	uint8_t padding[3];
-#ifdef CONFIG_SPI_INTEL_CS_GPIO
+#ifdef CONFIG_SPI_CS_GPIO
 	struct device *cs_gpio_port;
-#endif /* CONFIG_SPI_INTEL_CS_GPIO */
+#endif /* CONFIG_SPI_CS_GPIO */
 	uint32_t sscr0;
 	uint32_t sscr1;
 	const uint8_t *tx_buf;

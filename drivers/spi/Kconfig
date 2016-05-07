@@ -26,6 +26,34 @@ menuconfig SPI
 	help
 	  Enable support for the SPI hardware bus.
 
+config SPI_QMSI
+	bool "QMSI driver for SPI controller"
+	depends on SPI && QMSI
+	default n
+	help
+	  SPI driver implementation using QMSI library. QMSI is the
+	  Quark Microcontroller Software Interface, providing a common
+	  interface to the Quark family of microcontrollers.
+
+config SPI_K64
+	bool
+	prompt "Freescale K64-based SPI controller driver"
+	depends on SPI && SOC_MK64F12
+	default n
+	help
+	  Enable support for Freescale K64-based SPI controllers.
+
+config SPI_INTEL
+	bool
+	prompt "Intel SPI controller driver"
+	depends on SPI && CPU_MINUTEIA
+	default n
+	help
+	  Enable support for Intel's SPI controllers. Such controller
+	  was formelly found on XScale chips. It can be found nowadays
+	  on CEXXXX Intel media controller and Quark CPU (2 of them).
+
+
 if SPI
 config SPI_INIT_PRIORITY
 	int "Init priority"
@@ -36,17 +64,102 @@ config SPI_INIT_PRIORITY
 config  SPI_DEBUG
 	bool
 	prompt "SPI drivers debug output"
-	depends on SPI
 	default n
 	help
 	  Enable debug output for SPI drivers
 
-source "drivers/spi/Kconfig.intel"
+config  SPI_CS_GPIO
+	bool "SPI port CS pin is controlled via a GPIO port"
+	depends on GPIO
+	default n
+
+config	SPI_0
+	bool
+	prompt "Intel SPI port 0"
+	default n
+	help
+	  Enable Intel's SPI controller port 0.
+
+config  SPI_0_NAME
+	string
+	prompt "SPI port 0 device name"
+	depends on SPI_0
+	default "SPI_0"
+
+config  SPI_0_IRQ_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_0
+
+config  SPI_0_CS_GPIO_PORT
+	string
+	prompt "The GPIO port which is used to control CS"
+	depends on SPI_0 && SPI_CS_GPIO
+	default "GPIO_0"
+
+config  SPI_0_CS_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	depends on SPI_0 && SPI_CS_GPIO
+	default 0
+
+config  SPI_1
+	bool
+	prompt "SPI port 1"
+	default n
+	help
+	  Enable SPI controller port 1.
+
+config  SPI_1_NAME
+	string
+	prompt "SPI port 1 device name"
+	depends on SPI_1
+	default "SPI_1"
+
+config  SPI_1_IRQ_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_1
+
+config  SPI_1_CS_GPIO_PORT
+	string
+	prompt "The GPIO port which is used to control CS"
+	depends on SPI_1 && SPI_CS_GPIO
+	default "GPIO_0"
+
+config  SPI_1_CS_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	depends on SPI_1 && SPI_CS_GPIO
+	default 0
+
+config  SPI_2
+	bool
+	prompt "SPI port 1"
+	default n
+	help
+	  Enable SPI controller port 1.
+
+config  SPI_2_NAME
+	string
+	prompt "SPI port 1 device name"
+	depends on SPI_2
+	default "SPI_2"
+
+config  SPI_2_IRQ_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_2
+
+config  SPI_2_CS_GPIO_PORT
+	string
+	prompt "The GPIO port which is used to control CS"
+	depends on SPI_2 && SPI_CS_GPIO
+	default "GPIO_0"
+
+config  SPI_2_CS_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	depends on SPI_2 && SPI_CS_GPIO
+	default 0
 
 source "drivers/spi/Kconfig.dw"
-
-source "drivers/spi/Kconfig.qmsi"
-
-source "drivers/spi/Kconfig.k64"
 
 endif # SPI

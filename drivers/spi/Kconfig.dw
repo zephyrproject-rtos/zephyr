@@ -35,36 +35,6 @@ config SPI_DW_ARC_AUX_REGS
 	  registers and thus their access is different than memory
 	  mapped registers.
 
-config SPI_DW_CS_GPIO
-	bool "SPI port CS pin is controlled via a GPIO port"
-	depends on SPI_DW && GPIO
-	default n
-
-choice
-depends on SPI_DW && (IOAPIC || MVIC)
-prompt "DesignWare SPI interrupt trigger condition"
-default SPI_DW_RISING_EDGE
-
-config SPI_DW_FALLING_EDGE
-	bool "Falling edge"
-	help
-	  "DesignWare SPI uses falling edge interrupt"
-
-config SPI_DW_RISING_EDGE
-	bool "Rising edge"
-	help
-	  "DesignWare SPI uses rising edge interrupt"
-
-config SPI_DW_LEVEL_HIGH
-	bool "Level high"
-	help
-	  "DesignWare SPI uses level high interrupt"
-
-config SPI_DW_LEVEL_LOW
-	bool "Level low"
-	help
-	  "DesignWare SPI uses level low interrupt"
-endchoice
 
 choice
 depends on SPI_DW
@@ -93,72 +63,15 @@ config	SPI_DW_CLOCK_GATE_DRV_NAME
 	depends on SPI_DW_CLOCK_GATE
 	default ""
 
-config	SPI_DW_PORT_0
-	bool
-	prompt "Designware SPI port 0"
-	depends on SPI_DW
-	default n
-	help
-	  Enable Designware SPI controller port 0.
 
 config  SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on SPI_DW_CLOCK_GATE
 
-config  SPI_DW_PORT_0_CS_GPIO_PORT
-	string
-	prompt "The GPIO port which is used to control CS"
-	depends on SPI_DW_PORT_0 && SPI_DW_CS_GPIO
-	default GPIO_DW_0_NAME
-
-config  SPI_DW_PORT_0_CS_GPIO_PIN
-	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_DW_PORT_0 && SPI_DW_CS_GPIO
-	default 0
-
-config  SPI_DW_PORT_0_DRV_NAME
-	string
-	prompt "Designware SPI port 0 device name"
-	depends on SPI_DW_PORT_0
-	default "SPI_0"
-
-config  SPI_DW_PORT_0_PRI
-	int
-	prompt "Port 0 interrupt priority"
-	depends on SPI_DW_PORT_0
-
-config  SPI_DW_PORT_1
-	bool
-	prompt "Designware SPI port 1"
-	depends on SPI_DW
-	default n
-	help
-	  Enable Designware SPI controller port 1.
 
 config  SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on SPI_DW_CLOCK_GATE
 
-config  SPI_DW_PORT_1_CS_GPIO_PORT
-	string
-	prompt "The GPIO port which is used to control CS"
-	depends on SPI_DW_PORT_0 && SPI_DW_CS_GPIO
-	default GPIO_DW_0_NAME
-
-config  SPI_DW_PORT_1_CS_GPIO_PIN
-	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_DW_PORT_0 && SPI_DW_CS_GPIO
-	default 0
-
-config  SPI_DW_PORT_1_DRV_NAME
-	string
-	prompt "Designware SPI port 1 device name"
-	depends on SPI_DW_PORT_1
-	default "SPI_1"
-
-config  SPI_DW_PORT_1_PRI
-	int
-	prompt "Port 1 interrupt priority"
-	depends on SPI_DW_PORT_1
 
 endif # SPI_DW

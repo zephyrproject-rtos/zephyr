@@ -91,7 +91,7 @@ DEFINE_CLEAR_BIT_OP(sscr1_tie, INTEL_SPI_REG_SSCR1, INTEL_SPI_SSCR1_TIE_BIT)
 DEFINE_TEST_BIT_OP(sscr1_tie, INTEL_SPI_REG_SSCR1, INTEL_SPI_SSCR1_TIE_BIT)
 DEFINE_CLEAR_BIT_OP(sssr_ror, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_ROR_BIT)
 
-#ifdef CONFIG_SPI_INTEL_CS_GPIO
+#ifdef CONFIG_SPI_CS_GPIO
 
 #include <gpio.h>
 
@@ -128,7 +128,7 @@ static inline void _spi_control_cs(struct device *dev, int on)
 #else
 #define _spi_control_cs(...) { ; }
 #define _spi_config_cs(...) { ; }
-#endif /* CONFIG_SPI_INTEL_CS_GPIO */
+#endif /* CONFIG_SPI_CS_GPIO */
 
 static void completed(struct device *dev, uint32_t error)
 {
@@ -422,22 +422,8 @@ int spi_intel_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_IOAPIC
-	#if defined(CONFIG_SPI_INTEL_FALLING_EDGE)
-		#define SPI_INTEL_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-	#elif defined(CONFIG_SPI_INTEL_RISING_EDGE)
-		#define SPI_INTEL_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-	#elif defined(CONFIG_SPI_INTEL_LEVEL_HIGH)
-		#define SPI_INTEL_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-	#elif defined(CONFIG_SPI_INTEL_LEVEL_LOW)
-		#define SPI_INTEL_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-	#endif
-#else
-	#define SPI_INTEL_IRQ_FLAGS 0
-#endif /* CONFIG_IOAPIC */
-
 /* system bindings */
-#ifdef CONFIG_SPI_INTEL_PORT_0
+#ifdef CONFIG_SPI_0
 
 void spi_config_0_irq(void);
 
@@ -454,27 +440,27 @@ struct spi_intel_config spi_intel_config_0 = {
 	.pci_dev.device_id = SPI_INTEL_DEVICE_ID,
 	.pci_dev.function = SPI_INTEL_PORT_0_FUNCTION,
 #endif
-#ifdef CONFIG_SPI_INTEL_CS_GPIO
-	.cs_gpio_name = CONFIG_SPI_INTEL_PORT_0_CS_GPIO_PORT,
-	.cs_gpio_pin = CONFIG_SPI_INTEL_PORT_0_CS_GPIO_PIN,
+#ifdef CONFIG_SPI_CS_GPIO
+	.cs_gpio_name = CONFIG_SPI_0_CS_GPIO_PORT,
+	.cs_gpio_pin = CONFIG_SPI_0_CS_GPIO_PIN,
 #endif
 	.config_func = spi_config_0_irq
 };
 
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
-DEVICE_INIT(spi_intel_port_0, CONFIG_SPI_INTEL_PORT_0_DRV_NAME, spi_intel_init,
+DEVICE_INIT(spi_intel_port_0, CONFIG_SPI_0_NAME, spi_intel_init,
 			&spi_intel_data_port_0, &spi_intel_config_0,
 			SECONDARY, CONFIG_SPI_INIT_PRIORITY);
 
 void spi_config_0_irq(void)
 {
-	IRQ_CONNECT(SPI_INTEL_PORT_0_IRQ, CONFIG_SPI_INTEL_PORT_0_PRI,
+	IRQ_CONNECT(SPI_INTEL_PORT_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_0),
 		    SPI_INTEL_IRQ_FLAGS);
 }
 
-#endif /* CONFIG_SPI_INTEL_PORT_0 */
-#ifdef CONFIG_SPI_INTEL_PORT_1
+#endif /* CONFIG_SPI_0 */
+#ifdef CONFIG_SPI_1
 
 void spi_config_1_irq(void);
 
@@ -491,23 +477,23 @@ struct spi_intel_config spi_intel_config_1 = {
 	.pci_dev.vendor_id = SPI_INTEL_VENDOR_ID,
 	.pci_dev.device_id = SPI_INTEL_DEVICE_ID,
 #endif
-#ifdef CONFIG_SPI_INTEL_CS_GPIO
-	.cs_gpio_name = CONFIG_SPI_INTEL_PORT_1_CS_GPIO_PORT,
-	.cs_gpio_pin = CONFIG_SPI_INTEL_PORT_1_CS_GPIO_PIN,
+#ifdef CONFIG_SPI_CS_GPIO
+	.cs_gpio_name = CONFIG_SPI_1_CS_GPIO_PORT,
+	.cs_gpio_pin = CONFIG_SPI_1_CS_GPIO_PIN,
 #endif
 	.config_func = spi_config_1_irq
 };
 
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
-DEVICE_INIT(spi_intel_port_1, CONFIG_SPI_INTEL_PORT_1_DRV_NAME, spi_intel_init,
+DEVICE_INIT(spi_intel_port_1, CONFIG_SPI_1_NAME, spi_intel_init,
 			&spi_intel_data_port_1, &spi_intel_config_1,
 			SECONDARY, CONFIG_SPI_INIT_PRIORITY);
 
 void spi_config_1_irq(void)
 {
-	IRQ_CONNECT(SPI_INTEL_PORT_1_IRQ, CONFIG_SPI_INTEL_PORT_1_PRI,
+	IRQ_CONNECT(SPI_INTEL_PORT_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_1),
 		    SPI_INTEL_IRQ_FLAGS);
 }
 
-#endif /* CONFIG_SPI_INTEL_PORT_1 */
+#endif /* CONFIG_SPI_1 */

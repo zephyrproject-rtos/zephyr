@@ -32,7 +32,7 @@
 
 #ifdef CONFIG_SPI_INTEL
 #include <spi/spi_intel.h>
-#if defined(CONFIG_SPI_INTEL_PORT_1)
+#if defined(CONFIG_SPI_1)
 #define SPI_DRV_NAME "SPI_1"
 #endif
 #define SPI_SLAVE 0

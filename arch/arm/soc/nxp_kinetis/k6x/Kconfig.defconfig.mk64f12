@@ -154,13 +154,13 @@ config SPI_K64
 
 if SPI_K64
 
-config SPI_K64_0
+config SPI_0
 	def_bool y
 
-config SPI_K64_1
+config SPI_1
 	def_bool n
 
-config SPI_K64_2
+config SPI_2
 	def_bool n
 
 endif # SPI_K64

@@ -260,23 +260,23 @@ static int spi_qmsi_init(struct device *dev)
 	switch (spi_config->spi) {
 	case QM_SPI_MST_0:
 		IRQ_CONNECT(QM_IRQ_SPI_MASTER_0,
-			    CONFIG_SPI_QMSI_PORT_0_PRI, qm_spi_master_0_isr,
+			    CONFIG_SPI_0_IRQ_PRI, qm_spi_master_0_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
 		irq_enable(QM_IRQ_SPI_MASTER_0);
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M0_REGISTER);
 		QM_SCSS_INT->int_spi_mst_0_mask &= ~BIT(0);
 		break;
 
-#ifdef CONFIG_SPI_QMSI_PORT_1
+#ifdef CONFIG_SPI_1
 	case QM_SPI_MST_1:
 		IRQ_CONNECT(QM_IRQ_SPI_MASTER_1,
-			    CONFIG_SPI_QMSI_PORT_1_PRI, qm_spi_master_1_isr,
+			    CONFIG_SPI_1_IRQ_PRI, qm_spi_master_1_isr,
 			    0, IOAPIC_LEVEL | IOAPIC_HIGH);
 		irq_enable(QM_IRQ_SPI_MASTER_1);
 		clk_periph_enable(CLK_PERIPH_CLK | CLK_PERIPH_SPI_M1_REGISTER);
 		QM_SCSS_INT->int_spi_mst_1_mask &= ~BIT(0);
 		break;
-#endif /* CONFIG_SPI_QMSI_PORT_1 */
+#endif /* CONFIG_SPI_1 */
 
 	default:
 		return -EIO;
@@ -291,37 +291,37 @@ static int spi_qmsi_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_SPI_QMSI_PORT_0
+#ifdef CONFIG_SPI_0
 static struct spi_qmsi_config spi_qmsi_mst_0_config = {
 	.spi = QM_SPI_MST_0,
-#ifdef CONFIG_SPI_QMSI_CS_GPIO
-	.cs_port = CONFIG_SPI_QMSI_PORT_0_CS_GPIO_PORT,
-	.cs_pin = CONFIG_SPI_QMSI_PORT_0_CS_GPIO_PIN,
+#ifdef CONFIG_SPI_CS_GPIO
+	.cs_port = CONFIG_SPI_0_CS_GPIO_PORT,
+	.cs_pin = CONFIG_SPI_0_CS_GPIO_PIN,
 #endif
 };
 
 static struct spi_qmsi_runtime spi_qmsi_mst_0_runtime;
 
-DEVICE_INIT(spi_master_0, CONFIG_SPI_QMSI_PORT_0_DRV_NAME,
+DEVICE_INIT(spi_master_0, CONFIG_SPI_0_NAME,
 	    spi_qmsi_init, &spi_qmsi_mst_0_runtime, &spi_qmsi_mst_0_config,
 	    SECONDARY, CONFIG_SPI_INIT_PRIORITY);
 
 
-#endif /* CONFIG_SPI_QMSI_PORT_0 */
-#ifdef CONFIG_SPI_QMSI_PORT_1
+#endif /* CONFIG_SPI_0 */
+#ifdef CONFIG_SPI_1
 
 static struct spi_qmsi_config spi_qmsi_mst_1_config = {
 	.spi = QM_SPI_MST_1,
-#ifdef CONFIG_SPI_QMSI_CS_GPIO
-	.cs_port = CONFIG_SPI_QMSI_PORT_1_CS_GPIO_PORT,
-	.cs_pin = CONFIG_SPI_QMSI_PORT_1_CS_GPIO_PIN,
+#ifdef CONFIG_SPI_CS_GPIO
+	.cs_port = CONFIG_SPI_1_CS_GPIO_PORT,
+	.cs_pin = CONFIG_SPI_1_CS_GPIO_PIN,
 #endif
 };
 
 static struct spi_qmsi_runtime spi_qmsi_mst_1_runtime;
 
-DEVICE_INIT(spi_master_1, CONFIG_SPI_QMSI_PORT_1_DRV_NAME,
+DEVICE_INIT(spi_master_1, CONFIG_SPI_1_NAME,
 	    spi_qmsi_init, &spi_qmsi_mst_1_runtime, &spi_qmsi_mst_1_config,
 	    SECONDARY, CONFIG_SPI_INIT_PRIORITY);
 
-#endif /* CONFIG_SPI_QMSI_PORT_1 */
+#endif /* CONFIG_SPI_1 */

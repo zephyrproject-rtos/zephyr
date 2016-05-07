@@ -51,7 +51,7 @@ config GPIO
 	def_bool y
 
 config TI_CC2520_SPI_DRV_NAME
-	default SPI_QMSI_PORT_1_DRV_NAME
+	default SPI_1_NAME
 config TI_CC2520_SPI_FREQ
 	default 4
 config TI_CC2520_SPI_SLAVE
@@ -68,11 +68,11 @@ config TI_CC2520_GPIO_AON_NAME
 endif # GPIO_QMSI
 
 if SPI_QMSI
-config SPI_QMSI_CS_GPIO
+config SPI_CS_GPIO
 	def_bool y
-config SPI_QMSI_PORT_1_CS_GPIO_PORT
+config SPI_1_CS_GPIO_PORT
 	default GPIO_QMSI_0_NAME
-config SPI_QMSI_PORT_1_CS_GPIO_PIN
+config SPI_1_CS_GPIO_PIN
 	default 11
 config TI_CC2520_GPIO_NAME
        string

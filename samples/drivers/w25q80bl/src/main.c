@@ -23,7 +23,7 @@
 
 #include <misc/printk.h>
 
-#if (!defined(CONFIG_SPI_QMSI_CS_GPIO) && !defined(CONFIG_SPI_DW_CS_GPIO))
+#if !defined(CONFIG_SPI_CS_GPIO)
 #error "This sample requires the GPIO pin as Chip Select feature"
 #endif
 

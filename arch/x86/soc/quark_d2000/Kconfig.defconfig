@@ -156,9 +156,9 @@ endif
 if SPI
 config SPI_QMSI
 	def_bool y
-config SPI_QMSI_PORT_0
+config SPI_0
 	def_bool y
-config SPI_QMSI_PORT_0_PRI
+config SPI_0_IRQ_PRI
 	default 0
 endif # SPI
 
