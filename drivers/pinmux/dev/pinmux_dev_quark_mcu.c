@@ -23,7 +23,7 @@
 #include <sys_io.h>
 #include "pinmux/pinmux.h"
 
-#include "pinmux_quark_mcu.h"
+#include "pinmux/pinmux_quark_mcu.h"
 
 #define MASK_2_BITS             0x3
 
