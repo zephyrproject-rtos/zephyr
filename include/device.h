@@ -293,6 +293,19 @@ struct device {
 };
 
 void _sys_device_do_config_level(int level);
+
+/**
+ * @brief Retrieve the device structure for a driver by name
+ *
+ * @details Device objects are created via the DEVICE_INIT() macro and
+ * placed in memory by the linker. If a driver needs to bind to another driver
+ * it can use this function to retrieve the device structure of the lower level
+ * driver by the name the driver exposes to the system.
+ *
+ * @param name device name to search for.
+ *
+ * @return pointer to device structure; NULL if not found or cannot be used.
+ */
 struct device* device_get_binding(char *name);
 
 /**
