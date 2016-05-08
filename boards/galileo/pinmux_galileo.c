@@ -16,12 +16,11 @@
  * limitations under the License.
  */
 
-#include <board.h>
-#include <device.h>
-#include <gpio.h>
-#include <init.h>
-#include <misc/util.h>
 #include <nanokernel.h>
+#include <init.h>
+#include <board.h>
+#include <gpio.h>
+#include <misc/util.h>
 #include <pinmux.h>
 #include <pwm.h>
 
