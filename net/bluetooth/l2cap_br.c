@@ -29,6 +29,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/driver.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -42,7 +43,15 @@
 #define L2CAP_BR_PSM_START	0x0001
 #define L2CAP_BR_PSM_END	0xffff
 
+#define L2CAP_BR_MIN_MTU	48
+
 static struct bt_l2cap_server *br_servers;
+
+/* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
+static struct nano_fifo br_sig;
+static NET_BUF_POOL(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), &br_sig, NULL,
+		    BT_BUF_USER_DATA_MIN);
 
 static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
 {
@@ -80,4 +89,9 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 	br_servers = server;
 
 	return 0;
+}
+
+void bt_l2cap_br_init(void)
+{
+	net_buf_pool_init(br_sig_pool);
 }
