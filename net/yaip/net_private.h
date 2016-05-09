@@ -23,3 +23,4 @@
 #include <errno.h>
 
 extern void net_nbuf_init(void);
+extern int net_if_init(void);
