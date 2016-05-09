@@ -2905,12 +2905,14 @@ static int set_event_mask(void)
 
 static int set_static_addr(void)
 {
-	ssize_t err;
+	int err;
 
 	if (bt_storage) {
-		err = bt_storage->read(NULL, BT_STORAGE_ID_ADDR,
+		ssize_t ret;
+
+		ret = bt_storage->read(NULL, BT_STORAGE_ID_ADDR,
 				       &bt_dev.id_addr, sizeof(bt_dev.id_addr));
-		if (err == sizeof(bt_dev.id_addr)) {
+		if (ret == sizeof(bt_dev.id_addr)) {
 			goto set_addr;
 		}
 	}
@@ -2928,10 +2930,12 @@ static int set_static_addr(void)
 	bt_dev.id_addr.a.val[5] |= 0xc0;
 
 	if (bt_storage) {
-		err = bt_storage->write(NULL, BT_STORAGE_ID_ADDR,
+		ssize_t ret;
+
+		ret = bt_storage->write(NULL, BT_STORAGE_ID_ADDR,
 					&bt_dev.id_addr,
 					sizeof(bt_dev.id_addr));
-		if (err != sizeof(bt_dev.id_addr)) {
+		if (ret != sizeof(bt_dev.id_addr)) {
 			BT_ERR("Unable to store static address");
 		}
 	} else {
