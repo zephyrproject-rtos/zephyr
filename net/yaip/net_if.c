@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_IF)
+#define SYS_LOG_DOMAIN "net/if"
+#define NET_DEBUG 1
+#endif
+
 #include <init.h>
 #include <nanokernel.h>
 #include <sections.h>
+#include <string.h>
 #include <misc/sys_log.h>
 #include <net/net_if.h>
+#include <net/net_core.h>
 
 /* net_if dedicated section limiters */
 extern struct net_if __net_if_start[];
@@ -32,8 +39,7 @@ static char __noinit __stack tx_fiber_stack[CONFIG_NET_TX_STACK_SIZE];
 
 static void net_if_tx_fiber(struct net_if *iface)
 {
-	SYS_LOG_DBG("Starting TX fiber (stack %d bytes)\n",
-		    sizeof(tx_fiber_stack));
+	NET_DBG("Starting TX fiber (stack %d bytes)", sizeof(tx_fiber_stack));
 
 	while (1) {
 		struct net_buf *buf;
@@ -41,8 +47,8 @@ static void net_if_tx_fiber(struct net_if *iface)
 		/* Get next packet from application - wait if necessary */
 		buf = nano_fifo_get(&iface->tx_queue, TICKS_UNLIMITED);
 
-		SYS_LOG_DBG("Processing (buf %p, len %u) network packet\n",
-			    buf, buf->len);
+		NET_DBG("Processing (buf %p, len %u) network packet",
+			buf, buf->len);
 
 		/* FIXME - Do something with the packet */
 	}
