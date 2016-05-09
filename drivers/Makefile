@@ -17,6 +17,7 @@ obj-$(CONFIG_I2C) += i2c/
 obj-$(CONFIG_PWM) += pwm/
 obj-$(CONFIG_ADC) += adc/
 obj-$(CONFIG_ETHERNET) += ethernet/
+obj-$(CONFIG_SLIP) += slip/
 obj-$(CONFIG_NETWORKING_WITH_15_4) += ieee802154/
 obj-$(CONFIG_WATCHDOG) += watchdog/
 obj-$(CONFIG_RTC) += rtc/
