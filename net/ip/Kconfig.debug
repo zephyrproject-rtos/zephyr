@@ -94,7 +94,7 @@ config NETWORK_IP_STACK_DEBUG_IPV6_DS
 
 config NETWORK_IP_STACK_DEBUG_IPV6_ICMPV6
 	bool "Debug ICMPv6"
-	depends on NETWORKING_WITH_IPV6
+	depends on NETWORKING_WITH_IPV6 || NET_IPV6
 	default n
 	help
 	  Enables ICMPv6 code part to output debug messages

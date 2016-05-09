@@ -20,6 +20,13 @@ config NET_YAIP_INIT_PRIO
        int
        default 99
 
+config NET_IPV6
+       bool "Enable IPv6"
+       default y
+       help
+         Enable IPv6 support. This should be selected by default as there is
+	 limited set of	network bearers provided that support IPv4.
+
 config NET_IFACE_UNICAST_IPV6_ADDR_COUNT
        int "Max number of unicast IPv6 addresses assigned to network interface"
        default 1
