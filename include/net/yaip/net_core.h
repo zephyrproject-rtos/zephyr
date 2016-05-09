@@ -59,6 +59,11 @@ struct net_context;
 
 #include <net/net_if.h>
 
+enum net_verdict {
+	NET_OK,
+	NET_DROP,
+};
+
 /* Called by lower network stack when a network packet has been received */
 int net_recv(struct net_if *iface, struct net_buf *buf);
 
