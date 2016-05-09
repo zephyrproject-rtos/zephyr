@@ -3302,7 +3302,7 @@ static int set_ad(uint16_t hci_op, const struct bt_data *ad, size_t ad_len)
 		set_data->len += ad[i].data_len;
 	}
 
-	return bt_hci_cmd_send(hci_op, buf);
+	return bt_hci_cmd_send_sync(hci_op, buf, NULL);
 }
 
 int bt_le_adv_start(const struct bt_le_adv_param *param,
