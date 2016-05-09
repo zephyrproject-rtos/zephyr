@@ -451,6 +451,22 @@ void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag);
  */
 void net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
 
+/** @brief Calculate amount of bytes stored in fragments.
+ *
+ * @return number of bytes in fragments
+ */
+static inline size_t net_buf_frags_len(struct net_buf *frag)
+{
+	size_t bytes = 0;
+
+	while (frag) {
+		bytes += frag->len;
+		frag = frag->frags;
+	}
+
+	return bytes;
+}
+
 #ifdef __cplusplus
 }
 #endif
