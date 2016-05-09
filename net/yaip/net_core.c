@@ -133,6 +133,8 @@ static int net_init(struct device *unused)
 
 	net_if_init();
 
+	net_context_init();
+
 	return network_initialization();
 }
 
