@@ -24,6 +24,7 @@
 
 #include <device.h>
 
+#include <net/buf.h>
 #include <net/net_linkaddr.h>
 #include <net/net_ip.h>
 
@@ -201,6 +202,7 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
 
 struct net_if_api {
 	void (*init)(struct net_if *iface);
+	int (*send)(struct net_if *iface, struct net_buf *buf);
 };
 
 #define NET_IF_INIT(dev_name, sfx, _mtu)				\
