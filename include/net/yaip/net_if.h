@@ -192,6 +192,13 @@ static inline uint16_t net_if_get_mtu(struct net_if *iface)
 	return iface->mtu;
 }
 
+/**
+ * @brief Get an interface according to link layer address.
+ * @param ll_addr Link layer address.
+ * @return Network interface or NULL if not found.
+ */
+struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
+
 struct net_if_api {
 	void (*init)(struct net_if *iface);
 };
