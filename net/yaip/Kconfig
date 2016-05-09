@@ -78,3 +78,17 @@ config NET_NBUF_DATA_SIZE
 	  which leaves in worst case 81 bytes for user data (MTU).
 	  In order to be able to receive at least full IPv6 packet which
 	  has a size of 1280 bytes, the one should allocate 16 fragments here.
+
+config NET_SLIP
+       bool "Use SLIP connectivity with Qemu"
+       default n
+       select SLIP
+       select UART_PIPE
+       select UART_INTERRUPT_DRIVEN
+       help
+	  The SLIP support is only used when the application is
+	  run inside Qemu and the network peer is run in your
+	  host. The host needs to have tunslip running in order
+	  to receive and send network packets via the SLIP driver.
+	  The SLIP driver Kconfig options can be tweaked in drivers
+	  section.
