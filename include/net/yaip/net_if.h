@@ -197,7 +197,7 @@ struct net_if_api {
 };
 
 #define NET_IF_INIT(dev_name, sfx, _mtu)				\
-	static struct net_if (__net_if_ ##dev_name _##sfx) __used	\
+	static struct net_if (__net_if_##dev_name_##sfx) __used		\
 	__attribute__((__section__(".net_if.data"))) = {		\
 		.dev = &(__device_##dev_name),				\
 		.mtu = _mtu,						\
