@@ -192,14 +192,14 @@ config NETWORK_IP_STACK_DEBUG_RPL_TIMERS
 
 config NETWORK_IP_STACK_DEBUG_IPV4
 	bool "Debug core IPv4"
-	depends on NETWORKING_WITH_IPV4
+	depends on NETWORKING_WITH_IPV4 || NET_IPV4
 	default n
 	help
 	  Enables core IPv4 code part to output debug messages
 
 config NETWORK_IP_STACK_DEBUG_IPV4_ARP
 	bool "Debug IPv4 ARP"
-	depends on NETWORKING_WITH_IPV4
+	depends on NETWORKING_WITH_IPV4 || NET_IPV4
 	default n
 	help
 	  Enables core ARP code part to output debug messages

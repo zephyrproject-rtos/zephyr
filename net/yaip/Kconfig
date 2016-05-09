@@ -30,6 +30,13 @@ config NET_IPV6
          Enable IPv6 support. This should be selected by default as there is
 	 limited set of	network bearers provided that support IPv4.
 
+config NET_IPV4
+       bool "Enable IPv4"
+       default n
+       help
+         Enable IPv4 support. If this is enabled then the device is
+	 able to send and receive IPv4 network packets.
+
 config NET_IFACE_UNICAST_IPV6_ADDR_COUNT
        int "Max number of unicast IPv6 addresses assigned to network interface"
        default 1
