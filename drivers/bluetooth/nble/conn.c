@@ -242,6 +242,8 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	conn->latency = param->latency;
 	conn->timeout = param->timeout;
 
+	memset(&req, 0, sizeof(req));
+
 	/* Construct parameters to NBLE */
 	bt_addr_le_copy(&req.bda, peer);
 
