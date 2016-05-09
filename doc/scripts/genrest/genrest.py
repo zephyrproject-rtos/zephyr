@@ -31,9 +31,15 @@ def print_items(items, outdir, indent):
             var = "CONFIG_%s" %item.get_name()
             if not var in done:
                 done.append(var)
-                f.write("     %s.rst\n" %var)
+                f.write("   * - :ref:`%s`\n" %var)
+                if len(item.get_prompts()) > 0:
+                    p = item.get_prompts()[0]
+                else:
+                    p = ""
+                f.write("     - %s\n" %p)
                 config = open("%s/%s.rst" % (outdir, var), "w")
-                config.write("\n.. _CONFIG_%s:\n" %item.get_name())
+                config.write(":orphan:\n\n")
+                config.write(".. _CONFIG_%s:\n" %item.get_name())
                 config.write("\n%s\n" %var)
                 config.write("%s\n\n" %(len("%s" %var) * '#' ))
                 if text:
@@ -80,7 +86,7 @@ Supported Options
 *****************
 
 """)
-f.write(".. toctree::\n     :maxdepth: 2\n\n")
+f.write(".. list-table:: Configuration Options\n\n")
 conf = kconfiglib.Config(sys.argv[1])
 print_items(conf.get_top_level_items(), sys.argv[2],  0)
 f.close()
