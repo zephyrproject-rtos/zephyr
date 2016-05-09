@@ -2905,7 +2905,6 @@ static int set_event_mask(void)
 
 static int set_static_addr(void)
 {
-	struct net_buf *buf;
 	ssize_t err;
 
 	if (bt_storage) {
@@ -2946,16 +2945,7 @@ set_addr:
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS,
-				sizeof(bt_dev.id_addr.a));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	bt_addr_copy(net_buf_add(buf, sizeof(bt_dev.id_addr.a)),
-		     &bt_dev.id_addr.a);
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
+	err = set_random_address(&bt_dev.id_addr.a);
 	if (err) {
 		return err;
 	}
