@@ -49,7 +49,14 @@ static ALWAYS_INLINE void _icache_setup(void)
 		CACHE_DIRECT | /* direct mapping (one-way assoc.) */
 		CACHE_ENABLE   /* i-cache enabled */
 	);
-	_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, icache_config);
+	uint32_t val;
+
+	val = _arc_v2_aux_reg_read(_ARC_V2_I_CACHE_BUILD);
+	val &= 0xff;
+	if (val != 0) {
+		/* configure i-cache if present */
+		_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, icache_config);
+	}
 }
 
 #endif /* _ASMLANGUAGE */
