@@ -116,3 +116,10 @@ config NET_SLIP
 	  to receive and send network packets via the SLIP driver.
 	  The SLIP driver Kconfig options can be tweaked in drivers
 	  section.
+
+config NET_STATISTICS
+       bool "Print network statistics"
+       default n
+       help
+	  Print network send/receive statistics to console.
+	  This takes memory so say 'n' if unsure.
