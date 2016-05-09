@@ -47,11 +47,39 @@
 #endif
 static char __noinit __stack rx_fiber_stack[CONFIG_NET_RX_STACK_SIZE];
 static struct nano_fifo rx_queue;
+static nano_thread_id_t rx_fiber_id;
+
+static inline enum net_verdict process_data(struct net_buf *buf)
+{
+	return NET_DROP;
+}
 
 static void net_rx_fiber(int unused1, int unused2)
 {
-	while (0) {
-		/* FIXME - implementation missing */
+	struct net_buf *buf;
+
+	NET_DBG("Starting RX fiber (stack %d bytes)",
+		sizeof(rx_fiber_stack));
+
+	while (1) {
+		buf = nano_fifo_get(&rx_queue, TICKS_UNLIMITED);
+
+		net_analyze_stack("RX fiber", rx_fiber_stack,
+				  sizeof(rx_fiber_stack));
+
+		NET_DBG("Received buf %p len %d", buf,
+			net_buf_frags_len(buf));
+
+		switch (process_data(buf)) {
+		case NET_OK:
+			NET_DBG("Consumed buf %p", buf);
+			break;
+		case NET_DROP:
+		default:
+			NET_DBG("Dropping buf %p", buf);
+			net_nbuf_unref(buf);
+			break;
+		}
 	}
 }
 
@@ -59,8 +87,8 @@ static void init_rx_queue(void)
 {
 	nano_fifo_init(&rx_queue);
 
-	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-		    net_rx_fiber, 0, 0, 7, 0);
+	rx_fiber_id = fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
+				  net_rx_fiber, 0, 0, 8, 0);
 }
 
 /* Called by driver when an IP packet has been received */
@@ -70,7 +98,14 @@ int net_recv(struct net_if *iface, struct net_buf *buf)
 		return -ENODATA;
 	}
 
+	NET_DBG("fifo %p iface %p buf %p len %d", &rx_queue, iface, buf,
+		net_buf_frags_len(buf));
+
+	net_nbuf_iface(buf) = iface;
+
 	nano_fifo_put(&rx_queue, buf);
+
+	fiber_wakeup(rx_fiber_id);
 
 	return 0;
 }
