@@ -96,6 +96,8 @@ static int net_init(struct device *unused)
 
 	init_rx_queue();
 
+	net_if_init();
+
 	return network_initialization();
 }
 
