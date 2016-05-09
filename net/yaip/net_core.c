@@ -33,7 +33,10 @@
 #include <errno.h>
 
 #include <net/net_if.h>
-#include <net/buf.h>
+#include <net/nbuf.h>
+#include <net/net_core.h>
+
+#include "net_private.h"
 
 /* Stack for the rx fiber.
  */
@@ -84,6 +87,8 @@ int net_init(void)
 		return -EALREADY;
 
 	initialized = 1;
+
+	net_nbuf_init();
 
 	init_rx_queue();
 
