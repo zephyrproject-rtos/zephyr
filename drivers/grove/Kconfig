@@ -111,3 +111,70 @@ config GROVE_LIGHT_SENSOR_INIT_PRIORITY
 	  Device driver initialization priority.
 	  As the device is connected to an ADC device, its driver has to be
 	  initialized after the ADC device.
+
+config GROVE_TEMPERATURE_SENSOR
+	bool
+	prompt "Enable the Seeed Grove Temperature Sensor"
+	depends on GROVE && ADC && NEWLIB_LIBC
+	default n
+	help
+	  Setting this value will enable dirver support for the Grove
+	  Temperature Sensor.
+
+config GROVE_TEMPERATURE_SENSOR_NAME
+	string
+	prompt "Driver name"
+	depends on GROVE_TEMPERATURE_SENSOR
+	default "GROVE_TEMPERATURE_SENSOR"
+	help
+	  Specify the device name with which the Grove Temperature Sensor
+	  is identified.
+
+choice
+	prompt "Sensor version"
+	depends on GROVE_TEMPERATURE_SENSOR
+	default GROVE_TEMPERATURE_SENSOR_V1_0
+	help
+	  Choose the version of the Grove Temperature Sensor.
+
+config GROVE_TEMPERATURE_SENSOR_V1_0
+	bool
+	prompt "v1.0"
+	help
+	  Version 1.0
+
+config GROVE_TEMPERATURE_SENSOR_V1_X
+	bool
+	prompt "v1.1/v1.2"
+	help
+	  Version 1.1 or 1.2
+
+endchoice
+
+config GROVE_TEMPERATURE_SENSOR_ADC_DEV_NAME
+	string
+	prompt "ADC where Grove Temperature Sensor is connected"
+	depends on GROVE_TEMPERATURE_SENSOR
+	default "ADC_0"
+	help
+	  Specify the device name of the ADC to which the Grove Temperature
+	  Sensor is connected.
+
+config GROVE_TEMPERATURE_SENSOR_ADC_CHANNEL
+	int
+	prompt "ADC channel used by Grove Temperature Sensor"
+	depends on GROVE_TEMPERATURE_SENSOR
+	default 10
+	help
+	  Specify the channel of the ADC to which the Grove Temperature Sensor
+	  is connected.
+
+config GROVE_TEMPERATURE_SENSOR_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	default 70
+	depends on GROVE_TEMPERATURE_SENSOR
+	help
+	  Device driver initialization priority.
+	  As the device is connected to an ADC device, its driver has to be
+	  initialized after the ADC device.
