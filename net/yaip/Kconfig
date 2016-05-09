@@ -16,9 +16,12 @@
 # limitations under the License.
 #
 
-config NET_YAIP_INIT_PRIO
+config NET_INIT_PRIO
        int
-       default 99
+       default 10
+       help
+         Network initialization priority level. This number tells how
+	 early in the boot the network stack is initialized.
 
 config NET_IPV6
        bool "Enable IPv6"
