@@ -1019,6 +1019,8 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 	BT_DBG("conn %p handle 0x%04x offset 0x%04x len %u data %p",
 	       conn, handle, offset, length, data);
 
+	memset(&req, 0, sizeof(req));
+
 	req.conn_handle = conn->handle;
 	req.handle = handle;
 	req.offset = offset;
@@ -1075,6 +1077,8 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 	       conn, handle, length, data, sign);
 
 	/* TODO: Handle signing */
+
+	memset(&req, 0, sizeof(req));
 
 	req.conn_handle = conn->handle;
 	req.handle = handle;
