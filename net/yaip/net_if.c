@@ -56,6 +56,20 @@ static inline void init_tx_queue(struct net_if *iface)
 		    (nano_fiber_entry_t)net_if_tx_fiber, (int)iface, 0, 7, 0);
 }
 
+struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
+{
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		if (!memcmp(iface->link_addr.addr, ll_addr->addr,
+			    ll_addr->len)) {
+			return iface;
+		}
+	}
+
+	return NULL;
+}
+
 int net_if_init(void)
 {
 	struct net_if_api *api;
