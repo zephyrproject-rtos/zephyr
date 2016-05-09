@@ -46,3 +46,35 @@ config NET_RX_STACK_SIZE
 	help
 	  Set the RX fiber stack size in bytes. The RX fiber is waiting
 	  data from network. There is one RX fiber in the system.
+
+config NET_NBUF_RX_COUNT
+	int "How many network receives can be pending at the same time"
+	default 2
+	help
+	  Each RX buffer will occupy smallish amount of memory.
+	  See include/net/nbuf.h and the sizeof(struct nbuf)
+
+config NET_NBUF_TX_COUNT
+	int "How many network sends can be pending at the same time"
+	default 2
+	help
+	  Each TX buffer will occupy smallish amount of memory.
+	  See include/net/nbuf.h and the sizeof(struct nbuf)
+
+config NET_NBUF_DATA_COUNT
+	int "How many network data buffers are allocated"
+	default 16
+	help
+	  Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish
+	  header (sizeof(struct net_buf)) amount of data.
+
+config NET_NBUF_DATA_SIZE
+	int "Size of each network data fragment"
+	default 128
+	help
+	  This value tells what is the size of the data fragment that is
+	  received from the network.
+	  Example: For IEEE 802.15.4, the network packet is 127 bytes long,
+	  which leaves in worst case 81 bytes for user data (MTU).
+	  In order to be able to receive at least full IPv6 packet which
+	  has a size of 1280 bytes, the one should allocate 16 fragments here.
