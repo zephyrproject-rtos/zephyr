@@ -66,7 +66,7 @@ config NETWORK_IP_STACK_DEBUG_TCP_PSOCK
 
 config NETWORK_IP_STACK_DEBUG_IPV6
 	bool "Debug core IPv6"
-	depends on NETWORKING_WITH_IPV6
+	depends on NETWORKING_WITH_IPV6 || NET_IPV6
 	default n
 	help
 	  Enables core IPv6 code part to output debug messages
@@ -93,28 +93,28 @@ config NETWORK_IP_STACK_DEBUG_IPV6_DS
 
 config NETWORK_IP_STACK_DEBUG_IPV6_ICMPV6
 	bool "Debug ICMPv6"
-	depends on NETWORKING_WITH_IPV6
+	depends on NETWORKING_WITH_IPV6 || NET_IPV6
 	default n
 	help
 	  Enables ICMPv6 code part to output debug messages
 
 config NETWORK_IP_STACK_DEBUG_IPV6_ND
 	bool "Debug IPv6 Neighbour Discovery"
-	depends on NETWORKING_WITH_IPV6
+	depends on NETWORKING_WITH_IPV6 || NET_IPV6
 	default n
 	help
 	  Enables IPv6 Neighbour Discovery code part to output debug messages
 
 config NETWORK_IP_STACK_DEBUG_IPV6_NBR_CACHE
 	bool "Debug IPv6 neighbour cache"
-	depends on NETWORKING_WITH_IPV6
+	depends on NETWORKING_WITH_IPV6 || NET_IPV6
 	default n
 	help
 	  Enables Neighbour Cache code part to output debug messages
 
 config NETWORK_IP_STACK_DEBUG_IPV6_ROUTE
 	bool "Debug IPv6 route"
-	depends on NETWORKING_WITH_IPV6
+	depends on NETWORKING_WITH_IPV6 || NET_IPV6
 	default n
 	help
 	  Enables IPv6 route code part to output debug messages
