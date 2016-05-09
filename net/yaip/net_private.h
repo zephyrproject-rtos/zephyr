@@ -24,3 +24,4 @@
 
 extern void net_nbuf_init(void);
 extern int net_if_init(void);
+extern void net_context_init(void);
