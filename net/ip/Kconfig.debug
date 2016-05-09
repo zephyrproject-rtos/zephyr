@@ -16,6 +16,17 @@
 # limitations under the License.
 #
 
+if NET_YAIP
+menuconfig NET_LOG
+	bool "Enable network stack logging"
+	select STDOUT_CONSOLE
+	select SYS_LOG
+	default n
+	help
+	  Enable logging in various parts of the network stack.
+endif
+
+if !NET_YAIP
 menuconfig NETWORKING_WITH_LOGGING
 	bool "Enable network stack logging"
 	select STDOUT_CONSOLE
@@ -23,6 +34,7 @@ menuconfig NETWORKING_WITH_LOGGING
 	help
 	  Enable logging in various parts of the network stack.
 
+if NETWORKING_WITH_LOGGING
 choice
 	prompt "General debug level"
 	default NETWORK_IP_STACK_DEBUG_PRINT
@@ -37,8 +49,24 @@ config NETWORK_IP_STACK_DEBUG_ANNOTATE
 config NETWORK_IP_STACK_DEBUG_FULL
        bool "Print both messages and annotations"
 endchoice
+endif
+endif
 
 if NETWORKING_WITH_LOGGING || NET_LOG
+
+config NETWORK_IP_STACK_DEBUG_CORE
+	bool "Debug core IP stack"
+	depends on NET_YAIP
+	default n
+	help
+	  Enables core network stack code part to output debug messages
+
+config NETWORK_IP_STACK_DEBUG_IF
+	bool "Debug network interface code"
+	depends on NET_YAIP
+	default n
+	help
+	  Enables network interface code part to output debug messages
 
 config NETWORK_IP_STACK_DEBUG_CONTEXT
 	bool "Debug network context allocation"

@@ -29,23 +29,32 @@ extern "C" {
 
 /* Network subsystem logging helpers */
 
-#ifdef CONFIG_NETWORKING_WITH_LOGGING
-#define NET_DBG(fmt, ...) printk("net: %s (%p): " fmt, __func__, \
-				 sys_thread_self_get(), ##__VA_ARGS__)
-#define NET_ERR(fmt, ...) printk("net: %s: " fmt, __func__, ##__VA_ARGS__)
-#define NET_INFO(fmt, ...) printk("net: " fmt,  ##__VA_ARGS__)
-#define NET_PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#else
+#if defined(CONFIG_NET_LOG)
+#if !defined(SYS_LOG_DOMAIN)
+#define SYS_LOG_DOMAIN "net"
+#endif /* !SYS_LOG_DOMAIN */
+
+#if NET_DEBUG > 0
+#undef SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#endif /* NET_DEBUG */
+
+#define NET_DBG(fmt, ...) SYS_LOG_DBG("(%p): " fmt, sys_thread_self_get(), \
+				      ##__VA_ARGS__)
+#define NET_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
+#define NET_WARN(fmt, ...) SYS_LOG_WRN(fmt, ##__VA_ARGS__)
+#define NET_INFO(fmt, ...) SYS_LOG_INF(fmt,  ##__VA_ARGS__)
+#else /* CONFIG_NET_LOG */
 #define NET_DBG(...)
 #define NET_ERR(...)
 #define NET_INFO(...)
-#define NET_PRINT(...)
-#endif /* CONFIG_NETWORKING_WITH_LOGGING */
+#define NET_WARN(...)
+#endif /* CONFIG_NET_LOG */
 
 struct net_buf;
 struct net_context;
 
-#include <misc/printk.h>
+#include <misc/sys_log.h>
 #include <string.h>
 
 #include <net/net_if.h>

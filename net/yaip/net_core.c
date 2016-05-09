@@ -22,8 +22,9 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_CORE
-#define DEBUG 1
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_CORE)
+#define SYS_LOG_DOMAIN "net/core"
+#define NET_DEBUG 1
 #endif
 
 #include <init.h>
