@@ -863,6 +863,14 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 
 	bt_addr_le_copy(&conn->le.init_addr, &bt_dev.random_addr);
 #else
+	/* If Static Random address is used as Identity address we need to
+	 * restore it before creating connection. Otherwise NRPA used for
+	 * active scan could be used for connection.
+	 */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM)) {
+		set_random_address(&bt_dev.id_addr.a);
+	}
+
 	bt_addr_le_copy(&conn->le.init_addr, &bt_dev.id_addr);
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
 
@@ -2947,7 +2955,13 @@ set_addr:
 	bt_addr_copy(net_buf_add(buf, sizeof(bt_dev.id_addr.a)),
 		     &bt_dev.id_addr.a);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM);
+	return 0;
 }
 
 static int hci_init(void)
