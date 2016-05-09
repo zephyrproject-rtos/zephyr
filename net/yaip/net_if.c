@@ -56,12 +56,10 @@ static inline void init_tx_queue(struct net_if *iface)
 		    (nano_fiber_entry_t)net_if_tx_fiber, (int)iface, 0, 7, 0);
 }
 
-static int net_if_init(struct device *unused)
+int net_if_init(void)
 {
 	struct net_if_api *api;
 	struct net_if *iface;
-
-	ARG_UNUSED(unused);
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
 		api = (struct net_if_api *) iface->dev->driver_api;
@@ -74,5 +72,3 @@ static int net_if_init(struct device *unused)
 
 	return 0;
 }
-
-SYS_INIT(net_if_init, NANOKERNEL, CONFIG_NET_YAIP_INIT_PRIO);

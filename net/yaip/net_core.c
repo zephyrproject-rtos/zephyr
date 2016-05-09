@@ -26,6 +26,7 @@
 #define DEBUG 1
 #endif
 
+#include <init.h>
 #include <nanokernel.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -79,14 +80,16 @@ static int network_initialization(void)
 	return 0;
 }
 
-int net_init(void)
+static int net_init(struct device *unused)
 {
-	static uint8_t initialized;
+	static bool is_initialized;
 
-	if (initialized)
+	if (is_initialized)
 		return -EALREADY;
 
-	initialized = 1;
+	is_initialized = true;
+
+	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
 
 	net_nbuf_init();
 
@@ -94,3 +97,5 @@ int net_init(void)
 
 	return network_initialization();
 }
+
+SYS_INIT(net_init, NANOKERNEL, CONFIG_NET_INIT_PRIO);
