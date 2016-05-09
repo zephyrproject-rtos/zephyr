@@ -62,9 +62,13 @@ SECTION_FUNC(TEXT, __text_start)
 	 * ZEP-275
 	 */
 
-	/* Set up the initial stack pointer
-	 * ZEP-269
-	 */
+	/* Set up the initial stack pointer to the interrupt stack, safe
+	 * to use this as the CPU boots up with interrupts disabled and we
+	 * don't turn them on until much later, when the kernel is on
+	 * the main stack */
+	movhi sp, %hi(_interrupt_stack)
+	ori sp, sp, %lo(_interrupt_stack)
+	addi sp, sp, CONFIG_ISR_STACK_SIZE
 
 	/* TODO Setup the global pointer
 	 * ZEP-272
