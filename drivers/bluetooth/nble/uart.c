@@ -54,7 +54,7 @@ struct ipc_uart_header {
 
 /* TODO: check size */
 #define NBLE_TX_BUF_COUNT	2
-#define NBLE_RX_BUF_COUNT	8
+#define NBLE_RX_BUF_COUNT	10
 #define NBLE_BUF_SIZE		384
 
 static struct nano_fifo rx;
