@@ -398,7 +398,8 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
 {
 	char *value = attr->user_data;
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value, strlen(value));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 strlen(value));
 }
 
 ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
