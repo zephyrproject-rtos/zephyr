@@ -59,7 +59,7 @@ config NETWORK_IP_STACK_DEBUG_RECV_SEND
 
 config NETWORK_IP_STACK_DEBUG_TCP_PSOCK
 	bool "Debug network TCP protosockets"
-	depends on NETWORKING_WITH_TCP
+	depends on NETWORKING_WITH_TCP && NET_UIP
 	default n
 	help
 	  Enables debugging the protosockets used in TCP engine.
@@ -74,18 +74,19 @@ config NETWORK_IP_STACK_DEBUG_IPV6
 config NETWORK_IP_STACK_DEBUG_SIMPLE_UDP
 	bool "Debug simple udp"
 	default n
+	depends on NET_UIP
 	help
 	  Enables network simple udp debug messages
 
 config NETWORK_IP_STACK_DEBUG_UDP_PACKET
-	bool "Debug uip udp packet"
+	bool "Debug udp packet"
 	default n
 	help
 	  Enables network uip udp packet debug messages
 
 config NETWORK_IP_STACK_DEBUG_IPV6_DS
 	bool "Debug IPv6 Data Structures"
-	depends on NETWORKING_WITH_IPV6
+	depends on NETWORKING_WITH_IPV6 && NET_UIP
 	default n
 	help
 	  Enables IPv6 Data Structures code part to output debug messages
@@ -156,7 +157,7 @@ config NETWORK_IP_STACK_DEBUG_6LOWPAN_COMPRESSION
 
 config NETWORK_IP_STACK_DEBUG_PACKET_QUEUE
 	bool "Debug uip packet queue"
-	depends on NETWORKING_WITH_IPV6
+	depends on NETWORKING_WITH_IPV6 && NET_UIP
 	default n
 	help
 	  Enables uip packet queue output debug messages
