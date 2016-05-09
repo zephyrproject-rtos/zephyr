@@ -16,7 +16,9 @@ arch_cflags += $(call cc-option,-ffunction-sections) \
 # Nios II CPUs are configurable and we need to pull in the generated
 # headers system.h and linker.h which specify what is enabled and where
 # everything is.
-arch_cflags += $(call cc-option,-I$(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/include)
+soc_ld_include := -I$(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/include
+arch_cflags += $(soc_ld_include)
+EXTRA_LINKER_CMD_OPT += $(soc_ld_include)
 
 KBUILD_AFLAGS += $(arch_cflags)
 KBUILD_CFLAGS += $(arch_cflags)
