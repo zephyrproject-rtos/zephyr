@@ -46,6 +46,7 @@ struct spi_qmsi_runtime {
 	qm_spi_config_t cfg;
 	int rc;
 	bool loopback;
+	struct nano_sem sem;
 };
 
 static inline qm_spi_bmode_t config_to_bmode(uint8_t mode)
@@ -147,10 +148,14 @@ static int spi_qmsi_transceive(struct device *dev,
 	qm_spi_async_transfer_t *xfer;
 	int rc;
 
-	if (pending_transfers[spi].dev)
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+	if (pending_transfers[spi].dev) {
+		nano_sem_give(&context->sem);
 		return -EBUSY;
-
+	}
 	pending_transfers[spi].dev = dev;
+	nano_sem_give(&context->sem);
+
 	xfer = &pending_transfers[spi].xfer;
 
 	xfer->rx = rx_buf;
@@ -178,8 +183,9 @@ static int spi_qmsi_transceive(struct device *dev,
 		QM_SPI[spi]->ctrlr0 |= BIT(11);
 
 	rc = qm_spi_set_config(spi, cfg);
-	if (rc != 0)
+	if (rc != 0) {
 		return -EINVAL;
+	}
 
 	spi_control_cs(dev, true);
 
@@ -188,7 +194,6 @@ static int spi_qmsi_transceive(struct device *dev,
 		spi_control_cs(dev, false);
 		return -EIO;
 	}
-
 	device_sync_call_wait(&context->sync);
 
 	return context->rc ? -EIO : 0;
@@ -264,6 +269,8 @@ static int spi_qmsi_init(struct device *dev)
 	context->gpio_cs = gpio_cs_init(spi_config);
 
 	device_sync_call_init(&context->sync);
+	nano_sem_init(&context->sem);
+	nano_sem_give(&context->sem);
 
 	dev->driver_api = &spi_qmsi_api;
 
