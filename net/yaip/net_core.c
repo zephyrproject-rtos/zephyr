@@ -139,7 +139,7 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	} else if (real_len < pkt_len) {
 		NET_DBG("IPv6 packet size %d buf len %d", pkt_len, real_len);
 		NET_STATS(++net_stats.ipv6.drop);
-		return NET_DROP;
+		goto drop;
 	}
 
 #if NET_DEBUG > 0
@@ -151,6 +151,13 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	} while (0);
 #endif /* NET_DEBUG > 0 */
 
+	if (net_is_ipv6_addr_mcast(&hdr->src)) {
+		NET_STATS(++net_stats.ipv6.drop);
+		NET_DBG("Dropping src multicast packet");
+		goto drop;
+	}
+
+drop:
 	return NET_DROP;
 }
 #endif /* CONFIG_NET_IPV6 */

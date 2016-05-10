@@ -24,6 +24,7 @@
 #define __NET_IP_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <misc/byteorder.h>
 
 #ifdef __cplusplus
@@ -157,6 +158,11 @@ struct net_ipv6_hdr {
 #define NET_IPV4UDPH_LEN   (NET_UDPH_LEN + NET_IPV4H_LEN) /* IPv4 + UDP */
 #define NET_IPV4TCPH_LEN   (NET_TCPH_LEN + NET_IPV4H_LEN) /* IPv4 + TCP */
 #define NET_IPV4ICMPH_LEN  (NET_IPV4H_LEN + NET_ICMPH_LEN) /* ICMPv4 + IPv4 */
+
+static inline bool net_is_ipv6_addr_mcast(struct in6_addr *addr)
+{
+	return addr->s6_addr[0] == 0xFF;
+}
 
 #ifdef __cplusplus
 }
