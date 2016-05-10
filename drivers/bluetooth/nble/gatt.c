@@ -797,6 +797,16 @@ static uint16_t parse_descriptor(struct bt_conn *conn,
 	return end_handle;
 }
 
+static void *gatt_get_private(struct bt_conn *conn)
+{
+	void *private;
+
+	private = conn->gatt_private;
+	/* Reset so it can be reused */
+	conn->gatt_private = NULL;
+
+	return private;
+}
 
 void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 				const uint8_t *data, uint8_t data_len)
@@ -812,10 +822,8 @@ void on_nble_gattc_discover_rsp(const struct nble_gattc_discover_rsp *rsp,
 		return;
 	}
 
-	params = conn->gatt_private;
-
 	/* This pointer would keep new params set in the function below */
-	conn->gatt_private = NULL;
+	params = gatt_get_private(conn);
 
 	/* Status maybe error or indicate end of discovery */
 	if (rsp->status) {
@@ -1040,7 +1048,7 @@ void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp,
 			     void *user_data)
 {
 	struct bt_conn *conn;
-	struct bt_gatt_write_params *params;
+	void *private;
 	bt_gatt_rsp_func_t func;
 
 	conn = bt_conn_lookup_handle(rsp->conn_handle);
@@ -1051,15 +1059,13 @@ void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp,
 
 	BT_DBG("conn %p status %d user_data %p", conn, rsp->status, user_data);
 
-	if (conn->gatt_private == gatt_write_ccc_rsp) {
+	private = gatt_get_private(conn);
+	if (private == gatt_write_ccc_rsp) {
 		func = gatt_write_ccc_rsp;
 	} else {
-		params = conn->gatt_private;
-		func = params->func;
+		func = ((struct bt_gatt_write_params *)private)->func;
 	}
 
-	/* Reset private data so the callback start new procedures */
-	conn->gatt_private = NULL;
 	func(conn, rsp->status);
 
 	bt_conn_unref(conn);
