@@ -9,6 +9,7 @@ obj-$(CONFIG_BMG160_TRIGGER) += sensor_bmg160_trigger.o
 obj-$(CONFIG_BMI160) += sensor_bmi160.o
 obj-$(CONFIG_BMI160_TRIGGER) += sensor_bmi160_trigger.o
 obj-$(CONFIG_BMP280) += sensor_bmp280.o
+obj-$(CONFIG_DHT) += sensor_dht.o
 obj-$(CONFIG_HDC1008) += sensor_hdc1008.o
 obj-$(CONFIG_ISL29035) += sensor_isl29035.o
 obj-$(CONFIG_ISL29035_TRIGGER) += sensor_isl29035_trigger.o

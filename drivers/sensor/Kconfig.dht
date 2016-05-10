@@ -1,0 +1,94 @@
+# Kconfig.dht - DHT Temperature and Himidity Sensor configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig DHT
+	bool
+	prompt "DHT Temperature and Humidity Sensor"
+	depends on SENSOR && GPIO
+	default n
+	help
+	  Enable driver for the DHT temperature and humidity sensor family.
+
+config DHT_SYS_LOG_LEVEL
+	int "DHT Log level"
+	depends on SYS_LOG && DHT
+	default 0
+	range 0 4
+	help
+	  Sets log level for DHT driver.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+choice
+	prompt "Chip type"
+	depends on DHT
+	default DHT_CHIP_DHT11
+	help
+	  Choose desired chip type from the DHT family.
+
+config DHT_CHIP_DHT11
+	bool
+	prompt "DHT11"
+	help
+	  Choose this option to enable the DHT11 chip.
+
+config DHT_CHIP_DHT22
+	bool
+	prompt "DHT22"
+	help
+	  Choose this option to enable the DHT22 chip.
+
+endchoice
+
+config DHT_NAME
+	string
+	prompt "Driver name"
+	default "DHT11" if DHT_CHIP_DHT11
+	default "DHT22" if DHT_CHIP_DHT22
+	depends on DHT
+	help
+	  Device name with which the sensor is identified.
+
+config DHT_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	depends on DHT
+	default 70
+	help
+	  Device driver initialization priority.
+
+config DHT_GPIO_DEV_NAME
+	string
+	prompt "GPIO device"
+	default "GPIO_0"
+	depends on DHT
+	help
+	  The device name of the GPIO device to which the chip's data pin
+	  is connected.
+
+config DHT_GPIO_PIN_NUM
+	int
+	prompt "Interrupt GPIO pin number"
+	default 0
+	depends on DHT
+	help
+	  The number of the GPIO on which the chip's data pin is connected.
