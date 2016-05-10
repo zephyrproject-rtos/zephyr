@@ -124,6 +124,30 @@ enum net_addr_type {
 	NET_ADDR_MANUAL,
 };
 
+#if NET_DEBUG > 0
+static inline char *net_addr_type2str(enum net_addr_type type)
+{
+	switch (type) {
+	case NET_ADDR_AUTOCONF:
+		return "AUTO";
+	case NET_ADDR_DHCP:
+		return "DHCP";
+	case NET_ADDR_MANUAL:
+		return "MANUAL";
+	case NET_ADDR_ANY:
+	default:
+		break;
+	}
+
+	return "<unknown>";
+}
+#else
+static inline char *net_addr_type2str(enum net_addr_type type)
+{
+	return NULL;
+}
+#endif
+
 /** What is the current state of the network address */
 enum net_addr_state {
 	NET_ADDR_TENTATIVE = 0,
