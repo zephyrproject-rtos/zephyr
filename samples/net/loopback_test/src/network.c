@@ -1,4 +1,4 @@
-/* network.c - Networking demo */
+/* network.c - Loopback demo: IPV6 + UDP */
 
 /*
  * Copyright (c) 2015 Intel Corporation.
@@ -40,7 +40,7 @@
  * The main() will add one null byte at the end so the maximum
  * length for the data to send is 1232 bytes.
  */
-static const char *lorem_ipsum =
+static const char *text =
 	"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam "
 	"congue non neque vel tempor. In id porta nibh, ut cursus tortor. "
 	"Morbi eleifend tristique vehicula. Nunc vitae risus mauris. "
@@ -64,18 +64,13 @@ static const char *lorem_ipsum =
 	"pellentesque, id fringilla nisi fermentum. Suspendisse gravida "
 	"pharetra sodales orci aliquam.";
 
-/* specify delay between greetings (in ms); compute equivalent in ticks */
-
+/* Specify delay between greetings (in ms); compute equivalent in ticks */
 #define SLEEPTIME  1000
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
 #define STACKSIZE 2000
-
-static char fiberReceiverStack[STACKSIZE];
-static char fiberSenderStack[STACKSIZE];
-
-const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;            /* ::  */
-const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;  /* ::1 */
+static char receiver_stack[STACKSIZE];
+static char sender_stack[STACKSIZE];
 
 static struct net_addr any_addr;
 static struct net_addr loopback_addr;
@@ -86,8 +81,8 @@ static int received;
 static nano_thread_id_t sender_id;
 static nano_thread_id_t receiver_id;
 
-static bool failure;
-static int appdatalen;
+static int failure;
+static int data_len;
 
 /* How many packets to send/receive */
 #if defined(CONFIG_NETWORK_LOOPBACK_TEST_COUNT)
@@ -97,12 +92,33 @@ static int appdatalen;
 #endif
 static unsigned long count = TEST_COUNT;
 
+int eval_rcvd_data(char *rcvd_buf, int rcvd_len)
+{
+	int rc = 0;
+
+	if (data_len != rcvd_len) {
+		rc = -1;
+		PRINT("Received %d bytes but was sent %d bytes\n",
+		      rcvd_len, data_len);
+	} else {
+		/* Data integrity */
+		rc = memcmp(text, rcvd_buf, data_len-1);
+		if (rc != 0) {
+			PRINT("Sent and received data does not match.\n");
+			PRINT("Sent: %.*s\n", data_len, text);
+			PRINT("Received: %.*s\n",
+			      data_len, rcvd_buf);
+		}
+	}
+	return rc;
+}
+
 void fiber_receiver(void)
 {
-	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
 	struct net_context *ctx;
 	struct net_buf *buf;
+	char *rcvd_buf;
+	int rcvd_len;
 
 	ctx = net_context_get(IPPROTO_UDP,
 			      &any_addr, 0,
@@ -112,46 +128,65 @@ void fiber_receiver(void)
 		return;
 	}
 
-	nano_timer_init(&timer, data);
-
 	while (!failure) {
+		/* Fiber blocks until something is ready to be read */
 		buf = net_receive(ctx, TICKS_UNLIMITED);
 		if (buf) {
-			PRINT("%d: %s: received %d bytes\n", received++,
-			      __func__, ip_buf_appdatalen(buf));
+			/* Application level data and its length */
+			rcvd_buf = ip_buf_appdata(buf);
+			rcvd_len = ip_buf_appdatalen(buf);
 
-			if (appdatalen != ip_buf_appdatalen(buf)) {
-				failure = true;
-				PRINT("Received %d bytes but was sent "
-				      "%d bytes\n",
-				      ip_buf_appdatalen(buf), appdatalen);
-			} else if (memcmp(lorem_ipsum, ip_buf_appdata(buf),
-					  appdatalen - 1)) {
-				failure = true;
-				PRINT("Sent and received data do not match.\n");
-				PRINT("    Sent: %.*s\n", appdatalen, lorem_ipsum);
-				PRINT("Received: %.*s\n", appdatalen, ip_buf_appdata(buf));
+			PRINT("[%d] %s: Received: %d bytes\n",
+			      received, __func__, rcvd_len);
+
+			if (eval_rcvd_data(rcvd_buf, rcvd_len) != 0) {
+				PRINT("[%d] %s: net_receive failed!\n",
+				      received, __func__);
+				failure = 1;
 			}
 			ip_buf_unref(buf);
+			received++;
 		}
-
+		fiber_wakeup(sender_id);
+		fiber_sleep(SLEEPTICKS);
 		if (count && (count < received)) {
 			break;
 		}
-
-		fiber_wakeup(sender_id);
-		fiber_sleep(SLEEPTICKS);
 	}
+}
+
+void prepare_to_send(struct net_buf *buf, size_t *len)
+{
+	char *ptr;
+	int text_len;
+
+	text_len = strlen(text);
+	*len = sys_rand32_get() % text_len;
+
+	/* net_buf_add: returns a pointer to the current tail of
+	 * buf->data before adding n bytes.
+	 * Adding 0 bytes just allows us to get a pointer to the
+	 * tail without affecting buf->len.
+	 */
+	ptr = net_buf_add(buf, 0);
+	memcpy(ptr, text, *len);
+	net_buf_add(buf, *len);
+	/* We need to know where the text finishes to add the
+	 * end-of-line character.
+	 */
+	ptr = net_buf_add(buf, 1);
+	*ptr = '\0';
+
+	*len += 1;
 }
 
 void fiber_sender(void)
 {
-	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
 	struct net_context *ctx;
 	struct net_buf *buf;
-	int len;
-	int ipsum_len = strlen(lorem_ipsum);
+	uint16_t sent_len;
+	size_t len;
+	int header_size;
 
 	ctx = net_context_get(IPPROTO_UDP,
 			      &loopback_addr, 4242,
@@ -161,49 +196,39 @@ void fiber_sender(void)
 		return;
 	}
 
-	nano_timer_init(&timer, data);
-
 	while (!failure) {
 		buf = ip_buf_get_tx(ctx);
 		if (buf) {
-			uint8_t *ptr;
-			uint16_t sent_len;
-
-			len = sys_rand32_get() % ipsum_len;
-
-			ptr = net_buf_add(buf, 0);
-			memcpy(ptr, lorem_ipsum, len);
-			ptr = net_buf_add(buf, len);
-			ptr = net_buf_add(buf, 1); /* add \0 */
-			*ptr = '\0';
+			prepare_to_send(buf, &len);
 			sent_len = buf->len;
-			appdatalen = 0;
+			header_size = ip_buf_reserve(buf);
+			data_len = sent_len - header_size;
+
+			PRINT("[%d] %s: App data: %d bytes, IPv6+UDP: %d bytes, "
+			      "Total packet size: %d bytes\n",
+			      sent, __func__, len, header_size, sent_len);
 
 			if (net_send(buf) < 0) {
-				PRINT("%s: sending %d bytes failed\n",
-					__func__, len);
-				ip_buf_unref(buf);
-			} else {
-				appdatalen = sent_len - ip_buf_reserve(buf);
-				PRINT("%d: %s: sent %d bytes\n", sent++,
-				      __func__, appdatalen);
+				PRINT("[%d] %s: net_send failed!\n",
+				      sent, __func__);
+				failure = 1;
 			}
+			ip_buf_unref(buf);
+			sent++;
 		}
-
 		fiber_wakeup(receiver_id);
 		fiber_sleep(SLEEPTICKS);
-
 		if (sent != received) {
-			failure = true;
+			failure = 1;
 		}
-
 		if (count && (count < sent)) {
 			break;
 		}
+
 	}
 
 	if (failure) {
-		PRINT("ERROR TEST FAILED\n");
+		PRINT("TEST FAILED\n");
 	} else {
 		PRINT("TEST PASSED\n");
 	}
@@ -211,10 +236,10 @@ void fiber_sender(void)
 
 void main(void)
 {
-	/* Pretend to be ethernet with 6 byte mac */
-	uint8_t mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+	struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;            /* ::  */
+	struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;  /* ::1 */
 
-	PRINT("%s: run network loopback test\n", __func__);
+	PRINT("%s: running network loopback test\n", __func__);
 
 	sys_rand32_init();
 
@@ -227,13 +252,11 @@ void main(void)
 	loopback_addr.in6_addr = in6addr_loopback;
 	loopback_addr.family = AF_INET6;
 
-	net_set_mac(mac, sizeof(mac));
-
-	receiver_id = task_fiber_start(&fiberReceiverStack[0], STACKSIZE,
+	receiver_id = task_fiber_start(receiver_stack, STACKSIZE,
 				       (nano_fiber_entry_t)fiber_receiver,
 				       0, 0, 7, 0);
 
-	sender_id = task_fiber_start(&fiberSenderStack[0], STACKSIZE,
+	sender_id = task_fiber_start(sender_stack, STACKSIZE,
 				     (nano_fiber_entry_t)fiber_sender,
 				     0, 0, 7, 0);
 }
