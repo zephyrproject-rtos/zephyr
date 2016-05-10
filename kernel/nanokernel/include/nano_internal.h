@@ -107,6 +107,8 @@ extern void _nano_timer_task_ready(void *task);
 #define _NANO_TASK_READY(tcs)		_nano_task_ready(tcs->uk_task_ptr)
 #define _NANO_TIMER_TASK_READY(tcs)	_nano_timer_task_ready(tcs->uk_task_ptr)
 #define _IS_MICROKERNEL_TASK(tcs)	((tcs)->uk_task_ptr != NULL)
+#define _IS_IDLE_TASK() \
+	(task_priority_get() == (CONFIG_NUM_TASK_PRIORITIES - 1))
 #else
 #define _TASK_PENDQ_INIT(queue)		do { } while (0)
 #define _NANO_UNPEND_TASKS(queue)	do { } while (0)

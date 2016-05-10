@@ -222,7 +222,7 @@ extern void _task_nano_timer_pend_task(struct nano_timer *timer);
 
 #define NANO_TASK_TIMER_PEND(timer, key)                                      \
 	do {                                                                  \
-		if (task_priority_get() == CONFIG_NUM_TASK_PRIORITIES - 1) {  \
+		if (_IS_IDLE_TASK()) {  \
 			IDLE_TASK_TIMER_PEND(timer, key);                     \
 		} else {                                                      \
 			_task_nano_timer_pend_task(timer);                    \

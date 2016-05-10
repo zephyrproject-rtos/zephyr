@@ -405,7 +405,7 @@ extern void _nano_task_sleep(int32_t timeout_in_ticks);
 
 void _micro_task_sleep(int32_t ticks)
 {
-	if (task_priority_get() == (CONFIG_NUM_TASK_PRIORITIES - 1)) {
+	if (_IS_IDLE_TASK()) {
 		_nano_task_sleep(ticks);
 	} else {
 		_do_micro_task_sleep(ticks);
