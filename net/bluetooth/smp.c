@@ -3597,7 +3597,7 @@ static bool le_sc_supported(void)
 #else
 static bool le_sc_supported(void)
 {
-	uint32_t random[16];
+	uint32_t random[8];
 	EccPoint pkey;
 
 	do {
