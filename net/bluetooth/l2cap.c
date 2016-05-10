@@ -204,13 +204,14 @@ void bt_l2cap_connected(struct bt_conn *conn)
 	struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
-	fchan = le_channels;
-
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR) {
-		fchan = br_channels;
+		bt_l2cap_br_connected(conn);
+		return;
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
+
+	fchan = le_channels;
 
 	for (; fchan; fchan = fchan->_next) {
 		if (fchan->accept(conn, &chan) < 0) {

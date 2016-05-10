@@ -53,6 +53,11 @@ static NET_BUF_POOL(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), &br_sig, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
+void bt_l2cap_br_connected(struct bt_conn *conn)
+{
+	BT_WARN("Not yet implemented");
+}
+
 static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
 {
 	struct bt_l2cap_server *server;
