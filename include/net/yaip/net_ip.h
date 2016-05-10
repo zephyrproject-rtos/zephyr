@@ -23,6 +23,7 @@
 #ifndef __NET_IP_H
 #define __NET_IP_H
 
+#include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <misc/byteorder.h>
@@ -183,9 +184,49 @@ struct net_ipv6_hdr {
 #define NET_IPV4TCPH_LEN   (NET_TCPH_LEN + NET_IPV4H_LEN) /* IPv4 + TCP */
 #define NET_IPV4ICMPH_LEN  (NET_IPV4H_LEN + NET_ICMPH_LEN) /* ICMPv4 + IPv4 */
 
+static inline bool net_is_ipv6_addr_loopback(struct in6_addr *addr)
+{
+	return addr->s6_addr32[0] == 0 &&
+		addr->s6_addr32[1] == 0 &&
+		addr->s6_addr32[2] == 0 &&
+		ntohl(addr->s6_addr32[3]) == 1;
+}
+
 static inline bool net_is_ipv6_addr_mcast(struct in6_addr *addr)
 {
 	return addr->s6_addr[0] == 0xFF;
+}
+
+extern struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr);
+static inline bool net_is_my_ipv6_addr(struct in6_addr *addr)
+{
+	return net_if_ipv6_addr_lookup(addr) != NULL;
+}
+
+extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *addr);
+static inline bool net_is_my_ipv6_maddr(struct in6_addr *maddr)
+{
+	return net_if_ipv6_maddr_lookup(maddr) != NULL;
+}
+
+static inline bool net_is_ipv6_prefix(uint8_t *addr1, uint8_t *addr2,
+				      uint8_t length)
+{
+	uint8_t bits = 128 - length;
+	uint8_t bytes = bits / 8;
+	uint8_t remain = bits % 8;
+
+	if (length > 128) {
+		return false;
+	}
+
+	if (memcmp(addr1, addr2, 16 - bytes)) {
+		return false;
+	}
+
+	return ((addr1[16 - bytes] & ((8 - remain) << 8))
+		==
+		(addr2[16 - bytes] & ((8 - remain) << 8)));
 }
 
 #ifdef __cplusplus
