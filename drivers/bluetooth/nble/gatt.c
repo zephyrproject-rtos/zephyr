@@ -970,7 +970,7 @@ done:
 void on_nble_gattc_read_multi_rsp(const struct nble_gattc_read_rsp *rsp,
 				     uint8_t *data, uint8_t len)
 {
-	struct bt_gatt_read_params *params;
+	struct bt_gatt_read_params *params = rsp->user_data;
 	struct bt_conn *conn;
 
 	conn = bt_conn_lookup_handle(rsp->conn_handle);
@@ -978,9 +978,6 @@ void on_nble_gattc_read_multi_rsp(const struct nble_gattc_read_rsp *rsp,
 		BT_ERR("Unable to find conn, handle 0x%04x", rsp->conn_handle);
 		return;
 	}
-
-	/* TODO: Get params from user_data pointer, not working at the moment */
-	params = conn->gatt_private;
 
 	BT_DBG("conn %p params %p status 0x%02x", conn, params, rsp->status);
 
@@ -995,7 +992,6 @@ void on_nble_gattc_read_multi_rsp(const struct nble_gattc_read_rsp *rsp,
 	params->func(conn, 0, params, NULL, 0);
 
 done:
-	conn->gatt_private = NULL;
 	bt_conn_unref(conn);
 }
 
