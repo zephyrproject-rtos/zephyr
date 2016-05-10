@@ -217,12 +217,12 @@ struct nble_gattc_read_rsp {
 };
 
 /* forward declaration */
-struct bt_gatt_write_params;
+struct nble_gatt_write_params;
 
 typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
-			      const struct bt_gatt_write_params *wr_params);
+			      const struct nble_gatt_write_params *wr_params);
 
-struct bt_gatt_write_params {
+struct nble_gatt_write_params {
 	/* Function invoked upon write response */
 	bt_att_func_t func;
 	/* User specific data */
@@ -235,7 +235,7 @@ struct nble_gattc_write_req {
 	uint16_t offset;
 	/* different than 0 if response required */
 	uint8_t with_resp;
-	struct bt_gatt_write_params wr_params;
+	struct nble_gatt_write_params wr_params;
 };
 
 struct nble_gattc_write_rsp {
@@ -243,7 +243,7 @@ struct nble_gattc_write_rsp {
 	int status;
 	uint16_t handle;
 	uint16_t len;
-	struct bt_gatt_write_params wr_params;
+	struct nble_gatt_write_params wr_params;
 };
 
 void nble_gattc_read_req(const struct nble_gattc_read_req *);

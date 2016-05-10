@@ -1370,6 +1370,8 @@ static void write_rsp(struct bt_conn *conn, uint8_t err)
 		    sizeof(err));
 }
 
+static struct bt_gatt_write_params write_params;
+
 static void write(uint8_t *data, uint16_t len)
 {
 	const struct gatt_write_cmd *cmd = (void *) data;
@@ -1380,10 +1382,14 @@ static void write(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	if (bt_gatt_write(conn, sys_le16_to_cpu(cmd->handle), 0, cmd->data,
-			  sys_le16_to_cpu(cmd->data_length), write_rsp) < 0) {
-		bt_conn_unref(conn);
+	write_params.handle = sys_le16_to_cpu(cmd->handle);
+	write_params.func = write_rsp;
+	write_params.offset = 0;
+	write_params.data = cmd->data;
+	write_params.length = sys_le16_to_cpu(cmd->data_length);
 
+	if (bt_gatt_write(conn, &write_params) < 0) {
+		bt_conn_unref(conn);
 		goto fail;
 	}
 
@@ -1411,12 +1417,14 @@ static void write_long(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	if (bt_gatt_write(conn, sys_le16_to_cpu(cmd->handle),
-			  sys_le16_to_cpu(cmd->offset), cmd->data,
-			  sys_le16_to_cpu(cmd->data_length),
-			  write_long_rsp) < 0) {
-		bt_conn_unref(conn);
+	write_params.handle = sys_le16_to_cpu(cmd->handle);
+	write_params.func = write_long_rsp;
+	write_params.offset = cmd->offset;
+	write_params.data = cmd->data;
+	write_params.length = sys_le16_to_cpu(cmd->data_length);
 
+	if (bt_gatt_write(conn, &write_params) < 0) {
+		bt_conn_unref(conn);
 		goto fail;
 	}
 

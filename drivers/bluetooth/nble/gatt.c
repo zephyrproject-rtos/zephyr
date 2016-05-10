@@ -995,12 +995,11 @@ done:
 	bt_conn_unref(conn);
 }
 
-int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
-		  const void *data, uint16_t length, bt_gatt_rsp_func_t func)
+int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 {
 	struct nble_gattc_write_req req;
 
-	if (!conn || !handle || !func) {
+	if (!conn || !params || !params->handle || !params->func) {
 		return -EINVAL;
 	}
 
@@ -1013,26 +1012,35 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 	}
 
 	BT_DBG("conn %p handle 0x%04x offset 0x%04x len %u data %p",
-	       conn, handle, offset, length, data);
+	       conn, params->handle, params->offset, params->length,
+	       params->data);
 
 	memset(&req, 0, sizeof(req));
 
 	req.conn_handle = conn->handle;
-	req.handle = handle;
-	req.offset = offset;
+	req.handle = params->handle;
+	req.offset = params->offset;
 	req.with_resp = 1;
 
-	conn->gatt_private = func;
+	conn->gatt_private = params;
 
-	nble_gattc_write_req(&req, data, length);
+	nble_gattc_write_req(&req, params->data, params->length);
 
 	return 0;
+}
+
+static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err)
+{
+	BT_DBG("conn %p err %u", conn, err);
+
+	/* TODO: Remove failed subscription */
 }
 
 void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp,
 			     void *user_data)
 {
 	struct bt_conn *conn;
+	struct bt_gatt_write_params *params;
 	bt_gatt_rsp_func_t func;
 
 	conn = bt_conn_lookup_handle(rsp->conn_handle);
@@ -1043,11 +1051,16 @@ void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp,
 
 	BT_DBG("conn %p status %d user_data %p", conn, rsp->status, user_data);
 
-	func = conn->gatt_private;
-	if (func) {
-		func(conn, rsp->status);
-		conn->gatt_private = NULL;
+	if (conn->gatt_private == gatt_write_ccc_rsp) {
+		func = gatt_write_ccc_rsp;
+	} else {
+		params = conn->gatt_private;
+		func = params->func;
 	}
+
+	/* Reset private data so the callback start new procedures */
+	conn->gatt_private = NULL;
+	func(conn, rsp->status);
 
 	bt_conn_unref(conn);
 }
@@ -1127,21 +1140,22 @@ static void remove_subscriptions(struct bt_conn *conn)
 	}
 }
 
-static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err)
-{
-	BT_DBG("conn %p err %u", conn, err);
-
-	/* TODO: Remove failed subscription */
-}
-
 static int gatt_write_ccc(struct bt_conn *conn,
 			  struct bt_gatt_subscribe_params *params)
 {
-	uint16_t handle = params->ccc_handle;
-	uint16_t value = params->value;
+	struct nble_gattc_write_req req;
 
-	return bt_gatt_write(conn, handle, 0, &value, sizeof(value),
-			     gatt_write_ccc_rsp);
+	req.conn_handle = conn->handle;
+	req.handle = params->ccc_handle;
+	req.offset = 0;
+	req.with_resp = 1;
+
+	conn->gatt_private = gatt_write_ccc_rsp;
+
+	nble_gattc_write_req(&req, (void *)&params->value,
+			     sizeof(params->value));
+
+	return 0;
 }
 
 int bt_gatt_subscribe(struct bt_conn *conn,

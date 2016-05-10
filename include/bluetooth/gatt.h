@@ -910,22 +910,34 @@ struct bt_gatt_read_params {
  */
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
 
+/** @brief GATT Write parameters */
+struct bt_gatt_write_params {
+	/** Response callback */
+	bt_gatt_rsp_func_t func;
+	/** Attribute handle */
+	uint16_t handle;
+	/** Attribute data offset */
+	uint16_t offset;
+	/** Data to be written */
+	const void *data;
+	/** Length of the data */
+	uint16_t length;
+};
+
 /** @brief Write Attribute Value by handle
  *
  * This procedure write the attribute value and return the result in the
  * callback.
  *
+ * Note: This procedure is asynchronous therefore the parameters need to
+ *  remains valid while it is active.
+ *
  * @param conn Connection object.
- * @param handle Attribute handle.
- * @param offset Attribute data offset.
- * @param data Data to be written.
- * @param length Data length.
- * @param func Callback function.
+ * @param params Write parameters.
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
-		  const void *data, uint16_t length, bt_gatt_rsp_func_t func);
+int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
 
 /** @brief Write Attribute Value by handle without response
  *

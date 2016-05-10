@@ -834,6 +834,8 @@ static void write_func(struct bt_conn *conn, uint8_t err)
 	printk("Write complete: err %u\n", err);
 }
 
+static struct bt_gatt_write_params write_params;
+
 static void cmd_gatt_write(int argc, char *argv[])
 {
 	int err;
@@ -868,8 +870,13 @@ static void cmd_gatt_write(int argc, char *argv[])
 	/* TODO: Add support for longer data */
 	data = strtoul(argv[3], NULL, 16);
 
-	err = bt_gatt_write(default_conn, handle, offset, &data, sizeof(data),
-			    write_func);
+	write_params.handle = handle;
+	write_params.offset = offset;
+	write_params.func = write_func;
+	write_params.data = &data;
+	write_params.length = sizeof(data);
+
+	err = bt_gatt_write(default_conn, &write_params);
 	if (err) {
 		printk("Write failed (err %d)\n", err);
 	} else {
