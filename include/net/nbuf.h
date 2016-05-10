@@ -97,6 +97,8 @@ struct net_nbuf {
 	uint8_t family; /* IPv4 vs IPv6 */
 	uint8_t ip_hdr_len; /* pre-filled in order to avoid func call */
 	uint8_t ext_len; /* length of extension headers */
+	uint8_t ext_bitmap;
+	uint8_t *next_hdr;
 	/* @endcond */
 
 	/** Network connection context */
@@ -152,6 +154,10 @@ struct net_nbuf {
 				   net_buf_user_data((buf)))->ip_hdr_len)
 #define net_nbuf_ext_len(buf) \
 	(((struct net_nbuf *)net_buf_user_data((buf)))->ext_len)
+#define net_nbuf_ext_bitmap(buf) \
+	(((struct net_nbuf *)net_buf_user_data((buf)))->ext_bitmap)
+#define net_nbuf_next_hdr(buf) \
+	(((struct net_nbuf *)net_buf_user_data((buf)))->next_hdr)
 
 #define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_nbuf_ip_data(buf))
 #define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))
