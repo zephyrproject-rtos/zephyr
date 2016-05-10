@@ -81,10 +81,6 @@ static NET_BUF_POOL(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_BUF_USER_DATA_MIN);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-static struct bt_l2cap_fixed_chan *br_channels;
-#endif /* CONFIG_BLUETOOTH_BREDR */
-
 /* L2CAP signalling channel specific context */
 struct bt_l2cap {
 	/* The channel this context is associated with */
@@ -1095,15 +1091,6 @@ void bt_l2cap_init(void)
 		.cid	= BT_L2CAP_CID_LE_SIG,
 		.accept	= l2cap_accept,
 	};
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	static struct bt_l2cap_fixed_chan chan_br = {
-		.cid	= BT_L2CAP_CID_BR_SIG,
-		.mask	= BT_L2CAP_MASK_BR_SIG,
-		.accept = l2cap_accept,
-	};
-	bt_l2cap_br_init();
-	bt_l2cap_br_fixed_chan_register(&chan_br);
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	net_buf_pool_init(le_sig_pool);
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -1111,6 +1098,10 @@ void bt_l2cap_init(void)
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 	bt_l2cap_le_fixed_chan_register(&chan);
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	bt_l2cap_br_init();
+#endif /* CONFIG_BLUETOOTH_BREDR */
 }
 
 struct bt_l2cap_chan *bt_l2cap_lookup_tx_cid(struct bt_conn *conn,
@@ -1363,13 +1354,3 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return err;
 }
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
-
-#if defined(CONFIG_BLUETOOTH_BREDR)
-void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
-{
-	BT_DBG("CID 0x%04x", chan->cid);
-
-	chan->_next = br_channels;
-	br_channels = chan;
-}
-#endif /* CONFIG_BLUETOOTH_BREDR */

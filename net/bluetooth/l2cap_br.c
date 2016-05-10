@@ -46,6 +46,7 @@
 #define L2CAP_BR_MIN_MTU	48
 
 static struct bt_l2cap_server *br_servers;
+static struct bt_l2cap_fixed_chan *br_channels;
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
 static struct nano_fifo br_sig;
@@ -96,7 +97,22 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 	return 0;
 }
 
+static void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
+{
+	BT_DBG("CID 0x%04x", chan->cid);
+
+	chan->_next = br_channels;
+	br_channels = chan;
+}
+
 void bt_l2cap_br_init(void)
 {
+	static struct bt_l2cap_fixed_chan chan_br = {
+			.cid	= BT_L2CAP_CID_BR_SIG,
+			.mask	= BT_L2CAP_MASK_BR_SIG,
+			.accept = NULL,
+			};
+
 	net_buf_pool_init(br_sig_pool);
+	bt_l2cap_br_fixed_chan_register(&chan_br);
 }
