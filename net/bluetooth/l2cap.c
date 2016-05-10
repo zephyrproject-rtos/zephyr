@@ -46,8 +46,6 @@
 
 #define L2CAP_LE_DYN_CID_START	0x0040
 #define L2CAP_LE_DYN_CID_END	0x007f
-#define L2CAP_BR_DYN_CID_START	0x0040
-#define L2CAP_BR_DYN_CID_END	0xffff
 
 #define L2CAP_LE_PSM_START	0x0001
 #define L2CAP_LE_PSM_END	0x00ff
@@ -148,7 +146,7 @@ void bt_l2cap_le_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 static void l2cap_chan_alloc_cid(struct bt_conn *conn,
 				 struct bt_l2cap_chan *chan)
 {
-	uint16_t cid, cid_min, cid_max;
+	uint16_t cid;
 
 	/*
 	 * No action needed if there's already a CID allocated, e.g. in
@@ -158,17 +156,7 @@ static void l2cap_chan_alloc_cid(struct bt_conn *conn,
 		return;
 	}
 
-	cid_min = L2CAP_LE_DYN_CID_START;
-	cid_max = L2CAP_LE_DYN_CID_END;
-
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
-		cid_min = L2CAP_BR_DYN_CID_START;
-		cid_max = L2CAP_BR_DYN_CID_END;
-	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
-
-	for (cid = cid_min; cid <= cid_max; cid++) {
+	for (cid = L2CAP_LE_DYN_CID_START; cid <= L2CAP_LE_DYN_CID_END; cid++) {
 		if (!bt_l2cap_lookup_rx_cid(conn, cid)) {
 			chan->rx.cid = cid;
 			return;

@@ -43,6 +43,9 @@
 #define L2CAP_BR_PSM_START	0x0001
 #define L2CAP_BR_PSM_END	0xffff
 
+#define L2CAP_BR_DYN_CID_START	0x0040
+#define L2CAP_BR_DYN_CID_END	0xffff
+
 #define L2CAP_BR_MIN_MTU	48
 
 static struct bt_l2cap_server *br_servers;
@@ -54,9 +57,71 @@ static NET_BUF_POOL(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), &br_sig, NULL,
 		    BT_BUF_USER_DATA_MIN);
 
+static void l2cap_br_chan_alloc_cid(struct bt_conn *conn,
+				    struct bt_l2cap_chan *chan)
+{
+	uint16_t cid;
+
+	/*
+	 * No action needed if there's already a CID allocated, e.g. in
+	 * the case of a fixed channel.
+	 */
+	if (chan->rx.cid > 0) {
+		return;
+	}
+
+	for (cid = L2CAP_BR_DYN_CID_START; cid <= L2CAP_BR_DYN_CID_END; cid++) {
+		if (!bt_l2cap_lookup_rx_cid(conn, cid)) {
+			chan->rx.cid = cid;
+			return;
+		}
+	}
+}
+
+static int l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
+{
+	l2cap_br_chan_alloc_cid(conn, chan);
+
+	if (!chan->rx.cid) {
+		BT_ERR("Unable to allocate L2CAP CID");
+		return -ENOMEM;
+	}
+
+	/* Attach channel to the connection */
+	chan->_next = conn->channels;
+	conn->channels = chan;
+	chan->conn = conn;
+
+	BT_DBG("conn %p chan %p cid 0x%04x", conn, chan, chan->rx.cid);
+
+	return 0;
+}
+
 void bt_l2cap_br_connected(struct bt_conn *conn)
 {
-	BT_WARN("Not yet implemented");
+	struct bt_l2cap_fixed_chan *fchan;
+	struct bt_l2cap_chan *chan;
+
+	fchan = br_channels;
+
+	for (; fchan; fchan = fchan->_next) {
+		if (!fchan->accept) {
+			continue;
+		}
+
+		if (fchan->accept(conn, &chan) < 0) {
+			continue;
+		}
+
+		chan->rx.cid = fchan->cid;
+		chan->tx.cid = fchan->cid;
+
+		l2cap_br_chan_add(conn, chan);
+
+		if (chan->ops->connected) {
+			chan->ops->connected(chan);
+		}
+	}
 }
 
 static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
