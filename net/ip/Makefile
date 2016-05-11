@@ -4,7 +4,7 @@ ccflags-y += -I${srctree}/net/ip/contiki/os
 ccflags-y += -I${srctree}/net/ip
 ccflags-y += -I${srctree}/include/drivers
 
-# Zypher specific files
+# Zephyr specific files
 obj-y = net_core.o \
 	ip_buf.o \
 	net_context.o
