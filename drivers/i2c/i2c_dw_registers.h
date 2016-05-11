@@ -29,7 +29,7 @@ extern "C" {
 #define IC_CON_RESTART_EN			(1 << 5)
 #define IC_CON_10BIT_ADDR_MASTER		(1 << 4)
 #define IC_CON_10BIT_ADDR_SLAVE			(1 << 3)
-#define IC_CON_SPEED_MASK			(2 << 1)
+#define IC_CON_SPEED_MASK			(0x3 << 1)
 #define IC_CON_MASTER_MODE			(1 << 0)
 
 union ic_con_register {
