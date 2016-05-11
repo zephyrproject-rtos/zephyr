@@ -143,6 +143,27 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	return 0;
 }
 
+static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
+					   uint16_t latency, uint16_t timeout)
+{
+	if (min > max || min < 6 || max > 3200) {
+		return false;
+	}
+
+	/* Limits according to BT Core spec 4.2 [Vol 2, Part E, 7.8.12] */
+	if (timeout < 10 || timeout > 3200 ||
+	    (2 * timeout) < ((1 + latency) * max * 5)) {
+		return false;
+	}
+
+	/* Limits according to BT Core spec 4.2 [Vol 6, Part B, 4.5.1] */
+	if (latency > 499 || ((latency + 1) * max) > (timeout * 4)) {
+		return false;
+	}
+
+	return true;
+}
+
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
@@ -195,27 +216,6 @@ void on_nble_gap_cancel_connect_rsp(const struct nble_common_rsp *rsp)
 	}
 
 	BT_DBG("conn %p", rsp->user_data);
-}
-
-static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
-					   uint16_t latency, uint16_t timeout)
-{
-	if (min > max || min < 6 || max > 3200) {
-		return false;
-	}
-
-	/* Limits according to BT Core spec 4.2 [Vol 2, Part E, 7.8.12] */
-	if (timeout < 10 || timeout > 3200 ||
-	    (2 * timeout) < ((1 + latency) * max * 5)) {
-		return false;
-	}
-
-	/* Limits according to BT Core spec 4.2 [Vol 6, Part B, 4.5.1] */
-	if (latency > 499 || ((latency + 1) * max) > (timeout * 4)) {
-		return false;
-	}
-
-	return true;
 }
 
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
