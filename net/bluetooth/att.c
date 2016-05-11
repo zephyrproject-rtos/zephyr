@@ -47,18 +47,14 @@
 
 #define BT_GATT_PERM_READ_MASK			(BT_GATT_PERM_READ | \
 						BT_GATT_PERM_READ_ENCRYPT | \
-						BT_GATT_PERM_READ_AUTHEN | \
-						BT_GATT_PERM_READ_AUTHOR)
+						BT_GATT_PERM_READ_AUTHEN)
 #define BT_GATT_PERM_WRITE_MASK			(BT_GATT_PERM_WRITE | \
 						BT_GATT_PERM_WRITE_ENCRYPT | \
-						BT_GATT_PERM_WRITE_AUTHEN | \
-						BT_GATT_PERM_WRITE_AUTHOR)
+						BT_GATT_PERM_WRITE_AUTHEN)
 #define BT_GATT_PERM_ENCRYPT_MASK		(BT_GATT_PERM_READ_ENCRYPT | \
 						BT_GATT_PERM_WRITE_ENCRYPT)
 #define BT_GATT_PERM_AUTHEN_MASK		(BT_GATT_PERM_READ_AUTHEN | \
 						BT_GATT_PERM_WRITE_AUTHEN)
-#define BT_GATT_PERM_AUTHOR_MASK		(BT_GATT_PERM_READ_AUTHOR | \
-						BT_GATT_PERM_WRITE_AUTHOR)
 #define BT_ATT_OP_CMD_FLAG			0x40
 
 /* ATT request context */
@@ -557,11 +553,6 @@ static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 #else
 		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
 #endif /* CONFIG_BLUETOOTH_SMP */
-	}
-
-	if (mask & BT_GATT_PERM_AUTHOR_MASK) {
-		/* TODO Authorization handled by application */
-		return BT_ATT_ERR_AUTHORIZATION;
 	}
 
 	return 0;

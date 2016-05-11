@@ -66,18 +66,6 @@ extern "C" {
  *  If set, requires encryption using authenticated link-key for write access.
  */
 #define BT_GATT_PERM_WRITE_AUTHEN		0x20
-/** @def BT_GATT_PERM_READ_AUTHOR
- *  @brief Attribute read permission with authorization.
- *
- *  If set, requires authorization for read access.
- */
-#define BT_GATT_PERM_READ_AUTHOR		0x40
-/** @def BT_GATT_PERM_WRITE_AUTHOR
- *  @brief Attribute write permission with authorization.
- *
- *  If set, requires authorization for write access.
- */
-#define BT_GATT_PERM_WRITE_AUTHOR		0x80
 
 /* GATT attribute flush flags */
 /** @def BT_GATT_FLUSH_DISCARD
