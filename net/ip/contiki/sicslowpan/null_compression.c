@@ -20,8 +20,8 @@
 #include <string.h>
 
 #include <net/buf.h>
-#include <net/sicslowpan/null_compression.h>
-#include <net/netstack.h>
+#include "contiki/netstack.h"
+#include "contiki/sicslowpan/null_compression.h"
 
 #define DEBUG 0
 #include "contiki/ip/uip-debug.h"

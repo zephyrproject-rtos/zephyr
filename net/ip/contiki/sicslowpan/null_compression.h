@@ -19,7 +19,7 @@
 #ifndef NULL_COMPRESSION_H_
 #define NULL_COMPRESSION_H_
 
-#include <net/sicslowpan/compression.h>
+#include "contiki/sicslowpan/compression.h"
 
 extern const struct compression null_compression;
 
