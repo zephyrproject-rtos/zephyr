@@ -202,8 +202,9 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 	device_sync_call_complete(&dw->sync);
 }
 
-void i2c_dw_isr(struct device *port)
+void i2c_dw_isr(void *arg)
 {
+	struct device *port = (struct device *)arg;
 	struct i2c_dw_rom_config const * const rom = port->config->config_info;
 	struct i2c_dw_dev_config * const dw = port->driver_data;
 	union ic_interrupt_register intr_stat;
@@ -833,9 +834,7 @@ DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_DW_1_NAME, &i2c_dw_initialize,
 void i2c_config_1(struct device *port)
 {
 	struct i2c_dw_rom_config * const config = port->config->config_info;
-	struct device *shared_irq_dev;
 
-	ARG_UNUSED(shared_irq_dev);
 	IRQ_CONNECT(I2C_DW_1_IRQ, CONFIG_I2C_DW_1_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_1), I2C_DW_IRQ_FLAGS);
 	irq_enable(config->irq_num);
