@@ -3605,7 +3605,7 @@ static bool le_sc_supported(void)
 			return false;
 		}
 
-		if (ecc_make_key(&pkey, sc_private_key, random) < 0) {
+		if (ecc_make_key(&pkey, sc_private_key, random) == TC_FAIL) {
 			BT_ERR("Failed to create ECC public/private pair");
 
 			return false;
