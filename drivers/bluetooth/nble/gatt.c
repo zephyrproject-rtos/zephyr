@@ -1151,6 +1151,8 @@ static int gatt_write_ccc(struct bt_conn *conn,
 {
 	struct nble_gattc_write_req req;
 
+	memset(&req, 0, sizeof(req));
+
 	req.conn_handle = conn->handle;
 	req.handle = params->ccc_handle;
 	req.offset = 0;
