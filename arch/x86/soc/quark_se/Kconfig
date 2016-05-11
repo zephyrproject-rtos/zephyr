@@ -39,6 +39,13 @@ config ARC_INIT
 	Allows x86 processor to kickoff the ARC slave processor.
 
 config ARC_INIT_DEBUG
+	bool "Quark SE Sensor Subsystem Debug"
+	default n
+	help
+	Debug the boot initialisation and boot process of the sensor
+	sub-system.
+
+config ARC_GDB_ENABLE
 	bool "Allows the usage of GDB with the ARC processor."
 	depends on ARC_INIT
 	default n

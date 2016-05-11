@@ -69,15 +69,16 @@ static int arc_init(struct device *arg)
 	arc_init_debug("Reset vector address: %x\n", *reset_vector);
 	shared_data->arc_start = *reset_vector;
 	shared_data->flags = 0;
-#ifndef CONFIG_ARC_INIT_DEBUG
 	if (!shared_data->arc_start) {
 		/* Reset vector points to NULL => skip ARC init. */
 		arc_init_debug("Reset vector is NULL, skipping ARC init.\n");
 		goto skip_arc_init;
 	}
 
+#ifndef CONFIG_ARC_GDB_ENABLE
 	/* Start the CPU */
 	SCSS_REG_VAL(SCSS_SS_CFG) |= ARC_RUN_REQ_A;
+#endif
 
 	arc_init_debug("Waiting for arc to start...\n");
 	/* Block until the ARC core actually starts up */
@@ -91,7 +92,6 @@ static int arc_init(struct device *arg)
 	}
 
 skip_arc_init:
-#endif
 
 	return 0;
 }
