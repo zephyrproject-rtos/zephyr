@@ -195,15 +195,15 @@ static struct bt_gatt_attr vnd_attrs[] = {
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
 			       BT_GATT_CHRC_INDICATE),
 	BT_GATT_DESCRIPTOR(&vnd_enc_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_ENCRYPT |
-			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT,
+			   BT_GATT_PERM_READ_ENCRYPT |
+			   BT_GATT_PERM_WRITE_ENCRYPT,
 			   read_vnd, write_vnd, vnd_value),
 	BT_GATT_CCC(vnd_ccc_cfg, vnd_ccc_cfg_changed),
 	BT_GATT_CHARACTERISTIC(&vnd_auth_uuid.uuid,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
 	BT_GATT_DESCRIPTOR(&vnd_auth_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_AUTHEN |
-			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_AUTHEN,
+			   BT_GATT_PERM_READ_AUTHEN |
+			   BT_GATT_PERM_WRITE_AUTHEN,
 			   read_vnd, write_vnd, vnd_value),
 	BT_GATT_CHARACTERISTIC(&vnd_long_uuid.uuid, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
