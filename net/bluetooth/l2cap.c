@@ -93,20 +93,7 @@ static struct bt_l2cap *l2cap_chan_get(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
 
-	switch (conn->type) {
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	case BT_CONN_TYPE_BR:
-		chan = bt_l2cap_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
-		break;
-#endif /* CONFIG_BLUETOOTH_BREDR */
-	case BT_CONN_TYPE_LE:
-		chan = bt_l2cap_lookup_rx_cid(conn, BT_L2CAP_CID_LE_SIG);
-		break;
-	default:
-		chan = NULL;
-		break;
-	}
-
+	chan = bt_l2cap_lookup_rx_cid(conn, BT_L2CAP_CID_LE_SIG);
 	if (!chan) {
 		BT_ERR("Unable to find L2CAP Signalling channel");
 		return 0;
