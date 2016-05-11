@@ -419,7 +419,7 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 	}
 
 	conn->handle = ev->conn_handle;
-	conn->role = ev->role_slave;
+	conn->role = ev->role_slave ? BT_CONN_ROLE_SLAVE : BT_CONN_ROLE_MASTER;
 	conn->interval = ev->conn_values.interval;
 	conn->latency = ev->conn_values.latency;
 	conn->timeout = ev->conn_values.supervision_to;
