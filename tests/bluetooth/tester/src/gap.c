@@ -222,8 +222,9 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 
 	adv_conn = atomic_test_bit(&current_settings, GAP_SETTINGS_CONNECTABLE);
 
+	/* BTP API don't allow to set empty scan response data. */
 	if (bt_le_adv_start(adv_conn ? BT_LE_ADV_CONN : BT_LE_ADV_NCONN,
-			    ad, adv_len, sd, sd_len) < 0) {
+			    ad, adv_len, sd_len ? sd : NULL, sd_len) < 0) {
 		BTTESTER_DBG("Failed to start advertising");
 		goto fail;
 	}
