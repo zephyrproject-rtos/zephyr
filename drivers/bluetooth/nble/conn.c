@@ -449,6 +449,8 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 	conn->state = BT_CONN_CONNECTED;
 
 	notify_connected(conn);
+
+	bt_conn_le_param_update(conn, BT_LE_CONN_PARAM_DEFAULT);
 }
 
 void on_nble_gap_disconnect_evt(const struct nble_gap_disconnect_evt *ev)
