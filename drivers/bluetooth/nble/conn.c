@@ -466,5 +466,9 @@ void on_nble_gap_conn_update_evt(const struct nble_gap_conn_update_evt *ev)
 	       conn, ev->conn_handle, ev->conn_values.interval,
 	       ev->conn_values.latency, ev->conn_values.supervision_to);
 
+	conn->interval = ev->conn_values.interval;
+	conn->latency = ev->conn_values.latency;
+	conn->timeout = ev->conn_values.supervision_to;
+
 	bt_conn_unref(conn);
 }
