@@ -15,6 +15,7 @@
  */
 
 #include <errno.h>
+#include <atomic.h>
 
 #include <nanokernel.h>
 #include <device.h>
@@ -24,6 +25,7 @@
 #include <bluetooth/log.h>
 
 #include "gap_internal.h"
+#include "conn_internal.h"
 #include "uart.h"
 #include "conn.h"
 #include "rpc.h"
@@ -524,6 +526,26 @@ void on_nble_sm_passkey_req_evt(const struct nble_sm_passkey_req_evt *ev)
 	}
 
 	bt_conn_unref(conn);
+}
+
+static int sm_error(struct bt_conn *conn, uint8_t reason)
+{
+	struct nble_sm_passkey_reply_req req;
+
+	req.conn = conn;
+	req.conn_handle = conn->handle;
+
+	req.params.type = NBLE_GAP_SM_REJECT;
+	req.params.reason = reason;
+
+	nble_sm_passkey_reply_req(&req);
+
+	return 0;
+}
+
+int bt_smp_auth_cancel(struct bt_conn *conn)
+{
+	return sm_error(conn, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
 }
 
 void on_nble_up(void)
