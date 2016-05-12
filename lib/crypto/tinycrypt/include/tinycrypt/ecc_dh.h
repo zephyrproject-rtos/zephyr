@@ -90,15 +90,13 @@ extern "C" {
  *
  * @note You must use a new non-predictable random number to generate each
  * new key pair.
- * @note p_random must have NUM_ECC_DIGITS*2 bits of entropy to eliminate
- * bias in keys.
  *
  * @note side-channel countermeasure: algorithm strengthened against timing
  * attack.
  */
 int32_t ecc_make_key(EccPoint *p_publicKey,
 		     uint32_t p_privateKey[NUM_ECC_DIGITS],
-		     uint32_t p_random[NUM_ECC_DIGITS * 2]);
+		     uint32_t p_random[NUM_ECC_DIGITS]);
 
 /**
  * @brief Determine whether or not a given point is on the chosen elliptic curve
