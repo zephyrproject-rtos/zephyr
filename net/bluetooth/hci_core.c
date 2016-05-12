@@ -3338,8 +3338,14 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	/* make sure we clear old SCAN_RSP if it will be used but wasn't
-	 * provided.
+	/*
+	 * We need to set SCAN_RSP when enabling advertising type that allows
+	 * for Scan Requests.
+	 *
+	 * If sd was not provided but we enable connectable undirected
+	 * advertising sd needs to be cleared from values set by previous calls.
+	 * Clearing sd is done by calling set_ad() with NULL data and zero len.
+	 * So following condition check is unusual but correct.
 	 */
 	if (sd || (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
 		err = set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, sd, sd_len);
