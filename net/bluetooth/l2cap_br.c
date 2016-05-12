@@ -50,6 +50,8 @@
 
 #define L2CAP_BR_MIN_MTU	48
 
+#define L2CAP_BR_PSM_SDP	0x0001
+
 /*
  * L2CAP extended feature mask:
  * BR/EDR fixed channel support enabled
@@ -92,6 +94,22 @@ struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
 		struct bt_l2cap_br_chan *ch = BR_CHAN(chan);
 
 		if (ch->rx.cid == cid) {
+			return chan;
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_l2cap_chan *bt_l2cap_br_lookup_tx_cid(struct bt_conn *conn,
+						       uint16_t cid)
+{
+	struct bt_l2cap_chan *chan;
+
+	for (chan = conn->channels; chan; chan = chan->_next) {
+		struct bt_l2cap_br_chan *ch = BR_CHAN(chan);
+
+		if (ch->tx.cid == cid) {
 			return chan;
 		}
 	}
@@ -367,6 +385,101 @@ static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
 	return NULL;
 }
 
+static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
+			      struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_server *server;
+	struct bt_l2cap_conn_req *req = (void *)buf->data;
+	struct bt_l2cap_conn_rsp *rsp;
+	struct bt_l2cap_sig_hdr *hdr;
+	uint16_t psm, scid, dcid, result;
+
+	if (buf->len < sizeof(*req)) {
+		BT_ERR("Too small L2CAP conn req packet size");
+		return;
+	}
+
+	psm = sys_le16_to_cpu(req->psm);
+	scid = sys_le16_to_cpu(req->scid);
+	dcid = 0;
+
+	BT_DBG("psm 0x%02x scid 0x%04x", psm, scid);
+
+	buf = bt_l2cap_create_pdu(&br_sig);
+	if (!buf) {
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_CONN_RSP;
+	hdr->ident = ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	memset(rsp, 0, sizeof(*rsp));
+
+	/* Check if there is a server registered */
+	server = l2cap_br_server_lookup_psm(psm);
+	if (!server) {
+		result = BT_L2CAP_ERR_PSM_NOT_SUPP;
+		goto done;
+	}
+
+	/*
+	 * Report security violation for non SDP channel without encryption when
+	 * remote supports SSP.
+	 */
+	if (psm != L2CAP_BR_PSM_SDP && lmp_ssp_host_supported(conn) &&
+	    !conn->encrypt) {
+		result = BT_L2CAP_ERR_SEC_BLOCK;
+		goto done;
+	}
+
+	if (scid < L2CAP_BR_DYN_CID_START || scid > L2CAP_BR_DYN_CID_END) {
+		result = BT_L2CAP_ERR_INVALID_SCID;
+		goto done;
+	}
+
+	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
+	if (chan) {
+		result = BT_L2CAP_ERR_SCID_IN_USE;
+		goto done;
+	}
+
+	/*
+	 * Request server to accept the new connection and allocate the
+	 * channel.
+	 */
+	if (server->accept(conn, &chan) < 0) {
+		result = BT_L2CAP_ERR_NO_RESOURCES;
+		goto done;
+	}
+
+	l2cap_br_chan_add(conn, chan);
+	BR_CHAN(chan)->tx.cid = scid;
+	dcid = BR_CHAN(chan)->rx.cid;
+
+	/*
+	 * TODO: Verify security level on link if this PSM channel requires
+	 * higher security.
+	 */
+
+	result = BT_L2CAP_SUCCESS;
+done:
+	rsp->dcid = sys_cpu_to_le16(dcid);
+	rsp->scid = req->scid;
+	rsp->result = sys_cpu_to_le16(result);
+	/* TODO: add command timeout guard */
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+
+	/* Disconnect link when security rules were violated */
+	if (result == BT_L2CAP_ERR_SEC_BLOCK) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+	}
+}
+
 int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 {
 	if (server->psm < L2CAP_BR_PSM_START || !server->accept) {
@@ -574,6 +687,9 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	case BT_L2CAP_DISCONN_REQ:
 		l2cap_br_disconn_req(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_CONN_REQ:
+		l2cap_br_conn_req(l2cap, hdr->ident, buf);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);

@@ -64,6 +64,10 @@ struct bt_conn_le {
 #define lmp_ext_feat_capable(conn) \
 	((conn)->br.features[0][7] & BT_LMP_REMOTE_EXT_FEATURES)
 
+/* Helper to validate SSP host support within retrieved remote LMP features */
+#define lmp_ssp_host_supported(conn) \
+	((conn)->br.features[1][0] & BT_LMP_HOST_SSP)
+
 struct bt_conn_br {
 	bt_addr_t		dst;
 	uint8_t			remote_io_capa;

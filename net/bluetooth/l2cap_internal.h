@@ -55,6 +55,20 @@ struct bt_l2cap_cmd_reject_cid_data {
 	uint16_t dcid;
 } __packed;
 
+#define BT_L2CAP_CONN_REQ		0x02
+struct bt_l2cap_conn_req {
+	uint16_t psm;
+	uint16_t scid;
+} __packed;
+
+#define BT_L2CAP_CONN_RSP		0x03
+struct bt_l2cap_conn_rsp {
+	uint16_t dcid;
+	uint16_t scid;
+	uint16_t result;
+	uint16_t status;
+} __packed;
+
 #define BT_L2CAP_DISCONN_REQ		0x06
 struct bt_l2cap_disconn_req {
 	uint16_t dcid;
@@ -113,6 +127,7 @@ struct bt_l2cap_le_conn_req {
 
 #define BT_L2CAP_SUCCESS		0x0000
 #define BT_L2CAP_ERR_PSM_NOT_SUPP	0x0002
+#define BT_L2CAP_ERR_SEC_BLOCK		0x0003
 #define BT_L2CAP_ERR_NO_RESOURCES	0x0004
 #define BT_L2CAP_ERR_AUTHENTICATION	0x0005
 #define BT_L2CAP_ERR_AUTHORIZATION	0x0006

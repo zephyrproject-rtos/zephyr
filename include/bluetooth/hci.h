@@ -126,6 +126,9 @@ struct bt_hci_cmd_hdr {
 #define BT_LMP_LE				0x40
 #define BT_LMP_REMOTE_EXT_FEATURES		0x80
 
+/* Host features */
+#define BT_LMP_HOST_SSP				0x01
+
 /* LE features */
 #define BT_HCI_LE_ENCRYPTION			0x01
 #define BT_HCI_LE_CONN_PARAM_REQ_PROC		0x02
