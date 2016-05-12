@@ -275,12 +275,6 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 
 	req.scan_params.interval = BT_GAP_SCAN_FAST_INTERVAL;
 	req.scan_params.window = BT_GAP_SCAN_FAST_WINDOW;
-	/* Use passive scanning */
-	req.scan_params.active = 0;
-	/* Do not use whitelist */
-	req.scan_params.selective = 0;
-	/* Disable timeout */
-	req.scan_params.timeout = 0;
 
 	conn->state = BT_CONN_CONNECT;
 

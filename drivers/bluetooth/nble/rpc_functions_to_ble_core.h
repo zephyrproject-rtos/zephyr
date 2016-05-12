@@ -37,6 +37,7 @@
 	FN_SIG_S(nble_sm_clear_bonds_req,				\
 		 const struct nble_sm_clear_bonds_req *)		\
 	FN_SIG_S(nble_set_bda_req, const struct nble_set_bda_req *)	\
+	FN_SIG_S(nble_get_bda_req, const struct nble_get_bda_req *)	\
 	FN_SIG_S(nble_gap_conn_update_req,				\
 		 const struct nble_gap_conn_update_req *)		\
 	FN_SIG_S(nble_gattc_discover_req,				\
@@ -51,15 +52,15 @@
 		 const struct nble_gap_disconnect_req *)		\
 	FN_SIG_S(nble_gattc_read_req,					\
 		 const struct nble_gattc_read_req *)			\
-	FN_SIG_S(nble_gap_tx_power_req,					\
+	FN_SIG_S(nble_gap_set_tx_power_req,				\
 		 const struct nble_gap_set_tx_power_req *)		\
-	FN_SIG_S(nble_get_version_req,					\
-		 const struct nble_gap_get_version_param *)
+	FN_SIG_S(nble_dbg_req, const struct nble_dbg_req *)
+
 
 #define LIST_FN_SIG_P							\
 	FN_SIG_P(nble_gap_dtm_init_req, void *)				\
-	FN_SIG_P(nble_gap_read_bda_req, void *)				\
 	FN_SIG_P(nble_gap_stop_adv_req, void *)				\
+	FN_SIG_P(nble_get_version_req, ble_get_version_cb_t)		\
 	FN_SIG_P(nble_gap_cancel_connect_req, void *)
 
 #define LIST_FN_SIG_S_B							\
@@ -88,9 +89,7 @@
 	FN_SIG_S_P(nble_gap_connect_req,				\
 		   const struct nble_gap_connect_req *, void *)		\
 	FN_SIG_S_P(nble_gap_set_rssi_report_req,			\
-		   const struct nble_gap_set_rssi_report_req *, void *)	\
-	FN_SIG_S_P(nble_gap_dbg_req, const struct nble_debug_params *,	\
-		   void *)
+		   const struct nble_gap_set_rssi_report_req *, void *)
 
 #define LIST_FN_SIG_S_B_P
 

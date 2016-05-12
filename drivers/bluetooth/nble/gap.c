@@ -144,7 +144,7 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 	return true;
 }
 
-static int set_ad(struct bt_eir_data *eir, const struct bt_data *ad,
+static int set_ad(struct nble_eir_data *eir, const struct bt_data *ad,
 		  size_t ad_len)
 {
 	int i;
@@ -291,10 +291,10 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		return -EINVAL;
 	}
 
-	nble_params.interval = param->interval;
-	nble_params.window = param->window;
-	nble_params.scan_type = param->type;
-	nble_params.use_whitelist = 0;
+	nble_params.scan_params.interval = param->interval;
+	nble_params.scan_params.window = param->window;
+	nble_params.scan_params.scan_type = param->type;
+	nble_params.scan_params.use_whitelist = 0;
 
 	/* Check is scan already enabled */
 
@@ -350,19 +350,11 @@ void nble_log(const struct nble_log_s *param, char *format, uint8_t len)
 
 void on_nble_get_bda_rsp(const struct nble_get_bda_rsp *rsp)
 {
-	struct nble_gap_get_version_param params;
-
-	if (rsp->status) {
-		BT_ERR("Read bdaddr failed, status %d", rsp->status);
-		return;
-	}
-
-	bt_addr_le_copy(&nble.addr, &rsp->bd);
+	bt_addr_le_copy(&nble.addr, &rsp->bda);
 
 	BT_DBG("Local bdaddr: %s", bt_addr_le_str(&nble.addr));
 
-	params.cb = NULL;
-	nble_get_version_req(&params);
+	nble_get_version_req(NULL);
 }
 
 void on_nble_common_rsp(const struct nble_common_rsp *rsp)
@@ -436,7 +428,7 @@ void on_nble_sm_config_rsp(struct nble_sm_config_rsp *rsp)
 	BT_DBG("status %u", rsp->status);
 
 	/* Get bdaddr queued after SM setup */
-	nble_gap_read_bda_req(NULL);
+	nble_get_bda_req(NULL);
 }
 
 void on_nble_sm_common_rsp(const struct nble_sm_common_rsp *rsp)
