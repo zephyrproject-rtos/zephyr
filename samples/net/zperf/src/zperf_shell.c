@@ -269,7 +269,7 @@ static void shell_cmd_connectap(int argc, char *argv[])
 
 static void shell_cmd_version(int argc, char *argv[])
 {
-	printk("\nZPerf version: %s config: %s\n", VERSION, CONFIG);
+	printk("\nzperf version: %s config: %s\n", VERSION, CONFIG);
 }
 
 struct shell_cmd commands[] = {
@@ -287,7 +287,7 @@ void mainloop(void)
 void main(void)
 {
 #endif
-	printk("\nZPerf version: %s config: %s\n", VERSION, CONFIG);
+	shell_cmd_version(0, NULL);
 
 	shell_init("zperf> ", commands);
 

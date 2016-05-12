@@ -1,7 +1,0 @@
-Desc:
-=====
-zperf is a network traffic generator for Zephyr.
-Same application is able to work dynamically in client or server mode.
-It allows to assess network bandwidth.
-zperf is compliant with iperf_2.0.5.
-zperf can be run in micro or nano kernel.
