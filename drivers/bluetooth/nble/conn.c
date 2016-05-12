@@ -475,6 +475,18 @@ void on_nble_gap_disconnect_evt(const struct nble_gap_disconnect_evt *ev)
 	bt_conn_unref(conn);
 }
 
+static void notify_le_param_updated(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->le_param_updated) {
+			cb->le_param_updated(conn, conn->interval,
+					     conn->latency, conn->timeout);
+		}
+	}
+}
+
 void on_nble_gap_conn_update_evt(const struct nble_gap_conn_update_evt *ev)
 {
 	struct bt_conn *conn;
@@ -492,6 +504,8 @@ void on_nble_gap_conn_update_evt(const struct nble_gap_conn_update_evt *ev)
 	conn->interval = ev->conn_values.interval;
 	conn->latency = ev->conn_values.latency;
 	conn->timeout = ev->conn_values.supervision_to;
+
+	notify_le_param_updated(conn);
 
 	bt_conn_unref(conn);
 }
