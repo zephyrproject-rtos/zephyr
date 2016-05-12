@@ -19,7 +19,7 @@
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = nano
 BOARD ?= qemu_x86
-CONF_FILE = prj_$(ARCH).conf
+CONF_FILE = prj.conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/test_15_4/src/
 
 include $(ZEPHYR_BASE)/Makefile.inc
