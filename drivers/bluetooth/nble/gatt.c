@@ -1354,6 +1354,49 @@ reply:
 	}
 }
 
+struct nble_gatts_flush_all {
+	struct bt_conn *conn;
+	int status;
+	uint8_t flag;
+};
+
+static uint8_t flush_all(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct nble_gatts_flush_all *flush_data = user_data;
+
+	if (attr->flush) {
+		int status = attr->flush(flush_data->conn, attr,
+					 flush_data->flag);
+		if (status < 0 && flush_data->status == 0)
+			flush_data->status = status;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
+{
+
+	struct nble_gatts_flush_all flush_data = {
+		.conn = bt_conn_lookup_handle(evt->conn_handle),
+		.flag = evt->flag,
+		.status = 0,
+	};
+	struct nble_gatts_write_reply_req rsp = {
+		.conn_handle = evt->conn_handle,
+	};
+
+	BT_DBG("handle 0x%04x", evt->conn_handle);
+
+	bt_gatt_foreach_attr(0x0001, 0xFFFF, flush_all, &flush_data);
+
+	rsp.status = flush_data.status;
+
+	nble_gatts_write_reply_req(&rsp);
+
+	bt_conn_unref(flush_data.conn);
+}
+
 void on_nble_gatts_read_evt(const struct nble_gatts_read_evt *ev)
 {
 	struct nble_gatts_read_reply_req reply_data;
