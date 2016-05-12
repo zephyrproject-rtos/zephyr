@@ -167,7 +167,28 @@ static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
-	return -ENOSYS;
+	struct nble_gap_conn_update_req req;
+
+	/* Check if there's a need to update conn params */
+	if (conn->interval >= param->interval_min &&
+	    conn->interval <= param->interval_max) {
+		return -EALREADY;
+	}
+
+	if (!bt_le_conn_params_valid(param->interval_min, param->interval_max,
+				     param->latency, param->timeout)) {
+		return -EINVAL;
+	}
+
+	req.conn_handle = conn->handle;
+	req.params.interval_min = param->interval_min;
+	req.params.interval_max = param->interval_max;
+	req.params.slave_latency = param->latency;
+	req.params.link_sup_to = param->timeout;
+
+	nble_gap_conn_update_req(&req);
+
+	return 0;
 }
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
