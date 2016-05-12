@@ -3597,20 +3597,19 @@ static bool le_sc_supported(void)
 #else
 static bool le_sc_supported(void)
 {
-	uint32_t random[8];
 	EccPoint pkey;
 
 	do {
+		uint32_t random[8];
+
 		if (bt_rand((uint8_t *)random, sizeof(random))) {
 			return false;
 		}
 
 		if (ecc_make_key(&pkey, sc_private_key, random) == TC_FAIL) {
 			BT_ERR("Failed to create ECC public/private pair");
-
 			return false;
 		}
-
 		/* make sure generated key isn't debug key */
 	} while (memcmp(sc_private_key, sc_debug_private_key, 32) == 0);
 
