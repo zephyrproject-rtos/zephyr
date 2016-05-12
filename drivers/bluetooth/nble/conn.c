@@ -34,6 +34,9 @@
 #define BT_DBG(fmt, ...)
 #endif
 
+/* Peripheral timeout to initialize Connection Parameter Update procedure */
+#define CONN_UPDATE_TIMEOUT	(5 * sys_clock_ticks_per_sec)
+
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
@@ -175,6 +178,9 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	    conn->interval <= param->interval_max) {
 		return -EALREADY;
 	}
+
+	/* Cancel any pending update */
+	nano_delayed_work_cancel(&conn->update_work);
 
 	if (!bt_le_conn_params_valid(param->interval_min, param->interval_max,
 				     param->latency, param->timeout)) {
@@ -439,6 +445,13 @@ static void notify_disconnected(struct bt_conn *conn)
 	}
 }
 
+static void le_conn_update(struct nano_work *work)
+{
+	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn, update_work);
+
+	bt_conn_le_param_update(conn, BT_LE_CONN_PARAM_DEFAULT);
+}
+
 void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 {
 	struct bt_conn *conn;
@@ -457,12 +470,20 @@ void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *ev)
 	conn->latency = ev->conn_values.latency;
 	conn->timeout = ev->conn_values.supervision_to;
 	bt_addr_le_copy(&conn->dst, &ev->peer_bda);
+	nano_delayed_work_init(&conn->update_work, le_conn_update);
 
 	conn->state = BT_CONN_CONNECTED;
 
 	notify_connected(conn);
 
-	bt_conn_le_param_update(conn, BT_LE_CONN_PARAM_DEFAULT);
+	/*
+	 * Core 4.2 Vol 3, Part C, 9.3.12.2
+	 * The Peripheral device should not perform a Connection Parameter
+	 * Update procedure within 5 s after establishing a connection.
+	 */
+	nano_delayed_work_submit(&conn->update_work,
+				 conn->role == BT_HCI_ROLE_MASTER ? TICKS_NONE :
+				 CONN_UPDATE_TIMEOUT);
 }
 
 void on_nble_gap_disconnect_evt(const struct nble_gap_disconnect_evt *ev)
@@ -480,6 +501,9 @@ void on_nble_gap_disconnect_evt(const struct nble_gap_disconnect_evt *ev)
 	conn->state = BT_CONN_DISCONNECTED;
 
 	notify_disconnected(conn);
+
+	/* Cancel Connection Update if it is pending */
+	nano_delayed_work_cancel(&conn->update_work);
 
 	/* Drop the reference given by lookup_handle() */
 	bt_conn_unref(conn);

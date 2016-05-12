@@ -28,6 +28,8 @@ config NBLE
 	select UART_INTERRUPT_DRIVEN
 	select NANO_TIMEOUTS
 	select NET_BUF
+	select NANO_WORKQUEUE
+	select SYSTEM_WORKQUEUE
 	depends on BLUETOOTH_STACK_NBLE
 	help
 	  Enables support for using Nordic Semiconductor nRF51 Bluetooth
