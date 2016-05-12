@@ -360,7 +360,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
 #. Build the binary for your application on the architecture you wish to
    debug. Alternatively, use the instructions above as template for testing.
 
-   When debugging on ARC, you will need to enable the :option:`ARC_INIT_DEBUG`
+   When debugging on ARC, you will need to enable the :option:`ARC_GDB_ENABLE`
    configuration option in your X86 PRJ file. Details of this flag can be
    found in :file:`arch/x86/soc/quark_se/Kconfig`. Setting this variable will
    force the ARC processor to halt on bootstrap, giving the debugger a chance
@@ -372,7 +372,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
    .. code-block:: console
 
       CONFIG_ARC_INIT=y
-      CONFIG_ARC_INIT_DEBUG=y
+      CONFIG_ARC_GDB_ENABLE=y
 
    .. note::
 
@@ -445,7 +445,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
      The gdb ARC server port was 3333 and the X86 port was 3334.  As of SDK
      v0.7.2, the gdb ARC server port is 3334, and the X86 port is 3333.
 
-   The :code:`continue` on the X86 side is needed as the ARC_INIT_DEBUG flag has
+   The :code:`continue` on the X86 side is needed as the ARC_GDB_ENABLE flag has
    been set and halts the X86 until the ARC core is ready.  Ready in this case
    is defined as openocd has had a chance to connect, setup registers, and any
    breakpoints.  Unfortunately, there exists no automated method for notifying
