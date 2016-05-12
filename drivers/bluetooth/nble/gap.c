@@ -465,12 +465,17 @@ void on_nble_sm_status_evt(const struct nble_sm_status_evt *ev)
 		return;
 	}
 
-	BT_DBG("conn %p status %d evt_type %d", conn, ev->status, ev->evt_type);
+	BT_DBG("conn %p status %d evt_type %d sec_level %d enc_size %u",
+	       conn, ev->status, ev->evt_type, ev->enc_link_sec.sec_level,
+	       ev->enc_link_sec.enc_size);
 
 	/* TODO Handle events */
 	switch (ev->evt_type) {
 	case NBLE_GAP_SM_EVT_START_PAIRING:
 		BT_DBG("Start pairing");
+		if (conn->role == BT_HCI_ROLE_MASTER) {
+			bt_conn_security(conn, ev->enc_link_sec.sec_level);
+		}
 		break;
 	case NBLE_GAP_SM_EVT_BONDING_COMPLETE:
 		BT_DBG("Bonding complete");
