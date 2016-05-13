@@ -62,7 +62,7 @@ static void test_items_init(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		tests[i].key = i + 1;
-		tests[i].work.handler = work_handler;
+		nano_work_init(&tests[i].work, work_handler);
 	}
 }
 

@@ -54,6 +54,15 @@ struct nano_work {
 };
 
 /**
+ * @brief Initialize work item
+ */
+static inline void nano_work_init(struct nano_work *work,
+				  work_handler_t handler)
+{
+	work->handler = handler;
+}
+
+/**
  * @brief Submit a work item to a workqueue.
  */
 static inline void nano_work_submit_to_queue(struct nano_workqueue *wq,
