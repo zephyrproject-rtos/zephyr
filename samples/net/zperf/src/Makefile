@@ -5,5 +5,7 @@ ccflags-y += -I${srctree}/net/ip
 
 obj-y += zperf_shell.o
 obj-y += shell_utils.o
-obj-y += zperf_uploader.o
-obj-y += zperf_receiver.o
+obj-y += zperf_udp_uploader.o
+obj-y += zperf_udp_receiver.o
+obj-y += zperf_session.o
+obj-${CONFIG_NETWORKING_WITH_TCP} += zperf_tcp_receiver.o

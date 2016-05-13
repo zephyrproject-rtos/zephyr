@@ -27,6 +27,7 @@
 #include "zperf.h"
 #include "zperf_internal.h"
 #include "shell_utils.h"
+#include "zperf_session.h"
 
 #define DEVICE_NAME "zperf shell"
 
@@ -58,6 +59,7 @@ static struct net_addr in_addr_my = {
 };
 
 #define MY_SRC_PORT 50000
+#define DEF_PORT 5001
 
 static void shell_cmd_setip(int argc, char *argv[])
 {
@@ -91,7 +93,7 @@ static void shell_cmd_setip(int argc, char *argv[])
 
 static void shell_cmd_udp_download(int argc, char *argv[])
 {
-	static bool stopped = true;
+	static bool udp_stopped = true;
 	int port;
 
 	if (argc == 1) {
@@ -105,16 +107,16 @@ static void shell_cmd_udp_download(int argc, char *argv[])
 	if (argc > 1) {
 		port = strtoul(argv[1], NULL, 10);
 	} else {
-		port = 5001;
+		port = DEF_PORT;
 	}
 
-	if (stopped == false) {
+	if (udp_stopped == false) {
 		printk("[udp.download] ERROR! UDP server already started!\n");
 		return;
 	}
 
 	zperf_receiver_init(port);
-	stopped = false;
+	udp_stopped = false;
 	printk("[udp.download] UDP server started on port %u\n", port);
 }
 
@@ -170,7 +172,7 @@ static void shell_cmd_udp_upload(int argc, char *argv[])
 		port = strtoul(argv[2], NULL, 10);
 		printk("[udp.upload] Remote port is %u\n", port);
 	} else {
-		port = 5001;
+		port = DEF_PORT;
 	}
 
 	net_context = net_context_get(IPPROTO_UDP, &net_addr_remote, port,
@@ -262,14 +264,55 @@ static void shell_cmd_udp_upload(int argc, char *argv[])
 	net_context_put(net_context);
 }
 
+#ifdef CONFIG_NETWORKING_WITH_TCP
 static void shell_cmd_connectap(int argc, char *argv[])
 {
 	printk("[connectap] Zephyr has not been built with Wi-Fi support.\n");
 }
 
+static void shell_cmd_tcp_upload(int argc, char *argv[])
+{
+	printk("[connectap] Zephyr doesn't support TCP client yet.\n");
+}
+#endif /* CONFIG_NETWORKING_WITH_TCP */
+
+static void shell_cmd_tcp_download(int argc, char *argv[])
+{
+	static bool tcp_stopped = true;
+	int port;
+
+	if (argc == 1) {
+		/* Print usage */
+		printk("\ntcp.download:\n");
+		printk("Usage:\ttcp.download <port>\n");
+		printk("\nExample tcp.download 5001\n");
+		return;
+	}
+
+	if (argc > 1) {
+		port = strtoul(argv[1], NULL, 10);
+	} else {
+		port = DEF_PORT;
+	}
+
+	if (tcp_stopped == false) {
+		printk("[tcp.download] ERROR! TCP server already started!\n");
+		return;
+	}
+
+	zperf_tcp_receiver_init(port);
+	tcp_stopped = false;
+	printk("[tcp.download] TCP server started on port %u\n", port);
+}
+
 static void shell_cmd_version(int argc, char *argv[])
 {
 	printk("\nzperf version: %s config: %s\n", VERSION, CONFIG);
+}
+
+static void zperf_init(void)
+{
+	zperf_session_init();
 }
 
 struct shell_cmd commands[] = {
@@ -278,6 +321,10 @@ struct shell_cmd commands[] = {
 		{ "version", shell_cmd_version },
 		{ "udp.upload", shell_cmd_udp_upload },
 		{ "udp.download", shell_cmd_udp_download },
+#ifdef CONFIG_NETWORKING_WITH_TCP
+		{ "tcp.upload", shell_cmd_tcp_upload },
+		{ "tcp.download", shell_cmd_tcp_download },
+#endif
 		{ NULL, NULL } };
 
 #ifdef CONFIG_MICROKERNEL
@@ -288,8 +335,7 @@ void main(void)
 {
 #endif
 	shell_cmd_version(0, NULL);
-
 	shell_init("zperf> ", commands);
-
 	net_init();
+	zperf_init();
 }

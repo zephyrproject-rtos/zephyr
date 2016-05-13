@@ -26,41 +26,11 @@
 #include "zperf.h"
 #include "zperf_internal.h"
 #include "shell_utils.h"
+#include "zperf_session.h"
 
 #define TAG "[udp.download] "
 
 #define RX_FIBER_STACK_SIZE 1024
-#define SESSION_MAX 4
-
-/* Type definition */
-enum state {
-	STATE_NULL, /* Session has not yet started */
-	STATE_ONGOING, /* 1st packet has been received, last packet not yet */
-	STATE_LAST_PACKET_RECEIVED, /* Last packet has been received */
-	STATE_COMPLETED /* Session completed, stats pkt can be sent if needed */
-};
-
-struct session {
-	/* Tuple */
-	uint16_t port;
-	uip_ipaddr_t ip;
-
-	enum state state;
-
-	/* Stat data */
-	uint32_t counter;
-	uint32_t next_id;
-	uint32_t outorder;
-	uint32_t error;
-	uint64_t length;
-	uint32_t start_time;
-	uint32_t last_time;
-	int32_t jitter;
-	int32_t last_transit_time;
-
-	/* Stats packet*/
-	struct zperf_server_hdr stat;
-};
 
 /* Static data */
 static char __noinit __stack zperf_rx_fiber_stack[RX_FIBER_STACK_SIZE];
@@ -82,47 +52,6 @@ static struct net_addr in_addr_my = {
 	.family = AF_INET, .in_addr = { { { 0 } } }
 #endif
 };
-
-static struct session sessions[SESSION_MAX];
-
-/* Get session from a given packet */
-static struct session *get_session(struct net_buf *buf)
-{
-	uint16_t port;
-	uip_ipaddr_t ip;
-	int i = 0;
-	struct session *active = NULL;
-	struct session *free = NULL;
-
-	/* Get tuple of the remote connection */
-	port = NET_BUF_UDP(buf)->srcport;
-	uip_ipaddr_copy(&ip, &NET_BUF_IP(buf)->srcipaddr);
-
-	/* Check whether we already have an active session */
-	while (active == NULL && i < SESSION_MAX) {
-		struct session *ptr = &sessions[i];
-
-		if (ptr->port == port && uip_ipaddr_cmp(&ptr->ip, &ip)) {
-			/* We found an active session */
-			active = ptr;
-		} else if (free == NULL
-				&& (ptr->state == STATE_NULL
-					|| ptr->state == STATE_COMPLETED)) {
-			/* We found a free slot - just in case */
-			free = ptr;
-		}
-		i++;
-	}
-
-	/* If no active session then create a new one */
-	if (active == NULL && free != NULL) {
-		active = free;
-		active->port = port;
-		uip_ipaddr_copy(&active->ip, &ip);
-	}
-
-	return active;
-}
 
 /* Send statistic to the remote client */
 static int zperf_receiver_send_stat(struct net_context *net_context,
@@ -160,10 +89,10 @@ static void zperf_rx_fiber(int port)
 			int32_t id;
 			int32_t transit_time;
 
-			struct session *session = get_session(buf);
+			struct session *session = get_session(buf, SESSION_UDP);
 
 			if (session == NULL) {
-				printk(TAG "ERROR! cannot create a session!\n");
+				printk(TAG "ERROR! cannot get a session!\n");
 				continue;
 			}
 
@@ -193,17 +122,9 @@ static void zperf_rx_fiber(int port)
 			} else if (session->state != STATE_ONGOING) {
 				/* Start a new session! */
 				printk(TAG "New session started.\n");
-
-				/* Reset statistic */
+				zperf_reset_session_stats(session);
 				session->state = STATE_ONGOING;
-				session->counter = 0;
 				session->start_time = time;
-				session->next_id = 0;
-				session->length = 0;
-				session->outorder = 0;
-				session->error = 0;
-				session->jitter = 0;
-				session->last_transit_time = 0;
 			}
 
 			/* Check header id */
@@ -297,9 +218,6 @@ static void zperf_rx_fiber(int port)
 
 void zperf_receiver_init(int port)
 {
-	for (int i = 0; i < SESSION_MAX; i++)
-		sessions[i].state = STATE_NULL;
-
 	fiber_start(zperf_rx_fiber_stack, sizeof(zperf_rx_fiber_stack),
 			(nano_fiber_entry_t) zperf_rx_fiber, port, 0, 7, 0);
 }

@@ -90,5 +90,8 @@ extern void zperf_upload_decode_stat(struct net_buf *net_stat,
 		zperf_results *results);
 
 extern void zperf_receiver_init(int port);
+#ifdef CONFIG_NETWORKING_WITH_TCP
+extern void zperf_tcp_receiver_init(int port);
+#endif
 extern void connect_ap(char *ssid);
 #endif /* __ZPERF_INTERNAL_H */
