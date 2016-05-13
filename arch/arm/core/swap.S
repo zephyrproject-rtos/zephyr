@@ -76,6 +76,11 @@ SECTION_FUNC(TEXT, __pendsv)
     mrs ip, PSP
     stmia r0, {v1-v8, ip}
 
+#ifdef CONFIG_FP_SHARING
+    add r0, r2, #__tTCS_preemp_float_regs_OFFSET
+    vstmia r0, {s16-s31}
+#endif
+
     /*
      * Prepare to clear PendSV with interrupts unlocked, but
      * don't clear it yet. PendSV must not be cleared until
@@ -127,6 +132,11 @@ SECTION_FUNC(TEXT, __pendsv)
     mov ip, #0
     str ip, [r2, #__tTCS_basepri_OFFSET]
     msr BASEPRI, r0
+
+#ifdef CONFIG_FP_SHARING
+    add r0, r2, #__tTCS_preemp_float_regs_OFFSET
+    vldmia r0, {s16-s31}
+#endif
 
     /* load callee-saved + psp from TCS */
     add r0, r2, #__tTCS_preempReg_OFFSET
