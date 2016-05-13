@@ -64,13 +64,13 @@ static NET_BUF_POOL(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_BUF_USER_DATA_MIN);
 
 /* BR/EDR L2CAP signalling channel specific context */
-struct bt_l2cap {
+struct bt_l2cap_br {
 	/* The channel this context is associated with */
 	struct bt_l2cap_chan	chan;
 	uint8_t			ident;
 };
 
-static struct bt_l2cap bt_l2cap_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
 static void l2cap_br_chan_alloc_cid(struct bt_conn *conn,
 				    struct bt_l2cap_chan *chan)
@@ -112,7 +112,7 @@ static int l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 	return 0;
 }
 
-static int l2cap_br_info_req(struct bt_l2cap *l2cap, uint8_t ident,
+static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 			     struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.conn;
@@ -270,7 +270,7 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 
 static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	struct bt_l2cap *l2cap = CONTAINER_OF(chan, struct bt_l2cap, chan);
+	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan);
 	struct bt_l2cap_sig_hdr *hdr = (void *)buf->data;
 	uint16_t len;
 
@@ -319,7 +319,7 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	BT_DBG("conn %p handle %u", conn, conn->handle);
 
 	for (i = 0; i < ARRAY_SIZE(bt_l2cap_br_pool); i++) {
-		struct bt_l2cap *l2cap = &bt_l2cap_br_pool[i];
+		struct bt_l2cap_br *l2cap = &bt_l2cap_br_pool[i];
 
 		if (l2cap->chan.conn) {
 			continue;
