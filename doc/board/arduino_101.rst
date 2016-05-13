@@ -6,18 +6,30 @@ Arduino 101
 Overview
 ********
 
-The Arduino 101 board is an Arduino product with an Intel Quark SE
-processor. Zephyr can be flashed to an Arduino 101 for experimentation
+The Arduino 101 board is an Arduino product with an  Intel® Curie™
+module. Zephyr can be flashed to an Arduino 101 for experimentation
 and testing purposes; keep in mind this is configuration is unsupported
 by Arduino.
 
-The Quark SE contains both an ARC and an X86 core, so be sure to
-flash an ARC and an X86 image if you wish to use both. Either **arduino_101**
-(for x86) or **arduino_101_sss** (for ARC) board configurations work to build
-a Zephyr Kernel that can be flashed to and run on the Arduino 101 platform.
-The default configuration for Arduino 101 boards can be found in
-:file:`boards/arduino_101/arduino_101_defconfig` for the X86 and
-:file:`boards/arduino_101_sss/arduino_101_sss_defconfig` for the ARC.
+The  Intel Curie module contains both an ARC and an X86 core, so be sure to
+flash an ARC and an X86 image if you wish to use both. Either
+**arduino_101_factory** (for x86) or **arduino_101_sss_factory** (for ARC)
+board configurations work to build a Zephyr Kernel that can be flashed to and
+run on the Arduino 101 platform. The default configuration for Arduino 101
+boards can be found in
+:file:`boards/arduino_101/arduino_101_factory_defconfig` for the X86 and
+:file:`boards/arduino_101_sss/arduino_101_sss_factory_defconfig` for the ARC.
+
+This release removes the support for the alternate boot ROM. Thus, the original
+boot ROM can be kept supporting the  flashing of the board over DFU and flashing
+the Bluetooth firmware.
+
+See the documentation for releases up to v1.3.0 for details on how to use an
+alternate boot ROM.
+
+If you have previously installed a different boot ROM it is recommended to
+restore the original boot ROM image as described in the
+`Backup and Restore Factory Settings`_ section.
 
 Board Layout
 ************
@@ -54,29 +66,12 @@ below shows which drivers and functionality can be found on which architectures:
 | mailbox   | on-chip    | Y   | Y   | ipm                   |
 +-----------+------------+-----+-----+-----------------------+
 
-Flashing Arduino 101 for Zephyr
-*******************************
-
-The sample hello_world application used in this tutorial can be
-found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
-
-To boot an image on a Arduino 101 board, follow the steps in this
-section:
-
-.. contents:: Procedures
-   :depth: 1
-   :local:
-   :backlinks: entry
 
 Required Hardware and Software
-==============================
+******************************
 
 Before flashing the Zephyr kernel onto an Arduino 101, a few additional
 pieces of hardware are required.
-
-* `FlySwatter2 JTAG debugger`_
-
-* ARM Micro JTAG Connector, Model: `ARM-JTAG-20-10`_
 
 * The USB port for power will work; however, we recommend the 7V-12V barrel
   connector be used when working with the JTAG connector.
@@ -84,17 +79,159 @@ pieces of hardware are required.
 * :ref:`The Zephyr SDK <zephyr_sdk>`
 
 * If you wish to grab any data off the serial port, you will need a TTY-to-USB
-  adaptor. Two kinds the Zephyr team has tested and found to work are listed
-  here. Both require male-to-male jumper cables in order to connect to the
-  Arduino 101 board.
+  adaptor. The following adapters require male-to-male jumper cables in order
+  to connect to the Arduino 101 board.
 
   #. `USB to TTL Serial Cable`_
 
   #. FTDI USB to TTL Serial Part #TTL-232R-3V3
      http://www.ftdichip.com/Products/Cables/USBTTLSerial.htm
 
-Connecting JTAG to Arduino 101
-==============================
+To flash using the JTAG the following hardware is needed:
+
+* `FlySwatter2 JTAG debugger`_
+
+* ARM Micro JTAG Connector, Model: `ARM-JTAG-20-10`_
+
+
+Connecting Serial Output
+************************
+
+In the default configuration, Zephyr's Arduino 101 images support serial output
+via the UART0 on the board. To read the output, you will need a USB to TTL
+serial cable.  To enable serial output:
+
+* Connect the Serial Cable RX pin to the Arduino 101's TX->1 pin.
+
+  .. figure:: figures/arduino_101_03.png
+      :scale: 50 %
+      :alt: Image for pin positions and serial output
+
+* Connect the Serial Cable TX pin to the Arduino 101's RX<-0 pin.
+
+  .. figure:: figures/arduino_101_04.png
+      :scale: 50 %
+      :alt: Image for pin positions and serial output
+
+* Connect the Serial Cable GND pin to the Arduino 101's GND pin.
+
+  .. figure:: figures/arduino_101_05.png
+      :scale: 50 %
+      :alt: Image for pin positions and serial output
+
+Once connected, on your development environment, you will need to:
+
+* Open a serial port emulator (i.e. on Linux minicom, screen, etc)
+
+* Attach to the USB to TTL Serial cable, for example, on Linux this may be
+  :file:`/dev/ttyUSB0`
+
+* Set the communication details to:
+  ** Speed: 115200
+  ** Data: 8 bits
+  ** Parity: None
+  ** Stopbits: 1
+
+
+Building an Application
+***********************
+
+The Arduino 101 is powered by a Quark CPU and a sensor sub-system powered by an
+ARC processor. When building applications, depending on the usage, two Zephyr
+image need to be built and flashed.
+
+The Arduino 101 has a bootloader that supports flashing over USB using
+the DFU protocol. Flashing over USB keeps the original bootloader intact and
+does not require a JTAG adapter. Additionally, the factory installed bootloader
+supports flashing of the firmware for the Bluetooth device of the Curie
+module.
+
+Use the ``arduino_101_factory`` board definition to build a kernel for the Quark
+core. Use the ``arduino_101_sss_facotry`` board definition when targeting the
+sensor sub-system.
+
+To use an alternate boot ROM different board definitions are needed for both the
+Quark and the sensor sub-system cores: For the Quark, use ``arduino_101``
+and for the sensor-subsystem, use ``arduino_101_sss``.
+
+When your application is targeting the Quark processor only, it is important to
+disable the sensor sub-system processor. otherwise the board will appear to hang
+waiting for the sensor sub-system processor to boot.
+
+See the `Debugging on Arduino 101`_ section for details on how to disable the
+sensor sub-system.
+
+Flashing using USB DFU
+**********************
+
+
+Flashing the Sensor Subsystem Core
+==================================
+
+#. Make sure the binary image has been built. Change directories to your local
+   checkout copy of Zephyr, and run:
+
+   .. code-block:: console
+
+     $ source ./zephyr-env.sh
+     $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
+     $ make pristine && make BOARD=arduino_101_sss_factory
+
+#. Verify the JTAG debugger is properly attached to the Arduino 101 board.
+
+#. Verify the Arduino 101 has power.
+
+#. Once the image has been built, flash it with:
+
+   .. code-block:: console
+
+      $ dfu-util -a sensor_core -D outdir/zephyr.bin
+
+.. note::
+
+   When building for the ARC processor, the board type is listed as
+   arduino_101_sss_factory.
+
+
+Congratulations, you have now flashed the hello_world image to the ARC
+processor.
+
+Flashing the x86 Application Core
+=================================
+
+#. Make sure the binary image has been built. Change directories to your local
+   checkout copy of Zephyr, and run:
+
+   .. code-block:: console
+
+      $ source ./zephyr-env.sh
+      $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
+      $ make pristine
+      $ make BOARD=arduino_101_factory
+
+#. Verify the JTAG debugger is properly attached to the Arduino 101 board.
+
+#. Verify the Arduino 101 has power.
+
+#. Once the image has been built, flash it with:
+
+   .. code-block:: console
+
+      $ dfu-util -a x86_app -D outdir/zephyr.bin
+
+.. note::
+
+   When building for the x86 processor, the board type is listed as
+   arduino_101_factory.
+
+Congratulations you have now flashed the hello_world image to the x86
+processor.
+
+
+Flashing using JTAG Adapter
+***************************
+
+Use this method only for advanced development and debugging.
 
 #. Connect the ARM Micro JTAG Connector to the FlySwatter2.
 
@@ -166,8 +303,8 @@ Connecting JTAG to Arduino 101
       usb 1-2.1.1: FTDI USB Serial Device converter now attached to ttyUSB1
 
 
-Making a Backup
-===============
+Backup and Restore Factory Settings
+===================================
 
 Before continuing, consider creating a backup image of the ROM device as
 it stands today. This would be necessary if you wanted to run Arduino sketches
@@ -176,7 +313,7 @@ method that is not currently supported by Zephyr.
 
 Typically Arduino hardware can re-program the Bootloader by connecting
 the ICSP header and issuing the "Burn Bootloader" option from the Arduino
-IDE. On the Arduino 101, this option is not currently functional.
+IDE. On the Arduino 101, this option is not provided.
 
 #. Confirm the Zephyr SDK has been installed on your platform.
 
@@ -189,9 +326,9 @@ IDE. On the Arduino 101, this option is not currently functional.
 
 #. Open a terminal window
 
-#. Source the :file:`zephyr-env.sh` file.
-
 #. Change directories to :file:`$ZEPHYR_BASE`.
+
+#. Source the :file:`zephyr-env.sh` file.
 
 #. In the terminal window, enter:
 
@@ -202,30 +339,13 @@ IDE. On the Arduino 101, this option is not currently functional.
   .. note::
 
      This command tells the JTAG to dump two files in your :file:`$ZEPHYR_BASE`:
-     directory: :file:`A101_BOOT.bin` and :file:`A101_OS.bin`. These contain copies
-     of the original flash, which can be used to restore the state of the board to
-     factory conditions.
+     directory: :file:`A101_BOOT.bin` and :file:`A101_OS.bin`. These contain
+     copies of the original flash, which can be used to restore the state of the
+     board to factory conditions.
 
 Done! You have finished creating a backup for the Arduino 101.
 
-Restoring a Backup
-==================
-
-#. Confirm the Zephyr SDK has been installed on your development
-   environment.
-
-#. Open a terminal window.
-
-#. Verify the JTAG debugger is properly attached to the Arduino 101 board and
-   to the host computer.
-
-#. Connect the Arduino 101 to a power source.
-
-#. Open a terminal window
-
-#. Source the :file:`zephyr-env.sh` file.
-
-#. Change directories to :file:`$ZEPHYR_BASE`.
+To restore the factory settings of the Arduino 101 device, use the provided script.
 
 #. In the terminal window, enter:
 
@@ -238,59 +358,9 @@ Restoring a Backup
      This script expects two files in your :file:`$ZEPHYR_BASE` directory
      named :file:`A101_OS.bin` and :file:`A101_BOOT.bin`.
 
-Flashing an Application to Arduino 101
-======================================
 
-By default, the Arduino 101 comes with an X86 and ARC image ready to run. Both
-images can be replaced by Zephyr OS image by following the steps below. When
-only the X86 image is needed or wanted, it is important to disable the ARC
-processor; the X86 OS will appear to hang waiting for the ARC processor.
-
-Details on how to disable the ARC can be found in the `Debugging on Arduino 101`_
-section.
-
-Flashing the ROM
-================
-
-The default boot ROM used by the Arduino 101 requires that any binary
-be authorized. Currently the Zephyr project is not supported by this ROM.  To
-work around this requirement, an alternative boot ROM has been created that
-needs to be flashed just once. To flash a Zephyr-compatible boot ROM, follow the
-steps below to flash the :file:`quark_se_rom.bin` to the board.
-
-.. note::
-
-    This will cause the Arduino 101 board to lose Arduino sketch functionality
-    and it will no longer work with the Arduino IDE.
-
-#. Source the :file:`zephyr-env.sh` file.
-
-#. Change directories to :file:`$ZEPHYR_BASE`.
-
-#. The Zephyr Project includes a pre-compiled version of a bootloader for
-   general use on the Arduino 101. Details for how to build your own
-   bootloader can be found in the
-   :file:`$ZEPHYR_BASE/boards/arduino_101/support/README`
-
-#. Verify the JTAG debugger is properly attached to the Arduino 101 board and
-   to the host computer.
-
-#. Connect the Arduino 101 to a power source.
-
-#. The Zephyr Project has included a pre-compiled version of a bootloader for
-   general use on the Arduino 101.  Details about how to build your own
-
-   .. code-block:: console
-
-      $ cd $ZEPHYR_BASE/boards/arduino_101/support
-      $ ./arduino_101_load.sh rom
-
-   This script will flash the boot ROM located in
-   :file:`$ZEPHYR_BASE/boards/arduino_101/support/quark_se_rom.bin` to the
-   Arduino 101 device, overwriting the original shipping ROM.
-
-Flashing an ARC Kernel
-======================
+Flashing the Sensor Subsystem Core
+==================================
 
 #. Make sure the binary image has been built. Change directories to your local
    checkout copy of Zephyr, and run:
@@ -299,7 +369,9 @@ Flashing an ARC Kernel
 
      $ source ./zephyr-env.sh
      $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
-     $ make pristine && make BOARD=arduino_101_sss ARCH=arc
+     $ make pristine
+     $ make BOARD=arduino_101_sss_factory
+
 
 #. Verify the JTAG debugger is properly attached to the Arduino 101 board.
 
@@ -309,19 +381,19 @@ Flashing an ARC Kernel
 
    .. code-block:: console
 
-      $ make BOARD=arduino_101_sss flash
+      $ make BOARD=arduino_101_sss_factory flash
 
 .. note::
 
    When building for the ARC processor, the board type is listed as
-   arduino_101_sss and the ARCH type is set to arc.
+   arduino_101_sss.
 
 
 Congratulations, you have now flashed the hello_world image to the ARC
 processor.
 
-Flashing an x86 Kernel
-======================
+Flashing the x86 Application Core
+=================================
 
 #. Make sure the binary image has been built. Change directories to your local
    checkout copy of Zephyr, and run:
@@ -330,7 +402,8 @@ Flashing an x86 Kernel
 
       $ source ./zephyr-env.sh
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
-      $ make pristine && make BOARD=arduino_101 ARCH=x86
+      $ make pristine
+      $ make BOARD=arduino_101_factory
 
 #. Verify the JTAG debugger is properly attached to the Arduino 101 board.
 
@@ -340,31 +413,34 @@ Flashing an x86 Kernel
 
    .. code-block:: console
 
-     $ make BOARD=arduino_101 flash
+     $ make BOARD=arduino_101_factory flash
 
 .. note::
 
    When building for the x86 processor, the board type is listed as
-   arduino_101 and the ARCH type is set to x86.
+   arduino_101_factory.
 
 Congratulations you have now flashed the hello_world image to the x86
 processor.
 
+
+
 Debugging on Arduino 101
-========================
+************************
 
 The image file used for debugging must be built to the corresponding
-architecture that you wish to debug. For example, the binary must be built
-for ARCH=x86 if you wish to debug on the x86 core.
+core that you wish to debug. For example, the binary must be built
+for BOARD=arduino_101_factory if you wish to debug on the quark core.
 
 #. Build the binary for your application on the architecture you wish to
    debug. Alternatively, use the instructions above as template for testing.
 
-   When debugging on ARC, you will need to enable the :option:`ARC_GDB_ENABLE`
-   configuration option in your X86 PRJ file. Details of this flag can be
-   found in :file:`arch/x86/soc/quark_se/Kconfig`. Setting this variable will
-   force the ARC processor to halt on bootstrap, giving the debugger a chance
-   at connecting and controlling the hardware.
+   When debugging on ARC, you will need to enable the
+   :option:`CONFIG_ARC_GDB_ENABLE` configuration option in your local kernel
+   configuration file. Details of this flag can be found in
+   :file:`arch/x86/soc/quark_se/Kconfig`. Setting this variable will force the
+   ARC processor to halt on bootstrap, giving the debugger a chance at
+   connecting and controlling the hardware.
 
    This can be done by editing the file
    :file:`samples/hello_world/nanokernel/prj.conf` to include:
@@ -376,9 +452,9 @@ for ARCH=x86 if you wish to debug on the x86 core.
 
    .. note::
 
-       By enabling :option:`CONFIG_ARC_INIT`, you *MUST* flash both an ARC and an X86
-       image to the hardware. If you do not, the X86 image will appear to hang
-       at boot while it is waiting for the ARC to finish initialization.
+       By enabling :option:`CONFIG_ARC_INIT`, you *MUST* flash both an ARC and
+       an X86 image to the hardware. If you do not, the X86 image will appear to
+       hang at boot while it is waiting for the ARC to finish initialization.
 
 #. Open two terminal windows.
 
@@ -387,7 +463,7 @@ for ARCH=x86 if you wish to debug on the x86 core.
    .. code-block:: console
 
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
-      $ make BOARD=arduino_101 debugserver
+      $ make BOARD=arduino_101_factory debugserver
 
    These commands will start an ``openocd`` session with a local telnet
    server (on port 4444 for direct openocd commands to be issued), and a
@@ -454,44 +530,6 @@ for ARCH=x86 if you wish to debug on the x86 core.
    Once you've started the X86 side again, and have configured any debug
    stubs on the ARC side, you will need to have gdb issue the continue
    command for the ARC processor to start.
-
-Connecting Serial Output
-************************
-
-In the default configuration, Zephyr's Arduino 101 images support serial output
-via the UART0 on the board. To read the output, you will need a USB to TTL
-serial cable.  To enable serial output:
-
-* Connect the Serial Cable RX pin to the Arduino 101's TX->1 pin.
-
-  .. figure:: figures/arduino_101_03.png
-      :scale: 50 %
-      :alt: Image for pin positions and serial output
-
-* Connect the Serial Cable TX pin to the Arduino 101's RX<-0 pin.
-
-  .. figure:: figures/arduino_101_04.png
-      :scale: 50 %
-      :alt: Image for pin positions and serial output
-
-* Connect the Serial Cable GND pin to the Arduino 101's GND pin.
-
-  .. figure:: figures/arduino_101_05.png
-      :scale: 50 %
-      :alt: Image for pin positions and serial output
-
-Once connected, on your development environment, you will need to:
-
-* Open a serial port emulator (i.e. on Linux minicom, screen, etc)
-
-* Attach to the USB to TTL Serial cable, for example, on Linux this may be
-  :file:`/dev/ttyUSB0`
-
-* Set the communication details to:
-  ** Speed: 115200
-  ** Data: 8 bits
-  ** Parity: None
-  ** Stopbits: 1
 
 
 Arduino 101 Pinout
