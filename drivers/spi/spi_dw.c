@@ -51,7 +51,7 @@
 #else
 #define DBG_COUNTER_INIT() {; }
 #define DBG_COUNTER_INC() {; }
-#define DBG_COUNTER_RESULT() {; }
+#define DBG_COUNTER_RESULT() 0
 #endif
 
 #define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
@@ -261,7 +261,7 @@ static int spi_dw_slave_select(struct device *dev, uint32_t slave)
 
 	SYS_LOG_DBG("%s: %p %d", __func__, dev, slave);
 
-	if (slave == 0 || slave > 4) {
+	if (slave == 0 || slave > 16) {
 		return -EINVAL;
 	}
 
@@ -347,7 +347,7 @@ static int spi_dw_resume(struct device *dev)
 
 void spi_dw_isr(void *arg)
 {
-	struct device *dev = arg;
+	struct device *dev = (struct device *)arg;
 	struct spi_dw_config *info = dev->config->config_info;
 	uint32_t error = 0;
 	uint32_t int_status;
@@ -391,12 +391,14 @@ int spi_dw_init(struct device *dev)
 	_clock_config(dev);
 	_clock_on(dev);
 
+#if 0 /* TODO: Not correct version for every target. Don't check. */
 #ifndef CONFIG_SOC_QUARK_SE_SS
 	if (read_ssi_comp_version(info->regs) != DW_SSI_COMP_VERSION) {
 		dev->driver_api = NULL;
 		_clock_off(dev);
 		return -EPERM;
 	}
+#endif
 #endif
 
 	info->config_func();
@@ -440,9 +442,9 @@ DEVICE_AND_API_INIT(spi_dw_port_0, CONFIG_SPI_0_NAME, spi_dw_init,
 void spi_config_0_irq(void)
 {
 #ifdef CONFIG_SPI_DW_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(CONFIG_SPI_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
+	IRQ_CONNECT(SPI_DW_PORT_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_0), SPI_DW_IRQ_FLAGS);
-	irq_enable(CONFIG_SPI_0_IRQ);
+	irq_enable(SPI_DW_PORT_0_IRQ);
 	_spi_int_unmask(SPI_DW_PORT_0_INT_MASK);
 #else /* SPI_DW_INTERRUPT_SEPARATED_LINES */
 	IRQ_CONNECT(IRQ_SPI0_RX_AVAIL, CONFIG_SPI_0_IRQ_PRI,
@@ -487,9 +489,9 @@ DEVICE_AND_API_INIT(spi_dw_port_1, CONFIG_SPI_1_NAME, spi_dw_init,
 void spi_config_1_irq(void)
 {
 #ifdef CONFIG_SPI_DW_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(CONFIG_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(SPI_DW_PORT_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_1), SPI_DW_IRQ_FLAGS);
-	irq_enable(CONFIG_SPI_1_IRQ);
+	irq_enable(SPI_DW_PORT_1_IRQ);
 	_spi_int_unmask(SPI_DW_PORT_1_INT_MASK);
 #else /* SPI_DW_INTERRUPT_SEPARATED_LINES */
 	IRQ_CONNECT(IRQ_SPI1_RX_AVAIL, CONFIG_SPI_1_IRQ_PRI,
