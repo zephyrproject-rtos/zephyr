@@ -577,20 +577,6 @@ endif
 export COMPILER
 endif
 
-ifdef CONFIG_QMSI_LIBRARY
-LIB_INCLUDE_DIR += -L$(CONFIG_QMSI_INSTALL_PATH:"%"=%)/lib
-ALL_LIBS += qmsi
-endif
-
-ifdef CONFIG_MINIMAL_LIBC
-ZEPHYRINCLUDE += -I$(srctree)/lib/libc/minimal/include
-endif
-
-ifdef CONFIG_NEWLIB_LIBC
-ZEPHYRINCLUDE += $(TOOLCHAIN_CFLAGS)
-ALL_LIBS += m c
-endif
-
 QEMU_BIN_PATH	?= /usr/bin
 QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(ARCH))
 
