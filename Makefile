@@ -780,7 +780,7 @@ quiet_cmd_create-lnk = LINK    $@
 	echo "$(LIB_INCLUDE_DIR) $(LINK_LIBS)";					\
 ) > $@
 
-$(KERNEL_NAME).lnk:
+$(KERNEL_NAME).lnk: $(zephyr-deps)
 	$(call cmd,create-lnk)
 
 linker.cmd: $(zephyr-deps)

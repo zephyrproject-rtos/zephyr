@@ -63,6 +63,8 @@ endif
 zephyrmake	= @+$(MAKE) -C $(ZEPHYR_BASE)  O=$(1) CFLAGS=$(CFLAGS) \
 			PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) $(2)
 
+BOARDCONFIG = $(O)/.board_$(BOARD)
+
 DOTCONFIG = $(O)/.config
 
 all: $(DOTCONFIG)
@@ -94,6 +96,10 @@ debugserver: FORCE
 
 initconfig: $(DOTCONFIG)
 
+$(BOARDCONFIG):
+	@rm -f $(O)/.board_*
+	@touch $@
+
 menuconfig: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)
 
@@ -106,7 +112,7 @@ help:
 
 KERNEL_CONFIG = $(ZEPHYR_BASE)/kernel/configs/$(KERNEL_TYPE).config
 
-$(DOTCONFIG): $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE)
+$(DOTCONFIG): $(BOARDCONFIG) $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE)
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
 		-q -m -O $(O) $(KBUILD_DEFCONFIG_PATH) $(KERNEL_CONFIG) $(CONF_FILE)
 	$(Q)$(MAKE) $(S) -C $(ZEPHYR_BASE) O=$(O) PROJECT=$(PROJECT_BASE) oldnoconfig
