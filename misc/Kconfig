@@ -16,11 +16,6 @@
 # limitations under the License.
 #
 
-
-menu "Cryptography"
-source "lib/crypto/tinycrypt/Kconfig"
-endmenu
-
 menu "Compile and Link Features"
 
 config  KERNEL_BIN_NAME

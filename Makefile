@@ -557,12 +557,7 @@ else
 include/config/auto.conf: ;
 endif # $(dot-config)
 
-ifdef CONFIG_TINYCRYPT
-# Objects we will link into the kernel / subdirs we need to visit
-KCRYPTO_DIR := lib/crypto/tinycrypt
-libs-y += $(KCRYPTO_DIR)/
- ZEPHYRINCLUDE += -I$(srctree)/lib/crypto/tinycrypt/include
-endif
+-include $(srctree)/lib/Makefile
 
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH

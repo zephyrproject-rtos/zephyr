@@ -1,1 +1,1 @@
-libs-$(CONFIG_TINYCRYPT) += tinycrypt/
+obj-$(CONFIG_TINYCRYPT) += tinycrypt/
