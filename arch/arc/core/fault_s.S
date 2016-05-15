@@ -102,7 +102,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	 * Before invoking exception handler, the kernel switches to an exception
 	 * stack, which is really the FIRQ stack, to save the faulting thread's
 	 * registers. It can use the FIRQ stack because it knows it is unused
-	 * since it is save to assume that if an exception has happened in FIRQ
+	 * since it is safe to assume that if an exception has happened in FIRQ
 	 * handler, the problem is fatal and all the kernel can do is just print
 	 * a diagnostic message and halt.
 	 */
