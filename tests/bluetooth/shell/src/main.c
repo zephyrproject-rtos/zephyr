@@ -867,14 +867,34 @@ static void cmd_gatt_write(int argc, char *argv[])
 		return;
 	}
 
-	/* TODO: Add support for longer data */
 	data = strtoul(argv[3], NULL, 16);
+
+	if (argc == 5) {
+		uint8_t buf[100];
+		size_t len;
+		int i;
+
+		len = (strtoul(argv[4], NULL, 16));
+
+		printk("duplicate data for long write, len %u max %u\n",
+		       len, sizeof(buf));
+
+		len = min(len, sizeof(buf));
+
+		for (i = 0; i < len; i++) {
+			buf[i] = data;
+		}
+
+		write_params.data = buf;
+		write_params.length = len;
+	} else {
+		write_params.data = &data;
+		write_params.length = sizeof(data);
+	}
 
 	write_params.handle = handle;
 	write_params.offset = offset;
 	write_params.func = write_func;
-	write_params.data = &data;
-	write_params.length = sizeof(data);
 
 	err = bt_gatt_write(default_conn, &write_params);
 	if (err) {
