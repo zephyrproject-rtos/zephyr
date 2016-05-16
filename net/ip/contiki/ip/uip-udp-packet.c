@@ -62,7 +62,7 @@ uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *dat
     memcpy(&uip_buf(buf)[UIP_LLH_LEN + UIP_IPUDPH_LEN], data,
            len > UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN?
            UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN: len);
-    if (uip_process(buf, UIP_UDP_SEND_CONN) == 0) {
+    if (uip_process(&buf, UIP_UDP_SEND_CONN) == 0) {
       /* The packet was dropped, we can return now */
       return 0;
     }

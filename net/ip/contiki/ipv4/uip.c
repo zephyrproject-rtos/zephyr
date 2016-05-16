@@ -678,8 +678,9 @@ uip_add_rcv_nxt(struct net_buf *buf, uint16_t n)
 #endif /* UIP_TCP */
 /*---------------------------------------------------------------------------*/
 uint8_t
-uip_process(struct net_buf *buf, uint8_t flag)
+uip_process(struct net_buf **buf_out, uint8_t flag)
 {
+  struct net_buf *buf = &buf_out;
 #if UIP_TCP
   register struct uip_conn *uip_connr = uip_conn(buf);
 #endif

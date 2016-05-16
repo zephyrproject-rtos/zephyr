@@ -284,8 +284,7 @@ void uip_setipid(uint16_t id);
  *
  * \hideinitializer
  */
-#define uip_input(buf)        uip_process(buf, UIP_DATA)
-
+#define uip_input(buf)        uip_process(&buf, UIP_DATA)
 
 /**
  * Periodic processing for a connection identified by its number.
@@ -331,7 +330,7 @@ void uip_setipid(uint16_t id);
  */
 #if UIP_TCP
 #define uip_periodic(buf, conn) do { uip_set_conn(buf) = &uip_conns[conn]; \
-    uip_process(buf, UIP_TIMER); } while (0)
+    uip_process(&buf, UIP_TIMER); } while (0)
 
 /**
  * Macro to determine whether a specific uIP connection is active
@@ -355,7 +354,7 @@ void uip_setipid(uint16_t id);
  * \hideinitializer
  */
 #define uip_periodic_conn(buf, conn) do { uip_set_conn(buf) = conn;	\
-    uip_process(buf, UIP_TIMER); } while (0)
+    uip_process(&buf, UIP_TIMER); } while (0)
 
 /**
  * Request that a particular connection should be polled.
@@ -369,7 +368,7 @@ void uip_setipid(uint16_t id);
  * \hideinitializer
  */
 #define uip_poll_conn(buf, conn) do { uip_set_conn(buf) = conn;	\
-    uip_process(buf, UIP_POLL_REQUEST); } while (0)
+    uip_process(&buf, UIP_POLL_REQUEST); } while (0)
 
 #endif /* UIP_TCP */
 
@@ -423,7 +422,7 @@ void uip_setipid(uint16_t id);
  * \hideinitializer
  */
 #define uip_udp_periodic_conn(buf, conn) do { uip_set_udp_conn(buf) = conn; \
-		uip_process(buf, UIP_UDP_TIMER); } while(0)
+		uip_process(&buf, UIP_UDP_TIMER); } while(0)
 #endif /* UIP_UDP */
 
 /** \brief Abandon the reassembly of the current packet */
@@ -1299,7 +1298,6 @@ extern uint8_t uip_ext_len;
 extern uint16_t uip_urglen, uip_surglen;
 #endif /* UIP_URGDATA > 0 */
 
-
 /**
  * Representation of a uIP TCP connection.
  *
@@ -1569,7 +1567,7 @@ uip_ext_hdr_options_process(); */
  *
  * The actual uIP function which does all the work.
  */
-uint8_t uip_process(struct net_buf *buf, uint8_t flag);
+uint8_t uip_process(struct net_buf **buf, uint8_t flag);
 
   /* The following flags are passed as an argument to the uip_process()
    function. They are used to distinguish between the two cases where

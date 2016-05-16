@@ -65,9 +65,16 @@ struct simple_udp_connection *
 	net_context_get_udp_connection(struct net_context *context);
 int net_context_get_receiver_registered(struct net_context *context);
 void net_context_set_receiver_registered(struct net_context *context);
-int net_context_tcp_init(struct net_context *context,
+int net_context_tcp_init(struct net_context *context, struct net_buf *buf,
 			 enum net_tcp_type);
 int net_context_tcp_send(struct net_buf *buf);
+void *net_context_get_internal_connection(struct net_context *context);
+struct net_buf *net_context_tcp_get_pending(struct net_context *context);
+void net_context_tcp_set_pending(struct net_context *context,
+				 struct net_buf *buf);
+void net_context_set_connection_status(struct net_context *context,
+				       int status);
+void net_context_unset_receiver_registered(struct net_context *context);
 
 /* Stacks for the tx & rx fibers.
  * FIXME: stack size needs fine-tuning
@@ -103,46 +110,65 @@ int net_send(struct net_buf *buf)
 {
 	int ret = 0;
 
-	if (ip_buf_len(buf) == 0) {
+	if (!buf || ip_buf_len(buf) == 0) {
 		return -ENODATA;
+	}
+
+	if (buf->len && !uip_appdatalen(buf)) {
+		uip_appdatalen(buf) = buf->len;
 	}
 
 #ifdef CONFIG_NETWORKING_WITH_TCP
 #define MAX_TCP_RETRY_COUNT 5
-	net_context_tcp_init(ip_buf_context(buf), NET_TCP_TYPE_CLIENT);
-	if (ip_buf_context(buf)) {
-		if (net_context_get_connection_status(
-			    ip_buf_context(buf)) == -ETIMEDOUT) {
-			return -ETIMEDOUT;
-		}
-		if (ip_buf_tcp_retry_count(buf) < MAX_TCP_RETRY_COUNT) {
-			int ret;
-
-			if (net_context_get_tuple(
-				    ip_buf_context(buf))->ip_proto ==
+	if (ip_buf_context(buf) &&
+	    net_context_get_tuple(ip_buf_context(buf))->ip_proto ==
 							IPPROTO_TCP) {
-				if (uip_conn(buf) && uip_conn(buf)->len > 0) {
-					/* There is already pending packet to
-					 * be sent. Application needs to try to
-					 * send data a bit later.
-					 * Do not wait forever thou so that
-					 * the connection can proceed if
-					 * needed.
-					 */
-					ip_buf_tcp_retry_count(buf)++;
-					return -EAGAIN;
+		struct uip_conn *conn;
+		int status;
+
+		net_context_tcp_init(ip_buf_context(buf), buf,
+				     NET_TCP_TYPE_CLIENT);
+
+		status = net_context_get_connection_status(
+							ip_buf_context(buf));
+		NET_DBG("context %p buf %p status %d\n",
+			ip_buf_context(buf), buf, status);
+
+		switch (status) {
+		case EISCONN:
+			/* User should be able to send new data now. */
+			NET_DBG("Send new data buf %p ref %d\n", buf, buf->ref);
+			net_context_set_connection_status(ip_buf_context(buf),
+							  0);
+			conn = (struct uip_conn *)net_context_get_internal_connection(ip_buf_context(buf));
+			if (conn->buf) {
+				ip_buf_unref(conn->buf);
+
+				if (conn->buf == buf) {
+					conn->buf = NULL;
+					return 0;
 				}
-				ret = net_context_get_connection_status(
-					ip_buf_context(buf));
-				if (ret < 0) {
-					ip_buf_tcp_retry_count(buf)++;
-					return ret;
-				}
+
+				conn->buf = NULL;
 			}
-		} else {
-			ip_buf_tcp_retry_count(buf) = 0;
-			ret = -EAGAIN;
+			break;
+
+		case -EALREADY:
+			NET_DBG("Connection established\n");
+			return 0;
+
+		case -EINPROGRESS:
+			NET_DBG("Connection being established\n");
+			return status;
+
+		case -ECONNRESET:
+			NET_DBG("Connection reset\n");
+			net_context_unset_receiver_registered(
+				ip_buf_context(buf));
+			return status;
 		}
+
+		ret = status;
 	}
 #endif
 
@@ -596,7 +622,7 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 		break;
 	case IPPROTO_TCP:
 #ifdef CONFIG_NETWORKING_WITH_TCP
-		ret = net_context_tcp_init(context, NET_TCP_TYPE_SERVER);
+		ret = net_context_tcp_init(context, NULL, NET_TCP_TYPE_SERVER);
 		if (ret) {
 			NET_DBG("TCP connection init failed\n");
 			ret = -ENOENT;
@@ -763,7 +789,11 @@ static int check_and_send_packet(struct net_buf *buf)
 			 */
 			ret = 1;
 		} else {
-			ip_buf_sent_status(buf) = 0;
+			ip_buf_sent_status(buf) = ret;
+			ret = true; /* This will prevent caller to discard
+				     * the buffer that needs to be resent
+				     * again.
+				     */
 		}
 #else
 		NET_DBG("TCP not supported\n");

@@ -70,7 +70,7 @@ struct net_context {
 			enum net_tcp_type tcp_type;
 			int connection_status;
 			void *conn;
-			struct net_buf *last_sent;
+			struct net_buf *pending;
 		};
 #endif
 	};
@@ -272,52 +272,24 @@ static int handle_tcp_connection(struct psock *p, enum tcp_event_type type,
 
 int net_context_tcp_send(struct net_buf *buf)
 {
+	bool connected, reset;
+
 	/* Prepare data to be sent */
-
-	/* If we have already tried to send this buf, then set the flag
-	 * accordingly so that psock can actually try to send the data.
-	 */
-	if (ip_buf_context(buf)->last_sent == buf) {
-		uip_flags(buf) |= UIP_REXMIT;
-	} else {
-		ip_buf_context(buf)->last_sent = buf;
-	}
-
-	ip_buf_ref(buf);
 
 	process_post_synch(&ip_buf_context(buf)->tcp,
 			   tcpip_event,
 			   INT_TO_POINTER(TCP_WRITE_EVENT),
 			   buf);
 
+	connected = uip_flags(buf) & UIP_CONNECTED;
+	reset = uip_flags(buf) & UIP_ABORT;
+
 	/* If the buffer ref is 1, then the buffer was sent and it
 	 * is cleared already.
 	 */
 	if (buf->ref == 1) {
-		ip_buf_unref(buf);
 		return 0;
 	}
-
-	ip_buf_unref(buf);
-
-	/* If we get -EAGAIN, then we need to retry the packet sending
-	 * after we have received ACK from peer. Store the packet to be
-	 * sent out later.
-	 */
-	if (ip_buf_sent_status(buf) == -EAGAIN) {
-		if (!uip_conn(buf)) {
-			;
-		} else if (!uip_conn(buf)->buf) {
-			uip_conn(buf)->buf = ip_buf_ref(buf);
-		} else {
-			/* We just could not send the packet and thus need to
-			 * discard it.
-			 */
-			ip_buf_sent_status(buf) = -EBUSY;
-		}
-	}
-
-	ip_buf_context(buf)->connection_status = ip_buf_sent_status(buf);
 
 	return ip_buf_sent_status(buf);
 }
@@ -327,11 +299,16 @@ int net_context_tcp_send(struct net_buf *buf)
  */
 PROCESS_THREAD(tcp, ev, data, buf, user_data)
 {
+	NET_DBG("tcp %p ev %p data %p buf %p user_data %p next line %d\n",
+		process_thread_tcp, ev, data, buf, user_data,
+		process_pt->lc);
+
 	PROCESS_BEGIN();
 
 	while(1) {
 		PROCESS_YIELD_UNTIL(ev == tcpip_event);
 
+	try_send:
 		if (POINTER_TO_INT(data) == TCP_WRITE_EVENT) {
 			/* We want to send data to peer. */
 			struct net_context *context = user_data;
@@ -389,6 +366,23 @@ PROCESS_THREAD(tcp, ev, data, buf, user_data)
 			}
 
 			continue;
+		} else {
+			if (buf && uip_aborted(buf)) {
+				struct net_context *context = user_data;
+				NET_DBG("Connection aborted context %p\n",
+					user_data);
+				context->connection_status = -ECONNRESET;
+				continue;
+			}
+
+			if (buf && uip_connected(buf)) {
+				struct net_context *context = user_data;
+				NET_DBG("Connection established context %p\n",
+					user_data);
+				context->connection_status = -EALREADY;
+				data = INT_TO_POINTER(TCP_WRITE_EVENT);
+				goto try_send;
+			}
 		}
 
 	read_data:
@@ -418,6 +412,9 @@ PROCESS_THREAD(tcp, ev, data, buf, user_data)
 			ip_buf_appdatalen(clone) = uip_len(buf);
 			ip_buf_len(clone) = ip_buf_len(buf);
 			ip_buf_context(clone) = user_data;
+			if (!ip_buf_context(buf)) {
+				ip_buf_context(buf) = user_data;
+			}
 			uip_set_conn(clone) = uip_conn(buf);
 			uip_flags(clone) = uip_flags(buf);
 			uip_flags(clone) |= UIP_CONNECTED;
@@ -442,7 +439,7 @@ PROCESS_THREAD(tcp, ev, data, buf, user_data)
 	PROCESS_END();
 }
 
-int net_context_tcp_init(struct net_context *context,
+int net_context_tcp_init(struct net_context *context, struct net_buf *buf,
 			 enum net_tcp_type tcp_type)
 {
 	if (!context || context->tuple.ip_proto != IPPROTO_TCP) {
@@ -462,6 +459,12 @@ int net_context_tcp_init(struct net_context *context,
 		 * us first, then we are the client.
 		 */
 		context->tcp_type = tcp_type;
+	} else if (context->tcp_type != tcp_type) {
+		/* This means that we have already selected that we
+		 * are either client or server. Use the context
+		 * value.
+		 */
+		return 0;
 	}
 
 	context->tcp.thread = process_thread_tcp;
@@ -475,7 +478,7 @@ int net_context_tcp_init(struct net_context *context,
 #if UIP_ACTIVE_OPEN
 	} else {
 		context->tcp.name = "TCP client";
-		context->connection_status = -EAGAIN;
+		context->connection_status = -EINPROGRESS;
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 		NET_DBG("Connecting to ");
@@ -485,7 +488,7 @@ int net_context_tcp_init(struct net_context *context,
 		tcp_connect((uip_ipaddr_t *)
 			    &context->tuple.remote_addr->in6_addr,
 			    UIP_HTONS(context->tuple.remote_port),
-			    context, &context->tcp);
+			    context, &context->tcp, buf);
 #else /* CONFIG_NETWORKING_WITH_IPV6 */
 		NET_DBG("Connecting to ");
 		PRINT6ADDR((const uip_ipaddr_t *)&context->tuple.remote_addr->in_addr);
@@ -494,7 +497,7 @@ int net_context_tcp_init(struct net_context *context,
 		tcp_connect((uip_ipaddr_t *)
 			    &context->tuple.remote_addr->in_addr,
 			    UIP_HTONS(context->tuple.remote_port),
-			    context, &context->tcp);
+			    context, &context->tcp, buf);
 #endif /* CONFIG_NETWORKING_WITH_IPV6 */
 #endif /* UIP_ACTIVE_OPEN */
 	}
@@ -543,6 +546,15 @@ void net_context_set_receiver_registered(struct net_context *context)
 	context->receiver_registered = true;
 }
 
+void net_context_unset_receiver_registered(struct net_context *context)
+{
+	if (!context) {
+		return;
+	}
+
+	context->receiver_registered = false;
+}
+
 int net_context_get_connection_status(struct net_context *context)
 {
 	if (!context) {
@@ -571,6 +583,7 @@ void net_context_set_connection_status(struct net_context *context,
 	}
 
 	if (context->tuple.ip_proto == IPPROTO_TCP) {
+		NET_DBG("context %p status %d\n", context, status);
 		context->connection_status = status;
 	}
 #endif
@@ -606,5 +619,49 @@ void net_context_set_internal_connection(struct net_context *context,
 	if (context->tuple.ip_proto == IPPROTO_TCP) {
 		context->conn = conn;
 	}
+#endif
+}
+
+struct net_context *net_context_find_internal_connection(void *conn)
+{
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
+	return NULL;
+#else
+	int i;
+
+	for (i = 0; i < NET_MAX_CONTEXT; i++) {
+		if (contexts[i].conn == conn) {
+			return &contexts[i];
+		}
+	}
+
+	return NULL;
+#endif
+}
+
+struct net_buf *net_context_tcp_get_pending(struct net_context *context)
+{
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
+	return NULL;
+#else
+	if (!context) {
+		return NULL;
+	}
+
+	return context->pending;
+#endif
+}
+
+void net_context_tcp_set_pending(struct net_context *context,
+				 struct net_buf *buf)
+{
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
+	return;
+#else
+	if (!context) {
+		return;
+	}
+
+	context->pending = buf;
 #endif
 }

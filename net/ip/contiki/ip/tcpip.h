@@ -167,7 +167,8 @@ CCIF void tcp_unlisten(uint16_t port, struct process *handler);
  *
  */
 CCIF struct uip_conn *tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port,
-				  void *appstate, struct process *process);
+				  void *appstate, struct process *process,
+				  struct net_buf *buf);
 
 /**
  * Cause a specified TCP connection to be polled.
@@ -180,7 +181,7 @@ CCIF struct uip_conn *tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port,
  * \param conn A pointer to the TCP connection that should be polled.
  *
  */
-void tcpip_poll_tcp(struct uip_conn *conn);
+void tcpip_poll_tcp(struct uip_conn *conn, struct net_buf *data_buf);
 
 void tcpip_resend_syn(struct uip_conn *conn, struct net_buf *buf);
 
