@@ -125,11 +125,13 @@ static inline void reverse(unsigned char *buf, int len)
 }
 
 #if 1
-#define WAIT_TIME  5
+#define WAIT_TIME  2
 #define WAIT_TICKS (WAIT_TIME * sys_clock_ticks_per_sec)
 #else
 #define WAIT_TICKS TICKS_UNLIMITED
 #endif
+
+#define ONE_SEC (1 * sys_clock_ticks_per_sec)
 
 static inline int send_packet(const char *name,
 			      struct net_context *ctx,
@@ -143,16 +145,22 @@ static inline int send_packet(const char *name,
 		/* We have a pending packet that needs to be sent
 		 * first.
 		 */
+		PRINT("%s: Trying to re-send %p len %d\n", __func__, buf,
+			buf->len);
 		ret = net_send(buf);
-		if (ret == -EAGAIN) {
-			PRINT("%s: packet %p needs to be re-sent\n",
-			      name, buf);
+		if (ret == -EAGAIN || ret == -EINPROGRESS) {
+			PRINT("%s: packet %p needs to be re-sent (%d)\n",
+			      name, buf, ret);
 			return ret;
 		} else if (ret < 0) {
+			PRINT("%s: returned %d pending buffer discarded %p\n",
+			      name, ret, buf);
 			ip_buf_unref(buf);
 			buf = NULL;
 			return ret;
 		} else {
+			PRINT("%s: returned %d pending buffer cleared %p\n",
+			      name, ret, buf);
 			buf = NULL;
 			return 0;
 		}
@@ -165,11 +173,17 @@ static inline int send_packet(const char *name,
 
 		ptr = net_buf_add(buf, sending_len);
 		memcpy(ptr, lorem_ipsum + pos, sending_len);
-		sending_len = buf->len;
 
+		ip_buf_appdatalen(buf) = sending_len;
+
+		PRINT("%s: Trying to send %p buflen %d datalen %d\n",
+		      __func__, buf, buf->len, ip_buf_appdatalen(buf));
 		ret = net_send(buf);
 		if (ret < 0) {
-			if (ret == -EAGAIN) {
+			if (ret == -EINPROGRESS) {
+				PRINT("%s: no connection yet, try again\n",
+				      __func__);
+			} else if (ret == -EAGAIN || ret == -ECONNRESET) {
 				PRINT("%s: no connection, try again later\n",
 				      __func__);
 			} else {
@@ -383,8 +397,8 @@ static bool sending(int resend)
 	again:
 		ret = send_packet(__func__, unicast, ipsum_len,
 				  expecting);
-		if (ret == -EAGAIN) {
-			fiber_sleep(100);
+		if (ret == -EAGAIN || ret == -EINPROGRESS) {
+			fiber_sleep(10);
 			PRINT("retrying...\n");
 			goto again;
 		} else if (ret == -ETIMEDOUT) {
@@ -429,6 +443,7 @@ void receiving(void)
 				expecting_len = expecting;
 			}
 		}
+		fiber_sleep(10);
 	}
 }
 
