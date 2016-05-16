@@ -16,5 +16,6 @@ into a single image.
    :maxdepth: 1
 
    kbuild_kconfig
+   ../kconfig/index.rst
    kbuild_makefiles
    kbuild_project

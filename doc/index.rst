@@ -28,20 +28,20 @@ Sections
 .. toctree::
    :maxdepth: 1
 
-   about_zephyr.rst
    getting_started/getting_started.rst
    kernel/kernel.rst
+   contribute/code.rst
    drivers/drivers.rst
    subsystems/subsystems.rst
-   contribute/code.rst
    porting/porting.rst
+   api/api.rst
+   board/board.rst
    reference/kbuild/kbuild.rst
    application/application.rst
-   api/api.rst
-   reference/kconfig/index.rst
-   board/board.rst
 
 You can find further information on the `Zephyr Project Wiki`_.
+
+.. include:: about_zephyr.rst
 
 Indices and Tables
 ******************

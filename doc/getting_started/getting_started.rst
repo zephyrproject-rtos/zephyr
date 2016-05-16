@@ -19,6 +19,7 @@ Use the following procedures to create a new development environment.
 .. toctree::
    :maxdepth: 1
 
+   about_zephyr.rst
    installation_linux.rst
    installation_mac.rst
    installation_win.rst
