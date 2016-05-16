@@ -20,6 +20,10 @@
  * Workqueue support functions
  */
 
+#include <nano_private.h>
+#include <wait_q.h>
+#include <errno.h>
+
 #include <misc/nano_work.h>
 
 static void workqueue_fiber_main(int arg1, int arg2)
@@ -30,10 +34,17 @@ static void workqueue_fiber_main(int arg1, int arg2)
 
 	while (1) {
 		struct nano_work *work;
+		work_handler_t handler;
 
 		work = nano_fiber_fifo_get(&wq->fifo, TICKS_UNLIMITED);
 
-		work->handler(work);
+		handler = work->handler;
+
+		/* Set state to idle so it can be resubmitted by handler */
+		if (!atomic_test_and_set_bit(work->flags,
+					     NANO_WORK_STATE_IDLE)) {
+			handler(work);
+		}
 	}
 }
 
@@ -62,6 +73,88 @@ void nano_workqueue_start(struct nano_workqueue *wq,
 
 	fiber_start_config(config, workqueue_fiber_main,
 			   (int)wq, 0, 0);
+}
+
+static void work_timeout(struct _nano_timeout *t)
+{
+	struct nano_delayed_work *w = CONTAINER_OF(t, struct nano_delayed_work,
+						   timeout);
+
+	/* submit work to workqueue */
+	nano_work_submit_to_queue(w->wq, &w->work);
+}
+
+void nano_delayed_work_init(struct nano_delayed_work *work,
+			    work_handler_t handler)
+{
+	nano_work_init(&work->work, handler);
+	_nano_timeout_init(&work->timeout, work_timeout);
+	work->wq = NULL;
+}
+
+int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
+				      struct nano_delayed_work *work,
+				      int ticks)
+{
+	int key = irq_lock();
+	int err;
+
+	/* Work cannot be active in multiple queues */
+	if (work->wq && work->wq != wq) {
+		err = -EADDRINUSE;
+		goto done;
+	}
+
+	/* Cancel if work has been submitted */
+	if (work->wq == wq) {
+		err = nano_delayed_work_cancel(work);
+		if (err < 0) {
+			goto done;
+		}
+	}
+
+	/* Attach workqueue so the timeout callback can submit it */
+	work->wq = wq;
+
+	if (!ticks) {
+		/* Submit work if no ticks is 0 */
+		nano_work_submit_to_queue(wq, &work->work);
+	} else {
+		/* Add timeout */
+		_do_nano_timeout_add(NULL, &work->timeout, NULL, ticks);
+	}
+
+	err = 0;
+
+done:
+	irq_unlock(key);
+
+	return err;
+}
+
+int nano_delayed_work_cancel(struct nano_delayed_work *work)
+{
+	int key = irq_lock();
+
+	if (!atomic_test_bit(work->work.flags, NANO_WORK_STATE_IDLE)) {
+		irq_unlock(key);
+		return -EINPROGRESS;
+	}
+
+	if (!work->wq) {
+		irq_unlock(key);
+		return -EINVAL;
+	}
+
+	/* Abort timeout, if it has expired this will do nothing */
+	_do_nano_timeout_abort(&work->timeout);
+
+	/* Detach from workqueue */
+	work->wq = NULL;
+
+	irq_unlock(key);
+
+	return 0;
 }
 
 #ifdef CONFIG_SYSTEM_WORKQUEUE

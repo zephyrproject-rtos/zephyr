@@ -25,6 +25,8 @@
 #define _misc_nano_work__h_
 
 #include <nanokernel.h>
+#include <atomic.h>
+#include <misc/__assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,11 +48,19 @@ struct nano_workqueue {
 };
 
 /**
+ * @brief Work flags.
+ */
+enum {
+	NANO_WORK_STATE_IDLE,		/* Work item idle state */
+};
+
+/**
  * @brief An item which can be scheduled on a @ref nano_workqueue.
  */
 struct nano_work {
 	void *_reserved;		/* Used by nano_fifo implementation. */
 	work_handler_t handler;
+	atomic_t flags[1];
 };
 
 /**
@@ -59,6 +69,7 @@ struct nano_work {
 static inline void nano_work_init(struct nano_work *work,
 				  work_handler_t handler)
 {
+	atomic_set_bit(work->flags, NANO_WORK_STATE_IDLE);
 	work->handler = handler;
 }
 
@@ -68,7 +79,11 @@ static inline void nano_work_init(struct nano_work *work,
 static inline void nano_work_submit_to_queue(struct nano_workqueue *wq,
 					     struct nano_work *work)
 {
-	nano_fifo_put(&wq->fifo, work);
+	if (!atomic_test_and_clear_bit(work->flags, NANO_WORK_STATE_IDLE)) {
+		__ASSERT_NO_MSG(0);
+	} else {
+		nano_fifo_put(&wq->fifo, work);
+	}
 }
 
 /**
@@ -90,16 +105,99 @@ extern void nano_task_workqueue_start(struct nano_workqueue *wq,
 extern void nano_workqueue_start(struct nano_workqueue *wq,
 				 const struct fiber_config *config);
 
-#ifdef CONFIG_SYSTEM_WORKQUEUE
+#if defined(CONFIG_NANO_TIMEOUTS)
+
+ /*
+ * @brief An item which can be scheduled on a @ref nano_workqueue with a
+ * delay.
+ */
+struct nano_delayed_work {
+	struct nano_work work;
+	struct _nano_timeout timeout;
+	struct nano_workqueue *wq;
+};
+
+/**
+ * @brief Initialize delayed work
+ */
+void nano_delayed_work_init(struct nano_delayed_work *work,
+			    work_handler_t handler);
+
+/**
+ * @brief Submit a delayed work item to a workqueue.
+ *
+ * This procedure schedules a work item to be processed after a delay.
+ * Once the delay has passed, the work item is submitted to the work queue:
+ * at this point, it is no longer possible to cancel it. Once the work item's
+ * handler is about to be executed, the work is considered complete and can be
+ * resubmitted.
+ *
+ * Care must be taken if the handler blocks or yield as there is no implicit
+ * mutual exclusion mechanism. Such usage is not recommended and if necessary,
+ * it should be explicitly done between the submitter and the handler.
+ *
+ * @param Workqueue to schedule the work item
+ * @param Delayed work item
+ * @param Ticks to wait before scheduling the work item
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
+				      struct nano_delayed_work *work,
+				      int ticks);
+
+/**
+ * @brief Cancel a delayed work item
+ *
+ * This procedure cancels a scheduled work item. If the work has been completed
+ * or is idle, this will do nothing. The only case where this can fail is when
+ * the work has been submitted to the work queue, but the handler has not run
+ * yet.
+ *
+ * @param Delayed work item to be canceled
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int nano_delayed_work_cancel(struct nano_delayed_work *work);
+
+#endif /* CONFIG_NANO_TIMEOUTS */
+
+#if defined(CONFIG_SYSTEM_WORKQUEUE)
 
 extern struct nano_workqueue sys_workqueue;
 
+/*
+ * @brief Submit a work item to the system workqueue.
+ *
+ * @ref nano_work_submit_to_queue
+ *
+ * When using the system workqueue it is not recommended to block or yield
+ * on the handler since its fiber is shared system wide it may cause
+ * unexpected behavior.
+ */
 static inline void nano_work_submit(struct nano_work *work)
 {
 	nano_work_submit_to_queue(&sys_workqueue, work);
 }
 
-#endif
+#if defined(CONFIG_NANO_TIMEOUTS)
+/*
+ * @brief Submit a delayed work item to the system workqueue.
+ *
+ * @ref nano_delayed_work_submit_to_queue
+ *
+ * When using the system workqueue it is not recommended to block or yield
+ * on the handler since its fiber is shared system wide it may cause
+ * unexpected behavior.
+ */
+static inline int nano_delayed_work_submit(struct nano_delayed_work *work,
+					   int ticks)
+{
+	return nano_delayed_work_submit_to_queue(&sys_workqueue, work, ticks);
+}
+
+#endif /* CONFIG_NANO_TIMEOUTS */
+#endif /* CONFIG_SYSTEM_WORKQUEUE */
 
 #ifdef __cplusplus
 }
