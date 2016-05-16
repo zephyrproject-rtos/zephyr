@@ -84,6 +84,16 @@
 #include <net/ip_buf.h>
 #include <string.h>
 #include <errno.h>
+
+extern void net_context_set_connection_status(struct net_context *context,
+					      int status);
+void *net_context_get_internal_connection(struct net_context *context);
+void net_context_set_internal_connection(struct net_context *context,
+					 void *conn);
+struct net_context *net_context_find_internal_connection(void *conn);
+void net_context_tcp_set_pending(struct net_context *context,
+				 struct net_buf *buf);
+
 /*---------------------------------------------------------------------------*/
 /* Variable definitions. */
 
@@ -676,11 +686,38 @@ uip_add_rcv_nxt(struct net_buf *buf, uint16_t n)
   uip_conn(buf)->rcv_nxt[3] = uip_acc32[3];
 }
 #endif /* UIP_TCP */
+
+#if UIP_TCP
+static inline void handle_tcp_retransmit_timer(struct net_buf *not_used,
+					       void *ptr)
+{
+  struct uip_conn *conn = ptr;
+
+  PRINTF("%s: connection %p buf %p\n", __func__, conn, conn ? conn->buf : 0);
+  if (conn && conn->buf) {
+    conn->timer = 0;
+    if (uip_process(&conn->buf, UIP_TIMER)) {
+      tcpip_resend_syn(conn, conn->buf);
+    }
+  }
+}
+
+static inline void tcp_set_retrans_timer(struct uip_conn *conn)
+{
+  ctimer_set(NULL, &conn->retransmit_timer, CLOCK_SECOND,
+	     &handle_tcp_retransmit_timer, conn);
+}
+
+static inline void tcp_cancel_retrans_timer(struct uip_conn *conn)
+{
+  ctimer_stop(&conn->retransmit_timer);
+}
+#endif /* UIP_TCP */
 /*---------------------------------------------------------------------------*/
 uint8_t
 uip_process(struct net_buf **buf_out, uint8_t flag)
 {
-  struct net_buf *buf = &buf_out;
+  struct net_buf *buf = *buf_out;
 #if UIP_TCP
   register struct uip_conn *uip_connr = uip_conn(buf);
 #endif
@@ -702,6 +739,22 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
      particular connection. */
 #if UIP_TCP
   if(flag == UIP_POLL_REQUEST || flag == UIP_TCP_SEND_CONN) {
+
+    /* If the connection is not found, and we are initiating the
+     * connection, try to get it.
+     */
+    if (!uip_connr) {
+      uip_connr = net_context_get_internal_connection(ip_buf_context(buf));
+      if (!uip_connr) {
+        PRINTF("No matching connection found for buf %p\n", buf);
+        ip_buf_sent_status(buf) = -ENOTCONN;
+	return 0;
+      } else {
+        uip_set_conn(buf) = uip_connr;
+        PRINTF("Using connection %p for buf %p\n", uip_conn(buf), buf);
+      }
+    }
+
     if((uip_connr->tcpstateflags & UIP_TS_MASK) == UIP_ESTABLISHED &&
        !uip_outstanding(uip_connr)) {
       if (flag == UIP_POLL) {
@@ -711,6 +764,14 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
       goto appsend;
 #if UIP_ACTIVE_OPEN
     } else if((uip_connr->tcpstateflags & UIP_TS_MASK) == UIP_SYN_SENT) {
+      if (uip_connr->nrtx > UIP_MAXSYNRTX) {
+        /* SYN has been sent too many times, just stop the connection.
+	 */
+	PRINTF("Too many SYN sent, dropping connection %p\n", uip_connr);
+	net_context_set_connection_status(ip_buf_context(buf), -ETIMEDOUT);
+	goto drop;
+      }
+
       /* In the SYN_SENT state, we retransmit out SYN. */
       BUF(buf)->flags = 0;
       goto tcp_send_syn;
@@ -728,9 +789,11 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
       }
       if (uip_outstanding(uip_connr)) {
         ip_buf_sent_status(buf) = -EAGAIN;
-        PRINTF("Retry to send packet len %d, outstanding data len %d\n",
-	       uip_len(buf), uip_outstanding(uip_connr));
-        return 0;
+        PRINTF("Retry to send packet len %d, outstanding data len %d, "
+	       "conn %p\n", uip_len(buf), uip_outstanding(uip_connr),
+		uip_connr);
+	flag = UIP_TIMER;
+	goto tcp_retry;
       }
     }
     goto drop;
@@ -748,6 +811,8 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
       --uip_reasstmr;
     }
 #endif /* UIP_REASSEMBLY */
+
+#if UIP_TCP
     /* Increase the initial sequence number. */
     if(++iss[3] == 0) {
       if(++iss[2] == 0) {
@@ -760,8 +825,7 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
     /* Reset the length variables. */
     uip_len(buf) = 0;
     uip_slen(buf) = 0;
-
-#if UIP_TCP
+  tcp_retry:
     /* Check if the connection is in a state in which we simply wait
        for the connection to time out. If so, we increase the
        connection's timer and remove the connection if it times
@@ -773,6 +837,11 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
 	uip_connr->tcpstateflags = UIP_CLOSED;
       }
     } else if(uip_connr->tcpstateflags != UIP_CLOSED) {
+      if (!uip_connr->buf) {
+        /* There cannot be any data pending if buf is NULL */
+        uip_outstanding(uip_connr) = 0;
+      }
+
       /* If the connection has outstanding data, we increase the
 	 connection's timer and see if it has reached the RTO value
 	 in which case we retransmit. */
@@ -818,7 +887,7 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
 #if UIP_ACTIVE_OPEN
 	  case UIP_SYN_SENT:
 	    /* In the SYN_SENT state, we retransmit out SYN. */
-	    BUF->flags = 0;
+	    BUF(buf)->flags = 0;
 	    goto tcp_send_syn;
 #endif /* UIP_ACTIVE_OPEN */
 
@@ -1426,6 +1495,13 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
   uip_connr->snd_nxt[3] = iss[3];
   uip_connr->len = 1;
 
+  if (flag == UIP_TCP_SEND_CONN) {
+    /* So we are trying send some data to other host */
+    if (uip_connr->buf && uip_connr->buf != buf) {
+      uip_connr->buf = ip_buf_ref(buf);
+    }
+  }
+
   /* rcv_nxt should be the seqno from the incoming packet + 1. */
   uip_connr->rcv_nxt[3] = BUF(buf)->seqno[3];
   uip_connr->rcv_nxt[2] = BUF(buf)->seqno[2];
@@ -1469,10 +1545,11 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
   /* Our response will be a SYNACK. */
 #if UIP_ACTIVE_OPEN
  tcp_send_synack:
-  BUF->flags = TCP_ACK;
+  BUF(buf)->flags = TCP_ACK;
 
  tcp_send_syn:
-  BUF->flags |= TCP_SYN;
+  BUF(buf)->flags |= TCP_SYN;
+  tcp_set_retrans_timer(uip_connr);
 #else /* UIP_ACTIVE_OPEN */
  tcp_send_synack:
   BUF(buf)->flags = TCP_SYN | TCP_ACK;
@@ -1615,13 +1692,13 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
        our SYN. The rcv_nxt is set to sequence number in the SYNACK
        plus one, and we send an ACK. We move into the ESTABLISHED
        state. */
-    if((uip_flags & UIP_ACKDATA) &&
-       (BUF->flags & TCP_CTL) == (TCP_SYN | TCP_ACK)) {
+    if((uip_flags(buf) & UIP_ACKDATA) &&
+       (BUF(buf)->flags & TCP_CTL) == (TCP_SYN | TCP_ACK)) {
 
       /* Parse the TCP MSS option, if present. */
-      if((BUF->tcpoffset & 0xf0) > 0x50) {
-	for(c = 0; c < ((BUF->tcpoffset >> 4) - 5) << 2 ;) {
-	  opt = uip_buf[UIP_IPTCPH_LEN + UIP_LLH_LEN + c];
+      if((BUF(buf)->tcpoffset & 0xf0) > 0x50) {
+	for(c = 0; c < ((BUF(buf)->tcpoffset >> 4) - 5) << 2 ;) {
+	  opt = uip_buf(buf)[UIP_IPTCPH_LEN + UIP_LLH_LEN + c];
 	  if(opt == TCP_OPT_END) {
 	    /* End of options. */
 	    break;
@@ -1629,10 +1706,10 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
 	    ++c;
 	    /* NOP option. */
 	  } else if(opt == TCP_OPT_MSS &&
-		    uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 1 + c] == TCP_OPT_MSS_LEN) {
+		    uip_buf(buf)[UIP_TCPIP_HLEN + UIP_LLH_LEN + 1 + c] == TCP_OPT_MSS_LEN) {
 	    /* An MSS option with the right option length. */
-	    tmp16 = (uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 2 + c] << 8) |
-	      uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 3 + c];
+	    tmp16 = (uip_buf(buf)[UIP_TCPIP_HLEN + UIP_LLH_LEN + 2 + c] << 8) |
+	      uip_buf(buf)[UIP_TCPIP_HLEN + UIP_LLH_LEN + 3 + c];
 	    uip_connr->initialmss =
 	      uip_connr->mss = tmp16 > UIP_TCP_MSS? UIP_TCP_MSS: tmp16;
 
@@ -1641,33 +1718,62 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
 	  } else {
 	    /* All other options have a length field, so that we easily
 	       can skip past them. */
-	    if(uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 1 + c] == 0) {
+	    if(uip_buf(buf)[UIP_TCPIP_HLEN + UIP_LLH_LEN + 1 + c] == 0) {
 	      /* If the length field is zero, the options are malformed
 		 and we don't process them further. */
 	      break;
 	    }
-	    c += uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 1 + c];
+	    c += uip_buf(buf)[UIP_TCPIP_HLEN + UIP_LLH_LEN + 1 + c];
 	  }
 	}
       }
       uip_connr->tcpstateflags = UIP_ESTABLISHED;
-      uip_connr->rcv_nxt[0] = BUF->seqno[0];
-      uip_connr->rcv_nxt[1] = BUF->seqno[1];
-      uip_connr->rcv_nxt[2] = BUF->seqno[2];
-      uip_connr->rcv_nxt[3] = BUF->seqno[3];
-      uip_add_rcv_nxt(1);
-      uip_flags = UIP_CONNECTED | UIP_NEWDATA;
+      uip_connr->rcv_nxt[0] = BUF(buf)->seqno[0];
+      uip_connr->rcv_nxt[1] = BUF(buf)->seqno[1];
+      uip_connr->rcv_nxt[2] = BUF(buf)->seqno[2];
+      uip_connr->rcv_nxt[3] = BUF(buf)->seqno[3];
+      uip_add_rcv_nxt(buf, 1);
+      uip_flags(buf) = UIP_CONNECTED | UIP_NEWDATA;
       uip_connr->len = 0;
       uip_len(buf) = 0;
-      uip_slen = 0;
-      UIP_APPCALL();
-      goto appsend;
+      uip_slen(buf) = 0;
+      ip_buf_sent_status(buf) = 0;
+      uip_set_conn(buf) = uip_connr;
+
+      if (uip_connr->buf) {
+        /* Now that we know the original connection request, clear
+	 * the buf in connr
+	 */
+        net_context_set_connection_status(ip_buf_context(uip_connr->buf), 0);
+	net_context_set_internal_connection(ip_buf_context(uip_connr->buf),
+					    uip_connr);
+	tcp_cancel_retrans_timer(uip_connr);
+
+	/* We received ACK for syn */
+	if (uip_connr->buf) {
+          net_context_set_connection_status(ip_buf_context(uip_connr->buf), -EINPROGRESS);
+	}
+
+	/* Now send the pending data */
+	buf = uip_connr->buf;
+	*buf_out = buf;
+
+	uip_flags(buf) = UIP_CONNECTED;
+      }
+      /* Right now we have received SYN-ACK so we can now start to send data.
+       * The UIP_APPCALL() will cause a call to this function by the
+       * net_context.c TCP process thread which will call
+       * handle_tcp_connection().
+       */
+      UIP_APPCALL(buf);
+      PRINTF("Returning now buf %p ref %p\n", buf, buf->ref);
+      return 0;
     }
     /* Inform the application that the connection failed */
-    uip_flags = UIP_ABORT;
-    UIP_APPCALL();
+    uip_flags(buf) = UIP_ABORT;
+    UIP_APPCALL(buf);
     /* The connection is closed after we send the RST */
-    uip_conn->tcpstateflags = UIP_CLOSED;
+    uip_conn(buf)->tcpstateflags = UIP_CLOSED;
     goto reset;
 #endif /* UIP_ACTIVE_OPEN */
 
@@ -1774,6 +1880,33 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
          */
         uip_slen(buf) = 0;
       }
+
+      if (uip_connr->buf) {
+	  net_context_tcp_set_pending(ip_buf_context(uip_connr->buf), NULL);
+          net_context_set_internal_connection(ip_buf_context(uip_connr->buf),
+					      uip_connr);
+
+	  /* At this point we have received ACK to data in uip_connr->buf */
+
+	  /* This is not an error but tells net_core.c:net_send() that
+	   * user should be able to send now more data.
+	   */
+	  net_context_set_connection_status(ip_buf_context(uip_connr->buf),
+					    EISCONN);
+
+	  /* Eventually the uip_connr->buf will be freed
+	   * by net_core.c:net_send()
+	   */
+
+	  tcp_cancel_retrans_timer(uip_connr);
+
+	} else {
+	  /* We have no pending data so this will cause ACK to be sent to
+	   * peer in few lines below.
+	   */
+	  uip_flags(buf) |= UIP_NEWDATA;
+	}
+
       UIP_APPCALL(buf);
 
     appsend:
@@ -1818,6 +1951,19 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
 	  /* Remember how much data we send out now so that we know
 	     when everything has been acknowledged. */
 	  uip_connr->len = uip_slen(buf);
+
+	  PRINTF("Setting connection %p to pending length %d\n",
+		 uip_connr, uip_connr->len);
+
+	  if (uip_connr->buf) {
+	    if (uip_connr->buf != buf) {
+	      PRINTF("Data packet %p already pending....\n",
+		     uip_connr->buf);
+	    }
+	  } else {
+	    uip_connr->buf = ip_buf_ref(buf);
+	  }
+
 	} else {
 
 	  /* If the application already had unacknowledged data, we
@@ -1926,6 +2072,7 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
   if (flag != UIP_TCP_SEND_CONN) {
     PRINTF("In tcp_send_nodata\n");
     uip_len(buf) = UIP_IPTCPH_LEN;
+    buf->len = UIP_IPTCPH_LEN;
   }
 
  tcp_send_noopts:
@@ -2021,6 +2168,22 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
  drop:
   uip_len(buf) = 0;
   uip_flags(buf) = 0;
+
+#if UIP_TCP
+  /* Clear any pending packet */
+  if (uip_connr->buf) {
+    tcp_cancel_retrans_timer(uip_connr);
+    switch (uip_connr->tcpstateflags & UIP_TS_MASK) {
+    case UIP_FIN_WAIT_1:
+    case UIP_FIN_WAIT_2:
+    case UIP_CLOSING:
+    case UIP_TIME_WAIT:
+      ip_buf_unref(uip_connr->buf);
+      uip_connr->buf = NULL;
+    }
+  }
+#endif
+
   return 0;
 }
 /*---------------------------------------------------------------------------*/
@@ -2042,6 +2205,7 @@ uip_send(struct net_buf *buf, const void *data, int len)
 {
   int copylen;
 #define MIN(a,b) ((a) < (b)? (a): (b))
+
   uip_sappdata(buf) = ip_buf_appdata(buf);
 
   if(uip_sappdata(buf) != NULL) {
@@ -2061,13 +2225,11 @@ uip_send(struct net_buf *buf, const void *data, int len)
         memmove(uip_sappdata(buf), (data), uip_slen(buf));
       }
     }
-    if (uip_process(buf, UIP_TCP_SEND_CONN)) {
+    if (uip_process(&buf, UIP_TCP_SEND_CONN)) {
        int ret = tcpip_output(buf, NULL);
        if (!ret) {
          PRINTF("Packet %p sending failed.\n", buf);
-         ip_buf_unref(buf);
-       } else {
-         ip_buf_sent_status(buf) = 0;
+	 ip_buf_sent_status(buf) = -EAGAIN;
        }
     }
   }
