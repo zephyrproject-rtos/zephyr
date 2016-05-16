@@ -479,7 +479,10 @@ struct nble_sm_status_evt {
 	uint16_t conn_handle;
 	uint8_t evt_type; /* see NBLE_SM_STATUS_EVT */
 	int status;
-	struct nble_link_sec enc_link_sec;
+	union {
+		struct nble_link_sec enc_link_sec;
+		bt_addr_le_t addr;
+	};
 };
 
 void on_nble_sm_status_evt(const struct nble_sm_status_evt *evt);

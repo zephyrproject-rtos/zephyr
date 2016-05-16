@@ -74,7 +74,8 @@ struct nble_gatts_write_evt {
 	struct bt_gatt_attr *attr;
 	uint16_t conn_handle;
 	uint16_t offset;
-	uint8_t flag;		/* Cf. enum nble_gatt_wr_flag */
+	/* see nble_gatt_wr_flag */
+	uint8_t flag;
 };
 
 void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *evt,
