@@ -20,6 +20,12 @@
 #ifndef __BT_BLUETOOTH_H
 #define __BT_BLUETOOTH_H
 
+/**
+ * @brief Bluetooth APIs
+ * @defgroup bluetooth Bluetooth APIs
+ * @{
+ */
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -406,5 +412,9 @@ int bt_br_set_connectable(bool enable);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __BT_BLUETOOTH_H */

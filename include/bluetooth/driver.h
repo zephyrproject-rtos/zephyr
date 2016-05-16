@@ -20,6 +20,13 @@
 #ifndef __BT_DRIVER_H
 #define __BT_DRIVER_H
 
+/**
+ * @brief HCI drivers
+ * @defgroup bt_driver HCI drivers
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <net/buf.h>
 #include <bluetooth/buf.h>
 
@@ -87,5 +94,9 @@ void bt_driver_unregister(struct bt_driver *drv);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __BT_DRIVER_H */

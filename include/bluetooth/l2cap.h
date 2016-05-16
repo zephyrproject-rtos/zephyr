@@ -34,6 +34,13 @@
 #ifndef __BT_L2CAP_H
 #define __BT_L2CAP_H
 
+/**
+ * @brief L2CAP
+ * @defgroup bt_l2cap L2CAP
+ * @ingroup bluetooth
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -219,5 +226,9 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __BT_L2CAP_H */

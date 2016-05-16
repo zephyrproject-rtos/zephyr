@@ -20,6 +20,13 @@
 #ifndef __BT_UUID_H
 #define __BT_UUID_H
 
+/**
+ * @brief UUIDs
+ * @defgroup bt_uuid UUIDs
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <misc/util.h>
 
 #ifdef __cplusplus
@@ -437,5 +444,9 @@ static inline const char *bt_uuid_str(const struct bt_uuid *uuid)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __BT_UUID_H */

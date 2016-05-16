@@ -20,6 +20,13 @@
 #ifndef __BT_STORAGE_H
 #define __BT_STORAGE_H
 
+/**
+ * @brief Persistent Storage
+ * @defgroup bt_storage Persistent Storage
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <sys/types.h>
 
 #include <bluetooth/bluetooth.h>
@@ -87,5 +94,9 @@ int bt_storage_clear(bt_addr_le_t *addr);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __BT_STORAGE_H */

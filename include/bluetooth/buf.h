@@ -21,6 +21,13 @@
 #ifndef __BT_BUF_H
 #define __BT_BUF_H
 
+/**
+ * @brief Data buffers
+ * @defgroup bt_buf Data buffers
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <stdint.h>
 #include <net/buf.h>
 #include <bluetooth/hci.h>
@@ -67,5 +74,9 @@ static inline enum bt_buf_type bt_buf_get_type(struct net_buf *buf)
 {
 	return *(uint8_t *)net_buf_user_data(buf);
 }
+
+/**
+ * @}
+ */
 
 #endif /* __BT_BUF_H */

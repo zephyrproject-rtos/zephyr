@@ -20,6 +20,13 @@
 #ifndef __BT_CONN_H
 #define __BT_CONN_H
 
+/**
+ * @brief Connection management
+ * @defgroup bt_conn Connection management
+ * @ingroup bluetooth
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -429,5 +436,9 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __BT_CONN_H */

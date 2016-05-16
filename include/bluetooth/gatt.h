@@ -20,6 +20,13 @@
 #ifndef __BT_GATT_H
 #define __BT_GATT_H
 
+/**
+ * @brief Generic Attribute Profile (GATT)
+ * @defgroup bt_gatt Generic Attribute Profile (GATT)
+ * @ingroup bluetooth
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1017,5 +1024,9 @@ void bt_gatt_cancel(struct bt_conn *conn);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __BT_GATT_H */
