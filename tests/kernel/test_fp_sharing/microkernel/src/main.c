@@ -23,9 +23,8 @@ microkernel version of this test utilizes a pair of tasks, while the nanokernel
 verions utilizes a task and a fiber.
 
 The load/store test validates the nanokernel's floating point unit context
-save/restore mechanism. (For the IA-32 architecture this includes the x87 FPU
-(MMX) registers and the XMM registers.) This test utilizes a pair of threads
-of different priorities that each use the floating point registers. The context
+save/restore mechanism. This test utilizes a pair of threads of different
+priorities that each use the floating point registers. The context
 switching that occurs exercises the kernel's ability to properly preserve the
 floating point registers. The test also exercises the kernel's ability to
 automatically enable floating point support for a task, if supported.
@@ -36,27 +35,25 @@ for example on IA-32 the USE_FP and USE_SSE options are provided, this test
 should be enhanced to ensure that the architectures' _Swap() routine doesn't
 context switch more registers that it needs to (which would represent a
 performance issue).  For example, on the IA-32, the test should issue
-a nanoCpuFpDisable() from main(), and then indicate that only x87 FPU
-registers will be utilized (nanoCpuFpEnable).  The fiber should continue
+a fiber_fp_disable() from main(), and then indicate that only x87 FPU
+registers will be utilized (fiber_fp_enable()).  The fiber should continue
 to load ALL non-integer registers, but main() should validate that only the
 x87 FPU registers are being saved/restored.
  */
 
-#if defined(CONFIG_ISA_IA32)
 #ifndef CONFIG_FLOAT
-#error Rebuild the nanokernel with the FLOAT config option enabled
-#endif
-
-#ifndef CONFIG_SSE
-#error Rebuild the nanokernel with the SSE config option enabled
+#error Rebuild with the FLOAT config option enabled
 #endif
 
 #ifndef CONFIG_FP_SHARING
-#error Rebuild the nanokernel with the FP_SHARING config option enabled
+#error Rebuild with the FP_SHARING config option enabled
 #endif
 
+#if defined(CONFIG_ISA_IA32)
+#ifndef CONFIG_SSE
+#error Rebuild with the SSE config option enabled
+#endif
 #endif /* CONFIG_ISA_IA32 */
-
 
 #include <zephyr.h>
 
@@ -72,32 +69,25 @@ x87 FPU registers are being saved/restored.
 #include <stddef.h>
 #include <string.h>
 
-#ifndef MAX_TESTS
-/* test duration, unless overridden by project builder (0 => run forever) */
 #define MAX_TESTS 500
-#endif
-
-/* macro used to read system clock value */
-
-#define TICK_COUNT_GET() sys_tick_get_32()
 
 /* space for float register load/store area used by low priority task */
 
-static FP_REG_SET floatRegSetLoad;
-static FP_REG_SET floatRegSetStore;
+static struct fp_register_set float_reg_set_load;
+static struct fp_register_set float_reg_set_store;
 
 /* space for float register load/store area used by high priority thread */
 
-static FP_REG_SET floatRegisterSet;
+static struct fp_register_set float_reg_set;
 
 
 #ifdef CONFIG_NANOKERNEL
-/* stack for high priority fiber (also use .bss for floatRegisterSet) */
+/* stack for high priority fiber (also use .bss for float_reg_set) */
 
-static char __stack fiberStack[1024];
+static char __stack fiber_stack[1024];
 
-static struct nano_timer fiberTimer;
-static void *dummyTimerData;	/* allocate just enough room for a pointer */
+static struct nano_timer fiber_timer;
+static void *dummy_timer_data;	/* allocate just enough room for a pointer */
 #endif
 
 /* flag indicating that an error has occurred */
@@ -112,9 +102,12 @@ int fpu_sharing_error;
 static volatile unsigned int load_store_low_count = 0;
 static volatile unsigned int load_store_high_count = 0;
 
+#ifdef CONFIG_NANOKERNEL
+static void load_store_high(int, int);
+#endif
+
 /**
  *
- * main -
  * @brief Low priority FPU load/store thread
  *
  * @return N/A
@@ -126,25 +119,15 @@ void main(void)
 void load_store_low(void)
 #endif
 {
-	unsigned int bufIx;
-	unsigned char floatRegInitByte;
-	unsigned char *floatRegSetStorePtr = (unsigned char *)&floatRegSetStore;
+	unsigned int i;
+	unsigned char init_byte;
+	unsigned char *store_ptr = (unsigned char *)&float_reg_set_store;
+	unsigned char *load_ptr = (unsigned char *)&float_reg_set_load;
 
-	volatile char volatileStackVar;
+	volatile char volatile_stack_var;
 
 	PRINT_DATA("Floating point sharing tests started\n");
 	PRINT_LINE;
-
-#if defined(CONFIG_FP_SHARING)
-	/*
-	 * No need to invoke task_float_enable() since
-	 * FP_SHARING is in effect
-	 */
-#else /* ! CONFIG_FP_SHARING */
-#if defined(CONFIG_FLOAT)
-	task_float_enable(sys_thread_self_get());
-#endif
-#endif /* CONFIG_FP_SHARING */
 
 #ifdef CONFIG_NANOKERNEL
 	/*
@@ -154,10 +137,8 @@ void load_store_low(void)
 	 * is loaded into the floating point registers.
 	 */
 
-	extern void load_store_high(int regFillValue, int unused);
-
-	task_fiber_start(fiberStack,
-			 sizeof(fiberStack),
+	task_fiber_start(fiber_stack,
+			 sizeof(fiber_stack),
 			 load_store_high,
 			 0,	/* arg1 */
 			 0,	/* arg2 */
@@ -166,7 +147,8 @@ void load_store_low(void)
 			 );
 #elif defined(CONFIG_MICROKERNEL)
 	/*
-	 * For microkernel builds, preemption tasks are specified in the .mdef file.
+	 * For microkernel builds, preemption tasks are specified in the .mdef
+	 * file.
 	 *
 	 * Enable round robin scheduling to allow both the low priority pi
 	 * computation and load/store tasks to execute. The high priority pi
@@ -182,9 +164,9 @@ void load_store_low(void)
 	 * these values must be different than the value used in other threads.
 	 */
 
-	floatRegInitByte = MAIN_FLOAT_REG_CHECK_BYTE;
-	for (bufIx = 0; bufIx < SIZEOF_FP_REG_SET; ++bufIx) {
-		((unsigned char *)&floatRegSetLoad)[bufIx] = floatRegInitByte++;
+	init_byte = MAIN_FLOAT_REG_CHECK_BYTE;
+	for (i = 0; i < SIZEOF_FP_REGISTER_SET; i++) {
+		load_ptr[i] = init_byte++;
 	}
 
 	/* Keep cranking forever, or until an error is detected. */
@@ -196,59 +178,60 @@ void load_store_low(void)
 		 * floating point values that have been saved.
 		 */
 
-		memset(&floatRegSetStore, 0, SIZEOF_FP_REG_SET);
+		memset(&float_reg_set_store, 0, SIZEOF_FP_REGISTER_SET);
 
 		/*
-		 * Utilize an architecture specific function to load all the floating
-		 * point (and XMM on IA-32) registers with known values.
+		 * Utilize an architecture specific function to load all the
+		 * floating point registers with known values.
 		 */
 
-		_LoadAllFloatRegisters(&floatRegSetLoad);
+		_load_all_float_registers(&float_reg_set_load);
 
 		/*
-		 * Waste some cycles to give the high priority load/store thread
-		 * an opportunity to run when the low priority thread is using the
-		 * floating point registers.
+		 * Waste some cycles to give the high priority load/store
+		 * thread an opportunity to run when the low priority thread is
+		 * using the floating point registers.
 		 *
-		 * IMPORTANT: This logic requires that TICK_COUNT_GET() not perform
-		 * any floating point operations!
+		 * IMPORTANT: This logic requires that sys_tick_get_32() not
+		 * perform any floating point operations!
 		 */
 
-		while ((TICK_COUNT_GET() % 5) != 0) {
+		while ((sys_tick_get_32() % 5) != 0) {
 			/*
-			 * Use a volatile variable to prevent compiler optimizing
-			 * out the spin loop.
+			 * Use a volatile variable to prevent compiler
+			 * optimizing out the spin loop.
 			 */
-			++volatileStackVar;
+			++volatile_stack_var;
 		}
 
 		/*
-		 * Utilize an architecture specific function to dump the contents
-		 * of all floating point (and XMM on IA-32) register to memory.
+		 * Utilize an architecture specific function to dump the
+		 * contents of all floating point registers to memory.
 		 */
 
-		_StoreAllFloatRegisters(&floatRegSetStore);
+		_store_all_float_registers(&float_reg_set_store);
 
 		/*
 		 * Compare each byte of buffer to ensure the expected value is
 		 * present, indicating that the floating point registers weren't
 		 * impacted by the operation of the high priority thread(s).
 		 *
-		 * Display error message and terminate if discrepancies are detected.
+		 * Display error message and terminate if discrepancies are
+		 * detected.
 		 */
 
-		floatRegInitByte = MAIN_FLOAT_REG_CHECK_BYTE;
+		init_byte = MAIN_FLOAT_REG_CHECK_BYTE;
 
-		for (bufIx = 0; bufIx < SIZEOF_FP_REG_SET; ++bufIx) {
-			if (floatRegSetStorePtr[bufIx] != floatRegInitByte) {
-				TC_ERROR("load_store_low found 0x%x instead of 0x%x"
-						 " @ offset 0x%x\n",
-						 floatRegSetStorePtr[bufIx], floatRegInitByte, bufIx);
+		for (i = 0; i < SIZEOF_FP_REGISTER_SET; i++) {
+			if (store_ptr[i] != init_byte) {
+				TC_ERROR("load_store_low found 0x%x instead of 0x%x @ offset 0x%x\n",
+						store_ptr[i],
+						init_byte, i);
 				TC_ERROR("Discrepancy found during iteration %d\n",
-						 load_store_low_count);
+						load_store_low_count);
 				fpu_sharing_error = 1;
 			}
-			floatRegInitByte++;
+			init_byte++;
 		}
 
 		/*
@@ -261,23 +244,20 @@ void load_store_low(void)
 			return;
 		}
 
-#if defined(CONFIG_FP_SHARING)
 		/*
 		 * After every 1000 iterations (arbitrarily chosen), explicitly
-		 * disable floating point operations for the task. The subsequent
-		 * execution of _LoadAllFloatRegisters() will result in an exception
-		 * to automatically re-enable floating point support for the task.
+		 * disable floating point operations for the task. The
+		 * subsequent execution of _load_all_float_registers() will result
+		 * in an exception to automatically re-enable floating point
+		 * support for the task.
 		 *
 		 * The purpose of this part of the test is to exercise the
-		 * task_float_disable() API, and to also continue exercising the
-		 * (exception based) floating enabling mechanism.
+		 * task_float_disable() API, and to also continue exercising
+		 * the (exception based) floating enabling mechanism.
 		 */
 		if ((load_store_low_count % 1000) == 0) {
-#if defined(CONFIG_FLOAT)
 			task_float_disable(sys_thread_self_get());
-#endif
 		}
-#endif /* CONFIG_FP_SHARING */
 	}
 }
 
@@ -294,13 +274,9 @@ void load_store_high(int unused1, int unused2)
 void load_store_high(void)
 #endif
 {
-	unsigned int bufIx;
-	unsigned char floatRegInitByte;
-#if !defined(CONFIG_ISA_IA32)
-	unsigned int numNonVolatileBytes;
-#endif /* !CONFIG_ISA_IA32 */
-	unsigned char *floatRegisterSetBytePtr =
-		(unsigned char *)&floatRegisterSet;
+	unsigned int i;
+	unsigned char init_byte;
+	unsigned char *reg_set_ptr = (unsigned char *)&float_reg_set;
 
 #ifdef CONFIG_NANOKERNEL
 	ARG_UNUSED(unused1);
@@ -308,65 +284,71 @@ void load_store_high(void)
 
 	/* initialize timer; data field is not used */
 
-	nano_timer_init(&fiberTimer, (void *)dummyTimerData);
+	nano_timer_init(&fiber_timer, (void *)dummy_timer_data);
 #endif
 
 	/* test until the specified time limit, or until an error is detected */
 
 	while (1) {
 		/*
-		 * Initialize the floatRegisterSet structure by treating it as a simple
-		 * array of bytes (the arrangement and actual number of registers is
-		 * not important for this generic C code).  The structure is
-		 * initialized by using the byte value specified by the constant
-		 * FIBER_FLOAT_REG_CHECK_BYTE, and then incrementing the value for each
-		 * successive location in the floatRegisterSet structure.
+		 * Initialize the float_reg_set structure by treating it as
+		 * a simple array of bytes (the arrangement and actual number
+		 * of registers is not important for this generic C code).  The
+		 * structure is initialized by using the byte value specified
+		 * by the constant FIBER_FLOAT_REG_CHECK_BYTE, and then
+		 * incrementing the value for each successive location in the
+		 * float_reg_set structure.
 		 *
 		 * The initial byte value, and thus the contents of the entire
-		 * floatRegisterSet structure, must be different for each thread to
-		 * effectively test the nanokernel's ability to properly save/restore
-		 * the floating point values during a context switch.
+		 * float_reg_set structure, must be different for each
+		 * thread to effectively test the nanokernel's ability to
+		 * properly save/restore the floating point values during a
+		 * context switch.
 		 */
 
-		floatRegInitByte = FIBER_FLOAT_REG_CHECK_BYTE;
+		init_byte = FIBER_FLOAT_REG_CHECK_BYTE;
 
-		for (bufIx = 0; bufIx < SIZEOF_FP_REG_SET; ++bufIx) {
-			floatRegisterSetBytePtr[bufIx] = floatRegInitByte++;
+		for (i = 0; i < SIZEOF_FP_REGISTER_SET; i++) {
+			reg_set_ptr[i] = init_byte++;
 		}
 
+#if defined(CONFIG_ISA_IA32)
 		/*
-		 * Utilize an architecture specific function to load all the floating
-		 * point (and XMM on IA-32) registers with the contents of
-		 * the floatRegisterSet structure.
+		 * Utilize an architecture specific function to load all the
+		 * floating point registers with the contents of the
+		 * float_reg_set structure.
 		 *
-		 * The goal of the loading all floating point registers with values
-		 * that differ from the values used in other threads is to help
-		 * determine whether the floating point register save/restore mechanism
-		 * in the nanokernel's context switcher is operating correctly.
+		 * The goal of the loading all floating point registers with
+		 * values that differ from the values used in other threads is
+		 * to help determine whether the floating point register
+		 * save/restore mechanism in the nanokernel's context switcher
+		 * is operating correctly.
 		 *
-		 * When a subsequent nano_fiber_timer_test() invocation is performed, a
-		 * (cooperative) context switch back to the preempted task will occur.
-		 * This context switch should result in restoring the state of the
-		 * task's floating point registers when the task was swapped out due
-		 * to the occurence of the timer tick.
+		 * When a subsequent nano_fiber_timer_test() invocation is
+		 * performed, a (cooperative) context switch back to the
+		 * preempted task will occur. This context switch should result
+		 * in restoring the state of the task's floating point
+		 * registers when the task was swapped out due to the
+		 * occurrence of the timer tick.
 		 */
 
-#if defined(CONFIG_ISA_IA32)
-		_LoadThenStoreAllFloatRegisters(&floatRegisterSet);
+		_load_then_store_all_float_registers(&float_reg_set);
 #endif
 
 		/*
-		 * Relinquish the processor for the remainder of the current system
-		 * clock tick, so that lower priority threads get a chance to run.
+		 * Relinquish the processor for the remainder of the current
+		 * system clock tick, so that lower priority threads get a
+		 * chance to run.
 		 *
-		 * This exercises the ability of the nanokernel to restore the FPU
-		 * state of a low priority thread _and_ the ability of the nanokernel
-		 * to provide a "clean" FPU state to this thread once the sleep ends.
+		 * This exercises the ability of the nanokernel to restore the
+		 * FPU state of a low priority thread _and_ the ability of the
+		 * nanokernel to provide a "clean" FPU state to this thread
+		 * once the sleep ends.
 		 */
 
 #ifdef CONFIG_NANOKERNEL
-		nano_fiber_timer_start(&fiberTimer, 1);
-		nano_fiber_timer_test(&fiberTimer, TICKS_UNLIMITED);
+		nano_fiber_timer_start(&fiber_timer, 1);
+		nano_fiber_timer_test(&fiber_timer, TICKS_UNLIMITED);
 #else
 		task_sleep(1);
 #endif
@@ -375,10 +357,10 @@ void load_store_high(void)
 
 		if ((++load_store_high_count % 100) == 0) {
 			PRINT_DATA("Load and store OK after %u (high) + %u (low) tests\n",
-					   load_store_high_count, load_store_low_count);
+					load_store_high_count,
+					load_store_low_count);
 		}
 
-#if (MAX_TESTS != 0)
 		/* terminate testing if specified limit has been reached */
 
 		if (load_store_high_count == MAX_TESTS) {
@@ -386,6 +368,5 @@ void load_store_high(void)
 			TC_END_REPORT(TC_PASS);
 			return;
 		}
-#endif
 	}
 }

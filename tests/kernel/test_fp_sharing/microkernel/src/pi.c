@@ -40,7 +40,6 @@ has occurred.
 
 #include <zephyr.h>
 
-#ifdef CONFIG_MICROKERNEL
 #include <stdio.h>
 #include <tc_util.h>
 
@@ -94,7 +93,7 @@ void calculate_pi_low(void)
 			reference_pi = pi;
 		} else if (reference_pi != pi) {
 			TC_ERROR("Computed pi %1.6f, reference pi %1.6f\n",
-					 pi, reference_pi);
+					pi, reference_pi);
 			fpu_sharing_error = 1;
 			return;
 		}
@@ -132,12 +131,14 @@ void calculate_pi_high(void)
 		}
 
 		/*
-		 * Relinquish the processor for the remainder of the current system
-		 * clock tick, so that lower priority threads get a chance to run.
+		 * Relinquish the processor for the remainder of the current
+		 * system clock tick, so that lower priority threads get a
+		 * chance to run.
 		 *
-		 * This exercises the ability of the nanokernel to restore the FPU
-		 * state of a low priority thread _and_ the ability of the nanokernel
-		 * to provide a "clean" FPU state to this thread once the sleep ends.
+		 * This exercises the ability of the nanokernel to restore the
+		 * FPU state of a low priority thread _and_ the ability of the
+		 * nanokernel to provide a "clean" FPU state to this thread
+		 * once the sleep ends.
 		 */
 
 		task_sleep(1);
@@ -156,11 +157,8 @@ void calculate_pi_high(void)
 		/* periodically issue progress report */
 
 		if ((++calc_pi_high_count % 100) == 50) {
-			printf("Pi calculation OK after %u (high) + %u (low) tests "
-				   "(computed %1.6f)\n",
-				   calc_pi_high_count, calc_pi_low_count, pi);
+			printf("Pi calculation OK after %u (high) + %u (low) tests (computed %1.6f)\n",
+				calc_pi_high_count, calc_pi_low_count, pi);
 		}
 	}
 }
-
-#endif /* CONFIG_MICROKERNEL */

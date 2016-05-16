@@ -1,4 +1,7 @@
-/* Intel x86 GCC specific floating point register macros */
+/**
+ * @file
+ * @brief Intel x86 GCC specific floating point register macros
+ */
 
 /*
  * Copyright (c) 2015, Wind River Systems, Inc.
@@ -20,7 +23,7 @@
 #define _FLOAT_REGS_X86_GCC_H
 
 #if !defined(__GNUC__) || !defined(CONFIG_ISA_IA32)
-#error test_asm_inline_gcc.h goes only with x86 GCC
+#error __FILE__ goes only with x86 GCC
 #endif
 
 #include <toolchain.h>
@@ -30,47 +33,22 @@
  *
  * @brief Load all floating point registers
  *
- * This function loads ALL floating point registers from the memory buffer
- * specified by <pFromBuffer>. It is expected that a subsequent call to
- * _StoreAllFloatRegisters() will be issued to dump the floating point registers
- * to memory.
+ * This function loads ALL floating point registers pointed to by @a regs.
+ * It is expected that a subsequent call to _store_all_float_registers()
+ * will be issued to dump the floating point registers to memory.
  *
- * The format/organization of the FP_REG_SET structure is not important; the
- * generic C test code (main.c and fiber.c) merely treat the FP_REG_SET
- * (and FP_NONVOLATILE_REG_SET) as an array of bytes.
+ * The format/organization of 'struct fp_register_set'; the generic C test
+ * code (main.c) merely treat the register set as an array of bytes.
  *
  * The only requirement is that the arch specific implementations of
- * _LoadAllFloatRegisters(), _StoreAllFloatRegisters(), and
- * _LoadThenStoreAllFloatRegisters agree on the format.
+ * _load_all_float_registers(), _store_all_float_registers() and
+ * _load_then_store_all_float_registers() agree on the format.
  *
  * @return N/A
  */
 
-static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
+static inline void _load_all_float_registers(struct fp_register_set *regs)
 {
-	/*
-	 * The 'movdqu' is the "move double quad unaligned" instruction: Move
-	 * a double quadword (16 bytes) between memory and an XMM register (or
-	 * between a pair of XMM registers). The memory destination/source operand
-	 * may be unaligned on a 16-byte boundary without causing an exception.
-	 *
-	 * The 'fldt' is the "load floating point value" instruction: Push an 80-bit
-	 * (double extended-precision) onto the FPU register stack.
-	 *
-	 * A note about operand size specification in the AT&T assembler syntax:
-	 *
-	 *   Instructions are generally suffixed with the a letter or a pair of
-	 *   letters to specify the operand size:
-	 *
-	 *    b  = byte (8 bit)
-	 *    s  = short (16 bit integer) or single (32-bit floating point)
-	 *    w  = word (16 bit)
-	 *    l  = long (32 bit integer or 64-bit floating point)
-	 *    q  = quad (64 bit)
-	 *    t  = ten bytes (80-bit floating point)
-	 *    dq = double quad (128 bit)
-	 */
-
 	__asm__ volatile (
 		"movdqu  0(%0), %%xmm0\n\t;"
 		"movdqu 16(%0), %%xmm1\n\t;"
@@ -90,7 +68,7 @@ static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
 		"fldt   188(%0)\n\t;"
 		"fldt   198(%0)\n\t;"
 
-		:: "r" (pFromBuffer)
+		:: "r" (regs)
 		);
 }
 
@@ -100,7 +78,7 @@ static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
  * @brief Load then dump all float registers to memory
  *
  * This function loads ALL floating point registers from the memory buffer
- * specified by <pFromToBuffer>, and then stores them back to that buffer.
+ * specified by @a regs, and then stores them back to that buffer.
  *
  * This routine is called by a high priority thread prior to calling a primitive
  * that pends and triggers a co-operative context switch to a low priority
@@ -113,7 +91,7 @@ static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
  * @return N/A
  */
 
-static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
+static inline void _load_then_store_all_float_registers(struct fp_register_set *regs)
 {
 	__asm__ volatile (
 		"movdqu  0(%0), %%xmm0\n\t;"
@@ -145,7 +123,7 @@ static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
 		"fstpt  138(%0)\n\t;"
 		"fstpt  128(%0)\n\t;"
 
-		:: "r" (pFromToBuffer)
+		:: "r" (regs)
 		);
 }
 
@@ -155,14 +133,14 @@ static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
  * @brief Dump all floating point registers to memory
  *
  * This function stores ALL floating point registers to the memory buffer
- * specified by <pToBuffer>. It is expected that a previous invocation of
- * _LoadAllFloatRegisters() occurred to load all the floating point registers
- * from a memory buffer.
+ * specified by @a regs. It is expected that a previous invocation of
+ * _load_all_float_registers() occurred to load all the floating point
+ * registers from a memory buffer.
  *
  * @return N/A
  */
 
-static inline void _StoreAllFloatRegisters(FP_REG_SET *pToBuffer)
+static inline void _store_all_float_registers(struct fp_register_set *regs)
 {
 	__asm__ volatile (
 		"movdqu %%xmm0, 0(%0)\n\t;"
@@ -183,28 +161,7 @@ static inline void _StoreAllFloatRegisters(FP_REG_SET *pToBuffer)
 		"fstpt  138(%0)\n\t;"
 		"fstpt  128(%0)\n\t;"
 
-		:: "r" (pToBuffer) : "memory"
+		:: "r" (regs) : "memory"
 		);
-}
-
-/**
- *
- * @brief Dump non-volatile FP registers to memory
- *
- * This routine is called by a high priority thread after resuming execution
- * from calling a primitive that will pend and thus result in a co-operative
- * context switch to a low priority thread.
- *
- * Only the non-volatile floating point registers are expected to survive across
- * a function call, regardless of whether the call results in the thread being
- * pended.
- *
- * @return N/A
- */
-
-void _StoreNonVolatileFloatRegisters(FP_NONVOLATILE_REG_SET *pToBuffer)
-{
-	ARG_UNUSED(pToBuffer);
-	/* do nothing; there are no non-volatile floating point registers */
 }
 #endif /* _FLOAT_REGS_X86_GCC_H */
