@@ -840,6 +840,7 @@ static void cmd_gatt_write(int argc, char *argv[])
 {
 	int err;
 	uint16_t handle, offset;
+	uint8_t buf[100];
 	uint8_t data;
 
 	if (!default_conn) {
@@ -870,16 +871,8 @@ static void cmd_gatt_write(int argc, char *argv[])
 	data = strtoul(argv[3], NULL, 16);
 
 	if (argc == 5) {
-		uint8_t buf[100];
-		size_t len;
+		size_t len = min(strtoul(argv[4], NULL, 16), sizeof(buf));
 		int i;
-
-		len = (strtoul(argv[4], NULL, 16));
-
-		printk("duplicate data for long write, len %u max %u\n",
-		       len, sizeof(buf));
-
-		len = min(len, sizeof(buf));
 
 		for (i = 0; i < len; i++) {
 			buf[i] = data;
