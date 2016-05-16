@@ -82,14 +82,35 @@ static const struct in6_addr in6addr_peer = PEER_IPADDR;
 
 #else /* CONFIG_NETWORKING_WITH_IPV6 */
 
-#error "IPv4 not supported at the moment, fix me!"
-
 /* Organization-local 239.192.0.0/14 */
 #define MCAST_IPADDR { { { 239, 192, 0, 2 } } }
 
+#define UIP_IPADDR0 192
+#define UIP_IPADDR1 0
+#define UIP_IPADDR2 2
+#define UIP_IPADDR3 2
+
+#define UIP_IPADDR3_PEER 1
+
+#define UIP_DRIPADDR0 UIP_IPADDR0
+#define UIP_DRIPADDR1 UIP_IPADDR1
+#define UIP_DRIPADDR2 UIP_IPADDR2
+#define UIP_DRIPADDR3 42
+
+uip_ipaddr_t uip_hostaddr = { { UIP_IPADDR0, UIP_IPADDR1,
+				UIP_IPADDR2, UIP_IPADDR3 } };
+uip_ipaddr_t uip_draddr = { { UIP_DRIPADDR0, UIP_DRIPADDR1,
+			      UIP_DRIPADDR2, UIP_DRIPADDR3 } };
+uip_ipaddr_t uip_netmask = { { 255, 255, 255, 0 } };
+
 #if !defined(CONFIG_NET_TESTING)
-#define PEER_IPADDR { { { 192, 0, 2, 1 } } }
+#define PEER_IPADDR { { { UIP_IPADDR0, UIP_IPADDR1, UIP_IPADDR2, \
+					UIP_IPADDR3_PEER } } }
+#define MY_IPADDR { { { UIP_IPADDR0, UIP_IPADDR1, UIP_IPADDR2, \
+					UIP_IPADDR3 } } }
 #endif
+
+static const struct in_addr in4addr_my = MY_IPADDR;
 
 #endif /* CONFIG_NETWORKING_WITH_IPV6 */
 
@@ -325,7 +346,6 @@ static inline bool get_context(struct net_context **unicast,
 	my_addr.family = AF_INET6;
 #else
 	static const struct in_addr in4addr_any = { { { 0 } } };
-	static const struct in_addr in4addr_my = { { { 0 } } };
 	static struct in_addr in4addr_mcast = MCAST_IPADDR;
 	static struct in_addr in4addr_peer = PEER_IPADDR;
 
