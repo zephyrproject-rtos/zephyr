@@ -61,6 +61,47 @@ Starting resubmit test
  - Resubmitting work
  - Resubmitting work
  - Checking results
+Starting delayed test
+ - Initializing delayed test items
+ - Submitting delayed test items
+ - Submitting delayed work 1 from task
+ - Submitting delayed work 3 from task
+ - Submitting delayed work 5 from task
+ - Waiting for delayed work to finish
+ - Submitting delayed work 2 from fiber
+ - Submitting delayed work 4 from fiber
+ - Submitting delayed work 6 from fiber
+ - Running delayed test item 1
+ - Running delayed test item 2
+ - Running delayed test item 3
+ - Running delayed test item 4
+ - Running delayed test item 5
+ - Running delayed test item 6
+ - Checking results
+Starting delayed resubmit test
+ - Submitting delayed work
+ - Waiting for work to finish
+ - Resubmitting delayed work
+ - Resubmitting delayed work
+ - Resubmitting delayed work
+ - Resubmitting delayed work
+ - Resubmitting delayed work
+ - Checking results
+Starting delayed resubmit from fiber test
+ - Resubmitting delayed work with 1 tick
+ - Resubmitting delayed work with 1 tick
+ - Resubmitting delayed work with 1 tick
+ - Resubmitting delayed work with 1 tick
+ - Resubmitting delayed work with 1 tick
+ - Resubmitting delayed work with 1 tick
+ - Running delayed test item 1
+ - Waiting for work to finish
+ - Checking results
+Starting delayed cancel test
+ - Cancel delayed work from task
+ - Cancel delayed work from fiber
+ - Waiting for work to finish
+ - Checking results
 ===================================================================
 PASS - main.
 ===================================================================
