@@ -72,6 +72,9 @@ prof.log = profiler output file generated from Zephyr target (binary)
 1) Enable KERNEL_EVENT_LOGGER
 -----------------------------
 
+  1.1) Kernel event logger configuration
+  --------------------------------------
+
 Edit project configuration file (e.g. $APP_BASE/prj.conf) and add the following
 flags:
 
@@ -107,6 +110,29 @@ For information:
 If wanting to understand microkernel object usage and task bit handling,
 recommended value is 6
 Otherwise, task monitor can be disabled (to decrease logger ring buffer usage)
+
+  1.2) Kernel event logger timestamp
+  ----------------------------------
+
+By default, the kernel event logger is using the system timer for timestamping
+events. As system timer may not work properly depending on platform, this timer
+can be set at runtime using following flag:
+
+$APP_BASE/prj.conf:
+CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP=y
+
+In that case, the profiler will set the RTC as timestamp so RTC must be enabled
+$APP_BASE/prj.conf:
+CONFIG_RTC=y
+
+In case the RTC cannot be used, profiler can support counters as well by
+building application with the following way:
+
+$APP_BASE/prj.conf:
+CONFIG_COUNTER=y
+
+Build command:
+make BOARD=... PROFILER_USE_COUNTER=y
 
 2) Enable UART flush [OPTIONAL]
 -------------------------------
@@ -239,6 +265,16 @@ make BOARD=... PROFILER_NO_SHELL_REGISTER=1
 
 4) Build and flash project
 --------------------------
+
+Flags that can be used by the profiler
+PROFILER_NO_SHELL_REGISTER: when profiler dynamic control is set, the profiler
+                            won't set its own console handler. In that case the
+                            profiler commands must be added to the application
+                            console handler
+
+PROFILER_USECOUNTER: in case custom timestamp is set for the kernel event
+                     logger, the profiler will use RTC. This flag allows to
+                     use a counter instead
 
 5) Get prepared for collecting profiler data
 --------------------------------------------

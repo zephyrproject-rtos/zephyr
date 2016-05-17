@@ -167,16 +167,72 @@ struct shell_cmd commands[] = {
 	PROF_CMD,
 	{ NULL, NULL}
 };
+#endif /* PROFILER_SHELL */
+
+#undef TIMESTAMP_MODE_RTC
+#undef TIMESTAMP_MODE_COUNTER
+#if defined(CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP)
+#if defined(CONFIG_RTC) && !defined(PROFILER_USE_COUNTER)
+#define TIMESTAMP_MODE_RTC
+#elif defined(CONFIG_COUNTER)
+#define TIMESTAMP_MODE_COUNTER
+#else
+#error KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP set but RTC/COUNTER not enabled
 #endif
+
+#if defined(TIMESTAMP_MODE_RTC)
+#include <rtc.h>
+struct device *rtc_dev;
+#elif defined(TIMESTAMP_MODE_COUNTER)
+#include <counter.h>
+struct device *counter_dev;
+#endif
+
+#if defined(TIMESTAMP_MODE_RTC)
+uint32_t prof_read_timer(void)
+{
+	return rtc_read(rtc_dev);
+}
+#elif defined(TIMESTAMP_MODE_COUNTER)
+uint32_t prof_read_timer(void)
+{
+	return counter_read(counter_dev);
+}
+#endif
+
+#endif /* CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP */
 
 void prof_init(void)
 {
+#if defined(TIMESTAMP_MODE_RTC)
+	struct rtc_config config;
+
+	rtc_dev = device_get_binding("RTC_0");
+	config.init_val = 0;
+	config.alarm_enable = 0;
+	rtc_enable(rtc_dev);
+	rtc_set_config(rtc_dev, &config);
+
+	sys_k_event_logger_set_timer(prof_read_timer);
+#elif defined(TIMESTAMP_MODE_COUNTER)
+	counter_dev = device_get_binding("AON_COUNTER");
+	counter_start(counter_dev);
+
+	sys_k_event_logger_set_timer(prof_read_timer);
+#endif
+
 #ifdef PROFILER_SHELL
 #ifndef PROFILER_NO_SHELL_REGISTER
 	shell_init("shell> ", commands);
 #endif
 #endif
+
+#if defined(TIMESTAMP_MODE_RTC) || defined(TIMESTAMP_MODE_COUNTER)
+	prof_pltfm_info.hw_ticks_per_sec = 32768;
+#else
 	prof_pltfm_info.hw_ticks_per_sec = (sys_clock_ticks_per_sec * sys_clock_hw_cycles_per_tick);
+#endif
+
 	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 
 	prof_initialized = 1;
