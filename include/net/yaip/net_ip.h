@@ -229,6 +229,12 @@ static inline bool net_is_ipv6_prefix(uint8_t *addr1, uint8_t *addr2,
 		(addr2[16 - bytes] & ((8 - remain) << 8)));
 }
 
+extern struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr);
+static inline bool net_is_my_ipv4_addr(struct in_addr *addr)
+{
+	return net_if_ipv4_addr_lookup(addr) != NULL;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -189,6 +189,65 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *maddr)
 	return NULL;
 }
 
+struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr)
+{
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		int i;
+
+		for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+			if (!iface->ipv4.unicast[i].is_used ||
+			    iface->ipv4.unicast[i].address.family != AF_INET) {
+				continue;
+			}
+
+			if (addr->s4_addr32[0] ==
+			    iface->ipv4.unicast[i].address.in_addr.s_addr[0]) {
+				return &iface->ipv4.unicast[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
+					 struct in_addr *addr,
+					 enum net_addr_type addr_type,
+					 uint32_t vlifetime)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (iface->ipv4.unicast[i].is_used) {
+			continue;
+		}
+
+		iface->ipv4.unicast[i].is_used = true;
+		iface->ipv4.unicast[i].address.family = AF_INET;
+		iface->ipv4.unicast[i].address.in_addr.s4_addr32[0] =
+						addr->s4_addr32[0];
+		iface->ipv4.unicast[i].addr_type = addr_type;
+
+		if (vlifetime) {
+			iface->ipv4.unicast[i].is_infinite = false;
+
+			/* FIXME - set the timer */
+		} else {
+			iface->ipv4.unicast[i].is_infinite = true;
+		}
+
+		NET_DBG("[%d] interface %p address %s type %s added", i, iface,
+			net_sprint_ipv4_addr(addr),
+			net_addr_type2str(addr_type));
+
+		return &iface->ipv4.unicast[i];
+	}
+
+	return NULL;
+}
+
 int net_if_init(void)
 {
 	struct net_if_api *api;

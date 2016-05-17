@@ -148,6 +148,18 @@ struct net_if {
 
 	uint8_t hop_limit;
 #endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+#define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IFACE_UNICAST_IPV4_ADDR_COUNT
+#define NET_IF_MAX_IPV4_MADDR CONFIG_NET_IFACE_MCAST_IPV4_ADDR_COUNT
+	struct {
+		/** Unicast IP addresses */
+		struct net_if_addr unicast[NET_IF_MAX_IPV4_ADDR];
+
+		/** Multicast IP addresses */
+		struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR];
+	} ipv4;
+#endif /* CONFIG_NET_IPV4 */
 };
 
 /**
@@ -235,6 +247,26 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
  * @return Pointer to interface multicast address, NULL if not found.
  */
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *addr);
+
+/**
+ * @brief Check if this IPv4 address belongs to one of the interfaces.
+ * @param addr IPv4 address
+ * @return Pointer to interface address, NULL if not found.
+ */
+struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr);
+
+/**
+ * @brief Add a IPv4 address to an interface
+ * @param iface Network interface
+ * @param addr IPv4 address
+ * @param addr_type IPv4 address type
+ * @param vlifetime Validity time for this address
+ * @return Pointer to interface address, NULL if cannot be added
+ */
+struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
+					 struct in_addr *addr,
+					 enum net_addr_type addr_type,
+					 uint32_t vlifetime);
 
 struct net_if_api {
 	void (*init)(struct net_if *iface);
