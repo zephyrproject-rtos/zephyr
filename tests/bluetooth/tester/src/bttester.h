@@ -529,6 +529,13 @@ static inline void tester_set_bit(uint8_t *addr, unsigned int bit)
 	*p |= BIT(bit % 8);
 }
 
+static inline uint8_t tester_test_bit(const uint8_t *addr, unsigned int bit)
+{
+	const uint8_t *p = addr + (bit / 8);
+
+	return *p & BIT(bit % 8);
+}
+
 /* L2CAP Service */
 /* commands */
 #define L2CAP_READ_SUPPORTED_COMMANDS	0x01

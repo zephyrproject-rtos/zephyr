@@ -34,10 +34,20 @@
 #define CONTROLLER_INDEX 0
 #define MAX_BUFFER_SIZE 2048
 
+/* This masks Permission bits from GATT API */
+#define GATT_PERM_MASK			(BT_GATT_PERM_READ | \
+					 BT_GATT_PERM_READ_AUTHEN | \
+					 BT_GATT_PERM_READ_ENCRYPT | \
+					 BT_GATT_PERM_WRITE | \
+					 BT_GATT_PERM_WRITE_AUTHEN | \
+					 BT_GATT_PERM_WRITE_ENCRYPT)
 #define GATT_PERM_ENC_READ_MASK		(BT_GATT_PERM_READ_ENCRYPT | \
 					 BT_GATT_PERM_READ_AUTHEN)
 #define GATT_PERM_ENC_WRITE_MASK	(BT_GATT_PERM_WRITE_ENCRYPT | \
 					 BT_GATT_PERM_WRITE_AUTHEN)
+#define GATT_PERM_READ_AUTHORIZATION	0x40
+#define GATT_PERM_WRITE_AUTHORIZATION	0x80
+
 /* GATT server context */
 #define SERVER_MAX_ATTRIBUTES		50
 #define SERVER_BUF_SIZE			2048
@@ -259,13 +269,23 @@ struct gatt_value {
 	uint8_t *data;
 	uint8_t *prep_data;
 	uint8_t enc_key_size;
-	bool has_ccc;
+	uint8_t flags[1];
+};
+
+enum {
+	GATT_VALUE_CCC_FLAG,
+	GATT_VALUE_READ_AUTHOR_FLAG,
+	GATT_VALUE_WRITE_AUTHOR_FLAG,
 };
 
 static ssize_t read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t len, uint16_t offset)
 {
 	const struct gatt_value *value = attr->user_data;
+
+	if (tester_test_bit(value->flags, GATT_VALUE_READ_AUTHOR_FLAG)) {
+		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+	}
 
 	if ((attr->perm & GATT_PERM_ENC_READ_MASK) &&
 	    (value->enc_key_size > bt_conn_enc_key_size(conn))) {
@@ -281,6 +301,10 @@ static ssize_t write_value(struct bt_conn *conn,
 			   uint16_t len, uint16_t offset)
 {
 	struct gatt_value *value = attr->user_data;
+
+	if (tester_test_bit(value->flags, GATT_VALUE_WRITE_AUTHOR_FLAG)) {
+		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+	}
 
 	if ((attr->perm & GATT_PERM_ENC_WRITE_MASK) &&
 	    (value->enc_key_size > bt_conn_enc_key_size(conn))) {
@@ -346,12 +370,30 @@ static int alloc_characteristic(struct add_characteristic *ch)
 
 	memset(&value, 0, sizeof(value));
 
+	if (ch->permissions & GATT_PERM_READ_AUTHORIZATION) {
+		tester_set_bit(value.flags, GATT_VALUE_READ_AUTHOR_FLAG);
+
+		/* To maintain backward compatibility, set Read Permission */
+		if (!(ch->permissions & GATT_PERM_ENC_READ_MASK)) {
+			ch->permissions |= BT_GATT_PERM_READ;
+		}
+	}
+
+	if (ch->permissions & GATT_PERM_WRITE_AUTHORIZATION) {
+		tester_set_bit(value.flags, GATT_VALUE_WRITE_AUTHOR_FLAG);
+
+		/* To maintain backward compatibility, set Write Permission */
+		if (!(ch->permissions & GATT_PERM_ENC_WRITE_MASK)) {
+			ch->permissions |= BT_GATT_PERM_WRITE;
+		}
+	}
+
 	/* Add Characteristic Value */
 	attr_value = gatt_db_add(&(struct bt_gatt_attr)
 				 BT_GATT_LONG_DESCRIPTOR(ch->uuid,
-					ch->permissions, read_value,
-					write_value, flush_value, &value),
-					sizeof(value));
+					ch->permissions & GATT_PERM_MASK,
+					read_value, write_value, flush_value,
+					&value), sizeof(value));
 	if (!attr_value) {
 		server_buf_pull(sizeof(*chrc_data));
 		/* Characteristic attribute uuid has constant length */
@@ -443,7 +485,7 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr)
 	}
 
 	value = attr->user_data;
-	value->has_ccc = true;
+	tester_set_bit(value->flags, GATT_VALUE_CCC_FLAG);
 	ccc_added = true;
 
 	return attr_desc;
@@ -485,11 +527,38 @@ static int alloc_descriptor(const struct bt_gatt_attr *attr,
 	} else {
 		memset(&value, 0, sizeof(value));
 
+		if (d->permissions & GATT_PERM_READ_AUTHORIZATION) {
+			tester_set_bit(value.flags,
+				       GATT_VALUE_READ_AUTHOR_FLAG);
+
+			/*
+			 * To maintain backward compatibility,
+			 * set Read Permission
+			 */
+			if (!(d->permissions & GATT_PERM_ENC_READ_MASK)) {
+				d->permissions |= BT_GATT_PERM_READ;
+			}
+		}
+
+		if (d->permissions & GATT_PERM_WRITE_AUTHORIZATION) {
+			tester_set_bit(value.flags,
+				       GATT_VALUE_WRITE_AUTHOR_FLAG);
+
+			/*
+			 * To maintain backward compatibility,
+			 * set Write Permission
+			 */
+			if (!(d->permissions & GATT_PERM_ENC_WRITE_MASK)) {
+				d->permissions |= BT_GATT_PERM_WRITE;
+			}
+		}
+
 		attr_desc = gatt_db_add(&(struct bt_gatt_attr)
 					BT_GATT_LONG_DESCRIPTOR(d->uuid,
-						d->permissions, read_value,
-						write_value, flush_value,
-						&value), sizeof(value));
+						d->permissions & GATT_PERM_MASK,
+						read_value, write_value,
+						flush_value, &value),
+						sizeof(value));
 	}
 
 	if (!attr_desc) {
@@ -640,7 +709,7 @@ static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 
 	memcpy(value->data, data->value, value->len);
 
-	if (value->has_ccc) {
+	if (tester_test_bit(value->flags, GATT_VALUE_CCC_FLAG)) {
 		bt_gatt_notify(NULL, attr, value->data, value->len);
 	}
 
