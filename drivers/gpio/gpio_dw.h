@@ -33,7 +33,8 @@ typedef void (*gpio_config_irq_t)(struct device *port);
 struct gpio_dw_config {
 	uint32_t base_addr;
 	uint32_t bits;
-	uint32_t irq_num;
+	uint32_t irq_num; /* set to 0 if GPIO port cannot interrupt */
+
 #ifdef CONFIG_PCI
 	struct pci_dev_info  pci_dev;
 #endif /* CONFIG_PCI */

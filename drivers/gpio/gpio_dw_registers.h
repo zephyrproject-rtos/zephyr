@@ -32,6 +32,9 @@
 #define CLK_ENA_POS	(31)
 
 #else
+/** This definition of GPIO related registers supports four ports: A, B, C, D
+ * yet only PORTA supports interrupts and debounce.
+ */
 #define SWPORTA_DR     0x00
 #define SWPORTA_DDR    0x04
 #define SWPORTA_CTL    0x08
