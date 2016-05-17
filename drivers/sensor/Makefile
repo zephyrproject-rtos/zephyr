@@ -14,6 +14,7 @@ obj-$(CONFIG_DHT) += sensor_dht.o
 obj-$(CONFIG_HDC1008) += sensor_hdc1008.o
 obj-$(CONFIG_HMC5883L) += sensor_hmc5883l.o
 obj-$(CONFIG_HMC5883L_TRIGGER) += sensor_hmc5883l_trigger.o
+obj-$(CONFIG_HP206C) += sensor_hp206c.o
 obj-$(CONFIG_HTS221) += sensor_hts221.o
 obj-$(CONFIG_HTS221_TRIGGER) += sensor_hts221_trigger.o
 obj-$(CONFIG_ISL29035) += sensor_isl29035.o
