@@ -63,6 +63,48 @@ extern "C" {
  */
 struct event_logger sys_k_event_logger;
 
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
+
+/**
+ * Callback used to set event timestamp
+ */
+typedef uint32_t (*sys_k_timer_func)(void);
+extern sys_k_timer_func timer_func;
+
+static inline uint32_t _sys_k_get_time(void)
+{
+	if (timer_func)
+		return timer_func();
+	else
+		return sys_cycle_get_32();
+}
+
+/**
+ * @brief Set kernel event logger timestamp function
+ *
+ * @details Calling this function permits to set the function
+ * to be called by kernel event logger for setting the event
+ * timestamp. By default, kernel event logger is using the
+ * system timer. But on some platforms where the timer driver
+ * maintains the system timer cycle accumulator in software,
+ * such as ones using the LOAPIC timer, the system timer behavior
+ * leads to timestamp errors. For example, the timer interrupt is
+ * logged with a wrong timestamp since the HW timer value has been
+ * reset (periodic mode) but accumulated value not updated yet
+ * (done later in the ISR).
+ *
+ * @param func Pointer to a function returning a 32-bit timer
+ *             Prototype: uint32_t (*func)(void)
+ */
+void sys_k_event_logger_set_timer(sys_k_timer_func func);
+#else
+static inline uint32_t _sys_k_get_time(void)
+{
+	return sys_cycle_get_32();
+}
+#endif
+
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
 
 extern int _sys_k_event_logger_mask;

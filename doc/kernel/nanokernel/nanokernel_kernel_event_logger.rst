@@ -55,6 +55,12 @@ Profiling points configuration:
   This flag adds functions allowing to enable/disable recoding of kernel event logger and
   task monitor events.
 
+* :option:`KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
+
+  Enables the possibility to set the timer function to be used to populate kernel event logger
+  timestamp. This has to be done at runtime by calling sys_k_event_logger_set_timer and providing
+  the function callback.
+
 Adding a Kernel Event Logging Point
 ***********************************
 
@@ -114,10 +120,17 @@ The timestamp used by the kernel event logger is 32-bit LSB of platform HW timer
 Lakemont APIC timer for Quark SE). This timer period is very small and leads to timestamp
 wraparound happening quite often (e.g. every 134s for Quark SE).
 
-see :option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC`
+see :option:`SYS_CLOCK_HW_CYCLES_PER_SEC`
 
 This wraparound must be considered when analyzing kernel event logger data and care must be
 taken when tickless idle is enabled and sleep duration can exceed maximum HW timer value.
+
+Timestamp used by the kernel event logger can be customized by enabling following option:
+:option:`KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
+
+In case this option is enabled, a callback function returning a 32-bit timestamp must
+be provided to the kernel event logger by calling the following function at runtime:
+:cpp:func:`sys_k_event_logger_set_timer()`
 
 Message Formats
 ***************
@@ -363,3 +376,8 @@ In case KERNEL_EVENT_LOGGER_DYNAMIC is enabled:
 
 :cpp:func:`sys_k_event_logger_get_monitor_mask()`
    Get task monitor event mask
+
+In case KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP is enabled:
+
+:cpp:func:`sys_k_event_logger_set_timer()`
+   Set kernel event logger timestamp function

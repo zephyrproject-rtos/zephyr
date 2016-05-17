@@ -59,12 +59,19 @@ static int _sys_k_event_logger_init(struct device *arg)
 SYS_INIT(_sys_k_event_logger_init,
 		NANOKERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
+sys_k_timer_func timer_func;
+void sys_k_event_logger_set_timer(sys_k_timer_func func)
+{
+	timer_func = func;
+}
+#endif
 
 void sys_k_event_logger_put_timed(uint16_t event_id)
 {
 	uint32_t data[1];
 
-	data[0] = sys_cycle_get_32();
+	data[0] = _sys_k_get_time();
 
 	sys_event_logger_put(&sys_k_event_logger, event_id, data,
 		ARRAY_SIZE(data));
@@ -92,7 +99,7 @@ void _sys_k_event_logger_context_switch(void)
 	}
 
 	if (_collector_fiber != _nanokernel.current) {
-		data[0] = sys_cycle_get_32();
+		data[0] = _sys_k_get_time();
 		data[1] = (uint32_t)_nanokernel.current;
 
 		/*
@@ -139,7 +146,7 @@ void _sys_k_event_logger_interrupt(void)
 		return;
 	}
 
-	data[0] = sys_cycle_get_32();
+	data[0] = _sys_k_get_time();
 	data[1] = _sys_current_irq_key_get();
 
 	sys_k_event_logger_put(KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID, data,
@@ -167,7 +174,7 @@ void _sys_k_event_logger_exit_sleep(void)
 	}
 
 	if (_sys_k_event_logger_sleep_start_time != 0) {
-		data[0] = sys_cycle_get_32();
+		data[0] = _sys_k_get_time();
 		data[1] = (sys_cycle_get_32() - _sys_k_event_logger_sleep_start_time)
 			/ sys_clock_hw_cycles_per_tick;
 		/* register the cause of exiting sleep mode */

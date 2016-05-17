@@ -111,6 +111,16 @@ config KERNEL_EVENT_LOGGER_DYNAMIC
 	It is up to the application to set the appropriate flags to enable/disable the
 	logging of each event type.
 
+config KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
+	bool
+	prompt "Kernel event logger custom timestamp"
+	default n
+	depends on KERNEL_EVENT_LOGGER
+	help
+	This flag enables the possibility to set the timer function to be used to
+	populate kernel event logger timestamp. This has to be done at runtime by
+	calling sys_k_event_logger_set_timer and providing the function callback.
+
 config  THREAD_MONITOR
 	bool
 	prompt "Task and fiber monitoring [EXPERIMENTAL]"

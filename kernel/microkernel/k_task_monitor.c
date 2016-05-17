@@ -39,7 +39,7 @@ void _k_task_monitor(struct k_task *X, uint32_t D)
 	if (!_k_debug_halt)
 #endif
 	{
-		data[0] = sys_cycle_get_32();
+		data[0] = _sys_k_get_time();
 		data[1] = X->id;
 		data[2] = D;
 		sys_k_event_logger_put(
@@ -63,7 +63,7 @@ void _k_task_monitor_args(struct k_args *A)
 		if (cmd_type == KERNEL_CMD_EVENT_TYPE) {
 			uint32_t data[2];
 
-			data[0] = sys_cycle_get_32();
+			data[0] = _sys_k_get_time();
 			data[1] = MO_EVENT | (uint32_t)A;
 			sys_k_event_logger_put(
 			KERNEL_EVENT_LOGGER_TASK_MON_KEVENT_EVENT_ID,
@@ -71,7 +71,7 @@ void _k_task_monitor_args(struct k_args *A)
 		} else {
 			uint32_t data[3];
 
-			data[0] = sys_cycle_get_32();
+			data[0] = _sys_k_get_time();
 			data[1] = _k_current_task->id;
 			data[2] = (uint32_t)A->Comm;
 			sys_k_event_logger_put(
