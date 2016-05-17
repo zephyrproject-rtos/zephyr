@@ -123,11 +123,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.cancel = auth_cancel,
 };
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
 	int err;
 

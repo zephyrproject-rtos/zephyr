@@ -108,11 +108,7 @@ static struct bt_conn_cb conn_callbacks = {
 		.disconnected = disconnected,
 };
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
 	int err;
 

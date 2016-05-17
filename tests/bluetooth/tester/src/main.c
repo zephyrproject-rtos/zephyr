@@ -22,11 +22,7 @@
 
 #include "bttester.h"
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
 	tester_init();
 }

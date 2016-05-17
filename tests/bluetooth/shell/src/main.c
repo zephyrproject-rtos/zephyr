@@ -1751,11 +1751,7 @@ static const struct shell_cmd commands[] = {
 	{ NULL, NULL }
 };
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
 	bt_conn_cb_register(&conn_callbacks);
 

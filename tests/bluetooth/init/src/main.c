@@ -22,11 +22,7 @@
 
 #include <bluetooth/bluetooth.h>
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
 	int err;
 

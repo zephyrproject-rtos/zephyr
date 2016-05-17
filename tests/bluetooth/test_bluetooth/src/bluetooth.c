@@ -51,11 +51,7 @@ static void driver_init(void)
 	bt_driver_register(&drv);
 }
 
-#if defined(CONFIG_MICROKERNEL)
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
 	int ret, ret_code;
 

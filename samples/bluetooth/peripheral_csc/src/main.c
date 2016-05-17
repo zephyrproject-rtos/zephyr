@@ -407,11 +407,7 @@ static void bt_ready(int err)
 	printk("Advertising successfully started\n");
 }
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
 	int err;
 
