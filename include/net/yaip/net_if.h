@@ -200,6 +200,42 @@ static inline uint16_t net_if_get_mtu(struct net_if *iface)
  */
 struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
 
+/**
+ * @brief Check if this IPv6 address belongs to one of the interfaces.
+ * @param addr IPv6 address
+ * @return Pointer to interface address, NULL if not found.
+ */
+struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr);
+
+/**
+ * @brief Add a IPv6 address to an interface
+ * @param iface Network interface
+ * @param addr IPv6 address
+ * @param addr_type IPv6 address type
+ * @param vlifetime Validity time for this address
+ * @return Pointer to interface address, NULL if cannot be added
+ */
+struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
+					 struct in6_addr *addr,
+					 enum net_addr_type addr_type,
+					 uint32_t vlifetime);
+
+/**
+ * @brief Add a IPv6 multicast address to an interface
+ * @param iface Network interface
+ * @param addr IPv6 multicast address
+ * @return Pointer to interface multicast address, NULL if cannot be added
+ */
+struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
+						struct in6_addr *addr);
+
+/**
+ * @brief Check if this IPv6 multicast address belongs to one of the interfaces.
+ * @param addr IPv6 address
+ * @return Pointer to interface multicast address, NULL if not found.
+ */
+struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *addr);
+
 struct net_if_api {
 	void (*init)(struct net_if *iface);
 	int (*send)(struct net_if *iface, struct net_buf *buf);

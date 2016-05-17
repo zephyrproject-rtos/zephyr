@@ -76,6 +76,119 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 	return NULL;
 }
 
+struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr)
+{
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		int i;
+
+		for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+			if (!iface->ipv6.unicast[i].is_used ||
+			    iface->ipv6.unicast[i].address.family != AF_INET6) {
+				continue;
+			}
+
+			if (net_is_ipv6_prefix(addr->s6_addr,
+				iface->ipv6.unicast[i].address.in6_addr.s6_addr,
+					       128)) {
+				return &iface->ipv6.unicast[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
+					 struct in6_addr *addr,
+					 enum net_addr_type addr_type,
+					 uint32_t vlifetime)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (iface->ipv6.unicast[i].is_used) {
+			continue;
+		}
+
+		iface->ipv6.unicast[i].is_used = true;
+		iface->ipv6.unicast[i].address.family = AF_INET6;
+		iface->ipv6.unicast[i].addr_type = addr_type;
+		memcpy(&iface->ipv6.unicast[i].address.in6_addr, addr, 16);
+
+		/* FIXME - set the mcast addr for this node */
+
+		if (vlifetime) {
+			iface->ipv6.unicast[i].is_infinite = false;
+
+			/* FIXME - set the timer */
+		} else {
+			iface->ipv6.unicast[i].is_infinite = true;
+		}
+
+		NET_DBG("[%d] interface %p address %s type %s added", i, iface,
+			net_sprint_ipv6_addr(addr),
+			net_addr_type2str(addr_type));
+
+		return &iface->ipv6.unicast[i];
+	}
+
+	return NULL;
+}
+
+struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
+						struct in6_addr *addr)
+{
+	int i;
+
+	if (!net_is_ipv6_addr_mcast(addr)) {
+		NET_DBG("Address %s is not a multicast address.",
+			net_sprint_ipv6_addr(addr));
+		return NULL;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (iface->ipv6.mcast[i].is_used) {
+			continue;
+		}
+
+		iface->ipv6.mcast[i].is_used = true;
+		memcpy(&iface->ipv6.mcast[i].address.in6_addr, addr, 16);
+
+		NET_DBG("[%d] interface %p address %s added", i, iface,
+			net_sprint_ipv6_addr(addr));
+
+		return &iface->ipv6.mcast[i];
+	}
+
+	return NULL;
+}
+
+struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *maddr)
+{
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		int i;
+
+		for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+			if (!iface->ipv6.mcast[i].is_used ||
+			    iface->ipv6.mcast[i].address.family != AF_INET6) {
+				continue;
+			}
+
+			if (net_is_ipv6_prefix(maddr->s6_addr,
+				iface->ipv6.mcast[i].address.in6_addr.s6_addr,
+					       128)) {
+				return &iface->ipv6.mcast[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
 int net_if_init(void)
 {
 	struct net_if_api *api;
