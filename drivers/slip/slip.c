@@ -192,11 +192,6 @@ static void process_msg(struct slip_context *slip)
 		return;
 	}
 
-#if defined(CONFIG_NET_IPV4)
-#error "FIXME - TBDL"
-#endif /* IPv4 */
-
-#if defined(CONFIG_NET_IPV6)
 	if (buf->frags) {
 		if (net_recv(net_if_get_by_link_addr(&slip->ll_addr),
 			     buf) < 0) {
@@ -204,7 +199,6 @@ static void process_msg(struct slip_context *slip)
 		}
 		slip->rx = slip->last = NULL;
 	}
-#endif /* CONFIG_NET_IPV6 */
 }
 
 static inline int slip_input_byte(struct slip_context *slip,

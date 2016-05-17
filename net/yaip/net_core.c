@@ -162,6 +162,44 @@ drop:
 }
 #endif /* CONFIG_NET_IPV6 */
 
+#if defined(CONFIG_NET_IPV4)
+static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
+{
+	struct net_ipv4_hdr *hdr = NET_IPV4_BUF(buf);
+	int real_len = net_buf_frags_len(buf);
+	int pkt_len = (hdr->len[0] << 8) + hdr->len[1];
+
+	if (real_len > pkt_len) {
+		NET_DBG("IPv4 adjust pkt len to %d (was %d)",
+			pkt_len, real_len);
+		net_buf_frag_last(buf)->len -= real_len - pkt_len;
+		real_len -= pkt_len;
+	} else if (real_len < pkt_len) {
+		NET_DBG("IPv4 packet size %d buf len %d", pkt_len, real_len);
+		NET_STATS(++net_stats.ipv4.drop);
+		return NET_DROP;
+	}
+
+#if NET_DEBUG > 0
+	do {
+		char out[sizeof("xxx.xxx.xxx.xxx")];
+		snprintf(out, sizeof(out), net_sprint_ipv4_addr(&hdr->dst));
+		NET_DBG("IPv4 packet received from %s to %s",
+			net_sprint_ipv4_addr(&hdr->src), out);
+	} while (0);
+#endif /* NET_DEBUG > 0 */
+
+	if (!net_is_my_ipv4_addr(&hdr->dst)) {
+		NET_DBG("IPv4 packet in buf %p not for me", buf);
+		NET_STATS(++net_stats.ipv4.drop);
+		goto drop;
+	}
+
+drop:
+	return NET_DROP;
+}
+#endif /* CONFIG_NET_IPV4 */
+
 static inline enum net_verdict process_data(struct net_buf *buf)
 {
 	/* If there is no data, then drop the packet. Also if
@@ -183,9 +221,14 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 		net_nbuf_family(buf) = PF_INET6;
 		return process_ipv6_pkt(buf);
 #endif
+#if defined(CONFIG_NET_IPV4)
+	case 0x40:
+		NET_STATS(++net_stats.ipv4.recv);
+		net_nbuf_family(buf) = PF_INET;
+		return process_ipv4_pkt(buf);
+#endif
 	}
 
-drop:
 	NET_STATS(++net_stats.ip_errors.protoerr);
 	NET_STATS(++net_stats.ip_errors.vhlerr);
 	return NET_DROP;
