@@ -227,6 +227,13 @@ Flashing the x86 Application Core
 Congratulations you have now flashed the hello_world image to the x86
 processor.
 
+Flashing the Bluetooth Core
+===========================
+
+To be interoperable with the Zephyr Bluetooth stack the Bluetooth
+controller of the Arduino 101 (Nordic Semiconductor nRF51) needs to be
+flashed with a compatible firmware. The instructions for acquiring and
+flashing the firmware are found :ref:`here <arduino_101_ble>`
 
 Flashing using JTAG Adapter
 ***************************
