@@ -357,20 +357,6 @@ static inline int sensor_channel_get(struct device *dev,
 	return api->channel_get(dev, chan, val);
 }
 
-#ifdef CONFIG_SENSOR_WORKQUEUE
-
-extern struct nano_workqueue sensor_workqueue;
-
-/**
- * @brief Submit a work item to the system-wide sensor workqueue.
- */
-static inline void sensor_work_submit(struct nano_work *work)
-{
-	nano_work_submit(&sensor_workqueue, work);
-}
-
-#endif
-
 /**
  * @brief The value of gravitational constant in micro m/s^2.
  */
