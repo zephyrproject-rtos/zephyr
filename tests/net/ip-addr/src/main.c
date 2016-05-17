@@ -178,6 +178,8 @@ void main(void)
 					    0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 	struct net_if_addr *ifaddr1, *ifaddr2;
 	struct net_if_mcast_addr *ifmaddr1;
+	struct in_addr addr4 = { { { 192, 168, 0, 1 } } };
+	struct in_addr loopback4 = { { { 127, 0, 0, 1 } } };
 
 	TEST_BYTE_1(0xde, "DE");
 	TEST_BYTE_1(0x09, "09");
@@ -288,6 +290,25 @@ void main(void)
 	ifmaddr1 = net_if_ipv6_maddr_add(__net_if_start, &addr6);
 	if (ifmaddr1) {
 		printk("IPv6 multicast address could be added failed\n");
+		return;
+	}
+
+	ifaddr1 = net_if_ipv4_addr_add(__net_if_start,
+				      &addr4,
+				      NET_ADDR_MANUAL,
+				      0);
+	if (!ifaddr1) {
+		printk("IPv4 interface address add failed\n");
+		return;
+	}
+
+	if (!net_is_my_ipv4_addr(&addr4)) {
+		printk("My IPv4 address check failed\n");
+		return;
+	}
+
+	if (net_is_my_ipv4_addr(&loopback4)) {
+		printk("My IPv4 loopback address check failed\n");
 		return;
 	}
 
