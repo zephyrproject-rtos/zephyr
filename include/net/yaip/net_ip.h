@@ -168,6 +168,19 @@ struct net_ipv6_hdr {
 	struct in6_addr dst;
 } __attribute__((__packed__));
 
+struct net_ipv4_hdr {
+	uint8_t vhl;
+	uint8_t tos;
+	uint8_t len[2];
+	uint8_t id[2];
+	uint8_t offset[2];
+	uint8_t ttl;
+	uint8_t proto;
+	uint16_t chksum;
+	struct in_addr src;
+	struct in_addr dst;
+} __attribute__((__packed__));
+
 #define NET_UDPH_LEN	8			/* Size of UDP header */
 #define NET_TCPH_LEN	20			/* Size of TCP header */
 #define NET_ICMPH_LEN	4			/* Size of ICMP header */

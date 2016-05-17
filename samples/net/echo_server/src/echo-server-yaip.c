@@ -42,28 +42,29 @@
 
 #if defined(CONFIG_NET_IPV6)
 /* admin-local, dynamically allocated multicast address */
-#define MCAST_IPADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, \
-			   0, 0, 0, 0, 0, 0, 0, 0x2 } } }
+#define MCAST_IP6ADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, \
+			    0, 0, 0, 0, 0, 0, 0, 0x2 } } }
 
 /* Define my IP address where to expect messages */
 #if !defined(CONFIG_NET_TESTING)
-#define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
-			0, 0, 0, 0, 0, 0, 0, 0x1 } } }
+#define MY_IP6ADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
+			 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 #define MY_PREFIX_LEN 64
 #endif
 
 #if defined(CONFIG_NET_TESTING)
 static const struct in6_addr in6addr_my = IN6ADDR_ANY_INIT;
 #else
-static const struct in6_addr in6addr_my = MY_IPADDR;
+static const struct in6_addr in6addr_my = MY_IP6ADDR;
 #endif
 
-#else /* IPv6 */
-
-/* Organization-local 239.192.0.0/14 */
-#define MCAST_IPADDR { { { 239, 192, 0, 2 } } }
-
 #endif /* IPv6 */
+
+#if defined(CONFIG_NET_IPV4)
+/* Organization-local 239.192.0.0/14 */
+#define MCAST_IP4ADDR { { { 239, 192, 0, 2 } } }
+#define MY_IP4ADDR { { { 192, 168, 0, 1 } } }
+#endif /* IPv4 */
 
 #define MY_PORT 4242
 
@@ -97,7 +98,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 	static struct net_addr any_addr6;
 	static struct net_addr my_addr6;
 	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
-	static const struct in6_addr in6addr_mcast = MCAST_IPADDR;
+	static const struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
 #endif
 
 #if defined(CONFIG_NET_IPV4)
@@ -105,8 +106,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 	static struct net_addr any_addr4;
 	static struct net_addr my_addr4;
 	static const struct in_addr in4addr_any = { { { 0 } } };
-	static struct in_addr in4addr_my = MY_IPADDR;
-	static struct in_addr in4addr_mcast = MCAST_IPADDR;
+	static struct in_addr in4addr_my = MY_IP4ADDR;
+	static struct in_addr in4addr_mcast = MCAST_IP4ADDR;
 #endif
 
 #if defined(CONFIG_NET_IPV6)
