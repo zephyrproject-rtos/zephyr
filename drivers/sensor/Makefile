@@ -20,6 +20,7 @@ obj-$(CONFIG_LIS3DH) += sensor_lis3dh.o
 obj-$(CONFIG_LIS3DH_TRIGGER) += sensor_lis3dh_trigger.o
 obj-$(CONFIG_LIS3MDL) += sensor_lis3mdl.o
 obj-$(CONFIG_LIS3MDL_TRIGGER) += sensor_lis3mdl_trigger.o
+obj-$(CONFIG_LSM6DS0) += sensor_lsm6ds0.o
 obj-$(CONFIG_LSM9DS0_GYRO) += sensor_lsm9ds0_gyro.o
 obj-$(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY) += sensor_lsm9ds0_gyro_trigger.o
 obj-$(CONFIG_LSM9DS0_MFD) += sensor_lsm9ds0_mfd.o
