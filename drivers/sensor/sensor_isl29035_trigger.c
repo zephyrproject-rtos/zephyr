@@ -64,9 +64,9 @@ int isl29035_attr_set(struct device *dev,
 	raw_val = isl29035_lux_processed_to_raw(val);
 
 	if (i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-			       lsb_reg, raw_val & 0xFF) != 0 ||
+			       lsb_reg, raw_val & 0xFF) < 0 ||
 	    i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-			       msb_reg, raw_val >> 8) != 0) {
+			       msb_reg, raw_val >> 8) < 0) {
 		SYS_LOG_DBG("Failed to set attribute.");
 		return -EIO;
 	}
@@ -160,7 +160,7 @@ int isl29035_init_interrupt(struct device *dev)
 				  ISL29035_COMMAND_I_REG,
 				  ISL29035_INT_PRST_MASK,
 				  ISL29035_INT_PRST_BITS);
-	if (ret != 0) {
+	if (ret < 0) {
 		SYS_LOG_DBG("Failed to set interrupt persistence cycles.");
 		return -EIO;
 	}
@@ -181,7 +181,7 @@ int isl29035_init_interrupt(struct device *dev)
 			   BIT(CONFIG_ISL29035_GPIO_PIN_NUM));
 
 	ret = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
-	if (ret != 0) {
+	if (ret < 0) {
 		SYS_LOG_DBG("Failed to set gpio callback.");
 		return -EIO;
 	}

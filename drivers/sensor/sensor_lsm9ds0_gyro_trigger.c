@@ -54,7 +54,7 @@ int lsm9ds0_gyro_trigger_set(struct device *dev,
 					LSM9DS0_GYRO_REG_CTRL_REG3_G,
 					LSM9DS0_GYRO_MASK_CTRL_REG3_G_I2_DRDY,
 					state << LSM9DS0_GYRO_SHIFT_CTRL_REG3_G_I2_DRDY)
-					!= 0) {
+					< 0) {
 			SYS_LOG_DBG("failed to set DRDY interrupt");
 			return -EIO;
 		}
@@ -124,7 +124,7 @@ int lsm9ds0_gyro_init_interrupt(struct device *dev)
 			   lsm9ds0_gyro_gpio_drdy_callback,
 			   BIT(config->gpio_drdy_int_pin));
 
-	if (gpio_add_callback(data->gpio_drdy, &data->gpio_cb) != 0) {
+	if (gpio_add_callback(data->gpio_drdy, &data->gpio_cb) < 0) {
 		SYS_LOG_DBG("failed to set gpio callback");
 		return -EINVAL;
 	}

@@ -122,14 +122,14 @@ int lis3dh_init_interrupt(struct device *dev)
 			   BIT(CONFIG_LIS3DH_GPIO_PIN_NUM));
 
 	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
-	if (rc != 0) {
+	if (rc < 0) {
 		SYS_LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
 
 	/* clear data ready interrupt line by reading sample data */
 	rc = lis3dh_sample_fetch(dev, SENSOR_CHAN_ALL);
-	if (rc != 0) {
+	if (rc < 0) {
 		SYS_LOG_DBG("Could not clear data ready interrupt line.");
 		return -EIO;
 	}
@@ -137,7 +137,7 @@ int lis3dh_init_interrupt(struct device *dev)
 	/* enable data ready interrupt on INT1 line */
 	rc = i2c_reg_write_byte(drv_data->i2c, LIS3DH_I2C_ADDRESS,
 				LIS3DH_REG_CTRL3, LIS3DH_EN_DRDY1_INT1);
-	if (rc != 0) {
+	if (rc < 0) {
 		SYS_LOG_DBG("Failed to enable data ready interrupt.");
 		return -EIO;
 	}

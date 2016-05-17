@@ -39,7 +39,7 @@ int tmp007_reg_read(struct tmp007_data *drv_data, uint8_t reg, uint16_t *val)
 		},
 	};
 
-	if (i2c_transfer(drv_data->i2c, msgs, 2, TMP007_I2C_ADDRESS) != 0) {
+	if (i2c_transfer(drv_data->i2c, msgs, 2, TMP007_I2C_ADDRESS) < 0) {
 		return -EIO;
 	}
 
@@ -62,7 +62,7 @@ int tmp007_reg_update(struct tmp007_data *drv_data, uint8_t reg,
 	uint16_t old_val = 0;
 	uint16_t new_val;
 
-	if (tmp007_reg_read(drv_data, reg, &old_val) != 0) {
+	if (tmp007_reg_read(drv_data, reg, &old_val) < 0) {
 		return -EIO;
 	}
 
@@ -81,7 +81,7 @@ static int tmp007_sample_fetch(struct device *dev, enum sensor_channel chan)
 	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_TEMP);
 
 	rc = tmp007_reg_read(drv_data, TMP007_REG_TOBJ, &val);
-	if (rc != 0 || val & TMP007_DATA_INVALID_BIT) {
+	if (rc < 0 || val & TMP007_DATA_INVALID_BIT) {
 		return -EIO;
 	}
 
@@ -130,7 +130,7 @@ int tmp007_init(struct device *dev)
 	}
 
 #ifdef CONFIG_TMP007_TRIGGER
-	if (tmp007_init_interrupt(dev) != 0) {
+	if (tmp007_init_interrupt(dev) < 0) {
 		SYS_LOG_DBG("Failed to initialize interrupt!");
 		return -EIO;
 	}

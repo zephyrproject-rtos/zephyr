@@ -37,13 +37,13 @@ static int isl29035_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	ret = i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 				ISL29035_DATA_MSB_REG, &msb);
-	if (ret != 0) {
+	if (ret < 0) {
 		return -EIO;
 	}
 
 	ret = i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 				ISL29035_DATA_LSB_REG, &lsb);
-	if (ret != 0) {
+	if (ret < 0) {
 		return -EIO;
 	}
 
@@ -100,7 +100,7 @@ static int isl29035_init(struct device *dev)
 	/* clear blownout status bit */
 	ret = i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 				  ISL29035_ID_REG, ISL29035_BOUT_MASK, 0);
-	if (ret != 0) {
+	if (ret < 0) {
 		SYS_LOG_DBG("Failed to clear blownout status bit.");
 		return ret;
 	}
@@ -108,14 +108,14 @@ static int isl29035_init(struct device *dev)
 	/* set command registers to set default attributes */
 	ret = i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 				 ISL29035_COMMAND_I_REG, 0);
-	if (ret != 0) {
+	if (ret < 0) {
 		SYS_LOG_DBG("Failed to clear COMMAND-I.");
 		return ret;
 	}
 
 	ret = i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 				 ISL29035_COMMAND_II_REG, 0);
-	if (ret != 0) {
+	if (ret < 0) {
 		SYS_LOG_DBG("Failed to clear COMMAND-II.");
 		return ret;
 	}
@@ -125,7 +125,7 @@ static int isl29035_init(struct device *dev)
 				  ISL29035_COMMAND_I_REG,
 				  ISL29035_OPMODE_MASK,
 				  ISL29035_ACTIVE_OPMODE_BITS);
-	if (ret != 0) {
+	if (ret < 0) {
 		SYS_LOG_DBG("Failed to set opmode.");
 		return ret;
 	}
@@ -135,7 +135,7 @@ static int isl29035_init(struct device *dev)
 				  ISL29035_COMMAND_II_REG,
 				  ISL29035_LUX_RANGE_MASK,
 				  ISL29035_LUX_RANGE_BITS);
-	if (ret != 0) {
+	if (ret < 0) {
 		SYS_LOG_DBG("Failed to set lux range.");
 		return ret;
 	}
@@ -145,14 +145,14 @@ static int isl29035_init(struct device *dev)
 				  ISL29035_COMMAND_II_REG,
 				  ISL29035_ADC_RES_MASK,
 				  ISL29035_ADC_RES_BITS);
-	if (ret != 0) {
+	if (ret < 0) {
 		SYS_LOG_DBG("Failed to set ADC resolution.");
 		return ret;
 	}
 
 #ifdef CONFIG_ISL29035_TRIGGER
 	ret = isl29035_init_interrupt(dev);
-	if (ret != 0) {
+	if (ret < 0) {
 		SYS_LOG_DBG("Failed to initialize interrupt.");
 		return ret;
 	}

@@ -48,7 +48,7 @@ int tmp007_attr_set(struct device *dev,
 	value = (int64_t)val->val1 * 1000000 + val->val2;
 	value = (value / TMP007_TEMP_TH_SCALE) << 6;
 
-	if (tmp007_reg_write(drv_data, reg, value) != 0) {
+	if (tmp007_reg_write(drv_data, reg, value) < 0) {
 		SYS_LOG_DBG("Failed to set attribute!");
 		return -EIO;
 	}
@@ -77,7 +77,7 @@ static void tmp007_fiber_cb(void *arg)
 	struct tmp007_data *drv_data = dev->driver_data;
 	uint16_t status;
 
-	if (tmp007_reg_read(drv_data, TMP007_REG_STATUS, &status) != 0) {
+	if (tmp007_reg_read(drv_data, TMP007_REG_STATUS, &status) < 0) {
 		return;
 	}
 
@@ -147,7 +147,7 @@ int tmp007_init_interrupt(struct device *dev)
 
 	rc = tmp007_reg_update(drv_data, TMP007_REG_CONFIG,
 			       TMP007_ALERT_EN_BIT, TMP007_ALERT_EN_BIT);
-	if (rc != 0) {
+	if (rc < 0) {
 		SYS_LOG_DBG("Failed to enable interrupt pin!");
 		return -EIO;
 	}
@@ -169,7 +169,7 @@ int tmp007_init_interrupt(struct device *dev)
 			   BIT(CONFIG_TMP007_GPIO_PIN_NUM));
 
 	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
-	if (rc != 0) {
+	if (rc < 0) {
 		SYS_LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
