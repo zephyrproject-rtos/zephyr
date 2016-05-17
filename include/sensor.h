@@ -115,6 +115,8 @@ enum sensor_channel {
 	SENSOR_CHAN_LIGHT,
 	/** Illuminance in infra-red spectrum, in lux. */
 	SENSOR_CHAN_IR,
+	/** Altitude, in meters */
+	SENSOR_CHAN_ALTITUDE,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
