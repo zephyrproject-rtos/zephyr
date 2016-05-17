@@ -971,6 +971,11 @@ void net_timer_check(void)
 
 int net_set_mac(uint8_t *mac, uint8_t len)
 {
+	if (!mac) {
+		NET_ERR("MAC address cannot be NULL\n");
+		return -EINVAL;
+	}
+
 	if ((len > UIP_LLADDR_LEN) || (len != 6 && len != 8)) {
 		NET_ERR("Wrong ll addr len, len %d, max %d\n",
 			len, UIP_LLADDR_LEN);
