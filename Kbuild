@@ -94,7 +94,7 @@ OFFSETS_INCLUDE = $(strip \
 
 cmd_cc_o_c_1 = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) -c -o $@ $<
 
-arch/$(ARCH)/core/offsets/offsets.o: arch/$(ARCH)/core/offsets/offsets.c
+arch/$(ARCH)/core/offsets/offsets.o: arch/$(ARCH)/core/offsets/offsets.c $(KCONFIG_CONFIG)
 	$(Q)mkdir -p $(dir $@)
 	$(call if_changed,cc_o_c_1)
 
