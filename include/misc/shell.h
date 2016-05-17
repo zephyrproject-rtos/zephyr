@@ -30,6 +30,7 @@ typedef void (*shell_cmd_function_t)(int argc, char *argv[]);
 struct shell_cmd {
 	const char *cmd_name;
 	shell_cmd_function_t cb;
+	const char *help;
 };
 
 /** @brief Initialize shell with optional prompt, NULL in case no prompt is

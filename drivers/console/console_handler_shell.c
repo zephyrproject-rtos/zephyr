@@ -115,9 +115,28 @@ static size_t line2argv(char *str, char *argv[], size_t size)
 	return argc;
 }
 
+static void show_cmd_help(int argc, char *argv[])
+{
+	int i;
+
+	for (i = 0; commands[i].cmd_name; i++) {
+		if (!strcmp(argv[0], commands[i].cmd_name)) {
+			printk("%s %s\n", commands[i].cmd_name,
+			       commands[i].help);
+			return;
+		}
+	}
+
+	printk("Unrecognized command: %s\n", argv[0]);
+}
+
 static void show_help(int argc, char *argv[])
 {
 	int i;
+
+	if (argc > 1) {
+		return show_cmd_help(--argc, &argv[1]);
+	}
 
 	printk("Available commands:\n");
 	printk("help\n");
