@@ -130,6 +130,17 @@ enum net_addr_state {
 	NET_ADDR_DEPRECATED,
 };
 
+struct net_ipv6_hdr {
+	uint8_t vtc;
+	uint8_t tcflow;
+	uint16_t flow;
+	uint8_t len[2];
+	uint8_t nexthdr;
+	uint8_t hop_limit;
+	struct in6_addr src;
+	struct in6_addr dst;
+} __attribute__((__packed__));
+
 #define NET_UDPH_LEN	8			/* Size of UDP header */
 #define NET_TCPH_LEN	20			/* Size of TCP header */
 #define NET_ICMPH_LEN	4			/* Size of ICMP header */

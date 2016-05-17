@@ -124,8 +124,63 @@ static inline void stats(void)
 #define net_print_statistics()
 #endif /* CONFIG_NET_STATISTICS */
 
+#if defined(CONFIG_NET_IPV6)
+static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
+{
+	struct net_ipv6_hdr *hdr = NET_IPV6_BUF(buf);
+	int real_len = net_buf_frags_len(buf);
+	int pkt_len = (hdr->len[0] << 8) + hdr->len[1] + sizeof(*hdr);
+
+	if (real_len > pkt_len) {
+		NET_DBG("IPv6 adjust pkt len to %d (was %d)",
+			pkt_len, real_len);
+		net_buf_frag_last(buf)->len -= real_len - pkt_len;
+		real_len -= pkt_len;
+	} else if (real_len < pkt_len) {
+		NET_DBG("IPv6 packet size %d buf len %d", pkt_len, real_len);
+		NET_STATS(++net_stats.ipv6.drop);
+		return NET_DROP;
+	}
+
+#if NET_DEBUG > 0
+	do {
+		char out[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
+		snprintf(out, sizeof(out), net_sprint_ipv6_addr(&hdr->dst));
+		NET_DBG("IPv6 packet len %d received from %s to %s",
+			real_len, net_sprint_ipv6_addr(&hdr->src), out);
+	} while (0);
+#endif /* NET_DEBUG > 0 */
+
+	return NET_DROP;
+}
+#endif /* CONFIG_NET_IPV6 */
+
 static inline enum net_verdict process_data(struct net_buf *buf)
 {
+	/* If there is no data, then drop the packet. Also if
+	 * the buffer is wrong type, then also drop the packet.
+	 * The first buffer needs to have user data part that
+	 * contains user data. The rest of the fragments should
+	 * be data fragments without user data.
+	 */
+	if (!buf->frags || !buf->user_data_size) {
+		NET_STATS(++net_stats.processing_error);
+		return NET_DROP;
+	}
+
+	/* IP version and header length. */
+	switch (NET_IPV6_BUF(buf)->vtc & 0xf0) {
+#if defined(CONFIG_NET_IPV6)
+	case 0x60:
+		NET_STATS(++net_stats.ipv6.recv);
+		net_nbuf_family(buf) = PF_INET6;
+		return process_ipv6_pkt(buf);
+#endif
+	}
+
+drop:
+	NET_STATS(++net_stats.ip_errors.protoerr);
+	NET_STATS(++net_stats.ip_errors.vhlerr);
 	return NET_DROP;
 }
 
