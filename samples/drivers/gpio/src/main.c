@@ -144,7 +144,7 @@
 #elif defined(CONFIG_GPIO_ATMEL_SAM3)
 #define GPIO_DRV_NAME CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME
 #else
-#error "Unsupported GPIO driver"
+#define GPIO_DRV_NAME "GPIO_0"
 #endif
 
 void gpio_callback(struct device *port,
