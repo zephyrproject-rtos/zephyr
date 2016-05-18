@@ -78,6 +78,7 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 
 struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if *iface;
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
@@ -96,6 +97,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr)
 			}
 		}
 	}
+#endif
 
 	return NULL;
 }
@@ -105,6 +107,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 enum net_addr_type addr_type,
 					 uint32_t vlifetime)
 {
+#if defined(CONFIG_NET_IPV6)
 	int i;
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
@@ -133,6 +136,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 
 		return &iface->ipv6.unicast[i];
 	}
+#endif
 
 	return NULL;
 }
@@ -140,6 +144,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 						struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	int i;
 
 	if (!net_is_ipv6_addr_mcast(addr)) {
@@ -161,12 +166,14 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 
 		return &iface->ipv6.mcast[i];
 	}
+#endif
 
 	return NULL;
 }
 
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *maddr)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if *iface;
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
@@ -185,6 +192,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *maddr)
 			}
 		}
 	}
+#endif
 
 	return NULL;
 }
@@ -341,6 +349,7 @@ struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 
 struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr)
 {
+#if defined(CONFIG_NET_IPV4)
 	struct net_if *iface;
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
@@ -358,6 +367,7 @@ struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr)
 			}
 		}
 	}
+#endif
 
 	return NULL;
 }
@@ -367,6 +377,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 					 enum net_addr_type addr_type,
 					 uint32_t vlifetime)
 {
+#if defined(CONFIG_NET_IPV4)
 	int i;
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
@@ -394,6 +405,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 
 		return &iface->ipv4.unicast[i];
 	}
+#endif
 
 	return NULL;
 }
