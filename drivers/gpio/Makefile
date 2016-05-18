@@ -11,3 +11,4 @@ obj-$(CONFIG_GPIO_QMSI_SS) += gpio_qmsi_ss.o
 obj-$(CONFIG_GPIO_ATMEL_SAM3) += gpio_atmel_sam3.o
 obj-$(CONFIG_GPIO_K64) += gpio_k64.o
 obj-$(CONFIG_GPIO_STM32) += gpio_stm32.o
+obj-$(CONFIG_GPIO_NRF5) += gpio_nrf5.o

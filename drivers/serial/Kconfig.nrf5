@@ -1,0 +1,105 @@
+# Kconfig.nrf5 - NRF5 UART configuration
+#
+# Copyright (c) 2016 Nordic Semiconductor ASA
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig UART_NRF5
+	bool "Nordic Semiconductor NRF5 family processor UART driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	depends on SOC_SERIES_NRF52X
+	select GPIO
+	help
+	  This option enables the UART driver for Nordic Semiconductor nRF5
+	  family processors. Note that there is only one
+	  UART controller on nRF5 ICs.
+
+config UART_NRF5_NAME
+	string "Device Name for Nordic Semicondoctor nRF5 UART"
+	default "UART_0"
+	depends on UART_NRF5
+	help
+	  This is the device name for UART, and is included in the device
+	  struct.
+
+config UART_NRF5_IRQ_PRI
+	int "UART Interrupt Priority (Interrupt support)"
+	range 0 7
+	default 2
+	depends on UART_NRF5
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The interrupt priority for UART port.
+
+config UART_NRF5_BAUD_RATE
+	int "Baud Rate"
+	range 1200 1000000
+	default 115200
+	depends on UART_NRF5
+	help
+	  The baud rate for UART port to be set to at boot.
+
+config UART_NRF5_CLK_FREQ
+	int
+	default 16000000 if SOC_NRF52832
+	depends on UART_NRF5
+
+config UART_NRF5_FLOW_CONTROL
+	bool "Enable Flow Control"
+	default n
+	depends on UART_NRF5
+	help
+	  Enable Flow Control.
+	  If selected, additionally two pins,
+	  RTS and CTS has to be
+	  configured.
+
+config UART_NRF5_GPIO_TX_PIN
+	int "TX Pin Number"
+	range 0 31
+	default 6
+	depends on UART_NRF5
+        depends on GPIO_NRF5
+	help
+	  The GPIO pin to use for TX.
+
+config UART_NRF5_GPIO_RX_PIN
+	int "RX Pin Number"
+	range 0 31
+	default 8
+	depends on UART_NRF5
+	depends on GPIO_NRF5
+	help
+	  The GPIO pin to use for RX.
+
+config UART_NRF5_GPIO_RTS_PIN
+	int "RTS Pin Number"
+	range 0 31
+	default 5
+	depends on UART_NRF5
+	depends on GPIO_NRF5
+	depends on UART_NRF5_FLOW_CONTROL
+	help
+	  The GPIO pin to use for RTS.
+
+config UART_NRF5_GPIO_CTS_PIN
+	int "CTS Pin Number"
+	range 0 31
+	default 7
+	depends on UART_NRF5
+	depends on GPIO_NRF5
+	depends on UART_NRF5_FLOW_CONTROL
+	help
+	  The GPIO pin to use for CTS.
