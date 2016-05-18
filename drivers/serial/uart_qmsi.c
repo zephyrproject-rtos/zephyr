@@ -16,7 +16,9 @@
 #include <errno.h>
 
 #include <device.h>
+#if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
 #include <ioapic.h>
+#endif
 #include <uart.h>
 
 #include "qm_uart.h"
