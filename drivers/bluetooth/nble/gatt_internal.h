@@ -259,13 +259,12 @@ struct nble_gattc_write_req {
 };
 
 void nble_gattc_write_req(const struct nble_gattc_write_req *req,
-			  const uint8_t *data, uint8_t len);
+			  const uint8_t *data, uint16_t len);
 
 struct nble_gattc_write_rsp {
 	int status;
 	uint16_t conn_handle;
 	uint16_t handle;
-	uint16_t len;
 	struct nble_gattc_write_param wr_params;
 };
 
