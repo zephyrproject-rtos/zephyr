@@ -268,6 +268,48 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 					 enum net_addr_type addr_type,
 					 uint32_t vlifetime);
 
+/**
+ * @brief Get IPv6 hop limit specified for a given interface
+ * @param iface Network interface
+ * @return Hop limit
+ */
+static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
+{
+#if defined(CONFIG_NET_IPV6)
+	return iface->hop_limit;
+#else
+	return 0;
+#endif
+}
+
+/**
+ * @brief Get a IPv6 source address that should be used when sending
+ * network data to destination.
+ * @param iface Interface that was used when packet was received.
+ * If the interface is not known, then NULL can be given.
+ * @param dst IPv6 destination address
+ * @return Pointer to IPv6 address to use, NULL if no IPv6 address
+ * could be found.
+ */
+struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
+					     struct in6_addr *dst);
+
+/**
+ * @brief Return IPv6 any address (all zeros, ::)
+ * @return IPv6 any address with all bits set to zero.
+ */
+struct in6_addr *net_if_ipv6_unspecified_addr(void);
+
+/**
+ * @brief Get a IPv6 link local address in a given state.
+ * @param iface Interface to use. Must be a valid pointer to an interface.
+ * @param addr_state IPv6 address state (preferred, tentative, deprecated)
+ * @return Pointer to link local IPv6 address, NULL if no proper IPv6 address
+ * could be found.
+ */
+struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
+				    enum net_addr_state addr_state);
+
 struct net_if_api {
 	void (*init)(struct net_if *iface);
 	int (*send)(struct net_if *iface, struct net_buf *buf);

@@ -151,6 +151,7 @@ static inline char *net_addr_type2str(enum net_addr_type type)
 
 /** What is the current state of the network address */
 enum net_addr_state {
+	NET_ADDR_ANY_STATE = -1,
 	NET_ADDR_TENTATIVE = 0,
 	NET_ADDR_PREFERRED,
 	NET_ADDR_DEPRECATED,
@@ -233,6 +234,37 @@ extern struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr);
 static inline bool net_is_my_ipv4_addr(struct in_addr *addr)
 {
 	return net_if_ipv4_addr_lookup(addr) != NULL;
+}
+
+/** @def net_ipaddr_copy
+ *  @brief Copy an IPv4 or IPv6 address
+ *
+ *  @param dest Destination IP address.
+ *  @param src Source IP address.
+ *
+ *  @return Destination address.
+ */
+#define net_ipaddr_copy(dest, src) ((*dest) = (*src))
+
+/** @brief Check if the given IPv6 address is a link local address.
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_is_ipv6_ll_addr(struct in6_addr *addr)
+{
+	return ((addr->s6_addr[0]) == 0xFE) &&
+		((addr->s6_addr[1]) == 0x80);
+}
+
+struct in6_addr *net_if_ipv6_unspecified_addr(void);
+
+/** @brief Return pointer to any (all bits zeros) IPv6 address.
+ *
+ * @return Any IPv6 address.
+ */
+static inline struct in6_addr *net_ipv6_unspecified_address(void)
+{
+	return net_if_ipv6_unspecified_addr();
 }
 
 #ifdef __cplusplus
