@@ -267,9 +267,11 @@ fail:
 struct gatt_value {
 	uint16_t len;
 	uint8_t *data;
+	uint16_t prep_data_len;
 	uint8_t *prep_data;
 	uint8_t enc_key_size;
 	uint8_t flags[1];
+	uint8_t prep_write_err;
 };
 
 enum {
@@ -311,19 +313,26 @@ static ssize_t write_value(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_ENCRYPTION_KEY_SIZE);
 	}
 
+	if (value->prep_write_err) {
+		return len;
+	}
+
 	/*
 	 * If the prepare Value Offset is greater than the current length of
 	 * the attribute value Error Response shall be sent with the
 	 * «Invalid Offset».
 	 */
 	if (offset > value->len) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+		value->prep_write_err = BT_ATT_ERR_INVALID_OFFSET;
+		return len;
 	}
 
 	if (offset + len > value->len) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		value->prep_write_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+		return len;
 	}
 
+	value->prep_data_len += len;
 	memcpy(value->prep_data + offset, buf, len);
 
 	return len;
@@ -334,13 +343,29 @@ static ssize_t flush_value(struct bt_conn *conn,
 {
 	struct gatt_value *value = attr->user_data;
 
+	if (!value->prep_data_len && !value->prep_write_err) {
+		return 0;
+	}
+
+	if (value->prep_write_err) {
+		uint8_t err = value->prep_write_err;
+
+		memset(value->prep_data, 0, value->prep_data_len);
+		value->prep_data_len = 0;
+		value->prep_write_err = 0;
+
+		return BT_GATT_ERR(err);
+	}
+
 	switch (flags) {
 	case BT_GATT_FLUSH_SYNC:
 		/* Sync buffer to data */
 		memcpy(value->data, value->prep_data, value->len);
+		value->len = value->prep_data_len;
 		/* Fallthrough */
 	case BT_GATT_FLUSH_DISCARD:
-		memset(value->prep_data, 0, value->len);
+		memset(value->prep_data, 0, value->prep_data_len);
+		value->prep_data_len = 0;
 		return 0;
 	}
 
