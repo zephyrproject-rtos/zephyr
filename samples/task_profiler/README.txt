@@ -198,6 +198,16 @@ CONFIG_UART_NS16550_PORT_1_BAUD_RATE=921600
 
 Profiler has been tested at 2 Mbauds on Quark SE.
 
+  2.4) (Galileo only) disable UART 0
+  ----------------------------------
+
+Due to an issue with Quark X1000 UART_0 IRQ mapping, UART0 must be disabled in
+$APP_BASE/prj.conf:
+
+<--snippet
+CONFIG_UART_NS16550_PORT_0=n
+-->
+
 3) Enable profiler console for dynamic control
 ----------------------------------------------
 
