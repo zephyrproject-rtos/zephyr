@@ -122,10 +122,10 @@ struct net_nbuf {
 
 /* This returns pointer to start of the protocol IP header */
 #define net_nbuf_ip_data(buf) ((buf)->frags->data)
-#define net_nbuf_udp_data(buf) ((buf)->frags->data[nbuf_ip_hdr_len(buf)])
-#define net_nbuf_tcp_data(buf) ((buf)->frags->data[nbuf_ip_hdr_len(buf)])
-#define net_nbuf_icmp_data(buf) ((buf)->frags->data[nbuf_ip_hdr_len(buf) + \
-						nbuf_ext_len(buf)])
+#define net_nbuf_udp_data(buf) (&(buf)->frags->data[net_nbuf_ip_hdr_len(buf)])
+#define net_nbuf_tcp_data(buf) (&(buf)->frags->data[net_nbuf_ip_hdr_len(buf)])
+#define net_nbuf_icmp_data(buf) (&(buf)->frags->data[net_nbuf_ip_hdr_len(buf) +\
+						    net_nbuf_ext_len(buf)])
 
 /* These two return only the application data length without
  * IP and other protocol header length.
