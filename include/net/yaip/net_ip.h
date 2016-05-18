@@ -181,6 +181,12 @@ struct net_ipv4_hdr {
 	struct in_addr dst;
 } __attribute__((__packed__));
 
+struct net_icmp_hdr {
+	uint8_t type;
+	uint8_t code;
+	uint16_t chksum;
+} __attribute__((__packed__));
+
 #define NET_UDPH_LEN	8			/* Size of UDP header */
 #define NET_TCPH_LEN	20			/* Size of TCP header */
 #define NET_ICMPH_LEN	4			/* Size of ICMP header */
