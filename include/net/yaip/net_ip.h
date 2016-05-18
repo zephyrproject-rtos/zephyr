@@ -198,6 +198,12 @@ struct net_ipv4_hdr {
 #define NET_IPV4TCPH_LEN   (NET_TCPH_LEN + NET_IPV4H_LEN) /* IPv4 + TCP */
 #define NET_IPV4ICMPH_LEN  (NET_IPV4H_LEN + NET_ICMPH_LEN) /* ICMPv4 + IPv4 */
 
+/** @brief Check if the IPv6 address is a loopback address (::1).
+ *
+ * @param addr IPv6 address
+ *
+ * @return True if address is a loopback address, False otherwise.
+ */
 static inline bool net_is_ipv6_addr_loopback(struct in6_addr *addr)
 {
 	return addr->s6_addr32[0] == 0 &&
@@ -206,23 +212,52 @@ static inline bool net_is_ipv6_addr_loopback(struct in6_addr *addr)
 		ntohl(addr->s6_addr32[3]) == 1;
 }
 
+/** @brief Check if the IPv6 address is a multicast address.
+ *
+ * @param addr IPv6 address
+ *
+ * @return True if address is multicast address, False otherwise.
+ */
 static inline bool net_is_ipv6_addr_mcast(struct in6_addr *addr)
 {
 	return addr->s6_addr[0] == 0xFF;
 }
 
 extern struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr);
+
+/** @brief Check if IPv6 address is found in one of the network interfaces.
+ *
+ * @param addr IPv6 address
+ *
+ * @return True if address was found, False otherwise.
+ */
 static inline bool net_is_my_ipv6_addr(struct in6_addr *addr)
 {
 	return net_if_ipv6_addr_lookup(addr) != NULL;
 }
 
 extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *addr);
+
+/** @brief Check if IPv6 multicast address is found in one of the
+ * network interfaces.
+ *
+ * @param maddr Multicast IPv6 address
+ *
+ * @return True if address was found, False otherwise.
+ */
 static inline bool net_is_my_ipv6_maddr(struct in6_addr *maddr)
 {
 	return net_if_ipv6_maddr_lookup(maddr) != NULL;
 }
 
+/** @brief Check if two IPv6 addresses are same when compared after prefix mask.
+ *
+ * @param addr1 First IPv6 address.
+ * @param addr2 Second IPv6 address.
+ * @param length Prefix length (max length is 128).
+ *
+ * @return True if addresses are the same, False otherwise.
+ */
 static inline bool net_is_ipv6_prefix(uint8_t *addr1, uint8_t *addr2,
 				      uint8_t length)
 {
@@ -244,6 +279,13 @@ static inline bool net_is_ipv6_prefix(uint8_t *addr1, uint8_t *addr2,
 }
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr);
+
+/** @brief Check if the IPv4 address is assigned to any network interface
+ * in the system.
+ *
+ * @return True if IPv4 address is found in one of the network interfaces,
+ * False otherwise.
+ */
 static inline bool net_is_my_ipv4_addr(struct in_addr *addr)
 {
 	return net_if_ipv4_addr_lookup(addr) != NULL;
