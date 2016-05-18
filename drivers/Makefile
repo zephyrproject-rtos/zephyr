@@ -1,9 +1,6 @@
 subdir-ccflags-y += -I$(srctree)/include/drivers
 
-subdir-ccflags-$(CONFIG_QMSI_LIBRARY) += -I$(CONFIG_QMSI_INSTALL_PATH)/include
-subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/drivers/qmsi/include
-subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/drivers/qmsi/drivers/include
-subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/drivers/qmsi/soc/$(SOC_NAME)/include/
+include $(srctree)/drivers/qmsi/Makefile.include
 
 obj-y = console/
 obj-y += random/

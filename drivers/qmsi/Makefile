@@ -1,4 +1,8 @@
+subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-DISR_HANDLED
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/clk.o
+ifeq ($(CONFIG_ARC),y)
+obj-$(CONFIG_QMSI_BUILTIN) += drivers/sensor/ss_clk.o
+endif
 obj-$(CONFIG_RTC_QMSI) += drivers/qm_rtc.o
 obj-$(CONFIG_WDT_QMSI) += drivers/qm_wdt.o
 obj-$(CONFIG_I2C_QMSI) += drivers/qm_i2c.o
