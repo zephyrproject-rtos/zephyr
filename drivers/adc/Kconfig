@@ -200,12 +200,18 @@ menuconfig ADC_QMSI
 	help
 	Enable the driver implementation of the QMSI ADC IP.
 
-if ADC_QMSI
+menuconfig ADC_QMSI_SS
+	bool "QMSI ADC Driver for the Sensor Subsystem"
+	depends on QMSI && ADC
+	default n
+	help
+	Enable the driver implementation of the QMSI ADC IP.
+
+if ADC_QMSI || ADC_QMSI_SS
 
 choice
 	prompt "Capturing Mode"
 	default ADC_QMSI_INTERRUPT
-	depends on ADC_QMSI
 	help
 	ADC sample capture mode - interrupt mode/polling mode
 
@@ -220,7 +226,6 @@ endchoice
 config ADC_QMSI_CALIBRATION
 	bool "Enable Calibration"
 	default y
-	depends on ADC_QMSI
 	help
 	Enables ADC to run with a calibrated output at the
 	expense of execution speed when exiting low power states.
@@ -230,14 +235,12 @@ config ADC_QMSI_CALIBRATION
 config ADC_QMSI_CLOCK_RATIO
 	int "Clock Ratio"
 	default 100
-	depends on ADC_QMSI
 	help
 	ADC Clock Ratio
 
 config ADC_QMSI_SERIAL_DELAY
 	int "Serial Delay"
 	default 1
-	depends on ADC_QMSI
 	help
 	Number of ADC clock ticks that the first bit of
 	the serial output is delayed after the conversion
@@ -245,7 +248,6 @@ config ADC_QMSI_SERIAL_DELAY
 
 config ADC_QMSI_SAMPLE_WIDTH
 	int "Sample Width"
-	depends on ADC_QMSI
 	default 3
 	help
 	Defines ADC device data sample width (resolution):
@@ -254,4 +256,4 @@ config ADC_QMSI_SAMPLE_WIDTH
 	2 = 10 bits resolution
 	3 = 12 bits resolution
 
-endif # ADC_QMSI
+endif # ADC_QMSI || ADC_QMSI_SS
