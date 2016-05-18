@@ -67,11 +67,7 @@ static int mcp9808_channel_get(struct device *dev,
 {
 	struct mcp9808_data *data = dev->driver_data;
 
-#ifdef CONFIG_SENSOR_DEBUG
-	if (chan != SENSOR_CHAN_TEMP) {
-		return -ENOTSUP;
-	}
-#endif
+	__ASSERT(chan == SENSOR_CHAN_TEMP);
 
 	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 

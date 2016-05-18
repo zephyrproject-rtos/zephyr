@@ -23,13 +23,6 @@ menuconfig SENSOR
 	help
 	  Include sensor drivers in system config
 
-config SENSOR_DEBUG
-	bool "Enable sensor debug output"
-	default n
-	depends on SENSOR && PRINTK
-	help
-	  This option enables debug output for sensor drivers.
-
 source "drivers/sensor/Kconfig.bma280"
 
 source "drivers/sensor/Kconfig.bmc150_magn"

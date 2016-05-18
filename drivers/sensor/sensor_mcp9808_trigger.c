@@ -20,6 +20,7 @@
 #include <nanokernel.h>
 #include <i2c.h>
 #include <misc/byteorder.h>
+#include <misc/__assert.h>
 
 #include "sensor_mcp9808.h"
 
@@ -71,11 +72,7 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 	uint8_t reg_addr;
 	int32_t val2;
 
-#ifdef CONFIG_SENSOR_DEBUG
-	if (chan != SENSOR_CHAN_TEMP) {
-		return -EINVAL;
-	}
-#endif
+	__ASSERT(chan == SENSOR_CHAN_TEMP);
 
 	switch (val->type) {
 	case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:

@@ -66,11 +66,7 @@ static int sx9500_channel_get(struct device *dev,
 {
 	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
 
-#ifdef CONFIG_SENSOR_DEBUG
-	if (chan != SENSOR_CHAN_PROX) {
-		return -ENOTSUP;
-	}
-#endif
+	__ASSERT(chan == SENSOR_CHAN_PROX);
 
 	val->type = SENSOR_VALUE_TYPE_INT;
 	val->val1 = !!(data->prox_stat &
