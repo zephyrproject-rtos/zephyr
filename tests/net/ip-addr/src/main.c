@@ -166,6 +166,7 @@ void main(void)
 #endif
 {
 	struct in6_addr loopback = IN6ADDR_LOOPBACK_INIT;
+	struct in6_addr any = IN6ADDR_ANY_INIT;
 	struct in6_addr mcast = { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0,
 				      0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 	struct in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
@@ -176,10 +177,13 @@ void main(void)
 					    0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 	struct in6_addr addr6_pref3 = { { { 0x20, 0x01, 0x0d, 0xb8, 0x64, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
+	struct in6_addr *tmp;
 	struct net_if_addr *ifaddr1, *ifaddr2;
 	struct net_if_mcast_addr *ifmaddr1;
 	struct in_addr addr4 = { { { 192, 168, 0, 1 } } };
 	struct in_addr loopback4 = { { { 127, 0, 0, 1 } } };
+	struct net_if *iface;
+	int i;
 
 	TEST_BYTE_1(0xde, "DE");
 	TEST_BYTE_1(0x09, "09");
@@ -310,6 +314,102 @@ void main(void)
 	if (net_is_my_ipv4_addr(&loopback4)) {
 		printk("My IPv4 loopback address check failed\n");
 		return;
+	}
+
+	if (memcmp(net_if_ipv6_unspecified_addr(), &any, sizeof(any))) {
+		printk("My IPv6 unspecified address check failed\n");
+		return;
+	}
+
+	ifaddr2 = net_if_ipv6_addr_add(__net_if_start,
+				       &addr6,
+				       NET_ADDR_AUTOCONF,
+				       0);
+	if (!ifaddr2) {
+		printk("IPv6 ll address autoconf add failed\n");
+		return;
+	}
+	ifaddr2->addr_state = NET_ADDR_PREFERRED;
+
+	tmp = net_if_ipv6_get_ll(__net_if_start, NET_ADDR_PREFERRED);
+	if (memcmp(tmp, &addr6.s6_addr, sizeof(struct in6_addr))) {
+		printk("IPv6 ll address fetch failed\n");
+		return;
+	}
+
+	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
+
+	tmp = net_if_ipv6_get_ll(__net_if_start, NET_ADDR_PREFERRED);
+	if (tmp || !memcmp(tmp, &any, sizeof(struct in6_addr))) {
+		printk("IPv6 preferred ll address fetch failed\n");
+		return;
+	}
+
+	ifaddr1 = net_if_ipv6_addr_add(__net_if_start,
+				       &addr6_pref2,
+				       NET_ADDR_AUTOCONF,
+				       0);
+	if (!ifaddr1) {
+		printk("IPv6 global address autoconf add failed\n");
+		return;
+	}
+	ifaddr1->addr_state = NET_ADDR_PREFERRED;
+
+	/* Two tests, first with interface given, then when iface is NULL */
+	for (i = 0, iface = __net_if_start; i < 2; i++, iface = NULL) {
+		ifaddr2->addr_state = NET_ADDR_DEPRECATED;
+
+		tmp = net_if_ipv6_select_src_addr(iface, &addr6_pref1);
+		if (!tmp) {
+			printk("IPv6 src addr selection failed, iface %p\n",
+				iface);
+			return;
+		}
+		printk("Selected IPv6 address %s, iface %p\n",
+		       net_sprint_ipv6_addr(tmp), iface);
+
+		if (memcmp(tmp->s6_addr, &addr6_pref2.s6_addr,
+			   sizeof(struct in6_addr))) {
+			printk("IPv6 wrong src address selected, iface %p\n",
+			       iface);
+			return;
+		}
+
+		/* Now we should get :: address */
+		tmp = net_if_ipv6_select_src_addr(iface, &addr6);
+		if (!tmp) {
+			printk("IPv6 src any addr selection failed, "
+			       "iface %p\n", iface);
+			return;
+		}
+		printk("Selected IPv6 address %s, iface %p\n",
+		       net_sprint_ipv6_addr(tmp), iface);
+
+		if (memcmp(tmp->s6_addr, &any.s6_addr,
+			   sizeof(struct in6_addr))) {
+			printk("IPv6 wrong src any address selected, "
+			       "iface %p\n", iface);
+			return;
+		}
+
+		ifaddr2->addr_state = NET_ADDR_PREFERRED;
+
+		/* Now we should get ll address */
+		tmp = net_if_ipv6_select_src_addr(iface, &addr6);
+		if (!tmp) {
+			printk("IPv6 src ll addr selection failed, iface %p\n",
+				iface);
+			return;
+		}
+		printk("Selected IPv6 address %s, iface %p\n",
+		       net_sprint_ipv6_addr(tmp), iface);
+
+		if (memcmp(tmp->s6_addr, &addr6.s6_addr,
+			   sizeof(struct in6_addr))) {
+			printk("IPv6 wrong src ll address selected, "
+			       "iface %p\n", iface);
+			return;
+		}
 	}
 
 	printk("IP address checks passed\n");
