@@ -92,14 +92,14 @@ static int shell_cmd_setip(int argc, char *argv[])
 
 	if (argc != 3) {
 		/* Print usage */
-		printk("\nsetip:\n");
-		printk("Usage:\tsetip <my ip> <prefix len>\n");
-		printk("\nExample setip 2001:db8::2 64\n");
-		return 0;
+		printk("\n%s:\n", CMD_STR_SETIP);
+		printk("Usage:\t%s <my ip> <prefix len>\n", CMD_STR_SETIP);
+		printk("\nExample %s 2001:db8::2 64\n", CMD_STR_SETIP);
+		return -1;
 	}
 
 	if (parseIpString(argv[1], value) != 0) {
-		printk("[setip] ERROR! Unable to set IP\n");
+		printk("[%s] ERROR! Unable to set IP\n", CMD_STR_SETIP);
 		return 0;
 	}
 
@@ -116,15 +116,15 @@ static int shell_cmd_setip(int argc, char *argv[])
 #else
 	if (argc != 2) {
 		/* Print usage */
-		printk("\nsetip:\n");
-		printk("Usage:\tsetip <my ip>\n");
-		printk("\nExample setip 10.237.164.178\n");
-		return 0;
+		printk("\n%s:\n", CMD_STR_SETIP);
+		printk("Usage:\t%s <my ip>\n", CMD_STR_SETIP);
+		printk("\nExample %s 10.237.164.178\n", CMD_STR_SETIP);
+		return -1;
 	}
 
 	if (parseIpString(argv[1], value) != 0) {
-		printk("[setip] ERROR! Unable to set IP\n");
-		return 0;
+		printk("[%s] ERROR! Unable to set IP\n", CMD_STR_SETIP);
+		return -1;
 	}
 
 	uip_ipaddr_t uip_ipaddr_local;
@@ -137,7 +137,7 @@ static int shell_cmd_setip(int argc, char *argv[])
 	uip_sethostaddr(&uip_ipaddr_local);
 #endif
 
-	printk("[setip] Setting IP address ");
+	printk("[%s] Setting IP address ", CMD_STR_SETIP);
 	print_address(value);
 	printk("\n");
 
@@ -151,10 +151,10 @@ static int shell_cmd_udp_download(int argc, char *argv[])
 
 	if (argc == 1) {
 		/* Print usage */
-		printk("\nudp.download:\n");
-		printk("Usage:\tudp.download <port>\n");
-		printk("\nExample udp.download 5001\n");
-		return 0;
+		printk("\n%s:\n", CMD_STR_UDP_DOWNLOAD);
+		printk("Usage:\t%s <port>\n", CMD_STR_UDP_DOWNLOAD);
+		printk("\nExample %s 5001\n", CMD_STR_UDP_DOWNLOAD);
+		return -1;
 	}
 
 	if (argc > 1) {
@@ -164,44 +164,144 @@ static int shell_cmd_udp_download(int argc, char *argv[])
 	}
 
 	if (udp_stopped == false) {
-		printk("[udp.download] ERROR! UDP server already started!\n");
-		return 0;
+		printk("[%s] ERROR! UDP server already started!\n",
+			CMD_STR_UDP_DOWNLOAD);
+		return -1;
 	}
 
 	zperf_receiver_init(port);
 	udp_stopped = false;
-	printk("[udp.download] UDP server started on port %u\n", port);
+	printk("[%s] UDP server started on port %u\n", CMD_STR_UDP_DOWNLOAD, port);
 
 	return 0;
 }
 
-static int shell_cmd_udp_upload(int argc, char *argv[])
+static void shell_udp_upload_usage(void)
 {
-	int value[IP_INDEX_MAX] = { 0 };
-	unsigned int duration_in_ms, packet_size, rate_in_kbps, client_rate_in_kbps;
-	uint16_t port;
-	zperf_results results = { 0 };
-	struct net_context *net_context;
-
-	if (argc == 1) {
 		/* Print usage */
-		printk("\nudp.upload:\n");
+		printk("\n%s:\n", CMD_STR_UDP_UPLOAD);
 		printk(
-				"Usage:\tudp.upload <dest ip> <dest port> <duration> <packet "
-				"size>[K] <baud rate>[K|M]\n");
+				"Usage:\t%s <dest ip> <dest port> <duration> <packet "
+				"size>[K] <baud rate>[K|M]\n", CMD_STR_UDP_UPLOAD);
 		printk("\t<dest ip>:\tIP destination\n");
 		printk("\t<dest port>:\tport destination\n");
 		printk("\t<duration>:\t of the test in seconds\n");
 		printk(
-				"\t<packet size>:\tSize of the paket in byte or kilobyte "
+				"\t<packet size>:\tSize of the packet in byte or kilobyte "
 				"(with suffix K)\n");
 		printk("\t<baud rate>:\tBaudrate in kilobyte or megabyte\n");
-		printk("\nExample udp.upload 10.237.164.178 1111 1 1K 1M\n");
-		return 0;
+		printk("\nExample %s 10.237.164.178 1111 1 1K 1M\n", CMD_STR_UDP_UPLOAD);
+}
+
+static void shell_tcp_upload_usage(void)
+{
+		/* Print usage */
+		printk("\n%s:\n", CMD_STR_TCP_UPLOAD);
+		printk(
+				"Usage:\t%s <dest ip> <dest port> <duration> <packet "
+				"size>[K]\n", CMD_STR_TCP_UPLOAD);
+		printk("\t<dest ip>:\tIP destination\n");
+		printk("\t<dest port>:\tport destination\n");
+		printk("\t<duration>:\t of the test in seconds\n");
+		printk(
+				"\t<packet size>:\tSize of the packet in byte or kilobyte "
+				"(with suffix K)\n");
+		printk("\nExample %s 10.237.164.178 1111 1 1K 1M\n", CMD_STR_TCP_UPLOAD);
+}
+
+static void shell_udp_upload_print_stats(zperf_results *results)
+{
+	unsigned int rate_in_kbps, client_rate_in_kbps;
+
+	printk("[%s] Upload completed!\n", CMD_STR_UDP_UPLOAD);
+
+	if (results->time_in_us != 0)
+		rate_in_kbps = (uint32_t) (((uint64_t) results->nb_bytes_sent
+				* (uint64_t) 8 * (uint64_t) USEC_PER_SEC)
+				/ ((uint64_t) results->time_in_us * 1024));
+	else
+		rate_in_kbps = 0;
+
+	if (results->client_time_in_us != 0)
+		client_rate_in_kbps = (uint32_t) (((uint64_t) results->nb_packets_sent
+				* (uint64_t) results->packet_size * (uint64_t) 8
+				* (uint64_t) USEC_PER_SEC)
+				/ ((uint64_t) results->client_time_in_us * 1024));
+	else
+		client_rate_in_kbps = 0;
+
+	if (!rate_in_kbps)
+		printk("[%s] LAST PACKET NOT RECEIVED!!!\n", CMD_STR_UDP_UPLOAD);
+
+	printk("[%s] statistic:\t\t\tserver\t(client)\n", CMD_STR_UDP_UPLOAD);
+	printk("[%s] duration:\t\t\t", CMD_STR_UDP_UPLOAD);
+	print_number(results->time_in_us, TIME_US, TIME_US_UNIT);
+	printk("\t(");
+	print_number(results->client_time_in_us, TIME_US, TIME_US_UNIT);
+	printk(")\n");
+
+	printk("[%s] nb packets:\t\t%u\t(%u)\n", CMD_STR_UDP_UPLOAD,
+			results->nb_packets_rcvd,
+			results->nb_packets_sent);
+
+	printk("[%s] nb packets outorder:\t%u\n", CMD_STR_UDP_UPLOAD,
+			results->nb_packets_outorder);
+	printk("[%s] nb packets lost:\t\t%u\n", CMD_STR_UDP_UPLOAD,
+			results->nb_packets_lost);
+
+	printk("[%s] jitter:\t\t\t", CMD_STR_UDP_UPLOAD);
+	print_number(results->jitter_in_us, TIME_US, TIME_US_UNIT);
+	printk("\n");
+
+	printk("[%s] rate:\t\t\t", CMD_STR_UDP_UPLOAD);
+	print_number(rate_in_kbps, KBPS, KBPS_UNIT);
+	printk("\t(");
+	print_number(client_rate_in_kbps, KBPS, KBPS_UNIT);
+	printk(")\n");
+}
+
+static void shell_tcp_upload_print_stats(zperf_results *results)
+{
+	unsigned int client_rate_in_kbps;
+
+	printk("[%s] Upload completed!\n", CMD_STR_TCP_UPLOAD);
+
+	if (results->client_time_in_us != 0)
+		client_rate_in_kbps = (uint32_t) (((uint64_t) results->nb_packets_sent
+				* (uint64_t) results->packet_size * (uint64_t) 8
+				* (uint64_t) USEC_PER_SEC)
+				/ ((uint64_t) results->client_time_in_us * 1024));
+	else
+		client_rate_in_kbps = 0;
+
+	printk("[%s] duration:\t", CMD_STR_TCP_UPLOAD);
+	print_number(results->client_time_in_us, TIME_US, TIME_US_UNIT);
+	printk("\n");
+	printk("[%s] nb packets:\t%u\n", CMD_STR_UDP_UPLOAD,
+			results->nb_packets_sent);
+	printk("[%s] nb sending errors (retry or fail):\t%u\n", CMD_STR_UDP_UPLOAD,
+			results->nb_packets_errors);
+	printk("[%s] rate:\t", CMD_STR_UDP_UPLOAD);
+	print_number(client_rate_in_kbps, KBPS, KBPS_UNIT);
+	printk("\n");
+}
+
+static int shell_cmd_upload(int argc, char *argv[])
+{
+	int value[IP_INDEX_MAX] = { 0 };
+	unsigned int duration_in_ms, packet_size, rate_in_kbps;
+	uint16_t port;
+	zperf_results results = { 0 };
+	struct net_context *net_context;
+	uint8_t is_udp = !strcmp(argv[0], CMD_STR_UDP_UPLOAD) ? 1 : 0;
+
+	if (argc == 1) {
+		is_udp ? shell_udp_upload_usage() : shell_tcp_upload_usage();
+		return -1;
 	}
 
 	if (argc > 1 && parseIpString(argv[1], value) == 0) {
-		printk("[udp.upload] Remote IP address is ");
+		printk("[%s] Remote IP address is ", argv[0]);
 		print_address(value);
 		printk("\n");
 #ifdef CONFIG_NETWORKING_WITH_IPV6
@@ -217,23 +317,25 @@ static int shell_cmd_udp_upload(int argc, char *argv[])
 #endif
 	} else {
 		printk(
-				"[udp.upload] ERROR! Please specify the IP address of the"
-				" remote server\n");
+			"[%s] ERROR! Please specify the IP address of the"
+			" remote server\n",  argv[0]);
+			return -1;
 	}
 
 	if (argc > 2) {
 		port = strtoul(argv[2], NULL, 10);
-		printk("[udp.upload] Remote port is %u\n", port);
+		printk("[%s] Remote port is %u\n", argv[0], port);
 	} else {
 		port = DEF_PORT;
 	}
 
-	net_context = net_context_get(IPPROTO_UDP, &in_addr_dst, port,
+	net_context = net_context_get(is_udp ? IPPROTO_UDP : IPPROTO_TCP,
+			&in_addr_dst, port,
 			&in_addr_my, MY_SRC_PORT);
 
 	if (!net_context) {
-		printk("[udp.upload] ERROR! Fail to retrieve a net context\n");
-		return 0;
+		printk("[%s] ERROR! Fail to retrieve a net context\n", argv[0]);
+		return -1;
 	}
 
 	if (argc > 3)
@@ -252,66 +354,25 @@ static int shell_cmd_udp_upload(int argc, char *argv[])
 		rate_in_kbps = 10;
 
 	/* Print settings */
-	printk("[udp.upload] duration:\t\t");
+	printk("[%s] duration:\t\t", argv[0]);
 	print_number(duration_in_ms * USEC_PER_MSEC, TIME_US, TIME_US_UNIT);
 	printk("\n");
 
-	printk("[udp.upload] packet size:\t%u bytes\n", packet_size);
+	printk("[%s] packet size:\t%u bytes\n", argv[0], packet_size);
 
-	printk("[udp.upload] rate:\t\t");
-	print_number(rate_in_kbps, KBPS, KBPS_UNIT);
-	printk("\n");
+	printk("[%s] start...\n", argv[0]);
 
-	printk("[udp.upload] start...\n");
-
-	/* Perform upload test */
-	zperf_upload(net_context, duration_in_ms, packet_size, rate_in_kbps,
-			&results);
-
-	printk("[udp.upload] completed!\n");
-
-	/* Print results */
-	if (results.time_in_us != 0)
-		rate_in_kbps = (uint32_t) (((uint64_t) results.nb_bytes_sent
-				* (uint64_t) 8 * (uint64_t) USEC_PER_SEC)
-				/ ((uint64_t) results.time_in_us * 1024));
-	else
-		rate_in_kbps = 0;
-
-	if (results.client_time_in_us != 0)
-		client_rate_in_kbps = (uint32_t) (((uint64_t) results.nb_packets_sent
-				* (uint64_t) packet_size * (uint64_t) 8
-				* (uint64_t) USEC_PER_SEC)
-				/ ((uint64_t) results.client_time_in_us * 1024));
-	else
-		client_rate_in_kbps = 0;
-
-	if (!rate_in_kbps)
-		printk("[udp.upload] LAST PACKET NOT RECEIVED!!!\n");
-
-	printk("[udp.upload] statistic:\t\t\tserver\t(client)\n");
-	printk("[udp.upload] duration:\t\t\t");
-	print_number(results.time_in_us, TIME_US, TIME_US_UNIT);
-	printk("\t(");
-	print_number(results.client_time_in_us, TIME_US, TIME_US_UNIT);
-	printk(")\n");
-
-	printk("[udp.upload] nb packets:\t\t%u\t(%u)\n", results.nb_packets_rcvd,
-			results.nb_packets_sent);
-
-	printk("[udp.upload] nb packets outorder:\t%u\n",
-			results.nb_packets_outorder);
-	printk("[udp.upload] nb packets lost:\t\t%u\n", results.nb_packets_lost);
-
-	printk("[udp.upload] jitter:\t\t\t");
-	print_number(results.jitter_in_us, TIME_US, TIME_US_UNIT);
-	printk("\n");
-
-	printk("[udp.upload] rate:\t\t\t");
-	print_number(rate_in_kbps, KBPS, KBPS_UNIT);
-	printk("\t(");
-	print_number(client_rate_in_kbps, KBPS, KBPS_UNIT);
-	printk(")\n");
+	if (is_udp) {
+		printk("[%s] rate:\t\t", argv[0]);
+		print_number(rate_in_kbps, KBPS, KBPS_UNIT);
+		printk("\n");
+		zperf_udp_upload(net_context, duration_in_ms, packet_size, rate_in_kbps,
+		&results);
+		shell_udp_upload_print_stats(&results);
+	} else {
+		zperf_tcp_upload(net_context, duration_in_ms, packet_size, &results);
+		shell_tcp_upload_print_stats(&results);
+	}
 
 	/* release net context */
 	net_context_put(net_context);
@@ -319,21 +380,13 @@ static int shell_cmd_udp_upload(int argc, char *argv[])
 	return 0;
 }
 
-#ifdef CONFIG_NETWORKING_WITH_TCP
 static int shell_cmd_connectap(int argc, char *argv[])
 {
-	printk("[connectap] Zephyr has not been built with Wi-Fi support.\n");
+	printk("[%s] Zephyr has not been built with Wi-Fi support.\n",
+		CMD_STR_CONNECTAP);
 
 	return 0;
 }
-
-static int shell_cmd_tcp_upload(int argc, char *argv[])
-{
-	printk("[connectap] Zephyr doesn't support TCP client yet.\n");
-
-	return 0;
-}
-#endif /* CONFIG_NETWORKING_WITH_TCP */
 
 static int shell_cmd_tcp_download(int argc, char *argv[])
 {
@@ -342,10 +395,10 @@ static int shell_cmd_tcp_download(int argc, char *argv[])
 
 	if (argc == 1) {
 		/* Print usage */
-		printk("\ntcp.download:\n");
-		printk("Usage:\ttcp.download <port>\n");
-		printk("\nExample tcp.download 5001\n");
-		return 0;
+		printk("\n[%s]:\n", CMD_STR_TCP_DOWNLOAD);
+		printk("Usage:\t%s <port>\n", CMD_STR_TCP_DOWNLOAD);
+		printk("\nExample %s 5001\n", CMD_STR_TCP_DOWNLOAD);
+		return -1;
 	}
 
 	if (argc > 1) {
@@ -355,20 +408,21 @@ static int shell_cmd_tcp_download(int argc, char *argv[])
 	}
 
 	if (tcp_stopped == false) {
-		printk("[tcp.download] ERROR! TCP server already started!\n");
-		return 0;
+		printk("[%s] ERROR! TCP server already started!\n",
+			CMD_STR_TCP_DOWNLOAD);
+		return -1;
 	}
 
 	zperf_tcp_receiver_init(port);
 	tcp_stopped = false;
-	printk("[tcp.download] TCP server started on port %u\n", port);
+	printk("[%s] TCP server started on port %u\n", CMD_STR_TCP_DOWNLOAD, port);
 
 	return 0;
 }
 
 static int shell_cmd_version(int argc, char *argv[])
 {
-	printk("\nzperf version: %s config: %s\n", VERSION, CONFIG);
+	printk("\nzperf [%s]: %s config: %s\n", CMD_STR_VERSION, VERSION, CONFIG);
 
 	return 0;
 }
@@ -379,14 +433,14 @@ static void zperf_init(void)
 }
 
 struct shell_cmd commands[] = {
-		{ "setip", shell_cmd_setip },
-		{ "connectap", shell_cmd_connectap },
-		{ "version", shell_cmd_version },
-		{ "udp.upload", shell_cmd_udp_upload },
-		{ "udp.download", shell_cmd_udp_download },
+		{ CMD_STR_SETIP, shell_cmd_setip },
+		{ CMD_STR_CONNECTAP, shell_cmd_connectap },
+		{ CMD_STR_VERSION, shell_cmd_version },
+		{ CMD_STR_UDP_UPLOAD, shell_cmd_upload },
+		{ CMD_STR_UDP_DOWNLOAD, shell_cmd_udp_download },
 #ifdef CONFIG_NETWORKING_WITH_TCP
-		{ "tcp.upload", shell_cmd_tcp_upload },
-		{ "tcp.download", shell_cmd_tcp_download },
+		{ CMD_STR_TCP_UPLOAD, shell_cmd_upload },
+		{ CMD_STR_TCP_DOWNLOAD, shell_cmd_tcp_download },
 #endif
 		{ NULL, NULL } };
 

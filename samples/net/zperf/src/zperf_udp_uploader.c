@@ -24,9 +24,9 @@
 #include "zperf.h"
 #include "zperf_internal.h"
 
-#define TAG "[udp.upload] "
+#define TAG CMD_STR_UDP_UPLOAD" "
 
-void zperf_upload(struct net_context *net_context,
+void zperf_udp_upload(struct net_context *net_context,
 		unsigned int duration_in_ms,
 		unsigned int packet_size, unsigned int rate_in_kbps,
 		zperf_results *results)
@@ -130,6 +130,7 @@ void zperf_upload(struct net_context *net_context,
 	results->nb_packets_sent = nb_packets;
 	results->client_time_in_us = HW_CYCLES_TO_USEC(
 			time_delta(start_time, end_time));
+	results->packet_size = packet_size;
 }
 
 void zperf_upload_fin(struct net_context *net_context, uint32_t nb_packets,

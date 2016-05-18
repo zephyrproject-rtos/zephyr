@@ -18,6 +18,15 @@
 
 #define VERSION "1.0"
 
+/* commands strings */
+#define CMD_STR_SETIP "setip"
+#define CMD_STR_CONNECTAP "connectap"
+#define CMD_STR_VERSION "version"
+#define CMD_STR_UDP_UPLOAD "udp.upload"
+#define CMD_STR_UDP_DOWNLOAD "udp.download"
+#define CMD_STR_TCP_UPLOAD "tcp.upload"
+#define CMD_STR_TCP_DOWNLOAD "tcp.download"
+
 typedef struct zperf_results {
 	uint32_t nb_packets_sent;
 	uint32_t nb_packets_rcvd;
@@ -27,6 +36,8 @@ typedef struct zperf_results {
 	uint32_t time_in_us;
 	uint32_t jitter_in_us;
 	uint32_t client_time_in_us;
+	uint32_t packet_size;
+	uint32_t nb_packets_errors;
 } zperf_results;
 
 typedef void (*zperf_callback)(int status, zperf_results*);

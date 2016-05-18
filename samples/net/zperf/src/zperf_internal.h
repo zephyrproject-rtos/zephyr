@@ -80,7 +80,7 @@ static inline uint32_t time_delta(uint32_t ts, uint32_t t)
 #define z_ntohl(val) sys_be32_to_cpu(val)
 
 /* internal functions */
-extern void zperf_upload(struct net_context *net_context,
+extern void zperf_udp_upload(struct net_context *net_context,
 		unsigned int duration_in_ms, unsigned int packet_size,
 		unsigned int rate_in_kbps, zperf_results *results);
 extern void zperf_upload_fin(struct net_context *net_context,
@@ -88,10 +88,12 @@ extern void zperf_upload_fin(struct net_context *net_context,
 		zperf_results *results);
 extern void zperf_upload_decode_stat(struct net_buf *net_stat,
 		zperf_results *results);
-
 extern void zperf_receiver_init(int port);
 #ifdef CONFIG_NETWORKING_WITH_TCP
 extern void zperf_tcp_receiver_init(int port);
+extern void zperf_tcp_upload(struct net_context *net_context,
+		unsigned int duration_in_ms, unsigned int packet_size,
+		zperf_results *results);
 #endif
 extern void connect_ap(char *ssid);
 #endif /* __ZPERF_INTERNAL_H */

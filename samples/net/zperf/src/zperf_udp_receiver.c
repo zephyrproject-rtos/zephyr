@@ -28,7 +28,7 @@
 #include "shell_utils.h"
 #include "zperf_session.h"
 
-#define TAG "[udp.download] "
+#define TAG CMD_STR_UDP_DOWNLOAD" "
 
 #define RX_FIBER_STACK_SIZE 1024
 

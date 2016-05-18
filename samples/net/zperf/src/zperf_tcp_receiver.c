@@ -28,7 +28,7 @@
 #include "shell_utils.h"
 #include "zperf_session.h"
 
-#define TAG "[tcp.download] "
+#define TAG CMD_STR_TCP_DOWNLOAD" "
 #define TCP_RX_FIBER_STACK_SIZE 1024
 
 /* Static data */
