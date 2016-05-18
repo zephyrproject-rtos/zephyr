@@ -411,6 +411,8 @@ FUNC_ALIAS(isr_sem_give, fiber_sem_give, void);
 
 void isr_sem_give(ksem_t sema)
 {
+	_COMMAND_STACK_SIZE_CHECK();
+
 	nano_isr_stack_push(&_k_command_stack,
 						(uint32_t)sema | KERNEL_CMD_SEMAPHORE_TYPE);
 }

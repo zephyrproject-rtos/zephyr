@@ -23,6 +23,7 @@
 #include <micro_private_types.h>
 #include <kernel_main.h>
 #include <nano_private.h>
+#include <misc/__assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -227,7 +228,16 @@ extern void _k_workload_monitor_idle_end(void);
 
 #define TO_ALIST(L, A) nano_fiber_stack_push((L), (uint32_t)(A))
 
-#define SENDARGS(A) nano_fiber_stack_push(&_k_command_stack, (uint32_t)(A))
+#define _COMMAND_STACK_SIZE_CHECK() do { \
+	__ASSERT((_k_command_stack.next - _k_command_stack.base) \
+		 < CONFIG_COMMAND_STACK_SIZE, \
+		 "microkernel server command stack exceeded\n"); \
+	} while ((0))
+
+#define SENDARGS(A) do { \
+		_COMMAND_STACK_SIZE_CHECK(); \
+		nano_fiber_stack_push(&_k_command_stack, (uint32_t)(A)); \
+	} while ((0))
 
 #ifdef __cplusplus
 }

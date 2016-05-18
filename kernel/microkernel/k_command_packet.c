@@ -41,6 +41,8 @@ uint32_t _k_test_cmd_pkt_size
  */
 void _k_task_call(struct k_args *cmd_packet)
 {
+	_COMMAND_STACK_SIZE_CHECK();
+
 	cmd_packet->alloc = false;
 	_k_current_task->args = cmd_packet;
 	nano_task_stack_push(&_k_command_stack, (uint32_t)cmd_packet);
