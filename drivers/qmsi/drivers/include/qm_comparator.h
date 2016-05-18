@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,44 +34,43 @@
 #include "qm_soc_regs.h"
 
 /**
- * Analog comparator for Quark Microcontrollers.
+ * Analog Comparator.
  *
  * @defgroup groupAC Analog Comparator
  * @{
  */
 
 /**
- * Analog comparator configuration type. Each bit in the
- * registers controls an Analog Comparator pin.
+ * Analog Comparator configuration type.
+ *
+ * Each bit in the registers controls a single Analog Comparator pin.
  */
 typedef struct {
-	uint32_t int_en;    /* Enable/disable comparator interrupt */
-	uint32_t reference; /* 1b: VREF; 0b: AR_PIN */
-	uint32_t polarity;  /* 0b: input>ref; 1b: input<ref */
-	uint32_t power;     /* 1b: Normal mode; 0b:Power-down/Shutdown mode */
-	void (*callback)(uint32_t int_status); /* Callback function */
+	uint32_t int_en;    /**< Interrupt enable. */
+	uint32_t reference; /**< Reference voltage, 1b: VREF; 0b: AR_PIN. */
+	uint32_t polarity;  /**< 0b: input>ref; 1b: input<ref */
+	uint32_t power;     /**< 1b: Normal mode; 0b:Power-down/Shutdown mode */
+
+	/**
+	 * Transfer callback.
+	 *
+	 * @param[in] data Callback user data.
+	 * @param[in] status Comparator interrupt status.
+	 */
+	void (*callback)(void *data, uint32_t int_status);
+	void *callback_data; /**< Callback user data. */
 } qm_ac_config_t;
-
-/**
- * Analog Comparator Interrupt Service Routine
- */
-void qm_ac_isr(void);
-
-/**
- * Get Analog Comparator configuration.
- *
- * @param [in] config Analog Comparator configuration.
- * @return qm_rc_t QM_RC_OK on success, QM_RC_ERR otherwise.
- */
-qm_rc_t qm_ac_get_config(qm_ac_config_t *const config);
 
 /**
  * Set Analog Comparator configuration.
  *
- * @param [in] config Analog Comparator configuration.
- * @return qm_rc_t QM_RC_OK on success, QM_RC_ERR otherwise.
+ * @param[in] config Analog Comparator configuration. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
  */
-qm_rc_t qm_ac_set_config(const qm_ac_config_t *const config);
+int qm_ac_set_config(const qm_ac_config_t *const config);
 
 /**
  * @}

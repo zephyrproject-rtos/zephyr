@@ -163,8 +163,7 @@ static int flash_qmsi_erase(struct device *dev, off_t addr, size_t size)
 		return -EIO;
 	}
 
-	/* QM_FLASH_PAGE_SIZE--number of 32 bit words */
-	if (flash_region(addr + size - (QM_FLASH_PAGE_SIZE << 2)) ==
+	if (flash_region(addr + size - (QM_FLASH_PAGE_SIZE_DWORDS << 2)) ==
 	    QM_FLASH_REGION_NUM) {
 		return -EIO;
 	}
@@ -189,7 +188,8 @@ static int flash_qmsi_write_protection(struct device *dev, bool enable)
 {
 	qm_flash_config_t qm_cfg;
 
-	qm_flash_get_config(QM_FLASH_0, &qm_cfg);
+	qm_cfg.us_count = CONFIG_SOC_FLASH_QMSI_CLK_COUNT_US;
+	qm_cfg.wait_states = CONFIG_SOC_FLASH_QMSI_WAIT_STATES;
 
 	if (enable) {
 		qm_cfg.write_disable = QM_FLASH_WRITE_DISABLE;
@@ -200,14 +200,6 @@ static int flash_qmsi_write_protection(struct device *dev, bool enable)
 	qm_flash_set_config(QM_FLASH_0, &qm_cfg);
 
 #if defined(CONFIG_SOC_QUARK_SE)
-	qm_flash_get_config(QM_FLASH_1, &qm_cfg);
-
-	if (enable) {
-		qm_cfg.write_disable = QM_FLASH_WRITE_DISABLE;
-	} else {
-		qm_cfg.write_disable = QM_FLASH_WRITE_ENABLE;
-	}
-
 	qm_flash_set_config(QM_FLASH_1, &qm_cfg);
 #endif
 

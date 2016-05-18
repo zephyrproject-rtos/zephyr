@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,31 +34,46 @@
 #include "qm_soc_regs.h"
 
 /**
- * Flash Controller for Quark Microcontrollers.
+ * Flash controller.
  *
- * @brief Flash Controller for QM.
  * @defgroup groupFlash Flash
  * @{
  */
 
+/** Flash mask to clear timing. */
 #define QM_FLASH_TMG_DEF_MASK (0xFFFFFC00)
+/** Flash mask to clear micro seconds. */
 #define QM_FLASH_MICRO_SEC_COUNT_MASK (0x3F)
+/** Flash mask to clear wait state. */
 #define QM_FLASH_WAIT_STATE_MASK (0x3C0)
+/** Flash wait state offset bit. */
 #define QM_FLASH_WAIT_STATE_OFFSET (6)
+/** Flash write disable offset bit. */
 #define QM_FLASH_WRITE_DISABLE_OFFSET (4)
+/** Flash write disable value. */
 #define QM_FLASH_WRITE_DISABLE_VAL BIT(4)
 
-#define QM_FLASH_PAGE_SIZE (0x200)
+/** Flash page size in dwords. */
+#define QM_FLASH_PAGE_SIZE_DWORDS (0x200)
+/** Flash page size in bytes. */
+#define QM_FLASH_PAGE_SIZE_BYTES (0x800)
+/** Flash page size in bits. */
 #define QM_FLASH_PAGE_SIZE_BITS (11)
 
-#define ROM_PROG BIT(2)
+/** Flash page erase request. */
 #define ER_REQ BIT(1)
+/** Flash page erase done. */
 #define ER_DONE (1)
+/** Flash page write request. */
 #define WR_REQ (1)
+/** Flash page write done. */
 #define WR_DONE BIT(1)
 
+/** Flash write address offset. */
 #define WR_ADDR_OFFSET (2)
+/** Flash perform mass erase includes OTP region. */
 #define MASS_ERASE_INFO BIT(6)
+/** Flash perform mass erase. */
 #define MASS_ERASE BIT(7)
 
 #define QM_FLASH_ADDRESS_MASK (0x7FF)
@@ -66,137 +81,162 @@
 #define QM_FLASH_ADDR_INC (0x10)
 
 /**
- * Flash region enum
+ * Flash region enum.
  */
 typedef enum {
-	QM_FLASH_REGION_OTP = 0,
-	QM_FLASH_REGION_SYS,
+	QM_FLASH_REGION_OTP = 0, /**< Flash OTP region. */
+	QM_FLASH_REGION_SYS,     /**< Flash System region. */
 #if (QUARK_D2000)
-	QM_FLASH_REGION_DATA,
+	QM_FLASH_REGION_DATA, /**< Flash Data region (Quark D2000 only). */
 #endif
-	QM_FLASH_REGION_NUM
+	QM_FLASH_REGION_NUM /**< Total number of flash regions. */
 } qm_flash_region_t;
 
 /**
- * Flash write disable / enable enum
+ * Flash write disable / enable enum.
  */
 typedef enum {
-	QM_FLASH_WRITE_ENABLE,
-	QM_FLASH_WRITE_DISABLE
+	QM_FLASH_WRITE_ENABLE, /**< Flash write enable. */
+	QM_FLASH_WRITE_DISABLE /**< Flash write disable. */
 } qm_flash_disable_t;
 
 /**
- * Flash configuration structure
+ * Flash configuration structure.
  */
 typedef struct {
-	uint8_t wait_states; /**< Read wait state */
-	uint8_t us_count;    /**< Number of clocks in a microsecond */
-	qm_flash_disable_t write_disable; /**< Write disable */
+	uint8_t wait_states; /**< Read wait state. */
+	uint8_t us_count;    /**< Number of clocks in a microsecond. */
+	qm_flash_disable_t write_disable; /**< Write disable. */
 } qm_flash_config_t;
 
 /**
- * Configure a Flash controller. This includes timing and behavioral settings.
- * When switching SoC to a higher frequency, this register must be updated first
- * to reflect settings associated with higher frequency BEFORE SoC frequency is
- * changed. On the other hand, when switching SoC to a lower frequency, this
- * register must be updated only 6 NOP instructions AFTER the SoC frequency has
- * been updated. Otherwise, flash timings will be violated.
+ * Configure a Flash controller.
  *
- * @brief Configure a Flash controller.
- * @param [in] flash Flash controller index.
- * @param [in] cfg Flash configuration.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
+ * The configuration includes timing and behavioral settings.
+ *
+ * Note: when switching SoC to a higher frequency, flash controllers must be
+ * reconfigured to reflect settings associated with higher frequency BEFORE SoC
+ * frequency is changed. On the other hand, when switching SoC to a lower
+ * frequency, flash controller must be reconfigured only 6 NOP instructions
+ * AFTER the SoC frequency has been updated. Otherwise, flash timings will be
+ * violated.
+ *
+ * @param[in] flash Flash controller index.
+ * @param[in] cfg   Flash configuration. It must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
  */
-qm_rc_t qm_flash_set_config(const qm_flash_t flash, qm_flash_config_t *cfg);
+int qm_flash_set_config(const qm_flash_t flash,
+			const qm_flash_config_t *const cfg);
 
 /**
- * Retrieve Flash controller configuration. This will set the
- * cfg parameter to match the current configuration of the
- * given Flash controller.
+ * Write 4 bytes of data to Flash.
  *
- * @brief Get Flash controller configuration.
- * @param [in] flash Flash controller index.
- * @param [out] cfg Flash configuration.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
+ * Brownout check is performed before initiating the write.
+ *
+ * Note: this function performs a write operation only; page erase may be
+ * needed if the page is already programmed.
+ *
+ * @param[in] flash  Flash controller index.
+ * @param[in] region Flash region to address.
+ * @param[in] f_addr Address within Flash physical address space.
+ * @param[in] data   Data word to write.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
  */
-qm_rc_t qm_flash_get_config(const qm_flash_t flash, qm_flash_config_t *cfg);
+int qm_flash_word_write(const qm_flash_t flash, const qm_flash_region_t region,
+			uint32_t f_addr, const uint32_t data);
 
 /**
- * Write 4 bytes of data to Flash. Check for brownout before initiating the
- * write. Note this function performs a write operation only; page erase
- * may be needed if the page is already programmed.
+ * Write multiple of 4 bytes of data to Flash.
  *
- * @brief Write 4 bytes of data to Flash.
- * @param [in] flash Flash controller index.
- * @param [in] region Flash region to address.
- * @param [in] f_addr Address within Flash physical address space.
- * @param [in] data Data word to write.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
+ * Brownout check is performed before initiating the write. The page is erased,
+ * and then written to.
+ *
+ * NOTE: Since this operation may take some time to complete, the caller is
+ * responsible for ensuring that the watchdog timer does not elapse in the
+ * meantime (e.g., by restarting it before calling this function).
+ *
+ * @param[in] flash    Flash controller index.
+ * @param[in] region   Which Flash region to address.
+ * @param[in] f_addr   Address within Flash physical address space.
+ * @param[in] page_buf Page buffer to store page during update. Must be at
+ *		       least QM_FLASH_PAGE_SIZE words big and must not be NULL.
+ * @param[in] data     Data to write (array of words). This must not be NULL.
+ * @param[in] len      Length of data to write (number of words).
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
  */
-qm_rc_t qm_flash_word_write(const qm_flash_t flash, qm_flash_region_t region,
-			    uint32_t f_addr, const uint32_t data);
+int qm_flash_page_update(const qm_flash_t flash, const qm_flash_region_t reg,
+			 uint32_t f_addr, uint32_t *const page_buf,
+			 const uint32_t *const data, uint32_t len);
 
 /**
- * Write a multiple of 4 bytes of data to Flash.
- * Check for brownout before initiating the write.
- * The page is erased, and then written to.
+ * Write a 2KB flash page.
  *
- * @brief Write multiple of 4 bytes of data to Flash.
- * @param [in] flash Flash controller index.
- * @param [in] region Which Flash region to address.
- * @param [in] f_addr Address within Flash physical address space.
- * @param [in] page_buffer Page buffer to store page, must be at least
- * 		QM_FLASH_PAGE_SIZE words big.
- * @param [in] data_buffer Data buffer to write.
- * @param [in] len Length of data to write.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
- */
-qm_rc_t qm_flash_page_update(const qm_flash_t flash, qm_flash_region_t region,
-			     uint32_t f_addr, uint32_t *page_buffer,
-			     uint32_t *data_buffer, uint32_t len);
-
-/**
- * Write a 2KB page of Flash. Check for brownout before initiating the write.
- * The page is erased, and then written to.
+ * Brownout check is performed before initiating the write. The page is erased,
+ * and then written to.
  *
- * @brief Write s 2KB flash page.
- * @param [in] flash Flash controller index.
- * @param [in] region Which Flash region to address.
- * @param [in] page_num Which page of flash to overwrite.
- * @param [in] data Data buffer to write.
- * @param [in] len Length of data to write.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
+ * NOTE: Since this operation may take some time to complete, the caller is
+ * responsible for ensuring that the watchdog timer does not elapse in the
+ * meantime (e.g., by restarting it before calling this function).
+ *
+ * @param[in] flash    Flash controller index.
+ * @param[in] region   Which Flash region to address.
+ * @param[in] page_num Which page of flash to overwrite.
+ * @param[in] data     Data to write (array of words). This must not be NULL.
+ * @param[in] len      Length of data to write (number of words).
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
  */
-qm_rc_t qm_flash_page_write(const qm_flash_t flash, qm_flash_region_t region,
-			    uint32_t page_num, uint32_t *data, uint32_t len);
+int qm_flash_page_write(const qm_flash_t flash, const qm_flash_region_t region,
+			uint32_t page_num, const uint32_t *data, uint32_t len);
 
 /**
  * Erase one page of Flash.
- * Check for brownout before initiating the write.
  *
- * @brief Erase one page of Flash.
- * @param [in] flash Flash controller index.
- * @param [in] region Flash region to address.
- * @param [in] page_num Page within the Flash controller to erase.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
+ * Brownout check is performed before initiating the write.
+ *
+ * @param[in] flash    Flash controller index.
+ * @param[in] region   Flash region to address.
+ * @param[in] page_num Page within the Flash controller to erase.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
  */
 /* Having page be 32-bits, saves 6 bytes over using 8 / 16-bits. */
-qm_rc_t qm_flash_page_erase(const qm_flash_t flash, qm_flash_region_t region,
-			    uint32_t page_num);
+int qm_flash_page_erase(const qm_flash_t flash, const qm_flash_region_t region,
+			uint32_t page_num);
 
 /**
- * Perform Flash mass erase.
- * Check for brownout before initiating the erase.
- * Performs mass erase on the Flash controller. The mass erase
- * may include the ROM region, if present and unlocked.
- * Note it is not possible to mass-erase the ROM portion separately.
+ * Perform mass erase.
  *
- * @brief Perform mass erase.
- * @param [in] flash Flash controller index.
- * @param [in] include_rom If set, it also erases the ROM region.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
+ * Perform mass erase on the specified flash controller. Brownout check is
+ * performed before initiating the erase. The mass erase may include the ROM
+ * region, if present and unlocked. Note: it is not possible to mass-erase the
+ * ROM portion separately.
+ *
+ * NOTE: Since this operation may take some time to complete, the caller is
+ * responsible for ensuring that the watchdog timer does not elapse in the
+ * meantime (e.g., by restarting it before calling this function).
+ *
+ * @param[in] flash       Flash controller index.
+ * @param[in] include_rom If set, it also erases the ROM region.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
  */
-qm_rc_t qm_flash_mass_erase(const qm_flash_t flash, uint8_t include_rom);
+int qm_flash_mass_erase(const qm_flash_t flash, const uint8_t include_rom);
 
 /**
  * @}

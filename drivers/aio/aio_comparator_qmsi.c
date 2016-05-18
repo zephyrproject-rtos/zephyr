@@ -40,16 +40,13 @@ struct aio_qmsi_cmp_dev_data_t {
 	struct aio_qmsi_cmp_cb cb[AIO_QMSI_CMP_COUNT];
 };
 
+/* Shadow configuration to keep track of changes */
+static qm_ac_config_t config;
+
 static int aio_cmp_config(struct device *dev);
 
 static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 {
-	qm_ac_config_t config;
-
-	if (qm_ac_get_config(&config) != QM_RC_OK) {
-		return -EINVAL;
-	}
-
 	if (index >= AIO_QMSI_CMP_COUNT) {
 		return -EINVAL;
 	}
@@ -61,7 +58,7 @@ static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 	config.int_en &= ~(1 << index);
 	config.power &= ~(1 << index);
 
-	if (qm_ac_set_config(&config) != QM_RC_OK) {
+	if (qm_ac_set_config(&config) != 0) {
 		return -EINVAL;
 	}
 
@@ -75,12 +72,6 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 {
 	struct aio_qmsi_cmp_dev_data_t *dev_data =
 		(struct aio_qmsi_cmp_dev_data_t *)dev->driver_data;
-
-	qm_ac_config_t config;
-
-	if (qm_ac_get_config(&config) != QM_RC_OK) {
-		return -EINVAL;
-	}
 
 	if (index >= AIO_QMSI_CMP_COUNT) {
 		return -EINVAL;
@@ -108,7 +99,7 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 	config.int_en |= (1 << index);
 	config.power |= (1 << index);
 
-	if (qm_ac_set_config(&config) != QM_RC_OK) {
+	if (qm_ac_set_config(&config) != 0) {
 		return -EINVAL;
 	}
 
@@ -138,6 +129,14 @@ int aio_qmsi_cmp_init(struct device *dev)
 	QM_SCSS_CMP->cmp_stat_clr |= INT_COMPARATORS_MASK;
 	QM_SCSS_CMP->cmp_pwr &= ~INT_COMPARATORS_MASK;
 	QM_SCSS_CMP->cmp_en &= ~INT_COMPARATORS_MASK;
+
+	/* Don't use the QMSI callback */
+	config.callback = NULL;
+	/* Get Initial configuration from HW */
+	config.reference = QM_SCSS_CMP->cmp_ref_sel;
+	config.polarity = QM_SCSS_CMP->cmp_ref_pol;
+	config.power = QM_SCSS_CMP->cmp_pwr;
+	config.int_en = QM_SCSS_CMP->cmp_en;
 
 	/* Clear callback pointers */
 	for (i = 0; i < dev_data->num_cmp; i++) {

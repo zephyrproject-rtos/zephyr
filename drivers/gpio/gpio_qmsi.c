@@ -24,9 +24,10 @@
 #include <sys_io.h>
 
 #include "qm_gpio.h"
-#include "qm_scss.h"
 #include "gpio_utils.h"
 #include "gpio_api_compat.h"
+#include "qm_isr.h"
+#include "clk.h"
 
 struct gpio_qmsi_config {
 	qm_gpio_t gpio;
@@ -86,7 +87,7 @@ static void gpio_qmsi_callback(struct device *port, uint32_t status)
 	}
 }
 
-static void gpio_qmsi_0_int_callback(uint32_t status)
+static void gpio_qmsi_0_int_callback(void *data, uint32_t status)
 {
 #ifndef CONFIG_GPIO_QMSI_0
 	return;
@@ -98,7 +99,7 @@ static void gpio_qmsi_0_int_callback(uint32_t status)
 }
 
 #ifdef CONFIG_GPIO_QMSI_AON
-static void gpio_qmsi_aon_int_callback(uint32_t status)
+static void gpio_qmsi_aon_int_callback(void *data, uint32_t status)
 {
 	struct device *port = DEVICE_GET(gpio_aon);
 
@@ -126,7 +127,12 @@ static inline void qmsi_pin_config(struct device *port, uint32_t pin, int flags)
 	 */
 	qm_gpio_port_config_t cfg = { 0 };
 
-	qm_gpio_get_config(gpio, &cfg);
+	cfg.direction = QM_GPIO[gpio]->gpio_swporta_ddr;
+	cfg.int_en = QM_GPIO[gpio]->gpio_inten;
+	cfg.int_type = QM_GPIO[gpio]->gpio_inttype_level;
+	cfg.int_polarity = QM_GPIO[gpio]->gpio_int_polarity;
+	cfg.int_debounce = QM_GPIO[gpio]->gpio_debounce;
+	cfg.int_bothedge = QM_GPIO[gpio]->gpio_int_bothedge;
 
 	qmsi_write_bit(&cfg.direction, pin, (flags & GPIO_DIR_MASK));
 
@@ -210,11 +216,13 @@ static inline int gpio_qmsi_read(struct device *port,
 {
 	struct gpio_qmsi_config *gpio_config = port->config->config_info;
 	qm_gpio_t gpio = gpio_config->gpio;
+	qm_gpio_state_t state;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = qm_gpio_read_pin(gpio, pin);
+		qm_gpio_read_pin(gpio, pin, &state);
+		*value = state;
 	} else {
-		*value = qm_gpio_read_port(gpio);
+		qm_gpio_read_port(gpio, (uint32_t *const) &value);
 	}
 
 	return 0;

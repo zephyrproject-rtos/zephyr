@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,70 +33,88 @@
 #define MASK_1BIT (0x1)
 #define MASK_2BIT (0x3)
 
-static __inline__ uint8_t pin2reg(qm_pin_id_t pin, uint8_t bit_width)
+/**
+ * Calculate the register index for a specific pin.
+ *
+ * @param[in] pin The pin to be used.
+ * @param[in] width The width in bits for each pin in the register.
+ *
+ * @return The register index of the given pin.
+ */
+static uint32_t pin_to_register(uint32_t pin, uint32_t width)
 {
-	return (pin / (32 / bit_width));
+	return (pin / (32 / width));
 }
 
-static __inline__ uint8_t pin2reg_offs(qm_pin_id_t pin, uint8_t bit_width)
+/**
+ * Calculate the offset for a pin within a register.
+ *
+ * @param[in] pin The pin to be used.
+ * @param[in] width The width in bits for each pin in the register.
+ *
+ * @return The offset for the pin within the register.
+ */
+static uint32_t pin_to_offset(uint32_t pin, uint32_t width)
 {
-	return ((pin % (32 / bit_width)) * bit_width);
+	return ((pin % (32 / width)) * width);
 }
 
-qm_rc_t qm_pmux_select(qm_pin_id_t pin, qm_pmux_fn_t fn)
+int qm_pmux_select(const qm_pin_id_t pin, const qm_pmux_fn_t fn)
 {
-	QM_CHECK(pin < QM_PIN_ID_NUM, QM_RC_EINVAL);
-	QM_CHECK(fn <= QM_PMUX_FN_3, QM_RC_EINVAL);
+	QM_CHECK(pin < QM_PIN_ID_NUM, -EINVAL);
+	QM_CHECK(fn <= QM_PMUX_FN_3, -EINVAL);
 
-	uint8_t reg = pin2reg(pin, 2);
-	uint8_t offs = pin2reg_offs(pin, 2);
+	uint32_t reg = pin_to_register(pin, 2);
+	uint32_t offs = pin_to_offset(pin, 2);
 
 	QM_SCSS_PMUX->pmux_sel[reg] &= ~(MASK_2BIT << offs);
 	QM_SCSS_PMUX->pmux_sel[reg] |= (fn << offs);
 
-	return QM_RC_OK;
+	return 0;
 }
 
-qm_rc_t qm_pmux_set_slew(qm_pin_id_t pin, qm_pmux_slew_t slew)
+int qm_pmux_set_slew(const qm_pin_id_t pin, const qm_pmux_slew_t slew)
 {
-	QM_CHECK(pin < QM_PIN_ID_NUM, QM_RC_EINVAL);
-	QM_CHECK(slew < QM_PMUX_SLEW_NUM, QM_RC_EINVAL);
+	QM_CHECK(pin < QM_PIN_ID_NUM, -EINVAL);
+	QM_CHECK(slew < QM_PMUX_SLEW_NUM, -EINVAL);
 
-	uint8_t reg = pin2reg(pin, 1);
-	uint8_t offs = pin2reg_offs(pin, 1);
+	uint32_t reg = pin_to_register(pin, 1);
+	uint32_t mask = MASK_1BIT << pin_to_offset(pin, 1);
 
-	QM_SCSS_PMUX->pmux_slew[reg] &= ~(MASK_1BIT << offs);
-	QM_SCSS_PMUX->pmux_slew[reg] |= (slew << offs);
-
-	return QM_RC_OK;
+	if (slew == 0) {
+		QM_SCSS_PMUX->pmux_slew[reg] &= ~mask;
+	} else {
+		QM_SCSS_PMUX->pmux_slew[reg] |= mask;
+	}
+	return 0;
 }
 
-qm_rc_t qm_pmux_input_en(qm_pin_id_t pin, bool enable)
+int qm_pmux_input_en(const qm_pin_id_t pin, const bool enable)
 {
-	QM_CHECK(pin < QM_PIN_ID_NUM, QM_RC_EINVAL);
+	QM_CHECK(pin < QM_PIN_ID_NUM, -EINVAL);
 
-	uint8_t reg = pin2reg(pin, 1);
-	uint8_t offs = pin2reg_offs(pin, 1);
+	uint32_t reg = pin_to_register(pin, 1);
+	uint32_t mask = MASK_1BIT << pin_to_offset(pin, 1);
 
-	enable &= MASK_1BIT;
-
-	QM_SCSS_PMUX->pmux_in_en[reg] &= ~(MASK_1BIT << offs);
-	QM_SCSS_PMUX->pmux_in_en[reg] |= (enable << offs);
-
-	return QM_RC_OK;
+	if (enable == false) {
+		QM_SCSS_PMUX->pmux_in_en[reg] &= ~mask;
+	} else {
+		QM_SCSS_PMUX->pmux_in_en[reg] |= mask;
+	}
+	return 0;
 }
 
-qm_rc_t qm_pmux_pullup_en(qm_pin_id_t pin, bool enable)
+int qm_pmux_pullup_en(const qm_pin_id_t pin, const bool enable)
 {
-	QM_CHECK(pin < QM_PIN_ID_NUM, QM_RC_EINVAL);
+	QM_CHECK(pin < QM_PIN_ID_NUM, -EINVAL);
 
-	uint8_t reg = pin2reg(pin, 1);
-	uint8_t offs = pin2reg_offs(pin, 1);
+	uint32_t reg = pin_to_register(pin, 1);
+	uint32_t mask = MASK_1BIT << pin_to_offset(pin, 1);
 
-	enable &= MASK_1BIT;
-
-	QM_SCSS_PMUX->pmux_pullup[reg] &= ~(MASK_1BIT << offs);
-	QM_SCSS_PMUX->pmux_pullup[reg] |= (enable << offs);
-
-	return QM_RC_OK;
+	if (enable == false) {
+		QM_SCSS_PMUX->pmux_pullup[reg] &= ~mask;
+	} else {
+		QM_SCSS_PMUX->pmux_pullup[reg] |= mask;
+	}
+	return 0;
 }

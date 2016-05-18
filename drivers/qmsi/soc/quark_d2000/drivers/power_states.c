@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,24 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "qm_power.h"
-#include "qm_scss.h"
+#include "power_states.h"
+#include "clk.h"
 #include "qm_comparator.h"
 
-#if (QUARK_D2000)
 #include "qm_adc.h"
-#endif
 
-#if (HAS_RAR)
-#include "qm_rar.h"
-#endif
+#include "rar.h"
 
 void cpu_halt(void)
 {
-	__asm__("hlt");
+	__asm__ __volatile__("hlt");
 }
-
-#if (QUARK_D2000)
 
 static void clear_all_pending_interrupts(void)
 {
@@ -64,7 +58,6 @@ static void clear_all_pending_interrupts(void)
 void soc_sleep(void)
 {
 	/* Variables to save register values. */
-	qm_ac_config_t ac_cfg;
 	uint32_t ac_power_save;
 	uint32_t clk_gate_save = QM_SCSS_CCU->ccu_periph_clk_gate_ctl;
 	uint32_t sys_clk_ctl_save = QM_SCSS_CCU->ccu_sys_clk_ctl;
@@ -77,10 +70,8 @@ void soc_sleep(void)
 	qm_adc_set_mode(QM_ADC_0, QM_ADC_MODE_PWR_DOWN);
 
 	/* Turn off high power comparators. */
-	qm_ac_get_config(&ac_cfg);
-	ac_power_save = ac_cfg.power;
-	ac_cfg.power &= QM_AC_HP_COMPARATORS_MASK;
-	qm_ac_set_config(&ac_cfg);
+	ac_power_save = QM_SCSS_CMP->cmp_pwr;
+	QM_SCSS_CMP->cmp_pwr &= QM_AC_HP_COMPARATORS_MASK;
 
 	/*
 	 * Program WAKE_MASK.WAKE_MASK[31:0],
@@ -155,15 +146,13 @@ void soc_sleep(void)
 	QM_SCSS_CCU->osc0_cfg1 = osc0_cfg_save;
 	QM_SCSS_CCU->ccu_periph_clk_gate_ctl = clk_gate_save;
 
-	ac_cfg.power = ac_power_save;
-	qm_ac_set_config(&ac_cfg);
+	QM_SCSS_CMP->cmp_pwr = ac_power_save;
 	QM_ADC->adc_op_mode = adc_mode_save;
 }
 
 void soc_deep_sleep(void)
 {
 	/* Variables to save register values. */
-	qm_ac_config_t ac_cfg;
 	uint32_t ac_power_save;
 	uint32_t clk_gate_save = QM_SCSS_CCU->ccu_periph_clk_gate_ctl;
 	uint32_t sys_clk_ctl_save = QM_SCSS_CCU->ccu_sys_clk_ctl;
@@ -189,10 +178,8 @@ void soc_deep_sleep(void)
 	qm_adc_set_mode(QM_ADC_0, QM_ADC_MODE_DEEP_PWR_DOWN);
 
 	/* Turn off high power comparators. */
-	qm_ac_get_config(&ac_cfg);
-	ac_power_save = ac_cfg.power;
-	ac_cfg.power &= QM_AC_HP_COMPARATORS_MASK;
-	qm_ac_set_config(&ac_cfg);
+	ac_power_save = QM_SCSS_CMP->cmp_pwr;
+	QM_SCSS_CMP->cmp_pwr &= QM_AC_HP_COMPARATORS_MASK;
 
 	/* Disable all peripheral clocks. */
 	clk_periph_disable(CLK_PERIPH_REGISTER);
@@ -229,7 +216,7 @@ void soc_deep_sleep(void)
 
 	/* Enable low voltage mode for flash controller. */
 	/* FlashCtrl.CTRL.LVE_MODE = 1; */
-	QM_FLASH[QM_FLASH_0].ctrl |= QM_FLASH_LVE_MODE;
+	QM_FLASH[QM_FLASH_0]->ctrl |= QM_FLASH_LVE_MODE;
 
 	/* Select 1.35V for voltage regulator. */
 	/* SCSS.AON_VR.VSEL = 0xB; */
@@ -296,7 +283,7 @@ void soc_deep_sleep(void)
 	QM_SCSS_CCU->osc0_cfg0 &= ~QM_SI_OSC_1V2_MODE;
 
 	/* FlashCtrl.CTRL.LVE_MODE = 0; */
-	QM_FLASH[QM_FLASH_0].ctrl &= ~QM_FLASH_LVE_MODE;
+	QM_FLASH[QM_FLASH_0]->ctrl &= ~QM_FLASH_LVE_MODE;
 
 	/* Restore all previous values. */
 	QM_SCSS_CCU->ccu_sys_clk_ctl = sys_clk_ctl_save;
@@ -322,8 +309,7 @@ void soc_deep_sleep(void)
 	QM_SCSS_CCU->ccu_periph_clk_gate_ctl = clk_gate_save;
 	QM_SCSS_CCU->osc1_cfg0 = osc1_cfg_save;
 
-	ac_cfg.power = ac_power_save;
-	qm_ac_set_config(&ac_cfg);
+	QM_SCSS_CMP->cmp_pwr = ac_power_save;
 	QM_ADC->adc_op_mode = adc_mode_save;
 
 	QM_SCSS_PMUX->pmux_slew[0] = pmux_slew_save;
@@ -333,17 +319,3 @@ void soc_deep_sleep(void)
 	QM_SCSS_CCU->wake_mask = SET_ALL_BITS;
 	QM_SCSS_GP->gps1 &= ~QM_SCSS_GP_POWER_STATE_DEEP_SLEEP;
 }
-
-#elif(QUARK_SE)
-void soc_sleep(void)
-{
-	/* NOTE: Add Quark SE specific sleep code. */
-	cpu_halt();
-}
-
-void soc_deep_sleep(void)
-{
-	/* NOTE: Add Quark SE specific deep sleep code. */
-	cpu_halt();
-}
-#endif

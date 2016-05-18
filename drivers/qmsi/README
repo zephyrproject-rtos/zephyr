@@ -1,6 +1,15 @@
 The sources in this directory are imported from QMSI project
 at https://github.com/01org/qmsi.
 
-The current version supported in Zephyr is QMSI 1.0.1. See
-   https://github.com/01org/qmsi/releases/tag/v1.0.1
+Intel® Quark™ Microcontroller Software Interface (QMSI) is a
+Hardware Abstraction Layer (HAL) for Intel® Quark™
+Microcontroller products. It currently support the following SoCs:
+
+- Intel® Quark™ D2000 Microcontroller
+- Intel® Quark™ SE Microcontroller
+
+The current version supported in Zephyr is QMSI 1.1.0 See
+
+   https://github.com/01org/qmsi/releases/tag/v1.1.0
+
 for more details.

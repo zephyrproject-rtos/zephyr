@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,7 +34,7 @@
 #include "qm_soc_regs.h"
 
 /**
- * Pulse width modulation and Timer driver for Quark Microcontrollers.
+ * Pulse width modulation and Timer driver.
  *
  * @defgroup groupPWM PWM / Timer
  * @{
@@ -48,106 +48,116 @@
  * PWM operating mode type.
  */
 typedef enum {
-	QM_PWM_MODE_TIMER_FREE_RUNNING = 0,
-	QM_PWM_MODE_TIMER_COUNT = 2,
-	QM_PWM_MODE_PWM = 10
+	QM_PWM_MODE_TIMER_FREE_RUNNING = 0, /**< Timer: free runnig mode. */
+	QM_PWM_MODE_TIMER_COUNT = 2,	/**< Timer: Counter mode. */
+	QM_PWM_MODE_PWM = 10		    /**< Pwm mode. */
 } qm_pwm_mode_t;
 
 /**
  * PWM / Timer configuration type.
  */
 typedef struct {
-	uint32_t lo_count; /* Number of cycles the PWM output is driven low. In
-			      timer mode, this is the timer load count. Must be
-			      > 0. */
-	uint32_t hi_count; /* Number of cycles the PWM output is driven high.
-			      Not applicable in timer mode. Must be > 0.*/
-	bool mask_interrupt;
-	qm_pwm_mode_t mode;
-	void (*callback)(uint32_t int_status);
+	uint32_t
+	    lo_count; /**< Number of cycles the PWM output is driven low. In
+			   timer mode, this is the timer load count. Must be
+			   > 0. */
+	uint32_t hi_count; /**< Number of cycles the PWM output is driven high.
+			 Not applicable in timer mode. Must be > 0.*/
+	bool mask_interrupt; /**< Mask interrupt. */
+	qm_pwm_mode_t mode;  /**< Pwm mode. */
+			     /**
+			      * User callback.
+			      *
+			      * @param[in] data The callback user data.
+			      * @param[in] int_status The timer status.
+			      */
+	void (*callback)(void *data, uint32_t int_status);
+	void *callback_data; /**< Callback user data. */
 } qm_pwm_config_t;
 
 /**
- * PWM Interrupt Service Routine
- */
-void qm_pwm_isr_0(void);
-
-/**
- * Change the configuration of a PWM channel. This includes low period load
- * value, high period load value, interrupt enable/disable. If interrupts are
- * enabled, registers an ISR with the given user callback function. When
- * operating in PWM mode, 0% and 100% duty cycle is not available on Quark SE or
- * Quark D2000. When setting the mode to PWM mode, hi_count must be > 0. In
- * timer mode, the value of high count is ignored.
+ * Change the configuration of a PWM channel.
  *
- * @brief Set PWM channel configuration.
- * @param [in] pwm Which PWM module to configure.
- * @param [in] id PWM channel id to configure.
- * @param [in] cfg New configuration for PWM.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
- */
-qm_rc_t qm_pwm_set_config(const qm_pwm_t pwm, const qm_pwm_id_t id,
-			  const qm_pwm_config_t *const cfg);
-
-/**
- * Get the current configuration of a PWM channel. This includes low
- * period load value, high period load value, interrupt enable/disable.
- *
- * @brief Get PWM channel configuration.
- * @param [in] pwm Which PWM module to get the configuration of.
- * @param [in] id PWM channel id to get the configuration of.
- * @param [out] cfg Current configuration for PWM.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
- */
-qm_rc_t qm_pwm_get_config(const qm_pwm_t pwm, const qm_pwm_id_t id,
-			  qm_pwm_config_t *const cfg);
-
-/**
- * Set the next period values of a PWM channel. This includes low
- * period count and high period count. When operating in PWM mode, 0% and 100%
- * duty cycle is not available on Quark SE or Quark D2000. When operating in PWM
+ * This includes low period load value, high period load value, interrupt
+ * enable/disable. If interrupts are enabled, registers an ISR with the given
+ * user callback function. When operating in PWM mode, 0% and 100% duty cycle
+ * is not available on Quark SE or Quark D2000. When setting the mode to PWM
  * mode, hi_count must be > 0. In timer mode, the value of high count is
  * ignored.
  *
+ * @brief Set PWM channel configuration.
+ * @param[in] pwm Which PWM module to configure.
+ * @param[in] id PWM channel id to configure.
+ * @param[in] cfg New configuration for PWM. This must not be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ * */
+int qm_pwm_set_config(const qm_pwm_t pwm, const qm_pwm_id_t id,
+		      const qm_pwm_config_t *const cfg);
+
+/**
+ * Set the next period values of a PWM channel.
+ *
+ * This includes low period count and high period count. When operating in PWM
+ * mode, 0% and 100% duty cycle is not available on Quark SE or Quark D2000.
+ * When operating in PWM mode, hi_count must be > 0. In timer mode, the value of
+ * high count is ignored.
+ *
  * @brief Set PWM period counts.
- * @param [in] pwm Which PWM module to set the counts of.
- * @param [in] id PWM channel id to set.
- * @param [in] lo_count Num of cycles the output is driven low.
- * @param [in] hi_count Num of cycles the output is driven high.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
- */
-qm_rc_t qm_pwm_set(const qm_pwm_t pwm, const qm_pwm_id_t id,
-		   const uint32_t lo_count, const uint32_t hi_count);
+ * @param[in] pwm Which PWM module to set the counts of.
+ * @param[in] id PWM channel id to set.
+ * @param[in] lo_count Num of cycles the output is driven low.
+ * @param[in] hi_count Num of cycles the output is driven high.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ * */
+int qm_pwm_set(const qm_pwm_t pwm, const qm_pwm_id_t id,
+	       const uint32_t lo_count, const uint32_t hi_count);
 
 /**
  * Get the current period values of a PWM channel.
  *
- * @param [in] pwm Which PWM module to get the count of.
- * @param [in] id PWM channel id to read the values of.
- * @param [out] lo_count Num of cycles the output is driven low.
- * @param [out] hi_count Num of cycles the output is driven high.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
- */
-qm_rc_t qm_pwm_get(const qm_pwm_t pwm, const qm_pwm_id_t id,
-		   uint32_t *const lo_count, uint32_t *const hi_count);
+ * @param[in] pwm Which PWM module to get the count of.
+ * @param[in] id PWM channel id to read the values of.
+ * @param[out] lo_count Num of cycles the output is driven low. This must not be
+ * NULL.
+ * @param[out] hi_count Num of cycles the output is driven high. This must not
+ * be NULL.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ * */
+int qm_pwm_get(const qm_pwm_t pwm, const qm_pwm_id_t id,
+	       uint32_t *const lo_count, uint32_t *const hi_count);
 
 /**
  * Start a PWM/timer channel.
  *
- * @param [in] pwm Which PWM block the PWM is in.
- * @param [in] id PWM channel id to start.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
- */
-qm_rc_t qm_pwm_start(const qm_pwm_t pwm, const qm_pwm_id_t id);
+ * @param[in] pwm Which PWM block the PWM is in.
+ * @param[in] id PWM channel id to start.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ * */
+int qm_pwm_start(const qm_pwm_t pwm, const qm_pwm_id_t id);
 
 /**
  * Stop a PWM/timer channel.
  *
- * @param [in] pwm Which PWM block the PWM is in.
- * @param [in] id PWM channel id to stop.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
- */
-qm_rc_t qm_pwm_stop(const qm_pwm_t pwm, const qm_pwm_id_t id);
+ * @param[in] pwm Which PWM block the PWM is in.
+ * @param[in] id PWM channel id to stop.
+ *
+ * @return Standard errno return type for QMSI.
+ * @retval 0 on success.
+ * @retval Negative @ref errno for possible error codes.
+ * */
+int qm_pwm_stop(const qm_pwm_t pwm, const qm_pwm_id_t id);
 
 /**
  * @}

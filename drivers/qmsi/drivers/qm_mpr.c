@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,26 +28,27 @@
  */
 
 #include "qm_mpr.h"
+#include "qm_interrupt.h"
 
 #define ADDRESS_MASK_7_BIT (0x7F)
-#define ADDRESS_MASK_LOW_BOUND (0x7F)
-#define ADDRESS_MASK_UP_BOUND (0x1FC00)
 
-static void (*callback)(void);
+static void (*callback)(void *data);
+static void *callback_data;
 
-void qm_mpr_isr(void)
+QM_ISR_DECLARE(qm_mpr_isr)
 {
-	(*callback)();
+	if (callback) {
+		(*callback)(callback_data);
+	}
 	QM_MPR->mpr_vsts = QM_MPR_VSTS_VALID;
 
 	QM_ISR_EOI(QM_IRQ_SRAM_VECTOR);
 }
 
-qm_rc_t qm_mpr_set_config(const qm_mpr_id_t id,
-			  const qm_mpr_config_t *const cfg)
+int qm_mpr_set_config(const qm_mpr_id_t id, const qm_mpr_config_t *const cfg)
 {
-	QM_CHECK(id < QM_MPR_NUM, QM_RC_EINVAL);
-	QM_CHECK(cfg != NULL, QM_RC_EINVAL);
+	QM_CHECK(id < QM_MPR_NUM, -EINVAL);
+	QM_CHECK(cfg != NULL, -EINVAL);
 
 	QM_MPR->mpr_cfg[id] &= ~QM_MPR_EN_LOCK_MASK;
 
@@ -62,54 +63,41 @@ qm_rc_t qm_mpr_set_config(const qm_mpr_id_t id,
 
 	/* enable/lock */
 	QM_MPR->mpr_cfg[id] |= (cfg->en_lock_mask << QM_MPR_EN_LOCK_OFFSET);
-	return QM_RC_OK;
+	return 0;
 }
 
-qm_rc_t qm_mpr_get_config(const qm_mpr_id_t id, qm_mpr_config_t *const cfg)
+int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
+				qm_mpr_callback_t callback_fn,
+				void *callback_data)
 {
-	QM_CHECK(id < QM_MPR_NUM, QM_RC_EINVAL);
-	QM_CHECK(cfg != NULL, QM_RC_EINVAL);
-
-	cfg->low_bound = QM_MPR->mpr_cfg[id] & ADDRESS_MASK_LOW_BOUND;
-
-	cfg->up_bound = (QM_MPR->mpr_cfg[id] & ADDRESS_MASK_UP_BOUND) >>
-			QM_MPR_UP_BOUND_OFFSET;
-
-	cfg->agent_read_en_mask =
-	    (QM_MPR->mpr_cfg[id] & QM_MPR_RD_EN_MASK) >> QM_MPR_RD_EN_OFFSET;
-
-	cfg->agent_write_en_mask =
-	    (QM_MPR->mpr_cfg[id] & QM_MPR_WR_EN_MASK) >> QM_MPR_WR_EN_OFFSET;
-
-	cfg->en_lock_mask = (QM_MPR->mpr_cfg[id] & QM_MPR_EN_LOCK_MASK) >>
-			    QM_MPR_EN_LOCK_OFFSET;
-	return QM_RC_OK;
-}
-
-qm_rc_t qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
-				    qm_mpr_callback_t callback_fn)
-{
-	QM_CHECK(mode <= MPR_VIOL_MODE_PROBE, QM_RC_EINVAL);
+	QM_CHECK(mode <= MPR_VIOL_MODE_PROBE, -EINVAL);
 	/*  interrupt mode */
 	if (MPR_VIOL_MODE_INTERRUPT == mode) {
-
-		QM_CHECK(callback_fn != NULL, QM_RC_EINVAL);
 		callback = callback_fn;
+		callback_data = callback_data;
 
-		/* host interrupt to Lakemont core */
+		/* unmask interrupt */
+		qm_irq_unmask(QM_IRQ_SRAM);
+#if defined(QM_SENSOR)
+		QM_SCSS_INT->int_sram_controller_mask |=
+		    QM_INT_SRAM_CONTROLLER_SS_HALT_MASK;
+#else  /* QM_SENSOR */
 		QM_SCSS_INT->int_sram_controller_mask |=
 		    QM_INT_SRAM_CONTROLLER_HOST_HALT_MASK;
-		QM_SCSS_INT->int_sram_controller_mask &=
-		    ~QM_INT_SRAM_CONTROLLER_HOST_MASK;
+#endif /* QM_SENSOR */
 	}
 
 	/* probe or reset mode */
 	else {
-		/* host halt interrupt to Lakemont core */
-		QM_SCSS_INT->int_sram_controller_mask |=
-		    QM_INT_SRAM_CONTROLLER_HOST_MASK;
+		/* mask interrupt */
+		qm_irq_mask(QM_IRQ_SRAM);
+#if defined(QM_SENSOR)
+		QM_SCSS_INT->int_sram_controller_mask &=
+		    ~QM_INT_SRAM_CONTROLLER_SS_HALT_MASK;
+#else  /* QM_SENSOR */
 		QM_SCSS_INT->int_sram_controller_mask &=
 		    ~QM_INT_SRAM_CONTROLLER_HOST_HALT_MASK;
+#endif /* QM_SENSOR */
 
 		if (MPR_VIOL_MODE_PROBE == mode) {
 
@@ -129,5 +117,5 @@ qm_rc_t qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 			    ~QM_P_STS_HALT_INTERRUPT_REDIRECTION;
 		}
 	}
-	return QM_RC_OK;
+	return 0;
 }

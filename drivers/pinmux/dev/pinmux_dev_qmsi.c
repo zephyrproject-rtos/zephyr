@@ -28,7 +28,7 @@ static int pinmux_dev_set(struct device *dev, uint32_t pin,
 {
 	ARG_UNUSED(dev);
 
-	return qm_pmux_select(pin, func) == QM_RC_OK ? 0 : -EIO;
+	return qm_pmux_select(pin, func) == 0 ? 0 : -EIO;
 }
 
 static int pinmux_dev_get(struct device *dev, uint32_t pin,
@@ -70,7 +70,7 @@ static int pinmux_dev_pullup(struct device *dev, uint32_t pin,
 {
 	ARG_UNUSED(dev);
 
-	return qm_pmux_pullup_en(pin, func) == QM_RC_OK ? 0 : -EIO;
+	return qm_pmux_pullup_en(pin, func) == 0 ? 0 : -EIO;
 }
 
 static int pinmux_dev_input(struct device *dev, uint32_t pin,
@@ -78,7 +78,7 @@ static int pinmux_dev_input(struct device *dev, uint32_t pin,
 {
 	ARG_UNUSED(dev);
 
-	return qm_pmux_input_en(pin, func) == QM_RC_OK ? 0 : -EIO;
+	return qm_pmux_input_en(pin, func) == 0 ? 0 : -EIO;
 }
 
 static struct pinmux_driver_api api_funcs = {

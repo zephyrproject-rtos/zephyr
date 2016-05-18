@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <errno.h>
 
 #include <device.h>
@@ -21,13 +20,11 @@
 #include <uart.h>
 
 #include "qm_uart.h"
-#include "qm_scss.h"
+#include "qm_isr.h"
+#include "clk.h"
 #include "qm_soc_regs.h"
 
 #define IIR_IID_NO_INTERRUPT_PENDING 0x01
-#define IIR_IID_RECV_DATA_AVAIL 0x04
-#define IIR_IID_CHAR_TIMEOUT 0x0C
-#define IER_ELSI 0x04
 
 #define DIVISOR_LOW(baudrate) \
 	((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / (16 * baudrate)) & 0xFF)
@@ -113,7 +110,9 @@ DEVICE_INIT(uart_1, CONFIG_UART_QMSI_1_NAME, uart_qmsi_init, &drv_data_1,
 static int uart_qmsi_poll_in(struct device *dev, unsigned char *data)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
-	qm_uart_status_t status = qm_uart_get_status(instance);
+	qm_uart_status_t status;
+
+	qm_uart_get_status(instance, &status);
 
 	/* In order to check if there is any data to read from UART
 	 * controller we should check if the QM_UART_RX_BUSY bit from
@@ -123,7 +122,7 @@ static int uart_qmsi_poll_in(struct device *dev, unsigned char *data)
 	if (!(status & QM_UART_RX_BUSY))
 		return -1;
 
-	qm_uart_read(instance, data);
+	qm_uart_read(instance, data, NULL);
 	return 0;
 }
 
@@ -139,18 +138,20 @@ static unsigned char uart_qmsi_poll_out(struct device *dev,
 static int uart_qmsi_err_check(struct device *dev)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
+	qm_uart_status_t status;
 
 	/* QMSI and Zephyr use the same bits to represent UART errors
 	 * so we don't need to translate each error bit from QMSI API
 	 * to Zephyr API.
 	 */
-	return qm_uart_get_status(instance) & QM_UART_LSR_ERROR_BITS;
+	qm_uart_get_status(instance, &status);
+	return (status & QM_UART_LSR_ERROR_BITS);
 }
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
 static bool is_tx_fifo_full(qm_uart_t instance)
 {
-	return !!(QM_UART[instance].lsr & QM_UART_LSR_THRE);
+	return !!(QM_UART[instance]->lsr & QM_UART_LSR_THRE);
 }
 
 static int uart_qmsi_fifo_fill(struct device *dev, const uint8_t *tx_data,
@@ -160,7 +161,7 @@ static int uart_qmsi_fifo_fill(struct device *dev, const uint8_t *tx_data,
 	int i;
 
 	for (i = 0; i < size && !is_tx_fifo_full(instance); i++) {
-		QM_UART[instance].rbr_thr_dll = tx_data[i];
+		QM_UART[instance]->rbr_thr_dll = tx_data[i];
 	}
 
 	return i;
@@ -168,7 +169,7 @@ static int uart_qmsi_fifo_fill(struct device *dev, const uint8_t *tx_data,
 
 static bool is_data_ready(qm_uart_t instance)
 {
-	return QM_UART[instance].lsr & QM_UART_LSR_DR;
+	return QM_UART[instance]->lsr & QM_UART_LSR_DR;
 }
 
 static int uart_qmsi_fifo_read(struct device *dev, uint8_t *rx_data,
@@ -178,7 +179,7 @@ static int uart_qmsi_fifo_read(struct device *dev, uint8_t *rx_data,
 	int i;
 
 	for (i = 0; i < size && is_data_ready(instance); i++) {
-		rx_data[i] = QM_UART[instance].rbr_thr_dll;
+		rx_data[i] = QM_UART[instance]->rbr_thr_dll;
 	}
 
 	return i;
@@ -188,14 +189,14 @@ static void uart_qmsi_irq_tx_enable(struct device *dev)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
-	QM_UART[instance].ier_dlh |= QM_UART_IER_ETBEI;
+	QM_UART[instance]->ier_dlh |= QM_UART_IER_ETBEI;
 }
 
 static void uart_qmsi_irq_tx_disable(struct device *dev)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
-	QM_UART[instance].ier_dlh &= ~QM_UART_IER_ETBEI;
+	QM_UART[instance]->ier_dlh &= ~QM_UART_IER_ETBEI;
 }
 
 static int uart_qmsi_irq_tx_ready(struct device *dev)
@@ -211,21 +212,21 @@ static int uart_qmsi_irq_tx_empty(struct device *dev)
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	const uint32_t mask = (QM_UART_LSR_TEMT | QM_UART_LSR_THRE);
 
-	return (QM_UART[instance].lsr & mask) == mask;
+	return (QM_UART[instance]->lsr & mask) == mask;
 }
 
 static void uart_qmsi_irq_rx_enable(struct device *dev)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
-	QM_UART[instance].ier_dlh |= QM_UART_IER_ERBFI;
+	QM_UART[instance]->ier_dlh |= QM_UART_IER_ERBFI;
 }
 
 static void uart_qmsi_irq_rx_disable(struct device *dev)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
-	QM_UART[instance].ier_dlh &= ~QM_UART_IER_ERBFI;
+	QM_UART[instance]->ier_dlh &= ~QM_UART_IER_ERBFI;
 }
 
 static int uart_qmsi_irq_rx_ready(struct device *dev)
@@ -233,21 +234,22 @@ static int uart_qmsi_irq_rx_ready(struct device *dev)
 	struct uart_qmsi_drv_data *drv_data = dev->driver_data;
 	uint32_t id = (drv_data->iir_cache & QM_UART_IIR_IID_MASK);
 
-	return (id == IIR_IID_RECV_DATA_AVAIL) || (id == IIR_IID_CHAR_TIMEOUT);
+	return (id == QM_UART_IIR_RECV_DATA_AVAIL) ||
+	       (id == QM_UART_IIR_CHAR_TIMEOUT);
 }
 
 static void uart_qmsi_irq_err_enable(struct device *dev)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
-	QM_UART[instance].ier_dlh |= IER_ELSI;
+	QM_UART[instance]->ier_dlh |= QM_UART_IER_ELSI;
 }
 
 static void uart_qmsi_irq_err_disable(struct device *dev)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
-	QM_UART[instance].ier_dlh &= ~IER_ELSI;
+	QM_UART[instance]->ier_dlh &= ~QM_UART_IER_ELSI;
 }
 
 static int uart_qmsi_irq_is_pending(struct device *dev)
@@ -263,7 +265,7 @@ static int uart_qmsi_irq_update(struct device *dev)
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	struct uart_qmsi_drv_data *drv_data = dev->driver_data;
 
-	drv_data->iir_cache = QM_UART[instance].iir_fcr;
+	drv_data->iir_cache = QM_UART[instance]->iir_fcr;
 	return 1;
 }
 

@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,55 +27,66 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __QM_POWER_H__
-#define __QM_POWER_H__
+#ifndef __QM_SS_INTERRUPT_H__
+#define __QM_SS_INTERRUPT_H__
 
 #include "qm_common.h"
-#include "qm_soc_regs.h"
+#include "qm_sensor_regs.h"
 
 /**
- * Power mode control for Quark Microcontrollers.
+ * Interrupt driver for Sensor Subsystem.
  *
- * @defgroup groupPower Power state
+ * @defgroup groupSSINT SS Interrupt
  * @{
  */
 
 /**
- * Halts the CPU until next interrupt or reset.
+ * Interrupt service routine type.
  */
-void cpu_halt(void);
+typedef void (*qm_ss_isr_t)(struct interrupt_frame *frame);
 
 /**
- * Enter into sleep mode. The hybrid oscillator is disabled, most peripherals
- * are disabled and the voltage regulator is set into retention mode.
- * The following peripherals are disabled in this mode:
- *  - I2C
- *  - SPI
- *  - GPIO debouncing
- *  - Watchdog timer
- *  - PWM / Timers
- *  - UART
- *
- * The SoC operates from the 32 kHz clock source and the following peripherals
- * may bring the SoC back into an active state:
- *
- *  - GPIO interrupts
- *  - AON Timers
- *  - RTC
- *  - Low power comparators
- *
- * @brief Put SoC to sleep
+ * Enable interrupt delivery for the Sensor Subsystem.
  */
-void soc_sleep();
+void qm_ss_irq_enable(void);
 
 /**
- * Enter into deep sleep mode. All clocks are gated. The only way to return
- * from this is to have an interrupt trigger on the low power comparators.
+ * Disable interrupt delivery for the Sensor Subsystem.
  */
-void soc_deep_sleep();
+void qm_ss_irq_disable(void);
+
+/**
+ * Unmask a given interrupt line.
+ *
+ * @param [in] irq Which IRQ to unmask.
+ */
+void qm_ss_irq_unmask(uint32_t irq);
+
+/**
+ * Mask a given interrupt line.
+ *
+ * @param [in] irq Which IRQ to mask.
+ */
+void qm_ss_irq_mask(uint32_t irq);
+
+/**
+ * Request a given IRQ and register ISR to interrupt vector.
+ *
+ * @param [in] irq IRQ number.
+ * @param [in] isr ISR to register to given IRQ.
+ */
+void qm_ss_irq_request(uint32_t irq, qm_ss_isr_t isr);
+
+/**
+ * Register an Interrupt Service Routine to a given interrupt vector.
+ *
+ * @param [in] vector Interrupt Vector number.
+ * @param [in] isr ISR to register to given vector. Must be a valid Sensor
+ *             Subsystem ISR.
+ */
+void qm_ss_int_vector_request(uint32_t vector, qm_ss_isr_t isr);
 
 /**
  * @}
  */
-
-#endif /* __QM_POWER_H__ */
+#endif /* __QM_SS_INTERRUPT_H__ */

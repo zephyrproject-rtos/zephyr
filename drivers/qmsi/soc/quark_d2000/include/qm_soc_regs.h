@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -97,6 +97,12 @@ qm_scss_ccu_reg_t test_scss_ccu;
 #define OSC0_CFG0_OSC0_XTAL_COUNT_VALUE_MASK (0x00600000)
 #define OSC0_CFG0_OSC0_XTAL_COUNT_VALUE_OFFS (21)
 
+/* Silicon Oscillator parameters */
+#define OSC0_CFG1_FTRIMOTP_MASK (0x3FF00000)
+#define OSC0_CFG1_FTRIMOTP_OFFS (20)
+#define OSC0_CFG1_SI_FREQ_SEL_MASK (0x00000300)
+#define OSC0_CFG1_SI_FREQ_SEL_OFFS (8)
+
 #define QM_OSC0_LOCK_SI BIT(0)
 #define QM_OSC0_LOCK_XTAL BIT(1)
 #define QM_OSC0_EN_SI_OSC BIT(1)
@@ -110,6 +116,7 @@ qm_scss_ccu_reg_t test_scss_ccu;
 #define QM_CCU_PERIPH_PCLK_DIV_OFFSET (1)
 #define QM_CCU_PERIPH_PCLK_DIV_EN BIT(0)
 #define QM_CCU_SYS_CLK_DIV_EN BIT(7)
+#define QM_CCU_SYS_CLK_DIV_MASK (0x00000700)
 #define QM_CCU_SYS_CLK_DIV_DEF_MASK (0xFFFFF47F)
 #define QM_OSC0_SI_FREQ_SEL_DEF_MASK (0xFFFFFCFF)
 #define QM_OSC0_SI_FREQ_SEL_4MHZ (3 >> 8)
@@ -124,6 +131,7 @@ qm_scss_ccu_reg_t test_scss_ccu;
 #define QM_CCU_GPIO_DB_CLK_DIV_DEF_MASK (0xFFFFFFE1)
 #define QM_CCU_EXT_CLK_DIV_DEF_MASK (0xFFFFFFE3)
 #define QM_CCU_RTC_CLK_DIV_DEF_MASK (0xFFFFFF83)
+#define QM_CCU_DMA_CLK_EN BIT(6)
 
 #define QM_CCU_WAKE_MASK_COMPARATOR_BIT BIT(14)
 
@@ -372,6 +380,9 @@ qm_scss_info_reg_t test_scss_info;
  * The vector numbers must be defined without arithmetic expressions nor
  * parentheses because they are expanded as token concatenation.
  */
+
+#define QM_INT_VECTOR_DOUBLE_FAULT 8
+
 #define QM_IRQ_RTC_0 (2)
 #define QM_IRQ_RTC_0_MASK_OFFSET (12)
 #define QM_IRQ_RTC_0_VECTOR 34
@@ -395,6 +406,10 @@ qm_scss_info_reg_t test_scss_info;
 #define QM_IRQ_ADC_0 (9)
 #define QM_IRQ_ADC_0_MASK_OFFSET (34)
 #define QM_IRQ_ADC_0_VECTOR 41
+
+#define QM_IRQ_ADC_PWR_0 (19)
+#define QM_IRQ_ADC_PWR_0_MASK_OFFSET (33)
+#define QM_IRQ_ADC_PWR_0_VECTOR 51
 
 #define QM_IRQ_WDT_0 (16)
 #define QM_IRQ_WDT_0_MASK_OFFSET (13)
@@ -428,6 +443,18 @@ qm_scss_info_reg_t test_scss_info;
 #define QM_IRQ_UART_1 (6)
 #define QM_IRQ_UART_1_MASK_OFFSET (7)
 #define QM_IRQ_UART_1_VECTOR 38
+
+#define QM_IRQ_DMA_0 (13)
+#define QM_IRQ_DMA_0_MASK_OFFSET (14)
+#define QM_IRQ_DMA_0_VECTOR 45
+
+#define QM_IRQ_DMA_1 (12)
+#define QM_IRQ_DMA_1_MASK_OFFSET (15)
+#define QM_IRQ_DMA_1_VECTOR 44
+
+#define QM_IRQ_DMA_ERR (0)
+#define QM_IRQ_DMA_ERR_MASK_OFFSET (28)
+#define QM_IRQ_DMA_ERR_VECTOR 32
 
 /**
  * Number of PWM/Timer controllers.
@@ -547,15 +574,17 @@ typedef struct {
 } qm_uart_reg_t;
 
 #if (UNIT_TEST)
-qm_uart_reg_t test_uart[QM_UART_NUM];
-#define QM_UART ((qm_uart_reg_t *)(&test_uart))
+qm_uart_reg_t test_uart_instance;
+qm_uart_reg_t *test_uart[QM_UART_NUM];
+#define QM_UART test_uart
 
 #else
 /** UART register base address */
-#define QM_UART_BASE (0xB0002000)
-
+#define QM_UART_0_BASE (0xB0002000)
+#define QM_UART_1_BASE (0xB0002400)
 /** UART register block */
-#define QM_UART ((qm_uart_reg_t *)QM_UART_BASE)
+extern qm_uart_reg_t *qm_uart[QM_UART_NUM];
+#define QM_UART qm_uart
 #endif
 
 /**
@@ -611,6 +640,50 @@ extern qm_spi_reg_t *qm_spi_controllers[QM_SPI_NUM];
 /** SPI Slave register base address */
 #define QM_SPI_SLV_BASE (0xB0001800)
 #endif
+
+/* SPI Ctrlr0 register */
+#define QM_SPI_CTRLR0_DFS_32_MASK (0x001F0000)
+#define QM_SPI_CTRLR0_TMOD_MASK (0x00000300)
+#define QM_SPI_CTRLR0_SCPOL_SCPH_MASK (0x000000C0)
+#define QM_SPI_CTRLR0_FRF_MASK (0x00000030)
+#define QM_SPI_CTRLR0_DFS_32_OFFSET (16)
+#define QM_SPI_CTRLR0_TMOD_OFFSET (8)
+#define QM_SPI_CTRLR0_SCPOL_SCPH_OFFSET (6)
+#define QM_SPI_CTRLR0_FRF_OFFSET (4)
+
+/* SPI SSI Enable register */
+#define QM_SPI_SSIENR_SSIENR BIT(0)
+
+/* SPI Status register */
+#define QM_SPI_SR_BUSY BIT(0)
+#define QM_SPI_SR_TFNF BIT(1)
+#define QM_SPI_SR_TFE BIT(2)
+
+/* SPI Interrupt Mask register */
+#define QM_SPI_IMR_MASK_ALL (0x00)
+#define QM_SPI_IMR_TXEIM BIT(0)
+#define QM_SPI_IMR_TXOIM BIT(1)
+#define QM_SPI_IMR_RXUIM BIT(2)
+#define QM_SPI_IMR_RXOIM BIT(3)
+#define QM_SPI_IMR_RXFIM BIT(4)
+
+/* SPI Interrupt Status register */
+#define QM_SPI_ISR_TXEIS BIT(0)
+#define QM_SPI_ISR_TXOIS BIT(1)
+#define QM_SPI_ISR_RXUIS BIT(2)
+#define QM_SPI_ISR_RXOIS BIT(3)
+#define QM_SPI_ISR_RXFIS BIT(4)
+
+/* SPI Raw Interrupt Status register */
+#define QM_SPI_RISR_TXEIR BIT(0)
+#define QM_SPI_RISR_TXOIR BIT(1)
+#define QM_SPI_RISR_RXUIR BIT(2)
+#define QM_SPI_RISR_RXOIR BIT(3)
+#define QM_SPI_RISR_RXFIR BIT(4)
+
+/* SPI DMA control */
+#define QM_SPI_DMACR_RDMAE BIT(0)
+#define QM_SPI_DMACR_TDMAE BIT(1)
 
 /**
  * Number of RTC controllers.
@@ -706,16 +779,18 @@ typedef struct {
 } qm_i2c_reg_t;
 
 #if (UNIT_TEST)
-qm_i2c_reg_t test_i2c[QM_I2C_NUM];
+qm_i2c_reg_t test_i2c_instance[QM_I2C_NUM];
+qm_i2c_reg_t *test_i2c[QM_I2C_NUM];
 
-#define QM_I2C ((qm_i2c_reg_t *)(&test_i2c))
+#define QM_I2C test_i2c
 
 #else
 /** I2C Master register base address */
-#define QM_I2C_BASE (0xB0002800)
+#define QM_I2C_0_BASE (0xB0002800)
 
 /** I2C register block */
-#define QM_I2C ((qm_i2c_reg_t *)QM_I2C_BASE)
+extern qm_i2c_reg_t *qm_i2c[QM_I2C_NUM];
+#define QM_I2C qm_i2c
 #endif
 
 #define QM_I2C_IC_ENABLE_CONTROLLER_EN BIT(0)
@@ -734,6 +809,7 @@ qm_i2c_reg_t test_i2c[QM_I2C_NUM];
 #define QM_I2C_IC_CON_RESTART_EN BIT(5)
 #define QM_I2C_IC_DATA_CMD_READ BIT(8)
 #define QM_I2C_IC_DATA_CMD_STOP_BIT_CTRL BIT(9)
+#define QM_I2C_IC_DATA_CMD_LSB_MASK (0x000000FF)
 #define QM_I2C_IC_RAW_INTR_STAT_TX_ABRT BIT(6)
 #define QM_I2C_IC_TX_ABRT_SOURCE_NAK_MASK (0x1F)
 #define QM_I2C_IC_TX_ABRT_SOURCE_ARB_LOST BIT(12)
@@ -764,6 +840,10 @@ qm_i2c_reg_t test_i2c[QM_I2C_NUM];
 #define QM_I2C_IC_HCNT_MIN (6)
 
 #define QM_I2C_FIFO_SIZE (16)
+
+/* I2C DMA */
+#define QM_I2C_IC_DMA_CR_RX_ENABLE BIT(0)
+#define QM_I2C_IC_DMA_CR_TX_ENABLE BIT(1)
 
 /**
  * Number of GPIO controllers.
@@ -875,6 +955,7 @@ qm_adc_reg_t test_adc;
 #define QM_ADC_INTR_STATUS_FO BIT(1)
 #define QM_ADC_INTR_STATUS_CONT_CC BIT(2)
 /* Operating mode */
+#define QM_ADC_OP_MODE_IE BIT(27)
 #define QM_ADC_OP_MODE_DELAY_OFFSET (0x3)
 #define QM_ADC_OP_MODE_DELAY_MASK (0xFFF8)
 #define QM_ADC_OP_MODE_OM_MASK (0x7)
@@ -904,19 +985,20 @@ typedef struct {
 
 #define QM_FLASH_REGION_DATA_0_SIZE (0x1000)
 #define QM_FLASH_REGION_DATA_0_PAGES (0x02)
-#define QM_FLASH_PAGE_MASK (0xF800)
 
 #if (UNIT_TEST)
-qm_flash_reg_t test_flash;
-uint32_t test_flash_page[0x200];
+qm_flash_reg_t test_flash_instance;
+qm_flash_reg_t *test_flash[QM_FLASH_NUM];
+uint8_t test_flash_page[0x800];
 
-#define QM_FLASH_BASE ((uint32_t *)&test_flash)
-#define QM_FLASH ((qm_flash_reg_t *)(&test_flash))
+#define QM_FLASH test_flash
 
 #define QM_FLASH_REGION_DATA_0_BASE (test_flash_page)
 #define QM_FLASH_REGION_SYS_0_BASE (test_flash_page)
 #define QM_FLASH_REGION_OTP_0_BASE (test_flash_page)
 
+#define QM_FLASH_PAGE_MASK (0xCFF)
+#define QM_FLASH_MAX_ADDR (0xFFFFFFFF)
 #else
 
 /** Flash physical address mappings */
@@ -924,18 +1006,22 @@ uint32_t test_flash_page[0x200];
 #define QM_FLASH_REGION_SYS_0_BASE (0x00180000)
 #define QM_FLASH_REGION_OTP_0_BASE (0x00000000)
 
+#define QM_FLASH_PAGE_MASK (0xF800)
+#define QM_FLASH_MAX_ADDR (0x8000)
+
 /** Flash controller register base address */
-#define QM_FLASH_BASE (0xB0100000)
+#define QM_FLASH_BASE_0 (0xB0100000)
 
 /** Flash controller register block */
-#define QM_FLASH ((qm_flash_reg_t *)QM_FLASH_BASE)
+extern qm_flash_reg_t *qm_flash[QM_FLASH_NUM];
+#define QM_FLASH qm_flash
 #endif
 
 #define QM_FLASH_REGION_DATA_BASE_OFFSET (0x04)
 #define QM_FLASH_MAX_WAIT_STATES (0xF)
 #define QM_FLASH_MAX_US_COUNT (0x3F)
-#define QM_FLASH_MAX_ADDR (0x8000)
-#define QM_FLASH_MAX_PAGE_NUM (QM_FLASH_MAX_ADDR / (4 * QM_FLASH_PAGE_SIZE))
+#define QM_FLASH_MAX_PAGE_NUM                                                  \
+	(QM_FLASH_MAX_ADDR / (4 * QM_FLASH_PAGE_SIZE_DWORDS))
 #define QM_FLASH_LVE_MODE BIT(5)
 
 /**
@@ -1035,7 +1121,7 @@ qm_mvic_reg_t test_mvic;
 #define QM_INT_CONTROLLER QM_MVIC
 /* Signal the interrupt controller that the interrupt was handled.  The vector
  * argument is ignored. */
-#if !defined(USE_ISR_EOI)
+#if defined(ISR_HANDLED)
 #define QM_ISR_EOI(vector)
 #else
 #define QM_ISR_EOI(vector) (QM_INT_CONTROLLER->eoi.reg = 0)
@@ -1056,6 +1142,228 @@ qm_ioapic_reg_t test_ioapic;
 #define QM_IOAPIC ((qm_ioapic_reg_t *)QM_IOAPIC_BASE)
 #endif
 
+/** DMA */
+
+/**
+ * DMA instances
+ */
+typedef enum {
+	QM_DMA_0,  /**< DMA controller id. */
+	QM_DMA_NUM /**< Number of DMA controllers. */
+} qm_dma_t;
+
+/**
+ * DMA channel IDs
+ */
+typedef enum {
+	QM_DMA_CHANNEL_0 = 0, /**< DMA channel id for channel 0 */
+	QM_DMA_CHANNEL_1,     /**< DMA channel id for channel 1 */
+	QM_DMA_CHANNEL_NUM    /**< Number of DMA channels */
+} qm_dma_channel_id_t;
+
+/**
+ * DMA hardware handshake interfaces
+ */
+typedef enum {
+	DMA_HW_IF_UART_A_TX = 0x0,       /**< UART_A_TX */
+	DMA_HW_IF_UART_A_RX = 0x1,       /**< UART_A_RX */
+	DMA_HW_IF_UART_B_TX = 0x2,       /**< UART_B_TX*/
+	DMA_HW_IF_UART_B_RX = 0x3,       /**< UART_B_RX */
+	DMA_HW_IF_SPI_MASTER_0_TX = 0x4, /**< SPI_Master_0_TX */
+	DMA_HW_IF_SPI_MASTER_0_RX = 0x5, /**< SPI_Master_0_RX */
+	DMA_HW_IF_SPI_SLAVE_TX = 0x8,    /**< SPI_Slave_TX */
+	DMA_HW_IF_SPI_SLAVE_RX = 0x9,    /**< SPI_Slave_RX */
+	DMA_HW_IF_I2C_MASTER_0_TX = 0xc, /**< I2C_Master_0_TX */
+	DMA_HW_IF_I2C_MASTER_0_RX = 0xd, /**< I2C_Master_0_RX */
+} qm_dma_handshake_interface_t;
+
+/**
+ * DMA channel register block type
+ */
+typedef struct {
+	QM_RW uint32_t sar_low;		   /**< SAR */
+	QM_RW uint32_t sar_high;	   /**< SAR */
+	QM_RW uint32_t dar_low;		   /**< DAR */
+	QM_RW uint32_t dar_high;	   /**< DAR */
+	QM_RW uint32_t llp_low;		   /**< LLP */
+	QM_RW uint32_t llp_high;	   /**< LLP */
+	QM_RW uint32_t ctrl_low;	   /**< CTL */
+	QM_RW uint32_t ctrl_high;	  /**< CTL */
+	QM_RW uint32_t src_stat_low;       /**< SSTAT */
+	QM_RW uint32_t src_stat_high;      /**< SSTAT */
+	QM_RW uint32_t dst_stat_low;       /**< DSTAT */
+	QM_RW uint32_t dst_stat_high;      /**< DSTAT */
+	QM_RW uint32_t src_stat_addr_low;  /**< SSTATAR */
+	QM_RW uint32_t src_stat_addr_high; /**< SSTATAR */
+	QM_RW uint32_t dst_stat_addr_low;  /**< DSTATAR */
+	QM_RW uint32_t dst_stat_addr_high; /**< DSTATAR */
+	QM_RW uint32_t cfg_low;		   /**< CFG */
+	QM_RW uint32_t cfg_high;	   /**< CFG */
+	QM_RW uint32_t src_sg_low;	 /**< SGR */
+	QM_RW uint32_t src_sg_high;	/**< SGR */
+	QM_RW uint32_t dst_sg_low;	 /**< DSR */
+	QM_RW uint32_t dst_sg_high;	/**< DSR */
+} qm_dma_chan_reg_t;
+
+/** DMA channel control register offsets and masks */
+#define QM_DMA_CTL_L_INT_EN_MASK BIT(0)
+#define QM_DMA_CTL_L_DST_TR_WIDTH_OFFSET (1)
+#define QM_DMA_CTL_L_DST_TR_WIDTH_MASK (0x7 << QM_DMA_CTL_L_DST_TR_WIDTH_OFFSET)
+#define QM_DMA_CTL_L_SRC_TR_WIDTH_OFFSET (4)
+#define QM_DMA_CTL_L_SRC_TR_WIDTH_MASK (0x7 << QM_DMA_CTL_L_SRC_TR_WIDTH_OFFSET)
+#define QM_DMA_CTL_L_DINC_OFFSET (7)
+#define QM_DMA_CTL_L_DINC_MASK (0x3 << QM_DMA_CTL_L_DINC_OFFSET)
+#define QM_DMA_CTL_L_SINC_OFFSET (9)
+#define QM_DMA_CTL_L_SINC_MASK (0x3 << QM_DMA_CTL_L_SINC_OFFSET)
+#define QM_DMA_CTL_L_DEST_MSIZE_OFFSET (11)
+#define QM_DMA_CTL_L_DEST_MSIZE_MASK (0x7 << QM_DMA_CTL_L_DEST_MSIZE_OFFSET)
+#define QM_DMA_CTL_L_SRC_MSIZE_OFFSET (14)
+#define QM_DMA_CTL_L_SRC_MSIZE_MASK (0x7 << QM_DMA_CTL_L_SRC_MSIZE_OFFSET)
+#define QM_DMA_CTL_L_TT_FC_OFFSET (20)
+#define QM_DMA_CTL_L_TT_FC_MASK (0x7 << QM_DMA_CTL_L_TT_FC_OFFSET)
+#define QM_DMA_CTL_L_LLP_DST_EN_MASK BIT(27)
+#define QM_DMA_CTL_L_LLP_SRC_EN_MASK BIT(28)
+#define QM_DMA_CTL_H_BLOCK_TS_OFFSET (0)
+#define QM_DMA_CTL_H_BLOCK_TS_MASK (0xfff << QM_DMA_CTL_H_BLOCK_TS_OFFSET)
+#define QM_DMA_CTL_H_BLOCK_TS_MAX 4095
+#define QM_DMA_CTL_H_BLOCK_TS_MIN 1
+
+/** DMA channel config register offsets and masks */
+#define QM_DMA_CFG_L_CH_SUSP_MASK BIT(8)
+#define QM_DMA_CFG_L_FIFO_EMPTY_MASK BIT(9)
+#define QM_DMA_CFG_L_HS_SEL_DST_OFFSET 10
+#define QM_DMA_CFG_L_HS_SEL_DST_MASK BIT(QM_DMA_CFG_L_HS_SEL_DST_OFFSET)
+#define QM_DMA_CFG_L_HS_SEL_SRC_OFFSET 11
+#define QM_DMA_CFG_L_HS_SEL_SRC_MASK BIT(QM_DMA_CFG_L_HS_SEL_SRC_OFFSET)
+#define QM_DMA_CFG_L_DST_HS_POL_OFFSET 18
+#define QM_DMA_CFG_L_DST_HS_POL_MASK BIT(QM_DMA_CFG_L_DST_HS_POL_OFFSET)
+#define QM_DMA_CFG_L_SRC_HS_POL_OFFSET 19
+#define QM_DMA_CFG_L_SRC_HS_POL_MASK BIT(QM_DMA_CFG_L_SRC_HS_POL_OFFSET)
+#define QM_DMA_CFG_L_RELOAD_SRC_MASK BIT(30)
+#define QM_DMA_CFG_L_RELOAD_DST_MASK BIT(31)
+#define QM_DMA_CFG_H_SRC_PER_OFFSET (7)
+#define QM_DMA_CFG_H_SRC_PER_MASK (0xf << QM_DMA_CFG_H_SRC_PER_OFFSET)
+#define QM_DMA_CFG_H_DEST_PER_OFFSET (11)
+#define QM_DMA_CFG_H_DEST_PER_MASK (0xf << QM_DMA_CFG_H_DEST_PER_OFFSET)
+
+/**
+ * DMA interrupt register block type
+ */
+typedef struct {
+	QM_RW uint32_t raw_tfr_low;	   /**< RawTfr */
+	QM_RW uint32_t raw_tfr_high;	  /**< RawTfr */
+	QM_RW uint32_t raw_block_low;	 /**< RawBlock */
+	QM_RW uint32_t raw_block_high;	/**< RawBlock */
+	QM_RW uint32_t raw_src_trans_low;     /**< RawSrcTran */
+	QM_RW uint32_t raw_src_trans_high;    /**< RawSrcTran */
+	QM_RW uint32_t raw_dst_trans_low;     /**< RawDstTran */
+	QM_RW uint32_t raw_dst_trans_high;    /**< RawDstTran */
+	QM_RW uint32_t raw_err_low;	   /**< RawErr */
+	QM_RW uint32_t raw_err_high;	  /**< RawErr */
+	QM_RW uint32_t status_tfr_low;	/**< StatusTfr */
+	QM_RW uint32_t status_tfr_high;       /**< StatusTfr */
+	QM_RW uint32_t status_block_low;      /**< StatusBlock */
+	QM_RW uint32_t status_block_high;     /**< StatusBlock */
+	QM_RW uint32_t status_src_trans_low;  /**< StatusSrcTran */
+	QM_RW uint32_t status_src_trans_high; /**< StatusSrcTran */
+	QM_RW uint32_t status_dst_trans_low;  /**< StatusDstTran */
+	QM_RW uint32_t status_dst_trans_high; /**< StatusDstTran */
+	QM_RW uint32_t status_err_low;	/**< StatusErr */
+	QM_RW uint32_t status_err_high;       /**< StatusErr */
+	QM_RW uint32_t mask_tfr_low;	  /**< MaskTfr */
+	QM_RW uint32_t mask_tfr_high;	 /**< MaskTfr */
+	QM_RW uint32_t mask_block_low;	/**< MaskBlock */
+	QM_RW uint32_t mask_block_high;       /**< MaskBlock */
+	QM_RW uint32_t mask_src_trans_low;    /**< MaskSrcTran */
+	QM_RW uint32_t mask_src_trans_high;   /**< MaskSrcTran */
+	QM_RW uint32_t mask_dst_trans_low;    /**< MaskDstTran */
+	QM_RW uint32_t mask_dst_trans_high;   /**< MaskDstTran */
+	QM_RW uint32_t mask_err_low;	  /**< MaskErr */
+	QM_RW uint32_t mask_err_high;	 /**< MaskErr */
+	QM_RW uint32_t clear_tfr_low;	 /**< ClearTfr */
+	QM_RW uint32_t clear_tfr_high;	/**< ClearTfr */
+	QM_RW uint32_t clear_block_low;       /**< ClearBlock */
+	QM_RW uint32_t clear_block_high;      /**< ClearBlock */
+	QM_RW uint32_t clear_src_trans_low;   /**< ClearSrcTran */
+	QM_RW uint32_t clear_src_trans_high;  /**< ClearSrcTran */
+	QM_RW uint32_t clear_dst_trans_low;   /**< ClearDstTran */
+	QM_RW uint32_t clear_dst_trans_high;  /**< ClearDstTran */
+	QM_RW uint32_t clear_err_low;	 /**< ClearErr */
+	QM_RW uint32_t clear_err_high;	/**< ClearErr */
+	QM_RW uint32_t status_int_low;	/**< StatusInt */
+	QM_RW uint32_t status_int_high;       /**< StatusInt */
+} qm_dma_int_reg_t;
+
+/** DMA interrupt status register bits */
+#define QM_DMA_INT_STATUS_TFR BIT(0)
+#define QM_DMA_INT_STATUS_ERR BIT(4)
+
+/**
+ * DMA miscellaneous register block type
+ */
+typedef struct {
+	QM_RW uint32_t cfg_low;      /**< DmaCfgReg */
+	QM_RW uint32_t cfg_high;     /**< DmaCfgReg */
+	QM_RW uint32_t chan_en_low;  /**< ChEnReg */
+	QM_RW uint32_t chan_en_high; /**< ChEnReg */
+	QM_RW uint32_t id_low;       /**< DmaIdReg */
+	QM_RW uint32_t id_high;      /**< DmaIdReg */
+	QM_RW uint32_t test_low;     /**< DmaTestReg */
+	QM_RW uint32_t test_high;    /**< DmaTestReg */
+	QM_RW uint32_t reserved[4];  /**< Reserved */
+} qm_dma_misc_reg_t;
+
+/** Channel write enable in the misc channel enable register */
+#define QM_DMA_MISC_CHAN_EN_WE_OFFSET (8)
+
+/** Controller enable bit in the misc config register */
+#define QM_DMA_MISC_CFG_DMA_EN BIT(0)
+
+typedef struct {
+	QM_RW qm_dma_chan_reg_t chan_reg[8]; /**< Channel Register */
+	QM_RW qm_dma_int_reg_t int_reg;      /**< Interrupt Register */
+	QM_RW uint32_t reserved[12];	 /**< Reserved (SW HS) */
+	QM_RW qm_dma_misc_reg_t misc_reg;    /**< Miscellaneous Register */
+} qm_dma_reg_t;
+
+#if (UNIT_TEST)
+qm_dma_reg_t test_dma_instance[QM_DMA_NUM];
+qm_dma_reg_t *test_dma[QM_DMA_NUM];
+#define QM_DMA test_dma
+#else
+#define QM_DMA_BASE (0xB0700000)
+extern qm_dma_reg_t *qm_dma[QM_DMA_NUM];
+#define QM_DMA qm_dma
+#endif
+
+/**
+ * Peripheral clock type.
+ */
+typedef enum {
+	CLK_PERIPH_REGISTER = BIT(0), /**< Peripheral Clock Gate Enable. */
+	CLK_PERIPH_CLK = BIT(1),      /**< Peripheral Clock Enable. */
+	CLK_PERIPH_I2C_M0 = BIT(2),   /**< I2C Master 0 Clock Enable. */
+	CLK_PERIPH_SPI_S = BIT(4),    /**< SPI Slave Clock Enable. */
+	CLK_PERIPH_SPI_M0 = BIT(5),   /**< SPI Master 0 Clock Enable. */
+	CLK_PERIPH_GPIO_INTERRUPT = BIT(7), /**< GPIO Interrupt Clock Enable. */
+	CLK_PERIPH_GPIO_DB = BIT(8),	/**< GPIO Debounce Clock Enable. */
+	CLK_PERIPH_WDT_REGISTER = BIT(10),  /**< Watchdog Clock Enable. */
+	CLK_PERIPH_RTC_REGISTER = BIT(11),  /**< RTC Clock Gate Enable. */
+	CLK_PERIPH_PWM_REGISTER = BIT(12),  /**< PWM Clock Gate Enable. */
+	CLK_PERIPH_GPIO_REGISTER = BIT(13), /**< GPIO Clock Gate Enable. */
+	CLK_PERIPH_SPI_M0_REGISTER =
+	    BIT(14), /**< SPI Master 0 Clock Gate Enable. */
+	CLK_PERIPH_SPI_S_REGISTER =
+	    BIT(16), /**< SPI Slave Clock Gate Enable. */
+	CLK_PERIPH_UARTA_REGISTER = BIT(17), /**< UARTA Clock Gate Enable. */
+	CLK_PERIPH_UARTB_REGISTER = BIT(18), /**< UARTB Clock Gate Enable. */
+	CLK_PERIPH_I2C_M0_REGISTER =
+	    BIT(19),		  /**< I2C Master 0 Clock Gate Enable. */
+	CLK_PERIPH_ADC = BIT(22), /**< ADC Clock Enable. */
+	CLK_PERIPH_ADC_REGISTER = BIT(23), /**< ADC Clock Gate Enable. */
+	CLK_PERIPH_ALL = 0xCFFFFF /**< Quark D2000 peripherals Enable. */
+} clk_periph_t;
+
 /* Default mask values */
 #define CLK_EXTERN_DIV_DEF_MASK (0xFFFFFFE3)
 #define CLK_SYS_CLK_DIV_DEF_MASK (0xFFFFF87F)
@@ -1063,6 +1371,16 @@ qm_ioapic_reg_t test_ioapic;
 #define CLK_GPIO_DB_DIV_DEF_MASK (0xFFFFFFE1)
 #define CLK_ADC_DIV_DEF_MASK (0xFC00FFFF)
 #define CLK_PERIPH_DIV_DEF_MASK (0xFFFFFFF9)
+
+/**
+ * Version variables.
+ */
+#if (UNIT_TEST)
+uint32_t test_rom_version;
+#define ROM_VERSION_ADDRESS &test_rom_version;
+#else
+#define ROM_VERSION_ADDRESS (0x1FFC);
+#endif
 
 /**
 @}

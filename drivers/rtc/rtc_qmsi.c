@@ -22,11 +22,9 @@
 #include <nanokernel.h>
 #include <rtc.h>
 
+#include "qm_isr.h"
 #include "qm_rtc.h"
 
-static struct device *rtc_qmsi_dev;
-
-static void (*user_callback)(struct device *dev);
 
 static void rtc_qmsi_enable(struct device *dev)
 {
@@ -38,11 +36,6 @@ static void rtc_qmsi_disable(struct device *dev)
 	clk_periph_disable(CLK_PERIPH_RTC_REGISTER);
 }
 
-static void rtc_callback(void)
-{
-	if (user_callback)
-		user_callback(rtc_qmsi_dev);
-}
 
 static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 {
@@ -51,11 +44,14 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	qm_cfg.init_val = cfg->init_val;
 	qm_cfg.alarm_en = cfg->alarm_enable;
 	qm_cfg.alarm_val = cfg->alarm_val;
-	qm_cfg.callback = rtc_callback;
+	/* Casting callback type due different input parameter from QMSI
+	 * compared aganst the Zephyr callback from void cb(struct device *dev)
+	 * to void cb(void *)
+	 */
+	qm_cfg.callback = (void *) cfg->cb_fn;
+	qm_cfg.callback_data = dev;
 
-	user_callback = cfg->cb_fn;
-
-	if (qm_rtc_set_config(QM_RTC_0, &qm_cfg) != QM_RC_OK)
+	if (qm_rtc_set_config(QM_RTC_0, &qm_cfg))
 		return -EIO;
 
 	return 0;
@@ -63,7 +59,7 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 
 static int rtc_qmsi_set_alarm(struct device *dev, const uint32_t alarm_val)
 {
-	return qm_rtc_set_alarm(QM_RTC_0, alarm_val) == QM_RC_OK ? 0 : -EIO;
+	return qm_rtc_set_alarm(QM_RTC_0, alarm_val);
 }
 
 static uint32_t rtc_qmsi_read(struct device *dev)
@@ -96,5 +92,3 @@ static int rtc_qmsi_init(struct device *dev)
 DEVICE_AND_API_INIT(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init, NULL, NULL,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&api);
-
-static struct device *rtc_qmsi_dev = DEVICE_GET(rtc);

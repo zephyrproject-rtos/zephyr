@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,6 +31,7 @@
 #define __QM_VERSION_H__
 
 #include "qm_common.h"
+#include "qm_soc_regs.h"
 
 /**
  * Version number functions for API.
@@ -38,21 +39,6 @@
  * @defgroup groupVersion Version
  * @{
  */
-
-/**
- * QM API major version number
- */
-#define QM_VER_API_MAJOR 1
-
-/**
- * QM API minor version number
- */
-#define QM_VER_API_MINOR 0
-
-/**
- * QM API patch version number
- */
-#define QM_VER_API_PATCH 1
 
 /**
  * Create a single version number from the major, minor and patch numbers
@@ -66,6 +52,15 @@
  */
 #define QM_VER_API_STRING                                                      \
 	QM_VER_STRINGIFY(QM_VER_API_MAJOR, QM_VER_API_MINOR, QM_VER_API_PATCH)
+
+/**
+ * Get the ROM version number.
+ *
+ * Reads the ROM version information from flash and returns it.
+ *
+ * @return uint32_t ROM version.
+ */
+uint32_t qm_ver_rom(void);
 
 /**
  * @}

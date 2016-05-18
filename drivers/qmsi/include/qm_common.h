@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -37,11 +37,17 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "qm_rc.h"
+#include <errno.h>
 
 #define QM_R volatile const
 #define QM_W volatile
 #define QM_RW volatile
+
+/* __attribute__((interrupt)) API requires that the interrupt handlers
+ * take an interrupt_frame parameter, but it is still undefined, so add
+ * an empty definition.
+ */
+struct interrupt_frame;
 
 #ifndef NULL
 #define NULL ((void *)0)
@@ -139,6 +145,15 @@ void stdout_uart_setup(uint32_t baud_divisors);
 #define STDOUT_UART (QM_UART_1)
 #endif
 
+/*
+ * Stdout UART intialization is enabled by default. Use this switch if you wish
+ * to disable it (e.g. if the UART is already initialized by an application
+ * running on the other core).
+ */
+#ifndef STDOUT_UART_INIT_DISABLE
+#define STDOUT_UART_INIT (1)
+#endif
+
 /**
  * Select assert action (default: put the IA core into HLT state)
  */
@@ -186,13 +201,59 @@ void stdout_uart_setup(uint32_t baud_divisors);
 
 /* Bitwise operation helpers */
 #ifndef BIT
-#define BIT(x) (1U << x)
+#define BIT(x) (1U << (x))
 #endif
 
 /* Set all bits */
 #ifndef SET_ALL_BITS
 #define SET_ALL_BITS (-1)
 #endif
+
+/*
+ * ISR declaration.
+ *
+ * The x86 'interrupt' attribute requires an interrupt_frame parameter.
+ * To keep consistency between different cores and compiler capabilities, we add
+ * the interrupt_frame parameter to all ISR handlers. When not needed, the value
+ * passed is a dummy one (NULL).
+ */
+#if (UNIT_TEST)
+#define QM_ISR_DECLARE(handler)                                                \
+	void handler(__attribute__(                                            \
+	    (unused)) struct interrupt_frame *__interrupt_frame__)
+#else /* !UNIT_TEST */
+#if (QM_SENSOR) && !(ISR_HANDLED)
+/*
+ * Sensor Subsystem 'interrupt' attribute.
+ */
+#define QM_ISR_DECLARE(handler)                                                \
+	__attribute__((interrupt("ilink"))) void handler(__attribute__(        \
+	    (unused)) struct interrupt_frame *__interrupt_frame__)
+#elif(ISR_HANDLED)
+/*
+ * Allow users to define their own ISR management. This includes optimisations
+ * and clearing EOI registers.
+ */
+#define QM_ISR_DECLARE(handler) void handler(__attribute__((unused)) void *data)
+
+#elif(__iamcu__)
+/*
+ * Lakemont with compiler supporting 'interrupt' attribute.
+ * We assume that if the compiler supports the IAMCU ABI it also supports the
+ * 'interrupt' attribute.
+ */
+#define QM_ISR_DECLARE(handler)                                                \
+	__attribute__((interrupt)) void handler(__attribute__(                 \
+	    (unused)) struct interrupt_frame *__interrupt_frame__)
+#else
+/*
+ * Lakemont with compiler not supporting the 'interrupt' attribute.
+ */
+#define QM_ISR_DECLARE(handler)                                                \
+	void handler(__attribute__(                                            \
+	    (unused)) struct interrupt_frame *__interrupt_frame__)
+#endif
+#endif /* UNIT_TEST */
 
 /**
  * Helper to convert a macro parameter into its literal text.

@@ -22,7 +22,7 @@
 #include <init.h>
 
 #include "qm_pwm.h"
-#include "qm_scss.h"
+#include "clk.h"
 
 static int pwm_qmsi_configure(struct device *dev, int access_op,
 				 uint32_t pwm, int flags)
@@ -58,7 +58,7 @@ static int __set_one_port(qm_pwm_t id, uint32_t pwm, uint32_t on, uint32_t off)
 	cfg.hi_count = on;
 	cfg.lo_count = off;
 
-	if (qm_pwm_set_config(id, pwm, &cfg) != QM_RC_OK) {
+	if (qm_pwm_set_config(id, pwm, &cfg) != 0) {
 		return -EIO;
 	}
 	/* Enable timer so it starts running and counting */

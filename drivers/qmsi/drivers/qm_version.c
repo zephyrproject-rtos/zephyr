@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,41 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __QM_RAR_H__
-#define __QM_RAR_H__
+#include "qm_version.h"
 
-#include "qm_common.h"
-#include "qm_soc_regs.h"
+uint32_t qm_ver_rom(void)
+{
+	volatile uint32_t *ver_pointer;
 
-#if (HAS_RAR)
-/**
- * Retention alternator regulator for Quark D2000.
- *
- * @defgroup groupRAR RAR
- * @{
- */
+	ver_pointer = (uint32_t*)ROM_VERSION_ADDRESS;
 
-/**
- * RAR modes type.
- */
-typedef enum {
-	RAR_NORMAL,   /**< Normal mode = 50 mA */
-	RAR_RETENTION /**< Retention mode = 300 uA */
-} rar_state_t;
-
-/**
- * Change operating mode of the RAR. Normal mode is able to source up to 50 mA.
- * Retention mode is able to source up to 300 uA. Care must be taken when
- * entering into retention mode to ensure the overall system draw is less than
- * 300 uA.
- *
- * @brief change operating mode of RAR
- * @param [in] mode Operating mode of the RAR
- */
-qm_rc_t rar_set_mode(rar_state_t mode);
-
-/**
- * @}
- */
-#endif /* HAS_RAR */
-#endif /* __QM_RAR_H__ */
+	return *ver_pointer;
+}

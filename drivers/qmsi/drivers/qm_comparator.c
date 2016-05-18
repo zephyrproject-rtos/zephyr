@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,9 +29,10 @@
 
 #include "qm_comparator.h"
 
-static void (*callback)(uint32_t) = NULL;
+static void (*callback)(void *, uint32_t) = NULL;
+static void *callback_data;
 
-void qm_ac_isr(void)
+QM_ISR_DECLARE(qm_ac_isr)
 {
 	uint32_t int_status = QM_SCSS_CMP->cmp_stat_clr;
 
@@ -54,7 +55,7 @@ void qm_ac_isr(void)
 	}
 #endif
 	if (callback) {
-		(*callback)(int_status);
+		(*callback)(callback_data, int_status);
 	}
 
 	/* Clear all pending interrupts */
@@ -63,24 +64,12 @@ void qm_ac_isr(void)
 	QM_ISR_EOI(QM_IRQ_AC_VECTOR);
 }
 
-qm_rc_t qm_ac_get_config(qm_ac_config_t *const config)
+int qm_ac_set_config(const qm_ac_config_t *const config)
 {
-	QM_CHECK(config != NULL, QM_RC_EINVAL);
-
-	config->callback = callback;
-	config->reference = QM_SCSS_CMP->cmp_ref_sel;
-	config->polarity = QM_SCSS_CMP->cmp_ref_pol;
-	config->power = QM_SCSS_CMP->cmp_pwr;
-	config->int_en = QM_SCSS_CMP->cmp_en;
-
-	return QM_RC_OK;
-}
-
-qm_rc_t qm_ac_set_config(const qm_ac_config_t *const config)
-{
-	QM_CHECK(config != NULL, QM_RC_EINVAL);
+	QM_CHECK(config != NULL, -EINVAL);
 
 	callback = config->callback;
+	callback_data = config->callback_data;
 	QM_SCSS_CMP->cmp_ref_sel = config->reference;
 	QM_SCSS_CMP->cmp_ref_pol = config->polarity;
 	QM_SCSS_CMP->cmp_pwr = config->power;
@@ -89,5 +78,5 @@ qm_rc_t qm_ac_set_config(const qm_ac_config_t *const config)
 	QM_SCSS_CMP->cmp_stat_clr = 0x7FFFF;
 	QM_SCSS_CMP->cmp_en = config->int_en;
 
-	return QM_RC_OK;
+	return 0;
 }

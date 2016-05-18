@@ -23,13 +23,13 @@
 #include <spi.h>
 #include <gpio.h>
 
-#include "qm_scss.h"
 #include "qm_spi.h"
+#include "clk.h"
+#include "qm_isr.h"
 
 struct pending_transfer {
 	struct device *dev;
 	qm_spi_async_transfer_t xfer;
-	int counter;
 };
 
 static struct pending_transfer pending_transfers[QM_SPI_NUM];
@@ -44,7 +44,7 @@ struct spi_qmsi_runtime {
 	struct device *gpio_cs;
 	device_sync_call_t sync;
 	qm_spi_config_t cfg;
-	qm_rc_t rc;
+	int rc;
 	bool loopback;
 };
 
@@ -92,48 +92,26 @@ static int spi_qmsi_configure(struct device *dev,
 	return 0;
 }
 
-static void pending_transfer_complete(uint32_t id, qm_rc_t rc)
+static void transfer_complete(void *data, int error, qm_spi_status_t status,
+			      uint16_t len)
 {
-	struct pending_transfer *pending = &pending_transfers[id];
+	struct spi_qmsi_config *spi_config =
+			       ((struct device *)data)->config->config_info;
+	qm_spi_t spi = spi_config->spi;
+	struct pending_transfer *pending = &pending_transfers[spi];
 	struct device *dev = pending->dev;
 	struct spi_qmsi_runtime *context;
-	qm_spi_config_t *cfg;
 
 	if (!dev)
 		return;
 
 	context = dev->driver_data;
-	cfg = &context->cfg;
-
-	pending->counter++;
-
-	/*
-	 * When it is TX/RX transfer this function will be called twice.
-	*/
-	if (cfg->transfer_mode == QM_SPI_TMOD_TX_RX && pending->counter == 1)
-		return;
 
 	spi_control_cs(dev, false);
 
 	pending->dev = NULL;
-	pending->counter = 0;
-	context->rc = rc;
+	context->rc = error;
 	device_sync_call_complete(&context->sync);
-}
-
-static void spi_qmsi_tx_callback(uint32_t id, uint32_t len)
-{
-	pending_transfer_complete(id, QM_RC_OK);
-}
-
-static void spi_qmsi_rx_callback(uint32_t id, uint32_t len)
-{
-	pending_transfer_complete(id, QM_RC_OK);
-}
-
-static void spi_qmsi_err_callback(uint32_t id, qm_rc_t err)
-{
-	pending_transfer_complete(id, err);
 }
 
 static int spi_qmsi_slave_select(struct device *dev, uint32_t slave)
@@ -158,8 +136,8 @@ static inline uint8_t frame_size_to_dfs(qm_spi_frame_size_t frame_size)
 }
 
 static int spi_qmsi_transceive(struct device *dev,
-			     const void *tx_buf, uint32_t tx_buf_len,
-			     void *rx_buf, uint32_t rx_buf_len)
+			       const void *tx_buf, uint32_t tx_buf_len,
+			       void *rx_buf, uint32_t rx_buf_len)
 {
 	struct spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_spi_t spi = spi_config->spi;
@@ -167,7 +145,7 @@ static int spi_qmsi_transceive(struct device *dev,
 	qm_spi_config_t *cfg = &context->cfg;
 	uint8_t dfs = frame_size_to_dfs(cfg->frame_size);
 	qm_spi_async_transfer_t *xfer;
-	qm_rc_t rc;
+	int rc;
 
 	if (pending_transfers[spi].dev)
 		return -EBUSY;
@@ -177,12 +155,13 @@ static int spi_qmsi_transceive(struct device *dev,
 
 	xfer->rx = rx_buf;
 	xfer->rx_len = rx_buf_len / dfs;
+	/* This cast is necessary to drop the "const" modifier, since QMSI xfer
+	 * does not take a const pointer.
+	 */
 	xfer->tx = (uint8_t *)tx_buf;
 	xfer->tx_len = tx_buf_len / dfs;
-	xfer->id = spi;
-	xfer->tx_callback = spi_qmsi_tx_callback;
-	xfer->rx_callback = spi_qmsi_rx_callback;
-	xfer->err_callback = spi_qmsi_err_callback;
+	xfer->callback_data = dev;
+	xfer->callback = transfer_complete;
 
 	if (tx_buf_len == 0)
 		cfg->transfer_mode = QM_SPI_TMOD_RX;
@@ -199,13 +178,13 @@ static int spi_qmsi_transceive(struct device *dev,
 		QM_SPI[spi]->ctrlr0 |= BIT(11);
 
 	rc = qm_spi_set_config(spi, cfg);
-	if (rc != QM_RC_OK)
+	if (rc != 0)
 		return -EINVAL;
 
 	spi_control_cs(dev, true);
 
 	rc = qm_spi_irq_transfer(spi, xfer);
-	if (rc != QM_RC_OK) {
+	if (rc != 0) {
 		spi_control_cs(dev, false);
 		return -EIO;
 	}

@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,7 +29,8 @@
 
 #include "qm_aon_counters.h"
 
-static void (*callback)() = NULL;
+static void (*callback)(void *) = NULL;
+static void *callback_data;
 
 static void pt_reset(const qm_scss_aon_t aonc)
 {
@@ -56,98 +57,94 @@ static void pt_reset(const qm_scss_aon_t aonc)
 	QM_SCSS_AON[aonc].aonpt_ctrl |= BIT(1);
 }
 
-void qm_aonpt_isr_0(void)
+QM_ISR_DECLARE(qm_aonpt_isr_0)
 {
 	if (callback) {
-		(*callback)();
+		(*callback)(callback_data);
 	}
 
 	QM_SCSS_AON[0].aonpt_ctrl |= BIT(0); /* Clear pending interrupts */
 	QM_ISR_EOI(QM_IRQ_AONPT_0_VECTOR);
 }
 
-qm_rc_t qm_aonc_enable(const qm_scss_aon_t aonc)
+int qm_aonc_enable(const qm_scss_aon_t aonc)
 {
-	QM_CHECK(aonc < QM_SCSS_AON_NUM, QM_RC_EINVAL);
+	QM_CHECK(aonc < QM_SCSS_AON_NUM, -EINVAL);
 
 	QM_SCSS_AON[aonc].aonc_cfg = 0x1;
 
-	return QM_RC_OK;
+	return 0;
 }
 
-qm_rc_t qm_aonc_disable(const qm_scss_aon_t aonc)
+int qm_aonc_disable(const qm_scss_aon_t aonc)
 {
-	QM_CHECK(aonc < QM_SCSS_AON_NUM, QM_RC_EINVAL);
+	QM_CHECK(aonc < QM_SCSS_AON_NUM, -EINVAL);
 
 	QM_SCSS_AON[aonc].aonc_cfg = 0x0;
 
-	return QM_RC_OK;
+	return 0;
 }
 
-uint32_t qm_aonc_get_value(const qm_scss_aon_t aonc)
+int qm_aonc_get_value(const qm_scss_aon_t aonc, uint32_t * const val)
 {
-	return QM_SCSS_AON[aonc].aonc_cnt;
+	QM_CHECK(aonc < QM_SCSS_AON_NUM, -EINVAL);
+	QM_CHECK(val != NULL, -EINVAL);
+
+	*val = QM_SCSS_AON[aonc].aonc_cnt;
+	return 0;
 }
 
-qm_rc_t qm_aonpt_set_config(const qm_scss_aon_t aonc,
-			    const qm_aonpt_config_t *const cfg)
+int qm_aonpt_set_config(const qm_scss_aon_t aonc,
+			const qm_aonpt_config_t *const cfg)
 {
-	QM_CHECK(aonc < QM_SCSS_AON_NUM, QM_RC_EINVAL);
-	QM_CHECK(cfg != NULL, QM_RC_EINVAL);
+	QM_CHECK(aonc < QM_SCSS_AON_NUM, -EINVAL);
+	QM_CHECK(cfg != NULL, -EINVAL);
 
 	QM_SCSS_AON[aonc].aonpt_ctrl |= BIT(0); /* Clear pending interrupts */
 	QM_SCSS_AON[aonc].aonpt_cfg = cfg->count;
 	if (cfg->int_en) {
 		callback = cfg->callback;
+		callback_data = cfg->callback_data;
 	} else {
 		callback = NULL;
 	}
 	pt_reset(aonc);
 
-	return QM_RC_OK;
+	return 0;
 }
 
-qm_rc_t qm_aonpt_get_config(const qm_scss_aon_t aonc,
-			    qm_aonpt_config_t *const cfg)
+int qm_aonpt_get_value(const qm_scss_aon_t aonc, uint32_t *const val)
 {
-	QM_CHECK(aonc < QM_SCSS_AON_NUM, QM_RC_EINVAL);
-	QM_CHECK(cfg != NULL, QM_RC_EINVAL);
+	QM_CHECK(aonc < QM_SCSS_AON_NUM, -EINVAL);
+	QM_CHECK(val != NULL, -EINVAL);
 
-	cfg->count = QM_SCSS_AON[aonc].aonpt_cfg;
-	if (callback == NULL) {
-		cfg->int_en = false;
-	} else {
-		cfg->int_en = true;
-	}
-	cfg->callback = callback;
-
-	return QM_RC_OK;
+	*val = QM_SCSS_AON[aonc].aonpt_cnt;
+	return 0;
 }
 
-uint32_t qm_aonpt_get_value(const qm_scss_aon_t aonc)
+int qm_aonpt_get_status(const qm_scss_aon_t aonc, bool *const status)
 {
-	return QM_SCSS_AON[aonc].aonpt_cnt;
+	QM_CHECK(aonc < QM_SCSS_AON_NUM, -EINVAL);
+	QM_CHECK(status != NULL, -EINVAL);
+
+	*status = QM_SCSS_AON[aonc].aonpt_stat & BIT(0);
+	return 0;
 }
 
-bool qm_aonpt_get_status(const qm_scss_aon_t aonc)
+int qm_aonpt_clear(const qm_scss_aon_t aonc)
 {
-	return QM_SCSS_AON[aonc].aonpt_stat & BIT(0);
-}
-
-qm_rc_t qm_aonpt_clear(const qm_scss_aon_t aonc)
-{
-	QM_CHECK(aonc < QM_SCSS_AON_NUM, QM_RC_EINVAL);
+	QM_CHECK(aonc < QM_SCSS_AON_NUM, -EINVAL);
 
 	QM_SCSS_AON[aonc].aonpt_ctrl |= BIT(0);
 
-	return QM_RC_OK;
+	return 0;
 }
 
-qm_rc_t qm_aonpt_reset(const qm_scss_aon_t aonc)
+int qm_aonpt_reset(const qm_scss_aon_t aonc)
 {
-	QM_CHECK(aonc < QM_SCSS_AON_NUM, QM_RC_EINVAL);
+	QM_CHECK(aonc < QM_SCSS_AON_NUM, -EINVAL);
 
 	pt_reset(aonc);
 
-	return QM_RC_OK;
+	return 0;
 }

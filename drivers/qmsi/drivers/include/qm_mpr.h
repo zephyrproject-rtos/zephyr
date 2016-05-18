@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -53,7 +53,7 @@
 /** MPR mask dma */
 #define QM_SRAM_MPR_AGENT_MASK_DMA BIT(2)
 
-typedef void (*qm_mpr_callback_t)(void);
+typedef void (*qm_mpr_callback_t)(void *);
 
 /* MPR identifier */
 typedef enum {
@@ -80,41 +80,24 @@ typedef enum {
 } qm_mpr_viol_mode_t;
 
 /**
- * MPR Interrupt Service Routine
- */
-void qm_mpr_isr(void);
-
-/**
  * Configure SRAM controller's Memory Protection Region.
  *
  * @param [in] id Which MPR to configure.
  * @param [in] cfg MPR configuration.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
+ * @return int 0 on success, error code otherwise.
  */
-qm_rc_t qm_mpr_set_config(const qm_mpr_id_t id,
-			  const qm_mpr_config_t *const cfg);
-
-/**
- * Retrieve SRAM controller's Memory Protection Region configuration.
- * This will set the cfg parameter to match the current configuration
- * of the SRAM controller's MPR.
- *
- * @brief Get MPR configuration.
- * @param [in] id Which MPR to get configuration of.
- * @param [out] cfg MPR configuration.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
- */
-qm_rc_t qm_mpr_get_config(const qm_mpr_id_t id, qm_mpr_config_t *const cfg);
+int qm_mpr_set_config(const qm_mpr_id_t id, const qm_mpr_config_t *const cfg);
 
 /**
  * Configure MPR violation behaviour
  *
  * @param [in] mode (generate interrupt, warm reset, enter probe mode).
- * @param [in] callback_fn for interrupt mode (only). This can not be null.
- * @return qm_rc_t QM_RC_OK on success, error code otherwise.
+ * @param [in] callback_fn for interrupt mode (only).
+ * @param [in] callback_data user data for interrupt mode (only).
+ * @return int 0 on success, error code otherwise.
  * */
-qm_rc_t qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
-				    qm_mpr_callback_t callback_fn);
+int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
+				qm_mpr_callback_t callback_fn, void *data);
 
 /**
  * @}

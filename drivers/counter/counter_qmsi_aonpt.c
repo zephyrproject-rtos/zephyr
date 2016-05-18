@@ -22,22 +22,17 @@
 #include <counter.h>
 
 #include "qm_aon_counters.h"
+#include "qm_isr.h"
 
-struct aon_timer_data {
-	void *callback_user_data;
-	counter_callback_t timer_callback;
-};
+static void aonpt_int_callback(void *user_data);
 
-static void aonpt_int_callback(void);
-
-static struct aon_timer_data aonpt_driver_data;
+static counter_callback_t user_cb;
 
 static int aon_timer_qmsi_start(struct device *dev)
 {
-	struct aon_timer_data *driver_data = dev->driver_data;
 	qm_aonpt_config_t qmsi_cfg;
 
-	driver_data->timer_callback = NULL;
+	user_cb = NULL;
 
 	qmsi_cfg.callback = NULL;
 	qmsi_cfg.int_en = false;
@@ -45,9 +40,9 @@ static int aon_timer_qmsi_start(struct device *dev)
 	 * the maximum value.
 	 */
 	qmsi_cfg.count = 0xffffffff;
+	qmsi_cfg.callback_data = NULL;
 
-	if (qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg) !=
-	    QM_RC_OK) {
+	if (qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg)) {
 		return -EIO;
 	}
 
@@ -61,6 +56,7 @@ static int aon_timer_qmsi_stop(struct device *dev)
 	qmsi_cfg.callback = NULL;
 	qmsi_cfg.int_en = false;
 	qmsi_cfg.count = 0;
+	qmsi_cfg.callback_data = NULL;
 
 	qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg);
 
@@ -69,34 +65,33 @@ static int aon_timer_qmsi_stop(struct device *dev)
 
 static uint32_t aon_timer_qmsi_read(void)
 {
-	return qm_aonpt_get_value(QM_SCSS_AON_0);
+	uint32_t value;
+
+	qm_aonpt_get_value(QM_SCSS_AON_0, &value);
+
+	return value;
 }
 
 static int aon_timer_qmsi_set_alarm(struct device *dev,
 				    counter_callback_t callback,
 				    uint32_t count, void *user_data)
 {
-	struct aon_timer_data *driver_data = dev->driver_data;
 	qm_aonpt_config_t qmsi_cfg;
 
-	qm_aonpt_get_config(QM_SCSS_AON_0, &qmsi_cfg);
-
 	/* Check if timer has been started */
-	if (qmsi_cfg.count == 0) {
+	if (QM_SCSS_AON[QM_SCSS_AON_0].aonpt_cfg == 0) {
 		return -ENOTSUP;
 	}
 
-	driver_data->timer_callback = callback;
-	driver_data->callback_user_data = user_data;
+	user_cb = callback;
 
 	qmsi_cfg.callback = aonpt_int_callback;
 	qmsi_cfg.int_en = true;
 	qmsi_cfg.count = count;
+	qmsi_cfg.callback_data = user_data;
 
-	if (qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg) !=
-	    QM_RC_OK) {
-		driver_data->timer_callback = NULL;
-		driver_data->callback_user_data = NULL;
+	if (qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg)) {
+		user_cb = NULL;
 		return -EIO;
 	}
 
@@ -112,14 +107,12 @@ static struct counter_driver_api aon_timer_qmsi_api = {
 
 static int aon_timer_init(struct device *dev)
 {
-	struct aon_timer_data *driver_data = dev->driver_data;
+	dev->driver_api = &aon_timer_qmsi_api;
 
-	driver_data->callback_user_data = NULL;
-	driver_data->timer_callback = NULL;
+	user_cb = NULL;
 
-	IRQ_CONNECT(QM_IRQ_AONPT_0,
-		    CONFIG_AON_TIMER_IRQ_PRI, qm_aonpt_isr_0,
-		    NULL, IOAPIC_EDGE | IOAPIC_HIGH);
+	IRQ_CONNECT(QM_IRQ_AONPT_0, CONFIG_AON_TIMER_IRQ_PRI,
+		    qm_aonpt_isr_0, NULL, IOAPIC_EDGE | IOAPIC_HIGH);
 
 	irq_enable(QM_IRQ_AONPT_0);
 
@@ -129,17 +122,13 @@ static int aon_timer_init(struct device *dev)
 }
 
 DEVICE_AND_API_INIT(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME,
-		    aon_timer_init, &aonpt_driver_data, NULL, SECONDARY,
+		    aon_timer_init, NULL, NULL, SECONDARY,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&aon_timer_qmsi_api);
 
-static void aonpt_int_callback(void)
+static void aonpt_int_callback(void *user_data)
 {
-	struct device *dev = DEVICE_GET(aon_timer);
-	struct aon_timer_data *driver_data = dev->driver_data;
-
-	if (driver_data->timer_callback) {
-		(*driver_data->timer_callback)(dev,
-		driver_data->callback_user_data);
+	if (user_cb) {
+		(*user_cb)(DEVICE_GET(aon_timer), user_data);
 	}
 }

@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,7 +34,7 @@
 #include "qm_soc_regs.h"
 
 /**
- * Initialisation and reset for Quark Microcontrollers.
+ * Initialisation and reset.
  *
  * @defgroup groupInit Initialisation
  * @{
@@ -44,12 +44,14 @@
  * Reset Mode type.
  */
 typedef enum {
-	QM_WARM_RESET = BIT(1),
-	QM_COLD_RESET = BIT(3),
+	QM_WARM_RESET = BIT(1), /**< Warm reset. */
+	QM_COLD_RESET = BIT(3), /**< Cold reset. */
 } qm_soc_reset_t;
 
 /**
- * Reset the SoC. This can either be a cold reset or a warm reset.
+ * Reset the SoC.
+ *
+ * This can either be a cold reset or a warm reset.
  *
  * @param [in] reset_type Selects the type of reset to perform.
  */

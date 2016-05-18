@@ -21,7 +21,8 @@
 #include <ioapic.h>
 
 #include "qm_i2c.h"
-#include "qm_scss.h"
+#include "qm_isr.h"
+#include "clk.h"
 
 /* Convenient macros to get the controller instance and the driver data. */
 #define GET_CONTROLLER_INSTANCE(dev) \
@@ -36,7 +37,7 @@ struct i2c_qmsi_config_info {
 
 struct i2c_qmsi_driver_data {
 	device_sync_call_t sync;
-	qm_rc_t transfer_status;
+	int transfer_status;
 };
 
 static int i2c_qmsi_init(struct device *dev);
@@ -99,45 +100,23 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 		return -EINVAL;
 	}
 
-	if (qm_i2c_set_config(instance, &qm_cfg) != QM_RC_OK)
+	if (qm_i2c_set_config(instance, &qm_cfg) != 0)
 		return -EIO;
 
 	return 0;
 }
 
-static void transfer_complete(uint32_t id, qm_rc_t status)
+static void transfer_complete(void *data, int rc, qm_i2c_status_t status,
+			 uint32_t len)
 {
-	struct device *dev;
+	struct device *dev = (struct device *) data;
 	struct i2c_qmsi_driver_data *driver_data;
 
-	switch (id) {
-#ifdef CONFIG_I2C_0
-	case QM_I2C_0:
-		dev = DEVICE_GET(i2c_0);
-		break;
-#endif
-#ifdef CONFIG_I2C_1
-	case QM_I2C_1:
-		dev = DEVICE_GET(i2c_1);
-		break;
-#endif
-	default:
-		return;
-	}
-
 	driver_data = GET_DRIVER_DATA(dev);
-	driver_data->transfer_status = status;
+	driver_data->transfer_status = rc;
 	device_sync_call_complete(&driver_data->sync);
-}
 
-static void complete_cb(uint32_t id, uint32_t len)
-{
-	transfer_complete(id, QM_RC_OK);
-}
 
-static void err_cb(uint32_t id, qm_i2c_status_t status)
-{
-	transfer_complete(id, status);
 }
 
 static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
@@ -145,44 +124,42 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 {
 	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
-	qm_rc_t rc;
+	qm_i2c_status_t status;
+	int rc;
 
-	if (qm_i2c_get_status(instance) != QM_I2C_IDLE)
+	qm_i2c_get_status(instance, &status);
+	if (status != QM_I2C_IDLE)
 		return -EBUSY;
 
 	if  (msgs == NULL || num_msgs == 0)
 		return -ENOTSUP;
 
 	for (int i = 0; i < num_msgs; i++) {
-		uint8_t *buf = msgs[i].buf;
-		uint32_t len = msgs[i].len;
 		uint8_t op =  msgs[i].flags & I2C_MSG_RW_MASK;
 		bool stop = (msgs[i].flags & I2C_MSG_STOP) == I2C_MSG_STOP;
 		qm_i2c_transfer_t xfer = { 0 };
-
 		if (op == I2C_MSG_WRITE) {
-			xfer.tx = buf;
-			xfer.tx_len = len;
-			xfer.tx_callback = complete_cb;
+			xfer.tx = msgs[i].buf;
+			xfer.tx_len = msgs[i].len;
 		} else {
-			xfer.rx = buf;
-			xfer.rx_len = len;
-			xfer.rx_callback = complete_cb;
+			xfer.rx = msgs[i].buf;
+			xfer.rx_len = msgs[i].len;
 		}
 
-		xfer.id = instance;
+		xfer.callback = transfer_complete;
+		xfer.callback_data = dev;
 		xfer.stop = stop;
-		xfer.err_callback = err_cb;
-
 		rc = qm_i2c_master_irq_transfer(instance, &xfer, addr);
-		if (rc != QM_RC_OK)
+		if (rc != 0)
 			return -EIO;
 
 		/* Block current thread until the I2C transfer completes. */
-		device_sync_call_wait(&driver_data->sync);
-
-		if (driver_data->transfer_status != QM_RC_OK)
-			return -EIO;
+		if (stop || op != I2C_MSG_WRITE) {
+			device_sync_call_wait(&driver_data->sync);
+			if (driver_data->transfer_status != 0) {
+				return -EIO;
+			}
+		}
 	}
 
 	return 0;

@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
  * 3. Neither the name of the Intel Corporation nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,7 +28,6 @@
  */
 
 #include "qm_pic_timer.h"
-#include "qm_interrupt.h"
 
 /*
  * PIC timer access layer. Supports both Local APIC timer and MVIC timer.
@@ -41,7 +40,8 @@
 #define LVTTIMER_MODE_PERIODIC_OFFS (17)
 #define LVTTIMER_INT_MASK_OFFS (16)
 
-static void (*callback)(void);
+static void (*callback)(void *data);
+static void *callback_data;
 
 #if (HAS_APIC)
 #define PIC_TIMER (QM_LAPIC)
@@ -49,10 +49,10 @@ static void (*callback)(void);
 #define PIC_TIMER (QM_PIC_TIMER)
 #endif
 
-void qm_pic_timer_isr(void)
+QM_ISR_DECLARE(qm_pic_timer_isr)
 {
 	if (callback) {
-		callback();
+		callback(callback_data);
 	}
 
 #if (HAS_APIC)
@@ -63,10 +63,10 @@ void qm_pic_timer_isr(void)
 #endif
 }
 
-qm_rc_t qm_pic_timer_set_config(const qm_pic_timer_config_t *const cfg)
+int qm_pic_timer_set_config(const qm_pic_timer_config_t *const cfg)
 {
-	QM_CHECK(cfg != NULL, QM_RC_EINVAL);
-	QM_CHECK(cfg->mode <= QM_PIC_TIMER_MODE_PERIODIC, QM_RC_EINVAL);
+	QM_CHECK(cfg != NULL, -EINVAL);
+	QM_CHECK(cfg->mode <= QM_PIC_TIMER_MODE_PERIODIC, -EINVAL);
 
 	/* Stop timer, mask interrupt and program interrupt vector */
 	PIC_TIMER->timer_icr.reg = 0;
@@ -84,33 +84,25 @@ qm_rc_t qm_pic_timer_set_config(const qm_pic_timer_config_t *const cfg)
 
 	PIC_TIMER->lvttimer.reg |= cfg->mode << LVTTIMER_MODE_PERIODIC_OFFS;
 	callback = cfg->callback;
+	callback_data = cfg->callback_data;
 	if (cfg->int_en) {
 		PIC_TIMER->lvttimer.reg &= ~BIT(LVTTIMER_INT_MASK_OFFS);
 	}
-	return QM_RC_OK;
+	return 0;
 }
 
-qm_rc_t qm_pic_timer_get_config(qm_pic_timer_config_t *const cfg)
-{
-	QM_CHECK(cfg != NULL, QM_RC_EINVAL);
-
-	cfg->mode =
-	    (PIC_TIMER->lvttimer.reg >> LVTTIMER_MODE_PERIODIC_OFFS) & 1;
-	cfg->int_en =
-	    (PIC_TIMER->lvttimer.reg & BIT(LVTTIMER_INT_MASK_OFFS)) == 0
-		? true
-		: false;
-	cfg->callback = callback;
-	return QM_RC_OK;
-}
-
-qm_rc_t qm_pic_timer_set(const uint32_t count)
+int qm_pic_timer_set(const uint32_t count)
 {
 	PIC_TIMER->timer_icr.reg = count;
-	return QM_RC_OK;
+
+	return 0;
 }
 
-uint32_t qm_pic_timer_get()
+int qm_pic_timer_get(uint32_t *const count)
 {
-	return PIC_TIMER->timer_ccr.reg;
+	QM_CHECK(count != NULL, -EINVAL);
+
+	*count = PIC_TIMER->timer_ccr.reg;
+
+	return 0;
 }
