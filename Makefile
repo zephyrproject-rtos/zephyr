@@ -810,12 +810,22 @@ quiet_cmd_lnk_elf = LINK    $@
 	rm elf.tmp									\
 )
 
+ASSERT_WARNING_STR := \
+    "\n      ------------------------------------------------------------" \
+    "\n      --- WARNING:  __ASSERT() statements are globally ENABLED ---" \
+    "\n      --- The kernel will run more slowly and uses more memory ---" \
+    "\n      ------------------------------------------------------------\n\n" \
+
+WARN_ABOUT_ASSERT := $(if $(CONFIG_ASSERT),echo -e -n $(ASSERT_WARNING_STR),true)
+
 ifeq ($(ARCH),x86)
 $(KERNEL_ELF_NAME): staticIdt.o final-linker.cmd
 	$(call cmd,lnk_elf)
+	@$(WARN_ABOUT_ASSERT)
 else
 $(KERNEL_ELF_NAME): $(TMP_ELF)
 	@cp $(TMP_ELF) $(KERNEL_ELF_NAME)
+	@$(WARN_ABOUT_ASSERT)
 endif
 
 

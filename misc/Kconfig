@@ -210,7 +210,8 @@ config ASSERT
 config ASSERT_LEVEL
 	int
 	prompt "__ASSERT() level"
-	default 1
+	default 2
+	range 0 2
 	depends on ASSERT
 	help
 	This option specifies the assertion level used by the __ASSERT()
