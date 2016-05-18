@@ -408,6 +408,93 @@ static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident,
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
+static void l2cap_br_chan_del(struct bt_l2cap_chan *chan)
+{
+	BT_DBG("conn %p chan %p cid 0x%04x", chan->conn, chan, chan->rx.cid);
+
+	chan->conn = NULL;
+
+	if (chan->ops && chan->ops->disconnected) {
+		chan->ops->disconnected(chan);
+	}
+
+	/* Destroy segmented SDU if it exists */
+
+	if (chan->_sdu) {
+		net_buf_unref(chan->_sdu);
+		chan->_sdu = NULL;
+		chan->_sdu_len = 0;
+	}
+}
+
+static struct bt_l2cap_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
+						    uint16_t cid)
+{
+	struct bt_l2cap_chan *chan, *prev;
+
+	for (chan = conn->channels, prev = NULL; chan;
+	     prev = chan, chan = chan->_next) {
+		if (chan->tx.cid != cid) {
+			continue;
+		}
+
+		if (!prev) {
+			conn->channels = chan->_next;
+		} else {
+			prev->_next = chan->_next;
+		}
+
+		return chan;
+	}
+
+	return NULL;
+}
+
+static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
+				 struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.conn;
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_disconn_req *req = (void *)buf->data;
+	struct bt_l2cap_disconn_rsp *rsp;
+	struct bt_l2cap_sig_hdr *hdr;
+	uint16_t scid, dcid;
+
+	if (buf->len < sizeof(*req)) {
+		BT_ERR("Too small disconn req packet size");
+		return;
+	}
+
+	dcid = sys_le16_to_cpu(req->dcid);
+	scid = sys_le16_to_cpu(req->scid);
+
+	BT_DBG("scid 0x%04x dcid 0x%04x", dcid, scid);
+
+	chan = l2cap_br_remove_tx_cid(conn, scid);
+	if (!chan) {
+		l2cap_br_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID);
+		return;
+	}
+
+	buf = bt_l2cap_create_pdu(&br_sig);
+	if (!buf) {
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_DISCONN_RSP;
+	hdr->ident = ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
+	rsp->scid = sys_cpu_to_le16(chan->tx.cid);
+
+	l2cap_br_chan_del(chan);
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+}
+
 static void l2cap_br_connected(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("chan %p cid 0x%04x", chan, chan->rx.cid);
@@ -451,6 +538,9 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	case BT_L2CAP_INFO_REQ:
 		l2cap_br_info_req(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_DISCONN_REQ:
+		l2cap_br_disconn_req(l2cap, hdr->ident, buf);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
