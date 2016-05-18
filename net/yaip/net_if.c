@@ -189,6 +189,156 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *maddr)
 	return NULL;
 }
 
+struct in6_addr *net_if_ipv6_unspecified_addr(void)
+{
+#if defined(CONFIG_NET_IPV6)
+	static struct in6_addr addr = IN6ADDR_ANY_INIT;
+
+	return &addr;
+#else
+	return NULL;
+#endif
+}
+
+struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
+				    enum net_addr_state addr_state)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!iface->ipv6.unicast[i].is_used ||
+		    (addr_state != NET_ADDR_ANY_STATE &&
+		     iface->ipv6.unicast[i].addr_state != addr_state) ||
+		    iface->ipv6.unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+		if (net_is_ipv6_ll_addr(&iface->ipv6.unicast[i].address.in6_addr)) {
+			return &iface->ipv6.unicast[i].address.in6_addr;
+		}
+	}
+
+	return NULL;
+}
+
+static inline uint8_t get_length(struct in6_addr *src, struct in6_addr *dst)
+{
+	uint8_t j, k, xor;
+	uint8_t len = 0;
+
+	for (j = 0; j < 16; j++) {
+		if (src->s6_addr[j] == dst->s6_addr[j]) {
+			len += 8;
+		} else {
+			xor = src->s6_addr[j] ^ dst->s6_addr[j];
+			for (k = 0; k < 8; k++) {
+				if (!(xor & 0x80)) {
+					len++;
+					xor <<= 1;
+				} else {
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+	return len;
+}
+
+static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
+{
+	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
+	    addr->address.family == AF_INET6 &&
+	    !net_is_ipv6_ll_addr(&addr->address.in6_addr)) {
+		return true;
+	}
+
+	return false;
+}
+
+static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
+							  struct in6_addr *dst,
+							  uint8_t *best_so_far)
+{
+#if defined(CONFIG_NET_IPV6)
+	struct in6_addr *src = NULL;
+	uint8_t i, len;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!is_proper_ipv6_address(&iface->ipv6.unicast[i])) {
+			continue;
+		}
+
+		len = get_length(dst,
+				 &iface->ipv6.unicast[i].address.in6_addr);
+		if (len >= *best_so_far) {
+			*best_so_far = len;
+			src = &iface->ipv6.unicast[i].address.in6_addr;
+		}
+	}
+
+	return src;
+#else
+	return NULL;
+#endif
+}
+
+struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
+					     struct in6_addr *dst)
+{
+#if defined(CONFIG_NET_IPV6)
+	struct in6_addr *src = NULL;
+	uint8_t best_match = 0;
+	struct net_if *iface;
+
+	if (!net_is_ipv6_ll_addr(dst) && !net_is_ipv6_addr_mcast(dst)) {
+
+		for (iface = __net_if_start;
+		     !dst_iface && iface != __net_if_end;
+		     iface++) {
+			struct in6_addr *addr;
+
+			addr = net_if_ipv6_get_best_match(iface, dst,
+							  &best_match);
+			if (addr) {
+				src = addr;
+			}
+		}
+
+		/* If caller has supplied interface, then use that */
+		if (dst_iface) {
+			src = net_if_ipv6_get_best_match(dst_iface, dst,
+							 &best_match);
+		}
+
+	} else {
+		for (iface = __net_if_start;
+		     !dst_iface && iface != __net_if_end;
+		     iface++) {
+			struct in6_addr *addr;
+
+			addr = net_if_ipv6_get_ll(iface, NET_ADDR_PREFERRED);
+			if (addr) {
+				src = addr;
+				break;
+			}
+		}
+
+		if (dst_iface) {
+			src = net_if_ipv6_get_ll(dst_iface, NET_ADDR_PREFERRED);
+		}
+	}
+
+	if (!src) {
+		return net_if_ipv6_unspecified_addr();
+	}
+
+	return src;
+#else
+	return NULL;
+#endif
+}
+
 struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr)
 {
 	struct net_if *iface;
