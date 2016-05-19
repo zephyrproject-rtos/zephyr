@@ -44,6 +44,7 @@ extern "C" {
 
 /** Protocol numbers from IANA */
 enum ip_protocol {
+	IPPROTO_ICMP = 1,
 	IPPROTO_TCP = 6,
 	IPPROTO_UDP = 17,
 	IPPROTO_ICMPV6 = 58,
