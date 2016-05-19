@@ -11,6 +11,9 @@ onto it. The best option currently is to use MyNewt
 possible to use the controller with the native Bluetooth stack of
 Zephyr.
 
+Building the firmware yourself
+******************************
+
 #. Set up the newt tool. For Fedora the dependencies are:
 
    .. code-block:: console
@@ -35,7 +38,7 @@ Zephyr.
 #. Currently the necessary code is only available in the 'develop'
    branch of MyNewt, aliased by version number '0.0.0'. To use this,
    edit :file:`project.yml` and change "vers: 0-latest" to
-   "vers: 0.0.0". After that, initialize the project with:
+   "vers: 0-dev". After that, initialize the project with:
 
    .. code-block:: console
 
