@@ -119,6 +119,10 @@ static void show_cmd_help(int argc, char *argv[])
 {
 	int i;
 
+	if (!argv[0] || argv[0][0] == '\0') {
+		goto done;
+	}
+
 	for (i = 0; commands[i].cmd_name; i++) {
 		if (!strcmp(argv[0], commands[i].cmd_name)) {
 			printk("%s %s\n", commands[i].cmd_name,
@@ -127,6 +131,7 @@ static void show_cmd_help(int argc, char *argv[])
 		}
 	}
 
+done:
 	printk("Unrecognized command: %s\n", argv[0]);
 }
 
