@@ -19,6 +19,11 @@
  * limitations under the License.
  */
 
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_UTILS)
+#define SYS_LOG_DOMAIN "net/utils"
+#define NET_DEBUG 1
+#endif
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
