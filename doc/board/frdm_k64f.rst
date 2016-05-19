@@ -1,13 +1,13 @@
 .. _frdm_k64f:
 
-Freescale FRDM-K64F
+NXP FRDM-K64F
 ###################
 
 Overview
 ********
 
 The frdm_k64f board configuration is used by Zephyr applications
-that run on the Freescale Freedom Development Platform (FRDM-K64F).
+that run on the NXP Freedom Development Platform (FRDM-K64F).
 It provides support for an ARM Cortex-M4 CPU and the following devices:
 
 * Nested Vectored Interrupt Controller (NVIC)
@@ -29,7 +29,7 @@ Supported Boards
 ****************
 
 The frdm_k64f board configuration has been tested to run on the
-Freescale Freedom Development Platform.  The physical characteristics of
+NXP Freedom Development Platform.  The physical characteristics of
 this board (including pin names, jumper settings, memory mappings, ...)
 can be found below.  No claims are made about its suitability for use with
 any other hardware system.
@@ -95,7 +95,7 @@ Jumpers & Switches
 
 The Zephyr kernel uses the FRDM-K64F default switch and jumper settings.
 
-The default switch settings for the Freescale FRDM-K64F are:
+The default switch settings for the NXP FRDM-K64F are:
 
 +---------------+------------+---------------+
 | Switch Number | Switch     | ON Switch OFF |
@@ -175,7 +175,7 @@ Component Layout
 ================
 
 Refer to page 2 of the FRDM-K64F Freedom Module User's Guide,
-Rev. 0, 04/2014 (Freescale FRDMK64FUG) for a component layout
+Rev. 0, 04/2014 (NXP FRDMK64FUG) for a component layout
 block diagram. See
 http://infocenter.arm.com/help/topic/com.arm.doc.dui0552a/DUI0552A_cortex_m3_dgug.pdf
 
@@ -200,7 +200,7 @@ hardware features:
 
 Other hardware features are not currently supported by the Zephyr kernel.
 See `vendor documentation`_ for a complete list of
-Freescale FRDM-K64F board hardware features.
+NXP FRDM-K64F board hardware features.
 
 .. _vendor documentation: http://infocenter.arm.com/help/topic/com.arm.doc.dui0552a/DUI0552A_cortex_m3_dgug.pdf
 
@@ -545,7 +545,7 @@ Prerequisites
 
 * You comply with all OpenSDA V2 firmware conditions of use, but particularly:
 
-    - Use with Freescale target devices only. Use with other devices
+    - Use with NXP target devices only. Use with other devices
           is prohibited and illegal.
 
     - Use with evaluation boards only; not with custom hardware.
@@ -780,6 +780,6 @@ Bibliography
 6. Cortex-M3 Devices Generic User Guide
    (ARM DUI 0052A ID121610)
 7. K64 Sub-Family Reference Manual, Rev. 2, January 2014
-   (Freescale K64P144M120SF5RM)
+   (NXP K64P144M120SF5RM)
 8. FRDM-K64F Freedom Module User's Guide, Rev. 0, 04/2014
-   (Freescale FRDMK64FUG)
+   (NXP FRDMK64FUG)
