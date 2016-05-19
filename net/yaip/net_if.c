@@ -418,6 +418,11 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 	return NULL;
 }
 
+struct net_if *net_if_get_default(void)
+{
+	return __net_if_start;
+}
+
 int net_if_init(void)
 {
 	struct net_if_api *api;

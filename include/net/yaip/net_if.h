@@ -316,6 +316,12 @@ struct in6_addr *net_if_ipv6_unspecified_addr(void);
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 				    enum net_addr_state addr_state);
 
+/**
+ * @brief Get the default network interface.
+ * @return Default interface or NULL if no interfaces are configured.
+ */
+struct net_if *net_if_get_default(void);
+
 struct net_if_api {
 	void (*init)(struct net_if *iface);
 	int (*send)(struct net_if *iface, struct net_buf *buf);
