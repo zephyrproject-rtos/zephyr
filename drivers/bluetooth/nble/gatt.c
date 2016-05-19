@@ -223,6 +223,12 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 		for (j = 0; j < attr_count; j++) {
 			attr = &svc_db[i].attrs[j];
 
+			/* Check if attribute handle is within range */
+			if (attr->handle < start_handle ||
+			    attr->handle > end_handle) {
+				continue;
+			}
+
 			if (func(attr, user_data) == BT_GATT_ITER_STOP) {
 				break;
 			}
