@@ -61,6 +61,13 @@ config NETWORK_IP_STACK_DEBUG_CORE
 	help
 	  Enables core network stack code part to output debug messages
 
+config NETWORK_IP_STACK_DEBUG_UTILS
+	bool "Debug utility functions in IP stack"
+	depends on NET_YAIP
+	default n
+	help
+	  Enables utility functions to output debug messages
+
 config NETWORK_IP_STACK_DEBUG_IF
 	bool "Debug network interface code"
 	depends on NET_YAIP
