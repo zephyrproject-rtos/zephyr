@@ -131,6 +131,12 @@ struct net_if {
 	/** Queue for outgoing packets from apps */
 	struct nano_fifo tx_queue;
 
+	/** Stack for the TX fiber tied to this interface */
+#ifndef CONFIG_NET_TX_STACK_SIZE
+#define CONFIG_NET_TX_STACK_SIZE 1024
+#endif
+	char tx_fiber_stack[CONFIG_NET_TX_STACK_SIZE];
+
 #if defined(CONFIG_NET_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IFACE_UNICAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IFACE_MCAST_IPV6_ADDR_COUNT
