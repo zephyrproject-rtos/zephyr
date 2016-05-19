@@ -159,9 +159,9 @@ BRANCH_LABEL(_ExcEntSetupDone)
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
 
-	movl	_nanokernel + __tNANO_current_OFFSET, %ecx
+	movl	_nanokernel + __tNANO_current_OFFSET, %edx
 
-	incl	__tTCS_excNestCount_OFFSET(%ecx)	/* inc exception nest count */
+	incl	__tTCS_excNestCount_OFFSET(%edx)	/* inc exception nest count */
 
 #ifdef CONFIG_GDB_INFO
 
@@ -172,9 +172,9 @@ BRANCH_LABEL(_ExcEntSetupDone)
      * registers and the stack of the preempted thread.
      */
 
-	testl	$EXC_ACTIVE, __tTCS_flags_OFFSET (%ecx)
+	testl	$EXC_ACTIVE, __tTCS_flags_OFFSET (%edx)
 	jne	alreadyInException
-	movl	%esp, __tTCS_esfPtr_OFFSET(%ecx)
+	movl	%esp, __tTCS_esfPtr_OFFSET(%edx)
 
 BRANCH_LABEL(alreadyInException)
 
@@ -188,7 +188,7 @@ BRANCH_LABEL(alreadyInException)
 	 * handled in the event of a context switch.
 	 */
 
-	orl	$EXC_ACTIVE, __tTCS_flags_OFFSET(%ecx)
+	orl	$EXC_ACTIVE, __tTCS_flags_OFFSET(%edx)
 
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
