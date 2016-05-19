@@ -33,6 +33,11 @@ extern char *net_sprint_ip_addr_buf(uint8_t *ip, int ip_len,
 				    char *buf, int buflen);
 extern uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto);
 
+static inline uint16_t net_calc_chksum_icmpv6(struct net_buf *buf)
+{
+	return net_calc_chksum(buf, IPPROTO_ICMPV6);
+}
+
 #if NET_DEBUG > 0
 static inline char *net_sprint_ll_addr(uint8_t *ll, uint8_t ll_len)
 {

@@ -41,6 +41,10 @@
 
 #include "net_private.h"
 
+#if defined(CONFIG_NET_IPV6)
+#include "icmpv6.h"
+#endif
+
 /* Stack for the rx fiber.
  */
 #if !defined(CONFIG_NET_RX_STACK_SIZE)
@@ -323,7 +327,9 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 
 static int network_initialization(void)
 {
-
+#if defined(CONFIG_NET_IPV6)
+	net_icmpv6_init();
+#endif
 	return 0;
 }
 
