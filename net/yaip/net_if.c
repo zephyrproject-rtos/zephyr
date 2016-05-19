@@ -23,23 +23,22 @@
 #include <nanokernel.h>
 #include <sections.h>
 #include <string.h>
-#include <misc/sys_log.h>
-#include <net/net_if.h>
 #include <net/net_core.h>
+#include <net/nbuf.h>
+#include <net/net_if.h>
+
+#include "net_private.h"
 
 /* net_if dedicated section limiters */
 extern struct net_if __net_if_start[];
 extern struct net_if __net_if_end[];
 
-/* Stack for the TX fiber */
-#ifndef CONFIG_NET_TX_STACK_SIZE
-#define CONFIG_NET_TX_STACK_SIZE 1024
-#endif
-static char __noinit __stack tx_fiber_stack[CONFIG_NET_TX_STACK_SIZE];
-
 static void net_if_tx_fiber(struct net_if *iface)
 {
-	NET_DBG("Starting TX fiber (stack %d bytes)", sizeof(tx_fiber_stack));
+	struct net_if_api *api = (struct net_if_api *)iface->dev->driver_api;
+
+	NET_DBG("Starting TX fiber (stack %d bytes) for driver %p",
+		sizeof(iface->tx_fiber_stack), api);
 
 	while (1) {
 		struct net_buf *buf;
@@ -48,9 +47,18 @@ static void net_if_tx_fiber(struct net_if *iface)
 		buf = nano_fifo_get(&iface->tx_queue, TICKS_UNLIMITED);
 
 		NET_DBG("Processing (buf %p, len %u) network packet",
-			buf, buf->len);
+			buf, net_buf_frags_len(buf->frags));
 
-		/* FIXME - Do something with the packet */
+		if (api && api->send) {
+			if (api->send(iface, buf) < 0) {
+				net_nbuf_unref(buf);
+			}
+		} else {
+			net_nbuf_unref(buf);
+		}
+
+		net_analyze_stack("TX fiber", iface->tx_fiber_stack,
+				  sizeof(iface->tx_fiber_stack));
 	}
 }
 
@@ -58,7 +66,7 @@ static inline void init_tx_queue(struct net_if *iface)
 {
 	nano_fifo_init(&iface->tx_queue);
 
-	fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
+	fiber_start(iface->tx_fiber_stack, sizeof(iface->tx_fiber_stack),
 		    (nano_fiber_entry_t)net_if_tx_fiber, (int)iface, 0, 7, 0);
 }
 
