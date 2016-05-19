@@ -54,8 +54,14 @@
 #define DBG_COUNTER_RESULT() 0
 #endif
 
+#ifdef SPI_DW_SPI_CLOCK
+#define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
+		((SPI_DW_SPI_CLOCK / ssi_clk_hz) & 0xFFFF)
+/* provision for soc.h providing a clock that is different than CPU clock */
+#else
 #define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
 		((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / ssi_clk_hz) & 0xFFFF)
+#endif
 
 static void completed(struct device *dev, int error)
 {
@@ -66,15 +72,28 @@ static void completed(struct device *dev, int error)
 		goto out;
 	}
 
-	if (spi->fifo_diff ||
-	    !((spi->tx_buf && !spi->tx_buf_len && !spi->rx_buf) ||
-	      (spi->rx_buf && !spi->rx_buf_len && !spi->tx_buf) ||
-	      (spi->tx_buf && !spi->tx_buf_len &&
-				spi->rx_buf && !spi->rx_buf_len))) {
-		return;
+	/*
+	* There are several situations here.
+	* 1. spi_write w rx_buf - need last_tx && rx_buf_len zero to be done.
+	* 2. spi_write w/o rx_buf - only need to determine when write is done.
+	* 3. spi_read - need rx_buf_len zero.
+	*/
+	if (spi->tx_buf && spi->rx_buf) {
+		if (!spi->last_tx || spi->rx_buf_len)
+			return;
+	} else if (spi->tx_buf) {
+		if (!spi->last_tx)
+			return;
+	} else { /* or, spi->rx_buf!=0 */
+		if (spi->rx_buf_len)
+			return;
 	}
 
 out:
+	/* need to give time for FIFOs to drain before issuing more commands */
+	while (test_bit_sr_busy(info->regs)) {
+	}
+
 	spi->error = error;
 
 	/* Disabling interrupts */
@@ -98,8 +117,19 @@ static void push_data(struct device *dev)
 	uint32_t f_tx;
 	DBG_COUNTER_INIT();
 
-	f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs) -
-					read_rxflr(info->regs) - 1;
+	if (spi->rx_buf) {
+		f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs) -
+					read_rxflr(info->regs);
+		if ((int)f_tx < 0) {
+			f_tx = 0; /* if rx-fifo is full, hold off tx */
+		}
+	} else {
+		f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs);
+	}
+	if (f_tx && (spi->tx_buf_len == 0)) {
+		/* room in fifo, yet nothing to send */
+		spi->last_tx = 1; /* setting last_tx indicates TX is done */
+	}
 	while (f_tx) {
 		if (spi->tx_buf && spi->tx_buf_len > 0) {
 			switch (spi->dfs) {
@@ -136,8 +166,9 @@ static void push_data(struct device *dev)
 		DBG_COUNTER_INC();
 	}
 
-	if (!spi->tx_buf_len && !spi->rx_buf_len) {
+	if (spi->last_tx) {
 		write_txftlr(0, info->regs);
+		/* prevents any further interrupts demanding TX fifo fill */
 	}
 
 	SYS_LOG_DBG("Pushed: %d", DBG_COUNTER_RESULT());
@@ -277,6 +308,7 @@ static int spi_dw_transceive(struct device *dev,
 	struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	uint32_t rx_thsld = DW_SPI_RXFTLR_DFLT;
+	uint32_t imask;
 
 	SYS_LOG_DBG("%s: %p, %p, %u, %p, %u",
 	    __func__, dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
@@ -291,17 +323,23 @@ static int spi_dw_transceive(struct device *dev,
 	spi->tx_buf = tx_buf;
 	spi->tx_buf_len = tx_buf_len/spi->dfs;
 	spi->rx_buf = rx_buf;
-	spi->rx_buf_len = rx_buf_len/spi->dfs;
+	if (rx_buf) {
+		spi->rx_buf_len = rx_buf_len/spi->dfs;
+	} else {
+		spi->rx_buf_len = 0; /* must be zero if no buffer */
+	}
 	spi->fifo_diff = 0;
+	spi->last_tx = 0;
 
-	/* Tx Threshold, always at default */
+	/* Tx Threshold */
 	write_txftlr(DW_SPI_TXFTLR_DFLT, info->regs);
 
 	/* Does Rx thresholds needs to be lower? */
-	if (rx_buf_len && spi->rx_buf_len < DW_SPI_FIFO_DEPTH) {
+	if (spi->rx_buf_len && spi->rx_buf_len < DW_SPI_FIFO_DEPTH) {
 		rx_thsld = spi->rx_buf_len - 1;
-	} else if (!rx_buf_len && spi->tx_buf_len < DW_SPI_FIFO_DEPTH) {
+	} else if (!spi->rx_buf_len && spi->tx_buf_len < DW_SPI_FIFO_DEPTH) {
 		rx_thsld = spi->tx_buf_len - 1;
+		/* TODO: why? */
 	}
 
 	write_rxftlr(rx_thsld, info->regs);
@@ -312,7 +350,13 @@ static int spi_dw_transceive(struct device *dev,
 	_spi_control_cs(dev, 1);
 
 	/* Enable interrupts */
-	write_imr(DW_SPI_IMR_UNMASK, info->regs);
+	imask = DW_SPI_IMR_UNMASK;
+	if (!rx_buf) {
+		/* if there is no rx buffer, keep all rx interrupts masked */
+		imask &= DW_SPI_IMR_MASK_RX;
+	}
+
+	write_imr(imask, info->regs);
 
 	/* Enable the controller */
 	set_bit_ssienr(info->regs);

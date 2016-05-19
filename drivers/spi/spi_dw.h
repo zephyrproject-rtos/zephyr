@@ -46,7 +46,8 @@ struct spi_dw_data {
 	uint32_t dfs:3; /* dfs in bytes: 1,2 or 4 */
 	uint32_t slave:17; /* up 16 slaves */
 	uint32_t fifo_diff:9; /* cannot be bigger than FIFO depth */
-	uint32_t _unused:2;
+	uint32_t last_tx:1;
+	uint32_t _unused:1;
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	struct device *clock;
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
