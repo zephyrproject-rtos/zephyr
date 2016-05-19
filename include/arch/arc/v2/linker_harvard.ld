@@ -35,15 +35,13 @@
 
 /* physical address of RAM */
 #ifdef CONFIG_XIP
-	#error "CONFIG_XIP is not supported at this time."
+	#define ROMABLE_REGION ICCM
+	#define RAMABLE_REGION DCCM
 #else
 	#define ROMABLE_REGION ICCM
 	#define RAMABLE_REGION DCCM
 #endif
 
-/* TODO: For Harvard, probably want data in ICCM but have startup code
- * that copies it to DCCM.
- */
 #if defined(CONFIG_XIP)
 	#define _DATA_IN_ROM __data_rom_start
 #else
