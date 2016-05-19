@@ -80,33 +80,33 @@ static int pinmux_galileo_initialize(struct device *port)
 	int i;
 
 	/* Grab the EXP0, EXP1, EXP2, and PWM0 now by name */
-	dev->exp0 = device_get_binding(CONFIG_PINMUX_GALILEO_EXP0_NAME);
+	dev->exp0 = device_get_binding(PINMUX_GALILEO_EXP0_NAME);
 	if (!dev->exp0) {
 		return -EINVAL;
 	}
-	dev->exp1 = device_get_binding(CONFIG_PINMUX_GALILEO_EXP1_NAME);
+	dev->exp1 = device_get_binding(PINMUX_GALILEO_EXP1_NAME);
 	if (!dev->exp1) {
 		return -EINVAL;
 	}
-	dev->exp2 = device_get_binding(CONFIG_PINMUX_GALILEO_EXP2_NAME);
+	dev->exp2 = device_get_binding(PINMUX_GALILEO_EXP2_NAME);
 	if (!dev->exp2) {
 		return -EINVAL;
 	}
-	dev->pwm0 = device_get_binding(CONFIG_PINMUX_GALILEO_PWM0_NAME);
+	dev->pwm0 = device_get_binding(PINMUX_GALILEO_PWM0_NAME);
 	if (!dev->pwm0) {
 		return -EINVAL;
 	}
-	dev->gpio_dw = device_get_binding(CONFIG_PINMUX_GALILEO_GPIO_DW_NAME);
+	dev->gpio_dw = device_get_binding(PINMUX_GALILEO_GPIO_DW_NAME);
 	if (!dev->gpio_dw) {
 		return -EINVAL;
 	}
 	dev->gpio_core = device_get_binding(
-			    CONFIG_PINMUX_GALILEO_GPIO_INTEL_CW_NAME);
+			    PINMUX_GALILEO_GPIO_INTEL_CW_NAME);
 	if (!dev->gpio_core) {
 		return -EINVAL;
 	}
 	dev->gpio_resume = device_get_binding(
-			    CONFIG_PINMUX_GALILEO_GPIO_INTEL_RW_NAME);
+			    PINMUX_GALILEO_GPIO_INTEL_RW_NAME);
 	if (!dev->gpio_resume) {
 		return -EINVAL;
 	}
