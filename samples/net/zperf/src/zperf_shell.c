@@ -83,7 +83,7 @@ static struct net_addr in_addr_dst = {
 #define MY_SRC_PORT 50000
 #define DEF_PORT 5001
 
-static void shell_cmd_setip(int argc, char *argv[])
+static int shell_cmd_setip(int argc, char *argv[])
 {
 	uint32_t value[IP_INDEX_MAX] = { 0 };
 
@@ -95,12 +95,12 @@ static void shell_cmd_setip(int argc, char *argv[])
 		printk("\nsetip:\n");
 		printk("Usage:\tsetip <my ip> <prefix len>\n");
 		printk("\nExample setip 2001:db8::2 64\n");
-		return;
+		return 0;
 	}
 
 	if (parseIpString(argv[1], value) != 0) {
 		printk("[setip] ERROR! Unable to set IP\n");
-		return;
+		return 0;
 	}
 
 	prefix = strtoul(argv[2], NULL, 10);
@@ -119,12 +119,12 @@ static void shell_cmd_setip(int argc, char *argv[])
 		printk("\nsetip:\n");
 		printk("Usage:\tsetip <my ip>\n");
 		printk("\nExample setip 10.237.164.178\n");
-		return;
+		return 0;
 	}
 
 	if (parseIpString(argv[1], value) != 0) {
 		printk("[setip] ERROR! Unable to set IP\n");
-		return;
+		return 0;
 	}
 
 	uip_ipaddr_t uip_ipaddr_local;
@@ -140,9 +140,11 @@ static void shell_cmd_setip(int argc, char *argv[])
 	printk("[setip] Setting IP address ");
 	print_address(value);
 	printk("\n");
+
+	return 0;
 }
 
-static void shell_cmd_udp_download(int argc, char *argv[])
+static int shell_cmd_udp_download(int argc, char *argv[])
 {
 	static bool udp_stopped = true;
 	int port;
@@ -152,7 +154,7 @@ static void shell_cmd_udp_download(int argc, char *argv[])
 		printk("\nudp.download:\n");
 		printk("Usage:\tudp.download <port>\n");
 		printk("\nExample udp.download 5001\n");
-		return;
+		return 0;
 	}
 
 	if (argc > 1) {
@@ -163,15 +165,17 @@ static void shell_cmd_udp_download(int argc, char *argv[])
 
 	if (udp_stopped == false) {
 		printk("[udp.download] ERROR! UDP server already started!\n");
-		return;
+		return 0;
 	}
 
 	zperf_receiver_init(port);
 	udp_stopped = false;
 	printk("[udp.download] UDP server started on port %u\n", port);
+
+	return 0;
 }
 
-static void shell_cmd_udp_upload(int argc, char *argv[])
+static int shell_cmd_udp_upload(int argc, char *argv[])
 {
 	int value[IP_INDEX_MAX] = { 0 };
 	unsigned int duration_in_ms, packet_size, rate_in_kbps, client_rate_in_kbps;
@@ -193,7 +197,7 @@ static void shell_cmd_udp_upload(int argc, char *argv[])
 				"(with suffix K)\n");
 		printk("\t<baud rate>:\tBaudrate in kilobyte or megabyte\n");
 		printk("\nExample udp.upload 10.237.164.178 1111 1 1K 1M\n");
-		return;
+		return 0;
 	}
 
 	if (argc > 1 && parseIpString(argv[1], value) == 0) {
@@ -229,7 +233,7 @@ static void shell_cmd_udp_upload(int argc, char *argv[])
 
 	if (!net_context) {
 		printk("[udp.upload] ERROR! Fail to retrieve a net context\n");
-		return;
+		return 0;
 	}
 
 	if (argc > 3)
@@ -311,21 +315,27 @@ static void shell_cmd_udp_upload(int argc, char *argv[])
 
 	/* release net context */
 	net_context_put(net_context);
+
+	return 0;
 }
 
 #ifdef CONFIG_NETWORKING_WITH_TCP
-static void shell_cmd_connectap(int argc, char *argv[])
+static int shell_cmd_connectap(int argc, char *argv[])
 {
 	printk("[connectap] Zephyr has not been built with Wi-Fi support.\n");
+
+	return 0;
 }
 
-static void shell_cmd_tcp_upload(int argc, char *argv[])
+static int shell_cmd_tcp_upload(int argc, char *argv[])
 {
 	printk("[connectap] Zephyr doesn't support TCP client yet.\n");
+
+	return 0;
 }
 #endif /* CONFIG_NETWORKING_WITH_TCP */
 
-static void shell_cmd_tcp_download(int argc, char *argv[])
+static int shell_cmd_tcp_download(int argc, char *argv[])
 {
 	static bool tcp_stopped = true;
 	int port;
@@ -335,7 +345,7 @@ static void shell_cmd_tcp_download(int argc, char *argv[])
 		printk("\ntcp.download:\n");
 		printk("Usage:\ttcp.download <port>\n");
 		printk("\nExample tcp.download 5001\n");
-		return;
+		return 0;
 	}
 
 	if (argc > 1) {
@@ -346,17 +356,21 @@ static void shell_cmd_tcp_download(int argc, char *argv[])
 
 	if (tcp_stopped == false) {
 		printk("[tcp.download] ERROR! TCP server already started!\n");
-		return;
+		return 0;
 	}
 
 	zperf_tcp_receiver_init(port);
 	tcp_stopped = false;
 	printk("[tcp.download] TCP server started on port %u\n", port);
+
+	return 0;
 }
 
-static void shell_cmd_version(int argc, char *argv[])
+static int shell_cmd_version(int argc, char *argv[])
 {
 	printk("\nzperf version: %s config: %s\n", VERSION, CONFIG);
+
+	return 0;
 }
 
 static void zperf_init(void)

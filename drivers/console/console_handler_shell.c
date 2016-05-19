@@ -115,7 +115,7 @@ static size_t line2argv(char *str, char *argv[], size_t size)
 	return argc;
 }
 
-static void show_cmd_help(int argc, char *argv[])
+static int show_cmd_help(int argc, char *argv[])
 {
 	int i;
 
@@ -127,15 +127,16 @@ static void show_cmd_help(int argc, char *argv[])
 		if (!strcmp(argv[0], commands[i].cmd_name)) {
 			printk("%s %s\n", commands[i].cmd_name,
 			       commands[i].help ? commands[i].help : "");
-			return;
+			return 0;
 		}
 	}
 
 done:
 	printk("Unrecognized command: %s\n", argv[0]);
+	return 0;
 }
 
-static void show_help(int argc, char *argv[])
+static int show_help(int argc, char *argv[])
 {
 	int i;
 
@@ -149,6 +150,8 @@ static void show_help(int argc, char *argv[])
 	for (i = 0; commands[i].cmd_name; i++) {
 		printk("%s\n", commands[i].cmd_name);
 	}
+
+	return 0;
 }
 
 static shell_cmd_function_t get_cb(const char *string)
@@ -204,7 +207,9 @@ static void shell(int arg1, int arg2)
 		}
 
 		/* Execute callback with arguments */
-		cb(argc, argv);
+		if (cb(argc, argv) < 0) {
+			show_cmd_help(argc, argv);
+		}
 
 		nano_fiber_fifo_put(&avail_queue, cmd);
 	}

@@ -107,7 +107,7 @@ int cfg2;
 /*TODO: could configure flush period as well ? */
 int prof_started;
 
-void shell_cmd_prof(int argc, char *argv[])
+int shell_cmd_prof(int argc, char *argv[])
 {
 	/*
 	 * prof [cmd]
@@ -157,8 +157,10 @@ void shell_cmd_prof(int argc, char *argv[])
 #endif
 		}
 	} else {
-		PRINT("Unknown command: prof start|stop|cfg <cfg1> <cfg2>\n");
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
 struct shell_cmd commands[] = {
@@ -212,8 +214,9 @@ void prof_flush(void)
 	 * of profiler state
 	 * Have to consider improving this (task suspend/resume in microkernel mode)
 	 */
-	if (!prof_started)
+	if (!prof_started) {
 		return;
+	}
 #endif
 
 	/*TODO: should consider removing this... */

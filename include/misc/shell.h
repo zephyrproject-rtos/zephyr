@@ -24,8 +24,10 @@ extern "C" {
  *
  *  @param argc Number of parameters passed.
  *  @param argv Array of option strings. First option is always command name.
+ *
+ * @return 0 in case of success or negative value in case of error.
  */
-typedef void (*shell_cmd_function_t)(int argc, char *argv[]);
+typedef int (*shell_cmd_function_t)(int argc, char *argv[]);
 
 struct shell_cmd {
 	const char *cmd_name;

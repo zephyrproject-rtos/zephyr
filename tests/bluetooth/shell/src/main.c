@@ -230,7 +230,7 @@ static void bt_ready(int err)
 	gap_init(DEVICE_NAME, appearance_value);
 }
 
-static void cmd_init(int argc, char *argv[])
+static int cmd_init(int argc, char *argv[])
 {
 	int err;
 
@@ -238,6 +238,8 @@ static void cmd_init(int argc, char *argv[])
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+
+	return 0;
 }
 
 static int char2hex(const char *c, uint8_t *x)
@@ -292,26 +294,20 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 	return 0;
 }
 
-static void cmd_connect_le(int argc, char *argv[])
+static int cmd_connect_le(int argc, char *argv[])
 {
 	int err;
 	bt_addr_le_t addr;
 	struct bt_conn *conn;
 
-	if (argc < 2) {
-		printk("Peer address required\n");
-		return;
-	}
-
 	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
+		return -EINVAL;
 	}
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
 		printk("Invalid peer address (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	conn = bt_conn_create_le(&addr, BT_LE_CONN_PARAM_DEFAULT);
@@ -325,9 +321,11 @@ static void cmd_connect_le(int argc, char *argv[])
 		/* unref connection obj in advance as app user */
 		bt_conn_unref(conn);
 	}
+
+	return 0;
 }
 
-static void cmd_disconnect(int argc, char *argv[])
+static int cmd_disconnect(int argc, char *argv[])
 {
 	struct bt_conn *conn;
 	int err;
@@ -337,20 +335,14 @@ static void cmd_disconnect(int argc, char *argv[])
 	} else {
 		bt_addr_le_t addr;
 
-		if (argc < 2) {
-			printk("Peer address required\n");
-			return;
-		}
-
 		if (argc < 3) {
-			printk("Peer address type required\n");
-			return;
+			return -EINVAL;
 		}
 
 		err = str2bt_addr_le(argv[1], argv[2], &addr);
 		if (err) {
 			printk("Invalid peer address (err %d)\n", err);
-			return;
+			return 0;
 		}
 
 		conn = bt_conn_lookup_addr_le(&addr);
@@ -358,7 +350,7 @@ static void cmd_disconnect(int argc, char *argv[])
 
 	if (!conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
@@ -367,27 +359,23 @@ static void cmd_disconnect(int argc, char *argv[])
 	}
 
 	bt_conn_unref(conn);
+
+	return 0;
 }
 
-static void cmd_auto_conn(int argc, char *argv[])
+static int cmd_auto_conn(int argc, char *argv[])
 {
 	bt_addr_le_t addr;
 	int err;
 
-	if (argc < 2) {
-		printk("Peer address required\n");
-		return;
-	}
-
 	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
+		return -EINVAL;
 	}
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
 		printk("Invalid peer address (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	if (argc < 4) {
@@ -397,36 +385,32 @@ static void cmd_auto_conn(int argc, char *argv[])
 	} else if (!strcmp(argv[3], "off")) {
 		bt_le_set_auto_conn(&addr, NULL);
 	} else {
-		printk("Specify \"on\" or \"off\"\n");
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
-static void cmd_select(int argc, char *argv[])
+static int cmd_select(int argc, char *argv[])
 {
 	struct bt_conn *conn;
 	bt_addr_le_t addr;
 	int err;
 
-	if (argc < 2) {
-		printk("Peer address required\n");
-		return;
-	}
-
 	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
+		return -EINVAL;
 	}
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
 		printk("Invalid peer address (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	conn = bt_conn_lookup_addr_le(&addr);
 	if (!conn) {
 		printk("No matching connection found\n");
-		return;
+		return 0;
 	}
 
 	if (default_conn) {
@@ -434,6 +418,8 @@ static void cmd_select(int argc, char *argv[])
 	}
 
 	default_conn = conn;
+
+	return 0;
 }
 
 static void cmd_active_scan_on(void)
@@ -460,13 +446,12 @@ static void cmd_scan_off(void)
 	}
 }
 
-static void cmd_scan(int argc, char *argv[])
+static int cmd_scan(int argc, char *argv[])
 {
 	const char *action;
 
 	if (argc < 2) {
-		printk("Scan [on/off] parameter required\n");
-		return;
+		return -EINVAL;
 	}
 
 	action = argv[1];
@@ -475,23 +460,24 @@ static void cmd_scan(int argc, char *argv[])
 	} else if (!strcmp(action, "off")) {
 		cmd_scan_off();
 	} else {
-		printk("Scan [on/off] parameter required\n");
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
-static void cmd_security(int argc, char *argv[])
+static int cmd_security(int argc, char *argv[])
 {
 	int err, sec;
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	if (argc < 2) {
-		printk("Security level required\n");
-		return;
+		return -EINVAL;
 	}
 
 	sec = *argv[1] - '0';
@@ -500,6 +486,8 @@ static void cmd_security(int argc, char *argv[])
 	if (err) {
 		printk("Setting security failed (err %d)\n", err);
 	}
+
+	return 0;
 }
 #endif
 
@@ -508,13 +496,13 @@ static void exchange_rsp(struct bt_conn *conn, uint8_t err)
 	printk("Exchange %s\n", err == 0 ? "successful" : "failed");
 }
 
-static void cmd_gatt_exchange_mtu(int argc, char *argv[])
+static int cmd_gatt_exchange_mtu(int argc, char *argv[])
 {
 	int err;
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	err = bt_gatt_exchange_mtu(default_conn, exchange_rsp);
@@ -523,6 +511,8 @@ static void cmd_gatt_exchange_mtu(int argc, char *argv[])
 	} else {
 		printk("Exchange pending\n");
 	}
+
+	return 0;
 }
 
 static const struct bt_data ad_discov[] = {
@@ -533,7 +523,7 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
-static void cmd_advertise(int argc, char *argv[])
+static int cmd_advertise(int argc, char *argv[])
 {
 	struct bt_le_adv_param param;
 	const struct bt_data *ad, *scan_rsp;
@@ -550,7 +540,7 @@ static void cmd_advertise(int argc, char *argv[])
 			printk("Advertising stopped\n");
 		}
 
-		return;
+		return 0;
 	}
 
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
@@ -596,12 +586,10 @@ static void cmd_advertise(int argc, char *argv[])
 		printk("Advertising started\n");
 	}
 
-	return;
+	return 0;
 
 fail:
-	printk("Usage: advertise <type> <ad mode>\n");
-	printk("type: off, on, nconn, scan\n");
-	printk("ad mode: discov, non_discov\n");
+	return -EINVAL;
 }
 
 static struct bt_gatt_discover_params discover_params;
@@ -692,13 +680,13 @@ static uint8_t discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void cmd_gatt_discover(int argc, char *argv[])
+static int cmd_gatt_discover(int argc, char *argv[])
 {
 	int err;
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	discover_params.func = discover_func;
@@ -708,8 +696,7 @@ static void cmd_gatt_discover(int argc, char *argv[])
 	if (argc < 2) {
 		if (!strcmp(argv[0], "gatt-discover-primary") ||
 		    !strcmp(argv[0], "gatt-discover-secondary")) {
-			printk("UUID type required\n");
-			return;
+			return -EINVAL;
 		}
 		goto done;
 	}
@@ -746,6 +733,8 @@ done:
 	} else {
 		printk("Discover pending\n");
 	}
+
+	return 0;
 }
 
 static struct bt_gatt_read_params read_params;
@@ -764,20 +753,19 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void cmd_gatt_read(int argc, char *argv[])
+static int cmd_gatt_read(int argc, char *argv[])
 {
 	int err;
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	read_params.func = read_func;
 
 	if (argc < 2) {
-		printk("handle required\n");
-		return;
+		return -EINVAL;
 	}
 
 	read_params.handle_count = 1;
@@ -793,26 +781,27 @@ static void cmd_gatt_read(int argc, char *argv[])
 	} else {
 		printk("Read pending\n");
 	}
+
+	return 0;
 }
 
-static void cmd_gatt_mread(int argc, char *argv[])
+static int cmd_gatt_mread(int argc, char *argv[])
 {
 	uint16_t h[8];
 	int i, err;
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	if (argc < 3) {
-		printk("Attribute handles in hex format to read required\n");
-		return;
+		return -EINVAL;
 	}
 
 	if (argc - 1 >  ARRAY_SIZE(h)) {
 		printk("Enter max %u handle items to read\n", ARRAY_SIZE(h));
-		return;
+		return 0;
 	}
 
 	for (i = 0; i < argc - 1; i++) {
@@ -827,6 +816,8 @@ static void cmd_gatt_mread(int argc, char *argv[])
 	if (err) {
 		printk("GATT multiple read request failed (err %d)\n", err);
 	}
+
+	return 0;
 }
 
 static void write_func(struct bt_conn *conn, uint8_t err)
@@ -836,7 +827,7 @@ static void write_func(struct bt_conn *conn, uint8_t err)
 
 static struct bt_gatt_write_params write_params;
 
-static void cmd_gatt_write(int argc, char *argv[])
+static int cmd_gatt_write(int argc, char *argv[])
 {
 	int err;
 	uint16_t handle, offset;
@@ -845,29 +836,16 @@ static void cmd_gatt_write(int argc, char *argv[])
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
-	if (argc < 2) {
-		printk("handle required\n");
-		return;
+	if (argc < 4) {
+		return -EINVAL;
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
-
-	if (argc < 3) {
-		printk("offset required\n");
-		return;
-	}
-
 	/* TODO: Add support for longer data */
 	offset = strtoul(argv[2], NULL, 16);
-
-	if (argc < 4) {
-		printk("data required\n");
-		return;
-	}
-
 	data = strtoul(argv[3], NULL, 16);
 
 	if (argc == 5) {
@@ -895,9 +873,11 @@ static void cmd_gatt_write(int argc, char *argv[])
 	} else {
 		printk("Write pending\n");
 	}
+
+	return 0;
 }
 
-static void cmd_gatt_write_without_rsp(int argc, char *argv[])
+static int cmd_gatt_write_without_rsp(int argc, char *argv[])
 {
 	int err;
 	uint16_t handle;
@@ -905,29 +885,24 @@ static void cmd_gatt_write_without_rsp(int argc, char *argv[])
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
-	if (argc < 2) {
-		printk("handle required\n");
-		return;
+	if (argc < 3) {
+		return -EINVAL;
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
-
-	if (argc < 3) {
-		printk("data required\n");
-		return;
-	}
-
 	data = strtoul(argv[2], NULL, 16);
 
 	err = bt_gatt_write_without_response(default_conn, handle, &data,
 					     sizeof(data), false);
 	printk("Write Complete (err %d)\n", err);
+
+	return 0;
 }
 
-static void cmd_gatt_write_signed(int argc, char *argv[])
+static int cmd_gatt_write_signed(int argc, char *argv[])
 {
 	int err;
 	uint16_t handle;
@@ -935,26 +910,21 @@ static void cmd_gatt_write_signed(int argc, char *argv[])
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
-	if (argc < 2) {
-		printk("handle required\n");
-		return;
+	if (argc < 3) {
+		return -EINVAL;
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
-
-	if (argc < 3) {
-		printk("data required\n");
-		return;
-	}
-
 	data = strtoul(argv[2], NULL, 16);
 
 	err = bt_gatt_write_without_response(default_conn, handle, &data,
 					     sizeof(data), true);
 	printk("Write Complete (err %d)\n", err);
+
+	return 0;
 }
 
 static struct bt_gatt_subscribe_params subscribe_params;
@@ -974,29 +944,23 @@ static uint8_t notify_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void cmd_gatt_subscribe(int argc, char *argv[])
+static int cmd_gatt_subscribe(int argc, char *argv[])
 {
 	int err;
 
 	if (subscribe_params.value_handle) {
 		printk("Cannot subscribe: subscription to %x already exists\n",
 		       subscribe_params.value_handle);
-		return;
+		return 0;
 	}
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
-	}
-
-	if (argc < 2) {
-		printk("CCC handle required\n");
-		return;
+		return 0;
 	}
 
 	if (argc < 3) {
-		printk("value handle required\n");
-		return;
+		return -EINVAL;
 	}
 
 	subscribe_params.ccc_handle = strtoul(argv[1], NULL, 16);
@@ -1011,24 +975,25 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 	err = bt_gatt_subscribe(default_conn, &subscribe_params);
 	if (err) {
 		printk("Subscribe failed (err %d)\n", err);
-		return;
+	} else {
+		printk("Subscribed\n");
 	}
 
-	printk("Subscribed\n");
+	return 0;
 }
 
-static void cmd_gatt_unsubscribe(int argc, char *argv[])
+static int cmd_gatt_unsubscribe(int argc, char *argv[])
 {
 	int err;
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	if (!subscribe_params.value_handle) {
 		printk("No subscription found\n");
-		return;
+		return 0;
 	}
 
 	err = bt_gatt_unsubscribe(default_conn, &subscribe_params);
@@ -1040,6 +1005,8 @@ static void cmd_gatt_unsubscribe(int argc, char *argv[])
 
 	/* Clear subscribe_params to reuse it */
 	memset(&subscribe_params, 0, sizeof(subscribe_params));
+
+	return 0;
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
@@ -1176,12 +1143,10 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.pairing_confirm = auth_pairing_confirm,
 };
 
-static void cmd_auth(int argc, char *argv[])
+static int cmd_auth(int argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("auth [display, yesno, input, all, none] "
-		       "parameter required\n");
-		return;
+		return -EINVAL;
 	}
 
 	if (!strcmp(argv[1], "all")) {
@@ -1195,12 +1160,13 @@ static void cmd_auth(int argc, char *argv[])
 	} else if (!strcmp(argv[1], "none")) {
 		bt_conn_auth_cb_register(NULL);
 	} else {
-		printk("auth [display, yesno, input, all, none] "
-		       "parameter required\n");
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
-static void cmd_auth_cancel(int argc, char *argv[])
+static int cmd_auth_cancel(int argc, char *argv[])
 {
 	struct bt_conn *conn;
 
@@ -1214,61 +1180,67 @@ static void cmd_auth_cancel(int argc, char *argv[])
 
 	if (!conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	bt_conn_auth_cancel(conn);
+
+	return 0;
 }
 
-static void cmd_auth_passkey_confirm(int argc, char *argv[])
+static int cmd_auth_passkey_confirm(int argc, char *argv[])
 {
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	bt_conn_auth_passkey_confirm(default_conn);
+
+	return 0;
 }
 
-static void cmd_auth_pairing_confirm(int argc, char *argv[])
+static int cmd_auth_pairing_confirm(int argc, char *argv[])
 {
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	bt_conn_auth_pairing_confirm(default_conn);
+
+	return 0;
 }
 
-static void cmd_auth_passkey(int argc, char *argv[])
+static int cmd_auth_passkey(int argc, char *argv[])
 {
 	unsigned int passkey;
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	if (argc < 2) {
-		printk("passkey required\n");
-		return;
+		return -EINVAL;
 	}
 
 	passkey = atoi(argv[1]);
 	if (passkey > 999999) {
 		printk("Passkey should be between 0-999999\n");
-		return;
+		return 0;
 	}
 
 	bt_conn_auth_passkey_entry(default_conn, passkey);
+
+	return 0;
 }
 #endif /* CONFIG_BLUETOOTH_SMP) || CONFIG_BLUETOOTH_BREDR */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static void cmd_auth_pincode(int argc, char *argv[])
+static int cmd_auth_pincode(int argc, char *argv[])
 {
 	struct bt_conn *conn;
-
 	uint8_t max = 16;
 
 	if (default_conn) {
@@ -1281,22 +1253,23 @@ static void cmd_auth_pincode(int argc, char *argv[])
 
 	if (!conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	if (argc < 2) {
-		printk("PIN code required\n");
-		return;
+		return -EINVAL;
 	}
 
 	if (strlen(argv[1]) > max) {
 		printk("PIN code value invalid - enter max %u digits\n", max);
-		return;
+		return 0;
 	}
 
 	printk("PIN code \"%s\" applied\n", argv[1]);
 
 	bt_conn_auth_pincode_entry(conn, argv[1]);
+
+	return 0;
 }
 
 static int str2bt_addr(const char *str, bt_addr_t *addr)
@@ -1328,21 +1301,20 @@ static int str2bt_addr(const char *str, bt_addr_t *addr)
 	return 0;
 }
 
-static void cmd_connect_bredr(int argc, char *argv[])
+static int cmd_connect_bredr(int argc, char *argv[])
 {
 	struct bt_conn *conn;
 	bt_addr_t addr;
 	int err;
 
 	if (argc < 2) {
-		printk("Peer address required\n");
-		return;
+		return -EINVAL;
 	}
 
 	err = str2bt_addr(argv[1], &addr);
 	if (err) {
 		printk("Invalid peer address (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	conn = bt_conn_create_br(&addr, BT_BR_CONN_PARAM_DEFAULT);
@@ -1355,6 +1327,8 @@ static void cmd_connect_bredr(int argc, char *argv[])
 		/* unref connection obj in advance as app user */
 		bt_conn_unref(conn);
 	}
+
+	return 0;
 }
 
 static void br_device_found(const bt_addr_t *addr, int8_t rssi,
@@ -1419,13 +1393,12 @@ static void br_discovery_complete(struct bt_br_discovery_result *results,
 	}
 }
 
-static void cmd_bredr_discovery(int argc, char *argv[])
+static int cmd_bredr_discovery(int argc, char *argv[])
 {
 	const char *action;
 
 	if (argc < 2) {
-		printk("Discovery [on/off] parameter required\n");
-		return;
+		return -EINVAL;
 	}
 
 	action = argv[1];
@@ -1442,20 +1415,22 @@ static void cmd_bredr_discovery(int argc, char *argv[])
 					  ARRAY_SIZE(br_discovery_results),
 					  br_discovery_complete) < 0) {
 			printk("Failed to start discovery\n");
-			return;
+			return 0;
 		}
 
 		printk("Discovery started\n");
 	} else if (!strcmp(action, "off")) {
 		if (bt_br_discovery_stop()) {
 			printk("Failed to stop discovery\n");
-			return;
+			return 0;
 		}
 
 		printk("Discovery stopped\n");
 	} else {
-		printk("Discovery [on/off] parameter required\n");
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
 #endif /* CONFIG_BLUETOOTH_BREDR */
@@ -1513,16 +1488,15 @@ static struct bt_l2cap_server server = {
 	.accept		= l2cap_accept,
 };
 
-static void cmd_l2cap_register(int argc, char *argv[])
+static int cmd_l2cap_register(int argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("psm required\n");
-		return;
+		return -EINVAL;
 	}
 
 	if (server.psm) {
 		printk("Already registered\n");
-		return;
+		return 0;
 	}
 
 	server.psm = strtoul(argv[1], NULL, 16);
@@ -1530,23 +1504,25 @@ static void cmd_l2cap_register(int argc, char *argv[])
 	if (bt_l2cap_server_register(&server) < 0) {
 		printk("Unable to register psm\n");
 		server.psm = 0;
-		return;
+	} else {
+		printk("L2CAP psm %u registered", server.psm);
 	}
+
+	return 0;
 }
 
-static void cmd_l2cap_connect(int argc, char *argv[])
+static int cmd_l2cap_connect(int argc, char *argv[])
 {
 	uint16_t psm;
 	int err;
 
 	if (!default_conn) {
 		printk("Not connected\n");
-		return;
+		return 0;
 	}
 
 	if (argc < 2) {
-		printk("psm required\n");
-		return;
+		return -EINVAL;
 	}
 
 	psm = strtoul(argv[1], NULL, 16);
@@ -1554,11 +1530,14 @@ static void cmd_l2cap_connect(int argc, char *argv[])
 	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan, psm);
 	if (err < 0) {
 		printk("Unable to connect to psm %u (err %u)\n", psm, err);
-		return;
+	} else {
+		printk("L2CAP connection pending");
 	}
+
+	return 0;
 }
 
-static void cmd_l2cap_disconnect(int argc, char *argv[])
+static int cmd_l2cap_disconnect(int argc, char *argv[])
 {
 	int err;
 
@@ -1566,9 +1545,11 @@ static void cmd_l2cap_disconnect(int argc, char *argv[])
 	if (err) {
 		printk("Unable to disconnect: %u\n", -err);
 	}
+
+	return 0;
 }
 
-static void cmd_l2cap_send(int argc, char *argv[])
+static int cmd_l2cap_send(int argc, char *argv[])
 {
 	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 	int ret, len, count = 1;
@@ -1595,6 +1576,8 @@ static void cmd_l2cap_send(int argc, char *argv[])
 			break;
 		}
 	}
+
+	return 0;
 }
 #endif
 
@@ -1623,16 +1606,15 @@ static struct bt_l2cap_server br_server = {
 	.accept = l2cap_bredr_accept,
 };
 
-static void cmd_bredr_l2cap_register(int argc, char *argv[])
+static int cmd_bredr_l2cap_register(int argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("psm required\n");
-		return;
+		return -EINVAL;
 	}
 
 	if (br_server.psm) {
 		printk("Already registered\n");
-		return;
+		return 0;
 	}
 
 	br_server.psm = strtoul(argv[1], NULL, 16);
@@ -1640,18 +1622,20 @@ static void cmd_bredr_l2cap_register(int argc, char *argv[])
 	if (bt_l2cap_br_server_register(&br_server) < 0) {
 		printk("Unable to register psm\n");
 		server.psm = 0;
-		return;
+	} else {
+		printk("L2CAP psm %u registered", server.psm);
 	}
+
+	return 0;
 }
 
-static void cmd_bredr_discoverable(int argc, char *argv[])
+static int cmd_bredr_discoverable(int argc, char *argv[])
 {
 	int err;
 	const char *action;
 
 	if (argc < 2) {
-		printk("[on/off] parameter required\n");
-		return;
+		return -EINVAL;
 	}
 
 	action = argv[1];
@@ -1661,26 +1645,25 @@ static void cmd_bredr_discoverable(int argc, char *argv[])
 	} else if (!strcmp(action, "off")) {
 		err = bt_br_set_discoverable(false);
 	} else {
-		printk("[on/off] parameter required\n");
-		return;
+		return -EINVAL;
 	}
 
 	if (err) {
 		printk("BR/EDR set/reset discoverable failed (err %d)\n", err);
-		return;
+	} else {
+		printk("BR/EDR set/reset discoverable done\n");
 	}
 
-	printk("BR/EDR set/reset discoverable done\n");
+	return 0;
 }
 
-static void cmd_bredr_connectable(int argc, char *argv[])
+static int cmd_bredr_connectable(int argc, char *argv[])
 {
 	int err;
 	const char *action;
 
 	if (argc < 2) {
-		printk("[on/off] parameter required\n");
-		return;
+		return -EINVAL;
 	}
 
 	action = argv[1];
@@ -1690,16 +1673,16 @@ static void cmd_bredr_connectable(int argc, char *argv[])
 	} else if (!strcmp(action, "off")) {
 		err = bt_br_set_connectable(false);
 	} else {
-		printk("[on/off] parameter required\n");
-		return;
+		return -EINVAL;
 	}
 
 	if (err) {
 		printk("BR/EDR set/rest connectable failed (err %d)\n", err);
-		return;
+	} else {
+		printk("BR/EDR set/reset connectable done\n");
 	}
 
-	printk("BR/EDR set/reset connectable done\n");
+	return 0;
 }
 #endif
 

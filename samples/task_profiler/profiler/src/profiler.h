@@ -19,8 +19,8 @@
 #ifndef PROFILER_H
 #define PROFILER_H
 
-extern void shell_cmd_prof(int argc, char *argv[]);
-#define PROF_CMD { "prof", shell_cmd_prof }
+extern int shell_cmd_prof(int argc, char *argv[]);
+#define PROF_CMD { "prof", shell_cmd_prof, "<start|stop|cfg> [cfg1] [cfg2]" }
 
 #endif /* PROFILER_H */
 
