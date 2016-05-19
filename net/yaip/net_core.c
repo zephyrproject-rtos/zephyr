@@ -128,6 +128,18 @@ static inline void stats(void)
 #define net_print_statistics()
 #endif /* CONFIG_NET_STATISTICS */
 
+static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
+						  struct net_ipv6_hdr *ipv6)
+{
+	struct net_icmp_hdr *hdr = NET_ICMP_BUF(buf);
+	uint16_t len = (ipv6->len[0] << 8) + ipv6->len[1];
+
+	NET_DBG("ICMPv6 packet received length %d type %d code %d",
+		len, hdr->type, hdr->code);
+
+	return net_icmpv6_input(buf, len, hdr->type, hdr->code);
+}
+
 #if defined(CONFIG_NET_IPV6)
 static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 {
@@ -161,6 +173,33 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 		goto drop;
 	}
 
+	if (!net_is_my_ipv6_addr(&hdr->dst) &&
+	    !net_is_my_ipv6_maddr(&hdr->dst) &&
+	    !net_is_ipv6_addr_mcast(&hdr->dst) &&
+	    !net_is_ipv6_addr_loopback(&hdr->dst)) {
+		NET_DBG("IPv6 packet in buf %p not for me", buf);
+		NET_STATS(++net_stats.ipv6.drop);
+		goto drop;
+	}
+
+	/* Check extension headers */
+	net_nbuf_next_hdr(buf) = &hdr->nexthdr;
+	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_ext_bitmap(buf) = 0;
+
+	while (1) {
+		switch (*(net_nbuf_next_hdr(buf))) {
+
+		case IPPROTO_ICMPV6:
+			net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
+			return process_icmpv6_pkt(buf, hdr);
+
+		default:
+			goto bad_header;
+		}
+	}
+
+bad_header:
 drop:
 	return NET_DROP;
 }
