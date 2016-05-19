@@ -22,7 +22,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <misc/byteorder.h>
+#include <net/net_ip.h>
+#include <net/nbuf.h>
+#include <net/net_core.h>
 
 char *net_byte_to_hex(uint8_t *ptr, uint8_t byte, char base, bool pad)
 {
@@ -227,4 +229,108 @@ char *net_sprint_ip_addr_buf(uint8_t *ip, int ip_len, char *buf, int buflen)
 	}
 
 	return buf;
+}
+
+static uint16_t calc_chksum(uint16_t sum, const uint8_t *ptr, uint16_t len)
+{
+	uint16_t tmp;
+	const uint8_t *end;
+
+	end = ptr + len - 1;
+
+	while (ptr < end) {
+		tmp = (ptr[0] << 8) + ptr[1];
+		sum += tmp;
+		if (sum < tmp) {
+			sum++;
+		}
+		ptr += 2;
+	}
+
+	if (ptr == end) {
+		tmp = ptr[0] << 8;
+		sum += tmp;
+		if (sum < tmp) {
+			sum++;
+		}
+	}
+
+	return sum;
+}
+
+static inline uint16_t calc_chksum_buf(uint16_t sum, struct net_buf *buf,
+				       uint16_t upper_layer_len)
+{
+	struct net_buf *frag = buf->frags;
+	uint16_t proto_len = net_nbuf_ip_hdr_len(buf) + net_nbuf_ext_len(buf) +
+		net_nbuf_ll_reserve(buf);
+	int16_t len = frag->len - proto_len;
+	uint8_t *ptr = frag->data + proto_len;
+
+	if (len < 0) {
+		NET_DBG("1st fragment len %u < IP header len %u",
+			frag->len, proto_len);
+		return 0;
+	}
+
+	while (frag) {
+		sum = calc_chksum(sum, ptr, len);
+		frag = frag->frags;
+		if (!frag) {
+			break;
+		}
+
+		ptr = frag->data;
+
+		/* Do we need to take first byte from next fragment */
+		if (len % 2) {
+			uint16_t tmp = *ptr;
+			sum += tmp;
+			if (sum < tmp) {
+				sum++;
+			}
+			len = frag->len - 1;
+			ptr++;
+		} else {
+			len = frag->len;
+		}
+	}
+
+	return sum;
+}
+
+uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto)
+{
+	uint16_t upper_layer_len;
+	uint16_t sum;
+
+	switch (net_nbuf_family(buf)) {
+#if defined(CONFIG_NET_IPV4)
+	case AF_INET:
+		upper_layer_len = (NET_IPV4_BUF(buf)->len[0] << 8) +
+			NET_IPV4_BUF(buf)->len[1] - net_nbuf_ext_len(buf);
+		sum = calc_chksum(upper_layer_len + proto,
+				  (uint8_t *)&NET_IPV4_BUF(buf)->src,
+				  2 * sizeof(struct in_addr));
+		break;
+#endif
+#if defined(CONFIG_NET_IPV6)
+	case AF_INET6:
+		upper_layer_len = (NET_IPV6_BUF(buf)->len[0] << 8) +
+			NET_IPV6_BUF(buf)->len[1] - net_nbuf_ext_len(buf);
+		sum = calc_chksum(upper_layer_len + proto,
+				  (uint8_t *)&NET_IPV6_BUF(buf)->src,
+				  2 * sizeof(struct in6_addr));
+		break;
+#endif
+	default:
+		NET_DBG("Unknown protocol family %d", net_nbuf_family(buf));
+		return 0;
+	}
+
+	sum = calc_chksum_buf(sum, buf, upper_layer_len);
+
+	sum = (sum == 0) ? 0xffff : htons(sum);
+
+	return sum;
 }
