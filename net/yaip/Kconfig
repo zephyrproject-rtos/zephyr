@@ -45,6 +45,13 @@ config NET_IFACE_IPV6_PREFIX_COUNT
        depends on NET_IPV6
        default 2
 
+config NET_INITIAL_HOP_LIMIT
+       int "Initial hop limit for a connection"
+       depends on NET_IPV6
+       default 64
+       help
+         The value should be > 0
+
 config NET_IPV4
        bool "Enable IPv4"
        default n
