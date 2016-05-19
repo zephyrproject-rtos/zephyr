@@ -126,7 +126,7 @@ static void show_cmd_help(int argc, char *argv[])
 	for (i = 0; commands[i].cmd_name; i++) {
 		if (!strcmp(argv[0], commands[i].cmd_name)) {
 			printk("%s %s\n", commands[i].cmd_name,
-			       commands[i].help);
+			       commands[i].help ? commands[i].help : "");
 			return;
 		}
 	}
