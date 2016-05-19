@@ -193,8 +193,8 @@ static void process_msg(struct slip_context *slip)
 	}
 
 	if (buf->frags) {
-		if (net_recv(net_if_get_by_link_addr(&slip->ll_addr),
-			     buf) < 0) {
+		if (net_recv_data(net_if_get_by_link_addr(&slip->ll_addr),
+				  buf) < 0) {
 			net_nbuf_unref(buf);
 		}
 		slip->rx = slip->last = NULL;

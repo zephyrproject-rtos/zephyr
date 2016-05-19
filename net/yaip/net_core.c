@@ -274,7 +274,7 @@ static void init_rx_queue(void)
 }
 
 /* Called by driver when an IP packet has been received */
-int net_recv(struct net_if *iface, struct net_buf *buf)
+int net_recv_data(struct net_if *iface, struct net_buf *buf)
 {
 	if (!buf->frags) {
 		return -ENODATA;

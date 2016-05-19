@@ -65,7 +65,7 @@ enum net_verdict {
 };
 
 /* Called by lower network stack when a network packet has been received */
-int net_recv(struct net_if *iface, struct net_buf *buf);
+int net_recv_data(struct net_if *iface, struct net_buf *buf);
 
 /** @cond ignore */
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
