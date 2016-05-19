@@ -45,6 +45,10 @@
 #include "icmpv6.h"
 #endif
 
+#if defined(CONFIG_NET_IPV4)
+#include "icmpv4.h"
+#endif
+
 /* Stack for the rx fiber.
  */
 #if !defined(CONFIG_NET_RX_STACK_SIZE)
@@ -206,6 +210,20 @@ drop:
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
+static inline enum net_verdict process_icmpv4_pkt(struct net_buf *buf,
+						  struct net_ipv4_hdr *ipv4)
+{
+	struct net_icmp_hdr *hdr = NET_ICMP_BUF(buf);
+	uint16_t len = (ipv4->len[0] << 8) + ipv4->len[1];
+
+	NET_DBG("ICMPv4 packet received length %d type %d code %d",
+		len, hdr->type, hdr->code);
+
+	return net_icmpv4_input(buf, len, hdr->type, hdr->code);
+}
+#endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV4)
 static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 {
 	struct net_ipv4_hdr *hdr = NET_IPV4_BUF(buf);
@@ -236,6 +254,12 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 		NET_DBG("IPv4 packet in buf %p not for me", buf);
 		NET_STATS(++net_stats.ipv4.drop);
 		goto drop;
+	}
+
+	switch (hdr->proto) {
+	case IPPROTO_ICMP:
+		net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
+		return process_icmpv4_pkt(buf, hdr);
 	}
 
 drop:
