@@ -87,6 +87,37 @@ static inline char *net_sprint_ip_addr(struct net_addr *addr)
 	return NULL;
 }
 
+static inline void net_hexdump(const char *str, const uint8_t *packet, size_t length)
+{
+	int n = 0;
+
+	if (!length) {
+		SYS_LOG_DBG("%s zero-length packet", str);
+		return;
+	}
+
+	while (length--) {
+		if (n % 16 == 0) {
+			printf("%s %08X ", str, n);
+		}
+
+		printf("%02X ", *packet++);
+
+		n++;
+		if (n % 8 == 0) {
+			if (n % 16 == 0) {
+				printf("\n");
+			} else {
+				printf(" ");
+			}
+		}
+	}
+
+	if (n % 16) {
+		printf("\n");
+	}
+}
+
 #else /* NET_DEBUG */
 
 static inline char *net_sprint_ll_addr(uint8_t *ll, uint8_t ll_len)
@@ -113,4 +144,7 @@ static inline char *net_sprint_ip_addr(struct net_addr *addr)
 {
 	return NULL;
 }
+
+#define net_hexdump(str, packet, length)
+
 #endif /* NET_DEBUG */
