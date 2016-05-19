@@ -67,6 +67,19 @@ enum net_verdict {
 /* Called by lower network stack when a network packet has been received */
 int net_recv_data(struct net_if *iface, struct net_buf *buf);
 
+/**
+ * @brief Send data to network.
+ *
+ * @details Send data to network. This should not be used normally by
+ * applications as it requires that the buffer and fragments are properly
+ * constructed.
+ *
+ * @param buf Network buffer.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int net_send_data(struct net_buf *buf);
+
 /** @cond ignore */
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
 #include <offsets.h>

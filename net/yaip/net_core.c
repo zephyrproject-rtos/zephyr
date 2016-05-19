@@ -273,6 +273,35 @@ static void init_rx_queue(void)
 				  net_rx_fiber, 0, 0, 8, 0);
 }
 
+/* Called when data needs to be sent to network */
+int net_send_data(struct net_buf *buf)
+{
+	int ret = 0;
+
+	if (!buf || !buf->frags) {
+		return -ENODATA;
+	}
+
+	if (!net_nbuf_iface(buf)) {
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_NET_STATISTICS)
+	switch (net_nbuf_family(buf)) {
+	case AF_INET:
+		NET_STATS(++net_stats.ipv4.sent);
+		break;
+	case AF_INET6:
+		NET_STATS(++net_stats.ipv6.sent);
+		break;
+	}
+#endif
+
+	nano_fifo_put(&net_nbuf_iface(buf)->tx_queue, buf);
+
+	return ret;
+}
+
 /* Called by driver when an IP packet has been received */
 int net_recv_data(struct net_if *iface, struct net_buf *buf)
 {
