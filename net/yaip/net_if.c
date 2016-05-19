@@ -422,6 +422,10 @@ int net_if_init(void)
 			api->init(iface);
 			init_tx_queue(iface);
 		}
+
+#if defined(CONFIG_NET_IPV6)
+		iface->hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
+#endif
 	}
 
 	return 0;
