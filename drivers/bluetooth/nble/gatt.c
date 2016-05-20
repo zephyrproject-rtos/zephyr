@@ -769,6 +769,12 @@ static uint16_t parse_characteristic(struct bt_conn *conn,
 		data += sizeof(*att);
 		len -= sizeof(*att);
 
+		/* Skip if UUID is set but doesn't match */
+		if (params->uuid &&
+		    bt_uuid_cmp(&att->uuid.uuid, params->uuid)) {
+			continue;
+		}
+
 		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
 			return 0;
 		}
