@@ -127,10 +127,11 @@ Once connected, on your development environment, you will need to:
   :file:`/dev/ttyUSB0`
 
 * Set the communication details to:
-  ** Speed: 115200
-  ** Data: 8 bits
-  ** Parity: None
-  ** Stopbits: 1
+
+  * Speed: 115200
+  * Data: 8 bits
+  * Parity: None
+  * Stopbits: 1
 
 
 Building an Application
@@ -269,9 +270,9 @@ Use this method only for advanced development and debugging.
    'plugdev'.  Verifying the group exists and adding your username can
    be accomplished with the useradd function:
 
-    .. code-block:: console
+   .. code-block:: console
 
-       $ sudo useradd -G plugdev $USERNAME
+      $ sudo useradd -G plugdev $USERNAME
 
 #. For Linux environments, verify that udev has the proper rules for giving
    your user control of the FlySwatter device.  Adding the following rule
@@ -294,7 +295,7 @@ Use this method only for advanced development and debugging.
 #. Plug the USB Type B cable into the FlySwatter2 and your computer. On
    Linux, you should see something similar to the following in your dmesg:
 
-    .. code-block:: console
+   .. code-block:: console
 
       usb 1-2.1.1: new high-speed USB device number 13 using xhci_hcd
       usb 1-2.1.1: New USB device found, idVendor=0403, idProduct=6010
@@ -339,16 +340,16 @@ IDE. On the Arduino 101, this option is not provided.
 
 #. In the terminal window, enter:
 
-  .. code-block:: console
+   .. code-block:: console
 
-     $ ./boards/arduino_101/support/arduino_101_backup.sh
+      $ ./boards/arduino_101/support/arduino_101_backup.sh
 
-  .. note::
+   .. note::
 
-     This command tells the JTAG to dump two files in your :file:`$ZEPHYR_BASE`:
-     directory: :file:`A101_BOOT.bin` and :file:`A101_OS.bin`. These contain
-     copies of the original flash, which can be used to restore the state of the
-     board to factory conditions.
+      This command tells the JTAG to dump two files in your :file:`$ZEPHYR_BASE`:
+      directory: :file:`A101_BOOT.bin` and :file:`A101_OS.bin`. These contain
+      copies of the original flash, which can be used to restore the state of the
+      board to factory conditions.
 
 Done! You have finished creating a backup for the Arduino 101.
 
@@ -356,14 +357,14 @@ To restore the factory settings of the Arduino 101 device, use the provided scri
 
 #. In the terminal window, enter:
 
-  .. code-block:: console
+   .. code-block:: console
 
-     $ ./boards/arduino_101/support/arduino_101_load.sh
+      $ ./boards/arduino_101/support/arduino_101_load.sh
 
-  .. note::
+   .. note::
 
-     This script expects two files in your :file:`$ZEPHYR_BASE` directory
-     named :file:`A101_OS.bin` and :file:`A101_BOOT.bin`.
+      This script expects two files in your :file:`$ZEPHYR_BASE` directory
+      named :file:`A101_OS.bin` and :file:`A101_BOOT.bin`.
 
 
 Flashing the Sensor Subsystem Core
@@ -506,27 +507,27 @@ for BOARD=arduino_101_factory if you wish to debug on the quark core.
 
      a) On Terminal 2:
 
-       .. code-block:: console
+        .. code-block:: console
 
-          $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
-          $ arc_gdb outdir/zephyr.elf
-          gdb$  target remote :3334
+           $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
+           $ arc_gdb outdir/zephyr.elf
+           gdb$  target remote :3334
 
      At this point you may set the breakpoint needed in the code/function.
 
      b) On Terminal 3 connect to the X86 side:
 
-      .. code-block:: console
+        .. code-block:: console
 
-         $ gdb
-         gdb$  target remote :3333
-         gdb$  continue
+           $ gdb
+           gdb$  target remote :3333
+           gdb$  continue
 
    .. note::
 
-     In previous versions of the SDK, the gdbserver remote ports were reversed.
-     The gdb ARC server port was 3333 and the X86 port was 3334.  As of SDK
-     v0.7.2, the gdb ARC server port is 3334, and the X86 port is 3333.
+      In previous versions of the SDK, the gdbserver remote ports were reversed.
+      The gdb ARC server port was 3333 and the X86 port was 3334.  As of SDK
+      v0.7.2, the gdb ARC server port is 3334, and the X86 port is 3333.
 
    The :code:`continue` on the X86 side is needed as the ARC_GDB_ENABLE flag has
    been set and halts the X86 until the ARC core is ready.  Ready in this case
@@ -596,7 +597,7 @@ be found in the :file:`boards/arduino_101/pinmux.c`.
 +-------------+----------+------------+
 
 .. note::
-  IO3 and IO5 require both pins to be set for functionality changes.
+   IO-3 and IO-5 require both pins to be set for functionality changes.
 
 Release Notes
 *************
@@ -604,9 +605,6 @@ Release Notes
 When debugging on ARC, it is important that the x86 core be started and
 running BEFORE attempting to debug on ARC. This is because the IPM console
 calls will hang waiting for the x86 core to clear the communication.
-
-Bibliography
-************
 
 .. _Arduino Website: https://www.arduino.cc/en/Main/ArduinoBoard101
 
