@@ -127,6 +127,7 @@ static struct temperature_sensor sensor_1 = {
 		.temp_value = 1200,
 		.lower_limit = -10000,
 		.upper_limit = 10000,
+		.condition = ESS_VALUE_CHANGED,
 		.meas.sampling_func = 0x00,
 		.meas.meas_period = 0x01,
 		.meas.update_interval = SENSOR_1_UPDATE_IVAL,
@@ -138,6 +139,7 @@ static struct temperature_sensor sensor_2 = {
 		.temp_value = 1800,
 		.lower_limit = -1000,
 		.upper_limit = 5000,
+		.condition = ESS_VALUE_CHANGED,
 		.meas.sampling_func = 0x00,
 		.meas.meas_period = 0x01,
 		.meas.update_interval = SENSOR_2_UPDATE_IVAL,
@@ -248,72 +250,6 @@ static ssize_t read_temp_trigger_setting(struct bt_conn *conn,
 	}
 }
 
-struct write_es_trigger_setting_req {
-	uint8_t condition;
-	uint8_t operand[];
-} __packed;
-
-static ssize_t write_temp_trigger_setting(struct bt_conn *conn,
-					  const struct bt_gatt_attr *attr,
-					  const void *buf, uint16_t len,
-					  uint16_t offset)
-{
-	const struct write_es_trigger_setting_req *req = buf;
-	const struct es_trigger_setting_reference *ref;
-	struct temperature_sensor *sensor = attr->user_data;
-	uint16_t ref_val;
-
-	if (!len) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
-
-	if (req->condition > 0x09) {
-		return BT_GATT_ERR(ESS_ERR_COND_NOT_SUPP);
-	}
-
-	switch (req->condition) {
-	/* Operand N/A */
-	case ESS_TRIGGER_INACTIVE:
-		/* fallthrough */
-	case ESS_VALUE_CHANGED:
-		if (len != sizeof(sensor->condition)) {
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-		}
-
-		sensor->condition = req->condition;
-		break;
-	/* Seconds */
-	case ESS_FIXED_TIME_INTERVAL:
-		/* fallthrough */
-	case ESS_NO_LESS_THAN_SPECIFIED_TIME:
-		if (len != sizeof(struct es_trigger_setting_seconds)) {
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-		}
-
-		sensor->condition = req->condition;
-		sensor->seconds = le24_to_int(req->operand);
-		break;
-	/* Reference temperature */
-	default:
-		if (len != sizeof(*ref)) {
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-		}
-
-		ref = buf;
-		ref_val = sys_le16_to_cpu(ref->ref_val);
-
-		if (sensor->lower_limit > ref_val ||
-		    sensor->upper_limit < ref_val) {
-			return BT_GATT_ERR(BT_ATT_ERR_OUT_OF_RANGE);
-		}
-
-		sensor->condition = req->condition;
-		sensor->ref_val = ref_val;
-	}
-
-	return len;
-}
-
 static bool check_condition(uint8_t condition, int16_t old_val, int16_t new_val,
 			    int16_t ref_val)
 {
@@ -375,11 +311,9 @@ static struct bt_gatt_attr ess_attrs[] = {
 	BT_GATT_CUD(SENSOR_1_NAME, BT_GATT_PERM_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_VALID_RANGE, BT_GATT_PERM_READ,
 			   read_temp_valid_range, NULL, &sensor_1),
-	/* TODO: Change to BT_GATT_PERM_WRITE_AUTHOR */
 	BT_GATT_DESCRIPTOR(BT_UUID_ES_TRIGGER_SETTING,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_temp_trigger_setting,
-			   write_temp_trigger_setting, &sensor_1),
+			   BT_GATT_PERM_READ, read_temp_trigger_setting,
+			   NULL, &sensor_1),
 	BT_GATT_CCC(sensor_1.ccc_cfg, temp_ccc_cfg_changed),
 
 	/* Temperature Sensor 2 */
@@ -392,11 +326,9 @@ static struct bt_gatt_attr ess_attrs[] = {
 	BT_GATT_CUD(SENSOR_2_NAME, BT_GATT_PERM_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_VALID_RANGE, BT_GATT_PERM_READ,
 			   read_temp_valid_range, NULL, &sensor_2),
-	/* TODO: Change to BT_GATT_PERM_WRITE_AUTHOR */
 	BT_GATT_DESCRIPTOR(BT_UUID_ES_TRIGGER_SETTING,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_temp_trigger_setting,
-			   write_temp_trigger_setting, &sensor_2),
+			   BT_GATT_PERM_READ, read_temp_trigger_setting,
+			   NULL, &sensor_2),
 	BT_GATT_CCC(sensor_2.ccc_cfg, temp_ccc_cfg_changed),
 
 	/* Humidity Sensor */
