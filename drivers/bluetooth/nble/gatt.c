@@ -634,8 +634,9 @@ int bt_gatt_discover(struct bt_conn *conn,
 		return -EBUSY;
 	}
 
-	BT_DBG("conn %p start 0x%04x end 0x%04x", conn, params->start_handle,
-	       params->end_handle);
+	BT_DBG("conn %p start 0x%04x end 0x%04x uuid %s", conn,
+	       params->start_handle, params->end_handle,
+	       bt_uuid_str(params->uuid));
 
 	memset(&discover_params, 0, sizeof(discover_params));
 
