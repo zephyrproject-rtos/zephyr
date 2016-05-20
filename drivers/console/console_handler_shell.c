@@ -148,20 +148,18 @@ static void show_help(int argc, char *argv[])
 
 static shell_cmd_function_t get_cb(const char *string)
 {
-	size_t len;
 	int i;
 
-	len = strlen(string);
-	if (!len) {
+	if (!string || string[0] == '\0') {
 		return NULL;
 	}
 
-	if (!strncmp(string, "help", len)) {
+	if (!strcmp(string, "help")) {
 		return show_help;
 	}
 
 	for (i = 0; commands[i].cmd_name; i++) {
-		if (!strncmp(string, commands[i].cmd_name, len)) {
+		if (!strcmp(string, commands[i].cmd_name)) {
 			return commands[i].cb;
 		}
 	}
