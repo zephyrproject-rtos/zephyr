@@ -27,6 +27,13 @@ if PINMUX
 
 source "drivers/pinmux/dev/Kconfig"
 
+config PINMUX_NAME
+       string "Pinmux driver name"
+       depends on PINMUX
+       default "PINMUX"
+       help
+       The name of the pinmux driver.
+
 config PINMUX_INIT_PRIORITY
 	int
 	prompt "Init priority"

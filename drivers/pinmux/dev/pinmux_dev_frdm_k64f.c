@@ -52,7 +52,7 @@ int pinmux_fsl_k64_initialize(struct device *port)
 }
 
 /* must be initialized after GPIO */
-DEVICE_AND_API_INIT(pmux, PINMUX_NAME, &pinmux_fsl_k64_initialize,
+DEVICE_AND_API_INIT(pmux, CONFIG_PINMUX_DEV_NAME, &pinmux_fsl_k64_initialize,
 		    NULL, NULL,
 		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &api_funcs);

@@ -36,8 +36,6 @@
 extern "C" {
 #endif
 
-#define PINMUX_NAME		"pinmux"
-
 #define PINMUX_FUNC_A		0
 #define PINMUX_FUNC_B		1
 #define PINMUX_FUNC_C		2
