@@ -75,6 +75,9 @@ void net_context_tcp_set_pending(struct net_context *context,
 void net_context_set_connection_status(struct net_context *context,
 				       int status);
 void net_context_unset_receiver_registered(struct net_context *context);
+extern void net_context_tcp_set_retry_count(struct net_context *context,
+					    uint8_t count);
+extern uint8_t net_context_tcp_get_retry_count(struct net_context *context);
 
 /* Stacks for the tx & rx fibers.
  * FIXME: stack size needs fine-tuning
@@ -119,12 +122,13 @@ int net_send(struct net_buf *buf)
 	}
 
 #ifdef CONFIG_NETWORKING_WITH_TCP
-#define MAX_TCP_RETRY_COUNT 5
+#define MAX_TCP_RETRY_COUNT 3
 	if (ip_buf_context(buf) &&
 	    net_context_get_tuple(ip_buf_context(buf))->ip_proto ==
 							IPPROTO_TCP) {
 		struct uip_conn *conn;
 		int status;
+		uint8_t retry_count;
 
 		net_context_tcp_init(ip_buf_context(buf), buf,
 				     NET_TCP_TYPE_CLIENT);
@@ -159,7 +163,16 @@ int net_send(struct net_buf *buf)
 
 		case -EINPROGRESS:
 			NET_DBG("Connection being established\n");
-			return status;
+			retry_count = net_context_tcp_get_retry_count(
+							ip_buf_context(buf));
+			if (retry_count < MAX_TCP_RETRY_COUNT) {
+				net_context_tcp_set_retry_count(
+					ip_buf_context(buf), ++retry_count);
+				return status;
+			}
+			net_context_tcp_set_retry_count(ip_buf_context(buf),
+							0);
+			break;
 
 		case -ECONNRESET:
 			NET_DBG("Connection reset\n");

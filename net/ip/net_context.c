@@ -71,6 +71,7 @@ struct net_context {
 			int connection_status;
 			void *conn;
 			struct net_buf *pending;
+			uint8_t retry_count;
 		};
 #endif
 	};
@@ -663,5 +664,32 @@ void net_context_tcp_set_pending(struct net_context *context,
 	}
 
 	context->pending = buf;
+#endif
+}
+
+void net_context_tcp_set_retry_count(struct net_context *context,
+				     uint8_t count)
+{
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
+	return;
+#else
+	if (!context) {
+		return;
+	}
+
+	context->retry_count = count;
+#endif
+}
+
+uint8_t net_context_tcp_get_retry_count(struct net_context *context)
+{
+#if !defined(CONFIG_NETWORKING_WITH_TCP)
+	return 0;
+#else
+	if (!context) {
+		return 0;
+	}
+
+	return context->retry_count;
 #endif
 }
