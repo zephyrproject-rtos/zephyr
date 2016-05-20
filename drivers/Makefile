@@ -1,6 +1,6 @@
 subdir-ccflags-y += -I$(srctree)/include/drivers
 
-include $(srctree)/drivers/qmsi/Makefile.include
+include $(srctree)/ext/hal/qmsi/Makefile.include
 
 obj-y = console/
 obj-y += random/
@@ -27,4 +27,3 @@ obj-$(CONFIG_IPM) += ipm/
 obj-$(CONFIG_SENSOR) += sensor/
 obj-$(CONFIG_AIO_COMPARATOR) += aio/
 obj-$(CONFIG_PINMUX) += pinmux/
-obj-$(CONFIG_QMSI_BUILTIN) += qmsi/

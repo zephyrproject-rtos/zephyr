@@ -1,0 +1,12 @@
+This directory contains different HALs for SoCs supported by Zephyr.
+
+The following HALs are supported:
+
+qmsi
+-------
+Intel® Quark™ Microcontroller Software Interface (QMSI) is a Hardware
+Abstraction Layer (HAL) for Intel® Quark™ Microcontroller products. It
+currently support the following SoCs:
+
+- Intel® Quark™ D2000 Microcontroller
+- Intel® Quark™ SE Microcontroller

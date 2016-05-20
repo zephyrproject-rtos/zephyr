@@ -1,4 +1,6 @@
 subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-DISR_HANDLED
+include $(srctree)/ext/hal/qmsi/Makefile.include
+
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/clk.o
 ifeq ($(CONFIG_ARC),y)
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/sensor/ss_clk.o

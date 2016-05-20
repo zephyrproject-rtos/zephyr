@@ -1,0 +1,6 @@
+subdir-ccflags-$(CONFIG_QMSI_LIBRARY) += -I$(CONFIG_QMSI_INSTALL_PATH)/include
+subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/ext/hal/qmsi/include
+subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/ext/hal/qmsi/drivers/include
+subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/ext/hal/qmsi/soc/$(SOC_NAME)/include/
+subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/ext/hal/qmsi/drivers/sensor/include
+subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-I$(srctree)/ext/hal/qmsi/soc/quark_se/include/
