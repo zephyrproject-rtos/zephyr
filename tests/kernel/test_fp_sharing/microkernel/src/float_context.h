@@ -37,7 +37,6 @@
  *     _load_all_float_registers()
  *     _load_then_store_all_float_registers()
  *     _store_all_float_registers()
- *     _store_non_volatile_float_registers()
  */
 
 #if defined(CONFIG_ISA_IA32)
@@ -74,7 +73,32 @@ struct fp_non_volatile_register_set {
 #define SIZEOF_FP_VOLATILE_REGISTER_SET sizeof(struct fp_volatile_register_set)
 #define SIZEOF_FP_NON_VOLATILE_REGISTER_SET 0
 
-#else /* ! CONFIG_ISA_IA32 */
+#elif defined(CONFIG_CPU_CORTEX_M4)
+
+#define FP_OPTION 0
+
+/*
+ * Registers s0..s15 are volatile and do not
+ * need to be preserved across function calls.
+ */
+struct fp_volatile_register_set {
+	float s[16];
+};
+
+/*
+ * Registers s16..s31 are non-volatile and
+ * need to be preserved across function calls.
+ */
+struct fp_non_volatile_register_set {
+	float s[16];
+};
+
+#define SIZEOF_FP_VOLATILE_REGISTER_SET                        \
+		sizeof(struct fp_volatile_register_set)
+#define SIZEOF_FP_NON_VOLATILE_REGISTER_SET                    \
+		sizeof(struct fp_non_volatile_register_set)
+
+#else
 
 #error	"Architecture must provide the following definitions:\n" \
 	"\t'struct fp_volatile_registers'\n"                     \
@@ -100,8 +124,6 @@ struct fp_register_set {
 
 #define MAIN_FLOAT_REG_CHECK_BYTE (unsigned char)0xe5
 #define FIBER_FLOAT_REG_CHECK_BYTE (unsigned char)0xf9
-
-void _store_non_volatile_float_registers(struct fp_non_volatile_register_set *regs);
 
 extern int fpu_sharing_error;
 

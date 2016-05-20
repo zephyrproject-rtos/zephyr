@@ -57,11 +57,19 @@ x87 FPU registers are being saved/restored.
 
 #include <zephyr.h>
 
-#if defined(__GNUC__)
-#include <float_regs_x86_gcc.h>
-#else
-#include <float_regs_x86_other.h>
-#endif /* __GNUC__ */
+#if defined(CONFIG_ISA_IA32)
+  #if defined(__GNUC__)
+    #include <float_regs_x86_gcc.h>
+  #else
+    #include <float_regs_x86_other.h>
+  #endif /* __GNUC__ */
+#elif defined(CONFIG_CPU_CORTEX_M4)
+  #if defined(__GNUC__)
+    #include <float_regs_arm_gcc.h>
+  #else
+    #include <float_regs_arm_other.h>
+  #endif /* __GNUC__ */
+#endif
 
 #include <arch/cpu.h>
 #include <tc_util.h>
@@ -244,6 +252,7 @@ void load_store_low(void)
 			return;
 		}
 
+#if defined(CONFIG_ISA_IA32)
 		/*
 		 * After every 1000 iterations (arbitrarily chosen), explicitly
 		 * disable floating point operations for the task. The
@@ -258,6 +267,15 @@ void load_store_low(void)
 		if ((load_store_low_count % 1000) == 0) {
 			task_float_disable(sys_thread_self_get());
 		}
+#elif defined(CONFIG_CPU_CORTEX_M4)
+		/*
+		 * The routine task_float_disable() allows for thread-level
+		 * granularity for disabling floating point. Furthermore, it
+		 * is useful for testing on the fly thread enabling of floating
+		 * point. Neither of these capabilities are currently supported
+		 * for ARM.
+		 */
+#endif
 	}
 }
 
@@ -312,7 +330,6 @@ void load_store_high(void)
 			reg_set_ptr[i] = init_byte++;
 		}
 
-#if defined(CONFIG_ISA_IA32)
 		/*
 		 * Utilize an architecture specific function to load all the
 		 * floating point registers with the contents of the
@@ -333,7 +350,6 @@ void load_store_high(void)
 		 */
 
 		_load_then_store_all_float_registers(&float_reg_set);
-#endif
 
 		/*
 		 * Relinquish the processor for the remainder of the current

@@ -35,6 +35,18 @@ or
 
 --------------------------------------------------------------------------------
 
+Advanced:
+
+Depending upon the board's speed, the frequency of test output may range from
+every few seconds to every few minutes. The speed of the test can be controlled
+through the variable PI_NUM_ITERATIONS (default 700000). Lowering this value
+will increase the test's speed, but at the expense of the calculation's
+precision.
+
+    make qemu PI_NUM_ITERATIONS=100000
+
+--------------------------------------------------------------------------------
+
 Sample Output:
 
 Floating point sharing tests started

@@ -45,7 +45,10 @@ has occurred.
 
 #include <float_context.h>
 
-#define PI_NUM_ITERATIONS 700000
+/*
+ * PI_NUM_ITERATIONS: This macro is defined in the project's Makefile and
+ * is configurable from the command line.
+ */
 
 static double reference_pi = 0.0f;
 
