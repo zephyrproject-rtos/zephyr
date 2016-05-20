@@ -3,4 +3,6 @@ peripheral drivers for Kinetis SOCs.
 
 The sources in this directory are imported from kex.nxp.com.
 
-The current version supported in Zephyr is KSDK 2.0.
+The current version supported in Zephyr is KSDK 2.0. It currently supports the
+following SOCs:
+- MK64F12 (aka K64F)
