@@ -42,6 +42,7 @@ my %use_type = ();
 my @use = ();
 my %ignore_type = ();
 my @ignore = ();
+my @exclude = ();
 my $help = 0;
 my $configuration_file = ".checkpatch.conf";
 my $max_line_length = 80;
@@ -72,6 +73,7 @@ Options:
   --subjective, --strict     enable more subjective tests
   --types TYPE(,TYPE2...)    show only these comma separated message types
   --ignore TYPE(,TYPE2...)   ignore various comma separated message types
+  --exclude DIR(,DIR22...)   exclude directories
   --max-line-length=n        set the maximum line length, if exceeded, warn
   --min-conf-desc-length=n   set the min description length, if shorter, warn
   --show-types               show the message "types" in the output
@@ -144,6 +146,7 @@ GetOptions(
 	'subjective!'	=> \$check,
 	'strict!'	=> \$check,
 	'ignore=s'	=> \@ignore,
+	'exclude=s'	=> \@exclude,
 	'types=s'	=> \@use,
 	'show-types!'	=> \$show_types,
 	'max-line-length=i' => \$max_line_length,
@@ -2185,6 +2188,15 @@ sub process {
 				      "do not modify files in include/asm, change architecture specific files in include/asm-<architecture>\n" . "$here$rawline\n");
 			}
 			$found_file = 1;
+		}
+		my $skipme = 0;
+		foreach (@exclude) {
+			if ($realfile =~ m@^(?:$_/)@) {
+				$skipme = 1;
+			}
+		}
+		if ($skipme) {
+			next;
 		}
 
 #make up the handle for any error we report on this line
