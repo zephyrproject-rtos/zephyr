@@ -26,10 +26,6 @@
 #include <init.h>
 #include <quark_se/shared_mem.h>
 
-/* Cannot use microkernel, since only nanokernel is supported */
-#if defined(CONFIG_MICROKERNEL)
-#error "Microkernel support is not available"
-#endif
 
 /**
  *
