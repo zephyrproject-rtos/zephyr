@@ -1,0 +1,14 @@
+#
+# TODO: This file is WRONG currently.
+#   The Zephyr-SDK tools don't yet support working with the ARC EM Starter Kit
+#   See doc/board/em_starterkit.rst for more details.
+#
+FLASH_SCRIPT = openocd.sh
+OPENOCD_PRE_CMD = "-c targets 1"
+OPENOCD_LOAD_CMD = "load_image ${O}/${KERNEL_BIN_NAME} $(CONFIG_ICCM_BASE_ADDRESS)"
+OPENOCD_VERIFY_CMD = "verify_image ${O}/${KERNEL_BIN_NAME} $(CONFIG_ICCM_BASE_ADDRESS)"
+
+GDB_PORT = 3333
+
+export OPENOCD_PRE_CMD FLASH_SCRIPT OPENOCD_VERIFY_CMD OPENOCD_LOAD_CMD GDB_PORT
+

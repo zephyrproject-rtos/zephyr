@@ -1,0 +1,7 @@
+
+if BOARD_EM_STARTERKIT
+
+config BOARD
+        default "em_starterkit"
+
+endif # BOARD_EM_STARTERKIT
