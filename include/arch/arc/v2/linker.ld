@@ -32,7 +32,7 @@
 #include <linker-tool.h>
 
 /* physical address of RAM */
-#ifdef CONFIG_XIP
+#if defined(CONFIG_XIP) && (FLASH_SIZE != 0)
 	#define ROMABLE_REGION FLASH
 	#define RAMABLE_REGION SRAM
 #else
@@ -47,9 +47,19 @@
 #endif
 
 MEMORY {
+#if (FLASH_SIZE != 0)
 	FLASH (rx) : ORIGIN = FLASH_START, LENGTH = FLASH_SIZE*1k
 	SRAM  (rwx) : ORIGIN = SRAM_START,  LENGTH = SRAM_SIZE*1k
 	DCCM  (rw) : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE*1k
+#else
+	/*
+	 * For those targets that have no FLASH, create ICCM, SRAM and DCCM memories.
+	 * NOTE: SRAM may actually be DRAM but there is not a symbol for DRAM yet.
+	 */
+	ICCM  (rx)  : ORIGIN = ICCM_START,  LENGTH = ICCM_SIZE*1k
+	SRAM  (rwx) : ORIGIN = SRAM_START,  LENGTH = SRAM_SIZE*1k
+	DCCM  (rw)  : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE*1k
+#endif
 }
 
 SECTIONS {
@@ -188,6 +198,53 @@ SECTIONS {
 	SECTION_PROLOGUE(initlevel, (OPTIONAL),)
 	{
 		DEVICE_INIT_SECTIONS()
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+SECTION_PROLOGUE (_k_task_list, (OPTIONAL),)
+	{
+		_k_task_list_start = .;
+			*(._k_task_list.public.*)
+			*(._k_task_list.private.*)
+		_k_task_list_idle_start = .;
+			*(._k_task_list.idle.*)
+		KEEP(*(SORT_BY_NAME("._k_task_list*")))
+		_k_task_list_end = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+	SECTION_PROLOGUE (_k_task_ptr, (OPTIONAL),)
+	{
+		_k_task_ptr_start = .;
+			*(._k_task_ptr.public.*)
+			*(._k_task_ptr.private.*)
+			*(._k_task_ptr.idle.*)
+		KEEP(*(SORT_BY_NAME("._k_task_ptr*")))
+		_k_task_ptr_end = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+	SECTION_PROLOGUE (_k_pipe_ptr, (OPTIONAL),)
+	{
+		_k_pipe_ptr_start = .;
+			*(._k_pipe_ptr.public.*)
+			*(._k_pipe_ptr.private.*)
+		KEEP(*(SORT_BY_NAME("._k_pipe_ptr*")))
+		_k_pipe_ptr_end = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+	SECTION_PROLOGUE (_k_mem_map_ptr, (OPTIONAL),)
+	{
+		_k_mem_map_ptr_start = .;
+			*(._k_mem_map_ptr.public.*)
+			*(._k_mem_map_ptr.private.*)
+		KEEP(*(SORT_BY_NAME("._k_mem_map_ptr*")))
+		_k_mem_map_ptr_end = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+	SECTION_PROLOGUE(_k_event_list, (OPTIONAL),)
+	{
+		_k_event_list_start = .;
+			*(._k_event_list.event.*)
+		KEEP(*(SORT_BY_NAME("._k_event_list*")))
+		_k_event_list_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 	__data_ram_end = .;
