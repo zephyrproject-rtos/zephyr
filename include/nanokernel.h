@@ -59,16 +59,11 @@ struct _nano_queue {
 
 #include <misc/dlist.h>
 
-struct _nano_timeout;
-
-typedef void (*_nano_timeout_func_t)(struct _nano_timeout *t);
-
 struct _nano_timeout {
 	sys_dlist_t node;
 	struct tcs *tcs;
 	struct _nano_queue *wait_q;
 	int32_t delta_ticks_from_prev;
-	_nano_timeout_func_t func;
 };
 /**
  * @endcond

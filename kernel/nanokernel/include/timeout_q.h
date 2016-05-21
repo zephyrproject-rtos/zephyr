@@ -36,40 +36,28 @@ static inline void _do_nano_timeout_add(struct tcs *tcs,
 					int32_t timeout);
 
 #if defined(CONFIG_NANO_TIMEOUTS)
+/* initialize the nano timeouts part of TCS when enabled in the kernel */
 
-static inline void _nano_timeout_init(struct _nano_timeout *t,
-				      _nano_timeout_func_t func)
+static inline void _nano_timeout_tcs_init(struct tcs *tcs)
 {
 	/*
 	 * Must be initialized here and when dequeueing a timeout so that code
 	 * not dealing with timeouts does not have to handle this, such as when
 	 * waiting forever on a semaphore.
 	 */
-	t->delta_ticks_from_prev = -1;
+	tcs->nano_timeout.delta_ticks_from_prev = -1;
 
 	/*
 	 * Must be initialized here so that the _fiber_wakeup family of APIs can
 	 * verify the fiber is not on a wait queue before aborting a timeout.
 	 */
-	t->wait_q = NULL;
+	tcs->nano_timeout.wait_q = NULL;
 
 	/*
 	 * Must be initialized here, so the _nano_timeout_handle_one_timeout()
 	 * routine can check if there is a fiber waiting on this timeout
 	 */
-	t->tcs = NULL;
-
-	/*
-	 * Set callback function
-	 */
-	t->func = func;
-}
-
-/* initialize the nano timeouts part of TCS when enabled in the kernel */
-
-static inline void _nano_timeout_tcs_init(struct tcs *tcs)
-{
-	_nano_timeout_init(&tcs->nano_timeout, NULL);
+	tcs->nano_timeout.tcs = NULL;
 
 	/*
 	 * These are initialized when enqueing on the timeout queue:
@@ -137,8 +125,6 @@ static inline struct _nano_timeout *_nano_timeout_handle_one_timeout(
 		} else {
 			_nano_fiber_ready(tcs);
 		}
-	} else if (t->func) {
-		t->func(t);
 	}
 	t->delta_ticks_from_prev = -1;
 
