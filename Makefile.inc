@@ -102,6 +102,13 @@ $(BOARDCONFIG):
 	@rm -f $(O)/.board_*
 	@touch $@
 
+
+ram_report: initconfig
+	$(Q)$(call zephyrmake,$(O),$@)
+
+rom_report: initconfig
+	$(Q)$(call zephyrmake,$(O),$@)
+
 menuconfig: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)
 

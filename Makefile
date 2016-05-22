@@ -311,6 +311,7 @@ STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
 GDB		= $(CROSS_COMPILE)gdb
+READELF		= $(CROSS_COMPILE)readelf
 AWK		= awk
 GENIDT		= scripts/gen_idt/gen_idt
 GENOFFSET_H	= scripts/gen_offset_header/gen_offset_header
@@ -347,6 +348,7 @@ BOARD_NAME = $(subst $(DQUOTE),,$(CONFIG_BOARD))
 KERNEL_NAME = $(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 KERNEL_ELF_NAME = $(KERNEL_NAME).elf
 KERNEL_BIN_NAME = $(KERNEL_NAME).bin
+KERNEL_STAT_NAME = $(KERNEL_NAME).stat
 
 export SOC_FAMILY SOC_SERIES SOC_PATH SOC_NAME BOARD_NAME
 export ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME
@@ -708,7 +710,7 @@ export LD_TOOLCHAIN KBUILD_LDS
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults to zephyr, but the arch makefile usually adds further targets
-all: $(KERNEL_BIN_NAME)
+all: $(KERNEL_BIN_NAME) $(KERNEL_STAT_NAME)
 
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the command line or
@@ -839,6 +841,14 @@ quiet_cmd_gen_bin = BIN     $@
 
 $(KERNEL_BIN_NAME): $(KERNEL_ELF_NAME)
 	$(call cmd,gen_bin)
+
+$(KERNEL_STAT_NAME): $(KERNEL_BIN_NAME) $(KERNEL_ELF_NAME)
+	@$(READELF) -e $(KERNEL_ELF_NAME) > $@
+
+ram_report: $(KERNEL_STAT_NAME)
+	@$(srctree)/scripts/size_report -r -o $(O)
+rom_report: $(KERNEL_STAT_NAME)
+	@$(srctree)/scripts/size_report -F -o $(O)
 
 zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 
