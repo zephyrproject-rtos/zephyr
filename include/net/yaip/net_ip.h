@@ -351,6 +351,21 @@ static inline const struct in_addr *net_ipv4_broadcast_address(void)
 	return net_if_ipv4_broadcast_addr();
 }
 
+struct net_if;
+extern bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
+				      struct in_addr *addr);
+
+/** @brief Check if the given address belongs to same subnet that
+ * has been configured for the interface.
+ *
+ * @return True if address is in same subnet, false otherwise.
+ */
+static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
+					  struct in_addr *addr)
+{
+	return net_if_ipv4_addr_mask_cmp(iface, addr);
+}
+
 #ifdef __cplusplus
 }
 #endif
