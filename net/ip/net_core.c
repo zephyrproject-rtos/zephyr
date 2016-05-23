@@ -97,6 +97,8 @@ static char __noinit __stack tx_fiber_stack[CONFIG_IP_TX_STACK_SIZE];
 static char __noinit __stack timer_fiber_stack[CONFIG_IP_TIMER_STACK_SIZE];
 static nano_thread_id_t timer_fiber_id, tx_fiber_id;
 
+static uint8_t initialized;
+
 static struct net_dev {
 	/* Queue for incoming packets from driver */
 	struct nano_fifo rx_queue;
@@ -999,7 +1001,9 @@ int net_set_mac(uint8_t *mac, uint8_t len)
 	NET_DBG("MAC "); PRINTLLADDR((uip_lladdr_t *)&linkaddr_node_addr); PRINTF("\n");
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
-	{
+	if (!initialized) {
+		memcpy(&uip_lladdr, mac, len);
+	} else {
 		uip_ds6_addr_t *lladdr;
 
 		uip_ds6_set_lladdr((uip_lladdr_t *)mac);
@@ -1104,8 +1108,6 @@ void net_unregister_driver(struct net_driver *drv)
 
 int net_init(void)
 {
-	static uint8_t initialized;
-
 	if (initialized)
 		return -EALREADY;
 
