@@ -342,9 +342,10 @@ static ssize_t flush_value(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, uint8_t flags)
 {
 	struct gatt_value *value = attr->user_data;
+	uint16_t flushed_data_len = 0;
 
 	if (!value->prep_data_len && !value->prep_write_err) {
-		return 0;
+		return flushed_data_len;
 	}
 
 	if (value->prep_write_err) {
@@ -357,6 +358,8 @@ static ssize_t flush_value(struct bt_conn *conn,
 		return BT_GATT_ERR(err);
 	}
 
+	flushed_data_len = value->prep_data_len;
+
 	switch (flags) {
 	case BT_GATT_FLUSH_SYNC:
 		/* Sync buffer to data */
@@ -366,7 +369,7 @@ static ssize_t flush_value(struct bt_conn *conn,
 	case BT_GATT_FLUSH_DISCARD:
 		memset(value->prep_data, 0, value->prep_data_len);
 		value->prep_data_len = 0;
-		return 0;
+		return flushed_data_len;
 	}
 
 	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
