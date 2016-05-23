@@ -186,6 +186,10 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 
 	memcpy(buf + W25QXXDV_LEN_CMD_ADDRESS, data, len);
 
+	/* Assume write protection has been disabled. Note that w25qxxdv
+	 * flash automatically turns on write protection at the completion
+	 * of each write or erase transaction.
+	 */
 	if (spi_write(driver_data->spi, buf, len + W25QXXDV_LEN_CMD_ADDRESS) != 0) {
 		nano_sem_give(&driver_data->sem);
 		return -EIO;
@@ -273,6 +277,10 @@ static inline int spi_flash_wb_erase_internal(struct device *dev,
 	buf[2] = (uint8_t) (offset >> 8);
 	buf[3] = (uint8_t) offset;
 
+	/* Assume write protection has been disabled. Note that w25qxxdv
+	 * flash automatically turns on write protection at the completion
+	 * of each write or erase transaction.
+	 */
 	return spi_write(driver_data->spi, buf, len);
 }
 

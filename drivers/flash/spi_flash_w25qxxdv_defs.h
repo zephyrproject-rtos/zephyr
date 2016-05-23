@@ -63,10 +63,12 @@
 #define W25QXXDV_SECR_EFAIL_BIT  (0x1 << 6)
 #define W25QXXDV_SECR_PFAIL_BIT  (0x1 << 5)
 
+/* supported erase size */
 #define W25QXXDV_PAGE_SIZE       (0x100)
 #define W25QXXDV_SECTOR_SIZE     (0x1000)
 #define W25QXXDV_BLOCK32K_SIZE   (0x8000)
 #define W25QXXDV_BLOCK_SIZE      (0x10000)
+
 #define W25QXXDV_SECTOR_MASK     (0xFFF)
 
 /* ID comands */

@@ -73,6 +73,9 @@ static inline int flash_read(struct device *dev, off_t offset, void *data,
 /**
  *  @brief  Write buffer into flash memory.
  *
+ *  Prior to the invocation of this API, the flash_write_protection_set needs
+ *  to be called first to disable the write protection.
+ *
  *  @param  dev             : flash device
  *  @param  offset          : starting offset for the write
  *  @param  data            : data to write
@@ -91,8 +94,12 @@ static inline int flash_write(struct device *dev, off_t offset,
 /**
  *  @brief  Erase part or all of a flash memory
  *
- *  Acceptable values of erase size are subject to hardware-specific
- *  multiples of sector size.
+ *  Acceptable values of erase size and offset are subject to
+ *  hardware-specific multiples of sector size and offset. Please check the
+ *  API implemented by the underlying sub driver.
+ *
+ *  Prior to the invocation of this API, the flash_write_protection_set needs
+ *  to be called first to disable the write protection.
  *
  *  @param  dev             : flash device
  *  @param  offset          : erase area starting offset
@@ -109,6 +116,14 @@ static inline int flash_erase(struct device *dev, off_t offset, size_t size)
 
 /**
  *  @brief  Enable or disable write protection for a flash memory
+ *
+ *  This API is required to be called before the invocation of write or erase
+ *  API. Please note that on some flash components, the write protection is
+ *  automatically turned on again by the device after the completion of each
+ *  write or erase calls. Therefore, on those flash parts, write protection needs
+ *  to be disabled before each invocation of the write or erase API. Please refer
+ *  to the sub-driver API or the data sheet of the flash component to get details
+ *  on the write protection behavior.
  *
  *  @param  dev             : flash device
  *  @param  enable          : enable or disable flash write protection
