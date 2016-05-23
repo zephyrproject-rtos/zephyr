@@ -26,6 +26,7 @@
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
+#include <net/arp.h>
 
 #include "net_private.h"
 
