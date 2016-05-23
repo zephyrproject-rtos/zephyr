@@ -306,7 +306,7 @@ static inline bool net_is_my_ipv4_addr(struct in_addr *addr)
  *
  *  @return Destination address.
  */
-#define net_ipaddr_copy(dest, src) ((*dest) = (*src))
+#define net_ipaddr_copy(dest, src) (*(dest) = *(src))
 
 /** @brief Check if the given IPv6 address is a link local address.
  *
