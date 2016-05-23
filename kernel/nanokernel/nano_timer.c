@@ -23,7 +23,7 @@
 void nano_timer_init(struct nano_timer *timer, void *data)
 {
 	/* initialize timeout_data */
-	_nano_timeout_init(&timer->timeout_data);
+	_nano_timeout_init(&timer->timeout_data, NULL);
 
 	/* nano_timer_test() returns NULL on timer that was not started */
 	timer->user_data = NULL;
