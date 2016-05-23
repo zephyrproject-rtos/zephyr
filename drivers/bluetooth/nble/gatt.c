@@ -178,10 +178,19 @@ void on_nble_gatts_register_rsp(const struct nble_gatts_register_rsp *rsp,
 			       const struct nble_gatt_attr_handles *handles,
 			       uint8_t len)
 {
+	int i;
+	struct bt_gatt_attr *head_svc_attr;
+
 	BT_DBG("status %u", rsp->status);
 
 	if (rsp->status != 0) {
 		return;
+	}
+
+	head_svc_attr = rsp->attr_base;
+
+	for (i = 0; i < rsp->attr_count; i++, head_svc_attr++) {
+		head_svc_attr->handle = handles[i].handle;
 	}
 #if defined(CONFIG_BLUETOOTH_DEBUG_GATT)
 	{
