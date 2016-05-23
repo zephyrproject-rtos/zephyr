@@ -75,7 +75,7 @@ void prof_send_platform_info(void)
 	irq_unlock(key);
 }
 
-#if CONFIG_CONSOLE_HANDLER_SHELL && CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
+#if defined(CONFIG_CONSOLE_HANDLER_SHELL) && defined(CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC)
 /* Profiler shell is only enabled if kernel event logger dynamic
  * enable/disable and console handler shell are enabled
  * Warning: if kernel event logger dynamic is enabled but no shell is available,
@@ -120,11 +120,11 @@ int shell_cmd_prof(int argc, char *argv[])
 	if (!strncmp(argv[1], "start", len)) {
 		PRINT("Start\n");
 		sys_k_event_logger_set_mask(cfg1);
-#if CONFIG_TASK_MONITOR
+#ifdef CONFIG_TASK_MONITOR
 		sys_k_event_logger_set_monitor_mask(cfg2);
 #endif
 		if ((sys_k_event_logger_get_mask() != 0)
-#if CONFIG_TASK_MONITOR
+#ifdef CONFIG_TASK_MONITOR
 		    || (sys_k_event_logger_get_monitor_mask() != 0)
 #endif
 		   ) {
@@ -134,7 +134,7 @@ int shell_cmd_prof(int argc, char *argv[])
 	} else if (!strncmp(argv[1], "stop", len)) {
 		PRINT("Stop\n");
 		sys_k_event_logger_set_mask(0);
-#if CONFIG_TASK_MONITOR
+#ifdef CONFIG_TASK_MONITOR
 		sys_k_event_logger_set_monitor_mask(0);
 #endif
 		/* Could flush buffer here... but flush may be on-going... */
@@ -144,7 +144,7 @@ int shell_cmd_prof(int argc, char *argv[])
 			cfg2 = atoi(argv[3]);
 			PRINT("Configure %d %d\n", cfg1, cfg2);
 		} else {
-#if CONFIG_TASK_MONITOR
+#ifdef CONFIG_TASK_MONITOR
 			PRINT("%d(%d) %d(%d)\n",
 					sys_k_event_logger_get_mask(),
 					cfg1,
