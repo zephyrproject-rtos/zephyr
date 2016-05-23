@@ -542,10 +542,11 @@ void net_nbuf_unref(struct net_buf *buf)
 	}
 
 	/* Remove the fragment list elements first, otherwise we
-	 * have a memory leak.
+	 * have a memory leak. But only if we are to be remove the
+	 * buffer.
 	 */
 	frag = buf->frags;
-	while (frag) {
+	while (!(buf->ref - 1) && frag) {
 		struct net_buf *next = frag->frags;
 
 		net_buf_frag_del(buf, frag);
