@@ -497,6 +497,17 @@ Events:
 
 		This event indicates that passkey needs to be confirmed.
 
+	Opcode 0x87 - Identity Resolved event
+
+		Controller Index:	<controller id>
+		Event parameters:	Address_Type (1 octet)
+					Address (6 octets)
+					Identity_Address_Type (1 octet)
+					Identity_Address (6 octets)
+
+		This event indicates that the remote Identity Address has been
+		resolved.
+
 GATT Service (ID 2)
 ===================
 
