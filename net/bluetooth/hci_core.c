@@ -58,6 +58,9 @@
 #define BT_DBG(fmt, ...)
 #endif
 
+/* Peripheral timeout to initialize Connection Parameter Update procedure */
+#define CONN_UPDATE_TIMEOUT	(5 * sys_clock_ticks_per_sec)
+
 /* Stacks for the fibers */
 static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
@@ -590,15 +593,16 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 	return 0;
 }
 
-static int update_conn_param(struct bt_conn *conn)
+static void update_conn_param(struct bt_conn *conn)
 {
-	const struct bt_le_conn_param *param;
-
-	param = BT_LE_CONN_PARAM(conn->le.interval_min,
-				 conn->le.interval_max,
-				 conn->le.latency,
-				 conn->le.timeout);
-	return bt_conn_le_param_update(conn, param);
+	/*
+	 * Core 4.2 Vol 3, Part C, 9.3.12.2
+	 * The Peripheral device should not perform a Connection Parameter
+	 * Update procedure within 5 s after establishing a connection.
+	 */
+	nano_delayed_work_submit(&conn->le.update_work,
+				 conn->role == BT_HCI_ROLE_MASTER ? TICKS_NONE :
+				 CONN_UPDATE_TIMEOUT);
 }
 
 static void le_conn_complete(struct net_buf *buf)

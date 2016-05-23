@@ -136,6 +136,21 @@ void notify_le_param_updated(struct bt_conn *conn)
 	}
 }
 
+static void le_conn_update(struct nano_work *work)
+{
+	struct bt_conn_le *le = CONTAINER_OF(work, struct bt_conn_le,
+					     update_work);
+	struct bt_conn *conn = CONTAINER_OF(le, struct bt_conn, le);
+	const struct bt_le_conn_param *param;
+
+	param = BT_LE_CONN_PARAM(conn->le.interval_min,
+				 conn->le.interval_max,
+				 conn->le.latency,
+				 conn->le.timeout);
+
+	bt_conn_le_param_update(conn, param);
+}
+
 static struct bt_conn *conn_new(void)
 {
 	struct bt_conn *conn = NULL;
@@ -1005,6 +1020,7 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	conn->type = BT_CONN_TYPE_LE;
 	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
 	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
+	nano_delayed_work_init(&conn->le.update_work, le_conn_update);
 
 	return conn;
 }
@@ -1085,6 +1101,10 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			/* this indicate LE Create Connection failed */
 			notify_connected(conn);
 		}
+
+		/* Cancel Connection Update if it is pending */
+		if (conn->type == BT_CONN_TYPE_LE)
+			nano_delayed_work_cancel(&conn->le.update_work);
 
 		/* Release the reference we took for the very first
 		 * state transition.
@@ -1288,6 +1308,9 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	    conn->le.interval <= param->interval_max) {
 		return -EALREADY;
 	}
+
+	/* Cancel any pending update */
+	nano_delayed_work_cancel(&conn->le.update_work);
 
 	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
 	    !(bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {

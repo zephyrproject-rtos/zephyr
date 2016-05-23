@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright (c) 2015 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <misc/nano_work.h>
 
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
@@ -50,6 +51,9 @@ struct bt_conn_le {
 	uint16_t		timeout;
 
 	uint8_t			features[8];
+
+	/* Delayed work for connection update handling */
+	struct nano_delayed_work update_work;
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
@@ -135,7 +139,7 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey);
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
 
-/* Look up a connection state. For NULL peer, returns the first connection
+/* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state
  */
 struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
