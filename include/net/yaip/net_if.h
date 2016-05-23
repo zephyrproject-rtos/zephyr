@@ -164,6 +164,12 @@ struct net_if {
 
 		/** Multicast IP addresses */
 		struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR];
+
+		/** Gateway */
+		struct in_addr gw;
+
+		/** Netmask */
+		struct in_addr netmask;
 	} ipv4;
 #endif /* CONFIG_NET_IPV4 */
 };
@@ -327,6 +333,32 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
  * @return Default interface or NULL if no interfaces are configured.
  */
 struct net_if *net_if_get_default(void);
+
+/**
+ * @brief Set IPv4 netmask for an interface.
+ * @param iface Interface to use.
+ * @param netmask IPv4 netmask
+ */
+static inline void net_if_set_netmask(struct net_if *iface,
+				      struct in_addr *netmask)
+{
+#if defined(CONFIG_NET_IPV4)
+	net_ipaddr_copy(&iface->ipv4.netmask, netmask);
+#endif
+}
+
+/**
+ * @brief Set IPv4 gateway for an interface.
+ * @param iface Interface to use.
+ * @param gw IPv4 address of an gateway
+ */
+static inline void net_if_set_gw(struct net_if *iface,
+				 struct in_addr *gw)
+{
+#if defined(CONFIG_NET_IPV4)
+	net_ipaddr_copy(&iface->ipv4.gw, gw);
+#endif
+}
 
 struct net_if_api {
 	void (*init)(struct net_if *iface);
