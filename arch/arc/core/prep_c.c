@@ -79,6 +79,30 @@ static void dataCopy(void)
 
 /**
  *
+ * @brief Disable the i-cache if present
+ *
+ * For those ARC CPUs that have a i-cache present,
+ * invalidate the i-cache and then disable it.
+ *
+ * @return N/A
+ */
+
+static void disable_icache(void)
+{
+	unsigned int val;
+
+	val = _arc_v2_aux_reg_read(_ARC_V2_I_CACHE_BUILD);
+	val &= 0xff; /* version field */
+	if (val == 0) {
+		return; /* skip if i-cache is not present */
+	}
+	_arc_v2_aux_reg_write(_ARC_V2_IC_IVIC, 0);
+	__asm__ __volatile__ ("nop");
+	_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, 1);
+}
+
+/**
+ *
  * @brief Invalidate the data cache if present
  *
  * For those ARC CPUs that have a data cache present,
@@ -140,8 +164,9 @@ extern FUNC_NORETURN void _Cstart(void);
 
 void _PrepC(void)
 {
-	adjust_vector_table_base();
+	disable_icache();
 	invalidate_dcache();
+	adjust_vector_table_base();
 	bssZero();
 	dataCopy();
 	_Cstart();
