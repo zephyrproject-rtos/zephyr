@@ -179,6 +179,10 @@ void main(void)
 	struct net_if_addr *ifaddr1, *ifaddr2;
 	struct net_if_mcast_addr *ifmaddr1;
 	struct in_addr addr4 = { { { 192, 168, 0, 1 } } };
+	struct in_addr match_addr = { { { 192, 168, 0, 2 } } };
+	struct in_addr fail_addr = { { { 10, 1, 0, 2 } } };
+	struct in_addr netmask = { { { 255, 255, 255, 0 } } };
+	struct in_addr gw = { { { 192, 168, 0, 42 } } };
 	struct in_addr loopback4 = { { { 127, 0, 0, 1 } } };
 	struct net_if *iface;
 	int i;
@@ -408,6 +412,21 @@ void main(void)
 			       "iface %p\n", iface);
 			return;
 		}
+	}
+
+	iface = net_if_get_default();
+
+	net_if_set_gw(iface, &gw);
+	net_if_set_netmask(iface, &netmask);
+
+	if (net_ipv4_addr_mask_cmp(iface, &fail_addr)) {
+		printk("IPv4 wrong match failed\n");
+		return;
+	}
+
+	if (!net_ipv4_addr_mask_cmp(iface, &match_addr)) {
+		printk("IPv4 match failed\n");
+		return;
 	}
 
 	printk("IP address checks passed\n");
