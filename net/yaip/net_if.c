@@ -227,6 +227,29 @@ const struct in_addr *net_if_ipv4_broadcast_addr(void)
 #endif
 }
 
+bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
+			       struct in_addr *addr)
+{
+#if defined(CONFIG_NET_IPV4)
+	uint32_t subnet = ntohl(addr->s_addr[0]) &
+			ntohl(iface->ipv4.netmask.s_addr[0]);
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!iface->ipv4.unicast[i].is_used ||
+		    iface->ipv4.unicast[i].address.family != AF_INET) {
+				continue;
+		}
+		if ((ntohl(iface->ipv4.unicast[i].address.in_addr.s_addr[0]) &
+		     ntohl(iface->ipv4.netmask.s_addr[0])) == subnet) {
+			return true;
+		}
+	}
+#endif
+
+	return false;
+}
+
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 				    enum net_addr_state addr_state)
 {

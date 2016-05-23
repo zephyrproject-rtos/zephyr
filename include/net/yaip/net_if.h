@@ -335,6 +335,15 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 struct net_if *net_if_get_default(void);
 
 /**
+ * @brief Check if the given IPv4 address belongs to local subnet.
+ * @param iface Interface to use. Must be a valid pointer to an interface.
+ * @param addr IPv4 address
+ * @return True if address is part of local subnet, false otherwise.
+ */
+bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
+			       struct in_addr *addr);
+
+/**
  * @brief Set IPv4 netmask for an interface.
  * @param iface Interface to use.
  * @param netmask IPv4 netmask
