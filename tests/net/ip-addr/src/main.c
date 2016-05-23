@@ -107,8 +107,6 @@
 		}							\
 	} while (0)
 
-extern struct net_if __net_if_start[];
-
 struct net_test_context {
 	uint8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
@@ -232,7 +230,7 @@ void main(void)
 		return;
 	}
 
-	ifaddr1 = net_if_ipv6_addr_add(__net_if_start,
+	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
 				      &addr6,
 				      NET_ADDR_MANUAL,
 				      0);
@@ -285,19 +283,19 @@ void main(void)
 		return;
 	}
 
-	ifmaddr1 = net_if_ipv6_maddr_add(__net_if_start, &mcast);
+	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &mcast);
 	if (!ifmaddr1) {
 		printk("IPv6 multicast address add failed\n");
 		return;
 	}
 
-	ifmaddr1 = net_if_ipv6_maddr_add(__net_if_start, &addr6);
+	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &addr6);
 	if (ifmaddr1) {
 		printk("IPv6 multicast address could be added failed\n");
 		return;
 	}
 
-	ifaddr1 = net_if_ipv4_addr_add(__net_if_start,
+	ifaddr1 = net_if_ipv4_addr_add(net_if_get_default(),
 				      &addr4,
 				      NET_ADDR_MANUAL,
 				      0);
@@ -321,7 +319,7 @@ void main(void)
 		return;
 	}
 
-	ifaddr2 = net_if_ipv6_addr_add(__net_if_start,
+	ifaddr2 = net_if_ipv6_addr_add(net_if_get_default(),
 				       &addr6,
 				       NET_ADDR_AUTOCONF,
 				       0);
@@ -331,7 +329,7 @@ void main(void)
 	}
 	ifaddr2->addr_state = NET_ADDR_PREFERRED;
 
-	tmp = net_if_ipv6_get_ll(__net_if_start, NET_ADDR_PREFERRED);
+	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
 	if (memcmp(tmp, &addr6.s6_addr, sizeof(struct in6_addr))) {
 		printk("IPv6 ll address fetch failed\n");
 		return;
@@ -339,13 +337,13 @@ void main(void)
 
 	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
-	tmp = net_if_ipv6_get_ll(__net_if_start, NET_ADDR_PREFERRED);
+	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
 	if (tmp || !memcmp(tmp, &any, sizeof(struct in6_addr))) {
 		printk("IPv6 preferred ll address fetch failed\n");
 		return;
 	}
 
-	ifaddr1 = net_if_ipv6_addr_add(__net_if_start,
+	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
 				       &addr6_pref2,
 				       NET_ADDR_AUTOCONF,
 				       0);
@@ -356,7 +354,7 @@ void main(void)
 	ifaddr1->addr_state = NET_ADDR_PREFERRED;
 
 	/* Two tests, first with interface given, then when iface is NULL */
-	for (i = 0, iface = __net_if_start; i < 2; i++, iface = NULL) {
+	for (i = 0, iface = net_if_get_default(); i < 2; i++, iface = NULL) {
 		ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
 		tmp = net_if_ipv6_select_src_addr(iface, &addr6_pref1);
