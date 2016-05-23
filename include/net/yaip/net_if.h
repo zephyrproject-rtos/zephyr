@@ -307,6 +307,12 @@ struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
 struct in6_addr *net_if_ipv6_unspecified_addr(void);
 
 /**
+ * @brief Return IPv4 broadcast address (all bits ones)
+ * @return IPv4 broadcast address with all bits set to one.
+ */
+const struct in_addr *net_if_ipv4_broadcast_addr(void);
+
+/**
  * @brief Get a IPv6 link local address in a given state.
  * @param iface Interface to use. Must be a valid pointer to an interface.
  * @param addr_state IPv6 address state (preferred, tentative, deprecated)

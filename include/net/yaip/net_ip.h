@@ -329,6 +329,17 @@ static inline struct in6_addr *net_ipv6_unspecified_address(void)
 	return net_if_ipv6_unspecified_addr();
 }
 
+extern const struct in_addr *net_if_ipv4_broadcast_addr(void);
+
+/** @brief Return pointer to broadcast (all bits ones) IPv4 address.
+ *
+ * @return Broadcast IPv4 address.
+ */
+static inline const struct in_addr *net_ipv4_broadcast_address(void)
+{
+	return net_if_ipv4_broadcast_addr();
+}
+
 #ifdef __cplusplus
 }
 #endif
