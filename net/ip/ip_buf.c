@@ -303,6 +303,7 @@ static struct net_buf *ip_buf_get(enum ip_buf_type type,
 	}
 
 	ip_buf_context(buf) = context;
+	uip_set_conn(buf) = NULL;
 
 	return buf;
 }
