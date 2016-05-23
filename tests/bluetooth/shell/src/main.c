@@ -1009,6 +1009,142 @@ static int cmd_gatt_unsubscribe(int argc, char *argv[])
 	return 0;
 }
 
+/* Custom Service Variables */
+static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(
+	0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+static struct bt_uuid_128 vnd_auth_uuid = BT_UUID_INIT_128(
+	0xf2, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+static const struct bt_uuid_128 vnd_long_uuid1 = BT_UUID_INIT_128(
+	0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+static const struct bt_uuid_128 vnd_long_uuid2 = BT_UUID_INIT_128(
+	0xde, 0xad, 0xfa, 0xce, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+
+static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			void *buf, uint16_t len, uint16_t offset)
+{
+	const char *value = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 strlen(value));
+}
+
+static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 const void *buf, uint16_t len, uint16_t offset)
+{
+	uint8_t *value = attr->user_data;
+
+	if (offset + len > sizeof(vnd_value)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	memcpy(value + offset, buf, len);
+
+	return len;
+}
+
+#define MAX_DATA 30
+struct vnd_long_value {
+	/* TODO: buffer needs to be per connection */
+	uint8_t buf[MAX_DATA];
+	uint8_t data[MAX_DATA];
+};
+
+static struct vnd_long_value vnd1 = {
+	.buf = { 'V', 'e', 'n', 'd', 'o', 'r' },
+	.data = { 'V', 'e', 'n', 'd', 'o', 'r' },
+};
+
+static struct vnd_long_value vnd2 = {
+	.buf = { 'S', 't', 'r', 'i', 'n', 'g' },
+	.data = { 'S', 't', 'r', 'i', 'n', 'g' },
+};
+
+static ssize_t read_long_vnd(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr, void *buf,
+			     uint16_t len, uint16_t offset)
+{
+	struct vnd_long_value *value = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value->data,
+				 sizeof(value->data));
+}
+
+static ssize_t write_long_vnd(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, const void *buf,
+			      uint16_t len, uint16_t offset)
+{
+	struct vnd_long_value *value = attr->user_data;
+
+	if (offset + len > sizeof(value->buf)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	/* Copy to buffer */
+	memcpy(value->buf + offset, buf, len);
+
+	return len;
+}
+
+static ssize_t flush_long_vnd(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, uint8_t flags)
+{
+	struct vnd_long_value *value = attr->user_data;
+
+	switch (flags) {
+	case BT_GATT_FLUSH_DISCARD:
+		/* Discard buffer reseting it back with data */
+		memcpy(value->buf, value->data, sizeof(value->buf));
+		return 0;
+	case BT_GATT_FLUSH_SYNC:
+		/* Sync buffer to data */
+		memcpy(value->data, value->buf, sizeof(value->data));
+		return 0;
+	}
+
+	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+}
+
+static struct bt_gatt_attr vnd_attrs[] = {
+	/* Vendor Primary Service Declaration */
+	BT_GATT_PRIMARY_SERVICE(&vnd_uuid),
+
+	BT_GATT_CHARACTERISTIC(&vnd_auth_uuid.uuid,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
+	BT_GATT_DESCRIPTOR(&vnd_auth_uuid.uuid,
+			   BT_GATT_PERM_READ_AUTHEN |
+			   BT_GATT_PERM_WRITE_AUTHEN,
+			   read_vnd, write_vnd, vnd_value),
+
+	BT_GATT_CHARACTERISTIC(&vnd_long_uuid1.uuid, BT_GATT_CHRC_READ |
+			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
+	BT_GATT_LONG_DESCRIPTOR(&vnd_long_uuid1.uuid,
+				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+				read_long_vnd, write_long_vnd, flush_long_vnd,
+				&vnd1),
+
+	BT_GATT_CHARACTERISTIC(&vnd_long_uuid2.uuid, BT_GATT_CHRC_READ |
+			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
+	BT_GATT_LONG_DESCRIPTOR(&vnd_long_uuid2.uuid,
+				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+				read_long_vnd, write_long_vnd, flush_long_vnd,
+				&vnd2),
+};
+
+static int cmd_gatt_register_test_svc(int argc, char *argv[])
+{
+	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
+
+	printk("Registering test vendor service\n");
+
+	return 0;
+}
+
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
@@ -1730,6 +1866,8 @@ static const struct shell_cmd commands[] = {
 	  "<handle> <offset> <data>" },
 	{ "gatt-subscribe", cmd_gatt_subscribe, "<CCC handle> <value handle>" },
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe, HELP_NONE },
+	{ "gatt-register-service", cmd_gatt_register_test_svc,
+	  "register pre-predefined test service" },
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	{ "l2cap-register", cmd_l2cap_register, "<psm>" },
 	{ "l2cap-connect", cmd_l2cap_connect, "<psm>" },
