@@ -308,6 +308,17 @@ static inline bool net_is_my_ipv4_addr(struct in_addr *addr)
  */
 #define net_ipaddr_copy(dest, src) (*(dest) = *(src))
 
+/** @def net_ipv4_addr_cmp
+ *  @brief Compare two IPv4 addresses
+ *
+ *  @param addr1 Pointer to IPv4 address.
+ *  @param addr2 Pointer to IPv4 address.
+ *
+ *  @return True if the addresses are the same, false otherwise.
+ */
+#define net_ipv4_addr_cmp(addr1, addr2) \
+	((addr1)->s_addr[0] == (addr2)->s_addr[0])
+
 /** @brief Check if the given IPv6 address is a link local address.
  *
  * @return True if it is, false otherwise.
