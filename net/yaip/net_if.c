@@ -216,6 +216,17 @@ struct in6_addr *net_if_ipv6_unspecified_addr(void)
 #endif
 }
 
+const struct in_addr *net_if_ipv4_broadcast_addr(void)
+{
+#if defined(CONFIG_NET_IPV4)
+	static const struct in_addr addr = { { { 255, 255, 255, 255 } } };
+
+	return &addr;
+#else
+	return NULL;
+#endif
+}
+
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 				    enum net_addr_state addr_state)
 {
