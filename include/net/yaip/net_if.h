@@ -33,6 +33,12 @@ extern "C" {
 #endif
 
 /**
+ * Network device capabilities.
+ */
+/* The network interface is an ethernet based */
+#define NET_CAP_ARP 0x00000001
+
+/**
  * @brief Network Interface unicast IP addresses
  *
  * Stores the unicast IP addresses assigned to this network interface.
@@ -121,6 +127,9 @@ struct net_if_ipv6_prefix {
 struct net_if {
 	/** The actualy device driver instance the net_if is related to */
 	struct device *dev;
+
+	/** Interface capabilities */
+	uint32_t capabilities;
 
 	/** The hardware link address */
 	struct net_linkaddr link_addr;
@@ -372,6 +381,7 @@ static inline void net_if_set_gw(struct net_if *iface,
 struct net_if_api {
 	void (*init)(struct net_if *iface);
 	int (*send)(struct net_if *iface, struct net_buf *buf);
+	uint32_t (*capabilities)(struct net_if *iface);
 };
 
 #define NET_IF_INIT(dev_name, sfx, _mtu)				\

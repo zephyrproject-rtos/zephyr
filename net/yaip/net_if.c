@@ -50,6 +50,22 @@ static void net_if_tx_fiber(struct net_if *iface)
 			buf, net_buf_frags_len(buf->frags));
 
 		if (api && api->send) {
+
+#if defined(CONFIG_NET_IPV4)
+			if (iface->capabilities & NET_CAP_ARP) {
+				buf = net_arp_prepare(buf);
+				if (!buf) {
+					/* Packet was discarded */
+					continue;
+				}
+
+				/* ARP packet will be sent now and the actual
+				 * packet is sent after the ARP reply has been
+				 * received.
+				 */
+			}
+#endif /* CONFIG_NET_IPV4 */
+
 			if (api->send(iface, buf) < 0) {
 				net_nbuf_unref(buf);
 			}
@@ -467,8 +483,21 @@ int net_if_init(void)
 
 		if (api && api->init) {
 			api->init(iface);
+
+			if (api->capabilities) {
+				iface->capabilities = api->capabilities(iface);
+			} else {
+				iface->capabilities = 0;
+			}
+
 			init_tx_queue(iface);
 		}
+
+#if defined(CONFIG_NET_IPV4)
+		if (iface->capabilities & NET_CAP_ARP) {
+			net_arp_init();
+		}
+#endif
 
 #if defined(CONFIG_NET_IPV6)
 		iface->hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
