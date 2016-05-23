@@ -198,7 +198,7 @@
 
 #if defined(CONFIG_LSM9DS0_GYRO_I2C_ADDR_6A)
 	#define LSM9DS0_GYRO_I2C_ADDR           0x6A
-#elif defined(CONFIG_LSM9DS0_GYRO_I2c_ADDR_6B)
+#elif defined(CONFIG_LSM9DS0_GYRO_I2C_ADDR_6B)
 	#define LSM9DS0_GYRO_I2C_ADDR           0x6B
 #endif
 
