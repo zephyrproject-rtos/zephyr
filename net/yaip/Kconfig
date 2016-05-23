@@ -69,6 +69,13 @@ config NET_IFACE_MCAST_IPV4_ADDR_COUNT
        depends on NET_IPV4
        default 1
 
+config NET_ARP_TABLE_SIZE
+       int "Number of entries in ARP table."
+       depends on NET_IPV4
+       default 2
+       help
+         Each entry in the ARP table consumes 22 bytes of memory.
+
 config NET_TX_STACK_SIZE
 	int "TX fiber stack size"
 	default 1024
