@@ -52,6 +52,8 @@
 #define SERVER_MAX_ATTRIBUTES		50
 #define SERVER_BUF_SIZE			2048
 
+/* bt_gatt_attr_next cannot be used on non-registered services */
+#define NEXT_DB_ATTR(attr) (attr + 1)
 #define LAST_DB_ATTR (server_db + (attr_count - 1))
 
 #define server_buf_push(_len)	net_buf_push(server_buf, ROUND_UP(_len, 4))
@@ -487,16 +489,11 @@ static struct bt_gatt_attr ccc = BT_GATT_CCC(ccc_cfg, ccc_cfg_changed);
 static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr)
 {
 	struct bt_gatt_attr *attr_desc;
-	struct bt_gatt_chrc *chrc = (struct bt_gatt_chrc *)(attr - 1);
-	struct gatt_value *value;
+	struct bt_gatt_chrc *chrc = attr->user_data;
+	struct gatt_value *value = NEXT_DB_ATTR(attr)->user_data;
 
 	/* Fail if another CCC already exist on server */
 	if (ccc_added) {
-		return NULL;
-	}
-
-	/* Characteristic should be last but one attr in sequential db */
-	if (bt_uuid_cmp(chrc->uuid, BT_UUID_GATT_CHRC)) {
 		return NULL;
 	}
 
@@ -512,7 +509,6 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr)
 		return NULL;
 	}
 
-	value = attr->user_data;
 	tester_set_bit(value->flags, GATT_VALUE_CCC_FLAG);
 	ccc_added = true;
 
@@ -521,7 +517,7 @@ static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr)
 
 static struct bt_gatt_attr *add_cep(const struct bt_gatt_attr *attr_chrc)
 {
-	struct bt_gatt_chrc *chrc = (attr_chrc - 1)->user_data;
+	struct bt_gatt_chrc *chrc = attr_chrc->user_data;
 	struct bt_gatt_cep cep_value;
 
 	/* Extended Properties bit shall be set */
@@ -597,11 +593,31 @@ static int alloc_descriptor(const struct bt_gatt_attr *attr,
 	return 0;
 }
 
+static struct bt_gatt_attr *get_base_chrc(struct bt_gatt_attr *attr)
+{
+	struct bt_gatt_attr *tmp;
+
+	for (tmp = attr; tmp > server_db; tmp--) {
+		/* Service Declaration cannot precede Descriptor declaration */
+		if (!bt_uuid_cmp(tmp->uuid, BT_UUID_GATT_PRIMARY) ||
+		    !bt_uuid_cmp(tmp->uuid, BT_UUID_GATT_SECONDARY)) {
+			break;
+		}
+
+		if (!bt_uuid_cmp(tmp->uuid, BT_UUID_GATT_CHRC)) {
+			return tmp;
+		}
+	}
+
+	return NULL;
+}
+
 static void add_descriptor(uint8_t *data, uint16_t len)
 {
 	const struct gatt_add_descriptor_cmd *cmd = (void *) data;
 	struct gatt_add_descriptor_rp rp;
 	struct add_descriptor cmd_data;
+	struct bt_gatt_attr *chrc;
 	union uuid uuid;
 
 	/* Must be declared first svc or at least 3 attrs (svc+char+char val) */
@@ -623,7 +639,13 @@ static void add_descriptor(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	if (alloc_descriptor(LAST_DB_ATTR, &cmd_data)) {
+	/* Lookup preceding Characteristic Declaration here */
+	chrc = get_base_chrc(LAST_DB_ATTR);
+	if (!chrc) {
+		goto fail;
+	}
+
+	if (alloc_descriptor(chrc, &cmd_data)) {
 		goto fail;
 	}
 
