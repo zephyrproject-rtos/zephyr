@@ -89,6 +89,7 @@ static uint32_t __noinit max_system_ticks;
 static uint32_t __noinit programmed_limit;
 static uint32_t __noinit programmed_ticks;
 static bool     straddled_tick_on_idle_enter = false;
+extern int32_t _sys_idle_elapsed_ticks;
 #endif
 
 /**
