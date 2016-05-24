@@ -27,6 +27,7 @@
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_ip.h>
+#include <net/arp.h>
 
 #define NET_DEBUG 1
 #include "net_private.h"
@@ -107,6 +108,50 @@ static const unsigned char pkt3[199] = {
 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, /* ........ */
 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, /* ........ */
 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96        /* ....... */
+};
+
+/* ICMP reply (98 bytes) */
+static const unsigned char pkt4[98] = {
+/* Ethernet header starts here */
+0x1a, 0xc9, 0xb7, 0xb6, 0x46, 0x70, 0x10, 0x00, /* ....Fp.. */
+0x00, 0x00, 0x00, 0x68, 0x08, 0x00,
+/* IPv4 header starts here */
+0x45, 0x00, /* ...h..E. */
+0x00, 0x54, 0x33, 0x35, 0x40, 0x00, 0x40, 0x01, /* .T35@.@. */
+0xf6, 0xf5, 0xc0, 0x00, 0x02, 0x01, 0x0a, 0xed, /* ........ */
+0x43, 0x90,
+/* ICMP header starts here */
+0x00, 0x00, 0x14, 0xe2, 0x59, 0xe2, /* C.....Y. */
+0x00, 0x01, 0x68, 0x4b, 0x44, 0x57, 0x00, 0x00, /* ..hKDW.. */
+0x00, 0x00, 0x1a, 0xc5, 0x0b, 0x00, 0x00, 0x00, /* ........ */
+0x00, 0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, /* ........ */
+0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, /* ........ */
+0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, /* .. !"#$% */
+0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, /* &'()*+,- */
+0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, /* ./012345 */
+0x36, 0x37                                      /* 67 */
+};
+
+/* ICMP request (98 bytes) */
+static const unsigned char pkt5[98] = {
+/* Ethernet header starts here */
+0x10, 0x00, 0x00, 0x00, 0x00, 0x68, 0x1a, 0xc9, /* .....h.. */
+0xb7, 0xb6, 0x46, 0x70, 0x08, 0x00,
+/* IPv4 header starts here */
+0x45, 0x00, /* ..Fp..E. */
+0x00, 0x54, 0x33, 0x35, 0x40, 0x00, 0x40, 0x01, /* .T35@.@. */
+0xf6, 0xf5, 0x0a, 0xed, 0x43, 0x90, 0xc0, 0x00, /* ....C... */
+0x02, 0x01,
+/* ICMP header starts here */
+0x08, 0x00, 0x0c, 0xe2, 0x59, 0xe2, /* ......Y. */
+0x00, 0x01, 0x68, 0x4b, 0x44, 0x57, 0x00, 0x00, /* ..hKDW.. */
+0x00, 0x00, 0x1a, 0xc5, 0x0b, 0x00, 0x00, 0x00, /* ........ */
+0x00, 0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, /* ........ */
+0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, /* ........ */
+0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, /* .. !"#$% */
+0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, /* &'()*+,- */
+0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, /* ./012345 */
+0x36, 0x37                                      /* 67 */
 };
 
 #ifdef CONFIG_MICROKERNEL
@@ -267,6 +312,62 @@ void main(void)
 	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt3, should be 0x%x\n",
+		       chksum, orig_chksum);
+		return;
+	}
+	net_nbuf_unref(buf);
+
+	/* Another packet that fits to one fragment.
+	 * This one has ethernet header before IPv4 data.
+	 */
+	buf = net_nbuf_get_reserve_rx(0);
+	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
+	net_buf_frag_add(buf, frag);
+
+	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
+	memcpy(net_nbuf_ll(buf), pkt4, sizeof(pkt4));
+	net_buf_add(frag, sizeof(pkt4) - sizeof(struct net_eth_hdr));
+
+	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
+	net_nbuf_family(buf) = AF_INET;
+	net_nbuf_ext_len(buf) = 0;
+
+	hdr_len = net_nbuf_ip_hdr_len(buf);
+	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
+	frag->data[hdr_len + 2] = 0;
+	frag->data[hdr_len + 3] = 0;
+
+	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMP));
+	if (chksum != orig_chksum) {
+		printk("Invalid chksum 0x%x in pkt4, should be 0x%x\n",
+		       chksum, orig_chksum);
+		return;
+	}
+	net_nbuf_unref(buf);
+
+	/* Another packet that fits to one fragment and which has correct
+	 * checksum. This one has ethernet header before IPv4 data.
+	 */
+	buf = net_nbuf_get_reserve_rx(0);
+	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
+	net_buf_frag_add(buf, frag);
+
+	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
+	memcpy(net_nbuf_ll(buf), pkt5, sizeof(pkt5));
+	net_buf_add(frag, sizeof(pkt5) - sizeof(struct net_eth_hdr));
+
+	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
+	net_nbuf_family(buf) = AF_INET;
+	net_nbuf_ext_len(buf) = 0;
+
+	hdr_len = net_nbuf_ip_hdr_len(buf);
+	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
+	frag->data[hdr_len + 2] = 0;
+	frag->data[hdr_len + 3] = 0;
+
+	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMP));
+	if (chksum != orig_chksum) {
+		printk("Invalid chksum 0x%x in pkt5, should be 0x%x\n",
 		       chksum, orig_chksum);
 		return;
 	}
