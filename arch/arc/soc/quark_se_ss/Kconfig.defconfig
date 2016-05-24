@@ -33,12 +33,6 @@ config  NUM_IRQS
 	# must be > the highest interrupt number used
 	default 68
 
-config QMSI
-        def_bool y
-
-config QMSI_BUILTIN
-        def_bool y
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 
@@ -70,7 +64,6 @@ config DCCM_BASE_ADDRESS
 
 config DCCM_SIZE
 	default 8
-
 
 config QMSI
 	def_bool y
