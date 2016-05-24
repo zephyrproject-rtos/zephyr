@@ -456,6 +456,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 			/* FIXME - set the timer */
 		} else {
 			iface->ipv4.unicast[i].is_infinite = true;
+			iface->ipv4.unicast[i].addr_state = NET_ADDR_PREFERRED;
 		}
 
 		NET_DBG("[%d] interface %p address %s type %s added", i, iface,
