@@ -170,11 +170,14 @@ struct eth_runtime {
 	volatile uint8_t rx_buf[UIP_BUFSIZE];
 };
 
+#define MMC_DEFAULT_MASK               0xffffffff
+
 #define MAC_CONF_14_RMII_100M          BIT(14)
 #define MAC_CONF_11_DUPLEX             BIT(11)
 #define MAC_CONF_3_TX_EN               BIT(3)
 #define MAC_CONF_2_RX_EN               BIT(2)
 
+#define STATUS_NORMAL_INT              BIT(16)
 #define STATUS_RX_INT                  BIT(6)
 
 #define OP_MODE_25_RX_STORE_N_FORWARD  BIT(25)
@@ -188,6 +191,11 @@ struct eth_runtime {
 #define REG_ADDR_MAC_CONF              0x0000
 #define REG_ADDR_MACADDR_HI            0x0040
 #define REG_ADDR_MACADDR_LO            0x0044
+
+#define REG_MMC_RX_INTR_MASK           0x010c
+#define REG_MMC_TX_INTR_MASK           0x0110
+#define REG_MMC_RX_IPC_INTR_MASK       0x0200
+
 #define REG_ADDR_TX_POLL_DEMAND        0x1004
 #define REG_ADDR_RX_POLL_DEMAND        0x1008
 #define REG_ADDR_RX_DESC_LIST          0x100C

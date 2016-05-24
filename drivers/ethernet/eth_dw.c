@@ -165,7 +165,7 @@ void eth_dw_isr(struct device *port)
 	eth_rx(port);
 
 	/* Acknowledge the interrupt. */
-	eth_write(base_addr, REG_ADDR_STATUS, STATUS_RX_INT);
+	eth_write(base_addr, REG_ADDR_STATUS, STATUS_NORMAL_INT | STATUS_RX_INT);
 }
 
 #ifdef CONFIG_PCI
@@ -259,6 +259,11 @@ static int eth_initialize(struct device *port)
 		  INT_ENABLE_NORMAL |
 		  /* Enable receive interrupts */
 		  INT_ENABLE_RX);
+
+	/* Mask all the MMC interrupts */
+	eth_write(base_addr, REG_MMC_RX_INTR_MASK, MMC_DEFAULT_MASK);
+	eth_write(base_addr, REG_MMC_TX_INTR_MASK, MMC_DEFAULT_MASK);
+	eth_write(base_addr, REG_MMC_RX_IPC_INTR_MASK, MMC_DEFAULT_MASK);
 
 	eth_write(base_addr, REG_ADDR_DMA_OPERATION,
 		  /* Enable receive store-and-forward mode for simplicity. */
