@@ -138,6 +138,7 @@ struct net_nbuf {
 			    net_buf_user_data((buf)))->reserve)
 #define net_nbuf_ll_reserve(buf) (((struct net_nbuf *) \
 			       net_buf_user_data((buf)))->ll_reserve)
+#define net_nbuf_ll(buf) (net_nbuf_ip_data(buf) - net_nbuf_ll_reserve(buf))
 
 #define net_nbuf_ll_src(buf) \
 	(((struct net_nbuf *)net_buf_user_data((buf)))->src)
