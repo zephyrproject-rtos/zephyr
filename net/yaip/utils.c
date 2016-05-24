@@ -267,8 +267,7 @@ static inline uint16_t calc_chksum_buf(uint16_t sum, struct net_buf *buf,
 				       uint16_t upper_layer_len)
 {
 	struct net_buf *frag = buf->frags;
-	uint16_t proto_len = net_nbuf_ip_hdr_len(buf) + net_nbuf_ext_len(buf) +
-		net_nbuf_ll_reserve(buf);
+	uint16_t proto_len = net_nbuf_ip_hdr_len(buf) + net_nbuf_ext_len(buf);
 	int16_t len = frag->len - proto_len;
 	uint8_t *ptr = frag->data + proto_len;
 
