@@ -3027,6 +3027,12 @@ int bt_recv(struct net_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr;
 
+#if defined(CONFIG_MICROKERNEL)
+	if (sys_execution_context_type_get() == NANO_CTX_TASK) {
+		return task_offload_to_fiber(bt_recv, buf);
+	}
+#endif /* CONFIG_MICROKERNEL */
+
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);
