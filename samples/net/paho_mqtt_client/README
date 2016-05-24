@@ -1,0 +1,71 @@
+MQTT sample using the Paho's MQTT Packet.
+
+Requirements
+------------
+
+* An Ethernet LAN for testing purposes.
+
+* A MQTT 3.1.1 Gateway running in the LAN.
+
+* A Galileo Dev Board connected to the LAN.
+
+* A FTDI 6-pin cable to see debugging information from Galileo.
+
+The Mosquitto MQTT implementation is used in this document.
+However, any MQTT 3.1.1 compliant gateway must work. See
+http://mosquitto.org/ for more details.
+
+
+Building instructions
+---------------------
+
+* Change src/config.h according to your network configuration.
+
+* Download the Paho's MQTT Embedded C Library.
+  See http://www.eclipse.org/paho/clients/c/embedded/ for more
+  information about Paho's MQTT Packet Library.
+
+* Modify the src/Makefile to reflect the location of your Paho
+  repository. In this example, it is assumed that src/paho_mqtt_pkt
+  is the directory that contains the MQTTPacket source code.
+
+Usage
+-----
+
+* From a terminal, run the gateway:
+
+  mosquitto -v
+
+* Connect the FTDI cable to the Galileo. Open a terminal and run:
+
+  screen /dev/ttyUSB0 115200
+
+* Turn on the Galileo.
+
+* Galileo's MQTT Client will publish to the topic "zephyr" the
+  following message: "Hello World from Zephyr!"
+
+* A subscriber is needed in order to receive the messages sent by the
+  Galileo. For example, the following command must be executed from a
+  terminal to create a MQTT subscriber:
+
+    mosquitto_sub -t zephyr
+
+  If this command is executed from a computer other than the gateway,
+  the host must be specified.
+
+* To publish a message, the following command can be used:
+
+    mosquitto_pub -t zephyr -m "Hello World"
+
+  The "Hello World" message must be displayed in the Galileo's debugging
+  console.
+
+
+Final Remakrs
+-------------
+
+The provided source code perhaps does not exemplify the best way to use
+Paho's MQTT in Zephyr. For example, PINGREQ must be sent periodically,
+but not too often as in this use-case. Furthermore, DISCONNECT is never
+used here.

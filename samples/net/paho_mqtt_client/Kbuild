@@ -1,0 +1,10 @@
+subdir-ccflags-y += -I$(SOURCE_DIR)/paho/MQTTPacket/src
+
+obj-y += src/
+obj-y += paho/MQTTPacket/src/MQTTSubscribeClient.o
+obj-y += paho/MQTTPacket/src/MQTTFormat.o
+obj-y += paho/MQTTPacket/src/MQTTUnsubscribeClient.o
+obj-y += paho/MQTTPacket/src/MQTTDeserializePublish.o
+obj-y += paho/MQTTPacket/src/MQTTSerializePublish.o
+obj-y += paho/MQTTPacket/src/MQTTConnectClient.o
+obj-y += paho/MQTTPacket/src/MQTTPacket.o
