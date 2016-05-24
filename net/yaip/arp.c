@@ -104,7 +104,7 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 	return NULL;
 }
 
-#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ip_data(buf))
+#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ll(buf))
 
 static inline struct net_buf *prepare_arp(struct net_if *iface,
 					  struct arp_entry *entry,
@@ -119,13 +119,14 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 		goto fail;
 	}
 
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
 	if (!frag) {
 		goto fail;
 	}
 
 	net_buf_frag_add(buf, frag);
 	net_nbuf_iface(buf) = iface;
+	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
 
 	hdr = NET_ARP_BUF(buf);
 
@@ -195,8 +196,8 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 		return NULL;
 	}
 
-	hdr = (struct net_eth_hdr *)(net_nbuf_ip_data(buf) -
-				     sizeof(struct net_eth_hdr));
+	hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
+
 	if (ntohs(hdr->type) == NET_ETH_PTYPE_ARP) {
 		NET_DBG("Buf %p is already an ARP msg", buf);
 		return buf;
@@ -398,8 +399,8 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 		return NET_DROP;
 	}
 
-	arp_hdr = (struct net_arp_hdr *)(net_nbuf_ip_data(buf) -
-					 net_nbuf_ll_reserve(buf));
+	arp_hdr = NET_ARP_BUF(buf);
+
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
 		/* Someone wants to know our ll address */
