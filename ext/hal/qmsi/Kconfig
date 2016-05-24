@@ -15,6 +15,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+config HAS_QMSI
+	bool
+
+menuconfig QMSI
+	bool "QMSI driver support"
+	default n
+	depends on HAS_QMSI
+	help
+	automatically set when either of QMSI_LIBRARY or QMSI_BUILTIN
+	is selected.
+
+if HAS_QMSI
+
 config QMSI_BUILTIN
 	bool "Enable QMSI drivers through integrated sources"
 	default n
@@ -32,13 +46,6 @@ config QMSI_LIBRARY
 	library (libqmsi) which implements several drivers for peripherals from
 	Intel MCUs (e.g. Quark SE and Quark D2000).
 
-config QMSI
-	bool
-	default n
-	help
-	automatically set when either of QMSI_LIBRARY or QMSI_BUILTIN
-	is selected.
-
 config QMSI_INSTALL_PATH
 	depends on QMSI_LIBRARY
 	string "QMSI install path"
@@ -46,3 +53,5 @@ config QMSI_INSTALL_PATH
 	This option holds the path where the QMSI library and headers are
 	installed. Make sure this option is properly set when QMSI_LIBRARY
 	is enabled otherwise the build will fail.
+
+endif
