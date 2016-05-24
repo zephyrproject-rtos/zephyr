@@ -35,6 +35,7 @@
 #include <errno.h>
 
 #include <net/net_if.h>
+#include <net/arp.h>
 #include <net/nbuf.h>
 #include <net/net_core.h>
 #include <net/net_stats.h>
@@ -279,6 +280,21 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 		NET_STATS(++net_stats.processing_error);
 		return NET_DROP;
 	}
+
+#if defined(CONFIG_NET_IPV4)
+	if ((net_nbuf_iface(buf)->capabilities & NET_CAP_ARP) &&
+	    (net_nbuf_ll_reserve(buf) == sizeof(struct net_eth_hdr))) {
+		struct net_eth_hdr *eth_hdr = (struct net_eth_hdr *)
+							net_nbuf_ll(buf);
+		if (ntohs(eth_hdr->type) == NET_ETH_PTYPE_ARP) {
+			NET_DBG("ARP packet from %s received",
+				net_sprint_ll_addr(
+					(uint8_t *)eth_hdr->src.addr,
+					sizeof(struct net_eth_addr)));
+			return net_arp_input(buf);
+		}
+	}
+#endif
 
 	/* IP version and header length. */
 	switch (NET_IPV6_BUF(buf)->vtc & 0xf0) {
