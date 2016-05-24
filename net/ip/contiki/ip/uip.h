@@ -586,6 +586,10 @@ struct uip_conn *uip_connect(const uip_ipaddr_t *ripaddr, uint16_t port);
 CCIF void uip_send(struct net_buf *buf, const void *data, int len);
 #endif
 
+#if UIP_UDP
+CCIF void uip_send_udp(struct net_buf *buf, const void *data, int len);
+#endif
+
 /**
  * The length of any incoming data that is currently available (if available)
  * in the uip_appdata buffer.

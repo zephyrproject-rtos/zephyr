@@ -178,3 +178,5 @@ obj-$(CONFIG_ER_COAP) += er-coap/er-coap.o \
 			rest-engine/rest-engine.o
 
 obj-$(CONFIG_ER_COAP_CLIENT) += er-coap/er-coap-observe-client.o
+
+obj-$(CONFIG_DHCP) += contiki/ip/dhcpc.o

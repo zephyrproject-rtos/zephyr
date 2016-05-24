@@ -521,6 +521,29 @@ config	ER_COAP_CLIENT
 	help
 	  Compile in client CoAP support.
 
+config	DHCP
+	bool
+	prompt "Enable DHCP support."
+	depends on NETWORKING && NETWORKING_WITH_IPV4
+	default n
+	help
+	  Enable DHCP support so that applications can use it.
+choice
+prompt "DHCP message type"
+depends on DHCP
+help
+	Select the DHCP message type broadcast or unicast.
+default DHCP_BROADCAST
+config DHCP_BROADCAST
+	bool "Broadcast message"
+	help
+	  Choose this if unsure.
+config DHCP_UNICAST
+	bool "Unicast message"
+	help
+	  DHCP message type
+endchoice
+
 config NET_SANITY_TEST
 	bool
 	prompt "Enable networking sanity test"

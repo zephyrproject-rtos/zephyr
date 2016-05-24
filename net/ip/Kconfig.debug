@@ -252,4 +252,11 @@ config NETWORK_IP_STACK_DEBUG_REST_ENGINE
 	help
 	  Enables REST engine output debug messages
 
+config NETWORK_IP_STACK_DEBUG_DHCP
+	bool "Debug DHCP"
+	depends on DHCP
+	default n
+	help
+	  Enables DHCP output debug messages
+
 endif

@@ -85,6 +85,10 @@
 #include <string.h>
 #include <errno.h>
 
+#ifdef CONFIG_DHCP
+#include "contiki/ip/dhcpc.h"
+#endif
+
 extern void net_context_set_connection_status(struct net_context *context,
 					      int status);
 void *net_context_get_internal_connection(struct net_context *context);
@@ -1036,6 +1040,23 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
 
     /* Check if the packet is destined for our IP address. */
 #if !NETSTACK_CONF_WITH_IPV6
+#ifdef CONFIG_DHCP
+    /* DHCP message destination address in DHCP OFFER and ACK
+     * packets, destination address is 255.255.255.255, so skip
+     * addres comparison in this case
+     */
+    if(BUF(buf)->proto == UIP_PROTO_UDP) {
+       uip_appdata(buf) = &uip_buf(buf)[UIP_LLH_LEN + UIP_IPUDPH_LEN];
+    }
+
+    if(msg_for_dhcpc(buf)) {
+      if(!(uip_ipaddr_cmp(&BUF(buf)->destipaddr, &uip_hostaddr) ||
+          uip_ipaddr_cmp(&BUF(buf)->destipaddr, &uip_broadcast_addr))) {
+         UIP_STAT(++uip_stat.ip.drop);
+         goto drop;
+      }
+    } else
+#endif
     if(!uip_ipaddr_cmp(&BUF(buf)->destipaddr, &uip_hostaddr)) {
       UIP_STAT(++uip_stat.ip.drop);
       goto drop;
@@ -1303,6 +1324,7 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
     goto drop;
   }
   uip_len(buf) = uip_slen(buf) + UIP_IPUDPH_LEN;
+  ip_buf_len(buf) = uip_len(buf);
 
 #if NETSTACK_CONF_WITH_IPV6
   /* For IPv6, the IP length field does not include the IPv6 IP header
@@ -2151,13 +2173,13 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
   /* Calculate IP checksum. */
   BUF(buf)->ipchksum = 0;
   BUF(buf)->ipchksum = ~(uip_ipchksum(buf));
-  DEBUG_PRINTF("uip ip_send_nolen: chkecum 0x%04x\n", uip_ipchksum(buf));
+  PRINTF("uip ip_send_nolen: chkecum 0x%04x\n", uip_ipchksum(buf));
 #endif /* NETSTACK_CONF_WITH_IPV6 */
   UIP_STAT(++uip_stat.tcp.sent);
 #if NETSTACK_CONF_WITH_IPV6
  send:
 #endif /* NETSTACK_CONF_WITH_IPV6 */
-  DEBUG_PRINTF("Sending packet with length %d (%d)\n", uip_len(buf),
+  PRINTF("Sending packet with length %d (%d)\n", uip_len(buf),
 	       (BUF(buf)->len[0] << 8) | BUF(buf)->len[1]);
 
   UIP_STAT(++uip_stat.ip.sent);
@@ -2233,6 +2255,24 @@ uip_send(struct net_buf *buf, const void *data, int len)
        }
     }
   }
+}
+#endif
+
+#if UIP_UDP
+void
+uip_send_udp(struct net_buf *buf, const void *data, int len)
+{
+  uip_slen(buf) = len;
+
+  if (uip_process(&buf, UIP_UDP_SEND_CONN)) {
+      int ret = tcpip_output(buf, NULL);
+      if (!ret) {
+         PRINTF("Packet %p sending failed.\n", buf);
+         ip_buf_unref(buf);
+      } else {
+        ip_buf_sent_status(buf) = 0;
+      }
+   }
 }
 #endif
 /*---------------------------------------------------------------------------*/

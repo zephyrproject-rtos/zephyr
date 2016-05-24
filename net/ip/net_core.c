@@ -57,6 +57,10 @@
 #include "contiki/mac/handler-802154.h"
 #endif
 
+#ifdef CONFIG_DHCP
+#include "contiki/ip/dhcpc.h"
+#endif
+
 /* Declare some private functions only to be used in this file so the
  * prototypes are not found in .h file.
  */
@@ -1076,6 +1080,9 @@ static int network_initialization(void)
 	NETSTACK_RADIO.set_value(RADIO_PARAM_PAN_ID, IEEE802154_PANID);
 #endif
 
+#ifdef CONFIG_DHCP
+	dhcpc_init(uip_lladdr.addr, sizeof(uip_lladdr.addr));
+#endif
 	return 0;
 }
 

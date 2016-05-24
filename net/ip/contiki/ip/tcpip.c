@@ -57,6 +57,10 @@
 #endif
 #include "contiki/ip/uip-debug.h"
 
+#ifdef CONFIG_DHCP
+#include "contiki/ip/dhcpc.h"
+#endif
+
 #if UIP_LOGGING
 #include <stdio.h>
 void uip_log(char *msg);
@@ -905,6 +909,15 @@ tcpip_uipcall(struct net_buf *buf)
    }
  }
 #endif /* UIP_TCP */
+
+#ifdef CONFIG_DHCP
+  if(msg_for_dhcpc(buf)) {
+    PRINTF("msg for dhcpc\n");
+    dhcpc_appcall(tcpip_event, buf);
+    return;
+  }
+#endif
+
   if(ts->p != NULL) {
     process_post_synch(ts->p, tcpip_event, ts->state, buf);
   }
