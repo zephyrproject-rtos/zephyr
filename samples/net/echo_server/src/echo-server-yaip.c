@@ -63,7 +63,9 @@ static const struct in6_addr in6addr_my = MY_IP6ADDR;
 #if defined(CONFIG_NET_IPV4)
 /* Organization-local 239.192.0.0/14 */
 #define MCAST_IP4ADDR { { { 239, 192, 0, 2 } } }
-#define MY_IP4ADDR { { { 192, 168, 0, 1 } } }
+
+/* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
+#define MY_IP4ADDR { { { 192, 0, 2, 1 } } }
 #endif /* IPv4 */
 
 #define MY_PORT 4242
