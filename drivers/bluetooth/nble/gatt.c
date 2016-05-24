@@ -1335,7 +1335,7 @@ void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 	struct bt_conn *conn = bt_conn_lookup_handle(ev->conn_handle);
 	struct nble_gatts_write_reply_req reply_data;
 
-	BT_DBG("handle 0x%04x buf %p len %u", attr->handle, buf, buflen);
+	BT_DBG("handle 0x%04x flag %d len %u", attr->handle, ev->flag, buflen);
 
 	/* Check for write support and flush support in case of prepare */
 	if (!attr->write ||
@@ -1428,7 +1428,7 @@ void on_nble_gatts_read_evt(const struct nble_gatts_read_evt *ev)
 
 	attr = ev->attr;
 
-	BT_DBG("attr %p", attr);
+	BT_DBG("attr %p offset %u", attr, ev->offset);
 
 	memset(&reply_data, 0, sizeof(reply_data));
 
