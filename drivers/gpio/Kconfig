@@ -17,11 +17,11 @@
 #
 
 menuconfig GPIO
-        bool
+	bool
 	prompt "GPIO Drivers"
-        default n
-        help
-          Include GPIO drivers in system config
+	default n
+	help
+	  Include GPIO drivers in system config
 
 if GPIO
 

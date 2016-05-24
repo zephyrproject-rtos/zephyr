@@ -20,9 +20,9 @@ prompt "STM32F1x MCU Selection"
 depends on SOC_SERIES_STM32F1X
 
 config SOC_STM32F103VE
-       bool "STM32F103VE"
+	bool "STM32F103VE"
 
 config SOC_STM32F103RB
-       bool "STM32F103RB"
+	bool "STM32F103RB"
 
 endchoice

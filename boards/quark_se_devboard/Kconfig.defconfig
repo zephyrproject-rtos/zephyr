@@ -2,7 +2,7 @@
 if BOARD_QUARK_SE_DEVBOARD
 
 config BOARD
-        default "quark_se_devboard"
+	default "quark_se_devboard"
 
 if NBLE
 
@@ -35,7 +35,7 @@ config BLUETOOTH_WAIT_NOP
 	def_bool y
 
 config BLUETOOTH_UART_ON_DEV_NAME
-        default UART_QMSI_0_NAME
+	default UART_QMSI_0_NAME
 
 config UART_QMSI_0_BAUDRATE
 	default 1000000
@@ -73,9 +73,9 @@ config TI_CC2520_SPI_SLAVE
 if GPIO_QMSI
 
 config TI_CC2520_GPIO_NAME
-       default GPIO_QMSI_0_NAME
+	default GPIO_QMSI_0_NAME
 config TI_CC2520_GPIO_AON_NAME
-       default GPIO_QMSI_AON_NAME
+	default GPIO_QMSI_AON_NAME
 
 endif # GPIO_QMSI
 
@@ -87,11 +87,11 @@ config SPI_1_CS_GPIO_PORT
 config SPI_1_CS_GPIO_PIN
 	default 11
 config TI_CC2520_GPIO_NAME
-       string
-       default GPIO_QMSI_0_NAME
+	string
+	default GPIO_QMSI_0_NAME
 config TI_CC2520_GPIO_AON_NAME
-       string
-       default GPIO_QMSI_AON_NAME
+	string
+	default GPIO_QMSI_AON_NAME
 endif
 
 endif # NETWORKING_WITH_15_4_TI_CC2520

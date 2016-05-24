@@ -18,10 +18,10 @@
 
 
 menuconfig GROVE
-        bool
-        prompt "Grove Device Drivers"
-        default n
-        help
+	bool
+	prompt "Grove Device Drivers"
+	default n
+	help
 	  Check this box to enable the Seeed Grove device drivers
 
 
@@ -41,13 +41,13 @@ config SYS_LOG_GROVE_LEVEL
 	  4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
 config GROVE_LCD_RGB
-        bool
-        default n
-        depends on GROVE
-        prompt "Enable the Seeed Grove LCD RGB Backlight"
-        help
-        Setting this value will enable driver support for the Groove-LCD RGB
-        Backlight.
+	bool
+	default n
+	depends on GROVE
+	prompt "Enable the Seeed Grove LCD RGB Backlight"
+	help
+	Setting this value will enable driver support for the Groove-LCD RGB
+	Backlight.
 
 config GROVE_LCD_RGB_I2C_MASTER_DEV_NAME
 	string "I2C Master where Grove LCD is connected"

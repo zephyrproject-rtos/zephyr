@@ -20,16 +20,16 @@ if SOC_SERIES_STM32F1X
 source "arch/arm/soc/st_stm32/stm32f1/Kconfig.defconfig.stm32f1*"
 
 config SOC_SERIES
-       default stm32f1
+	default stm32f1
 
 config SRAM_BASE_ADDRESS
-        default 0x20000000
+	default 0x20000000
 
 config FLASH_BASE_ADDRESS
-        default 0x08000000
+	default 0x08000000
 
 config NUM_IRQ_PRIO_BITS
-        int
-        default 4
+	int
+	default 4
 
 endif # SOC_SERIES_STM32F1X

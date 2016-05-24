@@ -91,7 +91,7 @@ config IOAPIC_NUM_RTES
 	most efficient usage of memory, it should match the number of IRQ lines
 	needed by devices connected to the IO-APIC.
 
-config  MVIC
+config MVIC
 	bool "Intel Quark D2000 Interrupt Controller (MVIC)"
 	default n
 	depends on X86

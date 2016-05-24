@@ -1,4 +1,4 @@
 
-config  BOARD_BASIC_CORTEX_M3
-        bool "Basic Cortex-M3 Board"
-        depends on SOC_TI_LM3S6965
+config BOARD_BASIC_CORTEX_M3
+	bool "Basic Cortex-M3 Board"
+	depends on SOC_TI_LM3S6965

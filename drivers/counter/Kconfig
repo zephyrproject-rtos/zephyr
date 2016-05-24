@@ -22,7 +22,7 @@ menuconfig COUNTER
 	help
 	  Enable support for counter and timer.
 
-config  AON_COUNTER_QMSI
+config AON_COUNTER_QMSI
 	bool
 	prompt "AON counter driver"
 	depends on COUNTER && QMSI
@@ -37,7 +37,7 @@ config AON_COUNTER_QMSI_DEV_NAME
 	help
 	 Specify the device name for AON counter driver.
 
-config  AON_TIMER_QMSI
+config AON_TIMER_QMSI
 	bool
 	prompt "AON periodic timer driver"
 	depends on COUNTER && QMSI

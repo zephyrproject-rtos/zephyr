@@ -84,7 +84,7 @@ choice
 	depends on BMC150_MAGN
 	help
 	  Specify the default preset (x/y oversampling, z oversampling, sampling
-          frequency).
+	  frequency).
 
 config BMC150_MAGN_PRESET_LOW_POWER
 	bool

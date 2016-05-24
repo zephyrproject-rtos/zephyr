@@ -27,7 +27,7 @@ menu "x86 Options"
 	depends on X86
 
 config ARCH
-        default "x86"
+	default "x86"
 
 
 config ARCH_DEFCONFIG
@@ -83,7 +83,7 @@ config X86_IAMCU
 menu "Floating Point Options"
 depends on CPU_HAS_FPU
 
-config  FLOAT
+config FLOAT
 	bool
 	prompt "Floating point registers"
 	default n
@@ -95,7 +95,7 @@ config  FLOAT
 	Disabling this option means that any task or fiber that uses a
 	floating point register will get a fatal exception.
 
-config  FP_SHARING
+config FP_SHARING
 	bool
 	prompt "Floating point register sharing"
 	depends on FLOAT
@@ -108,7 +108,7 @@ config  FP_SHARING
 	108 bytes of added stack space, while a task the uses the SSE registers
 	must provide 464 bytes of added stack space.
 
-config  SSE
+config SSE
 	bool
 	prompt "SSE registers"
 	depends on FLOAT

@@ -46,24 +46,24 @@ config PCI_LEGACY_BRIDGE
 	mapping.
 
 config PCI_LEGACY_BRIDGE_BUS
-        int "PCI Legacy Bridge Bus number"
-        depends on PCI_LEGACY_BRIDGE
-        default 0
+	int "PCI Legacy Bridge Bus number"
+	depends on PCI_LEGACY_BRIDGE
+	default 0
 
 config PCI_LEGACY_BRIDGE_DEV
-        int "PCI Legacy Bridge Device number"
-        depends on PCI_LEGACY_BRIDGE
-        default 0
+	int "PCI Legacy Bridge Device number"
+	depends on PCI_LEGACY_BRIDGE
+	default 0
 
 config PCI_LEGACY_BRIDGE_VENDOR_ID
-        hex "PCI Legacy Bridge Vendor ID"
-        depends on PCI_LEGACY_BRIDGE
-        default 0
+	hex "PCI Legacy Bridge Vendor ID"
+	depends on PCI_LEGACY_BRIDGE
+	default 0
 
 config PCI_LEGACY_BRIDGE_DEVICE_ID
-        hex "PCI Legacy Bridge Device ID"
-        depends on PCI_LEGACY_BRIDGE
-        default 0
+	hex "PCI Legacy Bridge Device ID"
+	depends on PCI_LEGACY_BRIDGE
+	default 0
 
 config PCI_DEBUG
 	bool

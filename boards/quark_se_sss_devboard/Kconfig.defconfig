@@ -2,6 +2,6 @@
 if BOARD_QUARK_SE_SSS_DEVBOARD
 
 config BOARD
-        default "quark_se_sss_devboard"
+	default "quark_se_sss_devboard"
 
 endif # BOARD_QUARK_SE_SSS_DEVBOARD

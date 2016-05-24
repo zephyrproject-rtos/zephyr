@@ -65,21 +65,21 @@ config BLUETOOTH_LE
 	  (CONFIG_BLUETOOTH) is enabled.
 
 if BLUETOOTH_LE
-config  BLUETOOTH_HCI_CMD_COUNT
+config BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
 	default 2
 	range 2 64
 	help
 	  Number of buffers available for HCI commands.
 
-config  BLUETOOTH_MAX_CMD_LEN
+config BLUETOOTH_MAX_CMD_LEN
 	int "Maximum supported HCI command length"
 	default 64
 	range 64 255
 	help
 	  Maximum length of each HCI command.
 
-config  BLUETOOTH_HCI_EVT_COUNT
+config BLUETOOTH_HCI_EVT_COUNT
 	int "Number of HCI event buffers"
 	default 8 if BLUETOOTH_CONN
 	default 4 if !BLUETOOTH_CONN
@@ -90,7 +90,7 @@ config  BLUETOOTH_HCI_EVT_COUNT
 	  to make sure we've got enough buffers to handle bursts of
 	  Number of Completed Packets HCI events.
 
-config  BLUETOOTH_MAX_EVT_LEN
+config BLUETOOTH_MAX_EVT_LEN
 	int "Maximum supported HCI event length"
 	default 68 if !BLUETOOTH_BREDR
 	default 255 if BLUETOOTH_BREDR
@@ -101,7 +101,7 @@ config  BLUETOOTH_MAX_EVT_LEN
 	  Commands. It is a 3 byte Command Complete header + 65 byte
 	  return parameters = 68 bytes in total.
 
-config  BLUETOOTH_RX_STACK_SIZE
+config BLUETOOTH_RX_STACK_SIZE
 	int "Size of the receiving fiber stack"
 	default 1024
 	range 1024 65536
@@ -132,14 +132,14 @@ config BLUETOOTH_CONN
 	default n
 
 if BLUETOOTH_CONN
-config  BLUETOOTH_ACL_IN_COUNT
+config BLUETOOTH_ACL_IN_COUNT
 	int "Number of incoming ACL data buffers"
 	default 5
 	range 2 64
 	help
 	  Number of buffers available for incoming ACL data.
 
-config  BLUETOOTH_L2CAP_IN_MTU
+config BLUETOOTH_L2CAP_IN_MTU
 	int "Maximum supported L2CAP MTU for incoming data"
 	default 65 if BLUETOOTH_SMP
 	default 23 if !BLUETOOTH_SMP
@@ -148,7 +148,7 @@ config  BLUETOOTH_L2CAP_IN_MTU
 	help
 	  Maximum size of each incoming L2CAP PDU.
 
-config  BLUETOOTH_ATT_MTU
+config BLUETOOTH_ATT_MTU
 	int "Attribute Protocol (ATT) channel MTU"
 	default 50 if BLUETOOTH_SMP # BLUETOOTH_L2CAP_IN_MTU is big enough
 				    # for two complete ACL packets
@@ -254,7 +254,7 @@ endif # BLUETOOTH_CONN
 
 endif # BLUETOOTH_LE
 
-config  BLUETOOTH_DEBUG
+config BLUETOOTH_DEBUG
 	bool
 	default n
 
@@ -276,7 +276,7 @@ config	BLUETOOTH_DEBUG_STDOUT
 	  This option enables Bluetooth debug going to standard
 	  serial console.
 
-config  BLUETOOTH_DEBUG_MONITOR
+config BLUETOOTH_DEBUG_MONITOR
 	bool "Monitor protocol over UART"
 	depends on BLUETOOTH_STACK_HCI
 	select BLUETOOTH_DEBUG
@@ -295,14 +295,14 @@ config  BLUETOOTH_DEBUG_MONITOR
 
 endchoice
 
-config  BLUETOOTH_DEBUG_COLOR
+config BLUETOOTH_DEBUG_COLOR
 	bool "Use colored logs"
 	depends on BLUETOOTH_DEBUG_STDOUT
 	default y
 	help
 	  Use color in the logs. This requires an ANSI capable terminal.
 
-config  BLUETOOTH_MONITOR_ON_DEV_NAME
+config BLUETOOTH_MONITOR_ON_DEV_NAME
 	string "Device Name of Bluetooth monitor logging UART"
 	depends on BLUETOOTH_DEBUG_MONITOR
 	default "UART_0"

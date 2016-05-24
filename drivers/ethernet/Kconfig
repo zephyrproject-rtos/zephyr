@@ -45,15 +45,15 @@ config ETH_DW_SHARED_IRQ
 	default n
 
 config ETH_DW_0
-       bool "Synopsys DesignWare Ethernet port 0"
-       default n
-       help
-         Include port 0 driver
+	bool "Synopsys DesignWare Ethernet port 0"
+	default n
+	help
+	 Include port 0 driver
 
 config ETH_DW_0_NAME
-       string "Driver name"
-       depends on ETH_DW_0
-       default "ETH_0"
+	string "Driver name"
+	depends on ETH_DW_0
+	default "ETH_0"
 
 choice
 	prompt "Port 0 Interrupts via"
@@ -84,10 +84,10 @@ config ETH_DW_0_IRQ_SHARED_NAME
 	  correctly.
 
 config ETH_DW_0_IRQ_PRI
-       int "Controller interrupt priority"
-       depends on ETH_DW_0 && ETH_DW_0_IRQ_DIRECT
-       default 0
-       help
-       IRQ priority
+	int "Controller interrupt priority"
+	depends on ETH_DW_0 && ETH_DW_0_IRQ_DIRECT
+	default 0
+	help
+	IRQ priority
 
 endif # ETH_DW

@@ -19,19 +19,19 @@
 if SOC_QUARK_SE
 
 config SOC
-        default quark_se
+	default quark_se
 
-config  PHYS_RAM_ADDR
+config PHYS_RAM_ADDR
 	default 0xA8006400
 
-config  PHYS_LOAD_ADDR
+config PHYS_LOAD_ADDR
 	default 0x40030000 if XIP
 
 config RAM_SIZE
-        default 55
+	default 55
 
 config ROM_SIZE
-        default 144
+	default 144
 
 config	SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
@@ -114,13 +114,13 @@ config CLOCK_CONTROL_QUARK_SE_PERIPHERAL
 config CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
 	default "clk_peripheral"
 
-config  CLOCK_CONTROL_QUARK_SE_EXTERNAL
-       def_bool y
+config CLOCK_CONTROL_QUARK_SE_EXTERNAL
+	def_bool y
 config CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME
 	default "clk_external"
 
-config  CLOCK_CONTROL_QUARK_SE_SENSOR
-       def_bool y
+config CLOCK_CONTROL_QUARK_SE_SENSOR
+	def_bool y
 config CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
 	default "clk_sensor"
 
@@ -131,9 +131,9 @@ endif # CLOCK_CONTROL
 
 if COUNTER
 config AON_COUNTER_QMSI
-        def_bool y
+	def_bool y
 config AON_TIMER_QMSI
-        def_bool y
+	def_bool y
 config AON_TIMER_IRQ_PRI
 	default 2
 
@@ -142,7 +142,7 @@ endif
 
 if SPI
 config SPI_QMSI
-       def_bool y
+	def_bool y
 
 config SPI_0
 	def_bool y
@@ -160,13 +160,13 @@ endif # SPI
 
 if ADC
 config ADC_QMSI
-        def_bool y
+	def_bool y
 endif
 
 
 if AIO_COMPARATOR
 config AIO_COMPARATOR_QMSI
-        def_bool y
+	def_bool y
 endif
 
 
@@ -217,7 +217,7 @@ endif
 
 if SOC_FLASH_QMSI
 config SOC_FLASH_QMSI_SYS_SIZE
-       default 0x60000
+	default 0x60000
 endif # SOC_FLASH_QMSI
 
 endif # SOC_QUARK_SE

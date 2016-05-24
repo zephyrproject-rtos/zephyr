@@ -43,19 +43,19 @@ endchoice
 #
 config SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	# Hidden
-        bool
-        default n
-        help
-        This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
-        configuration option.
+	bool
+	default n
+	help
+	This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
+	configuration option.
 
 config SYS_POWER_DEEP_SLEEP_SUPPORTED
 	# Hidden
-        bool
-        default n
-        help
-        This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
-        configuration option.
+	bool
+	default n
+	help
+	This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
+	configuration option.
 #
 # End hidden PM feature configs
 #

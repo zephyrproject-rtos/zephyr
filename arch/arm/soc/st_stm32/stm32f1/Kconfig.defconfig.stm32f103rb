@@ -21,14 +21,14 @@ config SOC
 	string
 	default stm32f103rb
 config SRAM_SIZE
-       default 20
+	default 20
 
 config FLASH_SIZE
-       default 128
+	default 128
 
 config NUM_IRQS
-        int
-        default 59
+	int
+	default 59
 
 endif # SOC_STM32F103RB
 

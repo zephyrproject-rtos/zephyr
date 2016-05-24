@@ -20,8 +20,8 @@
 # PinMux options
 #
 menuconfig PINMUX
-        bool "Enable platform pinmux driver"
-        default n
+	bool "Enable platform pinmux driver"
+	default n
 
 if PINMUX
 

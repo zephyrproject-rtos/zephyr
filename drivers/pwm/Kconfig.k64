@@ -76,19 +76,19 @@ choice PWM_K64_FTM_0_CLOCK_SOURCE_CHOICE
 	prompt "Choose the K64 FTM0 clock source"
 	default PWM_K64_FTM_0_CLOCK_SOURCE_SYSTEM
 
-config  PWM_K64_FTM_0_CLOCK_SOURCE_NONE
+config PWM_K64_FTM_0_CLOCK_SOURCE_NONE
 	bool "No clock selected (FTM counter disable)"
 
-config  PWM_K64_FTM_0_CLOCK_SOURCE_SYSTEM
+config PWM_K64_FTM_0_CLOCK_SOURCE_SYSTEM
 	bool "System clock"
 
-config  PWM_K64_FTM_0_CLOCK_SOURCE_FIXED
+config PWM_K64_FTM_0_CLOCK_SOURCE_FIXED
 	bool "Fixed Frequency Clock"
 
-config  PWM_K64_FTM_0_CLOCK_SOURCE_EXTERNAL
+config PWM_K64_FTM_0_CLOCK_SOURCE_EXTERNAL
 	bool "External Clock"
 
-config  PWM_K64_FTM_0_CLOCK_SOURCE_QUAD
+config PWM_K64_FTM_0_CLOCK_SOURCE_QUAD
 	bool "Quadrature Decoder"
 
 endchoice
@@ -185,19 +185,19 @@ choice PWM_K64_FTM_1_CLOCK_SOURCE_CHOICE
 	prompt "Choose the FTM1 clock source"
 	default PWM_K64_FTM_1_CLOCK_SOURCE_SYSTEM
 
-config  PWM_K64_FTM_1_CLOCK_SOURCE_NONE
+config PWM_K64_FTM_1_CLOCK_SOURCE_NONE
 	bool "No clock selected (FTM counter disable)"
 
-config  PWM_K64_FTM_1_CLOCK_SOURCE_SYSTEM
+config PWM_K64_FTM_1_CLOCK_SOURCE_SYSTEM
 	bool "System clock"
 
-config  PWM_K64_FTM_1_CLOCK_SOURCE_FIXED
+config PWM_K64_FTM_1_CLOCK_SOURCE_FIXED
 	bool "Fixed Frequency Clock"
 
-config  PWM_K64_FTM_1_CLOCK_SOURCE_EXTERNAL
+config PWM_K64_FTM_1_CLOCK_SOURCE_EXTERNAL
 	bool "External Clock"
 
-config  PWM_K64_FTM_1_CLOCK_SOURCE_QUAD
+config PWM_K64_FTM_1_CLOCK_SOURCE_QUAD
 	bool "Quadrature Decoder"
 
 endchoice
@@ -294,19 +294,19 @@ choice PWM_K64_FTM_2_CLOCK_SOURCE_CHOICE
 	prompt "Choose the FTM2 clock source"
 	default PWM_K64_FTM_2_CLOCK_SOURCE_SYSTEM
 
-config  PWM_K64_FTM_2_CLOCK_SOURCE_NONE
+config PWM_K64_FTM_2_CLOCK_SOURCE_NONE
 	bool "No clock selected (FTM counter disable)"
 
-config  PWM_K64_FTM_2_CLOCK_SOURCE_SYSTEM
+config PWM_K64_FTM_2_CLOCK_SOURCE_SYSTEM
 	bool "System clock"
 
-config  PWM_K64_FTM_2_CLOCK_SOURCE_FIXED
+config PWM_K64_FTM_2_CLOCK_SOURCE_FIXED
 	bool "Fixed Frequency Clock"
 
-config  PWM_K64_FTM_2_CLOCK_SOURCE_EXTERNAL
+config PWM_K64_FTM_2_CLOCK_SOURCE_EXTERNAL
 	bool "External Clock"
 
-config  PWM_K64_FTM_2_CLOCK_SOURCE_QUAD
+config PWM_K64_FTM_2_CLOCK_SOURCE_QUAD
 	bool "Quadrature Decoder"
 
 endchoice
@@ -403,19 +403,19 @@ choice PWM_K64_FTM_3_CLOCK_SOURCE_CHOICE
 	prompt "Choose the FTM3 clock source"
 	default PWM_K64_FTM_3_CLOCK_SOURCE_SYSTEM
 
-config  PWM_K64_FTM_3_CLOCK_SOURCE_NONE
+config PWM_K64_FTM_3_CLOCK_SOURCE_NONE
 	bool "No clock selected (FTM counter disable)"
 
-config  PWM_K64_FTM_3_CLOCK_SOURCE_SYSTEM
+config PWM_K64_FTM_3_CLOCK_SOURCE_SYSTEM
 	bool "System clock"
 
-config  PWM_K64_FTM_3_CLOCK_SOURCE_FIXED
+config PWM_K64_FTM_3_CLOCK_SOURCE_FIXED
 	bool "Fixed Frequency Clock"
 
-config  PWM_K64_FTM_3_CLOCK_SOURCE_EXTERNAL
+config PWM_K64_FTM_3_CLOCK_SOURCE_EXTERNAL
 	bool "External Clock"
 
-config  PWM_K64_FTM_3_CLOCK_SOURCE_QUAD
+config PWM_K64_FTM_3_CLOCK_SOURCE_QUAD
 	bool "Quadrature Decoder"
 
 endchoice

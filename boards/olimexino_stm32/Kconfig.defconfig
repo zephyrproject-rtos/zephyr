@@ -18,6 +18,6 @@
 if BOARD_OLIMEXINO_STM32
 
 config BOARD
-        default olimexino_stm32
+	default olimexino_stm32
 
 endif # BOARD_OLIMEXINO_STM32

@@ -2,6 +2,6 @@
 if BOARD_BASIC_MINUTEIA
 
 config BOARD
-        default basic_minuteia
+	default basic_minuteia
 
 endif # BOARD_BASIC_MINUTEIA

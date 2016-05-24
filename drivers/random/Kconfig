@@ -17,15 +17,15 @@
 #
 
 menu "Random Generation Configuration"
-config  RANDOM_GENERATOR
-        bool
+config RANDOM_GENERATOR
+	bool
 	prompt "Custom random generator"
-        default n
-        help
-          This option signifies that the target uses a real random number
+	default n
+	help
+	  This option signifies that the target uses a real random number
 	  generator.
 
-config  TEST_RANDOM_GENERATOR
+config TEST_RANDOM_GENERATOR
 	bool
 	prompt "Non-random number generator"
 	depends on !RANDOM_GENERATOR
@@ -37,7 +37,7 @@ config  TEST_RANDOM_GENERATOR
 	  number generator is not available. The non-random number generator
 	  should not be used in a production environment.
 
-config  X86_TSC_RANDOM_GENERATOR
+config X86_TSC_RANDOM_GENERATOR
 	bool
 	prompt "x86 timestamp counter based number generator"
 	depends on TEST_RANDOM_GENERATOR && X86
@@ -46,7 +46,7 @@ config  X86_TSC_RANDOM_GENERATOR
 	  This options enables number generator based on timestamp counter
 	  of x86 platform, obtained with rdtsc instruction.
 
-config  TIMER_RANDOM_GENERATOR
+config TIMER_RANDOM_GENERATOR
 	bool
 	prompt "System timer clock based number generator"
 	depends on TEST_RANDOM_GENERATOR && !X86_TSC_RANDOM_GENERATOR

@@ -52,7 +52,7 @@ config SPI_FLASH_W25QXXDV_INIT_PRIORITY
 	  Device is connected to SPI bus, it has to
 	  be initialized after SPI driver.
 
-config  SPI_FLASH_W25QXXDV_SPI_FREQ_0
+config SPI_FLASH_W25QXXDV_SPI_FREQ_0
 	int "SPI system frequency"
 	depends on SPI_FLASH_W25QXXDV
 	default 4
@@ -68,7 +68,7 @@ config	SPI_FLASH_W25QXXDV_SPI_SLAVE
 	  This option sets the SPI slave number the SPI controller has to switch
 	  to when dealing with WinBond SPI flash chip.
 
-config  SPI_FLASH_W25QXXDV_FLASH_SIZE
+config SPI_FLASH_W25QXXDV_FLASH_SIZE
 	int "flash size in bytes"
 	depends on SPI_FLASH_W25QXXDV
 	default 2097152

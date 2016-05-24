@@ -2,7 +2,7 @@
 if BOARD_ARDUINO_101
 
 config BOARD
-        default "arduino_101"
+	default "arduino_101"
 
 if NBLE
 
@@ -13,7 +13,7 @@ config BLUETOOTH_NRF51_PM
 	def_bool y
 
 config NBLE_UART_ON_DEV_NAME
-        default UART_QMSI_0_NAME
+	default UART_QMSI_0_NAME
 
 endif
 
@@ -29,7 +29,7 @@ config BLUETOOTH_WAIT_NOP
 	def_bool y
 
 config BLUETOOTH_UART_ON_DEV_NAME
-        default UART_QMSI_0_NAME
+	default UART_QMSI_0_NAME
 
 endif
 

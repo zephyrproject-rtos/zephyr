@@ -2,6 +2,6 @@
 if BOARD_BASIC_CORTEX_M3
 
 config BOARD
-        default basic_cortex_m3
+	default basic_cortex_m3
 
 endif # BOARD_BASIC_CORTEX_M3

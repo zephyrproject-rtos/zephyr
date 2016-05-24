@@ -31,7 +31,7 @@ menuconfig CLOCK_CONTROL
 
 if CLOCK_CONTROL
 
-config  CLOCK_CONTROL_DEBUG
+config CLOCK_CONTROL_DEBUG
 	bool
 	prompt "Hardware clock controller drivers debug output"
 	depends on CLOCK_CONTROL

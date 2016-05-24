@@ -150,7 +150,7 @@ config	UART_PIPE
 	data (as contrary to console UART driver) and all aspects of received
 	protocol data are handled by application provided callback.
 
-config  UART_PIPE_ON_DEV_NAME
+config UART_PIPE_ON_DEV_NAME
 	string "Device Name of UART Device for pipe UART"
 	default "UART_0"
 	depends on UART_PIPE

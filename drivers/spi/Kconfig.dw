@@ -52,7 +52,7 @@ config SPI_DW_INTERRUPT_SEPARATED_LINES
 	  Each interrupt gets a dedicated line
 endchoice
 
-config  SPI_DW_CLOCK_GATE
+config SPI_DW_CLOCK_GATE
 	bool "Enable glock gating"
 	depends on SPI_DW && SOC_QUARK_SE
 	select CLOCK_CONTROL
@@ -70,12 +70,12 @@ config SPI_DW_FIFO_DEPTH
 	  SSI_RX_FIFO_DEPTH of the DesignWare Syncrhonous
 	  Serial Interface. Depth ranges from 2-256.
 
-config  SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
+config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on SPI_DW_CLOCK_GATE
 
 
-config  SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
+config SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on SPI_DW_CLOCK_GATE
 

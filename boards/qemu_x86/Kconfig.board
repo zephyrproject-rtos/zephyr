@@ -1,4 +1,4 @@
 
-config  BOARD_QEMU_X86
-        bool "QEMU x86"
-        depends on SOC_IA32
+config BOARD_QEMU_X86
+	bool "QEMU x86"
+	depends on SOC_IA32

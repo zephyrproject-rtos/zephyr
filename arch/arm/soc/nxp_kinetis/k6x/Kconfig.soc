@@ -20,7 +20,7 @@ prompt "Kinetis K6x MCU Selection"
 depends on SOC_SERIES_KINETIS_K6X
 
 config SOC_MK64F12
-       bool "SOC_MK64F12"
+	bool "SOC_MK64F12"
 
 endchoice
 

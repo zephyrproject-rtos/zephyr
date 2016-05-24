@@ -19,18 +19,18 @@ if SOC_QUARK_D2000
 config SOC
 	default quark_d2000
 
-config  SYS_CLOCK_HW_CYCLES_PER_SEC
+config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 
-config  PHYS_LOAD_ADDR
+config PHYS_LOAD_ADDR
 	default 0x00180000 if XIP
 	default 0x00280000 if !XIP
 
 config RAM_SIZE
-        default 8
+	default 8
 
 config ROM_SIZE
-        default 32
+	default 32
 
 config IDT_NUM_VECTORS
 	default 64
@@ -50,7 +50,7 @@ config PHYS_RAM_ADDR
 	This option specifies the physical SRAM address of this Soc.
 
 config TOOLCHAIN_VARIANT
-        default "iamcu"
+	default "iamcu"
 
 config QMSI
 	def_bool y
@@ -116,7 +116,7 @@ endif # GPIO
 
 if PWM
 config PWM_QMSI
-        def_bool y
+	def_bool y
 endif
 
 if I2C

@@ -2,6 +2,6 @@
 if BOARD_MINNOWBOARD
 
 config BOARD
-        default minnowboard
+	default minnowboard
 
 endif # BOARD_MINNOWBOARD

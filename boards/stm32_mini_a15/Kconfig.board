@@ -15,6 +15,6 @@
 # limitations under the License.
 #
 
-config  BOARD_STM32_MINI_A15
+config BOARD_STM32_MINI_A15
 	bool "STM32 MINI A15 Development Board"
 	depends on SOC_STM32F103VE

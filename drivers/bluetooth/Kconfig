@@ -64,7 +64,7 @@ config BLUETOOTH_NO_DRIVER
 
 endchoice
 
-config  BLUETOOTH_HOST_BUFFERS
+config BLUETOOTH_HOST_BUFFERS
 	bool "Host managed incoming data buffers"
 	default n
 	help
@@ -84,7 +84,7 @@ config	BLUETOOTH_DEBUG_DRIVER
 	  This option enables debug support for the chosen
 	  Bluetooth HCI driver
 
-config  BLUETOOTH_UART_ON_DEV_NAME
+config BLUETOOTH_UART_ON_DEV_NAME
 	string "Device Name of UART Device for Bluetooth"
 	default "UART_0"
 	depends on BLUETOOTH_UART

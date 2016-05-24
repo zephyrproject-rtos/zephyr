@@ -30,7 +30,7 @@ config BMG160_INIT_PRIORITY
 	  As the device is connected to SPI bus, its driver has
 	  to be initialized after the SPI one.
 
-config  BMG160_DRV_NAME
+config BMG160_DRV_NAME
 	string "Driver's name"
 	depends on BMG160
 	default "bmg160"
@@ -44,7 +44,7 @@ config BMG160_I2C_PORT_NAME
 	help
 	  Master I2C port name through which BMG160 chip is accessed.
 
-config  BMG160_I2C_ADDR
+config BMG160_I2C_ADDR
 	hex "BMG160 I2C address"
 	depends on BMG160
 	default 0x68
@@ -129,19 +129,19 @@ choice
 config BMG160_RANGE_RUNTIME
 	bool "Set at runtime."
 
-config  BMG160_RANGE_2000DPS
+config BMG160_RANGE_2000DPS
 	bool "2000 DPS"
 
-config  BMG160_RANGE_1000DPS
+config BMG160_RANGE_1000DPS
 	bool "1000 DPS"
 
-config  BMG160_RANGE_500DPS
+config BMG160_RANGE_500DPS
 	bool "500 DPS"
 
-config  BMG160_RANGE_250DPS
+config BMG160_RANGE_250DPS
 	bool "250 DPS"
 
-config  BMG160_RANGE_125DPS
+config BMG160_RANGE_125DPS
 	bool "125 DPS"
 endchoice
 

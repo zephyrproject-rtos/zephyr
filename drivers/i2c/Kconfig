@@ -29,49 +29,49 @@ menuconfig I2C
 if I2C
 
 config I2C_DW
-        bool "Design Ware I2C support"
-        depends on I2C
-        default n
-        help
-        Enable Design Ware I2C support on the selected platform
+	bool "Design Ware I2C support"
+	depends on I2C
+	default n
+	help
+	Enable Design Ware I2C support on the selected platform
 
 config I2C_QUARK_SE_SS
-        bool "I2C Driver for Quark SE Sensor Subsystem (SS)"
-        default n
-        depends on I2C
-        help
-        This option enables the driver to support the I2C on Quark SE Sensor
-        Subsystem.
+	bool "I2C Driver for Quark SE Sensor Subsystem (SS)"
+	default n
+	depends on I2C
+	help
+	This option enables the driver to support the I2C on Quark SE Sensor
+	Subsystem.
 
 config I2C_QMSI_SS
-        bool "QMSI I2C driver for the Sensor Subsystem"
-        depends on I2C && QMSI
-        default n
-        help
-        This option enable the Sensor QMSI I2C driver.
+	bool "QMSI I2C driver for the Sensor Subsystem"
+	depends on I2C && QMSI
+	default n
+	help
+	This option enable the Sensor QMSI I2C driver.
 
-        This driver is simply a shim driver based on the I2C driver
-        provided by the QMSI BSP.
+	This driver is simply a shim driver based on the I2C driver
+	provided by the QMSI BSP.
 
 config I2C_QMSI_SS
-        bool "QMSI I2C driver for the Sensor Subsystem"
-        depends on QMSI && I2C
-        default n
-        help
-        This option enable the Sensor QMSI I2C driver.
+	bool "QMSI I2C driver for the Sensor Subsystem"
+	depends on QMSI && I2C
+	default n
+	help
+	This option enable the Sensor QMSI I2C driver.
 
-        This driver is simply a shim driver based on the I2C driver
-        provided by the QMSI BSP.
+	This driver is simply a shim driver based on the I2C driver
+	provided by the QMSI BSP.
 
 config I2C_QMSI
-        bool "QMSI I2C driver"
-        depends on I2C && QMSI
-        default n
-        help
-        This option enable the QMSI I2C driver.
+	bool "QMSI I2C driver"
+	depends on I2C && QMSI
+	default n
+	help
+	This option enable the QMSI I2C driver.
 
-        This driver is simply a shim driver based on the I2C driver
-        provided by the QMSI BSP.
+	This driver is simply a shim driver based on the I2C driver
+	provided by the QMSI BSP.
 
 config I2C_ATMEL_SAM3
 	bool "Atmel SAM3 I2C Driver"
@@ -130,65 +130,65 @@ config I2C_0_IRQ_SHARED
 endchoice
 
 config I2C_0_IRQ_SHARED_NAME
-        string "Device name for Shared IRQ"
-        depends on I2C_0 && I2C_0_IRQ_SHARED
-        help
-          Specify the device name for the shared IRQ driver. It is used to register
-          this driver with the shared IRQ driver, so interrupts can be dispatched
-          correctly.
+	string "Device name for Shared IRQ"
+	depends on I2C_0 && I2C_0_IRQ_SHARED
+	help
+	  Specify the device name for the shared IRQ driver. It is used to register
+	  this driver with the shared IRQ driver, so interrupts can be dispatched
+	  correctly.
 
 config I2C_0
-        bool "Enable I2C_0"
+	bool "Enable I2C_0"
 	depends on I2C
-        default n
+	default n
 
 config I2C_0_NAME
-        string "Select a name for finding the device"
+	string "Select a name for finding the device"
 	depends on I2C_0
-        default "I2C_0"
+	default "I2C_0"
 
 config I2C_0_DEFAULT_CFG
 	hex "I2C default configuration"
 	depends on I2C_0
-        default 0x0
-        help
-        Allows the I2C port to be brought up with a default configuration.
-        This is useful to set if other drivers depend upon using the I2C bus
-        before the application has a chance to custom configure the port.
-        Setting this value does not prohibit the application from customizing
-        the values later.  Refer to the I2C datasheet for proper values.
+	default 0x0
+	help
+	Allows the I2C port to be brought up with a default configuration.
+	This is useful to set if other drivers depend upon using the I2C bus
+	before the application has a chance to custom configure the port.
+	Setting this value does not prohibit the application from customizing
+	the values later.  Refer to the I2C datasheet for proper values.
 
 config I2C_0_IRQ_PRI
-        int "Controller interrupt priority"
-        depends on I2C_0 && I2C_0_IRQ_DIRECT
-        help
-        IRQ priority.
+	int "Controller interrupt priority"
+	depends on I2C_0 && I2C_0_IRQ_DIRECT
+	help
+	IRQ priority.
 
 config I2C_1
-        bool "Enable I2C Port 1"
+	bool "Enable I2C Port 1"
 	depends on I2C
-        default n
+	default n
 
 config I2C_1_NAME
-        string "Select a name for finding the device"
-        default "I2C_1"
+	string "Select a name for finding the device"
+	default "I2C_1"
 	depends on I2C_1
 
 config I2C_1_DEFAULT_CFG
 	hex "I2C default configuration"
 	depends on I2C_1
-        default 0x0
-        help
-        Allows the I2C port to be brought up with a default configuration.
-        This is useful to set if other drivers depend upon using the I2C bus
-        before the application has a chance to custom configure the port.
-        Setting this value does not prohibit the application from customizing
-        the values later.  Refer to the I2C datasheet for proper values.
+	default 0x0
+	help
+	Allows the I2C port to be brought up with a default configuration.
+	This is useful to set if other drivers depend upon using the I2C bus
+	before the application has a chance to custom configure the port.
+	Setting this value does not prohibit the application from customizing
+	the values later.  Refer to the I2C datasheet for proper values.
 
 config I2C_1_IRQ_PRI
-        int "Controller interrupt priority"
-        depends on I2C_1 && I2C_0_IRQ_DIRECT
-        help
-        IRQ priority.
+	int "Controller interrupt priority"
+	depends on I2C_1 && I2C_0_IRQ_DIRECT
+	help
+	IRQ priority.
 
 endif

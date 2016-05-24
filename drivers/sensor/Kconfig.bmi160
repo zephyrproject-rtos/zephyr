@@ -31,7 +31,7 @@ config BMI160_INIT_PRIORITY
 	  As the device is connected to SPI bus, its driver has
 	  to be initialized after the SPI one.
 
-config  BMI160_NAME
+config BMI160_NAME
 	string "Driver's name"
 	depends on BMI160
 	default "bmi160"
@@ -43,7 +43,7 @@ config BMI160_SPI_PORT_NAME
 	help
 	  Master I2C port name through which BMI160 chip is accessed.
 
-config  BMI160_SLAVE
+config BMI160_SLAVE
 	hex "BMI160 SPI slave select pin"
 	depends on BMI160
 	default 0
@@ -156,16 +156,16 @@ choice
 config BMI160_ACCEL_RANGE_RUNTIME
 	bool "Set at runtime."
 
-config  BMI160_ACCEL_RANGE_2G
+config BMI160_ACCEL_RANGE_2G
 	bool "2G"
 
-config  BMI160_ACCEL_RANGE_4G
+config BMI160_ACCEL_RANGE_4G
 	bool "4G"
 
-config  BMI160_ACCEL_RANGE_8G
+config BMI160_ACCEL_RANGE_8G
 	bool "8G"
 
-config  BMI160_ACCEL_RANGE_16G
+config BMI160_ACCEL_RANGE_16G
 	bool "16G"
 endchoice
 
@@ -248,19 +248,19 @@ choice
 config BMI160_GYRO_RANGE_RUNTIME
 	bool "Set at runtime."
 
-config  BMI160_GYRO_RANGE_2000DPS
+config BMI160_GYRO_RANGE_2000DPS
 	bool "2000 DPS"
 
-config  BMI160_GYRO_RANGE_1000DPS
+config BMI160_GYRO_RANGE_1000DPS
 	bool "1000 DPS"
 
-config  BMI160_GYRO_RANGE_500DPS
+config BMI160_GYRO_RANGE_500DPS
 	bool "500 DPS"
 
-config  BMI160_GYRO_RANGE_250DPS
+config BMI160_GYRO_RANGE_250DPS
 	bool "250 DPS"
 
-config  BMI160_GYRO_RANGE_125DPS
+config BMI160_GYRO_RANGE_125DPS
 	bool "125 DPS"
 endchoice
 

@@ -44,7 +44,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	system clock (in Hz). This option is set by the platform's Kconfig file
 	and the user should generally avoid modifying it via the menu configuration.
 
-config  SYS_CLOCK_EXISTS
+config SYS_CLOCK_EXISTS
 	bool
 	# omit prompt to signify a "hidden" option
 	default y
@@ -52,7 +52,7 @@ config  SYS_CLOCK_EXISTS
 	help
 	This option specifies that the kernel lacks timer support.
 
-config  INIT_STACKS
+config INIT_STACKS
 	bool
 	prompt "Initialize stack areas"
 	default n
@@ -63,7 +63,7 @@ config  INIT_STACKS
 	for both tasks and fibers, as well as for the microkernel server's command
 	stack.
 
-config  XIP
+config XIP
 	bool
 	prompt "Execute in place"
 	help
@@ -121,7 +121,7 @@ config KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
 	populate kernel event logger timestamp. This has to be done at runtime by
 	calling sys_k_event_logger_set_timer and providing the function callback.
 
-config  THREAD_MONITOR
+config THREAD_MONITOR
 	bool
 	prompt "Task and fiber monitoring [EXPERIMENTAL]"
 	default n
@@ -223,7 +223,7 @@ config SYS_POWER_MANAGEMENT
 menu "Power Management Features"
 	depends on SYS_POWER_MANAGEMENT
 
-config  SYS_POWER_LOW_POWER_STATE
+config SYS_POWER_LOW_POWER_STATE
 	bool
 	prompt "Low power state"
 	default n
@@ -235,7 +235,7 @@ config  SYS_POWER_LOW_POWER_STATE
 	the CPU low power states supported by the processor.  Generally the one
 	saving most power.
 
-config  SYS_POWER_DEEP_SLEEP
+config SYS_POWER_DEEP_SLEEP
 	bool
 	prompt "Deep sleep state"
 	default n

@@ -2,7 +2,7 @@
 if BOARD_FRDM_K64F
 
 config BOARD
-        default frdm_k64f
+	default frdm_k64f
 
 config FLASH_SIZE
 	default 1024

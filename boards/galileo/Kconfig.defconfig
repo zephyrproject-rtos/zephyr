@@ -2,10 +2,10 @@
 if BOARD_GALILEO
 
 config BOARD
-        default galileo
+	default galileo
 
 config PINMUX
-        def_bool y
+	def_bool y
 
 config I2C
 	def_bool y
@@ -31,13 +31,13 @@ config PCI_ENUMERATION
 if PINMUX
 
 config PINMUX_GALILEO_EXP0_NAME
-        default GPIO_PCAL9535A_0_DEV_NAME
+	default GPIO_PCAL9535A_0_DEV_NAME
 config PINMUX_GALILEO_EXP1_NAME
-        default GPIO_PCAL9535A_1_DEV_NAME
+	default GPIO_PCAL9535A_1_DEV_NAME
 config PINMUX_GALILEO_EXP2_NAME
-        default GPIO_PCAL9535A_2_DEV_NAME
+	default GPIO_PCAL9535A_2_DEV_NAME
 config PINMUX_GALILEO_PWM0_NAME
-        default PWM_PCA9685_0_DEV_NAME
+	default PWM_PCA9685_0_DEV_NAME
 config PINMUX_GALILEO_GPIO_DW_NAME
 	default GPIO_DW_0_NAME
 config PINMUX_GALILEO_GPIO_INTEL_CW_NAME
@@ -144,7 +144,7 @@ endif # PWM && I2C
 # SPI uses GPIO pin for CS, so it needs to be initialized after
 # the gpio_dw driver ( and the pinmux driver for port 1)
 config SPI_INIT_PRIORITY
-       default 90 if SPI_INTEL
+	default 90 if SPI_INTEL
 
 # Pin multiplexer uses PCAL9535A, needs to be initialized after it
 config PINMUX_INIT_PRIORITY

@@ -65,7 +65,7 @@ config	BLUETOOTH_MAX_PAIRED
 	int
 	default 7
 
-config  BLUETOOTH_RX_STACK_SIZE
+config BLUETOOTH_RX_STACK_SIZE
 	int "Size of the receiving fiber stack"
 	default 1024
 	range 1024 65536
@@ -117,7 +117,7 @@ config NBLE_DEBUG_RPC
 
 endif # BLUETOOTH_DEBUG
 
-config  NBLE_UART_ON_DEV_NAME
+config NBLE_UART_ON_DEV_NAME
 	string "Device Name of UART Device for Nordic BLE"
 	default "UART_0"
 	depends on NBLE

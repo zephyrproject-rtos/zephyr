@@ -32,7 +32,7 @@ config NUM_REGULAR_IRQ_PRIO_LEVELS
 	# TODO: But regular irq nesting is not implemented -- so use 1.
 	default 1
 
-config  NUM_IRQS
+config NUM_IRQS
 	# must be > the highest interrupt number used
 	default 36
 
@@ -136,38 +136,38 @@ endif # GPIO
 if I2C
 
 config I2C_CLOCK_SPEED
-        default 100
+	default 100
 
 config I2C_DW
-        def_bool y
+	def_bool y
 
 if I2C_DW
 
 config I2C_0
-        def_bool y
+	def_bool y
 
 if I2C_0
 
 config I2C_0_NAME
-        default "I2C_0"
+	default "I2C_0"
 config I2C_0_DEFAULT_CFG
-        default 0x3
+	default 0x3
 config I2C_0_IRQ_PRI
-        default 1
+	default 1
 
 endif # I2C_0
 
 config I2C_1
-        def_bool y
+	def_bool y
 
 if I2C_1
 
 config I2C_1_NAME
-        default "I2C_1"
+	default "I2C_1"
 config I2C_1_DEFAULT_CFG
-        default 0x3
+	default 0x3
 config I2C_1_IRQ_PRI
-        default 1
+	default 1
 
 endif # I2C_1
 

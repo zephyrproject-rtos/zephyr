@@ -18,20 +18,20 @@
 
 menu "Compile and Link Features"
 
-config  KERNEL_BIN_NAME
+config KERNEL_BIN_NAME
 	string "The kernel binary name"
 	default "zephyr"
 	help
 	This option sets the name of the generated kernel binary.
 
-config  HAVE_CUSTOM_LINKER_SCRIPT
+config HAVE_CUSTOM_LINKER_SCRIPT
 	prompt "Custom linker scripts provided"
 	def_bool n
 	help
 	Set this option if you have a custom linker script which needed to
 	be define in CUSTOM_LINKER_SCRIPT.
 
-config  CUSTOM_LINKER_SCRIPT
+config CUSTOM_LINKER_SCRIPT
 	string "Path to custom linker script"
 	default ""
 	depends on HAVE_CUSTOM_LINKER_SCRIPT
@@ -62,14 +62,14 @@ config CROSS_COMPILE
 	need to set this unless you want the configured kernel build
 	directory to select the cross-compiler automatically.
 
-config  GDB_INFO
-        bool
-        prompt "Task-aware debugging with GDB"
-        default n
-        help
-          This option enables the kernel to collect additional information
-          during interrupts, exceptions, and context switches. This information
-          is required for task-aware debugging with GDB.
+config GDB_INFO
+	bool
+	prompt "Task-aware debugging with GDB"
+	default n
+	help
+	  This option enables the kernel to collect additional information
+	  during interrupts, exceptions, and context switches. This information
+	  is required for task-aware debugging with GDB.
 
 config LINK_WHOLE_ARCHIVE
 	bool "Allow linking with --whole-archive"
@@ -78,7 +78,7 @@ config LINK_WHOLE_ARCHIVE
 	This options allows linking external libraries with the
 	--whole-archive option to keep all symbols.
 
-config  COMPILER_OPT
+config COMPILER_OPT
 	string
 	prompt "Custom compiler options"
 	default ""
@@ -131,19 +131,19 @@ config MINIMAL_LIBC_EXTENDED
 	depends on MINIMAL_LIBC
 	help
 	This option enables building some optional libc functions that
-        are not used directly by the kernel but can be used in applications.
-        The option adds the following functions: strtoul, strtol, atoi,
-        strncasecmp.
+	are not used directly by the kernel but can be used in applications.
+	The option adds the following functions: strtoul, strtol, atoi,
+	strncasecmp.
 	Warning: Use the above functions only for testing, if you need to
-        use any of the functions in an application you probably should be
-        linking against a full lib c implementation instead.
+	use any of the functions in an application you probably should be
+	linking against a full lib c implementation instead.
 
 
 endmenu
 
 menu "Debugging Options"
 
-config  DEBUG
+config DEBUG
 	bool "Build kernel with debugging enabled"
 	default n
 	help
@@ -151,7 +151,7 @@ config  DEBUG
 	only disables optimization, more debugging variants can be selected
 	from here to allow more debugging.
 
-config  TASK_DEBUG
+config TASK_DEBUG
 	bool
 	prompt "Task debugging [EXPERIMENTAL]"
 	default n
@@ -299,14 +299,14 @@ endmenu
 
 menu "System Monitoring Options"
 
-config  PERFORMANCE_METRICS
+config PERFORMANCE_METRICS
 	bool
 	prompt "Enable performance metrics [EXPERIMENTAL]"
 	default n
 	help
 	Enable Performance Metrics.
 
-config  BOOT_TIME_MEASUREMENT
+config BOOT_TIME_MEASUREMENT
 	bool
 	prompt "Boot time measurements [EXPERIMENTAL]"
 	default n
@@ -318,7 +318,7 @@ config  BOOT_TIME_MEASUREMENT
 	and __idle_tsc records when the CPU becomes idle. All values are
 	recorded in terms of CPU clock cycles since system reset.
 
-config  CPU_CLOCK_FREQ_MHZ
+config CPU_CLOCK_FREQ_MHZ
 	int
 	prompt "CPU CLock Frequency in MHz"
 	default 20
@@ -332,22 +332,22 @@ endmenu
 menu "Boot Options"
 
 config IS_BOOTLOADER
-        bool "Act as a bootloader"
-        default n
-        depends on XIP
+	bool "Act as a bootloader"
+	default n
+	depends on XIP
 	depends on ARM
-        help
-        This option indicates that Zephyr will act as a bootloader to execute
-        a separate Zephyr image payload.
+	help
+	This option indicates that Zephyr will act as a bootloader to execute
+	a separate Zephyr image payload.
 
 config BOOTLOADER_SRAM_SIZE
-        int "SRAM reserved for when Zephyr acts as a bootloader"
-        default 16
-        depends on !XIP || IS_BOOTLOADER
+	int "SRAM reserved for when Zephyr acts as a bootloader"
+	default 16
+	depends on !XIP || IS_BOOTLOADER
 	depends on ARM
-        help
-        This option specifies the amount of SRAM (measure in kB) reserved for
-        when Zephyr is to act as a bootloader.
+	help
+	This option specifies the amount of SRAM (measure in kB) reserved for
+	when Zephyr is to act as a bootloader.
 
 config BOOTLOADER_KEXEC
 	bool

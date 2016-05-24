@@ -17,8 +17,8 @@
 # limitations under the License.
 #
 config KERNELVERSION
-        string
-        option env="KERNELVERSION"
+	string
+	option env="KERNELVERSION"
 
 source "arch/Kconfig"
 

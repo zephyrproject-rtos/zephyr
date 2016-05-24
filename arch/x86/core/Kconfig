@@ -67,10 +67,10 @@ config PHYS_LOAD_ADDR
 	This option specifies the physical address where the kernel is loaded.
 
 config PHYS_RAM_ADDR
-        hex "Physical RAM address"
+	hex "Physical RAM address"
 	# Default value must be supplied by platform
-        help
-        This option specifies the physical RAM address of the selected SoC.
+	help
+	This option specifies the physical RAM address of the selected SoC.
 
 config RAM_SIZE
 	int "Amount of RAM given to the kernel (in kB)"

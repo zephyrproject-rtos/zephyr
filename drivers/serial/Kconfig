@@ -35,7 +35,7 @@ config SERIAL_HAS_DRIVER
 	to signal that there is a serial driver. This is being used
 	by other drivers which are dependent on serial.
 
-config  UART_INTERRUPT_DRIVEN
+config UART_INTERRUPT_DRIVEN
 	bool
 	prompt "Enable UART Interrupt support"
 	default n

@@ -80,7 +80,7 @@ config NUM_TIMER_PACKETS
 	This option specifies the number of timer packets to create. Each
 	explicit and implicit timer usage consumes one timer packet.
 
-config  NUM_TASK_PRIORITIES
+config NUM_TASK_PRIORITIES
 	int
 	prompt "Number of task priorities"
 	default 16
@@ -132,7 +132,7 @@ config TIMESLICE_SIZE
 	A time slice size of zero means "no limit" (i.e. an infinitely large
 	time slice).
 
-config  TIMESLICE_PRIORITY
+config TIMESLICE_PRIORITY
 	int
 	prompt "Time slicing task priority threshold"
 	default 0
@@ -144,7 +144,7 @@ config  TIMESLICE_PRIORITY
 	that all tasks are potentially subject to time slicing.
 endmenu
 
-config  TASK_MONITOR
+config TASK_MONITOR
 	bool
 	prompt "Task monitoring [EXPERIMENTAL]"
 	default n
@@ -154,7 +154,7 @@ config  TASK_MONITOR
 	activities. These can include: task switches, task state changes,
 	kernel service requests, and the signalling of events.
 
-config  TASK_MONITOR_MASK
+config TASK_MONITOR_MASK
 	int
 	prompt "Trace buffer mask"
 	default 15
@@ -169,7 +169,7 @@ config  TASK_MONITOR_MASK
 		4 (MON_KSERV): task execution of kernel APIs
 		8 (MON_EVENT): task event signalled
 
-config  OBJECT_MONITOR
+config OBJECT_MONITOR
 	bool
 	prompt "Kernel object monitoring [EXPERIMENTAL]"
 	default n

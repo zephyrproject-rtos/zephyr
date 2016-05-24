@@ -222,7 +222,7 @@ choice
 prompt "Wired networking support"
 depends on NETWORKING
 default NETWORKING_NO_WIRED
-config  NETWORKING_NO_WIRED
+config NETWORKING_NO_WIRED
 	bool "No wired network driver"
 	help
 	  Do not enable any wired network driver. It is still
@@ -233,7 +233,7 @@ config	NETWORKING_UART
 	select UART_PIPE
 	help
 	  Enable UART driver for passing IPv6 packets using slip.
-config  ETHERNET
+config ETHERNET
 	bool "Ethernet drivers"
 	help
 	  Include Ethernet drivers in system config. This
@@ -277,7 +277,7 @@ config	NETWORKING_WITH_15_4
 	  it into suitable chunks ready to be sent to the 802.15.4
 	  hw driver
 
-config  NETWORKING_WITH_15_4_ALWAYS_ACK
+config NETWORKING_WITH_15_4_ALWAYS_ACK
 	bool
 	prompt "Always request 802.15.4 packet acknowledgment"
 	depends on NETWORKING_WITH_15_4
@@ -366,13 +366,13 @@ config	15_4_BEACON_STATS
 	  Enable 802.15.4 beacon statistics support.
 
 config NETWORKING_WITH_15_4_PAN_ID
-       hex
-       prompt "IEEE 802.15.4 PAN id/address"
-       depends on NETWORKING_WITH_15_4
-       default 0xabcd
-       help
-         All the 802.15.4 devices that want to connect to each
-         other need to have same PAN id (address).
+	hex
+	prompt "IEEE 802.15.4 PAN id/address"
+	depends on NETWORKING_WITH_15_4
+	default 0xabcd
+	help
+	 All the 802.15.4 devices that want to connect to each
+	 other need to have same PAN id (address).
 	 Default PAN id is 0xABCD
 
 choice
@@ -380,8 +380,8 @@ prompt "802.15.4 Radio Driver"
 depends on NETWORKING && NETWORKING_WITH_15_4
 default n
 help
-       The 802.15.4 layer can either support loopback within
-       or loopback with uart but not both at the same time.
+	The 802.15.4 layer can either support loopback within
+	or loopback with uart but not both at the same time.
 config	NETWORKING_WITH_15_4_TI_CC2520
 	bool
 	prompt "TI CC2520"
@@ -397,14 +397,14 @@ config	NETWORKING_WITH_15_4_LOOPBACK
 	  the 802.15.4 frame and put it back 802.15.4 Rx Fifo.
 
 config NETWORKING_WITH_15_4_LOOPBACK_UART
-       bool
-       prompt "Loopback with UART"
-       select UART_PIPE
-       help
-         Enable 802.15.4 loopback radio driver that sends
-         802.15.4 frames out of qemu through uart and receive
-         frames through uart. This way one can test 802.15.4 frames
-         between two qemus
+	bool
+	prompt "Loopback with UART"
+	select UART_PIPE
+	help
+	 Enable 802.15.4 loopback radio driver that sends
+	 802.15.4 frames out of qemu through uart and receive
+	 frames through uart. This way one can test 802.15.4 frames
+	 between two qemus
 endchoice
 
 config	NETWORKING_WITH_BT
@@ -504,22 +504,22 @@ config	ER_COAP_CLIENT
 	  Compile in client CoAP support.
 
 config NET_SANITY_TEST
-       bool
-       prompt "Enable networking sanity test"
-       depends on NETWORKING
-       default n
-       help
-         Enable networking sanity tests. Network sanity test
-         verification and test report submission will fall under
-         this config.
+	bool
+	prompt "Enable networking sanity test"
+	depends on NETWORKING
+	default n
+	help
+	 Enable networking sanity tests. Network sanity test
+	 verification and test report submission will fall under
+	 this config.
 
 config NET_15_4_LOOPBACK_NUM
-       int
-       prompt "Number of times loopback test runs"
-       depends on (NETWORKING_WITH_15_4_LOOPBACK || NETWORKING_WITH_15_4_LOOPBACK_UART) && NET_SANITY_TEST
-       default 0
-       help
-         Number of times loopback test runs, 0 means infinite.
+	int
+	prompt "Number of times loopback test runs"
+	depends on (NETWORKING_WITH_15_4_LOOPBACK || NETWORKING_WITH_15_4_LOOPBACK_UART) && NET_SANITY_TEST
+	default 0
+	help
+	 Number of times loopback test runs, 0 means infinite.
 
 config	NET_TESTING
 	bool

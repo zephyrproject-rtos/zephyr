@@ -36,12 +36,12 @@ config SPI_QMSI
 	  interface to the Quark family of microcontrollers.
 
 config SPI_QMSI_SS
-        bool "QMSI driver for SPI controller on Sensor Subsystem"
-        depends on SPI && QMSI
-        default n
-        help
-          SPI driver implementation using QMSI library. This instance is
-          for the Sensor Subsystem.
+	bool "QMSI driver for SPI controller on Sensor Subsystem"
+	depends on SPI && QMSI
+	default n
+	help
+	  SPI driver implementation using QMSI library. This instance is
+	  for the Sensor Subsystem.
 
 config SPI_K64
 	bool
@@ -84,7 +84,7 @@ config SYS_LOG_SPI_LEVEL
 	  3 INFO, write SYS_LOG_INF in adition to previous levels
 	  4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
-config  SPI_CS_GPIO
+config SPI_CS_GPIO
 	bool "SPI port CS pin is controlled via a GPIO port"
 	depends on GPIO
 	default n
@@ -96,82 +96,82 @@ config	SPI_0
 	help
 	  Enable Intel's SPI controller port 0.
 
-config  SPI_0_NAME
+config SPI_0_NAME
 	string
 	prompt "SPI port 0 device name"
 	depends on SPI_0
 	default "SPI_0"
 
-config  SPI_0_IRQ_PRI
+config SPI_0_IRQ_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_0
 
-config  SPI_0_CS_GPIO_PORT
+config SPI_0_CS_GPIO_PORT
 	string
 	prompt "The GPIO port which is used to control CS"
 	depends on SPI_0 && SPI_CS_GPIO
 	default "GPIO_0"
 
-config  SPI_0_CS_GPIO_PIN
+config SPI_0_CS_GPIO_PIN
 	int "The GPIO PIN which is used to act as a CS pin"
 	depends on SPI_0 && SPI_CS_GPIO
 	default 0
 
-config  SPI_1
+config SPI_1
 	bool
 	prompt "SPI port 1"
 	default n
 	help
 	  Enable SPI controller port 1.
 
-config  SPI_1_NAME
+config SPI_1_NAME
 	string
 	prompt "SPI port 1 device name"
 	depends on SPI_1
 	default "SPI_1"
 
-config  SPI_1_IRQ_PRI
+config SPI_1_IRQ_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_1
 
-config  SPI_1_CS_GPIO_PORT
+config SPI_1_CS_GPIO_PORT
 	string
 	prompt "The GPIO port which is used to control CS"
 	depends on SPI_1 && SPI_CS_GPIO
 	default "GPIO_0"
 
-config  SPI_1_CS_GPIO_PIN
+config SPI_1_CS_GPIO_PIN
 	int "The GPIO PIN which is used to act as a CS pin"
 	depends on SPI_1 && SPI_CS_GPIO
 	default 0
 
-config  SPI_2
+config SPI_2
 	bool
 	prompt "SPI port 1"
 	default n
 	help
 	  Enable SPI controller port 1.
 
-config  SPI_2_NAME
+config SPI_2_NAME
 	string
 	prompt "SPI port 1 device name"
 	depends on SPI_2
 	default "SPI_2"
 
-config  SPI_2_IRQ_PRI
+config SPI_2_IRQ_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_2
 
-config  SPI_2_CS_GPIO_PORT
+config SPI_2_CS_GPIO_PORT
 	string
 	prompt "The GPIO port which is used to control CS"
 	depends on SPI_2 && SPI_CS_GPIO
 	default "GPIO_0"
 
-config  SPI_2_CS_GPIO_PIN
+config SPI_2_CS_GPIO_PIN
 	int "The GPIO PIN which is used to act as a CS pin"
 	depends on SPI_2 && SPI_CS_GPIO
 	default 0

@@ -22,14 +22,14 @@ config SOC
 	default stm32f103ve
 
 config SRAM_SIZE
-       default 64
+	default 64
 
 config FLASH_SIZE
-       default 512
+	default 512
 
 config NUM_IRQS
-        int
-        default 68
+	int
+	default 68
 
 endif # SOC_STM32F103VE
 
