@@ -35,6 +35,7 @@ config  ADC_DEBUG
 
 config ADC_INIT_PRIORITY
 	int
+	depends on ADC
 	default 80
 	prompt "Init priority"
 	help
@@ -42,10 +43,12 @@ config ADC_INIT_PRIORITY
 
 config  ADC_0_NAME
 	string "ADC Driver's name"
+	depends on ADC
 	default "ADC_0"
 
 config ADC_0_IRQ_PRI
         int
+	depends on ADC
         prompt "ADC interrupt priority"
         default 2
 
