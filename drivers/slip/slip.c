@@ -34,7 +34,7 @@
 #include <net/buf.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
-
+#include <net/arp.h>
 #include <net/net_core.h>
 #include <console/uart_pipe.h>
 
@@ -54,6 +54,7 @@ struct slip_context {
 	uint8_t buf[1];		/* SLIP data is read into this buf */
 	struct net_buf *rx;	/* and then placed into this net_buf */
 	struct net_buf *last;	/* Pointer to last fragment in the list */
+	uint8_t *ptr;		/* Where in net_buf to add data */
 	uint8_t state;
 
 	uint16_t ll_reserve;	/* Reserve any space for link layer headers */
@@ -115,6 +116,7 @@ static inline void slip_writeb(unsigned char c)
 
 static int slip_send(struct net_if *iface, struct net_buf *buf)
 {
+	struct slip_context *slip = iface->dev->driver_data;
 	uint16_t i;
 	uint8_t *ptr;
 	uint8_t c;
@@ -133,9 +135,9 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 		int frag_count = 0;
 #endif
 
-		ptr = frag->data;
+		ptr = frag->data - slip->ll_reserve;
 
-		for (i = 0; i < frag->len; ++i) {
+		for (i = 0; i < frag->len + slip->ll_reserve; ++i) {
 			c = *ptr++;
 			if (c == SLIP_END) {
 				slip_writeb(SLIP_ESC);
@@ -148,13 +150,14 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 		}
 
 #if defined(CONFIG_SLIP_DEBUG)
-		SYS_LOG_DBG("[%p] sent data %d bytes", iface->dev->driver_data,
-			    frag->len);
-		if (frag->len) {
+		SYS_LOG_DBG("[%p] sent data %d bytes", slip,
+			    frag->len + slip->ll_reserve);
+		if (frag->len + slip->ll_reserve) {
 			char msg[7 + 1];
 			snprintf(msg, sizeof(msg), "slip %d", frag_count++);
 			msg[7] = '\0';
-			hexdump(msg, frag->data, frag->len);
+			hexdump(msg, frag->data - slip->ll_reserve,
+				frag->len + slip->ll_reserve);
 		}
 #endif
 
@@ -254,6 +257,9 @@ static inline int slip_input_byte(struct slip_context *slip,
 			return 0;
 		}
 		net_buf_frag_add(slip->rx, slip->last);
+
+		net_nbuf_ll_reserve(slip->rx) = slip->ll_reserve;
+		slip->ptr = net_nbuf_ip_data(slip->rx) - slip->ll_reserve;
 	}
 
 	if (!net_buf_tailroom(slip->last)) {
@@ -272,8 +278,18 @@ static inline int slip_input_byte(struct slip_context *slip,
 		}
 		net_buf_frag_insert(slip->last, frag);
 		slip->last = frag;
+		slip->ptr = slip->last->data - slip->ll_reserve;
 	}
-	net_buf_add_u8(slip->last, c);
+
+	/* The net_buf_add_u8() cannot add data to ll header so we need
+	 * a way to do it.
+	 */
+	if (slip->ptr < slip->last->data) {
+		*slip->ptr = c;
+	} else {
+		slip->ptr = net_buf_add_u8(slip->last, c);
+	}
+	slip->ptr++;
 
 	return 0;
 }
@@ -291,16 +307,17 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 			int count = 0;
 			int bytes = net_buf_frags_len(slip->rx->frags);
 
-			SYS_LOG_DBG("[%p] received data %d bytes", slip,
-				    bytes);
 			while (bytes && frag) {
 				char msg[7 + 1];
 				snprintf(msg, sizeof(msg), "slip %d", count);
 				msg[7] = '\0';
-				hexdump(msg, frag->data, frag->len);
+				hexdump(msg, frag->data - slip->ll_reserve,
+					frag->len + slip->ll_reserve);
 				frag = frag->frags;
 				count++;
 			}
+			SYS_LOG_DBG("[%p] received data %d bytes", slip,
+				    bytes + count * slip->ll_reserve);
 #endif
 			process_msg(slip);
 			break;
@@ -322,7 +339,19 @@ static int slip_init(struct device *dev)
 
 	slip->state = STATE_OK;
 	slip->rx = NULL;
+
+#if defined(CONFIG_SLIP_TAP)
+	slip->ll_reserve = sizeof(struct net_eth_hdr);
+#else
 	slip->ll_reserve = 0;
+#endif
+	NET_DBG("%sll reserve %d",
+#if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_IPV4)
+		"ARP enabled, ",
+#else
+		"",
+#endif
+		slip->ll_reserve);
 
 	uart_pipe_register(slip->buf, sizeof(slip->buf), recv_cb);
 
@@ -357,9 +386,19 @@ static void slip_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len);
 }
 
+static uint32_t slip_cap(struct net_if *iface)
+{
+#if defined(CONFIG_SLIP_TAP) &&	defined(CONFIG_NET_IPV4)
+	return NET_CAP_ARP;
+#else
+	return 0;
+#endif
+}
+
 static struct net_if_api slip_if_api = {
 	.init = slip_iface_init,
 	.send = slip_send,
+	.capabilities = slip_cap,
 };
 
 static struct slip_context slip_context_data;
