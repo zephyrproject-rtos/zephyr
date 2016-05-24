@@ -233,13 +233,13 @@ void i2c_dw_isr(void *arg)
 	 * Causes of an interrupt:
 	 *   - STOP condition is detected
 	 *   - Transfer is aborted
-	 *   - Transmit FIFO is empy
-	 *   - Transmit FIFO is overflowing
+	 *   - Transmit FIFO is empty
+	 *   - Transmit FIFO has overflowed
 	 *   - Receive FIFO is full
-	 *   - Receive FIFO overflow
-	 *   - Received FIFO underrun
-	 *   - Transmit data required (tx_req)
-	 *   - Receive data available (rx_avail)
+	 *   - Receive FIFO has overflowed
+	 *   - Received FIFO has underrun
+	 *   - Transmit data is required (tx_req)
+	 *   - Receive data is available (rx_avail)
 	 */
 
 	DBG("I2C: interrupt received\n");
