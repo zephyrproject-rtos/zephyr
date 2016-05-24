@@ -316,10 +316,14 @@ static inline void arp_update(struct net_if *iface,
 
 		if (arp_table[i].iface == iface &&
 		    net_ipv4_addr_cmp(&arp_table[i].ip, src)) {
-			memcpy(&arp_table[i].eth, hwaddr,
-			       sizeof(struct net_eth_addr));
 
 			if (arp_table[i].pending) {
+				/* We only update the ARP cache if we were
+				 * initiating a request.
+				 */
+				memcpy(&arp_table[i].eth, hwaddr,
+				       sizeof(struct net_eth_addr));
+
 				send_pending(&arp_table[i].pending);
 			}
 
