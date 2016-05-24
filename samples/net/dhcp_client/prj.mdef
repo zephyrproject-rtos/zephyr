@@ -1,0 +1,5 @@
+% Application       : echo client
+
+% TASK NAME  PRIO ENTRY STACK GROUPS
+% ==================================
+  TASK MAIN  7    main  2048 [EXE]
