@@ -1364,6 +1364,30 @@ void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 
 	reply_data.status = attr->write(conn, attr, buf, buflen, ev->offset);
 	if (reply_data.status < 0) {
+		if (ev->flag & NBLE_GATT_WR_FLAG_PREP) {
+			/**
+			 * Note: The Attribute Value validation is done when an
+			 * Execute Write Request is received. Hence, any Invalid
+			 * Offset or Invalid Attribute Value Length errors are
+			 * generated when an Execute Write Request is received.
+			 * BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F]
+			 * page 504.
+			 * So we end up storing errors to be sent later on.
+			 */
+
+			BT_DBG("Prepare write error %d", reply_data.status);
+
+			switch (reply_data.status) {
+			case BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET):
+			case BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN):
+				BT_DBG("Defer error to the execute write");
+				conn->gatt_private = (void *)reply_data.status;
+				reply_data.status = buflen;
+				break;
+			default:
+				break;
+			}
+		}
 
 		goto reply;
 	}
@@ -1414,9 +1438,8 @@ static uint8_t flush_all(const struct bt_gatt_attr *attr, void *user_data)
 
 void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 {
-
+	struct bt_conn *conn;
 	struct nble_gatts_flush_all flush_data = {
-		.conn = bt_conn_lookup_handle(evt->conn_handle),
 		.flag = evt->flag,
 		.status = 0,
 	};
@@ -1426,13 +1449,28 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 
 	BT_DBG("handle 0x%04x", evt->conn_handle);
 
+	conn = bt_conn_lookup_handle(evt->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn, handle 0x%04x", evt->conn_handle);
+		return;
+	}
+
+	flush_data.conn = conn;
+
+	if (conn->gatt_private) {
+		rsp.status = (int)gatt_get_private(conn);
+		BT_DBG("Return deferred error %d", rsp.status);
+		goto reply;
+	}
+
 	bt_gatt_foreach_attr(0x0001, 0xFFFF, flush_all, &flush_data);
 
 	rsp.status = flush_data.status;
 
+reply:
 	nble_gatts_write_reply_req(&rsp);
 
-	bt_conn_unref(flush_data.conn);
+	bt_conn_unref(conn);
 }
 
 void on_nble_gatts_read_evt(const struct nble_gatts_read_evt *ev)
