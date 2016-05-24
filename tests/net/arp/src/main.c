@@ -44,6 +44,8 @@ static const unsigned char pkt1[60] = {
 0x00, 0x00, 0x00, 0x00                          /* .... */
 };
 
+static bool req_test;
+
 static char *app_data = "0123456789";
 
 static const struct net_eth_addr broadcast_eth_addr = {
@@ -101,7 +103,7 @@ static struct net_eth_addr hwaddr = { { 0x42, 0x11, 0x69, 0xde, 0xfa, 0xec } };
 
 static int send_status = -EINVAL;
 
-#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ip_data(buf))
+#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ll(buf))
 
 static int tester_send(struct net_if *iface, struct net_buf *buf)
 {
@@ -119,23 +121,22 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		return send_status;
 	}
 
-	hdr = (struct net_eth_hdr *)(net_nbuf_ip_data(buf) -
-				     net_nbuf_ll_reserve(buf));
+	hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
 
 	if (ntohs(hdr->type) == NET_ETH_PTYPE_ARP) {
 		struct net_arp_hdr *arp_hdr =
-			(struct net_arp_hdr *)(net_nbuf_ip_data(buf) -
-					       net_nbuf_ll_reserve(buf));
+				(struct net_arp_hdr *)net_nbuf_ll(buf);
+
 		if (ntohs(arp_hdr->opcode) == NET_ARP_REPLY) {
-			if (buf != pending_buf) {
+			if (!req_test && buf != pending_buf) {
 				printk("Pending data but to be sent is wrong, "
 				       "expecting %p but got %p\n",
 				       pending_buf, buf);
 				return -EINVAL;
 			}
 
-			if (memcmp(&hdr->dst, &hwaddr,
-				   sizeof(struct net_eth_addr))) {
+			if (!req_test && memcmp(&hdr->dst, &hwaddr,
+						sizeof(struct net_eth_addr))) {
 				char out[sizeof("xx:xx:xx:xx:xx:xx")];
 				snprintf(out, sizeof(out),
 					 net_sprint_ll_addr(
@@ -214,8 +215,7 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 	net_nbuf_iface(buf) = iface;
 	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
 
-	hdr = (struct net_arp_hdr *)(net_nbuf_ip_data(buf) -
-				     net_buf_headroom(frag));
+	hdr = (struct net_arp_hdr *)net_nbuf_ll(buf);
 
 	hdr->eth_hdr.type = htons(NET_ETH_PTYPE_ARP);
 
@@ -267,10 +267,8 @@ static inline struct net_buf *prepare_arp_request(struct net_if *iface,
 	net_nbuf_iface(buf) = iface;
 	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
 
-	hdr = (struct net_arp_hdr *)(net_nbuf_ip_data(buf) -
-				     net_buf_headroom(frag));
-	req_hdr = (struct net_arp_hdr *)(net_nbuf_ip_data(req) -
-					 net_nbuf_ll_reserve(req));
+	hdr = (struct net_arp_hdr *)net_nbuf_ll(buf);
+	req_hdr = (struct net_arp_hdr *)net_nbuf_ll(req);
 
 	hdr->eth_hdr.type = htons(NET_ETH_PTYPE_ARP);
 
@@ -301,8 +299,7 @@ fail:
 static void setup_eth_header(struct net_if *iface, struct net_buf *buf,
 			     struct net_eth_addr *hwaddr, uint16_t type)
 {
-	struct net_eth_hdr *hdr = (struct net_eth_hdr *)
-		(net_nbuf_ip_data(buf) - net_nbuf_ll_reserve(buf));
+	struct net_eth_hdr *hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
 
 	memcpy(&hdr->dst.addr, hwaddr, sizeof(struct net_eth_addr));
 	memcpy(&hdr->src.addr, net_if_get_link_addr(iface)->addr,
@@ -384,8 +381,7 @@ void main(void)
 		return;
 	}
 
-	eth_hdr = (struct net_eth_hdr *)(net_nbuf_ip_data(buf) -
-					 net_nbuf_ll_reserve(buf));
+	eth_hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
 
 	if (memcmp(&eth_hdr->dst.addr, &broadcast_eth_addr,
 		   sizeof(struct net_eth_addr))) {
@@ -493,17 +489,17 @@ void main(void)
 	pending_buf = buf;
 
 	/* buf2 should contain the arp header, verify it */
-	if (memcmp(net_nbuf_ip_data(buf2), &broadcast_eth_addr,
+	if (memcmp(net_nbuf_ll(buf2), &broadcast_eth_addr,
 		   sizeof(struct net_eth_addr))) {
 		printk("ARP ETH dest address invalid\n");
-		net_hexdump("ETH dest correct", net_nbuf_ip_data(buf2),
+		net_hexdump("ETH dest correct", net_nbuf_ll(buf2),
 			    sizeof(struct net_eth_addr));
 		net_hexdump("ETH dest wrong  ", (uint8_t *)&broadcast_eth_addr,
 			    sizeof(struct net_eth_addr));
 		return;
 	}
 
-	if (memcmp(net_nbuf_ip_data(buf2) + sizeof(struct net_eth_addr),
+	if (memcmp(net_nbuf_ll(buf2) + sizeof(struct net_eth_addr),
 		   iface->link_addr.addr,
 		   sizeof(struct net_eth_addr))) {
 		printk("ARP ETH source address invalid\n");
@@ -511,13 +507,12 @@ void main(void)
 			    iface->link_addr.addr,
 			    sizeof(struct net_eth_addr));
 		net_hexdump("ETH src wrong  ",
-			    net_nbuf_ip_data(buf2) +
-						sizeof(struct net_eth_addr),
+			    net_nbuf_ll(buf2) +	sizeof(struct net_eth_addr),
 			    sizeof(struct net_eth_addr));
 		return;
 	}
 
-	arp_hdr = (struct net_arp_hdr *)net_nbuf_ip_data(buf2);
+	arp_hdr = (struct net_arp_hdr *)net_nbuf_ll(buf2);
 
 	if (arp_hdr->eth_hdr.type != htons(NET_ETH_PTYPE_ARP)) {
 		printk("ETH type 0x%x, should be 0x%x\n",
@@ -595,7 +590,7 @@ void main(void)
 		return;
 	}
 
-	arp_hdr = (struct net_arp_hdr *)net_nbuf_ip_data(buf2);
+	arp_hdr = (struct net_arp_hdr *)net_nbuf_ll(buf2);
 
 	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr, &iface->ipv4.gw)) {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
@@ -665,7 +660,7 @@ void main(void)
 	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
 	net_nbuf_iface(buf) = iface;
 
-	arp_hdr = (struct net_arp_hdr *)net_nbuf_ip_data(buf);
+	arp_hdr = (struct net_arp_hdr *)net_nbuf_ll(buf);
 	net_buf_add(buf, sizeof(struct net_arp_hdr));
 
 	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &dst);
@@ -718,10 +713,9 @@ void main(void)
 	net_nbuf_iface(buf) = iface;
 	send_status = -EINVAL;
 
-	arp_hdr = (struct net_arp_hdr *)(net_nbuf_ip_data(buf) -
-					 net_nbuf_ll_reserve(buf));
-	net_buf_add(frag,
-		    sizeof(struct net_arp_hdr) - net_nbuf_ll_reserve(buf));
+	arp_hdr = (struct net_arp_hdr *)net_nbuf_ll(buf);
+	net_buf_add(frag, sizeof(struct net_arp_hdr) -
+						net_nbuf_ll_reserve(buf));
 
 	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &src);
 	net_ipaddr_copy(&arp_hdr->src_ipaddr, &dst);
@@ -732,6 +726,8 @@ void main(void)
 		printk("ARP request generation failed.");
 		return;
 	}
+
+	req_test = true;
 
 	switch (net_arp_input(buf2)) {
 	case NET_OK:
