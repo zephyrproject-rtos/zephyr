@@ -36,7 +36,8 @@ void main(void)
 	struct device *flash_dev;
 	uint8_t buf[TEST_DATA_LEN];
 
-	PRINT("SPI flash testing!\n");
+	PRINT("\nW25QXXDV SPI flash testing\n");
+	PRINT("==========================\n");
 
 	flash_dev = device_get_binding("W25QXXDV");
 
@@ -45,31 +46,43 @@ void main(void)
 		return;
 	}
 
+	/* Write protection needs to be disabled in w25qxxdv flash before
+	 * each write or erase. This is because the flash component turns
+	 * on write protection automatically after completion of write and
+	 * erase operations.
+	 */
+	PRINT("\nTest 1: Flash erase\n");
 	flash_write_protection_set(flash_dev, false);
+	if (flash_erase(flash_dev,
+			FLASH_TEST_REGION_OFFSET,
+			FLASH_SECTOR_SIZE) != 0) {
+		PRINT("   Flash erase failed!\n");
+	} else {
+		PRINT("   Flash erase succeeded!\n");
+	}
 
-	flash_erase(flash_dev, FLASH_TEST_REGION_OFFSET, FLASH_SECTOR_SIZE);
-
+	PRINT("\nTest 2: Flash write\n");
 	flash_write_protection_set(flash_dev, false);
 
 	buf[0] = TEST_DATA_BYTE_0;
 	buf[1] = TEST_DATA_BYTE_1;
+	PRINT("   Attempted to write %x %x\n", buf[0], buf[1]);
 	if (flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
 	    TEST_DATA_LEN) != 0) {
-		PRINT("flash write failed!\n");
+		PRINT("   Flash write failed!\n");
 		return;
 	}
-	PRINT("data written %x %x\n", buf[0], buf[1]);
 
 	if (flash_read(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
 	    TEST_DATA_LEN) != 0) {
-		PRINT("flash read failed!\n");
+		PRINT("   Flash read failed!\n");
 		return;
 	}
-	PRINT("data read %x %x\n", buf[0], buf[1]);
+	PRINT("   Data read %x %x\n", buf[0], buf[1]);
 
 	if ((buf[0] == TEST_DATA_BYTE_0) && (buf[1] == TEST_DATA_BYTE_1)) {
-		PRINT("data read matches with data written. Good!!\n");
+		PRINT("   Data read matches with data written. Good!!\n");
 	} else {
-		PRINT("data read does not match with data written!!\n");
+		PRINT("   Data read does not match with data written!!\n");
 	}
 }
