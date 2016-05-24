@@ -312,10 +312,19 @@ uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto)
 #if defined(CONFIG_NET_IPV4)
 	case AF_INET:
 		upper_layer_len = (NET_IPV4_BUF(buf)->len[0] << 8) +
-			NET_IPV4_BUF(buf)->len[1] - net_nbuf_ext_len(buf);
-		sum = calc_chksum(upper_layer_len + proto,
-				  (uint8_t *)&NET_IPV4_BUF(buf)->src,
-				  2 * sizeof(struct in_addr));
+			NET_IPV4_BUF(buf)->len[1] -
+			net_nbuf_ext_len(buf) -
+			net_nbuf_ip_hdr_len(buf);
+
+		if (proto == IPPROTO_ICMP) {
+			return htons(calc_chksum(0, net_nbuf_ip_data(buf) +
+						 net_nbuf_ip_hdr_len(buf),
+						 upper_layer_len));
+		} else {
+			sum = calc_chksum(upper_layer_len + proto,
+					  (uint8_t *)&NET_IPV4_BUF(buf)->src,
+					  2 * sizeof(struct in_addr));
+		}
 		break;
 #endif
 #if defined(CONFIG_NET_IPV6)
