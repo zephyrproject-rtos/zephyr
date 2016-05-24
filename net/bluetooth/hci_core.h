@@ -184,3 +184,5 @@ int bt_le_scan_update(bool fast_scan);
 bool bt_addr_le_is_bonded(const bt_addr_le_t *addr);
 
 int bt_send(struct net_buf *buf);
+
+uint16_t bt_hci_get_cmd_opcode(struct net_buf *buf);

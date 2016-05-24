@@ -19,5 +19,6 @@ ifeq ($(CONFIG_BLUETOOTH_CONN),y)
 		obj-y += smp_null.o
 	endif
 
+	obj-$(CONFIG_BLUETOOTH_TINYCRYPT_ECC) += hci_ecc.o
 	obj-$(CONFIG_BLUETOOTH_BREDR) += keys.o l2cap_br.o
 endif

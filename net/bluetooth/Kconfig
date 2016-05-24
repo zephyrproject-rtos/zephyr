@@ -194,6 +194,7 @@ config BLUETOOTH_TINYCRYPT_ECC
 	bool "Use TinyCrypt library for LE SC ECDH"
 	default n
 	select TINYCRYPT_ECC_DH
+	depends on MICROKERNEL
 	help
 	  If this option is set TinyCrypt library is also used for LE Secure
 	  Connections elliptic curve Diffie-Hellman key agreement. If not set
