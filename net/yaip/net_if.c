@@ -47,7 +47,7 @@ static void net_if_tx_fiber(struct net_if *iface)
 		/* Get next packet from application - wait if necessary */
 		buf = nano_fifo_get(&iface->tx_queue, TICKS_UNLIMITED);
 
-		NET_DBG("Processing (buf %p, len %u) network packet",
+		NET_DBG("Processing (buf %p, data len %u) network packet",
 			buf, net_buf_frags_len(buf->frags));
 
 		if (api && api->send) {
