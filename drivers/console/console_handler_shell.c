@@ -215,6 +215,83 @@ static void shell(int arg1, int arg2)
 	}
 }
 
+static uint8_t completion(char *line, uint8_t len)
+{
+	char cmds[MAX_LINE_LEN];
+	int common_chars = -1;
+	size_t cmds_len = 0;
+	int i;
+
+	for (i = 0; commands[i].cmd_name; i++) {
+		int name_len, j;
+
+		if (strncmp(line, commands[i].cmd_name, len)) {
+			continue;
+		}
+
+		name_len = strlen(commands[i].cmd_name);
+		if (name_len > (MAX_LINE_LEN - (cmds_len + 1))) {
+			break;
+		}
+
+		memcpy(cmds + cmds_len, commands[i].cmd_name, name_len);
+		cmds_len += name_len;
+		cmds[cmds_len++] = '\n';
+
+		/* first match */
+		if (common_chars < 0) {
+			common_chars = name_len;
+			continue;
+		}
+
+		/* cut common part of matching names */
+		for (j = 0; j < common_chars; j++) {
+			if (cmds[j] != commands[i].cmd_name[j]) {
+				break;
+			}
+		}
+
+		common_chars = j;
+	}
+
+	/* no match */
+	if (common_chars < 0) {
+		return 0;
+	}
+
+	/* alter line with common part of commands */
+	memcpy(line + len, cmds + len, common_chars - len);
+
+	if (common_chars < cmds_len - 1) {
+		/*
+		 * more than one match, print matching commands, restore prompt
+		 * and print common part of matched commands
+		 */
+		cmds[cmds_len] = '\0';
+		printk("\n%s", cmds);
+
+		/* restore prompt */
+		printk("%s", get_prompt());
+
+		/* print common part after prompt */
+		for (i = 0; i < common_chars; i++) {
+			printk("%c", line[i]);
+		}
+	} else {
+		/* only one match, complete command name */
+		for (i = len; i < common_chars; i++) {
+			printk("%c", line[i]);
+		}
+
+		/* for convenience add space after command */
+		printk(" ");
+		line[common_chars] = ' ';
+		common_chars++;
+	}
+
+	return common_chars - len;
+}
+
 void shell_init(const char *str, const struct shell_cmd *cmds)
 {
 	nano_fifo_init(&cmds_queue);
@@ -229,7 +306,7 @@ void shell_init(const char *str, const struct shell_cmd *cmds)
 	task_fiber_start(stack, STACKSIZE, shell, 0, 0, 7, 0);
 
 	/* Register serial console handler */
-	uart_register_input(&avail_queue, &cmds_queue, NULL);
+	uart_register_input(&avail_queue, &cmds_queue, completion);
 }
 
 /** @brief Optionally register an app default cmd handler.
