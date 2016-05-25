@@ -166,7 +166,7 @@ static void emulate_le_generate_dhkey(struct net_buf *buf)
 	if (ecc_valid_public_key(&pk) < 0) {
 		evt->status = 0x1f; /* unspecified error */
 		memset(evt->dhkey, 0, sizeof(evt->dhkey));
-		nano_fifo_put(&bt_dev.rx_queue, buf);
+		bt_recv(buf);
 		return;
 	}
 
