@@ -229,7 +229,7 @@ void shell_init(const char *str, const struct shell_cmd *cmds)
 	task_fiber_start(stack, STACKSIZE, shell, 0, 0, 7, 0);
 
 	/* Register serial console handler */
-	uart_register_input(&avail_queue, &cmds_queue);
+	uart_register_input(&avail_queue, &cmds_queue, NULL);
 }
 
 /** @brief Optionally register an app default cmd handler.

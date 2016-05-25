@@ -129,6 +129,7 @@ extern void __printk_hook_install(int (*fn)(int));
 #if defined(CONFIG_CONSOLE_HANDLER)
 static struct nano_fifo *avail_queue;
 static struct nano_fifo *lines_queue;
+static uint8_t (*completion_cb)(char *line, uint8_t len);
 
 /* Control characters */
 #define ESC                0x1b
@@ -377,6 +378,11 @@ void uart_console_isr(struct device *unused)
 				nano_isr_fifo_put(lines_queue, cmd);
 				cmd = NULL;
 				break;
+			case '\t':
+				if (completion_cb && !end) {
+					cur += completion_cb(cmd->line, cur);
+				}
+				break;
 			default:
 				break;
 			}
@@ -408,13 +414,16 @@ static void console_input_init(void)
 	uart_irq_rx_enable(uart_console_dev);
 }
 
-void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines)
+void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines,
+			 uint8_t (*completion)(char *str, uint8_t len))
 {
 	avail_queue = avail;
 	lines_queue = lines;
+	completion_cb = completion;
 
 	console_input_init();
 }
+
 #else
 #define console_input_init(x)			\
 	do {/* nothing */			\

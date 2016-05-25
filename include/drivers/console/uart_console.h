@@ -41,10 +41,12 @@ struct uart_console_input {
  *  @param avail nano_fifo queue keeping available input slots
  *  @param lines nano_fifo queue of entered lines which to be processed
  *         in the application code.
+ *  @param completion callback for tab completion of entered commands
  *
  *  @return N/A
  */
-void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines);
+void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines,
+			 uint8_t (*completion)(char *str, uint8_t len));
 
 /*
  * Allows having debug hooks in the console driver for handling incoming
