@@ -70,12 +70,24 @@ static const struct in6_addr in6addr_my = MY_IP6ADDR;
 
 #define MY_PORT 4242
 
+struct in6_addr addr6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+			      0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in_addr in4addr_my = MY_IP4ADDR;
+
 static inline void init_app(void)
 {
 	PRINT("%s: run echo server\n", __func__);
 
 #if defined(CONFIG_NET_TESTING)
 	net_testing_setup();
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+	net_if_ipv6_addr_add(net_if_get_default(), &addr6, NET_ADDR_MANUAL, 0);
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+	net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my, NET_ADDR_MANUAL, 0);
 #endif
 }
 
@@ -108,7 +120,6 @@ static inline bool get_context(struct net_context **udp_recv4,
 	static struct net_addr any_addr4;
 	static struct net_addr my_addr4;
 	static const struct in_addr in4addr_any = { { { 0 } } };
-	static struct in_addr in4addr_my = MY_IP4ADDR;
 	static struct in_addr in4addr_mcast = MCAST_IP4ADDR;
 #endif
 
