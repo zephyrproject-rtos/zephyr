@@ -17,6 +17,7 @@
  */
 
 #include <zephyr.h>
+#include <tc_util.h>
 
 #include "syskernel.h"
 
@@ -198,6 +199,7 @@ void main(void)
 		} else {
 			fprintf(output_file, sz_module_result_fmt, sz_fail);
 		}
+		TC_PRINT_RUNID;
 
 	} while (continuously && !kbhit());
 
