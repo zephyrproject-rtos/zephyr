@@ -478,10 +478,11 @@ fail:
 static bool ccc_added;
 
 static struct bt_gatt_ccc_cfg ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static uint8_t ccc_value;
 
 static void ccc_cfg_changed(uint16_t value)
 {
-	/* NOP */
+	ccc_value = value;
 }
 
 static struct bt_gatt_attr ccc = BT_GATT_CCC(ccc_cfg, ccc_cfg_changed);
@@ -729,6 +730,14 @@ struct set_value {
 	uint16_t len;
 };
 
+struct bt_gatt_indicate_params indicate_params;
+
+static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			uint8_t err)
+{
+	BTTESTER_DBG("Indication %s\n", err != 0 ? "fail" : "success");
+}
+
 static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 {
 	struct gatt_value *value;
@@ -759,8 +768,17 @@ static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 
 	memcpy(value->data, data->value, value->len);
 
-	if (tester_test_bit(value->flags, GATT_VALUE_CCC_FLAG)) {
-		bt_gatt_notify(NULL, attr, value->data, value->len);
+	if (tester_test_bit(value->flags, GATT_VALUE_CCC_FLAG) && ccc_value) {
+		if (ccc_value == BT_GATT_CCC_NOTIFY) {
+			bt_gatt_notify(NULL, attr, value->data, value->len);
+		} else {
+			indicate_params.attr = attr;
+			indicate_params.data = value->data;
+			indicate_params.len = value->len;
+			indicate_params.func = indicate_cb;
+
+			bt_gatt_indicate(NULL, &indicate_params);
+		}
 	}
 
 	return BTP_STATUS_SUCCESS;
