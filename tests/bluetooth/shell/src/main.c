@@ -1081,8 +1081,14 @@ static ssize_t write_long_vnd(struct bt_conn *conn,
 {
 	struct vnd_long_value *value = attr->user_data;
 
-	if (offset + len > sizeof(value->buf)) {
+	if (offset >= sizeof(value->buf)) {
+		printk("incorrect write: len %u offset %u\n", len, offset);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	if (offset + len > sizeof(value->buf)) {
+		printk("incorrect write: len %u offset %u\n", len, offset);
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
 	/* Copy to buffer */
