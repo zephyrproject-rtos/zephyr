@@ -491,6 +491,27 @@ static int notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return 0;
 }
 
+static int indicate(struct bt_conn *conn,
+		    struct bt_gatt_indicate_params *params)
+{
+	struct nble_gatts_indicate_req ind;
+
+	BT_DBG("conn %p", conn);
+
+	if (!params) {
+		return -EINVAL;
+	}
+
+	ind.params.conn_handle = conn->handle;
+	ind.params.attr = (void *)params->attr;
+	ind.params.offset = 0;
+	ind.cback = params->func;
+
+	nble_gatts_indicate_req(&ind, (void *)params->data, params->len);
+
+	return 0;
+}
+
 struct notify_data {
 	uint16_t type;
 	const struct bt_gatt_attr *attr;
@@ -530,8 +551,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 
 		if (data->type == BT_GATT_CCC_INDICATE) {
-			err = 0;
-			/* TODO: Imlement */
+			err = indicate(conn, data->params);
 		} else {
 			err = notify(conn, data->attr, data->data, data->len);
 		}
@@ -574,25 +594,22 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params)
 {
-	struct nble_gatts_indicate_req ind;
+	struct notify_data nfy;
 
 	BT_DBG("conn %p", conn);
 
-	if (!params) {
+	if (!params || !params->attr || !params->attr->handle) {
 		return -EINVAL;
 	}
 
 	if (conn) {
-		ind.params.conn_handle = conn->handle;
-	} else {
-		ind.params.conn_handle = 0xffff;
+		return indicate(conn, params);
 	}
 
-	ind.params.attr = (void *)params->attr;
-	ind.params.offset = 0;
-	ind.cback = params->func;
+	nfy.type = BT_GATT_CCC_INDICATE;
+	nfy.params = params;
 
-	nble_gatts_indicate_req(&ind, (void *)params->data, params->len);
+	bt_gatt_foreach_attr(1, 0xffff, notify_cb, &nfy);
 
 	return 0;
 }
