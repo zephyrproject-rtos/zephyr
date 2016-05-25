@@ -26,7 +26,30 @@
 
 #define PRINT_DATA(fmt, ...) printk(fmt, ##__VA_ARGS__)
 
-#define PRINT_LINE                                                     \
+/**
+ * @def TC_PRINT_RUN_ID
+ * @brief Report a Run ID
+ *
+ * When the CPP symbol \c TC_RUNID is defined (for example, from the
+ * compile environment), print the defined string ``RunID:
+ * <TC_RUNID>`` when called (TC_END_REPORT() will also call it).
+ *
+ * This is used mainly when automating the execution and running of
+ * multiple test cases, to verify that the expected image is being
+ * executed (as sometimes the targets fail to flash or reset
+ * properly).
+ *
+ * TC_RUNID is any string, that will be converted to a string literal.
+ */
+#define __str(x) #x
+#define _str(x) __str(x)
+#ifdef TC_RUNID
+#define TC_PRINT_RUNID PRINT_DATA("RunID: " _str(TC_RUNID) "\n")
+#else
+#define TC_PRINT_RUNID do {} while (0)
+#endif
+
+#define PRINT_LINE							\
 	PRINT_DATA(                                                        \
 		"============================================================" \
 		"=======\n")
@@ -62,6 +85,7 @@
 #define TC_END_REPORT(result)                               \
 	do {                                                    \
 		PRINT_LINE;                                         \
+		TC_PRINT_RUNID;                                         \
 		TC_END(result,                                      \
 			"PROJECT EXECUTION %s\n",               \
 			result == TC_PASS ? "SUCCESSFUL" : "FAILED");   \
