@@ -22,14 +22,8 @@
 
 void nano_timer_init(struct nano_timer *timer, void *data)
 {
-	/* initialize timer in expired state */
-	timer->timeout_data.delta_ticks_from_prev = -1;
-
-	/* initialize to no object to wait on */
-	timer->timeout_data.wait_q = NULL;
-
-	/* initialize to no fiber waiting for the timer expire */
-	timer->timeout_data.tcs = NULL;
+	/* initialize timeout_data */
+	_nano_timeout_init(&timer->timeout_data);
 
 	/* nano_timer_test() returns NULL on timer that was not started */
 	timer->user_data = NULL;
