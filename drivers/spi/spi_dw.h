@@ -176,7 +176,7 @@ struct spi_dw_data {
 
 /* Threshold defaults */
 #define DW_SPI_FIFO_DEPTH		CONFIG_SPI_DW_FIFO_DEPTH
-#define DW_SPI_TXFTLR_DFLT		((DW_SPI_FIFO_DEPTH*5)/8)
+#define DW_SPI_TXFTLR_DFLT		((DW_SPI_FIFO_DEPTH*1)/2) /* 50% */
 #define DW_SPI_RXFTLR_DFLT		((DW_SPI_FIFO_DEPTH*5)/8)
 
 /* Interrupt mask (IMR) */
