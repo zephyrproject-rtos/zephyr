@@ -96,7 +96,7 @@ SECTION_FUNC(TEXT, _Swap)
 	_save_callee_saved_regs
 
 	ld_s r2, [r1, __tNANO_fiber_OFFSET]
-	breq.nd r2, 0, _swap_to_the_task
+	breq r2, 0, _swap_to_the_task
 
 .balign 4
 _swap_to_a_fiber:
@@ -137,9 +137,9 @@ _finish_swapping_to_thread:
 
 	ld_s r3, [r2, __tTCS_relinquish_cause_OFFSET]
 
-	breq.nd r3, _CAUSE_RIRQ, _swap_return_from_rirq
+	breq r3, _CAUSE_RIRQ, _swap_return_from_rirq
 	nop
-	breq.nd r3, _CAUSE_FIRQ, _swap_return_from_firq
+	breq r3, _CAUSE_FIRQ, _swap_return_from_firq
 	nop
 
 	/* fall through to _swap_return_from_coop */

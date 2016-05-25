@@ -129,7 +129,7 @@ SECTION_FUNC(TEXT, _firq_exit)
 	 * means that another bit is set so an interrupt was interrupted.
 	 */
 
-	breq.nd r3, 1, _check_if_current_is_the_task
+	breq r3, 1, _check_if_current_is_the_task
 
 	rtie
 
@@ -140,13 +140,13 @@ _check_if_current_is_the_task:
 
 	ld_s r0, [r2, __tTCS_flags_OFFSET]
 	and.f r0, r0, PREEMPTIBLE
-	bnz.nd _check_if_a_fiber_is_ready
+	bnz _check_if_a_fiber_is_ready
 	rtie
 
 .balign 4
 _check_if_a_fiber_is_ready:
 	ld_s r0, [r1, __tNANO_fiber_OFFSET] /* incoming fiber in r0 */
-	brne.nd r0, 0, _firq_reschedule
+	brne r0, 0, _firq_reschedule
 	rtie
 
 .balign 4
@@ -204,9 +204,9 @@ _firq_reschedule:
 
 	ld_s r3, [r2, __tTCS_relinquish_cause_OFFSET]
 
-	breq.nd r3, _CAUSE_RIRQ, _firq_return_from_rirq
+	breq r3, _CAUSE_RIRQ, _firq_return_from_rirq
 	nop
-	breq.nd r3, _CAUSE_FIRQ, _firq_return_from_firq
+	breq r3, _CAUSE_FIRQ, _firq_return_from_firq
 	nop
 
 	/* fall through */
@@ -279,4 +279,4 @@ SECTION_FUNC(TEXT, _firq_stack_setup)
 	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
 	kflag r0
 
-	j_s.nd [blink]
+	j_s [blink]

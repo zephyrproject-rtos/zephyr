@@ -209,7 +209,7 @@ SECTION_FUNC(TEXT, _isr_enter)
 	mov.nz r3, _rirq_exit
 	mov.nz r2, _rirq_enter
 
-	j_s.nd [r2]
+	j_s [r2]
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 GTEXT(_sys_k_event_logger_exit_sleep)
@@ -278,5 +278,5 @@ SECTION_FUNC(TEXT, _isr_demux)
 
 	/* back from ISR, jump to exit stub */
 	pop_s r3
-	j_s.nd [r3]
+	j_s [r3]
 	nop

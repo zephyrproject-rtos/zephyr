@@ -71,7 +71,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 	ld r1, [nano_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
 	sleep r1
-	j_s.nd [blink]
+	j_s [blink]
 	nop
 
 /*

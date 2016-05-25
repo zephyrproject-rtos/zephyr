@@ -95,7 +95,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	 */
 
 	cmp r0, r3
-	brgt.nd _rirq_return_from_rirq
+	brgt _rirq_return_from_rirq
 	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 #endif
 
@@ -147,9 +147,9 @@ _rirq_reschedule:
 
 	ld_s r3, [r2, __tTCS_relinquish_cause_OFFSET]
 
-	breq.nd r3, _CAUSE_RIRQ, _rirq_return_from_rirq
+	breq r3, _CAUSE_RIRQ, _rirq_return_from_rirq
 	nop
-	breq.nd r3, _CAUSE_FIRQ, _rirq_return_from_firq
+	breq r3, _CAUSE_FIRQ, _rirq_return_from_firq
 	nop
 
 	/* fall through */
