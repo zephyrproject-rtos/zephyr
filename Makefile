@@ -559,8 +559,6 @@ else
 include/config/auto.conf: ;
 endif # $(dot-config)
 
--include $(srctree)/lib/Makefile
-
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH
 ifdef ZEPHYR_GCC_VARIANT
@@ -569,6 +567,10 @@ else
 $(if $(CROSS_COMPILE),, \
      $(error ZEPHYR_GCC_VARIANT is not set. ))
 endif
+
+
+-include $(srctree)/lib/Makefile
+-include $(srctree)/ext/Makefile
 
 ifneq ($(CC),)
 ifeq ($(shell $(CC) -v 2>&1 | grep -Ec "clang version|icx version"), 1)
