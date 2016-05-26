@@ -151,16 +151,16 @@ config GPIO_DW_1_IRQ_PRI
 	IRQ priority
 
 config GPIO_DW_2
-       bool "Designware GPIO block 1"
-       depends on GPIO_DW
-       default n
-       help
-       Include Designware GPIO driver
+	bool "Designware GPIO block 1"
+	depends on GPIO_DW
+	default n
+	help
+	Include Designware GPIO driver
 
 config GPIO_DW_2_NAME
-       string "Driver name"
-       depends on GPIO_DW_2
-       default "GPIO_2"
+	string "Driver name"
+	depends on GPIO_DW_2
+	default "GPIO_2"
 
 config GPIO_DW_2_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
@@ -195,22 +195,22 @@ config GPIO_DW_2_IRQ_SHARED_NAME
 	  correctly.
 
 config GPIO_DW_2_IRQ_PRI
-       int "Controller interrupt priority"
-       depends on GPIO_DW_2 && GPIO_DW_2_IRQ_DIRECT
-       help
-       IRQ priority
+	int "Controller interrupt priority"
+	depends on GPIO_DW_2 && GPIO_DW_2_IRQ_DIRECT
+	help
+	IRQ priority
 
 config GPIO_DW_3
-       bool "Designware GPIO block 1"
-       depends on GPIO_DW
-       default n
-       help
-       Include Designware GPIO driver
+	bool "Designware GPIO block 1"
+	depends on GPIO_DW
+	default n
+	help
+	Include Designware GPIO driver
 
 config GPIO_DW_3_NAME
-       string "Driver name"
-       depends on GPIO_DW_3
-       default "GPIO_3"
+	string "Driver name"
+	depends on GPIO_DW_3
+	default "GPIO_3"
 
 config GPIO_DW_3_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
@@ -245,9 +245,9 @@ config GPIO_DW_3_IRQ_SHARED_NAME
 	  correctly.
 
 config GPIO_DW_3_IRQ_PRI
-       int "Controller interrupt priority"
-       depends on GPIO_DW_3 && GPIO_DW_3_IRQ_DIRECT
-       help
-       IRQ priority
+	int "Controller interrupt priority"
+	depends on GPIO_DW_3 && GPIO_DW_3_IRQ_DIRECT
+	help
+	IRQ priority
 
 endif # GPIO_DW
