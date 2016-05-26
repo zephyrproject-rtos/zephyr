@@ -147,3 +147,31 @@ After successfully completing these steps your Arduino 101 should now
 have a HCI compatible BLE firmware. The Zephyr tree contains several
 sample config files for this firmware (named after the MyNewt BLE stack,
 Nimble), e.g. :file:`samples/bluetooth/peripheral_hr/prj_nimble.conf`
+
+Getting HCI traces
+******************
+
+By default you will only see normal log messages on the console, without
+any way of accessing the HCI traffic between Zephyr and the nRF51
+controller. There is however a special Bluetooth logging mode that
+converts the console to use a binary protocol that interleaves both
+normal log messages as well as the HCI traffic. To enable this protocol
+the following Kconfig options need to be set:
+
+.. code-block:: none
+
+   CONFIG_BLUETOOTH_DEBUG_MONITOR=y
+   CONFIG_UART_CONSOLE=n
+   CONFIG_UART_QMSI_1_BAUDRATE=1000000
+
+The first item replaces the BLUETOOTH_DEBUG_STDOUT option, the second
+one disables the default printk/printf hooks, and the third one matches
+the console baudrate with what's used to communicate with the nRF51, in
+order not to create a bottle neck.
+
+To decode the binary protocol that will now be sent to the console UART
+you need to use the btmon tool from BlueZ 5.40 or later:
+
+.. code-block:: console
+
+   $ btmon --tty <console TTY> --tty-speed 1000000
