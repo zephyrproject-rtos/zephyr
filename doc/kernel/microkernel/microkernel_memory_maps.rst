@@ -116,7 +116,7 @@ when all the memory blocks are in use.
 
 .. code-block:: c
 
-  char *block_ptr;
+  void *block_ptr;
 
   task_mem_map_alloc(MYMAP, &block_ptr, TICKS_UNLIMITED);
 
@@ -130,7 +130,7 @@ in the specified time.
 
 .. code-block:: c
 
-  char *block_ptr;
+  void *block_ptr;
 
   if (task_mem_map_alloc(MYMAP, &block_ptr, 5) == RC_OK)) {
     /* utilize memory block */
@@ -146,7 +146,7 @@ This code gives an immediate warning when all memory blocks are in use.
 
 .. code-block:: c
 
-  char *block_ptr;
+  void *block_ptr;
 
   if (task_mem_map_alloc(MYMAP, &block_ptr, TICKS_NONE) == RC_OK) {
     /* utilize memory block */
@@ -162,11 +162,11 @@ This code releases a memory block back when it is no longer needed.
 
 .. code-block:: c
 
-  char *block_ptr;
+  void *block_ptr;
 
   task_mem_map_alloc(MYMAP, &block_ptr, TICKS_UNLIMITED);
   /* use memory block */
-  task_mem_map_free(&block_ptr);
+  task_mem_map_free(MYMAP, &block_ptr);
 
 
 APIs
