@@ -1,4 +1,4 @@
-/* micro_int_to_task.c - measure time from ISR to back to interrupted task */
+/* micro_int_to_task.c - measure time from ISR back to interrupted task */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
@@ -77,7 +77,7 @@ static void makeInt(void)
  */
 int microIntToTask(void)
 {
-	PRINT_FORMAT(" 1- Measure time to switch from ISR to back to"
+	PRINT_FORMAT(" 1- Measure time to switch from ISR back to"
 				 " interrupted task");
 	TICK_SYNCH();
 	makeInt();
