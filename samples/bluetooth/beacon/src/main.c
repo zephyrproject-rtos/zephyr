@@ -33,6 +33,7 @@
  * https://github.com/google/eddystone/tree/master/eddystone-url
  */
 static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
 	BT_DATA_BYTES(BT_DATA_SVC_DATA16,
 		      0xaa, 0xfe, /* Eddystone UUID */
