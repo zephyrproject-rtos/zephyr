@@ -49,38 +49,61 @@ extern "C" {
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 
-/** @brief L2CAP Endpoint structure. */
-struct bt_l2cap_endpoint {
-	/** Endpoint CID */
-	uint16_t		cid;
-	/** Endpoint Maximum PDU payload Size */
-	uint16_t		mps;
-	/** Endpoint Maximum Transmission Unit */
-	uint16_t		mtu;
-	/** Endpoint credits */
-	struct nano_sem		credits;
-};
-
 /** @brief L2CAP Channel structure. */
 struct bt_l2cap_chan {
 	/** Channel connection reference */
-	struct bt_conn		*conn;
-
+	struct bt_conn			*conn;
 	/** Channel operations reference */
-	struct bt_l2cap_chan_ops *ops;
-
-	/** Channel Transmission Endpoint */
-	struct bt_l2cap_endpoint tx;
-	/** Channel Receiving Endpoint */
-	struct bt_l2cap_endpoint rx;
-
-	struct net_buf		*_sdu;
-	uint16_t		_sdu_len;
-
-	uint8_t			_ident;
-
-	struct bt_l2cap_chan	*_next;
+	struct bt_l2cap_chan_ops	*ops;
+	struct bt_l2cap_chan		*_next;
 };
+
+/** @brief LE L2CAP Endpoint structure. */
+struct bt_l2cap_le_endpoint {
+	/** Endpoint CID */
+	uint16_t			cid;
+	/** Endpoint Maximum Transmission Unit */
+	uint16_t			mtu;
+	/** Endpoint Maximum PDU payload Size */
+	uint16_t			mps;
+	/** Endpoint credits */
+	struct nano_sem			credits;
+};
+
+/** @brief LE L2CAP Channel structure. */
+struct bt_l2cap_le_chan {
+	/** Common L2CAP channel reference object */
+	struct bt_l2cap_chan		chan;
+	/** Channel Receiving Endpoint */
+	struct bt_l2cap_le_endpoint	rx;
+	/** Channel Transmission Endpoint */
+	struct bt_l2cap_le_endpoint	tx;
+	/** Helps match request context for oustanding requests during CoC */
+	uint8_t				ident;
+	/** Segment SDU packet from upper layer */
+	struct net_buf			*_sdu;
+	uint16_t			_sdu_len;
+};
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+/** @brief BREDR L2CAP Endpoint structure. */
+struct bt_l2cap_br_endpoint {
+	/** Endpoint CID */
+	uint16_t			cid;
+	/** Endpoint Maximum Transmission Unit */
+	uint16_t			mtu;
+};
+
+/** @brief BREDR L2CAP Channel structure. */
+struct bt_l2cap_br_chan {
+	/** Common L2CAP channel reference object */
+	struct bt_l2cap_chan		chan;
+	/** Channel Receiving Endpoint */
+	struct bt_l2cap_br_endpoint	rx;
+	/** Channel Transmission Endpoint */
+	struct bt_l2cap_br_endpoint	tx;
+};
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 /** @brief L2CAP Channel operations structure. */
 struct bt_l2cap_chan_ops {
@@ -189,6 +212,12 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
  *  Connect L2CAP channel by PSM, once the connection is completed channel
  *  connected() callback will be called. If the connection is rejected
  *  disconnected() callback is called instead.
+ *  Channel object passed (over an address of it) as second parameter shouldn't
+ *  be instantiated in application as standalone. Instead of, application should
+ *  create transport dedicated L2CAP objects, i.e. type of bt_l2cap_le_chan for
+ *  LE and/or type of bt_l2cap_br_chan for BR/EDR. Then pass to this API
+ *  the location (address) of bt_l2cap_chan type object which is a member
+ *  of both transport dedicated objects.
  *
  *  @param conn Connection object.
  *  @param chan Channel object.
@@ -203,6 +232,8 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
  *
  *  Disconnect L2CAP channel, if the connection is pending it will be
  *  canceled and as a result the channel disconnected() callback is called.
+ *  Regarding to input parameter, to get details see reference description
+ *  to bt_l2cap_chan_connect() API above.
  *
  *  @param chan Channel object.
  *
@@ -215,6 +246,8 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  Send data from buffer to the channel. This procedure may block waiting for
  *  credits to send data therefore it shall be used from a fiber to be able to
  *  receive credits when necessary.
+ *  Regarding to first input parameter, to get details see reference description
+ *  to bt_l2cap_chan_connect() API above.
  *
  *  @return Bytes sent in case of success or negative value in case of error.
  */

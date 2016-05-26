@@ -134,8 +134,8 @@ static struct bt_l2cap_chan_ops ipsp_ops = {
 	.disconnected	= ipsp_disconnected,
 };
 
-static struct bt_l2cap_chan ipsp_chan = {
-	.ops		= &ipsp_ops,
+static struct bt_l2cap_le_chan ipsp_chan = {
+	.chan.ops	= &ipsp_ops,
 	.rx.mtu		= L2CAP_IPSP_MTU,
 };
 
@@ -143,12 +143,12 @@ static int ipsp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	NET_DBG("Incoming conn %p\n", conn);
 
-	if (ipsp_chan.conn) {
+	if (ipsp_chan.chan.conn) {
 		NET_ERR("No channels available");
 		return -ENOMEM;
 	}
 
-	*chan = &ipsp_chan;
+	*chan = &ipsp_chan.chan;
 
 	return 0;
 }
@@ -187,7 +187,7 @@ static int net_driver_bt_send(struct net_buf *buf)
 	NET_DBG("sending %d bytes (original len %d)\n", ip_buf_len(buf),
 		orig_len);
 
-	return bt_l2cap_chan_send(&ipsp_chan, buf);
+	return bt_l2cap_chan_send(&ipsp_chan.chan, buf);
 }
 
 static struct net_driver net_driver_bt = {

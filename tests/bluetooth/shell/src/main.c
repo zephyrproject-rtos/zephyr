@@ -1629,8 +1629,8 @@ static struct bt_l2cap_chan_ops l2cap_ops = {
 	.disconnected	= l2cap_disconnected,
 };
 
-static struct bt_l2cap_chan l2cap_chan = {
-	.ops		= &l2cap_ops,
+static struct bt_l2cap_le_chan l2cap_chan = {
+	.chan.ops	= &l2cap_ops,
 	.rx.mtu		= DATA_MTU,
 };
 
@@ -1638,12 +1638,12 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	printk("Incoming conn %p\n", conn);
 
-	if (l2cap_chan.conn) {
+	if (l2cap_chan.chan.conn) {
 		printk("No channels available\n");
 		return -ENOMEM;
 	}
 
-	*chan = &l2cap_chan;
+	*chan = &l2cap_chan.chan;
 
 	return 0;
 }
@@ -1691,7 +1691,7 @@ static int cmd_l2cap_connect(int argc, char *argv[])
 
 	psm = strtoul(argv[1], NULL, 16);
 
-	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan, psm);
+	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan.chan, psm);
 	if (err < 0) {
 		printk("Unable to connect to psm %u (err %u)\n", psm, err);
 	} else {
@@ -1705,7 +1705,7 @@ static int cmd_l2cap_disconnect(int argc, char *argv[])
 {
 	int err;
 
-	err = bt_l2cap_chan_disconnect(&l2cap_chan);
+	err = bt_l2cap_chan_disconnect(&l2cap_chan.chan);
 	if (err) {
 		printk("Unable to disconnect: %u\n", -err);
 	}
@@ -1731,7 +1731,7 @@ static int cmd_l2cap_send(int argc, char *argv[])
 					  TICKS_UNLIMITED);
 
 		memcpy(net_buf_add(buf, len), buf_data, len);
-		ret = bt_l2cap_chan_send(&l2cap_chan, buf);
+		ret = bt_l2cap_chan_send(&l2cap_chan.chan, buf);
 		if (ret < 0) {
 			printk("Unable to send: %d\n", -ret);
 			net_buf_unref(buf);
@@ -1748,18 +1748,18 @@ static int cmd_l2cap_send(int argc, char *argv[])
  * TODO: fill/implement channel startup/callback data when need to be used
  * similar like for LE case, for now can be empty.
  */
-static struct bt_l2cap_chan l2cap_bredr_chan = {};
+static struct bt_l2cap_br_chan l2cap_bredr_chan = {};
 
 static int l2cap_bredr_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	printk("Incoming BR/EDR conn %p\n", conn);
 
-	if (l2cap_bredr_chan.conn) {
+	if (l2cap_bredr_chan.chan.conn) {
 		printk("No channels available");
 		return -ENOMEM;
 	}
 
-	*chan = &l2cap_bredr_chan;
+	*chan = &l2cap_bredr_chan.chan;
 
 	return 0;
 }

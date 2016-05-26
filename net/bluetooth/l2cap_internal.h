@@ -185,12 +185,12 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn,
 void bt_l2cap_init(void);
 
 /* Lookup channel by Transmission CID */
-struct bt_l2cap_chan *bt_l2cap_lookup_tx_cid(struct bt_conn *conn,
-					     uint16_t cid);
+struct bt_l2cap_chan *bt_l2cap_le_lookup_tx_cid(struct bt_conn *conn,
+						uint16_t cid);
 
 /* Lookup channel by Receiver CID */
-struct bt_l2cap_chan *bt_l2cap_lookup_rx_cid(struct bt_conn *conn,
-					     uint16_t cid);
+struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
+						uint16_t cid);
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /* Initialize BR/EDR L2CAP signal layer */
@@ -198,4 +198,18 @@ void bt_l2cap_br_init(void);
 
 /* Notify BR/EDR L2CAP channels about established new ACL connection */
 void bt_l2cap_br_connected(struct bt_conn *conn);
+
+/* Lookup BR/EDR L2CAP channel by Receiver CID */
+struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
+						uint16_t cid);
+
+/* Disconnects dynamic channel */
+int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan);
+
+/* Make connection to peer psm server */
+int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
+			     uint16_t psm);
+
+/* Send packet data to connected peer */
+int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 #endif /* CONFIG_BLUETOOTH_BREDR */

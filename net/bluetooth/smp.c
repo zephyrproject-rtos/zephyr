@@ -1382,7 +1382,7 @@ static struct bt_smp *smp_chan_get(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
 
-	chan = bt_l2cap_lookup_rx_cid(conn, BT_L2CAP_CID_SMP);
+	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_SMP);
 	if (!chan) {
 		BT_ERR("Unable to find SMP channel");
 		return NULL;
@@ -2628,7 +2628,8 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
 
-	BT_DBG("chan %p cid 0x%04x", chan, chan->tx.cid);
+	BT_DBG("chan %p cid 0x%04x", chan,
+	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
 	nano_delayed_work_init(&smp->work, smp_timeout);
 	smp_reset(smp);
@@ -2639,7 +2640,8 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
 	struct bt_keys *keys = chan->conn->keys;
 
-	BT_DBG("chan %p cid 0x%04x", chan, chan->tx.cid);
+	BT_DBG("chan %p cid 0x%04x", chan,
+	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
 	nano_delayed_work_cancel(&smp->work);
 

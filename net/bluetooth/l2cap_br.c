@@ -72,9 +72,8 @@ enum {
 /* BR/EDR L2CAP signalling channel specific context */
 struct bt_l2cap_br {
 	/* The channel this context is associated with */
-	struct bt_l2cap_chan	chan;
+	struct bt_l2cap_br_chan	chan;
 	atomic_t		flags[1];
-	uint8_t			ident;
 	uint8_t			info_ident;
 	uint8_t			info_fixed_chan;
 	uint32_t		info_feat_mask;
@@ -82,34 +81,56 @@ struct bt_l2cap_br {
 
 static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
-static void l2cap_br_chan_alloc_cid(struct bt_conn *conn,
-				    struct bt_l2cap_chan *chan)
+struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
+						uint16_t cid)
+{
+	struct bt_l2cap_chan *chan;
+
+	for (chan = conn->channels; chan; chan = chan->_next) {
+		struct bt_l2cap_br_chan *ch =
+			CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan);
+
+		if (ch->rx.cid == cid) {
+			return chan;
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_l2cap_br_chan*
+l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 {
 	uint16_t cid;
+	struct bt_l2cap_br_chan *ch = CONTAINER_OF(chan,
+						   struct bt_l2cap_br_chan,
+						   chan);
 
 	/*
 	 * No action needed if there's already a CID allocated, e.g. in
 	 * the case of a fixed channel.
 	 */
-	if (chan->rx.cid > 0) {
-		return;
+	if (ch->rx.cid > 0) {
+		return ch;
 	}
 
 	for (cid = L2CAP_BR_DYN_CID_START; cid <= L2CAP_BR_DYN_CID_END; cid++) {
-		if (!bt_l2cap_lookup_rx_cid(conn, cid)) {
-			chan->rx.cid = cid;
-			return;
+		if (!bt_l2cap_br_lookup_rx_cid(conn, cid)) {
+			ch->rx.cid = cid;
+			return ch;
 		}
 	}
+
+	return NULL;
 }
 
-static int l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
+static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 {
-	l2cap_br_chan_alloc_cid(conn, chan);
+	struct bt_l2cap_br_chan *ch = l2cap_br_chan_alloc_cid(conn, chan);
 
-	if (!chan->rx.cid) {
-		BT_ERR("Unable to allocate L2CAP CID");
-		return -ENOMEM;
+	if (!ch) {
+		BT_DBG("Unable to allocate L2CAP CID");
+		return false;
 	}
 
 	/* Attach channel to the connection */
@@ -117,41 +138,22 @@ static int l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 	conn->channels = chan;
 	chan->conn = conn;
 
-	BT_DBG("conn %p chan %p cid 0x%04x", conn, chan, chan->rx.cid);
+	BT_DBG("conn %p chan %p cid 0x%04x", conn, ch, ch->rx.cid);
 
-	return 0;
+	return true;
 }
 
-static struct bt_l2cap_br *l2cap_br_chan_get(struct bt_conn *conn)
+static uint8_t l2cap_br_get_ident(void)
 {
-	struct bt_l2cap_chan *chan;
+	static uint8_t ident;
 
-	chan = bt_l2cap_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
-	if (!chan) {
-		BT_ERR("Unable to find L2CAP Signalling channel");
-		return NULL;
-	}
-
-	return CONTAINER_OF(chan, struct bt_l2cap_br, chan);
-}
-
-static uint8_t l2cap_br_get_ident(struct bt_conn *conn)
-{
-	struct bt_l2cap_br *l2cap;
-
-	l2cap = l2cap_br_chan_get(conn);
-	if (!l2cap) {
-		return 0;
-	}
-
-	l2cap->ident++;
-
+	ident++;
 	/* handle integer overflow (0 is not valid) */
-	if (!l2cap->ident) {
-		l2cap->ident++;
+	if (!ident) {
+		ident++;
 	}
 
-	return l2cap->ident;
+	return ident;
 }
 
 static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
@@ -182,7 +184,7 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 	}
 
 	atomic_set_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_PENDING);
-	l2cap->info_ident = l2cap_br_get_ident(l2cap->chan.conn);
+	l2cap->info_ident = l2cap_br_get_ident();
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_INFO_REQ;
@@ -193,7 +195,7 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 	info->type = sys_cpu_to_le16(info_type);
 
 	/* TODO: add command timeout guard */
-	bt_l2cap_send(l2cap->chan.conn, BT_L2CAP_CID_BR_SIG, buf);
+	bt_l2cap_send(l2cap->chan.chan.conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
 static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
@@ -261,7 +263,7 @@ done:
 static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 			     struct net_buf *buf)
 {
-	struct bt_conn *conn = l2cap->chan.conn;
+	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_info_req *req = (void *)buf->data;
 	struct bt_l2cap_info_rsp *rsp;
 	struct net_buf *rsp_buf;
@@ -332,17 +334,23 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 			continue;
 		}
 
-		chan->rx.cid = fchan->cid;
-		chan->tx.cid = fchan->cid;
+		struct bt_l2cap_br_chan *ch =
+			CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan);
 
-		l2cap_br_chan_add(conn, chan);
+		ch->rx.cid = fchan->cid;
+		ch->tx.cid = fchan->cid;
 
-		if (chan->ops->connected) {
+		if (!l2cap_br_chan_add(conn, chan)) {
+			return;
+		}
+
+		if (chan->ops && chan->ops->connected) {
 			chan->ops->connected(chan);
 		}
 	}
 
-	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan);
+	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br,
+						 chan.chan);
 
 	l2cap_br_get_info(l2cap, BT_L2CAP_INFO_FEAT_MASK);
 }
@@ -419,31 +427,32 @@ static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident,
 
 static void l2cap_br_chan_del(struct bt_l2cap_chan *chan)
 {
-	BT_DBG("conn %p chan %p cid 0x%04x", chan->conn, chan, chan->rx.cid);
+	struct bt_l2cap_br_chan *ch = CONTAINER_OF(chan,
+						   struct bt_l2cap_br_chan,
+						   chan);
+
+	ARG_UNUSED(ch);
+	BT_DBG("conn %p chan %p cid 0x%04x", chan->conn, ch, ch->rx.cid);
 
 	chan->conn = NULL;
 
 	if (chan->ops && chan->ops->disconnected) {
 		chan->ops->disconnected(chan);
 	}
-
-	/* Destroy segmented SDU if it exists */
-
-	if (chan->_sdu) {
-		net_buf_unref(chan->_sdu);
-		chan->_sdu = NULL;
-		chan->_sdu_len = 0;
-	}
 }
 
-static struct bt_l2cap_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
-						    uint16_t cid)
+static struct bt_l2cap_br_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
+						       uint16_t cid)
 {
 	struct bt_l2cap_chan *chan, *prev;
 
 	for (chan = conn->channels, prev = NULL; chan;
 	     prev = chan, chan = chan->_next) {
-		if (chan->tx.cid != cid) {
+		/* get the app's l2cap object wherein this chan is contained */
+		struct bt_l2cap_br_chan *ch =
+			CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan);
+
+		if (ch->tx.cid != cid) {
 			continue;
 		}
 
@@ -453,7 +462,7 @@ static struct bt_l2cap_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
 			prev->_next = chan->_next;
 		}
 
-		return chan;
+		return ch;
 	}
 
 	return NULL;
@@ -462,8 +471,8 @@ static struct bt_l2cap_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
 static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 				 struct net_buf *buf)
 {
-	struct bt_conn *conn = l2cap->chan.conn;
-	struct bt_l2cap_chan *chan;
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_br_chan *chan;
 	struct bt_l2cap_disconn_req *req = (void *)buf->data;
 	struct bt_l2cap_disconn_rsp *rsp;
 	struct bt_l2cap_sig_hdr *hdr;
@@ -504,19 +513,45 @@ static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
 	rsp->scid = sys_cpu_to_le16(chan->tx.cid);
 
-	l2cap_br_chan_del(chan);
+	l2cap_br_chan_del(&chan->chan);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
 static void l2cap_br_connected(struct bt_l2cap_chan *chan)
 {
-	BT_DBG("chan %p cid 0x%04x", chan, chan->rx.cid);
+	struct bt_l2cap_br_chan *ch = CONTAINER_OF(chan,
+						   struct bt_l2cap_br_chan,
+						   chan);
+
+	ARG_UNUSED(ch);
+	BT_DBG("ch %p cid 0x%04x", ch, ch->rx.cid);
 }
 
 static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 {
-	BT_DBG("chan %p cid 0x%04x", chan, chan->rx.cid);
+	struct bt_l2cap_br_chan *ch = CONTAINER_OF(chan,
+						   struct bt_l2cap_br_chan,
+						   chan);
+
+	ARG_UNUSED(ch);
+	BT_DBG("ch %p cid 0x%04x", ch, ch->rx.cid);
+}
+
+int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
+{
+	return -ENOTSUP;
+}
+
+int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
+			     uint16_t psm)
+{
+	return -ENOTSUP;
+}
+
+int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	return -ENOTSUP;
 }
 
 static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -578,12 +613,12 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	for (i = 0; i < ARRAY_SIZE(bt_l2cap_br_pool); i++) {
 		struct bt_l2cap_br *l2cap = &bt_l2cap_br_pool[i];
 
-		if (l2cap->chan.conn) {
+		if (l2cap->chan.chan.conn) {
 			continue;
 		}
 
-		l2cap->chan.ops = &ops;
-		*chan = &l2cap->chan;
+		l2cap->chan.chan.ops = &ops;
+		*chan = &l2cap->chan.chan;
 		atomic_set(l2cap->flags, 0);
 		return 0;
 	}
