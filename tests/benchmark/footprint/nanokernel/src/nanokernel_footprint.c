@@ -26,7 +26,7 @@ volatile int i = 0;		/* counter used by background task */
 #include <misc/printk.h>
 #include <stdio.h>
 
-#define IRQ_LINE          10  /* just some random value w/o driver conflicts */
+#define IRQ_LINE          11  /* just some random value w/o driver conflicts */
 #define IRQ_PRIORITY      3
 #define TEST_SOFT_INT	  64
 
