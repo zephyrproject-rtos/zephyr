@@ -80,7 +80,9 @@ struct net_context {
 };
 
 /* Override this in makefile if needed */
-#ifndef NET_MAX_CONTEXT
+#if defined(CONFIG_NET_MAX_CONTEXTS)
+#define NET_MAX_CONTEXT CONFIG_NET_MAX_CONTEXTS
+#else
 #define NET_MAX_CONTEXT 5
 #endif
 

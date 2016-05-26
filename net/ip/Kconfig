@@ -71,6 +71,14 @@ config IP_TIMER_STACK_SIZE
 	  responsible for handling re-transmissions and periodic network
 	  packet sending like IPv6 router solicitations.
 
+config NET_MAX_CONTEXTS
+	int "How many network context to use"
+	default 2
+	help
+	  The network context is similar concept as network socket.
+	  It defines a network endpoint and number of context depends
+	  on application usage.
+
 choice
 prompt "Internet Protocol version"
 depends on NETWORKING
