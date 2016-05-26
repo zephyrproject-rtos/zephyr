@@ -21,3 +21,9 @@ arch_cflags += $(call cc-option,-I$(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/includ
 KBUILD_AFLAGS += $(arch_cflags)
 KBUILD_CFLAGS += $(arch_cflags)
 KBUILD_CXXFLAGS += $(arch_cflags)
+
+soc-cxxflags ?= $(soc-cflags)
+soc-aflags ?= $(soc-cflags)
+KBUILD_CFLAGS += $(soc-cflags)
+KBUILD_CXXFLAGS += $(soc-cxxflags)
+KBUILD_AFLAGS += $(soc-aflags)

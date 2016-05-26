@@ -34,6 +34,12 @@ include $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/Makefile
 KBUILD_CXXFLAGS += $(cflags-y)
 KBUILD_CFLAGS += $(cflags-y)
 
+soc-cxxflags ?= $(soc-cflags)
+soc-aflags ?= $(soc-cflags)
+KBUILD_CFLAGS += $(soc-cflags)
+KBUILD_CXXFLAGS += $(soc-cxxflags)
+KBUILD_AFLAGS += $(soc-aflags)
+
 QEMU_BIOS ?= /usr/share/qemu
 QEMU_CPU_TYPE_x86 = qemu32
 QEMU_X86_NO_REBOOT_y =

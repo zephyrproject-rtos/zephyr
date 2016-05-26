@@ -1,8 +1,5 @@
-
-arch-cflags = $(call cc-option,-mARCv2EM) \
+soc-cflags = $(call cc-option,-mARCv2EM) \
                    $(call cc-option,-mav2em,) $(call cc-option,-mno-sdata)
-
-KBUILD_CFLAGS += -DQM_SENSOR=1
-KBUILD_AFLAGS += $(arch-cflags)
-KBUILD_CFLAGS += $(arch-cflags)
-KBUILD_CXXFLAGS += $(arch-cflags)
+soc-aflags = $(soc-cflags)
+soc-cxxflags = $(soc-cflags)
+soc-cflags += -DQM_SENSOR=1
