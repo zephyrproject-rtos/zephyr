@@ -43,6 +43,8 @@ static inline void timestamp_serialize(void)
 	:
 	: "memory");
 }
+#elif defined(CONFIG_CPU_ARCV2)
+#define timestamp_serialize()
 #else
 #error implementation of timestamp_serialize() not provided for your CPU target
 #endif
