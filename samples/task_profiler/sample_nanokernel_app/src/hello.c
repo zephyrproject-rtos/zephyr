@@ -26,6 +26,8 @@
 #define PRINT           printk
 #endif
 
+#include "profiler.h"
+
 #ifdef CONFIG_NANOKERNEL
 
 /*
@@ -46,8 +48,6 @@ char __stack fiberStack[STACKSIZE];
 
 struct nano_sem nanoSemTask;
 struct nano_sem nanoSemFiber;
-
-extern void prof_flush(void);
 
 void fiberEntry(void)
 {

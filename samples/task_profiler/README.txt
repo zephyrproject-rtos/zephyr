@@ -66,7 +66,7 @@ How to enable profiler in your application
 Conventions:
 $ZEPHYR_BASE = Zephyr base folder
 $APP_BASE = Application base folder
-$PROFILER_BASE = Profiler base folder
+$PROFILER_BASE = Profiler base folder i.e. $ZEPHYR_BASE/samples/task_profiler/profiler
 prof.log = profiler output file generated from Zephyr target (binary)
 
 1) Enable KERNEL_EVENT_LOGGER
@@ -164,7 +164,7 @@ prof_flush in the main loop, where processing will be the least impacted)
 prof_flush function must be called from main task before going in idle mode
 
 <--snippet
-extern void prof_flush()
+#include "profiler.h"
 
 ...
 
@@ -177,6 +177,13 @@ void main(void)
 		// Going to idle e.g. calling nano_cpu_idle()
 -->
 
+Note that profiler src folder must be added to the Makefile:
+$APP_BASE/src/Makefile:
+
+<--snippet
+ccflags-y += -I${ZEPHYR_BASE}/samples/task_profiler/profiler/src
+-->
+
   2.2) Add path to $PROFILER_BASE folder in application Makefile
   --------------------------------------------------------------
 
@@ -185,6 +192,10 @@ For example in $APP_BASE/src/Makefile:
 <--snippet
 obj-y += $PROFILER_BASE/
 -->
+
+Note:
+- the final "/" after $PROFILER_BASE is important
+- the path must be relative to application src folder
 
   2.3) Increase console UART baud rate (depending on your board)
   ------------------------------------
@@ -265,6 +276,13 @@ const struct shell_cmd apps_cmd[] = {
 	PROF_CMD,
 	{ NULL, NULL}
 }
+-->
+
+Note that profiler src folder must be added to the Makefile:
+$APP_BASE/src/Makefile:
+
+<--snippet
+ccflags-y += -I${ZEPHYR_BASE}/samples/task_profiler/profiler/src
 -->
 
 Additionally, the profiler must not register its console so

@@ -163,7 +163,7 @@ int shell_cmd_prof(int argc, char *argv[])
 	return 0;
 }
 
-struct shell_cmd commands[] = {
+struct shell_cmd prof_commands[] = {
 	PROF_CMD,
 	{ NULL, NULL}
 };
@@ -223,7 +223,7 @@ void prof_init(void)
 
 #ifdef PROFILER_SHELL
 #ifndef PROFILER_NO_SHELL_REGISTER
-	shell_init("shell> ", commands);
+	shell_init("shell> ", prof_commands);
 #endif
 #endif
 
