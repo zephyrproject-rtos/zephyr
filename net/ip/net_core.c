@@ -1009,8 +1009,6 @@ int net_set_mac(uint8_t *mac, uint8_t len)
 		NET_DBG("Tentative link-local IPv6 address ");
 		PRINT6ADDR(&lladdr->ipaddr);
 		PRINTF("\n");
-
-		lladdr->state = ADDR_AUTOCONF;
 	}
 #else
 	memcpy(&uip_lladdr, mac, len);
