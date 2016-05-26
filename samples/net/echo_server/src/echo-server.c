@@ -267,7 +267,6 @@ static inline bool get_context(struct net_context **udp_recv,
 	if (!*mcast_recv) {
 		PRINT("%s: Cannot get receiving mcast network context\n",
 		      __func__);
-		return false;
 	}
 
 	return true;
