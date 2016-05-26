@@ -76,7 +76,7 @@ int read_bytes(struct device *i2c_dev, uint16_t addr,
 	/* Read from device. RESTART as neededm and STOP after this. */
 	msgs[1].buf = data;
 	msgs[1].len = num_bytes;
-	msgs[1].flags = I2C_MSG_READ | I2C_MSG_RESTART;
+	msgs[1].flags = I2C_MSG_READ | I2C_MSG_STOP;
 
 	return i2c_transfer(i2c_dev, &msgs[0], 2, FRAM_I2C_ADDR);
 }
