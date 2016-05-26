@@ -34,6 +34,16 @@
 
 GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
+GTEXT(_rirq_common_interrupt_swap)
+
+#if CONFIG_NUM_IRQ_PRIO_LEVELS > 2
+#error "NUM_IRQ_PRIO_LEVELS>2 is not supported."
+/*
+ * Nesting of Regularing interrupts is not yet supported.
+ * If your SOC supports more than 2, set this value to 2.
+ */
+#endif
+
 
 /**
  *
@@ -131,6 +141,9 @@ _rirq_reschedule:
 	st_s r2, [r1, __tNANO_current_OFFSET]
 	ld_s r3, [r2, __tTCS_link_OFFSET]
 	st_s r3, [r1, __tNANO_fiber_OFFSET]
+
+_rirq_common_interrupt_swap:
+	/* r2 contains pointer to new thread */
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Use stack top and down registers from restored context */
