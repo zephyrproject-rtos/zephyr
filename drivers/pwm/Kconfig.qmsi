@@ -28,7 +28,7 @@ menuconfig PWM_QMSI
 config PWM_QMSI_DEV_NAME
 	string "QMSI PWM Device Name"
 	depends on PWM_QMSI
-	default "PWM"
+	default "PWM_0"
 	help
 	  Specify the device name for the PWM driver.
 
