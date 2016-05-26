@@ -60,6 +60,10 @@ static const char *CONFIG = ""
 #define MY_PREFIX_LEN 64
 #endif
 
+#ifdef PROFILER
+#include "profiler.h"
+#endif
+
 static struct net_addr in_addr_my = {
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 	.family = AF_INET6,
@@ -442,6 +446,9 @@ struct shell_cmd commands[] = {
 		{ CMD_STR_TCP_UPLOAD, shell_cmd_upload },
 		{ CMD_STR_TCP_DOWNLOAD, shell_cmd_tcp_download },
 #endif
+#ifdef PROFILER
+		PROF_CMD,
+#endif
 		{ NULL, NULL } };
 
 #ifdef CONFIG_MICROKERNEL
@@ -455,4 +462,11 @@ void main(void)
 	shell_init("zperf> ", commands);
 	net_init();
 	zperf_init();
+
+#if PROFILER
+	while (1) {
+		task_sleep(5 * sys_clock_ticks_per_sec);
+		prof_flush();
+	}
+#endif
 }

@@ -10,6 +10,7 @@ Features
 - Compatible with iPerf_2.0.5.
 - Support for micro and nano kernel modes.
 - Client or server mode allowed without need to modify the source code.
+- Working with task profiler (PROFILER=1 to be set when building zperf)
 
 Supported Boards
 ================

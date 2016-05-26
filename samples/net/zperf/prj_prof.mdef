@@ -1,0 +1,6 @@
+% Application       : Zperf
+
+% TASK NAME  PRIO ENTRY STACK GROUPS
+% ==================================
+  TASK MAIN  7    mainloop  2048 [EXE]
+  TASK PROF  10   prof      512  [EXE]
