@@ -127,6 +127,15 @@ config	NETWORKING_IPV6_NO_ND
 	  Normally ND should be enabled but in order to simplify
 	  the network setup it can be turned off if using
 	  slip and tun device.
+
+config	NETWORKING_MAX_NEIGHBORS
+	int "Max number of neighbors"
+	depends on NETWORKING
+	depends on NETWORKING_WITH_IPV6
+	default 4
+	help
+	  Specifies the maximum number of neighbors that each node will
+	  be able to handle.
 endif
 
 config	NETWORKING_WITH_TCP
