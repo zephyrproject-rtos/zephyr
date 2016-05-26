@@ -79,6 +79,12 @@ config NET_MAX_CONTEXTS
 	  It defines a network endpoint and number of context depends
 	  on application usage.
 
+config UDP_MAX_CONNECTIONS
+	int "How many UDP connections can be used"
+	default 2
+	help
+	  Amount of concurrent UDP connections.
+
 choice
 prompt "Internet Protocol version"
 depends on NETWORKING

@@ -239,4 +239,8 @@ typedef unsigned int uip_stats_t;
 #define UIP_CONF_LLH_LEN 14
 #endif
 
+#if defined(CONFIG_UDP_MAX_CONNECTIONS)
+#define UIP_CONF_UDP_CONNS CONFIG_UDP_MAX_CONNECTIONS
+#endif
+
 #endif /* __CONTIKI_CONF_H__ */
