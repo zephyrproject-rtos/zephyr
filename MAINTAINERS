@@ -59,6 +59,17 @@ Maintainers List (try to look for most precise areas first)
 
 		-----------------------------------
 
+BLUETOOTH
+M:	Johan Hedberg <johan.hedberg@intel.com>
+M:	Luiz Augusto von Dentz <luiz.dentz@gmail.com>
+M:	Szymon Janc <szymon.janc@gmail.com>
+S:	Supported
+F:	net/bluetooth/
+F:	include/bluetooth/
+F:	drivers/bluetooth/
+F:	samples/bluetooth/
+F:	tests/bluetooth/
+
 DOCUMENTATION
 M:	Perez-Gonzalez, Inaky <inaky.perez-gonzalez@intel.com>
 S:	Supported
