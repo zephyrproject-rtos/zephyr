@@ -287,24 +287,10 @@ config NETWORKING_WITH_15_4_ALWAYS_ACK
 	  acknowledgment on all data packet will draw power resource.
 	  Use case for this option it for testing only.
 
-choice
-	prompt "802.15.4 MAC Driver"
-	depends on NETWORKING && NETWORKING_WITH_15_4
-	help
-	 The 802.15.4 layer can support nullmac or csma.
+# Using nullmac 802.15.4 driver only.
 config	NETWORKING_WITH_15_4_MAC_NULL
 	bool
-	prompt "nullmac driver"
-	help
-	  Enable nullmac driver. All packets go straight through.
-
-config	NETWORKING_WITH_15_4_MAC_CSMA
-	bool
-	prompt "csma driver"
-	help
-	  Enable csma driver. Will queue packets and retry transmissions.
-
-endchoice
+	default y
 
 choice
 	prompt "802.15.4 RDC Driver"
