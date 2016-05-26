@@ -4,6 +4,32 @@ include $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/Makefile
 
 cflags-$(CONFIG_LTO) += $(call cc-option,-flto,)
 
+cflags-cortex-m0 = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m0) \
+			$(call cc-option,-mthumb -march=armv6-m)
+cflags-cortex-m0+ = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m0plus) \
+			$(call cc-option,-mthumb -march=armv6-m)
+cflags-cortex-m1 = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m1) \
+			$(call cc-option,-mthumb -march=armv6-m)
+cflags-cortex-m3 = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m3) \
+			$(call cc-option,-mthumb -march=armv7-m)
+cflags-cortex-m4 = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m4) \
+			$(call cc-option,-mthumb -march=armv7e-m)
+cflags-cortex-m7 = $(call cc-option,-mabi=aapcs -mthumb -mcpu=cortex-m7) \
+			$(call cc-option,-mthumb -march=armv7e-m)
+
+aflags-$(CONFIG_CPU_CORTEX_M3) += $(cflags-cortex-m3)
+cflags-$(CONFIG_CPU_CORTEX_M3) += $(cflags-cortex-m3)
+cxxflags-$(CONFIG_CPU_CORTEX_M3) += $(cflags-cortex-m3)
+_arm_isa-$(CONFIG_CPU_CORTEX_M3) = armv7-m
+
+aflags-$(CONFIG_CPU_CORTEX_M4) += $(cflags-cortex-m4)
+cflags-$(CONFIG_CPU_CORTEX_M4) += $(cflags-cortex-m4)
+cxxflags-$(CONFIG_CPU_CORTEX_M4) += $(cflags-cortex-m4)
+_arm_isa-$(CONFIG_CPU_CORTEX_M4) = armv7e-m
+
+_CROSS_COMPILE_arm_isa = $(_arm_isa-y)
+
+KBUILD_AFLAGS += $(aflags-y)
 KBUILD_CFLAGS += $(cflags-y)
 KBUILD_CXXFLAGS += $(cflags-y)
 

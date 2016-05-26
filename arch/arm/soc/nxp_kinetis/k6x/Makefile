@@ -1,2 +1,3 @@
-soc-cflags = $(call cc-option,-mthumb -mcpu=cortex-m4) \
-			$(call cc-option,-mthumb -march=armv7e-m)
+obj-y += soc_config.o
+obj-y += soc.o
+obj-y += wdog.o
