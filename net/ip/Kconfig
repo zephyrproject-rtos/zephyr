@@ -137,6 +137,15 @@ config	NETWORKING_WITH_TCP
 	help
 	  Enable Transmission and Control Protocol (TCP) support.
 
+config	TCP_MAX_CONNECTIONS
+	int "Maximum number of connections"
+	depends on NETWORKING_WITH_TCP
+	default 2
+	help
+	  Tweak the TCP maximum segment size. Normally one should
+	  not change this but let the IP stack to calculate a best
+	  size for it.
+
 config	TCP_DISABLE_ACTIVE_OPEN
 	bool
 	prompt "Disallow host to initiate connection attempt"
