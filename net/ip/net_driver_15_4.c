@@ -52,16 +52,10 @@
 #ifndef CONFIG_15_4_RX_STACK_SIZE
 #define CONFIG_15_4_RX_STACK_SIZE (STACKSIZE_UNIT * 1)
 #endif
-#ifndef CONFIG_15_4_TX_STACK_SIZE
-#define CONFIG_15_4_TX_STACK_SIZE (STACKSIZE_UNIT * 4)
-#endif
 static char __noinit __stack rx_fiber_stack[CONFIG_15_4_RX_STACK_SIZE];
-static char __noinit __stack tx_fiber_stack[CONFIG_15_4_TX_STACK_SIZE];
 
 /* Queue for incoming packets from hw driver */
 static struct nano_fifo rx_queue;
-/* Queue for outgoing packets to IP stack */
-static struct nano_fifo tx_queue;
 
 static int net_driver_15_4_open(void)
 {
@@ -83,39 +77,21 @@ static int net_driver_15_4_send(struct net_buf *buf)
 	NET_DBG("sending %d bytes (original len %d)\n", ip_buf_len(buf),
 		orig_len);
 
-	nano_fifo_put(&tx_queue, buf);
-	return 1;
-}
-
-static void net_tx_15_4_fiber(void)
-{
-	NET_DBG("Starting 15.4 TX fiber (stack %d bytes)\n",
-		sizeof(tx_fiber_stack));
-
-	while (1) {
-		struct net_buf *buf;
-
-		/* Get next packet from application - wait if necessary */
-		buf = nano_fifo_get(&tx_queue, TICKS_UNLIMITED);
-
-		if (uip_len(buf) == 0) {
-			/* It is possible that uIP stack overwrote the len.
-			 * We need to fix this here.
-			 */
-			uip_len(buf) = ip_buf_len(buf);
-		}
-
-		NET_DBG("Sending (%u bytes) to 15.4 stack\n",
-			ip_buf_len(buf));
-
-		if (!NETSTACK_FRAGMENT.fragment(buf, NULL)) {
-			/* Release buffer on error */
-			ip_buf_unref(buf);
-		}
-
-		net_analyze_stack("802.15.4 TX", tx_fiber_stack,
-				  sizeof(tx_fiber_stack));
+	if (uip_len(buf) == 0) {
+		/* It is possible that uIP stack overwrote the len.
+		 * We need to fix this here.
+		 */
+		uip_len(buf) = ip_buf_len(buf);
 	}
+
+	NET_DBG("Sending (%u bytes) to 15.4 stack\n", ip_buf_len(buf));
+
+	if (!NETSTACK_FRAGMENT.fragment(buf, NULL)) {
+		/* Release buffer on error */
+		ip_buf_unref(buf);
+	}
+
+	return 1;
 }
 
 static void net_rx_15_4_fiber(void)
@@ -158,14 +134,6 @@ static void init_rx_queue(void)
 		    (nano_fiber_entry_t) net_rx_15_4_fiber, 0, 0, 7, 0);
 }
 
-static void init_tx_queue(void)
-{
-	nano_fifo_init(&tx_queue);
-
-	fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
-		    (nano_fiber_entry_t) net_tx_15_4_fiber, 0, 0, 7, 0);
-}
-
 static struct net_driver net_driver_15_4 = {
 	.head_reserve = 0,
 	.open = net_driver_15_4_open,
@@ -174,7 +142,6 @@ static struct net_driver net_driver_15_4 = {
 
 int net_driver_15_4_init(void)
 {
-	init_tx_queue();
 	init_rx_queue();
 
 	NETSTACK_RADIO.init();
