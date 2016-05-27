@@ -32,6 +32,7 @@ ARM (v7-M and v7E-M) Instruction Set
        arduino_due
        frdm_k64f
        olimexino_stm32
+       nrf52_pca10040
 
 ARC EM4 Instruction Set
 ====================================
