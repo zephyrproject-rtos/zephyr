@@ -29,6 +29,7 @@
 #include "uart.h"
 #include "conn.h"
 #include "rpc.h"
+#include "smp.h"
 
 /* Set the firmware compatible with Nordic BLE RPC */
 static uint8_t compatible_firmware[4] = { '0', '5', '2', '7' };
@@ -44,17 +45,6 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 struct nble nble;
 
 static const struct bt_storage *storage;
-
-#define BT_SMP_IO_DISPLAY_ONLY			0x00
-#define BT_SMP_IO_DISPLAY_YESNO			0x01
-#define BT_SMP_IO_KEYBOARD_ONLY			0x02
-#define BT_SMP_IO_NO_INPUT_OUTPUT		0x03
-#define BT_SMP_IO_KEYBOARD_DISPLAY		0x04
-
-#define BT_SMP_OOB_NOT_PRESENT			0x00
-#define BT_SMP_OOB_PRESENT			0x01
-
-#define BT_SMP_MAX_ENC_KEY_SIZE			16
 
 #if defined(CONFIG_NBLE_DEBUG_GAP)
 static const char *bt_addr_le_str(const bt_addr_le_t *addr)
@@ -367,189 +357,11 @@ void on_nble_common_rsp(const struct nble_common_rsp *rsp)
 	BT_DBG("status %d", rsp->status);
 }
 
-/* Security Manager event handling */
-
-static uint8_t get_io_capa(void)
-{
-	if (!nble.auth) {
-		return BT_SMP_IO_NO_INPUT_OUTPUT;
-	}
-
-	/* Passkey Confirmation is valid only for LE SC */
-	if (nble.auth->passkey_display && nble.auth->passkey_entry &&
-	    nble.auth->passkey_confirm) {
-		return BT_SMP_IO_KEYBOARD_DISPLAY;
-	}
-
-	/* DisplayYesNo is useful only for LE SC */
-	if (nble.auth->passkey_display &&
-	    nble.auth->passkey_confirm) {
-		return BT_SMP_IO_DISPLAY_YESNO;
-	}
-
-	if (nble.auth->passkey_entry) {
-		return BT_SMP_IO_KEYBOARD_ONLY;
-	}
-
-	if (nble.auth->passkey_display) {
-		return BT_SMP_IO_DISPLAY_ONLY;
-	}
-
-	return BT_SMP_IO_NO_INPUT_OUTPUT;
-}
-
-static void send_dm_config(void)
-{
-	struct nble_sm_config_req config = {
-		.key_size = BT_SMP_MAX_ENC_KEY_SIZE,
-		.oob_present = BT_SMP_OOB_NOT_PRESENT,
-	};
-
-	config.io_caps = get_io_capa();
-
-	if (config.io_caps == BT_SMP_IO_NO_INPUT_OUTPUT) {
-		config.options = BT_SMP_AUTH_BONDING;
-	} else {
-		config.options = BT_SMP_AUTH_BONDING | BT_SMP_AUTH_MITM;
-	}
-
-	BT_DBG("io_caps %u options %u", config.io_caps, config.options);
-
-	nble_sm_config_req(&config);
-}
-
-void on_nble_sm_config_rsp(struct nble_sm_config_rsp *rsp)
-{
-	if (rsp->status) {
-		BT_ERR("SM config failed, status %d", rsp->status);
-		return;
-	}
-
-	BT_DBG("status %u", rsp->status);
-
-	/* Get bdaddr queued after SM setup */
-	nble_get_bda_req(NULL);
-}
-
-void on_nble_sm_common_rsp(const struct nble_sm_common_rsp *rsp)
-{
-	if (rsp->status) {
-		BT_ERR("GAP SM request failed:  conn %p err %d", rsp->conn,
-		       rsp->status);
-
-		/* TODO: Handle error */
-		return;
-	}
-}
-
-void on_nble_sm_status_evt(const struct nble_sm_status_evt *ev)
-{
-	struct bt_conn *conn;
-
-	if (ev->status) {
-		BT_ERR("SM request failed, status %d", ev->status);
-		return;
-	}
-
-	conn = bt_conn_lookup_handle(ev->conn_handle);
-	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
-		return;
-	}
-
-	BT_DBG("conn %p status %d evt_type %d sec_level %d enc_size %u",
-	       conn, ev->status, ev->evt_type, ev->enc_link_sec.sec_level,
-	       ev->enc_link_sec.enc_size);
-
-	/* TODO Handle events */
-	switch (ev->evt_type) {
-	case NBLE_GAP_SM_EVT_START_PAIRING:
-		BT_DBG("Start pairing");
-		if (conn->role == BT_HCI_ROLE_MASTER) {
-			bt_conn_security(conn, ev->enc_link_sec.sec_level);
-		}
-		break;
-	case NBLE_GAP_SM_EVT_BONDING_COMPLETE:
-		BT_DBG("Bonding complete");
-		break;
-	case NBLE_GAP_SM_EVT_LINK_ENCRYPTED:
-		BT_DBG("Link encrypted");
-		break;
-	case NBLE_GAP_SM_EVT_LINK_SECURITY_CHANGE:
-		BT_DBG("Security change");
-		break;
-	default:
-		BT_ERR("Unknown event %d", ev->evt_type);
-		break;
-	}
-
-	bt_conn_unref(conn);
-}
-
-void on_nble_sm_passkey_disp_evt(const struct nble_sm_passkey_disp_evt *ev)
-{
-	struct bt_conn *conn;
-
-	conn = bt_conn_lookup_handle(ev->conn_handle);
-	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
-		return;
-	}
-
-	BT_DBG("conn %p passkey %u", conn, ev->passkey);
-
-	/* TODO: Check shall we store io_caps globally */
-	if (get_io_capa() == BT_SMP_IO_DISPLAY_YESNO) {
-		nble.auth->passkey_confirm(conn, ev->passkey);
-	} else {
-		nble.auth->passkey_display(conn, ev->passkey);
-	}
-
-	bt_conn_unref(conn);
-}
-
-void on_nble_sm_passkey_req_evt(const struct nble_sm_passkey_req_evt *ev)
-{
-	struct bt_conn *conn;
-
-	conn = bt_conn_lookup_handle(ev->conn_handle);
-	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
-		return;
-	}
-
-	if (ev->key_type == NBLE_GAP_SM_PK_PASSKEY) {
-		nble.auth->passkey_entry(conn);
-	}
-
-	bt_conn_unref(conn);
-}
-
-static int sm_error(struct bt_conn *conn, uint8_t reason)
-{
-	struct nble_sm_passkey_reply_req req;
-
-	req.conn = conn;
-	req.conn_handle = conn->handle;
-
-	req.params.type = NBLE_GAP_SM_REJECT;
-	req.params.reason = reason;
-
-	nble_sm_passkey_reply_req(&req);
-
-	return 0;
-}
-
-int bt_smp_auth_cancel(struct bt_conn *conn)
-{
-	return sm_error(conn, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
-}
-
 void on_nble_up(void)
 {
 	BT_DBG("");
 
-	send_dm_config();
+	bt_smp_init();
 }
 
 void bt_storage_register(const struct bt_storage *bt_storage)

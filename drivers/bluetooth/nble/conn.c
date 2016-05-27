@@ -27,6 +27,7 @@
 #include "gap_internal.h"
 #include "gatt_internal.h"
 #include "conn_internal.h"
+#include "smp.h"
 
 #if !defined(CONFIG_NBLE_DEBUG_CONN)
 #undef BT_DBG
@@ -392,6 +393,10 @@ static void notify_connected(struct bt_conn *conn)
 {
 	struct bt_conn_cb *cb;
 
+	/* TODO: Add l2cap_connected callback if needed */
+
+	bt_smp_connected(conn);
+
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->connected) {
 			cb->connected(conn, 0);
@@ -404,6 +409,7 @@ static void notify_disconnected(struct bt_conn *conn)
 	struct bt_conn_cb *cb;
 
 	bt_gatt_disconnected(conn);
+	bt_smp_disconnected(conn);
 
 	/*
 	 * FIXME: When disconnected NBLE stops advertising, this should
