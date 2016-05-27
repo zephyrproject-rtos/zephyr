@@ -23,6 +23,8 @@ menuconfig SENSOR
 	help
 	  Include sensor drivers in system config
 
+source "drivers/sensor/Kconfig.ak8975"
+
 source "drivers/sensor/Kconfig.bma280"
 
 source "drivers/sensor/Kconfig.bmc150_magn"
