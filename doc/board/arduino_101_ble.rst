@@ -170,7 +170,8 @@ the console baudrate with what's used to communicate with the nRF51, in
 order not to create a bottle neck.
 
 To decode the binary protocol that will now be sent to the console UART
-you need to use the btmon tool from BlueZ 5.40 or later:
+you need to use the btmon tool from `BlueZ 5.40
+<http://www.bluez.org/release-of-bluez-5-40/>`_ or later:
 
 .. code-block:: console
 
