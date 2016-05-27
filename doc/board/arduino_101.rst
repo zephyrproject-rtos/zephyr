@@ -178,8 +178,6 @@ Flashing the Sensor Subsystem Core
      $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
      $ make pristine && make BOARD=arduino_101_sss_factory
 
-#. Verify the JTAG debugger is properly attached to the Arduino 101 board.
-
 #. Verify the Arduino 101 has power.
 
 #. Once the image has been built, flash it with:
@@ -209,8 +207,6 @@ Flashing the x86 Application Core
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
       $ make pristine
       $ make BOARD=arduino_101_factory
-
-#. Verify the JTAG debugger is properly attached to the Arduino 101 board.
 
 #. Verify the Arduino 101 has power.
 
