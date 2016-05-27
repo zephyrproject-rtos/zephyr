@@ -49,6 +49,43 @@ typedef struct _dnode sys_dlist_t;
 typedef struct _dnode sys_dnode_t;
 
 /**
+ * @brief Provide the primitive to iterate on a list
+ * Note: the loop is unsafe and thus __dn should not be removed
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     SYS_DLIST_FOR_EACH_NODE(l, n) {
+ *         <user code>
+ *     }
+ *
+ * @param __dl A pointer on a sys_list_t to iterate on
+ * @param __dn A sys_dnode_t pointer to peek each node of the list
+ */
+#define SYS_DLIST_FOR_EACH_NODE(__dl, __dn)				\
+	for (__dn = sys_dlist_peek_head(__dl); __dn;			\
+	     __dn = sys_dlist_peek_next(__dl, __dn))
+
+/**
+ * @brief Provide the primitive to safely iterate on a list
+ * Note: __dn can be removed, it will not break the loop.
+ *
+ * User _MUST_ add the loop statement curly braces enclosing its own code:
+ *
+ *     SYS_DLIST_FOR_EACH_NODE_SAFE(l, n, s) {
+ *         <user code>
+ *     }
+ *
+ * @param __dl A pointer on a sys_list_t to iterate on
+ * @param __dn A sys_dnode_t pointer to peek each node of the list
+ * @param __dns A sys_dnode_t pointer for the loop to run safely
+ */
+#define SYS_DLIST_FOR_EACH_NODE_SAFE(__dl, __dn, __dns)			\
+	for (__dn = sys_dlist_peek_head(__dl),				\
+		     __dns = sys_dlist_peek_next(__dl, __dn);  		\
+	     __dn; __dn = __dns,					\
+		     __dns = sys_dlist_peek_next(__dl, __dn))
+
+/**
  * @brief initialize list
  *
  * @param list the doubly-linked list
