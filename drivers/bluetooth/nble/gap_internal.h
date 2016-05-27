@@ -157,12 +157,12 @@ struct nble_dbg_rsp {
 
 void on_nble_dbg_rsp(const struct nble_dbg_rsp *rsp);
 
-typedef void (*nble_set_bda_cb_t)(int status, void *user_data);
+typedef void (*nble_set_bda_cb_t)(int status, void *user_data, const bt_addr_le_t *bda);
 
 struct nble_set_bda_req {
-	bt_addr_le_t bda;
 	nble_set_bda_cb_t cb;
 	void *user_data;
+	bt_addr_le_t bda;
 };
 
 void nble_set_bda_req(const struct nble_set_bda_req *req);
@@ -171,6 +171,7 @@ struct nble_set_bda_rsp {
 	nble_set_bda_cb_t cb;
 	void *user_data;
 	int status;
+	bt_addr_le_t bda;
 };
 
 void on_nble_set_bda_rsp(const struct nble_set_bda_rsp *rsp);
@@ -279,7 +280,6 @@ struct nble_sm_security_req {
 void nble_sm_security_req(const struct nble_sm_security_req *req);
 
 enum NBLE_SM_PASSKEY_TYPE {
-	NBLE_SM_REJECT = 0,
 	NBLE_SM_PK_PASSKEY,
 	NBLE_SM_PK_OOB,
 };
@@ -313,6 +313,21 @@ struct nble_sm_common_rsp {
 };
 
 void on_nble_sm_common_rsp(const struct nble_sm_common_rsp *rsp);
+
+struct nble_sm_pairing_response_req {
+	struct bt_conn *conn;
+	uint16_t conn_handle;
+};
+
+void nble_sm_pairing_response_req(const struct nble_sm_pairing_response_req *req);
+
+struct nble_sm_error_req {
+	struct bt_conn *conn;
+	uint16_t conn_handle;
+	uint8_t reason;
+};
+
+void nble_sm_error_req(const struct nble_sm_error_req *req);
 
 struct nble_gap_set_rssi_report_req {
 	uint16_t conn_handle;
@@ -486,6 +501,25 @@ struct nble_sm_status_evt {
 };
 
 void on_nble_sm_status_evt(const struct nble_sm_status_evt *evt);
+
+struct nble_sec_param {
+	uint8_t mitm;
+	uint8_t remote_io;
+};
+
+struct nble_sm_pairing_request_evt {
+	uint16_t conn_handle;
+	struct nble_sec_param sec_param;
+};
+
+void on_nble_sm_pairing_request_evt(const struct nble_sm_pairing_request_evt *evt);
+
+struct nble_sm_security_request_evt {
+	uint16_t conn_handle;
+	struct nble_sec_param sec_param;
+};
+
+void on_nble_sm_security_request_evt(const struct nble_sm_security_request_evt *evt);
 
 struct nble_sm_bond_info;
 typedef void (*ble_bond_info_cb_t)(const struct nble_sm_bond_info *info,

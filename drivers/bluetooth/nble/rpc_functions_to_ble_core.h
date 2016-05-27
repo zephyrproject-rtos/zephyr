@@ -54,7 +54,11 @@
 		 const struct nble_gattc_read_req *)			\
 	FN_SIG_S(nble_gap_set_tx_power_req,				\
 		 const struct nble_gap_set_tx_power_req *)		\
-	FN_SIG_S(nble_dbg_req, const struct nble_dbg_req *)
+	FN_SIG_S(nble_dbg_req, const struct nble_dbg_req *)		\
+	FN_SIG_S(nble_sm_pairing_response_req,				\
+		 const struct nble_sm_pairing_response_req *)		\
+	FN_SIG_S(nble_sm_error_req,					\
+		 const struct nble_sm_error_req *)
 
 
 #define LIST_FN_SIG_P							\

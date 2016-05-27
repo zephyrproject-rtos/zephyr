@@ -72,7 +72,12 @@
 	FN_SIG_S(on_nble_gattc_write_rsp,			\
 		 const struct nble_gattc_write_rsp *)		\
 	FN_SIG_S(on_nble_gap_set_tx_power_rsp,			\
-		 const struct nble_common_rsp *)
+		 const struct nble_common_rsp *)		\
+	FN_SIG_S(on_nble_sm_pairing_request_evt,		\
+		 const struct nble_sm_pairing_request_evt *)	\
+	FN_SIG_S(on_nble_sm_security_request_evt,		\
+		 const struct nble_sm_security_request_evt *)
+
 
 #define LIST_FN_SIG_P						\
 	FN_SIG_P(on_nble_gap_dtm_init_rsp, void *)
