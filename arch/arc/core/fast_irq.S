@@ -45,14 +45,16 @@ SECTION_VAR(NOINIT, _firq_stack)
  *
  * The processor switches to a second register bank so registers from the
  * current bank do not have to be preserved yet. The only issue is the LP_START/
- * LP_COUNT/LP_END registers, which are not banked.
+ * LP_COUNT/LP_END registers, which are not banked. These can be saved
+ * in available callee saved registers.
  *
  * If all FIRQ ISRs are programmed such that there are no use of the LP
  * registers (ie. no LPcc instruction), and CONFIG_ARC_STACK_CHECKING is
- * not set, then the kernel can be configured to remove the use of _firq_enter().
+ * not set, then the kernel can be configured to not save and restore them.
  *
  * When entering a FIRQ, interrupts might as well be locked: the processor is
- * running at its highest priority, and cannot be preempted by anything.
+ * running at its highest priority, and cannot be interrupted by any other
+ * interrupt. An exception, however, can be taken.
  *
  * Assumption by _isr_demux: r3 is untouched by _firq_enter.
  *
@@ -60,6 +62,11 @@ SECTION_VAR(NOINIT, _firq_stack)
  */
 
 SECTION_FUNC(TEXT, _firq_enter)
+
+	/*
+	 * ATTENTION:
+	 * firq uses a 2nd register bank so GPRs do not need to be saved.
+	 */
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* disable stack checking */
@@ -70,20 +77,13 @@ SECTION_FUNC(TEXT, _firq_enter)
 
 #ifndef CONFIG_FIRQ_NO_LPCC
 	/*
-	 * Unlike the rest of context switching code, r2 is loaded with something
-	 * else than 'current' in this routine: this is to preserve r3 so that it
-	 * does not have to be fetched again in _isr_demux.
+	 * Save LP_START/LP_COUNT/LP_END because called handler might use.
+	 * Save these in callee saved registers to avoid using memory.
+	 * These will be saved by the compiler if it needs to spill them.
 	 */
-
-	/* save LP_START/LP_COUNT/LP_END variables */
-	mov_s r1, _nanokernel
-
-	st lp_count, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_count_OFFSET]
-
-	lr r2, [_ARC_V2_LP_START]
-	st_s r2, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_start_OFFSET]
-	lr r2, [_ARC_V2_LP_END]
-	st_s r2, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_end_OFFSET]
+	mov r23,lp_count
+	lr r24, [_ARC_V2_LP_START]
+	lr r25, [_ARC_V2_LP_END]
 #endif
 
 	j @_isr_demux
@@ -97,30 +97,19 @@ SECTION_FUNC(TEXT, _firq_enter)
 
 SECTION_FUNC(TEXT, _firq_exit)
 
+#ifndef CONFIG_FIRQ_NO_LPCC
+	/* restore lp_count, lp_start, lp_end from r23-r25 */
+	mov lp_count,r23
+	sr r24, [_ARC_V2_LP_START]
+	sr r25, [_ARC_V2_LP_END]
+#endif
+
 	mov_s r1, _nanokernel
 	ld_s r2, [r1, __tNANO_current_OFFSET]
 
-#ifndef CONFIG_FIRQ_NO_LPCC
-
-	/* assumption: r1 contains _nanokernel, r2 contains the current thread */
-
-	/* restore LP_START/LP_COUNT/LP_END variables */
-
-	/* cannot load lp_count from memory */
-	ld_s r3, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_count_OFFSET]
-	mov lp_count, r3
-
-	ld_s r3, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_start_OFFSET]
-	sr r3, [_ARC_V2_LP_START]
-	ld_s r3, [r1, __tNANO_firq_regs_OFFSET + __tFirqRegs_lp_end_OFFSET]
-	sr r3, [_ARC_V2_LP_END]
-
-	/* exiting here: r1/r2 unchanged, r0/r3 destroyed */
-#endif
-
 #if CONFIG_NUM_IRQ_PRIO_LEVELS > 1
-	/* check if we're a nested interrupt: if so, let the interrupted interrupt
-	 * handle the reschedule */
+	/* check if we're a nested interrupt: if so, let the interrupted
+	 * interrupt handle the reschedule */
 
 	lr r3, [_ARC_V2_AUX_IRQ_ACT]
 
@@ -225,9 +214,9 @@ _firq_return_from_coop:
 	/*
 	 * There are only two interrupt lock states: locked and unlocked. When
 	 * entering _Swap(), they are always locked, so the IE bit is unset in
-	 * status32. If the incoming thread had them locked recursively, it means
-	 * that the IE bit should stay unset. The only time the bit has to change
-	 * is if they were not locked recursively.
+	 * status32. If the incoming thread had them locked recursively, it
+	 * means that the IE bit should stay unset. The only time the bit
+	 * has to change is if they were not locked recursively.
 	 */
 	and.f r3, r3, (1 << 4)
 	or.nz r0, r0, _ARC_V2_STATUS32_IE

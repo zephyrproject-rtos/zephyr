@@ -130,14 +130,6 @@ struct callee_saved {
 };
 typedef struct callee_saved tCalleeSaved;
 
-/* registers saved by software when taking a FIRQ */
-struct firq_regs {
-	uint32_t lp_count;
-	uint32_t lp_start;
-	uint32_t lp_end;
-};
-typedef struct firq_regs tFirqRegs;
-
 #endif /* _ASMLANGUAGE */
 
 /* Bitmask definitions for the struct tcs->flags bit field */
@@ -226,7 +218,6 @@ struct s_NANO {
 	 * there is no need to track it in _nanokernel.
 	 */
 
-	struct firq_regs firq_regs;
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;
 	int32_t task_timeout;

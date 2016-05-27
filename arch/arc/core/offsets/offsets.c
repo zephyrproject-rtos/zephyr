@@ -39,7 +39,6 @@
 
 /* ARCv2-specific tNANO structure member offsets */
 GEN_OFFSET_SYM(tNANO, rirq_sp);
-GEN_OFFSET_SYM(tNANO, firq_regs);
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 GEN_OFFSET_SYM(tNANO, idle);
 #endif
@@ -101,12 +100,6 @@ GEN_OFFSET_SYM(tCalleeSaved, r26);
 GEN_OFFSET_SYM(tCalleeSaved, fp);
 GEN_OFFSET_SYM(tCalleeSaved, r30);
 GEN_ABSOLUTE_SYM(__tCalleeSaved_SIZEOF, sizeof(tCalleeSaved));
-
-/* ARCv2-specific registers-saved-in-FIRQ structure member offsets */
-GEN_OFFSET_SYM(tFirqRegs, lp_count);
-GEN_OFFSET_SYM(tFirqRegs, lp_start);
-GEN_OFFSET_SYM(tFirqRegs, lp_end);
-GEN_ABSOLUTE_SYM(__tFirqRegs_SIZEOF, sizeof(tFirqRegs));
 
 /* size of the struct tcs structure sans save area for floating point regs */
 GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF, sizeof(tTCS));
