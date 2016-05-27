@@ -40,6 +40,7 @@ ARC EM4 Instruction Set
        :maxdepth: 1
 
        arduino_101
+       em_starterkit
 
 For details on how to flash a Zephyr image, see the respective board reference
 documentation.
