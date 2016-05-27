@@ -99,10 +99,19 @@ static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static struct vnd_long_value {
 	/* TODO: buffer needs to be per connection */
 	uint8_t buf[MAX_DATA];
+	uint16_t prep_data_len;
 	uint8_t data[MAX_DATA];
+	uint16_t data_len;
+	uint8_t prep_write_err;
 } vnd_long_value = {
-	.buf = { 'V', 'e', 'n', 'd', 'o', 'r' },
-	.data = { 'V', 'e', 'n', 'd', 'o', 'r' },
+	.data = { 'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '1',
+		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '2',
+		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '3',
+		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '4',
+		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '5',
+		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '6',
+		  '.', ' ' },
+	.data_len = MAX_DATA,
 };
 
 static ssize_t read_long_vnd(struct bt_conn *conn,
@@ -112,7 +121,7 @@ static ssize_t read_long_vnd(struct bt_conn *conn,
 	struct vnd_long_value *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value->data,
-				 sizeof(value->data));
+				 value->data_len);
 }
 
 static ssize_t write_long_vnd(struct bt_conn *conn,
@@ -121,11 +130,22 @@ static ssize_t write_long_vnd(struct bt_conn *conn,
 {
 	struct vnd_long_value *value = attr->user_data;
 
-	if (offset + len > sizeof(value->buf)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	if (value->prep_write_err) {
+		return len;
+	}
+
+	if (offset > value->data_len) {
+		value->prep_write_err = BT_ATT_ERR_INVALID_OFFSET;
+		return len;
+	}
+
+	if (offset + len > MAX_DATA) {
+		value->prep_write_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+		return len;
 	}
 
 	/* Copy to buffer */
+	value->prep_data_len += len;
 	memcpy(value->buf + offset, buf, len);
 
 	return len;
@@ -135,16 +155,34 @@ static ssize_t flush_long_vnd(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, uint8_t flags)
 {
 	struct vnd_long_value *value = attr->user_data;
+	uint16_t flushed_data_len = 0;
+
+	if (!value->prep_data_len && !value->prep_write_err) {
+		return flushed_data_len;
+	}
+
+	if (value->prep_write_err) {
+		uint8_t err = value->prep_write_err;
+
+		memset(value->buf, 0, value->prep_data_len);
+		value->prep_data_len = 0;
+		value->prep_write_err = 0;
+
+		return BT_GATT_ERR(err);
+	}
+
+	flushed_data_len = value->prep_data_len;
 
 	switch (flags) {
-	case BT_GATT_FLUSH_DISCARD:
-		/* Discard buffer reseting it back with data */
-		memcpy(value->buf, value->data, sizeof(value->buf));
-		return 0;
 	case BT_GATT_FLUSH_SYNC:
 		/* Sync buffer to data */
-		memcpy(value->data, value->buf, sizeof(value->data));
-		return 0;
+		memcpy(value->data, value->buf, value->prep_data_len);
+		value->data_len = value->prep_data_len;
+		/* Fallthrough */
+	case BT_GATT_FLUSH_DISCARD:
+		memset(value->buf, 0, value->prep_data_len);
+		value->prep_data_len = 0;
+		return flushed_data_len;
 	}
 
 	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
