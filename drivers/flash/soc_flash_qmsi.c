@@ -25,6 +25,54 @@
 #include "qm_flash.h"
 #include "qm_soc_regs.h"
 
+struct soc_flash_data {
+	struct nano_sem sem;
+};
+
+#ifdef CONFIG_SOC_FLASH_QMSI_API_REENTRANCY
+static struct soc_flash_data soc_flash_context;
+#define FLASH_CONTEXT (&soc_flash_context)
+static const int reentrancy_protection = 1;
+#else
+#define FLASH_CONTEXT (NULL)
+static const int reentrancy_protection;
+#endif /* CONFIG_SOC_FLASH_QMSI_API_REENTRANCY */
+
+
+static void flash_reentrancy_init(struct device *dev)
+{
+	struct soc_flash_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_init(&context->sem);
+	nano_sem_give(&context->sem);
+}
+
+static void flash_critical_region_start(struct device *dev)
+{
+	struct soc_flash_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+}
+
+static void flash_critical_region_end(struct device *dev)
+{
+	struct soc_flash_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_give(&context->sem);
+}
+
 static inline bool is_aligned_32(uint32_t data)
 {
 	return (data & 0x3) ? false : true;
@@ -136,7 +184,9 @@ static int flash_qmsi_write(struct device *dev, off_t addr,
 		}
 #endif
 
+		flash_critical_region_start(dev);
 		qm_flash_word_write(flash, reg, offset, data_word);
+		flash_critical_region_end(dev);
 	}
 
 	return 0;
@@ -178,7 +228,9 @@ static int flash_qmsi_erase(struct device *dev, off_t addr, size_t size)
 				     (QM_FLASH_PAGE_SIZE_BITS + 1));
 		}
 #endif
+		flash_critical_region_start(dev);
 		qm_flash_page_erase(flash, reg, page);
+		flash_critical_region_end(dev);
 	}
 
 	return 0;
@@ -197,11 +249,14 @@ static int flash_qmsi_write_protection(struct device *dev, bool enable)
 		qm_cfg.write_disable = QM_FLASH_WRITE_ENABLE;
 	}
 
+	flash_critical_region_start(dev);
 	qm_flash_set_config(QM_FLASH_0, &qm_cfg);
 
 #if defined(CONFIG_SOC_QUARK_SE)
 	qm_flash_set_config(QM_FLASH_1, &qm_cfg);
 #endif
+
+	flash_critical_region_end(dev);
 
 	return 0;
 }
@@ -229,9 +284,11 @@ static int quark_flash_init(struct device *dev)
 	qm_flash_set_config(QM_FLASH_1, &qm_cfg);
 #endif
 
+	flash_reentrancy_init(dev);
+
 	return 0;
 }
 
 DEVICE_INIT(quark_flash, CONFIG_SOC_FLASH_QMSI_DEV_NAME,
-	    quark_flash_init, NULL, NULL, SECONDARY,
+	    quark_flash_init, FLASH_CONTEXT, NULL, SECONDARY,
 	    CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

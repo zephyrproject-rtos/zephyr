@@ -131,3 +131,11 @@ config SOC_FLASH_NRF5_DEV_NAME
 	default "NRF5_FLASH"
 	help
 	  Specify the device name for the flash driver.
+
+config SOC_FLASH_QMSI_API_REENTRANCY
+	bool
+	prompt "flash driver API reentrancy for QMSI shim driver"
+	depends on SOC_FLASH_QMSI
+	default n
+	help
+	Enable support for QMSI flash driver API reentrancy.
