@@ -373,19 +373,39 @@ void on_nble_sm_passkey_req_evt(const struct nble_sm_passkey_req_evt *ev)
 	bt_conn_unref(conn);
 }
 
+static void nble_security_reply(struct bt_conn *conn,
+				struct nble_sm_passkey *par)
+{
+	struct nble_sm_passkey_reply_req rsp = {
+		.conn = conn,
+		.conn_handle = conn->handle,
+	};
+
+	memcpy(&rsp.params, par, sizeof(*par));
+
+	nble_sm_passkey_reply_req(&rsp);
+}
+
 static int sm_error(struct bt_conn *conn, uint8_t reason)
 {
-	struct nble_sm_passkey_reply_req req;
+	struct nble_sm_passkey params;
 
-	req.conn = conn;
-	req.conn_handle = conn->handle;
+	params.type = NBLE_GAP_SM_REJECT;
+	params.reason = reason;
 
-	req.params.type = NBLE_GAP_SM_REJECT;
-	req.params.reason = reason;
-
-	nble_sm_passkey_reply_req(&req);
+	nble_security_reply(conn, &params);
 
 	return 0;
+}
+
+static void legacy_passkey_entry(struct bt_smp *smp, unsigned int passkey)
+{
+	struct nble_sm_passkey pkey = {
+		.type = NBLE_SM_PK_PASSKEY,
+		.passkey = passkey,
+	};
+
+	nble_security_reply(smp->conn, &pkey);
 }
 
 int bt_smp_auth_cancel(struct bt_conn *conn)
@@ -393,6 +413,29 @@ int bt_smp_auth_cancel(struct bt_conn *conn)
 	BT_DBG("");
 
 	return sm_error(conn, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+}
+
+int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
+{
+	struct bt_smp *smp;
+
+	BT_DBG("");
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		legacy_passkey_entry(smp, passkey);
+		return 0;
+	}
+
+	return 0;
 }
 
 int bt_smp_init(void)
