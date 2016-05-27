@@ -117,7 +117,7 @@ struct bt_le_adv_param {
 
 /** Helper to declare advertising parameters inline
   *
-  * @param _flags     Advertising Flags
+  * @param _options   Advertising Options
   * @param _int_min   Minimum advertising interval
   * @param _int_max   Maximum advertising interval
   */
