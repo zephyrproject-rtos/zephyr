@@ -74,3 +74,4 @@ following subsections:
    :maxdepth: 1
 
    devel.rst
+   ../../board/arduino_101_ble.rst
