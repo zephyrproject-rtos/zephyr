@@ -38,6 +38,7 @@ struct i2c_qmsi_ss_config_info {
 struct i2c_qmsi_ss_driver_data {
 	device_sync_call_t sync;
 	int transfer_status;
+	struct nano_sem sem;
 };
 
 static int i2c_qmsi_ss_init(struct device *dev);
@@ -169,6 +170,7 @@ static void i2c_qmsi_ss_config_irq_1(void)
 static int i2c_qmsi_ss_configure(struct device *dev, uint32_t config)
 {
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
+	struct i2c_qmsi_ss_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	union dev_config cfg;
 	qm_ss_i2c_config_t qm_cfg;
 
@@ -193,10 +195,12 @@ static int i2c_qmsi_ss_configure(struct device *dev, uint32_t config)
 		return -EINVAL;
 	}
 
+	nano_sem_take(&driver_data->sem, TICKS_UNLIMITED);
 	if (qm_ss_i2c_set_config(instance, &qm_cfg) != 0) {
+		nano_sem_give(&driver_data->sem);
 		return -EIO;
 	}
-
+	nano_sem_give(&driver_data->sem);
 	return 0;
 }
 
@@ -247,7 +251,9 @@ static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
 		xfer.callback_data = dev;
 		xfer.stop = stop;
 
+		nano_sem_take(&driver_data->sem, TICKS_UNLIMITED);
 		rc = qm_ss_i2c_master_irq_transfer(instance, &xfer, addr);
+		nano_sem_give(&driver_data->sem);
 		if (rc != 0)
 			return -EIO;
 
@@ -291,6 +297,10 @@ static int i2c_qmsi_ss_init(struct device *dev)
 
 	config->irq_cfg();
 	ss_clk_i2c_enable(instance);
+
+	nano_sem_init(&driver_data->sem);
+	nano_sem_give(&driver_data->sem);
+
 	err = i2c_qmsi_ss_configure(dev, config->default_cfg.raw);
 
 	if (err < 0) {
@@ -298,7 +308,6 @@ static int i2c_qmsi_ss_init(struct device *dev)
 	}
 
 	device_sync_call_init(&driver_data->sync);
-
 	dev->driver_api = &api;
 	return 0;
 }
