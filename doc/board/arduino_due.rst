@@ -141,7 +141,7 @@ To build the bossa tool, follow these steps:
 
 #. Checkout the bossa tool's code from the repository.
 
-  .. code-block:: console
+   .. code-block:: console
 
      $ git clone https://github.com/shumatech/BOSSA.git
      $ cd BOSSA
@@ -149,13 +149,13 @@ To build the bossa tool, follow these steps:
 #. Checkout the arduino branch. The code on the master branch does not
    work with Arduino Due.
 
-  .. code-block:: console
+   .. code-block:: console
 
      $ git checkout arduino
 
 #. Build the command line version of the bossa tool.
 
-  .. code-block:: console
+   .. code-block:: console
 
      $ make bin/bossac
 
