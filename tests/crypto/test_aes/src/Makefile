@@ -1,2 +1,2 @@
-ccflags-y += -I$(srctree)/tests/include -I$(srctree)/lib/crypto/tinycrypt/include
+ccflags-y += -I$(srctree)/tests/include
 obj-y = test_aes.o

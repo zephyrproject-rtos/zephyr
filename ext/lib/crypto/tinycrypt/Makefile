@@ -1,4 +1,4 @@
-subdir-ccflags-y +=-I$(srctree)/lib/crypto/tinycrypt/include
+subdir-ccflags-y +=-I$(srctree)/ext/lib/crypto/tinycrypt/include
 
 obj-$(CONFIG_TINYCRYPT) := source/utils.o
 obj-$(CONFIG_TINYCRYPT_ECC_DH) += source/ecc_dh.o source/ecc.o

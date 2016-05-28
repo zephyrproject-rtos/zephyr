@@ -1,7 +1,5 @@
-# Kconfig - external source code configuration options
-
 #
-# Copyright (c) 2016 Linaro Ltd.
+# Copyright (c) 2016 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,10 +14,8 @@
 # limitations under the License.
 #
 
-menu "External Sources"
+menu "Cryptography"
 
-source "ext/hal/Kconfig"
-
-source "ext/lib/crypto/Kconfig"
+source "ext/lib/crypto/tinycrypt/Kconfig"
 
 endmenu

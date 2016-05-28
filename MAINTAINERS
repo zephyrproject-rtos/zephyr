@@ -80,6 +80,11 @@ M:	Anas Nashif <anas.nashif@intel.com>
 S:	Supported
 F:	ext/hal/qmsi/
 
+TINYCRYPT
+M:	Constanza Heath <constanza.m.heath@intel.com>
+S:	Supported
+F:	ext/lib/crypto/tinycrypt
+
 THE REST
 M:	Anas Nashif <anas.nashif@intel.com>
 L:	devel@lists.zephyrproject.com
