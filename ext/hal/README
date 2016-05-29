@@ -5,12 +5,17 @@ The following HALs are supported:
 cmsis
 -------
 The ARM Cortex Microcontroller Software Interface Standard (CMSIS) defines a
-set of standard interfaces to ARM Cortex-M SOCs.
+set of standard interfaces to ARM Cortex-M SoCs.
 
 ksdk
 -------
 The Kinetis Software Development Kit (KSDK) provides device header files and
-peripheral drivers for Kinetis SOCs.
+peripheral drivers for Kinetis SoCs.
+
+nordic
+-------
+The Nordic Semiconductor Microcontroller Development Kit (MDK) provides device
+header files for the Nordic Semiconductor nRF5 SoCs.
 
 qmsi
 -------

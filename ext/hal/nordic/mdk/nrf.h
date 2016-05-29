@@ -1,4 +1,4 @@
-/* Copyright (c) 2012 ARM LIMITED
+/* Copyright (c) 2016, Nordic Semiconductor ASA
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -11,9 +11,9 @@
  *     this list of conditions and the following disclaimer in the documentation
  *     and/or other materials provided with the distribution.
  *
- *   * Neither the name of ARM nor the names of its contributors may be used to
- *     endorse or promote products derived from this software without specific
- *     prior written permission.
+ *   * Neither the name of Nordic Semiconductor ASA nor the names of its
+ *     contributors may be used to endorse or promote products derived from
+ *     this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -27,43 +27,40 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+ 
+#ifndef NRF_H
+#define NRF_H
 
-#ifndef SYSTEM_NRF52_H
-#define SYSTEM_NRF52_H
+/* MDK version */
+#define MDK_MAJOR_VERSION   8
+#define MDK_MINOR_VERSION   6
+#define MDK_MICRO_VERSION   0
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#if defined(_WIN32)
+    /* Do not include nrf51 specific files when building for PC host */
+#elif defined(__unix)
+    /* Do not include nrf51 specific files when building for PC host */
+#elif defined(__APPLE__)
+    /* Do not include nrf51 specific files when building for PC host */
+#else
 
-#include <stdint.h>
+    /* Family selection for family includes. */
+    #if defined (NRF51)
+        #include "nrf51.h"
+        #include "nrf51_bitfields.h"
+        #include "nrf51_deprecated.h"
+    #elif defined (NRF52)
+        #include "nrf52.h"
+        #include "nrf52_bitfields.h"
+        #include "nrf51_to_nrf52.h"
+        #include "nrf52_name_change.h"
+    #else
+        #error "Device family must be defined. See nrf.h."
+    #endif /* NRF51, NRF52 */
 
+    #include "compiler_abstraction.h"
 
-extern uint32_t SystemCoreClock;    /*!< System Clock Frequency (Core Clock)  */
+#endif /* _WIN32 || __unix || __APPLE__ */
 
-/**
- * Initialize the system
- *
- * @param  none
- * @return none
- *
- * @brief  Setup the microcontroller system.
- *         Initialize the System and update the SystemCoreClock variable.
- */
-extern void SystemInit (void);
+#endif /* NRF_H */
 
-/**
- * Update SystemCoreClock variable
- *
- * @param  none
- * @return none
- *
- * @brief  Updates the SystemCoreClock with current core Clock
- *         retrieved from cpu registers.
- */
-extern void SystemCoreClockUpdate (void);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* SYSTEM_NRF52_H */

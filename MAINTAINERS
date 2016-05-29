@@ -81,6 +81,11 @@ M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
 S:	Supported
 F:	drivers/flash/
 
+NORDIC MDK
+M:	Carles Cufi <carles.cufi@nordicsemi.no>
+S:	Supported
+F:	ext/hal/nordic/mdk
+
 POWER MANAGEMENT
 M:	Ramesh Thomas <ramesh.thomas@intel.com>
 M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>

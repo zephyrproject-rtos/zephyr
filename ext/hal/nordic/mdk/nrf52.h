@@ -134,7 +134,7 @@ typedef enum {
 #define __FPU_PRESENT                  1            /*!< FPU present or not                                                    */
 /** @} */ /* End of group Configuration_of_CMSIS */
 
-#include <core_cm4.h>
+#include <core_cm4.h>                               /*!< Cortex-M4 processor and core peripherals                              */
 #include "system_nrf52.h"                           /*!< nrf52 System                                                          */
 
 
