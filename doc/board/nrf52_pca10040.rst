@@ -377,16 +377,6 @@ shell :file:`$ZEPHYR_BASE/samples/shell`.
 
 #. Connect the micro-USB cable to the nRF52 DK and to your computer.
 
-#. Convert the Zephyr kernel image to Intel Hex:
-
-   .. code-block:: console
-
-      $ cd samples/shell
-      $ objcopy -O ihex outdir/zephyr.elf outdir/zephyr.hex
-
-   The :code:`objcopy` binary must be the one included with the
-   toolchain you used to build the Zephyr kernel
-
 #. Erase the flash memory in the nRF52832:
 
    .. code-block:: console
