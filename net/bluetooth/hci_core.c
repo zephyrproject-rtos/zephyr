@@ -3220,6 +3220,10 @@ int bt_enable(bt_ready_cb_t cb)
 		return -ENODEV;
 	}
 
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		return -EALREADY;
+	}
+
 	/* Initialize the buffer pools */
 	net_buf_pool_init(hci_cmd_pool);
 #if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)

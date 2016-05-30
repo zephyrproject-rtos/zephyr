@@ -101,6 +101,10 @@ int bt_enable(bt_ready_cb_t cb)
 		return -EINVAL;
 	}
 
+	if (atomic_test_and_set_bit(&nble.flags, NBLE_FLAG_ENABLE)) {
+		return -EALREADY;
+	}
+
 	ret = nble_open();
 	if (ret) {
 		return ret;
