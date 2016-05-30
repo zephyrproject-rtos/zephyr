@@ -151,15 +151,8 @@ _swap_return_from_coop:
 	st  0, [r2, __tTCS_intlock_key_OFFSET]
 	ld_s r0, [r2, __tTCS_return_value_OFFSET]
 
-	/*
-	 * Adjust the stack here in case we go to _return_from_exc: this allows
-	 * keeping handling both coop and irq cases in _return_from_exc without
-	 * adding extra logic.
-	 */
-	add_s sp, sp, 8
 	lr ilink, [_ARC_V2_STATUS32]
 	bbit1 ilink, _ARC_V2_STATUS32_AE_BIT, _return_from_exc
-	sub_s sp, sp, 8
 
 	pop_s blink /* pc into blink */
 	pop_s r3    /* status32 into r3 */
@@ -173,39 +166,32 @@ _swap_return_from_coop:
 _swap_return_from_rirq:
 _swap_return_from_firq:
 
-	_pop_irq_stack_frame
-
-	lr ilink, [_ARC_V2_STATUS32]
-	bbit1 ilink, _ARC_V2_STATUS32_AE_BIT, _return_from_exc
-
-	ld ilink, [sp, -4] /* status32 into ilink */
-#ifdef CONFIG_ARC_STACK_CHECKING
-	and ilink, ilink, 0x7fffbffe // keep SC off till we stop using under SP
-#else
-	and ilink, ilink, 0x7ffffffe // keep interrupts disabled until seti
-#endif
-	kflag ilink
-
-	ld ilink, [sp, -8] /* pc into ilink */
-
-#ifdef CONFIG_ARC_STACK_CHECKING
-	/* Enable stack checking now it is safe */
-	push_s r3
 	lr r3, [_ARC_V2_STATUS32]
-	bset r3, r3, _ARC_V2_STATUS32_SC_BIT
-	flag r3
-	pop_s r3
-#endif
-	j.d [ilink]
-	seti (_ARC_V2_DEF_IRQ_LEVEL | (1 << 4))
+	bbit1 r3, _ARC_V2_STATUS32_AE_BIT, _return_from_exc_irq
+
+	/* pretend interrupt happened to use rtie instruction */
+	lr r3, [_ARC_V2_AUX_IRQ_ACT]
+	brne r3,0,_swap_already_in_irq
+
+	or r3,r3,(1<<(CONFIG_NUM_IRQ_PRIO_LEVELS-1)) /* use lowest */
+	sr r3, [_ARC_V2_AUX_IRQ_ACT]
+
+_swap_already_in_irq:
+	rtie
 
 .balign 4
+_return_from_exc_irq:
+	_pop_irq_stack_frame
+	sub_s sp, sp, 8
+
 _return_from_exc:
+
 	/* put the return address to eret */
-	ld ilink, [sp, -8] /* pc into ilink */
+	ld ilink, [sp] /* pc into ilink */
 	sr ilink, [_ARC_V2_ERET]
 
 	/* put status32 into estatus */
-	ld ilink, [sp, -4] /* status32 into ilink */
+	ld ilink, [sp, 4] /* status32 into ilink */
 	sr ilink, [_ARC_V2_ERSTATUS]
+	add_s sp, sp, 8
 	rtie
