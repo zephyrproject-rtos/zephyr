@@ -80,7 +80,7 @@ struct bt_storage {
 
 };
 
-void bt_storage_register(struct bt_storage *storage);
+void bt_storage_register(const struct bt_storage *storage);
 
 /** Clear all storage keys for a specific address
   *

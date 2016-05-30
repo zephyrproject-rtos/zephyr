@@ -43,7 +43,7 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 
 struct nble nble;
 
-static struct bt_storage *storage;
+static const struct bt_storage *storage;
 
 #define BT_SMP_IO_DISPLAY_ONLY			0x00
 #define BT_SMP_IO_DISPLAY_YESNO			0x01
@@ -552,7 +552,7 @@ void on_nble_up(void)
 	send_dm_config();
 }
 
-void bt_storage_register(struct bt_storage *bt_storage)
+void bt_storage_register(const struct bt_storage *bt_storage)
 {
 	storage = bt_storage;
 }
