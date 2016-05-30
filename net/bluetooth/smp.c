@@ -94,6 +94,7 @@ enum {
 	SMP_FLAG_BOND,		/* if bonding */
 	SMP_FLAG_SC_DEBUG_KEY,	/* if Secure Connection are using debug key */
 	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
+	SMP_FLAG_DHCHECK_WAIT,	/* if waiting for remote DHCheck (as slave) */
 };
 
 /* SMP channel specific context */
@@ -1895,6 +1896,12 @@ void bt_smp_dhkey_ready(const uint8_t *dhkey)
 		return;
 	}
 
+	/* wait for remote DHKey Check */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT)) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+		return;
+	}
+
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
 		uint8_t err;
 
@@ -2047,6 +2054,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		smp->passkey_round++;
 		if (smp->passkey_round == 20) {
 			atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+			atomic_set_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT);
 			return 0;
 		}
 
@@ -2060,6 +2068,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+	atomic_set_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT);
 	smp_send_pairing_random(smp);
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
@@ -2510,6 +2519,7 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	if (smp->chan.conn->role == BT_HCI_ROLE_SLAVE) {
+		atomic_clear_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT);
 		memcpy(smp->e, req->e, sizeof(smp->e));
 
 		/* wait for DHKey being generated */
@@ -3313,6 +3323,12 @@ int bt_smp_auth_passkey_confirm(struct bt_conn *conn)
 
 	/* wait for DHKey being generated */
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING)) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+		return 0;
+	}
+
+	/* wait for remote DHKey Check */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT)) {
 		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
 		return 0;
 	}
