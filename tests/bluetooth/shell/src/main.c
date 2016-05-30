@@ -1888,14 +1888,14 @@ static int cmd_bredr_connectable(int argc, char *argv[])
 #endif
 
 #define HELP_NONE "[none]"
-#define HELP_ADDR "<address: XX:XX:XX:XX:XX:XX> <address type: (public)>"
+#define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 static const struct shell_cmd commands[] = {
-	{ "init", cmd_init, HELP_ADDR },
-	{ "connect", cmd_connect_le, HELP_ADDR },
+	{ "init", cmd_init, HELP_ADDR_LE },
+	{ "connect", cmd_connect_le, HELP_ADDR_LE },
 	{ "disconnect", cmd_disconnect, HELP_NONE },
-	{ "auto-conn", cmd_auto_conn, HELP_ADDR },
-	{ "select", cmd_select, HELP_ADDR },
+	{ "auto-conn", cmd_auto_conn, HELP_ADDR_LE },
+	{ "select", cmd_select, HELP_ADDR_LE },
 	{ "scan", cmd_scan, "<value: on, off>" },
 	{ "advertise", cmd_advertise,
 	"<type: off, on, scan, nconn> <mode: discov, non_discov>"  },
