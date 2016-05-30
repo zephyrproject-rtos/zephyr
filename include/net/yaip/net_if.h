@@ -403,4 +403,4 @@ struct net_if_api {
 }
 #endif
 
-#endif /* __NET_IFACE_H__ */
+#endif /* __NET_IF_H__ */
