@@ -38,22 +38,6 @@
 static struct net_context contexts[NET_MAX_CONTEXT];
 static struct nano_sem contexts_lock;
 
-static void context_sem_give(struct nano_sem *chan)
-{
-	switch (sys_execution_context_type_get()) {
-	case NANO_CTX_FIBER:
-		nano_fiber_sem_give(chan);
-		break;
-	case NANO_CTX_TASK:
-		nano_task_sem_give(chan);
-		break;
-	case NANO_CTX_ISR:
-	default:
-		/* Invalid context type */
-		break;
-	}
-}
-
 static int context_port_used(enum ip_protocol ip_proto, uint16_t local_port,
 			     const struct net_addr *local_addr)
 
@@ -126,7 +110,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 		}
 	}
 
-	context_sem_give(&contexts_lock);
+	nano_sem_give(&contexts_lock);
 
 	return context;
 }
@@ -145,7 +129,7 @@ void net_context_put(struct net_context *context)
 
 	memset(&context->tuple, 0, sizeof(context->tuple));
 
-	context_sem_give(&contexts_lock);
+	nano_sem_give(&contexts_lock);
 }
 
 void net_context_init(void)
@@ -160,5 +144,5 @@ void net_context_init(void)
 		nano_fifo_init(&contexts[i].rx_queue);
 	}
 
-	context_sem_give(&contexts_lock);
+	nano_sem_give(&contexts_lock);
 }
