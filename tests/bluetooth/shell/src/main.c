@@ -34,6 +34,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/storage.h>
 
 #include <misc/shell.h>
 
@@ -47,6 +48,7 @@
 #define DATA_MTU		(23 * CREDITS)
 
 static struct bt_conn *default_conn;
+static bt_addr_le_t id_addr;
 
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */
 static struct bt_conn *pairing_conn;
@@ -218,30 +220,6 @@ static struct bt_conn_cb conn_callbacks = {
 
 static uint16_t appearance_value = 0x0001;
 
-static void bt_ready(int err)
-{
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Bluetooth initialized\n");
-
-	gap_init(DEVICE_NAME, appearance_value);
-}
-
-static int cmd_init(int argc, char *argv[])
-{
-	int err;
-
-	err = bt_enable(bt_ready);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-	}
-
-	return 0;
-}
-
 static int char2hex(const char *c, uint8_t *x)
 {
 	if (*c >= '0' && *c <= '9') {
@@ -289,6 +267,87 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 		addr->type = BT_ADDR_LE_RANDOM;
 	} else {
 		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static ssize_t storage_read(const bt_addr_le_t *addr, uint16_t key, void *data,
+			    size_t length)
+{
+	if (addr) {
+		return -ENOENT;
+	}
+
+	if (key == BT_STORAGE_ID_ADDR && length == sizeof(id_addr) &&
+	    bt_addr_le_cmp(&id_addr, BT_ADDR_LE_ANY)) {
+		bt_addr_le_copy(data, &id_addr);
+		return sizeof(id_addr);
+	}
+
+	return -EIO;
+}
+
+static ssize_t storage_write(const bt_addr_le_t *addr, uint16_t key,
+			     const void *data, size_t length)
+{
+	if (addr) {
+		return -ENOENT;
+	}
+
+	if (key == BT_STORAGE_ID_ADDR && length == sizeof(id_addr)) {
+		bt_addr_le_copy(&id_addr, data);
+		return sizeof(id_addr);
+	}
+
+	return -EIO;
+}
+
+static int storage_clear(const bt_addr_le_t *addr)
+{
+	return -ENOSYS;
+}
+
+static void bt_ready(int err)
+{
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	printk("Bluetooth initialized\n");
+
+	gap_init(DEVICE_NAME, appearance_value);
+}
+
+static int cmd_init(int argc, char *argv[])
+{
+	static const struct bt_storage storage = {
+		.read = storage_read,
+		.write = storage_write,
+		.clear = storage_clear,
+	};
+	int err;
+
+	if (argc > 1) {
+		if (argc < 3) {
+			printk("Invalid address\n");
+			return -EINVAL;
+		}
+
+		err = str2bt_addr_le(argv[1], argv[2], &id_addr);
+		if (err) {
+			printk("Invalid address (err %d)\n", err);
+			bt_addr_le_cmp(&id_addr, BT_ADDR_LE_ANY);
+			return -EINVAL;
+		}
+
+		bt_storage_register(&storage);
+	}
+
+	err = bt_enable(bt_ready);
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
 	}
 
 	return 0;
@@ -1832,7 +1891,7 @@ static int cmd_bredr_connectable(int argc, char *argv[])
 #define HELP_ADDR "<address: XX:XX:XX:XX:XX:XX> <address type: (public)>"
 
 static const struct shell_cmd commands[] = {
-	{ "init", cmd_init, HELP_NONE },
+	{ "init", cmd_init, HELP_ADDR },
 	{ "connect", cmd_connect_le, HELP_ADDR },
 	{ "disconnect", cmd_disconnect, HELP_NONE },
 	{ "auto-conn", cmd_auto_conn, HELP_ADDR },
