@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
+#include <string.h>
+#include <errno.h>
+#include <misc/printk.h>
+
 #include "config.h"
 #include "tcp.h"
 
 #include <net/ip_buf.h>
 #include <net/net_core.h>
 #include <net/net_socket.h>
-
-#include <errno.h>
-#include <stdio.h>
 
 uip_ipaddr_t uip_hostaddr =	{ { CLIENT_IPADDR0, CLIENT_IPADDR1,
 				    CLIENT_IPADDR2, CLIENT_IPADDR3 } };
@@ -38,17 +39,16 @@ uip_ipaddr_t uip_netmask =	{ { NETMASK0, NETMASK1, NETMASK2, NETMASK3 } };
 
 #define INET_FAMILY		AF_INET
 
-
 int tcp_tx(struct net_context *ctx, uint8_t *buf,  size_t size)
 {
-	int rc = 0;
-	uint8_t *ptr;
 	struct net_buf *nbuf = NULL;
+	uint8_t *ptr;
+	int rc = 0;
 
 	nbuf = ip_buf_get_tx(ctx);
 	if (nbuf == NULL) {
-		printf("[%s:%d] Unable to get buffer\n", __func__, __LINE__);
-		return -1;
+		printk("[%s:%d] Unable to get buffer\n", __func__, __LINE__);
+		return -EINVAL;
 	}
 
 	ptr = net_buf_add(nbuf, size);
@@ -63,16 +63,16 @@ int tcp_tx(struct net_context *ctx, uint8_t *buf,  size_t size)
 		}
 		switch (rc) {
 		case -EINPROGRESS:
-			printf("%s: no connection yet, try again\n", __func__);
+			printk("%s: no connection yet, try again\n", __func__);
 			fiber_sleep(TCP_RETRY_TIMEOUT);
 			break;
 		case -EAGAIN:
 		case -ECONNRESET:
-			printf("%s: no connection, try again later\n", __func__);
+			printk("%s: no connection, try again later\n", __func__);
 			fiber_sleep(TCP_RETRY_TIMEOUT);
 			break;
 		default:
-			printf("%s: sending %d bytes failed\n",
+			printk("%s: sending %d bytes failed\n",
 			      __func__, size);
 			ip_buf_unref(nbuf);
 			return -EIO;
@@ -84,8 +84,8 @@ int tcp_tx(struct net_context *ctx, uint8_t *buf,  size_t size)
 
 int tcp_rx(struct net_context *ctx, uint8_t *buf, size_t *read_bytes, size_t size)
 {
-	int rc;
 	struct net_buf *nbuf;
+	int rc;
 
 	nbuf = net_receive(ctx, TCP_RX_TIMEOUT);
 	rc = -EIO;
@@ -119,7 +119,7 @@ int tcp_init(struct net_context **ctx)
 			       &server, SERVER_MQTT_PORT,
 			       &client, CLIENT_MQTT_PORT);
 	if (*ctx == NULL) {
-		printf("%s: Unable to get network context\n", __func__);
+		printk("%s: Unable to get network context\n", __func__);
 		return -EINVAL;
 	}
 	return 0;

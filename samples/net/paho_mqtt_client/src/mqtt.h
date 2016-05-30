@@ -22,7 +22,7 @@
 int mqtt_connect(struct net_context *ctx, char *client_name);
 int mqtt_disconnect(struct net_context *ctx);
 int mqtt_publish(struct net_context *ctx, char *topic, char *msg);
-int mqtt_publish_read(struct net_context *ctx);
+int mqtt_publish_read(struct net_context *ctx, char *topic_str, char *msg_str);
 int mqtt_subscribe(struct net_context *ctx, char *topic);
 int mqtt_pingreq(struct net_context *ctx);
 

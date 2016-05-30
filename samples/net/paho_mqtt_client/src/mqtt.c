@@ -17,6 +17,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "config.h"
 #include "mqtt.h"
 #include "tcp.h"
 
@@ -149,7 +150,7 @@ int mqtt_pingreq(struct net_context *ctx)
 	return rc == 1 ? 0 : -EINVAL;
 }
 
-int mqtt_publish_read(struct net_context *ctx)
+int mqtt_publish_read(struct net_context *ctx, char *topic_str, char *msg_str)
 {
 	MQTTString topic;
 	unsigned char dup;
@@ -169,15 +170,16 @@ int mqtt_publish_read(struct net_context *ctx)
 	rc = MQTTDeserialize_publish(&dup, &qos, &retained, &msg_id,
 				     &topic, &msg, &msg_len,
 				     mqtt_buffer, rx_len);
-	rc = rc == 1 ? 0 : -EIO;
-	if (rc == 0) {
-		printf("\n\tReceived message: [%.*s] %.*s\n\n",
-		       topic.lenstring.len, topic.lenstring.data,
-		       msg_len, msg);
-	}
-	return rc;
-}
 
+	if (rc == 1) {
+		memcpy(topic_str, topic.lenstring.data, topic.lenstring.len);
+		topic_str[topic.lenstring.len] = '\0';
+		memcpy(msg_str, msg, msg_len);
+		msg_str[msg_len] = '\0';
+		return 0;
+	}
+	return -EINVAL;
+}
 
 int mqtt_subscribe(struct net_context *ctx, char *topic)
 {
@@ -212,4 +214,3 @@ int mqtt_subscribe(struct net_context *ctx, char *topic)
 
 	return rc == 1 ? granted_qos : -EINVAL;
 }
-
