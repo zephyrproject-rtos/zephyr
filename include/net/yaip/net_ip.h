@@ -167,7 +167,7 @@ struct net_ipv6_hdr {
 	uint8_t hop_limit;
 	struct in6_addr src;
 	struct in6_addr dst;
-} __attribute__((__packed__));
+} __packed;
 
 struct net_ipv4_hdr {
 	uint8_t vhl;
@@ -180,13 +180,13 @@ struct net_ipv4_hdr {
 	uint16_t chksum;
 	struct in_addr src;
 	struct in_addr dst;
-} __attribute__((__packed__));
+} __packed;
 
 struct net_icmp_hdr {
 	uint8_t type;
 	uint8_t code;
 	uint16_t chksum;
-} __attribute__((__packed__));
+} __packed;
 
 struct net_udp_hdr {
 	uint16_t src_port;
