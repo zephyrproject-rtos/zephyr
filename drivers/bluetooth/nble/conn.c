@@ -374,7 +374,9 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 int bt_conn_auth_cancel(struct bt_conn *conn)
 {
-	return -ENOSYS;
+	BT_DBG("");
+
+	return bt_smp_auth_cancel(conn);
 }
 
 int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
