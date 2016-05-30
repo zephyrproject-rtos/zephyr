@@ -25,20 +25,7 @@
 #ifndef __ARP_H
 #define __ARP_H
 
-#include <stdint.h>
-
-#include <net/net_ip.h>
-#include <net/nbuf.h>
-
-struct net_eth_addr {
-	uint8_t addr[6];
-};
-
-struct net_eth_hdr {
-	struct net_eth_addr dst;
-	struct net_eth_addr src;
-	uint16_t type;
-} __packed;
+#include <net/ethernet.h>
 
 struct net_arp_hdr {
 	struct net_eth_hdr eth_hdr;
@@ -53,10 +40,6 @@ struct net_arp_hdr {
 	struct in_addr dst_ipaddr;	/* TPA */
 }  __packed;
 
-#define NET_ETH_PTYPE_ARP  0x0806
-#define NET_ETH_PTYPE_IP   0x0800
-#define NET_ETH_PTYPE_IPV6 0x86dd
-
 #define NET_ARP_HTYPE_ETH 1
 
 #define NET_ARP_REQUEST 1
@@ -66,6 +49,6 @@ struct net_buf *net_arp_prepare(struct net_buf *buf);
 enum net_verdict net_arp_input(struct net_buf *buf);
 void net_arp_init(void);
 
-#endif /* __ICMPV4_H */
+#endif /* __ARP_H */
 
 #endif /* CONFIG_NET_IPV4 */
