@@ -342,15 +342,14 @@ Installing the J-Link Software and documentation pack
 To install the J-Link Software and documentation pack, follow the
 steps below:
 
-#. Download the appropriate package from the
-`J-Link Software and documentation pack`_ website.
+#. Download the appropriate package from the `J-Link Software and documentation pack`_
+   website.
 
-#. Depending on your platform, install the package
-or run the installer
+#. Depending on your platform, install the package or
+   run the installer
 
-#. When connecting a J-Link-enabled device such as the
-nRF52 DK board, a drive corresponding to a USB Mass Storage device
-as well as a serial port should come up.
+#. When connecting a J-Link-enabled device such as the nRF52 DK board, a drive
+   corresponding to a USB Mass Storage device as well as a serial port should come up.
 
 Installing the nRF5x Command Line Tools
 =======================================
@@ -360,7 +359,7 @@ To install the nRF5x Command Line Tools, follow the steps below:
 #. Download the appropriate package from the `nRF52 DK website`_.
 
 #. Depending on your platform, unpack the tarball and copy the
-contents into a folder whithin your $PATH or run the installer.
+   contents into a folder whithin your $PATH or run the installer.
 
 Flashing an Application to nRF52 DK
 ===================================
