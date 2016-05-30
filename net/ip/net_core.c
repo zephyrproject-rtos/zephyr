@@ -401,8 +401,11 @@ static inline int udp_prepare_and_send(struct net_context *context,
 				     ip_buf_appdatalen(buf),
 				     &NET_BUF_IP(buf)->destipaddr,
 				     uip_ntohs(NET_BUF_UDP(buf)->destport));
-	if (!ret) {
+	if (ret <= 0) {
+		ret = -EINVAL;
 		NET_DBG("Packet could not be sent properly.\n");
+	} else {
+		ret = 0;
 	}
 
 #ifdef CONFIG_NETWORKING_IPV6_NO_ND
@@ -412,7 +415,7 @@ static inline int udp_prepare_and_send(struct net_context *context,
 	}
 #endif
 
-	return !ret;
+	return ret;
 }
 
 #ifdef CONFIG_NETWORKING_WITH_TCP
