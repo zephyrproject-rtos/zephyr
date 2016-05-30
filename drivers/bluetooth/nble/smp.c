@@ -438,6 +438,34 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 	return 0;
 }
 
+int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
+{
+	struct bt_smp *smp;
+	struct nble_sm_pairing_response_req params;
+
+	BT_DBG("");
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+		return -EINVAL;
+	}
+
+	if (conn->role == BT_CONN_ROLE_MASTER) {
+		/* TODO: handle */
+	} else {
+		/* TODO: io caps, mitm */
+		params.conn = conn;
+		params.conn_handle = conn->handle;
+		nble_sm_pairing_response_req(&params);
+	}
+
+	return 0;
+}
+
 int bt_smp_init(void)
 {
 	BT_DBG("");

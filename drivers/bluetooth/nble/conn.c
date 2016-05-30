@@ -384,7 +384,9 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 
 int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 {
-	return -ENOSYS;
+	BT_DBG("");
+
+	return bt_smp_auth_pairing_confirm(conn);
 }
 
 /* Connection related events */
