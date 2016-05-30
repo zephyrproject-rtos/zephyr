@@ -1104,7 +1104,9 @@ void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp)
 		func = ((struct bt_gatt_write_params *)private)->func;
 	}
 
-	func(conn, rsp->status);
+	if (func) {
+		func(conn, rsp->status);
+	}
 
 	bt_conn_unref(conn);
 }
