@@ -293,11 +293,7 @@ void on_nble_sm_common_rsp(const struct nble_sm_common_rsp *rsp)
 void on_nble_sm_status_evt(const struct nble_sm_status_evt *ev)
 {
 	struct bt_conn *conn;
-
-	if (ev->status) {
-		BT_ERR("SM request failed, status %d", ev->status);
-		return;
-	}
+	struct bt_smp *smp;
 
 	conn = bt_conn_lookup_handle(ev->conn_handle);
 	if (!conn) {
@@ -305,20 +301,23 @@ void on_nble_sm_status_evt(const struct nble_sm_status_evt *ev)
 		return;
 	}
 
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		BT_ERR("No smp for conn %p", conn);
+		return;
+	}
+
 	BT_DBG("conn %p status %d evt_type %d sec_level %d enc_size %u",
 	       conn, ev->status, ev->evt_type, ev->enc_link_sec.sec_level,
 	       ev->enc_link_sec.enc_size);
 
-	/* TODO Handle events */
 	switch (ev->evt_type) {
-	case NBLE_GAP_SM_EVT_START_PAIRING:
-		BT_DBG("Start pairing");
-		if (conn->role == BT_HCI_ROLE_MASTER) {
-			bt_conn_security(conn, ev->enc_link_sec.sec_level);
-		}
-		break;
 	case NBLE_GAP_SM_EVT_BONDING_COMPLETE:
 		BT_DBG("Bonding complete");
+		if (ev->status) {
+			nble.auth->cancel(conn);
+		}
+		smp_reset(smp);
 		break;
 	case NBLE_GAP_SM_EVT_LINK_ENCRYPTED:
 		BT_DBG("Link encrypted");
