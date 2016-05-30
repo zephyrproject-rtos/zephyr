@@ -269,4 +269,4 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf);
 }
 #endif
 
-#endif /* __IP_BUF_H */
+#endif /* __NBUF_H */
