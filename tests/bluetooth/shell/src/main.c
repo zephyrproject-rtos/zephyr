@@ -1905,8 +1905,8 @@ static const struct shell_cmd commands[] = {
 	  "<authentication method: all, input, display, yesno, none>" },
 	{ "auth-cancel", cmd_auth_cancel, HELP_NONE },
 	{ "auth-passkey", cmd_auth_passkey, "<passkey>" },
-	{ "auth-confirm", cmd_auth_passkey_confirm, HELP_NONE },
-	{ "auth-pairing", cmd_auth_pairing_confirm, HELP_NONE },
+	{ "auth-passkey-confirm", cmd_auth_passkey_confirm, HELP_NONE },
+	{ "auth-pairing-confirm", cmd_auth_pairing_confirm, HELP_NONE },
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	{ "auth-pincode", cmd_auth_pincode, "<pincode>" },
 #endif /* CONFIG_BLUETOOTH_BREDR */
