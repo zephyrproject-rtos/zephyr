@@ -23,5 +23,4 @@ int tcp_init(struct net_context **ctx);
 int tcp_tx(struct net_context *ctx, uint8_t *buf,  size_t size);
 int tcp_rx(struct net_context *ctx, uint8_t *buf, size_t *read_bytes, size_t size);
 
-
 #endif

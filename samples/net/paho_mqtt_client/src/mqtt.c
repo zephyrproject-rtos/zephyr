@@ -18,6 +18,7 @@
 #include <errno.h>
 
 #include "mqtt.h"
+#include "tcp.h"
 
 #include "MQTTPacket.h"
 #include "MQTTConnect.h"
@@ -28,9 +29,6 @@
 /* non thread safe */
 #define BUF_SIZE 128
 static uint8_t mqtt_buffer[BUF_SIZE];
-
-
-#include "tcp.h"
 
 int mqtt_connect(struct net_context *ctx, char *client_name)
 {
@@ -70,12 +68,8 @@ int mqtt_connect(struct net_context *ctx, char *client_name)
 	}
 	rc = MQTTDeserialize_connack(&session_present, &conn_ack,
 				     mqtt_buffer, rx_len);
-	rc = rc != 1 ? -EINVAL : 0;
-	if (rc != 0) {
-		return -EINVAL;
-	}
 
-	return conn_ack;
+	return rc == 1 ? conn_ack : -EINVAL;
 }
 
 int mqtt_disconnect(struct net_context *ctx)
@@ -157,7 +151,7 @@ int mqtt_pingreq(struct net_context *ctx)
 
 int mqtt_publish_read(struct net_context *ctx)
 {
-	MQTTString received_topic;
+	MQTTString topic;
 	unsigned char dup;
 	unsigned char retained;
 	unsigned short msg_id;
@@ -173,11 +167,13 @@ int mqtt_publish_read(struct net_context *ctx)
 	}
 
 	rc = MQTTDeserialize_publish(&dup, &qos, &retained, &msg_id,
-				     &received_topic, &msg, &msg_len,
+				     &topic, &msg, &msg_len,
 				     mqtt_buffer, rx_len);
 	rc = rc == 1 ? 0 : -EIO;
 	if (rc == 0) {
-		printf("\n\tReceived message: %.*s\n\n", msg_len, msg);
+		printf("\n\tReceived message: [%.*s] %.*s\n\n",
+		       topic.lenstring.len, topic.lenstring.data,
+		       msg_len, msg);
 	}
 	return rc;
 }
@@ -214,6 +210,6 @@ int mqtt_subscribe(struct net_context *ctx, char *topic)
 	rc = MQTTDeserialize_suback(&submsg_id, 1, &sub_count, &granted_qos,
 				    mqtt_buffer, rx_len);
 
-	return rc != 1 ?  -EINVAL : granted_qos;
+	return rc == 1 ? granted_qos : -EINVAL;
 }
 

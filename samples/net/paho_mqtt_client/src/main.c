@@ -24,9 +24,9 @@
 #include "mqtt.h"
 
 #define RC_MSG(rc)		(rc) == 0 ? "success" : "failure"
-#define STACKSIZE		1024
+#define STACK_SIZE		1024
 
-uint8_t stack[STACKSIZE];
+uint8_t stack[STACK_SIZE];
 
 struct net_context *ctx;
 
@@ -72,6 +72,6 @@ void main(void)
 	net_init();
 	tcp_init(&ctx);
 
-	task_fiber_start(stack, STACKSIZE, (nano_fiber_entry_t)fiber,
+	task_fiber_start(stack, STACK_SIZE, (nano_fiber_entry_t)fiber,
 			 0, 0, 7, 0);
 }

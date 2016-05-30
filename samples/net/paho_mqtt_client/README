@@ -1,4 +1,4 @@
-MQTT sample using the Paho's MQTT Packet.
+MQTT sample using the Paho's MQTT Packet Library.
 
 Requirements
 ------------
@@ -25,9 +25,20 @@ Building instructions
   See http://www.eclipse.org/paho/clients/c/embedded/ for more
   information about Paho's MQTT Packet Library.
 
-* Modify the src/Makefile to reflect the location of your Paho
-  repository. In this example, it is assumed that src/paho_mqtt_pkt
-  is the directory that contains the MQTTPacket source code.
+  Inside samples/net/paho_mqtt_client, run the following commands:
+
+  git clone https://git.eclipse.org/r/paho/org.eclipse.paho.mqtt.embedded-c paho
+
+  Now "paho" contains the MQTT Packet Library.
+
+* make pristine && make are enough to build this sample.
+
+* Follow the steps indicated here:
+
+  https://www.zephyrproject.org/doc/board/galileo.html
+
+  to load the binary into the Galileo Dev Board.
+
 
 Usage
 -----
