@@ -22,6 +22,8 @@
 #if defined(CONFIG_SLIP_DEBUG)
 #define SYS_LOG_DOMAIN "slip"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#include <misc/sys_log.h>
+#include <stdio.h>
 #endif
 
 #include <nanokernel.h>
@@ -29,7 +31,6 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
-#include <misc/sys_log.h>
 #include <misc/util.h>
 #include <net/buf.h>
 #include <net/nbuf.h>
