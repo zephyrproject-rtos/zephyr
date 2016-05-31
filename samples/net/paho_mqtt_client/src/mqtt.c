@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <string.h>
 #include <errno.h>
 
 #include "config.h"
@@ -40,11 +39,9 @@ int mqtt_connect(struct net_context *ctx, char *client_name)
 	size_t tx_len;
 	int rc;
 
-	memset(&data, 0x00, sizeof(MQTTPacket_connectData));
-
 	data.MQTTVersion = 4;
 	data.clientID.cstring = client_name;
-	data.keepAliveInterval = 500;
+	data.keepAliveInterval = 0;
 	data.cleansession = 1;
 	data.username.cstring = "zephyr";
 	data.password.cstring = "1234";
