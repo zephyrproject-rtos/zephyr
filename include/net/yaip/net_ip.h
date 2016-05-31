@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <misc/byteorder.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
