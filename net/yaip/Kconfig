@@ -30,18 +30,18 @@ config NET_IPV6
          Enable IPv6 support. This should be selected by default as there is
 	 limited set of	network bearers provided that support IPv4.
 
-config NET_IFACE_UNICAST_IPV6_ADDR_COUNT
-       int "Max number of unicast IPv6 addresses assigned to network interface"
+config NET_IF_UNICAST_IPV6_ADDR_COUNT
+       int "Max number of unicast IPv6 addresses per network interface"
        depends on NET_IPV6
        default 1
 
-config NET_IFACE_MCAST_IPV6_ADDR_COUNT
-       int "Max number of multicast IPv6 addresses assigned to network interface"
+config NET_IF_MCAST_IPV6_ADDR_COUNT
+       int "Max number of multicast IPv6 addresses per network interface"
        depends on NET_IPV6
        default 1
 
-config NET_IFACE_IPV6_PREFIX_COUNT
-       int "Max number of IPv6 prefixes assigned to network interface"
+config NET_IF_IPV6_PREFIX_COUNT
+       int "Max number of IPv6 prefixes per network interface"
        depends on NET_IPV6
        default 2
 
@@ -59,13 +59,13 @@ config NET_IPV4
          Enable IPv4 support. If this is enabled then the device is
 	 able to send and receive IPv4 network packets.
 
-config NET_IFACE_UNICAST_IPV4_ADDR_COUNT
-       int "Max number of unicast IPv4 addresses assigned to network interface"
+config NET_IF_UNICAST_IPV4_ADDR_COUNT
+       int "Max number of unicast IPv4 addresses per network interface"
        depends on NET_IPV4
        default 1
 
-config NET_IFACE_MCAST_IPV4_ADDR_COUNT
-       int "Max number of multicast IPv4 addresses assigned to network interface"
+config NET_IF_MCAST_IPV4_ADDR_COUNT
+       int "Max number of multicast IPv4 addresses per network interface"
        depends on NET_IPV4
        default 1
 
