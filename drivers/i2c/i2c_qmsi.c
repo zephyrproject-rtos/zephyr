@@ -197,6 +197,10 @@ static int i2c_qmsi_init(struct device *dev)
 	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	int err;
 
+	device_sync_call_init(&driver_data->sync);
+	nano_sem_init(&driver_data->sem);
+	nano_sem_give(&driver_data->sem);
+
 	switch (instance) {
 	case QM_I2C_0:
 		/* Register interrupt handler, unmask IRQ and route it
@@ -232,9 +236,6 @@ static int i2c_qmsi_init(struct device *dev)
 		return err;
 	}
 
-	device_sync_call_init(&driver_data->sync);
-	nano_sem_init(&driver_data->sem);
-	nano_sem_give(&driver_data->sem);
 	dev->driver_api = &api;
 	return 0;
 }
