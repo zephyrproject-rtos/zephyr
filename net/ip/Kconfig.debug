@@ -34,21 +34,20 @@ menuconfig NETWORKING_WITH_LOGGING
 	help
 	  Enable logging in various parts of the network stack.
 
-if NETWORKING_WITH_LOGGING
 choice
-prompt "General debug level"
-help
-	Set the level of debugging you want. This will be generalized,
-	whatever the part you will be debugging.
-default NETWORK_IP_STACK_DEBUG_PRINT
+	prompt "General debug level"
+	default NETWORK_IP_STACK_DEBUG_PRINT
+	depends on NETWORKING_WITH_LOGGING
+	help
+	  Set the level of debugging you want. This will be generalized,
+	  whatever the part you will be debugging.
 config NETWORK_IP_STACK_DEBUG_PRINT
-	bool "Print only debug messages"
+       bool "Print only debug messages"
 config NETWORK_IP_STACK_DEBUG_ANNOTATE
-	bool "Print only annotations"
+       bool "Print only annotations"
 config NETWORK_IP_STACK_DEBUG_FULL
-	bool "Print both messages and annotations"
+       bool "Print both messages and annotations"
 endchoice
-endif
 endif
 
 if NETWORKING_WITH_LOGGING || NET_LOG
