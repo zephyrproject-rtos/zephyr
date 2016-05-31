@@ -427,6 +427,10 @@ static int net_init(struct device *unused)
 
 	init_rx_queue();
 
+#ifdef CONFIG_NET_ARP
+	net_arp_init();
+#endif
+
 	net_if_init();
 
 	net_context_init();
