@@ -315,7 +315,9 @@ void on_nble_sm_status_evt(const struct nble_sm_status_evt *ev)
 	case NBLE_GAP_SM_EVT_BONDING_COMPLETE:
 		BT_DBG("Bonding complete");
 		if (ev->status) {
-			nble.auth->cancel(conn);
+			if (nble.auth && nble.auth->cancel) {
+				nble.auth->cancel(conn);
+			}
 		}
 		smp_reset(smp);
 		break;
@@ -347,9 +349,13 @@ void on_nble_sm_passkey_disp_evt(const struct nble_sm_passkey_disp_evt *ev)
 
 	/* TODO: Check shall we store io_caps globally */
 	if (get_io_capa() == BT_SMP_IO_DISPLAY_YESNO) {
-		nble.auth->passkey_confirm(conn, ev->passkey);
+		if (nble.auth && nble.auth->passkey_confirm) {
+			nble.auth->passkey_confirm(conn, ev->passkey);
+		}
 	} else {
-		nble.auth->passkey_display(conn, ev->passkey);
+		if (nble.auth && nble.auth->passkey_display) {
+			nble.auth->passkey_display(conn, ev->passkey);
+		}
 	}
 
 	bt_conn_unref(conn);
@@ -366,7 +372,9 @@ void on_nble_sm_passkey_req_evt(const struct nble_sm_passkey_req_evt *ev)
 	}
 
 	if (ev->key_type == NBLE_GAP_SM_PK_PASSKEY) {
-		nble.auth->passkey_entry(conn);
+		if (nble.auth && nble.auth->passkey_entry) {
+			nble.auth->passkey_entry(conn);
+		}
 	}
 
 	bt_conn_unref(conn);
