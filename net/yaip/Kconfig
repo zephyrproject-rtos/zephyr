@@ -69,21 +69,6 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
        depends on NET_IPV4
        default 1
 
-config NET_ARP
-       bool "Enable ARP"
-       default y
-       depends on NET_IPV4 && NET_L2_ETHERNET
-       help
-         Enable ARP support. This is necessary on hardware that requires it to
-	 get IPv4 working (like Ethernet devices).
-
-config NET_ARP_TABLE_SIZE
-       int "Number of entries in ARP table."
-       depends on NET_ARP
-       default 2
-       help
-         Each entry in the ARP table consumes 22 bytes of memory.
-
 config NET_TX_STACK_SIZE
 	int "TX fiber stack size"
 	default 1024
