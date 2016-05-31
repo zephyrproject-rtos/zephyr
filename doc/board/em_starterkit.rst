@@ -19,7 +19,7 @@ Documentation for this board can be found at the following URL:
 https://www.embarc.org.
 
 See also this URL for details about the board:
-http://www.synopsys.com/IP/PROCESSORIP/SOFTWAREDEVELOPMENTTOOLS/Pages/arc-em-starter-kit.aspx
+https://www.synopsys.com/dw/ipdir.php?ds=arc_em_starter_kit
 
 The default configuration for EM Starter Kit boards can be found in
 :file:`boards/em_starterkit/em_starterkit_defconfig`.
@@ -319,7 +319,7 @@ Bibliography
 ************
 .. _embARC-website: https://www.embarc.org
 
-.. _emstarterkit-website: http://www.synopsys.com/IP/PROCESSORIP/SOFTWAREDEVELOPMENTTOOLS/Pages/arc-em-starter-kit.aspx
+.. _emstarterkit-website: https://www.synopsys.com/dw/ipdir.php?ds=arc_em_starter_kit
 
 .. _digilent-website: http://store.digilentinc.com
 
