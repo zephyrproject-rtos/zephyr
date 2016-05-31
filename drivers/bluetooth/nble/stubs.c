@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <atomic.h>
+
 #include <bluetooth/gatt.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/log.h>

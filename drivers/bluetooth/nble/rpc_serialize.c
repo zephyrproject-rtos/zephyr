@@ -15,6 +15,7 @@
  */
 
 #include <string.h>
+#include <atomic.h>
 
 #include <bluetooth/gatt.h>
 #include <bluetooth/conn.h>

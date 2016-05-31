@@ -583,11 +583,15 @@ void ble_gap_set_rssi_report(struct ble_rssi_report_params *par,
 			     struct bt_conn *conn,
 			     rssi_report_resp_t resp_cb, rssi_report_t evt_cb);
 
+enum {
+	NBLE_FLAG_KEEP_ADVERTISING,
+};
+
 struct nble {
 	/* Local Bluetooth LE Device Address */
 	bt_addr_le_t addr;
 	const struct bt_conn_auth_cb *auth;
-	bool keep_adv;
+	atomic_t flags;
 };
 
 extern struct nble nble;

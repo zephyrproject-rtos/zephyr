@@ -419,7 +419,7 @@ static void notify_disconnected(struct bt_conn *conn)
 	 * FIXME: When disconnected NBLE stops advertising, this should
 	 * be fixed in the NBLE firmware, use this hack for now
 	 */
-	if (nble.keep_adv) {
+	if (atomic_test_bit(&nble.flags, NBLE_FLAG_KEEP_ADVERTISING)) {
 		BT_WARN("Re-enable advertising on disconnect");
 		nble_gap_start_adv_req();
 	}

@@ -217,7 +217,7 @@ void on_nble_gap_start_adv_rsp(const struct nble_common_rsp *rsp)
 		return;
 	}
 
-	nble.keep_adv = true;
+	atomic_set_bit(&nble.flags, NBLE_FLAG_KEEP_ADVERTISING);
 
 	BT_DBG("status %u", rsp->status);
 }
@@ -238,7 +238,7 @@ void on_nble_gap_stop_advertise_rsp(const struct nble_common_rsp *rsp)
 		return;
 	}
 
-	nble.keep_adv = false;
+	atomic_clear_bit(&nble.flags, NBLE_FLAG_KEEP_ADVERTISING);
 
 	BT_DBG("status %d", rsp->status);
 }
