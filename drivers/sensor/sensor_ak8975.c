@@ -128,6 +128,24 @@ int ak8975_init(struct device *dev)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_MPU9150
+	/* wake up MPU9150 chip */
+	if (i2c_reg_update_byte(drv_data->i2c, MPU9150_I2C_ADDR,
+				MPU9150_REG_PWR_MGMT1, MPU9150_SLEEP_EN,
+				0) < 0) {
+		SYS_LOG_ERR("Failed to wake up MPU9150 chip.");
+		return -EIO;
+	}
+
+	/* enable MPU9150 pass-though to have access to AK8975 */
+	if (i2c_reg_update_byte(drv_data->i2c, MPU9150_I2C_ADDR,
+				MPU9150_REG_BYPASS_CFG, MPU9150_I2C_BYPASS_EN,
+				MPU9150_I2C_BYPASS_EN) < 0) {
+		SYS_LOG_ERR("Failed to enable pass-through mode for MPU9150.");
+		return -EIO;
+	}
+#endif
+
 	/* check chip ID */
 	if (i2c_reg_read_byte(drv_data->i2c, CONFIG_AK8975_I2C_ADDR,
 			      AK8975_REG_CHIP_ID, &id) < 0) {

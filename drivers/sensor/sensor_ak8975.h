@@ -37,6 +37,26 @@
 #define AK8975_MEASURE_TIME_US		9000
 #define AK8975_MICRO_GAUSS_PER_BIT	3000
 
+#ifdef CONFIG_MPU9150
+#if CONFIG_AK8975_I2C_ADDR != 0x0C
+#error "I2C address must be 0x0C when AK8975 is part of a MPU9150 chip"
+#endif
+
+#ifdef CONFIG_MPU9150_I2C_ADDR
+#define MPU9150_I2C_ADDR		CONFIG_MPU9150_I2C_ADDR
+#else
+#define MPU9150_I2C_ADDR		CONFIG_MPU6050_I2C_ADDR
+#endif
+
+#define MPU9150_REG_BYPASS_CFG		0x37
+#define MPU9150_I2C_BYPASS_EN		BIT(1)
+
+#define MPU9150_REG_PWR_MGMT1		0x6B
+#define MPU9150_SLEEP_EN		BIT(6)
+
+#endif /* CONFIG_MPU9150 */
+
+
 struct ak8975_data {
 	struct device *i2c;
 
