@@ -495,12 +495,6 @@ int net_if_init(void)
 			init_tx_queue(iface);
 		}
 
-#if defined(CONFIG_NET_IPV4)
-		if (iface->capabilities & NET_CAP_ARP) {
-			net_arp_init();
-		}
-#endif
-
 #if defined(CONFIG_NET_IPV6)
 		iface->hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
 #endif

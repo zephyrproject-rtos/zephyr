@@ -69,9 +69,17 @@ config NET_IFACE_MCAST_IPV4_ADDR_COUNT
        depends on NET_IPV4
        default 1
 
+config NET_ARP
+       bool "Enable ARP"
+       default y
+       depends on NET_IPV4 && NET_ETHERNET
+       help
+         Enable ARP support. This is necessary on hardware that requires it to
+	 get IPv4 working (like Ethernet devices).
+
 config NET_ARP_TABLE_SIZE
        int "Number of entries in ARP table."
-       depends on NET_IPV4
+       depends on NET_ARP
        default 2
        help
          Each entry in the ARP table consumes 22 bytes of memory.
@@ -129,6 +137,14 @@ config CONFIG_NET_MAX_CONTEXTS
 	help
 	  Each network context is used to describe a network 5-tuple that
 	  is used when listening or sending network traffic.
+
+config NET_ETHERNET
+       bool "Enable ethernet support"
+       default n
+       help
+         Add suport for Ethernet, enabling selecting relevant hardware drivers.
+	 If NET_SLIP and SLIP_TAP are selected, NET_ETHERNET will enable to
+	 fully simulate ethernet through SLIP.
 
 config NET_SLIP
        bool "Use SLIP connectivity with Qemu"
