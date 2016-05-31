@@ -51,6 +51,8 @@ source "drivers/sensor/Kconfig.lsm9ds0_mfd"
 
 source "drivers/sensor/Kconfig.mcp9808"
 
+source "drivers/sensor/Kconfig.mpu6050"
+
 source "drivers/sensor/Kconfig.sht3xd"
 
 source "drivers/sensor/Kconfig.sx9500"
