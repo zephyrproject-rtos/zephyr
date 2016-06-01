@@ -40,6 +40,11 @@ extern "C" {
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_OVERRIDE_LEVEL
 #endif
 
+/**
+ * @brief System Log
+ * @defgroup system_log System Log
+ * @{
+ */
 #if defined(CONFIG_SYS_LOG) && (SYS_LOG_LEVEL > SYS_LOG_LEVEL_OFF)
 
 #define IS_SYS_LOG_ACTIVE 1
@@ -144,7 +149,7 @@ extern "C" {
  * active. it's meant to report severe errors, such as those from which it's
  * not possible to recover.
  *
- * @param A string optionally containing printk valid conversion specifier,
+ * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
 #define SYS_LOG_ERR(...) { ; }
@@ -161,7 +166,7 @@ extern "C" {
  * It's meant to register messages related to unusual situations that are
  * not necesarily errors.
  *
- * @param A string optionally containing printk valid conversion specifier,
+ * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
 #define SYS_LOG_WRN(...) { ; }
@@ -176,7 +181,7 @@ extern "C" {
  * @details available if SYS_LOG_LEVEL is SYS_LOG_LEVEL_INFO or higher.
  * It's meant to write generic user oriented messages.
  *
- * @param A string optionally containing printk valid conversion specifier,
+ * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
 #define SYS_LOG_INF(...) { ; }
@@ -191,11 +196,14 @@ extern "C" {
  * @details highest logging level, available if SYS_LOG_LEVEL is
  * SYS_LOG_LEVEL_DEBUG. It's meant to write developer oriented information.
  *
- * @param A string optionally containing printk valid conversion specifier,
+ * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
 #define SYS_LOG_DBG(...) { ; }
 #endif
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

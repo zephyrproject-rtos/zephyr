@@ -22,5 +22,6 @@ The use of the Zephyr APIs is the same for all platforms and boards.
    device.rst
    io_interfaces.rst
    event_logger.rst
+   system_log.rst
    power_management_api
 
