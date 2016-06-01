@@ -57,6 +57,19 @@
 						BT_GATT_PERM_WRITE_AUTHEN)
 #define BT_ATT_OP_CMD_FLAG			0x40
 
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+struct bt_attr_data {
+	uint16_t handle;
+	uint16_t offset;
+};
+
+/* Pool for incoming ATT packets, MTU is 23 */
+static struct nano_fifo prep_data;
+static NET_BUF_POOL(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
+		    CONFIG_BLUETOOTH_ATT_MTU, &prep_data, NULL,
+		    sizeof(struct bt_attr_data));
+#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
+
 /* ATT request context */
 struct bt_att_req {
 	bt_att_func_t		func;
@@ -73,6 +86,9 @@ struct bt_att {
 	/* The channel this context is associated with */
 	struct bt_l2cap_chan	chan;
 	struct bt_att_req	req;
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	struct nano_fifo	prep_queue;
+#endif
 	 /* TODO: Allow more than one pending request */
 };
 
@@ -1053,11 +1069,10 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	struct write_data *data = user_data;
 	int write;
 
-	BT_DBG("handle 0x%04x", attr->handle);
+	BT_DBG("handle 0x%04x offset %u", attr->handle, data->offset);
 
-	/* Check for write support and flush support in case of prepare */
-	if (!attr->write ||
-	    (data->op == BT_ATT_OP_PREPARE_WRITE_REQ && !attr->flush)) {
+	/* Check for write support */
+	if (!attr->write) {
 		data->err = BT_ATT_ERR_WRITE_NOT_PERMITTED;
 		return BT_GATT_ITER_STOP;
 	}
@@ -1074,15 +1089,6 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	if (write < 0 || write != data->len) {
 		data->err = err_to_att(write);
 		return BT_GATT_ITER_STOP;
-	}
-
-	/* Flush in case of regular write operation */
-	if (attr->flush && data->op != BT_ATT_OP_PREPARE_WRITE_REQ) {
-		write = attr->flush(data->conn, attr, BT_GATT_FLUSH_SYNC);
-		if (write < 0) {
-			data->err = err_to_att(write);
-			return BT_GATT_ITER_STOP;
-		}
 	}
 
 	data->err = 0;
@@ -1120,39 +1126,16 @@ static uint8_t att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 	bt_gatt_foreach_attr(handle, handle, write_cb, &data);
 
 	if (data.err) {
-		/* Don't send error response when user attribute write handler
-		 * returns invalid offset or invalid attribute value length.
-		 * Such response needs to be sent when execute write request
-		 * is received.
-		 * Refer to BT SIG 4.2 [Vol 3, Part F, 3.4.6.1] page 504
-		 */
-		if (data.op == BT_ATT_OP_PREPARE_WRITE_REQ &&
-		    (data.err == BT_ATT_ERR_INVALID_OFFSET ||
-		     data.err == BT_ATT_ERR_INVALID_ATTRIBUTE_LEN)) {
-			goto done;
-		}
-
 		/* In case of error discard data and respond with an error */
 		if (rsp) {
 			net_buf_unref(data.buf);
 			/* Respond here since handle is set */
 			send_err_rsp(conn, op, handle, data.err);
 		}
-		return 0;
+		return op == BT_ATT_OP_EXEC_WRITE_REQ ? data.err : 0;
 	}
 
-done:
 	if (data.buf) {
-		/* Add prepare write response */
-		if (rsp == BT_ATT_OP_PREPARE_WRITE_RSP) {
-			struct bt_att_prepare_write_rsp *rsp;
-
-			rsp = net_buf_add(data.buf, sizeof(*rsp));
-			rsp->handle = sys_cpu_to_le16(handle);
-			rsp->offset = sys_cpu_to_le16(offset);
-			net_buf_add(data.buf, len);
-			memcpy(rsp->value, value, len);
-		}
 		bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
 	}
 
@@ -1176,9 +1159,108 @@ static uint8_t att_write_req(struct bt_att *att, struct net_buf *buf)
 			     handle, 0, buf->data, buf->len);
 }
 
-static uint8_t att_prepare_write_req(struct bt_att *att, struct net_buf *buf)
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+struct prep_data {
+	struct bt_conn *conn;
+	struct net_buf *buf;
+	const void *value;
+	uint8_t len;
+	uint16_t offset;
+	uint8_t err;
+};
+
+static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct prep_data *data = user_data;
+	struct bt_attr_data *attr_data;
+
+	BT_DBG("handle 0x%04x offset %u", attr->handle, data->offset);
+
+	/* Check for write support */
+	if (!attr->write) {
+		data->err = BT_ATT_ERR_WRITE_NOT_PERMITTED;
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Check attribute permissions */
+	data->err = check_perm(data->conn, attr, BT_GATT_PERM_WRITE_MASK);
+	if (data->err) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Copy data into the outstanding queue */
+	data->buf = net_buf_get_timeout(&prep_data, 0, TICKS_NONE);
+	if (!data->buf) {
+		data->err = BT_ATT_ERR_PREPARE_QUEUE_FULL;
+		return BT_GATT_ITER_STOP;
+	}
+
+	attr_data = net_buf_user_data(data->buf);
+	attr_data->handle = attr->handle;
+	attr_data->offset = data->offset;
+
+	memcpy(net_buf_add(data->buf, data->len), data->value, data->len);
+
+	data->err = 0;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static uint8_t att_prep_write_rsp(struct bt_att *att, uint16_t handle,
+				  uint16_t offset, const void *value,
+				  uint8_t len)
 {
 	struct bt_conn *conn = att->chan.conn;
+	struct prep_data data;
+	struct bt_att_prepare_write_rsp *rsp;
+
+	if (!handle) {
+		return BT_ATT_ERR_INVALID_HANDLE;
+	}
+
+	memset(&data, 0, sizeof(data));
+
+	data.conn = conn;
+	data.offset = offset;
+	data.value = value;
+	data.len = len;
+	data.err = BT_ATT_ERR_INVALID_HANDLE;
+
+	bt_gatt_foreach_attr(handle, handle, prep_write_cb, &data);
+
+	if (data.err) {
+		/* Respond here since handle is set */
+		send_err_rsp(conn, BT_ATT_OP_PREPARE_WRITE_REQ, handle,
+			     data.err);
+		return 0;
+	}
+
+	/* Store buffer in the outstanding queue */
+	nano_fifo_put(&att->prep_queue, data.buf);
+
+	/* Generate response */
+	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_RSP, 0);
+	if (!data.buf) {
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	rsp = net_buf_add(data.buf, sizeof(*rsp));
+	rsp->handle = sys_cpu_to_le16(handle);
+	rsp->offset = sys_cpu_to_le16(offset);
+	net_buf_add(data.buf, len);
+	memcpy(rsp->value, value, len);
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
+
+static uint8_t att_prepare_write_req(struct bt_att *att, struct net_buf *buf)
+{
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT == 0
+	return BT_ATT_ERR_NOT_SUPPORTED;
+#else
 	struct bt_att_prepare_write_req *req;
 	uint16_t handle, offset;
 
@@ -1190,80 +1272,65 @@ static uint8_t att_prepare_write_req(struct bt_att *att, struct net_buf *buf)
 
 	BT_DBG("handle 0x%04x offset %u", handle, offset);
 
-	return att_write_rsp(conn, BT_ATT_OP_PREPARE_WRITE_REQ,
-			     BT_ATT_OP_PREPARE_WRITE_RSP, handle, offset,
-			     buf->data, buf->len);
+	return att_prep_write_rsp(att, handle, offset, buf->data, buf->len);
+#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
 }
 
-struct flush_data {
-	struct bt_conn *conn;
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+static uint8_t att_exec_write_rsp(struct bt_att *att, uint8_t flags)
+{
+	struct bt_conn *conn = att->chan.conn;
 	struct net_buf *buf;
-	uint8_t flags;
-	uint8_t err;
-};
+	uint8_t err = 0;
 
-static uint8_t flush_cb(const struct bt_gatt_attr *attr, void *user_data)
-{
-	struct flush_data *data = user_data;
-	int err;
+	while ((buf = nano_fifo_get(&att->prep_queue, TICKS_NONE))) {
+		struct bt_attr_data *data = net_buf_user_data(buf);
 
-	/* If attribute cannot be flushed continue to next */
-	if (!attr->flush) {
-		return BT_GATT_ITER_CONTINUE;
+		/* Just discard the data if an error was set */
+		if (!err && flags == BT_ATT_FLAG_EXEC) {
+			err = att_write_rsp(conn, BT_ATT_OP_EXEC_WRITE_REQ, 0,
+					    data->handle, data->offset,
+					    buf->data, buf->len);
+			if (err) {
+				/* Respond here since handle is set */
+				send_err_rsp(conn, BT_ATT_OP_EXEC_WRITE_REQ,
+					     data->handle, err);
+			}
+		}
+
+		net_buf_unref(buf);
 	}
 
-	BT_DBG("handle 0x%04x flags 0x%02x", attr->handle, data->flags);
-
-	/* Flush attribute any data cached to be written */
-	err = attr->flush(data->conn, attr, data->flags);
-	if (err < 0) {
-		data->err = err_to_att(err);
-		return BT_GATT_ITER_STOP;
+	if (err) {
+		return 0;
 	}
 
-	data->err = 0;
-
-	return BT_GATT_ITER_CONTINUE;
-}
-
-static uint8_t att_exec_write_rsp(struct bt_conn *conn, uint8_t flags)
-{
-	struct flush_data data;
-
-	memset(&data, 0, sizeof(data));
-
-	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_EXEC_WRITE_RSP, 0);
-	if (!data.buf) {
+	/* Generate response */
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_EXEC_WRITE_RSP, 0);
+	if (!buf) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	data.conn = conn;
-	data.flags = flags;
-
-	/* Apply to the whole database */
-	bt_gatt_foreach_attr(0x0001, 0xffff, flush_cb, &data);
-
-	/* In case of error discard data */
-	if (data.err) {
-		net_buf_unref(data.buf);
-		return data.err;
-	}
-
-	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
 
 	return 0;
 }
+#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
+
 
 static uint8_t att_exec_write_req(struct bt_att *att, struct net_buf *buf)
 {
-	struct bt_conn *conn = att->chan.conn;
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT == 0
+	return BT_ATT_ERR_NOT_SUPPORTED;
+#else
 	struct bt_att_exec_write_req *req;
 
 	req = (void *)buf->data;
 
 	BT_DBG("flags 0x%02x", req->flags);
 
-	return att_exec_write_rsp(conn, req->flags);
+	return att_exec_write_rsp(att, req->flags);
+#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
 }
 
 static uint8_t att_write_cmd(struct bt_att *att, struct net_buf *buf)
@@ -1636,12 +1703,35 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 
 static void bt_att_connected(struct bt_l2cap_chan *chan)
 {
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	struct bt_att *att = CONTAINER_OF(chan, struct bt_att, chan);
+#endif
+
 	BT_DBG("chan %p cid 0x%04x", chan, chan->tx.cid);
 
 	chan->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
 	chan->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
 
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	nano_fifo_init(&att->prep_queue);
+#endif
+
 	bt_gatt_connected(chan->conn);
+}
+
+static void att_reset(struct bt_att *att)
+{
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	struct net_buf *buf;
+
+	/* Discard queued buffers */
+	while ((buf = nano_fifo_get(&att->prep_queue, TICKS_NONE))) {
+		net_buf_unref(buf);
+	}
+#endif
+
+	/* Notify client if request is pending */
+	att_handle_rsp(att, NULL, 0, BT_ATT_ERR_UNLIKELY);
 }
 
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)
@@ -1650,8 +1740,7 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", chan, chan->tx.cid);
 
-	/* Notify client if request is pending */
-	att_handle_rsp(att, NULL, 0, BT_ATT_ERR_UNLIKELY);
+	att_reset(att);
 
 	bt_gatt_disconnected(chan->conn);
 	memset(att, 0, sizeof(*att));
@@ -1725,6 +1814,9 @@ void bt_att_init(void)
 	};
 
 	net_buf_pool_init(att_pool);
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	net_buf_pool_init(prep_pool);
+#endif
 
 	bt_l2cap_le_fixed_chan_register(&chan);
 }
