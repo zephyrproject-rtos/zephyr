@@ -29,6 +29,8 @@
 #include <misc/byteorder.h>
 #include <toolchain.h>
 
+#include <net/net_linkaddr.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -329,11 +331,24 @@ static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 	return addr1->s_addr[0] == addr2->s_addr[0];
 }
 
+/** @brief Compare two IPv6 addresses
+ *
+ *  @param addr1 Pointer to IPv6 address.
+ *  @param addr2 Pointer to IPv6 address.
+ *
+ *  @return True if the addresses are the same, false otherwise.
+ */
+static inline bool net_ipv6_addr_cmp(const struct in6_addr *addr1,
+				     const struct in6_addr *addr2)
+{
+	return !memcmp(addr1, addr2, sizeof(struct in6_addr));
+}
+
 /** @brief Check if the given IPv6 address is a link local address.
  *
  * @return True if it is, false otherwise.
  */
-static inline bool net_is_ipv6_ll_addr(struct in6_addr *addr)
+static inline bool net_is_ipv6_ll_addr(const struct in6_addr *addr)
 {
 	return ((addr->s6_addr[0]) == 0xFE) &&
 		((addr->s6_addr[1]) == 0x80);
@@ -374,6 +389,120 @@ static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
 					  struct in_addr *addr)
 {
 	return net_if_ipv4_addr_mask_cmp(iface, addr);
+}
+
+/** @brief Check if the IPv6 address is unspecified (all bits zero)
+ *
+ *  @param addr IPv6 address.
+ *
+ *  @return True if the address is unspecified, false otherwise.
+ */
+static inline bool net_is_ipv6_addr_unspecified(struct in6_addr *addr)
+{
+	return addr->s6_addr32[0] == 0 && addr->s6_addr32[1] == 0 &&
+		addr->s6_addr32[2] == 0 && addr->s6_addr32[3] == 0;
+}
+
+/** @brief Check if the IPv6 address is solicited node multicast address
+ *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
+ *
+ *  @param addr IPv6 address.
+ *
+ *  @return True if the address is solicited node address, false otherwise.
+ */
+static inline bool net_is_ipv6_addr_solicited_node(struct in6_addr *addr)
+{
+	return addr->s6_addr32[0] == htonl(0xff020000) &&
+		addr->s6_addr32[1] == 0x00000000 &&
+		addr->s6_addr32[2] == htonl(0x00000001) &&
+		((addr->s6_addr32[3] & htonl(0xff000000)) == htonl(0xff000000));
+}
+
+/** @brief Create solicited node IPv6 multicast address
+ *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
+ *
+ *  @param src IPv6 address.
+ *  @param dst IPv6 address.
+ *
+ */
+static inline void net_ipv6_addr_create_solicited_node(struct in6_addr *src,
+						       struct in6_addr *dst)
+{
+	dst->s6_addr[0]   = 0xFF;
+	dst->s6_addr[1]   = 0x02;
+	dst->s6_addr16[1] = 0;
+	dst->s6_addr16[2] = 0;
+	dst->s6_addr16[3] = 0;
+	dst->s6_addr16[4] = 0;
+	dst->s6_addr[10]  = 0;
+	dst->s6_addr[11]  = 0x01;
+	dst->s6_addr[12]  = 0xFF;
+	dst->s6_addr[13]  = src->s6_addr[13];
+	dst->s6_addr16[7] = src->s6_addr16[7];
+}
+
+/** @brief Construct an IPv6 address from eight 16-bit words.
+ *
+ *  @param addr IPv6 address
+ *  @param addr0 16-bit word
+ *  @param addr1 16-bit word
+ *  @param addr2 16-bit word
+ *  @param addr3 16-bit word
+ *  @param addr4 16-bit word
+ *  @param addr5 16-bit word
+ *  @param addr6 16-bit word
+ *  @param addr7 16-bit word
+ */
+static inline void net_ipv6_addr_create(struct in6_addr *addr,
+					uint16_t addr0, uint16_t addr1,
+					uint16_t addr2, uint16_t addr3,
+					uint16_t addr4, uint16_t addr5,
+					uint16_t addr6, uint16_t addr7)
+{
+	addr->s6_addr16[0] = htons(addr0);
+	addr->s6_addr16[1] = htons(addr1);
+	addr->s6_addr16[2] = htons(addr2);
+	addr->s6_addr16[3] = htons(addr3);
+	addr->s6_addr16[4] = htons(addr4);
+	addr->s6_addr16[5] = htons(addr5);
+	addr->s6_addr16[6] = htons(addr6);
+	addr->s6_addr16[7] = htons(addr7);
+}
+
+/** @brief Create link local allnodes multicast IPv6 address
+ *
+ *  @param addr IPv6 address
+ */
+static inline void net_ipv6_addr_create_ll_allnodes_mcast(struct in6_addr *addr)
+{
+	net_ipv6_addr_create(addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
+}
+
+/** @brief Create IPv6 address interface identifier
+ *
+ *  @param addr IPv6 address
+ *  @param lladdr Link local address
+ */
+static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
+					    struct net_linkaddr *lladdr)
+{
+	addr->s6_addr[0] = 0xfe;
+	addr->s6_addr[1] = 0x80;
+
+	switch (lladdr->len) {
+	case 6:
+		memcpy(&addr->s6_addr[8], lladdr->addr, 3);
+		addr->s6_addr[11] = 0xff;
+		addr->s6_addr[12] = 0xfe;
+		memcpy(&addr->s6_addr[13], lladdr->addr + 3, 3);
+		addr->s6_addr[8] ^= 0x02;
+		break;
+
+	case 8:
+		memcpy(&addr->s6_addr[8], lladdr->addr, lladdr->len);
+		addr->s6_addr[8] ^= 0x02;
+		break;
+	}
 }
 
 #ifdef __cplusplus
