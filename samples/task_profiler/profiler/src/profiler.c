@@ -274,14 +274,7 @@ void prof_flush(void)
 	 */
 	if (prof_state == PROF_STOPPED) {
 		return;
-	}
-#endif
-
-	/*TODO: should consider removing this... */
-	PRINT("Dump\n");
-
-#ifdef PROFILER_SHELL
-	if (prof_state == PROF_STARTING) {
+	} else if (prof_state == PROF_STARTING) {
 		prof_send_platform_info();
 		prof_state = PROF_STARTED;
 	}
