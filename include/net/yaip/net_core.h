@@ -44,11 +44,22 @@ extern "C" {
 #define NET_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
 #define NET_WARN(fmt, ...) SYS_LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) SYS_LOG_INF(fmt,  ##__VA_ARGS__)
+#define NET_ASSERT(cond) do {				     \
+		if (!(cond)) {					     \
+			NET_ERR("{assert: '" #cond "' failed}");     \
+		} } while (0)
+#define NET_ASSERT_INFO(cond, fmt, ...) do {			     \
+		if (!(cond)) {					     \
+			NET_ERR("{assert: '" #cond "' failed} " fmt, \
+				##__VA_ARGS__);			     \
+		} } while (0)
 #else /* CONFIG_NET_LOG */
 #define NET_DBG(...)
 #define NET_ERR(...)
 #define NET_INFO(...)
 #define NET_WARN(...)
+#define NET_ASSERT(...)
+#define NET_ASSERT_INFO(...)
 #endif /* CONFIG_NET_LOG */
 
 #include <nanokernel.h>
