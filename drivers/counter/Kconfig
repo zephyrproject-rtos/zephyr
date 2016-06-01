@@ -57,3 +57,11 @@ config AON_TIMER_IRQ_PRI
 	depends on AON_TIMER_QMSI
 	help
 	 aon timer interrupt priority.
+
+config AON_API_REENTRANCY
+	bool
+	prompt "AON driver API reentrancy"
+	depends on AON_TIMER_QMSI
+	default n
+	help
+	Enable support for AON driver API reentrancy.

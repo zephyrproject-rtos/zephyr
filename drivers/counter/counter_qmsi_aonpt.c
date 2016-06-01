@@ -28,9 +28,57 @@ static void aonpt_int_callback(void *user_data);
 
 static counter_callback_t user_cb;
 
+struct aon_data {
+	struct nano_sem sem;
+};
+
+#ifdef CONFIG_AON_API_REENTRANCY
+static struct aon_data aonpt_context;
+#define AONPT_CONTEXT (&aonpt_context)
+static const int reentrancy_protection = 1;
+#else
+#define AONPT_CONTEXT (NULL)
+static const int reentrancy_protection;
+#endif
+
+static void aon_reentrancy_init(struct device *dev)
+{
+	struct aon_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_init(&context->sem);
+	nano_sem_give(&context->sem);
+}
+
+static void aon_critical_region_start(struct device *dev)
+{
+	struct aon_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+}
+
+static void aon_critical_region_end(struct device *dev)
+{
+	struct aon_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_give(&context->sem);
+}
+
 static int aon_timer_qmsi_start(struct device *dev)
 {
 	qm_aonpt_config_t qmsi_cfg;
+	int result = 0;
 
 	user_cb = NULL;
 
@@ -42,11 +90,13 @@ static int aon_timer_qmsi_start(struct device *dev)
 	qmsi_cfg.count = 0xffffffff;
 	qmsi_cfg.callback_data = NULL;
 
+	aon_critical_region_start(dev);
 	if (qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg)) {
-		return -EIO;
+		result = -EIO;
 	}
+	aon_critical_region_end(dev);
 
-	return 0;
+	return result;
 }
 
 static int aon_timer_qmsi_stop(struct device *dev)
@@ -58,7 +108,9 @@ static int aon_timer_qmsi_stop(struct device *dev)
 	qmsi_cfg.count = 0;
 	qmsi_cfg.callback_data = NULL;
 
+	aon_critical_region_start(dev);
 	qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg);
+	aon_critical_region_end(dev);
 
 	return 0;
 }
@@ -77,6 +129,7 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 				    uint32_t count, void *user_data)
 {
 	qm_aonpt_config_t qmsi_cfg;
+	int result = 0;
 
 	/* Check if timer has been started */
 	if (QM_SCSS_AON[QM_SCSS_AON_0].aonpt_cfg == 0) {
@@ -90,12 +143,14 @@ static int aon_timer_qmsi_set_alarm(struct device *dev,
 	qmsi_cfg.count = count;
 	qmsi_cfg.callback_data = user_data;
 
+	aon_critical_region_start(dev);
 	if (qm_aonpt_set_config(QM_SCSS_AON_0, &qmsi_cfg)) {
 		user_cb = NULL;
-		return -EIO;
+		result = -EIO;
 	}
+	aon_critical_region_end(dev);
 
-	return 0;
+	return result;
 }
 
 static struct counter_driver_api aon_timer_qmsi_api = {
@@ -118,11 +173,13 @@ static int aon_timer_init(struct device *dev)
 
 	QM_SCSS_INT->int_aon_timer_mask &= ~BIT(0);
 
+	aon_reentrancy_init(dev);
+
 	return 0;
 }
 
 DEVICE_AND_API_INIT(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME,
-		    aon_timer_init, NULL, NULL, SECONDARY,
+		    aon_timer_init, AONPT_CONTEXT, NULL, SECONDARY,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&aon_timer_qmsi_api);
 
