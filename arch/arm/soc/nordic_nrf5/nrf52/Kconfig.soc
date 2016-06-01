@@ -20,6 +20,6 @@ prompt "nRF52x MCU Selection"
 depends on SOC_SERIES_NRF52X
 
 config SOC_NRF52832
-       bool "NRF52832"
+	bool "NRF52832"
 
 endchoice

@@ -17,7 +17,7 @@
 if BOARD_NRF52_PCA10040
 
 config  GPIO_AS_PINRESET
-        bool "GPIO as pin reset (reset button)"
-        default y
+	bool "GPIO as pin reset (reset button)"
+	default y
 
 endif # BOARD_NRF52_PCA10040

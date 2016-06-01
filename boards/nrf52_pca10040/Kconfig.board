@@ -15,5 +15,5 @@
 # limitations under the License.
 
 config  BOARD_NRF52_PCA10040
-        bool "nRF52 PCA10040"
-        depends on SOC_NRF52832
+	bool "nRF52 PCA10040"
+	depends on SOC_NRF52832

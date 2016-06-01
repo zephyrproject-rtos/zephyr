@@ -23,7 +23,7 @@ menuconfig LSM6DS0
 	default n
 	help
 	  Enable driver for LSM6DS0 I2C-based accelerometer and gyroscope
-          sensor.
+	  sensor.
 
 config LSM6DS0_SYS_LOG_LEVEL
 	int "LSM6DS0 Log level"

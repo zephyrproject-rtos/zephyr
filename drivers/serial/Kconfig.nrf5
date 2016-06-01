@@ -71,7 +71,7 @@ config UART_NRF5_GPIO_TX_PIN
 	range 0 31
 	default 6
 	depends on UART_NRF5
-        depends on GPIO_NRF5
+	depends on GPIO_NRF5
 	help
 	  The GPIO pin to use for TX.
 
