@@ -18,7 +18,9 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 
+#include <net/buf.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/att.h>
 #include <bluetooth/log.h>
 
 #include "conn.h"
@@ -34,6 +36,16 @@
 
 /* TODO: Get this value during negotiation */
 #define BLE_GATT_MTU_SIZE 23
+
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+/* Pool for incoming ATT packets */
+static struct nano_fifo prep_data;
+static NET_BUF_POOL(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
+		    BLE_GATT_MTU_SIZE, &prep_data, NULL,
+		    sizeof(struct nble_gatts_write_evt));
+
+static struct nano_fifo queue;
+#endif
 
 struct nble_gatt_service {
 	const struct bt_gatt_attr *attrs;
@@ -1347,6 +1359,43 @@ void bt_gatt_cancel(struct bt_conn *conn)
 	BT_DBG("");
 }
 
+static uint8_t
+on_nble_gatts_prep_write_evt(const struct nble_gatts_write_evt *ev,
+			     const uint8_t *data, uint8_t len)
+{
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	struct net_buf *buf;
+
+	BT_DBG("handle 0x%04x flag %d len %u", attr->handle, ev->flag, buflen);
+
+	buf = net_buf_get_timeout(&prep_data, 0, TICKS_NONE);
+	if (!buf) {
+		return BT_GATT_ERR(BT_ATT_ERR_PREPARE_QUEUE_FULL);
+	}
+
+	/* Copy data into the outstanding queue */
+	memcpy(net_buf_user_data(buf), ev, sizeof(*ev));
+	memcpy(net_buf_add(buf, len), data, len);
+
+	nano_fifo_put(&queue, buf);
+
+	return 0;
+#else
+	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
+#endif
+}
+
+static uint8_t gatts_write_evt(const struct nble_gatts_write_evt *ev,
+			       const uint8_t *buf, uint8_t buflen)
+{
+	const struct bt_gatt_attr *attr = ev->attr;
+	struct bt_conn *conn = bt_conn_lookup_handle(ev->conn_handle);
+
+	BT_DBG("handle 0x%04x offset %u", attr->handle, ev->offset);
+
+	return attr->write(conn, attr, buf, buflen, ev->offset);
+}
+
 void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 			     const uint8_t *buf, uint8_t buflen)
 {
@@ -1357,40 +1406,20 @@ void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 	BT_DBG("handle 0x%04x flag %d len %u", attr->handle, ev->flag, buflen);
 
 	/* Check for write support and flush support in case of prepare */
-	if (!attr->write ||
-	    ((ev->flag & NBLE_GATT_WR_FLAG_PREP) && !attr->flush)) {
+	if (!attr->write) {
 		reply_data.status = BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
 
 		goto reply;
 	}
 
-	reply_data.status = attr->write(conn, attr, buf, buflen, ev->offset);
+	if (ev->flag & NBLE_GATT_WR_FLAG_PREP) {
+		reply_data.status = on_nble_gatts_prep_write_evt(ev, buf,
+								 buflen);
+		goto reply;
+	}
+
+	reply_data.status = gatts_write_evt(ev, buf, buflen);
 	if (reply_data.status < 0) {
-		if (ev->flag & NBLE_GATT_WR_FLAG_PREP) {
-			/**
-			 * Note: The Attribute Value validation is done when an
-			 * Execute Write Request is received. Hence, any Invalid
-			 * Offset or Invalid Attribute Value Length errors are
-			 * generated when an Execute Write Request is received.
-			 * BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F]
-			 * page 504.
-			 * So we end up storing errors to be sent later on.
-			 */
-
-			BT_DBG("Prepare write error %d", reply_data.status);
-
-			switch (reply_data.status) {
-			case BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET):
-			case BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN):
-				BT_DBG("Defer error to the execute write");
-				conn->gatt_private = (void *)reply_data.status;
-				reply_data.status = buflen;
-				break;
-			default:
-				break;
-			}
-		}
-
 		goto reply;
 	}
 
@@ -1399,11 +1428,6 @@ void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 		reply_data.status = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 
 		goto reply;
-	}
-
-	/* Flush in case of regular write operation */
-	if (attr->flush && !(ev->flag & NBLE_GATT_WR_FLAG_PREP)) {
-		reply_data.status = attr->flush(conn, attr, BT_GATT_FLUSH_SYNC);
 	}
 
 reply:
@@ -1418,33 +1442,10 @@ reply:
 	}
 }
 
-struct nble_gatts_flush_all {
-	struct bt_conn *conn;
-	int status;
-	uint8_t flag;
-};
-
-static uint8_t flush_all(const struct bt_gatt_attr *attr, void *user_data)
-{
-	struct nble_gatts_flush_all *flush_data = user_data;
-
-	if (attr->flush) {
-		int status = attr->flush(flush_data->conn, attr,
-					 flush_data->flag);
-		if (status < 0 && flush_data->status == 0)
-			flush_data->status = status;
-	}
-
-	return BT_GATT_ITER_CONTINUE;
-}
-
 void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 {
 	struct bt_conn *conn;
-	struct nble_gatts_flush_all flush_data = {
-		.flag = evt->flag,
-		.status = 0,
-	};
+	struct net_buf *buf;
 	struct nble_gatts_write_reply_req rsp = {
 		.conn_handle = evt->conn_handle,
 	};
@@ -1457,19 +1458,23 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 		return;
 	}
 
-	flush_data.conn = conn;
+	while ((buf = nano_fifo_get(&queue, TICKS_NONE))) {
+		struct nble_gatts_write_evt *ev = net_buf_user_data(buf);
 
-	if (conn->gatt_private) {
-		rsp.status = (int)gatt_get_private(conn);
-		BT_DBG("Return deferred error %d", rsp.status);
-		goto reply;
+		/* Skip buffer for other connections */
+		if (ev->conn_handle != evt->conn_handle) {
+			nano_fifo_put(&queue, buf);
+			continue;
+		}
+
+		/* Just discard the data if an error was set */
+		if (!rsp.status && evt->flag == 0x01) {
+			rsp.status = gatts_write_evt(ev, buf->data, buf->len);
+		}
+
+		net_buf_unref(buf);
 	}
 
-	bt_gatt_foreach_attr(0x0001, 0xFFFF, flush_all, &flush_data);
-
-	rsp.status = flush_data.status;
-
-reply:
 	nble_gatts_write_reply_req(&rsp);
 
 	bt_conn_unref(conn);
@@ -1514,9 +1519,27 @@ void on_nble_gatts_read_evt(const struct nble_gatts_read_evt *ev)
 	nble_gatts_read_reply_req(&reply_data, data, len);
 }
 
+void bt_gatt_init(void)
+{
+	BT_DBG("");
+
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	net_buf_pool_init(prep_pool);
+#endif
+}
+
 void bt_gatt_disconnected(struct bt_conn *conn)
 {
+	struct net_buf *buf;
+
 	BT_DBG("conn %p", conn);
+
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	/* Discard queued buffers */
+	while ((buf = nano_fifo_get(&queue, TICKS_NONE))) {
+		net_buf_unref(buf);
+	}
+#endif
 
 	conn->gatt_private = NULL;
 

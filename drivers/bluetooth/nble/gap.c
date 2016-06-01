@@ -22,10 +22,12 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/gatt.h>
 #include <bluetooth/log.h>
 
 #include "gap_internal.h"
 #include "conn_internal.h"
+#include "gatt_internal.h"
 #include "uart.h"
 #include "conn.h"
 #include "rpc.h"
@@ -366,6 +368,7 @@ void on_nble_up(void)
 	BT_DBG("");
 
 	bt_smp_init();
+	bt_gatt_init();
 }
 
 void bt_storage_register(const struct bt_storage *bt_storage)

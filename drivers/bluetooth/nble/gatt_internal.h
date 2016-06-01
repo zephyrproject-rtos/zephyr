@@ -23,6 +23,8 @@
  */
 #define BLE_GATTS_MAX_SERVICES 10
 
+void bt_gatt_init(void);
+
 /*
  * GATT Attribute stream structure.
  *

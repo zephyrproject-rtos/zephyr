@@ -49,6 +49,14 @@ config BLUETOOTH_CENTRAL
 	bool
 	default n
 
+config BLUETOOTH_ATT_PREPARE_COUNT
+	int "Number of ATT prepare write buffers"
+	default 2
+	range 0 64
+	help
+	  Number of buffers available for ATT prepare write, setting
+	  this to 0 disables GATT long/reliable writes.
+
 config BLUETOOTH_GATT_CLIENT
 	bool
 	default n
