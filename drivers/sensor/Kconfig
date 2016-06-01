@@ -49,6 +49,8 @@ source "drivers/sensor/Kconfig.lis3dh"
 
 source "drivers/sensor/Kconfig.lis3mdl"
 
+source "drivers/sensor/Kconfig.lps25hb"
+
 source "drivers/sensor/Kconfig.lsm6ds0"
 
 source "drivers/sensor/Kconfig.lsm9ds0_gyro"
