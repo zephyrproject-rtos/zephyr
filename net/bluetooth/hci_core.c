@@ -530,7 +530,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
 		BT_ERR("Unable to look up conn with handle %u", handle);
-		return;
+		goto advertise;
 	}
 
 	conn->err = evt->reason;
@@ -566,6 +566,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 
+advertise:
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
 		set_advertise_enable();
 	}
