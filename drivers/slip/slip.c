@@ -387,19 +387,9 @@ static void slip_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len);
 }
 
-static uint32_t slip_cap(struct net_if *iface)
-{
-#if defined(CONFIG_SLIP_TAP) &&	defined(CONFIG_NET_IPV4)
-	return NET_CAP_ARP;
-#else
-	return 0;
-#endif
-}
-
 static struct net_if_api slip_if_api = {
 	.init = slip_iface_init,
 	.send = slip_send,
-	.capabilities = slip_cap,
 };
 
 static struct slip_context slip_context_data;
