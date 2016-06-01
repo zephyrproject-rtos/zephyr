@@ -515,7 +515,7 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 	$(Q)$(MAKE) $(build)=$(@)
 
 
-core-y := lib/ kernel/ misc/ net/ boards/ arch/ ext/
+core-y := lib/ kernel/ misc/ net/ boards/ arch/ ext/ usb/
 drivers-y := drivers/
 
 ifneq ($(strip $(MAKEFILE_APP_DIR)),)
