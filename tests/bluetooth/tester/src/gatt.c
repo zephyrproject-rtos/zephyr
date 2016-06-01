@@ -340,43 +340,6 @@ static ssize_t write_value(struct bt_conn *conn,
 	return len;
 }
 
-static ssize_t flush_value(struct bt_conn *conn,
-			    const struct bt_gatt_attr *attr, uint8_t flags)
-{
-	struct gatt_value *value = attr->user_data;
-	uint16_t flushed_data_len = 0;
-
-	if (!value->prep_data_len && !value->prep_write_err) {
-		return flushed_data_len;
-	}
-
-	if (value->prep_write_err) {
-		uint8_t err = value->prep_write_err;
-
-		memset(value->prep_data, 0, value->prep_data_len);
-		value->prep_data_len = 0;
-		value->prep_write_err = 0;
-
-		return BT_GATT_ERR(err);
-	}
-
-	flushed_data_len = value->prep_data_len;
-
-	switch (flags) {
-	case BT_GATT_FLUSH_SYNC:
-		/* Sync buffer to data */
-		memcpy(value->data, value->prep_data, value->len);
-		value->len = value->prep_data_len;
-		/* Fallthrough */
-	case BT_GATT_FLUSH_DISCARD:
-		memset(value->prep_data, 0, value->prep_data_len);
-		value->prep_data_len = 0;
-		return flushed_data_len;
-	}
-
-	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-}
-
 struct add_characteristic {
 	uint16_t char_id;
 	uint8_t properties;
@@ -420,10 +383,10 @@ static int alloc_characteristic(struct add_characteristic *ch)
 
 	/* Add Characteristic Value */
 	attr_value = gatt_db_add(&(struct bt_gatt_attr)
-				 BT_GATT_LONG_DESCRIPTOR(ch->uuid,
+				 BT_GATT_DESCRIPTOR(ch->uuid,
 					ch->permissions & GATT_PERM_MASK,
-					read_value, write_value, flush_value,
-					&value), sizeof(value));
+					read_value, write_value, &value),
+					sizeof(value));
 	if (!attr_value) {
 		server_buf_pull(sizeof(*chrc_data));
 		/* Characteristic attribute uuid has constant length */
@@ -579,11 +542,10 @@ static int alloc_descriptor(const struct bt_gatt_attr *attr,
 		}
 
 		attr_desc = gatt_db_add(&(struct bt_gatt_attr)
-					BT_GATT_LONG_DESCRIPTOR(d->uuid,
+					BT_GATT_DESCRIPTOR(d->uuid,
 						d->permissions & GATT_PERM_MASK,
 						read_value, write_value,
-						flush_value, &value),
-						sizeof(value));
+						&value), sizeof(value));
 	}
 
 	if (!attr_desc) {

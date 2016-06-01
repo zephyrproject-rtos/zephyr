@@ -1108,71 +1108,33 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 #define MAX_DATA 30
-struct vnd_long_value {
-	/* TODO: buffer needs to be per connection */
-	uint8_t buf[MAX_DATA];
-	uint8_t data[MAX_DATA];
-};
-
-static struct vnd_long_value vnd1 = {
-	.buf = { 'V', 'e', 'n', 'd', 'o', 'r' },
-	.data = { 'V', 'e', 'n', 'd', 'o', 'r' },
-};
-
-static struct vnd_long_value vnd2 = {
-	.buf = { 'S', 't', 'r', 'i', 'n', 'g' },
-	.data = { 'S', 't', 'r', 'i', 'n', 'g' },
-};
+static uint8_t vnd_long_value1[MAX_DATA] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+static uint8_t vnd_long_value2[MAX_DATA] = { 'S', 't', 'r', 'i', 'n', 'g' };
 
 static ssize_t read_long_vnd(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	struct vnd_long_value *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value->data,
-				 sizeof(value->data));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 sizeof(vnd_long_value1));
 }
 
 static ssize_t write_long_vnd(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
 			      uint16_t len, uint16_t offset)
 {
-	struct vnd_long_value *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
-	if (offset >= sizeof(value->buf)) {
-		printk("incorrect write: len %u offset %u\n", len, offset);
+	if (offset + len > sizeof(vnd_long_value1)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (offset + len > sizeof(value->buf)) {
-		printk("incorrect write: len %u offset %u\n", len, offset);
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
-
 	/* Copy to buffer */
-	memcpy(value->buf + offset, buf, len);
+	memcpy(value + offset, buf, len);
 
 	return len;
-}
-
-static ssize_t flush_long_vnd(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr, uint8_t flags)
-{
-	struct vnd_long_value *value = attr->user_data;
-
-	switch (flags) {
-	case BT_GATT_FLUSH_DISCARD:
-		/* Discard buffer reseting it back with data */
-		memcpy(value->buf, value->data, sizeof(value->buf));
-		return 0;
-	case BT_GATT_FLUSH_SYNC:
-		/* Sync buffer to data */
-		memcpy(value->data, value->buf, sizeof(value->data));
-		return 0;
-	}
-
-	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
 static struct bt_gatt_attr vnd_attrs[] = {
@@ -1188,17 +1150,17 @@ static struct bt_gatt_attr vnd_attrs[] = {
 
 	BT_GATT_CHARACTERISTIC(&vnd_long_uuid1.uuid, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
-	BT_GATT_LONG_DESCRIPTOR(&vnd_long_uuid1.uuid,
+	BT_GATT_DESCRIPTOR(&vnd_long_uuid1.uuid,
 				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-				read_long_vnd, write_long_vnd, flush_long_vnd,
-				&vnd1),
+				read_long_vnd, write_long_vnd,
+				&vnd_long_value1),
 
 	BT_GATT_CHARACTERISTIC(&vnd_long_uuid2.uuid, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
-	BT_GATT_LONG_DESCRIPTOR(&vnd_long_uuid2.uuid,
+	BT_GATT_DESCRIPTOR(&vnd_long_uuid2.uuid,
 				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-				read_long_vnd, write_long_vnd, flush_long_vnd,
-				&vnd2),
+				read_long_vnd, write_long_vnd,
+				&vnd_long_value2),
 };
 
 static int cmd_gatt_register_test_svc(int argc, char *argv[])

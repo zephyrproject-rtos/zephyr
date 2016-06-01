@@ -74,19 +74,8 @@ extern "C" {
  */
 #define BT_GATT_PERM_WRITE_AUTHEN		0x20
 
-/* GATT attribute flush flags */
-/** @def BT_GATT_FLUSH_DISCARD
- *  @brief Attribute flush discard flag.
- */
-#define BT_GATT_FLUSH_DISCARD			0x00
-/** @def BT_GATT_FLUSH_DISCARD
- *  @brief Attribute flush synchronize flag.
- */
-#define BT_GATT_FLUSH_SYNC			0x01
-
 /**  @def BT_GATT_ERR
-  *  @brief Construct error return value for attribute read, write and
-  *         flush callbacks.
+  *  @brief Construct error return value for attribute read and write callbacks.
   *
   *  @param _att_err ATT error code
   *
@@ -131,24 +120,6 @@ struct bt_gatt_attr {
 					 const struct bt_gatt_attr *attr,
 					 const void *buf, uint16_t len,
 					 uint16_t offset);
-
-	/** Attribute flush callback
-	 *
-	 *  If this callback is provided (non-NULL) every write
-	 *  operation will be followed by a call to it. The expectation
-	 *  is for the attribute implementation to only commit the write
-	 *  result once this is called.
-	 *
-	 *  @param conn   The connection that is requesting to write
-	 *  @param attr   The attribute that's being read
-	 *  @param flags  Flags (BT_GATT_FLUSH_*)
-	 *
-	 *  @return Number of bytes flushed, or in case of an error
-	 *          BT_GATT_ERR() with a specific ATT error code.
-	 */
-	ssize_t			(*flush)(struct bt_conn *conn,
-					 const struct bt_gatt_attr *attr,
-					 uint8_t flags);
 
 	/** Attribute user data */
 	void			*user_data;
@@ -687,28 +658,6 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 	.perm = _perm,							\
 	.read = _read,							\
 	.write = _write,						\
-	.user_data = _value,						\
-}
-
-/** @def BT_GATT_LONG_DESCRIPTOR
- *  @brief Descriptor Declaration Macro.
- *
- *  Helper macro to declare a descriptor attribute.
- *
- *  @param _uuid Descriptor attribute uuid.
- *  @param _perm Descriptor attribute access permissions.
- *  @param _read Descriptor attribute read callback.
- *  @param _write Descriptor attribute write callback.
- *  @param _flush Descriptor attribute flush callback.
- *  @param _value Descriptor attribute value.
- */
-#define BT_GATT_LONG_DESCRIPTOR(_uuid, _perm, _read, _write, _flush, _value) \
-{									\
-	.uuid = _uuid,							\
-	.perm = _perm,							\
-	.read = _read,							\
-	.write = _write,						\
-	.flush = _flush,						\
 	.user_data = _value,						\
 }
 
