@@ -104,8 +104,6 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 	return NULL;
 }
 
-#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ll(buf))
-
 static inline struct net_buf *prepare_arp(struct net_if *iface,
 					  struct arp_entry *entry,
 					  struct net_buf *pending)
