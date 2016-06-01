@@ -27,6 +27,8 @@
 
 #include <net/ethernet.h>
 
+#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ll(buf))
+
 struct net_arp_hdr {
 	struct net_eth_hdr eth_hdr;
 	uint16_t hwtype;		/* HTYPE */
