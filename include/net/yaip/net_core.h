@@ -62,6 +62,7 @@ struct net_if;
 
 enum net_verdict {
 	NET_OK,
+	NET_CONTINUE,
 	NET_DROP,
 };
 

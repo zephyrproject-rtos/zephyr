@@ -72,7 +72,7 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 config NET_ARP
        bool "Enable ARP"
        default y
-       depends on NET_IPV4 && NET_ETHERNET
+       depends on NET_IPV4 && NET_L2_ETHERNET
        help
          Enable ARP support. This is necessary on hardware that requires it to
 	 get IPv4 working (like Ethernet devices).
@@ -138,14 +138,6 @@ config CONFIG_NET_MAX_CONTEXTS
 	  Each network context is used to describe a network 5-tuple that
 	  is used when listening or sending network traffic.
 
-config NET_ETHERNET
-       bool "Enable ethernet support"
-       default n
-       help
-         Add suport for Ethernet, enabling selecting relevant hardware drivers.
-	 If NET_SLIP and SLIP_TAP are selected, NET_ETHERNET will enable to
-	 fully simulate ethernet through SLIP.
-
 config NET_SLIP
        bool "Use SLIP connectivity with Qemu"
        default n
@@ -166,3 +158,5 @@ config NET_STATISTICS
        help
 	  Print network send/receive statistics to console.
 	  This takes memory so say 'n' if unsure.
+
+source "net/yaip/l2/Kconfig"

@@ -270,6 +270,8 @@ drop:
 
 static inline enum net_verdict process_data(struct net_buf *buf)
 {
+	int ret;
+
 	/* If there is no data, then drop the packet. Also if
 	 * the buffer is wrong type, then also drop the packet.
 	 * The first buffer needs to have user data part that
@@ -281,20 +283,14 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 		return NET_DROP;
 	}
 
-#if defined(CONFIG_NET_IPV4)
-	if ((net_nbuf_iface(buf)->capabilities & NET_CAP_ARP) &&
-	    (net_nbuf_ll_reserve(buf) == sizeof(struct net_eth_hdr))) {
-		struct net_eth_hdr *eth_hdr = (struct net_eth_hdr *)
-							net_nbuf_ll(buf);
-		if (ntohs(eth_hdr->type) == NET_ETH_PTYPE_ARP) {
-			NET_DBG("ARP packet from %s received",
-				net_sprint_ll_addr(
-					(uint8_t *)eth_hdr->src.addr,
-					sizeof(struct net_eth_addr)));
-			return net_arp_input(buf);
+	ret = net_if_recv_data(net_nbuf_iface(buf), buf);
+	if (ret != NET_CONTINUE) {
+		if (ret == NET_DROP) {
+			NET_STATS(++net_stats.processing_error);
 		}
+
+		return ret;
 	}
-#endif
 
 	/* IP version and header length. */
 	switch (NET_IPV6_BUF(buf)->vtc & 0xf0) {
@@ -359,8 +355,6 @@ static void init_rx_queue(void)
 /* Called when data needs to be sent to network */
 int net_send_data(struct net_buf *buf)
 {
-	int ret = 0;
-
 	if (!buf || !buf->frags) {
 		return -ENODATA;
 	}
@@ -380,9 +374,7 @@ int net_send_data(struct net_buf *buf)
 	}
 #endif
 
-	net_if_queue_tx(net_nbuf_iface(buf), buf);
-
-	return ret;
+	return net_if_send_data(net_nbuf_iface(buf), buf);
 }
 
 /* Called by driver when an IP packet has been received */

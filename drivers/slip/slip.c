@@ -404,5 +404,12 @@ static struct net_if_api slip_if_api = {
 
 static struct slip_context slip_context_data;
 
+#if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
+#define _SLIP_L2_LAYER ETHERNET_L2
+#else
+#define _SLIP_L2_LAYER DUMMY_L2
+#endif
+
 NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
-		NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api, 127);
+		NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
+		_SLIP_L2_LAYER, 127);

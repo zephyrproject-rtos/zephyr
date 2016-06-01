@@ -238,7 +238,6 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 				 * pending query to this IP address,
 				 * so this packet must be discarded.
 				 */
-				net_nbuf_unref(buf);
 				return NULL;
 			}
 
@@ -279,7 +278,7 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 	return buf;
 }
 
-static inline void send_pending(struct net_buf **buf)
+static inline void send_pending(struct net_if *iface, struct net_buf **buf)
 {
 	struct net_buf *pending = *buf;
 
@@ -288,7 +287,7 @@ static inline void send_pending(struct net_buf **buf)
 
 	*buf = NULL;
 
-	if (net_send_data(pending) < 0) {
+	if (net_if_send_data(iface, pending) < 0) {
 		/* This is to unref the original ref */
 		net_nbuf_unref(pending);
 	}
@@ -325,7 +324,7 @@ static inline void arp_update(struct net_if *iface,
 				memcpy(&arp_table[i].eth, hwaddr,
 				       sizeof(struct net_eth_addr));
 
-				send_pending(&arp_table[i].pending);
+				send_pending(iface, &arp_table[i].pending);
 			}
 
 			return;

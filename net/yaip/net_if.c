@@ -51,22 +51,6 @@ static void net_if_tx_fiber(struct net_if *iface)
 			buf, net_buf_frags_len(buf->frags));
 
 		if (api && api->send) {
-
-#if defined(CONFIG_NET_IPV4)
-			if (iface->capabilities & NET_CAP_ARP) {
-				buf = net_arp_prepare(buf);
-				if (!buf) {
-					/* Packet was discarded */
-					continue;
-				}
-
-				/* ARP packet will be sent now and the actual
-				 * packet is sent after the ARP reply has been
-				 * received.
-				 */
-			}
-#endif /* CONFIG_NET_IPV4 */
-
 			if (api->send(iface, buf) < 0) {
 				net_nbuf_unref(buf);
 			}
