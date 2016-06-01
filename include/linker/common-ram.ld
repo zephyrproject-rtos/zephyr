@@ -172,3 +172,11 @@
 		KEEP(*(SORT_BY_NAME(".net_if*")))
 		__net_if_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	SECTION_DATA_PROLOGUE(net_nbr, (OPTIONAL),)
+	{
+		__net_nbr_start = .;
+		*(".net_nbr.*")
+		KEEP(*(SORT_BY_NAME(".net_nbr*")))
+		__net_nbr_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

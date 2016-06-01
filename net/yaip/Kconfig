@@ -52,6 +52,14 @@ config NET_INITIAL_HOP_LIMIT
        help
          The value should be > 0
 
+config NET_IPV6_MAX_NEIGHBORS
+       int "How many IPv6 neighbors are supported"
+       depends on NET_IPV6
+       default 8
+       range 1 254
+       help
+         The value depends on your network needs.
+
 config NET_IPV4
        bool "Enable IPv4"
        default n
