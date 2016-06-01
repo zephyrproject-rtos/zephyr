@@ -34,7 +34,7 @@ extern void _NmiInit(void);
 #define NMI_INIT()
 #endif
 
-#include "system_nrf52.h"
+#include "nrf.h"
 
 #define __SYSTEM_CLOCK_64M (64000000UL)
 
