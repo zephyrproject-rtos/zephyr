@@ -531,8 +531,9 @@ void net_nbuf_unref(struct net_buf *buf)
 #endif
 	} else {
 #ifdef NET_DEBUG_NBUFS
-		NET_DBG("%s buf %p ref %d frags %p (%s():%d)",
+		NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
 			type2str(NET_NBUF_DATA),
+			get_frees(NET_NBUF_DATA),
 			buf, buf->ref - 1, buf->frags, caller, line);
 #else
 		NET_DBG("%s buf %p ref %d frags %p",
@@ -552,8 +553,9 @@ void net_nbuf_unref(struct net_buf *buf)
 		net_buf_frag_del(buf, frag);
 
 #ifdef NET_DEBUG_NBUFS
-		NET_DBG("%s buf %p ref %d frags %p (%s():%d)",
+		NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
 			type2str(NET_NBUF_DATA),
+			get_frees(NET_NBUF_DATA),
 			frag, frag->ref - 1, frag->frags, caller, line);
 #else
 		NET_DBG("%s buf %p ref %d frags %p",
