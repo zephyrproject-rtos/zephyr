@@ -469,13 +469,6 @@ int net_if_init(void)
 
 		if (api && api->init) {
 			api->init(iface);
-
-			if (api->capabilities) {
-				iface->capabilities = api->capabilities(iface);
-			} else {
-				iface->capabilities = 0;
-			}
-
 			init_tx_queue(iface);
 		}
 
