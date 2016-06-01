@@ -269,6 +269,36 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
 struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr);
 
 /**
+ * @brief Check if this IPv6 address belongs to this specific interfaces.
+ * @param iface Network interface
+ * @param addr IPv6 address
+ * @return Pointer to interface address, NULL if not found.
+ */
+static inline
+struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
+						     struct in6_addr *addr)
+{
+#if defined(CONFIG_NET_IPV6)
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!iface->ipv6.unicast[i].is_used ||
+		    iface->ipv6.unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		if (net_is_ipv6_prefix(addr->s6_addr,
+			iface->ipv6.unicast[i].address.in6_addr.s6_addr,
+				       128)) {
+			return &iface->ipv6.unicast[i];
+		}
+	}
+#endif
+
+	return NULL;
+}
+
+/**
  * @brief Add a IPv6 address to an interface
  * @param iface Network interface
  * @param addr IPv6 address
@@ -282,6 +312,14 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 uint32_t vlifetime);
 
 /**
+ * @brief Remove an IPv6 address from an interface
+ * @param iface Network interface
+ * @param addr IPv6 address
+ * @return True if successfully removed, false otherwise
+ */
+bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr);
+
+/**
  * @brief Add a IPv6 multicast address to an interface
  * @param iface Network interface
  * @param addr IPv6 multicast address
@@ -289,6 +327,14 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
  */
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 						struct in6_addr *addr);
+
+/**
+ * @brief Remove an IPv6 multicast address from an interface
+ * @param iface Network interface
+ * @param addr IPv6 multicast address
+ * @return True if successfully removed, false otherwise
+ */
+bool net_if_ipv6_maddr_rm(struct net_if *iface, struct in6_addr *addr);
 
 /**
  * @brief Check if this IPv6 multicast address belongs to one of the interfaces.

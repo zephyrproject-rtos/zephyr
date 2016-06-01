@@ -152,6 +152,42 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 	return NULL;
 }
 
+bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr)
+{
+#if defined(CONFIG_NET_IPV6)
+	int i;
+
+	NET_ASSERT(addr);
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		struct in6_addr maddr;
+
+		if (!iface->ipv6.unicast[i].is_used) {
+			continue;
+		}
+
+		if (!net_ipv6_addr_cmp(
+			    &iface->ipv6.unicast[i].address.in6_addr,
+			    addr)) {
+			continue;
+		}
+
+		iface->ipv6.unicast[i].is_used = false;
+
+		net_ipv6_addr_create_solicited_node(addr, &maddr);
+		net_if_ipv6_maddr_rm(iface, &maddr);
+
+		NET_DBG("[%d] interface %p address %s type %s removed",
+			i, iface, net_sprint_ipv6_addr(addr),
+			net_addr_type2str(iface->ipv6.unicast[i].addr_type));
+
+		return true;
+	}
+#endif
+
+	return false;
+}
+
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 						struct in6_addr *addr)
 {
@@ -180,6 +216,34 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 #endif
 
 	return NULL;
+}
+
+bool net_if_ipv6_maddr_rm(struct net_if *iface, struct in6_addr *addr)
+{
+#if defined(CONFIG_NET_IPV6)
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (!iface->ipv6.mcast[i].is_used) {
+			continue;
+		}
+
+		if (!net_ipv6_addr_cmp(
+			    &iface->ipv6.mcast[i].address.in6_addr,
+			    addr)) {
+			continue;
+		}
+
+		iface->ipv6.mcast[i].is_used = false;
+
+		NET_DBG("[%d] interface %p address %s removed",
+			i, iface, net_sprint_ipv6_addr(addr));
+
+		return true;
+	}
+#endif
+
+	return false;
 }
 
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *maddr)
