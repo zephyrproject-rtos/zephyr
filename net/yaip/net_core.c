@@ -380,7 +380,7 @@ int net_send_data(struct net_buf *buf)
 	}
 #endif
 
-	nano_fifo_put(&net_nbuf_iface(buf)->tx_queue, buf);
+	net_if_queue_tx(net_nbuf_iface(buf), buf);
 
 	return ret;
 }

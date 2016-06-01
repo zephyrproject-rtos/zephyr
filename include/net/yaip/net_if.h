@@ -194,6 +194,16 @@ static inline struct device *net_if_get_device(struct net_if *iface)
 }
 
 /**
+ * @brief Queue a packet into net if's TX queue
+ * @param iface Pointer to a network interface structure
+ * @param buf Pointer on a net buffer to queue
+ */
+static inline void net_if_queue_tx(struct net_if *iface, struct net_buf *buf)
+{
+	nano_fifo_put(&iface->tx_queue, buf);
+}
+
+/**
  * @brief Get an network interface's link address
  * @param iface Pointer to a network interface structure
  * @return a pointer on the network link address
