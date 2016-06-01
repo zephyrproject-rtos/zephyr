@@ -1,3 +1,7 @@
+ifdef CONFIG_SOC_SERIES_NRF52X
+soc-cflags += -DNRF52
+endif
+
 obj-y += soc.o
 
 KERNEL_HEX_NAME = $(KERNEL_NAME).hex
