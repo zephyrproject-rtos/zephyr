@@ -273,6 +273,7 @@ config BLUETOOTH_DEBUG_NONE
 config	BLUETOOTH_DEBUG_LOG
 	bool "Normal printf-style to console"
 	select BLUETOOTH_DEBUG
+	select STDOUT_CONSOLE
 	select SYS_LOG
 	help
 	  This option enables Bluetooth debug going to standard
