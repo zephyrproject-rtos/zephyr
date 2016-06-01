@@ -22,6 +22,9 @@
 #ifndef __NET_LINKADDR_H__
 #define __NET_LINKADDR_H__
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,8 +37,37 @@ extern "C" {
 struct net_linkaddr {
 	/** The array of byte representing the address */
 	uint8_t *addr;
+
 	/** Length of that address array */
 	uint8_t len;
+};
+
+/**
+ *  @brief Hardware link address structure
+ *
+ *  Used to hold the link address information. This variant is needed
+ *  when we have to store the link layer address.
+ *  Note that you cannot cast this to net_linkaddr as they store
+ *  different things.
+ */
+struct net_linkaddr_storage {
+	/** The real length of the ll address. */
+	uint8_t len;
+
+	union {
+		/** The array of bytes representing the address */
+		uint8_t addr[0];
+
+		struct {
+			/* The integer array allocate total of 8 bytes
+			 * that can hold currently all the supported
+			 * link layer addresses. These int's can be
+			 * used when comparing lladdr instead of using
+			 * memcmp()
+			 */
+			uint32_t storage[2];
+		};
+	};
 };
 
 #ifdef __cplusplus
