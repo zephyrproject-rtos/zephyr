@@ -1,4 +1,4 @@
-# Kconfig - USB device stack configuration options
+# Kconfig - USB class drivers configuration options
 
 #
 # Copyright (c) 2016 Wind River Systems, Inc.
@@ -16,23 +16,28 @@
 # limitations under the License.
 #
 
-menuconfig USB_DEVICE_STACK
-	bool
-	prompt "USB device stack"
-	depends on USB
-	default n
-	help
-	Enable USB device stack.
-
 if USB_DEVICE_STACK
 
-config USB_DEBUG
+config USB_CDC_ACM
 	bool
-	prompt "Enable USB debug options for the entire USB stack"
+	prompt "USB CDC ACM Device Class Driver"
 	default n
 	help
-	This option enables the debug features for the USB device stack.
+	USB CDC ACM device class driver
 
-source "usb/class/Kconfig"
+config CDC_ACM_PORT_NAME
+	string "CDC ACM class device driver port name"
+	depends on USB_CDC_ACM
+	default "CDC_ACM"
+	help
+	Port name through which CDC ACM class device driver is accessed
 
-endif # USB_DEVICE_STACK
+config USB_CDC_ACM_DEBUG
+	bool
+	prompt "Enable debug options for USB CDC ACM device class driver"
+	default n
+	depends on USB_CDC_ACM
+	help
+	This option enables the debug features for USB CDC ACM device class driver
+
+endif # CONFIG_USB_DEVICE_STACK

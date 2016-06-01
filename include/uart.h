@@ -51,6 +51,8 @@ extern "C" {
 #define LINE_CTRL_BAUD_RATE	(1 << 0)
 #define LINE_CTRL_RTS		(1 << 1)
 #define LINE_CTRL_DTR		(1 << 2)
+#define LINE_CTRL_DCD		(1 << 3)
+#define LINE_CTRL_DSR		(1 << 4)
 
 /* Common communication errors for UART.*/
 
@@ -174,6 +176,7 @@ struct uart_driver_api {
 
 #ifdef CONFIG_UART_LINE_CTRL
 	int (*line_ctrl_set)(struct device *dev, uint32_t ctrl, uint32_t val);
+	int (*line_ctrl_get)(struct device *dev, uint32_t ctrl, uint32_t *val);
 #endif
 
 #ifdef CONFIG_UART_DRV_CMD
@@ -588,6 +591,30 @@ static inline int uart_line_ctrl_set(struct device *dev,
 
 	if (api->line_ctrl_set) {
 		return api->line_ctrl_set(dev, ctrl, val);
+	}
+
+	return -ENOTSUP;
+}
+
+/**
+ * @brief Retrieve line control for UART.
+ *
+ * @param dev UART device structure.
+ * @param ctrl The line control to manipulate.
+ * @param val Value to get for the line control.
+ *
+ * @retval 0 If successful.
+ * @retval failed Otherwise.
+ */
+static inline int uart_line_ctrl_get(struct device *dev,
+				     uint32_t ctrl, uint32_t *val)
+{
+	struct uart_driver_api *api;
+
+	api = (struct uart_driver_api *)dev->driver_api;
+
+	if (api && api->line_ctrl_get) {
+		return api->line_ctrl_get(dev, ctrl, val);
 	}
 
 	return -ENOTSUP;
