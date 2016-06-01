@@ -38,8 +38,14 @@ static void net_if_tx_fiber(struct net_if *iface)
 {
 	struct net_if_api *api = (struct net_if_api *)iface->dev->driver_api;
 
-	NET_DBG("Starting TX fiber (stack %d bytes) for driver %p",
-		sizeof(iface->tx_fiber_stack), api);
+	api = (struct net_if_api *) iface->dev->driver_api;
+
+	NET_ASSERT(api && api->init && api->send);
+
+	NET_DBG("Starting TX fiber (stack %d bytes) for driver %p queue %p",
+		sizeof(iface->tx_fiber_stack), api, &iface->tx_queue);
+
+	api->init(iface);
 
 	while (1) {
 		struct net_buf *buf;
@@ -457,15 +463,9 @@ struct net_if *net_if_get_default(void)
 
 void net_if_init(void)
 {
-	struct net_if_api *api;
 	struct net_if *iface;
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
-		api = (struct net_if_api *) iface->dev->driver_api;
-
-		NET_ASSERT(api && api->init && api->send);
-
-		api->init(iface);
 		init_tx_queue(iface);
 
 #if defined(CONFIG_NET_IPV6)

@@ -313,12 +313,17 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 	return NET_DROP;
 }
 
-static void net_rx_fiber(int unused1, int unused2)
+static void net_rx_fiber(void)
 {
 	struct net_buf *buf;
 
 	NET_DBG("Starting RX fiber (stack %d bytes)",
 		sizeof(rx_fiber_stack));
+
+	/* Starting TX side. The ordering is important here and the TX
+	 * can only be started when RX side is ready to receive packets.
+	 */
+	net_if_init();
 
 	while (1) {
 		buf = nano_fifo_get(&rx_queue, TICKS_UNLIMITED);
@@ -349,7 +354,8 @@ static void init_rx_queue(void)
 	nano_fifo_init(&rx_queue);
 
 	rx_fiber_id = fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-				  net_rx_fiber, 0, 0, 8, 0);
+				  (nano_fiber_entry_t)net_rx_fiber,
+				  0, 0, 8, 0);
 }
 
 /* Called when data needs to be sent to network */
@@ -401,6 +407,7 @@ static int network_initialization(void)
 #if defined(CONFIG_NET_IPV6)
 	net_icmpv6_init();
 #endif
+	NET_DBG("Network L3 layer init done");
 	return 0;
 }
 
@@ -417,17 +424,17 @@ static int net_init(struct device *unused)
 
 	net_nbuf_init();
 
-	init_rx_queue();
+	net_context_init();
 
 #ifdef CONFIG_NET_ARP
 	net_arp_init();
 #endif
 
-	net_if_init();
+	network_initialization();
 
-	net_context_init();
+	init_rx_queue();
 
-	return network_initialization();
+	return 0;
 }
 
 SYS_INIT(net_init, NANOKERNEL, CONFIG_NET_INIT_PRIO);
