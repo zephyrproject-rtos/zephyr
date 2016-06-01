@@ -24,9 +24,11 @@
 
 #include <device.h>
 
+#include <net/net_core.h>
 #include <net/buf.h>
 #include <net/net_linkaddr.h>
 #include <net/net_ip.h>
+#include <net/net_l2.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -131,6 +133,9 @@ struct net_if {
 	/** Interface capabilities */
 	uint32_t capabilities;
 
+	/** Interface's L2 layer */
+	const struct net_l2 const *l2;
+
 	/** The hardware link address */
 	struct net_linkaddr link_addr;
 
@@ -182,6 +187,28 @@ struct net_if {
 	} ipv4;
 #endif /* CONFIG_NET_IPV4 */
 };
+
+/**
+ * @brief Send a buffer through a net iface
+ * @param iface Pointer to a network interface structure
+ * @param buf Pointer on a net buffer to send
+ */
+static inline enum net_verdict net_if_send_data(struct net_if *iface,
+						struct net_buf *buf)
+{
+	return iface->l2->send(iface, buf);
+}
+
+/**
+ * @brief Input a buffer through a net iface
+ * @param iface Pointer to a network interface structure
+ * @param buf Pointer on a net buffer to input
+ */
+static inline enum net_verdict net_if_recv_data(struct net_if *iface,
+						struct net_buf *buf)
+{
+	return iface->l2->recv(iface, buf);
+}
 
 /**
  * @brief Get an network interface's device
@@ -394,20 +421,24 @@ struct net_if_api {
 	uint32_t (*capabilities)(struct net_if *iface);
 };
 
-#define NET_IF_INIT(dev_name, sfx, _mtu)				\
-	static struct net_if (__net_if_##dev_name_##sfx) __used		\
+#define NET_IF_GET_NAME(dev_name, sfx) (__net_if_##dev_name_##sfx)
+#define NET_IF_GET(dev_name, sfx) (&NET_IF_GET_NAME(dev_name, sfx))
+
+#define NET_IF_INIT(dev_name, sfx, _l2, _mtu)				\
+	static struct net_if (NET_IF_GET_NAME(dev_name, sfx)) __used	\
 	__attribute__((__section__(".net_if.data"))) = {		\
 		.dev = &(__device_##dev_name),				\
+		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.mtu = _mtu,						\
 	}
 
 /* Network device intialization macro */
 
 #define NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
-			data, cfg_info, prio, api, mtu)		\
+			data, cfg_info, prio, api, l2, mtu)	\
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
 			    cfg_info, NANOKERNEL, prio, api);	\
-	NET_IF_INIT(dev_name, 0, mtu)
+	NET_IF_INIT(dev_name, 0, l2, mtu)
 
 #ifdef __cplusplus
 }

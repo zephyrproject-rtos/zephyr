@@ -14,6 +14,22 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_YAIP
-#include <net/yaip/net_l2.h>
-#endif
+#include <net/net_core.h>
+#include <net/net_l2.h>
+#include <net/net_if.h>
+
+static inline enum net_verdict dummy_recv(struct net_if *iface,
+					  struct net_buf *buf)
+{
+	return NET_CONTINUE;
+}
+
+static inline enum net_verdict dummy_send(struct net_if *iface,
+					  struct net_buf *buf)
+{
+	net_if_queue_tx(iface, buf);
+
+	return NET_OK;
+}
+
+NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send);

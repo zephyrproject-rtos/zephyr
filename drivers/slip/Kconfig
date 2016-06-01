@@ -73,6 +73,7 @@ config	SLIP_STATISTICS
 config  SLIP_TAP
 	bool "Use TAP interface to host"
 	default n
+	select NET_L2_ETHERNET
 	help
 	  By default TUN is used. In TAP the Ethernet frames
 	  are transferred over SLIP.
