@@ -105,7 +105,10 @@ int cfg2;
 #endif
 
 /*TODO: could configure flush period as well ? */
-int prof_started;
+#define PROF_STOPPED  0
+#define PROF_STARTING 1
+#define PROF_STARTED  2
+int prof_state;
 
 int shell_cmd_prof(int argc, char *argv[])
 {
@@ -128,8 +131,7 @@ int shell_cmd_prof(int argc, char *argv[])
 		    || (sys_k_event_logger_get_monitor_mask() != 0)
 #endif
 		   ) {
-			prof_started = 1;
-			prof_send_platform_info();
+			prof_state = PROF_STARTING;
 		}
 	} else if (!strncmp(argv[1], "stop", len)) {
 		PRINT("Stop\n");
@@ -270,7 +272,7 @@ void prof_flush(void)
 	 * of profiler state
 	 * Have to consider improving this (task suspend/resume in microkernel mode)
 	 */
-	if (!prof_started) {
+	if (prof_state == PROF_STOPPED) {
 		return;
 	}
 #endif
@@ -278,7 +280,12 @@ void prof_flush(void)
 	/*TODO: should consider removing this... */
 	PRINT("Dump\n");
 
-#ifndef PROFILER_SHELL
+#ifdef PROFILER_SHELL
+	if (prof_state == PROF_STARTING) {
+		prof_send_platform_info();
+		prof_state = PROF_STARTED;
+	}
+#else
 	prof_send_platform_info();
 #endif
 
@@ -310,8 +317,9 @@ void prof_flush(void)
 #ifdef CONFIG_TASK_MONITOR
 			    && (sys_k_event_logger_get_monitor_mask() == 0)
 #endif
-			   )
-				prof_started = 0;
+			   ) {
+				prof_state = PROF_STOPPED;
+			}
 			irq_unlock(key);
 #endif
 
