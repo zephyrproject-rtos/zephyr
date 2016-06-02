@@ -17,6 +17,7 @@
 import sys
 import os
 import copy
+import threading
 
 try:
     import ply.lex as lex
@@ -204,14 +205,21 @@ def ast_expr(ast, env):
     elif ast[0] == "exists":
         return True if ast_sym(ast[1], env) else False
 
+mutex = threading.Lock()
 
 def parse(expr_text, env):
     """Given a text representation of an expression in our language,
     use the provided environment to determine whether the expression
     is true or false"""
-    ast = parser.parse(expr_text)
-    return ast_expr(ast, env)
 
+    # Like it's C counterpart, state machine is not thread-safe
+    mutex.acquire()
+    try:
+        ast = parser.parse(expr_text)
+    finally:
+        mutex.release()
+
+    return ast_expr(ast, env)
 
 # Just some test code
 if __name__ == "__main__":
