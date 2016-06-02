@@ -14,6 +14,16 @@ Environmental Sensing Service.
 
 --------------------------------------------------------------------------------
 
+Bluetooth firmware:
+
+Before using the environmental sensing sample, the Arduino 101 board needs to be
+flashed with the firmware for its nRF51 Bluetooth LE controller. To do this,
+follow the steps from:
+
+https://www.zephyrproject.org/doc/board/arduino_101_ble.html
+
+--------------------------------------------------------------------------------
+
 Sensor wiring:
 
 The sample uses the HDC1008 sensor for temperature and humidity measurement, and
