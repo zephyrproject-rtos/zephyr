@@ -75,10 +75,36 @@ M:	Perez-Gonzalez, Inaky <inaky.perez-gonzalez@intel.com>
 S:	Supported
 F:	doc/
 
+FLASH DRIVER
+M:	Baohong Liu <baohong.liu@intel.com>
+M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
+S:	Supported
+F:	drivers/flash/
+
+POWER MANAGEMENT
+M:	Ramesh Thomas <ramesh.thomas@intel.com>
+M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
+S:	Supported
+F:	arch/x86/core/crt0.S
+F:	include/device.h
+F:	include/init.h
+F:	include/power.h
+F:	kernel/microkernel/k_idle.c
+F:	kernel/nanokernel/device.c
+F:	samples/power/
+
 QMSI
 M:	Anas Nashif <anas.nashif@intel.com>
 S:	Supported
 F:	ext/hal/qmsi/
+
+QMSI DRIVERS
+M:	Sergio Rodriguez <sergio.sf.rodriguez@intel.com>
+M:	Baohong Liu <baohong.liu@intel.com>
+M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
+S:	Supported
+F:	drivers/*/*qmsi*
+F:	drivers/*/*/*qmsi*
 
 TINYCRYPT
 M:	Constanza Heath <constanza.m.heath@intel.com>
