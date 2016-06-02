@@ -106,6 +106,13 @@ S:	Supported
 F:	drivers/*/*qmsi*
 F:	drivers/*/*/*qmsi*
 
+SANITYCHECK
+M:	Andrew Boie <andrew.p.boie@intel.com>
+S:	Supported
+F:	scripts/sanitycheck
+F:	scripts/expr_parser.py
+F:	scripts/sanity_chk/
+
 TINYCRYPT
 M:	Constanza Heath <constanza.m.heath@intel.com>
 S:	Supported
