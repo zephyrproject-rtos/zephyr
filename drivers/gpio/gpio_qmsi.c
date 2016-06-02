@@ -222,7 +222,7 @@ static inline int gpio_qmsi_read(struct device *port,
 		qm_gpio_read_pin(gpio, pin, &state);
 		*value = state;
 	} else {
-		qm_gpio_read_port(gpio, (uint32_t *const) &value);
+		qm_gpio_read_port(gpio, (uint32_t *const) value);
 	}
 
 	return 0;
