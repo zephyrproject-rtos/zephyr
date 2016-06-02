@@ -173,8 +173,6 @@ static uint8_t legacy_get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 	uint8_t local_io = get_io_capa();
 	uint8_t method;
 
-	BT_DBG("local_io %u remote_io %u", local_io, remote_io);
-
 	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY)
 		return JUST_WORKS;
 
@@ -190,6 +188,9 @@ static uint8_t legacy_get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 			method = PASSKEY_INPUT;
 		}
 	}
+
+	BT_DBG("local_io %u remote_io %u method %u", local_io, remote_io,
+	       method);
 
 	return method;
 }
@@ -243,6 +244,49 @@ void on_nble_sm_pairing_request_evt(const struct nble_sm_pairing_request_evt *ev
 
 	legacy_pairing_req(smp, evt->sec_param.remote_io);
 
+	bt_conn_unref(conn);
+}
+
+void on_nble_sm_security_request_evt(const struct nble_sm_security_request_evt *evt)
+{
+	struct bt_conn *conn;
+	struct bt_smp *smp;
+
+	BT_DBG("");
+
+	conn = bt_conn_lookup_handle(evt->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", evt->conn_handle);
+		return;
+	}
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		BT_ERR("No smp");
+		bt_conn_unref(conn);
+		return;
+	}
+
+	BT_DBG("conn %p remote_io %u mitm %u", conn, evt->sec_param.remote_io,
+	       evt->sec_param.mitm);
+
+	smp->method = legacy_get_pair_method(smp, evt->sec_param.remote_io);
+
+	if (smp->method == JUST_WORKS &&
+	    nble.auth && nble.auth->pairing_confirm) {
+		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		nble.auth->pairing_confirm(smp->conn);
+		goto done;
+	}
+
+	if (evt->sec_param.mitm) {
+		bt_conn_security(conn, BT_SECURITY_HIGH);
+	} else {
+		bt_conn_security(conn, BT_SECURITY_MEDIUM);
+	}
+
+done:
+	atomic_set_bit(&smp->flags, SMP_FLAG_SEC_REQ);
 	bt_conn_unref(conn);
 }
 
