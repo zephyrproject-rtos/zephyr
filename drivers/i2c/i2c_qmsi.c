@@ -96,7 +96,7 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 	case I2C_SPEED_FAST:
 		qm_cfg.speed = QM_I2C_SPEED_FAST;
 		break;
-	case QM_I2C_SPEED_FAST_PLUS:
+	case I2C_SPEED_FAST_PLUS:
 		qm_cfg.speed = QM_I2C_SPEED_FAST_PLUS;
 		break;
 	default:
