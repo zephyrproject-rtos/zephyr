@@ -63,7 +63,7 @@ def t_INTEGER(t):
     return t
 
 def t_STR(t):
-    r'\"([^\\\n]|(\\.))*?\"'
+    r'\"([^\\\n]|(\\.))*?\"|\'([^\\\n]|(\\.))*?\''
     # nip off the quotation marks
     t.value = t.value[1:-1]
     return t
