@@ -137,7 +137,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 
 		adc_lock(info);
 
-		if (qm_adc_set_config(QM_ADC_0, &cfg) != QM_RC_OK) {
+		if (qm_adc_set_config(QM_ADC_0, &cfg) != 0) {
 			ret =  -EINVAL;
 			adc_unlock(info);
 			break;
@@ -148,7 +148,7 @@ static int adc_qmsi_read(struct device *dev, struct adc_seq_table *seq_tbl)
 		 * register to check if the number of samples required has been
 		 * captured
 		 */
-		if (qm_adc_convert(QM_ADC_0, &xfer) != QM_RC_OK) {
+		if (qm_adc_convert(QM_ADC_0, &xfer) != 0) {
 			ret =  -EIO;
 			adc_unlock(info);
 			break;
