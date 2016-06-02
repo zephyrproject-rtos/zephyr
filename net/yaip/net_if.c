@@ -208,10 +208,10 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *maddr)
 	return NULL;
 }
 
-struct in6_addr *net_if_ipv6_unspecified_addr(void)
+const struct in6_addr *net_if_ipv6_unspecified_addr(void)
 {
 #if defined(CONFIG_NET_IPV6)
-	static struct in6_addr addr = IN6ADDR_ANY_INIT;
+	static const struct in6_addr addr = IN6ADDR_ANY_INIT;
 
 	return &addr;
 #else
@@ -336,8 +336,8 @@ static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 #endif
 }
 
-struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
-					     struct in6_addr *dst)
+const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
+						   struct in6_addr *dst)
 {
 #if defined(CONFIG_NET_IPV6)
 	struct in6_addr *src = NULL;

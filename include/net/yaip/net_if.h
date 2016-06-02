@@ -340,14 +340,14 @@ static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
  * @return Pointer to IPv6 address to use, NULL if no IPv6 address
  * could be found.
  */
-struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
-					     struct in6_addr *dst);
+const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
+						   struct in6_addr *dst);
 
 /**
  * @brief Return IPv6 any address (all zeros, ::)
  * @return IPv6 any address with all bits set to zero.
  */
-struct in6_addr *net_if_ipv6_unspecified_addr(void);
+const struct in6_addr *net_if_ipv6_unspecified_addr(void);
 
 /**
  * @brief Return IPv4 broadcast address (all bits ones)
