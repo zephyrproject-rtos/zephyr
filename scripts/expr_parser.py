@@ -18,6 +18,7 @@ import sys
 import os
 import copy
 import threading
+import re
 
 try:
     import ply.lex as lex
@@ -51,6 +52,7 @@ tokens = [
     "CBRACKET",
     "COMMA",
     "SYMBOL",
+    "COLON",
 ] + list(reserved.values())
 
 def t_HEX(t):
@@ -90,6 +92,8 @@ t_OBRACKET = r"\["
 t_CBRACKET = r"\]"
 
 t_COMMA = r","
+
+t_COLON = ":"
 
 def t_SYMBOL(t):
     r"[A-Za-z_][0-9A-Za-z_]*"
@@ -133,7 +137,8 @@ def p_expr_eval(p):
             | SYMBOL LT number
             | SYMBOL GTEQ number
             | SYMBOL LTEQ number
-            | SYMBOL IN list"""
+            | SYMBOL IN list
+            | SYMBOL COLON STR"""
     p[0] = (p[2], p[1], p[3])
 
 def p_expr_single(p):
@@ -204,6 +209,8 @@ def ast_expr(ast, env):
         return ast_sym(ast[1], env) in ast[2]
     elif ast[0] == "exists":
         return True if ast_sym(ast[1], env) else False
+    elif ast[0] == ":":
+        return True if re.compile(ast[2]).match(ast_sym(ast[1], env)) else False
 
 mutex = threading.Lock()
 

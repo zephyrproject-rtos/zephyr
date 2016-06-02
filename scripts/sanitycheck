@@ -80,6 +80,7 @@ Each testcase.ini block can define the following key/value pairs:
                  | symbol ">=" number
                  | symbol "<=" number
                  | symbol "in" list
+                 | symbol ":" string
                  | symbol
 
     list ::= "[" list_contents "]"
@@ -109,6 +110,14 @@ Each testcase.ini block can define the following key/value pairs:
     Is the same as:
 
         filter = not ARCH in ["x86", "arc"]
+
+    The ':' operator compiles the string argument as a regular expression,
+    and then returns a true value only if the symbol's value in the environment
+    matches. For example, if CONFIG_SOC="quark_se" then
+
+        filter = CONFIG_SOC : "quark.*"
+
+    Would match it.
 
 Architectures and platforms are defined in an archtecture configuration
 file which are stored by default in scripts/sanity_chk/arches/. These
