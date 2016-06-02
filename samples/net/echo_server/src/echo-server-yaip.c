@@ -28,6 +28,7 @@
 #include <sections.h>
 #include <errno.h>
 
+#include <net/net_if.h>
 #include <net/net_core.h>
 
 #if defined(CONFIG_NETWORKING_WITH_BT)

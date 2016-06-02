@@ -51,13 +51,14 @@ extern "C" {
 #define NET_WARN(...)
 #endif /* CONFIG_NET_LOG */
 
+#include <nanokernel.h>
+
 struct net_buf;
 struct net_context;
+struct net_if;
 
 #include <misc/sys_log.h>
 #include <string.h>
-
-#include <net/net_if.h>
 
 enum net_verdict {
 	NET_OK,
