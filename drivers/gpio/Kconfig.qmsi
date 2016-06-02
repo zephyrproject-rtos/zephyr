@@ -70,4 +70,12 @@ config GPIO_QMSI_AON_IRQ_PRI
 	help
 	  IRQ priority
 
+config GPIO_QMSI_API_REENTRANCY
+	bool
+	prompt "GPIO driver API reentrancy"
+	depends on GPIO_QMSI
+	default n
+	help
+	Enable support for QMSI GPIO driver API reentrancy.
+
 endif # GPIO_QMSI
