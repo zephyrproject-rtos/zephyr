@@ -49,7 +49,8 @@ void _arc_v2_irq_unit_init(void)
 
 	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, 1);
+		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1)); /* lowest priority */
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
 	}
