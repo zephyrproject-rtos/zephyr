@@ -26,6 +26,52 @@
 #include "qm_isr.h"
 #include "qm_rtc.h"
 
+struct rtc_data {
+	struct nano_sem sem;
+};
+
+#ifdef CONFIG_RTC_QMSI_API_REENTRANCY
+static struct rtc_data rtc_context;
+#define RTC_CONTEXT (&rtc_context)
+static const int reentrancy_protection = 1;
+#else
+#define RTC_CONTEXT (NULL)
+static const int reentrancy_protection;
+#endif /* CONFIG_RTC_QMSI_API_REENTRANCY */
+
+static void rtc_reentrancy_init(struct device *dev)
+{
+	struct rtc_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_init(&context->sem);
+	nano_sem_give(&context->sem);
+}
+
+static void rtc_critical_region_start(struct device *dev)
+{
+	struct rtc_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+}
+
+static void rtc_critical_region_end(struct device *dev)
+{
+	struct rtc_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_give(&context->sem);
+}
 
 static void rtc_qmsi_enable(struct device *dev)
 {
@@ -41,6 +87,7 @@ static void rtc_qmsi_disable(struct device *dev)
 static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 {
 	qm_rtc_config_t qm_cfg;
+	int result = 0;
 
 	qm_cfg.init_val = cfg->init_val;
 	qm_cfg.alarm_en = cfg->alarm_enable;
@@ -52,10 +99,15 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	qm_cfg.callback = (void *) cfg->cb_fn;
 	qm_cfg.callback_data = dev;
 
-	if (qm_rtc_set_config(QM_RTC_0, &qm_cfg))
-		return -EIO;
+	rtc_critical_region_start(dev);
 
-	return 0;
+	if (qm_rtc_set_config(QM_RTC_0, &qm_cfg)) {
+		result = -EIO;
+	}
+
+	rtc_critical_region_end(dev);
+
+	return result;
 }
 
 static int rtc_qmsi_set_alarm(struct device *dev, const uint32_t alarm_val)
@@ -78,6 +130,8 @@ static struct rtc_driver_api api = {
 
 static int rtc_qmsi_init(struct device *dev)
 {
+	rtc_reentrancy_init(dev);
+
 	IRQ_CONNECT(QM_IRQ_RTC_0, CONFIG_RTC_0_IRQ_PRI, qm_rtc_isr_0, 0,
 		    IOAPIC_EDGE | IOAPIC_HIGH);
 
@@ -115,5 +169,5 @@ static int rtc_resume_device(struct device *dev, int pm_policy)
 DEFINE_DEVICE_PM_OPS(rtc, rtc_suspend_device, rtc_resume_device);
 
 DEVICE_AND_API_INIT_PM(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init,
-		       DEVICE_PM_OPS_GET(rtc), NULL, NULL, SECONDARY,
+		       DEVICE_PM_OPS_GET(rtc), RTC_CONTEXT, NULL, SECONDARY,
 		       CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&api);
