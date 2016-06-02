@@ -2021,7 +2021,9 @@ static void hci_reset_complete(struct net_buf *buf)
 	discovery_results_size = 0;
 	discovery_results_count = 0;
 #endif /* CONFIG_BLUETOOTH_BREDR */
-	atomic_set(bt_dev.flags, 0);
+
+	/* we only allow to enable once so this bit must be keep set */
+	atomic_set(bt_dev.flags, BIT(BT_DEV_ENABLE));
 }
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
