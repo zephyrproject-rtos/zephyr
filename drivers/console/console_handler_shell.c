@@ -217,76 +217,71 @@ static void shell(int arg1, int arg2)
 
 static uint8_t completion(char *line, uint8_t len)
 {
-	char cmds[MAX_LINE_LEN];
+	const char *first_match = NULL;
 	int common_chars = -1;
-	size_t cmds_len = 0;
 	int i;
 
 	for (i = 0; commands[i].cmd_name; i++) {
-		int name_len, j;
+		int j;
 
 		if (strncmp(line, commands[i].cmd_name, len)) {
 			continue;
 		}
 
-		name_len = strlen(commands[i].cmd_name);
-		if (name_len > (MAX_LINE_LEN - (cmds_len + 1))) {
-			break;
+		if (!first_match) {
+			first_match = commands[i].cmd_name;
+			continue;
 		}
 
-		memcpy(cmds + cmds_len, commands[i].cmd_name, name_len);
-		cmds_len += name_len;
-		cmds[cmds_len++] = '\n';
-
-		/* first match */
-		if (common_chars < 0) {
-			common_chars = name_len;
-			continue;
+		/* more commands match, print first match */
+		if (first_match && (common_chars < 0)) {
+			printk("\n%s\n", first_match);
+			common_chars = strlen(first_match);
 		}
 
 		/* cut common part of matching names */
 		for (j = 0; j < common_chars; j++) {
-			if (cmds[j] != commands[i].cmd_name[j]) {
+			if (first_match[j] != commands[i].cmd_name[j]) {
 				break;
 			}
 		}
 
 		common_chars = j;
+
+		printk("%s\n", commands[i].cmd_name);
 	}
 
-	/* no match */
-	if (common_chars < 0) {
+	/* no match, do nothing */
+	if (!first_match) {
 		return 0;
 	}
 
-	/* alter line with common part of commands */
-	memcpy(line + len, cmds + len, common_chars - len);
-
-	if (common_chars < cmds_len - 1) {
-		/*
-		 * more than one match, print matching commands, restore prompt
-		 * and print common part of matched commands
-		 */
-		cmds[cmds_len] = '\0';
-		printk("\n%s", cmds);
-
-		/* restore prompt */
+	if (common_chars >= 0) {
+		/* multiple match, restore prompt */
 		printk("%s", get_prompt());
 
-		/* print common part after prompt */
+		/* add common part after prompt */
 		for (i = 0; i < common_chars; i++) {
-			printk("%c", line[i]);
+			printk("%c", first_match[i]);
+			line[i] = first_match[i];
 		}
 	} else {
-		/* only one match, complete command name */
+		common_chars = strlen(first_match);
+
+		/* full command name with trailing spaces, do nothing */
+		if (len > common_chars) {
+			return 0;
+		}
+
+		/* complete matched command name */
 		for (i = len; i < common_chars; i++) {
-			printk("%c", line[i]);
+			printk("%c", first_match[i]);
+			line[i] = first_match[i];
 		}
 
 		/* for convenience add space after command */
 		printk(" ");
-		line[common_chars] = ' ';
-		common_chars++;
+		line[common_chars++] = ' ';
 	}
 
 	return common_chars - len;
