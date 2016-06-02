@@ -35,7 +35,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	}
 
 #ifdef CONFIG_NET_ARP
-	if ((net_nbuf_ll_reserve(buf) == sizeof(struct net_eth_hdr))) {
+	if (net_nbuf_family(buf) == AF_INET &&
+	    (net_nbuf_ll_reserve(buf) == sizeof(struct net_eth_hdr))) {
 		struct net_eth_hdr *eth_hdr =
 			(struct net_eth_hdr *) net_nbuf_ll(buf);
 
@@ -55,13 +56,15 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 				      struct net_buf *buf)
 {
 #ifdef CONFIG_NET_ARP
-	struct net_buf *arp_buf = net_arp_prepare(buf);
+	if (net_nbuf_family(buf) == AF_INET) {
+		struct net_buf *arp_buf = net_arp_prepare(buf);
 
-	if (!arp_buf) {
-		return NET_DROP;
+		if (!arp_buf) {
+			return NET_DROP;
+		}
+
+		buf = arp_buf;
 	}
-
-	buf = arp_buf;
 #endif
 
 	net_if_queue_tx(iface, buf);
