@@ -88,7 +88,7 @@ In rare cases a few global symbols do not use the normal kernel prefixes;
 Subsystem Naming Conventions
 ============================
 
-Generally, any sub-system can define its own naming conventions for symbols.
+Generally, any subsystem can define its own naming conventions for symbols.
 However, these should be implemented with their own namespace prefix (for
 example, ``bt\_`` for BlueTooth, or ``net\_`` for IP). This limits possible
 clashes with applications. Following this prefix convention with subsystems
@@ -109,15 +109,20 @@ files should be included with:
 
 .. code-block:: c
 
-   #include <subdirectory/header.h>.
+   #include <subdirectory/header.h>
 
 For example, if you have two files, :file:`include/pci.h` and
-:file:`include/drvers/pci.h`, and have set both :option:`-Iinclude/drivers`
+:file:`include/drivers/pci.h`, and have set both :option:`-Iinclude/drivers`
 and :option:`-Iinclude` for your compile, then any code using
 
 .. code-block:: c
 
-   #include <pci.h> becomes ambiguous, while
+   #include <pci.h>
+
+becomes ambiguous, while
+
+.. code-block:: c
+
    #include <drivers/pci.h>
 
 is not. Not having :option:`-Iinclude/drivers` forces users to use the second
