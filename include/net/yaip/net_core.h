@@ -30,11 +30,11 @@ extern "C" {
 /* Network subsystem logging helpers */
 
 #if defined(CONFIG_NET_LOG)
+#if NET_DEBUG > 0
 #if !defined(SYS_LOG_DOMAIN)
 #define SYS_LOG_DOMAIN "net"
 #endif /* !SYS_LOG_DOMAIN */
 
-#if NET_DEBUG > 0
 #undef SYS_LOG_LEVEL
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #endif /* NET_DEBUG */
