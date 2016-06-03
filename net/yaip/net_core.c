@@ -133,6 +133,7 @@ static inline void stats(void)
 #define net_print_statistics()
 #endif /* CONFIG_NET_STATISTICS */
 
+#if defined(CONFIG_NET_IPV6)
 static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
 						  struct net_ipv6_hdr *ipv6)
 {
@@ -145,7 +146,6 @@ static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
 	return net_icmpv6_input(buf, len, hdr->type, hdr->code);
 }
 
-#if defined(CONFIG_NET_IPV6)
 static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 {
 	struct net_ipv6_hdr *hdr = NET_IPV6_BUF(buf);
