@@ -467,7 +467,7 @@ for BOARD=arduino_101_factory if you wish to debug on the quark core.
    .. code-block:: console
 
       $ cd $ZEPHYR_BASE/samples/hello_world/nanokernel
-      $ make BOARD=arduino_101_factory debugserver
+      $ make BOARD=arduino_101 debugserver
 
    These commands will start an ``openocd`` session with a local telnet
    server (on port 4444 for direct openocd commands to be issued), and a
