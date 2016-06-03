@@ -23,7 +23,7 @@
 #include <errno.h>
 
 extern void net_nbuf_init(void);
-extern int net_if_init(void);
+extern void net_if_init(void);
 extern void net_context_init(void);
 
 extern char *net_byte_to_hex(uint8_t *ptr, uint8_t byte, char base, bool pad);
