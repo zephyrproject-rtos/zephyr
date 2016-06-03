@@ -34,9 +34,6 @@
 #if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
 #undef NET_DEBUG_NBUFS
 #define NET_DEBUG_NBUFS 1
-#if !defined(NET_DEBUG)
-#define NET_DEBUG 1
-#endif
 #endif
 
 #include <net/net_core.h>
