@@ -218,7 +218,7 @@ objtree		:= .
 src		:= $(srctree)
 obj		:= $(objtree)
 
-VPATH		:= $(srctree)
+VPATH		:= $(SOURCE_DIR_PARENT) $(srctree)
 
 export srctree objtree VPATH
 
@@ -731,13 +731,13 @@ export KBUILD_IMAGE ?= zephyr
 zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(core-y) $(drivers-y) \
 		     $(libs-y)))
 
-zephyr-app-dirs	:= $(patsubst %/,%,$(filter %/, $(app-y)))
+zephyr-app-dirs	:= $(SOURCE_DIR)
 
 zephyr-alldirs	:= $(sort $(zephyr-dirs) $(zephyr-app-dirs) $(patsubst %/,%,$(filter %/, \
 		     $(core-) $(drivers-) $(libs-) $(app-))))
 
 core-y		:= $(patsubst %/, %/built-in.o, $(core-y))
-app-y		:= $(patsubst %/, %/built-in.o, $(app-y))
+app-y		:= $(patsubst %, %/built-in.o, $(notdir $(zephyr-app-dirs)))
 drivers-y	:= $(patsubst %/, %/built-in.o, $(drivers-y))
 libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
@@ -879,8 +879,9 @@ $(zephyr-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@
 
 PHONY += $(zephyr-app-dirs)
+$(zephyr-app-dirs): zephyr-app-dir-root = $(abspath $(patsubst %, %/.., $@))
 $(zephyr-app-dirs): prepare scripts
-	$(Q)$(MAKE) $(build)=$@
+	$(Q)$(MAKE) $(build)=$(@F) srctree=$(zephyr-app-dir-root)
 
 # Things we need to do before we recursively start building the kernel
 # or the modules are listed in "prepare".
