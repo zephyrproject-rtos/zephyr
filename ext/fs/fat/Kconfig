@@ -1,0 +1,6 @@
+
+config FAT_FILESYSTEM
+        bool "Enable FAT File System"
+        default n
+        help
+        Enable FAT File system.

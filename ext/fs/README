@@ -1,0 +1,8 @@
+This directory contains different file systems supported by Zephyr.
+
+The following file systems are currently supported:
+
+FatFs
+-------
+FatFs is a file system based on the FAT file system spefication.  This is
+provided by ELM Chan http://elm-chan.org/fsw/ff/00index_e.html

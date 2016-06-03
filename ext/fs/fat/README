@@ -1,0 +1,7 @@
+This implementaion of file system is developed by ELM Chan
+http://elm-chan.org/fsw/ff/00index_e.html.  
+
+This is based on FAT file system specification.  It provides
+an interface to physical storage management through its disk io
+API in diskio.c. The disk io interfaces are updated to interface
+with Zephyr flash memory management.

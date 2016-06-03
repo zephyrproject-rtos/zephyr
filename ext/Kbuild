@@ -1,2 +1,3 @@
 obj-y += hal/
 obj-y += lib/
+obj-y += fs/
