@@ -72,9 +72,10 @@ struct net_if;
 #include <string.h>
 
 enum net_verdict {
-	NET_OK,
-	NET_CONTINUE,
-	NET_DROP,
+	NET_OK,		/** Packet has been taken care of */
+	NET_CONTINUE,	/** Packet has not been touched,
+			    other part should decide about its fate */
+	NET_DROP,	/** Packet must be dropped */
 };
 
 /* Called by lower network stack when a network packet has been received */
