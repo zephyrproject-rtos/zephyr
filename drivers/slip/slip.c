@@ -163,10 +163,10 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 #endif
 
 		net_buf_frag_del(buf, frag);
-		net_buf_unref(frag);
+		net_nbuf_unref(frag);
 	}
 
-	net_buf_unref(buf);
+	net_nbuf_unref(buf);
 
 	slip_writeb(SLIP_END);
 
