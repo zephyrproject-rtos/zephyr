@@ -89,7 +89,7 @@ static inline void stats(void)
 			 GET_STAT(ipv4.sent),
 			 GET_STAT(ipv4.drop),
 			 GET_STAT(ipv4.forwarded));
-#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_IPV4 */
 
 		PRINT_STAT("IP vhlerr      %d\thblener\t%d\tlblener\t%d\n",
 			 GET_STAT(ip_errors.vhlerr),
