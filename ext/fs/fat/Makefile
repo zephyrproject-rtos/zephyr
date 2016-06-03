@@ -1,3 +1,3 @@
-ifdef CONFIG_FAT_FILESYSTEM
+ifdef CONFIG_FAT_FILESYSTEM_ELM
 ZEPHYRINCLUDE += -I$(srctree)/ext/fs/fat/include
 endif
