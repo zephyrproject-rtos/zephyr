@@ -128,16 +128,28 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 
 	hdr = NET_ARP_BUF(buf);
 
-	entry->pending = net_buf_ref(pending);
-	entry->iface = net_nbuf_iface(buf);
+	/* If entry is not set, then we are just about to send
+	 * an ARP request using the data in pending net_buf.
+	 * This can happen if there is already a pending ARP
+	 * request and we want to send it again.
+	 */
+	if (entry) {
+		entry->pending = net_buf_ref(pending);
+		entry->iface = net_nbuf_iface(buf);
 
-	net_ipaddr_copy(&entry->ip, &NET_IPV4_BUF(pending)->dst);
+		net_ipaddr_copy(&entry->ip, &NET_IPV4_BUF(pending)->dst);
+
+		memcpy(&hdr->eth_hdr.src.addr,
+		       net_if_get_link_addr(entry->iface)->addr,
+		       sizeof(struct net_eth_addr));
+	} else {
+		memcpy(&hdr->eth_hdr.src.addr,
+		       net_if_get_link_addr(iface)->addr,
+		       sizeof(struct net_eth_addr));
+	}
 
 	hdr->eth_hdr.type = htons(NET_ETH_PTYPE_ARP);
 	memset(&hdr->eth_hdr.dst.addr, 0xff, sizeof(struct net_eth_addr));
-	memcpy(&hdr->eth_hdr.src.addr,
-	       net_if_get_link_addr(entry->iface)->addr,
-	       sizeof(struct net_eth_addr));
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
 	hdr->protocol = htons(NET_ETH_PTYPE_IP);
@@ -156,7 +168,13 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 
 	memcpy(hdr->src_hwaddr.addr, hdr->eth_hdr.src.addr,
 	       sizeof(struct net_eth_addr));
-	my_addr = if_get_addr(entry->iface);
+
+	if (entry) {
+		my_addr = if_get_addr(entry->iface);
+	} else {
+		my_addr = &NET_IPV4_BUF(pending)->src;
+	}
+
 	if (my_addr) {
 		net_ipaddr_copy(&hdr->src_ipaddr, my_addr);
 	} else {
@@ -237,7 +255,15 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 				 * pending query to this IP address,
 				 * so this packet must be discarded.
 				 */
-				return NULL;
+				struct net_buf *req;
+
+				req = prepare_arp(net_nbuf_iface(buf),
+						  NULL, buf);
+				NET_DBG("Resending ARP");
+
+				net_nbuf_unref(buf);
+
+				return req;
 			}
 
 			free_entry = non_pending;
