@@ -50,11 +50,7 @@ static void net_if_tx_fiber(struct net_if *iface)
 		NET_DBG("Processing (buf %p, data len %u) network packet",
 			buf, net_buf_frags_len(buf->frags));
 
-		if (api && api->send) {
-			if (api->send(iface, buf) < 0) {
-				net_nbuf_unref(buf);
-			}
-		} else {
+		if (api->send(iface, buf) < 0) {
 			net_nbuf_unref(buf);
 		}
 
@@ -459,7 +455,7 @@ struct net_if *net_if_get_default(void)
 	return __net_if_start;
 }
 
-int net_if_init(void)
+void net_if_init(void)
 {
 	struct net_if_api *api;
 	struct net_if *iface;
@@ -467,15 +463,13 @@ int net_if_init(void)
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
 		api = (struct net_if_api *) iface->dev->driver_api;
 
-		if (api && api->init) {
-			api->init(iface);
-			init_tx_queue(iface);
-		}
+		NET_ASSERT(api && api->init && api->send);
+
+		api->init(iface);
+		init_tx_queue(iface);
 
 #if defined(CONFIG_NET_IPV6)
 		iface->hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
 #endif
 	}
-
-	return 0;
 }
