@@ -95,9 +95,8 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf);
 int net_send_data(struct net_buf *buf);
 
 /** @cond ignore */
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
+#if defined(CONFIG_INIT_STACKS)
 #include <offsets.h>
-#include <misc/printk.h>
 
 static inline void net_analyze_stack(const char *name,
 				     unsigned char *stack,
@@ -139,10 +138,10 @@ static inline void net_analyze_stack(const char *name,
 	size -= stack_offset;
 	pcnt = ((size - unused) * 100) / size;
 
-	printk("net (%p): %s stack real size %u "
-	       "unused %u usage %u/%u (%u %%)\n",
-	       sys_thread_self_get(), name,
-	       size + stack_offset, unused, size - unused, size, pcnt);
+	NET_INFO("net (%p): %s stack real size %u "
+		 "unused %u usage %u/%u (%u %%)",
+		 sys_thread_self_get(), name,
+		 size + stack_offset, unused, size - unused, size, pcnt);
 }
 #else
 #define net_analyze_stack(...)
