@@ -60,7 +60,7 @@ static struct nano_fifo rx_queue;
 static nano_thread_id_t rx_fiber_id;
 
 #if defined(CONFIG_NET_STATISTICS)
-#define PRINT_STAT(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#define PRINT(fmt, ...) NET_INFO(fmt, ##__VA_ARGS__)
 struct net_stats net_stats;
 #define GET_STAT(s) net_stats.s
 #define PRINT_STATISTICS_INTERVAL (30 * sys_clock_ticks_per_sec)
@@ -76,48 +76,48 @@ static inline void stats(void)
 		uint32_t new_print;
 
 #if defined(CONFIG_NET_IPV6)
-		PRINT_STAT("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
-			 GET_STAT(ipv6.recv),
-			 GET_STAT(ipv6.sent),
-			 GET_STAT(ipv6.drop),
-			 GET_STAT(ipv6.forwarded));
+		PRINT("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
+		      GET_STAT(ipv6.recv),
+		      GET_STAT(ipv6.sent),
+		      GET_STAT(ipv6.drop),
+		      GET_STAT(ipv6.forwarded));
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-		PRINT_STAT("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
-			 GET_STAT(ipv4.recv),
-			 GET_STAT(ipv4.sent),
-			 GET_STAT(ipv4.drop),
-			 GET_STAT(ipv4.forwarded));
+		PRINT("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
+		      GET_STAT(ipv4.recv),
+		      GET_STAT(ipv4.sent),
+		      GET_STAT(ipv4.drop),
+		      GET_STAT(ipv4.forwarded));
 #endif /* CONFIG_NET_IPV4 */
 
-		PRINT_STAT("IP vhlerr      %d\thblener\t%d\tlblener\t%d\n",
-			 GET_STAT(ip_errors.vhlerr),
-			 GET_STAT(ip_errors.hblenerr),
-			 GET_STAT(ip_errors.lblenerr));
-		PRINT_STAT("IP fragerr     %d\tchkerr\t%d\tprotoer\t%d\n",
-			 GET_STAT(ip_errors.fragerr),
-			 GET_STAT(ip_errors.chkerr),
-			 GET_STAT(ip_errors.protoerr));
+		PRINT("IP vhlerr      %d\thblener\t%d\tlblener\t%d",
+		      GET_STAT(ip_errors.vhlerr),
+		      GET_STAT(ip_errors.hblenerr),
+		      GET_STAT(ip_errors.lblenerr));
+		PRINT("IP fragerr     %d\tchkerr\t%d\tprotoer\t%d",
+		      GET_STAT(ip_errors.fragerr),
+		      GET_STAT(ip_errors.chkerr),
+		      GET_STAT(ip_errors.protoerr));
 
-		PRINT_STAT("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
-			 GET_STAT(icmp.recv),
-			 GET_STAT(icmp.sent),
-			 GET_STAT(icmp.drop));
-		PRINT_STAT("ICMP typeer    %d\tchkerr\t%d\n",
-			 GET_STAT(icmp.typeerr),
-			 GET_STAT(icmp.chkerr));
+		PRINT("ICMP recv      %d\tsent\t%d\tdrop\t%d",
+		      GET_STAT(icmp.recv),
+		      GET_STAT(icmp.sent),
+		      GET_STAT(icmp.drop));
+		PRINT("ICMP typeer    %d\tchkerr\t%d",
+		      GET_STAT(icmp.typeerr),
+		      GET_STAT(icmp.chkerr));
 
 #if defined(CONFIG_NET_UDP)
-		PRINT_STAT("UDP recv       %d\tsent\t%d\tdrop\t%d\n",
-			 GET_STAT(udp.recv),
-			 GET_STAT(udp.sent),
-			 GET_STAT(udp.drop));
-		PRINT_STAT("UDP chkerr     %d\n",
-			 GET_STAT(icmp.chkerr));
+		PRINT("UDP recv       %d\tsent\t%d\tdrop\t%d",
+		      GET_STAT(udp.recv),
+		      GET_STAT(udp.sent),
+		      GET_STAT(udp.drop));
+		PRINT("UDP chkerr     %d",
+		      GET_STAT(icmp.chkerr));
 #endif
 
-		PRINT_STAT("Processing err %d\n", GET_STAT(processing_error));
+		PRINT("Processing err %d", GET_STAT(processing_error));
 
 		new_print = curr + PRINT_STATISTICS_INTERVAL;
 		if (new_print > curr) {
