@@ -22,6 +22,18 @@
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_buf *buf)
 {
+	struct net_eth_hdr *hdr = NET_ETH_BUF(buf);
+
+	switch (ntohs(hdr->type)) {
+	case NET_ETH_PTYPE_IP:
+	case NET_ETH_PTYPE_ARP:
+		net_nbuf_family(buf) = AF_INET;
+		break;
+	case NET_ETH_PTYPE_IPV6:
+		net_nbuf_family(buf) = AF_INET6;
+		break;
+	}
+
 #ifdef CONFIG_NET_ARP
 	if ((net_nbuf_ll_reserve(buf) == sizeof(struct net_eth_hdr))) {
 		struct net_eth_hdr *eth_hdr =

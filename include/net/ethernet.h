@@ -28,6 +28,8 @@
 #include <net/net_ip.h>
 #include <net/nbuf.h>
 
+#define NET_ETH_BUF(buf) ((struct net_eth_hdr *)net_nbuf_ll(buf))
+
 #define NET_ETH_PTYPE_ARP  0x0806
 #define NET_ETH_PTYPE_IP   0x0800
 #define NET_ETH_PTYPE_IPV6 0x86dd
