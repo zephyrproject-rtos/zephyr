@@ -768,9 +768,10 @@ LINK_LIBS := $(foreach l,$(ALL_LIBS), -l$(l))
 OUTPUT_FORMAT ?= elf32-i386
 OUTPUT_ARCH ?= i386
 
+quiet_cmd_ar_target = AR      $@
+cmd_ar_target = rm -f $@; $(AR) rcT$(KBUILD_ARFLAGS) $@ $(KBUILD_ZEPHYR_MAIN)
 libzephyr.a: $(zephyr-deps)
-	@rm -f $@
-	$(Q)$(AR) -rcT libzephyr.a $(KBUILD_ZEPHYR_MAIN)
+	$(call cmd,ar_target)
 
 quiet_cmd_create-lnk = LINK    $@
       cmd_create-lnk =								\
