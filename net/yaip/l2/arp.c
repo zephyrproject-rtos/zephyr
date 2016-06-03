@@ -443,13 +443,5 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 
 void net_arp_init(void)
 {
-	static bool is_initialized;
-
-	if (is_initialized) {
-		return;
-	}
-
-	is_initialized = true;
-
 	memset(&arp_table, 0, sizeof(arp_table));
 }

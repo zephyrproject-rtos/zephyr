@@ -49,7 +49,12 @@ struct net_arp_hdr {
 
 struct net_buf *net_arp_prepare(struct net_buf *buf);
 enum net_verdict net_arp_input(struct net_buf *buf);
+
+#if defined(CONFIG_NET_ARP)
 void net_arp_init(void);
+#else
+#define net_arp_init(...)
+#endif
 
 #endif /* __ARP_H */
 

@@ -124,13 +124,5 @@ static struct net_icmpv6_handler echo_request_handler = {
 
 void net_icmpv6_init(void)
 {
-	static bool is_initialized;
-
-	if (is_initialized) {
-		return;
-	}
-
 	net_icmpv6_register_handler(&echo_request_handler);
-
-	is_initialized = true;
 }

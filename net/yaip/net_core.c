@@ -406,13 +406,18 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 	return 0;
 }
 
-static int network_initialization(void)
+static inline void l3_init(void)
 {
-#if defined(CONFIG_NET_IPV6)
 	net_icmpv6_init();
-#endif
-	NET_DBG("Network L3 layer init done");
-	return 0;
+
+	NET_DBG("Network L3 init done");
+}
+
+static inline void l2_init(void)
+{
+	net_arp_init();
+
+	NET_DBG("Network L2 init done");
 }
 
 static int net_init(struct device *unused)
@@ -430,11 +435,8 @@ static int net_init(struct device *unused)
 
 	net_context_init();
 
-#ifdef CONFIG_NET_ARP
-	net_arp_init();
-#endif
-
-	network_initialization();
+	l2_init();
+	l3_init();
 
 	init_rx_queue();
 

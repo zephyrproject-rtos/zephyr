@@ -44,6 +44,10 @@ struct net_icmpv6_handler {
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
 enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
 				  uint8_t type, uint8_t code);
+#if defined(CONFIG_NET_IPV6)
 void net_icmpv6_init(void);
+#else
+#define net_icmpv6_init(...)
+#endif
 
 #endif /* __ICMPV6_H */
