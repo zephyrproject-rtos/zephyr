@@ -380,7 +380,11 @@ int net_send_data(struct net_buf *buf)
 	}
 #endif
 
-	return net_if_send_data(net_nbuf_iface(buf), buf);
+	if (net_if_send_data(net_nbuf_iface(buf), buf) == NET_DROP) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 /* Called by driver when an IP packet has been received */
