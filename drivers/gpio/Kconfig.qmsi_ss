@@ -62,4 +62,11 @@ config GPIO_QMSI_SS_1_PRI
 	help
 	  IRQ priority
 
+config GPIO_QMSI_SS_API_REENTRANCY
+	bool
+	prompt "GPIO driver API reentrancy"
+	default n
+	help
+	Enable support for QMSI GPIO driver API reentrancy.
+
 endif # GPIO_QMSI_SS
