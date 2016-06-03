@@ -1,12 +1,15 @@
 .. _em_starterkit:
 
-DesignWare(R) ARC(R) EM Starter Kit
-###################################
+.. |trade| unicode:: U+000AE .. Registered Trademark char
+.. |tradem| unicode:: U+002122 .. Trademark char
+
+DesignWare|trade| ARC|trade| EM Starter Kit
+###########################################
 
 Overview
 ********
 
-The DesignWare(R) ARC(R) EM Starter Kit is a low-cost, versatile solution
+The DesignWare|trade| ARC|trade| EM Starter Kit is a low-cost, versatile solution
 enabling rapid software development and software debugging, and profiling
 for the ARC EM Family of processors. The EM Family includes the EM4, EM6,
 EM5D, EM7D, EM9D, and EM11D cores. The Zephyr RTOS can be used with the
@@ -43,7 +46,7 @@ configured to support attachment of GPIO, I2C, UART or SPI devices.
 The board also has a 16MB SPI-FLASH and an SDCard for storage. There are 9 LEDs,
 3 buttons, and 4 dip switches that can be used with GPIO.
 
-The Xilinx Spartan(R)-6 LX150 FPGA can auto-load one of 3 FPGA SOC bit files
+The Xilinx Spartan|trade|-6 LX150 FPGA can auto-load one of 3 FPGA SOC bit files
 which have the EM7D, EM9D, or EM11D SOC.
 
 Documentation and general information for the board can be found at the
@@ -54,7 +57,7 @@ Supported Features
 The Zephyr kernel supports multiple hardware features on the EM Starter Kit
 through the use of device drivers.
 
-The EM Starter Kit supports 6 Digilent Pmod(TM) Interfaces, which enables the
+The EM Starter Kit supports 6 Digilent Pmod|tradem| Interfaces, which enables the
 use of a large variety of pluggable modules for storage, communications,
 sensors, displays, etc. With the Pmod interface, you can prototype your
 applications using the Zephyr RTOS.
