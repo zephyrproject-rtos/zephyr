@@ -24,33 +24,90 @@
 #include "qm_isr.h"
 #include "qm_wdt.h"
 
-static void (*user_cb)(struct device *dev);
+struct wdt_data {
+	struct nano_sem sem;
+};
 
-/* global variable to track qmsi wdt conf */
-static qm_wdt_config_t qm_cfg;
+#ifdef CONFIG_WDT_QMSI_API_REENTRANCY
+static struct wdt_data wdt_context;
+#define WDT_CONTEXT (&wdt_context)
+static const int reentrancy_protection = 1;
+#else
+#define WDT_CONTEXT (NULL)
+static const int reentrancy_protection;
+#endif /* CONFIG_WDT_QMSI_API_REENTRANCY */
+
+static void wdt_reentrancy_init(struct device *dev)
+{
+	struct wdt_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_init(&context->sem);
+	nano_sem_give(&context->sem);
+}
+
+static void wdt_critical_region_start(struct device *dev)
+{
+	struct wdt_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+}
+
+static void wdt_critical_region_end(struct device *dev)
+{
+	struct wdt_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_give(&context->sem);
+}
+
+static void (*user_cb)(struct device *dev);
 
 static void get_config(struct device *dev, struct wdt_config *cfg)
 {
-	cfg->timeout = qm_cfg.timeout;
-	cfg->mode = (qm_cfg.mode == QM_WDT_MODE_RESET) ?
-			WDT_MODE_RESET : WDT_MODE_INTERRUPT_RESET;
+	cfg->timeout = QM_WDT[QM_WDT_0].wdt_torr;
+	cfg->mode = ((QM_WDT[QM_WDT_0].wdt_cr & QM_WDT_MODE) >>
+			QM_WDT_MODE_OFFSET);
 	cfg->interrupt_fn = user_cb;
 }
 
 static int set_config(struct device *dev, struct wdt_config *cfg)
 {
-	user_cb = cfg->interrupt_fn;
+	int ret_val = 0;
+	qm_wdt_config_t qm_cfg;
 
+	user_cb = cfg->interrupt_fn;
 	qm_cfg.timeout = cfg->timeout;
 	qm_cfg.mode = (cfg->mode == WDT_MODE_RESET) ?
 			QM_WDT_MODE_RESET : QM_WDT_MODE_INTERRUPT_RESET;
 	qm_cfg.callback = (void *)user_cb;
 	qm_cfg.callback_data = dev;
-	if (qm_wdt_set_config(QM_WDT_0, &qm_cfg) != 0) {
-		return -EIO;
+
+	wdt_critical_region_start(dev);
+
+	if (qm_wdt_set_config(QM_WDT_0, &qm_cfg)) {
+		ret_val = -EIO;
+		goto wdt_config_return;
 	}
 
-	return qm_wdt_start(QM_WDT_0) == 0 ? 0 : -EIO;
+	if (qm_wdt_start(QM_WDT_0)) {
+		ret_val = -EIO;
+	}
+
+wdt_config_return:
+	wdt_critical_region_end(dev);
+
+	return ret_val;
 }
 
 static void reload(struct device *dev)
@@ -78,6 +135,8 @@ static struct wdt_driver_api api = {
 
 static int init(struct device *dev)
 {
+	wdt_reentrancy_init(dev);
+
 	IRQ_CONNECT(QM_IRQ_WDT_0, CONFIG_WDT_0_IRQ_PRI,
 		    qm_wdt_isr_0, 0, IOAPIC_EDGE | IOAPIC_HIGH);
 
@@ -90,6 +149,6 @@ static int init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt, CONFIG_WDT_0_NAME, init, 0, 0,
+DEVICE_AND_API_INIT(wdt, CONFIG_WDT_0_NAME, init, WDT_CONTEXT, 0,
 		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&api);
