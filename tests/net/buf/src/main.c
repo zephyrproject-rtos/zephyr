@@ -44,6 +44,8 @@ static void buf_destroy(struct net_buf *buf)
 	if (buf->free != &bufs_fifo) {
 		printk("Invalid free pointer in buffer!\n");
 	}
+
+	nano_fifo_put(buf->free, buf);
 }
 
 static NET_BUF_POOL(bufs_pool, 22, 74, &bufs_fifo, buf_destroy,
