@@ -45,6 +45,8 @@ static void buf_destroy(struct net_buf *buf)
 		printk("Invalid free pointer in buffer!\n");
 	}
 
+	printk("destroying %p\n", buf);
+
 	nano_fifo_put(buf->free, buf);
 }
 
@@ -58,6 +60,8 @@ void main(void)
 #endif
 {
 	struct net_buf *bufs[ARRAY_SIZE(bufs_pool)];
+	struct nano_fifo fifo;
+	struct net_buf *buf;
 	int i;
 
 	printk("sizeof(struct net_buf) = %u\n", sizeof(struct net_buf));
@@ -66,8 +70,6 @@ void main(void)
 	net_buf_pool_init(bufs_pool);
 
 	for (i = 0; i < ARRAY_SIZE(bufs_pool); i++) {
-		struct net_buf *buf;
-
 		buf = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
 		if (!buf) {
 			printk("Failed to get buffer!\n");
@@ -79,10 +81,46 @@ void main(void)
 
 	for (i = 0; i < ARRAY_SIZE(bufs_pool); i++) {
 		net_buf_unref(bufs[i]);
+		bufs[i] = NULL;
 	}
 
 	if (destroy_called != ARRAY_SIZE(bufs_pool)) {
 		printk("Incorrect destroy callback count: %d\n",
+		       destroy_called);
+		return;
+	}
+
+	bufs[0] = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+	if (!bufs[0]) {
+		printk("Failed to get fragment list head!\n");
+		return;
+	}
+
+	printk("Fragment list head %p\n", bufs[0]);
+
+	buf = bufs[0];
+	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
+		buf->frags = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+		if (!buf->frags) {
+			printk("Failed to get fragment!\n");
+			return;
+		}
+		printk("%p -> %p\n", buf, buf->frags);
+		buf = buf->frags;
+	}
+
+	printk("%p -> %p\n", buf, buf->frags);
+	buf = bufs[0];
+
+	nano_fifo_init(&fifo);
+	net_buf_put(&fifo, buf);
+	buf = net_buf_get_timeout(&fifo, 0, TICKS_NONE);
+
+	destroy_called = 0;
+	net_buf_unref(buf);
+
+	if (destroy_called != ARRAY_SIZE(bufs_pool)) {
+		printk("Incorrect fragment destroy callback count: %d\n",
 		       destroy_called);
 		return;
 	}
