@@ -129,19 +129,18 @@ void net_buf_unref(struct net_buf *buf)
 	NET_BUF_DBG("buf %p ref %u fifo %p\n", buf, buf->ref, buf->free);
 	NET_BUF_ASSERT(buf->ref > 0);
 
-	if (--buf->ref) {
-		return;
-	}
+	while (buf && --buf->ref == 0) {
+		struct net_buf *frags = buf->frags;
 
-	if (buf->frags) {
-		net_buf_unref(buf->frags);
 		buf->frags = NULL;
-	}
 
-	if (buf->destroy) {
-		buf->destroy(buf);
-	} else {
-		nano_fifo_put(buf->free, buf);
+		if (buf->destroy) {
+			buf->destroy(buf);
+		} else {
+			nano_fifo_put(buf->free, buf);
+		}
+
+		buf = frags;
 	}
 }
 
