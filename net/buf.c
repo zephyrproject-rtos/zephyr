@@ -46,7 +46,7 @@
 struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 				    size_t reserve_head, int32_t timeout)
 {
-	struct net_buf *buf;
+	struct net_buf *buf, *frag;
 
 	NET_BUF_DBG("fifo %p reserve %u timeout %d\n", fifo, reserve_head,
 		    timeout);
@@ -57,11 +57,33 @@ struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 		return NULL;
 	}
 
-	buf->ref  = 1;
-	buf->data = buf->__buf + reserve_head;
-	buf->len  = 0;
-
 	NET_BUF_DBG("buf %p fifo %p reserve %u\n", buf, fifo, reserve_head);
+
+	/* If this buffer is from the free buffers FIFO there wont be
+	 * any fragments and we can directly proceed with initializing
+	 * and returning it.
+	 */
+	if (buf->free == fifo) {
+		buf->ref   = 1;
+		buf->data  = buf->__buf + reserve_head;
+		buf->len   = 0;
+		buf->flags = 0;
+		buf->frags = NULL;
+
+		return buf;
+	}
+
+	/* Get any fragments belonging to this buffer */
+	for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
+		frag->frags = nano_fifo_get(fifo, TICKS_NONE);
+		NET_BUF_ASSERT(frag->frags);
+
+		/* The fragments flag is only for FIFO-internal usage */
+		frag->flags &= ~NET_BUF_FRAGS;
+	}
+
+	/* Mark the end of the fragment list */
+	frag->frags = NULL;
 
 	return buf;
 }
@@ -82,6 +104,26 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 	return net_buf_get_timeout(fifo, reserve_head, TICKS_UNLIMITED);
 }
 
+void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf)
+{
+	int mask;
+
+	mask = irq_lock();
+
+	while (buf) {
+		struct net_buf *frag = buf->frags;
+
+		if (frag) {
+			buf->flags |= NET_BUF_FRAGS;
+		}
+
+		nano_fifo_put(fifo, buf);
+		buf = frag;
+	}
+
+	irq_unlock(mask);
+}
+
 void net_buf_unref(struct net_buf *buf)
 {
 	NET_BUF_DBG("buf %p ref %u fifo %p\n", buf, buf->ref, buf->free);
@@ -89,6 +131,11 @@ void net_buf_unref(struct net_buf *buf)
 
 	if (--buf->ref) {
 		return;
+	}
+
+	if (buf->frags) {
+		net_buf_unref(buf->frags);
+		buf->frags = NULL;
 	}
 
 	if (buf->destroy) {

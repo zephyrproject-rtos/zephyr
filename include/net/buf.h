@@ -33,15 +33,32 @@ extern "C" {
 /* Alignment needed for various parts of the buffer definition */
 #define __net_buf_align __aligned(sizeof(int))
 
+/** Flag indicating that the buffer has associated fragments. Only used
+  * internally by the buffer handling code while the buffer is inside a
+  * FIFO, meaning this never needs to be explicitly set or unset by the
+  * net_buf API user. As long as the buffer is outside of a FIFO, i.e.
+  * in practice always for the user for this API, the buf->frags pointer
+  * should be used instead.
+  */
+#define NET_BUF_FRAGS        BIT(0)
+
 struct net_buf {
-	/** FIFO uses first 4 bytes itself, reserve space */
-	int _unused;
+	union {
+		/** FIFO uses first 4 bytes itself, reserve space */
+		int _unused;
+
+		/** Fragments associated with this buffer. */
+		struct net_buf *frags;
+	};
 
 	/** Size of the user data associated with this buffer. */
 	const uint16_t user_data_size;
 
 	/** Reference count. */
 	uint8_t ref;
+
+	/** Bit-field of buffer flags. */
+	uint8_t flags;
 
 	/** Pointer to the start of data in the buffer. */
 	uint8_t *data;
@@ -115,10 +132,12 @@ struct net_buf {
 		}							\
 	} while (0)
 
-/** @brief Get a new buffer from the pool.
+/** @brief Get a new buffer from a FIFO.
  *
- *  Get buffer from the available buffers pool with specified type and
- *  reserved headroom.
+ *  Get buffer from a FIFO. The reserve_head parameter is only relevant
+ *  if the FIFO in question is a free buffers pool, i.e. the buffer will
+ *  end up being initialized upon return. If called for any other FIFO
+ *  the reserve_head parameter will be ignored and should be set to 0.
  *
  *  @param fifo Which FIFO to take the buffer from.
  *  @param reserve_head How much headroom to reserve.
@@ -127,19 +146,21 @@ struct net_buf {
  *
  *  @warning If there are no available buffers and the function is
  *  called from a task or fiber the call will block until a buffer
- *  becomes available in the pool. If you want to make sure no blocking
+ *  becomes available in the FIFO. If you want to make sure no blocking
  *  happens use net_buf_get_timeout() instead with TICKS_NONE.
  */
 struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head);
 
-/** @brief Get a new buffer from the pool.
+/** @brief Get a new buffer from a FIFO.
  *
- *  Get buffer from the available buffers pool with specified type and
- *  reserved headroom.
+ *  Get buffer from a FIFO. The reserve_head parameter is only relevant
+ *  if the FIFO in question is a free buffers pool, i.e. the buffer will
+ *  end up being initialized upon return. If called for any other FIFO
+ *  the reserve_head parameter will be ignored and should be set to 0.
  *
  *  @param fifo Which FIFO to take the buffer from.
  *  @param reserve_head How much headroom to reserve.
- *  @param timeout Affects the action taken should the pool (FIFO) be empty.
+ *  @param timeout Affects the action taken should the FIFO be empty.
  *         If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then
  *         wait as long as necessary. Otherwise, wait up to the specified
  *         number of ticks before timing out.
@@ -148,6 +169,17 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head);
  */
 struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 				    size_t reserve_head, int32_t timeout);
+
+/** @brief Put a buffer into a FIFO
+ *
+ *  Put a buffer to the end of a FIFO. If the buffer contains follow-up
+ *  fragments this function will take care of inserting them as well
+ *  into the FIFO.
+ *
+ *  @param fifo Which FIFO to put the buffer to.
+ *  @param buf Buffer.
+ */
+void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf);
 
 /** @brief Decrements the reference count of a buffer.
  *
