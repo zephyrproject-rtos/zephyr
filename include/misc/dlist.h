@@ -99,6 +99,8 @@ static inline void sys_dlist_init(sys_dlist_t *list)
 	list->tail = (sys_dnode_t *)list;
 }
 
+#define SYS_DLIST_STATIC_INIT(ptr_to_list) {{(ptr_to_list)}, {(ptr_to_list)}}
+
 /**
  * @brief check if a node is the list's head
  *
