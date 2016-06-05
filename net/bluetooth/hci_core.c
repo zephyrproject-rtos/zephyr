@@ -239,7 +239,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		return err;
 	}
 
-	nano_fifo_put(&bt_dev.cmd_tx_queue, buf);
+	net_buf_put(&bt_dev.cmd_tx_queue, buf);
 
 	return 0;
 }
@@ -262,7 +262,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	nano_sem_init(&sync_sem);
 	cmd(buf)->sync = &sync_sem;
 
-	nano_fifo_put(&bt_dev.cmd_tx_queue, buf);
+	net_buf_put(&bt_dev.cmd_tx_queue, buf);
 
 	nano_sem_take(&sync_sem, TICKS_UNLIMITED);
 
@@ -2509,8 +2509,9 @@ static void hci_cmd_tx_fiber(void)
 		nano_fiber_sem_take(&bt_dev.ncmd_sem, TICKS_UNLIMITED);
 
 		/* Get next command - wait if necessary */
-		BT_DBG("calling fifo_get_wait");
-		buf = nano_fifo_get(&bt_dev.cmd_tx_queue, TICKS_UNLIMITED);
+		BT_DBG("calling net_buf_get_timeout");
+		buf = net_buf_get_timeout(&bt_dev.cmd_tx_queue, 0,
+					  TICKS_UNLIMITED);
 		bt_dev.ncmd = 0;
 
 		/* Clear out any existing sent command */
@@ -3080,7 +3081,7 @@ int bt_recv(struct net_buf *buf)
 	}
 
 	if (bt_buf_get_type(buf) == BT_BUF_ACL_IN) {
-		nano_fifo_put(&bt_dev.rx_queue, buf);
+		net_buf_put(&bt_dev.rx_queue, buf);
 		return 0;
 	}
 
@@ -3108,7 +3109,7 @@ int bt_recv(struct net_buf *buf)
 		break;
 #endif /* CONFIG_BLUETOOTH_CONN */
 	default:
-		nano_fifo_put(&bt_dev.rx_queue, net_buf_ref(buf));
+		net_buf_put(&bt_dev.rx_queue, net_buf_ref(buf));
 		break;
 	}
 
@@ -3226,7 +3227,7 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait");
-		buf = nano_fifo_get(&bt_dev.rx_queue, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&bt_dev.rx_queue, 0, TICKS_UNLIMITED);
 
 		BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		       buf->len);

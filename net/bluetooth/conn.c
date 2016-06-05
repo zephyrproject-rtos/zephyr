@@ -835,7 +835,7 @@ int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-	nano_fifo_put(&conn->tx_queue, buf);
+	net_buf_put(&conn->tx_queue, buf);
 	return 0;
 }
 
@@ -958,7 +958,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Get next ACL packet for connection */
-		buf = nano_fifo_get(&conn->tx_queue, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&conn->tx_queue, 0, TICKS_UNLIMITED);
 		if (conn->state != BT_CONN_CONNECTED) {
 			net_buf_unref(buf);
 			break;
@@ -972,7 +972,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	BT_DBG("handle %u disconnected - cleaning up", conn->handle);
 
 	/* Give back any allocated buffers */
-	while ((buf = nano_fifo_get(&conn->tx_queue, TICKS_NONE))) {
+	while ((buf = net_buf_get_timeout(&conn->tx_queue, 0, TICKS_NONE))) {
 		net_buf_unref(buf);
 	}
 
@@ -1077,7 +1077,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_l2cap_disconnected(conn);
 			notify_disconnected(conn);
 
-			nano_fifo_put(&conn->tx_queue, net_buf_get(&dummy, 0));
+			net_buf_put(&conn->tx_queue, net_buf_get(&dummy, 0));
 		} else if (old_state == BT_CONN_CONNECT) {
 			/* conn->err will be set in this case */
 			notify_connected(conn);

@@ -222,7 +222,8 @@ static void process_unack(void)
 	BT_DBG("Need to remove %u packet from the queue", number_removed);
 
 	while (number_removed) {
-		struct net_buf *buf = nano_fifo_get(&h5.unack_queue, TICKS_NONE);
+		struct net_buf *buf = net_buf_get_timeout(&h5.unack_queue, 0,
+							  TICKS_NONE);
 
 		if (!buf) {
 			BT_ERR("Unack queue is empty");
@@ -365,22 +366,24 @@ static void retx_fiber(int arg1, int arg2)
 		nano_fifo_init(&tmp_queue);
 
 		/* Queue to temperary queue */
-		while ((buf = nano_fifo_get(&h5.tx_queue, TICKS_NONE))) {
-			nano_fifo_put(&tmp_queue, buf);
+		while ((buf = net_buf_get_timeout(&h5.tx_queue, 0,
+						  TICKS_NONE))) {
+			net_buf_put(&tmp_queue, buf);
 		}
 
 		/* Queue unack packets to the beginning of the queue */
-		while ((buf = nano_fifo_get(&h5.unack_queue, TICKS_NONE))) {
+		while ((buf = net_buf_get_timeout(&h5.unack_queue, 0,
+						  TICKS_NONE))) {
 			/* include also packet type */
 			net_buf_push(buf, sizeof(uint8_t));
-			nano_fifo_put(&h5.tx_queue, buf);
+			net_buf_put(&h5.tx_queue, buf);
 			h5.tx_seq = (h5.tx_seq - 1) & 0x07;
 			unack_queue_len--;
 		}
 
 		/* Queue saved packets from temp queue */
-		while ((buf = nano_fifo_get(&tmp_queue, TICKS_NONE))) {
-			nano_fifo_put(&h5.tx_queue, buf);
+		while ((buf = net_buf_get_timeout(&tmp_queue, 0, TICKS_NONE))) {
+			net_buf_put(&h5.tx_queue, buf);
 		}
 
 		/* Analyze stack */
@@ -436,7 +439,7 @@ static void h5_process_complete_packet(uint8_t *hdr)
 		net_buf_unref(buf);
 		break;
 	case HCI_3WIRE_LINK_PKT:
-		nano_fifo_put(&h5.rx_queue, buf);
+		net_buf_put(&h5.rx_queue, buf);
 		break;
 	case HCI_EVENT_PKT:
 	case HCI_ACLDATA_PKT:
@@ -609,7 +612,7 @@ static int h5_queue(struct net_buf *buf)
 
 	memcpy(net_buf_push(buf, sizeof(type)), &type, sizeof(type));
 
-	nano_fifo_put(&h5.tx_queue, buf);
+	net_buf_put(&h5.tx_queue, buf);
 
 	return 0;
 }
@@ -637,7 +640,8 @@ static void tx_fiber(void)
 			fiber_sleep(10);
 			break;
 		case ACTIVE:
-			buf = nano_fifo_get(&h5.tx_queue, TICKS_UNLIMITED);
+			buf = net_buf_get_timeout(&h5.tx_queue, 0,
+						  TICKS_UNLIMITED);
 			type = h5_get_type(buf);
 
 			h5_send(buf->data, type, buf->len);
@@ -645,7 +649,7 @@ static void tx_fiber(void)
 			/* buf is dequeued from tx_queue and queued to unack
 			 * queue.
 			 */
-			nano_fifo_put(&h5.unack_queue, buf);
+			net_buf_put(&h5.unack_queue, buf);
 			unack_queue_len++;
 
 			if (h5.retx_to) {
@@ -673,7 +677,7 @@ static void rx_fiber(void)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = nano_fifo_get(&h5.rx_queue, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&h5.rx_queue, 0, TICKS_UNLIMITED);
 
 		hexdump("=> ", buf->data, buf->len);
 

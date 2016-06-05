@@ -227,7 +227,7 @@ static int ecc_send(struct net_buf *buf)
 		switch (bt_hci_get_cmd_opcode(buf)) {
 		case BT_HCI_OP_LE_P256_PUBLIC_KEY:
 		case BT_HCI_OP_LE_GENERATE_DHKEY:
-			nano_fifo_put(&ecc_queue, buf);
+			net_buf_put(&ecc_queue, buf);
 			return 0;
 		case BT_HCI_OP_LE_SET_EVENT_MASK:
 			clear_ecc_events(buf);

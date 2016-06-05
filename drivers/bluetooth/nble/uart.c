@@ -76,7 +76,7 @@ static void rx_fiber(void)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = nano_fifo_get(&rx_queue, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&rx_queue, 0, TICKS_UNLIMITED);
 		BT_DBG("Got buf %p", buf);
 
 		rpc_deserialize(buf);
@@ -201,7 +201,7 @@ static void bt_uart_isr(struct device *unused)
 			BT_DBG("full packet received");
 			hdr_bytes = 0;
 			/* Pass buffer to the stack */
-			nano_fifo_put(&rx_queue, buf);
+			net_buf_put(&rx_queue, buf);
 		}
 	}
 }
