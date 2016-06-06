@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
-#include <net/buf.h>
+#include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 
 /** @brief L2CAP Endpoint structure. */
