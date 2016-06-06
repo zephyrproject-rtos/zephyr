@@ -25,9 +25,10 @@ menuconfig BLUETOOTH
 	help
 	  This option enables Bluetooth support.
 
+if BLUETOOTH
+
 choice
 	prompt "Bluetooth Stack Selection"
-	depends on BLUETOOTH
 	default BLUETOOTH_STACK_HCI
 	help
 	  Select the Bluetooth stack to compile.
@@ -43,8 +44,6 @@ config BLUETOOTH_STACK_NBLE
 	  Select the Bluetooth stack to use with Nordic BLE drivers.
 
 endchoice
-
-if BLUETOOTH
 
 comment "HCI Stack Configurations"
 	depends on BLUETOOTH_STACK_HCI
