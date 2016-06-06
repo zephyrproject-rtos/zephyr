@@ -520,6 +520,34 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 	return NULL;
 }
 
+bool net_if_ipv4_addr_rm(struct net_if *iface, struct in_addr *addr)
+{
+#if defined(CONFIG_NET_IPV4)
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!iface->ipv4.unicast[i].is_used) {
+			continue;
+		}
+
+		if (!net_ipv4_addr_cmp(
+			    &iface->ipv4.unicast[i].address.in_addr,
+			    addr)) {
+			continue;
+		}
+
+		iface->ipv4.unicast[i].is_used = false;
+
+		NET_DBG("[%d] interface %p address %s removed",
+			i, iface, net_sprint_ipv4_addr(addr));
+
+		return true;
+	}
+#endif
+
+	return false;
+}
+
 struct net_if *net_if_get_default(void)
 {
 	return __net_if_start;

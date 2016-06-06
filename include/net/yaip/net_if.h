@@ -364,6 +364,14 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 					 uint32_t vlifetime);
 
 /**
+ * @brief Remove a IPv4 address from an interface
+ * @param iface Network interface
+ * @param addr IPv4 address
+ * @return True if successfully removed, false otherwise
+ */
+bool net_if_ipv4_addr_rm(struct net_if *iface,  struct in_addr *addr);
+
+/**
  * @brief Get IPv6 hop limit specified for a given interface
  * @param iface Network interface
  * @return Hop limit
