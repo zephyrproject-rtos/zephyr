@@ -53,11 +53,7 @@ static void buf_destroy(struct net_buf *buf)
 static NET_BUF_POOL(bufs_pool, 22, 74, &bufs_fifo, buf_destroy,
 		    sizeof(struct bt_data));
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
 	struct net_buf *bufs[ARRAY_SIZE(bufs_pool)];
 	struct nano_fifo fifo;
