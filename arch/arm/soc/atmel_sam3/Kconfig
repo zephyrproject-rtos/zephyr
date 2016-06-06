@@ -80,4 +80,13 @@ config SOC_ATMEL_SAM3_PLLA_DIVA
 	With default of MULA == 6, and DIVA == 1,
 	PLL is running at 7 times of main clock.
 
+config SOC_ATMEL_SAM3_WAIT_MODE
+	bool "Atmel SAM3 goes to Wait mode instead of Sleep mode"
+	depends on SOC_ATMEL_SAM3_EXT_MAINCK
+	default y if DEBUG
+	help
+	For JTAG debugging CPU clock (HCLK) should not stop. In order
+	to achieve this, make CPU go to Wait mode instead of Sleep
+	mode while using external crystal oscillator for main clock.
+
 endif # SOC_ATMEL_SAM3

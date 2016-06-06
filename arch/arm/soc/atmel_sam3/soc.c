@@ -81,6 +81,14 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Wait for main oscillator to be selected */
 	while (!(__PMC->sr & PMC_INT_MOSCSELS))
 		;
+#ifdef CONFIG_SOC_ATMEL_SAM3_WAIT_MODE
+	/*
+	 * Instruct CPU enter Wait mode instead of Sleep mode to
+	 * keep Processor Clock (HCLK) and thus be able to debug
+	 * CPU using JTAG
+	 */
+	__PMC->fsmr |= PMC_FSMR_LPM;
+#endif
 #else
 	/* Set main fast RC oscillator to 12 MHz */
 	__PMC->ckgr_mor = PMC_CKGR_MOR_KEY | PMC_CKGR_MOR_MOSCRCF_12MHZ

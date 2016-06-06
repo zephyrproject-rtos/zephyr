@@ -162,6 +162,8 @@
 #define PMC_MCKR_PLLADIV2		(1 << 12)
 #define PMC_MCKR_UPLLDIV2		(1 << 13)
 
+#define PMC_FSMR_LPM			(1 << 20)
+
 #define PMC_INT_MOSCXTS			(1 << 0)
 #define PMC_INT_LOCKA			(1 << 1)
 #define PMC_INT_MCKRDY			(1 << 3)
