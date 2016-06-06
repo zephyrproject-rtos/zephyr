@@ -1676,7 +1676,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	printk("Incoming conn %p\n", conn);
 
 	if (l2cap_chan.conn) {
-		printk("No channels available");
+		printk("No channels available\n");
 		return -ENOMEM;
 	}
 
@@ -1706,7 +1706,7 @@ static int cmd_l2cap_register(int argc, char *argv[])
 		printk("Unable to register psm\n");
 		server.psm = 0;
 	} else {
-		printk("L2CAP psm %u registered", server.psm);
+		printk("L2CAP psm %u registered\n", server.psm);
 	}
 
 	return 0;
@@ -1732,7 +1732,7 @@ static int cmd_l2cap_connect(int argc, char *argv[])
 	if (err < 0) {
 		printk("Unable to connect to psm %u (err %u)\n", psm, err);
 	} else {
-		printk("L2CAP connection pending");
+		printk("L2CAP connection pending\n");
 	}
 
 	return 0;
@@ -1822,7 +1822,7 @@ static int cmd_bredr_l2cap_register(int argc, char *argv[])
 		printk("Unable to register psm\n");
 		server.psm = 0;
 	} else {
-		printk("L2CAP psm %u registered", server.psm);
+		printk("L2CAP psm %u registered\n", server.psm);
 	}
 
 	return 0;
