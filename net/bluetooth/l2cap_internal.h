@@ -50,6 +50,11 @@ struct bt_l2cap_cmd_reject {
 	uint8_t  data[0];
 } __packed;
 
+struct bt_l2cap_cmd_reject_cid_data {
+	uint16_t scid;
+	uint16_t dcid;
+} __packed;
+
 #define BT_L2CAP_DISCONN_REQ		0x06
 struct bt_l2cap_disconn_req {
 	uint16_t dcid;

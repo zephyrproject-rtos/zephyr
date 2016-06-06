@@ -249,7 +249,7 @@ void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
 }
 
 static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
-			      uint16_t reason)
+			      uint16_t reason, void *data, uint8_t data_len)
 {
 	struct bt_l2cap_cmd_reject *rej;
 	struct bt_l2cap_sig_hdr *hdr;
@@ -263,10 +263,14 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CMD_REJECT;
 	hdr->ident = ident;
-	hdr->len = sys_cpu_to_le16(sizeof(*rej));
+	hdr->len = sys_cpu_to_le16(sizeof(*rej) + data_len);
 
 	rej = net_buf_add(buf, sizeof(*rej));
 	rej->reason = sys_cpu_to_le16(reason);
+
+	if (data) {
+		memcpy(net_buf_add(buf, data_len), data, data_len);
+	}
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
@@ -301,7 +305,8 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	if (conn->role != BT_HCI_ROLE_MASTER) {
-		l2cap_send_reject(conn, ident, BT_L2CAP_REJ_NOT_UNDERSTOOD);
+		l2cap_send_reject(conn, ident, BT_L2CAP_REJ_NOT_UNDERSTOOD,
+				  NULL, 0);
 		return;
 	}
 
@@ -587,7 +592,13 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	chan = l2cap_remove_tx_cid(conn, scid);
 	if (!chan) {
-		l2cap_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID);
+		struct bt_l2cap_cmd_reject_cid_data data;
+
+		data.scid = req->scid;
+		data.dcid = req->dcid;
+
+		l2cap_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID, &data,
+				  sizeof(data));
 		return;
 	}
 
@@ -833,7 +844,7 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	default:
 		BT_WARN("Unknown L2CAP PDU code 0x%02x", hdr->code);
 		l2cap_send_reject(chan->conn, hdr->ident,
-				  BT_L2CAP_REJ_NOT_UNDERSTOOD);
+				  BT_L2CAP_REJ_NOT_UNDERSTOOD, NULL, 0);
 		break;
 	}
 }
