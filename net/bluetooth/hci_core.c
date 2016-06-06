@@ -389,6 +389,8 @@ static int set_random_address(const bt_addr_t *addr)
 	struct net_buf *buf;
 	int err;
 
+	BT_DBG("%s", bt_addr_str(addr));
+
 	/* Do nothing if we already have the right address */
 	if (!bt_addr_cmp(addr, &bt_dev.random_addr.a)) {
 		return 0;
