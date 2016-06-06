@@ -35,25 +35,22 @@ Building the firmware yourself
       Project arduino-mynewt successfully created.
       $ cd arduino-mynewt/
 
-#. Currently the necessary code is only available in the 'develop'
-   branch of MyNewt, aliased by version number '0.0.0'. To use this,
-   edit :file:`project.yml` and change "vers: 0-latest" to
-   "vers: 0-dev". After that, initialize the project with:
+#. After that, initialize the project with:
 
    .. code-block:: console
 
       $ newt install -v
       apache-mynewt-core
       Downloading repository description for apache-mynewt-core... success!
-      Downloading repository incubator-mynewt-core (branch: master; commit: develop) at https://github.com/apache/incubator-mynewt-core.git
-      Cloning into '/tmp/newt-repo604330290'...
-      remote: Counting objects: 21889, done.
-      remote: Compressing objects: 100% (97/97), done.
-      remote: Total 21889 (delta 49), reused 0 (delta 0), pack-reused 21784
-      Receiving objects: 100% (21889/21889), 7.63 MiB | 1.13 MiB/s, done.
-      Resolving deltas: 100% (12945/12945), done.
+      Downloading repository incubator-mynewt-core (branch: master; commit: mynewt_0_9_0_tag) at https://github.com/apache/incubator-mynewt-core.git
+      Cloning into '/tmp/newt-repo072720113'...
+      remote: Counting objects: 24003, done.
+      remote: Compressing objects: 100% (559/559), done.
+      remote: Total 24003 (delta 373), reused 13 (delta 13), pack-reused 23359
+      Receiving objects: 100% (24003/24003), 8.53 MiB | 1.82 MiB/s, done.
+      Resolving deltas: 100% (14213/14213), done.
       Checking connectivity... done.
-      apache-mynewt-core successfully installed version 0.0.0-none
+      apache-mynewt-core successfully installed version 0.9.0-none
 
 #. Create a target for the bootloader:
 
