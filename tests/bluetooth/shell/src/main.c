@@ -54,7 +54,8 @@ static bt_addr_le_t id_addr;
 static struct bt_conn *pairing_conn;
 
 static struct nano_fifo data_fifo;
-static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL, 0);
+static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL,
+		    BT_BUF_USER_DATA_MIN);
 
 static const char *current_prompt(void)
 {
