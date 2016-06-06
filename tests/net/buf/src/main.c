@@ -17,6 +17,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <misc/printk.h>
 
@@ -53,23 +54,17 @@ static void buf_destroy(struct net_buf *buf)
 static NET_BUF_POOL(bufs_pool, 22, 74, &bufs_fifo, buf_destroy,
 		    sizeof(struct bt_data));
 
-void main(void)
+static bool net_buf_test_1(void)
 {
 	struct net_buf *bufs[ARRAY_SIZE(bufs_pool)];
-	struct nano_fifo fifo;
 	struct net_buf *buf;
 	int i;
-
-	printk("sizeof(struct net_buf) = %u\n", sizeof(struct net_buf));
-	printk("sizeof(bufs_pool)      = %u\n", sizeof(bufs_pool));
-
-	net_buf_pool_init(bufs_pool);
 
 	for (i = 0; i < ARRAY_SIZE(bufs_pool); i++) {
 		buf = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
 		if (!buf) {
 			printk("Failed to get buffer!\n");
-			return;
+			return false;
 		}
 
 		bufs[i] = buf;
@@ -77,49 +72,84 @@ void main(void)
 
 	for (i = 0; i < ARRAY_SIZE(bufs_pool); i++) {
 		net_buf_unref(bufs[i]);
-		bufs[i] = NULL;
 	}
 
 	if (destroy_called != ARRAY_SIZE(bufs_pool)) {
 		printk("Incorrect destroy callback count: %d\n",
 		       destroy_called);
-		return;
+		return false;
 	}
 
-	bufs[0] = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
-	if (!bufs[0]) {
+	return true;
+}
+
+static bool net_buf_test_2(void)
+{
+	struct net_buf *frag, *head;
+	struct nano_fifo fifo;
+	int i;
+
+	head = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+	if (!head) {
 		printk("Failed to get fragment list head!\n");
-		return;
+		return false;
 	}
 
-	printk("Fragment list head %p\n", bufs[0]);
+	printk("Fragment list head %p\n", head);
 
-	buf = bufs[0];
+	frag = head;
 	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
-		buf->frags = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
-		if (!buf->frags) {
+		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+		if (!frag->frags) {
 			printk("Failed to get fragment!\n");
-			return;
+			return false;
 		}
-		printk("%p -> %p\n", buf, buf->frags);
-		buf = buf->frags;
+		printk("%p -> %p\n", frag, frag->frags);
+		frag = frag->frags;
 	}
 
-	printk("%p -> %p\n", buf, buf->frags);
-	buf = bufs[0];
+	printk("%p -> %p\n", frag, frag->frags);
 
 	nano_fifo_init(&fifo);
-	net_buf_put(&fifo, buf);
-	buf = net_buf_get_timeout(&fifo, 0, TICKS_NONE);
+	net_buf_put(&fifo, head);
+	head = net_buf_get_timeout(&fifo, 0, TICKS_NONE);
 
 	destroy_called = 0;
-	net_buf_unref(buf);
+	net_buf_unref(head);
 
 	if (destroy_called != ARRAY_SIZE(bufs_pool)) {
 		printk("Incorrect fragment destroy callback count: %d\n",
 		       destroy_called);
-		return;
+		return false;
 	}
 
-	printk("Buffer tests passed\n");
+	return true;
+}
+
+static const struct {
+	const char *name;
+	bool (*func)(void);
+} tests[] = {
+	{ "Test 1", net_buf_test_1, },
+	{ "Test 2", net_buf_test_2, },
+};
+
+void main(void)
+{
+	int count, pass;
+
+	printk("sizeof(struct net_buf) = %u\n", sizeof(struct net_buf));
+	printk("sizeof(bufs_pool)      = %u\n", sizeof(bufs_pool));
+
+	net_buf_pool_init(bufs_pool);
+
+	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
+		if (!tests[count].func()) {
+			printk("%s failed!\n", tests[count].name);
+		} else {
+			pass++;
+		}
+	}
+
+	printk("%d / %d tests passed\n", pass, count);
 }
