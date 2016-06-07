@@ -17,10 +17,16 @@
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
+#include <net/nbuf.h>
 
 static inline enum net_verdict dummy_recv(struct net_if *iface,
 					  struct net_buf *buf)
 {
+	net_nbuf_ll_src(buf)->addr = NULL;
+	net_nbuf_ll_src(buf)->len = 0;
+	net_nbuf_ll_dst(buf)->addr = NULL;
+	net_nbuf_ll_dst(buf)->len = 0;
+
 	return NET_CONTINUE;
 }
 
