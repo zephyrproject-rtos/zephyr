@@ -65,6 +65,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 static enum net_verdict ethernet_send(struct net_if *iface,
 				      struct net_buf *buf)
 {
+	struct net_eth_hdr *hdr;
+
 #ifdef CONFIG_NET_ARP
 	if (net_nbuf_family(buf) == AF_INET) {
 		struct net_buf *arp_buf = net_arp_prepare(buf);
@@ -76,6 +78,17 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		buf = arp_buf;
 	}
 #endif
+
+	hdr = NET_ETH_BUF(buf);
+
+	if (net_nbuf_family(buf) == AF_INET) {
+		/* ARP pre-fills the type so don't overwrite it */
+		if (hdr->type != htons(NET_ETH_PTYPE_ARP)) {
+			hdr->type = htons(NET_ETH_PTYPE_IP);
+		}
+	} else {
+		hdr->type = htons(NET_ETH_PTYPE_IPV6);
+	}
 
 	net_if_queue_tx(iface, buf);
 
