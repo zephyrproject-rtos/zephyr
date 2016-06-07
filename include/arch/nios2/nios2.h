@@ -46,104 +46,89 @@ extern "C"
  */
 #define NIOS2_NIRQ 32
 
+#ifndef _ASMLANGUAGE
+
+#include <stdint.h>
+
 /*
- * Macros for accessing select Nios II general-purpose registers.
+ * Functions for accessing select Nios II general-purpose registers.
  */
 
 /* ET (Exception Temporary) register */ 
-#define NIOS2_READ_ET(et) \
-    do { __asm ("mov %0, et" : "=r" (et) ); } while (0)
+static inline uint32_t _nios2_read_et(void)
+{
+	uint32_t et;
 
-#define NIOS2_WRITE_ET(et) \
-    do { __asm volatile ("mov et, %z0" : : "rM" (et)); } while (0)
+	__asm__("mov %0, et" : "=r" (et));
+	return et;
+}
 
-/* SP (Stack Pointer) register */ 
-#define NIOS2_READ_SP(sp) \
-    do { __asm ("mov %0, sp" : "=r" (sp) ); } while (0)
+static inline void _nios2_write_et(uint32_t et)
+{
+	__asm__ volatile("mov et, %z0" : : "rM" (et));
+}
+
+static inline uint32_t _nios2_read_sp(void)
+{
+	uint32_t sp;
+
+	__asm__("mov %0, et" : "=r" (sp));
+	return sp;
+}
 
 /*
- * Macros for useful processor instructions.
+ * Functions for useful processor instructions.
  */
-#define NIOS2_BREAK() \
-    do { __asm volatile ("break"); } while (0)
+static inline void _nios2_break(void)
+{
+	__asm__ volatile("break");
+}
 
-#define NIOS2_REPORT_STACK_OVERFLOW() \
-    do { __asm volatile("break 3"); } while (0)
+static inline void _nios2_report_stack_overflow(void)
+{
+	__asm__ volatile("break 3");
+}
+
 
 /*
- * Macros for accessing Nios II control registers.
+ * Functions for reading/writing control registers
  */
-#define NIOS2_READ_STATUS(dest) \
-    do { dest = __builtin_rdctl(0); } while (0)
 
-#define NIOS2_WRITE_STATUS(src) \
-    do { __builtin_wrctl(0, src); } while (0)
+enum nios2_creg {
+	NIOS2_CR_STATUS = 0,
+	NIOS2_CR_ESTATUS = 1,
+	NIOS2_CR_BSTATUS = 2,
+	NIOS2_CR_IENABLE = 3,
+	NIOS2_CR_IPENDING = 4,
+	NIOS2_CR_CPUID = 5,
+	/* 6 is reserved */
+	NIOS2_CR_EXCEPTION = 7,
+	NIOS2_CR_PTEADDR = 8,
+	NIOS2_CR_TLBACC = 9,
+	NIOS2_CR_TLBMISC = 10,
+	NIOS2_CR_ECCINJ = 11,
+	NIOS2_CR_BADADDR = 12,
+	NIOS2_CR_CONFIG = 13,
+	NIOS2_CR_MPUBASE = 14,
+	NIOS2_CR_MPUACC = 15
+};
 
-#define NIOS2_READ_ESTATUS(dest) \
-    do { dest = __builtin_rdctl(1); } while (0)
+/* XXX I would prefer to define these as static inline functions for
+ * type checking purposes. However if -O0 is used (i.e. CONFIG_DEBUG is on)
+ * we get errors "Control register number must be in range 0-31 for
+ * __builtin_rdctl" with the following code:
+ *
+ * static inline uint32_t _nios2_creg_read(enum nios2_creg reg)
+ * {
+ *          return __builtin_rdctl(reg);
+ * }
+ *
+ * This compiles just fine with -Os.
+ */
+#define _nios2_creg_read(reg) __builtin_rdctl(reg)
+#define _nios2_creg_write(reg, val) __builtin_wrctl(reg, val)
 
-#define NIOS2_READ_BSTATUS(dest) \
-    do { dest = __builtin_rdctl(2); } while (0)
-
-#define NIOS2_READ_IENABLE(dest) \
-    do { dest = __builtin_rdctl(3); } while (0)
-
-#define NIOS2_WRITE_IENABLE(src) \
-    do { __builtin_wrctl(3, src); } while (0)
-
-#define NIOS2_READ_IPENDING(dest) \
-    do { dest = __builtin_rdctl(4); } while (0)
-
-#define NIOS2_READ_CPUID(dest) \
-    do { dest = __builtin_rdctl(5); } while (0)
-
-#define NIOS2_READ_EXCEPTION(dest) \
-    do { dest = __builtin_rdctl(7); } while (0)
-
-#define NIOS2_READ_PTEADDR(dest) \
-    do { dest = __builtin_rdctl(8); } while (0)
-
-#define NIOS2_WRITE_PTEADDR(src) \
-    do { __builtin_wrctl(8, src); } while (0)
-
-#define NIOS2_READ_TLBACC(dest) \
-    do { dest = __builtin_rdctl(9); } while (0)
-
-#define NIOS2_WRITE_TLBACC(src) \
-    do { __builtin_wrctl(9, src); } while (0)
-
-#define NIOS2_READ_TLBMISC(dest) \
-    do { dest = __builtin_rdctl(10); } while (0)
-
-#define NIOS2_WRITE_TLBMISC(src) \
-    do { __builtin_wrctl(10, src); } while (0)
-
-#define NIOS2_READ_ECCINJ(dest) \
-    do { dest = __builtin_rdctl(11); } while (0)
-
-#define NIOS2_WRITE_ECCINJ(src) \
-    do { __builtin_wrctl(11, src); } while (0)
-
-#define NIOS2_READ_BADADDR(dest) \
-    do { dest = __builtin_rdctl(12); } while (0)
-
-#define NIOS2_WRITE_CONFIG(src) \
-    do { __builtin_wrctl(13, src); } while (0)
-
-#define NIOS2_READ_CONFIG(dest) \
-    do { dest = __builtin_rdctl(13); } while (0)
-
-#define NIOS2_WRITE_MPUBASE(src) \
-    do { __builtin_wrctl(14, src); } while (0)
-
-#define NIOS2_READ_MPUBASE(dest) \
-    do { dest = __builtin_rdctl(14); } while (0)
-
-#define NIOS2_WRITE_MPUACC(src) \
-    do { __builtin_wrctl(15, src); } while (0)
-
-#define NIOS2_READ_MPUACC(dest) \
-    do { dest = __builtin_rdctl(15); } while (0)
+#endif /* _ASMLANGUAGE */
 
 /*
  * Nios II control registers that are always present

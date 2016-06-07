@@ -50,8 +50,8 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 {
 	unsigned int key;
 
-	NIOS2_READ_STATUS(key);
-	NIOS2_WRITE_STATUS(key & ~NIOS2_STATUS_PIE_MSK);
+	key = _nios2_creg_read(NIOS2_CR_STATUS);
+	_nios2_creg_write(NIOS2_CR_STATUS, key & ~NIOS2_STATUS_PIE_MSK);
 
 	return key;
 }
@@ -79,10 +79,10 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 	if (!(key & NIOS2_STATUS_PIE_MSK))
 		return;
 
-	NIOS2_READ_STATUS(status_reg);
-	NIOS2_WRITE_STATUS(status_reg | NIOS2_STATUS_PIE_MSK);
+	status_reg = _nios2_creg_read(NIOS2_CR_STATUS);
+	_nios2_creg_write(NIOS2_CR_STATUS, status_reg | NIOS2_STATUS_PIE_MSK);
 #else
-	NIOS2_WRITE_STATUS(key);
+	_nios2_creg_write(NIOS2_CR_STATUS, key);
 #endif
 }
 
