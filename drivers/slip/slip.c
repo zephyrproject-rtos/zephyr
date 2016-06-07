@@ -136,9 +136,21 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 		int frag_count = 0;
 #endif
 
+#if defined(CONFIG_SLIP_TAP)
 		ptr = frag->data - slip->ll_reserve;
 
-		for (i = 0; i < frag->len + slip->ll_reserve; ++i) {
+		/* This writes ethernet header */
+		if (slip->ll_reserve) {
+			for (i = 0; i < sizeof(struct net_eth_hdr); i++) {
+				slip_writeb(*ptr++);
+			}
+		}
+#else
+		/* There is no ll header in tun device */
+		ptr = frag->data;
+#endif
+
+		for (i = 0; i < frag->len; ++i) {
 			c = *ptr++;
 			if (c == SLIP_END) {
 				slip_writeb(SLIP_ESC);
