@@ -31,9 +31,15 @@
 #include "net_private.h"
 #include "ipv6.h"
 
+#define REACHABLE_TIME 30000 /* in ms */
+#define MIN_RANDOM_FACTOR (1/2)
+#define MAX_RANDOM_FACTOR (3/2)
+
 /* net_if dedicated section limiters */
 extern struct net_if __net_if_start[];
 extern struct net_if __net_if_end[];
+
+static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
 
 #if NET_DEBUG
 #define debug_check_packet(buf)						   \
@@ -362,6 +368,209 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *maddr)
 	return NULL;
 }
 
+struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
+						  struct in6_addr *prefix,
+						  uint8_t len,
+						  uint32_t lifetime)
+{
+#if defined(CONFIG_NET_IPV6)
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+		if (iface->ipv6.prefix[i].is_used) {
+			continue;
+		}
+
+		iface->ipv6.prefix[i].is_used = true;
+		iface->ipv6.prefix[i].len = len;
+
+		if (lifetime == NET_IPV6_ND_INFINITE_LIFETIME) {
+			iface->ipv6.prefix[i].is_infinite = true;
+		} else {
+			iface->ipv6.prefix[i].is_infinite = false;
+		}
+
+		/* FIXME set timer for the lifetime */
+
+		memcpy(&iface->ipv6.prefix[i].prefix, prefix,
+		       sizeof(struct in6_addr));
+
+		NET_DBG("[%d] interface %p prefix %s/%d added", i, iface,
+			net_sprint_ipv6_addr(prefix), len);
+
+		return &iface->ipv6.prefix[i];
+	}
+#endif
+
+	return NULL;
+}
+
+bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
+			   uint8_t len)
+{
+#if defined(CONFIG_NET_IPV6)
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+		if (!iface->ipv6.prefix[i].is_used) {
+			continue;
+		}
+
+		if (!net_ipv6_addr_cmp(&iface->ipv6.prefix[i].prefix, addr) ||
+		    iface->ipv6.prefix[i].len != len) {
+			continue;
+		}
+
+		iface->ipv6.prefix[i].is_used = false;
+		return true;
+	}
+#endif
+	return false;
+}
+
+struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
+						     struct in6_addr *addr,
+						     uint8_t len)
+{
+#if defined(CONFIG_NET_IPV6)
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+		if (!iface->ipv6.prefix[i].is_used) {
+			continue;
+		}
+
+		if (net_is_ipv6_prefix(iface->ipv6.prefix[i].prefix.s6_addr,
+				       addr->s6_addr, len)) {
+			return &iface->ipv6.prefix[i];
+		}
+	}
+#endif
+	return NULL;
+}
+
+struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
+						struct in6_addr *addr)
+{
+#if defined(CONFIG_NET_IPV6)
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
+		if (!routers[i].is_used ||
+		    routers[i].address.family != AF_INET6 ||
+		    routers[i].iface != iface) {
+			continue;
+		}
+
+		if (net_ipv6_addr_cmp(&routers[i].address.in6_addr, addr)) {
+			return &routers[i];
+		}
+	}
+#endif
+	return NULL;
+}
+
+struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
+					     struct in6_addr *addr,
+					     uint16_t lifetime)
+{
+#if defined(CONFIG_NET_IPV6)
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
+		if (routers[i].is_used) {
+			continue;
+		}
+
+		routers[i].is_used = true;
+		routers[i].iface = iface;
+		routers[i].address.family = AF_INET6;
+
+		if (lifetime) {
+			/* This is a default router. RFC 4861 page 43
+			 * AdvDefaultLifetime variable
+			 */
+			routers[i].is_default = true;
+			routers[i].is_infinite = false;
+
+			/* FIXME - add timer */
+		} else {
+			routers[i].is_default = false;
+			routers[i].is_infinite = true;
+		}
+
+		net_ipaddr_copy(&routers[i].address.in6_addr, addr);
+
+		NET_DBG("[%d] interface %p router %s lifetime %u default %d "
+			"added",
+			i, iface, net_sprint_ipv6_addr(addr), lifetime,
+			routers[i].is_default);
+
+		return &routers[i];
+	}
+#endif
+	return NULL;
+}
+
+struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
+						struct in_addr *addr)
+{
+#if defined(CONFIG_NET_IPV4)
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
+		if (!routers[i].is_used ||
+		    routers[i].address.family != AF_INET) {
+			continue;
+		}
+
+		if (net_ipv4_addr_cmp(&routers[i].address.in_addr, addr)) {
+			return &routers[i];
+		}
+	}
+#endif
+	return NULL;
+}
+
+struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
+					     struct in_addr *addr,
+					     bool is_default,
+					     uint16_t lifetime)
+{
+#if defined(CONFIG_NET_IPV4)
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
+		if (routers[i].is_used) {
+			continue;
+		}
+
+		routers[i].is_used = true;
+		routers[i].iface = iface;
+		routers[i].address.family = AF_INET;
+		routers[i].is_default = is_default;
+
+		if (lifetime) {
+			routers[i].is_infinite = false;
+
+			/* FIXME - add timer */
+		} else {
+			routers[i].is_infinite = true;
+		}
+
+		net_ipaddr_copy(&routers[i].address.in_addr, addr);
+
+		NET_DBG("[%d] interface %p router %s lifetime %u default %d "
+			"added",
+			i, iface, net_sprint_ipv4_addr(addr), lifetime,
+			is_default);
+
+		return &routers[i];
+	}
+#endif
+	return NULL;
+}
+
 const struct in6_addr *net_if_ipv6_unspecified_addr(void)
 {
 #if defined(CONFIG_NET_IPV6)
@@ -643,6 +852,18 @@ struct net_if *net_if_get_default(void)
 	return __net_if_start;
 }
 
+uint32_t net_if_ipv6_calc_reachable_time(struct net_if *iface)
+{
+#if defined(CONFIG_NET_IPV6)
+	return MIN_RANDOM_FACTOR * iface->base_reachable_time +
+		sys_rand32_get() %
+		(MAX_RANDOM_FACTOR * iface->base_reachable_time -
+		 MIN_RANDOM_FACTOR * iface->base_reachable_time);
+#else
+	return 0;
+#endif
+}
+
 void net_if_init(void)
 {
 	struct net_if *iface;
@@ -652,6 +873,9 @@ void net_if_init(void)
 
 #if defined(CONFIG_NET_IPV6)
 		iface->hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
+		iface->base_reachable_time = REACHABLE_TIME;
+
+		net_ipv6_set_reachable_time(iface);
 #endif
 	}
 }

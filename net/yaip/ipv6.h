@@ -32,6 +32,11 @@
 #include "icmpv6.h"
 
 #define NET_IPV6_ND_HOP_LIMIT 255
+#define NET_IPV6_ND_INFINITE_LIFETIME 0xFFFFFFFF
+
+#define NET_IPV6_DEFAULT_PREFIX_LEN 64
+
+#define NET_MAX_RS_COUNT 3
 
 #if !defined(CONFIG_NET_IPV6_NO_DAD)
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr);
@@ -43,6 +48,7 @@ int net_ipv6_send_ns(struct net_if *iface, struct net_buf *pending,
 
 int net_ipv6_start_rs(struct net_if *iface);
 int net_ipv6_send_rs(struct net_if *iface);
+int net_ipv6_start_rs(struct net_if *iface);
 
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);

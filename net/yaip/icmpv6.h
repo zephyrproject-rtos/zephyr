@@ -49,6 +49,32 @@ struct net_icmpv6_rs_hdr {
 	uint32_t reserved;
 } __packed;
 
+struct net_icmpv6_ra_hdr {
+	uint8_t cur_hop_limit;
+	uint8_t flags;
+	uint16_t router_lifetime;
+	uint32_t reachable_time;
+	uint32_t retrans_timer;
+} __packed;
+
+struct net_icmpv6_nd_opt_mtu {
+	uint8_t type;
+	uint8_t len;
+	uint16_t reserved;
+	uint32_t mtu;
+} __packed;
+
+struct net_icmpv6_nd_opt_prefix_info {
+	uint8_t type;
+	uint8_t len;
+	uint8_t prefix_len;
+	uint8_t flags;
+	uint32_t valid_lifetime;
+	uint32_t preferred_lifetime;
+	uint32_t reserved;
+	struct in6_addr prefix;
+} __packed;
+
 #define NET_ICMPV6_NS_BUF(buf)						\
 	((struct net_icmpv6_ns_hdr *)(net_nbuf_icmp_data(buf) +		\
 				      sizeof(struct net_icmp_hdr)))
@@ -66,8 +92,19 @@ struct net_icmpv6_rs_hdr {
 	((struct net_icmpv6_rs_hdr *)(net_nbuf_icmp_data(buf) +		\
 				      sizeof(struct net_icmp_hdr)))
 
-#define NET_ICMPV6_ND_OPT_SLLAO 1
-#define NET_ICMPV6_ND_OPT_TLLAO 2
+#define NET_ICMPV6_RA_BUF(buf)						\
+	((struct net_icmpv6_ra_hdr *)(net_nbuf_icmp_data(buf) +		\
+				      sizeof(struct net_icmp_hdr)))
+
+#define NET_ICMPV6_ND_O_FLAG(flag) ((flag) & 0x40)
+#define NET_ICMPV6_ND_M_FLAG(flag) ((flag) & 0x80)
+
+#define NET_ICMPV6_ND_OPT_SLLAO       1
+#define NET_ICMPV6_ND_OPT_TLLAO       2
+#define NET_ICMPV6_ND_OPT_PREFIX_INFO 3
+#define NET_ICMPV6_ND_OPT_MTU         5
+#define NET_ICMPV6_ND_OPT_RDNSS       25
+#define NET_ICMPV6_ND_OPT_DNSSL       31
 
 #define NET_ICMPV6_OPT_TYPE_OFFSET   0
 #define NET_ICMPV6_OPT_LEN_OFFSET    1
@@ -82,6 +119,7 @@ struct net_icmpv6_rs_hdr {
 #define NET_ICMPV6_ECHO_REQUEST 128
 #define NET_ICMPV6_ECHO_REPLY   129
 #define NET_ICMPV6_RS           133	/* Router Solicitation */
+#define NET_ICMPV6_RA           134	/* Router Advertisement */
 #define NET_ICMPV6_NS           135	/* Neighbor Solicitation */
 #define NET_ICMPV6_NA           136	/* Neighbor Advertisement */
 

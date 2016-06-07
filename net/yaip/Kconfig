@@ -68,6 +68,14 @@ config NET_IPV6_NO_DAD
          The value depends on your network needs. DAD should normally
          be active.
 
+config NET_IPV6_RA_RDNSS
+       bool "Support RA RDNSS option"
+       depends on NET_IPV6
+       default y
+       help
+         Support Router Advertisement Recursive DNS Server option.
+	 See RFC 6106 for details. The value depends on your network needs.
+
 config NET_IPV4
        bool "Enable IPv4"
        default n
@@ -87,9 +95,9 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 
 config NET_MAX_ROUTERS
        int "How many routers are supported"
-#       default 2 if NET_IPV4 and NET_IPV6
-#       default 1 if NET_IPV4 and !NET_IPV6
-#       default 1 if !NET_IPV4 and NET_IPV6
+       default 2 if NET_IPV4 && NET_IPV6
+       default 1 if NET_IPV4 && !NET_IPV6
+       default 1 if !NET_IPV4 && NET_IPV6
        range 1 254
        help
          The value depends on your network needs.
