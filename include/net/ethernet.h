@@ -24,6 +24,7 @@
 #define __ETHERNET_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <net/net_ip.h>
 #include <net/nbuf.h>
@@ -43,5 +44,29 @@ struct net_eth_hdr {
 	struct net_eth_addr src;
 	uint16_t type;
 } __packed;
+
+static inline bool net_eth_is_addr_broadcast(struct net_eth_addr *addr)
+{
+	if (addr->addr[0] == 0xff &&
+	    addr->addr[1] == 0xff &&
+	    addr->addr[2] == 0xff &&
+	    addr->addr[3] == 0xff &&
+	    addr->addr[4] == 0xff &&
+	    addr->addr[5] == 0xff) {
+		return true;
+	}
+
+	return false;
+}
+
+static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
+{
+	if (addr->addr[0] == 0x33 &&
+	    addr->addr[1] == 0x33) {
+		return true;
+	}
+
+	return false;
+}
 
 #endif /* __ETHERNET_H */
