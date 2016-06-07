@@ -92,11 +92,6 @@ static void net_arp_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8);
 }
 
-static uint32_t net_arp_iface_cap(struct net_if *iface)
-{
-	return NET_CAP_ARP;
-}
-
 static struct net_buf *pending_buf;
 
 static struct net_eth_addr hwaddr = { { 0x42, 0x11, 0x69, 0xde, 0xfa, 0xec } };
@@ -312,14 +307,19 @@ struct net_arp_context net_arp_context_data;
 
 static struct net_if_api net_arp_if_api = {
 	.init = net_arp_iface_init,
-	.capabilities = net_arp_iface_cap,
 	.send = tester_send,
 };
+
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_L2_ETHERNET)
+#define _ETH_L2_LAYER ETHERNET_L2
+#else
+#define _ETH_L2_LAYER DUMMY_L2
+#endif
 
 NET_DEVICE_INIT(net_arp_test, "net_arp_test",
 		net_arp_dev_init, &net_arp_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&net_arp_if_api, 127);
+		&net_arp_if_api, _ETH_L2_LAYER, 127);
 
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
@@ -674,6 +674,7 @@ void main(void)
 
 	switch (net_arp_input(buf2)) {
 	case NET_OK:
+	case NET_CONTINUE:
 		break;
 	case NET_DROP:
 		break;
@@ -731,6 +732,7 @@ void main(void)
 
 	switch (net_arp_input(buf2)) {
 	case NET_OK:
+	case NET_CONTINUE:
 		break;
 	case NET_DROP:
 		break;
