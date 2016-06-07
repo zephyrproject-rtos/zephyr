@@ -64,6 +64,7 @@ M:	Johan Hedberg <johan.hedberg@intel.com>
 M:	Luiz Augusto von Dentz <luiz.dentz@gmail.com>
 M:	Szymon Janc <szymon.janc@gmail.com>
 S:	Supported
+W:	https://www.zephyrproject.org/doc/subsystems/bluetooth/bluetooth.html
 F:	net/bluetooth/
 F:	include/bluetooth/
 F:	drivers/bluetooth/
@@ -84,6 +85,7 @@ F:	drivers/flash/
 NETWORKING
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
 S:	Supported
+W:	https://www.zephyrproject.org/doc/subsystems/networking/networking.html
 F:	net/ip/
 F:	include/net/
 F:	samples/net/
@@ -93,6 +95,7 @@ NETWORK BUFFERS
 M:	Johan Hedberg <johan.hedberg@intel.com>
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
 S:	Supported
+W:	https://www.zephyrproject.org/doc/subsystems/networking/buffers.html
 F:	net/buf.c
 F:	include/net/buf.h
 F:	tests/net/buf/
