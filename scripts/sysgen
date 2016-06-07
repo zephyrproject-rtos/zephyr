@@ -78,6 +78,7 @@ copyright = \
 
 output_dir = ""
 input_mdef_file = ""
+kernel_type = 'micro'
 
 def get_cmdline_args():
     """ Handle optional output directory argument """
@@ -87,6 +88,7 @@ def get_cmdline_args():
 
     output_dir_help='output directory for kernel_main.*, sysgen.h, etc'
     input_mdef_file_help='input MDEF file'
+    kernel_type_help="'micro' or 'unified'"
 
     parser = argparse.ArgumentParser()
 
@@ -94,6 +96,8 @@ def get_cmdline_args():
                         required=True, help=input_mdef_file_help)
     parser.add_argument('-o', '--output-dir', action='store',
                         help=output_dir_help)
+    parser.add_argument('-k', '--kernel-type', action='store',
+                        help=kernel_type_help)
 
     args = parser.parse_args()
 
@@ -101,6 +105,9 @@ def get_cmdline_args():
 
     if (args.output_dir != None):
         output_dir = args.output_dir
+
+    if (args.kernel_type != None):
+        kernel_type = args.kernel_type
 
 def write_file(filename, contents):
     """ Create file using specified name and contents """
