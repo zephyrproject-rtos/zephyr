@@ -37,6 +37,7 @@
 #endif
 
 #include <net/net_core.h>
+#include <net/net_linkaddr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,6 +97,10 @@ struct net_nbuf {
 	uint8_t ext_len; /* length of extension headers */
 	uint8_t ext_bitmap;
 	uint8_t *next_hdr;
+
+	/* Filled by layer 2 when network packet is received. */
+	struct net_linkaddr lladdr_src;
+	struct net_linkaddr lladdr_dst;
 	/* @endcond */
 
 	/** Network connection context */
@@ -138,9 +143,29 @@ struct net_nbuf {
 #define net_nbuf_ll(buf) (net_nbuf_ip_data(buf) - net_nbuf_ll_reserve(buf))
 
 #define net_nbuf_ll_src(buf) \
-	(((struct net_nbuf *)net_buf_user_data((buf)))->src)
-#define net_nbuf_ll_dest(buf) \
-	(((struct net_nbuf *)net_buf_user_data((buf)))->dest)
+	(&(((struct net_nbuf *)net_buf_user_data((buf)))->lladdr_src))
+#define net_nbuf_ll_dst(buf) \
+	(&(((struct net_nbuf *)net_buf_user_data((buf)))->lladdr_dst))
+
+static inline void net_nbuf_ll_clear(struct net_buf *buf)
+{
+	memset(net_nbuf_ll(buf), 0, net_nbuf_ll_reserve(buf));
+	net_nbuf_ll_src(buf)->addr = NULL;
+	net_nbuf_ll_src(buf)->len = 0;
+}
+
+static inline void net_nbuf_ll_swap(struct net_buf *buf)
+{
+	uint8_t *addr = net_nbuf_ll_src(buf)->addr;
+
+	net_nbuf_ll_src(buf)->addr = net_nbuf_ll_dst(buf)->addr;
+	net_nbuf_ll_dst(buf)->addr = addr;
+}
+
+/* The interface real ll address */
+#define net_nbuf_ll_if(buf)						\
+	net_if_get_link_addr(((struct net_nbuf *)net_buf_user_data(buf))->iface)
+
 #define net_nbuf_context(buf) \
 	(((struct net_nbuf *)net_buf_user_data((buf)))->context)
 #define net_nbuf_iface(buf) \
