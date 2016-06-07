@@ -1265,8 +1265,6 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 
 static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 {
-	int err;
-
 	if (conn->timeout) {
 		fiber_delayed_start_cancel(conn->timeout);
 		conn->timeout = NULL;
@@ -1275,12 +1273,7 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 		bt_conn_unref(conn);
 	}
 
-	err = bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
-	if (err) {
-		return err;
-	}
-
-	return 0;
+	return bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
 }
 
 int bt_conn_le_param_update(struct bt_conn *conn,
