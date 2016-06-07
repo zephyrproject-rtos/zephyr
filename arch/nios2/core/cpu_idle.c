@@ -29,7 +29,9 @@
  */
 void nano_cpu_idle(void)
 {
-	/* STUB */
+	/* Do nothing but return to the caller. This CPU does not have any
+	 * kind of power saving instruction.
+	 */
 }
 
 /**
@@ -55,6 +57,9 @@ void nano_cpu_idle(void)
  */
 void nano_cpu_atomic_idle(unsigned int key)
 {
-	/* STUB */
+	/* Do nothing but restore IRQ state. This CPU does not have any
+	 * kind of power saving instruction.
+	 */
+	irq_unlock(key);
 }
 
