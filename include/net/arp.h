@@ -20,10 +20,10 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NET_IPV4)
-
 #ifndef __ARP_H
 #define __ARP_H
+
+#if defined(CONFIG_NET_ARP)
 
 #include <net/ethernet.h>
 
@@ -50,12 +50,12 @@ struct net_arp_hdr {
 struct net_buf *net_arp_prepare(struct net_buf *buf);
 enum net_verdict net_arp_input(struct net_buf *buf);
 
-#if defined(CONFIG_NET_ARP)
 void net_arp_init(void);
-#else
+
+#else /* CONFIG_NET_ARP */
+
 #define net_arp_init(...)
-#endif
+
+#endif /* CONFIG_NET_ARP */
 
 #endif /* __ARP_H */
-
-#endif /* CONFIG_NET_IPV4 */
