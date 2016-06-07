@@ -58,7 +58,7 @@ void __stdin_hook_install(unsigned char (*hook)(void))
 	_stdin_hook = hook;
 }
 
-int read(int fd, char *buf, int nbytes)
+int _read(int fd, char *buf, int nbytes)
 {
 	int i = 0;
 
@@ -71,8 +71,9 @@ int read(int fd, char *buf, int nbytes)
 	}
 	return i;
 }
+FUNC_ALIAS(_read, read, int);
 
-int write(int fd, char *buf, int nbytes)
+int _write(int fd, char *buf, int nbytes)
 {
 	int i;
 
@@ -84,54 +85,60 @@ int write(int fd, char *buf, int nbytes)
 	}
 	return nbytes;
 }
+FUNC_ALIAS(_write, write, int);
 
-int isatty(int file)
+int _isatty(int file)
 {
 	return 1;
 }
+FUNC_ALIAS(_isatty, isatty, int);
 
-
-int kill(int i, int j)
+int _kill(int i, int j)
 {
 	return 0;
 }
+FUNC_ALIAS(_kill, kill, int);
 
-int getpid(void)
+int _getpid(void)
 {
 	return 0;
 }
+FUNC_ALIAS(_getpid, getpid, int);
 
-int fstat(int file, struct stat *st)
+int _fstat(int file, struct stat *st)
 {
 	st->st_mode = S_IFCHR;
 	return 0;
 }
-
+FUNC_ALIAS(_fstat, fstat, int);
 
 void _exit(int status)
 {
-	write(1, "exit", 4);
+	_write(1, "exit", 4);
 	while (1) {
 		;
 	}
 }
 
-int open(const char *name, int mode)
+int _open(const char *name, int mode)
 {
 	return -1;
 }
+FUNC_ALIAS(_open, open, int);
 
-int close(int file)
+int _close(int file)
 {
 	return -1;
 }
+FUNC_ALIAS(_close, close, int);
 
-int lseek(int file, int ptr, int dir)
+int _lseek(int file, int ptr, int dir)
 {
 	return 0;
 }
+FUNC_ALIAS(_lseek, lseek, int);
 
-void *sbrk(int count)
+void *_sbrk(int count)
 {
 	void *ptr = heap_base + heap_sz;
 
@@ -142,3 +149,4 @@ void *sbrk(int count)
 		return (void *)-1;
 	}
 }
+FUNC_ALIAS(_sbrk, sbrk, void *);
