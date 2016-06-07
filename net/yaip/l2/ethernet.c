@@ -23,6 +23,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_buf *buf)
 {
 	struct net_eth_hdr *hdr = NET_ETH_BUF(buf);
+	struct net_linkaddr *lladdr;
 
 	switch (ntohs(hdr->type)) {
 	case NET_ETH_PTYPE_IP:
@@ -33,6 +34,15 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		net_nbuf_family(buf) = AF_INET6;
 		break;
 	}
+
+	/* Set the pointers to ll src and dst addresses */
+	lladdr = net_nbuf_ll_src(buf);
+	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->src.addr;
+	lladdr->len = sizeof(struct net_eth_hdr);
+
+	lladdr = net_nbuf_ll_dst(buf);
+	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->dst.addr;
+	lladdr->len = sizeof(struct net_eth_hdr);
 
 #ifdef CONFIG_NET_ARP
 	if (net_nbuf_family(buf) == AF_INET &&
