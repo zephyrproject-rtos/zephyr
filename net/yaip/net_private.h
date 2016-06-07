@@ -27,6 +27,7 @@
 extern void net_nbuf_init(void);
 extern void net_if_init(void);
 extern void net_context_init(void);
+extern void net_ipv6_init(void);
 
 extern char *net_byte_to_hex(uint8_t *ptr, uint8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,

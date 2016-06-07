@@ -411,6 +411,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 static inline void l3_init(void)
 {
 	net_icmpv6_init();
+	net_ipv6_init();
 
 	NET_DBG("Network L3 init done");
 }

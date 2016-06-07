@@ -26,6 +26,8 @@ menuconfig NETWORKING
 	select NANO_TIMEOUTS
 	select NANO_TIMERS
 	select NET_BUF
+	select SYSTEM_WORKQUEUE
+	select NANO_WORKQUEUE
 	default n
 	help
 	  This option enabled generic networking support.

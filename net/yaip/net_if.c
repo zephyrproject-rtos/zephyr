@@ -29,6 +29,7 @@
 #include <net/arp.h>
 
 #include "net_private.h"
+#include "ipv6.h"
 
 /* net_if dedicated section limiters */
 extern struct net_if __net_if_start[];
@@ -101,6 +102,51 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 
 	return NULL;
 }
+
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV6_NO_DAD)
+#define DAD_TIMEOUT (sys_clock_ticks_per_sec / 10)
+
+static void dad_timeout(struct nano_work *work)
+{
+	/* This means that the DAD succeed. */
+	struct net_if_addr *ifaddr = CONTAINER_OF(work,
+						  struct net_if_addr,
+						  dad_timer);
+
+	NET_DBG("DAD succeeded for %s",
+		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
+
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+}
+
+void net_if_start_dad(struct net_if *iface)
+{
+	struct net_if_addr *ifaddr;
+	struct in6_addr addr = { 0 };
+
+	net_ipv6_addr_create_iid(&addr, &iface->link_addr);
+
+	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
+	if (!ifaddr) {
+		NET_ERR("Cannot add %s address to interface %p, DAD fails",
+			net_sprint_ipv6_addr(&addr), iface);
+		return;
+	}
+
+	ifaddr->addr_state = NET_ADDR_TENTATIVE;
+	ifaddr->dad_count = 1;
+
+	NET_DBG("Interface %p ll addr %s tentative IPv6 addr %s", iface,
+		net_sprint_ll_addr(iface->link_addr.addr,
+				   iface->link_addr.len),
+		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
+
+	if (!net_ipv6_start_dad(iface, ifaddr)) {
+		nano_delayed_work_init(&ifaddr->dad_timer, dad_timeout);
+		nano_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);
+	}
+}
+#endif
 
 struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr)
 {

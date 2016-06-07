@@ -133,6 +133,12 @@ struct net_stats_udp {
 	net_stats_t chkerr;
 };
 
+struct net_stats_ipv6_nd {
+	net_stats_t drop;
+	net_stats_t recv;
+	net_stats_t sent;
+};
+
 struct net_stats {
 	net_stats_t processing_error;
 
@@ -154,6 +160,10 @@ struct net_stats {
 
 #if defined (CONFIG_NET_UDP)
 	struct net_stats_udp udp;
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+	struct net_stats_ipv6_nd ipv6_nd;
 #endif
 };
 

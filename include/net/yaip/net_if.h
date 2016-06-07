@@ -23,6 +23,7 @@
 #define __NET_IF_H__
 
 #include <device.h>
+#include <misc/nano_work.h>
 
 #include <net/net_core.h>
 #include <net/buf.h>
@@ -59,9 +60,9 @@ struct net_if_addr {
 	/** Timer that triggers renewal */
 	struct nano_timer lifetime;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV6_NO_DAD)
 	/** Duplicate address detection (DAD) timer */
-	struct nano_timer dad_timer;
+	struct nano_delayed_work dad_timer;
 
 	/** How many times we have done DAD */
 	uint8_t dad_count;
@@ -157,7 +158,13 @@ struct net_if {
 		struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX];
 	} ipv6;
 
+	/** IPv6 hop limit */
 	uint8_t hop_limit;
+
+#if !defined(CONFIG_NET_IPV6_NO_DAD)
+	/** IPv6 current duplicate address detection count */
+	uint8_t dad_count;
+#endif /* !CONFIG_NET_IPV6_NO_DAD */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -242,6 +249,16 @@ static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
 }
 
 /**
+ * @brief Start duplicate address detection procedure.
+ * @param iface Pointer to a network interface structure
+ */
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV6_NO_DAD)
+void net_if_start_dad(struct net_if *iface);
+#else
+#define net_if_start_dad(iface)
+#endif
+
+/**
  * @brief Set a network interfac's link address
  * @param iface Pointer to a network interface structure
  * @param addr a pointer on a uint8_t buffer representing the address
@@ -252,6 +269,11 @@ static inline void net_if_set_link_addr(struct net_if *iface,
 {
 	iface->link_addr.addr = addr;
 	iface->link_addr.len = len;
+
+#if !defined(CONFIG_NET_NO_DAD)
+	NET_DBG("Starting DAD for iface %p", iface);
+	net_if_start_dad(iface);
+#endif
 }
 
 /**

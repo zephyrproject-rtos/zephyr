@@ -101,6 +101,10 @@ struct net_nbuf {
 	/* Filled by layer 2 when network packet is received. */
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
+
+#if defined(CONFIG_NET_IPV6)
+	uint8_t ext_opt_len; /* IPv6 ND option length */
+#endif
 	/* @endcond */
 
 	/** Network connection context */
@@ -181,6 +185,8 @@ static inline void net_nbuf_ll_swap(struct net_buf *buf)
 	(((struct net_nbuf *)net_buf_user_data((buf)))->ext_bitmap)
 #define net_nbuf_next_hdr(buf) \
 	(((struct net_nbuf *)net_buf_user_data((buf)))->next_hdr)
+#define net_nbuf_ext_opt_len(buf) \
+	(((struct net_nbuf *)net_buf_user_data((buf)))->ext_opt_len)
 
 #define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_nbuf_ip_data(buf))
 #define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))

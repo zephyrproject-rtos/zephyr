@@ -60,6 +60,14 @@ config NET_IPV6_MAX_NEIGHBORS
        help
          The value depends on your network needs.
 
+config NET_IPV6_NO_DAD
+       bool "Do not do duplicate address detection"
+       depends on NET_IPV6
+       default n
+       help
+         The value depends on your network needs. DAD should normally
+         be active.
+
 config NET_IPV4
        bool "Enable IPv4"
        default n
