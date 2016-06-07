@@ -21,15 +21,31 @@
 
 void _arch_irq_enable(unsigned int irq)
 {
-	/* STUB */
-	ARG_UNUSED(irq);
+	uint32_t ienable;
+	int key;
+
+	key = irq_lock();
+
+	ienable = _nios2_creg_read(NIOS2_CR_IENABLE);
+	ienable |= (1 << irq);
+	_nios2_creg_write(NIOS2_CR_IENABLE, ienable);
+
+	irq_unlock(key);
 };
 
 
 void _arch_irq_disable(unsigned int irq)
 {
-	/* STUB */
-	ARG_UNUSED(irq);
+	uint32_t ienable;
+	int key;
+
+	key = irq_lock();
+
+	ienable = _nios2_creg_read(NIOS2_CR_IENABLE);
+	ienable &= ~(1 << irq);
+	_nios2_creg_write(NIOS2_CR_IENABLE, ienable);
+
+	irq_unlock(key);
 };
 
 
