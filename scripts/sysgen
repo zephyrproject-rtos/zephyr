@@ -31,6 +31,7 @@
 import os
 import sys
 import subprocess
+import argparse
 
 # global variables describing system
 
@@ -76,15 +77,30 @@ copyright = \
     " */\n"
 
 output_dir = ""
+input_mdef_file = ""
 
-
-def get_output_dir():
+def get_cmdline_args():
     """ Handle optional output directory argument """
 
+    global input_mdef_file
     global output_dir
-    if len(sys.argv) > 2:
-        output_dir = sys.argv[2]
 
+    output_dir_help='output directory for kernel_main.*, sysgen.h, etc'
+    input_mdef_file_help='input MDEF file'
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-i', '--input-mdef-file', action='store',
+                        required=True, help=input_mdef_file_help)
+    parser.add_argument('-o', '--output-dir', action='store',
+                        help=output_dir_help)
+
+    args = parser.parse_args()
+
+    input_mdef_file = args.input_mdef_file
+
+    if (args.output_dir != None):
+        output_dir = args.output_dir
 
 def write_file(filename, contents):
     """ Create file using specified name and contents """
@@ -123,7 +139,7 @@ def mdef_parse():
     global heap_pos_in_pool_list
 
     # read file contents in a single shot
-    with open(sys.argv[1], 'r') as infile:
+    with open(input_mdef_file, 'r') as infile:
         data = infile.read()
 
     # create list of the lines, breaking at line boundaries
@@ -1001,8 +1017,8 @@ def sysgen_h_generate():
 #
 
 
+get_cmdline_args()
 mdef_parse()
-get_output_dir()
 kernel_main_c_generate()
 kernel_main_h_generate()
 micro_private_types_h_generate()
