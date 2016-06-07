@@ -716,6 +716,11 @@ static void rx_fiber(void)
 		}
 
 		net_buf_unref(buf);
+
+		/* Make sure we don't hog the CPU if the rx_queue never
+		 * gets empty.
+		 */
+		fiber_yield();
 	}
 }
 

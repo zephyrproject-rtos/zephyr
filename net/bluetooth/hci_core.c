@@ -3214,6 +3214,10 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 			break;
 		}
 
+		/* Make sure we don't hog the CPU if the rx_queue never
+		 * gets empty.
+		 */
+		fiber_yield();
 	}
 }
 
