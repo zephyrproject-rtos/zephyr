@@ -163,7 +163,8 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 		memset(&hdr->src_ipaddr, 0, sizeof(struct in_addr));
 	}
 
-	net_buf_add(frag, sizeof(struct net_arp_hdr));
+	net_buf_add(frag,
+		    sizeof(struct net_arp_hdr) - sizeof(struct net_eth_hdr));
 
 	return buf;
 
@@ -374,7 +375,11 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 	net_ipaddr_copy(&hdr->dst_ipaddr, &query->src_ipaddr);
 	net_ipaddr_copy(&hdr->src_ipaddr, &query->dst_ipaddr);
 
-	net_buf_add(frag, sizeof(struct net_arp_hdr));
+	/* The ethernet header is already added to fragment length (because
+	 * of the reserve) so we must not add it again.
+	 */
+	net_buf_add(frag,
+		    sizeof(struct net_arp_hdr) - sizeof(struct net_eth_hdr));
 
 	return buf;
 

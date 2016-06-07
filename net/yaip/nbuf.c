@@ -314,7 +314,15 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 		net_nbuf_type(buf) = type;
 		break;
 	case NET_NBUF_DATA:
-		buf = net_buf_get(&free_data_bufs, reserve_head);
+		buf = net_buf_get(&free_data_bufs, 0);
+
+		/* The buf->data will point to the start of the L3
+		 * header (like IPv4 or IPv6 packet header) after the
+		 * add() and pull().
+		 */
+		net_buf_add(buf, reserve_head);
+		net_buf_pull(buf, reserve_head);
+
 		dec_free_data_bufs(buf);
 		break;
 	default:
