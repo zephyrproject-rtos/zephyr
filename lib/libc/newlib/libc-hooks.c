@@ -85,14 +85,6 @@ int write(int fd, char *buf, int nbytes)
 	return nbytes;
 }
 
-int fstat(int fd, struct stat *buf)
-{
-	buf->st_mode = S_IFCHR;       /* Always pretend to be a tty */
-	buf->st_blksize = 0;
-
-	return 0;
-}
-
 int isatty(int file)
 {
 	return 1;
@@ -109,7 +101,7 @@ int getpid(void)
 	return 0;
 }
 
-int _fstat(int file, struct stat *st)
+int fstat(int file, struct stat *st)
 {
 	st->st_mode = S_IFCHR;
 	return 0;
