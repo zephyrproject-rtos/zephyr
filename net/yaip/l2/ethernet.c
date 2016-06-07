@@ -121,4 +121,9 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	return NET_OK;
 }
 
-NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send);
+static inline uint16_t get_reserve(struct net_if *iface)
+{
+	return sizeof(struct net_eth_hdr);
+}
+
+NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, get_reserve);

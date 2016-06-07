@@ -33,6 +33,7 @@ struct net_if;
 struct net_l2 {
 	enum net_verdict (*recv)(struct net_if *iface, struct net_buf *buf);
 	enum net_verdict (*send)(struct net_if *iface, struct net_buf *buf);
+	uint16_t (*get_reserve)(struct net_if *iface);
 };
 
 #define NET_L2_GET_NAME(_name) (__net_l2_##_name)
@@ -53,11 +54,12 @@ NET_L2_DECLARE_PUBLIC(ETHERNET_L2);
 
 extern struct net_l2 __net_l2_end[];
 
-#define NET_L2_INIT(_name, _recv_fn, _send_fn)				\
+#define NET_L2_INIT(_name, _recv_fn, _send_fn, _reserve_fn)		\
 	const struct net_l2 const (NET_L2_GET_NAME(_name)) __used	\
 	__attribute__((__section__(".net_l2.init"))) = {		\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
+		.get_reserve = (_reserve_fn),				\
 	}
 
 #ifdef __cplusplus

@@ -32,4 +32,9 @@ static inline enum net_verdict dummy_send(struct net_if *iface,
 	return NET_OK;
 }
 
-NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send);
+static inline uint16_t get_reserve(struct net_if *iface)
+{
+	return 0;
+}
+
+NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send, get_reserve);

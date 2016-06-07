@@ -202,6 +202,16 @@ static inline enum net_verdict net_if_recv_data(struct net_if *iface,
 }
 
 /**
+ * @brief Get link layer header size for this network interface
+ * @param iface Pointer to a network interface structure
+ * @return Return the link layer header size
+ */
+static inline uint16_t net_if_get_ll_reserve(struct net_if *iface)
+{
+	return iface->l2->get_reserve(iface);
+}
+
+/**
  * @brief Get an network interface's device
  * @param iface Pointer to a network interface structure
  * @return a pointer on the device driver instance
