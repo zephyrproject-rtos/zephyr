@@ -27,7 +27,7 @@
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_ip.h>
-#include <net/arp.h>
+#include <net/ethernet.h>
 
 #define NET_DEBUG 1
 #include "net_private.h"
