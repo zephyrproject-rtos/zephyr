@@ -358,13 +358,13 @@ static int slip_init(struct device *dev)
 #else
 	slip->ll_reserve = 0;
 #endif
-	NET_DBG("%sll reserve %d",
+	SYS_LOG_DBG("%sll reserve %d",
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_IPV4)
-		"ARP enabled, ",
+		    "ARP enabled, ",
 #else
-		"",
+		    "",
 #endif
-		slip->ll_reserve);
+		    slip->ll_reserve);
 
 	uart_pipe_register(slip->buf, sizeof(slip->buf), recv_cb);
 
