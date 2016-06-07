@@ -91,6 +91,8 @@
 #else
 #if defined(CONFIG_NET_IPV4)
 #define IP_PROTO_LEN NET_IPV4H_LEN
+#else
+#error "Either IPv6 or IPv4 needs to be selected."
 #endif /* IPv4 */
 #endif /* IPv6 */
 
