@@ -645,7 +645,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			continue;
 		}
 
-		if (bt_addr_le_cmp(&conn->le.dst, &ccc->cfg[i].peer)) {
+		if (!bt_addr_le_cmp(&conn->le.dst, &ccc->cfg[i].peer)) {
 			struct bt_conn *tmp;
 
 			/* Skip if there is another peer connected */
@@ -657,13 +657,19 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 				}
 
 				bt_conn_unref(tmp);
+
+				/* Clear value if not paired */
+				if (!ccc->cfg[i].valid)
+					memset(&ccc->cfg[i].value, 0,
+					       sizeof(ccc->cfg[i].value));
 			}
 		}
 	}
 
 	/* Reset value while disconnected */
 	memset(&ccc->value, 0, sizeof(ccc->value));
-	ccc->cfg_changed(ccc->value);
+	if (ccc->cfg_changed)
+		ccc->cfg_changed(ccc->value);
 
 	BT_DBG("ccc %p reseted", ccc);
 
