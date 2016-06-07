@@ -29,9 +29,9 @@ extern void net_if_init(void);
 extern void net_context_init(void);
 
 extern char *net_byte_to_hex(uint8_t *ptr, uint8_t byte, char base, bool pad);
-extern char *net_sprint_ll_addr_buf(uint8_t *ll, uint8_t ll_len,
+extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 				    char *buf, int buflen);
-extern char *net_sprint_ip_addr_buf(uint8_t *ip, int ip_len,
+extern char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 				    char *buf, int buflen);
 extern uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto);
 
@@ -46,21 +46,21 @@ static inline uint16_t net_calc_chksum_icmpv4(struct net_buf *buf)
 }
 
 #if NET_DEBUG > 0
-static inline char *net_sprint_ll_addr(uint8_t *ll, uint8_t ll_len)
+static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
 {
 	static char buf[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 
 	return net_sprint_ll_addr_buf(ll, ll_len, (char *)buf, sizeof(buf));
 }
 
-static inline char *net_sprint_ip_addr_ptr(uint8_t *ptr, uint8_t len)
+static inline char *net_sprint_ip_addr_ptr(const uint8_t *ptr, uint8_t len)
 {
 	static char buf[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
 
 	return net_sprint_ip_addr_buf(ptr, len, (char *)buf, sizeof(buf));
 }
 
-static inline char *net_sprint_ipv6_addr(struct in6_addr *addr)
+static inline char *net_sprint_ipv6_addr(const struct in6_addr *addr)
 {
 #if defined(CONFIG_NET_IPV6)
 	return net_sprint_ip_addr_ptr(addr->s6_addr, 16);
@@ -69,7 +69,7 @@ static inline char *net_sprint_ipv6_addr(struct in6_addr *addr)
 #endif
 }
 
-static inline char *net_sprint_ipv4_addr(struct in_addr *addr)
+static inline char *net_sprint_ipv4_addr(const struct in_addr *addr)
 {
 #if defined(CONFIG_NET_IPV4)
 	return net_sprint_ip_addr_ptr(addr->s4_addr, 4);
@@ -78,7 +78,7 @@ static inline char *net_sprint_ipv4_addr(struct in_addr *addr)
 #endif
 }
 
-static inline char *net_sprint_ip_addr(struct net_addr *addr)
+static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 {
 	switch (addr->family) {
 	case AF_INET6:
@@ -133,27 +133,27 @@ static inline void net_hexdump(const char *str, const uint8_t *packet, size_t le
 
 #else /* NET_DEBUG */
 
-static inline char *net_sprint_ll_addr(uint8_t *ll, uint8_t ll_len)
+static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
 {
 	return NULL;
 }
 
-static inline char *net_sprint_ip_addr_ptr(uint8_t *ptr, uint8_t len)
+static inline char *net_sprint_ip_addr_ptr(const uint8_t *ptr, uint8_t len)
 {
 	return NULL;
 }
 
-static inline char *net_sprint_ipv6_addr(struct in6_addr *addr)
+static inline char *net_sprint_ipv6_addr(const struct in6_addr *addr)
 {
 	return NULL;
 }
 
-static inline char *net_sprint_ipv4_addr(struct in_addr *addr)
+static inline char *net_sprint_ipv4_addr(const struct in_addr *addr)
 {
 	return NULL;
 }
 
-static inline char *net_sprint_ip_addr(struct net_addr *addr)
+static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 {
 	return NULL;
 }
