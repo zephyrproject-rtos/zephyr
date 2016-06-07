@@ -385,9 +385,10 @@ class SizeCalculator:
 
     alloc_sections = ["bss", "noinit"]
     rw_sections = ["datas", "initlevel", "_k_mem_map_ptr", "_k_pipe_ptr",
-                   "_k_task_ptr", "_k_task_list", "_k_event_list"]
+                   "_k_task_ptr", "_k_task_list", "_k_event_list",
+                   "exceptions"]
     # These get copied into RAM only on non-XIP
-    ro_sections = ["text", "ctors", "init_array",
+    ro_sections = ["text", "ctors", "init_array", "reset",
                    "rodata", "devconfig", "gpio_compat"]
 
     def __init__(self, filename):

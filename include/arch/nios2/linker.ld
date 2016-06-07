@@ -30,30 +30,76 @@
 #include <linker-defs.h>
 #include <linker-tool.h>
 
-#define ROMABLE_REGION FLASH
-#define RAMABLE_REGION SRAM
+/* These sections are specific to this CPU */
+#define _EXCEPTION_SECTION_NAME exceptions
+#define _RESET_SECTION_NAME reset
 
-#define ROM_ADDR CONFIG_FLASH_BASE_ADDRESS
-#define ROM_SIZE CONFIG_FLASH_SIZE * 1K
+/* This linker script requires the following macros to be defined in the
+ * SOC-specfic linker script. All of these values can be found defined
+ * in system.h for CPU configurations that can generate a HAL.
+ *
+ * _RESET_VECTOR     CPU entry point at boot
+ * _EXC_VECTOR       General exception vector
+ * _ROM_ADDR         Beginning of flash memory
+ * _ROM_SIZE         Size in bytes of flash memory
+ * _RAM_ADDR         Beginning of RAM
+ * _RAM_SIZE         Size of RAM in bytes
+ *
+ * For now we support two scenarios:
+ *
+ * 1. Non-XIP systems where the reset vector is at the beginning of RAM
+ * with the exception vector 0x20 bytes after it.
+ * 2. XIP systems where the reset vector is at the beginning of ROM and
+ * the exception vector is in RAM
+ */
 
-#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
-#define RAM_SIZE CONFIG_SRAM_SIZE * 1K
 
-#define _DATA_IN_ROM __data_rom_start
+#ifdef CONFIG_XIP
+	#define ROMABLE_REGION FLASH
+	#define RAMABLE_REGION SRAM
+#else
+	#define ROMABLE_REGION SRAM
+	#define RAMABLE_REGION SRAM
+#endif
+
+#ifdef CONFIG_XIP
+
+ASSERT(_RESET_VECTOR == _ROM_ADDR, "Reset vector not at beginning of ROM!")
 
 MEMORY
     {
-    FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
-    SRAM  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+    RESET (rx) : ORIGIN = _RESET_VECTOR, LENGTH = 0x20
+    FLASH (rx) : ORIGIN = _RESET_VECTOR + 0x20 , LENGTH = (_ROM_SIZE - 0x20)
+    SRAM  (wx) : ORIGIN = _EXC_VECTOR, LENGTH = _RAM_SIZE - (_EXC_VECTOR - _RAM_ADDR)
     }
+
+#else
+
+ASSERT(_RESET_VECTOR == _RAM_ADDR, "Reset vector not at beginning of RAM!")
+ASSERT(_EXC_VECTOR - _RESET_VECTOR == 0x20, "Exception vector in wrong place?")
+
+MEMORY
+    {
+    RESET (wx) : ORIGIN = _RESET_VECTOR, LENGTH = 0x20
+    SRAM  (wx) : ORIGIN = _EXC_VECTOR, LENGTH = _RAM_SIZE - (_EXC_VECTOR - _RAM_ADDR)
+}
+#endif
 
 SECTIONS
     {
     GROUP_START(ROMABLE_REGION)
-    _image_rom_start = CONFIG_FLASH_BASE_ADDRESS;
+    _image_rom_start = _ROM_ADDR;
+
+    SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
+    {
+        *(.reset.*)
+    } GROUP_LINK_IN(RESET)
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
         {
+        /* XXX If ALT_CPU_RESET_ADDR is not the same as _ROM_ADDR
+         * we are going to waste flash space? */
+        . = ALT_CPU_RESET_ADDR;
 
         _image_text_start = .;
         *(.text)
@@ -108,18 +154,37 @@ SECTIONS
     _image_rom_end = .;
     __data_rom_start = ALIGN(4);    /* XIP imaged DATA ROM start addr */
 
-
     GROUP_END(ROMABLE_REGION)
 
     GROUP_START(RAMABLE_REGION)
 
-    _gp = ALIGN(16) + 0x7ff0;
-    PROVIDE(gp = _gp);
+#ifdef CONFIG_XIP
+    /* Altera strongly recommends keeping exception entry code in RAM
+     * even on XIP systems
+     *
+     * XXX any space between _RAM_ADDR and ALT_CPU_EXCEPTION_ADDR is lost,
+     * currently 0x20 bytes
+     *
+     * This is code not data, but we need this copied just like XIP data
+     */
 
-    SECTION_AT_PROLOGUE(_DATA_SECTION_NAME,,,_DATA_IN_ROM)
+    SECTION_AT_PROLOGUE(_EXCEPTION_SECTION_NAME,,, __data_rom_start)
         {
+            _image_ram_start = .;
+            __data_ram_start = .;
+
+            /* FIXME these KEEP()s shouldn't be necessary */
+            KEEP(*(".exception.entry.*"))
+            KEEP(*(".exception.other.*"))
+
+        } GROUP_LINK_IN(RAMABLE_REGION)
+#endif
+
+    SECTION_PROLOGUE(_DATA_SECTION_NAME,,)
+        {
+#ifndef CONFIG_XIP
         _image_ram_start = .;
-        __data_ram_start = .;
+#endif
         *(.data)
         *(".data.*")
         } GROUP_LINK_IN(RAMABLE_REGION)
@@ -207,7 +272,6 @@ SECTIONS
         } GROUP_LINK_IN(RAMABLE_REGION)
 
     /* Define linker symbols */
-
     _image_ram_end = .;
     _end = .; /* end of image */
     __bss_num_words = (__bss_end - __bss_start) >> 2;
@@ -216,6 +280,7 @@ SECTIONS
 
     }
 
+#if CONFIG_XIP
 /*
  * Round up number of words for DATA section to ensure that XIP copies the
  * entire data section. XIP copy is done in words only, so there may be up
@@ -224,4 +289,5 @@ SECTIONS
  */
 __data_size = (__data_ram_end - __data_ram_start);
 __data_num_words = (__data_size + 3) >> 2;
+#endif
 
