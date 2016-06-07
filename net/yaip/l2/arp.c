@@ -375,6 +375,7 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 
 	net_buf_frag_add(buf, frag);
 	net_nbuf_iface(buf) = iface;
+	net_nbuf_family(buf) = AF_INET;
 	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
 
 	hdr = NET_ARP_BUF(buf);
