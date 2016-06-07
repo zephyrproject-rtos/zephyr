@@ -152,10 +152,16 @@ static struct net_if_api net_test_if_api = {
 	.init = net_test_iface_init
 };
 
+#if defined(CONFIG_NET_L2_ETHERNET)
+#define _ETH_L2_LAYER ETHERNET_L2
+#else
+#define _ETH_L2_LAYER DUMMY_L2
+#endif
+
 NET_DEVICE_INIT(net_addr_test, "net_addr_test",
 		net_test_init, &net_test_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&net_test_if_api, 127);
+		&net_test_if_api, _ETH_L2_LAYER, 127);
 
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
@@ -176,6 +182,7 @@ void main(void)
 	struct in6_addr addr6_pref3 = { { { 0x20, 0x01, 0x0d, 0xb8, 0x64, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 	struct in6_addr *tmp;
+	const struct in6_addr *out;
 	struct net_if_addr *ifaddr1, *ifaddr2;
 	struct net_if_mcast_addr *ifmaddr1;
 	struct in_addr addr4 = { { { 192, 168, 0, 1 } } };
@@ -361,16 +368,16 @@ void main(void)
 	for (i = 0, iface = net_if_get_default(); i < 2; i++, iface = NULL) {
 		ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
-		tmp = net_if_ipv6_select_src_addr(iface, &addr6_pref1);
-		if (!tmp) {
+		out = net_if_ipv6_select_src_addr(iface, &addr6_pref1);
+		if (!out) {
 			printk("IPv6 src addr selection failed, iface %p\n",
 				iface);
 			return;
 		}
 		printk("Selected IPv6 address %s, iface %p\n",
-		       net_sprint_ipv6_addr(tmp), iface);
+		       net_sprint_ipv6_addr(out), iface);
 
-		if (memcmp(tmp->s6_addr, &addr6_pref2.s6_addr,
+		if (memcmp(out->s6_addr, &addr6_pref2.s6_addr,
 			   sizeof(struct in6_addr))) {
 			printk("IPv6 wrong src address selected, iface %p\n",
 			       iface);
@@ -378,16 +385,16 @@ void main(void)
 		}
 
 		/* Now we should get :: address */
-		tmp = net_if_ipv6_select_src_addr(iface, &addr6);
-		if (!tmp) {
+		out = net_if_ipv6_select_src_addr(iface, &addr6);
+		if (!out) {
 			printk("IPv6 src any addr selection failed, "
 			       "iface %p\n", iface);
 			return;
 		}
 		printk("Selected IPv6 address %s, iface %p\n",
-		       net_sprint_ipv6_addr(tmp), iface);
+		       net_sprint_ipv6_addr(out), iface);
 
-		if (memcmp(tmp->s6_addr, &any.s6_addr,
+		if (memcmp(out->s6_addr, &any.s6_addr,
 			   sizeof(struct in6_addr))) {
 			printk("IPv6 wrong src any address selected, "
 			       "iface %p\n", iface);
@@ -397,16 +404,16 @@ void main(void)
 		ifaddr2->addr_state = NET_ADDR_PREFERRED;
 
 		/* Now we should get ll address */
-		tmp = net_if_ipv6_select_src_addr(iface, &addr6);
-		if (!tmp) {
+		out = net_if_ipv6_select_src_addr(iface, &addr6);
+		if (!out) {
 			printk("IPv6 src ll addr selection failed, iface %p\n",
 				iface);
 			return;
 		}
 		printk("Selected IPv6 address %s, iface %p\n",
-		       net_sprint_ipv6_addr(tmp), iface);
+		       net_sprint_ipv6_addr(out), iface);
 
-		if (memcmp(tmp->s6_addr, &addr6.s6_addr,
+		if (memcmp(out->s6_addr, &addr6.s6_addr,
 			   sizeof(struct in6_addr))) {
 			printk("IPv6 wrong src ll address selected, "
 			       "iface %p\n", iface);
