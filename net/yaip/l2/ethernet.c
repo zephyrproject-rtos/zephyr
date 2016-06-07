@@ -79,6 +79,32 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	}
 #endif
 
+	/* If the src ll address is multicast or broadcast, then
+	 * what probably happened is that the RX buffer is used
+	 * for sending data back to recipient. We must substitute
+	 * the src address using the real ll address.
+	 * If the ll address is not set at all, then we must set
+	 * it here.
+	 */
+	if (!net_nbuf_ll_src(buf)->addr ||
+	    net_eth_is_addr_broadcast(
+		    (struct net_eth_addr *)net_nbuf_ll_src(buf)->addr) ||
+	    net_eth_is_addr_multicast(
+		    (struct net_eth_addr *)net_nbuf_ll_src(buf)->addr)) {
+		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
+		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+	}
+
+	/* If the destination address is not set, then use broadcast
+	 * address.
+	 */
+	if (!net_nbuf_ll_dst(buf)->addr) {
+		memset((uint8_t *)net_nbuf_ll(buf), 0xff,
+		       sizeof(struct net_eth_addr));
+		net_nbuf_ll_dst(buf)->addr = net_nbuf_ll(buf);
+		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
+	}
+
 	hdr = NET_ETH_BUF(buf);
 
 	if (net_nbuf_family(buf) == AF_INET) {
