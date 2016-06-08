@@ -34,6 +34,20 @@
 extern struct net_if __net_if_start[];
 extern struct net_if __net_if_end[];
 
+#if NET_DEBUG
+#define debug_check_packet(buf)						   \
+	{								   \
+		size_t len = net_buf_frags_len(buf->frags);		   \
+									   \
+		NET_DBG("Processing (buf %p, data len %u) network packet", \
+			buf, len);					   \
+									   \
+		NET_ASSERT(buf->frags && len);				   \
+	} while (0)
+#else
+#define debug_check_packet(...)
+#endif
+
 static void net_if_tx_fiber(struct net_if *iface)
 {
 	struct net_if_api *api = (struct net_if_api *)iface->dev->driver_api;
@@ -53,8 +67,7 @@ static void net_if_tx_fiber(struct net_if *iface)
 		/* Get next packet from application - wait if necessary */
 		buf = net_buf_get_timeout(&iface->tx_queue, 0, TICKS_UNLIMITED);
 
-		NET_DBG("Processing (buf %p, data len %u) network packet",
-			buf, net_buf_frags_len(buf->frags));
+		debug_check_packet(buf);
 
 		if (api->send(iface, buf) < 0) {
 			net_nbuf_unref(buf);
