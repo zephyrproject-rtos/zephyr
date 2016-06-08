@@ -314,4 +314,10 @@ config NETWORK_IP_STACK_DEBUG_TRICKLE
 	help
 	  Enables Trickle library output debug messages
 
+config NETWORK_IP_STACK_DEBUG_L2
+	bool "Debug L2 layer"
+	default n
+	help
+	  Enables L2 output debug messages
+
 endif

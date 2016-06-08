@@ -14,10 +14,35 @@
  * limitations under the License.
  */
 
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_L2)
+#define SYS_LOG_DOMAIN "net/l2"
+#define NET_DEBUG 1
+#endif
+
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
 #include <net/arp.h>
+
+#include "net_private.h"
+
+#if NET_DEBUG
+#define print_ll_addrs(buf, type)					   \
+	do {								   \
+		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
+									   \
+		snprintf(out, sizeof(out),				   \
+			 net_sprint_ll_addr(net_nbuf_ll_src(buf)->addr,    \
+					    sizeof(struct net_eth_addr))); \
+									   \
+		NET_DBG("src %s dst %s type 0x%x", out,			   \
+			net_sprint_ll_addr(net_nbuf_ll_dst(buf)->addr,	   \
+					   sizeof(struct net_eth_addr)),   \
+			type);						   \
+	} while (0)
+#else
+#define print_ll_addrs(...)
+#endif
 
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_buf *buf)
@@ -43,6 +68,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	lladdr = net_nbuf_ll_dst(buf);
 	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->dst.addr;
 	lladdr->len = sizeof(struct net_eth_hdr);
+
+	print_ll_addrs(buf,
+		       ntohs(((struct net_eth_hdr *)net_nbuf_ll(buf))->type));
 
 #ifdef CONFIG_NET_ARP
 	if (net_nbuf_family(buf) == AF_INET &&
@@ -115,6 +143,8 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	} else {
 		hdr->type = htons(NET_ETH_PTYPE_IPV6);
 	}
+
+	print_ll_addrs(buf, ntohs(hdr->type));
 
 	net_if_queue_tx(iface, buf);
 
