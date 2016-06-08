@@ -56,6 +56,12 @@
 #endif /* CONFIG_STDOUT_CONSOLE */
 #endif /* CONFIG_USB_DFU_DEBUG */
 
+/* Alternate settings are used to access additional memory segments.
+ * This example uses the alternate settings as an offset into flash.
+ */
+#define DFU_FLASH_ADDR (dfu_data.flash_base_addr + \
+	dfu_data.alt_setting * DFU_ALT_SETTING_OFFSET)
+
 static struct usb_cfg_data dfu_config;
 
 /* Device data structure */
@@ -72,6 +78,7 @@ struct dfu_data_t {
 	uint32_t bytes_sent;
 	/* Number of bytes received during download */
 	uint32_t bytes_rcvd;
+	uint32_t alt_setting;              /* DFU alternate setting */
 	uint8_t buffer[DFU_MAX_XFER_SIZE]; /* DFU data buffer */
 	enum dfu_state state;              /* State of the DFU device */
 	enum dfu_status status;            /* Status of the DFU device */
@@ -83,7 +90,7 @@ static struct dfu_data_t dfu_data = {
 	.status = statusOK,
 };
 
-/* Structure representing the global USB description */
+/* Structure representing the DFU runtime USB description */
 static const uint8_t dfu_runtime_usb_description[] = {
 	/* Device descriptor */
 	USB_DEVICE_DESC_SIZE,           /* Descriptor size */
@@ -101,19 +108,19 @@ static const uint8_t dfu_runtime_usb_description[] = {
 	LOW_BYTE(BCDDEVICE_RELNUM),
 	HIGH_BYTE(BCDDEVICE_RELNUM),    /* Device Release Number */
 	/* Index of Manufacturer String Descriptor */
-	0x00,
+	0x01,
 	/* Index of Product String Descriptor */
-	0x00,
+	0x02,
 	/* Index of Serial Number String Descriptor */
-	0x00,
+	0x03,
 	DFU_NUM_CONF,                   /* Number of Possible Configuration */
 
 	/* Configuration descriptor */
 	USB_CONFIGURATION_DESC_SIZE,    /* Descriptor size */
 	USB_CONFIGURATION_DESC,         /* Descriptor type */
 	/* Total length in bytes of data returned */
-	LOW_BYTE(DFU_CONF_SIZE),
-	HIGH_BYTE(DFU_CONF_SIZE),
+	LOW_BYTE(DFU_RUNTIME_CONF_SIZE),
+	HIGH_BYTE(DFU_RUNTIME_CONF_SIZE),
 	DFU_NUM_ITF,                    /* Number of interfaces */
 	0x01,                           /* Configuration value */
 	0x00,                           /* Index of the Configuration string */
@@ -168,7 +175,7 @@ static const uint8_t dfu_runtime_usb_description[] = {
 	'0', 0, '0', 0, '.', 0, '0', 0, '1', 0
 };
 
-/* Structure representing the global USB description */
+/* Structure representing the DFU mode USB description */
 static const uint8_t dfu_mode_usb_description[] = {
 	/* Device descriptor */
 	USB_DEVICE_DESC_SIZE,           /* Descriptor size */
@@ -186,26 +193,26 @@ static const uint8_t dfu_mode_usb_description[] = {
 	LOW_BYTE(BCDDEVICE_RELNUM),
 	HIGH_BYTE(BCDDEVICE_RELNUM),    /* Device Release Number */
 	/* Index of Manufacturer String Descriptor */
-	0x00,
+	0x01,
 	/* Index of Product String Descriptor */
-	0x00,
+	0x02,
 	/* Index of Serial Number String Descriptor */
-	0x00,
+	0x03,
 	DFU_NUM_CONF,                   /* Number of Possible Configuration */
 
 	/* Configuration descriptor */
 	USB_CONFIGURATION_DESC_SIZE,    /* Descriptor size */
 	USB_CONFIGURATION_DESC,         /* Descriptor type */
 	/* Total length in bytes of data returned */
-	LOW_BYTE(DFU_CONF_SIZE),
-	HIGH_BYTE(DFU_CONF_SIZE),
+	LOW_BYTE(DFU_RUNTIME_CONF_SIZE),
+	HIGH_BYTE(DFU_RUNTIME_CONF_SIZE),
 	DFU_NUM_ITF,                    /* Number of interfaces */
 	0x01,                           /* Configuration value */
 	0x00,                           /* Index of the Configuration string */
 	USB_CONFIGURATION_ATTRIBUTES,   /* Attributes */
 	MAX_LOW_POWER,                  /* Max power consumption */
 
-	/* Interface descriptor */
+	/* Interface descriptor, alternate setting 0 */
 	USB_INTERFACE_DESC_SIZE,        /* Descriptor size */
 	USB_INTERFACE_DESC,             /* Descriptor type */
 	0x00,                           /* Interface index */
@@ -215,7 +222,31 @@ static const uint8_t dfu_mode_usb_description[] = {
 	DFU_INTERFACE_SUBCLASS,         /* SubClass */
 	DFU_MODE_PROTOCOL,              /* DFU Runtime Protocol */
 	/* Index of the Interface String Descriptor */
-	0x00,
+	0x04,
+
+	/* Interface descriptor, alternate setting 1 */
+	USB_INTERFACE_DESC_SIZE,        /* Descriptor size */
+	USB_INTERFACE_DESC,             /* Descriptor type */
+	0x00,                           /* Interface index */
+	0x01,                           /* Alternate setting */
+	DFU_NUM_EP,                     /* Number of Endpoints */
+	DFU_CLASS,                      /* Class */
+	DFU_INTERFACE_SUBCLASS,         /* SubClass */
+	DFU_MODE_PROTOCOL,              /* DFU Runtime Protocol */
+	/* Index of the Interface String Descriptor */
+	0x05,
+
+	/* Interface descriptor, alternate setting 2 */
+	USB_INTERFACE_DESC_SIZE,        /* Descriptor size */
+	USB_INTERFACE_DESC,             /* Descriptor type */
+	0x00,                           /* Interface index */
+	0x02,                           /* Alternate setting */
+	DFU_NUM_EP,                     /* Number of Endpoints */
+	DFU_CLASS,                      /* Class */
+	DFU_INTERFACE_SUBCLASS,         /* SubClass */
+	DFU_MODE_PROTOCOL,              /* DFU Runtime Protocol */
+	/* Index of the Interface String Descriptor */
+	0x06,
 
 	/* DFU descriptor */
 	USB_DFU_DESC_SIZE,              /* Descriptor size */
@@ -250,7 +281,22 @@ static const uint8_t dfu_mode_usb_description[] = {
 	/* Serial Number String Descriptor "00.01" */
 	0x0C,
 	USB_STRING_DESC,
-	'0', 0, '0', 0, '.', 0, '0', 0, '1', 0
+	'0', 0, '0', 0, '.', 0, '0', 0, '1', 0,
+
+	/* Interface alternate setting 0 String Descriptor */
+	0x0E,
+	USB_STRING_DESC,
+	'F', 0, 'L', 0, 'A', 0, 'S', 0, 'H', 0, '0', 0,
+
+	/* Interface alternate setting 0 String Descriptor */
+	0x0E,
+	USB_STRING_DESC,
+	'F', 0, 'L', 0, 'A', 0, 'S', 0, 'H', 0, '1', 0,
+
+	/* Interface alternate setting 0 String Descriptor */
+	0x0E,
+	USB_STRING_DESC,
+	'F', 0, 'L', 0, 'A', 0, 'S', 0, 'H', 0, '2', 0,
 };
 
 /**
@@ -357,7 +403,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 				if (!(dfu_data.bytes_rcvd %
 				      dfu_data.flash_page_size)) {
 					ret = flash_erase(dfu_data.flash_dev,
-					    dfu_data.flash_base_addr +
+					    DFU_FLASH_ADDR +
 						    dfu_data.bytes_rcvd,
 					    dfu_data.flash_page_size);
 					DBG("Flash erase\n");
@@ -372,7 +418,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 				/* Flash write len should be multiple of 4 */
 				len = (pSetup->wLength + 3) & (~3);
 				ret = flash_write(dfu_data.flash_dev,
-				    dfu_data.flash_base_addr +
+				    DFU_FLASH_ADDR +
 					    dfu_data.bytes_rcvd,
 				    *data, len);
 				if (ret) {
@@ -427,7 +473,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 
 			if (len) {
 				ret = flash_read(dfu_data.flash_dev,
-				    dfu_data.flash_base_addr +
+				    DFU_FLASH_ADDR +
 					    dfu_data.bytes_sent,
 				    dfu_data.buffer, len);
 				if (ret) {
@@ -532,12 +578,48 @@ static void dfu_status_cb(enum usb_dc_status_code status)
 	}
 }
 
+/**
+ * @brief Custom handler for standard ('chapter 9') requests
+ *        in order to catch the SET_INTERFACE request and
+ *        extract the interface alternate setting
+ *
+ * @param pSetup    Information about the request to execute.
+ * @param len       Size of the buffer.
+ * @param data      Buffer containing the request result.
+ *
+ * @return  0 if SET_INTERFACE request, -ENOTSUP otherwise.
+ */
+
+static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
+		int32_t *data_len, uint8_t **data)
+{
+	if (REQTYPE_GET_RECIP(pSetup->bmRequestType) ==
+	    REQTYPE_RECIP_INTERFACE) {
+		if (pSetup->bRequest == REQ_SET_INTERFACE) {
+			DBG("DFU alternate setting %d\n", pSetup->wValue);
+
+			if (pSetup->wValue >= DFU_MODE_ALTERNATE_SETTINGS) {
+				DBG("Invalid DFU alternate setting (%d)\n",
+				    pSetup->wValue);
+			} else {
+				dfu_data.alt_setting = pSetup->wValue;
+			}
+			*data_len = 0;
+			return 0;
+		}
+	}
+
+	/* Not handled by us */
+	return -ENOTSUP;
+}
+
 /* Configuration of the DFU Device send to the USB Driver */
 static struct usb_cfg_data dfu_config = {
 	.usb_device_description = dfu_runtime_usb_description,
 	.cb_usb_status = dfu_status_cb,
 	.interface = {
 		.class_handler = dfu_class_handle_req,
+		.custom_handler = dfu_custom_handle_req,
 		.payload_data = dfu_data.buffer,
 	},
 	.num_endpoints = DFU_NUM_EP,

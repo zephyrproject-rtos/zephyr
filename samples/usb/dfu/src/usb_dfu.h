@@ -107,12 +107,26 @@ enum dfu_state {
 	dfuERROR,
 };
 
+/* Number of DFU interface alternate settings. */
+#define DFU_RUNTIME_ALTERNATE_SETTINGS  1
+#define DFU_MODE_ALTERNATE_SETTINGS     3
+
 /* Size in bytes of the configuration sent to the Host on
  * GetConfiguration() request
- * For DFU: CONF + ITF + DFU) -> 27 bytes
+ * For DFU: CONF + ITF*ALT_SETTINGS + DFU)
  */
-#define DFU_CONF_SIZE   (USB_CONFIGURATION_DESC_SIZE + \
-	USB_INTERFACE_DESC_SIZE + USB_DFU_DESC_SIZE)
+#define DFU_MODE_CONF_SIZE   (USB_CONFIGURATION_DESC_SIZE +    \
+	USB_INTERFACE_DESC_SIZE * DFU_RUNTIME_ALTERNATE_SETTINGS + \
+	USB_DFU_DESC_SIZE)
+
+#define DFU_RUNTIME_CONF_SIZE   (USB_CONFIGURATION_DESC_SIZE + \
+	USB_INTERFACE_DESC_SIZE * DFU_MODE_ALTERNATE_SETTINGS +    \
+	USB_DFU_DESC_SIZE)
+
+/* Alternate settings are used to access additional memory segments.
+ * This example uses the alternate settings as an offset into flash.
+ */
+#define DFU_ALT_SETTING_OFFSET 0x6000
 
 /**
  * @brief DFU class driver start routine
