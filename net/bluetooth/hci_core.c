@@ -2121,16 +2121,6 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 		struct bt_hci_rp_le_rand *rp;
 		struct net_buf *rsp;
 
-#if defined(CONFIG_BOARD_ARDUINO_101)
-		/* FIXME: Temporary hack for MyNewt HCI firmware which
-		 * crashes if it receives too rapid LE_Rand commands.
-		 */
-		if (sys_execution_context_type_get() == NANO_CTX_FIBER) {
-			fiber_sleep(MSEC(30));
-		} else {
-			task_sleep(MSEC(30));
-		}
-#endif
 		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
 		if (ret) {
 			return ret;
