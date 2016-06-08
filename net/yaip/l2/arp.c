@@ -52,8 +52,10 @@ static inline struct arp_entry *find_entry(struct net_if *iface,
 
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
 
-		NET_DBG("[%d] iface %p dst %s pending %p", i, iface,
+		NET_DBG("[%d] iface %p dst %s ll %s pending %p", i, iface,
 			net_sprint_ipv4_addr(&arp_table[i].ip),
+			net_sprint_ll_addr((uint8_t *)&arp_table[i].eth.addr,
+					   sizeof(struct net_eth_addr)),
 			arp_table[i].pending);
 
 		if (arp_table[i].iface == iface &&
@@ -62,8 +64,11 @@ static inline struct arp_entry *find_entry(struct net_if *iface,
 			 * IP address.
 			 */
 			if (arp_table[i].pending) {
-				NET_DBG("ARP already pending to %s",
-					net_sprint_ipv4_addr(dst));
+				NET_DBG("ARP already pending to %s ll %s",
+					net_sprint_ipv4_addr(dst),
+					net_sprint_ll_addr((uint8_t *)
+						&arp_table[i].eth.addr,
+						sizeof(struct net_eth_addr)));
 				*free_entry = NULL;
 				*non_pending = NULL;
 				return NULL;
@@ -257,7 +262,7 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 
 				req = prepare_arp(net_nbuf_iface(buf),
 						  NULL, buf);
-				NET_DBG("Resending ARP");
+				NET_DBG("Resending ARP %p", req);
 
 				net_nbuf_unref(buf);
 
@@ -333,8 +338,10 @@ static inline void arp_update(struct net_if *iface,
 
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
 
-		NET_DBG("[%d] iface %p dst %s pending %p", i, iface,
+		NET_DBG("[%d] iface %p dst %s ll %s pending %p", i, iface,
 			net_sprint_ipv4_addr(&arp_table[i].ip),
+			net_sprint_ll_addr((uint8_t *)&arp_table[i].eth.addr,
+					   sizeof(struct net_eth_addr)),
 			arp_table[i].pending);
 
 		if (arp_table[i].iface == iface &&
