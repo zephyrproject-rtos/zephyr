@@ -2656,6 +2656,15 @@ static int common_init(void)
 	hci_reset_complete(rsp);
 	net_buf_unref(rsp);
 
+	/*
+	 * initialize PRNG right after reset so that it is safe to use it later
+	 * on in initialization process
+	 */
+	err = prng_init(&prng);
+	if (err) {
+		return err;
+	}
+
 	/* Read Local Supported Features */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
 	if (err) {
@@ -2803,7 +2812,7 @@ static int le_init(void)
 	}
 #endif /* CONFIG_BLUETOOTH_SMP */
 
-	return prng_init(&prng);
+	return 0;
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
