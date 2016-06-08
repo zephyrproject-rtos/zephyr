@@ -68,6 +68,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		break;
 	}
 
+	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
+
 	/* Set the pointers to ll src and dst addresses */
 	lladdr = net_nbuf_ll_src(buf);
 	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->src.addr;
