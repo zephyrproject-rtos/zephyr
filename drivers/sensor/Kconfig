@@ -39,6 +39,8 @@ source "drivers/sensor/Kconfig.dht"
 
 source "drivers/sensor/Kconfig.hdc1008"
 
+source "drivers/sensor/Kconfig.hmc5883l"
+
 source "drivers/sensor/Kconfig.hts221"
 
 source "drivers/sensor/Kconfig.isl29035"
