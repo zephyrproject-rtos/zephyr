@@ -40,8 +40,6 @@ struct arp_entry {
 };
 
 static struct arp_entry arp_table[CONFIG_NET_ARP_TABLE_SIZE];
-static const struct net_eth_addr broadcast_eth_addr = {
-	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
 static inline struct arp_entry *find_entry(struct net_if *iface,
 					   struct in_addr *dst,
@@ -223,8 +221,8 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 	if (net_ipv4_addr_cmp(&NET_IPV4_BUF(buf)->dst,
 			      net_ipv4_broadcast_address())) {
 		/* Broadcast address */
-		memcpy(&hdr->dst.addr,
-		       &broadcast_eth_addr.addr, sizeof(struct net_eth_addr));
+		memcpy(&hdr->dst.addr, net_eth_broadcast_addr()->addr,
+		       sizeof(struct net_eth_addr));
 
 		return buf;
 

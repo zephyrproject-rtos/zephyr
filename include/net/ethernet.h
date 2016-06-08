@@ -69,4 +69,6 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 	return false;
 }
 
+const struct net_eth_addr *net_eth_broadcast_addr(void);
+
 #endif /* __ETHERNET_H */

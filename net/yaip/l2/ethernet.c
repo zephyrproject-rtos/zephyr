@@ -26,6 +26,14 @@
 
 #include "net_private.h"
 
+static const struct net_eth_addr broadcast_eth_addr = {
+	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
+
+const struct net_eth_addr *net_eth_broadcast_addr(void)
+{
+	return &broadcast_eth_addr;
+}
+
 #if NET_DEBUG
 #define print_ll_addrs(buf, type)					   \
 	do {								   \
