@@ -326,7 +326,7 @@ static void net_rx_fiber(void)
 	net_if_init();
 
 	while (1) {
-		buf = nano_fifo_get(&rx_queue, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&rx_queue, 0, TICKS_UNLIMITED);
 
 		net_analyze_stack("RX fiber", rx_fiber_stack,
 				  sizeof(rx_fiber_stack));
@@ -399,7 +399,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 
 	net_nbuf_iface(buf) = iface;
 
-	nano_fifo_put(&rx_queue, buf);
+	net_buf_put(&rx_queue, buf);
 
 	fiber_wakeup(rx_fiber_id);
 

@@ -228,7 +228,7 @@ static inline struct device *net_if_get_device(struct net_if *iface)
  */
 static inline void net_if_queue_tx(struct net_if *iface, struct net_buf *buf)
 {
-	nano_fifo_put(&iface->tx_queue, buf);
+	net_buf_put(&iface->tx_queue, buf);
 }
 
 /**
