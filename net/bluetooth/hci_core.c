@@ -611,14 +611,15 @@ static void le_conn_complete(struct net_buf *buf)
 	BT_DBG("status %u handle %u role %u %s", evt->status, handle,
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
 
-	id_addr = find_id_addr(&evt->peer_addr);
-
-	/* Make lookup to check if there's a connection object in CONNECT state
-	 * associated with passed peer LE address.
-	 */
-	conn = bt_conn_lookup_state_le(id_addr, BT_CONN_CONNECT);
-
 	if (evt->status) {
+		/*
+		 * if there was an error we are only interested in pending
+		 * connection so there is no need to check ID address as
+		 * only one connection can be in that state
+		 *
+		 * Depending on error code address might not be valid anyway.
+		 */
+		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
 		if (!conn) {
 			return;
 		}
@@ -635,6 +636,14 @@ static void le_conn_complete(struct net_buf *buf)
 
 		return;
 	}
+
+	id_addr = find_id_addr(&evt->peer_addr);
+
+	/*
+	 * Make lookup to check if there's a connection object in
+	 * CONNECT state associated with passed peer LE address.
+	 */
+	conn = bt_conn_lookup_state_le(id_addr, BT_CONN_CONNECT);
 
 	if (evt->role == BT_CONN_ROLE_SLAVE) {
 		/*
