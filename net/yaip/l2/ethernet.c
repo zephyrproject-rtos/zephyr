@@ -35,7 +35,7 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 }
 
 #if NET_DEBUG
-#define print_ll_addrs(buf, type)					   \
+#define print_ll_addrs(buf, type, len)					   \
 	do {								   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
@@ -43,10 +43,10 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 			 net_sprint_ll_addr(net_nbuf_ll_src(buf)->addr,    \
 					    sizeof(struct net_eth_addr))); \
 									   \
-		NET_DBG("src %s dst %s type 0x%x", out,			   \
+		NET_DBG("src %s dst %s type 0x%x len %u", out,		   \
 			net_sprint_ll_addr(net_nbuf_ll_dst(buf)->addr,	   \
 					   sizeof(struct net_eth_addr)),   \
-			type);						   \
+			type, len);					   \
 	} while (0)
 #else
 #define print_ll_addrs(...)
@@ -79,7 +79,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->dst.addr;
 	lladdr->len = sizeof(struct net_eth_hdr);
 
-	print_ll_addrs(buf, ntohs(hdr->type));
+	print_ll_addrs(buf, ntohs(hdr->type), net_buf_frags_len(buf));
 
 #ifdef CONFIG_NET_ARP
 	if (net_nbuf_family(buf) == AF_INET &&
@@ -96,7 +96,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 static enum net_verdict ethernet_send(struct net_if *iface,
 				      struct net_buf *buf)
 {
-	struct net_eth_hdr *hdr;
+	struct net_eth_hdr *hdr = NET_ETH_BUF(buf);
+	struct net_buf *frag;
+	uint16_t ptype;
 
 #ifdef CONFIG_NET_ARP
 	if (net_nbuf_family(buf) == AF_INET) {
@@ -106,49 +108,99 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 			return NET_DROP;
 		}
 
+		NET_DBG("Sending arp buf %p (orig %p) to iface %p",
+			arp_buf, buf, iface);
+
 		buf = arp_buf;
+
+		net_nbuf_ll_src(buf)->addr = (uint8_t *)&NET_ETH_BUF(buf)->src;
+		net_nbuf_ll_src(buf)->len = sizeof(struct net_eth_addr);
+		net_nbuf_ll_dst(buf)->addr = (uint8_t *)&NET_ETH_BUF(buf)->dst;
+		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
+
+		/* For ARP message, we do not touch the packet further but will
+		 * send it as it is because the arp.c has prepared the packet
+		 * already.
+		 */
+		goto send;
 	}
+#else
+	NET_DBG("Sending buf %p to iface %p", buf, iface);
 #endif
 
-	/* If the src ll address is multicast or broadcast, then
-	 * what probably happened is that the RX buffer is used
-	 * for sending data back to recipient. We must substitute
-	 * the src address using the real ll address.
-	 * If the ll address is not set at all, then we must set
+	/* If the ll address is not set at all, then we must set
 	 * it here.
 	 */
-	if (!net_nbuf_ll_src(buf)->addr ||
-	    net_eth_is_addr_broadcast(
-		    (struct net_eth_addr *)net_nbuf_ll_src(buf)->addr) ||
-	    net_eth_is_addr_multicast(
-		    (struct net_eth_addr *)net_nbuf_ll_src(buf)->addr)) {
+	if (!net_nbuf_ll_src(buf)->addr) {
 		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
 		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+	} else {
+		/* If the destination address is my address, then
+		 * swap src and dst.
+		 */
+		if (!memcmp(net_nbuf_ll_if(buf)->addr,
+			    net_nbuf_ll_dst(buf)->addr,
+			    sizeof(struct net_eth_addr))) {
+			net_nbuf_ll_swap(buf);
+		} else {
+			/* If the src ll address is multicast or broadcast, then
+			 * what probably happened is that the RX buffer is used
+			 * for sending data back to recipient. We must
+			 * substitute the src address using the real ll address.
+			 */
+			if (net_eth_is_addr_broadcast((struct net_eth_addr *)
+					      net_nbuf_ll_src(buf)->addr) ||
+			    net_eth_is_addr_multicast((struct net_eth_addr *)
+					      net_nbuf_ll_src(buf)->addr)) {
+				net_nbuf_ll_src(buf)->addr =
+						net_nbuf_ll_if(buf)->addr;
+				net_nbuf_ll_src(buf)->len =
+						net_nbuf_ll_if(buf)->len;
+			}
+		}
 	}
 
 	/* If the destination address is not set, then use broadcast
 	 * address.
 	 */
 	if (!net_nbuf_ll_dst(buf)->addr) {
-		memset((uint8_t *)net_nbuf_ll(buf), 0xff,
-		       sizeof(struct net_eth_addr));
-		net_nbuf_ll_dst(buf)->addr = net_nbuf_ll(buf);
+		net_nbuf_ll_dst(buf)->addr = (uint8_t *)broadcast_eth_addr.addr;
 		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
-	}
 
-	hdr = NET_ETH_BUF(buf);
+		NET_DBG("Destination address was not set, using %s",
+			net_sprint_ll_addr(net_nbuf_ll_dst(buf)->addr,
+					   net_nbuf_ll_dst(buf)->len));
+	}
 
 	if (net_nbuf_family(buf) == AF_INET) {
-		/* ARP pre-fills the type so don't overwrite it */
-		if (hdr->type != htons(NET_ETH_PTYPE_ARP)) {
-			hdr->type = htons(NET_ETH_PTYPE_IP);
-		}
+		ptype = htons(NET_ETH_PTYPE_IP);
 	} else {
-		hdr->type = htons(NET_ETH_PTYPE_IPV6);
+		ptype = htons(NET_ETH_PTYPE_IPV6);
 	}
 
-	print_ll_addrs(buf, ntohs(hdr->type));
+	/* Then go through the fragments and set the ethernet header.
+	 */
+	frag = buf->frags;
 
+	NET_ASSERT_INFO(frag, "No data!");
+
+	while (frag) {
+		hdr = (struct net_eth_hdr *)frag->data -
+						net_nbuf_ll_reserve(buf);
+		memcpy(&hdr->dst, net_nbuf_ll_dst(buf)->addr,
+		       sizeof(struct net_eth_addr));
+		memcpy(&hdr->src, net_nbuf_ll_src(buf)->addr,
+		       sizeof(struct net_eth_addr));
+		hdr->type = ptype;
+
+		print_ll_addrs(buf, ntohs(hdr->type), frag->len);
+
+		frag = frag->frags;
+	}
+
+	print_ll_addrs(buf, ntohs(hdr->type), net_buf_frags_len(buf));
+
+send:
 	net_if_queue_tx(iface, buf);
 
 	return NET_OK;
