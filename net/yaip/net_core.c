@@ -346,6 +346,8 @@ static void net_rx_fiber(void)
 		}
 
 		net_print_statistics();
+
+		fiber_yield();
 	}
 }
 

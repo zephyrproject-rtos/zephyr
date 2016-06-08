@@ -62,6 +62,8 @@ static void net_if_tx_fiber(struct net_if *iface)
 
 		net_analyze_stack("TX fiber", iface->tx_fiber_stack,
 				  sizeof(iface->tx_fiber_stack));
+
+		fiber_yield();
 	}
 }
 
