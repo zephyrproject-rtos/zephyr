@@ -79,22 +79,15 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->dst.addr;
 	lladdr->len = sizeof(struct net_eth_hdr);
 
-	print_ll_addrs(buf,
-		       ntohs(((struct net_eth_hdr *)net_nbuf_ll(buf))->type));
+	print_ll_addrs(buf, ntohs(hdr->type));
 
 #ifdef CONFIG_NET_ARP
 	if (net_nbuf_family(buf) == AF_INET &&
-	    (net_nbuf_ll_reserve(buf) == sizeof(struct net_eth_hdr))) {
-		struct net_eth_hdr *eth_hdr =
-			(struct net_eth_hdr *) net_nbuf_ll(buf);
-
-		if (ntohs(eth_hdr->type) == NET_ETH_PTYPE_ARP) {
-			NET_DBG("ARP packet from %s received",
-				net_sprint_ll_addr(
-					(uint8_t *)eth_hdr->src.addr,
-					sizeof(struct net_eth_addr)));
-			return net_arp_input(buf);
-		}
+	    hdr->type == htons(NET_ETH_PTYPE_ARP)) {
+		NET_DBG("ARP packet from %s received",
+			net_sprint_ll_addr((uint8_t *)hdr->src.addr,
+					   sizeof(struct net_eth_addr)));
+		return net_arp_input(buf);
 	}
 #endif
 	return NET_CONTINUE;
