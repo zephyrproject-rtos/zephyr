@@ -135,7 +135,7 @@ void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey);
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
 
-/* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
+/* Look up a connection state. For NULL peer, returns the first connection
  * with the specific state
  */
 struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
