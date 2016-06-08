@@ -48,6 +48,7 @@ extern "C" {
  */
 typedef int (*pwm_config_t)(struct device *dev, int access_op,
 			    uint32_t pwm, int flags);
+
 /**
  * @typedef pwm_set_values_t
  * @brief Callback API upon setting PIN values
@@ -55,6 +56,7 @@ typedef int (*pwm_config_t)(struct device *dev, int access_op,
  */
 typedef int (*pwm_set_values_t)(struct device *dev, int access_op,
 				uint32_t pwm, uint32_t on, uint32_t off);
+
 /**
  * @typedef pwm_set_duty_cycle_t
  * @brief Callback API upon setting the duty cycle
@@ -62,19 +64,22 @@ typedef int (*pwm_set_values_t)(struct device *dev, int access_op,
  */
 typedef int (*pwm_set_duty_cycle_t)(struct device *dev, int access_op,
 				    uint32_t pwm, uint8_t duty);
+
 /**
  * @typedef pwm_set_phase_t
  * @brief Callback API upon setting the phase
  * See @a pwm_pin_set_phase() for argument description
  */
 typedef int (*pwm_set_phase_t)(struct device *dev, int access_op,
-				    uint32_t pwm, uint8_t phase);
+			       uint32_t pwm, uint8_t phase);
+
 /**
  * @typedef pwm_suspend_dev_t
  * @brief Callback API upon suspending
  * See @a pwm_suspend() for argument description
  */
 typedef int (*pwm_suspend_dev_t)(struct device *dev);
+
 /**
  * @typedef pwm_resume_dev_t
  * @brief Callback API upon resuming
@@ -82,10 +87,19 @@ typedef int (*pwm_suspend_dev_t)(struct device *dev);
  */
 typedef int (*pwm_resume_dev_t)(struct device *dev);
 
+/**
+ * @typedef pwm_set_period_t
+ * @brief Callback API upon setting the period
+ * See @a pwm_pin_set_period() for argument description
+ */
+typedef int (*pwm_set_period_t)(struct device *dev, int access_op,
+				uint32_t pwm, uint32_t period);
+
 /** @brief PWM driver API definition. */
 struct pwm_driver_api {
 	pwm_config_t config;
 	pwm_set_values_t set_values;
+	pwm_set_period_t set_period;
 	pwm_set_duty_cycle_t set_duty_cycle;
 	pwm_set_phase_t set_phase;
 	pwm_suspend_dev_t suspend;
@@ -100,7 +114,7 @@ struct pwm_driver_api {
  * @param flags PWM configuration flags.
  *
  * @retval 0 If successful,
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_pin_configure(struct device *dev, uint8_t pwm,
 				    int flags)
@@ -120,7 +134,7 @@ static inline int pwm_pin_configure(struct device *dev, uint8_t pwm,
  * @param off OFF value set to the PWM.
  *
  * @retval 0 If successful.
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_pin_set_values(struct device *dev, uint32_t pwm,
 				     uint32_t on, uint32_t off)
@@ -129,6 +143,28 @@ static inline int pwm_pin_set_values(struct device *dev, uint32_t pwm,
 
 	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->set_values(dev, PWM_ACCESS_BY_PIN, pwm, on, off);
+}
+
+/**
+ * @brief Set the period of a single PWM output.
+ *
+ * It is optional to call this API. If not called, there is a default
+ * period.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pwm PWM output.
+ * @param period Period duration of the cycle to set in microseconds
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int pwm_pin_set_period(struct device *dev, uint32_t pwm,
+				     uint32_t period)
+{
+	struct pwm_driver_api *api;
+
+	api = (struct pwm_driver_api *)dev->driver_api;
+	return api->set_period(dev, PWM_ACCESS_BY_PIN, pwm, period);
 }
 
 /**
@@ -142,7 +178,7 @@ static inline int pwm_pin_set_values(struct device *dev, uint32_t pwm,
  *        50 sets to 50%.
  *
  * @retval 0 If successful.
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_pin_set_duty_cycle(struct device *dev, uint32_t pwm,
 					 uint8_t duty)
@@ -163,10 +199,10 @@ static inline int pwm_pin_set_duty_cycle(struct device *dev, uint32_t pwm,
  * @param phase The number of clock ticks to delay before the start of pulses.
  *
  * @retval 0 If successful.
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_pin_set_phase(struct device *dev, uint32_t pwm,
-					 uint8_t phase)
+				    uint8_t phase)
 {
 	struct pwm_driver_api *api;
 
@@ -186,7 +222,7 @@ static inline int pwm_pin_set_phase(struct device *dev, uint32_t pwm,
  * @param flags PWM configuration flags.
  *
  * @retval 0 If successful.
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_all_configure(struct device *dev, int flags)
 {
@@ -204,7 +240,7 @@ static inline int pwm_all_configure(struct device *dev, int flags)
  * @param off OFF value set to the PWM.
  *
  * @retval 0 If successful.
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_all_set_values(struct device *dev,
 				     uint32_t on, uint32_t off)
@@ -213,6 +249,26 @@ static inline int pwm_all_set_values(struct device *dev,
 
 	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->set_values(dev, PWM_ACCESS_ALL, 0, on, off);
+}
+
+/**
+ * @brief Set the period of all PWM outputs.
+ *
+ * It is optional to call this API. If not called, there is a default
+ * period.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param period Period duration of the cycle to set in microseconds
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int pwm_all_period(struct device *dev, uint32_t period)
+{
+	struct pwm_driver_api *api;
+
+	api = (struct pwm_driver_api *)dev->driver_api;
+	return api->set_period(dev, PWM_ACCESS_ALL, 0, period);
 }
 
 /**
@@ -225,7 +281,7 @@ static inline int pwm_all_set_values(struct device *dev,
  *        50 sets to 50%.
  *
  * @retval 0 If successful.
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_all_set_duty_cycle(struct device *dev, uint8_t duty)
 {
@@ -244,7 +300,7 @@ static inline int pwm_all_set_duty_cycle(struct device *dev, uint8_t duty)
  * @param phase The number of clock ticks to delay before the start of pulses.
  *
  * @retval 0 If successful.
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_all_set_phase(struct device *dev, uint8_t phase)
 {
@@ -261,12 +317,12 @@ static inline int pwm_all_set_phase(struct device *dev, uint8_t phase)
 
 /**
  * @brief Save the state of the device and makes it go to the low power
- * state.
+ *	  state.
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_suspend(struct device *dev)
 {
@@ -282,7 +338,7 @@ static inline int pwm_suspend(struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval failed Otherwise.
+ * @retval Negative errno code if failure.
  */
 static inline int pwm_resume(struct device *dev)
 {
