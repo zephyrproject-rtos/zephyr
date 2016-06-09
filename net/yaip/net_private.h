@@ -131,6 +131,17 @@ static inline void net_hexdump(const char *str, const uint8_t *packet, size_t le
 	}
 }
 
+/* Hexdump from all fragments */
+static inline void net_hexdump_frags(const char *str, struct net_buf *buf)
+{
+	struct net_buf *frag = buf->frags;
+
+	while (frag) {
+		net_hexdump(str, frag->data, net_nbuf_len(frag));
+		frag = frag->frags;
+	}
+}
+
 #else /* NET_DEBUG */
 
 static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
