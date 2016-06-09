@@ -203,6 +203,7 @@ void fiber_sender(void)
 			sent_len = buf->len;
 			header_size = ip_buf_reserve(buf);
 			data_len = sent_len - header_size;
+			ip_buf_appdatalen(buf) = data_len;
 
 			PRINT("[%d] %s: App data: %d bytes, IPv6+UDP: %d bytes, "
 			      "Total packet size: %d bytes\n",
