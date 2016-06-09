@@ -23,6 +23,8 @@
 
 #include <net/buf.h>
 
+#define TEST_TIMEOUT SECONDS(1)
+
 struct bt_data {
 	void *hci_sync;
 
@@ -126,12 +128,93 @@ static bool net_buf_test_2(void)
 	return true;
 }
 
+static void test_3_fiber(int arg1, int arg2)
+{
+	struct nano_fifo *fifo = (struct nano_fifo *)arg1;
+	struct nano_sem *sema = (struct nano_sem *)arg2;
+	struct net_buf *buf;
+
+	nano_sem_give(sema);
+
+	buf = net_buf_get_timeout(fifo, 0, TEST_TIMEOUT);
+	if (!buf) {
+		printk("test_3_fiber: Unable to get initial buffer\n");
+		return;
+	}
+
+	printk("Got buffer from FIFO\n");
+
+	destroy_called = 0;
+	net_buf_unref(buf);
+
+	if (destroy_called != ARRAY_SIZE(bufs_pool)) {
+		printk("Incorrect fragment destroy callback count: %d\n",
+		       destroy_called);
+		return;
+	}
+
+	nano_sem_give(sema);
+}
+
+static bool net_buf_test_3(void)
+{
+	static char __stack test_3_fiber_stack[1024];
+	struct net_buf *frag, *head;
+	struct nano_fifo fifo;
+	struct nano_sem sema;
+	int i;
+
+	head = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+	if (!head) {
+		printk("Failed to get fragment list head!\n");
+		return false;
+	}
+
+	printk("Fragment list head %p\n", head);
+
+	frag = head;
+	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
+		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
+		if (!frag->frags) {
+			printk("Failed to get fragment!\n");
+			return false;
+		}
+		printk("%p -> %p\n", frag, frag->frags);
+		frag = frag->frags;
+	}
+
+	printk("%p -> %p\n", frag, frag->frags);
+
+	nano_fifo_init(&fifo);
+	nano_sem_init(&sema);
+
+	fiber_start(test_3_fiber_stack, sizeof(test_3_fiber_stack),
+		    test_3_fiber, (int)&fifo, (int)&sema, 7, 0);
+
+	if (!nano_sem_take(&sema, TEST_TIMEOUT)) {
+		printk("Timeout 1 while waiting for semaphore\n");
+		return false;
+	}
+
+	printk("calling net_buf_put\n");
+
+	net_buf_put(&fifo, head);
+
+	if (!nano_sem_take(&sema, TEST_TIMEOUT)) {
+		printk("Timeout 2 while waiting for semaphore\n");
+		return false;
+	}
+
+	return true;
+}
+
 static const struct {
 	const char *name;
 	bool (*func)(void);
 } tests[] = {
 	{ "Test 1", net_buf_test_1, },
 	{ "Test 2", net_buf_test_2, },
+	{ "Test 3", net_buf_test_3, },
 };
 
 void main(void)
