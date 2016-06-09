@@ -232,9 +232,12 @@ send:
 	return NET_OK;
 }
 
-static inline uint16_t get_reserve(struct net_if *iface)
+static inline uint16_t ethernet_reserve(struct net_if *iface, void *unused)
 {
+	ARG_UNUSED(iface);
+	ARG_UNUSED(unused);
+
 	return sizeof(struct net_eth_hdr);
 }
 
-NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, get_reserve);
+NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_reserve);

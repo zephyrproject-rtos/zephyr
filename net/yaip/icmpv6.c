@@ -141,6 +141,12 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 
 	buf = net_nbuf_get_reserve_tx(0);
 
+	/* We need to remember the original location of source and destination
+	 * addresses as the net_nbuf_copy() will mangle the original buffer.
+	 */
+	src = &NET_IPV6_BUF(orig)->src;
+	dst = &NET_IPV6_BUF(orig)->dst;
+
 	/* There is unsed part in ICMPv6 error msg header */
 	reserve = sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr) +
 		NET_ICMPV6_UNUSED_LEN;
@@ -153,7 +159,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 		/* FIXME, add TCP header length too */
 	} else {
 		size_t space = CONFIG_NET_NBUF_DATA_SIZE -
-			net_if_get_ll_reserve(iface);
+			net_if_get_ll_reserve(iface, dst);
 
 		if (reserve > space) {
 			extra_len = 0;
@@ -161,12 +167,6 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 			extra_len = space - reserve;
 		}
 	}
-
-	/* We need to remember the original location of source and destination
-	 * addresses as the net_nbuf_copy() will mangle the original buffer.
-	 */
-	src = &NET_IPV6_BUF(orig)->src;
-	dst = &NET_IPV6_BUF(orig)->dst;
 
 	/* We only copy minimal IPv6 + next header from original message.
 	 * This is so that the memory pressure is minimized.

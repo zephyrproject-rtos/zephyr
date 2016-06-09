@@ -141,7 +141,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 		/* FIXME, add TCP header length too */
 	} else {
 		size_t space = CONFIG_NET_NBUF_DATA_SIZE -
-			net_if_get_ll_reserve(iface);
+			net_if_get_ll_reserve(iface, NULL);
 
 		if (reserve > space) {
 			extra_len = 0;

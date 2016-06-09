@@ -462,12 +462,19 @@ static struct net_buf *net_nbuf_get(enum net_nbuf_type type,
 				    struct net_context *context)
 #endif /* NET_DEBUG */
 {
-	struct net_buf *buf;
 	struct net_if *iface = net_context_get_iface(context);
-	uint16_t reserve = net_if_get_ll_reserve(iface);
+	struct in6_addr *addr6 = NULL;
+	struct net_buf *buf;
+	uint16_t reserve;
 
 	NET_ASSERT_INFO(context && iface, "context %p iface %p",
 			context, iface);
+
+	if (context && net_context_get_family(context) == AF_INET6) {
+		addr6 = &((struct sockaddr_in6 *) &context->remote)->sin6_addr;
+	}
+
+	reserve = net_if_get_ll_reserve(iface, addr6);
 
 #if NET_DEBUG
 	buf = net_nbuf_get_reserve_debug(type, reserve, caller, line);

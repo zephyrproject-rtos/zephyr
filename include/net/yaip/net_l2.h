@@ -33,7 +33,7 @@ struct net_if;
 struct net_l2 {
 	enum net_verdict (*recv)(struct net_if *iface, struct net_buf *buf);
 	enum net_verdict (*send)(struct net_if *iface, struct net_buf *buf);
-	uint16_t (*get_reserve)(struct net_if *iface);
+	uint16_t (*reserve)(struct net_if *iface, void *data);
 };
 
 #define NET_L2_GET_NAME(_name) (__net_l2_##_name)
@@ -59,7 +59,7 @@ extern struct net_l2 __net_l2_end[];
 	__attribute__((__section__(".net_l2.init"))) = {		\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
-		.get_reserve = (_reserve_fn),				\
+		.reserve = (_reserve_fn),				\
 	}
 
 #ifdef __cplusplus
