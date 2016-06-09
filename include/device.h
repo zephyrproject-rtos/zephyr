@@ -313,7 +313,7 @@ struct device_config {
  * @param device_config Build time config information
  * @param driver_api pointer to structure containing the API functions for
  * the device type. This pointer is filled in by the driver at init time.
- * @param driver_data river instance data. For driver use only
+ * @param driver_data driver instance data. For driver use only
  */
 struct device {
 	struct device_config *config;
