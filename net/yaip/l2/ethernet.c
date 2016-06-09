@@ -185,14 +185,13 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	NET_ASSERT_INFO(frag, "No data!");
 
 	while (frag) {
-		hdr = (struct net_eth_hdr *)frag->data -
-						net_nbuf_ll_reserve(buf);
+		hdr = (struct net_eth_hdr *)(frag->data -
+					     net_nbuf_ll_reserve(buf));
 		memcpy(&hdr->dst, net_nbuf_ll_dst(buf)->addr,
 		       sizeof(struct net_eth_addr));
 		memcpy(&hdr->src, net_nbuf_ll_src(buf)->addr,
 		       sizeof(struct net_eth_addr));
 		hdr->type = ptype;
-
 		print_ll_addrs(buf, ntohs(hdr->type), frag->len);
 
 		frag = frag->frags;
