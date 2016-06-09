@@ -23,6 +23,12 @@
 
 #include <net/buf.h>
 
+#if defined(CONFIG_NET_BUF_DEBUG)
+#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#else
+#define DBG(fmt, ...)
+#endif
+
 #define TEST_TIMEOUT SECONDS(1)
 
 struct bt_data {
@@ -48,7 +54,7 @@ static void buf_destroy(struct net_buf *buf)
 		printk("Invalid free pointer in buffer!\n");
 	}
 
-	printk("destroying %p\n", buf);
+	DBG("destroying %p\n", buf);
 
 	nano_fifo_put(buf->free, buf);
 }
@@ -97,7 +103,7 @@ static bool net_buf_test_2(void)
 		return false;
 	}
 
-	printk("Fragment list head %p\n", head);
+	DBG("Fragment list head %p\n", head);
 
 	frag = head;
 	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
@@ -106,11 +112,11 @@ static bool net_buf_test_2(void)
 			printk("Failed to get fragment!\n");
 			return false;
 		}
-		printk("%p -> %p\n", frag, frag->frags);
+		DBG("%p -> %p\n", frag, frag->frags);
 		frag = frag->frags;
 	}
 
-	printk("%p -> %p\n", frag, frag->frags);
+	DBG("%p -> %p\n", frag, frag->frags);
 
 	nano_fifo_init(&fifo);
 	net_buf_put(&fifo, head);
@@ -142,7 +148,7 @@ static void test_3_fiber(int arg1, int arg2)
 		return;
 	}
 
-	printk("Got buffer from FIFO\n");
+	DBG("Got buffer %p from FIFO\n", buf);
 
 	destroy_called = 0;
 	net_buf_unref(buf);
@@ -170,7 +176,7 @@ static bool net_buf_test_3(void)
 		return false;
 	}
 
-	printk("Fragment list head %p\n", head);
+	DBG("Fragment list head %p\n", head);
 
 	frag = head;
 	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
@@ -179,11 +185,11 @@ static bool net_buf_test_3(void)
 			printk("Failed to get fragment!\n");
 			return false;
 		}
-		printk("%p -> %p\n", frag, frag->frags);
+		DBG("%p -> %p\n", frag, frag->frags);
 		frag = frag->frags;
 	}
 
-	printk("%p -> %p\n", frag, frag->frags);
+	DBG("%p -> %p\n", frag, frag->frags);
 
 	nano_fifo_init(&fifo);
 	nano_sem_init(&sema);
@@ -196,7 +202,7 @@ static bool net_buf_test_3(void)
 		return false;
 	}
 
-	printk("calling net_buf_put\n");
+	DBG("calling net_buf_put\n");
 
 	net_buf_put(&fifo, head);
 
@@ -227,9 +233,11 @@ void main(void)
 	net_buf_pool_init(bufs_pool);
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
+		printk("Running %s... ", tests[count].name);
 		if (!tests[count].func()) {
-			printk("%s failed!\n", tests[count].name);
+			printk("failed!\n");
 		} else {
+			printk("passed!\n");
 			pass++;
 		}
 	}
