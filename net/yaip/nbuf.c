@@ -305,16 +305,33 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 	switch (type) {
 	case NET_NBUF_RX:
 		buf = net_buf_get(&free_rx_bufs, 0);
+		if (!buf) {
+			return NULL;
+		}
+
+		NET_ASSERT(buf->ref);
+
 		dec_free_rx_bufs(buf);
 		net_nbuf_type(buf) = type;
 		break;
 	case NET_NBUF_TX:
 		buf = net_buf_get(&free_tx_bufs, 0);
+		if (!buf) {
+			return NULL;
+		}
+
+		NET_ASSERT(buf->ref);
+
 		dec_free_tx_bufs(buf);
 		net_nbuf_type(buf) = type;
 		break;
 	case NET_NBUF_DATA:
 		buf = net_buf_get(&free_data_bufs, 0);
+		if (!buf) {
+			return NULL;
+		}
+
+		NET_ASSERT(buf->ref);
 
 		/* The buf->data will point to the start of the L3
 		 * header (like IPv4 or IPv6 packet header) after the
