@@ -8,6 +8,10 @@ MDEF_FILE_PATH=$(strip $(PROJECT_BASE)/$(MDEF_FILE))
 endif
 endif
 
+ifeq ($(ARCH),x86)
+TASKGROUP_SSE="  TASKGROUP SSE"
+endif
+
 define filechk_prj.mdef
 	(echo "% WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!"; \
 	echo; \
@@ -20,7 +24,7 @@ define filechk_prj.mdef
 	echo "  TASKGROUP EXE";\
 	echo "  TASKGROUP SYS";\
 	echo "  TASKGROUP FPU";\
-	echo "  TASKGROUP SSE";\
+	echo $(TASKGROUP_SSE);\
 	echo; \
 	if test -e "$(MDEF_FILE_PATH)"; then \
 		cat $(MDEF_FILE_PATH); \
