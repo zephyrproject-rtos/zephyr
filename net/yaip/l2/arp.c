@@ -113,6 +113,7 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 {
 	struct net_buf *buf, *frag;
 	struct net_arp_hdr *hdr;
+	struct net_eth_hdr *eth;
 	struct in_addr *my_addr;
 
 	buf = net_nbuf_get_reserve_tx(0);
@@ -131,6 +132,7 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
 
 	hdr = NET_ARP_BUF(buf);
+	eth = NET_ETH_BUF(buf);
 
 	/* If entry is not set, then we are just about to send
 	 * an ARP request using the data in pending net_buf.
@@ -143,17 +145,17 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 
 		net_ipaddr_copy(&entry->ip, &NET_IPV4_BUF(pending)->dst);
 
-		memcpy(&hdr->eth_hdr.src.addr,
+		memcpy(&eth->src.addr,
 		       net_if_get_link_addr(entry->iface)->addr,
 		       sizeof(struct net_eth_addr));
 	} else {
-		memcpy(&hdr->eth_hdr.src.addr,
+		memcpy(&eth->src.addr,
 		       net_if_get_link_addr(iface)->addr,
 		       sizeof(struct net_eth_addr));
 	}
 
-	hdr->eth_hdr.type = htons(NET_ETH_PTYPE_ARP);
-	memset(&hdr->eth_hdr.dst.addr, 0xff, sizeof(struct net_eth_addr));
+	eth->type = htons(NET_ETH_PTYPE_ARP);
+	memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
 	hdr->protocol = htons(NET_ETH_PTYPE_IP);
@@ -170,7 +172,7 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 		net_ipaddr_copy(&hdr->dst_ipaddr, &NET_IPV4_BUF(pending)->dst);
 	}
 
-	memcpy(hdr->src_hwaddr.addr, hdr->eth_hdr.src.addr,
+	memcpy(hdr->src_hwaddr.addr, eth->src.addr,
 	       sizeof(struct net_eth_addr));
 
 	if (entry) {
@@ -185,8 +187,7 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 		memset(&hdr->src_ipaddr, 0, sizeof(struct in_addr));
 	}
 
-	net_buf_add(frag,
-		    sizeof(struct net_arp_hdr) - sizeof(struct net_eth_hdr));
+	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	return buf;
 
@@ -311,8 +312,9 @@ static inline void send_pending(struct net_if *iface, struct net_buf **buf)
 {
 	struct net_buf *pending = *buf;
 
-	NET_DBG("dst %s pending %p",
-		net_sprint_ipv4_addr(&NET_IPV4_BUF(pending)->dst), pending);
+	NET_DBG("dst %s pending %p frag %p",
+		net_sprint_ipv4_addr(&NET_IPV4_BUF(pending)->dst), pending,
+		pending->frags);
 
 	*buf = NULL;
 
@@ -355,6 +357,13 @@ static inline void arp_update(struct net_if *iface,
 				memcpy(&arp_table[i].eth, hwaddr,
 				       sizeof(struct net_eth_addr));
 
+				/* Set the dst in the pending packet */
+				net_nbuf_ll_dst(arp_table[i].pending)->len =
+					sizeof(struct net_eth_addr);
+				net_nbuf_ll_dst(arp_table[i].pending)->addr =
+					(uint8_t *)
+					&NET_ETH_BUF(arp_table[i].pending)->dst.addr;
+
 				send_pending(iface, &arp_table[i].pending);
 			}
 
@@ -368,6 +377,7 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 {
 	struct net_buf *buf, *frag;
 	struct net_arp_hdr *hdr, *query;
+	struct net_eth_hdr *eth, *eth_query;
 
 	buf = net_nbuf_get_reserve_tx(0);
 	if (!buf) {
@@ -385,13 +395,15 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
 
 	hdr = NET_ARP_BUF(buf);
+	eth = NET_ETH_BUF(buf);
 	query = NET_ARP_BUF(req);
+	eth_query = NET_ETH_BUF(req);
 
-	hdr->eth_hdr.type = htons(NET_ETH_PTYPE_ARP);
+	eth->type = htons(NET_ETH_PTYPE_ARP);
 
-	memcpy(&hdr->eth_hdr.dst.addr, &query->eth_hdr.src.addr,
+	memcpy(&eth->dst.addr, &eth_query->src.addr,
 	       sizeof(struct net_eth_addr));
-	memcpy(&hdr->eth_hdr.src.addr, net_if_get_link_addr(iface)->addr,
+	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
 	       sizeof(struct net_eth_addr));
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
@@ -400,19 +412,15 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 	hdr->protolen = sizeof(struct in_addr);
 	hdr->opcode = htons(NET_ARP_REPLY);
 
-	memcpy(&hdr->dst_hwaddr.addr, &query->eth_hdr.src.addr,
+	memcpy(&hdr->dst_hwaddr.addr, &eth_query->src.addr,
 	       sizeof(struct net_eth_addr));
-	memcpy(&hdr->src_hwaddr.addr, &hdr->eth_hdr.src.addr,
+	memcpy(&hdr->src_hwaddr.addr, &eth->src.addr,
 	       sizeof(struct net_eth_addr));
 
 	net_ipaddr_copy(&hdr->dst_ipaddr, &query->src_ipaddr);
 	net_ipaddr_copy(&hdr->src_ipaddr, &query->dst_ipaddr);
 
-	/* The ethernet header is already added to fragment length (because
-	 * of the reserve) so we must not add it again.
-	 */
-	net_buf_add(frag,
-		    sizeof(struct net_arp_hdr) - sizeof(struct net_eth_hdr));
+	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	return buf;
 

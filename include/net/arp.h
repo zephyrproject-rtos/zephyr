@@ -27,10 +27,9 @@
 
 #include <net/ethernet.h>
 
-#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ll(buf))
+#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_nbuf_ip_data(buf))
 
 struct net_arp_hdr {
-	struct net_eth_hdr eth_hdr;
 	uint16_t hwtype;		/* HTYPE */
 	uint16_t protocol;		/* PTYPE */
 	uint8_t hwlen;			/* HLEN */
