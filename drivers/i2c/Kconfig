@@ -53,16 +53,6 @@ config I2C_QMSI_SS
 	This driver is simply a shim driver based on the I2C driver
 	provided by the QMSI BSP.
 
-config I2C_QMSI_SS
-	bool "QMSI I2C driver for the Sensor Subsystem"
-	depends on QMSI && I2C
-	default n
-	help
-	This option enable the Sensor QMSI I2C driver.
-
-	This driver is simply a shim driver based on the I2C driver
-	provided by the QMSI BSP.
-
 config I2C_QMSI
 	bool "QMSI I2C driver"
 	depends on I2C && QMSI
