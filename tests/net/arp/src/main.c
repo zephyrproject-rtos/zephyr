@@ -16,6 +16,9 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
+#include <sections.h>
+
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -321,11 +324,7 @@ NET_DEVICE_INIT(net_arp_test, "net_arp_test",
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_arp_if_api, _ETH_L2_LAYER, 127);
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
-void main(void)
-#endif
+void main_fiber(void)
 {
 	struct net_buf *buf, *buf2;
 	struct net_buf *frag;
@@ -762,4 +761,19 @@ void main(void)
 	net_nbuf_unref(buf);
 
 	printk("Network ARP checks passed\n");
+}
+
+#if defined(CONFIG_NANOKERNEL)
+#define STACKSIZE 2000
+char __noinit __stack fiberStack[STACKSIZE];
+#endif
+
+void main(void)
+{
+#if defined(CONFIG_MICROKERNEL)
+	main_fiber();
+#else
+	task_fiber_start(&fiberStack[0], STACKSIZE,
+			(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
+#endif
 }
