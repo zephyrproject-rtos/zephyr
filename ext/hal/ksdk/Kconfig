@@ -1,7 +1,7 @@
-# Kconfig - external HAL source code configuration options
+# Kconfig - Kinetis SDK
 
 #
-# Copyright (c) 2016 Linaro Ltd.
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,16 +16,7 @@
 # limitations under the License.
 #
 
-# When adding new entries keep the list in alphabetical order
-
-menu "HALs"
-
-source "ext/hal/cmsis/Kconfig"
-
-source "ext/hal/ksdk/Kconfig"
-
-source "ext/hal/nordic/mdk/Kconfig"
-
-source "ext/hal/qmsi/Kconfig"
-
-endmenu
+config HAS_KSDK
+	bool
+	select HAS_CMSIS
+	depends on SOC_FAMILY_KINETIS
