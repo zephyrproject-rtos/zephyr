@@ -55,6 +55,7 @@
 #include <misc/__assert.h>
 #include <misc/util.h>
 #include <irq_offload.h>
+#include <sections.h>
 
 #include <util_test_common.h>
 
@@ -109,6 +110,15 @@ void * const pPutList2[NUM_FIFO_ELEMENT] = {
 	(void *)myFifoData2,
 	(void *)myFifoData1
 	};
+
+/* for put_list tests */
+struct nano_fifo fifo_list;
+struct nano_sem sem_list;
+
+struct packet_list {
+	void *next;
+	int n;
+};
 
 int retCode = TC_PASS;
 
@@ -562,15 +572,130 @@ void initNanoObjects(void)
 {
 	nano_fifo_init(&nanoFifoObj);
 	nano_fifo_init(&nanoFifoObj2);
+	nano_fifo_init(&fifo_list);
 
 	nano_sem_init(&nanoSemObj1);
 	nano_sem_init(&nanoSemObj2);
 	nano_sem_init(&nanoSemObj3);
 	nano_sem_init(&nanoSemObjTask);
+	nano_sem_init(&sem_list);
 
 	nano_timer_init(&timer, timerData);
 
 } /* initNanoObjects */
+
+/* fifo_put_list */
+
+sys_slist_t list;
+
+struct packet_list packets[8];
+
+char __stack __noinit stacks_list[2][512];
+
+void fiber_list_0(int a, int b)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+
+	struct packet_list *p;
+
+	p = nano_fiber_fifo_get(&fifo_list, TICKS_UNLIMITED);
+	if (p->n != 0) {
+		retCode = TC_FAIL;
+		TC_ERROR(" *** %s did not get expected element %d\n",
+			 __func__, 0);
+		return;
+	}
+
+	printk("%s got element %d, as expected\n", __func__, 0);
+
+	p = nano_fiber_fifo_get(&fifo_list, TICKS_UNLIMITED);
+	if (p->n != 2) {
+		retCode = TC_FAIL;
+		TC_ERROR(" *** %s did not get expected element %d\n",
+			 __func__, 2);
+		return;
+	}
+
+	printk("%s got element %d, as expected\n", __func__, 2);
+
+	sys_slist_init(&list);
+
+	for (int ii = 3; ii < 8; ii++) {
+		sys_slist_append(&list, (sys_snode_t *)&packets[ii]);
+	}
+
+	fiber_yield(); /* collegue takes 1 */
+
+	nano_fiber_fifo_put_slist(&fifo_list, &list);
+
+	fiber_yield(); /* collegue takes 3 */
+
+	/* I take the rest */
+	for (int ii = 4; ii < 8; ii++) {
+		p = nano_fiber_fifo_get(&fifo_list, SECONDS(1));
+		if (p->n != ii) {
+			TC_ERROR(" *** %s did not get expected element %d\n",
+				 __func__, ii);
+			retCode = TC_FAIL;
+			return;
+		}
+
+		printk("%s got element %d, as expected\n",
+			__func__, ii);
+	}
+
+	nano_fiber_sem_give(&sem_list);
+}
+
+static void fiber_list_1(int a, int b)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+
+	struct packet_list *p;
+
+	p = nano_fiber_fifo_get(&fifo_list, TICKS_UNLIMITED);
+	if (p->n != 1) {
+		retCode = TC_FAIL;
+		TC_ERROR(" *** %s did not get expected element %d\n",
+			 __func__, 1);
+		return;
+	}
+
+	printk("%s got element %d, as expected\n", __func__, 1);
+
+	p = nano_fiber_fifo_get(&fifo_list, TICKS_UNLIMITED);
+	if (p->n != 3) {
+		retCode = TC_FAIL;
+		TC_ERROR(" *** %s did not get expected element %d\n",
+			 __func__, 3);
+		return;
+	}
+
+	printk("%s got element %d, as expected\n", __func__, 3);
+}
+
+static void test_fifo_put_list(void)
+{
+	PRINT_LINE;
+	task_fiber_start(stacks_list[0], 512, fiber_list_0, 0, 0, 7, 0);
+	task_fiber_start(stacks_list[1], 512, fiber_list_1, 0, 0, 7, 0);
+
+	for (int ii = 0; ii < 8; ii++) {
+		packets[ii].n = ii;
+	}
+
+	packets[0].next = &packets[1];
+	packets[1].next = &packets[2];
+	packets[2].next = NULL;
+
+	nano_task_fifo_put_list(&fifo_list, &packets[0], &packets[2]);
+
+	nano_task_sem_take(&sem_list, SECONDS(5));
+
+	TC_END_RESULT(retCode);
+}
 
 /**
  *
@@ -703,6 +828,10 @@ void main(void)
 		goto exit;
 	}
 	PRINT_LINE;
+
+	/* test put_list/slist */
+
+	test_fifo_put_list();
 
 exit:
 	TC_END_RESULT(retCode);
