@@ -3413,16 +3413,16 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		set_param->type = BT_LE_ADV_IND;
 	} else {
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
+		err = le_set_rpa();
+#else
 		err = le_set_nrpa();
+#endif /* CONFIG_BLUETOOTH_PRIVACY */
 		if (err) {
 			net_buf_unref(buf);
 			return err;
 		}
 
 		set_param->own_addr_type = BT_ADDR_LE_RANDOM;
-#else
-		set_param->own_addr_type = bt_dev.id_addr.type;
-#endif /* CONFIG_BLUETOOTH_PRIVACY */
 
 		if (sd) {
 			set_param->type = BT_LE_ADV_SCAN_IND;
