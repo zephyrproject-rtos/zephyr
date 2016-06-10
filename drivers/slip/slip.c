@@ -52,6 +52,7 @@ enum slip_state {
 };
 
 struct slip_context {
+	bool init_done;
 	uint8_t buf[1];		/* SLIP data is read into this buf */
 	struct net_buf *rx;	/* and then placed into this net_buf */
 	struct net_buf *last;	/* Pointer to last fragment in the list */
@@ -313,6 +314,11 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 		CONTAINER_OF(buf, struct slip_context, buf);
 	int i;
 
+	if (!slip->init_done) {
+		*off = 0;
+		return buf;
+	}
+
 	for (i = 0; i < *off; i++) {
 		if (slip_input_byte(slip, buf[i])) {
 #if defined(CONFIG_SLIP_DEBUG)
@@ -348,8 +354,6 @@ static int slip_init(struct device *dev)
 
 	SYS_LOG_DBG("[%p] dev %p", slip, dev);
 
-	dev->driver_api = NULL;
-
 	slip->state = STATE_OK;
 	slip->rx = NULL;
 
@@ -371,10 +375,8 @@ static int slip_init(struct device *dev)
 	return 0;
 }
 
-static inline struct net_linkaddr *slip_get_mac(struct device *dev)
+static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 {
-	struct slip_context *slip = dev->driver_data;
-
 	if (slip->mac_addr[0] == 0x00) {
 		/* 10-00-00-00-00 to 10-00-00-00-FF Documentation RFC7042 */
 		slip->mac_addr[0] = 0x10;
@@ -394,7 +396,10 @@ static inline struct net_linkaddr *slip_get_mac(struct device *dev)
 
 static void slip_iface_init(struct net_if *iface)
 {
-	struct net_linkaddr *ll_addr = slip_get_mac(net_if_get_device(iface));
+	struct slip_context *slip = net_if_get_device(iface)->driver_data;
+	struct net_linkaddr *ll_addr = slip_get_mac(slip);
+
+	slip->init_done = true;
 
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len);
 }
