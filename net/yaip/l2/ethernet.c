@@ -218,8 +218,6 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		frag = frag->frags;
 	}
 
-	print_ll_addrs(buf, ntohs(hdr->type), net_buf_frags_len(buf));
-
 send:
 	net_if_queue_tx(iface, buf);
 
