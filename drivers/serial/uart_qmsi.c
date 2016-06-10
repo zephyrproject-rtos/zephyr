@@ -51,6 +51,7 @@ struct uart_qmsi_config_info {
 struct uart_qmsi_drv_data {
 	uart_irq_callback_t user_cb;
 	uint8_t iir_cache;
+	struct nano_sem sem;
 };
 
 static int uart_qmsi_init(struct device *dev);
@@ -111,9 +112,11 @@ DEVICE_INIT(uart_1, CONFIG_UART_QMSI_1_NAME, uart_qmsi_init, &drv_data_1,
 
 static int uart_qmsi_poll_in(struct device *dev, unsigned char *data)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	qm_uart_status_t status;
 
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
 	qm_uart_get_status(instance, &status);
 
 	/* In order to check if there is any data to read from UART
@@ -121,24 +124,31 @@ static int uart_qmsi_poll_in(struct device *dev, unsigned char *data)
 	 * 'status' is not set. This bit is set only if there is any
 	 * pending character to read.
 	 */
-	if (!(status & QM_UART_RX_BUSY))
+	if (!(status & QM_UART_RX_BUSY)) {
+		nano_sem_give(&context->sem);
 		return -1;
+	}
 
 	qm_uart_read(instance, data, NULL);
+	nano_sem_give(&context->sem);
 	return 0;
 }
 
 static unsigned char uart_qmsi_poll_out(struct device *dev,
 					unsigned char data)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
 	qm_uart_write(instance, data);
+	nano_sem_give(&context->sem);
 	return data;
 }
 
 static int uart_qmsi_err_check(struct device *dev)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	qm_uart_status_t status;
 
@@ -146,7 +156,9 @@ static int uart_qmsi_err_check(struct device *dev)
 	 * so we don't need to translate each error bit from QMSI API
 	 * to Zephyr API.
 	 */
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
 	qm_uart_get_status(instance, &status);
+	nano_sem_give(&context->sem);
 	return (status & QM_UART_LSR_ERROR_BITS);
 }
 
@@ -189,16 +201,22 @@ static int uart_qmsi_fifo_read(struct device *dev, uint8_t *rx_data,
 
 static void uart_qmsi_irq_tx_enable(struct device *dev)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
 	QM_UART[instance]->ier_dlh |= QM_UART_IER_ETBEI;
+	nano_sem_give(&context->sem);
 }
 
 static void uart_qmsi_irq_tx_disable(struct device *dev)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
 	QM_UART[instance]->ier_dlh &= ~QM_UART_IER_ETBEI;
+	nano_sem_give(&context->sem);
 }
 
 static int uart_qmsi_irq_tx_ready(struct device *dev)
@@ -219,16 +237,22 @@ static int uart_qmsi_irq_tx_empty(struct device *dev)
 
 static void uart_qmsi_irq_rx_enable(struct device *dev)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
 	QM_UART[instance]->ier_dlh |= QM_UART_IER_ERBFI;
+	nano_sem_give(&context->sem);
 }
 
 static void uart_qmsi_irq_rx_disable(struct device *dev)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
 	QM_UART[instance]->ier_dlh &= ~QM_UART_IER_ERBFI;
+	nano_sem_give(&context->sem);
 }
 
 static int uart_qmsi_irq_rx_ready(struct device *dev)
@@ -242,16 +266,22 @@ static int uart_qmsi_irq_rx_ready(struct device *dev)
 
 static void uart_qmsi_irq_err_enable(struct device *dev)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
 	QM_UART[instance]->ier_dlh |= QM_UART_IER_ELSI;
+	nano_sem_give(&context->sem);
 }
 
 static void uart_qmsi_irq_err_disable(struct device *dev)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
 	QM_UART[instance]->ier_dlh &= ~QM_UART_IER_ELSI;
+	nano_sem_give(&context->sem);
 }
 
 static int uart_qmsi_irq_is_pending(struct device *dev)
@@ -314,15 +344,18 @@ static void irq_config_func_1(struct device *dev)
 #ifdef CONFIG_UART_LINE_CTRL
 static int uart_qmsi_line_ctrl_set(struct device *dev, uint32_t ctrl, uint32_t val)
 {
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	qm_uart_config_t cfg;
 
 	switch (ctrl) {
 	case LINE_CTRL_BAUD_RATE:
+		nano_sem_take(&context->sem, TICKS_UNLIMITED);
 		qm_uart_get_config(instance, &cfg);
 		cfg.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(DIVISOR_HIGH(val),
 							    DIVISOR_LOW(val), 0);
 		qm_uart_set_config(instance, &cfg);
+		nano_sem_give(&context->sem);
 		break;
 	default:
 		return -ENODEV;
@@ -373,7 +406,11 @@ static struct uart_driver_api api = {
 static int uart_qmsi_init(struct device *dev)
 {
 	struct uart_qmsi_config_info *config = dev->config->config_info;
+	struct uart_qmsi_drv_data *context = dev->driver_data;
 	qm_uart_config_t cfg;
+
+	nano_sem_init(&context->sem);
+	nano_sem_give(&context->sem);
 
 	cfg.line_control = QM_UART_LC_8N1;
 	cfg.baud_divisor = config->baud_divisor;
