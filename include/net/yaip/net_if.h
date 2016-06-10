@@ -293,7 +293,7 @@ static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
  * @brief Start duplicate address detection procedure.
  * @param iface Pointer to a network interface structure
  */
-#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV6_NO_DAD)
+#if !defined(CONFIG_NET_IPV6_NO_DAD) && !defined(CONFIG_NET_IPV6_NO_ND)
 void net_if_start_dad(struct net_if *iface);
 #else
 #define net_if_start_dad(iface)
@@ -317,12 +317,12 @@ static inline void net_if_set_link_addr(struct net_if *iface,
 	iface->link_addr.addr = addr;
 	iface->link_addr.len = len;
 
-#if !defined(CONFIG_NET_NO_DAD)
+#if !defined(CONFIG_NET_IPV6_NO_DAD) && !defined(CONFIG_NET_IPV6_NO_ND)
 	NET_DBG("Starting DAD for iface %p", iface);
 	net_if_start_dad(iface);
 #endif
 
-#if defined(CONFIG_NET_IPV6)
+#if !defined(CONFIG_NET_IPV6_NO_ND)
 	NET_DBG("Starting ND/RS for iface %p", iface);
 	net_if_start_rs(iface);
 #endif

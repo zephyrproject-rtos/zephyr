@@ -32,6 +32,8 @@
 #include "ipv6.h"
 #include "nbr.h"
 
+#if !defined(CONFIG_NET_IPV6_NO_ND)
+
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
 
@@ -145,8 +147,9 @@ void net_neighbor_table_clear(struct net_nbr_table *table)
 {
 	NET_DBG("Neighbor table %p cleared", table);
 }
+#endif /* !CONFIG_NET_IPV6_NO_ND */
 
-#if !defined(CONFIG_NET_IPV6_NO_DAD)
+#if !defined(CONFIG_NET_IPV6_NO_DAD) && !defined(CONFIG_NET_IPV6_NO_ND)
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr)
 {
 	return net_ipv6_send_ns(iface, NULL, NULL, NULL,
@@ -197,6 +200,8 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #define dbg_update_neighbor_lladdr(...)
 #define dbg_update_neighbor_lladdr_raw(...)
 #endif /* NET_DEBUG */
+
+#if !defined(CONFIG_NET_IPV6_NO_ND)
 
 static inline uint8_t get_llao_len(struct net_if *iface)
 {
@@ -1272,7 +1277,9 @@ drop:
 	NET_STATS(++net_stats.ipv6_nd.drop);
 	return NET_DROP;
 }
+#endif /* !CONFIG_NET_IPV6_NO_ND */
 
+#if !defined(CONFIG_NET_IPV6_NO_ND)
 static struct net_icmpv6_handler ns_input_handler = {
 	.type = NET_ICMPV6_NS,
 	.code = 0,
@@ -1290,10 +1297,13 @@ static struct net_icmpv6_handler ra_input_handler = {
 	.code = 0,
 	.handler = handle_ra_input,
 };
+#endif /* !CONFIG_NET_IPV6_NO_ND */
 
 void net_ipv6_init(void)
 {
+#if !defined(CONFIG_NET_IPV6_NO_ND)
 	net_icmpv6_register_handler(&ns_input_handler);
 	net_icmpv6_register_handler(&na_input_handler);
 	net_icmpv6_register_handler(&ra_input_handler);
+#endif
 }

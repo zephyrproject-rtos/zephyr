@@ -60,17 +60,26 @@ config NET_IPV6_MAX_NEIGHBORS
        help
          The value depends on your network needs.
 
-config NET_IPV6_NO_DAD
-       bool "Do not do duplicate address detection"
+config NET_IPV6_NO_ND
+       bool "Do not do neighbor discovery"
        depends on NET_IPV6
        default n
+       help
+         The value depends on your network needs. ND should normally
+         be active.
+
+config NET_IPV6_NO_DAD
+       bool "Do not do duplicate address detection"
+       depends on !NET_IPV6_NO_ND
+       default n
+       default y if !NET_IPV6_NO_ND
        help
          The value depends on your network needs. DAD should normally
          be active.
 
 config NET_IPV6_RA_RDNSS
        bool "Support RA RDNSS option"
-       depends on NET_IPV6
+       depends on NET_IPV6 && !NET_IPV6_NO_ND
        default y
        help
          Support Router Advertisement Recursive DNS Server option.
