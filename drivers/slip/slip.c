@@ -62,6 +62,7 @@ struct slip_context {
 	uint16_t ll_reserve;	/* Reserve any space for link layer headers */
 	uint8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
+	int mtu;
 
 #if defined(CONFIG_SLIP_STATISTICS)
 #define SLIP_STATS(statement)
@@ -291,7 +292,15 @@ static inline int slip_input_byte(struct slip_context *slip,
 		}
 		net_buf_frag_insert(slip->last, frag);
 		slip->last = frag;
-		slip->ptr = slip->last->data - slip->ll_reserve;
+
+		if (slip->mtu > net_buf_tailroom(slip->last)) {
+			/* Do not add link layer header if the mtu is bigger
+			 * than fragment size.
+			 */
+			slip->ptr = slip->last->data;
+		} else {
+			slip->ptr = slip->last->data - slip->ll_reserve;
+		}
 	}
 
 	/* The net_buf_add_u8() cannot add data to ll header so we need
@@ -358,8 +367,10 @@ static int slip_init(struct device *dev)
 
 #if defined(CONFIG_SLIP_TAP)
 	slip->ll_reserve = sizeof(struct net_eth_hdr);
+	slip->mtu = 1500; /* assume for ethernet */
 #else
 	slip->ll_reserve = 0;
+	slip->mtu = 576; /* assume for tun */
 #endif
 	SYS_LOG_DBG("%sll reserve %d",
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_IPV4)
