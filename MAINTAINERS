@@ -82,6 +82,13 @@ M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
 S:	Supported
 F:	drivers/flash/
 
+MAINTAINERS
+M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
+M:	Anas Nashif <anas.nashif@intel.com>
+M:	Perez-Gonzalez, Inaky <inaky.perez-gonzalez@intel.com>
+S:	Supported
+F:	MAINTAINERS
+
 NETWORKING
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
 S:	Supported
