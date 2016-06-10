@@ -39,6 +39,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>
+#include <misc/__assert.h>
 
 struct fifo_node {
 	void *next;
@@ -171,6 +172,106 @@ void nano_fifo_put(struct nano_fifo *fifo, void *data)
 	};
 
 	func[sys_execution_context_type_get()](fifo, data);
+}
+
+static void enqueue_list(struct nano_fifo *fifo, void *head, void *tail)
+{
+	struct fifo_node *q_tail = fifo->data_q.tail;
+
+	q_tail->next = head;
+	fifo->data_q.tail = tail;
+}
+
+void _fifo_put_list_non_preemptible(struct nano_fifo *fifo,
+				    void *head, void *tail)
+{
+	__ASSERT(head && tail, "invalid head or tail");
+
+	unsigned int key = irq_lock();
+	struct tcs *fiber;
+
+	while (head && ((fiber = _nano_wait_q_remove(&fifo->wait_q)))) {
+		_nano_timeout_abort(fiber);
+		fiberRtnValueSet(fiber, (unsigned int)head);
+		head = *(void **)head;
+	}
+
+	if (head) {
+		enqueue_list(fifo, head, tail);
+		_NANO_UNPEND_TASKS(&fifo->task_q);
+	}
+
+	irq_unlock(key);
+}
+
+void _fifo_put_slist_non_preemptible(struct nano_fifo *fifo,
+				     sys_slist_t *list)
+{
+	__ASSERT(!sys_slist_is_empty(list), "list must not be empty");
+
+	_fifo_put_list_non_preemptible(fifo, list->head, list->tail);
+}
+
+FUNC_ALIAS(_fifo_put_list_non_preemptible, nano_isr_fifo_put_list, void);
+FUNC_ALIAS(_fifo_put_list_non_preemptible, nano_fiber_fifo_put_list, void);
+
+FUNC_ALIAS(_fifo_put_slist_non_preemptible, nano_isr_fifo_put_slist, void);
+FUNC_ALIAS(_fifo_put_slist_non_preemptible, nano_fiber_fifo_put_slist, void);
+
+void nano_task_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail)
+{
+	__ASSERT(head && tail, "invalid head or tail");
+	__ASSERT(*(void **)tail == NULL, "list is not NULL-terminated");
+
+	unsigned int key = irq_lock();
+	struct tcs *fiber, *first_fiber;
+
+	first_fiber = fifo->wait_q.head;
+	while (head && ((fiber = _nano_wait_q_remove(&fifo->wait_q)))) {
+		_nano_timeout_abort(fiber);
+		fiberRtnValueSet(fiber, (unsigned int)head);
+		head = *(void **)head;
+	}
+
+	if (head) {
+		enqueue_list(fifo, head, tail);
+		_NANO_UNPEND_TASKS(&fifo->task_q);
+	}
+
+	if (first_fiber) {
+		_Swap(key);
+	} else {
+		irq_unlock(key);
+	}
+}
+
+void nano_task_fifo_put_slist(struct nano_fifo *fifo, sys_slist_t *list)
+{
+	__ASSERT(!sys_slist_is_empty(list), "list must not be empty");
+
+	nano_task_fifo_put_list(fifo, list->head, list->tail);
+}
+
+void nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail)
+{
+	static void (*func[3])(struct nano_fifo *, void *, void *) = {
+		nano_isr_fifo_put_list,
+		nano_fiber_fifo_put_list,
+		nano_task_fifo_put_list
+	};
+
+	func[sys_execution_context_type_get()](fifo, head, tail);
+}
+
+void nano_fifo_put_slist(struct nano_fifo *fifo, sys_slist_t *list)
+{
+	static void (*func[3])(struct nano_fifo *, sys_slist_t *) = {
+		nano_isr_fifo_put_slist,
+		nano_fiber_fifo_put_slist,
+		nano_task_fifo_put_slist
+	};
+
+	func[sys_execution_context_type_get()](fifo, list);
 }
 
 /**

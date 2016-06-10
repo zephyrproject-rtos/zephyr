@@ -38,6 +38,7 @@
 #include <kernel_version.h>
 #include <sys_clock.h>
 #include <drivers/rand32.h>
+#include <misc/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -507,6 +508,71 @@ extern void nano_fifo_put(struct nano_fifo *fifo, void *data);
 
 /**
  *
+ * @brief Atomically add a list of elements to the end of a FIFO.
+ *
+ * This routine adds a list of elements in one shot to the end of a FIFO
+ * object. If fibers are pending on the FIFO object, they become ready to run.
+ * If this API is called from a task, the highest priority one will preempt the
+ * running task once the put operation is complete.
+ *
+ * If enough fibers are waiting on the FIFO, the address of each element given
+ * to fibers is returned to the waiting fiber. The remaining elements are
+ * linked to the end of the list.
+ *
+ * The list must be a singly-linked list, where each element only has a pointer
+ * to the next one. The list must be NULL-terminated.
+ *
+ * Unlike the fiber/ISR versions of this API which is not much different
+ * conceptually than calling nano_fifo_put once for each element to queue, the
+ * behaviour is indeed different for tasks. There is no context switch being
+ * done for each element queued, so the task can enqueue all elements without
+ * being interrupted by a fiber being woken up.
+ *
+ * This routine is a convenience wrapper for the execution of context-specific
+ * APIs. It is helpful when the exact execution context is not known. However,
+ * it should be avoided when the context is known up-front to avoid unnecessary
+ * overhead.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param head head of singly-linked list
+ * @param tail tail of singly-linked list
+ *
+ * @return N/A
+ *
+ * @sa nano_fifo_put_slist, nano_isr_fifo_put_list, nano_fiber_fifo_put_list,
+ *     nano_task_fifo_put_list
+ */
+
+extern void nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail);
+
+/**
+ *
+ * @brief Atomically add a list of elements to the end of a FIFO.
+ *
+ * See nano_fifo_put_list for the description of the behaviour.
+ *
+ * It takes a pointer to a sys_slist_t object instead of the head and tail of a
+ * custom singly-linked list. The sys_slist_t object is invalid afterwards and
+ * must be re-initialized via sys_slist_init().
+ *
+ * This routine is a convenience wrapper for the execution of context-specific
+ * APIs. It is helpful when the exact execution context is not known. However,
+ * it should be avoided when the context is known up-front to avoid unnecessary
+ * overhead.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param list pointer to singly-linked list
+ *
+ * @return N/A
+ *
+ * @sa nano_fifo_put_list, nano_isr_fifo_put_slist, nano_fiber_fifo_put_slist,
+ *     nano_task_fifo_put_slist
+ */
+
+extern void nano_fifo_put_slist(struct nano_fifo *fifo, sys_slist_t *list);
+
+/**
+ *
  * @brief Get an element from the head a FIFO.
  *
  * This routine is a convenience wrapper for the execution of context-specific
@@ -554,6 +620,48 @@ extern void *nano_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks);
 extern void nano_isr_fifo_put(struct nano_fifo *fifo, void *data);
 
 /**
+ *
+ * @brief Atomically add a list of elements to the end of a FIFO from an ISR.
+ *
+ * See nano_fifo_put_list for the description of the behaviour.
+ *
+ * This is an alias for the execution context-specific API. This is helpful
+ * whenever the exact execution context is known. Its use avoids unnecessary
+ * overhead.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param head head of singly-linked list
+ * @param tail tail of singly-linked list
+ *
+ * @return N/A
+ *
+ * @sa nano_fifo_put_list
+ */
+
+extern void nano_isr_fifo_put_list(struct nano_fifo *fifo,
+				   void *head, void *tail);
+
+/**
+ *
+ * @brief Atomically add a list of elements to the end of a FIFO from an ISR.
+ *
+ * See nano_fifo_put_slist for the description of the behaviour.
+ *
+ * This is an alias for the execution context-specific API. This is helpful
+ * whenever the exact execution context is known. Its use avoids unnecessary
+ * overhead.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param list pointer to singly-linked list
+ *
+ * @return N/A
+ *
+ * @sa nano_fifo_put_slist
+ */
+
+extern void nano_isr_fifo_put_slist(struct nano_fifo *fifo, sys_slist_t *list);
+
+/**
  * @brief Get an element from the head of a FIFO from an ISR context.
  *
  * Remove the head element from the specified nanokernel FIFO
@@ -585,7 +693,52 @@ extern void *nano_isr_fifo_get(struct nano_fifo *fifo, int32_t timeout_in_ticks)
  *
  * @return N/A
  */
+
 extern void nano_fiber_fifo_put(struct nano_fifo *fifo, void *data);
+
+/**
+ *
+ * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
+ *
+ * See nano_fifo_put_list for the description of the behaviour.
+ *
+ * This is an alias for the execution context-specific API. This is helpful
+ * whenever the exact execution context is known. Its use avoids unnecessary
+ * overhead.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param head head of singly-linked list
+ * @param tail tail of singly-linked list
+ *
+ * @return N/A
+ *
+ * @sa nano_fifo_put_list
+ */
+
+extern void nano_fiber_fifo_put_list(struct nano_fifo *fifo,
+				     void *head, void *tail);
+
+/**
+ *
+ * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
+ *
+ * See nano_fifo_put_slist for the description of the behaviour.
+ *
+ * This is an alias for the execution context-specific API. This is helpful
+ * whenever the exact execution context is known. Its use avoids unnecessary
+ * overhead.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param list pointer to singly-linked list
+ *
+ * @return N/A
+ *
+ * @sa nano_fifo_put_slist
+ */
+
+extern void nano_fiber_fifo_put_slist(struct nano_fifo *fifo,
+				       sys_slist_t *list);
+
 
 /**
  * @brief Get an element from the head of a FIFO from a fiber.
@@ -630,6 +783,48 @@ extern void *nano_fiber_fifo_get(struct nano_fifo *fifo,
  * @return N/A
  */
 extern void nano_task_fifo_put(struct nano_fifo *fifo, void *data);
+
+/**
+ *
+ * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
+ *
+ * See nano_fifo_put_list for the description of the behaviour.
+ *
+ * This is an alias for the execution context-specific API. This is helpful
+ * whenever the exact execution context is known. Its use avoids unnecessary
+ * overhead.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param head head of singly-linked list
+ * @param tail tail of singly-linked list
+ *
+ * @return N/A
+ *
+ * @sa nano_fifo_put_list
+ */
+
+extern void nano_task_fifo_put_list(struct nano_fifo *fifo,
+				    void *head, void *tail);
+
+/**
+ *
+ * @brief Atomically add a list of elements to the end of a FIFO from a fiber.
+ *
+ * See nano_fifo_put_slist for the description of the behaviour.
+ *
+ * This is an alias for the execution context-specific API. This is helpful
+ * whenever the exact execution context is known. Its use avoids unnecessary
+ * overhead.
+ *
+ * @param fifo FIFO on which to interact.
+ * @param list pointer to singly-linked list
+ *
+ * @return N/A
+ *
+ * @sa nano_fifo_put_slist
+ */
+
+extern void nano_task_fifo_put_slist(struct nano_fifo *fifo, sys_slist_t *list);
 
 /**
  * @brief Get an element from a FIFO's head that comes from a task, poll if
