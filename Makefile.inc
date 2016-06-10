@@ -39,9 +39,9 @@ $(error BOARD is not defined!)
 endif
 
 SOURCE_DIR ?= $(PROJECT_BASE)/src/
-override SOURCE_DIR := $(abspath $(SOURCE_DIR))
-# Kbuild doesn't work correctly if SOURCE_DIR is an absolute path
-override SOURCE_DIR := $(subst $(ZEPHYR_BASE),.,$(SOURCE_DIR))/
+# Kbuild doesn't work correctly if this is an absolute path
+# FIXME Do not depend on python
+override SOURCE_DIR := $(shell python -c "import os.path; print(\"%s\" % os.path.relpath(os.path.realpath('$(SOURCE_DIR)'), os.path.realpath('$(ZEPHYR_BASE)')))")/
 override SOURCE_DIR := $(subst \,/,$(SOURCE_DIR))
 export SOURCE_DIR
 
