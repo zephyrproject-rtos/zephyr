@@ -284,7 +284,6 @@ static inline int slip_input_byte(struct slip_context *slip,
 		if (!frag) {
 			SYS_LOG_ERR("[%p] cannot allocate data fragment",
 				    slip);
-			net_nbuf_unref(frag);
 			net_nbuf_unref(slip->rx);
 			slip->rx = NULL;
 			slip->last = NULL;
