@@ -18,7 +18,7 @@
 
 config NET_INIT_PRIO
        int
-       default 10
+       default 90
        help
          Network initialization priority level. This number tells how
 	 early in the boot the network stack is initialized.
