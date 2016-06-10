@@ -84,6 +84,10 @@ hello_world application as an example.
 Flashing a Binary
 -----------------
 
+Make sure a ROM binary has been flashed; the D2000 is flashed without
+it. Instructions on how to build and flash it are in
+https://github.com/01org/qmsi.
+
 #. Since the board has a built-in JTAG; it is possible to flash the device
    through the USB only.  Set the following jumpers to enable the built-in JTAG:
 
