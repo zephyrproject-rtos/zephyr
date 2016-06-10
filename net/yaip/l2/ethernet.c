@@ -26,6 +26,9 @@
 
 #include "net_private.h"
 
+static const struct net_eth_addr multicast_eth_addr = {
+	{ 0x33, 0x33, 0x00, 0x00, 0x00, 0x00 } };
+
 static const struct net_eth_addr broadcast_eth_addr = {
 	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
@@ -161,10 +164,28 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	}
 
 	/* If the destination address is not set, then use broadcast
-	 * address.
+	 * or multicast address.
 	 */
 	if (!net_nbuf_ll_dst(buf)->addr) {
-		net_nbuf_ll_dst(buf)->addr = (uint8_t *)broadcast_eth_addr.addr;
+#if defined(CONFIG_NET_IPV6)
+		if (net_nbuf_family(buf) == AF_INET6 &&
+		    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+			struct net_eth_addr *dst = &NET_ETH_BUF(buf)->dst;
+
+			memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
+			       sizeof(struct net_eth_addr) - 4);
+			memcpy((uint8_t *)dst + 2,
+			       (uint8_t *)(&NET_IPV6_BUF(buf)->dst) + 12,
+			       sizeof(struct net_eth_addr) - 2);
+
+			net_nbuf_ll_dst(buf)->addr = (uint8_t *)dst->addr;
+		} else
+#endif
+		{
+			net_nbuf_ll_dst(buf)->addr =
+				(uint8_t *)broadcast_eth_addr.addr;
+		}
+
 		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
 
 		NET_DBG("Destination address was not set, using %s",
