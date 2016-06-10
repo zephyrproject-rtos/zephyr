@@ -85,6 +85,15 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
        depends on NET_IPV4
        default 1
 
+config NET_MAX_ROUTERS
+       int "How many routers are supported"
+#       default 2 if NET_IPV4 and NET_IPV6
+#       default 1 if NET_IPV4 and !NET_IPV6
+#       default 1 if !NET_IPV4 and NET_IPV6
+       range 1 254
+       help
+         The value depends on your network needs.
+
 config NET_TX_STACK_SIZE
 	int "TX fiber stack size"
 	default 1024

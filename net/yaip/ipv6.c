@@ -850,6 +850,82 @@ drop:
 	return -EINVAL;
 }
 
+int net_ipv6_send_rs(struct net_if *iface)
+{
+	struct net_buf *buf, *frag;
+	bool unspec_src;
+	uint8_t llao_len = 0;
+
+	buf = net_nbuf_get_reserve_tx(0);
+
+	frag = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface));
+
+	net_buf_frag_add(buf, frag);
+
+	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
+	net_nbuf_iface(buf) = iface;
+	net_nbuf_family(buf) = AF_INET6;
+	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
+
+	net_nbuf_ll_clear(buf);
+
+	net_ipv6_addr_create_ll_allnodes_mcast(&NET_IPV6_BUF(buf)->dst);
+
+	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
+			net_if_ipv6_select_src_addr(iface,
+						    &NET_IPV6_BUF(buf)->dst));
+
+	unspec_src = net_is_ipv6_addr_unspecified(&NET_IPV6_BUF(buf)->src);
+	if (!unspec_src) {
+		llao_len = get_llao_len(net_nbuf_iface(buf));
+	}
+
+	setup_headers(buf, sizeof(struct net_icmpv6_rs_hdr) + llao_len,
+		      NET_ICMPV6_RS);
+
+	if (!unspec_src) {
+		set_llao(&net_nbuf_iface(buf)->link_addr,
+			 net_nbuf_icmp_data(buf) +
+			 sizeof(struct net_icmp_hdr) +
+			 sizeof(struct net_icmpv6_rs_hdr),
+			 llao_len, NET_ICMPV6_ND_OPT_SLLAO);
+
+		net_buf_add(frag, sizeof(struct net_ipv6_hdr) +
+			    sizeof(struct net_icmp_hdr) +
+			    sizeof(struct net_icmpv6_rs_hdr) +
+			    llao_len);
+	} else {
+		net_buf_add(frag, sizeof(struct net_ipv6_hdr) +
+			    sizeof(struct net_icmp_hdr) +
+			    sizeof(struct net_icmpv6_rs_hdr));
+	}
+
+	NET_ICMP_BUF(buf)->chksum = 0;
+	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
+
+	dbg_addr_sent("Router Solicitation",
+		      &NET_IPV6_BUF(buf)->src,
+		      &NET_IPV6_BUF(buf)->dst);
+
+	if (net_send_data(buf) < 0) {
+		goto drop;
+	}
+
+	NET_STATS(++net_stats.ipv6_nd.sent);
+
+	return 0;
+
+drop:
+	net_nbuf_unref(buf);
+	NET_STATS(++net_stats.ipv6_nd.drop);
+	return -EINVAL;
+}
+
+int net_ipv6_start_rs(struct net_if *iface)
+{
+	return net_ipv6_send_rs(iface);
+}
+
 static struct net_icmpv6_handler ns_input_handler = {
 	.type = NET_ICMPV6_NS,
 	.code = 0,

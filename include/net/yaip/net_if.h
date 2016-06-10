@@ -109,6 +109,26 @@ struct net_if_ipv6_prefix {
 #endif /* CONFIG_NET_IPV6 */
 
 /**
+ * @brief Information about routers in the system.
+ *
+ * Stores the router information.
+ *
+ */
+struct net_if_router {
+	/** IP address */
+	struct net_addr address;
+
+	/** Is default router */
+	bool is_default;
+
+	/** Is the router valid forever */
+	bool is_infinite;
+
+	/** Router lifetime */
+	struct nano_timer lifetime;
+};
+
+/**
  * @brief Network Interface structure
  *
  * Used to handle a network interface on top of a device driver instance.
@@ -165,6 +185,12 @@ struct net_if {
 	/** IPv6 current duplicate address detection count */
 	uint8_t dad_count;
 #endif /* !CONFIG_NET_IPV6_NO_DAD */
+
+	/** Router solicitation timer */
+	struct nano_delayed_work rs_timer;
+
+	/** RS count */
+	uint8_t rs_count;
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -259,6 +285,12 @@ void net_if_start_dad(struct net_if *iface);
 #endif
 
 /**
+ * @brief Start neighbor discovery and send router solicitation message.
+ * @param iface Pointer to a network interface structure
+ */
+void net_if_start_rs(struct net_if *iface);
+
+/**
  * @brief Set a network interfac's link address
  * @param iface Pointer to a network interface structure
  * @param addr a pointer on a uint8_t buffer representing the address
@@ -273,6 +305,11 @@ static inline void net_if_set_link_addr(struct net_if *iface,
 #if !defined(CONFIG_NET_NO_DAD)
 	NET_DBG("Starting DAD for iface %p", iface);
 	net_if_start_dad(iface);
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+	NET_DBG("Starting ND/RS for iface %p", iface);
+	net_if_start_rs(iface);
 #endif
 }
 

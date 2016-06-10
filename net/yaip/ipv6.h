@@ -41,6 +41,9 @@ int net_ipv6_send_ns(struct net_if *iface, struct net_buf *pending,
 		     struct in6_addr *src, struct in6_addr *dst,
 		     struct in6_addr *tgt, bool is_my_address);
 
+int net_ipv6_start_rs(struct net_if *iface);
+int net_ipv6_send_rs(struct net_if *iface);
+
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);
 #else

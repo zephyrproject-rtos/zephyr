@@ -148,6 +148,35 @@ void net_if_start_dad(struct net_if *iface)
 }
 #endif
 
+#if defined(CONFIG_NET_IPV6)
+#define RS_TIMEOUT (sys_clock_ticks_per_sec)
+#define RS_COUNT 3
+
+static void rs_timeout(struct nano_work *work)
+{
+	/* Did not receive RA yet. */
+	struct net_if *iface = CONTAINER_OF(work, struct net_if, rs_timer);
+
+	iface->rs_count++;
+
+	NET_DBG("RS no respond iface %p count %d", iface, iface->rs_count);
+
+	if (iface->rs_count < RS_COUNT) {
+		net_if_start_rs(iface);
+	}
+}
+
+void net_if_start_rs(struct net_if *iface)
+{
+	NET_DBG("Interface %p", iface);
+
+	if (!net_ipv6_start_rs(iface)) {
+		nano_delayed_work_init(&iface->rs_timer, rs_timeout);
+		nano_delayed_work_submit(&iface->rs_timer, RS_TIMEOUT);
+	}
+}
+#endif /* CONFIG_NET_IPV6 */
+
 struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr)
 {
 #if defined(CONFIG_NET_IPV6)

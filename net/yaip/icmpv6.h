@@ -45,6 +45,10 @@ struct net_icmpv6_na_hdr {
 	struct in6_addr tgt;
 } __packed;
 
+struct net_icmpv6_rs_hdr {
+	uint32_t reserved;
+} __packed;
+
 #define NET_ICMPV6_NS_BUF(buf)						\
 	((struct net_icmpv6_ns_hdr *)(net_nbuf_icmp_data(buf) +		\
 				      sizeof(struct net_icmp_hdr)))
@@ -56,6 +60,10 @@ struct net_icmpv6_na_hdr {
 
 #define NET_ICMPV6_NA_BUF(buf)						\
 	((struct net_icmpv6_na_hdr *)(net_nbuf_icmp_data(buf) +		\
+				      sizeof(struct net_icmp_hdr)))
+
+#define NET_ICMPV6_RS_BUF(buf)						\
+	((struct net_icmpv6_rs_hdr *)(net_nbuf_icmp_data(buf) +		\
 				      sizeof(struct net_icmp_hdr)))
 
 #define NET_ICMPV6_ND_OPT_SLLAO 1
@@ -73,6 +81,7 @@ struct net_icmpv6_na_hdr {
 
 #define NET_ICMPV6_ECHO_REQUEST 128
 #define NET_ICMPV6_ECHO_REPLY   129
+#define NET_ICMPV6_RS           133	/* Router Solicitation */
 #define NET_ICMPV6_NS           135	/* Neighbor Solicitation */
 #define NET_ICMPV6_NA           136	/* Neighbor Advertisement */
 
