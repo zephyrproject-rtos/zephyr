@@ -106,22 +106,13 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 
 void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf)
 {
-	int mask;
+	struct net_buf *tail;
 
-	mask = irq_lock();
-
-	while (buf) {
-		struct net_buf *frag = buf->frags;
-
-		if (frag) {
-			buf->flags |= NET_BUF_FRAGS;
-		}
-
-		nano_fifo_put(fifo, buf);
-		buf = frag;
+	for (tail = buf; tail->frags; tail = tail->frags) {
+		tail->flags |= NET_BUF_FRAGS;
 	}
 
-	irq_unlock(mask);
+	nano_fifo_put_list(fifo, buf, tail);
 }
 
 void net_buf_unref(struct net_buf *buf)
