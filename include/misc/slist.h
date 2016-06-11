@@ -199,6 +199,39 @@ static inline void sys_slist_insert(sys_slist_t *list,
 }
 
 /**
+ * @brief Fetch and remove the first node of the given list
+ *
+ * List must be known to be non-empty.
+ *
+ * @param list A pointer on the list to affect
+ *
+ * @return A pointer to the first node of the list
+ */
+static inline sys_snode_t *sys_slist_get_not_empty(sys_slist_t *list)
+{
+	sys_snode_t *node = list->head;
+
+	list->head = node->next;
+	if (list->tail == node) {
+		list->tail = list->head;
+	}
+
+	return node;
+}
+
+/**
+ * @brief Fetch and remove the first node of the given list
+ *
+ * @param list A pointer on the list to affect
+ *
+ * @return A pointer to the first node of the list (or NULL if empty)
+ */
+static inline sys_snode_t *sys_slist_get(sys_slist_t *list)
+{
+	return sys_slist_is_empty(list) ? NULL : sys_slist_get_not_empty(list);
+}
+
+/**
  * @brief Remove a node
  *
  * @param list A pointer on the list to affect
