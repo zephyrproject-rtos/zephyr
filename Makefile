@@ -49,6 +49,7 @@ unexport GREP_OPTIONS
 
 DQUOTE = "
 #This comment line is to fix the highlighting of some editors due the quote effect."
+export DQUOTE
 
 # We are using a recursive build, so we need to do a little thinking
 # to get the ordering right.
