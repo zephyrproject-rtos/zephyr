@@ -623,8 +623,8 @@ Steps
 
 2.  Download and install the
     `GNU ARM Eclipse Plug-ins <http://sourceforge.net/projects/gnuarmeclipse/>`_,
-    and follow the `online instructions
-    <http://gnuarmeclipse.livius.net/blog/>`_.
+    and follow the online instructions
+    `<http://gnuarmeclipse.livius.net/blog/>`_.
 
 3.  Follow the online instructions to install the
     `GDB Server <https://www.segger.com/jlink-gdb-server.html>`_.
