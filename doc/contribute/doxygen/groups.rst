@@ -25,18 +25,18 @@ The desired entities must be inside the comment block that uses the syntax :lite
 
 .. code-block:: C
 
-      /** @defgroup <GroupLabel> Group Name
-       *  Detailed Description of the Group
-       *  @{
-       */
+   /** @defgroup <GroupLabel> Group Name
+    *  Detailed Description of the Group
+    *  @{
+    */
 
-       /* @brief Brief description of the entity*/
-       <entity1>
+   /* @brief Brief description of the entity*/
+   ENTITY1;
 
-       /* @brief Brief description of the entity*/
-       <entity2>
+   /* @brief Brief description of the entity*/
+   ENTITY2;
 
-      /** @} */ // End of GroupLabel
+   /** @} */ // End of GroupLabel
 
 If you need to add more information that is not listed inside the group block,
 you must use :literal:`@addtogroup <GroupLabel>`.
@@ -46,11 +46,12 @@ Example:
 
 .. code-block:: C
 
-      /** @addtogroup <GroupLabel>
-       *  Optional: This line adds information to the GroupLabel Detailed Description of the Group
-       *  @{
-       */
+   /** @addtogroup <GroupLabel>
+    *  Optional: This line adds information to the GroupLabel Detailed Description of the Group
+    *  @{
+    */
 
-       /* The entities you want to add must be inserted inside before the close block*/
+   /* The entities you want to add must be inserted inside before the close block*/
 
-      /** @} // End of addtogroup GroupLabel
+   /** @} // End of addtogroup GroupLabel */
+
