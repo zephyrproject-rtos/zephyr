@@ -673,16 +673,14 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 
 	switch (timeout) {
 	case TICKS_UNLIMITED:
-		buf = nano_fifo_get(rx_queue, TICKS_UNLIMITED);
-		break;
 	case TICKS_NONE:
-		buf = nano_fifo_get(rx_queue, TICKS_NONE);
+		buf = net_buf_get_timeout(rx_queue, 0, timeout);
 		break;
 	default:
 #ifdef CONFIG_NANO_TIMEOUTS
 		buf = buf_wait_timeout(rx_queue, timeout);
 #else /* CONFIG_NANO_TIMEOUTS */
-		buf = nano_fifo_get(rx_queue, TICKS_NONE);
+		buf = net_buf_get_timeout(rx_queue, 0, TICKS_NONE);
 #endif
 		break;
 	}
@@ -841,7 +839,7 @@ static void net_tx_fiber(void)
 		int ret;
 
 		/* Get next packet from application - wait if necessary */
-		buf = nano_fifo_get(&netdev.tx_queue, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&netdev.tx_queue, 0, TICKS_UNLIMITED);
 
 		NET_DBG("Sending (buf %p, len %u) to IP stack\n",
 			buf, buf->len);
@@ -885,7 +883,7 @@ static void net_rx_fiber(void)
 		sizeof(rx_fiber_stack));
 
 	while (1) {
-		buf = nano_fifo_get(&netdev.rx_queue, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&netdev.rx_queue, 0, TICKS_UNLIMITED);
 
 		/* Check stack usage (no-op if not enabled) */
 		net_analyze_stack("RX fiber", rx_fiber_stack,

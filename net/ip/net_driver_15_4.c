@@ -106,7 +106,7 @@ static void net_rx_15_4_fiber(void)
 
 	while (1) {
 		/* Wait next packet from 15.4 stack */
-		buf = nano_fifo_get(&rx_queue, TICKS_UNLIMITED);
+		buf = net_buf_get_timeout(&rx_queue, 0, TICKS_UNLIMITED);
 
 #if NET_MAC_CONF_STATS
 		byte_count = uip_pkt_buflen(buf);
