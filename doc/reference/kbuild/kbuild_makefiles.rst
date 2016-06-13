@@ -63,7 +63,7 @@ example, if the option :option:`CONFIG_VAR` is set and it implies that a source
 file must be added in the compilation process, then the following line adds the
 source code conditionally:
 
-.. code-block:: make
+.. code-block:: none
 
    obj-$(CONFIG_VAR) += <file>.o
 
@@ -88,9 +88,9 @@ an additional lever of recursion.
 
 Directories can also be conditionally added:
 
-.. code-block:: make
+.. code-block:: none
 
-   oby-$(CONFIG_VAR) += <directory_name>/
+   obj-y-$(CONFIG_VAR) += <directory_name>/
 
 The subdirectory must contain its own Makefile following the rules described in
 :ref:`makefile_conventions`.

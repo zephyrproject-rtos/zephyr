@@ -134,15 +134,15 @@ This code waits up to 5 ticks for an 80 byte memory block to become
 available and gives a warning if a suitable memory block is not obtained
 in that time.
 
-.. code-block:: c
+.. code-block:: none
 
-  struct k_block block;
+   struct k_block block;
 
-  if (task_mem_pool_alloc(&block, MYPOOL, 80, 5) == RC_OK) {
-      /* use memory block */
-  } else {
-      printf('Memory allocation timeout');
-  }
+   if (task_mem_pool_alloc(:&block, MYPOOL, 80, 5) == RC_OK) {
+           /* use memory block */
+   } else {
+           printf('Memory allocation timeout');
+   }
 
 Example: Requesting a Memory Block from a Pool with a No-Blocking Condition
 ===========================================================================
@@ -150,15 +150,15 @@ Example: Requesting a Memory Block from a Pool with a No-Blocking Condition
 This code gives an immediate warning when it can not satisfy the request for
 a memory block of 80 bytes.
 
-.. code-block:: c
+.. code-block:: none
 
-  struct k_block block;
+   struct k_block block;
 
-  if (task_mem_pool_alloc (&block, MYPOOL, 80, TICKS_NONE) == RC_OK) {
-      /* use memory block */
-  } else {
-      printf('Memory allocation timeout');
-  }
+   if (task_mem_pool_alloc (&block, MYPOOL, 80, TICKS_NONE) == RC_OK) {
+           /* use memory block */
+   } else {
+           printf('Memory allocation timeout');
+   }
 
 Example: Freeing a Memory Block Back to a Pool
 ==============================================
