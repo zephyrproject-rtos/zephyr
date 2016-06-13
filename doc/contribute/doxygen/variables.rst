@@ -29,7 +29,7 @@ the best practices.
 
 .. literalinclude:: phil_fiber_commented.c
    :language: c
-   :lines: 110-168
+   :lines: 92-160
    :emphasize-lines: 15, 18, 21-23, 25, 31
    :linenos:
 
@@ -53,9 +53,8 @@ Example 2
 =========
 Variables outside of functions must be documented as well.
 
-.. literalinclude:: hello_commented.c
-   :language: c
-   :lines: 133-140
+.. literalinclude:: ./hello_commented.c
+   :lines: 119-127
    :emphasize-lines: 1, 4, 7
    :linenos:
 
