@@ -318,18 +318,19 @@ table depending on the range of flexibility and performance
 needed. The two following kconfig options drive the interrupt
 table options:
 
-:option:`SW_ISR_TABLE` and :option:`SW_ISR_TABLE_DYNAMIC`
+:option:`CONFIG_SW_ISR_TABLE` and :option:`CONFIG_SW_ISR_TABLE_DYNAMIC`
 
 Depending on whether static tables are provided by the platform
 configuration or by the application, two other kconfig options
 are available:
 
-:option:`SW_ISR_TABLE_STATIC_CUSTOM` and
-:option:`IRQ_VECTOR_TABLE_CUSTOM`
+:option:`CONFIG_SW_ISR_TABLE_STATIC_CUSTOM` and
+:option:`CONFIG_IRQ_VECTOR_TABLE_CUSTOM`
 
 The following interrupt table scenarios exist:
 
-:option:`SW_ISR_TABLE=y`, :option:`SW_ISR_TABLE_DYNAMIC=y`
+:option:`CONFIG_SW_ISR_TABLE`\=y, :option:`CONFIG_SW_ISR_TABLE_DYNAMIC`\=y
+
    For maximum ease of use, maximum flexibility, a larger
    footprint, and weaker performance.
 
@@ -358,7 +359,7 @@ The following interrupt table scenarios exist:
    care of the exception handling epilogue because the
    handler is installed directly in the vector table.
 
-:option:`SW_ISR_TABLE=y`, :option:`SW_ISR_TABLE_DYNAMIC=n`
+:option:`CONFIG_SW_ISR_TABLE`\=y, :option:`CONFIG_SW_ISR_TABLE_DYNAMIC`\=n
    For advanced use, medium flexibility, a medium footprint,
    and medium performance.
 
@@ -375,7 +376,7 @@ The following interrupt table scenarios exist:
    provides their own :file:`sw_isr_table.c`, the type can be found
    by including :file:`sw_isr_table.h`.
 
-:option:`SW_ISR_TABLE=n`
+:option:`CONFIG_SW_ISR_TABLE`\=n
    For advanced use, no flexibility, the best footprint, and
    the best performance.
 
@@ -398,47 +399,47 @@ The following interrupt table scenarios exist:
 .. note::
    This configuration prevents the use of tickless idle.
 
-:option:`SW_ISR_TABLE=y`, :option:`SW_ISR_TABLE_STATIC_CUSTOM=y`
+:option:`CONFIG_SW_ISR_TABLE`\=y, :option:`CONFIG_SW_ISR_TABLE_STATIC_CUSTOM`\=y
    For overriding the static ISR tables defined by the platform:
 
    In this setup, the platform provides the **_irq_vector_table**
    symbol and data in :file:`sw_isr_table.s`.
 
-:option:`SW_ISR_TABLE=n`, :option:`IRQ_VECTOR_TABLE_CUSTOM=y`
+:option:`CONFIG_SW_ISR_TABLE`\=n, :option:`CONFIG_IRQ_VECTOR_TABLE_CUSTOM`\=y
    In this setup, the platform provides the **_irq_vector_table** symbol
    and data in `irq_vector_table.c`.
 
 Configuration Options
 =====================
 
-:option:`LDREX_STREX_AVAILABLE`
+:option:`CONFIG_LDREX_STREX_AVAILABLE`
       Set to 'n' when the ldrex/strex instructions are not available.
 
-:option:`DATA_ENDIANNESS_LITTLE`
+:option:`CONFIG_DATA_ENDIANNESS_LITTLE`
       Set to 'n' when the data sections are big endian.
 
-:option:`STACK_ALIGN_DOUBLE_WORD`
+:option:`CONFIG_STACK_ALIGN_DOUBLE_WORD`
       Set to 'n' only when there is a good reason to do it.
 
-:option:`NUM_IRQ_PRIO_BITS`
+:option:`CONFIG_NUM_IRQ_PRIO_BITS`
       The board configuration sets this to the correct value for the board
       ("4" for FRDM board, IIRC).
 
-:option:`RUNTIME_NMI`
+:option:`CONFIG_RUNTIME_NMI`
       The kernel provides a simple NMI handler that simply
       hangs in a tight loop if triggered. This fills the
       requirement that there must be an NMI handler installed
       when the CPU boots.If a custom handler is needed,
       enable this option and attach it via _NmiHandlerSet().
 
-:option:`NUM_IRQS`
+:option:`CONFIG_NUM_IRQS`
       The board configuration sets this value to the correct number of
       interrupts available on the board. The default is '34'.
 
-:option:`SW_ISR_TABLE`
+:option:`CONFIG_SW_ISR_TABLE`
       Set to 'n' when the board configuration does not provide one.
 
-:option:`SW_ISR_TABLE_DYNAMIC`
+:option:`CONFIG_SW_ISR_TABLE_DYNAMIC`
       Set to 'n' to override the default.
 
 System Clock
