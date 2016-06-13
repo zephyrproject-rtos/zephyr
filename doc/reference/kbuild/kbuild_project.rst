@@ -129,21 +129,21 @@ changed using Kconfig.
 QEMU is the supported emulation system of the kernel. QEMU must be invoked
 with the -s and -S options.
 
-* :option:`-S` Do not start CPU at startup; rather, you must type 'c' in the
+* ``-S`` Do not start CPU at startup; rather, you must type 'c' in the
   monitor.
-* :option:`-s` Shorthand for :literal:`-gdb tcp::1234`: open a GDB server on
+* ``-s`` Shorthand for :literal:`-gdb tcp::1234`: open a GDB server on
   TCP port 1234.
 
 The build system can build the elf binary and call the QEMU process with
 the :makevar:`qemu` target. The QEMU debug options can be set using the
-environment variable :envvar:`QEMU_EXTRA_FLAGS`. To set the :option:`-s` and
-:option:`-S` options:
+environment variable :envvar:`QEMU_EXTRA_FLAGS`. To set the ``-s`` and
+``-S`` options:
 
 .. code-block:: bash
 
     export QEMU_EXTRA_FLAGS="-s -S"
 
-The build and emulation processes are called with the Makefile :option:`qemu`
+The build and emulation processes are called with the Makefile ``qemu``
 target:
 
 .. code-block:: bash
@@ -169,7 +169,7 @@ reference. The :file:`.gdbinit` file contains the following lines:
    Substitute ZEPHYR_BASE for the current kernel's root directory.
 
 Execute the application to debug from the same directory that you chose for
-the :file:`gdbinit` file. The command can include the :option:`--tui` option
+the :file:`gdbinit` file. The command can include the ``--tui`` option
 to enable the use of a terminal user interface. The following commands
 connects to the GDB server using :file:`gdb`. The command loads the symbol
 table from the elf binary file. In this example, the elf binary file name

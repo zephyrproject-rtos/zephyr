@@ -25,13 +25,12 @@ they add to the configuration menus. For example:
 * The Kconfig file at the :file:`drivers` directory organizes the inclusion of
   the various Kconfig files needed for each supported driver in the system.
 
-* The Kconfig file at the :file:`misc` directory contains the configuration
-  symbols that affect different aspects of the build system. For example,
-  the :option:`Custom Compiler Options` and the :option:`Minimal Libc` are
-  general build options that apply to the build system.
-  :option:`Debugging Options` and :option:`System
-  Monitoring Options` are also examples of build options that apply to the
-  entire system.
+* The Kconfig file at the :file:`misc` directory contains the
+  configuration symbols that affect different aspects of the build
+  system. For example, the *Custom Compiler Options* and the
+  ``Minimal Libc`` are general build options that apply to the build
+  system.  *Debugging Options* and *System Monitoring Options* are
+  also examples of build options that apply to the entire system.
 
 * The Kconfig file at the :file:`net` directory contains the different symbols
   that define the configuration options for the communications stack code.

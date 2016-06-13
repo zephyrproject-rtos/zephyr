@@ -112,8 +112,8 @@ files should be included with:
    #include <subdirectory/header.h>
 
 For example, if you have two files, :file:`include/pci.h` and
-:file:`include/drivers/pci.h`, and have set both :option:`-Iinclude/drivers`
-and :option:`-Iinclude` for your compile, then any code using
+:file:`include/drivers/pci.h`, and have set both ``-Iinclude/drivers``
+and ``-Iinclude`` for your compile, then any code using
 
 .. code-block:: c
 
@@ -125,7 +125,7 @@ becomes ambiguous, while
 
    #include <drivers/pci.h>
 
-is not. Not having :option:`-Iinclude/drivers` forces users to use the second
+is not. Not having ``-Iinclude/drivers`` forces users to use the second
 form which is more explicit.
 
 Return Codes
@@ -175,7 +175,7 @@ In general, follow the `Linux kernel coding style`_, with the following
 exceptions:
 
 * Add braces to every ``if`` and ``else`` body, even for single-line code
-  blocks. Use the :option:`--ignore BRACES` flag to make :program:`checkpatch`
+  blocks. Use the ``--ignore BRACES`` flag to make :program:`checkpatch`
   stop complaining.
 * Use hard tab stops. Set the tab width 8 spaces. Break lines at 80 characters.
   If you are trying to align comments after declarations, use spaces instead of

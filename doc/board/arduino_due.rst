@@ -199,7 +199,7 @@ be found in :file:`$ZEPHYR_BASE/samples/hello_world/nanokernel`.
 
       $ minicom -D /dev/ttyACM0 -o
 
-   The :option:`-o` option tells minicom not to send the modem initialization
+   The ``-o`` option tells minicom not to send the modem initialization
    string.
 
 #. Press the Reset button and you should see "Hello World!" in your terminal.

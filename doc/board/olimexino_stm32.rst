@@ -384,7 +384,7 @@ button :file:`$ZEPHYR_BASE/samples/drivers/button`.
 
       $ minicom -D /dev/ttyUSB0 -b 115200
 
-   The :option:`-b` option sets baudrate ignoring the value
+   The ``-b`` option sets baudrate ignoring the value
    from config.
 
 #. Press the Reset button and you should see the output of

@@ -59,7 +59,7 @@ following line should be added in the Makefile:
    The same method applies for assembly files with .s extension.
 
 Source files can be added conditionally using configuration options.  For
-example, if the option :option:`CONFIG_VAR` is set and it implies that a source
+example, if the option ``CONFIG_VAR`` is set and it implies that a source
 file must be added in the compilation process, then the following line adds the
 source code conditionally:
 
