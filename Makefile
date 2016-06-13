@@ -569,8 +569,8 @@ $(if $(CROSS_COMPILE),, \
 endif
 
 
--include $(srctree)/lib/Makefile
 -include $(srctree)/ext/Makefile
+-include $(srctree)/lib/Makefile
 
 ifneq ($(CC),)
 ifeq ($(shell $(CC) -v 2>&1 | grep -Ec "clang version|icx version"), 1)
