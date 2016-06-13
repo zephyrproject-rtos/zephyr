@@ -26,12 +26,27 @@ menuconfig ADC
 	help
 	Enable ADC (Analog to Digital Converter) driver configuration
 
-config ADC_DEBUG
-	bool "ADC drivers debug output"
+config SYS_LOG_ADC_LEVEL
+	int
+	prompt "ADC drivers log level"
 	depends on ADC
-	default n
+	default 0
+	range 0 4
 	help
-	Enable debug output for ADC drivers
+
+	Sets log level for ADC driver.
+
+	Levels are:
+
+	- 0 OFF, do not write
+
+	- 1 ERROR, only write SYS_LOG_ERR
+
+	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+
+	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+
+	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
 config ADC_INIT_PRIORITY
 	int

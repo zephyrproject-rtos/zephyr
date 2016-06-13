@@ -20,28 +20,19 @@
 
 #include <nanokernel.h>
 #include <misc/util.h>
+#define SYS_LOG_NO_NEWLINE
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ADC_LEVEL
+#include <misc/sys_log.h>
 #include <string.h>
 #include <init.h>
 
 #include "adc_ti_adc108s102.h"
 
-#ifndef CONFIG_ADC_DEBUG
-#define DBG(...) { ; }
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_ADC_DEBUG */
-
 static inline int _ti_adc108s102_sampling(struct device *dev)
 {
 	struct ti_adc108s102_data *adc = dev->driver_data;
 
-	DBG("Sampling!\n");
+	SYS_LOG_DBG("Sampling!\n");
 
 	/* SPI deals with uint8_t buffers so multiplying by 2 the length */
 	return spi_transceive(adc->spi, adc->cmd_buffer,
@@ -58,7 +49,7 @@ static inline void _ti_adc108s102_handle_result(struct device *dev)
 	struct adc_seq_entry *entry;
 	uint32_t s_i, i;
 
-	DBG("_ti_adc108s102_handle_result()");
+	SYS_LOG_DBG("_ti_adc108s102_handle_result()");
 
 	for (i = 0, s_i = 1; i < seq_table->num_entries; i++, s_i++) {
 		entry = &seq_table->entries[i];
@@ -95,7 +86,7 @@ static inline int32_t _ti_adc108s102_prepare(struct device *dev)
 			continue;
 		}
 
-		DBG("Requesting channel %d\n", entry->channel_id);
+		SYS_LOG_DBG("Requesting channel %d\n", entry->channel_id);
 		adc->cmd_buffer[adc->cmd_buf_len] =
 				ADC108S102_CHANNEL_CMD(entry->channel_id);
 
@@ -113,7 +104,7 @@ static inline int32_t _ti_adc108s102_prepare(struct device *dev)
 	adc->cmd_buffer[adc->cmd_buf_len] = 0;
 	adc->cmd_buf_len++;
 
-	DBG("ADC108S102 is prepared...");
+	SYS_LOG_DBG("ADC108S102 is prepared...");
 
 	return sampling_delay;
 }
@@ -226,7 +217,7 @@ int ti_adc108s102_init(struct device *dev)
 		return -EPERM;
 	}
 
-	DBG("ADC108s102 initialized\n");
+	SYS_LOG_DBG("ADC108s102 initialized\n");
 
 	dev->driver_api = &ti_adc108s102_api;
 
