@@ -38,7 +38,7 @@ A common application project is composed of the following files:
   different directory.
 
    * **Makefile**: Adds the developer's source code into the build system's
-   recursion model.
+     recursion model.
 
 The application's source code can be organized in subdirectories.
 Each directory must follow the Kbuild Makefile conventions; see
@@ -130,9 +130,9 @@ QEMU is the supported emulation system of the kernel. QEMU must be invoked
 with the -s and -S options.
 
 * :option:`-S` Do not start CPU at startup; rather, you must type 'c' in the
-monitor.
+  monitor.
 * :option:`-s` Shorthand for :literal:`-gdb tcp::1234`: open a GDB server on
-TCP port 1234.
+  TCP port 1234.
 
 The build system can build the elf binary and call the QEMU process with
 the :makevar:`qemu` target. The QEMU debug options can be set using the

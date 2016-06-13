@@ -542,7 +542,7 @@ operations:
    #. The PMA returns the :code:`SYS_PM_LOW_POWER_STATE` code.
 
 * If the time allotted is not enough for the :code:`SYS_PM_LOW_POWER_STATE`
-policy, the PMA returns the :code:`SYS_PM_DEVICE_SUSPEND_ONLY` code.
+  policy, the PMA returns the :code:`SYS_PM_DEVICE_SUSPEND_ONLY` code.
 
 When a device fails to suspend, the PMA executes the following operations:
 

@@ -156,7 +156,7 @@ On your development environment, you will need to:
 * Open a serial port emulator (i.e. on Linux minicom, putty, screen, etc)
 
 * Specify the tty driver name, for example, on Linux this may be
- :file:`/dev/ttyUSB1`
+  :file:`/dev/ttyUSB1`
 
 * Set the communication settings to:
 
