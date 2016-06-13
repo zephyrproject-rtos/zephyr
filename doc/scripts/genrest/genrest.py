@@ -31,7 +31,7 @@ def print_items(items, outdir, indent):
             var = "CONFIG_%s" %item.get_name()
             if not var in done:
                 done.append(var)
-                f.write("   * - :ref:`%s`\n" %var)
+                f.write("   * - :option:`%s`\n" %var)
                 if len(item.get_prompts()) > 0:
                     p = item.get_prompts()[0]
                 else:
@@ -39,9 +39,8 @@ def print_items(items, outdir, indent):
                 f.write("     - %s\n" %p)
                 config = open("%s/%s.rst" % (outdir, var), "w")
                 config.write(":orphan:\n\n")
+                config.write(".. option:: CONFIG_%s:\n" %item.get_name())
                 config.write(".. _CONFIG_%s:\n" %item.get_name())
-                config.write("\n%s\n" %var)
-                config.write("%s\n\n" %(len("%s" %var) * '#' ))
                 if text:
                     config.write("\n%s\n\n" %text)
                 else:

@@ -1682,10 +1682,10 @@ class Config(object):
                 selects_str_rows = []
                 for target, cond_expr in sc.orig_selects:
                     if cond_expr is None:
-                        selects_str_rows.append(" :ref:`CONFIG_{0}`".format(target.name))
+                        selects_str_rows.append(" :option:`CONFIG_{0}`".format(target.name))
                     else:
                         selects_str_rows.append(
-                          " :ref:`CONFIG_{0}` if {1}".format(target.name,
+                          " :option:`CONFIG_{0}` if {1}".format(target.name,
                                                self._expr_val_str(cond_expr)))
                 selects_str = "\n * "
                 selects_str += "\n * ".join(selects_str_rows)
@@ -1848,10 +1848,10 @@ class Config(object):
                 selects_str_rows = []
                 for target, cond_expr in sc.orig_selects:
                     if cond_expr is None:
-                        selects_str_rows.append(" :ref:`CONFIG_{0}`".format(target.name))
+                        selects_str_rows.append(" :option:`CONFIG_{0}`".format(target.name))
                     else:
                         selects_str_rows.append(
-                          " :ref:`CONFIG_{0}` if {1}".format(target.name,
+                          " :option:`CONFIG_{0}` if {1}".format(target.name,
                                                self._expr_val_str(cond_expr)))
                 selects_str = "\n".join(selects_str_rows)
 
