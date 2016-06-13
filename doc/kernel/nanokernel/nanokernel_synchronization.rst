@@ -119,12 +119,15 @@ The following APIs for a nanokernel semaphore are provided
 by :file:`nanokernel.h`:
 
 :cpp:func:`nano_sem_init()`
+
    Initialize a semaphore.
 
 :cpp:func:`nano_task_sem_give()`, :cpp:func:`nano_fiber_sem_give()`,
 :cpp:func:`nano_isr_sem_give()`, :cpp:func:`nano_sem_give()`
+
    Signal a sempahore.
 
 :cpp:func:`nano_task_sem_take()`, :cpp:func:`nano_fiber_sem_take()`,
 :cpp:func:`nano_isr_sem_take()`, :cpp:func:`nano_sem_take()`
+
    Wait on a semaphore for a specified time period.

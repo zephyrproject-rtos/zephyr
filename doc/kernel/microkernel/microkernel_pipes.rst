@@ -15,8 +15,11 @@ but not yet received; alternatively, the pipe may have no ring buffer.
 Pipes can be used to transfer chunks of data in whole or in part, and either
 synchronously or asynchronously.
 
-Any number of pipes can be defined in a microkernel system. Each pipe needs
+Any number of pipes can be defined in a microkernel system. Each pipe
+needs
+
 * A **name** to uniquely identify it.
+
 * A **size**, in bytes, of the ring buffer. Note that a size of zero defines
   a pipe with no ring buffer.
 

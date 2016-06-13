@@ -281,27 +281,33 @@ APIs affecting the currently-executing fiber are provided
 by :file:`microkernel.h` and by :file:`nanokernel.h`:
 
 :cpp:func:`fiber_yield()`
+
    Yield the CPU to higher priority and equal priority fibers.
 
 :cpp:func:`fiber_sleep()`
+
    Yield the CPU for a specified time period.
 
 :cpp:func:`fiber_abort()`
+
    Terminate fiber execution.
 
-APIs affecting a specified fiber are provided by
-:file:`microkernel.h` and by :file:`nanokernel.h`:
+APIs affecting a specified fiber are provided by :file:`microkernel.h`
+and by :file:`nanokernel.h`:
 
 :cpp:func:`task_fiber_start()`, :cpp:func:`fiber_fiber_start()`,
 :cpp:func:`fiber_start()`
+
    Spawn a new fiber.
 
 :cpp:func:`task_fiber_delayed_start()`,
 :cpp:func:`fiber_fiber_delayed_start()`,
 :cpp:func:`fiber_delayed_start()`
+
    Spawn a new fiber after a specified time period.
 
 :cpp:func:`task_fiber_delayed_start_cancel()`,
 :cpp:func:`fiber_fiber_delayed_start_cancel()`,
 :cpp:func:`fiber_delayed_start_cancel()`
+
    Cancel spawning of a new fiber, if not already started.

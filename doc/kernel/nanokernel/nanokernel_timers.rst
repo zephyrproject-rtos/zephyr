@@ -156,19 +156,24 @@ APIs for a nanokernel timer provided by :file:`nanokernel.h`
 ============================================================
 
 :cpp:func:`nano_timer_init()`
+
    Initialize a timer.
 
 :cpp:func:`nano_task_timer_start()`, :cpp:func:`nano_fiber_timer_start()`,
 :cpp:func:`nano_isr_timer_start()`, :cpp:func:`nano_timer_start()`
+
    Start a timer.
 
 :cpp:func:`nano_task_timer_test()`, :cpp:func:`nano_fiber_timer_test()`,
 :cpp:func:`nano_isr_timer_test()`, :cpp:func:`nano_timer_test()`
+
    Wait or test for timer expiration.
 
 :cpp:func:`nano_task_timer_stop()`, :cpp:func:`nano_fiber_timer_stop()`,
 :cpp:func:`nano_isr_timer_stop()`, :cpp:func:`nano_timer_stop()`
+
    Force timer expiration, if not already expired.
 
 :cpp:func:`nano_timer_ticks_remain()`
+
    Return timer ticks before timer expiration.

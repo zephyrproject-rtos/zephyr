@@ -129,13 +129,16 @@ APIs
 The following APIs for a nanokernel FIFO are provided by :file:`nanokernel.h`:
 
 :cpp:func:`nano_fifo_init()`
+
    Initializes a FIFO.
 
 :cpp:func:`nano_task_fifo_put()`, :cpp:func:`nano_fiber_fifo_put()`,
 :cpp:func:`nano_isr_fifo_put()`, :cpp:func:`nano_fifo_put()`
+
    Add an item to a FIFO.
 
 :cpp:func:`nano_task_fifo_get()`, :cpp:func:`nano_fiber_fifo_get()`,
 :cpp:func:`nano_isr_fifo_get()`, :cpp:func:`nano_fifo_get()`
-   Remove an item from a FIFO, or waits for an item for a specified time
-   period if it is empty.
+
+   Remove an item from a FIFO, or waits for an item for a specified
+   time period if it is empty.

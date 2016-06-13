@@ -127,13 +127,16 @@ APIs
 The following APIs for a nanokernel LIFO are provided by :file:`nanokernel.h`:
 
 :cpp:func:`nano_lifo_init()`
+
    Initializes a LIFO.
 
 :cpp:func:`nano_task_lifo_put()`, :cpp:func:`nano_fiber_lifo_put()`,
 :cpp:func:`nano_isr_lifo_put()`, :cpp:func:`nano_lifo_put()`
+
    Add an item to a LIFO.
 
 :cpp:func:`nano_task_lifo_get()`, :cpp:func:`nano_fiber_lifo_get()`,
 :cpp:func:`nano_isr_lifo_get()`, :cpp:func:`nano_lifo_get()`
-   Remove an item from a LIFO, or waits for an item for a specified time
-   period if it is empty.
+
+   Remove an item from a LIFO, or waits for an item for a specified
+   time period if it is empty.
