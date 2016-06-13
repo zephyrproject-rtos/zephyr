@@ -52,6 +52,8 @@
 #include <arch/cpu.h>
 
 #include <misc/__assert.h>
+#define SYS_LOG_LEVEL SYS_LOG_SPI_LEVEL
+#include <misc/sys_log.h>
 #include <board.h>
 #include <init.h>
 
@@ -61,19 +63,6 @@
 #include <spi.h>
 #include <spi/spi_k64.h>
 #include "spi_k64_priv.h"
-
-#ifndef CONFIG_SPI_DEBUG
-#define DBG(...) do { } while ((0))
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_SPI_DEBUG */
-
 
 /* SPI protocol frequency = K64 bus clock frequency, in hz */
 
@@ -128,7 +117,8 @@ static inline void spi_k64_halt(struct device *dev)
 	sys_set_bit((info->regs + SPI_K64_REG_MCR), SPI_K64_MCR_HALT_BIT);
 
 	while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TXRXS) {
-		DBG("SPI Controller dev %p is running.  Waiting for Halt.\n", dev);
+		SYS_LOG_DBG("SPI Controller dev %p is running.  Waiting for "
+			    "Halt.\n", dev);
 	}
 
 }
@@ -192,7 +182,7 @@ static uint32_t spi_k64_set_baud_rate(uint32_t baud_rate, uint32_t *ctar_ptr)
 	 * exceeding it.
 	 */
 
-	DBG("spi_k64_set_baud_rate - ");
+	SYS_LOG_DBG("spi_k64_set_baud_rate - ");
 
 	/*
 	 * Initialize the prescaler and scaler to their maximum values to calculate
@@ -206,9 +196,8 @@ static uint32_t spi_k64_set_baud_rate(uint32_t baud_rate, uint32_t *ctar_ptr)
 							baud_rate_prescaler[best_scaler]);
 
 	if (best_baud_rate > baud_rate) {
-
-		DBG("ERROR : Minimum baud rate %d is greater than desired rate %d\n",
-			best_baud_rate, baud_rate);
+		SYS_LOG_DBG("ERROR : Minimum baud rate %d is greater than "
+			    "desired rate %d\n", best_baud_rate, baud_rate);
 
 		return 0;
 	}
@@ -263,7 +252,7 @@ static uint32_t spi_k64_set_baud_rate(uint32_t baud_rate, uint32_t *ctar_ptr)
 
 	/* return the actual baud rate */
 
-	DBG("%d bps desired, %d bps set\n", baud_rate, best_baud_rate);
+	SYS_LOG_DBG("%d bps desired, %d bps set\n", baud_rate, best_baud_rate);
 
 	return best_baud_rate;
 }
@@ -298,7 +287,7 @@ static uint32_t spi_k64_set_delay(enum spi_k64_delay_id delay_id,
 	volatile uint32_t best_delay;
 	uint32_t diff, min_diff;					/* difference values */
 
-	DBG("spi_k64_set_delay - ");
+	SYS_LOG_DBG("spi_k64_set_delay - ");
 
 	/*
 	 * This function can calculate the clocking and timing attribute register
@@ -311,7 +300,7 @@ static uint32_t spi_k64_set_delay(enum spi_k64_delay_id delay_id,
 	if ((delay_id != DELAY_PCS_TO_SCK) && (delay_id != DELAY_AFTER_SCK) &&
 		(delay_id != DELAY_AFTER_XFER)) {
 
-		DBG("ERROR : Unknown delay type %d\n", delay_id);
+		SYS_LOG_DBG("ERROR : Unknown delay type %d\n", delay_id);
 
 		return 0;
 	}
@@ -327,9 +316,8 @@ static uint32_t spi_k64_set_delay(enum spi_k64_delay_id delay_id,
 				 delay_scaler[best_scaler];
 
 	if (best_delay < delay_ns) {
-
-		DBG("ERROR : Maximum delay %d does meet desired minimum of %d\n",
-			best_delay, delay_ns);
+		SYS_LOG_DBG("ERROR : Maximum delay %d does meet desired minimum"
+			    " of %d\n", best_delay, delay_ns);
 
 		return 0;
 	}
@@ -394,19 +382,19 @@ static uint32_t spi_k64_set_delay(enum spi_k64_delay_id delay_id,
 	case DELAY_PCS_TO_SCK:
 		*ctar_ptr = *ctar_ptr | SPI_K64_CTAR_PCSSCK_SET(best_prescaler) |
 					SPI_K64_CTAR_CSSCK_SET(best_scaler);
-		DBG("DELAY_PCS_TO_SCK: ");
+		SYS_LOG_DBG("DELAY_PCS_TO_SCK: ");
 		break;
 
 	case DELAY_AFTER_SCK:
 		*ctar_ptr = *ctar_ptr | SPI_K64_CTAR_PASC_SET(best_prescaler) |
 					SPI_K64_CTAR_ASC_SET(best_scaler);
-		DBG("DELAY_AFTER_SCK: ");
+		SYS_LOG_DBG("DELAY_AFTER_SCK: ");
 		break;
 
 	case DELAY_AFTER_XFER:
 		*ctar_ptr = *ctar_ptr | SPI_K64_CTAR_PDT_SET(best_prescaler) |
 					SPI_K64_CTAR_DT_SET(best_scaler);
-		DBG("DELAY_AFTER_XFER: ");
+		SYS_LOG_DBG("DELAY_AFTER_XFER: ");
 		break;
 
 	default:
@@ -416,7 +404,7 @@ static uint32_t spi_k64_set_delay(enum spi_k64_delay_id delay_id,
 
 	/* return the actual delay */
 
-	DBG("%d delay desired, %d delay set\n", delay_ns, best_delay);
+	SYS_LOG_DBG("%d delay desired, %d delay set\n", delay_ns, best_delay);
 
 	return best_delay;
 }
@@ -438,9 +426,10 @@ static int spi_k64_configure(struct device *dev, struct spi_config *config)
 	uint32_t ctar = 0;	/* clocking and timing attributes, for CTAR */
 	uint32_t frame_sz;	/* frame size, in bits */
 
-	DBG("spi_k64_configure: dev %p (regs @ 0x%x), ", dev, info->regs);
-	DBG("config 0x%x, freq 0x%x",
-		config->config, config->max_sys_freq);
+	SYS_LOG_DBG("spi_k64_configure: dev %p (regs @ 0x%x), ", dev,
+		    info->regs);
+	SYS_LOG_DBG("config 0x%x, freq 0x%x",
+		    config->config, config->max_sys_freq);
 
 	 /* Disable transfer operations during configuration */
 
@@ -517,7 +506,7 @@ static int spi_k64_configure(struct device *dev, struct spi_config *config)
 	}
 
 
-	DBG("spi_k64_configure: MCR: 0x%x CTAR0: 0x%x\n", mcr, ctar);
+	SYS_LOG_DBG("spi_k64_configure: MCR: 0x%x CTAR0: 0x%x\n", mcr, ctar);
 
 	sys_write32(ctar, (info->regs + SPI_K64_REG_CTAR0));
 
@@ -559,7 +548,7 @@ static int spi_k64_slave_select(struct device *dev, uint32_t slave)
 	 * - SPI2 uses PCS0-1;
 	 */
 
-	DBG("spi_k64_slave_select: slave 0x%x selected for dev %p\n",
+	SYS_LOG_DBG("spi_k64_slave_select: slave 0x%x selected for dev %p\n",
 		(uint8_t)slave, dev);
 
 	spi_data->pcs = (uint8_t)slave;
@@ -586,8 +575,9 @@ static int spi_k64_transceive(struct device *dev,
 	struct spi_k64_data *spi_data = dev->driver_data;
 	uint32_t int_config;	/* interrupt configuration */
 
-	DBG("spi_k64_transceive: dev %p, Tx buf %p, ", dev, tx_buf);
-	DBG("Tx len %u, Rx buf %p, Rx len %u\n", tx_buf_len, rx_buf, rx_buf_len);
+	SYS_LOG_DBG("spi_k64_transceive: dev %p, Tx buf %p, ", dev, tx_buf);
+	SYS_LOG_DBG("Tx len %u, Rx buf %p, Rx len %u\n", tx_buf_len, rx_buf,
+		    rx_buf_len);
 
 #ifdef CONFIG_SPI_DEBUG
 	__ASSERT(!((tx_buf_len && (tx_buf == NULL)) ||
@@ -600,7 +590,7 @@ static int spi_k64_transceive(struct device *dev,
 	if (tx_buf_len &&
 		((sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TFFF) == 0)) {
 
-		DBG("spi_k64_transceive: Tx FIFO is already full\n");
+		SYS_LOG_DBG("spi_k64_transceive: Tx FIFO is already full\n");
 		return -EBUSY;
 	}
 
@@ -659,7 +649,7 @@ static int spi_k64_suspend(struct device *dev)
 {
 	struct spi_k64_config *info = dev->config->config_info;
 
-	DBG("spi_k64_suspend: %p\n", dev);
+	SYS_LOG_DBG("spi_k64_suspend: %p\n", dev);
 
 	/* disable module */
 
@@ -668,7 +658,8 @@ static int spi_k64_suspend(struct device *dev)
 	irq_disable(info->irq);
 
 	while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TXRXS) {
-		DBG("SPI Controller dev %p is running.  Waiting to stop.\n", dev);
+		SYS_LOG_DBG("SPI Controller dev %p is running.  Waiting to "
+			    "stop.\n", dev);
 	}
 
 	return 0;
@@ -683,7 +674,7 @@ static int spi_k64_resume(struct device *dev)
 {
 	struct spi_k64_config *info = dev->config->config_info;
 
-	DBG("spi_k64_resume: %p\n", dev);
+	SYS_LOG_DBG("spi_k64_resume: %p\n", dev);
 
 	/* enable module */
 
@@ -708,7 +699,7 @@ static void spi_k64_push_data(struct device *dev)
 	uint32_t cnt = 0;		/* # of bytes pushed */
 #endif
 
-	DBG("spi_k64_push_data - ");
+	SYS_LOG_DBG("spi_k64_push_data - ");
 
 	do {	/* initial status already checked by spi_k64_isr() */
 
@@ -767,7 +758,7 @@ static void spi_k64_push_data(struct device *dev)
 
 	} while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TFFF);
 
-	DBG("pushed: %d\n", cnt);
+	SYS_LOG_DBG("pushed: %d\n", cnt);
 
 }
 
@@ -785,7 +776,7 @@ static void spi_k64_pull_data(struct device *dev)
 	uint32_t cnt = 0;		/* # of bytes pulled */
 #endif
 
-	DBG("spi_k64_pull_data - ");
+	SYS_LOG_DBG("spi_k64_pull_data - ");
 
 	do {	/* initial status already checked by spi_k64_isr() */
 
@@ -829,7 +820,7 @@ static void spi_k64_pull_data(struct device *dev)
 	} while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_RFDF);
 
 
-	DBG("pulled: %d\n", cnt);
+	SYS_LOG_DBG("pulled: %d\n", cnt);
 }
 
 /**
@@ -846,7 +837,7 @@ static void spi_k64_complete(struct device *dev, uint32_t error)
 
 	if (error) {
 
-		DBG("spi_k64_complete - ERROR condition\n");
+		SYS_LOG_DBG("spi_k64_complete - ERROR condition\n");
 
 		goto complete;
 	}
@@ -922,7 +913,7 @@ void spi_k64_isr(void *arg)
 
 	status = sys_read32(info->regs + SPI_K64_REG_SR);
 
-	DBG("spi_k64_isr: dev %p, status 0x%x\n", dev, status);
+	SYS_LOG_DBG("spi_k64_isr: dev %p, status 0x%x\n", dev, status);
 
 	if (status & (SPI_K64_SR_RFOF | SPI_K64_SR_TFUF)) {
 
@@ -972,35 +963,36 @@ int spi_k64_init(struct device *dev)
 	 * (Clear MCR[MDIS] and set MCR[HALT].)
 	 */
 
-	DBG("halt\n");
+	SYS_LOG_DBG("halt\n");
 	mcr = SPI_K64_MCR_HALT;
 	sys_write32(mcr, (info->regs + SPI_K64_REG_MCR));
 
 	while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TXRXS) {
-		DBG("SPI Controller dev %p is running.  Waiting for Halt.\n", dev);
+		SYS_LOG_DBG("SPI Controller dev %p is running.  Waiting for "
+			    "Halt.\n", dev);
 	}
 
 	/* Clear Tx and Rx FIFOs */
 
 	mcr |= (SPI_K64_MCR_CLR_RXF | SPI_K64_MCR_CLR_TXF);
 
-	DBG("fifo clr\n");
+	SYS_LOG_DBG("fifo clr\n");
 	sys_write32(mcr, (info->regs + SPI_K64_REG_MCR));
 
 	/* Set master mode */
 
 	mcr = SPI_K64_MCR_MSTR | SPI_K64_MCR_HALT;
-	DBG("master mode\n");
+	SYS_LOG_DBG("master mode\n");
 	sys_write32(mcr, (info->regs + SPI_K64_REG_MCR));
 
 	/* Disable SPI module interrupt generation */
 
-	DBG("irq disable\n");
+	SYS_LOG_DBG("irq disable\n");
 	sys_write32(0, (info->regs + SPI_K64_REG_RSER));
 
 	/* Clear status */
 
-	DBG("status clr\n");
+	SYS_LOG_DBG("status clr\n");
 	sys_write32((SPI_K64_SR_RFDF | SPI_K64_SR_RFOF | SPI_K64_SR_TFUF |
 				SPI_K64_SR_EOQF	| SPI_K64_SR_TCF),
 				(info->regs + SPI_K64_REG_SR));
@@ -1020,10 +1012,10 @@ int spi_k64_init(struct device *dev)
 	 * Note that Tx underflow is only generated when in slave mode.
 	 */
 
-	DBG("rxfifo overflow enable\n");
+	SYS_LOG_DBG("rxfifo overflow enable\n");
 	sys_write32(SPI_K64_RSER_RFOF_RE, (info->regs + SPI_K64_REG_RSER));
 
-	DBG("K64 SPI Driver initialized on device: %p\n", dev);
+	SYS_LOG_DBG("K64 SPI Driver initialized on device: %p\n", dev);
 
 	/* operation remains disabled (MCR[HALT] = 1)*/
 
