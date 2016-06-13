@@ -331,10 +331,10 @@ Steps
 
    .. note::
       If the following messages appear during boot, they can be safely
-      ignored.
-      .. code-block:: console
-         WARNING: no console will be available to OS
-         error: no suitable video mode found.
+      ignored::
+
+        WARNING: no console will be available to OS
+        error: no suitable video mode found.
 
 Known Problems and Limitations
 ******************************
