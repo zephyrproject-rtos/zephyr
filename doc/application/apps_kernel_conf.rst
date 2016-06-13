@@ -72,13 +72,13 @@ Steps
 
 
   The default name is :file:`prj.conf`. The filename must match
-  the :option:`CONF_FILE` entry in the application :file:`Makefile`.
+  the ``CONF_FILE`` entry in the application :file:`Makefile`.
 
 2. Edit the file and add the appropriate configuration entries.
 
    a) Add each configuration entry on a new line.
 
-   b) Begin each entry with :option:`CONFIG_`.
+   b) Begin each entry with ``CONFIG_``.
 
    c) Ensure that each entry contains no spaces
       (including on either side of the = sign).
@@ -262,8 +262,7 @@ Steps
 11. Press :kbd:`Enter` to retire the menu display and
     return to the console command line.
 
-**Next Steps**:
-For microkernel applications, go to :ref:`Creating and
-Configuring an MDEF File for a Microkernel Application`.
+**Next Steps**: For microkernel applications, go to :ref:`Creating and
+Configuring an MDEF File for a Microkernel Application <create_mdef>`.
 
 For nanokernel applications, go to :ref:`apps_code_dev`.
