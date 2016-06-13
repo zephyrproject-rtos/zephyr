@@ -1,3 +1,5 @@
+:orphan:
+
 .. _error_code_conventions:
 
 Return Codes

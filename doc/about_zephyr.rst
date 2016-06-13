@@ -1,3 +1,5 @@
+:orphan:
+
 .. _about_zephyr:
 
 Introduction to the Zephyr Project

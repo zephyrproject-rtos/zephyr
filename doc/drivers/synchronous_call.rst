@@ -1,3 +1,5 @@
+:orphan:
+
 .. _synchronous_call:
 
 Synchronous Calls

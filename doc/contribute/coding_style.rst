@@ -1,3 +1,5 @@
+:orphan:
+
 .. _coding_style:
 
 Coding Style

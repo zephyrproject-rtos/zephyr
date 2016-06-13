@@ -1,3 +1,5 @@
+:orphan:
+
 Welcome to Zephyr Kernel
 ########################
 
