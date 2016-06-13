@@ -53,21 +53,21 @@ the corresponding :literal:`_ANY` channel type and a buffer of 3
 of channels between reads and efficiency of communication by issuing a
 single transaction on the underlying bus.
 
-Below is an example illustrating the usage of the BMP280 sensor, which
+Below is an example illustrating the usage of the BME280 sensor, which
 measures ambient temperature and atmospheric pressure.  Note that
 :c:func:`sensor_sample_fetch` is only called once, as it reads and
 compensates data for both channels.
 
-.. literalinclude:: ../../../samples/sensor/bmp280/src/main.c
+.. literalinclude:: ../../samples/sensor/bme280/src/main.c
    :language: c
    :lines: 31-
    :linenos:
 
-The example assumes that the returned values have type
-:c:macro:`SENSOR_TYPE_INT_PLUS_MICRO`, which is the case for BMP280.  A real
-application supporting multiple sensors should inspect the :c:data:`type`
-field of the :c:data:`temp` and :c:data:`press` values and use the other
-fields of the structure accordingly.
+The example assumes that the returned values have type :c:type:`struct
+sensor_value`, which is the case for BME280.  A real application
+supporting multiple sensors should inspect the :c:data:`type` field of
+the :c:data:`temp` and :c:data:`press` values and use the other fields
+of the structure accordingly.
 
 Configuration and Attributes
 ****************************
@@ -118,7 +118,7 @@ interest of saving power. Since the application has direct access to the
 kernel config symbols, no trigger is registered when triggering was disabled
 by the driver's configuration.
 
-.. literalinclude:: ../../../samples/sensor/mcp9808/src/main.c
+.. literalinclude:: ../../samples/sensor/mcp9808/src/main.c
    :language: c
    :lines: 31-
    :linenos:
