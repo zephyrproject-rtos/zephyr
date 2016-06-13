@@ -1,4 +1,4 @@
-.. _power_management
+.. _power_management:
 
 Power Management
 ################
@@ -598,21 +598,21 @@ Policy Decision Summary
 +---------------------------------+---------------------------------------+
 | PM operations                   | Policy and Return Code                |
 +=================================+=======================================+
-| Suspend some devices and        | :code:`SYS_PM_LOW_POWER_STATE`     |
+| Suspend some devices and        | :code:`SYS_PM_LOW_POWER_STATE`        |
 |                                 |                                       |
 | Enter Low Power State           |                                       |
 +---------------------------------+---------------------------------------+
-| Suspend all devices and         | :code:`SYS_PM_LOW_POWER_STATE`     |
+| Suspend all devices and         | :code:`SYS_PM_LOW_POWER_STATE`        |
 |                                 |                                       |
 | Enter Low Power State           |                                       |
 +---------------------------------+---------------------------------------+
-| Suspend all devices and         | :code:`SYS_PM_DEEP_SLEEP`          |
+| Suspend all devices and         | :code:`SYS_PM_DEEP_SLEEP`             |
 |                                 |                                       |
 | Enter Deep Sleep                |                                       |
 +---------------------------------+---------------------------------------+
-| Suspend some or all devices and | :code:`SYS_PM_DEVICE_SUSPEND_ONLY` |
+| Suspend some or all devices and | :code:`SYS_PM_DEVICE_SUSPEND_ONLY`    |
 |                                 |                                       |
 | No CPU/SoC PM Operation         |                                       |
 +---------------------------------+---------------------------------------+
-| No PM operation                 | :code:`SYS_PM_NOT_HANDLED`         |
+| No PM operation                 | :code:`SYS_PM_NOT_HANDLED`            |
 +---------------------------------+---------------------------------------+
