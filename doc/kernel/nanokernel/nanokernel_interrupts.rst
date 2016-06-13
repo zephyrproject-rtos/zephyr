@@ -97,7 +97,7 @@ Working with Interrupts
 ***********************
 
 Offloading ISR Work
-===================
+*******************
 
 Interrupt service routines should generally be kept short
 to ensure predictable system operation.
