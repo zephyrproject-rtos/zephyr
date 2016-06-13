@@ -40,6 +40,8 @@
 #define BT_DBG(fmt, ...)
 #endif
 
+#define LE_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_le_chan, chan)
+
 #define L2CAP_LE_MIN_MTU		23
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
 #define L2CAP_LE_CREDITS_THRESHOLD	(L2CAP_LE_MAX_CREDITS / 2)
@@ -111,9 +113,8 @@ void bt_l2cap_le_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 						     struct bt_l2cap_chan *chan)
 {
+	struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 	uint16_t cid;
-	struct bt_l2cap_le_chan *ch =
-		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
 
 	/*
 	 * No action needed if there's already a CID allocated, e.g. in
@@ -167,12 +168,13 @@ void bt_l2cap_connected(struct bt_conn *conn)
 	fchan = le_channels;
 
 	for (; fchan; fchan = fchan->_next) {
+		struct bt_l2cap_le_chan *ch;
+
 		if (fchan->accept(conn, &chan) < 0) {
 			continue;
 		}
 
-		struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+		ch = LE_CHAN(chan);
 
 		/* Fill up remaining fixed channel context attached in
 		 * fchan->accept()
@@ -486,8 +488,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	if (l2cap_chan_add(conn, chan)) {
-		struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+		struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 
 		/* Init TX parameters */
 		l2cap_chan_tx_init(ch);
@@ -525,8 +526,7 @@ static struct bt_l2cap_le_chan *l2cap_remove_tx_cid(struct bt_conn *conn,
 	for (chan = conn->channels, prev = NULL; chan;
 	     prev = chan, chan = chan->_next) {
 		/* get the app's l2cap object wherein this chan is contained */
-		struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+		struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 
 		if (ch->tx.cid != cid) {
 			continue;
@@ -546,8 +546,7 @@ static struct bt_l2cap_le_chan *l2cap_remove_tx_cid(struct bt_conn *conn,
 
 static void l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
-	struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+	struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 
 	BT_DBG("conn %p chan %p cid 0x%04x", chan->conn, ch, ch->rx.cid);
 
@@ -631,8 +630,7 @@ __l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, bool remove)
 	for (chan = conn->channels, prev = NULL; chan;
 	     prev = chan, chan = chan->_next) {
 		/* get the app's l2cap object where this chan is member */
-		struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+		struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 
 		if (ch->ident != ident) {
 			continue;
@@ -742,6 +740,7 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_le_credits *ev = (void *)buf->data;
+	struct bt_l2cap_le_chan *ch;
 	uint16_t credits, cid;
 
 	if (buf->len < sizeof(*ev)) {
@@ -760,8 +759,7 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+	ch = LE_CHAN(chan);
 
 	if (ch->tx.credits.nsig + credits > UINT16_MAX) {
 		BT_ERR("Credits overflow");
@@ -973,7 +971,7 @@ static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	switch (chan->conn->type) {
 	case BT_CONN_TYPE_LE:
-		ch = CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+		ch = LE_CHAN(chan);
 		break;
 	default:
 		ch = NULL;
@@ -1063,9 +1061,7 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn,
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
 {
-	struct bt_l2cap_le_chan *ch = CONTAINER_OF(chan,
-						   struct bt_l2cap_le_chan,
-						   chan);
+	struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 
 	ARG_UNUSED(ch);
 	BT_DBG("ch %p cid 0x%04x", ch, ch->rx.cid);
@@ -1073,9 +1069,7 @@ static void l2cap_connected(struct bt_l2cap_chan *chan)
 
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_l2cap_le_chan *ch = CONTAINER_OF(chan,
-						   struct bt_l2cap_le_chan,
-						   chan);
+	struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 
 	ARG_UNUSED(ch);
 	BT_DBG("ch %p cid 0x%04x", ch, ch->rx.cid);
@@ -1135,8 +1129,7 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_tx_cid(struct bt_conn *conn,
 	struct bt_l2cap_chan *chan;
 
 	for (chan = conn->channels; chan; chan = chan->_next) {
-		struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+		struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 
 		if (ch->tx.cid == cid)
 			return chan;
@@ -1151,8 +1144,7 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 	struct bt_l2cap_chan *chan;
 
 	for (chan = conn->channels; chan; chan = chan->_next) {
-		struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+		struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 
 		if (ch->rx.cid == cid) {
 			return chan;
@@ -1166,12 +1158,10 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			    uint16_t psm)
 {
+	struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 	struct net_buf *buf;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_le_conn_req *req;
-	struct bt_l2cap_le_chan *ch = CONTAINER_OF(chan,
-						   struct bt_l2cap_le_chan,
-						   chan);
 
 	if (psm < L2CAP_LE_PSM_START || psm > L2CAP_LE_PSM_END) {
 		return -EINVAL;
@@ -1234,6 +1224,10 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 {
 	struct bt_conn *conn = chan->conn;
+	struct net_buf *buf;
+	struct bt_l2cap_disconn_req *req;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_le_chan *ch;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1245,12 +1239,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	}
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-	struct net_buf *buf;
-	struct bt_l2cap_disconn_req *req;
-	struct bt_l2cap_sig_hdr *hdr;
-	struct bt_l2cap_le_chan *ch = CONTAINER_OF(chan,
-						   struct bt_l2cap_le_chan,
-						   chan);
+	ch = LE_CHAN(chan);
 
 	BT_DBG("chan %p scid 0x%04x dcid 0x%04x", chan, ch->rx.cid,
 	       ch->tx.cid);
@@ -1279,11 +1268,10 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_chan *chan,
 					     struct net_buf *buf,
 					     size_t sdu_hdr_len)
 {
+	struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 	struct net_buf *seg;
 	uint16_t headroom;
 	uint16_t len;
-	struct bt_l2cap_le_chan *ch =
-		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
 
 	/* Segment if data (+ data headroom) is bigger than MPS */
 	if (buf->len + sdu_hdr_len > ch->tx.mps) {
@@ -1324,9 +1312,8 @@ segment:
 static int l2cap_chan_le_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
 			      uint16_t sdu_hdr_len)
 {
+	struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 	int len;
-	struct bt_l2cap_le_chan *ch =
-		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
 
 	/* Wait for credits */
 	nano_sem_take(&ch->tx.credits, TICKS_UNLIMITED);
@@ -1355,10 +1342,8 @@ static int l2cap_chan_le_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_chan *chan,
 				  struct net_buf *buf)
 {
+	struct bt_l2cap_le_chan *ch = LE_CHAN(chan);
 	int ret, sent, total_len;
-	struct bt_l2cap_le_chan *ch = CONTAINER_OF(chan,
-						   struct bt_l2cap_le_chan,
-						   chan);
 
 	if (buf->len > ch->tx.mtu) {
 		return -EMSGSIZE;
