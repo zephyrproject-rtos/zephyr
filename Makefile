@@ -751,7 +751,7 @@ quiet_cmd_create-lnk = LINK    $@
       cmd_create-lnk =								\
 (										\
 	echo $(LDFLAGS_zephyr); 						\
-	echo "$(LINKFLAGPREFIX)-Map=$(O)/$(KERNEL_NAME).map"; 			\
+	echo "$(LINKFLAGPREFIX)-Map=$(KERNEL_NAME).map"; 			\
 	echo "-L $(objtree)/include/generated";					\
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms"; 				\
 	echo "-e __start"; 						 	\
