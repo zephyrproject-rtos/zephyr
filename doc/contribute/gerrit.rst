@@ -91,7 +91,7 @@ Submitting a Change
 
 Currently, Gerrit is the only method to submit a change for review.
 
-Before submitting, please ensure each commit follows :ref:`contributing_code`
+Before submitting, please ensure each commit follows :ref:`naming_conventions`
 guidelines. Directions for building the source code
 are beyond the scope of this document. Please see the :ref:`getting_started`
 for further detail.
