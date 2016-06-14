@@ -397,7 +397,7 @@ static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
  *
  *  @return True if the address is unspecified, false otherwise.
  */
-static inline bool net_is_ipv6_addr_unspecified(struct in6_addr *addr)
+static inline bool net_is_ipv6_addr_unspecified(const struct in6_addr *addr)
 {
 	return addr->s6_addr32[0] == 0 && addr->s6_addr32[1] == 0 &&
 		addr->s6_addr32[2] == 0 && addr->s6_addr32[3] == 0;
@@ -410,7 +410,7 @@ static inline bool net_is_ipv6_addr_unspecified(struct in6_addr *addr)
  *
  *  @return True if the address is solicited node address, false otherwise.
  */
-static inline bool net_is_ipv6_addr_solicited_node(struct in6_addr *addr)
+static inline bool net_is_ipv6_addr_solicited_node(const struct in6_addr *addr)
 {
 	return addr->s6_addr32[0] == htonl(0xff020000) &&
 		addr->s6_addr32[1] == 0x00000000 &&
