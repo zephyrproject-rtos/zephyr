@@ -16,19 +16,18 @@
 # limitations under the License.
 #
 
-if NET_YAIP
 menuconfig NET_LOG
 	bool "Enable network stack logging"
+	depends on NET_YAIP
 	select STDOUT_CONSOLE
 	select SYS_LOG
 	default n
 	help
 	  Enable logging in various parts of the network stack.
-endif
 
-if !NET_YAIP
 menuconfig NETWORKING_WITH_LOGGING
 	bool "Enable network stack logging"
+	depends on NET_UIP
 	select STDOUT_CONSOLE
 	default n
 	help
@@ -41,14 +40,17 @@ choice
 	help
 	  Set the level of debugging you want. This will be generalized,
 	  whatever the part you will be debugging.
+
 config NETWORK_IP_STACK_DEBUG_PRINT
        bool "Print only debug messages"
+
 config NETWORK_IP_STACK_DEBUG_ANNOTATE
        bool "Print only annotations"
+
 config NETWORK_IP_STACK_DEBUG_FULL
        bool "Print both messages and annotations"
+
 endchoice
-endif
 
 if NETWORKING_WITH_LOGGING || NET_LOG
 

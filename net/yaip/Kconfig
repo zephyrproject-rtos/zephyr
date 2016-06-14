@@ -16,6 +16,9 @@
 # limitations under the License.
 #
 
+menu   "Networking: YAIP stack"
+       depends on NET_YAIP
+
 config NET_INIT_PRIO
        int
        default 90
@@ -187,3 +190,7 @@ config NET_STATISTICS
 	  This takes memory so say 'n' if unsure.
 
 source "net/yaip/l2/Kconfig"
+
+source "net/ip/Kconfig.debug"
+
+endmenu

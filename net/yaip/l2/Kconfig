@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+menu "Link layer options"
+
 config  NET_L2_DUMMY
 	bool "Enable dummy l2 layer"
 	default n
@@ -44,3 +46,5 @@ config NET_ARP_TABLE_SIZE
        default 2
        help
          Each entry in the ARP table consumes 22 bytes of memory.
+
+endmenu

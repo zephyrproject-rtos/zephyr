@@ -16,9 +16,19 @@
 # limitations under the License.
 #
 
-menu "Networking"
+menuconfig NETWORKING
+	bool
+	prompt "Generic networking support"
+	select NANO_TIMEOUTS
+	select NANO_TIMERS
+	select NET_BUF
+	select SYSTEM_WORKQUEUE
+	select NANO_WORKQUEUE
+	default n
+	help
+	  This option enabled generic networking support.
 
-source "net/ip/Kconfig"
+if NETWORKING
 
 config NET_BUF
 	bool "Network buffer support"
@@ -45,4 +55,28 @@ config NET_BUF_SIMPLE_DEBUG
 	help
 	  Enable extra debug logs and checks for the generic network buffers.
 
-endmenu
+choice
+	prompt "IP stack"
+	default NET_UIP
+	help
+	  Select what IP stack to use. The legacy stack is
+	  Contiki based uIP stack.
+
+config NET_UIP
+	bool "uIP"
+	help
+	  Choose this if unsure.
+
+config NET_YAIP
+	bool "New IP stack [EXPERIMENTAL]"
+	help
+	  New IP stack.
+endchoice
+
+source "net/ip/Kconfig"
+
+source "net/yaip/Kconfig"
+
+source "net/bluetooth/Kconfig"
+
+endif

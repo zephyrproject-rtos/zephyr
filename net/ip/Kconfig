@@ -17,40 +17,10 @@
 #
 
 #
-# Networking options
+# UIP options
 #
-
-menuconfig NETWORKING
-	bool
-	prompt "Generic networking support"
-	select NANO_TIMEOUTS
-	select NANO_TIMERS
-	select NET_BUF
-	select SYSTEM_WORKQUEUE
-	select NANO_WORKQUEUE
-	default n
-	help
-	  This option enabled generic networking support.
-
-choice
-prompt "IP stack"
-depends on NETWORKING
-help
-	Select what IP stack to use. The legacy stack is
-	Contiki based uIP stack.
-default NET_UIP
-config NET_UIP
-	bool "uIP"
-	help
-	  Choose this if unsure.
-
-config NET_YAIP
-	bool "New IP stack [EXPERIMENTAL]"
-	help
-	  New IP stack.
-endchoice
-
-if NETWORKING && NET_UIP
+menu   "Networking: µIP stack"
+        depends on NET_UIP
 
 config IP_BUF_RX_SIZE
 	int "Number of IP net buffers to use when receiving data"
@@ -134,7 +104,6 @@ config	NETWORKING_STATISTICS
 	  this in live system! The option uses memory and slows
 	  down IP packet processing.
 
-if NETWORKING_WITH_IPV6
 config	NETWORKING_IPV6_NO_ND
 	bool
 	prompt "Disable IPv6 neighbor discovery"
@@ -154,7 +123,6 @@ config	NETWORKING_MAX_NEIGHBORS
 	help
 	  Specifies the maximum number of neighbors that each node will
 	  be able to handle.
-endif
 
 config	NETWORKING_WITH_TCP
 	bool
@@ -607,8 +575,6 @@ config	NET_TESTING
 	  Setup the network stack such a way that it is suitable for
 	  testing with Qemu and slip.
 
-endif
-
 if NETWORKING
 
 if NET_YAIP
@@ -618,3 +584,5 @@ endif
 source "net/ip/Kconfig.debug"
 
 endif
+
+endmenu
