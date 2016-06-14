@@ -9,7 +9,7 @@ Concepts
 The microkernel's :dfn:`memory pool` objects provide dynamic allocation and
 release of variable-size memory blocks.
 
-Unlike :ref:`memory map <microkernel_memory_map>` objects, which support
+Unlike :ref:`memory map <microkernel_memory_maps>` objects, which support
 memory blocks of only a *single* size, a memory pool can support memory blocks
 of *various* sizes. The memory pool does this by subdividing blocks into smaller
 chunks, where possible, to more closely match the actual needs of a requesting
