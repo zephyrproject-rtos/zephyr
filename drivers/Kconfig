@@ -71,4 +71,6 @@ source "drivers/counter/Kconfig"
 
 source "drivers/dma/Kconfig"
 
+source "drivers/usb/Kconfig"
+
 endmenu
