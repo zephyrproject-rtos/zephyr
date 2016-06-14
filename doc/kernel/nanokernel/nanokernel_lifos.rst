@@ -19,7 +19,7 @@ in the LIFO's linked list. Consequently, a data item that holds N bytes
 of application data requires N+4 bytes of memory.
 
 Any number of nanokernel LIFOs can be defined. Each LIFO is a distinct
-variable of type :cpp:type:`struct nano_lifo`, and is referenced using a
+variable of type :c:type:`struct nano_lifo`, and is referenced using a
 pointer to that variable. A LIFO must be initialized before it can be used to
 send or receive data items.
 

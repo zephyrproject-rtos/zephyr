@@ -23,7 +23,7 @@ remaining bytes of this area can be used to hold data that is helpful to the
 thread that uses the timer.
 
 Any number of nanokernel timers can be defined. Each timer is a distinct
-variable of type :cpp:type:`struct nano_timer`, and is referenced using a pointer
+variable of type :c:type:`struct nano_timer`, and is referenced using a pointer
 to that variable. A timer must be initialized with its user data structure
 before it can be used.
 

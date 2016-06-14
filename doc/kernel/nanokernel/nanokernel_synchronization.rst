@@ -18,7 +18,7 @@ The nanokernel's :dfn:`semaphore` object type is an implementation of a
 traditional counting semaphore. It is mainly intended for use by fibers.
 
 Any number of nanokernel semaphores can be defined. Each semaphore is a
-distinct variable of type :cpp:type:`struct nano_sem`, and is referenced
+distinct variable of type :c:type:`struct nano_sem`, and is referenced
 using a pointer to that variable. A semaphore must be initialized before
 it can be used.
 

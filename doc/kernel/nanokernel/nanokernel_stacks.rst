@@ -14,7 +14,7 @@ Each stack uses an array of 32-bit words to hold its data values. The array
 may be of any size, but must be aligned on a 4-byte boundary.
 
 Any number of nanokernel stacks can be defined. Each stack is a distinct
-variable of type :cpp:type:`struct nano_stack`, and is referenced using a pointer
+variable of type :c:type:`struct nano_stack`, and is referenced using a pointer
 to that variable. A stack must be initialized to use its array before it
 can be used to send or receive data values.
 
