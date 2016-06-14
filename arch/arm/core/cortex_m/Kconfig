@@ -119,8 +119,10 @@ config FAULT_DUMP
 
 	2: The default. Display specific and verbose information. Consumes
 		the most memory (long strings).
+
 	1: Display general and short information. Consumes less memory
 		(short strings).
+
 	0: Off.
 
 config XIP
