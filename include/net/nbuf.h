@@ -293,6 +293,43 @@ struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller, int 
 struct net_buf *net_nbuf_ref(struct net_buf *buf);
 #endif
 
+/**
+ * @brief Copy a buffer with fragments while reserving some extra space
+ * in destination buffer before a copy.
+ *
+ * @details Note that the original buffer is not really usable after the copy
+ * as the function will call net_buf_pull() internally and should be discarded.
+ *
+ * @param buf Network buffer fragment. This should be the first fragment (data)
+ * in the fragment list.
+ * @param amount Max amount of data to be copied.
+ * @param reserve Amount of extra data (this is not link layer header) in the
+ * first data fragment that is returned. The function will copy the original
+ * buffer right after the reserved bytes in the first destination fragment.
+ *
+ * @return New fragment list if successful, NULL otherwise.
+ */
+struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
+			      size_t reserve);
+
+/**
+ * @brief Copy a buffer with fragments while reserving some extra space
+ * in destination buffer before a copy.
+ *
+ * @param buf Network buffer fragment. This should be the first fragment (data)
+ * in the fragment list.
+ * @param reserve Amount of extra data (this is not link layer header) in the
+ * first data fragment that is returned. The function will copy the original
+ * buffer right after the reserved bytes in the first destination fragment.
+ *
+ * @return New fragment list if successful, NULL otherwise.
+ */
+static inline struct net_buf *net_nbuf_copy_all(struct net_buf *buf,
+						size_t reserve)
+{
+	return net_nbuf_copy(buf, net_buf_frags_len(buf), reserve);
+}
+
 #ifdef __cplusplus
 }
 #endif

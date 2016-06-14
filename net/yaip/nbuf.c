@@ -637,6 +637,92 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf)
 	return net_buf_ref(buf);
 }
 
+struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
+			      size_t reserve)
+{
+	uint16_t ll_reserve = net_buf_headroom(orig);
+	struct net_buf *frag, *first;
+
+	if (orig->user_data_size) {
+		NET_ERR("Buffer %p is not a data fragment", orig);
+		return NULL;
+	}
+
+	frag = net_nbuf_get_reserve_data(ll_reserve);
+
+	if (reserve > net_buf_tailroom(frag)) {
+		NET_ERR("Reserve %d is too long, max is %d",
+			reserve, net_buf_tailroom(frag));
+		net_nbuf_unref(frag);
+		return NULL;
+	}
+
+	net_buf_add(frag, reserve);
+
+	first = frag;
+
+	NET_DBG("Copying frag %p with %d bytes and reserving %d bytes",
+		first, amount, reserve);
+
+	if (!orig->len) {
+		/* No data in the first fragment in the original message */
+		NET_DBG("Original buffer empty!");
+		return frag;
+	}
+
+	while (orig && amount) {
+		int left_len = net_buf_tailroom(frag);
+		int copy_len;
+
+		if (amount > orig->len) {
+			copy_len = orig->len;
+		} else {
+			copy_len = amount;
+		}
+
+		if ((copy_len - left_len) >= 0) {
+			/* Just copy the data from original fragment
+			 * to new fragment. The old data will fit the
+			 * new fragment and there could be some space
+			 * left in the new fragment.
+			 */
+			amount -= left_len;
+
+			memcpy(net_buf_add(frag, left_len), orig->data,
+			       left_len);
+
+			if (!net_buf_tailroom(frag)) {
+				/* There is no space left in copy fragment.
+				 * We must allocate a new one.
+				 */
+				struct net_buf *new_frag =
+					net_nbuf_get_reserve_data(ll_reserve);
+
+				net_buf_frag_add(frag, new_frag);
+
+				frag = new_frag;
+			}
+
+			net_buf_pull(orig, left_len);
+
+			continue;
+		} else {
+			/* We should be at the end of the original buf
+			 * fragment list.
+			 */
+			amount -= copy_len;
+
+			memcpy(net_buf_add(frag, copy_len), orig->data,
+			       copy_len);
+			net_buf_pull(orig, copy_len);
+		}
+
+		orig = orig->frags;
+	}
+
+	return first;
+}
+
 void net_nbuf_init(void)
 {
 	NET_DBG("Allocating %d RX (%d bytes), %d TX (%d bytes) "
