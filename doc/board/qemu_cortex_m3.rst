@@ -55,7 +55,7 @@ Refer to the :ref:`frdm_k64f`.
 
 .. note::
    Unlike the frdm_k64f board configuration, the qemu_cortex_m3
-   board configuration sets option :option:`NUM_IRQ_PRIO_BITS` to '3'.
+   board configuration sets option :option:`CONFIG_NUM_IRQ_PRIO_BITS` to '3'.
 
 System Clock
 ============
