@@ -96,11 +96,6 @@ Example
 Working with Interrupts
 ***********************
 
-Use the following:
-
-* `Offloading ISR Work`_
-* `IDT Security`_
-
 Offloading ISR Work
 ===================
 
