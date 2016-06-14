@@ -20,7 +20,7 @@
 #include <device.h>
 #include <init.h>
 
-#if defined(CONFIG_NETWORKING_WITH_15_4_TI_CC2520)
+#if defined(CONFIG_TI_CC2520_LEGACY) || defined(CONFIG_TI_CC2520)
 
 #include <gpio.h>
 
@@ -56,4 +56,4 @@ struct device **cc2520_configure_gpios(void)
 	return cc2520_gpio_config;
 }
 
-#endif /* CONFIG_NETWORKING_WITH_15_4_TI_CC2520 */
+#endif /* CONFIG_TI_CC2520_LEGACY || CONFIG_TI_CC2520 */
