@@ -106,7 +106,8 @@ pygments_style = 'sphinx'
 todo_include_todos = False
 
 rst_epilog = """
-.. include:: /substitutions.rst
+.. |codename| replace:: Zephyr Kernel
+.. |project| replace:: Zephyr Project
 """
 
 # -- Options for HTML output ----------------------------------------------
