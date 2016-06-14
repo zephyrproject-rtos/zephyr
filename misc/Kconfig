@@ -229,6 +229,20 @@ config DEBUG_TRACING_KERNEL_OBJECTS
 	This option enable the feature for tracing kernel objects. This option
 	is for debug purposes and increase the memory footprint of the kernel.
 
+config OMIT_FRAME_POINTER
+	bool
+	prompt "Omit frame pointer"
+	default n
+	help
+	Prevent the compiler from putting the stack frame pointer into a
+	register. Saves a few instructions in function prologues/epilogues and
+	frees up a register for general-purpose use, which can provide good
+	performance improvements on register-constrained architectures like
+	x86. Omitting frame pointers impedes debugging as local variables are
+	harder to locate and it is much more difficult to produce a stack
+	trace. Recommended only for production builds which do not need to be
+	debugged.
+
 source "misc/debug/Kconfig"
 
 endmenu

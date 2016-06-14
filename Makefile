@@ -369,7 +369,6 @@ KBUILD_CPPFLAGS := -DKERNEL
 
 KBUILD_CFLAGS   := -c -g -std=c99 \
 		-fno-asynchronous-unwind-tables \
-		-fno-omit-frame-pointer \
 		-Wall \
 		-Wno-format-zero-length \
 		-Wno-main -ffreestanding
@@ -377,7 +376,6 @@ KBUILD_CFLAGS   := -c -g -std=c99 \
 KBUILD_CXXFLAGS   := -c -g -std=c++11 \
 		-fno-reorder-functions \
 		-fno-asynchronous-unwind-tables \
-		-fno-omit-frame-pointer \
 		-fcheck-new \
 		-fno-defer-pop -Wall \
 		-Wno-unused-but-set-variable \
@@ -611,6 +609,14 @@ KBUILD_CFLAGS += $(call cc-option,-fstack-protector-all,)
 else
 KBUILD_CFLAGS += $(call cc-option,-fno-stack-protector,)
 endif
+
+ifeq ($(CONFIG_OMIT_FRAME_POINTER),y)
+fp_arg := $(call cc-option,-fomit-frame-pointer,)
+else
+fp_arg := $(call cc-option,-fno-omit-frame-pointer,)
+endif
+KBUILD_CFLAGS += $(fp_arg)
+KBUILD_CXXFLAGS += $(fp_arg)
 
 KBUILD_CFLAGS += $(subst $(DQUOTE),,$(CONFIG_COMPILER_OPT))
 
