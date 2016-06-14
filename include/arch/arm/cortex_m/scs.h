@@ -319,6 +319,103 @@ union __mpu_rasr {
 	} bit;
 };
 
+union __cpacr {    /* Coprocessor Access Control Register */
+	uint32_t val;
+	struct {
+		uint32_t rsvd__0_19 : 20 __packed;
+		uint32_t cp10 : 2 __packed;
+		uint32_t cp11 : 2 __packed;
+		uint32_t rsvd__24_31 : 8 __packed;
+	} bit;
+};
+
+/* CP10 Access Bits */
+#define _SCS_CPACR_CP10_Pos          20U
+#define _SCS_CPACR_CP10_Msk          (3UL << _SCS_CPACR_CP10_Pos)
+#define _SCS_CPACR_CP10_NO_ACCESS    (0UL << _SCS_CPACR_CP10_Pos)
+#define _SCS_CPACR_CP10_PRIV_ACCESS  (1UL << _SCS_CPACR_CP10_Pos)
+#define _SCS_CPACR_CP10_RESERVED     (2UL << _SCS_CPACR_CP10_Pos)
+#define _SCS_CPACR_CP10_FULL_ACCESS  (3UL << _SCS_CPACR_CP10_Pos)
+
+/* CP11 Access Bits */
+#define _SCS_CPACR_CP11_Pos          22U
+#define _SCS_CPACR_CP11_Msk          (3UL << _SCS_CPACR_CP11_Pos)
+#define _SCS_CPACR_CP11_NO_ACCESS    (0UL << _SCS_CPACR_CP11_Pos)
+#define _SCS_CPACR_CP11_PRIV_ACCESS  (1UL << _SCS_CPACR_CP11_Pos)
+#define _SCS_CPACR_CP11_RESERVED     (2UL << _SCS_CPACR_CP11_Pos)
+#define _SCS_CPACR_CP11_FULL_ACCESS  (3UL << _SCS_CPACR_CP11_Pos)
+
+union __fpu_ccr {      /* FPU Context Control Register */
+	uint32_t val;
+	struct {
+		uint32_t lspact : 1 __packed;
+		uint32_t user : 1 __packed;
+		uint32_t rsvd__2 : 1 __packed;
+		uint32_t thread : 1 __packed;
+		uint32_t hfrdy : 1 __packed;
+		uint32_t mmrdy : 1 __packed;
+		uint32_t bfrdy : 1 __packed;
+		uint32_t rsvd__7 : 1 __packed;
+		uint32_t monrdy : 1 __packed;
+		uint32_t rsvd__9_29 : 21 __packed;
+		uint32_t lspen : 1 __packed;
+		uint32_t aspen : 1 __packed;
+	} bit;
+};
+
+#define _SCS_FPU_CCR_ASPEN_Pos      31U
+#define _SCS_FPU_CCR_ASPEN_Msk      (1UL << _SCS_FPU_CCR_ASPEN_Pos)
+#define _SCS_FPU_CCR_ASPEN_ENABLE   (1UL << _SCS_FPU_CCR_ASPEN_Pos)
+#define _SCS_FPU_CCR_ASPEN_DISABLE  (0UL << _SCS_FPU_CCR_ASPEN_Pos)
+
+#define _SCS_FPU_CCR_LSPEN_Pos      30U
+#define _SCS_FPU_CCR_LSPEN_Msk      (1UL << _SCS_FPU_CCR_LSPEN_Pos)
+#define _SCS_FPU_CCR_LSPEN_ENABLE   (1UL << _SCS_FPU_CCR_LSPEN_Pos)
+#define _SCS_FPU_CCR_LSPEN_DISABLE  (0UL << _SCS_FPU_CCR_LSPEN_Pos)
+
+union __fpu_car {      /* FPU Context Address Register */
+	uint32_t val;
+	struct {
+		uint32_t rsvd__0_2 : 3 __packed;
+		uint32_t address : 29 __packed;
+	} bit;
+};
+
+union __fpu_scr {      /* FPU Status Control Register */
+	uint32_t val;
+	struct {
+		uint32_t ioc : 1 __packed;
+		uint32_t dzc : 1 __packed;
+		uint32_t ofc : 1 __packed;
+		uint32_t ufc : 1 __packed;
+		uint32_t ixc : 1 __packed;
+		uint32_t rsvd__5_6 : 2 __packed;
+		uint32_t idc : 1 __packed;
+		uint32_t rsvd__8_21 : 14 __packed;
+		uint32_t rmode : 2 __packed;
+		uint32_t fz : 1 __packed;
+		uint32_t dn : 1 __packed;
+		uint32_t ahp : 1 __packed;
+		uint32_t rsvd__27 : 1 __packed;
+		uint32_t v : 1 __packed;
+		uint32_t c : 1 __packed;
+		uint32_t z : 1 __packed;
+		uint32_t n : 1 __packed;
+	} bit;
+};
+
+union __fpu_dscr {     /* FPU Default Status Control Register */
+	uint32_t val;
+	struct {
+		uint32_t rsvd__0_21 : 22 __packed;
+		uint32_t rmode : 2 __packed;
+		uint32_t fz : 1 __packed;
+		uint32_t dn : 1 __packed;
+		uint32_t ahp : 1 __packed;
+		uint32_t rsvd__27_31 : 5 __packed;
+	} bit;
+};
+
 struct __scs {
 	uint32_t rsvd__MasterControlRegister;
 	union __ictr ictr;   /* 0x004 Interrupt Controller Type Register */
@@ -391,7 +488,11 @@ struct __scs {
 	/*
 	 * d40 -> d7f: processor feature ID registers (pp.778-779 in DDI0403D)
 	 */
-	uint32_t rsvd__d40_d8f[(0xd90 - 0xd40) / 4];
+	uint32_t rsvd__d40_d87[(0xd88 - 0xd40) / 4];
+
+	union __cpacr cpacr;       /* 0xd88 Coprocessor Access Control Reg */
+
+	uint32_t rsvd__d8c_d8f;
 
 	/* Memory Protection Unit (MPU) */
 	struct { /* 0xD90-0xDA3 */
@@ -415,7 +516,15 @@ struct __scs {
 	/* 0xf00 WO SW Trigger IRQ Reg. (bit 0-8/IRQ 0-239 only) */
 	uint32_t stir;
 
-	uint32_t rsvd__f04_fff[(0x1000 - 0xF04) / 4];
+	uint32_t rsvd__f04_f33[(0xf34 - 0xF04) / 4];
+
+	struct { /* 0xF34-F3F */
+		union __fpu_ccr  ccr;    /* 0xf34 Context Control Reg */
+		union __fpu_car  car;    /* 0xf38 Context Address Reg */
+		union __fpu_dscr dscr;   /* 0xf3c Default Status Control Reg */
+	} fpu;                           /* offset: 0xf34, size: 0x0c */
+
+	uint32_t rsvd__f40_fff[(0x1000 - 0xf40) / 4];
 };
 
 /* the linker always puts this object at 0xe000e000 */
