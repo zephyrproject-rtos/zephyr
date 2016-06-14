@@ -78,10 +78,6 @@
  */
 #define USB_CONFIGURATION_ATTRIBUTES    0xC0
 
-/* Misc. macros */
-#define LOW_BYTE(x)                     ((x)&0xFF)
-#define HIGH_BYTE(x)                    ((x)>>8)
-
 /* Classes */
 #define COMMUNICATION_DEVICE_CLASS      0x02
 #define COMMUNICATION_DEVICE_CLASS_DATA 0x0A

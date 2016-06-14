@@ -62,6 +62,10 @@
 #define DFU_FLASH_ADDR (dfu_data.flash_base_addr + \
 	dfu_data.alt_setting * DFU_ALT_SETTING_OFFSET)
 
+/* Misc. macros */
+#define LOW_BYTE(x)  ((x) & 0xFF)
+#define HIGH_BYTE(x) ((x) >> 8)
+
 static struct usb_cfg_data dfu_config;
 
 /* Device data structure */

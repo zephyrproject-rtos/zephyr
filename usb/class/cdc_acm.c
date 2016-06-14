@@ -74,6 +74,10 @@ static struct uart_driver_api cdc_acm_driver_api;
 /* Size of the internal buffer used for storing received data */
 #define CDC_ACM_BUFFER_SIZE (2 * CDC_BULK_EP_MPS)
 
+/* Misc. macros */
+#define LOW_BYTE(x)  ((x) & 0xFF)
+#define HIGH_BYTE(x) ((x) >> 8)
+
 struct device *cdc_acm_dev;
 
 /* Device data structure */
