@@ -107,6 +107,8 @@ struct net_addr {
 
 #define INADDR_ANY 0
 
+#define NET_IPV6_MTU 1280
+
 /** IPv6/IPv4 network connection tuple */
 struct net_tuple {
 	/** IPv6/IPv4 remote address */
