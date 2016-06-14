@@ -24,38 +24,19 @@ These options can be found in the following path :file:`kernel/Kconfig`.
 
 General kernel event logger configuration:
 
-* :option:`KERNEL_EVENT_LOGGER_BUFFER_SIZE`
+* :option:`CONFIG_KERNEL_EVENT_LOGGER_BUFFER_SIZE`
 
   Default size: 128 words, 32-bit length.
 
 Profiling points configuration:
 
-* :option:`KERNEL_EVENT_INTERRUPT`
-
-  Enables recording of interrupt-driven events by providing timestamp information.
-
-* :option:`KERNEL_EVENT_SLEEP`
-
-  Enables recording of sleep events:
-
-    * Timestamp when the CPU went to sleep mode.
-    * Timestamp when the CPU woke up.
-    * The interrupt Id that woke the CPU up.
-
-* :option:`KERNEL_EVENT_CONTEXT`
-
-  Enables recording of context-switching events. Details include:
-
-    * Which thread is leaving the CPU.
-    * Timestamp when the event has occurred.
-
-* :option:`KERNEL_EVENT_LOGGER_DYNAMIC`
+* :option:`CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC`
 
   Allows modifying at runtime the events to record. At boot no event is recorded if enabled
   This flag adds functions allowing to enable/disable recoding of kernel event logger and
   task monitor events.
 
-* :option:`KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
+* :option:`CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
 
   Enables the possibility to set the timer function to be used to populate kernel event logger
   timestamp. This has to be done at runtime by calling sys_k_event_logger_set_timer and providing
@@ -120,13 +101,13 @@ The timestamp used by the kernel event logger is 32-bit LSB of platform HW timer
 Lakemont APIC timer for Quark SE). This timer period is very small and leads to timestamp
 wraparound happening quite often (e.g. every 134s for Quark SE).
 
-see :option:`SYS_CLOCK_HW_CYCLES_PER_SEC`
+see :option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC`
 
 This wraparound must be considered when analyzing kernel event logger data and care must be
 taken when tickless idle is enabled and sleep duration can exceed maximum HW timer value.
 
 Timestamp used by the kernel event logger can be customized by enabling following option:
-:option:`KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
+:option:`CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP`
 
 In case this option is enabled, a callback function returning a 32-bit timestamp must
 be provided to the kernel event logger by calling the following function at runtime:
