@@ -50,6 +50,9 @@
 #include "icmpv4.h"
 #endif
 
+#include "connection.h"
+#include "udp.h"
+
 /* Stack for the rx fiber.
  */
 #if !defined(CONFIG_NET_RX_STACK_SIZE)
@@ -199,6 +202,10 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 			net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
 			return process_icmpv6_pkt(buf, hdr);
 
+		case IPPROTO_UDP:
+			net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
+			return net_conn_input(IPPROTO_UDP, buf);
+
 		default:
 			goto bad_header;
 		}
@@ -261,6 +268,10 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 	case IPPROTO_ICMP:
 		net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
 		return process_icmpv4_pkt(buf, hdr);
+
+	case IPPROTO_UDP:
+		net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
+		return net_conn_input(IPPROTO_UDP, buf);
 	}
 
 drop:
@@ -412,6 +423,11 @@ static inline void l3_init(void)
 {
 	net_icmpv6_init();
 	net_ipv6_init();
+
+#if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
+	net_conn_init();
+#endif
+	net_udp_init();
 
 	NET_DBG("Network L3 init done");
 }
