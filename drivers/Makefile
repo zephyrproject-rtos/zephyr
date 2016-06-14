@@ -27,3 +27,4 @@ obj-$(CONFIG_IPM) += ipm/
 obj-$(CONFIG_SENSOR) += sensor/
 obj-$(CONFIG_AIO_COMPARATOR) += aio/
 obj-$(CONFIG_PINMUX) += pinmux/
+obj-$(CONFIG_DMA) += dma/

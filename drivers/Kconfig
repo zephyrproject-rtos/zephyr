@@ -69,4 +69,6 @@ source "drivers/sensor/Kconfig"
 
 source "drivers/counter/Kconfig"
 
+source "drivers/dma/Kconfig"
+
 endmenu
