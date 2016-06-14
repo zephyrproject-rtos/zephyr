@@ -36,14 +36,20 @@ struct ipv6_hdr {
 	uint8_t hop_limit;
 	struct in6_addr src;
 	struct in6_addr dst;
-} __attribute__((__packed__));
+} __packed;
 
 struct udp_hdr {
 	uint16_t src_port;
 	uint16_t dst_port;
 	uint16_t len;
 	uint16_t chksum;
-} __attribute__((__packed__));
+} __packed;
+
+struct icmp_hdr {
+	uint8_t type;
+	uint8_t code;
+	uint16_t chksum;
+} __packed;
 
 static const char example_data[] =
 	"0123456789abcdefghijklmnopqrstuvxyz!#¤%&/()=?"
@@ -156,6 +162,116 @@ static int test_ipv6_multi_frags(void)
 	return 0;
 }
 
+static char buf_orig[200];
+static char buf_copy[200];
+
+static void linearize(struct net_buf *buf, char *buffer, int len)
+{
+	char *ptr = buffer;
+
+	buf = buf->frags;
+
+	while (buf && len > 0) {
+
+		memcpy(ptr, buf->data, buf->len);
+		ptr += buf->len;
+		len -= buf->len;
+
+		buf = buf->frags;
+	}
+}
+
+static int test_fragment_copy(void)
+{
+	struct net_buf *buf, *frag, *new_buf, *new_frag;
+	struct ipv6_hdr *ipv6;
+	struct udp_hdr *udp;
+	size_t orig_len;
+	int pos;
+
+	buf = net_nbuf_get_reserve_rx(0);
+	frag = net_nbuf_get_reserve_data(LL_RESERVE);
+
+	/* Place the IP + UDP header in the first fragment */
+	if (net_buf_tailroom(frag)) {
+		ipv6 = (struct ipv6_hdr *)(frag->data);
+		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+		if (net_buf_tailroom(frag) < sizeof(*ipv6)) {
+			printk("Not enough space for IPv6 header, "
+			       "needed %d bytes, has %d bytes\n",
+			       sizeof(ipv6), net_buf_tailroom(frag));
+			return -EINVAL;
+		}
+		net_buf_add(frag, sizeof(*ipv6));
+
+		if (net_buf_tailroom(frag) < sizeof(*udp)) {
+			printk("Not enough space for UDP header, "
+			       "needed %d bytes, has %d bytes\n",
+			       sizeof(udp), net_buf_tailroom(frag));
+			return -EINVAL;
+		}
+
+		net_buf_add(frag, sizeof(*udp));
+
+		memcpy(net_buf_add(frag, 15), example_data, 15);
+
+		net_nbuf_appdata(buf) = (void *)udp + sizeof(*udp) + 15;
+		net_nbuf_appdatalen(buf) = 0;
+	}
+
+	net_buf_frag_add(buf, frag);
+
+	orig_len = net_buf_frags_len(buf);
+
+	printk("Total copy data len %d\n", orig_len);
+
+	linearize(buf, buf_orig, sizeof(orig_len));
+
+	/* Then copy a fragment list to a new fragment list */
+	new_frag = net_nbuf_copy_all(buf->frags, sizeof(struct ipv6_hdr) +
+				     sizeof(struct icmp_hdr));
+	if (!new_frag) {
+		printk("Cannot copy fragment list.\n");
+		return -EINVAL;
+	}
+
+	new_buf = net_nbuf_get_reserve_tx(0);
+	net_buf_frag_add(new_buf, new_frag);
+
+	printk("Total new data len %d\n", net_buf_frags_len(new_buf));
+
+	if (net_buf_frags_len(buf) != 0) {
+		printk("Fragment list missing data, %d bytes not copied\n",
+		       net_buf_frags_len(buf));
+		return -EINVAL;
+	}
+
+	if (net_buf_frags_len(new_buf) != (orig_len + sizeof(struct ipv6_hdr) +
+					   sizeof(struct icmp_hdr))) {
+		printk("Fragment list missing data, new buf len %d "
+		       "should be %d\n", net_buf_frags_len(new_buf),
+		       orig_len + sizeof(struct ipv6_hdr) +
+		       sizeof(struct icmp_hdr));
+		return -EINVAL;
+	}
+
+	linearize(new_buf, buf_copy, sizeof(buf_copy));
+
+	if (!memcmp(buf_orig, buf_copy, sizeof(buf_orig))) {
+		printk("Buffer copy failed, buffers are same!\n");
+		return -EINVAL;
+	}
+
+	pos = memcmp(buf_orig, buf_copy + sizeof(struct ipv6_hdr) +
+		     sizeof(struct icmp_hdr), sizeof(buf_orig));
+	if (pos) {
+		printk("Buffer copy failed at pos %d\n", pos);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -163,6 +279,10 @@ void main(void)
 #endif
 {
 	if (test_ipv6_multi_frags() < 0) {
+		return;
+	}
+
+	if (test_fragment_copy() < 0) {
 		return;
 	}
 
