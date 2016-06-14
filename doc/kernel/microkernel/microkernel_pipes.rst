@@ -31,14 +31,19 @@ to be sent. It also specifies both the number of data bytes available
 and a :dfn:`pipe option` that indicates the minimum number of data bytes
 the pipe must accept. The following pipe option values are supported:
 
-   :option:`_ALL_N`
+   ``_ALL_N``
+
       Specifies that **all** available data bytes must be accepted by the pipe.
       When this requirement is not fulfilled, the send request either fails or
       performs a partial send.
-   :option:`_1_TO_N`
+
+   ``_1_TO_N``
+
       Specifies that **at least one** data byte must be accepted by the pipe.
       When this requirement is not fulfilled, the send request fails.
-   :option:`_0_TO_N`
+
+   ``_0_TO_N``
+
       Specifies that **any number** of data bytes, including zero, may be accepted
       by the pipe; the send request never fails.
 
@@ -65,11 +70,11 @@ Incomplete Send Requests
 ------------------------
 
 Although a pipe endeavors to accept all available data bytes when the
-:option:`_ALL_N` pipe option is specified, it does not guarantee that the
+``_ALL_N`` pipe option is specified, it does not guarantee that the
 data bytes will be accepted in an "all or nothing" manner. When the pipe
-is able to accept at least one data byte, it returns :option:`RC_INCOMPLETE`
+is able to accept at least one data byte, it returns :c:macro:`RC_INCOMPLETE`
 to notify the sending task that its request was not fully satisfied. When
-the pipe is unable to accept any data bytes, it returns :option:`RC_FAIL`.
+the pipe is unable to accept any data bytes, it returns :c:macro:`RC_FAIL`.
 
 One example of a situation that can result in an incomplete send is a
 time-limited send request through an unbuffered pipe. If the receiving task
@@ -101,14 +106,19 @@ of data bytes and a :dfn:`pipe option` that indicates the minimum number of
 data bytes the pipe must deliver. The following pipe option values
 are supported:
 
-   :option:`_ALL_N`
+   ``_ALL_N``
+
       Specifies that all desired number of data bytes must be received.
       When this requirement is not fulfilled, the receive request either fails or
       performs a partial receive.
-   :option:`_1_TO_N`
+
+   ``_1_TO_N``
+
       Specifies that at least one data byte must be received. When this requirement
       is not fulfilled, the receive request fails.
-   :option:`_0_TO_N`
+
+   ``_0_TO_N``
+
       Specifies that any number of data bytes (including zero) may be
       received; the receive request never fails.
 
@@ -128,11 +138,11 @@ Incomplete Receive Requests
 ---------------------------
 
 Although a pipe endeavors to deliver all desired data bytes when the
-:option:`_ALL_N` pipe option is specified, it does not guarantee that the
+``_ALL_N`` pipe option is specified, it does not guarantee that the
 data bytes will be delivered in an "all or nothing" manner. When the pipe
-is able to deliver at least one data byte, it returns :option:`RC_INCOMPLETE`
+is able to deliver at least one data byte, it returns :c:macro:`RC_INCOMPLETE`
 to notify the receiving task that its request was not fully satisfied. When
-the pipe is unable to deliver any data bytes, it returns :option:`RC_FAIL`.
+the pipe is unable to deliver any data bytes, it returns :c:macro:`RC_FAIL`.
 
 An example of a situation that can result in an incomplete receive is a
 time-limited receive request through an unbuffered pipe. If the sending task
@@ -155,7 +165,7 @@ tasks or multiple receiving tasks.
 
 Care must be taken when a pipe is shared by multiple sending tasks to
 ensure the data bytes they send do not become interleaved unexpectedly;
-using the :option:`_ALL_N` pipe option helps to ensure that each data chunk is
+using the ``_ALL_N`` pipe option helps to ensure that each data chunk is
 transferred in a single operation. The same is true when multiple receiving
 tasks are reading from the same pipe.
 

@@ -84,42 +84,43 @@ A message descriptor is a structure of type :c:type:`struct k_msg`. The fields
 listed below are available for application use; all other fields are for
 kernel use only.
 
-   :c:option:`info`
+   *info*
+
       A 32-bit value that is exchanged by the message sender and receiver,
       and whose meaning is defined by the application. This exchange is
       bi-directional, allowing the sender to pass a value to the receiver
       during any message exchange, and allowing the receiver to pass a value
       to the sender during a synchronous message exchange.
 
-   :c:option:`size`
+   *size*
       The message data size, in bytes. Set it to zero when sending an empty
       message, or when discarding the message data of a received message.
       The mailbox updates this field with the actual number of data bytes
       exchanged once the message is received.
 
-   :c:option:`tx_data`
+   *tx_data*
       A pointer to the sending task's message data buffer. Set it to
       :c:macro:`NULL` when sending a memory pool block, or when sending
       an empty message. (Not used when receiving a message.)
 
-   :c:option:`tx_block`
+   *tx_block*
       The descriptor for the memory pool block containing the sending task's
       message data. (Not used when sending a message data buffer,
       or when sending an empty message. Not used when receiving a message.)
 
-   :c:option:`rx_data`
+   *rx_data*
       A pointer to the receiving task's message data buffer. Set it to
       :c:macro:`NULL` when the message's data is not wanted, or when it will be
       retrieved by a subsequent mailbox operation. (Not used when sending
       a message.)
 
-   :c:option:`tx_task`
+   *tx_task*
       The name of the sending task. Set it to :c:macro:`ANYTASK` to receive
       a message sent by any task. The mailbox updates this field with the
       actual sender's name once the message is received. (Not used when
       sending a message.)
 
-   :c:option:`rx_task`
+   *rx_task*
       The name of the receiving task. Set it to :c:macro:`ANYTASK` to allow
       any task to receive the message. The mailbox updates this field with
       the actual receiver's name once the message is received, but only if
@@ -254,13 +255,13 @@ The receiving task must then respond as follows:
 * If the message descriptor size is non-zero and the receiving task still
   wants to retrieve the data, the task must supply a buffer large enough
   to hold the data. The task first sets the message descriptor's
-  :c:option:`rx_data` field to the address of the buffer, then calls
+  *rx_data* field to the address of the buffer, then calls
   :c:func:`task_mbox_data_get()`. This instructs the mailbox to copy the data
   and delete the message.
 
 * If the message descriptor size is non-zero and the receiving task does *not*
   want to retrieve the data, the task sets the message descriptor's
-  :c:option:`size` field to zero and calls :c:func:`task_mbox_data_get()`.
+  *size* field to zero and calls :c:func:`task_mbox_data_get()`.
   This instructs the mailbox to delete the message without copying the data.
 
 The subsequent data retrieval technique is suitable for applications where
