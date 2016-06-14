@@ -39,7 +39,7 @@ config IOAPIC_NUM_RTES
 	default 32
 
 config LOAPIC_TIMER_IRQ
-	default 0
+	default 10
 
 config LOAPIC_TIMER_IRQ_PRIORITY
 	default 2
