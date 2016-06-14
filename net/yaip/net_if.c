@@ -872,6 +872,10 @@ void net_if_init(void)
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
 		init_tx_queue(iface);
 
+#if defined(CONFIG_NET_IPV4)
+		iface->ttl = CONFIG_NET_INITIAL_TTL;
+#endif
+
 #if defined(CONFIG_NET_IPV6)
 		iface->hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
 		iface->base_reachable_time = REACHABLE_TIME;

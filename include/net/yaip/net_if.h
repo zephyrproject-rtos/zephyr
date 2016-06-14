@@ -224,6 +224,9 @@ struct net_if {
 		/** Netmask */
 		struct in_addr netmask;
 	} ipv4;
+
+	/** IPv4 time-to-live */
+	uint8_t ttl;
 #endif /* CONFIG_NET_IPV4 */
 };
 
@@ -493,6 +496,20 @@ static inline void net_if_ipv6_prefix_set_lf(struct net_if_ipv6_prefix *prefix,
 {
 #if defined(CONFIG_NET_IPV6)
 	prefix->is_infinite = is_infinite;
+#endif
+}
+
+/**
+ * @brief Get IPv4 time-to-live value specified for a given interface
+ * @param iface Network interface
+ * @return Time-to-live
+ */
+static inline uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
+{
+#if defined(CONFIG_NET_IPV4)
+	return iface->ttl;
+#else
+	return 0;
 #endif
 }
 
