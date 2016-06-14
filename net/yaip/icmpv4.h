@@ -28,8 +28,21 @@
 #include <net/net_ip.h>
 #include <net/nbuf.h>
 
+#define NET_ICMPV4_DST_UNREACH  3	/* Destination unreachable */
 #define NET_ICMPV4_ECHO_REQUEST 8
 #define NET_ICMPV4_ECHO_REPLY   0
+
+#define NET_ICMPV4_DST_UNREACH_NO_PROTO  2 /* Protocol not supported */
+#define NET_ICMPV4_DST_UNREACH_NO_PORT   3 /* Port unreachable */
+
+/**
+ * @brief Send ICMPv4 error message.
+ * @param buf Network buffer that this error is related to.
+ * @param type Type of the error message.
+ * @param code Code of the type of the error message.
+ * @return Return 0 if the sending succeed, <0 otherwise.
+ */
+int net_icmpv4_send_error(struct net_buf *buf, uint8_t type, uint8_t code);
 
 enum net_verdict net_icmpv4_input(struct net_buf *buf, uint16_t len,
 				  uint8_t type, uint8_t code);
