@@ -2618,6 +2618,12 @@ sub process {
 			WARN("DEPRECATED_VARIABLE",
 			     "Use of $flag is deprecated, please use \`$replacement->{$flag} instead.\n" . $herecurr) if ($replacement->{$flag});
 		}
+# Kconfig use tabs and no spaces in line
+		if ($realfile =~ /Kconfig/ && $rawline =~ /^\+\t*[ ]+/) {
+			my $herevet = "$here\n" . cat_vet($rawline) . "\n";
+			WARN("LEADING_SPACE",
+			     "please, no spaces at the start of a line\n" . $herevet);
+		}
 
 # check for DT compatible documentation
 		if (defined $root &&
