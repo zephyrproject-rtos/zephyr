@@ -116,12 +116,22 @@ struct net_icmpv6_nd_opt_prefix_info {
 #define NET_ICMPV6_RA_FLAG_ONLINK     0x80
 #define NET_ICMPV6_RA_FLAG_AUTONOMOUS 0x40
 
+#define NET_ICMPV6_DST_UNREACH    1	/* Destination unreachable */
 #define NET_ICMPV6_ECHO_REQUEST 128
 #define NET_ICMPV6_ECHO_REPLY   129
 #define NET_ICMPV6_RS           133	/* Router Solicitation */
 #define NET_ICMPV6_RA           134	/* Router Advertisement */
 #define NET_ICMPV6_NS           135	/* Neighbor Solicitation */
 #define NET_ICMPV6_NA           136	/* Neighbor Advertisement */
+
+/* Codes for ICMPv6 Destination Unreachable message */
+#define NET_ICMPV6_DST_UNREACH_NO_ROUTE  0 /* No route to destination */
+#define NET_ICMPV6_DST_UNREACH_ADMIN     1 /* Admin prohibited communication */
+#define NET_ICMPV6_DST_UNREACH_SCOPE     2 /* Beoynd scope of source address */
+#define NET_ICMPV6_DST_UNREACH_NO_ADDR   3 /* Address unrechable */
+#define NET_ICMPV6_DST_UNREACH_NO_PORT   4 /* Port unreachable */
+#define NET_ICMPV6_DST_UNREACH_SRC_ADDR  5 /* Source address failed */
+#define NET_ICMPV6_DST_UNREACH_REJ_ROUTE 6 /* Reject route to destination */
 
 typedef enum net_verdict (*icmpv6_callback_handler_t)(struct net_buf *buf);
 
@@ -131,6 +141,15 @@ struct net_icmpv6_handler {
 	uint8_t code;
 	icmpv6_callback_handler_t handler;
 };
+
+/**
+ * @brief Send ICMPv6 error message.
+ * @param buf Network buffer that this error is related to.
+ * @param type Type of the error message.
+ * @param code Code of the type of the error message.
+ * @return Return 0 if the sending succeed, <0 otherwise.
+ */
+int net_icmpv6_send_error(struct net_buf *buf, uint8_t type, uint8_t code);
 
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
 enum net_verdict net_icmpv6_input(struct net_buf *buf, uint16_t len,
