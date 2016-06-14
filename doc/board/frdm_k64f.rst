@@ -321,11 +321,8 @@ table options:
 :option:`CONFIG_SW_ISR_TABLE` and :option:`CONFIG_SW_ISR_TABLE_DYNAMIC`
 
 Depending on whether static tables are provided by the platform
-configuration or by the application, two other kconfig options
-are available:
-
-:option:`CONFIG_SW_ISR_TABLE_STATIC_CUSTOM` and
-:option:`CONFIG_IRQ_VECTOR_TABLE_CUSTOM`
+configuration or by the application, another kconfig option is
+available: :option:`CONFIG_IRQ_VECTOR_TABLE_CUSTOM`.
 
 The following interrupt table scenarios exist:
 
@@ -399,7 +396,7 @@ The following interrupt table scenarios exist:
 .. note::
    This configuration prevents the use of tickless idle.
 
-:option:`CONFIG_SW_ISR_TABLE`\=y, :option:`CONFIG_SW_ISR_TABLE_STATIC_CUSTOM`\=y
+:option:`CONFIG_SW_ISR_TABLE`\=y
    For overriding the static ISR tables defined by the platform:
 
    In this setup, the platform provides the **_irq_vector_table**
