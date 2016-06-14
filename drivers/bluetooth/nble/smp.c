@@ -39,6 +39,7 @@
 #define BT_SMP_OOB_NOT_PRESENT			0x00
 #define BT_SMP_OOB_PRESENT			0x01
 
+#define BT_SMP_MIN_ENC_KEY_SIZE			7
 #define BT_SMP_MAX_ENC_KEY_SIZE			16
 
 enum {
@@ -195,13 +196,25 @@ static uint8_t legacy_get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 	return method;
 }
 
-static uint8_t legacy_pairing_req(struct bt_smp *smp, uint8_t remote_io)
+static uint8_t get_auth(uint8_t auth)
 {
-	struct nble_sm_pairing_response_req params;
+	if (get_io_capa() == BT_SMP_IO_NO_INPUT_OUTPUT) {
+		auth &= ~(BT_SMP_AUTH_MITM);
+	} else {
+		auth |= BT_SMP_AUTH_MITM;
+	}
 
-	smp->method = legacy_get_pair_method(smp, remote_io);
+	return auth;
+}
 
-	BT_DBG("method %u remote_io %u", smp->method, remote_io);
+static uint8_t legacy_pairing_req(struct bt_smp *smp,
+				  const struct nble_sec_param *par)
+{
+	struct nble_sm_pairing_response_req req;
+
+	smp->method = legacy_get_pair_method(smp, par->io_capabilities);
+
+	BT_DBG("method %u io_caps %u", smp->method, par->io_capabilities);
 
 	/* ask for consent if pairing is not due to sending SecReq*/
 	if (smp->method == JUST_WORKS &&
@@ -212,10 +225,15 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp, uint8_t remote_io)
 		return 0;
 	}
 
-	/* TODO: io caps */
-	params.conn = smp->conn;
-	params.conn_handle = smp->conn->handle;
-	nble_sm_pairing_response_req(&params);
+	req.conn = smp->conn;
+	req.conn_handle = smp->conn->handle;
+	req.params.auth = get_auth(par->auth);
+	req.params.io_capabilities = get_io_capa();
+	req.params.max_key_size = par->max_key_size;
+	req.params.min_key_size = par->min_key_size;
+	req.params.oob_flag = BT_SMP_OOB_NOT_PRESENT;
+
+	nble_sm_pairing_response_req(&req);
 
 	return 0;
 }
@@ -242,9 +260,77 @@ void on_nble_sm_pairing_request_evt(const struct nble_sm_pairing_request_evt *ev
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
 
-	legacy_pairing_req(smp, evt->sec_param.remote_io);
+	legacy_pairing_req(smp, &evt->sec_param);
 
 	bt_conn_unref(conn);
+}
+
+static void nble_start_security(struct bt_conn *conn)
+{
+	struct nble_sm_security_req req = { 0 };
+
+	req.conn = conn,
+	req.conn_handle = conn->handle,
+	req.params.auth =  get_auth(BT_SMP_AUTH_BONDING | BT_SMP_AUTH_MITM);
+	req.params.io_capabilities = get_io_capa();
+	req.params.max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
+	req.params.min_key_size = BT_SMP_MIN_ENC_KEY_SIZE;
+	req.params.oob_flag = BT_SMP_OOB_NOT_PRESENT;
+
+	/**
+	 * nble stack generates either a smp security or pairing request
+	 * depending on role.
+	 */
+	nble_sm_security_req(&req);
+}
+
+int bt_smp_send_pairing_req(struct bt_conn *conn)
+{
+	struct bt_smp *smp;
+
+	BT_DBG("");
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return -ENOTCONN;
+	}
+
+	/* pairing is in progress */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+		return -EBUSY;
+	}
+
+	/* TODO: Verify sec level reachable */
+
+	nble_start_security(conn);
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
+
+	return 0;
+}
+int bt_smp_send_security_req(struct bt_conn *conn)
+{
+	struct bt_smp *smp;
+
+	BT_DBG("");
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return -ENOTCONN;
+	}
+
+	/* pairing is in progress */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+		return -EBUSY;
+	}
+
+	/* TODO: Verify sec level reachable */
+
+	nble_start_security(conn);
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_SEC_REQ);
+
+	return 0;
 }
 
 void on_nble_sm_security_request_evt(const struct nble_sm_security_request_evt *evt)
@@ -267,10 +353,11 @@ void on_nble_sm_security_request_evt(const struct nble_sm_security_request_evt *
 		return;
 	}
 
-	BT_DBG("conn %p remote_io %u mitm %u", conn, evt->sec_param.remote_io,
-	       evt->sec_param.mitm);
+	BT_DBG("conn %p remote_io %u auth %u", conn,
+	       evt->sec_param.io_capabilities, evt->sec_param.auth);
 
-	smp->method = legacy_get_pair_method(smp, evt->sec_param.remote_io);
+	smp->method = legacy_get_pair_method(smp,
+					     evt->sec_param.io_capabilities);
 
 	if (smp->method == JUST_WORKS &&
 	    nble.auth && nble.auth->pairing_confirm) {
@@ -279,48 +366,11 @@ void on_nble_sm_security_request_evt(const struct nble_sm_security_request_evt *
 		goto done;
 	}
 
-	if (evt->sec_param.mitm) {
-		bt_conn_security(conn, BT_SECURITY_HIGH);
-	} else {
-		bt_conn_security(conn, BT_SECURITY_MEDIUM);
-	}
+	bt_smp_send_pairing_req(conn);
 
 done:
 	atomic_set_bit(&smp->flags, SMP_FLAG_SEC_REQ);
 	bt_conn_unref(conn);
-}
-
-void send_dm_config(void)
-{
-	struct nble_sm_config_req config = {
-		.key_size = BT_SMP_MAX_ENC_KEY_SIZE,
-		.oob_present = BT_SMP_OOB_NOT_PRESENT,
-	};
-
-	config.io_caps = get_io_capa();
-
-	if (config.io_caps == BT_SMP_IO_NO_INPUT_OUTPUT) {
-		config.options = BT_SMP_AUTH_BONDING;
-	} else {
-		config.options = BT_SMP_AUTH_BONDING | BT_SMP_AUTH_MITM;
-	}
-
-	BT_DBG("io_caps %u options %u", config.io_caps, config.options);
-
-	nble_sm_config_req(&config);
-}
-
-void on_nble_sm_config_rsp(struct nble_sm_config_rsp *rsp)
-{
-	if (rsp->status) {
-		BT_ERR("SM config failed, status %d", rsp->status);
-		return;
-	}
-
-	BT_DBG("status %u", rsp->status);
-
-	/* Get bdaddr queued after SM setup */
-	nble_get_bda_req(NULL);
 }
 
 void on_nble_sm_common_rsp(const struct nble_sm_common_rsp *rsp)
@@ -492,13 +542,13 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
-	struct nble_sm_pairing_response_req params;
+	struct nble_sm_pairing_response_req req;
 
 	BT_DBG("");
 
 	smp = smp_chan_get(conn);
 	if (!smp) {
-		return -EINVAL;
+		return -ENOTCONN;
 	}
 
 	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
@@ -506,12 +556,17 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 	}
 
 	if (conn->role == BT_CONN_ROLE_MASTER) {
-		/* TODO: handle */
+		bt_smp_send_pairing_req(conn);
 	} else {
-		/* TODO: io caps, mitm */
-		params.conn = conn;
-		params.conn_handle = conn->handle;
-		nble_sm_pairing_response_req(&params);
+		req.conn = conn;
+		req.conn_handle = conn->handle;
+		req.params.auth = get_auth(BT_SMP_AUTH_BONDING);
+		req.params.io_capabilities = get_io_capa();
+		req.params.max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
+		req.params.min_key_size = BT_SMP_MIN_ENC_KEY_SIZE;
+		req.params.oob_flag = BT_SMP_OOB_NOT_PRESENT;
+
+		nble_sm_pairing_response_req(&req);
 	}
 
 	return 0;
@@ -521,7 +576,7 @@ int bt_smp_init(void)
 {
 	BT_DBG("");
 
-	send_dm_config();
+	nble_get_bda_req(NULL);
 
 	return 0;
 }

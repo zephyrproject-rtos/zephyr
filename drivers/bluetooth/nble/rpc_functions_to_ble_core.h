@@ -17,7 +17,8 @@
 /* declare the list of functions sorted by signature */
 #define LIST_FN_SIG_NONE						\
 	FN_SIG_NONE(nble_gap_start_adv_req)				\
-	FN_SIG_NONE(nble_gap_stop_scan_req)
+	FN_SIG_NONE(nble_gap_stop_scan_req)				\
+	FN_SIG_NONE(nble_panic_req)
 
 #define LIST_FN_SIG_S							\
 	FN_SIG_S(nble_gap_set_adv_data_req,				\
@@ -26,8 +27,6 @@
 		 struct nble_gap_set_adv_params_req *)			\
 	FN_SIG_S(nble_gap_start_scan_req,				\
 		 const struct nble_gap_start_scan_req *)		\
-	FN_SIG_S(nble_sm_config_req,					\
-		 const struct nble_sm_config_req *)			\
 	FN_SIG_S(nble_sm_passkey_reply_req,				\
 		 const struct nble_sm_passkey_reply_req *)		\
 	FN_SIG_S(nble_sm_bond_info_req,					\

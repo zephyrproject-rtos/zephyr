@@ -70,7 +70,16 @@ struct nble_common_rsp {
 	void *user_data;
 };
 
+struct bt_local_addr {
+	bt_addr_le_t id_addr;
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+	bt_addr_le_t rpa;
+#endif
+};
+
 void on_nble_common_rsp(const struct nble_common_rsp *rsp);
+
+void nble_panic_req(void);
 
 struct nble_version {
 	uint8_t version;
@@ -245,18 +254,6 @@ struct nble_gap_disconnect_req {
 
 void nble_gap_disconnect_req(const struct nble_gap_disconnect_req *req);
 
-struct nble_sm_config_req {
-	/* Security options (see BLE_GAP_SM_OPTIONS) */
-	uint8_t options;
-	/* I/O Capabilities (see BLE_GAP_IO_CAPABILITIES) */
-	uint8_t io_caps;
-	/* Maximum encryption key size (7-16) */
-	uint8_t key_size;
-	uint8_t oob_present;
-};
-
-void nble_sm_config_req(const struct nble_sm_config_req *req);
-
 struct nble_sm_config_rsp {
 	void *user_data;
 	int status;
@@ -267,7 +264,11 @@ void on_nble_sm_config_rsp(struct nble_sm_config_rsp *rsp);
 
 struct nble_sm_pairing_param {
 	/* authentication level see BLE_GAP_SM_OPTIONS */
-	uint8_t auth_level;
+	uint8_t auth;
+	uint8_t io_capabilities;
+	uint8_t max_key_size;
+	uint8_t min_key_size;
+	uint8_t oob_flag;
 };
 
 struct nble_sm_security_req {
@@ -317,6 +318,7 @@ void on_nble_sm_common_rsp(const struct nble_sm_common_rsp *rsp);
 struct nble_sm_pairing_response_req {
 	struct bt_conn *conn;
 	uint16_t conn_handle;
+	struct nble_sm_pairing_param params;
 };
 
 void nble_sm_pairing_response_req(const struct nble_sm_pairing_response_req *req);
@@ -503,8 +505,10 @@ struct nble_sm_status_evt {
 void on_nble_sm_status_evt(const struct nble_sm_status_evt *evt);
 
 struct nble_sec_param {
-	uint8_t mitm;
-	uint8_t remote_io;
+	uint8_t auth;
+	uint8_t io_capabilities;
+	uint8_t min_key_size;
+	uint8_t max_key_size;
 };
 
 struct nble_sm_pairing_request_evt {
@@ -558,6 +562,8 @@ void ble_gap_get_bonding_info(ble_bond_info_cb_t func, void *user_data,
 			      bool include_bonded_addrs);
 
 void ble_gap_get_version(ble_get_version_cb_t func);
+
+void ble_gap_get_bda_info(struct bt_local_addr *addr);
 
 enum NBLE_GAP_RSSI_OPS {
 	NBLE_GAP_RSSI_DISABLE_REPORT = 0,

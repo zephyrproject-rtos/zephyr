@@ -21,6 +21,9 @@ struct bt_conn {
 
 	bt_addr_le_t dst;
 
+	bt_security_t sec_level;
+	bt_security_t required_sec_level;
+
 	uint16_t interval;
 	uint16_t latency;
 	uint16_t timeout;

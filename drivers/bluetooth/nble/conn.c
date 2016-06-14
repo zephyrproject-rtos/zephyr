@@ -294,33 +294,41 @@ void on_nble_gap_connect_rsp(const struct nble_common_rsp *rsp)
 	BT_DBG("conn %p", rsp->user_data);
 }
 
+static int start_security(struct bt_conn *conn)
+{
+	switch (conn->role) {
+	case BT_HCI_ROLE_MASTER:
+		return bt_smp_send_pairing_req(conn);
+	case BT_HCI_ROLE_SLAVE:
+		return bt_smp_send_security_req(conn);
+	default:
+		return -EINVAL;
+	}
+}
+
 int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 {
-	struct nble_sm_security_req params = {
-			.conn = conn,
-			.conn_handle = conn->handle,
-	};
+	int err;
 
 	BT_DBG("conn %p sec %u", conn, sec);
 
-	switch (sec) {
-	case BT_SECURITY_LOW:
-		params.params.auth_level = BT_SMP_AUTH_NONE;
-		break;
-	case BT_SECURITY_MEDIUM:
-		params.params.auth_level = BT_SMP_AUTH_BONDING;
-		break;
-	case BT_SECURITY_HIGH:
-		params.params.auth_level = BT_SMP_AUTH_BONDING |
-						BT_SMP_AUTH_MITM;
-		break;
-	case BT_SECURITY_FIPS:
-		params.params.auth_level = BT_SMP_AUTH_BONDING | BT_SMP_AUTH_SC;
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
 	}
 
-	nble_sm_security_req(&params);
+	/* nothing to do */
+	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
+		return 0;
+	}
 
-	return 0;
+	conn->required_sec_level = sec;
+
+	err = start_security(conn);
+	if (err) {
+		conn->required_sec_level = conn->sec_level;
+	}
+
+	return err;
 }
 
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
