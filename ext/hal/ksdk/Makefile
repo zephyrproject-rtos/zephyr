@@ -21,6 +21,9 @@ KSDK_DEVICE = $(shell echo $(CONFIG_SOC) | tr '[:lower:]' '[:upper:]')
 KSDK_CPU = CPU_$(subst $(DQUOTE),,$(CONFIG_SOC_PART_NUMBER))
 
 ifdef CONFIG_HAS_KSDK
+ifdef CONFIG_ETH_KSDK
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/ksdk/components/phyksz8081
+endif
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/ksdk/devices/$(KSDK_DEVICE)
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/ksdk/drivers
 
@@ -36,6 +39,7 @@ KBUILD_CFLAGS += -D$(KSDK_CPU)
 obj-y += devices/$(KSDK_DEVICE)/fsl_clock.o
 
 # Build ksdk drivers that can be used for multiple SoC's.
+obj-y += components/
 obj-y += drivers/
 
 endif

@@ -1,6 +1,6 @@
-# Makefile - Kinetis SDK drivers
+# Makefile - Kinetis SDK
 #
-# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# Copyright (c) 2016, ARM Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-obj-$(CONFIG_ETH_KSDK) += fsl_enet.o
-obj-$(CONFIG_I2C_KSDK) += fsl_i2c.o
-obj-$(CONFIG_KSDK_RNGA) += fsl_rnga.o
+obj-$(CONFIG_ETH_KSDK) += phyksz8081/fsl_phy.o
