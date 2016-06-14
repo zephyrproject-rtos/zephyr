@@ -32,7 +32,7 @@ config NBLE
 	help
 	  Enables support for using Nordic Semiconductor nRF51 Bluetooth
 	  LE chips with a custom firmware. The API for this is a subset of
-	  the normal Bluetooth API (include/bluetooth/*.h). This driver can
+	  the normal Bluetooth API (include/bluetooth/). This driver can
 	  only be enabled if CONFIG_BLUETOOTH has not been enabled.
 
 	  A fundamental assumption that the driver makes is that it is
