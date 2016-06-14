@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-config SOC_NRF5
+config SOC_FAMILY_NRF5
 	bool
 	# omit prompt to signify a "hidden" option
 	default n
