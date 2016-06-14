@@ -98,7 +98,6 @@ does not require the device driver or application code to supply an ISR at all.
 Related sections:
 
 * :ref:`Nanokernel Interrupt Services <nanokernel_interrupts>`
-* :ref:`Microkernel Interrupt Services <microkernel_task_irqs>`
 
 Clocks and Timers
 *****************

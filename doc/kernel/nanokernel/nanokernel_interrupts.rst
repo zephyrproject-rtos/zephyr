@@ -131,11 +131,6 @@ to a fiber or task.
 
    See :ref:`microkernel_semaphores`.
 
-5. A kernel-supplied ISR can signal a helper task to do interrupt-related work
-   using a task IRQ that the helper task allocates.
-
-   See :ref:`microkernel_task_irqs`.
-
 When an ISR offloads work to a fiber there is typically a single
 context switch to that fiber when the ISR completes.
 Thus, interrupt-related processing usually continues almost immediately.
