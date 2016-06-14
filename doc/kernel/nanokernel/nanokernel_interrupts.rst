@@ -114,7 +114,7 @@ to a fiber or task.
    The :c:func:`nano_isr_XXX()` APIs should be used to notify the helper fiber
    (or task) that work is available for it.
 
-   See :ref:`fiber_services`.
+   See :ref:`nanokernel_fibers`.
 
 2. An ISR can signal the microkernel server fiber to do interrupt-related
    work by sending an event that has an associated event handler.
