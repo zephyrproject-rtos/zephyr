@@ -121,6 +121,22 @@ config NET_MAX_ROUTERS
        help
          The value depends on your network needs.
 
+config NET_MAX_CONN
+       int "How many network connections are supported"
+       depends on NET_UDP || NET_TCP
+       default 4
+       help
+         The value depends on your network needs. The value
+         should include both UDP and TCP connections.
+
+config NET_CONN_CACHE
+       bool "Cache network connections"
+       depends on NET_UDP || NET_TCP
+       default n
+       help
+         Caching takes slight more memory but will speedup connection
+         handling of UDP and TCP connections.
+
 config NET_TX_STACK_SIZE
 	int "TX fiber stack size"
 	default 1024

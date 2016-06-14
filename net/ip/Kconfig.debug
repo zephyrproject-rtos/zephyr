@@ -322,4 +322,10 @@ config NETWORK_IP_STACK_DEBUG_L2
 	help
 	  Enables L2 output debug messages
 
+config NETWORK_IP_STACK_DEBUG_CONN
+	bool "Debug connection handling"
+	default n
+	help
+	  Enables connection debug messages
+
 endif
