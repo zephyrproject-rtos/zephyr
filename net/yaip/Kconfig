@@ -121,6 +121,12 @@ config NET_MAX_ROUTERS
        help
          The value depends on your network needs.
 
+config NET_UDP
+       bool "Enable UDP"
+       default y
+       help
+         The value depends on your network needs.
+
 config NET_MAX_CONN
        int "How many network connections are supported"
        depends on NET_UDP || NET_TCP

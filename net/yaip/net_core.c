@@ -114,7 +114,7 @@ static inline void stats(void)
 		      GET_STAT(udp.sent),
 		      GET_STAT(udp.drop));
 		PRINT("UDP chkerr     %d",
-		      GET_STAT(icmp.chkerr));
+		      GET_STAT(udp.chkerr));
 #endif
 
 		PRINT("Processing err %d", GET_STAT(processing_error));

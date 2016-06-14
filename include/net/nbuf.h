@@ -191,6 +191,7 @@ static inline void net_nbuf_ll_swap(struct net_buf *buf)
 #define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_nbuf_ip_data(buf))
 #define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))
 #define NET_ICMP_BUF(buf) ((struct net_icmp_hdr *)net_nbuf_icmp_data(buf))
+#define NET_UDP_BUF(buf)  ((struct net_udp_hdr *)(net_nbuf_udp_data(buf)))
 
 #define net_nbuf_set_src_ipv6_addr(buf)				 \
 	net_if_select_src(net_context_get_if(nbuf_context(buf)), \
