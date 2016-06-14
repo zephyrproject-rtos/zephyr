@@ -128,14 +128,16 @@ parameter.
 * Using some architecture defined mechanism, the parameter value is forced in
   the stub. This is commonly found in X86-based architectures.
 
-* The parameters to the ISR are inserted and tracked via a separate table
-  requiring the architecture to discover at runtime which interrupt is
-  executing. A common interrupt handler demuxer is installed for all entries of
-  the real interrupt vector table, which then fetches the device's ISR and
-  parameter from the separate table. This approach is commonly used in the ARC
-  and ARM architectures via the :option:`SW_ISR_TABLE` implementation. You can find
-  examples of the stubs by looking at _IntEnt in x86, _IntExit in x86 and ARM,
-  :code:`_isr_wrapper()` in ARM, or the full implementation description for ARC in
+* The parameters to the ISR are inserted and tracked via a separate
+  table requiring the architecture to discover at runtime which
+  interrupt is executing. A common interrupt handler demuxer is
+  installed for all entries of the real interrupt vector table, which
+  then fetches the device's ISR and parameter from the separate
+  table. This approach is commonly used in the ARC and ARM
+  architectures via the :option:`CONFIG_SW_ISR_TABLE`
+  implementation. You can find examples of the stubs by looking at
+  _IntEnt in x86, _IntExit in x86 and ARM, :code:`_isr_wrapper()` in
+  ARM, or the full implementation description for ARC in
   :file:`arch/arc/core/isr_wrapper.S`.
 
 Each architecture also has to implement primitives for interrupt control:
@@ -304,10 +306,10 @@ mode if the thread triggered a fatal exception, but not if the thread
 gracefully exits its entry point function.
 
 This means implementing an architecture-specific version of
-:c:func:`fiber_abort` and :code:`_TaskAbort`, and setting the two Kconfig
-options :option:`ARCH_HAS_TASK_ABORT` and :option:`ARCH_HAS_NANO_FIBER_ABORT`
-as needed for the architecture (e.g. see
-:file:`arch/arm//core/cortex_m/Kconfig`).
+:c:func:`fiber_abort` and :code:`_TaskAbort`, and setting the two
+Kconfig options :option:`CONFIG_ARCH_HAS_TASK_ABORT` and
+:option:`CONFIG_ARCH_HAS_NANO_FIBER_ABORT` as needed for the
+architecture (e.g. see :file:`arch/arm//core/cortex_m/Kconfig`).
 
 Device Drivers
 **************
@@ -391,8 +393,9 @@ port, since it is so useful for debugging. It is a simple polling, output-only,
 serial port driver on which to send the console (:code:`printk`,
 :code:`printf`) output.
 
-It is not required, and a RAM console (:option:`RAM_CONSOLE`) can be used to
-send all output to a circular buffer that can be read by a debugger instead.
+It is not required, and a RAM console (:option:`CONFIG_RAM_CONSOLE`)
+can be used to send all output to a circular buffer that can be read
+by a debugger instead.
 
 Utility Libraries
 *****************

@@ -79,10 +79,10 @@ Usage
 Configuring Microkernel Timers
 ==============================
 
-Set the :option:`NUM_TIMER_PACKETS` configuration option to specify the
-number of timer-related command packets available in the application. This
-value should be **equal to** or **greater than** the sum of the following
-quantities:
+Set the :option:`CONFIG_NUM_TIMER_PACKETS` configuration option to
+specify the number of timer-related command packets available in the
+application. This value should be **equal to** or **greater than** the
+sum of the following quantities:
 
 * The number of microkernel timers.
 * The number of tasks.

@@ -122,17 +122,17 @@ Usage
 Configuring Floating Point Services
 ===================================
 
-To configure unshared FP registers mode, enable the :option:`FLOAT`
-configuration option and leave the :option:`FP_SHARING` configuration option
+To configure unshared FP registers mode, enable the :option:`CONFIG_FLOAT`
+configuration option and leave the :option:`CONFIG_FP_SHARING` configuration option
 disabled.
 
-To configure shared FP registers mode, enable both the :option:`FLOAT`
-configuration option and the :option:`FP_SHARING` configuration option.
+To configure shared FP registers mode, enable both the :option:`CONFIG_FLOAT`
+configuration option and the :option:`CONFIG_FP_SHARING` configuration option.
 Also, ensure that any task that uses the floating point registers has
 sufficient added stack space for saving floating point register values
 during context switches, as described above.
 
-Use the :option:`SSE` configuration option to enable support for
+Use the :option:`CONFIG_SSE` configuration option to enable support for
 SSEx instructions.
 
 

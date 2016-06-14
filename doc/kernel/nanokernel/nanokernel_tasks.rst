@@ -65,9 +65,9 @@ This function is used as the background task's entry point function. If a
 nanokernel application does not need to perform any task-level processing,
 :code:`main()` can simply do an immediate return.
 
-The :option:`MAIN_STACK_SIZE` configuration option specifies the size,
-in bytes, of the memory region used for the background task's stack
-and for other execution context information.
+The :option:`CONFIG_MAIN_STACK_SIZE` configuration option specifies
+the size, in bytes, of the memory region used for the background
+task's stack and for other execution context information.
 
 APIs
 ****

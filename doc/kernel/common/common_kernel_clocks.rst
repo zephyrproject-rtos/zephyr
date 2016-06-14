@@ -50,7 +50,7 @@ Usage
 Configuring the Kernel Clocks
 =============================
 
-Use the :option:`SYS_CLOCK_TICKS_PER_SEC` configuration option
+Use the :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` configuration option
 to specify how many ticks occur every second. Setting this value
 to zero disables all system clock and hardware clock capabilities.
 

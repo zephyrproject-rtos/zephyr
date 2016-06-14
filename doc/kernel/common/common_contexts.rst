@@ -44,7 +44,7 @@ Usage
 Configuring Custom Data Support
 ===============================
 
-Use the :option:`THREAD_CUSTOM_DATA` configuration option
+Use the :option:`CONFIG_THREAD_CUSTOM_DATA` configuration option
 to enable support for thread custom data. By default, custom data
 support is disabled.
 

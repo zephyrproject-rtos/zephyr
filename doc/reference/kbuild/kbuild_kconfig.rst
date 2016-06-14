@@ -15,9 +15,10 @@ The Kconfig files are distributed across the build directory tree. The files
 are organized based on their common characteristics and on what new symbols
 they add to the configuration menus. For example:
 
-* The Kconfig file at the root directory contains the general configuration
-  options like :option:`ARCH` and :option:`KERNEL VERSION`. These symbols are
-  defined for and apply to the entire build system.
+* The Kconfig file at the root directory contains the general
+  configuration options like :option:`CONFIG_ARCH` and
+  ``CONFIG_KERNEL VERSION``. These symbols are defined for and
+  apply to the entire build system.
 
 * The Kconfig file at the :file:`kernel` directory contains the general
   configuration related to the micro- and the nanokernel.

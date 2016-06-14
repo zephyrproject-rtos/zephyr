@@ -39,8 +39,8 @@ higher-priority fibers, such as time-sensitive device driver or
 application fibers.
 
 Both the fiber's stack size and scheduling priority can be configured
-with the :option:`MICROKERNEL_SERVER_STACK_SIZE` and
-:option:`MICROKERNEL_SERVER_PRIORITY` configuration options,
+with the :option:`CONFIG_MICROKERNEL_SERVER_STACK_SIZE` and
+:option:`CONFIG_MICROKERNEL_SERVER_PRIORITY` configuration options,
 respectively.
 
 

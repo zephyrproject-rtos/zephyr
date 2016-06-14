@@ -95,12 +95,14 @@ A task whose state has no factors that prevent its execution is said to be
 Task Priorities
 ---------------
 
-A microkernel application can be configured to support any number of task
-priority levels using the :option:`NUM_TASK_PRIORITIES` configuration option.
+A microkernel application can be configured to support any number of
+task priority levels using the :option:`CONFIG_NUM_TASK_PRIORITIES`
+configuration option.
 
-An application task can have any priority from 0 (highest priority) down to
-:option:`NUM_TASK_PRIORITIES`-2. The lowest priority level,
-:option:`NUM_TASK_PRIORITIES`-1, is reserved for the microkernel's idle task.
+An application task can have any priority from 0 (highest priority)
+down to :option:`CONFIG_NUM_TASK_PRIORITIES`\-2. The lowest priority
+level, :option:`CONFIG_NUM_TASK_PRIORITIES`\-1, is reserved for the
+microkernel's idle task.
 
 A task's original priority can be altered up or down after the task has been
 started.
@@ -140,10 +142,11 @@ The microkernel's scheduler supports an optional time slicing capability
 that prevents a task from monopolizing the CPU when other tasks of the
 same priority are ready to execute.
 
-The scheduler divides time into a series of *time slices*, where slices
-are measured in system clock ticks. The time slice size is specified with
-the :option:`TIMESLICE_SIZE` configuration option, but this size can also
-be changed dynamically, while the application is running.
+The scheduler divides time into a series of *time slices*, where
+slices are measured in system clock ticks. The time slice size is
+specified with the :option:`CONFIG_TIMESLICE_SIZE` configuration
+option, but this size can also be changed dynamically, while the
+application is running.
 
 At the end of every time slice, the scheduler implicitly invokes
 :c:func:`task_yield()` on behalf of the current task; this gives
@@ -154,10 +157,10 @@ tasks to execute. If no tasks of equal priority are ready to execute,
 the current task remains the current task, and it continues to execute.
 
 Tasks with a priority higher than that specified by the
-:option:`TIMESLICE_PRIORITY` configuration option are exempt from time
-slicing, and are never preempted by a task of equal priority. This
-capability allows an application to use time slicing only for lower
-priority tasks that are less time-sensitive.
+:option:`CONFIG_TIMESLICE_PRIORITY` configuration option are exempt
+from time slicing, and are never preempted by a task of equal
+priority. This capability allows an application to use time slicing
+only for lower priority tasks that are less time-sensitive.
 
 .. note::
    The microkernel's time slicing algorithm does *not* ensure that a set
