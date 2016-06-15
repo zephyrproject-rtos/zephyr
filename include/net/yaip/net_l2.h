@@ -31,8 +31,24 @@ extern "C" {
 struct net_if;
 
 struct net_l2 {
+	/**
+	 * This function is used by net core to get iface's L2 layer parsing
+	 * what's relevant to itself.
+	 */
 	enum net_verdict (*recv)(struct net_if *iface, struct net_buf *buf);
+
+	/**
+	 * This function is used by net core to push a buffer to lower layer
+	 * (interface's L2), which in turn might work on the buffer relevantly.
+	 * (adding proper header etc...)
+	 */
 	enum net_verdict (*send)(struct net_if *iface, struct net_buf *buf);
+
+	/**
+	 * This function is used to get the amount of bytes the net core should
+	 * reserve as headroom in a net buffer. Such space is relevant to L2
+	 * layer only.
+	 */
 	uint16_t (*reserve)(struct net_if *iface, void *data);
 };
 
