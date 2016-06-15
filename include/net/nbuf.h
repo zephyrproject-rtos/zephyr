@@ -331,6 +331,32 @@ static inline struct net_buf *net_nbuf_copy_all(struct net_buf *buf,
 	return net_nbuf_copy(buf, net_buf_frags_len(buf), reserve);
 }
 
+/**
+ * @brief Compact the fragment list.
+ *
+ * @details After this there is no more any free space in individual fragments.
+ *
+ * @param buf Network buffer fragment. This should be the first fragment (data)
+ * in the fragment list.
+ *
+ * @return Pointer to the start of the fragment list if ok, NULL otherwise.
+ */
+struct net_buf *net_nbuf_compact(struct net_buf *buf);
+
+/**
+ * @brief Check if the buffer chain is compact or not.
+ *
+ * @details The compact here means that is there any free space in the
+ * fragments. Only the last fragment can have some free space if the fragment
+ * list is compact.
+ *
+ * @param buf Network buffer.
+ *
+ * @return True if there is no free space in the fragment list,
+ * false otherwise.
+ */
+bool net_nbuf_is_compact(struct net_buf *buf);
+
 #ifdef __cplusplus
 }
 #endif

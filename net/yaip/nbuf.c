@@ -723,6 +723,131 @@ struct net_buf *net_nbuf_copy(struct net_buf *orig, size_t amount,
 	return first;
 }
 
+bool net_nbuf_is_compact(struct net_buf *buf)
+{
+	struct net_buf *last;
+	size_t total = 0, calc;
+	int count = 0;
+
+	last = NULL;
+
+	if (buf->user_data_size) {
+		/* Skip the first element that does not contain any data.
+		 */
+		buf = buf->frags;
+	}
+
+	while (buf) {
+		total += buf->len;
+		count++;
+
+		last = buf;
+		buf = buf->frags;
+	}
+
+	NET_ASSERT(last);
+
+	if (!last) {
+		return false;
+	}
+
+	calc = count * last->size - net_buf_tailroom(last) -
+		count * net_buf_headroom(last);
+
+	if (total == calc) {
+		return true;
+	}
+
+	NET_DBG("Not compacted total %u real %u", total, calc);
+
+	return false;
+}
+
+struct net_buf *net_nbuf_compact(struct net_buf *buf)
+{
+	struct net_buf *first, *prev;
+
+	first = buf;
+
+	if (buf->user_data_size) {
+		NET_DBG("Buffer %p is not a data fragment", buf);
+		buf = buf->frags;
+	}
+
+	prev = NULL;
+
+	NET_DBG("Compacting data to buf %p", first);
+
+	while (buf) {
+		if (buf->frags) {
+			/* Copy amount of data from next fragment to this
+			 * fragment.
+			 */
+			size_t copy_len;
+
+			copy_len = buf->frags->len;
+			if (copy_len > net_buf_tailroom(buf)) {
+				copy_len = net_buf_tailroom(buf);
+			}
+
+			memcpy(net_buf_tail(buf), buf->frags->data, copy_len);
+			net_buf_add(buf, copy_len);
+
+			memmove(buf->frags->data,
+				buf->frags->data + copy_len,
+				buf->frags->len - copy_len);
+
+			buf->frags->len -= copy_len;
+
+			/* Is there any more space in this fragment */
+			if (net_buf_tailroom(buf)) {
+				struct net_buf *frag;
+
+				/* There is. This also means that the next
+				 * fragment is empty as otherwise we could
+				 * not have copied all data.
+				 */
+				frag = buf->frags;
+
+				/* Remove next fragment as there is no
+				 * data in it any more.
+				 */
+				net_buf_frag_del(buf, buf->frags);
+
+				net_nbuf_unref(frag);
+
+				/* Then check next fragment */
+				continue;
+			}
+		} else {
+			if (!buf->len) {
+				/* Remove the last fragment because there is no
+				 * data in it.
+				 */
+				NET_ASSERT_INFO(prev,
+					"First element cannot be deleted!");
+
+				net_buf_frag_del(prev, buf);
+			}
+		}
+
+		prev = buf;
+		buf = buf->frags;
+	}
+
+	/* If the buf exists, then it is the last fragment and can be removed.
+	 */
+	if (buf) {
+		net_nbuf_unref(buf);
+
+		if (prev) {
+			prev->frags = NULL;
+		}
+	}
+
+	return first;
+}
+
 void net_nbuf_init(void)
 {
 	NET_DBG("Allocating %d RX (%d bytes), %d TX (%d bytes) "
