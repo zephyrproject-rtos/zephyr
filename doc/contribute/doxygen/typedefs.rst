@@ -28,11 +28,13 @@ Type Definition Documentation Example
 
 Correct:
 
-.. literalinclude:: irq_test_common_commented.h
-   :language: c
-   :lines: 69-73
-   :emphasize-lines: 1, 3, 4
-   :linenos:
+.. code-block:: c
+
+   /** Declares a void-void function pointer to test the ISR. */
+   typedef void (*vvfn)(void);
+
+   /** Declares a void-void_pointer function pointer to test the ISR. */
+   typedef void (*vvpfn)(void *);
 
 Lines 1 and 4 name the type that is being used and with what purpose.
 Even if the purpose is the same, since the types are different, two
@@ -42,14 +44,12 @@ appropriately.
 
 Incorrect:
 
-.. literalinclude:: ../../../../samples/include/irq_test_common.h
-   :language: c
-   :lines: 67-72
-   :emphasize-lines: 3, 4
-   :linenos:
+.. code-block:: c
 
-The comments on lines 3 and 4 offer little insight into the code's behavior.
-Furthermore, they do not start with
-:literal:`/**` and end with :literal:`*/`. Doxygen won't add the
-information to the documentation nor link it properly to the complex
-type documentation.
+   typedef void (*vvfn)(void);		/* void-void function pointer */
+   typedef void (*vvpfn)(void *);	/* void-void_pointer function pointer */
+
+The comments offer little insight into the code's behavior.
+Furthermore, they do not start with :literal:`/**` and end with
+:literal:`*/`. Doxygen won't add the information to the documentation
+nor link it properly to the complex type documentation.
