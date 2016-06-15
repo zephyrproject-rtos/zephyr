@@ -31,12 +31,20 @@
 
 #define TOTAL_TEST_NUMBER 3
 
+/* 1 IPM console fiber if enabled */
+#if defined(CONFIG_IPM_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
+#define IPM_THREAD 1
+#else
+#define IPM_THREAD 0
+#endif /* CONFIG_IPM_CONSOLE_RECEIVER && CONFIG_PRINTK*/
+
 #ifdef CONFIG_NANOKERNEL
 #define OBJ_LIST_NAME nano_sem
 #define OBJ_LIST_TYPE struct nano_sem
 /* We expect N_PHILOSPHERS fibers and:
  *	1 Background task
  *	1 The object monitor fiber
+ *	1 IPM console fiber if enabled
  */
 #define DELTA_THREADS 2
 
@@ -52,6 +60,7 @@ static inline int test_task_tracing(void)
  *	1 Phil demo task
  *	1 The object monitor task
  *	1 Task scheduler fiber
+ *	1 IPM console fiber if enabled
  */
 #define DELTA_THREADS 3
 
@@ -101,7 +110,7 @@ static inline int test_thread_monitor(void)
 	}
 	TC_PRINT("THREAD QUANTITY: %d\n", obj_counter);
 
-	if (obj_counter == N_PHILOSOPHERS + DELTA_THREADS) {
+	if (obj_counter == N_PHILOSOPHERS + DELTA_THREADS + IPM_THREAD) {
 		TC_END_RESULT(TC_PASS);
 		return 1;
 	}
