@@ -3,10 +3,7 @@ IPSP sample application
 == Supported Boards ==
 
 This application currently only works with HCI based firmware since it
-requires L2CAP channels support, so in order to use it with an arduino 101
-the prj_nimble.conf shall be used:
-
-$ make CONF_FILE=prj_nimble.conf BOARD=arduino_101
+requires L2CAP channels support.
 
 == Testing with Linux host ==
 

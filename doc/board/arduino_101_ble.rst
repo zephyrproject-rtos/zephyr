@@ -141,9 +141,7 @@ Building the firmware yourself
       Done!
 
 After successfully completing these steps your Arduino 101 should now
-have a HCI compatible BLE firmware. The Zephyr tree contains several
-sample config files for this firmware (named after the MyNewt BLE stack,
-Nimble), e.g. :file:`samples/bluetooth/peripheral_hr/prj_nimble.conf`
+have a HCI compatible BLE firmware.
 
 Getting HCI traces
 ******************
