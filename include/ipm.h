@@ -38,25 +38,61 @@ extern "C" {
 #endif
 
 /**
+ * @typedef ipm_callback_t
  * @brief Callback API for incoming IPM messages
  *
  * These callbacks execute in interrupt context. Therefore, use only
  * interrupt-safe APIS. Registration of callbacks is done via
  * @a ipm_register_callback
  *
- * @param context Arbitrary context pointer provided at registration time.
- * @param id Message type identifier.
- * @param data Message data pointer. The correct amount of data to read out
+ * @param "void *context" Arbitrary context pointer provided at
+ *        registration time.
+ * @param "uint32_t id" Message type identifier.
+ * @param "volatile void *data" Message data pointer. The correct
+ *        amount of data to read out
  * must be inferred using the message id/upper level protocol.
  */
 typedef void (*ipm_callback_t)(void *context, uint32_t id, volatile void *data);
 
+/**
+ * @typedef ipm_send_t
+ * @brief Callback API to send IPM messages
+ *
+ * See @a ipm_send() for argument definitions.
+ */
 typedef int (*ipm_send_t)(struct device *ipmdev, int wait, uint32_t id,
 			  const void *data, int size);
+/**
+ * @typedef ipm_max_data_size_get_t
+ * @brief Callback API to get maximum data size
+ *
+ * See @a ipm_max_data_size_get() for argument definitions.
+ */
 typedef int (*ipm_max_data_size_get_t)(struct device *ipmdev);
+
+/**
+ * @typedef ipm_max_id_val_get_t
+ * @brief Callback API to get the ID's maximum value
+ *
+ * See @a ipm_max_id_val_get() for argument definitions.
+ */
 typedef uint32_t (*ipm_max_id_val_get_t)(struct device *ipmdev);
+
+/**
+ * @typedef ipm_register_callback_t
+ * @brief Callback API upon registration
+ *
+ * See @a ipm_register_callback() for argument definitions.
+ */
 typedef void (*ipm_register_callback_t)(struct device *port, ipm_callback_t cb,
 					void *cb_context);
+
+/**
+ * @typedef ipm_set_enabled_t
+ * @brief Callback API upon emablement of interrupts
+ *
+ * See @a ipm_set_enabled() for argument definitions.
+ */
 typedef int (*ipm_set_enabled_t)(struct device *ipmdev, int enable);
 
 struct ipm_driver_api {

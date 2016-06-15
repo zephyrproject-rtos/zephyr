@@ -126,10 +126,11 @@ extern "C" {
 #define GPIO_PIN_DISABLE	(1 << 11)
 
 /**
+ * @typedef gpio_callback_t
  * @brief Define the application callback function signature.
  *
- * @param port Device struct for the GPIO device.
- * @param pin The pin that triggers the callback.
+ * @param "struct device *port" Device struct for the GPIO device.
+ * @param "uint32_t pin" The pin that triggers the callback.
  *
  * Note: This is the former callback signature used to set a unique
  *       callback (API v1.0) through gpio_set_callback(). The new
@@ -141,11 +142,13 @@ typedef void (*gpio_callback_t)(struct device *port, uint32_t pin);
 struct gpio_callback;
 
 /**
+ * @typedef gpio_callback_handler_t
  * @brief Define the application callback handler function signature
  *
- * @param port Device struct for the GPIO device.
- * @param cb Original struct gpio_callback owning this handler
- * @param pins Mask of pins that triggers the callback handler
+ * @param "struct device *port" Device struct for the GPIO device.
+ * @param "struct gpio_callback *cb" Original struct gpio_callback
+ *        owning this handler
+ * @param "uint32_t pins" Mask of pins that triggers the callback handler
  *
  * Note: cb pointer can be used to retrieve private data through
  * CONTAINER_OF() if original struct gpio_callback is stored in

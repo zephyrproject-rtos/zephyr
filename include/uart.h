@@ -73,13 +73,19 @@ extern "C" {
 #define UART_ERROR_BREAK    (1 << 3)
 
 /**
+ * @typedef uart_irq_callback_t
  * @brief Define the application callback function signature for UART.
  *
  * @param port Device struct for the UART device.
  */
 typedef void (*uart_irq_callback_t)(struct device *port);
 
-/* For configuring IRQ on each individual UART device. Internal use only. */
+/**
+ * @typedef uart_irq_config_func_t
+ * @brief For configuring IRQ on each individual UART device.
+ *
+ * @internal
+ */
 typedef void (*uart_irq_config_func_t)(struct device *port);
 
 /** @brief UART device configuration.*/

@@ -41,15 +41,45 @@ extern "C" {
 #include <stddef.h>
 #include <device.h>
 
+/**
+ * @typedef pwm_config_t
+ * @brief Callback API upon configuration
+ * See @a pwm_pin_configure() for argument description
+ */
 typedef int (*pwm_config_t)(struct device *dev, int access_op,
 			    uint32_t pwm, int flags);
+/**
+ * @typedef pwm_set_values_t
+ * @brief Callback API upon setting PIN values
+ * See @a pwm_pin_set_values() for argument description
+ */
 typedef int (*pwm_set_values_t)(struct device *dev, int access_op,
 				uint32_t pwm, uint32_t on, uint32_t off);
+/**
+ * @typedef pwm_set_duty_cycle_t
+ * @brief Callback API upon setting the duty cycle
+ * See @a pwm_pin_set_duty_cycle() for argument description
+ */
 typedef int (*pwm_set_duty_cycle_t)(struct device *dev, int access_op,
 				    uint32_t pwm, uint8_t duty);
+/**
+ * @typedef pwm_set_phase_t
+ * @brief Callback API upon setting the phase
+ * See @a pwm_pin_set_phase() for argument description
+ */
 typedef int (*pwm_set_phase_t)(struct device *dev, int access_op,
 				    uint32_t pwm, uint8_t phase);
+/**
+ * @typedef pwm_suspend_dev_t
+ * @brief Callback API upon suspending
+ * See @a pwm_suspend() for argument description
+ */
 typedef int (*pwm_suspend_dev_t)(struct device *dev);
+/**
+ * @typedef pwm_resume_dev_t
+ * @brief Callback API upon resuming
+ * See @a pwm_resume() for argument description
+ */
 typedef int (*pwm_resume_dev_t)(struct device *dev);
 
 /** @brief PWM driver API definition. */

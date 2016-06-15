@@ -77,12 +77,32 @@ struct spi_config {
 	uint32_t	max_sys_freq;
 };
 
+/**
+ * @typedef spi_api_configure
+ * @brief Callback API upon configuring the const controller
+ * See spi_configure() for argument description
+ */
 typedef int (*spi_api_configure)(struct device *dev,
 				 struct spi_config *config);
+/**
+ * @typedef spi_api_slave_select
+ * @brief Callback API upon selecting a slave
+ * See spi_slave_select() for argument description
+ */
 typedef int (*spi_api_slave_select)(struct device *dev, uint32_t slave);
+/**
+ * @typedef spi_api_io
+ * @brief Callback API for I/O
+ * See spi_read() and spi_write() for argument descriptions
+ */
 typedef int (*spi_api_io)(struct device *dev,
 			  const void *tx_buf, uint32_t tx_buf_len,
 			  void *rx_buf, uint32_t rx_buf_len);
+/**
+ * @typedef spi_api_control
+ * @brief Callback API upon for suspend/resume
+ * See spi_suspend() and spi_resume() for argument description
+ */
 typedef int (*spi_api_control)(struct device *dev);
 
 struct spi_driver_api {

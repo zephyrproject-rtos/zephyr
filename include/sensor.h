@@ -198,18 +198,49 @@ enum sensor_attribute {
 	SENSOR_ATTR_CALIB_TARGET,
 };
 
+/**
+ * @typedef sensor_trigger_handler_t
+ * @brief Callback API upon firing of a trigger
+ *
+ * @param "struct device *dev" Pointer to the sensor device
+ * @param "struct sensor_trigger *trigger" The trigger
+ */
 typedef void (*sensor_trigger_handler_t)(struct device *dev,
 					 struct sensor_trigger *trigger);
 
+/**
+ * @typedef sensor_attr_set_t
+ * @brief Callback API upon setting a sensor's attributes
+ *
+ * See sensor_attr_set() for argument description
+ */
 typedef int (*sensor_attr_set_t)(struct device *dev,
 				 enum sensor_channel chan,
 				 enum sensor_attribute attr,
 				 const struct sensor_value *val);
+/**
+ * @typedef sensor_trigger_set_t
+ * @brief Callback API for setting a sensor's trigger and handler
+ *
+ * See sensor_trigger_set() for argument description
+ */
 typedef int (*sensor_trigger_set_t)(struct device *dev,
 				    const struct sensor_trigger *trig,
 				    sensor_trigger_handler_t handler);
+/**
+ * @typedef sensor_sample_fetch_t
+ * @brief Callback API for fetching data from a sensor
+ *
+ * See sensor_sample_fetch() for argument descriptor
+ */
 typedef int (*sensor_sample_fetch_t)(struct device *dev,
 				     enum sensor_channel chan);
+/**
+ * @typedef sensor_channel_get_t
+ * @brief Callback API for getting a reading from a sensor
+ *
+ * See sensor_channel_get() for argument descriptor
+ */
 typedef int (*sensor_channel_get_t)(struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val);

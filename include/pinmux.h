@@ -47,9 +47,29 @@ extern "C" {
 #define PINMUX_INPUT_ENABLED	(0x1)
 #define PINMUX_OUTPUT_ENABLED	(0x0)
 
+/**
+ * @typedef pmux_set
+ * @brief Callback API upon setting a PIN's function
+ * See pinmux_pin_set() for argument description
+ */
 typedef int (*pmux_set)(struct device *dev, uint32_t pin, uint32_t func);
+/**
+ * @typedef pmux_get
+ * @brief Callback API upon getting a PIN's function
+ * See pinmux_pin_get() for argument description
+ */
 typedef int (*pmux_get)(struct device *dev, uint32_t pin, uint32_t *func);
+/**
+ * @typedef pmux_pullup
+ * @brief Callback API upon setting a PIN's pullup
+ * See pinmix_pin_pullup() for argument description
+ */
 typedef int (*pmux_pullup)(struct device *dev, uint32_t pin, uint8_t func);
+/**
+ * @typedef pmux_input
+ * @brief Callback API upon setting a PIN's input function
+ * See pinmux_input() for argument description
+ */
 typedef int (*pmux_input)(struct device *dev, uint32_t pin, uint8_t func);
 
 struct pinmux_driver_api {
