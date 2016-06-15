@@ -1385,17 +1385,6 @@ on_nble_gatts_prep_write_evt(const struct nble_gatts_write_evt *ev,
 #endif
 }
 
-static uint8_t gatts_write_evt(const struct nble_gatts_write_evt *ev,
-			       const uint8_t *buf, uint8_t buflen)
-{
-	const struct bt_gatt_attr *attr = ev->attr;
-	struct bt_conn *conn = bt_conn_lookup_handle(ev->conn_handle);
-
-	BT_DBG("handle 0x%04x offset %u", attr->handle, ev->offset);
-
-	return attr->write(conn, attr, buf, buflen, ev->offset);
-}
-
 void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 			     const uint8_t *buf, uint8_t buflen)
 {
@@ -1418,7 +1407,7 @@ void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 		goto reply;
 	}
 
-	reply_data.status = gatts_write_evt(ev, buf, buflen);
+	reply_data.status = attr->write(conn, attr, buf, buflen, ev->offset);
 	if (reply_data.status < 0) {
 		goto reply;
 	}
@@ -1460,6 +1449,7 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 
 	while ((buf = nano_fifo_get(&queue, TICKS_NONE))) {
 		struct nble_gatts_write_evt *ev = net_buf_user_data(buf);
+		const struct bt_gatt_attr *attr = ev->attr;
 
 		/* Skip buffer for other connections */
 		if (ev->conn_handle != evt->conn_handle) {
@@ -1469,7 +1459,8 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 
 		/* Just discard the data if an error was set */
 		if (!rsp.status && evt->flag == 0x01) {
-			rsp.status = gatts_write_evt(ev, buf->data, buf->len);
+			rsp.status = attr->write(conn, attr, buf->data,
+						 buf->len, ev->offset);
 		}
 
 		net_buf_unref(buf);
