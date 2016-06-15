@@ -136,9 +136,9 @@ void nano_delayed_work_init(struct nano_delayed_work *work,
  * mutual exclusion mechanism. Such usage is not recommended and if necessary,
  * it should be explicitly done between the submitter and the handler.
  *
- * @param Workqueue to schedule the work item
- * @param Delayed work item
- * @param Ticks to wait before scheduling the work item
+ * @param wq Workqueue to schedule the work item
+ * @param work Delayed work item
+ * @param ticks Ticks to wait before scheduling the work item
  *
  * @return 0 in case of success or negative value in case of error.
  */
@@ -154,7 +154,7 @@ int nano_delayed_work_submit_to_queue(struct nano_workqueue *wq,
  * the work has been submitted to the work queue, but the handler has not run
  * yet.
  *
- * @param Delayed work item to be canceled
+ * @param work Delayed work item to be canceled
  *
  * @return 0 in case of success or negative value in case of error.
  */

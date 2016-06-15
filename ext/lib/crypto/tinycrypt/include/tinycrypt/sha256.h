@@ -120,7 +120,7 @@ int32_t tc_sha256_update(TCSha256State_t s,
  *           If your application intends to have sensitive data in this
  *           buffer, remind to erase it after the data has been processed
  *  @param digest unsigned eight bit integer
- *  @param Sha256 state struct
+ *  @param s Sha256 state struct
  */
 int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s);
 

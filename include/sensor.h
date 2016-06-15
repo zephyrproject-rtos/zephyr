@@ -317,7 +317,7 @@ static inline int sensor_sample_fetch(struct device *dev)
  * to call it in an ISR if the device is connected via I2C or SPI.
  *
  * @param dev Pointer to the sensor device
- * @param chan The channel that needs updated
+ * @param type The channel that needs updated
  *
  * @return 0 if successful, negative errno code if failure.
  */
