@@ -381,7 +381,6 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
 }
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief Enable/disable set controller in discoverable state.
  *
  *  Allows make local controller to listen on INQUIRY SCAN channel and responds
@@ -407,7 +406,6 @@ int bt_br_set_discoverable(bool enable);
  *  already set. Zero if done successfully.
  */
 int bt_br_set_connectable(bool enable);
-#endif
 
 #ifdef __cplusplus
 }

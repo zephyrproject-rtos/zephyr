@@ -45,7 +45,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 
@@ -85,7 +84,6 @@ struct bt_l2cap_le_chan {
 	uint16_t			_sdu_len;
 };
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief BREDR L2CAP Endpoint structure. */
 struct bt_l2cap_br_endpoint {
 	/** Endpoint CID */
@@ -103,7 +101,6 @@ struct bt_l2cap_br_chan {
 	/** Channel Transmission Endpoint */
 	struct bt_l2cap_br_endpoint	tx;
 };
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 /** @brief L2CAP Channel operations structure. */
 struct bt_l2cap_chan_ops {
@@ -154,7 +151,6 @@ struct bt_l2cap_chan_ops {
 	void (*recv)(struct bt_l2cap_chan *chan, struct net_buf *buf);
 };
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /** @def BT_L2CAP_CHAN_SEND_RESERVE
  *  @brief Headroom needed for outgoing buffers
  */
@@ -193,7 +189,6 @@ struct bt_l2cap_server {
  */
 int bt_l2cap_server_register(struct bt_l2cap_server *server);
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief Register L2CAP server on BR/EDR oriented connection.
  *
  *  Register L2CAP server for a PSM, each new connection is authorized using
@@ -205,7 +200,6 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 /** @brief Connect L2CAP channel
  *
@@ -252,9 +246,6 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
-
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
-#endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
 
 #ifdef __cplusplus
 }

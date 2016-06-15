@@ -31,7 +31,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #include <stdbool.h>
 
 #include <bluetooth/bluetooth.h>
@@ -113,9 +112,7 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
 /** Connection Type */
 enum {
 	BT_CONN_TYPE_LE, /** LE Connection Type */
-#if defined(CONFIG_BLUETOOTH_BREDR)
 	BT_CONN_TYPE_BR, /** BR/EDR Connection Type */
-#endif
 };
 
 /** LE Connection Info Structure */
@@ -127,12 +124,10 @@ struct bt_conn_le_info {
 	uint16_t timeout; /** Connection supervision timeout */
 };
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
 /** BR/EDR Connection Info Structure */
 struct bt_conn_br_info {
 	const bt_addr_t *dst; /** Destination BR/EDR address */
 };
-#endif
 
 /** Connection role (master or slave) */
 enum {
@@ -151,9 +146,9 @@ struct bt_conn_info {
 	union {
 		/** LE Connection specific Info */
 		struct bt_conn_le_info le;
-#if defined(CONFIG_BLUETOOTH_BREDR)
+
+		/** BR/EDR Connection specific Info */
 		struct bt_conn_br_info br;
-#endif
 	};
 };
 
@@ -188,7 +183,6 @@ int bt_conn_le_param_update(struct bt_conn *conn,
  */
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
 
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
 /** @brief Initiate an LE connection to a remote device.
  *
  *  Allows initiate new LE link to remote peer using its address.
@@ -216,9 +210,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
  */
 int bt_le_set_auto_conn(bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param);
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 /** @brief Initiate directed advertising to a remote device
  *
  *  Allows initiating a new LE connection to remote peer with the remote
@@ -241,7 +233,6 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
  */
 struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 					const struct bt_le_adv_param *param);
-#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
 /** Security level. */
 typedef enum __packed {
@@ -253,7 +244,6 @@ typedef enum __packed {
 			     */
 } bt_security_t;
 
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief Set security level for a connection.
  *
  *  This function enable security (encryption) for a connection. If device is
@@ -286,7 +276,6 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
  *  @return Encryption key size.
  */
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
-#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
 /** Connection callback structure */
 struct bt_conn_cb {
@@ -313,9 +302,6 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
-#endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
-
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
@@ -383,7 +369,6 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn);
  */
 int bt_conn_auth_pairing_confirm(struct bt_conn *conn);
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
 /** @brief Reply with entered PIN code.
  *
  *  This function should be called only after PIN code callback from
@@ -395,10 +380,7 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn);
  *  @return Zero on success or negative error code otherwise
  */
 int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin);
-#endif /* CONFIG_BLUETOOTH_BREDR */
-#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
 /** Connection parameters for BR/EDR connections */
 struct bt_br_conn_param {
 	bool allow_role_switch;
@@ -431,7 +413,6 @@ struct bt_br_conn_param {
  */
 struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 				  const struct bt_br_conn_param *param);
-#endif /* CONFIG_BLUETOOTH_BREDR */
 
 #ifdef __cplusplus
 }

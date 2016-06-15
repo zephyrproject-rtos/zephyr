@@ -34,12 +34,11 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-
 /** Allocate a buffer for an HCI event
  *
  *  This will set the BT_BUF_EVT buffer type so bt_buf_set_type()
- *  doesn't need to be explicitly called.
+ *  doesn't need to be explicitly called. Only available when
+ *  CONFIG_BLUETOOTH_HOST_BUFFERS has been selected.
  *
  *  @return A new buffer with the BT_BUF_EVT type.
  */
@@ -48,13 +47,12 @@ struct net_buf *bt_buf_get_evt(void);
 /** Allocate a buffer for incoming ACL data
  *
  *  This will set the BT_BUF_ACL_IN buffer type so bt_buf_set_type()
- *  doesn't need to be explicitly called.
+ *  doesn't need to be explicitly called. Only available when
+ *  CONFIG_BLUETOOTH_HOST_BUFFERS has been selected.
  *
  *  @return A new buffer with the BT_BUF_ACL_IN type.
  */
 struct net_buf *bt_buf_get_acl(void);
-
-#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 /* Receive data from the controller/HCI driver */
 int bt_recv(struct net_buf *buf);

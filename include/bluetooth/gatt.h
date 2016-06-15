@@ -31,7 +31,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #include <stddef.h>
 #include <sys/types.h>
 #include <misc/util.h>
@@ -714,7 +713,6 @@ struct bt_gatt_indicate_params {
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params);
 
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 /* Client API */
 
 /** @brief Response callback function
@@ -966,9 +964,6 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
  *  @param conn Connection object.
  */
 void bt_gatt_cancel(struct bt_conn *conn);
-
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
-#endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
 
 #ifdef __cplusplus
 }
