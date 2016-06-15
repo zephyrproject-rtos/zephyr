@@ -139,6 +139,19 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 	return NULL;
 }
 
+struct net_if *net_if_lookup_by_dev(struct device *dev)
+{
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		if (iface->dev == dev) {
+			return iface;
+		}
+	}
+
+	return NULL;
+}
+
 struct net_if *net_if_get_default(void)
 {
 	return __net_if_start;

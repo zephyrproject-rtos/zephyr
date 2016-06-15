@@ -387,6 +387,15 @@ static inline void net_if_addr_set_lf(struct net_if_addr *ifaddr,
 struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
 
 /**
+ * @brief Find an interface from it's related device
+ *
+ * @param dev A valid struct device pointer to relate with an interface
+ *
+ * @return a valid struct net_if pointer on success, NULL otherwise
+ */
+struct net_if *net_if_lookup_by_dev(struct device *dev);
+
+/**
  * @brief Remove a router from the system
  *
  * @param router Pointer to existing router
