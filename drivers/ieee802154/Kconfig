@@ -33,10 +33,20 @@
 #
 # IEEE 802.15.4 options
 #
-menu "IEEE 802.15.4 Options"
-depends on NETWORKING_WITH_15_4
+menu "IEEE 802.15.4 drivers options"
+depends on NETWORKING_WITH_15_4 || NET_L2_IEEE802154
 
-if NETWORKING_WITH_15_4_TI_CC2520
+config  TI_CC2520_LEGACY
+	bool "TI CC2520 Driver support"
+	depends on NETWORKING_WITH_15_4_TI_CC2520
+	default n
+
+config  TI_CC2520
+	bool "TI CC2520 Driver support"
+	depends on NET_L2_IEEE802154
+	default n
+
+if TI_CC2520_LEGACY || TI_CC2520
 
 config SYS_LOG_TI_CC2520_LEVEL
 	int
@@ -112,6 +122,7 @@ config TI_CC2520_AUTO_CRC
 config TI_CC2520_LINK_DETAILS
 	bool "Forward RSSI and link information on reception to upper stack"
 	default n
+	depends on TI_CC2520_LEGACY
 	select TI_CC2520_AUTO_CRC
 	help
 	  If necessary, it will be possible to grab link and RSSI information
@@ -127,7 +138,5 @@ config TI_CC2520_AUTO_ACK
 	  this feature requires the chip to get hardware filtering on, and
 	  thus the above stack needs to provide the right information for such
 	  filtering feature to work.
-
 endif
-
 endmenu

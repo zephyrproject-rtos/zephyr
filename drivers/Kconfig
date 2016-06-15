@@ -21,6 +21,11 @@ menu "Device Drivers"
 
 source "drivers/bluetooth/Kconfig"
 
+config IEEE802154
+       bool
+       default n
+       default y if NETWORKING_WITH_15_4 || NET_L2_IEEE802154
+
 source "drivers/ieee802154/Kconfig"
 
 source "drivers/console/Kconfig"

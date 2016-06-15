@@ -43,6 +43,9 @@ struct cc2520_spi {
 };
 
 struct cc2520_context {
+#ifdef CONFIG_NET_YAIP
+	struct net_if *iface;
+#endif
 	/**************************/
 	struct device **gpios;
 	struct gpio_callback sfd_cb;
