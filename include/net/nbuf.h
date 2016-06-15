@@ -357,6 +357,24 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf);
  */
 bool net_nbuf_is_compact(struct net_buf *buf);
 
+/**
+ * @brief Create some more space in front of the fragment list.
+ *
+ * @details After this there is more space available before the first
+ * fragment. The existing data needs to be moved "down" which will
+ * cause a cascading effect on fragment list because fragments are fixed
+ * size.
+ *
+ * @param parent Pointer to parent of the network buffer. If there is
+ * no parent, then set this parameter NULL.
+ * @param buf Network buffer
+ * @param amount Amount of data that is needed in front of the fragment list.
+ *
+ * @return Pointer to the start of the fragment list if ok, NULL otherwise.
+ */
+struct net_buf *net_nbuf_push(struct net_buf *parent, struct net_buf *buf,
+			      size_t amount);
+
 #ifdef __cplusplus
 }
 #endif

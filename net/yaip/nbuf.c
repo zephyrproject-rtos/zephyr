@@ -848,6 +848,35 @@ struct net_buf *net_nbuf_compact(struct net_buf *buf)
 	return first;
 }
 
+struct net_buf *net_nbuf_push(struct net_buf *parent,
+			      struct net_buf *buf,
+			      size_t amount)
+{
+	struct net_buf *frag;
+
+	NET_ASSERT_INFO(amount > 3,
+			"Amount %d very small and not recommended", amount);
+
+	if (amount > buf->len) {
+		NET_DBG("Cannot move amount %d because the buf "
+			"length is only %d bytes", amount, buf->len);
+		return NULL;
+	}
+
+	frag = net_nbuf_get_reserve_data(net_buf_headroom(buf));
+
+	net_buf_add(frag, amount);
+
+	if (parent) {
+		net_buf_frag_insert(parent, frag);
+	} else {
+		net_buf_frag_insert(frag, buf);
+		parent = frag;
+	}
+
+	return net_nbuf_compact(parent);
+}
+
 void net_nbuf_init(void)
 {
 	NET_DBG("Allocating %d RX (%d bytes), %d TX (%d bytes) "
