@@ -1366,7 +1366,7 @@ on_nble_gatts_prep_write_evt(const struct nble_gatts_write_evt *ev,
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct net_buf *buf;
 
-	BT_DBG("handle 0x%04x flag %d len %u", attr->handle, ev->flag, buflen);
+	BT_DBG("handle 0x%04x flag %d len %u", ev->attr->handle, ev->flag, len);
 
 	buf = net_buf_get_timeout(&prep_data, 0, TICKS_NONE);
 	if (!buf) {
