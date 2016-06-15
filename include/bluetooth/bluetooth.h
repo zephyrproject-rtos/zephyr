@@ -37,6 +37,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Generic Access Profile
+ * @defgroup bt_gap Generic Access Profile
+ * @ingroup bluetooth
+ * @{
+ */
+
 /** @brief Callback for notifying that Bluetooth has been enabled.
  *
  *  @param err zero on success or (negative) error code otherwise.
@@ -407,10 +414,13 @@ int bt_br_set_discoverable(bool enable);
  */
 int bt_br_set_connectable(bool enable);
 
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif
-
 /**
  * @}
  */
