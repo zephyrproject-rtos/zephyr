@@ -73,5 +73,6 @@ following subsections:
 .. toctree::
    :maxdepth: 1
 
+   ../../api/bluetooth.rst
    devel.rst
    ../../board/arduino_101_ble.rst
