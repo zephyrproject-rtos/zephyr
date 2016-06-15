@@ -21,6 +21,7 @@
 #include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
+#include <stdio.h>
 
 #include <net/nbuf.h>
 #include <net/net_ip.h>
@@ -272,6 +273,196 @@ static int test_fragment_copy(void)
 	return 0;
 }
 
+/* Empty data and test data must be the same size in order the test to work */
+static const char test_data[] = { '0', '1', '2', '3', '4',
+				  '5', '6', '7' };
+static const char empty_data[] = { 0x00, 0x00, 0x00, 0x00, 0x00,
+				   0x00, 0x00, 0x00 };
+
+static void hexdump(const char *str, const uint8_t *packet, size_t length)
+{
+	int n = 0;
+
+	if (!length) {
+		SYS_LOG_DBG("%s zero-length packet", str);
+		return;
+	}
+
+	while (length--) {
+		if (n % 16 == 0) {
+			printf("%s %08X ", str, n);
+		}
+
+		printf("%02X ", *packet++);
+
+		n++;
+		if (n % 8 == 0) {
+			if (n % 16 == 0) {
+				printf("\n");
+			} else {
+				printf(" ");
+			}
+		}
+	}
+
+	if (n % 16) {
+		printf("\n");
+	}
+}
+
+static int test_fragment_push(void)
+{
+#define FRAG_COUNT 7
+	struct net_buf *buf, *frags[FRAG_COUNT], *frag;
+	uint8_t *ptr;
+	int i, bytes;
+
+	buf = net_nbuf_get_reserve_rx(0);
+	frag = NULL;
+
+	for (i = 0; i < FRAG_COUNT; i++) {
+		frags[i] = net_nbuf_get_reserve_data(12);
+
+		if (frag) {
+			net_buf_frag_add(frag, frags[i]);
+		}
+
+		frag = frags[i];
+
+		/* Copy character test data in front of the fragment */
+		memcpy(net_buf_add(frags[i], sizeof(test_data)),
+		       test_data, sizeof(test_data));
+
+		/* Followed by bytes of zeroes */
+		memset(net_buf_add(frags[i], sizeof(test_data)), 0,
+		       sizeof(test_data));
+	}
+
+	net_buf_frag_add(buf, frags[0]);
+
+	bytes = net_buf_frags_len(buf);
+	if (bytes != FRAG_COUNT * sizeof(test_data) * 2) {
+		printk("Push test failed, fragments had %d bytes but "
+		       "should have had %d\n", bytes,
+		       FRAG_COUNT * sizeof(test_data) * 2);
+		return -1;
+	}
+
+	if (net_nbuf_is_compact(buf->frags)) {
+		printk("The buf->frags is not compact. Test fails\n");
+		return -1;
+	}
+
+	if (net_nbuf_is_compact(buf)) {
+		printk("The buf is definitely not compact. Test fails\n");
+		return -1;
+	}
+
+	buf = net_nbuf_compact(buf);
+
+	if (!net_nbuf_is_compact(buf)) {
+		printk("The buf should be in compact form. Test fails\n");
+		return -1;
+	}
+
+	/* Try compacting again, nothing should happen */
+	buf = net_nbuf_compact(buf);
+
+	if (!net_nbuf_is_compact(buf)) {
+		printk("The buf should be compacted now. Test fails\n");
+		return -1;
+	}
+
+	buf = net_nbuf_push(buf, buf->frags, sizeof(empty_data));
+	if (!buf) {
+		printk("push test failed, even with fragment pointer\n");
+		return -1;
+	}
+
+	/* Clear the just allocated area */
+	memcpy(buf->frags->data, empty_data, sizeof(empty_data));
+
+	/* The data should look now something like this (frag->data will point
+	 * into this part).
+	 *     empty
+	 *     test data
+	 *     empty
+	 *     test data
+	 *     empty
+	 *     test data
+	 *     empty
+	 *     test data
+	 *     empty
+	 *     test data
+	 *     empty
+	 *
+	 * Then the second fragment:
+	 *     test data
+	 *     empty
+	 *     test data
+	 *     empty
+	 */
+
+	frag = buf->frags;
+
+	hexdump("frag 1", frag->data, frag->len);
+
+	ptr = frag->data;
+
+	for (i = 0; i < frag->len / (sizeof(empty_data) * 2); i++) {
+		if (memcmp(ptr, empty_data, sizeof(empty_data))) {
+			printk("%d: No empty data at pos %p\n",
+			       __LINE__, ptr);
+			return -1;
+		}
+
+		ptr += sizeof(empty_data);
+
+		if (memcmp(ptr, test_data, sizeof(test_data))) {
+			printk("%d: No test data at pos %p\n",
+			       __LINE__, ptr);
+			return -1;
+		}
+
+		ptr += sizeof(empty_data);
+	}
+
+	/* One empty data at the end of first fragment */
+	if (memcmp(ptr, empty_data, sizeof(empty_data))) {
+		printk("%d: No empty data at pos %p\n",
+		       __LINE__, ptr);
+		return -1;
+	}
+
+	frag = frag->frags;
+
+	hexdump("frag 2", frag->data, frag->len);
+
+	ptr = frag->data;
+
+	for (i = 0; i < frag->len / (sizeof(empty_data) * 2); i++) {
+		if (memcmp(ptr, test_data, sizeof(test_data))) {
+			printk("%d: No test data at pos %p\n",
+			       __LINE__, ptr);
+			return -1;
+		}
+
+		ptr += sizeof(test_data);
+
+		if (memcmp(ptr, empty_data, sizeof(empty_data))) {
+			printk("%d: No empty data at pos %p\n",
+			       __LINE__, ptr);
+			return -1;
+		}
+
+		ptr += sizeof(empty_data);
+	}
+
+	net_nbuf_unref(buf);
+
+	return 0;
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -283,6 +474,10 @@ void main(void)
 	}
 
 	if (test_fragment_copy() < 0) {
+		return;
+	}
+
+	if (test_fragment_push() < 0) {
 		return;
 	}
 
