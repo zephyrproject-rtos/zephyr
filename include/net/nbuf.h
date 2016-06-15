@@ -203,7 +203,19 @@ struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller,
 				   int line);
 #define net_nbuf_ref(buf) net_nbuf_ref_debug(buf, __func__, __LINE__)
 
+/**
+ * @brief Print fragment list and the fragment sizes
+ *
+ * @details Only available if debugging is activated.
+ *
+ * @param buf Network buffer fragment. This should be the first fragment (data)
+ * in the fragment list.
+ */
+void net_nbuf_print_frags(struct net_buf *buf);
+
 #else /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+
+#define net_nbuf_print_frags(...)
 
 /**
  * @brief Get buffer from the RX buffers pool.

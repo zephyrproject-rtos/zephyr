@@ -274,6 +274,37 @@ static inline const char *type2str(enum net_nbuf_type type)
 
 	return NULL;
 }
+
+void net_nbuf_print_frags(struct net_buf *buf)
+{
+	struct net_buf *frag;
+	size_t total = 0;
+	int count = 0, frag_size = 0, ll_overhead = 0;
+
+	NET_DBG("Buf %p frags %p", buf, buf->frags);
+
+	NET_ASSERT(buf->frags);
+
+	frag = buf->frags;
+
+	while (frag) {
+		total += frag->len;
+
+		NET_DBG("[%d] frag %p len %d", count, frag, frag->len);
+
+		count++;
+
+		frag_size = frag->size;
+		ll_overhead = net_buf_headroom(frag);
+
+		frag = frag->frags;
+	}
+
+	NET_DBG("Total data size %d, occupied %d bytes, ll overhead %d, "
+		"utilization %u%%",
+		total, count * frag_size - count * ll_overhead,
+		count * ll_overhead, (total * 100) / (count * frag_size));
+}
 #endif /* NET_DEBUG */
 
 #if NET_DEBUG
