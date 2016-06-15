@@ -1359,9 +1359,8 @@ void bt_gatt_cancel(struct bt_conn *conn)
 	BT_DBG("");
 }
 
-static uint8_t
-on_nble_gatts_prep_write_evt(const struct nble_gatts_write_evt *ev,
-			     const uint8_t *data, uint8_t len)
+static uint8_t prep_write_evt(const struct nble_gatts_write_evt *ev,
+			      const uint8_t *data, uint8_t len)
 {
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct net_buf *buf;
@@ -1402,8 +1401,7 @@ void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 	}
 
 	if (ev->flag & NBLE_GATT_WR_FLAG_PREP) {
-		reply_data.status = on_nble_gatts_prep_write_evt(ev, buf,
-								 buflen);
+		reply_data.status = prep_write_evt(ev, buf, buflen);
 		goto reply;
 	}
 
