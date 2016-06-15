@@ -37,7 +37,8 @@ extern "C" {
 #define INVALID_VECTOR 0xFFFFFFFF
 
 /**
- *
+ * @fn uint32_t task_irq_alloc(kirq_t irq_obj, uint32_t irq,
+ *                             uint32_t priority, uint32_t flags)
  * @brief Register a task IRQ object.
  *
  * This routine connects a task IRQ object to a system interrupt based
@@ -53,11 +54,12 @@ extern "C" {
  *
  * @return assigned interrupt vector if successful, INVALID_VECTOR if not
  */
-extern uint32_t __deprecated task_irq_alloc(kirq_t irq_obj, uint32_t irq,
-					    uint32_t priority, uint32_t flags);
+uint32_t __deprecated task_irq_alloc(kirq_t irq_obj, uint32_t irq,
+				     uint32_t priority, uint32_t flags);
 
 /**
  *
+ * @fn void task_irq_ack(kirq_t irq_obj)
  * @brief Re-enable a task IRQ object's interrupt.
  *
  * This re-enables the interrupt for a task IRQ object.
@@ -66,9 +68,10 @@ extern uint32_t __deprecated task_irq_alloc(kirq_t irq_obj, uint32_t irq,
  *
  * @return N/A
  */
-extern void __deprecated task_irq_ack(kirq_t irq_obj);
+void __deprecated task_irq_ack(kirq_t irq_obj);
 
 /**
+ * @fn int task_irq_wait(kirq_t irq_obj, int32_t timeout)
  * @brief Wait for task IRQ to signal an interrupt.
  *
  * This routine waits up to @a timeout ticks for the IRQ object @a irq_obj
@@ -86,7 +89,7 @@ extern void __deprecated task_irq_ack(kirq_t irq_obj);
  * @a timeout = TICKS_NONE.
  * @sa TICKS_NONE, TICKS_UNLIMITED
  */
-extern int __deprecated task_irq_wait(kirq_t irq_obj, int32_t timeout);
+int __deprecated task_irq_wait(kirq_t irq_obj, int32_t timeout);
 
 /**
  * @}

@@ -264,6 +264,7 @@ static inline int gpio_pin_read(struct device *port, uint32_t pin,
 }
 
 /**
+ * @fn int gpio_set_callback(struct device *port, gpio_callback_t callback)
  * @brief Former way of setting the application's callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback Application's callback (or NULL to unset).

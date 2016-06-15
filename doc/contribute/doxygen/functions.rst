@@ -71,6 +71,79 @@ Simplified template:
    and the function's signature. This ensures that Doxygen can link the comment
    to the function.
 
+Workarounds
+***********
+
+When adding qualifiers to a function declaration, like *__deprecated*
+(or *ALWAYS_INLINE*, or any others), for example:
+
+.. code-block:: c
+
+  /**
+   * @brief Register a task IRQ object.
+   *
+   * This routine connects a task IRQ object to a system interrupt based
+   * upon the specified IRQ and priority values.
+   *
+   * IRQ allocation is done via the microkernel server fiber, making simultaneous
+   * allocation requests single-threaded.
+   *
+   * @param irq_obj IRQ object identifier.
+   * @param irq Request IRQ.
+   * @param priority Requested interrupt priority.
+   * @param flags IRQ flags.
+   *
+   * @return assigned interrupt vector if successful, INVALID_VECTOR if not
+   */
+  uint32_t __deprecated task_irq_alloc(kirq_t irq_obj, uint32_t irq,
+				     uint32_t priority, uint32_t flags);
+
+the *Sphinx* parser can get confused with errors such as::
+
+  doc/api/microkernel_api.rst:35: WARNING: Error when parsing function declaration.
+  If the function has no return type:
+    Error in declarator or parameters and qualifiers
+    Invalid definition: Expecting "(" in parameters_and_qualifiers. [error at 9]
+      uint32_t __deprecated task_irq_alloc(kirq_t irq_obj, uint32_t irq, uint32_t priority, uint32_t flags)
+      ---------^
+  If the function has a return type:
+    Error in declarator or parameters and qualifiers
+    If pointer to member declarator:
+      Invalid definition: Expected '::' in pointer to member (function). [error at 22]
+        uint32_t __deprecated task_irq_alloc(kirq_t irq_obj, uint32_t irq, uint32_t priority, uint32_t flags)
+        ----------------------^
+    If declarator-id:
+      Invalid definition: Expecting "(" in parameters_and_qualifiers. [error at 22]
+        uint32_t __deprecated task_irq_alloc(kirq_t irq_obj, uint32_t irq, uint32_t priority, uint32_t flags)
+        ----------------------^
+  ... <etc etc>...
+
+a workaround is to name with *@fn* the function:
+
+.. code-block:: c
+
+  /**
+   * @fn uint32_t task_irq_alloc(kirq_t irq_obj, uint32_t irq,
+   *                             uint32_t priority, uint32_t flags)
+   * @brief Register a task IRQ object.
+   *
+   * This routine connects a task IRQ object to a system interrupt based
+   * upon the specified IRQ and priority values.
+   *
+   * IRQ allocation is done via the microkernel server fiber, making simultaneous
+   * allocation requests single-threaded.
+   *
+   * @param irq_obj IRQ object identifier.
+   * @param irq Request IRQ.
+   * @param priority Requested interrupt priority.
+   * @param flags IRQ flags.
+   *
+   * @return assigned interrupt vector if successful, INVALID_VECTOR if not
+   */
+
+This has been reported to the Sphinx developers
+(https://github.com/sphinx-doc/sphinx/issues/2682).
+
 Function Documentation Examples
 *******************************
 
