@@ -70,37 +70,37 @@ static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
  * devices that have an instruction/data cache
  */
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_write8(uint8_t data, mm_reg_t addr)
 {
 	__builtin_stbio((void *)addr, data);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint8_t sys_read8(mm_reg_t addr)
 {
 	return __builtin_ldbuio((void *)addr);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_write16(uint16_t data, mm_reg_t addr)
 {
 	__builtin_sthio((void *)addr, data);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint16_t sys_read16(mm_reg_t addr)
 {
 	return __builtin_ldhuio((void *)addr);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_write32(uint32_t data, mm_reg_t addr)
 {
 	__builtin_stwio((void *)addr, data);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint32_t sys_read32(mm_reg_t addr)
 {
 	return __builtin_ldwio((void *)addr);
@@ -110,19 +110,19 @@ static inline __attribute__((always_inline))
  * so just read, modify, write in C
  */
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	sys_write32(sys_read32(addr) | (1 << bit), addr);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	sys_write32(sys_read32(addr) & ~(1 << bit), addr);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	return sys_read32(addr) & (1 << bit);
@@ -130,7 +130,7 @@ static inline __attribute__((always_inline))
 
 /* These are not required to be atomic, just do it in C */
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
@@ -141,7 +141,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
@@ -152,7 +152,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	/* Doing memory offsets in terms of 32-bit values to prevent
@@ -161,20 +161,20 @@ static inline __attribute__((always_inline))
 	sys_set_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	sys_clear_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	return sys_test_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
@@ -185,7 +185,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;

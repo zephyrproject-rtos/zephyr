@@ -49,7 +49,7 @@ extern "C" {
  * "interrupt disable state" prior to the call.
  */
 
-static inline __attribute__((always_inline)) unsigned int _do_irq_lock(void)
+static ALWAYS_INLINE unsigned int _do_irq_lock(void)
 {
 	unsigned int key;
 
@@ -78,7 +78,7 @@ static inline __attribute__((always_inline)) unsigned int _do_irq_lock(void)
  * @return N/A
  */
 
-static inline __attribute__((always_inline)) void _do_irq_unlock(void)
+static ALWAYS_INLINE void _do_irq_unlock(void)
 {
 	__asm__ volatile (
 		"sti;\n\t"
@@ -227,7 +227,7 @@ static inline uint64_t _NanoTscRead(void)
  * @return a 32-bit number
  */
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint32_t _do_read_cpu_timestamp32(void)
 {
 	uint32_t rv;
@@ -240,8 +240,8 @@ static inline __attribute__((always_inline))
 
 /* Implementation of sys_io.h's documented functions */
 
-static inline __attribute__((always_inline))
-	void sys_out8(uint8_t data, io_port_t port)
+static ALWAYS_INLINE
+void sys_out8(uint8_t data, io_port_t port)
 {
 	__asm__ volatile("outb	%b0, %w1;\n\t"
 			 :
@@ -249,7 +249,7 @@ static inline __attribute__((always_inline))
 }
 
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint8_t sys_in8(io_port_t port)
 {
 	uint8_t ret;
@@ -261,7 +261,7 @@ static inline __attribute__((always_inline))
 }
 
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_out16(uint16_t data, io_port_t port)
 {
 	__asm__ volatile("outw	%w0, %w1;\n\t"
@@ -270,7 +270,7 @@ static inline __attribute__((always_inline))
 }
 
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint16_t sys_in16(io_port_t port)
 {
 	uint16_t ret;
@@ -282,7 +282,7 @@ static inline __attribute__((always_inline))
 }
 
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_out32(uint32_t data, io_port_t port)
 {
 	__asm__ volatile("outl	%0, %w1;\n\t"
@@ -291,7 +291,7 @@ static inline __attribute__((always_inline))
 }
 
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint32_t sys_in32(io_port_t port)
 {
 	uint32_t ret;
@@ -303,7 +303,7 @@ static inline __attribute__((always_inline))
 }
 
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_io_set_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t reg = 0;
@@ -315,7 +315,7 @@ static inline __attribute__((always_inline))
 			 : "a" (reg), "Nd" (port), "Ir" (bit));
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_io_clear_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t reg = 0;
@@ -327,7 +327,7 @@ static inline __attribute__((always_inline))
 			 : "a" (reg), "Nd" (port), "Ir" (bit));
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_io_test_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t ret;
@@ -340,7 +340,7 @@ static inline __attribute__((always_inline))
 	return (ret & 1);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_io_test_and_set_bit(io_port_t port, unsigned int bit)
 {
 	int ret;
@@ -351,7 +351,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_io_test_and_clear_bit(io_port_t port, unsigned int bit)
 {
 	int ret;
@@ -362,7 +362,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_write8(uint8_t data, mm_reg_t addr)
 {
 	__asm__ volatile("movb	%0, %1;\n\t"
@@ -371,7 +371,7 @@ static inline __attribute__((always_inline))
 			 : "memory");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint8_t sys_read8(mm_reg_t addr)
 {
 	uint8_t ret;
@@ -384,7 +384,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_write16(uint16_t data, mm_reg_t addr)
 {
 	__asm__ volatile("movw	%0, %1;\n\t"
@@ -393,7 +393,7 @@ static inline __attribute__((always_inline))
 			 : "memory");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint16_t sys_read16(mm_reg_t addr)
 {
 	uint16_t ret;
@@ -406,7 +406,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_write32(uint32_t data, mm_reg_t addr)
 {
 	__asm__ volatile("movl	%0, %1;\n\t"
@@ -415,7 +415,7 @@ static inline __attribute__((always_inline))
 			 : "memory");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint32_t sys_read32(mm_reg_t addr)
 {
 	uint32_t ret;
@@ -429,7 +429,7 @@ static inline __attribute__((always_inline))
 }
 
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	__asm__ volatile("btsl	%1, %0;\n\t"
@@ -438,7 +438,7 @@ static inline __attribute__((always_inline))
 			 : "memory");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	__asm__ volatile("btrl	%1, %0;\n\t"
@@ -446,7 +446,7 @@ static inline __attribute__((always_inline))
 			 : "Ir" (bit));
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
@@ -459,7 +459,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
@@ -472,7 +472,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;

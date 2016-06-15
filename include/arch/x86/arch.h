@@ -427,7 +427,7 @@ void _int_latency_stop(void);
  *
  */
 
-static inline __attribute__((always_inline)) unsigned int _arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 {
 	unsigned int key = _do_irq_lock();
 
@@ -451,7 +451,7 @@ static inline __attribute__((always_inline)) unsigned int _arch_irq_lock(void)
  *
  */
 
-static inline __attribute__((always_inline)) void _arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 {
 	if (!(key & 0x200)) {
 		return;

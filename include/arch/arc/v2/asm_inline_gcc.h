@@ -33,43 +33,43 @@ extern "C" {
 
 /* Implementation of sys_io.h's documented functions */
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_out8(uint8_t data, io_port_t port)
 {
 	_arc_v2_aux_reg_write(port, data);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint8_t sys_in8(io_port_t port)
 {
 	return (uint8_t)(_arc_v2_aux_reg_read(port) & 0x000000ff);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_out16(uint16_t data, io_port_t port)
 {
 	_arc_v2_aux_reg_write(port, data);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint16_t sys_in16(io_port_t port)
 {
 	return (uint16_t)(_arc_v2_aux_reg_read(port) & 0x0000ffff);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_out32(uint32_t data, io_port_t port)
 {
 	_arc_v2_aux_reg_write(port, data);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint32_t sys_in32(io_port_t port)
 {
 	return _arc_v2_aux_reg_read(port);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_io_set_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t reg = 0;
@@ -83,7 +83,7 @@ static inline __attribute__((always_inline))
 			 : "memory", "cc");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_io_clear_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t reg = 0;
@@ -97,7 +97,7 @@ static inline __attribute__((always_inline))
 			 : "memory", "cc");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_io_test_bit(io_port_t port, unsigned int bit)
 {
 	uint32_t status = _ARC_V2_STATUS32;
@@ -115,7 +115,7 @@ static inline __attribute__((always_inline))
 	return !(ret & _ARC_V2_STATUS32_Z);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_io_test_and_set_bit(io_port_t port, unsigned int bit)
 {
 	int ret;
@@ -126,7 +126,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_io_test_and_clear_bit(io_port_t port, unsigned int bit)
 {
 	int ret;
@@ -137,7 +137,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_write8(uint8_t data, mm_reg_t addr)
 {
 	__asm__ volatile("stb%U1	%0, %1;\n\t"
@@ -146,7 +146,7 @@ static inline __attribute__((always_inline))
 			 : "memory");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint8_t sys_read8(mm_reg_t addr)
 {
 	uint8_t ret;
@@ -159,7 +159,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_write16(uint16_t data, mm_reg_t addr)
 {
 	__asm__ volatile("sth%U1	%0, %1;\n\t"
@@ -168,7 +168,7 @@ static inline __attribute__((always_inline))
 			 : "memory");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint16_t sys_read16(mm_reg_t addr)
 {
 	uint16_t ret;
@@ -181,7 +181,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_write32(uint32_t data, mm_reg_t addr)
 {
 	__asm__ volatile("st%U1	%0, %1;\n\t"
@@ -190,7 +190,7 @@ static inline __attribute__((always_inline))
 			 : "memory");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	uint32_t sys_read32(mm_reg_t addr)
 {
 	uint32_t ret;
@@ -203,7 +203,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	uint32_t reg = 0;
@@ -216,7 +216,7 @@ static inline __attribute__((always_inline))
 			 : "memory", "cc");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	uint32_t reg = 0;
@@ -229,7 +229,7 @@ static inline __attribute__((always_inline))
 			 : "memory", "cc");
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	uint32_t status = _ARC_V2_STATUS32;
@@ -247,7 +247,7 @@ static inline __attribute__((always_inline))
 	return !(ret & _ARC_V2_STATUS32_Z);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
@@ -258,7 +258,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
@@ -269,7 +269,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	/* Doing memory offsets in terms of 32-bit values to prevent
@@ -278,20 +278,20 @@ static inline __attribute__((always_inline))
 	sys_set_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	sys_clear_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	return sys_test_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
 }
 
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
@@ -302,7 +302,7 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline __attribute__((always_inline))
+static ALWAYS_INLINE
 	int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
