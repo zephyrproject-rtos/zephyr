@@ -48,7 +48,14 @@ static uint32_t __noinit _k_server_command_stack_storage
 
 struct nano_stack _k_command_stack = {NULL,
 				  _k_server_command_stack_storage,
-				  _k_server_command_stack_storage};
+				  _k_server_command_stack_storage,
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+				  /* _k_command stack is not tracked by
+				   * the debug tracing kernel objects feature.
+				   */
+				  NULL,
+#endif
+				};
 
 
 extern void _k_server(int unused1, int unused2);
