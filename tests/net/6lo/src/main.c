@@ -154,7 +154,7 @@ static struct net_if_api net_6lo_if_api = {
 NET_DEVICE_INIT(net_6lo_test, "net_6lo_test",
 		net_6lo_dev_init, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&net_6lo_if_api, DUMMY_L2, 127);
+		&net_6lo_if_api, DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 static bool compare_data(struct net_buf *buf, struct net_6lo_data *data)
 {

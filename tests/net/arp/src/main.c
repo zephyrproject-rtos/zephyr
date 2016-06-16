@@ -314,14 +314,16 @@ static struct net_if_api net_arp_if_api = {
 
 #if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_L2_ETHERNET)
 #define _ETH_L2_LAYER ETHERNET_L2
+#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 #else
 #define _ETH_L2_LAYER DUMMY_L2
+#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 #endif
 
 NET_DEVICE_INIT(net_arp_test, "net_arp_test",
 		net_arp_dev_init, &net_arp_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&net_arp_if_api, _ETH_L2_LAYER, 127);
+		&net_arp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
 void main_fiber(void)
 {

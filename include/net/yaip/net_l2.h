@@ -55,16 +55,19 @@ struct net_l2 {
 #define NET_L2_GET_NAME(_name) (__net_l2_##_name)
 #define NET_L2_DECLARE_PUBLIC(_name)					\
 	extern const struct net_l2 const NET_L2_GET_NAME(_name)
+#define NET_L2_GET_CTX_TYPE(_name) _name##_CTX_TYPE
 
 extern struct net_l2 __net_l2_start[];
 
 #ifdef CONFIG_NET_L2_DUMMY
-#define DUMMY_L2 dummy
+#define DUMMY_L2		DUMMY
+#define DUMMY_L2_CTX_TYPE	void*
 NET_L2_DECLARE_PUBLIC(DUMMY_L2);
 #endif /* CONFIG_NET_L2_DUMMY */
 
 #ifdef CONFIG_NET_L2_ETHERNET
-#define ETHERNET_L2 ethernet
+#define ETHERNET_L2		ETHERNET
+#define ETHERNET_L2_CTX_TYPE	void*
 NET_L2_DECLARE_PUBLIC(ETHERNET_L2);
 #endif /* CONFIG_NET_L2_ETHERNET */
 
@@ -77,6 +80,12 @@ extern struct net_l2 __net_l2_end[];
 		.send = (_send_fn),					\
 		.reserve = (_reserve_fn),				\
 	}
+
+#define NET_L2_GET_DATA(name, sfx) (__net_l2_data_##name##sfx)
+
+#define NET_L2_DATA_INIT(name, sfx, ctx_type)				\
+	static ctx_type NET_L2_GET_DATA(name, sfx) __used		\
+	__attribute__((__section__(".net_l2.data")));
 
 #ifdef __cplusplus
 }

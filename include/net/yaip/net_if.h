@@ -150,6 +150,9 @@ struct net_if {
 	/** Interface's L2 layer */
 	const struct net_l2 const *l2;
 
+	/** Interfaces's private L2 data pointer */
+	void *l2_data;
+
 	/** The hardware link address */
 	struct net_linkaddr link_addr;
 
@@ -262,6 +265,18 @@ static inline uint16_t net_if_get_ll_reserve(struct net_if *iface,
 					     struct in6_addr *dst_ip6)
 {
 	return iface->l2->reserve(iface, (void *)dst_ip6);
+}
+
+/**
+ * @brief Get a pointer on L2's private data
+ *
+ * @param iface a valid pointer to a network interface structure
+ *
+ * @return a pointer on the iface's l2 data
+ */
+static inline void *net_if_l2_data(struct net_if *iface)
+{
+	return iface->l2_data;
 }
 
 /**
@@ -865,22 +880,26 @@ struct net_if_api {
 };
 
 #define NET_IF_GET_NAME(dev_name, sfx) (__net_if_##dev_name_##sfx)
-#define NET_IF_GET(dev_name, sfx) (&NET_IF_GET_NAME(dev_name, sfx))
+#define NET_IF_GET(dev_name, sfx)					\
+	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
 
 #define NET_IF_INIT(dev_name, sfx, _l2, _mtu)				\
 	static struct net_if (NET_IF_GET_NAME(dev_name, sfx)) __used	\
 	__attribute__((__section__(".net_if.data"))) = {		\
 		.dev = &(__device_##dev_name),				\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
+		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
 		.mtu = _mtu,						\
 	}
 
 /* Network device intialization macro */
 
 #define NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
-			data, cfg_info, prio, api, l2, mtu)	\
+			data, cfg_info, prio, api, l2,		\
+			l2_ctx_type, mtu)			\
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
 			    cfg_info, NANOKERNEL, prio, api);	\
+	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, 0, l2, mtu)
 
 #ifdef __cplusplus

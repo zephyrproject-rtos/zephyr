@@ -173,6 +173,14 @@
 		__net_if_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(net_l2_data, (OPTIONAL),)
+	{
+		__net_l2_data_start = .;
+		*(".net_l2.data")
+		KEEP(*(SORT_BY_NAME(".net_l2.data*")))
+		__net_l2_data_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(net_nbr, (OPTIONAL),)
 	{
 		__net_nbr_start = .;
