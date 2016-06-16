@@ -285,6 +285,11 @@ typedef void bt_br_discovery_cb_t(struct bt_br_discovery_result *results,
 
 /** BR/EDR discovery parameters */
 struct bt_br_discovery_param {
+	/** Maximum length of the discovery in units of 1.28 seconds.
+	 *  Valid range is 0x01 - 0x30.
+	 */
+	uint8_t length;
+
 	/** True if limited discovery procedure is to be used. */
 	bool limited_discovery;
 };

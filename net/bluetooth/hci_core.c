@@ -3594,7 +3594,7 @@ struct net_buf *bt_buf_get_acl(void)
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static int br_start_inquiry(bool limited)
+static int br_start_inquiry(const struct bt_br_discovery_param *param)
 {
 	const uint8_t iac[3] = { 0x33, 0x8b, 0x9e };
 	struct bt_hci_op_inquiry *cp;
@@ -3607,12 +3607,17 @@ static int br_start_inquiry(bool limited)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 
-	/* do inquiry for maximum allowed time without results limit */
-	cp->length = 0x30;
+	if (!param->length) {
+		/* do inquiry for maximum allowed time without results limit */
+		cp->length = 0x30;
+	} else {
+		cp->length = param->length;
+	}
+
 	cp->num_rsp = 0x00;
 
 	memcpy(cp->lap, iac, 3);
-	if (limited) {
+	if (param->limited_discovery) {
 		cp->lap[0] = 0x00;
 	}
 
@@ -3627,11 +3632,15 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 
 	BT_DBG("");
 
+	if (param->length > 0x30) {
+		return -EINVAL;
+	}
+
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return -EALREADY;
 	}
 
-	err = br_start_inquiry(param->limited_discovery);
+	err = br_start_inquiry(param);
 	if (err) {
 		return err;
 	}
