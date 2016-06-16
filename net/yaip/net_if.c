@@ -619,6 +619,7 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 				    enum net_addr_state addr_state)
 {
+#if defined(CONFIG_NET_IPV6)
 	int i;
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
@@ -632,6 +633,7 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 			return &iface->ipv6.unicast[i].address.in6_addr;
 		}
 	}
+#endif
 
 	return NULL;
 }
@@ -663,11 +665,13 @@ static inline uint8_t get_length(struct in6_addr *src, struct in6_addr *dst)
 
 static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
 	    addr->address.family == AF_INET6 &&
 	    !net_is_ipv6_ll_addr(&addr->address.in6_addr)) {
 		return true;
 	}
+#endif
 
 	return false;
 }

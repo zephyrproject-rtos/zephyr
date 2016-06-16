@@ -42,9 +42,8 @@
 
 #include "net_private.h"
 
-#if defined(CONFIG_NET_IPV6)
 #include "icmpv6.h"
-#endif
+#include "ipv6.h"
 
 #if defined(CONFIG_NET_IPV4)
 #include "icmpv4.h"
