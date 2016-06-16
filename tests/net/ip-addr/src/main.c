@@ -116,7 +116,6 @@ int net_test_init(struct device *dev)
 {
 	struct net_test_context *net_test_context = dev->driver_data;
 
-	dev->driver_api = NULL;
 	net_test_context = net_test_context;
 
 	return 0;
@@ -146,17 +145,20 @@ static void net_test_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8);
 }
 
+static int tester_send(struct net_if *iface, struct net_buf *buf)
+{
+	net_nbuf_unref(buf);
+	return 0;
+}
+
 struct net_test_context net_test_context_data;
 
 static struct net_if_api net_test_if_api = {
-	.init = net_test_iface_init
+	.init = net_test_iface_init,
+	.send = tester_send,
 };
 
-#if defined(CONFIG_NET_L2_ETHERNET)
-#define _ETH_L2_LAYER ETHERNET_L2
-#else
 #define _ETH_L2_LAYER DUMMY_L2
-#endif
 
 NET_DEVICE_INIT(net_addr_test, "net_addr_test",
 		net_test_init, &net_test_context_data, NULL,
