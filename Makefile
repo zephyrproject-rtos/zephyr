@@ -729,9 +729,11 @@ all: $(KERNEL_BIN_NAME) $(KERNEL_STAT_NAME)
 export KBUILD_IMAGE ?= zephyr
 
 zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(core-y) $(drivers-y) \
-		     $(libs-y) $(app-y)))
+		     $(libs-y)))
 
-zephyr-alldirs	:= $(sort $(zephyr-dirs) $(patsubst %/,%,$(filter %/, \
+zephyr-app-dirs	:= $(patsubst %/,%,$(filter %/, $(app-y)))
+
+zephyr-alldirs	:= $(sort $(zephyr-dirs) $(zephyr-app-dirs) $(patsubst %/,%,$(filter %/, \
 		     $(core-) $(drivers-) $(libs-) $(app-))))
 
 core-y		:= $(patsubst %/, %/built-in.o, $(core-y))
@@ -741,10 +743,10 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
-export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(libs-y) $(app-y) $(core-y)
+export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(libs-y) $(core-y)
 export LDFLAGS_zephyr
 
-zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_MAIN)
+zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_MAIN) $(app-y)
 
 ALL_LIBS += $(TOOLCHAIN_LIBS)
 export ALL_LIBS
@@ -765,6 +767,7 @@ quiet_cmd_create-lnk = LINK    $@
 	echo "$(LINKFLAGPREFIX)--start-group";					\
 	echo "$(LINKFLAGPREFIX)--whole-archive";				\
 	echo "$(KBUILD_ZEPHYR_APP)";						\
+	echo "$(app-y)";							\
 	echo "$(LINKFLAGPREFIX)--no-whole-archive";         			\
 	echo "$(KBUILD_ZEPHYR_MAIN)";						\
 	echo "$(objtree)/arch/$(ARCH)/core/offsets/offsets.o"; 			\
@@ -787,7 +790,7 @@ final-linker.cmd: $(zephyr-deps)
 
 TMP_ELF = .tmp_$(KERNEL_NAME).prebuilt
 
-$(TMP_ELF): $(zephyr-deps) $(KBUILD_ZEPHYR_APP) linker.cmd $(KERNEL_NAME).lnk
+$(TMP_ELF): $(zephyr-deps) $(KBUILD_ZEPHYR_APP) $(app-y) linker.cmd $(KERNEL_NAME).lnk
 	$(Q)$(CC) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
 
 quiet_cmd_gen_idt = SIDT    $@
@@ -863,7 +866,7 @@ zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
-$(sort $(zephyr-deps)): $(zephyr-dirs) ;
+$(sort $(zephyr-deps)): $(zephyr-dirs) $(zephyr-app-dirs) ;
 
 # Handle descending into subdirectories listed in $(zephyr-dirs)
 # Preset locale variables to speed up the build process. Limit locale
@@ -873,6 +876,10 @@ $(sort $(zephyr-deps)): $(zephyr-dirs) ;
 
 PHONY += $(zephyr-dirs)
 $(zephyr-dirs): prepare scripts
+	$(Q)$(MAKE) $(build)=$@
+
+PHONY += $(zephyr-app-dirs)
+$(zephyr-app-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@
 
 # Things we need to do before we recursively start building the kernel
