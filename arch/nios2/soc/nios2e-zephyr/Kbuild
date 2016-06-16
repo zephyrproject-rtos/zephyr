@@ -5,4 +5,5 @@ ccflags-y +=-I$(srctree)/drivers
 
 asflags-y := ${ccflags-y}
 
-obj-y = soc.o soc_config.o
+# Force kbuild to make empty built-in.o if necessary
+obj- := dummy.o
