@@ -41,6 +41,8 @@
 #define ER32KSEL_RTC		(2)
 #define ER32KSEL_LPO1KHZ	(3)
 
+#define TIMESRC_OSCERCLK        (2)
+
 /*
  * K64F Flash configuration fields
  * These 16 bytes, which must be loaded to address 0x400, include default
@@ -139,6 +141,10 @@ static ALWAYS_INLINE void clkInit(void)
 				      CONFIG_MCG_FCRDIV);
 
 	CLOCK_SetSimConfig(&simConfig);
+
+#if CONFIG_ETH_KSDK
+	CLOCK_SetEnetTime0Clock(TIMESRC_OSCERCLK);
+#endif
 }
 
 /**

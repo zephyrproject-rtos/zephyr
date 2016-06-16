@@ -209,4 +209,14 @@ endif # SPI_K64
 
 endif # SPI
 
+if ETHERNET
+
+config ETH_KSDK
+	def_bool y
+
+config ETH_KSDK_0
+	def_bool y
+
+endif # ETHERNET
+
 endif # SOC_MK64F12

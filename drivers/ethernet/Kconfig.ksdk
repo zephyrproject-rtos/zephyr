@@ -1,0 +1,113 @@
+# Kconfig - ETH_KSDK Ethernet driver configuration options
+
+# Copyright (c) 2016 ARM Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+menuconfig ETH_KSDK
+	bool
+	prompt "KSDK Ethernet driver"
+	depends on ETHERNET && HAS_KSDK
+	default n
+	help
+	Enable KSDK Ethernet driver.  Note, this driver performs one shot PHY
+	setup.  There is no support for PHY disconnect, reconnect or
+	configuration change.
+
+if ETH_KSDK
+config ETH_KSDK_RX_BUFFERS
+	int "Number of KSDK RX buffers"
+	depends on ETH_KSDK
+	default 2
+	range 1 16
+	help
+	Set the number of RX buffers provided to the KSDK driver.
+
+config ETH_KSDK_TX_BUFFERS
+	int "Number of KSDK TX buffers"
+	depends on ETH_KSDK
+	default 2
+	range 1 16
+	help
+	Set the number of TX buffers provided to the KSDK driver.
+
+config ETH_KSDK_0
+	bool "KSDK Ethernet port 0"
+	default n
+	help
+	Include port 0 driver
+
+config ETH_KSDK_0_NAME
+	string "Driver name"
+	depends on ETH_KSDK_0
+	default "ETH_0"
+
+config ETH_KSDK_0_IRQ_PRI
+	int "Controller interrupt priority"
+	depends on ETH_KSDK_0
+	default 0
+	help
+	IRQ priority
+
+config ETH_KSDK_0_RANDOM_MAC
+	bool "Random MAC address"
+	depends on ETH_KSDK_0 && RANDOM_GENERATOR
+	default y
+	help
+	Generate a random MAC address dynamically.
+
+if ETH_KSDK_0 && ! ETH_KSDK_0_RANDOM_MAC
+
+config ETH_KSDK_0_MAC0
+	hex "MAC Address Byte 0"
+	default 0
+	range 0 ff
+	help
+	This is byte 0 of the MAC address.
+
+config ETH_KSDK_0_MAC1
+	hex "MAC Address Byte 1"
+	default 0
+	range 0 ff
+	help
+	This is the byte 1 of the MAC address.
+
+config ETH_KSDK_0_MAC2
+	hex "MAC Address Byte 2"
+	default 0
+	range 0 ff
+	help
+	This is the byte 2 of the MAC address.
+
+config ETH_KSDK_0_MAC3
+	hex "MAC Address Byte 3"
+	default 0
+	range 0 ff
+	help
+	This is the byte 3 of the MAC address.
+
+config ETH_KSDK_0_MAC4
+	hex "MAC Address Byte 4"
+	default 0
+	range 0 ff
+	help
+	This is the byte 4 of the MAC address.
+
+config ETH_KSDK_0_MAC5
+	hex "MAC Address Byte 5"
+	default 0
+	range 0 ff
+	help
+	This is the byte 5 of the MAC address.
+endif
+endif
