@@ -23,6 +23,7 @@
 #if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
 #define SYS_LOG_DOMAIN "net/nbuf"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define NET_DEBUG 1
 #endif
 
 #include <nanokernel.h>
@@ -36,45 +37,13 @@
 
 #include <net/net_core.h>
 
-#if !defined(NET_DEBUG_NBUFS)
-#undef NET_DBG
-#define NET_DBG(...)
-#endif
-
 #include "net_private.h"
 
 /* Available (free) buffers queue */
-#if !defined(NBUF_RX_COUNT)
-#if CONFIG_NET_NBUF_RX_COUNT > 0
-#define NBUF_RX_COUNT		CONFIG_NET_NBUF_RX_COUNT
-#else
-#define NBUF_RX_COUNT		1
-#endif
-#endif
-
-#if !defined(NBUF_TX_COUNT)
-#if CONFIG_NET_NBUF_TX_COUNT > 0
-#define NBUF_TX_COUNT		CONFIG_NET_NBUF_TX_COUNT
-#else
-#define NBUF_TX_COUNT		1
-#endif
-#endif
-
-#if !defined(NBUF_DATA_COUNT)
-#if CONFIG_NET_NBUF_DATA_COUNT > 0
-#define NBUF_DATA_COUNT CONFIG_NET_NBUF_DATA_COUNT
-#else
-#define NBUF_DATA_COUNT 13
-#endif
-#endif
-
-#if !defined(NBUF_DATA_LEN)
-#if CONFIG_NET_NBUF_DATA_SIZE > 0
-#define NBUF_DATA_LEN CONFIG_NET_NBUF_DATA_SIZE
-#else
-#define NBUF_DATA_LEN 128
-#endif
-#endif
+#define NBUF_RX_COUNT	CONFIG_NET_NBUF_RX_COUNT
+#define NBUF_TX_COUNT	CONFIG_NET_NBUF_TX_COUNT
+#define NBUF_DATA_COUNT	CONFIG_NET_NBUF_DATA_COUNT
+#define NBUF_DATA_LEN	CONFIG_NET_NBUF_DATA_SIZE
 
 #if defined(CONFIG_NET_TCP)
 #define APP_PROTO_LEN NET_TCPH_LEN
@@ -116,7 +85,24 @@
 #error "Too small net_buf fragment size"
 #endif
 
-#if defined(NET_DEBUG_NBUFS)
+#if NET_DEBUG
+
+#define NET_BUF_CHECK_IF_IN_USE(buf, ref)				\
+	do {								\
+		if (ref) {						\
+			NET_ERR("**ERROR** buf %p in use (%s:%s():%d)", \
+				buf, __FILE__, __func__, __LINE__);     \
+		}                                                       \
+	} while (0)
+
+#define NET_BUF_CHECK_IF_NOT_IN_USE(buf, ref)				\
+	do {								\
+		if (!(ref)) {                                           \
+			NET_ERR("**ERROR** buf %p not in use (%s:%s():%d)", \
+				buf, __FILE__, __func__, __LINE__);     \
+		}                                                       \
+	} while (0)
+
 static int num_free_rx_bufs = NBUF_RX_COUNT;
 static int num_free_tx_bufs = NBUF_TX_COUNT;
 static int num_free_data_bufs = NBUF_DATA_COUNT;
@@ -217,7 +203,7 @@ static inline int get_frees(enum net_nbuf_type type)
 #define inc_free_tx_bufs_func inc_free_tx_bufs
 #define inc_free_data_bufs_func inc_free_data_bufs
 
-#else /* NET_DEBUG_NBUFS */
+#else /* NET_DEBUG */
 #define dec_free_rx_bufs(...)
 #define inc_free_rx_bufs(...)
 #define dec_free_tx_bufs(...)
@@ -227,7 +213,9 @@ static inline int get_frees(enum net_nbuf_type type)
 #define inc_free_rx_bufs_func(...)
 #define inc_free_tx_bufs_func(...)
 #define inc_free_data_bufs_func(...)
-#endif /* NET_DEBUG_NBUFS */
+#define NET_BUF_CHECK_IF_IN_USE(buf, ref)
+#define NET_BUF_CHECK_IF_NOT_IN_USE(buf, ref)
+#endif /* NET_DEBUG */
 
 static struct nano_fifo free_rx_bufs;
 static struct nano_fifo free_tx_bufs;
@@ -272,6 +260,7 @@ static NET_BUF_POOL(data_buffers, NBUF_DATA_COUNT,	\
 		    NBUF_DATA_LEN, &free_data_bufs,	\
 		    free_data_bufs_func, 0);
 
+#if NET_DEBUG
 static inline const char *type2str(enum net_nbuf_type type)
 {
 	switch (type) {
@@ -285,8 +274,9 @@ static inline const char *type2str(enum net_nbuf_type type)
 
 	return NULL;
 }
+#endif /* NET_DEBUG */
 
-#ifdef NET_DEBUG_NBUFS
+#if NET_DEBUG
 static struct net_buf *net_nbuf_get_reserve_debug(enum net_nbuf_type type,
 						  uint16_t reserve_head,
 						  const char *caller,
@@ -348,7 +338,7 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 	}
 
 	if (!buf) {
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+#if NET_DEBUG
 #define PRINT_CYCLE (30 * sys_clock_ticks_per_sec)
 		static uint32_t next_print;
 		uint32_t curr = sys_tick_get_32();
@@ -357,13 +347,8 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 				    (!((curr - next_print) > PRINT_CYCLE)))) {
 			uint32_t new_print;
 
-#ifdef NET_DEBUG_NBUFS
 			NET_ERR("Failed to get free %s buffer (%s():%d)",
 				type2str(type), caller, line);
-#else
-			NET_ERR("Failed to get free %s buffer",
-				type2str(type));
-#endif /* NET_DEBUG_NBUFS */
 
 			new_print = curr + PRINT_CYCLE;
 			if (new_print > curr) {
@@ -374,76 +359,70 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 					(0xffffffff - curr);
 			}
 		}
-#endif
+#endif /* NET_DEBUG */
+
 		return NULL;
 	}
 
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
 
-#ifdef NET_DEBUG_NBUFS
 	NET_DBG("%s [%d] buf %p reserve %u ref %d (%s():%d)",
 		type2str(type), get_frees(type),
 		buf, reserve_head, buf->ref, caller, line);
-#else
-	NET_DBG("%s buf %p reserve %u ref %d",
-		type2str(type), buf, reserve_head, buf->ref);
-#endif
+
 	return buf;
 }
 
-#ifdef NET_DEBUG_NBUFS
+#if NET_DEBUG
 struct net_buf *net_nbuf_get_reserve_rx_debug(uint16_t reserve_head,
 					      const char *caller, int line)
-#else
-struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head)
-#endif
 {
-#ifdef NET_DEBUG_NBUFS
 	return net_nbuf_get_reserve_debug(NET_NBUF_RX, reserve_head,
-				      caller, line);
-#else
-	return net_nbuf_get_reserve(NET_NBUF_RX, reserve_head);
-#endif
+					  caller, line);
 }
 
-#ifdef NET_DEBUG_NBUFS
 struct net_buf *net_nbuf_get_reserve_tx_debug(uint16_t reserve_head,
 					      const char *caller, int line)
-#else
-struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head)
-#endif
 {
-#ifdef NET_DEBUG_NBUFS
 	return net_nbuf_get_reserve_debug(NET_NBUF_TX, reserve_head,
-				      caller, line);
-#else
-	return net_nbuf_get_reserve(NET_NBUF_TX, reserve_head);
-#endif
+					  caller, line);
 }
 
-#ifdef NET_DEBUG_NBUFS
 struct net_buf *net_nbuf_get_reserve_data_debug(uint16_t reserve_head,
 						const char *caller, int line)
-#else
-struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head)
-#endif
 {
-#ifdef NET_DEBUG_NBUFS
 	return net_nbuf_get_reserve_debug(NET_NBUF_DATA, reserve_head,
-				      caller, line);
-#else
-	return net_nbuf_get_reserve(NET_NBUF_DATA, reserve_head);
-#endif
+					  caller, line);
 }
 
-#ifdef NET_DEBUG_NBUFS
+#else
+
+struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head)
+{
+	return net_nbuf_get_reserve(NET_NBUF_RX, reserve_head);
+}
+
+struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head)
+{
+	return net_nbuf_get_reserve(NET_NBUF_TX, reserve_head);
+}
+
+struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head)
+{
+	return net_nbuf_get_reserve(NET_NBUF_DATA, reserve_head);
+}
+
+#endif /* NET_DEBUG */
+
+
+#if NET_DEBUG
 static struct net_buf *net_nbuf_get_debug(enum net_nbuf_type type,
 					  struct net_context *context,
 					  const char *caller, int line)
 #else
 static struct net_buf *net_nbuf_get(enum net_nbuf_type type,
 				    struct net_context *context)
-#endif
+#endif /* NET_DEBUG */
 {
 	struct net_buf *buf;
 	int16_t reserve = 0;
@@ -459,7 +438,7 @@ static struct net_buf *net_nbuf_get(enum net_nbuf_type type,
 		}
 	}
 
-#ifdef NET_DEBUG_NBUFS
+#if NET_DEBUG
 	buf = net_nbuf_get_reserve_debug(type, (uint16_t)reserve, caller, line);
 #else
 	buf = net_nbuf_get_reserve(type, (uint16_t)reserve);
@@ -476,49 +455,46 @@ static struct net_buf *net_nbuf_get(enum net_nbuf_type type,
 	return buf;
 }
 
-#ifdef NET_DEBUG_NBUFS
+#if NET_DEBUG
 struct net_buf *net_nbuf_get_rx_debug(struct net_context *context,
 				      const char *caller, int line)
-#else
-struct net_buf *net_nbuf_get_rx(struct net_context *context)
-#endif
 {
-#ifdef NET_DEBUG_NBUFS
 	return net_nbuf_get_debug(NET_NBUF_RX, context, caller, line);
-#else
-	return net_nbuf_get(NET_NBUF_RX, context);
-#endif
 }
 
-#ifdef NET_DEBUG_NBUFS
 struct net_buf *net_nbuf_get_tx_debug(struct net_context *context,
 				      const char *caller, int line)
-#else
-struct net_buf *net_nbuf_get_tx(struct net_context *context)
-#endif
 {
-#ifdef NET_DEBUG_NBUFS
 	return net_nbuf_get_debug(NET_NBUF_TX, context, caller, line);
-#else
-	return net_nbuf_get(NET_NBUF_TX, context);
-#endif
 }
 
-#ifdef NET_DEBUG_NBUFS
 struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
 					const char *caller, int line)
-#else
-struct net_buf *net_nbuf_get_data(struct net_context *context)
-#endif
 {
-#ifdef NET_DEBUG_NBUFS
 	return net_nbuf_get_debug(NET_NBUF_DATA, context, caller, line);
-#else
-	return net_nbuf_get(NET_NBUF_DATA, context);
-#endif
 }
 
-#ifdef NET_DEBUG_NBUFS
+#else /* NET_DEBUG */
+
+struct net_buf *net_nbuf_get_rx(struct net_context *context)
+{
+	return net_nbuf_get(NET_NBUF_RX, context);
+}
+
+struct net_buf *net_nbuf_get_tx(struct net_context *context)
+{
+	return net_nbuf_get(NET_NBUF_TX, context);
+}
+
+struct net_buf *net_nbuf_get_data(struct net_context *context)
+{
+	return net_nbuf_get(NET_NBUF_DATA, context);
+}
+
+#endif /* NET_DEBUG */
+
+
+#if NET_DEBUG
 void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line)
 #else
 void net_nbuf_unref(struct net_buf *buf)
@@ -527,46 +503,26 @@ void net_nbuf_unref(struct net_buf *buf)
 	struct net_buf *frag;
 
 	if (!buf) {
-#ifdef NET_DEBUG_NBUFS
 		NET_DBG("*** ERROR *** buf %p (%s():%d)", buf, caller, line);
-#else
-		NET_DBG("*** ERROR *** buf %p", buf);
-#endif
 		return;
 	}
 
 	if (!buf->ref) {
-#ifdef NET_DEBUG_NBUFS
 		NET_DBG("*** ERROR *** buf %p is freed already (%s():%d)",
 			buf, caller, line);
-#else
-		NET_DBG("*** ERROR *** buf %p is freed already", buf);
-#endif
 		return;
 	}
 
 	if (buf->user_data_size) {
-#ifdef NET_DEBUG_NBUFS
 		NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
 			type2str(net_nbuf_type(buf)),
 			get_frees(net_nbuf_type(buf)),
 			buf, buf->ref - 1, buf->frags, caller, line);
-#else
-		NET_DBG("%s buf %p ref %d frags %p",
-			type2str(net_nbuf_type(buf)), buf, buf->ref - 1,
-			buf->frags);
-#endif
 	} else {
-#ifdef NET_DEBUG_NBUFS
 		NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
 			type2str(NET_NBUF_DATA),
 			get_frees(NET_NBUF_DATA),
 			buf, buf->ref - 1, buf->frags, caller, line);
-#else
-		NET_DBG("%s buf %p ref %d frags %p",
-			type2str(NET_NBUF_DATA), buf, buf->ref - 1,
-			buf->frags);
-#endif
 	}
 
 	/* Remove the fragment list elements first, otherwise we
@@ -579,16 +535,11 @@ void net_nbuf_unref(struct net_buf *buf)
 
 		net_buf_frag_del(buf, frag);
 
-#ifdef NET_DEBUG_NBUFS
 		NET_DBG("%s [%d] buf %p ref %d frags %p (%s():%d)",
 			type2str(NET_NBUF_DATA),
 			get_frees(NET_NBUF_DATA),
 			frag, frag->ref - 1, frag->frags, caller, line);
-#else
-		NET_DBG("%s buf %p ref %d frags %p",
-			type2str(NET_NBUF_DATA), frag, frag->ref - 1,
-			frag->frags);
-#endif
+
 		net_buf_unref(frag);
 
 		frag = next;
@@ -597,7 +548,8 @@ void net_nbuf_unref(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-#ifdef NET_DEBUG_NBUFS
+
+#if NET_DEBUG
 struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller,
 				   int line)
 #else
@@ -605,33 +557,19 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf)
 #endif
 {
 	if (!buf) {
-#ifdef NET_DEBUG_NBUFS
 		NET_DBG("*** ERROR *** buf %p (%s():%d)", buf, caller, line);
-#else
-		NET_DBG("*** ERROR *** buf %p", buf);
-#endif
 		return NULL;
 	}
 
 	if (buf->user_data_size) {
-#ifdef NET_DEBUG_NBUFS
 		NET_DBG("%s [%d] buf %p ref %d (%s():%d)",
 			type2str(net_nbuf_type(buf)),
 			get_frees(net_nbuf_type(buf)),
 			buf, buf->ref + 1, caller, line);
-#else
-		NET_DBG("%s buf %p ref %d",
-			type2str(net_nbuf_type(buf)), buf, buf->ref + 1);
-#endif
 	} else {
-#ifdef NET_DEBUG_NBUFS
 		NET_DBG("%s buf %p ref %d (%s():%d)",
 			type2str(NET_NBUF_DATA),
 			buf, buf->ref + 1, caller, line);
-#else
-		NET_DBG("%s buf %p ref %d",
-			type2str(NET_NBUF_DATA), buf, buf->ref + 1);
-#endif
 	}
 
 	return net_buf_ref(buf);

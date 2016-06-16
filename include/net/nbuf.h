@@ -31,37 +31,11 @@
 
 #include <net/buf.h>
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
-#undef NET_DEBUG_NBUFS
-#define NET_DEBUG_NBUFS 1
-#endif
-
 #include <net/net_core.h>
 #include <net/net_linkaddr.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if defined(NET_DEBUG_NBUFS)
-#define NET_BUF_CHECK_IF_IN_USE(buf, ref)				\
-	do {								\
-		if (ref) {						\
-			NET_ERR("**ERROR** buf %p in use (%s:%s():%d)", \
-				buf, __FILE__, __func__, __LINE__);	\
-		}							\
-	} while (0)
-
-#define NET_BUF_CHECK_IF_NOT_IN_USE(buf, ref)				\
-	do {								\
-		if (!(ref)) {						\
-			NET_ERR("**ERROR** buf %p not in use (%s:%s():%d)", \
-				buf, __FILE__, __func__, __LINE__);	\
-		}							\
-	} while (0)
-#else
-#define NET_BUF_CHECK_IF_IN_USE(buf, ref)
-#define NET_BUF_CHECK_IF_NOT_IN_USE(buf, ref)
 #endif
 
 struct net_context;
@@ -73,19 +47,6 @@ enum net_nbuf_type {
 	NET_NBUF_DATA = 2,
 };
 /** @endcond */
-
-/** Note that the buf len is usually smaller that the minimum IPv6 MTU 1280
- * bytes. The default MTU is 1280 (minimum IPv6 packet size) + LL header
- * In Contiki terms this is UIP_LINK_MTU + UIP_LLH_LEN = UIP_BUFSIZE
- *
- * Contiki assumes that this value is UIP_BUFSIZE so do not change it
- * without changing the value of UIP_BUFSIZE!
- */
-#if defined(CONFIG_NET_BUF_MAX_DATA)
-#define NBUF_MAX_DATA CONFIG_NET_BUF_MAX_DATA
-#else
-#define NBUF_MAX_DATA 128
-#endif
 
 struct net_nbuf {
 	/** @cond ignore */
@@ -199,10 +160,55 @@ static inline void net_nbuf_ll_swap(struct net_buf *buf)
 			  &NET_IPV6_BUF(buf)->dst)
 /* @endcond */
 
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+
+/* Debug versions of the nbuf functions that are used when tracking
+ * buffer usage.
+ */
+
+struct net_buf *net_nbuf_get_rx_debug(struct net_context *context,
+				      const char *caller, int line);
+#define net_nbuf_get_rx(context) \
+	net_nbuf_get_rx_debug(context, __func__, __LINE__)
+
+struct net_buf *net_nbuf_get_tx_debug(struct net_context *context,
+				      const char *caller, int line);
+#define net_nbuf_get_tx(context) \
+	net_nbuf_get_tx_debug(context, __func__, __LINE__)
+
+struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
+					const char *caller, int line);
+#define net_nbuf_get_data(context) \
+	net_nbuf_get_data_debug(context, __func__, __LINE__)
+
+struct net_buf *net_nbuf_get_reserve_rx_debug(uint16_t reserve_head,
+					      const char *caller, int line);
+#define net_nbuf_get_reserve_rx(res) \
+	net_nbuf_get_reserve_rx_debug(res, __func__, __LINE__)
+
+struct net_buf *net_nbuf_get_reserve_tx_debug(uint16_t reserve_head,
+					      const char *caller, int line);
+#define net_nbuf_get_reserve_tx(res) \
+	net_nbuf_get_reserve_tx_debug(res, __func__, __LINE__)
+
+struct net_buf *net_nbuf_get_reserve_data_debug(uint16_t reserve_head,
+						const char *caller, int line);
+#define net_nbuf_get_reserve_data(res) \
+	net_nbuf_get_reserve_data_debug(res, __func__, __LINE__)
+
+void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line);
+#define net_nbuf_unref(buf) net_nbuf_unref_debug(buf, __func__, __LINE__)
+
+struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller,
+				   int line);
+#define net_nbuf_ref(buf) net_nbuf_ref_debug(buf, __func__, __LINE__)
+
+#else /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+
 /**
- * @brief Get buffer from the available buffers pool.
+ * @brief Get buffer from the RX buffers pool.
  *
- * @details Get network buffer from buffer pool. You must have
+ * @details Get network buffer from RX buffer pool. You must have
  * network context before able to use this function.
  *
  * @param context Network context that will be related to
@@ -210,25 +216,36 @@ static inline void net_nbuf_ll_swap(struct net_buf *buf)
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-/* Get buffer from the available buffers pool */
-#if defined(NET_DEBUG_NBUFS)
-#define net_nbuf_get_rx(context) net_nbuf_get_rx_debug(context, __func__, __LINE__)
-#define net_nbuf_get_tx(context) net_nbuf_get_tx_debug(context, __func__, __LINE__)
-#define net_nbuf_get_data(context) net_nbuf_get_data_debug(context, __func__, __LINE__)
-struct net_buf *net_nbuf_get_rx_debug(struct net_context *context,
-				  const char *caller, int line);
-struct net_buf *net_nbuf_get_tx_debug(struct net_context *context,
-				  const char *caller, int line);
-struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
-				  const char *caller, int line);
-#else
 struct net_buf *net_nbuf_get_rx(struct net_context *context);
-struct net_buf *net_nbuf_get_tx(struct net_context *context);
-struct net_buf *net_nbuf_get_data(struct net_context *context);
-#endif
 
 /**
- * @brief Get buffer from pool but also reserve headroom for
+ * @brief Get buffer from the TX buffers pool.
+ *
+ * @details Get network buffer from TX buffer pool. You must have
+ * network context before able to use this function.
+ *
+ * @param context Network context that will be related to
+ * this buffer.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
+struct net_buf *net_nbuf_get_tx(struct net_context *context);
+
+/**
+ * @brief Get buffer from the DATA buffers pool.
+ *
+ * @details Get network buffer from DATA buffer pool. You must have
+ * network context before able to use this function.
+ *
+ * @param context Network context that will be related to
+ * this buffer.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
+struct net_buf *net_nbuf_get_data(struct net_context *context);
+
+/**
+ * @brief Get RX buffer from pool but also reserve headroom for
  * potential headers.
  *
  * @details Normally this version is not useful for applications
@@ -238,28 +255,33 @@ struct net_buf *net_nbuf_get_data(struct net_context *context);
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-/* Same as net_buf_get, but also reserve headroom for potential headers */
-#if defined(NET_DEBUG_NBUFS)
-#define net_nbuf_get_reserve_rx(res) net_nbuf_get_reserve_rx_debug(res,	\
-							       __func__, \
-							       __LINE__)
-#define net_nbuf_get_reserve_tx(res) net_nbuf_get_reserve_tx_debug(res,	\
-							       __func__, \
-							       __LINE__)
-#define net_nbuf_get_reserve_data(res) net_nbuf_get_reserve_data_debug(res,	\
-							       __func__, \
-							       __LINE__)
-struct net_buf *net_nbuf_get_reserve_rx_debug(uint16_t reserve_head,
-					    const char *caller, int line);
-struct net_buf *net_nbuf_get_reserve_tx_debug(uint16_t reserve_head,
-					    const char *caller, int line);
-struct net_buf *net_nbuf_get_reserve_data_debug(uint16_t reserve_head,
-					    const char *caller, int line);
-#else
 struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head);
+
+/**
+ * @brief Get TX buffer from pool but also reserve headroom for
+ * potential headers.
+ *
+ * @details Normally this version is not useful for applications
+ * but is mainly used by network fragmentation code.
+ *
+ * @param reserve_head How many bytes to reserve for headroom.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
 struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head);
+
+/**
+ * @brief Get DATA buffer from pool but also reserve headroom for
+ * potential headers.
+ *
+ * @details Normally this version is not useful for applications
+ * but is mainly used by network fragmentation code.
+ *
+ * @param reserve_head How many bytes to reserve for headroom.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
 struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head);
-#endif
 
 /**
  * @brief Place buffer back into the available buffers pool.
@@ -271,12 +293,7 @@ struct net_buf *net_nbuf_get_reserve_data(uint16_t reserve_head);
  * @param buf Network buffer to release.
  *
  */
-#ifdef NET_DEBUG_NBUFS
-#define net_nbuf_unref(buf) net_nbuf_unref_debug(buf, __func__, __LINE__)
-void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line);
-#else
 void net_nbuf_unref(struct net_buf *buf);
-#endif
 
 /**
  * @brief Increase the ref count
@@ -287,12 +304,9 @@ void net_nbuf_unref(struct net_buf *buf);
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-#ifdef NET_DEBUG_NBUFS
-#define net_nbuf_ref(buf) net_nbuf_ref_debug(buf, __func__, __LINE__)
-struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller, int line);
-#else
 struct net_buf *net_nbuf_ref(struct net_buf *buf);
-#endif
+
+#endif /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
 
 /**
  * @brief Copy a buffer with fragments while reserving some extra space
