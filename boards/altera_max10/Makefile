@@ -2,4 +2,5 @@ ccflags-y += -I$(srctree)/include/drivers
 ccflags-y += -I$(srctree)/drivers
 asflags-y := ${ccflags-y}
 
-obj-y += board.o
+# Force kbuild to make empty built-in.o if necessary
+obj- := dummy.o
