@@ -32,7 +32,7 @@
 #include "ipv6.h"
 #include "nbr.h"
 
-#if !defined(CONFIG_NET_IPV6_NO_ND)
+#if defined(CONFIG_NET_IPV6_ND)
 
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
@@ -147,9 +147,9 @@ void net_neighbor_table_clear(struct net_nbr_table *table)
 {
 	NET_DBG("Neighbor table %p cleared", table);
 }
-#endif /* !CONFIG_NET_IPV6_NO_ND */
+#endif /* CONFIG_NET_IPV6_ND */
 
-#if !defined(CONFIG_NET_IPV6_NO_DAD) && !defined(CONFIG_NET_IPV6_NO_ND)
+#if defined(CONFIG_NET_IPV6_DAD)
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr)
 {
 	return net_ipv6_send_ns(iface, NULL, NULL, NULL,
@@ -167,7 +167,7 @@ static inline bool dad_failed(struct net_if *iface, struct in6_addr *addr)
 
 	return true;
 }
-#endif /* !CONFIG_NET_IPV6_NO_DAD */
+#endif /* CONFIG_NET_IPV6_DAD */
 
 #if NET_DEBUG > 0
 static inline void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
@@ -201,7 +201,7 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #define dbg_update_neighbor_lladdr_raw(...)
 #endif /* NET_DEBUG */
 
-#if !defined(CONFIG_NET_IPV6_NO_ND)
+#if defined(CONFIG_NET_IPV6_ND)
 
 static inline uint8_t get_llao_len(struct net_if *iface)
 {
@@ -409,12 +409,12 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 		goto drop;
 	}
 
-#if defined(CONFIG_NET_IPV6_NO_DAD)
+#if !defined(CONFIG_NET_IPV6_DAD)
 	if (net_is_ipv6_addr_unspecified(&NET_IPV6_BUF(buf)->src)) {
 		goto drop;
 	}
 
-#else /* CONFIG_NET_IPV6_NO_DAD */
+#else /* CONFIG_NET_IPV6_DAD */
 
 	/* Do DAD */
 	if (net_is_ipv6_addr_unspecified(&NET_IPV6_BUF(buf)->src)) {
@@ -441,7 +441,7 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 		flags = NET_ICMPV6_NA_FLAG_OVERRIDE;
 		goto send_na;
 	}
-#endif /* CONFIG_NET_IPV6_NO_DAD */
+#endif /* CONFIG_NET_IPV6_DAD */
 
 	if (net_is_my_ipv6_addr(&NET_IPV6_BUF(buf)->src)) {
 		NET_DBG("Duplicate IPv6 %s address",
@@ -703,12 +703,12 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 			net_nbuf_iface(buf),
 			net_sprint_ipv6_addr(&NET_ICMPV6_NA_BUF(buf)->tgt));
 
-#if !defined(CONFIG_NET_IPV6_NO_DAD)
+#if defined(CONFIG_NET_IPV6_DAD)
 		if (ifaddr->addr_state == NET_ADDR_TENTATIVE) {
 			dad_failed(net_nbuf_iface(buf),
 				   &NET_ICMPV6_NA_BUF(buf)->tgt);
 		}
-#endif /* !CONFIG_NET_IPV6_NO_DAD */
+#endif /* CONFIG_NET_IPV6_DAD */
 
 		goto drop;
 	}
@@ -1277,9 +1277,9 @@ drop:
 	NET_STATS(++net_stats.ipv6_nd.drop);
 	return NET_DROP;
 }
-#endif /* !CONFIG_NET_IPV6_NO_ND */
+#endif /* CONFIG_NET_IPV6_ND */
 
-#if !defined(CONFIG_NET_IPV6_NO_ND)
+#if defined(CONFIG_NET_IPV6_ND)
 static struct net_icmpv6_handler ns_input_handler = {
 	.type = NET_ICMPV6_NS,
 	.code = 0,
@@ -1297,11 +1297,11 @@ static struct net_icmpv6_handler ra_input_handler = {
 	.code = 0,
 	.handler = handle_ra_input,
 };
-#endif /* !CONFIG_NET_IPV6_NO_ND */
+#endif /* CONFIG_NET_IPV6_ND */
 
 void net_ipv6_init(void)
 {
-#if !defined(CONFIG_NET_IPV6_NO_ND)
+#if defined(CONFIG_NET_IPV6_ND)
 	net_icmpv6_register_handler(&ns_input_handler);
 	net_icmpv6_register_handler(&na_input_handler);
 	net_icmpv6_register_handler(&ra_input_handler);

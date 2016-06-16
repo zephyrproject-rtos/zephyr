@@ -63,19 +63,19 @@ config NET_IPV6_MAX_NEIGHBORS
        help
          The value depends on your network needs.
 
-config NET_IPV6_NO_ND
-       bool "Do not do neighbor discovery"
+config NET_IPV6_ND
+       bool "Activate neighbor discovery"
        depends on NET_IPV6
-       default n
+       default y
        help
          The value depends on your network needs. ND should normally
          be active.
 
-config NET_IPV6_NO_DAD
-       bool "Do not do duplicate address detection"
-       depends on !NET_IPV6_NO_ND
-       default n
-       default y if !NET_IPV6_NO_ND
+config NET_IPV6_DAD
+       bool "Activate duplicate address detection"
+       depends on NET_IPV6
+       default y
+       default n if !NET_IPV6_ND
        help
          The value depends on your network needs. DAD should normally
          be active.

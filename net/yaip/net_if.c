@@ -109,7 +109,7 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 	return NULL;
 }
 
-#if !defined(CONFIG_NET_IPV6_NO_DAD) && !defined(CONFIG_NET_IPV6_NO_ND)
+#if defined(CONFIG_NET_IPV6_DAD)
 #define DAD_TIMEOUT (sys_clock_ticks_per_sec / 10)
 
 static void dad_timeout(struct nano_work *work)
@@ -152,10 +152,9 @@ void net_if_start_dad(struct net_if *iface)
 		nano_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);
 	}
 }
-#endif /* !CONFIG_NET_IPV6_NO_DAD && !CONFIG_NET_IPV6_NO_ND */
+#endif /* CONFIG_NET_IPV6_DAD */
 
-
-#if !defined(CONFIG_NET_IPV6_NO_ND)
+#if defined(CONFIG_NET_IPV6_ND)
 #define RS_TIMEOUT (sys_clock_ticks_per_sec)
 #define RS_COUNT 3
 
@@ -182,7 +181,7 @@ void net_if_start_rs(struct net_if *iface)
 		nano_delayed_work_submit(&iface->rs_timer, RS_TIMEOUT);
 	}
 }
-#endif /* !CONFIG_NET_IPV6_NO_ND */
+#endif /* CONFIG_NET_IPV6_ND */
 
 struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr)
 {

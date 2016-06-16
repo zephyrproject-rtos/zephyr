@@ -38,7 +38,7 @@
 
 #define NET_MAX_RS_COUNT 3
 
-#if !defined(CONFIG_NET_IPV6_NO_DAD)
+#if defined(CONFIG_NET_IPV6_DAD)
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr);
 #endif
 
