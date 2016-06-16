@@ -52,7 +52,7 @@ struct bt_le_conn_param {
   * @param int_min  Minimum Connection Interval (N * 1.25 ms)
   * @param int_max  Maximum Connection Interval (N * 1.25 ms)
   * @param lat      Connection Latency
-  * @param timeout  Supervision Timeout (N * 10 ms)
+  * @param to       Supervision Timeout (N * 10 ms)
   */
 #define BT_LE_CONN_PARAM(int_min, int_max, lat, to) \
 	(&(struct bt_le_conn_param) { \

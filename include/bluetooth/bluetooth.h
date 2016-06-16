@@ -44,7 +44,9 @@ extern "C" {
  * @{
  */
 
-/** @brief Callback for notifying that Bluetooth has been enabled.
+/**
+ * @typedef bt_ready_cb_t
+ * @brief Callback for notifying that Bluetooth has been enabled.
  *
  *  @param err zero on success or (negative) error code otherwise.
  */
@@ -167,7 +169,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
  */
 int bt_le_adv_stop(void);
 
-/** @brief Callback type for reporting LE scan results.
+/** @typedef bt_le_scan_cb_t
+ *  @brief Callback type for reporting LE scan results.
  *
  *  A function of this type is given to the bt_le_scan_start() function
  *  and will be called for any discovered LE device.
@@ -270,7 +273,8 @@ struct bt_br_discovery_result {
 	uint8_t eir[240];
 };
 
-/** @brief Callback type for reporting BR/EDR discovery (inquiry)
+/** @typedef bt_br_discovery_cb_t
+ *  @brief Callback type for reporting BR/EDR discovery (inquiry)
  *         results.
  *
  *  A callback of this type is given to the bt_br_discovery_start()

@@ -276,7 +276,8 @@ enum {
 	BT_GATT_ITER_CONTINUE,
 };
 
-/** @brief Attribute iterator callback.
+/** @typedef bt_gatt_attr_func_t
+ *  @brief Attribute iterator callback.
  *
  *  @param attr Attribute found.
  *  @param user_data Data given.
@@ -353,7 +354,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  *  Helper macro to declare a service attribute.
  *
  *  @param _uuid Service attribute type.
- *  @param _data Service attribute value.
+ *  @param _service Service attribute value.
  */
 #define BT_GATT_SERVICE(_uuid, _service)				\
 {									\
@@ -417,7 +418,7 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
  *
  *  Helper macro to declare database internal include service attribute.
  *
- *  @param _service_incl, the first service attribute of service to include
+ *  @param _service_incl the first service attribute of service to include
  */
 #define BT_GATT_INCLUDE_SERVICE(_service_incl)				\
 {									\
@@ -668,13 +669,14 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *
  *  @param conn Connection object.
  *  @param attr Attribute object.
- *  @param value Attribute value.
+ *  @param data Pointer to Attribute data.
  *  @param len Attribute value length.
  */
 int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   const void *data, uint16_t len);
 
-/** @brief Indication complete result callback.
+/** @typedef bt_gatt_indicate_func_t
+ *  @brief Indication complete result callback.
  *
  *  @param conn Connection object.
  *  @param attr Attribute object.
@@ -715,7 +717,8 @@ int bt_gatt_indicate(struct bt_conn *conn,
 
 /* Client API */
 
-/** @brief Response callback function
+/** @typedef bt_gatt_rsp_func_t
+ *  @brief Response callback function
  *
  *  @param conn Connection object.
  *  @param err ATT error code.
@@ -735,7 +738,8 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func);
 
 struct bt_gatt_discover_params;
 
-/** @brief Discover attribute callback function.
+/** @typedef bt_gatt_discover_func_t
+ *  @brief Discover attribute callback function.
  *
  *  @param conn Connection object.
  *  @param attr Attribute found.
@@ -804,7 +808,8 @@ int bt_gatt_discover(struct bt_conn *conn,
 
 struct bt_gatt_read_params;
 
-/** @brief Read callback function
+/** @typedef bt_gatt_read_func_t
+ *  @brief Read callback function
  *
  *  @param conn Connection object.
  *  @param err ATT error code.
@@ -900,7 +905,8 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 
 struct bt_gatt_subscribe_params;
 
-/** @brief Notification callback function
+/** @typedef bt_gatt_notify_func_t
+ *  @brief Notification callback function
  *
  *  @param conn Connection object.
  *  @param params Subscription parameters.
