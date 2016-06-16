@@ -302,7 +302,7 @@ struct bt_br_discovery_param {
  *
  *  @param param Discovery parameters.
  *  @param results Storage for discovery results.
- *  @param count Number of results in storage
+ *  @param count Number of results in storage. Valid range: 1-255.
  *  @param cb Callback to notify discovery results.
  *
  *  @return Zero on success or error code otherwise, positive in case

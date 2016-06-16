@@ -1570,6 +1570,8 @@ static int cmd_bredr_discovery(int argc, char *argv[])
 		struct bt_br_discovery_param param;
 
 		param.limited_discovery = false;
+		/* FIXME: expose providing length on the command line */
+		param.length = 8;
 
 		if (argc > 2 && !strcmp(argv[2], "limited")) {
 			param.limited_discovery = true;

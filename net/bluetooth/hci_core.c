@@ -3604,13 +3604,7 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 
-	if (!param->length) {
-		/* do inquiry for maximum allowed time without results limit */
-		cp->length = 0x30;
-	} else {
-		cp->length = param->length;
-	}
-
+	cp->length = param->length;
 	cp->num_rsp = num_rsp;
 
 	memcpy(cp->lap, iac, 3);
@@ -3621,6 +3615,20 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY, buf, NULL);
 }
 
+static bool valid_br_discov_param(const struct bt_br_discovery_param *param,
+				  size_t num_results)
+{
+	if (!num_results || num_results > 255) {
+		return false;
+	}
+
+	if (!param->length || param->length > 0x30) {
+		return false;
+	}
+
+	return true;
+}
+
 int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 			  struct bt_br_discovery_result *results, size_t cnt,
 			  bt_br_discovery_cb_t cb)
@@ -3629,7 +3637,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 
 	BT_DBG("");
 
-	if (param->length > 0x30) {
+	if (!valid_br_discov_param(param, cnt)) {
 		return -EINVAL;
 	}
 
