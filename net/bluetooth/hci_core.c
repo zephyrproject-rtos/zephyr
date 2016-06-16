@@ -3608,7 +3608,7 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param,
 	cp->num_rsp = num_rsp;
 
 	memcpy(cp->lap, iac, 3);
-	if (param->limited_discovery) {
+	if (param->limited) {
 		cp->lap[0] = 0x00;
 	}
 

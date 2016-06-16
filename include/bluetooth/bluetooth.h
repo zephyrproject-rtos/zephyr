@@ -291,7 +291,7 @@ struct bt_br_discovery_param {
 	uint8_t length;
 
 	/** True if limited discovery procedure is to be used. */
-	bool limited_discovery;
+	bool limited;
 };
 
 /** @brief Start BR/EDR discovery
