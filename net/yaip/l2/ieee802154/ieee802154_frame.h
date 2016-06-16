@@ -23,6 +23,7 @@
 #define __IEEE802154_FRAME_H__
 
 #include <nanokernel.h>
+#include <net/nbuf.h>
 
 #define IEEE802154_MTU				127
 #define IEEE802154_MIN_LENGTH			5
@@ -132,7 +133,10 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 
 static inline bool ieee802154_ack_required(struct net_buf *buf)
 {
-	return false;
+	struct ieee802154_fcf_seq *fs =
+		(struct ieee802154_fcf_seq *)net_nbuf_ll(buf);
+
+	return fs->fc.ar;
 }
 
 #endif /* __IEEE802154_FRAME_H__ */
