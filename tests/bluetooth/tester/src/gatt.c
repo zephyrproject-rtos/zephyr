@@ -269,11 +269,8 @@ fail:
 struct gatt_value {
 	uint16_t len;
 	uint8_t *data;
-	uint16_t prep_data_len;
-	uint8_t *prep_data;
 	uint8_t enc_key_size;
 	uint8_t flags[1];
-	uint8_t prep_write_err;
 };
 
 enum {
@@ -315,27 +312,15 @@ static ssize_t write_value(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_ENCRYPTION_KEY_SIZE);
 	}
 
-	if (value->prep_write_err) {
-		return len;
-	}
-
-	/*
-	 * If the prepare Value Offset is greater than the current length of
-	 * the attribute value Error Response shall be sent with the
-	 * «Invalid Offset».
-	 */
 	if (offset > value->len) {
-		value->prep_write_err = BT_ATT_ERR_INVALID_OFFSET;
-		return len;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	if (offset + len > value->len) {
-		value->prep_write_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
-		return len;
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	value->prep_data_len += len;
-	memcpy(value->prep_data + offset, buf, len);
+	memcpy(value->data + offset, buf, len);
 
 	return len;
 }
@@ -719,7 +704,6 @@ static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 	/* Check if attribute value has been already set */
 	if (!value->len) {
 		value->data = server_buf_push(data->len);
-		value->prep_data = server_buf_push(data->len);
 		value->len = data->len;
 	}
 
