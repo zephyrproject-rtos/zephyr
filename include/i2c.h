@@ -107,7 +107,7 @@ struct i2c_msg {
 
 union dev_config {
 	uint32_t raw;
-	struct {
+	struct __bits {
 		uint32_t        use_10_bit_addr : 1;
 		uint32_t        speed : 3;
 		uint32_t        is_master_device : 1;

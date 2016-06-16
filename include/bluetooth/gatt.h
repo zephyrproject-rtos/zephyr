@@ -821,24 +821,23 @@ typedef uint8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, uint8_t err,
 				       struct bt_gatt_read_params *params,
 				       const void *data, uint16_t length);
 
-/** @brief GATT Read parameters */
+/** @brief GATT Read parameters
+ *  @param func Read attribute callback
+ *  @param handle_count If equals to 1 single.handle and single.offset
+ *                      are used.  If >1 Read Multiple Characteristic
+ *                      Values is performed and handles are used.
+ *  @param handle Attribute handle
+ *  @param offset Attribute data offset
+ *  @param handles Handles to read in Read Multiple Characteristic Values
+ */
 struct bt_gatt_read_params {
-	/** Read attribute callback */
 	bt_gatt_read_func_t func;
-	/** Handles count.
-	 * If equals to 1 single.handle and single.offset are used.
-	 * If >1 Read Multiple Characteristic Values is performed and handles
-	 * are used.
-	 */
 	size_t handle_count;
-	union {
-		struct {
-			/** Attribute handle */
+	union __unnamed_workaround__ {
+		struct __single {
 			uint16_t handle;
-			/** Attribute data offset */
 			uint16_t offset;
 		} single;
-		/** Handles to read in Read Multiple Characteristic Values */
 		uint16_t *handles;
 	};
 };

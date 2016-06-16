@@ -31,4 +31,19 @@
 #include <toolchain/other.h>
 #endif
 
+/**
+ * Workaround for documentation parser limitations
+ *
+ * Current documentation parsers (sphinx under Doxygen) don't seem to
+ * understand well unnamed structs / unions. A workaround is to make
+ * the parser think there is something like a struct/union/enum name
+ * that is actually something with no effect to the compiler.
+ *
+ * Current choice is to give it a 1B alignment. This basically tells
+ * the compiler to do what is doing now: align it wherever it thinks
+ * it should, as a 1B alignment "restriction" fits any other alignment
+ * restriction we might have.
+ */
+#define __unnamed_workaround__ __attribute__((__aligned__(1)))
+
 #endif /* _TOOLCHAIN_H */

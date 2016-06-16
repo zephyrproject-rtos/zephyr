@@ -88,20 +88,21 @@ typedef void (*uart_irq_callback_t)(struct device *port);
  */
 typedef void (*uart_irq_config_func_t)(struct device *port);
 
-/** @brief UART device configuration.*/
+/**
+ * @brief UART device configuration.
+ *
+ * @param port Base port number
+ * @param base Memory mapped base address
+ * @param regs Register address
+ * @param sys_clk_freq System clock frequency in Hz
+ */
 struct uart_device_config {
-	/**
-	 * Base port number
-	 * or memory mapped base address
-	 * or register address
-	 */
-	union {
+	union __unnamed_workaround__ {
 		uint32_t port;
 		uint8_t *base;
 		uint32_t regs;
 	};
 
-/** System clock frequency in Hz.*/
 	uint32_t sys_clk_freq;
 
 #ifdef CONFIG_PCI

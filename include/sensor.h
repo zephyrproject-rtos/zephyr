@@ -63,8 +63,8 @@ enum sensor_value_type {
  */
 struct sensor_value {
 	enum sensor_value_type type;
-	union {
-		struct {
+	union __unnamed_workaround__  {
+		struct __unnamed_workaround__ {
 			int32_t val1;
 			int32_t val2;
 		};

@@ -135,19 +135,22 @@ enum {
 	BT_CONN_ROLE_SLAVE,
 };
 
-/** Connection Info Structure */
+/** @brief Connection Info Structure
+ *
+ *
+ *  @param type Connection Type
+ *  @param role Connection Role
+ *  @param le LE Connection specific Info
+ *  @param br BR/EDR Connection specific Info
+ */
 struct bt_conn_info {
-	/** Connection Type */
 	uint8_t type;
 
-	/** Connection Role */
 	uint8_t role;
 
-	union {
-		/** LE Connection specific Info */
+	union __unnamed_workaround__ {
 		struct bt_conn_le_info le;
 
-		/** BR/EDR Connection specific Info */
 		struct bt_conn_br_info br;
 	};
 };
