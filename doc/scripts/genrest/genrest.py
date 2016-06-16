@@ -39,6 +39,8 @@ def print_items(items, outdir, indent):
                 f.write("     - %s\n" %p)
                 config = open("%s/%s.rst" % (outdir, var), "w")
                 config.write(":orphan:\n\n")
+                config.write(".. raw:: HTML\n\n   <script>document.title = '%s'</script>\n\n"
+                    %item.get_name())
                 config.write(".. option:: CONFIG_%s:\n" %item.get_name())
                 config.write(".. _CONFIG_%s:\n" %item.get_name())
                 if text:
