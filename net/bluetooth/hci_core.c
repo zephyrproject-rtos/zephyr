@@ -1516,22 +1516,10 @@ static void inquiry_complete(struct net_buf *buf)
 	report_discovery_results();
 }
 
-static void discovery_results_full(void)
-{
-	int err;
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
-	if (err) {
-		BT_ERR("Failed to cancel discovery (%d)", err);
-		return;
-	}
-
-	report_discovery_results();
-}
-
 static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr)
 {
 	size_t i;
+	int err;
 
 	/* check if already present in results */
 	for (i = 0; i < discovery_results_count; i++) {
@@ -1540,14 +1528,22 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr)
 		}
 	}
 
-	/* get new slot from results */
+	/* Pick a new slot (if available) */
 	if (discovery_results_count < discovery_results_size) {
 		bt_addr_copy(&discovery_results[discovery_results_count].addr,
 			     addr);
 		return &discovery_results[discovery_results_count++];
 	}
 
-	discovery_results_full();
+	BT_WARN("Got more Inquiry results than requested");
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
+	if (err) {
+		BT_ERR("Failed to cancel discovery (%d)", err);
+		return NULL;
+	}
+
+	report_discovery_results();
 
 	return NULL;
 }
@@ -3594,7 +3590,8 @@ struct net_buf *bt_buf_get_acl(void)
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static int br_start_inquiry(const struct bt_br_discovery_param *param)
+static int br_start_inquiry(const struct bt_br_discovery_param *param,
+			    size_t num_rsp)
 {
 	const uint8_t iac[3] = { 0x33, 0x8b, 0x9e };
 	struct bt_hci_op_inquiry *cp;
@@ -3614,7 +3611,7 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param)
 		cp->length = param->length;
 	}
 
-	cp->num_rsp = 0x00;
+	cp->num_rsp = num_rsp;
 
 	memcpy(cp->lap, iac, 3);
 	if (param->limited_discovery) {
@@ -3640,7 +3637,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 		return -EALREADY;
 	}
 
-	err = br_start_inquiry(param);
+	err = br_start_inquiry(param, cnt);
 	if (err) {
 		return err;
 	}
