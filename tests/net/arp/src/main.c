@@ -63,7 +63,6 @@ int net_arp_dev_init(struct device *dev)
 {
 	struct net_arp_context *net_arp_context = dev->driver_data;
 
-	dev->driver_api = NULL;
 	net_arp_context = net_arp_context;
 
 	return 0;
