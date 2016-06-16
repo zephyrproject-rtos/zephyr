@@ -22,7 +22,6 @@
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
-#include <board.h>
 #include <init.h>
 #include <uart.h>
 #include <misc/util.h>
