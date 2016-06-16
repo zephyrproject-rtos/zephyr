@@ -105,6 +105,10 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned options)
 {
+	__ASSERT(!((uint32_t)pStackMem & (STACK_ALIGN - 1)),
+		 "stack is not aligned properly\n"
+		 "%d-byte alignment required\n", STACK_ALIGN);
+
 	char *stackEnd = pStackMem + stackSize;
 	struct __esf *pInitCtx;
 	struct tcs *tcs = (struct tcs *) pStackMem;
