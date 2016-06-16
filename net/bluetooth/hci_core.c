@@ -1612,7 +1612,7 @@ static void extended_inquiry_result(struct net_buf *buf)
 	memcpy(result->eir, evt->eir, sizeof(result->eir));
 }
 
-static void  remote_name_request_complete(struct net_buf *buf)
+static void remote_name_request_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_remote_name_req_complete *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
