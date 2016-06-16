@@ -71,6 +71,13 @@ NET_L2_DECLARE_PUBLIC(DUMMY_L2);
 NET_L2_DECLARE_PUBLIC(ETHERNET_L2);
 #endif /* CONFIG_NET_L2_ETHERNET */
 
+#ifdef CONFIG_NET_L2_IEEE802154
+#include <net/ieee802154.h>
+#define IEEE802154_L2		IEEE802154
+#define IEEE802154_L2_CTX_TYPE	struct ieee802154_context
+NET_L2_DECLARE_PUBLIC(IEEE802154_L2);
+#endif /* CONFIG_NET_L2_IEEE802154 */
+
 extern struct net_l2 __net_l2_end[];
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _reserve_fn)		\

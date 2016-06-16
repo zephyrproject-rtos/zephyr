@@ -32,6 +32,8 @@ config  NET_L2_ETHERNET
 	 If NET_SLIP and SLIP_TAP are selected, NET_L2_ETHERNET will enable to
 	 fully simulate ethernet through SLIP.
 
+source "net/yaip/l2/ieee802154/Kconfig"
+
 config NET_ARP
        bool "Enable ARP"
        default y

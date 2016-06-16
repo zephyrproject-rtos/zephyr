@@ -89,4 +89,11 @@ extern int ieee802154_radio_send(struct net_if *iface,
 extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 						    struct net_buf *buf);
 
+/**
+ * @brief Initialize L2 stack for a given interface
+ *
+ * @param iface A valid pointer on a network interface
+ */
+void ieee802154_init(struct net_if *iface);
+
 #endif /* __IEEE802154_RADIO_H__ */
