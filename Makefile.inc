@@ -63,7 +63,7 @@ endif
 export CFLAGS
 
 zephyrmake	= +$(MAKE) -C $(ZEPHYR_BASE)  O=$(1) \
-			PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) $(2)
+			PROJECT=$(PROJECT_BASE) SOURCE_DIR="$(SOURCE_DIR)" $(2)
 
 BOARDCONFIG = $(O)/.board_$(BOARD)
 
