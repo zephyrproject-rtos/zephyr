@@ -167,13 +167,10 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
  */
 int bt_le_adv_stop(void);
 
-/** @brief Define a type allowing user to implement a function that can
- *  be used to get back active LE scan results.
+/** @brief Callback type for reporting LE scan results.
  *
- *  A function of this type will be called back when user application
- *  triggers active LE scan. The caller will populate all needed
- *  parameters based on data coming from scan result.
- *  Such function can be set by user when LE active scan API is used.
+ *  A function of this type is given to the bt_le_scan_start() function
+ *  and will be called for any discovered LE device.
  *
  *  @param addr Advertiser LE address and type.
  *  @param rssi Strength of advertiser signal.
@@ -235,8 +232,8 @@ struct bt_le_scan_param {
 
 /** @brief Start (LE) scanning
  *
- *  Start LE scanning with and provide results through the specified
- *  callback.
+ *  Start LE scanning with given parameters and provide results through
+ *  the specified callback.
  *
  *  @param param Scan parameters.
  *  @param cb Callback to notify scan results.
@@ -273,11 +270,12 @@ struct bt_br_discovery_result {
 	uint8_t eir[240];
 };
 
-/** @brief Define a type allowing user to implement a function that can
- *  be used to get back BR/EDR discovery (inquiry) results.
+/** @brief Callback type for reporting BR/EDR discovery (inquiry)
+ *         results.
  *
- *  A function of this type will be called back when user application
- *  triggers BR/EDR discovery and discovery process completes.
+ *  A callback of this type is given to the bt_br_discovery_start()
+ *  function and will be called at the end of the discovery with
+ *  information about found devices populated in the results array.
  *
  *  @param results Storage used for discovery results
  *  @param count Number of valid discovery results.
