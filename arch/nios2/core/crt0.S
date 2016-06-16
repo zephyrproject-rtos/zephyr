@@ -62,6 +62,25 @@ SECTION_FUNC(TEXT, __text_start)
 	 * ZEP-275
 	 */
 
+#ifdef CONFIG_INIT_STACKS
+	/* Pre-populate all bytes in _interrupt_stack with 0xAA */
+	movhi r1, %hi(_interrupt_stack)
+	ori r1, r1, %lo(_interrupt_stack)
+	movhi r2, %hi(CONFIG_ISR_STACK_SIZE)
+	ori r2, r2, %lo(CONFIG_ISR_STACK_SIZE)
+	subi r2, r2, 3
+	/* Put constant 0xaaaaaaaa in r3 */
+	movhi r3, 0xaaaa
+	ori r3, r3, 0xaaaa
+1:
+	/* Loop through the _interrupt_stack treating it as an array of
+	 * uint32_t, setting each element to r3 */
+	stw r3, (r1)
+	subi r2, r2, 4
+	addi r1, r1, 4
+	blt r0, r2, 1b
+#endif
+
 	/* Set up the initial stack pointer to the interrupt stack, safe
 	 * to use this as the CPU boots up with interrupts disabled and we
 	 * don't turn them on until much later, when the kernel is on
