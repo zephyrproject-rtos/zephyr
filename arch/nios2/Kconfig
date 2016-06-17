@@ -46,7 +46,7 @@ menu "Nios II Family Options"
 
 config XIP
 	bool
-	default y
+	default n
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
