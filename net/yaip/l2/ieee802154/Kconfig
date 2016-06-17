@@ -44,4 +44,28 @@ config  NET_L2_IEEE802154_RADIO_ALOHA_TX_RETRIES
 	  Number of transmission attempts radio driver should do, before
 	  replying it could not send the packet.
 
+config  NET_L2_IEEE802154_ORFD
+	bool "Support only an OVERLY Reduced Functionality Device"
+	default n
+	help
+	  This is a TEST ONLY support. Do not use that in production! This is
+	  not spec compliant. This is added for 2 reasons: to support legacy
+	  stack behavior and for testing. PAN ID is fixed as well as the channel.
+	  The device is not able to scan, associate to a PAN or anything else
+	  like that. You have been warned.
+
+config  NET_L2_IEEE802154_ORFD_PAN_ID
+	hex "IEEE 802.15.4 fixed PAN ID"
+	depends on NET_L2_IEEE802154_ORFD
+	default 0xabcd
+	help
+	  The fixed PAN ID to use for the ORFD.
+
+config  NET_L2_IEEE802154_ORFD_CHANNEL
+	int "IEEE 802.15.4 fixed channel"
+	depends on NET_L2_IEEE802154_ORFD
+	default 26
+	help
+	  The fixed channel to use for the ORFD.
+
 endif
