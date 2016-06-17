@@ -66,24 +66,44 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-struct irq_stack_frame {
-	int stub;
+/*
+ * The following structure defines the set of 'non-volatile' or 'callee saved'
+ * integer registers.  These registers must be preserved by a called C
+ * function.  These are the only registers that need to be saved/restored when
+ * a cooperative context switch occurs.
+ */
+struct s_coop {
+	/* General purpose callee-saved registers */
+	uint32_t r16;
+	uint32_t r17;
+	uint32_t r18;
+	uint32_t r19;
+	uint32_t r20;
+	uint32_t r21;
+	uint32_t r22;
+	uint32_t r23;
+
+	 /* Normally used for the frame pointer but also a general purpose
+	  * register if frame pointers omitted
+	  */
+	uint32_t r28;
+
+	uint32_t ra; /* Return address */
+	uint32_t sp; /* Stack pointer */
+	uint32_t key; /* IRQ status before irq_lock() and call to _Swap() */
 };
+typedef struct s_coop t_coop;
 
-typedef struct irq_stack_frame tISF;
-
-struct callee_saved {
-	int stub;
-};
-
-typedef struct callee_saved tCalleeSaved;
-
-struct coop {
-	int stub;
-};
-
+/*
+ * The following structure defines the set of caller-saved integer registers.
+ * These registers need not be preserved by a called C function.  Given that
+ * they are not preserved across function calls, they must be save/restored
+ * (along with the struct coop regs) when a preemptive context switch occurs.
+ */
 struct preempt {
-	int stub;
+	/* Nothing here, the exception code puts all the caller-saved registers
+	 * onto the stack
+	 */
 };
 
 struct tcs {
@@ -92,8 +112,9 @@ struct tcs {
 				   */
 	uint32_t flags;           /* bitmask of flags above */
 	int prio;                 /* fiber priority, -1 for a task */
-	struct coop coopReg;
 	struct preempt preempReg;
+	t_coop coopReg;
+
 #ifdef CONFIG_ERRNO
 	int errno_var;
 #endif
@@ -103,6 +124,12 @@ struct tcs {
 #if defined(CONFIG_THREAD_MONITOR)
 	struct __thread_entry *entry; /* thread entry and parameters description */
 	struct tcs *next_thread; /* next item in list of ALL fiber+tasks */
+#endif
+#ifdef CONFIG_MICROKERNEL
+	void *uk_task_ptr;
+#endif
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+	void *custom_data;        /* available for custom use */
 #endif
 };
 
@@ -118,6 +145,11 @@ struct s_NANO {
 #if defined(CONFIG_THREAD_MONITOR)
 	struct tcs *threads; /* singly linked list of ALL fiber+tasks */
 #endif
+
+	/* Nios II-specific members */
+
+	char *irq_sp;		/* Interrupt stack pointer */
+	uint32_t nested;	/* IRQ/exception nest level */
 };
 
 typedef struct s_NANO tNANO;

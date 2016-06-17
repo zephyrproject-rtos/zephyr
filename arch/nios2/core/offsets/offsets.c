@@ -38,6 +38,24 @@
 #include <nano_private.h>
 #include <nano_offsets.h>
 
+/* Nios II specific tNANO structure member offsets */
+GEN_OFFSET_SYM(tNANO, irq_sp);
+GEN_OFFSET_SYM(tNANO, nested);
+
+/* struct coop member offsets */
+GEN_OFFSET_SYM(t_coop, r16);
+GEN_OFFSET_SYM(t_coop, r17);
+GEN_OFFSET_SYM(t_coop, r18);
+GEN_OFFSET_SYM(t_coop, r19);
+GEN_OFFSET_SYM(t_coop, r20);
+GEN_OFFSET_SYM(t_coop, r21);
+GEN_OFFSET_SYM(t_coop, r22);
+GEN_OFFSET_SYM(t_coop, r23);
+GEN_OFFSET_SYM(t_coop, r28);
+GEN_OFFSET_SYM(t_coop, ra);
+GEN_OFFSET_SYM(t_coop, sp);
+GEN_OFFSET_SYM(t_coop, key);
+
 /* size of the struct tcs structure sans save area for floating point regs */
 GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF, sizeof(tTCS));
 
