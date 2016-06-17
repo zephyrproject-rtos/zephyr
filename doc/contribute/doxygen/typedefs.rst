@@ -23,6 +23,8 @@ No further explanation is needed regarding the type even if it is complex.
 Each complex type must be documented whereever it was defined.
 Doxygen connects the typedef and the complex type it uses automatically.
 
+.. _function_definitions:
+
 Workarounds for function definitions
 ************************************
 

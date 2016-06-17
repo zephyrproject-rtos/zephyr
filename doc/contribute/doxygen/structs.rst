@@ -27,6 +27,8 @@ Structs have a simplified template:
 Doxygen does not require any commands to recognize the different comments.
 It does, however, require that line 8 be left blank.
 
+.. _unnamed_structs:
+
 Unnamed structures or unions
 ****************************
 
@@ -120,6 +122,7 @@ with *@param* indicators, otherwise they won't be extracted:
         uint32_t sys_clk_freq;
   ...
 
+.. _unnamed_structs_var:
 
 Unnamed structures or unions which declare a variable
 -----------------------------------------------------

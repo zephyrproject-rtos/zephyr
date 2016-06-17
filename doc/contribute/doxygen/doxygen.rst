@@ -59,3 +59,4 @@ the documentation:
    structs
    typedefs
    groups
+   troubleshooting
