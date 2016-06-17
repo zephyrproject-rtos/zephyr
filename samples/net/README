@@ -61,3 +61,14 @@ GET method.
 It can be run similar to the echo_server sample: using two terminals,
 (1) for zoap_server, run 'make server' in its directory, (2) for
 zoap_client, run 'make client' in the zoap_client test directory.
+
+
+zoap_client
+-----------
+
+The Zoap client application does a single request against a 'a/light'
+resource, which has the first response lost (so retransmissions are
+basically verified).
+
+Please refer to the section above about how to run these applications
+together.
