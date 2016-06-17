@@ -1,4 +1,4 @@
-include $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/Makefile
+-include $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/Makefile
 
 # FIXME: Disable use of global pointer for now, this isn't properly set up
 # in our linker script.
