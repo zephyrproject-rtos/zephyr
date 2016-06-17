@@ -1058,6 +1058,7 @@ static void conn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_complete *evt = (void *)buf->data;
 	struct bt_conn *conn;
+	struct bt_hci_cp_read_remote_features *cp;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 
 	BT_DBG("status 0x%02x, handle %u, type 0x%02x", evt->status, handle,
@@ -1081,6 +1082,16 @@ static void conn_complete(struct net_buf *buf)
 	update_sec_level_br(conn);
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 	bt_conn_unref(conn);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_FEATURES, sizeof(*cp));
+	if (!buf) {
+		return;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = evt->handle;
+
+	bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_FEATURES, buf, NULL);
 }
 
 static void pin_code_req(struct net_buf *buf)
@@ -1741,6 +1752,71 @@ static void auth_complete(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
+
+static void read_remote_features_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_remote_features *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_hci_cp_read_remote_ext_features *cp;
+	struct bt_conn *conn;
+
+	BT_DBG("status %u handle %u", evt->status, handle);
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Can't find conn for handle %u", handle);
+		return;
+	}
+
+	if (!evt->status) {
+		memcpy(conn->br.features[0], evt->features,
+		       sizeof(conn->br.features[0]));
+
+		if (!lmp_ext_feat_capable(conn)) {
+			goto done;
+		}
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_EXT_FEATURES,
+					sizeof(*cp));
+		if (!buf) {
+			goto done;
+		}
+
+		/* read LMP remote features page 1 */
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->handle = evt->handle;
+		/* get page at index 1 */
+		cp->page = 0x01;
+
+		bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, buf,
+				     NULL);
+	}
+done:
+	bt_conn_unref(conn);
+}
+
+static void read_remote_ext_features_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_remote_ext_features *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_conn *conn;
+
+	BT_DBG("status %u handle %u", evt->status, handle);
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Can't find conn for handle %u", handle);
+		return;
+	}
+
+	if (!evt->status && evt->page == 0x01) {
+		memcpy(conn->br.features[1], evt->features,
+		       sizeof(conn->br.features[1]));
+	}
+
+	bt_conn_unref(conn);
+}
+
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
@@ -2471,6 +2547,12 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_AUTH_COMPLETE:
 		auth_complete(buf);
 		break;
+	case BT_HCI_EVT_REMOTE_FEATURES:
+		read_remote_features_complete(buf);
+		break;
+	case BT_HCI_EVT_REMOTE_EXT_FEATURES:
+		read_remote_ext_features_complete(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2918,10 +3000,12 @@ static int set_event_mask(void)
 	ev->events[0] |= 0x08; /* Connection Request */
 	ev->events[0] |= 0x20; /* Authentication Complete */
 	ev->events[0] |= 0x40; /* Remote Name Request Complete */
+	ev->events[1] |= 0x04; /* Read Remote Feature Complete */
 	ev->events[2] |= 0x20; /* Pin Code Request */
 	ev->events[2] |= 0x40; /* Link Key Request */
 	ev->events[2] |= 0x80; /* Link Key Notif */
 	ev->events[4] |= 0x02; /* Inquiry Result With RSSI */
+	ev->events[4] |= 0x04; /* Remote Extended Features Complete */
 	ev->events[5] |= 0x40; /* Extended Inquiry Result */
 	ev->events[6] |= 0x01; /* IO Capability Request */
 	ev->events[6] |= 0x02; /* IO Capability Response */
@@ -2929,7 +3013,8 @@ static int set_event_mask(void)
 	ev->events[6] |= 0x08; /* User Passkey Request */
 	ev->events[6] |= 0x20; /* Simple Pairing Complete */
 	ev->events[7] |= 0x04; /* User Passkey Notification */
-#endif
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 	ev->events[1] |= 0x20; /* Command Complete */
 	ev->events[1] |= 0x40; /* Command Status */
 	ev->events[1] |= 0x80; /* Hardware Error */

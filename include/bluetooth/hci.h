@@ -124,6 +124,7 @@ struct bt_hci_cmd_hdr {
 /* LMP features */
 #define BT_LMP_NO_BREDR				0x20
 #define BT_LMP_LE				0x40
+#define BT_LMP_REMOTE_EXT_FEATURES		0x80
 
 /* LE features */
 #define BT_HCI_LE_ENCRYPTION			0x01
@@ -283,6 +284,17 @@ struct bt_hci_cp_remote_name_cancel {
 struct bt_hci_rp_remote_name_cancel {
 	uint8_t status;
 	bt_addr_t bdaddr;
+} __packed;
+
+#define BT_HCI_OP_READ_REMOTE_FEATURES		BT_OP(BT_OGF_LINK_CTRL, 0x001b)
+struct bt_hci_cp_read_remote_features {
+	uint16_t handle;
+} __packed;
+
+#define BT_HCI_OP_READ_REMOTE_EXT_FEATURES	BT_OP(BT_OGF_LINK_CTRL, 0x001c)
+struct bt_hci_cp_read_remote_ext_features {
+	uint16_t handle;
+	uint8_t  page;
 } __packed;
 
 #define BT_HCI_OP_IO_CAPABILITY_REPLY		BT_OP(BT_OGF_LINK_CTRL, 0x002b)
@@ -640,6 +652,13 @@ struct bt_hci_evt_encrypt_change {
 	uint8_t  encrypt;
 } __packed;
 
+#define BT_HCI_EVT_REMOTE_FEATURES		0x0b
+struct bt_hci_evt_remote_features {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  features[8];
+} __packed;
+
 #define BT_HCI_EVT_CMD_COMPLETE			0x0e
 struct hci_evt_cmd_complete {
 	uint8_t  ncmd;
@@ -695,6 +714,15 @@ struct bt_hci_evt_inquiry_result_with_rssi {
 	uint8_t   cod[3];
 	uint16_t  clock_offset;
 	int8_t    rssi;
+} __packed;
+
+#define BT_HCI_EVT_REMOTE_EXT_FEATURES		0x23
+struct bt_hci_evt_remote_ext_features {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  page;
+	uint8_t  max_page;
+	uint8_t  features[8];
 } __packed;
 
 #define BT_HCI_EVT_EXTENDED_INQUIRY_RESULT	0x2f

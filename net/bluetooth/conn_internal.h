@@ -57,11 +57,20 @@ struct bt_conn_le {
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+/* For now reserve space for 2 pages of LMP remote features */
+#define LMP_MAX_PAGES 2
+
+/* Helper to get remote extended features bit available at page 0 */
+#define lmp_ext_feat_capable(conn) \
+	((conn)->br.features[0][7] & BT_LMP_REMOTE_EXT_FEATURES)
+
 struct bt_conn_br {
 	bt_addr_t		dst;
 	uint8_t			remote_io_capa;
 	uint8_t			remote_auth;
 	uint8_t			pairing_method;
+	/* remote LMP features pages per 8 bytes each */
+	uint8_t			features[LMP_MAX_PAGES][8];
 };
 #endif
 
