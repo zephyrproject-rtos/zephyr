@@ -75,9 +75,6 @@ MEMORY
 
 #else
 
-ASSERT(_RESET_VECTOR == _RAM_ADDR, "Reset vector not at beginning of RAM!")
-ASSERT(_EXC_VECTOR - _RESET_VECTOR == 0x20, "Exception vector in wrong place?")
-
 MEMORY
     {
     RESET (wx) : ORIGIN = _RESET_VECTOR, LENGTH = 0x20
