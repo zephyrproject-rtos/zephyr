@@ -92,6 +92,15 @@ SECTIONS
         KEEP(*(.reset.*))
     } GROUP_LINK_IN(RESET)
 
+#ifndef CONFIG_XIP
+    SECTION_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
+        {
+            KEEP(*(".exception.entry.*"))
+            *(".exception.other.*")
+
+        } GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
         {
         /* XXX If ALT_CPU_RESET_ADDR is not the same as _ROM_ADDR
@@ -159,9 +168,6 @@ SECTIONS
     /* Altera strongly recommends keeping exception entry code in RAM
      * even on XIP systems
      *
-     * XXX any space between _RAM_ADDR and ALT_CPU_EXCEPTION_ADDR is lost,
-     * currently 0x20 bytes
-     *
      * This is code not data, but we need this copied just like XIP data
      */
 
@@ -170,9 +176,8 @@ SECTIONS
             _image_ram_start = .;
             __data_ram_start = .;
 
-            /* FIXME these KEEP()s shouldn't be necessary */
             KEEP(*(".exception.entry.*"))
-            KEEP(*(".exception.other.*"))
+            *(".exception.other.*")
 
         } GROUP_LINK_IN(RAMABLE_REGION)
 #endif
