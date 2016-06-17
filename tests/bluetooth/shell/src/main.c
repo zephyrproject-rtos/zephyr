@@ -1785,9 +1785,9 @@ static int cmd_bredr_l2cap_register(int argc, char *argv[])
 
 	if (bt_l2cap_br_server_register(&br_server) < 0) {
 		printk("Unable to register psm\n");
-		server.psm = 0;
+		br_server.psm = 0;
 	} else {
-		printk("L2CAP psm %u registered\n", server.psm);
+		printk("L2CAP psm %u registered\n", br_server.psm);
 	}
 
 	return 0;
