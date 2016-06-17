@@ -1369,6 +1369,7 @@ static uint8_t prep_write_evt(const struct nble_gatts_write_evt *ev,
 
 	buf = net_buf_get_timeout(&prep_data, 0, TICKS_NONE);
 	if (!buf) {
+		BT_ERR("No more buffers for prepare write");
 		return BT_GATT_ERR(BT_ATT_ERR_PREPARE_QUEUE_FULL);
 	}
 
