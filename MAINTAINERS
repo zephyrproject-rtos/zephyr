@@ -135,6 +135,12 @@ F:	net/buf.c
 F:	include/net/buf.h
 F:	tests/net/buf/
 
+NIOS II
+M:	Andrew Boie <andrew.p.boie@intel.com>
+S:	Supported
+F:	arch/nios2/
+F:	include/arch/nios2/
+
 NORDIC MDK
 M:	Carles Cufi <carles.cufi@nordicsemi.no>
 S:	Supported
