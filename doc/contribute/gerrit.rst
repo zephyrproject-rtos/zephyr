@@ -135,7 +135,7 @@ For the Zephyr Project, the special branch is called :literal:`refs/for/master` 
 
    .. code-block:: bash
 
-      $ git push origin HEAD:refs/for/master%r=rev1@email.com,rv2@notemail.com
+      $ git push origin HEAD:refs/for/master%r=rev1@email.com,r=rev2@notemail.com
 
    Alternatively, you can auto-configure GIT to add a set of reviewers if your commits will
    have the same reviewers all at the time.
@@ -146,7 +146,7 @@ For the Zephyr Project, the special branch is called :literal:`refs/for/master` 
    .. code-block:: bash
 
       [branch "master"] #.... push =
-      HEAD:refs/for/master%r=rev1@email.com,rev2@notemail.com`
+      HEAD:refs/for/master%r=rev1@email.com,r=rev2@notemail.com`
 
 
    Make sure to use actual email addresses instead of the :literal:`@email.com and
