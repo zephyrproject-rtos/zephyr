@@ -20,7 +20,7 @@
 
 /* exports */
 GTEXT(__start)
-GTEXT(__text_start)
+GTEXT(__reset)
 
 /* imports */
 GTEXT(_PrepC)
@@ -39,21 +39,21 @@ GTEXT(_interrupt_stack)
  * This code can be at most 0x20 bytes, since the exception vector for Nios II
  * is usually configured to be 0x20 past the reset vector.
  */
-SECTION_FUNC(reset, __start)
+SECTION_FUNC(reset, __reset)
 
 	/* TODO initialize instruction cache, if present
 	 * ZEP-275
 	 */
 
 	/* Done all we need to do here, jump to __text_start */
-	movhi r1, %hi(__text_start)
-	ori r1, r1, %lo(__text_start)
+	movhi r1, %hi(__start)
+	ori r1, r1, %lo(__start)
 	jmp r1
 
 /* Remainder of asm-land initialization code before we can jump into
  * the C domain
  */
-SECTION_FUNC(TEXT, __text_start)
+SECTION_FUNC(TEXT, __start)
 
 	/* TODO if shadow register sets enabled, ensure we are in set 0
 	 * ZEP-258
