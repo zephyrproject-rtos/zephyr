@@ -91,14 +91,11 @@ extern "C" {
  * @brief Create device object and set it up for boot time initialization,
  * with the option to set driver_api.
  *
- * @details This macro defines a device object that is automatically
- * configured by the kernel during system initialization. The driver_api
- * is also be set here, eliminating the need to do that during initialization.
- *
- * \see DEVICE_INIT() for description on other parameters.
- *
+ * @copydetails DEVICE_INIT
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
+ * @details The driver api is also set here, eliminating the need to do that
+ * during initialization.
  */
 
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -129,13 +126,11 @@ extern "C" {
  * @brief Create device object and set it up for boot time initialization,
  * with the options to set driver_api and device_pm_ops.
  *
- * @details This macro defines a device object that is automatically
- * configured by the kernel during system initialization. This driver_api
- * and device_pm_ops are also be set here.
- *
- * @param device_pm_ops Address to the device_pm_ops structure of the driver.
- *
- * \see DEVICE_AND_API_INIT() for description on other parameters.
+ * @copydetails DEVICE_INIT_PM
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @details The driver api is also set here, eliminating the need to do that
+ * during initialization.
  */
 
 #define DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
@@ -159,15 +154,10 @@ extern "C" {
  * @def DEVICE_INIT_PM
  *
  * @brief Create device object and set it up for boot time initialization,
- * with the options to device_pm_ops.
+ * with the option to device_pm_ops.
  *
- * @details This macro defines a device object that is automatically
- * configured by the kernel during system initialization. This device_pm_ops
- * is also be set here.
- *
+ * @copydetails DEVICE_INIT
  * @param device_pm_ops Address to the device_pm_ops structure of the driver.
- *
- * \see DEVICE_INIT() for description on other parameters.
  */
 
 #define DEVICE_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
