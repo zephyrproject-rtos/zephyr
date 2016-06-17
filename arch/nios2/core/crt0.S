@@ -16,6 +16,7 @@
 
 #define _ASMLANGUAGE
 #include <arch/nios2/asm.h>
+#include <nano_private.h>
 
 /* exports */
 GTEXT(__start)
@@ -88,6 +89,14 @@ SECTION_FUNC(TEXT, __text_start)
 	movhi sp, %hi(_interrupt_stack)
 	ori sp, sp, %lo(_interrupt_stack)
 	addi sp, sp, CONFIG_ISR_STACK_SIZE
+	/* Create a mask in r1 which will be used to round down sp to
+	 * the desired alignment
+	 */
+	movi r1, STACK_ALIGN_SIZE
+	subi r1, r1, 1
+	nor r1, r1, r0
+	/* Align the stack pointer */
+	and sp, sp, r1
 
 	/* TODO Setup the global pointer
 	 * ZEP-272
