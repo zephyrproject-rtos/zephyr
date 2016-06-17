@@ -89,7 +89,7 @@ SECTIONS
 
     SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
     {
-        *(.reset.*)
+        KEEP(*(.reset.*))
     } GROUP_LINK_IN(RESET)
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
