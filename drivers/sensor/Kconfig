@@ -64,3 +64,5 @@ source "drivers/sensor/Kconfig.sht3xd"
 source "drivers/sensor/Kconfig.sx9500"
 
 source "drivers/sensor/Kconfig.tmp007"
+
+source "drivers/sensor/Kconfig.tmp112"
