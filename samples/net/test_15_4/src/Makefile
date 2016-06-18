@@ -1,7 +1,7 @@
-ccflags-y += -I${srctree}/net/ip/contiki
-ccflags-y += -I${srctree}/net/ip/contiki/os/lib
-ccflags-y += -I${srctree}/net/ip/contiki/os
-ccflags-y += -I${srctree}/net/ip
-ccflags-$(CONFIG_NET_SANITY_TEST) += -I${srctree}/samples/include
+ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki
+ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki/os/lib
+ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki/os
+ccflags-y += -I${ZEPHYR_BASE}/net/ip
+ccflags-$(CONFIG_NET_SANITY_TEST) += -I${ZEPHYR_BASE}/samples/include
 
 obj-y = network.o

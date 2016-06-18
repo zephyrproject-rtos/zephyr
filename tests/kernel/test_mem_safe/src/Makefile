@@ -1,4 +1,4 @@
-ccflags-y += -I${srctree}/tests/include
+ccflags-y += -I${ZEPHYR_BASE}/tests/include
 DQUOTE = "
 BUILD_ARCH = $(strip $(subst $(DQUOTE),,$(CONFIG_ARCH)))
 

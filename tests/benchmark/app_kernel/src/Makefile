@@ -1,5 +1,5 @@
 ccflags-y += -I$(CURDIR)/misc/generated/sysgen
-ccflags-y += -I$(srctree)/tests/benchmark/latency_measure/microkernel/src
+ccflags-y += -I$(ZEPHYR_BASE)/tests/benchmark/latency_measure/microkernel/src
 
 obj-y := fifo_b.o mailbox_b.o master.o mempool_b.o \
 	nop_b.o  pipe_r.o sema_r.o event_b.o \

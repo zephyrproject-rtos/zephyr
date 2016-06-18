@@ -1,5 +1,5 @@
 ccflags-y += ${PROJECTINCLUDE} \
-		-I$(srctree)/include/drivers \
-		-I$(srctree)/drivers -I$(srctree)/arch/arc
+		-I$(ZEPHYR_BASE)/include/drivers \
+		-I$(ZEPHYR_BASE)/drivers -I$(ZEPHYR_BASE)/arch/arc
 
 obj-y = hello.o

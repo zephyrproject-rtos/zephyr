@@ -14,10 +14,10 @@
 # limitations under the License.
 #
 
-ccflags-y +=-I${srctree}/net/ip/contiki
-ccflags-y +=-I${srctree}/net/ip/contiki/os/lib
-ccflags-y +=-I${srctree}/net/ip/contiki/os
-ccflags-y +=-I${srctree}/net/ip
+ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki
+ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os/lib
+ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os
+ccflags-y +=-I${ZEPHYR_BASE}/net/ip
 
 obj-y += tcp.o
 obj-y += mqtt.o

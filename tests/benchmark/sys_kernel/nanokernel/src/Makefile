@@ -1,4 +1,4 @@
-ccflags-y = -I$(srctree)/tests/benchmark/latency_measure/microkernel/src -I${srctree}/tests/include
+ccflags-y = -I$(ZEPHYR_BASE)/tests/benchmark/latency_measure/microkernel/src -I${ZEPHYR_BASE}/tests/include
 ccflags-y += -I$(CURDIR)/misc/generated/sysgen
 
 obj-y = lifo.o \
