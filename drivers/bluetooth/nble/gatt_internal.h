@@ -47,6 +47,8 @@ struct nble_gatts_register_req {
 	struct bt_gatt_attr *attr_base;
 	/* Number of of attributes in this service */
 	uint8_t attr_count;
+	/* Size of struct bt_gatt_attr */
+	uint8_t attr_size;
 };
 
 void nble_gatts_register_req(const struct nble_gatts_register_req *req,

@@ -146,6 +146,7 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 	svc_count++;
 	param.attr_base = attrs;
 	param.attr_count = count;
+	param.attr_size = sizeof(struct bt_gatt_attr);
 
 	attr_table_size = 0;
 
