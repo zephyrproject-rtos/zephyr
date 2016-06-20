@@ -376,8 +376,8 @@ static inline void uart_irq_rx_disable(struct device *dev)
 	struct uart_driver_api *api;
 
 	api = (struct uart_driver_api *)dev->driver_api;
-	if (api->irq_tx_disable) {
-		api->irq_tx_disable(dev);
+	if (api->irq_rx_disable) {
+		api->irq_rx_disable(dev);
 	}
 }
 
