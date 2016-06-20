@@ -217,7 +217,8 @@ struct net_udp_hdr {
 #define NET_IPV4TCPH_LEN   (NET_TCPH_LEN + NET_IPV4H_LEN) /* IPv4 + TCP */
 #define NET_IPV4ICMPH_LEN  (NET_IPV4H_LEN + NET_ICMPH_LEN) /* ICMPv4 + IPv4 */
 
-/** @brief Check if the IPv6 address is a loopback address (::1).
+/**
+ * @brief Check if the IPv6 address is a loopback address (::1).
  *
  * @param addr IPv6 address
  *
@@ -231,7 +232,8 @@ static inline bool net_is_ipv6_addr_loopback(struct in6_addr *addr)
 		ntohl(addr->s6_addr32[3]) == 1;
 }
 
-/** @brief Check if the IPv6 address is a multicast address.
+/**
+ * @brief Check if the IPv6 address is a multicast address.
  *
  * @param addr IPv6 address
  *
@@ -244,7 +246,8 @@ static inline bool net_is_ipv6_addr_mcast(struct in6_addr *addr)
 
 extern struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr);
 
-/** @brief Check if IPv6 address is found in one of the network interfaces.
+/**
+ * @brief Check if IPv6 address is found in one of the network interfaces.
  *
  * @param addr IPv6 address
  *
@@ -257,7 +260,8 @@ static inline bool net_is_my_ipv6_addr(struct in6_addr *addr)
 
 extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *addr);
 
-/** @brief Check if IPv6 multicast address is found in one of the
+/**
+ * @brief Check if IPv6 multicast address is found in one of the
  * network interfaces.
  *
  * @param maddr Multicast IPv6 address
@@ -269,7 +273,8 @@ static inline bool net_is_my_ipv6_maddr(struct in6_addr *maddr)
 	return net_if_ipv6_maddr_lookup(maddr) != NULL;
 }
 
-/** @brief Check if two IPv6 addresses are same when compared after prefix mask.
+/**
+ * @brief Check if two IPv6 addresses are same when compared after prefix mask.
  *
  * @param addr1 First IPv6 address.
  * @param addr2 Second IPv6 address.
@@ -299,8 +304,11 @@ static inline bool net_is_ipv6_prefix(uint8_t *addr1, uint8_t *addr2,
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr);
 
-/** @brief Check if the IPv4 address is assigned to any network interface
+/**
+ * @brief Check if the IPv4 address is assigned to any network interface
  * in the system.
+ *
+ * @param addr A valid pointer on an IPv4 address
  *
  * @return True if IPv4 address is found in one of the network interfaces,
  * False otherwise.
@@ -310,7 +318,8 @@ static inline bool net_is_my_ipv4_addr(struct in_addr *addr)
 	return net_if_ipv4_addr_lookup(addr) != NULL;
 }
 
-/** @def net_ipaddr_copy
+/**
+ *  @def net_ipaddr_copy
  *  @brief Copy an IPv4 or IPv6 address
  *
  *  @param dest Destination IP address.
@@ -320,7 +329,8 @@ static inline bool net_is_my_ipv4_addr(struct in_addr *addr)
  */
 #define net_ipaddr_copy(dest, src) (*(dest) = *(src))
 
-/** @brief Compare two IPv4 addresses
+/**
+ *  @brief Compare two IPv4 addresses
  *
  *  @param addr1 Pointer to IPv4 address.
  *  @param addr2 Pointer to IPv4 address.
@@ -333,7 +343,8 @@ static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 	return addr1->s_addr[0] == addr2->s_addr[0];
 }
 
-/** @brief Compare two IPv6 addresses
+/**
+ *  @brief Compare two IPv6 addresses
  *
  *  @param addr1 Pointer to IPv6 address.
  *  @param addr2 Pointer to IPv6 address.
@@ -346,7 +357,10 @@ static inline bool net_ipv6_addr_cmp(const struct in6_addr *addr1,
 	return !memcmp(addr1, addr2, sizeof(struct in6_addr));
 }
 
-/** @brief Check if the given IPv6 address is a link local address.
+/**
+ * @brief Check if the given IPv6 address is a link local address.
+ *
+ * @param addr A valid pointer on an IPv6 address
  *
  * @return True if it is, false otherwise.
  */
@@ -358,7 +372,8 @@ static inline bool net_is_ipv6_ll_addr(const struct in6_addr *addr)
 
 const struct in6_addr *net_if_ipv6_unspecified_addr(void);
 
-/** @brief Return pointer to any (all bits zeros) IPv6 address.
+/**
+ * @brief Return pointer to any (all bits zeros) IPv6 address.
  *
  * @return Any IPv6 address.
  */
@@ -369,7 +384,8 @@ static inline const struct in6_addr *net_ipv6_unspecified_address(void)
 
 extern const struct in_addr *net_if_ipv4_broadcast_addr(void);
 
-/** @brief Return pointer to broadcast (all bits ones) IPv4 address.
+/**
+ * @brief Return pointer to broadcast (all bits ones) IPv4 address.
  *
  * @return Broadcast IPv4 address.
  */
@@ -382,8 +398,12 @@ struct net_if;
 extern bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 				      struct in_addr *addr);
 
-/** @brief Check if the given address belongs to same subnet that
+/**
+ * @brief Check if the given address belongs to same subnet that
  * has been configured for the interface.
+ *
+ * @param iface A valid pointer on an interface
+ * @param addr pointer on an address
  *
  * @return True if address is in same subnet, false otherwise.
  */
@@ -393,7 +413,8 @@ static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
 	return net_if_ipv4_addr_mask_cmp(iface, addr);
 }
 
-/** @brief Check if the IPv6 address is unspecified (all bits zero)
+/**
+ *  @brief Check if the IPv6 address is unspecified (all bits zero)
  *
  *  @param addr IPv6 address.
  *
@@ -405,7 +426,8 @@ static inline bool net_is_ipv6_addr_unspecified(const struct in6_addr *addr)
 		addr->s6_addr32[2] == 0 && addr->s6_addr32[3] == 0;
 }
 
-/** @brief Check if the IPv6 address is solicited node multicast address
+/**
+ *  @brief Check if the IPv6 address is solicited node multicast address
  *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
  *
  *  @param addr IPv6 address.
@@ -420,12 +442,12 @@ static inline bool net_is_ipv6_addr_solicited_node(const struct in6_addr *addr)
 		((addr->s6_addr32[3] & htonl(0xff000000)) == htonl(0xff000000));
 }
 
-/** @brief Create solicited node IPv6 multicast address
+/**
+ *  @brief Create solicited node IPv6 multicast address
  *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
  *
  *  @param src IPv6 address.
  *  @param dst IPv6 address.
- *
  */
 static inline void net_ipv6_addr_create_solicited_node(struct in6_addr *src,
 						       struct in6_addr *dst)
@@ -446,14 +468,14 @@ static inline void net_ipv6_addr_create_solicited_node(struct in6_addr *src,
 /** @brief Construct an IPv6 address from eight 16-bit words.
  *
  *  @param addr IPv6 address
- *  @param addr0 16-bit word
- *  @param addr1 16-bit word
- *  @param addr2 16-bit word
- *  @param addr3 16-bit word
- *  @param addr4 16-bit word
- *  @param addr5 16-bit word
- *  @param addr6 16-bit word
- *  @param addr7 16-bit word
+ *  @param addr0 16-bit word which is part of the address
+ *  @param addr1 16-bit word which is part of the address
+ *  @param addr2 16-bit word which is part of the address
+ *  @param addr3 16-bit word which is part of the address
+ *  @param addr4 16-bit word which is part of the address
+ *  @param addr5 16-bit word which is part of the address
+ *  @param addr6 16-bit word which is part of the address
+ *  @param addr7 16-bit word which is part of the address
  */
 static inline void net_ipv6_addr_create(struct in6_addr *addr,
 					uint16_t addr0, uint16_t addr1,
@@ -471,7 +493,8 @@ static inline void net_ipv6_addr_create(struct in6_addr *addr,
 	addr->s6_addr16[7] = htons(addr7);
 }
 
-/** @brief Create link local allnodes multicast IPv6 address
+/**
+ *  @brief Create link local allnodes multicast IPv6 address
  *
  *  @param addr IPv6 address
  */
@@ -480,7 +503,8 @@ static inline void net_ipv6_addr_create_ll_allnodes_mcast(struct in6_addr *addr)
 	net_ipv6_addr_create(addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
 }
 
-/** @brief Create IPv6 address interface identifier
+/**
+ *  @brief Create IPv6 address interface identifier
  *
  *  @param addr IPv6 address
  *  @param lladdr Link local address
