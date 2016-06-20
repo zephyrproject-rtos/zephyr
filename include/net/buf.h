@@ -81,7 +81,8 @@ struct net_buf {
 	uint8_t __buf[0] __net_buf_align;
 };
 
-/** @brief Define a pool of buffers of a certain amount and size.
+/**
+ *  @brief Define a pool of buffers of a certain amount and size.
  *
  *  Defines the necessary memory space (array of structs) for the needed
  *  amount of buffers. After this the net_buf_pool_init() API still
@@ -112,7 +113,8 @@ struct net_buf {
 			.size = ROUND_UP(_size, 4) } },			\
 	}
 
-/** @brief Initialize an available buffers FIFO based on a pool.
+/**
+ *  @brief Initialize an available buffers FIFO based on a pool.
  *
  *  Initializes a buffer pool created using NET_BUF_POOL(). After
  *  calling this API the buffers can ge accessed through the FIFO that
@@ -132,7 +134,8 @@ struct net_buf {
 		}							\
 	} while (0)
 
-/** @brief Get a new buffer from a FIFO.
+/**
+ *  @brief Get a new buffer from a FIFO.
  *
  *  Get buffer from a FIFO. The reserve_head parameter is only relevant
  *  if the FIFO in question is a free buffers pool, i.e. the buffer will
@@ -151,7 +154,8 @@ struct net_buf {
  */
 struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head);
 
-/** @brief Get a new buffer from a FIFO.
+/**
+ *  @brief Get a new buffer from a FIFO.
  *
  *  Get buffer from a FIFO. The reserve_head parameter is only relevant
  *  if the FIFO in question is a free buffers pool, i.e. the buffer will
@@ -170,7 +174,8 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head);
 struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 				    size_t reserve_head, int32_t timeout);
 
-/** @brief Put a buffer into a FIFO
+/**
+ *  @brief Put a buffer into a FIFO
  *
  *  Put a buffer to the end of a FIFO. If the buffer contains follow-up
  *  fragments this function will take care of inserting them as well
@@ -181,43 +186,48 @@ struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
  */
 void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf);
 
-/** @brief Decrements the reference count of a buffer.
+/**
+ *  @brief Decrements the reference count of a buffer.
  *
  *  Decrements the reference count of a buffer and puts it back into the
  *  pool if the count reaches zero.
  *
- *  @param buf Buffer.
+ *  @param buf A valid pointer on a buffer
  */
 void net_buf_unref(struct net_buf *buf);
 
-/** Increment the reference count of a buffer.
+/**
+ *  @brief Increment the reference count of a buffer.
  *
- *  Increment the reference count of a buffer.
+ *  @param buf A valid pointer on a buffer
  *
- *  @param buf Buffer.
+ *  @return the buffer newly referenced
  */
 struct net_buf *net_buf_ref(struct net_buf *buf);
 
-/** @brief Duplicate buffer
+/**
+ *  @brief Duplicate buffer
  *
  *  Duplicate given buffer including any data and headers currently stored.
  *
- *  @param buf Buffer.
+ *  @param buf A valid pointer on a buffer
  *
  *  @return Duplicated buffer or NULL if out of buffers.
  */
 struct net_buf *net_buf_clone(struct net_buf *buf);
 
-/** Get a pointer to the user data of a buffer.
+/**
+ *  @brief Get a pointer to the user data of a buffer.
  *
- *  @param buf  The buffer in question.
+ *  @param buf A valid pointer on a buffer
  *
  *  @return Pointer to the user data of the buffer.
  */
 #define net_buf_user_data(buf) \
 	((void *)(ROUND_UP(((buf)->__buf + (buf)->size), sizeof(int))))
 
-/** @brief Prepare data to be added at the end of the buffer
+/**
+ *  @brief Prepare data to be added at the end of the buffer
  *
  *  Increments the data length of a buffer to account for more data
  *  at the end.
@@ -229,7 +239,8 @@ struct net_buf *net_buf_clone(struct net_buf *buf);
  */
 void *net_buf_add(struct net_buf *buf, size_t len);
 
-/** @brief Add (8-bit) byte at the end of the buffer
+/**
+ *  @brief Add (8-bit) byte at the end of the buffer
  *
  *  Adds a byte at the end of the buffer. Increments the data length of
  *  the  buffer to account for more data at the end.
@@ -241,7 +252,8 @@ void *net_buf_add(struct net_buf *buf, size_t len);
  */
 uint8_t *net_buf_add_u8(struct net_buf *buf, uint8_t value);
 
-/** @brief Add 16-bit value at the end of the buffer
+/**
+ *  @brief Add 16-bit value at the end of the buffer
  *
  *  Adds 16-bit value in little endian format at the end of buffer.
  *  Increments the data length of a buffer to account for more data
@@ -249,12 +261,11 @@ uint8_t *net_buf_add_u8(struct net_buf *buf, uint8_t value);
  *
  *  @param buf Buffer to update.
  *  @param value 16-bit value to be added.
- *
- *  @return void
  */
 void net_buf_add_le16(struct net_buf *buf, uint16_t value);
 
-/** @brief Add 32-bit value at the end of the buffer
+/**
+ *  @brief Add 32-bit value at the end of the buffer
  *
  *  Adds 32-bit value in little endian format at the end of buffer.
  *  Increments the data length of a buffer to account for more data
@@ -262,12 +273,11 @@ void net_buf_add_le16(struct net_buf *buf, uint16_t value);
  *
  *  @param buf Buffer to update.
  *  @param value 32-bit value to be added.
- *
- *  @return void
  */
 void net_buf_add_le32(struct net_buf *buf, uint32_t value);
 
-/** @brief Push data to the beginning of the buffer.
+/**
+ *  @brief Push data to the beginning of the buffer.
  *
  *  Modifies the data pointer and buffer length to account for more data
  *  in the beginning of the buffer.
@@ -279,19 +289,19 @@ void net_buf_add_le32(struct net_buf *buf, uint32_t value);
  */
 void *net_buf_push(struct net_buf *buf, size_t len);
 
-/** @brief Push 16-bit value to the beginning of the buffer
+/**
+ *  @brief Push 16-bit value to the beginning of the buffer
  *
  *  Adds 16-bit value in little endian format to the beginning of the
  *  buffer.
  *
  *  @param buf Buffer to update.
  *  @param value 16-bit value to be pushed to the buffer.
- *
- *  @return void
  */
 void net_buf_push_le16(struct net_buf *buf, uint16_t value);
 
-/** @brief Remove data from the beginning of the buffer.
+/**
+ *  @brief Remove data from the beginning of the buffer.
  *
  *  Removes data from the beginnig of the buffer by modifying the data
  *  pointer and buffer length.
@@ -303,57 +313,66 @@ void net_buf_push_le16(struct net_buf *buf, uint16_t value);
  */
 void *net_buf_pull(struct net_buf *buf, size_t len);
 
-/** @brief Remove a 8-bit value from the beginning of the buffer
+/**
+ *  @brief Remove a 8-bit value from the beginning of the buffer
  *
  *  Same idea as with bt_buf_pull(), but a helper for operating on
  *  8-bit values.
  *
- *  @param buf Buffer.
+ *  @param buf A valid pointer on a buffer
  *
- *  @return 8-bit value.
+ *  @return The 8-bit removed value
  */
 uint8_t net_buf_pull_u8(struct net_buf *buf);
 
-/** @brief Remove and convert 16 bits from the beginning of the buffer.
+/**
+ *  @brief Remove and convert 16 bits from the beginning of the buffer.
  *
  *  Same idea as with bt_buf_pull(), but a helper for operating on
  *  16-bit little endian data.
  *
- *  @param buf Buffer.
+ *  @param buf A valid pointer on a buffer
  *
  *  @return 16-bit value converted from little endian to host endian.
  */
 uint16_t net_buf_pull_le16(struct net_buf *buf);
 
-/** @brief Remove and convert 32 bits from the beginning of the buffer.
+/**
+ *  @brief Remove and convert 32 bits from the beginning of the buffer.
  *
  *  Same idea as with bt_buf_pull(), but a helper for operating on
  *  32-bit little endian data.
  *
- *  @param buf Buffer.
+ *  @param buf A valid pointer on a buffer
  *
  *  @return 32-bit value converted from little endian to host endian.
  */
 uint32_t net_buf_pull_le32(struct net_buf *buf);
 
-/** @brief Check buffer tailroom.
+/**
+ *  @brief Check buffer tailroom.
  *
  *  Check how much free space there is at the end of the buffer.
  *
+ *  @param buf A valid pointer on a buffer
+ *
  *  @return Number of bytes available at the end of the buffer.
  */
-
 size_t net_buf_tailroom(struct net_buf *buf);
 
-/** @brief Check buffer headroom.
+/**
+ *  @brief Check buffer headroom.
  *
  *  Check how much free space there is in the beginning of the buffer.
+ *
+ *  buf A valid pointer on a buffer
  *
  *  @return Number of bytes available in the beginning of the buffer.
  */
 size_t net_buf_headroom(struct net_buf *buf);
 
-/** @def net_buf_tail
+/**
+ *  @def net_buf_tail
  *  @brief Get the tail pointer for a buffer.
  *
  *  Get a pointer to the end of the data in a buffer.
