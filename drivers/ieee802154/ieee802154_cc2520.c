@@ -217,15 +217,17 @@ static void _usleep(uint32_t usec)
 uint8_t _cc2520_read_reg(struct cc2520_spi *spi,
 			 bool freg, uint8_t addr)
 {
-	spi->cmd_buf[0] = freg ? CC2520_INS_MEMRD : CC2520_INS_REGRD;
-	spi->cmd_buf[1] = addr;
+	uint8_t len = freg ? 2 : 3;
+
+	spi->cmd_buf[0] = freg ? CC2520_INS_REGRD | addr : CC2520_INS_MEMRD;
+	spi->cmd_buf[1] = freg ? 0 : addr;
 	spi->cmd_buf[2] = 0;
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	if (spi_transceive(spi->dev, spi->cmd_buf, 3,
-			   spi->cmd_buf, 3) == 0) {
-		return spi->cmd_buf[2];
+	if (spi_transceive(spi->dev, spi->cmd_buf, len,
+			   spi->cmd_buf, len) == 0) {
+		return spi->cmd_buf[len - 1];
 	}
 
 	return 0;
@@ -234,13 +236,15 @@ uint8_t _cc2520_read_reg(struct cc2520_spi *spi,
 bool _cc2520_write_reg(struct cc2520_spi *spi, bool freg,
 		       uint8_t addr, uint8_t value)
 {
-	spi->cmd_buf[0] = freg ? CC2520_INS_MEMWR : CC2520_INS_REGWR;
-	spi->cmd_buf[1] = addr;
-	spi->cmd_buf[2] = value;
+	uint8_t len = freg ? 2 : 3;
+
+	spi->cmd_buf[0] = freg ? CC2520_INS_REGWR | addr : CC2520_INS_MEMWR;
+	spi->cmd_buf[1] = freg ? value : addr;
+	spi->cmd_buf[2] = freg ? 0 : value;
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, spi->cmd_buf, 3) == 0);
+	return (spi_write(spi->dev, spi->cmd_buf, len) == 0);
 }
 
 bool _cc2520_write_ram(struct cc2520_spi *spi, uint16_t addr,
