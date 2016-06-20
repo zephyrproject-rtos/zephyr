@@ -235,15 +235,20 @@ static void set_baud_rate(struct device *dev, uint32_t baud_rate)
 	struct uart_device_config * const dev_cfg = DEV_CFG(dev);
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 	uint32_t divisor; /* baud rate divisor */
+	uint8_t lcr_cache;
 
 	if ((baud_rate != 0) && (dev_cfg->sys_clk_freq != 0)) {
 		/* calculate baud rate divisor */
 		divisor = (dev_cfg->sys_clk_freq / baud_rate) >> 4;
 
 		/* set the DLAB to access the baud rate divisor registers */
+		lcr_cache = INBYTE(LCR(dev));
 		OUTBYTE(LCR(dev), LCR_DLAB);
 		OUTBYTE(BRDL(dev), (unsigned char)(divisor & 0xff));
 		OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
+
+		/* restore the DLAB to access the baud rate divisor registers */
+		OUTBYTE(LCR(dev), lcr_cache);
 
 		dev_data->baud_rate = baud_rate;
 	}
