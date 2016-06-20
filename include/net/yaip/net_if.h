@@ -39,7 +39,6 @@ extern "C" {
  * @brief Network Interface unicast IP addresses
  *
  * Stores the unicast IP addresses assigned to this network interface.
- *
  */
 struct net_if_addr {
 	/** Is this IP address used or not */
@@ -73,7 +72,6 @@ struct net_if_addr {
  * @brief Network Interface multicast IP addresses
  *
  * Stores the multicast IP addresses assigned to this network interface.
- *
  */
 struct net_if_mcast_addr {
 	/** Is this multicast IP address used or not */
@@ -88,7 +86,6 @@ struct net_if_mcast_addr {
  * @brief Network Interface IPv6 prefixes
  *
  * Stores the multicast IP addresses assigned to this network interface.
- *
  */
 struct net_if_ipv6_prefix {
 	/** Is this prefix used or not */
@@ -112,7 +109,6 @@ struct net_if_ipv6_prefix {
  * @brief Information about routers in the system.
  *
  * Stores the router information.
- *
  */
 struct net_if_router {
 	/** Network interface the router is connected to */
@@ -232,8 +228,11 @@ struct net_if {
 
 /**
  * @brief Send a buffer through a net iface
+ *
  * @param iface Pointer to a network interface structure
  * @param buf Pointer on a net buffer to send
+ *
+ * return verdict about the packet
  */
 static inline enum net_verdict net_if_send_data(struct net_if *iface,
 						struct net_buf *buf)
@@ -243,8 +242,11 @@ static inline enum net_verdict net_if_send_data(struct net_if *iface,
 
 /**
  * @brief Input a buffer through a net iface
+ *
  * @param iface Pointer to a network interface structure
  * @param buf Pointer on a net buffer to input
+ *
+ * @return verdict about the packet
  */
 static inline enum net_verdict net_if_recv_data(struct net_if *iface,
 						struct net_buf *buf)
@@ -264,7 +266,9 @@ static inline uint16_t net_if_get_ll_reserve(struct net_if *iface)
 
 /**
  * @brief Get an network interface's device
+ *
  * @param iface Pointer to a network interface structure
+ *
  * @return a pointer on the device driver instance
  */
 static inline struct device *net_if_get_device(struct net_if *iface)
@@ -274,6 +278,7 @@ static inline struct device *net_if_get_device(struct net_if *iface)
 
 /**
  * @brief Queue a packet into net if's TX queue
+ *
  * @param iface Pointer to a network interface structure
  * @param buf Pointer on a net buffer to queue
  */
@@ -284,7 +289,9 @@ static inline void net_if_queue_tx(struct net_if *iface, struct net_buf *buf)
 
 /**
  * @brief Get an network interface's link address
+ *
  * @param iface Pointer to a network interface structure
+ *
  * @return a pointer on the network link address
  */
 static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
@@ -294,6 +301,7 @@ static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
 
 /**
  * @brief Start duplicate address detection procedure.
+ *
  * @param iface Pointer to a network interface structure
  */
 #if defined(CONFIG_NET_IPV6_DAD)
@@ -304,12 +312,14 @@ void net_if_start_dad(struct net_if *iface);
 
 /**
  * @brief Start neighbor discovery and send router solicitation message.
+ *
  * @param iface Pointer to a network interface structure
  */
 void net_if_start_rs(struct net_if *iface);
 
 /**
  * @brief Set a network interfac's link address
+ *
  * @param iface Pointer to a network interface structure
  * @param addr a pointer on a uint8_t buffer representing the address
  * @param len length of the address buffer
@@ -333,7 +343,9 @@ static inline void net_if_set_link_addr(struct net_if *iface,
 
 /**
  * @brief Get an network interface's MTU
+ *
  * @param iface Pointer to a network interface structure
+ *
  * @return the MTU
  */
 static inline uint16_t net_if_get_mtu(struct net_if *iface)
@@ -343,6 +355,7 @@ static inline uint16_t net_if_get_mtu(struct net_if *iface)
 
 /**
  * @brief Set an network interface's MTU
+ *
  * @param iface Pointer to a network interface structure
  * @param mtu New MTU, note that we store only 16 bit mtu value.
  */
@@ -354,22 +367,28 @@ static inline void net_if_set_mtu(struct net_if *iface,
 
 /**
  * @brief Get an interface according to link layer address.
+ *
  * @param ll_addr Link layer address.
+ *
  * @return Network interface or NULL if not found.
  */
 struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
 
 /**
  * @brief Check if this IPv6 address belongs to one of the interfaces.
+ *
  * @param addr IPv6 address
+ *
  * @return Pointer to interface address, NULL if not found.
  */
 struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr);
 
 /**
  * @brief Check if this IPv6 address belongs to this specific interfaces.
+ *
  * @param iface Network interface
  * @param addr IPv6 address
+ *
  * @return Pointer to interface address, NULL if not found.
  */
 static inline
@@ -398,10 +417,12 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 
 /**
  * @brief Add a IPv6 address to an interface
+ *
  * @param iface Network interface
  * @param addr IPv6 address
  * @param addr_type IPv6 address type
  * @param vlifetime Validity time for this address
+ *
  * @return Pointer to interface address, NULL if cannot be added
  */
 struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
@@ -411,14 +432,17 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 
 /**
  * @brief Remove an IPv6 address from an interface
+ *
  * @param iface Network interface
  * @param addr IPv6 address
+ *
  * @return True if successfully removed, false otherwise
  */
 bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr);
 
 /**
  * @brief Set the infinite status of the network interface address
+ *
  * @param ifaddr IP address for network interface
  * @param is_infinite Infinite status
  */
@@ -430,8 +454,10 @@ static inline void net_if_addr_set_lf(struct net_if_addr *ifaddr,
 
 /**
  * @brief Add a IPv6 multicast address to an interface
+ *
  * @param iface Network interface
  * @param addr IPv6 multicast address
+ *
  * @return Pointer to interface multicast address, NULL if cannot be added
  */
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
@@ -439,24 +465,30 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 
 /**
  * @brief Remove an IPv6 multicast address from an interface
+ *
  * @param iface Network interface
  * @param addr IPv6 multicast address
+ *
  * @return True if successfully removed, false otherwise
  */
 bool net_if_ipv6_maddr_rm(struct net_if *iface, struct in6_addr *addr);
 
 /**
  * @brief Check if this IPv6 multicast address belongs to one of the interfaces.
+ *
  * @param addr IPv6 address
+ *
  * @return Pointer to interface multicast address, NULL if not found.
  */
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *addr);
 
 /**
  * @brief Check if this IPv6 prefix belongs to this interface
+ *
  * @param iface Network interface
  * @param addr IPv6 address
  * @param len Prefix length
+ *
  * @return Pointer to prefix, NULL if not found.
  */
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
@@ -465,10 +497,12 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 
 /**
  * @brief Add a IPv6 prefix to an network interface.
+ *
  * @param iface Network interface
  * @param prefix IPv6 address
  * @param len Prefix length
  * @param lifetime Prefix lifetime in seconds
+ *
  * @return Pointer to prefix, NULL if the prefix was not added.
  */
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
@@ -478,9 +512,11 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 
 /**
  * @brief Remove an IPv6 prefix from an interface
+ *
  * @param iface Network interface
  * @param addr IPv6 prefix address
  * @param len Prefix length
+ *
  * @return True if successfully removed, false otherwise
  */
 bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
@@ -488,6 +524,7 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 
 /**
  * @brief Set the infinite status of the prefix
+ *
  * @param prefix IPv6 address
  * @param is_infinite Infinite status
  */
@@ -501,7 +538,9 @@ static inline void net_if_ipv6_prefix_set_lf(struct net_if_ipv6_prefix *prefix,
 
 /**
  * @brief Get IPv4 time-to-live value specified for a given interface
+ *
  * @param iface Network interface
+ *
  * @return Time-to-live
  */
 static inline uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
@@ -515,17 +554,21 @@ static inline uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
 
 /**
  * @brief Check if this IPv4 address belongs to one of the interfaces.
+ *
  * @param addr IPv4 address
+ *
  * @return Pointer to interface address, NULL if not found.
  */
 struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr);
 
 /**
  * @brief Add a IPv4 address to an interface
+ *
  * @param iface Network interface
  * @param addr IPv4 address
  * @param addr_type IPv4 address type
  * @param vlifetime Validity time for this address
+ *
  * @return Pointer to interface address, NULL if cannot be added
  */
 struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
@@ -535,17 +578,21 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 
 /**
  * @brief Remove a IPv4 address from an interface
+
  * @param iface Network interface
  * @param addr IPv4 address
+ *
  * @return True if successfully removed, false otherwise
  */
 bool net_if_ipv4_addr_rm(struct net_if *iface,  struct in_addr *addr);
 
-/*
+/**
  * @brief Check if IPv6 address is one of the routers configured
  * in the system.
+ *
  * @param iface Network interface
  * @param addr IPv6 address
+ *
  * @return Pointer to router information, NULL if cannot be found
  */
 struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
@@ -553,9 +600,11 @@ struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
 
 /**
  * @brief Add IPv6 router to the system.
+ *
  * @param iface Network interface
  * @param addr IPv6 address
  * @param router_lifetime Lifetime of the router
+ *
  * @return Pointer to router information, NULL if could not be added
  */
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
@@ -565,8 +614,10 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 /**
  * @brief Check if IPv4 address is one of the routers configured
  * in the system.
+ *
  * @param iface Network interface
  * @param addr IPv4 address
+ *
  * @return Pointer to router information, NULL if cannot be found
  */
 struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
@@ -574,10 +625,12 @@ struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
 
 /**
  * @brief Add IPv4 router to the system.
+ *
  * @param iface Network interface
  * @param addr IPv4 address
  * @param is_default Is this router the default one
  * @param router_lifetime Lifetime of the router
+ *
  * @return Pointer to router information, NULL if could not be added
  */
 struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
@@ -587,6 +640,7 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 
 /**
  * @brief Remove a router from the system
+ *
  * @param router Pointer to existing router
  */
 static inline void net_if_router_rm(struct net_if_router *router)
@@ -598,7 +652,9 @@ static inline void net_if_router_rm(struct net_if_router *router)
 
 /**
  * @brief Get IPv6 hop limit specified for a given interface
+ *
  * @param iface Network interface
+ *
  * @return Hop limit
  */
 static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
@@ -612,6 +668,7 @@ static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 
 /**
  * @brief Set IPv6 hop limit of a given interface
+ *
  * @param iface Network interface
  * @param hop_limit New hop limit
  */
@@ -625,6 +682,7 @@ static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 
 /**
  * @brief Set IPv6 reachable time for a given interface
+ *
  * @param iface Network interface
  * @param reachable_time New reachable time
  */
@@ -638,7 +696,9 @@ static inline void net_ipv6_set_base_reachable_time(struct net_if *iface,
 
 /**
  * @brief Get IPv6 reachable timeout specified for a given interface
+ *
  * @param iface Network interface
+ *
  * @return Reachable timeout
  */
 static inline uint32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
@@ -652,7 +712,9 @@ static inline uint32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
 
 /**
  * @brief Calculate next reachable time value for IPv6 reachable time
+ *
  * @param iface Network interface
+ *
  * @return Reachable time
  */
 uint32_t net_if_ipv6_calc_reachable_time(struct net_if *iface);
@@ -660,6 +722,7 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if *iface);
 /**
  * @brief Set IPv6 reachable time for a given interface. This requires
  * that base reachable time is set for the interface.
+ *
  * @param iface Network interface
  */
 static inline void net_ipv6_set_reachable_time(struct net_if *iface)
@@ -671,6 +734,7 @@ static inline void net_ipv6_set_reachable_time(struct net_if *iface)
 
 /**
  * @brief Set IPv6 retransmit timer for a given interface
+ *
  * @param iface Network interface
  * @param retrans_timer New retransmit timer
  */
@@ -684,7 +748,9 @@ static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
 
 /**
  * @brief Get IPv6 retransmit timer specified for a given interface
+ *
  * @param iface Network interface
+ *
  * @return Retransmit timer
  */
 static inline uint32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
@@ -699,9 +765,11 @@ static inline uint32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
 /**
  * @brief Get a IPv6 source address that should be used when sending
  * network data to destination.
+ *
  * @param iface Interface that was used when packet was received.
  * If the interface is not known, then NULL can be given.
  * @param dst IPv6 destination address
+ *
  * @return Pointer to IPv6 address to use, NULL if no IPv6 address
  * could be found.
  */
@@ -710,20 +778,24 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
 
 /**
  * @brief Return IPv6 any address (all zeros, ::)
+ *
  * @return IPv6 any address with all bits set to zero.
  */
 const struct in6_addr *net_if_ipv6_unspecified_addr(void);
 
 /**
  * @brief Return IPv4 broadcast address (all bits ones)
+ *
  * @return IPv4 broadcast address with all bits set to one.
  */
 const struct in_addr *net_if_ipv4_broadcast_addr(void);
 
 /**
  * @brief Get a IPv6 link local address in a given state.
+ *
  * @param iface Interface to use. Must be a valid pointer to an interface.
  * @param addr_state IPv6 address state (preferred, tentative, deprecated)
+ *
  * @return Pointer to link local IPv6 address, NULL if no proper IPv6 address
  * could be found.
  */
@@ -732,14 +804,17 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 
 /**
  * @brief Get the default network interface.
+ *
  * @return Default interface or NULL if no interfaces are configured.
  */
 struct net_if *net_if_get_default(void);
 
 /**
  * @brief Check if the given IPv4 address belongs to local subnet.
+ *
  * @param iface Interface to use. Must be a valid pointer to an interface.
  * @param addr IPv4 address
+ *
  * @return True if address is part of local subnet, false otherwise.
  */
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
@@ -747,6 +822,7 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 
 /**
  * @brief Set IPv4 netmask for an interface.
+ *
  * @param iface Interface to use.
  * @param netmask IPv4 netmask
  */
@@ -760,6 +836,7 @@ static inline void net_if_set_netmask(struct net_if *iface,
 
 /**
  * @brief Set IPv4 gateway for an interface.
+ *
  * @param iface Interface to use.
  * @param gw IPv4 address of an gateway
  */
