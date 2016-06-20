@@ -223,8 +223,10 @@ struct net_buf *net_buf_clone(struct net_buf *buf);
  *
  *  @return Pointer to the user data of the buffer.
  */
-#define net_buf_user_data(buf) \
-	((void *)(ROUND_UP(((buf)->__buf + (buf)->size), sizeof(int))))
+static inline void *net_buf_user_data(struct net_buf *buf)
+{
+	return (void *)ROUND_UP((buf->__buf + buf->size), sizeof(int));
+}
 
 /**
  *  @brief Prepare data to be added at the end of the buffer
@@ -372,7 +374,6 @@ size_t net_buf_tailroom(struct net_buf *buf);
 size_t net_buf_headroom(struct net_buf *buf);
 
 /**
- *  @def net_buf_tail
  *  @brief Get the tail pointer for a buffer.
  *
  *  Get a pointer to the end of the data in a buffer.
@@ -381,7 +382,10 @@ size_t net_buf_headroom(struct net_buf *buf);
  *
  *  @return Tail pointer for the buffer.
  */
-#define net_buf_tail(buf) ((buf)->data + (buf)->len)
+static inline uint8_t *net_buf_tail(struct net_buf *buf)
+{
+	return buf->data + buf->len;
+}
 
 #ifdef __cplusplus
 }
