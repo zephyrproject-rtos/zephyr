@@ -364,7 +364,7 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 		goto drop;
 	}
 
-	net_nbuf_ext_opt_len(buf) = sizeof(struct net_icmpv6_ns_hdr);
+	net_nbuf_set_ext_opt_len(buf, sizeof(struct net_icmpv6_ns_hdr));
 	hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
 
 	/* The parsing gets tricky if the ND struct is split
@@ -398,7 +398,8 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 			break;
 		}
 
-		net_nbuf_ext_opt_len(buf) += hdr->len << 3;
+		net_nbuf_set_ext_opt_len(buf, net_nbuf_ext_opt_len(buf) +
+					 (hdr->len << 3));
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_nbuf_iface(buf),
@@ -479,7 +480,7 @@ send_na:
 	llao_len = get_llao_len(net_nbuf_iface(buf));
 
 	net_nbuf_ll_swap(buf);
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_ext_len(buf, 0);
 
 	setup_headers(buf, sizeof(struct net_icmpv6_na_hdr) + llao_len,
 		      NET_ICMPV6_NA);
@@ -497,9 +498,9 @@ send_na:
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
-	net_nbuf_len(buf->frags) = NET_IPV6ICMPH_LEN +
-		sizeof(struct net_icmpv6_na_hdr) +
-		llao_len;
+	net_nbuf_set_len(buf->frags, NET_IPV6ICMPH_LEN +
+			 sizeof(struct net_icmpv6_na_hdr) +
+			 llao_len);
 
 	if (net_send_data(buf) < 0) {
 		goto drop;
@@ -664,7 +665,7 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 		goto drop;
 	}
 
-	net_nbuf_ext_opt_len(buf) = sizeof(struct net_icmpv6_na_hdr);
+	net_nbuf_set_ext_opt_len(buf, sizeof(struct net_icmpv6_na_hdr));
 	hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
 
 	/* The parsing gets tricky if the ND struct is split
@@ -693,7 +694,8 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 			break;
 		}
 
-		net_nbuf_ext_opt_len(buf) += hdr->len << 3;
+		net_nbuf_set_ext_opt_len(buf, net_nbuf_ext_opt_len(buf) +
+					 (hdr->len << 3));
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_nbuf_iface(buf),
@@ -749,10 +751,10 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_family(buf) = AF_INET6;
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	net_nbuf_ll_clear(buf);
 
@@ -867,10 +869,10 @@ int net_ipv6_send_rs(struct net_if *iface)
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_family(buf) = AF_INET6;
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	net_nbuf_ll_clear(buf);
 
@@ -1188,7 +1190,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 			      ntohl(NET_ICMPV6_RA_BUF(buf)->retrans_timer));
 	}
 
-	net_nbuf_ext_opt_len(buf) = sizeof(struct net_icmpv6_ra_hdr);
+	net_nbuf_set_ext_opt_len(buf, sizeof(struct net_icmpv6_ra_hdr));
 	hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
 
 	/* The parsing gets tricky if the ND struct is split
@@ -1236,7 +1238,8 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 			break;
 		}
 
-		net_nbuf_ext_opt_len(buf) += hdr->len << 3;
+		net_nbuf_set_ext_opt_len(buf, net_nbuf_ext_opt_len(buf) +
+					 (hdr->len << 3));
 	}
 
 	router = net_if_ipv6_router_lookup(net_nbuf_iface(buf),

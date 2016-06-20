@@ -190,19 +190,21 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	}
 
 	/* Check extension headers */
-	net_nbuf_next_hdr(buf) = &hdr->nexthdr;
-	net_nbuf_ext_len(buf) = 0;
-	net_nbuf_ext_bitmap(buf) = 0;
+	net_nbuf_set_next_hdr(buf, &hdr->nexthdr);
+	net_nbuf_set_ext_len(buf, 0);
+	net_nbuf_set_ext_bitmap(buf, 0);
 
 	while (1) {
 		switch (*(net_nbuf_next_hdr(buf))) {
 
 		case IPPROTO_ICMPV6:
-			net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
+			net_nbuf_set_ip_hdr_len(buf,
+						sizeof(struct net_ipv6_hdr));
 			return process_icmpv6_pkt(buf, hdr);
 
 		case IPPROTO_UDP:
-			net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
+			net_nbuf_set_ip_hdr_len(buf,
+						sizeof(struct net_ipv6_hdr));
 			return net_conn_input(IPPROTO_UDP, buf);
 
 		default:
@@ -265,11 +267,11 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
-		net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
+		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 		return process_icmpv4_pkt(buf, hdr);
 
 	case IPPROTO_UDP:
-		net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
+		net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 		return net_conn_input(IPPROTO_UDP, buf);
 	}
 
@@ -307,13 +309,13 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
 		NET_STATS(++net_stats.ipv6.recv);
-		net_nbuf_family(buf) = PF_INET6;
+		net_nbuf_set_family(buf, PF_INET6);
 		return process_ipv6_pkt(buf);
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
 		NET_STATS(++net_stats.ipv4.recv);
-		net_nbuf_family(buf) = PF_INET;
+		net_nbuf_set_family(buf, PF_INET);
 		return process_ipv4_pkt(buf);
 #endif
 	}
@@ -409,7 +411,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 	NET_DBG("fifo %p iface %p buf %p len %d", &rx_queue, iface, buf,
 		net_buf_frags_len(buf));
 
-	net_nbuf_iface(buf) = iface;
+	net_nbuf_set_iface(buf, iface);
 
 	net_buf_put(&rx_queue, buf);
 

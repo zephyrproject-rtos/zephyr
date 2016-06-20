@@ -205,8 +205,8 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	hdr = NET_ARP_BUF(buf);
 	eth = NET_ETH_BUF(buf);
@@ -259,8 +259,8 @@ static inline struct net_buf *prepare_arp_request(struct net_if *iface,
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
 	hdr = NET_ARP_BUF(buf);
 	eth = NET_ETH_BUF(buf);
@@ -364,8 +364,8 @@ void main_fiber(void)
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
-	net_nbuf_iface(buf) = iface;
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_nbuf_set_iface(buf, iface);
 
 	ipv4 = (struct net_ipv4_hdr *)net_buf_add(frag,
 						  sizeof(struct net_ipv4_hdr));
@@ -438,8 +438,8 @@ void main_fiber(void)
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
-	net_nbuf_iface(buf) = iface;
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_nbuf_set_iface(buf, iface);
 
 	setup_eth_header(iface, buf, &hwaddr, NET_ETH_PTYPE_IP);
 
@@ -666,8 +666,8 @@ void main_fiber(void)
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
-	net_nbuf_iface(buf) = iface;
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_nbuf_set_iface(buf, iface);
 
 	arp_hdr = NET_ARP_BUF(buf);
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
@@ -720,8 +720,8 @@ void main_fiber(void)
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
-	net_nbuf_iface(buf) = iface;
+	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
+	net_nbuf_set_iface(buf, iface);
 	send_status = -EINVAL;
 
 	arp_hdr = NET_ARP_BUF(buf);

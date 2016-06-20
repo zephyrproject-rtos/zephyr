@@ -110,7 +110,7 @@ static inline void setup_ipv6_header(struct net_buf *buf, uint8_t extra_len,
 	NET_IPV6_BUF(buf)->nexthdr = IPPROTO_ICMPV6;
 	NET_IPV6_BUF(buf)->hop_limit = hop_limit;
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	NET_ICMP_BUF(buf)->type = icmp_type;
 	NET_ICMP_BUF(buf)->code = icmp_code;
@@ -175,10 +175,10 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_family(buf) = AF_INET6;
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_nbuf_set_ext_len(buf, 0);
 
 	setup_ipv6_header(buf, extra_len, net_if_ipv6_get_hop_limit(iface),
 			  type, code);

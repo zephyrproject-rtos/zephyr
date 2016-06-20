@@ -33,6 +33,9 @@
 
 #include <net/net_core.h>
 #include <net/net_linkaddr.h>
+#include <net/net_ip.h>
+#include <net/net_if.h>
+#include <net/net_context.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,35 +85,187 @@ struct net_nbuf {
 
 /** @cond ignore */
 
-/* Value returned by nbuf_len() contains length of all the protocol headers,
- * like IP and UDP, and the length of the user payload.
- */
-#define net_nbuf_len(buf) ((buf)->len)
 
-/* This returns pointer to start of the protocol IP header */
-#define net_nbuf_ip_data(buf) ((buf)->frags->data)
-#define net_nbuf_udp_data(buf) (&(buf)->frags->data[net_nbuf_ip_hdr_len(buf)])
-#define net_nbuf_tcp_data(buf) (&(buf)->frags->data[net_nbuf_ip_hdr_len(buf)])
-#define net_nbuf_icmp_data(buf) (&(buf)->frags->data[net_nbuf_ip_hdr_len(buf) +\
-						    net_nbuf_ext_len(buf)])
+/* The interface real ll address */
+static inline struct net_linkaddr *net_nbuf_ll_if(struct net_buf *buf)
+{
+	return net_if_get_link_addr(
+		((struct net_nbuf *)net_buf_user_data(buf))->iface);
+}
 
-/* These two return only the application data length without
- * IP and other protocol header length.
- */
-#define net_nbuf_appdata(buf) (((struct net_nbuf *) \
-			    net_buf_user_data((buf)))->appdata)
-#define net_nbuf_appdatalen(buf) (((struct net_nbuf *) \
-			       net_buf_user_data((buf)))->appdatalen)
-#define net_nbuf_reserve(buf) (((struct net_nbuf *) \
-			    net_buf_user_data((buf)))->reserve)
-#define net_nbuf_ll_reserve(buf) (((struct net_nbuf *) \
-			       net_buf_user_data((buf)))->ll_reserve)
-#define net_nbuf_ll(buf) (net_nbuf_ip_data(buf) - net_nbuf_ll_reserve(buf))
+static inline struct net_context *net_nbuf_context(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->context;
+}
 
-#define net_nbuf_ll_src(buf) \
-	(&(((struct net_nbuf *)net_buf_user_data((buf)))->lladdr_src))
-#define net_nbuf_ll_dst(buf) \
-	(&(((struct net_nbuf *)net_buf_user_data((buf)))->lladdr_dst))
+static inline void net_nbuf_set_context(struct net_buf *buf,
+					struct net_context *ctx)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->context = ctx;
+}
+
+static inline struct net_if *net_nbuf_iface(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->iface;
+}
+
+static inline void net_nbuf_set_iface(struct net_buf *buf, struct net_if *iface)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->iface = iface;
+}
+
+static inline enum net_nbuf_type net_nbuf_type(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->type;
+}
+
+static inline void net_nbuf_set_type(struct net_buf *buf, uint8_t type)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->type = type;
+}
+
+static inline uint8_t net_nbuf_family(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->family;
+}
+
+static inline void net_nbuf_set_family(struct net_buf *buf, uint8_t family)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->family = family;
+}
+
+static inline uint8_t net_nbuf_ip_hdr_len(struct net_buf *buf)
+{
+	return ((struct net_nbuf *) net_buf_user_data(buf))->ip_hdr_len;
+}
+
+static inline void net_nbuf_set_ip_hdr_len(struct net_buf *buf, uint8_t len)
+{
+	((struct net_nbuf *) net_buf_user_data(buf))->ip_hdr_len = len;
+}
+
+static inline uint8_t net_nbuf_ext_len(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->ext_len;
+}
+
+static inline void net_nbuf_set_ext_len(struct net_buf *buf, uint8_t len)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->ext_len = len;
+}
+
+static inline uint8_t net_nbuf_ext_bitmap(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->ext_bitmap;
+}
+
+static inline void net_nbuf_set_ext_bitmap(struct net_buf *buf, uint8_t bm)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->ext_bitmap = bm;
+}
+
+static inline uint8_t *net_nbuf_next_hdr(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->next_hdr;
+}
+
+static inline void net_nbuf_set_next_hdr(struct net_buf *buf, uint8_t *hdr)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->next_hdr = hdr;
+}
+
+#if defined(CONFIG_NET_IPV6)
+static inline uint8_t net_nbuf_ext_opt_len(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->ext_opt_len;
+}
+
+static inline void net_nbuf_set_ext_opt_len(struct net_buf *buf, uint8_t len)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->ext_opt_len = len;
+}
+#endif
+
+static inline uint16_t net_nbuf_get_len(struct net_buf *buf)
+{
+	return buf->len;
+}
+
+static inline void net_nbuf_set_len(struct net_buf *buf, uint16_t len)
+{
+	buf->len = len;
+}
+
+static inline uint8_t *net_nbuf_ip_data(struct net_buf *buf)
+{
+	return buf->frags->data;
+}
+
+static inline uint8_t *net_nbuf_udp_data(struct net_buf *buf)
+{
+	return &buf->frags->data[net_nbuf_ip_hdr_len(buf)];
+}
+
+static inline uint8_t *net_nbuf_tcp_data(struct net_buf *buf)
+{
+	return &buf->frags->data[net_nbuf_ip_hdr_len(buf)];
+}
+
+static inline uint8_t *net_nbuf_icmp_data(struct net_buf *buf)
+{
+	return &buf->frags->data[net_nbuf_ip_hdr_len(buf) +
+				 net_nbuf_ext_len(buf)];
+}
+
+static inline uint8_t *net_nbuf_appdata(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->appdata;
+}
+
+static inline void net_nbuf_set_appdata(struct net_buf *buf, uint8_t *data)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->appdata = data;
+}
+
+static inline uint16_t net_nbuf_appdatalen(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->appdatalen;
+}
+
+static inline void net_nbuf_set_appdatalen(struct net_buf *buf, uint16_t len)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->appdatalen = len;
+}
+
+static inline uint16_t net_nbuf_reserve(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->reserve;
+}
+
+static inline uint8_t net_nbuf_ll_reserve(struct net_buf *buf)
+{
+	return ((struct net_nbuf *) net_buf_user_data(buf))->ll_reserve;
+}
+
+static inline void net_nbuf_set_ll_reserve(struct net_buf *buf, uint8_t len)
+{
+	((struct net_nbuf *) net_buf_user_data(buf))->ll_reserve = len;
+}
+
+static inline uint8_t *net_nbuf_ll(struct net_buf *buf)
+{
+	return net_nbuf_ip_data(buf) - net_nbuf_ll_reserve(buf);
+}
+
+static inline struct net_linkaddr *net_nbuf_ll_src(struct net_buf *buf)
+{
+	return &((struct net_nbuf *)net_buf_user_data(buf))->lladdr_src;
+}
+
+static inline struct net_linkaddr *net_nbuf_ll_dst(struct net_buf *buf)
+{
+	return &((struct net_nbuf *)net_buf_user_data(buf))->lladdr_dst;
+}
 
 static inline void net_nbuf_ll_clear(struct net_buf *buf)
 {
@@ -127,37 +282,18 @@ static inline void net_nbuf_ll_swap(struct net_buf *buf)
 	net_nbuf_ll_dst(buf)->addr = addr;
 }
 
-/* The interface real ll address */
-#define net_nbuf_ll_if(buf)						\
-	net_if_get_link_addr(((struct net_nbuf *)net_buf_user_data(buf))->iface)
-
-#define net_nbuf_context(buf) \
-	(((struct net_nbuf *)net_buf_user_data((buf)))->context)
-#define net_nbuf_iface(buf) \
-	(((struct net_nbuf *)net_buf_user_data((buf)))->iface)
-#define net_nbuf_type(ptr) (((struct net_nbuf *)net_buf_user_data((ptr)))->type)
-#define net_nbuf_family(ptr) (((struct net_nbuf *) \
-			       net_buf_user_data((ptr)))->family)
-#define net_nbuf_ip_hdr_len(buf) (((struct net_nbuf *) \
-				   net_buf_user_data((buf)))->ip_hdr_len)
-#define net_nbuf_ext_len(buf) \
-	(((struct net_nbuf *)net_buf_user_data((buf)))->ext_len)
-#define net_nbuf_ext_bitmap(buf) \
-	(((struct net_nbuf *)net_buf_user_data((buf)))->ext_bitmap)
-#define net_nbuf_next_hdr(buf) \
-	(((struct net_nbuf *)net_buf_user_data((buf)))->next_hdr)
-#define net_nbuf_ext_opt_len(buf) \
-	(((struct net_nbuf *)net_buf_user_data((buf)))->ext_opt_len)
-
 #define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_nbuf_ip_data(buf))
 #define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))
 #define NET_ICMP_BUF(buf) ((struct net_icmp_hdr *)net_nbuf_icmp_data(buf))
 #define NET_UDP_BUF(buf)  ((struct net_udp_hdr *)(net_nbuf_udp_data(buf)))
 
-#define net_nbuf_set_src_ipv6_addr(buf)				 \
-	net_if_select_src(net_context_get_if(nbuf_context(buf)), \
-			  &NET_IPV6_BUF(buf)->src,		 \
-			  &NET_IPV6_BUF(buf)->dst)
+static inline void net_nbuf_set_src_ipv6_addr(struct net_buf *buf)
+{
+	net_if_ipv6_select_src_addr(net_context_get_iface(
+					    net_nbuf_context(buf)),
+				    &NET_IPV6_BUF(buf)->src);
+}
+
 /* @endcond */
 
 #if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)

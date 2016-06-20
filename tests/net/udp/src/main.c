@@ -188,12 +188,12 @@ static void setup_ipv6_udp(struct net_buf *buf,
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, remote_addr);
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, local_addr);
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	NET_UDP_BUF(buf)->src_port = htons(remote_port);
 	NET_UDP_BUF(buf)->dst_port = htons(local_port);
 
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_ext_len(buf, 0);
 
 	net_buf_add(buf->frags, net_nbuf_ip_hdr_len(buf) +
 				sizeof(struct net_udp_hdr));
@@ -216,12 +216,12 @@ static void setup_ipv4_udp(struct net_buf *buf,
 	net_ipaddr_copy(&NET_IPV4_BUF(buf)->src, remote_addr);
 	net_ipaddr_copy(&NET_IPV4_BUF(buf)->dst, local_addr);
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
 	NET_UDP_BUF(buf)->src_port = htons(remote_port);
 	NET_UDP_BUF(buf)->dst_port = htons(local_port);
 
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_ext_len(buf, 0);
 
 	net_buf_add(buf->frags, net_nbuf_ip_hdr_len(buf) +
 				sizeof(struct net_udp_hdr));
@@ -245,8 +245,8 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 	frag = net_nbuf_get_reserve_data(0);
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	setup_ipv6_udp(buf, src, dst, src_port, dst_port);
 
@@ -293,8 +293,8 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 	frag = net_nbuf_get_reserve_data(0);
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	setup_ipv4_udp(buf, src, dst, src_port, dst_port);
 

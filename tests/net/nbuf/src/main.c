@@ -90,8 +90,8 @@ static int test_ipv6_multi_frags(void)
 			return -EINVAL;
 		}
 
-		net_nbuf_appdata(buf) = (void *)udp + sizeof(*udp);
-		net_nbuf_appdatalen(buf) = 0;
+		net_nbuf_set_appdata(buf, (void *)udp + sizeof(*udp));
+		net_nbuf_set_appdatalen(buf, 0);
 	}
 
 	net_buf_frag_add(buf, frag);
@@ -216,8 +216,8 @@ static int test_fragment_copy(void)
 
 		memcpy(net_buf_add(frag, 15), example_data, 15);
 
-		net_nbuf_appdata(buf) = (void *)udp + sizeof(*udp) + 15;
-		net_nbuf_appdatalen(buf) = 0;
+		net_nbuf_set_appdata(buf, (void *)udp + sizeof(*udp) + 15);
+		net_nbuf_set_appdatalen(buf, 0);
 	}
 
 	net_buf_frag_add(buf, frag);

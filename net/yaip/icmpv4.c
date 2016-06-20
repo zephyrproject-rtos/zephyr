@@ -92,7 +92,7 @@ static inline void setup_ipv4_header(struct net_buf *buf, uint8_t extra_len,
 	NET_IPV4_BUF(buf)->offset[0] = NET_IPV4_BUF(buf)->offset[1] = 0;
 	NET_IPV4_BUF(buf)->id[0] = NET_IPV4_BUF(buf)->id[1] = 0;
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
 	NET_ICMP_BUF(buf)->type = icmp_type;
 	NET_ICMP_BUF(buf)->code = icmp_code;
@@ -165,9 +165,9 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_family(buf) = AF_INET;
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_ll_reserve(buf) = net_buf_headroom(frag);
+	net_nbuf_set_family(buf, AF_INET);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	setup_ipv4_header(buf, extra_len, net_if_ipv4_get_ttl(iface),
 			  type, code);

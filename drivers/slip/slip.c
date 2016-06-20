@@ -273,7 +273,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 		}
 		net_buf_frag_add(slip->rx, slip->last);
 
-		net_nbuf_ll_reserve(slip->rx) = slip->ll_reserve;
+		net_nbuf_set_ll_reserve(slip->rx, slip->ll_reserve);
 		slip->ptr = net_nbuf_ip_data(slip->rx) - slip->ll_reserve;
 	}
 

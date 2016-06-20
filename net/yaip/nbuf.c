@@ -333,7 +333,7 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 		NET_ASSERT(buf->ref);
 
 		dec_free_rx_bufs(buf);
-		net_nbuf_type(buf) = type;
+		net_nbuf_set_type(buf, type);
 		break;
 	case NET_NBUF_TX:
 		buf = net_buf_get(&free_tx_bufs, 0);
@@ -344,7 +344,7 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 		NET_ASSERT(buf->ref);
 
 		dec_free_tx_bufs(buf);
-		net_nbuf_type(buf) = type;
+		net_nbuf_set_type(buf, type);
 		break;
 	case NET_NBUF_DATA:
 		buf = net_buf_get(&free_data_bufs, 0);
@@ -479,8 +479,8 @@ static struct net_buf *net_nbuf_get(enum net_nbuf_type type,
 	}
 
 	if (type != NET_NBUF_DATA) {
-		net_nbuf_context(buf) = context;
-		net_nbuf_ll_reserve(buf) = (uint16_t)reserve;
+		net_nbuf_set_context(buf, context);
+		net_nbuf_set_ll_reserve(buf, (uint8_t)reserve);
 	}
 
 	return buf;

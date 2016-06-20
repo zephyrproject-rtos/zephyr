@@ -138,7 +138,7 @@ static inline void net_hexdump_frags(const char *str, struct net_buf *buf)
 	struct net_buf *frag = buf->frags;
 
 	while (frag) {
-		net_hexdump(str, frag->data, net_nbuf_len(frag));
+		net_hexdump(str, frag->data, net_nbuf_get_len(frag));
 		frag = frag->frags;
 	}
 }

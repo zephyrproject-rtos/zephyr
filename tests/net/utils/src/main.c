@@ -176,9 +176,9 @@ void main(void)
 		return;
 	}
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
-	net_nbuf_family(buf) = AF_INET6;
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ext_len(buf, 0);
 
 	/* We need to zero the ICMP checksum */
 	hdr_len = net_nbuf_ip_hdr_len(buf);
@@ -200,9 +200,9 @@ void main(void)
 	net_buf_frag_add(buf, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt2) / 2), pkt2, sizeof(pkt2) / 2);
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
-	net_nbuf_family(buf) = AF_INET6;
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ext_len(buf, 0);
 
 	hdr_len = net_nbuf_ip_hdr_len(buf);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
@@ -229,9 +229,9 @@ void main(void)
 	memcpy(net_buf_add(frag, sizeof(pkt3) / 2), pkt3, sizeof(pkt3) / 2);
 	printk("First fragment will have %d bytes\n", sizeof(pkt3) / 2);
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
-	net_nbuf_family(buf) = AF_INET6;
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ext_len(buf, 0);
 
 	hdr_len = net_nbuf_ip_hdr_len(buf);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
@@ -261,9 +261,9 @@ void main(void)
 	       sizeof(struct net_ipv6_hdr));
 	printk("[0] IPv6 fragment will have %d bytes\n", frag->len);
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv6_hdr);
-	net_nbuf_family(buf) = AF_INET6;
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_nbuf_set_family(buf, AF_INET6);
+	net_nbuf_set_ext_len(buf, 0);
 
 	chunk = 29;
 	datalen = sizeof(pkt3) - sizeof(struct net_ipv6_hdr);
@@ -324,13 +324,13 @@ void main(void)
 	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
+	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 	memcpy(net_nbuf_ll(buf), pkt4, sizeof(pkt4));
 	net_buf_add(frag, sizeof(pkt4) - sizeof(struct net_eth_hdr));
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
-	net_nbuf_family(buf) = AF_INET;
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_nbuf_set_family(buf, AF_INET);
+	net_nbuf_set_ext_len(buf, 0);
 
 	hdr_len = net_nbuf_ip_hdr_len(buf);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
@@ -352,13 +352,13 @@ void main(void)
 	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
+	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 	memcpy(net_nbuf_ll(buf), pkt5, sizeof(pkt5));
 	net_buf_add(frag, sizeof(pkt5) - sizeof(struct net_eth_hdr));
 
-	net_nbuf_ip_hdr_len(buf) = sizeof(struct net_ipv4_hdr);
-	net_nbuf_family(buf) = AF_INET;
-	net_nbuf_ext_len(buf) = 0;
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_nbuf_set_family(buf, AF_INET);
+	net_nbuf_set_ext_len(buf, 0);
 
 	hdr_len = net_nbuf_ip_hdr_len(buf);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];

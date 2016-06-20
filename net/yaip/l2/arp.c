@@ -127,9 +127,9 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_family(buf) = AF_INET;
-	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_family(buf, AF_INET);
+	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
 	hdr = NET_ARP_BUF(buf);
 	eth = NET_ETH_BUF(buf);
@@ -390,9 +390,9 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_iface(buf) = iface;
-	net_nbuf_family(buf) = AF_INET;
-	net_nbuf_ll_reserve(buf) = sizeof(struct net_eth_hdr);
+	net_nbuf_set_iface(buf, iface);
+	net_nbuf_set_family(buf, AF_INET);
+	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
 	hdr = NET_ARP_BUF(buf);
 	eth = NET_ETH_BUF(buf);
@@ -438,7 +438,8 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 				       net_nbuf_ll_reserve(buf))) {
 		NET_DBG("Invalid ARP header (len %d, min %d bytes)",
 			net_buf_frags_len(buf),
-			sizeof(struct net_arp_hdr) - net_nbuf_ll_reserve(buf));
+			sizeof(struct net_arp_hdr) -
+			net_nbuf_ll_reserve(buf));
 		return NET_DROP;
 	}
 
