@@ -1768,29 +1768,29 @@ static void read_remote_features_complete(struct net_buf *buf)
 		return;
 	}
 
-	if (!evt->status) {
-		memcpy(conn->br.features[0], evt->features,
-		       sizeof(conn->br.features[0]));
-
-		if (!lmp_ext_feat_capable(conn)) {
-			goto done;
-		}
-
-		buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_EXT_FEATURES,
-					sizeof(*cp));
-		if (!buf) {
-			goto done;
-		}
-
-		/* read LMP remote features page 1 */
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->handle = evt->handle;
-		/* get page at index 1 */
-		cp->page = 0x01;
-
-		bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, buf,
-				     NULL);
+	if (evt->status) {
+		goto done;
 	}
+
+	memcpy(conn->br.features[0], evt->features, sizeof(evt->features));
+
+	if (!lmp_ext_feat_capable(conn)) {
+		goto done;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_EXT_FEATURES,
+				sizeof(*cp));
+	if (!buf) {
+		goto done;
+	}
+
+	/* Read remote host features (page 1) */
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = evt->handle;
+	cp->page = 0x01;
+
+	bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, buf, NULL);
+
 done:
 	bt_conn_unref(conn);
 }
