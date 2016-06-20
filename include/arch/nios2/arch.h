@@ -25,6 +25,7 @@
 #define _ARCH_IFACE_H
 
 #include <system.h>
+#include <arch/nios2/asm_inline.h>
 #include "nios2.h"
 
 #ifdef __cplusplus
@@ -41,7 +42,6 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <irq.h>
-#include <arch/nios2/asm_inline.h>
 
 /* STUB. Eventually port ARC/ARM interrupt stuff */
 #define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)

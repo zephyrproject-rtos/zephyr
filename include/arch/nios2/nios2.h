@@ -46,9 +46,14 @@ extern "C"
  */
 #define NIOS2_NIRQ 32
 
+/* Size in bits of registers */
+#define SYSTEM_BUS_WIDTH 32
+
 #ifndef _ASMLANGUAGE
 
 #include <stdint.h>
+#include <arch/cpu.h>
+#include <sys_io.h>
 
 /*
  * Functions for accessing select Nios II general-purpose registers.
@@ -127,6 +132,19 @@ enum nios2_creg {
  */
 #define _nios2_creg_read(reg) __builtin_rdctl(reg)
 #define _nios2_creg_write(reg, val) __builtin_wrctl(reg, val)
+
+#define _nios2_get_register_address(base, regnum) \
+	((void *)(((uint8_t *)base) + ((regnum) * (SYSTEM_BUS_WIDTH / 8))))
+
+static inline void _nios2_reg_write(void *base, int regnum, uint32_t data)
+{
+	sys_write32(data, (mm_reg_t)_nios2_get_register_address(base, regnum));
+}
+
+static inline uint32_t _nios2_reg_read(void *base, int regnum)
+{
+	return sys_read32((mm_reg_t)_nios2_get_register_address(base, regnum));
+}
 
 #endif /* _ASMLANGUAGE */
 
