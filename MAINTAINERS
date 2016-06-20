@@ -140,6 +140,7 @@ M:	Andrew Boie <andrew.p.boie@intel.com>
 S:	Supported
 F:	arch/nios2/
 F:	include/arch/nios2/
+F:	drivers/serial/uart_altera_jtag.c
 
 NORDIC MDK
 M:	Carles Cufi <carles.cufi@nordicsemi.no>
