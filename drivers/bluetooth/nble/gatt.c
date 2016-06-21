@@ -1386,6 +1386,25 @@ static uint8_t prep_write_evt(const struct nble_gatts_write_evt *ev,
 #endif
 }
 
+static int32_t write_evt(struct bt_conn *conn,
+			 const struct bt_gatt_attr *attr,
+			 uint16_t offset, const uint8_t *data, uint8_t len)
+{
+	int32_t status;
+
+	status = attr->write(conn, attr, data, len, offset);
+	if (status < 0) {
+		return status;
+	}
+
+	/* Return an error if not all data has been written */
+	if (status != len) {
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
+
+	return status;
+}
+
 void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 			     const uint8_t *buf, uint8_t buflen)
 {
@@ -1407,17 +1426,7 @@ void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 		goto reply;
 	}
 
-	reply_data.status = attr->write(conn, attr, buf, buflen, ev->offset);
-	if (reply_data.status < 0) {
-		goto reply;
-	}
-
-	/* Return an error if not all data has been written */
-	if (reply_data.status != buflen) {
-		reply_data.status = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-
-		goto reply;
-	}
+	reply_data.status = write_evt(conn, attr, ev->offset, buf, buflen);
 
 reply:
 	if (ev->flag & NBLE_GATT_WR_FLAG_REPLY) {
@@ -1463,8 +1472,7 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 		 * Ignore in case of error (status < 0).
 		 */
 		if (rsp.status >= 0 && evt->flag == NBLE_GATT_EX_FLAG_EXECUTE) {
-			rsp.status = attr->write(conn, attr, buf->data,
-						 buf->len, ev->offset);
+			write_evt(conn, attr, ev->offset, buf->data, buf->len);
 		}
 
 		net_buf_unref(buf);
