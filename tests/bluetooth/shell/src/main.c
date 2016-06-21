@@ -46,6 +46,7 @@
 #define AD_COMPLETE_NAME	0x09
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)
+#define DATA_BREDR_MTU		48
 
 static struct bt_conn *default_conn;
 static bt_addr_le_t id_addr;
@@ -56,6 +57,13 @@ static struct bt_conn *pairing_conn;
 static struct nano_fifo data_fifo;
 static NET_BUF_POOL(data_pool, 1, DATA_MTU, &data_fifo, NULL,
 		    BT_BUF_USER_DATA_MIN);
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static struct nano_fifo data_bredr_fifo;
+static NET_BUF_POOL(data_bredr_pool, 1, DATA_BREDR_MTU, &data_bredr_fifo, NULL,
+		    BT_BUF_USER_DATA_MIN);
+
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 static const char *current_prompt(void)
 {
@@ -1746,11 +1754,40 @@ static int cmd_l2cap_send(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-/*
- * TODO: fill/implement channel startup/callback data when need to be used
- * similar like for LE case, for now can be empty.
- */
-static struct bt_l2cap_br_chan l2cap_bredr_chan = {};
+static void l2cap_bredr_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	printk("Incoming data channel %p len %u\n", chan, buf->len);
+}
+
+static void l2cap_bredr_connected(struct bt_l2cap_chan *chan)
+{
+	printk("Channel %p connected\n", chan);
+}
+
+static void l2cap_bredr_disconnected(struct bt_l2cap_chan *chan)
+{
+	printk("Channel %p disconnected\n", chan);
+}
+
+static struct net_buf *l2cap_bredr_alloc_buf(struct bt_l2cap_chan *chan)
+{
+	printk("Channel %p requires buffer\n", chan);
+
+	return net_buf_get(&data_bredr_fifo, 0);
+}
+
+static struct bt_l2cap_chan_ops l2cap_bredr_ops = {
+	.alloc_buf	= l2cap_bredr_alloc_buf,
+	.recv		= l2cap_bredr_recv,
+	.connected	= l2cap_bredr_connected,
+	.disconnected	= l2cap_bredr_disconnected,
+};
+
+static struct bt_l2cap_br_chan l2cap_bredr_chan = {
+	.chan.ops	= &l2cap_bredr_ops,
+	 /* Set for now min. MTU */
+	.rx.mtu		= 48,
+};
 
 static int l2cap_bredr_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
@@ -1918,6 +1955,9 @@ void main(void)
 	bt_conn_cb_register(&conn_callbacks);
 
 	net_buf_pool_init(data_pool);
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	net_buf_pool_init(data_bredr_pool);
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	printk("Type \"help\" for supported commands.\n");
 	printk("Before any Bluetooth commands you must run \"init\".\n");
