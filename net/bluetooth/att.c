@@ -542,12 +542,12 @@ static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  uint8_t mask)
 {
 	if ((mask & BT_GATT_PERM_READ) &&
-	    !(attr->perm & BT_GATT_PERM_READ_MASK)) {
+	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read)) {
 		return BT_ATT_ERR_READ_NOT_PERMITTED;
 	}
 
 	if ((mask & BT_GATT_PERM_WRITE) &&
-	    !(attr->perm & BT_GATT_PERM_WRITE_MASK)) {
+	    (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !attr->write)) {
 		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
 	}
 
@@ -760,11 +760,6 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
 	 * should be changed from pre-set: invalid handle error to no error.
 	 */
 	data->err = 0x00;
-
-	if (!attr->read) {
-		data->err = BT_ATT_ERR_READ_NOT_PERMITTED;
-		return BT_GATT_ITER_STOP;
-	}
 
 	/* Check attribute permissions */
 	data->err = check_perm(conn, attr, BT_GATT_PERM_READ_MASK);
@@ -1072,12 +1067,6 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	BT_DBG("handle 0x%04x offset %u", attr->handle, data->offset);
 
-	/* Check for write support */
-	if (!attr->write) {
-		data->err = BT_ATT_ERR_WRITE_NOT_PERMITTED;
-		return BT_GATT_ITER_STOP;
-	}
-
 	/* Check attribute permissions */
 	data->err = check_perm(data->conn, attr, BT_GATT_PERM_WRITE_MASK);
 	if (data->err) {
@@ -1176,12 +1165,6 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	struct bt_attr_data *attr_data;
 
 	BT_DBG("handle 0x%04x offset %u", attr->handle, data->offset);
-
-	/* Check for write support */
-	if (!attr->write) {
-		data->err = BT_ATT_ERR_WRITE_NOT_PERMITTED;
-		return BT_GATT_ITER_STOP;
-	}
 
 	/* Check attribute permissions */
 	data->err = check_perm(data->conn, attr, BT_GATT_PERM_WRITE_MASK);
