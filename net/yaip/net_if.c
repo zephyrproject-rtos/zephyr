@@ -89,6 +89,8 @@ static void net_if_tx_fiber(struct net_if *iface)
 
 static inline void init_tx_queue(struct net_if *iface)
 {
+	NET_DBG("On iface %p", iface);
+
 	nano_fifo_init(&iface->tx_queue);
 
 	fiber_start(iface->tx_fiber_stack, sizeof(iface->tx_fiber_stack),
@@ -887,6 +889,8 @@ uint8_t net_if_get_by_iface(struct net_if *iface)
 void net_if_init(void)
 {
 	struct net_if *iface;
+
+	NET_DBG("");
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
 		init_tx_queue(iface);
