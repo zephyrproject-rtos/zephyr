@@ -2425,7 +2425,7 @@ static void init_interrupt_handling(void)
 	nano_fifo_init(&cmds_queue);
 	nano_fifo_init(&avail_queue);
 	uart_irq_input_hook_set(uart_console_dev, console_irq_input_hook);
-	uart_register_input(&avail_queue, &cmds_queue);
+	uart_register_input(&avail_queue, &cmds_queue, NULL);
 }
 #else
 #define init_interrupt_handling() do { } while ((0))
