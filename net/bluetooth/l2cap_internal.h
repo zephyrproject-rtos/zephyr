@@ -70,6 +70,8 @@ struct bt_l2cap_conn_rsp {
 } __packed;
 
 #define BT_L2CAP_CONF_SUCCESS		0x0000
+#define BT_L2CAP_CONF_UNACCEPT		0x0001
+#define BT_L2CAP_CONF_REJECT		0x0002
 
 #define BT_L2CAP_CONF_REQ		0x04
 struct bt_l2cap_conf_req {
@@ -88,6 +90,9 @@ struct bt_l2cap_conf_rsp {
 
 /* Option type used by MTU config request data */
 #define BT_L2CAP_CONF_OPT_MTU		0x01
+/* Options bits selecting most significant bit (hint) in type field */
+#define BT_L2CAP_CONF_HINT		0x80
+#define BT_L2CAP_CONF_MASK		0x7f
 
 struct bt_l2cap_conf_opt {
 	uint8_t type;

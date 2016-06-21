@@ -628,6 +628,144 @@ static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident,
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
+static uint16_t l2cap_br_conf_opt_mtu(struct bt_l2cap_chan *chan,
+				      struct net_buf *buf, size_t len)
+{
+	uint16_t mtu, result = BT_L2CAP_CONF_SUCCESS;
+
+	/* Core 4.2 [Vol 3, Part A, 5.1] MTU payload length */
+	if (len != 2) {
+		BT_ERR("tx MTU length %u invalid", len);
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	/* pulling MTU value moves buf data to next option item */
+	mtu = net_buf_pull_le16(buf);
+	if (mtu < L2CAP_BR_MIN_MTU) {
+		result = BT_L2CAP_CONF_UNACCEPT;
+		BR_CHAN(chan)->tx.mtu = L2CAP_BR_MIN_MTU;
+		BT_DBG("tx MTU %u invalid", mtu);
+		goto done;
+	}
+
+	BR_CHAN(chan)->tx.mtu = mtu;
+	BT_DBG("tx MTU %u", mtu);
+done:
+	return result;
+}
+
+static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident,
+			      uint16_t len, struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_conf_req *req = (void *)buf->data;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_conf_rsp *rsp;
+	struct bt_l2cap_conf_opt *opt;
+	uint16_t flags, dcid, opt_len, hint, result = BT_L2CAP_CONF_SUCCESS;
+
+	if (buf->len < sizeof(*req)) {
+		BT_ERR("Too small L2CAP conf req packet size");
+		return;
+	}
+
+	flags = sys_le16_to_cpu(req->flags);
+	dcid = sys_le16_to_cpu(req->dcid);
+	opt_len = len - sizeof(*req);
+
+	BT_DBG("dcid 0x%04x flags 0x%02x len %u", dcid, flags, opt_len);
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, dcid);
+	if (!chan) {
+		BT_ERR("rx channel mismatch!");
+		struct bt_l2cap_cmd_reject_cid_data data = {.scid = req->dcid,
+							    .dcid = 0,
+							   };
+
+		l2cap_br_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID,
+				     &data, sizeof(data));
+		return;
+	}
+
+	if (!opt_len) {
+		BT_DBG("tx default MTU %u", L2CAP_BR_DEFAULT_MTU);
+		BR_CHAN(chan)->tx.mtu = L2CAP_BR_DEFAULT_MTU;
+		goto send_rsp;
+	}
+
+	/*
+	 * initialize config option data dedicated object with proper
+	 * offset set to beginnig of config options data
+	 */
+	opt = net_buf_pull(buf, sizeof(*req));
+
+	while (buf->len >= sizeof(*opt)) {
+		/* pull buf to always point to option data item */
+		net_buf_pull(buf, sizeof(*opt));
+
+		/* make sure opt object can get safe dereference in iteration */
+		if (buf->len < opt->len) {
+			BT_ERR("Received too short option data");
+			result = BT_L2CAP_CONF_REJECT;
+			break;
+		}
+
+		hint = opt->type & BT_L2CAP_CONF_HINT;
+
+		switch (opt->type & BT_L2CAP_CONF_MASK) {
+		case BT_L2CAP_CONF_OPT_MTU:
+			/* getting MTU modifies buf internals */
+			result = l2cap_br_conf_opt_mtu(chan, buf, opt->len);
+			/*
+			 * MTU is done. For now bailout the loop but later on
+			 * there can be a need to continue checking next options
+			 * that are after MTU value and then goto is not proper
+			 * way out here.
+			 */
+			goto send_rsp;
+		default:
+			if (!hint) {
+				BT_DBG("option %u not handled", opt->type);
+				goto send_rsp;
+			}
+
+			/* set opt object to next option chunk */
+			opt = net_buf_pull(buf, opt->len);
+			break;
+		}
+	}
+
+send_rsp:
+	buf = bt_l2cap_create_pdu(&br_sig);
+	if (!buf) {
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_CONF_RSP;
+	hdr->ident = ident;
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	memset(rsp, 0, sizeof(*rsp));
+
+	rsp->result = sys_cpu_to_le16(result);
+	rsp->scid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
+
+	/*
+	 * TODO: If options other than MTU bacame meaningful then processing
+	 * the options chain need to be modified and taken into account when
+	 * sending back to peer.
+	 */
+	if (result == BT_L2CAP_CONF_UNACCEPT) {
+		l2cap_br_conf_add_mtu(buf, BR_CHAN(chan)->tx.mtu);
+	}
+
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+}
+
 static struct bt_l2cap_br_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
 						       uint16_t cid)
 {
@@ -772,6 +910,9 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	case BT_L2CAP_CONF_RSP:
 		l2cap_br_conf_rsp(l2cap, hdr->ident, len, buf);
+		break;
+	case BT_L2CAP_CONF_REQ:
+		l2cap_br_conf_req(l2cap, hdr->ident, len, buf);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
