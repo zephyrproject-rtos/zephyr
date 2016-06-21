@@ -30,6 +30,7 @@
 
 #include <net/net_if.h>
 #include <net/net_core.h>
+#include <net/net_context.h>
 
 #if defined(CONFIG_NETWORKING_WITH_BT)
 #include <bluetooth/bluetooth.h>
@@ -155,7 +156,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return NULL;
 	}
 
-	*mcast_recv5 = net_context_get(IPPROTO_UDP,
+	*mcast_recv6 = net_context_get(IPPROTO_UDP,
 				       &any_addr6, 0,
 				       &mcast_addr6, MY_PORT);
 	if (!*mcast_recv6) {
