@@ -135,13 +135,15 @@ config	FAULT_DUMP
 	default 2
 	range 0 2
 	help
-	  Different levels for display information when a fault occurs.
+	Different levels for display information when a fault occurs.
 
-	  2: The default. Display specific and verbose information. Consumes
-	     the most memory (long strings).
-	  1: Display general and short information. Consumes less memory
-	     (short strings).
-	  0: Off.
+	2: The default. Display specific and verbose information. Consumes
+		the most memory (long strings).
+
+	1: Display general and short information. Consumes less memory
+		(short strings).
+
+	0: Off.
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
