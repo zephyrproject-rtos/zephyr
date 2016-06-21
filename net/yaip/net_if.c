@@ -59,8 +59,6 @@ static void net_if_tx_fiber(struct net_if *iface)
 {
 	struct net_if_api *api = (struct net_if_api *)iface->dev->driver_api;
 
-	api = (struct net_if_api *) iface->dev->driver_api;
-
 	NET_ASSERT(api && api->init && api->send);
 
 	NET_DBG("Starting TX fiber (stack %d bytes) for driver %p queue %p",
