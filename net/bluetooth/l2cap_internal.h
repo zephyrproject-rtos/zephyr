@@ -69,6 +69,22 @@ struct bt_l2cap_conn_rsp {
 	uint16_t status;
 } __packed;
 
+#define BT_L2CAP_CONF_REQ		0x04
+struct bt_l2cap_conf_req {
+	uint16_t dcid;
+	uint16_t flags;
+	uint8_t  data[0];
+} __packed;
+
+/* Option type used by MTU config request data */
+#define BT_L2CAP_CONF_OPT_MTU		0x01
+
+struct bt_l2cap_conf_opt {
+	uint8_t type;
+	uint8_t len;
+	uint8_t data[0];
+} __packed;
+
 #define BT_L2CAP_DISCONN_REQ		0x06
 struct bt_l2cap_disconn_req {
 	uint16_t dcid;

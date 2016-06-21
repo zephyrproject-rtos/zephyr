@@ -49,6 +49,7 @@
 #define L2CAP_BR_DYN_CID_END	0xffff
 
 #define L2CAP_BR_MIN_MTU	48
+#define L2CAP_BR_DEFAULT_MTU	672
 
 #define L2CAP_BR_PSM_SDP	0x0001
 
@@ -385,6 +386,54 @@ static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
 	return NULL;
 }
 
+static void l2cap_br_conf_add_mtu(struct net_buf *buf, const uint16_t mtu)
+{
+	net_buf_add_u8(buf, BT_L2CAP_CONF_OPT_MTU);
+	net_buf_add_u8(buf, sizeof(mtu));
+	net_buf_add_le16(buf, mtu);
+}
+
+static void l2cap_br_conf(struct bt_l2cap_chan *chan)
+{
+	struct bt_conn *conn = chan->conn;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_conf_req *conf;
+	struct net_buf *buf;
+
+	buf = bt_l2cap_create_pdu(&br_sig);
+	if (!buf) {
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_CONF_REQ;
+	hdr->ident = l2cap_br_get_ident();
+	conf = net_buf_add(buf, sizeof(*conf));
+	memset(conf, 0, sizeof(*conf));
+
+	conf->dcid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
+	/*
+	 * Add MTU option if app set non default BR/EDR L2CAP MTU,
+	 * otherwise sent emtpy configuration data meaning default MTU
+	 * to be used.
+	 */
+	if (BR_CHAN(chan)->rx.mtu != L2CAP_BR_DEFAULT_MTU) {
+		l2cap_br_conf_add_mtu(buf, BR_CHAN(chan)->rx.mtu);
+	}
+
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+
+	/*
+	 * TODO:
+	 * 1. start tracking number of configuration iterations on
+	 *    on both directions
+	 * 2. add individual command timeout guard
+	 * 3. might be the option to add overall configuration phase
+	 *    timeout (max 120sec)
+	 */
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+}
+
 static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 			      struct net_buf *buf)
 {
@@ -477,6 +526,11 @@ done:
 	/* Disconnect link when security rules were violated */
 	if (result == BT_L2CAP_ERR_SEC_BLOCK) {
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+		return;
+	}
+
+	if (result == BT_L2CAP_SUCCESS) {
+		l2cap_br_conf(chan);
 	}
 }
 
