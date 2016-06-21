@@ -19,9 +19,26 @@
 #include <nano_private.h>
 #include <misc/printk.h>
 
-/* TODO initialize with sentinel values */
-const NANO_ESF _default_esf;
-
+const NANO_ESF _default_esf = {
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad,
+	0xdeadbaad
+};
 
 /**
  *
@@ -42,21 +59,72 @@ const NANO_ESF _default_esf;
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *esf)
 {
-	/* STUB TODO: dump out reason for the error and any interesting
-	 * info in esf
-	 */
+#ifdef CONFIG_PRINTK
+	switch (reason) {
+	case _NANO_ERR_CPU_EXCEPTION:
+	case _NANO_ERR_SPURIOUS_INT:
+		break;
+
+	case _NANO_ERR_INVALID_TASK_EXIT:
+		printk("***** Invalid Exit Software Error! *****\n");
+		break;
+
+
+	case _NANO_ERR_ALLOCATION_FAIL:
+		printk("**** Kernel Allocation Failure! ****\n");
+		break;
+
+	default:
+		printk("**** Unknown Fatal Error %d! ****\n", reason);
+		break;
+	}
+
+	printk("Current thread ID: 0x%x\n"
+	       "Faulting instruction: 0x%x\n"
+	       " r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x\n"
+	       " r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x\n"
+	       " r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x\n"
+	       "r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x\n"
+	       "estatus: %x\n", sys_thread_self_get(), esf->instr,
+	       esf->r1, esf->r2, esf->r3, esf->r4,
+	       esf->r5, esf->r6, esf->r7, esf->r8,
+	       esf->r9, esf->r10, esf->r11, esf->r12,
+	       esf->r13, esf->r14, esf->r15, esf->ra,
+	       esf->estatus);
+#endif
 
 	_SysFatalErrorHandler(reason, esf);
 }
 
 
 
-FUNC_NORETURN void _Fault(void)
+FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 {
-	/* STUB TODO dump out reason for this exception */
+#ifdef CONFIG_PRINTK
+	/* Unfortunately, completely unavailable on Nios II/e cores */
+#ifdef NIOS2_HAS_EXTRA_EXCEPTION_INFO
+	uint32_t exc_reg, badaddr_reg, eccftl;
+	enum nios2_exception_cause cause;
 
-	_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
+	exc_reg = _nios2_creg_read(NIOS2_CR_EXCEPTION);
+
+	/* Bit 31 indicates potentially fatal ECC error */
+	eccftl = (exc_reg & NIOS2_EXCEPTION_REG_ECCFTL_MASK) != 0;
+
+	/* Bits 2-6 contain the cause code */
+	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
+		 >> NIOS2_EXCEPTION_REG_CAUSE_OFST;
+	printk("Exception cause: 0x%x ECCFTL: %d\n", exc_reg, eccftl);
+	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
+		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
+		printk("Badaddr: 0x%x\n", badaddr_reg);
+	}
+#endif /* NIOS2_HAS_EXTRA_EXCEPTION_INFO */
+#endif /* CONFIG_PRINTK */
+
+	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 }
+
 
 /**
  *
@@ -74,20 +142,42 @@ FUNC_NORETURN void _Fault(void)
  * information to a persistent repository and/or rebooting the system.
  *
  * @param reason the fatal error reason
- * @param pEsf the pointer to the exception stack frame
+ * @param pEsf pointer to exception stack frame
  *
- * @return This function does not return.
+ * @return N/A
  */
 FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
-					 const NANO_ESF *esf)
+					 const NANO_ESF *pEsf)
 {
-	/* STUB TODO try to abort task/fibers like in the x86 implementation */
-	printk("Fatal error!\n");
+	nano_context_type_t curCtx = sys_execution_context_type_get();
 
-	while (1) {
-		/* whee! */
+	ARG_UNUSED(reason);
+	ARG_UNUSED(pEsf);
+
+	if ((curCtx != NANO_CTX_ISR) && !_is_thread_essential()) {
+#ifdef CONFIG_MICROKERNEL
+		if (curCtx == NANO_CTX_TASK) {
+			extern FUNC_NORETURN void _TaskAbort(void);
+			printk("Fatal task error! Aborting task.\n");
+			_TaskAbort();
+		} else
+#endif /* CONFIG_MICROKERNEL */
+		{
+			printk("Fatal fiber error! Aborting fiber.\n");
+			fiber_abort();
+		}
+		CODE_UNREACHABLE;
 	}
+
+	printk("Fatal fault in %s ! Spinning...\n",
+	       curCtx == NANO_CTX_ISR
+		       ? "ISR"
+		       : curCtx == NANO_CTX_FIBER ? "essential fiber"
+						  : "essential task");
+#ifdef NIOS2_HAS_DEBUG_STUB
+	_nios2_break();
+#endif
+	for (;;)
+		; /* Spin forever */
 }
-
-
 

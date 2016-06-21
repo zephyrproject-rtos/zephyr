@@ -154,6 +154,7 @@ struct s_NANO {
 
 typedef struct s_NANO tNANO;
 extern tNANO _nanokernel;
+extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
 
 /* Arch-specific nanokernel APIs */
@@ -162,7 +163,8 @@ void nano_cpu_atomic_idle(unsigned int key);
 
 static ALWAYS_INLINE void nanoArchInit(void)
 {
-	/* STUB */
+	_nanokernel.irq_sp = (char *)STACK_ROUND_DOWN(_interrupt_stack +
+						      CONFIG_ISR_STACK_SIZE);
 }
 
 static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber,
