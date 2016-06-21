@@ -141,6 +141,7 @@ S:	Supported
 F:	arch/nios2/
 F:	include/arch/nios2/
 F:	drivers/serial/uart_altera_jtag.c
+F:	drivers/timer/altera_avalon_timer.c
 
 NORDIC MDK
 M:	Carles Cufi <carles.cufi@nordicsemi.no>
