@@ -534,6 +534,48 @@ done:
 	}
 }
 
+static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
+			      uint16_t len, struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_conf_rsp *rsp = (void *)buf->data;
+	uint16_t flags, scid, result, opt_len;
+
+	if (buf->len < sizeof(*rsp)) {
+		BT_ERR("Too small L2CAP conf rsp packet size");
+		return;
+	}
+
+	flags = sys_le16_to_cpu(rsp->flags);
+	scid = sys_le16_to_cpu(rsp->scid);
+	result = sys_le16_to_cpu(rsp->result);
+	opt_len = len - sizeof(*rsp);
+
+	BT_DBG("scid 0x%04x flags 0x%02x result 0x%02x len %u", scid, flags,
+	       result, opt_len);
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, scid);
+	if (!chan) {
+		BT_ERR("channel mismatch!");
+		return;
+	}
+
+	/*
+	 * TODO: handle other results than success and parse response data if
+	 * available
+	 */
+	switch (result) {
+	case BT_L2CAP_CONF_SUCCESS:
+		BT_DBG("local MTU %u", BR_CHAN(chan)->rx.mtu);
+		break;
+	default:
+		/* currently disconnect channel on non success result */
+		bt_l2cap_chan_disconnect(chan);
+		break;
+	}
+}
+
 int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 {
 	if (server->psm < L2CAP_BR_PSM_START || !server->accept) {
@@ -744,6 +786,10 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	case BT_L2CAP_CONN_REQ:
 		l2cap_br_conn_req(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_CONF_RSP:
+		l2cap_br_conf_rsp(l2cap, hdr->ident, sys_le16_to_cpu(hdr->len),
+				  buf);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);

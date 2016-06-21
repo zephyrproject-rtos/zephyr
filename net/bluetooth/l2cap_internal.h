@@ -69,10 +69,20 @@ struct bt_l2cap_conn_rsp {
 	uint16_t status;
 } __packed;
 
+#define BT_L2CAP_CONF_SUCCESS		0x0000
+
 #define BT_L2CAP_CONF_REQ		0x04
 struct bt_l2cap_conf_req {
 	uint16_t dcid;
 	uint16_t flags;
+	uint8_t  data[0];
+} __packed;
+
+#define BT_L2CAP_CONF_RSP		0x05
+struct bt_l2cap_conf_rsp {
+	uint16_t scid;
+	uint16_t flags;
+	uint16_t result;
 	uint8_t  data[0];
 } __packed;
 
