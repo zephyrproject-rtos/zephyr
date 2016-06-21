@@ -111,12 +111,10 @@ SECTION_FUNC(exception.entry, _exception)
 
 BRANCH_LABEL(on_irq_stack)
 
-#if 0 /* TODO enable interrupt handling code */
 	/* Enter C interrupt handling code. Value of ipending will be the
 	 * function parameter since we put it in r4
 	 */
 	call _enter_irq
-#endif
 
 	/* Interrupt handler finished and the interrupt should be serviced
 	 * now, the appropriate bits in ipending should be cleared */

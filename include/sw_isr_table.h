@@ -24,6 +24,8 @@
 #ifndef _SW_ISR_TABLE__H_
 #define _SW_ISR_TABLE__H_
 
+#include <arch/cpu.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,6 +45,8 @@ typedef struct _IsrTableEntry _IsrTableEntry_t;
 
 #ifdef CONFIG_ARC
 extern _IsrTableEntry_t _sw_isr_table[CONFIG_NUM_IRQS - 16];
+#elif CONFIG_NIOS2
+extern _IsrTableEntry_t _sw_isr_table[NIOS2_NIRQ];
 #else
 extern _IsrTableEntry_t _sw_isr_table[CONFIG_NUM_IRQS];
 #endif

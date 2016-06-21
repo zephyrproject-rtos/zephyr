@@ -133,7 +133,7 @@ A##a:
 
 #if defined(_ASMLANGUAGE) && !defined(_LINKER)
 
-#ifdef CONFIG_ARM
+#if defined(CONFIG_ARM) || defined(CONFIG_NIOS2)
 #define GTEXT(sym) .global FUNC(sym); .type FUNC(sym), %function
 #define GDATA(sym) .global FUNC(sym); .type FUNC(sym), %object
 #define WTEXT(sym) .weak FUNC(sym); .type FUNC(sym), %function

@@ -14,9 +14,27 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ * @brief Nios II C-domain interrupt management code for use with Internal
+ * Interrupt Controller (IIC)
+ */
+
+
 #include <nanokernel.h>
+#include <nano_private.h>
 #include <arch/cpu.h>
 #include <irq.h>
+#include <misc/printk.h>
+#include <sw_isr_table.h>
+
+void _irq_spurious(void *unused)
+{
+	ARG_UNUSED(unused);
+	printk("Spurious interrupt detected! ipending: %x\n",
+	       _nios2_creg_read(NIOS2_CR_IPENDING));
+	_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, &_default_esf);
+}
 
 
 void _arch_irq_enable(unsigned int irq)
@@ -32,6 +50,7 @@ void _arch_irq_enable(unsigned int irq)
 
 	irq_unlock(key);
 };
+
 
 
 void _arch_irq_disable(unsigned int irq)
@@ -64,4 +83,26 @@ int _arch_irq_connect_dynamic(unsigned int irq,
 	/* STUB. May never implement this, part of a deprecated API */
 	return -1;
 };
+
+/**
+ * @brief Interrupt demux function
+ *
+ * Given a bitfield of pending interrupts, execute the appropriate handler
+ *
+ * @param ipending Bitfield of interrupts
+ */
+void _enter_irq(uint32_t ipending)
+{
+	int index;
+
+	while (ipending) {
+		_IsrTableEntry_t *ite;
+
+		index = find_lsb_set(ipending) - 1;
+		ipending &= ~(1 << index);
+
+		ite = &_sw_isr_table[index];
+		ite->isr(ite->arg);
+	}
+}
 

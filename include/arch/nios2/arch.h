@@ -43,9 +43,46 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <irq.h>
+#include <sw_isr_table.h>
 
-/* STUB. Eventually port ARC/ARM interrupt stuff */
-#define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
+/**
+ * Configure a static interrupt.
+ *
+ * All arguments must be computable by the compiler at build time; if this
+ * can't be done use irq_connect_dynamic() instead.
+ *
+ * Internally this function does a few things:
+ *
+ * 1. The enum statement has no effect but forces the compiler to only
+ * accept constant values for the irq_p parameter, very important as the
+ * numerical IRQ line is used to create a named section.
+ *
+ * 2. An instance of _IsrTableEntry is created containing the ISR and its
+ * parameter. If you look at how _sw_isr_table is created, each entry in the
+ * array is in its own section named by the IRQ line number. What we are doing
+ * here is to override one of the default entries (which points to the
+ * spurious IRQ handler) with what was supplied here.
+ *
+ * There is no notion of priority with the Nios II internal interrupt
+ * controller and no flags are currently supported.
+ *
+ * @param irq_p IRQ line number
+ * @param priority_p Interrupt priority (ignored)
+ * @param isr_p Interrupt service routine
+ * @param isr_param_p ISR parameter
+ * @param flags_p IRQ triggering options (currently unused)
+ *
+ * @return The vector assigned to this interrupt
+ */
+#define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+({ \
+	enum { IRQ = irq_p }; \
+	static struct _IsrTableEntry _CONCAT(_isr_irq, irq_p) \
+		__attribute__ ((used))  \
+		__attribute__ ((section(STRINGIFY(_CONCAT(.gnu.linkonce.isr_irq, irq_p))))) = \
+			{isr_param_p, isr_p}; \
+	irq_p; \
+})
 
 static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 {
