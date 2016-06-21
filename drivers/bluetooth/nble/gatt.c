@@ -1437,6 +1437,7 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 	struct net_buf *buf;
 	struct nble_gatts_write_reply_req rsp = {
 		.conn_handle = evt->conn_handle,
+		.status = 0,
 	};
 
 	BT_DBG("handle 0x%04x", evt->conn_handle);
@@ -1457,8 +1458,11 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 			continue;
 		}
 
-		/* Just discard the data if an error was set */
-		if (!rsp.status && evt->flag == 0x01) {
+		/*
+		 * Dispatch the callback in case of success (status >= 0).
+		 * Ignore in case of error (status < 0).
+		 */
+		if (rsp.status >= 0 && evt->flag == NBLE_GATT_EX_FLAG_EXECUTE) {
 			rsp.status = attr->write(conn, attr, buf->data,
 						 buf->len, ev->offset);
 		}

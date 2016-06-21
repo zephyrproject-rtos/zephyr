@@ -92,8 +92,14 @@ struct nble_gatts_write_reply_req {
 
 void nble_gatts_write_reply_req(const struct nble_gatts_write_reply_req *req);
 
+enum nble_gatt_ex_flag {
+	NBLE_GATT_EX_FLAG_CANCEL,
+	NBLE_GATT_EX_FLAG_EXECUTE,
+};
+
 struct nble_gatts_write_exec_evt {
 	uint16_t conn_handle;
+	/* see nble_gatt_ex_flag */
 	uint8_t flag;
 };
 
