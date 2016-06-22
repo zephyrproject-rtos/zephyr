@@ -239,7 +239,7 @@ static inline bool net_is_ipv6_addr_loopback(struct in6_addr *addr)
  *
  * @return True if address is multicast address, False otherwise.
  */
-static inline bool net_is_ipv6_addr_mcast(struct in6_addr *addr)
+static inline bool net_is_ipv6_addr_mcast(const struct in6_addr *addr)
 {
 	return addr->s6_addr[0] == 0xFF;
 }
@@ -286,7 +286,8 @@ static inline bool net_is_my_ipv6_maddr(struct in6_addr *maddr)
  *
  * @return True if addresses are the same, False otherwise.
  */
-static inline bool net_is_ipv6_prefix(uint8_t *addr1, uint8_t *addr2,
+static inline bool net_is_ipv6_prefix(const uint8_t *addr1,
+				      const uint8_t *addr2,
 				      uint8_t length)
 {
 	uint8_t bits = 128 - length;
@@ -318,7 +319,7 @@ extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
  * @return True if IPv4 address is found in one of the network interfaces,
  * False otherwise.
  */
-static inline bool net_is_my_ipv4_addr(struct in_addr *addr)
+static inline bool net_is_my_ipv4_addr(const struct in_addr *addr)
 {
 	return net_if_ipv4_addr_lookup(addr, NULL) != NULL;
 }

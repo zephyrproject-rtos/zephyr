@@ -51,7 +51,7 @@ char *net_byte_to_hex(uint8_t *ptr, uint8_t byte, char base, bool pad)
 	return ptr;
 }
 
-char *net_sprint_ll_addr_buf(uint8_t *ll, uint8_t ll_len,
+char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 			     char *buf, int buflen)
 {
 	uint8_t i, len, blen;
@@ -106,7 +106,8 @@ static int net_value_to_udec(char *buf, uint32_t value, int precision)
 	return buf - start;
 }
 
-char *net_sprint_ip_addr_buf(uint8_t *ip, int ip_len, char *buf, int buflen)
+char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
+			     char *buf, int buflen)
 {
 	uint16_t *w = (uint16_t *)ip;
 	uint8_t i, bl, bh, longest = 1;
