@@ -33,7 +33,11 @@
 #include <net/net_ip.h>
 #include <net/ethernet.h>
 
-#define NET_DEBUG 1
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_UDP)
+#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#else
+#define DBG(fmt, ...)
+#endif
 
 #include "udp.h"
 #include "net_private.h"
@@ -84,11 +88,11 @@ static int send_status = -EINVAL;
 static int tester_send(struct net_if *iface, struct net_buf *buf)
 {
 	if (!buf->frags) {
-		printk("No data to send!\n");
+		DBG("No data to send!\n");
 		return -ENODATA;
 	}
 
-	printk("Data was sent successfully\n");
+	DBG("Data was sent successfully\n");
 
 	net_nbuf_unref(buf);
 
@@ -146,7 +150,7 @@ static enum net_verdict test_ok(struct net_buf *buf, void *user_data)
 	if (!ud) {
 		fail = true;
 
-		printk("Test %s failed.", ud->test);
+		DBG("Test %s failed.", ud->test);
 
 		return NET_DROP;
 	}
