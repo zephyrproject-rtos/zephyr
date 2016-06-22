@@ -77,6 +77,8 @@ static enum net_verdict handle_echo_request(struct net_buf *buf)
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
+	net_nbuf_ll_swap(buf);
+
 #if NET_DEBUG > 0
 	snprintf(out, sizeof(out),
 		 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
