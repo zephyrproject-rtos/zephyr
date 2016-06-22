@@ -98,9 +98,9 @@ static int net_driver_ethernet_send(struct net_buf *buf)
 
 void net_driver_ethernet_recv(struct net_buf *buf)
 {
-#ifdef CONFIG_NETWORKING_WITH_IPV4
 	struct uip_eth_hdr *eth_hdr = (struct uip_eth_hdr *)uip_buf(buf);
 
+#ifdef CONFIG_NETWORKING_WITH_IPV4
 	if (eth_hdr->type == uip_htons(UIP_ETHTYPE_ARP)) {
 		uip_arp_arpin(buf);
 
@@ -127,9 +127,15 @@ void net_driver_ethernet_recv(struct net_buf *buf)
 		ip_buf_unref(buf);
 	} else
 #endif
-
-	if (net_recv(buf) != 0) {
-		NET_ERR("Unexpected return value from net_recv.\n");
+	if (eth_hdr->type == uip_htons(UIP_ETHTYPE_IP) ||
+	    eth_hdr->type == uip_htons(UIP_ETHTYPE_IPV6)) {
+		if (net_recv(buf) != 0) {
+			NET_ERR("Unexpected return value from net_recv.\n");
+			ip_buf_unref(buf);
+		}
+	} else {
+		NET_DBG("Dropping unknown ethertype %x\n",
+			uip_ntohs(eth_hdr->type));
 		ip_buf_unref(buf);
 	}
 }
