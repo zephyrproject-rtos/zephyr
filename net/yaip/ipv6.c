@@ -1085,7 +1085,7 @@ static inline void handle_prefix_autonomous(struct net_buf *buf,
 	net_ipv6_addr_create_iid(&addr,
 				 net_if_get_link_addr(net_nbuf_iface(buf)));
 
-	ifaddr = net_if_ipv6_addr_lookup(&addr);
+	ifaddr = net_if_ipv6_addr_lookup(&addr, NULL);
 	if (ifaddr && ifaddr->addr_type == NET_ADDR_AUTOCONF) {
 		if (prefix_info->valid_lifetime ==
 		    NET_IPV6_ND_INFINITE_LIFETIME) {

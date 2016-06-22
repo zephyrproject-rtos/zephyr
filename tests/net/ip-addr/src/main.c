@@ -252,7 +252,7 @@ void main(void)
 		return;
 	}
 
-	ifaddr2 = net_if_ipv6_addr_lookup(&addr6);
+	ifaddr2 = net_if_ipv6_addr_lookup(&addr6, NULL);
 	if (ifaddr1 != ifaddr2) {
 		printk("IPv6 interface address mismatch\n");
 		return;

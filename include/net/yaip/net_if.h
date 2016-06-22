@@ -410,10 +410,12 @@ struct net_if *net_if_get_default(void);
  * @brief Check if this IPv6 address belongs to one of the interfaces.
  *
  * @param addr IPv6 address
+ * @param iface Pointer to interface is returned
  *
  * @return Pointer to interface address, NULL if not found.
  */
-struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr);
+struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
+					    struct net_if **iface);
 
 /**
  * @brief Check if this IPv6 address belongs to this specific interfaces.
@@ -496,10 +498,12 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, struct in6_addr *addr);
  * @brief Check if this IPv6 multicast address belongs to one of the interfaces.
  *
  * @param addr IPv6 address
+ * @param iface Pointer to interface is returned
  *
  * @return Pointer to interface multicast address, NULL if not found.
  */
-struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *addr);
+struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
+						   struct net_if **iface);
 
 /**
  * @brief Check if this IPv6 prefix belongs to this interface
@@ -723,10 +727,12 @@ static inline uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
  * @brief Check if this IPv4 address belongs to one of the interfaces.
  *
  * @param addr IPv4 address
+ * @param iface Interface is returned
  *
  * @return Pointer to interface address, NULL if not found.
  */
-struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr);
+struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
+					    struct net_if **iface);
 
 /**
  * @brief Add a IPv4 address to an interface

@@ -244,7 +244,10 @@ static inline bool net_is_ipv6_addr_mcast(struct in6_addr *addr)
 	return addr->s6_addr[0] == 0xFF;
 }
 
-extern struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr);
+struct net_if;
+
+extern struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
+						   struct net_if **iface);
 
 /**
  * @brief Check if IPv6 address is found in one of the network interfaces.
@@ -255,10 +258,11 @@ extern struct net_if_addr *net_if_ipv6_addr_lookup(struct in6_addr *addr);
  */
 static inline bool net_is_my_ipv6_addr(struct in6_addr *addr)
 {
-	return net_if_ipv6_addr_lookup(addr) != NULL;
+	return net_if_ipv6_addr_lookup(addr, NULL) != NULL;
 }
 
-extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *addr);
+extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
+							  struct net_if **iface);
 
 /**
  * @brief Check if IPv6 multicast address is found in one of the
@@ -270,7 +274,7 @@ extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(struct in6_addr *addr)
  */
 static inline bool net_is_my_ipv6_maddr(struct in6_addr *maddr)
 {
-	return net_if_ipv6_maddr_lookup(maddr) != NULL;
+	return net_if_ipv6_maddr_lookup(maddr, NULL) != NULL;
 }
 
 /**
@@ -302,7 +306,8 @@ static inline bool net_is_ipv6_prefix(uint8_t *addr1, uint8_t *addr2,
 		(addr2[16 - bytes] & ((8 - remain) << 8)));
 }
 
-extern struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr);
+extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
+						   struct net_if **iface);
 
 /**
  * @brief Check if the IPv4 address is assigned to any network interface
@@ -315,7 +320,7 @@ extern struct net_if_addr *net_if_ipv4_addr_lookup(struct in_addr *addr);
  */
 static inline bool net_is_my_ipv4_addr(struct in_addr *addr)
 {
-	return net_if_ipv4_addr_lookup(addr) != NULL;
+	return net_if_ipv4_addr_lookup(addr, NULL) != NULL;
 }
 
 /**
