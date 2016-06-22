@@ -28,6 +28,7 @@
 #include <string.h>
 #include <misc/printk.h>
 #include <misc/byteorder.h>
+#include <zephyr.h>
 
 #include <console/uart_console.h>
 #include <bluetooth/bluetooth.h>
@@ -39,6 +40,7 @@
 #include <misc/shell.h>
 
 #include <gatt/gap.h>
+#include <gatt/hrs.h>
 
 #define DEVICE_NAME		"test shell"
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
@@ -1181,6 +1183,32 @@ static int cmd_gatt_register_test_svc(int argc, char *argv[])
 	return 0;
 }
 
+static bool hrs_simulate;
+
+static int cmd_hrs_simulate(int argc, char *argv[])
+{
+	if (!strcmp(argv[1], "on")) {
+		static bool hrs_registered;
+
+		if (!hrs_registered) {
+			printk("Register HRS Serice\n");
+			hrs_init(0x01);
+			hrs_registered = true;
+		}
+
+		printk("Start HRS simulation\n");
+		hrs_simulate = true;
+	} else if (!strcmp(argv[1], "off")) {
+		printk("Stop HRS simulation\n");
+		hrs_simulate = false;
+	} else {
+		printk("Incorrect value: %s\n", argv[1]);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
@@ -1933,6 +1961,8 @@ static const struct shell_cmd commands[] = {
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe, HELP_NONE },
 	{ "gatt-register-service", cmd_gatt_register_test_svc,
 	  "register pre-predefined test service" },
+	{ "hrs-simulate", cmd_hrs_simulate,
+	  "register and simulate Heart Rate Service <value: on, off>" },
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	{ "l2cap-register", cmd_l2cap_register, "<psm>" },
 	{ "l2cap-connect", cmd_l2cap_connect, "<psm>" },
@@ -1965,4 +1995,13 @@ void main(void)
 	shell_init("btshell> ", commands);
 
 	shell_register_prompt_handler(current_prompt);
+
+	while (1) {
+		task_sleep(sys_clock_ticks_per_sec);
+
+		/* Heartrate measurements simulation */
+		if (hrs_simulate) {
+			hrs_notify();
+		}
+	}
 }
