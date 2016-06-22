@@ -1394,8 +1394,9 @@ static unsigned char *handle_xml_query(unsigned char *packet)
 static const char *supported_features_cmd =
 	"PacketSize=%x;qXfer:features:read+;QStartNoAckMode+"
 #ifdef GDB_ARCH_HAS_REMOTE_SERIAL_EXT_USING_NOTIF_PACKETS
-	";" CONFIG_GDB_REMOTE_SERIAL_EXT_NOTIF_PREFIX_STR "+";
+	";" CONFIG_GDB_REMOTE_SERIAL_EXT_NOTIF_PREFIX_STR "+"
 #endif
+	;
 
 static unsigned char *handle_general_query(unsigned char *packet)
 {
