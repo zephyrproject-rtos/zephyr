@@ -80,7 +80,7 @@ static void net_udp_iface_init(struct net_if *iface)
 {
 	uint8_t *mac = net_udp_get_mac(net_if_get_device(iface));
 
-	net_if_set_link_addr(iface, mac, 8);
+	net_if_set_link_addr(iface, mac, 6);
 }
 
 static int send_status = -EINVAL;
