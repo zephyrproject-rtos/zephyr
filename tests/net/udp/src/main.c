@@ -131,8 +131,8 @@ NET_DEVICE_INIT(net_udp_test, "net_udp_test",
 		&net_udp_if_api, _ETH_L2_LAYER, 127);
 
 struct ud {
-	const struct net_addr *remote_addr;
-	const struct net_addr *local_addr;
+	const struct sockaddr *remote_addr;
+	const struct sockaddr *local_addr;
 	uint16_t remote_port;
 	uint16_t local_port;
 	char *test;
@@ -329,6 +329,31 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 	return !fail;
 }
 
+static void set_port(sa_family_t family, struct sockaddr *raddr,
+		     struct sockaddr *laddr, uint16_t rport,
+		     uint16_t lport)
+{
+	if (family == AF_INET6) {
+		if (raddr) {
+			((struct sockaddr_in6 *)raddr)->
+				sin6_port = htons(rport);
+		}
+		if (laddr) {
+			((struct sockaddr_in6 *)laddr)->
+				sin6_port = htons(lport);
+		}
+	} else if (family == AF_INET) {
+		if (raddr) {
+			((struct sockaddr_in *)raddr)->
+				sin_port = htons(rport);
+		}
+		if (laddr) {
+			((struct sockaddr_in *)laddr)->
+				sin_port = htons(lport);
+		}
+	}
+}
+
 void main_fiber(void)
 {
 	void *handlers[CONFIG_NET_MAX_CONN];
@@ -338,43 +363,43 @@ void main_fiber(void)
 	int ret, i = 0;
 	bool st;
 
-	struct net_addr any_addr6;
+	struct sockaddr_in6 any_addr6;
 	const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 
-	struct net_addr my_addr6;
+	struct sockaddr_in6 my_addr6;
 	struct in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-	struct net_addr peer_addr6;
+	struct sockaddr_in6 peer_addr6;
 	struct in6_addr in6addr_peer = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0x4e, 0x11, 0, 0, 0x2 } } };
 
-	struct net_addr any_addr4;
+	struct sockaddr_in any_addr4;
 	const struct in_addr in4addr_any = { { { 0 } } };
 
-	struct net_addr my_addr4;
+	struct sockaddr_in my_addr4;
 	struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
 
-	struct net_addr peer_addr4;
+	struct sockaddr_in peer_addr4;
 	struct in_addr in4addr_peer = { { { 192, 0, 2, 9 } } };
 
-	net_ipaddr_copy(&any_addr6.in6_addr, &in6addr_any);
-	any_addr6.family = AF_INET6;
+	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_any);
+	any_addr6.sin6_family = AF_INET6;
 
-	net_ipaddr_copy(&my_addr6.in6_addr, &in6addr_my);
-	my_addr6.family = AF_INET6;
+	net_ipaddr_copy(&my_addr6.sin6_addr, &in6addr_my);
+	my_addr6.sin6_family = AF_INET6;
 
-	net_ipaddr_copy(&peer_addr6.in6_addr, &in6addr_peer);
-	peer_addr6.family = AF_INET6;
+	net_ipaddr_copy(&peer_addr6.sin6_addr, &in6addr_peer);
+	peer_addr6.sin6_family = AF_INET6;
 
-	net_ipaddr_copy(&any_addr4.in_addr, &in4addr_any);
-	any_addr4.family = AF_INET;
+	net_ipaddr_copy(&any_addr4.sin_addr, &in4addr_any);
+	any_addr4.sin_family = AF_INET;
 
-	net_ipaddr_copy(&my_addr4.in_addr, &in4addr_my);
-	my_addr4.family = AF_INET;
+	net_ipaddr_copy(&my_addr4.sin_addr, &in4addr_my);
+	my_addr4.sin_family = AF_INET;
 
-	net_ipaddr_copy(&peer_addr4.in_addr, &in4addr_peer);
-	peer_addr4.family = AF_INET;
+	net_ipaddr_copy(&peer_addr4.sin_addr, &in4addr_peer);
+	peer_addr4.sin_family = AF_INET;
 
 	nano_sem_init(&recv_lock);
 
@@ -392,17 +417,22 @@ void main_fiber(void)
 		return;
 	}
 
-#define REGISTER(raddr, laddr, rport, lport)				\
+#define REGISTER(family, raddr, laddr, rport, lport)			\
 	({								\
 		static struct ud user_data;				\
 									\
-		user_data.remote_addr = raddr;				\
-		user_data.local_addr = laddr;				\
+		user_data.remote_addr = (struct sockaddr *)raddr;	\
+		user_data.local_addr =  (struct sockaddr *)laddr;	\
 		user_data.remote_port = rport;				\
 		user_data.local_port = lport;				\
 		user_data.test = #raddr"-"#laddr"-"#rport"-"#lport;	\
 									\
-		ret = net_udp_register(raddr, laddr, rport, lport,	\
+		set_port(family, (struct sockaddr *)raddr,		\
+			 (struct sockaddr *)laddr, rport, lport);	\
+									\
+		ret = net_udp_register((struct sockaddr *)raddr,	\
+				       (struct sockaddr *)laddr,	\
+				       rport, lport,			\
 				       test_ok, &user_data,		\
 				       &handlers[i]);			\
 		if (ret) {						\
@@ -415,8 +445,10 @@ void main_fiber(void)
 	})
 
 #define REGISTER_FAIL(raddr, laddr, rport, lport)			\
-	ret = net_udp_register(raddr, laddr, rport, lport, test_fail,	\
-			       INT_TO_POINTER(0), NULL);		\
+	ret = net_udp_register((struct sockaddr *)raddr,		\
+			       (struct sockaddr *)laddr,		\
+			       rport, lport,				\
+			       test_fail, INT_TO_POINTER(0), NULL);	\
 	if (!ret) {							\
 		printk("UDP register invalid match %s failed\n",	\
 		       #raddr"-"#laddr"-"#rport"-"#lport);		\
@@ -467,47 +499,47 @@ void main_fiber(void)
 		return;							\
 	}
 
-	ud = REGISTER(&any_addr6, &any_addr6, 1234, 4242);
+	ud = REGISTER(AF_INET6, &any_addr6, &any_addr6, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	UNREGISTER(ud);
 
-	ud = REGISTER(&any_addr4, &any_addr4, 1234, 4242);
+	ud = REGISTER(AF_INET, &any_addr4, &any_addr4, 1234, 4242);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 4242);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 4242);
 	TEST_IPV4_FAIL(ud, &in4addr_peer, &in4addr_my, 1234, 4325);
 	TEST_IPV4_FAIL(ud, &in4addr_peer, &in4addr_my, 1234, 4325);
 	UNREGISTER(ud);
 
-	ud = REGISTER(&any_addr6, NULL, 1234, 4242);
+	ud = REGISTER(AF_INET6, &any_addr6, NULL, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	UNREGISTER(ud);
 
-	ud = REGISTER(NULL, &any_addr6, 1234, 4242);
+	ud = REGISTER(AF_INET6, NULL, &any_addr6, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 61400);
 	UNREGISTER(ud);
 
-	ud = REGISTER(&peer_addr6, &my_addr6, 1234, 4242);
+	ud = REGISTER(AF_INET6, &peer_addr6, &my_addr6, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 1234, 4243);
 
-	ud = REGISTER(&peer_addr4, &my_addr4, 1234, 4242);
+	ud = REGISTER(AF_INET, &peer_addr4, &my_addr4, 1234, 4242);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 4242);
 	TEST_IPV4_FAIL(ud, &in4addr_peer, &in4addr_my, 1234, 4243);
 
-	ud = REGISTER(NULL, NULL, 1234, 42423);
+	ud = REGISTER(AF_UNSPEC, NULL, NULL, 1234, 42423);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 42423);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 42423);
 
-	ud = REGISTER(NULL, NULL, 1234, 0);
+	ud = REGISTER(AF_UNSPEC, NULL, NULL, 1234, 0);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 42422);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 42422);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 1234, 42422);
@@ -516,13 +548,13 @@ void main_fiber(void)
 	TEST_IPV4_FAIL(ud, &in4addr_peer, &in4addr_my, 12345, 42421);
 	TEST_IPV6_FAIL(ud, &in6addr_peer, &in6addr_my, 12345, 42421);
 
-	ud = REGISTER(NULL, NULL, 0, 0);
+	ud = REGISTER(AF_UNSPEC, NULL, NULL, 0, 0);
 	TEST_IPV4_OK(ud, &in4addr_peer, &in4addr_my, 12345, 42421);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 12345, 42421);
 
 	/* Remote addr same as local addr, these two will never match */
-	REGISTER(&my_addr6, NULL, 1234, 4242);
-	REGISTER(&my_addr4, NULL, 1234, 4242);
+	REGISTER(AF_INET6, &my_addr6, NULL, 1234, 4242);
+	REGISTER(AF_INET, &my_addr4, NULL, 1234, 4242);
 
 	/* IPv4 remote addr and IPv6 remote addr, impossible combination */
 	REGISTER_FAIL(&my_addr4, &my_addr6, 1234, 4242);

@@ -370,13 +370,14 @@ int net_conn_unregister(void *handle)
 #if NET_DEBUG
 static inline
 void prepare_register_debug_print(char *dst, char *src,
-				  const struct net_addr *remote_addr,
-				  const struct net_addr *local_addr)
+				  const struct sockaddr *remote_addr,
+				  const struct sockaddr *local_addr)
 {
 	if (remote_addr && remote_addr->family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		snprintf(dst, sizeof(dst),
-			 net_sprint_ipv6_addr(&remote_addr->in6_addr));
+			 net_sprint_ipv6_addr(&net_sin6(remote_addr)->
+							sin6_addr));
 #else
 		snprintf(dst, sizeof(dst), "?");
 #endif
@@ -384,7 +385,8 @@ void prepare_register_debug_print(char *dst, char *src,
 	} else if (remote_addr && remote_addr->family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		snprintf(dst, sizeof(dst),
-			 net_sprint_ipv4_addr(&remote_addr->in_addr));
+			 net_sprint_ipv4_addr(&net_sin(remote_addr)->
+							sin_addr));
 #else
 		snprintf(dst, sizeof(dst), "?");
 #endif
@@ -396,7 +398,8 @@ void prepare_register_debug_print(char *dst, char *src,
 	if (local_addr && local_addr->family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		snprintf(src, sizeof(src),
-			 net_sprint_ipv6_addr(&local_addr->in6_addr));
+			 net_sprint_ipv6_addr(&net_sin6(local_addr)->
+							sin6_addr));
 #else
 		snprintf(src, sizeof(src), "?");
 #endif
@@ -404,7 +407,8 @@ void prepare_register_debug_print(char *dst, char *src,
 	} else if (local_addr && local_addr->family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		snprintf(src, sizeof(src),
-			 net_sprint_ipv4_addr(&local_addr->in_addr));
+			 net_sprint_ipv4_addr(&net_sin(local_addr)->
+							sin_addr));
 #else
 		snprintf(src, sizeof(src), "?");
 #endif
@@ -416,8 +420,8 @@ void prepare_register_debug_print(char *dst, char *src,
 #endif /* NET_DEBUG */
 
 int net_conn_register(enum ip_protocol proto,
-		      const struct net_addr *remote_addr,
-		      const struct net_addr *local_addr,
+		      const struct sockaddr *remote_addr,
+		      const struct sockaddr *local_addr,
 		      uint16_t remote_port,
 		      uint16_t local_port,
 		      net_conn_cb_t cb,
@@ -442,12 +446,13 @@ int net_conn_register(enum ip_protocol proto,
 			conns[i].flags |= NET_CONN_REMOTE_ADDR_SET;
 
 			memcpy(&conns[i].remote_addr, remote_addr,
-			       sizeof(struct net_addr));
+			       sizeof(struct sockaddr));
 
 #if defined(CONFIG_NET_IPV6)
 			if (remote_addr->family == AF_INET6) {
 				if (net_is_ipv6_addr_unspecified(
-					    &remote_addr->in6_addr)) {
+					    &net_sin6(remote_addr)->
+							sin6_addr)) {
 					rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_REMOTE_SPEC_ADDR;
@@ -457,7 +462,8 @@ int net_conn_register(enum ip_protocol proto,
 
 #if defined(CONFIG_NET_IPV4)
 			if (remote_addr->family == AF_INET) {
-				if (!remote_addr->in_addr.s_addr[0]) {
+				if (!net_sin(remote_addr)->
+							sin_addr.s_addr[0]) {
 					rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_REMOTE_SPEC_ADDR;
@@ -476,12 +482,13 @@ int net_conn_register(enum ip_protocol proto,
 			conns[i].flags |= NET_CONN_LOCAL_ADDR_SET;
 
 			memcpy(&conns[i].local_addr, local_addr,
-			       sizeof(struct net_addr));
+			       sizeof(struct sockaddr));
 
 #if defined(CONFIG_NET_IPV6)
 			if (local_addr->family == AF_INET6) {
 				if (net_is_ipv6_addr_unspecified(
-					    &local_addr->in6_addr)) {
+					    &net_sin6(local_addr)->
+							sin6_addr)) {
 					rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_LOCAL_SPEC_ADDR;
@@ -491,7 +498,7 @@ int net_conn_register(enum ip_protocol proto,
 
 #if defined(CONFIG_NET_IPV4)
 			if (local_addr->family == AF_INET) {
-				if (!local_addr->in_addr.s_addr[0]) {
+				if (!net_sin(local_addr)->sin_addr.s_addr[0]) {
 					rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_LOCAL_SPEC_ADDR;
@@ -509,15 +516,17 @@ int net_conn_register(enum ip_protocol proto,
 
 		if (remote_port) {
 			rank |= NET_RANK_REMOTE_PORT;
+			net_sin(&conns[i].remote_addr)->sin_port =
+				htons(remote_port);
 		}
 
 		if (local_port) {
 			rank |= NET_RANK_LOCAL_PORT;
+			net_sin(&conns[i].local_addr)->sin_port =
+				htons(local_port);
 		}
 
 		conns[i].flags |= NET_CONN_IN_USE;
-		conns[i].remote_port = remote_port;
-		conns[i].local_port = local_port;
 		conns[i].cb = cb;
 		conns[i].user_data = user_data;
 		conns[i].rank = rank;
@@ -535,8 +544,9 @@ int net_conn_register(enum ip_protocol proto,
 						     remote_addr,
 						     local_addr);
 
-			NET_DBG("[%d/%u/0x%02x] remote %p/%s/%u local %p/%s/%u "
-				"cb %p ud %p", i, proto, rank,
+			NET_DBG("[%d/%d/%u/0x%02x] remote %p/%s/%u "
+				"local %p/%s/%u cb %p ud %p",
+				i, remote_addr->family, proto, rank,
 				remote_addr, dst, remote_port,
 				local_addr, src, local_port,
 				cb, user_data);
@@ -553,7 +563,8 @@ int net_conn_register(enum ip_protocol proto,
 	return -ENOENT;
 }
 
-static bool check_addr(struct net_buf *buf, struct net_addr *addr,
+static bool check_addr(struct net_buf *buf,
+		       struct sockaddr *addr,
 		       bool is_remote)
 {
 	if (addr->family != net_nbuf_family(buf)) {
@@ -570,8 +581,10 @@ static bool check_addr(struct net_buf *buf, struct net_addr *addr,
 			addr6 = &NET_IPV6_BUF(buf)->dst;
 		}
 
-		if (!net_is_ipv6_addr_unspecified(&addr->in6_addr)) {
-			if (!net_ipv6_addr_cmp(&addr->in6_addr, addr6)) {
+		if (!net_is_ipv6_addr_unspecified(
+			    &net_sin6(addr)->sin6_addr)) {
+			if (!net_ipv6_addr_cmp(&net_sin6(addr)->sin6_addr,
+					       addr6)) {
 				return false;
 			}
 		}
@@ -590,8 +603,9 @@ static bool check_addr(struct net_buf *buf, struct net_addr *addr,
 			addr4 = &NET_IPV4_BUF(buf)->dst;
 		}
 
-		if (addr->in_addr.s_addr[0]) {
-			if (!net_ipv4_addr_cmp(&addr->in_addr, addr4)) {
+		if (net_sin(addr)->sin_addr.s_addr[0]) {
+			if (!net_ipv4_addr_cmp(&net_sin(addr)->sin_addr,
+					       addr4)) {
 				return false;
 			}
 		}
@@ -649,16 +663,16 @@ enum net_verdict net_conn_input(enum ip_protocol proto, struct net_buf *buf)
 			continue;
 		}
 
-		if (conns[i].remote_port) {
-			if (conns[i].remote_port !=
-			    ntohs(NET_CONN_BUF(buf)->src_port)) {
+		if (net_sin(&conns[i].remote_addr)->sin_port) {
+			if (net_sin(&conns[i].remote_addr)->sin_port !=
+			    NET_CONN_BUF(buf)->src_port) {
 				continue;
 			}
 		}
 
-		if (conns[i].local_port) {
-			if (conns[i].local_port !=
-			    ntohs(NET_CONN_BUF(buf)->dst_port)) {
+		if (net_sin(&conns[i].local_addr)->sin_port) {
+			if (net_sin(&conns[i].local_addr)->sin_port !=
+			    NET_CONN_BUF(buf)->dst_port) {
 				continue;
 			}
 		}
@@ -701,7 +715,7 @@ enum net_verdict net_conn_input(enum ip_protocol proto, struct net_buf *buf)
 			conns[best_match].rank);
 #endif /* CONFIG_NET_CONN_CACHE */
 
-		if (conns[best_match].cb(buf,
+		if (conns[best_match].cb(&conns[best_match], buf,
 			     conns[best_match].user_data) == NET_DROP) {
 			goto drop;
 		}

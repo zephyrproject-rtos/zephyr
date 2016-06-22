@@ -35,6 +35,8 @@
 extern "C" {
 #endif
 
+struct net_conn;
+
 /**
  * @brief Function that is called by connection subsystem when UDP/TCP
  * packet is received and which matches local and remote IP address
@@ -51,16 +53,10 @@ typedef enum net_verdict (*net_conn_cb_t)(struct net_buf *buf,
  */
 struct net_conn {
 	/** Remote IP address */
-	struct net_addr remote_addr;
+	struct sockaddr remote_addr;
 
 	/** Local IP address */
-	struct net_addr local_addr;
-
-	/** Remote port */
-	uint16_t remote_port;
-
-	/** Local port */
-	uint16_t local_port;
+	struct sockaddr local_addr;
 
 	/** Callback to be called when matching UDP packet is received */
 	net_conn_cb_t cb;
@@ -103,8 +99,8 @@ struct net_conn {
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
 int net_conn_register(enum ip_protocol proto,
-		      const struct net_addr *remote_addr,
-		      const struct net_addr *local_addr,
+		      const struct sockaddr *remote_addr,
+		      const struct sockaddr *local_addr,
 		      uint16_t remote_port,
 		      uint16_t local_port,
 		      net_conn_cb_t cb,
