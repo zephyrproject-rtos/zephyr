@@ -40,7 +40,8 @@
 					 BT_GATT_PERM_READ_ENCRYPT | \
 					 BT_GATT_PERM_WRITE | \
 					 BT_GATT_PERM_WRITE_AUTHEN | \
-					 BT_GATT_PERM_WRITE_ENCRYPT)
+					 BT_GATT_PERM_WRITE_ENCRYPT | \
+					 BT_GATT_PERM_PREPARE_WRITE)
 #define GATT_PERM_ENC_READ_MASK		(BT_GATT_PERM_READ_ENCRYPT | \
 					 BT_GATT_PERM_READ_AUTHEN)
 #define GATT_PERM_ENC_WRITE_MASK	(BT_GATT_PERM_WRITE_ENCRYPT | \
@@ -299,7 +300,7 @@ static ssize_t read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 static ssize_t write_value(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, const void *buf,
-			   uint16_t len, uint16_t offset)
+			   uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct gatt_value *value = attr->user_data;
 
@@ -310,6 +311,11 @@ static ssize_t write_value(struct bt_conn *conn,
 	if ((attr->perm & GATT_PERM_ENC_WRITE_MASK) &&
 	    (value->enc_key_size > bt_conn_enc_key_size(conn))) {
 		return BT_GATT_ERR(BT_ATT_ERR_ENCRYPTION_KEY_SIZE);
+	}
+
+	/* Don't write anything if prepare flag is set */
+	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
+		return 0;
 	}
 
 	if (offset > value->len) {
@@ -365,6 +371,9 @@ static int alloc_characteristic(struct add_characteristic *ch)
 			ch->permissions |= BT_GATT_PERM_WRITE;
 		}
 	}
+
+	/* Allow prepare writes */
+	ch->permissions |= BT_GATT_PERM_PREPARE_WRITE;
 
 	/* Add Characteristic Value */
 	attr_value = gatt_db_add(&(struct bt_gatt_attr)
@@ -525,6 +534,9 @@ static int alloc_descriptor(const struct bt_gatt_attr *attr,
 				d->permissions |= BT_GATT_PERM_WRITE;
 			}
 		}
+
+		/* Allow prepare writes */
+		d->permissions |= BT_GATT_PERM_PREPARE_WRITE;
 
 		attr_desc = gatt_db_add(&(struct bt_gatt_attr)
 					BT_GATT_DESCRIPTOR(d->uuid,

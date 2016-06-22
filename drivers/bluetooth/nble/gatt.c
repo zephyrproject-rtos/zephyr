@@ -407,8 +407,8 @@ static void gatt_ccc_changed(struct _bt_gatt_ccc *ccc)
 }
 
 ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
-			       const struct bt_gatt_attr *attr,
-			       const void *buf, uint16_t len, uint16_t offset)
+			       const struct bt_gatt_attr *attr, const void *buf,
+			       uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
 	const uint16_t *data = buf;
@@ -1379,9 +1379,23 @@ static int32_t prep_write_evt(const struct nble_gatts_write_evt *ev,
 			      const uint8_t *data, uint8_t len)
 {
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	const struct bt_gatt_attr *attr = ev->attr;
+	struct bt_conn *conn = bt_conn_lookup_handle(ev->conn_handle);
 	struct net_buf *buf;
+	ssize_t ret;
 
 	BT_DBG("handle 0x%04x flag %d len %u", ev->attr->handle, ev->flag, len);
+
+	if (!(attr->perm & BT_GATT_PERM_PREPARE_WRITE)) {
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
+
+	/* Write attribute value to check if device is authorired */
+	ret = attr->write(conn, attr, data, len, ev->offset,
+			  BT_GATT_WRITE_FLAG_PREPARE);
+	if (ret != 0) {
+		return ret;
+	}
 
 	buf = net_buf_get_timeout(&prep_data, 0, TICKS_NONE);
 	if (!buf) {
@@ -1407,7 +1421,7 @@ static int32_t write_evt(struct bt_conn *conn,
 {
 	int32_t status;
 
-	status = attr->write(conn, attr, data, len, offset);
+	status = attr->write(conn, attr, data, len, offset, 0);
 	if (status < 0) {
 		return status;
 	}

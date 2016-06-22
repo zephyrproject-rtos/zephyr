@@ -1077,7 +1077,7 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	/* Read attribute value and store in the buffer */
 	write = attr->write(data->conn, attr, data->value, data->len,
-			    data->offset);
+			    data->offset, 0);
 	if (write < 0 || write != data->len) {
 		data->err = err_to_att(write);
 		return BT_GATT_ITER_STOP;
@@ -1165,12 +1165,26 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct prep_data *data = user_data;
 	struct bt_attr_data *attr_data;
+	int write;
 
 	BT_DBG("handle 0x%04x offset %u", attr->handle, data->offset);
 
 	/* Check attribute permissions */
 	data->err = check_perm(data->conn, attr, BT_GATT_PERM_WRITE_MASK);
 	if (data->err) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (!(attr->perm & BT_GATT_PERM_PREPARE_WRITE)) {
+		data->err = BT_ATT_ERR_WRITE_NOT_PERMITTED;
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Write attribute value to check if device is authorized */
+	write = attr->write(data->conn, attr, data->value, data->len,
+			    data->offset, BT_GATT_WRITE_FLAG_PREPARE);
+	if (write != 0) {
+		data->err = err_to_att(write);
 		return BT_GATT_ITER_STOP;
 	}
 

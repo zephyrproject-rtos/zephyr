@@ -1105,7 +1105,8 @@ static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, uint16_t len, uint16_t offset)
+			 const void *buf, uint16_t len, uint16_t offset,
+			 uint8_t flags)
 {
 	uint8_t *value = attr->user_data;
 
@@ -1134,9 +1135,13 @@ static ssize_t read_long_vnd(struct bt_conn *conn,
 
 static ssize_t write_long_vnd(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      uint16_t len, uint16_t offset)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
 	uint8_t *value = attr->user_data;
+
+	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
+		return 0;
+	}
 
 	if (offset + len > sizeof(vnd_long_value1)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -1162,14 +1167,16 @@ static struct bt_gatt_attr vnd_attrs[] = {
 	BT_GATT_CHARACTERISTIC(&vnd_long_uuid1.uuid, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
 	BT_GATT_DESCRIPTOR(&vnd_long_uuid1.uuid,
-				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE |
+				BT_GATT_PERM_PREPARE_WRITE,
 				read_long_vnd, write_long_vnd,
 				&vnd_long_value1),
 
 	BT_GATT_CHARACTERISTIC(&vnd_long_uuid2.uuid, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
 	BT_GATT_DESCRIPTOR(&vnd_long_uuid2.uuid,
-				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE |
+				BT_GATT_PERM_PREPARE_WRITE,
 				read_long_vnd, write_long_vnd,
 				&vnd_long_value2),
 };

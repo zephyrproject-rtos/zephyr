@@ -71,6 +71,13 @@ enum {
 	 *  access.
 	 */
 	BT_GATT_PERM_WRITE_AUTHEN = BIT(5),
+
+	/** Attribute prepare write permission.
+	 *
+	 *  If set, allows prepare writes with use of BT_GATT_WRITE_FLAG_PREPARE
+	 *  passed to write callback.
+	 */
+	BT_GATT_PERM_PREPARE_WRITE = BIT(6),
 };
 
 /**  @def BT_GATT_ERR
@@ -82,6 +89,16 @@ enum {
   *
   */
 #define BT_GATT_ERR(_att_err)                  (-(_att_err))
+
+/* GATT attribute write flags */
+enum {
+	/** Attribute prepare write flag
+	 *
+	 * If set, write callback should only check if the device is
+	 * authorized but no data shall be written.
+	 */
+	BT_GATT_WRITE_FLAG_PREPARE = BIT(0),
+};
 
 /** @brief GATT Attribute structure. */
 struct bt_gatt_attr {
@@ -111,6 +128,7 @@ struct bt_gatt_attr {
 	 *  @param buf    Buffer with the data to write
 	 *  @param len    Number of bytes in the buffer
 	 *  @param offset Offset to start writing from
+	 *  @param flags  Flags (BT_GATT_WRITE_*)
 	 *
 	 *  @return Number of bytes written, or in case of an error
 	 *          BT_GATT_ERR() with a specific ATT error code.
@@ -118,7 +136,7 @@ struct bt_gatt_attr {
 	ssize_t			(*write)(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 const void *buf, uint16_t len,
-					 uint16_t offset);
+					 uint16_t offset, uint8_t flags);
 
 	/** Attribute user data */
 	void			*user_data;
@@ -511,13 +529,14 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
  *  @param buf Buffer to store the value read.
  *  @param len Buffer length.
  *  @param offset Start offset.
+ *  @param flags Write flags.
  *
  *  @return number of bytes written in case of success or negative values in
  *  case of error.
  */
 ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
-			       uint16_t len, uint16_t offset);
+			       uint16_t len, uint16_t offset, uint8_t flags);
 
 /** @def BT_GATT_CCC
  *  @brief Client Characteristic Configuration Declaration Macro.

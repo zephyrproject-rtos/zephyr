@@ -143,7 +143,8 @@ struct write_sc_ctrl_point_req {
 
 static ssize_t write_ctrl_point(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				const void *buf, uint16_t len, uint16_t offset)
+				const void *buf, uint16_t len, uint16_t offset,
+				uint8_t flags)
 {
 	const struct write_sc_ctrl_point_req *req = buf;
 	uint8_t status;
