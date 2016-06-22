@@ -481,6 +481,8 @@ static struct net_buf *net_nbuf_get(enum net_nbuf_type type,
 	if (type != NET_NBUF_DATA) {
 		net_nbuf_set_context(buf, context);
 		net_nbuf_set_ll_reserve(buf, (uint8_t)reserve);
+		net_nbuf_set_family(buf, net_context_get_family(context));
+		net_nbuf_set_iface(buf, net_context_get_iface(context));
 	}
 
 	return buf;
