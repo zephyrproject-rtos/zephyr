@@ -180,6 +180,17 @@ F:	scripts/sanitycheck
 F:	scripts/expr_parser.py
 F:	scripts/sanity_chk/
 
+SENSOR DRIVERS
+M:	Bogdan Davidoaia <bogdan.m.davidoaia@intel.com>
+M:	Laurentiu Palcu <laurentiu.palcu@intel.com>
+M:	Murtaza Alexandru <alexandru.murtaza@intel.com>
+M:	Vlad Dogaru <vlad.dogaru@intel.com>
+S:	Supported
+W:	https://www.zephyrproject.org/doc/subsystems/sensor.html
+F:	include/sensor.h
+F:	drivers/sensor/
+F:	samples/sensor/
+
 TINYCRYPT
 M:	Constanza Heath <constanza.m.heath@intel.com>
 S:	Supported
