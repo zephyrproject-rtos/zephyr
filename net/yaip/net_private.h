@@ -171,5 +171,6 @@ static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 }
 
 #define net_hexdump(str, packet, length)
+#define net_hexdump_frags(...)
 
 #endif /* NET_DEBUG */
