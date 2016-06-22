@@ -16,19 +16,7 @@
 # limitations under the License.
 #
 
-menuconfig NETWORKING
-	bool
-	prompt "Generic networking support"
-	select NANO_TIMEOUTS
-	select NANO_TIMERS
-	select NET_BUF
-	select SYSTEM_WORKQUEUE
-	select NANO_WORKQUEUE
-	default n
-	help
-	  This option enabled generic networking support.
-
-if NETWORKING
+menu "Networking"
 
 config NET_BUF
 	bool "Network buffer support"
@@ -55,6 +43,21 @@ config NET_BUF_SIMPLE_DEBUG
 	help
 	  Enable extra debug logs and checks for the generic network buffers.
 
+source "net/bluetooth/Kconfig"
+
+config  NETWORKING
+	bool "Link layer and IP networking support"
+	select NANO_TIMEOUTS
+	select NANO_TIMERS
+	select NET_BUF
+	select SYSTEM_WORKQUEUE
+	select NANO_WORKQUEUE
+	default n
+	help
+	  This option enabled generic link layer and IP networking support.
+
+if NETWORKING
+
 choice
 	prompt "IP stack"
 	default NET_UIP
@@ -77,6 +80,7 @@ source "net/ip/Kconfig"
 
 source "net/yaip/Kconfig"
 
-source "net/bluetooth/Kconfig"
 
 endif
+
+endmenu

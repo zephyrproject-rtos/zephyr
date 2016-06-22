@@ -19,7 +19,7 @@
 #
 # UIP options
 #
-menu   "Networking: µIP stack"
+menu   "uIP stack"
         depends on NET_UIP
 
 config IP_BUF_RX_SIZE

@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-menu   "Networking: YAIP stack"
+menu   "New IP stack [EXPERIMENTAL]"
        depends on NET_YAIP
 
 config NET_INIT_PRIO
