@@ -838,6 +838,23 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, struct in_addr *addr)
 }
 #endif /* CONFIG_NET_IPV4 */
 
+struct net_if *net_if_get_by_index(uint8_t index)
+{
+	if (&__net_if_start[index] > __net_if_end) {
+		NET_DBG("Index %d is too large", index);
+		return NULL;
+	}
+
+	return &__net_if_start[index];
+}
+
+uint8_t net_if_get_by_iface(struct net_if *iface)
+{
+	NET_ASSERT(iface >= __net_if_start && iface <= __net_if_end);
+
+	return iface - __net_if_start;
+}
+
 void net_if_init(void)
 {
 	struct net_if *iface;

@@ -832,6 +832,24 @@ static inline void net_if_ipv4_set_gw(struct net_if *iface,
 
 #endif /* CONFIG_NET_IPV4 */
 
+/**
+ * @brief Get interface according to index
+ *
+ * @param index Interface index
+ *
+ * @return Pointer to interface or NULL if not found.
+ */
+struct net_if *net_if_get_by_index(uint8_t index);
+
+/**
+ * @brief Get interface index according to pointer
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return Interface index
+ */
+uint8_t net_if_get_by_iface(struct net_if *iface);
+
 struct net_if_api {
 	void (*init)(struct net_if *iface);
 	int (*send)(struct net_if *iface, struct net_buf *buf);
