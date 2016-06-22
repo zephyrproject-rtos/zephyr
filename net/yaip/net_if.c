@@ -308,6 +308,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		}
 
 		iface->ipv6.mcast[i].is_used = true;
+		iface->ipv6.mcast[i].address.family = AF_INET6;
 		memcpy(&iface->ipv6.mcast[i].address.in6_addr, addr, 16);
 
 		NET_DBG("[%d] interface %p address %s added", i, iface,
