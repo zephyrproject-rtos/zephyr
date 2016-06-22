@@ -1360,7 +1360,7 @@ void bt_gatt_cancel(struct bt_conn *conn)
 	BT_DBG("");
 }
 
-static uint8_t prep_write_evt(const struct nble_gatts_write_evt *ev,
+static int32_t prep_write_evt(const struct nble_gatts_write_evt *ev,
 			      const uint8_t *data, uint8_t len)
 {
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
