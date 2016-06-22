@@ -36,7 +36,7 @@ config NET_IPV6
 config NET_IF_UNICAST_IPV6_ADDR_COUNT
        int "Max number of unicast IPv6 addresses per network interface"
        depends on NET_IPV6
-       default 1
+       default 2
 
 config NET_IF_MCAST_IPV6_ADDR_COUNT
        int "Max number of multicast IPv6 addresses per network interface"
