@@ -15,3 +15,4 @@
 # limitations under the License.
 
 obj-$(CONFIG_I2C_KSDK) += fsl_i2c.o
+obj-$(CONFIG_KSDK_RNGA) += fsl_rnga.o
