@@ -639,6 +639,32 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 	return false;
 }
 
+/**
+ * @brief Get sockaddr_in6 from sockaddr. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to IPv6 socket address
+ */
+static inline struct sockaddr_in6 *net_sin6(const struct sockaddr *addr)
+{
+	return (struct sockaddr_in6 *)addr;
+}
+
+/**
+ * @brief Get sockaddr_in from sockaddr. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to IPv4 socket address
+ */
+static inline struct sockaddr_in *net_sin(const struct sockaddr *addr)
+{
+	return (struct sockaddr_in *)addr;
+}
+
 #ifdef __cplusplus
 }
 #endif
