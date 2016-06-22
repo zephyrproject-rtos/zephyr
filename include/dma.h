@@ -214,6 +214,10 @@ static inline int dma_transfer_stop(struct device *dev, uint32_t channel)
 	return api->transfer_stop(dev, channel);
 }
 
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif

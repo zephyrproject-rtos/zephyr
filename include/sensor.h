@@ -493,8 +493,9 @@ struct sensor_trigger_config {
  * @brief Structure used for sensor trigger configuration.
  *
  * If @ref fiber_config.stack is non-NULL, the driver should start its
- * on fiber based on @fiber_config.  Otherwise, use @ref
- * trig_config.mode to decide if and how to use triggering.
+ * on fiber based on @ref fiber_config.  Otherwise, use @ref
+ * sensor_interface::sensor_trigger_mode to decide if and how to use
+ * triggering.
  */
 union sensor_trig_or_wq_config {
 	struct fiber_config fiber_config;
