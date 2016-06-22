@@ -200,12 +200,27 @@ config NET_NBUF_DATA_SIZE
 	  In order to be able to receive at least full IPv6 packet which
 	  has a size of 1280 bytes, the one should allocate 16 fragments here.
 
-config CONFIG_NET_MAX_CONTEXTS
+config NET_MAX_CONTEXTS
 	int "Number of network contexts to allocate"
-	default 6
+	default 2
 	help
 	  Each network context is used to describe a network 5-tuple that
-	  is used when listening or sending network traffic.
+	  is used when listening or sending network traffic. This is very
+	  similar as one could call a network socket in some other systems.
+
+config NET_CONTEXT_SYNC_RECV
+	bool "Support synchronous functionality in net_context_recv() API"
+	default y
+	help
+	  You can disable sync support to save some memory if you are calling
+	  net_context_recv() in async way only when timeout is set to 0.
+
+config NET_CONTEXT_CHECK
+	bool "Check options when calling various net_context functions"
+	default y
+	help
+	  If you know that the options passed to net_context...() functions
+	  are ok, then you can disable the checks to save some memory.
 
 config NET_SLIP
        bool "Use SLIP connectivity with Qemu"

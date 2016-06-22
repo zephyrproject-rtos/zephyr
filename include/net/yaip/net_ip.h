@@ -53,6 +53,12 @@ enum ip_protocol {
 	IPPROTO_ICMPV6 = 58,
 };
 
+/** Socket type */
+enum net_sock_type {
+	SOCK_DGRAM = 1,
+	SOCK_STREAM,
+};
+
 #define ntohs(x) sys_be16_to_cpu(x)
 #define ntohl(x) sys_be32_to_cpu(x)
 #define htons(x) sys_cpu_to_be16(x)

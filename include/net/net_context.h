@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NET_YAIP
+#if defined(CONFIG_NET_YAIP)
 #include <net/yaip/net_context.h>
-#endif /* CONFIG_NET_YAIP */
+#endif
