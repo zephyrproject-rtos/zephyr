@@ -62,7 +62,7 @@ uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
 
 /* random number generator items */
 #if defined(CONFIG_TEST_RANDOM_GENERATOR) || \
-	defined(CONFIG_CUSTOM_RANDOM_GENERATOR)
+	defined(CONFIG_RANDOM_GENERATOR)
 #define RAND32_INIT() sys_rand32_init()
 #else
 #define RAND32_INIT()
