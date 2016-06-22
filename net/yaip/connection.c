@@ -330,7 +330,7 @@ static inline enum net_verdict cache_check(enum ip_protocol proto,
 				net_nbuf_family(buf), *pos,
 				conn_cache[*pos].value);
 
-			return conn->cb(buf, conn->user_data);
+			return conn->cb(conn, buf, conn->user_data);
 		}
 	} else if (*cache_value > 0) {
 		if (cache_check_neg(*cache_value)) {

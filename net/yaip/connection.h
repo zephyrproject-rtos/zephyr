@@ -42,7 +42,8 @@ struct net_conn;
  * packet is received and which matches local and remote IP address
  * and port.
  */
-typedef enum net_verdict (*net_conn_cb_t)(struct net_buf *buf,
+typedef enum net_verdict (*net_conn_cb_t)(struct net_conn *conn,
+					  struct net_buf *buf,
 					  void *user_data);
 
 /**

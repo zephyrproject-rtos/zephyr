@@ -141,7 +141,9 @@ struct ud {
 
 static struct ud *returned_ud;
 
-static enum net_verdict test_ok(struct net_buf *buf, void *user_data)
+static enum net_verdict test_ok(struct net_conn *conn,
+				struct net_buf *buf,
+				void *user_data)
 {
 	struct ud *ud = (struct ud *)user_data;
 
@@ -164,7 +166,9 @@ static enum net_verdict test_ok(struct net_buf *buf, void *user_data)
 	return NET_OK;
 }
 
-static enum net_verdict test_fail(struct net_buf *buf, void *user_data)
+static enum net_verdict test_fail(struct net_conn *conn,
+				  struct net_buf *buf,
+				  void *user_data)
 {
 	/* This function should never be called as there should not
 	 * be a matching UDP connection.
