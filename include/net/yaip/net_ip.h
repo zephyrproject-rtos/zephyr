@@ -86,6 +86,56 @@ struct in_addr {
 
 typedef unsigned short int sa_family_t;
 
+/**
+ * Note that the sin_port and sin6_port are in network byte order
+ * in various sockaddr* structs.
+ */
+struct sockaddr_in6 {
+	sa_family_t		sin6_family;   /* AF_INET6               */
+	uint16_t		sin6_port;     /* Port number            */
+	struct in6_addr		sin6_addr;     /* IPv6 address           */
+	uint8_t			sin6_scope_id; /* interfaces for a scope */
+};
+
+struct sockaddr_in6_ptr {
+	sa_family_t		sin6_family;   /* AF_INET6               */
+	uint16_t		sin6_port;     /* Port number            */
+	struct in6_addr		*sin6_addr;    /* IPv6 address           */
+	uint8_t			sin6_scope_id; /* interfaces for a scope */
+};
+
+struct sockaddr_in {
+	sa_family_t		sin_family;    /* AF_INET      */
+	uint16_t		sin_port;      /* Port number  */
+	struct in_addr		sin_addr;      /* IPv4 address */
+};
+
+struct sockaddr_in_ptr {
+	sa_family_t		sin_family;    /* AF_INET      */
+	uint16_t		sin_port;      /* Port number  */
+	struct in_addr		*sin_addr;     /* IPv4 address */
+};
+
+#if defined(CONFIG_NET_IPV6)
+#define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in6))
+#define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_in6_ptr))
+#elif defined(CONFIG_NET_IPV4)
+#define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in))
+#define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_in_ptr))
+#else
+#error "Either IPv6 or IPv4 needs to be selected."
+#endif
+
+struct sockaddr {
+	sa_family_t family;
+	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
+};
+
+struct sockaddr_ptr {
+	sa_family_t family;
+	char data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(sa_family_t)];
+};
+
 struct net_addr {
 	sa_family_t family;
 	union {
