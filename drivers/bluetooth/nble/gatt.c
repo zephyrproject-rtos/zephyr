@@ -504,6 +504,12 @@ static int notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return 0;
 }
 
+void on_nble_gatts_notify_tx_evt(const struct nble_gatts_notify_tx_evt *evt)
+{
+	BT_DBG("conn handle %u status %d attr %p", evt->conn_handle,
+	       evt->status, evt->attr);
+}
+
 static int indicate(struct bt_conn *conn,
 		    struct bt_gatt_indicate_params *params)
 {
