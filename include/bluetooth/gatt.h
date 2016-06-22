@@ -107,7 +107,7 @@ struct bt_gatt_attr {
 	/** Attribute write callback
 	 *
 	 *  @param conn   The connection that is requesting to write
-	 *  @param attr   The attribute that's being read
+	 *  @param attr   The attribute that's being written
 	 *  @param buf    Buffer with the data to write
 	 *  @param len    Number of bytes in the buffer
 	 *  @param offset Offset to start writing from
