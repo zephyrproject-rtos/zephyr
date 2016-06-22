@@ -124,10 +124,10 @@ static int context_port_used(enum ip_protocol ip_proto, uint16_t local_port,
 }
 
 struct net_context *net_context_get(enum ip_protocol ip_proto,
-					const struct net_addr *remote_addr,
-					uint16_t remote_port,
-					struct net_addr *local_addr,
-					uint16_t local_port)
+				    const struct net_addr *remote_addr,
+				    uint16_t remote_port,
+				    struct net_addr *local_addr,
+				    uint16_t local_port)
 {
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 	const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
