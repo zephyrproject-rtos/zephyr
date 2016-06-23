@@ -1,4 +1,8 @@
-/* sensor.h - public sensor driver API */
+/**
+ * @file sensor.h
+ *
+ * @brief Public APIs for the sensor driver.
+ */
 
 /*
  * Copyright (c) 2016 Intel Corporation
@@ -479,6 +483,9 @@ enum sensor_trigger_mode {
 	SENSOR_TRIG_MODE_GLOBAL_WQ,
 };
 
+/**
+ * @brief configuration parameters for sensor triggers.
+ */
 struct sensor_trigger_config {
 	/**
 	 * This is always set to NULL when using a @ref
@@ -492,8 +499,8 @@ struct sensor_trigger_config {
 /**
  * @brief Structure used for sensor trigger configuration.
  *
- * If @ref fiber_config.stack is non-NULL, the driver should start its
- * on fiber based on @ref fiber_config.  Otherwise, use @ref
+ * If fiber_config.stack is non-NULL, the driver should start its
+ * own fiber based on @ref fiber_config.  Otherwise, use
  * sensor_interface::sensor_trigger_mode to decide if and how to use
  * triggering.
  */
