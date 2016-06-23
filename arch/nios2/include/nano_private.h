@@ -197,6 +197,10 @@ static ALWAYS_INLINE int _IS_IN_ISR(void)
 	return 1;
 }
 
+#ifdef CONFIG_IRQ_OFFLOAD
+void _irq_do_offload(void);
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* _NANO_PRIVATE_H */

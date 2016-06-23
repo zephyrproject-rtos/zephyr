@@ -95,6 +95,10 @@ void _enter_irq(uint32_t ipending)
 {
 	int index;
 
+#ifdef CONFIG_IRQ_OFFLOAD
+	_irq_do_offload();
+#endif
+
 	while (ipending) {
 		_IsrTableEntry_t *ite;
 

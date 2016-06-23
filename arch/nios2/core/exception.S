@@ -27,6 +27,10 @@ GTEXT(_exception_enter_fault)
 GTEXT(_Fault)
 GTEXT(_Swap)
 GTEXT(_exception_try_muldiv)
+#ifdef CONFIG_IRQ_OFFLOAD
+GTEXT(_irq_do_offload)
+GTEXT(_offload_routine)
+#endif
 
 /* Allows use of r1/at register, otherwise reserved for assembler use */
 .set noat
@@ -89,6 +93,7 @@ SECTION_FUNC(exception.entry, _exception)
 	andi  r15, et, 1
 	beq   r15, zero, not_interrupt
 
+BRANCH_LABEL(is_interrupt)
 	/* If we get here, this is an interrupt */
 
 	/* Grab a reference to _nanokernel in r10 so we can determine the
@@ -166,8 +171,6 @@ BRANCH_LABEL(on_irq_stack)
 
 BRANCH_LABEL(not_interrupt)
 
-#if 0 /* TODO enable multiply / divide exception handing */
-
 	/* Since this wasn't an interrupt we're not going to restart the
 	 * faulting instruction. If it's an unimplemented math instruction,
 	 * the muldiv code will handle it, else we just give up and _Fault.
@@ -176,6 +179,17 @@ BRANCH_LABEL(not_interrupt)
 	 */
 	stw ea, 72(sp)
 
+#ifdef CONFIG_IRQ_OFFLOAD
+	/* Check the contents of _offload_routine. If non-NULL, jump into
+	 * the interrupt code anyway.
+	 */
+	movhi r10, %hi(_offload_routine)
+	ori   r10, r10, %lo(_offload_routine)
+	ldw   r11, (r10)
+	bne   r11, zero, is_interrupt
+#endif
+
+#if 0 /* TODO: implement multiply/divide handling */
 	/* Could be an unimplemented instruction we have to emulate.
 	 * Smaller Nios II cores don't have multiply or divide instructions.
 	 * This code comes back to either _exception_enter_fault or
