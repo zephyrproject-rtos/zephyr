@@ -77,7 +77,7 @@ static inline uint32_t _nios2_read_sp(void)
 {
 	uint32_t sp;
 
-	__asm__("mov %0, et" : "=r" (sp));
+	__asm__("mov %0, sp" : "=r" (sp));
 	return sp;
 }
 
