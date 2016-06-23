@@ -514,6 +514,8 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 {
 	addr->s6_addr[0] = 0xfe;
 	addr->s6_addr[1] = 0x80;
+	addr->s6_addr16[1] = 0;
+	addr->s6_addr32[1] = 0;
 
 	switch (lladdr->len) {
 	case 6:
