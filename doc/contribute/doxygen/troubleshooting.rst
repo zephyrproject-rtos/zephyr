@@ -3,9 +3,9 @@
 Troubleshooting obscure warnings from Doxygen / Sphinx
 ######################################################
 
-Some code construct can give a good amount of headache, as it might be
-pushing the limits of the documentation scanners. See here common
-solutions to them:
+Some code construct are problematic and
+push the limits of the documentation scanners. Here are some common
+issues and the solutions to them:
 
 WARNING: Error when parsing function declaration.
 *************************************************
@@ -176,3 +176,14 @@ Use *@copydetails*:
     *
     * This does the same as FUNCTION_1 but also sommersaults.
     */
+
+
+The API documentation is missing a term or link to it when I use @ref term.
+****************************************************************************
+
+When you use an :literal:`@ref term` in your doxygen comment, there must be
+a corresponding definition of :literal:`term` somewhere in the system.  If
+there isn't, then there can't be a link to that term's defintion.  Make sure
+you've spelled :literal:`term` correctly and there is whitespace after the
+term. Using :literal:`@ref term.` (at the end of a sentence for example) won't
+work so add a space like this: :literal:`@ref term .`
