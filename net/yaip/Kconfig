@@ -88,6 +88,16 @@ config NET_IPV6_RA_RDNSS
          Support Router Advertisement Recursive DNS Server option.
 	 See RFC 6106 for details. The value depends on your network needs.
 
+config NET_6LO
+       bool "Enable 6lowpan IPv6 Compression library"
+       depends on NET_IPV6
+       help
+         6lowpan compression and fragmentation.
+
+config NET_6LO_DEBUG
+        bool "Enable 6lowpan debug"
+        depends on NET_6LO
+
 config NET_IPV4
        bool "Enable IPv4"
        default n
