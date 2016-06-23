@@ -34,7 +34,7 @@ Developing the Application
 The app development process works best when changes are continually tested.
 Frequently rebuilding with :command:`make` makes debugging less painful
 as your application becomes more complex. It's usually a good idea to
-rebulild and test after any major changes to source files, Makefiles,
+rebuild and test after any major changes to source files, Makefiles,
 .conf, or .mdef.
 
 .. important::
@@ -59,9 +59,28 @@ following procedure:
 
 #. Run :command:`$ make pristine`.
 
-#. Optionally, override the values specified in the application’s :file:`.conf`
-   file by specifying the kernel configuration option settings needed.
+#. You have the option to configure your project by running
+   :command:`$ make menuconfig`. If you choose not to configure your project
+   via :command:`menuconfig`, you can choose a configuration tailored for a
+   supported board later.
+   If you choose to use :command:`$ make menuconfig` be prepared to configure
+   all the parameters correctly for your specific board.
 
-#. Run :command:`$ make menuconfig`.
+#. Rebuild the application normally. Run :command:`$ make`. You can choose to
+   specify a default configuration for a supported board using the parameter
+   :command:`BOARD`. For example: :command:`$ make BOARD=arduino_101`.
+   You can see the boards that currently support a default configuration by
+   running the command :command:`$ make help`
 
-#. Rebuild the application normally. Run :command:`$ make`
+#. Optionally, you can override the :file:`.config` file configuration (obtained
+   as a result of :command:`menuconfig` or :command:`BOARD` parameters) by using
+   the application’s :file:`.conf` file. Declare the kernel configuration settings
+   that cover the specific needs of your project.
+
+
+.. note::
+   We recommend to use the :command:`BOARD` parameter, since it will load
+   a preset configuration already tested to work properly with
+   that board. You can always tune the board configuration. Override specific
+   configuration elements by providing a configuration snippet file. Let the build
+   system know about it with the :command:`CONF_FILE` environment variable.
