@@ -436,6 +436,7 @@ static int strTblLoad(int fd, unsigned strTblIx, char **ppStringTable)
 	}
 
 	if (lseek(fd, shdr[strTblIx].sh_offset, SEEK_SET) == -1) {
+		free(pTable);
 		fprintf(stderr, "Unable to seek\n");
 		return -1;
 	}
