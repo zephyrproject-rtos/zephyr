@@ -186,8 +186,15 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 
 static ALWAYS_INLINE int _IS_IN_ISR(void)
 {
-	/* STUB */
-	return 0;
+	char *sp = (char *)_nios2_read_sp();
+
+	/* Make sure we're on the interrupt stack somewhere */
+	if (sp < _interrupt_stack ||
+	    sp >= (char *)(STACK_ROUND_DOWN(_interrupt_stack +
+					    CONFIG_ISR_STACK_SIZE))) {
+		return 0;
+	}
+	return 1;
 }
 
 #endif /* _ASMLANGUAGE */
