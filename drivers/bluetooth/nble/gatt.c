@@ -1483,7 +1483,8 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 		 * Ignore in case of error (status < 0).
 		 */
 		if (rsp.status >= 0 && evt->flag == NBLE_GATT_EX_FLAG_EXECUTE) {
-			write_evt(conn, attr, ev->offset, buf->data, buf->len);
+			rsp.status = write_evt(conn, attr, ev->offset,
+					       buf->data, buf->len);
 		}
 
 		net_buf_unref(buf);
