@@ -75,8 +75,11 @@ all: $(DOTCONFIG)
 ifeq ($(findstring qemu_,$(BOARD)),)
 qemu:
 	@echo "Emulation not available for this platform"
+qemugdb: qemu
 else
 qemu: $(DOTCONFIG)
+	$(Q)$(call zephyrmake,$(O),$@)
+qemugdb: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 endif
 

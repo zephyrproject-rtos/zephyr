@@ -1050,6 +1050,7 @@ help:
 	@echo  '  all		  - Build all targets marked with [*]'
 	@echo  '* zephyr	  - Build a zephyr application'
 	@echo  '  qemu		  - Build a zephyr application and run it in qemu'
+	@echo  '  qemugdb         - Same as 'qemu' but start a GDB server on port 1234'
 	@echo  '  flash		  - Build and flash an application'
 	@echo  '  debug		  - Build and debug an application using GDB'
 	@echo  ''
@@ -1167,6 +1168,9 @@ qemu: zephyr
 	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(ARCH))'
 	$(if $(CONFIG_X86_IAMCU),python $(ZEPHYR_BASE)/scripts/qemu-machine-hack.py $(KERNEL_ELF_NAME))
 	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_ELF_NAME)
+
+qemugdb: QEMU_EXTRA_FLAGS += -s -S
+qemugdb: qemu
 
 -include $(srctree)/boards/$(BOARD_NAME)/Makefile.board
 ifneq ($(FLASH_SCRIPT),)
