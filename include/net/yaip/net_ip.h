@@ -518,6 +518,15 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 	addr->s6_addr32[1] = 0;
 
 	switch (lladdr->len) {
+	case 2:
+		addr->s6_addr32[2] = 0;
+		addr->s6_addr[11] = 0xff;
+		addr->s6_addr[12] = 0xfe;
+		addr->s6_addr[13] = 0;
+		addr->s6_addr[14] = lladdr->addr[0];
+		addr->s6_addr[15] = lladdr->addr[1];
+		addr->s6_addr[8] ^= 0x02;
+		break;
 	case 6:
 		memcpy(&addr->s6_addr[8], lladdr->addr, 3);
 		addr->s6_addr[11] = 0xff;
