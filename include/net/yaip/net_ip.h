@@ -542,6 +542,47 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 	}
 }
 
+/**
+ *  @brief Check if given address is based on link layer address
+ *
+ *  @return True if it is, False otherwise
+ */
+static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
+					     const struct net_linkaddr *lladdr)
+{
+	switch (lladdr->len) {
+	case 2:
+		if (!memcmp(&addr->s6_addr[14], lladdr->addr, lladdr->len) &&
+		    (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0] &&
+		    addr->s6_addr[11] == 0xff &&
+		    addr->s6_addr[12] == 0xfe) {
+			return true;
+		}
+
+		break;
+	case 6:
+		if (!memcmp(&addr->s6_addr[9], &lladdr->addr[1], 2) &&
+		    !memcmp(&addr->s6_addr[13], &lladdr->addr[3], 3) &&
+		    addr->s6_addr[11] == 0xff &&
+		    addr->s6_addr[12] == 0xfe &&
+		    (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]) {
+			return true;
+		}
+
+		break;
+	case 8:
+		if (!memcmp(&addr->s6_addr[9], &lladdr->addr[1],
+			    lladdr->len - 1) &&
+		    (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]) {
+			return true;
+		}
+
+		break;
+	}
+
+	return false;
+}
+
 #ifdef __cplusplus
 }
 #endif
