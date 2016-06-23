@@ -1538,6 +1538,7 @@ void bt_gatt_init(void)
 	BT_DBG("");
 
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	nano_fifo_init(&queue);
 	net_buf_pool_init(prep_pool);
 #endif
 }
