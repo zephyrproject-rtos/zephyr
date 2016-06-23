@@ -177,7 +177,7 @@ static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber,
 
 static inline void _IntLibInit(void)
 {
-	/* STUB ... possibly nothing to do here though */
+	/* No special initialization of the interrupt subsystem required */
 }
 
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
