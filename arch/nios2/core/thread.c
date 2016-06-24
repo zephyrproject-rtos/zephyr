@@ -17,7 +17,6 @@
 #include <nanokernel.h>
 #include <nano_private.h>
 #include <wait_q.h>
-#include <timeout_q.h>
 #include <string.h>
 
 tNANO _nanokernel = {0};
