@@ -103,6 +103,10 @@ BRANCH_LABEL(next_chosen)
 	 * key was supplied as argument to _Swap()
 	 */
 	ldw r3, __tTCS_coopReg_OFFSET + __t_coop_key_OFFSET(r11)
+#if (NIOS2_NUM_OF_SHADOW_REG_SETS > 0) || \
+		(defined NIOS2_EIC_PRESENT) || \
+		(defined NIOS2_MMU_PRESENT) || \
+		(defined NIOS2_MPU_PRESENT)
 	andi r3, r3, NIOS2_STATUS_PIE_MSK
 	beq r3, zero, no_unlock
 	rdctl r3, status
@@ -110,7 +114,9 @@ BRANCH_LABEL(next_chosen)
 	wrctl status, r3
 
 BRANCH_LABEL(no_unlock)
-
+#else
+	wrctl status, r3
+#endif
 	ret
 
 
