@@ -84,6 +84,17 @@ struct bt_l2cap_le_chan {
 	uint16_t			_sdu_len;
 };
 
+/** @def BT_L2CAP_LE_CHAN(_ch)
+ *  @brief Helper macro getting container object of type bt_l2cap_le_chan
+ *  address having the same container chan member address as object in question.
+ *
+ *  @param _ch Address of object of bt_l2cap_chan type
+ *
+ *  @return Address of in memory bt_l2cap_le_chan object type containing
+ *  the address of in question object.
+ */
+#define BT_L2CAP_LE_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_le_chan, chan)
+
 /** @brief BREDR L2CAP Endpoint structure. */
 struct bt_l2cap_br_endpoint {
 	/** Endpoint CID */

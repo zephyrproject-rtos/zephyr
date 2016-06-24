@@ -1706,9 +1706,7 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct bt_att *att = ATT_CHAN(chan);
 #endif
-
-	struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
@@ -1740,8 +1738,7 @@ static void att_reset(struct bt_att *att)
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att *att = ATT_CHAN(chan);
-	struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
@@ -1755,8 +1752,7 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 static void bt_att_encrypt_change(struct bt_l2cap_chan *chan)
 {
 	struct bt_att *att = ATT_CHAN(chan);
-	struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
+	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
 	struct bt_conn *conn = ch->chan.conn;
 	struct bt_att_req *req;
