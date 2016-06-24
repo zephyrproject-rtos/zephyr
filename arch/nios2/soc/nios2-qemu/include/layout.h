@@ -16,11 +16,15 @@
 
 #include <system.h>
 
-#define _RESET_VECTOR		ONCHIP_MEMORY2_0_BASE
+/* To simulate XIP on QEMU, we split RAM into two chunks, with the
+ * higher-addressed chunk considered "ROM"
+ */
+
+#define _RESET_VECTOR		ONCHIP_MEMORY2_0_BASE + 0x10000
 #define	_EXC_VECTOR		ALT_CPU_EXCEPTION_ADDR
 
-#define _ROM_ADDR		ONCHIP_FLASH_0_DATA_BASE
-#define _ROM_SIZE		ONCHIP_FLASH_0_DATA_SPAN
+#define _ROM_ADDR		ONCHIP_MEMORY2_0_BASE + 0x10000
+#define _ROM_SIZE		0x10000
 
 #define _RAM_ADDR		ONCHIP_MEMORY2_0_BASE
-#define _RAM_SIZE		ONCHIP_MEMORY2_0_SPAN
+#define _RAM_SIZE		0x10000
