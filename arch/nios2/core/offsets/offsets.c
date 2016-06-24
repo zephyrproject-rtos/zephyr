@@ -55,6 +55,7 @@ GEN_OFFSET_SYM(t_coop, r28);
 GEN_OFFSET_SYM(t_coop, ra);
 GEN_OFFSET_SYM(t_coop, sp);
 GEN_OFFSET_SYM(t_coop, key);
+GEN_OFFSET_SYM(t_coop, retval);
 
 /* size of the struct tcs structure sans save area for floating point regs */
 GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF, sizeof(tTCS));

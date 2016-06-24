@@ -93,15 +93,24 @@ BRANCH_LABEL(next_chosen)
 	ldw ra,  __tTCS_coopReg_OFFSET + __t_coop_ra_OFFSET(r11)
 	ldw sp,  __tTCS_coopReg_OFFSET + __t_coop_sp_OFFSET(r11)
 
-	/* Restore interrupt state in status.PIE */
-	ldw r2, __tTCS_coopReg_OFFSET + __t_coop_key_OFFSET(r11)
-	andi r3, r2, NIOS2_STATUS_PIE_MSK
+	/* Load return value into r2 (return value register). garbage
+	 * unless someone previously called fiberRtnValueSet(). Do this
+	 * before we potentially unlock interrupts.
+	 */
+	ldw r2, __tTCS_coopReg_OFFSET + __t_coop_retval_OFFSET(r11)
+
+	/* irq_unlock(fiber->coopReg.key);
+	 * key was supplied as argument to _Swap()
+	 */
+	ldw r3, __tTCS_coopReg_OFFSET + __t_coop_key_OFFSET(r11)
+	andi r3, r3, NIOS2_STATUS_PIE_MSK
 	beq r3, zero, no_unlock
 	rdctl r3, status
 	ori r3, r3, NIOS2_STATUS_PIE_MSK
 	wrctl status, r3
 
 BRANCH_LABEL(no_unlock)
+
 	ret
 
 

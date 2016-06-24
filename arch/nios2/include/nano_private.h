@@ -91,6 +91,7 @@ struct s_coop {
 	uint32_t ra; /* Return address */
 	uint32_t sp; /* Stack pointer */
 	uint32_t key; /* IRQ status before irq_lock() and call to _Swap() */
+	uint32_t retval; /* Return value of _Swap() */
 };
 typedef struct s_coop t_coop;
 
@@ -170,9 +171,7 @@ static ALWAYS_INLINE void nanoArchInit(void)
 static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber,
 					   unsigned int value)
 {
-	ARG_UNUSED(fiber);
-	ARG_UNUSED(value);
-	/* STUB */
+	fiber->coopReg.retval = value;
 }
 
 static inline void _IntLibInit(void)
