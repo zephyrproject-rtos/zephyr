@@ -193,7 +193,7 @@ PROCESS_THREAD(udp_socket_process, ev, data, buf, user_data)
                               UIP_HTONS(UIP_IP_BUF(buf)->srcport),
                               &(UIP_IP_BUF(buf)->destipaddr),
                               UIP_HTONS(UIP_IP_BUF(buf)->destport),
-                              uip_buf(buf), uip_datalen(buf));
+                              uip_appdata(buf), uip_datalen(buf));
             PROCESS_CONTEXT_END();
           }
         }
