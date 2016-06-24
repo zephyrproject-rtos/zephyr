@@ -425,8 +425,8 @@ void main(void)
 
 	iface = net_if_get_default();
 
-	net_if_set_gw(iface, &gw);
-	net_if_set_netmask(iface, &netmask);
+	net_if_ipv4_set_gw(iface, &gw);
+	net_if_ipv4_set_netmask(iface, &netmask);
 
 	if (net_ipv4_addr_mask_cmp(iface, &fail_addr)) {
 		printk("IPv4 wrong match failed\n");

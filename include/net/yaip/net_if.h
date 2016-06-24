@@ -806,8 +806,8 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
  * @param iface Interface to use.
  * @param netmask IPv4 netmask
  */
-static inline void net_if_set_netmask(struct net_if *iface,
-				      struct in_addr *netmask)
+static inline void net_if_ipv4_set_netmask(struct net_if *iface,
+					   struct in_addr *netmask)
 {
 	net_ipaddr_copy(&iface->ipv4.netmask, netmask);
 }
@@ -818,8 +818,8 @@ static inline void net_if_set_netmask(struct net_if *iface,
  * @param iface Interface to use.
  * @param gw IPv4 address of an gateway
  */
-static inline void net_if_set_gw(struct net_if *iface,
-				 struct in_addr *gw)
+static inline void net_if_ipv4_set_gw(struct net_if *iface,
+				      struct in_addr *gw)
 {
 	net_ipaddr_copy(&iface->ipv4.gw, gw);
 }

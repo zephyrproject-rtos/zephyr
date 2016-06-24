@@ -346,8 +346,8 @@ void main_fiber(void)
 
 	iface = net_if_get_default();
 
-	net_if_set_gw(iface, &gw);
-	net_if_set_netmask(iface, &netmask);
+	net_if_ipv4_set_gw(iface, &gw);
+	net_if_ipv4_set_netmask(iface, &netmask);
 
 	/* Broadcast and multicast tests */
 	buf = net_nbuf_get_reserve_tx(0);
