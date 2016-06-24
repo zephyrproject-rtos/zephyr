@@ -46,7 +46,7 @@
 
 #include <util_test_common.h>
 
-#define FIBER_STACKSIZE    256
+#define FIBER_STACKSIZE    384
 #define FIBER_PRIORITY     4
 
 typedef struct {

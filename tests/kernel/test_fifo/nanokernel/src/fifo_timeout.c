@@ -38,7 +38,7 @@
 #include <tc_nano_timeout_common.h>
 
 #define FIBER_PRIORITY 5
-#define FIBER_STACKSIZE 256
+#define FIBER_STACKSIZE 384
 
 struct scratch_fifo_packet {
 	void *link_in_fifo;

@@ -59,7 +59,7 @@
 
 #include <util_test_common.h>
 
-#define FIBER_STACKSIZE		256
+#define FIBER_STACKSIZE		384
 #define NUM_FIFO_ELEMENT	4
 #define INVALID_DATA		NULL
 
