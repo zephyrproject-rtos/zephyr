@@ -26,7 +26,6 @@ GTEXT(_exception_enter_fault)
 /* import */
 GTEXT(_Fault)
 GTEXT(_Swap)
-GTEXT(_exception_try_muldiv)
 #ifdef CONFIG_IRQ_OFFLOAD
 GTEXT(_irq_do_offload)
 GTEXT(_offload_routine)
@@ -187,15 +186,6 @@ BRANCH_LABEL(not_interrupt)
 	ori   r10, r10, %lo(_offload_routine)
 	ldw   r11, (r10)
 	bne   r11, zero, is_interrupt
-#endif
-
-#if 0 /* TODO: implement multiply/divide handling */
-	/* Could be an unimplemented instruction we have to emulate.
-	 * Smaller Nios II cores don't have multiply or divide instructions.
-	 * This code comes back to either _exception_enter_fault or
-	 * _exception_exit
-	 */
-	jmpi _exception_try_muldiv
 #endif
 
 SECTION_FUNC(exception.entry, _exception_enter_fault)

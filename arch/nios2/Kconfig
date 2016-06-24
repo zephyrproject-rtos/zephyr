@@ -55,6 +55,18 @@ config IRQ_OFFLOAD
 	Enable irq_offload() API which allows functions to be synchronously
 	run in interrupt context. Mainly useful for test cases.
 
+config HAS_MUL_INSTRUCTION
+	bool
+	default n
+
+config HAS_DIV_INSTRUCTION
+	bool
+	default n
+
+config HAS_MULX_INSTRUCTION
+	bool
+	default n
+
 endmenu
 
 source "arch/nios2/soc/*/Kconfig"

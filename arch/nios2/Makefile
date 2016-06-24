@@ -9,6 +9,24 @@ arch_cflags := $(call cc-option,-G0)
 arch_cflags += $(call cc-option,-ffunction-sections) \
 	       $(call cc-option,-fdata-sections)
 
+# TODO Find a way to pull this out of system.h somehow
+# instead of having Kconfig for it
+ifdef CONFIG_HAS_MUL_INSTRUCTION
+arch_cflags += -mhw-mul
+else
+arch_cflags += -mno-hw-mul
+endif
+ifdef CONFIG_HAS_MULX_INSTRUCTION
+arch_cflags += -mhw-mulx
+else
+arch_cflags += -mno-hw-mulx
+endif
+ifdef CONFIG_HAS_DIV_INSTRUCTION
+arch_cflags += -mhw-div
+else
+arch_cflags += -mno-hw-div
+endif
+
 # Nios II CPUs are configurable and we need to pull in the generated
 # headers system.h and linker.h which specify what is enabled and where
 # everything is.
