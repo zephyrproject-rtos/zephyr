@@ -21,6 +21,40 @@
 
 tNANO _nanokernel = {0};
 
+#if defined(CONFIG_THREAD_MONITOR)
+#define THREAD_MONITOR_INIT(tcs) thread_monitor_init(tcs)
+#else
+#define THREAD_MONITOR_INIT(tcs) \
+	do {/* do nothing */     \
+	} while ((0))
+#endif
+
+#if defined(CONFIG_THREAD_MONITOR)
+/*
+ * @brief Initialize thread monitoring support
+ *
+ * Currently only inserts the new thread in the list of active threads.
+ *
+ * @return N/A
+ */
+
+static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
+{
+	unsigned int key;
+
+	/*
+	 * Add the newly initialized thread to head of the list of threads.  This
+	 * singly linked list of threads maintains ALL the threads in the system:
+	 * both tasks and fibers regardless of whether they are runnable.
+	 */
+
+	key = irq_lock();
+	tcs->next_thread = _nanokernel.threads;
+	_nanokernel.threads = tcs;
+	irq_unlock(key);
+}
+#endif /* CONFIG_THREAD_MONITOR */
+
 /* forward declaration to asm function to adjust setup the arguments
  * to _thread_entry() since this arch puts the first four arguments
  * in r4-r7 and not on the stack
@@ -96,4 +130,6 @@ void _new_thread(char *stack_memory, unsigned stack_size,
 #ifdef CONFIG_NANO_TIMEOUTS
 	_nano_timeout_tcs_init(tcs);
 #endif
+
+	THREAD_MONITOR_INIT(tcs);
 }
