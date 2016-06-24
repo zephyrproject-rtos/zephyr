@@ -45,6 +45,8 @@
 #define BT_DBG(fmt, ...)
 #endif
 
+#define ATT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_att, chan)
+
 #define BT_GATT_PERM_READ_MASK			(BT_GATT_PERM_READ | \
 						BT_GATT_PERM_READ_ENCRYPT | \
 						BT_GATT_PERM_READ_AUTHEN)
@@ -1601,7 +1603,7 @@ static const struct {
 
 static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	struct bt_att *att = CONTAINER_OF(chan, struct bt_att, chan);
+	struct bt_att *att = ATT_CHAN(chan);
 	struct bt_att_hdr *hdr = (void *)buf->data;
 	uint8_t err = BT_ATT_ERR_NOT_SUPPORTED;
 	size_t i;
@@ -1654,7 +1656,7 @@ static struct bt_att *att_chan_get(struct bt_conn *conn)
 		return NULL;
 	}
 
-	return CONTAINER_OF(chan, struct bt_att, chan);
+	return ATT_CHAN(chan);
 }
 
 struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
@@ -1688,7 +1690,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 static void bt_att_connected(struct bt_l2cap_chan *chan)
 {
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	struct bt_att *att = CONTAINER_OF(chan, struct bt_att, chan);
+	struct bt_att *att = ATT_CHAN(chan);
 #endif
 
 	struct bt_l2cap_le_chan *ch =
@@ -1723,7 +1725,7 @@ static void att_reset(struct bt_att *att)
 
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_att *att = CONTAINER_OF(chan, struct bt_att, chan);
+	struct bt_att *att = ATT_CHAN(chan);
 	struct bt_l2cap_le_chan *ch =
 			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
 
@@ -1738,7 +1740,7 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 #if defined(CONFIG_BLUETOOTH_SMP)
 static void bt_att_encrypt_change(struct bt_l2cap_chan *chan)
 {
-	struct bt_att *att = CONTAINER_OF(chan, struct bt_att, chan);
+	struct bt_att *att = ATT_CHAN(chan);
 	struct bt_l2cap_le_chan *ch =
 			CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
 
