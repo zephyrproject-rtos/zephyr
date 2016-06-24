@@ -57,12 +57,32 @@ This module tests the following CPU and thread related routines:
   #define TICK_IRQ CONFIG_HPET_TIMER_IRQ
 #elif defined(CONFIG_LOAPIC_TIMER)
   #define TICK_IRQ CONFIG_LOAPIC_TIMER_IRQ
+#elif defined(CONFIG_ALTERA_AVALON_TIMER)
+  #define TICK_IRQ TIMER_0_IRQ
+#elif defined(CONFIG_ARCV2_TIMER)
+  #define TICK_IRQ CONFIG_ARCV2_TIMER0_INT_LVL
 #elif defined(CONFIG_CPU_CORTEX_M3_M4)
-  /* Cortex-M3/M4 does not need a tick IRQ number. */
+/*
+ * The Cortex-M3/M4 use the SYSTICK exception for the system timer, which is
+ * not considered an IRQ by the irq_enable/Disable APIs.
+ */
 #else
   /* generate an error */
   #error Timer type is not defined for this platform
 #endif
+
+/* Nios II doesn't have a power saving instruction, so nano_cpu_idle()
+ * returns immediately
+ */
+#if !defined(CONFIG_NIOS2)
+#define HAS_POWERSAVE_INSTRUCTION
+#endif
+
+/* Divide-by-zero exception test here is x86-specific */
+#if defined(CONFIG_X86)
+#define CONNECT_EXCEPTIONS 1
+#endif
+
 
 typedef struct {
 	int     command;    /* command to process */
@@ -76,8 +96,7 @@ typedef struct {
 typedef int  (* disable_interrupt_func)(int);
 typedef void (* enable_interrupt_func)(int);
 
-/* Cortex-M3/M4 does not implement connecting non-IRQ exception handlers */
-#if !defined(CONFIG_CPU_CORTEX_M3_M4)
+#ifdef CONNECT_EXCEPTIONS
 static volatile int    excHandlerExecuted;
 #endif
 
@@ -128,8 +147,7 @@ static void _trigger_isrHandler(void)
 }
 
 
-/* Cortex-M3/M4 does not implement connecting non-IRQ exception handlers */
-#if !defined(CONFIG_CPU_CORTEX_M3_M4)
+#ifdef CONNECT_EXCEPTIONS
 /**
  *
  * @brief Divide by zero exception handler
@@ -166,14 +184,14 @@ int initNanoObjects(void)
 	nano_timer_init(&timer, timerData);
 	nano_fifo_init(&timeout_order_fifo);
 
-/* no nanoCpuExcConnect on Cortex-M3/M4 */
-#if !defined(CONFIG_CPU_CORTEX_M3_M4)
+#ifdef CONNECT_EXCEPTIONS
 	nanoCpuExcConnect(IV_DIVIDE_ERROR, exc_divide_error_handler);
 #endif
 
 	return TC_PASS;
 }
 
+#ifdef HAS_POWERSAVE_INSTRUCTION
 /**
  *
  * @brief Test the nano_cpu_idle() routine
@@ -204,9 +222,9 @@ int nano_cpu_idleTest(void)
 			return TC_FAIL;
 		}
 	}
-
 	return TC_PASS;
 }
+#endif
 
 /**
  *
@@ -829,11 +847,13 @@ void main(void)
 		goto doneTests;
 	}
 
+#ifdef HAS_POWERSAVE_INSTRUCTION
 	TC_PRINT("Testing nano_cpu_idle()\n");
 	rv = nano_cpu_idleTest();
 	if (rv != TC_PASS) {
 		goto doneTests;
 	}
+#endif
 
 	TC_PRINT("Testing interrupt locking and unlocking\n");
 	rv = nanoCpuDisableInterruptsTest(irq_lockWrapper,
@@ -843,11 +863,7 @@ void main(void)
 	}
 
 
-/*
- * The Cortex-M3/M4 use the SYSTICK exception for the system timer, which is
- * not considered an IRQ by the irq_enable/Disable APIs.
- */
-#if !defined(CONFIG_CPU_CORTEX_M3_M4)
+#ifdef TICK_IRQ
 	/* Disable interrupts coming from the timer. */
 
 	TC_PRINT("Testing irq_disable() and irq_enable()\n");
@@ -905,8 +921,7 @@ void main(void)
 		goto doneTests;
 	}
 
-/* Cortex-M3/M4 does not implement connecting non-IRQ exception handlers */
-#if !defined(CONFIG_CPU_CORTEX_M3_M4)
+#ifdef CONNECT_EXCEPTIONS
 	/*
 	 * Test divide by zero exception handler.
 	 *
