@@ -43,35 +43,35 @@ extern "C" {
 /** @def BT_GATT_PERM_READ
  *  @brief Attribute read permission.
  */
-#define BT_GATT_PERM_READ			0x01
+#define BT_GATT_PERM_READ			BIT(0)
 /** @def BT_GATT_PERM_WRITE
  *  @brief Attribute write permission.
  */
-#define BT_GATT_PERM_WRITE			0x02
+#define BT_GATT_PERM_WRITE			BIT(1)
 /** @def BT_GATT_PERM_READ_ENCRYPT
  *  @brief Attribute read permission with encryption.
  *
  *  If set, requires encryption for read access.
  */
-#define BT_GATT_PERM_READ_ENCRYPT		0x04
+#define BT_GATT_PERM_READ_ENCRYPT		BIT(2)
 /** @def BT_GATT_PERM_WRITE_ENCRYPT
  *  @brief Attribute write permission with encryption.
  *
  *  If set, requires encryption for write access.
  */
-#define BT_GATT_PERM_WRITE_ENCRYPT		0x08
+#define BT_GATT_PERM_WRITE_ENCRYPT		BIT(3)
 /** @def BT_GATT_PERM_READ_AUTHEN
  *  @brief Attribute read permission with authentication.
  *
  *  If set, requires encryption using authenticated link-key for read access.
  */
-#define BT_GATT_PERM_READ_AUTHEN		0x10
+#define BT_GATT_PERM_READ_AUTHEN		BIT(4)
 /** @def BT_GATT_PERM_WRITE_AUTHEN
  *  @brief Attribute write permission with authentication.
  *
  *  If set, requires encryption using authenticated link-key for write access.
  */
-#define BT_GATT_PERM_WRITE_AUTHEN		0x20
+#define BT_GATT_PERM_WRITE_AUTHEN		BIT(5)
 
 /**  @def BT_GATT_ERR
   *  @brief Construct error return value for attribute read and write callbacks.
