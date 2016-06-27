@@ -2269,8 +2269,6 @@ uip_send_udp(struct net_buf *buf, const void *data, int len)
       if (!ret) {
          PRINTF("Packet %p sending failed.\n", buf);
          ip_buf_unref(buf);
-      } else {
-        ip_buf_sent_status(buf) = 0;
       }
    }
 }
