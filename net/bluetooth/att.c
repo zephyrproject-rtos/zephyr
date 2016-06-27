@@ -59,6 +59,8 @@
 						BT_GATT_PERM_WRITE_AUTHEN)
 #define BT_ATT_OP_CMD_FLAG			0x40
 
+#define ATT_TIMEOUT				(30 * sys_clock_ticks_per_sec)
+
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 struct bt_attr_data {
 	uint16_t handle;
@@ -88,6 +90,7 @@ struct bt_att {
 	/* The channel this context is associated with */
 	struct bt_l2cap_le_chan	chan;
 	struct bt_att_req	req;
+	struct nano_delayed_work timeout_work;
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct nano_fifo	prep_queue;
 #endif
@@ -107,6 +110,8 @@ static NET_BUF_POOL(att_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
 
 static void att_req_destroy(struct bt_att_req *req)
 {
+	struct bt_att *att = CONTAINER_OF(req, struct bt_att, req);
+
 	if (req->buf) {
 		net_buf_unref(req->buf);
 	}
@@ -114,6 +119,8 @@ static void att_req_destroy(struct bt_att_req *req)
 	if (req->destroy) {
 		req->destroy(req->user_data);
 	}
+
+	nano_delayed_work_cancel(&att->timeout_work);
 
 	memset(req, 0, sizeof(*req));
 }
@@ -1701,25 +1708,6 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	return buf;
 }
 
-static void bt_att_connected(struct bt_l2cap_chan *chan)
-{
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	struct bt_att *att = ATT_CHAN(chan);
-#endif
-	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-
-	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
-
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
-	nano_fifo_init(&att->prep_queue);
-#endif
-
-	ch->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
-	ch->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
-
-	bt_gatt_connected(ch->chan.conn);
-}
-
 static void att_reset(struct bt_att *att)
 {
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
@@ -1733,6 +1721,48 @@ static void att_reset(struct bt_att *att)
 
 	/* Notify client if request is pending */
 	att_handle_rsp(att, NULL, 0, BT_ATT_ERR_UNLIKELY);
+}
+
+static void att_timeout(struct nano_work *work)
+{
+	struct bt_att *att = CONTAINER_OF(work, struct bt_att, timeout_work);
+	struct bt_l2cap_le_chan *ch =
+			CONTAINER_OF(att, struct bt_l2cap_le_chan, chan);
+
+	BT_ERR("ATT Timeout");
+
+	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 480:
+	 *
+	 * A transaction not completed within 30 seconds shall time out. Such a
+	 * transaction shall be considered to have failed and the local higher
+	 * layers shall be informed of this failure. No more attribute protocol
+	 * requests, commands, indications or notifications shall be sent to the
+	 * target device on this ATT Bearer.
+	 */
+	att_reset(att);
+
+	/* Consider the channel disconnected */
+	bt_gatt_disconnected(ch->chan.conn);
+	ch->chan.conn = NULL;
+}
+
+static void bt_att_connected(struct bt_l2cap_chan *chan)
+{
+	struct bt_att *att = ATT_CHAN(chan);
+	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
+
+	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
+
+#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+	nano_fifo_init(&att->prep_queue);
+#endif
+
+	ch->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
+	ch->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
+
+	nano_delayed_work_init(&att->timeout_work, att_timeout);
+
+	bt_gatt_connected(ch->chan.conn);
 }
 
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)
@@ -1838,6 +1868,73 @@ uint16_t bt_att_get_mtu(struct bt_conn *conn)
 	return att->chan.tx.mtu;
 }
 
+static struct bt_att_req *att_req_new(struct bt_att *att, struct net_buf *buf,
+				      bt_att_func_t func, void *user_data,
+				      bt_att_destroy_t destroy)
+{
+	/* Check if there is a request pending */
+	if (att->req.func) {
+		 /* TODO: Allow more than one pending request */
+		return NULL;
+	}
+
+	att->req.buf = net_buf_clone(buf);
+#if defined(CONFIG_BLUETOOTH_SMP)
+	att->req.retrying = false;
+#endif /* CONFIG_BLUETOOTH_SMP */
+	att->req.func = func;
+	att->req.user_data = user_data;
+	att->req.destroy = destroy;
+
+	return &att->req;
+}
+
+enum {
+	ATT_OP_TYPE_REQ,
+	ATT_OP_TYPE_RSP,
+	ATT_OP_TYPE_CMD,
+	ATT_OP_TYPE_UNKNOWN,
+};
+
+static uint8_t att_op_type(uint8_t op)
+{
+	switch (op) {
+	case BT_ATT_OP_MTU_REQ:
+	case BT_ATT_OP_FIND_INFO_REQ:
+	case BT_ATT_OP_FIND_TYPE_REQ:
+	case BT_ATT_OP_READ_TYPE_REQ:
+	case BT_ATT_OP_READ_REQ:
+	case BT_ATT_OP_READ_BLOB_REQ:
+	case BT_ATT_OP_READ_MULT_REQ:
+	case BT_ATT_OP_READ_GROUP_REQ:
+	case BT_ATT_OP_WRITE_REQ:
+	case BT_ATT_OP_PREPARE_WRITE_REQ:
+	case BT_ATT_OP_EXEC_WRITE_REQ:
+	case BT_ATT_OP_INDICATE:
+		return ATT_OP_TYPE_REQ;
+	case BT_ATT_OP_ERROR_RSP:
+	case BT_ATT_OP_MTU_RSP:
+	case BT_ATT_OP_FIND_INFO_RSP:
+	case BT_ATT_OP_FIND_TYPE_RSP:
+	case BT_ATT_OP_READ_TYPE_RSP:
+	case BT_ATT_OP_READ_RSP:
+	case BT_ATT_OP_READ_BLOB_RSP:
+	case BT_ATT_OP_READ_MULT_RSP:
+	case BT_ATT_OP_READ_GROUP_RSP:
+	case BT_ATT_OP_WRITE_RSP:
+	case BT_ATT_OP_PREPARE_WRITE_RSP:
+	case BT_ATT_OP_EXEC_WRITE_RSP:
+	case BT_ATT_OP_CONFIRM:
+		return ATT_OP_TYPE_RSP;
+	case BT_ATT_OP_NOTIFY:
+	case BT_ATT_OP_WRITE_CMD:
+	case BT_ATT_OP_SIGNED_WRITE_CMD:
+		return ATT_OP_TYPE_CMD;
+	default:
+		return ATT_OP_TYPE_UNKNOWN;
+	}
+}
+
 int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_att_func_t func,
 		void *user_data, bt_att_destroy_t destroy)
 {
@@ -1854,19 +1951,9 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_att_func_t func,
 	}
 
 	if (func) {
-		/* Check if there is a request pending */
-		if (att->req.func) {
-			 /* TODO: Allow more than one pending request */
+		if (!att_req_new(att, buf, func, user_data, destroy)) {
 			return -EBUSY;
 		}
-
-		att->req.buf = net_buf_clone(buf);
-#if defined(CONFIG_BLUETOOTH_SMP)
-		att->req.retrying = false;
-#endif /* CONFIG_BLUETOOTH_SMP */
-		att->req.func = func;
-		att->req.user_data = user_data;
-		att->req.destroy = destroy;
 	}
 
 	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
@@ -1877,6 +1964,8 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_att_func_t func,
 			BT_ERR("Error signing data");
 			return err;
 		}
+	} else if (att_op_type(hdr->code) == ATT_OP_TYPE_REQ) {
+		nano_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
 	}
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
