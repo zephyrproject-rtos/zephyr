@@ -607,14 +607,15 @@ fail:
 		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
-static int alloc_included(const struct bt_gatt_attr *attr,
+static int alloc_included(struct bt_gatt_attr *attr,
 			  uint16_t *included_service_id, uint16_t svc_handle)
 {
 	struct bt_gatt_attr *attr_incl;
 
 	attr_incl = gatt_db_add(&(struct bt_gatt_attr)
-				BT_GATT_INCLUDE_SERVICE(&attr),
-				sizeof(attr));
+				BT_GATT_INCLUDE_SERVICE(attr),
+				sizeof(*attr));
+
 	if (!attr_incl) {
 		return -EINVAL;
 	}
