@@ -27,6 +27,7 @@
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_stats.h>
+#include <net/net_context.h>
 #include "net_private.h"
 #include "icmpv6.h"
 #include "ipv6.h"
@@ -148,6 +149,68 @@ void net_neighbor_table_clear(struct net_nbr_table *table)
 	NET_DBG("Neighbor table %p cleared", table);
 }
 #endif /* CONFIG_NET_IPV6_ND */
+
+struct net_buf *net_ipv6_create(struct net_context *context,
+				struct net_buf *buf,
+				const struct in6_addr *addr)
+{
+	struct net_buf *header;
+
+	header = net_nbuf_get_data(context);
+
+	net_buf_frag_insert(buf, header);
+
+	NET_IPV6_BUF(buf)->vtc = 0x60;
+	NET_IPV6_BUF(buf)->tcflow = 0;
+	NET_IPV6_BUF(buf)->flow = 0;
+
+	NET_IPV6_BUF(buf)->nexthdr = 0;
+	NET_IPV6_BUF(buf)->hop_limit =
+		net_if_ipv6_get_hop_limit(net_context_get_iface(context));
+
+	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, addr);
+
+	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
+	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
+		((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
+
+#if defined(CONFIG_NET_UDP)
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		NET_IPV6_BUF(buf)->nexthdr = IPPROTO_UDP;
+	}
+#endif /* CONFIG_NET_UDP */
+
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+
+	net_buf_add(header, sizeof(struct net_ipv6_hdr));
+
+	return buf;
+}
+
+struct net_buf *net_ipv6_finalize(struct net_context *context,
+				  struct net_buf *buf)
+{
+	/* Set the length of the IPv6 header */
+	size_t total_len;
+
+	net_nbuf_compact(buf);
+
+	total_len = net_buf_frags_len(buf->frags);
+
+	total_len -= sizeof(struct net_ipv6_hdr);
+
+	NET_IPV6_BUF(buf)->len[0] = total_len / 256;
+	NET_IPV6_BUF(buf)->len[1] = total_len - NET_IPV6_BUF(buf)->len[0] * 256;
+
+#if defined(CONFIG_NET_UDP)
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		NET_UDP_BUF(buf)->chksum = 0;
+		NET_UDP_BUF(buf)->chksum = ~net_calc_chksum_udp(buf);
+	}
+#endif
+
+	return buf;
+}
 
 #if defined(CONFIG_NET_IPV6_DAD)
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr)

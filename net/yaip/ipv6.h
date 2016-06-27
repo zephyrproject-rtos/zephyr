@@ -28,6 +28,7 @@
 #include <net/net_ip.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
+#include <net/net_context.h>
 
 #include "icmpv6.h"
 
@@ -49,6 +50,33 @@ int net_ipv6_send_ns(struct net_if *iface, struct net_buf *pending,
 int net_ipv6_start_rs(struct net_if *iface);
 int net_ipv6_send_rs(struct net_if *iface);
 int net_ipv6_start_rs(struct net_if *iface);
+
+/**
+ * @brief Create IPv6 packet in provided net_buf.
+ *
+ * @param context Network context for a connection
+ * @param buf Network buffer
+ * @param dst_addr Destination IPv6 address
+ *
+ * @return Return network buffer that contains the IPv6 packet.
+ */
+struct net_buf *net_ipv6_create(struct net_context *context,
+				struct net_buf *buf,
+				const struct in6_addr *dst_addr);
+
+/**
+ * @brief Finalize IPv6 packet. It should be called right before
+ * sending the packet and after all the data has been added into
+ * the packet. This function will set the length of the
+ * packet and calculate the higher protocol checksum if needed.
+ *
+ * @param context Network context for a connection
+ * @param buf Network buffer
+ *
+ * @return Return network buffer that contains the IPv6 packet.
+ */
+struct net_buf *net_ipv6_finalize(struct net_context *context,
+				  struct net_buf *buf);
 
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);
