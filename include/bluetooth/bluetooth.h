@@ -421,6 +421,19 @@ int bt_br_set_discoverable(bool enable);
  */
 int bt_br_set_connectable(bool enable);
 
+/** @brief Generate random data.
+ *
+ *  A random number generation helper which utilizes the Bluetooth
+ *  controller's own RNG.
+ *
+ *  @param buf Buffer to insert the random data
+ *  @param len Length of random data to generate
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_rand(void *buf, size_t len);
+
 /**
  * @}
  */
