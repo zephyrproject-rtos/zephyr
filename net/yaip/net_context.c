@@ -37,6 +37,10 @@
 #include "connection.h"
 #include "net_private.h"
 
+#include "ipv6.h"
+#include "ipv4.h"
+#include "udp.h"
+
 #define NET_MAX_CONTEXT CONFIG_NET_MAX_CONTEXTS
 
 static struct net_context contexts[NET_MAX_CONTEXT];
@@ -523,6 +527,30 @@ int net_context_send(struct net_buf *buf,
 		return -EDESTADDRREQ;
 	}
 
+#if defined(CONFIG_NET_IPV6)
+	if (net_nbuf_family(buf) == AF_INET6) {
+		buf = net_ipv6_create(context, buf,
+			&((struct sockaddr_in6 *)&context->remote)->sin6_addr);
+		buf = net_udp_append(context, buf,
+				ntohs(net_sin6(&context->remote)->sin6_port));
+		buf = net_ipv6_finalize(context, buf);
+	} else
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	if (net_nbuf_family(buf) == AF_INET) {
+		buf = net_ipv4_create(context, buf,
+			&((struct sockaddr_in *)&context->remote)->sin_addr);
+		buf = net_udp_append(context, buf,
+				ntohs(net_sin(&context->remote)->sin_port));
+		buf = net_ipv4_finalize(context, buf);
+	} else
+#endif /* CONFIG_NET_IPV4 */
+	{
+		NET_DBG("Invalid protocol family %d", net_nbuf_family(buf));
+		return -EINVAL;
+	}
+
 	return send_data(context, buf, cb, timeout, token, user_data);
 }
 
@@ -543,6 +571,39 @@ int net_context_sendto(struct net_buf *buf,
 
 	if (!dst_addr) {
 		return -EDESTADDRREQ;
+	}
+
+#if defined(CONFIG_NET_IPV6)
+	if (net_nbuf_family(buf) == AF_INET6) {
+		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
+
+		if (net_is_ipv6_addr_unspecified(&addr6->sin6_addr)) {
+			return -EDESTADDRREQ;
+		}
+
+		buf = net_ipv6_create(context, buf, &addr6->sin6_addr);
+		buf = net_udp_append(context, buf, ntohs(addr6->sin6_port));
+		buf = net_ipv6_finalize(context, buf);
+
+	} else
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	if (net_nbuf_family(buf) == AF_INET) {
+		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
+
+		if (!addr4->sin_addr.s_addr[0]) {
+			return -EDESTADDRREQ;
+		}
+
+		buf = net_ipv4_create(context, buf, &addr4->sin_addr);
+		buf = net_udp_append(context, buf, ntohs(addr4->sin_port));
+		buf = net_ipv4_finalize(context, buf);
+	} else
+#endif /* CONFIG_NET_IPV4 */
+	{
+		NET_DBG("Invalid protocol family %d", net_nbuf_family(buf));
+		return -EINVAL;
 	}
 
 	return send_data(context, buf, cb, timeout, token, user_data);
