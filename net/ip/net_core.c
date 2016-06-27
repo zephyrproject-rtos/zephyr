@@ -575,6 +575,7 @@ static void udp_packet_receive(struct simple_udp_connection *c,
 
 	ip_buf_appdatalen(buf) = datalen;
 	ip_buf_appdata(buf) = &uip_buf(buf)[UIP_IPUDPH_LEN + UIP_LLH_LEN];
+	ip_buf_len(buf) = datalen + UIP_IPUDPH_LEN + UIP_LLH_LEN;
 
 	NET_DBG("packet received context %p len %d "
 		"appdata %p appdatalen %d\n",
