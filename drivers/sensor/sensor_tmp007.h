@@ -61,7 +61,7 @@
 
 struct tmp007_data {
 	struct device *i2c;
-	uint16_t sample;
+	int16_t sample;
 
 #ifdef CONFIG_TMP007_TRIGGER
 	struct device *gpio;

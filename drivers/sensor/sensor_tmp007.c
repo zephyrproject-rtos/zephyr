@@ -18,6 +18,7 @@
 #include <i2c.h>
 #include <gpio.h>
 #include <misc/byteorder.h>
+#include <misc/util.h>
 #include <nanokernel.h>
 #include <sensor.h>
 #include <misc/__assert.h>
@@ -87,7 +88,7 @@ static int tmp007_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return -EIO;
 	}
 
-	drv_data->sample = val >> 2;
+	drv_data->sample = arithmetic_shift_right((int16_t)val, 2);
 
 	return 0;
 }
@@ -97,7 +98,7 @@ static int tmp007_channel_get(struct device *dev,
 			       struct sensor_value *val)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
-	int64_t uval;
+	int32_t uval;
 
 	if (chan != SENSOR_CHAN_TEMP) {
 		return -ENOTSUP;
