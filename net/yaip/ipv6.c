@@ -310,6 +310,12 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 	return NULL;
 }
 
+struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
+				    struct in6_addr *addr)
+{
+	return nbr_lookup(&net_neighbor.table, iface, addr);
+}
+
 static inline uint8_t get_llao_len(struct net_if *iface)
 {
 	if (iface->link_addr.len == 6) {

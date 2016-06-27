@@ -78,6 +78,7 @@ struct net_buf *net_ipv6_create(struct net_context *context,
 struct net_buf *net_ipv6_finalize(struct net_context *context,
 				  struct net_buf *buf);
 
+#if defined(CONFIG_NET_IPV6_ND)
 /**
  * @brief Make sure the link layer address is set according to
  * destination address. If the ll address is not yet known, then
@@ -90,12 +91,29 @@ struct net_buf *net_ipv6_finalize(struct net_context *context,
  *
  * @return Return network buffer to be sent.
  */
-#if defined(CONFIG_NET_IPV6_ND)
 struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf);
-#else
+
+/**
+ * @brief Look for a neighbour from it's address on an iface
+ *
+ * @param iface A valid pointer on a network interface
+ * @param addr The IPv6 address to match
+ *
+ * @return A valid pointer on a neighbour on success, NULL otherwise
+ */
+struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
+				    struct in6_addr *addr);
+
+#else /* CONFIG_NET_IPV6_ND */
 static inline struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 {
 	return buf;
+}
+
+static inline struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
+						  struct in6_addr *addr)
+{
+	return NULL;
 }
 #endif
 
