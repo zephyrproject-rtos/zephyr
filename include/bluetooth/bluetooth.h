@@ -106,6 +106,9 @@ struct bt_data {
 
 /** Advertising options */
 enum {
+	/** Convenience value when no options are specified. */
+	BT_LE_ADV_OPT_NONE = 0,
+
 	/** Advertise as connectable. Type of advertising is determined by
 	 * providing SCAN_RSP data and/or enabling local privacy support.
 	 */
