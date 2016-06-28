@@ -369,52 +369,53 @@ int net_conn_unregister(void *handle)
 
 #if NET_DEBUG
 static inline
-void prepare_register_debug_print(char *dst, char *src,
+void prepare_register_debug_print(char *dst, int dst_len,
+				  char *src, int src_len,
 				  const struct sockaddr *remote_addr,
 				  const struct sockaddr *local_addr)
 {
 	if (remote_addr && remote_addr->family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
-		snprintf(dst, sizeof(dst),
+		snprintf(dst, dst_len,
 			 net_sprint_ipv6_addr(&net_sin6(remote_addr)->
 							sin6_addr));
 #else
-		snprintf(dst, sizeof(dst), "?");
+		snprintf(dst, dst_len, "?");
 #endif
 
 	} else if (remote_addr && remote_addr->family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-		snprintf(dst, sizeof(dst),
+		snprintf(dst, dst_len,
 			 net_sprint_ipv4_addr(&net_sin(remote_addr)->
 							sin_addr));
 #else
-		snprintf(dst, sizeof(dst), "?");
+		snprintf(dst, dst_len, "?");
 #endif
 
 	} else {
-		snprintf(dst, sizeof(dst), "-");
+		snprintf(dst, dst_len, "-");
 	}
 
 	if (local_addr && local_addr->family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
-		snprintf(src, sizeof(src),
+		snprintf(src, src_len,
 			 net_sprint_ipv6_addr(&net_sin6(local_addr)->
 							sin6_addr));
 #else
-		snprintf(src, sizeof(src), "?");
+		snprintf(src, src_len, "?");
 #endif
 
 	} else if (local_addr && local_addr->family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-		snprintf(src, sizeof(src),
+		snprintf(src, src_len,
 			 net_sprint_ipv4_addr(&net_sin(local_addr)->
 							sin_addr));
 #else
-		snprintf(src, sizeof(src), "?");
+		snprintf(src, src_len, "?");
 #endif
 
 	} else {
-		snprintf(src, sizeof(src), "-");
+		snprintf(src, src_len, "-");
 	}
 }
 #endif /* NET_DEBUG */
@@ -540,13 +541,14 @@ int net_conn_register(enum ip_protocol proto,
 			char dst[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
 			char src[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")];
 
-			prepare_register_debug_print(dst, src,
+			prepare_register_debug_print(dst, sizeof(dst),
+						     src, sizeof(src),
 						     remote_addr,
 						     local_addr);
 
 			NET_DBG("[%d/%d/%u/0x%02x] remote %p/%s/%u "
 				"local %p/%s/%u cb %p ud %p",
-				i, remote_addr->family, proto, rank,
+				i, local_addr->family, proto, rank,
 				remote_addr, dst, remote_port,
 				local_addr, src, local_port,
 				cb, user_data);
