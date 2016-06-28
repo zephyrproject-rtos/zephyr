@@ -133,6 +133,7 @@ static struct net_nbr *nbr_new(struct in6_addr *addr,
 
 	net_ipaddr_copy(&net_nbr_data(nbr)->addr, addr);
 	net_nbr_data(nbr)->state = state;
+	net_nbr_data(nbr)->pending = NULL;
 
 	return nbr;
 }
