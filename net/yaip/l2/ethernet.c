@@ -25,6 +25,7 @@
 #include <net/arp.h>
 
 #include "net_private.h"
+#include "ipv6.h"
 
 static const struct net_eth_addr multicast_eth_addr = {
 	{ 0x33, 0x33, 0x00, 0x00, 0x00, 0x00 } };
@@ -168,17 +169,35 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	 */
 	if (!net_nbuf_ll_dst(buf)->addr) {
 #if defined(CONFIG_NET_IPV6)
-		if (net_nbuf_family(buf) == AF_INET6 &&
-		    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
-			struct net_eth_addr *dst = &NET_ETH_BUF(buf)->dst;
+		if (net_nbuf_family(buf) == AF_INET6) {
+			if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+				struct net_eth_addr *dst =
+					&NET_ETH_BUF(buf)->dst;
 
-			memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
-			       sizeof(struct net_eth_addr) - 4);
-			memcpy((uint8_t *)dst + 2,
-			       (uint8_t *)(&NET_IPV6_BUF(buf)->dst) + 12,
-			       sizeof(struct net_eth_addr) - 2);
+				memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
+				       sizeof(struct net_eth_addr) - 4);
+				memcpy((uint8_t *)dst + 2,
+				       (uint8_t *)(&NET_IPV6_BUF(buf)->dst) +
+									12,
+				       sizeof(struct net_eth_addr) - 2);
 
-			net_nbuf_ll_dst(buf)->addr = (uint8_t *)dst->addr;
+				net_nbuf_ll_dst(buf)->addr =
+					(uint8_t *)dst->addr;
+			} else {
+				/* Check neighbor cache if it has the
+				 * destination address.
+				 */
+				net_nbuf_set_ll_reserve(buf,
+						sizeof(struct net_eth_hdr));
+
+				buf = net_ipv6_prepare_for_send(buf);
+				if (!buf) {
+					/* The actual packet will be send later
+					 */
+					NET_DBG("Buf will be sent later");
+					return NET_OK;
+				}
+			}
 		} else
 #endif
 		{
