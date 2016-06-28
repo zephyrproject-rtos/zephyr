@@ -194,7 +194,7 @@ SECTION_FUNC(exception.entry, _exception_enter_fault)
 	 * C domain
 	 */
 
-	ldw  r4, 0(sp)
+	mov  r4, sp
 	call _Fault
 	jmpi _exception_exit
 
