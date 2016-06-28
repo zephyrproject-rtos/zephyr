@@ -46,7 +46,7 @@ extern "C" {
 #define AF_INET6	PF_INET6
 
 /** Protocol numbers from IANA */
-enum ip_protocol {
+enum net_ip_protocol {
 	IPPROTO_ICMP = 1,
 	IPPROTO_TCP = 6,
 	IPPROTO_UDP = 17,
@@ -176,7 +176,7 @@ struct net_tuple {
 	/** UDP/TCP local port */
 	uint16_t local_port;
 	/** IP protocol */
-	enum ip_protocol ip_proto;
+	enum net_ip_protocol ip_proto;
 };
 
 /** How the network address is assigned to network interface */

@@ -99,7 +99,7 @@ struct net_conn {
  *
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
-int net_conn_register(enum ip_protocol proto,
+int net_conn_register(enum net_ip_protocol proto,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
 		      uint16_t remote_port,
@@ -128,9 +128,10 @@ int net_conn_unregister(void *handle);
  * disabled, the function will always return NET_DROP.
  */
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
-enum net_verdict net_conn_input(enum ip_protocol proto, struct net_buf *buf);
+enum net_verdict net_conn_input(enum net_ip_protocol proto,
+				struct net_buf *buf);
 #else
-static inline enum net_verdict net_conn_input(enum ip_protocol proto,
+static inline enum net_verdict net_conn_input(enum net_ip_protocol proto,
 					      struct net_buf *buf)
 {
 	return NET_DROP;

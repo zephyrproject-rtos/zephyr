@@ -61,7 +61,7 @@ static struct net_conn conns[CONFIG_NET_MAX_CONN];
 #define NET_CONN_BUF(buf) ((struct net_udp_hdr *)(net_nbuf_udp_data(buf)))
 
 #if NET_DEBUG
-static inline const char *proto2str(enum ip_protocol proto)
+static inline const char *proto2str(enum net_ip_protocol proto)
 {
 	switch (proto) {
 	case IPPROTO_ICMP:
@@ -177,7 +177,7 @@ static inline uint16_t ipv4_to_hash(struct in_addr *addr)
 /* Return either the first free position in the cache (idx < 0) or
  * the existing cached position (idx >= 0)
  */
-static int32_t check_hash(enum ip_protocol proto,
+static int32_t check_hash(enum net_ip_protocol proto,
 			  sa_family_t family,
 			  void *remote_addr,
 			  void *local_addr,
@@ -238,7 +238,7 @@ static int32_t check_hash(enum ip_protocol proto,
 	return -ENOENT;
 }
 
-static inline int32_t get_conn(enum ip_protocol proto,
+static inline int32_t get_conn(enum net_ip_protocol proto,
 			       sa_family_t family,
 			       struct net_buf *buf,
 			       uint32_t *cache_value)
@@ -309,7 +309,7 @@ static void cache_clear(void)
 	}
 }
 
-static inline enum net_verdict cache_check(enum ip_protocol proto,
+static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 					   struct net_buf *buf,
 					   uint32_t *cache_value,
 					   int32_t *pos)
@@ -420,7 +420,7 @@ void prepare_register_debug_print(char *dst, int dst_len,
 }
 #endif /* NET_DEBUG */
 
-int net_conn_register(enum ip_protocol proto,
+int net_conn_register(enum net_ip_protocol proto,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
 		      uint16_t remote_port,
@@ -634,7 +634,7 @@ static inline void send_icmp_error(struct net_buf *buf)
 	}
 }
 
-enum net_verdict net_conn_input(enum ip_protocol proto, struct net_buf *buf)
+enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 {
 	int i, best_match = -1;
 	int16_t best_rank = -1;

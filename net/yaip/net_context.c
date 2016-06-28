@@ -52,7 +52,7 @@ static struct nano_sem contexts_lock;
 
 int net_context_get(sa_family_t family,
 		    enum net_sock_type type,
-		    enum ip_protocol ip_proto,
+		    enum net_ip_protocol ip_proto,
 		    struct net_context **context)
 {
 	int i, ret = -ENOENT;
@@ -186,7 +186,7 @@ int net_context_put(struct net_context *context)
 	return 0;
 }
 
-static int check_used_port(enum ip_protocol ip_proto,
+static int check_used_port(enum net_ip_protocol ip_proto,
 			   uint16_t local_port,
 			   const struct sockaddr *local_addr)
 
@@ -627,7 +627,7 @@ static inline struct net_context *find_context(void *conn_handler)
 }
 
 static void set_appdata_values(struct net_buf *buf,
-			       enum ip_protocol proto,
+			       enum net_ip_protocol proto,
 			       size_t total_len)
 {
 	if (proto == IPPROTO_UDP) {

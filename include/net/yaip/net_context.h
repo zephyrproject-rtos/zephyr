@@ -263,7 +263,7 @@ static inline void net_context_set_type(struct net_context *context,
  * @return Network context IP protocol.
  */
 static inline
-enum ip_protocol net_context_get_ip_proto(struct net_context *context)
+enum net_ip_protocol net_context_get_ip_proto(struct net_context *context)
 {
 	NET_ASSERT(context);
 
@@ -284,7 +284,7 @@ enum ip_protocol net_context_get_ip_proto(struct net_context *context)
  * @param ip_proto Context IP protocol (IPPROTO_UDP or IPPROTO_TCP)
  */
 static inline void net_context_set_ip_proto(struct net_context *context,
-					    enum ip_protocol ip_proto)
+					    enum net_ip_protocol ip_proto)
 {
 	NET_ASSERT(context);
 
@@ -347,7 +347,7 @@ static inline void net_context_set_iface(struct net_context *context,
  */
 int net_context_get(sa_family_t family,
 		    enum net_sock_type type,
-		    enum ip_protocol ip_proto,
+		    enum net_ip_protocol ip_proto,
 		    struct net_context **context);
 
 /**
