@@ -104,7 +104,6 @@
 
   #elif defined(CONFIG_NIOS2)
 
-    /* FIXME placeholder value */
     #define PERFOPT_ALIGN .balign 4
 
   #else
