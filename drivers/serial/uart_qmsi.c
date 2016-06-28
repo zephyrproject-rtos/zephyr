@@ -350,10 +350,12 @@ static int uart_qmsi_line_ctrl_set(struct device *dev, uint32_t ctrl, uint32_t v
 
 	switch (ctrl) {
 	case LINE_CTRL_BAUD_RATE:
-		nano_sem_take(&context->sem, TICKS_UNLIMITED);
-		qm_uart_get_config(instance, &cfg);
+		cfg.line_control = QM_UART[instance]->lcr;
 		cfg.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(DIVISOR_HIGH(val),
 							    DIVISOR_LOW(val), 0);
+		cfg.hw_fc = QM_UART[instance]->mcr & QM_UART_MCR_AFCE;
+		cfg.int_en = false;
+		nano_sem_take(&context->sem, TICKS_UNLIMITED);
 		qm_uart_set_config(instance, &cfg);
 		nano_sem_give(&context->sem);
 		break;
