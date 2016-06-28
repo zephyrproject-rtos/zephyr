@@ -29,6 +29,13 @@ config  NET_L2_IEEE802154_DEBUG
 	  Enable it if you want to see what's happening. Only useful
 	  for developers.
 
+config  NET_L2_IEEE802154_ACK_REPLY
+	bool "Enable IEEE 802.15.4 ACK reply logic"
+	default y
+	help
+	  Enable inner stack's logic on handling ACK request. Note that
+	  if the hw driver has an AUTOACK feature, this is then unnecessary.
+
 config  NET_L2_IEEE802154_RADIO_ALOHA
 	bool "Enable IEEE 802.15.4 Aloha radio protocol"
 	default y

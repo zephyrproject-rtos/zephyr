@@ -131,6 +131,11 @@ uint16_t ieee802154_compute_header_size(struct net_if *iface,
 bool ieee802154_create_data_frame(struct net_if *iface,
 				  struct net_buf *buf);
 
+#ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
+bool ieee802154_create_ack_frame(struct net_if *iface,
+				 struct net_buf *buf, uint8_t seq);
+#endif
+
 static inline bool ieee802154_ack_required(struct net_buf *buf)
 {
 	struct ieee802154_fcf_seq *fs =

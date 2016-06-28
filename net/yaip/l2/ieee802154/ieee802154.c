@@ -22,13 +22,49 @@
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
-#include <net/nbuf.h>
 
 #include <errno.h>
 
 #include <net/ieee802154_radio.h>
 
 #include "ieee802154_frame.h"
+
+#ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
+static inline void ieee802154_acknowledge(struct net_if *iface,
+					  struct ieee802154_mpdu *mpdu)
+{
+	struct net_buf *buf, *frag;
+
+	if (!mpdu->mhr.fs->fc.ar) {
+		return;
+	}
+
+	buf = net_nbuf_get_reserve_tx(0);
+	if (!buf) {
+		return;
+	}
+
+	frag = net_nbuf_get_reserve_data(IEEE802154_ACK_PKT_LENGTH);
+
+	net_buf_frag_insert(buf, frag);
+	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+
+	if (ieee802154_create_ack_frame(iface, buf, mpdu->mhr.fs->sequence)) {
+		struct ieee802154_radio_api *radio =
+			(struct ieee802154_radio_api *)iface->dev->driver_api;
+
+		net_buf_add(frag, IEEE802154_ACK_PKT_LENGTH);
+
+		radio->tx(iface->dev, buf);
+	}
+
+	net_nbuf_unref(buf);
+
+	return;
+}
+#else
+#define ieee802154_acknowledge(...)
+#endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
 
 static enum net_verdict ieee802154_recv(struct net_if *iface,
 					struct net_buf *buf)
@@ -55,6 +91,8 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	 * so net_core will not count it as IP data.
 	 */
 	buf->frags->len -= IEEE802154_MFR_LENGTH;
+
+	ieee802154_acknowledge(iface, &mpdu);
 
 	net_nbuf_set_ll_reserve(buf, mpdu.payload - (void *)net_nbuf_ll(buf));
 	net_buf_pull(buf->frags, net_nbuf_ll_reserve(buf));

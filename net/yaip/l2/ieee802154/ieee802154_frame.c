@@ -31,7 +31,6 @@
 
 #include <net/net_core.h>
 #include <net/net_if.h>
-#include <net/nbuf.h>
 
 #include <ipv6.h>
 #include <nbr.h>
@@ -104,12 +103,20 @@ validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 	NET_DBG("Header size: %u, vs total length %u: payload size %u",
 		p_buf - buf, length, payload_length);
 
-	/** A data frame embeds a payload */
-	if (payload_length == 0) {
-		return false;
-	}
+	if (mpdu->mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_ACK) {
+		if (payload_length) {
+			return false;
+		}
 
-	mpdu->payload = (void *)p_buf;
+		mpdu->payload = NULL;
+	} else {
+		 /** A data frame embeds a payload */
+		if (payload_length == 0) {
+			return false;
+		}
+
+		mpdu->payload = (void *)p_buf;
+	}
 
 	mpdu->mfr = (struct ieee802154_mfr *)(p_buf + payload_length);
 
@@ -132,7 +139,8 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 	}
 
 	/** ToDo: Support other frames */
-	if (mpdu->mhr.fs->fc.frame_type != IEEE802154_FRAME_TYPE_DATA) {
+	if (mpdu->mhr.fs->fc.frame_type != IEEE802154_FRAME_TYPE_DATA &&
+	    mpdu->mhr.fs->fc.frame_type != IEEE802154_FRAME_TYPE_ACK) {
 		return false;
 	}
 
@@ -310,3 +318,23 @@ bool ieee802154_create_data_frame(struct net_if *iface, struct net_buf *buf)
 
 	return true;
 }
+
+#ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
+bool ieee802154_create_ack_frame(struct net_if *iface,
+				 struct net_buf *buf, uint8_t seq)
+{
+	uint8_t *p_buf = net_nbuf_ll(buf);
+	struct ieee802154_fcf_seq *fs;
+
+	if (!p_buf) {
+		return false;
+	}
+
+	fs = generate_fcf_grounds(&p_buf);
+
+	fs->fc.frame_type = IEEE802154_FRAME_TYPE_ACK;
+	fs->sequence = seq;
+
+	return true;
+}
+#endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
