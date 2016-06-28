@@ -56,20 +56,6 @@ static void interrupt_handler(struct device *dev)
 	}
 }
 
-static void read_data(struct device *dev, int *bytes_read)
-{
-	uart_irq_rx_enable(dev);
-
-	data_arrived = false;
-	while (data_arrived == false)
-		;
-
-	/* Read all data */
-	*bytes_read = uart_fifo_read(dev, data_buf, sizeof(data_buf));
-
-	uart_irq_rx_disable(dev);
-}
-
 static void write_data(struct device *dev, const char *buf, int len)
 {
 	uart_irq_tx_enable(dev);
@@ -80,6 +66,20 @@ static void write_data(struct device *dev, const char *buf, int len)
 		;
 
 	uart_irq_tx_disable(dev);
+}
+
+static void read_and_echo_data(struct device *dev, int *bytes_read)
+{
+	while (data_arrived == false)
+		;
+
+	data_arrived = false;
+
+	/* Read all data and echo it back */
+	while ((*bytes_read = uart_fifo_read(dev,
+	    data_buf, sizeof(data_buf)))) {
+		write_data(dev, data_buf, *bytes_read);
+	}
 }
 
 void main(void)
@@ -124,9 +124,11 @@ void main(void)
 	write_data(dev, banner1, strlen(banner1));
 	write_data(dev, banner2, strlen(banner2));
 
+	/* Enable rx interrupts */
+	uart_irq_rx_enable(dev);
+
 	/* Echo the received data */
 	while (1) {
-		read_data(dev, &bytes_read);
-		write_data(dev, data_buf, bytes_read);
+		read_and_echo_data(dev, &bytes_read);
 	}
 }
