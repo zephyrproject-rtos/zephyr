@@ -254,15 +254,15 @@ static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
 		nano_sem_take(&driver_data->sem, TICKS_UNLIMITED);
 		rc = qm_ss_i2c_master_irq_transfer(instance, &xfer, addr);
 		nano_sem_give(&driver_data->sem);
-		if (rc != 0)
+		if (rc != 0) {
 			return -EIO;
+		}
 
 		/* Block current thread until the I2C transfer completes. */
-		if (stop || op != I2C_MSG_WRITE) {
-			device_sync_call_wait(&driver_data->sync);
+		device_sync_call_wait(&driver_data->sync);
 
-			if (driver_data->transfer_status != 0)
-				return -EIO;
+		if (driver_data->transfer_status != 0) {
+			return -EIO;
 		}
 	}
 

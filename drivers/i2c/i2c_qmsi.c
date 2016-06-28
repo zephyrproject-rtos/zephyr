@@ -132,11 +132,13 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 	int rc;
 
 	qm_i2c_get_status(instance, &status);
-	if (status != QM_I2C_IDLE)
+	if (status != QM_I2C_IDLE) {
 		return -EBUSY;
+	}
 
-	if  (msgs == NULL || num_msgs == 0)
+	if  (msgs == NULL || num_msgs == 0) {
 		return -ENOTSUP;
+	}
 
 	for (int i = 0; i < num_msgs; i++) {
 		uint8_t op =  msgs[i].flags & I2C_MSG_RW_MASK;
@@ -158,15 +160,15 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 		rc = qm_i2c_master_irq_transfer(instance, &xfer, addr);
 		nano_sem_give(&driver_data->sem);
 
-		if (rc != 0)
+		if (rc != 0) {
 			return -EIO;
+		}
 
 		/* Block current thread until the I2C transfer completes. */
-		if (stop || op != I2C_MSG_WRITE) {
-			device_sync_call_wait(&driver_data->sync);
-			if (driver_data->transfer_status != 0) {
-				return -EIO;
-			}
+		device_sync_call_wait(&driver_data->sync);
+
+		if (driver_data->transfer_status != 0) {
+			return -EIO;
 		}
 	}
 
