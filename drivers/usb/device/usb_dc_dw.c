@@ -334,6 +334,7 @@ static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 	enum usb_dw_in_ep_idx ep_idx = USB_DW_EP_ADDR2IDX(ep);
 	uint32_t max_xfer_size, max_pkt_cnt, pkt_cnt, avail_space;
 	uint32_t ep_mps = usb_dw_ctrl.in_ep_ctrl[ep_idx].mps;
+	unsigned int key;
 	int i;
 
 	/* Check if FIFO space available */
@@ -403,9 +404,20 @@ static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 	USB_DW->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_CNAK;
 	USB_DW->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_EP_ENA;
 
-	/* Write data to FIFO */
-	for (i = 0; i < data_len; i += 4)
+	/*
+	 * Write data to FIFO, make sure that we are protected against
+	 * other USB register accesses.  According to "DesignWare Cores
+	 * USB 1.1/2.0 Device Subsystem-AHB/VCI Databook": "During FIFO
+	 * access, the application must not access the UDC/Subsystem
+	 * registers or vendor registers (for ULPI mode). After starting
+	 * to access a FIFO, the application must complete the transaction
+	 * before accessing the register."
+	 */
+	key = irq_lock();
+	for (i = 0; i < data_len; i += 4) {
 		USB_DW_EP_FIFO(ep_idx) = *(uint32_t *)(data + i);
+	}
+	irq_unlock(key);
 
 	DBG("USB IN EP%d write %x bytes\n", ep_idx, data_len);
 
