@@ -120,7 +120,8 @@ static inline void slip_writeb(unsigned char c)
 static int slip_send(struct net_if *iface, struct net_buf *buf)
 {
 	struct slip_context *slip = iface->dev->driver_data;
-	uint16_t i;
+	uint16_t i, reserve = slip->ll_reserve;
+	bool send_header_once = false;
 	uint8_t *ptr;
 	uint8_t c;
 
@@ -142,10 +143,20 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 		ptr = frag->data - slip->ll_reserve;
 
 		/* This writes ethernet header */
-		if (slip->ll_reserve) {
+		if (!send_header_once && slip->ll_reserve) {
 			for (i = 0; i < sizeof(struct net_eth_hdr); i++) {
 				slip_writeb(*ptr++);
 			}
+		}
+
+		if (slip->mtu > net_buf_headroom(frag)) {
+			/* Do not add link layer header if the mtu is bigger
+			 * than fragment size. The first packet needs the
+			 * link layer header always.
+			 */
+			send_header_once = true;
+			reserve = 0;
+			ptr = frag->data;
 		}
 #else
 		/* There is no ll header in tun device */
@@ -166,13 +177,13 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 
 #if defined(CONFIG_SLIP_DEBUG)
 		SYS_LOG_DBG("[%p] sent data %d bytes", slip,
-			    frag->len + slip->ll_reserve);
-		if (frag->len + slip->ll_reserve) {
+			    frag->len + reserve);
+		if (frag->len + reserve) {
 			char msg[7 + 1];
 			snprintf(msg, sizeof(msg), "slip %d", frag_count++);
 			msg[7] = '\0';
-			hexdump(msg, frag->data - slip->ll_reserve,
-				frag->len + slip->ll_reserve);
+			hexdump(msg, frag->data - reserve,
+				frag->len + reserve);
 		}
 #endif
 
