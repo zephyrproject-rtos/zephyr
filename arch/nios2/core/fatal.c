@@ -79,13 +79,20 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 	}
 
+	/* Subtract 4 from EA since we added 4 earlier so that the faulting
+	 * instruction isn't retried.
+	 *
+	 * TODO: Only caller-saved registers get saved upon exception entry.
+	 * We may want to introduce a config option to save and dump all
+	 * registers, at the expense of some stack space.
+	 */
 	printk("Current thread ID: 0x%x\n"
 	       "Faulting instruction: 0x%x\n"
 	       " r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x\n"
 	       " r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x\n"
 	       " r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x\n"
 	       "r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x\n"
-	       "estatus: %x\n", sys_thread_self_get(), esf->instr,
+	       "estatus: %x\n", sys_thread_self_get(), esf->instr - 4,
 	       esf->r1, esf->r2, esf->r3, esf->r4,
 	       esf->r5, esf->r6, esf->r7, esf->r8,
 	       esf->r9, esf->r10, esf->r11, esf->r12,
@@ -114,7 +121,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	/* Bits 2-6 contain the cause code */
 	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
 		 >> NIOS2_EXCEPTION_REG_CAUSE_OFST;
-	printk("Exception cause: 0x%x ECCFTL: %d\n", exc_reg, eccftl);
+	printk("Exception cause: 0x%x ECCFTL: %d\n", cause, eccftl);
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
 		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
 		printk("Badaddr: 0x%x\n", badaddr_reg);
