@@ -45,6 +45,7 @@
 extern "C" {
 #endif
 
+#include <misc/nano_work.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 
@@ -80,6 +81,8 @@ struct bt_l2cap_le_chan {
 	struct bt_l2cap_le_endpoint	tx;
 	/** Helps match request context for oustanding requests during CoC */
 	uint8_t				ident;
+	/* Response Timeout eXpired (RTX) timer */
+	struct nano_delayed_work	rtx_work;
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
 	uint16_t			_sdu_len;

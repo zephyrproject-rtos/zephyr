@@ -40,6 +40,8 @@
 #define BT_DBG(fmt, ...)
 #endif
 
+#define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, rtx_work)
+
 #define L2CAP_LE_MIN_MTU		23
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
 #define L2CAP_LE_CREDITS_THRESHOLD	(L2CAP_LE_MAX_CREDITS / 2)
@@ -49,6 +51,9 @@
 
 #define L2CAP_LE_PSM_START	0x0001
 #define L2CAP_LE_PSM_END	0x00ff
+
+#define L2CAP_CONN_TIMEOUT	(40 * sys_clock_ticks_per_sec)
+#define L2CAP_DISC_TIMEOUT	sys_clock_ticks_per_sec
 
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
@@ -132,6 +137,67 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 	return NULL;
 }
 
+static struct bt_l2cap_le_chan *
+__l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, bool remove)
+{
+	struct bt_l2cap_chan *chan, *prev;
+
+	for (chan = conn->channels, prev = NULL; chan;
+	     prev = chan, chan = chan->_next) {
+		/* get the app's l2cap object where this chan is member */
+		struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
+
+		if (ch->ident != ident) {
+			continue;
+		}
+
+		if (!remove) {
+			return ch;
+		}
+
+		if (!prev) {
+			conn->channels = chan->_next;
+		} else {
+			prev->_next = chan->_next;
+		}
+
+		return ch;
+	}
+
+	return NULL;
+}
+
+static void l2cap_chan_del(struct bt_l2cap_chan *chan)
+{
+	BT_DBG("conn %p chan %p", chan->conn, chan);
+
+	if (!chan->conn) {
+		goto destroy;
+	}
+
+	if (chan->ops && chan->ops->disconnected) {
+		chan->ops->disconnected(chan);
+	}
+
+	chan->conn = NULL;
+
+destroy:
+	if (chan->destroy) {
+		chan->destroy(chan);
+	}
+}
+
+static void l2cap_rtx_timeout(struct nano_work *work)
+{
+	struct bt_l2cap_le_chan *chan = LE_CHAN_RTX(work);
+
+	BT_ERR("chan %p timeout", chan);
+
+	l2cap_remove_ident(chan->chan.conn, chan->ident);
+
+	l2cap_chan_del(&chan->chan);
+}
+
 static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *ch = l2cap_chan_alloc_cid(conn, chan);
@@ -145,6 +211,8 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 	chan->_next = conn->channels;
 	conn->channels = chan;
 	chan->conn = conn;
+
+	nano_delayed_work_init(&ch->rtx_work, l2cap_rtx_timeout);
 
 	BT_DBG("conn %p chan %p cid 0x%04x", conn, ch, ch->rx.cid);
 
@@ -187,26 +255,6 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		if (chan->ops->connected) {
 			chan->ops->connected(chan);
 		}
-	}
-}
-
-static void l2cap_chan_del(struct bt_l2cap_chan *chan)
-{
-	BT_DBG("conn %p chan %p", chan->conn, chan);
-
-	if (!chan->conn) {
-		goto destroy;
-	}
-
-	if (chan->ops && chan->ops->disconnected) {
-		chan->ops->disconnected(chan);
-	}
-
-	chan->conn = NULL;
-
-destroy:
-	if (chan->destroy) {
-		chan->destroy(chan);
 	}
 }
 
@@ -345,7 +393,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_CONN_PARAM_REJECTED);
 	}
 
-	bt_l2cap_send(l2cap->chan.chan.conn, BT_L2CAP_CID_LE_SIG, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 
 	if (params_valid) {
 		bt_conn_le_conn_update(conn, param);
@@ -633,36 +681,6 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
 
-static struct bt_l2cap_le_chan *
-__l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, bool remove)
-{
-	struct bt_l2cap_chan *chan, *prev;
-
-	for (chan = conn->channels, prev = NULL; chan;
-	     prev = chan, chan = chan->_next) {
-		/* get the app's l2cap object where this chan is member */
-		struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-
-		if (ch->ident != ident) {
-			continue;
-		}
-
-		if (!remove) {
-			return ch;
-		}
-
-		if (!prev) {
-			conn->channels = chan->_next;
-		} else {
-			prev->_next = chan->_next;
-		}
-
-		return ch;
-	}
-
-	return NULL;
-}
-
 static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			struct net_buf *buf)
 {
@@ -711,6 +729,9 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		/* Give credits */
 		l2cap_chan_tx_give_credits(chan, credits);
 		l2cap_chan_rx_give_credits(chan, L2CAP_LE_MAX_CREDITS);
+
+		/* Cancel RTX work */
+		nano_delayed_work_cancel(&chan->rtx_work);
 
 		break;
 	/* TODO: Retry on Authentication and Encryption errors */
@@ -1162,6 +1183,27 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
+				struct net_buf *buf, uint32_t ticks)
+{
+	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
+	 *
+	 * The value of this timer is implementation-dependent but the minimum
+	 * initial value is 1 second and the maximum initial value is 60
+	 * seconds. One RTX timer shall exist for each outstanding signaling
+	 * request, including each Echo Request. The timer disappears on the
+	 * final expiration, when the response is received, or the physical
+	 * link is lost.
+	 */
+	if (ticks) {
+		nano_delayed_work_submit(&chan->rtx_work, ticks);
+	} else {
+		nano_delayed_work_cancel(&chan->rtx_work);
+	}
+
+	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
+}
+
 static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 			    uint16_t psm)
 {
@@ -1202,7 +1244,7 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 	req->mps = sys_cpu_to_le16(ch->rx.mps);
 	req->credits = sys_cpu_to_le16(L2CAP_LE_MAX_CREDITS);
 
-	bt_l2cap_send(ch->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
+	l2cap_chan_send_req(ch, buf, L2CAP_CONN_TIMEOUT);
 
 	return 0;
 }
@@ -1258,16 +1300,18 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 		return -ENOMEM;
 	}
 
+	ch->ident = get_ident();
+
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_DISCONN_REQ;
-	hdr->ident = get_ident();
+	hdr->ident = ch->ident;
 	hdr->len = sys_cpu_to_le16(sizeof(*req));
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->dcid = sys_cpu_to_le16(ch->tx.cid);
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	l2cap_chan_send_req(ch, buf, L2CAP_DISC_TIMEOUT);
 
 	return 0;
 }
