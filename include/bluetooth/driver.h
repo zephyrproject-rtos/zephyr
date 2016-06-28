@@ -40,9 +40,10 @@ extern "C" {
  *  doesn't need to be explicitly called. Only available when
  *  CONFIG_BLUETOOTH_HOST_BUFFERS has been selected.
  *
+ *  @param opcode HCI event opcode or 0 if not known
  *  @return A new buffer with the BT_BUF_EVT type.
  */
-struct net_buf *bt_buf_get_evt(void);
+struct net_buf *bt_buf_get_evt(uint8_t opcode);
 
 /** Allocate a buffer for incoming ACL data
  *

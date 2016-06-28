@@ -55,7 +55,7 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 
 	BT_DBG("opcode %x status %x", opcode, status);
 
-	buf = bt_buf_get_evt();
+	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS);
 	if (!buf) {
 		BT_ERR("No available event buffers!");
 		return;
@@ -86,7 +86,7 @@ static void emulate_le_p256_public_key_cmd(struct net_buf *buf)
 
 	send_cmd_status(BT_HCI_OP_LE_P256_PUBLIC_KEY, 0);
 
-	buf = bt_buf_get_evt();
+	buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT);
 	if (!buf) {
 		BT_ERR("No available event buffers!");
 		return;
@@ -148,7 +148,7 @@ static void emulate_le_generate_dhkey(struct net_buf *buf)
 
 	net_buf_unref(buf);
 
-	buf = bt_buf_get_evt();
+	buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT);
 	if (!buf) {
 		BT_ERR("No available event buffers!");
 		return;

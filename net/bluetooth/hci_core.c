@@ -118,6 +118,17 @@ static struct nano_fifo avail_hci_evt;
 static NET_BUF_POOL(hci_evt_pool, CONFIG_BLUETOOTH_HCI_EVT_COUNT,
 		    BT_BUF_EVT_SIZE, &avail_hci_evt, NULL,
 		    BT_BUF_USER_DATA_MIN);
+/*
+ * This priority pool is to handle HCI events that must not be dropped
+ * (currently this is Command Status, Command Complete and Number of
+ * Complete Packets) if running low on buffers. Buffers from this pool are not
+ * allowed to be passed to RX fiber and must be returned from bt_recv().
+ */
+static struct nano_fifo avail_prio_hci_evt;
+static NET_BUF_POOL(hci_evt_prio_pool, 1,
+		    BT_BUF_EVT_SIZE, &avail_prio_hci_evt, NULL,
+		    BT_BUF_USER_DATA_MIN);
+
 #endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
 
 static struct tc_hmac_prng_struct prng;
@@ -3195,6 +3206,17 @@ int bt_recv(struct net_buf *buf)
 		break;
 #endif /* CONFIG_BLUETOOTH_CONN */
 	default:
+#if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
+		/*
+		 * If buffer used is from priority pool we are running low on
+		 * buffers and those needs to be kept for 'critical' events
+		 * handled directly from bt_recv().
+		 */
+		if (buf->free == &avail_prio_hci_evt) {
+			break;
+		}
+#endif /* CONFIG_BLUETOOTH_HOST_BUFFERS */
+
 		net_buf_put(&bt_dev.rx_queue, net_buf_ref(buf));
 		break;
 	}
@@ -3355,6 +3377,7 @@ int bt_enable(bt_ready_cb_t cb)
 	net_buf_pool_init(hci_cmd_pool);
 #if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
 	net_buf_pool_init(hci_evt_pool);
+	net_buf_pool_init(hci_evt_prio_pool);
 #if defined(CONFIG_BLUETOOTH_CONN)
 	net_buf_pool_init(acl_in_pool);
 #endif /* CONFIG_BLUETOOTH_CONN */
@@ -3649,11 +3672,27 @@ int bt_le_scan_stop(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_HOST_BUFFERS)
-struct net_buf *bt_buf_get_evt(void)
+struct net_buf *bt_buf_get_evt(uint8_t opcode)
 {
 	struct net_buf *buf;
 
-	buf = net_buf_get(&avail_hci_evt, CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+	switch (opcode) {
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_CMD_STATUS:
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+		buf = net_buf_get(&avail_prio_hci_evt,
+				  CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+		break;
+	default:
+		buf = net_buf_get(&avail_hci_evt,
+				  CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+		if (!buf && opcode == 0x00) {
+			buf = net_buf_get(&avail_prio_hci_evt,
+					  CONFIG_BLUETOOTH_HCI_RECV_RESERVE);
+		}
+		break;
+	}
+
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_EVT);
 	}

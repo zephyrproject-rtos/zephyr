@@ -94,7 +94,7 @@ static struct net_buf *h4_evt_recv(int *remaining)
 
 	*remaining = hdr.len;
 
-	buf = bt_buf_get_evt();
+	buf = bt_buf_get_evt(hdr.evt);
 	if (buf) {
 		memcpy(net_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
 	} else {
