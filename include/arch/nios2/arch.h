@@ -137,7 +137,6 @@ void _arch_irq_disable(unsigned int irq);
 
 struct __esf {
 	uint32_t ra; /* return address r31 */
-	uint32_t r0; /* zero register */
 	uint32_t r1; /* at */
 	uint32_t r2; /* return value */
 	uint32_t r3; /* return value */

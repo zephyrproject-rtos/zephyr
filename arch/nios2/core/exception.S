@@ -21,8 +21,6 @@
 
 /* exports */
 GTEXT(_exception)
-GTEXT(_exception_exit)
-GTEXT(_exception_enter_fault)
 
 /* import */
 GTEXT(_Fault)
@@ -52,7 +50,6 @@ SECTION_FUNC(exception.entry, _exception)
 
 	/* Preserve all caller-saved registers onto the thread's stack */
 	stw ra,  __NANO_ESF_ra_OFFSET(sp)
-	/* Gap here for muldiv handler to store zero register */
 	stw r1,  __NANO_ESF_r1_OFFSET(sp)
 	stw r2,  __NANO_ESF_r2_OFFSET(sp)
 	stw r3,  __NANO_ESF_r3_OFFSET(sp)
@@ -172,8 +169,7 @@ BRANCH_LABEL(on_irq_stack)
 BRANCH_LABEL(not_interrupt)
 
 	/* Since this wasn't an interrupt we're not going to restart the
-	 * faulting instruction. If it's an unimplemented math instruction,
-	 * the muldiv code will handle it, else we just give up and _Fault.
+	 * faulting instruction.
 	 *
 	 * We earlier put ea - 4 in the stack frame, replace it with just ea
 	 */
@@ -189,9 +185,9 @@ BRANCH_LABEL(not_interrupt)
 	bne   r11, zero, is_interrupt
 #endif
 
-SECTION_FUNC(exception.entry, _exception_enter_fault)
+BRANCH_LABEL(_exception_enter_fault)
 	/* If we get here, the exception wasn't in interrupt or an
-	 * unimplemented math instruction. Let _Fault() handle it in
+	 * invocation of irq_oflload(). Let _Fault() handle it in
 	 * C domain
 	 */
 
@@ -208,7 +204,7 @@ BRANCH_LABEL(no_reschedule)
 
 	/* Fall through */
 
-SECTION_FUNC(exception.entry, _exception_exit)
+BRANCH_LABEL(_exception_exit)
 	/* We are on the thread stack. Restore all saved registers
 	 * and return to the interrupted context */
 
