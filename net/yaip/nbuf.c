@@ -290,12 +290,13 @@ void net_nbuf_print_frags(struct net_buf *buf)
 	while (frag) {
 		total += frag->len;
 
-		NET_DBG("[%d] frag %p len %d", count, frag, frag->len);
-
-		count++;
-
 		frag_size = frag->size;
 		ll_overhead = net_buf_headroom(frag);
+
+		NET_DBG("[%d] frag %p len %d size %d reserve %d",
+			count, frag, frag->len, frag_size, ll_overhead);
+
+		count++;
 
 		frag = frag->frags;
 	}
@@ -511,16 +512,22 @@ struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
 
 struct net_buf *net_nbuf_get_rx(struct net_context *context)
 {
+	NET_ASSERT_INFO(context, "RX context not set");
+
 	return net_nbuf_get(NET_NBUF_RX, context);
 }
 
 struct net_buf *net_nbuf_get_tx(struct net_context *context)
 {
+	NET_ASSERT_INFO(context, "TX context not set");
+
 	return net_nbuf_get(NET_NBUF_TX, context);
 }
 
 struct net_buf *net_nbuf_get_data(struct net_context *context)
 {
+	NET_ASSERT_INFO(context, "Data context not set");
+
 	return net_nbuf_get(NET_NBUF_DATA, context);
 }
 
