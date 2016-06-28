@@ -17,6 +17,7 @@
 #define _ASMLANGUAGE
 #include <arch/nios2/asm.h>
 #include <nano_private.h>
+#include <offsets.h>
 
 /* exports */
 GTEXT(_exception)
@@ -47,36 +48,36 @@ GTEXT(_offload_routine)
  */
 SECTION_FUNC(exception.entry, _exception)
 	/* Reserve thread stack space for saving context */
-	addi sp, sp, -76
+	subi sp, sp, __NANO_ESF_SIZEOF
 
 	/* Preserve all caller-saved registers onto the thread's stack */
-	stw ra,   0(sp)
+	stw ra,  __NANO_ESF_ra_OFFSET(sp)
 	/* Gap here for muldiv handler to store zero register */
-	stw r1,   8(sp)
-	stw r2,  12(sp)
-	stw r3,  16(sp)
-	stw r4,  20(sp)
-	stw r5,  24(sp)
-	stw r6,  28(sp)
-	stw r7,  32(sp)
-	stw r8,  36(sp)
-	stw r9,  40(sp)
-	stw r10, 44(sp)
-	stw r11, 48(sp)
-	stw r12, 52(sp)
-	stw r13, 56(sp)
-	stw r14, 60(sp)
-	stw r15, 64(sp)
+	stw r1,  __NANO_ESF_r1_OFFSET(sp)
+	stw r2,  __NANO_ESF_r2_OFFSET(sp)
+	stw r3,  __NANO_ESF_r3_OFFSET(sp)
+	stw r4,  __NANO_ESF_r4_OFFSET(sp)
+	stw r5,  __NANO_ESF_r5_OFFSET(sp)
+	stw r6,  __NANO_ESF_r6_OFFSET(sp)
+	stw r7,  __NANO_ESF_r7_OFFSET(sp)
+	stw r8,  __NANO_ESF_r8_OFFSET(sp)
+	stw r9,  __NANO_ESF_r9_OFFSET(sp)
+	stw r10, __NANO_ESF_r10_OFFSET(sp)
+	stw r11, __NANO_ESF_r11_OFFSET(sp)
+	stw r12, __NANO_ESF_r12_OFFSET(sp)
+	stw r13, __NANO_ESF_r13_OFFSET(sp)
+	stw r14, __NANO_ESF_r14_OFFSET(sp)
+	stw r15, __NANO_ESF_r15_OFFSET(sp)
 
 	/* Store value of estatus control register */
 	rdctl et, estatus
-	stw   et, 68(sp)
+	stw   et, __NANO_ESF_estatus_OFFSET(sp)
 
 	/* ea-4 is the address of the instruction when the exception happened,
 	 * put this in the stack frame as well
 	 */
 	addi  r15, ea, -4
-	stw   r15, 72(sp)
+	stw   r15, __NANO_ESF_instr_OFFSET(sp)
 
 	/* Figure out whether we are here because of an interrupt or an
 	 * exception. If an interrupt, switch stacks and enter IRQ handling
@@ -176,7 +177,7 @@ BRANCH_LABEL(not_interrupt)
 	 *
 	 * We earlier put ea - 4 in the stack frame, replace it with just ea
 	 */
-	stw ea, 72(sp)
+	stw ea, __NANO_ESF_instr_OFFSET(sp)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/* Check the contents of _offload_routine. If non-NULL, jump into
@@ -212,35 +213,35 @@ SECTION_FUNC(exception.entry, _exception_exit)
 	 * and return to the interrupted context */
 
 	/* Return address from the exception */
-	ldw ea, 72(sp)
+	ldw ea, __NANO_ESF_instr_OFFSET(sp)
 
 	/* Restore estatus
 	 * XXX is this right??? */
-	ldw   r5, 68(sp)
+	ldw   r5, __NANO_ESF_estatus_OFFSET(sp)
 	wrctl estatus, r5
 
 	/* Restore caller-saved registers */
-	ldw ra,   0(sp)
-	ldw r1,   8(sp)
-	ldw r2,  12(sp)
-	ldw r3,  16(sp)
-	ldw r4,  20(sp)
-	ldw r5,  24(sp)
-	ldw r6,  28(sp)
-	ldw r7,  32(sp)
-	ldw r8,  36(sp)
-	ldw r9,  40(sp)
-	ldw r10, 44(sp)
-	ldw r11, 48(sp)
-	ldw r12, 52(sp)
-	ldw r13, 56(sp)
-	ldw r14, 60(sp)
-	ldw r15, 64(sp)
+	ldw ra,  __NANO_ESF_ra_OFFSET(sp)
+	ldw r1,  __NANO_ESF_r1_OFFSET(sp)
+	ldw r2,  __NANO_ESF_r2_OFFSET(sp)
+	ldw r3,  __NANO_ESF_r3_OFFSET(sp)
+	ldw r4,  __NANO_ESF_r4_OFFSET(sp)
+	ldw r5,  __NANO_ESF_r5_OFFSET(sp)
+	ldw r6,  __NANO_ESF_r6_OFFSET(sp)
+	ldw r7,  __NANO_ESF_r7_OFFSET(sp)
+	ldw r8,  __NANO_ESF_r8_OFFSET(sp)
+	ldw r9,  __NANO_ESF_r9_OFFSET(sp)
+	ldw r10, __NANO_ESF_r10_OFFSET(sp)
+	ldw r11, __NANO_ESF_r11_OFFSET(sp)
+	ldw r12, __NANO_ESF_r12_OFFSET(sp)
+	ldw r13, __NANO_ESF_r13_OFFSET(sp)
+	ldw r14, __NANO_ESF_r14_OFFSET(sp)
+	ldw r15, __NANO_ESF_r15_OFFSET(sp)
 
 	/* Put the stack pointer back where it was when we entered
 	 * exception state
 	 */
-	addi sp, sp, 76
+	addi sp, sp, __NANO_ESF_SIZEOF
 
 	/* All done, copy estatus into status and transfer to ea */
 	eret
