@@ -847,11 +847,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
-	if (pending) {
-		frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(pending));
-	} else {
-		frag = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface));
-	}
+	frag = net_nbuf_get_reserve_data(net_if_get_ll_reserve(iface));
 
 	NET_ASSERT_INFO(frag, "Out of DATA buffers");
 
