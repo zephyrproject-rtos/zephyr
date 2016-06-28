@@ -330,19 +330,38 @@ static void cdc_acm_bulk_out(uint8_t ep,
 		enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
-	uint32_t bytes_to_read, i, buf_tail;
+	uint32_t bytes_to_read, i, j, buf_head;
+	uint8_t tmp_buf[4];
 
 	/* Check how many bytes were received */
 	usb_read(ep, NULL, 0, &bytes_to_read);
 
-	for (i = 0; i < bytes_to_read; i++) {
-		buf_tail = (dev_data->rx_buf_tail + i) % CDC_ACM_BUFFER_SIZE;
-		usb_read(ep, &dev_data->rx_buf[buf_tail], 1, NULL);
+	buf_head = dev_data->rx_buf_head;
+
+	/*
+	 * Quark SE USB controller is always storing data
+	 * in the FIFOs per 32-bit words.
+	 */
+	for (i = 0; i < bytes_to_read; i += 4) {
+		usb_read(ep, tmp_buf, 4, NULL);
+		for (j = 0; j < 4; j++) {
+			if (i + j == bytes_to_read) {
+				/* We read all the data */
+				break;
+			}
+
+			if (((buf_head + 1) % CDC_ACM_BUFFER_SIZE) ==
+			    dev_data->rx_buf_tail) {
+				/* FIFO full, discard data */
+				DBG("CDC buffer full!\n");
+			} else {
+				dev_data->rx_buf[buf_head] = tmp_buf[j];
+				buf_head = (buf_head + 1) % CDC_ACM_BUFFER_SIZE;
+			}
+		}
 	}
 
-	dev_data->rx_buf_tail = (dev_data->rx_buf_tail + bytes_to_read) %
-	    CDC_ACM_BUFFER_SIZE;
-
+	dev_data->rx_buf_head = buf_head;
 	dev_data->rx_ready = 1;
 	/* Call callback only if rx irq ena */
 	if (dev_data->cb && dev_data->rx_irq_ena)
@@ -531,21 +550,21 @@ static int cdc_acm_fifo_read(struct device *dev, uint8_t *rx_data,
 	uint32_t avail_data, bytes_read, i;
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	avail_data = (CDC_ACM_BUFFER_SIZE + dev_data->rx_buf_tail -
-	    dev_data->rx_buf_head) % CDC_ACM_BUFFER_SIZE;
+	avail_data = (CDC_ACM_BUFFER_SIZE + dev_data->rx_buf_head -
+	    dev_data->rx_buf_tail) % CDC_ACM_BUFFER_SIZE;
 	if (avail_data > size)
 		bytes_read = size;
 	else
 		bytes_read = avail_data;
 
 	for (i = 0; i < bytes_read; i++)
-		rx_data[i] = dev_data->rx_buf[(dev_data->rx_buf_head + i) %
+		rx_data[i] = dev_data->rx_buf[(dev_data->rx_buf_tail + i) %
 		    CDC_ACM_BUFFER_SIZE];
 
-	dev_data->rx_buf_head = (dev_data->rx_buf_head + bytes_read) %
+	dev_data->rx_buf_tail = (dev_data->rx_buf_tail + bytes_read) %
 	    CDC_ACM_BUFFER_SIZE;
 
-	if (dev_data->rx_buf_head == dev_data->rx_buf_tail) {
+	if (dev_data->rx_buf_tail == dev_data->rx_buf_head) {
 		/* Buffer empty */
 		dev_data->rx_ready = 0;
 	}
