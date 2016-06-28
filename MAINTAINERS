@@ -204,6 +204,13 @@ S:	Supported
 F:	arch/x86/
 F:	include/arch/x86/
 
+KNOWN ISSUES
+M:	Anas Nashif <anas.nashif@intel.com>
+M:	Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>
+M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
+F:	.known-issues/
+
+
 THE REST
 M:	Anas Nashif <anas.nashif@intel.com>
 L:	devel@lists.zephyrproject.com

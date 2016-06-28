@@ -1,0 +1,55 @@
+This directory contains configuration files to ignore errors found in
+the build and test process which are known to the developers and for
+now can be safely ignored.
+
+To use:
+
+ $ cd zephyr
+ $ make SOMETHING >& result
+ $ scripts/filter-known-issues.py result
+
+It is included in the source tree so if anyone has to submit anything
+that triggers some kind of error that is a false positive, it can
+include the "ignore me" file, properly documented.
+
+Each file can contain one or more multiline Python regular expressions
+(https://docs.python.org/2/library/re.html#regular-expression-syntax)
+that match an error message. Multiple regular expressions are
+separated by comment blocks (that start with #). Note that an empty
+line still is considered part of the multiline regular expression.
+
+For example
+
+---beginning---
+#
+# This testcase always fails, pending fix ZEP-1234
+#
+.*/tests/kernel/grumpy .* FAIL
+#
+# Documentation issue, masks:
+#
+# /home/e/inaky/z/kernel.git/doc/api/io_interfaces.rst:28: WARNING: Invalid definition: Expected identifier in nested name. [error at 19]
+#  struct dev_config::@65  dev_config::bits
+#  -------------------^
+#
+^(?P<filename>.+/doc/api/io_interfaces.rst):(?P<lineno>[0-9]+): WARNING: Invalid definition: Expected identifier in nested name. \[error at [0-9]+]
+^\s+struct dev_config::@[0-9]+  dev_config::bits.*
+^\s+-+\^
+---end---
+
+Note you want to:
+
+- use relateive paths; instead of
+  /home/me/mydir/zephyr/something/somewhere.c you will want
+  ^.*/something/somewhere.c (as they will depend on where it is being
+  built)
+
+- Replace line numbers with [0-9]+, as they will change
+
+- (?P<filename>[-._/\w]+/something/somewhere.c) saves the match on
+  that file path in a "variable" called 'filename' that later you can
+  match with (?P=filename) if you want to match multiple lines of the
+  same error message.
+
+Can get really twisted and interesting in terms of regexps; they are
+powerful, so start small :)
