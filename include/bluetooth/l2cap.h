@@ -55,6 +55,7 @@ struct bt_l2cap_chan {
 	/** Channel operations reference */
 	struct bt_l2cap_chan_ops	*ops;
 	struct bt_l2cap_chan		*_next;
+	void				(*destroy)(struct bt_l2cap_chan *chan);
 };
 
 /** @brief LE L2CAP Endpoint structure. */

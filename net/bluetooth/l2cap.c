@@ -190,6 +190,21 @@ void bt_l2cap_connected(struct bt_conn *conn)
 	}
 }
 
+static void l2cap_chan_del(struct bt_l2cap_chan *chan)
+{
+	BT_DBG("conn %p chan %p", chan->conn, chan);
+
+	chan->conn = NULL;
+
+	if (chan->ops && chan->ops->disconnected) {
+		chan->ops->disconnected(chan);
+	}
+
+	if (chan->destroy) {
+		chan->destroy(chan);
+	}
+}
+
 void bt_l2cap_disconnected(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
@@ -200,11 +215,8 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 		/* prefetch since disconnected callback may cleanup */
 		next = chan->_next;
 
-		if (chan->ops->disconnected) {
-			chan->ops->disconnected(chan);
-		}
+		l2cap_chan_del(chan);
 
-		chan->conn = NULL;
 		chan = next;
 	}
 
@@ -412,6 +424,27 @@ static void l2cap_chan_rx_give_credits(struct bt_l2cap_le_chan *chan,
 	}
 }
 
+static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
+
+	BT_DBG("chan %p cid 0x%04x", chan->conn, ch, ch->rx.cid);
+
+	/* There could be a writer waiting for credits so return a dummy credit
+	 * to wake it up.
+	 */
+	if (!ch->tx.credits.nsig) {
+		l2cap_chan_tx_give_credits(ch, 1);
+	}
+
+	/* Destroy segmented SDU if it exists */
+	if (ch->_sdu) {
+		net_buf_unref(ch->_sdu);
+		ch->_sdu = NULL;
+		ch->_sdu_len = 0;
+	}
+}
+
 static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			struct net_buf *buf)
 {
@@ -488,6 +521,8 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	if (l2cap_chan_add(conn, chan)) {
 		struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
+		chan->destroy = l2cap_chan_destroy;
+
 		/* Init TX parameters */
 		l2cap_chan_tx_init(ch);
 		ch->tx.cid = scid;
@@ -540,33 +575,6 @@ static struct bt_l2cap_le_chan *l2cap_remove_tx_cid(struct bt_conn *conn,
 	}
 
 	return NULL;
-}
-
-static void l2cap_chan_del(struct bt_l2cap_chan *chan)
-{
-	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-
-	BT_DBG("conn %p chan %p cid 0x%04x", chan->conn, ch, ch->rx.cid);
-
-	ch->chan.conn = NULL;
-
-	if (chan->ops && chan->ops->disconnected) {
-		chan->ops->disconnected(chan);
-	}
-
-	/* There could be a writer waiting for credits so return a dummy credit
-	 * to wake it up.
-	 */
-	if (!ch->tx.credits.nsig) {
-		l2cap_chan_tx_give_credits(ch, 1);
-	}
-
-	/* Destroy segmented SDU if it exists */
-	if (ch->_sdu) {
-		net_buf_unref(ch->_sdu);
-		ch->_sdu = NULL;
-		ch->_sdu_len = 0;
-	}
 }
 
 static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
@@ -1166,6 +1174,8 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 	if (!l2cap_chan_add(conn, &ch->chan)) {
 		return -ENOMEM;
 	}
+
+	ch->chan.destroy = l2cap_chan_destroy;
 
 	buf = bt_l2cap_create_pdu(&le_sig);
 	if (!buf) {
