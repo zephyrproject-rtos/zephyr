@@ -116,7 +116,7 @@ of data items to multiple consumer fibers, if desired.
        ARG_UNUSED(unused2);
 
        while (1) {
-           rx_data = nano_fiber_fifo_get_wait(&signal_fifo, TICKS_NONE);
+           rx_data = nano_fiber_fifo_get(&signal_fifo, TICKS_NONE);
 
            /* process FIFO data */
            ...
