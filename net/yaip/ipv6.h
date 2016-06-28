@@ -78,6 +78,27 @@ struct net_buf *net_ipv6_create(struct net_context *context,
 struct net_buf *net_ipv6_finalize(struct net_context *context,
 				  struct net_buf *buf);
 
+/**
+ * @brief Make sure the link layer address is set according to
+ * destination address. If the ll address is not yet known, then
+ * start neighbor discovery to find it out. If ND needs to be done
+ * then the returned packet is the Neighbor Solicitation message
+ * and the original message is sent after Neighbor Advertisement
+ * message is received.
+ *
+ * @param buf Network buffer
+ *
+ * @return Return network buffer to be sent.
+ */
+#if defined(CONFIG_NET_IPV6_ND)
+struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf);
+#else
+static inline struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
+{
+	return buf;
+}
+#endif
+
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);
 #else

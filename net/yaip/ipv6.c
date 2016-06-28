@@ -266,6 +266,48 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #endif /* NET_DEBUG */
 
 #if defined(CONFIG_NET_IPV6_ND)
+struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
+{
+	struct net_nbr *nbr;
+
+	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
+			 &NET_IPV6_BUF(buf)->dst);
+
+	NET_DBG("Neighbor lookup %p addr %s", nbr,
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+
+	if (nbr) {
+		struct net_linkaddr_storage *lladdr;
+
+		lladdr = net_nbr_get_lladdr(nbr->idx);
+
+		net_nbuf_ll_dst(buf)->addr = lladdr->addr;
+		net_nbuf_ll_dst(buf)->len = lladdr->len;
+
+		return buf;
+	}
+
+	/* We need to send NS and wait for NA before sending the packet.
+	 * The net_ipv6_send_ns() will try to drop the packet if there is
+	 * an error but we do not want to do that right now. So we ref the buf
+	 * and try to send it anyway if there is an error.
+	 */
+	net_nbuf_ref(buf);
+
+	if (net_ipv6_send_ns(net_nbuf_iface(buf),
+			     buf,
+			     &NET_IPV6_BUF(buf)->src,
+			     NULL,
+			     &NET_IPV6_BUF(buf)->dst,
+			     false) < 0) {
+		/* Something went wrong, try to send the packet anyway */
+		return buf;
+	}
+
+	net_nbuf_unref(buf);
+
+	return NULL;
+}
 
 static inline uint8_t get_llao_len(struct net_if *iface)
 {
