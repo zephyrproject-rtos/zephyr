@@ -329,12 +329,16 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_gatt_attr *incl = attr->user_data;
+	/*
+	 * bt_gatt_attr_read uses memcpy to copy the address of the attr
+	 * to the buf, so pointer to pointer is needed here.
+	 */
+	struct bt_gatt_attr **incl = (struct bt_gatt_attr **)&attr->user_data;
 
 	/* nble gatt register case reading user_data. */
 	if (!conn) {
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, incl,
-				sizeof(incl));
+					 sizeof(*incl));
 	}
 
 	/* nble handles gattc reads internally */
