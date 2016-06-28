@@ -30,6 +30,8 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#include <stdint.h>
+
 /* Helper to pass a int as a pointer or vice-versa.
  * Those are available for 32 bits architectures:
  */
@@ -66,6 +68,25 @@ static inline int is_power_of_two(unsigned int x)
 {
 	return (x != 0) && !(x & (x - 1));
 }
+
+static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
+{
+	int64_t sign_ext;
+
+	if (shift == 0) {
+		return value;
+	}
+
+	/* extract sign bit */
+	sign_ext = (value >> 63) & 1;
+
+	/* make all bits of sign_ext be the same as the value's sign bit */
+	sign_ext = -sign_ext;
+
+	/* shift value and fill opened bit positions with sign bit */
+	return (value >> shift) | (sign_ext << (64 - shift));
+}
+
 #endif /* !_ASMLANGUAGE */
 
 /* KB, MB, GB */
