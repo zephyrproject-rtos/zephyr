@@ -612,9 +612,12 @@ static int alloc_included(struct bt_gatt_attr *attr,
 {
 	struct bt_gatt_attr *attr_incl;
 
+	/*
+	 * user_data_len is set to 0 to NOT allocate memory in server_buf for
+	 * user_data, just to assign to it attr pointer.
+	 */
 	attr_incl = gatt_db_add(&(struct bt_gatt_attr)
-				BT_GATT_INCLUDE_SERVICE(attr),
-				sizeof(*attr));
+				BT_GATT_INCLUDE_SERVICE(attr), 0);
 
 	if (!attr_incl) {
 		return -EINVAL;
