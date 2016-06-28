@@ -31,6 +31,7 @@ GTEXT(_interrupt_stack)
 	 */
 	.set noat
 
+#if CONFIG_INCLUDE_RESET_VECTOR
 /*
  * Reset vector entry point into the system. Placed into special 'reset'
  * section so that the linker puts this at ALT_CPU_RESET_ADDR defined in
@@ -49,6 +50,7 @@ SECTION_FUNC(reset, __reset)
 	movhi r1, %hi(__start)
 	ori r1, r1, %lo(__start)
 	jmp r1
+#endif
 
 /* Remainder of asm-land initialization code before we can jump into
  * the C domain

@@ -67,6 +67,16 @@ config HAS_MULX_INSTRUCTION
 	bool
 	default n
 
+config INCLUDE_RESET_VECTOR
+	bool "Include Reset vector"
+	default y
+	help
+	Include the reset vector stub, which enables instruction/data caches
+	and then jumps to __start. This code is typically located at the very
+	beginning of flash memory. You may need to omit this if using the
+	nios2-download tool since it refuses to load data anywhere other than
+	RAM.
+
 endmenu
 
 source "arch/nios2/soc/*/Kconfig"
