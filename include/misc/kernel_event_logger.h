@@ -351,6 +351,12 @@ void _sys_k_event_logger_enter_sleep(void);
 static inline void _sys_k_event_logger_enter_sleep(void) {};
 #endif
 
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
+void _sys_k_event_logger_interrupt(void);
+#else
+static inline void _sys_k_event_logger_interrupt(void) {};
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #else /* !CONFIG_KERNEL_EVENT_LOGGER */
