@@ -87,7 +87,7 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 			continue;
 		}
 
-		if (nbr->iface == iface &&
+		if ((!nbr->iface || nbr->iface == iface) &&
 		    net_ipv6_addr_cmp(&net_nbr_data(nbr)->addr, addr)) {
 			return nbr;
 		}
@@ -273,10 +273,11 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_IPV6_BUF(buf)->dst);
 
-	NET_DBG("Neighbor lookup %p addr %s", nbr,
+	NET_DBG("Neighbor lookup %p iface %p addr %s", nbr,
+		net_nbuf_iface(buf),
 		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
 
-	if (nbr) {
+	if (nbr && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
 		struct net_linkaddr_storage *lladdr;
 
 		lladdr = net_nbr_get_lladdr(nbr->idx);
@@ -641,9 +642,26 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 
 	NET_DBG("Neighbor lookup %p", nbr);
 
-	if (!nbr || nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
+	if (!nbr) {
 		NET_DBG("No such neighbor found, msg discarded");
 		return false;
+	}
+
+	if (nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
+		struct net_linkaddr lladdr;
+
+		if (!tllao) {
+			NET_DBG("No target link layer address.");
+			return false;
+		}
+
+		lladdr.len = net_nbuf_iface(buf)->link_addr.len;
+		lladdr.addr = &tllao[NET_ICMPV6_OPT_DATA_OFFSET];
+
+		if (net_nbr_link(nbr, net_nbuf_iface(buf), &lladdr)) {
+			net_nbr_unref(nbr);
+			return false;
+		}
 	}
 
 	cached_lladdr = net_nbr_get_lladdr(nbr->idx);
@@ -855,6 +873,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 		     bool is_my_address)
 {
 	struct net_buf *buf, *frag;
+	struct net_nbr *nbr;
 	uint8_t llao_len;
 
 	buf = net_nbuf_get_reserve_tx(0);
@@ -932,18 +951,14 @@ int net_ipv6_send_ns(struct net_if *iface,
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
+	nbr = nbr_new(&NET_ICMPV6_NS_BUF(buf)->tgt, NET_NBR_INCOMPLETE);
+	if (!nbr) {
+		NET_DBG("Could not create new neighbor %s",
+			net_sprint_ipv6_addr(&NET_ICMPV6_NS_BUF(buf)->tgt));
+		goto drop;
+	}
+
 	if (pending) {
-		struct net_nbr *nbr;
-
-		nbr = nbr_new(&NET_ICMPV6_NS_BUF(buf)->tgt,
-			      NET_NBR_INCOMPLETE);
-		if (!nbr) {
-			NET_DBG("Could not create new neighbor %s",
-				net_sprint_ipv6_addr(
-					&NET_ICMPV6_NS_BUF(buf)->tgt));
-			goto drop;
-		}
-
 		if (!net_nbr_data(nbr)->pending) {
 			net_nbr_data(nbr)->pending = pending;
 		} else {
