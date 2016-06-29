@@ -27,6 +27,7 @@
 
 #include <net/net_ip.h>
 #include <net/net_if.h>
+#include <net/net_stats.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -616,6 +617,10 @@ static inline void net_context_send_cb(struct net_context *context,
 {
 	if (context->send_cb) {
 		context->send_cb(context, err_code, token, context->user_data);
+	}
+
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		NET_STATS(++net_stats.udp.sent);
 	}
 }
 
