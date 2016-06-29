@@ -20,6 +20,8 @@
 #ifndef __BT_LOG_H
 #define __BT_LOG_H
 
+#include <sections.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
