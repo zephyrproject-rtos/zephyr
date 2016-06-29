@@ -184,7 +184,7 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 					/* The actual packet will be send later
 					 */
 					NET_DBG("Buf will be sent later");
-					return NET_OK;
+					return NET_CONTINUE;
 				}
 			}
 		} else
