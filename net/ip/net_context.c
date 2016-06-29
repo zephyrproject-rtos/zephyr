@@ -413,7 +413,7 @@ PROCESS_THREAD(tcp, ev, data, buf, user_data)
 			ip_buf_appdata(clone) = uip_buf(clone) +
 				(ip_buf_appdata(buf) - (void *)uip_buf(buf));
 			ip_buf_appdatalen(clone) = uip_len(buf);
-			ip_buf_len(clone) = ip_buf_len(buf);
+			ip_buf_len(clone) = uip_len(buf) + UIP_IPTCPH_LEN + UIP_LLH_LEN;
 			ip_buf_context(clone) = user_data;
 			if (!ip_buf_context(buf)) {
 				ip_buf_context(buf) = user_data;
