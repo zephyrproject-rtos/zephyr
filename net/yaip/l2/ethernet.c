@@ -139,28 +139,17 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
 		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
 	} else {
-		/* If the destination address is my address, then
-		 * swap src and dst.
+		/* If the src ll address is multicast or broadcast, then
+		 * what probably happened is that the RX buffer is used
+		 * for sending data back to recipient. We must
+		 * substitute the src address using the real ll address.
 		 */
-		if (!memcmp(net_nbuf_ll_if(buf)->addr,
-			    net_nbuf_ll_dst(buf)->addr,
-			    sizeof(struct net_eth_addr))) {
-			net_nbuf_ll_swap(buf);
-		} else {
-			/* If the src ll address is multicast or broadcast, then
-			 * what probably happened is that the RX buffer is used
-			 * for sending data back to recipient. We must
-			 * substitute the src address using the real ll address.
-			 */
-			if (net_eth_is_addr_broadcast((struct net_eth_addr *)
+		if (net_eth_is_addr_broadcast((struct net_eth_addr *)
 					      net_nbuf_ll_src(buf)->addr) ||
-			    net_eth_is_addr_multicast((struct net_eth_addr *)
+		    net_eth_is_addr_multicast((struct net_eth_addr *)
 					      net_nbuf_ll_src(buf)->addr)) {
-				net_nbuf_ll_src(buf)->addr =
-						net_nbuf_ll_if(buf)->addr;
-				net_nbuf_ll_src(buf)->len =
-						net_nbuf_ll_if(buf)->len;
-			}
+			net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
+			net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
 		}
 	}
 
