@@ -29,9 +29,10 @@
  */
 void nano_cpu_idle(void)
 {
-	/* Do nothing but return to the caller. This CPU does not have any
-	 * kind of power saving instruction.
+	/* Do nothing but unconditionally unlock interrupts and return to the
+	 * caller. This CPU does not have any kind of power saving instruction.
 	 */
+	irq_unlock(NIOS2_STATUS_PIE_MSK);
 }
 
 /**
