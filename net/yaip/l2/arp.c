@@ -318,7 +318,7 @@ static inline void send_pending(struct net_if *iface, struct net_buf **buf)
 
 	*buf = NULL;
 
-	if (net_if_send_data(iface, pending) < 0) {
+	if (net_if_send_data(iface, pending) == NET_DROP) {
 		/* This is to unref the original ref */
 		net_nbuf_unref(pending);
 	}
