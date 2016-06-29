@@ -94,6 +94,28 @@ static inline void _nios2_report_stack_overflow(void)
 	__asm__ volatile("break 3");
 }
 
+/*
+ * Low-level cache management functions
+ */
+static inline void _nios2_dcache_addr_flush(void *addr)
+{
+	__asm__ volatile ("flushda (%0)" :: "r" (addr));
+}
+
+static inline void _nios2_dcache_flush(uint32_t offset)
+{
+	__asm__ volatile ("flushd (%0)" :: "r" (offset));
+}
+
+static inline void _nios2_icache_flush(uint32_t offset)
+{
+	__asm__ volatile ("flushi %0" :: "r" (offset));
+}
+
+static inline void _nios2_pipeline_flush(void)
+{
+	__asm__ volatile ("flushp");
+}
 
 /*
  * Functions for reading/writing control registers

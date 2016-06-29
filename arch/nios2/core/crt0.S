@@ -31,6 +31,7 @@ GTEXT(_interrupt_stack)
 	 */
 	.set noat
 
+
 #if CONFIG_INCLUDE_RESET_VECTOR
 /*
  * Reset vector entry point into the system. Placed into special 'reset'
@@ -42,15 +43,39 @@ GTEXT(_interrupt_stack)
  */
 SECTION_FUNC(reset, __reset)
 
-	/* TODO initialize instruction cache, if present
-	 * ZEP-275
+#if NIOS2_ICACHE_SIZE > 0
+	/* Aside from the instruction cache line associated with the reset
+	 * vector, the contents of the cache memories are indeterminate after
+	 * reset. To ensure cache coherency after reset, the reset handler
+	 * located at the reset vector must immediately initialize the
+	 * instruction cache. Next, either the reset handler or a subsequent
+	 * routine should proceed to initialize the data cache.
+	 *
+	 * The cache memory sizes are *always* a power of 2.
 	 */
+#if NIOS2_ICACHE_SIZE > 0x8000
+	movhi r2, %hi(NIOS2_ICACHE_SIZE)
+#else
+	movui r2, NIOS2_ICACHE_SIZE
+#endif
+0:
+	/* If ECC present, need to execute initd for each word address
+	 * to ensure ECC parity bits in data RAM get initialized
+	 */
+#if NIOS2_ECC_PRESENT
+	subi r2, r2, 4
+#else
+	subi r2, r2, NIOS2_ICACHE_LINE_SIZE
+#endif
+	initi r2
+	bgt r2, zero, 0b
+#endif /* NIOS2_ICACHE_SIZE > 0 */
 
 	/* Done all we need to do here, jump to __text_start */
 	movhi r1, %hi(__start)
 	ori r1, r1, %lo(__start)
 	jmp r1
-#endif
+#endif /* CONFIG_INCLUDE_RESET_VECTOR */
 
 /* Remainder of asm-land initialization code before we can jump into
  * the C domain
@@ -61,9 +86,29 @@ SECTION_FUNC(TEXT, __start)
 	 * ZEP-258
 	 */
 
-	/* TODO initialize data cache, if present
-	 * ZEP-275
+	/* Initialize the data cache if booting from bare metal. If
+	 * we're not booting from our reset vector, either by a bootloader
+	 * or JTAG, assume caches already initialized.
 	 */
+#if NIOS2_DCACHE_SIZE > 0 && defined(CONFIG_INCLUDE_RESET_VECTOR)
+	/* Per documentation data cache size is always a power of two. */
+#if NIOS2_DCACHE_SIZE > 0x8000
+	movhi r2, %hi(NIOS2_DCACHE_SIZE)
+#else
+	movui r2, NIOS2_DCACHE_SIZE
+#endif
+0:
+	/* If ECC present, need to execute initd for each word address
+	 * to ensure ECC parity bits in data RAM get initialized
+	 */
+#if NIOS2_ECC_PRESENT
+	subi r2, r2, 4
+#else
+	subi r2, r2, NIOS2_DCACHE_LINE_SIZE
+#endif
+	initd 0(r2)
+	bgt r2, zero, 0b
+#endif /* NIOS2_DCACHE_SIZE && defined(CONFIG_INCLUDE_RESET_VECTOR) */
 
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in _interrupt_stack with 0xAA */

@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <toolchain.h>
 #include <linker-defs.h>
+#include <nano_private.h>
 
 /**
  *
@@ -68,6 +69,18 @@ static void dataCopy(void)
 	for (n = 0; n < (unsigned int)&__data_num_words; n++) {
 		pRAM[n] = pROM[n];
 	}
+
+	/* In most XIP scenarios we copy the exception code into RAM, so need
+	 * to flush instruction cache.
+	 */
+	_nios2_icache_flush_all();
+#if NIOS2_ICACHE_SIZE > 0
+	/* Only need to flush the data cache here if there actually is an
+	 * instruction cache, so that the cached instruction data written is
+	 * actually committed.
+	 */
+	_nios2_dcache_flush_all();
+#endif
 }
 #else
 static void dataCopy(void)

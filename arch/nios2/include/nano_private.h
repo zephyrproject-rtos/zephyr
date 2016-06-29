@@ -200,6 +200,18 @@ static ALWAYS_INLINE int _IS_IN_ISR(void)
 void _irq_do_offload(void);
 #endif
 
+#if NIOS2_ICACHE_SIZE > 0
+void _nios2_icache_flush_all(void);
+#else
+#define _nios2_icache_flush_all() do { } while (0)
+#endif
+
+#if NIOS2_DCACHE_SIZE > 0
+void _nios2_dcache_flush_all(void);
+#else
+#define _nios2_dcache_flush_all() do { } while (0)
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* _NANO_PRIVATE_H */
