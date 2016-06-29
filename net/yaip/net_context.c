@@ -492,12 +492,13 @@ static int send_data(struct net_context *context,
 {
 	int ret;
 
+	context->send_cb = cb;
+	context->user_data = user_data;
+	net_nbuf_set_token(buf, token);
+
 	ret =  net_send_data(buf);
 
 	if (!timeout || net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		if (cb) {
-			cb(context, ret, token, user_data);
-		}
 		return ret;
 	}
 

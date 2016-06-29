@@ -84,6 +84,24 @@ typedef void (*net_context_recv_cb_t)(struct net_context *context,
 				      void *user_data);
 
 /**
+ * @brief Network data send callback.
+ *
+ * @details The send callback is called after a network data is
+ * sent. The callback is called in fiber context.
+ *
+ * @param context The context to use.
+ * @param status Value is set to 0 if all data was sent ok, <0 if
+ * there was an error sending data. >0 amount of data that was
+ * sent when not all data was sent ok.
+ * @param token User specified value specified in net_send() call.
+ * @param user_data The user data given in net_send() call.
+ */
+typedef void (*net_context_send_cb_t)(struct net_context *context,
+				      int status,
+				      void *token,
+				      void *user_data);
+
+/**
  * Note that we do not store the actual source IP address in the context
  * because the address is already be set in the network interface struct.
  * If there is no such source address there, the packet cannot be sent
@@ -105,6 +123,15 @@ struct net_context {
 	 * has been received.
 	 */
 	net_context_recv_cb_t recv_cb;
+
+	/** Send callback to be called when the packet has been sent
+	 * successfully.
+	 */
+	net_context_send_cb_t send_cb;
+
+	/** User data.
+	 */
+	void *user_data;
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	/**
@@ -478,24 +505,6 @@ int net_context_accept(struct net_context *context,
 		       void *user_data);
 
 /**
- * @brief Network data send callback.
- *
- * @details The send callback is called after a network data is
- * sent. The callback is called in fiber context.
- *
- * @param context The context to use.
- * @param status Value is set to 0 if all data was sent ok, <0 if
- * there was an error sending data. >0 amount of data that was
- * sent when not all data was sent ok.
- * @param token User specified value specified in net_send() call.
- * @param user_data The user data given in net_send() call.
- */
-typedef void (*net_context_send_cb_t)(struct net_context *context,
-				      int status,
-				      void *token,
-				      void *user_data);
-
-/**
  * @brief Send a network buffer to a peer.
  *
  * @details This function can be used to send network data to a peer
@@ -592,6 +601,23 @@ int net_context_recv(struct net_context *context,
 		     net_context_recv_cb_t cb,
 		     int32_t timeout,
 		     void *user_data);
+
+/**
+ * @brief Internal function that is called when network packet is sent
+ * successfully.
+ *
+ * @param context The network context to use.
+ * @param token User supplied token tied to the net_buf that was sent.
+ * @param err_code Error code
+ */
+static inline void net_context_send_cb(struct net_context *context,
+				       void *token,
+				       int err_code)
+{
+	if (context->send_cb) {
+		context->send_cb(context, err_code, token, context->user_data);
+	}
+}
 
 #ifdef __cplusplus
 }
