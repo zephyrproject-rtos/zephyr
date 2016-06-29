@@ -302,7 +302,7 @@ Define the task in a source file using the following syntax:
    DEFINE_TASK(PRIV_TASK, priority, entry, stack_size, groups);
 
 The task groups are specified using a list of task group names separated by
-:literal:`|`; i.e. the logical OR operator. If the task does not belong to any
+:literal:`|`; i.e. the bitwise OR operator. If the task does not belong to any
 task group specify NULL.
 
 For example, the following code can be used to define a private task named
