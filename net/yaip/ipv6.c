@@ -592,7 +592,6 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 send_na:
 	llao_len = get_llao_len(net_nbuf_iface(buf));
 
-	net_nbuf_ll_swap(buf);
 	net_nbuf_set_ext_len(buf, 0);
 
 	setup_headers(buf, sizeof(struct net_icmpv6_na_hdr) + llao_len,
