@@ -27,6 +27,7 @@
 #include <irq.h>
 #include <misc/printk.h>
 #include <sw_isr_table.h>
+#include <misc/kernel_event_logger.h>
 
 void _irq_spurious(void *unused)
 {
@@ -101,6 +102,10 @@ void _enter_irq(uint32_t ipending)
 
 	while (ipending) {
 		_IsrTableEntry_t *ite;
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
+		_sys_k_event_logger_interrupt();
+#endif
 
 		index = find_lsb_set(ipending) - 1;
 		ipending &= ~(1 << index);

@@ -23,6 +23,9 @@
 GTEXT(_Swap)
 GTEXT(_thread_entry_wrapper)
 
+/* imports */
+GTEXT(_sys_k_event_logger_context_switch)
+
 /* unsigned int _Swap(unsigned int key)
  *
  * Always called with interrupts locked
@@ -58,7 +61,9 @@ SECTION_FUNC(exception.other, _Swap)
 	 */
 	stw r4, __tTCS_coopReg_OFFSET + __t_coop_key_OFFSET(r11)
 
-	/* FIXME call _sys_k_event_logger_context_switch */
+#if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
+	call _sys_k_event_logger_context_switch
+#endif
 
 	/* Find the next context to run. Choose _nanokernel.fiber
 	 * if non-NULL */
