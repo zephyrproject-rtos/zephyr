@@ -95,6 +95,34 @@ static inline void init_tx_queue(struct net_if *iface)
 		    (nano_fiber_entry_t)net_if_tx_fiber, (int)iface, 0, 7, 0);
 }
 
+enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
+{
+	struct net_context *context = net_nbuf_context(buf);
+	void *token = net_nbuf_token(buf);
+	enum net_verdict verdict;
+
+	verdict = iface->l2->send(iface, buf);
+
+	/* The L2 send() function can return
+	 *   NET_OK in which case packet was sent successfully.
+	 *   In that case we need to check if any user callbacks need
+	 *   to be called to mark a successful delivery.
+	 *
+	 *   NET_CONTINUE in which case the sending of the packet is delayed.
+	 *   This can happen for example if we need to do IPv6 ND to figure
+	 *   out link layer address.
+	 */
+	if (context && (verdict == NET_OK || verdict == NET_DROP)) {
+		NET_DBG("Calling context send cb %p token %p verdict %d",
+			context, token, verdict);
+
+		net_context_send_cb(context, token,
+				    verdict == NET_OK ? 0 : -EIO);
+	}
+
+	return verdict;
+}
+
 struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 {
 	struct net_if *iface;

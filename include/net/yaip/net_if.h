@@ -234,11 +234,7 @@ struct net_if {
  *
  * return verdict about the packet
  */
-static inline enum net_verdict net_if_send_data(struct net_if *iface,
-						struct net_buf *buf)
-{
-	return iface->l2->send(iface, buf);
-}
+enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf);
 
 /**
  * @brief Input a buffer through a net iface
