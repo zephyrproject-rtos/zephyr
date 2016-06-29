@@ -113,7 +113,8 @@ For example::
             0: Off.
 
 The ReST parser will be confused by the lack of blank lines between
-the ``2``, ``1`` and ``0`` items, so help him by doing::
+the ``2``, ``1`` and ``0`` items, so help him by adding bullets and
+spacing the lines::
 
   config  FAULT_DUMP
           int
@@ -123,13 +124,13 @@ the ``2``, ``1`` and ``0`` items, so help him by doing::
           help
           Different levels for display information when a fault occurs.
 
-          2: The default. Display specific and verbose information. Consumes
-                  the most memory (long strings).
+          - 2: The default. Display specific and verbose
+               information. Consumes the most memory (long strings).
 
-          1: Display general and short information. Consumes less memory
-                  (short strings).
+          - 1: Display general and short information. Consumes less
+               memory (short strings).
 
-          0: Off.
+          - 0: Off.
 
 
 WARNING: Unparseable C++ cross-reference: u'struct somestruct'
