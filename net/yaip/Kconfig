@@ -163,7 +163,7 @@ config NET_TX_STACK_SIZE
 
 config NET_RX_STACK_SIZE
 	int "RX fiber stack size"
-	default 1024
+	default 1200
 	help
 	  Set the RX fiber stack size in bytes. The RX fiber is waiting
 	  data from network. There is one RX fiber in the system.
