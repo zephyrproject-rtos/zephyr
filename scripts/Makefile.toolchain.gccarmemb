@@ -2,16 +2,10 @@ ifndef GCCARMEMB_TOOLCHAIN_PATH
 $(error GCCARMEMB_TOOLCHAIN_PATH is not set)
 endif
 
-CROSS_COMPILE_TARGET_arm = arm-none-eabi
-CROSS_COMPILE_arm=${GCCARMEMB_TOOLCHAIN_PATH}/bin/${CROSS_COMPILE_TARGET_arm}-
-CROSS_COMPILE_arm_version ?= $(shell $(CROSS_COMPILE_arm)gcc -dumpversion)
-
-CROSS_COMPILE= $(CROSS_COMPILE_$(ARCH))
-CROSS_COMPILE_TARGET = ${CROSS_COMPILE_TARGET_${ARCH}}
-CROSS_COMPILE_version = ${CROSS_COMPILE_${ARCH}_version}
+CROSS_COMPILE = ${GCCARMEMB_TOOLCHAIN_PATH}/bin/arm-none-eabi-
 
 TOOLCHAIN_LIBS = gcc
-LIBGCC_DIR = $(shell dirname `$(CROSS_COMPILE_arm)gcc ${KBUILD_CFLAGS} -print-libgcc-file-name`)
+LIBGCC_DIR = $(shell dirname `$(CROSS_COMPILE)gcc ${KBUILD_CFLAGS} -print-libgcc-file-name`)
 
 LIB_INCLUDE_DIR += -L ${LIBGCC_DIR}
 TOOLCHAIN_CFLAGS = -I${GCCARMEMB_TOOLCHAIN_PATH}/arm-none-eabi/include
