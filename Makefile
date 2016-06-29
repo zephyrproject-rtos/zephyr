@@ -1167,7 +1167,7 @@ ifneq ($(QEMU_PIPE),)
     # Send console output to a pipe, used for running automated sanity tests
     QEMU_FLAGS += -serial pipe:$(QEMU_PIPE)
 else
-    QEMU_FLAGS += -serial stdio
+    QEMU_FLAGS += -serial mon:stdio
 endif
 endif
 
