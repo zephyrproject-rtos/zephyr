@@ -74,6 +74,11 @@ struct net_nbuf {
 	/** Network connection context */
 	struct net_context *context;
 
+	/** Network context token that user can set. This is passed
+	 * to user callback when data has been sent.
+	 */
+	void *token;
+
 	/** Network interface */
 	struct net_if *iface;
 
@@ -102,6 +107,16 @@ static inline void net_nbuf_set_context(struct net_buf *buf,
 					struct net_context *ctx)
 {
 	((struct net_nbuf *)net_buf_user_data(buf))->context = ctx;
+}
+
+static inline void *net_nbuf_token(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->token;
+}
+
+static inline void net_nbuf_set_token(struct net_buf *buf, void *token)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->token = token;
 }
 
 static inline struct net_if *net_nbuf_iface(struct net_buf *buf)
