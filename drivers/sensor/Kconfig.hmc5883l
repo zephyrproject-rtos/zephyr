@@ -29,7 +29,6 @@ config HMC5883L_SYS_LOG_LEVEL
 	range 0 4
 	help
 	Sets log level for HMC5883L driver.
-
 	Levels are:
 
 	- 0 OFF: do not write
