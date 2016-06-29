@@ -398,6 +398,12 @@ static struct net_buf *net_nbuf_get_reserve(enum net_nbuf_type type,
 
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
 
+	if (type != NET_NBUF_DATA) {
+		net_nbuf_set_context(buf, NULL);
+		net_nbuf_ll_dst(buf)->addr = NULL;
+		net_nbuf_ll_src(buf)->addr = NULL;
+	}
+
 	NET_DBG("%s [%d] buf %p reserve %u ref %d (%s():%d)",
 		type2str(type), get_frees(type),
 		buf, reserve_head, buf->ref, caller, line);
