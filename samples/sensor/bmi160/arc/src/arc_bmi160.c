@@ -120,20 +120,69 @@ static int auto_calibration(struct device *bmi160)
 }
 #endif
 
+/**
+ * @brief Helper function for printing a sensor value to a buffer
+ *
+ * @param buf A pointer to the buffer to which the printing is done.
+ * @param len Size of buffer in bytes.
+ * @param val A pointer to a sensor_value struct holding the value
+ *            to be printed.
+ *
+ * @return The number of characters printed to the buffer.
+ */
+static inline int sensor_value_snprintf(char *buf, size_t len,
+					const struct sensor_value *val)
+{
+	int32_t val1, val2;
+
+	switch (val->type) {
+	case SENSOR_VALUE_TYPE_INT:
+		return snprintf(buf, len, "%d", val->val1);
+	case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
+		if (val->val2 == 0) {
+			return snprintf(buf, len, "%d", val->val1);
+		}
+
+		/* normalize value */
+		if (val->val1 < 0 && val->val2 > 0) {
+			val1 = val->val1 + 1;
+			val2 = val->val2 - 1000000;
+		} else {
+			val1 = val->val1;
+			val2 = val->val2;
+		}
+
+		/* print value to buffer */
+		if (val1 > 0 || (val1 == 0 && val2 > 0)) {
+			return snprintf(buf, len, "%d.%06d", val1, val2);
+		} else if (val1 == 0 && val2 < 0) {
+			return snprintf(buf, len, "-0.%06d", -val2);
+		} else {
+			return snprintf(buf, len, "%d.%06d", val1, -val2);
+		}
+	case SENSOR_VALUE_TYPE_DOUBLE:
+		return snprintf(buf, len, "%f", val->dval);
+	default:
+		return 0;
+	}
+}
+
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 static void print_gyro_data(struct device *bmi160)
 {
 	struct sensor_value val[3];
+	char buf_x[18], buf_y[18], buf_z[18];
 
 	if (sensor_channel_get(bmi160, SENSOR_CHAN_GYRO_ANY, val) < 0) {
 		printf("Cannot read bmi160 gyro channels.\n");
 		return;
 	}
 
-	printf("Gyro (rad/s): X=%f, Y=%f, Z=%f\n",
-	       val[0].val1 + val[0].val2 / 1000000.0,
-	       val[1].val1 + val[1].val2 / 1000000.0,
-	       val[2].val1 + val[2].val2 / 1000000.0);
+	sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
+	sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
+	sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
+
+	printf("Gyro (rad/s): X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
 }
 #endif
 
@@ -141,6 +190,7 @@ static void print_gyro_data(struct device *bmi160)
 static void print_accel_data(struct device *bmi160)
 {
 	struct sensor_value val[3];
+	char buf_x[18], buf_y[18], buf_z[18];
 
 	if (sensor_channel_get(bmi160,
 			       SENSOR_CHAN_ACCEL_ANY, val) < 0) {
@@ -148,24 +198,27 @@ static void print_accel_data(struct device *bmi160)
 		return;
 	}
 
-	printf("Acc (m/s^2): X=%f, Y=%f, Z=%f\n",
-	       val[0].val1 + val[0].val2 / 1000000.0,
-	       val[1].val1 + val[1].val2 / 1000000.0,
-	       val[2].val1 + val[2].val2 / 1000000.0);
+	sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
+	sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
+	sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
+
+	printf("Acc (m/s^2): X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
 }
 #endif
 
 static void print_temp_data(struct device *bmi160)
 {
 	struct sensor_value val;
+	char buf[18];
 
 	if (sensor_channel_get(bmi160, SENSOR_CHAN_TEMP, &val) < 0) {
 		printf("Temperature channel read error.\n");
 		return;
 	}
 
-	printf("Temperature (Celsius): %f\n",
-	       val.val1 + val.val2 / 1000000.0);
+	sensor_value_snprintf(buf, sizeof(buf), &val);
+
+	printf("Temperature (Celsius): %s\n", buf);
 }
 
 static void test_polling_mode(struct device *bmi160)
