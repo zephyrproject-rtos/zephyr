@@ -451,7 +451,7 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 	uint16_t total_len = net_buf_frags_len(buf);
 	struct net_icmpv6_nd_opt_hdr *hdr;
 	struct net_if_addr *ifaddr;
-	uint8_t flags = 0, llao_len;
+	uint8_t flags = 0, llao_len, prev_opt_len = 0;
 
 	dbg_addr_recv_tgt("Neighbor Solicitation",
 			  &NET_IPV6_BUF(buf)->src,
@@ -483,8 +483,6 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 
 	while (net_nbuf_ext_opt_len(buf) < buf->frags->len) {
 
-		hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
-
 		if (!hdr->len) {
 			break;
 		}
@@ -504,8 +502,17 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 			break;
 		}
 
+		prev_opt_len = net_nbuf_ext_opt_len(buf);
+
 		net_nbuf_set_ext_opt_len(buf, net_nbuf_ext_opt_len(buf) +
 					 (hdr->len << 3));
+
+		if (prev_opt_len == net_nbuf_ext_opt_len(buf)) {
+			NET_ERR("Corrupted NS message");
+			goto drop;
+		}
+
+		hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_nbuf_iface(buf),
@@ -751,6 +758,7 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 	struct net_icmpv6_nd_opt_hdr *hdr;
 	struct net_if_addr *ifaddr;
 	uint8_t *tllao = NULL;
+	uint8_t prev_opt_len = 0;
 
 	dbg_addr_recv_tgt("Neighbor Advertisement",
 			  &NET_IPV6_BUF(buf)->src,
@@ -784,8 +792,6 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 
 	while (net_nbuf_ext_opt_len(buf) < buf->frags->len) {
 
-		hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
-
 		if (!hdr->len) {
 			break;
 		}
@@ -800,8 +806,17 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 			break;
 		}
 
+		prev_opt_len = net_nbuf_ext_opt_len(buf);
+
 		net_nbuf_set_ext_opt_len(buf, net_nbuf_ext_opt_len(buf) +
 					 (hdr->len << 3));
+
+		if (prev_opt_len == net_nbuf_ext_opt_len(buf)) {
+			NET_ERR("Corrupted NA message");
+			goto drop;
+		}
+
+		hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_nbuf_iface(buf),
@@ -1254,6 +1269,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 	struct net_icmpv6_nd_opt_hdr *hdr;
 	struct net_if_router *router;
 	struct net_nbr *nbr = NULL;
+	uint8_t prev_opt_len = 0;
 
 	dbg_addr_recv("Router Advertisement",
 		      &NET_IPV6_BUF(buf)->src,
@@ -1305,8 +1321,6 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 
 	while (net_nbuf_ext_opt_len(buf) < buf->frags->len) {
 
-		hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
-
 		if (!hdr->len) {
 			break;
 		}
@@ -1340,8 +1354,17 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 			break;
 		}
 
+		prev_opt_len = net_nbuf_ext_opt_len(buf);
+
 		net_nbuf_set_ext_opt_len(buf, net_nbuf_ext_opt_len(buf) +
 					 (hdr->len << 3));
+
+		if (prev_opt_len == net_nbuf_ext_opt_len(buf)) {
+			NET_ERR("Corrupted RA message");
+			goto drop;
+		}
+
+		hdr = NET_ICMPV6_ND_OPT_HDR_BUF(buf);
 	}
 
 	router = net_if_ipv6_router_lookup(net_nbuf_iface(buf),
