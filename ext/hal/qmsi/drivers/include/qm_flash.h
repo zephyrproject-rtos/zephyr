@@ -32,7 +32,7 @@
 
 #include "qm_common.h"
 #include "qm_soc_regs.h"
-
+#include "qm_interrupt.h"
 /**
  * Flash controller.
  *

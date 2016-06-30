@@ -36,9 +36,17 @@
 
 /* SPI DMA transmit watermark level. When the number of valid data entries in
  * the transmit FIFO is equal to or below this field value, dma_tx_req is
- * generated. The burst length has to fit in the remaining space of the transmit
- * FIFO, i.e. the burst length cannot be bigger than (16 - watermark level). */
-#define SPI_DMATDLR_DMATDL (0x03)
+ * generated. The destination burst length has to fit in the remaining space
+ * of the transmit FIFO, thus it must be <= (SPI_FIFOS_DEPTH - TDLR).
+ * For optimal results it must be set to that delta so we can ensure the number
+ * of DMA transactions (bursts) needed are minimal, leading to a better bus
+ * utilization.
+ *
+ * With that in mind, here we choose 4 frames as a watermark level (TDLR) so we
+ * can end up with a valid value for SPI_DMA_WRITE_BURST_LENGTH of 4 frames,
+ * still adhering to the above (FIFOS_DEPTH - TDLR = 4).
+ */
+#define SPI_DMATDLR_DMATDL (0x4)
 #define SPI_DMA_WRITE_BURST_LENGTH QM_DMA_BURST_TRANS_LENGTH_4
 
 /* SPI DMA receive watermark level. When the number of valid data entries in the
@@ -50,12 +58,20 @@
  *   0			1
  *   3			4
  *   7 (highest)	8
+ *
+ * By keeping SPI_DMA_READ_BURST_LENGTH = RDLR + 1, we have optimal results
+ * since it reduces the number of DMA transactions, leading to a better bus
+ * utilization.
+ *
+ * Note that, unlike we do for IRQ transfers, there is no need to adjust the
+ * watermark level (RDLR for DMA transfers, RXFTLR for IRQ ones) during or at
+ * the start of the DMA transaction, if rx_len < RDLR. This is done
+ * automatically
+ * by the SPI DMA interface when it decides between burst or single transactions
+ * through means of the BLOCK_TS and SRC_MSIZE ratio.
  */
 #define SPI_DMARDLR_DMARDL (0x03)
 #define SPI_DMA_READ_BURST_LENGTH QM_DMA_BURST_TRANS_LENGTH_4
-
-/* Arbitrary byte sent in RX-only mode. */
-#define SPI_RX_ONLY_DUMMY_BYTE (0xf0)
 
 /* DMA transfer information, relevant on callback invocations from the DMA
  * driver. */
@@ -81,7 +97,7 @@ qm_spi_reg_t *qm_spi_controllers[QM_SPI_NUM] = {
 static const qm_spi_async_transfer_t *spi_async_transfer[QM_SPI_NUM];
 static volatile uint16_t tx_counter[QM_SPI_NUM], rx_counter[QM_SPI_NUM];
 static uint8_t dfs[QM_SPI_NUM];
-static const uint32_t tx_dummy_frame = SPI_RX_ONLY_DUMMY_BYTE;
+static const uint32_t tx_dummy_frame = 0;
 static qm_spi_tmode_t tmode[QM_SPI_NUM];
 /* DMA (memory to SPI controller) callback information. */
 static dma_context_t dma_context_tx[QM_SPI_NUM];
@@ -220,8 +236,7 @@ static void handle_spi_interrupt(const qm_spi_t spi)
 	if (int_status & QM_SPI_ISR_RXOIS) {
 		if (transfer->callback) {
 			transfer->callback(transfer->callback_data, -EIO,
-					   QM_SPI_RX_OVERFLOW,
-					   rx_counter[spi]);
+					   QM_SPI_RX_OVERFLOW, rx_counter[spi]);
 		}
 
 		controller->rxoicr;
@@ -361,8 +376,6 @@ int qm_spi_transfer(const qm_spi_t spi, const qm_spi_transfer_t *const xfer,
 	uint8_t *rx_buffer = xfer->rx;
 	const uint8_t *tx_buffer = xfer->tx;
 
-	int frames;
-
 	/* RX Only transfers need a dummy byte to be sent for starting.
 	 * This is covered by the databook on page 42.
 	 */
@@ -381,33 +394,21 @@ int qm_spi_transfer(const qm_spi_t spi, const qm_spi_transfer_t *const xfer,
 			break;
 		}
 
-		while (i_rx && controller->rxflr) {
+		if (i_rx && (controller->sr & QM_SPI_SR_RFNE)) {
 			read_frame(spi, rx_buffer);
 			rx_buffer += dfs[spi];
 			i_rx--;
 		}
 
-		frames =
-		    SPI_FIFOS_DEPTH - controller->txflr - controller->rxflr - 1;
-		while (i_tx && frames) {
+		if (i_tx && (controller->sr & QM_SPI_SR_TFNF)) {
 			write_frame(spi, tx_buffer);
 			tx_buffer += dfs[spi];
 			i_tx--;
-			frames--;
-		}
-		/* Databook page 43 says we always need to busy-wait until the
-		 * controller is ready again after writing frames to the TX
-		 * FIFO.
-		 *
-		 * That is only needed for TX or TX_RX transfer modes.
-		 */
-		if (tmode[spi] == QM_SPI_TMOD_TX_RX ||
-		    tmode[spi] == QM_SPI_TMOD_TX) {
-			wait_for_controller(controller);
 		}
 	}
+	wait_for_controller(controller);
 
-	controller->ssienr = 0; /** Disable SPI Device */
+	controller->ssienr = 0; /* Disable SPI Device */
 
 	return rc;
 }
@@ -548,12 +549,10 @@ static void spi_dma_callback(void *callback_context, uint32_t len,
 		/* TX transfer. */
 		frames_expected = transfer->tx_len;
 		cb_pending_alternate_p = &dma_context_rx[spi].cb_pending;
-	} else if (dma_context_p == &dma_context_rx[spi]) {
-		/* RX tranfer. */
+	} else {
+		/* RX transfer. */
 		frames_expected = transfer->rx_len;
 		cb_pending_alternate_p = &dma_context_tx[spi].cb_pending;
-	} else {
-		return;
 	}
 
 	QM_ASSERT(cb_pending_alternate_p);
@@ -598,7 +597,6 @@ int qm_spi_dma_channel_config(
 	QM_CHECK(dma_ctrl_id < QM_DMA_NUM, -EINVAL);
 	QM_CHECK(dma_channel_id < QM_DMA_CHANNEL_NUM, -EINVAL);
 
-	int ret = -EINVAL;
 	dma_context_t *dma_context_p = NULL;
 	qm_dma_channel_config_t dma_chan_cfg = {0};
 	dma_chan_cfg.handshake_polarity = QM_DMA_HANDSHAKE_POLARITY_HIGH;
@@ -630,21 +628,14 @@ int qm_spi_dma_channel_config(
 
 	switch (dma_channel_direction) {
 	case QM_DMA_MEMORY_TO_PERIPHERAL:
-		switch (spi) {
-		case QM_SPI_MST_0:
-			dma_chan_cfg.handshake_interface =
-			    DMA_HW_IF_SPI_MASTER_0_TX;
-			break;
+
 #if (QUARK_SE)
-		case QM_SPI_MST_1:
-			dma_chan_cfg.handshake_interface =
-			    DMA_HW_IF_SPI_MASTER_1_TX;
-			break;
+		dma_chan_cfg.handshake_interface =
+		    (QM_SPI_MST_0 == spi) ? DMA_HW_IF_SPI_MASTER_0_TX
+					  : DMA_HW_IF_SPI_MASTER_1_TX;
+#else
+		dma_chan_cfg.handshake_interface = DMA_HW_IF_SPI_MASTER_0_TX;
 #endif
-		default:
-			/* Slave SPI is not supported. */
-			return -EINVAL;
-		}
 
 		/* The DMA burst length has to fit in the space remaining in the
 		 * TX FIFO after the watermark level, DMATDLR. */
@@ -656,22 +647,14 @@ int qm_spi_dma_channel_config(
 		break;
 
 	case QM_DMA_PERIPHERAL_TO_MEMORY:
-		switch (spi) {
-		case QM_SPI_MST_0:
-			dma_chan_cfg.handshake_interface =
-			    DMA_HW_IF_SPI_MASTER_0_RX;
-			break;
-#if (QUARK_SE)
-		case QM_SPI_MST_1:
-			dma_chan_cfg.handshake_interface =
-			    DMA_HW_IF_SPI_MASTER_1_RX;
-			break;
-#endif
-		default:
-			/* Slave SPI is not supported. */
-			return -EINVAL;
-		}
 
+#if (QUARK_SE)
+		dma_chan_cfg.handshake_interface =
+		    (QM_SPI_MST_0 == spi) ? DMA_HW_IF_SPI_MASTER_0_RX
+					  : DMA_HW_IF_SPI_MASTER_1_RX;
+#else
+		dma_chan_cfg.handshake_interface = DMA_HW_IF_SPI_MASTER_0_RX;
+#endif
 		/* The DMA burst length has to match the value of the receive
 		 * watermark level, DMARDLR + 1. */
 		dma_chan_cfg.source_burst_length = SPI_DMA_READ_BURST_LENGTH;
@@ -693,12 +676,6 @@ int qm_spi_dma_channel_config(
 	QM_ASSERT(dma_context_p);
 	dma_chan_cfg.callback_context = dma_context_p;
 
-	ret = qm_dma_channel_set_config(dma_ctrl_id, dma_channel_id,
-					&dma_chan_cfg);
-	if (ret) {
-		return ret;
-	}
-
 	/* To be used on received DMA callback. */
 	dma_context_p->spi_id = spi;
 	dma_context_p->dma_channel_id = dma_channel_id;
@@ -706,7 +683,8 @@ int qm_spi_dma_channel_config(
 	/* To be used on transfer setup. */
 	dma_core[spi] = dma_ctrl_id;
 
-	return 0;
+	return qm_dma_channel_set_config(dma_ctrl_id, dma_channel_id,
+					 &dma_chan_cfg);
 }
 
 int qm_spi_dma_transfer(const qm_spi_t spi,

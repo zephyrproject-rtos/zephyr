@@ -31,6 +31,7 @@
 #define __QM_SS_ADC_H__
 
 #include "qm_common.h"
+#include "qm_soc_regs.h"
 #include "qm_sensor_regs.h"
 
 /**
@@ -171,7 +172,9 @@ int qm_ss_adc_set_mode(const qm_ss_adc_t adc, const qm_ss_adc_mode_t mode);
 /**
  * Switch operating mode of SS ADC.
  *
- * This call is non-blocking and will call the user callback on completion.
+ * This call is non-blocking and will call the user callback on completion. An
+ * interrupt will not be generated if the user requests the same mode the ADC
+ * is currently in (default mode on boot is deep power down).
  *
  * @param[in] adc Which ADC to enable.
  * @param[in] mode ADC operating mode.
@@ -273,12 +276,14 @@ int qm_ss_adc_set_config(const qm_ss_adc_t adc,
  *
  * @param[in] adc Which ADC to read.
  * @param[in,out] xfer Channel and sample info. This must not be NULL.
+ * @param[out] status Get status of the adc device.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
  */
-int qm_ss_adc_convert(const qm_ss_adc_t adc, qm_ss_adc_xfer_t *const xfer);
+int qm_ss_adc_convert(const qm_ss_adc_t adc, qm_ss_adc_xfer_t *const xfer,
+		      qm_ss_adc_status_t *const status);
 
 /**
  * Asynchronously read values from the SS ADC.

@@ -267,12 +267,14 @@ int qm_adc_set_config(const qm_adc_t adc, const qm_adc_config_t *const cfg);
  *
  * @param[in] adc Which ADC to read.
  * @param[in,out] xfer Channel and sample info. This must not be NULL.
+ * @param[out] status Get status of the ADC device.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
  */
-int qm_adc_convert(const qm_adc_t adc, qm_adc_xfer_t *const xfer);
+int qm_adc_convert(const qm_adc_t adc, qm_adc_xfer_t *const xfer,
+		   qm_adc_status_t *const status);
 
 /**
  * Asynchronously read values from the ADC.

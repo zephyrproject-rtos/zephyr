@@ -111,7 +111,7 @@ typedef void (*qm_mbox_callback_t)(void *data);
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch, qm_mbox_callback_t mpr_cb,
-		    void *cb_data, const bool irq_en);
+			  void *cb_data, const bool irq_en);
 
 /**
  * Write to a specified mailbox channel.
@@ -125,7 +125,7 @@ int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch, qm_mbox_callback_t mpr_cb,
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_mbox_ch_write(const qm_mbox_ch_t mbox_ch,
-		const qm_mbox_msg_t *const msg);
+		     const qm_mbox_msg_t *const msg);
 
 /**
  * Read specified mailbox channel.
@@ -151,7 +151,7 @@ int qm_mbox_ch_read(const qm_mbox_ch_t mbox_ch, qm_mbox_msg_t *const msg);
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_mbox_ch_get_status(const qm_mbox_ch_t mbox_ch,
-		qm_mbox_ch_status_t *const status);
+			  qm_mbox_ch_status_t *const status);
 
 /**
  * Acknowledge the data arrival.

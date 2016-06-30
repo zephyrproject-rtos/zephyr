@@ -8,8 +8,8 @@ Microcontroller products. It currently support the following SoCs:
 - Intel® Quark™ D2000 Microcontroller
 - Intel® Quark™ SE Microcontroller
 
-The current version supported in Zephyr is QMSI 1.1.0 See
+The current version supported in Zephyr is QMSI 1.1.0-Beta. See:
 
-   https://github.com/01org/qmsi/releases/tag/v1.1.0
+   https://github.com/01org/qmsi/releases/tag/v1.1.0-beta
 
 for more details.

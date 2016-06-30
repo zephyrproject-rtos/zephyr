@@ -44,7 +44,7 @@
  * Sensor Subsystem Timer Configuration Type.
  */
 typedef struct {
-	bool watchdog_mode;     /**< Watchdog mode. */
+	bool watchdog_mode; /**< Watchdog mode. */
 
 	/**
 	 * Increments in run state only.
@@ -55,8 +55,9 @@ typedef struct {
 	 * running state.
 	 */
 	bool inc_run_only;
-	bool int_en;            /**< Interrupt enable. */
-	uint32_t count;         /**< Final count value. */
+	bool int_en;    /**< Interrupt enable. */
+	uint32_t count; /**< Final count value. */
+
 	/**
 	 * User callback.
 	 *

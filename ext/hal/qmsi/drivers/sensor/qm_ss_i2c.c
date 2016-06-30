@@ -26,14 +26,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <string.h>
+#include "qm_ss_i2c.h"
+#include "clk.h"
+
 #define SPK_LEN_SS (1)
 #define SPK_LEN_FS (2)
 #define TX_TL (2)
 #define RX_TL (5)
 
-#include <string.h>
-#include "qm_ss_i2c.h"
-#include "clk.h"
+/* number of retries before giving up on disabling the controller */
+#define I2C_POLL_COUNT (1000000)
+#define I2C_POLL_MICROSECOND (1)
 
 /*
  * NOTE: There are a number of differences between this Sensor Subsystem I2C
@@ -59,19 +64,22 @@
  */
 
 static uint32_t i2c_base[QM_SS_I2C_NUM] = {QM_SS_I2C_0_BASE, QM_SS_I2C_1_BASE};
-static qm_ss_i2c_transfer_t i2c_transfer[QM_SS_I2C_NUM];
+static const qm_ss_i2c_transfer_t *i2c_transfer[QM_SS_I2C_NUM];
 static uint32_t i2c_write_pos[QM_SS_I2C_NUM], i2c_read_pos[QM_SS_I2C_NUM],
-    i2c_read_buffer_remaining[QM_SS_I2C_NUM];
+    i2c_read_cmd_send[QM_SS_I2C_NUM];
 
 static void controller_enable(const qm_ss_i2c_t i2c);
-static void controller_disable(const qm_ss_i2c_t i2c);
+static int controller_disable(const qm_ss_i2c_t i2c);
 
 static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 {
+	const qm_ss_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 	uint32_t controller = i2c_base[i2c], data_cmd = 0,
 		 count_tx = (QM_SS_I2C_FIFO_SIZE - TX_TL);
 	qm_ss_i2c_status_t status = 0;
 	int rc = 0;
+	uint32_t read_buffer_remaining = transfer->rx_len - i2c_read_pos[i2c];
+	uint32_t write_buffer_remaining = transfer->tx_len - i2c_write_pos[i2c];
 
 	/* Check for errors */
 	QM_ASSERT(!(__builtin_arc_lr(controller + QM_SS_I2C_INTR_STAT) &
@@ -101,27 +109,29 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 
 		rc = (status & QM_I2C_TX_ABRT_USER_ABRT) ? -ECANCELED : -EIO;
 
-		if (i2c_transfer[i2c].callback) {
-			i2c_transfer[i2c].callback(
-			    i2c_transfer[i2c].callback_data, rc, status, 0);
+		if (i2c_transfer[i2c]->callback) {
+			i2c_transfer[i2c]->callback(
+			    i2c_transfer[i2c]->callback_data, rc, status, 0);
 		}
+
+		controller_disable(i2c);
 	}
 
 	/* RX read from buffer */
 	if ((__builtin_arc_lr(controller + QM_SS_I2C_INTR_STAT) &
 	     QM_SS_I2C_INTR_STAT_RX_FULL)) {
 
-		while (i2c_read_buffer_remaining[i2c] &&
+		while (read_buffer_remaining &&
 		       (__builtin_arc_lr(controller + QM_SS_I2C_RXFLR))) {
 			__builtin_arc_sr(QM_SS_I2C_DATA_CMD_POP,
 					 controller + QM_SS_I2C_DATA_CMD);
 			/* IC_DATA_CMD[7:0] contains received data */
-			i2c_transfer[i2c].rx[i2c_read_pos[i2c]] =
+			i2c_transfer[i2c]->rx[i2c_read_pos[i2c]] =
 			    __builtin_arc_lr(controller + QM_SS_I2C_DATA_CMD);
-			i2c_read_buffer_remaining[i2c]--;
+			read_buffer_remaining--;
 			i2c_read_pos[i2c]++;
 
-			if (i2c_read_buffer_remaining[i2c] == 0) {
+			if (read_buffer_remaining == 0) {
 				/* mask rx full interrupt if transfer
 				 * complete
 				 */
@@ -129,19 +139,19 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 				    (controller + QM_SS_I2C_INTR_MASK),
 				    QM_SS_I2C_INTR_MASK_RX_FULL);
 
-				if (i2c_transfer[i2c].stop) {
+				if (i2c_transfer[i2c]->stop) {
 					controller_disable(i2c);
 				}
 
-				if (i2c_transfer[i2c].callback) {
-					i2c_transfer[i2c].callback(
-					    i2c_transfer[i2c].callback_data, 0,
+				if (i2c_transfer[i2c]->callback) {
+					i2c_transfer[i2c]->callback(
+					    i2c_transfer[i2c]->callback_data, 0,
 					    QM_I2C_IDLE, i2c_read_pos[i2c]);
 				}
 			}
 		}
-		if (i2c_read_buffer_remaining[i2c] > 0 &&
-		    i2c_read_buffer_remaining[i2c] < (RX_TL + 1)) {
+		if (read_buffer_remaining > 0 &&
+		    read_buffer_remaining < (RX_TL + 1)) {
 			/* Adjust the RX threshold so the next 'RX_FULL'
 			 * interrupt is generated when all the remaining
 			 * data are received.
@@ -149,7 +159,7 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 			QM_SS_REG_AUX_NAND((controller + QM_SS_I2C_TL),
 					   QM_SS_I2C_TL_RX_TL_MASK);
 			QM_SS_REG_AUX_OR((controller + QM_SS_I2C_TL),
-					 (i2c_read_buffer_remaining[i2c] - 1));
+					 (read_buffer_remaining - 1));
 		}
 
 		/* RX_FULL INTR is autocleared when the buffer
@@ -162,9 +172,9 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 
 		if ((__builtin_arc_lr(controller + QM_SS_I2C_STATUS) &
 		     QM_SS_I2C_STATUS_TFE) &&
-		    (i2c_transfer[i2c].tx != NULL) &&
-		    (i2c_transfer[i2c].tx_len == 0) &&
-		    (i2c_transfer[i2c].rx_len == 0)) {
+		    (i2c_transfer[i2c]->tx != NULL) &&
+		    (write_buffer_remaining == 0) &&
+		    (read_buffer_remaining == 0)) {
 
 			QM_SS_REG_AUX_NAND((controller + QM_SS_I2C_INTR_MASK),
 					   QM_SS_I2C_INTR_MASK_TX_EMPTY);
@@ -172,34 +182,33 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 			/* if this is not a combined
 			 * transaction, disable the controller now
 			 */
-			if ((i2c_read_buffer_remaining[i2c] == 0) &&
-			    i2c_transfer[i2c].stop) {
+			if (i2c_transfer[i2c]->stop) {
 				controller_disable(i2c);
 
 				/* callback */
-				if (i2c_transfer[i2c].callback) {
-					i2c_transfer[i2c].callback(
-					i2c_transfer[i2c].callback_data, 0,
-					QM_I2C_IDLE, i2c_write_pos[i2c]);
+				if (i2c_transfer[i2c]->callback) {
+					i2c_transfer[i2c]->callback(
+					    i2c_transfer[i2c]->callback_data, 0,
+					    QM_I2C_IDLE, i2c_write_pos[i2c]);
 				}
 			}
 		}
 
-		while ((count_tx) && i2c_transfer[i2c].tx_len) {
+		while ((count_tx) && write_buffer_remaining) {
 			count_tx--;
+			write_buffer_remaining--;
 
 			/* write command -IC_DATA_CMD[8] = 0 */
 			/* fill IC_DATA_CMD[7:0] with the data */
 			data_cmd = QM_SS_I2C_DATA_CMD_PUSH |
-				   i2c_transfer[i2c].tx[i2c_write_pos[i2c]];
-			i2c_transfer[i2c].tx_len--;
+				   i2c_transfer[i2c]->tx[i2c_write_pos[i2c]];
 
 			/* if transfer is a combined transfer, only
 			 * send stop at
 			 * end of the transfer sequence */
-			if (i2c_transfer[i2c].stop &&
-			    (i2c_transfer[i2c].tx_len == 0) &&
-			    (i2c_transfer[i2c].rx_len == 0)) {
+			if (i2c_transfer[i2c]->stop &&
+			    (read_buffer_remaining == 0) &&
+			    (write_buffer_remaining == 0)) {
 
 				data_cmd |= QM_SS_I2C_DATA_CMD_STOP;
 			}
@@ -220,18 +229,17 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 		    (__builtin_arc_lr(controller + QM_SS_I2C_TXFLR) +
 		     (__builtin_arc_lr(controller + QM_SS_I2C_RXFLR) + 1));
 
-		while (i2c_transfer[i2c].rx_len &&
-		       (i2c_transfer[i2c].tx_len == 0) && count_tx) {
+		while (i2c_read_cmd_send[i2c] &&
+		       (write_buffer_remaining == 0) && count_tx) {
 			count_tx--;
-			i2c_transfer[i2c].rx_len--;
+			i2c_read_cmd_send[i2c]--;
 
 			/* if transfer is a combined transfer, only
 			 * send stop at
 			 * end of
 			 * the transfer sequence */
-			if (i2c_transfer[i2c].stop &&
-			    (i2c_transfer[i2c].rx_len == 0) &&
-			    (i2c_transfer[i2c].tx_len == 0)) {
+			if (i2c_transfer[i2c]->stop &&
+			    (i2c_read_cmd_send[i2c] == 0)) {
 
 				__builtin_arc_sr((QM_SS_I2C_DATA_CMD_CMD |
 						  QM_SS_I2C_DATA_CMD_PUSH |
@@ -249,8 +257,8 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 
 		/* generate a tx_empty interrupt when tx fifo is fully
 		 * empty */
-		if ((i2c_transfer[i2c].tx_len == 0) &&
-		    (i2c_transfer[i2c].rx_len == 0)) {
+		if ((write_buffer_remaining == 0) &&
+		    (read_buffer_remaining == 0)) {
 			QM_SS_REG_AUX_NAND((controller + QM_SS_I2C_TL),
 					   QM_SS_I2C_TL_TX_TL_MASK);
 		}
@@ -297,7 +305,9 @@ int qm_ss_i2c_set_config(const qm_ss_i2c_t i2c,
 			 controller + QM_SS_I2C_INTR_MASK);
 
 	/* disable controller */
-	controller_disable(i2c);
+	if (controller_disable(i2c)) {
+		return -EBUSY;
+	}
 
 	/* set mode */
 	con |= QM_SS_I2C_CON_RESTART_EN |
@@ -379,7 +389,7 @@ int qm_ss_i2c_set_speed(const qm_ss_i2c_t i2c, const qm_ss_i2c_speed_t speed,
 		     lo_cnt > QM_SS_I2C_IC_LCNT_MIN,
 		 -EINVAL);
 
-	con &= ~QM_SS_I2C_CON_SPEED_MASK;
+	con &= ~(QM_SS_I2C_CON_SPEED_MASK | QM_SS_I2C_CON_SPKLEN_MASK);
 
 	full_cnt = (lo_cnt & QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK) |
 		   (hi_cnt & QM_SS_I2C_SS_FS_SCL_CNT_16BIT_MASK)
@@ -387,12 +397,14 @@ int qm_ss_i2c_set_speed(const qm_ss_i2c_t i2c, const qm_ss_i2c_speed_t speed,
 
 	switch (speed) {
 	case QM_SS_I2C_SPEED_STD:
-		con |= QM_SS_I2C_CON_SPEED_SS;
+		con |= (QM_SS_I2C_CON_SPEED_SS |
+			(SPK_LEN_SS << QM_SS_I2C_CON_SPKLEN_OFFSET));
 		__builtin_arc_sr(full_cnt, controller + QM_SS_I2C_SS_SCL_CNT);
 		break;
 
 	case QM_SS_I2C_SPEED_FAST:
-		con |= QM_SS_I2C_CON_SPEED_FS;
+		con |= (QM_SS_I2C_CON_SPEED_FS |
+			(SPK_LEN_FS << QM_SS_I2C_CON_SPKLEN_OFFSET));
 		__builtin_arc_sr(full_cnt, controller + QM_SS_I2C_FS_SCL_CNT);
 		break;
 	}
@@ -480,7 +492,9 @@ int qm_ss_i2c_master_write(const qm_ss_i2c_t i2c, const uint16_t slave_addr,
 
 	/*  disable controller */
 	if (true == stop) {
-		controller_disable(i2c);
+		if (controller_disable(i2c)) {
+			ret = -EBUSY;
+		}
 	}
 
 	if (status != NULL) {
@@ -550,7 +564,8 @@ int qm_ss_i2c_master_read(const qm_ss_i2c_t i2c, const uint16_t slave_addr,
 
 		/* wait until rx fifo is empty, indicating pop is complete*/
 		while ((__builtin_arc_lr(controller + QM_SS_I2C_STATUS) &
-			 QM_SS_I2C_STATUS_RFNE));
+			QM_SS_I2C_STATUS_RFNE))
+			;
 
 		/* IC_DATA_CMD[7:0] contains received data */
 		*d = __builtin_arc_lr(controller + QM_SS_I2C_DATA_CMD);
@@ -559,7 +574,9 @@ int qm_ss_i2c_master_read(const qm_ss_i2c_t i2c, const uint16_t slave_addr,
 
 	/*  disable controller */
 	if (true == stop) {
-		controller_disable(i2c);
+		if (controller_disable(i2c)) {
+			ret = -EBUSY;
+		}
 	}
 
 	if (status != NULL) {
@@ -595,8 +612,8 @@ int qm_ss_i2c_master_irq_transfer(const qm_ss_i2c_t i2c,
 
 	i2c_write_pos[i2c] = 0;
 	i2c_read_pos[i2c] = 0;
-	i2c_read_buffer_remaining[i2c] = xfer->rx_len;
-	memcpy(&i2c_transfer[i2c], xfer, sizeof(i2c_transfer[i2c]));
+	i2c_read_cmd_send[i2c] = xfer->rx_len;
+	i2c_transfer[i2c] = xfer;
 
 	/* set threshold */
 	if (xfer->rx_len > 0 && xfer->rx_len < (RX_TL + 1)) {
@@ -643,22 +660,30 @@ static void controller_enable(const qm_ss_i2c_t i2c)
 		      QM_SS_I2C_ENABLE_STATUS_IC_EN))
 			;
 	}
+
+	/* Clear all interruption flags */
+	__builtin_arc_sr(QM_SS_I2C_INTR_CLR_ALL,
+			 controller + QM_SS_I2C_INTR_CLR);
 }
 
-static void controller_disable(const qm_ss_i2c_t i2c)
+static int controller_disable(const qm_ss_i2c_t i2c)
 {
 	uint32_t controller = i2c_base[i2c];
-	if (__builtin_arc_lr(controller + QM_SS_I2C_ENABLE_STATUS) &
-	    QM_SS_I2C_ENABLE_STATUS_IC_EN) {
-		/* disable controller */
-		QM_SS_REG_AUX_NAND((controller + QM_SS_I2C_CON),
-				   QM_SS_I2C_CON_ENABLE);
+	int poll_count = I2C_POLL_COUNT;
 
-		/* wait until controller is disabled */
-		while ((__builtin_arc_lr(controller + QM_SS_I2C_ENABLE_STATUS) &
-			QM_SS_I2C_ENABLE_STATUS_IC_EN))
-			;
+	/* disable controller */
+	QM_SS_REG_AUX_NAND((controller + QM_SS_I2C_CON), QM_SS_I2C_CON_ENABLE);
+
+	/* wait until controller is disabled */
+	while ((__builtin_arc_lr(controller + QM_SS_I2C_ENABLE_STATUS) &
+		QM_SS_I2C_ENABLE_STATUS_IC_EN) &&
+	       poll_count--) {
+		clk_sys_udelay(I2C_POLL_MICROSECOND);
 	}
+
+	/* returns 0 if ok, meaning controller is disabled */
+	return (__builtin_arc_lr(controller + QM_SS_I2C_ENABLE_STATUS) &
+		QM_SS_I2C_ENABLE_STATUS_IC_EN);
 }
 
 int qm_ss_i2c_irq_transfer_terminate(const qm_ss_i2c_t i2c)

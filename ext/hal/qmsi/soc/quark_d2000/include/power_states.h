@@ -41,11 +41,19 @@
  */
 
 /**
+* Wake source for deep sleep mode type.
+*/
+typedef enum {
+	POWER_WAKE_FROM_GPIO_COMP, /**< Use GPIO / Comparator as wake source. */
+	POWER_WAKE_FROM_RTC,       /**< Use RTC as wake source. */
+} power_wake_event_t;
+
+/**
  * Put CPU in halt state.
  *
  * Halts the CPU until next interrupt or reset.
  */
-void cpu_halt(void);
+void power_cpu_halt(void);
 
 /**
  * Put SoC to sleep.
@@ -68,15 +76,19 @@ void cpu_halt(void);
  *  - RTC
  *  - Low power comparators
  */
-void soc_sleep();
+void power_soc_sleep();
 
 /**
  * Put SoC to deep sleep.
  *
- * Enter into deep sleep mode. All clocks are gated. The only way to return
- * from this is to have an interrupt trigger on the low power comparators.
+ * Enter into deep sleep mode. All clocks are gated. The Wake source for this
+ * function depends on the input parameter, POWER_WAKE_FROM_GPIO_COMP will
+ * enable waking from GPIO or comparator pins and POWER_WAKE_FROM_RTC will
+ * enable waking from the RTC.
+ *
+ * @param[in] wake_source Select wake source for deep sleep mode.
  */
-void soc_deep_sleep();
+void power_soc_deep_sleep(const power_wake_event_t wake_event);
 
 /**
  * @}

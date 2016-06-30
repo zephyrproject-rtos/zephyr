@@ -131,8 +131,8 @@ int qm_mbox_ch_set_config(const qm_mbox_ch_t mbox_ch, qm_mbox_callback_t mpr_cb,
 int qm_mbox_ch_write(const qm_mbox_ch_t mbox_ch,
 		     const qm_mbox_msg_t *const data)
 {
-	qm_mailbox_t *const mbox_reg = (qm_mailbox_t *)QM_SCSS_MAILBOX +
-			mbox_ch;
+	qm_mailbox_t *const mbox_reg =
+	    (qm_mailbox_t *)QM_SCSS_MAILBOX + mbox_ch;
 
 	/* Check if the previous message has been consumed. */
 	if (!(mbox_reg->ch_ctrl & QM_MBOX_TRIGGER_CH_INT)) {
@@ -152,7 +152,8 @@ int qm_mbox_ch_write(const qm_mbox_ch_t mbox_ch,
 
 int qm_mbox_ch_read(const qm_mbox_ch_t mbox_ch, qm_mbox_msg_t *const data)
 {
-	qm_mailbox_t *const mbox_reg = (qm_mailbox_t *)QM_SCSS_MAILBOX + mbox_ch;
+	qm_mailbox_t *const mbox_reg =
+	    (qm_mailbox_t *)QM_SCSS_MAILBOX + mbox_ch;
 
 	/* Read data from the mailbox channel and clear bit 31 of the
 	 * control word. */
@@ -176,9 +177,9 @@ int qm_mbox_ch_get_status(const qm_mbox_ch_t mbox_ch,
 			  qm_mbox_ch_status_t *const status)
 {
 	QM_CHECK(mbox_ch < QM_MBOX_CH_NUM, -EINVAL);
-	qm_mailbox_t *const mbox_reg = (qm_mailbox_t *)QM_SCSS_MAILBOX +
-			mbox_ch;
-	*status = mbox_reg->ch_sts &QM_MBOX_CH_STATUS_MASK;
+	qm_mailbox_t *const mbox_reg =
+	    (qm_mailbox_t *)QM_SCSS_MAILBOX + mbox_ch;
+	*status = mbox_reg->ch_sts & QM_MBOX_CH_STATUS_MASK;
 	return 0;
 }
 

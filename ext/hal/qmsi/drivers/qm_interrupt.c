@@ -158,6 +158,16 @@ void _qm_irq_setup(uint32_t irq, uint16_t register_offset)
 void _qm_register_isr(uint32_t vector, qm_isr_t isr)
 {
 #if (QM_SENSOR)
+	/* Invalidate the i-cache line which contains the IRQ vector. This
+	 * will bypass i-cache and set vector with the good ISR. */
+	__builtin_arc_sr((uint32_t)&__ivt_vect_table[0] + (vector * 4),
+			 QM_SS_AUX_IC_IVIL);
+	/* All SR accesses to the IC_IVIL register must be followed by three
+	 * NOP instructions, see chapter 3.3.59 in the datasheet
+	 * "ARC_V2_ProgrammersReference.pdf" */
+	__builtin_arc_nop();
+	__builtin_arc_nop();
+	__builtin_arc_nop();
 	__ivt_vect_table[vector] = isr;
 #else
 	idt_set_intr_gate_desc(vector, (uint32_t)isr);
@@ -180,7 +190,7 @@ static void ss_register_irq(unsigned int vector)
 		/* Edge sensitive. */
 		__builtin_arc_sr(vector, QM_SS_AUX_IRQ_SELECT);
 		__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE,
-				 QM_SS_AUX_IRQ_TRIGER);
+				 QM_SS_AUX_IRQ_TRIGGER);
 	}
 }
 #endif

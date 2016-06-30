@@ -37,6 +37,33 @@ QM_ISR_DECLARE(qm_rtc_isr_0)
 	/*  Disable RTC interrupt */
 	QM_RTC[QM_RTC_0].rtc_ccr &= ~QM_RTC_CCR_INTERRUPT_ENABLE;
 
+#if (QUARK_D2000)
+	/*
+	 * If the SoC is in deep sleep mode, all the clocks are gated, if the
+	 * interrupt source is cleared before the oscillators are ungated, the
+	 * oscillators return to a powered down state and the SoC will not
+	 * return to an active state then.
+	 */
+	if ((QM_SCSS_GP->gps1 & QM_SCSS_GP_POWER_STATES_MASK) ==
+	    QM_SCSS_GP_POWER_STATE_DEEP_SLEEP) {
+		/* Return the oscillators to an active state. */
+		QM_SCSS_CCU->osc0_cfg1 &=
+		    ~QM_OSC0_PD; /* power on the oscillator. */
+		QM_SCSS_CCU->osc1_cfg0 &=
+		    ~QM_OSC1_PD; /* power on crystal oscillator. */
+
+		/*
+		 * datasheet 9.1.2 Low Power State to Active
+		 *
+		 * FW to program HYB_OSC_PD_LATCH_EN = 1, RTC_OSC_PD_LATCH_EN=1
+		 * so that OSC0_PD and OSC1_PD values directly control the
+		 * oscillators in active state.
+		 */
+
+		QM_SCSS_CCU->ccu_lp_clk_ctl |=
+		    (QM_HYB_OSC_PD_LATCH_EN | QM_RTC_OSC_PD_LATCH_EN);
+	}
+#endif
 	if (callback[QM_RTC_0]) {
 		(callback[QM_RTC_0])(callback_data[QM_RTC_0]);
 	}

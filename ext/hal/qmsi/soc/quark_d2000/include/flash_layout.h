@@ -84,6 +84,78 @@ typedef union {
 #define QM_FLASH_TRIM_PRESENT_MASK (0xFC00)
 #define QM_FLASH_TRIM_PRESENT (0x7C00)
 
+/*
+ * Bootloader data
+ */
+
+/** The flash controller where BL-Data is stored. */
+#define BL_DATA_FLASH_CONTROLLER QM_FLASH_0
+/** The flash region where BL-Data is stored. */
+#define BL_DATA_FLASH_REGION QM_FLASH_REGION_DATA
+/** The flash address where the BL-Data Section starts. */
+#define BL_DATA_FLASH_REGION_BASE QM_FLASH_REGION_DATA_0_BASE
+/** The flash page where the BL-Data Section starts. */
+#define BL_DATA_SECTION_BASE_PAGE (0)
+
+/** The size (in pages) of the System flash region of Quark D2000. */
+#define QM_FLASH_REGION_SYS_0_PAGES (16)
+
+/** The size of each flash partition for Lakemont application code. */
+#if (BL_CONFIG_DUAL_BANK)
+#define BL_PARTITION_SIZE_LMT (QM_FLASH_REGION_SYS_0_PAGES / 2)
+#else /* !BL_CONFIG_DUAL_BANK */
+#define BL_PARTITION_SIZE_LMT (QM_FLASH_REGION_SYS_0_PAGES)
+#endif /* BL_CONFIG_DUAL_BANK */
+
+/** Number of boot targets. */
+#define BL_BOOT_TARGETS_NUM (1)
+
+#define BL_TARGET_IDX_LMT (0)
+
+#define BL_PARTITION_IDX_LMT0 (0)
+#define BL_PARTITION_IDX_LMT1 (1)
+
+#define BL_TARGET_0_LMT                                                        \
+	{                                                                      \
+		.active_partition_idx = BL_PARTITION_IDX_LMT0, .svn = 0        \
+	}
+
+#define BL_PARTITION_0_LMT0                                                    \
+	{                                                                      \
+		.target_idx = BL_TARGET_IDX_LMT, .controller = QM_FLASH_0,     \
+		.first_page = 0, .num_pages = BL_PARTITION_SIZE_LMT,           \
+		.start_addr = (uint32_t *)QM_FLASH_REGION_SYS_0_BASE,          \
+		.is_consistent = true,                                         \
+	}
+
+#define BL_PARTITION_1_LMT1                                                    \
+	{                                                                      \
+		.target_idx = BL_TARGET_IDX_LMT, .controller = QM_FLASH_0,     \
+		.first_page = BL_PARTITION_SIZE_LMT,                           \
+		.num_pages = BL_PARTITION_SIZE_LMT,                            \
+		.start_addr =                                                  \
+		    (uint_32_t *)QM_FLASH_REGION_SYS_0_BASE +                  \
+		    (BL_PARTITION_SIZE_LMT * QM_FLAH_PAGE_SIZE_DWORDS),        \
+		.is_consistent = true,                                         \
+	}
+
+#define BL_TARGET_LIST                                                         \
+	{                                                                      \
+		BL_TARGET_0_LMT                                                \
+	}
+
+#if (BL_CONFIG_DUAL_BANK)
+#define BL_PARTITION_LIST                                                      \
+	{                                                                      \
+		BL_PARTITION_0_LMT0, BL_PARTITION_1_LMT1                       \
+	}
+#else /* !BL_CONFIG_DUAL_BANK */
+#define BL_PARTITION_LIST                                                      \
+	{                                                                      \
+		BL_PARTITION_0_LMT0                                            \
+	}
+#endif /* BL_CONFIG_DUAL_BANK */
+
 /**
  * @}
  */

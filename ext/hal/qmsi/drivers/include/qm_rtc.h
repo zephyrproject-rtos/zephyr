@@ -59,6 +59,7 @@ typedef struct {
 	uint32_t init_val;  /**< Initial value in RTC clocks. */
 	bool alarm_en;      /**< Alarm enable. */
 	uint32_t alarm_val; /**< Alarm value in RTC clocks. */
+
 	/**
 	 * User callback.
 	 *
@@ -75,6 +76,13 @@ typedef struct {
  * an alarm is required. If the alarm is enabled, register an ISR with the user
  * defined callback function.
  *
+ * The RTC clock resides in a different clock domain
+ * to the system clock.
+ * It takes 3-4 RTC ticks for a system clock write to propagate
+ * to the RTC domain.
+ * If an entry to sleep is initiated without waiting for the
+ * transaction to complete the SOC will not wake from sleep.
+ *
  * @param[in] rtc RTC index.
  * @param[in] cfg New RTC configuration. This must not be NULL.
  *
@@ -89,6 +97,13 @@ int qm_rtc_set_config(const qm_rtc_t rtc, const qm_rtc_config_t *const cfg);
  *
  * Set a new RTC alarm value after an alarm, that has been set using the
  * qm_rtc_set_config function, has expired and a new alarm value is required.
+ *
+ * The RTC clock resides in a different clock domain
+ * to the system clock.
+ * It takes 3-4 RTC ticks for a system clock write to propagate
+ * to the RTC domain.
+ * If an entry to sleep is initiated without waiting for the
+ * transaction to complete the SOC will not wake from sleep.
  *
  * @param[in] rtc RTC index.
  * @param[in] alarm_val Value to set alarm to.

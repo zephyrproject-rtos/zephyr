@@ -47,17 +47,20 @@ typedef struct {
 	const qm_uart_transfer_t *xfer;     /**< User transfer structure. */
 } dma_context_t;
 
-/* UART Callback pointers. */
-static uart_client_callback_t write_callback[QM_UART_NUM];
-static uart_client_callback_t read_callback[QM_UART_NUM];
-
-/* User callback data. */
-static void *write_data[QM_UART_NUM], *read_data[QM_UART_NUM];
+/**
+ * Parameters returned by DMA driver on DMA transfer complete callback.
+ */
+typedef volatile struct {
+	void *context;  /**< Pointer to dma_context_t struct. */
+	uint32_t len;   /**< Amount of data successfully transferred. */
+	int error_code; /**< Error code of failed transfer. */
+} dma_callback_par_t;
 
 /* Buffer pointers to store transmit / receive data for UART */
-static uint8_t *write_buffer[QM_UART_NUM], *read_buffer[QM_UART_NUM];
-static uint32_t write_pos[QM_UART_NUM], write_len[QM_UART_NUM];
-static uint32_t read_pos[QM_UART_NUM], read_len[QM_UART_NUM];
+static uint32_t write_pos[QM_UART_NUM];
+static uint32_t read_pos[QM_UART_NUM];
+static const qm_uart_transfer_t *uart_read_transfer[QM_UART_NUM];
+static const qm_uart_transfer_t *uart_write_transfer[QM_UART_NUM];
 
 /* DMA (memory to UART) callback information. */
 static dma_context_t dma_context_tx[QM_UART_NUM];
@@ -65,21 +68,34 @@ static dma_context_t dma_context_tx[QM_UART_NUM];
 static dma_context_t dma_context_rx[QM_UART_NUM];
 /* DMA core being used by each UART. */
 static qm_dma_t dma_core[QM_UART_NUM];
+/* DMA callback parameters returned by DMA driver (TX transfers). */
+static dma_callback_par_t dma_delayed_callback_par[QM_UART_NUM];
 
 static bool is_read_xfer_complete(const qm_uart_t uart)
 {
-	return read_pos[uart] >= read_len[uart];
+	const qm_uart_transfer_t *const transfer = uart_read_transfer[uart];
+
+	return read_pos[uart] >= transfer->data_len;
 }
 
 static bool is_write_xfer_complete(const qm_uart_t uart)
 {
-	return write_pos[uart] >= write_len[uart];
+	const qm_uart_transfer_t *const transfer = uart_write_transfer[uart];
+
+	return write_pos[uart] >= transfer->data_len;
 }
+
+static void uart_client_callback(void *data, int error, qm_uart_status_t status,
+				 uint32_t len);
 
 static void qm_uart_isr_handler(const qm_uart_t uart)
 {
 	qm_uart_reg_t *const regs = QM_UART[uart];
 	uint8_t interrupt_id = regs->iir_fcr & QM_UART_IIR_IID_MASK;
+	const qm_uart_transfer_t *const read_transfer =
+	    uart_read_transfer[uart];
+	const qm_uart_transfer_t *const write_transfer =
+	    uart_write_transfer[uart];
 
 	/*
 	 * Interrupt ID priority levels (from highest to lowest):
@@ -89,6 +105,22 @@ static void qm_uart_isr_handler(const qm_uart_t uart)
 	 */
 	switch (interrupt_id) {
 	case QM_UART_IIR_THR_EMPTY:
+
+		if (dma_delayed_callback_par[uart].context) {
+			/*
+			 * A DMA TX transfer just completed, disable interrupt
+			 * and invoke client callback.
+			 */
+			regs->ier_dlh &= ~QM_UART_IER_ETBEI;
+
+			uart_client_callback(
+			    dma_delayed_callback_par[uart].context,
+			    dma_delayed_callback_par[uart].error_code,
+			    QM_UART_IDLE, dma_delayed_callback_par[uart].len);
+			dma_delayed_callback_par[uart].context = NULL;
+			return;
+		}
+
 		if (is_write_xfer_complete(uart)) {
 			regs->ier_dlh &= ~QM_UART_IER_ETBEI;
 			/*
@@ -99,10 +131,10 @@ static void qm_uart_isr_handler(const qm_uart_t uart)
 			 * complete.
 			 */
 			regs->scr |= BIT(0);
-			if (write_callback[uart]) {
-				write_callback[uart](write_data[uart], 0,
-						     QM_UART_IDLE,
-						     write_pos[uart]);
+			if (write_transfer->callback) {
+				write_transfer->callback(
+				    write_transfer->callback_data, 0,
+				    QM_UART_IDLE, write_pos[uart]);
 			}
 			return;
 		}
@@ -116,7 +148,7 @@ static void qm_uart_isr_handler(const qm_uart_t uart)
 						   : QM_UART_FIFO_HALF_DEPTH;
 		while (count-- && !is_write_xfer_complete(uart)) {
 			regs->rbr_thr_dll =
-			    write_buffer[uart][write_pos[uart]++];
+			    write_transfer->data[write_pos[uart]++];
 		}
 
 		/*
@@ -148,14 +180,14 @@ static void qm_uart_isr_handler(const qm_uart_t uart)
 			 * in the future.
 			 */
 			if (lsr & QM_UART_LSR_ERROR_BITS) {
-				if (read_callback[uart]) {
-					read_callback[uart](
-					    read_data[uart], -EIO,
+				if (read_transfer->callback) {
+					read_transfer->callback(
+					    read_transfer->callback_data, -EIO,
 					    lsr & QM_UART_LSR_ERROR_BITS, 0);
 				}
 			}
 			if (lsr & QM_UART_LSR_DR) {
-				read_buffer[uart][read_pos[uart]++] =
+				read_transfer->data[read_pos[uart]++] =
 				    regs->rbr_thr_dll;
 			} else {
 				/* No more data in the RX FIFO */
@@ -170,24 +202,24 @@ static void qm_uart_isr_handler(const qm_uart_t uart)
 			 */
 			regs->ier_dlh &=
 			    ~(QM_UART_IER_ERBFI | QM_UART_IER_ELSI);
-			if (read_callback[uart]) {
-				read_callback[uart](read_data[uart], 0,
-						    QM_UART_IDLE,
-						    read_pos[uart]);
+			if (read_transfer->callback) {
+				read_transfer->callback(
+				    read_transfer->callback_data, 0,
+				    QM_UART_IDLE, read_pos[uart]);
 			}
 		}
 
 		break;
 
 	case QM_UART_IIR_RECV_LINE_STATUS:
-		if (read_callback[uart]) {
+		if (read_transfer->callback) {
 			/*
 			 * NOTE: Returned len is 0 for now, this might change
 			 * in the future.
 			 */
-			read_callback[uart](read_data[uart], -EIO,
-					    regs->lsr & QM_UART_LSR_ERROR_BITS,
-					    0);
+			read_transfer->callback(
+			    read_transfer->callback_data, -EIO,
+			    regs->lsr & QM_UART_LSR_ERROR_BITS, 0);
 		}
 		break;
 	}
@@ -363,10 +395,7 @@ int qm_uart_irq_write(const qm_uart_t uart,
 	qm_uart_reg_t *const regs = QM_UART[uart];
 
 	write_pos[uart] = 0;
-	write_len[uart] = xfer->data_len;
-	write_buffer[uart] = xfer->data;
-	write_callback[uart] = xfer->callback;
-	write_data[uart] = xfer->callback_data;
+	uart_write_transfer[uart] = xfer;
 
 	/* Set threshold */
 	regs->iir_fcr =
@@ -386,10 +415,7 @@ int qm_uart_irq_read(const qm_uart_t uart, const qm_uart_transfer_t *const xfer)
 	qm_uart_reg_t *const regs = QM_UART[uart];
 
 	read_pos[uart] = 0;
-	read_len[uart] = xfer->data_len;
-	read_buffer[uart] = xfer->data;
-	read_callback[uart] = xfer->callback;
-	read_data[uart] = xfer->callback_data;
+	uart_read_transfer[uart] = xfer;
 
 	/* Set threshold */
 	regs->iir_fcr =
@@ -409,14 +435,14 @@ int qm_uart_irq_write_terminate(const qm_uart_t uart)
 	QM_CHECK(uart < QM_UART_NUM, -EINVAL);
 
 	qm_uart_reg_t *const regs = QM_UART[uart];
+	const qm_uart_transfer_t *const transfer = uart_write_transfer[uart];
 
 	/* Disable TX holding reg empty interrupt. */
 	regs->ier_dlh &= ~QM_UART_IER_ETBEI;
-	if (write_callback[uart]) {
-		write_callback[uart](write_data[uart], -ECANCELED, QM_UART_IDLE,
-				     write_pos[uart]);
+	if (transfer->callback) {
+		transfer->callback(transfer->callback_data, -ECANCELED,
+				   QM_UART_IDLE, write_pos[uart]);
 	}
-	write_len[uart] = 0;
 
 	return 0;
 }
@@ -426,28 +452,71 @@ int qm_uart_irq_read_terminate(const qm_uart_t uart)
 	QM_CHECK(uart < QM_UART_NUM, -EINVAL);
 
 	qm_uart_reg_t *const regs = QM_UART[uart];
+	const qm_uart_transfer_t *const transfer = uart_read_transfer[uart];
 
 	/*
 	 * Disable both 'Receiver Data Available' and 'Receiver Line Status'
 	 * interrupts.
 	 */
 	regs->ier_dlh &= ~(QM_UART_IER_ERBFI | QM_UART_IER_ELSI);
-	if (read_callback[uart]) {
-		read_callback[uart](read_data[uart], -ECANCELED, QM_UART_IDLE,
-				    read_pos[uart]);
+	if (transfer->callback) {
+		transfer->callback(transfer->callback_data, -ECANCELED,
+				   QM_UART_IDLE, read_pos[uart]);
 	}
-	read_len[uart] = 0;
 
 	return 0;
 }
 
-/* DMA driver invoked callback. */
+/*
+ * Called by the DMA driver when the whole TX buffer has been written to the TX
+ * FIFO (write transfers) or the expected amount of data has been read from the
+ * RX FIFO (read transfers).
+ */
 static void uart_dma_callback(void *callback_context, uint32_t len,
 			      int error_code)
 {
 	QM_ASSERT(callback_context);
-	const qm_uart_transfer_t *const xfer =
-	    ((dma_context_t *)callback_context)->xfer;
+	/*
+	 * On TX transfers, the DMA driver invokes this function as soon as all
+	 * data has been written to the TX FIFO, but we still need to wait until
+	 * everything has been written to the shift register (TX FIFO empty
+	 * interrupt) before the client callback is invoked.
+	 */
+	if (callback_context >= (void *)&dma_context_tx[0] &&
+	    callback_context <= (void *)&dma_context_tx[QM_UART_NUM - 1]) {
+		/*
+		 * callback_context is within dma_context_tx array so this is a
+		 * TX transfer, we extract the uart index from the position in
+		 * the array.
+		 */
+		const qm_uart_t uart =
+		    (dma_context_t *)callback_context - dma_context_tx;
+		QM_ASSERT(callback_context == (void *)&dma_context_tx[uart]);
+		qm_uart_reg_t *const regs = QM_UART[uart];
+
+		dma_delayed_callback_par[uart].context = callback_context;
+		dma_delayed_callback_par[uart].len = len;
+		dma_delayed_callback_par[uart].error_code = error_code;
+
+		/*
+		 * Change the threshold level to trigger an interrupt when the
+		 * TX FIFO is empty and enable the TX FIFO empty interrupt.
+		 */
+		regs->iir_fcr =
+		    (QM_UART_FCR_FIFOE | QM_UART_FCR_TX_0_RX_1_2_THRESHOLD);
+		regs->ier_dlh |= QM_UART_IER_ETBEI;
+	} else {
+		/* RX transfer. */
+		uart_client_callback(callback_context, error_code, QM_UART_IDLE,
+				     len);
+	}
+}
+
+/* Invoke the UART client callback. */
+static void uart_client_callback(void *data, int error, qm_uart_status_t status,
+				 uint32_t len)
+{
+	const qm_uart_transfer_t *const xfer = ((dma_context_t *)data)->xfer;
 	QM_ASSERT(xfer);
 	const uart_client_callback_t client_callback = xfer->callback;
 	void *const client_data = xfer->callback_data;
@@ -457,19 +526,19 @@ static void uart_dma_callback(void *callback_context, uint32_t len,
 		return;
 	}
 
-	if (error_code) {
+	if (error) {
 		/*
 		 * Transfer failed, pass to client the error code returned by
 		 * the DMA driver.
 		 */
-		client_callback(client_data, error_code, QM_UART_IDLE, 0);
+		client_callback(client_data, error, status, 0);
 	} else if (len == client_expected_len) {
 		/* Transfer completed successfully. */
-		client_callback(client_data, 0, QM_UART_IDLE, len);
+		client_callback(client_data, 0, status, len);
 	} else {
 		QM_ASSERT(len < client_expected_len);
 		/* Transfer cancelled. */
-		client_callback(client_data, -ECANCELED, QM_UART_IDLE, len);
+		client_callback(client_data, -ECANCELED, status, len);
 	}
 }
 
@@ -496,16 +565,9 @@ int qm_uart_dma_channel_config(
 
 	switch (dma_channel_direction) {
 	case QM_DMA_MEMORY_TO_PERIPHERAL:
-		switch (uart) {
-		case QM_UART_0:
-			dma_chan_cfg.handshake_interface = DMA_HW_IF_UART_A_TX;
-			break;
-		case QM_UART_1:
-			dma_chan_cfg.handshake_interface = DMA_HW_IF_UART_B_TX;
-			break;
-		default:
-			return -EINVAL;
-		}
+		dma_chan_cfg.handshake_interface = (QM_UART_0 == uart)
+						       ? DMA_HW_IF_UART_A_TX
+						       : DMA_HW_IF_UART_B_TX;
 
 		/*
 		 * The DMA driver needs a pointer to the DMA context structure
@@ -516,16 +578,9 @@ int qm_uart_dma_channel_config(
 		break;
 
 	case QM_DMA_PERIPHERAL_TO_MEMORY:
-		switch (uart) {
-		case QM_UART_0:
-			dma_chan_cfg.handshake_interface = DMA_HW_IF_UART_A_RX;
-			break;
-		case QM_UART_1:
-			dma_chan_cfg.handshake_interface = DMA_HW_IF_UART_B_RX;
-			break;
-		default:
-			return -EINVAL;
-		}
+		dma_chan_cfg.handshake_interface = (QM_UART_0 == uart)
+						       ? DMA_HW_IF_UART_A_RX
+						       : DMA_HW_IF_UART_B_RX;
 
 		/*
 		 * The DMA driver needs a pointer to the DMA context structure

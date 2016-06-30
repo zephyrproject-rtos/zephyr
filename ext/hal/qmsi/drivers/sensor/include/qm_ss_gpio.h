@@ -44,7 +44,7 @@
  * GPIO SS pin states.
  */
 typedef enum {
-	QM_SS_GPIO_LOW, /**< Pin level high. */
+	QM_SS_GPIO_LOW,  /**< Pin level high. */
 	QM_SS_GPIO_HIGH, /**< Pin level low. */
 	QM_SS_GPIO_STATE_NUM
 } qm_ss_gpio_state_t;
@@ -60,6 +60,7 @@ typedef struct {
 	uint32_t int_type;     /**< Interrupt type, 0b: level; 1b: edge. */
 	uint32_t int_polarity; /**< Interrupt polarity, 0b: low, 1b: high. */
 	uint32_t int_debounce; /**< Debounce on/off. */
+
 	/**
 	 * User callback.
 	 *
@@ -95,14 +96,15 @@ int qm_ss_gpio_set_config(const qm_ss_gpio_t gpio,
  *
  * @param[in] gpio SS GPIO port index.
  * @param[in] pin Pin of SS GPIO port to read.
- * @param[out] state QM_GPIO_LOW for low or QM_GPIO_HIGH for high. This must not be NULL.
+ * @param[out] state QM_GPIO_LOW for low or QM_GPIO_HIGH for high. This must not
+ * be NULL.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_ss_gpio_read_pin(const qm_ss_gpio_t gpio, const uint8_t pin,
-		qm_ss_gpio_state_t *const state);
+			qm_ss_gpio_state_t *const state);
 
 /**
  * Set a single pin on a given SS GPIO port.

@@ -115,7 +115,7 @@ void _qm_irq_setup(uint32_t irq, uint16_t register_offset);
  * @param[in] isr ISR to register to given IRQ.
  */
 #if (UNIT_TEST)
-#define qm_int_vector_request(vector, isr)
+void qm_int_vector_request(uint32_t vector, qm_isr_t isr);
 #else
 #if (__iamcu__)
 /*

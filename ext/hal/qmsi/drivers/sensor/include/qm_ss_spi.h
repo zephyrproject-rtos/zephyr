@@ -110,14 +110,16 @@ typedef enum {
 /**
  * SPI slave select type.
  *
- * Slave selects can be combined by logical OR.
+ * Slave selects can combined by logical OR if multiple slaves are selected
+ * during one transfer. Setting only QM_SS_SPI_SS_DISABLED prevents the
+ * controller from starting the transfer.
  */
 typedef enum {
-	QM_SS_SPI_SS_NONE = 0,   /**< No slave select. */
-	QM_SS_SPI_SS_0 = BIT(0), /**< Slave select 0. */
-	QM_SS_SPI_SS_1 = BIT(1), /**< Slave select 1. */
-	QM_SS_SPI_SS_2 = BIT(2), /**< Slave select 2. */
-	QM_SS_SPI_SS_3 = BIT(3), /**< Slave select 3. */
+	QM_SS_SPI_SS_DISABLED = 0, /**< Slave select disable. */
+	QM_SS_SPI_SS_0 = BIT(0),   /**< Slave select 0. */
+	QM_SS_SPI_SS_1 = BIT(1),   /**< Slave select 1. */
+	QM_SS_SPI_SS_2 = BIT(2),   /**< Slave select 2. */
+	QM_SS_SPI_SS_3 = BIT(3),   /**< Slave select 3. */
 } qm_ss_spi_slave_select_t;
 
 /**
@@ -169,7 +171,7 @@ typedef struct {
 	 */
 	void (*callback)(void *data, int error, qm_ss_spi_status_t status,
 			 uint16_t len);
-	void *data; /**< Callback user data. */
+	void *callback_data; /**< Callback user data. */
 } qm_ss_spi_async_transfer_t;
 
 /**

@@ -69,6 +69,7 @@ QM_ISR_DECLARE(qm_adc_pwr_0_isr);
  * @endcode if IRQ based calibration is used.
  */
 QM_ISR_DECLARE(qm_ss_adc_0_cal_isr);
+
 /**
  * ISR for SS ADC 0 mode change interrupt.
  *
@@ -79,6 +80,7 @@ QM_ISR_DECLARE(qm_ss_adc_0_cal_isr);
 QM_ISR_DECLARE(qm_ss_adc_0_pwr_isr);
 
 #endif /* QUARK_SE */
+
 /**
  * ISR for Always-on Periodic Timer 0 interrupt.
  *

@@ -71,32 +71,32 @@
  */
 typedef enum {
 	QM_SS_I2C_7_BIT = 0, /**< 7-bit mode. */
-	QM_SS_I2C_10_BIT /**< 10-bit mode. */
+	QM_SS_I2C_10_BIT     /**< 10-bit mode. */
 } qm_ss_i2c_addr_t;
 
 /**
  * QM SS I2C Speed Type.
  */
 typedef enum {
-	QM_SS_I2C_SPEED_STD = 1,  /**< Standard mode (100 Kbps). */
-	QM_SS_I2C_SPEED_FAST = 2  /**< Fast mode (400 Kbps).  */
+	QM_SS_I2C_SPEED_STD = 1, /**< Standard mode (100 Kbps). */
+	QM_SS_I2C_SPEED_FAST = 2 /**< Fast mode (400 Kbps).  */
 } qm_ss_i2c_speed_t;
 
 /**
  * QM SS I2C status type.
  */
 typedef enum {
-	QM_I2C_IDLE = 0, /**< Controller idle. */
+	QM_I2C_IDLE = 0,		       /**< Controller idle. */
 	QM_I2C_TX_ABRT_7B_ADDR_NOACK = BIT(0), /**< 7-bit address noack. */
-	QM_I2C_TX_ABRT_TXDATA_NOACK = BIT(3), /**< Tx data noack. */
-	QM_I2C_TX_ABRT_SBYTE_ACKDET = BIT(7), /**< Start ACK. */
-	QM_I2C_TX_ABRT_MASTER_DIS = BIT(11), /**< Master disabled. */
-	QM_I2C_TX_ARB_LOST = BIT(12), /**< Master lost arbitration. */
+	QM_I2C_TX_ABRT_TXDATA_NOACK = BIT(3),  /**< Tx data noack. */
+	QM_I2C_TX_ABRT_SBYTE_ACKDET = BIT(7),  /**< Start ACK. */
+	QM_I2C_TX_ABRT_MASTER_DIS = BIT(11),   /**< Master disabled. */
+	QM_I2C_TX_ARB_LOST = BIT(12),	  /**< Master lost arbitration. */
 	QM_I2C_TX_ABRT_SLVFLUSH_TXFIFO = BIT(13), /**< Slave flush tx FIFO. */
-	QM_I2C_TX_ABRT_SLV_ARBLOST = BIT(14), /**< Slave lost bus. */
-	QM_I2C_TX_ABRT_SLVRD_INTX = BIT(15), /**< Slave read completion. */
-	QM_I2C_TX_ABRT_USER_ABRT = BIT(16), /**< User abort. */
-	QM_I2C_BUSY = BIT(17) /**< Controller busy. */
+	QM_I2C_TX_ABRT_SLV_ARBLOST = BIT(14),     /**< Slave lost bus. */
+	QM_I2C_TX_ABRT_SLVRD_INTX = BIT(15),      /**< Slave read completion. */
+	QM_I2C_TX_ABRT_USER_ABRT = BIT(16),       /**< User abort. */
+	QM_I2C_BUSY = BIT(17)			  /**< Controller busy. */
 } qm_ss_i2c_status_t;
 
 /**
@@ -120,6 +120,7 @@ typedef struct {
 	uint8_t *rx;     /**< Read data. */
 	uint32_t rx_len; /**< Read buffer length. */
 	bool stop;       /**< Generate master STOP. */
+
 	/**
 	 * User callback.
 	 *
@@ -230,8 +231,9 @@ int qm_ss_i2c_master_read(const qm_ss_i2c_t i2c, const uint16_t slave_addr,
  *
  * @param[in] i2c Which I2C to transfer from.
  * @param[in] xfer Transfer structure includes write / read data and length,
- * 		           user callback function and the callback context.
- * 		           This must not be NULL.
+ * 		user callback function and the callback context.
+ *              The structure must not be NULL and must be kept valid until
+ *              the transfer is complete.
  * @param[in] slave_addr Address of slave to transfer data with.
  *
  * @return Standard errno return type for QMSI.

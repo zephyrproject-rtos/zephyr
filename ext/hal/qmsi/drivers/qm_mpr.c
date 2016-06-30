@@ -58,14 +58,61 @@ int qm_mpr_set_config(const qm_mpr_id_t id, const qm_mpr_config_t *const cfg)
 	    /*   MPR Upper bound 16:10 */
 	    ((cfg->up_bound & ADDRESS_MASK_7_BIT) << QM_MPR_UP_BOUND_OFFSET)
 	    /*   MPR Lower bound 6:0 */
-	    |
-	    cfg->low_bound;
+	    | cfg->low_bound;
 
 	/* enable/lock */
 	QM_MPR->mpr_cfg[id] |= (cfg->en_lock_mask << QM_MPR_EN_LOCK_OFFSET);
 	return 0;
 }
+#if (QM_SENSOR)
+int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
+				qm_mpr_callback_t callback_fn,
+				void *callback_data)
+{
+	QM_CHECK(mode <= MPR_VIOL_MODE_PROBE, -EINVAL);
+	/*  interrupt mode */
+	if (MPR_VIOL_MODE_INTERRUPT == mode) {
+		callback = callback_fn;
+		callback_data = callback_data;
 
+		/* unmask interrupt */
+		QM_SCSS_INT->int_sram_controller_mask &=
+		    ~QM_INT_SRAM_CONTROLLER_SS_MASK;
+
+		QM_SCSS_INT->int_sram_controller_mask |=
+		    QM_INT_SRAM_CONTROLLER_SS_HALT_MASK;
+
+		QM_SCSS_SS->ss_cfg &= ~QM_SS_STS_HALT_INTERRUPT_REDIRECTION;
+	}
+
+	/* probe or reset mode */
+	else {
+		/* mask interrupt */
+		QM_SCSS_INT->int_sram_controller_mask |=
+		    QM_INT_SRAM_CONTROLLER_SS_MASK;
+
+		QM_SCSS_INT->int_sram_controller_mask &=
+		    ~QM_INT_SRAM_CONTROLLER_SS_HALT_MASK;
+
+		if (MPR_VIOL_MODE_PROBE == mode) {
+
+			/* When an enabled host halt interrupt occurs, this bit
+			* determines if the interrupt event triggers a warm
+			* reset
+			* or an entry into Probe Mode.
+			* 0b : Warm Reset
+			* 1b : Probe Mode Entry
+			*/
+			QM_SCSS_SS->ss_cfg |=
+			    QM_SS_STS_HALT_INTERRUPT_REDIRECTION;
+		} else {
+			QM_SCSS_SS->ss_cfg &=
+			    ~QM_SS_STS_HALT_INTERRUPT_REDIRECTION;
+		}
+	}
+	return 0;
+}
+#else
 int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 				qm_mpr_callback_t callback_fn,
 				void *callback_data)
@@ -78,26 +125,18 @@ int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 
 		/* unmask interrupt */
 		qm_irq_unmask(QM_IRQ_SRAM);
-#if defined(QM_SENSOR)
-		QM_SCSS_INT->int_sram_controller_mask |=
-		    QM_INT_SRAM_CONTROLLER_SS_HALT_MASK;
-#else  /* QM_SENSOR */
+
 		QM_SCSS_INT->int_sram_controller_mask |=
 		    QM_INT_SRAM_CONTROLLER_HOST_HALT_MASK;
-#endif /* QM_SENSOR */
 	}
 
 	/* probe or reset mode */
 	else {
 		/* mask interrupt */
 		qm_irq_mask(QM_IRQ_SRAM);
-#if defined(QM_SENSOR)
-		QM_SCSS_INT->int_sram_controller_mask &=
-		    ~QM_INT_SRAM_CONTROLLER_SS_HALT_MASK;
-#else  /* QM_SENSOR */
+
 		QM_SCSS_INT->int_sram_controller_mask &=
 		    ~QM_INT_SRAM_CONTROLLER_HOST_HALT_MASK;
-#endif /* QM_SENSOR */
 
 		if (MPR_VIOL_MODE_PROBE == mode) {
 
@@ -110,12 +149,11 @@ int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,
 			*/
 			QM_SCSS_PMU->p_sts |=
 			    QM_P_STS_HALT_INTERRUPT_REDIRECTION;
-		}
-
-		else {
+		} else {
 			QM_SCSS_PMU->p_sts &=
 			    ~QM_P_STS_HALT_INTERRUPT_REDIRECTION;
 		}
 	}
 	return 0;
 }
+#endif /* QM_SENSOR */

@@ -55,15 +55,21 @@ struct interrupt_frame;
 
 #define REG_VAL(addr) (*((volatile uint32_t *)addr))
 
+/* QM_ASSERT is not currently available for Zephyr. */
+#define ASSERT_EXCLUDE (ZEPHYR_OS)
+
 /**
  * In our reference implementation, by default DEBUG enables QM_PUTS and
  * QM_ASSERT but not QM_PRINTF.
  * User can modify this block to customise the default DEBUG configuration.
  */
+
 #if (DEBUG)
+#if !ASSERT_EXCLUDE
 #ifndef ASSERT_ENABLE
 #define ASSERT_ENABLE (1)
 #endif
+#endif /* ASSERT_EXCLUDE */
 #ifndef PUTS_ENABLE
 #define PUTS_ENABLE (1)
 #endif
@@ -112,7 +118,8 @@ void stdout_uart_setup(uint32_t baud_divisors);
 #endif /* PRINTF_ENABLE || PUTS_ENABLE || ASSERT_ENABLE */
 
 #if (PRINTF_ENABLE)
-#define QM_PRINTF(...) printf(__VA_ARGS__)
+int pico_printf(const char *format, ...);
+#define QM_PRINTF(...) pico_printf(__VA_ARGS__)
 #else
 #define QM_PRINTF(...)
 #endif /* PRINTF_ENABLE */
@@ -146,7 +153,7 @@ void stdout_uart_setup(uint32_t baud_divisors);
 #endif
 
 /*
- * Stdout UART intialization is enabled by default. Use this switch if you wish
+ * Stdout UART initialization is enabled by default. Use this switch if you wish
  * to disable it (e.g. if the UART is already initialized by an application
  * running on the other core).
  */
@@ -265,5 +272,40 @@ void stdout_uart_setup(uint32_t baud_divisors);
  */
 #define QM_VER_STRINGIFY(major, minor, patch)                                  \
 	QM_STRINGIFY(major) "." QM_STRINGIFY(minor) "." QM_STRINGIFY(patch)
+
+#if (SOC_WATCH_ENABLE) && (!QM_SENSOR)
+/**
+ * Front-end macro for logging a SoC Watch event.  When SOC_WATCH_ENABLE
+ * is not set to 1, the macro expands to nothing, there is no overhead.
+ *
+ * @param[in] event_id The Event ID of the profile event.
+ * @param[in] ev_data  A parameter to the event ID (if the event needs one).
+ *
+ * @returns Nothing.
+ */
+#define SOC_WATCH_LOG_EVENT(event, param)                                      \
+	do {                                                                   \
+		soc_watch_log_event(event, param);                             \
+	} while (0)
+
+/**
+ * Front-end macro for logging application events via the power profiler
+ * logger.  When SOC_WATCH_ENABLE is not set to 1, the macro expands to
+ * nothing, there is no overhead.
+ *
+ * @param[in] event_id    The Event ID of the profile event.
+ * @param[in] ev_subtype  A 1-byte user-defined event_id.
+ * @param[in] ev_data     A parameter to the event ID (if the event needs one).
+ *
+ * @returns Nothing.
+ */
+#define SOC_WATCH_LOG_APP_EVENT(event, subtype, param)                         \
+	do {                                                                   \
+		soc_watch_log_app_event(event, subtype, param);                \
+	} while (0)
+#else
+#define SOC_WATCH_LOG_EVENT(event, param)
+#define SOC_WATCH_LOG_APP_EVENT(event, subtype, param)
+#endif
 
 #endif /* __QM_COMMON_H__ */

@@ -86,6 +86,58 @@ int qm_fpr_set_config(const qm_flash_t flash, const qm_fpr_id_t id,
 	return 0;
 }
 
+#if (QM_SENSOR)
+int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
+				const qm_flash_t flash,
+				qm_fpr_callback_t callback_fn, void *data)
+{
+	QM_CHECK(mode <= FPR_VIOL_MODE_PROBE, -EINVAL);
+	QM_CHECK(flash < QM_FLASH_NUM, -EINVAL);
+	volatile uint32_t *int_flash_controller_mask =
+	    &QM_SCSS_INT->int_flash_controller_0_mask;
+
+	/* interrupt mode */
+	if (FPR_VIOL_MODE_INTERRUPT == mode) {
+
+		callback[flash] = callback_fn;
+		callback_data[flash] = data;
+
+		int_flash_controller_mask[flash] &=
+		    ~QM_INT_FLASH_CONTROLLER_SS_MASK;
+		int_flash_controller_mask[flash] |=
+		    QM_INT_FLASH_CONTROLLER_SS_HALT_MASK;
+
+		QM_SCSS_SS->ss_cfg &= ~QM_SS_STS_HALT_INTERRUPT_REDIRECTION;
+	}
+
+	/* probe or reset mode */
+	else {
+		int_flash_controller_mask[flash] |=
+		    QM_INT_FLASH_CONTROLLER_SS_MASK;
+		int_flash_controller_mask[flash] &=
+		    ~QM_INT_FLASH_CONTROLLER_SS_HALT_MASK;
+
+		if (FPR_VIOL_MODE_PROBE == mode) {
+
+			/* When an enabled host halt interrupt occurs, this bit
+			* determines if the interrupt event triggers a warm
+			* reset
+			* or an entry into Probe Mode.
+			* 0b : Warm Reset
+			* 1b : Probe Mode Entry
+			*/
+			QM_SCSS_SS->ss_cfg |=
+			    QM_SS_STS_HALT_INTERRUPT_REDIRECTION;
+		} else {
+			QM_SCSS_SS->ss_cfg &=
+			    ~QM_SS_STS_HALT_INTERRUPT_REDIRECTION;
+		}
+	}
+	return 0;
+}
+
+#else /* QM_SENSOR */
+
 int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 				const qm_flash_t flash,
 				qm_fpr_callback_t callback_fn, void *data)
@@ -109,13 +161,9 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 			qm_irq_unmask(QM_IRQ_FLASH_1);
 #endif
 		}
-#if defined(QM_SENSOR)
-		int_flash_controller_mask[flash] |=
-		    QM_INT_FLASH_CONTROLLER_SS_HALT_MASK;
-#else  /* QM_SENSOR */
+
 		int_flash_controller_mask[flash] |=
 		    QM_INT_FLASH_CONTROLLER_HOST_HALT_MASK;
-#endif /* QM_SENSOR */
 
 		QM_SCSS_PMU->p_sts &= ~QM_P_STS_HALT_INTERRUPT_REDIRECTION;
 	}
@@ -130,13 +178,9 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 			qm_irq_mask(QM_IRQ_FLASH_1);
 #endif
 		}
-#if defined(QM_SENSOR)
-		int_flash_controller_mask[flash] &=
-		    ~QM_INT_FLASH_CONTROLLER_SS_HALT_MASK;
-#else  /* QM_SENSOR */
+
 		int_flash_controller_mask[flash] &=
 		    ~QM_INT_FLASH_CONTROLLER_HOST_HALT_MASK;
-#endif /* QM_SENSOR */
 
 		if (FPR_VIOL_MODE_PROBE == mode) {
 
@@ -156,3 +200,4 @@ int qm_fpr_set_violation_policy(const qm_fpr_viol_mode_t mode,
 	}
 	return 0;
 }
+#endif /* QM_SENSOR */

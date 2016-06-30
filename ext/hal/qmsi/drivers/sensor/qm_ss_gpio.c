@@ -125,7 +125,7 @@ int qm_ss_gpio_clear_pin(const qm_ss_gpio_t gpio, const uint8_t pin)
 }
 
 int qm_ss_gpio_set_pin_state(const qm_ss_gpio_t gpio, const uint8_t pin,
-			 const qm_ss_gpio_state_t state)
+			     const qm_ss_gpio_state_t state)
 {
 	uint32_t val;
 	QM_CHECK(gpio < QM_SS_GPIO_NUM, -EINVAL);

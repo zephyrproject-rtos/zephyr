@@ -37,8 +37,8 @@
 #define SPK_LEN_FS_FSP (2)
 
 /* number of retries before giving up on disabling the controller */
-#define MAX_T_POLL_COUNT (100)
-#define TI2C_POLL_MICROSECOND (10000)
+#define I2C_POLL_COUNT (1000000)
+#define I2C_POLL_MICROSECOND (1)
 
 #ifndef UNIT_TEST
 #if (QUARK_SE)
@@ -49,9 +49,9 @@ qm_i2c_reg_t *qm_i2c[QM_I2C_NUM] = {(qm_i2c_reg_t *)QM_I2C_0_BASE};
 #endif
 #endif
 
-static qm_i2c_transfer_t i2c_transfer[QM_I2C_NUM];
+static const qm_i2c_transfer_t *i2c_transfer[QM_I2C_NUM];
 static uint32_t i2c_write_pos[QM_I2C_NUM], i2c_read_pos[QM_I2C_NUM],
-    i2c_read_buffer_remaining[QM_I2C_NUM];
+    i2c_read_cmd_send[QM_I2C_NUM];
 
 /**
  * I2C DMA controller configuration descriptor.
@@ -61,12 +61,13 @@ typedef struct {
 	qm_dma_t dma_controller_id;
 	qm_dma_channel_id_t dma_tx_channel_id;    /* TX channel ID */
 	qm_dma_transfer_t dma_tx_transfer_config; /* Configuration for TX */
-	volatile bool ongoing_dma_tx_operation;   /* Keep track of ongoing TX */
 	qm_dma_channel_id_t dma_rx_channel_id;    /* RX channel ID */
 	qm_dma_transfer_t dma_rx_transfer_config; /* Configuration for RX */
 	/* Configuration for writing READ commands during an RX	operation */
 	qm_dma_transfer_t dma_cmd_transfer_config;
+	volatile bool ongoing_dma_tx_operation; /* Keep track of ongoing TX */
 	volatile bool ongoing_dma_rx_operation; /* Keep track of oingoing RX*/
+	int multimaster_abort_status;
 } i2c_dma_context_t;
 
 /* DMA context */
@@ -96,9 +97,12 @@ static int controller_disable(const qm_i2c_t i2c);
 
 static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 {
+	const qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 	uint32_t ic_data_cmd = 0, count_tx = (QM_I2C_FIFO_SIZE - TX_TL);
 	qm_i2c_status_t status = 0;
 	int rc = 0;
+	uint32_t read_buffer_remaining = transfer->rx_len - i2c_read_pos[i2c];
+	uint32_t write_buffer_remaining = transfer->tx_len - i2c_write_pos[i2c];
 
 	qm_i2c_reg_t *const controller = QM_I2C[i2c];
 
@@ -120,12 +124,24 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 		controller->ic_intr_mask = QM_I2C_IC_INTR_MASK_ALL;
 
 		rc = (status & QM_I2C_TX_ABRT_USER_ABRT) ? -ECANCELED : -EIO;
-		if (i2c_transfer[i2c].callback) {
-			/* NOTE: currently 0 is returned for length but we
-			 * may revisit that soon
+
+		if ((i2c_dma_context[i2c].ongoing_dma_rx_operation == true) ||
+		    (i2c_dma_context[i2c].ongoing_dma_tx_operation == true)) {
+			/* If in DMA mode, raise a flag and stop the channels */
+			i2c_dma_context[i2c].multimaster_abort_status = rc;
+			/* When terminating the DMA transfer, the DMA controller
+			 * calls the TX or RX callback, which will trigger the
+			 * error callback. This will disable the I2C controller
 			 */
-			i2c_transfer[i2c].callback(
-			    i2c_transfer[i2c].callback_data, rc, status, 0);
+			qm_i2c_dma_transfer_terminate(i2c);
+		} else {
+			if (transfer->callback) {
+				/* NOTE: currently 0 is returned for length but
+				 * we may revisit that soon
+				 */
+				transfer->callback(transfer->callback_data, rc,
+						   status, 0);
+			}
 			controller_disable(i2c);
 		}
 	}
@@ -133,39 +149,38 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 	/* RX read from buffer */
 	if (controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_RX_FULL) {
 
-		while (i2c_read_buffer_remaining[i2c] && controller->ic_rxflr) {
-			i2c_transfer[i2c].rx[i2c_read_pos[i2c]] =
+		while (read_buffer_remaining && controller->ic_rxflr) {
+			transfer->rx[i2c_read_pos[i2c]] =
 			    controller->ic_data_cmd;
-			i2c_read_buffer_remaining[i2c]--;
+			read_buffer_remaining--;
 			i2c_read_pos[i2c]++;
 
-			if (i2c_read_buffer_remaining[i2c] == 0) {
+			if (read_buffer_remaining == 0) {
 				/* mask rx full interrupt if transfer
 				 * complete
 				 */
 				controller->ic_intr_mask &=
 				    ~QM_I2C_IC_INTR_MASK_RX_FULL;
 
-				if (i2c_transfer[i2c].stop) {
+				if (transfer->stop) {
 					controller_disable(i2c);
 				}
 
-				if (i2c_transfer[i2c].callback) {
-					i2c_transfer[i2c].callback(
-					    i2c_transfer[i2c].callback_data, 0,
+				if (transfer->callback) {
+					transfer->callback(
+					    transfer->callback_data, 0,
 					    QM_I2C_IDLE, i2c_read_pos[i2c]);
 				}
 			}
 		}
 
-		if (i2c_read_buffer_remaining[i2c] > 0 &&
-		    i2c_read_buffer_remaining[i2c] < (RX_TL + 1)) {
+		if (read_buffer_remaining > 0 &&
+		    read_buffer_remaining < (RX_TL + 1)) {
 			/* Adjust the RX threshold so the next 'RX_FULL'
 			 * interrupt is generated when all the remaining
 			 * data are received.
 			 */
-			controller->ic_rx_tl =
-			    i2c_read_buffer_remaining[i2c] - 1;
+			controller->ic_rx_tl = read_buffer_remaining - 1;
 		}
 
 		/* RX_FULL INTR is autocleared when the buffer
@@ -176,9 +191,8 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 	if (controller->ic_intr_stat & QM_I2C_IC_INTR_STAT_TX_EMPTY) {
 
 		if ((controller->ic_status & QM_I2C_IC_STATUS_TFE) &&
-		    (i2c_transfer[i2c].tx != NULL) &&
-		    (i2c_transfer[i2c].tx_len == 0) &&
-		    (i2c_transfer[i2c].rx_len == 0)) {
+		    (transfer->tx != NULL) && (write_buffer_remaining == 0) &&
+		    (read_buffer_remaining == 0)) {
 
 			controller->ic_intr_mask &=
 			    ~QM_I2C_IC_INTR_MASK_TX_EMPTY;
@@ -186,33 +200,31 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 			/* if this is not a combined
 			 * transaction, disable the controller now
 			 */
-			if ((i2c_read_buffer_remaining[i2c] == 0) &&
-			    i2c_transfer[i2c].stop) {
+			if (transfer->stop) {
 				controller_disable(i2c);
 
 				/* callback */
-				if (i2c_transfer[i2c].callback) {
-					i2c_transfer[i2c].callback(
-					    i2c_transfer[i2c].callback_data, 0,
+				if (transfer->callback) {
+					transfer->callback(
+					    transfer->callback_data, 0,
 					    QM_I2C_IDLE, i2c_write_pos[i2c]);
 				}
 			}
 		}
 
-		while ((count_tx) && i2c_transfer[i2c].tx_len) {
+		while ((count_tx) && write_buffer_remaining) {
 			count_tx--;
+			write_buffer_remaining--;
 
 			/* write command -IC_DATA_CMD[8] = 0 */
 			/* fill IC_DATA_CMD[7:0] with the data */
-			ic_data_cmd = i2c_transfer[i2c].tx[i2c_write_pos[i2c]];
-			i2c_transfer[i2c].tx_len--;
+			ic_data_cmd = transfer->tx[i2c_write_pos[i2c]];
 
 			/* if transfer is a combined transfer, only
 			 * send stop at
 			 * end of the transfer sequence */
-			if (i2c_transfer[i2c].stop &&
-			    (i2c_transfer[i2c].tx_len == 0) &&
-			    (i2c_transfer[i2c].rx_len == 0)) {
+			if (transfer->stop && (write_buffer_remaining == 0) &&
+			    (read_buffer_remaining == 0)) {
 
 				ic_data_cmd |= QM_I2C_IC_DATA_CMD_STOP_BIT_CTRL;
 			}
@@ -230,18 +242,15 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 		count_tx = QM_I2C_FIFO_SIZE -
 			   (controller->ic_txflr + controller->ic_rxflr + 1);
 
-		while (i2c_transfer[i2c].rx_len &&
-		       (i2c_transfer[i2c].tx_len == 0) && count_tx) {
+		while (i2c_read_cmd_send[i2c] &&
+		       (write_buffer_remaining == 0) && count_tx) {
 			count_tx--;
-			i2c_transfer[i2c].rx_len--;
+			i2c_read_cmd_send[i2c]--;
 
-			/* if transfer is a combined transfer, only
-			 * send stop at
-			 * end of
-			 * the transfer sequence */
-			if (i2c_transfer[i2c].stop &&
-			    (i2c_transfer[i2c].rx_len == 0) &&
-			    (i2c_transfer[i2c].tx_len == 0)) {
+			/* If transfer is a combined transfer, only send stop at
+			 * end of the transfer sequence
+			 */
+			if (transfer->stop && (i2c_read_cmd_send[i2c] == 0)) {
 				controller->ic_data_cmd =
 				    QM_I2C_IC_DATA_CMD_READ |
 				    QM_I2C_IC_DATA_CMD_STOP_BIT_CTRL;
@@ -252,8 +261,8 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 		}
 
 		/* generate a tx_empty interrupt when tx fifo is fully empty */
-		if ((i2c_transfer[i2c].tx_len == 0) &&
-		    (i2c_transfer[i2c].rx_len == 0)) {
+		if ((write_buffer_remaining == 0) &&
+		    (read_buffer_remaining == 0)) {
 			controller->ic_tx_tl = 0;
 		}
 	}
@@ -315,7 +324,7 @@ int qm_i2c_set_config(const qm_i2c_t i2c, const qm_i2c_config_t *const cfg)
 
 	/* disable controller */
 	if (controller_disable(i2c)) {
-		return -EAGAIN;
+		return -EBUSY;
 	}
 
 	switch (cfg->mode) {
@@ -430,6 +439,7 @@ int qm_i2c_set_speed(const qm_i2c_t i2c, const qm_i2c_speed_t speed,
 		ic_con |= QM_I2C_IC_CON_SPEED_SS;
 		controller->ic_ss_scl_lcnt = lo_cnt;
 		controller->ic_ss_scl_hcnt = hi_cnt;
+		controller->ic_fs_spklen = SPK_LEN_SS;
 		break;
 
 	case QM_I2C_SPEED_FAST:
@@ -437,6 +447,7 @@ int qm_i2c_set_speed(const qm_i2c_t i2c, const qm_i2c_speed_t speed,
 		ic_con |= QM_I2C_IC_CON_SPEED_FS_FSP;
 		controller->ic_fs_scl_lcnt = lo_cnt;
 		controller->ic_fs_scl_hcnt = hi_cnt;
+		controller->ic_fs_spklen = SPK_LEN_FS_FSP;
 		break;
 	}
 
@@ -517,7 +528,7 @@ int qm_i2c_master_write(const qm_i2c_t i2c, const uint16_t slave_addr,
 	/*  disable controller */
 	if (true == stop) {
 		if (controller_disable(i2c)) {
-			ret = -EIO;
+			ret = -EBUSY;
 		}
 	}
 
@@ -590,7 +601,7 @@ int qm_i2c_master_read(const qm_i2c_t i2c, const uint16_t slave_addr,
 	/*  disable controller */
 	if (true == stop) {
 		if (controller_disable(i2c)) {
-			ret = -EIO;
+			ret = -EBUSY;
 		}
 	}
 
@@ -623,8 +634,8 @@ int qm_i2c_master_irq_transfer(const qm_i2c_t i2c,
 
 	i2c_write_pos[i2c] = 0;
 	i2c_read_pos[i2c] = 0;
-	i2c_read_buffer_remaining[i2c] = xfer->rx_len;
-	memcpy(&i2c_transfer[i2c], xfer, sizeof(i2c_transfer[i2c]));
+	i2c_read_cmd_send[i2c] = xfer->rx_len;
+	i2c_transfer[i2c] = xfer;
 
 	/* set threshold */
 	controller->ic_tx_tl = TX_TL;
@@ -666,12 +677,15 @@ static void controller_enable(const qm_i2c_t i2c)
 			 QM_I2C_IC_ENABLE_STATUS_IC_EN))
 			;
 	}
+
+	/* be sure that all interrupts flag are cleared */
+	controller->ic_clr_intr;
 }
 
 static int controller_disable(const qm_i2c_t i2c)
 {
 	qm_i2c_reg_t *const controller = QM_I2C[i2c];
-	int poll_count = MAX_T_POLL_COUNT;
+	int poll_count = I2C_POLL_COUNT;
 
 	/* disable controller */
 	controller->ic_enable &= ~QM_I2C_IC_ENABLE_CONTROLLER_EN;
@@ -679,7 +693,7 @@ static int controller_disable(const qm_i2c_t i2c)
 	/* wait until controller is disabled */
 	while ((controller->ic_enable_status & QM_I2C_IC_ENABLE_STATUS_IC_EN) &&
 	       poll_count--) {
-		clk_sys_udelay(TI2C_POLL_MICROSECOND);
+		clk_sys_udelay(I2C_POLL_MICROSECOND);
 	}
 
 	/* returns 0 if ok, meaning controller is disabled */
@@ -718,26 +732,18 @@ int qm_i2c_dma_transfer_terminate(const qm_i2c_t i2c)
 		rc = qm_dma_transfer_terminate(
 		    i2c_dma_context[i2c].dma_controller_id,
 		    i2c_dma_context[i2c].dma_tx_channel_id);
-		/* Then disable DMA transmit */
-		QM_I2C[i2c]->ic_dma_cr &= ~QM_I2C_IC_DMA_CR_TX_ENABLE;
-		i2c_dma_context[i2c].ongoing_dma_tx_operation = false;
 	}
 
-	if (rc == 0) {
-		if (i2c_dma_context[i2c].ongoing_dma_rx_operation) {
-			/* First terminate the DMA transfer */
-			rc = qm_dma_transfer_terminate(
-			    i2c_dma_context[i2c].dma_controller_id,
-			    i2c_dma_context[i2c].dma_rx_channel_id);
-			/* Then disable DMA receive */
-			QM_I2C[i2c]->ic_dma_cr &= ~QM_I2C_IC_DMA_CR_RX_ENABLE;
-			i2c_dma_context[i2c].ongoing_dma_rx_operation = false;
-		}
+	if (i2c_dma_context[i2c].ongoing_dma_rx_operation) {
+		/* First terminate the DMA transfer */
+		rc |= qm_dma_transfer_terminate(
+		    i2c_dma_context[i2c].dma_controller_id,
+		    i2c_dma_context[i2c].dma_rx_channel_id);
 	}
 
-	/* And terminate the I2C transfer */
-	if (rc == 0) {
-		QM_I2C[i2c]->ic_enable |= QM_I2C_IC_ENABLE_CONTROLLER_ABORT;
+	/* Check if any of the calls failed */
+	if (rc != 0) {
+		rc = -EIO;
 	}
 
 	return rc;
@@ -749,6 +755,7 @@ int qm_i2c_dma_transfer_terminate(const qm_i2c_t i2c)
 static void i2c_dma_transfer_error_callback(uint32_t i2c, int error_code,
 					    uint32_t len)
 {
+	const qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 	qm_i2c_status_t status;
 
 	if (error_code != 0) {
@@ -764,12 +771,16 @@ static void i2c_dma_transfer_error_callback(uint32_t i2c, int error_code,
 			i2c_dma_context[i2c].ongoing_dma_rx_operation = false;
 		}
 
+		/* Wait until the controller is done and disable it */
+		while (!(QM_I2C[i2c]->ic_status & QM_I2C_IC_STATUS_TFE)) {
+		}
+		controller_disable(i2c);
+
 		/* If the user has provided a callback, let's call it */
-		if (i2c_transfer[i2c].callback != NULL) {
+		if (transfer->callback != NULL) {
 			qm_i2c_get_status(i2c, &status);
-			i2c_transfer[i2c].callback(
-			    i2c_transfer[i2c].callback_data, error_code, status,
-			    len);
+			transfer->callback(transfer->callback_data, error_code,
+					   status, len);
 		}
 	}
 }
@@ -785,8 +796,10 @@ static void i2c_dma_transmit_callback(void *callback_context, uint32_t len,
 	qm_i2c_status_t status;
 
 	qm_i2c_t i2c = ((i2c_dma_context_t *)callback_context)->i2c;
+	const qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 
-	if (error_code == 0) {
+	if ((error_code == 0) &&
+	    (i2c_dma_context[i2c].multimaster_abort_status == 0)) {
 		/* Disable DMA transmit */
 		QM_I2C[i2c]->ic_dma_cr &= ~QM_I2C_IC_DMA_CR_TX_ENABLE;
 		i2c_dma_context[i2c].ongoing_dma_tx_operation = false;
@@ -805,8 +818,8 @@ static void i2c_dma_transmit_callback(void *callback_context, uint32_t len,
 
 			/* Check if we must issue a stop condition and it's not
 			   a combined transaction */
-			if ((i2c_transfer[i2c].stop == true) &&
-			    (i2c_transfer[i2c].rx_len == 0)) {
+			if ((transfer->stop == true) &&
+			    (transfer->rx_len == 0)) {
 				data_command |=
 				    QM_I2C_IC_DATA_CMD_STOP_BIT_CTRL;
 			}
@@ -816,12 +829,12 @@ static void i2c_dma_transmit_callback(void *callback_context, uint32_t len,
 
 			/* Check if there is a pending read operation, meaning
 			   this is a combined transaction */
-			if (i2c_transfer[i2c].rx_len > 0) {
+			if (transfer->rx_len > 0) {
 				i2c_start_dma_read(i2c);
 			} else {
 				/* Let's disable the I2C controller if we are
 				   done */
-				if (i2c_transfer[i2c].stop == true) {
+				if (transfer->stop == true) {
 					/* This callback is called when DMA is
 					   done, but I2C can still be
 					   transmitting, so let's wait
@@ -834,15 +847,21 @@ static void i2c_dma_transmit_callback(void *callback_context, uint32_t len,
 				/* If user provided a callback, it'll be called
 				   only if this is a TX only operation, not in a
 				   combined transaction */
-				if (i2c_transfer[i2c].callback != NULL) {
+				if (transfer->callback != NULL) {
 					qm_i2c_get_status(i2c, &status);
-					i2c_transfer[i2c].callback(
-					    i2c_transfer[i2c].callback_data,
-					    error_code, status, len);
+					transfer->callback(
+					    transfer->callback_data, error_code,
+					    status, len);
 				}
 			}
 		}
 	} else {
+		/* If error code is 0, a multimaster arbitration loss has
+		   happened, so use it as error code */
+		if (error_code == 0) {
+			error_code =
+			    i2c_dma_context[i2c].multimaster_abort_status;
+		}
 		i2c_dma_transfer_error_callback(i2c, error_code, len);
 	}
 }
@@ -856,26 +875,31 @@ static void i2c_dma_receive_callback(void *callback_context, uint32_t len,
 	qm_i2c_status_t status;
 
 	qm_i2c_t i2c = ((i2c_dma_context_t *)callback_context)->i2c;
+	const qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 
-	if (error_code == 0) {
+	if ((error_code == 0) &&
+	    (i2c_dma_context[i2c].multimaster_abort_status == 0)) {
 		/* Disable DMA receive */
 		QM_I2C[i2c]->ic_dma_cr &= ~QM_I2C_IC_DMA_CR_RX_ENABLE;
 		i2c_dma_context[i2c].ongoing_dma_rx_operation = false;
 
 		/* Let's disable the I2C controller if we are done */
-		if (i2c_transfer[i2c].stop == true) {
+		if (transfer->stop == true) {
 			controller_disable(i2c);
 		}
 
 		/* If the user has provided a callback, let's call it */
-		if (i2c_transfer[i2c].callback != NULL) {
+		if (transfer->callback != NULL) {
 			qm_i2c_get_status(i2c, &status);
-			i2c_transfer[i2c].callback(
-			    i2c_transfer[i2c].callback_data, error_code, status,
-			    len);
+			transfer->callback(transfer->callback_data, error_code,
+					   status, len);
 		}
 	} else {
-		i2c_dma_transfer_error_callback(i2c, error_code, len);
+		/* Only call the error callback on RX error. Arbitration loss
+		   errors are handled on the TX callback */
+		if (error_code != 0) {
+			i2c_dma_transfer_error_callback(i2c, error_code, len);
+		}
 	}
 }
 
@@ -994,17 +1018,20 @@ int qm_i2c_master_dma_transfer(const qm_i2c_t i2c,
 	QM_CHECK(0 == xfer->rx_len ? xfer->tx_len != 0 : 1, -EINVAL);
 
 	/* Disable all IRQs but the TX abort one */
-	QM_I2C[i2c]->ic_intr_mask = QM_I2C_IC_INTR_STAT_TX_ABRT;
+	QM_I2C[i2c]->ic_intr_mask = QM_I2C_IC_INTR_MASK_TX_ABORT;
 
 	/* write slave address to TAR */
 	QM_I2C[i2c]->ic_tar = slave_addr;
 
-	memcpy(&i2c_transfer[i2c], xfer, sizeof(i2c_transfer[i2c]));
+	i2c_read_cmd_send[i2c] = xfer->rx_len;
+	i2c_transfer[i2c] = xfer;
 
 	/* Set DMA TX and RX waterlevels to 0, to make sure no data is lost */
 	/* NOTE: This can be optimized for performance */
 	QM_I2C[i2c]->ic_dma_rdlr = 0;
 	QM_I2C[i2c]->ic_dma_tdlr = 0;
+
+	i2c_dma_context[i2c].multimaster_abort_status = 0;
 
 	/* Setup RX if something to receive */
 	if (xfer->rx_len > 0) {

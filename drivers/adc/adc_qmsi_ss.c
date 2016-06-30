@@ -116,6 +116,7 @@ static int adc_qmsi_ss_read(struct device *dev, struct adc_seq_table *seq_tbl)
 {
 	int i, ret = 0;
 	qm_ss_adc_xfer_t xfer;
+	qm_ss_adc_status_t status;
 
 	struct adc_info *info = dev->driver_data;
 
@@ -154,7 +155,7 @@ static int adc_qmsi_ss_read(struct device *dev, struct adc_seq_table *seq_tbl)
 		 * register to check if the number of samples required has been
 		 * captured
 		 */
-		if (qm_ss_adc_convert(QM_SS_ADC_0, &xfer) != 0) {
+		if (qm_ss_adc_convert(QM_SS_ADC_0, &xfer, &status) != 0) {
 			ret =  -EIO;
 			adc_unlock(info);
 			break;

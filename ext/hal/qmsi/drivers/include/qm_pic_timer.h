@@ -54,6 +54,7 @@ typedef enum {
 typedef struct {
 	qm_pic_timer_mode_t mode; /**< Operation mode. */
 	bool int_en;		  /**< Interrupt enable. */
+
 	/**
 	 * User callback.
 	 *

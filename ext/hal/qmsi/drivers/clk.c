@@ -33,6 +33,8 @@
 #include <x86intrin.h>
 #endif
 
+#include "soc_watch.h"
+
 #if (QM_SENSOR) && (!UNIT_TEST)
 /* Timestamp counter for Sensor Subsystem is 32bit. */
 #define get_ticks() __builtin_arc_lr(QM_SS_TSC_BASE + QM_SS_TIMER_COUNT)
@@ -51,7 +53,7 @@ static uint32_t ticks_per_us = SYS_TICKS_PER_US_32MHZ;
 
 int clk_sys_set_mode(const clk_sys_mode_t mode, const clk_sys_div_t div)
 {
-	QM_CHECK(div <= CLK_SYS_DIV_NUM, -EINVAL);
+	QM_CHECK(div < CLK_SYS_DIV_NUM, -EINVAL);
 	QM_CHECK(mode <= CLK_SYS_CRYSTAL_OSC, -EINVAL);
 	uint16_t trim = 0;
 
@@ -158,6 +160,9 @@ int clk_sys_set_mode(const clk_sys_mode_t mode, const clk_sys_div_t div)
 	QM_SCSS_CCU->ccu_sys_clk_ctl |= QM_CCU_SYS_CLK_DIV_EN;
 	ticks_per_us = (sys_ticks_per_us > 0 ? sys_ticks_per_us : 1);
 
+	/* Log any clock changes. */
+	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_OSC0_CFG1);
+	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_CCU_SYS_CLK_CTL);
 	return 0;
 }
 
@@ -173,10 +178,25 @@ int clk_trim_read(uint32_t *const value)
 
 int clk_trim_apply(const uint32_t value)
 {
+	/* Enable trim mode */
+	QM_SCSS_CCU->osc0_cfg0 |= BIT(1);
+
 	/* Apply trim code */
 	QM_SCSS_CCU->osc0_cfg1 &= ~OSC0_CFG1_FTRIMOTP_MASK;
 	QM_SCSS_CCU->osc0_cfg1 |=
 	    (value << OSC0_CFG1_FTRIMOTP_OFFS) & OSC0_CFG1_FTRIMOTP_MASK;
+
+	/*
+	 * Recommended wait time after setting up the trim code
+	 * is 200us. Minimum wait time is 100us.
+	 * The delay is running from of the silicon oscillator
+	 * which is been trimmed. This induces a lack of precision
+	 * in the delay.
+	 */
+	clk_sys_udelay(200);
+
+	/* Disable trim mode */
+	QM_SCSS_CCU->osc0_cfg0 &= ~BIT(1);
 
 	return 0;
 }
@@ -270,6 +290,9 @@ int clk_periph_enable(const clk_periph_t clocks)
 
 	QM_SCSS_CCU->ccu_periph_clk_gate_ctl |= clocks;
 
+	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER,
+			    SOCW_REG_CCU_PERIPH_CLK_GATE_CTL);
+
 	return 0;
 }
 
@@ -278,6 +301,9 @@ int clk_periph_disable(const clk_periph_t clocks)
 	QM_CHECK(clocks <= CLK_PERIPH_ALL, -EINVAL);
 
 	QM_SCSS_CCU->ccu_periph_clk_gate_ctl &= ~clocks;
+
+	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER,
+			    SOCW_REG_CCU_PERIPH_CLK_GATE_CTL);
 
 	return 0;
 }

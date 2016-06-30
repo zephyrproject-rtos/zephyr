@@ -354,7 +354,7 @@ int qm_dma_transfer_terminate(const qm_dma_t dma,
 
 	/* The channel is disabled and the transfer complete callback is
 	 * triggered. This callback provides the client with the data length
-	 * transfered before the transfer was stopped. */
+	 * transferred before the transfer was stopped. */
 	return_code = dma_channel_disable(dma, channel_id);
 	if (!return_code) {
 		chan_cfg = &dma_channel_config[dma][channel_id];

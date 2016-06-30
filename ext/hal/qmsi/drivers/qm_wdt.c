@@ -28,6 +28,7 @@
  */
 
 #include "qm_wdt.h"
+#include "soc_watch.h"
 
 #define QM_WDT_RELOAD_VALUE (0x76)
 
@@ -37,7 +38,7 @@ static void *callback_data[QM_WDT_NUM];
 QM_ISR_DECLARE(qm_wdt_isr_0)
 {
 	if (callback[QM_WDT_0]) {
-		callback[QM_WDT_0](callback_data);
+		callback[QM_WDT_0](callback_data[QM_WDT_0]);
 	}
 	QM_ISR_EOI(QM_IRQ_WDT_0_VECTOR);
 }
@@ -58,6 +59,8 @@ int qm_wdt_start(const qm_wdt_t wdt)
 #else
 #error("Unsupported / unspecified processor detected.");
 #endif
+	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER,
+			    SOCW_REG_CCU_PERIPH_CLK_GATE_CTL);
 
 	QM_SCSS_PERIPHERAL->periph_cfg0 |= BIT(1);
 

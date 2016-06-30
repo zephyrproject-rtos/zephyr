@@ -331,7 +331,8 @@ int qm_uart_write_buffer(const qm_uart_t uart, const uint8_t *const data,
  * @param[in] uart UART index.
  * @param[in] xfer Structure containing pre-allocated
  *                 write buffer and callback functions.
- *                 This must not be NULL.
+ *                 The structure must not be NULL and must be kept valid until
+ *                 the transfer is complete.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -349,7 +350,8 @@ int qm_uart_irq_write(const qm_uart_t uart,
  * @param[in] uart UART index.
  * @param[in] xfer Structure containing pre-allocated read
  *                 buffer and callback functions.
- *                 This must not be NULL.
+ *                 The structure must not be NULL and must be kept valid until
+ *                 the transfer is complete.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -423,6 +425,10 @@ int qm_uart_dma_channel_config(
  * must have configured a DMA channel with direction
  * QM_DMA_MEMORY_TO_PERIPHERAL to be used on this UART, calling
  * qm_uart_dma_channel_config(). The transfer length is limited to 4KB.
+ *
+ * Note that this function uses the UART TX FIFO empty interrupt and therefore,
+ * in addition to the DMA interrupts, the ISR of the corresponding UART must be
+ * registered before using this function.
  *
  * @param[in] uart UART index.
  * @param[in] xfer Structure containing a pre-allocated write buffer

@@ -45,6 +45,25 @@ static void gpio_isr(const qm_gpio_t gpio)
 {
 	const uint32_t int_status = QM_GPIO[gpio]->gpio_intstatus;
 
+#if (QUARK_D2000)
+	/*
+	 * If the SoC is in deep sleep mode, all the clocks are gated, if the
+	 * interrupt source is cleared before the oscillators are ungated, the
+	 * oscillators return to a powered down state and the SoC will not
+	 * return to an active state then.
+	 */
+	if ((QM_SCSS_GP->gps1 & QM_SCSS_GP_POWER_STATES_MASK) ==
+	    QM_SCSS_GP_POWER_STATE_DEEP_SLEEP) {
+		/* Return the oscillators to an active state. */
+		QM_SCSS_CCU->osc0_cfg1 &= ~QM_OSC0_PD;
+		QM_SCSS_CCU->osc1_cfg0 &= ~QM_OSC1_PD;
+
+		/* HYB_OSC_PD_LATCH_EN = 1, RTC_OSC_PD_LATCH_EN=1 */
+		QM_SCSS_CCU->ccu_lp_clk_ctl |=
+		    (QM_HYB_OSC_PD_LATCH_EN | QM_RTC_OSC_PD_LATCH_EN);
+	}
+#endif
+
 	if (callback[gpio]) {
 		(*callback[gpio])(callback_data[gpio], int_status);
 	}

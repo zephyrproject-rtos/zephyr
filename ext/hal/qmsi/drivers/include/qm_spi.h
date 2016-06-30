@@ -99,7 +99,9 @@ typedef enum {
 /**
  * SPI slave select type.
  *
- * QM_SPI_SS_DISABLED prevents the controller from starting a transfer.
+ * Slave selects can combined by logical OR if multiple slaves are selected
+ * during one transfer. Setting only QM_SPI_SS_DISABLED prevents the controller
+ * from starting the transfer.
  */
 typedef enum {
 	QM_SPI_SS_DISABLED = 0, /**< Slave select disable. */
@@ -139,8 +141,8 @@ typedef struct {
  */
 typedef struct {
 	uint8_t *tx;     /**< Write data. */
-	uint16_t tx_len; /**< Write data Length. */
 	uint8_t *rx;     /**< Read data. */
+	uint16_t tx_len; /**< Write data Length. */
 	uint16_t rx_len; /**< Read buffer length. */
 
 	/**
@@ -152,8 +154,8 @@ typedef struct {
 	 * @param[in] data The callback user data.
 	 * @param[in] error 0 on success.
 	 *            Negative @ref errno for possible error codes.
-         * @param[in] status SPI driver status.
-         * @param[in] len Length of the SPI transfer if successful, 0
+	 * @param[in] status SPI driver status.
+	 * @param[in] len Length of the SPI transfer if successful, 0
 	 * 	      otherwise.
 	 */
 	void (*callback)(void *data, int error, qm_spi_status_t status,
@@ -166,8 +168,8 @@ typedef struct {
  */
 typedef struct {
 	uint8_t *tx;     /**< Write Data. */
-	uint16_t tx_len; /**< Write Data Length. */
 	uint8_t *rx;     /**< Read Data. */
+	uint16_t tx_len; /**< Write Data Length. */
 	uint16_t rx_len; /**< Receive Data Length. */
 } qm_spi_transfer_t;
 

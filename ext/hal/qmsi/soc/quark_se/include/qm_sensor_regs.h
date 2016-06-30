@@ -234,6 +234,7 @@ typedef enum {
 #define QM_SS_I2C_TL_RX_TL_MASK (0xFF)
 #define QM_SS_I2C_TL_TX_TL_MASK (0xFF0000)
 
+#define QM_SS_I2C_INTR_CLR_ALL (0xFF)
 #define QM_SS_I2C_INTR_CLR_TX_ABRT BIT(6)
 
 #define QM_SS_I2C_TX_ABRT_SOURCE_NAK_MASK (0x09)
@@ -358,7 +359,7 @@ typedef enum {
 #define QM_SS_ADC_CAL_VAL_GET_OFFSET (5)
 #define QM_SS_ADC_CAL_VAL_GET_MASK (0xFE0)
 #define QM_SS_ADC_CAL_ACK BIT(4)
-#define QM_SS_ADC_PWR_MODE_STS BIT(3) /*FIXME doesnt match doc */
+#define QM_SS_ADC_PWR_MODE_STS BIT(3)
 
 #define SS_CLK_PERIPH_ALL_IN_CREG                                              \
 	(SS_CLK_PERIPH_ADC | SS_CLK_PERIPH_I2C_1 | SS_CLK_PERIPH_I2C_0 |       \
@@ -391,62 +392,62 @@ typedef enum {
  * #define QM_SS_xxx          - irq number
  * #define QM_SS_xxx_VECTOR   - vector number
  */
-#define QM_SS_INT_TIMER_0 (16)
-#define QM_SS_INT_TIMER_1 (17)
+#define QM_SS_INT_TIMER_0 16
+#define QM_SS_INT_TIMER_1 17
 
-#define QM_SS_IRQ_ADC_ERR (0)
-#define QM_SS_IRQ_ADC_ERR_VECTOR (18)
+#define QM_SS_IRQ_ADC_ERR 0
+#define QM_SS_IRQ_ADC_ERR_VECTOR 18
 
-#define QM_SS_IRQ_ADC_IRQ (1)
-#define QM_SS_IRQ_ADC_IRQ_VECTOR (19)
+#define QM_SS_IRQ_ADC_IRQ 1
+#define QM_SS_IRQ_ADC_IRQ_VECTOR 19
 
-#define QM_SS_IRQ_GPIO_INTR_0 (2)
-#define QM_SS_IRQ_GPIO_INTR_0_VECTOR (20)
+#define QM_SS_IRQ_GPIO_INTR_0 2
+#define QM_SS_IRQ_GPIO_INTR_0_VECTOR 20
 
-#define QM_SS_IRQ_GPIO_INTR_1 (3)
-#define QM_SS_IRQ_GPIO_INTR_1_VECTOR (21)
+#define QM_SS_IRQ_GPIO_INTR_1 3
+#define QM_SS_IRQ_GPIO_INTR_1_VECTOR 21
 
-#define QM_SS_IRQ_I2C_0_ERR (4)
-#define QM_SS_IRQ_I2C_0_ERR_VECTOR (22)
+#define QM_SS_IRQ_I2C_0_ERR 4
+#define QM_SS_IRQ_I2C_0_ERR_VECTOR 22
 
-#define QM_SS_IRQ_I2C_0_RX_AVAIL (5)
-#define QM_SS_IRQ_I2C_0_RX_AVAIL_VECTOR (23)
+#define QM_SS_IRQ_I2C_0_RX_AVAIL 5
+#define QM_SS_IRQ_I2C_0_RX_AVAIL_VECTOR 23
 
-#define QM_SS_IRQ_I2C_0_TX_REQ (6)
-#define QM_SS_IRQ_I2C_0_TX_REQ_VECTOR (24)
+#define QM_SS_IRQ_I2C_0_TX_REQ 6
+#define QM_SS_IRQ_I2C_0_TX_REQ_VECTOR 24
 
-#define QM_SS_IRQ_I2C_0_STOP_DET (7)
-#define QM_SS_IRQ_I2C_0_STOP_DET_VECTOR (25)
+#define QM_SS_IRQ_I2C_0_STOP_DET 7
+#define QM_SS_IRQ_I2C_0_STOP_DET_VECTOR 25
 
-#define QM_SS_IRQ_I2C_1_ERR (8)
-#define QM_SS_IRQ_I2C_1_ERR_VECTOR (26)
+#define QM_SS_IRQ_I2C_1_ERR 8
+#define QM_SS_IRQ_I2C_1_ERR_VECTOR 26
 
-#define QM_SS_IRQ_I2C_1_RX_AVAIL (9)
-#define QM_SS_IRQ_I2C_1_RX_AVAIL_VECTOR (27)
+#define QM_SS_IRQ_I2C_1_RX_AVAIL 9
+#define QM_SS_IRQ_I2C_1_RX_AVAIL_VECTOR 27
 
-#define QM_SS_IRQ_I2C_1_TX_REQ (10)
-#define QM_SS_IRQ_I2C_1_TX_REQ_VECTOR (28)
+#define QM_SS_IRQ_I2C_1_TX_REQ 10
+#define QM_SS_IRQ_I2C_1_TX_REQ_VECTOR 28
 
-#define QM_SS_IRQ_I2C_1_STOP_DET (11)
-#define QM_SS_IRQ_I2C_1_STOP_DET_VECTOR (29)
+#define QM_SS_IRQ_I2C_1_STOP_DET 11
+#define QM_SS_IRQ_I2C_1_STOP_DET_VECTOR 29
 
-#define QM_SS_IRQ_SPI_0_ERR_INT (12)
-#define QM_SS_IRQ_SPI_0_ERR_INT_VECTOR (30)
+#define QM_SS_IRQ_SPI_0_ERR_INT 12
+#define QM_SS_IRQ_SPI_0_ERR_INT_VECTOR 30
 
-#define QM_SS_IRQ_SPI_0_RX_AVAIL (13)
-#define QM_SS_IRQ_SPI_0_RX_AVAIL_VECTOR (31)
+#define QM_SS_IRQ_SPI_0_RX_AVAIL 13
+#define QM_SS_IRQ_SPI_0_RX_AVAIL_VECTOR 31
 
-#define QM_SS_IRQ_SPI_0_TX_REQ (14)
-#define QM_SS_IRQ_SPI_0_TX_REQ_VECTOR (32)
+#define QM_SS_IRQ_SPI_0_TX_REQ 14
+#define QM_SS_IRQ_SPI_0_TX_REQ_VECTOR 32
 
-#define QM_SS_IRQ_SPI_1_ERR_INT (15)
-#define QM_SS_IRQ_SPI_1_ERR_INT_VECTOR (33)
+#define QM_SS_IRQ_SPI_1_ERR_INT 15
+#define QM_SS_IRQ_SPI_1_ERR_INT_VECTOR 33
 
-#define QM_SS_IRQ_SPI_1_RX_AVAIL (16)
-#define QM_SS_IRQ_SPI_1_RX_AVAIL_VECTOR (34)
+#define QM_SS_IRQ_SPI_1_RX_AVAIL 16
+#define QM_SS_IRQ_SPI_1_RX_AVAIL_VECTOR 34
 
-#define QM_SS_IRQ_SPI_1_TX_REQ (17)
-#define QM_SS_IRQ_SPI_1_TX_REQ_VECTOR (35)
+#define QM_SS_IRQ_SPI_1_TX_REQ 17
+#define QM_SS_IRQ_SPI_1_TX_REQ_VECTOR 35
 
 typedef enum {
 	QM_SS_INT_PRIORITY_0 = 0,
@@ -468,7 +469,7 @@ typedef enum {
 #define QM_SS_AUX_IRQ_STATUS (0x406)
 #define QM_SS_AUX_IRQ_SELECT (0x40B)
 #define QM_SS_AUX_IRQ_ENABLE (0x40C)
-#define QM_SS_AUX_IRQ_TRIGER (0x40D)
+#define QM_SS_AUX_IRQ_TRIGGER (0x40D)
 
 /** @} */
 

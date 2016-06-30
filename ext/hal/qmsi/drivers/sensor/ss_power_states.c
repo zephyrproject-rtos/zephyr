@@ -28,6 +28,8 @@
  */
 
 #include "ss_power_states.h"
+#include "qm_isr.h"
+#include "qm_sensor_regs.h"
 
 /* Sensor Subsystem sleep operand definition.
  * Only a subset applies as internal sensor RTC
@@ -58,6 +60,14 @@
  */
 void ss_power_cpu_ss1(const ss_power_cpu_ss1_mode_t mode)
 {
+	/* The sensor cannot be woken up with an edge triggered
+	 * interrupt from the RTC.
+	 * Switch to Level triggered interrupts and restore
+	 * the setting after when waking up.
+	 */
+	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
+
 	/* Enter SS1 */
 	switch (mode) {
 	case SS_POWER_CPU_SS1_TIMER_OFF:
@@ -73,6 +83,10 @@ void ss_power_cpu_ss1(const ss_power_cpu_ss1_mode_t mode)
 				     : "i"(QM_SS_SLEEP_MODE_CORE_OFF));
 		break;
 	}
+
+	/* Restore the RTC to edge interrupt after when waking up. */
+	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 }
 
 /* Enter SS2 :
@@ -81,8 +95,20 @@ void ss_power_cpu_ss1(const ss_power_cpu_ss1_mode_t mode)
  */
 void ss_power_cpu_ss2(void)
 {
+	/* The sensor cannot be woken up with an edge triggered
+	 * interrupt from the RTC.
+	 * Switch to Level triggered interrupts and restore
+	 * the setting after when waking up.
+	 */
+	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_SS_IRQ_LEVEL_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
+
 	/* Enter SS2 */
 	__asm__ __volatile__("sleep %0"
 			     :
 			     : "i"(QM_SS_SLEEP_MODE_CORE_TIMERS_RTC_OFF));
+
+	/* Restore the RTC to edge interrupt after when waking up. */
+	__builtin_arc_sr(QM_IRQ_RTC_0_VECTOR, QM_SS_AUX_IRQ_SELECT);
+	__builtin_arc_sr(QM_SS_IRQ_EDGE_SENSITIVE, QM_SS_AUX_IRQ_TRIGGER);
 }

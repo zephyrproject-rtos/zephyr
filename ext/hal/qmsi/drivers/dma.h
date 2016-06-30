@@ -159,10 +159,6 @@ static int dma_channel_disable(const qm_dma_t dma,
 		timeout_us--;
 	}
 
-	if (!(chan_reg->cfg_low & QM_DMA_CFG_L_FIFO_EMPTY_MASK)) {
-		return -EIO;
-	}
-
 	/* Disable the channel and wait to confirm that it has been disabled. */
 	misc_reg->chan_en_low = (channel_mask << QM_DMA_MISC_CHAN_EN_WE_OFFSET);
 

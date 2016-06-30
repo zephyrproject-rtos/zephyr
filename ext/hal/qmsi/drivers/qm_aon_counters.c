@@ -85,7 +85,7 @@ int qm_aonc_disable(const qm_scss_aon_t aonc)
 	return 0;
 }
 
-int qm_aonc_get_value(const qm_scss_aon_t aonc, uint32_t * const val)
+int qm_aonc_get_value(const qm_scss_aon_t aonc, uint32_t *const val)
 {
 	QM_CHECK(aonc < QM_SCSS_AON_NUM, -EINVAL);
 	QM_CHECK(val != NULL, -EINVAL);

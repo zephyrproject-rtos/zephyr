@@ -58,9 +58,9 @@
 /**
  * QM I2C addressing type.
  */
-typedef enum{
+typedef enum {
 	QM_I2C_7_BIT = 0, /**< 7-bit mode. */
-	QM_I2C_10_BIT /**< 10-bit mode. */
+	QM_I2C_10_BIT     /**< 10-bit mode. */
 } qm_i2c_addr_t;
 
 /**
@@ -68,7 +68,7 @@ typedef enum{
  */
 typedef enum {
 	QM_I2C_MASTER, /**< Master mode. */
-	QM_I2C_SLAVE /**< Slave mode. */
+	QM_I2C_SLAVE   /**< Slave mode. */
 } qm_i2c_mode_t;
 
 /**
@@ -84,27 +84,27 @@ typedef enum {
  * I2C status type.
  */
 typedef enum {
-	QM_I2C_IDLE = 0, /**< Controller idle. */
+	QM_I2C_IDLE = 0,		       /**< Controller idle. */
 	QM_I2C_TX_ABRT_7B_ADDR_NOACK = BIT(0), /**< 7-bit address noack. */
 	QM_I2C_TX_ABRT_10ADDR1_NOACK = BIT(1), /**< 10-bit address noack. */
 	QM_I2C_TX_ABRT_10ADDR2_NOACK = BIT(2), /**< 10-bit second address
 						 byte address noack. */
-	QM_I2C_TX_ABRT_TXDATA_NOACK = BIT(3), /**< Tx data noack. */
-	QM_I2C_TX_ABRT_GCALL_NOACK = BIT(4), /**< General call noack. */
-	QM_I2C_TX_ABRT_GCALL_READ = BIT(5), /**< Read after general call. */
-	QM_I2C_TX_ABRT_HS_ACKDET = BIT(6), /**< High Speed master ID ACK. */
-	QM_I2C_TX_ABRT_SBYTE_ACKDET = BIT(7), /**< Start ACK. */
-	QM_I2C_TX_ABRT_HS_NORSTRT = BIT(8), /**< High Speed with restart
-					      disabled. */
+	QM_I2C_TX_ABRT_TXDATA_NOACK = BIT(3),  /**< Tx data noack. */
+	QM_I2C_TX_ABRT_GCALL_NOACK = BIT(4),   /**< General call noack. */
+	QM_I2C_TX_ABRT_GCALL_READ = BIT(5),    /**< Read after general call. */
+	QM_I2C_TX_ABRT_HS_ACKDET = BIT(6),     /**< High Speed master ID ACK. */
+	QM_I2C_TX_ABRT_SBYTE_ACKDET = BIT(7),  /**< Start ACK. */
+	QM_I2C_TX_ABRT_HS_NORSTRT = BIT(8),    /**< High Speed with restart
+						 disabled. */
 	QM_I2C_TX_ABRT_10B_RD_NORSTRT = BIT(10), /**< 10-bit address read and
 						   restart disabled. */
-	QM_I2C_TX_ABRT_MASTER_DIS = BIT(11), /**< Master disabled. */
+	QM_I2C_TX_ABRT_MASTER_DIS = BIT(11),     /**< Master disabled. */
 	QM_I2C_TX_ARB_LOST = BIT(12), /**< Master lost arbitration. */
 	QM_I2C_TX_ABRT_SLVFLUSH_TXFIFO = BIT(13), /**< Slave flush tx FIFO. */
-	QM_I2C_TX_ABRT_SLV_ARBLOST = BIT(14), /**< Slave lost bus. */
-	QM_I2C_TX_ABRT_SLVRD_INTX = BIT(15), /**< Slave read completion. */
-	QM_I2C_TX_ABRT_USER_ABRT = BIT(16), /**< User abort. */
-	QM_I2C_BUSY = BIT(17) /**< Controller busy. */
+	QM_I2C_TX_ABRT_SLV_ARBLOST = BIT(14),     /**< Slave lost bus. */
+	QM_I2C_TX_ABRT_SLVRD_INTX = BIT(15),      /**< Slave read completion. */
+	QM_I2C_TX_ABRT_USER_ABRT = BIT(16),       /**< User abort. */
+	QM_I2C_BUSY = BIT(17)			  /**< Controller busy. */
 } qm_i2c_status_t;
 
 /**
@@ -135,7 +135,7 @@ typedef struct {
 	bool stop;       /**< Generate master STOP. */
 	void (*callback)(void *data, int rc, qm_i2c_status_t status,
 			 uint32_t len); /**< Callback. */
-	void *callback_data; /**< Callback identifier. */
+	void *callback_data;		/**< Callback identifier. */
 } qm_i2c_transfer_t;
 
 /**
@@ -217,8 +217,8 @@ int qm_i2c_master_write(const qm_i2c_t i2c, const uint16_t slave_addr,
  * @retval Negative @ref errno for possible error codes.
  */
 int qm_i2c_master_read(const qm_i2c_t i2c, const uint16_t slave_addr,
-		       uint8_t *const data, uint32_t len,
-		       const bool stop, qm_i2c_status_t *const status);
+		       uint8_t *const data, uint32_t len, const bool stop,
+		       qm_i2c_status_t *const status);
 
 /**
  * Interrupt based master transfer on I2C.
@@ -228,8 +228,9 @@ int qm_i2c_master_read(const qm_i2c_t i2c, const uint16_t slave_addr,
  *
  * @param[in] i2c Which I2C to transfer from.
  * @param[in] xfer Transfer structure includes write / read buffers, length,
- *		user callback function and the callback context. This must
- *		not be NULL.
+ *		user callback function and the callback context.
+ *		The structure must not be NULL and must be kept valid until
+ *		the transfer is complete.
  * @param[in] slave_addr Address of slave to transfer data with.
  *
  * @return Standard errno return type for QMSI.
