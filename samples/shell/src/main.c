@@ -28,14 +28,14 @@ static int shell_cmd_ping(int argc, char *argv[])
 
 static int shell_cmd_ticks(int argc, char *argv[])
 {
-	printk("ticks: %d\n", sys_tick_get_32());
+	printk("ticks: %u\n", sys_tick_get_32());
 
 	return 0;
 }
 
 static int shell_cmd_highticks(int argc, char *argv[])
 {
-	printk("highticks: %d\n", sys_cycle_get_32());
+	printk("highticks: %u\n", sys_cycle_get_32());
 
 	return 0;
 }
