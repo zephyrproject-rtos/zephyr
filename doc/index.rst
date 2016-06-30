@@ -29,15 +29,15 @@ Sections
    :maxdepth: 1
 
    getting_started/getting_started.rst
+   board/board.rst
    kernel/kernel.rst
-   contribute/code.rst
    drivers/drivers.rst
    subsystems/subsystems.rst
-   porting/porting.rst
    api/api.rst
-   board/board.rst
-   reference/kbuild/kbuild.rst
    application/application.rst
+   contribute/code.rst
+   porting/porting.rst
+   reference/kbuild/kbuild.rst
 
 You can find further information on the `Zephyr Project Wiki`_.
 
