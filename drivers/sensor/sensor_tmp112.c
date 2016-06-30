@@ -38,7 +38,6 @@
 
 #define TMP112_REG_TEMPERATURE		0x00
 #define TMP112_D0_BIT			BIT(0)
-#define TMP112_D15_BIT			BIT(15)
 
 #define TMP112_REG_CONFIG		0x01
 #define TMP112_EM_BIT			BIT(4)
@@ -50,7 +49,7 @@
 
 struct tmp112_data {
 	struct device *i2c;
-	uint16_t sample;
+	int16_t sample;
 };
 
 static int tmp112_reg_read(struct tmp112_data *drv_data,
@@ -201,15 +200,9 @@ static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	if (val & TMP112_D0_BIT) {
-		drv_data->sample = val >> 3;
-		if (val & TMP112_D15_BIT) {
-			drv_data->sample |= 0xF << 13;
-		}
+		drv_data->sample = arithmetic_shift_right((int16_t)val, 3);
 	} else {
-		drv_data->sample = val >> 4;
-		if (val & TMP112_D15_BIT) {
-			drv_data->sample |= 0xF << 12;
-		}
+		drv_data->sample = arithmetic_shift_right((int16_t)val, 4);
 	}
 
 	return 0;
@@ -220,13 +213,13 @@ static int tmp112_channel_get(struct device *dev,
 		struct sensor_value *val)
 {
 	struct tmp112_data *drv_data = dev->driver_data;
-	int64_t uval;
+	int32_t uval;
 
 	if (chan != SENSOR_CHAN_TEMP) {
 		return -ENOTSUP;
 	}
 
-	uval = (int16_t)drv_data->sample * TMP112_TEMP_SCALE;
+	uval = (int32_t)drv_data->sample * TMP112_TEMP_SCALE;
 	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 	val->val1 = uval / 1000000;
 	val->val2 = uval % 1000000;
