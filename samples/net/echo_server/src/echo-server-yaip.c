@@ -95,7 +95,7 @@ static inline void quit(void)
 
 static inline void init_app(void)
 {
-	NET_INFO("%s: run echo server", __func__);
+	NET_INFO("Run echo server");
 
 	nano_sem_init(&quit_lock);
 
@@ -151,28 +151,28 @@ static inline bool get_context(struct net_context **udp_recv4,
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_UDP)
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, udp_recv6);
 	if (ret < 0) {
-		NET_ERR("%s: Cannot get network context for IPv6 UDP (%d)",
-		      __func__, ret);
+		NET_ERR("Cannot get network context for IPv6 UDP (%d)",
+			ret);
 		return false;
 	}
 
 	ret = net_context_bind(*udp_recv6, (struct sockaddr *)&my_addr6);
 	if (ret < 0) {
-		NET_ERR("%: Cannot bind IPv6 UDP port %d (%d)",
-		      ntohs(my_addr6.sin6_port), ret);
+		NET_ERR("Cannot bind IPv6 UDP port %d (%d)",
+			ntohs(my_addr6.sin6_port), ret);
 		return false;
 	}
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, mcast_recv6);
 	if (ret < 0) {
-		NET_ERR("%s: Cannot get receiving IPv6 mcast "
-		      "network context (%d)", __func__, ret);
+		NET_ERR("Cannot get receiving IPv6 mcast "
+			"network context (%d)", ret);
 		return false;
 	}
 
 	ret = net_context_bind(*mcast_recv6, (struct sockaddr *)&mcast_addr6);
 	if (ret < 0) {
-		NET_ERR("%: Cannot bind IPv6 mcast (%d)", ret);
+		NET_ERR("Cannot bind IPv6 mcast (%d)", ret);
 		return false;
 	}
 #endif
@@ -180,15 +180,15 @@ static inline bool get_context(struct net_context **udp_recv4,
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_UDP)
 	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, udp_recv4);
 	if (ret < 0) {
-		NET_ERR("%s: Cannot get network context for IPv4 UDP (%d)",
-		      __func__, ret);
+		NET_ERR("Cannot get network context for IPv4 UDP (%d)",
+			ret);
 		return false;
 	}
 
 	ret = net_context_bind(*udp_recv4, (struct sockaddr *)&my_addr4);
 	if (ret < 0) {
-		NET_ERR("%: Cannot bind IPv4 UDP port %d (%d)",
-		      ntohs(my_addr4.sin_port), ret);
+		NET_ERR("Cannot bind IPv4 UDP port %d (%d)",
+			ntohs(my_addr4.sin_port), ret);
 		return false;
 	}
 #endif
@@ -198,22 +198,22 @@ static inline bool get_context(struct net_context **udp_recv4,
 		ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
 				      tcp_recv6);
 		if (ret < 0) {
-			NET_ERR("%s: Cannot get network context "
-			      "for IPv6 TCP (%d)", __func__, ret);
+			NET_ERR("Cannot get network context "
+				"for IPv6 TCP (%d)", ret);
 			return false;
 		}
 
 		ret = net_context_bind(*tcp_recv6,
 				       (struct sockaddr *)&my_addr6);
 		if (ret < 0) {
-			NET_ERR("%: Cannot bind IPv6 TCP port %d (%d)",
-			      ntohs(my_addr6.sin_port), ret);
+			NET_ERR("Cannot bind IPv6 TCP port %d (%d)",
+				ntohs(my_addr6.sin_port), ret);
 			return false;
 		}
 
 		ret = net_context_listen(*tcp_recv6, 0);
 		if (ret < 0) {
-			NET_ERR("%s: Cannot listen IPv6 TCP (%d)", ret);
+			NET_ERR("Cannot listen IPv6 TCP (%d)", ret);
 			return false;
 		}
 	}
@@ -224,22 +224,21 @@ static inline bool get_context(struct net_context **udp_recv4,
 		ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
 				      tcp_recv4);
 		if (ret < 0) {
-			NET_ERR("%s: Cannot get network context for IPv4 TCP",
-			      __func__);
+			NET_ERR("Cannot get network context for IPv4 TCP");
 			return false;
 		}
 
 		ret = net_context_bind(*tcp_recv4,
 				       (struct sockaddr *)&my_addr4);
 		if (ret < 0) {
-			NET_ERR("%: Cannot bind IPv4 TCP port %d",
-			      ntohs(my_addr4.sin_port));
+			NET_ERR("Cannot bind IPv4 TCP port %d",
+				ntohs(my_addr4.sin_port));
 			return false;
 		}
 
 		ret = net_context_listen(*tcp_recv6, 0);
 		if (ret < 0) {
-			NET_ERR("%s: Cannot listen IPv6 TCP");
+			NET_ERR("Cannot listen IPv6 TCP");
 			return false;
 		}
 	}
@@ -373,14 +372,14 @@ static void setup_udp_recv(struct net_context *udp_recv4,
 #if defined(CONFIG_NET_IPV6)
 	ret = net_context_recv(udp_recv6, udp_received, 0, NULL);
 	if (ret < 0) {
-		NET_ERR("%s: Cannot receive IPv6 UDP packets");
+		NET_ERR("Cannot receive IPv6 UDP packets");
 	}
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 	ret = net_context_recv(udp_recv4, udp_received, 0, NULL);
 	if (ret < 0) {
-		NET_ERR("%s: Cannot receive IPv4 UDP packets");
+		NET_ERR("Cannot receive IPv4 UDP packets");
 	}
 #endif /* CONFIG_NET_IPV4 */
 }
@@ -397,7 +396,7 @@ void receive(void)
 	if (!get_context(&udp_recv4, &udp_recv6,
 			 &tcp_recv4, &tcp_recv6,
 			 &mcast_recv6)) {
-		NET_ERR("%s: Cannot get network contexts", __func__);
+		NET_ERR("Cannot get network contexts");
 		return;
 	}
 
