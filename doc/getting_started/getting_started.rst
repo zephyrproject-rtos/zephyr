@@ -3,7 +3,7 @@
 Getting Started Guide
 #####################
 
-Use this guide to get started with your :ref:`Zephyr <about_zephyr>`
+Use this guide to get started with your :ref:`Zephyr <introducing_zephyr>`
 development.
 
 Set Up the Development Environment
