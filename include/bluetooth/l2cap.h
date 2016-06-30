@@ -58,6 +58,16 @@ struct bt_l2cap_chan;
  */
 typedef void (*bt_l2cap_chan_destroy_t)(struct bt_l2cap_chan *chan);
 
+/** @brief Life-span states of L2CAP CoC channel. Used only by internal APIs
+ *  dealing with setting channel to proper state depending on operational
+ *  context.
+ */
+typedef enum bt_l2cap_chan_state {
+	BT_L2CAP_DISCONNECTED,	/* channel disconnected */
+	BT_L2CAP_CONNECT,	/* channel in connecting state */
+	BT_L2CAP_CONFIG,	/* channel in config state, BR/EDR specific */
+} __packed bt_l2cap_chan_state_t;
+
 /** @brief L2CAP Channel structure. */
 struct bt_l2cap_chan {
 	/** Channel connection reference */
@@ -66,6 +76,9 @@ struct bt_l2cap_chan {
 	struct bt_l2cap_chan_ops	*ops;
 	struct bt_l2cap_chan		*_next;
 	bt_l2cap_chan_destroy_t		destroy;
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+	bt_l2cap_chan_state_t		state;
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 };
 
 /** @brief LE L2CAP Endpoint structure. */

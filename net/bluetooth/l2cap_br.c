@@ -86,6 +86,63 @@ struct bt_l2cap_br {
 
 static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
+#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
+static const char *state2str(bt_l2cap_chan_state_t state)
+{
+	switch (state) {
+	case BT_L2CAP_DISCONNECTED:
+		return "disconnected";
+	case BT_L2CAP_CONNECT:
+		return "connect";
+	case BT_L2CAP_CONFIG:
+		return "config";
+	default:
+		return "unknown";
+	}
+}
+#endif /* CONFIG_BLUETOOTH_DEBUG_L2CAP */
+
+static void l2cap_br_state_set(struct bt_l2cap_chan *ch,
+			       bt_l2cap_chan_state_t state)
+{
+	bt_l2cap_chan_state_t old_state = ch->state;
+
+	BT_DBG("scid 0x%04x %s -> %s", BR_CHAN(ch)->rx.cid,
+	       state2str(old_state), state2str(state));
+
+	if (old_state == state) {
+		BT_WARN("no transition");
+		return;
+	}
+
+	/* check transitions validness */
+	switch (state) {
+	case BT_L2CAP_DISCONNECTED:
+		/* regardless of old state always allows this state */
+		break;
+	case BT_L2CAP_CONNECT:
+		if (old_state == BT_L2CAP_DISCONNECTED) {
+			break;
+		}
+
+		BT_WARN("no valid transition");
+		return;
+	case BT_L2CAP_CONFIG:
+		if (old_state == BT_L2CAP_CONNECT) {
+			break;
+		}
+
+		BT_WARN("no valid transition");
+		return;
+	default:
+		BT_WARN("no valid (%u) state was set", state);
+		return;
+	}
+
+	/* apply new valid channel state */
+	ch->state = state;
+}
+
 struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
 						uint16_t cid)
 {
@@ -504,6 +561,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	l2cap_br_chan_add(conn, chan);
 	BR_CHAN(chan)->tx.cid = scid;
 	dcid = BR_CHAN(chan)->rx.cid;
+	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
 
 	/*
 	 * TODO: Verify security level on link if this PSM channel requires
@@ -520,11 +578,13 @@ done:
 
 	/* Disconnect link when security rules were violated */
 	if (result == BT_L2CAP_ERR_SEC_BLOCK) {
+		l2cap_br_state_set(chan, BT_L2CAP_DISCONNECTED);
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
 		return;
 	}
 
 	if (result == BT_L2CAP_SUCCESS) {
+		l2cap_br_state_set(chan, BT_L2CAP_CONFIG);
 		l2cap_br_conf(chan);
 	}
 }
