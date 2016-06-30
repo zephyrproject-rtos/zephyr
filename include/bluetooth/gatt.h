@@ -852,7 +852,7 @@ typedef uint8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, uint8_t err,
 struct bt_gatt_read_params {
 	bt_gatt_read_func_t func;
 	size_t handle_count;
-	union __unnamed_workaround__ {
+	union {
 		struct __single {
 			uint16_t handle;
 			uint16_t offset;

@@ -99,7 +99,7 @@ typedef void (*uart_irq_config_func_t)(struct device *port);
  * @param sys_clk_freq System clock frequency in Hz
  */
 struct uart_device_config {
-	union __unnamed_workaround__ {
+	union {
 		uint32_t port;
 		uint8_t *base;
 		uint32_t regs;

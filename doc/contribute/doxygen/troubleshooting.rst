@@ -22,6 +22,13 @@ This might be one of:
 
 - :ref:`Non-anonymous unnamed structs <unnamed_structs_var>`
 
+We are waiting for a proper solution from the developers of
+sphinx/build. In the meantime, the workaround is to document the
+members with `@param` and ignore the warning adding a configuration
+item to :file:`.known-issues/doc/NAME.conf`.
+
+Choose ``NAME`` wisely (eg: :file:`doc/bluetooth_xyz.conf`) for
+something related to documentation of the bluetooth subsystem.
 
 WARNING: documented symbol `XYZ` was not declared or defined
 ************************************************************

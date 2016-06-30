@@ -60,43 +60,11 @@ This will likely generate an error such as::
     sensor_value.__unnamed__
     ------------^
 
-A workaround is to introduce something that looks like a name to the
-parser but it is a no-op to the compiler:
+There is no really good workaround we can use, other than live with
+the warning and ignore it. As well, because of this, the documentation
+of the members doesn't really work yet.
 
-.. code-block:: c
-
-  /**
-   * Workaround for documentation parser limitations
-   *
-   * Current documentation parsers (sphinx under Doxygen) don't seem to
-   * understand well unnamed structs / unions. A workaround is to make
-   * the parser think there is something like a struct/union/enum name
-   * that is actually something with no effect to the compiler.
-   *
-   * Current choice is to give it a 1B alignment. This basically tells
-   * the compiler to do what is doing now: align it wherever it thinks
-   * it should, as a 1B alignment "restriction" fits any other alignment
-   * restriction we might have.
-   */
-  #define __unnamed_workaround__ __attribute__ ((__aligned__ (1)))
-
-And then use it such as:
-
-.. code-block:: c
-
-  struct sensor_value {
-          enum sensor_value_type type;
-          union __unnamed_workaround__ {
-                  struct __unnamed_workaround__  {
-                          int32_t val1;
-                          int32_t val2;
-                  };
-                  double dval;
-          };
-  };
-
-This is currently defined in :file:`include/toolchain.h`. The issue
-reported to developers in
+The issue reported to developers in
 https://github.com/sphinx-doc/sphinx/issues/2683.
 
 When running into this issue, the member documentation has to be done
@@ -113,7 +81,7 @@ with *@param* indicators, otherwise they won't be extracted:
    * @param sys_clk_freq System clock frequency in Hz
    */
   struct uart_device_config {
-        union __unnamed_workaround__ {
+        union {
                 uint32_t port;
                 uint8_t *base;
                 uint32_t regs;

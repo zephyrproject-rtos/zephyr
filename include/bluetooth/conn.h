@@ -148,7 +148,7 @@ struct bt_conn_info {
 
 	uint8_t role;
 
-	union __unnamed_workaround__ {
+	union {
 		struct bt_conn_le_info le;
 
 		struct bt_conn_br_info br;
