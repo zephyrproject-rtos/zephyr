@@ -1,9 +1,5 @@
 -include $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/Makefile
 
-# FIXME: Disable use of global pointer for now, this isn't properly set up
-# in our linker script.
-arch_cflags := $(call cc-option,-G0)
-
 # Put functions and data in their own binary sections so that ld can
 # garbage collect them
 arch_cflags += $(call cc-option,-ffunction-sections) \

@@ -182,29 +182,11 @@ SECTIONS
         } GROUP_LINK_IN(RAMABLE_REGION)
 #endif
 
-    SECTION_PROLOGUE(_DATA_SECTION_NAME,,)
+    SECTION_PROLOGUE(initlevel, (OPTIONAL),)
         {
 #ifndef CONFIG_XIP
         _image_ram_start = .;
 #endif
-        *(.data)
-        *(".data.*")
-
-	KEEP(*(.isr_irq*))
-
-	/* sections for IRQ0-9 */
-	KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9])))
-
-	/* sections for IRQ10-99 */
-	KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9])))
-
-	/* sections for IRQ100-999 */
-	KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9][0-9])))
-
-        } GROUP_LINK_IN(RAMABLE_REGION)
-
-    SECTION_PROLOGUE(initlevel, (OPTIONAL),)
-        {
                 DEVICE_INIT_SECTIONS()
         } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -255,6 +237,43 @@ SECTIONS
                 _k_event_list_end = .;
         } GROUP_LINK_IN(RAMABLE_REGION)
 
+    SECTION_PROLOGUE(_DATA_SECTION_NAME,,)
+        {
+
+        KEEP(*(.isr_irq*))
+
+        /* sections for IRQ0-9 */
+        KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9])))
+
+        /* sections for IRQ10-99 */
+        KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9])))
+
+        /* sections for IRQ100-999 */
+        KEEP(*(SORT(.gnu.linkonce.isr_irq[0-9][0-9][0-9])))
+
+        *(.data)
+        *(".data.*")
+
+        /* the Nios2 architecture only has 16-bit signed immediate offsets in
+         * the instructions, so accessing a general address requires typically
+         * three instructions – basically, two for the two halves of the 32-bit
+         * address, and one to merge them – but if we can put the most commonly
+         * accessed globals in a special 64K span of memory addressed by the GP
+         * register, then we can access those values in a single instruction,
+         * saving both codespace and runtime.
+         *
+         * Since these immediate offsets are signed, place gp 0x8000 past the
+         * beginning of .sdata so that we can use both positive and negative
+         * offsets.
+         */
+        _gp = ABSOLUTE(. + 0x8000);
+        PROVIDE(gp = _gp);
+
+        *(.sdata .sdata.* .gnu.linkonce.s.*)
+        *(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+
+        } GROUP_LINK_IN(RAMABLE_REGION)
+
     __data_ram_end = .;
 
     SECTION_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
@@ -265,8 +284,9 @@ SECTIONS
          */
         . = ALIGN(4);
         __bss_start = .;
-        *(.bss)
         *(.sbss)
+        *(".sbss.*")
+        *(.bss)
         *(".bss.*")
         COMMON_SYMBOLS
         /*
