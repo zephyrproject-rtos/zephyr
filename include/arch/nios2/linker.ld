@@ -115,6 +115,11 @@ SECTIONS
 
     _image_text_end = .;
 
+#if defined(CONFIG_GP_ALL_DATA)
+        _gp = ABSOLUTE(. + 0x8000);
+        PROVIDE(gp = _gp);
+#endif
+
 #ifdef CONFIG_CPLUSPLUS
     SECTION_PROLOGUE(_CTOR_SECTION_NAME, ,)
         {
@@ -266,8 +271,10 @@ SECTIONS
          * beginning of .sdata so that we can use both positive and negative
          * offsets.
          */
+#if defined(CONFIG_GP_LOCAL) || defined(CONFIG_GP_GLOBAL)
         _gp = ABSOLUTE(. + 0x8000);
         PROVIDE(gp = _gp);
+#endif
 
         *(.sdata .sdata.* .gnu.linkonce.s.*)
         *(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
@@ -309,20 +316,8 @@ SECTIONS
     /* Define linker symbols */
     _image_ram_end = .;
     _end = .; /* end of image */
-    __bss_num_words = (__bss_end - __bss_start) >> 2;
 
     GROUP_END(RAMABLE_REGION)
 
     }
-
-#if CONFIG_XIP
-/*
- * Round up number of words for DATA section to ensure that XIP copies the
- * entire data section. XIP copy is done in words only, so there may be up
- * to 3 extra bytes copied in next section (BSS). At run time, the XIP copy
- * is done first followed by clearing the BSS section.
- */
-__data_size = (__data_ram_end - __data_ram_start);
-__data_num_words = (__data_size + 3) >> 2;
-#endif
 

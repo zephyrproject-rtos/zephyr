@@ -138,7 +138,7 @@ extern ksem_t regSem;
 extern ksem_t altSem;
 extern ksem_t counterSem;
 
-extern kpipe_t pipeId;
+extern kpipe_t pipeId _GENERIC_SECTION(_k_pipe_ptr);
 
 /**
  *

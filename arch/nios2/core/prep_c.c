@@ -42,11 +42,10 @@
 
 static void bssZero(void)
 {
-	volatile uint32_t *pBSS = (uint32_t *)&__bss_start;
-	unsigned int n;
+	uint32_t *pos = (uint32_t *)&__bss_start;
 
-	for (n = 0; n < (unsigned int)&__bss_num_words; n++) {
-		pBSS[n] = 0;
+	for ( ; pos < (uint32_t *)&__bss_end; pos++) {
+		*pos = 0;
 	}
 }
 
@@ -62,12 +61,13 @@ static void bssZero(void)
 #ifdef CONFIG_XIP
 static void dataCopy(void)
 {
-	volatile uint32_t *pROM = (uint32_t *)&__data_rom_start;
-	volatile uint32_t *pRAM = (uint32_t *)&__data_ram_start;
-	unsigned int n;
+	uint32_t *pROM, *pRAM;
 
-	for (n = 0; n < (unsigned int)&__data_num_words; n++) {
-		pRAM[n] = pROM[n];
+	pROM = (uint32_t *)&__data_rom_start;
+	pRAM = (uint32_t *)&__data_ram_start;
+
+	for ( ; pRAM < (uint32_t *)&__data_ram_end; pROM++, pRAM++) {
+		*pRAM = *pROM;
 	}
 
 	/* In most XIP scenarios we copy the exception code into RAM, so need

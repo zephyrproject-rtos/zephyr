@@ -1,5 +1,18 @@
 -include $(srctree)/arch/$(ARCH)/soc/$(SOC_PATH)/Makefile
 
+ifdef CONFIG_GP_NONE
+gpopt = none
+else ifdef CONFIG_GP_LOCAL
+gpopt = local
+else ifdef CONFIG_GP_GLOBAL
+gpopt = global
+else ifdef CONFIG_GP_ALL_DATA
+gpopt = data
+endif
+
+# Set Global Pointer option based on Kconfig.
+arch_cflags += -mgpopt=$(gpopt)
+
 # Put functions and data in their own binary sections so that ld can
 # garbage collect them
 arch_cflags += $(call cc-option,-ffunction-sections) \

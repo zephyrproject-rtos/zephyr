@@ -77,6 +77,38 @@ config INCLUDE_RESET_VECTOR
 	nios2-download tool since it refuses to load data anywhere other than
 	RAM.
 
+choice
+prompt "Global Pointer options"
+default GP_GLOBAL
+
+config GP_NONE
+	bool "No global pointer"
+	help
+	Do not use global pointer relative offsets at all
+
+config GP_LOCAL
+	bool "Local data global pointer references"
+	help
+	Use global pointer relative offsets for small globals declared in the
+	same C file as the code that uses it.
+
+config GP_GLOBAL
+	bool "Global data global pointer references"
+	help
+	Use global pointer relative offsets for small globals declared
+	anywhere in the executable. Note that if any small globals that are put
+	in alternate sections (such as _k_task_list_ptr in the microkernel)
+	they must be declared in headers with proper __attribute__((section)) or
+	the linker will error out.
+
+config GP_ALL_DATA
+	bool "All data global pointer references"
+	help
+	Use GP relative access for all data in the program, not just
+	small data. Use this if your platform has 64K or less of RAM.
+
+endchoice
+
 endmenu
 
 source "arch/nios2/soc/*/Kconfig"

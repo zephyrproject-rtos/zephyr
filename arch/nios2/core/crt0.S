@@ -145,9 +145,12 @@ SECTION_FUNC(TEXT, __start)
 	/* Align the stack pointer */
 	and sp, sp, r1
 
+#if defined(CONFIG_GP_LOCAL) || defined(CONFIG_GP_GLOBAL) || \
+		defined(CONFIG_GP_ALL_DATA)
 	/* Initialize global pointer with the linker variable we set */
 	movhi gp, %hi(_gp)
 	ori gp, gp, %lo(_gp)
+#endif
 
 	/* TODO if shadow register sets enabled, interate through them to set
 	 * up. Need to clear r0, write gp, set the execption stack pointer
