@@ -60,6 +60,7 @@ clean:
 	@rm -rf html
 	@rm -rf xml
 	@rm -rf latex
+	@rm -rf reference/kconfig/*.rst
 
 htmldocs: doxy html
 
