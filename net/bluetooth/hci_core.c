@@ -46,6 +46,7 @@
 #include "monitor.h"
 #include "hci_core.h"
 #include "hci_ecc.h"
+#include "ecc.h"
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 #include "conn_internal.h"
@@ -70,6 +71,10 @@ struct bt_dev bt_dev;
 const struct bt_storage *bt_storage;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
+
+static uint8_t pub_key[16];
+static struct bt_pub_key_cb *pub_key_cb;
+static bt_dh_key_cb_t dh_key_cb;
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static bt_br_discovery_cb_t *discovery_cb;
@@ -2074,18 +2079,25 @@ static void le_ltk_request(struct net_buf *buf)
 done:
 	bt_conn_unref(conn);
 }
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 static void le_pkey_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_p256_public_key_complete *evt = (void *)buf->data;
+	struct bt_pub_key_cb *cb;
 
 	BT_DBG("status: 0x%x", evt->status);
 
-	if (evt->status) {
-		return;
+	atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
+
+	if (!evt->status) {
+		memcpy(pub_key, evt->key, 16);
+		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 	}
 
-	bt_smp_pkey_ready(evt->key);
+	for (cb = pub_key_cb; cb; cb = cb->_next) {
+		cb->func(evt->status ? NULL : evt->key);
+	}
 }
 
 static void le_dhkey_complete(struct net_buf *buf)
@@ -2094,14 +2106,11 @@ static void le_dhkey_complete(struct net_buf *buf)
 
 	BT_DBG("status: 0x%x", evt->status);
 
-	if (evt->status) {
-		bt_smp_dhkey_ready(NULL);
-		return;
+	if (dh_key_cb) {
+		dh_key_cb(evt->status ? NULL : evt->dhkey);
+		dh_key_cb = NULL;
 	}
-
-	bt_smp_dhkey_ready(evt->dhkey);
 }
-#endif /* CONFIG_BLUETOOTH_SMP */
 
 static void hci_reset_complete(struct net_buf *buf)
 {
@@ -2484,13 +2493,13 @@ static void hci_le_meta_event(struct net_buf *buf)
 	case BT_HCI_EVT_LE_LTK_REQUEST:
 		le_ltk_request(buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_SMP */
 	case BT_HCI_EVT_LE_P256_PUBLIC_KEY_COMPLETE:
 		le_pkey_complete(buf);
 		break;
 	case BT_HCI_EVT_LE_GENERATE_DHKEY_COMPLETE:
 		le_dhkey_complete(buf);
 		break;
-#endif /* CONFIG_BLUETOOTH_SMP */
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 		le_adv_report(buf);
 		break;
@@ -2903,23 +2912,6 @@ static int le_init(void)
 	if (err) {
 		return err;
 	}
-
-#if defined(CONFIG_BLUETOOTH_SMP)
-	/*
-	 * We check for both "LE Read Local P-256 Public Key" and
-	 * "LE Generate DH Key" support here since both commands are needed for
-	 * LE SC support. If "LE Generate DH Key" is not supported then there
-	 * is no point in reading local public key.
-	 */
-	if ((bt_dev.supported_commands[34] & 0x02) &&
-	    (bt_dev.supported_commands[34] & 0x04)) {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_P256_PUBLIC_KEY, NULL,
-					   NULL);
-		if (err) {
-			return err;
-		}
-	}
-#endif /* CONFIG_BLUETOOTH_SMP */
 
 	return 0;
 }
@@ -3925,4 +3917,88 @@ int bt_storage_clear(bt_addr_le_t *addr)
 uint16_t bt_hci_get_cmd_opcode(struct net_buf *buf)
 {
 	return cmd(buf)->opcode;
+}
+
+int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
+{
+	struct bt_pub_key_cb *cb;
+	int err;
+
+	/*
+	 * We check for both "LE Read Local P-256 Public Key" and
+	 * "LE Generate DH Key" support here since both commands are needed for
+	 * ECC support. If "LE Generate DH Key" is not supported then there
+	 * is no point in reading local public key.
+	 */
+	if (!(bt_dev.supported_commands[34] & 0x02) ||
+	    !(bt_dev.supported_commands[34] & 0x04)) {
+		return -ENOTSUP;
+	}
+
+	new_cb->_next = pub_key_cb;
+	pub_key_cb = new_cb;
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY)) {
+		return 0;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_P256_PUBLIC_KEY, NULL, NULL);
+	if (err) {
+		pub_key_cb = NULL;
+		return err;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+
+	for (cb = pub_key_cb; cb; cb = cb->_next) {
+		if (cb != new_cb) {
+			cb->func(NULL);
+		}
+	}
+
+	return 0;
+}
+
+const uint8_t *bt_pub_key_get(void)
+{
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY)) {
+		return pub_key;
+	}
+
+	return NULL;
+}
+
+int bt_dh_key_gen(const uint8_t remote_pk[64], bt_dh_key_cb_t cb)
+{
+	struct bt_hci_cp_le_generate_dhkey *cp;
+	struct net_buf *buf;
+	int err;
+
+	if (dh_key_cb || atomic_test_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY)) {
+		return -EBUSY;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY)) {
+		return -EADDRNOTAVAIL;
+	}
+
+	dh_key_cb = cb;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_GENERATE_DHKEY, sizeof(*cp));
+	if (!buf) {
+		dh_key_cb = NULL;
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	memcpy(cp->key, remote_pk, sizeof(cp->key));
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_GENERATE_DHKEY, buf, NULL);
+	if (err) {
+		dh_key_cb = NULL;
+		return err;
+	}
+
+	return 0;
 }

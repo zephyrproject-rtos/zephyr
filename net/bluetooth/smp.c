@@ -42,6 +42,7 @@
 #include <tinycrypt/cmac_mode.h>
 
 #include "hci_core.h"
+#include "ecc.h"
 #include "keys.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
@@ -1842,7 +1843,7 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 }
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
-void bt_smp_dhkey_ready(const uint8_t *dhkey)
+static void bt_smp_dhkey_ready(const uint8_t *dhkey)
 {
 	struct bt_smp *smp = NULL;
 	int i;
@@ -2310,18 +2311,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 
 static uint8_t generate_dhkey(struct bt_smp *smp)
 {
-	struct bt_hci_cp_le_generate_dhkey *cp;
-	struct net_buf *buf;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_GENERATE_DHKEY, sizeof(*cp));
-	if (!buf) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	memcpy(cp->key, smp->pkey, sizeof(cp->key));
-
-	if (bt_hci_cmd_send_sync(BT_HCI_OP_LE_GENERATE_DHKEY, buf, NULL)) {
+	if (bt_dh_key_gen(smp->pkey, bt_smp_dhkey_ready)) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2587,11 +2577,17 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
-void bt_smp_pkey_ready(const uint8_t *pkey)
+static void bt_smp_pkey_ready(const uint8_t *pkey)
 {
 	int i;
 
 	BT_DBG("");
+
+	if (!pkey) {
+		BT_WARN("Public key not available");
+		sc_local_pkey_valid = false;
+		return;
+	}
 
 	memcpy(sc_public_key, pkey, 64);
 	sc_local_pkey_valid = true;
@@ -3557,6 +3553,9 @@ int bt_smp_init(void)
 		.cid		= BT_L2CAP_CID_SMP,
 		.accept		= bt_smp_accept,
 	};
+	static struct bt_pub_key_cb pub_key_cb = {
+		.func           = bt_smp_pkey_ready,
+	};
 
 	sc_supported = le_sc_supported();
 #if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
@@ -3571,6 +3570,8 @@ int bt_smp_init(void)
 	bt_l2cap_le_fixed_chan_register(&chan);
 
 	BT_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
+
+	bt_pub_key_gen(&pub_key_cb);
 
 	return smp_self_test();
 }
