@@ -2495,7 +2495,7 @@ static void hci_le_meta_event(struct net_buf *buf)
 		le_adv_report(buf);
 		break;
 	default:
-		BT_DBG("Unhandled LE event %x", evt->subevent);
+		BT_DBG("Unhandled LE event 0x%02x", evt->subevent);
 		break;
 	}
 }
@@ -2504,7 +2504,7 @@ static void hci_event(struct net_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr = (void *)buf->data;
 
-	BT_DBG("event %u", hdr->evt);
+	BT_DBG("event 0x%02x", hdr->evt);
 
 	net_buf_pull(buf, sizeof(*hdr));
 
