@@ -115,11 +115,21 @@ extern "C" {
 		 .driver_data = data \
 	}
 
-#define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
+#define DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
+			       data, cfg_info, level, prio, api) \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, NULL)
-
+			    level, prio, api)
 #else
+/**
+ * @def DEVICE_INIT_PM
+ *
+ * @brief Create device object and set it up for boot time initialization,
+ * with the option to device_pm_ops.
+ *
+ * @copydetails DEVICE_INIT
+ * @param device_pm_ops Address to the device_pm_ops structure of the driver.
+ */
+
 /**
  * @def DEVICE_AND_API_INIT_PM
  *
@@ -150,21 +160,6 @@ extern "C" {
 		 .driver_data = data \
 	}
 
-/**
- * @def DEVICE_INIT_PM
- *
- * @brief Create device object and set it up for boot time initialization,
- * with the option to device_pm_ops.
- *
- * @copydetails DEVICE_INIT
- * @param device_pm_ops Address to the device_pm_ops structure of the driver.
- */
-
-#define DEVICE_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
-			       data, cfg_info, level, prio) \
-	DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
-			       data, cfg_info, level, prio, NULL)
-
 	/*
 	 * Create a default device_pm_ops for devices that do not call the
 	 * DEVICE_INIT_PM macro so that caller of hook functions
@@ -176,12 +171,16 @@ extern struct device_pm_ops device_pm_ops_nop;
 	DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, \
 			       &device_pm_ops_nop, data, cfg_info, \
 			       level, prio, api)
+#endif
+
+#define DEVICE_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
+			       data, cfg_info, level, prio) \
+	DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
+			       data, cfg_info, level, prio, NULL)
 
 #define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, NULL)
-
-#endif
 
 /**
  * @def DEVICE_NAME_GET
@@ -249,9 +248,49 @@ struct device_pm_ops {
 	int (*suspend)(struct device *device, int pm_policy);
 	int (*resume)(struct device *device, int pm_policy);
 };
+
+/**
+ * @brief Helper macro to define the device_pm_ops structure
+ *
+ * @param _name name of the device
+ * @param _suspend name of the suspend function
+ * @param _resume name of the resume function
+ */
+#define DEFINE_DEVICE_PM_OPS(_name, _suspend, _resume)	\
+	struct device_pm_ops _name##_dev_pm_ops = {	\
+		.suspend = _suspend,			\
+		.resume = _resume,			\
+	}
+
+/**
+ * @brief Macro to get a pointer to the device_ops_structure
+ *
+ * Will return the name of the structure that was created using
+ * DEFINE_PM_OPS macro if CONFIG_DEVICE_POWER_MANAGEMENT is defined.
+ * Otherwise, will return NULL.
+ *
+ * @param _name name of the device
+ */
+#define DEVICE_PM_OPS_GET(_name) \
+	(&_name##_dev_pm_ops)
+
+/**
+ * @brief Macro to declare the device_pm_ops structure
+ *
+ * The declaration would be added if CONFIG_DEVICE_POWER_MANAGEMENT
+ * is defined. Otherwise this macro will not add anything.
+ *
+ * @param _name name of the device
+ */
+#define DEVICE_PM_OPS_DECLARE(_name) \
+	extern struct device_pm_ops _name##_dev_pm_ops
 /**
  * @}
  */
+#else
+#define DEFINE_DEVICE_PM_OPS(_name, _suspend, _resume)
+#define DEVICE_PM_OPS_GET(_name) NULL
+#define DEVICE_PM_OPS_DECLARE(_name)
 #endif
 
 /**

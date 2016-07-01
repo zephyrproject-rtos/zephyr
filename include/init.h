@@ -45,6 +45,9 @@ extern "C" {
 #define SYS_INIT_PM(drv_name, init_fn, device_pm_ops, level, prio) \
 	DEVICE_INIT_PM(sys_init_##init_fn, drv_name, init_fn, device_pm_ops, \
 		NULL, NULL, level, prio)
+#else
+#define SYS_INIT_PM(drv_name, init_fn, device_pm_ops, level, prio) \
+	DEVICE_INIT(sys_init_##init_fn, "", init_fn, NULL, NULL, level, prio)
 #endif
 
 #ifdef __cplusplus
