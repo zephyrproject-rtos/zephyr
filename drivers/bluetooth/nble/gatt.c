@@ -1460,8 +1460,9 @@ void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *ev,
 reply:
 	if (ev->flag & NBLE_GATT_WR_FLAG_REPLY) {
 		reply_data.conn_handle = ev->conn_handle;
+		reply_data.offset = ev->offset;
 
-		nble_gatts_write_reply_req(&reply_data);
+		nble_gatts_write_reply_req(&reply_data, buf, buflen);
 	}
 
 	if (conn) {
@@ -1500,7 +1501,7 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 		 * Dispatch the callback in case of success (status >= 0).
 		 * Ignore in case of error (status < 0).
 		 */
-		if (rsp.status >= 0 && evt->flag == NBLE_GATT_EX_FLAG_EXECUTE) {
+		if (rsp.status >= 0 && evt->flag == 1) {
 			rsp.status = write_evt(conn, attr, ev->offset,
 					       buf->data, buf->len);
 		}
@@ -1508,7 +1509,7 @@ void on_nble_gatts_write_exec_evt(const struct nble_gatts_write_exec_evt *evt)
 		net_buf_unref(buf);
 	}
 
-	nble_gatts_write_reply_req(&rsp);
+	nble_gatts_write_reply_req(&rsp, NULL, 0);
 
 	bt_conn_unref(conn);
 }

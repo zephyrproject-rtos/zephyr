@@ -219,6 +219,77 @@ static char *debug_func_s_b_b_p[] = { LIST_FN_SIG_S_B_B_P};
 
 #endif
 
+#undef FN_SIG_NONE
+#undef FN_SIG_S
+#undef FN_SIG_P
+#undef FN_SIG_S_B
+#undef FN_SIG_B_B_P
+#undef FN_SIG_S_P
+#undef FN_SIG_S_B_P
+#undef FN_SIG_S_B_B_P
+
+#define DJB2_HASH(__h, __v) ((((__h) << 5) + (__h)) + (__v))
+
+#define FN_SIG_NONE(__fn)						\
+		hash = DJB2_HASH(hash, 1);
+
+#define FN_SIG_S(__fn, __s)						\
+	do {								\
+		hash = DJB2_HASH(hash, 2);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_P(__fn, __type)						\
+		hash = DJB2_HASH(hash, 3);
+
+#define FN_SIG_S_B(__fn, __s, __type, __length)				\
+	do {								\
+		hash = DJB2_HASH(hash, 4);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_B_B_P(__fn, __type1, __length1, __type2, __length2,	\
+		     __type3)						\
+	do {								\
+		hash = DJB2_HASH(hash, 5);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_S_P(__fn, __s, __type)					\
+	do {								\
+		hash = DJB2_HASH(hash, 6);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_S_B_P(__fn, __s, __type, __length, __type_ptr)		\
+	do {								\
+		hash = DJB2_HASH(hash, 7);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_S_B_B_P(__fn, __s, __type1, __length1, __type2,		\
+		       __length2, __type3)				\
+	do {								\
+		hash = DJB2_HASH(hash, 8);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+uint32_t rpc_deserialize_hash(void)
+{
+	uint32_t hash = 5381;
+
+	LIST_FN_SIG_NONE;
+	LIST_FN_SIG_S;
+	LIST_FN_SIG_P;
+	LIST_FN_SIG_S_B;
+	LIST_FN_SIG_B_B_P;
+	LIST_FN_SIG_S_P;
+	LIST_FN_SIG_S_B_P;
+	LIST_FN_SIG_S_B_B_P;
+
+	return hash;
+}
+
 static void panic(int err)
 {
 	PRINTK("panic: errcode %d", err);
@@ -473,6 +544,35 @@ static void deserialize_s_b_b_p(uint8_t fn_index, struct net_buf *buf)
 	}
 }
 
+static void deserialize_control(uint8_t fn_index, struct net_buf *buf)
+{
+	const uint8_t *p_struct_data;
+	uint8_t struct_length;
+	struct {
+		uint32_t version;
+		uint32_t ser_hash;
+		uint32_t des_hash;
+	} struct_data;
+
+	switch (fn_index) {
+	case 0:
+		deserialize_struct(buf, &p_struct_data, &struct_length);
+
+		if (struct_length != sizeof(struct_data))
+			panic(-1);
+		memcpy(&struct_data, p_struct_data, struct_length);
+		if (struct_data.ser_hash != rpc_deserialize_hash() ||
+		    struct_data.des_hash != rpc_serialize_hash()) {
+			rpc_init_cb(struct_data.version, false);
+		} else {
+			rpc_init_cb(struct_data.version, true);
+		}
+		break;
+	break;
+		panic(-1);
+	}
+}
+
 void rpc_deserialize(struct net_buf *buf)
 {
 
@@ -533,8 +633,16 @@ void rpc_deserialize(struct net_buf *buf)
 			deserialize_s_b_b_p(fn_index, buf);
 		}
 		break;
+	case SIG_TYPE_CONTROL:
+		deserialize_control(fn_index, buf);
+		break;
 	default:
 		panic(-1);
 		break;
 	}
+}
+
+__weak
+void rpc_init_cb(uint32_t version, bool compatible)
+{
 }

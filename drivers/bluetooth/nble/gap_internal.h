@@ -63,8 +63,6 @@ struct nble_log_s {
 
 void nble_log(const struct nble_log_s *par, char *data, uint8_t len);
 
-void on_nble_up(void);
-
 struct nble_common_rsp {
 	int status;
 	void *user_data;
@@ -553,6 +551,27 @@ struct nble_sm_bond_info_rsp {
 void on_nble_sm_bond_info_rsp(const struct nble_sm_bond_info_rsp *rsp,
 			      const bt_addr_le_t *peer_addr, uint16_t len);
 
+struct nble_uart_test_req {
+	/* Test type: 1 = start peer test, 2 = loopback test */
+	uint16_t test_type;
+	/* Test type 1: Number of test events packets sent from peer to host */
+	uint16_t nb_loops;
+	/* Test type 1: The maximum delay between packets (in ms) */
+	uint16_t max_delay;
+	/* Test type 1: The maximum length of packets (in bytes) */
+	uint16_t max_len;
+};
+
+void nble_uart_test_req(const struct nble_uart_test_req *req,
+			const uint8_t *data, uint8_t len);
+
+struct nble_uart_test_evt {
+	/* Number of loops executed */
+	uint16_t nb_loops;
+};
+
+void on_nble_uart_test_evt(const struct nble_uart_test_evt *evt,
+			   const uint8_t *data, uint8_t len);
 
 /*
  * The following functions are NOT RPC functions

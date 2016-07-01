@@ -41,8 +41,6 @@
 		 const struct nble_gap_conn_update_req *)		\
 	FN_SIG_S(nble_gattc_discover_req,				\
 		 const struct nble_gattc_discover_req *)		\
-	FN_SIG_S(nble_gatts_write_reply_req,				\
-		 const struct nble_gatts_write_reply_req *)		\
 	FN_SIG_S(nble_uas_rssi_calibrate_req,				\
 		 const struct nble_uas_rssi_calibrate_req *)		\
 	FN_SIG_S(nble_gap_service_req,					\
@@ -84,7 +82,13 @@
 		   const uint8_t *, uint16_t)				\
 	FN_SIG_S_B(nble_gattc_read_multi_req,				\
 		   const struct nble_gattc_read_multi_req *,		\
-		   const uint16_t *, uint16_t)
+		   const uint16_t *, uint16_t)				\
+	FN_SIG_S_B(nble_uart_test_req,					\
+		   const struct nble_uart_test_req *,			\
+		   const uint8_t *, uint8_t)				\
+	FN_SIG_S_B(nble_gatts_write_reply_req,				\
+		   const struct nble_gatts_write_reply_req *,		\
+		   const uint8_t *, uint8_t)
 
 #define LIST_FN_SIG_B_B_P
 

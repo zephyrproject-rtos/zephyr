@@ -15,8 +15,7 @@
  */
 
 /* declare the list of functions sorted by signature */
-#define LIST_FN_SIG_NONE					\
-	FN_SIG_NONE(on_nble_up)
+#define LIST_FN_SIG_NONE
 
 #define LIST_FN_SIG_S						\
 	FN_SIG_S(on_nble_get_version_rsp,			\
@@ -109,7 +108,10 @@
 		   uint8_t *, uint8_t)				\
 	FN_SIG_S_B(on_nble_gattc_read_multi_rsp,		\
 		   const struct nble_gattc_read_rsp *,		\
-		   uint8_t *, uint8_t)
+		   uint8_t *, uint8_t)				\
+	FN_SIG_S_B(on_nble_uart_test_evt,			\
+		   const struct nble_uart_test_evt *,		\
+		   const uint8_t *, uint8_t)
 
 #define LIST_FN_SIG_B_B_P
 

@@ -33,8 +33,15 @@
 #include "rpc.h"
 #include "smp.h"
 
+#define NBLE_VERSION(a, b, c)						\
+	((((a) & 0xFF) << 16) | (((b) & 0xFF) << 8) | ((c) & 0xFF))
+
+#define NBLE_VERSION_MAJOR(v) (((v) >> 16) & 0xFF)
+#define NBLE_VERSION_MINOR(v) (((v) >> 8)  & 0xFF)
+#define NBLE_VERSION_PATCH(v) (((v) >> 0)  & 0xFF)
+
 /* Set the firmware compatible with Nordic BLE RPC */
-static uint8_t compatible_firmware[4] = { '0', '6', '2', '0' };
+static const uint32_t compatible_firmware = NBLE_VERSION(4, 0, 31);
 
 #if !defined(CONFIG_NBLE_DEBUG_GAP)
 #undef BT_DBG
@@ -66,30 +73,6 @@ static void clear_bonds(const bt_addr_le_t *addr)
 	bt_addr_le_copy(&params.addr, addr);
 
 	nble_sm_clear_bonds_req(&params);
-}
-
-void on_nble_get_version_rsp(const struct nble_get_version_rsp *rsp)
-{
-	BT_DBG("VERSION: %d.%d.%d %.20s", rsp->ver.major, rsp->ver.minor,
-	       rsp->ver.patch, rsp->ver.version_string);
-
-	if (memcmp(&rsp->ver.version_string[sizeof(rsp->ver.version_string) -
-		   sizeof(compatible_firmware)], compatible_firmware,
-		   sizeof(compatible_firmware))) {
-		BT_ERR("\n\n"
-		       "Incompatible firmware: %.20s, please use version %.4s"
-		       "\n\n",
-		       rsp->ver.version_string, compatible_firmware);
-		/* TODO: shall we allow to continue */
-	}
-
-	/* Make sure the nRF51 persistent memory is cleared */
-	clear_bonds(BT_ADDR_LE_ANY);
-
-	if (bt_ready_cb) {
-		bt_ready_cb(0);
-		bt_ready_cb = NULL;
-	}
 }
 
 int bt_enable(bt_ready_cb_t cb)
@@ -350,7 +333,13 @@ void on_nble_get_bda_rsp(const struct nble_get_bda_rsp *rsp)
 
 	BT_DBG("Local bdaddr: %s", bt_addr_le_str(&nble.addr));
 
-	nble_get_version_req(NULL);
+	/* Make sure the nRF51 persistent memory is cleared */
+	clear_bonds(BT_ADDR_LE_ANY);
+
+	if (bt_ready_cb) {
+		bt_ready_cb(0);
+		bt_ready_cb = NULL;
+	}
 }
 
 void on_nble_common_rsp(const struct nble_common_rsp *rsp)
@@ -363,9 +352,28 @@ void on_nble_common_rsp(const struct nble_common_rsp *rsp)
 	BT_DBG("status %d", rsp->status);
 }
 
-void on_nble_up(void)
+void rpc_init_cb(uint32_t version, bool compatible)
 {
 	BT_DBG("");
+
+	if (!compatible) {
+		BT_ERR("\n\n"
+		       "RPC reported incompatible firmware"
+		       "\n\n");
+	}
+	if (version != compatible_firmware) {
+		BT_ERR("\n\n"
+		       "Incompatible firmware: %d.%d.%d, "
+		       "please use version %d.%d.%d"
+		       "\n\n",
+		       NBLE_VERSION_MAJOR(version),
+		       NBLE_VERSION_MINOR(version),
+		       NBLE_VERSION_PATCH(version),
+		       NBLE_VERSION_MAJOR(compatible_firmware),
+		       NBLE_VERSION_MINOR(compatible_firmware),
+		       NBLE_VERSION_PATCH(compatible_firmware));
+		/* TODO: shall we allow to continue */
+	}
 
 	bt_smp_init();
 	bt_gatt_init();

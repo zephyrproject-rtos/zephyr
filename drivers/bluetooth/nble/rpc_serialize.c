@@ -137,6 +137,77 @@ LIST_FN_SIG_S_P
 LIST_FN_SIG_S_B_P
 LIST_FN_SIG_S_B_B_P
 
+#undef FN_SIG_NONE
+#undef FN_SIG_S
+#undef FN_SIG_P
+#undef FN_SIG_S_B
+#undef FN_SIG_B_B_P
+#undef FN_SIG_S_P
+#undef FN_SIG_S_B_P
+#undef FN_SIG_S_B_B_P
+
+#define DJB2_HASH(__h, __v) ((((__h) << 5) + (__h)) + (__v))
+
+#define FN_SIG_NONE(__fn)						\
+		hash = DJB2_HASH(hash, 1);
+
+#define FN_SIG_S(__fn, __s)						\
+	do {								\
+		hash = DJB2_HASH(hash, 2);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_P(__fn, __type)						\
+		hash = DJB2_HASH(hash, 3);
+
+#define FN_SIG_S_B(__fn, __s, __type, __length)				\
+	do {								\
+		hash = DJB2_HASH(hash, 4);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_B_B_P(__fn, __type1, __length1, __type2, __length2,	\
+		     __type3)						\
+	do {								\
+		hash = DJB2_HASH(hash, 5);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_S_P(__fn, __s, __type)					\
+	do {								\
+		hash = DJB2_HASH(hash, 6);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_S_B_P(__fn, __s, __type, __length, __type_ptr)		\
+	do {								\
+		hash = DJB2_HASH(hash, 7);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+#define FN_SIG_S_B_B_P(__fn, __s, __type1, __length1, __type2,		\
+		       __length2, __type3)				\
+	do {								\
+		hash = DJB2_HASH(hash, 8);				\
+		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
+	} while (0);
+
+uint32_t rpc_serialize_hash(void)
+{
+	uint32_t hash = 5381;
+
+	LIST_FN_SIG_NONE;
+	LIST_FN_SIG_S;
+	LIST_FN_SIG_P;
+	LIST_FN_SIG_S_B;
+	LIST_FN_SIG_B_B_P;
+	LIST_FN_SIG_S_P;
+	LIST_FN_SIG_S_B_P;
+	LIST_FN_SIG_S_B_B_P;
+
+	return hash;
+}
+
 #define SIG_TYPE_SIZE		1
 #define FN_INDEX_SIZE		1
 #define POINTER_SIZE		4
@@ -336,5 +407,26 @@ void rpc_serialize_s_b_b_p(uint8_t fn_index, const void *struct_data,
 	serialize_buf(buf, vbuf2, vbuf2_length);
 	serialize_p(buf, priv);
 
+	_send(buf);
+}
+
+void rpc_init(uint32_t version)
+{
+	struct net_buf *buf;
+	struct {
+		uint32_t version;
+		uint32_t ser_hash;
+		uint32_t des_hash;
+	} struct_data;
+
+	struct_data.version = version;
+	struct_data.ser_hash = rpc_serialize_hash();
+	struct_data.des_hash = rpc_deserialize_hash();
+	buf = rpc_alloc_cb(SIG_TYPE_SIZE + FN_INDEX_SIZE +
+			   encoded_structlen(sizeof(struct_data)));
+
+	net_buf_add_u8(buf, SIG_TYPE_CONTROL);
+	net_buf_add_u8(buf, 0);
+	serialize_struct(buf, (uint8_t *)&struct_data, sizeof(struct_data));
 	_send(buf);
 }

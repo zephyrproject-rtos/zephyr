@@ -87,19 +87,15 @@ void on_nble_gatts_write_evt(const struct nble_gatts_write_evt *evt,
 
 struct nble_gatts_write_reply_req {
 	uint16_t conn_handle;
+	uint16_t offset;
 	int32_t status;
 };
 
-void nble_gatts_write_reply_req(const struct nble_gatts_write_reply_req *req);
-
-enum nble_gatt_ex_flag {
-	NBLE_GATT_EX_FLAG_CANCEL,
-	NBLE_GATT_EX_FLAG_EXECUTE,
-};
+void nble_gatts_write_reply_req(const struct nble_gatts_write_reply_req *req,
+				const uint8_t *data, uint8_t len);
 
 struct nble_gatts_write_exec_evt {
 	uint16_t conn_handle;
-	/* see nble_gatt_ex_flag */
 	uint8_t flag;
 };
 

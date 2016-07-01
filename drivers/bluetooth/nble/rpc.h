@@ -26,7 +26,8 @@ enum {
 	SIG_TYPE_B_B_P,
 	SIG_TYPE_S_P,
 	SIG_TYPE_S_B_P,
-	SIG_TYPE_S_B_B_P
+	SIG_TYPE_S_B_B_P,
+	SIG_TYPE_CONTROL = 0xFF
 };
 
 /**
@@ -35,7 +36,7 @@ enum {
  * This function is called by the RPC mechanism to allocate a buffer for
  * transmission of a serialized function.  The function should not fail.
  *
- * @param length Length of the buffer to allocate
+ * @param length Length of the buffer to allocate.
  *
  * @return Pointer to the allocated buffer, the allocation shall not fail,
  * error must be handled internally
@@ -49,6 +50,34 @@ struct net_buf *rpc_alloc_cb(uint16_t length);
  * by @ref rpc_alloc_cb
  */
 void rpc_transmit_cb(struct net_buf *buf);
+
+/**
+ * RPC initialization function that notifies the peer with an initialization
+ * packet containing the information to check the compatibility of the
+ * frameworks.
+ *
+ * @param version Local version to send to the peer.
+ */
+void rpc_init(uint32_t version);
+
+/**
+ * RPC initialization packet reception function, can optionally be implemented
+ * by the user of the RPC.  If this function is not implemented, it will default
+ * to an empty function.
+ *
+ * This function is called by the RPC mechanism when an initialization packet is
+ * received from the connected peer.
+ *
+ * @param version Peer advertised version.
+ * @param compatible True if the peer runs a compatible RPC framework.
+ */
+void rpc_init_cb(uint32_t version, bool compatible);
+
+/** RPC serialize hash number generation.
+ *
+ * @return The unique identifier of the RPC deserialization.
+ */
+uint32_t rpc_serialize_hash(void);
 
 /**
  * RPC serialization function to serialize a function that does not require any
@@ -71,7 +100,7 @@ void rpc_serialize_s(uint8_t fn_index, const void *struct_data,
 
 /**
  * RPC serialization function to serialize a function that expects a structure
- * as parameter.
+ * and a pointer as parameters.
  *
  * @param fn_index Index of the function
  * @param struct_data Pointer to the structure to serialize
@@ -156,7 +185,13 @@ void rpc_serialize_s_b_b_p(uint8_t fn_index, const void *struct_data,
  * RPC deserialization function, shall be invoked when a buffer is received
  * over the transport interface.
  *
- * @param p_buf Pointer to the received buffer
- * @param length Length of the received buffer
+ * @param buf Pointer to the received buffer
  */
 void rpc_deserialize(struct net_buf *buf);
+
+/** RPC deserialize hash number generation.
+ *
+ * @return The unique identifier of the RPC deserialization.
+ */
+uint32_t rpc_deserialize_hash(void);
+
