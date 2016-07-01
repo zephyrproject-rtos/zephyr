@@ -2,10 +2,10 @@
 
 % TASK NAME          PRIO ENTRY           STACK GROUPS
 % ===================================================
-  TASK tStartTask       5 RegressionTask    320  [EXE]
-  TASK tAlternate       6 AlternateTask     320  [EXE]
-  TASK tDefrag          7 DefragTask        320  [EXE]
-  TASK tHelper          7 HelperTask        320  [EXE]
+  TASK tStartTask       5 RegressionTask    512  [EXE]
+  TASK tAlternate       6 AlternateTask     512  [EXE]
+  TASK tDefrag          7 DefragTask        512  [EXE]
+  TASK tHelper          7 HelperTask        512  [EXE]
 
 % SEMA NAME
 % ==================
