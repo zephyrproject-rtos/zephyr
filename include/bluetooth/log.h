@@ -84,6 +84,12 @@ void bt_log(int prio, const char *fmt, ...);
 #define BT_STACK_NOINIT(name, size) \
 		char __noinit __stack name[(size) + BT_STACK_DEBUG_EXTRA]
 
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+const char *bt_hex(const void *buf, size_t len);
+#else
+#define bt_hex(buf, len)
+#endif
+
 #ifdef __cplusplus
 }
 #endif

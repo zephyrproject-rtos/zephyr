@@ -4,6 +4,8 @@ obj-$(CONFIG_BLUETOOTH_STACK_HCI) = \
 	hci_core.o \
 	uuid.o
 
+obj-$(CONFIG_BLUETOOTH_DEBUG) += log.o
+
 obj-$(CONFIG_BLUETOOTH_DEBUG_MONITOR) += monitor.o
 
 ifeq ($(CONFIG_BLUETOOTH_CONN),y)
