@@ -255,39 +255,6 @@ static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 	return gen_method_sc[remote_io][get_io_capa()];
 }
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_SMP)
-/* Helper for printk parameters to convert from binary to hex.
- * We declare multiple buffers so the helper can be used multiple times
- * in a single printk call.
- */
-static const char *h(const void *buf, size_t len)
-{
-	static const char hex[] = "0123456789abcdef";
-	static char hexbufs[4][129];
-	static uint8_t curbuf;
-	const uint8_t *b = buf;
-	char *str;
-	int i;
-
-	str = hexbufs[curbuf++];
-	curbuf %= ARRAY_SIZE(hexbufs);
-
-	len = min(len, (sizeof(hexbufs[0]) - 1) / 2);
-
-	for (i = 0; i < len; i++) {
-		str[i * 2]     = hex[b[i] >> 4];
-		str[i * 2 + 1] = hex[b[i] & 0xf];
-	}
-
-	str[i * 2] = '\0';
-
-	return str;
-}
-#else
-#undef BT_DBG
-#define BT_DBG(fmt, ...)
-#endif
-
 /* swap octets for LE encrypt */
 static void swap_buf(uint8_t *dst, const uint8_t *src, uint16_t len)
 {
@@ -316,7 +283,7 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 	struct tc_aes_key_sched_struct s;
 	uint8_t tmp[16];
 
-	BT_DBG("key %s plaintext %s", h(key, 16), h(plaintext, 16));
+	BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
 
 	swap_buf(tmp, key, 16);
 
@@ -332,7 +299,7 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 
 	swap_in_place(enc_data, 16);
 
-	BT_DBG("enc_data %s", h(enc_data, 16));
+	BT_DBG("enc_data %s", bt_hex(enc_data, 16));
 
 	return 0;
 }
@@ -342,7 +309,7 @@ static int smp_ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
 	uint8_t res[16];
 	int err;
 
-	BT_DBG("irk %s, r %s", h(irk, 16), h(r, 3));
+	BT_DBG("irk %s, r %s", bt_hex(irk, 16), bt_hex(r, 3));
 
 	/* r' = padding || r */
 	memcpy(res, r, 3);
@@ -399,9 +366,9 @@ static int smp_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x,
 	uint8_t m[65];
 	int err;
 
-	BT_DBG("u %s", h(u, 32));
-	BT_DBG("v %s", h(v, 32));
-	BT_DBG("x %s z 0x%x", h(x, 16), z);
+	BT_DBG("u %s", bt_hex(u, 32));
+	BT_DBG("v %s", bt_hex(v, 32));
+	BT_DBG("x %s z 0x%x", bt_hex(x, 16), z);
 
 	/*
 	 * U, V and Z are concatenated and used as input m to the function
@@ -425,7 +392,7 @@ static int smp_f4(const uint8_t *u, const uint8_t *v, const uint8_t *x,
 
 	swap_in_place(res, 16);
 
-	BT_DBG("res %s", h(res, 16));
+	BT_DBG("res %s", bt_hex(res, 16));
 
 	return err;
 }
@@ -449,8 +416,8 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	uint8_t t[16], ws[32];
 	int err;
 
-	BT_DBG("w %s", h(w, 32));
-	BT_DBG("n1 %s n2 %s", h(n1, 16), h(n2, 16));
+	BT_DBG("w %s", bt_hex(w, 32));
+	BT_DBG("n1 %s n2 %s", bt_hex(n1, 16), bt_hex(n2, 16));
 
 	swap_buf(ws, w, 32);
 
@@ -459,7 +426,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	BT_DBG("t %s", h(t, 16));
+	BT_DBG("t %s", bt_hex(t, 16));
 
 	swap_buf(m + 5, n1, 16);
 	swap_buf(m + 21, n2, 16);
@@ -473,7 +440,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	BT_DBG("mackey %1s", h(mackey, 16));
+	BT_DBG("mackey %1s", bt_hex(mackey, 16));
 
 	swap_in_place(mackey, 16);
 
@@ -485,7 +452,7 @@ static int smp_f5(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	BT_DBG("ltk %s", h(ltk, 16));
+	BT_DBG("ltk %s", bt_hex(ltk, 16));
 
 	swap_in_place(ltk, 16);
 
@@ -500,10 +467,10 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 	uint8_t m[65];
 	int err;
 
-	BT_DBG("w %s", h(w, 16));
-	BT_DBG("n1 %s n2 %s", h(n1, 16), h(n2, 16));
-	BT_DBG("r %s io_cap %s", h(r, 16), h(iocap, 3));
-	BT_DBG("a1 %s a2 %s", h(a1, 7), h(a2, 7));
+	BT_DBG("w %s", bt_hex(w, 16));
+	BT_DBG("n1 %s n2 %s", bt_hex(n1, 16), bt_hex(n2, 16));
+	BT_DBG("r %s io_cap %s", bt_hex(r, 16), bt_hex(iocap, 3));
+	BT_DBG("a1 %s a2 %s", bt_hex(a1, 7), bt_hex(a2, 7));
 
 	swap_buf(m, n1, 16);
 	swap_buf(m + 16, n2, 16);
@@ -525,7 +492,7 @@ static int smp_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 		return err;
 	}
 
-	BT_DBG("res %s", h(check, 16));
+	BT_DBG("res %s", bt_hex(check, 16));
 
 	swap_in_place(check, 16);
 
@@ -538,9 +505,9 @@ static int smp_g2(const uint8_t u[32], const uint8_t v[32],
 	uint8_t m[80], xs[16];
 	int err;
 
-	BT_DBG("u %s", h(u, 32));
-	BT_DBG("v %s", h(v, 32));
-	BT_DBG("x %s y %s", h(x, 16), h(y, 16));
+	BT_DBG("u %s", bt_hex(u, 32));
+	BT_DBG("v %s", bt_hex(v, 32));
+	BT_DBG("x %s y %s", bt_hex(x, 16), bt_hex(y, 16));
 
 	swap_buf(m, u, 32);
 	swap_buf(m + 32, v, 32);
@@ -553,7 +520,7 @@ static int smp_g2(const uint8_t u[32], const uint8_t v[32],
 	if (err) {
 		return err;
 	}
-	BT_DBG("res %s", h(xs, 16));
+	BT_DBG("res %s", bt_hex(xs, 16));
 
 	memcpy(passkey, xs + 12, 4);
 	*passkey = sys_be32_to_cpu(*passkey) % 1000000;
@@ -709,9 +676,9 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	uint8_t p1[16], p2[16];
 	int err;
 
-	BT_DBG("k %s r %s", h(k, 16), h(r, 16));
+	BT_DBG("k %s r %s", bt_hex(k, 16), bt_hex(r, 16));
 	BT_DBG("ia %s ra %s", bt_addr_le_str(ia), bt_addr_le_str(ra));
-	BT_DBG("preq %s pres %s", h(preq, 7), h(pres, 7));
+	BT_DBG("preq %s pres %s", bt_hex(preq, 7), bt_hex(pres, 7));
 
 	/* pres, preq, rat and iat are concatenated to generate p1 */
 	p1[0] = ia->type;
@@ -719,7 +686,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	memcpy(p1 + 2, preq, 7);
 	memcpy(p1 + 9, pres, 7);
 
-	BT_DBG("p1 %s", h(p1, 16));
+	BT_DBG("p1 %s", bt_hex(p1, 16));
 
 	/* c1 = e(k, e(k, r XOR p1) XOR p2) */
 
@@ -736,7 +703,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	memcpy(p2 + 6, ia->a.val, 6);
 	memset(p2 + 12, 0, 4);
 
-	BT_DBG("p2 %s", h(p2, 16));
+	BT_DBG("p2 %s", bt_hex(p2, 16));
 
 	xor_128(enc_data, p2, enc_data);
 
@@ -1122,7 +1089,7 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	BT_DBG("pcnf %s cfm %s", h(smp->pcnf, 16), h(tmp, 16));
+	BT_DBG("pcnf %s cfm %s", bt_hex(smp->pcnf, 16), bt_hex(tmp, 16));
 
 	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf))) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
@@ -1156,7 +1123,7 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 	}
 
 	memcpy(smp->tk, tmp, sizeof(smp->tk));
-	BT_DBG("generated STK %s", h(smp->tk, 16));
+	BT_DBG("generated STK %s", bt_hex(smp->tk, 16));
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
 
@@ -1339,7 +1306,7 @@ static int smp_init(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	BT_DBG("prnd %s", h(smp->prnd, 16));
+	BT_DBG("prnd %s", bt_hex(smp->prnd, 16));
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
@@ -1932,7 +1899,7 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	BT_DBG("pcnf %s cfm %s", h(smp->pcnf, 16), h(cfm, 16));
+	BT_DBG("pcnf %s cfm %s", bt_hex(smp->pcnf, 16), bt_hex(cfm, 16));
 
 	if (memcmp(smp->pcnf, cfm, 16)) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
@@ -2727,7 +2694,7 @@ bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 	uint8_t hash[3];
 	int err;
 
-	BT_DBG("IRK %s bdaddr %s", h(irk, 16), bt_addr_str(addr));
+	BT_DBG("IRK %s bdaddr %s", bt_hex(irk, 16), bt_addr_str(addr));
 
 	err = smp_ah(irk, addr->val + 3, hash);
 	if (err) {
@@ -2782,7 +2749,8 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 	uint8_t key_s[16], tmp[16];
 	int err;
 
-	BT_DBG("Signing msg %s len %u key %s", h(msg, len), len, h(key, 16));
+	BT_DBG("Signing msg %s len %u key %s", bt_hex(msg, len), len,
+	       bt_hex(key, 16));
 
 	swap_in_place(m, len + sizeof(cnt));
 	swap_buf(key_s, key, 16);
@@ -2801,7 +2769,7 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 
 	memcpy(sig, tmp + 4, 12);
 
-	BT_DBG("sig %s", h(sig, 12));
+	BT_DBG("sig %s", bt_hex(sig, 12));
 
 	return 0;
 }
@@ -2828,7 +2796,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	memcpy(net_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
 
 	BT_DBG("Sign data len %u key %s count %u", buf->len - sizeof(sig),
-	       h(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
+	       bt_hex(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
 
 	err = smp_sign_buf(keys->remote_csrk.val, buf->data,
 			   buf->len - sizeof(sig));
@@ -2870,7 +2838,7 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	memcpy(net_buf_tail(buf) - 12, &cnt, sizeof(cnt));
 
 	BT_DBG("Sign data len %u key %s count %u", buf->len,
-	       h(keys->local_csrk.val, 16), keys->local_csrk.cnt);
+	       bt_hex(keys->local_csrk.val, 16), keys->local_csrk.cnt);
 
 	err = smp_sign_buf(keys->local_csrk.val, buf->data, buf->len - 12);
 	if (err) {
@@ -3003,8 +2971,8 @@ static int sign_test(const char *prefix, const uint8_t *key, const uint8_t *m,
 		BT_DBG("%s: Original message intact", prefix);
 	} else {
 		BT_ERR("%s: Original message modified", prefix);
-		BT_DBG("%s: orig %s", prefix, h(orig, sizeof(orig)));
-		BT_DBG("%s: msg %s", prefix, h(msg, sizeof(msg)));
+		BT_DBG("%s: orig %s", prefix, bt_hex(orig, sizeof(orig)));
+		BT_DBG("%s: msg %s", prefix, bt_hex(msg, sizeof(msg)));
 		return -1;
 	}
 
