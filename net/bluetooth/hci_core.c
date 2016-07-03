@@ -72,7 +72,7 @@ const struct bt_storage *bt_storage;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
-static uint8_t pub_key[16];
+static uint8_t pub_key[64];
 static struct bt_pub_key_cb *pub_key_cb;
 static bt_dh_key_cb_t dh_key_cb;
 
@@ -2091,7 +2091,7 @@ static void le_pkey_complete(struct net_buf *buf)
 	atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
 
 	if (!evt->status) {
-		memcpy(pub_key, evt->key, 16);
+		memcpy(pub_key, evt->key, 64);
 		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 	}
 
