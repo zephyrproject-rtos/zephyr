@@ -127,6 +127,19 @@ int net_send(struct net_buf *buf)
 		uip_appdatalen(buf) = buf->len;
 	}
 
+	switch (sys_execution_context_type_get()) {
+	case NANO_CTX_ISR:
+		break;
+	case NANO_CTX_FIBER:
+		fiber_yield();
+		break;
+	case NANO_CTX_TASK:
+#ifdef CONFIG_MICROKERNEL
+		task_yield();
+#endif
+		break;
+	}
+
 #ifdef CONFIG_NETWORKING_WITH_TCP
 #define MAX_TCP_RETRY_COUNT 3
 	if (ip_buf_context(buf) &&
@@ -514,6 +527,19 @@ int net_reply(struct net_context *context, struct net_buf *buf)
 	tuple = net_context_get_tuple(context);
 	if (!tuple) {
 		return -ENOENT;
+	}
+
+	switch (sys_execution_context_type_get()) {
+	case NANO_CTX_ISR:
+		break;
+	case NANO_CTX_FIBER:
+		fiber_yield();
+		break;
+	case NANO_CTX_TASK:
+#ifdef CONFIG_MICROKERNEL
+		task_yield();
+#endif
+		break;
 	}
 
 	switch (tuple->ip_proto) {
