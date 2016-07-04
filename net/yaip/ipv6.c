@@ -459,6 +459,7 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 	struct net_icmpv6_nd_opt_hdr *hdr;
 	struct net_if_addr *ifaddr;
 	uint8_t flags = 0, llao_len, prev_opt_len = 0;
+	size_t left_len;
 
 	dbg_addr_recv_tgt("Neighbor Solicitation",
 			  &NET_IPV6_BUF(buf)->src,
@@ -487,7 +488,11 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 		goto drop;
 	}
 
-	while (net_nbuf_ext_opt_len(buf) < buf->frags->len) {
+	left_len = buf->frags->len - (sizeof(struct net_ipv6_hdr) +
+				      sizeof(struct net_icmp_hdr));
+
+	while (net_nbuf_ext_opt_len(buf) < left_len &&
+	       left_len < buf->frags->len) {
 
 		if (!hdr->len) {
 			break;
@@ -781,6 +786,7 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 	struct net_if_addr *ifaddr;
 	uint8_t *tllao = NULL;
 	uint8_t prev_opt_len = 0;
+	size_t left_len;
 
 	dbg_addr_recv_tgt("Neighbor Advertisement",
 			  &NET_IPV6_BUF(buf)->src,
@@ -812,7 +818,11 @@ static enum net_verdict handle_na_input(struct net_buf *buf)
 		goto drop;
 	}
 
-	while (net_nbuf_ext_opt_len(buf) < buf->frags->len) {
+	left_len = buf->frags->len - (sizeof(struct net_ipv6_hdr) +
+				      sizeof(struct net_icmp_hdr));
+
+	while (net_nbuf_ext_opt_len(buf) < left_len &&
+	       left_len < buf->frags->len) {
 
 		if (!hdr->len) {
 			break;
@@ -1289,6 +1299,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 	struct net_if_router *router;
 	struct net_nbr *nbr = NULL;
 	uint8_t prev_opt_len = 0;
+	size_t left_len;
 
 	dbg_addr_recv("Router Advertisement",
 		      &NET_IPV6_BUF(buf)->src,
@@ -1338,7 +1349,11 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 		goto drop;
 	}
 
-	while (net_nbuf_ext_opt_len(buf) < buf->frags->len) {
+	left_len = buf->frags->len - (sizeof(struct net_ipv6_hdr) +
+				      sizeof(struct net_icmp_hdr));
+
+	while (net_nbuf_ext_opt_len(buf) < left_len &&
+	       left_len < buf->frags->len) {
 
 		if (!hdr->len) {
 			break;
