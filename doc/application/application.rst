@@ -21,6 +21,7 @@ These subsections explain the entire build process in more detail:
 .. toctree::
    :maxdepth: 1
 
+   apps_overview
    apps_dev_process
    apps_structure
    apps_kernel_conf
