@@ -295,6 +295,57 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #endif /* NET_DEBUG */
 
 #if defined(CONFIG_NET_IPV6_ND)
+#define NS_REPLY_TIMEOUT (sys_clock_ticks_per_sec * 1)
+
+static void ns_reply_timeout(struct nano_work *work)
+{
+	/* We did not receive reply to a sent NS */
+	struct net_nbr_data *data = CONTAINER_OF(work,
+						 struct net_nbr_data,
+						 send_ns);
+
+	struct net_nbr *nbr = get_nbr_from_data(data);
+
+	if (!data) {
+		NET_DBG("NS timeout but no nbr data");
+		return;
+	}
+
+	if (!data->pending) {
+		/* Silently return, this is not an error as the work
+		 * cannot be cancelled in certain cases.
+		 */
+		return;
+	}
+
+	NET_DBG("NS nbr %p pending %p timeout to %s", nbr, data->pending,
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(data->pending)->dst));
+
+	/* To unref when pending variable was set */
+	net_nbuf_unref(data->pending);
+
+	/* To unref the original buf allocation */
+	net_nbuf_unref(data->pending);
+
+	data->pending = NULL;
+
+	net_nbr_unref(nbr);
+}
+
+static inline void nbr_clear_ns_pending(struct net_nbr_data *data)
+{
+	int ret;
+
+	ret = nano_delayed_work_cancel(&data->send_ns);
+	if (ret < 0) {
+		NET_DBG("Cannot cancel NS work (%d)", ret);
+	}
+
+	net_nbuf_unref(data->pending);
+
+	data->pending = NULL;
+}
+
 struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 {
 	struct net_nbr *nbr;
@@ -802,7 +853,7 @@ send_pending:
 
 	if (net_send_data(pending) < 0) {
 		net_nbuf_unref(pending);
-		net_nbr_data(nbr)->pending = NULL;
+		nbr_clear_ns_pending(net_nbr_data(nbr));
 	}
 
 	return true;
@@ -1003,13 +1054,19 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	if (pending) {
 		if (!net_nbr_data(nbr)->pending) {
-			net_nbr_data(nbr)->pending = pending;
+			net_nbr_data(nbr)->pending = net_nbuf_ref(pending);
 		} else {
 			NET_DBG("Buffer %p already pending for operation. "
 				"Discarding this buf %p",
 				net_nbr_data(nbr)->pending, buf);
+			net_nbuf_unref(pending);
 			goto drop;
 		}
+
+		nano_delayed_work_init(&net_nbr_data(nbr)->send_ns,
+				       ns_reply_timeout);
+		nano_delayed_work_submit(&net_nbr_data(nbr)->send_ns,
+					 NS_REPLY_TIMEOUT);
 	}
 
 	dbg_addr_sent_tgt("Neighbor Solicitation",
@@ -1458,7 +1515,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 			net_nbuf_unref(net_nbr_data(nbr)->pending);
 		}
 
-		net_nbr_data(nbr)->pending = NULL;
+		nbr_clear_ns_pending(net_nbr_data(nbr));
 	}
 
 	net_nbuf_unref(buf);
