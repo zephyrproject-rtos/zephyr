@@ -162,7 +162,7 @@ struct net_stats {
 	struct net_stats_udp udp;
 #endif
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IPV6_ND)
 	struct net_stats_ipv6_nd ipv6_nd;
 #endif
 };

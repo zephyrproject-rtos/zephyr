@@ -83,6 +83,12 @@ static inline void stats(void)
 		      GET_STAT(ipv6.sent),
 		      GET_STAT(ipv6.drop),
 		      GET_STAT(ipv6.forwarded));
+#if defined(CONFIG_NET_IPV6_ND)
+		PRINT("IPv6 ND recv   %d\tsent\t%d\tdrop\t%d",
+		      GET_STAT(ipv6_nd.recv),
+		      GET_STAT(ipv6_nd.sent),
+		      GET_STAT(ipv6_nd.drop));
+#endif /* CONFIG_NET_IPV6_ND */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
