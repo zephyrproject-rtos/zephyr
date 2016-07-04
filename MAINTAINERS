@@ -111,6 +111,12 @@ F:	include/sys_io.h
 F:	include/toolchain.h
 F:	include/zephyr.h
 
+KNOWN ISSUES
+M:	Anas Nashif <anas.nashif@intel.com>
+M:	Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>
+M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
+F:	.known-issues/
+
 MAINTAINERS
 M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
 M:	Anas Nashif <anas.nashif@intel.com>
@@ -204,13 +210,6 @@ M:	Allan Stephens <allan.stephens@windriver.com>
 S:	Supported
 F:	arch/x86/
 F:	include/arch/x86/
-
-KNOWN ISSUES
-M:	Anas Nashif <anas.nashif@intel.com>
-M:	Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>
-M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
-F:	.known-issues/
-
 
 THE REST
 M:	Anas Nashif <anas.nashif@intel.com>
