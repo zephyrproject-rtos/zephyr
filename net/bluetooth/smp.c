@@ -2556,22 +2556,23 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (hdr->code >= ARRAY_SIZE(handlers) || !handlers[hdr->code].func) {
 		BT_WARN("Unhandled SMP code 0x%02x", hdr->code);
-		err = BT_SMP_ERR_CMD_NOTSUPP;
-	} else {
-		if (!atomic_test_and_clear_bit(&smp->allowed_cmds, hdr->code)) {
-			BT_WARN("Unexpected SMP code 0x%02x", hdr->code);
-			return;
-		}
-
-		if (buf->len != handlers[hdr->code].expect_len) {
-			BT_ERR("Invalid len %u for code 0x%02x", buf->len,
-			       hdr->code);
-			err = BT_SMP_ERR_INVALID_PARAMS;
-		} else {
-			err = handlers[hdr->code].func(smp, buf);
-		}
+		smp_error(smp, BT_SMP_ERR_CMD_NOTSUPP);
+		return;
 	}
 
+	if (!atomic_test_and_clear_bit(&smp->allowed_cmds, hdr->code)) {
+		BT_WARN("Unexpected SMP code 0x%02x", hdr->code);
+		smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
+		return;
+	}
+
+	if (buf->len != handlers[hdr->code].expect_len) {
+		BT_ERR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
+		smp_error(smp, BT_SMP_ERR_INVALID_PARAMS);
+		return;
+	}
+
+	err = handlers[hdr->code].func(smp, buf);
 	if (err) {
 		smp_error(smp, err);
 	}
