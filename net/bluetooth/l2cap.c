@@ -194,12 +194,17 @@ static void l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("conn %p chan %p", chan->conn, chan);
 
-	chan->conn = NULL;
+	if (!chan->conn) {
+		goto destroy;
+	}
 
 	if (chan->ops && chan->ops->disconnected) {
 		chan->ops->disconnected(chan);
 	}
 
+	chan->conn = NULL;
+
+destroy:
 	if (chan->destroy) {
 		chan->destroy(chan);
 	}
