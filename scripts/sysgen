@@ -700,7 +700,7 @@ def kernel_main_c_pools():
 
         # append memory pool descriptor info
 
-        pool_descriptors += "    {%d, %d, 2, %d, %d, %d, NULL, %s, %s},\n" % \
+        pool_descriptors += "    {%d, %d, %d, %d, %d, NULL, %s, %s},\n" % \
             (max_block_size, min_block_size_actual, total_memory,
             num_maximal_blocks, frag_levels, frag_table, buffer)
 

@@ -301,10 +301,6 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
  * @file
  * @brief Memory pool kernel services
  *
- *
- * not implemented: check if we go below the minimal number of blocks with
- * the maximum size
- *
  * @return pointer to allocated block, or NULL if none available
  */
 static char *get_block_recusive(struct pool_struct *P, int index, int startindex)

@@ -392,7 +392,6 @@ struct pool_block {
 struct pool_struct {
 	int maxblock_size;
 	int minblock_size;
-	int min_nr_blocks;
 	int total_mem;
 	int nr_of_maxblocks;
 	int nr_of_frags;
