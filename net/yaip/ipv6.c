@@ -959,8 +959,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 		net_buf_add(frag,
 			    sizeof(struct net_ipv6_hdr) +
 			    sizeof(struct net_icmp_hdr) +
-			    sizeof(struct net_icmpv6_ns_hdr) +
-			    sizeof(struct net_icmpv6_nd_opt_hdr) + llao_len);
+			    sizeof(struct net_icmpv6_ns_hdr) + llao_len);
 	}
 
 	NET_ICMP_BUF(buf)->chksum = 0;
