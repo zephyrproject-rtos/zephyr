@@ -39,32 +39,24 @@ void _k_mem_pool_init(void)
 {
 	int i, j, k;
 	struct pool_struct *P;
-	char *memptr;
 
-	/* for all pools initialise largest blocks */
+	/* perform initialization for each memory pool */
+
 	for (i = 0, P = _k_mem_pool_list; i < _k_mem_pool_count; i++, P++) {
+
+		/*
+		 * mark block status array for largest block size
+		 * as owning all of the memory pool buffer space
+		 */
+
 		int remaining = P->nr_of_maxblocks;
 		int t = 0;
+		char *memptr = P->bufblock;
 
-		/* initialise block-arrays */
-		for (k = 0; k < P->nr_of_frags; k++) {
-			P->frag_tab[k].count = 0;
-			for (j = 0; j < P->frag_tab[k].nr_of_entries; j++) {
-				P->frag_tab[k].blocktable[j].mem_blocks = NULL;
-				P->frag_tab[k].blocktable[j].mem_status =
-					0xF; /* all blocks in use */
-			}
-		}
-
-		memptr = P->bufblock;
-
-		while (remaining >= 4) { /* while not all blocks allocated */
-			/* - put pointer in table - */
+		while (remaining >= 4) {
 			P->frag_tab[0].blocktable[t].mem_blocks = memptr;
-			P->frag_tab[0].blocktable[t].mem_status =
-				0; /* all blocks initial free */
-
-			t++; /* next entry in table  */
+			P->frag_tab[0].blocktable[t].mem_status = 0;
+			t++;
 			remaining = remaining - 4;
 			memptr +=
 				OCTET_TO_SIZEOFUNIT(P->frag_tab[0].block_size) *
@@ -72,12 +64,19 @@ void _k_mem_pool_init(void)
 		}
 
 		if (remaining != 0) {
-
-			/* - put pointer in table - */
 			P->frag_tab[0].blocktable[t].mem_blocks = memptr;
 			P->frag_tab[0].blocktable[t].mem_status =
-				(0xF << remaining) &
-				0xF; /* mark unaccessible blocks as used */
+				(0xF << remaining) & 0xF;
+			/* non-existent blocks are marked as unavailable */
+		}
+
+		/* mark all other block status arrays as owning no blocks */
+
+		for (k = 1; k < P->nr_of_frags; k++) {
+			for (j = 0; j < P->frag_tab[k].nr_of_entries; j++) {
+				P->frag_tab[k].blocktable[j].mem_blocks = NULL;
+				P->frag_tab[k].blocktable[j].mem_status = 0xF;
+			}
 		}
 	}
 }
