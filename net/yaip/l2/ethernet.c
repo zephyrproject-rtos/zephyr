@@ -78,11 +78,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	/* Set the pointers to ll src and dst addresses */
 	lladdr = net_nbuf_ll_src(buf);
 	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->src.addr;
-	lladdr->len = sizeof(struct net_eth_hdr);
+	lladdr->len = sizeof(struct net_eth_addr);
 
 	lladdr = net_nbuf_ll_dst(buf);
 	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->dst.addr;
-	lladdr->len = sizeof(struct net_eth_hdr);
+	lladdr->len = sizeof(struct net_eth_addr);
 
 	print_ll_addrs(buf, ntohs(hdr->type), net_buf_frags_len(buf));
 
