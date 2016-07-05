@@ -45,7 +45,7 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define ATT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_att, chan)
+#define ATT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_att, chan.chan)
 
 #define BT_GATT_PERM_READ_MASK			(BT_GATT_PERM_READ | \
 						BT_GATT_PERM_READ_ENCRYPT | \
