@@ -38,34 +38,7 @@ static inline void _nano_wait_q_init(struct _nano_queue *wait_q)
 	_nano_wait_q_reset(wait_q);
 }
 
-/*
- * Remove first fiber from a wait queue and put it on the ready queue, knowing
- * that the wait queue is not empty.
- */
-static inline
-struct tcs *_nano_wait_q_remove_no_check(struct _nano_queue *wait_q)
-{
-	struct tcs *tcs = wait_q->head;
-
-	if (wait_q->tail == wait_q->head) {
-		_nano_wait_q_reset(wait_q);
-	} else {
-		wait_q->head = tcs->link;
-	}
-	tcs->link = 0;
-
-	_nano_fiber_ready(tcs);
-	return tcs;
-}
-
-/*
- * Remove first fiber from a wait queue and put it on the ready queue.
- * Abort and return NULL if the wait queue is empty.
- */
-static inline struct tcs *_nano_wait_q_remove(struct _nano_queue *wait_q)
-{
-	return wait_q->head ? _nano_wait_q_remove_no_check(wait_q) : NULL;
-}
+struct tcs *_nano_wait_q_remove(struct _nano_queue *wait_q);
 
 /* put current fiber on specified wait queue */
 static inline void _nano_wait_q_put(struct _nano_queue *wait_q)
@@ -75,29 +48,7 @@ static inline void _nano_wait_q_put(struct _nano_queue *wait_q)
 }
 
 #if defined(CONFIG_NANO_TIMEOUTS)
-static inline void _nano_timeout_remove_tcs_from_wait_q(
-	struct tcs *tcs, struct _nano_queue *wait_q)
-{
-	if (wait_q->head == tcs) {
-		if (wait_q->tail == wait_q->head) {
-			_nano_wait_q_reset(wait_q);
-		} else {
-			wait_q->head = tcs->link;
-		}
-	} else {
-		struct tcs *prev = wait_q->head;
 
-		while (prev->link != tcs) {
-			prev = prev->link;
-		}
-		prev->link = tcs->link;
-		if (wait_q->tail == tcs) {
-			wait_q->tail = prev;
-		}
-	}
-
-	tcs->nano_timeout.wait_q = NULL;
-}
 #include <timeout_q.h>
 
 	#define _NANO_TIMEOUT_TICK_GET()  sys_tick_get()
@@ -131,7 +82,6 @@ static inline void _nano_timeout_remove_tcs_from_wait_q(
 	#define _nano_timeout_tcs_init(tcs) do { } while ((0))
 	#define _nano_timeout_abort(tcs) do { } while ((0))
 	#define _nano_get_earliest_timeouts_deadline() ((uint32_t)TICKS_UNLIMITED)
-
 	#define _NANO_TIMEOUT_TICK_GET()  0
 	#define _NANO_TIMEOUT_ADD(pq, ticks) do { } while (0)
 	#define _NANO_TIMEOUT_SET_TASK_TIMEOUT(ticks) do { } while ((0))
