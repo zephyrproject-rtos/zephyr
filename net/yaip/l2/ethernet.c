@@ -22,6 +22,7 @@
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
+#include <net/ethernet.h>
 #include <net/arp.h>
 
 #include "net_private.h"
@@ -226,7 +227,10 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		frag = frag->frags;
 	}
 
+#ifdef CONFIG_NET_ARP
 send:
+#endif /* CONFIG_NET_ARP */
+
 	net_if_queue_tx(iface, buf);
 
 	return NET_OK;

@@ -35,6 +35,7 @@
 #include <net/buf.h>
 #include <net/nbuf.h>
 #include <net/net_if.h>
+#include <net/ethernet.h>
 #include <net/arp.h>
 #include <net/net_core.h>
 #include <console/uart_pipe.h>
