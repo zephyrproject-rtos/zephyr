@@ -667,9 +667,14 @@ def kernel_main_c_pools():
             frag_size_list.append(min_block_size_proposed)
         frag_levels = len(frag_size_list)
 
-        # determine size of block status arrays
-        # - largest size gets special handling
-        # - remainder of algorithm is a complete mystery ...
+        # determine size of block status arrays,
+	# from the largest block size to the smallest block size
+	# - each array must be big enough to track the status of
+	#   the entire memory pool buffer
+	# - each array entry tracks the status of 4 consecutive blocks
+        # - need to do rounding up with array for largest block size
+	#   in case the # of largest size blocks isn't a multiple of 4
+	#   (i.e. it's final array entry may be partly unused)
 
         block_status_sizes = [(num_maximal_blocks + 3) / 4]
         block_status_size_to_use = num_maximal_blocks
