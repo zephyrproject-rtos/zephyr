@@ -1,2 +1,2 @@
 obj-y = main.o
-ccflags-y += -I${srctree}/net/yaip
+ccflags-y += -I${ZEPHYR_BASE}/net/yaip
