@@ -788,8 +788,7 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		l2cap_br_conn_req(l2cap, hdr->ident, buf);
 		break;
 	case BT_L2CAP_CONF_RSP:
-		l2cap_br_conf_rsp(l2cap, hdr->ident, sys_le16_to_cpu(hdr->len),
-				  buf);
+		l2cap_br_conf_rsp(l2cap, hdr->ident, len, buf);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
