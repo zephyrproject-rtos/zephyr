@@ -454,12 +454,11 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 	NET_DBG("Neighbor lookup %p", nbr);
 
 	if (!nbr) {
-		nbr = nbr_add(buf, &NET_IPV6_BUF(buf)->src, &lladdr,
-			      false, NET_NBR_STALE);
+		nbr = nbr_new(&NET_ICMPV6_NS_BUF(buf)->tgt, NET_NBR_INCOMPLETE);
 
-		NET_ASSERT_INFO(nbr, "Could not add neighbor %s [%s]",
-				net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src),
-				net_sprint_ll_addr(lladdr.addr, lladdr.len));
+		NET_ASSERT_INFO(nbr, "Could not add neighbor %s",
+			net_sprint_ipv6_addr(&NET_ICMPV6_NS_BUF(buf)->tgt));
+
 		return;
 	}
 
