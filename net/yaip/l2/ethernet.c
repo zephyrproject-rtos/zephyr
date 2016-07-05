@@ -86,6 +86,19 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	print_ll_addrs(buf, ntohs(hdr->type), net_buf_frags_len(buf));
 
+	if (!net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr) &&
+	    !net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr) &&
+	    !net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
+		/* The ethernet frame is not for me as the link addresses
+		 * are different.
+		 */
+		NET_DBG("Dropping frame, not for me [%s]",
+			net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+					   sizeof(struct net_eth_addr)));
+
+		return NET_DROP;
+	}
+
 #ifdef CONFIG_NET_ARP
 	if (net_nbuf_family(buf) == AF_INET &&
 	    hdr->type == htons(NET_ETH_PTYPE_ARP)) {
