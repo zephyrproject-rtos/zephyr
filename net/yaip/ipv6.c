@@ -21,6 +21,11 @@
 #ifdef CONFIG_NETWORK_IP_STACK_DEBUG_IPV6
 #define SYS_LOG_DOMAIN "net/ipv6"
 #define NET_DEBUG 1
+
+/* By default this prints too much data, set the value to 1 to see
+ * neighbor cache contents.
+ */
+#define NET_DEBUG_NBR 0
 #endif
 
 #include <errno.h>
@@ -103,6 +108,37 @@ static inline struct net_nbr *get_nbr_from_data(struct net_nbr_data *data)
 	return NULL;
 }
 
+#if NET_DEBUG_NBR
+void nbr_print(void)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+
+		if (!nbr->ref) {
+			continue;
+		}
+
+		NET_DBG("[%d] %p %d/%d/%d/%d/%d pending %p iface %p idx %d "
+			"ll %s addr %s",
+			i, nbr, nbr->ref, net_nbr_data(nbr)->ns_count,
+			net_nbr_data(nbr)->is_router,
+			net_nbr_data(nbr)->state,
+			net_nbr_data(nbr)->link_metric,
+			net_nbr_data(nbr)->pending,
+			nbr->iface, nbr->idx,
+			nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
+			net_sprint_ll_addr(
+				net_nbr_get_lladdr(nbr->idx)->addr,
+				net_nbr_get_lladdr(nbr->idx)->len),
+			net_sprint_ipv6_addr(&net_nbr_data(nbr)->addr));
+	}
+}
+#else
+#define nbr_print(...)
+#endif
+
 static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 				  struct net_if *iface,
 				  struct in6_addr *addr)
@@ -145,6 +181,11 @@ static struct net_nbr *nbr_add(struct net_buf *buf,
 	net_ipaddr_copy(&net_nbr_data(nbr)->addr, addr);
 	net_nbr_data(nbr)->state = state;
 	net_nbr_data(nbr)->is_router = is_router;
+
+	NET_DBG("nbr %p state %d router %d IPv6 %s ll %s",
+		nbr, state, is_router,
+		net_sprint_ipv6_addr(addr),
+		net_sprint_ll_addr(lladdr->addr, lladdr->len));
 
 	return nbr;
 }
@@ -451,7 +492,9 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_IPV6_BUF(buf)->src);
 
-	NET_DBG("Neighbor lookup %p", nbr);
+	NET_DBG("Neighbor lookup %p iface %p addr %s", nbr,
+		net_nbuf_iface(buf),
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
 
 	if (!nbr) {
 		nbr = nbr_new(&NET_ICMPV6_NS_BUF(buf)->tgt, NET_NBR_INCOMPLETE);
@@ -729,9 +772,13 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_ICMPV6_NS_BUF(buf)->tgt);
 
-	NET_DBG("Neighbor lookup %p", nbr);
+	NET_DBG("Neighbor lookup %p iface %p addr %s", nbr,
+		net_nbuf_iface(buf),
+		net_sprint_ipv6_addr(&NET_ICMPV6_NS_BUF(buf)->tgt));
 
 	if (!nbr) {
+		nbr_print();
+
 		NET_DBG("No such neighbor found, msg discarded");
 		return false;
 	}
@@ -751,6 +798,11 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 			net_nbr_unref(nbr);
 			return false;
 		}
+
+		NET_DBG("nbr %p state %d IPv6 %s ll %s",
+			nbr, net_nbr_data(nbr)->state,
+			net_sprint_ipv6_addr(&NET_ICMPV6_NS_BUF(buf)->tgt),
+			net_sprint_ll_addr(lladdr.addr, lladdr.len));
 	}
 
 	cached_lladdr = net_nbr_get_lladdr(nbr->idx);
@@ -1060,9 +1112,9 @@ int net_ipv6_send_ns(struct net_if *iface,
 		if (!net_nbr_data(nbr)->pending) {
 			net_nbr_data(nbr)->pending = net_nbuf_ref(pending);
 		} else {
-			NET_DBG("Buffer %p already pending for operation. "
-				"Discarding this buf %p",
-				net_nbr_data(nbr)->pending, buf);
+			NET_DBG("Buffer %p already pending for "
+				"operation. Discarding pending %p and buf %p",
+				net_nbr_data(nbr)->pending, pending, buf);
 			net_nbuf_unref(pending);
 			goto drop;
 		}
@@ -1183,9 +1235,13 @@ static inline struct net_nbr *handle_ra_neighbor(struct net_buf *buf,
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_IPV6_BUF(buf)->src);
 
-	NET_DBG("Neighbor lookup %p", nbr);
+	NET_DBG("Neighbor lookup %p iface %p addr %s", nbr,
+		net_nbuf_iface(buf),
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
 
 	if (!nbr) {
+		nbr_print();
+
 		nbr = nbr_add(buf, &NET_IPV6_BUF(buf)->src, &lladdr,
 			      true, NET_NBR_STALE);
 
@@ -1513,7 +1569,8 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 	}
 
 	if (net_nbr_data(nbr)->pending) {
-		NET_DBG("Sending pending buf to %s",
+		NET_DBG("Sending pending buf %p to %s",
+			net_nbr_data(nbr)->pending,
 			net_sprint_ipv6_addr(&NET_IPV6_BUF(
 					net_nbr_data(nbr)->pending)->dst));
 
