@@ -40,6 +40,9 @@
 
 #if defined(CONFIG_NET_IPV6_ND)
 
+#define MAX_MULTICAST_SOLICIT 3
+#define MAX_UNICAST_SOLICIT   3
+
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
 
@@ -783,6 +786,98 @@ drop:
 	return NET_DROP;
 }
 
+static void nd_reachable_timeout(struct nano_work *work)
+{
+	struct net_nbr_data *data = CONTAINER_OF(work,
+						 struct net_nbr_data,
+						 send_ns);
+
+	struct net_nbr *nbr = get_nbr_from_data(data);
+
+	if (!data) {
+		NET_DBG("ND reachable timeout but no nbr data");
+		return;
+	}
+
+	switch (data->state) {
+
+	case NET_NBR_INCOMPLETE:
+		if (data->ns_count >= MAX_MULTICAST_SOLICIT) {
+			nbr_free(nbr);
+		} else {
+			data->ns_count++;
+
+			NET_DBG("nbr %p incomplete count %u", nbr,
+				data->ns_count);
+
+			net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
+					 &data->addr, false);
+		}
+		break;
+
+	case NET_NBR_REACHABLE:
+		data->state = NET_NBR_STALE;
+
+		NET_DBG("nbr %p moving %s state to STALE (%d)",
+			nbr, net_sprint_ipv6_addr(&data->addr), data->state);
+		break;
+
+	case NET_NBR_STALE:
+		NET_DBG("nbr %p removing stale address %s",
+			nbr, net_sprint_ipv6_addr(&data->addr));
+		nbr_free(nbr);
+		break;
+
+	case NET_NBR_DELAY:
+		data->state = NET_NBR_PROBE;
+		data->ns_count = 0;
+
+		NET_DBG("nbr %p moving %s state to PROBE (%d)",
+			nbr, net_sprint_ipv6_addr(&data->addr), data->state);
+		break;
+
+	case NET_NBR_PROBE:
+		if (data->ns_count >= MAX_UNICAST_SOLICIT) {
+			struct net_if_router *router;
+
+			router = net_if_ipv6_router_lookup(nbr->iface,
+							   &data->addr);
+			if (router && !router->is_infinite) {
+				NET_DBG("nbr %p address %s PROBE ended",
+					nbr, net_sprint_ipv6_addr(&data->addr),
+					data->state);
+
+				net_if_router_rm(router);
+				nbr_free(nbr);
+			}
+		} else {
+			data->ns_count++;
+
+			NET_DBG("nbr %p probe count %u", nbr,
+				data->ns_count);
+
+			net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
+					 &data->addr, false);
+		}
+		break;
+	}
+}
+
+static inline void set_reachable_timeout(struct net_if *iface,
+					 struct net_nbr *nbr)
+{
+	uint32_t time;
+
+	time = MSEC(net_if_ipv6_get_reachable_time(iface));
+
+	NET_ASSERT_INFO(time, "Zero reachable timeout!");
+
+	nano_delayed_work_init(&net_nbr_data(nbr)->reachable,
+			       nd_reachable_timeout);
+
+	nano_delayed_work_submit(&net_nbr_data(nbr)->reachable, time);
+}
+
 static inline bool handle_na_neighbor(struct net_buf *buf,
 				      struct net_icmpv6_nd_opt_hdr *hdr,
 				      uint8_t *tllao)
@@ -861,7 +956,7 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 			net_nbr_data(nbr)->state = NET_NBR_REACHABLE;
 			net_nbr_data(nbr)->ns_count = 0;
 
-			/* FIXME - reachable timer here */
+			set_reachable_timeout(net_nbuf_iface(buf), nbr);
 		} else {
 			net_nbr_data(nbr)->state = NET_NBR_STALE;
 		}
@@ -899,7 +994,7 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		if (net_is_solicited(buf)) {
 			net_nbr_data(nbr)->state = NET_NBR_REACHABLE;
 
-			/* FIXME - rechable timer here */
+			set_reachable_timeout(net_nbuf_iface(buf), nbr);
 		} else {
 			if (lladdr_changed) {
 				net_nbr_data(nbr)->state = NET_NBR_STALE;
