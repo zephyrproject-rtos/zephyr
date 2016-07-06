@@ -475,37 +475,43 @@ void _k_mem_pool_block_get(struct k_args *A)
 	int start_size;
 	int offset;
 
-	/* calculate start size */
+	/* compute smallest block size that will satisfy request */
+
+	__ASSERT(A->args.p1.req_size <= P->maxblock_size,
+		 "Request exceeds maximum memory pool block size\n");
+
 	start_size = P->minblock_size;
 	offset = P->nr_of_frags - 1;
 
 	while (A->args.p1.req_size > start_size) {
-		start_size = start_size << 2; /*try one larger */
+		start_size = start_size << 2;
 		offset--;
 	}
 
-	/* startsize==the available size that can contain the requeste block size */
-	/* offset: index in fragtable of the minimal blocksize */
+	/*
+	 * try allocating a block of the computed size
+	 * (fragmenting a larger block to create one, if necessary)
+	 */
 
-	found_block =
-		get_block_recusive(P, offset, offset); /* allocate and fragment blocks */
+	found_block = get_block_recusive(P, offset, offset);
 
 	if (found_block != NULL) {
 		A->args.p1.rep_poolptr = found_block;
 		A->args.p1.rep_dataptr = found_block;
 		A->Time.rcode = RC_OK;
-		return; /* return found block */
+		return;
 	}
 
-	if (likely(
-		    (A->Time.ticks != TICKS_NONE) &&
-		    (A->args.p1.req_size <=
-		     P->maxblock_size))) {/* timeout?  but not block to large */
+	/*
+	 * no suitable block is currently available,
+	 * so either wait for one to appear or indicate failure
+	 */
+
+	if (likely(A->Time.ticks != TICKS_NONE)) {
 		A->priority = _k_current_task->priority;
 		A->Ctxt.task = _k_current_task;
-		_k_state_bit_set(_k_current_task, TF_GTBL); /* extra new statebit */
+		_k_state_bit_set(_k_current_task, TF_GTBL);
 
-		/* INSERT_ELM (P->frag_tab[offset].waiters, A); */
 		INSERT_ELM(P->waiters, A);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -517,8 +523,7 @@ void _k_mem_pool_block_get(struct k_args *A)
 		}
 #endif
 	} else {
-		A->Time.rcode =
-			RC_FAIL; /* no blocks available or block too large */
+		A->Time.rcode = RC_FAIL;
 	}
 }
 
