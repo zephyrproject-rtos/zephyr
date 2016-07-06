@@ -1219,7 +1219,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
-			 &NET_IPV6_BUF(buf)->dst);
+			 &NET_ICMPV6_NS_BUF(buf)->tgt);
 	if (!nbr) {
 		nbr_print();
 
