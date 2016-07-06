@@ -72,6 +72,7 @@ F:	samples/bluetooth/
 F:	tests/bluetooth/
 
 DOCUMENTATION
+M:	Kinder, David <david.b.kinder@intel.com>
 M:	Perez-Gonzalez, Inaky <inaky.perez-gonzalez@intel.com>
 S:	Supported
 F:	doc/
