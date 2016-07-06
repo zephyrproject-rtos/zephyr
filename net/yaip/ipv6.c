@@ -1015,14 +1015,18 @@ send_pending:
 	/* Next send any pending messages to the peer. */
 	pending = net_nbr_data(nbr)->pending;
 
-	NET_DBG("Sending pending to %s lladdr %s",
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(pending)->dst),
-		net_sprint_ll_addr(cached_lladdr->addr,
-				   cached_lladdr->len));
+	if (pending) {
+		NET_DBG("Sending pending %p to %s lladdr %s", pending,
+			net_sprint_ipv6_addr(&NET_IPV6_BUF(pending)->dst),
+			net_sprint_ll_addr(cached_lladdr->addr,
+					   cached_lladdr->len));
 
-	if (net_send_data(pending) < 0) {
-		net_nbuf_unref(pending);
-		nbr_clear_ns_pending(net_nbr_data(nbr));
+		if (net_send_data(pending) < 0) {
+			net_nbuf_unref(pending);
+			nbr_clear_ns_pending(net_nbr_data(nbr));
+		} else {
+			net_nbr_data(nbr)->pending = NULL;
+		}
 	}
 
 	return true;
