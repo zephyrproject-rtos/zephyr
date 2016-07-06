@@ -214,80 +214,53 @@ void task_mem_pool_defragment(kmemory_pool_t Pid)
 
 /**
  *
- * @brief Allocate block using specified fragmentation level
+ * @brief Allocate block from an existing block set
  *
- * This routine attempts to allocate a free block. [NEED TO EXPAND THIS]
+ * @param pfraglevelinfo block set descriptor
+ * @param piblockindex area to return index of first unused quad-block
+ *                     when allocation fails
  *
  * @return pointer to allocated block, or NULL if none available
  */
-static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
-						    int *piblockindex)
+static char *get_existing_block(struct pool_block *pfraglevelinfo,
+				int *piblockindex)
 {
-	int i, status, end_of_list;
-	char *found;
+	char *found = NULL;
+	int i = 0;
+	int status;
+	int free_bit;
 
-	i = 0;
-	end_of_list = 0;
-	found = NULL;
-
-	while (!end_of_list) {/* search list */
+	do {
+		/* give up if no more quad-blocks in block set */
 
 		if (pfraglevelinfo->blocktable[i].mem_blocks == NULL) {
-			end_of_list = 1;
-		} else {
-			status = pfraglevelinfo->blocktable[i].mem_status;
-			if (!(status & 1)) {
-				found = pfraglevelinfo->blocktable[i]
-						.mem_blocks;
-				pfraglevelinfo->blocktable[i].mem_status |=
-					1; /* set status used */
-#ifdef CONFIG_OBJECT_MONITOR
-				pfraglevelinfo->count++;
-#endif
-				break;
-			} else if (!(status & 2)) {
-				found = pfraglevelinfo->blocktable[i]
-						.mem_blocks +
-					(OCTET_TO_SIZEOFUNIT(
-						pfraglevelinfo->block_size));
-				pfraglevelinfo->blocktable[i].mem_status |=
-					2; /* set status used */
-#ifdef CONFIG_OBJECT_MONITOR
-				pfraglevelinfo->count++;
-#endif
-				break;
-			} else if (!(status & 4)) {
-				found = pfraglevelinfo->blocktable[i]
-						.mem_blocks +
-					(OCTET_TO_SIZEOFUNIT(
-						2 *
-						pfraglevelinfo->block_size));
-				pfraglevelinfo->blocktable[i].mem_status |=
-					4; /* set status used */
-#ifdef CONFIG_OBJECT_MONITOR
-				pfraglevelinfo->count++;
-#endif
-				break;
-			} else if (!(status & 8)) {
-				found = pfraglevelinfo->blocktable[i]
-						.mem_blocks +
-					(OCTET_TO_SIZEOFUNIT(
-						3 *
-						pfraglevelinfo->block_size));
-				pfraglevelinfo->blocktable[i].mem_status |=
-					8; /* set status used */
-#ifdef CONFIG_OBJECT_MONITOR
-				pfraglevelinfo->count++;
-#endif
-				break;
-			}
-
-			i++;
-			if (i >= pfraglevelinfo->nr_of_entries) {
-				end_of_list = 1;
-			}
+			break;
 		}
-	} /* while (...) */
+
+		/* allocate a block from current quad-block, if possible */
+
+		status = pfraglevelinfo->blocktable[i].mem_status;
+		if (status != 0xF) {
+			/* identify first free block */
+			free_bit = find_lsb_set(~status) - 1;
+
+			/* compute address of free block */
+			found = pfraglevelinfo->blocktable[i].mem_blocks +
+				(OCTET_TO_SIZEOFUNIT(free_bit *
+					pfraglevelinfo->block_size));
+
+			/* mark block as unavailable */
+			pfraglevelinfo->blocktable[i].mem_status |=
+				1 << free_bit;
+#ifdef CONFIG_OBJECT_MONITOR
+			pfraglevelinfo->count++;
+#endif
+			break;
+		}
+
+		/* move on to next quad block; give up if at end of array */
+
+	} while (++i < pfraglevelinfo->nr_of_entries);
 
 	*piblockindex = i;
 	return found;
@@ -316,7 +289,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 	i = 0;
 
 	/* let's inspect the fragmentation level <index> */
-	found = search_block_on_frag_level(&(fr_table[index]), &i);
+	found = get_existing_block(&(fr_table[index]), &i);
 	if (found != NULL) {
 		return found;
 	}
@@ -330,7 +303,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 				     * (fragmentation level) !!
 				     */
 
-		found = search_block_on_frag_level(&(fr_table[index]), &i);
+		found = get_existing_block(&(fr_table[index]), &i);
 		if (found != NULL) {
 			return found;
 		}
@@ -366,7 +339,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 				     * (fragmentation level) !!
 				     */
 
-		found = search_block_on_frag_level(&(fr_table[index]), &i);
+		found = get_existing_block(&(fr_table[index]), &i);
 		if (found != NULL) {
 			return found;
 		}
