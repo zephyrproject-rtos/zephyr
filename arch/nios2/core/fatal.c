@@ -103,7 +103,66 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	_SysFatalErrorHandler(reason, esf);
 }
 
-
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_PRINTK) \
+	&& defined(ALT_CPU_HAS_EXTRA_EXCEPTION_INFO)
+static char *cause_str(uint32_t cause_code)
+{
+	switch (cause_code) {
+	case 0:
+		return "reset";
+	case 1:
+		return "processor-only reset request";
+	case 2:
+		return "interrupt";
+	case 3:
+		return "trap";
+	case 4:
+		return "unimplemented instruction";
+	case 5:
+		return "illegal instruction";
+	case 6:
+		return "misaligned data address";
+	case 7:
+		return "misaligned destination address";
+	case 8:
+		return "division error";
+	case 9:
+		return "supervisor-only instruction address";
+	case 10:
+		return "supervisor-only instruction";
+	case 11:
+		return "supervisor-only data address";
+	case 12:
+		return "TLB miss";
+	case 13:
+		return "TLB permission violation (execute)";
+	case 14:
+		return "TLB permission violation (read)";
+	case 15:
+		return "TLB permission violation (write)";
+	case 16:
+		return "MPU region violation (instruction)";
+	case 17:
+		return "MPU region violation (data)";
+	case 18:
+		return "ECC TLB error";
+	case 19:
+		return "ECC fetch error (instruction)";
+	case 20:
+		return "ECC register file error";
+	case 21:
+		return "ECC data error";
+	case 22:
+		return "ECC data cache writeback error";
+	case 23:
+		return "bus instruction fetch error";
+	case 24:
+		return "bus data region violation";
+	default:
+		return "unknown";
+	}
+}
+#endif
 
 FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 {
@@ -121,7 +180,11 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	/* Bits 2-6 contain the cause code */
 	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
 		 >> NIOS2_EXCEPTION_REG_CAUSE_OFST;
+
 	printk("Exception cause: 0x%x ECCFTL: %d\n", cause, eccftl);
+#if CONFIG_EXTRA_EXCEPTION_INFO
+	printk("reason: %s\n", cause_str(cause));
+#endif
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
 		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
 		printk("Badaddr: 0x%x\n", badaddr_reg);

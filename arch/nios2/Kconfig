@@ -77,6 +77,15 @@ config INCLUDE_RESET_VECTOR
 	nios2-download tool since it refuses to load data anywhere other than
 	RAM.
 
+config EXTRA_EXCEPTION_INFO
+	bool "Extra exception debug information"
+	default n
+	help
+	Have exceptions print additional useful debugging information in
+	human-readable form, at the expense of code size. For example,
+	the cause code for an exception will be supplemented by a string
+	describing what that cause code means.
+
 choice
 prompt "Global Pointer options"
 default GP_GLOBAL
