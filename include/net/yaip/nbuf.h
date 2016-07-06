@@ -551,6 +551,15 @@ bool net_nbuf_is_compact(struct net_buf *buf);
 struct net_buf *net_nbuf_push(struct net_buf *parent, struct net_buf *buf,
 			      size_t amount);
 
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+/**
+ * @brief Debug helper to print out the buffer allocations
+ */
+void net_nbuf_print(void);
+#else /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+#define net_nbuf_print(...)
+#endif /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+
 #ifdef __cplusplus
 }
 #endif

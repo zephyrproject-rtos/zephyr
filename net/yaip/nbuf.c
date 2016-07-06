@@ -861,6 +861,16 @@ struct net_buf *net_nbuf_push(struct net_buf *parent,
 	return net_nbuf_compact(parent);
 }
 
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+void net_nbuf_print(void)
+{
+	NET_DBG("TX %d RX %d DATA %d",
+		get_frees(NET_NBUF_TX),
+		get_frees(NET_NBUF_RX),
+		get_frees(NET_NBUF_DATA));
+}
+#endif /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+
 void net_nbuf_init(void)
 {
 	NET_DBG("Allocating %d RX (%d bytes), %d TX (%d bytes) "
