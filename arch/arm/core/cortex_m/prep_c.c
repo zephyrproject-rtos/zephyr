@@ -30,53 +30,11 @@
 #include <stdint.h>
 #include <toolchain.h>
 #include <linker-defs.h>
-
-/**
- *
- * @brief Clear BSS
- *
- * This routine clears the BSS region, so all bytes are 0.
- *
- * @return N/A
- */
-
-static void bssZero(void)
-{
-	volatile uint32_t *pBSS = (uint32_t *)&__bss_start;
-	unsigned int n;
-
-	for (n = 0; n < (unsigned int)&__bss_num_words; n++) {
-		pBSS[n] = 0;
-	}
-}
-
-/**
- *
- * @brief Copy the data section from ROM to RAM
- *
- * This routine copies the data section from ROM to RAM.
- *
- * @return N/A
- */
+#include <nano_internal.h>
 
 #ifdef CONFIG_XIP
-static void dataCopy(void)
-{
-	volatile uint32_t *pROM = (uint32_t *)&__data_rom_start;
-	volatile uint32_t *pRAM = (uint32_t *)&__data_ram_start;
-	unsigned int n;
-
-	for (n = 0; n < (unsigned int)&__data_num_words; n++) {
-		pRAM[n] = pROM[n];
-	}
-}
-
 static inline void relocate_vector_table(void) { /* do nothing */ }
 #else
-static void dataCopy(void)
-{
-}
-
 static inline void relocate_vector_table(void)
 {
 	/* vector table is already in SRAM, just point to it */
@@ -136,8 +94,8 @@ void _PrepC(void)
 {
 	relocate_vector_table();
 	enable_floating_point();
-	bssZero();
-	dataCopy();
+	_bss_zero();
+	_data_copy();
 	_Cstart();
 	CODE_UNREACHABLE;
 }

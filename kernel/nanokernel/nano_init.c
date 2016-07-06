@@ -30,6 +30,7 @@
 #include <nano_private.h>
 #include <device.h>
 #include <init.h>
+#include <linker-defs.h>
 
 /* kernel build timestamp items */
 
@@ -133,6 +134,48 @@ extern ktask_t _k_task_ptr_idle _GENERIC_SECTION(_k_task_list);
 /* microkernel has its own implementation of _main() */
 
 extern void _main(void);
+#endif
+
+
+/**
+ *
+ * @brief Clear BSS
+ *
+ * This routine clears the BSS region, so all bytes are 0.
+ *
+ * @return N/A
+ */
+
+void _bss_zero(void)
+{
+	uint32_t *pos = (uint32_t *)&__bss_start;
+
+	for ( ; pos < (uint32_t *)&__bss_end; pos++) {
+		*pos = 0;
+	}
+}
+
+
+#ifdef CONFIG_XIP
+/**
+ *
+ * @brief Copy the data section from ROM to RAM
+ *
+ * This routine copies the data section from ROM to RAM.
+ *
+ * @return N/A
+ */
+void _data_copy(void)
+{
+	uint32_t *pROM, *pRAM;
+
+	pROM = (uint32_t *)&__data_rom_start;
+	pRAM = (uint32_t *)&__data_ram_start;
+
+	for ( ; pRAM < (uint32_t *)&__data_ram_end; pROM++, pRAM++) {
+		*pRAM = *pROM;
+	}
+}
 #endif
 
 /**

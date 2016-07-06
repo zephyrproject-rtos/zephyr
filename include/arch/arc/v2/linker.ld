@@ -279,7 +279,6 @@ SECTION_PROLOGUE (_k_task_list, (OPTIONAL),)
 	/* Define linker symbols */
 	_image_ram_end = .;
 	_end = .; /* end of image */
-	__bss_num_words = (__bss_end - __bss_start) >> 2;
 
 	GROUP_END(RAMABLE_REGION)
 
@@ -294,15 +293,3 @@ SECTION_PROLOGUE (_k_task_list, (OPTIONAL),)
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
 	}
-
-#ifdef CONFIG_XIP
-/*
- * Round up number of words for DATA section to ensure that XIP copies the
- * entire data section. XIP copy is done in words only, so there may be up
- * to 3 extra bytes copied in next section (BSS). At run time, the XIP copy
- * is done first followed by clearing the BSS section.
- */
-__data_size = (__data_ram_end - __data_ram_start);
-__data_num_words = (__data_size + 3) >> 2;
-
-#endif

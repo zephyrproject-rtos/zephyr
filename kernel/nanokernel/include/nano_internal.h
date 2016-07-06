@@ -31,6 +31,21 @@
 extern "C" {
 #endif
 
+#include <nanokernel.h>
+
+/* Early boot functions */
+
+void _bss_zero(void);
+#ifdef CONFIG_XIP
+void _data_copy(void);
+#else
+static inline void _data_copy(void)
+{
+	/* Do nothing */
+}
+#endif
+FUNC_NORETURN void _Cstart(void);
+
 /* helper type alias for thread control structure */
 
 typedef struct tcs tTCS;

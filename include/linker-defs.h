@@ -133,12 +133,10 @@ GDATA(__data_num_words)
 #include <stdint.h>
 extern char __bss_start[];
 extern char __bss_end[];
-extern int __bss_num_words[];
 #ifdef CONFIG_XIP
 extern char __data_rom_start[];
 extern char __data_ram_start[];
 extern char __data_ram_end[];
-extern int __data_num_words[];
 #endif
 
 extern char _image_rom_start[];

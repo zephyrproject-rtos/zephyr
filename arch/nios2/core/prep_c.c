@@ -30,65 +30,8 @@
 #include <toolchain.h>
 #include <linker-defs.h>
 #include <nano_private.h>
+#include <nano_internal.h>
 
-/**
- *
- * @brief Clear BSS
- *
- * This routine clears the BSS region, so all bytes are 0.
- *
- * @return N/A
- */
-
-static void bssZero(void)
-{
-	uint32_t *pos = (uint32_t *)&__bss_start;
-
-	for ( ; pos < (uint32_t *)&__bss_end; pos++) {
-		*pos = 0;
-	}
-}
-
-/**
- *
- * @brief Copy the data section from ROM to RAM
- *
- * This routine copies the data section from ROM to RAM.
- *
- * @return N/A
- */
-
-#ifdef CONFIG_XIP
-static void dataCopy(void)
-{
-	uint32_t *pROM, *pRAM;
-
-	pROM = (uint32_t *)&__data_rom_start;
-	pRAM = (uint32_t *)&__data_ram_start;
-
-	for ( ; pRAM < (uint32_t *)&__data_ram_end; pROM++, pRAM++) {
-		*pRAM = *pROM;
-	}
-
-	/* In most XIP scenarios we copy the exception code into RAM, so need
-	 * to flush instruction cache.
-	 */
-	_nios2_icache_flush_all();
-#if NIOS2_ICACHE_SIZE > 0
-	/* Only need to flush the data cache here if there actually is an
-	 * instruction cache, so that the cached instruction data written is
-	 * actually committed.
-	 */
-	_nios2_dcache_flush_all();
-#endif
-}
-#else
-static void dataCopy(void)
-{
-}
-#endif
-
-extern FUNC_NORETURN void _Cstart(void);
 /**
  *
  * @brief Prepare to and run C code
@@ -100,8 +43,21 @@ extern FUNC_NORETURN void _Cstart(void);
 
 void _PrepC(void)
 {
-	bssZero();
-	dataCopy();
+	_bss_zero();
+#ifdef CONFIG_XIP
+	_data_copy();
+	/* In most XIP scenarios we copy the exception code into RAM, so need
+	 * to flush instruction cache.
+	 */
+	_nios2_icache_flush_all();
+#if NIOS2_ICACHE_SIZE > 0
+	/* Only need to flush the data cache here if there actually is an
+	 * instruction cache, so that the cached instruction data written is
+	 * actually committed.
+	 */
+	_nios2_dcache_flush_all();
+#endif
+#endif
 	_Cstart();
 	CODE_UNREACHABLE;
 }
