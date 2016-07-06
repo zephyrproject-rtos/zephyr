@@ -2210,7 +2210,7 @@ static void hci_cmd_status(struct net_buf *buf)
 
 static inline void mynewt_rand_delay(void)
 {
-#if defined(CONFIG_BOARD_ARDUINO_101)
+#if defined(CONFIG_BOARD_ARDUINO_101) || defined(CONFIG_BOARD_QUARK_SE_DEVBOARD)
 	/* FIXME: Temporary hack for MyNewt HCI firmware which
 	 * crashes if it receives too rapid LE_Rand commands.
 	 */
@@ -2219,7 +2219,7 @@ static inline void mynewt_rand_delay(void)
 	} else {
 		task_sleep(MSEC(30));
 	}
-#endif
+#endif /* CONFIG_BOARD_ARDUINO_101 || CONFIG_BOARD_QUARK_SE_DEVBOARD */
 }
 
 static int prng_reseed(struct tc_hmac_prng_struct *h)
