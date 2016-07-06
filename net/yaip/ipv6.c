@@ -161,6 +161,31 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 	return NULL;
 }
 
+static inline void nbr_clear_ns_pending(struct net_nbr_data *data)
+{
+	int ret;
+
+	ret = nano_delayed_work_cancel(&data->send_ns);
+	if (ret < 0) {
+		NET_DBG("Cannot cancel NS work (%d)", ret);
+	}
+
+	net_nbuf_unref(data->pending);
+
+	data->pending = NULL;
+}
+
+static inline void nbr_free(struct net_nbr *nbr)
+{
+	NET_DBG("nbr %p", nbr);
+
+	nbr_clear_ns_pending(net_nbr_data(nbr));
+
+	nano_delayed_work_cancel(&net_nbr_data(nbr)->reachable);
+
+	net_nbr_unref(nbr);
+}
+
 static struct net_nbr *nbr_add(struct net_buf *buf,
 			       struct in6_addr *addr,
 			       struct net_linkaddr *lladdr,
@@ -174,7 +199,7 @@ static struct net_nbr *nbr_add(struct net_buf *buf,
 	}
 
 	if (net_nbr_link(nbr, net_nbuf_iface(buf), lladdr)) {
-		net_nbr_unref(nbr);
+		nbr_free(nbr);
 		return NULL;
 	}
 
@@ -376,20 +401,6 @@ static void ns_reply_timeout(struct nano_work *work)
 	data->pending = NULL;
 
 	net_nbr_unref(nbr);
-}
-
-static inline void nbr_clear_ns_pending(struct net_nbr_data *data)
-{
-	int ret;
-
-	ret = nano_delayed_work_cancel(&data->send_ns);
-	if (ret < 0) {
-		NET_DBG("Cannot cancel NS work (%d)", ret);
-	}
-
-	net_nbuf_unref(data->pending);
-
-	data->pending = NULL;
 }
 
 struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
@@ -807,7 +818,7 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		lladdr.addr = &tllao[NET_ICMPV6_OPT_DATA_OFFSET];
 
 		if (net_nbr_link(nbr, net_nbuf_iface(buf), &lladdr)) {
-			net_nbr_unref(nbr);
+			nbr_free(nbr);
 			return false;
 		}
 
