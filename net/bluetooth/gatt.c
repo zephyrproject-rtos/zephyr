@@ -917,8 +917,8 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 		 * have different formats so the conversion have to be done
 		 * field by field.
 		 */
-		value.start_handle = incl->start_handle;
-		value.end_handle = incl->end_handle;
+		value.start_handle = sys_le16_to_cpu(incl->start_handle);
+		value.end_handle = sys_le16_to_cpu(incl->end_handle);
 
 		switch (u.uuid.type) {
 		case BT_UUID_TYPE_16:
