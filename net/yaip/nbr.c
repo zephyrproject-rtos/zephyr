@@ -25,6 +25,8 @@
 
 #include <net/net_core.h>
 
+#include "net_private.h"
+
 #include "nbr.h"
 
 NET_NBR_LLADDR_INIT(net_neighbor_lladdr, CONFIG_NET_IPV6_MAX_NEIGHBORS);
@@ -163,3 +165,23 @@ void net_nbr_clear_table(struct net_nbr_table *table)
 	}
 }
 
+#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_IPV6_NBR_CACHE)
+void net_nbr_print(struct net_nbr_table *table)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		struct net_nbr *nbr = &table->nbr[i];
+
+		if (!nbr->ref) {
+			continue;
+		}
+
+		NET_DBG("[%d] ref %d iface %p idx %d ll %s",
+			i, nbr->ref, nbr->iface, nbr->idx,
+			net_sprint_ll_addr(
+				net_neighbor_lladdr[nbr->idx].lladdr.addr,
+				net_neighbor_lladdr[nbr->idx].lladdr.len));
+	}
+}
+#endif
