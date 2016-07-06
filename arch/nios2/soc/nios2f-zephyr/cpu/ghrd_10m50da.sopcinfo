@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EnsembleReport name="ghrd_10m50da" kind="ghrd_10m50da" version="1.0" fabric="QSYS">
  <!-- Format version 16.0 211 (Future versions may contain additional information.) -->
- <!-- 2016.06.08.19:12:52 -->
+ <!-- 2016.07.02.07:59:54 -->
  <!-- A collection of modules and connections -->
  <parameter name="AUTO_GENERATION_ID">
   <type>java.lang.Integer</type>
-  <value>1465384371</value>
+  <value>1467417594</value>
   <derived>false</derived>
   <enabled>true</enabled>
   <visible>false</visible>
@@ -3137,7 +3137,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="debug_hwbreakpoint">
    <type>int</type>
-   <value>0</value>
+   <value>4</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -3145,7 +3145,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="debug_datatrigger">
    <type>int</type>
-   <value>0</value>
+   <value>4</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
