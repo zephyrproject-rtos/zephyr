@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <net/net_context.h>
+#include <net/nbuf.h>
 
 extern void net_nbuf_init(void);
 extern void net_if_init(void);
