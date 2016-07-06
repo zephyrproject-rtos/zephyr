@@ -30,6 +30,7 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
+#include <misc/nano_work.h>
 #include <string.h>
 
 #include <bluetooth/bluetooth.h>
@@ -46,8 +47,9 @@
 
 static BT_STACK_NOINIT(tx_stack, 256);
 static BT_STACK_NOINIT(rx_stack, 256);
-static BT_STACK_NOINIT(ack_stack, 256);
-static BT_STACK_NOINIT(retx_stack, 256);
+
+static struct nano_delayed_work ack_work;
+static struct nano_delayed_work retx_work;
 
 #define HCI_3WIRE_ACK_PKT	0x00
 #define HCI_COMMAND_PKT		0x01
@@ -110,11 +112,6 @@ static struct h5 {
 	uint8_t			tx_seq;
 
 	uint8_t			rx_ack;
-
-	/* delayed rx ack fiber */
-	nano_thread_id_t  ack_to;
-	/* delayed retransmit fiber */
-	nano_thread_id_t  retx_to;
 
 	enum {
 		UNINIT,
@@ -314,13 +311,9 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 
 	memset(hdr, 0, sizeof(hdr));
 
-	/* Set ACK for outgoing packet and stop delayed fiber */
+	/* Set ACK for outgoing packet and stop delayed work */
 	H5_SET_ACK(hdr, h5.tx_ack);
-	if (h5.ack_to) {
-		BT_DBG("Cancel delayed ack fiber");
-		fiber_delayed_start_cancel(h5.ack_to);
-		h5.ack_to = NULL;
-	}
+	nano_delayed_work_cancel(&ack_work);
 
 	if (reliable_packet(type)) {
 		H5_SET_RELIABLE(hdr);
@@ -349,15 +342,12 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 	uart_poll_out(h5_dev, SLIP_DELIMITER);
 }
 
-/* Delayed fiber taking care about retransmitting packets */
-static void retx_fiber(int arg1, int arg2)
+/* Delayed work taking care about retransmitting packets */
+static void retx_timeout(struct nano_work *work)
 {
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
+	ARG_UNUSED(work);
 
 	BT_DBG("unack_queue_len %u", unack_queue_len);
-
-	h5.retx_to = NULL;
 
 	if (unack_queue_len) {
 		struct nano_fifo tmp_queue;
@@ -385,28 +375,20 @@ static void retx_fiber(int arg1, int arg2)
 		while ((buf = net_buf_get_timeout(&tmp_queue, 0, TICKS_NONE))) {
 			net_buf_put(&h5.tx_queue, buf);
 		}
-
-		/* Analyze stack */
-		stack_analyze("retx_stack", retx_stack, sizeof(retx_stack));
 	}
 }
 
-static void ack_fiber(int arg1, int arg2)
+static void ack_timeout(struct nano_work *work)
 {
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
+	ARG_UNUSED(work);
 
 	BT_DBG("");
-
-	h5.ack_to = NULL;
 
 	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0);
 
 	/* Analyze stacks */
-	stack_analyze("ack_stack", ack_stack, sizeof(ack_stack));
 	stack_analyze("tx_stack", tx_stack, sizeof(tx_stack));
 	stack_analyze("rx_stack", rx_stack, sizeof(rx_stack));
-	stack_analyze("retx_stack", retx_stack, sizeof(retx_stack));
 }
 
 static void h5_process_complete_packet(uint8_t *hdr)
@@ -421,10 +403,8 @@ static void h5_process_complete_packet(uint8_t *hdr)
 	if (reliable_packet(H5_HDR_PKT_TYPE(hdr))) {
 		/* For reliable packet increment next transmit ack number */
 		h5.tx_ack = (h5.tx_ack + 1) % 8;
-		/* Start delayed fiber to ack the packet */
-		h5.ack_to = fiber_delayed_start(ack_stack, sizeof(ack_stack),
-						ack_fiber, 0, 0, 7, 0,
-						H5_RX_ACK_TIMEOUT);
+		/* Submit delayed work to ack the packet */
+		nano_delayed_work_submit(&ack_work, H5_RX_ACK_TIMEOUT);
 	}
 
 	h5_print_header(hdr, "RX: >");
@@ -652,14 +632,8 @@ static void tx_fiber(void)
 			net_buf_put(&h5.unack_queue, buf);
 			unack_queue_len++;
 
-			if (h5.retx_to) {
-				fiber_delayed_start_cancel(h5.retx_to);
-			}
+			nano_delayed_work_submit(&retx_work, H5_TX_ACK_TIMEOUT);
 
-			h5.retx_to = fiber_delayed_start(retx_stack,
-							 sizeof(retx_stack),
-							 retx_fiber, 0, 0, 7, 0,
-							 H5_TX_ACK_TIMEOUT);
 			break;
 		}
 	}
@@ -750,6 +724,10 @@ static void h5_init(void)
 
 	/* Unack queue */
 	nano_fifo_init(&h5.unack_queue);
+
+	/* Init delayed work */
+	nano_delayed_work_init(&ack_work, ack_timeout);
+	nano_delayed_work_init(&retx_work, retx_timeout);
 }
 
 static int h5_open(void)
