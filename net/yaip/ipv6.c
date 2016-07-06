@@ -152,7 +152,7 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 			continue;
 		}
 
-		if ((!nbr->iface || nbr->iface == iface) &&
+		if (nbr->iface == iface &&
 		    net_ipv6_addr_cmp(&net_nbr_data(nbr)->addr, addr)) {
 			return nbr;
 		}
@@ -190,7 +190,8 @@ static struct net_nbr *nbr_add(struct net_buf *buf,
 	return nbr;
 }
 
-static struct net_nbr *nbr_new(struct in6_addr *addr,
+static struct net_nbr *nbr_new(struct net_if *iface,
+			       struct in6_addr *addr,
 			       enum net_nbr_state state)
 {
 	struct net_nbr *nbr = net_nbr_get(&net_neighbor.table);
@@ -200,10 +201,14 @@ static struct net_nbr *nbr_new(struct in6_addr *addr,
 	}
 
 	nbr->idx = NET_NBR_LLADDR_UNKNOWN;
+	nbr->iface = iface;
 
 	net_ipaddr_copy(&net_nbr_data(nbr)->addr, addr);
 	net_nbr_data(nbr)->state = state;
 	net_nbr_data(nbr)->pending = NULL;
+
+	NET_DBG("nbr %p iface %p state %d IPv6 %s",
+		nbr, iface, state, net_sprint_ipv6_addr(addr));
 
 	return nbr;
 }
@@ -497,10 +502,17 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
 
 	if (!nbr) {
-		nbr = nbr_new(&NET_ICMPV6_NS_BUF(buf)->tgt, NET_NBR_INCOMPLETE);
+		nbr_print();
+
+		nbr = nbr_new(net_nbuf_iface(buf),
+			      &NET_IPV6_BUF(buf)->src, NET_NBR_INCOMPLETE);
+		if (nbr) {
+			NET_DBG("Added %s to nbr cache",
+				net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
+		}
 
 		NET_ASSERT_INFO(nbr, "Could not add neighbor %s",
-			net_sprint_ipv6_addr(&NET_ICMPV6_NS_BUF(buf)->tgt));
+			net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
 
 		return;
 	}
@@ -1099,7 +1111,11 @@ int net_ipv6_send_ns(struct net_if *iface,
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
 			 &NET_IPV6_BUF(buf)->dst);
 	if (!nbr) {
-		nbr = nbr_new(&NET_ICMPV6_NS_BUF(buf)->tgt, NET_NBR_INCOMPLETE);
+		nbr_print();
+
+		nbr = nbr_new(net_nbuf_iface(buf),
+			      &NET_ICMPV6_NS_BUF(buf)->tgt,
+			      NET_NBR_INCOMPLETE);
 		if (!nbr) {
 			NET_DBG("Could not create new neighbor %s",
 				net_sprint_ipv6_addr(
