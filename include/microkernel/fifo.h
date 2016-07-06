@@ -137,9 +137,9 @@ extern int task_fifo_get(kfifo_t queue, void *data, int32_t timeout);
  * @param width Width of the FIFO.
  */
 #define DEFINE_FIFO(name, depth, width) \
-	static char __noinit __##name_buffer[(depth * width)]; \
+	static char __noinit __##name##_buffer[(depth * width)]; \
 	struct _k_fifo_struct _k_fifo_obj_##name = \
-	       __K_FIFO_DEFAULT(depth, width, __##name_buffer); \
+	       __K_FIFO_DEFAULT(depth, width, __##name##_buffer); \
 	const kfifo_t name = (kfifo_t)&_k_fifo_obj_##name;
 
 #ifdef __cplusplus
