@@ -180,25 +180,24 @@ void _k_defrag(struct k_args *A)
 {
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
 
-	defrag(P,
-	       P->nr_of_frags - 1, /* start from smallest blocks */
-	       0		   /* and defragment till fragment level 0 */
-	       );
+	/* do complete defragmentation of memory pool (i.e. all block sets) */
 
-	/* reschedule waiters */
+	defrag(P, P->nr_of_frags - 1, 0);
 
-	if (
-		    P->waiters) {
+	/* reschedule anybody waiting for a block */
+
+	if (P->waiters) {
 		struct k_args *NewGet;
 
 		/*
-		 * get new command packet that calls the function
-		 * that reallocate blocks for the waiting tasks
+		 * create a command packet to re-try block allocation
+		 * for the waiting tasks, and add it to the command stack
 		 */
+
 		GETARGS(NewGet);
 		*NewGet = *A;
 		NewGet->Comm = _K_SVC_BLOCK_WAITERS_GET;
-		TO_ALIST(&_k_command_stack, NewGet); /*push on command stack */
+		TO_ALIST(&_k_command_stack, NewGet);
 	}
 }
 
