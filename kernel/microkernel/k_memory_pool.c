@@ -268,86 +268,102 @@ static char *get_existing_block(struct pool_block *pfraglevelinfo,
 
 /**
  *
- * @brief Recursively get a block, doing fragmentation if necessary
+ * @brief Allocate a block, recursively fragmenting larger blocks if necessary
  *
- * @file
- * @brief Memory pool kernel services
+ * @param P memory pool descriptor
+ * @param index index of block set currently being examined
+ * @param startindex index of block set for which allocation is being done
  *
  * @return pointer to allocated block, or NULL if none available
  */
-static char *get_block_recusive(struct pool_struct *P, int index, int startindex)
+static char *get_block_recursive(struct pool_struct *P,
+				 int index, int startindex)
 {
 	int i;
 	char *found, *larger_block;
 	struct pool_block *fr_table;
 
+	/* give up if we've exhausted the set of maximum size blocks */
+
 	if (index < 0) {
-		return NULL; /* no more free blocks in pool */
+		return NULL;
 	}
+
+	/* try allocating a block from the current block set */
 
 	fr_table = P->frag_tab;
 	i = 0;
 
-	/* let's inspect the fragmentation level <index> */
 	found = get_existing_block(&(fr_table[index]), &i);
 	if (found != NULL) {
 		return found;
 	}
 
 #if AUTODEFRAG == AD_BEFORE_SEARCH4BIGGERBLOCK
-	/* maybe a partial defrag will free up a block? */
-	if (index == startindex) { /* only for the original request */
-		defrag(P,
-		       P->nr_of_frags - 1, /* start from the smallest blocks */
-		       startindex); /* but only until the requested blocksize
-				     * (fragmentation level) !!
-				     */
+	/*
+	 * do a partial defragmentation of memory pool & try allocating again
+	 * - do this on initial invocation only, not recursive ones
+	 *   (since there is no benefit in repeating the defrag)
+	 * - defrag only the blocks smaller than the desired size,
+	 *   and only until the size needed is reached
+	 *
+	 * note: defragging at this time tries to preserve the memory pool's
+	 * larger blocks by fragmenting them only when necessary
+	 * (i.e. at the cost of doing more frequent auto-defragmentations)
+	 */
 
+	if (index == startindex) {
+		defrag(P, P->nr_of_frags - 1, startindex);
 		found = get_existing_block(&(fr_table[index]), &i);
 		if (found != NULL) {
 			return found;
 		}
 	}
-	/* partial defrag did not release a block of level <index> */
 #endif
 
-	/* end of list and i is index of first empty entry in blocktable */
-	{
-		/* get a block of one size larger */
-		larger_block = get_block_recusive(
-			P, index - 1, startindex);
-	}
+	/* try allocating a block from the next largest block set */
 
+	larger_block = get_block_recursive(P, index - 1, startindex);
 	if (larger_block != NULL) {
-		/* insert 4 found blocks and mark one block as used */
+		/*
+		 * add a new quad-block to the current block set,
+		 * then mark one of its 4 blocks as used and return it
+		 *
+		 * note: "i" was earlier set to indicate the first unused
+		 * quad-block entry in the current block set
+		 */
+
 		fr_table[index].blocktable[i].mem_blocks = larger_block;
 		fr_table[index].blocktable[i].mem_status = 1;
 #ifdef CONFIG_OBJECT_MONITOR
 		fr_table[index].count++;
 #endif
-		return larger_block; /* return marked block */
+		return larger_block;
 	}
 
-	/* trying to get a larger block did not succeed */
-
 #if AUTODEFRAG == AD_AFTER_SEARCH4BIGGERBLOCK
-	/* maybe a partial defrag will free up a block? */
-	if (index == startindex) { /* only for the original request */
-		defrag(P,
-		       P->nr_of_frags - 1, /* start from the smallest blocks */
-		       startindex); /* but only until the requested blocksize
-				     * (fragmentation level) !!
-				     */
+	/*
+	 * do a partial defragmentation of memory pool & try allocating again
+	 * - do this on initial invocation only, not recursive ones
+	 *   (since there is no benefit in repeating the defrag)
+	 * - defrag only the blocks smaller than the desired size,
+	 *   and only until the size needed is reached
+	 *
+	 * note: defragging at this time tries to limit the cost of doing
+	 * auto-defragmentations by doing them only when necessary
+	 * (i.e. at the cost of fragmenting the memory pool's larger blocks)
+	 */
 
+	if (index == startindex) {
+		defrag(P, P->nr_of_frags - 1, startindex);
 		found = get_existing_block(&(fr_table[index]), &i);
 		if (found != NULL) {
 			return found;
 		}
 	}
-   /* partial defrag did not release a block of level <index> */
 #endif
 
-	return NULL; /* now we have to report failure: no block available */
+	return NULL; /* can't find (or create) desired block */
 }
 
 /**
@@ -384,7 +400,7 @@ void _k_block_waiters_get(struct k_args *A)
 		}
 
 		/* allocate block */
-		found_block = get_block_recusive(
+		found_block = get_block_recursive(
 			P, offset, offset); /* allocate and fragment blocks */
 
 		/* if success : remove task from list and reschedule */
@@ -466,7 +482,7 @@ void _k_mem_pool_block_get(struct k_args *A)
 	 * (fragmenting a larger block to create one, if necessary)
 	 */
 
-	found_block = get_block_recusive(P, offset, offset);
+	found_block = get_block_recursive(P, offset, offset);
 
 	if (found_block != NULL) {
 		A->args.p1.rep_poolptr = found_block;
