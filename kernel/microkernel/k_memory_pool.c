@@ -635,62 +635,45 @@ void *task_malloc(uint32_t size)
 void _k_mem_pool_block_release(struct k_args *A)
 {
 	struct pool_struct *P;
-	struct pool_block *block;
-	struct block_stat *blockstat;
 	int Pid;
 	int start_size, offset;
-	int i, j;
 
 	Pid = A->args.p1.pool_id;
 
-
 	P = _k_mem_pool_list + OBJ_INDEX(Pid);
 
-	/* calculate size */
+	/* determine block set that block belongs to */
+
 	start_size = P->minblock_size;
 	offset = P->nr_of_frags - 1;
 
 	while (A->args.p1.req_size > start_size) {
-		start_size = start_size << 2; /* try one larger */
+		start_size = start_size << 2;
 		offset--;
 	}
 
-	/* startsize==the available size that contains the requested block size */
-	/* offset: index in fragtable of the block */
+	/* mark the block as unused */
 
-	j = 0;
-	block = P->frag_tab + offset;
+	free_existing_block(A->args.p1.rep_poolptr, P, offset);
 
-	while ((j < block->nr_of_entries) &&
-	       ((blockstat = block->blocktable + j)->mem_blocks != 0)) {
-		for (i = 0; i < 4; i++) {
-			if (A->args.p1.rep_poolptr ==
-			    (blockstat->mem_blocks +
-			     (OCTET_TO_SIZEOFUNIT(i * block->block_size)))) {
-				/* we've found the right pointer, so free it */
-				blockstat->mem_status &= ~(1 << i);
+	/* reschedule anybody waiting for a block */
 
-				/* waiters? */
-				if (P->waiters != NULL) {
-					struct k_args *NewGet;
-					/*
-					 * get new command packet that calls
-					 * the function that reallocate blocks
-					 * for the waiting tasks
-					 */
-					GETARGS(NewGet);
-					*NewGet = *A;
-					NewGet->Comm = _K_SVC_BLOCK_WAITERS_GET;
-					/* push on command stack */
-					TO_ALIST(&_k_command_stack, NewGet);
-				}
-				if (A->alloc) {
-					FREEARGS(A);
-				}
-				return;
-			}
-		}
-		j++;
+	if (P->waiters != NULL) {
+		struct k_args *NewGet;
+
+		/*
+		 * create a command packet to re-try block allocation
+		 * for the waiting tasks, and add it to the command stack
+		 */
+
+		GETARGS(NewGet);
+		*NewGet = *A;
+		NewGet->Comm = _K_SVC_BLOCK_WAITERS_GET;
+		TO_ALIST(&_k_command_stack, NewGet);
+	}
+
+	if (A->alloc) {
+		FREEARGS(A);
 	}
 }
 
