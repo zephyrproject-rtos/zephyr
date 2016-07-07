@@ -44,18 +44,8 @@
 
 #include "i2c_atmel_sam3.h"
 
-
-#ifndef CONFIG_I2C_DEBUG
-#define DBG(...) { ; }
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
-#else
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_I2C_DEBUG */
-
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
+#include <misc/sys_log.h>
 
 /* for use with dev_data->state */
 #define STATE_READY		0
@@ -624,7 +614,7 @@ static int i2c_sam3_init(struct device *dev)
 
 	if (i2c_sam3_runtime_configure(dev, dev_data->dev_config.raw)
 	    != 0) {
-		DBG("I2C: Cannot set default configuration 0x%x\n",
+		SYS_LOG_DBG("I2C: Cannot set default configuration 0x%x",
 		    dev_data->dev_config.raw);
 		return -EINVAL;
 	}

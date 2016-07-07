@@ -37,12 +37,8 @@
 #include "i2c_quark_se_ss.h"
 #include "i2c_quark_se_ss_registers.h"
 
-#ifndef CONFIG_I2C_DEBUG
-#define DBG(...) { ; }
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_I2C_DEBUG */
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
+#include <misc/sys_log.h>
 
 static inline uint32_t _i2c_qse_ss_memory_read(uint32_t base_addr,
 					       uint32_t offset)
@@ -293,7 +289,7 @@ void i2c_qse_ss_isr(void *arg)
 	 *   - Received FIFO underrun
 	 */
 
-	DBG("I2C_SS: interrupt received\n");
+	SYS_LOG_DBG("I2C_SS: interrupt received");
 
 	ic_intr_stat = _i2c_qse_ss_reg_read(dev, REG_INTR_STAT);
 
@@ -367,14 +363,14 @@ static int _i2c_qse_ss_setup(struct device *dev, uint16_t addr)
 
 	/* Set addressing mode - (initialization = 7 bit) */
 	if (dw->app_config.bits.use_10_bit_addr) {
-		DBG("I2C: using 10-bit address\n");
+		SYS_LOG_DBG("I2C: using 10-bit address");
 		ic_con |= IC_CON_10BIT_ADDR;
 	}
 
 	/* Setup the clock frequency and speed mode */
 	switch (dw->app_config.bits.speed) {
 	case I2C_SPEED_STANDARD:
-		DBG("I2C: speed set to STANDARD\n");
+		SYS_LOG_DBG("I2C: speed set to STANDARD");
 		_i2c_qse_ss_reg_write(dev, REG_SS_SCL_CNT,
 				      (dw->hcnt << 16) | (dw->lcnt & 0xFFFF));
 		ic_con |= I2C_QSE_SS_SPEED_STANDARD << IC_CON_SPEED_POS;
@@ -383,14 +379,14 @@ static int _i2c_qse_ss_setup(struct device *dev, uint16_t addr)
 	case I2C_SPEED_FAST:
 		/* fall through */
 	case I2C_SPEED_FAST_PLUS:
-		DBG("I2C: speed set to FAST or FAST_PLUS\n");
+		SYS_LOG_DBG("I2C: speed set to FAST or FAST_PLUS");
 		_i2c_qse_ss_reg_write(dev, REG_FS_SCL_CNT,
 				      (dw->hcnt << 16) | (dw->lcnt & 0xFFFF));
 		ic_con |= I2C_QSE_SS_SPEED_FAST << IC_CON_SPEED_POS;
 
 		break;
 	default:
-		DBG("I2C: invalid speed requested\n");
+		SYS_LOG_DBG("I2C: invalid speed requested");
 		/* TODO change */
 		rc = -EINVAL;
 		goto done;
@@ -597,14 +593,14 @@ static int i2c_qse_ss_runtime_configure(struct device *dev, uint32_t config)
 
 static int i2c_qse_ss_suspend(struct device *dev)
 {
-	DBG("I2C_SS: suspend called - function not yet implemented\n");
+	SYS_LOG_DBG("I2C_SS: suspend called - function not yet implemented");
 	/* TODO - add this code */
 	return 0;
 }
 
 static int i2c_qse_ss_resume(struct device *dev)
 {
-	DBG("I2C_SS: resume called - function not yet implemented\n");
+	SYS_LOG_DBG("I2C_SS: resume called - function not yet implemented");
 	/* TODO - add this code */
 	return 0;
 }
@@ -631,7 +627,7 @@ int i2c_qse_ss_initialize(struct device *dev)
 	device_sync_call_init(&dw->sync);
 
 	if (i2c_qse_ss_runtime_configure(dev, dw->app_config.raw) != 0) {
-		DBG("I2C_SS: Cannot set default configuration 0x%x\n",
+		SYS_LOG_DBG("I2C_SS: Cannot set default configuration 0x%x",
 		    dw->app_config.raw);
 		return -EPERM;
 	}
