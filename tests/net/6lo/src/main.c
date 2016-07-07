@@ -231,7 +231,7 @@ static struct net_buf *create_buf(struct net_6lo_data *data)
 	frag->data[4] = len >> 8;
 	frag->data[5] = (uint8_t) len;
 	frag->data[44] = len >> 8;
-	frag->data[4] = (uint8_t) len;
+	frag->data[45] = (uint8_t) len;
 
 	data->ipv6.len[0] = len >> 8;
 	data->ipv6.len[1] = (uint8_t) len;
@@ -429,7 +429,7 @@ static void main_fiber(void)
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		TC_START(tests[count].name);
 
-		if (test_6lo(tests[1].data)) {
+		if (test_6lo(tests[count].data)) {
 			TC_END(FAIL, "failed\n");
 		} else {
 			TC_END(PASS, "passed\n");
