@@ -83,6 +83,28 @@ void _k_mem_pool_init(void)
 
 /**
  *
+ * @brief Determines which block set corresponds to the specified data size
+ *
+ * Finds the block set with the smallest blocks that can hold the specified
+ * amount of data.
+ *
+ * @return block set index
+ */
+static int compute_block_set_index(struct pool_struct *P, int data_size)
+{
+	int block_size = P->minblock_size;
+	int offset = P->nr_of_frags - 1;
+
+	while (data_size > block_size) {
+		block_size = block_size << 2;
+		offset--;
+	}
+
+	return offset;
+}
+
+/**
+ *
  * @brief Return an allocated block to its block set
  *
  * @param ptr pointer to start of block
@@ -388,7 +410,7 @@ void _k_block_waiters_get(struct k_args *A)
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
 	char *found_block;
 	struct k_args *curr_task, *prev_task;
-	int start_size, offset;
+	int offset;
 
 	curr_task = P->waiters;
 	/* forw is first field in struct */
@@ -397,17 +419,13 @@ void _k_block_waiters_get(struct k_args *A)
 	/* loop all waiters */
 	while (curr_task != NULL) {
 
-		/* calculate size & offset */
-		start_size = P->minblock_size;
-		offset = P->nr_of_frags - 1;
-		while (curr_task->args.p1.req_size > start_size) {
-			start_size = start_size << 2; /* try one larger */
-			offset--;
-		}
+		/* locate block set to try allocating from */
+		offset = compute_block_set_index(
+			P, curr_task->args.p1.req_size);
 
-		/* allocate block */
+		/* allocate block (fragmenting a larger block, if needed) */
 		found_block = get_block_recursive(
-			P, offset, offset); /* allocate and fragment blocks */
+			P, offset, offset);
 
 		/* if success : remove task from list and reschedule */
 		if (found_block != NULL) {
@@ -466,8 +484,6 @@ void _k_mem_pool_block_get(struct k_args *A)
 {
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
 	char *found_block;
-
-	int start_size;
 	int offset;
 
 	/* compute smallest block size that will satisfy request */
@@ -475,18 +491,11 @@ void _k_mem_pool_block_get(struct k_args *A)
 	__ASSERT(A->args.p1.req_size <= P->maxblock_size,
 		 "Request exceeds maximum memory pool block size\n");
 
-	start_size = P->minblock_size;
-	offset = P->nr_of_frags - 1;
+	/* locate block set to try allocating from */
 
-	while (A->args.p1.req_size > start_size) {
-		start_size = start_size << 2;
-		offset--;
-	}
+	offset = compute_block_set_index(P, A->args.p1.req_size);
 
-	/*
-	 * try allocating a block of the computed size
-	 * (fragmenting a larger block to create one, if necessary)
-	 */
+	/* allocate block (fragmenting a larger block, if needed) */
 
 	found_block = get_block_recursive(P, offset, offset);
 
@@ -636,7 +645,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 {
 	struct pool_struct *P;
 	int Pid;
-	int start_size, offset;
+	int offset;
 
 	Pid = A->args.p1.pool_id;
 
@@ -644,13 +653,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 
 	/* determine block set that block belongs to */
 
-	start_size = P->minblock_size;
-	offset = P->nr_of_frags - 1;
-
-	while (A->args.p1.req_size > start_size) {
-		start_size = start_size << 2;
-		offset--;
-	}
+	offset = compute_block_set_index(P, A->args.p1.req_size);
 
 	/* mark the block as unused */
 
