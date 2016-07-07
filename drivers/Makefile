@@ -1,7 +1,5 @@
 subdir-ccflags-y += -I$(srctree)/include/drivers
 
-include $(srctree)/ext/hal/qmsi/Makefile.include
-
 obj-y = console/
 obj-y += random/
 obj-y += serial/
