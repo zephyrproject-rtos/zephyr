@@ -176,7 +176,7 @@ ld-ifversion = $(shell [ $(call ld-version) $(1) $(2) ] && echo $(3))
 # Shorthand for $(Q)$(MAKE) -f scripts/Makefile.build obj=
 # Usage:
 # $(Q)$(MAKE) $(build)=dir
-build := -f $(srctree)/scripts/Makefile.build obj
+build := -f $(ZEPHYR_BASE)/scripts/Makefile.build obj
 
 ###
 # Shorthand for $(Q)$(MAKE) -f scripts/Makefile.modbuiltin obj=
