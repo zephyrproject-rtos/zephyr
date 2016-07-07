@@ -805,9 +805,7 @@ bool net_6lo_compress(struct net_buf *buf, bool iphc,
 
 bool net_6lo_uncompress(struct net_buf *buf)
 {
-	if (!buf || !buf->frags) {
-		return false;
-	}
+	NET_ASSERT(buf && buf->frags);
 
 	if ((buf->frags->data[0] & NET_6LO_DISPATCH_IPHC) ==
 	    NET_6LO_DISPATCH_IPHC) {
@@ -821,5 +819,7 @@ bool net_6lo_uncompress(struct net_buf *buf)
 		return uncompress_ipv6_header(buf);
 	}
 
-	return false;
+	NET_DBG("Buf is not compressed");
+
+	return true;
 }
