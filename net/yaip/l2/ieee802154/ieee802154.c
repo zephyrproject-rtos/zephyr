@@ -25,6 +25,10 @@
 
 #include <errno.h>
 
+#ifdef CONFIG_NET_6LO
+#include <6lo.h>
+#endif /* CONFIG_NET_6LO */
+
 #include <net/ieee802154_radio.h>
 
 #include "ieee802154_frame.h"
@@ -93,6 +97,10 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 					struct net_buf *buf)
 {
 	struct ieee802154_mpdu mpdu;
+#ifdef CONFIG_NET_6LO
+	uint32_t src;
+	uint32_t dst;
+#endif /* CONFIG_NET_6LO */
 
 	if (!ieee802154_validate_frame(net_nbuf_ll(buf),
 				       net_buf_frags_len(buf), &mpdu)) {
@@ -124,6 +132,24 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	set_buf_ll_addr(net_nbuf_ll_dst(buf), false,
 			mpdu.mhr.fs->fc.dst_addr_mode, mpdu.mhr.dst_addr);
 
+#ifdef CONFIG_NET_6LO
+	/** Uncompress will drop the current fragment. Buf ll src/dst address
+	 * will then be wrong and must be updated according to the new fragment.
+	 */
+	src = net_nbuf_ll_src(buf)->addr ?
+		net_nbuf_ll_src(buf)->addr - net_nbuf_ll(buf) : 0;
+	dst = net_nbuf_ll_dst(buf)->addr ?
+		net_nbuf_ll_dst(buf)->addr - net_nbuf_ll(buf) : 0;
+
+	if (!net_6lo_uncompress(buf)) {
+		NET_DBG("Packet decompression failed");
+		return NET_DROP;
+	}
+
+	net_nbuf_ll_src(buf)->addr = src ? net_nbuf_ll(buf) + src : NULL;
+	net_nbuf_ll_dst(buf)->addr = dst ? net_nbuf_ll(buf) + dst : NULL;
+#endif /* CONFIG_NET_6LO */
+
 	return NET_CONTINUE;
 }
 
@@ -134,6 +160,12 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 	    !ieee802154_create_data_frame(iface, buf)) {
 		return NET_DROP;
 	}
+
+#ifdef CONFIG_NET_6LO
+	if (!net_6lo_compress(buf, true, NULL)) {
+		return NET_DROP;
+	}
+#endif /* CONFIG_NET_6LO */
 
 	net_if_queue_tx(iface, buf);
 
