@@ -38,11 +38,24 @@ depends on NETWORKING_WITH_15_4
 
 if NETWORKING_WITH_15_4_TI_CC2520
 
-config	TI_CC2520_DEBUG
-	bool "CC2520 driver debug"
-	default n
+config SYS_LOG_TI_CC2520_LEVEL
+	int
+	prompt "CC2520 driver log level"
+	default 0
 	help
-	  This option enables debug support for 802.15.4 CC2520 driver.
+	Sets log level for 802.15.4 CC2520 driver.
+
+	Levels are:
+
+	- 0 OFF, do not write
+
+	- 1 ERROR, only write SYS_LOG_ERR
+
+	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+
+	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+
+	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
 config TI_CC2520_DRV_NAME
 	string "TI CC2520 Driver's name"

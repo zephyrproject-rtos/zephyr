@@ -19,17 +19,9 @@
 #ifndef __IEEE802154_CC2520_H__
 #define __IEEE802154_CC2520_H__
 
-#ifndef CONFIG_TI_CC2520_DEBUG
-#define DBG(...) {; }
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_TI_CC2520_DEBUG */
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_TI_CC2520_LEVEL
+#define SYS_LOG_NO_NEWLINE
+#include <misc/sys_log.h>
 
 #include <sections.h>
 #include <atomic.h>
