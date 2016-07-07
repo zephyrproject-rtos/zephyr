@@ -53,14 +53,24 @@ struct net_nbr *net_nbr_ref(struct net_nbr *nbr)
 	return nbr;
 }
 
+static inline struct net_nbr *get_nbr(struct net_nbr *start, int idx)
+{
+	NET_ASSERT(idx < CONFIG_NET_IPV6_MAX_NEIGHBORS);
+
+	return (struct net_nbr *)((void *)start +
+			((sizeof(struct net_nbr) + start->size) * idx));
+}
+
 struct net_nbr *net_nbr_get(struct net_nbr_table *table)
 {
 	int i;
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		struct net_nbr *nbr = &table->nbr[i];
+		struct net_nbr *nbr = get_nbr(table->nbr, i);
 
 		if (!nbr->ref) {
+			nbr->data = nbr->__nbr;
+
 			return net_nbr_ref(nbr);
 		}
 	}
@@ -126,7 +136,7 @@ struct net_nbr *net_nbr_lookup(struct net_nbr_table *table,
 	int i;
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		struct net_nbr *nbr = &table->nbr[i];
+		struct net_nbr *nbr = get_nbr(table->nbr, i);
 
 		if (nbr->ref && nbr->iface == iface &&
 		    net_neighbor_lladdr[nbr->idx].ref &&
@@ -151,7 +161,7 @@ void net_nbr_clear_table(struct net_nbr_table *table)
 	int i;
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		struct net_nbr *nbr = &table->nbr[i];
+		struct net_nbr *nbr = get_nbr(table->nbr, i);
 		struct net_linkaddr lladdr = {
 			.addr = net_neighbor_lladdr[i].lladdr.addr,
 			.len = net_neighbor_lladdr[i].lladdr.len
@@ -171,7 +181,7 @@ void net_nbr_print(struct net_nbr_table *table)
 	int i;
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		struct net_nbr *nbr = &table->nbr[i];
+		struct net_nbr *nbr = get_nbr(table->nbr, i);
 
 		if (!nbr->ref) {
 			continue;
