@@ -29,15 +29,6 @@
 #include <pci/pci_mgr.h>
 #include <string.h>
 
-#ifdef __MSIX_DEBUG__
-#include <misc/printk.h>
-#define _DEBUG_PRINT(fmt, args...) printk(fmt, ##args)
-#else
-#define _DEBUG_PRINT(fmt, args...) \
-	do {                       \
-	} while (0)
-#endif
-
 /**
  *
  * @brief Write a 32bit data to pci reg in offset
