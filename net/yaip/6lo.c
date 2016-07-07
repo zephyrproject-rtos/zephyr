@@ -93,7 +93,7 @@ static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr *addr)
   * context based (dst) address compression
   * Mesh header compression
   */
-static struct net_buf *compress_IPHC_header(struct net_buf *buf)
+static inline bool compress_IPHC_header(struct net_buf *buf)
 {
 	struct net_buf *frag;
 	struct net_ipv6_hdr *ipv6 = NET_IPV6_BUF(buf);
@@ -103,19 +103,19 @@ static struct net_buf *compress_IPHC_header(struct net_buf *buf)
 	if (buf->frags->len < NET_IPV6H_LEN) {
 		NET_DBG("Invalid length %d, min %d",
 			 buf->frags->len, NET_IPV6H_LEN);
-		return NULL;
+		return false;
 	}
 
 	if (ipv6->nexthdr == IPPROTO_UDP &&
 	    buf->frags->len < NET_IPV6UDPH_LEN) {
 		NET_DBG("Invalid length %d, min %d",
 			 buf->frags->len, NET_IPV6UDPH_LEN);
-		return NULL;
+		return false;
 	}
 
 	frag = net_nbuf_get_reserve_data(0);
 	if (!frag) {
-		return NULL;
+		return false;
 	}
 
 	IPHC[offset++] = NET6LO_DISPATCH_IPHC;
@@ -429,13 +429,13 @@ end:
 	net_buf_frag_insert(buf, frag);
 
 	/* compact the fragments, so that gaps will be filled */
-	buf->frags = net_nbuf_compact(buf->frags);
+	net_nbuf_compact(buf->frags);
 
-	return buf;
+	return true;
 }
 
 /* TODO: context based uncompression not supported */
-static struct net_buf *uncompress_IPHC_header(struct net_buf *buf)
+static inline bool uncompress_IPHC_header(struct net_buf *buf)
 {
 	struct net_buf *frag;
 	struct net_ipv6_hdr *ipv6;
@@ -445,12 +445,12 @@ static struct net_buf *uncompress_IPHC_header(struct net_buf *buf)
 
 	if (CIPHC[1] & NET6LO_IPHC_CID_1) {
 		/* if it is supported increase offset to +1 */
-		return NULL;
+		return false;
 	}
 
 	frag = net_nbuf_get_reserve_data(0);
 	if (!frag) {
-		return NULL;
+		return false;
 	}
 
 	ipv6 = (struct net_ipv6_hdr *)(frag->data);
@@ -733,7 +733,7 @@ end:
 
 	/* insert the fragment (this one holds uncompressed headers) */
 	net_buf_frag_insert(buf, frag);
-	buf->frags = net_nbuf_compact(buf->frags);
+	net_nbuf_compact(buf->frags);
 
 	/* set IPv6 header and UDP (if next header is) length */
 	len = net_buf_frags_len(buf) - NET_IPV6H_LEN;
@@ -744,19 +744,19 @@ end:
 		udp->len = len;
 	}
 
-	return buf;
+	return true;
 
 fail:
 	net_nbuf_unref(frag);
-	return NULL;
+	return false;
 }
 
-struct net_buf *net_6lo_compress(struct net_buf *buf)
+bool net_6lo_compress(struct net_buf *buf)
 {
 	return compress_IPHC_header(buf);
 }
 
-struct net_buf *net_6lo_uncompress(struct net_buf *buf)
+bool net_6lo_uncompress(struct net_buf *buf)
 {
 	if (!buf || !buf->frags) {
 		return NULL;

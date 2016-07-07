@@ -37,9 +37,9 @@
  *
  *  @param Pointer to network buffer
  *
- *  @return Pointer to network buffer if ok, NULL otherwise
+ *  @return True on success, false otherwise
  */
-struct net_buf *net_6lo_compress(struct net_buf *buf);
+bool net_6lo_compress(struct net_buf *buf);
 
 /**
  *  @brief Unompress IPv6 packet as per RFC 6282
@@ -50,9 +50,9 @@ struct net_buf *net_6lo_compress(struct net_buf *buf);
  *
  *  @param Pointer to network buffer
  *
- *  @return Pointer to network buffer if ok, NULL otherwise
+ *  @return True on success, false otherwise
  */
 
-struct net_buf *net_6lo_uncompress(struct net_buf *buf);
+bool net_6lo_uncompress(struct net_buf *buf);
 
 #endif /* __NET_6LO_H */

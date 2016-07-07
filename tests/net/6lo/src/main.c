@@ -374,8 +374,7 @@ static int test_6lo(struct net_6lo_data *data)
 	net_hexdump_frags("before-compression", buf);
 #endif
 
-	buf = net_6lo_compress(buf);
-	if (!buf) {
+	if (!net_6lo_compress(buf)) {
 		TC_PRINT("compression failed\n");
 		goto end;
 	}
@@ -385,8 +384,7 @@ static int test_6lo(struct net_6lo_data *data)
 	net_hexdump_frags("after-compression", buf);
 #endif
 
-	buf = net_6lo_uncompress(buf);
-	if (!buf) {
+	if (!net_6lo_uncompress(buf)) {
 		TC_PRINT("uncompression failed\n");
 		goto end;
 	}
