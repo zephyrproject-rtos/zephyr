@@ -385,7 +385,7 @@ struct pool_quad_block {
 struct pool_block_set {
 	int block_size;
 	int nr_of_entries;
-	struct pool_quad_block *blocktable;
+	struct pool_quad_block *quad_block;
 	int count;
 };
 

@@ -54,8 +54,8 @@ void _k_mem_pool_init(void)
 		char *memptr = P->bufblock;
 
 		while (remaining >= 4) {
-			P->frag_tab[0].blocktable[t].mem_blocks = memptr;
-			P->frag_tab[0].blocktable[t].mem_status = 0xF;
+			P->frag_tab[0].quad_block[t].mem_blocks = memptr;
+			P->frag_tab[0].quad_block[t].mem_status = 0xF;
 			t++;
 			remaining = remaining - 4;
 			memptr +=
@@ -64,8 +64,8 @@ void _k_mem_pool_init(void)
 		}
 
 		if (remaining != 0) {
-			P->frag_tab[0].blocktable[t].mem_blocks = memptr;
-			P->frag_tab[0].blocktable[t].mem_status =
+			P->frag_tab[0].quad_block[t].mem_blocks = memptr;
+			P->frag_tab[0].quad_block[t].mem_status =
 				0xF >> (4 - remaining);
 			/* non-existent blocks are marked as unavailable */
 		}
@@ -111,7 +111,7 @@ static int compute_block_set_index(struct pool_struct *P, int data_size)
  */
 static void free_existing_block(char *ptr, struct pool_struct *P, int index)
 {
-	struct pool_quad_block *quad_block = P->frag_tab[index].blocktable;
+	struct pool_quad_block *quad_block = P->frag_tab[index].quad_block;
 	char *block_ptr;
 	int i, j;
 
@@ -163,7 +163,7 @@ static void defrag(struct pool_struct *P,
 
 	for (j = ifraglevel_start; j > ifraglevel_stop; j--) {
 
-		quad_block = P->frag_tab[j].blocktable;
+		quad_block = P->frag_tab[j].quad_block;
 		i = 0;
 
 		do {
@@ -280,24 +280,24 @@ static char *get_existing_block(struct pool_block_set *pfraglevelinfo,
 	do {
 		/* give up if no more quad-blocks in block set */
 
-		if (pfraglevelinfo->blocktable[i].mem_blocks == NULL) {
+		if (pfraglevelinfo->quad_block[i].mem_blocks == NULL) {
 			break;
 		}
 
 		/* allocate a block from current quad-block, if possible */
 
-		status = pfraglevelinfo->blocktable[i].mem_status;
+		status = pfraglevelinfo->quad_block[i].mem_status;
 		if (status != 0x0) {
 			/* identify first free block */
 			free_bit = find_lsb_set(status) - 1;
 
 			/* compute address of free block */
-			found = pfraglevelinfo->blocktable[i].mem_blocks +
+			found = pfraglevelinfo->quad_block[i].mem_blocks +
 				(OCTET_TO_SIZEOFUNIT(free_bit *
 					pfraglevelinfo->block_size));
 
 			/* mark block as unavailable (using XOR to invert) */
-			pfraglevelinfo->blocktable[i].mem_status ^=
+			pfraglevelinfo->quad_block[i].mem_status ^=
 				1 << free_bit;
 #ifdef CONFIG_OBJECT_MONITOR
 			pfraglevelinfo->count++;
@@ -380,8 +380,8 @@ static char *get_block_recursive(struct pool_struct *P,
 		 * quad-block entry in the current block set
 		 */
 
-		fr_table[index].blocktable[i].mem_blocks = larger_block;
-		fr_table[index].blocktable[i].mem_status = 0xE;
+		fr_table[index].quad_block[i].mem_blocks = larger_block;
+		fr_table[index].quad_block[i].mem_status = 0xE;
 #ifdef CONFIG_OBJECT_MONITOR
 		fr_table[index].count++;
 #endif
