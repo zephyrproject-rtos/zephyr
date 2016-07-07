@@ -111,7 +111,7 @@ static int compute_block_set_index(struct pool_struct *P, int data_size)
  */
 static void free_existing_block(char *ptr, struct pool_struct *P, int index)
 {
-	struct block_stat *quad_block = P->frag_tab[index].blocktable;
+	struct pool_quad_block *quad_block = P->frag_tab[index].blocktable;
 	char *block_ptr;
 	int i, j;
 
@@ -157,7 +157,7 @@ static void defrag(struct pool_struct *P,
 		   int ifraglevel_start, int ifraglevel_stop)
 {
 	int i, j, k;
-	struct block_stat *quad_block;
+	struct pool_quad_block *quad_block;
 
 	/* process block sets from smallest to largest permitted sizes */
 
@@ -269,7 +269,7 @@ void task_mem_pool_defragment(kmemory_pool_t Pid)
  *
  * @return pointer to allocated block, or NULL if none available
  */
-static char *get_existing_block(struct pool_block *pfraglevelinfo,
+static char *get_existing_block(struct pool_block_set *pfraglevelinfo,
 				int *piblockindex)
 {
 	char *found = NULL;
@@ -328,7 +328,7 @@ static char *get_block_recursive(struct pool_struct *P,
 {
 	int i;
 	char *found, *larger_block;
-	struct pool_block *fr_table;
+	struct pool_block_set *fr_table;
 
 	/* give up if we've exhausted the set of maximum size blocks */
 

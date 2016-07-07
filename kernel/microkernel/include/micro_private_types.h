@@ -377,15 +377,15 @@ struct k_args {
 /* ---------------------------------------------------------------------- */
 /* KERNEL OBJECT STRUCTURES */
 
-struct block_stat {
+struct pool_quad_block {
 	char *mem_blocks;
 	uint32_t mem_status;
 };
 
-struct pool_block {
+struct pool_block_set {
 	int block_size;
 	int nr_of_entries;
-	struct block_stat *blocktable;
+	struct pool_quad_block *blocktable;
 	int count;
 };
 
@@ -397,7 +397,7 @@ struct pool_struct {
 
 	struct k_args *waiters;
 
-	struct pool_block *frag_tab;
+	struct pool_block_set *frag_tab;
 
 	char *bufblock;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS

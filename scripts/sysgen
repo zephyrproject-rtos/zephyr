@@ -686,12 +686,12 @@ def kernel_main_c_pools():
 
         for index in range(0, frag_levels):
             kernel_main_c_out(
-                "struct block_stat blockstatus_%#010x_%d[%d];\n" %
+                "struct pool_quad_block blockstatus_%#010x_%d[%d];\n" %
                 (ident, index, block_status_sizes[index]))
 
         # generate memory pool fragmentation descriptor
 
-        kernel_main_c_out("\nstruct pool_block %s[%d] =\n{\n" %
+        kernel_main_c_out("\nstruct pool_block_set %s[%d] =\n{\n" %
                         (frag_table, frag_levels))
         for index in range(0, frag_levels):
             kernel_main_c_out("    { %d, %d, blockstatus_%#010x_%d},\n" %
