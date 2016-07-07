@@ -37,8 +37,8 @@
  */
 void _k_mem_pool_init(void)
 {
-	int i, j, k;
 	struct pool_struct *P;
+	int i;
 
 	/* perform initialization for each memory pool */
 
@@ -70,14 +70,10 @@ void _k_mem_pool_init(void)
 			/* non-existent blocks are marked as unavailable */
 		}
 
-		/* mark all other block status arrays as owning no blocks */
-
-		for (k = 1; k < P->nr_of_frags; k++) {
-			for (j = 0; j < P->frag_tab[k].nr_of_entries; j++) {
-				P->frag_tab[k].blocktable[j].mem_blocks = NULL;
-				P->frag_tab[k].blocktable[j].mem_status = 0xF;
-			}
-		}
+		/*
+		 * note: all other block sets own no blocks, since their
+		 * first quad-block array entry has a NULL memory pointer
+		 */
 	}
 }
 
