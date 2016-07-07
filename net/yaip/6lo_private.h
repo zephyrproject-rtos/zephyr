@@ -23,12 +23,12 @@
 #include <stdio.h>
 
 /* 6lopan dispatches */
-#define NET6LO_DISPATH_IPV6		0x41 /* 01000001 */
-#define NET6LO_DISPATH_BROADCAST	0x50 /* 01010000 */
-#define NET6LO_DISPATH_IPHC		0x60 /* 01100000 */
-#define NET6LO_DISPATH_MESH		0x80 /* 10xxxxxx */
-#define NET6LO_DISPATH_FRAG1	0xC0 /* 11000xxx */
-#define NET6LO_DISPATH_FRAGN	0xE0 /* 11100xxx */
+#define NET6LO_DISPATCH_IPV6		0x41 /* 01000001 */
+#define NET6LO_DISPATCH_BROADCAST	0x50 /* 01010000 */
+#define NET6LO_DISPATCH_IPHC		0x60 /* 01100000 */
+#define NET6LO_DISPATCH_MESH		0x80 /* 10xxxxxx */
+#define NET6LO_DISPATCH_FRAG1		0xC0 /* 11000xxx */
+#define NET6LO_DISPATCH_FRAGN		0xE0 /* 11100xxx */
 
 /**
   * TF (Traffic class and Flow label)
@@ -67,8 +67,8 @@
 #define NET6LO_IPHC_SAM_11		0x30
 
 /* M (Multicast compression) */
-#define NET6LO_IPHC_M_0		0x00
-#define NET6LO_IPHC_M_1		0x08
+#define NET6LO_IPHC_M_0			0x00
+#define NET6LO_IPHC_M_1			0x08
 
 /* DAC (Destination Address Compression) */
 #define NET6LO_IPHC_DAC_0		0x00
@@ -83,13 +83,13 @@
 /* Next Header UDP */
 #define NET6LO_NHC_UDP_BARE		0xF0
 
-#define NET6LO_NHC_UDP_CHKSUM_0	0x00
-#define NET6LO_NHC_UDP_CHKSUM_1	0x08
+#define NET6LO_NHC_UDP_CHKSUM_0		0x00
+#define NET6LO_NHC_UDP_CHKSUM_1		0x08
 
-#define NET6LO_NHC_UDP_PORT_00	0x00
-#define NET6LO_NHC_UDP_PORT_01	0x01
-#define NET6LO_NHC_UDP_PORT_10	0x02
-#define NET6LO_NHC_UDP_PORT_11	0x03
+#define NET6LO_NHC_UDP_PORT_00		0x00
+#define NET6LO_NHC_UDP_PORT_01		0x01
+#define NET6LO_NHC_UDP_PORT_10		0x02
+#define NET6LO_NHC_UDP_PORT_11		0x03
 
 #define NET6LO_NHC_UDP_8_BIT_PORT	0xF0
 #define NET6LO_NHC_UDP_4_BIT_PORT	0xF0B

@@ -118,7 +118,7 @@ static struct net_buf *compress_IPHC_header(struct net_buf *buf)
 		return NULL;
 	}
 
-	IPHC[offset++] = NET6LO_DISPATH_IPHC;
+	IPHC[offset++] = NET6LO_DISPATCH_IPHC;
 	IPHC[offset++] = 0;
 
 	/** +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -762,7 +762,7 @@ struct net_buf *net_6lo_uncompress(struct net_buf *buf)
 		return NULL;
 	}
 
-	if (!(buf->frags->data[0] & NET6LO_DISPATH_IPHC)) {
+	if (!(buf->frags->data[0] & NET6LO_DISPATCH_IPHC)) {
 		return NULL;
 	}
 
