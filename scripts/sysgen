@@ -654,20 +654,20 @@ def kernel_main_c_pools():
         num_maximal_blocks = pool[3]
         total_memory = max_block_size * num_maximal_blocks
         buffer = "__" + pool[0] + "_buffer"
-        frag_table = "fragtab_%#010x" % ident
+        frag_table = "block_sets_%#010x" % ident
 
         # determine block sizes used by pool (including actual minimum size)
 
-        frag_size_list = [max_block_size]
+        block_size_list = [max_block_size]
         while (ident != 0):    # loop forever
-            min_block_size_actual = frag_size_list[len(frag_size_list) - 1]
+            min_block_size_actual = block_size_list[len(block_size_list) - 1]
             min_block_size_proposed = min_block_size_actual / 4
             if (min_block_size_proposed < min_block_size):
                 break
-            frag_size_list.append(min_block_size_proposed)
-        frag_levels = len(frag_size_list)
+            block_size_list.append(min_block_size_proposed)
+        frag_levels = len(block_size_list)
 
-        # determine size of block status arrays,
+        # determine size of quad-block arrays,
 	# from the largest block size to the smallest block size
 	# - each array must be big enough to track the status of
 	#   the entire memory pool buffer
@@ -676,26 +676,26 @@ def kernel_main_c_pools():
 	#   in case the # of largest size blocks isn't a multiple of 4
 	#   (i.e. it's final array entry may be partly unused)
 
-        block_status_sizes = [(num_maximal_blocks + 3) / 4]
-        block_status_size_to_use = num_maximal_blocks
+        quad_block_sizes = [(num_maximal_blocks + 3) / 4]
+        quad_block_size_to_use = num_maximal_blocks
         for index in range(1, frag_levels):
-            block_status_sizes.append(block_status_size_to_use)
-            block_status_size_to_use *= 4
+            quad_block_sizes.append(quad_block_size_to_use)
+            quad_block_size_to_use *= 4
 
-        # generate block status areas
+        # generate array of quad-blocks for each block set
 
         for index in range(0, frag_levels):
             kernel_main_c_out(
-                "struct pool_quad_block blockstatus_%#010x_%d[%d];\n" %
-                (ident, index, block_status_sizes[index]))
+                "struct pool_quad_block quad_blocks_%#010x_%d[%d];\n" %
+                (ident, index, quad_block_sizes[index]))
 
-        # generate memory pool fragmentation descriptor
+        # generate array of block sets for memory pool
 
         kernel_main_c_out("\nstruct pool_block_set %s[%d] =\n{\n" %
                         (frag_table, frag_levels))
         for index in range(0, frag_levels):
-            kernel_main_c_out("    { %d, %d, blockstatus_%#010x_%d},\n" %
-                (frag_size_list[index], block_status_sizes[index],
+            kernel_main_c_out("    { %d, %d, quad_blocks_%#010x_%d},\n" %
+                (block_size_list[index], quad_block_sizes[index],
                  ident, index))
         kernel_main_c_out("};\n")
 
