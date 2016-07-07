@@ -29,17 +29,8 @@
 #include <clock_control.h>
 #include <clock_control/quark_se_clock_control.h>
 
-#ifndef CONFIG_CLOCK_DEBUG
-#define DBG(...) {; }
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_CLOCK_DEBUG */
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_CLOCK_CONTROL_LEVEL
+#include <misc/sys_log.h>
 
 struct quark_se_clock_control_config {
 	uint32_t base_address;
@@ -52,13 +43,13 @@ static inline int quark_se_clock_control_on(struct device *dev,
 	uint32_t subsys = POINTER_TO_INT(sub_system);
 
 	if (sub_system == CLOCK_CONTROL_SUBSYS_ALL) {
-		DBG("Enabling all clock gates on dev %p\n", dev);
+		SYS_LOG_DBG("Enabling all clock gates on dev %p", dev);
 		sys_write32(0xffffffff, info->base_address);
 
 		return 0;
 	}
 
-	DBG("Enabling clock gate on dev %p subsystem %u\n", dev, subsys);
+	SYS_LOG_DBG("Enabling clock gate on dev %p subsystem %u", dev, subsys);
 
 	return sys_test_and_set_bit(info->base_address, subsys);
 }
@@ -70,13 +61,13 @@ static inline int quark_se_clock_control_off(struct device *dev,
 	uint32_t subsys = POINTER_TO_INT(sub_system);
 
 	if (sub_system == CLOCK_CONTROL_SUBSYS_ALL) {
-		DBG("Disabling all clock gates on dev %p\n", dev);
+		SYS_LOG_DBG("Disabling all clock gates on dev %p", dev);
 		sys_write32(0x00000000, info->base_address);
 
 		return 0;
 	}
 
-	DBG("clock gate on dev %p subsystem %u\n", dev, subsys);
+	SYS_LOG_DBG("clock gate on dev %p subsystem %u", dev, subsys);
 
 	return sys_test_and_clear_bit(info->base_address, subsys);
 }
@@ -89,8 +80,8 @@ static struct clock_control_driver_api quark_se_clock_control_api = {
 
 int quark_se_clock_control_init(struct device *dev)
 {
-	DBG("Quark Se clock controller driver initialized on device: %p\n",
-									dev);
+	SYS_LOG_DBG("Quark Se clock controller driver initialized on device: "
+		    "%p", dev);
 	return 0;
 }
 
