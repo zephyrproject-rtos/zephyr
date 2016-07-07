@@ -146,56 +146,79 @@ static void free_existing_block(char *ptr, struct pool_struct *P, int index)
 
 /**
  *
- * @brief Defragmentation algorithm for memory pool
+ * @brief Defragment specified memory pool block sets
+ *
+ * Reassembles any quad-blocks that are entirely unused into larger blocks
+ * (to the extent permitted).
+ *
+ * @param P memory pool descriptor
+ * @param ifraglevel_start index of smallest block set to defragment
+ * @param ifraglevel_stop index of largest block set to defragment
  *
  * @return N/A
  */
 static void defrag(struct pool_struct *P,
-				  int ifraglevel_start,
-				  int ifraglevel_stop)
+		   int ifraglevel_start, int ifraglevel_stop)
 {
 	int i, j, k;
+	struct block_stat *quad_block;
 
-	j = ifraglevel_start;
+	/* process block sets from smallest to largest permitted sizes */
 
-	while (j > ifraglevel_stop) {
+	for (j = ifraglevel_start; j > ifraglevel_stop; j--) {
+
+		quad_block = P->frag_tab[j].blocktable;
 		i = 0;
-		while (P->frag_tab[j].blocktable[i].mem_blocks != NULL) {
-			if ((P->frag_tab[j].blocktable[i].mem_status & 0xF) ==
-			    0) { /* blocks for defragmenting */
-				free_existing_block(
-					P->frag_tab[j].blocktable[i].mem_blocks,
-					P,
-					j - 1);
 
-				/* remove blocks & compact list */
+		do {
+			/* block set is done if no more quad-blocks exist */
+
+			if (quad_block[i].mem_blocks == NULL) {
+				break;
+			}
+
+			/* reassemble current quad-block, if possible */
+
+			if (quad_block[i].mem_status == 0) {
+
+				/*
+				 * mark the corresponding block in next larger
+				 * block set as free
+				 */
+
+				free_existing_block(
+					quad_block[i].mem_blocks, P, j - 1);
+
+				/*
+				 * delete the quad-block from this block set
+				 * by replacing it with the last quad-block
+				 *
+				 * (algorithm works even when the deleted
+				 * quad-block is the last quad_block)
+				 */
+
 				k = i;
-				while ((P->frag_tab[j]
-						.blocktable[k]
-						.mem_blocks != NULL) &&
-				       (k <
-					(P->frag_tab[j].nr_of_entries - 1))) {
-					P->frag_tab[j]
-						.blocktable[k]
-						.mem_blocks =
-						P->frag_tab[j]
-							.blocktable[k + 1]
-							.mem_blocks;
-					P->frag_tab[j]
-						.blocktable[k]
-						.mem_status =
-						P->frag_tab[j]
-							.blocktable[k + 1]
-							.mem_status;
+				while (((k+1) != P->frag_tab[j].nr_of_entries)
+				       &&
+				       (quad_block[k+1].mem_blocks != NULL)) {
 					k++;
 				}
-				P->frag_tab[j].blocktable[k].mem_blocks = NULL;
-				P->frag_tab[j].blocktable[k].mem_status = 0;
+
+				quad_block[i].mem_blocks =
+					quad_block[k].mem_blocks;
+				quad_block[i].mem_status =
+					quad_block[k].mem_status;
+
+				quad_block[k].mem_blocks = NULL;
+
+				/* loop & process replacement quad_block[i] */
 			} else {
-				i++; /* take next block */
+				i++;
 			}
-		}
-		j--;
+
+			/* block set is done if at end of array */
+
+		} while (i < P->frag_tab[j].nr_of_entries);
 	}
 }
 
