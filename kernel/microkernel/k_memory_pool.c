@@ -45,7 +45,7 @@ void _k_mem_pool_init(void)
 	for (i = 0, P = _k_mem_pool_list; i < _k_mem_pool_count; i++, P++) {
 
 		/*
-		 * mark block status array for largest block size
+		 * mark block set for largest block size
 		 * as owning all of the memory pool buffer space
 		 */
 
@@ -72,7 +72,7 @@ void _k_mem_pool_init(void)
 
 		/*
 		 * note: all other block sets own no blocks, since their
-		 * first quad-block array entry has a NULL memory pointer
+		 * first quad-block has a NULL memory pointer
 		 */
 	}
 }
@@ -116,7 +116,7 @@ static void free_existing_block(char *ptr, struct pool_struct *P, int index)
 	int i, j;
 
 	/*
-	 * search quad_block array until the block is located,
+	 * search block set's quad-blocks until the block is located,
 	 * then mark it as unused
 	 *
 	 * note: block *must* exist, so no need to do array bounds checking
@@ -142,7 +142,7 @@ static void free_existing_block(char *ptr, struct pool_struct *P, int index)
 
 /**
  *
- * @brief Defragment specified memory pool block sets
+ * @brief Defragment the specified memory pool block sets
  *
  * Reassembles any quad-blocks that are entirely unused into larger blocks
  * (to the extent permitted).
@@ -212,7 +212,7 @@ static void defrag(struct pool_struct *P,
 				i++;
 			}
 
-			/* block set is done if at end of array */
+			/* block set is done if at end of quad-block array */
 
 		} while (i < P->block_set[j].nr_of_entries);
 	}
@@ -263,7 +263,7 @@ void task_mem_pool_defragment(kmemory_pool_t Pid)
  *
  * @brief Allocate block from an existing block set
  *
- * @param pfraglevelinfo block set descriptor
+ * @param pfraglevelinfo pointer to block set
  * @param piblockindex area to return index of first unused quad-block
  *                     when allocation fails
  *
@@ -278,7 +278,7 @@ static char *get_existing_block(struct pool_block_set *pfraglevelinfo,
 	int free_bit;
 
 	do {
-		/* give up if no more quad-blocks in block set */
+		/* give up if no more quad-blocks exist */
 
 		if (pfraglevelinfo->quad_block[i].mem_blocks == NULL) {
 			break;
@@ -305,7 +305,7 @@ static char *get_existing_block(struct pool_block_set *pfraglevelinfo,
 			break;
 		}
 
-		/* move on to next quad block; give up if at end of array */
+		/* move on to next quad-block; give up if at end of array */
 
 	} while (++i < pfraglevelinfo->nr_of_entries);
 
@@ -419,7 +419,7 @@ static char *get_block_recursive(struct pool_struct *P,
  *
  * This routine attempts to satisfy any incomplete block allocation requests for
  * the specified memory pool. It can be invoked either by the explicit freeing
- * of a used block or as a result of defragmenting the pool  (which may create
+ * of a used block or as a result of defragmenting the pool (which may create
  * one or more new, larger blocks).
  *
  * @return N/A
@@ -504,8 +504,6 @@ void _k_mem_pool_block_get(struct k_args *A)
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
 	char *found_block;
 	int offset;
-
-	/* compute smallest block size that will satisfy request */
 
 	__ASSERT(A->args.p1.req_size <= P->maxblock_size,
 		 "Request exceeds maximum memory pool block size\n");

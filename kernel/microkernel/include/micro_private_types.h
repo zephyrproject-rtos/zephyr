@@ -394,11 +394,8 @@ struct pool_struct {
 	int minblock_size;
 	int nr_of_maxblocks;
 	int nr_of_block_sets;
-
 	struct k_args *waiters;
-
 	struct pool_block_set *block_set;
-
 	char *bufblock;
 #ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
 	struct pool_struct *__next;
