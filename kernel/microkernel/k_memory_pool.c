@@ -54,18 +54,18 @@ void _k_mem_pool_init(void)
 		char *memptr = P->bufblock;
 
 		while (remaining >= 4) {
-			P->frag_tab[0].quad_block[t].mem_blocks = memptr;
-			P->frag_tab[0].quad_block[t].mem_status = 0xF;
+			P->block_set[0].quad_block[t].mem_blocks = memptr;
+			P->block_set[0].quad_block[t].mem_status = 0xF;
 			t++;
 			remaining = remaining - 4;
 			memptr +=
-				OCTET_TO_SIZEOFUNIT(P->frag_tab[0].block_size) *
-				4;
+				OCTET_TO_SIZEOFUNIT(P->block_set[0].block_size)
+				* 4;
 		}
 
 		if (remaining != 0) {
-			P->frag_tab[0].quad_block[t].mem_blocks = memptr;
-			P->frag_tab[0].quad_block[t].mem_status =
+			P->block_set[0].quad_block[t].mem_blocks = memptr;
+			P->block_set[0].quad_block[t].mem_status =
 				0xF >> (4 - remaining);
 			/* non-existent blocks are marked as unavailable */
 		}
@@ -89,7 +89,7 @@ void _k_mem_pool_init(void)
 static int compute_block_set_index(struct pool_struct *P, int data_size)
 {
 	int block_size = P->minblock_size;
-	int offset = P->nr_of_frags - 1;
+	int offset = P->nr_of_block_sets - 1;
 
 	while (data_size > block_size) {
 		block_size = block_size << 2;
@@ -111,7 +111,7 @@ static int compute_block_set_index(struct pool_struct *P, int data_size)
  */
 static void free_existing_block(char *ptr, struct pool_struct *P, int index)
 {
-	struct pool_quad_block *quad_block = P->frag_tab[index].quad_block;
+	struct pool_quad_block *quad_block = P->block_set[index].quad_block;
 	char *block_ptr;
 	int i, j;
 
@@ -123,7 +123,7 @@ static void free_existing_block(char *ptr, struct pool_struct *P, int index)
 	 */
 
 	for (i = 0; ; i++) {
-		__ASSERT((i < P->frag_tab[index].nr_of_entries) &&
+		__ASSERT((i < P->block_set[index].nr_of_entries) &&
 			 (quad_block[i].mem_blocks != NULL),
 			 "Attempt to free unallocated memory pool block\n");
 
@@ -134,7 +134,7 @@ static void free_existing_block(char *ptr, struct pool_struct *P, int index)
 				return;
 			}
 			block_ptr += OCTET_TO_SIZEOFUNIT(
-				P->frag_tab[index].block_size);
+				P->block_set[index].block_size);
 		}
 	}
 }
@@ -163,7 +163,7 @@ static void defrag(struct pool_struct *P,
 
 	for (j = ifraglevel_start; j > ifraglevel_stop; j--) {
 
-		quad_block = P->frag_tab[j].quad_block;
+		quad_block = P->block_set[j].quad_block;
 		i = 0;
 
 		do {
@@ -194,7 +194,7 @@ static void defrag(struct pool_struct *P,
 				 */
 
 				k = i;
-				while (((k+1) != P->frag_tab[j].nr_of_entries)
+				while (((k+1) != P->block_set[j].nr_of_entries)
 				       &&
 				       (quad_block[k+1].mem_blocks != NULL)) {
 					k++;
@@ -214,7 +214,7 @@ static void defrag(struct pool_struct *P,
 
 			/* block set is done if at end of array */
 
-		} while (i < P->frag_tab[j].nr_of_entries);
+		} while (i < P->block_set[j].nr_of_entries);
 	}
 }
 
@@ -230,7 +230,7 @@ void _k_defrag(struct k_args *A)
 
 	/* do complete defragmentation of memory pool (i.e. all block sets) */
 
-	defrag(P, P->nr_of_frags - 1, 0);
+	defrag(P, P->nr_of_block_sets - 1, 0);
 
 	/* reschedule anybody waiting for a block */
 
@@ -338,7 +338,7 @@ static char *get_block_recursive(struct pool_struct *P,
 
 	/* try allocating a block from the current block set */
 
-	fr_table = P->frag_tab;
+	fr_table = P->block_set;
 	i = 0;
 
 	found = get_existing_block(&(fr_table[index]), &i);
@@ -360,7 +360,7 @@ static char *get_block_recursive(struct pool_struct *P,
 	 */
 
 	if (index == startindex) {
-		defrag(P, P->nr_of_frags - 1, startindex);
+		defrag(P, P->nr_of_block_sets - 1, startindex);
 		found = get_existing_block(&(fr_table[index]), &i);
 		if (found != NULL) {
 			return found;
@@ -402,7 +402,7 @@ static char *get_block_recursive(struct pool_struct *P,
 	 */
 
 	if (index == startindex) {
-		defrag(P, P->nr_of_frags - 1, startindex);
+		defrag(P, P->nr_of_block_sets - 1, startindex);
 		found = get_existing_block(&(fr_table[index]), &i);
 		if (found != NULL) {
 			return found;
