@@ -68,11 +68,10 @@ Further reading
 ===============
 
 More information on the stack and its usage can be found in the
-following subsections:
+`wiki <http://wiki.zephyrproject.org/view/Arduino_101#Bluetooth_firmware_for_the_Arduino_101>`_ and the following subsections:
 
 .. toctree::
    :maxdepth: 1
 
    ../../api/bluetooth.rst
    devel.rst
-   ../../board/arduino_101_ble.rst
