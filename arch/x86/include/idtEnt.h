@@ -99,14 +99,13 @@ typedef struct idt_entry {
  * host side simply passes a pointer to a local variable.
  *
  */
-static inline void _IdtEntCreate(unsigned long long *pIdtEntry,
-				 void (*routine)(void *),
+static inline void _IdtEntCreate(uint64_t *pIdtEntry, uint32_t routine,
 				 unsigned int dpl)
 {
-	unsigned long *pIdtEntry32 = (unsigned long *)pIdtEntry;
+	uint32_t *pIdtEntry32 = (uint32_t *)pIdtEntry;
 
 	pIdtEntry32[0] = (KERNEL_CODE_SEG_SELECTOR << 16) |
-			((unsigned short)(unsigned int)routine);
+			((uint16_t)routine);
 
 	/*
 	 * The constant 0x8e00 results from the following:
@@ -126,8 +125,7 @@ static inline void _IdtEntCreate(unsigned long long *pIdtEntry,
 	 * Reserved = 0
 	 */
 
-	pIdtEntry32[1] = ((unsigned int) routine & 0xffff0000) |
-				    (0x8e00 | (dpl << 13));
+	pIdtEntry32[1] = (routine & 0xffff0000) | (0x8e00 | (dpl << 13));
 }
 
 #ifdef __cplusplus

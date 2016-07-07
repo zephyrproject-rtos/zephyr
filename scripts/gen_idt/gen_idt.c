@@ -85,13 +85,13 @@ static void generate_interrupt_vector_bitmap(void);
 static void clean_exit(int exit_code);
 
 struct genidt_header_s {
-	void *spurious_addr;
-	void *spurious_no_error_addr;
+	uint32_t spurious_addr;
+	uint32_t spurious_no_error_addr;
 	unsigned int num_entries;
 };
 
 struct genidt_entry_s {
-	void *isr;
+	uint32_t isr;
 	unsigned int irq;
 	unsigned int priority;
 	unsigned int vector_id;
@@ -248,7 +248,7 @@ static void open_files(void)
 
 static void show_entry(struct genidt_entry_s *entry)
 {
-	fprintf(stderr, "Vector %3d: ISR %10p IRQ %3d PRI %2d DPL %2x\n",
+	fprintf(stderr, "Vector %3d: ISR 0x%08x IRQ %3d PRI %2d DPL %2x\n",
 			entry->vector_id, entry->isr, entry->irq, entry->priority,
 			entry->dpl);
 }
@@ -264,7 +264,7 @@ static void read_input_file(void)
 		goto read_error;
 	}
 
-	PRINTF("Spurious interrupt handlers found at %p and %p.\n",
+	PRINTF("Spurious interrupt handlers found at 0x%x and 0x%x.\n",
 		    genidt_header.spurious_addr, genidt_header.spurious_no_error_addr);
 	PRINTF("There are %d ISR(s).\n", genidt_header.num_entries);
 
@@ -450,7 +450,7 @@ static void generate_idt(void)
      */
 
 	for (i = 0; i < num_vectors; i++) {
-		unsigned long long idt_entry;
+		uint64_t idt_entry;
 		ssize_t bytes_written;
 
 		 _IdtEntCreate(&idt_entry, generated_entry[i].isr,

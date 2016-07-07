@@ -151,7 +151,7 @@ void irq_debug_dump_idt(void)
 
 void _IntVecSet(unsigned int vector, void (*routine)(void *), unsigned int dpl)
 {
-	unsigned long long *pIdtEntry;
+	uint64_t *pIdtEntry;
 	unsigned int key;
 
 	/*
@@ -160,7 +160,7 @@ void _IntVecSet(unsigned int vector, void (*routine)(void *), unsigned int dpl)
 	 * explicit validation will not be performed in this primitive.
 	 */
 
-	pIdtEntry = (unsigned long long *)(_idt_base_address + (vector << 3));
+	pIdtEntry = (uint64_t *)(_idt_base_address + (vector << 3));
 
 	/*
 	 * Lock interrupts to protect the IDT entry to which _IdtEntryCreate()
@@ -169,7 +169,7 @@ void _IntVecSet(unsigned int vector, void (*routine)(void *), unsigned int dpl)
 	 */
 
 	key = irq_lock();
-	_IdtEntCreate(pIdtEntry, routine, dpl);
+	_IdtEntCreate(pIdtEntry, (uint32_t)routine, dpl);
 
 #ifdef CONFIG_MVIC
 	/* Some nonstandard interrupt controllers may be doing some IDT
