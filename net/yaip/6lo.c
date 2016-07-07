@@ -96,10 +96,13 @@ static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr *addr)
 static inline bool compress_IPHC_header(struct net_buf *buf,
 					fragment_handler_t fragment)
 {
-	struct net_buf *frag;
 	struct net_ipv6_hdr *ipv6 = NET_IPV6_BUF(buf);
+	uint8_t offset = 0;
 	struct net_udp_hdr *udp;
-	uint8_t offset = 0, tcl, tmp, compressed;
+	struct net_buf *frag;
+	uint8_t compressed;
+	uint8_t tcl;
+	uint8_t tmp;
 
 	if (buf->frags->len < NET_IPV6H_LEN) {
 		NET_DBG("Invalid length %d, min %d",
@@ -114,7 +117,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		return false;
 	}
 
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
 	if (!frag) {
 		return false;
 	}
@@ -425,6 +428,12 @@ end:
 	       buf->frags->len - compressed);
 	net_buf_add(frag, buf->frags->len - compressed);
 
+	/* Copying ll part, if any */
+	if (net_nbuf_ll_reserve(buf)) {
+		memcpy(IPHC - net_nbuf_ll_reserve(buf),
+		       net_nbuf_ll(buf), net_nbuf_ll_reserve(buf));
+	}
+
 	/* delete the uncompressed(original) fragment */
 	net_buf_frag_del(buf, buf->frags);
 	net_buf_frag_insert(buf, frag);
@@ -442,18 +451,20 @@ end:
 /* TODO: context based uncompression not supported */
 static inline bool uncompress_IPHC_header(struct net_buf *buf)
 {
-	struct net_buf *frag;
-	struct net_ipv6_hdr *ipv6;
 	struct net_udp_hdr *udp = NULL;
-	uint8_t tcl, offset = 2, chksum;
+	uint8_t offset = 2;
+	struct net_ipv6_hdr *ipv6;
+	struct net_buf *frag;
+	uint8_t chksum;
 	uint16_t len;
+	uint8_t tcl;
 
 	if (CIPHC[1] & NET_6LO_IPHC_CID_1) {
 		/* if it is supported increase offset to +1 */
 		return false;
 	}
 
-	frag = net_nbuf_get_reserve_data(0);
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
 	if (!frag) {
 		return false;
 	}
@@ -735,6 +746,12 @@ end:
 	memmove(buf->frags->data, buf->frags->data + offset,
 		buf->frags->len - offset);
 	buf->frags->len -= offset;
+
+	/* Copying ll part, if any */
+	if (net_nbuf_ll_reserve(buf)) {
+		memcpy(frag->data - net_nbuf_ll_reserve(buf),
+		       net_nbuf_ll(buf), net_nbuf_ll_reserve(buf));
+	}
 
 	/* insert the fragment (this one holds uncompressed headers) */
 	net_buf_frag_insert(buf, frag);
