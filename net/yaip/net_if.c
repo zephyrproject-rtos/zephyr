@@ -439,8 +439,6 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 			iface->ipv6.prefix[i].is_infinite = false;
 		}
 
-		/* FIXME set timer for the lifetime */
-
 		memcpy(&iface->ipv6.prefix[i].prefix, prefix,
 		       sizeof(struct in6_addr));
 
@@ -468,7 +466,10 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 			continue;
 		}
 
+		net_if_ipv6_prefix_unset_timer(&iface->ipv6.prefix[i]);
+
 		iface->ipv6.prefix[i].is_used = false;
+
 		return true;
 	}
 
@@ -493,6 +494,53 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 	}
 
 	return NULL;
+}
+
+static inline void prefix_lf_timeout(struct nano_work *work)
+{
+	struct net_if_ipv6_prefix *prefix =
+		CONTAINER_OF(work, struct net_if_ipv6_prefix, lifetime);
+
+	NET_DBG("Prefix %s/%d expired",
+		net_sprint_ipv6_addr(&prefix->prefix), prefix->len);
+
+	prefix->is_used = false;
+}
+
+void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
+				  uint32_t lifetime)
+{
+	/* The maximum lifetime might be shorter than expected
+	 * because we have only 32-bit int to store the value and
+	 * the timer API uses ticks value. The lifetime value with
+	 * all bits set means infinite and that value is never set
+	 * to timer.
+	 */
+	uint32_t timeout = SECONDS(lifetime);
+
+	NET_ASSERT(lifetime != 0xffffffff);
+
+	if (lifetime > (0xfffffffe / sys_clock_ticks_per_sec)) {
+		timeout = 0xfffffffe;
+
+		NET_ERR("Prefix %s/%d lifetime %u overflow, "
+			"setting it to %u secs",
+			net_sprint_ipv6_addr(&prefix->prefix),
+			prefix->len,
+			lifetime, timeout / sys_clock_ticks_per_sec);
+	}
+
+	nano_delayed_work_init(&prefix->lifetime, prefix_lf_timeout);
+	nano_delayed_work_submit(&prefix->lifetime, timeout);
+}
+
+void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix)
+{
+	if (!prefix->is_used) {
+		return;
+	}
+
+	nano_delayed_work_cancel(&prefix->lifetime);
 }
 
 struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,

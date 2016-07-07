@@ -101,7 +101,7 @@ struct net_if_ipv6_prefix {
 	bool is_infinite;
 
 	/** Prefix lifetime */
-	struct nano_timer lifetime;
+	struct nano_delayed_work lifetime;
 };
 #endif /* CONFIG_NET_IPV6 */
 
@@ -580,6 +580,22 @@ static inline void net_if_ipv6_prefix_set_lf(struct net_if_ipv6_prefix *prefix,
 {
 	prefix->is_infinite = is_infinite;
 }
+
+/**
+ * @brief Set the prefix lifetime timer.
+ *
+ * @param prefix IPv6 address
+ * @param lifetime Prefix lifetime in seconds
+ */
+void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
+				  uint32_t lifetime);
+
+/**
+ * @brief Unset the prefix lifetime timer.
+ *
+ * @param prefix IPv6 address
+ */
+void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix);
 
 /**
  * @brief Check if IPv6 address is one of the routers configured

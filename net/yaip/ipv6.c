@@ -1466,8 +1466,9 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 			prefix_info->prefix_len,
 			ntohl(prefix_info->valid_lifetime));
 
-		/* FIXME - add timer */
 		net_if_ipv6_prefix_set_lf(prefix, false);
+		net_if_ipv6_prefix_set_timer(prefix,
+					ntohl(prefix_info->valid_lifetime));
 		break;
 	}
 }
