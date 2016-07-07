@@ -25,13 +25,15 @@ enum power_states {
 	POWER_STATE_CPU_C1,
 	POWER_STATE_CPU_C2,
 	POWER_STATE_CPU_C2LP,
+	POWER_STATE_SOC_SLEEP,
+	POWER_STATE_SOC_DEEP_SLEEP,
 	POWER_STATE_MAX
 };
 
 #define TIMEOUT 5 /* in seconds */
 
 static struct device *rtc_dev;
-static enum power_states last_state = POWER_STATE_CPU_C2LP;
+static enum power_states last_state = POWER_STATE_SOC_DEEP_SLEEP;
 
 static enum power_states get_next_state(void)
 {
@@ -48,9 +50,78 @@ static const char *state_to_string(int state)
 		return "CPU_C2";
 	case POWER_STATE_CPU_C2LP:
 		return "CPU_C2LP";
+	case POWER_STATE_SOC_SLEEP:
+		return "SOC_SLEEP";
+	case POWER_STATE_SOC_DEEP_SLEEP:
+		return "SOC_DEEP_SLEEP";
 	default:
 		return "Unknown state";
 	}
+}
+
+/*
+ * This helper function handle both 'sleep' and 'deep sleep' states.
+ *
+ * In those states, the core voltage rail is turned off and the execution
+ * context is lost. The WakeUp event will turn on the core voltage rail
+ * and the x86 core will jump the its reset vector.
+ *
+ * In order to be able to continue the program execution from the point
+ * it was before entering in Sleep states, we have to save the execution
+ * context and restore it during system startup.
+ *
+ * The execution context is restored by the 'restore_trap' routine which
+ * is called during system startup by _sys_soc_resume hook.
+ *
+ * In future, this save and restore functionality will be provided by QMSI
+ * and we won't need to do it in Zephyr side.
+ */
+static void __do_soc_sleep(int deep)
+{
+	uint64_t saved_idt = 0;
+	uint64_t saved_gdt = 0;
+
+	/* Save execution context. This routine saves 'idtr', 'gdtr',
+	 * EFLAGS and general purpose registers onto the stack, and
+	 * current ESP register in GPS1 register.
+	 */
+	__asm__ __volatile__("sidt %[idt]\n\t"
+			     "sgdt %[gdt]\n\t"
+			     "pushfl\n\t"
+			     "pushal\n\t"
+			     "movl %%esp, %[gps1]\n\t"
+			     : /* Output operands. */
+			     [idt] "=m"(saved_idt),
+			     [gdt] "=m"(saved_gdt),
+			     [gps1] "=m"(QM_SCSS_GP->gps1)
+			     : /* Input operands. */
+			     : /* Clobbered registers list. */
+			     );
+
+	if (deep) {
+		power_soc_deep_sleep();
+	} else {
+		power_soc_sleep();
+	}
+
+	/* Restore trap. This routine is called during system initialization
+	 * to restore the execution context from this function.
+	 */
+	__asm__ __volatile__(".globl restore_trap\n\t"
+			     "restore_trap:\n\t"
+			     "    movl %[gps1], %%esp\n\t"
+			     "    movl $0x00, %[gps1]\n\t"
+			     "    popal\n\t"
+			     "    popfl\n\t"
+			     "    lgdt %[gdt]\n\t"
+			     "    lidt %[idt]\n\t"
+			     : /* Output operands. */
+			     : /* Input operands. */
+			     [gps1] "m"(QM_SCSS_GP->gps1),
+			     [idt] "m"(saved_idt),
+			     [gdt] "m"(saved_gdt)
+			     : /* Clobbered registers list. */
+			     );
 }
 
 static void set_rtc_alarm(void)
@@ -66,6 +137,20 @@ static void set_rtc_alarm(void)
 	 */
 	while (rtc_read(rtc_dev) < now + 5)
 		;
+}
+
+static void do_soc_sleep(int deep)
+{
+	/* Host processor will be turned off so we set up an RTC
+	 * interrupt to wake up the SoC.
+	 */
+	set_rtc_alarm();
+
+	/* TODO: Call suspend API from devices. */
+
+	__do_soc_sleep(deep);
+
+	/* TODO: Call resume API from devices. */
 }
 
 int _sys_soc_suspend(int32_t ticks)
@@ -102,6 +187,14 @@ int _sys_soc_suspend(int32_t ticks)
 		set_rtc_alarm();
 		power_cpu_c2lp();
 		break;
+	case POWER_STATE_SOC_SLEEP:
+		pm_operation = SYS_PM_DEEP_SLEEP;
+		do_soc_sleep(0);
+		break;
+	case POWER_STATE_SOC_DEEP_SLEEP:
+		pm_operation = SYS_PM_DEEP_SLEEP;
+		do_soc_sleep(1);
+		break;
 	default:
 		printk("State not supported\n");
 		break;
@@ -120,10 +213,6 @@ int _sys_soc_suspend(int32_t ticks)
 	printk("Exiting %s state\n", state_to_string(state));
 
 	return pm_operation;
-}
-
-void _sys_soc_resume(void)
-{
 }
 
 void main(void)

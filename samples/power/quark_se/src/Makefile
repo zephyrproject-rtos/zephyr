@@ -1,1 +1,1 @@
-obj-y = main.o
+obj-y = main.o resume.o
