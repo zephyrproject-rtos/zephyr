@@ -83,37 +83,44 @@ void _k_mem_pool_init(void)
 
 /**
  *
- * @brief ???
+ * @brief Return an allocated block to its block set
  *
- * marks ptr as free block in the given list [MYSTERIOUS LEGACY COMMENT]
+ * @param ptr pointer to start of block
+ * @param P memory pool descriptor
+ * @param index block set identifier
  *
  * @return N/A
  */
-static void search_bp(char *ptr, struct pool_struct *P, int index)
+static void free_existing_block(char *ptr, struct pool_struct *P, int index)
 {
-	int i = 0, j, block_found = 0;
+	struct block_stat *quad_block = P->frag_tab[index].blocktable;
+	char *block_ptr;
+	int i, j;
 
-	while ((P->frag_tab[index].blocktable[i].mem_blocks != NULL) &&
-	       (!block_found)) {
+	/*
+	 * search quad_block array until the block is located,
+	 * then mark it as unused
+	 *
+	 * note: block *must* exist, so no need to do array bounds checking
+	 */
+
+	for (i = 0; ; i++) {
+		__ASSERT((i < P->frag_tab[index].nr_of_entries) &&
+			 (quad_block[i].mem_blocks != NULL),
+			 "Attempt to free unallocated memory pool block\n");
+
+		block_ptr = quad_block[i].mem_blocks;
 		for (j = 0; j < 4; j++) {
-			if (ptr ==
-			    ((P->frag_tab[index].blocktable[i].mem_blocks) +
-			     (OCTET_TO_SIZEOFUNIT(
-				     j * P->frag_tab[index].block_size)))) {
-				/* then we've found the right pointer */
-				block_found = 1;
-
-				/* so free it */
-				P->frag_tab[index].blocktable[i].mem_status =
-					P->frag_tab[index]
-						.blocktable[i]
-						.mem_status &
-					(~(1 << j));
+			if (ptr == block_ptr) {
+				quad_block[i].mem_status &= (~(1 << j));
+				return;
 			}
+			block_ptr += OCTET_TO_SIZEOFUNIT(
+				P->frag_tab[index].block_size);
 		}
-		i++;
 	}
 }
+
 
 /**
  *
@@ -134,7 +141,7 @@ static void defrag(struct pool_struct *P,
 		while (P->frag_tab[j].blocktable[i].mem_blocks != NULL) {
 			if ((P->frag_tab[j].blocktable[i].mem_status & 0xF) ==
 			    0) { /* blocks for defragmenting */
-				search_bp(
+				free_existing_block(
 					P->frag_tab[j].blocktable[i].mem_blocks,
 					P,
 					j - 1);
