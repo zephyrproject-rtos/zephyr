@@ -270,4 +270,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 /* Send packet data to connected peer */
 int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
+
+/* Handle security level changed on link */
+void l2cap_br_encrypt_change(struct bt_conn *conn);
 #endif /* CONFIG_BLUETOOTH_BREDR */

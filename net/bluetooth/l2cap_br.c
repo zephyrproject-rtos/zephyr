@@ -1064,6 +1064,17 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
+void l2cap_br_encrypt_change(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan;
+
+	for (chan = conn->channels; chan; chan = chan->_next) {
+		if (chan->ops && chan->ops->encrypt_change) {
+			chan->ops->encrypt_change(chan);
+		}
+	}
+}
+
 static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	int i;

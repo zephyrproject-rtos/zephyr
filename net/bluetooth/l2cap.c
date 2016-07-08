@@ -330,6 +330,13 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		l2cap_br_encrypt_change(conn);
+		return;
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 	for (chan = conn->channels; chan; chan = chan->_next) {
 		if (chan->ops->encrypt_change) {
 			chan->ops->encrypt_change(chan);
