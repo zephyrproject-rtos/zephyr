@@ -64,6 +64,7 @@
 enum {
 	L2CAP_FLAG_LCONF_DONE,	/* local config accepted by remote */
 	L2CAP_FLAG_RCONF_DONE,	/* remote config accepted by local */
+	L2CAP_FLAG_ACCEPTOR,	/* getting incoming connection req on PSM */
 };
 
 static struct bt_l2cap_server *br_servers;
@@ -609,6 +610,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	BR_CHAN(chan)->tx.cid = scid;
 	dcid = BR_CHAN(chan)->rx.cid;
 	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_ACCEPTOR);
 
 	if (l2cap_br_security_check(chan, psm)) {
 		result = BT_L2CAP_PENDING;
@@ -630,6 +632,7 @@ done:
 	/* Disconnect link when security rules were violated */
 	if (result == BT_L2CAP_ERR_SEC_BLOCK) {
 		l2cap_br_state_set(chan, BT_L2CAP_DISCONNECTED);
+		atomic_clear(BR_CHAN(chan)->flags);
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
 		return;
 	}
@@ -1064,11 +1067,58 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
+static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan)
+{
+	struct net_buf *buf;
+	struct bt_l2cap_conn_rsp *rsp;
+	struct bt_l2cap_sig_hdr *hdr;
+
+	if (chan->state != BT_L2CAP_CONNECT) {
+		return;
+	}
+
+	/*
+	 * For incoming connection state send confirming outstanding
+	 * response and initiate configuration request.
+	 */
+	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_ACCEPTOR)) {
+		buf = bt_l2cap_create_pdu(&br_sig);
+		if (!buf) {
+			BT_ERR("No buffers for PDU");
+			return;
+		}
+
+		hdr = net_buf_add(buf, sizeof(*hdr));
+		hdr->code = BT_L2CAP_CONN_RSP;
+		hdr->ident = chan->ident;
+		hdr->len = sys_cpu_to_le16(sizeof(*rsp));
+
+		rsp = net_buf_add(buf, sizeof(*rsp));
+		memset(rsp, 0, sizeof(*rsp));
+
+		rsp->dcid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
+		rsp->scid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
+		rsp->result = BT_L2CAP_SUCCESS;
+
+		bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
+
+		chan->ident = 0;
+		l2cap_br_state_set(chan, BT_L2CAP_CONFIG);
+		/*
+		 * Initialize config request since remote needs to know
+		 * local MTU segmentation.
+		 */
+		l2cap_br_conf(chan);
+	}
+}
+
 void l2cap_br_encrypt_change(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
 
 	for (chan = conn->channels; chan; chan = chan->_next) {
+		l2cap_br_conn_pend(chan);
+
 		if (chan->ops && chan->ops->encrypt_change) {
 			chan->ops->encrypt_change(chan);
 		}
