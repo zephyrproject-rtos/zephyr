@@ -98,19 +98,19 @@
 
 /* UDP Ports */
 /* 4 bit compressible udp ports */
-#define udp_src_port_4bit 0xb1f0
-#define udp_dst_port_4bit 0xb2f0
+#define udp_src_port_4bit 0xf0b1
+#define udp_dst_port_4bit 0xf0b2
 
 /* 8 bit compressible udp ports */
-#define udp_src_port_8bit   0x11f1
-#define udp_dst_port_8bit_y 0x22f0
+#define udp_src_port_8bit   0xf111
+#define udp_dst_port_8bit_y 0xf022 /* compressible */
 
-#define udp_src_port_8bit_y 0x11f0
-#define udp_dst_port_8bit   0x22f1
+#define udp_src_port_8bit_y 0xf011 /* compressible */
+#define udp_dst_port_8bit   0xf122
 
 /* uncompressible ports */
-#define udp_src_port_16bit 0x11ff
-#define udp_dst_port_16bit 0x22ff
+#define udp_src_port_16bit 0xff11
+#define udp_dst_port_16bit 0xff22
 
 static const char user_data[] =
 		"0123456789012345678901234567890123456789"
@@ -120,6 +120,7 @@ static const char user_data[] =
 struct net_6lo_data {
 	struct net_ipv6_hdr ipv6;
 	struct net_udp_hdr udp;
+	bool iphc;
 	bool small;
 } __packed;
 
@@ -235,7 +236,7 @@ static struct net_buf *create_buf(struct net_6lo_data *data)
 
 	data->ipv6.len[0] = len >> 8;
 	data->ipv6.len[1] = (uint8_t) len;
-	data->udp.len = len;
+	data->udp.len = htons(len);
 
 	while (remaining > 0) {
 		uint8_t copy;
@@ -271,11 +272,12 @@ static struct net_6lo_data test_data_1 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam00,
 	.ipv6.dst = dst_dam00,
-	.udp.src_port = udp_src_port_4bit,
-	.udp.dst_port = udp_dst_port_4bit,
+	.udp.src_port = htons(udp_src_port_4bit),
+	.udp.dst_port = htons(udp_dst_port_4bit),
 	.udp.len = 0x00,
 	.udp.chksum = 0x00,
-	.small = true
+	.small = true,
+	.iphc = true
 };
 
 static struct net_6lo_data test_data_2 = {
@@ -287,11 +289,12 @@ static struct net_6lo_data test_data_2 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam01,
 	.ipv6.dst = dst_dam01,
-	.udp.src_port = udp_src_port_8bit_y,
-	.udp.dst_port = udp_dst_port_8bit,
+	.udp.src_port = htons(udp_src_port_8bit_y),
+	.udp.dst_port = htons(udp_dst_port_8bit),
 	.udp.len = 0x00,
 	.udp.chksum = 0x00,
-	.small = false
+	.small = false,
+	.iphc = true
 };
 
 static struct net_6lo_data test_data_3 = {
@@ -303,11 +306,12 @@ static struct net_6lo_data test_data_3 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam10,
 	.ipv6.dst = dst_dam10,
-	.udp.src_port = udp_src_port_8bit,
-	.udp.dst_port = udp_dst_port_8bit_y,
+	.udp.src_port = htons(udp_src_port_8bit),
+	.udp.dst_port = htons(udp_dst_port_8bit_y),
 	.udp.len = 0x00,
 	.udp.chksum = 0x00,
-	.small = true
+	.small = true,
+	.iphc = true
 };
 
 static struct net_6lo_data test_data_4 = {
@@ -319,11 +323,12 @@ static struct net_6lo_data test_data_4 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sac1_sam00,
 	.ipv6.dst = dst_m1_dam00,
-	.udp.src_port = udp_src_port_16bit,
-	.udp.dst_port = udp_dst_port_16bit,
+	.udp.src_port = htons(udp_src_port_16bit),
+	.udp.dst_port = htons(udp_dst_port_16bit),
 	.udp.len = 0x00,
 	.udp.chksum = 0x00,
-	.small = false
+	.small = false,
+	.iphc = true
 };
 
 static struct net_6lo_data test_data_5 = {
@@ -335,11 +340,12 @@ static struct net_6lo_data test_data_5 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam01,
 	.ipv6.dst = dst_m1_dam01,
-	.udp.src_port = udp_src_port_16bit,
-	.udp.dst_port = udp_dst_port_16bit,
+	.udp.src_port = htons(udp_src_port_16bit),
+	.udp.dst_port = htons(udp_dst_port_16bit),
 	.udp.len = 0x00,
 	.udp.chksum = 0x00,
-	.small = true
+	.small = true,
+	.iphc = true
 };
 
 static struct net_6lo_data test_data_6 = {
@@ -351,11 +357,46 @@ static struct net_6lo_data test_data_6 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam10,
 	.ipv6.dst = dst_m1_dam10,
-	.udp.src_port = udp_src_port_8bit,
-	.udp.dst_port = udp_dst_port_8bit,
+	.udp.src_port = htons(udp_src_port_8bit),
+	.udp.dst_port = htons(udp_dst_port_8bit),
 	.udp.len = 0x00,
 	.udp.chksum = 0x00,
-	.small = true
+	.small = true,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_7 = {
+	.ipv6.vtc = 0x61,
+	.ipv6.tcflow = 0x20,
+	.ipv6.flow = 0x00,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam00,
+	.ipv6.dst = dst_m1_dam00,
+	.udp.src_port = htons(udp_src_port_16bit),
+	.udp.dst_port = htons(udp_dst_port_16bit),
+	.udp.len = 0x00,
+	.udp.chksum = 0x00,
+	.small = true,
+	.iphc = false
+};
+
+static struct net_6lo_data test_data_8 = {
+	.ipv6.vtc = 0x61,
+	.ipv6.tcflow = 0x20,
+	.ipv6.flow = 0x00,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam00,
+	.ipv6.dst = dst_m1_dam00,
+	.udp.src_port = htons(udp_src_port_16bit),
+	.udp.dst_port = htons(udp_dst_port_16bit),
+	.udp.len = 0x00,
+	.udp.chksum = 0x00,
+	.small = false,
+	.iphc = false
 };
 
 static int test_6lo(struct net_6lo_data *data)
@@ -374,7 +415,7 @@ static int test_6lo(struct net_6lo_data *data)
 	net_hexdump_frags("before-compression", buf);
 #endif
 
-	if (!net_6lo_compress(buf, true)) {
+	if (!net_6lo_compress(buf, data->iphc)) {
 		TC_PRINT("compression failed\n");
 		goto end;
 	}
@@ -418,6 +459,8 @@ static const struct {
 	{ "test_6lo_sac1_sam00_m1_dam00", &test_data_4},
 	{ "test_6lo_sam01_m1_dam01", &test_data_5},
 	{ "test_6lo_sam10_m1_dam10", &test_data_6},
+	{ "test_6lo_ipv6_dispatch_small", &test_data_7},
+	{ "test_6lo_ipv6_dispatch_big", &test_data_8},
 };
 
 static void main_fiber(void)
