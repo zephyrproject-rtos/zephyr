@@ -91,9 +91,7 @@ are written entirely in C, but also permits the use of assembly language.
 
 In situations where an ISR cannot complete the processing of an interrupt in a
 timely manner by itself, the kernel's synchronization and data passing mechanisms
-can hand off the remaining processing to a fiber or task. The microkernel provides
-a *task IRQ* object type that streamlines the handoff to a task in a manner that
-does not require the device driver or application code to supply an ISR at all.
+can hand off the remaining processing to a fiber or task.
 
 Related sections:
 
