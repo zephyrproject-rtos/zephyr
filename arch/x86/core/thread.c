@@ -41,7 +41,8 @@ tNANO _nanokernel = {0};
 
 /* forward declaration */
 
-#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
+#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
+	|| defined(CONFIG_X86_IAMCU)
 void _thread_entry_wrapper(_thread_entry_t, _thread_arg_t,
 			   _thread_arg_t, _thread_arg_t);
 #endif
@@ -116,10 +117,13 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	tcs->entry = (struct __thread_entry *)(pInitialCtx -
 		sizeof(struct __thread_entry));
 #endif
-	/*
-	 * We subtract 11 here to account for the thread entry routine
-	 * parameters
-	 * (4 of them), eflags, eip, and the edi/esi/ebx/ebp/eax registers.
+
+	/* The stack needs to be set up so that when we do an initial switch
+	 * to it in the middle of _Swap(), it needs to be set up as follows:
+	 *  - 4 thread entry routine parameters
+	 *  - eflags
+	 *  - eip (so that _Swap() "returns" to the entry point)
+	 *  - edi, esi, ebx, ebp,  eax
 	 */
 	pInitialCtx -= 11;
 
@@ -204,19 +208,24 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	_nano_timeout_tcs_init(tcs);
 }
 
-#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
+#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
+	|| defined(CONFIG_X86_IAMCU)
 /**
  *
- * @brief Adjust stack before invoking _thread_entry
+ * @brief Adjust stack/parameters before invoking _thread_entry
  *
- * This function adjusts the initial stack frame created by _new_thread()
- * such that the GDB stack frame unwinders recognize it as the outermost frame
- * in the thread's stack.  The function then jumps to _thread_entry().
+ * This function adjusts the initial stack frame created by _new_thread() such
+ * that the GDB stack frame unwinders recognize it as the outermost frame in
+ * the thread's stack.  For targets that use the IAMCU calling convention, the
+ * first three arguments are popped into eax, edx, and ecx. The function then
+ * jumps to _thread_entry().
  *
  * GDB normally stops unwinding a stack when it detects that it has
  * reached a function called main().  Kernel tasks, however, do not have
  * a main() function, and there does not appear to be a simple way of stopping
  * the unwinding of the stack.
+ *
+ * SYS V Systems:
  *
  * Given the initial thread created by _new_thread(), GDB expects to find a
  * return address on the stack immediately above the thread entry routine
@@ -229,6 +238,20 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
  * an invalid access to address zero and returns an error, which causes the
  * GDB stack unwinder to stop somewhat gracefully.
  *
+ * The initial EFLAGS cannot be overwritten until after _Swap() has swapped in
+ * the new thread for the first time.  This routine is called by _Swap() the
+ * first time that the new thread is swapped in, and it jumps to
+ * _thread_entry after it has done its work.
+ *
+ * IAMCU Systems:
+ *
+ * There is no EFLAGS on the stack when we get here. _thread_entry() takes
+ * four arguments, and we need to pop off the first three into the
+ * appropriate registers. Instead of using the 'call' instruction, we push
+ * a NULL return address onto the stack and jump into _thread_entry,
+ * ensuring the stack won't be unwound further. Placing some kind of return
+ * address on the stack is mandatory so this isn't conditionally compiled.
+ *
  *       __________________
  *      |      param3      |   <------ Top of the stack
  *      |__________________|
@@ -236,28 +259,12 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
  *      |__________________|                  |
  *      |      param1      |                  V
  *      |__________________|
- *      |      pEntry      |
+ *      |      pEntry      |  <----   ESP when invoked by _Swap() on IAMCU
  *      |__________________|
- *      | initial EFLAGS   |  <----   ESP when invoked by _Swap()
- *      |__________________|             (Zeroed by this routine)
- *      |    entryRtn      |  <-----  Thread Entry Routine invoked by _Swap()
- *      |__________________|             (This routine if GDB_INFO)
- *      |      <edi>       |  \
- *      |__________________|  |
- *      |      <esi>       |  |
- *      |__________________|  |
- *      |      <ebx>       |  |----   Initial registers restored by _Swap()
- *      |__________________|  |
- *      |      <ebp>       |  |
- *      |__________________|  |
- *      |      <eax>       | /
- *      |__________________|
+ *      | initial EFLAGS   |  <----   ESP when invoked by _Swap() on Sys V
+ *      |__________________|             (Zeroed by this routine on Sys V)
  *
  *
- * The initial EFLAGS cannot be overwritten until after _Swap() has swapped in
- * the new thread for the first time.  This routine is called by _Swap() the
- * first time that the new thread is swapped in, and it jumps to
- * _thread_entry after it has done its work.
  *
  * @return this routine does NOT return.
  */
@@ -266,9 +273,20 @@ __asm__("\t.globl _thread_entry\n"
 	"_thread_entry_wrapper:\n" /* should place this func .S file and use
 				    * SECTION_FUNC
 				    */
+
+#ifdef CONFIG_X86_IAMCU
+	/* IAMCU calling convention has first 3 arguments supplied in
+	 * registers not the stack
+	 */
+	"\tpopl %eax\n"
+	"\tpopl %edx\n"
+	"\tpopl %ecx\n"
+	"\tpushl $0\n" /* Null return address */
+#elif defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
 	"\tmovl $0, (%esp)\n" /* zero initialEFLAGS location */
+#endif
 	"\tjmp _thread_entry\n");
-#endif /* defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) */
+#endif /* CONFIG_GDB_INFO || CONFIG_DEBUG_INFO) || CONFIG_X86_IAMCU */
 
 /**
  *
@@ -326,8 +344,8 @@ void _new_thread(char *pStackMem, unsigned stackSize,
 
 	*--pInitialThread = (EflagsGet() & ~EFLAGS_MASK) | EFLAGS_INITIAL;
 
-#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
-
+#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
+	|| defined(CONFIG_X86_IAMCU)
 	/*
 	 * Arrange for the _thread_entry_wrapper() function to be called
 	 * to adjust the stack before _thread_entry() is invoked.

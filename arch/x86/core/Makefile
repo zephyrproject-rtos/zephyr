@@ -11,16 +11,11 @@ endif
 # character starts a comment
 KBUILD_AFLAGS += -Wa,--divide
 
-ifndef CONFIG_X86_IAMCU
-obj-y += i386_sysV_abi/
-else
-obj-y += iamcu_abi/
-endif
-
 obj-y += fatal.o cpuhalt.o \
 	msr.o dynamic.o intconnect.o \
 	excconnect.o sys_fatal_error_handler.o \
-	crt0.o atomic.o cache_s.o cache.o excstub.o
+	crt0.o atomic.o cache_s.o cache.o excstub.o \
+	intstub.o swap.o thread.o
 
 obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 obj-$(CONFIG_FP_SHARING) += float.o

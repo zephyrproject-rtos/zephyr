@@ -93,6 +93,13 @@
  */
 
 SECTION_FUNC(TEXT, _Swap)
+#ifdef CONFIG_X86_IAMCU
+	/* save EFLAGS on stack right before return address, just as SYSV would
+	 * have done
+	 */
+	pushl	0(%esp)
+	movl	%eax, 4(%esp)
+#endif
 	movl	$_nanokernel, %eax
 
 	/*
@@ -375,4 +382,12 @@ BRANCH_LABEL(CROHandlingDone)
 BRANCH_LABEL(skipIntLatencyStop)
 #endif
 	popfl
+#if CONFIG_X86_IAMCU
+	/* Remember that eflags we stuck into the stack before the return
+	 * address? need to get it out of there since the calling convention
+	 * will not do that for us.
+	 */
+	popl	%edx
+	movl	%edx, (%esp)
+#endif
 	ret

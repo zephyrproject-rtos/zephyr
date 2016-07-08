@@ -307,7 +307,7 @@ int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  *
  * @param stub_idx Index into the dyn_irq_list array
  */
-void _common_dynamic_irq_handler(uint32_t stub_idx)
+void _common_dynamic_irq_handler(uint8_t stub_idx)
 {
 	dyn_irq_list[stub_idx].handler(dyn_irq_list[stub_idx].param);
 }

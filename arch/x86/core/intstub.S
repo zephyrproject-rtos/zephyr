@@ -245,6 +245,7 @@ BRANCH_LABEL(alreadyOnIntStack)
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 BRANCH_LABEL(_HandleIdle)
+	/* Preserve eax which contains stub return address */
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 	pushl	%eax
 	call _power_save_idle_exit
@@ -272,15 +273,19 @@ BRANCH_LABEL(_HandleIdle)
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 /**
- * @brief Perform EOI, clean up stack, and do interrupt exit
+ * @brief Perform EOI and do interrupt exit
  *
  * This is used by the interrupt stubs, which all leave the stack in
  * a particular state and need to poke the interrupt controller.
- * Prior to running the logic in _IntExit, the ISR parameter is popped off
- * the stack and EOI is set to the LOAPIC.
  */
 SECTION_FUNC(TEXT, _IntExitWithEoi)
-	popl %eax			/* Pushed onto stack by stub */
+#ifndef CONFIG_X86_IAMCU
+	/* For SYS V, the stub pushes an argument onto the stack to be
+	 * consumed by the handler, remove it since the handler is now
+	 * finished
+	 */
+	popl %eax
+#endif
 #if CONFIG_EOI_FORWARDING_BUG
 	call	_lakemont_eoi
 #endif
@@ -380,8 +385,16 @@ BRANCH_LABEL(_IntExit)
 #endif
 
 	pushfl			/* push KERNEL_LOCK_KEY argument */
+#ifdef CONFIG_X86_IAMCU
+	/* IAMCU first argument goes into a register, not the stack.
+	 */
+	popl	%eax
+#endif
 	call	_Swap
 
+#ifndef CONFIG_X86_IAMCU
+	addl 	$4, %esp	/* pop KERNEL_LOCK_KEY argument */
+#endif
 	/*
 	 * The interrupted thread has now been scheduled,
 	 * as the result of a _later_ invocation of _Swap().
@@ -389,7 +402,6 @@ BRANCH_LABEL(_IntExit)
 	 * Now need to restore the interrupted thread's environment before
 	 * returning control to it at the point where it was interrupted ...
 	 */
-
 
 #if ( defined(CONFIG_FP_SHARING) ||  \
       defined(CONFIG_GDB_INFO) )
@@ -402,12 +414,6 @@ BRANCH_LABEL(_IntExit)
 	movl	_nanokernel + __tNANO_current_OFFSET, %eax
 	andl	$~INT_ACTIVE, __tTCS_flags_OFFSET (%eax)
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
-
-
-	addl 	$4, %esp	/* pop KERNEL_LOCK_KEY argument */
-
-
-
 
 	/* Restore volatile registers and return to the interrupted thread */
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
@@ -520,8 +526,11 @@ SECTION_FUNC(TEXT, _SpuriousIntHandler)
 	 * anyway so that _ExcExit can "recover the stack pointer"
 	 * without determining whether the exception occurred while CPL=3
 	 */
-
+#ifndef CONFIG_X86_IAMCU
 	pushl	%esp			/* push cur stack pointer: pEsf arg */
+#else
+	mov	%esp, %edx
+#endif
 
 BRANCH_LABEL(finishSpuriousInt)
 
@@ -530,18 +539,18 @@ BRANCH_LABEL(finishSpuriousInt)
 	sti
 
 	/* push the 'unsigned int reason' parameter */
-
+#ifndef CONFIG_X86_IAMCU
 	pushl	$_NANO_ERR_SPURIOUS_INT
+#else
+	movl	$_NANO_ERR_SPURIOUS_INT, %eax
+#endif
 
 BRANCH_LABEL(callFatalHandler)
-
 	/* call the fatal error handler */
 
 	call	_NanoFatalErrorHandler
 
-	/* handler shouldn't return, but call it again if it does */
-
-	jmp	callFatalHandler
+	/* handler doesn't  return */
 
 #if ALL_DYN_IRQ_STUBS > 0
 BRANCH_LABEL(_DynIntStubCommon)
@@ -582,12 +591,22 @@ stub_num = 0
 			 * stub_num to the irq stack
 			 */
 			call _IntEnt
-
+#if CONFIG_X86_IAMCU
+			/*
+			 * 2-byte mov imm8 to r8
+			 * Put the stub id in the lower 8 bits of EAX,
+			 * which will be the 1st arg of
+			 * _common_dynamic_irq_handlder.
+			 */
+			movb $stub_num, %al
+#else
 			/*
 			 * 2-byte push imm8. Consumed by
 			 * common_dynamic_handler(), see intconnect.c
 			 */
+
 			push $stub_num
+#endif
 
 			/*
 			 * Check to make sure this isn't the last stub in

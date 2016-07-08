@@ -161,40 +161,18 @@ typedef struct s_isrList {
 
 
 /**
- * Inline assembly code for the interrupt stub
+ * Assembly code to populate ISR's argument
  *
- * This is the actual assembly code which gets run when the interrupt
- * is triggered. Due to different calling convention semantics we have
- * different versions for IAMCU and SYSV.
- *
- * For IAMCU case, we call _execute_handler() with the isr and its argument
- * as parameters.
- *
- * For SysV case, we first call _IntEnt to properly enter Zephyr's interrupt
- * handling context, and then directly call the isr. A jump is done to
- * _IntExitWithEoi which does EOI to the interrupt controller, restores
- * context, and finally does 'iret'.
+ * IAMCU it goes in EAX. Sys V on the stack, _IntExitWithEoi pops it.
  *
  * This is only intended to be used by the IRQ_CONNECT() macro.
  */
-#if CONFIG_X86_IAMCU
-#define _IRQ_STUB_ASM \
-	"pushl %%eax\n\t" \
-	"pushl %%edx\n\t" \
-	"pushl %%ecx\n\t" \
-	"movl %[isr], %%eax\n\t" \
-	"movl %[isr_param], %%edx\n\t" \
-	"call _execute_handler\n\t" \
-	"popl %%ecx\n\t" \
-	"popl %%edx\n\t" \
-	"popl %%eax\n\t" \
-	"iret\n\t"
+#ifdef CONFIG_X86_IAMCU
+#define _ISR_ARG_ASM \
+	"movl %[isr_param], %%eax\n\t"
 #else
-#define _IRQ_STUB_ASM \
-	"call _IntEnt\n\t" \
-	"pushl %[isr_param]\n\t" \
-	"call %P[isr]\n\t" \
-	"jmp _IntExitWithEoi\n\t"
+#define _ISR_ARG_ASM \
+	"pushl %[isr_param]\n\t"
 #endif /* CONFIG_X86_IAMCU */
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
@@ -251,6 +229,11 @@ typedef struct s_isrList {
  * of the calling function due to the initial 'jmp' instruction at the
  * beginning of the assembly block, but a pointer to it gets saved in the IDT.
  *
+ * The stub calls _IntEnt to save interrupted context and switch to the IRQ
+ * stack. There is a calling convention specific macro to populate the
+ * argument to the ISR, and then the ISR is called. _IntExitWithEoi
+ * restores calling context and 'iret's.
+ *
  * 4. _SysIntVecProgram() is called at runtime to set the mapping between
  * the vector and the IRQ line.
  *
@@ -275,7 +258,10 @@ typedef struct s_isrList {
 		".popsection\n\t" \
 		"1:\n\t" \
 		_IRQ_STUB_LABEL \
-		_IRQ_STUB_ASM \
+		"call _IntEnt\n\t" \
+		_ISR_ARG_ASM \
+		"call %P[isr]\n\t" \
+		"jmp _IntExitWithEoi\n\t" \
 		"2:\n\t" \
 		: \
 		: [isr] "i" (isr_p), \

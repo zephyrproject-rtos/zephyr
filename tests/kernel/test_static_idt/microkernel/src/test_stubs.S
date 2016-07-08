@@ -49,26 +49,18 @@ SYS_NANO_CPU_EXC_CONNECT(exc_divide_error_handler,IV_DIVIDE_ERROR)
 
 
 	GTEXT(nanoIntStub)
-#if !defined(CONFIG_X86_IAMCU)
 SECTION_FUNC(TEXT, nanoIntStub)
         call    _IntEnt
-        pushl   $0
-        call    isr_handler
-        addl    $4, %esp
-        jmp     _IntExit
+#ifdef CONFIG_X86_IAMCU
+	movl	$0, %eax
 #else
-SECTION_FUNC(TEXT, nanoIntStub)
-	pushl %eax
-	pushl %edx
-	pushl %ecx
-	movl $isr_handler, %eax
-	movl $0, %edx
-	call _execute_handler
-	pop %ecx
-	pop %edx
-	pop %eax
-	iret
+        pushl   $0
 #endif
+        call    isr_handler
+#ifndef CONFIG_X86_IAMCU
+        addl    $4, %esp
+#endif
+        jmp     _IntExit
 #else
 
 #error Arch not supported
