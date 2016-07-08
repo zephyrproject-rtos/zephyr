@@ -789,8 +789,18 @@ struct bt_gatt_discover_params {
 	struct bt_uuid *uuid;
 	/** Discover attribute callback */
 	bt_gatt_discover_func_t func;
-	/** Discover start handle */
-	uint16_t start_handle;
+	union {
+		struct {
+			/** Include service attribute declaration handle */
+			uint16_t attr_handle;
+			/** Included service start handle */
+			uint16_t start_handle;
+			/** Included service end handle */
+			uint16_t end_handle;
+		} _included;
+		/** Discover start handle */
+		uint16_t start_handle;
+	};
 	/** Discover end handle */
 	uint16_t end_handle;
 	/** Discover type */

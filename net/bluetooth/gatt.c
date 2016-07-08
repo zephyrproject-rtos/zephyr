@@ -870,6 +870,85 @@ static int att_find_type(struct bt_conn *conn,
 	return gatt_send(conn, buf, att_find_type_rsp, params, NULL);
 }
 
+static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
+				  const void *pdu, uint16_t length,
+				  void *user_data)
+{
+	struct bt_gatt_discover_params *params = user_data;
+	struct bt_gatt_include value;
+	struct bt_gatt_attr *attr;
+	union {
+		struct bt_uuid uuid;
+		struct bt_uuid_128 u128;
+	} u;
+
+	if (length != 16) {
+		BT_ERR("Invalid data len %u", length);
+		goto done;
+	}
+
+	value.start_handle = params->_included.start_handle;
+	value.end_handle = params->_included.end_handle;
+	value.uuid = &u.uuid;
+	u.uuid.type = BT_UUID_TYPE_128;
+	memcpy(u.u128.val, pdu, length);
+
+	BT_DBG("handle 0x%04x uuid %s start_handle 0x%04x "
+	       "end_handle 0x%04x\n", params->_included.attr_handle,
+	       bt_uuid_str(&u.uuid), value.start_handle, value.end_handle);
+
+	/* Skip if UUID is set but doesn't match */
+	if (params->uuid && bt_uuid_cmp(&u.uuid, params->uuid)) {
+		goto next;
+	}
+
+	attr = (&(struct bt_gatt_attr) {
+		.uuid = BT_UUID_GATT_INCLUDE,
+		.user_data = &value, });
+	attr->handle = params->_included.attr_handle;
+
+	if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
+		return;
+	}
+next:
+	/* Continue from the last handle */
+	if (params->start_handle < UINT16_MAX) {
+		params->start_handle++;
+	}
+
+	/* Stop if over the requested range */
+	if (params->start_handle >= params->end_handle) {
+		goto done;
+	}
+
+	/* Continue to the next range */
+	if (!bt_gatt_discover(conn, params)) {
+		return;
+	}
+
+done:
+	params->func(conn, NULL, params);
+}
+
+static int read_included_uuid(struct bt_conn *conn,
+			      struct bt_gatt_discover_params *params)
+{
+	struct net_buf *buf;
+	struct bt_att_read_req *req;
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->handle = sys_cpu_to_le16(params->_included.start_handle);
+
+	BT_DBG("handle 0x%04x", params->_included.start_handle);
+
+	return gatt_send(conn, buf, read_included_uuid_cb, params, NULL);
+}
+
 static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 			      struct bt_gatt_discover_params *params,
 			      uint16_t length)
@@ -926,8 +1005,11 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 			u.u16.val = sys_le16_to_cpu(incl->uuid16);
 			break;
 		case BT_UUID_TYPE_128:
-			/* Data is not available at this point */
-			break;
+			params->_included.attr_handle = handle;
+			params->_included.start_handle = value.start_handle;
+			params->_included.end_handle = value.end_handle;
+
+			return read_included_uuid(conn, params);
 		}
 
 		BT_DBG("handle 0x%04x uuid %s start_handle 0x%04x "

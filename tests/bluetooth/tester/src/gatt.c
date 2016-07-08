@@ -1026,8 +1026,8 @@ static uint8_t find_included_cb(struct bt_conn *conn,
 
 		memcpy(included->service.uuid, &u16, uuid_length);
 	} else {
-		/* TODO Read this 128bit UUID */
-		memset(included->service.uuid, 0, uuid_length);
+		memcpy(included->service.uuid, BT_UUID_128(data->uuid)->val,
+		       uuid_length);
 	}
 
 	rp->services_count++;
