@@ -61,6 +61,10 @@ struct bt_l2cap_conn_req {
 	uint16_t scid;
 } __packed;
 
+/* command statuses in reposnse */
+#define BT_L2CAP_CS_NO_INFO		0x0000
+#define BT_L2CAP_CS_AUTHEN_PEND		0x0001
+
 #define BT_L2CAP_CONN_RSP		0x03
 struct bt_l2cap_conn_rsp {
 	uint16_t dcid;
@@ -157,6 +161,7 @@ struct bt_l2cap_le_conn_req {
 } __packed;
 
 #define BT_L2CAP_SUCCESS		0x0000
+#define BT_L2CAP_PENDING		0x0001
 #define BT_L2CAP_ERR_PSM_NOT_SUPP	0x0002
 #define BT_L2CAP_ERR_SEC_BLOCK		0x0003
 #define BT_L2CAP_ERR_NO_RESOURCES	0x0004

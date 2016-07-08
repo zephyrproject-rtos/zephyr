@@ -86,6 +86,7 @@ struct bt_l2cap_chan {
 	bt_l2cap_chan_state_t		state;
 	/** Helps match request context during CoC */
 	uint8_t				ident;
+	bt_security_t			required_sec_level;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 };
 

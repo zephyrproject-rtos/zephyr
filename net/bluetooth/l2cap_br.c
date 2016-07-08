@@ -502,6 +502,37 @@ static void l2cap_br_conf(struct bt_l2cap_chan *chan)
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
+static bool l2cap_br_security_check(struct bt_l2cap_chan *chan,
+				    const uint16_t psm)
+{
+	int check;
+
+	if (psm == L2CAP_BR_PSM_SDP) {
+		return false;
+	};
+
+	/* No link key needed and legacy devices */
+	if (chan->required_sec_level == BT_SECURITY_LOW &&
+	    !lmp_ssp_host_supported(chan->conn)) {
+		return false;
+	}
+
+	check = bt_conn_security(chan->conn, chan->required_sec_level);
+
+	/*
+	 * Get case when connection security level already covers channel
+	 * demands and bt_conn_security returns 0 and differentiate it to
+	 * the case when HCI authentication request in internal subcall was send
+	 * and bt_conn_security returns as well 0.
+	 */
+	if (check == 0 &&
+	    chan->conn->sec_level >= chan->required_sec_level) {
+		return false;
+	}
+
+	return (check == 0) ? true : false;
+}
+
 static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 			      struct net_buf *buf)
 {
@@ -511,7 +542,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	struct bt_l2cap_conn_req *req = (void *)buf->data;
 	struct bt_l2cap_conn_rsp *rsp;
 	struct bt_l2cap_sig_hdr *hdr;
-	uint16_t psm, scid, dcid, result;
+	uint16_t psm, scid, dcid, result, status = BT_L2CAP_CS_NO_INFO;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small L2CAP conn req packet size");
@@ -579,17 +610,21 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	dcid = BR_CHAN(chan)->rx.cid;
 	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
 
-	/*
-	 * TODO: Verify security level on link if this PSM channel requires
-	 * higher security.
-	 */
-
-	result = BT_L2CAP_SUCCESS;
+	if (l2cap_br_security_check(chan, psm)) {
+		result = BT_L2CAP_PENDING;
+		status = BT_L2CAP_CS_AUTHEN_PEND;
+		/* store ident for connection response after GAP done */
+		chan->ident = ident;
+		/* TODO: auth timeout */
+	} else {
+		result = BT_L2CAP_SUCCESS;
+	}
 done:
 	rsp->dcid = sys_cpu_to_le16(dcid);
 	rsp->scid = req->scid;
 	rsp->result = sys_cpu_to_le16(result);
-	/* TODO: add command timeout guard */
+	rsp->status = sys_cpu_to_le16(status);
+
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 
 	/* Disconnect link when security rules were violated */
