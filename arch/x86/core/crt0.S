@@ -49,7 +49,7 @@
 #endif
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
-	GDATA(_sys_soc_resume)
+	GTEXT(_sys_soc_resume)
 #endif
 
 
