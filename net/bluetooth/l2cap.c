@@ -198,7 +198,8 @@ static void l2cap_rtx_timeout(struct nano_work *work)
 	l2cap_chan_del(&chan->chan);
 }
 
-static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
+static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
+			   void (*destroy)(struct bt_l2cap_chan *chan))
 {
 	struct bt_l2cap_le_chan *ch = l2cap_chan_alloc_cid(conn, chan);
 
@@ -211,6 +212,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 	chan->_next = conn->channels;
 	conn->channels = chan;
 	chan->conn = conn;
+	chan->destroy = destroy;
 
 	nano_delayed_work_init(&ch->rtx_work, l2cap_rtx_timeout);
 
@@ -248,7 +250,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		ch->rx.cid = fchan->cid;
 		ch->tx.cid = fchan->cid;
 
-		if (!l2cap_chan_add(conn, chan)) {
+		if (!l2cap_chan_add(conn, chan, NULL)) {
 			return;
 		}
 
@@ -571,10 +573,8 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto rsp;
 	}
 
-	if (l2cap_chan_add(conn, chan)) {
+	if (l2cap_chan_add(conn, chan, l2cap_chan_destroy)) {
 		struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-
-		chan->destroy = l2cap_chan_destroy;
 
 		/* Init TX parameters */
 		l2cap_chan_tx_init(ch);
@@ -1218,11 +1218,9 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 	l2cap_chan_tx_init(ch);
 	l2cap_chan_rx_init(ch);
 
-	if (!l2cap_chan_add(conn, &ch->chan)) {
+	if (!l2cap_chan_add(conn, &ch->chan, l2cap_chan_destroy)) {
 		return -ENOMEM;
 	}
-
-	ch->chan.destroy = l2cap_chan_destroy;
 
 	buf = bt_l2cap_create_pdu(&le_sig);
 	if (!buf) {
