@@ -119,7 +119,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		return false;
 	}
 
-	IPHC[offset++] = NET6LO_DISPATCH_IPHC;
+	IPHC[offset++] = NET_6LO_DISPATCH_IPHC;
 	IPHC[offset++] = 0;
 
 	/** +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -143,12 +143,12 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 			NET_DBG("Trafic class and Flow label elided");
 
 			/* Trafic class and Flow label elided */
-			IPHC[0] |= NET6LO_IPHC_TF_11;
+			IPHC[0] |= NET_6LO_IPHC_TF_11;
 		} else {
 			NET_DBG("Flow label elided");
 
 			/* Flow label elided */
-			IPHC[0] |= NET6LO_IPHC_TF_10;
+			IPHC[0] |= NET_6LO_IPHC_TF_10;
 			IPHC[offset++] = tcl;
 		}
 	} else {
@@ -156,7 +156,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 			NET_DBG("ECN + 2-bit Pad + Flow Label, DSCP is elided");
 
 			/* ECN + 2-bit Pad + Flow Label, DSCP is elided.*/
-			IPHC[0] |= NET6LO_IPHC_TF_01;
+			IPHC[0] |= NET_6LO_IPHC_TF_01;
 			IPHC[offset++] = (tcl & 0xC0) | (ipv6->tcflow & 0x0F);
 
 			memcpy(&IPHC[offset], &ipv6->flow, 2);
@@ -165,7 +165,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 			NET_DBG("ECN + DSCP + 4-bit Pad + Flow Label");
 
 			/* ECN + DSCP + 4-bit Pad + Flow Label */
-			IPHC[0] |= NET6LO_IPHC_TF_00;
+			IPHC[0] |= NET_6LO_IPHC_TF_00;
 
 			/* Elide the version field */
 			IPHC[offset++] = tcl;
@@ -178,7 +178,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 
 	/* Next header */
 	if (ipv6->nexthdr == IPPROTO_UDP) {
-		IPHC[0] |= NET6LO_IPHC_NH_1;
+		IPHC[0] |= NET_6LO_IPHC_NH_1;
 	} else {
 		IPHC[offset++] = ipv6->nexthdr;
 	}
@@ -186,13 +186,13 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	/* Hop Limit */
 	switch (ipv6->hop_limit) {
 	case 1:
-		IPHC[0] |= NET6LO_IPHC_HLIM1;
+		IPHC[0] |= NET_6LO_IPHC_HLIM1;
 		break;
 	case 64:
-		IPHC[0] |= NET6LO_IPHC_HLIM64;
+		IPHC[0] |= NET_6LO_IPHC_HLIM64;
 		break;
 	case 255:
-		IPHC[0] |= NET6LO_IPHC_HLIM255;
+		IPHC[0] |= NET_6LO_IPHC_HLIM255;
 		break;
 	default:
 		IPHC[offset++] = ipv6->hop_limit;
@@ -210,7 +210,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		if (net_6lo_addr_16_bit_compressible(&ipv6->src)) {
 			NET_DBG("src addr 16 bit compressible");
 
-			IPHC[1] |= NET6LO_IPHC_SAM_10;
+			IPHC[1] |= NET_6LO_IPHC_SAM_10;
 
 			memcpy(&IPHC[offset], &ipv6->src.s6_addr[14], 2);
 			offset += 2;
@@ -221,12 +221,12 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 				NET_DBG("src address is fully elided");
 
 				/* Address is fully elided */
-				IPHC[1] |= NET6LO_IPHC_SAM_11;
+				IPHC[1] |= NET_6LO_IPHC_SAM_11;
 			} else {
 				NET_DBG("src remaining 64 bits are inlined");
 
 				/* remaining 64 bits are in-line */
-				IPHC[1] |= NET6LO_IPHC_SAM_01;
+				IPHC[1] |= NET_6LO_IPHC_SAM_01;
 
 				memcpy(&IPHC[offset], &ipv6->src.s6_addr[8], 8);
 				offset += 8;
@@ -236,14 +236,14 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		NET_DBG("src is unspecified address");
 
 		/* Unspecified IPv6 src address */
-		IPHC[1] |= NET6LO_IPHC_SAC_1;
-		IPHC[1] |= NET6LO_IPHC_SAM_00;
+		IPHC[1] |= NET_6LO_IPHC_SAC_1;
+		IPHC[1] |= NET_6LO_IPHC_SAM_00;
 
 	} else {
 		NET_DBG("full address is carried in-line");
 
 		/* full address is carried in-line */
-		IPHC[1] |= NET6LO_IPHC_SAM_00;
+		IPHC[1] |= NET_6LO_IPHC_SAM_00;
 
 		memcpy(&IPHC[offset], ipv6->src.s6_addr, 16);
 		offset += 16;
@@ -252,7 +252,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	/* if destination address is multicast */
 	if (net_is_ipv6_addr_mcast(&ipv6->dst)) {
 
-		IPHC[1] |= NET6LO_IPHC_M_1;
+		IPHC[1] |= NET_6LO_IPHC_M_1;
 
 		NET_DBG("dst is mcast");
 
@@ -260,7 +260,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 			NET_DBG("sicslowpan maddr 8 bit compressible");
 
 			/* last byte */
-			IPHC[1] |= NET6LO_IPHC_DAM_11;
+			IPHC[1] |= NET_6LO_IPHC_DAM_11;
 
 			memcpy(&IPHC[offset], &ipv6->dst.s6_addr[15], 1);
 			offset++;
@@ -268,7 +268,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 			NET_DBG("4 bytes: 2nd byte + last three bytes");
 
 			/* 4 bytes: 2nd byte + last three bytes */
-			IPHC[1] |= NET6LO_IPHC_DAM_10;
+			IPHC[1] |= NET_6LO_IPHC_DAM_10;
 
 			memcpy(&IPHC[offset], &ipv6->dst.s6_addr[1], 1);
 			offset++;
@@ -279,7 +279,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 			NET_DBG("6 bytes: 2nd byte + last five bytes");
 
 			/* 6 bytes: 2nd byte + last five bytes */
-			IPHC[1] |= NET6LO_IPHC_DAM_01;
+			IPHC[1] |= NET_6LO_IPHC_DAM_01;
 
 			memcpy(&IPHC[offset], &ipv6->dst.s6_addr[1], 1);
 			offset++;
@@ -289,7 +289,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		} else {
 			NET_DBG("dst complete address inlined");
 
-			/* complete address IPHC[1] |= NET6LO_IPHC_DAM_00 */
+			/* complete address IPHC[1] |= NET_6LO_IPHC_DAM_00 */
 			memcpy(&IPHC[offset], &ipv6->dst.s6_addr[0], 16);
 			offset += 16;
 		}
@@ -302,7 +302,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		if (net_6lo_addr_16_bit_compressible(&ipv6->dst)) {
 			NET_DBG("dst sicslowpan addr 16 bit compressible");
 
-			IPHC[1] |= NET6LO_IPHC_DAM_10;
+			IPHC[1] |= NET_6LO_IPHC_DAM_10;
 
 			memcpy(&IPHC[offset], &ipv6->dst.s6_addr[14], 2);
 			offset += 2;
@@ -313,12 +313,12 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 				NET_DBG("address is fully elided");
 
 				/* Address is fully elided */
-				IPHC[1] |= NET6LO_IPHC_DAM_11;
+				IPHC[1] |= NET_6LO_IPHC_DAM_11;
 			} else {
 				NET_DBG("remaining 64 bits are inlined");
 
 				/* remaining 64 bits are in-line */
-				IPHC[1] |= NET6LO_IPHC_DAM_01;
+				IPHC[1] |= NET_6LO_IPHC_DAM_01;
 
 				memcpy(&IPHC[offset], &ipv6->dst.s6_addr[8], 8);
 				offset += 8;
@@ -327,7 +327,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	} else {
 		NET_DBG("dst complete address inlined");
 
-		/* complete address IPHC[1] |= NET6LO_IPHC_DAM_00 */
+		/* complete address IPHC[1] |= NET_6LO_IPHC_DAM_00 */
 		memcpy(&IPHC[offset], &ipv6->dst.s6_addr[0], 16);
 		offset += 16;
 	}
@@ -357,18 +357,18 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	  */
 
 	udp = NET_UDP_BUF(buf);
-	IPHC[offset] = NET6LO_NHC_UDP_BARE;
+	IPHC[offset] = NET_6LO_NHC_UDP_BARE;
 
 	if ((((htons(udp->src_port) >> 4) & 0xFFF) ==
-	    NET6LO_NHC_UDP_4_BIT_PORT) &&
+	    NET_6LO_NHC_UDP_4_BIT_PORT) &&
 	    (((htons(udp->dst_port) >> 4) & 0xFFF) ==
-	    NET6LO_NHC_UDP_4_BIT_PORT)) {
+	    NET_6LO_NHC_UDP_4_BIT_PORT)) {
 
 		NET_DBG("udp ports src and dst 4 bits inlined");
 		/** src: first 16 bits elided, next 4 bits inlined
 		  * dst: first 16 bits elided, next 4 bits inlined
 		  */
-		IPHC[offset] |= NET6LO_NHC_UDP_PORT_11;
+		IPHC[offset] |= NET_6LO_NHC_UDP_PORT_11;
 		offset++;
 
 		tmp = (uint8_t)(htons(udp->src_port));
@@ -377,13 +377,13 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		tmp |= (((uint8_t)(htons(udp->dst_port))) & 0x0F);
 		IPHC[offset++] = tmp;
 	} else if (((htons(udp->dst_port) >> 8) & 0xFF) ==
-		   NET6LO_NHC_UDP_8_BIT_PORT) {
+		   NET_6LO_NHC_UDP_8_BIT_PORT) {
 
 		NET_DBG("udp ports src full, dst 8 bits inlined");
 		/** dst: first 8 bits elided, next 8 bits inlined
 		  * src: fully carried inline
 		  */
-		IPHC[offset] |= NET6LO_NHC_UDP_PORT_01;
+		IPHC[offset] |= NET_6LO_NHC_UDP_PORT_01;
 		offset++;
 
 		memcpy(&IPHC[offset], &udp->src_port, 2);
@@ -391,13 +391,13 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 
 		IPHC[offset++] = (uint8_t)(htons(udp->dst_port));
 	} else if (((htons(udp->src_port) >> 8) & 0xFF) ==
-		    NET6LO_NHC_UDP_8_BIT_PORT) {
+		    NET_6LO_NHC_UDP_8_BIT_PORT) {
 
 		NET_DBG("udp ports src 8bits, dst full inlined");
 		/** src: first 8 bits elided, next 8 bits inlined
 		  * dst: fully carried inline
 		  */
-		IPHC[offset] |= NET6LO_NHC_UDP_PORT_10;
+		IPHC[offset] |= NET_6LO_NHC_UDP_PORT_10;
 		offset++;
 
 		IPHC[offset++] = (uint8_t)(htons(udp->src_port));
@@ -448,7 +448,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	uint8_t tcl, offset = 2, chksum;
 	uint16_t len;
 
-	if (CIPHC[1] & NET6LO_IPHC_CID_1) {
+	if (CIPHC[1] & NET_6LO_IPHC_CID_1) {
 		/* if it is supported increase offset to +1 */
 		return false;
 	}
@@ -465,8 +465,8 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
 
 	/* uncompress tcl and flow label */
-	switch (CIPHC[0] & NET6LO_IPHC_TF_11) {
-	case NET6LO_IPHC_TF_00:
+	switch (CIPHC[0] & NET_6LO_IPHC_TF_11) {
+	case NET_6LO_IPHC_TF_00:
 		NET_DBG("ECN + DSCP + 4-bit Pad + Flow Label");
 
 		tcl = CIPHC[offset++];
@@ -478,7 +478,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		memcpy(&ipv6->flow, &CIPHC[offset], 2);
 		offset += 2;
 		break;
-	case NET6LO_IPHC_TF_01:
+	case NET_6LO_IPHC_TF_01:
 		NET_DBG("ECN + 2-bit Pad + Flow Label, DSCP is elided");
 
 		tcl = ((CIPHC[offset] & 0xF0) >> 6);
@@ -487,7 +487,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		memcpy(&ipv6->flow, &CIPHC[offset], 2);
 		offset += 2;
 		break;
-	case NET6LO_IPHC_TF_10:
+	case NET_6LO_IPHC_TF_10:
 		NET_DBG("Flow label elided");
 
 		tcl = CIPHC[offset];
@@ -498,7 +498,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		ipv6->flow = 0;
 		offset++;
 		break;
-	case NET6LO_IPHC_TF_11:
+	case NET_6LO_IPHC_TF_11:
 		NET_DBG("Tcl and Flow label elided");
 
 		ipv6->tcflow = 0;
@@ -506,17 +506,17 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		break;
 	}
 
-	switch (CIPHC[0] & NET6LO_IPHC_HLIM255) {
-	case NET6LO_IPHC_HLIM:
+	switch (CIPHC[0] & NET_6LO_IPHC_HLIM255) {
+	case NET_6LO_IPHC_HLIM:
 		ipv6->hop_limit = 0;
 		break;
-	case NET6LO_IPHC_HLIM1:
+	case NET_6LO_IPHC_HLIM1:
 		ipv6->hop_limit = 1;
 		break;
-	case NET6LO_IPHC_HLIM64:
+	case NET_6LO_IPHC_HLIM64:
 		ipv6->hop_limit = 64;
 		break;
-	case NET6LO_IPHC_HLIM255:
+	case NET_6LO_IPHC_HLIM255:
 		ipv6->hop_limit = 255;
 		break;
 	default:
@@ -528,23 +528,23 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	memset(&ipv6->src.s6_addr[0], 0, 16);
 	memset(&ipv6->dst.s6_addr[0], 0, 16);
 
-	if (CIPHC[1] & NET6LO_IPHC_SAC_1) {
+	if (CIPHC[1] & NET_6LO_IPHC_SAC_1) {
 		NET_DBG("SAC is set");
-		if (!(CIPHC[1] & NET6LO_IPHC_SAM_00)) {
+		if (!(CIPHC[1] & NET_6LO_IPHC_SAM_00)) {
 			NET_DBG("SAM_00 unspecified address");
 		} else {
 			/* TODO: context based uncompression */
 			goto fail;
 		}
 	} else {
-		switch (CIPHC[1] & NET6LO_IPHC_SAM_11) {
-		case NET6LO_IPHC_SAM_00:
+		switch (CIPHC[1] & NET_6LO_IPHC_SAM_11) {
+		case NET_6LO_IPHC_SAM_00:
 			NET_DBG("SAM_00 full src addr inlined");
 
 			memcpy(ipv6->src.s6_addr, &CIPHC[offset], 16);
 			offset += 16;
 			break;
-		case NET6LO_IPHC_SAM_01:
+		case NET_6LO_IPHC_SAM_01:
 			NET_DBG("SAM_01 last 64 bits are inlined");
 
 			ipv6->src.s6_addr[0] = 0xFE;
@@ -553,7 +553,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 			memcpy(&ipv6->src.s6_addr[8], &CIPHC[offset], 8);
 			offset += 8;
 			break;
-		case NET6LO_IPHC_SAM_10:
+		case NET_6LO_IPHC_SAM_10:
 			NET_DBG("SAM_10 src addr 16 bit compressed");
 
 			ipv6->src.s6_addr[0] = 0xFE;
@@ -564,7 +564,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 			memcpy(&ipv6->src.s6_addr[14], &CIPHC[offset], 2);
 			offset += 2;
 			break;
-		case NET6LO_IPHC_SAM_11:
+		case NET_6LO_IPHC_SAM_11:
 			NET_DBG("SAM_11 generate src addr from ll");
 
 			net_ipv6_addr_create_iid(&ipv6->src,
@@ -573,12 +573,12 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		}
 	}
 
-	if (CIPHC[1] & NET6LO_IPHC_DAC_1) {
+	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
 		/* TODO: context based uncompression */
 		goto fail;
 	}
 
-	if (CIPHC[1] & NET6LO_IPHC_M_1) {
+	if (CIPHC[1] & NET_6LO_IPHC_M_1) {
 	/** If M=1 and DAC=0:
 	  * 00: 128 bits, The full address is carried in-line.
 	  * 01:  48 bits, The address takes the form ffXX::00XX:XXXX:XXXX.
@@ -586,14 +586,14 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	  * 11:   8 bits, The address takes the form ff02::00XX.
 	  */
 		NET_DBG("dst is multicast");
-		switch (CIPHC[1] & NET6LO_IPHC_DAM_11) {
-		case NET6LO_IPHC_DAM_00:
+		switch (CIPHC[1] & NET_6LO_IPHC_DAM_11) {
+		case NET_6LO_IPHC_DAM_00:
 			NET_DBG("DAM_00 full dst addr inlined");
 
 			memcpy(&ipv6->dst.s6_addr[0], &CIPHC[offset], 16);
 			offset += 16;
 			break;
-		case NET6LO_IPHC_DAM_01:
+		case NET_6LO_IPHC_DAM_01:
 			NET_DBG("DAM_01 2nd byte and last five bytes");
 
 			ipv6->dst.s6_addr[0] = 0xFF;
@@ -602,7 +602,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 			memcpy(&ipv6->dst.s6_addr[11], &CIPHC[offset], 5);
 			offset += 5;
 			break;
-		case NET6LO_IPHC_DAM_10:
+		case NET_6LO_IPHC_DAM_10:
 			NET_DBG("DAM_10 2nd byte and last three bytes");
 
 			ipv6->dst.s6_addr[0] = 0xFF;
@@ -611,7 +611,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 			memcpy(&ipv6->dst.s6_addr[13], &CIPHC[offset], 3);
 			offset += 3;
 			break;
-		case NET6LO_IPHC_DAM_11:
+		case NET_6LO_IPHC_DAM_11:
 			NET_DBG("DAM_11 8 bit compressed");
 
 			ipv6->dst.s6_addr[0] = 0xFF;
@@ -620,14 +620,14 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 			break;
 		}
 	} else {
-		switch (CIPHC[1] & NET6LO_IPHC_DAM_11) {
-		case NET6LO_IPHC_DAM_00:
+		switch (CIPHC[1] & NET_6LO_IPHC_DAM_11) {
+		case NET_6LO_IPHC_DAM_00:
 			NET_DBG("DAM_00 full dst addr inlined");
 
 			memcpy(&ipv6->dst.s6_addr[0], &CIPHC[offset], 16);
 			offset += 16;
 			break;
-		case NET6LO_IPHC_DAM_01:
+		case NET_6LO_IPHC_DAM_01:
 			NET_DBG("DAM_01 last 64 bits are inlined");
 
 			ipv6->dst.s6_addr[0] = 0xFE;
@@ -636,7 +636,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 			memcpy(&ipv6->dst.s6_addr[8], &CIPHC[offset], 8);
 			offset += 8;
 			break;
-		case NET6LO_IPHC_DAM_10:
+		case NET_6LO_IPHC_DAM_10:
 			NET_DBG("DAM_10 dst addr 16 bit compressed");
 
 			ipv6->dst.s6_addr[0] = 0xFE;
@@ -647,7 +647,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 			memcpy(&ipv6->dst.s6_addr[14], &CIPHC[offset], 2);
 			offset += 2;
 			break;
-		case NET6LO_IPHC_DAM_11:
+		case NET_6LO_IPHC_DAM_11:
 			NET_DBG("DAM_11 generate dst addr from ll");
 
 			net_ipv6_addr_create_iid(&ipv6->dst,
@@ -658,11 +658,11 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 
 	net_buf_add(frag, NET_IPV6H_LEN);
 
-	if (!(CIPHC[0] & NET6LO_IPHC_NH_1)) {
+	if (!(CIPHC[0] & NET_6LO_IPHC_NH_1)) {
 		goto end;
 	}
 
-	if ((CIPHC[offset] & 0xF0) != NET6LO_NHC_UDP_BARE) {
+	if ((CIPHC[offset] & 0xF0) != NET_6LO_NHC_UDP_BARE) {
 		/*doesn't support other NH uncompression */
 		goto fail;
 	}
@@ -676,11 +676,11 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	ipv6->nexthdr = IPPROTO_UDP;
 	udp = (struct net_udp_hdr *)(frag->data + NET_IPV6H_LEN);
 
-	chksum = CIPHC[offset] & NET6LO_NHC_UDP_CHKSUM_1;
+	chksum = CIPHC[offset] & NET_6LO_NHC_UDP_CHKSUM_1;
 
 	/* UDP header uncompression */
-	switch (CIPHC[offset++] & NET6LO_NHC_UDP_PORT_11) {
-	case NET6LO_NHC_UDP_PORT_00:
+	switch (CIPHC[offset++] & NET_6LO_NHC_UDP_PORT_11) {
+	case NET_6LO_NHC_UDP_PORT_00:
 		NET_DBG("src and dst ports are inlined");
 
 		memcpy(&udp->src_port, &CIPHC[offset], 2);
@@ -689,33 +689,33 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		memcpy(&udp->dst_port, &CIPHC[offset], 2);
 		offset += 2;
 		break;
-	case NET6LO_NHC_UDP_PORT_01:
+	case NET_6LO_NHC_UDP_PORT_01:
 		NET_DBG("src full, dst 8 bits inlined");
 
 		memcpy(&udp->src_port, &CIPHC[offset], 2);
 		offset += 2;
 
-		udp->dst_port = htons(((uint16_t)NET6LO_NHC_UDP_8_BIT_PORT << 8)
-					| CIPHC[offset]);
+		udp->dst_port = htons(((uint16_t)NET_6LO_NHC_UDP_8_BIT_PORT
+				       << 8) | CIPHC[offset]);
 		offset++;
 		break;
-	case NET6LO_NHC_UDP_PORT_10:
+	case NET_6LO_NHC_UDP_PORT_10:
 		NET_DBG("src 8 bits, dst full inlined");
 
-		udp->src_port = htons(((uint16_t)NET6LO_NHC_UDP_8_BIT_PORT << 8)
-					| CIPHC[offset]);
+		udp->src_port = htons(((uint16_t)NET_6LO_NHC_UDP_8_BIT_PORT
+				       << 8) | CIPHC[offset]);
 		offset++;
 
 		memcpy(&udp->dst_port, &CIPHC[offset], 2);
 		offset += 2;
 		break;
-	case NET6LO_NHC_UDP_PORT_11:
+	case NET_6LO_NHC_UDP_PORT_11:
 		NET_DBG("src and dst 4 bits inlined");
 
-		udp->src_port = htons((NET6LO_NHC_UDP_4_BIT_PORT << 4) |
+		udp->src_port = htons((NET_6LO_NHC_UDP_4_BIT_PORT << 4) |
 				      (CIPHC[offset] >> 4));
 
-		udp->dst_port = htons((NET6LO_NHC_UDP_4_BIT_PORT << 4) |
+		udp->dst_port = htons((NET_6LO_NHC_UDP_4_BIT_PORT << 4) |
 				      (CIPHC[offset] & 0x0F));
 		offset++;
 		break;
@@ -767,7 +767,7 @@ static inline bool compress_ipv6_header(struct net_buf *buf,
 		return false;
 	}
 
-	frag->data[0] = NET6LO_DISPATCH_IPV6;
+	frag->data[0] = NET_6LO_DISPATCH_IPV6;
 	net_buf_add(frag, 1);
 
 	net_buf_frag_insert(buf, frag);
@@ -809,13 +809,13 @@ bool net_6lo_uncompress(struct net_buf *buf)
 		return false;
 	}
 
-	if ((buf->frags->data[0] & NET6LO_DISPATCH_IPHC) ==
-	    NET6LO_DISPATCH_IPHC) {
+	if ((buf->frags->data[0] & NET_6LO_DISPATCH_IPHC) ==
+	    NET_6LO_DISPATCH_IPHC) {
 		/* uncompress IPHC header */
 		return uncompress_IPHC_header(buf);
 
-	} else if ((buf->frags->data[0] & NET6LO_DISPATCH_IPV6) ==
-		   NET6LO_DISPATCH_IPV6) {
+	} else if ((buf->frags->data[0] & NET_6LO_DISPATCH_IPV6) ==
+		   NET_6LO_DISPATCH_IPV6) {
 		/* uncompress IPv6 header, it has only IPv6 dispatch in the
 		 * beginning */
 		return uncompress_ipv6_header(buf);

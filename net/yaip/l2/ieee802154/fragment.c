@@ -104,7 +104,7 @@ static inline uint8_t calc_max_payload(struct net_buf *buf, uint8_t offset)
 	uint8_t max;
 
 	max = net_nbuf_iface(buf)->mtu - net_nbuf_ll_reserve(buf);
-	max -= offset ? NET6LO_FRAGN_HDR_LEN : NET6LO_FRAG1_HDR_LEN;
+	max -= offset ? NET_6LO_FRAGN_HDR_LEN : NET_6LO_FRAG1_HDR_LEN;
 
 	return (max & 0xF8);
 }
@@ -115,16 +115,16 @@ static inline void set_up_frag_hdr(struct net_buf *buf, uint16_t size,
 	uint8_t pos = 0;
 
 	if (offset) {
-		buf->data[pos] = NET6LO_DISPATCH_FRAGN;
+		buf->data[pos] = NET_6LO_DISPATCH_FRAGN;
 	} else {
-		buf->data[pos] = NET6LO_DISPATCH_FRAG1;
+		buf->data[pos] = NET_6LO_DISPATCH_FRAG1;
 	}
 
 	set_datagram_size(buf->data, size);
-	pos += NET6LO_FRAG_DATAGRAM_SIZE_LEN;
+	pos += NET_6LO_FRAG_DATAGRAM_SIZE_LEN;
 
 	set_datagram_tag(buf->data + pos, datagram_tag);
-	pos += NET6LO_FRAG_DATAGRAM_OFFSET_LEN;
+	pos += NET_6LO_FRAG_DATAGRAM_OFFSET_LEN;
 
 	if (offset) {
 		buf->data[pos] = offset;
@@ -140,9 +140,9 @@ static inline uint8_t compact_frag(struct net_buf *frag, uint8_t moved)
 	/** Move remaining data to next to fragmentation header,
 	 *  (leaving space for header).
 	 */
-	memmove(frag->data + NET6LO_FRAGN_HDR_LEN, frag->data + moved,
+	memmove(frag->data + NET_6LO_FRAGN_HDR_LEN, frag->data + moved,
 		remaining);
-	frag->len = NET6LO_FRAGN_HDR_LEN + remaining;
+	frag->len = NET_6LO_FRAGN_HDR_LEN + remaining;
 
 	return remaining;
 }
@@ -216,7 +216,7 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 	}
 
 	/* Reserve space for fragmentation header */
-	net_buf_add(frag, NET6LO_FRAG1_HDR_LEN);
+	net_buf_add(frag, NET_6LO_FRAG1_HDR_LEN);
 	net_buf_frag_insert(buf, frag);
 
 	offset = pos = 0;
@@ -244,7 +244,7 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 		 *  header.
 		 */
 		if (!next->frags) {
-			if (next->len == NET6LO_FRAGN_HDR_LEN) {
+			if (next->len == NET_6LO_FRAGN_HDR_LEN) {
 				net_buf_frag_del(frag, next);
 			} else {
 				set_up_frag_hdr(next, size, offset >> 3);
@@ -406,11 +406,11 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
 
 	/* Parse total size of packet */
 	size = get_datagram_size(frag->frags->data);
-	pos += NET6LO_FRAG_DATAGRAM_SIZE_LEN;
+	pos += NET_6LO_FRAG_DATAGRAM_SIZE_LEN;
 
 	/* Parse the datagram tag */
 	tag = get_datagram_tag(frag->frags->data + pos);
-	pos += NET6LO_FRAG_DATAGRAM_OFFSET_LEN;
+	pos += NET_6LO_FRAG_DATAGRAM_OFFSET_LEN;
 
 	if (!first) {
 		offset = ((uint16_t)frag->frags->data[pos]) << 3;
@@ -473,11 +473,11 @@ enum net_verdict ieee802154_reassemble(struct net_buf *frag,
 	*buf = NULL;
 
 	switch (frag->frags->data[0] & 0xF0) {
-	case NET6LO_DISPATCH_FRAG1:
+	case NET_6LO_DISPATCH_FRAG1:
 		/* First fragment with IP headers */
 		return add_frag_to_cache(frag, buf, true);
 
-	case NET6LO_DISPATCH_FRAGN:
+	case NET_6LO_DISPATCH_FRAGN:
 		/* Further fragments */
 		return add_frag_to_cache(frag, buf, false);
 
