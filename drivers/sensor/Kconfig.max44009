@@ -1,0 +1,90 @@
+# Kconfig.max44009 - MAX44009 light sensor configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig MAX44009
+	bool
+	prompt "MAX44009 Light Sensor"
+	depends on SENSOR && I2C
+	default n
+	help
+	Enable driver for MAX44009 light sensors.
+
+config MAX44009_SYS_LOG_LEVEL
+	int "MAX44009 Log level"
+	depends on SYS_LOG && MAX44009
+	default 0
+	range 0 4
+	help
+	Sets log level for MAX44009 driver.
+	Levels are:
+
+	- 0 OFF: do not write
+
+	- 1 ERROR: only write SYS_LOG_ERR
+
+	- 2 WARNING: write SYS_LOG_WRN in addition to previous level
+
+	- 3 INFO: write SYS_LOG_INF in addition to previous levels
+
+	- 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
+
+config MAX44009_DRV_NAME
+	string
+	prompt "Driver name"
+	default "MAX44009"
+	depends on MAX44009
+	help
+	Device name with which the MAX44009 light is identified.
+
+config MAX44009_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	depends on MAX44009
+	default 70
+	help
+	Device driver initialization priority.
+
+choice
+	prompt "I2C address"
+	depends on MAX44009
+	default MAX44009_I2C_ADDR_0
+	help
+	I2C address of the MAX44009 sensor.
+
+config MAX44009_I2C_ADDR_0
+	bool
+	prompt "0x4a"
+	help
+	A0 connected to GND.
+
+config MAX44009_I2C_ADDR_1
+	bool
+	prompt "0x4b"
+	help
+	A0 connected to VCC.
+
+endchoice
+
+config MAX44009_I2C_DEV_NAME
+	string
+	prompt "I2C master where MAX44009 is connected"
+	depends on MAX44009
+	default "I2C_0"
+	help
+	Specify the device name of the I2C master device to which the
+	MAX44009 chip is connected.
