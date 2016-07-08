@@ -103,14 +103,14 @@ struct net_buf {
 #define NET_BUF_POOL(_name, _count, _size, _fifo, _destroy, _ud_size)	\
 	struct {							\
 		struct net_buf buf;					\
-		uint8_t data[ROUND_UP(_size, 4)] __net_buf_align;	\
+		uint8_t data[_size] __net_buf_align;	                \
 		uint8_t ud[ROUND_UP(_ud_size, 4)] __net_buf_align;	\
 	} _name[_count] = {						\
 		[0 ... (_count - 1)] = { .buf = {			\
 			.user_data_size = ROUND_UP(_ud_size, 4),	\
 			.free = _fifo,					\
 			.destroy = _destroy,				\
-			.size = ROUND_UP(_size, 4) } },			\
+			.size = _size } },			        \
 	}
 
 /**
