@@ -67,6 +67,7 @@ typedef enum bt_l2cap_chan_state {
 	BT_L2CAP_DISCONNECTED,	/* channel disconnected */
 	BT_L2CAP_CONNECT,	/* channel in connecting state */
 	BT_L2CAP_CONFIG,	/* channel in config state, BR/EDR specific */
+	BT_L2CAP_CONNECTED,	/* channel ready for traffic on it */
 } __packed bt_l2cap_chan_state_t;
 
 /** @brief L2CAP Channel structure. */

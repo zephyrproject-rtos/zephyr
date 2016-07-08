@@ -102,6 +102,8 @@ static const char *state2str(bt_l2cap_chan_state_t state)
 		return "connect";
 	case BT_L2CAP_CONFIG:
 		return "config";
+	case BT_L2CAP_CONNECTED:
+		return "connected";
 	default:
 		return "unknown";
 	}
@@ -135,6 +137,13 @@ static void l2cap_br_state_set(struct bt_l2cap_chan *ch,
 		return;
 	case BT_L2CAP_CONFIG:
 		if (old_state == BT_L2CAP_CONNECT) {
+			break;
+		}
+
+		BT_WARN("no valid transition");
+		return;
+	case BT_L2CAP_CONNECTED:
+		if (old_state == BT_L2CAP_CONFIG) {
 			break;
 		}
 
@@ -628,8 +637,20 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	 */
 	switch (result) {
 	case BT_L2CAP_CONF_SUCCESS:
-		BT_DBG("local MTU %u", BR_CHAN(chan)->rx.mtu);
 		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_LCONF_DONE);
+
+		if (chan->state == BT_L2CAP_CONFIG &&
+		    atomic_test_bit(BR_CHAN(chan)->flags,
+				    L2CAP_FLAG_RCONF_DONE)) {
+			BT_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u",
+			       BR_CHAN(chan)->rx.cid, BR_CHAN(chan)->rx.mtu,
+			       BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
+
+			l2cap_br_state_set(chan, BT_L2CAP_CONNECTED);
+			if (chan->ops && chan->ops->connected) {
+				chan->ops->connected(chan);
+			}
+		}
 		break;
 	default:
 		/* currently disconnect channel on non success result */
@@ -837,6 +858,18 @@ send_rsp:
 	}
 
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_RCONF_DONE);
+
+	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_LCONF_DONE) &&
+	    chan->state == BT_L2CAP_CONFIG) {
+		BT_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u",
+		       BR_CHAN(chan)->rx.cid, BR_CHAN(chan)->rx.mtu,
+		       BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
+
+		l2cap_br_state_set(chan, BT_L2CAP_CONNECTED);
+		if (chan->ops && chan->ops->connected) {
+			chan->ops->connected(chan);
+		}
+	}
 }
 
 static struct bt_l2cap_br_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
