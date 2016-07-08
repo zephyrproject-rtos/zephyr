@@ -741,7 +741,7 @@ end:
 	ipv6->len[1] = (uint8_t)len;
 
 	if (ipv6->nexthdr == IPPROTO_UDP) {
-		udp->len = len;
+		udp->len = htons(len);
 	}
 
 	return true;
