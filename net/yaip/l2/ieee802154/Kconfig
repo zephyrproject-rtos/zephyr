@@ -83,6 +83,24 @@ config  NET_L2_IEEE802154_FRAGMENT
 	  If IPv6 packets size more than 802.15.4 MTU, packet is fragmented
 	  and reasseble incoming packets according to RFC4944/6282.
 
+config  NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
+	int "IEEE 802.15.4 Reassembly cache size"
+	depends on NET_L2_IEEE802154_FRAGMENT
+	default 1
+	help
+	  Simultaneoulsy reassemble 802.15.4 fragments depending on
+	  cache size.
+
+config  NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
+	int "IEEE 802.15.4 Reassembly timeout in seconds"
+	depends on NET_L2_IEEE802154_FRAGMENT
+	default 5
+	range 1 60
+	help
+	  Reassembly timer will start as soon as first packet received
+	  from peer. Reassembly should be finished within a given time.
+	  Otherwise all accumulated fragments are dropped.
+
 config  NET_L2_IEEE802154_FRAGMENT_DEBUG
 	bool "Enable debug support for IEEE 802.15.4 fragmentation"
 	default n

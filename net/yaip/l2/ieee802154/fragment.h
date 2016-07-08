@@ -42,4 +42,23 @@
  */
 bool ieee802154_fragment(struct net_buf *buf, int hdr_diff);
 
+/**
+ *  @brief Reassemble 802.15.4 fragments as per RFC 6282
+ *
+ *  @details If the data does not fit into sinle fragment whole IPv6 packet
+ *  comes in number of fragments. This funtion will reassemble them all as
+ *  per data tag, data offset and data size. First packet is uncompressed
+ *  immediately after reception.
+ *
+ *  @param Pointer to network fragment
+ *  @param Pointer to network buf (on NET_OK verdict only)
+ *
+ *  @return NET_OK reassembly done,
+ *          NET_CONTINUE waiting for other fragments,
+ *          NET_DROP invalid fragment.
+ */
+
+enum net_verdict ieee802154_reassemble(struct net_buf *frag,
+				       struct net_buf **buf);
+
 #endif /* __NET_FRAGMENT_H */

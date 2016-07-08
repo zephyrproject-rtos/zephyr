@@ -34,7 +34,25 @@
 #include "6lo.h"
 #include "6lo_private.h"
 
+#define FRAG_REASSEMBLY_TIMEOUT (sys_clock_ticks_per_sec * \
+				 CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT)
+#define REASS_CACHE_SIZE CONFIG_NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
+
 static uint16_t datagram_tag;
+
+/**
+ *  Reasseble cache : Depends on cache size it used for reassemble
+ *  IPv6 packets simultaneously.
+ */
+struct frag_cache {
+	struct nano_delayed_work timer;	/* Reassemble timer */
+	struct net_buf *buf;		/* Reassemble buffer */
+	uint16_t size;			/* Datagram size */
+	uint16_t tag;			/* Datagram tag */
+	bool used;
+};
+
+static struct frag_cache cache[REASS_CACHE_SIZE];
 
 /**
  *  RFC 4944, section 5.3
@@ -241,4 +259,235 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 	}
 
 	return true;
+}
+
+static inline uint16_t get_datagram_size(uint8_t *ptr)
+{
+	return ((ptr[0] & 0x1F) << 8) | ptr[1];
+}
+
+static inline uint16_t get_datagram_tag(uint8_t *ptr)
+{
+	return (ptr[0] << 8) | ptr[1];
+}
+
+static inline void remove_frag_header(struct net_buf *frag, uint8_t hdr_len)
+{
+	memmove(frag->data, frag->data + hdr_len, frag->len - hdr_len);
+	frag->len -= hdr_len;
+}
+
+static void update_protocol_header_lengths(struct net_buf *buf, uint16_t size)
+{
+	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
+
+	NET_IPV6_BUF(buf)->len[0] = (size - NET_IPV6H_LEN) >> 8;
+	NET_IPV6_BUF(buf)->len[1] = (uint8_t) (size - NET_IPV6H_LEN);
+
+	if (NET_IPV6_BUF(buf)->nexthdr == IPPROTO_UDP) {
+		NET_UDP_BUF(buf)->len = htons(size - NET_IPV6H_LEN);
+	}
+}
+
+static inline void clear_reass_cache(uint16_t size, uint16_t tag, bool fail)
+{
+	uint8_t i;
+
+	for (i = 0; i < REASS_CACHE_SIZE; i++) {
+		if (!(cache[i].size == size && cache[i].tag == tag)) {
+			continue;
+		}
+
+		/* Incase of failure unref the buffer */
+		if (fail) {
+			net_nbuf_unref(cache[i].buf);
+		}
+
+		cache[i].buf = NULL;
+		cache[i].size = 0;
+		cache[i].tag = 0;
+		cache[i].used = false;
+		nano_delayed_work_cancel(&cache[i].timer);
+	}
+}
+
+/**
+ *  If the reassembly not completed within reassembly timeout discard
+ *  the whole packet.
+ */
+static void reass_timeout(struct nano_work *work)
+{
+	struct frag_cache *cache = CONTAINER_OF(work,
+						    struct frag_cache,
+						    timer);
+
+	if (cache->buf) {
+		net_nbuf_unref(cache->buf);
+	}
+
+	cache->buf = NULL;
+	cache->size = 0;
+	cache->tag = 0;
+	cache->used = false;
+}
+
+/**
+ *  Upon receiption of first fragment with respective of size and tag
+ *  create a new cache. If number of unused cache are out then
+ *  discard the fragments.
+ */
+static inline struct frag_cache *set_reass_cache(struct net_buf *buf,
+						     uint16_t size,
+						     uint16_t tag)
+{
+	int i;
+
+	for (i = 0; i < REASS_CACHE_SIZE; i++) {
+		if (cache[i].used) {
+			continue;
+		}
+
+		cache[i].buf = buf;
+		cache[i].size = size;
+		cache[i].tag = tag;
+		cache[i].used = true;
+
+		nano_delayed_work_init(&cache[i].timer, reass_timeout);
+		nano_delayed_work_submit(&cache[i].timer,
+					 FRAG_REASSEMBLY_TIMEOUT);
+
+		return &cache[i];
+	}
+
+	return NULL;
+}
+
+/**
+ *  Return cache if it matches with size and tag of stored caches,
+ *  otherwise return NULL.
+ */
+static inline struct frag_cache *get_reass_cache(struct net_buf *buf,
+						     uint16_t size,
+						     uint16_t tag)
+{
+	uint8_t i;
+
+	for (i = 0; i < REASS_CACHE_SIZE; i++) {
+		if (cache[i].used) {
+			if (cache[i].size == size &&
+			    cache[i].tag == tag) {
+				return &cache[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+/**
+ *  Parse size and tag from the fragment, check if we have any cache
+ *  related to it. If not create a new cache.
+ *  Remove the fragmentation header and uncompress IPv6 and related headers.
+ *  Cache Rx part of fragment along with data buf for the first fragment
+ *  in the cache, remaining fragments just cache data fragment, unref
+ *  RX buf. So in both the cases caller can assume buffer is consumed.
+ *
+ *  TODO append based on offset
+ */
+static inline enum net_verdict add_frag_to_cache(struct net_buf *frag,
+						   struct net_buf **buf,
+						   bool first)
+{
+	struct frag_cache *cache;
+	uint16_t size;
+	uint16_t tag;
+	uint16_t offset;
+	uint8_t pos = 0;
+
+	/* Parse total size of packet */
+	size = get_datagram_size(frag->frags->data);
+	pos += NET6LO_FRAG_DATAGRAM_SIZE_LEN;
+
+	/* Parse the datagram tag */
+	tag = get_datagram_tag(frag->frags->data + pos);
+	pos += NET6LO_FRAG_DATAGRAM_OFFSET_LEN;
+
+	if (!first) {
+		offset = ((uint16_t)frag->frags->data[pos]) << 3;
+		pos++;
+	}
+
+	/* Remove frag header and update data */
+	remove_frag_header(frag->frags, pos);
+
+	/* Uncompress the IP headers */
+	if (first && !net_6lo_uncompress(frag)) {
+		clear_reass_cache(size, tag, true);
+		return NET_DROP;
+	}
+
+	/** If there are no fragments in the cache means this frag
+	 *  is the first one. So cache Rx buf and data buf.
+	 *  else
+	 *  If the cache already exists, reasseble the data according
+	 *  to offset. Unref the Rx buf and cache the data buf,
+	 */
+
+	cache = get_reass_cache(frag, size, tag);
+	if (!cache) {
+		cache = set_reass_cache(frag, size, tag);
+		if (!cache) {
+			return NET_DROP;
+		}
+
+		return NET_CONTINUE;
+	}
+
+	/* Add data buffer to reassembly buffer */
+	net_buf_frag_add(cache->buf, frag->frags);
+	frag->frags = NULL;
+
+	/* Unref Rx part of original buffer */
+	net_nbuf_unref(frag);
+
+	/* Check if all the fragments are received or not */
+	if (net_buf_frags_len(cache->buf->frags) == size) {
+		net_nbuf_compact(cache->buf->frags);
+		update_protocol_header_lengths(cache->buf,
+					       cache->size);
+		*buf = cache->buf;
+		clear_reass_cache(size, tag, false);
+		return NET_OK;
+	}
+
+	return NET_CONTINUE;
+}
+
+enum net_verdict ieee802154_reassemble(struct net_buf *frag,
+				       struct net_buf **buf)
+{
+	if (!frag || !frag->frags) {
+		return NET_DROP;
+	}
+
+	*buf = NULL;
+
+	switch (frag->frags->data[0] & 0xF0) {
+	case NET6LO_DISPATCH_FRAG1:
+		/* First fragment with IP headers */
+		return add_frag_to_cache(frag, buf, true);
+
+	case NET6LO_DISPATCH_FRAGN:
+		/* Further fragments */
+		return add_frag_to_cache(frag, buf, false);
+
+	default:
+		/* Received unfragmented packet, uncompress */
+		if (net_6lo_uncompress(frag)) {
+			*buf = frag;
+			return NET_OK;
+		}
+	}
+
+	return NET_DROP;
 }
