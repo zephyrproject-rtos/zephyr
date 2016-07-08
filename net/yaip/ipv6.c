@@ -63,16 +63,45 @@ NET_NBR_POOL_INIT(net_neighbor_pool, CONFIG_NET_IPV6_MAX_NEIGHBORS,
 NET_NBR_TABLE_INIT(NET_NBR_GLOBAL, neighbor, net_neighbor_pool,
 		   net_neighbor_table_clear);
 
-#define net_nbr_data(nbr) ((struct net_nbr_data *)((nbr)->data))
+static inline bool net_is_solicited(struct net_buf *buf)
+{
+	return NET_ICMPV6_NA_BUF(buf)->flags & NET_ICMPV6_NA_FLAG_SOLICITED;
+}
 
-#define net_is_solicited(buf)						\
-	(NET_ICMPV6_NA_BUF(buf)->flags & NET_ICMPV6_NA_FLAG_SOLICITED)
+static inline bool net_is_router(struct net_buf *buf)
+{
+	return NET_ICMPV6_NA_BUF(buf)->flags & NET_ICMPV6_NA_FLAG_ROUTER;
+}
 
-#define net_is_router(buf)						\
-	(NET_ICMPV6_NA_BUF(buf)->flags & NET_ICMPV6_NA_FLAG_ROUTER)
+static inline bool net_is_override(struct net_buf *buf)
+{
+	return NET_ICMPV6_NA_BUF(buf)->flags & NET_ICMPV6_NA_FLAG_OVERRIDE;
+}
 
-#define net_is_override(buf)						\
-	(NET_ICMPV6_NA_BUF(buf)->flags & NET_ICMPV6_NA_FLAG_OVERRIDE)
+static inline struct net_nbr *get_nbr(int idx)
+{
+	return &net_neighbor_pool[idx].nbr;
+}
+
+static inline struct net_nbr_data *net_nbr_data(struct net_nbr *nbr)
+{
+	return (struct net_nbr_data *)nbr->data;
+}
+
+static inline struct net_nbr *get_nbr_from_data(struct net_nbr_data *data)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+
+		if (nbr->data == (uint8_t *)data) {
+			return nbr;
+		}
+	}
+
+	return NULL;
+}
 
 static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 				  struct net_if *iface,
@@ -712,7 +741,7 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 			net_nbr_data(nbr)->state = NET_NBR_STALE;
 		}
 
-		net_nbr_data(buf)->is_router = net_is_router(buf);
+		net_nbr_data(nbr)->is_router = net_is_router(buf);
 
 		goto send_pending;
 	}
