@@ -372,35 +372,3 @@ use of C++ is restricted to application code.
 
 .. note::
    Do not use C++ for kernel, driver, or system initialization code.
-
-Device Driver Library
-*********************
-
-The Zephyr kernel supports a variety of device drivers. The specific set of
-device drivers available for an application's board configuration varies
-according to the associated hardware components and device driver software.
-
-Device drivers which are present on all supported board configurations
-are listed below.
-
-* **Interrupt controller**: This device driver is used by the nanokernel's
-  interrupt management subsystem.
-
-* **Timer**: This device driver is used by the kernel's system clock and
-  hardware clock subsystem.
-
-* **Serial communication**: This device driver is used by the kernel's
-  system console subsystem.
-
-* **Random number generator**: This device driver provides a source of random
-  numbers.
-
-  .. important::
-
-    Certain implementations of this device driver do not generate sequences of
-    values that are truly random.
-
-Networking Library
-******************
-
-[This section briefly outlines the networking subsystems.]

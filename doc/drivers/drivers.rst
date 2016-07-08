@@ -5,16 +5,42 @@ Device Drivers and Device Model
 
 Introduction
 ************
+The Zephyr kernel supports a variety of device drivers. The specific set of
+device drivers available for an application's board configuration varies
+according to the associated hardware components and device driver software.
+
 The Zephyr device model provides a consistent device model for configuring the
-drivers that are part of the platform/system. The device model is responsible
-for initializing all the drivers configured into the system.
+drivers that are part of a system. The device model is responsible
+for initializing all the drivers configured into the system.
 
-Each type of driver (UART, SPI, I2C) is supported by a generic type API.
+Each type of driver (UART, SPI, I2C) is supported by a generic type API.
 
-In this model the driver fills in the pointer to the structure containing the
+In this model the driver fills in the pointer to the structure containing the
 function pointers to its API functions during driver initialization. These
-structures are placed into the RAM section in initialization level order.
+structures are placed into the RAM section in initialization level order.
 
+Standard Drivers
+****************
+
+Device drivers which are present on all supported board configurations
+are listed below.
+
+* **Interrupt controller**: This device driver is used by the kernel's
+  interrupt management subsystem.
+
+* **Timer**: This device driver is used by the kernel's system clock and
+  hardware clock subsystem.
+
+* **Serial communication**: This device driver is used by the kernel's
+  system console subsystem.
+
+* **Random number generator**: This device driver provides a source of random
+  numbers.
+
+  .. important::
+
+    Certain implementations of this device driver do not generate sequences of
+    values that are truly random.
 
 Synchronous Calls
 *****************
