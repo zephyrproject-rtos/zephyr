@@ -45,6 +45,7 @@
 extern "C" {
 #endif
 
+#include <atomic.h>
 #include <misc/nano_work.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
@@ -137,6 +138,7 @@ struct bt_l2cap_br_chan {
 	struct bt_l2cap_br_endpoint	rx;
 	/** Channel Transmission Endpoint */
 	struct bt_l2cap_br_endpoint	tx;
+	atomic_t			flags[1];
 };
 
 /** @brief L2CAP Channel operations structure. */

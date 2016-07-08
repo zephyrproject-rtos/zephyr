@@ -59,6 +59,12 @@
  */
 #define L2CAP_FEAT_FIXED_CHAN_MASK	0x00000080
 
+/* Auxiliary L2CAP CoC flags making channel context */
+enum {
+	L2CAP_FLAG_LCONF_DONE,	/* local config accepted by remote */
+	L2CAP_FLAG_RCONF_DONE,	/* remote config accepted by local */
+};
+
 static struct bt_l2cap_server *br_servers;
 static struct bt_l2cap_fixed_chan *br_channels;
 
@@ -623,6 +629,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	switch (result) {
 	case BT_L2CAP_CONF_SUCCESS:
 		BT_DBG("local MTU %u", BR_CHAN(chan)->rx.mtu);
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_LCONF_DONE);
 		break;
 	default:
 		/* currently disconnect channel on non success result */
@@ -824,6 +831,12 @@ send_rsp:
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+
+	if (result != BT_L2CAP_CONF_SUCCESS) {
+		return;
+	}
+
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_RCONF_DONE);
 }
 
 static struct bt_l2cap_br_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
