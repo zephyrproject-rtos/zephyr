@@ -65,8 +65,8 @@ struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 	 */
 	if (buf->free == fifo) {
 		buf->ref   = 1;
-		buf->data  = buf->__buf + reserve_head;
 		buf->len   = 0;
+		net_buf_reserve(buf, reserve_head);
 		buf->flags = 0;
 		buf->frags = NULL;
 
@@ -102,6 +102,14 @@ struct net_buf *net_buf_get(struct nano_fifo *fifo, size_t reserve_head)
 	NET_BUF_WARN("Low on buffers. Waiting (fifo %p)\n", fifo);
 
 	return net_buf_get_timeout(fifo, reserve_head, TICKS_UNLIMITED);
+}
+
+void net_buf_reserve(struct net_buf *buf, size_t reserve)
+{
+	NET_BUF_ASSERT(buf->len == 0);
+	NET_BUF_DBG("buf %p reserve %u", buf, reserve);
+
+	buf->data = buf->__buf + reserve;
 }
 
 void net_buf_put(struct nano_fifo *fifo, struct net_buf *buf)

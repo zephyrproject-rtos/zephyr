@@ -175,6 +175,17 @@ struct net_buf *net_buf_get_timeout(struct nano_fifo *fifo,
 				    size_t reserve_head, int32_t timeout);
 
 /**
+ *  @brief Initialize buffer with the given headroom.
+ *
+ *  Initializes a buffer with a given headroom. The buffer is not expected to
+ *  contain any data when this API is called.
+ *
+ *  @param buf Buffer to initialize.
+ *  @param reserve How much headroom to reserve.
+ */
+void net_buf_reserve(struct net_buf *buf, size_t reserve);
+
+/**
  *  @brief Put a buffer into a FIFO
  *
  *  Put a buffer to the end of a FIFO. If the buffer contains follow-up
