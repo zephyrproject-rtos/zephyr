@@ -278,6 +278,18 @@ uint8_t *net_buf_add_u8(struct net_buf *buf, uint8_t value);
 void net_buf_add_le16(struct net_buf *buf, uint16_t value);
 
 /**
+ *  @brief Add 16-bit value at the end of the buffer
+ *
+ *  Adds 16-bit value in big endian format at the end of buffer.
+ *  Increments the data length of a buffer to account for more data
+ *  at the end.
+ *
+ *  @param buf Buffer to update.
+ *  @param value 16-bit value to be added.
+ */
+void net_buf_add_be16(struct net_buf *buf, uint16_t value);
+
+/**
  *  @brief Add 32-bit value at the end of the buffer
  *
  *  Adds 32-bit value in little endian format at the end of buffer.
@@ -312,6 +324,17 @@ void *net_buf_push(struct net_buf *buf, size_t len);
  *  @param value 16-bit value to be pushed to the buffer.
  */
 void net_buf_push_le16(struct net_buf *buf, uint16_t value);
+
+/**
+ *  @brief Push 16-bit value to the beginning of the buffer
+ *
+ *  Adds 16-bit value in little endian format to the beginning of the
+ *  buffer.
+ *
+ *  @param buf Buffer to update.
+ *  @param value 16-bit value to be pushed to the buffer.
+ */
+void net_buf_push_be16(struct net_buf *buf, uint16_t value);
 
 /**
  *  @brief Remove data from the beginning of the buffer.

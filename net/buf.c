@@ -197,6 +197,14 @@ void net_buf_add_le16(struct net_buf *buf, uint16_t value)
 	memcpy(net_buf_add(buf, sizeof(value)), &value, sizeof(value));
 }
 
+void net_buf_add_be16(struct net_buf *buf, uint16_t value)
+{
+	NET_BUF_DBG("buf %p value %u\n", buf, value);
+
+	value = sys_cpu_to_be16(value);
+	memcpy(net_buf_add(buf, sizeof(value)), &value, sizeof(value));
+}
+
 void net_buf_add_le32(struct net_buf *buf, uint32_t value)
 {
 	NET_BUF_DBG("buf %p value %u\n", buf, value);
@@ -221,6 +229,14 @@ void net_buf_push_le16(struct net_buf *buf, uint16_t value)
 	NET_BUF_DBG("buf %p value %u\n", buf, value);
 
 	value = sys_cpu_to_le16(value);
+	memcpy(net_buf_push(buf, sizeof(value)), &value, sizeof(value));
+}
+
+void net_buf_push_be16(struct net_buf *buf, uint16_t value)
+{
+	NET_BUF_DBG("buf %p value %u\n", buf, value);
+
+	value = sys_cpu_to_be16(value);
 	memcpy(net_buf_push(buf, sizeof(value)), &value, sizeof(value));
 }
 
