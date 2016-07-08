@@ -214,17 +214,11 @@ __csSet:
 	/*
 	 * copy DATA section from ROM to RAM region
 	 *	 DATA is followed by BSS section.
-	 *       Given that BSS section is initialized after this copy, we can
-	 *	 safely over-write into the next section.
-	 * Note: __data_num_words is a multiple of 4 bytes
-	 *       rounded up to next 4 bytes.
-	 *	 Note: the sections might not be 4 byte aligned.
 	 */
 
 	movl	$__data_ram_start, %edi /* DATA in RAM (dest) */
 	movl	$__data_rom_start, %esi /* DATA in ROM (src) */
 	movl	$__data_num_words, %ecx /* Size of DATA in quad bytes */
-	je	copyDataDone
 
   #ifdef CONFIG_SSE
 	/* copy 16 bytes at a time using XMM until < 16 bytes remain */
@@ -247,7 +241,6 @@ dataWords:
 
 	rep
 	movsl				/* copy data 4 bytes at a time */
-copyDataDone:
 
 #endif /* CONFIG_XIP */
 
