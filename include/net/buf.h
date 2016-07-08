@@ -337,6 +337,16 @@ void net_buf_push_le16(struct net_buf *buf, uint16_t value);
 void net_buf_push_be16(struct net_buf *buf, uint16_t value);
 
 /**
+ *  @brief Push 8-bit value to the beginning of the buffer
+ *
+ *  Adds 8-bit value the beginning of the buffer.
+ *
+ *  @param buf Buffer to update.
+ *  @param value 8-bit value to be pushed to the buffer.
+ */
+void net_buf_push_u8(struct net_buf *buf, uint8_t value);
+
+/**
  *  @brief Remove data from the beginning of the buffer.
  *
  *  Removes data from the beginnig of the buffer by modifying the data
