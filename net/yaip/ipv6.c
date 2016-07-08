@@ -149,7 +149,7 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 	int i;
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		struct net_nbr *nbr = &table->nbr[i];
+		struct net_nbr *nbr = get_nbr(i);
 
 		if (!nbr->ref) {
 			continue;
