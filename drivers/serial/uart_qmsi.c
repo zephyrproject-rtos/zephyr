@@ -24,6 +24,7 @@
 #include "qm_uart.h"
 #include "qm_isr.h"
 #include "clk.h"
+#include "soc.h"
 #include "qm_soc_regs.h"
 
 #define IIR_IID_NO_INTERRUPT_PENDING 0x01
@@ -293,7 +294,7 @@ static void irq_config_func_0(struct device *dev)
 {
 	IRQ_CONNECT(QM_IRQ_UART_0, CONFIG_UART_QMSI_0_IRQ_PRI,
 		    uart_qmsi_isr, DEVICE_GET(uart_0),
-		    (IOAPIC_LEVEL | IOAPIC_HIGH));
+		    UART_IRQ_FLAGS);
 	irq_enable(QM_IRQ_UART_0);
 	QM_SCSS_INT->int_uart_0_mask &= ~BIT(0);
 }
@@ -304,7 +305,7 @@ static void irq_config_func_1(struct device *dev)
 {
 	IRQ_CONNECT(QM_IRQ_UART_1, CONFIG_UART_QMSI_1_IRQ_PRI,
 		    uart_qmsi_isr, DEVICE_GET(uart_1),
-		    (IOAPIC_LEVEL | IOAPIC_HIGH));
+		    UART_IRQ_FLAGS);
 	irq_enable(QM_IRQ_UART_1);
 	QM_SCSS_INT->int_uart_1_mask &= ~BIT(0);
 }

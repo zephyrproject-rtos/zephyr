@@ -61,6 +61,8 @@
  */
 #define PINMUX_BASE_ADDR		0xb0800900
 
+#define UART_IRQ_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+
 #endif /*  _ASMLANGUAGE */
 
 #endif /* __SOC_H_ */
