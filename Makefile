@@ -981,6 +981,8 @@ CLEAN_DIRS  += $(MODVERDIR)
 CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
 		misc/generated/sysgen/sysgen.h \
 		misc/generated/sysgen/prj.mdef \
+		misc/generated/sysgen/micro_private_types.h \
+		misc/generated/sysgen/kernel_main.h \
 		.old_version .tmp_System.map .tmp_version \
 		.tmp_* System.map *.lnk *.map *.elf *.lst \
 		*.bin *.strip staticIdt.o linker.cmd final-linker.cmd

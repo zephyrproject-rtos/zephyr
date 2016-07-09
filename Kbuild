@@ -47,7 +47,9 @@ misc/generated/sysgen/prj.mdef:	$(MDEF_FILE_PATH) \
 				include/config/auto.conf FORCE
 	$(call filechk,prj.mdef)
 
-misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.mdef
+misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.mdef \
+				     kernel/microkernel/include/micro_private_types.h \
+				     kernel/microkernel/include/kernel_main.h
 	$(Q)$(srctree)/scripts/sysgen $(CURDIR)/misc/generated/sysgen/prj.mdef $(CURDIR)/misc/generated/sysgen/
 
 define filechk_configs.c
