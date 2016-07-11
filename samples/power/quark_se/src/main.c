@@ -19,6 +19,8 @@
 #include <misc/printk.h>
 #include <rtc.h>
 
+#include <string.h>
+
 #include "power_states.h"
 
 enum power_states {
@@ -31,8 +33,11 @@ enum power_states {
 };
 
 #define TIMEOUT 5 /* in seconds */
+#define MAX_SUSPEND_DEVICE_COUNT 15
 
 static struct device *rtc_dev;
+static struct device *suspend_devices[MAX_SUSPEND_DEVICE_COUNT];
+static int suspend_device_count;
 static enum power_states last_state = POWER_STATE_SOC_DEEP_SLEEP;
 
 static enum power_states get_next_state(void)
@@ -141,16 +146,25 @@ static void set_rtc_alarm(void)
 
 static void do_soc_sleep(int deep)
 {
+	int i, devices_retval[suspend_device_count];
+
 	/* Host processor will be turned off so we set up an RTC
 	 * interrupt to wake up the SoC.
 	 */
 	set_rtc_alarm();
 
-	/* TODO: Call suspend API from devices. */
+	for (i = suspend_device_count - 1; i >= 0; i--) {
+		devices_retval[i] = device_suspend(suspend_devices[i],
+						   SYS_PM_DEEP_SLEEP);
+	}
 
 	__do_soc_sleep(deep);
 
-	/* TODO: Call resume API from devices. */
+	for (i = 0; i < suspend_device_count; i++) {
+		if (!devices_retval[i]) {
+			device_resume(suspend_devices[i], SYS_PM_DEEP_SLEEP);
+		}
+	}
 }
 
 int _sys_soc_suspend(int32_t ticks)
@@ -215,6 +229,34 @@ int _sys_soc_suspend(int32_t ticks)
 	return pm_operation;
 }
 
+static void build_suspend_device_list(void)
+{
+	int i, devcount;
+	struct device *devices;
+
+	device_list_get(&devices, &devcount);
+	if (devcount > MAX_SUSPEND_DEVICE_COUNT) {
+		printk("Error: List of devices exceeds what we can track "
+		       "for suspend. Built: %d, Max: %d\n",
+		       devcount, MAX_SUSPEND_DEVICE_COUNT);
+		return;
+	}
+
+	suspend_device_count = 3;
+	for (i = 0; i < devcount; i++) {
+		if (!strcmp(devices[i].config->name, "loapic")) {
+			suspend_devices[0] = &devices[i];
+		} else if (!strcmp(devices[i].config->name, "ioapic")) {
+			suspend_devices[1] = &devices[i];
+		} else if (!strcmp(devices[i].config->name,
+				 CONFIG_UART_CONSOLE_ON_DEV_NAME)) {
+			suspend_devices[2] = &devices[i];
+		} else {
+			suspend_devices[suspend_device_count++] = &devices[i];
+		}
+	}
+}
+
 void main(void)
 {
 	struct rtc_config cfg;
@@ -231,6 +273,8 @@ void main(void)
 	rtc_dev = device_get_binding(CONFIG_RTC_0_NAME);
 	rtc_enable(rtc_dev);
 	rtc_set_config(rtc_dev, &cfg);
+
+	build_suspend_device_list();
 
 	/* All our application does is putting the task to sleep so the kernel
 	 * triggers the suspend operation.
