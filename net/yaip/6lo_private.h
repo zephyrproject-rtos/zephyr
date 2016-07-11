@@ -96,3 +96,9 @@
 
 #define IPHC ((frag)->data)
 #define CIPHC ((buf->frags)->data)
+
+#define NET6LO_FRAG1_HDR_LEN		4
+#define NET6LO_FRAGN_HDR_LEN		5
+
+#define NET6LO_FRAG_DATAGRAM_SIZE_LEN		2
+#define NET6LO_FRAG_DATAGRAM_OFFSET_LEN		2

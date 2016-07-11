@@ -75,4 +75,16 @@ config  NET_L2_IEEE802154_ORFD_CHANNEL
 	help
 	  The fixed channel to use for the ORFD.
 
+config  NET_L2_IEEE802154_FRAGMENT
+	bool "Enable 802.15.4 fragmentation support"
+	default y
+	depends on NET_6LO
+	help
+	  If IPv6 packets size more than 802.15.4 MTU, packet is fragmented
+	  and reasseble incoming packets according to RFC4944/6282.
+
+config  NET_L2_IEEE802154_FRAGMENT_DEBUG
+	bool "Enable debug support for IEEE 802.15.4 fragmentation"
+	default n
+
 endif
