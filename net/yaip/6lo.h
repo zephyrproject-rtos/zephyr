@@ -36,10 +36,11 @@
  *  will be adjusted according to remaining space in fragments.
  *
  *  @param Pointer to network buffer
+ *  @param iphc true for IPHC compression, false for IPv6 dispatch header
  *
  *  @return True on success, false otherwise
  */
-bool net_6lo_compress(struct net_buf *buf);
+bool net_6lo_compress(struct net_buf *buf, bool iphc);
 
 /**
  *  @brief Unompress IPv6 packet as per RFC 6282

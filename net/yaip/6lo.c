@@ -751,20 +751,64 @@ fail:
 	return false;
 }
 
-bool net_6lo_compress(struct net_buf *buf)
+/* Adds IPv6 dispatch as first byte and adjust fragments  */
+static inline bool compress_ipv6_header(struct net_buf *buf)
 {
-	return compress_IPHC_header(buf);
+	struct net_buf *frag;
+
+	frag = net_nbuf_get_reserve_data(net_nbuf_ll_reserve(buf));
+	if (!frag) {
+		return false;
+	}
+
+	frag->data[0] = NET6LO_DISPATCH_IPV6;
+	net_buf_add(frag, 1);
+
+	net_buf_frag_insert(buf, frag);
+
+	/* compact the fragments, so that gaps will be filled */
+	buf->frags = net_nbuf_compact(buf->frags);
+
+	return true;
+}
+
+static inline bool uncompress_ipv6_header(struct net_buf *buf)
+{
+	struct net_buf *frag = buf->frags;
+
+	/* Pull off IPv6 dispatch header and adjust data and length */
+	memmove(frag->data, frag->data + 1, frag->len - 1);
+	frag->len -= 1;
+
+	return true;
+}
+
+bool net_6lo_compress(struct net_buf *buf, bool iphc)
+{
+	if (iphc) {
+		return compress_IPHC_header(buf);
+	} else {
+		return compress_ipv6_header(buf);
+	}
 }
 
 bool net_6lo_uncompress(struct net_buf *buf)
 {
 	if (!buf || !buf->frags) {
-		return NULL;
+		return false;
 	}
 
-	if (!(buf->frags->data[0] & NET6LO_DISPATCH_IPHC)) {
-		return NULL;
+	if ((buf->frags->data[0] & NET6LO_DISPATCH_IPHC) ==
+	    NET6LO_DISPATCH_IPHC) {
+		/* uncompress IPHC header */
+		return uncompress_IPHC_header(buf);
+
+	} else if ((buf->frags->data[0] & NET6LO_DISPATCH_IPV6) ==
+		   NET6LO_DISPATCH_IPV6) {
+		/* uncompress IPv6 header, it has only IPv6 dispatch in the
+		 * beginning */
+		return uncompress_ipv6_header(buf);
 	}
 
-	return uncompress_IPHC_header(buf);
+	return false;
 }

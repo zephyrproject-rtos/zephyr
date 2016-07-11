@@ -374,7 +374,7 @@ static int test_6lo(struct net_6lo_data *data)
 	net_hexdump_frags("before-compression", buf);
 #endif
 
-	if (!net_6lo_compress(buf)) {
+	if (!net_6lo_compress(buf, true)) {
 		TC_PRINT("compression failed\n");
 		goto end;
 	}
