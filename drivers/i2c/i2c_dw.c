@@ -43,6 +43,7 @@
 #include "i2c_dw.h"
 #include "i2c_dw_registers.h"
 
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
 #include <misc/sys_log.h>
 
 static inline void _i2c_dw_data_ask(struct device *dev)
