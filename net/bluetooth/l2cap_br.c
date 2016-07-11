@@ -151,12 +151,7 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 		return false;
 	}
 
-	/* Attach channel to the connection */
-	chan->_next = conn->channels;
-	conn->channels = chan;
-	chan->conn = conn;
-
-	BT_DBG("conn %p chan %p cid 0x%04x", conn, ch, ch->rx.cid);
+	bt_l2cap_chan_add(conn, chan, NULL);
 
 	return true;
 }
@@ -633,18 +628,6 @@ static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident,
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
-static void l2cap_br_chan_del(struct bt_l2cap_chan *chan)
-{
-	BT_DBG("conn %p chan %p cid 0x%04x", chan->conn, BR_CHAN(chan),
-	       BR_CHAN(chan)->rx.cid);
-
-	chan->conn = NULL;
-
-	if (chan->ops && chan->ops->disconnected) {
-		chan->ops->disconnected(chan);
-	}
-}
-
 static struct bt_l2cap_br_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
 						       uint16_t cid)
 {
@@ -716,7 +699,7 @@ static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
 	rsp->scid = sys_cpu_to_le16(chan->tx.cid);
 
-	l2cap_br_chan_del(&chan->chan);
+	bt_l2cap_chan_del(&chan->chan);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }

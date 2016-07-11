@@ -206,6 +206,13 @@ void bt_l2cap_connected(struct bt_conn *conn);
 /* Notify L2CAP channels of a disconnect event */
 void bt_l2cap_disconnected(struct bt_conn *conn);
 
+/* Add channel to the connection */
+void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
+		       bt_l2cap_chan_destroy_t destroy);
+
+/* Delete channel */
+void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
+
 /* Notify L2CAP channels of a change in encryption state */
 void bt_l2cap_encrypt_change(struct bt_conn *conn);
 

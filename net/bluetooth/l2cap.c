@@ -167,7 +167,7 @@ __l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, bool remove)
 	return NULL;
 }
 
-static void l2cap_chan_del(struct bt_l2cap_chan *chan)
+void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("conn %p chan %p", chan->conn, chan);
 
@@ -195,11 +195,23 @@ static void l2cap_rtx_timeout(struct nano_work *work)
 
 	l2cap_remove_ident(chan->chan.conn, chan->ident);
 
-	l2cap_chan_del(&chan->chan);
+	bt_l2cap_chan_del(&chan->chan);
+}
+
+void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
+		       bt_l2cap_chan_destroy_t destroy)
+{
+	/* Attach channel to the connection */
+	chan->_next = conn->channels;
+	conn->channels = chan;
+	chan->conn = conn;
+	chan->destroy = destroy;
+
+	BT_DBG("conn %p chan %p", conn, chan);
 }
 
 static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
-			   void (*destroy)(struct bt_l2cap_chan *chan))
+			   bt_l2cap_chan_destroy_t destroy)
 {
 	struct bt_l2cap_le_chan *ch = l2cap_chan_alloc_cid(conn, chan);
 
@@ -208,15 +220,9 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
-	/* Attach channel to the connection */
-	chan->_next = conn->channels;
-	conn->channels = chan;
-	chan->conn = conn;
-	chan->destroy = destroy;
-
 	nano_delayed_work_init(&ch->rtx_work, l2cap_rtx_timeout);
 
-	BT_DBG("conn %p chan %p cid 0x%04x", conn, ch, ch->rx.cid);
+	bt_l2cap_chan_add(conn, chan, destroy);
 
 	return true;
 }
@@ -270,7 +276,7 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 		/* prefetch since disconnected callback may cleanup */
 		next = chan->_next;
 
-		l2cap_chan_del(chan);
+		bt_l2cap_chan_del(chan);
 
 		chan = next;
 	}
@@ -676,7 +682,7 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
 	rsp->scid = sys_cpu_to_le16(chan->tx.cid);
 
-	l2cap_chan_del(&chan->chan);
+	bt_l2cap_chan_del(&chan->chan);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
@@ -736,7 +742,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		break;
 	/* TODO: Retry on Authentication and Encryption errors */
 	default:
-		l2cap_chan_del(&chan->chan);
+		bt_l2cap_chan_del(&chan->chan);
 	}
 }
 
@@ -763,7 +769,7 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	l2cap_chan_del(&chan->chan);
+	bt_l2cap_chan_del(&chan->chan);
 }
 
 static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
@@ -816,7 +822,7 @@ static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	l2cap_chan_del(&chan->chan);
+	bt_l2cap_chan_del(&chan->chan);
 }
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 

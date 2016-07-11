@@ -49,6 +49,15 @@ extern "C" {
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 
+struct bt_l2cap_chan;
+
+/** @typedef bt_l2cap_chan_destroy_t
+ *  @brief Channel destroy callback
+ *
+ *  @param chan Channel object.
+ */
+typedef void (*bt_l2cap_chan_destroy_t)(struct bt_l2cap_chan *chan);
+
 /** @brief L2CAP Channel structure. */
 struct bt_l2cap_chan {
 	/** Channel connection reference */
@@ -56,7 +65,7 @@ struct bt_l2cap_chan {
 	/** Channel operations reference */
 	struct bt_l2cap_chan_ops	*ops;
 	struct bt_l2cap_chan		*_next;
-	void				(*destroy)(struct bt_l2cap_chan *chan);
+	bt_l2cap_chan_destroy_t		destroy;
 };
 
 /** @brief LE L2CAP Endpoint structure. */
