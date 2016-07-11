@@ -491,6 +491,9 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", chan->conn, ch, ch->rx.cid);
 
+	/* Cancel ongoing work */
+	nano_delayed_work_cancel(&ch->rtx_work);
+
 	/* There could be a writer waiting for credits so return a dummy credit
 	 * to wake it up.
 	 */
