@@ -109,7 +109,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 {
 #ifdef CONFIG_PRINTK
 	/* Unfortunately, completely unavailable on Nios II/e cores */
-#ifdef NIOS2_HAS_EXTRA_EXCEPTION_INFO
+#ifdef ALT_CPU_HAS_EXTRA_EXCEPTION_INFO
 	uint32_t exc_reg, badaddr_reg, eccftl;
 	enum nios2_exception_cause cause;
 
@@ -126,7 +126,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
 		printk("Badaddr: 0x%x\n", badaddr_reg);
 	}
-#endif /* NIOS2_HAS_EXTRA_EXCEPTION_INFO */
+#endif /* ALT_CPU_HAS_EXTRA_EXCEPTION_INFO */
 #endif /* CONFIG_PRINTK */
 
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
@@ -181,7 +181,7 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 		       ? "ISR"
 		       : curCtx == NANO_CTX_FIBER ? "essential fiber"
 						  : "essential task");
-#ifdef NIOS2_HAS_DEBUG_STUB
+#ifdef ALT_CPU_HAS_DEBUG_STUB
 	_nios2_break();
 #endif
 	for (;;)

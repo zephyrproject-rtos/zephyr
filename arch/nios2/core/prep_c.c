@@ -50,7 +50,7 @@ void _PrepC(void)
 	 * to flush instruction cache.
 	 */
 	_nios2_icache_flush_all();
-#if NIOS2_ICACHE_SIZE > 0
+#if ALT_CPU_ICACHE_SIZE > 0
 	/* Only need to flush the data cache here if there actually is an
 	 * instruction cache, so that the cached instruction data written is
 	 * actually committed.

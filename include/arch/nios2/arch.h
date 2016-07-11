@@ -114,10 +114,10 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 	 * specifically flip just that bit.
 	 */
 
-#if (NIOS2_NUM_OF_SHADOW_REG_SETS > 0) || \
-		(defined NIOS2_EIC_PRESENT) || \
-		(defined NIOS2_MMU_PRESENT) || \
-		(defined NIOS2_MPU_PRESENT)
+#if (ALT_CPU_NUM_OF_SHADOW_REG_SETS > 0) || \
+		(defined ALT_CPU_EIC_PRESENT) || \
+		(defined ALT_CPU_MMU_PRESENT) || \
+		(defined ALT_CPU_MPU_PRESENT)
 	uint32_t status_reg;
 
 	/* Interrupts were already locked when irq_lock() was called,
