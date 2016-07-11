@@ -93,7 +93,8 @@ static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr *addr)
   * context based (dst) address compression
   * Mesh header compression
   */
-static inline bool compress_IPHC_header(struct net_buf *buf)
+static inline bool compress_IPHC_header(struct net_buf *buf,
+					fragment_handler_t fragment)
 {
 	struct net_buf *frag;
 	struct net_ipv6_hdr *ipv6 = NET_IPV6_BUF(buf);
@@ -431,6 +432,10 @@ end:
 	/* compact the fragments, so that gaps will be filled */
 	net_nbuf_compact(buf->frags);
 
+	if (fragment) {
+		return fragment(buf, compressed - offset);
+	}
+
 	return true;
 }
 
@@ -752,7 +757,8 @@ fail:
 }
 
 /* Adds IPv6 dispatch as first byte and adjust fragments  */
-static inline bool compress_ipv6_header(struct net_buf *buf)
+static inline bool compress_ipv6_header(struct net_buf *buf,
+					fragment_handler_t fragment)
 {
 	struct net_buf *frag;
 
@@ -769,6 +775,10 @@ static inline bool compress_ipv6_header(struct net_buf *buf)
 	/* compact the fragments, so that gaps will be filled */
 	buf->frags = net_nbuf_compact(buf->frags);
 
+	if (fragment) {
+		return fragment(buf, -1);
+	}
+
 	return true;
 }
 
@@ -783,12 +793,13 @@ static inline bool uncompress_ipv6_header(struct net_buf *buf)
 	return true;
 }
 
-bool net_6lo_compress(struct net_buf *buf, bool iphc)
+bool net_6lo_compress(struct net_buf *buf, bool iphc,
+		      fragment_handler_t fragment)
 {
 	if (iphc) {
-		return compress_IPHC_header(buf);
+		return compress_IPHC_header(buf, fragment);
 	} else {
-		return compress_ipv6_header(buf);
+		return compress_ipv6_header(buf, fragment);
 	}
 }
 

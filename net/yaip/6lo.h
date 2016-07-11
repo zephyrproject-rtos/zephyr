@@ -28,6 +28,8 @@
 
 #include <net/nbuf.h>
 
+typedef bool (*fragment_handler_t)(struct net_buf *, int);
+
 /**
  *  @brief Compress IPv6 packet as per RFC 6282
  *
@@ -37,10 +39,12 @@
  *
  *  @param Pointer to network buffer
  *  @param iphc true for IPHC compression, false for IPv6 dispatch header
+ *  @param Pointer to fragment function
  *
  *  @return True on success, false otherwise
  */
-bool net_6lo_compress(struct net_buf *buf, bool iphc);
+bool net_6lo_compress(struct net_buf *buf, bool iphc,
+		      fragment_handler_t fragment);
 
 /**
  *  @brief Unompress IPv6 packet as per RFC 6282
