@@ -33,6 +33,29 @@ extern "C" {
 /* Alignment needed for various parts of the buffer definition */
 #define __net_buf_align __aligned(sizeof(int))
 
+/** @def NET_BUF_SIMPLE
+ *  @brief Define a net_buf_simple stack variable and get a pointer to it.
+ *
+ *  This is a helper macro which is used to define a net_buf_simple object on
+ *  the stack and the get a pointer to it as follows:
+ *
+ *  struct net_buf_simple *my_buf = NET_BUF_SIMPLE(10);
+ *
+ *  After creating the object it needs to be initialized by calling
+ *  net_buf_simple_init().
+ *
+ *  @param _size Maximum data storage for the buffer.
+ *
+ *  @return Pointer to stack-allocated net_buf_simple object.
+ */
+#define NET_BUF_SIMPLE(_size)                        \
+	((struct net_buf_simple *)(&(struct {        \
+		struct net_buf_simple buf;           \
+		uint8_t data[_size] __net_buf_align; \
+	}) {                                         \
+		.buf.size = _size,                   \
+	}))
+
 /** @brief Simple network buffer representation.
  *
  *  This is a simpler variant of the net_buf object (in fact net_buf uses
@@ -61,6 +84,21 @@ struct net_buf_simple {
 	 */
 	uint8_t __buf[0] __net_buf_align;
 };
+
+/** @brief Initialize a net_buf_simple object.
+ *
+ *  This needs to be called after creating a net_buf_simple object e.g. using
+ *  the NET_BUF_SIMPLE macro.
+ *
+ *  @param buf Buffer to initialize.
+ *  @param reserve_head Headroom to reserve.
+ */
+static inline void net_buf_simple_init(struct net_buf_simple *buf,
+				       size_t reserve_head)
+{
+	buf->data = buf->__buf + reserve_head;
+	buf->len = 0;
+}
 
 /**
  *  @brief Prepare data to be added at the end of the buffer
