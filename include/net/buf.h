@@ -33,6 +33,35 @@ extern "C" {
 /* Alignment needed for various parts of the buffer definition */
 #define __net_buf_align __aligned(sizeof(int))
 
+/** @brief Simple network buffer representation.
+ *
+ *  This is a simpler variant of the net_buf object (in fact net_buf uses
+ *  net_buf_simple internally). It doesn't provide any kind of reference
+ *  counting, user data, dynamic allocation, or in general the ability to
+ *  pass through nano-kernel objects such as FIFOs.
+ *
+ *  The main use of this is for scenarios where the meta-data of the normal
+ *  net_buf isn't needed and causes too much overhead. This could be e.g.
+ *  when the buffer only needs to be allocated on the stack or when the
+ *  access to and lifetime of the buffer is well controlled and constrained.
+ *
+ */
+struct net_buf_simple {
+	/** Pointer to the start of data in the buffer. */
+	uint8_t *data;
+
+	/** Length of the data behind the data pointer. */
+	uint16_t len;
+
+	/** Amount of data that this buffer can store. */
+	const uint16_t size;
+
+	/** Start of the data storage. Not to be accessed directly
+	 *  (the data pointer should be used instead).
+	 */
+	uint8_t __buf[0] __net_buf_align;
+};
+
 /** Flag indicating that the buffer has associated fragments. Only used
   * internally by the buffer handling code while the buffer is inside a
   * FIFO, meaning this never needs to be explicitly set or unset by the
@@ -72,14 +101,24 @@ struct net_buf {
 	/** Function to be called when the buffer is freed. */
 	void (*const destroy)(struct net_buf *buf);
 
-	/** Pointer to the start of data in the buffer. */
-	uint8_t *data;
+	/* Union for convenience access to the net_buf_simple members, also
+	 * preserving the old API.
+	 */
+	union {
+		/* The ABI of this struct must match net_buf_simple */
+		struct {
+			/** Pointer to the start of data in the buffer. */
+			uint8_t *data;
 
-	/** Length of the data behind the data pointer. */
-	uint16_t len;
+			/** Length of the data behind the data pointer. */
+			uint16_t len;
 
-	/** Amount of data that this buffer can store. */
-	const uint16_t size;
+			/** Amount of data that this buffer can store. */
+			const uint16_t size;
+		};
+
+		struct net_buf_simple b;
+	};
 
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
