@@ -338,7 +338,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	compressed = NET_IPV6H_LEN;
 
 	if (ipv6->nexthdr != IPPROTO_UDP) {
-		NET_DBG("next header UDP");
+		NET_DBG("next header is not UDP (%u)", ipv6->nexthdr);
 		goto end;
 	}
 
@@ -675,11 +675,13 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 	net_buf_add(frag, NET_IPV6H_LEN);
 
 	if (!(CIPHC[0] & NET_6LO_IPHC_NH_1)) {
+		NET_DBG("No following compressed header");
 		goto end;
 	}
 
 	if ((CIPHC[offset] & 0xF0) != NET_6LO_NHC_UDP_BARE) {
 		/*doesn't support other NH uncompression */
+		NET_DBG("Unsupported following compressed header");
 		goto fail;
 	}
 
@@ -748,6 +750,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 
 end:
 	/* move the data to beginning, no need for headers now */
+	NET_DBG("Removing %u bytes of compressed hdr", offset);
 	memmove(buf->frags->data, buf->frags->data + offset,
 		buf->frags->len - offset);
 	buf->frags->len -= offset;
