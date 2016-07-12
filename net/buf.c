@@ -305,6 +305,16 @@ uint16_t net_buf_simple_pull_le16(struct net_buf_simple *buf)
 	return sys_le16_to_cpu(val);
 }
 
+uint16_t net_buf_simple_pull_be16(struct net_buf_simple *buf)
+{
+	uint16_t val;
+
+	val = UNALIGNED_GET((uint16_t *)buf->data);
+	net_buf_simple_pull(buf, sizeof(val));
+
+	return sys_be16_to_cpu(val);
+}
+
 uint32_t net_buf_simple_pull_le32(struct net_buf_simple *buf)
 {
 	uint32_t val;
@@ -313,6 +323,16 @@ uint32_t net_buf_simple_pull_le32(struct net_buf_simple *buf)
 	net_buf_simple_pull(buf, sizeof(val));
 
 	return sys_le32_to_cpu(val);
+}
+
+uint32_t net_buf_simple_pull_be32(struct net_buf_simple *buf)
+{
+	uint32_t val;
+
+	val = UNALIGNED_GET((uint32_t *)buf->data);
+	net_buf_simple_pull(buf, sizeof(val));
+
+	return sys_be32_to_cpu(val);
 }
 
 size_t net_buf_simple_headroom(struct net_buf_simple *buf)
