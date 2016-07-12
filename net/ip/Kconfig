@@ -121,8 +121,6 @@ config NETWORKING_WITH_IPV4
 	  Legacy IP.
 endchoice
 
-source "net/ip/Kconfig.debug"
-
 config	NETWORKING_STATISTICS
 	bool
 	prompt "Enable IP statistics gathering"
@@ -590,9 +588,12 @@ config	NET_TESTING
 
 endif
 
-if NETWORKING && NET_YAIP
+if NETWORKING
 
+if NET_YAIP
 source "net/yaip/Kconfig"
+endif
+
 source "net/ip/Kconfig.debug"
 
 endif
