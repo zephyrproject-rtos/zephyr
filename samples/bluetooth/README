@@ -56,6 +56,10 @@ central_hr:
         looks for heart-rate monitors and reports the heart-rate
         readings once connected.
 
+eddystone:
+        Application demostrating Eddystone Configuration Service:
+        https://github.com/google/eddystone/tree/master/configuration-service
+
 gatt:
         Not an application, but a set of reusable modules for common
         GATT profiles & services.
