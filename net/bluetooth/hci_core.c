@@ -3534,6 +3534,15 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 
 		set_param->own_addr_type = BT_ADDR_LE_RANDOM;
 #else
+		/*
+		 * If Static Random address is used as Identity address we need
+		 * to restore it before advertising is enabled. Otherwise NRPA
+		 * used for active scan could be used for advertising.
+		 */
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM)) {
+			set_random_address(&bt_dev.id_addr.a);
+		}
+
 		set_param->own_addr_type = bt_dev.id_addr.type;
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
 		set_param->type = BT_LE_ADV_IND;
