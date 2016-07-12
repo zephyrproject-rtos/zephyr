@@ -42,6 +42,12 @@ extern "C" {
   */
 #define NET_BUF_FRAGS        BIT(0)
 
+/** @brief Network buffer representation.
+  *
+  * This struct is used to represent network buffers. Such buffers are
+  * normally defined through the NET_BUF_POOL() API and allocated using
+  * the net_buf_get() and net_buf_get_timeout() APIS.
+  */
 struct net_buf {
 	union {
 		/** FIFO uses first 4 bytes itself, reserve space */
