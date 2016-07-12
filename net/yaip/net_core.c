@@ -214,11 +214,11 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 			return net_conn_input(IPPROTO_UDP, buf);
 
 		default:
-			goto bad_header;
+			NET_DBG("Unknown next header type");
+			goto drop;
 		}
 	}
 
-bad_header:
 drop:
 	return NET_DROP;
 }
@@ -297,13 +297,16 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 	 * be data fragments without user data.
 	 */
 	if (!buf->frags || !buf->user_data_size) {
+		NET_DBG("Corrupted buffer");
 		NET_STATS(++net_stats.processing_error);
+
 		return NET_DROP;
 	}
 
 	ret = net_if_recv_data(net_nbuf_iface(buf), buf);
 	if (ret != NET_CONTINUE) {
 		if (ret == NET_DROP) {
+			NET_DBG("Buffer disgarded by L2");
 			NET_STATS(++net_stats.processing_error);
 		}
 
@@ -326,8 +329,10 @@ static inline enum net_verdict process_data(struct net_buf *buf)
 #endif
 	}
 
+	NET_DBG("Unknown IP family packet");
 	NET_STATS(++net_stats.ip_errors.protoerr);
 	NET_STATS(++net_stats.ip_errors.vhlerr);
+
 	return NET_DROP;
 }
 
