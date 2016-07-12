@@ -15,23 +15,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+menuconfig ETH_DRIVERS
+	bool
+	prompt "Ethernet drivers"
+	depends on ETHERNET
+	default n
+	help
+	Enable Ethernet drivers and debugging.
 
-config SYS_LOG_ETHERNET_LEVEL
+if ETH_DRIVERS
+
+config	SYS_LOG_ETHERNET_DRIVER_LEVEL
 	int
-	prompt "Grove Log level"
-	depends on SYS_LOG && ETHERNET
+	prompt "Ethernet driver debug level"
+	depends on SYS_LOG && ETH_DRIVERS
 	default 0
 	range 0 4
 	help
-	  Sets log level for Ethernet Device Drivers.
-	  Levels are:
-	  0 OFF, do not write
-	  1 ERROR, only write SYS_LOG_ERR
-	  2 WARNING, write SYS_LOG_WRN in adition to previous level
-	  3 INFO, write SYS_LOG_INF in adition to previous levels
-	  4 DEBUG, write SYS_LOG_DBG in adition to previous levels
+	Sets log level for Ethernet Device Drivers.
+	Levels are:
+	0 OFF, do not print anything
+	1 ERROR, only print SYS_LOG_ERR
+	2 WARNING, print SYS_LOG_WRN in addition to previous level
+	3 INFO, print SYS_LOG_INF in addition to previous levels
+	4 DEBUG, print SYS_LOG_DBG in addition to previous levels
 
-menuconfig ETH_DW
+config ETH_DW
 	bool
 	prompt "Synopsys DesignWare Ethernet driver"
 	depends on ETHERNET
@@ -91,3 +100,4 @@ config ETH_DW_0_IRQ_PRI
 	IRQ priority
 
 endif # ETH_DW
+endif # ETH_DRIVERS
