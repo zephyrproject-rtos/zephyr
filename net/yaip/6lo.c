@@ -580,7 +580,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 
 			net_ipv6_addr_create_iid(&ipv6->src,
 						 net_nbuf_ll_src(buf));
-			goto end;
+			break;
 		}
 	}
 
