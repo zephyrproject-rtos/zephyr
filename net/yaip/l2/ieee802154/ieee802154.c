@@ -33,6 +33,33 @@
 
 #include "ieee802154_frame.h"
 
+#if 0
+
+#include <stdio.h>
+
+static void pkt_hexdump(uint8_t *pkt, uint8_t length)
+{
+	int i;
+
+	printf("IEEE 802.15.4 payload content:\n");
+
+	for (i = 0; i < length;) {
+		int j;
+
+		printf("\t");
+
+		for (j = 0; j < 10 && i < length; j++, i++) {
+			printf("%02x ", *pkt);
+			pkt++;
+		}
+
+		printf("\n");
+	}
+}
+#else
+#define pkt_hexdump(...)
+#endif
+
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 static inline void ieee802154_acknowledge(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu)
@@ -132,6 +159,8 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	set_buf_ll_addr(net_nbuf_ll_dst(buf), false,
 			mpdu.mhr.fs->fc.dst_addr_mode, mpdu.mhr.dst_addr);
 
+	pkt_hexdump(net_nbuf_ip_data(buf), net_buf_frags_len(buf));
+
 #ifdef CONFIG_NET_6LO
 	/** Uncompress will drop the current fragment. Buf ll src/dst address
 	 * will then be wrong and must be updated according to the new fragment.
@@ -148,6 +177,8 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	net_nbuf_ll_src(buf)->addr = src ? net_nbuf_ll(buf) + src : NULL;
 	net_nbuf_ll_dst(buf)->addr = dst ? net_nbuf_ll(buf) + dst : NULL;
+
+	pkt_hexdump(net_nbuf_ip_data(buf), net_buf_frags_len(buf));
 #endif /* CONFIG_NET_6LO */
 
 	return NET_CONTINUE;
@@ -161,10 +192,14 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 		return NET_DROP;
 	}
 
+	pkt_hexdump(net_nbuf_ip_data(buf), net_buf_frags_len(buf));
+
 #ifdef CONFIG_NET_6LO
 	if (!net_6lo_compress(buf, true, NULL)) {
 		return NET_DROP;
 	}
+
+	pkt_hexdump(net_nbuf_ip_data(buf), net_buf_frags_len(buf));
 #endif /* CONFIG_NET_6LO */
 
 	net_if_queue_tx(iface, buf);
