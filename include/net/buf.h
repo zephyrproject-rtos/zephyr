@@ -66,6 +66,12 @@ struct net_buf {
 	/** Bit-field of buffer flags. */
 	uint8_t flags;
 
+	/** Where the buffer should go when freed up. */
+	struct nano_fifo * const free;
+
+	/** Function to be called when the buffer is freed. */
+	void (*const destroy)(struct net_buf *buf);
+
 	/** Pointer to the start of data in the buffer. */
 	uint8_t *data;
 
@@ -74,12 +80,6 @@ struct net_buf {
 
 	/** Amount of data that this buffer can store. */
 	const uint16_t size;
-
-	/** Where the buffer should go when freed up. */
-	struct nano_fifo * const free;
-
-	/** Function to be called when the buffer is freed. */
-	void (*const destroy)(struct net_buf *buf);
 
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
