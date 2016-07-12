@@ -80,8 +80,9 @@ static inline void _loapic_eoi(void)
 {
 #if CONFIG_EOI_FORWARDING_BUG
 	_lakemont_eoi();
-#endif
+#else
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
+#endif
 }
 #endif /* _ASMLANGUAGE */
 
