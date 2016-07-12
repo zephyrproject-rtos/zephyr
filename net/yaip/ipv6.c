@@ -622,6 +622,11 @@ static enum net_verdict handle_ns_input(struct net_buf *buf)
 	    (NET_ICMP_BUF(buf)->code != 0) ||
 	    (NET_IPV6_BUF(buf)->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
 	    net_is_ipv6_addr_mcast(&NET_ICMPV6_NS_BUF(buf)->tgt)) {
+		NET_DBG("Preliminary check failed %u/%u, code %u, hop %u",
+			total_len, (sizeof(struct net_ipv6_hdr) +
+				    sizeof(struct net_icmp_hdr) +
+				    sizeof(struct net_icmpv6_ns_hdr)),
+			NET_ICMP_BUF(buf)->code, NET_IPV6_BUF(buf)->hop_limit);
 		goto drop;
 	}
 
