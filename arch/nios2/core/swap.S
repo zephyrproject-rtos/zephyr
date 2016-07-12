@@ -63,6 +63,11 @@ SECTION_FUNC(exception.other, _Swap)
 
 #if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	call _sys_k_event_logger_context_switch
+	/* Restore caller-saved r10. We could have stuck its value
+	 * onto the stack, but less instructions to just use immediates
+	 */
+	movhi r10, %hi(_nanokernel)
+	ori   r10, r10, %lo(_nanokernel)
 #endif
 
 	/* Find the next context to run. Choose _nanokernel.fiber
