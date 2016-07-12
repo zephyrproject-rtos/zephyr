@@ -91,6 +91,7 @@
 #include <arch/cpu.h>
 #include <stdint.h>
 #include <string.h>
+#include <misc/__assert.h>
 
 #include "board.h"
 #include <toolchain.h>
@@ -420,6 +421,8 @@ void _loapic_irq_disable(unsigned int irq)
  * in service. And the higher vector is the indentification of the interrupt
  * being currently processed.
  *
+ * This function must be called with interrupts locked in interrupt context.
+ *
  * ISR registers' offsets:
  * --------------------
  * | Offset | bits    |
@@ -438,20 +441,19 @@ void _loapic_irq_disable(unsigned int irq)
  */
 int _loapic_isr_vector_get(void)
 {
-	/* pointer to ISR vector table */
-	volatile int *pReg;
-	int block = 0;
+	int pReg, block;
 
-	while (block < 8) {
-		pReg = (volatile int *)
-		(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ISR + (block * 0x10));
-		if (*pReg) {
-			return (block * 32) + (find_lsb_set(*pReg) - 1);
+	for (block = 7; ; block--) {
+		pReg = sys_read32(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ISR +
+				  (block * 0x10));
+		if (pReg) {
+			return (block * 32) + (find_msb_set(pReg) - 1);
 		}
-		block++;
-	}
+		__ASSERT(block >= 0,
+			 "_loapic_isr_vector_get called but no ISR in service");
 
-	return 0;
+	}
+	CODE_UNREACHABLE;
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
