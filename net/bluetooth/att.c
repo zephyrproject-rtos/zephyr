@@ -517,7 +517,7 @@ static uint8_t att_find_type_req(struct bt_att *att, struct net_buf *buf)
 	}
 
 	/* The Attribute Protocol Find By Type Value Request shall be used with
-	 * the Attribute Type parameter set to the UUID for «Primary Service»
+	 * the Attribute Type parameter set to the UUID for "Primary Service"
 	 * and the Attribute Value set to the 16-bit Bluetooth UUID or 128-bit
 	 * UUID for the specific primary service.
 	 */
@@ -1044,9 +1044,9 @@ static uint8_t att_read_group_req(struct bt_att *att, struct net_buf *buf)
 
 	/* Core v4.2, Vol 3, sec 2.5.3 Attribute Grouping:
 	 * Not all of the grouping attributes can be used in the ATT
-	 * Read By Group Type Request. The «Primary Service» and «Secondary
-	 * Service» grouping types may be used in the Read By Group Type
-	 * Request. The «Characteristic» grouping type shall not be used in
+	 * Read By Group Type Request. The "Primary Service" and "Secondary
+	 * Service" grouping types may be used in the Read By Group Type
+	 * Request. The "Characteristic" grouping type shall not be used in
 	 * the ATT Read By Group Type Request.
 	 */
 	if (bt_uuid_cmp(&u.uuid, BT_UUID_GATT_PRIMARY) &&
