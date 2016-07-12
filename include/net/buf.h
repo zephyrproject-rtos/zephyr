@@ -438,30 +438,44 @@ static inline uint8_t *net_buf_tail(struct net_buf *buf)
 struct net_buf *net_buf_frag_last(struct net_buf *frags);
 
 /** @brief Insert a new fragment to a chain of bufs.
+ *
+ *  @param parent Parent buffer/fragment.
+ *  @param frag Fragment to insert.
  */
 void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag);
 
 /** @def net_buf_frag_add
  *  @brief Add a new fragment to the end of a chain of bufs.
+ *
+ *  @param parent Parent buffer/fragment.
+ *  @param frag Fragment to add.
  */
 #define net_buf_frag_add(parent, frag) \
 	net_buf_frag_insert(net_buf_frag_last(parent), frag)
 
 /** @brief Delete existing fragment from a chain of bufs.
+ *
+ *  @param parent Parent buffer/fragment.
+ *  @param frag Fragment to delete.
  */
 void net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
 
 /** @brief Calculate amount of bytes stored in fragments.
  *
- * @return number of bytes in fragments
+ *  Calculates the total amount of data stored in the given buffer and the
+ *  fragments linked to it.
+ *
+ *  @param buf Buffer to start off with.
+ *
+ *  @return Number of bytes in the buffer and its fragments.
  */
-static inline size_t net_buf_frags_len(struct net_buf *frag)
+static inline size_t net_buf_frags_len(struct net_buf *buf)
 {
 	size_t bytes = 0;
 
-	while (frag) {
-		bytes += frag->len;
-		frag = frag->frags;
+	while (buf) {
+		bytes += buf->len;
+		buf = buf->frags;
 	}
 
 	return bytes;
