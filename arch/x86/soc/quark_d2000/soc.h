@@ -57,4 +57,6 @@
 #define PINMUX_BASE_ADDR		0xb0800900
 #define PINMUX_NUM_PINS			25
 
+#define UART_IRQ_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+
 #endif /* __SOC_H_ */
