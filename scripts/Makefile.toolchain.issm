@@ -1,13 +1,17 @@
+#
+# The ISSM standalone toolchain provides both the x86 IAMCU and elf32 ARC
+# toolchains. Currently supported version is '2016-05-12':
+# https://software.intel.com/en-us/articles/issm-toolchain-only-download
+#
+
 ifndef ISSM_INSTALLATION_PATH
 $(error ISSM_INSTALLATION_PATH is not set)
 endif
 
 # IA_VERSION and ARC_VERSION can be used to adjust the toolchain
 # paths inside the ISSM installation to use an specific version, e.g.:
-# IA_VERSION ?= gcc-ia/5.2.1
-# ARC_VERSION ?= gcc-arc/4.8.5
-IA_VERSION ?= .
-ARC_VERSION ?= .
+IA_VERSION ?= gcc-ia/5.2.1
+ARC_VERSION ?= gcc-arc/4.8.5
 ISSM_TOOLCHAIN_GCC_IA_ROOT ?= $(ISSM_INSTALLATION_PATH)/tools/compiler/$(IA_VERSION)
 ISSM_TOOLCHAIN_GCC_ARC_ROOT ?= $(ISSM_INSTALLATION_PATH)/tools/compiler/$(ARC_VERSION)
 
