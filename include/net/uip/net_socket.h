@@ -84,6 +84,7 @@ void net_context_put(struct net_context *context);
  * @details Send user specified data to network. This
  * requires that net_buf is tied to context. This means
  * that the net_buf was allocated using net_buf_get().
+ * This function will yield in thread and fiber contexts.
  *
  * @param buf Network buffer.
  *

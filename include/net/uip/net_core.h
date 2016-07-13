@@ -130,6 +130,7 @@ int net_set_mac(uint8_t *mac, uint8_t len);
  * a network packet from peer. The application needs to write
  * reply data into net_buf. The app can use ip_buf_appdata(buf) and
  * ip_buf_appdatalen(buf) to set the application data and length.
+ * This function will yield in thread and fiber contexts.
  *
  * @param context Network context
  * @param buf Network buffer containing the network data.
