@@ -517,6 +517,11 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 		break;
 	}
 
+	if (!(CIPHC[0] & NET_6LO_IPHC_NH_1)) {
+		ipv6->nexthdr = CIPHC[offset];
+		offset++;
+	}
+
 	switch (CIPHC[0] & NET_6LO_IPHC_HLIM255) {
 	case NET_6LO_IPHC_HLIM:
 		ipv6->hop_limit = 0;
