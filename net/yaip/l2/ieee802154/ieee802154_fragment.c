@@ -29,8 +29,9 @@
 #include <net/net_if.h>
 #include <net/net_stats.h>
 
+#include "ieee802154_fragment.h"
+
 #include "net_private.h"
-#include "fragment.h"
 #include "6lo.h"
 #include "6lo_private.h"
 

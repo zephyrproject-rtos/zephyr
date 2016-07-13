@@ -20,8 +20,8 @@
  * limitations under the License.
  */
 
-#ifndef __NET_FRAGMENT_H
-#define __NET_FRAGMENT_H
+#ifndef __NET_IEEE802154_FRAGMENT_H__
+#define __NET_IEEE802154_FRAGMENT_H__
 
 #include <misc/slist.h>
 #include <stdint.h>
@@ -61,4 +61,4 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff);
 enum net_verdict ieee802154_reassemble(struct net_buf *frag,
 				       struct net_buf **buf);
 
-#endif /* __NET_FRAGMENT_H */
+#endif /* __NET_IEEE802154_FRAGMENT_H__ */

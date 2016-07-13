@@ -34,7 +34,7 @@
 #include <tc_util.h>
 
 #include "6lo.h"
-#include "fragment.h"
+#include "ieee802154_fragment.h"
 
 #define NET_DEBUG 1
 #include "net_private.h"
