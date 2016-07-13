@@ -223,10 +223,10 @@ void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len);
 /**
  *  @brief Remove a 8-bit value from the beginning of the buffer
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
- *  8-bit values.
+ *  Same idea as with net_buf_simple_pull(), but a helper for operating
+ *  on 8-bit values.
  *
- *  @param buf A valid pointer on a buffer
+ *  @param buf A valid pointer on a buffer.
  *
  *  @return The 8-bit removed value
  */
@@ -235,10 +235,10 @@ uint8_t net_buf_simple_pull_u8(struct net_buf_simple *buf);
 /**
  *  @brief Remove and convert 16 bits from the beginning of the buffer.
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
- *  16-bit little endian data.
+ *  Same idea as with net_buf_simple_pull(), but a helper for operating
+ *  on 16-bit little endian data.
  *
- *  @param buf A valid pointer on a buffer
+ *  @param buf A valid pointer on a buffer.
  *
  *  @return 16-bit value converted from little endian to host endian.
  */
@@ -247,10 +247,10 @@ uint16_t net_buf_simple_pull_le16(struct net_buf_simple *buf);
 /**
  *  @brief Remove and convert 16 bits from the beginning of the buffer.
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
- *  16-bit big endian data.
+ *  Same idea as with net_buf_simple_pull(), but a helper for operating
+ *  on 16-bit big endian data.
  *
- *  @param buf A valid pointer on a buffer
+ *  @param buf A valid pointer on a buffer.
  *
  *  @return 16-bit value converted from big endian to host endian.
  */
@@ -259,10 +259,10 @@ uint16_t net_buf_simple_pull_be16(struct net_buf_simple *buf);
 /**
  *  @brief Remove and convert 32 bits from the beginning of the buffer.
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
- *  32-bit little endian data.
+ *  Same idea as with net_buf_simple_pull(), but a helper for operating
+ *  on 32-bit little endian data.
  *
- *  @param buf A valid pointer on a buffer
+ *  @param buf A valid pointer on a buffer.
  *
  *  @return 32-bit value converted from little endian to host endian.
  */
@@ -271,10 +271,10 @@ uint32_t net_buf_simple_pull_le32(struct net_buf_simple *buf);
 /**
  *  @brief Remove and convert 32 bits from the beginning of the buffer.
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
- *  32-bit big endian data.
+ *  Same idea as with net_buf_simple_pull(), but a helper for operating
+ *  on 32-bit big endian data.
  *
- *  @param buf A valid pointer on a buffer
+ *  @param buf A valid pointer on a buffer.
  *
  *  @return 32-bit value converted from big endian to host endian.
  */
@@ -672,10 +672,10 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @def net_buf_pull_u8
  *  @brief Remove a 8-bit value from the beginning of the buffer
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
+ *  Same idea as with net_buf_pull(), but a helper for operating on
  *  8-bit values.
  *
- *  @param buf A valid pointer on a buffer
+ *  @param buf A valid pointer on a buffer.
  *
  *  @return The 8-bit removed value
  */
@@ -685,10 +685,10 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @def net_buf_pull_le16
  *  @brief Remove and convert 16 bits from the beginning of the buffer.
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
+ *  Same idea as with net_buf_pull(), but a helper for operating on
  *  16-bit little endian data.
  *
- *  @param buf A valid pointer on a buffer
+ *  @param buf A valid pointer on a buffer.
  *
  *  @return 16-bit value converted from little endian to host endian.
  */
@@ -698,10 +698,10 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @def net_buf_pull_be16
  *  @brief Remove and convert 16 bits from the beginning of the buffer.
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
+ *  Same idea as with net_buf_pull(), but a helper for operating on
  *  16-bit big endian data.
  *
- *  @param buf A valid pointer on a buffer
+ *  @param buf A valid pointer on a buffer.
  *
  *  @return 16-bit value converted from big endian to host endian.
  */
@@ -711,10 +711,10 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @def net_buf_pull_le32
  *  @brief Remove and convert 32 bits from the beginning of the buffer.
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
+ *  Same idea as with net_buf_pull(), but a helper for operating on
  *  32-bit little endian data.
  *
- *  @param buf A valid pointer on a buffer
+ *  @param buf A valid pointer on a buffer.
  *
  *  @return 32-bit value converted from little endian to host endian.
  */
@@ -724,7 +724,7 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @def net_buf_pull_be32
  *  @brief Remove and convert 32 bits from the beginning of the buffer.
  *
- *  Same idea as with bt_buf_pull(), but a helper for operating on
+ *  Same idea as with net_buf_pull(), but a helper for operating on
  *  32-bit big endian data.
  *
  *  @param buf A valid pointer on a buffer
