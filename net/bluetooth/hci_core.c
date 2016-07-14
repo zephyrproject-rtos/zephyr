@@ -2354,10 +2354,13 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 	set_param->filter_policy = 0x00;
 
 	if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
-		err = le_set_nrpa();
-		if (err) {
-			net_buf_unref(buf);
-			return err;
+		/* only set NRPA if there is no advertising ongoing */
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+			err = le_set_nrpa();
+			if (err) {
+				net_buf_unref(buf);
+				return err;
+			}
 		}
 
 		set_param->addr_type = BT_ADDR_LE_RANDOM;
@@ -3599,6 +3602,11 @@ int bt_le_adv_stop(void)
 	}
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
+
+	/* If active scan is ongoing set NRPA */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
+		le_set_nrpa();
+	}
 
 	return 0;
 }
