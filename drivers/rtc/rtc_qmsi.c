@@ -21,6 +21,7 @@
 #include <init.h>
 #include <nanokernel.h>
 #include <rtc.h>
+#include <power.h>
 
 #include "qm_isr.h"
 #include "qm_rtc.h"
@@ -89,6 +90,30 @@ static int rtc_qmsi_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init, NULL, NULL,
-		    SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&api);
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static uint32_t int_rtc_mask_save;
+
+static int rtc_suspend_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		int_rtc_mask_save = QM_SCSS_INT->int_rtc_mask;
+	}
+
+	return 0;
+}
+
+static int rtc_resume_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		QM_SCSS_INT->int_rtc_mask = int_rtc_mask_save;
+	}
+
+	return 0;
+}
+#endif
+
+DEFINE_DEVICE_PM_OPS(rtc, rtc_suspend_device, rtc_resume_device);
+
+DEVICE_AND_API_INIT_PM(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init,
+		       DEVICE_PM_OPS_GET(rtc), NULL, NULL, SECONDARY,
+		       CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&api);
