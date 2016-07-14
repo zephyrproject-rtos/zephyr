@@ -85,6 +85,7 @@ struct nble_version {
 	uint8_t minor;
 	uint8_t patch;
 	char version_string[20];
+	uint8_t build_hash[4];
 	uint8_t hash[4];
 };
 
