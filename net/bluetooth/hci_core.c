@@ -333,6 +333,7 @@ static int bt_hci_stop_scanning(void)
 	err = rsp->data[0];
 	if (!err) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_SCANNING);
+		atomic_clear_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN);
 	}
 
 	net_buf_unref(rsp);
@@ -2385,6 +2386,9 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 	err = rsp->data[0];
 	if (!err) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+		if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN);
+		}
 	}
 
 	net_buf_unref(rsp);
