@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef __INC_BOARD_H
-#define __INC_BOARD_H
 
-#include <soc.h>
+#ifndef __SOC_H_
+#define __SOC_H_
 
-#endif /* __INC_BOARD_H */
+#include <system.h>
+
+#define UART_NS16550_PORT_0_BASE_ADDR		A_16550_UART_0_BASE
+#define UART_NS16550_PORT_0_IRQ			A_16550_UART_0_IRQ
+#define UART_NS16550_PORT_0_CLK_FREQ		A_16550_UART_0_FREQ
+
+#endif
