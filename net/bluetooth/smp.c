@@ -48,6 +48,11 @@
 #include "l2cap_internal.h"
 #include "smp.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_SMP)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 #define SMP_TIMEOUT (30 * sys_clock_ticks_per_sec)
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
