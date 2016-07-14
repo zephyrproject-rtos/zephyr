@@ -124,8 +124,8 @@ qm_scss_ccu_reg_t test_scss_ccu;
 /* System clock control */
 #define QM_CCU_SYS_CLK_SEL BIT(0)
 #define QM_SCSS_CCU_SYS_CLK_SEL BIT(0)
-#define QM_SCSS_CCU_C2_LP_EN (1)
-#define QM_SCSS_CCU_SS_LPS_EN (0)
+#define QM_SCSS_CCU_C2_LP_EN BIT(1)
+#define QM_SCSS_CCU_SS_LPS_EN BIT(0)
 #define QM_CCU_RTC_CLK_EN BIT(1)
 #define QM_CCU_RTC_CLK_DIV_EN BIT(2)
 #define QM_CCU_SYS_CLK_DIV_EN BIT(7)
