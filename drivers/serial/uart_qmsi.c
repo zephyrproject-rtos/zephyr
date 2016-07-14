@@ -20,6 +20,7 @@
 #include <ioapic.h>
 #endif
 #include <uart.h>
+#include <power.h>
 
 #include "qm_uart.h"
 #include "qm_isr.h"
@@ -49,12 +50,46 @@ struct uart_qmsi_config_info {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
+
+static int uart_qmsi_init(struct device *dev);
+
+#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 struct uart_qmsi_drv_data {
 	uart_irq_callback_t user_cb;
 	uint8_t iir_cache;
 };
 
-static int uart_qmsi_init(struct device *dev);
+#define uart_qmsi_pm_save_config(dev, cfg) do { } while ((0))
+#else
+struct uart_qmsi_drv_data {
+	uart_irq_callback_t user_cb;
+	uint8_t iir_cache;
+	qm_uart_config_t cfg_save;
+};
+
+static inline
+void uart_qmsi_pm_save_config(struct device *dev, qm_uart_config_t *cfg)
+{
+	struct uart_qmsi_drv_data *drv_data = dev->driver_data;
+
+	drv_data->cfg_save = *cfg;
+}
+
+static int uart_resume_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		struct uart_qmsi_config_info *config = dev->config->config_info;
+		struct uart_qmsi_drv_data *drv_data = dev->driver_data;
+
+		clk_periph_enable(config->clock_gate);
+
+		qm_uart_set_config(config->instance,
+				&drv_data->cfg_save);
+	}
+
+	return 0;
+}
+#endif
 
 #ifdef CONFIG_UART_QMSI_0
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -79,8 +114,11 @@ static struct uart_qmsi_config_info config_info_0 = {
 
 static struct uart_qmsi_drv_data drv_data_0;
 
-DEVICE_INIT(uart_0, CONFIG_UART_QMSI_0_NAME, uart_qmsi_init, &drv_data_0,
-	    &config_info_0, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEFINE_DEVICE_PM_OPS(uart, device_pm_nop, uart_resume_device);
+
+DEVICE_INIT_PM(uart_0, CONFIG_UART_QMSI_0_NAME, &uart_qmsi_init,
+	       DEVICE_PM_OPS_GET(uart), &drv_data_0, &config_info_0, PRIMARY,
+	       CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif /* CONFIG_UART_QMSI_0 */
 
 #ifdef CONFIG_UART_QMSI_1
@@ -106,8 +144,9 @@ static struct uart_qmsi_config_info config_info_1 = {
 
 static struct uart_qmsi_drv_data drv_data_1;
 
-DEVICE_INIT(uart_1, CONFIG_UART_QMSI_1_NAME, uart_qmsi_init, &drv_data_1,
-	    &config_info_1, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_INIT_PM(uart_1, CONFIG_UART_QMSI_1_NAME, &uart_qmsi_init,
+	       DEVICE_PM_OPS_GET(uart), &drv_data_1, &config_info_1, PRIMARY,
+	       CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif /* CONFIG_UART_QMSI_1 */
 
 static int uart_qmsi_poll_in(struct device *dev, unsigned char *data)
@@ -326,6 +365,7 @@ static int uart_qmsi_line_ctrl_set(struct device *dev, uint32_t ctrl, uint32_t v
 		cfg.hw_fc = QM_UART[instance]->mcr & QM_UART_MCR_AFCE;
 		cfg.int_en = false;
 		qm_uart_set_config(instance, &cfg);
+		uart_qmsi_pm_save_config(dev, &cfg);
 		break;
 	default:
 		return -ENODEV;
@@ -386,6 +426,8 @@ static int uart_qmsi_init(struct device *dev)
 	clk_periph_enable(config->clock_gate);
 
 	qm_uart_set_config(config->instance, &cfg);
+
+	uart_qmsi_pm_save_config(dev, &cfg);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
