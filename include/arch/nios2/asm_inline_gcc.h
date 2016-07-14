@@ -71,9 +71,21 @@ static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
  */
 
 static ALWAYS_INLINE
+	void sys_write32(uint32_t data, mm_reg_t addr)
+{
+	__builtin_stwio((void *)addr, data);
+}
+
+static ALWAYS_INLINE
+	uint32_t sys_read32(mm_reg_t addr)
+{
+	return __builtin_ldwio((void *)addr);
+}
+
+static ALWAYS_INLINE
 	void sys_write8(uint8_t data, mm_reg_t addr)
 {
-	__builtin_stbio((void *)addr, data);
+	sys_write32(data, addr);
 }
 
 static ALWAYS_INLINE
@@ -85,25 +97,13 @@ static ALWAYS_INLINE
 static ALWAYS_INLINE
 	void sys_write16(uint16_t data, mm_reg_t addr)
 {
-	__builtin_sthio((void *)addr, data);
+	sys_write32(data, addr);
 }
 
 static ALWAYS_INLINE
 	uint16_t sys_read16(mm_reg_t addr)
 {
 	return __builtin_ldhuio((void *)addr);
-}
-
-static ALWAYS_INLINE
-	void sys_write32(uint32_t data, mm_reg_t addr)
-{
-	__builtin_stwio((void *)addr, data);
-}
-
-static ALWAYS_INLINE
-	uint32_t sys_read32(mm_reg_t addr)
-{
-	return __builtin_ldwio((void *)addr);
 }
 
 /* NIOS II does not have any special instructions for manipulating bits,
