@@ -36,7 +36,6 @@ menu "Nios II Gen 2 Processor Options"
 config CPU_NIOS2_GEN2
 	bool
 	default y
-	select ATOMIC_OPERATIONS_C
 	help
 	This option signifies the use of a Nios II Gen 2 CPU
 

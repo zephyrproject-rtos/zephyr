@@ -14,9 +14,8 @@ obj-y += prep_c.o \
 
 obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 
-ifneq ($(CONFIG_ATOMIC_OPERATIONS_C),y)
-obj-y += atomic.o
-endif
-
+# Some ARC cores like the EM4 lack the atomic LLOCK/SCOND and
+# can't use these.
+obj-$(CONFIG_ATOMIC_OPERATIONS_CUSTOM) += atomic.o
 obj-$(CONFIG_IRQ_VECTOR_TABLE_BSP) += irq_vector_table.o
 obj-$(CONFIG_SW_ISR_TABLE) += sw_isr_table.o

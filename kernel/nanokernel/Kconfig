@@ -106,15 +106,6 @@ config ERRNO
 	include errno.h provided by the C library (libc) to use the errno symbol.
 	The C library must access the per-thread errno via the _get_errno() symbol.
 
-config ATOMIC_OPERATIONS_C
-	bool
-	default n
-	help
-	Use atomic operations routines that are implemented entirely
-	in C by locking interrupts. Selected by architectures which either
-	do not have support for atomic operations in their instruction
-	set, or haven't been implemented yet during bring-up.
-
 config NANO_WORKQUEUE
 	bool "Enable nano workqueue support"
 	default n
@@ -140,5 +131,27 @@ config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"
 	default 10
 	depends on SYSTEM_WORKQUEUE
+
+config ATOMIC_OPERATIONS_BUILTIN
+	bool
+	help
+	Use the compiler builtin functions for atomic operations. This is
+	the preferred method. However, support for all arches in GCC is
+	incomplete.
+
+config ATOMIC_OPERATIONS_CUSTOM
+	bool
+	help
+	Use when there isn't support for compiler built-ins, but you have
+	written optimized assembly code under arch/ which implements these.
+
+config ATOMIC_OPERATIONS_C
+	bool
+	help
+	Use atomic operations routines that are implemented entirely
+	in C by locking interrupts. Selected by architectures which either
+	do not have support for atomic operations in their instruction
+	set, or haven't been implemented yet during bring-up, and also
+	the compiler does not have support for the atomic __sync_* builtins.
 
 endmenu
