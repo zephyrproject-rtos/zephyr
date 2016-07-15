@@ -458,12 +458,24 @@ void on_nble_sm_passkey_disp_evt(const struct nble_sm_passkey_disp_evt *ev)
 void on_nble_sm_passkey_req_evt(const struct nble_sm_passkey_req_evt *ev)
 {
 	struct bt_conn *conn;
+	struct bt_smp *smp;
 
 	conn = bt_conn_lookup_handle(ev->conn_handle);
 	if (!conn) {
 		BT_ERR("Unable to find conn for handle %u", ev->conn_handle);
 		return;
 	}
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		bt_conn_unref(conn);
+		return;
+	}
+
+	BT_DBG("conn %p key_type %u", conn, ev->key_type);
+
+	/* Set user input expected flag */
+	atomic_set_bit(&smp->flags, SMP_FLAG_USER);
 
 	if (ev->key_type == NBLE_GAP_SM_PK_PASSKEY) {
 		if (nble.auth && nble.auth->passkey_entry) {
@@ -506,6 +518,8 @@ static void legacy_passkey_entry(struct bt_smp *smp, unsigned int passkey)
 		.passkey = passkey,
 	};
 
+	BT_DBG("passkey %u", passkey);
+
 	nble_security_reply(smp->conn, &pkey);
 }
 
@@ -520,7 +534,7 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 {
 	struct bt_smp *smp;
 
-	BT_DBG("");
+	BT_DBG("passkey %u", passkey);
 
 	smp = smp_chan_get(conn);
 	if (!smp) {
@@ -528,6 +542,7 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 	}
 
 	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+		BT_ERR("Not expected user input");
 		return -EINVAL;
 	}
 
@@ -552,6 +567,7 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 	}
 
 	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+		BT_ERR("Not expected user input");
 		return -EINVAL;
 	}
 
