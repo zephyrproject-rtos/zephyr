@@ -163,6 +163,18 @@ void net_buf_simple_add_be16(struct net_buf_simple *buf, uint16_t val);
 void net_buf_simple_add_le32(struct net_buf_simple *buf, uint32_t val);
 
 /**
+ *  @brief Add 32-bit value at the end of the buffer
+ *
+ *  Adds 32-bit value in big endian format at the end of buffer.
+ *  Increments the data length of a buffer to account for more data
+ *  at the end.
+ *
+ *  @param buf Buffer to update.
+ *  @param val 32-bit value to be added.
+ */
+void net_buf_simple_add_be32(struct net_buf_simple *buf, uint32_t val);
+
+/**
  *  @brief Push data to the beginning of the buffer.
  *
  *  Modifies the data pointer and buffer length to account for more data
@@ -604,6 +616,19 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @param val 32-bit value to be added.
  */
 #define net_buf_add_le32(buf, val) net_buf_simple_add_le32(&(buf)->b, val)
+
+/**
+ *  @def net_buf_add_be32
+ *  @brief Add 32-bit value at the end of the buffer
+ *
+ *  Adds 32-bit value in big endian format at the end of buffer.
+ *  Increments the data length of a buffer to account for more data
+ *  at the end.
+ *
+ *  @param buf Buffer to update.
+ *  @param val 32-bit value to be added.
+ */
+#define net_buf_add_be32(buf, val) net_buf_simple_add_be32(&(buf)->b, val)
 
 /**
  *  @def net_buf_push

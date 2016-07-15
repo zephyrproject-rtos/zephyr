@@ -241,6 +241,14 @@ void net_buf_simple_add_le32(struct net_buf_simple *buf, uint32_t val)
 	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
 }
 
+void net_buf_simple_add_be32(struct net_buf_simple *buf, uint32_t val)
+{
+	NET_BUF_DBG("buf %p val %u\n", buf, val);
+
+	val = sys_cpu_to_be32(val);
+	memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
+}
+
 void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 {
 	NET_BUF_DBG("buf %p len %u\n", buf, len);
