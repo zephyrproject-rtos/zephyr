@@ -14,20 +14,7 @@
  * limitations under the License.
  */
 
-#include <misc/__assert.h>
-
-/* Do not include assert.h as that does not exists */
-#undef HAVE_ASSERT_H
-
-#ifndef NDEBUG
-#ifndef assert
-#define assert(...) __ASSERT(...)
-#endif
-#else
-#ifndef assert
-#define assert(...)
-#endif
-#endif
+#define HAVE_ASSERT_H 1
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define BYTE_ORDER LITTLE_ENDIAN
