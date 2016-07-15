@@ -58,40 +58,105 @@ struct uart_qmsi_drv_data {
 	uart_irq_callback_t user_cb;
 	uint8_t iir_cache;
 };
-
-#define uart_qmsi_pm_save_config(dev, cfg) do { } while ((0))
 #else
+struct uart_context_t {
+	uint32_t ier; /**< Interrupt Enable Register. */
+	uint32_t dlh; /**< Divisor Latch High. */
+	uint32_t dll; /**< Divisor Latch Low. */
+	uint32_t lcr; /**< Line Control. */
+	uint32_t mcr; /**< Modem Control. */
+	uint32_t scr; /**< Scratchpad. */
+	uint32_t htx; /**< Halt Transmission. */
+	uint32_t dlf; /**< Divisor Latch Fraction. */
+	uint32_t int_uart_mask; /**< Interrupt Mask. */
+};
+
 struct uart_qmsi_drv_data {
 	uart_irq_callback_t user_cb;
 	uint8_t iir_cache;
-	qm_uart_config_t cfg_save;
+	struct uart_context_t ctx_save;
 };
 
-static inline
-void uart_qmsi_pm_save_config(struct device *dev, qm_uart_config_t *cfg)
+static int uart_suspend_device(struct device *dev, int pm_policy)
 {
-	struct uart_qmsi_drv_data *drv_data = dev->driver_data;
+	if (device_busy_check(dev)) {
+		return -EBUSY;
+	}
 
-	drv_data->cfg_save = *cfg;
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		struct uart_qmsi_config_info *config = dev->config->config_info;
+		qm_uart_reg_t *const regs = QM_UART[config->instance];
+		struct uart_qmsi_drv_data *drv_data = dev->driver_data;
+		struct uart_context_t *const ctx_save = &drv_data->ctx_save;
+
+		if (config->instance == QM_UART_0) {
+			ctx_save->int_uart_mask = QM_SCSS_INT->int_uart_0_mask;
+		} else {
+			ctx_save->int_uart_mask = QM_SCSS_INT->int_uart_1_mask;
+		}
+
+		ctx_save->ier = regs->ier_dlh;
+		ctx_save->lcr = regs->lcr;
+		ctx_save->mcr = regs->mcr;
+		ctx_save->scr = regs->scr;
+		ctx_save->htx = regs->htx;
+		ctx_save->dlf = regs->dlf;
+
+		/* When DLAB is set, DLL and DLH registers can be accessed. */
+		regs->lcr |= QM_UART_LCR_DLAB;
+		ctx_save->dlh = regs->ier_dlh;
+		ctx_save->dll = regs->rbr_thr_dll;
+		regs->lcr &= ~QM_UART_LCR_DLAB;
+	}
+
+	return 0;
 }
 
 static int uart_resume_device(struct device *dev, int pm_policy)
 {
 	if (pm_policy == SYS_PM_DEEP_SLEEP) {
 		struct uart_qmsi_config_info *config = dev->config->config_info;
+		qm_uart_reg_t *const regs = QM_UART[config->instance];
 		struct uart_qmsi_drv_data *drv_data = dev->driver_data;
+		struct uart_context_t *const ctx_save = &drv_data->ctx_save;
 
 		clk_periph_enable(config->clock_gate);
 
-		qm_uart_set_config(config->instance,
-				&drv_data->cfg_save);
+		if (config->instance == QM_UART_0) {
+			QM_SCSS_INT->int_uart_0_mask = ctx_save->int_uart_mask;
+		} else {
+			QM_SCSS_INT->int_uart_1_mask = ctx_save->int_uart_mask;
+		}
+
+		/* When DLAB is set, DLL and DLH registers can be accessed. */
+		regs->lcr |= QM_UART_LCR_DLAB;
+		regs->ier_dlh = ctx_save->dlh;
+		regs->rbr_thr_dll = ctx_save->dll;
+		regs->lcr &= ~QM_UART_LCR_DLAB;
+
+		regs->ier_dlh = ctx_save->ier;
+		regs->lcr = ctx_save->lcr;
+		regs->mcr = ctx_save->mcr;
+		regs->scr = ctx_save->scr;
+		regs->htx = ctx_save->htx;
+		regs->dlf = ctx_save->dlf;
+
+		/*
+		 * FIFO control register cannot be read back,
+		 * default config is applied for this register.
+		 * Application will need to restore its own parameters.
+		 */
+		regs->iir_fcr =
+			(QM_UART_FCR_FIFOE | QM_UART_FCR_RFIFOR |
+			 QM_UART_FCR_XFIFOR |
+			 QM_UART_FCR_DEFAULT_TX_RX_THRESHOLD);
 	}
 
 	return 0;
 }
-#endif
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-DEFINE_DEVICE_PM_OPS(uart, device_pm_nop, uart_resume_device);
+DEFINE_DEVICE_PM_OPS(uart, uart_suspend_device, uart_resume_device);
 
 #ifdef CONFIG_UART_QMSI_0
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -202,6 +267,8 @@ static int uart_qmsi_fifo_fill(struct device *dev, const uint8_t *tx_data,
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	int i;
 
+	device_busy_set(dev);
+
 	for (i = 0; i < size && !is_tx_fifo_full(instance); i++) {
 		QM_UART[instance]->rbr_thr_dll = tx_data[i];
 	}
@@ -219,6 +286,8 @@ static int uart_qmsi_fifo_read(struct device *dev, uint8_t *rx_data,
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	int i;
+
+	device_busy_set(dev);
 
 	for (i = 0; i < size && is_data_ready(instance); i++) {
 		rx_data[i] = QM_UART[instance]->rbr_thr_dll;
@@ -321,11 +390,13 @@ static void uart_qmsi_irq_callback_set(struct device *dev,
 
 static void uart_qmsi_isr(void *arg)
 {
-	struct device  *dev = arg;
+	struct device *dev = arg;
 	struct uart_qmsi_drv_data *drv_data = dev->driver_data;
 
 	if (drv_data->user_cb)
 		drv_data->user_cb(dev);
+
+	device_busy_clear(dev);
 }
 
 #ifdef CONFIG_UART_QMSI_0
@@ -426,8 +497,6 @@ static int uart_qmsi_init(struct device *dev)
 	clk_periph_enable(config->clock_gate);
 
 	qm_uart_set_config(config->instance, &cfg);
-
-	uart_qmsi_pm_save_config(dev, &cfg);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
