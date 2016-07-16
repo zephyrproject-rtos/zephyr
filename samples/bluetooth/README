@@ -38,3 +38,54 @@ $ scripts/sanity_chk/sanitycheck [-P <platform>]
 To only run Bluetooth tests use the -t bluetooth switch:
 
 $ scripts/sanity_chk/sanitycheck -t bluetooth
+
+= Summary of available applications =
+
+beacon:
+        A simple application demonstrating the BLE Broadcaster role
+        functionality by advertising an Eddystone URL (the Zephyr
+        website).
+
+central:
+        Application demonstrating very basic BLE Central role
+        functionality by scanning for other BLE devices and establishing
+        a connection to the first one with a strong enough signal.
+
+central_hr:
+        Similar to 'central', except that this application specifically
+        looks for heart-rate monitors and reports the heart-rate
+        readings once connected.
+
+gatt:
+        Not an application, but a set of reusable modules for common
+        GATT profiles & services.
+
+ipsp:
+        Application demonstrating the IPSP (Internet Protocol Support
+        Profile) Node role. IPSP is the Bluetooth profile that
+        underneath utilizes 6LoWPAN, i.e. gives you IPv6 connectivity
+        over BLE.
+
+peripheral:
+        Application demonstrating the BLE Peripheral role. It has
+        several well-known and vendor-specific GATT services that it
+        exposes.
+
+peripheral_csc:
+        Similar to 'peripheral', except that this application
+        specifically exposes the CSC (Cycling Speed and Cadence)
+        GATT Service.
+
+peripheral_dis:
+        Similar to 'peripheral', except that this application
+        specifically exposes the DIS (Device Information) GATT Service.
+
+peripheral_esp:
+        Similar to 'peripheral', except that this application
+        specifically exposes the ESP (Environmental Sensing Profile)
+        GATT Service.
+
+peripheral_hr:
+        Similar to 'peripheral', except that this application
+        specifically exposes the HR (Heart Rate) GATT Service. Once a
+        device connects it will generate dummy heart-rate values.
