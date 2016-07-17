@@ -34,8 +34,8 @@
 /  the f_mount() function fails with FR_INT_ERR.
 */
 
-int ff_cre_syncobj (	/* !=0:Function succeeded, ==0:Could not create due to any error */
-	BYTE vol,			/* Corresponding logical drive being processed */
+int ff_cre_syncobj (	/* 1:Function succeeded, 0:Could not create the sync object */
+	BYTE vol,			/* Corresponding volume (logical drive number) */
 	_SYNC_t *sobj		/* Pointer to return the created sync object */
 )
 {
@@ -45,7 +45,7 @@ int ff_cre_syncobj (	/* !=0:Function succeeded, ==0:Could not create due to any 
 	*sobj = CreateMutex(NULL, FALSE, NULL);		/* Win32 */
 	ret = (int)(*sobj != INVALID_HANDLE_VALUE);
 
-//	*sobj = SyncObjects[vol];			/* uITRON (give a static created sync object) */
+//	*sobj = SyncObjects[vol];			/* uITRON (give a static sync object) */
 //	ret = 1;							/* The initial value of the semaphore must be 1. */
 
 //	*sobj = OSMutexCreate(0, &err);		/* uC/OS-II */
@@ -63,11 +63,11 @@ int ff_cre_syncobj (	/* !=0:Function succeeded, ==0:Could not create due to any 
 /* Delete a Synchronization Object                                        */
 /*------------------------------------------------------------------------*/
 /* This function is called in f_mount() function to delete a synchronization
-/  object that created with ff_cre_syncobj function. When a 0 is returned,
+/  object that created with ff_cre_syncobj() function. When a 0 is returned,
 /  the f_mount() function fails with FR_INT_ERR.
 */
 
-int ff_del_syncobj (	/* !=0:Function succeeded, ==0:Could not delete due to any error */
+int ff_del_syncobj (	/* 1:Function succeeded, 0:Could not delete due to any error */
 	_SYNC_t sobj		/* Sync object tied to the logical drive to be deleted */
 )
 {

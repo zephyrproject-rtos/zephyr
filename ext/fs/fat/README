@@ -5,3 +5,5 @@ This is based on FAT file system specification.  It provides
 an interface to physical storage management through its disk io
 API in diskio.c. The disk io interfaces are updated to interface
 with Zephyr flash memory management.
+
+Current revision in the tree is 0.12a
