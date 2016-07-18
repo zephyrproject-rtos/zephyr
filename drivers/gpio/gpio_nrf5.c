@@ -139,7 +139,7 @@ static int gpio_nrf5_config(struct device *dev,
 			gpio->PIN_CNF[pin] = GPIO_SENSE_DISABLE |
 					     GPIO_DRIVE_S0S1    |
 					     pull               |
-					     GPIO_INPUT_CONNECT |
+					     GPIO_INPUT_DISCONNECT |
 					     GPIO_DIR_OUTPUT;
 		} else {
 			/* Config as input */
