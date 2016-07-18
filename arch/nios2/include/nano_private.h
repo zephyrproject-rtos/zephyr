@@ -50,8 +50,8 @@ extern "C" {
 #define FIBER          0x000
 #define TASK           0x001 /* 1 = task, 0 = fiber   */
 
-#define INT_ACTIVE     0x002 /* 1 = execution context is interrupt handler */
-#define EXC_ACTIVE     0x004 /* 1 = executino context is exception handler */
+#define INT_ACTIVE     0x002 /* 1 = executing context is interrupt handler */
+#define EXC_ACTIVE     0x004 /* 1 = executing context is exception handler */
 #define USE_FP         0x010 /* 1 = thread uses floating point unit */
 #define PREEMPTIBLE    0x020 /* 1 = preemptible thread */
 #define ESSENTIAL      0x200 /* 1 = system thread that must not abort */
