@@ -34,10 +34,14 @@
 
 /** Possible types of buffers passed around the Bluetooth stack */
 enum bt_buf_type {
-	BT_BUF_CMD,		/** HCI command */
-	BT_BUF_EVT,		/** HCI event */
-	BT_BUF_ACL_OUT,		/** Outgoing ACL data */
-	BT_BUF_ACL_IN,		/** Incoming ACL data */
+	/** HCI command */
+	BT_BUF_CMD,
+	/** HCI event */
+	BT_BUF_EVT,
+	/** Outgoing ACL data */
+	BT_BUF_ACL_OUT,
+	/** Incoming ACL data */
+	BT_BUF_ACL_IN,
 };
 
 /** Minimum amount of user data size for buffers passed to the stack. */
