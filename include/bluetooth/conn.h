@@ -111,8 +111,10 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
 
 /** Connection Type */
 enum {
-	BT_CONN_TYPE_LE, /** LE Connection Type */
-	BT_CONN_TYPE_BR, /** BR/EDR Connection Type */
+	/** LE Connection Type */
+	BT_CONN_TYPE_LE,
+	/** BR/EDR Connection Type */
+	BT_CONN_TYPE_BR,
 };
 
 /** LE Connection Info Structure */
