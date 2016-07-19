@@ -32,10 +32,6 @@
 
 void _lakemont_eoi(void)
 {
-	int key;
-
-	key = irq_lock();
-
 	/* It is difficult to know whether the IRQ being serviced is
 	 * a level interrupt handled by the IOAPIC; the only information
 	 * we have is the vector # in the IDT. So unconditionally
@@ -46,7 +42,5 @@ void _lakemont_eoi(void)
 
 	/* Send EOI to the LOAPIC as well */
 	sys_write32(0, CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI);
-
-	irq_unlock(key);
 }
 

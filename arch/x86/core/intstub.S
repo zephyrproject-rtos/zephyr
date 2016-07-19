@@ -279,6 +279,9 @@ BRANCH_LABEL(_HandleIdle)
  * a particular state and need to poke the interrupt controller.
  */
 SECTION_FUNC(TEXT, _IntExitWithEoi)
+
+	cli			/* disable interrupts */
+
 #ifndef CONFIG_X86_IAMCU
 	/* For SYS V, the stub pushes an argument onto the stack to be
 	 * consumed by the handler, remove it since the handler is now
@@ -299,7 +302,7 @@ SECTION_FUNC(TEXT, _IntExitWithEoi)
 	loapic_eoi_reg = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 	movl %eax, loapic_eoi_reg	/* tell LOAPIC the IRQ is handled */
 #endif
-	/* fall through to _IntExit */
+	jmp _IntExitWithCli
 
 /**
  *
@@ -326,6 +329,8 @@ SECTION_FUNC(TEXT, _IntExitWithEoi)
 BRANCH_LABEL(_IntExit)
 
 	cli			/* disable interrupts */
+
+BRANCH_LABEL(_IntExitWithCli)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_start
 #endif
