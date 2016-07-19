@@ -27,6 +27,7 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
+#include <misc/nano_work.h>
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
@@ -61,6 +62,7 @@
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT	(5 * sys_clock_ticks_per_sec)
+#define RPA_TIMEOUT (CONFIG_BLUETOOTH_RPA_TIMEOUT * sys_clock_ticks_per_sec)
 
 /* Stacks for the fibers */
 static BT_STACK_NOINIT(rx_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
@@ -433,6 +435,67 @@ static int set_random_address(const bt_addr_t *addr)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+/* this function sets new RPA only if current one is no longer valid */
+static int le_set_rpa(void)
+{
+	bt_addr_t rpa;
+	int err;
+
+	/* work is not idle so current RPA is valid */
+	if (!atomic_test_bit(bt_dev.rpa_update.work.flags,
+			     NANO_WORK_STATE_IDLE)) {
+		return 0;
+	}
+
+	err = bt_smp_create_rpa(bt_dev.irk, &rpa);
+	if (!err) {
+		err = set_random_address(&rpa);
+	}
+
+	/* restart timer even if failed to set new RPA */
+	nano_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
+
+	return err;
+}
+
+static void rpa_timeout(struct nano_work *work)
+{
+	BT_DBG("");
+
+	/*
+	 * we need to update rpa only if advertising is ongoing, with
+	 * BT_DEV_KEEP_ADVERTISING flag is handled in disconnected event
+	 */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		/* make sure new address is used */
+		set_advertise_disable();
+		le_set_rpa();
+		set_advertise_enable();
+	}
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
+		/* TODO do we need to toggle scan? */
+		le_set_rpa();
+	}
+}
+#else
+static int le_set_nrpa(void)
+{
+	bt_addr_t nrpa;
+	int err;
+
+	err = bt_rand(nrpa.val, sizeof(nrpa.val));
+	if (err) {
+		return err;
+	}
+
+	nrpa.val[5] &= 0x3f;
+
+	return set_random_address(&nrpa);
+}
+#endif
+
 #if defined(CONFIG_BLUETOOTH_CONN)
 static void hci_acl(struct net_buf *buf)
 {
@@ -588,6 +651,9 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 advertise:
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+		le_set_rpa();
+#endif
 		set_advertise_enable();
 	}
 }
@@ -850,21 +916,6 @@ static void le_conn_update_complete(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
-
-#if defined(CONFIG_BLUETOOTH_PRIVACY)
-static int le_set_rpa(void)
-{
-	bt_addr_t rpa;
-	int err;
-
-	err = bt_smp_create_rpa(bt_dev.irk, &rpa);
-	if (err) {
-		return err;
-	}
-
-	return set_random_address(&rpa);
-}
-#endif
 
 static void check_pending_conn(const bt_addr_le_t *id_addr,
 			       const bt_addr_le_t *addr, uint8_t evtype)
@@ -2313,21 +2364,6 @@ int bt_rand(void *buf, size_t len)
 	return -EIO;
 }
 
-static int le_set_nrpa(void)
-{
-	bt_addr_t nrpa;
-	int err;
-
-	err = bt_rand(nrpa.val, sizeof(nrpa.val));
-	if (err) {
-		return err;
-	}
-
-	nrpa.val[5] &= 0x3f;
-
-	return set_random_address(&nrpa);
-}
-
 static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 			 uint8_t filter_dup)
 {
@@ -2354,6 +2390,13 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 	set_param->filter_policy = 0x00;
 
 	if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+		err = le_set_rpa();
+		if (err) {
+			net_buf_unref(buf);
+			return err;
+		}
+#else
 		/* only set NRPA if there is no advertising ongoing */
 		if (!atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
 			err = le_set_nrpa();
@@ -2362,6 +2405,7 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 				return err;
 			}
 		}
+#endif
 
 		set_param->addr_type = BT_ADDR_LE_RANDOM;
 	} else {
@@ -3313,6 +3357,8 @@ static int bt_init(void)
 	if (err) {
 		return err;
 	}
+
+	nano_delayed_work_init(&bt_dev.rpa_update, rpa_timeout);
 #endif
 
 	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
@@ -3603,11 +3649,12 @@ int bt_le_adv_stop(void)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
 
+#if !defined(CONFIG_BLUETOOTH_PRIVACY)
 	/* If active scan is ongoing set NRPA */
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
 		le_set_nrpa();
 	}
-
+#endif
 	return 0;
 }
 

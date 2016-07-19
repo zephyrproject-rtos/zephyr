@@ -116,6 +116,9 @@ struct bt_dev {
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
 	/* Local Identity Resolving Key */
 	uint8_t			irk[16];
+
+	/* Work used for RPA rotation */
+	struct nano_delayed_work rpa_update;
 #endif
 };
 

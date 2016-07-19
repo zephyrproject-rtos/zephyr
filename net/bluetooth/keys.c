@@ -20,6 +20,7 @@
 #include <nanokernel.h>
 #include <atomic.h>
 #include <misc/util.h>
+#include <misc/nano_work.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>

@@ -23,6 +23,7 @@
 #include <atomic.h>
 #include <microkernel/task.h>
 #include <misc/byteorder.h>
+#include <misc/nano_work.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>

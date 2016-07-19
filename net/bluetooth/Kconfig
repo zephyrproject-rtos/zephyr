@@ -182,6 +182,15 @@ config BLUETOOTH_PRIVACY
 	  Enable local Privacy Feature support. This makes it possible
 	  to use Resolvable Private Addresses (RPAs).
 
+config BLUETOOTH_RPA_TIMEOUT
+	int "Resolvable Private Address timeout"
+	depends on BLUETOOTH_PRIVACY
+	default 900
+	range 1 65535
+	help
+	  This option defines how often resolvable private address is rotated.
+	  Value is provided in seconds and defaults to 900 seconds (15 minutes).
+
 config BLUETOOTH_SIGNING
 	bool "Data signing support"
 	default n
