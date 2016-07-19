@@ -1647,7 +1647,15 @@ static int cmd_bredr_discovery(int argc, char *argv[])
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
+	int ret;
+
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
+
+	/* loopback the data */
+	ret = bt_l2cap_chan_send(chan, buf);
+	if (ret < 0) {
+		printk("Unable to send: %d\n", -ret);
+	}
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
