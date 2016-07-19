@@ -138,7 +138,8 @@ static inline int spi_configure(struct device *dev,
  * on the same line.
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param slave An integer identifying the slave
+ * @param slave An integer identifying the slave. It starts from 1 which
+ *		corresponds to cs0.
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
@@ -190,6 +191,7 @@ static inline int spi_write(struct device *dev, const void *buf, uint32_t len)
  * @brief Read and write the specified amount of data from the SPI driver.
  *
  * This routine is meant for full-duplex transmission.
+ * Only equal length is supported(tx_buf_len must be equal to rx_buf_len).
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param tx_buf Memory buffer where data originates
