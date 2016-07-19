@@ -1,0 +1,61 @@
+# Kconfig - Crypto configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# CRYPTO options
+#
+menuconfig CRYPTO
+	bool
+	prompt "Crypto Drivers  [EXPERIMENTAL]"
+	default n
+
+if CRYPTO
+config SYS_LOG_CRYPTO_LEVEL
+	int
+	prompt "Crypto drivers log level"
+	default 0
+	help
+	Sets log level for crypto drivers
+
+	Levels are:
+
+	- 0 OFF, do not write
+
+	- 1 ERROR, only write SYS_LOG_ERR
+
+	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+
+	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+
+	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
+
+config CRYPTO_TINYCRYPT_SHIM
+	bool "Enable TinyCrypt shim driver [EXPERIMENTAL] "
+	default n
+	depends on CRYPTO
+	help
+	Enable TinyCrypt shim layer compliant with crypto APIs.
+
+config CRYPTO_0_NAME
+	string "Device name for TinyCrypt Pseudo device"
+	default "CRYPTO_TC_0"
+	depends on CRYPTO_TINYCRYPT_SHIM
+	help
+	Device name for TinyCrypt Pseudo device.
+
+endif # CRYPTO
