@@ -63,8 +63,21 @@
 /* For now use MPS - SDU length to disable segmentation */
 #define BT_L2CAP_MAX_LE_MTU	(BT_L2CAP_MAX_LE_MPS - 2)
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 #define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+
+enum l2cap_conn_list_action {
+	L2CAP_LOOKUP_CHAN,
+	L2CAP_DETACH_CHAN,
+};
+
+/* Wrapper macros making action on channel's list assigned to connection */
+#define l2cap_lookup_chan(conn, chan) \
+	__l2cap_chan(conn, chan, L2CAP_LOOKUP_CHAN)
+#define l2cap_detach_chan(conn, chan) \
+	__l2cap_chan(conn, chan, L2CAP_DETACH_CHAN)
 
 static struct bt_l2cap_fixed_chan *le_channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -138,6 +151,7 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 	return NULL;
 }
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_le_chan *
 __l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, bool remove)
 {
@@ -145,15 +159,12 @@ __l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, bool remove)
 
 	for (chan = conn->channels, prev = NULL; chan;
 	     prev = chan, chan = chan->_next) {
-		/* get the app's l2cap object where this chan is member */
-		struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-
-		if (ch->ident != ident) {
+		if (chan->ident != ident) {
 			continue;
 		}
 
 		if (!remove) {
-			return ch;
+			return BT_L2CAP_LE_CHAN(chan);
 		}
 
 		if (!prev) {
@@ -162,7 +173,38 @@ __l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, bool remove)
 			prev->_next = chan->_next;
 		}
 
-		return ch;
+		return BT_L2CAP_LE_CHAN(chan);
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+
+static struct bt_l2cap_le_chan *__l2cap_chan(struct bt_conn *conn,
+					     struct bt_l2cap_chan *ch,
+					     enum l2cap_conn_list_action action)
+{
+	struct bt_l2cap_chan *chan, *prev;
+
+	for (chan = conn->channels, prev = NULL; chan;
+	     prev = chan, chan = chan->_next) {
+		if (chan != ch) {
+			continue;
+		}
+
+		switch (action) {
+		case L2CAP_DETACH_CHAN:
+			if (!prev) {
+				conn->channels = chan->_next;
+			} else {
+				prev->_next = chan->_next;
+			}
+
+			return BT_L2CAP_LE_CHAN(chan);
+		case L2CAP_LOOKUP_CHAN:
+		default:
+			return BT_L2CAP_LE_CHAN(chan);
+		}
 	}
 
 	return NULL;
@@ -194,8 +236,7 @@ static void l2cap_rtx_timeout(struct nano_work *work)
 
 	BT_ERR("chan %p timeout", chan);
 
-	l2cap_remove_ident(chan->chan.conn, chan->ident);
-
+	l2cap_detach_chan(chan->chan.conn, &chan->chan);
 	bt_l2cap_chan_del(&chan->chan);
 }
 
@@ -727,7 +768,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	switch (result) {
 	case BT_L2CAP_SUCCESS:
 		/* Reset ident since it is no longer pending */
-		chan->ident = 0;
+		chan->chan.ident = 0;
 		chan->tx.cid = dcid;
 		chan->tx.mtu = mtu;
 		chan->tx.mps = mps;
@@ -1238,11 +1279,11 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 		return -ENOMEM;
 	}
 
-	ch->ident = get_ident();
+	ch->chan.ident = get_ident();
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_LE_CONN_REQ;
-	hdr->ident = ch->ident;
+	hdr->ident = ch->chan.ident;
 	hdr->len = sys_cpu_to_le16(sizeof(*req));
 
 	req = net_buf_add(buf, sizeof(*req));
@@ -1308,11 +1349,11 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 		return -ENOMEM;
 	}
 
-	ch->ident = get_ident();
+	ch->chan.ident = get_ident();
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_DISCONN_REQ;
-	hdr->ident = ch->ident;
+	hdr->ident = ch->chan.ident;
 	hdr->len = sys_cpu_to_le16(sizeof(*req));
 
 	req = net_buf_add(buf, sizeof(*req));

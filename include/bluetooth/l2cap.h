@@ -84,6 +84,8 @@ struct bt_l2cap_chan {
 	bt_l2cap_chan_destroy_t		destroy;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	bt_l2cap_chan_state_t		state;
+	/** Helps match request context during CoC */
+	uint8_t				ident;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 };
 
@@ -107,8 +109,6 @@ struct bt_l2cap_le_chan {
 	struct bt_l2cap_le_endpoint	rx;
 	/** Channel Transmission Endpoint */
 	struct bt_l2cap_le_endpoint	tx;
-	/** Helps match request context for oustanding requests during CoC */
-	uint8_t				ident;
 	/* Response Timeout eXpired (RTX) timer */
 	struct nano_delayed_work	rtx_work;
 	/** Segment SDU packet from upper layer */
