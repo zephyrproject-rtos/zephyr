@@ -328,6 +328,51 @@ size_t net_buf_simple_headroom(struct net_buf_simple *buf);
  */
 size_t net_buf_simple_tailroom(struct net_buf_simple *buf);
 
+/**
+ *  @brief Parsing state of a buffer.
+ *
+ *  This is used for temporarily storing the parsing state of a buffer
+ *  while giving control of the parsing to a routing which we don't
+ *  control.
+ */
+struct net_buf_simple_state {
+	/** Offset of the data pointer from the beginning of the storage */
+	uint16_t offset;
+	/** Length of data */
+	uint16_t len;
+};
+
+/**
+ *  @brief Save the parsing state of a buffer.
+ *
+ *  Saves the parsing state of a buffer so it can be restored later.
+ *
+ *  @param buf Buffer from which the state should be saved.
+ *  @param state Storage for the state.
+ */
+static inline void net_buf_simple_save(struct net_buf_simple *buf,
+				       struct net_buf_simple_state *state)
+{
+	state->offset = net_buf_simple_headroom(buf);
+	state->len = buf->len;
+}
+
+/**
+ *  @brief Restore the parsing state of a buffer.
+ *
+ *  Restores the parsing state of a buffer from a state previously stored
+ *  by net_buf_simple_save().
+ *
+ *  @param buf Buffer to which the state should be restored.
+ *  @param state Stored state.
+ */
+static inline void net_buf_simple_restore(struct net_buf_simple *buf,
+					  struct net_buf_simple_state *state)
+{
+	buf->data = buf->__buf + state->offset;
+	buf->len = state->len;
+}
+
 /** Flag indicating that the buffer has associated fragments. Only used
   * internally by the buffer handling code while the buffer is inside a
   * FIFO, meaning this never needs to be explicitly set or unset by the
