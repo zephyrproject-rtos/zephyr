@@ -72,6 +72,8 @@ typedef enum bt_l2cap_chan_state {
 	BT_L2CAP_CONFIG,
 	/** Channel ready for upper layer traffic on it */
 	BT_L2CAP_CONNECTED,
+	/** Channel in disconnecting state */
+	BT_L2CAP_DISCONNECT,
 } __packed bt_l2cap_chan_state_t;
 
 /** @brief L2CAP Channel structure. */

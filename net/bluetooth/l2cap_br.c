@@ -106,6 +106,8 @@ static const char *state2str(bt_l2cap_chan_state_t state)
 		return "config";
 	case BT_L2CAP_CONNECTED:
 		return "connected";
+	case BT_L2CAP_DISCONNECT:
+		return "disconnect";
 	default:
 		return "unknown";
 	}
@@ -146,6 +148,14 @@ static void l2cap_br_state_set(struct bt_l2cap_chan *ch,
 		return;
 	case BT_L2CAP_CONNECTED:
 		if (old_state == BT_L2CAP_CONFIG) {
+			break;
+		}
+
+		BT_WARN("no valid transition");
+		return;
+	case BT_L2CAP_DISCONNECT:
+		if (old_state == BT_L2CAP_CONFIG ||
+		    old_state == BT_L2CAP_CONNECTED) {
 			break;
 		}
 
@@ -999,7 +1009,71 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 
 int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 {
-	return -ENOTSUP;
+	struct bt_conn *conn = chan->conn;
+	struct net_buf *buf;
+	struct bt_l2cap_disconn_req *req;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_br_chan *ch;
+
+	if (!conn) {
+		return -ENOTCONN;
+	}
+
+	if (chan->state == BT_L2CAP_DISCONNECT) {
+		return -EALREADY;
+	}
+
+	ch = BR_CHAN(chan);
+
+	BT_DBG("chan %p scid 0x%04x dcid 0x%04x", chan, ch->rx.cid,
+	       ch->tx.cid);
+
+	buf = bt_l2cap_create_pdu(&br_sig);
+	if (!buf) {
+		BT_ERR("Unable to send L2CAP disconnect request");
+		return -ENOMEM;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_DISCONN_REQ;
+	hdr->ident = l2cap_br_get_ident();
+	hdr->len = sys_cpu_to_le16(sizeof(*req));
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->dcid = sys_cpu_to_le16(ch->tx.cid);
+	req->scid = sys_cpu_to_le16(ch->rx.cid);
+
+	bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
+	l2cap_br_state_set(chan, BT_L2CAP_DISCONNECT);
+
+	return 0;
+}
+
+static void l2cap_br_disconn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
+				 struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_br_chan *chan;
+	struct bt_l2cap_disconn_rsp *rsp = (void *)buf->data;
+	uint16_t dcid, scid;
+
+	if (buf->len < sizeof(*rsp)) {
+		BT_ERR("Too small disconn rsp packet size");
+		return;
+	}
+
+	dcid = sys_le16_to_cpu(rsp->dcid);
+	scid = sys_le16_to_cpu(rsp->scid);
+
+	BT_DBG("dcid 0x%04x scid 0x%04x", dcid, scid);
+
+	chan = l2cap_br_remove_tx_cid(conn, dcid);
+	if (!chan) {
+		BT_WARN("No dcid 0x%04x channel found", dcid);
+		return;
+	}
+
+	bt_l2cap_chan_del(&chan->chan);
 }
 
 int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
@@ -1058,6 +1132,9 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		break;
 	case BT_L2CAP_CONF_REQ:
 		l2cap_br_conf_req(l2cap, hdr->ident, len, buf);
+		break;
+	case BT_L2CAP_DISCONN_RSP:
+		l2cap_br_disconn_rsp(l2cap, hdr->ident, buf);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
