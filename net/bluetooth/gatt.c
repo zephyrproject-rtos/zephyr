@@ -1346,7 +1346,7 @@ static void att_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 
 	/*
 	 * Core Spec 4.2, Vol. 3, Part G, 4.8.1
-	 * If the Characteristic Value is greater than (ATT_MTU – 1) octets
+	 * If the Characteristic Value is greater than (ATT_MTU - 1) octets
 	 * in length, the Read Long Characteristic Value procedure may be used
 	 * if the rest of the Characteristic Value is required.
 	 */
