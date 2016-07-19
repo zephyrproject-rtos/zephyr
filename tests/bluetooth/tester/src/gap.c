@@ -258,10 +258,10 @@ static void stop_advertising(const uint8_t *data, uint16_t len)
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
-			 const uint8_t *ad, uint8_t len)
+			 struct net_buf_simple *ad)
 {
 	struct gap_device_found_ev *ev;
-	uint8_t buf[sizeof(*ev) + len];
+	uint8_t buf[sizeof(*ev) + ad->len];
 
 	ev = (void*) buf;
 
@@ -277,9 +277,9 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 		ev->flags |= GAP_DEVICE_FOUND_FLAG_AD;
 	}
 
-	ev->eir_data_len = len;
-	if (len) {
-		memcpy(ev->eir_data, ad, len);
+	ev->eir_data_len = ad->len;
+	if (ad->len) {
+		memcpy(ev->eir_data, ad, ad->len);
 	}
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_FOUND, CONTROLLER_INDEX,

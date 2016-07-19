@@ -2492,10 +2492,14 @@ static void le_adv_report(struct net_buf *buf)
 
 	BT_DBG("Adv number of reports %u",  num_reports);
 
-	info = (void *)buf->data;
 	while (num_reports--) {
-		int8_t rssi = info->data[info->length];
 		const bt_addr_le_t *addr;
+		int8_t rssi;
+
+		info = (void *)buf->data;
+		net_buf_pull(buf, sizeof(*info));
+
+		rssi = info->data[info->length];
 
 		BT_DBG("%s event %u, len %u, rssi %d dBm",
 		       bt_addr_le_str(&info->addr),
@@ -2504,18 +2508,24 @@ static void le_adv_report(struct net_buf *buf)
 		addr = find_id_addr(&info->addr);
 
 		if (scan_dev_found_cb) {
-			scan_dev_found_cb(addr, rssi, info->evt_type,
-					  info->data, info->length);
+			struct net_buf_simple_state state;
+
+			net_buf_simple_save(&buf->b, &state);
+
+			buf->len = info->length;
+			scan_dev_found_cb(addr, rssi, info->evt_type, &buf->b);
+
+			net_buf_simple_restore(&buf->b, &state);
 		}
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 		check_pending_conn(addr, &info->addr, info->evt_type);
 #endif /* CONFIG_BLUETOOTH_CONN */
+
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
 		 */
-		info = net_buf_pull(buf, sizeof(*info) + info->length +
-				    sizeof(rssi));
+		net_buf_pull(buf, info->length + sizeof(rssi));
 	}
 }
 

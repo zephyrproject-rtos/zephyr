@@ -32,7 +32,7 @@
 static struct bt_conn *default_conn;
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			 const uint8_t *ad, uint8_t len)
+			 struct net_buf_simple *ad)
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 

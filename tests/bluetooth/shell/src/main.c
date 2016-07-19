@@ -90,44 +90,41 @@ static const char *current_prompt(void)
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
-			 const uint8_t *ad, uint8_t len)
+			 struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[30];
 
 	memset(name, 0, sizeof(name));
 
-	while (len) {
-		if (len < 2) {
-			break;
-		};
+	while (buf->len > 1) {
+		uint8_t len, type;
 
-		/* Look for early termination */
-		if (!ad[0]) {
+		len = net_buf_simple_pull_u8(buf);
+		if (!len) {
 			break;
 		}
 
 		/* Check if field length is correct */
-		if (ad[0] > len - 1) {
+		if (len > buf->len || buf->len < 1) {
 			break;
 		}
 
-		switch (ad[1]) {
+		type = net_buf_simple_pull_u8(buf);
+		switch (type) {
 		case AD_SHORT_NAME:
 		case AD_COMPLETE_NAME:
-			if (ad[0] > sizeof(name) - 1) {
-				memcpy(name, &ad[2], sizeof(name) - 1);
+			if (len > sizeof(name) - 1) {
+				memcpy(name, buf->data, sizeof(name) - 1);
 			} else {
-				memcpy(name, &ad[2], ad[0] - 1);
+				memcpy(name, buf->data, len - 1);
 			}
 			break;
 		default:
 			break;
 		}
 
-		/* Parse next AD Structure */
-		len -= ad[0] + 1;
-		ad += ad[0] + 1;
+		net_buf_simple_pull(buf, len - 1);
 	}
 
 	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));

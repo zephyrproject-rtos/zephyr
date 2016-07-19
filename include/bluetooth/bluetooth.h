@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include <misc/util.h>
+#include <net/buf.h>
 #include <bluetooth/hci.h>
 
 #ifdef __cplusplus
@@ -181,12 +182,10 @@ int bt_le_adv_stop(void);
  *  @param addr Advertiser LE address and type.
  *  @param rssi Strength of advertiser signal.
  *  @param adv_type Type of advertising response from advertiser.
- *  @param adv_data Address of buffer containig advertiser data.
- *  @param len Length of advertiser data contained in buffer.
+ *  @param data Buffer containig advertiser data.
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
-			     uint8_t adv_type, const uint8_t *adv_data,
-			     uint8_t len);
+			     uint8_t adv_type, struct net_buf_simple *buf);
 
 /** LE scan parameters */
 struct bt_le_scan_param {

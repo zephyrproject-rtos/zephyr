@@ -20,6 +20,7 @@
 #include <nanokernel.h>
 #include <device.h>
 
+#include <net/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
@@ -290,8 +291,12 @@ void on_nble_gap_adv_report_evt(const struct nble_gap_adv_report_evt *evt,
 	BT_DBG("");
 
 	if (scan_dev_found_cb) {
-		scan_dev_found_cb(&evt->addr, evt->rssi, evt->adv_type,
-				  buf, len);
+		struct net_buf_simple *data = NET_BUF_SIMPLE(31);
+
+		net_buf_simple_init(data, 0);
+		memcpy(net_buf_simple_add(data, len), buf, len);
+
+		scan_dev_found_cb(&evt->addr, evt->rssi, evt->adv_type, data);
 	}
 }
 
