@@ -1,1 +1,2 @@
+obj-$(CONFIG_HAS_KSDK) += ksdk/
 obj-$(CONFIG_QMSI_BUILTIN) += qmsi/

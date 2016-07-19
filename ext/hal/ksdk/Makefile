@@ -30,11 +30,9 @@ ZEPHYRINCLUDE += -I$(srctree)/ext/hal/ksdk/drivers
 # in a given SOC. See fsl_device_registers.h and $(KSDK_DEVICE)_features.h
 KBUILD_CFLAGS += -D$(KSDK_CPU)
 
-# Soon we will add support here to build the CMSIS-CORE system configuration
-# object using the ksdk device name. For example:
-# obj-y += devices/$(KSDK_DEVICE)/system_$(KSDK_DEVICE).o
-#
-# Although it is not normal Kbuild practice, drilling down like this avoids the
-# need for repetitive Makefiles for every ksdk device.
+# Build ksdk device-specific objects. Although it is not normal Kbuild
+# practice, drilling down like this avoids the need for repetitive Makefiles
+# for every ksdk device.
+obj-y += devices/$(KSDK_DEVICE)/fsl_clock.o
 
 endif
