@@ -257,6 +257,27 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  */
 int bt_le_scan_stop(void);
 
+struct bt_le_oob {
+	/** LE connectable address. If local privacy is enabled this is
+	 * Resolvable Private Address.
+	 */
+	bt_addr_le_t connectable_addr;
+};
+
+/**
+ * @brief Get LE local Out Of Band information
+ *
+ * This function allows to get local information that are useful for Out Of Band
+ * pairing or connection creation process.
+ *
+ * If privacy is enabled this will result in generating new Resolvable Private
+ * Address that is valid for CONFIG_BLUETOOTH_RPA_TIMEOUT seconds. This address
+ * will be used for advertising, active scanning and connection creation.
+ *
+ * @param oob LE related information
+ */
+int bt_le_oob_get_local(struct bt_le_oob *oob);
+
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
 	/** private */
@@ -327,6 +348,21 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_br_discovery_stop(void);
+
+struct bt_br_oob {
+	/** BR/EDR address. */
+	bt_addr_t addr;
+};
+
+/**
+ * @brief Get BR/EDR local Out Of Band information
+ *
+ * This function allows to get local controller information that are useful
+ * for Out Of Band pairing or connection creation process.
+ *
+ * @param oob Out Of Band information
+ */
+int bt_br_oob_get_local(struct bt_br_oob *oob);
 
 /** @def BT_ADDR_STR_LEN
  *

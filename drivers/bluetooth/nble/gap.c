@@ -395,3 +395,10 @@ int bt_storage_clear(bt_addr_le_t *addr)
 	/* FIXME: make the necessary storage callbacks too. */
 	return 0;
 }
+
+int bt_le_oob_get_local(struct bt_le_oob *oob)
+{
+	bt_addr_le_copy(&oob->connectable_addr, &nble.addr);
+
+	return 0;
+}
