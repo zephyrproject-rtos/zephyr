@@ -176,6 +176,10 @@ __csSet:
 	 * dual-purposing of this area of memory is safe since
 	 * interrupts are disabled until the first context switch.
 	 *
+	 * nano_init.c enforces that the _interrupt_stack pointer and
+	 * the ISR stack size are some multiple of STACK_ALIGN, which
+	 * is at least 4.
+	 *
 	 * This is also used to call the _sys_soc_resume() routine
 	 * to avoid memory corruption if the system is resuming from
 	 * deep sleep. It is important that _sys_soc_resume() restores
@@ -188,10 +192,6 @@ __csSet:
 
 	movl	$_interrupt_stack, %esp
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
-
-	/* align to stack boundary: ROUND_DOWN (%esp, 4) */
-
-	andl	$0xfffffffc, %esp
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 	/*

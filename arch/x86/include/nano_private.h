@@ -778,8 +778,7 @@ static inline void nanoArchInit(void)
 
 	_nanokernel.nested = 0;
 
-	_nanokernel.common_isp = (char *)STACK_ROUND_DOWN(
-		&_interrupt_stack[CONFIG_ISR_STACK_SIZE - 1]);
+	_nanokernel.common_isp = _interrupt_stack + CONFIG_ISR_STACK_SIZE;
 	/*
 	 * Forces the inclusion of the spurious interrupt handlers. If a
 	 * reference isn't made then intconnect.o is never pulled in by the
