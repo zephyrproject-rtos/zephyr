@@ -1,0 +1,61 @@
+# Kconfig - Cryptography primitive options for mbed TLS
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+menuconfig MBEDTLS
+	bool
+	prompt "mbedTLS Support"
+	default n
+	help
+	  This option enables the mbedTLS cryptography library.
+
+config MBEDTLS_BUILTIN
+	bool "Enable mbedTLS integrated sources"
+	depends on MBEDTLS
+	default n
+	help
+	Link with local mbedTLS sources instead of external library.
+
+config MBEDTLS_CFG_FILE
+	string "mbed TLS configuration file"
+	depends on MBEDTLS_BUILTIN
+	default "config-threadnet.h"
+	help
+	Enable custom mbed TLS configuration
+
+config MBEDTLS_TEST
+	bool "Compile internal self test functions"
+	depends on MBEDTLS_BUILTIN
+	default n
+	help
+	Enable self test function for the crypto algorithms
+
+config MBEDTLS_LIBRARY
+	bool "Enable mbedTLS external library"
+	depends on MBEDTLS
+	default n
+	help
+	This option enables mbedTLS library.
+
+config MBEDTLS_INSTALL_PATH
+	string "mbedTLS install path"
+	depends on MBEDTLS_LIBRARY
+	help
+	This option holds the path where the mbedTLS libraries and headers are
+	installed. Make sure this option is properly set when MBEDTLS_LIBRARY
+	is enabled otherwise the build will fail.
