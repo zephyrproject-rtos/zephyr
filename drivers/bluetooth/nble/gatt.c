@@ -1104,7 +1104,8 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 	return 0;
 }
 
-static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err)
+static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
+			       struct bt_gatt_write_params *params)
 {
 	BT_DBG("conn %p err %u", conn, err);
 
@@ -1115,7 +1116,7 @@ void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp)
 {
 	struct bt_conn *conn;
 	void *private;
-	bt_gatt_rsp_func_t func;
+	bt_gatt_write_func_t func;
 
 	conn = bt_conn_lookup_handle(rsp->conn_handle);
 	if (!conn) {
@@ -1133,7 +1134,7 @@ void on_nble_gattc_write_rsp(const struct nble_gattc_write_rsp *rsp)
 	}
 
 	if (func) {
-		func(conn, rsp->status);
+		func(conn, rsp->status, private);
 	}
 
 	bt_conn_unref(conn);

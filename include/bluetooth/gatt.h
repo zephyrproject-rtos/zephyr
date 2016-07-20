@@ -885,10 +885,22 @@ struct bt_gatt_read_params {
  */
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
 
+struct bt_gatt_write_params;
+
+/** @typedef bt_gatt_write_func_t
+ *  @brief Write callback function
+ *
+ *  @param conn Connection object.
+ *  @param err ATT error code.
+ *  @param params Write parameters used.
+ */
+typedef void (*bt_gatt_write_func_t)(struct bt_conn *conn, uint8_t err,
+					struct bt_gatt_write_params *params);
+
 /** @brief GATT Write parameters */
 struct bt_gatt_write_params {
 	/** Response callback */
-	bt_gatt_rsp_func_t func;
+	bt_gatt_write_func_t func;
 	/** Attribute handle */
 	uint16_t handle;
 	/** Attribute data offset */

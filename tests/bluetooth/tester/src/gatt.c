@@ -1463,7 +1463,8 @@ rsp:
 	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
 }
 
-static void write_rsp(struct bt_conn *conn, uint8_t err)
+static void write_rsp(struct bt_conn *conn, uint8_t err,
+		      struct bt_gatt_write_params *params)
 {
 	tester_send(BTP_SERVICE_ID_GATT, GATT_WRITE, CONTROLLER_INDEX, &err,
 		    sizeof(err));
@@ -1500,7 +1501,8 @@ fail:
 		   BTP_STATUS_FAILED);
 }
 
-static void write_long_rsp(struct bt_conn *conn, uint8_t err)
+static void write_long_rsp(struct bt_conn *conn, uint8_t err,
+			   struct bt_gatt_write_params *params)
 {
 	tester_send(BTP_SERVICE_ID_GATT, GATT_WRITE_LONG, CONTROLLER_INDEX,
 		    &err, sizeof(err));

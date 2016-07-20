@@ -1540,7 +1540,7 @@ static void att_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
 
 	/* Don't continue in case of error */
 	if (err) {
-		params->func(conn, err);
+		params->func(conn, err, params);
 		return;
 	}
 

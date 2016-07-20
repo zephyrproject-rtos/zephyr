@@ -890,7 +890,8 @@ static int cmd_gatt_mread(int argc, char *argv[])
 	return 0;
 }
 
-static void write_func(struct bt_conn *conn, uint8_t err)
+static void write_func(struct bt_conn *conn, uint8_t err,
+		       struct bt_gatt_write_params *params)
 {
 	printk("Write complete: err %u\n", err);
 }
