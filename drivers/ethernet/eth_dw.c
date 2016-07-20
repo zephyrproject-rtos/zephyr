@@ -30,7 +30,7 @@
 #endif
 
 #define SYS_LOG_DOMAIN "ETH DW"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_DRIVER_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
 #include <misc/sys_log.h>
 
 static inline uint32_t eth_read(uint32_t base_addr, uint32_t offset)
