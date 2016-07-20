@@ -595,14 +595,14 @@ class MakeGenerator:
 """
 
     MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
-\t$(MAKE) -C {directory} O={outdir} V={verb} EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LDFLAGS=--fatal-warnings {args} >{logfile} 2>&1
+\t$(MAKE) -C {directory} O={outdir} V={verb} EXTRA_CFLAGS="-Werror {cflags}" EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LDFLAGS=--fatal-warnings {args} >{logfile} 2>&1
 """
 
     GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
 
     re_make = re.compile("sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* [[](.+)[]] Error.+$")
 
-    def __init__(self, base_outdir):
+    def __init__(self, base_outdir, asserts=False):
         """MakeGenerator constructor
 
         @param base_outdir Intended to be the base out directory. A make.log
@@ -616,6 +616,7 @@ class MakeGenerator:
             os.makedirs(base_outdir)
         self.logfile = os.path.join(base_outdir, "make.log")
         self.makefile = os.path.join(base_outdir, "Makefile")
+        self.asserts = asserts
 
     def _get_rule_header(self, name):
         return MakeGenerator.GOAL_HEADER_TMPL.format(goal=name)
@@ -623,8 +624,12 @@ class MakeGenerator:
     def _get_sub_make(self, name, phase, workdir, outdir, logfile, args):
         verb = "1" if VERBOSE else "0"
         args = " ".join(args)
+        if self.asserts:
+            cflags="-DCONFIG_ASSERT=1 -D__ASSERT_ON=2"
+        else:
+            cflags=""
         return MakeGenerator.MAKE_RULE_TMPL.format(phase=phase, goal=name,
-                                                   outdir=outdir,
+                                                   outdir=outdir, cflags=cflags,
                                                    directory=workdir, verb=verb,
                                                    args=args, logfile=logfile)
 
@@ -1374,7 +1379,7 @@ class TestSuite:
         for ti in ti_list:
             self.instances[ti.name] = ti
 
-    def execute(self, cb, cb_context, build_only, enable_slow):
+    def execute(self, cb, cb_context, build_only, enable_slow, enable_asserts):
 
         def calc_one_elf_size(name, goal):
             if not goal.failed:
@@ -1385,7 +1390,7 @@ class TestSuite:
                 goal.metrics["unrecognized"] = sc.unrecognized_sections()
                 goal.metrics["mismatched"] = sc.mismatched_sections()
 
-        mg = MakeGenerator(self.outdir)
+        mg = MakeGenerator(self.outdir, asserts=enable_asserts)
         for i in self.instances.values():
             mg.add_test_instance(i, build_only, enable_slow)
         self.goals = mg.execute(cb, cb_context)
@@ -1595,6 +1600,8 @@ def parse_arguments():
     parser.add_argument("-S", "--enable-slow", action="store_true",
             help="Execute time-consuming test cases that have been marked "
                  "as 'slow' in testcase.ini. Normally these are only built.")
+    parser.add_argument("-R", "--enable-asserts", action="store_true",
+            help="Build all test cases with assertions enabled.")
 
     return parser.parse_args()
 
@@ -1713,10 +1720,10 @@ def main():
 
     if VERBOSE or not TERMINAL:
         goals = ts.execute(chatty_test_cb, ts.instances, args.build_only,
-                           args.enable_slow)
+                           args.enable_slow, args.enable_asserts)
     else:
         goals = ts.execute(terse_test_cb, ts.instances, args.build_only,
-                           args.enable_slow)
+                           args.enable_slow, args.enable_asserts)
         info("")
 
     # figure out which report to use for size comparison
