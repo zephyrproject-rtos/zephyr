@@ -189,6 +189,13 @@ __csSet:
 	 * If it is a cold boot then _sys_soc_resume() should not do
 	 * anything and must return immediately.
 	 */
+#ifdef CONFIG_INIT_STACKS
+	movl $0xAAAAAAAA, %eax
+	leal _interrupt_stack, %edi
+	stack_size_dwords = (CONFIG_ISR_STACK_SIZE / 4)
+	movl $stack_size_dwords, %ecx
+	rep  stosl
+#endif
 
 	movl	$_interrupt_stack, %esp
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
