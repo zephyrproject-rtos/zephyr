@@ -63,7 +63,9 @@
 #if defined(_WIN32) && !defined(EFIX64) && !defined(EFI32)
 #include <windows.h>
 #else
+#if defined(MBEDTLS_HAVE_TIME)
 #include <time.h>
+#endif /* MBEDTLS_HAVE_TIME */
 #endif
 
 #if defined(MBEDTLS_FS_IO)
