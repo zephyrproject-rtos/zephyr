@@ -672,7 +672,7 @@ static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 	uint8_t tx = BMI160_SAMPLE_BURST_READ_ADDR | (1 << 7);
 	int i;
 
-	__ASSERT(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	if (bmi160_transceive(dev, &tx, 1, bmi160->sample.raw,
 			      BMI160_BUF_SIZE) < 0) {
