@@ -43,9 +43,6 @@ extern "C" {
 
 #else
 
-#define __GET_MSP() \
-	STACK_ROUND_DOWN(&_interrupt_stack[CONFIG_ISR_STACK_SIZE - 1])
-
 extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
 /**
@@ -59,7 +56,7 @@ extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
  */
 static ALWAYS_INLINE void _InterruptStackSetup(void)
 {
-	uint32_t msp = __GET_MSP();
+	uint32_t msp = (uint32_t)(_interrupt_stack + CONFIG_ISR_STACK_SIZE);
 
 	_MspSet(msp);
 }
