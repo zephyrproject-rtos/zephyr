@@ -111,12 +111,13 @@ SECTION_FUNC(TEXT, __start)
 #endif /* ALT_CPU_DCACHE_SIZE && defined(CONFIG_INCLUDE_RESET_VECTOR) */
 
 #ifdef CONFIG_INIT_STACKS
-	/* Pre-populate all bytes in _interrupt_stack with 0xAA */
+	/* Pre-populate all bytes in _interrupt_stack with 0xAA
+	 * nano_init.c enforces that the _interrupt_stack pointer
+	 * and CONFIG_ISR_STACK_SIZE are a multiple of STACK_ALIGN (4) */
 	movhi r1, %hi(_interrupt_stack)
 	ori r1, r1, %lo(_interrupt_stack)
 	movhi r2, %hi(CONFIG_ISR_STACK_SIZE)
 	ori r2, r2, %lo(CONFIG_ISR_STACK_SIZE)
-	subi r2, r2, 3
 	/* Put constant 0xaaaaaaaa in r3 */
 	movhi r3, 0xaaaa
 	ori r3, r3, 0xaaaa
@@ -136,14 +137,6 @@ SECTION_FUNC(TEXT, __start)
 	movhi sp, %hi(_interrupt_stack)
 	ori sp, sp, %lo(_interrupt_stack)
 	addi sp, sp, CONFIG_ISR_STACK_SIZE
-	/* Create a mask in r1 which will be used to round down sp to
-	 * the desired alignment
-	 */
-	movi r1, STACK_ALIGN_SIZE
-	subi r1, r1, 1
-	nor r1, r1, r0
-	/* Align the stack pointer */
-	and sp, sp, r1
 
 #if defined(CONFIG_GP_LOCAL) || defined(CONFIG_GP_GLOBAL) || \
 		defined(CONFIG_GP_ALL_DATA)

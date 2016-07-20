@@ -164,8 +164,7 @@ void nano_cpu_atomic_idle(unsigned int key);
 
 static ALWAYS_INLINE void nanoArchInit(void)
 {
-	_nanokernel.irq_sp = (char *)STACK_ROUND_DOWN(_interrupt_stack +
-						      CONFIG_ISR_STACK_SIZE);
+	_nanokernel.irq_sp = _interrupt_stack + CONFIG_ISR_STACK_SIZE;
 }
 
 static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber,
