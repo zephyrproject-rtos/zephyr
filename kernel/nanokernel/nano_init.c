@@ -69,7 +69,9 @@ uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
 #endif
 
 /* stack space for the background (or idle) task */
-
+#if CONFIG_MAIN_STACK_SIZE & (STACK_ALIGN - 1)
+    #error "MAIN_STACK_SIZE must be a multiple of the stack alignment"
+#endif
 char __noinit __stack main_task_stack[CONFIG_MAIN_STACK_SIZE];
 
 /*
@@ -80,8 +82,10 @@ char __noinit __stack main_task_stack[CONFIG_MAIN_STACK_SIZE];
  * purposing of this area is safe since interrupts are disabled until the
  * nanokernel context switches to the background (or idle) task.
  */
-
-char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
+#if CONFIG_ISR_STACK_SIZE & (STACK_ALIGN - 1)
+    #error "ISR_STACK_SIZE must be a multiple of the stack alignment"
+#endif
+char __noinit __stack _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	#include <misc/dlist.h>
