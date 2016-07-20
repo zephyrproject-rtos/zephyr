@@ -91,7 +91,8 @@ static void write_buf_irq(struct device *dev, const char *buf, int len)
 
 	for (i = 0; i < len; i++) {
 		data_transmitted = false;
-		uart_fifo_fill(dev, &buf[i], 1);
+		while (uart_fifo_fill(dev, &buf[i], 1) == 0)
+			;
 		while (data_transmitted == false)
 			;
 	}
