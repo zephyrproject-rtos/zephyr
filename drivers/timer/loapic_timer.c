@@ -81,6 +81,8 @@
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
 #include <drivers/loapic.h> /* LOAPIC registers */
+#include <power.h>
+#include <device.h>
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
@@ -570,6 +572,64 @@ int _sys_clock_driver_init(struct device *device)
 
 	return 0;
 }
+
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+
+static uint32_t reg_timer_save;
+static uint32_t reg_timer_cfg_save;
+
+static int sys_clock_suspend(struct device *dev, int pm_policy)
+{
+	ARG_UNUSED(dev);
+
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		reg_timer_save = *_REG_TIMER;
+		reg_timer_cfg_save = *_REG_TIMER_CFG;
+	}
+
+	return 0;
+}
+
+static int sys_clock_resume(struct device *dev, int pm_policy)
+{
+	ARG_UNUSED(dev);
+
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		*_REG_TIMER = reg_timer_save;
+		*_REG_TIMER_CFG = reg_timer_cfg_save;
+
+		/*
+		 * It is difficult to accurately know the time spent in DS.
+		 * We can use TSC or RTC but that will create a dependency
+		 * on those components. Other issue is about what to do
+		 * with pending timers. Following are some options :-
+		 *
+		 * 1) Expire all timers based on time spent found using some
+		 *    source like TSC
+		 * 2) Expire all timers anyway
+		 * 3) Expire only the timer at the top
+		 * 4) Contine from where the timer left
+		 *
+		 * 1 and 2 require change to how timers are handled. 4 may not
+		 * give a good user experience. After waiting for a long period
+		 * in DS, the system would appear dead if it waits again.
+		 *
+		 * Current implementation uses option 3. The top most timer is
+		 * expired. Following code will set the counter to a low number
+		 * so it would immediately expire and generate timer interrupt
+		 * which will process the top most timer. Note that timer IC
+		 * cannot be set to 0.  Setting it to 0 will stop the timer.
+		 */
+
+		initial_count_register_set(1);
+	}
+
+	return 0;
+}
+#endif
+
+DEFINE_DEVICE_PM_OPS(_sys_clock, sys_clock_suspend, sys_clock_resume);
 
 /**
  *
