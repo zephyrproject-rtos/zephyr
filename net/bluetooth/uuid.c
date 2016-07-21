@@ -47,21 +47,13 @@ static const struct bt_uuid_128 uuid128_base = {
 		 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
 };
 
-static inline void u16_to_uuid128(void *dst, uint16_t u16)
-{
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	u16 = bswap_16(u16);
-#endif
-	memcpy(dst, &u16, 2);
-}
-
 static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid_128 *dst)
 {
 	switch (src->type) {
 	case BT_UUID_TYPE_16:
 		*dst = uuid128_base;
-		u16_to_uuid128(&dst->val[UUID_16_BASE_OFFSET],
-			       BT_UUID_16(src)->val);
+		sys_put_le16(BT_UUID_16(src)->val,
+			     &dst->val[UUID_16_BASE_OFFSET]);
 		return;
 	case BT_UUID_TYPE_128:
 		memcpy(dst, src, sizeof(*dst));
