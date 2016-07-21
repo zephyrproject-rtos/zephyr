@@ -840,7 +840,7 @@ static struct uart_driver_api cdc_acm_driver_api = {
 #ifdef CONFIG_UART_LINE_CTRL
 	.line_ctrl_set = cdc_acm_line_ctrl_set,
 	.line_ctrl_get = cdc_acm_line_ctrl_get,
-#endif /* CONFIG_UART_LINE_CTR */
+#endif /* CONFIG_UART_LINE_CTRL */
 };
 
 static struct cdc_acm_dev_data_t cdc_acm_dev_data = {
