@@ -83,6 +83,24 @@ M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
 S:	Supported
 F:	drivers/flash/
 
+INTERRUPTS
+M:	Andrew Boie <andrew.p.boie@intel.com>
+S:	Supported
+F:	drivers/interrupt_controller/
+F:	arch/arc/core/
+F:	arch/arm/core/
+F:	arch/nios2/core/
+F:	arch/x86/core/
+F:	include/irq.h
+F:	include/arch/x86/arch.h
+F:	include/arch/arm/cortex_m/irq.h
+F:	include/arch/nios2/arch.h
+F:	include/arch/arc/arch.h
+F:	include/arch/arc/v2/irq.h
+F:	include/drivers/loapic.h
+F:	include/drivers/ioapic.h
+F:	include/drivers/mvic.h
+
 KERNEL CORE
 M:	Benjamin Walsh <benjamin.walsh@windriver.com>
 M:	Allan Stephens <allan.stephens@windriver.com>
