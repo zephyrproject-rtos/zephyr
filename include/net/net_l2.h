@@ -13,7 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifdef CONFIG_NET_YAIP
-#include <net/yaip/net_l2.h>
-#endif

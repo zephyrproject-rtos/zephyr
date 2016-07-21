@@ -274,16 +274,6 @@ SECTION_PROLOGUE (_k_task_list, (OPTIONAL),)
 		__bss_end = ALIGN(4);
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
-#ifdef CONFIG_NET_YAIP
-	SECTION_PROLOGUE(net_if, (OPTIONAL),)
-	{
-		__net_if_start = .;
-		*(".net_if.*")
-		KEEP(*(SORT_BY_NAME(".net_if*")))
-		__net_if_end = .;
-	} GROUP_LINK_IN(RAMABLE_REGION)
-#endif
-
 	SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),) {
 		/*
 		 * This section is used for non-initialized objects that
