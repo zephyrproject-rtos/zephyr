@@ -411,4 +411,4 @@ void main(void)
 			 (nano_fiber_entry_t) fiber_sending, 0, 0, 7, 0);
 }
 
-#endif /* CONFIG_MICROKERNE ||  CONFIG_NANOKERNEL */
+#endif /* CONFIG_MICROKERNEL ||  CONFIG_NANOKERNEL */
