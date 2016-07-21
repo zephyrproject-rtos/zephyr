@@ -17,7 +17,7 @@ while [ -z "$GDB_TCP_PORT" ]; do
     GDB_TCP_PORT=
 done
 
-REQUIRED_PROGRAMS="nios2-gdb-server nios2-download"
+REQUIRED_PROGRAMS="quartus_cpf quartus_pgm nios2-gdb-server nios2-download"
 
 
 for pgm in ${REQUIRED_PROGRAMS}; do
@@ -29,14 +29,21 @@ done
 # CONFIG_INCLUDE_RESET_VECTOR must be disabled.
 
 do_flash() {
-    nios2-download --go ${ELF_NAME}
+    if [ -z "${NIOS2_CPU_SOF}" ]; then
+        echo "Please set NIOS2_CPU_SOF variable to location of CPU .sof data"
+        exit 1
+    fi
+
+    ${ZEPHYR_BASE}/scripts/support/quartus-flash.py \
+            --sof ${NIOS2_CPU_SOF} \
+            --kernel ${HEX_NAME}
 }
 
 do_debug() {
     do_debugserver 1 &
 
     # connect to the GDB server
-    ${GDB} ${TUI} -ex "target remote :${GDB_TCP_PORT}" -ex "load" ${ELF_NAME}
+    ${GDB} ${TUI} ${ELF_NAME} -ex "target remote :${GDB_TCP_PORT}"
 }
 
 do_debugserver() {
@@ -49,7 +56,7 @@ do_debugserver() {
         SETSID=
     fi
     echo "Nios II GDB server running on port ${GDB_TCP_PORT}"
-    ${SETSID} nios2-gdb-server --tcpport ${GDB_TCP_PORT} --init-cache --reset-target
+    ${SETSID} nios2-gdb-server --tcpport ${GDB_TCP_PORT} --stop --reset-target
 }
 
 
