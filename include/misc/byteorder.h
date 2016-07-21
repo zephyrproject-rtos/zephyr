@@ -124,3 +124,123 @@
 #else
 #error "Unknown byte order"
 #endif
+
+/**
+ *  @brief Put a 16-bit intger as big-endian to arbitrary location.
+ *
+ *  Put a 16-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in big-endian format.
+ *
+ *  @param val 16-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_be16(uint16_t val, uint8_t dst[2])
+{
+	dst[0] = val >> 8;
+	dst[1] = val;
+}
+
+/**
+ *  @brief Put a 32-bit intger as big-endian to arbitrary location.
+ *
+ *  Put a 32-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in big-endian format.
+ *
+ *  @param val 32-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_be32(uint32_t val, uint8_t dst[4])
+{
+	sys_put_be16(val >> 16, dst);
+	sys_put_be16(val, &dst[2]);
+}
+
+/**
+ *  @brief Put a 16-bit intger as little-endian to arbitrary location.
+ *
+ *  Put a 16-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in little-endian format.
+ *
+ *  @param val 16-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_le16(uint16_t val, uint8_t dst[2])
+{
+	dst[0] = val;
+	dst[1] = val >> 8;
+}
+
+/**
+ *  @brief Put a 32-bit intger as little-endian to arbitrary location.
+ *
+ *  Put a 32-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in little-endian format.
+ *
+ *  @param val 32-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_le32(uint32_t val, uint8_t dst[4])
+{
+	sys_put_le16(val, dst);
+	sys_put_le16(val >> 16, &dst[2]);
+}
+
+/**
+ *  @brief Get a 16-bit intger stored in big-endian format.
+ *
+ *  Get a 16-bit integer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the big-endian 16-bit integer to get.
+ *
+ *  @return 16-bit integer in host endianness.
+ */
+static inline uint16_t sys_get_be16(const uint8_t src[2])
+{
+	return ((uint16_t)src[0] << 8) | src[1];
+}
+
+/**
+ *  @brief Get a 32-bit intger stored in big-endian format.
+ *
+ *  Get a 32-bit integer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the big-endian 32-bit integer to get.
+ *
+ *  @return 32-bit integer in host endianness.
+ */
+static inline uint32_t sys_get_be32(const uint8_t src[4])
+{
+	return ((uint32_t)sys_get_be16(&src[0]) << 16) | sys_get_be16(&src[2]);
+}
+
+/**
+ *  @brief Get a 16-bit intger stored in little-endian format.
+ *
+ *  Get a 16-bit integer, stored in little-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the little-endian 16-bit integer to get.
+ *
+ *  @return 16-bit integer in host endianness.
+ */
+static inline uint16_t sys_get_le16(const uint8_t src[2])
+{
+	return ((uint16_t)src[1] << 8) | src[0];
+}
+
+/**
+ *  @brief Get a 32-bit intger stored in little-endian format.
+ *
+ *  Get a 32-bit integer, stored in little-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the little-endian 32-bit integer to get.
+ *
+ *  @return 32-bit integer in host endianness.
+ */
+static inline uint32_t sys_get_le32(const uint8_t src[4])
+{
+	return ((uint32_t)sys_get_le16(&src[2]) << 16) | sys_get_le16(&src[0]);
+}
