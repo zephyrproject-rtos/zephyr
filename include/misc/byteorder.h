@@ -20,24 +20,12 @@
 
 #include <stdint.h>
 
-/** @def bswap_16
- *  @brief Change the endianness of a 16-bit integer.
- *
- *  @param x 16-bit integer.
- *
- *  @return 16-bit integer in swapped endianness.
- */
-#define bswap_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
-
-/** @def bswap_32
- *  @brief Change the endianness of a 32-bit integer.
- *
- *  @param x 32-bit integer.
- *
- *  @return 32-bit integer in swapped endianness.
- */
-#define bswap_32(x) ((uint32_t) ((((x) >> 24) & 0xff) | (((x) >> 8) & 0xff00) \
-				| (((x) & 0xff00) << 8) | (((x) & 0xff) << 24)))
+/* Internal helpers only used by the sys_* APIs further below */
+#define __bswap_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+#define __bswap_32(x) ((uint32_t) ((((x) >> 24) & 0xff) | \
+				   (((x) >> 8) & 0xff00) | \
+				   (((x) & 0xff00) << 8) | \
+				   (((x) & 0xff) << 24)))
 
 /** @def sys_le16_to_cpu
  *  @brief Convert 16-bit integer from little-endian to host endianness.
@@ -106,19 +94,19 @@
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define sys_le16_to_cpu(val) (val)
 #define sys_cpu_to_le16(val) (val)
-#define sys_be16_to_cpu(val) bswap_16(val)
-#define sys_cpu_to_be16(val) bswap_16(val)
+#define sys_be16_to_cpu(val) __bswap_16(val)
+#define sys_cpu_to_be16(val) __bswap_16(val)
 #define sys_le32_to_cpu(val) (val)
 #define sys_cpu_to_le32(val) (val)
-#define sys_be32_to_cpu(val) bswap_32(val)
-#define sys_cpu_to_be32(val) bswap_32(val)
+#define sys_be32_to_cpu(val) __bswap_32(val)
+#define sys_cpu_to_be32(val) __bswap_32(val)
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define sys_le16_to_cpu(val) bswap_16(val)
-#define sys_cpu_to_le16(val) bswap_16(val)
+#define sys_le16_to_cpu(val) __bswap_16(val)
+#define sys_cpu_to_le16(val) __bswap_16(val)
 #define sys_be16_to_cpu(val) (val)
 #define sys_cpu_to_be16(val) (val)
-#define sys_le32_to_cpu(val) bswap_32(val)
-#define sys_cpu_to_le32(val) bswap_32(val)
+#define sys_le32_to_cpu(val) __bswap_32(val)
+#define sys_cpu_to_le32(val) __bswap_32(val)
 #define sys_be32_to_cpu(val) (val)
 #define sys_cpu_to_be32(val) (val)
 #else
