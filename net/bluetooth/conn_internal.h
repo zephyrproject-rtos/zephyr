@@ -17,8 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <misc/nano_work.h>
-
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_CONNECT_SCAN,
