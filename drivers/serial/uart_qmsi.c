@@ -402,11 +402,11 @@ static struct uart_driver_api api = {
 	.irq_is_pending = uart_qmsi_irq_is_pending,
 	.irq_update = uart_qmsi_irq_update,
 	.irq_callback_set = uart_qmsi_irq_callback_set,
-#endif /* CONFIG_UART_INTERRUPT_DRIVE */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_LINE_CTRL
 	.line_ctrl_set = uart_qmsi_line_ctrl_set,
-#endif /* CONFIG_UART_LINE_CTR */
+#endif /* CONFIG_UART_LINE_CTRL */
 
 #ifdef CONFIG_UART_DRV_CMD
 	.drv_cmd = uart_qmsi_drv_cmd,
