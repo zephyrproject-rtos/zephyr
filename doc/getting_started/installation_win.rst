@@ -46,7 +46,7 @@ following packages with their installler `mingw-get-setup.exe`:
 * msys-w32api
 
 Launch the `MSYS console`. The installer does not create shortcuts for you,
-but the script to launch it is in :file:`C:\MinGW\msys\1.0\msys.bat.`.
+but the script to launch it is in :file:`C:\\MinGW\\msys\\1.0\\msys.bat.`.
 We need the following line in :file:`/etc/fstab`:
 
 .. code-block:: console
@@ -66,14 +66,15 @@ The easiest way to do this is just copy the file :file:`fstab.sample` as
 Configure Python's folder location in the environmental variable :envvar:`PATH`
 and the installation path for MinGW.
 
+.. note:: The format of the path for `PYTHON_PATH` must to be in the
+   linux format. Default installation is in :file:`C:\\python27`,
+   which would be written as :file:`/c/python27/`.
+
 .. code-block:: console
 
+   export PYTHON_PATH=/c/python27
    export PATH=$PATH:${PYTHON_PATH}
-   export MINGW_DIR=C:/MinGW
-
-.. note:: The format of the path for this variable (PYTHON_PATH) must to be in
-   the linux format. For example, :file:`C:\python27` would be written as
-   :file:`/c/python27/`.
+   export MINGW_DIR=/c/MinGW
 
 GNU Regex C library
 ===================
