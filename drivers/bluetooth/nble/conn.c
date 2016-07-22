@@ -414,6 +414,7 @@ static void notify_connected(struct bt_conn *conn)
 	/* TODO: Add l2cap_connected callback if needed */
 
 	bt_smp_connected(conn);
+	bt_gatt_connected(conn);
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->connected) {

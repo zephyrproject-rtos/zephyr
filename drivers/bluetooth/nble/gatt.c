@@ -498,6 +498,8 @@ static int notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	BT_DBG("");
 
+	nano_sem_take(&conn->gatt_notif_sem, TICKS_UNLIMITED);
+
 	notif.params.conn_handle = conn->handle;
 	notif.params.attr = attr;
 	notif.params.offset = 0;
@@ -510,8 +512,28 @@ static int notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 void on_nble_gatts_notify_tx_evt(const struct nble_gatts_notify_tx_evt *evt)
 {
+	struct bt_conn *conn;
+
+	if (evt->status) {
+		BT_ERR("status %d", evt->status);
+		/**
+		 * Continue since we get non zero status shen we
+		 * unsubscribe from notifications
+		 */
+	}
+
 	BT_DBG("conn handle %u status %d attr %p", evt->conn_handle,
 	       evt->status, evt->attr);
+
+	conn = bt_conn_lookup_handle(evt->conn_handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn, handle 0x%04x", evt->conn_handle);
+		return;
+	}
+
+	nano_sem_give(&conn->gatt_notif_sem);
+
+	bt_conn_unref(conn);
 }
 
 static int indicate(struct bt_conn *conn,
@@ -1563,6 +1585,14 @@ void bt_gatt_init(void)
 	nano_fifo_init(&queue);
 	net_buf_pool_init(prep_pool);
 #endif
+}
+
+void bt_gatt_connected(struct bt_conn *conn)
+{
+	nano_sem_init(&conn->gatt_notif_sem);
+
+	/* Allow to send first notification */
+	nano_sem_give(&conn->gatt_notif_sem);
 }
 
 void bt_gatt_disconnected(struct bt_conn *conn)
