@@ -157,7 +157,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 		       sizeof(struct in6_addr));
 	}
 #else
-	if (local_addr->in_addr.s_addr == INADDR_ANY) {
+	if (local_addr->in_addr.s_addr[0] == INADDR_ANY) {
 		uip_gethostaddr((uip_ipaddr_t *)&local_addr->in_addr);
 	}
 #endif
