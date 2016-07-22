@@ -28,6 +28,7 @@
 #include "gpio_api_compat.h"
 #include "qm_isr.h"
 #include "clk.h"
+#include <power.h>
 
 struct gpio_qmsi_config {
 	qm_gpio_t gpio;
@@ -88,11 +89,54 @@ static struct gpio_qmsi_config gpio_0_config = {
 
 static struct gpio_qmsi_runtime gpio_0_runtime;
 
-DEVICE_INIT(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
-	    &gpio_0_runtime, &gpio_0_config,
-	    SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
-GPIO_SETUP_COMPAT_DEV(gpio_0);
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+QM_RW uint32_t save_reg[10];
+static uint32_t int_gpio_mask_save;
 
+static int gpio_suspend_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		int_gpio_mask_save = REG_VAL(&QM_SCSS_INT->int_gpio_mask);
+		save_reg[0] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_dr);
+		save_reg[1] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ddr);
+		save_reg[2] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ctl);
+		save_reg[3] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inten);
+		save_reg[4] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_intmask);
+		save_reg[5] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inttype_level);
+		save_reg[6] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_polarity);
+		save_reg[7] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_debounce);
+		save_reg[8] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_ls_sync);
+		save_reg[9] = REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_bothedge);
+	}
+	return 0;
+}
+
+static int gpio_resume_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_dr) = save_reg[0];
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ddr) = save_reg[1];
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_swporta_ctl) = save_reg[2];
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inten) = save_reg[3];
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_intmask) = save_reg[4];
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_inttype_level) = save_reg[5];
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_polarity) = save_reg[6];
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_debounce) = save_reg[7];
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_ls_sync) = save_reg[8];
+		REG_VAL(&QM_GPIO[QM_GPIO_0]->gpio_int_bothedge) = save_reg[9];
+		REG_VAL(&QM_SCSS_INT->int_gpio_mask) = int_gpio_mask_save;
+	}
+	return 0;
+}
+#endif
+
+DEFINE_DEVICE_PM_OPS(gpio, gpio_suspend_device, gpio_resume_device);
+
+DEVICE_INIT_PM(gpio_0, CONFIG_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
+		DEVICE_PM_OPS_GET(gpio), &gpio_0_runtime, &gpio_0_config,
+		SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
+
+GPIO_SETUP_COMPAT_DEV(gpio_0);
 #endif /* CONFIG_GPIO_QMSI_0 */
 
 #ifdef CONFIG_GPIO_QMSI_AON
@@ -103,9 +147,34 @@ static struct gpio_qmsi_config gpio_aon_config = {
 
 static struct gpio_qmsi_runtime gpio_aon_runtime;
 
-DEVICE_INIT(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
-	    &gpio_aon_runtime, &gpio_aon_config,
-	    SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static uint32_t int_gpio_aon_mask_save;
+
+static int gpio_aon_suspend_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		int_gpio_aon_mask_save =
+				REG_VAL(&QM_SCSS_INT->int_aon_gpio_mask);
+	}
+	return 0;
+}
+
+static int gpio_aon_resume_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		REG_VAL(&QM_SCSS_INT->int_aon_gpio_mask) =
+				int_gpio_aon_mask_save;
+	}
+	return 0;
+}
+#endif
+
+DEFINE_DEVICE_PM_OPS(gpio_aon, gpio_aon_suspend_device, gpio_aon_resume_device);
+
+DEVICE_INIT_PM(gpio_aon, CONFIG_GPIO_QMSI_AON_NAME, &gpio_qmsi_init,
+	       DEVICE_PM_OPS_GET(gpio_aon), &gpio_aon_runtime,
+	       &gpio_aon_config, SECONDARY, CONFIG_GPIO_QMSI_INIT_PRIORITY);
 GPIO_SETUP_COMPAT_DEV(gpio_aon);
 
 #endif /* CONFIG_GPIO_QMSI_AON */
