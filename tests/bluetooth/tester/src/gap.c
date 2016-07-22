@@ -31,9 +31,6 @@
 #define CONTROLLER_INDEX 0
 #define CONTROLLER_NAME "btp_tester"
 
-/* TODO add api for reading real address */
-#define CONTROLLER_ADDR (&(bt_addr_t) {{1, 2, 3, 4, 5, 6}})
-
 static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
 
@@ -113,10 +110,22 @@ static void controller_index_list(uint8_t *data,  uint16_t len)
 static void controller_info(uint8_t *data, uint16_t len)
 {
 	struct gap_read_controller_info_rp rp;
+	struct bt_le_oob oob;
 	uint32_t supported_settings;
 
 	memset(&rp, 0, sizeof(rp));
-	memcpy(rp.address, CONTROLLER_ADDR, sizeof(bt_addr_t));
+
+	bt_le_oob_get_local(&oob);
+	memcpy(rp.address, &oob.addr.a, sizeof(bt_addr_t));
+	/*
+	 * If privacy is used, the device uses random type address, otherwise
+	 * static random or public type address is used.
+	 */
+#if !defined(CONFIG_BLUETOOTH_PRIVACY)
+	if (oob.addr.type == BT_ADDR_LE_RANDOM) {
+		atomic_set_bit(&current_settings, GAP_SETTINGS_STATIC_ADDRESS);
+	}
+#endif /* CONFIG_BLUETOOTH_PRIVACY */
 
 	supported_settings = BIT(GAP_SETTINGS_POWERED);
 	supported_settings |= BIT(GAP_SETTINGS_CONNECTABLE);
