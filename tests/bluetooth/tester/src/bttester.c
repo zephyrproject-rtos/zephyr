@@ -210,7 +210,8 @@ void tester_init(void)
 	uart_pipe_register(nano_fifo_get(&avail_queue, TICKS_NONE),
 			   BTP_MTU, recv_cb);
 
-	printk("BT tester initialized\n");
+	tester_send(BTP_SERVICE_ID_CORE, CORE_EV_IUT_READY, BTP_INDEX_NONE,
+		    NULL, 0);
 }
 
 void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,

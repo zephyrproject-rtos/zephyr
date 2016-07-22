@@ -64,6 +64,9 @@ struct core_register_service_cmd {
 	uint8_t id;
 } __packed;
 
+/* events */
+#define CORE_EV_IUT_READY		0x80
+
 /* GAP Service */
 /* commands */
 #define GAP_READ_SUPPORTED_COMMANDS	0x01
