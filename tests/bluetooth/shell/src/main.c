@@ -44,8 +44,6 @@
 
 #define DEVICE_NAME		"test shell"
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
-#define AD_SHORT_NAME		0x08
-#define AD_COMPLETE_NAME	0x09
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)
 #define DATA_BREDR_MTU		48
@@ -112,8 +110,8 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 
 		type = net_buf_simple_pull_u8(buf);
 		switch (type) {
-		case AD_SHORT_NAME:
-		case AD_COMPLETE_NAME:
+		case BT_DATA_NAME_SHORTENED:
+		case BT_DATA_NAME_COMPLETE:
 			if (len > sizeof(name) - 1) {
 				memcpy(name, buf->data, sizeof(name) - 1);
 			} else {
@@ -1581,8 +1579,8 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi,
 		}
 
 		switch (eir[1]) {
-		case AD_SHORT_NAME:
-		case AD_COMPLETE_NAME:
+		case BT_DATA_NAME_SHORTENED:
+		case BT_DATA_NAME_COMPLETE:
 			if (eir[0] > sizeof(name) - 1) {
 				memcpy(name, &eir[2], sizeof(name) - 1);
 			} else {
