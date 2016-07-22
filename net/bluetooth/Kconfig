@@ -208,17 +208,6 @@ config BLUETOOTH_SMP_SC_ONLY
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
 
-config BLUETOOTH_TINYCRYPT_ECC
-	bool "Use TinyCrypt library for LE SC ECDH"
-	default n
-	select TINYCRYPT_ECC_DH
-	depends on MICROKERNEL
-	help
-	  If this option is set TinyCrypt library is also used for LE Secure
-	  Connections elliptic curve Diffie-Hellman key agreement. If not set
-	  controller crypto is used for ECDH and if controller doesn't support
-	  required HCI commands LE Secure Connections support will be disabled.
-
 config	BLUETOOTH_USE_DEBUG_KEYS
 	bool "Enable Security Manager Debug Mode"
 	default n
@@ -269,6 +258,18 @@ config	BLUETOOTH_MAX_PAIRED
 	  default) number is 1.
 
 endif # BLUETOOTH_CONN
+
+config BLUETOOTH_TINYCRYPT_ECC
+	bool "Use TinyCrypt library for ECDH"
+	default n
+	select TINYCRYPT_ECC_DH
+	depends on MICROKERNEL
+	help
+	  If this option is set TinyCrypt library is used for emulating the
+	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
+	  If not set controller crypto is used for ECDH and if
+	  controller doesn't support required HCI commands LE Secure
+	  Connections support will be disabled.
 
 endif # BLUETOOTH_LE
 
