@@ -41,7 +41,7 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, rtx_work)
+#define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, chan.rtx_work)
 
 #define L2CAP_LE_MIN_MTU		23
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_IN_COUNT - 1)
@@ -266,7 +266,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
-	nano_delayed_work_init(&ch->rtx_work, l2cap_rtx_timeout);
+	nano_delayed_work_init(&chan->rtx_work, l2cap_rtx_timeout);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
@@ -545,7 +545,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", ch, ch->rx.cid);
 
 	/* Cancel ongoing work */
-	nano_delayed_work_cancel(&ch->rtx_work);
+	nano_delayed_work_cancel(&chan->rtx_work);
 
 	/* There could be a writer waiting for credits so return a dummy credit
 	 * to wake it up.
@@ -793,7 +793,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		l2cap_chan_rx_give_credits(chan, L2CAP_LE_MAX_CREDITS);
 
 		/* Cancel RTX work */
-		nano_delayed_work_cancel(&chan->rtx_work);
+		nano_delayed_work_cancel(&chan->chan.rtx_work);
 
 		break;
 	/* TODO: Retry on Authentication and Encryption errors */
@@ -1258,9 +1258,9 @@ static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
 	 * link is lost.
 	 */
 	if (ticks) {
-		nano_delayed_work_submit(&chan->rtx_work, ticks);
+		nano_delayed_work_submit(&chan->chan.rtx_work, ticks);
 	} else {
-		nano_delayed_work_cancel(&chan->rtx_work);
+		nano_delayed_work_cancel(&chan->chan.rtx_work);
 	}
 
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
