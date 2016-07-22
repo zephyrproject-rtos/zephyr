@@ -569,6 +569,9 @@ static void tester_init_gap_cb(int err)
 	atomic_set_bit(&current_settings, GAP_SETTINGS_CONNECTABLE);
 	atomic_set_bit(&current_settings, GAP_SETTINGS_BONDABLE);
 	atomic_set_bit(&current_settings, GAP_SETTINGS_LE);
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+	atomic_set_bit(&current_settings, GAP_SETTINGS_PRIVACY);
+#endif /* CONFIG_BLUETOOTH_PRIVACY */
 
 	bt_conn_cb_register(&conn_callbacks);
 
