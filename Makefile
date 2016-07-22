@@ -600,7 +600,7 @@ KBUILD_CFLAGS += $(call cc-option,-fno-reorder-blocks,) \
 endif
 
 ifeq ($(CONFIG_DEBUG),y)
-KBUILD_CFLAGS  += -O0
+KBUILD_CFLAGS  += -Og
 else
 KBUILD_CFLAGS  += -Os
 endif
