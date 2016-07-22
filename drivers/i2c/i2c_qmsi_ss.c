@@ -220,13 +220,7 @@ static int i2c_qmsi_ss_transfer(struct device *dev, struct i2c_msg *msgs,
 {
 	struct i2c_qmsi_ss_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
-	qm_ss_i2c_status_t status;
 	int rc;
-
-	qm_ss_i2c_get_status(instance, &status);
-	if (status != QM_I2C_IDLE) {
-		return -EBUSY;
-	}
 
 	if  (msgs == NULL || num_msgs == 0) {
 		return -ENOTSUP;
