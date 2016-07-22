@@ -4010,6 +4010,7 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 	 */
 	if (!(bt_dev.supported_commands[34] & 0x02) ||
 	    !(bt_dev.supported_commands[34] & 0x04)) {
+		BT_WARN("ECC HCI commands not available");
 		return -ENOTSUP;
 	}
 
