@@ -94,6 +94,8 @@ struct gap_read_controller_index_list_rp {
 #define GAP_SETTINGS_SC			11
 #define GAP_SETTINGS_DEBUG_KEYS		12
 #define GAP_SETTINGS_PRIVACY		13
+#define GAP_SETTINGS_CONTROLLER_CONFIG	14
+#define GAP_SETTINGS_STATIC_ADDRESS	15
 
 #define GAP_READ_CONTROLLER_INFO	0x03
 struct gap_read_controller_info_rp {
