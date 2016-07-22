@@ -2,7 +2,7 @@ Title: Quark Always-on counter and timer test app
 
 Description:
 
-A simple test app to test the AON counter and timer for quark d2000.
+A simple test app to test the AON counter and timer for quark d2000 and Quark SE.
 
 --------------------------------------------------------------------------------
 
@@ -11,15 +11,6 @@ Building and Running Project:
     make BOARD=quark_d2000_crb
 
 --------------------------------------------------------------------------------
-
-Important note:
-
-This sample app requires QMSI lib which is not in the repo yet.
-User needs to get the QMSI source code and compile it with command
-like the following.
-make SOC=quark_d2000 libqmsi
-Then, copy the directory "libqmsi" to the ZEPHYR base directory.
-
 Sample Output:
 
 Always-on counter example app
