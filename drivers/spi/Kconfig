@@ -267,4 +267,6 @@ source "drivers/spi/Kconfig.mcux_dspi"
 
 source "drivers/spi/Kconfig.nrf5"
 
+source "drivers/spi/Kconfig.pl022"
+
 endif # SPI

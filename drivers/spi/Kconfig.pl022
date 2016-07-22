@@ -1,0 +1,139 @@
+#
+# Copyright (c) 2016 Linaro Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SPI_PL022
+	bool
+	prompt "ARM PrimeCell Synchronous Serial Port (PL022)"
+	depends on SPI && ARM
+	default n
+	help
+	  Enable support for ARM's PrimeCell Synchronous Serial Port.
+
+# ---------- Port 0 ----------
+
+menuconfig SPI_PL022_0
+	bool "Enable PL022 SPI device 0"
+	default n
+	depends on SPI_PL022
+	help
+	  This tells the driver to configure the SPI device at boot, depending
+	  on the additional configure options below.
+
+config SPI_PL022_0_NAME
+	string "PL022 SPI device 0 Device Name"
+	default "SPI_0"
+	depends on SPI_PL022_0
+	help
+	  This is the device name for the SPI device, and is included in the
+	  device struct.
+
+config SPI_PL022_0_IRQ_PRI
+	int "PL022 SPI device 0 Interrupt Priority"
+	default 0
+	depends on SPI_PL022_0
+	help
+	  The interrupt priority for the SPI device.
+
+# ---------- Port 1 ----------
+
+menuconfig SPI_PL022_1
+	bool "Enable PL022 SPI device 1"
+	default n
+	depends on SPI_PL022
+	help
+	  This tells the driver to configure the SPI device at boot, depending
+	  on the additional configure options below.
+
+config SPI_PL022_1_NAME
+	string "PL022 SPI device 1 Device Name"
+	default "SPI_1"
+	depends on SPI_PL022_1
+	help
+	  This is the device name for the SPI device, and is included in the
+	  device struct.
+
+config SPI_PL022_1_IRQ_PRI
+	int "PL022 SPI device 1 Interrupt Priority"
+	default 0
+	depends on SPI_PL022_1
+	help
+	  The interrupt priority for the SPI device.
+
+# ---------- Port 2 ----------
+
+menuconfig SPI_PL022_2
+	bool "Enable PL022 SPI device 2"
+	default n
+	depends on SPI_PL022
+	help
+	  This tells the driver to configure the SPI device at boot, depending
+	  on the additional configure options below.
+
+config SPI_PL022_2_NAME
+	string "PL022 SPI device 2 Device Name"
+	default "SPI_2"
+	depends on SPI_PL022_2
+	help
+	  This is the device name for the SPI device, and is included in the
+	  device struct.
+
+config SPI_PL022_2_IRQ_PRI
+	int "PL022 SPI device 2 Interrupt Priority"
+	default 0
+	depends on SPI_PL022_2
+	help
+	  The interrupt priority for the SPI device.
+
+# ---------- Port 3 ----------
+
+menuconfig SPI_PL022_3
+	bool "Enable PL022 SPI device 3"
+	default n
+	depends on SPI_PL022
+	help
+	  This tells the driver to configure the SPI device at boot, depending
+	  on the additional configure options below.
+
+config SPI_PL022_3_NAME
+	string "PL022 SPI device 3 Device Name"
+	default "SPI_3"
+	depends on SPI_PL022_3
+	help
+	  This is the device name for the SPI device, and is included in the
+	  device struct.
+
+config SPI_PL022_3_IRQ_PRI
+	int "PL022 SPI device 3 Interrupt Priority"
+	default 0
+	depends on SPI_PL022_3
+	help
+	  The interrupt priority for the SPI device.
+
+# ---------- Port 4 ----------
+
+menuconfig SPI_PL022_4
+	bool "Enable PL022 SPI device 4"
+	default n
+	depends on SPI_PL022
+	help
+	  This tells the driver to configure the SPI device at boot, depending
+	  on the additional configure options below.
+
+config SPI_PL022_4_NAME
+	string "PL022 SPI device 4 Device Name"
+	default "SPI_4"
+	depends on SPI_PL022_4
+	help
+	  This is the device name for the SPI device, and is included in the
+	  device struct.
+
+config SPI_PL022_4_IRQ_PRI
+	int "PL022 SPI device 4 Interrupt Priority"
+	default 0
+	depends on SPI_PL022_4
+	help
+	  The interrupt priority for the SPI device.
+
