@@ -91,6 +91,8 @@ static int uart_resume_device(struct device *dev, int pm_policy)
 }
 #endif
 
+DEFINE_DEVICE_PM_OPS(uart, device_pm_nop, uart_resume_device);
+
 #ifdef CONFIG_UART_QMSI_0
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_0(struct device *dev);
@@ -113,8 +115,6 @@ static struct uart_qmsi_config_info config_info_0 = {
 };
 
 static struct uart_qmsi_drv_data drv_data_0;
-
-DEFINE_DEVICE_PM_OPS(uart, device_pm_nop, uart_resume_device);
 
 DEVICE_INIT_PM(uart_0, CONFIG_UART_QMSI_0_NAME, &uart_qmsi_init,
 	       DEVICE_PM_OPS_GET(uart), &drv_data_0, &config_info_0, PRIMARY,
