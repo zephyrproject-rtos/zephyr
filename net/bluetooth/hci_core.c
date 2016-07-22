@@ -4107,9 +4107,9 @@ int bt_le_oob_get_local(struct bt_le_oob *oob)
 		return err;
 	}
 
-	bt_addr_le_copy(&oob->connectable_addr, &bt_dev.random_addr);
+	bt_addr_le_copy(&oob->addr, &bt_dev.random_addr);
 #else
-	bt_addr_le_copy(&oob->connectable_addr, &bt_dev.id_addr);
+	bt_addr_le_copy(&oob->addr, &bt_dev.id_addr);
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
 
 	return 0;

@@ -258,10 +258,10 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 int bt_le_scan_stop(void);
 
 struct bt_le_oob {
-	/** LE connectable address. If local privacy is enabled this is
-	 * Resolvable Private Address.
+	/** LE address. If local privacy is enabled this is Resolvable Private
+	 *  Address.
 	 */
-	bt_addr_le_t connectable_addr;
+	bt_addr_le_t addr;
 };
 
 /**

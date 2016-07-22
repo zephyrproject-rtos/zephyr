@@ -669,7 +669,7 @@ static int cmd_oob(int argc, char *argv[])
 		return 0;
 	}
 
-	bt_addr_le_to_str(&oob.connectable_addr, addr, sizeof(addr));
+	bt_addr_le_to_str(&oob.addr, addr, sizeof(addr));
 
 	printk("OOB data:\n");
 	printk("  addr %s\n", addr);

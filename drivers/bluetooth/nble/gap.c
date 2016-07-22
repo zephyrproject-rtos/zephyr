@@ -398,7 +398,7 @@ int bt_storage_clear(bt_addr_le_t *addr)
 
 int bt_le_oob_get_local(struct bt_le_oob *oob)
 {
-	bt_addr_le_copy(&oob->connectable_addr, &nble.addr);
+	bt_addr_le_copy(&oob->addr, &nble.addr);
 
 	return 0;
 }
