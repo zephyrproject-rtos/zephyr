@@ -490,7 +490,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
-	BT_DBG("chan %p cid 0x%04x", chan->conn, ch, ch->rx.cid);
+	BT_DBG("chan %p cid 0x%04x", ch, ch->rx.cid);
 
 	/* Cancel ongoing work */
 	nano_delayed_work_cancel(&ch->rtx_work);
