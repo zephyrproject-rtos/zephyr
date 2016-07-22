@@ -130,6 +130,16 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+Events:
+	Opcode 0x80 - IUT ready event
+
+		Controller Index:	<non-controller>
+		Event parameters:	<none>
+
+		This event indicates that IUT has been initialized and is ready to
+		receive BTP commands.
+		Tester shall wait for this event before sending any command to the IUT.
+
 GAP Service (ID 1)
 ==================
 
