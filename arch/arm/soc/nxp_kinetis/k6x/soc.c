@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
+ * Copyright (c) 2016, Freescale Semiconductor, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +27,9 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <drivers/k20_mcg.h>
 #include <uart.h>
-#include <drivers/k20_pcr.h>
-#include <drivers/k20_sim.h>
-#include <drivers/k6x_mpu.h>
-#include <drivers/k6x_pmc.h>
 #include <sections.h>
-
+#include <fsl_common.h>
 #include <arch/cpu.h>
 
 
@@ -42,6 +38,19 @@
 
 /* board's setting for PLL multipler (VDIV0) */
 #define FRDM_K64F_PLL_MULT_48 (48 - 24)
+
+/* MCG register field encodings */
+#define MCG_C1_CLKS_FLL_PLL	(MCG_C1_CLKS(0))
+#define MCG_C1_CLKS_EXT_REF	(MCG_C1_CLKS(2))
+#define MCG_C1_FRDIV_32_1024	(MCG_C1_FRDIV(5))
+#define MCG_C1_IREFS_EXT	(MCG_C1_IREFS(0))
+#define MCG_C2_RANGE_VHIGH	(MCG_C2_RANGE(2))
+#define MCG_C2_HGO_LO_PWR	(MCG_C2_HGO(0))
+#define MCG_C2_EREFS_EXT_CLK	(MCG_C2_EREFS(0))
+#define MCG_C6_PLLS_PLL		(MCG_C6_PLLS(1))
+#define MCG_C7_OSCSEL_OSC0	(MCG_C7_OSCSEL(0))
+#define MCG_S_CLKST_EXT_REF	(MCG_S_CLKST(2))
+#define MCG_S_CLKST_PLL		(MCG_S_CLKST(3))
 
 /*
  * K64F Flash configuration fields
@@ -94,7 +103,6 @@ uint8_t __security_frdm_k64f_section __security_frdm_k64f[] = {
 static ALWAYS_INLINE void clkInit(void)
 {
 	uint8_t temp_reg;
-	K20_MCG_t *mcg_p = (K20_MCG_t *)PERIPH_ADDR_BASE_MCG; /* clk gen. ctl */
 
 	/*
 	 * Select the 50 Mhz external clock as the MCG OSC clock.
@@ -102,9 +110,9 @@ static ALWAYS_INLINE void clkInit(void)
 	 * - Select OSCCLK0 / XTAL
 	 */
 
-	temp_reg = mcg_p->c7 & ~MCG_C7_OSCSEL_MASK;
+	temp_reg = MCG->C7 & ~MCG_C7_OSCSEL_MASK;
 	temp_reg |= MCG_C7_OSCSEL_OSC0;
-	mcg_p->c7 = temp_reg;
+	MCG->C7 = temp_reg;
 
 	/*
 	 * Transition MCG from FEI mode (at reset) to FBE mode.
@@ -118,13 +126,13 @@ static ALWAYS_INLINE void clkInit(void)
 	 * - Select external reference clock as the oscillator source
 	 */
 
-	temp_reg = mcg_p->c2 &
+	temp_reg = MCG->C2 &
 		   ~(MCG_C2_RANGE_MASK | MCG_C2_HGO_MASK | MCG_C2_EREFS_MASK);
 
 	temp_reg |=
 		(MCG_C2_RANGE_VHIGH | MCG_C2_HGO_LO_PWR | MCG_C2_EREFS_EXT_CLK);
 
-	mcg_p->c2 = temp_reg;
+	MCG->C2 = temp_reg;
 
 	/*
 	 * MCG Control 1 register:
@@ -140,20 +148,20 @@ static ALWAYS_INLINE void clkInit(void)
 	 *
 	 */
 
-	temp_reg = mcg_p->c1 &
+	temp_reg = MCG->C1 &
 		   ~(MCG_C1_CLKS_MASK | MCG_C1_FRDIV_MASK | MCG_C1_IREFS_MASK);
 
 	temp_reg |=
 		(MCG_C1_CLKS_EXT_REF | MCG_C1_FRDIV_32_1024 | MCG_C1_IREFS_EXT);
 
-	mcg_p->c1 = temp_reg;
+	MCG->C1 = temp_reg;
 
 	/*
 	 * Confirm that the external reference clock is the FLL reference
 	 * source
 	 */
 
-	while ((mcg_p->s & MCG_S_IREFST_MASK) != 0)
+	while ((MCG->S & MCG_S_IREFST_MASK) != 0)
 		;
 	;
 
@@ -162,7 +170,7 @@ static ALWAYS_INLINE void clkInit(void)
 	 * (MCGOUTCLK)
 	 */
 
-	while ((mcg_p->s & MCG_S_CLKST_MASK) != MCG_S_CLKST_EXT_REF)
+	while ((MCG->S & MCG_S_CLKST_MASK) != MCG_S_CLKST_EXT_REF)
 		;
 	;
 
@@ -181,11 +189,11 @@ static ALWAYS_INLINE void clkInit(void)
 	 * - Set the PLL divider
 	 */
 
-	temp_reg = mcg_p->c5 & ~MCG_C5_PRDIV0_MASK;
+	temp_reg = MCG->C5 & ~MCG_C5_PRDIV0_MASK;
 
 	temp_reg |= FRDM_K64F_PLL_DIV_20;
 
-	mcg_p->c5 = temp_reg;
+	MCG->C5 = temp_reg;
 
 	/*
 	 * MCG Control 6 register:
@@ -193,21 +201,21 @@ static ALWAYS_INLINE void clkInit(void)
 	 * - Set the PLL multiplier
 	 */
 
-	temp_reg = mcg_p->c6 & ~(MCG_C6_PLLS_MASK | MCG_C6_VDIV0_MASK);
+	temp_reg = MCG->C6 & ~(MCG_C6_PLLS_MASK | MCG_C6_VDIV0_MASK);
 
 	temp_reg |= (MCG_C6_PLLS_PLL | FRDM_K64F_PLL_MULT_48);
 
-	mcg_p->c6 = temp_reg;
+	MCG->C6 = temp_reg;
 
 	/* Confirm that the PLL clock is selected as the PLL output */
 
-	while ((mcg_p->s & MCG_S_PLLST_MASK) == 0)
+	while ((MCG->S & MCG_S_PLLST_MASK) == 0)
 		;
 	;
 
 	/* Confirm that the PLL has acquired lock */
 
-	while ((mcg_p->s & MCG_S_LOCK0_MASK) == 0)
+	while ((MCG->S & MCG_S_LOCK0_MASK) == 0)
 		;
 	;
 
@@ -217,15 +225,15 @@ static ALWAYS_INLINE void clkInit(void)
 	 * - Select PLL as the system clock source (MCGOUTCLK)
 	 */
 
-	temp_reg = mcg_p->c1 & ~MCG_C1_CLKS_MASK;
+	temp_reg = MCG->C1 & ~MCG_C1_CLKS_MASK;
 
 	temp_reg |= MCG_C1_CLKS_FLL_PLL;
 
-	mcg_p->c1 = temp_reg;
+	MCG->C1 = temp_reg;
 
 	/* Confirm that the PLL output is the system clock source (MCGOUTCLK) */
 
-	while ((mcg_p->s & MCG_S_CLKST_MASK) != MCG_S_CLKST_PLL)
+	while ((MCG->S & MCG_S_CLKST_MASK) != MCG_S_CLKST_PLL)
 		;
 	;
 }
@@ -244,17 +252,6 @@ static ALWAYS_INLINE void clkInit(void)
 static int fsl_frdm_k64f_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
-	/* System Integration module */
-	volatile struct K20_SIM *sim_p =
-		(volatile struct K20_SIM *)PERIPH_ADDR_BASE_SIM;
-
-	/* Power Mgt Control module */
-	volatile struct K6x_PMC *pmc_p =
-		(volatile struct K6x_PMC *)PERIPH_ADDR_BASE_PMC;
-
-	/* Power Mgt Control module */
-	volatile struct K6x_MPU *mpu_p =
-		(volatile struct K6x_MPU *)PERIPH_ADDR_BASE_MPU;
 
 	int oldLevel; /* old interrupt lock level */
 	uint32_t temp_reg;
@@ -263,12 +260,12 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	oldLevel = irq_lock();
 
 	/* enable the port clocks */
-	sim_p->scgc5.value |= (SIM_SCGC5_PORTA_CLK_EN | SIM_SCGC5_PORTB_CLK_EN |
-			       SIM_SCGC5_PORTC_CLK_EN | SIM_SCGC5_PORTD_CLK_EN |
-			       SIM_SCGC5_PORTE_CLK_EN);
+	SIM->SCGC5 |= (SIM_SCGC5_PORTA(1) | SIM_SCGC5_PORTB(1) |
+			       SIM_SCGC5_PORTC(1) | SIM_SCGC5_PORTD(1) |
+			       SIM_SCGC5_PORTE(1));
 
 	/* release I/O power hold to allow normal run state */
-	pmc_p->regsc.value |= PMC_REGSC_ACKISO_MASK;
+	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
 
 	/*
 	 * Disable memory protection and clear slave port errors.
@@ -276,10 +273,10 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	 * protection unit (MPU), specified by the architecture (PMSAv7), in the
 	 * Cortex-M4 core.  Instead, the processor includes its own MPU module.
 	 */
-	temp_reg = mpu_p->ctrlErrStatus.value;
-	temp_reg &= ~MPU_VALID_MASK;
-	temp_reg |= MPU_SLV_PORT_ERR_MASK;
-	mpu_p->ctrlErrStatus.value = temp_reg;
+	temp_reg = MPU->CESR;
+	temp_reg &= ~MPU_CESR_VLD_MASK;
+	temp_reg |= MPU_CESR_SPERR_MASK;
+	MPU->CESR = temp_reg;
 
 	/* clear all faults */
 
@@ -296,15 +293,11 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	 * FlexBus clock = 40 MHz (PLL/OUTDIV3)
 	 * Flash clock = 24 MHz (PLL/OUTDIV4)
 	 */
-	sim_p->clkdiv1.value = (
-		(SIM_CLKDIV(CONFIG_K64_CORE_CLOCK_DIVIDER) <<
-			SIM_CLKDIV1_OUTDIV1_SHIFT) |
-		(SIM_CLKDIV(CONFIG_K64_BUS_CLOCK_DIVIDER) <<
-			SIM_CLKDIV1_OUTDIV2_SHIFT) |
-		(SIM_CLKDIV(CONFIG_K64_FLEXBUS_CLOCK_DIVIDER) <<
-			SIM_CLKDIV1_OUTDIV3_SHIFT) |
-		(SIM_CLKDIV(CONFIG_K64_FLASH_CLOCK_DIVIDER) <<
-			SIM_CLKDIV1_OUTDIV4_SHIFT));
+	SIM->CLKDIV1 = (
+		SIM_CLKDIV1_OUTDIV1(CONFIG_K64_CORE_CLOCK_DIVIDER - 1) |
+		SIM_CLKDIV1_OUTDIV2(CONFIG_K64_BUS_CLOCK_DIVIDER - 1) |
+		SIM_CLKDIV1_OUTDIV3(CONFIG_K64_FLEXBUS_CLOCK_DIVIDER - 1) |
+		SIM_CLKDIV1_OUTDIV4(CONFIG_K64_FLASH_CLOCK_DIVIDER - 1));
 
 	/* Initialize PLL/system clock to 120 MHz */
 	clkInit();
