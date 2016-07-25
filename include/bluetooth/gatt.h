@@ -746,12 +746,15 @@ typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
 
 /** @brief Exchange MTU
  *
- * This client procedure can be used to set the MTU to the maximum possible
- * size the buffers can hold.
- * NOTE: Shall only be used once per connection.
+ *  This client procedure can be used to set the MTU to the maximum possible
+ *  size the buffers can hold.
+ *
+ *  NOTE: Shall only be used once per connection.
  *
  *  @param conn Connection object.
  *  @param func Exchange MTU Response callback function.
+ *
+ *  @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func);
 
