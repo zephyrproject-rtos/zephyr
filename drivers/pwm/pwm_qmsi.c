@@ -47,6 +47,53 @@
 /* in micro seconds */
 #define DEFAULT_PERIOD 2000
 
+struct pwm_data {
+	struct nano_sem sem;
+};
+
+#ifdef CONFIG_PWM_QMSI_API_REENTRANCY
+static struct pwm_data pwm_context;
+#define PWM_CONTEXT (&pwm_context)
+static const int reentrancy_protection = 1;
+#else
+#define PWM_CONTEXT (NULL)
+static const int reentrancy_protection;
+#endif /* CONFIG_PWM_QMSI_API_REENTRANCY */
+
+static void pwm_reentrancy_init(struct device *dev)
+{
+	struct pwm_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_init(&context->sem);
+	nano_sem_give(&context->sem);
+}
+
+static void pwm_critical_region_start(struct device *dev)
+{
+	struct pwm_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_take(&context->sem, TICKS_UNLIMITED);
+}
+
+static void pwm_critical_region_end(struct device *dev)
+{
+	struct pwm_data *context = dev->driver_data;
+
+	if (!reentrancy_protection) {
+		return;
+	}
+
+	nano_sem_give(&context->sem);
+}
+
 static uint32_t  pwm_channel_period[CONFIG_PWM_QMSI_NUM_PORTS];
 
 static int pwm_qmsi_configure(struct device *dev, int access_op,
@@ -60,16 +107,20 @@ static int pwm_qmsi_configure(struct device *dev, int access_op,
 	return 0;
 }
 
-static int __set_one_port(qm_pwm_t id, uint32_t pwm, uint32_t on, uint32_t off)
+static int __set_one_port(struct device *dev, qm_pwm_t id, uint32_t pwm,
+				uint32_t on, uint32_t off)
 {
 	qm_pwm_config_t cfg;
+	int ret_val = 0;
+
+	pwm_critical_region_start(dev);
 
 	/* Disable timer to prevent any output */
 	qm_pwm_stop(id, pwm);
 
 	if (on == 0) {
 		/* stop PWM if so specified */
-		return 0;
+		goto pwm_set_port_return;
 	}
 
 	/**
@@ -92,12 +143,17 @@ static int __set_one_port(qm_pwm_t id, uint32_t pwm, uint32_t on, uint32_t off)
 	cfg.lo_count = off;
 
 	if (qm_pwm_set_config(id, pwm, &cfg) != 0) {
-		return -EIO;
+		ret_val = -EIO;
+		goto pwm_set_port_return;
 	}
+
 	/* Enable timer so it starts running and counting */
 	qm_pwm_start(id, pwm);
 
-	return 0;
+pwm_set_port_return:
+	pwm_critical_region_end(dev);
+
+	return ret_val;
 }
 
 /*
@@ -135,11 +191,11 @@ static int pwm_qmsi_set_values(struct device *dev, int access_op,
 		if (pwm >= CONFIG_PWM_QMSI_NUM_PORTS) {
 			return -EIO;
 		}
-		return __set_one_port(QM_PWM_0, pwm, on, off);
+		return __set_one_port(dev, QM_PWM_0, pwm, on, off);
 
 	case PWM_ACCESS_ALL:
 		for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
-			__set_one_port(QM_PWM_0, i, on, off);
+			__set_one_port(dev, QM_PWM_0, i, on, off);
 		}
 	break;
 	default:
@@ -154,6 +210,7 @@ static int pwm_qmsi_set_period(struct device *dev, int access_op,
 				 uint32_t pwm, uint32_t period)
 {
 	uint32_t *channel_period = dev->config->config_info;
+	int ret_val = 0;
 
 	if (channel_period == NULL) {
 		return -EIO;
@@ -163,11 +220,14 @@ static int pwm_qmsi_set_period(struct device *dev, int access_op,
 		return -ENOTSUP;
 	}
 
+	pwm_critical_region_start(dev);
+
 	switch (access_op) {
 	case PWM_ACCESS_BY_PIN:
 		/* make sure the PWM port exists */
 		if (pwm >= CONFIG_PWM_QMSI_NUM_PORTS) {
-			return -EIO;
+			ret_val = -EIO;
+			goto pwm_set_period_return;
 		}
 		channel_period[pwm] = period * HW_CLOCK_CYCLES_PER_USEC;
 		break;
@@ -178,10 +238,13 @@ static int pwm_qmsi_set_period(struct device *dev, int access_op,
 		}
 		break;
 	default:
-		return -ENOTSUP;
+		ret_val = -ENOTSUP;
 	}
 
-	return 0;
+pwm_set_period_return:
+	pwm_critical_region_end(dev);
+
+	return ret_val;
 }
 
 static int pwm_qmsi_set_duty_cycle(struct device *dev, int access_op,
@@ -210,7 +273,7 @@ static int pwm_qmsi_set_duty_cycle(struct device *dev, int access_op,
 			on--;
 			off = 1;
 		}
-		return __set_one_port(QM_PWM_0, pwm, on, off);
+		return __set_one_port(dev, QM_PWM_0, pwm, on, off);
 	case PWM_ACCESS_ALL:
 		for (int i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
 			on = (channel_period[i] * duty) / 100;
@@ -219,7 +282,7 @@ static int pwm_qmsi_set_duty_cycle(struct device *dev, int access_op,
 				on--;
 				off = 1;
 			}
-			if (__set_one_port(QM_PWM_0, i, on, off) != 0) {
+			if (__set_one_port(dev, QM_PWM_0, i, on, off) != 0) {
 				return -EIO;
 			}
 		}
@@ -280,10 +343,13 @@ static int pwm_qmsi_init(struct device *dev)
 	}
 
 	clk_periph_enable(CLK_PERIPH_PWM_REGISTER | CLK_PERIPH_CLK);
+
+	pwm_reentrancy_init(dev);
+
 	return 0;
 }
 
-DEVICE_AND_API_INIT(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init, NULL,
-		    pwm_channel_period, SECONDARY,
+DEVICE_AND_API_INIT(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
+		    PWM_CONTEXT, pwm_channel_period, SECONDARY,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&pwm_qmsi_drv_api_funcs);
