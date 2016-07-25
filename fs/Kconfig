@@ -1,0 +1,67 @@
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menu "File System"
+
+config FILE_SYSTEM
+	bool "File system support"
+	default n
+	help
+	Enables support for file system.
+
+config FILE_SYSTEM_FAT
+	bool "FAT file system support"
+	default y
+	depends on FILE_SYSTEM
+	help
+	Enables FAT file system support.
+
+choice
+	prompt "Select file system storage device"
+	depends on FILE_SYSTEM_FAT
+	default FS_FAT_RAM_DISK
+	help
+	The storage device where the file system
+	resides
+
+config FS_FAT_RAM_DISK
+	bool
+	prompt "RAM Disk"
+	help
+	RAM buffer used to emulate storage disk.
+	This option can used to test the file
+	system.
+
+endchoice
+
+if FS_FAT_RAM_DISK
+
+config FS_VOLUME_SIZE
+	hex
+	default 0x18000
+	help
+	This is the file system volume size in bytes.
+
+config FS_BLOCK_SIZE
+	hex
+	default 0x1000
+	help
+	This is typically the minimum block size that
+	is erased at one time in flash storage.
+
+endif # FS_RAM_DISK
+
+endmenu

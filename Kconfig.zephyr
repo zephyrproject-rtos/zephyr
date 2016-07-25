@@ -32,6 +32,8 @@ source "misc/Kconfig"
 
 source "lib/Kconfig"
 
+source "fs/Kconfig"
+
 source "ext/Kconfig"
 
 source "usb/Kconfig"

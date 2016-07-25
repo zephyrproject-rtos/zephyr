@@ -518,7 +518,7 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 
 # arch/ must be last here so that .gnu.linkonce magic for interrupts/exceptions
 # works as expected
-core-y := lib/ kernel/ misc/ net/ boards/ ext/ usb/ arch/
+core-y := lib/ kernel/ misc/ net/ boards/ ext/ usb/ fs/ arch/
 drivers-y := drivers/
 
 ifneq ($(strip $(MAKEFILE_APP_DIR)),)
