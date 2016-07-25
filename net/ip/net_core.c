@@ -124,7 +124,7 @@ int net_send(struct net_buf *buf)
 	}
 
 	if (buf->len && !uip_appdatalen(buf)) {
-		uip_appdatalen(buf) = buf->len;
+		uip_appdatalen(buf) = ip_buf_appdatalen(buf);
 	}
 
 	switch (sys_execution_context_type_get()) {

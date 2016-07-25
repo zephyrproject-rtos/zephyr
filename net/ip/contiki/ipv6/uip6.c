@@ -1712,9 +1712,6 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
  udp_send:
   PRINTF("In udp_send\n");
 
-  if(uip_slen(buf) == 0) {
-    goto drop;
-  }
   uip_len(buf) = uip_slen(buf) + UIP_IPUDPH_LEN;
 
   /* For IPv6, the IP length field does not include the IPv6 IP header
