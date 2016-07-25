@@ -27,10 +27,14 @@
 #include <arch/arc/v2/aux_regs.h>
 #include <toolchain/common.h>
 #include <irq.h>
+#include <misc/util.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define IRQ_ZERO_LATENCY	BIT(0)
+#define IRQ_NON_MASKABLE	BIT(1)
 
 #ifdef _ASMLANGUAGE
 GTEXT(_irq_exit);

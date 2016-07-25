@@ -58,7 +58,8 @@ extern "C" {
 #include <irq.h>
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void _irq_priority_set(unsigned int irq, unsigned int prio);
+extern void _irq_priority_set(unsigned int irq, unsigned int prio,
+			      uint32_t flags);
 
 /**
  * Configure a static interrupt.
@@ -81,11 +82,20 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
  * 3. The priority level for the interrupt is configured by a call to
  * _irq_priority_set()
  *
+ * Supported flags:
+ *
+ *    IRQ_ZERO_LATENCY - Aka 'firqs'. Cannot make kernel calls due to
+ *                       insufficent context being saved. priority_p argument
+ *                       ignored.
+ *    IRQ_NON_MASKABLE - These high-priority interrupts are not maked when
+ *                       interrupts are locked system-wide. priority_p
+ *                       argument ignored.
+ *
  * @param irq_p IRQ line number
- * @param priority_p Interrupt priority
+ * @param priority_p Interrupt priority, in range 0-13
  * @param isr_p Interrupt service routine
  * @param isr_param_p ISR parameter
- * @param flags_p IRQ triggering options (currently unused)
+ * @param flags_p IRQ options
  *
  * @return The vector assigned to this interrupt
  */
@@ -96,7 +106,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
 		__attribute__ ((used))  \
 		__attribute__ ((section(STRINGIFY(_CONCAT(.gnu.linkonce.isr_irq, irq_p))))) = \
 			{isr_param_p, isr_p}; \
-	_irq_priority_set(irq_p, priority_p); \
+	_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 

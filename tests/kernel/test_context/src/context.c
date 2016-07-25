@@ -60,7 +60,7 @@ This module tests the following CPU and thread related routines:
 #elif defined(CONFIG_ALTERA_AVALON_TIMER)
   #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)
-  #define TICK_IRQ CONFIG_ARCV2_TIMER0_INT_LVL
+  #define TICK_IRQ IRQ_TIMER0
 #elif defined(CONFIG_CPU_CORTEX_M3_M4)
 /*
  * The Cortex-M3/M4 use the SYSTICK exception for the system timer, which is
