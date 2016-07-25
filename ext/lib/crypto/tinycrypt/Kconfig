@@ -1,4 +1,4 @@
-# Kconfig - Cryptography primitive options for TinyCrypt
+# Kconfig - Cryptography primitive options for TinyCrypt version 2.0
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -21,7 +21,16 @@ config TINYCRYPT
 	prompt "Cryptography Support"
 	default n
 	help
-	  This option enables the TinyCrypt cryptography library.
+	This option enables the TinyCrypt cryptography library.
+
+config TINYCRYPT_CTR_PRNG
+	bool
+	prompt "PRNG in counter mode"
+	depends on TINYCRYPT
+	default n
+	help
+	This option enables support for the pseudo-random number
+	generator in counter mode.
 
 config TINYCRYPT_SHA256
 	bool
@@ -29,8 +38,8 @@ config TINYCRYPT_SHA256
 	depends on TINYCRYPT
 	default n
 	help
-	  This option enables support for SHA-256
-	  hash function primitive.
+	This option enables support for SHA-256
+	hash function primitive.
 
 config TINYCRYPT_SHA256_HMAC
 	bool
@@ -38,8 +47,8 @@ config TINYCRYPT_SHA256_HMAC
 	depends on TINYCRYPT_SHA256
 	default n
 	help
-	  This option enables support for HMAC using SHA-256
-	  message authentication code.
+	This option enables support for HMAC using SHA-256
+	message authentication code.
 
 config TINYCRYPT_SHA256_HMAC_PRNG
 	bool
@@ -47,8 +56,8 @@ config TINYCRYPT_SHA256_HMAC_PRNG
 	depends on TINYCRYPT_SHA256_HMAC
 	default n
 	help
-	  This option enables support for pseudo-random number
-	  generator.
+	This option enables support for pseudo-random number
+	generator.
 
 config TINYCRYPT_ECC_DH
 	bool
@@ -56,8 +65,8 @@ config TINYCRYPT_ECC_DH
 	depends on TINYCRYPT
 	default n
 	help
-	  This option enables support for the Elliptic curve
-	  Diffie-Hellman anonymous key agreement protocol.
+	This option enables support for the Elliptic curve
+	Diffie-Hellman anonymous key agreement protocol.
 
 config TINYCRYPT_ECC_DSA
 	bool
@@ -65,8 +74,8 @@ config TINYCRYPT_ECC_DSA
 	depends on TINYCRYPT
 	default n
 	help
-	  This option enables support for the Elliptic Curve Digital
-	  Signature Algorithm (ECDSA).
+	This option enables support for the Elliptic Curve Digital
+	Signature Algorithm (ECDSA).
 
 config TINYCRYPT_AES
 	bool
@@ -74,7 +83,7 @@ config TINYCRYPT_AES
 	depends on TINYCRYPT
 	default n
 	help
-	  This option enables support for AES-128 decrypt and encrypt.
+	This option enables support for AES-128 decrypt and encrypt.
 
 config TINYCRYPT_AES_CBC
 	bool
@@ -82,7 +91,7 @@ config TINYCRYPT_AES_CBC
 	depends on TINYCRYPT_AES
 	default n
 	help
-	  This option enables support for AES-128 block cipher mode.
+	This option enables support for AES-128 block cipher mode.
 
 config TINYCRYPT_AES_CTR
 	bool
@@ -90,7 +99,7 @@ config TINYCRYPT_AES_CTR
 	depends on TINYCRYPT_AES
 	default n
 	help
-	  This option enables support for AES-128 counter mode.
+	This option enables support for AES-128 counter mode.
 
 config TINYCRYPT_AES_CCM
 	bool
@@ -98,7 +107,7 @@ config TINYCRYPT_AES_CCM
 	depends on TINYCRYPT_AES
 	default n
 	help
-	  This option enables support for AES-128 CCM mode.
+	This option enables support for AES-128 CCM mode.
 
 config TINYCRYPT_AES_CMAC
 	bool
@@ -106,4 +115,4 @@ config TINYCRYPT_AES_CMAC
 	depends on TINYCRYPT_AES
 	default n
 	help
-	  This option enables support for AES-128 CMAC mode.
+	This option enables support for AES-128 CMAC mode.
