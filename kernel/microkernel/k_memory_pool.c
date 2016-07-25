@@ -505,9 +505,6 @@ void _k_mem_pool_block_get(struct k_args *A)
 	char *found_block;
 	int offset;
 
-	__ASSERT(A->args.p1.req_size <= P->maxblock_size,
-		 "Request exceeds maximum memory pool block size\n");
-
 	/* locate block set to try allocating from */
 
 	offset = compute_block_set_index(P, A->args.p1.req_size);
