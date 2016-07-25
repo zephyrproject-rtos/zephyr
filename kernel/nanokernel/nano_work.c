@@ -45,6 +45,11 @@ static void workqueue_fiber_main(int arg1, int arg2)
 					     NANO_WORK_STATE_IDLE)) {
 			handler(work);
 		}
+
+		/* Make sure we don't hog up the CPU if the FIFO never (or
+		 * very rarely) gets empty.
+		 */
+		fiber_yield();
 	}
 }
 
