@@ -277,8 +277,8 @@ void EccPoint_mult(EccPointJacobi *p_result, EccPoint *p_point,
 
 /*
  * @brief Convert an integer in standard octet representation to native format.
- * @return returns TC_SUCCESS (1)
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1)
+ *         returns TC_CRYPTO_FAIL (0) if:
  *                out == NULL or
  *                c == NULL or
  *                ((plen > 0) and (payload == NULL)) or
@@ -296,8 +296,8 @@ void ecc_bytes2native(uint32_t p_native[NUM_ECC_DIGITS],
 
 /*
  * @brief Convert an integer in native format to standard octet representation.
- * @return returns TC_SUCCESS (1)
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1)
+ *         returns TC_CRYPTO_FAIL (0) if:
  *                out == NULL or
  *                c == NULL or
  *                ((plen > 0) and (payload == NULL)) or

@@ -77,9 +77,9 @@ int32_t tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k)
 	uint32_t t;
 
 	if (s == (TCAesKeySched_t) 0) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	} else if (k == (const uint8_t *) 0) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	for (i = 0; i < Nk; ++i) {
@@ -95,7 +95,7 @@ int32_t tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k)
 		s->words[i] = s->words[i-Nk] ^ t;
 	}
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }
 
 static inline void add_round_key(uint8_t *s, const uint32_t *k)
@@ -161,11 +161,11 @@ int32_t tc_aes_encrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 	uint32_t i;
 
 	if (out == (uint8_t *) 0) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	} else if (in == (const uint8_t *) 0) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	} else if (s == (TCAesKeySched_t) 0) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	(void)_copy(state, sizeof(state), in, sizeof(state));
@@ -187,5 +187,5 @@ int32_t tc_aes_encrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 	/* zeroing out the state buffer */
 	_set(state, TC_ZERO_BYTE, sizeof(state));
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }

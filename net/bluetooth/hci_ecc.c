@@ -24,6 +24,7 @@
 #include <microkernel/task.h>
 #include <misc/byteorder.h>
 #include <misc/nano_work.h>
+#include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
@@ -80,6 +81,7 @@ static void emulate_le_p256_public_key_cmd(struct net_buf *buf)
 	struct bt_hci_evt_le_meta_event *meta;
 	struct bt_hci_evt_hdr *hdr;
 	EccPoint pkey;
+	int rc;
 
 	BT_DBG();
 
@@ -112,7 +114,8 @@ static void emulate_le_p256_public_key_cmd(struct net_buf *buf)
 			break;
 		}
 
-		if (ecc_make_key(&pkey, private_key, random) == TC_FAIL) {
+		rc = ecc_make_key(&pkey, private_key, random);
+		if (rc == TC_CRYPTO_FAIL) {
 			BT_ERR("Failed to create ECC public/private pair");
 			evt->status = 0x1f; /* unspecified error */
 			break;
@@ -173,7 +176,7 @@ static void emulate_le_generate_dhkey(struct net_buf *buf)
 	}
 
 	if (ecdh_shared_secret((uint32_t *)evt->dhkey, &pk, private_key)
-	    == TC_FAIL) {
+	    == TC_CRYPTO_FAIL) {
 		evt->status = 0x1f; /* unspecified error */
 		memset(evt->dhkey, 0, sizeof(evt->dhkey));
 	}

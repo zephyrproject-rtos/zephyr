@@ -46,14 +46,10 @@
 extern "C" {
 #endif
 
-#define TC_SUCCESS 1
-#define TC_FAIL 0
-#define TC_RESEED_REQ -1
-
 /**
  * @brief Copy the the buffer 'from' to the buffer 'to'.
- * @return returns TC_SUCCESS (1)
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1)
+ *         returns TC_CRYPTO_FAIL (0) if:
  *                from_len > to_len.
  *
  * @param to OUT -- destination buffer

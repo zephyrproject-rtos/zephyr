@@ -134,11 +134,11 @@ int32_t tc_aes_decrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 	uint32_t i;
 
 	if (out == (uint8_t *) 0) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	} else if (in == (const uint8_t *) 0) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	} else if (s == (TCAesKeySched_t) 0) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	(void)_copy(state, sizeof(state), in, sizeof(state));
@@ -160,5 +160,5 @@ int32_t tc_aes_decrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 	/*zeroing out one byte state buffer */
 	_set(state, ZERO_BYTE, sizeof(state));
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }

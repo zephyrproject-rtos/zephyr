@@ -69,8 +69,8 @@ typedef struct tc_aes_key_sched_struct *TCAesKeySched_t;
 /**
  *  @brief Set AES-128 encryption key
  *  Uses key k to initialize s
- *  @return  returns TC_SUCCESS (1)
- *           returns TC_FAIL (0) if: s == NULL or k == NULL
+ *  @return  returns TC_CRYPTO_SUCCESS (1)
+ *           returns TC_CRYPTO_FAIL (0) if: s == NULL or k == NULL
  *  @note       This implementation skips the additional steps required for keys
  *              larger than 128 bits, and must not be used for AES-192 or
  *              AES-256 key schedule -- see FIPS 197 for details
@@ -85,8 +85,8 @@ int32_t tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k);
  *              schedule s
  *  @note Assumes s was initialized by aes_set_encrypt_key;
  *              out and in point to 16 byte buffers
- *  @return  returns TC_SUCCESS (1)
- *           returns TC_FAIL (0) if: out == NULL or in == NULL or s == NULL
+ *  @return  returns TC_CRYPTO_SUCCESS (1)
+ *           returns TC_CRYPTO_FAIL (0) if: out == NULL or in == NULL or s == NULL
  *  @param out IN/OUT -- buffer to receive ciphertext block
  *  @param in IN -- a plaintext block to encrypt
  *  @param s IN -- initialized AES key schedule
@@ -98,8 +98,8 @@ int32_t tc_aes_encrypt(uint8_t *out,
 /**
  *  @brief Set the AES-128 decryption key
  *  Uses key k to initialize s
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if: s == NULL or k == NULL
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if: s == NULL or k == NULL
  *  @note       This is the implementation of the straightforward inverse cipher
  *              using the cipher documented in FIPS-197 figure 12, not the
  *              equivalent inverse cipher presented in Figure 15
@@ -114,8 +114,8 @@ int32_t tc_aes128_set_decrypt_key(TCAesKeySched_t s, const uint8_t *k);
 /**
  *  @brief AES-128 Encryption procedure
  *  Decrypts in buffer into out buffer under key schedule s
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if: out is NULL or in is NULL or s is NULL
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if: out is NULL or in is NULL or s is NULL
  *  @note   Assumes s was initialized by aes_set_encrypt_key
  *          out and in point to 16 byte buffers
  *  @param out IN/OUT -- buffer to receive ciphertext block

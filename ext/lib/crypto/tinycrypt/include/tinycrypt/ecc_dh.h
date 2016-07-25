@@ -80,8 +80,8 @@ extern "C" {
 
 /**
  * @brief Create a public/private key pair.
- * @return returns TC_SUCCESS (1) if the key pair was generated successfully
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1) if the key pair was generated successfully
+ *         returns TC_CRYPTO_FAIL (0) if:
  *                the private key is 0
 
  * @param p_publicKey OUT -- the point representing the public key.
@@ -114,8 +114,8 @@ int32_t ecc_valid_public_key(EccPoint *p_publicKey);
 /**
  * @brief Compute a shared secret given your secret key and someone else's
  * public key.
- * @return returns TC_SUCCESS (1) if the shared secret was computed successfully
- *         returns TC_FAIL (0) otherwise
+ * @return returns TC_CRYPTO_SUCCESS (1) if the shared secret was computed successfully
+ *         returns TC_CRYPTO_FAIL (0) otherwise
  *
  * @param p_secret OUT -- The shared secret value.
  * @param p_publicKey IN -- The public key of the remote party.

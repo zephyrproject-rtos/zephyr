@@ -40,6 +40,7 @@
 #include <bluetooth/driver.h>
 #include <bluetooth/storage.h>
 
+#include <tinycrypt/constants.h>
 #include <tinycrypt/hmac_prng.h>
 #include <tinycrypt/utils.h>
 
@@ -2304,7 +2305,7 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 
 	ret = tc_hmac_prng_reseed(h, seed, sizeof(seed), (uint8_t *)&extra,
 				  sizeof(extra));
-	if (ret == TC_FAIL) {
+	if (ret == TC_CRYPTO_FAIL) {
 		BT_ERR("Failed to re-seed PRNG");
 		return -EIO;
 	}
@@ -2334,7 +2335,7 @@ static int prng_init(struct tc_hmac_prng_struct *h)
 
 	net_buf_unref(rsp);
 
-	if (ret == TC_FAIL) {
+	if (ret == TC_CRYPTO_FAIL) {
 		BT_ERR("Failed to initialize PRNG");
 		return -EIO;
 	}
@@ -2357,7 +2358,7 @@ int bt_rand(void *buf, size_t len)
 		ret = tc_hmac_prng_generate(buf, len, &prng);
 	}
 
-	if (ret == TC_SUCCESS) {
+	if (ret == TC_CRYPTO_SUCCESS) {
 		return 0;
 	}
 

@@ -87,8 +87,8 @@ extern "C" {
 
 /**
  * @brief Generate an ECDSA signature for a given hash value.
- * @return returns TC_SUCCESS (1) if the the signature generated successfully
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1) if the the signature generated successfully
+ *         returns TC_CRYPTO_FAIL (0) if:
  *                r == 0 or
  *                p_random == 0
  *
@@ -112,8 +112,8 @@ int32_t ecdsa_sign(uint32_t r[NUM_ECC_DIGITS], uint32_t s[NUM_ECC_DIGITS],
 
 /**
  * @brief Verify an ECDSA signature.
- * @return returns TC_SUCCESS (1) if the the signature generated successfully
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1) if the the signature generated successfully
+ *         returns TC_CRYPTO_FAIL (0) if:
  *                r == 0 or
  *                p_random == 0
  *

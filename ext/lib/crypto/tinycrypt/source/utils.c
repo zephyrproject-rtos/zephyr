@@ -45,7 +45,7 @@ uint32_t _copy(uint8_t *to, uint32_t to_len,
 		(void)memcpy(to, from, from_len);
 		return from_len;
 	} else {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 }
 

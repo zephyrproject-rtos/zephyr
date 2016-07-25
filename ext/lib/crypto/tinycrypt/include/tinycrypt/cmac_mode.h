@@ -130,8 +130,8 @@ typedef struct tc_cmac_struct {
 
 /**
  * @brief Configures the CMAC state to use the given AES key
- * @return returns TC_SUCCESS (1) after having configured the CMAC state
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1) after having configured the CMAC state
+ *         returns TC_CRYPTO_FAIL (0) if:
  *              s == NULL or
  *              key == NULL
  *
@@ -144,8 +144,8 @@ int32_t tc_cmac_setup(TCCmacState_t s, const uint8_t *key,
 
 /**
  * @brief Erases the CMAC state
- * @return returns TC_SUCCESS (1) after having configured the CMAC state
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1) after having configured the CMAC state
+ *         returns TC_CRYPTO_FAIL (0) if:
  *              s == NULL
  *
  * @param s IN/OUT -- the state to erase
@@ -154,8 +154,8 @@ int32_t tc_cmac_erase(TCCmacState_t s);
 
 /**
  * @brief Initializes a new CMAC computation
- * @return returns TC_SUCCESS (1) after having initialized the CMAC state
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1) after having initialized the CMAC state
+ *         returns TC_CRYPTO_FAIL (0) if:
  *              s == NULL
  *
  * @param s IN/OUT -- the state to initialize
@@ -164,8 +164,8 @@ int32_t tc_cmac_init(TCCmacState_t s);
 
 /**
  * @brief Incrementally computes CMAC over the next data segment
- * @return returns TC_SUCCESS (1) after successfully updating the CMAC state
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1) after successfully updating the CMAC state
+ *         returns TC_CRYPTO_FAIL (0) if:
  *              s == NULL or
  *              if data == NULL when dlen > 0
  *
@@ -177,8 +177,8 @@ int32_t tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t dlen);
 
 /**
  * @brief Generates the tag from the CMAC state
- * @return returns TC_SUCCESS (1) after successfully generating the tag
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1) after successfully generating the tag
+ *         returns TC_CRYPTO_FAIL (0) if:
  *              tag == NULL or
  *              s == NULL
  *

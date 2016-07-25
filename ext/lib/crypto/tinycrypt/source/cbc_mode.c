@@ -51,7 +51,7 @@ int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
 	    (inlen % TC_AES_BLOCK_SIZE) != 0 ||
 	    (outlen % TC_AES_BLOCK_SIZE) != 0 ||
 	    outlen != inlen + TC_AES_BLOCK_SIZE) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	/* copy iv to the buffer */
@@ -71,7 +71,7 @@ int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
 		}
 	}
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }
 
 int32_t tc_cbc_mode_decrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
@@ -91,7 +91,7 @@ int32_t tc_cbc_mode_decrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
 	    (inlen % TC_AES_BLOCK_SIZE) != 0 ||
 	    (outlen % TC_AES_BLOCK_SIZE) != 0 ||
 	    outlen != inlen - TC_AES_BLOCK_SIZE) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	/*
@@ -109,5 +109,5 @@ int32_t tc_cbc_mode_decrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
 		*out++ = buffer[m++] ^ *p++;
 	}
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }

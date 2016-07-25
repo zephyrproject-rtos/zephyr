@@ -37,6 +37,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/buf.h>
 
+#include <tinycrypt/constants.h>
 #include <tinycrypt/aes.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/cmac_mode.h>
@@ -295,13 +296,13 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 
 	swap_buf(tmp, key, 16);
 
-	if (tc_aes128_set_encrypt_key(&s, tmp) == TC_FAIL) {
+	if (tc_aes128_set_encrypt_key(&s, tmp) == TC_CRYPTO_FAIL) {
 		return -EINVAL;
 	}
 
 	swap_buf(tmp, plaintext, 16);
 
-	if (tc_aes_encrypt(enc_data, tmp, &s) == TC_FAIL) {
+	if (tc_aes_encrypt(enc_data, tmp, &s) == TC_CRYPTO_FAIL) {
 		return -EINVAL;
 	}
 
@@ -352,15 +353,15 @@ static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
 	struct tc_aes_key_sched_struct sched;
 	struct tc_cmac_struct state;
 
-	if (tc_cmac_setup(&state, key, &sched) == TC_FAIL) {
+	if (tc_cmac_setup(&state, key, &sched) == TC_CRYPTO_FAIL) {
 		return -EIO;
 	}
 
-	if (tc_cmac_update(&state, in, len) == TC_FAIL) {
+	if (tc_cmac_update(&state, in, len) == TC_CRYPTO_FAIL) {
 		return -EIO;
 	}
 
-	if (tc_cmac_final(out, &state) == TC_FAIL) {
+	if (tc_cmac_final(out, &state) == TC_CRYPTO_FAIL) {
 		return -EIO;
 	}
 

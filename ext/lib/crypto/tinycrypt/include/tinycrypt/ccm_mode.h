@@ -96,8 +96,8 @@ typedef struct tc_ccm_mode_struct {
 
 /**
  * @brief CCM configuration procedure
- * @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if:
  *                c == NULL or
  *                sched == NULL or
  *                nonce == NULL or
@@ -113,8 +113,8 @@ int32_t tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
 
 /**
  * @brief CCM tag generation and encryption procedure
- * @return returns TC_SUCCESS (1)
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1)
+ *         returns TC_CRYPTO_FAIL (0) if:
  *                out == NULL or
  *                c == NULL or
  *                ((plen > 0) and (payload == NULL)) or
@@ -155,8 +155,8 @@ int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_dat
 
 /**
  * @brief CCM decryption and tag verification procedure
- * @return returns TC_SUCCESS (1)
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1)
+ *         returns TC_CRYPTO_FAIL (0) if:
  *                out == NULL or
  *                c == NULL or
  *                ((plen > 0) and (payload == NULL)) or

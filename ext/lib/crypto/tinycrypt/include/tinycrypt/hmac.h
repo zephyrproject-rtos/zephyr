@@ -80,8 +80,8 @@ typedef struct tc_hmac_state_struct *TCHmacState_t;
 /**
  *  @brief HMAC set key procedure
  *  Configures ctx to use key
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if
  *                ctx == NULL or
  *                key == NULL or
  *                key_size == 0
@@ -96,8 +96,8 @@ int32_t tc_hmac_set_key(TCHmacState_t ctx,
 /**
  * @brief HMAC init procedure
  * Initializes ctx to begin the next HMAC operation
- * @return returns TC_SUCCESS (1)
- *         returns TC_FAIL (0) if: ctx == NULL or key == NULL
+ * @return returns TC_CRYPTO_SUCCESS (1)
+ *         returns TC_CRYPTO_FAIL (0) if: ctx == NULL or key == NULL
  * @param ctx IN/OUT -- struct tc_hmac_state_struct buffer to init
  */
 int32_t tc_hmac_init(TCHmacState_t ctx);
@@ -105,8 +105,8 @@ int32_t tc_hmac_init(TCHmacState_t ctx);
 /**
  *  @brief HMAC update procedure
  *  Mixes data_length bytes addressed by data into state
- *  @return returns TC_SUCCCESS (1)
- *          returns TC_FAIL (0) if: ctx == NULL or key == NULL
+ *  @return returns TC_CRYPTO_SUCCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if: ctx == NULL or key == NULL
  *  @note Assumes state has been initialized by tc_hmac_init
  *  @param ctx IN/OUT -- state of HMAC computation so far
  *  @param data IN -- data to incorporate into state
@@ -119,8 +119,8 @@ int32_t tc_hmac_update(TCHmacState_t ctx,
 /**
  *  @brief HMAC final procedure
  *  Writes the HMAC tag into the tag buffer
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if:
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if:
  *                tag == NULL or
  *                ctx == NULL or
  *                key == NULL or

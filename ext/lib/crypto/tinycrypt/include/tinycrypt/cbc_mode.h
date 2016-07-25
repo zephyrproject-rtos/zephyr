@@ -84,8 +84,8 @@ extern "C" {
  *  @brief CBC encryption procedure
  *  CBC encrypts inlen bytes of the in buffer into the out buffer
  *  using the encryption key schedule provided, prepends iv to out
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if:
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if:
  *                out == NULL or
  *                in == NULL or
  *                ctr == NULL or
@@ -115,8 +115,8 @@ int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
  * @brief CBC decryption procedure
  * CBC decrypts inlen bytes of the in buffer into the out buffer
  * using the provided encryption key schedule
- * @return returns TC_SUCCESS (1)
- *         returns TC_FAIL (0) if:
+ * @return returns TC_CRYPTO_SUCCESS (1)
+ *         returns TC_CRYPTO_FAIL (0) if:
  *                out == NULL or
  *                in == NULL or
  *                sched == NULL or

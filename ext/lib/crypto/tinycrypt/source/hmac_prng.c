@@ -1,4 +1,4 @@
-/* Hmac_prng.c - TinyCrypt implementation of HMAC-PRNG */
+/* hmac_prng.c - TinyCrypt implementation of HMAC-PRNG */
 
 /*
  *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
@@ -117,7 +117,7 @@ int32_t tc_hmac_prng_init(TCHmacPrng_t prng,
 	if (prng == (TCHmacPrng_t) 0 ||
 	    personalization == (uint8_t *) 0 ||
 	    plen > MAX_PLEN) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	/* put the generator into a known state: */
@@ -131,7 +131,7 @@ int32_t tc_hmac_prng_init(TCHmacPrng_t prng,
 	/* force a reseed before allowing tc_hmac_prng_generate to succeed: */
 	prng->countdown = 0;
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }
 
 int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng,
@@ -145,7 +145,7 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng,
 	    seed == (const uint8_t *) 0 ||
 	    seedlen < MIN_SLEN ||
 	    seedlen > MAX_SLEN) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	if (additional_input != (const uint8_t *) 0) {
@@ -155,7 +155,7 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng,
 		 */
 		if (additionallen == 0 ||
 		    additionallen > MAX_ALEN) {
-			return TC_FAIL;
+			return TC_CRYPTO_FAIL;
 		} else {
 		/* call update for the seed and additional_input */
 		update(prng, seed, seedlen);
@@ -169,7 +169,7 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng,
 	/* ... and enable hmac_prng_generate */
 	prng->countdown = MAX_GENS;
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }
 
 int32_t tc_hmac_prng_generate(uint8_t *out, uint32_t outlen, TCHmacPrng_t prng)
@@ -181,7 +181,7 @@ int32_t tc_hmac_prng_generate(uint8_t *out, uint32_t outlen, TCHmacPrng_t prng)
 	    prng == (TCHmacPrng_t) 0 ||
 	    outlen == 0 ||
 	    outlen > MAX_OUT) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	} else if (prng->countdown == 0) {
 		return TC_HMAC_PRNG_RESEED_REQ;
 	}
@@ -206,5 +206,5 @@ int32_t tc_hmac_prng_generate(uint8_t *out, uint32_t outlen, TCHmacPrng_t prng)
 	/* block future PRNG compromises from revealing past state */
 	update(prng, prng->v, TC_SHA256_DIGEST_SIZE);
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }

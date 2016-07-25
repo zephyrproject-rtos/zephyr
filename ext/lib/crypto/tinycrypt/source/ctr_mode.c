@@ -51,7 +51,7 @@ int32_t tc_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
 	    inlen == 0 ||
 	    outlen == 0 ||
 	    outlen != inlen) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	/* copy the ctr to the nonce */
@@ -70,7 +70,7 @@ int32_t tc_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
 				nonce[14] = (uint8_t)(block_num >> 8);
 				nonce[15] = (uint8_t)(block_num);
 			} else {
-				return TC_FAIL;
+				return TC_CRYPTO_FAIL;
 			}
 		}
 		/* update the output */
@@ -81,5 +81,5 @@ int32_t tc_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
 	ctr[12] = nonce[12]; ctr[13] = nonce[13];
 	ctr[14] = nonce[14]; ctr[15] = nonce[15];
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }

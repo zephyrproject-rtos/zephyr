@@ -93,8 +93,8 @@ typedef struct tc_hmac_prng_struct *TCHmacPrng_t;
 /**
  *  @brief HMAC-PRNG initialization procedure
  *  Initializes prng with personalization, disables tc_hmac_prng_generate
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if:
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if:
  *                prng == NULL,
  *                personalization == NULL,
  *                plen > MAX_PLEN
@@ -119,8 +119,8 @@ int32_t tc_hmac_prng_init(TCHmacPrng_t prng,
 /**
  *  @brief HMAC-PRNG reseed procedure
  *  Mixes seed into prng, enables tc_hmac_prng_generate
- *  @return returns  TC_SUCCESS (1)
- *  returns TC_FAIL (0) if:
+ *  @return returns  TC_CRYPTO_SUCCESS (1)
+ *  returns TC_CRYPTO_FAIL (0) if:
  *          prng == NULL,
  *          seed == NULL,
  *          seedlen < MIN_SLEN,
@@ -143,9 +143,9 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed,
 /**
  *  @brief HMAC-PRNG generate procedure
  *  Generates outlen pseudo-random bytes into out buffer, updates prng
- *  @return returns TC_SUCCESS (1)
+ *  @return returns TC_CRYPTO_SUCCESS (1)
  *          returns TC_HMAC_PRNG_RESEED_REQ (-1) if a reseed is needed
- *             returns TC_FAIL (0) if:
+ *             returns TC_CRYPTO_FAIL (0) if:
  *                out == NULL,
  *                prng == NULL,
  *                outlen == 0,

@@ -80,8 +80,8 @@ typedef struct tc_sha256_state_struct *TCSha256State_t;
 /**
  *  @brief SHA256 initialization procedure
  *  Initializes s
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if s == NULL
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if s == NULL
  *  @param s Sha256 state struct
  */
 int32_t tc_sha256_init(TCSha256State_t s);
@@ -89,8 +89,8 @@ int32_t tc_sha256_init(TCSha256State_t s);
 /**
  *  @brief SHA256 update procedure
  *  Hashes data_length bytes addressed by data into state s
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIl (0) if:
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if:
  *                s == NULL,
  *                s->iv == NULL,
  *                data == NULL
@@ -109,8 +109,8 @@ int32_t tc_sha256_update(TCSha256State_t s,
 /**
  *  @brief SHA256 final procedure
  *  Inserts the completed hash computation into digest
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if:
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if:
  *                s == NULL,
  *                s->iv == NULL,
  *                digest == NULL
@@ -120,7 +120,7 @@ int32_t tc_sha256_update(TCSha256State_t s,
  *           If your application intends to have sensitive data in this
  *           buffer, remind to erase it after the data has been processed
  *  @param digest unsigned eight bit integer
- *  @param s Sha256 state struct
+ *  @param s state struct
  */
 int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s);
 

@@ -44,18 +44,18 @@ int32_t tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
 	if (c == (TCCcmMode_t) 0 ||
 	    sched == (TCAesKeySched_t) 0 ||
 	    nonce == (uint8_t *) 0) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	} else if (nlen != 13) {
-		return TC_FAIL; /* The allowed nonce size is: 13. See documentation.*/
+		return TC_CRYPTO_FAIL; /* The allowed nonce size is: 13. See documentation.*/
 	} else if ((mlen < 4) || (mlen > 16) || (mlen & 1)) {
-		return TC_FAIL; /* The allowed mac sizes are: 4, 6, 8, 10, 12, 14, 16.*/
+		return TC_CRYPTO_FAIL; /* The allowed mac sizes are: 4, 6, 8, 10, 12, 14, 16.*/
 	}
 
 	c->mlen = mlen;
 	c->sched = sched;
 	c->nonce = nonce;
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }
 
 /**
@@ -107,7 +107,7 @@ static int32_t ccm_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
 	    inlen == 0 ||
 	    outlen == 0 ||
 	    outlen != inlen) {
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	/* copy the counter to the nonce */
@@ -121,7 +121,7 @@ static int32_t ccm_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
 			nonce[14] = (uint8_t)(block_num >> 8);
 			nonce[15] = (uint8_t)(block_num);
 			if (!tc_aes_encrypt(buffer, nonce, sched)) {
-				return TC_FAIL;
+				return TC_CRYPTO_FAIL;
 			}
 		}
 		/* update the output */
@@ -131,7 +131,7 @@ static int32_t ccm_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
 	/* update the counter */
 	ctr[14] = nonce[14]; ctr[15] = nonce[15];
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }
 
 int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_data,
@@ -145,7 +145,7 @@ int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_dat
 	    ((alen > 0) && (associated_data == (uint8_t *) 0)) ||
 	    (alen >= TC_CCM_AAD_MAX_BYTES) || /* associated data size unsupported */
 	    (plen >= TC_CCM_PAYLOAD_MAX_BYTES)) { /* payload size unsupported */
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	uint8_t b[Nb * Nk];
@@ -189,7 +189,7 @@ int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_dat
 		*out++ = tag[i] ^ b[i];
 	}
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }
 
 int32_t tc_ccm_decryption_verification(uint8_t *out, const uint8_t *associated_data,
@@ -205,7 +205,7 @@ int32_t tc_ccm_decryption_verification(uint8_t *out, const uint8_t *associated_d
 	    ((alen > 0) && (associated_data == (uint8_t *) 0)) ||
 	    (alen >= TC_CCM_AAD_MAX_BYTES) || /* associated data size unsupported */
 	    (plen >= TC_CCM_PAYLOAD_MAX_BYTES)) { /* payload size unsupported */
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
 	uint8_t b[Nb * Nk];
@@ -255,8 +255,8 @@ int32_t tc_ccm_decryption_verification(uint8_t *out, const uint8_t *associated_d
 	if (_compare(b, tag, c->mlen) != 0) {
 		/* erase the decrypted buffer in case of mac validation failure: */
 		_set(out, 0, sizeof(*out));
-		return TC_FAIL;
+		return TC_CRYPTO_FAIL;
 	}
 
-	return TC_SUCCESS;
+	return TC_CRYPTO_SUCCESS;
 }

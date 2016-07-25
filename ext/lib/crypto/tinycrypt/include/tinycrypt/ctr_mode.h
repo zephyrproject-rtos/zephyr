@@ -77,8 +77,8 @@ extern "C" {
 /**
  *  @brief CTR mode encryption/decryption procedure.
  *  CTR mode encrypts (or decrypts) inlen bytes from in buffer into out buffer
- *  @return returns TC_SUCCESS (1)
- *          returns TC_FAIL (0) if:
+ *  @return returns TC_CRYPTO_SUCCESS (1)
+ *          returns TC_CRYPTO_FAIL (0) if:
  *                out == NULL or
  *                in == NULL or
  *                ctr == NULL or
