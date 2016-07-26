@@ -33,6 +33,9 @@ enum {
 	BT_CONN_BR_PAIRING,		/* BR connection in pairing context */
 	BT_CONN_BR_NOBOND,		/* SSP no bond pairing tracker */
 	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_CONN_NUM_FLAGS,
 };
 
 struct bt_conn_le {
@@ -80,7 +83,8 @@ struct bt_conn {
 	uint16_t		handle;
 	uint8_t			type;
 	uint8_t			role;
-	atomic_t		flags[1];
+
+	ATOMIC_DEFINE(flags, BT_CONN_NUM_FLAGS);
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	bt_security_t		sec_level;

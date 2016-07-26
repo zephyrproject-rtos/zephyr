@@ -102,6 +102,9 @@ enum {
 	SMP_FLAG_SC_DEBUG_KEY,	/* if Secure Connection are using debug key */
 	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
 	SMP_FLAG_DHCHECK_WAIT,	/* if waiting for remote DHCheck (as slave) */
+
+	/* Total number of flags - must be at the end */
+	SMP_NUM_FLAGS,
 };
 
 /* SMP channel specific context */
@@ -113,7 +116,7 @@ struct bt_smp {
 	atomic_t		allowed_cmds;
 
 	/* Flags for SMP state machine */
-	atomic_t		flags;
+	ATOMIC_DEFINE(flags, SMP_NUM_FLAGS);
 
 	/* Type of method used for pairing */
 	uint8_t			method;
@@ -543,7 +546,7 @@ static void smp_reset(struct bt_smp *smp)
 
 	smp->method = JUST_WORKS;
 	atomic_set(&smp->allowed_cmds, 0);
-	atomic_set(&smp->flags, 0);
+	atomic_set(smp->flags, 0);
 
 	if (conn->required_sec_level != conn->sec_level) {
 		/* TODO report error */
@@ -573,14 +576,14 @@ static void smp_timeout(struct nano_work *work)
 	 * If SMP timeout occurred during key distribution we should assume
 	 * pairing failed and don't store any keys from this pairing.
 	 */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_KEYS_DISTR) &&
+	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR) &&
 	    smp->chan.chan.conn->keys) {
 		bt_keys_clear(smp->chan.chan.conn->keys, BT_KEYS_ALL);
 	}
 
 	smp_reset(smp);
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_TIMEOUT);
+	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
 }
 
 static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
@@ -758,7 +761,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 
 	smp_send(smp, buf);
 
-	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+	atomic_clear_bit(smp->flags, SMP_FLAG_CFM_DELAYED);
 
 	return 0;
 }
@@ -814,7 +817,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 
 		smp_send(smp, buf);
 
-		if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
 
 			memcpy(keys->slave_ltk.val, key,
@@ -838,7 +841,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 	/* Distribute legacy pairing specific keys */
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		legacy_distribute_keys(smp);
 	}
 #endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
@@ -895,7 +898,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 
 		bt_rand(info->csrk, sizeof(info->csrk));
 
-		if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
 			memcpy(keys->local_csrk.val, info->csrk, 16);
 			keys->local_csrk.cnt = 0;
@@ -990,7 +993,7 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 	 * keys with unauthenticated ones.
 	  */
 	keys = bt_keys_find_addr(&conn->le.dst);
-	if (keys && atomic_test_bit(&keys->flags, BT_KEYS_AUTHENTICATED) &&
+	if (keys && atomic_test_bit(keys->flags, BT_KEYS_AUTHENTICATED) &&
 	    smp->method == JUST_WORKS) {
 		BT_ERR("JustWorks failed, authenticated keys present");
 		return BT_SMP_ERR_UNSPECIFIED;
@@ -1011,7 +1014,7 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 
 		break;
 	case PASSKEY_INPUT:
-		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		atomic_set_bit(smp->flags, SMP_FLAG_USER);
 		bt_auth->passkey_entry(conn);
 		break;
 	case JUST_WORKS:
@@ -1045,7 +1048,7 @@ static uint8_t legacy_send_pairing_confirm(struct bt_smp *smp)
 
 	smp_send(smp, buf);
 
-	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+	atomic_clear_bit(smp->flags, SMP_FLAG_CFM_DELAYED);
 
 	return 0;
 }
@@ -1061,9 +1064,9 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp, uint8_t remote_io)
 
 	/* ask for consent if pairing is not due to sending SecReq*/
 	if (smp->method == JUST_WORKS &&
-	    !atomic_test_bit(&smp->flags, SMP_FLAG_SEC_REQ) &&
+	    !atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 	    bt_auth && bt_auth->pairing_confirm) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		atomic_set_bit(smp->flags, SMP_FLAG_USER);
 		bt_auth->pairing_confirm(smp->chan.chan.conn);
 		return 0;
 	}
@@ -1115,7 +1118,7 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
+		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 
 		return 0;
 	}
@@ -1130,7 +1133,7 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 	memcpy(smp->tk, tmp, sizeof(smp->tk));
 	BT_DBG("generated STK %s", bt_hex(smp->tk, 16));
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
+	atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 
 	smp_send_pairing_random(smp);
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
@@ -1150,12 +1153,12 @@ static uint8_t legacy_pairing_confirm(struct bt_smp *smp)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return legacy_send_pairing_confirm(smp);
 	}
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+	atomic_set_bit(smp->flags, SMP_FLAG_CFM_DELAYED);
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 	return 0;
 }
@@ -1165,7 +1168,7 @@ static void legacy_passkey_entry(struct bt_smp *smp, unsigned int passkey)
 	passkey = sys_cpu_to_le32(passkey);
 	memcpy(smp->tk, &passkey, sizeof(passkey));
 
-	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
+	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_CFM_DELAYED)) {
 		smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
 		return;
 	}
@@ -1192,7 +1195,7 @@ static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	BT_DBG("");
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 		struct bt_smp_encrypt_info *req = (void *)buf->data;
 		struct bt_conn *conn = smp->chan.chan.conn;
 		struct bt_keys *keys;
@@ -1218,7 +1221,7 @@ static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_DBG("");
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 		struct bt_smp_master_ident *req = (void *)buf->data;
 		struct bt_keys *keys;
 
@@ -1266,9 +1269,9 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp, uint8_t remote_io)
 
 	/* ask for consent if this is due to received SecReq */
 	if (smp->method == JUST_WORKS &&
-	    atomic_test_bit(&smp->flags, SMP_FLAG_SEC_REQ) &&
+	    atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 	    bt_auth && bt_auth->pairing_confirm) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		atomic_set_bit(smp->flags, SMP_FLAG_USER);
 		bt_auth->pairing_confirm(smp->chan.chan.conn);
 		return 0;
 	}
@@ -1278,12 +1281,12 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp, uint8_t remote_io)
 		return ret;
 	}
 
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		return legacy_send_pairing_confirm(smp);
 	}
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+	atomic_set_bit(smp->flags, SMP_FLAG_CFM_DELAYED);
 
 	return 0;
 }
@@ -1378,12 +1381,12 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	}
 
 	/* SMP Timeout */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_TIMEOUT)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
 		return -EIO;
 	}
 
 	/* pairing is in progress */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		return -EBUSY;
 	}
 
@@ -1444,7 +1447,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 	if ((rsp->auth_req & BT_SMP_AUTH_SC) &&
 	    (req->auth_req & BT_SMP_AUTH_SC)) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_SC);
+		atomic_set_bit(smp->flags, SMP_FLAG_SC);
 
 		rsp->init_key_dist &= RECV_KEYS_SC;
 		rsp->resp_key_dist &= SEND_KEYS_SC;
@@ -1455,12 +1458,12 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
 	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_BOND);
+		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
 	}
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
+	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 #if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 #else
@@ -1481,9 +1484,9 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 #else
 		/* ask for consent if pairing is not due to sending SecReq*/
-		if (!atomic_test_bit(&smp->flags, SMP_FLAG_SEC_REQ) &&
+		if (!atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 		    bt_auth && bt_auth->pairing_confirm) {
-			atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+			atomic_set_bit(smp->flags, SMP_FLAG_USER);
 			bt_auth->pairing_confirm(smp->chan.chan.conn);
 			return 0;
 		}
@@ -1519,7 +1522,7 @@ static uint8_t sc_send_public_key(struct bt_smp *smp)
 	smp_send(smp, req_buf);
 
 #if defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
-	atomic_set_bit(&smp->flags, SMP_FLAG_SC_DEBUG_KEY);
+	atomic_set_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY);
 #endif /* CONFIG_BLUETOOTH_USE_DEBUG_KEYS */
 
 	return 0;
@@ -1540,12 +1543,12 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	}
 
 	/* SMP Timeout */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_TIMEOUT)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
 		return -EIO;
 	}
 
 	/* pairing is in progress */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		return -EBUSY;
 	}
 
@@ -1582,7 +1585,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	smp_send(smp, req_buf);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
-	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
+	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
 	return 0;
 }
@@ -1608,15 +1611,15 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 
 	if ((rsp->auth_req & BT_SMP_AUTH_SC) &&
 	    (req->auth_req & BT_SMP_AUTH_SC)) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_SC);
+		atomic_set_bit(smp->flags, SMP_FLAG_SC);
 	}
 
 	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
 	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_BOND);
+		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
 	}
 
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 #if defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 #else
@@ -1634,9 +1637,9 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 #else
 		/* ask for consent if this is due to received SecReq */
-		if (atomic_test_bit(&smp->flags, SMP_FLAG_SEC_REQ) &&
+		if (atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 		    bt_auth && bt_auth->pairing_confirm) {
-			atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+			atomic_set_bit(smp->flags, SMP_FLAG_USER);
 			bt_auth->pairing_confirm(smp->chan.chan.conn);
 			return 0;
 		}
@@ -1644,7 +1647,7 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	if (!sc_local_pkey_valid) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_PKEY_SEND);
+		atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
 		return 0;
 	}
 
@@ -1675,7 +1678,7 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		return legacy_pairing_confirm(smp);
 	}
 #endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
@@ -1685,8 +1688,8 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_confirm(smp);
 	case PASSKEY_INPUT:
-		if (atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
-			atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+		if (atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
+			atomic_set_bit(smp->flags, SMP_FLAG_CFM_DELAYED);
 			return 0;
 		}
 
@@ -1810,7 +1813,7 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 	/* send local e */
 	sc_smp_send_dhkey_check(smp, e);
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
+	atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 	return 0;
 }
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
@@ -1823,7 +1826,7 @@ static void bt_smp_dhkey_ready(const uint8_t *dhkey)
 	BT_DBG("%p", dhkey);
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
-		if (atomic_test_and_clear_bit(&bt_smp_pool[i].flags,
+		if (atomic_test_and_clear_bit(bt_smp_pool[i].flags,
 					      SMP_FLAG_DHKEY_PENDING)) {
 			smp = &bt_smp_pool[i];
 			break;
@@ -1842,18 +1845,18 @@ static void bt_smp_dhkey_ready(const uint8_t *dhkey)
 	memcpy(smp->dhkey, dhkey, 32);
 
 	/* wait for user passkey confirmation */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+	if (atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
 		return;
 	}
 
 	/* wait for remote DHKey Check */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT)) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+	if (atomic_test_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
 		return;
 	}
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_DHKEY_SEND)) {
 		uint8_t err;
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
@@ -1924,7 +1927,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 	memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		return legacy_pairing_random(smp);
 	}
 #endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
@@ -1944,8 +1947,8 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
 
-			atomic_set_bit(&smp->flags, SMP_FLAG_USER);
-			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+			atomic_set_bit(smp->flags, SMP_FLAG_USER);
+			atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
 			bt_auth->passkey_confirm(smp->chan.chan.conn, passkey);
 			return 0;
 		case JUST_WORKS:
@@ -1970,8 +1973,8 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		}
 
 		/* wait for DHKey being generated */
-		if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING)) {
-			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+		if (atomic_test_bit(smp->flags, SMP_FLAG_DHKEY_PENDING)) {
+			atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
 			return 0;
 		}
 
@@ -1986,7 +1989,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		atomic_set_bit(smp->flags, SMP_FLAG_USER);
 		bt_auth->passkey_confirm(smp->chan.chan.conn, passkey);
 		break;
 	case JUST_WORKS:
@@ -2005,7 +2008,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		smp->passkey_round++;
 		if (smp->passkey_round == 20) {
 			atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
-			atomic_set_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT);
+			atomic_set_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 			return 0;
 		}
 
@@ -2019,7 +2022,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
-	atomic_set_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT);
+	atomic_set_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 	smp_send_pairing_random(smp);
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
@@ -2053,7 +2056,7 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 	 * Pairing Failed command may be sent at any time during the pairing,
 	 * so if there are any keys distributed, shall be cleared.
 	 */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_KEYS_DISTR) &&
+	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR) &&
 	    smp->chan.chan.conn->keys) {
 		bt_keys_clear(smp->chan.chan.conn->keys, BT_KEYS_ALL);
 	}
@@ -2070,7 +2073,7 @@ static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	BT_DBG("");
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 		struct bt_smp_ident_info *req = (void *)buf->data;
 		struct bt_conn *conn = smp->chan.chan.conn;
 		struct bt_keys *keys;
@@ -2103,7 +2106,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 		const bt_addr_le_t *dst;
 		struct bt_keys *keys;
 
@@ -2172,7 +2175,7 @@ static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_DBG("");
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 		struct bt_smp_signing_info *req = (void *)buf->data;
 		struct bt_keys *keys;
 
@@ -2237,7 +2240,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if MITM required key must be authenticated */
 	if ((auth & BT_SMP_AUTH_MITM) &&
-	    !atomic_test_bit(&conn->keys->flags, BT_KEYS_AUTHENTICATED)) {
+	    !atomic_test_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED)) {
 		if (get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT) {
 			BT_INFO("New auth requirements: 0x%x, repairing",
 				auth);
@@ -2262,7 +2265,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
+	atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 
 	return 0;
 pair:
@@ -2270,7 +2273,7 @@ pair:
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_SEC_REQ);
+	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
 
 	return 0;
 }
@@ -2287,7 +2290,7 @@ static uint8_t generate_dhkey(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING);
+	atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_PENDING);
 	return 0;
 }
 
@@ -2336,7 +2339,7 @@ static uint8_t smp_public_key_slave(struct bt_smp *smp)
 		break;
 	case PASSKEY_INPUT:
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-		atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+		atomic_set_bit(smp->flags, SMP_FLAG_USER);
 		bt_auth->passkey_entry(smp->chan.chan.conn);
 		break;
 	default:
@@ -2360,7 +2363,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	/* mark key as debug if remote is using it */
 	if (memcmp(smp->pkey, sc_debug_public_key, 64) == 0) {
 		BT_INFO("Remote is using Debug Public key");
-		atomic_set_bit(&smp->flags, SMP_FLAG_SC_DEBUG_KEY);
+		atomic_set_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY);
 	}
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
@@ -2386,7 +2389,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 			}
 			break;
 		case PASSKEY_INPUT:
-			atomic_set_bit(&smp->flags, SMP_FLAG_USER);
+			atomic_set_bit(smp->flags, SMP_FLAG_USER);
 			bt_auth->passkey_entry(smp->chan.chan.conn);
 			break;
 		default:
@@ -2398,7 +2401,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	if (!sc_local_pkey_valid) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_PKEY_SEND);
+		atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
 		return 0;
 	}
 
@@ -2453,24 +2456,24 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
+		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 		return 0;
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	if (smp->chan.chan.conn->role == BT_HCI_ROLE_SLAVE) {
-		atomic_clear_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT);
+		atomic_clear_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 		memcpy(smp->e, req->e, sizeof(smp->e));
 
 		/* wait for DHKey being generated */
-		if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING)) {
-			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+		if (atomic_test_bit(smp->flags, SMP_FLAG_DHKEY_PENDING)) {
+			atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
 			return 0;
 		}
 
 		/* waiting for user to confirm passkey */
-		if (atomic_test_bit(&smp->flags, SMP_FLAG_USER)) {
-			atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+		if (atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
+			atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
 			return 0;
 		}
 
@@ -2520,7 +2523,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	 * the L2CAP Security Manager Channel. A new SM procedure shall only be
 	 * performed when a new physical link has been established."
 	 */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_TIMEOUT)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
 		BT_WARN("SMP command (code 0x%02x) received after timeout",
 			hdr->code);
 		return;
@@ -2569,7 +2572,7 @@ static void bt_smp_pkey_ready(const uint8_t *pkey)
 		struct bt_smp *smp = &bt_smp_pool[i];
 		uint8_t err;
 
-		if (!atomic_test_bit(&smp->flags, SMP_FLAG_PKEY_SEND)) {
+		if (!atomic_test_bit(smp->flags, SMP_FLAG_PKEY_SEND)) {
 			continue;
 		}
 
@@ -2621,7 +2624,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 		 * No keys indicate no bonding so free keys storage.
 		 */
 		if (!keys->keys ||
-		    atomic_test_bit(&keys->flags, BT_KEYS_DEBUG)) {
+		    atomic_test_bit(keys->flags, BT_KEYS_DEBUG)) {
 			bt_keys_clear(keys, BT_KEYS_ALL);
 		}
 	}
@@ -2641,7 +2644,7 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 		return;
 	}
 
-	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_ENC_PENDING)) {
+	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
 		return;
 	}
 
@@ -2652,7 +2655,7 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 	 * Since it is possible that slave might sent another Security Request
 	 * eg with different AuthReq we should allow it.
 	 */
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 		return;
 	}
@@ -2664,7 +2667,7 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 	 * if any (?) keys were distributed but EncKey was not set in key
 	 * distribution.
 	 */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
 		smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 	}
@@ -2677,7 +2680,7 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
-	atomic_set_bit(&smp->flags, SMP_FLAG_KEYS_DISTR);
+	atomic_set_bit(smp->flags, SMP_FLAG_KEYS_DISTR);
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	/* Slave distributes it's keys first */
@@ -3221,12 +3224,12 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 		return -EINVAL;
 	}
 
-	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_USER)) {
 		return -EINVAL;
 	}
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		legacy_passkey_entry(smp, passkey);
 		return 0;
 	}
@@ -3245,7 +3248,7 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_CFM_DELAYED)) {
 		if (smp_send_pairing_confirm(smp)) {
 			smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
 			return 0;
@@ -3266,23 +3269,23 @@ int bt_smp_auth_passkey_confirm(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_USER)) {
 		return -EINVAL;
 	}
 
 	/* wait for DHKey being generated */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_PENDING)) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+	if (atomic_test_bit(smp->flags, SMP_FLAG_DHKEY_PENDING)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
 		return 0;
 	}
 
 	/* wait for remote DHKey Check */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHCHECK_WAIT)) {
-		atomic_set_bit(&smp->flags, SMP_FLAG_DHKEY_SEND);
+	if (atomic_test_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
 		return 0;
 	}
 
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_DHKEY_SEND)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_DHKEY_SEND)) {
 		uint8_t err;
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 		if (smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
@@ -3313,7 +3316,7 @@ int bt_smp_auth_cancel(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_USER)) {
 		return -EINVAL;
 	}
 
@@ -3340,20 +3343,20 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_USER)) {
+	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_USER)) {
 		return -EINVAL;
 	}
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (conn->role == BT_CONN_ROLE_MASTER) {
-		if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+		if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 			atomic_set_bit(&smp->allowed_cmds,
 				       BT_SMP_CMD_PAIRING_CONFIRM);
 			return legacy_send_pairing_confirm(smp);
 		}
 
 		if (!sc_local_pkey_valid) {
-			atomic_set_bit(&smp->flags, SMP_FLAG_PKEY_SEND);
+			atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
 			return 0;
 		}
 
@@ -3363,7 +3366,7 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_SC)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		return send_pairing_rsp(smp);
 	}
@@ -3392,7 +3395,7 @@ void bt_smp_update_keys(struct bt_conn *conn)
 		return;
 	}
 
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		return;
 	}
 
@@ -3412,8 +3415,8 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	}
 
 	/* mark keys as debug */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC_DEBUG_KEY)) {
-		atomic_set_bit(&conn->keys->flags, BT_KEYS_DEBUG);
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY)) {
+		atomic_set_bit(conn->keys->flags, BT_KEYS_DEBUG);
 	}
 
 	/*
@@ -3425,12 +3428,12 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
 	case PASSKEY_CONFIRM:
-		atomic_set_bit(&conn->keys->flags, BT_KEYS_AUTHENTICATED);
+		atomic_set_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED);
 		break;
 	case JUST_WORKS:
 	default:
 		/* unauthenticated key, clear it */
-		atomic_clear_bit(&conn->keys->flags, BT_KEYS_AUTHENTICATED);
+		atomic_clear_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED);
 		break;
 	}
 
@@ -3441,8 +3444,8 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 * exclusive with legacy pairing. Other keys are added on keys
 	 * distribution.
 	 */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_SC) &&
-	    atomic_test_bit(&smp->flags, SMP_FLAG_BOND)) {
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SC) &&
+	    atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 		bt_keys_add_type(conn->keys, BT_KEYS_LTK_P256);
 		memcpy(conn->keys->ltk.val, smp->tk,
 		       sizeof(conn->keys->ltk.val));
@@ -3461,7 +3464,7 @@ bool bt_smp_get_tk(struct bt_conn *conn, uint8_t *tk)
 		return false;
 	}
 
-	if (!atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		return false;
 	}
 

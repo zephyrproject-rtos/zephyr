@@ -43,6 +43,9 @@ enum {
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
 #endif /* CONFIG_BLUETOOTH_BREDR */
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_DEV_NUM_FLAGS,
 };
 
 struct bt_dev_le {
@@ -81,7 +84,7 @@ struct bt_dev {
 	/* Supported commands */
 	uint8_t			supported_commands[36];
 
-	atomic_t		flags[1];
+	ATOMIC_DEFINE(flags, BT_DEV_NUM_FLAGS);
 
 	/* LE controller specific features */
 	struct bt_dev_le	le;

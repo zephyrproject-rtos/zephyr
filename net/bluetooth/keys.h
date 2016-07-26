@@ -36,6 +36,9 @@ enum {
 	BT_KEYS_AUTHENTICATED,
 	BT_KEYS_BR_LEGACY,
 	BT_KEYS_DEBUG,
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_KEYS_NUM_FLAGS,
 };
 
 struct bt_ltk {
@@ -65,7 +68,7 @@ struct bt_keys {
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	uint8_t			enc_size;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
-	atomic_t		flags;
+	ATOMIC_DEFINE(flags, BT_KEYS_NUM_FLAGS);
 	uint16_t		keys;
 
 #if defined(CONFIG_BLUETOOTH_SMP)
