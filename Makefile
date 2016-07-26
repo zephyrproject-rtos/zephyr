@@ -563,13 +563,13 @@ endif # $(dot-config)
 
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH
+
 ifdef ZEPHYR_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 else
 $(if $(CROSS_COMPILE),, \
      $(error ZEPHYR_GCC_VARIANT is not set. ))
 endif
-
 
 -include $(srctree)/ext/Makefile
 -include $(srctree)/lib/Makefile
@@ -582,9 +582,6 @@ COMPILER := gcc
 endif
 export COMPILER
 endif
-
-QEMU_BIN_PATH	?= /usr/bin
-QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(ARCH))
 
 # The all: target is the default when no target is given on the
 # command line.
@@ -717,6 +714,15 @@ endif
 endif
 
 export LD_TOOLCHAIN KBUILD_LDS
+
+ifdef MAKEFILE_TOOLCHAIN_DO_PASS2
+# KBUILD_CFLAGS known at this point.
+# We can now determine which multilib libraries to use
+include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
+endif
+
+QEMU_BIN_PATH	?= /usr/bin
+QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(ARCH))
 
 # The all: target is the default when no target is given on the
 # command line.

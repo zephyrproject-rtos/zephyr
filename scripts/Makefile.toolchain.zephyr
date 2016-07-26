@@ -1,3 +1,16 @@
+########################################################################
+#
+# Pass1: Determine CROSS_COMPILE only.
+#   We need CROSS_COMPILE in order to validate various KBUILD_CFLAGS
+#   GCC CROSS_COMILE is needed in order to validate compiler options
+#   via constructs such as:
+#   KBUILD_CFLAGS += $(call cc-option,-option,)
+#
+# Pass2: Determine LIB_INCLUDE_DIR and TOOLCHAIN_CFLAGS.
+#   Knowing KBUILD_CFLAGS, we can query GCC compiler for the location
+#   of the libraries corresponding to the KBUILD_CFLAGS.
+#
+#######################################################################
 
 ifndef ZEPHYR_SDK_INSTALL_DIR
 $(error ZEPHYR_SDK_INSTALL_DIR is not set)
@@ -9,62 +22,51 @@ else
 	TOOLCHAIN_HOME = ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux
 endif
 
-# arm
+ifndef MAKEFILE_TOOLCHAIN_DO_PASS2
+
+# arm (pass1)
 CROSS_COMPILE_TARGET_arm = arm-poky-eabi
+SYSROOT_TARGET_arm = armv5-poky-eabi
 CROSS_COMPILE_arm=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_TARGET_arm)-
-CROSS_COMPILE_arm_version = $(shell $(CROSS_COMPILE_arm)gcc -dumpversion)
 
-CROSS_COMPILE_arm_isa_thumb2-y = "thumb/thumb2"
-CROSS_COMPILE_arm_isa = $(CROSS_COMPILE_arm_isa_thumb2-$(CONFIG_ISA_THUMB2))
-
-LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/${CROSS_COMPILE_TARGET_arm}/lib/$(CROSS_COMPILE_arm_isa)
-LIB_INCLUDE_DIR_arm += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/lib/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_arm_version)/$(CROSS_COMPILE_arm_isa)
-TOOLCHAIN_CFLAGS_arm = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/armv5-poky-eabi/usr/${CROSS_COMPILE_TARGET_arm}/include
-
-# iamcu
-CROSS_COMPILE_TARGET_iamcu = i586-poky-elfiamcu
-CROSS_COMPILE_iamcu=$(TOOLCHAIN_HOME)/usr/bin/iamcu-poky-elfiamcu/$(CROSS_COMPILE_TARGET_iamcu)-
-CROSS_COMPILE_iamcu_version = $(shell $(CROSS_COMPILE_iamcu)gcc -dumpversion)
-
-LIB_INCLUDE_DIR_iamcu = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamcu/usr/lib/i586-poky-elfiamcu/$(CROSS_COMPILE_iamcu_version)
-LIB_INCLUDE_DIR_iamcu += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamcu/usr/i586-default-elfiamcu/lib/
-TOOLCHAIN_CFLAGS_iamcu = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamcu/usr/i586-default-elfiamcu/include
-
-# x86
-CROSS_COMPILE_TARGET_x86 = i586-poky-elf
-CROSS_COMPILE_x86=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_x86)/$(CROSS_COMPILE_TARGET_x86)-
-CROSS_COMPILE_x86_version = $(shell $(CROSS_COMPILE_x86)gcc -dumpversion)
-
-LIB_INCLUDE_DIR_x86 = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/lib/i586-poky-elf/$(CROSS_COMPILE_x86_version)
-LIB_INCLUDE_DIR_x86 += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/${CROSS_COMPILE_TARGET_x86}/lib
-TOOLCHAIN_CFLAGS_x86 = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/${CROSS_COMPILE_TARGET_x86}/include
-
-# arc
+# arc (pass1)
 CROSS_COMPILE_TARGET_arc = arc-poky-elf
+SYSROOT_TARGET_arc = arc-poky-elf
 CROSS_COMPILE_arc=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_TARGET_arc)-
-CROSS_COMPILE_arc_version = $(shell $(CROSS_COMPILE_arc)gcc -dumpversion)
 
-LIB_INCLUDE_DIR_arc = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_arc)/usr/lib/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_arc_version)/em
-LIB_INCLUDE_DIR_arc += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_arc)/usr/${CROSS_COMPILE_TARGET_arc}/lib/em
-TOOLCHAIN_CFLAGS_arc = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_arc)/usr/${CROSS_COMPILE_TARGET_arc}/include
+# iamcu (pass1)
+CROSS_COMPILE_TARGET_iamcu = i586-poky-elfiamcu
+SYSROOT_TARGET_iamcu = iamcu-poky-elfiamcu
+CROSS_COMPILE_iamcu=$(TOOLCHAIN_HOME)/usr/bin/iamcu-poky-elfiamcu/$(CROSS_COMPILE_TARGET_iamcu)-
 
-# nios2
+# x86 (pass1)
+CROSS_COMPILE_TARGET_x86 = i586-poky-elf
+SYSROOT_TARGET_x86 = i586-poky-elf
+CROSS_COMPILE_x86=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_x86)/$(CROSS_COMPILE_TARGET_x86)-
+
+# nios2 (pass1)
 CROSS_COMPILE_TARGET_nios2 = nios2-poky-elf
-CROSS_COMPILE_nios2 = $(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_nios2)/$(CROSS_COMPILE_TARGET_nios2)-
-CROSS_COMPILE_nios2_version = $(shell $(CROSS_COMPILE_nios2)gcc -dumpversion)
+SYSROOT_TARGET_nios2 = nios2-poky-elf
+CROSS_COMPILE_nios2=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_nios2)/$(CROSS_COMPILE_TARGET_nios2)-
 
-LIB_INCLUDE_DIR_nios2 = -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_nios2)/usr/lib/$(CROSS_COMPILE_TARGET_nios2)/$(CROSS_COMPILE_nios2_version)
-LIB_INCLUDE_DIR_nios2 += -L ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_nios2)/usr/lib
-TOOLCHAIN_CFLAGS_nios2 = -I${ZEPHYR_SDK_INSTALL_DIR}/sysroots/$(CROSS_COMPILE_TARGET_nios2)/usr/include
+else
+
+ifneq ($(CONFIG_TOOLCHAIN_VARIANT),"")
+SYSROOT := ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/${SYSROOT_TARGET_$(subst $\",,${CONFIG_TOOLCHAIN_VARIANT})}
+else
+SYSROOT := ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/${SYSROOT_TARGET_${ARCH}}
+endif
+
+LIBGCC_DIR = $(shell dirname `$(CROSS_COMPILE)gcc --sysroot=$(SYSROOT) $(KBUILD_CFLAGS) -print-libgcc-file-name`)
+NEWLIB_DIR = $(shell $(CROSS_COMPILE)gcc --sysroot=$(SYSROOT) $(KBUILD_CFLAGS) -print-multi-directory)
+TOOLCHAIN_CFLAGS = -I $(SYSROOT)/usr/include
+LIB_INCLUDE_DIR = -L $(LIBGCC_DIR) -L $(SYSROOT)/usr/lib/$(NEWLIB_DIR)
+endif
 
 ifneq ($(CONFIG_TOOLCHAIN_VARIANT),"")
 CROSS_COMPILE = $(CROSS_COMPILE_$(subst $\",,$(CONFIG_TOOLCHAIN_VARIANT)))
-LIB_INCLUDE_DIR = $(LIB_INCLUDE_DIR_$(subst $\",,$(CONFIG_TOOLCHAIN_VARIANT)))
-TOOLCHAIN_CFLAGS = $(TOOLCHAIN_CFLAGS_$(subst $\",,$(CONFIG_TOOLCHAIN_VARIANT)))
 else
 CROSS_COMPILE = $(CROSS_COMPILE_$(ARCH))
-LIB_INCLUDE_DIR = $(LIB_INCLUDE_DIR_$(ARCH))
-TOOLCHAIN_CFLAGS = $(TOOLCHAIN_CFLAGS_$(ARCH))
 endif
 
 QEMU_BIN_PATH ?= $(TOOLCHAIN_HOME)/usr/bin
@@ -77,3 +79,7 @@ OPENOCD ?= ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/openocd
 OPENOCD_DEFAULT_PATH ?= ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/share/openocd/scripts
 
 export LIB_INCLUDE_DIR CROSS_COMPILE TOOLCHAIN_LIBS QEMU_BIN_PATH QEMU TOOLCHAIN_CFLAGS OPENOCD OPENOCD_DEFAULT_PATH
+
+ifndef MAKEFILE_TOOLCHAIN_DO_PASS2
+MAKEFILE_TOOLCHAIN_DO_PASS2=true
+endif
