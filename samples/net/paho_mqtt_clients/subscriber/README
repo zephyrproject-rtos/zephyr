@@ -1,0 +1,93 @@
+MQTT sample using the Paho's MQTT Packet Library.
+
+
+Requirements
+------------
+
+* Ethernet LAN for testing purposes.
+
+* MQTT 3.1.1 Gateway.
+
+* Galileo Gen 2 Development Board.
+
+* USB-UART cable: CH340, FTDI 6-pin or equivalent for debugging.
+
+The Mosquitto MQTT implementation is used in this document. However,
+any MQTT 3.1.1 compliant gateway must work. See http://mosquitto.org/
+for more details.
+
+
+Building instructions
+---------------------
+
+* Download the Paho's MQTT Embedded C Library.
+  See http://www.eclipse.org/paho/clients/c/embedded/ for more
+  information about Paho's MQTT Packet Library.
+
+  Inside samples/net/paho_mqtt_clients/publisher, run the following
+  commands:
+
+  git clone https://git.eclipse.org/r/paho/org.eclipse.paho.mqtt.embedded-c paho
+
+  Now "paho" contains the MQTT Packet Library.
+
+* Read src/main.c, change the IP addresses according to the LAN
+  environment.
+
+* make pristine && make are enough to build this sample.
+
+* Follow the steps indicated here:
+
+  https://www.zephyrproject.org/doc/board/galileo.html
+
+  to load the binary into the Galileo Dev Board.
+
+
+Usage
+-----
+
+* Open a terminal window and type:
+
+  mosquitto -v
+
+* Connect the USB-UART cable to the Galileo. Open a terminal and run:
+
+  screen /dev/ttyUSB0 115200
+
+* Connect Galileo to the LAN, Turn on the board.
+
+* Once Galileo is connected to the MQTT Gateway, on the mosquitto
+  terminal window something like this will appear:
+
+    1469492516: mosquitto version 1.4.9 (build date 2016-07-01 15:07:21+0000) starting
+    1469492516: Using default config.
+    1469492516: Opening ipv4 listen socket on port 1883.
+    1469492516: Opening ipv6 listen socket on port 1883.
+    1469492531: New connection from 192.168.1.110 on port 1883.
+    1469492531: New client connected from 192.168.1.110 as zephyr (c1, k0).
+    1469492531: Sending CONNACK to zephyr (0, 0)
+    1469492531: Received SUBSCRIBE from zephyr
+    1469492531: 	sensors (QoS 2)
+    1469492531: zephyr 2 sensors
+    1469492531: Sending SUBACK to zephyr
+
+
+* Open another terminal window, and type:
+
+  mosquitto_pub -t "sensors" -m "DOOR:OPEN" -q 1
+
+* On the screen window, the following text will be shown:
+
+    --------------------------------
+    [cb_publish:121] Received msg
+    [cb_publish:129] Topic: sensors
+    [cb_publish:133] Msg: DOOR:OPEN
+    [cb_publish:135] QoS: 1
+    [cb_publish:137] Pkt id: 1
+    --------------------------------
+
+* QoS values can be changed. For QoS 0, type:
+
+  mosquitto_pub -t "sensors" -m "DOOR:OPEN" -q 0
+
+  For QoS 2, just change "-q 0" for "-q 2"
