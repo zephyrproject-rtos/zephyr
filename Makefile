@@ -516,8 +516,9 @@ PHONY += scripts
 scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 	$(Q)$(MAKE) $(build)=$(@)
 
-
-core-y := lib/ kernel/ misc/ net/ boards/ arch/ ext/ usb/
+# arch/ must be last here so that .gnu.linkonce magic for interrupts/exceptions
+# works as expected
+core-y := lib/ kernel/ misc/ net/ boards/ ext/ usb/ arch/
 drivers-y := drivers/
 
 ifneq ($(strip $(MAKEFILE_APP_DIR)),)
@@ -745,6 +746,9 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
+# core-y must be last here. several arches use .gnu.linkonce magic
+# to register interrupt or exception handlers, and defaults under
+# arch/ (part of core-y) must be linked after drivers or libs.
 export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(libs-y) $(core-y)
 export LDFLAGS_zephyr
 
