@@ -28,17 +28,8 @@
 
 #include "gpio_pcal9535a.h"
 
-#ifndef CONFIG_GPIO_PCAL9535A_DEBUG
-#define DBG(...) { ; }
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_GPIO_PCAL9535A_DEBUG */
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_GPIO_PCAL9535A_LEVEL
+#include <misc/sys_log.h>
 
 /* Register definitions */
 #define REG_INPUT_PORT0			0x00
@@ -107,13 +98,13 @@ static int _read_port_regs(struct device *dev, uint8_t reg,
 
 	ret = i2c_burst_read(i2c_master, i2c_addr, reg, buf->byte, 2);
 	if (ret) {
-		DBG("PCAL9535A[0x%X]: error reading register 0x%X (%d)\n",
-		    i2c_addr, reg, ret);
+		SYS_LOG_ERR("PCAL9535A[0x%X]: error reading register 0x%X (%d)",
+			    i2c_addr, reg, ret);
 		goto error;
 	}
 
-	DBG("PCAL9535A[0x%X]: Read: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X\n",
-	    i2c_addr, reg, buf->byte[0], (reg + 1), buf->byte[1]);
+	SYS_LOG_DBG("PCAL9535A[0x%X]: Read: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X",
+		    i2c_addr, reg, buf->byte[0], (reg + 1), buf->byte[1]);
 
 error:
 	return ret;
@@ -141,13 +132,14 @@ static int _write_port_regs(struct device *dev, uint8_t reg,
 	uint16_t i2c_addr = config->i2c_slave_addr;
 	int ret;
 
-	DBG("PCAL9535A[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X\n",
-	    i2c_addr, reg, buf->byte[0], (reg + 1), buf->byte[1]);
+	SYS_LOG_DBG("PCAL9535A[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = "
+		    "0x%X", i2c_addr, reg, buf->byte[0], (reg + 1),
+		    buf->byte[1]);
 
 	ret = i2c_burst_write(i2c_master, i2c_addr, reg, buf->byte, 2);
 	if (ret) {
-		DBG("PCAL9535A[0x%X]: error writing from register 0x%X (%d)\n",
-		    i2c_addr, reg, ret);
+		SYS_LOG_ERR("PCAL9535A[0x%X]: error writing from register 0x%X "
+			    "(%d)", i2c_addr, reg, ret);
 	}
 
 	return ret;
@@ -368,7 +360,7 @@ static int gpio_pcal9535a_config(struct device *dev, int access_op,
 {
 	int ret;
 
-#ifdef CONFIG_GPIO_PCAL9535A_DEBUG
+#if (CONFIG_SYS_LOG_GPIO_PCAL9535A_LEVEL >= SYS_LOG_LEVEL_DEBUG)
 	const struct gpio_pcal9535a_config * const config =
 		dev->config->config_info;
 	uint16_t i2c_addr = config->i2c_slave_addr;
@@ -380,22 +372,22 @@ static int gpio_pcal9535a_config(struct device *dev, int access_op,
 
 	ret = _setup_pin_dir(dev, access_op, pin, flags);
 	if (ret) {
-		DBG("PCAL9535A[0x%X]: error setting pin direction (%d)\n",
-		    i2c_addr, ret);
+		SYS_LOG_ERR("PCAL9535A[0x%X]: error setting pin direction (%d)",
+			    i2c_addr, ret);
 		goto done;
 	}
 
 	ret = _setup_pin_polarity(dev, access_op, pin, flags);
 	if (ret) {
-		DBG("PCAL9535A[0x%X]: error setting pin polarity (%d)\n",
-		    i2c_addr, ret);
+		SYS_LOG_ERR("PCAL9535A[0x%X]: error setting pin polarity (%d)",
+			    i2c_addr, ret);
 		goto done;
 	}
 
 	ret = _setup_pin_pullupdown(dev, access_op, pin, flags);
 	if (ret) {
-		DBG("PCAL9535A[0x%X]: error setting pin pull up/down (%d)\n",
-		    i2c_addr, ret);
+		SYS_LOG_ERR("PCAL9535A[0x%X]: error setting pin pull up/down "
+			    "(%d)", i2c_addr, ret);
 		goto done;
 	}
 
