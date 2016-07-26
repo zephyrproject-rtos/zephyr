@@ -103,9 +103,11 @@ endif
 ifeq ($(KBUILD_VERBOSE),1)
   quiet =
   Q =
+  GENIDT_EXTRA_ARGS = -d
 else
   quiet=quiet_
   Q = @
+  GENIDT_EXTRA_ARGS =
 endif
 
 # If the user is running make -s (silent mode), suppress echoing of
@@ -799,7 +801,7 @@ quiet_cmd_gen_idt = SIDT    $@
 	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j intList $< isrList.bin &&	\
 	$(GENIDT) -i isrList.bin -n $(CONFIG_IDT_NUM_VECTORS) -o staticIdt.bin 	\
 		-b int_vector_alloc.bin -m irq_int_vector_map.bin		\
-		-l $(CONFIG_MAX_IRQ_LINES) &&					\
+		-l $(CONFIG_MAX_IRQ_LINES) $(GENIDT_EXTRA_ARGS) &&		\
 	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
 		--rename-section .data=staticIdt staticIdt.bin staticIdt.o &&	\
 	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\

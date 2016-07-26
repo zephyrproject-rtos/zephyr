@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -50,15 +51,6 @@
 /* These come from the shared directory */
 #include "segselect.h"
 #include "idtEnt.h"
-
-/* Define the following macro to see a verbose or debug output from the tool */
-/* #define DEBUG_GENIDT */
-
-#ifdef DEBUG_GENIDT
-#define PRINTF(...) printf(__VA_ARGS__)
-#else
-#define PRINTF(...) do {} while (0)
-#endif
 
 #if !defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__WIN32__)
   #define O_BINARY 0
@@ -83,6 +75,7 @@ static void validate_input_file(void);
 static void generate_idt(void);
 static void generate_interrupt_vector_bitmap(void);
 static void clean_exit(int exit_code);
+static void debug(const char *format, ...);
 
 struct genidt_header_s {
 	uint32_t spurious_addr;
@@ -118,6 +111,19 @@ static char *filenames[NFILES];
 static unsigned int num_vectors = (unsigned int)-1;
 static struct version version = {KERNEL_VERSION, 1, 1, 6};
 static unsigned int num_irq_lines = -1;
+static int verbose;
+
+static void debug(const char *format, ...)
+{
+	va_list vargs;
+
+	if (!verbose)
+		return;
+
+	va_start(vargs, format);
+	vfprintf(stderr, format, vargs);
+	va_end(vargs);
+}
 
 int main(int argc, char *argv[])
 {
@@ -137,7 +143,7 @@ static void get_options(int argc, char *argv[])
 	char *endptr;
 	int ii, opt;
 
-	while ((opt = getopt(argc, argv, "hb:i:o:m:n:vl:")) != -1) {
+	while ((opt = getopt(argc, argv, "hb:i:o:m:n:vl:d")) != -1) {
 		switch (opt) {
 		case 'b':
 			filenames[BFILE] = optarg;
@@ -171,6 +177,9 @@ static void get_options(int argc, char *argv[])
 		case 'v':
 			show_version(filenames[EXECFILE], &version);
 			exit(0);
+		case 'd':
+			verbose = 1;
+			break;
 		default:
 			usage(SHORT_USAGE);
 			exit(-1);
@@ -248,7 +257,7 @@ static void open_files(void)
 
 static void show_entry(struct genidt_entry_s *entry)
 {
-	fprintf(stderr, "Vector %3d: ISR 0x%08x IRQ %3d PRI %2d DPL %2x\n",
+	debug("Vector %3d: ISR 0x%08x IRQ %3d PRI %2d DPL %2x\n",
 			entry->vector_id, entry->isr, entry->irq, entry->priority,
 			entry->dpl);
 }
@@ -264,9 +273,9 @@ static void read_input_file(void)
 		goto read_error;
 	}
 
-	PRINTF("Spurious interrupt handlers found at 0x%x and 0x%x.\n",
+	debug("Spurious interrupt handlers found at 0x%x and 0x%x.\n",
 		    genidt_header.spurious_addr, genidt_header.spurious_no_error_addr);
-	PRINTF("There are %d ISR(s).\n", genidt_header.num_entries);
+	debug("There are %d ISR(s).\n", genidt_header.num_entries);
 
 
 	if (genidt_header.num_entries > num_vectors) {
@@ -283,13 +292,11 @@ static void read_input_file(void)
 		goto read_error;
 	}
 
-#ifdef DEBUG_GENIDT
 	int i;
 
 	for (i = 0; i < genidt_header.num_entries; i++) {
 		show_entry(&supplied_entry[i]);
 	}
-#endif
 	return;
 
 read_error:
@@ -612,5 +619,6 @@ static void usage(int len)
 	    "        [Mandatory] Number of IRQ lines\n\n"
 	    "    -v  Display version.\n\n"
 	    "    -h  Display this help.\n\n"
+	    "    -d  Display extra debugging output.\n\n"
 	    "\nReturns -1 on error, 0 on success\n\n");
 }
