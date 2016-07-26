@@ -274,19 +274,19 @@ extern int atomic_cas(atomic_t *target, atomic_val_t oldValue,
 #define ATOMIC_MASK(bit) (1 << ((bit) & (ATOMIC_BITS - 1)))
 #define ATOMIC_ELEM(addr, bit) ((addr) + ((bit) / ATOMIC_BITS))
 
-/** @def ATOMIC_DECLARE
+/** @def ATOMIC_DEFINE
  *  @brief Helper to declare an atomic_t array.
  *
- *  A helper to declare an atomic_t array based on the number of needed
+ *  A helper to define an atomic_t array based on the number of needed
  *  bits, e.g. any bit count of 32 or less will produce a single-element
  *  array.
  *
  *  @param name Name of atomic_t array.
  *  @param num_bits Maximum number of bits needed.
  *
- *  @return Appropriately sized array of atomic_t.
+ *  @return n/a
  */
-#define ATOMIC_DECLARE(name, num_bits) \
+#define ATOMIC_DEFINE(name, num_bits) \
 	atomic_t name[1 + ((num_bits) - 1) / ATOMIC_BITS]
 
 /** @brief Test whether a bit is set
