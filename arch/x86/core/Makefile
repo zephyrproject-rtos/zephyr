@@ -11,7 +11,7 @@ endif
 # character starts a comment
 KBUILD_AFLAGS += -Wa,--divide
 
-obj-y += fatal.o cpuhalt.o \
+obj-y += cpuhalt.o \
 	msr.o dynamic.o intconnect.o \
 	excconnect.o sys_fatal_error_handler.o \
 	crt0.o cache_s.o cache.o excstub.o \
@@ -25,3 +25,6 @@ obj-$(CONFIG_REBOOT_RST_CNT) += reboot_rst_cnt.o
 
 obj-$(CONFIG_DEBUG_INFO) += debug/
 obj-$(CONFIG_REBOOT_RST_CNT) += reboot_rst_cnt.o
+
+# Last since we declare default exception handlers here
+obj-y += fatal.o

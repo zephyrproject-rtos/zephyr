@@ -95,7 +95,7 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
 	pEsf->eip += 2;
 	excHandlerExecuted = 1;    /* provide evidence that the handler executed */
 }
-
+_EXCEPTION_CONNECT_NOCODE(exc_divide_error_handler, IV_DIVIDE_ERROR);
 
 /**
  *

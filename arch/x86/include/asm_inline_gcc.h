@@ -28,12 +28,7 @@ extern "C" {
  * Include asm_inline.h instead
  */
 
-#ifdef _ASMLANGUAGE
-
-#define SYS_NANO_CPU_EXC_CONNECT(handler, vector) \
-NANO_CPU_EXC_CONNECT_NO_ERR(handler, vector, 0)
-
-#else /* !_ASMLANGUAGE */
+#ifndef _ASMLANGUAGE
 
 /**
  *

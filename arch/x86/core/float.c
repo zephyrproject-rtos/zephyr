@@ -425,5 +425,6 @@ void _FpNotAvailableExcHandler(NANO_ESF * pEsf)
 
 	_FpEnable(_nanokernel.current, enableOption);
 }
+_EXCEPTION_CONNECT_NOCODE(_FpNotAvailableExcHandler, IV_DEVICE_NOT_AVAILABLE);
 
 #endif /* CONFIG_FP_SHARING */

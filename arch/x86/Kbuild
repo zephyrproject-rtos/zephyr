@@ -1,3 +1,5 @@
-obj-y += core/
 obj-$(CONFIG_GDB_SERVER) += debug/
 obj-y += soc/$(SOC_PATH)/
+# Must be last so that debug/ or soc/ can override default exception
+# handlers
+obj-y += core/

@@ -24,7 +24,6 @@
 #include <string.h>
 #include <debug/gdb_arch.h>
 #include <misc/debug/gdb_server.h>
-#include <asmPrv.h>
 
 #define TRACE_FLAG	0x0100 /* EFLAGS:TF */
 #define INT_FLAG	0x0200 /* EFLAGS:IF */
@@ -636,6 +635,7 @@ void gdb_trace_handler(NANO_ESF *esf)
 	(void)irq_lock();
 	_do_gdb_trace_handler(esf);
 }
+_EXCEPTION_CONNECT_NOCODE(gdb_trace_handler, IV_DEBUG);
 
 /**
  * @brief GDB breakpoint handler
@@ -658,6 +658,7 @@ void gdb_bp_handler(NANO_ESF *esf)
 
 	gdb_handler(GDB_EXC_BP, esf, GDB_SIG_TRAP);
 }
+_EXCEPTION_CONNECT_NOCODE(gdb_bp_handler, IV_BREAKPOINT);
 
 /**
  * @brief GDB division-by-zero handler
@@ -675,6 +676,7 @@ void gdb_div_by_zero_handler(NANO_ESF *esf)
 	gdb_debug_status = DEBUGGING;
 	gdb_handler(GDB_EXC_OTHER, esf, GDB_SIG_FPE);
 }
+_EXCEPTION_CONNECT_NOCODE(gdb_div_by_zero_handler, IV_DIVIDE_ERROR);
 
 /**
  * @brief GDB page fault handler
@@ -692,5 +694,6 @@ void gdb_pfault_handler(NANO_ESF *esf)
 	gdb_debug_status = DEBUGGING;
 	gdb_handler(GDB_EXC_OTHER, esf, GDB_SIG_SIGSEGV);
 }
+_EXCEPTION_CONNECT_CODE(gdb_pfault_handler, IV_PAGE_FAULT);
 
 #endif /* GDB_ARCH_HAS_RUNCONTROL */

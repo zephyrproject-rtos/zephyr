@@ -31,7 +31,6 @@ testing.
 #include <arch/cpu.h>
 #include <nano_private.h>
 #include <arch/x86/asm.h>
-#include <asmPrv.h>
 #include <asm_inline.h>
 
 	/* exports (internal APIs) */
@@ -41,12 +40,7 @@ testing.
 	GTEXT(_IntEnt)
 	GTEXT(_IntExit)
 
-
-/* Static exception handler stubs */
-SYS_NANO_CPU_EXC_CONNECT(exc_divide_error_handler,IV_DIVIDE_ERROR)
-
 /* Static interrupt handler stubs */
-
 
 	GTEXT(nanoIntStub)
 SECTION_FUNC(TEXT, nanoIntStub)

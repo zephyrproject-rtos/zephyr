@@ -37,6 +37,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <asm_inline.h>
+#include <exception.h>
 
 #ifndef _ASMLANGUAGE
 #include <nanokernel.h>		   /* public nanokernel API */

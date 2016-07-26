@@ -27,8 +27,8 @@
 #include <nanokernel.h>
 #include <nano_private.h>
 #include <misc/printk.h>
-#include <asmPrv.h>
 #include <drivers/loapic.h>
+#include <exception.h>
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
@@ -138,29 +138,44 @@ static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
 }
 
-#define EXC_FUNC(vector) \
+#define _EXC_FUNC(vector) \
 FUNC_NORETURN void handle_exc_##vector(const NANO_ESF *pEsf) \
 { \
 	generic_exc_handle(vector, pEsf); \
 }
 
-EXC_FUNC(IV_DIVIDE_ERROR);
-EXC_FUNC(IV_NON_MASKABLE_INTERRUPT);
-EXC_FUNC(IV_OVERFLOW);
-EXC_FUNC(IV_BOUND_RANGE);
-EXC_FUNC(IV_INVALID_OPCODE);
-#ifndef CONFIG_FP_SHARING
-EXC_FUNC(IV_DEVICE_NOT_AVAILABLE);
-#endif
-EXC_FUNC(IV_DOUBLE_FAULT);
-EXC_FUNC(IV_INVALID_TSS);
-EXC_FUNC(IV_SEGMENT_NOT_PRESENT);
-EXC_FUNC(IV_STACK_FAULT);
-EXC_FUNC(IV_GENERAL_PROTECTION);
-EXC_FUNC(IV_PAGE_FAULT);
-EXC_FUNC(IV_X87_FPU_FP_ERROR);
-EXC_FUNC(IV_ALIGNMENT_CHECK);
-EXC_FUNC(IV_MACHINE_CHECK);
+#define _EXC_FUNC_CODE(vector) \
+	_EXC_FUNC(vector) \
+	_EXCEPTION_CONNECT_CODE(handle_exc_##vector, vector)
+
+#define _EXC_FUNC_NOCODE(vector) \
+	_EXC_FUNC(vector) \
+	_EXCEPTION_CONNECT_NOCODE(handle_exc_##vector, vector)
+
+/* Necessary indirection to ensure 'vector' is expanded before we expand
+ * the handle_exc_##vector
+ */
+#define EXC_FUNC_NOCODE(vector) \
+	_EXC_FUNC_NOCODE(vector)
+
+#define EXC_FUNC_CODE(vector) \
+	_EXC_FUNC_CODE(vector)
+
+EXC_FUNC_NOCODE(IV_DIVIDE_ERROR);
+EXC_FUNC_NOCODE(IV_NON_MASKABLE_INTERRUPT);
+EXC_FUNC_NOCODE(IV_OVERFLOW);
+EXC_FUNC_NOCODE(IV_BOUND_RANGE);
+EXC_FUNC_NOCODE(IV_INVALID_OPCODE);
+EXC_FUNC_NOCODE(IV_DEVICE_NOT_AVAILABLE);
+EXC_FUNC_CODE(IV_DOUBLE_FAULT);
+EXC_FUNC_CODE(IV_INVALID_TSS);
+EXC_FUNC_CODE(IV_SEGMENT_NOT_PRESENT);
+EXC_FUNC_CODE(IV_STACK_FAULT);
+EXC_FUNC_CODE(IV_GENERAL_PROTECTION);
+EXC_FUNC_CODE(IV_PAGE_FAULT);
+EXC_FUNC_NOCODE(IV_X87_FPU_FP_ERROR);
+EXC_FUNC_CODE(IV_ALIGNMENT_CHECK);
+EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
 
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
