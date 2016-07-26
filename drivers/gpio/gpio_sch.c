@@ -28,17 +28,8 @@
 #include "gpio_utils.h"
 #include "gpio_api_compat.h"
 
-#ifndef CONFIG_GPIO_DEBUG
-#define DBG(...)
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_GPIO_DEBUG */
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_GPIO_LEVEL
+#include <misc/sys_log.h>
 
 /* Define GPIO_SCH_LEGACY_IO_PORTS_ACCESS
  * inside soc.h if the GPIO controller
@@ -121,8 +112,8 @@ static void _gpio_pin_config(struct device *dev, uint32_t pin, int flags)
 			active_low = 1;
 		}
 
-		DBG("Setting up pin %d to active_high %d and active_low %d\n",
-		    active_high, active_low);
+		SYS_LOG_DBG("Setting up pin %d to active_high %d and "
+			    "active_low %d", active_high, active_low);
 	}
 
 	/* We store the gtpe/gtne settings. These will be used once
@@ -235,7 +226,7 @@ static void _gpio_sch_manage_callback(struct device *dev)
 	/* Start the fiber only when relevant */
 	if (!sys_slist_is_empty(&gpio->callbacks) && gpio->cb_enabled) {
 		if (!gpio->poll) {
-			DBG("Starting SCH GPIO polling fiber\n");
+			SYS_LOG_DBG("Starting SCH GPIO polling fiber");
 			gpio->poll = 1;
 			fiber_start(gpio->polling_stack,
 				    GPIO_SCH_POLLING_STACK_SIZE,
@@ -335,7 +326,7 @@ int gpio_sch_init(struct device *dev)
 
 	nano_timer_init(&gpio->poll_timer, NULL);
 
-	DBG("SCH GPIO Intel Driver initialized on device: %p\n", dev);
+	SYS_LOG_DBG("SCH GPIO Intel Driver initialized on device: %p", dev);
 
 	return 0;
 }

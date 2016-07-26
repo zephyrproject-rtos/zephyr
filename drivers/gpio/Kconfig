@@ -25,11 +25,24 @@ menuconfig GPIO
 
 if GPIO
 
-config GPIO_DEBUG
-	bool "Debug output for GPIO drivers"
-	default n
+config SYS_LOG_GPIO_LEVEL
+	int
+	prompt "GPIO drivers log level"
+	default 0
 	help
-	  Enable the debug output for GPIO drivers
+	Sets log level for GPIO drivers
+
+	Levels are:
+
+	- 0 OFF, do not write
+
+	- 1 ERROR, only write SYS_LOG_ERR
+
+	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+
+	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+
+	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
 source "drivers/gpio/Kconfig.dw"
 
