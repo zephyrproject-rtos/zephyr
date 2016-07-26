@@ -117,3 +117,17 @@ config SOC_FLASH_QMSI_SYS_SIZE
 	depends on SOC_FLASH_QMSI
 	help
 	  Specify system flash size on the quark SOC.
+
+config SOC_FLASH_NRF5
+	bool "Nordic Semiconductor nRF5X flash driver"
+	depends on FLASH && SOC_FAMILY_NRF5
+	default n
+	help
+	  Enables Nordic Semiconductor nRF5X flash driver.
+
+config SOC_FLASH_NRF5_DEV_NAME
+	string "Nordic nRF5X flash device name"
+	depends on SOC_FLASH_NRF5
+	default "NRF5_FLASH"
+	help
+	  Specify the device name for the flash driver.
