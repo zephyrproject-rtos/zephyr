@@ -27,7 +27,7 @@ menuconfig UART_NRF5
 	  UART controller on nRF5 ICs.
 
 config UART_NRF5_NAME
-	string "Device Name for Nordic Semicondoctor nRF5 UART"
+	string "Device Name for Nordic Semiconductor nRF5 UART"
 	default "UART_0"
 	depends on UART_NRF5
 	help
