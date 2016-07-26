@@ -142,6 +142,12 @@ M:	Perez-Gonzalez, Inaky <inaky.perez-gonzalez@intel.com>
 S:	Supported
 F:	MAINTAINERS
 
+MBEDTLS
+M:	Sergio Rodriguez <sergio.sf.rodriguez@intel.com>
+M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
+S:	Supported
+F:	ext/lib/crypto/mbedtls/
+
 NETWORKING
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
 S:	Supported
