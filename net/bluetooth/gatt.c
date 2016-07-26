@@ -1456,11 +1456,11 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 static void att_write_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 			  uint16_t length, void *user_data)
 {
-	bt_gatt_rsp_func_t func = user_data;
+	struct bt_gatt_write_params *params = user_data;
 
 	BT_DBG("err 0x%02x", err);
 
-	func(conn, err);
+	params->func(conn, err, params);
 }
 
 static bool write_signed_allowed(struct bt_conn *conn)
@@ -1519,7 +1519,7 @@ static int gatt_exec_write(struct bt_conn *conn,
 
 	BT_DBG("");
 
-	return gatt_send(conn, buf, att_write_rsp, params->func, NULL);
+	return gatt_send(conn, buf, att_write_rsp, params, NULL);
 }
 
 struct prepare_write_data {
@@ -1615,7 +1615,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 
 	BT_DBG("handle 0x%04x length %u", params->handle, params->length);
 
-	return gatt_send(conn, buf, att_write_rsp, params->func, NULL);
+	return gatt_send(conn, buf, att_write_rsp, params, NULL);
 }
 
 static void gatt_subscription_add(struct bt_conn *conn,
