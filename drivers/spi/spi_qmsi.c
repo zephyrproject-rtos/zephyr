@@ -22,6 +22,7 @@
 #include <nanokernel.h>
 #include <spi.h>
 #include <gpio.h>
+#include <power.h>
 
 #include "qm_spi.h"
 #include "clk.h"
@@ -40,6 +41,17 @@ struct spi_qmsi_config {
 	uint32_t cs_pin;
 };
 
+struct spi_context_t {
+	uint32_t ctrlr0;
+	uint32_t baudr;
+	uint32_t ser;
+	/* FIXME: When moving suspend/resume to QMSI,
+	 * int_*_masks will need to be removed as the
+	 * QMSI ROM will not reset it anymore.
+	 */
+	uint32_t int_spi_mask;
+};
+
 struct spi_qmsi_runtime {
 	struct device *gpio_cs;
 	device_sync_call_t sync;
@@ -47,6 +59,9 @@ struct spi_qmsi_runtime {
 	int rc;
 	bool loopback;
 	struct nano_sem sem;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	struct spi_context_t ctx_save;
+#endif
 };
 
 static inline qm_spi_bmode_t config_to_bmode(uint8_t mode)
@@ -156,6 +171,8 @@ static int spi_qmsi_transceive(struct device *dev,
 	pending_transfers[spi].dev = dev;
 	nano_sem_give(&context->sem);
 
+	device_busy_set(dev);
+
 	xfer = &pending_transfers[spi].xfer;
 
 	xfer->rx = rx_buf;
@@ -184,6 +201,7 @@ static int spi_qmsi_transceive(struct device *dev,
 
 	rc = qm_spi_set_config(spi, cfg);
 	if (rc != 0) {
+		device_busy_clear(dev);
 		return -EINVAL;
 	}
 
@@ -192,9 +210,12 @@ static int spi_qmsi_transceive(struct device *dev,
 	rc = qm_spi_irq_transfer(spi, xfer);
 	if (rc != 0) {
 		spi_control_cs(dev, false);
+		device_busy_clear(dev);
 		return -EIO;
 	}
 	device_sync_call_wait(&context->sync);
+
+	device_busy_clear(dev);
 
 	return context->rc ? -EIO : 0;
 }
@@ -263,6 +284,61 @@ static int spi_qmsi_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static int spi_master_suspend_device(struct device *dev, int pm_policy)
+{
+	if (device_busy_check(dev)) {
+		return -EBUSY;
+	}
+
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		struct spi_qmsi_config *config = dev->config->config_info;
+		qm_spi_reg_t *const regs = QM_SPI[config->spi];
+		struct spi_qmsi_runtime *drv_data = dev->driver_data;
+		struct spi_context_t *const ctx_save = &drv_data->ctx_save;
+
+		if (config->spi == QM_SPI_MST_0) {
+			ctx_save->int_spi_mask =
+					QM_SCSS_INT->int_spi_mst_0_mask;
+		} else {
+			ctx_save->int_spi_mask =
+					QM_SCSS_INT->int_spi_mst_1_mask;
+		}
+
+		ctx_save->ctrlr0 = regs->ctrlr0;
+		ctx_save->ser = regs->ser;
+		ctx_save->baudr = regs->baudr;
+	}
+	return 0;
+}
+
+static int spi_master_resume_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		struct spi_qmsi_config *config = dev->config->config_info;
+		qm_spi_reg_t *const regs = QM_SPI[config->spi];
+		struct spi_qmsi_runtime *drv_data = dev->driver_data;
+		struct spi_context_t *const ctx_save = &drv_data->ctx_save;
+
+		if (config->spi == QM_SPI_MST_0) {
+			QM_SCSS_INT->int_spi_mst_0_mask =
+					ctx_save->int_spi_mask;
+		} else {
+			QM_SCSS_INT->int_spi_mst_1_mask =
+					ctx_save->int_spi_mask;
+		}
+
+		regs->ctrlr0 = ctx_save->ctrlr0;
+		regs->ser = ctx_save->ser;
+		regs->baudr = ctx_save->baudr;
+	}
+	return 0;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
+DEFINE_DEVICE_PM_OPS(spi_master, spi_master_suspend_device,
+		     spi_master_resume_device);
+
 #ifdef CONFIG_SPI_0
 static struct spi_qmsi_config spi_qmsi_mst_0_config = {
 	.spi = QM_SPI_MST_0,
@@ -274,14 +350,12 @@ static struct spi_qmsi_config spi_qmsi_mst_0_config = {
 
 static struct spi_qmsi_runtime spi_qmsi_mst_0_runtime;
 
-DEVICE_INIT(spi_master_0, CONFIG_SPI_0_NAME,
-	    spi_qmsi_init, &spi_qmsi_mst_0_runtime, &spi_qmsi_mst_0_config,
-	    SECONDARY, CONFIG_SPI_INIT_PRIORITY);
-
-
+DEVICE_INIT_PM(spi_master_0, CONFIG_SPI_0_NAME, spi_qmsi_init,
+	       DEVICE_PM_OPS_GET(spi_master), &spi_qmsi_mst_0_runtime,
+	       &spi_qmsi_mst_0_config, SECONDARY, CONFIG_SPI_INIT_PRIORITY);
 #endif /* CONFIG_SPI_0 */
-#ifdef CONFIG_SPI_1
 
+#ifdef CONFIG_SPI_1
 static struct spi_qmsi_config spi_qmsi_mst_1_config = {
 	.spi = QM_SPI_MST_1,
 #ifdef CONFIG_SPI_CS_GPIO
@@ -292,8 +366,7 @@ static struct spi_qmsi_config spi_qmsi_mst_1_config = {
 
 static struct spi_qmsi_runtime spi_qmsi_mst_1_runtime;
 
-DEVICE_INIT(spi_master_1, CONFIG_SPI_1_NAME,
-	    spi_qmsi_init, &spi_qmsi_mst_1_runtime, &spi_qmsi_mst_1_config,
-	    SECONDARY, CONFIG_SPI_INIT_PRIORITY);
-
+DEVICE_INIT_PM(spi_master_1, CONFIG_SPI_1_NAME, spi_qmsi_init,
+	       DEVICE_PM_OPS_GET(spi_master), &spi_qmsi_mst_1_runtime,
+	       &spi_qmsi_mst_1_config, SECONDARY, CONFIG_SPI_INIT_PRIORITY);
 #endif /* CONFIG_SPI_1 */
