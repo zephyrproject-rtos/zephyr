@@ -16,8 +16,8 @@
 
 KERNEL_TYPE = nano
 BOARD = galileo
-CONF_FILE = prj_ethernet.conf
+CONF_FILE = prj_galileo.conf
 
-SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/paho_mqtt_shell
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/net/paho_mqtt_clients/publisher
 
 include $(ZEPHYR_BASE)/Makefile.inc

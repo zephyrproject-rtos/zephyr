@@ -1,0 +1,113 @@
+MQTT sample using the Paho's MQTT Packet Library.
+
+
+Requirements
+------------
+
+* Ethernet LAN for testing purposes.
+
+* MQTT 3.1.1 Gateway.
+
+* Galileo Gen 2 Development Board.
+
+* USB-UART cable: CH340, FTDI 6-pin or equivalent for debugging.
+
+The Mosquitto MQTT implementation is used in this document. However,
+any MQTT 3.1.1 compliant gateway must work. See http://mosquitto.org/
+for more details.
+
+
+Building instructions
+---------------------
+
+* Download the Paho's MQTT Embedded C Library.
+  See http://www.eclipse.org/paho/clients/c/embedded/ for more
+  information about Paho's MQTT Packet Library.
+
+  Inside samples/net/paho_mqtt_clients/publisher, run the following
+  commands:
+
+  git clone https://git.eclipse.org/r/paho/org.eclipse.paho.mqtt.embedded-c paho
+
+  Now "paho" contains the MQTT Packet Library.
+
+* Read src/main.c, change the IP addresses according to the LAN
+  environment.
+
+* make pristine && make are enough to build this sample.
+
+* Follow the steps indicated here:
+
+  https://www.zephyrproject.org/doc/board/galileo.html
+
+  to load the binary into the Galileo Dev Board.
+
+
+Usage
+-----
+
+* From a terminal, run the gateway:
+
+  mosquitto -v
+
+* A subscriber is required to receive the messages sent by this
+  publisher. For example, the following command must be executed from a
+  terminal to create a MQTT subscriber:
+
+    mosquitto_sub -t sensors
+
+  If this command is executed from a computer other than the gateway,
+  the host must be specified.
+
+* Connect the USB-UART cable to the Galileo. Open a terminal and run:
+
+  screen /dev/ttyUSB0 115200
+
+* Connect Galileo to the LAN, Turn on the board.
+
+  Once Galileo is connected to the MQTT Gateway, the following text
+  will appear in the screen terminal:
+
+    WARNING: no console will be available to OS
+    error: no suitable video mode found.
+
+    --------------------------------
+    Pingreg, rc: 0
+    Publish QoS0, rc: OK
+    Publish QoS1, rc: OK
+    Publish QoS2, rc: OK
+
+
+  The subscriber application will receive the following messages:
+
+    OK QoS0
+    OK QoS1
+    OK QoS2
+
+  The mosquitto application will show something like this:
+
+    1469221705: mosquitto version 1.4.9 (build date 2016-07-01 15:07:21+0000) starting
+    1469221705: Using default config.
+    1469221705: Opening ipv4 listen socket on port 1883.
+    1469221705: Opening ipv6 listen socket on port 1883.
+    1469221712: New connection from 192.168.1.110 on port 1883.
+    1469221712: New client connected from 192.168.1.110 as zephyr (c1, k0).
+    1469221712: Sending CONNACK to zephyr (0, 0)
+    1469221712: Received PINGREQ from zephyr
+    1469221712: Sending PINGRESP to zephyr
+    1469221712: Received PUBLISH from zephyr (d0, q0, r0, m0, 'sensors', ... (8 bytes))
+    1469221712: Received PUBLISH from zephyr (d0, q1, r0, m1, 'sensors', ... (8 bytes))
+    1469221712: Sending PUBACK to zephyr (Mid: 1)
+    1469221713: Received PUBLISH from zephyr (d0, q2, r0, m2, 'sensors', ... (8 bytes))
+    1469221713: Sending PUBREC to zephyr (Mid: 2)
+    1469221713: Received PUBREL from zephyr (Mid: 2)
+    1469221713: Sending PUBCOMP to zephyr (Mid: 2)
+
+
+Final Remarks
+-------------
+
+The provided source code perhaps does not exemplify the best way to use
+Paho's MQTT in Zephyr. For example, PINGREQ must be sent periodically,
+but not too often as in this use-case. Furthermore, DISCONNECT is never
+used here.
