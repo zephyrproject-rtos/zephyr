@@ -19,16 +19,6 @@ if [ $# -eq 1 ]; then
 
 echo "About to flash Zephyr comptaible ROM"
 
-$OPENOCD -s ${OPENOCD_SCRIPT} \
-         -f ${ZEPHYR_BASE}/boards/arduino_101/support/restore.cfg \
-         -c 'init' \
-         -c 'targets 1' \
-         -c 'reset halt' \
-         -c 'load_image quark_se_rom.bin 0xffffe000 bin' \
-         -c 'verify_image quark_se_rom.bin 0xffffe000 bin' \
-         -c 'reset run' \
-         -c "shutdown"
-
 else
 
 if [ ! -r "A101_OS.bin" ]; then
