@@ -4,4 +4,3 @@ ccflags-y += -I$(srctree)/drivers/pinmux
 asflags-y := ${ccflags-y}
 
 obj-$(CONFIG_PINMUX) += pinmux.o
-obj-y += board.o
