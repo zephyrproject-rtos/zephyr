@@ -175,14 +175,6 @@ typedef struct s_isrList {
 	"pushl %[isr_param]\n\t"
 #endif /* CONFIG_X86_IAMCU */
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
-#define _IRQ_STUB_LABEL \
-	" .global %[isr]%P[irq]_stub\n\t" \
-	"%[isr]%P[irq]_stub:\n\t"
-#else
-#define _IRQ_STUB_LABEL
-#endif
-
 /**
  * Code snippets for populating the vector ID and priority into the intList
  *
@@ -216,18 +208,15 @@ typedef struct s_isrList {
  *
  * Internally this function does a few things:
  *
- * 1. There is a block of inline assembly which is completely skipped over
- * at runtime with an initial 'jmp' instruction.
- *
- * 2. There is a declaration of the interrupt parameters in the .intList
+ * 1. There is a declaration of the interrupt parameters in the .intList
  * section, used by gen_idt to create the IDT. This does the same thing
  * as the NANO_CPU_INT_REGISTER() macro, but is done in assembly as we
  * need to populate the .fnc member with the address of the assembly
  * IRQ stub that we generate immediately afterwards.
  *
- * 3. The IRQ stub itself is declared. It doesn't get run in the context
- * of the calling function due to the initial 'jmp' instruction at the
- * beginning of the assembly block, but a pointer to it gets saved in the IDT.
+ * 2. The IRQ stub itself is declared. The code will go in its own named
+ * section .text.irqstubs section (which eventually gets linked into 'text')
+ * and the stub shall be named (isr_name)_irq(irq_line)_stub
  *
  * The stub calls _IntEnt to save interrupted context and switch to the IRQ
  * stack. There is a calling convention specific macro to populate the
@@ -248,21 +237,21 @@ typedef struct s_isrList {
 #define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	__asm__ __volatile__(							\
-		"jmp 2f\n\t" \
 		".pushsection .intList\n\t" \
-		".long 1f\n\t"			/* ISR_LIST.fnc */ \
+		".long %P[isr]_irq%P[irq]_stub\n\t"	/* ISR_LIST.fnc */ \
 		".long %P[irq]\n\t"		/* ISR_LIST.irq */ \
 		".long %P[priority]\n\t"	/* ISR_LIST.priority */ \
 		".long %P[vector]\n\t"		/* ISR_LIST.vec */ \
 		".long 0\n\t"			/* ISR_LIST.dpl */ \
 		".popsection\n\t" \
-		"1:\n\t" \
-		_IRQ_STUB_LABEL \
+		".pushsection .text.irqstubs\n\t" \
+		".global %P[isr]_irq%P[irq]_stub\n\t" \
+		"%P[isr]_irq%P[irq]_stub:\n\t" \
 		"call _IntEnt\n\t" \
 		_ISR_ARG_ASM \
 		"call %P[isr]\n\t" \
 		"jmp _IntExitWithEoi\n\t" \
-		"2:\n\t" \
+		".popsection\n\t" \
 		: \
 		: [isr] "i" (isr_p), \
 		  [isr_param] "i" (isr_param_p), \
