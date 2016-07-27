@@ -1522,14 +1522,6 @@ static int gatt_exec_write(struct bt_conn *conn,
 	return gatt_send(conn, buf, att_write_rsp, params, NULL);
 }
 
-struct prepare_write_data {
-	bt_gatt_rsp_func_t func;
-	const void *data;
-	uint16_t length;
-	uint16_t handle;
-	uint16_t offset;
-};
-
 static void att_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
 				  const void *pdu, uint16_t length,
 				  void *user_data)
