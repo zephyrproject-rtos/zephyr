@@ -29,7 +29,7 @@ int hmc5883l_trigger_set(struct device *dev,
 {
 	struct hmc5883l_data *drv_data = dev->driver_data;
 
-	__ASSERT(trig->type == SENSOR_TRIG_DATA_READY);
+	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
 	gpio_pin_disable_callback(drv_data->gpio, CONFIG_HMC5883L_GPIO_PIN_NUM);
 

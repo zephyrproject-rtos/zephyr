@@ -54,7 +54,7 @@ static int sx9500_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
 
-	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX);
 
 	return i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 				 SX9500_REG_STAT, &data->prox_stat);
@@ -66,7 +66,7 @@ static int sx9500_channel_get(struct device *dev,
 {
 	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
 
-	__ASSERT(chan == SENSOR_CHAN_PROX);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PROX);
 
 	val->type = SENSOR_VALUE_TYPE_INT;
 	val->val1 = !!(data->prox_stat &

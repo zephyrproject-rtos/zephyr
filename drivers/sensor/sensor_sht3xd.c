@@ -76,7 +76,7 @@ static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 	uint8_t rx_buf[6];
 	uint16_t t_sample, rh_sample;
 
-	__ASSERT(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	uint8_t tx_buf[2] = {
 		SHT3XD_CMD_FETCH >> 8,

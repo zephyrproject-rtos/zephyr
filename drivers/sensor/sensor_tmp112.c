@@ -193,7 +193,7 @@ static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct tmp112_data *drv_data = dev->driver_data;
 	uint16_t val;
 
-	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_TEMP);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_TEMP);
 
 	if (tmp112_reg_read(drv_data, TMP112_REG_TEMPERATURE, &val) < 0) {
 		return -EIO;

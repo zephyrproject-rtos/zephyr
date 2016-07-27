@@ -64,7 +64,7 @@ int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct lis3dh_data *drv_data = dev->driver_data;
 	uint8_t buf[6];
 
-	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_ACCEL_ANY);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_ACCEL_ANY);
 
 	/*
 	 * since all accel data register addresses are consecutive,

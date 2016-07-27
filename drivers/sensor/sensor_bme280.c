@@ -96,7 +96,7 @@ static int bme280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	int32_t adc_press, adc_temp, adc_humidity;
 	int size = 6;
 
-	__ASSERT(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	if (data->chip_id == BME280_CHIP_ID) {
 		size = 8;

@@ -29,7 +29,7 @@ int lis3mdl_trigger_set(struct device *dev,
 {
 	struct lis3mdl_data *drv_data = dev->driver_data;
 
-	__ASSERT(trig->type == SENSOR_TRIG_DATA_READY);
+	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
 	gpio_pin_disable_callback(drv_data->gpio, CONFIG_LIS3MDL_GPIO_PIN_NUM);
 

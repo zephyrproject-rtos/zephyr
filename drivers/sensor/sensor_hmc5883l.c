@@ -64,7 +64,7 @@ static int hmc5883l_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct hmc5883l_data *drv_data = dev->driver_data;
 	int16_t buf[3];
 
-	__ASSERT(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* fetch magnetometer sample */
 	if (i2c_burst_read(drv_data->i2c, HMC5883L_I2C_ADDR,

@@ -124,7 +124,7 @@ static int max44009_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct max44009_data *drv_data = dev->driver_data;
 	uint8_t val_h, val_l;
 
-	__ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_LIGHT);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_LIGHT);
 
 	drv_data->sample = 0;
 

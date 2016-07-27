@@ -68,7 +68,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 	uint8_t buf[5];
 	unsigned int i, j;
 
-	__ASSERT(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* send start signal */
 	gpio_pin_write(drv_data->gpio, CONFIG_DHT_GPIO_PIN_NUM, 0);
@@ -172,7 +172,7 @@ static int dht_channel_get(struct device *dev,
 {
 	struct dht_data *drv_data = dev->driver_data;
 
-	__ASSERT(chan == SENSOR_CHAN_TEMP || chan == SENSOR_CHAN_HUMIDITY);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_TEMP || chan == SENSOR_CHAN_HUMIDITY);
 
 	val->type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
 

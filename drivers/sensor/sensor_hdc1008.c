@@ -41,7 +41,7 @@ static int hdc1008_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct hdc1008_data *drv_data = dev->driver_data;
 	uint8_t buf[4];
 
-	__ASSERT(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	gpio_pin_enable_callback(drv_data->gpio, CONFIG_HDC1008_GPIO_PIN_NUM);
 

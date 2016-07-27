@@ -27,7 +27,7 @@ static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	uint8_t buf[6];
 	uint8_t lsb;
 
-	__ASSERT(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/*
 	 * since all accel data register addresses are consecutive,

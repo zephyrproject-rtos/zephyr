@@ -69,7 +69,7 @@ int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct lis3mdl_data *drv_data = dev->driver_data;
 	int16_t buf[4];
 
-	__ASSERT(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* fetch magnetometer sample */
 	if (i2c_burst_read(drv_data->i2c, CONFIG_LIS3MDL_I2C_ADDR,

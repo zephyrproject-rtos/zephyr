@@ -72,7 +72,7 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 	uint8_t reg_addr;
 	int32_t val2;
 
-	__ASSERT(chan == SENSOR_CHAN_TEMP);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_TEMP);
 
 	switch (val->type) {
 	case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:

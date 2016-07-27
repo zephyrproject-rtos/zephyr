@@ -29,7 +29,7 @@ static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct ak8975_data *drv_data = dev->driver_data;
 	uint8_t buf[6];
 
-	__ASSERT(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	if (i2c_reg_write_byte(drv_data->i2c, CONFIG_AK8975_I2C_ADDR,
 			       AK8975_REG_CNTL, AK8975_MODE_MEASURE) < 0) {
@@ -70,7 +70,7 @@ static int ak8975_channel_get(struct device *dev,
 {
 	struct ak8975_data *drv_data = dev->driver_data;
 
-	__ASSERT(chan == SENSOR_CHAN_MAGN_ANY || chan == SENSOR_CHAN_MAGN_X ||
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_MAGN_ANY || chan == SENSOR_CHAN_MAGN_X ||
 		 chan == SENSOR_CHAN_MAGN_Y || chan == SENSOR_CHAN_MAGN_Z);
 
 	if (chan == SENSOR_CHAN_MAGN_ANY) {
