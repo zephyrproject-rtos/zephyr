@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-if PINMUX
+if PINMUX && BOARD_GALILEO
 comment "Galileo Pinmux Options"
 
 config PINMUX_GALILEO_EXP0_NAME
