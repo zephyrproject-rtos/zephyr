@@ -184,7 +184,7 @@ int max44009_init(struct device *dev)
 	drv_data->i2c = device_get_binding(CONFIG_MAX44009_I2C_DEV_NAME);
 	if (drv_data->i2c == NULL) {
 		SYS_LOG_DBG("Failed to get pointer to %s device!",
-			    CONFIG_MAX44009_I2C_MASTER_DEV_NAME);
+			    CONFIG_MAX44009_I2C_DEV_NAME);
 		return -EINVAL;
 	}
 
