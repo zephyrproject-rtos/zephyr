@@ -10,17 +10,6 @@ OPENOCD_ROOT=$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/
 OPENOCD=$OPENOCD_ROOT/bin/openocd
 OPENOCD_SCRIPT=$OPENOCD_ROOT/share/openocd/scripts
 
-if [ $# -eq 1 ]; then
-   if [ "$1" != "rom" ]; then
-       echo "Unexpected command."
-       echo "Only valid option is: rom"
-       exit 1
-   fi
-
-echo "About to flash Zephyr comptaible ROM"
-
-else
-
 if [ ! -r "A101_OS.bin" ]; then
     echo "Unable to find the A101_OS.bin file."
     exit 1
@@ -45,8 +34,6 @@ $OPENOCD -s ${OPENOCD_SCRIPT} \
          -c "load_image   A101_BOOT.bin 0xffffe000 bin" \
          -c "verify_image A101_BOOT.bin 0xffffe000 bin" \
          -c "shutdown"
-
-fi
 
 echo ""
 echo "Flashing done"
