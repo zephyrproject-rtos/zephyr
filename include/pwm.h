@@ -74,20 +74,6 @@ typedef int (*pwm_set_phase_t)(struct device *dev, int access_op,
 			       uint32_t pwm, uint8_t phase);
 
 /**
- * @typedef pwm_suspend_dev_t
- * @brief Callback API upon suspending
- * See @a pwm_suspend() for argument description
- */
-typedef int (*pwm_suspend_dev_t)(struct device *dev);
-
-/**
- * @typedef pwm_resume_dev_t
- * @brief Callback API upon resuming
- * See @a pwm_resume() for argument description
- */
-typedef int (*pwm_resume_dev_t)(struct device *dev);
-
-/**
  * @typedef pwm_set_period_t
  * @brief Callback API upon setting the period
  * See @a pwm_pin_set_period() for argument description
@@ -102,8 +88,6 @@ struct pwm_driver_api {
 	pwm_set_period_t set_period;
 	pwm_set_duty_cycle_t set_duty_cycle;
 	pwm_set_phase_t set_phase;
-	pwm_suspend_dev_t suspend;
-	pwm_resume_dev_t resume;
 };
 
 /**
@@ -313,39 +297,6 @@ static inline int pwm_all_set_phase(struct device *dev, uint8_t phase)
 	}
 
 	return -ENOTSUP;
-}
-
-/**
- * @brief Save the state of the device and makes it go to the low power
- *	  state.
- *
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
- */
-static inline int pwm_suspend(struct device *dev)
-{
-	struct pwm_driver_api *api;
-
-	api = (struct pwm_driver_api *)dev->driver_api;
-	return api->suspend(dev);
-}
-
-/**
- * @brief Restore state stored during suspend and resumes operation.
- *
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
- */
-static inline int pwm_resume(struct device *dev)
-{
-	struct pwm_driver_api *api;
-
-	api = (struct pwm_driver_api *)dev->driver_api;
-	return api->resume(dev);
 }
 
 #ifdef __cplusplus

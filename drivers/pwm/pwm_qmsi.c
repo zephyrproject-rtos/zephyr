@@ -294,43 +294,12 @@ static int pwm_qmsi_set_duty_cycle(struct device *dev, int access_op,
 	return 0;
 }
 
-/*
- * Set the PWM IP block suspended/low power state
- * In this case, the PWN does not support power state handling
- *
- * Parameters
- * dev: Device struct
- * return -ENOTSUP
- */
-static int pwm_qmsi_suspend(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
-
-/*
- * Bring back the PWM IP block from suspended/low power state
- * In this case, the PWN does not support power state handling
- *
- * Parameters
- * dev: Device struct
- * return -ENOTSUP
- */
-static int pwm_qmsi_resume(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-}
 
 static struct pwm_driver_api pwm_qmsi_drv_api_funcs = {
 	.config = pwm_qmsi_configure,
 	.set_values = pwm_qmsi_set_values,
 	.set_period = pwm_qmsi_set_period,
 	.set_duty_cycle = pwm_qmsi_set_duty_cycle,
-	.suspend = pwm_qmsi_suspend,
-	.resume = pwm_qmsi_resume,
 };
 
 static int pwm_qmsi_init(struct device *dev)
