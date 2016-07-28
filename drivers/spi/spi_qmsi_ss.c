@@ -220,24 +220,10 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 	return context->rc ? -EIO : 0;
 }
 
-static int ss_spi_qmsi_suspend(struct device *dev)
-{
-	/* FIXME */
-	return 0;
-}
-
-static int ss_spi_qmsi_resume(struct device *dev)
-{
-	/* FIXME */
-	return 0;
-}
-
 static struct spi_driver_api ss_spi_qmsi_api = {
 	.configure = ss_spi_qmsi_configure,
 	.slave_select = ss_spi_qmsi_slave_select,
 	.transceive = ss_spi_qmsi_transceive,
-	.suspend = ss_spi_qmsi_suspend,
-	.resume = ss_spi_qmsi_resume,
 };
 
 #ifdef CONFIG_SPI_CS_GPIO

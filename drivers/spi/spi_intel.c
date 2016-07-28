@@ -333,17 +333,10 @@ out:
 	completed(dev, error);
 }
 
-static int toberemoved(struct device *dev)
-{
-	return 0;
-}
-
 static struct spi_driver_api intel_spi_api = {
 	.configure = spi_intel_configure,
 	.slave_select = NULL,
 	.transceive = spi_intel_transceive,
-	.suspend = toberemoved,
-	.resume = toberemoved,
 };
 
 #ifdef CONFIG_PCI

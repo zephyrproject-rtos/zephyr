@@ -98,19 +98,11 @@ typedef int (*spi_api_slave_select)(struct device *dev, uint32_t slave);
 typedef int (*spi_api_io)(struct device *dev,
 			  const void *tx_buf, uint32_t tx_buf_len,
 			  void *rx_buf, uint32_t rx_buf_len);
-/**
- * @typedef spi_api_control
- * @brief Callback API upon for suspend/resume
- * See spi_suspend() and spi_resume() for argument description
- */
-typedef int (*spi_api_control)(struct device *dev);
 
 struct spi_driver_api {
 	spi_api_configure configure;
 	spi_api_slave_select slave_select;
 	spi_api_io transceive;
-	spi_api_control suspend;
-	spi_api_control resume;
 };
 
 /**
@@ -209,34 +201,6 @@ static inline int spi_transceive(struct device *dev,
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
 
 	return api->transceive(dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
-}
-
-/**
- * @brief Suspend the SPI host controller operations.
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
- */
-static inline int spi_suspend(struct device *dev)
-{
-	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
-
-	return api->suspend(dev);
-}
-
-/**
- * @brief Resume the SPI host controller operations.
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
- */
-static inline int spi_resume(struct device *dev)
-{
-	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
-
-	return api->resume(dev);
 }
 
 #ifdef __cplusplus

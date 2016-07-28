@@ -371,24 +371,6 @@ static int spi_dw_transceive(struct device *dev,
 	return 0;
 }
 
-static int spi_dw_suspend(struct device *dev)
-{
-	SYS_LOG_DBG("device %p", dev);
-
-	_clock_off(dev);
-
-	return 0;
-}
-
-static int spi_dw_resume(struct device *dev)
-{
-	SYS_LOG_DBG("%p", dev);
-
-	_clock_on(dev);
-
-	return 0;
-}
-
 void spi_dw_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -423,8 +405,6 @@ static struct spi_driver_api dw_spi_api = {
 	.configure = spi_dw_configure,
 	.slave_select = spi_dw_slave_select,
 	.transceive = spi_dw_transceive,
-	.suspend = spi_dw_suspend,
-	.resume = spi_dw_resume,
 };
 
 int spi_dw_init(struct device *dev)
