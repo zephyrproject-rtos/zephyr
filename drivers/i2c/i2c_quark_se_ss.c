@@ -591,25 +591,9 @@ static int i2c_qse_ss_runtime_configure(struct device *dev, uint32_t config)
 	return rc;
 }
 
-static int i2c_qse_ss_suspend(struct device *dev)
-{
-	SYS_LOG_DBG("I2C_SS: suspend called - function not yet implemented");
-	/* TODO - add this code */
-	return 0;
-}
-
-static int i2c_qse_ss_resume(struct device *dev)
-{
-	SYS_LOG_DBG("I2C_SS: resume called - function not yet implemented");
-	/* TODO - add this code */
-	return 0;
-}
-
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_qse_ss_runtime_configure,
 	.transfer = i2c_qse_ss_intr_transfer,
-	.suspend = i2c_qse_ss_suspend,
-	.resume = i2c_qse_ss_resume,
 };
 
 int i2c_qse_ss_initialize(struct device *dev)

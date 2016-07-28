@@ -169,21 +169,9 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 	return 0;
 }
 
-static int i2c_qmsi_suspend(struct device *dev)
-{
-	return -ENODEV;
-}
-
-static int i2c_qmsi_resume(struct device *dev)
-{
-	return -ENODEV;
-}
-
 static struct i2c_driver_api api = {
 	.configure = i2c_qmsi_configure,
 	.transfer = i2c_qmsi_transfer,
-	.suspend = i2c_qmsi_suspend,
-	.resume = i2c_qmsi_resume,
 };
 
 static int i2c_qmsi_init(struct device *dev)

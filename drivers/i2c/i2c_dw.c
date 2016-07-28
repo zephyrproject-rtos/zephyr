@@ -637,27 +637,9 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 	return rc;
 }
 
-static int i2c_dw_suspend(struct device *dev)
-{
-	SYS_LOG_DBG("I2C: suspend called - function not yet implemented");
-	/* TODO - add this code */
-	return 0;
-}
-
-
-static int i2c_dw_resume(struct device *dev)
-{
-	SYS_LOG_DBG("I2C: resume called - function not yet implemented");
-	/* TODO - add this code */
-	return 0;
-}
-
-
 static struct i2c_driver_api funcs = {
 	.configure = i2c_dw_runtime_configure,
 	.transfer = i2c_dw_transfer,
-	.suspend = i2c_dw_suspend,
-	.resume = i2c_dw_resume,
 };
 
 

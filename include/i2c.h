@@ -128,14 +128,10 @@ typedef int (*i2c_api_full_io_t)(struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs,
 				 uint16_t addr);
-typedef int (*i2c_api_suspend_t)(struct device *dev);
-typedef int (*i2c_api_resume_t)(struct device *dev);
 
 struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_full_io_t transfer;
-	i2c_api_suspend_t suspend;
-	i2c_api_resume_t resume;
 };
 /**
  * @endcond
@@ -381,34 +377,6 @@ static inline int i2c_reg_update_byte(struct device *dev, uint8_t dev_addr,
 	}
 
 	return i2c_reg_write_byte(dev, dev_addr, reg_addr, new_value);
-}
-
-/**
- * @brief Suspend an I2C driver.
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @retval 0 If successful.
- */
-static inline int i2c_suspend(struct device *dev)
-{
-	struct i2c_driver_api *api;
-
-	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->suspend(dev);
-}
-
-/**
- * @brief Resume an I2C driver.
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @retval 0 If successful.
- */
-static inline int i2c_resume(struct device *dev)
-{
-	struct i2c_driver_api *api;
-
-	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->resume(dev);
 }
 
 struct i2c_client_config {

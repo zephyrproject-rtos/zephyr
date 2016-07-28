@@ -581,23 +581,9 @@ done:
 	return ret;
 }
 
-static int i2c_sam3_suspend(struct device *dev)
-{
-	/* TODO - add this code */
-	return 0;
-}
-
-static int i2c_sam3_resume(struct device *dev)
-{
-	/* TODO - add this code */
-	return 0;
-}
-
 static struct i2c_driver_api api_funcs = {
 	.configure = i2c_sam3_runtime_configure,
 	.transfer = i2c_sam3_transfer,
-	.suspend = i2c_sam3_suspend,
-	.resume = i2c_sam3_resume,
 };
 
 static int i2c_sam3_init(struct device *dev)
