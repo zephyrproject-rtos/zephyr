@@ -26,6 +26,7 @@
 #include <init.h>
 
 #include <sys_io.h>
+#include <power.h>
 
 #include <spi.h>
 #include <spi/spi_intel.h>
@@ -301,30 +302,6 @@ static int spi_intel_transceive(struct device *dev,
 	return 0;
 }
 
-static int spi_intel_suspend(struct device *dev)
-{
-	struct spi_intel_config *info = dev->config->config_info;
-
-	SYS_LOG_DBG("spi_intel_suspend: %p", dev);
-
-	clear_bit_sscr0_sse(info->regs);
-	irq_disable(info->irq);
-
-	return 0;
-}
-
-static int spi_intel_resume(struct device *dev)
-{
-	struct spi_intel_config *info = dev->config->config_info;
-
-	SYS_LOG_DBG("spi_intel_resume: %p", dev);
-
-	set_bit_sscr0_sse(info->regs);
-	irq_enable(info->irq);
-
-	return 0;
-}
-
 void spi_intel_isr(void *arg)
 {
 	struct device *dev = arg;
@@ -356,12 +333,17 @@ out:
 	completed(dev, error);
 }
 
+static int toberemoved(struct device *dev)
+{
+	return 0;
+}
+
 static struct spi_driver_api intel_spi_api = {
 	.configure = spi_intel_configure,
 	.slave_select = NULL,
 	.transceive = spi_intel_transceive,
-	.suspend = spi_intel_suspend,
-	.resume = spi_intel_resume,
+	.suspend = toberemoved,
+	.resume = toberemoved,
 };
 
 #ifdef CONFIG_PCI
@@ -415,6 +397,34 @@ int spi_intel_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static int spi_intel_suspend(struct device *dev, int pm_policy)
+{
+	struct spi_intel_config *info = dev->config->config_info;
+
+	SYS_LOG_DBG("spi_intel_suspend: %p", dev);
+
+	clear_bit_sscr0_sse(info->regs);
+	irq_disable(info->irq);
+
+	return 0;
+}
+
+static int spi_intel_resume(struct device *dev, int pm_policy)
+{
+	struct spi_intel_config *info = dev->config->config_info;
+
+	SYS_LOG_DBG("spi_intel_resume: %p", dev);
+
+	set_bit_sscr0_sse(info->regs);
+	irq_enable(info->irq);
+
+	return 0;
+}
+#endif
+
+DEFINE_DEVICE_PM_OPS(spi, spi_intel_suspend, spi_intel_resume);
+
 /* system bindings */
 #ifdef CONFIG_SPI_0
 
@@ -441,9 +451,9 @@ struct spi_intel_config spi_intel_config_0 = {
 };
 
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
-DEVICE_INIT(spi_intel_port_0, CONFIG_SPI_0_NAME, spi_intel_init,
-			&spi_intel_data_port_0, &spi_intel_config_0,
-			SECONDARY, CONFIG_SPI_INIT_PRIORITY);
+DEVICE_INIT_PM(spi_intel_port_0, CONFIG_SPI_0_NAME, spi_intel_init,
+		DEVICE_PM_OPS_GET(spi), &spi_intel_data_port_0,
+		&spi_intel_config_0, SECONDARY, CONFIG_SPI_INIT_PRIORITY);
 
 void spi_config_0_irq(void)
 {
@@ -478,9 +488,9 @@ struct spi_intel_config spi_intel_config_1 = {
 };
 
 /* SPI may use GPIO pin for CS, thus it needs to be initialized after GPIO */
-DEVICE_INIT(spi_intel_port_1, CONFIG_SPI_1_NAME, spi_intel_init,
-			&spi_intel_data_port_1, &spi_intel_config_1,
-			SECONDARY, CONFIG_SPI_INIT_PRIORITY);
+DEVICE_INIT_PM(spi_intel_port_1, CONFIG_SPI_1_NAME, spi_intel_init,
+		DEVICE_PM_OPS_GET(spi), &spi_intel_data_port_1,
+		&spi_intel_config_1, SECONDARY, CONFIG_SPI_INIT_PRIORITY);
 
 void spi_config_1_irq(void)
 {
