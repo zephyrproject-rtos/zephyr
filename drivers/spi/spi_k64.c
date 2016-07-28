@@ -59,6 +59,7 @@
 
 #include <sys_io.h>
 #include <limits.h>
+#include <power.h>
 
 #include <spi.h>
 #include <spi/spi_k64.h>
@@ -641,51 +642,6 @@ static int spi_k64_transceive(struct device *dev,
 }
 
 /**
- * @brief Suspend SPI host controller operations.
- * @param dev Pointer to the device structure for the driver instance
- * @return 0 if successful, another DEV_* code otherwise.
- */
-static int spi_k64_suspend(struct device *dev)
-{
-	struct spi_k64_config *info = dev->config->config_info;
-
-	SYS_LOG_DBG("spi_k64_suspend: %p\n", dev);
-
-	/* disable module */
-
-	sys_set_bit((info->regs + SPI_K64_REG_MCR), SPI_K64_MCR_MDIS_BIT);
-
-	irq_disable(info->irq);
-
-	while (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TXRXS) {
-		SYS_LOG_DBG("SPI Controller dev %p is running.  Waiting to "
-			    "stop.\n", dev);
-	}
-
-	return 0;
-}
-
-/**
- * @brief Resume SPI host controller operations.
- * @param dev Pointer to the device structure for the driver instance
- * @return 0 if successful, another DEV_* code otherwise.
- */
-static int spi_k64_resume(struct device *dev)
-{
-	struct spi_k64_config *info = dev->config->config_info;
-
-	SYS_LOG_DBG("spi_k64_resume: %p\n", dev);
-
-	/* enable module */
-
-	sys_clear_bit((info->regs + SPI_K64_REG_MCR), SPI_K64_MCR_MDIS_BIT);
-
-	irq_enable(info->irq);
-
-	return 0;
-}
-
-/**
  * @brief SPI module data push (write) operation.
  * @param dev Pointer to the device structure for the driver instance
  * @return None.
@@ -938,12 +894,17 @@ void spi_k64_isr(void *arg)
 	spi_k64_complete(dev, error);
 }
 
+static int toberemoved(struct device *dev)
+{
+	return 0;
+}
+
 static struct spi_driver_api k64_spi_api = {
 	.configure = spi_k64_configure,
 	.slave_select = spi_k64_slave_select,
 	.transceive = spi_k64_transceive,
-	.suspend = spi_k64_suspend,
-	.resume = spi_k64_resume,
+	.suspend = toberemoved,
+	.resume = toberemoved,
 };
 
 
@@ -1022,6 +983,56 @@ int spi_k64_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+/**
+ * @brief Suspend SPI host controller operations.
+ * @param dev Pointer to the device structure for the driver instance
+ * @param pm_policy The power management policy to enact on the device
+ * @return 0 if successful, a negative errno value otherwise.
+ */
+static int spi_k64_suspend(struct device *dev, int pm_policy)
+{
+	struct spi_k64_config *info = dev->config->config_info;
+
+	SYS_LOG_DBG("spi_k64_suspend: %p\n", dev);
+
+	if (sys_read32(info->regs + SPI_K64_REG_SR) & SPI_K64_SR_TXRXS)
+		return -EBUSY;
+
+	/* disable module */
+
+	sys_set_bit((info->regs + SPI_K64_REG_MCR), SPI_K64_MCR_MDIS_BIT);
+
+	irq_disable(info->irq);
+
+	return 0;
+}
+
+/**
+ * @brief Resume SPI host controller operations.
+ * @param dev Pointer to the device structure for the driver instance
+ * @param pm_policy The power management policy from which the device is
+ * returning
+ * @return 0 if successful, a negative errno value otherwise.
+ */
+static int spi_k64_resume(struct device *dev, int pm_policy)
+{
+	struct spi_k64_config *info = dev->config->config_info;
+
+	SYS_LOG_DBG("spi_k64_resume: %p\n", dev);
+
+	/* enable module */
+
+	sys_clear_bit((info->regs + SPI_K64_REG_MCR), SPI_K64_MCR_MDIS_BIT);
+
+	irq_enable(info->irq);
+
+	return 0;
+}
+#endif
+
+DEFINE_DEVICE_PM_OPS(spi, spi_k64_suspend, spi_k64_resume);
+
 /* system bindings */
 #ifdef CONFIG_SPI_K64_0
 
@@ -1037,10 +1048,10 @@ struct spi_k64_config spi_k64_config_0 = {
 	.config_func = spi_config_0_irq
 };
 
-DEVICE_AND_API_INIT(spi_k64_port_0, CONFIG_SPI_K64_0_DEV_NAME, spi_k64_init,
-		    &spi_k64_data_port_0, &spi_k64_config_0,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &k64_spi_api);
+DEVICE_AND_API_INIT_PM(spi_k64_port_0, CONFIG_SPI_K64_0_DEV_NAME, spi_k64_init,
+		       DEVICE_PM_OPS_GET(spi), &spi_k64_data_port_0,
+		       &spi_k64_config_0, PRIMARY,
+		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
 
 
 void spi_config_0_irq(void)
@@ -1066,10 +1077,10 @@ struct spi_k64_config spi_k64_config_1 = {
 	.config_func = spi_config_1_irq
 };
 
-DEVICE_AND_API_INIT(spi_k64_port_1, CONFIG_SPI_K64_1_DEV_NAME, spi_k64_init,
-		    &spi_k64_data_port_1, &spi_k64_config_1,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &k64_spi_api);
+DEVICE_AND_API_INIT_PM(spi_k64_port_1, CONFIG_SPI_K64_1_DEV_NAME, spi_k64_init,
+		       DEVICE_PM_OPS_GET(spi), &spi_k64_data_port_1,
+		       &spi_k64_config_1, PRIMARY,
+		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
 
 
 void spi_config_1_irq(void)
@@ -1095,10 +1106,10 @@ struct spi_k64_config spi_k64_config_2 = {
 	.config_func = spi_config_2_irq
 };
 
-DEVICE_AND_API_INIT(spi_k64_port_2, CONFIG_SPI_K64_2_DEV_NAME, spi_k64_init,
-		    &spi_k64_data_port_2, &spi_k64_config_2,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &k64_spi_api);
+DEVICE_AND_API_INIT_PM(spi_k64_port_2, CONFIG_SPI_K64_2_DEV_NAME, spi_k64_init,
+		       DEVICE_PM_OPS_GET(spi), &spi_k64_data_port_2,
+		       &spi_k64_config_2, PRIMARY,
+		       CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &k64_spi_api);
 
 
 void spi_config_2_irq(void)
