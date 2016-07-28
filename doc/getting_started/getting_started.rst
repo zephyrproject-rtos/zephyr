@@ -41,7 +41,9 @@ You have successfully checked out a copy of the source code to your local
 machine.
 
 Once you're ready to start contributing, follow the steps to make yourself
-a Linux Foundation account at :ref:`gerrit_accounts`.
+a Linux Foundation account at `Gerrit Accounts`_.
+
+.. _Gerrit Accounts: https://wiki.zephyrproject.org/view/Gerrit_accounts
 
 Building and Running an Application
 ***********************************

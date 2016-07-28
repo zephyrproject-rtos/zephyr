@@ -40,9 +40,11 @@ Workflow
 
 7. Develop source code and add source code files to the src directory.
 
-   * :ref:`naming_conventions`
+   * `naming conventions`_
    * :ref:`src_makefiles_reqs`
    * :ref:`src_files_directories`
+
+.. _naming conventions: https://wiki.zephyrproject.org/view/Coding_conventio    ns#Naming_Conventions
 
 8. Build an application image.
 

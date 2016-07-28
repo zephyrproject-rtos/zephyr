@@ -49,7 +49,9 @@ Understanding Naming Conventions
 ================================
 
 The kernel limits the use of some prefixes to internal use only. For
-more information, see :ref:`naming_conventions`.
+more information, see `naming conventions`_.
+
+.. _naming conventions: https://wiki.zephyrproject.org/view/Coding_conventions#Naming_Conventions
 
 .. _src_makefiles_reqs:
 
