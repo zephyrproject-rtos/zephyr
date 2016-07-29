@@ -31,12 +31,25 @@ menuconfig PWM_K64_FTM
 
 if PWM_K64_FTM
 
-config PWM_K64_FTM_DEBUG
-	bool "Enable Debugging for pwm_ftm driver"
+config SYS_LOG_PWM_K64_FTM_LEVEL
+	int
+	prompt "Sets log level for pwm_ftm driver"
 	depends on PWM_K64_FTM
-	default n
+	default 0
 	help
-	Enable debugging for pwm_ftm driver.
+	Sets log level for pwm_ftm driver.
+
+	Levels are:
+
+	- 0 OFF, do not write
+
+	- 1 ERROR, only write SYS_LOG_ERR
+
+	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+
+	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+
+	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
 #### FTM0 #####
 
