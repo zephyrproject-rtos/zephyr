@@ -17,7 +17,10 @@
 #ifndef _MQTT_PKT_H_
 #define _MQTT_PKT_H_
 
-#include <app_buf.h>
+#include <stdint.h>
+#include <stddef.h>
+
+#include "app_buf.h"
 
 /**
  * @brief MQTT Packet Type
