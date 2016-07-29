@@ -8,6 +8,15 @@ Requirements
 
 * MQTT 3.1.1 Gateway.
 
+  NOTE for Debian/Ubuntu users: it seems that the mosquitto server
+       included with these distros does not support MQTT 3.1.1.
+       Uninstall the mosquitto server and follow the instructions
+       provided at the mosquitto website:
+
+                    http://mosquitto.org/download/
+
+       to update the application.
+
 * Galileo Gen 2 Development Board.
 
 * USB-UART cable: CH340, FTDI 6-pin or equivalent for debugging.
