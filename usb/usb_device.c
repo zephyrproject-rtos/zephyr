@@ -66,17 +66,9 @@
 #endif
 #include "usb_device.h"
 
-#ifndef CONFIG_USB_DEBUG
-#define DBG(...) { ; }
-#else
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define DBG printf
-#else
-#include <misc/printk.h>
-#define DBG printk
-#endif /* CONFIG_STDOUT_CONSOLE */
-#endif /* CONFIG_USB_DEBUG */
+#define SYS_LOG_LEVEL SYS_LOG_USB_LEVEL
+#define SYS_LOG_NO_NEWLINE
+#include <misc/sys_log.h>
 
 #define MAX_DESC_HANDLERS           4 /** Device, interface, endpoint, other */
 
@@ -139,11 +131,11 @@ static struct usb_dev_priv {
  */
 static void usb_print_setup(struct usb_setup_packet *setup)
 {
-	/* avoid compiler warning if DBG is not defined */
+	/* avoid compiler warning if SYS_LOG_DBG is not defined */
 	setup = setup;
 
-	DBG("SETUP\n");
-	DBG("%x %x %x %x %x\n",
+	SYS_LOG_DBG("SETUP\n");
+	SYS_LOG_DBG("%x %x %x %x %x\n",
 	    setup->bmRequestType,
 	    setup->bRequest,
 	    setup->wValue,
@@ -171,20 +163,20 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
 	uint32_t type = REQTYPE_GET_TYPE(setup->bmRequestType);
 	usb_request_handler handler = usb_dev.req_handlers[type];
 
-	DBG("** %d **\n", type);
+	SYS_LOG_DBG("** %d **\n", type);
 
 	if (type >= MAX_NUM_REQ_HANDLERS) {
-		DBG("Error Incorrect iType %d\n", type);
+		SYS_LOG_DBG("Error Incorrect iType %d\n", type);
 		return false;
 	}
 
 	if (handler == NULL) {
-		DBG("No handler for reqtype %d\n", type);
+		SYS_LOG_DBG("No handler for reqtype %d\n", type);
 		return false;
 	}
 
 	if ((*handler)(setup, len, data) < 0) {
-		DBG("Handler Error %d\n", type);
+		SYS_LOG_DBG("Handler Error %d\n", type);
 		usb_print_setup(setup);
 		return false;
 	}
@@ -222,7 +214,8 @@ static void usb_handle_control_transfer(uint8_t ep,
 	uint32_t type = 0;
 	struct usb_setup_packet *setup = &usb_dev.setup;
 
-	DBG("usb_handle_control_transfer ep %x, status %x\n", ep, ep_status);
+	SYS_LOG_DBG("usb_handle_control_transfer ep %x, status %x\n", ep,
+		    ep_status);
 	if (ep == USB_CONTROL_OUT_EP0 && ep_status == USB_DC_EP_SETUP) {
 		/*
 		 * OUT transfer, Setup packet,
@@ -230,7 +223,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 		 */
 		if (usb_dc_ep_read(ep,
 		    (uint8_t *)setup, sizeof(*setup), NULL) < 0) {
-			DBG("Read Setup Packet failed\n");
+			SYS_LOG_DBG("Read Setup Packet failed\n");
 			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 			return;
 		}
@@ -250,7 +243,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 		/* Ask installed handler to process request */
 		if (!usb_handle_request(setup,
 		    &usb_dev.data_buf_len, &usb_dev.data_buf)) {
-			DBG("usb_handle_request failed\n");
+			SYS_LOG_DBG("usb_handle_request failed\n");
 			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 			return;
 		}
@@ -266,17 +259,17 @@ static void usb_handle_control_transfer(uint8_t ep,
 			/* absorb zero-length status message */
 			if (usb_dc_ep_read(USB_CONTROL_OUT_EP0,
 			    usb_dev.data_buf, 0, &chunk) < 0) {
-				DBG("Read DATA Packet failed\n");
+				SYS_LOG_DBG("Read DATA Packet failed\n");
 				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 			}
-			DBG(chunk > 0 ? "?" : "");
+			SYS_LOG_DBG(chunk > 0 ? "?" : "");
 			return;
 		}
 
 		if (usb_dc_ep_read(USB_CONTROL_OUT_EP0,
 		    usb_dev.data_buf,
 		    usb_dev.data_buf_residue, &chunk) < 0) {
-			DBG("Read DATA Packet failed\n");
+			SYS_LOG_DBG("Read DATA Packet failed\n");
 			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 			return;
 		}
@@ -289,13 +282,13 @@ static void usb_handle_control_transfer(uint8_t ep,
 			usb_dev.data_buf = usb_dev.data_store[type];
 			if (!usb_handle_request(setup,
 			    &usb_dev.data_buf_len,	&usb_dev.data_buf)) {
-				DBG("usb_handle_request1 failed\n");
+				SYS_LOG_DBG("usb_handle_request1 failed\n");
 				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 				return;
 			}
 
 			/*Send status to host*/
-			DBG(">> usb_data_to_host(2)\n");
+			SYS_LOG_DBG(">> usb_data_to_host(2)\n");
 			usb_data_to_host();
 		}
 	} else if (ep == USB_CONTROL_IN_EP0) {
@@ -400,7 +393,7 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
 		}
 	} else {
 		/* nothing found */
-		DBG("Desc %x not found!\n", type_index);
+		SYS_LOG_DBG("Desc %x not found!\n", type_index);
 	}
 	return found;
 }
@@ -427,7 +420,8 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 
 	if (config_index == 0) {
 		/* unconfigure device */
-		DBG("Device not configured - invalid configuration offset\n");
+		SYS_LOG_DBG("Device not configured - invalid configuration "
+			    "offset\n");
 		return true;
 	}
 
@@ -498,7 +492,7 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
-		DBG("REQ_GET_STATUS\n");
+		SYS_LOG_DBG("REQ_GET_STATUS\n");
 		/* bit 0: self-powered */
 		/* bit 1: remote wakeup = not supported */
 		data[0] = 0;
@@ -507,27 +501,27 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		break;
 
 	case REQ_SET_ADDRESS:
-		DBG("REQ_SET_ADDRESS\n");
+		SYS_LOG_DBG("REQ_SET_ADDRESS\n");
 		usb_dc_set_address(setup->wValue);
 		break;
 
 	case REQ_GET_DESCRIPTOR:
-		DBG("REQ_GET_DESCRIPTOR\n");
+		SYS_LOG_DBG("REQ_GET_DESCRIPTOR\n");
 		ret = usb_get_descriptor(setup->wValue,
 		    setup->wIndex, len, data_buf);
 		break;
 
 	case REQ_GET_CONFIGURATION:
-		DBG("REQ_GET_CONFIGURATION\n");
+		SYS_LOG_DBG("REQ_GET_CONFIGURATION\n");
 		/* indicate if we are configured */
 		data[0] = usb_dev.configuration;
 		*len = 1;
 		break;
 
 	case REQ_SET_CONFIGURATION:
-		DBG("REQ_SET_CONFIGURATION\n");
+		SYS_LOG_DBG("REQ_SET_CONFIGURATION\n");
 		if (!usb_set_configuration(setup->wValue & 0xFF, 0)) {
-			DBG("USBSetConfiguration failed!\n");
+			SYS_LOG_DBG("USBSetConfiguration failed!\n");
 			ret = false;
 		} else {
 			/* configuration successful,
@@ -538,10 +532,10 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		break;
 
 	case REQ_CLEAR_FEATURE:
-		DBG("REQ_CLEAR_FEATURE\n");
+		SYS_LOG_DBG("REQ_CLEAR_FEATURE\n");
 		break;
 	case REQ_SET_FEATURE:
-		DBG("REQ_SET_FEATURE\n");
+		SYS_LOG_DBG("REQ_SET_FEATURE\n");
 
 		if (setup->wValue == FEA_REMOTE_WAKEUP) {
 			/* put DEVICE_REMOTE_WAKEUP code here */
@@ -554,12 +548,12 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		break;
 
 	case REQ_SET_DESCRIPTOR:
-		DBG("Device req %x not implemented\n", setup->bRequest);
+		SYS_LOG_DBG("Device req %x not implemented\n", setup->bRequest);
 		ret = false;
 		break;
 
 	default:
-		DBG("Illegal device req %x\n", setup->bRequest);
+		SYS_LOG_DBG("Illegal device req %x\n", setup->bRequest);
 		ret = false;
 		break;
 	}
@@ -601,12 +595,12 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 		break;
 
 	case REQ_SET_INTERFACE:
-		DBG("REQ_SET_INTERFACE\n");
+		SYS_LOG_DBG("REQ_SET_INTERFACE\n");
 		*len = 0;
 		break;
 
 	default:
-		DBG("Illegal interface req %d\n", setup->bRequest);
+		SYS_LOG_DBG("Illegal interface req %d\n", setup->bRequest);
 		return false;
 	}
 
@@ -654,11 +648,11 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 		return false;
 
 	case REQ_SYNCH_FRAME:
-		DBG("EP req %d not implemented\n", setup->bRequest);
+		SYS_LOG_DBG("EP req %d not implemented\n", setup->bRequest);
 		return false;
 
 	default:
-		DBG("Illegal EP req %d\n", setup->bRequest);
+		SYS_LOG_DBG("Illegal EP req %d\n", setup->bRequest);
 		return false;
 	}
 
@@ -751,7 +745,8 @@ static int usb_vbus_set(bool on)
 	struct device *gpio_dev = device_get_binding(USB_GPIO_DRV_NAME);
 
 	if (!gpio_dev) {
-		DBG("USB requires GPIO. Cannot find %s!\n", USB_GPIO_DRV_NAME);
+		SYS_LOG_DBG("USB requires GPIO. Cannot find %s!\n",
+			    USB_GPIO_DRV_NAME);
 		return -ENODEV;
 	}
 
