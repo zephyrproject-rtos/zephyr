@@ -2193,7 +2193,7 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
 
 #if UIP_TCP
   /* Clear any pending packet */
-  if (uip_connr->buf) {
+  if (uip_connr && uip_connr->buf) {
     tcp_cancel_retrans_timer(uip_connr);
     switch (uip_connr->tcpstateflags & UIP_TS_MASK) {
     case UIP_FIN_WAIT_1:
