@@ -207,7 +207,7 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 
 	for (i = 0, adv_len = 1; i < cmd->adv_data_len; adv_len++) {
 		if (adv_len >= ARRAY_SIZE(ad)) {
-			BTTESTER_DBG("ad[] Out of memory");
+			SYS_LOG_ERR("ad[] Out of memory");
 			goto fail;
 		}
 
@@ -219,7 +219,7 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 
 	for (i = 0, sd_len = 0; i < cmd->scan_rsp_len; sd_len++) {
 		if (sd_len >= ARRAY_SIZE(sd)) {
-			BTTESTER_DBG("sd[] Out of memory");
+			SYS_LOG_ERR("sd[] Out of memory");
 			goto fail;
 		}
 
@@ -234,7 +234,7 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 	/* BTP API don't allow to set empty scan response data. */
 	if (bt_le_adv_start(adv_conn ? BT_LE_ADV_CONN : BT_LE_ADV_NCONN,
 			    ad, adv_len, sd_len ? sd : NULL, sd_len) < 0) {
-		BTTESTER_DBG("Failed to start advertising");
+		SYS_LOG_ERR("Failed to start advertising");
 		goto fail;
 	}
 

@@ -95,7 +95,7 @@ static void *gatt_buf_add(const void *data, size_t len)
 
 	gatt_buf.len += len;
 
-	BTTESTER_DBG("%d/%d used", gatt_buf.len, MAX_BUFFER_SIZE);
+	SYS_LOG_DBG("%d/%d used", gatt_buf.len, MAX_BUFFER_SIZE);
 
 	return ptr;
 }
@@ -146,7 +146,7 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern,
 		memcpy(attr->user_data, pattern->user_data, user_data_len);
 	}
 
-	BTTESTER_DBG("handle 0x%04x", attr->handle);
+	SYS_LOG_DBG("handle 0x%04x", attr->handle);
 
 	attr_count++;
 	svc_attr_count++;
@@ -698,7 +698,11 @@ struct bt_gatt_indicate_params indicate_params;
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint8_t err)
 {
-	BTTESTER_DBG("Indication %s\n", err != 0 ? "fail" : "success");
+	if (err != 0) {
+		SYS_LOG_ERR("Indication fail\n");
+	} else {
+		SYS_LOG_DBG("Indication success\n");
+	}
 }
 
 static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
@@ -1550,7 +1554,7 @@ static uint8_t notify_func(struct bt_conn *conn,
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
 	if (!data) {
-		BTTESTER_DBG("Unsubscribed");
+		SYS_LOG_DBG("Unsubscribed");
 		memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
@@ -1620,7 +1624,7 @@ static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 {
 	/* Fail if there is another subscription enabled */
 	if (subscribe_params.ccc_handle) {
-		BTTESTER_DBG("Another subscription already enabled");
+		SYS_LOG_ERR("Another subscription already enabled");
 		return -EEXIST;
 	}
 
@@ -1641,7 +1645,7 @@ static int disable_subscription(struct bt_conn *conn, uint16_t ccc_handle)
 {
 	/* Fail if CCC handle doesn't match */
 	if (ccc_handle != subscribe_params.ccc_handle) {
-		BTTESTER_DBG("CCC handle doesn't match");
+		SYS_LOG_ERR("CCC handle doesn't match");
 		return -EINVAL;
 	}
 
@@ -1692,7 +1696,7 @@ static void config_subscription(uint8_t *data, uint16_t len, uint16_t op)
 		}
 	}
 
-	BTTESTER_DBG("Config subscription (op %u) status %u", op, status);
+	SYS_LOG_DBG("Config subscription (op %u) status %u", op, status);
 
 	bt_conn_unref(conn);
 	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);

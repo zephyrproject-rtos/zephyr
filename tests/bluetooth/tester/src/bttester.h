@@ -32,8 +32,9 @@
 #define BTP_STATUS_UNKNOWN_CMD	0x02
 #define BTP_STATUS_NOT_READY	0x03
 
-#define BTTESTER_DBG(fmt, ...) printf("bttester: %s: " fmt "\n", __func__, \
-			       ##__VA_ARGS__)
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define SYS_LOG_DOMAIN "bttester"
+#include <misc/sys_log.h>
 
 struct btp_hdr {
 	uint8_t  service;
