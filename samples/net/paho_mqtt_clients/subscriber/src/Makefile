@@ -14,8 +14,13 @@
 # limitations under the License.
 #
 
+ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki
+ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os/lib
+ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os
+ccflags-y +=-I${ZEPHYR_BASE}/net/ip
 ccflags-y += -I$(SOURCE_DIR)/../publisher/src
 
-obj-y += main.o
 obj-y += ../../publisher/src/mqtt_pack.o
+obj-y += ../../publisher/src/netz.o
 obj-y += ../../publisher/src/mqtt.o
+obj-y += main.o

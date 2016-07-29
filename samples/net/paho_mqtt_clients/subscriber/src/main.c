@@ -18,9 +18,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-/* Network for Zephyr API - netz					*/
-#include <netz.h>
-
+#include "netz.h"
 #include "mqtt.h"
 
 #define STACK_SIZE		2048
