@@ -36,11 +36,8 @@
 #define SCSS_REG_VAL(offset) \
 	(*((volatile uint32_t *)(SCSS_REGISTER_BASE+offset)))
 
-#ifdef CONFIG_ARC_INIT_DEBUG
-#define arc_init_debug	printk
-#else
-#define arc_init_debug(x...) do { } while (0)
-#endif
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ARC_INIT_LEVEL
+#include <misc/sys_log.h>
 
 /**
  *
@@ -66,12 +63,12 @@ static int arc_init(struct device *arg)
 	 * we read the value and stick it in shared_mem->arc_start which is
 	 * the beginning of the address space at 0xA8000000 */
 	reset_vector = (uint32_t *)RESET_VECTOR;
-	arc_init_debug("Reset vector address: %x\n", *reset_vector);
+	SYS_LOG_DBG("Reset vector address: %x", *reset_vector);
 	shared_data->arc_start = *reset_vector;
 	shared_data->flags = 0;
 	if (!shared_data->arc_start) {
 		/* Reset vector points to NULL => skip ARC init. */
-		arc_init_debug("Reset vector is NULL, skipping ARC init.\n");
+		SYS_LOG_DBG("Reset vector is NULL, skipping ARC init.");
 		goto skip_arc_init;
 	}
 
@@ -80,14 +77,14 @@ static int arc_init(struct device *arg)
 	SCSS_REG_VAL(SCSS_SS_CFG) |= ARC_RUN_REQ_A;
 #endif
 
-	arc_init_debug("Waiting for arc to start...\n");
+	SYS_LOG_DBG("Waiting for arc to start...");
 	/* Block until the ARC core actually starts up */
 	while (SCSS_REG_VAL(SCSS_SS_STS) & 0x4000) {
 	}
 
 	/* Block until ARC's quark_se_init() sets a flag indicating it is ready,
 	 * if we get stuck here ARC has run but has exploded very early */
-	arc_init_debug("Waiting for arc to init...\n");
+	SYS_LOG_DBG("Waiting for arc to init...");
 	while (!shared_data->flags & ARC_READY) {
 	}
 
