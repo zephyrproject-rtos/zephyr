@@ -40,7 +40,7 @@
 #define ER_COAP_CONF_H_
 
 /* Features that can be disabled to achieve smaller memory footprint */
-#define COAP_LINK_FORMAT_FILTERING     0
+#define COAP_LINK_FORMAT_FILTERING     CONFIG_ER_COAP_LINK_FORMAT_FILTERING
 #define COAP_PROXY_OPTION_PROCESSING   0
 
 /* Listening port for the CoAP REST Engine */
