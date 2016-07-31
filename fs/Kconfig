@@ -29,14 +29,6 @@ config FILE_SYSTEM_FAT
 	help
 	Enables FAT file system support.
 
-choice
-	prompt "Select file system storage device"
-	depends on FILE_SYSTEM_FAT
-	default FS_FAT_RAM_DISK
-	help
-	The storage device where the file system
-	resides
-
 config FS_FAT_RAM_DISK
 	bool
 	prompt "RAM Disk"
@@ -45,7 +37,11 @@ config FS_FAT_RAM_DISK
 	This option can used to test the file
 	system.
 
-endchoice
+config FS_FAT_FLASH_DISK
+	bool
+	prompt "Flash"
+	help
+	Flash device is used for the file system.
 
 if FS_FAT_RAM_DISK
 
@@ -63,5 +59,61 @@ config FS_BLOCK_SIZE
 	is erased at one time in flash storage.
 
 endif # FS_RAM_DISK
+
+if FS_FAT_FLASH_DISK
+
+config FS_FAT_FLASH_DISK_W25QXXDV
+	bool "W25QXXDV flash component"
+	default ""
+	help
+	Enables to use the W25QXXDV as the storage media
+	for the file system.
+
+if FS_FAT_FLASH_DISK_W25QXXDV
+
+config FS_VOLUME_SIZE
+	hex
+	default 0x100000
+	help
+	This is the file system volume size in bytes.
+
+config FS_BLOCK_SIZE
+	hex
+	default 0x1000
+	help
+	This is typically the minimum flash erase size
+	that the flash component supports.
+
+config FS_FLASH_DEV_NAME
+	string
+	prompt "File system flash storage device name"
+	depends on SPI_FLASH_W25QXXDV
+	default SPI_FLASH_W25QXXDV_DRV_NAME
+
+config FS_FLASH_START
+	hex
+	default 0x0
+	help
+	This is start address of the flash for the file
+	system.
+
+config FS_FLASH_MAX_RW_SIZE
+	int
+	default SPI_FLASH_W25QXXDV_MAX_DATA_LEN
+	help
+	This is the maximum number of bytes that the
+	flash_write API can do per invocation.
+	API.
+
+config FS_FLASH_ERASE_ALIGNMENT
+	hex
+	default 0x1000
+	help
+	This is the start address alignment required by
+	the flash component.
+
+endif # FS_FAT_FLASH_DISK_W25QXXDV
+
+endif # FS_FAT_FLASH_DISK
 
 endmenu
