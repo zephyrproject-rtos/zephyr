@@ -97,6 +97,17 @@
 #define DEVICE_INIT_UNDEFINED_SECTION()		\
 		KEEP(*(SORT(.init_[_A-Z0-9]*)))	\
 
+/*
+ * link in shell initialization objects for all modules that use shell and
+ * their shell commands are automatically initialized by the kernel.
+ */
+
+#define	SHELL_INIT_SECTIONS()		\
+		__shell_cmd_start = .;		\
+		KEEP(*(".shell_*"));		\
+		__shell_cmd_end = .;
+
+
 #ifdef CONFIG_X86 /* LINKER FILES: defines used by linker script */
 /* Should be moved to linker-common-defs.h */
 #if defined(CONFIG_XIP)

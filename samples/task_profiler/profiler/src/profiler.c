@@ -165,6 +165,8 @@ int shell_cmd_prof(int argc, char *argv[])
 	return 0;
 }
 
+#define MY_SHELL_ENTITY "profiler"
+
 struct shell_cmd prof_commands[] = {
 	PROF_CMD,
 	{ NULL, NULL}
@@ -225,7 +227,8 @@ void prof_init(void)
 
 #ifdef PROFILER_SHELL
 #ifndef PROFILER_NO_SHELL_REGISTER
-	shell_init("shell> ", prof_commands);
+	SHELL_REGISTER(MY_SHELL_ENTITY, prof_commands);
+	shell_register_default_module(MY_SHELL_ENTITY);
 #endif
 #endif
 

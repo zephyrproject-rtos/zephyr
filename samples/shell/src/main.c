@@ -19,9 +19,23 @@
 #include <misc/shell.h>
 #define DEVICE_NAME "test shell"
 
+/*
+ * Since we don't have kConfig in application level, we have the define here as
+ * an example to what is needed to be in the relevant module kConfig file
+ */
+#define CONFIG_SAMPLE_MODULE_USE_SHELL
+
+
 static int shell_cmd_ping(int argc, char *argv[])
 {
 	printk("pong\n");
+
+	return 0;
+}
+
+static int shell_cmd_params(int argc, char *argv[])
+{
+	printk("argc = %d, argv[0] = %s\n", argc, argv[0]);
 
 	return 0;
 }
@@ -41,20 +55,24 @@ static int shell_cmd_cycles(int argc, char *argv[])
 }
 
 
-const struct shell_cmd commands[] = {
+#ifdef CONFIG_SAMPLE_MODULE_USE_SHELL
+
+#define MY_SHELL_MODULE "sample_module"
+
+static struct shell_cmd commands[] = {
 	{ "ping", shell_cmd_ping },
 	{ "uptime", shell_cmd_uptime },
 	{ "cycles", shell_cmd_cycles },
+	{ "params", shell_cmd_params, "print argc" },
 	{ NULL, NULL }
 };
 
+#endif
+
+
 void main(void)
 {
-	uint32_t version = sys_kernel_version_get();
-
-	printk("Zephyr version %d.%d.%d\n",
-		SYS_KERNEL_VER_MAJOR(version),
-		SYS_KERNEL_VER_MINOR(version),
-		SYS_KERNEL_VER_PATCHLEVEL(version));
-	shell_init("shell> ", commands);
+#ifdef CONFIG_SAMPLE_MODULE_USE_SHELL
+	SHELL_REGISTER(MY_SHELL_MODULE, commands);
+#endif
 }

@@ -30,12 +30,21 @@
 
 #include <misc/shell.h>
 
-/* maximum number of command parameters */
 #define ARGC_MAX 10
+#define COMMAND_MAX_LEN 50
+#define MODULE_NAME_MAX_LEN 20
+/* additional chars are " >" (include '\0' )*/
+#define PROMPT_SUFFIX 3
+#define PROMPT_MAX_LEN (MODULE_NAME_MAX_LEN + PROMPT_SUFFIX)
 
-static const struct shell_cmd *commands;
+/* command table is located in the dedicated memory segment (.shell_) */
+extern struct shell_module __shell_cmd_start[];
+extern struct shell_module __shell_cmd_end[];
+#define NUM_OF_SHELL_ENTITIES (__shell_cmd_end - __shell_cmd_start)
 
 static const char *prompt;
+static char default_module_prompt[PROMPT_MAX_LEN];
+static int default_module = -1;
 
 #define STACKSIZE CONFIG_CONSOLE_HANDLER_SHELL_STACKSIZE
 static char __stack stack[STACKSIZE];
@@ -58,6 +67,8 @@ static const char *get_prompt(void)
 		if (str) {
 			return str;
 		}
+	} else if (default_module != -1) {
+		return default_module_prompt;
 	}
 
 	return prompt;
@@ -115,60 +126,194 @@ static size_t line2argv(char *str, char *argv[], size_t size)
 	return argc;
 }
 
-static int show_cmd_help(int argc, char *argv[])
+static int get_destination_module(const char *module_str)
 {
 	int i;
 
-	if (!argv[0] || argv[0][0] == '\0') {
-		goto done;
+	for (i = 0; i < NUM_OF_SHELL_ENTITIES; i++) {
+		if (!strncmp(module_str,
+				__shell_cmd_start[i].module_name,
+				MODULE_NAME_MAX_LEN)) {
+			return i;
+		}
 	}
 
-	for (i = 0; commands[i].cmd_name; i++) {
-		if (!strcmp(argv[0], commands[i].cmd_name)) {
-			printk("%s %s\n", commands[i].cmd_name,
-			       commands[i].help ? commands[i].help : "");
+	return -1;
+}
+
+/* For a specific command: argv[0] = module name, argv[1] = command name
+ * If a default module was selected: argv[0] = command name
+ */
+static const char *get_command_and_module(char *argv[], int *module)
+{
+	*module = -1;
+
+	if (!argv[0]) {
+		printk("Unrecognized command\n");
+		return NULL;
+	}
+
+	if (default_module == -1) {
+		if (!argv[1] || argv[1][0] == '\0') {
+			printk("Unrecognized command: %s\n", argv[0]);
+			return NULL;
+		}
+
+		*module = get_destination_module(argv[0]);
+		if (*module == -1) {
+			printk("Illegal module %s\n", argv[0]);
+			return NULL;
+		}
+
+		return argv[1];
+	}
+
+	*module = default_module;
+	return argv[0];
+}
+
+static int show_cmd_help(char *argv[])
+{
+	const char *command = NULL;
+	int module = -1;
+	const struct shell_module *shell_module;
+	int i;
+
+	command = get_command_and_module(argv, &module);
+	if ((module == -1) || (command == NULL)) {
+		return 0;
+	}
+
+	shell_module = &__shell_cmd_start[module];
+	for (i = 0; shell_module->commands[i].cmd_name; i++) {
+		if (!strcmp(command, shell_module->commands[i].cmd_name)) {
+			printk("%s %s\n",
+				shell_module->commands[i].cmd_name,
+				shell_module->commands[i].help ?
+				shell_module->commands[i].help : "");
 			return 0;
 		}
 	}
 
-done:
 	printk("Unrecognized command: %s\n", argv[0]);
 	return 0;
 }
 
-static int show_help(int argc, char *argv[])
+static void print_module_commands(const int module)
 {
+	const struct shell_module *shell_module = &__shell_cmd_start[module];
 	int i;
 
-	if (argc > 1) {
-		return show_cmd_help(--argc, &argv[1]);
-	}
-
-	printk("Available commands:\n");
 	printk("help\n");
 
-	for (i = 0; commands[i].cmd_name; i++) {
-		printk("%s\n", commands[i].cmd_name);
+	for (i = 0; shell_module->commands[i].cmd_name; i++) {
+		printk("%s\n", shell_module->commands[i].cmd_name);
+	}
+}
+
+static int show_help(int argc, char *argv[])
+{
+	int module;
+
+	/* help per command */
+	if ((argc > 2) || ((default_module != -1) && (argc == 2))) {
+		return show_cmd_help(&argv[1]);
+	}
+
+	/* help per module */
+	if ((argc == 2) || ((default_module != -1) && (argc == 1))) {
+		if (default_module == -1) {
+			module = get_destination_module(argv[1]);
+			if (module == -1) {
+				printk("Illegal module %s\n", argv[1]);
+				return 0;
+			}
+		} else {
+			module = default_module;
+		}
+
+		print_module_commands(module);
+	} else { /* help for all entities */
+		printk("Available modules:\n");
+		for (module = 0; module < NUM_OF_SHELL_ENTITIES; module++) {
+			printk("%s\n", __shell_cmd_start[module].module_name);
+		}
 	}
 
 	return 0;
 }
 
-static shell_cmd_function_t get_cb(const char *string)
+static int set_default_module(const char *name)
 {
+	int module;
+
+	if (strlen(name) > MODULE_NAME_MAX_LEN) {
+		printk("Module name %s is too long, default is not changed\n",
+			name);
+		return -1;
+	}
+
+	module = get_destination_module(name);
+
+	if (module == -1) {
+		printk("Illegal module %s, default is not changed\n", name);
+		return -1;
+	}
+
+	default_module = module;
+
+	strncpy(default_module_prompt, name, MODULE_NAME_MAX_LEN);
+	strcat(default_module_prompt, "> ");
+
+	return 0;
+}
+
+static int set_module(int argc, char *argv[])
+{
+	if (argc == 1) {
+		default_module = -1;
+	} else {
+		set_default_module(argv[1]);
+	}
+
+	return 0;
+}
+
+static shell_cmd_function_t get_cb(int argc, char *argv[])
+{
+	const char *first_string = argv[0];
+	int module = -1;
+	const struct shell_module *shell_module;
+	const char *command;
 	int i;
 
-	if (!string || string[0] == '\0') {
+	if (!first_string || first_string[0] == '\0') {
+		printk("Illegal parameter\n");
 		return NULL;
 	}
 
-	if (!strcmp(string, "help")) {
+	if (!strcmp(first_string, "help")) {
 		return show_help;
 	}
 
-	for (i = 0; commands[i].cmd_name; i++) {
-		if (!strcmp(string, commands[i].cmd_name)) {
-			return commands[i].cb;
+	if (!strcmp(first_string, "set_module")) {
+		return set_module;
+	}
+
+	if ((argc == 1) && (default_module == -1)) {
+		printk("Missing parameter\n");
+		return NULL;
+	}
+
+	command = get_command_and_module(argv, &module);
+	if ((module == -1) || (command == NULL)) {
+		return NULL;
+	}
+
+	shell_module = &__shell_cmd_start[module];
+	for (i = 0; shell_module->commands[i].cmd_name; i++) {
+		if (!strcmp(command, shell_module->commands[i].cmd_name)) {
+			return shell_module->commands[i].cb;
 		}
 	}
 
@@ -194,7 +339,7 @@ static void shell(int arg1, int arg2)
 			continue;
 		}
 
-		cb = get_cb(argv[0]);
+		cb = get_cb(argc, argv);
 		if (!cb) {
 			if (app_cmd_handler != NULL) {
 				cb = app_cmd_handler;
@@ -208,28 +353,107 @@ static void shell(int arg1, int arg2)
 
 		/* Execute callback with arguments */
 		if (cb(argc, argv) < 0) {
-			show_cmd_help(argc, argv);
+			show_cmd_help(argv);
 		}
 
 		nano_fiber_fifo_put(&avail_queue, cmd);
 	}
 }
 
+static int get_command_to_complete(char *str, char *command_prefix)
+{
+	char dest_str[MODULE_NAME_MAX_LEN];
+	int dest = -1;
+	char *start;
+
+	/* remove ' ' at the beginning of the line */
+	while (*str && *str == ' ') {
+		str++;
+	}
+
+	if (!*str) {
+		return -1;
+	}
+
+	start = str;
+
+	if (default_module != -1) {
+		dest = default_module;
+		/* caller function already checks str len and put '\0' */
+		strncpy(command_prefix, str, COMMAND_MAX_LEN);
+	}
+
+	/*
+	 * In case of a default module: only one parameter is possible.
+	 * Otherwise, only two parameters are possibles.
+	 */
+	str = strchr(str, ' ');
+	if (default_module != -1) {
+		return (str == NULL) ? dest : -1;
+	}
+
+	if (str == NULL) {
+		return -1;
+	}
+
+	if ((str - start + 1) >= MODULE_NAME_MAX_LEN) {
+		return -1;
+	}
+
+	strncpy(dest_str, start, (str - start + 1));
+	dest_str[str - start] = '\0';
+	dest = get_destination_module(dest_str);
+	if (dest == -1) {
+		return -1;
+	}
+
+	str++;
+
+	/* caller func has already checked str len and put '\0' at the end */
+	strncpy(command_prefix, str, COMMAND_MAX_LEN);
+	str = strchr(str, ' ');
+
+	/* only two parameters are possibles in case of no default module */
+	return (str == NULL) ? dest : -1;
+}
+
 static uint8_t completion(char *line, uint8_t len)
 {
 	const char *first_match = NULL;
 	int common_chars = -1;
-	int i;
 
-	for (i = 0; commands[i].cmd_name; i++) {
+	int i, dest, command_len, num_to_copy;
+	const struct shell_module *module;
+	char command_prefix[COMMAND_MAX_LEN];
+
+	if (len >= (MODULE_NAME_MAX_LEN + COMMAND_MAX_LEN - 1)) {
+		return 0;
+	}
+
+	/*
+	 * line to completion is not ended by '\0' as the line that gets from
+	 * nano_fiber_fifo_get function
+	 */
+	line[len] = '\0';
+	dest = get_command_to_complete(line, command_prefix);
+	if (dest == -1) {
+		return 0;
+	}
+
+	command_len = strlen(command_prefix);
+
+	module = &__shell_cmd_start[dest];
+
+	for (i = 0; module->commands[i].cmd_name; i++) {
 		int j;
 
-		if (strncmp(line, commands[i].cmd_name, len)) {
+		if (strncmp(command_prefix,
+			module->commands[i].cmd_name, command_len)) {
 			continue;
 		}
 
 		if (!first_match) {
-			first_match = commands[i].cmd_name;
+			first_match = module->commands[i].cmd_name;
 			continue;
 		}
 
@@ -241,14 +465,14 @@ static uint8_t completion(char *line, uint8_t len)
 
 		/* cut common part of matching names */
 		for (j = 0; j < common_chars; j++) {
-			if (first_match[j] != commands[i].cmd_name[j]) {
+			if (first_match[j] != module->commands[i].cmd_name[j]) {
 				break;
 			}
 		}
 
 		common_chars = j;
 
-		printk("%s\n", commands[i].cmd_name);
+		printk("%s\n", module->commands[i].cmd_name);
 	}
 
 	/* no match, do nothing */
@@ -259,40 +483,35 @@ static uint8_t completion(char *line, uint8_t len)
 	if (common_chars >= 0) {
 		/* multiple match, restore prompt */
 		printk("%s", get_prompt());
-
-		/* add common part after prompt */
-		for (i = 0; i < common_chars; i++) {
-			printk("%c", first_match[i]);
-			line[i] = first_match[i];
-		}
+		printk("%s", line);
 	} else {
 		common_chars = strlen(first_match);
 
-		/* full command name with trailing spaces, do nothing */
-		if (len > common_chars) {
+		/* full command name with trailing spaces, do nothing*/
+		if (command_len > common_chars) {
 			return 0;
 		}
+	}
 
-		/* complete matched command name */
-		for (i = len; i < common_chars; i++) {
-			printk("%c", first_match[i]);
-			line[i] = first_match[i];
-		}
+	num_to_copy = common_chars - command_len;
+
+	if ((num_to_copy > 0) && ((len + num_to_copy) < COMMAND_MAX_LEN)) {
+		printk("%s", &first_match[command_len]);
+		strncpy(&line[len], &first_match[command_len], num_to_copy);
 
 		/* for convenience add space after command */
 		printk(" ");
-		line[common_chars++] = ' ';
+		line[len+num_to_copy] = ' ';
+		return (num_to_copy + 1);
+	} else {
+		return 0;
 	}
-
-	return common_chars - len;
 }
 
-void shell_init(const char *str, const struct shell_cmd *cmds)
+void shell_init(const char *str)
 {
 	nano_fifo_init(&cmds_queue);
 	nano_fifo_init(&avail_queue);
-
-	commands = cmds;
 
 	line_queue_init();
 
@@ -306,7 +525,8 @@ void shell_init(const char *str, const struct shell_cmd *cmds)
 
 /** @brief Optionally register an app default cmd handler.
  *
- *  @param handler To be called if no cmd found in cmds registered with shell_init.
+ *  @param handler To be called if no cmd found in cmds registered with
+ *  shell_init.
  */
 void shell_register_app_cmd_handler(shell_cmd_function_t handler)
 {
@@ -317,3 +537,13 @@ void shell_register_prompt_handler(shell_prompt_function_t handler)
 {
 	app_prompt_handler = handler;
 }
+
+void shell_register_default_module(const char *name)
+{
+	int result = set_default_module(name);
+
+	if (result != -1) {
+		printk("\n%s", default_module_prompt);
+	}
+}
+

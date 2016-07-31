@@ -438,6 +438,7 @@ static void zperf_init(void)
 	zperf_session_init();
 }
 
+#define MY_SHELL_MODULE "zperf"
 struct shell_cmd commands[] = {
 		{ CMD_STR_SETIP, shell_cmd_setip },
 		{ CMD_STR_CONNECTAP, shell_cmd_connectap },
@@ -461,7 +462,8 @@ void main(void)
 {
 #endif
 	shell_cmd_version(0, NULL);
-	shell_init("zperf> ", commands);
+	SHELL_REGISTER(MY_SHELL_MODULE, commands);
+	shell_register_default_module(MY_SHELL_MODULE);
 	net_init();
 	zperf_init();
 

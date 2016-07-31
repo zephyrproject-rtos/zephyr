@@ -50,6 +50,7 @@
 #define DATA_MTU		(23 * CREDITS)
 #define DATA_BREDR_MTU		48
 
+#define MY_SHELL_MODULE "btshell"
 static struct bt_conn *default_conn;
 static bt_addr_le_t id_addr;
 
@@ -2227,9 +2228,9 @@ void main(void)
 	printk("Type \"help\" for supported commands.\n");
 	printk("Before any Bluetooth commands you must run \"init\".\n");
 
-	shell_init("btshell> ", commands);
-
+	SHELL_REGISTER(MY_SHELL_MODULE, commands);
 	shell_register_prompt_handler(current_prompt);
+	shell_register_default_module(MY_SHELL_MODULE);
 
 	while (1) {
 		task_sleep(sys_clock_ticks_per_sec);

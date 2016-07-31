@@ -10,6 +10,11 @@
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
+	SECTION_DATA_PROLOGUE(initshell, (OPTIONAL),)
+	{
+		SHELL_INIT_SECTIONS()
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(_k_task_list, (OPTIONAL),)
 	{
 		_k_task_list_start = .;
