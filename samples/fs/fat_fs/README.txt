@@ -7,11 +7,9 @@ Demonstrates basic file and dir operations using the Zephyr file system.
 
 Building and Running Project:
 
-While this demo uses RAM to emulate storage, it can be tested using QEMU.
+The demo will run on Arduino 101 and will use the on-board SPI flash.
 
-Following command will build it for running on QEMU:
-
-    make qemu
+    make BOARD=arduino_101
 
 --------------------------------------------------------------------------------
 
