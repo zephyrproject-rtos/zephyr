@@ -17,7 +17,7 @@
 #ifndef _NATS_CLIENT_H_
 #define _NATS_CLIENT_H_
 
-#include <netz.h>
+#include "netz.h"
 #include "nats_pack.h"
 
 /**

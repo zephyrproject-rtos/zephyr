@@ -17,7 +17,7 @@
 #ifndef _NATS_PKT_H_
 #define _NATS_PKT_H_
 
-#include <app_buf.h>
+#include "app_buf.h"
 
 #include <stdint.h>
 #include <stddef.h>
