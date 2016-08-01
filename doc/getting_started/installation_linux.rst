@@ -23,17 +23,25 @@ are beyond the scope of this document.
 Update Your Operating System
 ****************************
 
-Before proceeding with the build, ensure your OS is up to date. On Ubuntu:
+Before proceeding with the build, ensure your OS is up to date.  On Ubuntu,
+you'll first need to update the local database list of available packages
+before upgrading:
 
 .. code-block:: console
 
    $ sudo apt-get update
+   $ sudo apt-get upgrade
 
 On Fedora:
 
 .. code-block:: console
 
-   $ sudo dnf update
+   $ sudo dnf upgrade
+
+Note that having a newer version available for an installed package
+(and reported by ``dnf check-update``) does not imply a subsequent
+``dnf upgrade`` will install it, because it must also ensure dependencies
+and other restrictions are satisfied.
 
 .. _linux_required_software:
 
