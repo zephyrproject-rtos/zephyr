@@ -14,8 +14,13 @@
 # limitations under the License.
 #
 
+ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki
+ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki/os/lib
+ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki/os
+ccflags-y += -I${ZEPHYR_BASE}/net/ip
 ccflags-y += -I$(SOURCE_DIR)/../publisher/src
 
-obj-y += main.o
 obj-y += ../../publisher/src/nats_pack.o
 obj-y += ../../publisher/src/nats_client.o
+obj-y += ../../publisher/src/netz.o
+obj-y += main.o

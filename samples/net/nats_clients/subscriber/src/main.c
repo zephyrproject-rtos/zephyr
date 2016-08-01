@@ -18,8 +18,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-/* Network for Zephyr API - netz					*/
-#include <netz.h>
+#include "netz.h"
 
 #include "nats_client.h"
 
