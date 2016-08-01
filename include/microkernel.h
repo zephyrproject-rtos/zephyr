@@ -55,7 +55,6 @@ extern "C" {
 #include <microkernel/event.h>
 #include <microkernel/memory_pool.h>
 #include <microkernel/pipe.h>
-#include <microkernel/task_irq.h>
 
 /**
  * @}

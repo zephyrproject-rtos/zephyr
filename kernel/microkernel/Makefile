@@ -9,7 +9,6 @@ obj-y += k_move_data.o
 obj-y += k_ticker.o
 obj-y += k_memory_map.o
 obj-y += k_memory_pool.o
-obj-y += k_irq.o
 obj-y += k_nop.o
 obj-y += k_offload.o
 obj-y += k_event.o
