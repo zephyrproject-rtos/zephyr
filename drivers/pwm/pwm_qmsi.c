@@ -20,6 +20,7 @@
 #include <pwm.h>
 #include <device.h>
 #include <init.h>
+#include <power.h>
 
 #include "qm_pwm.h"
 #include "clk.h"
@@ -318,7 +319,68 @@ static int pwm_qmsi_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
-		    PWM_CONTEXT, pwm_channel_period, SECONDARY,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&pwm_qmsi_drv_api_funcs);
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+struct pwm_channel_ctx {
+	uint32_t loadcount1;
+	uint32_t loadcount2;
+	uint32_t controlreg;
+};
+
+struct pwm_ctx {
+	struct pwm_channel_ctx channels[CONFIG_PWM_QMSI_NUM_PORTS];
+	uint32_t int_pwm_timer_mask;
+};
+
+static struct pwm_ctx pwm_ctx_save;
+
+static int pwm_qmsi_suspend(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		int i;
+
+		pwm_ctx_save.int_pwm_timer_mask =
+			QM_SCSS_INT->int_pwm_timer_mask;
+		for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
+			qm_pwm_channel_t *channel;
+			struct pwm_channel_ctx *channel_save;
+
+			channel = &QM_PWM->timer[i];
+			channel_save = &pwm_ctx_save.channels[i];
+			channel_save->loadcount1 = channel->loadcount;
+			channel_save->controlreg = channel->controlreg;
+			channel_save->loadcount2 = QM_PWM->timer_loadcount2[i];
+		}
+	}
+
+	return 0;
+}
+
+static int pwm_qmsi_resume(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		int i;
+
+		for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
+			qm_pwm_channel_t *channel;
+			struct pwm_channel_ctx *channel_save;
+
+			channel = &QM_PWM->timer[i];
+			channel_save = &pwm_ctx_save.channels[i];
+			channel->loadcount = channel_save->loadcount1;
+			channel->controlreg = channel_save->controlreg;
+			QM_PWM->timer_loadcount2[i] = channel_save->loadcount2;
+		}
+		QM_SCSS_INT->int_pwm_timer_mask =
+			pwm_ctx_save.int_pwm_timer_mask;
+	}
+
+	return 0;
+}
+#endif
+
+DEFINE_DEVICE_PM_OPS(pwm, pwm_qmsi_suspend, pwm_qmsi_resume);
+
+DEVICE_AND_API_INIT_PM(pwm_qmsi_0, CONFIG_PWM_QMSI_DEV_NAME, pwm_qmsi_init,
+		       DEVICE_PM_OPS_GET(pwm), PWM_CONTEXT, pwm_channel_period,
+		       SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		       (void *)&pwm_qmsi_drv_api_funcs);
