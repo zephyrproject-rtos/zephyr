@@ -33,8 +33,7 @@ extern "C" {
 /**
  * Configure a static interrupt.
  *
- * All arguments must be computable by the compiler at build time; if this
- * can't be done use irq_connect_dynamic() instead.
+ * All arguments must be computable by the compiler at build time.
  *
  * @param irq_p IRQ line number
  * @param priority_p Interrupt priority
@@ -46,31 +45,6 @@ extern "C" {
  */
 #define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 	_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
-
-/**
- * Configure a dynamic interrupt.
- *
- * @param irq IRQ line number
- * @param priority Interrupt priority
- * @param routine Interrupt service routine
- * @param parameter ISR parameter
- * @param flags Arch-specific IRQ configuration flags
- *
- * @return The vector assigned to this interrupt
- */
-extern int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     uint32_t flags);
-
-static inline int  __deprecated
-irq_connect_dynamic(unsigned int irq, unsigned int priority,
-		    void (*routine)(void *parameter), void *parameter,
-		    uint32_t flags)
-{
-	return _arch_irq_connect_dynamic(irq, priority, routine, parameter, flags);
-}
-
-
 
 /**
  * @brief Disable all interrupts on the CPU (inline)
