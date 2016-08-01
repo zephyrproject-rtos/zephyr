@@ -273,7 +273,7 @@ uip_ds6_neighbor_periodic(struct net_buf *buf)
     case NBR_INCOMPLETE:
       if(nbr->nscount >= UIP_ND6_MAX_MULTICAST_SOLICIT) {
         uip_ds6_nbr_rm(nbr);
-      } else if(stimer_expired(&nbr->sendns) && (uip_len(buf) == 0)) {
+      } else if(stimer_expired(&nbr->sendns) && (!buf || uip_len(buf) == 0)) {
         nbr->nscount++;
         PRINTF("NBR_INCOMPLETE: NS %u\n", nbr->nscount);
         uip_nd6_ns_output(buf, NULL, NULL, &nbr->ipaddr);
@@ -298,7 +298,7 @@ uip_ds6_neighbor_periodic(struct net_buf *buf)
           }
         }
         uip_ds6_nbr_rm(nbr);
-      } else if(stimer_expired(&nbr->sendns) && (uip_len(buf) == 0)) {
+      } else if(stimer_expired(&nbr->sendns) && (!buf || uip_len(buf) == 0)) {
         nbr->nscount++;
         PRINTF("PROBE: NS %u\n", nbr->nscount);
         uip_nd6_ns_output(buf, NULL, &nbr->ipaddr, &nbr->ipaddr);
