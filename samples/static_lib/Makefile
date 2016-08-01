@@ -14,25 +14,29 @@
 # limitations under the License.
 #
 
+KERNEL_TYPE = nano
+BOARD ?= qemu_x86
+CONF_FILE = prj.conf
+
 MYLIB = mylib/lib/libmylib.a
 
 all:
-	make clean
-	make mylib
-	make hello_world
+	$(MAKE) clean
+	$(MAKE) mylib
+	$(MAKE) hello_world
 
 hello_world: $(MYLIB)
-	make -C hello_world
+	$(MAKE) -C hello_world
 
 $(MYLIB):
-	make -C mylib
+	$(MAKE) -C mylib
 
 run:
-	make -C hello_world qemu
+	$(MAKE) -C hello_world qemu
 
 pristine:
-	make -C mylib clean
-	make -C hello_world pristine
+	$(MAKE) -C mylib clean
+	$(MAKE) -C hello_world pristine
 
 clean:
-	make pristine
+	$(MAKE) pristine
