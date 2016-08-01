@@ -52,7 +52,7 @@ export ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" && pwd ${MINGW_OPT})
 
 scripts_path=${ZEPHYR_BASE}/scripts
 echo "${PATH}" | grep -q "${scripts_path}"
-[ $? != 0 ] && export PATH=${PATH}:${scripts_path}
+[ $? != 0 ] && export PATH=${scripts_path}:${PATH}
 unset scripts_path
 
 # enable custom environment settings
