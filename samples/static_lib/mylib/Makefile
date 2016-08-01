@@ -14,14 +14,15 @@
 # limitations under the License.
 #
 
-include $(ZEPHYR_BASE)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
-
 # This Makefile is like a replacement of the $(ZEPHYR_BASE)/Makefile
-# for libraries. So, we need to define ARCH here.
+# for libraries. So, we need to define ARCH, and do it before including
+# Makefile.toolchain.*
 ARCH ?= x86
 
-CROSS_COMPILE = $(CROSS_COMPILE_$(ARCH))
-TOOLCHAIN_CFLAGS = $(TOOLCHAIN_CFLAGS_$(ARCH))
+# This include will set CROSS_COMPILE & TOOLCHAIN_CFLAGS for us. It uses
+# two-pass compile flag configuration, so needs to be included twice.
+include $(ZEPHYR_BASE)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
+include $(ZEPHYR_BASE)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 
 CC = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
