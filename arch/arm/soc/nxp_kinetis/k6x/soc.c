@@ -30,27 +30,16 @@
 #include <uart.h>
 #include <sections.h>
 #include <fsl_common.h>
+#include <fsl_clock.h>
 #include <arch/cpu.h>
 
+#define PLLFLLSEL_MCGFLLCLK	(0)
+#define PLLFLLSEL_MCGPLLCLK	(1)
+#define PLLFLLSEL_IRC48MHZ	(3)
 
-/* board's setting for PLL multipler (PRDIV0) */
-#define FRDM_K64F_PLL_DIV_20 (20 - 1)
-
-/* board's setting for PLL multipler (VDIV0) */
-#define FRDM_K64F_PLL_MULT_48 (48 - 24)
-
-/* MCG register field encodings */
-#define MCG_C1_CLKS_FLL_PLL	(MCG_C1_CLKS(0))
-#define MCG_C1_CLKS_EXT_REF	(MCG_C1_CLKS(2))
-#define MCG_C1_FRDIV_32_1024	(MCG_C1_FRDIV(5))
-#define MCG_C1_IREFS_EXT	(MCG_C1_IREFS(0))
-#define MCG_C2_RANGE_VHIGH	(MCG_C2_RANGE(2))
-#define MCG_C2_HGO_LO_PWR	(MCG_C2_HGO(0))
-#define MCG_C2_EREFS_EXT_CLK	(MCG_C2_EREFS(0))
-#define MCG_C6_PLLS_PLL		(MCG_C6_PLLS(1))
-#define MCG_C7_OSCSEL_OSC0	(MCG_C7_OSCSEL(0))
-#define MCG_S_CLKST_EXT_REF	(MCG_S_CLKST(2))
-#define MCG_S_CLKST_PLL		(MCG_S_CLKST(3))
+#define ER32KSEL_OSC32KCLK	(0)
+#define ER32KSEL_RTC		(2)
+#define ER32KSEL_LPO1KHZ	(3)
 
 /*
  * K64F Flash configuration fields
@@ -83,6 +72,44 @@ uint8_t __security_frdm_k64f_section __security_frdm_k64f[] = {
 	/* Reserved for FlexNVM feature (unsupported by this MCU) */
 	0xFF, 0xFF};
 
+static const osc_config_t oscConfig = {
+	.freq = CONFIG_OSC_XTAL0_FREQ,
+	.capLoad = 0,
+
+#if defined(CONFIG_OSC_EXTERNAL)
+	.workMode = kOSC_ModeExt,
+#elif defined(CONFIG_OSC_LOW_POWER)
+	.workMode = kOSC_ModeOscLowPower,
+#elif defined(CONFIG_OSC_HIGH_GAIN)
+	.workMode = kOSC_ModeOscHighGain,
+#else
+#error "An oscillator mode must be defined"
+#endif
+
+	.oscerConfig = {
+		.enableMode = kOSC_ErClkEnable,
+#if (defined(FSL_FEATURE_OSC_HAS_EXT_REF_CLOCK_DIVIDER) && \
+	FSL_FEATURE_OSC_HAS_EXT_REF_CLOCK_DIVIDER)
+		.erclkDiv = 0U,
+#endif
+	},
+};
+
+static const mcg_pll_config_t pll0Config = {
+	.enableMode = 0U,
+	.prdiv = CONFIG_MCG_PRDIV0,
+	.vdiv = CONFIG_MCG_VDIV0,
+};
+
+static const sim_clock_config_t simConfig = {
+	.pllFllSel = PLLFLLSEL_MCGPLLCLK, /* PLLFLLSEL select PLL. */
+	.er32kSrc = ER32KSEL_RTC,         /* ERCLK32K selection, use RTC. */
+	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CONFIG_K64_CORE_CLOCK_DIVIDER - 1) |
+		   SIM_CLKDIV1_OUTDIV2(CONFIG_K64_BUS_CLOCK_DIVIDER - 1) |
+		   SIM_CLKDIV1_OUTDIV3(CONFIG_K64_FLEXBUS_CLOCK_DIVIDER - 1) |
+		   SIM_CLKDIV1_OUTDIV4(CONFIG_K64_FLASH_CLOCK_DIVIDER - 1),
+};
+
 /**
  *
  * @brief Initialize the system clock
@@ -99,143 +126,19 @@ uint8_t __security_frdm_k64f_section __security_frdm_k64f[] = {
  * @return N/A
  *
  */
-
 static ALWAYS_INLINE void clkInit(void)
 {
-	uint8_t temp_reg;
+	CLOCK_SetSimSafeDivs();
 
-	/*
-	 * Select the 50 Mhz external clock as the MCG OSC clock.
-	 * MCG Control 7 register:
-	 * - Select OSCCLK0 / XTAL
-	 */
+	CLOCK_InitOsc0(&oscConfig);
+	CLOCK_SetXtal0Freq(CONFIG_OSC_XTAL0_FREQ);
 
-	temp_reg = MCG->C7 & ~MCG_C7_OSCSEL_MASK;
-	temp_reg |= MCG_C7_OSCSEL_OSC0;
-	MCG->C7 = temp_reg;
+	CLOCK_BootToPeeMode(kMCG_OscselOsc, kMCG_PllClkSelPll0, &pll0Config);
 
-	/*
-	 * Transition MCG from FEI mode (at reset) to FBE mode.
-	 */
+	CLOCK_SetInternalRefClkConfig(kMCG_IrclkEnable, kMCG_IrcSlow,
+				      CONFIG_MCG_FCRDIV);
 
-	/*
-	 * MCG Control 2 register:
-	 * - Set oscillator frequency range = very high for 50 MHz external
-	 * clock
-	 * - Set oscillator mode = low power
-	 * - Select external reference clock as the oscillator source
-	 */
-
-	temp_reg = MCG->C2 &
-		   ~(MCG_C2_RANGE_MASK | MCG_C2_HGO_MASK | MCG_C2_EREFS_MASK);
-
-	temp_reg |=
-		(MCG_C2_RANGE_VHIGH | MCG_C2_HGO_LO_PWR | MCG_C2_EREFS_EXT_CLK);
-
-	MCG->C2 = temp_reg;
-
-	/*
-	 * MCG Control 1 register:
-	 * - Set system clock source (MCGOUTCLK) = external reference clock
-	 * - Set FLL external reference divider = 1024 (MCG_C1_FRDIV_32_1024)
-	 *   to get the FLL frequency of 50 MHz/1024 = 48.828KHz
-	 *   (Note: If FLL frequency must be in the in 31.25KHz-39.0625KHz
-	 *range,
-	 *          the FLL external reference divider = 1280
-	 *(MCG_C1_FRDIV_64_1280)
-	 *          to get 50 MHz/1280 = 39.0625KHz)
-	 * - Select the external reference clock as the FLL reference source
-	 *
-	 */
-
-	temp_reg = MCG->C1 &
-		   ~(MCG_C1_CLKS_MASK | MCG_C1_FRDIV_MASK | MCG_C1_IREFS_MASK);
-
-	temp_reg |=
-		(MCG_C1_CLKS_EXT_REF | MCG_C1_FRDIV_32_1024 | MCG_C1_IREFS_EXT);
-
-	MCG->C1 = temp_reg;
-
-	/*
-	 * Confirm that the external reference clock is the FLL reference
-	 * source
-	 */
-
-	while ((MCG->S & MCG_S_IREFST_MASK) != 0)
-		;
-	;
-
-	/*
-	 * Confirm the external ref. clock is the system clock source
-	 * (MCGOUTCLK)
-	 */
-
-	while ((MCG->S & MCG_S_CLKST_MASK) != MCG_S_CLKST_EXT_REF)
-		;
-	;
-
-	/*
-	 * Transition to PBE mode.
-	 * Configure the PLL frequency in preparation for PEE mode.
-	 * The goal is PEE mode with a 120 MHz system clock source (MCGOUTCLK),
-	 * which is calculated as (oscillator clock / PLL divider) * PLL
-	 * multiplier,
-	 * where oscillator clock = 50MHz, PLL divider = 20 and PLL multiplier =
-	 * 48.
-	 */
-
-	/*
-	 * MCG Control 5 register:
-	 * - Set the PLL divider
-	 */
-
-	temp_reg = MCG->C5 & ~MCG_C5_PRDIV0_MASK;
-
-	temp_reg |= FRDM_K64F_PLL_DIV_20;
-
-	MCG->C5 = temp_reg;
-
-	/*
-	 * MCG Control 6 register:
-	 * - Select PLL as output for PEE mode
-	 * - Set the PLL multiplier
-	 */
-
-	temp_reg = MCG->C6 & ~(MCG_C6_PLLS_MASK | MCG_C6_VDIV0_MASK);
-
-	temp_reg |= (MCG_C6_PLLS_PLL | FRDM_K64F_PLL_MULT_48);
-
-	MCG->C6 = temp_reg;
-
-	/* Confirm that the PLL clock is selected as the PLL output */
-
-	while ((MCG->S & MCG_S_PLLST_MASK) == 0)
-		;
-	;
-
-	/* Confirm that the PLL has acquired lock */
-
-	while ((MCG->S & MCG_S_LOCK0_MASK) == 0)
-		;
-	;
-
-	/*
-	 * Transition to PEE mode.
-	 * MCG Control 1 register:
-	 * - Select PLL as the system clock source (MCGOUTCLK)
-	 */
-
-	temp_reg = MCG->C1 & ~MCG_C1_CLKS_MASK;
-
-	temp_reg |= MCG_C1_CLKS_FLL_PLL;
-
-	MCG->C1 = temp_reg;
-
-	/* Confirm that the PLL output is the system clock source (MCGOUTCLK) */
-
-	while ((MCG->S & MCG_S_CLKST_MASK) != MCG_S_CLKST_PLL)
-		;
-	;
+	CLOCK_SetSimConfig(&simConfig);
 }
 
 /**
@@ -285,19 +188,6 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	_ScbUsageFaultAllFaultsReset();
 
 	_ScbHardFaultAllFaultsReset();
-
-	/*
-	 * Initialize the clock dividers for:
-	 * core and system clocks = 120 MHz (PLL/OUTDIV1)
-	 * bus clock = 60 MHz (PLL/OUTDIV2)
-	 * FlexBus clock = 40 MHz (PLL/OUTDIV3)
-	 * Flash clock = 24 MHz (PLL/OUTDIV4)
-	 */
-	SIM->CLKDIV1 = (
-		SIM_CLKDIV1_OUTDIV1(CONFIG_K64_CORE_CLOCK_DIVIDER - 1) |
-		SIM_CLKDIV1_OUTDIV2(CONFIG_K64_BUS_CLOCK_DIVIDER - 1) |
-		SIM_CLKDIV1_OUTDIV3(CONFIG_K64_FLEXBUS_CLOCK_DIVIDER - 1) |
-		SIM_CLKDIV1_OUTDIV4(CONFIG_K64_FLASH_CLOCK_DIVIDER - 1));
 
 	/* Initialize PLL/system clock to 120 MHz */
 	clkInit();
