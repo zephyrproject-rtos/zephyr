@@ -40,7 +40,6 @@
 	GTEXT(_IntExit)
 	GTEXT(_SpuriousIntNoErrCodeHandler)
 	GTEXT(_SpuriousIntHandler)
-	GTEXT(_DynIntStubsBegin)
 	GTEXT(_irq_sw_handler)
 
 	/* externs */
@@ -96,7 +95,7 @@
 SECTION_FUNC(TEXT, _IntEnt)
 
 	/*
-	 * The _IntVecSet() routine creates an interrupt-gate descriptor for
+	 * The gen_idt tool creates an interrupt-gate descriptor for
 	 * all connections.  The processor will automatically clear the IF
 	 * bit in the EFLAGS register upon execution of the handler, thus
 	 * _IntEnt() (and _ExcEnt) need not issue an 'cli' as the first
@@ -497,7 +496,7 @@ nestedInterrupt:
  * void _SpuriousIntHandler (void);
  *
  * INTERNAL
- * The _IntVecSet() routine creates an interrupt-gate descriptor for all
+ * The gen_idt tool creates an interrupt-gate descriptor for all
  * connections.  The processor will automatically clear the IF bit
  * in the EFLAGS register upon execution of the handler,
  * thus _SpuriousIntNoErrCodeHandler()/_SpuriousIntHandler() shall be
@@ -557,83 +556,6 @@ callFatalHandler:
 	call	_NanoFatalErrorHandler
 
 	/* handler doesn't  return */
-
-#if ALL_DYN_IRQ_STUBS > 0
-_DynIntStubCommon:
-	call _common_dynamic_irq_handler
-	/* Clean up and call IRET */
-	jmp _IntExitWithEoi
-
-/* Create all the dynamic IRQ stubs
- *
- * NOTE: Please update DYN_STUB_SIZE in include/arch/x86/arch.h if you change
- * how large the generated stubs are, otherwise _get_dynamic_stub() will
- * be unable to correctly determine the offset
- */
-
-/*
- * Create nice labels for all the stubs so we can see where we
- * are in a debugger
- */
-.altmacro
-.macro __INT_STUB_NUM id
-_DynIntStub\id:
-.endm
-.macro INT_STUB_NUM id
-__INT_STUB_NUM %id
-.endm
-
-SECTION_FUNC(TEXT, _DynIntStubsBegin)
-stub_num = 0
-.rept ((ALL_DYN_IRQ_STUBS + DYN_STUB_PER_BLOCK - 1) / DYN_STUB_PER_BLOCK)
-	block_counter = 0
-	.rept DYN_STUB_PER_BLOCK
-		.if stub_num < ALL_DYN_IRQ_STUBS
-			INT_STUB_NUM stub_num
-			/*
-			 * TODO: make this call in _DynIntStubCommon, saving
-			 * 5 bytes per stub. Some voodoo will be necessary
-			 * in _IntEnt/_IntExit to transplant the pushed
-			 * stub_num to the irq stack
-			 */
-			call _IntEnt
-#if CONFIG_X86_IAMCU
-			/*
-			 * 2-byte mov imm8 to r8
-			 * Put the stub id in the lower 8 bits of EAX,
-			 * which will be the 1st arg of
-			 * _common_dynamic_irq_handlder.
-			 */
-			movb $stub_num, %al
-#else
-			/*
-			 * 2-byte push imm8. Consumed by
-			 * common_dynamic_handler(), see intconnect.c
-			 */
-
-			push $stub_num
-#endif
-
-			/*
-			 * Check to make sure this isn't the last stub in
-			 * a block, in which case we just fall through
-			 */
-			.if (block_counter <> (DYN_STUB_PER_BLOCK - 1) && \
-			     (stub_num <> ALL_DYN_IRQ_STUBS - 1))
-				/* This should always be a 2-byte jmp rel8 */
-				jmp 1f
-			.endif
-			stub_num = stub_num + 1
-			block_counter = block_counter + 1
-		.endif
-	.endr
-	/*
-	 * This must a 5-bvte jump rel32, which is why _DynStubCommon
-	 * is before the actual stubs
-	 */
-1:	jmp _DynIntStubCommon
-.endr
-#endif /* ALL_DYN_IRQ_STUBS */
 
 #if CONFIG_IRQ_OFFLOAD
 SECTION_FUNC(TEXT, _irq_sw_handler)

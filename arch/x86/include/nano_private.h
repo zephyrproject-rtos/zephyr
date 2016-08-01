@@ -819,20 +819,9 @@ static inline void fiberRtnValueSet(struct tcs *fiber, unsigned int value)
 	*(unsigned int *)(fiber->coopReg.esp) = value;
 }
 
-/* definitions to support nanoCpuExcConnect() */
-
-#define _EXC_STUB_SIZE 0x14
-
 /* function prototypes */
 
 extern void nano_cpu_atomic_idle(unsigned int imask);
-
-extern void nanoCpuExcConnect(unsigned int vector,
-			      void (*routine)(NANO_ESF *pEsf));
-
-extern void _IntVecSet(unsigned int vector,
-		       void (*routine)(void *),
-		       unsigned int dpl);
 
 extern void _MsrWrite(unsigned int msr, uint64_t msrData);
 extern uint64_t _MsrRead(unsigned int msr);
@@ -846,10 +835,6 @@ extern uint64_t _MsrRead(unsigned int msr);
 static inline void _IntLibInit(void)
 {
 }
-
-int _stub_alloc(unsigned int *ep, unsigned int limit);
-void *_get_dynamic_stub(int stub_idx, void *base_ptr);
-uint8_t _stub_idx_from_vector(int vector);
 
 /* the _idt_base_address symbol is generated via a linker script */
 extern unsigned char _idt_base_address[];

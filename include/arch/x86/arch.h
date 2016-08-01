@@ -46,45 +46,6 @@ extern "C" {
  */
 #define MK_ISR_NAME(x) __isr__##x
 
-#define ALL_DYN_IRQ_STUBS (CONFIG_NUM_DYNAMIC_STUBS)
-
-#define ALL_DYN_EXC_STUBS (CONFIG_NUM_DYNAMIC_EXC_STUBS + \
-			   CONFIG_NUM_DYNAMIC_EXC_NOERR_STUBS)
-
-#define ALL_DYN_STUBS (ALL_DYN_EXC_STUBS + ALL_DYN_IRQ_STUBS)
-
-
-
-/*
- * Synchronize these DYN_STUB_* macros with the generated assembly for
- * _DynIntStubsBegin in intstub.S / _DynExcStubsBegin in excstub.S
- * Assumes all stub types are same size/format
- */
-
-/* Size of each dynamic interrupt/exception stub in bytes */
-#ifdef CONFIG_X86_IAMCU
-#define DYN_STUB_SIZE		8
-#else
-#define DYN_STUB_SIZE		9
-#endif
-
-/*
- * Offset from the beginning of a stub to the byte containing the argument
- * to the push instruction, which is the stub index
- */
-#define DYN_STUB_IDX_OFFSET	6
-
-/* Every DYN_STUB_PER_BLOCK stubs, there is a long jump instead of
- * a short jump. Define the extra amount of bytes for this.
- */
-#define DYN_STUB_LONG_JMP_EXTRA_SIZE	3
-
-/*
- * How many consecutive stubs we have until we encounter a periodic
- * jump to _DynStubCommon
- */
-#define DYN_STUB_PER_BLOCK	8
-
 #ifndef _ASMLANGUAGE
 
 /* interrupt/exception/error related definitions */
@@ -135,8 +96,7 @@ typedef struct s_isrList {
  * populates the special intList section with the address of the routine, the
  * vector number and the descriptor privilege level. The genIdt tool then picks
  * up this information and generates an actual IDT entry with this information
- * properly encoded. This macro replaces the _IntVecSet () routine in static
- * interrupt systems.
+ * properly encoded.
  *
  * The @a d argument specifies the privilege level for the interrupt-gate
  * descriptor; (hardware) interrupts and exceptions should specify a level of 0,
@@ -454,12 +414,6 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 #endif /* CONFIG_SSE */
 #endif /* CONFIG_FP_SHARING */
 
-extern int	_arch_irq_connect_dynamic(unsigned int irq,
-					 unsigned int priority,
-					 void (*routine)(void *parameter),
-					 void *parameter,
-					 uint32_t flags);
-
 /**
  * @brief Enable a specific IRQ
  * @param irq IRQ
@@ -500,54 +454,17 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 extern const NANO_ESF _default_esf;
 
 /**
- * @brief Configure an interrupt vector of the specified priority
- *
- * This routine is invoked by the kernel to configure an interrupt vector of
- * the specified priority.  To this end, it allocates an interrupt vector,
- * programs hardware to route interrupt requests on the specified IRQ to that
- * vector, and returns the vector number
- */
-extern int _SysIntVecAlloc(unsigned int irq,
-			   unsigned int priority,
-			   uint32_t flags);
-
-/**
  *
  * @brief Program interrupt controller
  *
  * This routine programs the interrupt controller with the given vector
- * based on the given IRQ parameter.
- *
- * Drivers call this routine instead of IRQ_CONNECT() when interrupts are
- * configured statically.
+ * based on the given IRQ parameter and triggering flags.
+ * Implicitly called by IRQ_CONNECT().
  *
  */
 extern void _SysIntVecProgram(unsigned int vector, unsigned int irq, uint32_t flags);
 
-/* functions provided by the kernel for usage by _SysIntVecAlloc() */
-
-extern int	_IntVecAlloc(unsigned int priority);
-
-extern void	_IntVecMarkAllocated(unsigned int vector);
-
-extern void	_IntVecMarkFree(unsigned int vector);
-
-#if CONFIG_DEBUG_IRQS
-/**
- *
- * @brief Dump out the IDT for debugging purposes
- *
- * The IDT has a strange structure which confounds direct examination in
- * a debugger. This function will print out its contents in human-readable
- * form. If unused, gc-sections will strip this function from the binary.
- */
-void irq_debug_dump_idt(void);
-#endif /* CONFIG_DEBUG_IRQS */
-
 #endif /* !_ASMLANGUAGE */
-
-/* Segment selector definitions are shared */
-#include "segselect.h"
 
 /* reboot through Reset Control Register (I/O port 0xcf9) */
 

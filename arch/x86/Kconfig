@@ -237,29 +237,6 @@ config CACHE_FLUSHING
 endmenu
 
 menu "Board Capabilities"
-config NUM_DYNAMIC_STUBS
-	int "Number of dynamic int stubs"
-	default 0
-	help
-	This option specifies the number of interrupt handlers that can be
-	installed dynamically using irq_connect_dynamic().
-
-config NUM_DYNAMIC_EXC_STUBS
-	int "Number of dynamic exception stubs"
-	default 0
-	help
-	This option specifies the maximum number of dynamically allocated
-	exception stubs that are to be used with exceptions that push an
-	error code onto the stack.
-
-config NUM_DYNAMIC_EXC_NOERR_STUBS
-	int "Number of dynamic no-error exception stubs"
-	default 0
-	help
-	This option specifies the maximum number of dynamically allocated
-	exception stubs that are to be used with exceptions that do not push
-	an error code onto the stack.
-
 config PIC_DISABLE
 	bool "Disable PIC"
 	default n
