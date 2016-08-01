@@ -22,9 +22,6 @@
  * Interrupt management:
  *
  * - enabling/disabling
- * - dynamic ISR connecting/replacing
- *
- * SW_ISR_TABLE_DYNAMIC has to be enabled for connecting ISRs at runtime.
  *
  * An IRQ number passed to the @a irq parameters found in this file is a
  * number from 16 to last IRQ number on the platform.
@@ -117,75 +114,3 @@ void _irq_spurious(void *unused)
 		;
 }
 
-#if CONFIG_SW_ISR_TABLE_DYNAMIC
-/*
- * @internal
- *
- * @brief Replace an interrupt handler by another
- *
- * An interrupt's ISR can be replaced at runtime.
- *
- * @return N/A
- */
-
-void _irq_handler_set(
-	unsigned int irq,
-	void (*new)(void *arg),
-	void *arg
-)
-{
-	int key = irq_lock();
-	int index = irq - 16;
-
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ number too high");
-	_sw_isr_table[index].isr = new;
-	_sw_isr_table[index].arg = arg;
-
-	irq_unlock(key);
-}
-
-/*
- * @brief Connect an ISR to an interrupt line
- *
- * @a isr is connected to interrupt line @a irq, a number greater than or equal
- * 16. No prior ISR can have been connected on @a irq interrupt line since the
- * system booted.
- *
- * This routine will hang if another ISR was connected for interrupt line @a irq
- * and ASSERT_ON is enabled; if ASSERT_ON is disabled, it will fail silently.
- *
- * @return the interrupt line number
- */
-
-int _arch_irq_connect_dynamic(
-	unsigned int irq,
-	unsigned int prio,
-	void (*isr)(void *arg),
-	void *arg,
-	uint32_t flags
-)
-{
-	ARG_UNUSED(flags);
-	_irq_handler_set(irq, isr, arg);
-	_irq_priority_set(irq, prio);
-	return irq;
-}
-
-/*
- * @internal
- *
- * @brief Disconnect an ISR from an interrupt line
- *
- * Interrupt line @a irq is disconnected from its ISR and the latter is
- * replaced by _irq_spurious(). irq_disable() should have been called before
- * invoking this routine.
- *
- * @return N/A
- */
-
-void _irq_disconnect(unsigned int irq)
-{
-	_irq_handler_set(irq, _irq_spurious, NULL);
-}
-
-#endif /* CONFIG_SW_ISR_TABLE_DYNAMIC */

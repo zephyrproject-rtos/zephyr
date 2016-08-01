@@ -39,11 +39,6 @@ GTEXT(_arch_irq_connect)
 GTEXT(_arch_irq_enable)
 GTEXT(_arch_irq_disable)
 #else
-extern int _arch_irq_connect_dynamic(unsigned int irq,
-			     unsigned int prio,
-			     void (*isr)(void *arg),
-			     void *arg,
-			     uint32_t flags);
 
 extern void _arch_irq_enable(unsigned int irq);
 extern void _arch_irq_disable(unsigned int irq);
