@@ -73,8 +73,6 @@ Testing fiber_delayed_start() with cancellations
  fiber (q order: 4, t/o: 175) is running
  got (q order: 4, t/o: 175, t/o order 1074292) as expected
  cancelling [q order: 6, t/o: 125, t/o order: 6]
-Verifying exception handler installed
-excHandlerExecuted: 1
 PASS - main.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

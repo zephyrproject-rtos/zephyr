@@ -40,11 +40,6 @@ irq_unlock
 irq_offload
   - Used when triggering an ISR to perform ISR context work.
 
-nanoCpuExcConnect
-  - Used during nanokernel object initialization.  Verified by triggering a
-    divide-by-zero exception.  The handler skips us over the offending
-    instruction.
-
 irq_enable
 irq_disable
   - Use these routines to disable and enable timer interrupts so that they can

@@ -78,12 +78,6 @@ This module tests the following CPU and thread related routines:
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 
-/* Divide-by-zero exception test here is x86-specific */
-#if defined(CONFIG_X86)
-#define CONNECT_EXCEPTIONS 1
-#endif
-
-
 typedef struct {
 	int     command;    /* command to process */
 	int     error;      /* error value (if any) */
@@ -95,10 +89,6 @@ typedef struct {
 
 typedef int  (* disable_interrupt_func)(int);
 typedef void (* enable_interrupt_func)(int);
-
-#ifdef CONNECT_EXCEPTIONS
-static volatile int    excHandlerExecuted;
-#endif
 
 static struct nano_sem        wakeFiber;
 static struct nano_timer      timer;
@@ -147,28 +137,6 @@ static void _trigger_isrHandler(void)
 }
 
 
-#ifdef CONNECT_EXCEPTIONS
-/**
- *
- * @brief Divide by zero exception handler
- *
- * This handler is part of a test that is only interested in detecting the
- * error so that we know the exception connect code is working. It simply
- * adds 2 to the EIP to skip over the offending instruction:
- *         f7 f9         idiv %ecx
- * thereby preventing the infinite loop of divide-by-zero errors which would
- * arise if control simply returns to that instruction.
- *
- * @return N/A
- */
-
-void exc_divide_error_handler(NANO_ESF *pEsf)
-{
-	pEsf->eip += 2;
-	excHandlerExecuted = 1;    /* provide evidence that the handler executed */
-}
-#endif
-
 /**
  *
  * @brief Initialize nanokernel objects
@@ -183,10 +151,6 @@ int initNanoObjects(void)
 	nano_sem_init(&wakeFiber);
 	nano_timer_init(&timer, timerData);
 	nano_fifo_init(&timeout_order_fifo);
-
-#ifdef CONNECT_EXCEPTIONS
-	nanoCpuExcConnect(IV_DIVIDE_ERROR, exc_divide_error_handler);
-#endif
 
 	return TC_PASS;
 }
@@ -921,27 +885,6 @@ void main(void)
 	if (rv != TC_PASS) {
 		goto doneTests;
 	}
-
-#ifdef CONNECT_EXCEPTIONS
-	/*
-	 * Test divide by zero exception handler.
-	 *
-	 * WARNING: This code has been very carefully crafted so that it does
-	 * what it is supposed to. Both "error" and "excHandlerExecuted" must be
-	 * volatile to prevent the compiler from issuing a "divide by zero"
-	 * warning (since otherwise in knows "excHandlerExecuted" is zero),
-	 * and to ensure the compiler issues the two byte "idiv" instruction
-	 * that the exception handler is designed to deal with.
-	 */
-
-	volatile int error;    /* used to create a divide by zero error */
-	TC_PRINT("Verifying exception handler installed\n");
-	excHandlerExecuted = 0;
-	error = error / excHandlerExecuted;
-	TC_PRINT("excHandlerExecuted: %d\n", excHandlerExecuted);
-
-	rv = (excHandlerExecuted == 1) ? TC_PASS : TC_FAIL;
-#endif
 
 doneTests:
 	TC_END_RESULT(rv);
