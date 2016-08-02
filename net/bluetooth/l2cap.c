@@ -68,16 +68,11 @@
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-enum l2cap_conn_list_action {
-	L2CAP_LOOKUP_CHAN,
-	L2CAP_DETACH_CHAN,
-};
-
 /* Wrapper macros making action on channel's list assigned to connection */
 #define l2cap_lookup_chan(conn, chan) \
-	__l2cap_chan(conn, chan, L2CAP_LOOKUP_CHAN)
+	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_LOOKUP)
 #define l2cap_detach_chan(conn, chan) \
-	__l2cap_chan(conn, chan, L2CAP_DETACH_CHAN)
+	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_DETACH)
 
 static struct bt_l2cap_fixed_chan *le_channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -193,7 +188,7 @@ static struct bt_l2cap_le_chan *__l2cap_chan(struct bt_conn *conn,
 		}
 
 		switch (action) {
-		case L2CAP_DETACH_CHAN:
+		case BT_L2CAP_CHAN_DETACH:
 			if (!prev) {
 				conn->channels = chan->_next;
 			} else {
@@ -201,7 +196,7 @@ static struct bt_l2cap_le_chan *__l2cap_chan(struct bt_conn *conn,
 			}
 
 			return BT_L2CAP_LE_CHAN(chan);
-		case L2CAP_LOOKUP_CHAN:
+		case BT_L2CAP_CHAN_LOOKUP:
 		default:
 			return BT_L2CAP_LE_CHAN(chan);
 		}

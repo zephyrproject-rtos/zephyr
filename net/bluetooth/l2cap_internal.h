@@ -20,6 +20,11 @@
 
 #include <bluetooth/l2cap.h>
 
+enum l2cap_conn_list_action {
+	BT_L2CAP_CHAN_LOOKUP,
+	BT_L2CAP_CHAN_DETACH,
+};
+
 #define BT_L2CAP_CID_BR_SIG		0x0001
 #define BT_L2CAP_CID_ATT		0x0004
 #define BT_L2CAP_CID_LE_SIG		0x0005

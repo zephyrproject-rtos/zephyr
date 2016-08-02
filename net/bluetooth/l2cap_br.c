@@ -42,6 +42,7 @@
 #endif
 
 #define BR_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_br_chan, chan)
+#define BR_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_br_chan, chan.rtx_work)
 
 #define L2CAP_BR_PSM_START	0x0001
 #define L2CAP_BR_PSM_END	0xffff
@@ -59,6 +60,12 @@
  * BR/EDR fixed channel support enabled
  */
 #define L2CAP_FEAT_FIXED_CHAN_MASK	0x00000080
+
+/* Wrapper macros making action on channel's list assigned to connection */
+#define l2cap_br_lookup_chan(conn, chan) \
+	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_LOOKUP)
+#define l2cap_br_detach_chan(conn, chan) \
+	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_DETACH)
 
 /* Auxiliary L2CAP CoC flags making channel context */
 enum {
@@ -226,7 +233,68 @@ l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 	return NULL;
 }
 
-static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
+static struct bt_l2cap_br_chan *__l2cap_chan(struct bt_conn *conn,
+					     struct bt_l2cap_chan *ch,
+					     enum l2cap_conn_list_action action)
+{
+	struct bt_l2cap_chan *chan, *prev;
+
+	for (chan = conn->channels, prev = NULL; chan;
+	     prev = chan, chan = chan->_next) {
+
+		if (chan != ch) {
+			continue;
+		}
+
+		switch (action) {
+		case BT_L2CAP_CHAN_DETACH:
+			if (!prev) {
+				conn->channels = chan->_next;
+			} else {
+				prev->_next = chan->_next;
+			}
+
+			return BR_CHAN(chan);
+		case BT_L2CAP_CHAN_LOOKUP:
+		default:
+			return BR_CHAN(chan);
+		}
+	}
+
+	return NULL;
+}
+
+static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
+{
+	BT_DBG("chan %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
+
+	/* Cancel ongoing work */
+	nano_delayed_work_cancel(&chan->rtx_work);
+}
+
+static void l2cap_br_rtx_timeout(struct nano_work *work)
+{
+	struct bt_l2cap_br_chan *chan = BR_CHAN_RTX(work);
+
+	BT_WARN("chan %p timeout", chan);
+	BT_DBG("chan %p %s scid 0x%04x", chan, state2str(chan->chan.state),
+	       chan->rx.cid);
+
+	switch (chan->chan.state) {
+	case BT_L2CAP_CONFIG:
+		bt_l2cap_br_chan_disconnect(&chan->chan);
+		break;
+	case BT_L2CAP_DISCONNECT:
+		l2cap_br_detach_chan(chan->chan.conn, &chan->chan);
+		bt_l2cap_chan_del(&chan->chan);
+		break;
+	default:
+		break;
+	}
+}
+
+static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
+			      bt_l2cap_chan_destroy_t destroy)
 {
 	struct bt_l2cap_br_chan *ch = l2cap_br_chan_alloc_cid(conn, chan);
 
@@ -235,7 +303,8 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 		return false;
 	}
 
-	bt_l2cap_chan_add(conn, chan, NULL);
+	nano_delayed_work_init(&chan->rtx_work, l2cap_br_rtx_timeout);
+	bt_l2cap_chan_add(conn, chan, destroy);
 
 	return true;
 }
@@ -439,7 +508,7 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 		ch->rx.cid = fchan->cid;
 		ch->tx.cid = fchan->cid;
 
-		if (!l2cap_br_chan_add(conn, chan)) {
+		if (!l2cap_br_chan_add(conn, chan, NULL)) {
 			return;
 		}
 
@@ -616,7 +685,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		goto done;
 	}
 
-	l2cap_br_chan_add(conn, chan);
+	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
 	BR_CHAN(chan)->tx.cid = scid;
 	dcid = BR_CHAN(chan)->rx.cid;
 	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
