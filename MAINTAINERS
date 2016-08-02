@@ -289,6 +289,14 @@ S:	Supported
 F:	arch/x86/
 F:	include/arch/x86/
 
+ZOAP
+M:	Vinicius Costa Gomes <vinicius.gomes@intel.com>
+S:	Supported
+F:	lib/iot/zoap/
+F:	samples/net/zoap_client/
+F:	samples/net/zoap_server/
+F:	tests/net/zoap/
+
 THE REST
 M:	Anas Nashif <anas.nashif@intel.com>
 L:	devel@lists.zephyrproject.com
