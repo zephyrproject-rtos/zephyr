@@ -25,8 +25,7 @@
  */
 
 #include <nanokernel.h>
-#include <drivers/loapic.h>
-#include <drivers/ioapic.h>
+#include <arch/x86/irq_controller.h>
 #include <sys_io.h>
 #include <interrupt_controller/ioapic_priv.h>
 
@@ -37,8 +36,8 @@ void _lakemont_eoi(void)
 	 * we have is the vector # in the IDT. So unconditionally
 	 * write to IOAPIC_EOI for every interrupt
 	 */
-	sys_write32(_loapic_isr_vector_get(), CONFIG_IOAPIC_BASE_ADDRESS +
-		    IOAPIC_EOI);
+	sys_write32(_irq_controller_isr_vector_get(),
+		    CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_EOI);
 
 	/* Send EOI to the LOAPIC as well */
 	sys_write32(0, CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI);

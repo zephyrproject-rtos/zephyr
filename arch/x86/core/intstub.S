@@ -30,8 +30,7 @@
 #include <arch/x86/asm.h>
 #include <offsets.h>	/* nanokernel structure offset definitions */
 #include <arch/cpu.h>	/* _NANO_ERR_SPURIOUS_INT */
-#include <drivers/loapic.h> /* LOAPIC_EOI */
-
+#include <arch/x86/irq_controller.h>
 
 	/* exports (internal APIs) */
 
@@ -288,19 +287,10 @@ SECTION_FUNC(TEXT, _IntExitWithEoi)
 	 */
 	popl %eax
 #endif
-#if CONFIG_EOI_FORWARDING_BUG
-	call	_lakemont_eoi
-#else
-	xorl %eax, %eax			/* zeroes eax */
-	/* TODO not great to have hard-coded LOAPIC stuff here. When
-	 * we get around to introducing the interrupt controller abstraction
-	 * layer, the in-use IRQ controller code will define an ASM macro
-	 * with a specific name which does the correct thing for the particular
-	 * controller.
-	 */
-	loapic_eoi_reg = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
-	movl %eax, loapic_eoi_reg	/* tell LOAPIC the IRQ is handled */
-#endif
+
+	/* irq_controller.h interface */
+	_irq_controller_eoi
+
 	jmp _IntExitWithCli
 
 /**

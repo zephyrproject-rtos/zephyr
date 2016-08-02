@@ -60,30 +60,11 @@ extern "C" {
 extern void _loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void _loapic_irq_enable(unsigned int irq);
 extern void _loapic_irq_disable(unsigned int irq);
-extern void _loapic_enable(void);
-extern void _loapic_disable(void);
-extern int _loapic_isr_vector_get(void);
 
 #if CONFIG_EOI_FORWARDING_BUG
 extern void _lakemont_eoi(void);
 #endif
 
-/**
- *
- * @brief  send EOI (End Of Interrupt) signal to Local APIC
- *
- * This routine sends an EOI signal to the Local APIC's interrupting source.
- *
- * @return N/A
- */
-static inline void _loapic_eoi(void)
-{
-#if CONFIG_EOI_FORWARDING_BUG
-	_lakemont_eoi();
-#else
-	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
-#endif
-}
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

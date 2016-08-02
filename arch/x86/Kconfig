@@ -265,6 +265,14 @@ config IRQ_OFFLOAD_VECTOR
 
 config XIP
 	default n
+
+config X86_FIXED_IRQ_MAPPING
+	bool
+	default n
+	help
+	Specify whether the current interrupt controller in use has a fixed
+	mapping between IDT vectors and IRQ lines.
+
 endmenu
 
 

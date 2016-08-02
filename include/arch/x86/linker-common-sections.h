@@ -48,13 +48,11 @@
  */
 
 #define _LINKER
-#define _ASMLANGUAGE /* Needed to include mmustructs.h */
 
+#define _ASMLANGUAGE
 #include <linker-defs.h>
 #include <offsets.h>
 #include <misc/util.h>
-#include <arch/cpu.h>
-
 #define MMU_PAGE_SIZE KB(4)
 
 #include <linker-tool.h>
@@ -150,8 +148,7 @@ SECTIONS
 	*(.gnu.linkonce.r.*)
 	IDT_MEMORY
 
-#ifndef CONFIG_MVIC
-	/* MVIC has fixed mapping, don't need this table */
+#ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 	IRQ_TO_INTERRUPT_VECTOR_MEMORY
 #endif /* CONFIG_MVIC */
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)

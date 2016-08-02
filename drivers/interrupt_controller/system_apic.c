@@ -29,6 +29,8 @@
 #include <drivers/sysapic.h>
 #include <irq.h>
 
+#define IS_IOAPIC_IRQ(irq)  (irq < LOAPIC_IRQ_BASE)
+#define HARDWARE_IRQ_LIMIT ((LOAPIC_IRQ_BASE + LOAPIC_IRQ_COUNT) - 1)
 
 /**
  *
@@ -52,8 +54,11 @@
  * @param flags interrupt flags
  *
  */
-void _SysIntVecProgram(unsigned int vector, unsigned int irq, uint32_t flags)
+void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
+				 uint32_t flags)
 {
+	__ASSERT(irq >= 0 && irq <= HARDWARE_IRQ_LIMIT, "invalid irq line");
+
 	if (IS_IOAPIC_IRQ(irq)) {
 		_ioapic_irq_set(irq, vector, flags);
 	} else {
@@ -73,7 +78,7 @@ void _SysIntVecProgram(unsigned int vector, unsigned int irq, uint32_t flags)
  *
  * The irq_enable() routine is provided by the interrupt controller driver due
  * to the IRQ virtualization that is performed by this platform.  See the
- * comments in _SysIntVecAlloc() for more information regarding IRQ
+ * comments in _interrupt_vector_allocate() for more information regarding IRQ
  * virtualization.
  *
  * @return N/A
@@ -93,7 +98,7 @@ void _arch_irq_enable(unsigned int irq)
  *
  * The irq_disable() routine is provided by the interrupt controller driver due
  * to the IRQ virtualization that is performed by this platform.  See the
- * comments in _SysIntVecAlloc() for more information regarding IRQ
+ * comments in _interrupt_vector_allocate() for more information regarding IRQ
  * virtualization.
  *
  * @return N/A

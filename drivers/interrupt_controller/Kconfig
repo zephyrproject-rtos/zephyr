@@ -30,7 +30,7 @@ config LOAPIC
 config LOAPIC_BASE_ADDRESS
 	hex "Local APIC Base Address"
 	default 0xFEE00000
-	depends on LOAPIC || MVIC
+	depends on LOAPIC
 	help
 	This option specifies the base address of the Local APIC device.
 
@@ -76,7 +76,7 @@ config IOAPIC_DEBUG
 config IOAPIC_BASE_ADDRESS
 	hex "IO-APIC Base Address"
 	default 0xFEC00000
-	depends on IOAPIC || MVIC
+	depends on IOAPIC
 	help
 	This option specifies the base address of the IO-APIC device.
 
@@ -95,12 +95,23 @@ config MVIC
 	bool "Intel Quark D2000 Interrupt Controller (MVIC)"
 	default n
 	depends on X86
+	select X86_FIXED_IRQ_MAPPING
 	help
 	The MVIC (Intel Quark microcontroller D2000 Interrupt Controller) is
 	configured by default to support 32 external interrupt lines. Unlike the
 	traditional IA LAPIC/IOAPIC, the interrupt vectors in MVIC are fixed and
 	not programmable. In addition, the priorities of these interrupt
 	lines are also fixed.
+
+config MVIC_TIMER_IRQ
+	int "IRQ line to use for timer interrupt"
+	range 0 15
+	default 0
+	depends on MVIC
+	help
+	Specify the IRQ line to use for the timer interrupt. This should be
+	an IRQ line unused by any hardware. If nested interrupts are enabled,
+	higher interrupt lines have priority.
 
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"

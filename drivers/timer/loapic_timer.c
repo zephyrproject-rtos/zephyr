@@ -80,7 +80,7 @@
 #include <sections.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
-#include <drivers/loapic.h> /* LOAPIC registers */
+#include <arch/x86/irq_controller.h>
 #include <power.h>
 #include <device.h>
 
@@ -104,15 +104,31 @@
 #define LOAPIC_TIMER_PERIODIC 0x00020000 /* Timer Mode: Periodic */
 
 
-/* Helpful macros and inlines for programming timer */
+/* Helpful macros and inlines for programming timer.
+ * We support both standard LOAPIC, and MVIC which has a similar
+ * interface
+ */
+
+#if defined(CONFIG_LOAPIC)
 #define _REG_TIMER ((volatile uint32_t *) \
-					(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER))
+			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER))
 #define _REG_TIMER_ICR ((volatile uint32_t *) \
-						(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_ICR))
+			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_ICR))
 #define _REG_TIMER_CCR ((volatile uint32_t *) \
-						(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CCR))
+			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CCR))
 #define _REG_TIMER_CFG ((volatile uint32_t *) \
-						(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CONFIG))
+			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CONFIG))
+#define TIMER_IRQ		CONFIG_LOAPIC_TIMER_IRQ
+#define TIMER_IRQ_PRIORITY	CONFIG_LOAPIC_TIMER_IRQ_PRIORITY
+#elif defined(CONFIG_MVIC)
+
+#define _REG_TIMER	((volatile uint32_t *)MVIC_LVTTIMER)
+#define _REG_TIMER_ICR	((volatile uint32_t *)MVIC_ICR)
+#define _REG_TIMER_CCR	((volatile uint32_t *)MVIC_CCR)
+/* MVIC has no TIMER_CFG register */
+#define TIMER_IRQ		CONFIG_MVIC_TIMER_IRQ
+#define TIMER_IRQ_PRIORITY	-1
+#endif
 
 #if defined(CONFIG_TICKLESS_IDLE)
 #define TIMER_MODE_ONE_SHOT     0
@@ -158,38 +174,6 @@ static inline void periodic_mode_set(void)
 	*_REG_TIMER |= LOAPIC_TIMER_PERIODIC;
 }
 
-#if defined(CONFIG_TICKLESS_IDLE) ||              \
-	defined(LOAPIC_TIMER_PERIODIC_WORKAROUND) || \
-	defined(CONFIG_SYSTEM_CLOCK_DISABLE)
-/**
- *
- * @brief Mask the timer interrupt
- *
- * This routine disables the LOAPIC timer by masking it.
- *
- * @return N/A
- */
-static inline void timer_interrupt_mask(void)
-{
-	*_REG_TIMER |= LOAPIC_LVT_MASKED;
-}
-#endif
-
-#if defined(CONFIG_TICKLESS_IDLE) || \
-	defined(LOAPIC_TIMER_PERIODIC_WORKAROUND)
-/**
- *
- * @brief Unmask the timer interrupt
- *
- * This routine enables the LOAPIC timer by unmasking it.
- *
- * @return N/A
- */
-static inline void timer_interrupt_unmask(void)
-{
-	*_REG_TIMER &= ~LOAPIC_LVT_MASKED;
-}
-#endif
 
 /**
  *
@@ -198,11 +182,10 @@ static inline void timer_interrupt_unmask(void)
  * This routine sets value from which the timer will count down.
  * Note that setting the value to zero stops the timer.
  *
+ * @param count Count from which timer is to count down
  * @return N/A
  */
-static inline void initial_count_register_set(
-	uint32_t count /* count from which timer is to count down */
-	)
+static inline void initial_count_register_set(uint32_t count)
 {
 	*_REG_TIMER_ICR = count;
 }
@@ -228,14 +211,11 @@ static inline void one_shot_mode_set(void)
  *
  * This routine sets rate at which the timer is decremented to match the
  * external bus frequency.
+ * This is not supported with MVIC, only real LOAPIC.
  *
  * @return N/A
  */
-#if defined(CONFIG_LOAPIC_TIMER_DIVIDER_UNSUPPORTED)
-static inline void divide_configuration_register_set(void)
-{
-}
-#else
+#ifndef CONFIG_MVIC
 static inline void divide_configuration_register_set(void)
 {
 	*_REG_TIMER_CFG = (*_REG_TIMER_CFG & ~0xf) | LOAPIC_TIMER_DIVBY_1;
@@ -558,17 +538,18 @@ int _sys_clock_driver_init(struct device *device)
 
 	tickless_idle_init();
 
+#ifndef CONFIG_MVIC
 	divide_configuration_register_set();
+#endif
 	initial_count_register_set(cycles_per_tick - 1);
 	periodic_mode_set();
 
-	IRQ_CONNECT(CONFIG_LOAPIC_TIMER_IRQ, CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
-		    _timer_int_handler, 0, 0);
+	IRQ_CONNECT(TIMER_IRQ, TIMER_IRQ_PRIORITY, _timer_int_handler, 0, 0);
 
 	/* Everything has been configured. It is now safe to enable the
 	 * interrupt
 	 */
-	irq_enable(CONFIG_LOAPIC_TIMER_IRQ);
+	irq_enable(TIMER_IRQ);
 
 	return 0;
 }
@@ -680,14 +661,10 @@ void sys_clock_disable(void)
 
 	key = irq_lock();
 
-	timer_interrupt_mask();
+	irq_disable(TIMER_IRQ);
 	initial_count_register_set(0);
 
 	irq_unlock(key);
-
-	/* disable interrupt in the interrupt controller */
-
-	irq_disable(CONFIG_LOAPIC_TIMER_IRQ);
 }
 
 #endif /* CONFIG_SYSTEM_CLOCK_DISABLE */

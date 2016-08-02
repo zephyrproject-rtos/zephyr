@@ -208,14 +208,14 @@ uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
  *
  */
 
-int _loapic_init(struct device *unused)
+static int _loapic_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	int32_t loApicMaxLvt; /* local APIC Max LVT */
 
 	/* enable the Local APIC */
-
-	_loapic_enable();
+	sys_write32(sys_read32(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR)
+		    | LOAPIC_ENABLE, CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR);
 
 	loApicMaxLvt = (*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_VER) &
 			LOAPIC_MAXLVT_MASK) >> 16;
@@ -262,60 +262,29 @@ int _loapic_init(struct device *unused)
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR) =
-		(*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR) & 0xFFFFFF00)
+		(*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR)
+		 & 0xFFFFFF00)
 		| (LOAPIC_SPURIOUS_VECTOR_ID & 0xFF);
 #endif
 
 	/* discard a pending interrupt if any */
-	_loapic_eoi();
+#if CONFIG_EOI_FORWARDING_BUG
+	_lakemont_eoi();
+#else
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
+#endif
+
 	return 0;
-}
-
-/**
- *
- * @brief Enable the Local xAPIC
- *
- * This routine enables the Local xAPIC.
- *
- * @return N/A
- */
-
-void _loapic_enable(void)
-{
-	int32_t oldLevel = irq_lock(); /* LOCK INTERRUPTS */
-
-	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR) |= LOAPIC_ENABLE;
-
-	irq_unlock(oldLevel); /* UNLOCK INTERRUPTS */
-}
-
-/**
- *
- * @brief Disable the Local xAPIC
- *
- * This routine disables the Local xAPIC.
- *
- * @return N/A
- */
-
-void _loapic_disable(void)
-{
-	int32_t oldLevel = irq_lock(); /* LOCK INTERRUPTS */
-
-	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR) &=
-		~LOAPIC_ENABLE;
-
-	irq_unlock(oldLevel); /* UNLOCK INTERRUPTS */
 }
 
 /**
  *
  * @brief Set the vector field in the specified RTE
  *
- * This routine is utilized by the interrupt controller's _SysIntVecAlloc()
- * routine (which exists to support the irq_connect_dynamic() API).  Once
- * a vector has been allocated, this routine is invoked to update the LVT
- * entry associated with <irq> with the vector.
+ * This routine is utilized by the interrupt controller's
+ * _interrupt_vector_allocate() routine (which exists to support the
+ * irq_connect_dynamic() API).  Once a vector has been allocated, this routine
+ * is invoked to update the LVT entry associated with <irq> with the vector.
  *
  * @return N/A
  */
@@ -439,7 +408,7 @@ void _loapic_irq_disable(unsigned int irq)
  *
  * @return The vector of the interrupt that is currently being processed.
  */
-int _loapic_isr_vector_get(void)
+int __irq_controller_isr_vector_get(void)
 {
 	int pReg, block;
 
@@ -490,7 +459,7 @@ static int loapic_suspend(struct device *port, int pm_policy)
 	return 0;
 }
 
-int loapic_resume(struct device *port, int pm_policy)
+static int loapic_resume(struct device *port, int pm_policy)
 {
 	int loapic_irq;
 

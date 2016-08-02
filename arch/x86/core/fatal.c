@@ -27,7 +27,7 @@
 #include <nanokernel.h>
 #include <nano_private.h>
 #include <misc/printk.h>
-#include <drivers/loapic.h>
+#include <arch/x86/irq_controller.h>
 #include <exception.h>
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
@@ -82,7 +82,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 
 	case _NANO_ERR_SPURIOUS_INT:
 		printk("***** Unhandled interrupt vector %d occurred! "
-		       "*****\n", _loapic_isr_vector_get());
+		       "*****\n", _irq_controller_isr_vector_get());
 		break;
 
 	case _NANO_ERR_INVALID_TASK_EXIT:

@@ -22,7 +22,7 @@
 #ifndef __KERNEL_EVENT_LOGGER_ARCH_H__
 #define __KERNEL_EVENT_LOGGER_ARCH_H__
 
-#include <drivers/loapic.h>
+#include <arch/x86/irq_controller.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +38,7 @@ extern "C" {
  */
 static inline int _sys_current_irq_key_get(void)
 {
-	return _loapic_isr_vector_get();
+	return _irq_controller_isr_vector_get();
 }
 
 #ifdef __cplusplus

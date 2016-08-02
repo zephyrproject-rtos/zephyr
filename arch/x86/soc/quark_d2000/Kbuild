@@ -3,4 +3,6 @@ ccflags-y +=-I$(srctree)/include/drivers
 ccflags-y +=-I$(srctree)/drivers
 asflags-y := ${ccflags-y}
 
-obj-$(CONFIG_SOC_QUARK_D2000) = soc.o
+# Force build system to create built-in.o even though we don't
+# have any C files to compile
+obj- = dummy.o

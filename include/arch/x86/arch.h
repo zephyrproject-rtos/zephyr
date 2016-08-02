@@ -25,6 +25,7 @@
 #define _ARCH_IFACE_H
 
 #include <irq.h>
+#include <arch/x86/irq_controller.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
@@ -76,11 +77,16 @@ extern "C" {
 typedef struct s_isrList {
 	/** Address of ISR/stub */
 	void		*fnc;
-	/** IRQ associated with the ISR/stub */
+	/** IRQ associated with the ISR/stub, or -1 if this is not
+	 * associated with a real interrupt; in this case vec must
+	 * not be -1
+	 */
 	unsigned int    irq;
-	/** Priority associated with the IRQ */
+	/** Priority associated with the IRQ. Ignored if vec is not -1 */
 	unsigned int    priority;
-	/** Vector number associated with ISR/stub */
+	/** Vector number associated with ISR/stub, or -1 to assign based
+	 * on priority
+	 */
 	unsigned int    vec;
 	/** Privilege level associated with ISR/stub */
 	unsigned int    dpl;
@@ -148,13 +154,11 @@ typedef struct s_isrList {
  *
  * These macros are only intended to be used by IRQ_CONNECT() macro.
  */
-#if CONFIG_MVIC
-#define _PRIORITY_ARG(irq_p, priority_p)	(-1)
-#define _VECTOR_ARG(irq_p)			(irq_p + 0x20)
+#if CONFIG_X86_FIXED_IRQ_MAPPING
+#define _VECTOR_ARG(irq_p)	_IRQ_CONTROLLER_VECTOR_MAPPING(irq_p)
 #else
-#define _PRIORITY_ARG(irq_p, priority_p)	(priority_p)
-#define _VECTOR_ARG(irq_p)			(-1)
-#endif /* CONFIG_MVIC */
+#define _VECTOR_ARG(irq_p)	(-1)
+#endif /* CONFIG_X86_FIXED_IRQ_MAPPING */
 
 /**
  * Configure a static interrupt.
@@ -179,14 +183,14 @@ typedef struct s_isrList {
  * argument to the ISR, and then the ISR is called. _IntExitWithEoi
  * restores calling context and 'iret's.
  *
- * 4. _SysIntVecProgram() is called at runtime to set the mapping between
- * the vector and the IRQ line.
+ * 4. _irq_controller_irq_config() is called at runtime to set the mapping
+ * between the vector and the IRQ line as well as triggering flags
  *
  * @param irq_p IRQ line number
  * @param priority_p Interrupt priority
  * @param isr_p Interrupt service routine
  * @param isr_param_p ISR parameter
- * @param flags_p IRQ triggering options
+ * @param flags_p IRQ triggering options, as defined in irq_controller.h
  *
  * @return The vector assigned to this interrupt
  */
@@ -211,18 +215,19 @@ typedef struct s_isrList {
 		: \
 		: [isr] "i" (isr_p), \
 		  [isr_param] "i" (isr_param_p), \
-		  [priority] "i" _PRIORITY_ARG(irq_p, priority_p), \
+		  [priority] "i" (priority_p), \
 		  [vector] "i" _VECTOR_ARG(irq_p), \
 		  [irq] "i" (irq_p)); \
-	_SysIntVecProgram(_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), (flags_p)); \
+	_irq_controller_irq_config(_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
+				   (flags_p)); \
 	_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
-#ifdef CONFIG_MVIC
+#ifdef CONFIG_X86_FIXED_IRQ_MAPPING
 /* Fixed vector-to-irq association mapping.
  * No need for the table at all.
  */
-#define _IRQ_TO_INTERRUPT_VECTOR(irq) (irq + 0x20)
+#define _IRQ_TO_INTERRUPT_VECTOR(irq) _IRQ_CONTROLLER_VECTOR_MAPPING(irq)
 #else
 /**
  * @brief Convert a statically connected IRQ to its interrupt vector number
@@ -393,9 +398,6 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 	_do_irq_unlock();
 }
 
-/** interrupt/exception/error related definitions */
-typedef void (*NANO_EOI_GET_FUNC) (void *);
-
 /**
  * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
  * to NANO_CPU_INT_REGSITER when connecting to an interrupt that does not
@@ -452,17 +454,6 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 						const NANO_ESF * pEsf);
 /** Dummy ESF for fatal errors that would otherwise not have an ESF */
 extern const NANO_ESF _default_esf;
-
-/**
- *
- * @brief Program interrupt controller
- *
- * This routine programs the interrupt controller with the given vector
- * based on the given IRQ parameter and triggering flags.
- * Implicitly called by IRQ_CONNECT().
- *
- */
-extern void _SysIntVecProgram(unsigned int vector, unsigned int irq, uint32_t flags);
 
 #endif /* !_ASMLANGUAGE */
 

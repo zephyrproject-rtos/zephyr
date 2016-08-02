@@ -17,28 +17,40 @@
 #ifndef __INC_SYS_APIC_H
 #define __INC_SYS_APIC_H
 
-#if !defined(LOAPIC_IRQ_BASE) && !defined(LOAPIC_IRQ_COUNT)
+#include <drivers/ioapic.h>
+#include <drivers/loapic.h>
 
-/* Default IA32 system APIC definitions with local APIC IRQs after IO APIC. */
+#define _IRQ_TRIGGER_EDGE	IOAPIC_EDGE
+#define _IRQ_TRIGGER_LEVEL	IOAPIC_LEVEL
+
+#define _IRQ_POLARITY_HIGH	IOAPIC_HIGH
+#define _IRQ_POLARITY_LOW	IOAPIC_LOW
+
+#ifndef _ASMLANGUAGE
 
 #define LOAPIC_IRQ_BASE  CONFIG_IOAPIC_NUM_RTES
 #define LOAPIC_IRQ_COUNT 6  /* Default to LOAPIC_TIMER to LOAPIC_ERROR */
 
-#define IS_IOAPIC_IRQ(irq)  (irq < LOAPIC_IRQ_BASE)
+/* irq_controller.h interface */
+void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
+				 uint32_t flags);
 
-#define HARDWARE_IRQ_LIMIT ((LOAPIC_IRQ_BASE + LOAPIC_IRQ_COUNT) - 1)
+int __irq_controller_isr_vector_get(void);
 
+#else /* _ASMLANGUAGE */
+
+#if CONFIG_EOI_FORWARDING_BUG
+.macro __irq_controller_eoi
+	call	_lakemont_eoi
+.endm
 #else
+.macro __irq_controller_eoi
+	xorl %eax, %eax			/* zeroes eax */
+	loapic_eoi_reg = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
+	movl %eax, loapic_eoi_reg	/* tell LOAPIC the IRQ is handled */
+.endm
+#endif /* CONFIG_EOI_FORMWARDING_BUG */
 
- /* Assumption for boards that define LOAPIC_IRQ_BASE & LOAPIC_IRQ_COUNT that
-  * local APIC IRQs are within IOAPIC RTE range.
-  */
-
-#define IS_IOAPIC_IRQ(irq)  ((irq < LOAPIC_IRQ_BASE) || \
-	(irq >= (LOAPIC_IRQ_BASE + LOAPIC_IRQ_COUNT)))
-
-#define HARDWARE_IRQ_LIMIT (CONFIG_IOAPIC_NUM_RTES - 1)
-
-#endif
+#endif /* _ASMLANGUAGE */
 
 #endif /* __INC_SYS_APIC_H */

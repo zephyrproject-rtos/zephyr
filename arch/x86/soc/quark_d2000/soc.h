@@ -28,10 +28,6 @@
 #include <uart.h>
 #include <drivers/ioapic.h>
 
-#define INT_VEC_IRQ0  0x20 /* Vector number for IRQ0 */
-#define FIXED_HARDWARE_IRQ_TO_VEC_MAPPING(x) (INT_VEC_IRQ0 + x)
-#define IOAPIC_LO32_RTE_SUPPORTED_MASK (IOAPIC_INT_MASK | IOAPIC_TRIGGER_MASK)
-
 /* Base Register */
 #define SCSS_REGISTER_BASE              0xB0800000
 
@@ -42,14 +38,6 @@
 #define CLOCK_SYSTEM_CLOCK_CONTROL      (SCSS_REGISTER_BASE + 0x38)
 
 #define INT_UNMASK_IA			(~0x00000001)
-
-
-/*
- * Local APIC (LOAPIC) device information (Intel loapic)
- */
-#define LOAPIC_IRQ_BASE			CONFIG_LOAPIC_TIMER_IRQ
-#define LOAPIC_IRQ_COUNT		1
-#define LOAPIC_LVT_REG_SPACING  	0x10
 
 /*
  * PINMUX configuration settings
