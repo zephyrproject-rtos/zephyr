@@ -178,6 +178,14 @@ config BLUETOOTH_ATT_PREPARE_COUNT
 	  Number of buffers available for ATT prepare write, setting
 	  this to 0 disables GATT long/reliable writes.
 
+config BLUETOOTH_ATT_REQ_COUNT
+	int "Number of ATT request buffers"
+	default 1
+	range 1 64
+	help
+	  Number of outgoing buffers available for ATT requests per connection,
+	  this controls how many requests can be queued without blocking.
+
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
 	default n

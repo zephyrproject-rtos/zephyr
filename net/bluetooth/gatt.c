@@ -455,12 +455,23 @@ static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
 }
 
 static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
-		     bt_att_func_t func, void *user_data,
+		     bt_att_func_t func, void *params,
 		     bt_att_destroy_t destroy)
 {
 	int err;
 
-	err = bt_att_send(conn, buf, func, user_data, destroy);
+	if (params) {
+		struct bt_att_req *req = params;
+
+		req->buf = buf;
+		req->func = func;
+		req->destroy = destroy;
+
+		err = bt_att_req_send(conn, req);
+	} else {
+		err = bt_att_send(conn, buf);
+	}
+
 	if (err) {
 		BT_ERR("Error sending ATT PDU: %d", err);
 		net_buf_unref(buf);
@@ -730,18 +741,19 @@ static void remove_subscriptions(struct bt_conn *conn)
 static void gatt_mtu_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 			 uint16_t length, void *user_data)
 {
-	bt_gatt_rsp_func_t func = user_data;
+	struct bt_gatt_exchange_params *params = user_data;
 
-	func(conn, err);
+	params->func(conn, err, params);
 }
 
-int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
+int bt_gatt_exchange_mtu(struct bt_conn *conn,
+			 struct bt_gatt_exchange_params *params)
 {
 	struct bt_att_exchange_mtu_req *req;
 	struct net_buf *buf;
 	uint16_t mtu;
 
-	if (!conn || !func) {
+	if (!conn || !params || !params->func) {
 		return -EINVAL;
 	}
 
@@ -757,7 +769,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 	req = net_buf_add(buf, sizeof(*req));
 	req->mtu = sys_cpu_to_le16(mtu);
 
-	return gatt_send(conn, buf, gatt_mtu_rsp, func, NULL);
+	return gatt_send(conn, buf, gatt_mtu_rsp, params, NULL);
 }
 
 static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
@@ -1760,9 +1772,9 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	return gatt_write_ccc(conn, params->ccc_handle, 0x0000, NULL, NULL);
 }
 
-void bt_gatt_cancel(struct bt_conn *conn)
+void bt_gatt_cancel(struct bt_conn *conn, void *params)
 {
-	bt_att_cancel(conn);
+	bt_att_req_cancel(conn, params);
 }
 
 static void add_subscriptions(struct bt_conn *conn)

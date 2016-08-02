@@ -859,7 +859,8 @@ fail:
 		   status);
 }
 
-static void exchange_mtu_rsp(struct bt_conn *conn, uint8_t err)
+static void exchange_func(struct bt_conn *conn, uint8_t err,
+			  struct bt_gatt_exchange_params *params)
 {
 	if (err) {
 		tester_rsp(BTP_SERVICE_ID_GATT, GATT_EXCHANGE_MTU,
@@ -872,6 +873,8 @@ static void exchange_mtu_rsp(struct bt_conn *conn, uint8_t err)
 		   BTP_STATUS_SUCCESS);
 }
 
+static struct bt_gatt_exchange_params exchange_params;
+
 static void exchange_mtu(uint8_t *data, uint16_t len)
 {
 	struct bt_conn *conn;
@@ -881,7 +884,9 @@ static void exchange_mtu(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	if (bt_gatt_exchange_mtu(conn, exchange_mtu_rsp) < 0) {
+	exchange_params.func = exchange_func;
+
+	if (bt_gatt_exchange_mtu(conn, &exchange_params) < 0) {
 		bt_conn_unref(conn);
 
 		goto fail;

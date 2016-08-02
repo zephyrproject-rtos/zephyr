@@ -245,14 +245,11 @@ uint16_t bt_att_get_mtu(struct bt_conn *conn);
 struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op,
 				  size_t len);
 
-typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
-			      const void *pdu, uint16_t length,
-			      void *user_data);
-typedef void (*bt_att_destroy_t)(void *user_data);
-
 /* Send ATT PDU over a connection */
-int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_att_func_t func,
-		void *user_data, bt_att_destroy_t destroy);
+int bt_att_send(struct bt_conn *conn, struct net_buf *buf);
+
+/* Send ATT Request over a connection */
+int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req);
 
 /* Cancel ATT request */
-void bt_att_cancel(struct bt_conn *conn);
+void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req);

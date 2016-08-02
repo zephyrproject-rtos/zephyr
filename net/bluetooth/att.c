@@ -47,6 +47,7 @@
 #endif
 
 #define ATT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_att, chan.chan)
+#define ATT_REQ(_node) CONTAINER_OF(_node, struct bt_att_req, node)
 
 #define BT_GATT_PERM_READ_MASK			(BT_GATT_PERM_READ | \
 						BT_GATT_PERM_READ_ENCRYPT | \
@@ -75,53 +76,48 @@ static NET_BUF_POOL(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT,
 		    sizeof(struct bt_attr_data));
 #endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
 
-/* ATT request context */
-struct bt_att_req {
-	bt_att_func_t		func;
-	void			*user_data;
-	bt_att_destroy_t	destroy;
-	struct net_buf		*buf;
-#if defined(CONFIG_BLUETOOTH_SMP)
-	bool			retrying;
-#endif /* CONFIG_BLUETOOTH_SMP */
-};
-
 /* ATT channel specific context */
 struct bt_att {
 	/* The channel this context is associated with */
 	struct bt_l2cap_le_chan	chan;
-	struct bt_att_req	req;
+	struct bt_att_req	*req;
+	sys_slist_t		reqs;
 	struct nano_delayed_work timeout_work;
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct nano_fifo	prep_queue;
 #endif
-	 /* TODO: Allow more than one pending request */
 };
 
-static struct bt_att bt_att_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_att bt_req_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
 /*
- * Pool for outgoing ATT packets. Reserve one buffer per connection plus
- * one additional one in case cloning is needed.
+ * Pool for outgoing ATT requests packets.
  */
-static struct nano_fifo att_buf;
-static NET_BUF_POOL(att_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
+static struct nano_fifo req_data;
+static NET_BUF_POOL(req_pool,
+		    CONFIG_BLUETOOTH_ATT_REQ_COUNT * CONFIG_BLUETOOTH_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
-		    &att_buf, NULL, BT_BUF_USER_DATA_MIN);
+		    &req_data, NULL, BT_BUF_USER_DATA_MIN);
+
+/*
+ * Pool for outstanding ATT request, this is required for resending in case
+ * there is a recoverable error since the original buffer is changed while
+ * sending.
+ */
+static struct nano_fifo clone_data;
+static NET_BUF_POOL(clone_pool, 1 * CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_ATT_MTU),
+		    &clone_data, NULL, BT_BUF_USER_DATA_MIN);
 
 static void att_req_destroy(struct bt_att_req *req)
 {
-	struct bt_att *att = CONTAINER_OF(req, struct bt_att, req);
-
 	if (req->buf) {
 		net_buf_unref(req->buf);
 	}
 
 	if (req->destroy) {
-		req->destroy(req->user_data);
+		req->destroy(req);
 	}
-
-	nano_delayed_work_cancel(&att->timeout_work);
 
 	memset(req, 0, sizeof(*req));
 }
@@ -195,28 +191,86 @@ static uint8_t att_mtu_req(struct bt_att *att, struct net_buf *buf)
 	return 0;
 }
 
+static struct net_buf *att_req_clone(struct net_buf *buf)
+{
+	struct net_buf *clone;
+
+	clone = net_buf_get(&clone_data, net_buf_headroom(buf));
+	if (!clone) {
+		return NULL;
+	}
+
+	memcpy(net_buf_add(clone, buf->len), buf->data, buf->len);
+
+	return clone;
+}
+
+static int att_send_req(struct bt_att *att, struct bt_att_req *req)
+{
+	BT_DBG("req %p", req);
+
+	att->req = req;
+
+	/* Start timeout work */
+	nano_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
+
+	/* Send a clone to keep the original buffer intact */
+	bt_l2cap_send(att->chan.chan.conn, BT_L2CAP_CID_ATT,
+		      att_req_clone(req->buf));
+
+	return 0;
+}
+
+static void att_process(struct bt_att *att)
+{
+	sys_snode_t *node;
+
+	BT_DBG("");
+
+	/* Peek next request from the list */
+	node = sys_slist_peek_head(&att->reqs);
+	if (!node) {
+		return;
+	}
+
+	sys_slist_remove(&att->reqs, NULL, node);
+	att_send_req(att, ATT_REQ(node));
+}
+
 static uint8_t att_handle_rsp(struct bt_att *att, void *pdu, uint16_t len,
 			      uint8_t err)
 {
-	struct bt_att_req req;
+	bt_att_func_t func;
 
-	if (!att->req.func) {
-		return 0;
+	if (!att->req) {
+		goto process;
 	}
 
-	/* Release cloned buffer */
-	if (att->req.buf) {
-		net_buf_unref(att->req.buf);
-		att->req.buf = NULL;
+	/* Cancel timeout if ongoing */
+	nano_delayed_work_cancel(&att->timeout_work);
+
+	/* Release original buffer */
+	if (att->req->buf) {
+		net_buf_unref(att->req->buf);
+		att->req->buf = NULL;
 	}
 
-	/* Reset request before callback so another request can be queued */
-	memcpy(&req, &att->req, sizeof(req));
-	att->req.func = NULL;
+	/* Reset func so it can be reused by the callback */
+	func = att->req->func;
+	att->req->func = NULL;
 
-	req.func(att->chan.chan.conn, err, pdu, len, req.user_data);
+	func(att->chan.chan.conn, err, pdu, len, att->req);
 
-	att_req_destroy(&req);
+	/* Don't destroy if callback had reused the request */
+	if (!att->req->func) {
+		att_req_destroy(att->req);
+	}
+
+	att->req = NULL;
+
+process:
+	/* Process pending requests */
+	att_process(att);
 
 	return 0;
 }
@@ -1416,7 +1470,6 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 
 static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 {
-	struct bt_att_req *req = &att->req;
 	struct bt_att_error_rsp *rsp;
 	struct bt_att_hdr *hdr;
 	uint8_t err;
@@ -1426,22 +1479,22 @@ static uint8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	if (!req->buf) {
+	if (!att->req || att->req->buf) {
 		err = BT_ATT_ERR_UNLIKELY;
 		goto done;
 	}
 
-	hdr = (void *)req->buf->data;
+	hdr = (void *)att->req->buf->data;
 
 	err = rsp->request == hdr->code ? rsp->error : BT_ATT_ERR_UNLIKELY;
 #if defined(CONFIG_BLUETOOTH_SMP)
-	if (req->retrying) {
+	if (att->req->retrying) {
 		goto done;
 	}
 
 	/* Check if security needs to be changed */
 	if (!att_change_security(att->chan.chan.conn, err)) {
-		req->retrying = true;
+		att->req->retrying = true;
 		/* Wait security_changed: TODO: Handle fail case */
 		return 0;
 	}
@@ -1698,7 +1751,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 		return NULL;
 	}
 
-	buf = bt_l2cap_create_pdu(&att_buf);
+	buf = bt_l2cap_create_pdu(&req_data);
 	if (!buf) {
 		return NULL;
 	}
@@ -1711,6 +1764,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 
 static void att_reset(struct bt_att *att)
 {
+	sys_snode_t *node, *tmp;
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct net_buf *buf;
 
@@ -1720,7 +1774,25 @@ static void att_reset(struct bt_att *att)
 	}
 #endif
 
-	/* Notify client if request is pending */
+	/* Notify pending requests */
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&att->reqs, node, tmp) {
+		struct bt_att_req *req = ATT_REQ(node);
+
+		if (req->func) {
+			req->func(NULL, BT_ATT_ERR_UNLIKELY, NULL, 0, req);
+		}
+
+		att_req_destroy(req);
+	}
+
+	/* Reset list */
+	sys_slist_init(&att->reqs);
+
+	if (!att->req) {
+		return;
+	}
+
+	/* Notify outstanding request */
 	att_handle_rsp(att, NULL, 0, BT_ATT_ERR_UNLIKELY);
 }
 
@@ -1762,6 +1834,7 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 	ch->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
 
 	nano_delayed_work_init(&att->timeout_work, att_timeout);
+	sys_slist_init(&att->reqs);
 
 	bt_gatt_connected(ch->chan.conn);
 }
@@ -1784,9 +1857,7 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan)
 {
 	struct bt_att *att = ATT_CHAN(chan);
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-
 	struct bt_conn *conn = ch->chan.conn;
-	struct bt_att_req *req;
 
 	BT_DBG("chan %p conn %p handle %u sec_level 0x%02x", ch, conn,
 	       conn->handle, conn->sec_level);
@@ -1795,16 +1866,15 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan)
 		return;
 	}
 
-	req = &att->req;
-	if (!req->retrying) {
+	if (!att->req || !att->req->retrying) {
 		return;
 	}
 
 	BT_DBG("Retrying");
 
 	/* Resend buffer */
-	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, req->buf);
-	req->buf = NULL;
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, att->req->buf);
+	att->req->buf = NULL;
 }
 #endif /* CONFIG_BLUETOOTH_SMP */
 
@@ -1822,8 +1892,8 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 	BT_DBG("conn %p handle %u", conn, conn->handle);
 
-	for (i = 0; i < ARRAY_SIZE(bt_att_pool); i++) {
-		struct bt_att *att = &bt_att_pool[i];
+	for (i = 0; i < ARRAY_SIZE(bt_req_pool); i++) {
+		struct bt_att *att = &bt_req_pool[i];
 
 		if (att->chan.chan.conn) {
 			continue;
@@ -1848,7 +1918,8 @@ void bt_att_init(void)
 		.accept		= bt_att_accept,
 	};
 
-	net_buf_pool_init(att_pool);
+	net_buf_pool_init(req_pool);
+	net_buf_pool_init(clone_pool);
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	net_buf_pool_init(prep_pool);
 #endif
@@ -1869,80 +1940,12 @@ uint16_t bt_att_get_mtu(struct bt_conn *conn)
 	return att->chan.tx.mtu;
 }
 
-static struct bt_att_req *att_req_new(struct bt_att *att, struct net_buf *buf,
-				      bt_att_func_t func, void *user_data,
-				      bt_att_destroy_t destroy)
-{
-	/* Check if there is a request pending */
-	if (att->req.func) {
-		 /* TODO: Allow more than one pending request */
-		return NULL;
-	}
-
-	att->req.buf = net_buf_clone(buf);
-#if defined(CONFIG_BLUETOOTH_SMP)
-	att->req.retrying = false;
-#endif /* CONFIG_BLUETOOTH_SMP */
-	att->req.func = func;
-	att->req.user_data = user_data;
-	att->req.destroy = destroy;
-
-	return &att->req;
-}
-
-enum {
-	ATT_OP_TYPE_REQ,
-	ATT_OP_TYPE_RSP,
-	ATT_OP_TYPE_CMD,
-	ATT_OP_TYPE_UNKNOWN,
-};
-
-static uint8_t att_op_type(uint8_t op)
-{
-	switch (op) {
-	case BT_ATT_OP_MTU_REQ:
-	case BT_ATT_OP_FIND_INFO_REQ:
-	case BT_ATT_OP_FIND_TYPE_REQ:
-	case BT_ATT_OP_READ_TYPE_REQ:
-	case BT_ATT_OP_READ_REQ:
-	case BT_ATT_OP_READ_BLOB_REQ:
-	case BT_ATT_OP_READ_MULT_REQ:
-	case BT_ATT_OP_READ_GROUP_REQ:
-	case BT_ATT_OP_WRITE_REQ:
-	case BT_ATT_OP_PREPARE_WRITE_REQ:
-	case BT_ATT_OP_EXEC_WRITE_REQ:
-	case BT_ATT_OP_INDICATE:
-		return ATT_OP_TYPE_REQ;
-	case BT_ATT_OP_ERROR_RSP:
-	case BT_ATT_OP_MTU_RSP:
-	case BT_ATT_OP_FIND_INFO_RSP:
-	case BT_ATT_OP_FIND_TYPE_RSP:
-	case BT_ATT_OP_READ_TYPE_RSP:
-	case BT_ATT_OP_READ_RSP:
-	case BT_ATT_OP_READ_BLOB_RSP:
-	case BT_ATT_OP_READ_MULT_RSP:
-	case BT_ATT_OP_READ_GROUP_RSP:
-	case BT_ATT_OP_WRITE_RSP:
-	case BT_ATT_OP_PREPARE_WRITE_RSP:
-	case BT_ATT_OP_EXEC_WRITE_RSP:
-	case BT_ATT_OP_CONFIRM:
-		return ATT_OP_TYPE_RSP;
-	case BT_ATT_OP_NOTIFY:
-	case BT_ATT_OP_WRITE_CMD:
-	case BT_ATT_OP_SIGNED_WRITE_CMD:
-		return ATT_OP_TYPE_CMD;
-	default:
-		return ATT_OP_TYPE_UNKNOWN;
-	}
-}
-
-int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_att_func_t func,
-		void *user_data, bt_att_destroy_t destroy)
+int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct bt_att *att;
-	struct bt_att_hdr *hdr = (void *)buf->data;
+	struct bt_att_hdr *hdr;
 
-	if (!conn) {
+	if (!conn || !buf) {
 		return -EINVAL;
 	}
 
@@ -1951,11 +1954,7 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_att_func_t func,
 		return -ENOTCONN;
 	}
 
-	if (func) {
-		if (!att_req_new(att, buf, func, user_data, destroy)) {
-			return -EBUSY;
-		}
-	}
+	hdr = (void *)buf->data;
 
 	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
 		int err;
@@ -1965,8 +1964,6 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_att_func_t func,
 			BT_ERR("Error signing data");
 			return err;
 		}
-	} else if (att_op_type(hdr->code) == ATT_OP_TYPE_REQ) {
-		nano_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
 	}
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
@@ -1974,11 +1971,36 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_att_func_t func,
 	return 0;
 }
 
-void bt_att_cancel(struct bt_conn *conn)
+int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 {
 	struct bt_att *att;
 
-	if (!conn) {
+	BT_DBG("conn %p req %p", conn, req);
+
+	if (!conn || !req) {
+		return -EINVAL;
+	}
+
+	att = att_chan_get(conn);
+	if (!att) {
+		return -ENOTCONN;
+	}
+
+	/* Check if there is a request outstanding */
+	if (att->req) {
+		/* Queue the request to be send later */
+		sys_slist_append(&att->reqs, &req->node);
+		return 0;
+	}
+
+	return att_send_req(att, req);
+}
+
+void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req)
+{
+	struct bt_att *att;
+
+	if (!conn || !req) {
 		return;
 	}
 
@@ -1987,5 +2009,13 @@ void bt_att_cancel(struct bt_conn *conn)
 		return;
 	}
 
-	att_req_destroy(&att->req);
+	/* Check if request is outstanding */
+	if (att->req == req) {
+		att->req = NULL;
+	} else {
+		/* Remove request from the list */
+		sys_slist_find_and_remove(&att->reqs, &req->node);
+	}
+
+	att_req_destroy(req);
 }

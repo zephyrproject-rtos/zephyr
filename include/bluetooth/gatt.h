@@ -707,6 +707,7 @@ typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
 
 /** @brief GATT Indicate Value parameters */
 struct bt_gatt_indicate_params {
+	struct bt_att_req _req;
 	/** Indicate Attribute object*/
 	const struct bt_gatt_attr *attr;
 	/** Indicate Value callback */
@@ -736,13 +737,13 @@ int bt_gatt_indicate(struct bt_conn *conn,
 
 /* Client API */
 
-/** @typedef bt_gatt_rsp_func_t
- *  @brief Response callback function
- *
- *  @param conn Connection object.
- *  @param err ATT error code.
- */
-typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
+/** @brief GATT Exchange MTU parameters */
+struct bt_gatt_exchange_params {
+	struct bt_att_req _req;
+	/** Response callback */
+	void (*func)(struct bt_conn *conn, uint8_t err,
+		     struct bt_gatt_exchange_params *params);
+};
 
 /** @brief Exchange MTU
  *
@@ -752,11 +753,12 @@ typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
  *  NOTE: Shall only be used once per connection.
  *
  *  @param conn Connection object.
- *  @param func Exchange MTU Response callback function.
+ *  @param params Exchange MTU parameters.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func);
+int bt_gatt_exchange_mtu(struct bt_conn *conn,
+			 struct bt_gatt_exchange_params *params);
 
 struct bt_gatt_discover_params;
 
@@ -788,6 +790,7 @@ enum {
 
 /** @brief GATT Discover Attributes parameters */
 struct bt_gatt_discover_params {
+	struct bt_att_req _req;
 	/** Discover UUID type */
 	struct bt_uuid *uuid;
 	/** Discover attribute callback */
@@ -863,6 +866,7 @@ typedef uint8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, uint8_t err,
  *  @param handles Handles to read in Read Multiple Characteristic Values
  */
 struct bt_gatt_read_params {
+	struct bt_att_req _req;
 	bt_gatt_read_func_t func;
 	size_t handle_count;
 	union {
@@ -902,6 +906,7 @@ typedef void (*bt_gatt_write_func_t)(struct bt_conn *conn, uint8_t err,
 
 /** @brief GATT Write parameters */
 struct bt_gatt_write_params {
+	struct bt_att_req _req;
 	/** Response callback */
 	bt_gatt_write_func_t func;
 	/** Attribute handle */
@@ -962,6 +967,7 @@ typedef uint8_t (*bt_gatt_notify_func_t)(struct bt_conn *conn,
 
 /** @brief GATT Subscribe parameters */
 struct bt_gatt_subscribe_params {
+	struct bt_att_req _req;
 	bt_addr_le_t _peer;
 	/** Notification value callback */
 	bt_gatt_notify_func_t notify;
@@ -1011,8 +1017,9 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 /** @brief Cancel GATT pending request
  *
  *  @param conn Connection object.
+ *  @param params Requested params address.
  */
-void bt_gatt_cancel(struct bt_conn *conn);
+void bt_gatt_cancel(struct bt_conn *conn, void *params);
 
 #ifdef __cplusplus
 }

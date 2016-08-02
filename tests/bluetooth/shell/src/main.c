@@ -557,10 +557,13 @@ static int cmd_security(int argc, char *argv[])
 }
 #endif
 
-static void exchange_rsp(struct bt_conn *conn, uint8_t err)
+static void exchange_func(struct bt_conn *conn, uint8_t err,
+			  struct bt_gatt_exchange_params *params)
 {
 	printk("Exchange %s\n", err == 0 ? "successful" : "failed");
 }
+
+static struct bt_gatt_exchange_params exchange_params;
 
 static int cmd_gatt_exchange_mtu(int argc, char *argv[])
 {
@@ -571,7 +574,9 @@ static int cmd_gatt_exchange_mtu(int argc, char *argv[])
 		return 0;
 	}
 
-	err = bt_gatt_exchange_mtu(default_conn, exchange_rsp);
+	exchange_params.func = exchange_func;
+
+	err = bt_gatt_exchange_mtu(default_conn, &exchange_params);
 	if (err) {
 		printk("Exchange failed (err %d)\n", err);
 	} else {

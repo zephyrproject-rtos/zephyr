@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+#include <misc/slist.h>
+
 /* Error codes for Error response PDU */
 #define BT_ATT_ERR_INVALID_HANDLE		0x01
 #define BT_ATT_ERR_READ_NOT_PERMITTED		0x02
@@ -47,6 +49,22 @@ extern "C" {
 #define BT_ATT_ERR_CCC_IMPROPER_CONF		0xfd
 #define BT_ATT_ERR_PROCEDURE_IN_PROGRESS	0xfe
 #define BT_ATT_ERR_OUT_OF_RANGE			0xff
+
+typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
+			      const void *pdu, uint16_t length,
+			      void *user_data);
+typedef void (*bt_att_destroy_t)(void *user_data);
+
+/* ATT request context */
+struct bt_att_req {
+	sys_snode_t		node;
+	bt_att_func_t           func;
+	bt_att_destroy_t        destroy;
+	struct net_buf          *buf;
+#if defined(CONFIG_BLUETOOTH_SMP)
+	bool                    retrying;
+#endif /* CONFIG_BLUETOOTH_SMP */
+};
 
 #ifdef __cplusplus
 }
