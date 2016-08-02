@@ -178,19 +178,6 @@ config SW_ISR_TABLE
 	a parameter to be passed to the interrupt handlers. Also, invoking
 	the exeception/interrupt exit stub is automatically done.
 
-	This has to be enabled for dynamically connecting interrupt handlers
-	at runtime (SW_ISR_TABLE_DYNAMIC).
-
-config SW_ISR_TABLE_DYNAMIC
-	bool
-	prompt "Allow installing interrupt handlers at runtime"
-	depends on SW_ISR_TABLE
-	default n
-	help
-	This option enables irq_connect_dynamic(). It moves the ISR table to
-	SRAM so that it is writable. This has the side-effect of removing
-	write-protection on the ISR table.
-
 config IRQ_VECTOR_TABLE_CUSTOM
 	bool
 	prompt "Projects provide a custom static IRQ part of vector table"

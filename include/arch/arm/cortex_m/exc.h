@@ -55,47 +55,6 @@ extern const NANO_ESF _default_esf;
 
 extern void _ExcExit(void);
 
-#if !defined(CONFIG_XIP)
-
-/* currently, exception connecting is only available to non-XIP kernels */
-
-/**
- * @brief signature for an exception handler
- */
-
-#define sys_exc_handler_sig(x) void (x)(NANO_ESF *esf)
-
-/**
- * @brief exception handler data type
- */
-
-typedef sys_exc_handler_sig(sys_exc_handler_t);
-
-/**
- * @brief connect a handler to an exception vector
- *
- * Connect the @a handler to the exception vector @a num.
- *
- * The @a unused parameter is only there to match the x86 signature.
- *
- * @param num Exception vector number
- * @param handler Exception handler to connect
- * @param unused Unused
- *
- * @return N/A
- */
-
-extern void sys_exc_connect(unsigned int num, sys_exc_handler_t *handler,
-							void *unused);
-
-/**
- * @brief alias of sys_exc_connect
- *
- * See sys_exc_connect().
- */
-
-extern void nanoCpuExcConnect(unsigned int, sys_exc_handler_t *, void *);
-
 /**
  * @brief display the contents of a exception stack frame
  *
@@ -103,8 +62,6 @@ extern void nanoCpuExcConnect(unsigned int, sys_exc_handler_t *, void *);
  */
 
 extern void sys_exc_esf_dump(NANO_ESF *esf);
-
-#endif
 
 #endif /* _ASMLANGUAGE */
 
