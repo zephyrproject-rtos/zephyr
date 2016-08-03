@@ -57,6 +57,7 @@
 
 #define L2CAP_BR_INFO_TIMEOUT		SECONDS(4)
 #define L2CAP_BR_CFG_TIMEOUT		SECONDS(4)
+#define L2CAP_BR_DISCONN_TIMEOUT	SECONDS(1)
 
 /*
  * L2CAP extended feature mask:
@@ -1159,7 +1160,7 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 	req->dcid = sys_cpu_to_le16(ch->tx.cid);
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 
-	bt_l2cap_send(chan->conn, BT_L2CAP_CID_BR_SIG, buf);
+	l2cap_br_chan_send_req(ch, buf, L2CAP_BR_DISCONN_TIMEOUT);
 	l2cap_br_state_set(chan, BT_L2CAP_DISCONNECT);
 
 	return 0;
