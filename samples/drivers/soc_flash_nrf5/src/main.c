@@ -18,13 +18,9 @@
 #include <zephyr.h>
 #include <flash.h>
 #include <device.h>
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
+
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
 
 /* Offset between pages */
 #define FLASH_TEST_OFFSET 0x40000
@@ -45,79 +41,83 @@ void main(void)
 	uint32_t buf_word = 0;
 	uint32_t i, offset;
 
-	PRINT("\nNordic nRF5 Flash Testing\n");
-	PRINT("=========================\n");
+	SYS_LOG_INF("\nNordic nRF5 Flash Testing");
+	SYS_LOG_INF("=========================");
 
 	flash_dev = device_get_binding("NRF5_FLASH");
 
 	if (!flash_dev) {
-		PRINT("Nordic nRF5 flash driver was not found!\n");
+		SYS_LOG_ERR("Nordic nRF5 flash driver was not found!");
 		return;
 	}
 
-	PRINT("\nTest 1: Flash erase page at 0x%x\n", FLASH_TEST_OFFSET);
+	SYS_LOG_INF("\nTest 1: Flash erase page at 0x%x", FLASH_TEST_OFFSET);
 	if (flash_erase(flash_dev, FLASH_TEST_OFFSET, FLASH_PAGE_SIZE) != 0) {
-		PRINT("   Flash erase failed!\n");
+		SYS_LOG_INF("   Flash erase failed!");
 	} else {
-		PRINT("   Flash erase succeeded!\n");
+		SYS_LOG_INF("   Flash erase succeeded!");
 	}
 
-	PRINT("\nTest 2: Flash write (word array 1)\n");
+	SYS_LOG_INF("\nTest 2: Flash write (word array 1)");
 	flash_write_protection_set(flash_dev, false);
 	for (i = 0; i < TEST_DATA_LEN; i++) {
 		offset = FLASH_TEST_OFFSET + (i << 2);
-		PRINT("   Attempted to write %x at 0x%x\n", buf_array_1[i],
-				offset);
+		SYS_LOG_INF("   Attempted to write %x at 0x%x",
+			    buf_array_1[i], offset);
 		if (flash_write(flash_dev, offset, &buf_array_1[i],
 					TEST_DATA_LEN) != 0) {
-			PRINT("   Flash write failed!\n");
+			SYS_LOG_INF("   Flash write failed!");
 			return;
 		}
-		PRINT("   Attempted to read 0x%x\n", offset);
+		SYS_LOG_INF("   Attempted to read 0x%x", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					TEST_DATA_LEN) != 0) {
-			PRINT("   Flash read failed!\n");
+			SYS_LOG_INF("   Flash read failed!");
 			return;
 		}
-		PRINT("   Data read: %x\n", buf_word);
+		SYS_LOG_INF("   Data read: %x", buf_word);
 		if (buf_array_1[i] == buf_word) {
-			PRINT("   Data read matches data written. Good!\n");
+			SYS_LOG_INF("   Data read matches data written. "
+				    "Good!");
 		} else {
-			PRINT("   Data read does not match data written!\n");
+			SYS_LOG_INF("   Data read does not match data "
+				    "written!");
 		}
 	}
 	flash_write_protection_set(flash_dev, true);
 
 	offset = FLASH_TEST_OFFSET - FLASH_PAGE_SIZE * 2;
-	PRINT("\nTest 3: Flash erase (4 pages at 0x%x)\n", offset);
+	SYS_LOG_INF("\nTest 3: Flash erase (4 pages at 0x%x)", offset);
 	if (flash_erase(flash_dev, offset, FLASH_PAGE_SIZE * 4) != 0) {
-		PRINT("   Flash erase failed!\n");
+		SYS_LOG_INF("   Flash erase failed!");
 	} else {
-		PRINT("   Flash erase succeeded!\n");
+		SYS_LOG_INF("   Flash erase succeeded!");
 	}
 
-	PRINT("\nTest 4: Flash write (word array 2)\n");
+	SYS_LOG_INF("\nTest 4: Flash write (word array 2)");
 	flash_write_protection_set(flash_dev, false);
 	for (i = 0; i < TEST_DATA_LEN; i++) {
 		offset = FLASH_TEST_OFFSET + (i << 2);
-		PRINT("   Attempted to write %x at 0x%x\n", buf_array_2[i],
-				offset);
+		SYS_LOG_INF("   Attempted to write %x at 0x%x",
+			    buf_array_2[i], offset);
 		if (flash_write(flash_dev, offset, &buf_array_2[i],
 					TEST_DATA_LEN) != 0) {
-			PRINT("   Flash write failed!\n");
+			SYS_LOG_INF("   Flash write failed!");
 			return;
 		}
-		PRINT("   Attempted to read 0x%x\n", offset);
+		SYS_LOG_INF("   Attempted to read 0x%x", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					TEST_DATA_LEN) != 0) {
-			PRINT("   Flash read failed!\n");
+			SYS_LOG_INF("   Flash read failed!");
 			return;
 		}
-		PRINT("   Data read: %x\n", buf_word);
+		SYS_LOG_INF("   Data read: %x", buf_word);
 		if (buf_array_2[i] == buf_word) {
-			PRINT("   Data read matches data written. Good!\n");
+			SYS_LOG_INF("   Data read matches data written. "
+				    "Good!");
 		} else {
-			PRINT("   Data read does not match data written!\n");
+			SYS_LOG_INF("   Data read does not match data "
+				    "written!");
 		}
 	}
 	flash_write_protection_set(flash_dev, true);
