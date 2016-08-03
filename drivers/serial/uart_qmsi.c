@@ -436,7 +436,6 @@ static int uart_qmsi_line_ctrl_set(struct device *dev, uint32_t ctrl, uint32_t v
 		cfg.hw_fc = QM_UART[instance]->mcr & QM_UART_MCR_AFCE;
 		cfg.int_en = false;
 		qm_uart_set_config(instance, &cfg);
-		uart_qmsi_pm_save_config(dev, &cfg);
 		break;
 	default:
 		return -ENODEV;
