@@ -56,6 +56,7 @@
 #define L2CAP_BR_PSM_SDP	0x0001
 
 #define L2CAP_BR_INFO_TIMEOUT		SECONDS(4)
+#define L2CAP_BR_CFG_TIMEOUT		SECONDS(4)
 
 /*
  * L2CAP extended feature mask:
@@ -581,7 +582,6 @@ static void l2cap_br_conf_add_mtu(struct net_buf *buf, const uint16_t mtu)
 
 static void l2cap_br_conf(struct bt_l2cap_chan *chan)
 {
-	struct bt_conn *conn = chan->conn;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_conf_req *conf;
 	struct net_buf *buf;
@@ -611,13 +611,10 @@ static void l2cap_br_conf(struct bt_l2cap_chan *chan)
 
 	/*
 	 * TODO:
-	 * 1. start tracking number of configuration iterations on
-	 *    on both directions
-	 * 2. add individual command timeout guard
-	 * 3. might be the option to add overall configuration phase
-	 *    timeout (max 120sec)
+	 * might be needed to start tracking number of configuration iterations
+	 * on both directions
 	 */
-	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+	l2cap_br_chan_send_req(BR_CHAN(chan), buf, L2CAP_BR_CFG_TIMEOUT);
 }
 
 static bool l2cap_br_security_check(struct bt_l2cap_chan *chan,
@@ -786,6 +783,9 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		BT_ERR("channel mismatch!");
 		return;
 	}
+
+	/* Release RTX work since got the response */
+	nano_delayed_work_cancel(&chan->rtx_work);
 
 	/*
 	 * TODO: handle other results than success and parse response data if
