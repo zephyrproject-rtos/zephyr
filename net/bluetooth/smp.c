@@ -70,12 +70,8 @@
 #define SEND_KEYS (BT_SMP_DIST_ENC_KEY | SIGN_DIST)
 #endif
 
-/*
- * Don't include BT_SMP_DIST_ENC_KEY in this mask. See comment in
- * bt_smp_encrypt_change for details.
- */
-#define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_LINK_KEY))
-#define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_LINK_KEY))
+#define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_LINK_KEY))
+#define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_LINK_KEY))
 
 #define BT_SMP_AUTH_MASK	0x07
 #define BT_SMP_AUTH_MASK_SC	0x0f
@@ -2659,18 +2655,6 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 		return;
-	}
-
-	/*
-	 * Clear EncKey bit for LE SC. This is legacy key and should not be
-	 * distributed when LE SC is used. We don't clean it initially to
-	 * workaround bug in iOS BT stack where it sends Pairing Failed PDU
-	 * if any (?) keys were distributed but EncKey was not set in key
-	 * distribution.
-	 */
-	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
-		smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
-		smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 	}
 
 	if (smp->remote_dist & BT_SMP_DIST_ENC_KEY) {
