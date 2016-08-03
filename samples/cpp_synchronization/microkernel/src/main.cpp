@@ -18,13 +18,8 @@
  * @file C++ Synchronization demo.  Uses basic C++ functionality.
  */
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
 
 /**
  * @class semaphore the basic pure virtual semaphore class
@@ -75,7 +70,7 @@ public:
  */
 task_semaphore::task_semaphore(): _sema_internal(__K_SEMAPHORE_DEFAULT)
 {
-	PRINT("Create semaphore %p\n", this);
+	SYS_LOG_INF("Create semaphore %p", this);
 	sema = (ksem_t)&_sema_internal;
 }
 
@@ -135,7 +130,7 @@ void hello_loop(const char *taskname,
 		my_sem.wait();
 
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", taskname);
+		SYS_LOG_INF("%s: Hello World!", taskname);
 
 		/* wait a while, then let other task have a turn */
 		task_sleep(SLEEPTICKS);
@@ -200,7 +195,7 @@ public:
  */
 nano_semaphore::nano_semaphore()
 {
-	PRINT("Create semaphore %p\n", this);
+	SYS_LOG_INF("Create semaphore %p", this);
 	nano_sem_init(&_sema_internal);
 }
 
@@ -263,7 +258,7 @@ void fiber_entry(void)
 		nano_sem_fiber.wait();
 
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", __FUNCTION__);
+		SYS_LOG_INF("Hello World!");
 
 		/* wait a while, then let task have a turn */
 		nano_fiber_timer_start(&timer, SLEEPTICKS);
@@ -284,7 +279,7 @@ void main(void)
 
 	while (1) {
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", __FUNCTION__);
+		SYS_LOG_INF("Hello World!");
 
 		/* wait a while, then let fiber have a turn */
 		nano_task_timer_start(&timer, SLEEPTICKS);

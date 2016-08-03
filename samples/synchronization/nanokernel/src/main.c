@@ -18,14 +18,8 @@
 
 #include <zephyr.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
 
 /*
  * Nanokernel version of hello world demo has a task and a fiber that utilize
@@ -59,7 +53,7 @@ void fiberEntry(void)
 		nano_fiber_sem_take(&nanoSemFiber, TICKS_UNLIMITED);
 
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", __func__);
+		SYS_LOG_INF("Hello World!");
 
 		/* wait a while, then let task have a turn */
 		nano_fiber_timer_start(&timer, SLEEPTICKS);
@@ -81,7 +75,7 @@ void main(void)
 
 	while (1) {
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", __func__);
+		SYS_LOG_INF("Hello World!");
 
 		/* wait a while, then let fiber have a turn */
 		nano_task_timer_start(&timer, SLEEPTICKS);
