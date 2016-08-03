@@ -34,7 +34,6 @@ enum {
 
 enum {
 	BT_KEYS_AUTHENTICATED,
-	BT_KEYS_BR_LEGACY,
 	BT_KEYS_DEBUG,
 
 	/* Total number of flags - must be at the end of the enum */
