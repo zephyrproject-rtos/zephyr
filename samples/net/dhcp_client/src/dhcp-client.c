@@ -16,13 +16,8 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
 
 #include <zephyr.h>
 #include <sections.h>
@@ -35,18 +30,19 @@
 
 static void dhcpc_configured_cb(void)
 {
-	PRINT("%s\n", __func__);
-	PRINT("Got IP address %d.%d.%d.%d\n", uip_ipaddr_to_quad(&uip_hostaddr));
+	SYS_LOG_INF("%s", __func__);
+	SYS_LOG_INF("Got IP address %d.%d.%d.%d",
+		    uip_ipaddr_to_quad(&uip_hostaddr));
 }
 
 static void dhcpc_unconfigured_cb(void)
 {
-	PRINT("%s\n", __func__);
+	SYS_LOG_INF("%s", __func__);
 }
 
 void main(void)
 {
-	PRINT("run dhcp client\n");
+	SYS_LOG_INF("run dhcp client");
 	dhcpc_set_callbacks(dhcpc_configured_cb, dhcpc_unconfigured_cb);
 	net_init();
 }

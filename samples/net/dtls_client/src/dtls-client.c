@@ -16,18 +16,13 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
 
 #if defined(CONFIG_TINYDTLS_DEBUG)
 #define DEBUG DEBUG_FULL
 #else
-#define DEBUG DEBUG_PRINT
+#define DEBUG DEBUG_SYS_LOG_INF
 #endif
 #include "contiki/ip/uip-debug.h"
 
@@ -101,7 +96,7 @@ static const unsigned char ecdsa_pub_key_y[] = {
 
 static inline void init_app(void)
 {
-	PRINT("%s: run dtls client\n", __func__);
+	SYS_LOG_INF("%s: run dtls client", __func__);
 
 #if defined(CONFIG_NET_TESTING)
 	net_testing_setup();
@@ -162,7 +157,7 @@ static inline bool wait_reply(const char *name,
 	/* Wait for the answer */
 	buf = net_receive(user_data->ctx, WAIT_TICKS);
 	if (buf) {
-		PRINT("Received data %p datalen %d\n",
+		SYS_LOG_INF("Received data %p datalen %d",
 		      ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
 		dtls_handle_message(dtls, session, ip_buf_appdata(buf),
@@ -209,7 +204,7 @@ static inline struct net_context *get_context(void)
 			      &peer_addr, PEER_PORT,
 			      &my_addr, MY_PORT);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __func__);
+		SYS_LOG_INF("%s: Cannot get network context", __func__);
 		return NULL;
 	}
 
@@ -223,10 +218,10 @@ static int read_from_peer(struct dtls_context_t *ctx,
 	struct data *user_data = (struct data *)dtls_get_app_data(ctx);
 	int pos;
 
-	PRINT("%s: read from peer %p len %d\n", __func__, data, len);
+	SYS_LOG_INF("%s: read from peer %p len %d", __func__, data, len);
 
 	if (user_data->expecting != len) {
-		PRINT("%s: received %d bytes, expected %d\n",
+		SYS_LOG_INF("%s: received %d bytes, expected %d",
 		      __func__, len, user_data->expecting);
 		user_data->fail = true;
 		return 0;
@@ -242,7 +237,7 @@ static int read_from_peer(struct dtls_context_t *ctx,
 	pos = user_data->ipsum_len - user_data->expecting;
 
 	if (memcmp(lorem_ipsum + pos, data, user_data->expecting)) {
-		PRINT("%s: received data mismatch.\n", __func__);
+		SYS_LOG_INF("%s: received data mismatch.", __func__);
 		user_data->fail = true;
 	}
 
@@ -266,11 +261,12 @@ static int send_to_peer(struct dtls_context_t *ctx,
 
 	max_data_len = IP_BUF_MAX_DATA - UIP_IPUDPH_LEN;
 
-	PRINT("%s: send to peer data %p len %d\n", __func__, data, len);
+	SYS_LOG_INF("%s: send to peer data %p len %d", __func__, data, len);
 
 	if (len > max_data_len) {
-		PRINT("%s: too much (%d bytes) data to send (max %d bytes)\n",
-		      __func__, len, max_data_len);
+		SYS_LOG_INF("%s: too much (%d bytes) data "
+			    "to send (max %d bytes)",
+			    __func__, len, max_data_len);
 		ip_buf_unref(buf);
 		len = -EINVAL;
 		goto out;
@@ -376,7 +372,7 @@ static int handle_event(struct dtls_context_t *ctx, session_t *session,
 			struct data *user_data =
 				(struct data *)dtls_get_app_data(ctx);
 
-			PRINT("*** Connected ***\n");
+			SYS_LOG_INF("*** Connected ***");
 
 			/* We can send data now */
 			user_data->connected = true;
@@ -401,7 +397,7 @@ static void init_dtls(struct data *user_data, dtls_context_t **dtls)
 #endif /* DTLS_ECC */
 	};
 
-	PRINT("DTLS client started\n");
+	SYS_LOG_INF("DTLS client started");
 
 #ifdef CONFIG_TINYDTLS_DEBUG
 	dtls_set_log_level(DTLS_LOG_DEBUG);
@@ -429,13 +425,13 @@ void startup(void)
 
 	user_data.ctx = get_context();
 	if (!user_data.ctx) {
-		PRINT("%s: Cannot get network context\n", __func__);
+		SYS_LOG_INF("%s: Cannot get network context", __func__);
 		return;
 	}
 
 	init_dtls(&user_data, &dtls);
 	if (!dtls) {
-		PRINT("%s: Cannot get DTLS context\n", __func__);
+		SYS_LOG_INF("%s: Cannot get DTLS context", __func__);
 		return;
 	}
 
@@ -444,9 +440,9 @@ void startup(void)
 	uip_ipaddr_copy(&session.addr.ipaddr, (uip_ipaddr_t *)&in6addr_peer);
 	session.addr.port = uip_htons(PEER_PORT);
 
-	PRINT("Trying to connect to ");
 	PRINT6ADDR(&session.addr.ipaddr);
-	PRINTF(":%d\n", uip_ntohs(session.addr.port));
+	SYS_LOG_INF("Trying to connect to :%d",
+		    uip_ntohs(session.addr.port));
 
 	dtls_connect(dtls, &session);
 
@@ -461,7 +457,7 @@ void startup(void)
 		}
 	}
 
-	PRINT("ERROR: Did not receive reply, closing.\n");
+	SYS_LOG_INF("ERROR: Did not receive reply, closing.");
 	dtls_close(dtls, &session);
 }
 

@@ -18,13 +18,8 @@
 
 #include <zephyr.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
 
 #ifdef CONFIG_NET_SANITY_TEST
 #include <tc_util.h>
@@ -99,7 +94,7 @@ static const char *lorem_ipsum =
 
 static inline void init_test()
 {
-	PRINT("%s: run 802.15.4 loopback tester\n", __func__);
+	SYS_LOG_INF("%s: run 802.15.4 loopback tester", __func__);
 
 	net_set_mac(src_mac, sizeof(src_mac));
 
@@ -117,11 +112,11 @@ static void set_routes()
 	 */
 	if (!uip_ds6_nbr_add((uip_ipaddr_t *)&in6addr_dest,
 					&dest_mac, 0, NBR_REACHABLE))
-		PRINT("Cannot add neighbor cache\n");
+		SYS_LOG_INF("Cannot add neighbor cache");
 
 	if (!uip_ds6_route_add((uip_ipaddr_t *)&in6addr_dest, 128,
 					(uip_ipaddr_t *)&in6addr_dest))
-		PRINT("Cannot add localhost route\n");
+		SYS_LOG_INF("Cannot add localhost route");
 }
 
 static void send_data(const char *taskname, struct net_context *ctx)
@@ -142,11 +137,11 @@ static void send_data(const char *taskname, struct net_context *ctx)
 		sent_len = buf->len;
 
 		if (net_send(buf) < 0) {
-			PRINT("%s: %s(): sending %d bytes failed\n",
+			SYS_LOG_INF("%s: %s(): sending %d bytes failed",
 			      taskname, __func__, len);
 			ip_buf_unref(buf);
 		} else {
-			PRINT("%s: %s(): sent %d bytes\n", taskname,
+			SYS_LOG_INF("%s: %s(): sent %d bytes", taskname,
 			      __func__, sent_len);
 		}
 	}
@@ -161,11 +156,11 @@ static void receive_data(const char *taskname, struct net_context *ctx)
 
 	buf = net_receive(ctx, TICKS_NONE);
 	if (buf) {
-		PRINT("%s: %s(): received %d bytes\n", taskname,
+		SYS_LOG_INF("%s: %s(): received %d bytes", taskname,
 		      __func__, ip_buf_appdatalen(buf));
 		if (memcmp(ip_buf_appdata(buf),
 			   lorem_ipsum, sizeof(lorem_ipsum))) {
-			PRINT("ERROR: data does not match\n");
+			SYS_LOG_INF("ERROR: data does not match");
 
 #ifdef CONFIG_NET_SANITY_TEST
 			rp = TC_FAIL;
@@ -200,7 +195,7 @@ static struct net_context *get_context(const struct net_addr *remote,
 			      remote, remote_port,
 			      local, local_port);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __func__);
+		SYS_LOG_INF("%s: Cannot get network context", __func__);
 		return NULL;
 	}
 
@@ -264,7 +259,7 @@ void taskA(void)
 
 	ctx = get_context(&any_addr, SRC_PORT, &loopback_addr, DEST_PORT);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __func__);
+		SYS_LOG_INF("%s: Cannot get network context", __func__);
 		return;
 	}
 
@@ -303,7 +298,7 @@ void taskB(void)
 
 	ctx = get_context(&loopback_addr, DEST_PORT, &any_addr, SRC_PORT);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __func__);
+		SYS_LOG_INF("%s: Cannot get network context", __func__);
 		return;
 	}
 
@@ -344,7 +339,7 @@ void fiber_receiving(void)
 
 	ctx = get_context(&any_addr, SRC_PORT, &loopback_addr, DEST_PORT);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __func__);
+		SYS_LOG_INF("%s: Cannot get network context", __func__);
 		return;
 	}
 
@@ -374,7 +369,7 @@ void fiber_sending(void)
 
 	ctx = get_context(&loopback_addr, DEST_PORT, &any_addr, SRC_PORT);
 	if (!ctx) {
-		PRINT("Cannot get network context\n");
+		SYS_LOG_INF("Cannot get network context");
 		return;
 	}
 
@@ -397,7 +392,7 @@ void fiber_sending(void)
 
 void main(void)
 {
-	PRINT("%s: run test_15_4\n", __func__);
+	SYS_LOG_INF("%s: run test_15_4", __func__);
 
 	net_init();
 	init_test();
