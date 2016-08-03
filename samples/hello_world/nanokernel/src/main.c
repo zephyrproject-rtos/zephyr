@@ -15,15 +15,8 @@
  */
 
 #include <zephyr.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
 
 /*
  * @file
@@ -34,6 +27,6 @@
 
 void main(void)
 {
-	PRINT("Hello World! %s\n", CONFIG_ARCH);
+	SYS_LOG_INF("Hello World! %s", CONFIG_ARCH);
 }
 
