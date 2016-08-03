@@ -26,6 +26,9 @@
 #define PRINT printk
 #endif
 
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
+
 #include <string.h>
 #include <spi.h>
 #define SPI_DRV_NAME "SPI_0"
@@ -63,36 +66,37 @@ struct spi_config spi_conf = {
 
 static void _spi_show(struct spi_config *spi_conf)
 {
-	PRINT("SPI Configuration:\n");
-	PRINT("\tbits per word: %u\n", SPI_WORD_SIZE_GET(spi_conf->config));
-	PRINT("\tMode: %u\n", SPI_MODE(spi_conf->config));
-	PRINT("\tMax speed Hz: 0x%X\n", spi_conf->max_sys_freq);
+	SYS_LOG_INF("SPI Configuration:");
+	SYS_LOG_INF("\tbits per word: %u",
+		    SPI_WORD_SIZE_GET(spi_conf->config));
+	SYS_LOG_INF("\tMode: %u", SPI_MODE(spi_conf->config));
+	SYS_LOG_INF("\tMax speed Hz: 0x%X", spi_conf->max_sys_freq);
 }
 
 void main(void)
 {
 	struct device *spi;
 
-	PRINT("==== SPI Test Application ====\n");
+	SYS_LOG_INF("==== SPI Test Application ====");
 
 	spi = device_get_binding(SPI_DRV_NAME);
 
-	PRINT("Running...\n");
+	SYS_LOG_INF("Running...");
 
 	spi_configure(spi, &spi_conf);
 	spi_slave_select(spi, SPI_SLAVE);
 
 	_spi_show(&spi_conf);
 
-	PRINT("Writing...\n");
+	SYS_LOG_INF("Writing...");
 	spi_write(spi, (uint8_t *) wbuf, 6);
 
-	PRINT("SPI sent: %s\n", wbuf);
+	SYS_LOG_INF("SPI sent: %s", wbuf);
 	print_buf_hex(rbuf, 6);
 
 	strcpy(wbuf, "So what then?");
 	spi_transceive(spi, wbuf, 14, rbuf, 16);
 
-	PRINT("SPI transceived: %s\n", rbuf);
+	SYS_LOG_INF("SPI transceived: %s", rbuf);
 	print_buf_hex(rbuf, 6);
 }
