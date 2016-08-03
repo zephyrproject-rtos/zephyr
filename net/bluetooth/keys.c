@@ -200,7 +200,7 @@ static struct bt_keys *bt_keys_get_addr_br(const bt_addr_t *addr)
 
 		/*
 		 * BT_ADDR_LE_ANY has the same type of as BT_ADDR_LE_PUBLIC
-		 * value. No need to make redudant comparision against
+		 * value. No need to make redundant comparison against
 		 * BT_ADDR_LE_PUBLIC.
 		 */
 		if (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
