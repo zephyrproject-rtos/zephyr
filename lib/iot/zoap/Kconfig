@@ -1,5 +1,7 @@
+# Kconfig - Zoap, CoAP implementation for Zephyr
+
 #
-# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2015 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +16,9 @@
 # limitations under the License.
 #
 
-
-menu "Cryptography"
-source "lib/crypto/tinycrypt/Kconfig"
-endmenu
-
-source "lib/iot/Kconfig"
+config ZOAP
+	bool
+	prompt "CoAP Support"
+	default n
+	help
+	This option enables the Zoap implementation of CoAP.

@@ -14,9 +14,8 @@
 # limitations under the License.
 #
 
+menu "IoT Protocols"
 
-menu "Cryptography"
-source "lib/crypto/tinycrypt/Kconfig"
+source "lib/iot/zoap/Kconfig"
+
 endmenu
-
-source "lib/iot/Kconfig"
