@@ -17,17 +17,12 @@
 #include <zephyr.h>
 #include <power.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
 
 void main(void)
 {
-	PRINT("Power management template!\n");
+	SYS_LOG_INF("Power management template!");
 }
 
 /**
