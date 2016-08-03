@@ -55,6 +55,8 @@
 
 #define L2CAP_BR_PSM_SDP	0x0001
 
+#define L2CAP_BR_INFO_TIMEOUT		SECONDS(4)
+
 /*
  * L2CAP extended feature mask:
  * BR/EDR fixed channel support enabled
@@ -275,8 +277,17 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 static void l2cap_br_rtx_timeout(struct nano_work *work)
 {
 	struct bt_l2cap_br_chan *chan = BR_CHAN_RTX(work);
+	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br,
+						 chan.chan);
 
 	BT_WARN("chan %p timeout", chan);
+
+	if (chan->rx.cid == BT_L2CAP_CID_BR_SIG) {
+		BT_DBG("Skip BR/EDR signalling channel ");
+		atomic_clear_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_PENDING);
+		return;
+	}
+
 	BT_DBG("chan %p %s scid 0x%04x", chan, state2str(chan->chan.state),
 	       chan->rx.cid);
 
@@ -322,6 +333,27 @@ static uint8_t l2cap_br_get_ident(void)
 	return ident;
 }
 
+static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
+				   struct net_buf *buf, uint32_t ticks)
+{
+	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
+	 *
+	 * The value of this timer is implementation-dependent but the minimum
+	 * initial value is 1 second and the maximum initial value is 60
+	 * seconds. One RTX timer shall exist for each outstanding signaling
+	 * request, including each Echo Request. The timer disappears on the
+	 * final expiration, when the response is received, or the physical
+	 * link is lost.
+	 */
+	if (ticks) {
+		nano_delayed_work_submit(&chan->chan.rtx_work, ticks);
+	} else {
+		nano_delayed_work_cancel(&chan->chan.rtx_work);
+	}
+
+	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf);
+}
+
 static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 {
 	struct bt_l2cap_info_req *info;
@@ -360,8 +392,7 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 	info = net_buf_add(buf, sizeof(*info));
 	info->type = sys_cpu_to_le16(info_type);
 
-	/* TODO: add command timeout guard */
-	bt_l2cap_send(l2cap->chan.chan.conn, BT_L2CAP_CID_BR_SIG, buf);
+	l2cap_br_chan_send_req(&l2cap->chan, buf, L2CAP_BR_INFO_TIMEOUT);
 }
 
 static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
@@ -375,7 +406,14 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		return 0;
 	}
 
-	atomic_clear_bit(l2cap->flags, BT_L2CAP_FLAG_INFO_PENDING);
+	if (atomic_test_and_clear_bit(l2cap->flags,
+				      BT_L2CAP_FLAG_INFO_PENDING)) {
+		/*
+		 * Release RTX timer since got the response & there's pending
+		 * command request.
+		 */
+		nano_delayed_work_cancel(&l2cap->chan.chan.rtx_work);
+	}
 
 	if (buf->len < sizeof(*rsp)) {
 		BT_ERR("Too small info rsp packet size");
@@ -1073,7 +1111,16 @@ static void l2cap_br_connected(struct bt_l2cap_chan *chan)
 
 static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 {
+	struct bt_l2cap_br *l2cap = CONTAINER_OF(BR_CHAN(chan),
+						 struct bt_l2cap_br, chan.chan);
+
 	BT_DBG("ch %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
+
+	if (atomic_test_and_clear_bit(l2cap->flags,
+				      BT_L2CAP_FLAG_INFO_PENDING)) {
+		/* Cancel RTX work on signal channel */
+		nano_delayed_work_cancel(&chan->rtx_work);
+	}
 }
 
 int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
