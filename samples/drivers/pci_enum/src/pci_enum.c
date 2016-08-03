@@ -20,13 +20,8 @@
 #include <stdint.h>
 #include <pci/pci.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <misc/sys_log.h>
 
 void pci_enumerate(void)
 {
@@ -59,7 +54,7 @@ void task_enum_pci(void)
 	}
 
 	pci_enumerate();
-	PRINT("Enumeration complete on %s", CONFIG_ARCH);
+	SYS_LOG_INF("Enumeration complete on %s", CONFIG_ARCH);
 	done = 1;
 }
 
@@ -68,7 +63,7 @@ void task_enum_pci(void)
 void main(void)
 {
 	pci_enumerate();
-	PRINT("Enumeration complete on %s", CONFIG_ARCH);
+	SYS_LOG_INF("Enumeration complete on %s", CONFIG_ARCH);
 }
 
 #endif /* CONFIG_MICROKERNEL */
