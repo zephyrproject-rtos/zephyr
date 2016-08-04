@@ -100,3 +100,22 @@ Usage
   mosquitto_pub -t "sensors" -m "DOOR:OPEN" -q 0
 
   For QoS 2, just change "-q 0" for "-q 2"
+
+
+Troubleshooting
+---------------
+
+  If the screen terminal window shows the following:
+
+
+    --------------------------------
+    Pingreq, rc: ERROR
+
+    --------------------------------
+
+    It may be caused by:
+
+      * A message was received while processing a PING handshake
+        with the server. This is the expected behavior.
+
+      * A network error. Check the LAN or the mosquitto server.
