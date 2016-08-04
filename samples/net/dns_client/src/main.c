@@ -27,19 +27,26 @@
 uint8_t stack[STACK_SIZE];
 
 #define BUF_SIZE	1024
-
 uint8_t tx_raw_buf[BUF_SIZE];
 uint8_t rx_raw_buf[BUF_SIZE];
 
-#define SLEEP_TIME 10
+#define SLEEP_TIME	50
 
-char *domains[] = {"not_a_real_domain_name", "oops!",
-		   "zephyrproject.org", "www.google.com",
-		   "mail.yahoo.com", NULL};
+#define RC_STR(rc)	(rc == 0 ? "OK" : "ERROR")
 
+char *domains[] = {"not_a_real_domain_name",
+		   "linuxfoundation.org", "www.linuxfoundation.org",
+		   "gnu.org", "www.gnu.org",
+		   "npr.org", "www.npr.org",
+		   "wikipedia.org", "www.wikipedia.org",
+		   "zephyrproject.org", "www.zephyrproject.org",
+		   NULL};
+
+/* this function creates the DNS query					*/
 int dns_query(struct app_buf_t *buf, char *str, uint16_t id,
 	      enum dns_rr_type qtype);
 
+/* this function parses the DNS server response				*/
 int dns_response(struct app_buf_t *_buf, int *response_type, int src_id);
 
 void fiber(void)
@@ -50,6 +57,9 @@ void fiber(void)
 	struct app_buf_t rx_buf = APP_BUF_INIT(rx_raw_buf,
 					       sizeof(rx_raw_buf), 0);
 
+	/* If the network is a bit slow, increase rx_timeout and
+	 * tx_retry_timeout in struct netz_ctx_t
+	 */
 	struct netz_ctx_t netz_ctx = NETZ_CTX_INIT;
 
 	int response_type;
@@ -64,40 +74,38 @@ void fiber(void)
 
 	counter = 0;
 	do {
-		fiber_sleep(300);
-
 		printf("\n-----------------------------------------\n");
 
 		name = domains[counter];
 		if (name == NULL) {
 			counter = 0;
-			break;
+			continue;
 		}
-		counter += 1;
 
 		printf("Domain name: %s\n", name);
 
 		rc = dns_query(&tx_buf, name, counter, DNS_RR_TYPE_A);
-		printf("[%s:%d] DNS Create Query: %d, ID: %d\n",
-		       __func__, __LINE__, rc, counter);
+		printf("[%s:%d] DNS Query: %s, ID: %d\n",
+		       __func__, __LINE__, RC_STR(rc), counter);
 
 		rc = netz_tx(&netz_ctx, &tx_buf);
-		printf("[%s:%d] TX: %d\n", __func__, __LINE__, rc);
+		printf("[%s:%d] TX: %s\n", __func__, __LINE__, RC_STR(rc));
+
+		fiber_sleep(SLEEP_TIME);
 
 		rc = netz_rx(&netz_ctx, &rx_buf);
-		printf("[%s:%d] RX: %d\n", __func__, __LINE__, rc);
+		printf("[%s:%d] RX: %s\n", __func__, __LINE__, RC_STR(rc));
 
-		if (rc != 0) {
-			continue;
+		if (rc == 0) {
+			rc = dns_response(&rx_buf, &response_type, counter);
+			printf("[%s:%d] DNS Response: %s %s\n",
+			       __func__, __LINE__, RC_STR(rc),
+			       (rc != 0 && counter == 0 ? "<- :)" : ""));
 		}
 
-		rc = dns_response(&rx_buf, &response_type, counter);
-		printf("[%s:%d] DNS response: %d\n", __func__, __LINE__, rc);
-
-
+		counter += 1;
+		fiber_sleep(SLEEP_TIME);
 	} while (1);
-
-	printf("Bye!\n");
 
 }
 
@@ -109,12 +117,17 @@ void main(void)
 			 0, 0, 7, 0);
 }
 
-
+/* Next versions must handle the transaction id internally		*/
 int dns_query(struct app_buf_t *buf, char *str, uint16_t id,
 	      enum dns_rr_type qtype)
 {
 	return dns_msg_pack_query(buf, str, id, qtype);
 }
+
+/* See dns_unpack_answer, and also see:
+ * https://tools.ietf.org/html/rfc1035#section-4.1.2
+ */
+#define DNS_QUERY_POS	0x0c
 
 int dns_response(struct app_buf_t *_buf, int *response_type, int src_id)
 {
@@ -125,7 +138,7 @@ int dns_response(struct app_buf_t *_buf, int *response_type, int src_id)
 
 	rc = dns_unpack_response_header(&dns_msg, src_id);
 	if (rc != 0) {
-		return rc;
+		return -EINVAL;
 	}
 
 	if (dns_header_qdcount(dns_msg.msg) != 1) {
@@ -134,20 +147,18 @@ int dns_response(struct app_buf_t *_buf, int *response_type, int src_id)
 
 	rc = dns_unpack_response_query(&dns_msg);
 	if (rc != 0) {
-		return rc;
+		return -EINVAL;
 	}
 
 	i = 0;
-	/* the first dname is at 0x0c bytes */
-	ptr = 0x0c;
+	ptr = DNS_QUERY_POS;
 	while (i < dns_header_ancount(dns_msg.msg)) {
 
 		printf("\n****** DNS ANSWER: %d ******\n", i);
 
 		rc = dns_unpack_answer(&dns_msg, ptr);
 		if (rc != 0) {
-			printf("[%s:%d]\n", __func__, __LINE__);
-			return rc;
+			return -EINVAL;
 		}
 
 		switch (dns_msg.response_type) {
@@ -156,18 +167,16 @@ int dns_response(struct app_buf_t *_buf, int *response_type, int src_id)
 			       dns_msg.response_length);
 			print_buf(dns_msg.msg + dns_msg.response_position,
 				  dns_msg.response_length);
+			printf("\n");
 			break;
 
 		case DNS_RESPONSE_CNAME_NO_IP:
-			printf("Response: CNAME NO IP address\t\tSize: %d:\t",
-			       dns_msg.response_length);
-			print_buf(dns_msg.msg + dns_msg.response_position,
-				  dns_msg.response_length);
-			printf("CNAME: ");
+			printf("Response: CNAME NO IP address");
+			printf("\nCNAME: ");
 			dns_print_readable_msg_label(dns_msg.response_position,
 						     dns_msg.msg,
 						     dns_msg.msg_size);
-
+			printf("\n");
 			ptr = dns_msg.response_position;
 
 			break;
@@ -179,9 +188,7 @@ int dns_response(struct app_buf_t *_buf, int *response_type, int src_id)
 		}
 
 		dns_msg.answer_offset = dns_msg.answer_offset + 12
-				+ dns_msg.response_length;
-
-
+					+ dns_msg.response_length;
 		++i;
 	}
 
