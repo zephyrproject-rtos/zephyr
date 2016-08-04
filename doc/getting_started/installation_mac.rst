@@ -45,7 +45,7 @@ the brew command line.
 
    $ brew tap homebrew/dupes
 
-   $ brew install grep --default-names
+   $ brew install grep --with-default-names
 
    $ pip3 install ply
 
@@ -89,10 +89,13 @@ Alternatively you can use the script below to create the image:
 
 .. code-block:: bash
 
-   #!/bin/bash ImageName=CrossToolNG ImageNameExt=${ImageName}.sparseimage
-   diskutil umount force /Volumes/${ImageName} && true rm -f ${ImageNameExt}
-   && true hdiutil create ${ImageName} -volname ${ImageName} -type SPARSE
-   -size 8g -fs HFSX hdiutil mount ${ImageNameExt} cd /Volumes/$ImageName
+   #!/bin/bash
+   ImageName=CrossToolNG ImageNameExt=${ImageName}.sparseimage
+   diskutil umount force /Volumes/${ImageName} && true
+   rm -f ${ImageNameExt} && true
+   hdiutil create ${ImageName} -volname ${ImageName} -type SPARSE -size 8g -fs HFSX
+   hdiutil mount ${ImageNameExt}
+   cd /Volumes/$ImageName
 
 When mounted, the file system of the image will be available under
 :file:`/Volumes`. Change to the mounted directory:
@@ -143,6 +146,9 @@ of the configuration set for the toolchain.
    CT_WORK_DIR="${CT_TOP_DIR}/.build"
    CT_PREFIX_DIR="/Volumes/CrossToolNG/x-tools/${CT_TARGET}"
    CT_INSTALL_DIR="${CT_PREFIX_DIR}"
+   # Following options prevent link errors
+   CT_WANTS_STATIC_LINK=n
+   CT_CC_STATIC_LIBSTDCXX=n
    ...
 
 Building the Toolchain
@@ -167,6 +173,8 @@ and use the target location where the toolchain was installed, type:
    $ export ZEPHYR_GCC_VARIANT=xtools
 
    $ export ZEPHYR_SDK_INSTALL_DIR=/Volumes/CrossToolNG/x-tools
+
+   $ export XTOOLS_TOOLCHAIN_PATH=$ZEPHYR_SDK_INSTALL_DIR
 
 
 To use the same toolchain in new sessions in the future you can set the
