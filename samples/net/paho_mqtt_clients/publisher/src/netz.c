@@ -87,7 +87,8 @@ void netz_remote_ipv4(struct netz_ctx_t *ctx, uint8_t a1, uint8_t a2,
 static int netz_prepare(struct netz_ctx_t *ctx, enum ip_protocol proto)
 {
 #ifdef CONFIG_NETWORKING_WITH_TCP
-	struct app_buf_t buf = APP_BUF_INIT(NULL, 0, 0);
+	uint8_t data = 0;
+	struct app_buf_t buf = APP_BUF_INIT(&data, 1, 1);
 	int rc;
 #endif
 
@@ -205,6 +206,7 @@ int netz_tx(struct netz_ctx_t *ctx, struct app_buf_t *buf)
 	rc = tcp_tx(ctx->net_ctx, buf->buf, buf->length,
 		    ctx->tx_retry_timeout);
 
+	/* space left for debugging */
 	return rc;
 }
 
@@ -219,5 +221,6 @@ int netz_rx(struct netz_ctx_t *ctx, struct app_buf_t *buf)
 	rc = tcp_rx(ctx->net_ctx, buf->buf, &buf->length, buf->size,
 		    ctx->rx_timeout);
 
+	/* space left for debugging */
 	return rc;
 }
