@@ -45,7 +45,9 @@ struct nats_clapp_ctx_t {
  * @param [in] verbose		Verbose mode
  * @return			0 on success
  * @return			-EIO on network error
- * @return			-EINVAL
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
  */
 int nats_connect(struct nats_clapp_ctx_t *ctx, char *client_name, int verbose);
 
@@ -57,7 +59,9 @@ int nats_connect(struct nats_clapp_ctx_t *ctx, char *client_name, int verbose);
  * @param [in] payload		Message payload
  * @return			0 on success
  * @return			-EIO on network error
- * @return			-EINVAL
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
  */
 int nats_pub(struct nats_clapp_ctx_t *ctx, char *subject, char *reply_to,
 	     char *payload);
@@ -70,7 +74,9 @@ int nats_pub(struct nats_clapp_ctx_t *ctx, char *subject, char *reply_to,
  * @param [in] sid		Subscription Identifier
  * @return			0 on success
  * @return			-EIO on network error
- * @return			-EINVAL
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
  */
 int nats_sub(struct nats_clapp_ctx_t *ctx, char *subject, char *queue_grp,
 	     char *sid);
@@ -80,7 +86,11 @@ int nats_sub(struct nats_clapp_ctx_t *ctx, char *subject, char *queue_grp,
  * @param [in] ctx		NATS Client Application Context structure
  * @param [in] sid		Subscription Identifier
  * @param [in] max_msgs		Max messages field
- * @return
+ * @return			0 on success
+ * @return			-EIO on network error
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
  */
 int nats_unsub(struct nats_clapp_ctx_t *ctx, char *sid, int max_msgs);
 
@@ -88,8 +98,10 @@ int nats_unsub(struct nats_clapp_ctx_t *ctx, char *sid, int max_msgs);
  * @brief nats_read_ok		Reads the +OK message
  * @param [in] ctx		NATS Client Application Context structure
  * @return			0 on success
- * @return			-EIO on error
- * @return			-EINVAL
+ * @return			-EIO on network error
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
  */
 int nats_read_ok(struct nats_clapp_ctx_t *ctx);
 
@@ -99,7 +111,9 @@ int nats_read_ok(struct nats_clapp_ctx_t *ctx);
  * @param [in] ctx		NATS Client Application Context structure
  * @return			0 on success
  * @return			-EIO on network error
- * @return			-EINVAL
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
  */
 int nats_ping_pong(struct nats_clapp_ctx_t *ctx);
 

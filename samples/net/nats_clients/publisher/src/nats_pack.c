@@ -22,8 +22,9 @@
 #include <ctype.h>
 #include <errno.h>
 
-/* NATS require to send the language and version.
- * So we send the GCC version. It could be any string.
+/* NATS requires that the app's language and version
+ * are included in the CONNECT message.
+ * So, here we send the GCC version. It could be anything.
  */
 #ifdef __GNUC__
 #define CLANG		"GCC"

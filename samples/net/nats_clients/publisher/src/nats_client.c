@@ -84,7 +84,7 @@ int nats_sub(struct nats_clapp_ctx_t *ctx, char *subject, char *queue_grp,
 
 	rc = netz_tx(ctx->netz_ctx, ctx->tx_buf);
 	if (rc != 0) {
-		return rc;
+		return -EIO;
 	}
 
 	return nats_read_ok(ctx);
@@ -95,10 +95,13 @@ int nats_unsub(struct nats_clapp_ctx_t *ctx, char *sid, int max_msgs)
 	int rc;
 
 	rc = nats_pack_unsub(ctx->tx_buf, sid, max_msgs);
+	if (rc != 0) {
+		return -EINVAL;
+	}
 
 	rc = netz_tx(ctx->netz_ctx, ctx->tx_buf);
 	if (rc != 0) {
-		return rc;
+		return -EIO;
 	}
 
 	return nats_read_ok(ctx);
