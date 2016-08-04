@@ -137,7 +137,6 @@ int dns_print_readable_msg_label(int offset, uint8_t *buf, int size)
 			offset = next;
 		}
 	}
-	printf("\n");
 
 	return 0;
 }
@@ -149,7 +148,6 @@ int print_buf(uint8_t *buf, size_t size)
 	for (i = 0; i < size; i++) {
 		printf("%d ", buf[i]);
 	}
-	printf("\n");
 
 	return 0;
 }

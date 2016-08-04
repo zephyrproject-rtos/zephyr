@@ -18,6 +18,14 @@
 
 #include <string.h>
 
+static inline size_t dns_strlen(char *str)
+{
+	if (str == NULL) {
+		return 0;
+	}
+	return strlen(str);
+}
+
 int dns_msg_pack_qname(int *len, uint8_t *buf, int size, char *domain_name)
 {
 	int lb_index;
@@ -30,7 +38,7 @@ int dns_msg_pack_qname(int *len, uint8_t *buf, int size, char *domain_name)
 	lb_size = 0;
 
 	/* traverse the domain name str, including the null-terminator :) */
-	for (i = 0; i < strlen(domain_name) + 1; i++) {
+	for (i = 0; i < dns_strlen(domain_name) + 1; i++) {
 		if (lb_index >= size) {
 			return -ENOMEM;
 		}
@@ -104,7 +112,8 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr)
 	case DNS_RR_TYPE_AAAA:
 		dns_msg->response_type = DNS_RESPONSE_IP;
 		dns_msg->response_position = dns_msg->answer_offset + 12;
-		dns_msg->response_length = dns_answer_rdlength(2, answer);
+		dns_msg->response_length = dns_unpack_answer_rdlength(2,
+								      answer);
 
 		return 0;
 
@@ -112,7 +121,8 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr)
 
 		dns_msg->response_type = DNS_RESPONSE_CNAME_NO_IP;
 		dns_msg->response_position = dns_msg->answer_offset + 12;
-		dns_msg->response_length = dns_answer_rdlength(2, answer);
+		dns_msg->response_length = dns_unpack_answer_rdlength(2,
+								      answer);
 
 		return 0;
 
@@ -130,6 +140,7 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 	int size;
 	int qdcount;
 	int ancount;
+	int rcode;
 
 	dns_header = msg->msg;
 	size = msg->msg_size;
@@ -138,7 +149,7 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 		return -ENOMEM;
 	}
 
-	if (dns_header_id(dns_header) != src_id) {
+	if (dns_unpack_header_id(dns_header) != src_id) {
 		return -EINVAL;
 	}
 
@@ -154,16 +165,17 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 		return -EINVAL;
 	}
 
-	switch (dns_header_rcode(dns_header)) {
+	rcode = dns_header_rcode(dns_header);
+	switch (rcode) {
 	case DNS_HEADER_NOERROR:
 		break;
 	default:
-		return dns_header_rcode(dns_header);
+		return rcode;
 
 	}
 
-	qdcount = dns_header_qdcount(dns_header);
-	ancount = dns_header_ancount(dns_header);
+	qdcount = dns_unpack_header_qdcount(dns_header);
+	ancount = dns_unpack_header_ancount(dns_header);
 	if (qdcount < 1 || ancount < 1) {
 		return -EINVAL;
 	}
@@ -177,7 +189,7 @@ static int dns_msg_pack_query_header(uint8_t *buf, int size, uint16_t id)
 		return -ENOMEM;
 	}
 
-	*(uint16_t *)(buf +  0) = z_swap2(id);
+	*(uint16_t *)(buf +  0) = sys_cpu_to_be16(id);
 
 	/* RD = 1, TC = 0, AA = 0, Opcode = 0, QR = 0 <-> 0x01 (1B)
 	 * RCode = 0, Z = 0, RA = 0		      <-> 0x00 (1B)
@@ -185,9 +197,11 @@ static int dns_msg_pack_query_header(uint8_t *buf, int size, uint16_t id)
 	 * QDCOUNT = 1				      <-> 0x0001 (2B)
 	 */
 
-	*(uint32_t *)(buf +  2) = 0x01000001;
-	*(uint32_t *)(buf +  6) = 0;
-	*(uint16_t *)(buf +  10) = 0;
+	*(buf + 2) = 0x01;
+	*(buf + 3) = 0x00;
+	*(uint16_t *)(buf + 4) = sys_cpu_to_be16(1);
+	*(uint32_t *)(buf +  6) = 0;	/* ANCOUNT and NSCOUNT = 0	*/
+	*(uint16_t *)(buf +  10) = 0;   /* ARCOUNT = 0			*/
 
 	return 0;
 }
@@ -219,9 +233,9 @@ int dns_msg_pack_query(struct app_buf_t *buf, char *domain_name,
 		return rc;
 	}
 	/* QType */
-	*(uint16_t *)(buf->buf + offset + 0) = z_swap2(qtype);
+	*(uint16_t *)(buf->buf + offset + 0) = sys_cpu_to_be16(qtype);
 	/* QClass */
-	*(uint16_t *)(buf->buf + offset + 2) = z_swap2(DNS_CLASS_IN);
+	*(uint16_t *)(buf->buf + offset + 2) = sys_cpu_to_be16(DNS_CLASS_IN);
 
 	buf->length = offset + 4;
 
@@ -243,6 +257,7 @@ int dns_find_null(int *qname_size, uint8_t *buf, int size)
 int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 {
 	uint8_t *dns_query;
+	uint8_t *buf;
 	int remaining_size;
 	int qname_size;
 	int offset;
@@ -265,12 +280,13 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 		return -ENOMEM;
 	}
 
-	if (dns_query_qtype(dns_query + qname_size) != DNS_RR_TYPE_A &&
-	    dns_query_qtype(dns_query + qname_size) != DNS_RR_TYPE_AAAA) {
+	buf = dns_query + qname_size;
+	if (dns_unpack_query_qtype(buf) != DNS_RR_TYPE_A &&
+	    dns_unpack_query_qtype(buf) != DNS_RR_TYPE_AAAA) {
 		return -EINVAL;
 	}
 
-	if (dns_query_qclass(dns_query + qname_size) != DNS_CLASS_IN) {
+	if (dns_unpack_query_qclass(buf) != DNS_CLASS_IN) {
 		return -EINVAL;
 	}
 

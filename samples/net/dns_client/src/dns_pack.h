@@ -21,7 +21,9 @@
 #include <stddef.h>
 #include <errno.h>
 
-#include <app_buf.h>
+#include <misc/byteorder.h>
+
+#include "app_buf.h"
 
 /**
  * @brief dns_msg_t
@@ -104,22 +106,19 @@ enum dns_header_rcode {
  */
 #define DNS_MSG_HEADER_SIZE	12
 
-static inline uint32_t z_swap4(uint32_t n)
-{
-	return ((n&0x000000FF)<<24) + ((n&0x0000FF00)<<8)
-			+ ((n&0x00FF0000)>>8) + ((n&0xFF000000)>>24);
-}
-
-static inline uint16_t z_swap2(uint16_t n)
-{
-	return (n>>8) + ((n & 0x00FF) << 8);
-}
-
-
 /** It returns the ID field in the DNS msg header	*/
 static inline int dns_header_id(uint8_t *header)
 {
-	return z_swap2(*(uint16_t *)header);
+	return sys_cpu_to_be16(*(uint16_t *)header);
+}
+
+/* inline unpack routines are used to unpack data from network
+ * order to cpu. Similar routines without the unpack prefix are
+ * used for cpu to network order.
+ */
+static inline int dns_unpack_header_id(uint8_t *header)
+{
+	return sys_be16_to_cpu(*(uint16_t *)header);
 }
 
 /** It returns the QR field in the DNS msg header	*/
@@ -173,40 +172,61 @@ static inline int dns_header_rcode(uint8_t *header)
 /** It returns the QDCOUNT field in the DNS msg header	*/
 static inline int dns_header_qdcount(uint8_t *header)
 {
-	return z_swap2(*(uint16_t *)(header + 4));
+	return sys_cpu_to_be16(*(uint16_t *)(header + 4));
+}
+
+static inline int dns_unpack_header_qdcount(uint8_t *header)
+{
+	return sys_be16_to_cpu(*(uint16_t *)(header + 4));
 }
 
 /** It returns the ANCOUNT field in the DNS msg header	*/
 static inline int dns_header_ancount(uint8_t *header)
 {
-	return z_swap2(*(uint16_t *)(header + 6));
+	return sys_cpu_to_be16(*(uint16_t *)(header + 6));
+}
+
+static inline int dns_unpack_header_ancount(uint8_t *header)
+{
+	return sys_be16_to_cpu(*(uint16_t *)(header + 6));
 }
 
 /** It returns the NSCOUNT field in the DNS msg header	*/
 static inline int dns_header_nscount(uint8_t *header)
 {
-	return z_swap2(*(uint16_t *)(header + 8));
+	return sys_cpu_to_be16(*(uint16_t *)(header + 8));
 }
 
 /** It returns the ARCOUNT field in the DNS msg header	*/
 static inline int dns_header_arcount(uint8_t *header)
 {
-	return z_swap2(*(uint16_t *)(header + 10));
+	return sys_cpu_to_be16(*(uint16_t *)(header + 10));
 }
 
 static inline int dns_query_qtype(uint8_t *question)
 {
-	return z_swap2(*((uint16_t *)(question + 0)));
+	return sys_cpu_to_be16(*((uint16_t *)(question + 0)));
+}
+
+static inline int dns_unpack_query_qtype(uint8_t *question)
+{
+	return sys_be16_to_cpu(*((uint16_t *)(question + 0)));
 }
 
 static inline int dns_query_qclass(uint8_t *question)
 {
-	return z_swap2(*((uint16_t *)(question + 2)));
+	return sys_cpu_to_be16(*((uint16_t *)(question + 2)));
+}
+
+static inline int dns_unpack_query_qclass(uint8_t *question)
+{
+	return sys_be16_to_cpu(*((uint16_t *)(question + 2)));
 }
 
 static inline int dns_response_type(int dname_size, uint8_t *answer)
 {
 	/** Future versions must consider byte 0
+	 * 4.1.3. Resource record format
 	 * *(answer + dname_size + 0);
 	 */
 	return *(answer + dname_size + 1);
@@ -215,6 +235,7 @@ static inline int dns_response_type(int dname_size, uint8_t *answer)
 static inline int dns_answer_class(int dname_size, uint8_t *answer)
 {
 	/** Future versions must consider byte 2
+	 * 4.1.3. Resource record format
 	 * *(answer + dname_size + 2);
 	 */
 	return *(answer + dname_size + 3);
@@ -222,12 +243,17 @@ static inline int dns_answer_class(int dname_size, uint8_t *answer)
 
 static inline int dns_answer_ttl(int dname_size, uint8_t *answer)
 {
-	return z_swap4(*(uint32_t *)(answer + dname_size + 4));
+	return sys_cpu_to_be32(*(uint32_t *)(answer + dname_size + 4));
 }
 
 static inline int dns_answer_rdlength(int dname_size, uint8_t *answer)
 {
-	return z_swap2(*(uint16_t *)(answer + dname_size + 8));
+	return sys_cpu_to_be16(*(uint16_t *)(answer + dname_size + 8));
+}
+
+static inline int dns_unpack_answer_rdlength(int dname_size, uint8_t *answer)
+{
+	return sys_be16_to_cpu(*(uint16_t *)(answer + dname_size + 8));
 }
 
 /**

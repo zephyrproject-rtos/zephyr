@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <netz.h>
+#include "netz.h"
 
 #include <net/net_core.h>
 #include <net/net_socket.h>

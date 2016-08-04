@@ -17,7 +17,7 @@
 #ifndef _DNS_UTILS_H_
 #define _DNS_UTILS_H_
 
-#include <app_buf.h>
+#include "app_buf.h"
 #include <stdint.h>
 
 int dns_print_msg_header(uint8_t *header, int size);
