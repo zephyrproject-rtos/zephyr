@@ -87,7 +87,8 @@ void netz_remote_ipv4(struct netz_ctx_t *ctx, uint8_t a1, uint8_t a2,
 static int netz_prepare(struct netz_ctx_t *ctx, enum ip_protocol proto)
 {
 #ifdef CONFIG_NETWORKING_WITH_TCP
-	struct app_buf_t buf = APP_BUF_INIT(NULL, 0, 0);
+	uint8_t data = 0;
+	struct app_buf_t buf = APP_BUF_INIT(&data, 1, 1);
 	int rc;
 #endif
 
