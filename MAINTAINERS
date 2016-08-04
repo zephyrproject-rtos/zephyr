@@ -170,6 +170,13 @@ F:	include/net/
 F:	samples/net/
 F:	tests/net/
 
+NETWORK APPLICATIONS
+M:	Flavio Santes <flavio.santes@intel.com>
+S:	Supported
+F:	samples/net/dns_client/
+F:	samples/net/nats_clients/
+F:	samples/net/paho_mqtt_clients/
+
 NETWORK BUFFERS
 M:	Johan Hedberg <johan.hedberg@intel.com>
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
@@ -238,8 +245,10 @@ F:	samples/sensor/
 
 TINYCRYPT
 M:	Constanza Heath <constanza.m.heath@intel.com>
+M:	Flavio Santes <flavio.santes@intel.com>
 S:	Supported
 F:	ext/lib/crypto/tinycrypt/
+F:	tests/crypto/
 
 X86 ARCH
 M:	Benjamin Walsh <benjamin.walsh@windriver.com>
