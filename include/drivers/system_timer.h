@@ -59,7 +59,8 @@ extern uint32_t _nano_get_earliest_deadline(void);
 
 extern void _nano_sys_clock_tick_announce(int32_t ticks);
 
-DEVICE_PM_OPS_DECLARE(_sys_clock);
+extern int _sys_clock_suspend(struct device *dev, int pm_policy);
+extern int _sys_clock_resume(struct device *dev, int pm_policy);
 
 #ifdef CONFIG_MICROKERNEL
 	extern void (*_do_sys_clock_tick_announce)(kevent_t);

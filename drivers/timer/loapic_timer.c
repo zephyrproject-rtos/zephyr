@@ -560,7 +560,7 @@ int _sys_clock_driver_init(struct device *device)
 static uint32_t reg_timer_save;
 static uint32_t reg_timer_cfg_save;
 
-static int sys_clock_suspend(struct device *dev, int pm_policy)
+int _sys_clock_suspend(struct device *dev, int pm_policy)
 {
 	ARG_UNUSED(dev);
 
@@ -572,7 +572,7 @@ static int sys_clock_suspend(struct device *dev, int pm_policy)
 	return 0;
 }
 
-static int sys_clock_resume(struct device *dev, int pm_policy)
+int _sys_clock_resume(struct device *dev, int pm_policy)
 {
 	ARG_UNUSED(dev);
 
@@ -609,8 +609,6 @@ static int sys_clock_resume(struct device *dev, int pm_policy)
 	return 0;
 }
 #endif
-
-DEFINE_DEVICE_PM_OPS(_sys_clock, sys_clock_suspend, sys_clock_resume);
 
 /**
  *

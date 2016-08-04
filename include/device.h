@@ -257,7 +257,7 @@ struct device_pm_ops {
  * @param _resume name of the resume function
  */
 #define DEFINE_DEVICE_PM_OPS(_name, _suspend, _resume)	\
-	struct device_pm_ops _name##_dev_pm_ops = {	\
+	static struct device_pm_ops _name##_dev_pm_ops = { \
 		.suspend = _suspend,			\
 		.resume = _resume,			\
 	}
@@ -275,22 +275,11 @@ struct device_pm_ops {
 	(&_name##_dev_pm_ops)
 
 /**
- * @brief Macro to declare the device_pm_ops structure
- *
- * The declaration would be added if CONFIG_DEVICE_POWER_MANAGEMENT
- * is defined. Otherwise this macro will not add anything.
- *
- * @param _name name of the device
- */
-#define DEVICE_PM_OPS_DECLARE(_name) \
-	extern struct device_pm_ops _name##_dev_pm_ops
-/**
  * @}
  */
 #else
 #define DEFINE_DEVICE_PM_OPS(_name, _suspend, _resume)
 #define DEVICE_PM_OPS_GET(_name) NULL
-#define DEVICE_PM_OPS_DECLARE(_name)
 #endif
 
 /**

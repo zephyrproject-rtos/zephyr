@@ -37,7 +37,9 @@
  * For other timers, define device_pm_ops with default handers in case
  * the app enables CONFIG_DEVICE_POWER_MANAGEMENT.
  */
-#ifndef CONFIG_LOAPIC_TIMER
+#ifdef CONFIG_LOAPIC_TIMER
+DEFINE_DEVICE_PM_OPS(_sys_clock, _sys_clock_suspend, _sys_clock_resume);
+#else
 DEFINE_DEVICE_PM_OPS(_sys_clock, device_pm_nop, device_pm_nop);
 #endif
 SYS_INIT_PM("sys_clock", _sys_clock_driver_init, DEVICE_PM_OPS_GET(_sys_clock),
