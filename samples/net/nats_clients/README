@@ -1,0 +1,49 @@
+NATS Client Library
+-------------------
+
+NATS is a text-based IoT protocol based on a publisher-subscriber paradigm.
+
+This implementation is still WORK IN PROGRESS. So, API may change.
+
+NATS messages are listed below:
+
+Msg	Side	Description
+INFO	Server	Sent to client after initial TCP/IP connection
+CONNECT Client	Sent to server to specify connection information
+PUB	Client	Publish a message to a subject, with optional reply subject
+SUB	Client	Subscribe to a subject (or subject wildcard)
+UNSUB	Client	Unsubscribe (or auto-unsubscribe) from subject
+MSG	Server	Delivers a message payload to a subscriber
+PING	Both	PING keep-alive message
+PONG	Both	PONG keep-alive response
++OK	Server	Acknowledges well-formed protocol message in verbose mode
+-ERR	Server	Indicates a protocol error. Will cause client disconnect.
+
+
+Known Limitations
+-----------------
+
+Msg	Side	Status
+INFO	Server	Partially implemented. Not fully tested.
+INFO	Client	Partially implemented. See nats_unpack_info function.
+CONNECT	Client	Fully implemented.
+PUB	Client	Fully implemented.
+SUB	Client	Fully implemented.
+UNSUB	Client	Fully implemented.
+MSG	Client	Fully implemented.
+PING	Server	Fully implemented.
+PING	Client	Fully implemented.
+PONG	Server	Fully implemented.
+PONG	Client	Fully implemented.
++OK	Client	Fully implemented.
+-ERR	Client	Not implemented: if the client receives something different
+		from +OK, we must assume an error was detected by the peer.
+		Future versions may include this message.
+
+
+References
+----------
+
+More information about the NATS protocol can be found at:
+
+http://nats.io/documentation/internals/nats-protocol/
