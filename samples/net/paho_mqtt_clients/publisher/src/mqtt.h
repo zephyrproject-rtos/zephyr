@@ -160,9 +160,11 @@ int mqtt_network(struct mqtt_app_ctx_t *app, struct netz_ctx_t *netz_ctx);
  * @details			This function packs and sends the MQTT
  *				CONNECT message to the server.
  * @param app			MQTT application context.
- * @return			0 on success.<br>
- *				netz API return codes are also returned
- *				by this function.<br>
+ * @return			0 on success.
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
+ * @return			-EIO on network error.
  */
 int mqtt_connect(struct mqtt_app_ctx_t *app);
 
@@ -171,9 +173,11 @@ int mqtt_connect(struct mqtt_app_ctx_t *app);
  * @details			This function packs and sends the MQTT
  *				DISCONNECT message to the server.
  * @param app			MQTT application context.
- * @return			0 on success.<br>
- *				netz API return codes are also returned
- *				by this function.<br>
+ * @return			0 on success.
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
+ * @return			-EIO on network error.
  */
 int mqtt_disconnect(struct mqtt_app_ctx_t *app);
 
@@ -187,9 +191,11 @@ int mqtt_disconnect(struct mqtt_app_ctx_t *app);
  * @param msg			MQTT Message structure.
  * @param qos			Message QoS.
  * @param retained		Retained property.
- * @return			0 on success.<br>
- *				netz API return codes are also returned
- *				by this function.<br>
+ * @return			0 on success.
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
+ * @return			-EIO on network error.
  */
 int mqtt_publish(struct mqtt_app_ctx_t *app, struct mqtt_msg_t *msg,
 		 enum mqtt_qos qos, int retained);
@@ -200,8 +206,10 @@ int mqtt_publish(struct mqtt_app_ctx_t *app, struct mqtt_msg_t *msg,
  *				PINGREQ message to the server.
  * @param app			MQTT application context.
  * @return			0 on success.
- *				netz API return codes are also returned
- *				by this function.
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
+ * @return			-EIO on network error.
  */
 int mqtt_pingreq(struct mqtt_app_ctx_t *app);
 
@@ -216,10 +224,29 @@ int mqtt_pingreq(struct mqtt_app_ctx_t *app);
  * @param topic			Topic to subscribe to.
  * @param qos			The desired QoS.
  * @return			0 on success.
- *				netz API return codes are also returned
- *				by this function.
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
+ * @return			-EIO on network error.
  */
 int mqtt_subscribe(struct mqtt_app_ctx_t *app, char *topic, enum mqtt_qos qos);
+
+/**
+ * @brief mqtt_unsubscribe	Sends the MQTT UNSUBSCRIBE message
+ * @details			This functions packs and sends the MQTT
+ *				UNSUBSCRIBE message to the server.
+ *				So far, only one topic is processed by
+ *				message.
+ *				TODO: add an array of topics.
+ * @param app			MQTT application context.
+ * @param topic			Topic to unsubscribe from.
+ * @return			0 on success.
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
+ * @return			-EIO on network error.
+ */
+int mqtt_unsubscribe(struct mqtt_app_ctx_t *app, char *topic);
 
 /**
  * @brief mqtt_read		Read any received MQTT message
@@ -229,8 +256,10 @@ int mqtt_subscribe(struct mqtt_app_ctx_t *app, char *topic, enum mqtt_qos qos);
  *				TODO: implement more messages' handlers.
  * @param app			MQTT application context.
  * @return			0 on success.
- *				netz API return codes are also returned
- *				by this function.
+ * @return			-EINVAL if an invalid parameter was
+ *				passed as argument or received from the
+ *				server.
+ * @return			-EIO on network error.
  */
 int mqtt_read(struct mqtt_app_ctx_t *app);
 
