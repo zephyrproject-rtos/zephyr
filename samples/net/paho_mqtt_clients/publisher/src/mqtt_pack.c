@@ -25,6 +25,10 @@
 #include <errno.h>
 #include <string.h>
 
+/* From MQTTConnectClient.c */
+extern int MQTTSerialize_zero(unsigned char *buf, int buflen,
+			      unsigned char packettype);
+
 static void str_to_buf(struct app_buf_t *buf, char *str);
 
 int mqtt_msg_topic(struct mqtt_msg_t *msg, char *str)
@@ -103,6 +107,24 @@ int mqtt_pack_subscribe(struct app_buf_t *buf, int dup, uint16_t pkt_id,
 	return 0;
 }
 
+int mqtt_pack_unsubscribe(struct app_buf_t *buf, int dup, uint16_t pkt_id,
+			  char *topic)
+{
+	MQTTString topic_str = MQTTString_initializer;
+	int rc;
+
+	topic_str.cstring = topic;
+	rc = MQTTSerialize_unsubscribe(buf->buf, buf->size, dup, pkt_id, 1,
+				       &topic_str);
+	if (rc <= 0) {
+		return -EINVAL;
+	}
+
+	buf->length = rc;
+
+	return 0;
+}
+
 int mqtt_unpack_suback(struct app_buf_t *buf, uint16_t *pkt_id,
 			 int *granted_qos)
 {
@@ -111,6 +133,19 @@ int mqtt_unpack_suback(struct app_buf_t *buf, uint16_t *pkt_id,
 
 	rc = MQTTDeserialize_suback(pkt_id, 1, &sub_count, granted_qos,
 				    buf->buf, buf->length);
+
+	if (rc != 1) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int mqtt_unpack_unsuback(struct app_buf_t *buf, uint16_t *pkt_id)
+{
+	int rc;
+
+	rc = MQTTDeserialize_unsuback(pkt_id, buf->buf, buf->length);
 
 	if (rc != 1) {
 		return -EINVAL;
@@ -270,6 +305,20 @@ int mqtt_pack_pingreq(struct app_buf_t *buf)
 	int rc;
 
 	rc = MQTTSerialize_pingreq(buf->buf, buf->size);
+	if (rc <= 0) {
+		return -EINVAL;
+	}
+
+	buf->length = rc;
+
+	return 0;
+}
+
+int mqtt_pack_pingresp(struct app_buf_t *buf)
+{
+	int rc;
+
+	rc =  MQTTSerialize_zero(buf->buf, buf->size, MQTT_PINGRESP);
 	if (rc <= 0) {
 		return -EINVAL;
 	}

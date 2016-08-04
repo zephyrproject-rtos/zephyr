@@ -177,6 +177,19 @@ int mqtt_pack_subscribe(struct app_buf_t *buf, int dup, uint16_t pkt_id,
 		       char *topic, enum mqtt_qos qos);
 
 /**
+ * @brief mqtt_pack_unsubscribe
+				Packs a UNSUBSCRIBE message
+ * @param buf			Buffer where the message is stored
+ * @param dup			DUP flag
+ * @param pkt_id		Packet Identifier
+ * @param topic			Topic to unsubscribe from
+ * @return			0 on success
+ *				-EINVAL on error
+ */
+int mqtt_pack_unsubscribe(struct app_buf_t *buf, int dup, uint16_t pkt_id,
+			  char *topic);
+
+/**
  * @brief mqtt_unpack_suback	Unpacks a SUBACK message
  * @param buf			Buffer where the message is stored
  * @param pkt_id		Packet Identifier
@@ -186,6 +199,16 @@ int mqtt_pack_subscribe(struct app_buf_t *buf, int dup, uint16_t pkt_id,
  */
 int mqtt_unpack_suback(struct app_buf_t *buf, uint16_t *pkt_id,
 		       int *granted_qos);
+
+
+/**
+ * @brief mqtt_unpack_unsuback	Unpacks a UNSUBACK message
+ * @param buf			Buffer where the message is stored
+ * @param pkt_id		Packet Identifier
+ * @return			0 on success
+ *				-EINVAL on error
+ */
+int mqtt_unpack_unsuback(struct app_buf_t *buf, uint16_t *pkt_id);
 
 /**
  * @brief mqtt_pack_connect	Packs a CONNECT message
@@ -263,5 +286,14 @@ int mqtt_pack_pubrel(struct app_buf_t *buf, int dup, uint16_t pkt_id);
  *				-EINVAL on error
  */
 int mqtt_pack_pingreq(struct app_buf_t *buf);
+
+
+/**
+ * @brief mqtt_pack_pingresp	Packs a PINGRESP message
+ * @param buf			Buffer where the message is stored
+ * @return			0 on success
+ *				-EINVAL on error
+ */
+int mqtt_pack_pingresp(struct app_buf_t *buf);
 
 #endif
