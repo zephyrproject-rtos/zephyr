@@ -57,9 +57,11 @@ static int bmi160_transceive(struct device *dev, uint8_t *tx_buf,
 int bmi160_read(struct device *dev, uint8_t reg_addr,
 		uint8_t *data, uint8_t len)
 {
-	uint8_t tx = reg_addr | (1 << 7);
+	uint8_t tx[3] = {0};
 
-	return bmi160_transceive(dev, &tx, 1, data, len);
+	tx[0] = reg_addr | (1 << 7);
+
+	return bmi160_transceive(dev, tx, len, data, len);
 }
 
 int bmi160_byte_read(struct device *dev, uint8_t reg_addr,
@@ -669,12 +671,14 @@ static int bmi160_attr_set(struct device *dev, enum sensor_channel chan,
 static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
-	uint8_t tx = BMI160_SAMPLE_BURST_READ_ADDR | (1 << 7);
+	uint8_t tx[BMI160_BUF_SIZE] = {0};
 	int i;
+
+	tx[0] = BMI160_SAMPLE_BURST_READ_ADDR | (1 << 7);
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (bmi160_transceive(dev, &tx, 1, bmi160->sample.raw,
+	if (bmi160_transceive(dev, tx, BMI160_BUF_SIZE, bmi160->sample.raw,
 			      BMI160_BUF_SIZE) < 0) {
 		return -EIO;
 	}
