@@ -87,7 +87,7 @@ void fiber(void)
 		printf("\n--------------------------------\n");
 
 		rc = mqtt_pingreq(&app_ctx);
-		printf("Pingreg, rc: %s\n", RC_STR(rc));
+		printf("Pingreq, rc: %s\n", RC_STR(rc));
 		fiber_sleep(SLEEP_TIME);
 
 		/* Message published with QoS0				*/

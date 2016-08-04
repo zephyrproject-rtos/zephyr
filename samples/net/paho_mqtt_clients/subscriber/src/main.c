@@ -54,21 +54,23 @@ void fiber(void)
 	struct netz_ctx_t netz_ctx = NETZ_CTX_INIT;
 
 	/* The MQTT Client Context - only MQTT-related stuff here	*/
-	struct mqtt_client_ctx_t client_ctx = MQTT_CLIENT_CTX_INIT("zephyr");
+	struct mqtt_client_ctx_t client_ctx = MQTT_CLIENT_CTX_INIT("zephyr2");
 
 	/* The MQTT Application Context: networking and mqtt stuff	*/
 	struct mqtt_app_ctx_t app_ctx = MQTT_APP_INIT(&client_ctx, &netz_ctx,
 						      &tx_buf, &rx_buf);
+	int i = 0;
 	int rc;
 
 	/* First we configure network related stuff			*/
-	netz_host_ipv4(&netz_ctx, 192, 168, 1, 110);
+	netz_host_ipv4(&netz_ctx, 192, 168, 1, 111);
 	netz_netmask_ipv4(&netz_ctx, 255, 255, 255, 0);
 	/* MQTT server address and port					*/
 	netz_remote_ipv4(&netz_ctx, 192, 168, 1, 10, 1883);
 
 	/* MQTT context runtime initialization				*/
 	mqtt_init(&app_ctx);
+
 	/* Network buffers are now handled by the MQTT context		*/
 	mqtt_buffers(&app_ctx, &tx_buf, &rx_buf);
 	/* Now we let the MQTT context to handle the network context	*/
@@ -76,8 +78,8 @@ void fiber(void)
 	/* Once everything is configured, we connect to the MQTT server	*/
 	rc = mqtt_connect(&app_ctx);
 	if (rc != 0) {
-		printf("[%s:%d] Unable to connect: %d\n",
-		       __func__, __LINE__, rc);
+		printf("[%s:%d] Unable to connect: %s\n",
+		       __func__, __LINE__, RC_STR(rc));
 		return;
 	}
 	fiber_sleep(SLEEP_TIME);
@@ -87,8 +89,8 @@ void fiber(void)
 	 */
 	rc = mqtt_subscribe(&app_ctx, "sensors", MQTT_QoS2);
 	if (rc < 0) {
-		printf("[%s:%d] Unable to subscribe: %d\n",
-		       __func__, __LINE__, rc);
+		printf("[%s:%d] Unable to subscribe: %s\n",
+		       __func__, __LINE__, RC_STR(rc));
 		return;
 	}
 
@@ -97,11 +99,31 @@ void fiber(void)
 
 	do {
 		printf("\n--------------------------------\n");
+
+		rc = mqtt_pingreq(&app_ctx);
+		printf("Pingreq, rc: %s\n", RC_STR(rc));
+		fiber_sleep(SLEEP_TIME);
+
 		mqtt_read(&app_ctx);
 		fiber_sleep(SLEEP_TIME);
 
-	} while (1);
+	} while (++i < 50);
 
+	rc = mqtt_unsubscribe(&app_ctx, "sensors");
+	if (rc < 0) {
+		printf("[%s:%d] Unable to unsubscribe: %s\n",
+		       __func__, __LINE__, RC_STR(rc));
+		return;
+	}
+
+	rc = mqtt_disconnect(&app_ctx);
+	if (rc < 0) {
+		printf("[%s:%d] Unable to disconnect: %s\n",
+		       __func__, __LINE__, RC_STR(rc));
+		return;
+	}
+
+	printf("Bye!\n");
 }
 
 void main(void)
