@@ -818,7 +818,34 @@ static int cdc_acm_line_ctrl_get(struct device *dev,
 
 #endif /* CONFIG_UART_LINE_CTRL */
 
+/*
+ * @brief Poll the device for input.
+ *
+ * @return -ENOTSUP Since underlying USB device controller always uses
+ * interrupts, polled mode UART APIs are not implemented for the UART interface
+ * exported by CDC ACM driver. Apps should use fifo_read API instead.
+ */
+
+static int cdc_acm_poll_in(struct device *dev, unsigned char *c)
+{
+	return -ENOTSUP;
+}
+
+/*
+ * @brief Output a character in polled mode.
+ *
+ * @return 0 Since it is not supported. See the comments of
+ * cdc_acm_poll_in() for details. Apps should use fifo_fill API instead.
+ */
+static unsigned char cdc_acm_poll_out(struct device *dev,
+					     unsigned char c)
+{
+	return 0;
+}
+
 static struct uart_driver_api cdc_acm_driver_api = {
+	.poll_in = cdc_acm_poll_in,
+	.poll_out = cdc_acm_poll_out,
 	.fifo_fill = cdc_acm_fifo_fill,
 	.fifo_read = cdc_acm_fifo_read,
 	.irq_tx_enable = cdc_acm_irq_tx_enable,
