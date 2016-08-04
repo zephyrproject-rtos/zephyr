@@ -54,14 +54,14 @@ Install the required packages in a Ubuntu host system with:
 
 .. code-block:: console
 
-   $ sudo apt-get install git make gcc g++ python3-ply
+   $ sudo apt-get install git make gcc g++ python3-ply ncurses-dev
 
 Install the required packages in a Fedora host system with:
 
 .. code-block:: console
 
    $ sudo dnf group install "Development Tools"
-   $ sudo dnf install git make gcc glibc-static libstdc++-static python3-ply
+   $ sudo dnf install git make gcc glibc-static libstdc++-static python3-ply ncurses-devel
 
 .. _zephyr_sdk:
 
