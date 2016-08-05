@@ -243,6 +243,13 @@ config NET_STATISTICS
 	  Print network send/receive statistics to console.
 	  This takes memory so say 'n' if unsure.
 
+config NET_TRICKLE
+	bool "Enable Trickle library"
+	default n
+	help
+	  Normally this is enabled automatically if needed,
+	  so say 'n' if unsure.
+
 source "net/yaip/l2/Kconfig"
 
 source "net/ip/Kconfig.debug"

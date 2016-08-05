@@ -334,4 +334,10 @@ config NETWORK_IP_STACK_DEBUG_CONN
 	help
 	  Enables connection debug messages
 
+config NETWORK_IP_STACK_DEBUG_TRICKLE
+	bool "Debug Trickle algorithm"
+	default n
+	help
+	  Enables Trickle library output debug messages
+
 endif
