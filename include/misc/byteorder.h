@@ -18,6 +18,9 @@
  * limitations under the License.
  */
 
+#ifndef __BYTEORDER_H__
+#define __BYTEORDER_H__
+
 #include <stdint.h>
 
 /* Internal helpers only used by the sys_* APIs further below */
@@ -232,3 +235,5 @@ static inline uint32_t sys_get_le32(const uint8_t src[4])
 {
 	return ((uint32_t)sys_get_le16(&src[2]) << 16) | sys_get_le16(&src[0]);
 }
+
+#endif /* __BYTEORDER_H__ */
