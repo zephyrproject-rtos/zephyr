@@ -101,6 +101,16 @@ config	WORKLOAD_MONITOR
 	This option instructs the kernel to record the percentage of time
 	the system is doing useful work (i.e. is not idle).
 
+config	MAX_NUM_TASK_IRQS
+	int
+	prompt "Number of task IRQ objects"
+	default 0
+	depends on MICROKERNEL
+	help
+	This option specifies the maximum number of IRQs that may be
+	utilized by task level device drivers. A value of zero disables
+	this feature.
+
 menu "Timer API Options"
 
 config TIMESLICING

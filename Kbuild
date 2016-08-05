@@ -1,5 +1,11 @@
 # vim: filetype=make
 
+ifneq ($(strip $(CONFIG_MAX_NUM_TASK_IRQS)),)
+ifneq (${CONFIG_MAX_NUM_TASK_IRQS},0)
+TASK_IRQS=y
+endif
+endif
+
 ifneq ("$(wildcard $(MDEF_FILE))","")
 MDEF_FILE_PATH=$(strip $(MDEF_FILE))
 else
@@ -22,6 +28,16 @@ define filechk_prj.mdef
 	echo "  TASKGROUP FPU";\
 	echo "  TASKGROUP SSE";\
 	echo; \
+	if test "$(TASK_IRQS)" = "y"; then \
+		echo "% Task IRQ objects";\
+		echo "% EVENT    NAME              HANDLER"; \
+		echo "% ======================================="; \
+		i=0; \
+		while [ $$i -lt $(CONFIG_MAX_NUM_TASK_IRQS) ]; do \
+			echo "  EVENT    _TaskIrqEvt$$i     NULL"; \
+		i=$$(($$i+1));\
+		done; \
+	fi; \
 	if test -e "$(MDEF_FILE_PATH)"; then \
 		cat $(MDEF_FILE_PATH); \
 	fi;)

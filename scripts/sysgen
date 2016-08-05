@@ -39,6 +39,7 @@ heap_pos_in_pool_list = -1
 num_kargs = 0
 num_timers = 0
 num_prios = 0
+num_task_irqs = 0
 
 task_list = []
 event_list = []
@@ -438,6 +439,8 @@ def kernel_main_c_priorities():
 def kernel_main_c_events():
     """ Generate event variables """
 
+    global num_task_irqs
+
     # event descriptors
 
     # pre-defined event for timer
@@ -458,6 +461,20 @@ def kernel_main_c_events():
             kernel_main_c_out("extern int %s(int event);\n" % (event[1]))
 
         kernel_main_c_out("DEFINE_EVENT(%s, %s);\n" % (event[0], event[1]))
+
+        if (event[0].startswith("_TaskIrqEvt")):
+            num_task_irqs += 1
+
+    if (num_task_irqs > 0):
+        kernel_main_c_out("const kevent_t _TaskIrqEvt_objIds[] = {\n")
+
+        for i in range(0, num_task_irqs):
+            kernel_main_c_out(
+                "    (kevent_t)&_k_event_obj__TaskIrqEvt%d,\n" % (i)
+            )
+
+        kernel_main_c_out("};\n")
+
 
 def kernel_main_c_mutexes():
     """ Generate mutex variables """
@@ -888,6 +905,7 @@ def generate_obj_id_lines(obj_types):
 def generate_sysgen_h_obj_ids():
 
     global sysgen_h_data
+    global num_task_irqs
 
     # mutex object ids
 

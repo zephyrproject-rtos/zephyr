@@ -29,6 +29,13 @@ Pipes
    :project: Zephyr
    :content-only:
 
+Interrupt Services
+******************
+
+.. doxygengroup:: microkernel_irq
+   :project: Zephyr
+   :content-only:
+
 Mailboxes
 *********
 
