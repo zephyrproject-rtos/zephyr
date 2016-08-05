@@ -175,7 +175,7 @@ ssize_t fs_write(ZFILE *zfp, const void *ptr, size_t size);
  * @param offset Relative location to move the file pointer to
  * @param whence Relative location from where offset is to be calculated.
  * - SEEK_SET = from beginning of file
- * - SEE_CUR = from current position,
+ * - SEEK_CUR = from current position,
  * - SEEK_END = from end of file.
  *
  * @retval 0 Success
