@@ -24,7 +24,8 @@
 #define _LOW_POWER_MODE			0xD02ED02E
 #define _DEVICE_SUSPEND_ONLY_MODE	0x1D1E1D1E
 
-#define _GPS0	0xb0800100
+/* GPS1 is reserved for PM use */
+#define _GPS1	0xb0800104
 
 /* Variables used to save CPU state */
 uint64_t _pm_save_gdtr;
@@ -38,16 +39,16 @@ void _sys_soc_set_power_policy(uint32_t pm_policy)
 {
 	switch (pm_policy) {
 	case SYS_PM_DEEP_SLEEP:
-		sys_write32(_DEEP_SLEEP_MODE, _GPS0);
+		sys_write32(_DEEP_SLEEP_MODE, _GPS1);
 		break;
 	case SYS_PM_LOW_POWER_STATE:
-		sys_write32(_LOW_POWER_MODE, _GPS0);
+		sys_write32(_LOW_POWER_MODE, _GPS1);
 		break;
 	case SYS_PM_DEVICE_SUSPEND_ONLY:
-		sys_write32(_DEVICE_SUSPEND_ONLY_MODE, _GPS0);
+		sys_write32(_DEVICE_SUSPEND_ONLY_MODE, _GPS1);
 		break;
 	case SYS_PM_NOT_HANDLED:
-		sys_write32(0, _GPS0);
+		sys_write32(0, _GPS1);
 		break;
 	default:
 		__ASSERT(0, "Unknown PM policy");
@@ -59,7 +60,7 @@ int _sys_soc_get_power_policy(void)
 {
 	uint32_t mode;
 
-	mode = sys_read32(_GPS0);
+	mode = sys_read32(_GPS1);
 
 	switch (mode) {
 	case _DEEP_SLEEP_MODE:
