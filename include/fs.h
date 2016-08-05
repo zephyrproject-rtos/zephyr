@@ -24,10 +24,10 @@
 extern "C" {
 #endif
 
-/** Create a ZFILE type similar to FILE for familiarity */
+/* Create a ZFILE type similar to FILE for familiarity */
 typedef struct _zfile_object ZFILE;
 
-/** Create a ZDIR type similar to DIR for familiarity */
+/* Create a ZDIR type similar to DIR for familiarity */
 typedef struct _zdir_object ZDIR;
 
 enum dir_entry_type {
@@ -35,11 +35,42 @@ enum dir_entry_type {
 	DIR_ENTRY_DIR
 };
 
+/**
+ * @brief File System Functions
+ * @defgroup data_structures File System Data Structures
+ * @ingroup file_system
+ * @{
+ */
+
+/** @var ZFILE
+ * @brief File object representing an open file
+ */
+
+/** @var ZDIR
+ * @brief Directory object representing an open directory
+ */
+
+/**
+ * @brief Structure to receive file or directory information
+ *
+ * Used in functions that reads the directory entries to get
+ * file or directory information.
+ *
+ * @param dir_entry_type Whether file or directory
+ * - DIR_ENTRY_FILE
+ * - DIR_ENTRY_DIR
+ * @param name Name of directory or file
+ * @param size Size of file. 0 if directory
+ */
 struct zfs_dirent {
-	enum dir_entry_type type;	/* Whether file or directory */
-	char name[MAX_FILE_NAME + 1];	/* Name of directory or file */
-	size_t size;			/* Size of file. 0 if directory */
+	enum dir_entry_type type;
+	char name[MAX_FILE_NAME + 1];
+	size_t size;
 };
+
+/**
+ * @}
+ */
 
 #ifndef SEEK_SET
 #define SEEK_SET	0	/* Seek from beginning of file. */
@@ -50,6 +81,13 @@ struct zfs_dirent {
 #ifndef SEEK_END
 #define SEEK_END	2	/* Seek from end of file.  */
 #endif
+
+/**
+ * @brief File System APIs
+ * @defgroup file_system_api File System APIs
+ * @ingroup file_system
+ * @{
+ */
 
 /**
  * @brief File open
@@ -136,9 +174,9 @@ ssize_t fs_write(ZFILE *zfp, const void *ptr, size_t size);
  * @param zfp Pointer to the file object
  * @param offset Relative location to move the file pointer to
  * @param whence Relative location from where offset is to be calculated.
- * SEEK_SET = from beginning of file
- * SEE_CUR = from current position,
- * SEEK_END = from end of file.
+ * - SEEK_SET = from beginning of file
+ * - SEE_CUR = from current position,
+ * - SEEK_END = from end of file.
  *
  * @retval 0 Success
  * @retval -ERRNO errno code if error.
@@ -222,6 +260,10 @@ int fs_closedir(ZDIR *zdp);
  * @retval -ERRNO errno code if error
  */
 int fs_stat(const char *path, struct zfs_dirent *entry);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
