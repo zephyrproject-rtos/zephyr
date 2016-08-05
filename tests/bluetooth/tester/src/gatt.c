@@ -699,9 +699,9 @@ static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint8_t err)
 {
 	if (err != 0) {
-		SYS_LOG_ERR("Indication fail\n");
+		SYS_LOG_ERR("Indication fail");
 	} else {
-		SYS_LOG_DBG("Indication success\n");
+		SYS_LOG_DBG("Indication success");
 	}
 }
 
