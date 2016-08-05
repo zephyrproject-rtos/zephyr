@@ -23,7 +23,6 @@
 
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
-#include <misc/printk.h>
 #include <misc/byteorder.h>
 #include <console/uart_pipe.h>
 
@@ -172,7 +171,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
 	len = sys_le16_to_cpu(cmd->len);
 	if (len > BTP_MTU - sizeof(*cmd)) {
-		printk("BT tester: invalid packet length\n");
+		SYS_LOG_ERR("BT tester: invalid packet length");
 		*off = 0;
 		return buf;
 	}
@@ -183,7 +182,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
 	new_buf =  nano_fifo_get(&avail_queue, TICKS_NONE);
 	if (!new_buf) {
-		printk("BT tester: RX overflow\n");
+		SYS_LOG_ERR("BT tester: RX overflow");
 		*off = 0;
 		return buf;
 	}
