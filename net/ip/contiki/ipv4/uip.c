@@ -1249,7 +1249,7 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
   /* Demultiplex this UDP packet between the UDP "connections". */
   for(i = 0, uip_set_udp_conn(buf) = &uip_udp_conns[0];
       i < UIP_UDP_CONNS && uip_udp_conn(buf) < &uip_udp_conns[UIP_UDP_CONNS];
-      i++, ++uip_set_udp_conn(buf)) {
+      i++, uip_set_udp_conn(buf) += sizeof(struct uip_udp_conn)) {
     /* If the local UDP port is non-zero, the connection is considered
        to be used. If so, the local port number is checked against the
        destination port number in the received packet. If the two port
