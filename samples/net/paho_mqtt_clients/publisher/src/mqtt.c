@@ -569,17 +569,18 @@ int mqtt_handle_pingreq(struct mqtt_app_ctx_t *app)
 
 	rc = mqtt_pack_pingresp(tx_buf);
 	if (rc != 0) {
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_pack_pingresp;
 	}
 
 	rc = netz_tx(netz_ctx, tx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
 	}
 
+error_mqtt_pack_pingresp:
 	nano_sem_give(&app->sem);
-	return 0;
+	return rc;
 }
 
 int mqtt_read(struct mqtt_app_ctx_t *app)
