@@ -98,46 +98,51 @@ int mqtt_connect(struct mqtt_app_ctx_t *app)
 
 	rc = mqtt_pack_connect(tx_buf, app->client);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_pack_connect;
 	}
 
 	rc = netz_tcp(netz_ctx);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_tcp;
 	}
 
 	rc = netz_tx(netz_ctx, tx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_tx;
 	}
 
 	rc = netz_rx(netz_ctx, rx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_rx;
 	}
 
 	rc = mqtt_unpack_connack(rx_buf, &session, &conn_ack);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_unpack_connack;
 	}
 
+	rc = -EINVAL;
 	if (app->client->clean_session == 1) {
-		nano_sem_give(&app->sem);
 		if (session == 0 && conn_ack == 0) {
-			return 0;
+			rc = 0;
 		}
-		return -EINVAL;
 	}
 	/*
 	 * TODO: validate CleanSession = 0
 	 */
+
+error_mqtt_pack_connect:
+error_netz_tcp:
+error_netz_tx:
+error_netz_rx:
+error_mqtt_unpack_connack:
 	nano_sem_give(&app->sem);
-	return 0;
+	return rc;
 }
 
 int mqtt_disconnect(struct mqtt_app_ctx_t *app)
@@ -148,17 +153,18 @@ int mqtt_disconnect(struct mqtt_app_ctx_t *app)
 
 	rc = mqtt_pack_disconnect(app->tx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_pack_disconnect;
 	}
 
 	rc = netz_tx(app->netz_ctx, app->tx_buf);
-	nano_sem_give(&app->sem);
 	if (rc != 0) {
-		return -EIO;
+		rc = -EIO;
 	}
 
-	return 0;
+error_mqtt_pack_disconnect:
+	nano_sem_give(&app->sem);
+	return rc;
 }
 
 
@@ -281,14 +287,14 @@ int mqtt_publish(struct mqtt_app_ctx_t *app, struct mqtt_msg_t *msg,
 
 	rc = mqtt_pack_publish(tx_buf, msg);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_pack_publish;
 	}
 
 	rc = netz_tx(netz_ctx, tx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_tx;
 	}
 
 	switch (msg->qos) {
@@ -298,26 +304,25 @@ int mqtt_publish(struct mqtt_app_ctx_t *app, struct mqtt_msg_t *msg,
 	case MQTT_QoS1:
 		rc = mqtt_publish_qos1(app, msg->pkt_id);
 		if (rc != 0) {
-			nano_sem_give(&app->sem);
-			return -EINVAL;
+			rc = -EINVAL;
 		}
 		break;
 
 	case MQTT_QoS2:
 		rc = mqtt_publish_qos2(app, msg->pkt_id);
 		if (rc != 0) {
-			nano_sem_give(&app->sem);
-			return -EINVAL;
+			rc = -EINVAL;
 		}
 		break;
 
 	default:
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
 	}
 
+error_mqtt_pack_publish:
+error_netz_tx:
 	nano_sem_give(&app->sem);
-	return 0;
+	return rc;
 }
 
 int mqtt_pingreq(struct mqtt_app_ctx_t *app)
@@ -338,35 +343,38 @@ int mqtt_pingreq(struct mqtt_app_ctx_t *app)
 
 	rc = mqtt_pack_pingreq(tx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_pack_pingreq;
 	}
 
 	rc = netz_tx(netz_ctx, tx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_tx;
 	}
 
 	rc = netz_rx(netz_ctx, rx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_rx;
 	}
 
 	rc = mqtt_unpack_ack(rx_buf, &pkt_type, &dup, &rcv_pkt_id);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_unpack_ack;
 	}
 
 	if (pkt_type != MQTT_PINGRESP) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
 	}
 
+error_mqtt_pack_pingreq:
+error_netz_tx:
+error_netz_rx:
+error_mqtt_unpack_ack:
 	nano_sem_give(&app->sem);
-	return 0;
+	return rc;
 }
 
 int mqtt_subscribe(struct mqtt_app_ctx_t *app,
@@ -391,35 +399,40 @@ int mqtt_subscribe(struct mqtt_app_ctx_t *app,
 
 	rc = mqtt_pack_subscribe(tx_buf, dup, pkt_id, topic, qos);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_pack_subscribe;
 	}
 
 	rc = netz_tx(netz_ctx, tx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_tx;
 	}
 
 	rc = netz_rx(netz_ctx, rx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_rx;
 	}
 
 	rc = mqtt_unpack_suback(rx_buf, &rcv_pkt_id, &granted_qos);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_unpack_suback;
 	}
 
 	if (rcv_pkt_id != pkt_id) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+	} else {
+		rc = granted_qos;
 	}
 
+error_mqtt_pack_subscribe:
+error_netz_tx:
+error_netz_rx:
+error_mqtt_unpack_suback:
 	nano_sem_give(&app->sem);
-	return granted_qos;
+	return rc;
 }
 
 int mqtt_unsubscribe(struct mqtt_app_ctx_t *app, char *topic)
@@ -442,35 +455,38 @@ int mqtt_unsubscribe(struct mqtt_app_ctx_t *app, char *topic)
 
 	rc = mqtt_pack_unsubscribe(tx_buf, dup, pkt_id, topic);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_pack_unsubscribe;
 	}
 
 	rc = netz_tx(netz_ctx, tx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_tx;
 	}
 
 	rc = netz_rx(netz_ctx, rx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_rx;
 	}
 
 	rc = mqtt_unpack_unsuback(rx_buf, &rcv_pkt_id);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto error_mqtt_unpack_unsuback;
 	}
 
 	if (rcv_pkt_id != pkt_id) {
-		nano_sem_give(&app->sem);
-		return -EINVAL;
+		rc = -EINVAL;
 	}
 
+error_mqtt_pack_unsubscribe:
+error_netz_tx:
+error_netz_rx:
+error_mqtt_unpack_unsuback:
 	nano_sem_give(&app->sem);
-	return 0;
+	return rc;
 }
 
 int mqtt_handle_publish(struct mqtt_app_ctx_t *app)
@@ -590,26 +606,23 @@ int mqtt_read(struct mqtt_app_ctx_t *app)
 	int pkt_type;
 	int rc;
 
-	nano_sem_take(&app->sem, TICKS_UNLIMITED);
-
 	netz_ctx = app->netz_ctx;
 	rx_buf = app->rx_buf;
 
+	nano_sem_take(&app->sem, TICKS_UNLIMITED);
 
 	rc = netz_rx(netz_ctx, rx_buf);
 	if (rc != 0) {
-		nano_sem_give(&app->sem);
-		return -EIO;
+		rc = -EIO;
+		goto error_netz_rx;
 	}
 
 	if (rx_buf->length < 2) {
-		nano_sem_give(&app->sem);
-		return -ENOMEM;
+		rc = -ENOMEM;
+		goto error_nomem;
 	}
 
 	pkt_type = (rx_buf->buf[0] & 0xF0) >> 4;
-
-	rc = -EINVAL;
 
 	/* This switch-case will be used for packet-handling routines
 	 * that will be coded in future releases.
@@ -636,8 +649,13 @@ int mqtt_read(struct mqtt_app_ctx_t *app)
 		break;
 	case MQTT_DISCONNECT:
 		break;
+	default:
+		rc = -EINVAL;
+		break;
 	}
 
+error_netz_rx:
+error_nomem:
 	nano_sem_give(&app->sem);
 	return rc;
 }
