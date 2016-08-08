@@ -178,6 +178,44 @@ static inline void sys_slist_append(sys_slist_t *list,
 }
 
 /**
+ * @brief Append a list to the given list
+ *
+ * Append a singly-linked, NULL-terminated list consisting of nodes containing
+ * the pointer to the next node as the first element of a node, to @a list.
+ *
+ * @param list A pointer on the list to affect
+ * @param head A pointer to the first element of the list to append
+ * @param tail A pointer to the last element of the list to append
+ */
+static inline void sys_slist_append_list(sys_slist_t *list,
+					 void *head, void *tail)
+{
+	if (!list->tail) {
+		list->head = (sys_snode_t *)head;
+		list->tail = (sys_snode_t *)tail;
+	} else {
+		list->tail->next = (sys_snode_t *)head;
+		list->tail = (sys_snode_t *)tail;
+	}
+}
+
+/**
+ * @brief merge two slists, appending the second one to the first
+ *
+ * When the operation is completed, the original list is empty.
+ *
+ * @param list A pointer on the list to affect
+ * @param list_to_append A pointer to the list to append.
+ */
+static inline void sys_slist_merge_slist(sys_slist_t *list,
+					 sys_slist_t *list_to_append)
+{
+	sys_slist_append_list(list, list_to_append->head,
+				    list_to_append->tail);
+	sys_slist_init(list);
+}
+
+/**
  * @brief Insert a node to the given list
  *
  * @param list A pointer on the list to affect
