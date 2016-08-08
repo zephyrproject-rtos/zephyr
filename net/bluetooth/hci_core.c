@@ -635,7 +635,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 		 */
 		if (conn->type == BT_CONN_TYPE_BR &&
 		    atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_NOBOND)) {
-			bt_keys_clear(conn->keys, BT_KEYS_LINK_KEY);
+			bt_keys_link_key_clear(conn->br.link_key);
 		}
 #endif
 		bt_conn_unref(conn);
@@ -1105,11 +1105,12 @@ static void update_sec_level_br(struct bt_conn *conn)
 		return;
 	}
 
-	if (conn->keys && (conn->keys->keys & BT_KEYS_LINK_KEY)) {
-		conn->sec_level = BT_SECURITY_MEDIUM;
-		if (atomic_test_bit(conn->keys->flags,
-				    BT_KEYS_AUTHENTICATED)) {
+	if (conn->br.link_key) {
+		if (atomic_test_bit(conn->br.link_key->flags,
+				    BT_LINK_KEY_AUTHENTICATED)) {
 			conn->sec_level = BT_SECURITY_HIGH;
+		} else {
+			conn->sec_level = BT_SECURITY_MEDIUM;
 		}
 	} else {
 		BT_WARN("No BR/EDR link key found");
@@ -1192,10 +1193,10 @@ static void link_key_notify(struct net_buf *buf)
 
 	BT_DBG("%s, link type 0x%02x", bt_addr_str(&evt->bdaddr), evt->key_type);
 
-	if (!conn->keys) {
-		conn->keys = bt_keys_get_link_key(&evt->bdaddr);
+	if (!conn->br.link_key) {
+		conn->br.link_key = bt_keys_get_link_key(&evt->bdaddr);
 	}
-	if (!conn->keys) {
+	if (!conn->br.link_key) {
 		BT_ERR("Can't update keys for %s", bt_addr_str(&evt->bdaddr));
 		bt_conn_unref(conn);
 		return;
@@ -1209,16 +1210,16 @@ static void link_key_notify(struct net_buf *buf)
 		 */
 		if (atomic_test_and_clear_bit(conn->flags,
 					      BT_CONN_BR_LEGACY_SECURE)) {
-			atomic_set_bit(conn->keys->flags,
-				       BT_KEYS_AUTHENTICATED);
+			atomic_set_bit(conn->br.link_key->flags,
+				       BT_LINK_KEY_AUTHENTICATED);
 		}
-		memcpy(conn->keys->link_key.val, evt->link_key, 16);
+		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	case BT_LK_UNAUTH_COMBINATION_P192:
 	case BT_LK_AUTH_COMBINATION_P192:
 		if (evt->key_type == BT_LK_AUTH_COMBINATION_P192) {
-			atomic_set_bit(conn->keys->flags,
-				       BT_KEYS_AUTHENTICATED);
+			atomic_set_bit(conn->br.link_key->flags,
+				       BT_LINK_KEY_AUTHENTICATED);
 		}
 		/*
 		 * Update keys database if authentication bond is required to
@@ -1226,7 +1227,7 @@ static void link_key_notify(struct net_buf *buf)
 		 * the contrary.
 		 */
 		if (bt_conn_ssp_get_auth(conn) > BT_HCI_NO_BONDING_MITM) {
-			memcpy(conn->keys->link_key.val, evt->link_key, 16);
+			memcpy(conn->br.link_key->val, evt->link_key, 16);
 		} else {
 			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
 		}
@@ -1290,11 +1291,11 @@ static void link_key_req(struct net_buf *buf)
 		return;
 	}
 
-	if (!conn->keys) {
-		conn->keys = bt_keys_find_link_key(&evt->bdaddr);
+	if (!conn->br.link_key) {
+		conn->br.link_key = bt_keys_find_link_key(&evt->bdaddr);
 	}
 
-	if (!conn->keys) {
+	if (!conn->br.link_key) {
 		link_key_neg_reply(&evt->bdaddr);
 		bt_conn_unref(conn);
 		return;
@@ -1304,14 +1305,15 @@ static void link_key_req(struct net_buf *buf)
 	 * Enforce regenerate by controller stronger link key since found one
 	 * in database not covers requested security level.
 	 */
-	if (!atomic_test_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED) &&
+	if (!atomic_test_bit(conn->br.link_key->flags,
+			     BT_LINK_KEY_AUTHENTICATED) &&
 	    conn->required_sec_level > BT_SECURITY_MEDIUM) {
 		link_key_neg_reply(&evt->bdaddr);
 		bt_conn_unref(conn);
 		return;
 	}
 
-	link_key_reply(&evt->bdaddr, conn->keys->link_key.val);
+	link_key_reply(&evt->bdaddr, conn->br.link_key->val);
 	bt_conn_unref(conn);
 }
 
@@ -1886,7 +1888,7 @@ static void read_remote_ext_features_complete(struct net_buf *buf)
 
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BLUETOOTH_SMP)
 static void update_sec_level(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
@@ -1894,9 +1896,9 @@ static void update_sec_level(struct bt_conn *conn)
 		return;
 	}
 
-	if (conn->keys && atomic_test_bit(conn->keys->flags,
-					  BT_KEYS_AUTHENTICATED)) {
-		if (conn->keys->keys & BT_KEYS_LTK_P256) {
+	if (conn->le.keys && atomic_test_bit(conn->le.keys->flags,
+					     BT_KEYS_AUTHENTICATED)) {
+		if (conn->le.keys->keys & BT_KEYS_LTK_P256) {
 			conn->sec_level = BT_SECURITY_FIPS;
 		} else {
 			conn->sec_level = BT_SECURITY_HIGH;
@@ -1910,7 +1912,9 @@ static void update_sec_level(struct bt_conn *conn)
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
 	}
 }
+#endif /* CONFIG_BLUETOOTH_SMP */
 
+#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 static void hci_encrypt_change(struct net_buf *buf)
 {
 	struct bt_hci_evt_encrypt_change *evt = (void *)buf->data;
@@ -1942,26 +1946,28 @@ static void hci_encrypt_change(struct net_buf *buf)
 
 	conn->encrypt = evt->encrypt;
 
-	/*
-	 * we update keys properties only on successful encryption to avoid
-	 * losing valid keys if encryption was not successful
-	 *
-	 * Update keys with last pairing info for proper sec level update.
-	 * This is done only for LE transport, for BR/EDR keys are updated on
-	 * HCI 'Link Key Notification Event'
-	 */
-	if (conn->encrypt && conn->type == BT_CONN_TYPE_LE) {
-		bt_smp_update_keys(conn);
-	}
-
+#if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
+		/*
+		 * we update keys properties only on successful encryption to
+		 * avoid losing valid keys if encryption was not successful.
+		 *
+		 * Update keys with last pairing info for proper sec level
+		 * update. This is done only for LE transport, for BR/EDR keys
+		 * are updated on HCI 'Link Key Notification Event'
+		 */
+		if (conn->encrypt) {
+			bt_smp_update_keys(conn);
+		}
 		update_sec_level(conn);
+	}
+#endif /* CONFIG_BLUETOOTH_SMP */
 #if defined(CONFIG_BLUETOOTH_BREDR)
-	} else {
+	if (conn->type == BT_CONN_TYPE_BR) {
 		update_sec_level_br(conn);
 		reset_pairing(conn);
-#endif /* CONFIG_BLUETOOTH_BREDR */
 	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
@@ -1995,14 +2001,17 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 	 * updated on HCI 'Link Key Notification Event', therefore update here
 	 * only security level based on available keys and encryption state.
 	 */
+#if defined(CONFIG_BLUETOOTH_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_update_keys(conn);
 		update_sec_level(conn);
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	} else {
-		update_sec_level_br(conn);
-#endif /* CONFIG_BLUETOOTH_BREDR */
 	}
+#endif /* CONFIG_BLUETOOTH_SMP */
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		update_sec_level_br(conn);
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_security_changed(conn);
@@ -2053,15 +2062,15 @@ static void le_ltk_request(struct net_buf *buf)
 		goto done;
 	}
 
-	if (!conn->keys) {
-		conn->keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
-		if (!conn->keys) {
-			conn->keys = bt_keys_find(BT_KEYS_SLAVE_LTK,
-						  &conn->le.dst);
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
+		if (!conn->le.keys) {
+			conn->le.keys = bt_keys_find(BT_KEYS_SLAVE_LTK,
+						     &conn->le.dst);
 		}
 	}
 
-	if (conn->keys && (conn->keys->keys & BT_KEYS_LTK_P256) &&
+	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_LTK_P256) &&
 	    evt->rand == 0 && evt->ediv == 0) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
 
@@ -2076,10 +2085,11 @@ static void le_ltk_request(struct net_buf *buf)
 		cp->handle = evt->handle;
 
 		/* use only enc_size bytes of key for encryption */
-		memcpy(cp->ltk, conn->keys->ltk.val, conn->keys->enc_size);
-		if (conn->keys->enc_size < sizeof(cp->ltk)) {
-			memset(cp->ltk + conn->keys->enc_size, 0,
-			       sizeof(cp->ltk) - conn->keys->enc_size);
+		memcpy(cp->ltk, conn->le.keys->ltk.val,
+		       conn->le.keys->enc_size);
+		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
+			memset(cp->ltk + conn->le.keys->enc_size, 0,
+			       sizeof(cp->ltk) - conn->le.keys->enc_size);
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
@@ -2087,9 +2097,9 @@ static void le_ltk_request(struct net_buf *buf)
 	}
 
 #if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
-	if (conn->keys && (conn->keys->keys & BT_KEYS_SLAVE_LTK) &&
-	    conn->keys->slave_ltk.rand == evt->rand &&
-	    conn->keys->slave_ltk.ediv == evt->ediv) {
+	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_SLAVE_LTK) &&
+	    conn->le.keys->slave_ltk.rand == evt->rand &&
+	    conn->le.keys->slave_ltk.ediv == evt->ediv) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
 		struct net_buf *buf;
 
@@ -2104,11 +2114,11 @@ static void le_ltk_request(struct net_buf *buf)
 		cp->handle = evt->handle;
 
 		/* use only enc_size bytes of key for encryption */
-		memcpy(cp->ltk, conn->keys->slave_ltk.val,
-		       conn->keys->enc_size);
-		if (conn->keys->enc_size < sizeof(cp->ltk)) {
-			memset(cp->ltk + conn->keys->enc_size, 0,
-			       sizeof(cp->ltk) - conn->keys->enc_size);
+		memcpy(cp->ltk, conn->le.keys->slave_ltk.val,
+		       conn->le.keys->enc_size);
+		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
+			memset(cp->ltk + conn->le.keys->enc_size, 0,
+			       sizeof(cp->ltk) - conn->le.keys->enc_size);
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);

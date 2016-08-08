@@ -38,7 +38,6 @@
 
 static struct bt_keys key_pool[CONFIG_BLUETOOTH_MAX_PAIRED];
 
-#if defined(CONFIG_BLUETOOTH_SMP)
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
@@ -159,105 +158,16 @@ struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr)
 
 	return NULL;
 }
-#endif /* CONFIG_BLUETOOTH_SMP */
 
 void bt_keys_add_type(struct bt_keys *keys, int type)
 {
 	keys->keys |= type;
 }
 
-void bt_keys_clear(struct bt_keys *keys, int type)
+void bt_keys_clear(struct bt_keys *keys)
 {
-	BT_DBG("keys for %s type %d", bt_addr_le_str(&keys->addr), type);
+	BT_DBG("keys for %s", bt_addr_le_str(&keys->addr));
 
-	keys->keys &= ~type;
-
-	if (!keys->keys) {
-		memset(keys, 0, sizeof(*keys));
-	}
+	memset(keys, 0, sizeof(*keys));
 }
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
-static struct bt_keys *bt_keys_get_addr_br(const bt_addr_t *addr)
-{
-	struct bt_keys *keys;
-	int i;
-
-	BT_DBG("%s", bt_addr_str(addr));
-
-	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
-		keys = &key_pool[i];
-
-		/*
-		 * When both LE and BR/EDR keys are for the same device,
-		 * the bt_addr_le_t is the public address, i.e. the same
-		 * as the BR/EDR address.
-		 */
-		if (keys->addr.type == BT_ADDR_LE_PUBLIC &&
-		    !bt_addr_cmp(&keys->addr.a, addr)) {
-			return keys;
-		}
-
-		/*
-		 * BT_ADDR_LE_ANY has the same type of as BT_ADDR_LE_PUBLIC
-		 * value. No need to make redundant comparison against
-		 * BT_ADDR_LE_PUBLIC.
-		 */
-		if (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
-			bt_addr_copy(&keys->addr.a, addr);
-			BT_DBG("created %p for %s", keys, bt_addr_str(addr));
-			return keys;
-		}
-	}
-
-	BT_DBG("unable to create keys for %s", bt_addr_str(addr));
-
-	return NULL;
-}
-
-struct bt_keys *bt_keys_find_link_key(const bt_addr_t *addr)
-{
-	struct bt_keys *keys;
-	int i;
-
-	BT_DBG("%s", bt_addr_str(addr));
-
-	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
-		keys = &key_pool[i];
-
-		/*
-		 * When both LE and BR/EDR keys are for the same device,
-		 * the bt_addr_le_t is the public address, i.e. the same
-		 * as the BR/EDR address.
-		 */
-		if (keys->addr.type == BT_ADDR_LE_PUBLIC &&
-		    (keys->keys & BT_KEYS_LINK_KEY) &&
-		    !bt_addr_cmp(&keys->addr.a, addr)) {
-			return keys;
-		}
-	}
-
-	return NULL;
-}
-
-struct bt_keys *bt_keys_get_link_key(const bt_addr_t *addr)
-{
-	struct bt_keys *keys;
-
-	BT_DBG("%s", bt_addr_str(addr));
-
-	keys = bt_keys_find_link_key(addr);
-	if (keys) {
-		return keys;
-	}
-
-	keys = bt_keys_get_addr_br(addr);
-	if (!keys) {
-		return NULL;
-	}
-
-	bt_keys_add_type(keys, BT_KEYS_LINK_KEY);
-
-	return keys;
-}
-#endif /* CONFIG_BLUETOOTH_BREDR */

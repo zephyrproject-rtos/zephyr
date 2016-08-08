@@ -618,7 +618,17 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 {
-	return conn->keys ? conn->keys->enc_size : 0;
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		return conn->br.link_key ? 16 : 0;
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
+#if defined(CONFIG_BLUETOOTH_SMP)
+	return conn->le.keys ? conn->le.keys->enc_size : 0;
+#else
+	return 0;
+#endif /* CONFIG_BLUETOOTH_SMP */
 }
 
 void bt_conn_security_changed(struct bt_conn *conn)
@@ -657,38 +667,39 @@ static int start_security(struct bt_conn *conn)
 #if defined(CONFIG_BLUETOOTH_CENTRAL) && defined(CONFIG_BLUETOOTH_SMP)
 	case BT_HCI_ROLE_MASTER:
 	{
-		if (!conn->keys) {
-			conn->keys = bt_keys_find(BT_KEYS_LTK_P256,
-						  &conn->le.dst);
-			if (!conn->keys) {
-				conn->keys = bt_keys_find(BT_KEYS_LTK,
-							  &conn->le.dst);
+		if (!conn->le.keys) {
+			conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256,
+						     &conn->le.dst);
+			if (!conn->le.keys) {
+				conn->le.keys = bt_keys_find(BT_KEYS_LTK,
+							     &conn->le.dst);
 			}
 		}
 
-		if (!conn->keys ||
-		    !(conn->keys->keys & (BT_KEYS_LTK | BT_KEYS_LTK_P256))) {
+		if (!conn->le.keys ||
+		    !(conn->le.keys->keys & (BT_KEYS_LTK | BT_KEYS_LTK_P256))) {
 			return bt_smp_send_pairing_req(conn);
 		}
 
 		if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
-		    !atomic_test_bit(conn->keys->flags,
+		    !atomic_test_bit(conn->le.keys->flags,
 				     BT_KEYS_AUTHENTICATED)) {
 			return bt_smp_send_pairing_req(conn);
 		}
 
 		if (conn->required_sec_level > BT_SECURITY_HIGH &&
-		    !atomic_test_bit(conn->keys->flags,
+		    !atomic_test_bit(conn->le.keys->flags,
 				     BT_KEYS_AUTHENTICATED) &&
-		    !(conn->keys->keys & BT_KEYS_LTK_P256)) {
+		    !(conn->le.keys->keys & BT_KEYS_LTK_P256)) {
 			return bt_smp_send_pairing_req(conn);
 		}
 
 		/* LE SC LTK and legacy master LTK are stored in same place */
-		return bt_conn_le_start_encryption(conn, conn->keys->ltk.rand,
-						   conn->keys->ltk.ediv,
-						   conn->keys->ltk.val,
-						   conn->keys->enc_size);
+		return bt_conn_le_start_encryption(conn,
+						   conn->le.keys->ltk.rand,
+						   conn->le.keys->ltk.ediv,
+						   conn->le.keys->ltk.val,
+						   conn->le.keys->enc_size);
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL && CONFIG_BLUETOOTH_SMP */
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL) && defined(CONFIG_BLUETOOTH_SMP)

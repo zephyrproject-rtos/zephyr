@@ -53,6 +53,8 @@ struct bt_conn_le {
 
 	uint8_t			features[8];
 
+	struct bt_keys		*keys;
+
 	/* Delayed work for connection update handling */
 	struct nano_delayed_work update_work;
 };
@@ -76,6 +78,8 @@ struct bt_conn_br {
 	uint8_t			pairing_method;
 	/* remote LMP features pages per 8 bytes each */
 	uint8_t			features[LMP_MAX_PAGES][8];
+
+	struct bt_keys_link_key	*link_key;
 };
 #endif
 
@@ -99,8 +103,6 @@ struct bt_conn {
 
 	/* Queue for outgoing ACL data */
 	struct nano_fifo	tx_queue;
-
-	struct bt_keys		*keys;
 
 	/* L2CAP channels */
 	void			*channels;

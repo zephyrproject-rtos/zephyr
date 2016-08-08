@@ -574,8 +574,8 @@ static void smp_timeout(struct nano_work *work)
 	 * pairing failed and don't store any keys from this pairing.
 	 */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR) &&
-	    smp->chan.chan.conn->keys) {
-		bt_keys_clear(smp->chan.chan.conn->keys, BT_KEYS_ALL);
+	    smp->chan.chan.conn->le.keys) {
+		bt_keys_clear(smp->chan.chan.conn->le.keys);
 	}
 
 	smp_reset(smp);
@@ -767,7 +767,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 static void legacy_distribute_keys(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	struct bt_keys *keys = conn->keys;
+	struct bt_keys *keys = conn->le.keys;
 
 	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
 		struct bt_smp_encrypt_info *info;
@@ -829,7 +829,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 static void bt_smp_distribute_keys(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	struct bt_keys *keys = conn->keys;
+	struct bt_keys *keys = conn->le.keys;
 
 	if (!keys) {
 		BT_ERR("No keys space for %s", bt_addr_le_str(&conn->le.dst));
@@ -2054,8 +2054,8 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 	 * so if there are any keys distributed, shall be cleared.
 	 */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR) &&
-	    smp->chan.chan.conn->keys) {
-		bt_keys_clear(smp->chan.chan.conn->keys, BT_KEYS_ALL);
+	    smp->chan.chan.conn->le.keys) {
+		bt_keys_clear(smp->chan.chan.conn->le.keys);
 	}
 
 	smp_reset(smp);
@@ -2224,20 +2224,21 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		auth = req->auth_req & BT_SMP_AUTH_MASK;
 	}
 
-	if (!conn->keys) {
-		conn->keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
-		if (!conn->keys) {
-			conn->keys = bt_keys_find(BT_KEYS_LTK, &conn->le.dst);
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
+		if (!conn->le.keys) {
+			conn->le.keys = bt_keys_find(BT_KEYS_LTK,
+						     &conn->le.dst);
 		}
 	}
 
-	if (!conn->keys) {
+	if (!conn->le.keys) {
 		goto pair;
 	}
 
 	/* if MITM required key must be authenticated */
 	if ((auth & BT_SMP_AUTH_MITM) &&
-	    !atomic_test_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED)) {
+	    !atomic_test_bit(conn->le.keys->flags, BT_KEYS_AUTHENTICATED)) {
 		if (get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT) {
 			BT_INFO("New auth requirements: 0x%x, repairing",
 				auth);
@@ -2249,16 +2250,17 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		goto pair;
 	}
 
-	/* if LE SC required and no p256 key present reapair */
-	if ((auth & BT_SMP_AUTH_SC) && !(conn->keys->keys & BT_KEYS_LTK_P256)) {
+	/* if LE SC required and no p256 key present repair */
+	if ((auth & BT_SMP_AUTH_SC) &&
+	    !(conn->le.keys->keys & BT_KEYS_LTK_P256)) {
 		BT_INFO("New auth requirements: 0x%x, repairing", auth);
 		goto pair;
 	}
 
-	if (bt_conn_le_start_encryption(conn, conn->keys->ltk.rand,
-					conn->keys->ltk.ediv,
-					conn->keys->ltk.val,
-					conn->keys->enc_size) < 0) {
+	if (bt_conn_le_start_encryption(conn, conn->le.keys->ltk.rand,
+					conn->le.keys->ltk.ediv,
+					conn->le.keys->ltk.val,
+					conn->le.keys->enc_size) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2608,7 +2610,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
-	struct bt_keys *keys = chan->conn->keys;
+	struct bt_keys *keys = chan->conn->le.keys;
 
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
@@ -2622,7 +2624,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 		 */
 		if (!keys->keys ||
 		    atomic_test_bit(keys->flags, BT_KEYS_DEBUG)) {
-			bt_keys_clear(keys, BT_KEYS_ALL);
+			bt_keys_clear(keys);
 		}
 	}
 
@@ -3388,12 +3390,12 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 * If link was successfully encrypted cleanup old keys as from now on
 	 * only keys distributed in this pairing or LTK from LE SC will be used.
 	 */
-	if (conn->keys) {
-		bt_keys_clear(conn->keys, BT_KEYS_ALL);
+	if (conn->le.keys) {
+		bt_keys_clear(conn->le.keys);
 	}
 
-	conn->keys = bt_keys_get_addr(&conn->le.dst);
-	if (!conn->keys) {
+	conn->le.keys = bt_keys_get_addr(&conn->le.dst);
+	if (!conn->le.keys) {
 		BT_ERR("Unable to get keys for %s",
 		       bt_addr_le_str(&conn->le.dst));
 		return;
@@ -3401,7 +3403,7 @@ void bt_smp_update_keys(struct bt_conn *conn)
 
 	/* mark keys as debug */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY)) {
-		atomic_set_bit(conn->keys->flags, BT_KEYS_DEBUG);
+		atomic_set_bit(conn->le.keys->flags, BT_KEYS_DEBUG);
 	}
 
 	/*
@@ -3413,16 +3415,16 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
 	case PASSKEY_CONFIRM:
-		atomic_set_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED);
+		atomic_set_bit(conn->le.keys->flags, BT_KEYS_AUTHENTICATED);
 		break;
 	case JUST_WORKS:
 	default:
 		/* unauthenticated key, clear it */
-		atomic_clear_bit(conn->keys->flags, BT_KEYS_AUTHENTICATED);
+		atomic_clear_bit(conn->le.keys->flags, BT_KEYS_AUTHENTICATED);
 		break;
 	}
 
-	conn->keys->enc_size = get_encryption_key_size(smp);
+	conn->le.keys->enc_size = get_encryption_key_size(smp);
 
 	/*
 	 * Store LTK if LE SC is used, this is safe since LE SC is mutually
@@ -3431,11 +3433,11 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC) &&
 	    atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
-		bt_keys_add_type(conn->keys, BT_KEYS_LTK_P256);
-		memcpy(conn->keys->ltk.val, smp->tk,
-		       sizeof(conn->keys->ltk.val));
-		conn->keys->ltk.rand = 0;
-		conn->keys->ltk.ediv = 0;
+		bt_keys_add_type(conn->le.keys, BT_KEYS_LTK_P256);
+		memcpy(conn->le.keys->ltk.val, smp->tk,
+		       sizeof(conn->le.keys->ltk.val));
+		conn->le.keys->ltk.rand = 0;
+		conn->le.keys->ltk.ediv = 0;
 	}
 }
 
