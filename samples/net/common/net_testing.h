@@ -52,7 +52,7 @@ static uint8_t net_testing_my_mac[] = net_testing_client_mac;
 
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
-#if defined(CONFIG_NET_TESTING_USE_RFC3849_ADDRESSES)
+#if NET_TESTING_USE_RFC3849_ADDRESSES
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
 #if defined(NET_TESTING_SERVER)
 #define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
@@ -61,7 +61,7 @@ static uint8_t net_testing_my_mac[] = net_testing_client_mac;
 #define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
 #define PEER_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 #endif /* NET_TESTING_SERVER */
-#else /* CONFIG_NET_TESTING_USE_RFC3849_ADDRESSES */
+#else /* NET_TESTING_USE_RFC3849_ADDRESSES */
 #if NET_TESTING_SERVER
 #define MY_IPADDR { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x5c, 0x25, 0xe2, 0xff, 0xfe, 0x15, 0x01, 0x01 } } }
 #define PEER_IPADDR { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0xc3, 0x1e, 0x47, 0xff, 0xfe, 0x15, 0x02, 0x02 } } }
@@ -69,7 +69,7 @@ static uint8_t net_testing_my_mac[] = net_testing_client_mac;
 #define PEER_IPADDR { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x5c, 0x25, 0xe2, 0xff, 0xfe, 0x15, 0x01, 0x01 } } }
 #define MY_IPADDR { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0xc3, 0x1e, 0x47, 0xff, 0xfe, 0x15, 0x02, 0x02 } } }
 #endif /* NET_TESTING_SERVER */
-#endif /* CONFIG_NET_TESTING_USE_RFC3849_ADDRESSES */
+#endif /* NET_TESTING_USE_RFC3849_ADDRESSES */
 
 static const struct in6_addr net_testing_in6addr_peer = PEER_IPADDR;
 static struct in6_addr net_testing_in6addr_my = MY_IPADDR;
