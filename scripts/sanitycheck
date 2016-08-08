@@ -64,7 +64,8 @@ Each testcase.ini block can define the following key/value pairs:
 
     { ARCH : <architecture>,
       PLATFORM : <platform>,
-      <all CONFIG_* key/value pairs in the test's generated defconfig>
+      <all CONFIG_* key/value pairs in the test's generated defconfig>,
+      *<env>: any environment variable available
     }
 
     The grammar for the expression language is as follows:
@@ -1349,6 +1350,7 @@ class TestSuite:
                         continue
 
                     defconfig = {"ARCH" : arch.name, "PLATFORM" : plat.name}
+                    defconfig.update(os.environ)
                     for tcase, tdefconfig in tc.defconfig.items():
                         p, k = tcase
                         if k == tc.ktype and p == plat:
