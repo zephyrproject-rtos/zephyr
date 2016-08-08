@@ -73,7 +73,7 @@ static void set_baud_rate(struct device *dev, uint32_t rate)
 	 *    f_clk == PCLK2,
 	 *    usartdiv = 234.375,
 	 *    mantissa = 234,
-	 *    fracion = 6 (0.375 * 16)
+	 *    fraction = 6 (0.375 * 16)
 	 */
 
 	div = clock / rate;

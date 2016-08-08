@@ -34,7 +34,7 @@ union __sr {
 	struct {
 		uint32_t pe :1 __packed;
 		uint32_t fe :1 __packed;
-		uint32_t ne :1 __packed;
+		uint32_t nf :1 __packed;
 		uint32_t ore :1 __packed;
 		uint32_t idle :1 __packed;
 		uint32_t rxne :1 __packed;
