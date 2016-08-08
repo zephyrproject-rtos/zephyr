@@ -262,7 +262,6 @@ static void usb_handle_control_transfer(uint8_t ep,
 				SYS_LOG_DBG("Read DATA Packet failed\n");
 				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 			}
-			SYS_LOG_DBG(chunk > 0 ? "?" : "");
 			return;
 		}
 
