@@ -948,21 +948,25 @@ int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
 	uint32_t i, j, data_len, bytes_to_copy;
 
 	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+		SYS_LOG_ERR("No valid endpoint");
 		return -EINVAL;
 	}
 
 	/* Check if OUT ep */
 	if (USB_DW_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+		SYS_LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 
 	/* Allow to read 0 bytes */
 	if (!data && max_data_len) {
+		SYS_LOG_ERR("Wrong arguments");
 		return -EINVAL;
 	}
 
 	/* Check if ep enabled */
 	if (!usb_dw_ep_is_enabled(ep)) {
+		SYS_LOG_ERR("Not enabled endpoint");
 		return -EINVAL;
 	}
 
