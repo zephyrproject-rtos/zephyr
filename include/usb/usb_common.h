@@ -83,6 +83,7 @@
 #define COMMUNICATION_DEVICE_CLASS_DATA 0x0A
 #define HID_CLASS                       0x03
 #define MASS_STORAGE_CLASS              0x08
+#define WIRELESS_DEVICE_CLASS           0xE0
 #define CUSTOM_CLASS                    0xFF
 #define DFU_CLASS                       0xFE
 
@@ -91,6 +92,7 @@
 #define BOOT_INTERFACE_SUBCLASS         0x01
 #define SCSI_TRANSPARENT_SUBCLASS       0x06
 #define DFU_INTERFACE_SUBCLASS          0x01
+#define RF_SUBCLASS                     0x01
 
 /* Protocols */
 #define V25TER_PROTOCOL                 0x01
@@ -98,5 +100,6 @@
 #define BULK_ONLY_PROTOCOL              0x50
 #define DFU_RUNTIME_PROTOCOL            0x01
 #define DFU_MODE_PROTOCOL               0x02
+#define BLUETOOTH_PROTOCOL              0x01
 
 #endif /* USB_COMMON_H_ */
