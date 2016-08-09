@@ -2996,6 +2996,7 @@ static int br_init(void)
 	struct net_buf *buf;
 	struct bt_hci_cp_write_ssp_mode *ssp_cp;
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
+	struct bt_hci_write_local_name *name_cp;
 	int err;
 
 	/* Get BR/EDR buffer size */
@@ -3029,6 +3030,21 @@ static int br_init(void)
 	inq_cp = net_buf_add(buf, sizeof(*inq_cp));
 	inq_cp->mode = 0x02;
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_INQUIRY_MODE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	/* Set local name */
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_LOCAL_NAME, sizeof(*name_cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	name_cp = net_buf_add(buf, sizeof(*name_cp));
+	strncpy(name_cp->local_name, CONFIG_BLUETOOTH_BREDR_NAME,
+		sizeof(name_cp->local_name));
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
 	if (err) {
 		return err;
 	}

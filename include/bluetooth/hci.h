@@ -342,6 +342,11 @@ struct bt_hci_cp_set_event_mask {
 
 #define BT_HCI_OP_RESET				BT_OP(BT_OGF_BASEBAND, 0x0003)
 
+#define BT_HCI_OP_WRITE_LOCAL_NAME		BT_OP(BT_OGF_BASEBAND, 0x0013)
+struct bt_hci_write_local_name {
+	uint8_t local_name[248];
+} __packed;
+
 #define BT_HCI_OP_WRITE_SCAN_ENABLE		BT_OP(BT_OGF_BASEBAND, 0x001a)
 #define BT_BREDR_SCAN_DISABLED			0x00
 #define BT_BREDR_SCAN_INQUIRY			0x01

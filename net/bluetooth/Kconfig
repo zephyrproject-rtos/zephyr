@@ -73,7 +73,9 @@ config BLUETOOTH_HCI_CMD_COUNT
 config BLUETOOTH_MAX_CMD_LEN
 	int "Maximum supported HCI command length"
 	default 64
+	default 255 if BLUETOOTH_BREDR
 	range 64 255
+	range 255 255 if BLUETOOTH_BREDR
 	help
 	  Maximum length of each HCI command.
 
@@ -416,11 +418,18 @@ config BLUETOOTH_BREDR
 	help
 	  This option enables Bluetooth BR/EDR support"
 
+if BLUETOOTH_BREDR
 config BLUETOOTH_RFCOMM
 	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
 	default n
-	depends on BLUETOOTH_BREDR
 	help
 	  This option enables Bluetooth RFCOMM support
 
+config BLUETOOTH_BREDR_NAME
+	string "Bluetooth BR/EDR device name"
+	default "Zephyr"
+	help
+	  Bluetooth BR/EDR name. Name can be up to 248 bytes long (excluding
+	  NULL termination). Can be empty string.
+endif # BLUETOOTH_BREDR
 endif # BLUETOOTH
