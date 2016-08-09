@@ -38,7 +38,7 @@
 
 extern void philEntry(void);
 
-#define STSIZE 1024
+#define STSIZE 512
 char __stack kernel_event_logger_stack[2][STSIZE];
 
 struct context_switch_data_t {
