@@ -68,9 +68,8 @@ extern "C" {
  *    word_size      [ 4 : 11 ]  - Size of a data frame in bits.
  *    RESERVED       [ 12 : 31 ] - Undefined or device-specific usage.
  *
- * max_sys_freq is the maximum frequency supported by the slave it
- * will deal with. This value depends on the host controller. The driver
- * can present a specific format for setting it.
+ * max_sys_freq is the clock divider supported by the the host
+ * spi controller.
  */
 struct spi_config {
 	uint32_t	config;
