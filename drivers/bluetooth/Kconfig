@@ -24,7 +24,7 @@ if BLUETOOTH
 
 menu "Bluetooth Drivers"
 
-if BLUETOOTH_STACK_HCI
+if BLUETOOTH_STACK_HCI || BLUETOOTH_STACK_HCI_RAW
 
 comment "Bluetooth HCI Driver Options"
 

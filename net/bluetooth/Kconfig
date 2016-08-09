@@ -42,6 +42,12 @@ config BLUETOOTH_STACK_NBLE
 	help
 	  Select the Bluetooth stack to use with Nordic BLE drivers.
 
+config BLUETOOTH_STACK_HCI_RAW
+	bool "Bluetooth RAW HCI access to the controller"
+	help
+	  This option allows to access Bluetooth controller
+	  from the application with the RAW HCI protocol.
+
 endchoice
 
 comment "HCI Stack Configurations"
@@ -62,7 +68,7 @@ config BLUETOOTH_LE
 	  Currently it is mandatory whenever Bluetooth support
 	  (CONFIG_BLUETOOTH) is enabled.
 
-if BLUETOOTH_LE
+if BLUETOOTH_LE || BLUETOOTH_STACK_HCI_RAW
 config BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
 	default 2
@@ -100,7 +106,27 @@ config BLUETOOTH_MAX_EVT_LEN
 	  for LE is the Command Complete for Read Local Supported
 	  Commands. It is a 3 byte Command Complete header + 65 byte
 	  return parameters = 68 bytes in total.
+endif # BLUETOOTH_LE || BLUETOOTH_STACK_HCI_RAW
 
+if (BLUETOOTH_LE && BLUETOOTH_CONN) || BLUETOOTH_STACK_HCI_RAW
+config BLUETOOTH_ACL_IN_COUNT
+	int "Number of incoming ACL data buffers"
+	default 5
+	range 2 64
+	help
+	  Number of buffers available for incoming ACL data.
+
+config BLUETOOTH_L2CAP_IN_MTU
+	int "Maximum supported L2CAP MTU for incoming data"
+	default 65 if BLUETOOTH_SMP
+	default 23 if !BLUETOOTH_SMP
+	range 65 1300 if BLUETOOTH_SMP
+	range 23 1300 if !BLUETOOTH_SMP
+	help
+	  Maximum size of each incoming L2CAP PDU.
+endif # BLUETOOTH_LE && BLUETOOTH_CONN || BLUETOOTH_STACK_HCI_RAW
+
+if BLUETOOTH_LE
 config BLUETOOTH_RX_STACK_SIZE
 	int "Size of the receiving fiber stack"
 	default 1024
@@ -134,22 +160,6 @@ config BLUETOOTH_CONN
 	default n
 
 if BLUETOOTH_CONN
-config BLUETOOTH_ACL_IN_COUNT
-	int "Number of incoming ACL data buffers"
-	default 5
-	range 2 64
-	help
-	  Number of buffers available for incoming ACL data.
-
-config BLUETOOTH_L2CAP_IN_MTU
-	int "Maximum supported L2CAP MTU for incoming data"
-	default 65 if BLUETOOTH_SMP
-	default 23 if !BLUETOOTH_SMP
-	range 65 1300 if BLUETOOTH_SMP
-	range 23 1300 if !BLUETOOTH_SMP
-	help
-	  Maximum size of each incoming L2CAP PDU.
-
 config BLUETOOTH_ATT_MTU
 	int "Attribute Protocol (ATT) channel MTU"
 	default 50 if BLUETOOTH_SMP # BLUETOOTH_L2CAP_IN_MTU is big enough
