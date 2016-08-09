@@ -18,6 +18,7 @@
 #include <device.h>
 #include <watchdog.h>
 #include <ioapic.h>
+#include <power.h>
 
 #include "clk.h"
 #include "qm_interrupt.h"
@@ -149,6 +150,45 @@ static int init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt, CONFIG_WDT_0_NAME, init, WDT_CONTEXT, 0,
-		    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+struct wdt_ctx {
+	uint32_t wdt_cr;
+	uint32_t wdt_torr;
+	uint32_t int_watchdog_mask;
+};
+
+static struct wdt_ctx wdt_ctx_save;
+
+static int wdt_suspend_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		wdt_ctx_save.wdt_torr = QM_WDT[QM_WDT_0].wdt_torr;
+		wdt_ctx_save.wdt_cr = QM_WDT[QM_WDT_0].wdt_cr;
+		wdt_ctx_save.int_watchdog_mask =
+			QM_SCSS_INT->int_watchdog_mask;
+	}
+
+	return 0;
+}
+
+static int wdt_resume_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		/* TOP_INIT field has to be written before
+		 * the Watchdog Timer is enabled.
+		 */
+		QM_WDT[QM_WDT_0].wdt_torr = wdt_ctx_save.wdt_torr;
+		QM_WDT[QM_WDT_0].wdt_cr = wdt_ctx_save.wdt_cr;
+		QM_SCSS_INT->int_watchdog_mask =
+			wdt_ctx_save.int_watchdog_mask;
+	}
+
+	return 0;
+}
+#endif
+
+DEFINE_DEVICE_PM_OPS(wdt, wdt_suspend_device, wdt_resume_device);
+
+DEVICE_AND_API_INIT_PM(wdt, CONFIG_WDT_0_NAME, init, DEVICE_PM_OPS_GET(wdt),
+		    WDT_CONTEXT, 0, PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&api);
