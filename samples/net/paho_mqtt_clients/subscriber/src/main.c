@@ -100,10 +100,6 @@ void fiber(void)
 	do {
 		printf("\n--------------------------------\n");
 
-		rc = mqtt_pingreq(&app_ctx);
-		printf("Pingreq, rc: %s\n", RC_STR(rc));
-		fiber_sleep(SLEEP_TIME);
-
 		mqtt_read(&app_ctx);
 		fiber_sleep(SLEEP_TIME);
 
