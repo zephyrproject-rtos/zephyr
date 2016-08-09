@@ -1190,7 +1190,18 @@ class TestSuite:
                     self.arches[arch.name] = arch
                     self.platforms.extend(arch.platforms)
 
-
+        # Build up a list of boards based on the presence of
+        # boards/*/*_defconfig files. We want to make sure that the arch.ini
+        # files are not missing any boards
+        all_plats = [plat.name for plat in self.platforms]
+        for dirpath, dirnames, filenames in os.walk(os.path.join(ZEPHYR_BASE,
+                                                                 "boards")):
+            for filename in filenames:
+                if filename.endswith("_defconfig"):
+                    board_name = filename.replace("_defconfig", "")
+                    if board_name not in all_plats:
+                        error("Platform '%s' not specified in any arch .ini file and will not be tested"
+                                % board_name)
         self.instances = {}
 
     def get_last_failed(self):
