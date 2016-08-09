@@ -268,7 +268,7 @@ config ADC_QMSI_SERIAL_DELAY
 	the serial output is delayed after the conversion
 	has started.
 
-#if ADC_QMSI
+if ADC_QMSI
 config ADC_QMSI_SAMPLE_WIDTH
 	int "Sample Width"
 	default 3
@@ -282,9 +282,9 @@ config ADC_QMSI_SAMPLE_WIDTH
 	- 2 = 10 bits resolution
 
 	- 3 = 12 bits resolution
-#endif
+endif
 
-#if ADC_QMSI_SS
+if ADC_QMSI_SS
 config ADC_QMSI_SAMPLE_WIDTH
 	int "Sample Width"
 	default 11
@@ -298,6 +298,6 @@ config ADC_QMSI_SAMPLE_WIDTH
 	- 9 = 10 bits resolution
 
 	- 11 = 12 bits resolution
-#endif
+endif
 
 endif # ADC_QMSI || ADC_QMSI_SS
