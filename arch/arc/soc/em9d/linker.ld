@@ -36,5 +36,5 @@
 #define DCCM_START		CONFIG_DCCM_BASE_ADDRESS
 #define DCCM_SIZE		CONFIG_DCCM_SIZE
 
-#include <arch/arc/v2/linker_harvard.ld>
+#include <arch/arc/v2/linker.ld>
 

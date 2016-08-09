@@ -32,12 +32,17 @@
 #include <linker-tool.h>
 
 /* physical address of RAM */
-#if defined(CONFIG_XIP) && (FLASH_SIZE != 0)
-	#define ROMABLE_REGION FLASH
-	#define RAMABLE_REGION SRAM
+#ifdef CONFIG_HARVARD
+	#define ROMABLE_REGION ICCM
+	#define RAMABLE_REGION DCCM
 #else
-	#define ROMABLE_REGION SRAM
-	#define RAMABLE_REGION SRAM
+	#if defined(CONFIG_XIP) && (FLASH_SIZE != 0)
+		#define ROMABLE_REGION FLASH
+		#define RAMABLE_REGION SRAM
+	#else
+		#define ROMABLE_REGION SRAM
+		#define RAMABLE_REGION SRAM
+	#endif
 #endif
 
 #if defined(CONFIG_XIP)
@@ -46,18 +51,20 @@
 	#define _DATA_IN_ROM
 #endif
 
+OUTPUT_ARCH(arc)
+ENTRY(__start)
+
 MEMORY {
-#if (FLASH_SIZE != 0)
-	FLASH (rx) : ORIGIN = FLASH_START, LENGTH = FLASH_SIZE*1k
-	SRAM  (rwx) : ORIGIN = SRAM_START,  LENGTH = SRAM_SIZE*1k
-	DCCM  (rw) : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE*1k
-#else
-	/*
-	 * For those targets that have no FLASH, create ICCM, SRAM and DCCM memories.
-	 * NOTE: SRAM may actually be DRAM but there is not a symbol for DRAM yet.
-	 */
+#ifdef FLASH_START
+	FLASH (rx)  : ORIGIN = FLASH_START, LENGTH = FLASH_SIZE*1k
+#endif
+#ifdef ICCM_START
 	ICCM  (rx)  : ORIGIN = ICCM_START,  LENGTH = ICCM_SIZE*1k
+#endif
+#ifdef SRAM_START
 	SRAM  (rwx) : ORIGIN = SRAM_START,  LENGTH = SRAM_SIZE*1k
+#endif
+#ifdef DCCM_START
 	DCCM  (rw)  : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE*1k
 #endif
 }
