@@ -72,6 +72,18 @@ static void align_to_tick_boundary(void)
 	}
 }
 
+/* Shouldn't ever sleep for less than requested time, but allow for 1
+ * tick of "too long" slop for aliasing between wakeup and
+ * measurement. Qemu at least will leak the external world's clock
+ * rate into the simulator when the host is under load.
+ */
+static int sleep_time_valid(uint32_t start, uint32_t end, uint32_t dur)
+{
+	uint32_t dt = end - start;
+
+	return dt >= dur && dt <= (dur + 1);
+}
+
 static void test_fiber(int arg1, int arg2)
 {
 	uint32_t start_tick;
@@ -86,7 +98,7 @@ static void test_fiber(int arg1, int arg2)
 	fiber_sleep(ONE_SECOND);
 	end_tick = sys_tick_get_32();
 
-	if (end_tick != start_tick + ONE_SECOND) {
+	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND)) {
 		TC_ERROR(" *** fiber_sleep() slept for %d ticks not %d.",
 				 end_tick - start_tick, ONE_SECOND);
 
@@ -192,7 +204,7 @@ void main(void)
 	task_sleep(ONE_SECOND);
 	end_tick = sys_tick_get_32();
 
-	if (end_tick - start_tick != ONE_SECOND) {
+	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND)) {
 		TC_ERROR("task_sleep() slept for %d ticks, not %d\n",
 				 end_tick - start_tick, ONE_SECOND);
 		goto done_tests;

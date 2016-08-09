@@ -288,16 +288,21 @@ int taskSleepTest(void)
 	is_main_task_ready = 1;
 	task_sem_take(RT_SEM, TICKS_UNLIMITED);
 
-	if (tick != SLEEP_TIME) {
+	/*
+	 * By design this should be exact, but at least one cycle of
+	 * slop is required experimentally on Qemu.
+	 */
+	if (tick < SLEEP_TIME || tick > SLEEP_TIME + 1) {
 		TC_ERROR("task_sleep() slept for %d ticks, not %d\n", tick, SLEEP_TIME);
 		return TC_FAIL;
 	}
 
 	/*
-	 * Check that the helper task ran for approximately SLEEP_TIME. On QEMU,
-	 * when the host CPU is overloaded, it has been observed that the tick
-	 * count can be missed by 1 on either side. Allow for 2 ticks to be sure.
-	 * This check is only there to make sure that the helper task did run for
+	 * Similarly check that the helper task ran for approximately
+	 * SLEEP_TIME. On QEMU, when the host CPU is overloaded, it
+	 * has been observed that the tick count can be missed by 1 on
+	 * either side. Allow for 2 ticks to be sure.  This check is
+	 * only there to make sure that the helper task did run for
 	 * approximately the whole time the main task was sleeping.
 	 */
 	const int tick_error_allowed = 2;
