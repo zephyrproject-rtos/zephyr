@@ -75,6 +75,7 @@
 #define GPIO_DW_0_IRQ                           22
 #define GPIO_DW_0_BITS                          32
 #define GPIO_DW_PORT_0_INT_MASK                 0 /* n/a */
+#define GPIO_DW_0_IRQ_FLAGS			0 /* Defaults */
 
 #define GPIO_DW_1_BASE_ADDR                     0xF000200C /* GPIO 1 : PORTB */
 #define GPIO_DW_1_IRQ                           0          /* can't interrupt */
@@ -131,6 +132,7 @@
 #define UART_NS16550_PORT_1_IRQ				28
 #define UART_NS16550_PORT_1_CLK_FREQ			SYSCLK_DEFAULT_IOSC_HZ
 
+#define UART_IRQ_FLAGS					0 /* Default */
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _BOARD__H_ */
