@@ -98,7 +98,6 @@ struct cmd_data {
 	 *  for the return parameters.
 	 */
 	void *sync;
-
 };
 
 struct acl_data {
