@@ -284,7 +284,13 @@ class QEMUHandler:
                 out_state = "timeout"
                 break
 
-            c = in_fp.read(1).decode("utf-8")
+            try:
+                c = in_fp.read(1).decode("utf-8")
+            except UnicodeDecodeError:
+                # Test is writing something weird, fail
+                out_state = "unexpected byte"
+                break
+
             if c == "":
                 # EOF, this shouldn't happen unless QEMU crashes
                 out_state = "unexpected eof"
