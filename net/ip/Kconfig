@@ -243,6 +243,15 @@ config RPL_WITH_OF0
 	  Objective function zero (OF0).
 endchoice
 
+config	NETWORKING_WITH_TRICKLE
+	bool "Enable Trickle algorithm"
+	depends on NETWORKING
+	default n
+	help
+	  Enable Trickle algorithm (RFC 6206) support. This only
+	  includes Trickle library but IP stack does not call its
+	  functions.
+
 config	NETWORKING_WITH_LOOPBACK
 	bool
 	prompt "Enable loopback driver"

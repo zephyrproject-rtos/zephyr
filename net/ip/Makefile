@@ -180,3 +180,6 @@ obj-$(CONFIG_ER_COAP) += er-coap/er-coap.o \
 obj-$(CONFIG_ER_COAP_CLIENT) += er-coap/er-coap-observe-client.o
 
 obj-$(CONFIG_DHCP) += contiki/ip/dhcpc.o
+
+obj-$(CONFIG_NETWORKING_WITH_TRICKLE) += \
+	contiki/trickle/trickle-timer.o
