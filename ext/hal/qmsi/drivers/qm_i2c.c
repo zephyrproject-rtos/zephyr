@@ -163,8 +163,7 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 				 * complete
 				 */
 				controller->ic_intr_mask &=
-				    ~(QM_I2C_IC_INTR_MASK_RX_FULL |
-				      QM_I2C_IC_INTR_MASK_TX_EMPTY);
+				    ~QM_I2C_IC_INTR_MASK_RX_FULL;
 
 				if (transfer->stop) {
 					controller_disable(i2c);

@@ -137,8 +137,7 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 				 */
 				QM_SS_REG_AUX_NAND(
 				    (controller + QM_SS_I2C_INTR_MASK),
-				    (QM_SS_I2C_INTR_MASK_RX_FULL |
-				     QM_SS_I2C_INTR_MASK_TX_EMPTY));
+				    QM_SS_I2C_INTR_MASK_RX_FULL);
 
 				if (i2c_transfer[i2c]->stop) {
 					controller_disable(i2c);
