@@ -16,6 +16,10 @@
  * limitations under the License.
  */
 
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_TI_CC2520_LEVEL
+#define SYS_LOG_NO_NEWLINE
+#include <misc/sys_log.h>
+
 #include <errno.h>
 
 #include <nanokernel.h>
