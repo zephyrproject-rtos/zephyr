@@ -449,13 +449,6 @@ static inline void l2_init(void)
 
 static int net_init(struct device *unused)
 {
-	static bool is_initialized;
-
-	if (is_initialized)
-		return -EALREADY;
-
-	is_initialized = true;
-
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
 
 	net_nbuf_init();
