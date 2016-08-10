@@ -130,8 +130,8 @@ int qm_mbox_ch_write(const qm_mbox_ch_t mbox_ch,
 /**
  * Read specified mailbox channel.
  *
- * @param[in] mbox_ch Mailbox channel identifier.
- * @param[out] msg Pointer to the data to read from the mailbox channel. This
+ * @param[in] mbox_ch mailbox channel identifier.
+ * @param[out] data pointer to the data to read from the mailbox channel. This
  * must not be NULL.
  *
  * @return Standard errno return type for QMSI.

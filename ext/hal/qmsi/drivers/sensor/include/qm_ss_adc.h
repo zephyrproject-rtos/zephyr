@@ -245,7 +245,7 @@ int qm_ss_adc_set_calibration(const qm_ss_adc_t adc,
  * Get the current calibration data for an SS ADC.
  *
  * @param[in] adc Which ADC to get calibration for.
- * @param[out] cal Calibration data. This must not be NULL.
+ * @param[out] adc Calibration data. This must not be NULL.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.

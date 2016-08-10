@@ -32,6 +32,7 @@
 
 #include "qm_common.h"
 #include "qm_soc_regs.h"
+#include "qm_interrupt.h"
 /**
  * Flash controller.
  *
@@ -39,40 +40,40 @@
  * @{
  */
 
-/* Flash mask to clear timing. */
+/** Flash mask to clear timing. */
 #define QM_FLASH_TMG_DEF_MASK (0xFFFFFC00)
-/* Flash mask to clear micro seconds. */
+/** Flash mask to clear micro seconds. */
 #define QM_FLASH_MICRO_SEC_COUNT_MASK (0x3F)
-/* Flash mask to clear wait state. */
+/** Flash mask to clear wait state. */
 #define QM_FLASH_WAIT_STATE_MASK (0x3C0)
-/* Flash wait state offset bit. */
+/** Flash wait state offset bit. */
 #define QM_FLASH_WAIT_STATE_OFFSET (6)
-/* Flash write disable offset bit. */
+/** Flash write disable offset bit. */
 #define QM_FLASH_WRITE_DISABLE_OFFSET (4)
-/* Flash write disable value. */
+/** Flash write disable value. */
 #define QM_FLASH_WRITE_DISABLE_VAL BIT(4)
 
-/* Flash page size in dwords. */
+/** Flash page size in dwords. */
 #define QM_FLASH_PAGE_SIZE_DWORDS (0x200)
-/* Flash page size in bytes. */
+/** Flash page size in bytes. */
 #define QM_FLASH_PAGE_SIZE_BYTES (0x800)
-/* Flash page size in bits. */
+/** Flash page size in bits. */
 #define QM_FLASH_PAGE_SIZE_BITS (11)
 
-/* Flash page erase request. */
+/** Flash page erase request. */
 #define ER_REQ BIT(1)
-/* Flash page erase done. */
+/** Flash page erase done. */
 #define ER_DONE (1)
-/* Flash page write request. */
+/** Flash page write request. */
 #define WR_REQ (1)
-/* Flash page write done. */
+/** Flash page write done. */
 #define WR_DONE BIT(1)
 
-/* Flash write address offset. */
+/** Flash write address offset. */
 #define WR_ADDR_OFFSET (2)
-/* Flash perform mass erase includes OTP region. */
+/** Flash perform mass erase includes OTP region. */
 #define MASS_ERASE_INFO BIT(6)
-/* Flash perform mass erase. */
+/** Flash perform mass erase. */
 #define MASS_ERASE BIT(7)
 
 #define QM_FLASH_ADDRESS_MASK (0x7FF)
@@ -161,7 +162,7 @@ int qm_flash_word_write(const qm_flash_t flash, const qm_flash_region_t region,
  * meantime (e.g., by restarting it before calling this function).
  *
  * @param[in] flash    Flash controller index.
- * @param[in] reg      Which Flash region to address.
+ * @param[in] region   Which Flash region to address.
  * @param[in] f_addr   Address within Flash physical address space.
  * @param[in] page_buf Page buffer to store page during update. Must be at
  *		       least QM_FLASH_PAGE_SIZE words big and must not be NULL.

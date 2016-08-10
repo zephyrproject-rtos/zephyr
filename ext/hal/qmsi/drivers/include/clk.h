@@ -43,19 +43,19 @@
  * @{
  */
 
-/*
+/**
  * When using an external crystal, this value must be set to the number of
  * system ticks per micro second. The expected value is 32 ticks for a 32MHz
  * crystal.
  */
 #define SYS_TICKS_PER_US_XTAL (32)
-/* System ticks per microseconds for a 32MHz oscillator. */
+/** System ticks per microseconds for a 32MHz oscillator. */
 #define SYS_TICKS_PER_US_32MHZ (32)
-/* System ticks per microseconds for a 16MHz oscillator. */
+/** System ticks per microseconds for a 16MHz oscillator. */
 #define SYS_TICKS_PER_US_16MHZ (16)
-/* System ticks per microseconds for a 8MHz oscillator. */
+/** System ticks per microseconds for a 8MHz oscillator. */
 #define SYS_TICKS_PER_US_8MHZ (8)
-/* System ticks per microseconds for a 4MHz oscillator. */
+/** System ticks per microseconds for a 4MHz oscillator. */
 #define SYS_TICKS_PER_US_4MHZ (4)
 
 /**

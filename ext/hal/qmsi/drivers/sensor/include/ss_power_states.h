@@ -49,40 +49,6 @@ typedef enum {
 } ss_power_cpu_ss1_mode_t;
 
 /**
- * Enable LPSS state entry.
- *
- * Put the SoC into LPSS on next C2/C2LP and SS2 state combination.<BR>
- * This function needs to be called on the Sensor Core to
- * Clock Gate ADC, I2C0, I2C1, SPI0 and SPI1 sensor peripherals.<BR>
- * Clock Gating sensor peripherals is a requirement to enter LPSS state.<BR>
- * After LPSS, ss_power_soc_lpss_disable needs to be called to
- * restore clock gating.<BR>
- *
- * This needs to be called before any transition to C2/C2LP and SS2
- * in order to enter LPSS.<BR>
- * SoC Hybrid Clock is gated in this state.<BR>
- * Core Well Clocks are gated.<BR>
- * RTC is the only clock running.
- *
- * Possible SoC wake events are:
- * 	- Low Power Comparator Interrupt
- * 	- AON GPIO Interrupt
- * 	- AON Timer Interrupt
- * 	- RTC Interrupt
- */
-void ss_power_soc_lpss_enable(void);
-
-/**
- * Disable LPSS state entry.
- *
- * Clear LPSS enable flag.<BR>
- * Disable Clock Gating of ADC, I2C0, I2C1, SPI0 and SPI1 sensor
- * peripherals.<BR>
- * This will prevent entry in LPSS when cores are in C2/C2LP and SS2 states.
- */
-void ss_power_soc_lpss_disable(void);
-
-/**
  * Enter Sensor SS1 state.
  *
  * Put the Sensor Subsystem into SS1.<BR>

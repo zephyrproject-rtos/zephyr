@@ -50,28 +50,28 @@
 
 /** System Core register map. */
 typedef struct {
-	QM_RW uint32_t osc0_cfg0;  /**< Hybrid Oscillator Configuration 0. */
-	QM_RW uint32_t osc0_stat1; /**< Hybrid Oscillator status 1. */
-	QM_RW uint32_t osc0_cfg1;  /**< Hybrid Oscillator configuration 1. */
-	QM_RW uint32_t osc1_stat0; /**< RTC Oscillator status 0. */
-	QM_RW uint32_t osc1_cfg0;  /**< RTC Oscillator Configuration 0. */
+	QM_RW uint32_t osc0_cfg0;  /**< Hybrid Oscillator Configuration 0 */
+	QM_RW uint32_t osc0_stat1; /**< Hybrid Oscillator status 1 */
+	QM_RW uint32_t osc0_cfg1;  /**< Hybrid Oscillator configuration 1 */
+	QM_RW uint32_t osc1_stat0; /**< RTC Oscillator status 0 */
+	QM_RW uint32_t osc1_cfg0;  /**< RTC Oscillator Configuration 0 */
 	QM_RW uint32_t reserved;
 	QM_RW uint32_t
-	    ccu_periph_clk_gate_ctl; /**< Peripheral Clock Gate Control. */
+	    ccu_periph_clk_gate_ctl; /**< Peripheral Clock Gate Control */
 	QM_RW uint32_t
-	    ccu_periph_clk_div_ctl0; /**< Peripheral Clock Divider Control 0. */
+	    ccu_periph_clk_div_ctl0; /**< Peripheral Clock Divider Control 0 */
 	QM_RW uint32_t
-	    ccu_gpio_db_clk_ctl; /**< Peripheral Clock Divider Control 1. */
+	    ccu_gpio_db_clk_ctl; /**< Peripheral Clock Divider Control 1 */
 	QM_RW uint32_t
-	    ccu_ext_clock_ctl; /**< External Clock Control Register. */
+	    ccu_ext_clock_ctl; /**< External Clock Control Register */
 	QM_RW uint32_t reserved1;
-	QM_RW uint32_t ccu_lp_clk_ctl; /**< System Low Power Clock Control. */
-	QM_RW uint32_t wake_mask;      /**< Wake Mask register. */
-	QM_RW uint32_t ccu_mlayer_ahb_ctl; /**< AHB Control Register. */
-	QM_RW uint32_t ccu_sys_clk_ctl; /**< System Clock Control Register. */
-	QM_RW uint32_t osc_lock_0;      /**< Clocks Lock Register. */
-	QM_RW uint32_t soc_ctrl;	/**< SoC Control Register. */
-	QM_RW uint32_t soc_ctrl_lock;   /**< SoC Control Register Lock. */
+	QM_RW uint32_t ccu_lp_clk_ctl; /**< System Low Power Clock Control */
+	QM_RW uint32_t wake_mask;      /**< Wake Mask register */
+	QM_RW uint32_t ccu_mlayer_ahb_ctl; /**< AHB Control Register */
+	QM_RW uint32_t ccu_sys_clk_ctl;    /**< System Clock Control Register */
+	QM_RW uint32_t osc_lock_0;	 /**< Clocks Lock Register */
+	QM_RW uint32_t soc_ctrl;	   /**< SoC Control Register */
+	QM_RW uint32_t soc_ctrl_lock;      /**< SoC Control Register Lock */
 } qm_scss_ccu_reg_t;
 
 #if (UNIT_TEST)
@@ -109,11 +109,11 @@ qm_scss_ccu_reg_t test_scss_ccu;
 
 #define QM_SI_OSC_1V2_MODE BIT(0)
 
-/* Peripheral clock divider control. */
+/** Peripheral clock divider control */
 #define QM_CCU_PERIPH_PCLK_DIV_OFFSET (1)
 #define QM_CCU_PERIPH_PCLK_DIV_EN BIT(0)
 
-/* System clock control. */
+/* System clock control */
 #define QM_CCU_SYS_CLK_SEL BIT(0)
 #define QM_CCU_PERIPH_CLK_EN BIT(1)
 #define QM_CCU_ADC_CLK_DIV_OFFSET (16)
@@ -161,19 +161,19 @@ qm_scss_ccu_reg_t test_scss_ccu;
 
 /** General Purpose register map. */
 typedef struct {
-	QM_RW uint32_t gps0; /**< General Purpose Sticky Register 0. */
-	QM_RW uint32_t gps1; /**< General Purpose Sticky Register 1. */
-	QM_RW uint32_t gps2; /**< General Purpose Sticky Register 2. */
-	QM_RW uint32_t gps3; /**< General Purpose Sticky Register 3. */
+	QM_RW uint32_t gps0; /**< General Purpose Sticky Register 0 */
+	QM_RW uint32_t gps1; /**< General Purpose Sticky Register 1 */
+	QM_RW uint32_t gps2; /**< General Purpose Sticky Register 2 */
+	QM_RW uint32_t gps3; /**< General Purpose Sticky Register 3 */
 	QM_RW uint32_t reserved;
-	QM_RW uint32_t gp0; /**< General Purpose Scratchpad Register 0. */
-	QM_RW uint32_t gp1; /**< General Purpose Scratchpad Register 1. */
-	QM_RW uint32_t gp2; /**< General Purpose Scratchpad Register 2. */
-	QM_RW uint32_t gp3; /**< General Purpose Scratchpad Register 3. */
+	QM_RW uint32_t gp0; /**< General Purpose Scratchpad Register 0 */
+	QM_RW uint32_t gp1; /**< General Purpose Scratchpad Register 1 */
+	QM_RW uint32_t gp2; /**< General Purpose Scratchpad Register 2 */
+	QM_RW uint32_t gp3; /**< General Purpose Scratchpad Register 3 */
 	QM_RW uint32_t reserved1[3];
-	QM_RW uint32_t wo_sp; /**< Write-One-to-Set Scratchpad Register. */
+	QM_RW uint32_t wo_sp; /**< Write-One-to-Set Scratchpad Register */
 	QM_RW uint32_t
-	    wo_st; /**< Write-One-to-Set Sticky Scratchpad Register. */
+	    wo_st; /**< Write-One-to-Set Sticky Scratchpad Register */
 } qm_scss_gp_reg_t;
 
 #if (UNIT_TEST)
@@ -226,48 +226,46 @@ qm_scss_cmp_reg_t test_scss_cmp;
 
 /** Interrupt register map. */
 typedef struct {
-	QM_RW uint32_t int_i2c_mst_0_mask; /**< Interrupt Routing Mask 0. */
+	QM_RW uint32_t int_i2c_mst_0_mask; /**< Interrupt Routing Mask 0 */
 	QM_RW uint32_t reserved[2]; /* There is a hole in the address space. */
-	QM_RW uint32_t int_spi_mst_0_mask; /**< Interrupt Routing Mask 2. */
+	QM_RW uint32_t int_spi_mst_0_mask; /**< Interrupt Routing Mask 2 */
 	QM_RW uint32_t reserved1;
-	QM_RW uint32_t int_spi_slv_0_mask; /**< Interrupt Routing Mask 4. */
-	QM_RW uint32_t int_uart_0_mask;    /**< Interrupt Routing Mask 5. */
-	QM_RW uint32_t int_uart_1_mask;    /**< Interrupt Routing Mask 6. */
+	QM_RW uint32_t int_spi_slv_0_mask; /**< Interrupt Routing Mask 4 */
+	QM_RW uint32_t int_uart_0_mask;    /**< Interrupt Routing Mask 5 */
+	QM_RW uint32_t int_uart_1_mask;    /**< Interrupt Routing Mask 6 */
 	QM_RW uint32_t reserved2;
-	QM_RW uint32_t int_gpio_mask;  /**< Interrupt Routing Mask 8. */
-	QM_RW uint32_t int_timer_mask; /**< Interrupt Routing Mask 9. */
+	QM_RW uint32_t int_gpio_mask;  /**< Interrupt Routing Mask 8 */
+	QM_RW uint32_t int_timer_mask; /**< Interrupt Routing Mask 9 */
 	QM_RW uint32_t reserved3;
-	QM_RW uint32_t int_rtc_mask;      /**< Interrupt Routing Mask 11. */
-	QM_RW uint32_t int_watchdog_mask; /**< Interrupt Routing Mask 12. */
-	QM_RW uint32_t
-	    int_dma_channel_0_mask; /**< Interrupt Routing Mask 13. */
-	QM_RW uint32_t
-	    int_dma_channel_1_mask; /**< Interrupt Routing Mask 14. */
+	QM_RW uint32_t int_rtc_mask;	   /**< Interrupt Routing Mask 11 */
+	QM_RW uint32_t int_watchdog_mask;      /**< Interrupt Routing Mask 12 */
+	QM_RW uint32_t int_dma_channel_0_mask; /**< Interrupt Routing Mask 13 */
+	QM_RW uint32_t int_dma_channel_1_mask; /**< Interrupt Routing Mask 14 */
 	QM_RW uint32_t reserved4[8];
 	QM_RW uint32_t
-	    int_comparators_host_halt_mask; /**< Interrupt Routing Mask 23. */
+	    int_comparators_host_halt_mask; /**< Interrupt Routing Mask 23 */
 	QM_RW uint32_t reserved5;
 	QM_RW uint32_t
-	    int_comparators_host_mask;	/**< Interrupt Routing Mask 25. */
-	QM_RW uint32_t int_host_bus_err_mask; /**< Interrupt Routing Mask 26. */
-	QM_RW uint32_t int_dma_error_mask;    /**< Interrupt Routing Mask 27. */
+	    int_comparators_host_mask;	/**< Interrupt Routing Mask 25 */
+	QM_RW uint32_t int_host_bus_err_mask; /**< Interrupt Routing Mask 26 */
+	QM_RW uint32_t int_dma_error_mask;    /**< Interrupt Routing Mask 27 */
 	QM_RW uint32_t
-	    int_sram_controller_mask; /**< Interrupt Routing Mask 28. */
+	    int_sram_controller_mask; /**< Interrupt Routing Mask 28 */
 	QM_RW uint32_t
-	    int_flash_controller_0_mask; /**< Interrupt Routing Mask 29. */
+	    int_flash_controller_0_mask; /**< Interrupt Routing Mask 29 */
 	QM_RW uint32_t reserved6;
-	QM_RW uint32_t int_aon_timer_mask; /**< Interrupt Routing Mask 31. */
-	QM_RW uint32_t int_adc_pwr_mask;   /**< Interrupt Routing Mask 32. */
-	QM_RW uint32_t int_adc_calib_mask; /**< Interrupt Routing Mask 33. */
+	QM_RW uint32_t int_aon_timer_mask; /**< Interrupt Routing Mask 31 */
+	QM_RW uint32_t int_adc_pwr_mask;   /**< Interrupt Routing Mask 32 */
+	QM_RW uint32_t int_adc_calib_mask; /**< Interrupt Routing Mask 33 */
 	QM_RW uint32_t reserved7;
-	QM_RW uint32_t lock_int_mask_reg; /**< Interrupt Mask Lock Register. */
+	QM_RW uint32_t lock_int_mask_reg; /**< Interrupt Mask Lock Register */
 } qm_scss_int_reg_t;
 
-/* Number of SCSS interrupt mask registers (excluding mask lock register). */
+/** Number of SCSS interrupt mask registers (excluding mask lock register) */
 #define QM_SCSS_INT_MASK_NUMREG                                                \
 	((sizeof(qm_scss_int_reg_t) / sizeof(uint32_t)) - 1)
 
-/* Default POR SCSS interrupt mask (all interrupts masked). */
+/** Default POR SCSS interrupt mask (all interrupts masked) */
 #define QM_SCSS_INT_MASK_DEFAULT (0xFFFFFFFF)
 
 #if (UNIT_TEST)
@@ -294,16 +292,16 @@ qm_scss_int_reg_t test_scss_int;
 
 /** Power Management register map. */
 typedef struct {
-	QM_RW uint32_t aon_vr; /**< AON Voltage Regulator. */
+	QM_RW uint32_t aon_vr; /**< AON Voltage Regulator */
 	QM_RW uint32_t reserved[5];
-	QM_RW uint32_t pm_wait; /**< Power Management Wait. */
+	QM_RW uint32_t pm_wait; /**< Power Management Wait */
 	QM_RW uint32_t reserved1;
-	QM_RW uint32_t p_sts; /**< Processor Status. */
+	QM_RW uint32_t p_sts; /**< Processor Status */
 	QM_RW uint32_t reserved2[3];
-	QM_RW uint32_t rstc; /**< Reset Control. */
-	QM_RW uint32_t rsts; /**< Reset Status. */
+	QM_RW uint32_t rstc; /**< Reset Control */
+	QM_RW uint32_t rsts; /**< Reset Status */
 	QM_RW uint32_t reserved3[7];
-	QM_RW uint32_t pm_lock; /**< Power Management Lock. */
+	QM_RW uint32_t pm_lock; /**< Power Management Lock */
 } qm_scss_pmu_reg_t;
 
 #if (UNIT_TEST)
@@ -365,9 +363,9 @@ qm_scss_aon_reg_t test_scss_aon;
 
 /** Peripheral Registers register map. */
 typedef struct {
-	QM_RW uint32_t periph_cfg0; /**< Peripheral Configuration. */
+	QM_RW uint32_t periph_cfg0; /**< Peripheral Configuration */
 	QM_RW uint32_t reserved[2];
-	QM_RW uint32_t cfg_lock; /**< Configuration Lock. */
+	QM_RW uint32_t cfg_lock; /**< Configuration Lock */
 } qm_scss_peripheral_reg_t;
 
 #if (UNIT_TEST)
@@ -388,19 +386,19 @@ qm_scss_peripheral_reg_t test_scss_peripheral;
 
 /** Pin MUX register map. */
 typedef struct {
-	QM_RW uint32_t pmux_pullup[1]; /**< Pin Mux Pullup. */
+	QM_RW uint32_t pmux_pullup[1]; /**< Pin Mux Pullup */
 	QM_RW uint32_t reserved[3];
-	QM_RW uint32_t pmux_slew[1]; /**< Pin Mux Slew Rate. */
+	QM_RW uint32_t pmux_slew[1]; /**< Pin Mux Slew Rate */
 	QM_RW uint32_t reserved1[3];
-	QM_RW uint32_t pmux_in_en[1]; /**< Pin Mux Input Enable. */
+	QM_RW uint32_t pmux_in_en[1]; /**< Pin Mux Input Enable */
 	QM_RW uint32_t reserved2[3];
-	QM_RW uint32_t pmux_sel[2]; /**< Pin Mux Select. */
+	QM_RW uint32_t pmux_sel[2]; /**< Pin Mux Select */
 	QM_RW uint32_t reserved3[5];
-	QM_RW uint32_t pmux_pullup_lock; /**< Pin Mux Pullup Lock. */
-	QM_RW uint32_t pmux_slew_lock;   /**< Pin Mux Slew Rate Lock. */
-	QM_RW uint32_t pmux_sel_0_lock;  /**< Pin Mux Select Lock 0. */
+	QM_RW uint32_t pmux_pullup_lock; /**< Pin Mux Pullup Lock */
+	QM_RW uint32_t pmux_slew_lock;   /**< Pin Mux Slew Rate Lock */
+	QM_RW uint32_t pmux_sel_0_lock;  /**< Pin Mux Select Lock 0 */
 	QM_RW uint32_t reserved4[2];
-	QM_RW uint32_t pmux_in_en_lock; /**< Pin Mux Slew Rate Lock. */
+	QM_RW uint32_t pmux_in_en_lock; /**< Pin Mux Slew Rate Lock */
 } qm_scss_pmux_reg_t;
 
 #if (UNIT_TEST)
@@ -421,12 +419,12 @@ qm_scss_pmux_reg_t test_scss_pmux;
 
 /** Information register map. */
 typedef struct {
-	QM_RW uint32_t id;    /**< Identification Register. */
-	QM_RW uint32_t rev;   /**< Revision Register. */
-	QM_RW uint32_t fs;    /**< Flash Size Register. */
-	QM_RW uint32_t rs;    /**< RAM Size Register. */
-	QM_RW uint32_t cotps; /**< Code OTP Size Register. */
-	QM_RW uint32_t dotps; /**< Data OTP Size Register. */
+	QM_RW uint32_t id;    /**< Identification Register */
+	QM_RW uint32_t rev;   /**< Revision Register */
+	QM_RW uint32_t fs;    /**< Flash Size Register */
+	QM_RW uint32_t rs;    /**< RAM Size Register */
+	QM_RW uint32_t cotps; /**< Code OTP Size Register */
+	QM_RW uint32_t dotps; /**< Data OTP Size Register */
 } qm_scss_info_reg_t;
 
 #if (UNIT_TEST)
@@ -541,16 +539,16 @@ typedef enum { QM_PWM_ID_0 = 0, QM_PWM_ID_1, QM_PWM_ID_NUM } qm_pwm_id_t;
 
 /** PWM / Timer channel register map. */
 typedef struct {
-	QM_RW uint32_t loadcount;    /**< Load Coun.t */
-	QM_RW uint32_t currentvalue; /**< Current Value. */
-	QM_RW uint32_t controlreg;   /**< Control. */
-	QM_RW uint32_t eoi;	  /**< End Of Interrupt. */
-	QM_RW uint32_t intstatus;    /**< Interrupt Status. */
+	QM_RW uint32_t loadcount;    /**< Load Count */
+	QM_RW uint32_t currentvalue; /**< Current Value */
+	QM_RW uint32_t controlreg;   /**< Control */
+	QM_RW uint32_t eoi;	  /**< End Of Interrupt */
+	QM_RW uint32_t intstatus;    /**< Interrupt Status */
 } qm_pwm_channel_t;
 
 /** PWM / Timer register map. */
 typedef struct {
-	qm_pwm_channel_t timer[QM_PWM_ID_NUM]; /**< 2 Timers. */
+	qm_pwm_channel_t timer[QM_PWM_ID_NUM]; /**< 4 Timers */
 	QM_RW uint32_t reserved[30];
 	QM_RW uint32_t timersintstatus;     /**< Timers Interrupt Status */
 	QM_RW uint32_t timerseoi;	   /**< Timers End Of Interrupt */
@@ -564,9 +562,9 @@ qm_pwm_reg_t test_pwm_t;
 #define QM_PWM ((qm_pwm_reg_t *)(&test_pwm_t))
 
 #else
-/* PWM register base address. */
+/** PWM register base address */
 #define QM_PWM_BASE (0xB0000800)
-/* PWM register block. */
+/** PWM register block */
 #define QM_PWM ((qm_pwm_reg_t *)QM_PWM_BASE)
 #endif
 
@@ -584,20 +582,20 @@ typedef enum { QM_WDT_0 = 0, QM_WDT_NUM } qm_wdt_t;
 
 /** Watchdog timer register map. */
 typedef struct {
-	QM_RW uint32_t wdt_cr;		 /**< Control Register. */
-	QM_RW uint32_t wdt_torr;	 /**< Timeout Range Register. */
-	QM_RW uint32_t wdt_ccvr;	 /**< Current Counter Value Register. */
-	QM_RW uint32_t wdt_crr;		 /**< Current Restart Register. */
-	QM_RW uint32_t wdt_stat;	 /**< Interrupt Status Register. */
-	QM_RW uint32_t wdt_eoi;		 /**< Interrupt Clear Register. */
-	QM_RW uint32_t wdt_comp_param_5; /**<  Component Parameters. */
-	QM_RW uint32_t wdt_comp_param_4; /**<  Component Parameters. */
-	QM_RW uint32_t wdt_comp_param_3; /**<  Component Parameters. */
-	QM_RW uint32_t wdt_comp_param_2; /**<  Component Parameters. */
+	QM_RW uint32_t wdt_cr;		 /**< Control Register */
+	QM_RW uint32_t wdt_torr;	 /**< Timeout Range Register */
+	QM_RW uint32_t wdt_ccvr;	 /**< Current Counter Value Register */
+	QM_RW uint32_t wdt_crr;		 /**< Current Restart Register */
+	QM_RW uint32_t wdt_stat;	 /**< Interrupt Status Register */
+	QM_RW uint32_t wdt_eoi;		 /**< Interrupt Clear Register */
+	QM_RW uint32_t wdt_comp_param_5; /**<  Component Parameters */
+	QM_RW uint32_t wdt_comp_param_4; /**<  Component Parameters */
+	QM_RW uint32_t wdt_comp_param_3; /**<  Component Parameters */
+	QM_RW uint32_t wdt_comp_param_2; /**<  Component Parameters */
 	QM_RW uint32_t
-	    wdt_comp_param_1; /**<  Component Parameters Register 1. */
-	QM_RW uint32_t wdt_comp_version; /**<  Component Version Register. */
-	QM_RW uint32_t wdt_comp_type;    /**< Component Type Register. */
+	    wdt_comp_param_1; /**<  Component Parameters Register 1 */
+	QM_RW uint32_t wdt_comp_version; /**<  Component Version Register */
+	QM_RW uint32_t wdt_comp_type;    /**< Component Type Register */
 } qm_wdt_reg_t;
 
 #if (UNIT_TEST)
@@ -605,10 +603,10 @@ qm_wdt_reg_t test_wdt;
 #define QM_WDT ((qm_wdt_reg_t *)(&test_wdt))
 
 #else
-/* WDT register base address. */
+/** WDT register base address */
 #define QM_WDT_BASE (0xB0000000)
 
-/* WDT register block. */
+/** WDT register block */
 #define QM_WDT ((qm_wdt_reg_t *)QM_WDT_BASE)
 #endif
 
@@ -624,29 +622,28 @@ typedef enum { QM_UART_0 = 0, QM_UART_1, QM_UART_NUM } qm_uart_t;
 
 /** UART register map. */
 typedef struct {
-	QM_RW uint32_t
-	    rbr_thr_dll;	/**< Rx Buffer/ Tx Holding/ Div Latch Low. */
-	QM_RW uint32_t ier_dlh; /**< Interrupt Enable / Divisor Latch High. */
-	QM_RW uint32_t iir_fcr; /**< Interrupt Identification / FIFO Control. */
-	QM_RW uint32_t lcr;     /**< Line Control. */
-	QM_RW uint32_t mcr;     /**< MODEM Control. */
-	QM_RW uint32_t lsr;     /**< Line Status. */
-	QM_RW uint32_t msr;     /**< MODEM Status. */
-	QM_RW uint32_t scr;     /**< Scratchpad. */
+	QM_RW uint32_t rbr_thr_dll; /**< Rx Buffer/ Tx Holding/ Div Latch Low */
+	QM_RW uint32_t ier_dlh; /**< Interrupt Enable / Divisor Latch High */
+	QM_RW uint32_t iir_fcr; /**< Interrupt Identification / FIFO Control */
+	QM_RW uint32_t lcr;     /**< Line Control */
+	QM_RW uint32_t mcr;     /**< MODEM Control */
+	QM_RW uint32_t lsr;     /**< Line Status */
+	QM_RW uint32_t msr;     /**< MODEM Status */
+	QM_RW uint32_t scr;     /**< Scratchpad */
 	QM_RW uint32_t reserved[23];
-	QM_RW uint32_t usr; /**< UART Status. */
+	QM_RW uint32_t usr; /**< UART Status */
 	QM_RW uint32_t reserved1[9];
-	QM_RW uint32_t htx;     /**< Halt Transmission. */
-	QM_RW uint32_t dmasa;   /**< DMA Software Acknowledge. */
-	QM_RW uint32_t tcr;     /**< Transceiver Control Register. */
-	QM_RW uint32_t de_en;   /**< Driver Output Enable Register. */
-	QM_RW uint32_t re_en;   /**< Receiver Output Enable Register. */
-	QM_RW uint32_t det;     /**< Driver Output Enable Timing Register. */
-	QM_RW uint32_t tat;     /**< TurnAround Timing Register. */
-	QM_RW uint32_t dlf;     /**< Divisor Latch Fraction. */
-	QM_RW uint32_t rar;     /**< Receive Address Register. */
-	QM_RW uint32_t tar;     /**< Transmit Address Register. */
-	QM_RW uint32_t lcr_ext; /**< Line Extended Control Register. */
+	QM_RW uint32_t htx;     /**< Halt Transmission */
+	QM_RW uint32_t dmasa;   /**< DMA Software Acknowledge */
+	QM_RW uint32_t tcr;     /**< Transceiver Control Register */
+	QM_RW uint32_t de_en;   /**< Driver Output Enable Register */
+	QM_RW uint32_t re_en;   /**< Receiver Output Enable Register */
+	QM_RW uint32_t det;     /**< Driver Output Enable Timing Register */
+	QM_RW uint32_t tat;     /**< TurnAround Timing Register */
+	QM_RW uint32_t dlf;     /**< Divisor Latch Fraction */
+	QM_RW uint32_t rar;     /**< Receive Address Register */
+	QM_RW uint32_t tar;     /**< Transmit Address Register */
+	QM_RW uint32_t lcr_ext; /**< Line Extended Control Register */
 	QM_RW uint32_t padding[204]; /* 0x400 - 0xD0 */
 } qm_uart_reg_t;
 
@@ -656,10 +653,10 @@ qm_uart_reg_t *test_uart[QM_UART_NUM];
 #define QM_UART test_uart
 
 #else
-/* UART register base address. */
+/** UART register base address */
 #define QM_UART_0_BASE (0xB0002000)
 #define QM_UART_1_BASE (0xB0002400)
-/* UART register block. */
+/** UART register block */
 extern qm_uart_reg_t *qm_uart[QM_UART_NUM];
 #define QM_UART qm_uart
 #endif
@@ -676,35 +673,32 @@ typedef enum { QM_SPI_MST_0 = 0, QM_SPI_SLV_0 = 1, QM_SPI_NUM } qm_spi_t;
 
 /** SPI register map. */
 typedef struct {
-	QM_RW uint32_t ctrlr0; /**< Control Register 0. */
-	QM_RW uint32_t ctrlr1; /**< Control Register 1. */
-	QM_RW uint32_t ssienr; /**< SSI Enable Register. */
-	QM_RW uint32_t mwcr;   /**< Microwire Control Register. */
-	QM_RW uint32_t ser;    /**< Slave Enable Register. */
-	QM_RW uint32_t baudr;  /**< Baud Rate Select. */
-	QM_RW uint32_t txftlr; /**< Transmit FIFO Threshold Level. */
-	QM_RW uint32_t rxftlr; /**< Receive FIFO Threshold Level. */
-	QM_RW uint32_t txflr;  /**< Transmit FIFO Level Register. */
-	QM_RW uint32_t rxflr;  /**< Receive FIFO Level Register. */
-	QM_RW uint32_t sr;     /**< Status Register. */
-	QM_RW uint32_t imr;    /**< Interrupt Mask Register. */
-	QM_RW uint32_t isr;    /**< Interrupt Status Register. */
-	QM_RW uint32_t risr;   /**< Raw Interrupt Status Register. */
-	QM_RW uint32_t
-	    txoicr; /**< Tx FIFO Overflow Interrupt Clear Register. */
-	QM_RW uint32_t
-	    rxoicr; /**< Rx FIFO Overflow Interrupt Clear Register. */
-	QM_RW uint32_t
-	    rxuicr; /**< Rx FIFO Underflow Interrupt Clear Register. */
-	QM_RW uint32_t msticr;  /**< Multi-Master Interrupt Clear Register. */
-	QM_RW uint32_t icr;     /**< Interrupt Clear Register. */
-	QM_RW uint32_t dmacr;   /**< DMA Control Register. */
-	QM_RW uint32_t dmatdlr; /**< DMA Transmit Data Level. */
-	QM_RW uint32_t dmardlr; /**< DMA Receive Data Level. */
-	QM_RW uint32_t idr;     /**< Identification Register. */
-	QM_RW uint32_t ssi_comp_version; /**< coreKit Version ID register. */
-	QM_RW uint32_t dr[36];		 /**< Data Register. */
-	QM_RW uint32_t rx_sample_dly;    /**< RX Sample Delay Register. */
+	QM_RW uint32_t ctrlr0; /**< Control Register 0 */
+	QM_RW uint32_t ctrlr1; /**< Control Register 1 */
+	QM_RW uint32_t ssienr; /**< SSI Enable Register */
+	QM_RW uint32_t mwcr;   /**< Microwire Control Register */
+	QM_RW uint32_t ser;    /**< Slave Enable Register */
+	QM_RW uint32_t baudr;  /**< Baud Rate Select */
+	QM_RW uint32_t txftlr; /**< Transmit FIFO Threshold Level */
+	QM_RW uint32_t rxftlr; /**< Receive FIFO Threshold Level */
+	QM_RW uint32_t txflr;  /**< Transmit FIFO Level Register */
+	QM_RW uint32_t rxflr;  /**< Receive FIFO Level Register */
+	QM_RW uint32_t sr;     /**< Status Register */
+	QM_RW uint32_t imr;    /**< Interrupt Mask Register */
+	QM_RW uint32_t isr;    /**< Interrupt Status Register */
+	QM_RW uint32_t risr;   /**< Raw Interrupt Status Register */
+	QM_RW uint32_t txoicr; /**< Tx FIFO Overflow Interrupt Clear Register*/
+	QM_RW uint32_t rxoicr; /**< Rx FIFO Overflow Interrupt Clear Register */
+	QM_RW uint32_t rxuicr; /**< Rx FIFO Underflow Interrupt Clear Register*/
+	QM_RW uint32_t msticr; /**< Multi-Master Interrupt Clear Register */
+	QM_RW uint32_t icr;    /**< Interrupt Clear Register */
+	QM_RW uint32_t dmacr;  /**< DMA Control Register */
+	QM_RW uint32_t dmatdlr;		 /**< DMA Transmit Data Level */
+	QM_RW uint32_t dmardlr;		 /**< DMA Receive Data Level */
+	QM_RW uint32_t idr;		 /**< Identification Register */
+	QM_RW uint32_t ssi_comp_version; /**< coreKit Version ID register */
+	QM_RW uint32_t dr[36];		 /**< Data Register */
+	QM_RW uint32_t rx_sample_dly;    /**< RX Sample Delay Register */
 	QM_RW uint32_t padding[0x1C4];   /* (0x800 - 0xF0) / 4 */
 } qm_spi_reg_t;
 
@@ -715,12 +709,12 @@ qm_spi_reg_t *test_spi_controllers[QM_SPI_NUM];
 #define QM_SPI test_spi_controllers
 
 #else
-/* SPI Master register base address. */
+/** SPI Master register base address */
 #define QM_SPI_MST_0_BASE (0xB0001000)
 extern qm_spi_reg_t *qm_spi_controllers[QM_SPI_NUM];
 #define QM_SPI qm_spi_controllers
 
-/* SPI Slave register base address. */
+/** SPI Slave register base address */
 #define QM_SPI_SLV_BASE (0xB0001800)
 #endif
 
@@ -782,14 +776,14 @@ typedef enum { QM_RTC_0 = 0, QM_RTC_NUM } qm_rtc_t;
 
 /** RTC register map. */
 typedef struct {
-	QM_RW uint32_t rtc_ccvr;	 /**< Current Counter Value Register. */
-	QM_RW uint32_t rtc_cmr;		 /**< Current Match Register. */
-	QM_RW uint32_t rtc_clr;		 /**< Counter Load Register. */
-	QM_RW uint32_t rtc_ccr;		 /**< Counter Control Register. */
-	QM_RW uint32_t rtc_stat;	 /**< Interrupt Status Register. */
-	QM_RW uint32_t rtc_rstat;	/**< Interrupt Raw Status Register. */
-	QM_RW uint32_t rtc_eoi;		 /**< End of Interrupt Register. */
-	QM_RW uint32_t rtc_comp_version; /**< End of Interrupt Register. */
+	QM_RW uint32_t rtc_ccvr;	 /**< Current Counter Value Register */
+	QM_RW uint32_t rtc_cmr;		 /**< Current Match Register */
+	QM_RW uint32_t rtc_clr;		 /**< Counter Load Register */
+	QM_RW uint32_t rtc_ccr;		 /**< Counter Control Register */
+	QM_RW uint32_t rtc_stat;	 /**< Interrupt Status Register */
+	QM_RW uint32_t rtc_rstat;	/**< Interrupt Raw Status Register */
+	QM_RW uint32_t rtc_eoi;		 /**< End of Interrupt Register */
+	QM_RW uint32_t rtc_comp_version; /**< End of Interrupt Register */
 } qm_rtc_reg_t;
 
 #if (UNIT_TEST)
@@ -797,10 +791,10 @@ qm_rtc_reg_t test_rtc;
 #define QM_RTC ((qm_rtc_reg_t *)(&test_rtc))
 
 #else
-/* RTC register base address. */
+/** RTC register base address. */
 #define QM_RTC_BASE (0xB0000400)
 
-/* RTC register block. */
+/** RTC register block. */
 #define QM_RTC ((qm_rtc_reg_t *)QM_RTC_BASE)
 #endif
 
@@ -816,60 +810,60 @@ typedef enum { QM_I2C_0 = 0, QM_I2C_NUM } qm_i2c_t;
 
 /** I2C register map. */
 typedef struct {
-	QM_RW uint32_t ic_con;      /**< Control Register. */
-	QM_RW uint32_t ic_tar;      /**< Master Target Address. */
-	QM_RW uint32_t ic_sar;      /**< Slave Address. */
-	QM_RW uint32_t ic_hs_maddr; /**< High Speed Master ID. */
-	QM_RW uint32_t ic_data_cmd; /**< Data Buffer and Command. */
+	QM_RW uint32_t ic_con;      /**< Control Register */
+	QM_RW uint32_t ic_tar;      /**< Master Target Address */
+	QM_RW uint32_t ic_sar;      /**< Slave Address */
+	QM_RW uint32_t ic_hs_maddr; /**< High Speed Master ID */
+	QM_RW uint32_t ic_data_cmd; /**< Data Buffer and Command */
 	QM_RW uint32_t
-	    ic_ss_scl_hcnt; /**< Standard Speed Clock SCL High Count. */
+	    ic_ss_scl_hcnt; /**< Standard Speed Clock SCL High Count */
 	QM_RW uint32_t
-	    ic_ss_scl_lcnt; /**< Standard Speed Clock SCL Low Count. */
-	QM_RW uint32_t ic_fs_scl_hcnt; /**< Fast Speed Clock SCL High Count. */
+	    ic_ss_scl_lcnt; /**< Standard Speed Clock SCL Low Count */
+	QM_RW uint32_t ic_fs_scl_hcnt; /**< Fast Speed Clock SCL High Count */
 	QM_RW uint32_t
-	    ic_fs_scl_lcnt; /**< Fast Speed I2C Clock SCL Low Count. */
+	    ic_fs_scl_lcnt; /**< Fast Speed I2C Clock SCL Low Count */
 	QM_RW uint32_t
-	    ic_hs_scl_hcnt; /**< High Speed I2C Clock SCL High Count. */
+	    ic_hs_scl_hcnt; /**< High Speed I2C Clock SCL High Count */
 	QM_RW uint32_t
-	    ic_hs_scl_lcnt;	  /**< High Speed I2C Clock SCL Low Count. */
-	QM_RW uint32_t ic_intr_stat; /**< Interrupt Status. */
-	QM_RW uint32_t ic_intr_mask; /**< Interrupt Mask. */
-	QM_RW uint32_t ic_raw_intr_stat; /**< Raw Interrupt Status. */
-	QM_RW uint32_t ic_rx_tl;	 /**< Receive FIFO Threshold Level. */
-	QM_RW uint32_t ic_tx_tl;	 /**< Transmit FIFO Threshold Level. */
+	    ic_hs_scl_lcnt;	  /**< High Speed I2C Clock SCL Low Count */
+	QM_RW uint32_t ic_intr_stat; /**< Interrupt Status */
+	QM_RW uint32_t ic_intr_mask; /**< Interrupt Mask */
+	QM_RW uint32_t ic_raw_intr_stat; /**< Raw Interrupt Status */
+	QM_RW uint32_t ic_rx_tl;	 /**< Receive FIFO Threshold Level */
+	QM_RW uint32_t ic_tx_tl;	 /**< Transmit FIFO Threshold Level */
 	QM_RW uint32_t
-	    ic_clr_intr; /**< Clear Combined and Individual Interrupt. */
-	QM_RW uint32_t ic_clr_rx_under;   /**< Clear RX_UNDER Interrupt. */
-	QM_RW uint32_t ic_clr_rx_over;    /**< Clear RX_OVER Interrupt. */
-	QM_RW uint32_t ic_clr_tx_over;    /**< Clear TX_OVER Interrupt. */
-	QM_RW uint32_t ic_clr_rd_req;     /**< Clear RD_REQ Interrupt. */
-	QM_RW uint32_t ic_clr_tx_abrt;    /**< Clear TX_ABRT Interrupt. */
-	QM_RW uint32_t ic_clr_rx_done;    /**< Clear RX_DONE Interrupt. */
-	QM_RW uint32_t ic_clr_activity;   /**< Clear ACTIVITY Interrupt. */
-	QM_RW uint32_t ic_clr_stop_det;   /**< Clear STOP_DET Interrupt. */
-	QM_RW uint32_t ic_clr_start_det;  /**< Clear START_DET Interrupt. */
-	QM_RW uint32_t ic_clr_gen_call;   /**< Clear GEN_CALL Interrupt. */
-	QM_RW uint32_t ic_enable;	 /**< Enable. */
-	QM_RW uint32_t ic_status;	 /**< Status. */
-	QM_RW uint32_t ic_txflr;	  /**< Transmit FIFO Level. */
-	QM_RW uint32_t ic_rxflr;	  /**< Receive FIFO Level. */
-	QM_RW uint32_t ic_sda_hold;       /**< SDA Hold. */
-	QM_RW uint32_t ic_tx_abrt_source; /**< Transmit Abort Source. */
+	    ic_clr_intr; /**< Clear Combined and Individual Interrupt */
+	QM_RW uint32_t ic_clr_rx_under;   /**< Clear RX_UNDER Interrupt */
+	QM_RW uint32_t ic_clr_rx_over;    /**< Clear RX_OVER Interrupt */
+	QM_RW uint32_t ic_clr_tx_over;    /**< Clear TX_OVER Interrupt */
+	QM_RW uint32_t ic_clr_rd_req;     /**< Clear RD_REQ Interrupt */
+	QM_RW uint32_t ic_clr_tx_abrt;    /**< Clear TX_ABRT Interrupt */
+	QM_RW uint32_t ic_clr_rx_done;    /**< Clear RX_DONE Interrupt */
+	QM_RW uint32_t ic_clr_activity;   /**< Clear ACTIVITY Interrupt */
+	QM_RW uint32_t ic_clr_stop_det;   /**< Clear STOP_DET Interrupt */
+	QM_RW uint32_t ic_clr_start_det;  /**< Clear START_DET Interrupt */
+	QM_RW uint32_t ic_clr_gen_call;   /**< Clear GEN_CALL Interrupt */
+	QM_RW uint32_t ic_enable;	 /**< Enable */
+	QM_RW uint32_t ic_status;	 /**< Status */
+	QM_RW uint32_t ic_txflr;	  /**< Transmit FIFO Level */
+	QM_RW uint32_t ic_rxflr;	  /**< Receive FIFO Level */
+	QM_RW uint32_t ic_sda_hold;       /**< SDA Hold */
+	QM_RW uint32_t ic_tx_abrt_source; /**< Transmit Abort Source */
 	QM_RW uint32_t reserved;
-	QM_RW uint32_t ic_dma_cr;    /**< SDA Setup. */
-	QM_RW uint32_t ic_dma_tdlr;  /**< DMA Transmit Data Level Register. */
-	QM_RW uint32_t ic_dma_rdlr;  /**< I2C Receive Data Level Register. */
-	QM_RW uint32_t ic_sda_setup; /**< SDA Setup. */
-	QM_RW uint32_t ic_ack_general_call; /**< General Call Ack. */
-	QM_RW uint32_t ic_enable_status;    /**< Enable Status. */
-	QM_RW uint32_t ic_fs_spklen; /**< SS and FS Spike Suppression Limit. */
-	QM_RW uint32_t ic_hs_spklen; /**< HS spike suppression limit. */
+	QM_RW uint32_t ic_dma_cr;    /**< SDA Setup */
+	QM_RW uint32_t ic_dma_tdlr;  /**< DMA Transmit Data Level Register */
+	QM_RW uint32_t ic_dma_rdlr;  /**< I2C Receive Data Level Register */
+	QM_RW uint32_t ic_sda_setup; /**< SDA Setup */
+	QM_RW uint32_t ic_ack_general_call; /**< General Call Ack */
+	QM_RW uint32_t ic_enable_status;    /**< Enable Status */
+	QM_RW uint32_t ic_fs_spklen; /**< SS and FS Spike Suppression Limit */
+	QM_RW uint32_t ic_hs_spklen; /**< HS spike suppression limit */
 	QM_RW uint32_t
-	    ic_clr_restart_det; /**< clear the RESTART_DET interrupt. */
+	    ic_clr_restart_det; /**< clear the RESTART_DET interrupt */
 	QM_RW uint32_t reserved1[18];
-	QM_RW uint32_t ic_comp_param_1; /**< Configuration Parameters. */
-	QM_RW uint32_t ic_comp_version; /**< Component Version. */
-	QM_RW uint32_t ic_comp_type;    /**< Component Type. */
+	QM_RW uint32_t ic_comp_param_1; /**< Configuration Parameters */
+	QM_RW uint32_t ic_comp_version; /**< Component Version */
+	QM_RW uint32_t ic_comp_type;    /**< Component Type */
 } qm_i2c_reg_t;
 
 #if (UNIT_TEST)
@@ -879,7 +873,7 @@ qm_i2c_reg_t *test_i2c[QM_I2C_NUM];
 #define QM_I2C test_i2c
 
 #else
-/* I2C Master register base address. */
+/** I2C Master register base address. */
 #define QM_I2C_0_BASE (0xB0002800)
 
 /** I2C register block. */
@@ -952,25 +946,25 @@ typedef enum { QM_GPIO_0 = 0, QM_GPIO_NUM } qm_gpio_t;
 
 /** GPIO register map. */
 typedef struct {
-	QM_RW uint32_t gpio_swporta_dr;  /**< Port A Data. */
-	QM_RW uint32_t gpio_swporta_ddr; /**< Port A Data Direction. */
+	QM_RW uint32_t gpio_swporta_dr;  /**< Port A Data */
+	QM_RW uint32_t gpio_swporta_ddr; /**< Port A Data Direction */
 	QM_RW uint32_t reserved[10];
-	QM_RW uint32_t gpio_inten;	 /**< Interrupt Enable. */
-	QM_RW uint32_t gpio_intmask;       /**< Interrupt Mask. */
-	QM_RW uint32_t gpio_inttype_level; /**< Interrupt Type. */
-	QM_RW uint32_t gpio_int_polarity;  /**< Interrupt Polarity. */
-	QM_RW uint32_t gpio_intstatus;     /**< Interrupt Status. */
-	QM_RW uint32_t gpio_raw_intstatus; /**< Raw Interrupt Status. */
-	QM_RW uint32_t gpio_debounce;      /**< Debounce Enable. */
-	QM_RW uint32_t gpio_porta_eoi;     /**< Clear Interrupt. */
-	QM_RW uint32_t gpio_ext_porta;     /**< Port A External Port. */
+	QM_RW uint32_t gpio_inten;	 /**< Interrupt Enable */
+	QM_RW uint32_t gpio_intmask;       /**< Interrupt Mask */
+	QM_RW uint32_t gpio_inttype_level; /**< Interrupt Type */
+	QM_RW uint32_t gpio_int_polarity;  /**< Interrupt Polarity */
+	QM_RW uint32_t gpio_intstatus;     /**< Interrupt Status */
+	QM_RW uint32_t gpio_raw_intstatus; /**< Raw Interrupt Status */
+	QM_RW uint32_t gpio_debounce;      /**< Debounce Enable */
+	QM_RW uint32_t gpio_porta_eoi;     /**< Clear Interrupt */
+	QM_RW uint32_t gpio_ext_porta;     /**< Port A External Port */
 	QM_RW uint32_t reserved1[3];
-	QM_RW uint32_t gpio_ls_sync;      /**< Synchronization Level. */
-	QM_RW uint32_t gpio_id_code;      /**< GPIO ID code. */
-	QM_RW uint32_t gpio_int_bothedge; /**< Interrupt both edge type. */
-	QM_RW uint32_t gpio_ver_id_code;  /**< GPIO Component Version. */
-	QM_RW uint32_t gpio_config_reg2;  /**< GPIO Configuration Register 2. */
-	QM_RW uint32_t gpio_config_reg1;  /**< GPIO Configuration Register 1. */
+	QM_RW uint32_t gpio_ls_sync;      /**< Synchronization Level */
+	QM_RW uint32_t gpio_id_code;      /**< GPIO ID code */
+	QM_RW uint32_t gpio_int_bothedge; /**< Interrupt both edge type */
+	QM_RW uint32_t gpio_ver_id_code;  /**< GPIO Component Version */
+	QM_RW uint32_t gpio_config_reg2;  /**< GPIO Configuration Register 2 */
+	QM_RW uint32_t gpio_config_reg1;  /**< GPIO Configuration Register 1 */
 } qm_gpio_reg_t;
 
 #define QM_NUM_GPIO_PINS (25)
@@ -982,10 +976,10 @@ qm_gpio_reg_t *test_gpio[QM_GPIO_NUM];
 #define QM_GPIO test_gpio
 #else
 
-/* GPIO register base address. */
+/** GPIO register base address */
 #define QM_GPIO_BASE (0xB0000C00)
 
-/* GPIO register block. */
+/** GPIO register block */
 extern qm_gpio_reg_t *qm_gpio[QM_GPIO_NUM];
 #define QM_GPIO qm_gpio
 #endif
@@ -1024,10 +1018,10 @@ qm_adc_reg_t test_adc;
 
 #define QM_ADC ((qm_adc_reg_t *)(&test_adc))
 #else
-/* ADC register block */
+/** ADC register block */
 #define QM_ADC ((qm_adc_reg_t *)QM_ADC_BASE)
 
-/* ADC register base. */
+/** ADC register base. */
 #define QM_ADC_BASE (0xB0004000)
 #endif
 
@@ -1114,10 +1108,10 @@ uint8_t test_flash_page[0x800];
 #define QM_FLASH_PAGE_MASK (0xF800)
 #define QM_FLASH_MAX_ADDR (0x8000)
 
-/* Flash controller register base address. */
+/** Flash controller register base address. */
 #define QM_FLASH_BASE_0 (0xB0100000)
 
-/* Flash controller register block. */
+/** Flash controller register block. */
 extern qm_flash_reg_t *qm_flash[QM_FLASH_NUM];
 #define QM_FLASH qm_flash
 
@@ -1128,7 +1122,6 @@ extern qm_flash_reg_t *qm_flash[QM_FLASH_NUM];
 #define QM_FLASH_MAX_US_COUNT (0x3F)
 #define QM_FLASH_MAX_PAGE_NUM                                                  \
 	(QM_FLASH_MAX_ADDR / (4 * QM_FLASH_PAGE_SIZE_DWORDS))
-#define QM_FLASH_CLK_SLOW BIT(14)
 #define QM_FLASH_LVE_MODE BIT(5)
 
 /** @} */
@@ -1192,7 +1185,7 @@ qm_pic_timer_reg_t test_pic_timer;
 #define QM_PIC_TIMER ((qm_pic_timer_reg_t *)(&test_pic_timer))
 
 #else
-/* PIC timer base address. */
+/** PIC timer base address. */
 #define QM_PIC_TIMER_BASE (0xFEE00320)
 #define QM_PIC_TIMER ((qm_pic_timer_reg_t *)QM_PIC_TIMER_BASE)
 #endif
@@ -1253,32 +1246,32 @@ typedef struct {
 
 /** MVIC register map. */
 typedef struct {
-	QM_RW mvic_reg_pad_t tpr; /**< Task priority. */
+	QM_RW mvic_reg_pad_t tpr; /**< Task priority*/
 	QM_RW mvic_reg_pad_t reserved;
-	QM_RW mvic_reg_pad_t ppr; /**< Processor priority. */
-	QM_RW mvic_reg_pad_t eoi; /**< End of interrupt. */
+	QM_RW mvic_reg_pad_t ppr; /**< Processor priority */
+	QM_RW mvic_reg_pad_t eoi; /**< End of interrupt */
 	QM_RW mvic_reg_pad_t reserved1[3];
-	QM_RW mvic_reg_pad_t sivr; /**< Spurious vector. */
+	QM_RW mvic_reg_pad_t sivr; /**< Spurious vector */
 	QM_RW mvic_reg_pad_t reserved2;
-	QM_RW mvic_reg_pad_t isr; /**< In-service. */
+	QM_RW mvic_reg_pad_t isr; /**< In-service */
 	QM_RW mvic_reg_pad_t reserved3[15];
-	QM_RW mvic_reg_pad_t irr; /**< Interrupt request. */
+	QM_RW mvic_reg_pad_t irr; /**< Interrupt request */
 	QM_RW mvic_reg_pad_t reserved4[16];
-	QM_RW mvic_reg_pad_t lvttimer; /**< Timer vector. */
+	QM_RW mvic_reg_pad_t lvttimer; /**< Timer vector */
 	QM_RW mvic_reg_pad_t reserved5[5];
-	QM_RW mvic_reg_pad_t icr; /**< Timer initial count. */
-	QM_RW mvic_reg_pad_t ccr; /**< Timer current count. */
+	QM_RW mvic_reg_pad_t icr; /**< Timer initial count */
+	QM_RW mvic_reg_pad_t ccr; /**< Timer current count */
 } qm_mvic_reg_t;
 
-#define QM_MVIC_REG_VER (0x01)    /* MVIC version. */
-#define QM_MVIC_REG_REDTBL (0x10) /* Redirection table base. */
+#define QM_MVIC_REG_VER (0x01)    /**< MVIC version */
+#define QM_MVIC_REG_REDTBL (0x10) /**< Redirection table base */
 
 #if (UNIT_TEST)
 qm_mvic_reg_t test_mvic;
 #define QM_MVIC ((qm_mvic_reg_t *)(&test_mvic))
 
 #else
-/* Interrupt Controller base address. */
+/** Interrupt Controller base address. */
 #define QM_MVIC_BASE (0xFEE00080)
 #define QM_MVIC ((qm_mvic_reg_t *)QM_MVIC_BASE)
 #endif
@@ -1293,8 +1286,8 @@ qm_mvic_reg_t test_mvic;
 #endif
 
 typedef struct {
-	QM_RW mvic_reg_pad_t ioregsel; /**< Register selector. */
-	QM_RW mvic_reg_pad_t iowin;    /**< Register window. */
+	QM_RW mvic_reg_pad_t ioregsel; /**< Register selector */
+	QM_RW mvic_reg_pad_t iowin;    /**< Register window */
 } qm_ioapic_reg_t;
 
 #if (UNIT_TEST)
@@ -1302,7 +1295,7 @@ qm_ioapic_reg_t test_ioapic;
 #define QM_IOAPIC ((qm_ioapic_reg_t *)(&test_ioapic))
 
 #else
-/* IO/APIC. */
+/** IO/APIC */
 #define QM_IOAPIC_BASE (0xFEC00000)
 #define QM_IOAPIC ((qm_ioapic_reg_t *)QM_IOAPIC_BASE)
 #endif
@@ -1471,10 +1464,10 @@ typedef struct {
 	QM_RW uint32_t reserved[4];  /**< Reserved */
 } qm_dma_misc_reg_t;
 
-/* Channel write enable in the misc channel enable register. */
+/** Channel write enable in the misc channel enable register. */
 #define QM_DMA_MISC_CHAN_EN_WE_OFFSET (8)
 
-/* Controller enable bit in the misc config register. */
+/** Controller enable bit in the misc config register. */
 #define QM_DMA_MISC_CFG_DMA_EN BIT(0)
 
 typedef struct {

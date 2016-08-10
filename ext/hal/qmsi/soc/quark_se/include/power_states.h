@@ -79,6 +79,30 @@ void power_soc_sleep(void);
 void power_soc_deep_sleep(void);
 
 /**
+ * Enable LPSS state entry.
+ *
+ * Put the SoC into LPSS on next C2/C2LP and SS2 state combination.<BR>
+ * SoC Hybrid Clock is gated in this state.<BR>
+ * Core Well Clocks are gated.<BR>
+ * RTC is the only clock remaining running.
+ *
+ * Possible SoC wake events are:
+ * 	- Low Power Comparator Interrupt
+ * 	- AON GPIO Interrupt
+ * 	- AON Timer Interrupt
+ * 	- RTC Interrupt
+ */
+void power_soc_lpss_enable(void);
+
+/**
+ * Disable LPSS state entry.
+ *
+ * Clear LPSS enable flag.<BR>
+ * This will prevent entry in LPSS when cores are in C2/C2LP and SS2 states.
+ */
+void power_soc_lpss_disable(void);
+
+/**
  * @}
  */
 

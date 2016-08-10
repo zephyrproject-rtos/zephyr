@@ -56,7 +56,7 @@ extern uint8_t test_flash_page[0x800];
 
 #define QM_FLASH_OTP_TRIM_CODE                                                 \
 	((qm_flash_otp_trim_t *)QM_FLASH_OTP_TRIM_CODE_BASE)
-#define QM_FLASH_OTP_SOC_DATA_VALID (0x24535021) /* $SP! */
+#define QM_FLASH_OTP_SOC_DATA_VALID (0x24535021) /**< $SP! */
 #define QM_FLASH_OTP_TRIM_MAGIC (QM_FLASH_OTP_TRIM_CODE->magic)
 
 typedef union {
@@ -91,21 +91,21 @@ typedef union {
  * Bootloader data
  */
 
-/* The flash controller where BL-Data is stored. */
+/** The flash controller where BL-Data is stored. */
 #define BL_DATA_FLASH_CONTROLLER QM_FLASH_0
-/* The flash region where BL-Data is stored. */
+/** The flash region where BL-Data is stored. */
 #define BL_DATA_FLASH_REGION QM_FLASH_REGION_SYS
-/* The flash address where the BL-Data Section starts. */
+/** The flash address where the BL-Data Section starts. */
 #define BL_DATA_FLASH_REGION_BASE QM_FLASH_REGION_SYS_0_BASE
-/* The flash page where the BL-Data Section starts. */
+/** The flash page where the BL-Data Section starts. */
 #define BL_DATA_SECTION_BASE_PAGE (94)
 
-/* The size (in pages) of the System_0 flash region of Quark SE. */
+/** The size (in pages) of the System_0 flash region of Quark SE. */
 #define QM_FLASH_REGION_SYS_0_PAGES (96)
-/* The size (in pages) of the System_1 flash region of Quark SE. */
+/** The size (in pages) of the System_1 flash region of Quark SE. */
 #define QM_FLASH_REGION_SYS_1_PAGES (96)
 
-/* The size (in pages) of the Bootloader Data section. */
+/** The size (in pages) of the Bootloader Data section. */
 #define BL_DATA_SECTION_PAGES (2)
 
 #if (BL_CONFIG_DUAL_BANK)
@@ -119,7 +119,7 @@ typedef union {
 #define BL_PARTITION_SIZE_LMT (QM_FLASH_REGION_SYS_1_PAGES)
 #endif /* BL_CONFIG_DUAL_BANK */
 
-/* Number of boot targets. */
+/** Number of boot targets. */
 #define BL_BOOT_TARGETS_NUM (2)
 
 #define BL_TARGET_IDX_LMT (0)

@@ -40,20 +40,30 @@
  * @{
  */
 
-/* Standard speed High/low period for 50% duty cycle bus clock (in nanosecs). */
+/**
+ * Standard speed High/low period for 50% duty cycle bus clock (in nanosecs).
+ */
 #define QM_I2C_SS_50_DC_NS (5000)
-/* Fast Speed High/low period for 50% duty cycle bus clock (in nanosecs). */
+/**
+ * Fast Speed High/low period for 50% duty cycle bus clock (in nanosecs).
+ */
 #define QM_I2C_FS_50_DC_NS (1250)
-/* High Speed High/low period for 50% duty cycle bus clock (in nanosecs). */
+/**
+ * High Speed High/low period for 50% duty cycle bus clock (in nanosecs).
+ */
 #define QM_I2C_FSP_50_DC_NS (500)
 
-/*
+/**
  * Standard speed minimum low period to meet timing requirements (in nanosecs).
  */
 #define QM_I2C_MIN_SS_NS (4700)
-/* Fast speed minimum low period to meet timing requirements (in nanosecs). */
+/**
+ * Fast speed minimum low period to meet timing requirements (in nanosecs).
+ */
 #define QM_I2C_MIN_FS_NS (1300)
-/* High speed minimum low period to meet timing requirements (in nanosecs). */
+/**
+ * High speed minimum low period to meet timing requirements (in nanosecs).
+ */
 #define QM_I2C_MIN_FSP_NS (500)
 
 /**

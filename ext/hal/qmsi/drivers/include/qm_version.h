@@ -40,12 +40,16 @@
  * @{
  */
 
-/* Create a single version number from the major, minor and patch numbers. */
+/**
+ * Create a single version number from the major, minor and patch numbers
+ */
 #define QM_VER_API_UINT                                                        \
 	((QM_VER_API_MAJOR * 10000) + (QM_VER_API_MINOR * 100) +               \
 	 QM_VER_API_PATCH)
 
-/* Create a version number string from the major, minor and patch numbers. */
+/**
+ * Create a version number string from the major, minor and patch numbers
+ */
 #define QM_VER_API_STRING                                                      \
 	QM_VER_STRINGIFY(QM_VER_API_MAJOR, QM_VER_API_MINOR, QM_VER_API_PATCH)
 

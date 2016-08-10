@@ -80,21 +80,29 @@ uint32_t test_sensor_aux[QM_SS_AUX_REGS_SIZE];
 #define __builtin_arc_nop()
 #endif
 
-/* Bitwise OR operation macro for registers in the auxiliary memory space. */
+/**
+ * @name Bitwise Operation Macros
+ * @{
+ */
+/** Bitwise OR operation macro for registers in the auxiliary memory space. */
 #define QM_SS_REG_AUX_OR(reg, mask)                                            \
 	(__builtin_arc_sr(__builtin_arc_lr(reg) | (mask), reg))
-/* Bitwise NAND operation macro for registers in the auxiliary memory space. */
+/** Bitwise NAND operation macro for registers in the auxiliary memory space. */
 #define QM_SS_REG_AUX_NAND(reg, mask)                                          \
 	(__builtin_arc_sr(__builtin_arc_lr(reg) & (~mask), reg))
+/** @} */
 
-/* Sensor Subsystem status32 register. */
-#define QM_SS_AUX_STATUS32 (0xA)
-/* Sensor Subsystem control register. */
-#define QM_SS_AUX_IC_CTRL (0x11)
-/* Sensor Subsystem cache invalidate register. */
+/**
+ * @name Status and Control Register
+ * @{
+ */
+#define QM_SS_AUX_STATUS32 (0xA) /**< Sensor Subsystem status32 register. */
+#define QM_SS_AUX_IC_CTRL (0x11) /**< Sensor Subsystem control register. */
+/**< Sensor Subsystem cache invalidate register. */
 #define QM_SS_AUX_IC_IVIL (0x19)
-/* Sensor Subsystem vector base register. */
+/**< Sensor Subsystem vector base register. */
 #define QM_SS_AUX_INT_VECTOR_BASE (0x25)
+/** @} */
 
 /**
  * @name SS Timer
@@ -129,7 +137,6 @@ typedef enum { QM_SS_TIMER_0 = 0, QM_SS_TIMER_NUM } qm_ss_timer_t;
  * @{
  */
 
-/** Sensor Subsystem GPIO register block type. */
 typedef enum {
 	QM_SS_GPIO_SWPORTA_DR = 0,
 	QM_SS_GPIO_SWPORTA_DDR,
@@ -144,11 +151,13 @@ typedef enum {
 	QM_SS_GPIO_LS_SYNC
 } qm_ss_gpio_reg_t;
 
+/* Sensor Subsystem GPIO register block type */
+
 #define QM_SS_GPIO_NUM_PINS (16)
 #define QM_SS_GPIO_LS_SYNC_CLK_EN BIT(31)
 #define QM_SS_GPIO_LS_SYNC_SYNC_LVL BIT(0)
 
-/** Sensor Subsystem GPIO. */
+/** Sensor Subsystem GPIO */
 typedef enum { QM_SS_GPIO_0 = 0, QM_SS_GPIO_1, QM_SS_GPIO_NUM } qm_ss_gpio_t;
 
 #define QM_SS_GPIO_0_BASE (0x80017800)
@@ -163,7 +172,7 @@ typedef enum { QM_SS_GPIO_0 = 0, QM_SS_GPIO_1, QM_SS_GPIO_NUM } qm_ss_gpio_t;
  * @{
  */
 
-/** Sensor Subsystem I2C register block type. */
+/** Sensor Subsystem I2C Registers*/
 typedef enum {
 	QM_SS_I2C_CON = 0,
 	QM_SS_I2C_DATA_CMD,
@@ -181,6 +190,7 @@ typedef enum {
 	QM_SS_I2C_ENABLE_STATUS = 0x11
 } qm_ss_i2c_reg_t;
 
+/** Sensor Subsystem I2C register block type */
 #define QM_SS_I2C_CON_ENABLE BIT(0)
 #define QM_SS_I2C_CON_ABORT BIT(1)
 #define QM_SS_I2C_CON_SPEED_SS BIT(3)
@@ -253,7 +263,6 @@ typedef enum { QM_SS_I2C_0 = 0, QM_SS_I2C_1, QM_SS_I2C_NUM } qm_ss_i2c_t;
 #define QM_SS_I2C_0_BASE (0x80012000)
 #define QM_SS_I2C_1_BASE (0x80012100)
 
-/** @} */
 /** Sensor Subsystem ADC @{*/
 
 /** Sensor Subsystem ADC registers */
@@ -272,10 +281,10 @@ typedef enum {
 	QM_SS_ADC_NUM
 } qm_ss_adc_t;
 
-/* SS ADC register base. */
+/** SS ADC register base */
 #define QM_SS_ADC_BASE (0x80015000)
 
-/* For 1MHz, the max divisor is 7. */
+/** For 1MHz, the max divisor is 7. */
 #define QM_SS_ADC_DIV_MAX (7)
 
 #define QM_SS_ADC_FIFO_LEN (32)
@@ -346,12 +355,6 @@ typedef enum {
 #define QM_SS_ADC_CAL_CMD_MASK (0xE0000)
 #define QM_SS_ADC_CAL_VAL_SET_OFFSET (20)
 #define QM_SS_ADC_CAL_VAL_SET_MASK (0x7F00000)
-
-#define QM_SS_IO_CREG_MST0_CTRL_ADC_CLK_GATE BIT(31)
-#define QM_SS_IO_CREG_MST0_CTRL_I2C1_CLK_GATE BIT(30)
-#define QM_SS_IO_CREG_MST0_CTRL_I2C0_CLK_GATE BIT(29)
-#define QM_SS_IO_CREG_MST0_CTRL_SPI0_CLK_GATE BIT(28)
-#define QM_SS_IO_CREG_MST0_CTRL_SPI1_CLK_GATE BIT(27)
 /* SLV0_OBSR fields */
 #define QM_SS_ADC_CAL_VAL_GET_OFFSET (5)
 #define QM_SS_ADC_CAL_VAL_GET_MASK (0xFE0)
@@ -362,7 +365,7 @@ typedef enum {
 	(SS_CLK_PERIPH_ADC | SS_CLK_PERIPH_I2C_1 | SS_CLK_PERIPH_I2C_0 |       \
 	 SS_CLK_PERIPH_SPI_1 | SS_CLK_PERIPH_SPI_0)
 
-/* SS CREG base. */
+/** SS CREG base */
 #define QM_SS_CREG_BASE (0x80018000)
 
 /** @} */
@@ -374,10 +377,10 @@ typedef enum {
  * @{
  */
 
-#define QM_SS_EXCEPTION_NUM (16)  /* Exceptions and traps in ARC EM core. */
-#define QM_SS_INT_TIMER_NUM (2)   /* Internal interrupts in ARC EM core. */
-#define QM_SS_IRQ_SENSOR_NUM (18) /* IRQ's from the Sensor Subsystem. */
-#define QM_SS_IRQ_COMMON_NUM (32) /* IRQ's from the common SoC fabric. */
+#define QM_SS_EXCEPTION_NUM (16)  /**< Exceptions and traps in ARC EM core */
+#define QM_SS_INT_TIMER_NUM (2)   /**< Internal interrupts in ARC EM core */
+#define QM_SS_IRQ_SENSOR_NUM (18) /**< IRQ's from the Sensor Subsystem */
+#define QM_SS_IRQ_COMMON_NUM (32) /**< IRQ's from the common SoC fabric */
 #define QM_SS_INT_VECTOR_NUM                                                   \
 	(QM_SS_EXCEPTION_NUM + QM_SS_INT_TIMER_NUM + QM_SS_IRQ_SENSOR_NUM +    \
 	 QM_SS_IRQ_COMMON_NUM)
@@ -567,7 +570,6 @@ typedef enum {
 #define QM_SS_SPI_DR_W_MASK (0xc0000000)
 #define QM_SS_SPI_DR_R_MASK (0x80000000)
 
-/** @} */
 /** @} */
 
 #endif /* __SENSOR_REGISTERS_H__ */

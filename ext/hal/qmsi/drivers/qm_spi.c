@@ -136,8 +136,7 @@ static void write_frame(const qm_spi_t spi, const uint8_t *const tx_buffer)
 
 static void wait_for_controller(const qm_spi_reg_t *const controller)
 {
-	/**
-	 * The controller must poll TFE status waiting for 1
+	/* Page 42 of databook says you must poll TFE status waiting for 1
 	 * before checking QM_SPI_SR_BUSY.
 	 */
 	while (!(controller->sr & QM_SPI_SR_TFE))
@@ -377,7 +376,9 @@ int qm_spi_transfer(const qm_spi_t spi, const qm_spi_transfer_t *const xfer,
 	uint8_t *rx_buffer = xfer->rx;
 	const uint8_t *tx_buffer = xfer->tx;
 
-	/* RX Only transfers need a dummy byte to be sent for starting. */
+	/* RX Only transfers need a dummy byte to be sent for starting.
+	 * This is covered by the databook on page 42.
+	 */
 	if (tmode[spi] == QM_SPI_TMOD_RX) {
 		tx_buffer = (uint8_t *)&tx_dummy_frame;
 		i_tx = 1;

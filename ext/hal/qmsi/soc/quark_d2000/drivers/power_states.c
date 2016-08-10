@@ -32,7 +32,6 @@
 #include "qm_comparator.h"
 #include "qm_isr.h"
 #include "qm_adc.h"
-#include "qm_flash.h"
 
 #include "rar.h"
 #include "soc_watch.h"
@@ -66,7 +65,6 @@ void power_soc_sleep(void)
 	uint32_t sys_clk_ctl_save = QM_SCSS_CCU->ccu_sys_clk_ctl;
 	uint32_t osc0_cfg_save = QM_SCSS_CCU->osc0_cfg1;
 	uint32_t adc_mode_save = QM_ADC->adc_op_mode;
-	uint32_t flash_tmg_save = QM_FLASH[QM_FLASH_0]->tmg_ctrl;
 
 	/* Clear any pending interrupts. */
 	clear_all_pending_interrupts();
@@ -134,18 +132,6 @@ void power_soc_sleep(void)
 	/* From here on, restore the SoC to an active state. */
 	/* Set the RAR to normal mode. */
 	rar_set_mode(RAR_NORMAL);
-
-	/*
-	 * Since we are running below 4MHz, 0 wait states are configured.
-	 * If the previous frequency was > 4MHz, 0 wait states will
-	 * violate the flash timings.
-	 * In the worst case scenario, when switching back to 32MHz,
-	 * 2 wait states will be restored.
-	 * This setting will be too conservative until the frequency has been
-	 * restored.
-	 */
-	QM_FLASH[QM_FLASH_0]->tmg_ctrl = flash_tmg_save;
-
 	/* Restore all previous values. */
 	QM_SCSS_CCU->ccu_sys_clk_ctl = sys_clk_ctl_save;
 	/* Re-apply clock divider values. DIV_EN must go 0 -> 1. */
@@ -181,7 +167,6 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	uint32_t osc1_cfg_save = QM_SCSS_CCU->osc1_cfg0;
 	uint32_t adc_mode_save = QM_ADC->adc_op_mode;
 	uint32_t aon_vr_save = QM_SCSS_PMU->aon_vr;
-	uint32_t flash_tmg_save = QM_FLASH[QM_FLASH_0]->tmg_ctrl;
 	uint32_t ext_clock_save;
 	uint32_t lp_clk_save, pmux_slew_save;
 
@@ -193,9 +178,9 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	clear_all_pending_interrupts();
 
 	/*
-	 * Clear the wake mask bits. Default behaviour is to wake from GPIO /
-	 * comparator.
-	 */
+     * Clear the wake mask bits. Default behaviour is to wake from GPIO /
+     * comparator.
+     */
 	switch (wake_event) {
 	case POWER_WAKE_FROM_RTC:
 		QM_SCSS_CCU->wake_mask =
@@ -300,17 +285,6 @@ void power_soc_deep_sleep(const power_wake_event_t wake_event)
 	/* We are now exiting from deep sleep mode. */
 	/* Set the RAR to normal mode. */
 	rar_set_mode(RAR_NORMAL);
-
-	/*
-	 * Since we are running below 4MHz, 0 wait states are configured.
-	 * If the previous frequency was > 4MHz, 0 wait states will
-	 * violate the flash timings.
-	 * In the worst case scenario, when switching back to 32MHz,
-	 * 2 wait states will be restored.
-	 * This setting will be too conservative until the frequency has been
-	 * restored.
-	 */
-	QM_FLASH[QM_FLASH_0]->tmg_ctrl = flash_tmg_save;
 
 	/* Restore operating voltage to 1.8V. */
 	/* SCSS.AON_VR.VSEL = 0x10; */

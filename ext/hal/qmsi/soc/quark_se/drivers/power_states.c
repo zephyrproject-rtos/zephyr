@@ -35,6 +35,18 @@
 #endif
 #include "soc_watch.h"
 
+void power_soc_lpss_enable()
+{
+	QM_SCSS_CCU->ccu_lp_clk_ctl |= QM_SCSS_CCU_SS_LPS_EN;
+	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_CCU_LP_CLK_CTL);
+}
+
+void power_soc_lpss_disable()
+{
+	QM_SCSS_CCU->ccu_lp_clk_ctl &= ~QM_SCSS_CCU_SS_LPS_EN;
+	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_CCU_LP_CLK_CTL);
+}
+
 void power_soc_sleep()
 {
 #if (QM_SENSOR)
@@ -85,7 +97,6 @@ void power_soc_deep_sleep()
 #if (!QM_SENSOR)
 void power_cpu_c1()
 {
-	SOC_WATCH_LOG_EVENT(SOCW_EVENT_HALT, 0);
 	__asm__ __volatile__("hlt");
 }
 

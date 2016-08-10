@@ -49,8 +49,8 @@ qm_i2c_reg_t *qm_i2c[QM_I2C_NUM] = {(qm_i2c_reg_t *)QM_I2C_0_BASE};
 #endif
 #endif
 
-static volatile const qm_i2c_transfer_t *i2c_transfer[QM_I2C_NUM];
-static volatile uint32_t i2c_write_pos[QM_I2C_NUM], i2c_read_pos[QM_I2C_NUM],
+static const qm_i2c_transfer_t *i2c_transfer[QM_I2C_NUM];
+static uint32_t i2c_write_pos[QM_I2C_NUM], i2c_read_pos[QM_I2C_NUM],
     i2c_read_cmd_send[QM_I2C_NUM];
 
 /**
@@ -67,8 +67,7 @@ typedef struct {
 	qm_dma_transfer_t dma_cmd_transfer_config;
 	volatile bool ongoing_dma_tx_operation; /* Keep track of ongoing TX */
 	volatile bool ongoing_dma_rx_operation; /* Keep track of oingoing RX*/
-	int tx_abort_status;
-	int i2c_error_code;
+	int multimaster_abort_status;
 } i2c_dma_context_t;
 
 /* DMA context */
@@ -98,13 +97,12 @@ static int controller_disable(const qm_i2c_t i2c);
 
 static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 {
-	const volatile qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
+	const qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 	uint32_t ic_data_cmd = 0, count_tx = (QM_I2C_FIFO_SIZE - TX_TL);
 	qm_i2c_status_t status = 0;
 	int rc = 0;
 	uint32_t read_buffer_remaining = transfer->rx_len - i2c_read_pos[i2c];
 	uint32_t write_buffer_remaining = transfer->tx_len - i2c_write_pos[i2c];
-	uint32_t missing_bytes;
 
 	qm_i2c_reg_t *const controller = QM_I2C[i2c];
 
@@ -130,15 +128,13 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 		if ((i2c_dma_context[i2c].ongoing_dma_rx_operation == true) ||
 		    (i2c_dma_context[i2c].ongoing_dma_tx_operation == true)) {
 			/* If in DMA mode, raise a flag and stop the channels */
-			i2c_dma_context[i2c].tx_abort_status = status;
-			i2c_dma_context[i2c].i2c_error_code = rc;
+			i2c_dma_context[i2c].multimaster_abort_status = rc;
 			/* When terminating the DMA transfer, the DMA controller
 			 * calls the TX or RX callback, which will trigger the
 			 * error callback. This will disable the I2C controller
 			 */
 			qm_i2c_dma_transfer_terminate(i2c);
 		} else {
-			controller_disable(i2c);
 			if (transfer->callback) {
 				/* NOTE: currently 0 is returned for length but
 				 * we may revisit that soon
@@ -146,6 +142,7 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 				transfer->callback(transfer->callback_data, rc,
 						   status, 0);
 			}
+			controller_disable(i2c);
 		}
 	}
 
@@ -205,13 +202,13 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 			 */
 			if (transfer->stop) {
 				controller_disable(i2c);
-			}
 
-			/* callback */
-			if (transfer->callback) {
-				transfer->callback(transfer->callback_data, 0,
-						   QM_I2C_IDLE,
-						   i2c_write_pos[i2c]);
+				/* callback */
+				if (transfer->callback) {
+					transfer->callback(
+					    transfer->callback_data, 0,
+					    QM_I2C_IDLE, i2c_write_pos[i2c]);
+				}
 			}
 		}
 
@@ -241,25 +238,9 @@ static void qm_i2c_isr_handler(const qm_i2c_t i2c)
 			 */
 		}
 
-		/* If missing_bytes is not null, then that means we are already
-		 * waiting for some bytes after sending read request on the
-		 * previous interruption. We have to take into account this
-		 * value in order to not send too much request so we won't fall
-		 * into rx overflow */
-		missing_bytes = read_buffer_remaining - i2c_read_cmd_send[i2c];
-
-		/* Sanity check: The number of read data but not processed
-		 * cannot be more than the number of expected bytes  */
-		QM_ASSERT(controller->ic_rxflr <= missing_bytes);
-
-		/* count_tx is the remaining size in the fifo */
-		count_tx = QM_I2C_FIFO_SIZE - controller->ic_txflr;
-
-		if (count_tx > missing_bytes) {
-			count_tx -= missing_bytes;
-		} else {
-			count_tx = 0;
-		}
+		/* TX read command */
+		count_tx = QM_I2C_FIFO_SIZE -
+			   (controller->ic_txflr + controller->ic_rxflr + 1);
 
 		while (i2c_read_cmd_send[i2c] &&
 		       (write_buffer_remaining == 0) && count_tx) {
@@ -774,7 +755,8 @@ int qm_i2c_dma_transfer_terminate(const qm_i2c_t i2c)
 static void i2c_dma_transfer_error_callback(uint32_t i2c, int error_code,
 					    uint32_t len)
 {
-	const volatile qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
+	const qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
+	qm_i2c_status_t status;
 
 	if (error_code != 0) {
 		if (i2c_dma_context[i2c].ongoing_dma_tx_operation == true) {
@@ -789,14 +771,16 @@ static void i2c_dma_transfer_error_callback(uint32_t i2c, int error_code,
 			i2c_dma_context[i2c].ongoing_dma_rx_operation = false;
 		}
 
-		/* Disable the controller */
+		/* Wait until the controller is done and disable it */
+		while (!(QM_I2C[i2c]->ic_status & QM_I2C_IC_STATUS_TFE)) {
+		}
 		controller_disable(i2c);
 
 		/* If the user has provided a callback, let's call it */
 		if (transfer->callback != NULL) {
+			qm_i2c_get_status(i2c, &status);
 			transfer->callback(transfer->callback_data, error_code,
-					   i2c_dma_context[i2c].tx_abort_status,
-					   len);
+					   status, len);
 		}
 	}
 }
@@ -812,9 +796,10 @@ static void i2c_dma_transmit_callback(void *callback_context, uint32_t len,
 	qm_i2c_status_t status;
 
 	qm_i2c_t i2c = ((i2c_dma_context_t *)callback_context)->i2c;
-	const volatile qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
+	const qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 
-	if ((error_code == 0) && (i2c_dma_context[i2c].i2c_error_code == 0)) {
+	if ((error_code == 0) &&
+	    (i2c_dma_context[i2c].multimaster_abort_status == 0)) {
 		/* Disable DMA transmit */
 		QM_I2C[i2c]->ic_dma_cr &= ~QM_I2C_IC_DMA_CR_TX_ENABLE;
 		i2c_dma_context[i2c].ongoing_dma_tx_operation = false;
@@ -832,11 +817,9 @@ static void i2c_dma_transmit_callback(void *callback_context, uint32_t len,
 				     .dma_tx_transfer_config.block_size];
 
 			/* Check if we must issue a stop condition and it's not
-			   a combined transaction, or bytes transfered are less
-			   than expected */
-			if (((transfer->stop == true) &&
-			     (transfer->rx_len == 0)) ||
-			    (len != transfer->tx_len - 1)) {
+			   a combined transaction */
+			if ((transfer->stop == true) &&
+			    (transfer->rx_len == 0)) {
 				data_command |=
 				    QM_I2C_IC_DATA_CMD_STOP_BIT_CTRL;
 			}
@@ -845,21 +828,17 @@ static void i2c_dma_transmit_callback(void *callback_context, uint32_t len,
 			len++;
 
 			/* Check if there is a pending read operation, meaning
-			   this is a combined transaction, and transfered data
-			   length is the expected */
-			if ((transfer->rx_len > 0) &&
-			    (len == transfer->tx_len)) {
+			   this is a combined transaction */
+			if (transfer->rx_len > 0) {
 				i2c_start_dma_read(i2c);
 			} else {
 				/* Let's disable the I2C controller if we are
 				   done */
-				if ((transfer->stop == true) ||
-				    (len != transfer->tx_len)) {
+				if (transfer->stop == true) {
 					/* This callback is called when DMA is
 					   done, but I2C can still be
 					   transmitting, so let's wait
 					   until all data is sent */
-
 					while (!(QM_I2C[i2c]->ic_status &
 						 QM_I2C_IC_STATUS_TFE)) {
 					}
@@ -880,9 +859,9 @@ static void i2c_dma_transmit_callback(void *callback_context, uint32_t len,
 		/* If error code is 0, a multimaster arbitration loss has
 		   happened, so use it as error code */
 		if (error_code == 0) {
-			error_code = i2c_dma_context[i2c].i2c_error_code;
+			error_code =
+			    i2c_dma_context[i2c].multimaster_abort_status;
 		}
-
 		i2c_dma_transfer_error_callback(i2c, error_code, len);
 	}
 }
@@ -896,9 +875,10 @@ static void i2c_dma_receive_callback(void *callback_context, uint32_t len,
 	qm_i2c_status_t status;
 
 	qm_i2c_t i2c = ((i2c_dma_context_t *)callback_context)->i2c;
-	const volatile qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
+	const qm_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 
-	if ((error_code == 0) && (i2c_dma_context[i2c].i2c_error_code == 0)) {
+	if ((error_code == 0) &&
+	    (i2c_dma_context[i2c].multimaster_abort_status == 0)) {
 		/* Disable DMA receive */
 		QM_I2C[i2c]->ic_dma_cr &= ~QM_I2C_IC_DMA_CR_RX_ENABLE;
 		i2c_dma_context[i2c].ongoing_dma_rx_operation = false;
@@ -1051,7 +1031,7 @@ int qm_i2c_master_dma_transfer(const qm_i2c_t i2c,
 	QM_I2C[i2c]->ic_dma_rdlr = 0;
 	QM_I2C[i2c]->ic_dma_tdlr = 0;
 
-	i2c_dma_context[i2c].i2c_error_code = 0;
+	i2c_dma_context[i2c].multimaster_abort_status = 0;
 
 	/* Setup RX if something to receive */
 	if (xfer->rx_len > 0) {

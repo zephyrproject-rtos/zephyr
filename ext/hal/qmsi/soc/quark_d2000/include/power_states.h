@@ -86,7 +86,7 @@ void power_soc_sleep();
  * enable waking from GPIO or comparator pins and POWER_WAKE_FROM_RTC will
  * enable waking from the RTC.
  *
- * @param[in] wake_event Select wake source for deep sleep mode.
+ * @param[in] wake_source Select wake source for deep sleep mode.
  */
 void power_soc_deep_sleep(const power_wake_event_t wake_event);
 

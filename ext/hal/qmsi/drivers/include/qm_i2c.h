@@ -273,9 +273,9 @@ int qm_i2c_irq_transfer_terminate(const qm_i2c_t i2c);
  * Note that qm_dma_init() must first be called before configuring a channel.
  *
  * @param[in] i2c I2C controller identifier.
- * @param[in] dma_controller_id DMA controller identifier.
- * @param[in] channel_id DMA channel identifier.
- * @param[in] direction DMA channel direction, either
+ * @param[in] dma_ctrl_id DMA controller identifier.
+ * @param[in] dma_channel_id DMA channel identifier.
+ * @param[in] dma_channel_direction DMA channel direction, either
  * QM_DMA_MEMORY_TO_PERIPHERAL (TX transfer) or QM_DMA_PERIPHERAL_TO_MEMORY
  * (RX transfer).
  *
@@ -309,7 +309,6 @@ int qm_i2c_dma_channel_config(const qm_i2c_t i2c,
  * @param[in] xfer Structure containing pre-allocated write and read data
  * buffers and callback functions. This pointer must be kept valid until the
  * transfer is complete.
- * @param[in] slave_addr Slave address.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.

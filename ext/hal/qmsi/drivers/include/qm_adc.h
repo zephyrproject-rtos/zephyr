@@ -226,7 +226,7 @@ int qm_adc_irq_calibrate(const qm_adc_t adc,
  * Set ADC calibration data.
  *
  * @param[in] adc Which ADC to set calibration for.
- * @param[in] cal Calibration data.
+ * @param[in] cal_data Calibration data.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.
@@ -238,7 +238,7 @@ int qm_adc_set_calibration(const qm_adc_t adc, const qm_adc_calibration_t cal);
  * Get the current calibration data for an ADC.
  *
  * @param[in] adc Which ADC to get calibration for.
- * @param[out] cal Calibration data. This must not be NULL.
+ * @param[out] adc Calibration data. This must not be NULL.
  *
  * @return Standard errno return type for QMSI.
  * @retval 0 on success.

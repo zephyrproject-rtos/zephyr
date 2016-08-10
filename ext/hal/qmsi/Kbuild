@@ -10,7 +10,7 @@ ifeq ($(CONFIG_SOC_QUARK_SE),y)
 obj-$(CONFIG_QMSI_BUILTIN) += soc/$(SOC_NAME)/drivers/vreg.o
 endif
 ifeq ($(CONFIG_SOC_QUARK_D2000),y)
-obj-$(CONFIG_QMSI_BUILTIN) += soc/$(SOC_NAME)/drivers/rar.o
+obj-$(CONFIG_QMSI_BUILTIN) += drivers/rar.o
 endif
 obj-$(CONFIG_RTC_QMSI) += drivers/qm_rtc.o
 obj-$(CONFIG_WDT_QMSI) += drivers/qm_wdt.o

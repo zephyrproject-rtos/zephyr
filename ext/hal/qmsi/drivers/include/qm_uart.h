@@ -41,97 +41,97 @@
  * @{
  */
 
-/* Divisor Latch Access Bit. */
+/** Divisor Latch Access Bit. */
 #define QM_UART_LCR_DLAB BIT(7)
-/* Auto Flow Control Enable Bit. */
+/** Auto Flow Control Enable Bit. */
 #define QM_UART_MCR_AFCE BIT(5)
-/* Request to Send Bit. */
+/** Request to Send Bit. */
 #define QM_UART_MCR_RTS BIT(1)
 
-/* FIFO Enable Bit. */
+/** FIFO Enable Bit. */
 #define QM_UART_FCR_FIFOE BIT(0)
-/* Reset Receive FIFO. */
+/** Reset Receive FIFO. */
 #define QM_UART_FCR_RFIFOR BIT(1)
-/* Reset Transmit FIFO. */
+/** Reset Transmit FIFO. */
 #define QM_UART_FCR_XFIFOR BIT(2)
-/* FIFO half RX, half TX Threshold. */
+/** FIFO half RX, half TX Threshold. */
 #define QM_UART_FCR_DEFAULT_TX_RX_THRESHOLD (0xB0)
-/* FIFO 1 byte RX, half TX Threshold. */
+/** FIFO 1 byte RX, half TX Threshold. */
 #define QM_UART_FCR_TX_1_2_RX_0_THRESHOLD (0x30)
-/* FIFO half RX, empty TX Threshold. */
+/** FIFO half RX, empty TX Threshold. */
 #define QM_UART_FCR_TX_0_RX_1_2_THRESHOLD (0x80)
 
-/* Transmit Holding Register Empty. */
+/** Transmit Holding Register Empty. */
 #define QM_UART_IIR_THR_EMPTY (0x02)
-/* Received Data Available. */
+/** Received Data Available. */
 #define QM_UART_IIR_RECV_DATA_AVAIL (0x04)
-/* Receiver Line Status. */
+/** Receiver Line Status. */
 #define QM_UART_IIR_RECV_LINE_STATUS (0x06)
-/* Character Timeout. */
+/** Character Timeout. */
 #define QM_UART_IIR_CHAR_TIMEOUT (0x0C)
-/* Interrupt ID Mask. */
+/** Interrupt ID Mask. */
 #define QM_UART_IIR_IID_MASK (0x0F)
 
-/* Data Ready Bit. */
+/** Data Ready Bit. */
 #define QM_UART_LSR_DR BIT(0)
-/* Overflow Error Bit. */
+/** Overflow Error Bit. */
 #define QM_UART_LSR_OE BIT(1)
-/* Parity Error Bit. */
+/** Parity Error Bit. */
 #define QM_UART_LSR_PE BIT(2)
-/* Framing Error Bit. */
+/** Framing Error Bit. */
 #define QM_UART_LSR_FE BIT(3)
-/* Break Interrupt Bit. */
+/** Break Interrupt Bit. */
 #define QM_UART_LSR_BI BIT(4)
-/* Transmit Holding Register Empty Bit. */
+/** Transmit Holding Register Empty Bit. */
 #define QM_UART_LSR_THRE BIT(5)
-/* Transmitter Empty Bit. */
+/** Transmitter Empty Bit. */
 #define QM_UART_LSR_TEMT BIT(6)
-/* Receiver FIFO Error Bit. */
+/** Receiver FIFO Error Bit. */
 #define QM_UART_LSR_RFE BIT(7)
 
-/* Enable Received Data Available Interrupt. */
+/** Enable Received Data Available Interrupt. */
 #define QM_UART_IER_ERBFI BIT(0)
-/* Enable Transmit Holding Register Empty Interrupt. */
+/** Enable Transmit Holding Register Empty Interrupt. */
 #define QM_UART_IER_ETBEI BIT(1)
-/* Enable Receiver Line Status Interrupt. */
+/** Enable Receiver Line Status Interrupt. */
 #define QM_UART_IER_ELSI BIT(2)
-/* Programmable THRE Interrupt Mode. */
+/** Programmable THRE Interrupt Mode. */
 #define QM_UART_IER_PTIME BIT(7)
 
-/* Line Status Errors. */
+/** Line Status Errors. */
 #define QM_UART_LSR_ERROR_BITS                                                 \
 	(QM_UART_LSR_OE | QM_UART_LSR_PE | QM_UART_LSR_FE | QM_UART_LSR_BI)
 
-/* FIFO Depth. */
+/** FIFO Depth. */
 #define QM_UART_FIFO_DEPTH (16)
-/* FIFO Half Depth. */
+/** FIFO Half Depth. */
 #define QM_UART_FIFO_HALF_DEPTH (QM_UART_FIFO_DEPTH / 2)
 
-/* Divisor Latch High Offset. */
+/** Divisor Latch High Offset. */
 #define QM_UART_CFG_BAUD_DLH_OFFS 16
-/* Divisor Latch Low Offset. */
+/** Divisor Latch Low Offset. */
 #define QM_UART_CFG_BAUD_DLL_OFFS 8
-/* Divisor Latch Fraction Offset. */
+/** Divisor Latch Fraction Offset. */
 #define QM_UART_CFG_BAUD_DLF_OFFS 0
-/* Divisor Latch High Mask. */
+/** Divisor Latch High Mask. */
 #define QM_UART_CFG_BAUD_DLH_MASK (0xFF << QM_UART_CFG_BAUD_DLH_OFFS)
-/* Divisor Latch Low Mask. */
+/** Divisor Latch Low Mask. */
 #define QM_UART_CFG_BAUD_DLL_MASK (0xFF << QM_UART_CFG_BAUD_DLL_OFFS)
-/* Divisor Latch Fraction Mask. */
+/** Divisor Latch Fraction Mask. */
 #define QM_UART_CFG_BAUD_DLF_MASK (0xFF << QM_UART_CFG_BAUD_DLF_OFFS)
 
-/* Divisor Latch Packing Helper. */
+/** Divisor Latch Packing Helper. */
 #define QM_UART_CFG_BAUD_DL_PACK(dlh, dll, dlf)                                \
 	(dlh << QM_UART_CFG_BAUD_DLH_OFFS | dll << QM_UART_CFG_BAUD_DLL_OFFS | \
 	 dlf << QM_UART_CFG_BAUD_DLF_OFFS)
 
-/* Divisor Latch High Unpacking Helper. */
+/** Divisor Latch High Unpacking Helper. */
 #define QM_UART_CFG_BAUD_DLH_UNPACK(packed)                                    \
 	((packed & QM_UART_CFG_BAUD_DLH_MASK) >> QM_UART_CFG_BAUD_DLH_OFFS)
-/* Divisor Latch Low Unpacking Helper. */
+/** Divisor Latch Low Unpacking Helper. */
 #define QM_UART_CFG_BAUD_DLL_UNPACK(packed)                                    \
 	((packed & QM_UART_CFG_BAUD_DLL_MASK) >> QM_UART_CFG_BAUD_DLL_OFFS)
-/* Divisor Latch Fraction Unpacking Helper. */
+/** Divisor Latch Fraction Unpacking Helper. */
 #define QM_UART_CFG_BAUD_DLF_UNPACK(packed)                                    \
 	((packed & QM_UART_CFG_BAUD_DLF_MASK) >> QM_UART_CFG_BAUD_DLF_OFFS)
 
