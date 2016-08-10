@@ -58,6 +58,24 @@ QM_ISR_DECLARE(qm_ss_adc_0_isr);
 QM_ISR_DECLARE(qm_ss_adc_0_err_isr);
 
 /**
+ * ISR for SS ADC 0 calibration interrupt.
+ *
+ * This function needs to be registered with
+ * @code qm_irq_request(QM_SS_IRQ_ADC_CAL, qm_ss_adc_0_cal_isr);
+ * @endcode if IRQ based calibration is used.
+ */
+QM_ISR_DECLARE(qm_ss_adc_0_cal_isr);
+
+/**
+ * ISR for SS ADC 0 mode change interrupt.
+ *
+ * This function needs to be registered with
+ * @code qm_irq_request(QM_SS_IRQ_ADC_PWR, qm_ss_adc_0_pwr_isr);
+ * @endcode if IRQ based mode change is used.
+ */
+QM_ISR_DECLARE(qm_ss_adc_0_pwr_isr);
+
+/**
  * ISR for GPIO 0 error interrupt.
  *
  * This function needs to be registered with

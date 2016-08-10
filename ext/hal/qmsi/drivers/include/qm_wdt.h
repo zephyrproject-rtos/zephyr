@@ -40,14 +40,13 @@
  * @{
  */
 
-/** Watchdog enable. */
+/* Watchdog enable. */
 #define QM_WDT_ENABLE (BIT(0))
-/** Watchdog mode. */
+/* Watchdog mode. */
 #define QM_WDT_MODE (BIT(1))
-/** Watchdog mode offset. */
+/* Watchdog mode offset. */
 #define QM_WDT_MODE_OFFSET (1)
-
-/** Watchdog Timeout Mask. */
+/* Watchdog Timeout Mask. */
 #define QM_WDT_TIMEOUT_MASK (0xF)
 
 /**

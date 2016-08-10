@@ -60,27 +60,6 @@ QM_ISR_DECLARE(qm_adc_0_isr);
 QM_ISR_DECLARE(qm_adc_pwr_0_isr);
 #endif /* QUARK_D2000 */
 
-#if (QUARK_SE)
-/**
- * ISR for SS ADC 0 calibration interrupt.
- *
- * This function needs to be registered with
- * @code qm_irq_request(QM_SS_IRQ_ADC_CAL, qm_ss_adc_0_cal_isr);
- * @endcode if IRQ based calibration is used.
- */
-QM_ISR_DECLARE(qm_ss_adc_0_cal_isr);
-
-/**
- * ISR for SS ADC 0 mode change interrupt.
- *
- * This function needs to be registered with
- * @code qm_irq_request(QM_SS_IRQ_ADC_PWR, qm_ss_adc_0_pwr_isr);
- * @endcode if IRQ based mode change is used.
- */
-QM_ISR_DECLARE(qm_ss_adc_0_pwr_isr);
-
-#endif /* QUARK_SE */
-
 /**
  * ISR for Always-on Periodic Timer 0 interrupt.
  *

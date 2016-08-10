@@ -68,6 +68,11 @@ int qm_ac_set_config(const qm_ac_config_t *const config)
 {
 	QM_CHECK(config != NULL, -EINVAL);
 
+	/* Avoid interrupts while configuring the comparators.
+	 * This can happen when the polarity is changed
+	 * compared to a previously configured interrupt. */
+	QM_SCSS_CMP->cmp_en = 0;
+
 	callback = config->callback;
 	callback_data = config->callback_data;
 	QM_SCSS_CMP->cmp_ref_sel = config->reference;
