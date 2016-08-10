@@ -21,7 +21,6 @@ menuconfig BLUETOOTH
 	default n
 	select NANO_TIMEOUTS
 	select NET_BUF
-	select BLUETOOTH_LE if !BLUETOOTH_STACK_NBLE
 	help
 	  This option enables Bluetooth support.
 
@@ -50,7 +49,7 @@ comment "HCI Stack Configurations"
 
 config BLUETOOTH_LE
 	bool "Bluetooth Low Energy (LE) support"
-	default n
+	default y
 	select TINYCRYPT
 	select TINYCRYPT_AES if BLUETOOTH_SMP
 	select TINYCRYPT_AES_CMAC if BLUETOOTH_SMP
