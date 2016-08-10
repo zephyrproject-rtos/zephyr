@@ -29,6 +29,7 @@
 
 #include "clk.h"
 #include "flash_layout.h"
+#include "qm_flash.h"
 #if (!QM_SENSOR) || (UNIT_TEST)
 #include <x86intrin.h>
 #endif
@@ -51,6 +52,85 @@
  */
 static uint32_t ticks_per_us = SYS_TICKS_PER_US_32MHZ;
 
+/* Set up flash timings according to the target sysclk frequency.
+ *
+ * By POR prefetcher is disabled.
+ * Drivers do not expect the pre-fetcher to be enabled,
+ * therefore this function does assume the prefetcher is always turned off.
+ */
+static void apply_flash_timings(uint32_t sys_ticks_per_us)
+{
+	uint32_t flash;
+
+	for (flash = QM_FLASH_0; flash < QM_FLASH_NUM; flash++) {
+		if (sys_ticks_per_us <= SYS_TICKS_PER_US_4MHZ) {
+			/*
+			 * QM_FLASH_CLK_SLOW enables 0 wait states
+			 * for flash accesses.
+			 */
+			QM_FLASH[flash]->tmg_ctrl |= QM_FLASH_CLK_SLOW;
+			QM_FLASH[flash]->tmg_ctrl &= ~QM_FLASH_WAIT_STATE_MASK;
+		} else if (sys_ticks_per_us <= SYS_TICKS_PER_US_16MHZ) {
+			QM_FLASH[flash]->tmg_ctrl &= ~QM_FLASH_CLK_SLOW;
+			/*
+			 * READ_WAIT_STATE_L has an integrated +1 which
+			 * results as 1 wait state for 8MHz and 16MHz.
+			 */
+			QM_FLASH[flash]->tmg_ctrl &= ~QM_FLASH_WAIT_STATE_MASK;
+		} else {
+			QM_FLASH[flash]->tmg_ctrl &= ~QM_FLASH_CLK_SLOW;
+			/*
+			 * READ_WAIT_STATE_L has an integrated +1 which
+			 * results as 2 wait states for 32MHz.
+			 */
+			QM_FLASH[flash]->tmg_ctrl =
+			    (QM_FLASH[flash]->tmg_ctrl &
+			     ~QM_FLASH_WAIT_STATE_MASK) |
+			    (1 << QM_FLASH_WAIT_STATE_OFFSET);
+		}
+	}
+}
+
+/*
+ * Compute the system clock ticks per microsecond and get the shadowed trim code
+ * from the Data Region of Flash.
+ */
+static void clk_sys_compute_new_frequency(clk_sys_mode_t mode,
+					  clk_sys_div_t div,
+					  uint32_t *sys_ticks_per_us,
+					  uint16_t *trim)
+{
+	switch (mode) {
+	case CLK_SYS_HYB_OSC_32MHZ:
+		*sys_ticks_per_us = SYS_TICKS_PER_US_32MHZ / BIT(div);
+		*trim = QM_FLASH_DATA_TRIM_CODE->osc_trim_32mhz;
+		break;
+
+	case CLK_SYS_HYB_OSC_16MHZ:
+		*sys_ticks_per_us = SYS_TICKS_PER_US_16MHZ / BIT(div);
+		*trim = QM_FLASH_DATA_TRIM_CODE->osc_trim_16mhz;
+		break;
+
+	case CLK_SYS_HYB_OSC_8MHZ:
+		*sys_ticks_per_us = SYS_TICKS_PER_US_8MHZ / BIT(div);
+		*trim = QM_FLASH_DATA_TRIM_CODE->osc_trim_8mhz;
+		break;
+
+	case CLK_SYS_HYB_OSC_4MHZ:
+		*sys_ticks_per_us = SYS_TICKS_PER_US_4MHZ / BIT(div);
+		*trim = QM_FLASH_DATA_TRIM_CODE->osc_trim_4mhz;
+		break;
+
+	case CLK_SYS_RTC_OSC:
+		*sys_ticks_per_us = 1;
+		break;
+
+	case CLK_SYS_CRYSTAL_OSC:
+		*sys_ticks_per_us = SYS_TICKS_PER_US_XTAL / BIT(div);
+		break;
+	}
+}
+
 int clk_sys_set_mode(const clk_sys_mode_t mode, const clk_sys_div_t div)
 {
 	QM_CHECK(div < CLK_SYS_DIV_NUM, -EINVAL);
@@ -66,6 +146,17 @@ int clk_sys_set_mode(const clk_sys_mode_t mode, const clk_sys_div_t div)
 	 */
 	uint32_t ccu_sys_clk_ctl =
 	    QM_SCSS_CCU->ccu_sys_clk_ctl & CLK_SYS_CLK_DIV_DEF_MASK;
+
+	/* Compute new frequency parameters. */
+	clk_sys_compute_new_frequency(mode, div, &sys_ticks_per_us, &trim);
+
+	/*
+	 * Changing sysclk frequency requires flash settings (mainly
+	 * wait states) to be realigned so as to avoid timing violations.
+	 * During clock switching, we change flash timings to the
+	 * most conservative settings (supporting up to 32MHz).
+	 */
+	apply_flash_timings(SYS_TICKS_PER_US_32MHZ);
 
 	/*
 	 * Steps:
@@ -89,22 +180,6 @@ int clk_sys_set_mode(const clk_sys_mode_t mode, const clk_sys_div_t div)
 	case CLK_SYS_HYB_OSC_16MHZ:
 	case CLK_SYS_HYB_OSC_8MHZ:
 	case CLK_SYS_HYB_OSC_4MHZ:
-		/* Calculate the system clock ticks per microsecond
-		 * and get the shadowed trim code from the Data Region of Flash.
-		 */
-		if (CLK_SYS_HYB_OSC_32MHZ == mode) {
-			sys_ticks_per_us = SYS_TICKS_PER_US_32MHZ / BIT(div);
-			trim = QM_FLASH_DATA_TRIM_CODE->osc_trim_32mhz;
-		} else if (CLK_SYS_HYB_OSC_16MHZ == mode) {
-			sys_ticks_per_us = SYS_TICKS_PER_US_16MHZ / BIT(div);
-			trim = QM_FLASH_DATA_TRIM_CODE->osc_trim_16mhz;
-		} else if (CLK_SYS_HYB_OSC_8MHZ == mode) {
-			sys_ticks_per_us = SYS_TICKS_PER_US_8MHZ / BIT(div);
-			trim = QM_FLASH_DATA_TRIM_CODE->osc_trim_8mhz;
-		} else {
-			sys_ticks_per_us = SYS_TICKS_PER_US_4MHZ / BIT(div);
-			trim = QM_FLASH_DATA_TRIM_CODE->osc_trim_4mhz;
-		}
 		/*
 		 * Apply trim code for the selected mode if this has been
 		 * written in the soc_data section.
@@ -159,6 +234,11 @@ int clk_sys_set_mode(const clk_sys_mode_t mode, const clk_sys_div_t div)
 
 	QM_SCSS_CCU->ccu_sys_clk_ctl |= QM_CCU_SYS_CLK_DIV_EN;
 	ticks_per_us = (sys_ticks_per_us > 0 ? sys_ticks_per_us : 1);
+
+	/*
+	 * Apply flash timings for the new clock settings.
+	 */
+	apply_flash_timings(sys_ticks_per_us);
 
 	/* Log any clock changes. */
 	SOC_WATCH_LOG_EVENT(SOCW_EVENT_REGISTER, SOCW_REG_OSC0_CFG1);

@@ -64,22 +64,23 @@
  */
 
 static uint32_t i2c_base[QM_SS_I2C_NUM] = {QM_SS_I2C_0_BASE, QM_SS_I2C_1_BASE};
-static const qm_ss_i2c_transfer_t *i2c_transfer[QM_SS_I2C_NUM];
-static uint32_t i2c_write_pos[QM_SS_I2C_NUM], i2c_read_pos[QM_SS_I2C_NUM],
-    i2c_read_cmd_send[QM_SS_I2C_NUM];
+static volatile const qm_ss_i2c_transfer_t *i2c_transfer[QM_SS_I2C_NUM];
+static volatile uint32_t i2c_write_pos[QM_SS_I2C_NUM],
+    i2c_read_pos[QM_SS_I2C_NUM], i2c_read_cmd_send[QM_SS_I2C_NUM];
 
 static void controller_enable(const qm_ss_i2c_t i2c);
 static int controller_disable(const qm_ss_i2c_t i2c);
 
 static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 {
-	const qm_ss_i2c_transfer_t *const transfer = i2c_transfer[i2c];
+	const volatile qm_ss_i2c_transfer_t *const transfer = i2c_transfer[i2c];
 	uint32_t controller = i2c_base[i2c], data_cmd = 0,
 		 count_tx = (QM_SS_I2C_FIFO_SIZE - TX_TL);
 	qm_ss_i2c_status_t status = 0;
 	int rc = 0;
 	uint32_t read_buffer_remaining = transfer->rx_len - i2c_read_pos[i2c];
 	uint32_t write_buffer_remaining = transfer->tx_len - i2c_write_pos[i2c];
+	uint32_t missing_bytes;
 
 	/* Check for errors */
 	QM_ASSERT(!(__builtin_arc_lr(controller + QM_SS_I2C_INTR_STAT) &
@@ -109,12 +110,11 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 
 		rc = (status & QM_I2C_TX_ABRT_USER_ABRT) ? -ECANCELED : -EIO;
 
+		controller_disable(i2c);
 		if (i2c_transfer[i2c]->callback) {
 			i2c_transfer[i2c]->callback(
 			    i2c_transfer[i2c]->callback_data, rc, status, 0);
 		}
-
-		controller_disable(i2c);
 	}
 
 	/* RX read from buffer */
@@ -184,13 +184,13 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 			 */
 			if (i2c_transfer[i2c]->stop) {
 				controller_disable(i2c);
+			}
 
-				/* callback */
-				if (i2c_transfer[i2c]->callback) {
-					i2c_transfer[i2c]->callback(
-					    i2c_transfer[i2c]->callback_data, 0,
-					    QM_I2C_IDLE, i2c_write_pos[i2c]);
-				}
+			/* callback */
+			if (i2c_transfer[i2c]->callback) {
+				i2c_transfer[i2c]->callback(
+				    i2c_transfer[i2c]->callback_data, 0,
+				    QM_I2C_IDLE, i2c_write_pos[i2c]);
 			}
 		}
 
@@ -223,11 +223,27 @@ static void qm_ss_i2c_isr_handler(const qm_ss_i2c_t i2c)
 			 */
 		}
 
-		/* TX read command */
-		count_tx =
-		    QM_SS_I2C_FIFO_SIZE -
-		    (__builtin_arc_lr(controller + QM_SS_I2C_TXFLR) +
-		     (__builtin_arc_lr(controller + QM_SS_I2C_RXFLR) + 1));
+		/* If missing_bytes is not null, then that means we are already
+		 * waiting for some bytes after sending read request on the
+		 * previous interruption. We have to take into account this
+		 * value in order to not send too much request so we won't fall
+		 * into rx overflow */
+		missing_bytes = read_buffer_remaining - i2c_read_cmd_send[i2c];
+
+		/* Sanity check: The number of read data but not processed
+		 * cannot be more than the number of expected bytes  */
+		QM_ASSERT(__builtin_arc_lr(controller + QM_SS_I2C_RXFLR) <=
+			  missing_bytes);
+
+		/* count_tx is the remaining size in the fifo */
+		count_tx = QM_SS_I2C_FIFO_SIZE -
+			   __builtin_arc_lr(controller + QM_SS_I2C_TXFLR);
+
+		if (count_tx > missing_bytes) {
+			count_tx -= missing_bytes;
+		} else {
+			count_tx = 0;
+		}
 
 		while (i2c_read_cmd_send[i2c] &&
 		       (write_buffer_remaining == 0) && count_tx) {

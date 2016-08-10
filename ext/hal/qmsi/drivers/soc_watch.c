@@ -253,7 +253,7 @@ void soc_watch_log_app_event(soc_watch_event_t event_id, uint8_t ev_subtype,
 			     uintptr_t ev_data)
 {
 	static uint8_t record_rtc = 0;
-	const uint32_t *rtc_ctr = (uint32_t *)&QM_RTC->rtc_ccr;
+	const uint32_t *rtc_ctr = (uint32_t *)&QM_RTC->rtc_ccvr;
 	const char *cp;
 	uint64_t tsc = __builtin_ia32_rdtsc(); /* Grab hi-res timestamp */
 	uint32_t rtc_val = *rtc_ctr;

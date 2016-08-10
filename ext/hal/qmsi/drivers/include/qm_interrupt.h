@@ -37,10 +37,10 @@
  * Linear mapping between IRQs and interrupt vectors
  */
 #if (QUARK_SE)
-#define QM_IRQ_TO_VECTOR(irq) (irq + 36) /**<  Get the vector of and irq. */
+#define QM_IRQ_TO_VECTOR(irq) (irq + 36) /* Get the vector of and IRQ. */
 
 #elif(QUARK_D2000)
-#define QM_IRQ_TO_VECTOR(irq) (irq + 32) /**<  Get the vector of and irq. */
+#define QM_IRQ_TO_VECTOR(irq) (irq + 32) /* Get the vector of and IRQ. */
 
 #endif
 
@@ -84,16 +84,14 @@ void _qm_register_isr(uint32_t vector, qm_isr_t isr);
 
 void _qm_irq_setup(uint32_t irq, uint16_t register_offset);
 
-/**
+/*
  * Request a given IRQ and register Interrupt Service Routine to interrupt
  * vector.
  *
  * @param[in] irq IRQ number. Must be of type QM_IRQ_XXX.
  * @param[in] isr ISR to register to given IRQ.
  */
-#if (UNIT_TEST)
-#define qm_irq_request(irq, isr)
-#elif(QM_SENSOR)
+#if (QM_SENSOR)
 #define qm_irq_request(irq, isr)                                               \
 	do {                                                                   \
 		_qm_register_isr(irq##_VECTOR, isr);                           \
@@ -106,7 +104,7 @@ void _qm_irq_setup(uint32_t irq, uint16_t register_offset);
                                                                                \
 		_qm_irq_setup(irq, irq##_MASK_OFFSET);                         \
 	} while (0)
-#endif /* UNIT_TEST */
+#endif /* QM_SENSOR */
 
 /**
  * Request an interrupt vector and register Interrupt Service Routine to it.

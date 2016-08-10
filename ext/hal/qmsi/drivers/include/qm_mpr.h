@@ -40,17 +40,17 @@
  * @{
  */
 
-/** MPR mask enable */
+/* MPR mask enable. */
 #define QM_SRAM_MPR_EN_MASK_ENABLE BIT(0)
-/** MPR mask lock */
+/* MPR mask lock. */
 #define QM_SRAM_MPR_EN_MASK_LOCK BIT(1)
-/** MPR mask host */
+/* MPR mask host. */
 #define QM_SRAM_MPR_AGENT_MASK_HOST BIT(0)
-/** MPR mask ss */
+/* MPR mask ss. */
 #if (QUARK_SE)
 #define QM_SRAM_MPR_AGENT_MASK_SS BIT(1)
 #endif
-/** MPR mask dma */
+/* MPR mask dma. */
 #define QM_SRAM_MPR_AGENT_MASK_DMA BIT(2)
 
 typedef void (*qm_mpr_callback_t)(void *);
@@ -93,7 +93,7 @@ int qm_mpr_set_config(const qm_mpr_id_t id, const qm_mpr_config_t *const cfg);
  *
  * @param [in] mode (generate interrupt, warm reset, enter probe mode).
  * @param [in] callback_fn for interrupt mode (only).
- * @param [in] callback_data user data for interrupt mode (only).
+ * @param [in] data user data for interrupt mode (only).
  * @return int 0 on success, error code otherwise.
  * */
 int qm_mpr_set_violation_policy(const qm_mpr_viol_mode_t mode,

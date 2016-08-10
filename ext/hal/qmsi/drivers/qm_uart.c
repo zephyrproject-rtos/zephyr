@@ -85,7 +85,7 @@ static bool is_write_xfer_complete(const qm_uart_t uart)
 	return write_pos[uart] >= transfer->data_len;
 }
 
-static void uart_client_callback(void *data, int error, qm_uart_status_t status,
+static void uart_client_callback(qm_uart_t uart, void *data, int error,
 				 uint32_t len);
 
 static void qm_uart_isr_handler(const qm_uart_t uart)
@@ -114,9 +114,9 @@ static void qm_uart_isr_handler(const qm_uart_t uart)
 			regs->ier_dlh &= ~QM_UART_IER_ETBEI;
 
 			uart_client_callback(
-			    dma_delayed_callback_par[uart].context,
+			    uart, dma_delayed_callback_par[uart].context,
 			    dma_delayed_callback_par[uart].error_code,
-			    QM_UART_IDLE, dma_delayed_callback_par[uart].len);
+			    dma_delayed_callback_par[uart].len);
 			dma_delayed_callback_par[uart].context = NULL;
 			return;
 		}
@@ -475,6 +475,7 @@ int qm_uart_irq_read_terminate(const qm_uart_t uart)
 static void uart_dma_callback(void *callback_context, uint32_t len,
 			      int error_code)
 {
+	qm_uart_t uart;
 	QM_ASSERT(callback_context);
 	/*
 	 * On TX transfers, the DMA driver invokes this function as soon as all
@@ -489,8 +490,7 @@ static void uart_dma_callback(void *callback_context, uint32_t len,
 		 * TX transfer, we extract the uart index from the position in
 		 * the array.
 		 */
-		const qm_uart_t uart =
-		    (dma_context_t *)callback_context - dma_context_tx;
+		uart = (dma_context_t *)callback_context - dma_context_tx;
 		QM_ASSERT(callback_context == (void *)&dma_context_tx[uart]);
 		qm_uart_reg_t *const regs = QM_UART[uart];
 
@@ -507,13 +507,14 @@ static void uart_dma_callback(void *callback_context, uint32_t len,
 		regs->ier_dlh |= QM_UART_IER_ETBEI;
 	} else {
 		/* RX transfer. */
-		uart_client_callback(callback_context, error_code, QM_UART_IDLE,
-				     len);
+		uart = (dma_context_t *)callback_context - dma_context_rx;
+		QM_ASSERT(callback_context == (void *)&dma_context_rx[uart]);
+		uart_client_callback(uart, callback_context, error_code, len);
 	}
 }
 
 /* Invoke the UART client callback. */
-static void uart_client_callback(void *data, int error, qm_uart_status_t status,
+static void uart_client_callback(qm_uart_t uart, void *data, int error,
 				 uint32_t len)
 {
 	const qm_uart_transfer_t *const xfer = ((dma_context_t *)data)->xfer;
@@ -521,10 +522,15 @@ static void uart_client_callback(void *data, int error, qm_uart_status_t status,
 	const uart_client_callback_t client_callback = xfer->callback;
 	void *const client_data = xfer->callback_data;
 	const uint32_t client_expected_len = xfer->data_len;
+	qm_uart_reg_t *const regs = QM_UART[uart];
+	qm_uart_status_t status;
 
 	if (!client_callback) {
 		return;
 	}
+
+	status = regs->lsr & QM_UART_LSR_ERROR_BITS;
+	status |= (regs->lsr & QM_UART_LSR_DR) ? QM_UART_RX_BUSY : 0;
 
 	if (error) {
 		/*
