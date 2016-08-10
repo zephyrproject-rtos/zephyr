@@ -66,10 +66,32 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 #define ieee802154_acknowledge(...)
 #endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
 
+static inline void set_buf_ll_addr(struct net_linkaddr *addr, bool comp,
+				   enum ieee802154_addressing_mode mode,
+				   struct ieee802154_address_field *ll)
+{
+	if (mode == IEEE802154_ADDR_MODE_NONE) {
+		return;
+	}
+
+	if (mode == IEEE802154_ADDR_MODE_EXTENDED) {
+		addr->len = IEEE802154_EXT_ADDR_LENGTH;
+
+		if (comp) {
+			addr->addr = ll->comp.addr.ext_addr;
+		} else {
+			addr->addr = ll->plain.addr.ext_addr;
+		}
+	} else {
+		/* ToDo: Handle short address (lookup known nbr, ...) */
+		addr->len = 0;
+		addr->addr = NULL;
+	}
+}
+
 static enum net_verdict ieee802154_recv(struct net_if *iface,
 					struct net_buf *buf)
 {
-	struct net_linkaddr *ll_addr;
 	struct ieee802154_mpdu mpdu;
 
 	if (!ieee802154_validate_frame(net_nbuf_ll(buf),
@@ -86,29 +108,21 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 		return NET_DROP;
 	}
 
+	ieee802154_acknowledge(iface, &mpdu);
+
 	/**
 	 * We now remove the size of the MFR from the total length
 	 * so net_core will not count it as IP data.
 	 */
 	buf->frags->len -= IEEE802154_MFR_LENGTH;
-
-	ieee802154_acknowledge(iface, &mpdu);
-
 	net_nbuf_set_ll_reserve(buf, mpdu.payload - (void *)net_nbuf_ll(buf));
 	net_buf_pull(buf->frags, net_nbuf_ll_reserve(buf));
 
-	/* ToDo: handle short address */
-	if (mpdu.mhr.fs->fc.src_addr_mode != IEEE802154_ADDR_MODE_NONE) {
-		ll_addr = net_nbuf_ll_src(buf);
-		ll_addr->addr = mpdu.mhr.src_addr->plain.addr.ext_addr;
-		ll_addr->len = IEEE802154_EXT_ADDR_LENGTH;
-	}
+	set_buf_ll_addr(net_nbuf_ll_src(buf), mpdu.mhr.fs->fc.pan_id_comp,
+			mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
 
-	if (mpdu.mhr.fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
-		ll_addr = net_nbuf_ll_dst(buf);
-		ll_addr->addr = mpdu.mhr.dst_addr->plain.addr.ext_addr;
-		ll_addr->len = IEEE802154_EXT_ADDR_LENGTH;
-	}
+	set_buf_ll_addr(net_nbuf_ll_dst(buf), false,
+			mpdu.mhr.fs->fc.dst_addr_mode, mpdu.mhr.dst_addr);
 
 	return NET_CONTINUE;
 }
