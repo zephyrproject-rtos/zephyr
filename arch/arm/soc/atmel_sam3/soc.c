@@ -187,6 +187,9 @@ static int atmel_sam3_init(struct device *arg)
 	/* Setup master clock */
 	clock_init();
 
+	/* Disable watchdog timer, not used by system */
+	__WDT->mr |= WDT_DISABLE;
+
 	/* Install default handler that simply resets the CPU
 	 * if configured in the kernel, NOP otherwise
 	 */
