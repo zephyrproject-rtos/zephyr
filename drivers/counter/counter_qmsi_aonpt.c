@@ -20,6 +20,7 @@
 #include <init.h>
 #include <drivers/ioapic.h>
 #include <counter.h>
+#include <power.h>
 
 #include "qm_aon_counters.h"
 #include "qm_isr.h"
@@ -178,9 +179,33 @@ static int aon_timer_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME,
-		    aon_timer_init, AONPT_CONTEXT, NULL, SECONDARY,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static uint32_t int_aonpt_mask_save;
+
+static int aonpt_suspend_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		int_aonpt_mask_save = QM_SCSS_INT->int_aon_timer_mask;
+	}
+
+	return 0;
+}
+
+static int aonpt_resume_device(struct device *dev, int pm_policy)
+{
+	if (pm_policy == SYS_PM_DEEP_SLEEP) {
+		QM_SCSS_INT->int_aon_timer_mask = int_aonpt_mask_save;
+	}
+
+	return 0;
+}
+#endif
+
+DEFINE_DEVICE_PM_OPS(aon_timer, aonpt_suspend_device, aonpt_resume_device);
+
+DEVICE_AND_API_INIT_PM(aon_timer, CONFIG_AON_TIMER_QMSI_DEV_NAME,
+		    aon_timer_init, DEVICE_PM_OPS_GET(aon_timer), AONPT_CONTEXT,
+		    NULL, SECONDARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&aon_timer_qmsi_api);
 
 static void aonpt_int_callback(void *user_data)
