@@ -211,6 +211,11 @@
 #define TWI0_ADDR	0x4008C000
 #define TWI1_ADDR	0x40090000
 
+/* Watchdog timer (WDT) */
+#define WDT_ADDR	0x400E1A50
+
+#define WDT_DISABLE	(1 << 15)
+
 #ifndef _ASMLANGUAGE
 
 #include <device.h>
@@ -243,6 +248,9 @@
 /* Two-wire Interface (TWI) */
 #define __TWI0		((volatile struct __twi *)TWI0_ADDR)
 #define __TWI1		((volatile struct __twi *)TWI1_ADDR)
+
+/* Watchdog timer (WDT) */
+#define __WDT		((volatile struct __wdt *)WDT_ADDR)
 
 #endif /* !_ASMLANGUAGE */
 

@@ -235,4 +235,11 @@ struct __twi {
 	struct __pdc	pdc;	/* 0x100 - 0x124 PDC                */
 };
 
+/* Watchdog timer (WDT) */
+struct __wdt {
+	uint32_t	cr;	/* 0x00 Control Register */
+	uint32_t	mr;	/* 0x04 Mode Register    */
+	uint32_t	sr;	/* 0x08 Status Register  */
+};
+
 #endif /* _ATMEL_SAM3_SOC_REGS_H_ */
