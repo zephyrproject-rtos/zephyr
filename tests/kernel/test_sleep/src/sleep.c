@@ -113,7 +113,7 @@ static void test_fiber(int arg1, int arg2)
 	fiber_sleep(ONE_SECOND);
 	end_tick = sys_tick_get_32();
 
-	if (end_tick > start_tick) {
+	if (end_tick - start_tick > 1) {
 		TC_ERROR(" *** fiber_fiber_wakeup() took too long (%d ticks)\n",
 				 end_tick - start_tick);
 		return;
@@ -127,7 +127,7 @@ static void test_fiber(int arg1, int arg2)
 	fiber_sleep(ONE_SECOND);
 	end_tick = sys_tick_get_32();
 
-	if (end_tick > start_tick) {
+	if (end_tick - start_tick > 1) {
 		TC_ERROR(" *** isr_fiber_wakeup() took too long (%d ticks)\n",
 				 end_tick - start_tick);
 		return;
@@ -141,7 +141,7 @@ static void test_fiber(int arg1, int arg2)
 	fiber_sleep(ONE_SECOND);           /* Task will execute */
 	end_tick = sys_tick_get_32();
 
-	if (end_tick > start_tick) {
+	if (end_tick - start_tick > 1) {
 		TC_ERROR(" *** task_fiber_wakeup() took too long (%d ticks)\n",
 				 end_tick - start_tick);
 		return;
