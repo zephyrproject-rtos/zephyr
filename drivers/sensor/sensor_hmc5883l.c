@@ -74,8 +74,8 @@ static int hmc5883l_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	drv_data->x_sample = sys_be16_to_cpu(buf[0]);
-	drv_data->y_sample = sys_be16_to_cpu(buf[1]);
-	drv_data->z_sample = sys_be16_to_cpu(buf[2]);
+	drv_data->z_sample = sys_be16_to_cpu(buf[1]);
+	drv_data->y_sample = sys_be16_to_cpu(buf[2]);
 
 	return 0;
 }
