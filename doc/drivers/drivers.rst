@@ -45,7 +45,7 @@ are listed below.
 Synchronous Calls
 *****************
 
-Zephyr provides a set of device drivers for multiple platforms. Each driver
+Zephyr provides a set of device drivers for multiple boards. Each driver
 should support an interrupt-based implementation, rather than polling, unless
 the specific hardware does not provide any interrupt.
 

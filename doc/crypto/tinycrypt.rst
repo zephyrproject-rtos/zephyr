@@ -81,7 +81,7 @@ Design Goals
 ************
 
 * Minimize the code size of each cryptographic primitive. This means minimize
-  the size of a platform-independent implementation, as presented in TinyCrypt.
+  the size of a board-independent implementation, as presented in TinyCrypt.
   Note that various applications may require further features, optimizations with
   respect to other metrics and countermeasures for particular threats. These
   peculiarities would increase the code size and thus are not considered here.
@@ -104,7 +104,7 @@ General Remarks
 ***************
 
 * TinyCrypt does **not** intend to be fully side-channel resistant. Due to the
-  variety of side-channel attacks, many of them making certain platforms
+  variety of side-channel attacks, many of them making certain boards
   vulnerable. In this sense, instead of penalizing all library users with
   side-channel countermeasures such as increasing the overall code size,
   TinyCrypt only implements certain generic timing-attack countermeasures.

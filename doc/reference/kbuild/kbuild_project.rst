@@ -27,7 +27,7 @@ A common application project is composed of the following files:
 * **Makefile**: Defines the application's build process and integrates the
   developer's application with the kernel's build system.
 
-* **Configuration file**: Allows the developer to override the platform's
+* **Configuration file**: Allows the developer to override the board's
   default configuration.
 
 * **MDEF**: Defines the set of kernel objects that the the application
@@ -76,7 +76,7 @@ The following predefined variables configure the development project:
   :file:`$(PROJECT_BASE/)src/` by default. This directory name should end
   with slash **'/'**.
 
-* :makevar:`BOARD`: Selects the platform that the application's
+* :makevar:`BOARD`: Selects the board that the application's
   build will use for the default configuration.
 
 * :makevar:`KERNEL_TYPE`: Selects the kernel type that the application's

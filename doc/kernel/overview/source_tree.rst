@@ -8,13 +8,13 @@ each of which may have one or more additional levels of subdirectories
 which are not described here.
 
 :file:`arch`
-    Architecture-specific nanokernel and platform code. Each supported
+    Architecture-specific nanokernel and board code. Each supported
     architecture has its own subdirectory, which contains additional
     subdirectories for the following areas:
 
     * architecture-specific nanokernel source files
     * architecture-specific nanokernel include files for private APIs
-    * platform-specific code
+    * board-specific code
 
 :file:`boards`
     Board related code and configuration files.

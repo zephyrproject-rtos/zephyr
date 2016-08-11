@@ -65,7 +65,7 @@ Default Configurations
 ======================
 
 The default configuration files define the default configuration for a specific
-kernel on a specific platform. For example:
+kernel on a specific SoC. For example:
 
 * :file:`arch/arm/configs`,
 * :file:`arch/x86/configs` and
@@ -73,11 +73,11 @@ kernel on a specific platform. For example:
 
 All the default configuration files must end with the suffix _defconfig. For
 example, the :file:`galileo_defconfig` file contains the configuration
-information for the galileo platform.
+information for the galileo board.
 
 The :file:`Makefile.inc` file uses defconfig files to provide a clean interface
 to developers using environment variables to define the kernel type and the
-platform of new projects. Developers can provide the build system with a
+board of new projects. Developers can provide the build system with a
 target's defconfig. The build system takes the specified defconfig file and
 sets it as the current :file:`.config` file for the current project. For
 example:

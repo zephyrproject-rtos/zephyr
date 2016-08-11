@@ -97,7 +97,7 @@ More details are provided in function description.
 Timestamp
 *********
 
-The timestamp used by the kernel event logger is 32-bit LSB of platform HW timer (for example
+The timestamp used by the kernel event logger is 32-bit LSB of board HW timer (for example
 Lakemont APIC timer for Quark SE). This timer period is very small and leads to timestamp
 wraparound happening quite often (e.g. every 134s for Quark SE).
 

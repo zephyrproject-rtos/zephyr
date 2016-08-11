@@ -12,7 +12,7 @@ microkernel APIs. If you are looking for a specific API, enter it on the
 search box. The search results display all sections containing information
 about that API.
 
-The use of the Zephyr APIs is the same for all platforms and boards.
+The use of the Zephyr APIs is the same for all SoCs and boards.
 
 .. toctree::
    :maxdepth: 2
