@@ -119,3 +119,13 @@ Troubleshooting
         with the server. This is the expected behavior.
 
       * A network error. Check the LAN or the mosquitto server.
+
+
+Compiler Warnings
+-----------------
+
+The network layer used in this sample code will be replaced once the
+new IP stack is ready. So, "netz" is tagged as "deprecated" and the
+following warnings will be displayed by the compiler:
+
+warning: 'netz_tx' is deprecated [-Wdeprecated-declarations]

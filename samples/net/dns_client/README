@@ -137,3 +137,13 @@ Usage
     Response: IP address            Size: 4:        63 80 4 161
 
     [fiber:102] DNS Response: OK
+
+
+Compiler Warnings
+-----------------
+
+The network layer used in this sample code will be replaced once the
+new IP stack is ready. So, "netz" is tagged as "deprecated" and the
+following warnings will be displayed by the compiler:
+
+warning: 'netz_tx' is deprecated [-Wdeprecated-declarations]

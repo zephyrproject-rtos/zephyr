@@ -120,3 +120,13 @@ The provided source code perhaps does not exemplify the best way to use
 Paho's MQTT in Zephyr. For example, PINGREQ must be sent periodically,
 but not too often as in this use-case. Furthermore, DISCONNECT is never
 used here.
+
+
+Compiler Warnings
+-----------------
+
+The network layer used in this sample code will be replaced once the
+new IP stack is ready. So, "netz" is tagged as "deprecated" and the
+following warnings will be displayed by the compiler:
+
+warning: 'netz_tx' is deprecated [-Wdeprecated-declarations]
