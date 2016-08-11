@@ -120,6 +120,12 @@ M:	Carles Cufi <carles.cufi@nordicsemi.no>
 S:	Supported
 F:	boards/arm/nrf52_pca10040/
 
+BOARDS/ARM - NUCLEO-64 F401RE Devboard
+M:	Amit Kucheria <amit.kucheria@linaro.org>
+M:	Ricardo Salveti <ricardo.salveti@linaro.org>
+S:	Supported
+F:	boards/arm/nucleo_f401re/
+
 BOARDS/NIOS2 - ALTERA MAX10
 M:	Andrew Boie <andrew.p.boie@intel.com>
 S:	Supported
