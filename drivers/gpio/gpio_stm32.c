@@ -69,7 +69,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 		return map_res;
 	}
 
-	if (stm32_gpio_configure(cfg->base, pin, pincfg)) {
+	if (stm32_gpio_configure(cfg->base, pin, pincfg, 0)) {
 		return -EIO;
 	}
 

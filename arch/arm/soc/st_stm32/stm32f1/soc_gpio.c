@@ -107,7 +107,7 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 	return 0;
 }
 
-int stm32_gpio_configure(uint32_t *base_addr, int pin, int conf)
+int stm32_gpio_configure(uint32_t *base_addr, int pin, int conf, int altf)
 {
 	volatile struct stm32f10x_gpio *gpio =
 		(struct stm32f10x_gpio *)(base_addr);

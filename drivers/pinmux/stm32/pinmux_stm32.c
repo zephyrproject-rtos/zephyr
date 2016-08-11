@@ -52,7 +52,7 @@ static int enable_port(uint32_t port, struct device *clk)
 	return clock_control_on(clk, subsys);
 }
 
-static int stm32_pin_configure(int pin, int func)
+static int stm32_pin_configure(int pin, int func, int altf)
 {
 	/* determine IO port registers location */
 	uint32_t offset = STM32_PORT(pin) * GPIO_REG_SIZE;
@@ -61,7 +61,8 @@ static int stm32_pin_configure(int pin, int func)
 	/* not much here, on STM32F10x the alternate function is
 	 * controller by setting up GPIO pins in specific mode.
 	 */
-	return stm32_gpio_configure((uint32_t *)port_base, STM32_PIN(pin), func);
+	return stm32_gpio_configure((uint32_t *)port_base,
+				    STM32_PIN(pin), func, altf);
 }
 
 /**
@@ -86,7 +87,7 @@ int _pinmux_stm32_set(uint32_t pin, uint32_t func,
 	/* determine config for alternate function */
 	config = stm32_get_pin_config(pin, func);
 
-	return stm32_pin_configure(pin, config);
+	return stm32_pin_configure(pin, config, func);
 }
 
 /**
