@@ -35,100 +35,90 @@
 #define DOUBLE 1
 #endif
 
-static int _to_hex(char *buf, uint32_t value, int alt_form, int precision, int prefix)
+static void _uc(char *buf)
 {
-	register int	i;
-	register int	temp;
-	char *start = buf;
-
-#if (MAXFLD < (2 + 7))
-  #error buffer size MAXFLD is too small
-#endif
-
-	if (precision < 0)
-		precision = 1;
-	*buf = '\0';
-	if (alt_form) {
-		buf[0] = '0';
-		buf[1] = (prefix == 'X') ? 'X' : 'x';
-		buf += 2;
-	}
-	for (i = 7; i >= 0; i--) {
-		temp = (value >> (i * 4)) & 0xF;
-		if ((precision > i) || (temp != 0)) {
-			precision = i;
-			if (temp < 10)
-				*buf++ = (char) (temp + '0');
-			else {
-				if (prefix == 'X')
-					*buf++ = (char) (temp - 10 + 'A');
-				else
-					*buf++ = (char) (temp - 10 + 'a');
-			}
+	for (/**/; *buf; buf++) {
+		if (*buf >= 'a' && *buf <= 'z') {
+			*buf += 'A' - 'a';
 		}
 	}
-	*buf = 0;
+}
 
-	return buf - start;
+/* Convention note: "end" as passed in is the standard "byte after
+ * last character" style, but...
+ */
+static int _reverse_and_pad(char *start, char *end, int minlen)
+{
+	int len;
+
+	while (end - start < minlen) {
+		*end++ = '0';
+	}
+
+	*end = 0;
+	len = end - start;
+	for (end--; end > start; end--, start++) {
+		char tmp = *end;
+		*end = *start;
+		*start = tmp;
+	}
+	return len;
+}
+
+/* Writes the specified number into the buffer in the given base,
+ * using the digit characters 0-9a-z (i.e. base>36 will start writing
+ * odd bytes), padding with leading zeros up to the minimum length.
+ */
+static int _to_x(char *buf, uint32_t n, int base, int minlen)
+{
+	char *buf0 = buf;
+
+	do {
+		int d = n % base;
+
+		n /= base;
+		*buf++ = '0' + d + (d > 9 ? ('a' - '0' - 10) : 0);
+	} while (n);
+	return _reverse_and_pad(buf0, buf, minlen);
+}
+
+static int _to_hex(char *buf, uint32_t value,
+		   int alt_form, int precision, int prefix)
+{
+	int len;
+	char *buf0 = buf;
+
+	if (alt_form) {
+		*buf++ = '0';
+		*buf++ = 'x';
+	}
+
+	len = _to_x(buf, value, 16, precision);
+	if (prefix == 'X') {
+		_uc(buf0);
+	}
+
+	return len + (buf - buf0);
 }
 
 static int _to_octal(char *buf, uint32_t value, int alt_form, int precision)
 {
-	register int	i;
-	register int	temp;
-	char *start = buf;
+	char *buf0 = buf;
 
-#if (MAXFLD < 10)
-  #error buffer size MAXFLD is too small
-#endif
-
-	if (precision < 0)
-		precision = 1;
-	*buf = '\0';
-	for (i = 10; i >= 0; i--) {
-		temp = (value >> (i * 3));
-		if (i == 10)
-			temp &= 0x3;
-		else
-			temp &= 0x7;
-		if ((precision > i) || (temp != 0)) {
-			precision = i;
-			if ((temp != 0) && alt_form)
-				*buf++ = '0';
-			alt_form = false;
-			*buf++ = (char) (temp + '0');
+	if (alt_form) {
+		*buf++ = '0';
+		if (!value) {
+			/* So we don't return "00" for a value == 0. */
+			*buf++ = 0;
+			return 1;
 		}
 	}
-	*buf = 0;
-
-	return buf - start;
+	return (buf - buf0) + _to_x(buf, value, 8, precision);
 }
 
 static int _to_udec(char *buf, uint32_t value, int precision)
 {
-	register uint32_t	divisor;
-	register int	i;
-	register int	temp;
-	char *start = buf;
-
-#if (MAXFLD < 9)
-  #error buffer size MAXFLD is too small
-#endif
-
-	divisor = 1000000000;
-	if (precision < 0)
-		precision = 1;
-	for (i = 9; i >= 0; i--, divisor /= 10) {
-		temp = value / divisor;
-		value = value % divisor;
-		if ((precision > i) || (temp != 0)) {
-			precision = i;
-			*buf++ = (char) (temp + '0');
-		}
-	}
-	*buf = 0;
-
-	return buf - start;
+	return _to_x(buf, value, 10, precision);
 }
 
 static int _to_dec(char *buf, int32_t value, int fplus, int fspace, int precision)
