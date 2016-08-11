@@ -61,6 +61,7 @@
 #define L2CAP_BR_INFO_TIMEOUT		SECONDS(4)
 #define L2CAP_BR_CFG_TIMEOUT		SECONDS(4)
 #define L2CAP_BR_DISCONN_TIMEOUT	SECONDS(1)
+#define L2CAP_BR_CONN_TIMEOUT		SECONDS(40)
 
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
@@ -84,6 +85,7 @@ enum {
 	L2CAP_FLAG_LCONF_DONE,	/* local config accepted by remote */
 	L2CAP_FLAG_RCONF_DONE,	/* remote config accepted by local */
 	L2CAP_FLAG_ACCEPTOR,	/* getting incoming connection req on PSM */
+	L2CAP_FLAG_CONN_PENDING,/* remote sent pending result in response */
 };
 
 static struct bt_l2cap_server *br_servers;
@@ -284,6 +286,9 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 	nano_delayed_work_cancel(&chan->rtx_work);
 	/* Reset _ONLY_ internal members of common channel */
 	chan->state = BT_L2CAP_DISCONNECTED;
+	/* Reset _ONLY_ BR/EDR specific members on L2CAP app channel */
+	BR_CHAN(chan)->psm = 0;
+	atomic_clear(BR_CHAN(chan)->flags);
 }
 
 static void l2cap_br_rtx_timeout(struct nano_work *work)
@@ -308,6 +313,7 @@ static void l2cap_br_rtx_timeout(struct nano_work *work)
 		bt_l2cap_br_chan_disconnect(&chan->chan);
 		break;
 	case BT_L2CAP_DISCONNECT:
+	case BT_L2CAP_CONNECT:
 		l2cap_br_detach_chan(chan->chan.conn, &chan->chan);
 		bt_l2cap_chan_del(&chan->chan);
 		break;
@@ -663,6 +669,24 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	if (chan->required_sec_level == BT_SECURITY_LOW &&
 	    !lmp_ssp_host_supported(chan->conn)) {
 		return L2CAP_CONN_SECURITY_PASSED;
+	}
+
+	switch (chan->required_sec_level) {
+	case BT_SECURITY_FIPS:
+	case BT_SECURITY_HIGH:
+	case BT_SECURITY_MEDIUM:
+		break;
+	default:
+		/*
+		 * For non SDP PSM connections GAP's Security Mode 4 requires at
+		 * least unauthenticated link key and enabled encryption if
+		 * remote supports SSP before any L2CAP CoC traffic. So preset
+		 * local to MEDIUM security to trigger it if needed.
+		 */
+		if (lmp_ssp_host_supported(chan->conn)) {
+			chan->required_sec_level = BT_SECURITY_MEDIUM;
+		}
+		break;
 	}
 
 	check = bt_conn_security(chan->conn, chan->required_sec_level);
@@ -1252,7 +1276,134 @@ static void l2cap_br_disconn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			     uint16_t psm)
 {
-	return -ENOTSUP;
+	struct net_buf *buf;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_conn_req *req;
+
+	if (!psm) {
+		return -EINVAL;
+	}
+
+	if (BR_CHAN(chan)->psm) {
+		return -EEXIST;
+	}
+
+	/* PSM must be odd and lsb of upper byte must be 0 */
+	if ((psm & 0x0101) != 0x0001) {
+		return -EINVAL;
+	}
+
+	switch (chan->state) {
+	case BT_L2CAP_CONNECTED:
+		/* Already connected */
+		return -EISCONN;
+	case BT_L2CAP_DISCONNECTED:
+		/* Can connect */
+		break;
+	case BT_L2CAP_CONFIG:
+	case BT_L2CAP_DISCONNECT:
+	default:
+		/* Bad context */
+		return -EBUSY;
+	}
+
+	if (!l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy)) {
+		return -ENOMEM;
+	}
+
+	BR_CHAN(chan)->psm = psm;
+	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
+
+	switch (l2cap_br_conn_security(chan, psm)) {
+	case L2CAP_CONN_SECURITY_PENDING:
+		/*
+		 * Authentication was triggered, wait with sending request on
+		 * connection security changed callback context.
+		 */
+		 return 0;
+	case L2CAP_CONN_SECURITY_PASSED:
+		break;
+	case L2CAP_CONN_SECURITY_REJECT:
+	default:
+		l2cap_br_detach_chan(chan->conn, chan);
+		bt_l2cap_chan_del(chan);
+		return -EIO;
+	}
+
+	buf = bt_l2cap_create_pdu(&br_sig);
+	if (!buf) {
+		BT_ERR("Unable to send L2CAP connection request");
+		return -ENOMEM;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_CONN_REQ;
+	hdr->ident = l2cap_br_get_ident();
+	hdr->len = sys_cpu_to_le16(sizeof(*req));
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->psm = sys_cpu_to_le16(psm);
+	req->scid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
+
+	l2cap_br_chan_send_req(BR_CHAN(chan), buf, L2CAP_BR_CONN_TIMEOUT);
+
+	return 0;
+}
+
+static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
+			      struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_conn_rsp *rsp = (void *)buf->data;
+	uint16_t dcid, scid, result, status;
+
+	if (buf->len < sizeof(*rsp)) {
+		BT_ERR("Too small L2CAP conn rsp packet size");
+		return;
+	}
+
+	dcid = sys_le16_to_cpu(rsp->dcid);
+	scid = sys_le16_to_cpu(rsp->scid);
+	result = sys_le16_to_cpu(rsp->result);
+	status = sys_le16_to_cpu(rsp->status);
+
+	BT_DBG("dcid 0x%04x scid 0x%04x result %u status %u", dcid, scid,
+	       result, status);
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, scid);
+	if (!chan) {
+		BT_ERR("No scid 0x%04x channel found", scid);
+		return;
+	}
+
+	/* Release RTX work since got the response */
+	nano_delayed_work_cancel(&chan->rtx_work);
+
+	if (chan->state != BT_L2CAP_CONNECT) {
+		BT_DBG("Invalid channel %p state %s", chan,
+		       state2str(chan->state));
+		return;
+	}
+
+	switch (result) {
+	case BT_L2CAP_SUCCESS:
+		chan->ident = 0;
+		BR_CHAN(chan)->tx.cid = dcid;
+		l2cap_br_conf(chan);
+		l2cap_br_state_set(chan, BT_L2CAP_CONFIG);
+		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
+		break;
+	case BT_L2CAP_PENDING:
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
+		nano_delayed_work_submit(&chan->rtx_work,
+					 L2CAP_BR_CONN_TIMEOUT);
+		break;
+	default:
+		l2cap_br_detach_chan(chan->conn, chan);
+		bt_l2cap_chan_del(chan);
+		break;
+	}
 }
 
 int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -1317,6 +1468,9 @@ static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_L2CAP_DISCONN_RSP:
 		l2cap_br_disconn_rsp(l2cap, hdr->ident, buf);
 		break;
+	case BT_L2CAP_CONN_RSP:
+		l2cap_br_conn_rsp(l2cap, hdr->ident, buf);
+		break;
 	default:
 		BT_WARN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
 		l2cap_br_send_reject(chan->conn, hdr->ident,
@@ -1330,8 +1484,13 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan)
 	struct net_buf *buf;
 	struct bt_l2cap_conn_rsp *rsp;
 	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_conn_req *req;
 
 	if (chan->state != BT_L2CAP_CONNECT) {
+		return;
+	}
+
+	if (!chan->conn->encrypt) {
 		return;
 	}
 
@@ -1367,6 +1526,25 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan)
 		 * local MTU segmentation.
 		 */
 		l2cap_br_conf(chan);
+	} else if (!atomic_test_bit(BR_CHAN(chan)->flags,
+				    L2CAP_FLAG_CONN_PENDING)) {
+		buf = bt_l2cap_create_pdu(&br_sig);
+		if (!buf) {
+			BT_ERR("Unable to send L2CAP connection request");
+			return;
+		}
+
+		hdr = net_buf_add(buf, sizeof(*hdr));
+		hdr->code = BT_L2CAP_CONN_REQ;
+		hdr->ident = l2cap_br_get_ident();
+		hdr->len = sys_cpu_to_le16(sizeof(*req));
+
+		req = net_buf_add(buf, sizeof(*req));
+		req->psm = sys_cpu_to_le16(BR_CHAN(chan)->psm);
+		req->scid = sys_cpu_to_le16(BR_CHAN(chan)->rx.cid);
+
+		l2cap_br_chan_send_req(BR_CHAN(chan), buf,
+				       L2CAP_BR_CONN_TIMEOUT);
 	}
 }
 
