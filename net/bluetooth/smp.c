@@ -68,11 +68,18 @@
 #define ID_DIST 0
 #endif
 
-#define RECV_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | SIGN_DIST)
-#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | ID_DIST | SIGN_DIST)
+#if defined(CONFIG_BLUETOOTH_BREDR)
+#define LINK_DIST BT_SMP_DIST_LINK_KEY
+#else
+#define LINK_DIST 0
+#endif
 
-#define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_LINK_KEY))
-#define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_LINK_KEY))
+#define RECV_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | SIGN_DIST |\
+		   LINK_DIST)
+#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | ID_DIST | SIGN_DIST | LINK_DIST)
+
+#define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_ENC_KEY))
+#define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_ENC_KEY))
 
 #define BT_SMP_AUTH_MASK	0x07
 #define BT_SMP_AUTH_MASK_SC	0x0f
@@ -100,6 +107,7 @@ enum {
 	SMP_FLAG_SC_DEBUG_KEY,	/* if Secure Connection are using debug key */
 	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
 	SMP_FLAG_DHCHECK_WAIT,	/* if waiting for remote DHCheck (as slave) */
+	SMP_FLAG_DERIVE_LK,	/* if Link Key should be derived */
 
 	/* Total number of flags - must be at the end */
 	SMP_NUM_FLAGS,
@@ -536,6 +544,72 @@ static int smp_g2(const uint8_t u[32], const uint8_t v[32],
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static int smp_h6(const uint8_t w[16], const uint8_t key_id[4], uint8_t res[16])
+{
+	uint8_t ws[16];
+	uint8_t key_id_s[4];
+	int err;
+
+	BT_DBG("w %s", bt_hex(w, 16));
+	BT_DBG("key_id %s", bt_hex(key_id, 4));
+
+	swap_buf(ws, w, 16);
+	swap_buf(key_id_s, key_id, 4);
+
+	err = bt_smp_aes_cmac(ws, key_id_s, 4, res);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("res %s", bt_hex(res, 16));
+
+	swap_in_place(res, 16);
+
+	return 0;
+}
+
+static void sc_derive_link_key(struct bt_smp *smp)
+{
+	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
+	static const uint8_t tmp1[4] = { 0x31, 0x70, 0x6d, 0x74 };
+	static const uint8_t lebr[4] = { 0x72, 0x62, 0x65, 0x6c };
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_keys_link_key *link_key;
+	uint8_t ilk[16];
+
+	BT_DBG("");
+
+	/* TODO handle errors? */
+
+	/*
+	 * At this point remote device identity is known so we can use
+	 * destination address here
+	 */
+	link_key = bt_keys_get_link_key(&conn->le.dst.a);
+	if (!link_key) {
+		return;
+	}
+
+	if (smp_h6(conn->le.keys->ltk.val, tmp1, ilk)) {
+		bt_keys_link_key_clear(link_key);
+		return;
+	}
+
+	if (smp_h6(ilk, lebr, link_key->val)) {
+		bt_keys_link_key_clear(link_key);
+	}
+
+	atomic_set_bit(link_key->flags, BT_LINK_KEY_SC);
+
+	if (atomic_test_bit(conn->le.keys->flags, BT_KEYS_AUTHENTICATED)) {
+		atomic_set_bit(link_key->flags, BT_LINK_KEY_AUTHENTICATED);
+	} else {
+		atomic_clear_bit(link_key->flags, BT_LINK_KEY_AUTHENTICATED);
+	}
+}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 static void smp_reset(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -567,6 +641,19 @@ static void smp_reset(struct bt_smp *smp)
 static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 {
 	BT_DBG("status 0x%x", status);
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (!status) {
+		/*
+		 * Don't derive if Debug Keys are used.
+		 * TODO should we allow this if BR/EDR is already connected?
+		 */
+		if (atomic_test_bit(smp->flags, SMP_FLAG_DERIVE_LK) &&
+		    !atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY)) {
+			sc_derive_link_key(smp);
+		}
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	smp_reset(smp);
 }
@@ -2665,6 +2752,24 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 		return;
+	}
+
+	/* derive BR/EDR LinkKey if supported by both sides */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
+		if ((smp->local_dist & BT_SMP_DIST_LINK_KEY) &&
+		    (smp->remote_dist & BT_SMP_DIST_LINK_KEY)) {
+			/*
+			 * Link Key will be derived after key distribution to
+			 * make sure remote device identity is known
+			 */
+			atomic_set_bit(smp->flags, SMP_FLAG_DERIVE_LK);
+		}
+		/*
+		 * Those are used as pairing finished indicator so generated
+		 * but not distributed keys must be cleared here.
+		 */
+		smp->local_dist &= ~BT_SMP_DIST_LINK_KEY;
+		smp->remote_dist &= ~BT_SMP_DIST_LINK_KEY;
 	}
 
 	if (smp->remote_dist & BT_SMP_DIST_ENC_KEY) {

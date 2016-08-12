@@ -84,6 +84,7 @@ void bt_keys_clear(struct bt_keys *keys);
 enum {
 	BT_LINK_KEY_AUTHENTICATED,
 	BT_LINK_KEY_DEBUG,
+	BT_LINK_KEY_SC,
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_LINK_KEY_NUM_FLAGS,
