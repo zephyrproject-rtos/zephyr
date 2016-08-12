@@ -39,8 +39,8 @@ extern "C" {
 #include <device.h>
 
 #ifdef CONFIG_PCI
-#include <pci/pci.h>
-#include <pci/pci_mgr.h>
+#include <drivers/pci/pci.h>
+#include <drivers/pci/pci_mgr.h>
 #endif
 /**
  * @brief Options for @a UART initialization.
