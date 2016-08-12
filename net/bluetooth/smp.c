@@ -563,6 +563,13 @@ static void smp_reset(struct bt_smp *smp)
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 }
 
+static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
+{
+	BT_DBG("status 0x%x", status);
+
+	smp_reset(smp);
+}
+
 static void smp_timeout(struct nano_work *work)
 {
 	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
@@ -578,7 +585,7 @@ static void smp_timeout(struct nano_work *work)
 		bt_keys_clear(smp->chan.chan.conn->le.keys);
 	}
 
-	smp_reset(smp);
+	smp_pairing_complete(smp, BT_SMP_ERR_UNSPECIFIED);
 
 	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
 }
@@ -611,8 +618,8 @@ static int smp_error(struct bt_smp *smp, uint8_t reason)
 	struct bt_smp_pairing_fail *rsp;
 	struct net_buf *buf;
 
-	/* reset context */
-	smp_reset(smp);
+	/* reset context and report */
+	smp_pairing_complete(smp, reason);
 
 	buf = smp_create_pdu(smp->chan.chan.conn, BT_SMP_CMD_PAIRING_FAIL,
 			     sizeof(*rsp));
@@ -1249,7 +1256,7 @@ static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(smp);
+		smp_pairing_complete(smp, 0);
 	}
 
 	return 0;
@@ -2058,7 +2065,7 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 		bt_keys_clear(smp->chan.chan.conn->le.keys);
 	}
 
-	smp_reset(smp);
+	smp_pairing_complete(smp, req->reason);
 
 	/* return no error to avoid sending Pairing Failed in response */
 	return 0;
@@ -2159,7 +2166,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(smp);
+		smp_pairing_complete(smp, 0);
 	}
 
 	return 0;
@@ -2197,7 +2204,7 @@ static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(smp);
+		smp_pairing_complete(smp, 0);
 	}
 
 	return 0;
@@ -2680,7 +2687,7 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(smp);
+		smp_pairing_complete(smp, 0);
 	}
 }
 
