@@ -194,4 +194,46 @@ config I2C_1_IRQ_PRI
 	help
 	IRQ priority.
 
+config I2C_SS_SDA_SETUP
+	int
+	depends on I2C_QMSI_SS
+	default 2
+	help
+	The delay time of clock rising edge relative to i2c data signal change.
+	The unit is i2c module base clock.
+
+config I2C_SS_SDA_HOLD
+	int
+	depends on I2C_QMSI_SS
+	default 10
+	help
+	The hold time on the data signal after a negative edge of i2c clock.
+	The unit is i2c module base clock.
+
+config I2C_SDA_SETUP
+	int
+	depends on I2C_QMSI
+	default 2
+	help
+	The delay time of clock rising edge relative to i2c data signal change.
+	The unit is i2c module base clock.
+
+config I2C_SDA_TX_HOLD
+	int
+	depends on I2C_QMSI
+	default 16
+	help
+	The hold time on the data signal after a negative edge of i2c clock
+	while i2c acts as transmitter.
+	The unit is i2c module base clock.
+
+config I2C_SDA_RX_HOLD
+	int
+	depends on I2C_QMSI
+	default 16
+	help
+	The hold time on the data signal after a negative edge of i2c clock
+	while i2c acts as receiver.
+	The unit is i2c module base clock.
+
 endif

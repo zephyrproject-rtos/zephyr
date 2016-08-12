@@ -173,6 +173,7 @@ static int i2c_qmsi_ss_configure(struct device *dev, uint32_t config)
 	struct i2c_qmsi_ss_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	union dev_config cfg;
 	qm_ss_i2c_config_t qm_cfg;
+	uint32_t i2c_base = QM_SS_I2C_0_BASE;
 
 	cfg.raw = config;
 
@@ -201,6 +202,15 @@ static int i2c_qmsi_ss_configure(struct device *dev, uint32_t config)
 		return -EIO;
 	}
 	nano_sem_give(&driver_data->sem);
+
+	if (instance == QM_SS_I2C_1) {
+		i2c_base = QM_SS_I2C_1_BASE;
+	}
+
+	__builtin_arc_sr(((CONFIG_I2C_SS_SDA_SETUP << 16) +
+			   CONFIG_I2C_SS_SDA_HOLD),
+			 (i2c_base + QM_SS_I2C_SDA_CONFIG));
+
 	return 0;
 }
 

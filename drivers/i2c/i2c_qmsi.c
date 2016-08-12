@@ -75,6 +75,7 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 {
 	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
+	qm_i2c_reg_t *const controller = QM_I2C[instance];
 	union dev_config cfg;
 	int rc;
 	qm_i2c_config_t qm_cfg;
@@ -106,6 +107,11 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 	nano_sem_take(&driver_data->sem, TICKS_UNLIMITED);
 	rc = qm_i2c_set_config(instance, &qm_cfg);
 	nano_sem_give(&driver_data->sem);
+
+	controller->ic_sda_hold = (CONFIG_I2C_SDA_RX_HOLD << 16) +
+				   CONFIG_I2C_SDA_TX_HOLD;
+
+	controller->ic_sda_setup = CONFIG_I2C_SDA_SETUP;
 
 	return rc;
 }
