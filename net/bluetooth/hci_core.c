@@ -1108,7 +1108,11 @@ static void update_sec_level_br(struct bt_conn *conn)
 	if (conn->br.link_key) {
 		if (atomic_test_bit(conn->br.link_key->flags,
 				    BT_LINK_KEY_AUTHENTICATED)) {
-			conn->sec_level = BT_SECURITY_HIGH;
+			if (conn->encrypt == 0x02) {
+				conn->sec_level = BT_SECURITY_FIPS;
+			} else {
+				conn->sec_level = BT_SECURITY_HIGH;
+			}
 		} else {
 			conn->sec_level = BT_SECURITY_MEDIUM;
 		}
