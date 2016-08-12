@@ -420,6 +420,8 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
     case PROCESS_EVENT_TIMER:
       /* We get this event if one of our timers have expired. */
       {
+        if(!buf)
+          break;
         /* Check the clock so see if we should call the periodic uIP
            processing. */
         if(data == &periodic &&
