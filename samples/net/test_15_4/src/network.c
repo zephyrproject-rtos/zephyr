@@ -186,7 +186,7 @@ static void receive_data(const char *taskname, struct net_context *ctx)
 
 static struct net_context *get_context(const struct net_addr *remote,
 				       uint16_t remote_port,
-				       const struct net_addr *local,
+				       struct net_addr *local,
 				       uint16_t local_port)
 {
 	struct net_context *ctx;
