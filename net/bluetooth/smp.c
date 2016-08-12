@@ -3266,6 +3266,30 @@ static int smp_g2_test(void)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
+static int smp_h6_test(void)
+{
+	uint8_t w[16] = { 0x9b, 0x7d, 0x39, 0x0a, 0xa6, 0x10, 0x10, 0x34,
+			  0x05, 0xad, 0xc8, 0x57, 0xa3, 0x34, 0x02, 0xec };
+	uint8_t key_id[8] = { 0x72, 0x62, 0x65, 0x6c };
+	uint8_t exp_res[16] = { 0x99, 0x63, 0xb1, 0x80, 0xe2, 0xa9, 0xd3, 0xe8,
+				0x1c, 0xc9, 0x6d, 0xe7, 0x02, 0xe1, 0x9a, 0x2d};
+	uint8_t res[16];
+	int err;
+
+	err = smp_h6(w, key_id, res);
+	if (err) {
+		return err;
+	}
+
+	if (memcmp(res, exp_res, 16)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
 static int smp_self_test(void)
 {
 	int err;
@@ -3305,6 +3329,14 @@ static int smp_self_test(void)
 		BT_ERR("SMP g2 self test failed");
 		return err;
 	}
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	err = smp_h6_test();
+	if (err) {
+		BT_ERR("SMP h6 self test failed");
+		return err;
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
 
 	return 0;
 }
