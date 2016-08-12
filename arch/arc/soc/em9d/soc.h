@@ -107,6 +107,8 @@
 #define SPI_DW_PORT_0_IRQ    25
 #define SPI_DW_PORT_1_IRQ    26
 
+#define SPI_DW_IRQ_FLAGS     0
+
 /*
  * SPI Chip Select Assignments on EM Starter Kit
  *
