@@ -74,9 +74,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	}
 
 	if (flags & GPIO_INT) {
-		struct device *exti = device_get_binding(STM32_EXTI_NAME);
-
-		stm32_exti_set_callback(exti, pin, gpio_stm32_isr, dev);
+		stm32_exti_set_callback(pin, gpio_stm32_isr, dev);
 
 		stm32_gpio_enable_int(cfg->port, pin);
 
@@ -92,10 +90,10 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 				edge = STM32_EXTI_TRIG_FALLING;
 			}
 
-			stm32_exti_trigger(exti, pin, edge);
+			stm32_exti_trigger(pin, edge);
 		}
 
-		stm32_exti_enable(exti, pin);
+		stm32_exti_enable(pin);
 	}
 
 	return 0;

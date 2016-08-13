@@ -66,12 +66,10 @@ struct stm32_exti_data {
 #define AS_EXTI(__base_addr)			\
 	((struct stm32_exti *)(__base_addr))
 
-void stm32_exti_enable(struct device *dev, int line)
+void stm32_exti_enable(int line)
 {
 	volatile struct stm32_exti *exti = AS_EXTI(EXTI_BASE);
 	int irqnum;
-
-	ARG_UNUSED(dev);
 
 	exti->imr |= 1 << line;
 
@@ -89,11 +87,9 @@ void stm32_exti_enable(struct device *dev, int line)
 	irq_enable(irqnum);
 }
 
-void stm32_exti_disable(struct device *dev, int line)
+void stm32_exti_disable(int line)
 {
 	volatile struct stm32_exti *exti = AS_EXTI(EXTI_BASE);
-
-	ARG_UNUSED(dev);
 
 	exti->imr &= ~(1 << line);
 }
@@ -122,11 +118,9 @@ static inline void stm32_exti_clear_pending(int line)
 	exti->pr |= 1 << line;
 }
 
-void stm32_exti_trigger(struct device *dev, int line, int trigger)
+void stm32_exti_trigger(int line, int trigger)
 {
 	volatile struct stm32_exti *exti = AS_EXTI(EXTI_BASE);
-
-	ARG_UNUSED(dev);
 
 	if (trigger & STM32_EXTI_TRIG_RISING) {
 		exti->rtsr |= 1 << line;
@@ -135,26 +129,6 @@ void stm32_exti_trigger(struct device *dev, int line, int trigger)
 	if (trigger & STM32_EXTI_TRIG_FALLING) {
 		exti->ftsr |= 1 << line;
 	}
-}
-
-void stm32_exti_set_callback(struct device *dev, int line,
-			stm32_exti_callback_t cb, void *arg)
-{
-	struct stm32_exti_data *data = dev->driver_data;
-
-	__ASSERT(data->cb[line].cb == NULL,
-		"EXTI %d callback already registered", line);
-
-	data->cb[line].cb = cb;
-	data->cb[line].data = arg;
-}
-
-void stm32_exti_unset_callback(struct device *dev, int line)
-{
-	struct stm32_exti_data *data = dev->driver_data;
-
-	data->cb[line].cb = NULL;
-	data->cb[line].data = NULL;
 }
 
 /**
@@ -240,6 +214,30 @@ static struct stm32_exti_data exti_data;
 DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
 	    &exti_data, NULL,
 	    PRIMARY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+/**
+ * @brief set & unset for the interrupt callbacks
+ */
+void stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
+{
+	struct device *dev = DEVICE_GET(exti_stm32);
+	struct stm32_exti_data *data = dev->driver_data;
+
+	__ASSERT(data->cb[line].cb == NULL,
+		"EXTI %d callback already registered", line);
+
+	data->cb[line].cb = cb;
+	data->cb[line].data = arg;
+}
+
+void stm32_exti_unset_callback(int line)
+{
+	struct device *dev = DEVICE_GET(exti_stm32);
+	struct stm32_exti_data *data = dev->driver_data;
+
+	data->cb[line].cb = NULL;
+	data->cb[line].data = NULL;
+}
 
 /**
  * @brief connect all interrupts
