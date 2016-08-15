@@ -517,6 +517,15 @@ static int eth_enc28j60_rx(struct device *dev)
 		eth_enc28j60_read_mem(dev, np, 2);
 		next_packet = np[0] | (uint16_t)np[1] << 8;
 
+		/* Errata 14. Even values in ERXRDPT
+		 * may corrupt receive buffer.
+		 */
+		if (next_packet == 0) {
+			next_packet = ENC28J60_RXEND;
+		} else if (!(next_packet & 0x01)) {
+			next_packet--;
+		}
+
 		/* Read reception status vector */
 		eth_enc28j60_read_mem(dev, context->rx_rsv, 4);
 
