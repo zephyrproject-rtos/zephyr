@@ -58,6 +58,12 @@ config BLUETOOTH_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
+config BLUETOOTH_CONTROLLER
+	bool "Controller"
+	select BLUETOOTH_HOST_BUFFERS
+	help
+		Enables support for SoC native controller implementation.
+
 config BLUETOOTH_NO_DRIVER
 	bool "No default HCI driver"
 	help
@@ -80,7 +86,7 @@ config BLUETOOTH_HOST_BUFFERS
 
 config	BLUETOOTH_DEBUG_DRIVER
 	bool "Bluetooth driver debug"
-	depends on BLUETOOTH_DEBUG && BLUETOOTH_UART
+	depends on BLUETOOTH_DEBUG && (BLUETOOTH_UART || BLUETOOTH_CONTROLLER)
 	default n
 	help
 	  This option enables debug support for the chosen
@@ -119,6 +125,8 @@ endif # BLUETOOTH_STACK_HCI
 
 source "drivers/bluetooth/nble/Kconfig"
 
+source "drivers/bluetooth/controller/Kconfig"
+
 config BLUETOOTH_NRF51_PM
 	bool "nRF51 Power Management [EXPERIMENTAL]"
 	depends on BLUETOOTH_H4 || NBLE
@@ -128,6 +136,7 @@ config BLUETOOTH_NRF51_PM
 
 config BLUETOOTH_WAIT_NOP
 	bool "Wait for \"NOP\" Command Complete event during init"
+	depends on !BLUETOOTH_CONTROLLER
 	help
 	  Some controllers emit a Command Complete event for the NOP
 	  opcode to indicate that they're ready to receive commands.
