@@ -408,7 +408,6 @@ static int eth_enc28j60_init(struct device *dev)
 
 	/* Enable interruptions */
 	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_INTIE);
-	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_TXIE);
 	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_PKTIE);
 
 	/* Enable Reception */
@@ -470,10 +469,6 @@ static int eth_enc28j60_tx(struct device *dev, uint8_t *buf, uint16_t len)
 			       tx_bufaddr_end & 0xFF);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_ETXNDH, tx_bufaddr_end >> 8);
 
-	/* Clear transmit interruption flag */
-	eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
-				   ENC28J60_BIT_EIR_TXIF
-				   | ENC28J60_BIT_EIR_TXERIF);
 	/* Signal ENC28J60 to send the buffer */
 	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1,
 				 ENC28J60_BIT_ECON1_TXRTS);
