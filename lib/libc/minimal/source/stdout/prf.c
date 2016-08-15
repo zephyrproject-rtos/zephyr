@@ -139,113 +139,69 @@ static int _to_dec(char *buf, int32_t value, int fplus, int fspace, int precisio
 
 static void _llshift(uint32_t value[])
 {
-	if (value[0] & 0x80000000)
-		value[1] = (value[1] << 1) | 1;
-	else
-		value[1] <<= 1;
-	value[0] <<= 1;
+	*((uint64_t *)&value[0]) <<= 1;
 }
 
-static void _lrshift(uint32_t value[])
+static void __attribute__((noinline)) _ladd(uint32_t *result, uint32_t *value)
 {
-	if (value[1] & 1)
-		value[0] = (value[0] >> 1) | 0x80000000;
-	else
-		value[0] = (value[0] >> 1) & 0x7FFFFFFF;
-	value[1] = (value[1] >> 1) & 0x7FFFFFFF;
-}
-
-static void _ladd(uint32_t result[], uint32_t value[])
-{
-	uint32_t carry;
-	uint32_t temp;
-
-	carry = 0;
-	temp = result[0] + value[0];
-	if (result[0] & 0x80000000) {
-		if ((value[0] & 0x80000000) || ((temp & 0x80000000) == 0))
-			carry = 1;
-	} else {
-		if ((value[0] & 0x80000000) && ((temp & 0x80000000) == 0))
-			carry = 1;
-	}
-	result[0] = temp;
-	result[1] = result[1] + value[1] + carry;
+	uint64_t *r = (uint64_t *)&result[0];
+	uint64_t *v = (uint64_t *)&value[0];
+	*r = *r + *v;
 }
 
 static	void _rlrshift(uint32_t value[])
 {
-	uint32_t temp[2];
-
-	temp[0] = value[0] & 1;
-	temp[1] = 0;
-	_lrshift(value);
-	_ladd(value, temp);
+	uint64_t *v = (uint64_t *)&value[0];
+	*v = (*v & 1) + (*v >> 1);
 }
 
- /*
-  * 64 bit divide by 5 function for _to_float.
-  * The result is ROUNDED, not TRUNCATED.
-  */
-
-static	void _ldiv5(uint32_t value[])
+/* Tiny integer divide-by-five routine.  The full 64 bit division
+ * implementations in libgcc are very large on some architectures, and
+ * currently nothing in Zephyr pulls it into the link.  So it makes
+ * sense to define this much smaller special case here to avoid
+ * including it just for printf.
+ *
+ * It works by iteratively dividing the most significant 32 bits of
+ * the 64 bit value by 5.  This will leave a remainder of 0-4
+ * (i.e. three significant bits), ensuring that the top 29 bits of the
+ * remainder are zero for the next iteration.  Thus in the second
+ * iteration only 35 significant bits remain, and in the third only
+ * six.  This was tested exhaustively through the first ~10B values in
+ * the input space, and for ~2e12 (4 hours runtime) random inputs
+ * taken from the full 64 bit space.
+ */
+static void _ldiv5(uint32_t value[])
 {
-	uint32_t      result[2];
-	register int  shift;
-	uint32_t      temp1[2];
-	uint32_t      temp2[2];
+	uint64_t *v = (uint64_t *)&value[0];
+	uint32_t i, hi;
+	uint64_t rem = *v, quot = 0, q;
+	static const char shifts[] = { 32, 3, 0 };
 
-	result[0] = 0;		/* Result accumulator */
-	result[1] = value[1] / 5;
-	temp1[0] = value[0];	/* Dividend for this pass */
-	temp1[1] = value[1] % 5;
-	temp2[1] = 0;
+	/* Usage in this file wants rounded behavior, not truncation.  So add
+	 * two to get the threshold right.
+	 */
+	rem += 2;
 
-	while (1) {
-		for (shift = 0; temp1[1] != 0; shift++)
-			_lrshift(temp1);
-		temp2[0] = temp1[0] / 5;
-		if (temp2[0] == 0) {
-			if (temp1[0] % 5 > (5 / 2)) {
-				temp1[0] = 1;
-				_ladd(result, temp1);
-			}
-			break;
-		}
-		temp1[0] = temp2[0];
-		while (shift-- != 0)
-			_llshift(temp1);
-		_ladd(result, temp1);	/* Update result accumulator */
-		temp1[0] = result[0];
-		temp1[1] = result[1];
-		_llshift(temp1);	/* Compute (current_result*5) */
-		_llshift(temp1);
-		_ladd(temp1, result);
-		temp1[0] = ~temp1[0];	/* Compute -(current_result*5) */
-		temp1[1] = ~temp1[1];
-		temp2[0] = 1;
-		_ladd(temp1, temp2);
-		_ladd(temp1, value);	/* Compute #-(current_result*5) */
+	for (i = 0; i < 3; i++) {
+		hi = rem >> shifts[i];
+		q = (uint64_t)(hi / 5) << shifts[i];
+		rem -= q * 5;
+		quot += q;
 	}
-	value[0] = result[0];
-	value[1] = result[1];
+
+	*v = quot;
 }
 
 static	char _get_digit(uint32_t fract[], int *digit_count)
 {
 	int		rval;
-	uint32_t	temp[2];
+	uint64_t *fr = (uint64_t *)&fract[0];
 
 	if (*digit_count > 0) {
 		*digit_count -= 1;
-		temp[0] = fract[0];
-		temp[1] = fract[1];
-		_llshift(fract);	/* Multiply by 10 */
-		_llshift(fract);
-		_ladd(fract, temp);
-		_llshift(fract);
-		rval = ((fract[1] >> 28) & 0xF) + '0';
-		fract[1] &= 0x0FFFFFFF;
+		*fr = *fr * 10;
+		rval = ((*fr >> 60) & 0xF) + '0';
+		*fr &= 0x0FFFFFFFFFFFFFFFull;
 	} else
 		rval = '0';
 	return (char) (rval);
