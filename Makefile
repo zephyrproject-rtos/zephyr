@@ -702,7 +702,10 @@ LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)--build-id=none)
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
 
 ifdef CONFIG_HAVE_CUSTOM_LINKER_SCRIPT
-KBUILD_LDS         := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
+KBUILD_LDS := $(subst $(DQUOTE),,$(PROJECT_BASE)/$(CONFIG_CUSTOM_LINKER_SCRIPT))
+ifeq ($(wildcard $(KBUILD_LDS)),)
+KBUILD_LDS := $(subst $(DQUOTE),,$(CONFIG_CUSTOM_LINKER_SCRIPT))
+endif
 else
 # Try a board specific linker file
 KBUILD_LDS := $(srctree)/boards/$(BOARD_NAME)/linker.ld
