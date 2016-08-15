@@ -1,6 +1,6 @@
 subdir-ccflags-$(CONFIG_QMSI_BUILTIN) +=-DISR_HANDLED
 
-obj-$(CONFIG_QMSI_BUILTIN) += drivers/clk.o
+obj-$(CONFIG_QMSI_BUILTIN) += drivers/clk.o drivers/qm_flash.o
 ifeq ($(CONFIG_ARC),y)
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/sensor/ss_clk.o
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/sensor/ss_power_states.o
