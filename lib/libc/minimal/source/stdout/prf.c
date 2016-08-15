@@ -137,21 +137,8 @@ static int _to_dec(char *buf, int32_t value, int fplus, int fspace, int precisio
 	return (buf + _to_udec(buf, (uint32_t) value, precision)) - start;
 }
 
-static void _llshift(uint32_t value[])
+static	void _rlrshift(uint64_t *v)
 {
-	*((uint64_t *)&value[0]) <<= 1;
-}
-
-static void __attribute__((noinline)) _ladd(uint32_t *result, uint32_t *value)
-{
-	uint64_t *r = (uint64_t *)&result[0];
-	uint64_t *v = (uint64_t *)&value[0];
-	*r = *r + *v;
-}
-
-static	void _rlrshift(uint32_t value[])
-{
-	uint64_t *v = (uint64_t *)&value[0];
 	*v = (*v & 1) + (*v >> 1);
 }
 
@@ -170,9 +157,8 @@ static	void _rlrshift(uint32_t value[])
  * the input space, and for ~2e12 (4 hours runtime) random inputs
  * taken from the full 64 bit space.
  */
-static void _ldiv5(uint32_t value[])
+static void _ldiv5(uint64_t *v)
 {
-	uint64_t *v = (uint64_t *)&value[0];
 	uint32_t i, hi;
 	uint64_t rem = *v, quot = 0, q;
 	static const char shifts[] = { 32, 3, 0 };
@@ -192,10 +178,9 @@ static void _ldiv5(uint32_t value[])
 	*v = quot;
 }
 
-static	char _get_digit(uint32_t fract[], int *digit_count)
+static	char _get_digit(uint64_t *fr, int *digit_count)
 {
 	int		rval;
-	uint64_t *fr = (uint64_t *)&fract[0];
 
 	if (*digit_count > 0) {
 		*digit_count -= 1;
@@ -230,37 +215,31 @@ static	char _get_digit(uint32_t fract[], int *digit_count)
  */
 
 #define	MAXFP1	0xFFFFFFFF	/* Largest # if first fp format */
-#define	MAXFP2	0x0FFFFFFF	/* Largest # in second fp format */
+#define HIGHBIT64 (1ull<<63)
 
-static int _to_float(char *buf, uint32_t double_temp[], int c,
+static int _to_float(char *buf, uint64_t double_temp, int c,
 					 int falt, int fplus, int fspace, int precision)
 {
 	register int    decexp;
 	register int    exp;
+	int             sign;
 	int             digit_count;
-	uint32_t        fract[2];
-	uint32_t        ltemp[2];
+	uint64_t        fract;
+	uint64_t        ltemp;
 	int             prune_zero;
 	char           *start = buf;
 
-	exp = (double_temp[1] >> 20) & 0x7FF;
-	fract[1] = (double_temp[1] << 11) & 0x7FFFF800;
-	fract[1] |= ((double_temp[0] >> 21) & 0x000007FF);
-	fract[0] = double_temp[0] << 11;
+	exp = double_temp >> 52 & 0x7ff;
+	fract = (double_temp << 11) & ~HIGHBIT64;
+	sign = !!(double_temp & HIGHBIT64);
 
-	if (exp == 0x7FF) {
-		if ((fract[1] | fract[0]) == 0) {
-			if ((double_temp[1] & 0x80000000)) {
-				*buf++ = '-';
-				*buf++ = 'I';
-				*buf++ = 'N';
-				*buf++ = 'F';
-			} else {
-				*buf++ = '+';
-				*buf++ = 'I';
-				*buf++ = 'N';
-				*buf++ = 'F';
-			}
+
+	if (exp == 0x7ff) {
+		if (!fract) {
+			*buf++ = sign ? '-' : '+';
+			*buf++ = 'I';
+			*buf++ = 'N';
+			*buf++ = 'F';
 		} else {
 			*buf++ = 'N';
 			*buf++ = 'a';
@@ -270,52 +249,49 @@ static int _to_float(char *buf, uint32_t double_temp[], int c,
 		return buf - start;
 	}
 
-	if ((exp | fract[1] | fract[0]) != 0) {
+	if ((exp | fract) != 0) {
 		exp -= (1023 - 1);	/* +1 since .1 vs 1. */
-		fract[1] |= 0x80000000;
+		fract |= HIGHBIT64;
 		decexp = true;		/* Wasn't zero */
 	} else
 		decexp = false;		/* It was zero */
 
-	if (decexp && (double_temp[1] & 0x80000000)) {
+	if (decexp && sign) {
 		*buf++ = '-';
-	} else if (fplus)
+	} else if (fplus) {
 		*buf++ = '+';
-	else if (fspace)
+	} else if (fspace) {
 		*buf++ = ' ';
+	}
 
 	decexp = 0;
 	while (exp <= -3) {
-		while (fract[1] >= (MAXFP1 / 5)) {
-			_rlrshift(fract);
+		while ((fract >> 32) >= (MAXFP1 / 5)) {
+			_rlrshift(&fract);
 			exp++;
 		}
-		ltemp[0] = fract[0];
-		ltemp[1] = fract[1];
-		_llshift(fract);
-		_llshift(fract);
-		_ladd(fract, ltemp);
+		fract *= 5;
 		exp++;
 		decexp--;
 
-		while (fract[1] <= (MAXFP1 / 2)) {
-			_llshift(fract);
+		while ((fract >> 32) <= (MAXFP1 / 2)) {
+			fract <<= 1;
 			exp--;
 		}
 	}
 
 	while (exp > 0) {
-		_ldiv5(fract);
+		_ldiv5(&fract);
 		exp--;
 		decexp++;
-		while (fract[1] <= (MAXFP1 / 2)) {
-			_llshift(fract);
+		while ((fract >> 32) <= (MAXFP1 / 2)) {
+			fract <<= 1;
 			exp--;
 		}
 	}
 
 	while (exp < (0 + 4)) {
-		_rlrshift(fract);
+		_rlrshift(&fract);
 		exp++;
 	}
 
@@ -344,24 +320,23 @@ static int _to_float(char *buf, uint32_t double_temp[], int c,
 	if (exp > 16)
 		exp = 16;
 
-	ltemp[0] = 0;
-	ltemp[1] = 0x08000000;
+	ltemp = 0x0800000000000000;
 	while (exp--) {
-		_ldiv5(ltemp);
-		_rlrshift(ltemp);
+		_ldiv5(&ltemp);
+		_rlrshift(&ltemp);
 	}
 
-	_ladd(fract, ltemp);
-	if (fract[1] & 0xF0000000) {
-		_ldiv5(fract);
-		_rlrshift(fract);
+	fract += ltemp;
+	if ((fract >> 32) & 0xF0000000) {
+		_ldiv5(&fract);
+		_rlrshift(&fract);
 		decexp++;
 	}
 
 	if (c == 'f') {
 		if (decexp > 0) {
 			while (decexp > 0) {
-				*buf++ = _get_digit(fract, &digit_count);
+				*buf++ = _get_digit(&fract, &digit_count);
 				decexp--;
 			}
 		} else
@@ -373,16 +348,16 @@ static int _to_float(char *buf, uint32_t double_temp[], int c,
 				*buf++ = '0';
 				decexp++;
 			} else
-				*buf++ = _get_digit(fract, &digit_count);
+				*buf++ = _get_digit(&fract, &digit_count);
 		}
 	} else {
-		*buf = _get_digit(fract, &digit_count);
+		*buf = _get_digit(&fract, &digit_count);
 		if (*buf++ != '0')
 			decexp--;
 		if (falt || (precision > 0))
 			*buf++ = '.';
 		while (precision-- > 0)
-			*buf++ = _get_digit(fract, &digit_count);
+			*buf++ = _get_digit(&fract, &digit_count);
 	}
 
 	if (prune_zero) {
@@ -450,7 +425,7 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 	int32_t			*int32ptr_temp;
 	int32_t			int32_temp;
 	uint32_t			uint32_temp;
-	uint32_t			double_temp[2];
+	uint64_t			double_temp;
 
 	count = 0;
 
@@ -599,20 +574,11 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 			{
 				union {
 					double d;
-					struct {
-						uint32_t u1;
-						uint32_t u2;
-						} s;
+					uint64_t i;
 				} u;
 
 				u.d = (double) va_arg(vargs, double);
-#if defined(_BIG_ENDIAN)
-				double_temp[0] = u.s.u2;
-				double_temp[1] = u.s.u1;
-#else
-				double_temp[0] = u.s.u1;
-				double_temp[1] = u.s.u2;
-#endif
+				double_temp = u.i;
 			}
 
 				c = _to_float(buf, double_temp, c, falt, fplus,
