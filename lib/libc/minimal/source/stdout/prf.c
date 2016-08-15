@@ -31,10 +31,6 @@
 #define EOF  -1
 #endif
 
-#ifndef DOUBLE
-#define DOUBLE 1
-#endif
-
 static void _uc(char *buf)
 {
 	for (/**/; *buf; buf++) {
@@ -263,7 +259,6 @@ static	char _get_digit(uint32_t fract[], int *digit_count)
  *	Parameters:
  *		"buf"		Buffer to write result into.
  *		"double_temp"	# to convert (either IEEE single or double).
- *		"full"		TRUE if IEEE double, else IEEE single.
  *		"c"		The conversion type (one of e,E,f,g,G).
  *		"falt"		TRUE if "#" conversion flag in effect.
  *		"fplus"		TRUE if "+" conversion flag in effect.
@@ -281,7 +276,7 @@ static	char _get_digit(uint32_t fract[], int *digit_count)
 #define	MAXFP1	0xFFFFFFFF	/* Largest # if first fp format */
 #define	MAXFP2	0x0FFFFFFF	/* Largest # in second fp format */
 
-static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
+static int _to_float(char *buf, uint32_t double_temp[], int c,
 					 int falt, int fplus, int fspace, int precision)
 {
 	register int    decexp;
@@ -292,22 +287,14 @@ static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
 	int             prune_zero;
 	char           *start = buf;
 
-	if (full) {			/* IEEE double */
-		exp = (double_temp[1] >> 20) & 0x7FF;
-		fract[1] = (double_temp[1] << 11) & 0x7FFFF800;
-		fract[1] |= ((double_temp[0] >> 21) & 0x000007FF);
-		fract[0] = double_temp[0] << 11;
-	} else {
-	/* IEEE float  */
-		exp = (double_temp[0] >> 23) & 0xFF;
-		fract[1] = (double_temp[0] << 8) & 0x7FFFFF00;
-		fract[0] = 0;
-	}
+	exp = (double_temp[1] >> 20) & 0x7FF;
+	fract[1] = (double_temp[1] << 11) & 0x7FFFF800;
+	fract[1] |= ((double_temp[0] >> 21) & 0x000007FF);
+	fract[0] = double_temp[0] << 11;
 
-	if ((full && (exp == 0x7FF)) || ((!full) && (exp == 0xFF))) {
+	if (exp == 0x7FF) {
 		if ((fract[1] | fract[0]) == 0) {
-			if ((full && (double_temp[1] & 0x80000000))
-				|| (!full && (double_temp[0] & 0x80000000))) {
+			if ((double_temp[1] & 0x80000000)) {
 				*buf++ = '-';
 				*buf++ = 'I';
 				*buf++ = 'N';
@@ -328,17 +315,13 @@ static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
 	}
 
 	if ((exp | fract[1] | fract[0]) != 0) {
-		if (full)
-			exp -= (1023 - 1);	/* +1 since .1 vs 1. */
-		else
-			exp -= (127 - 1);	/* +1 since .1 vs 1. */
+		exp -= (1023 - 1);	/* +1 since .1 vs 1. */
 		fract[1] |= 0x80000000;
 		decexp = true;		/* Wasn't zero */
 	} else
 		decexp = false;		/* It was zero */
 
-	if (decexp && ((full && (double_temp[1] & 0x80000000))
-					|| (!full && (double_temp[0] & 0x80000000)))) {
+	if (decexp && (double_temp[1] & 0x80000000)) {
 		*buf++ = '-';
 	} else if (fplus)
 		*buf++ = '+';
@@ -401,15 +384,9 @@ static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
 			exp = 0;
 	} else
 		exp = precision + 1;
-	if (full) {
-		digit_count = 16;
-		if (exp > 16)
-			exp = 16;
-	} else {
-		digit_count = 8;
-		if (exp > 8)
-			exp = 8;
-	}
+	digit_count = 16;
+	if (exp > 16)
+		exp = 16;
 
 	ltemp[0] = 0;
 	ltemp[1] = 0x08000000;
@@ -682,8 +659,8 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 #endif
 			}
 
-				c = _to_float(buf, double_temp, DOUBLE, c, falt, fplus,
-								fspace, precision);
+				c = _to_float(buf, double_temp, c, falt, fplus,
+					      fspace, precision);
 				if (fplus || fspace || (buf[0] == '-'))
 					prefix = 1;
 				need_justifying = true;
