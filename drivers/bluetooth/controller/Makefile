@@ -10,3 +10,4 @@ obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hal/rtc.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hal/rand.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hal/ecb.o
 obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hal/radio.o
+obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hci/hci.o
