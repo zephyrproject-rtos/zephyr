@@ -53,6 +53,10 @@ char *ro_data_after_image_end;
 
 int foo;
 
+#define PROBE_BUFFER_SIZE 32
+char top_of_ram[PROBE_BUFFER_SIZE] __in_section(top_of_image_ram, 0, 0);
+char bottom_of_ram[PROBE_BUFFER_SIZE] __in_section(bottom_of_image_ram, 0, 0);
+
 static void update_rv(int *rv, int last_result)
 {
 	*rv = *rv == TC_FAIL ? *rv : last_result;
@@ -135,6 +139,10 @@ static int test_mem_safe_access(void *p, char *buf, int size,
 
 void main(void)
 {
+	/* reference symbols so that they get included */
+	top_of_ram[0] = 'a';
+	bottom_of_ram[PROBE_BUFFER_SIZE - 1] = 'z';
+
 	int rv = TC_PASS;
 	int rc; /* temporary return code */
 
