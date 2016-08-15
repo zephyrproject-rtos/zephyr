@@ -801,11 +801,13 @@ class MakeGenerator:
 # XXX Be sure to update __doc__ if you change any of this!!
 
 arch_valid_keys = {"name" : {"type" : "str", "required" : True},
-                   "platforms" : {"type" : "list", "required" : True}}
+                   "platforms" : {"type" : "list", "required" : True},
+                   "supported_toolchains" : {"type" : "list", "required" : True}}
 
 platform_valid_keys = {"qemu_support" : {"type" : "bool", "default" : False},
                        "microkernel_support" : {"type" : "bool",
-                                                "default" : True}}
+                                                "default" : True},
+                       "supported_toolchains" : {"type" : "list", "default" : []}}
 
 testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "extra_args" : {"type" : "list"},
@@ -962,6 +964,9 @@ class Platform:
         self.qemu_support = plat_dict["qemu_support"]
         self.microkernel_support = plat_dict["microkernel_support"]
         self.arch = arch
+        self.supported_toolchains = arch.supported_toolchains
+        if plat_dict["supported_toolchains"]:
+            self.supported_toolchains = plat_dict["supported_toolchains"]
         # Gets populated in a separate step
         self.defconfig = {"micro" : None, "nano" : None}
         pass
@@ -1011,6 +1016,7 @@ class Architecture:
         arch = cp.get_section("arch", arch_valid_keys)
 
         self.name = arch["name"]
+        self.supported_toolchains = arch["supported_toolchains"]
 
         for plat_name in arch["platforms"]:
             verbose("Platform: %s" % plat_name)
@@ -1203,7 +1209,7 @@ class TestSuite:
 
     def apply_filters(self, platform_filter, arch_filter, tag_filter,
                       config_filter, testcase_filter, last_failed, all_plats,
-                      platform_limit):
+                      platform_limit, toolchain):
         instances = []
         discards = {}
         verbose("platform filter: " + str(platform_filter))
@@ -1347,6 +1353,10 @@ class TestSuite:
 
                     if not plat.microkernel_support and tc.ktype == "micro":
                         discards[instance] = "No microkernel support for platform"
+                        continue
+
+                    if toolchain and toolchain not in plat.supported_toolchains:
+                        discards[instance] = "Not supported by the toolchain"
                         continue
 
                     defconfig = {"ARCH" : arch.name, "PLATFORM" : plat.name}
@@ -1688,6 +1698,7 @@ def main():
     start_time = time.time()
     global VERBOSE, INLINE_LOGS, CPU_COUNTS
     args = parse_arguments()
+    toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
 
     if args.size:
         for fn in args.size:
@@ -1710,7 +1721,7 @@ def main():
     ts = TestSuite(args.arch_root, args.testcase_root, args.outdir)
     discards = ts.apply_filters(args.platform, args.arch, args.tag, args.config,
                                 args.test, args.only_failed, args.all,
-                                args.platform_limit)
+                                args.platform_limit, toolchain)
 
     if args.discard_report:
         ts.discard_report(args.discard_report)
