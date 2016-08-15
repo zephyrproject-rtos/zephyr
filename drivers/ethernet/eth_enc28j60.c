@@ -314,6 +314,7 @@ static void eth_enc28j60_init_mac(struct device *dev)
 	mac_address[5] = CONFIG_ETH_ENC28J60_0_MAC5;
 	net_set_mac(mac_address, sizeof(mac_address));
 
+	eth_enc28j60_set_bank(dev, ENC28J60_REG_MAADR0);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR0,
 			       CONFIG_ETH_ENC28J60_0_MAC5);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR1,
@@ -498,18 +499,19 @@ static int eth_enc28j60_tx(struct device *dev, uint8_t *buf, uint16_t len)
 static int eth_enc28j60_rx(struct device *dev)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t rx_flag;
+	uint8_t counter;
 
-	/* Check if there are received frames in buffer */
-	eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &rx_flag);
+	/* Errata 6. The Receive Packet Pending Interrupt Flag (EIR.PKTIF)
+	 * does not reliably/accurately report the status of pending packet.
+	 * Use EPKTCNT register instead.
+	*/
 
-	rx_flag &= ENC28J60_BIT_EIR_PKTIF;
-	while (rx_flag) {
-		struct net_buf *buf;
-		uint8_t np[2];
-		uint8_t *reception_buf;
+	do {
+		uint8_t *reception_buf = NULL;
 		uint16_t frm_len = 0;
 		uint16_t next_packet;
+		struct net_buf *buf;
+		uint8_t np[2];
 
 		/* Read address for next packet */
 		eth_enc28j60_read_mem(dev, np, 2);
@@ -521,19 +523,25 @@ static int eth_enc28j60_rx(struct device *dev)
 		/* Get the frame length from the rx status vector */
 		frm_len = (context->rx_rsv[1] << 8) | context->rx_rsv[0];
 
-		if (frm_len > UIP_BUFSIZE) {
-			return -EIO;
+		if (frm_len > (UIP_BUFSIZE)) {
+			goto done;
 		}
 		/* Get the frame from the buffer */
 		buf = ip_buf_get_reserve_rx(0);
+
 		reception_buf = net_buf_add(buf, frm_len);
+
+		if (reception_buf == NULL) {
+			frm_len = 0;
+			goto done;
+		}
 
 		eth_enc28j60_read_mem(dev, reception_buf, frm_len);
 		uip_len(buf) = frm_len;
 
 		/* Register the buffer frame with the IP stack */
 		net_driver_ethernet_recv(buf);
-
+done:
 		/* Free buffer memory and decrement rx counter */
 		eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXRDPTL);
 		eth_enc28j60_write_reg(dev, ENC28J60_REG_ERXRDPTL,
@@ -549,9 +557,8 @@ static int eth_enc28j60_rx(struct device *dev)
 		}
 
 		/* Check if there are frames to clean from the buffer */
-		eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &rx_flag);
-		rx_flag &= ENC28J60_BIT_EIR_PKTIF;
-	}
+		eth_enc28j60_read_reg(dev, ENC28J60_REG_EPKTCNT, &counter);
+	} while (counter);
 	return 0;
 }
 
