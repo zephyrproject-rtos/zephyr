@@ -10,7 +10,7 @@ the data and sends it back.
 
 The echo client can be running in the host system in which
 case you need to use SLIP to connect to qemu. This usage scenario
-is described in net/ip/tools/README file. This is the default
+is described in net-tools project README file [1]. This is the default
 if you type "make qemu" in echo_server test application directory.
 The network IP stack hooks right under IP stack (network level)
 and sends the IP packet to host using SLIP. The layer 2 is the
@@ -40,7 +40,7 @@ is correct.
 
 The echo server can be running in the host system in which case
 you need to use SLIP to connect to qemu. This usage scenario
-is described in net/ip/tools/README file. This is the default
+is described in net-tools project README file [1]. This is the default
 if you type "make qemu" in echo_client test application directory.
 The network IP stack hooks right under IP stack (network level)
 and sends the IP packet to host using SLIP. The layer 2 is the
@@ -72,3 +72,6 @@ basically verified).
 
 Please refer to the section above about how to run these applications
 together.
+
+
+[1] https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=summary
