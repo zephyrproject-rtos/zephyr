@@ -32,7 +32,7 @@
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
 
-DSTATUS disk_status(uint8_t pdrv)
+DSTATUS disk_status(BYTE pdrv)
 {
 	return fat_disk_status();
 }
@@ -41,7 +41,7 @@ DSTATUS disk_status(uint8_t pdrv)
 /* Inidialize a Drive                                                    */
 /*-----------------------------------------------------------------------*/
 
-DSTATUS disk_initialize(uint8_t pdrv)
+DSTATUS disk_initialize(BYTE pdrv)
 {
 	return fat_disk_initialize();
 }
@@ -50,8 +50,7 @@ DSTATUS disk_initialize(uint8_t pdrv)
 /* Read Sector(s)                                                        */
 /*-----------------------------------------------------------------------*/
 
-DRESULT disk_read(uint8_t pdrv, uint8_t *buff, unsigned long sector,
-		  uint32_t count)
+DRESULT disk_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 {
 	return fat_disk_read(buff, sector, count);
 }
@@ -59,8 +58,7 @@ DRESULT disk_read(uint8_t pdrv, uint8_t *buff, unsigned long sector,
 /*-----------------------------------------------------------------------*/
 /* Write Sector(s)                                                       */
 /*-----------------------------------------------------------------------*/
-DRESULT disk_write(uint8_t pdrv,
-		   const uint8_t *buff, unsigned long sector, uint32_t count)
+DRESULT disk_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 {
 	return fat_disk_write(buff, sector, count);
 }
@@ -69,7 +67,7 @@ DRESULT disk_write(uint8_t pdrv,
 /* Miscellaneous Functions                                               */
 /*-----------------------------------------------------------------------*/
 
-DRESULT disk_ioctl(uint8_t pdrv, uint8_t cmd, void *buff)
+DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff)
 {
 	return fat_disk_ioctl(cmd, buff);
 }
