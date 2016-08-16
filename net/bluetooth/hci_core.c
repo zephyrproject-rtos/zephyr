@@ -3189,7 +3189,12 @@ static int hci_init(void)
 			return err;
 		}
 	} else {
+#if defined(CONFIG_BLUETOOTH_BREDR)
+		BT_ERR("Non-BR/EDR controller detected");
+		return -EIO;
+#else
 		BT_DBG("Non-BR/EDR controller detected! Skipping BR init.");
+#endif
 	}
 
 	err = set_event_mask();
