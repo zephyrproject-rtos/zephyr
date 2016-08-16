@@ -24,12 +24,13 @@
 #include <stdio.h>
 #include <ipm.h>
 #include <console/ipm_console.h>
+#include <misc/__assert.h>
 
 static void ipm_console_fiber(int arg1, int arg2)
 {
 	uint8_t size32;
 	uint16_t type;
-	int ret;
+	int ret, key;
 	struct device *d;
 	struct ipm_console_receiver_config_info *config_info;
 	struct ipm_console_receiver_runtime_data *driver_data;
@@ -74,6 +75,22 @@ static void ipm_console_fiber(int arg1, int arg2)
 		} else {
 			++pos;
 		}
+
+		/* ISR may have disabled the channel due to full buffer at
+		 * some point. If that happened and there is now room,
+		 * re-enable it.
+		 *
+		 * Lock interrupts to avoid pathological scenario where
+		 * the buffer fills up in between enabling the channel and
+		 * clearing the channel_disabled flag.
+		 */
+		if (driver_data->channel_disabled &&
+		    sys_ring_buf_space_get(&driver_data->rb)) {
+			key = irq_lock();
+			ipm_set_enabled(driver_data->ipm_device, 1);
+			driver_data->channel_disabled = 0;
+			irq_unlock(key);
+		}
 	}
 }
 
@@ -82,12 +99,28 @@ static void ipm_console_receive_callback(void *context, uint32_t id,
 {
 	struct device *d;
 	struct ipm_console_receiver_runtime_data *driver_data;
+	int ret;
 
 	ARG_UNUSED(data);
 	d = context;
 	driver_data = d->driver_data;
-	if (!sys_ring_buf_put(&driver_data->rb, 0, id, NULL, 0)) {
-		nano_isr_sem_give(&driver_data->sem);
+
+	/* Should always be at least one free buffer slot */
+	ret = sys_ring_buf_put(&driver_data->rb, 0, id, NULL, 0);
+	__ASSERT(ret == 0, "Failed to insert data into ring buffer");
+	nano_isr_sem_give(&driver_data->sem);
+
+	/* If the buffer is now full, disable future interrupts for this channel
+	 * until the fiber has a chance to consume characters.
+	 *
+	 * This works without losing data if the sending side tries to send
+	 * more characters because the sending side is making an ipm_send()
+	 * call with the wait flag enabled.  It blocks until the receiver side
+	 * re-enables the channel and consumes the data.
+	 */
+	if (sys_ring_buf_space_get(&driver_data->rb) == 0) {
+		ipm_set_enabled(driver_data->ipm_device, 0);
+		driver_data->channel_disabled = 1;
 	}
 }
 
@@ -114,6 +147,7 @@ int ipm_console_receiver_init(struct device *d)
 	}
 
 	driver_data->ipm_device = ipm;
+	driver_data->channel_disabled = 0;
 	nano_sem_init(&driver_data->sem);
 	sys_ring_buf_init(&driver_data->rb, config_info->rb_size32,
 			  config_info->ring_buf_data);

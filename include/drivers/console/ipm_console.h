@@ -82,6 +82,11 @@ struct ipm_console_receiver_runtime_data {
 
 	/** pointer to the bound low-level IPM device */
 	struct device *ipm_device;
+
+	/** Indicator that the channel is temporarily disabled due to
+	 * full buffer
+	 */
+	int channel_disabled;
 };
 
 struct ipm_console_sender_config_info {
