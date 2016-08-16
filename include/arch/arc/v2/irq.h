@@ -33,9 +33,6 @@
 extern "C" {
 #endif
 
-#define IRQ_ZERO_LATENCY	BIT(0)
-#define IRQ_NON_MASKABLE	BIT(1)
-
 #ifdef _ASMLANGUAGE
 GTEXT(_irq_exit);
 GTEXT(_arch_irq_connect)

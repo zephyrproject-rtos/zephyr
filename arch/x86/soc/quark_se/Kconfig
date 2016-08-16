@@ -67,6 +67,14 @@ config ARC_GDB_ENABLE
 	the ARC slave processor. This will allow GDB to halt and
 	engage the ARC processor to proceed step by step execution.
 
+if IPM
+config QUARK_SE_IPM_IRQ_PRI
+	int "IPM interrupt priority"
+	default 2
+	help
+	Priority level for interrupts coming in from the inter-processor
+	mailboxes.
+
 if IPM_CONSOLE_RECEIVER
 config QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32
 	int "IPM Console Ring Buffer Size"
@@ -74,6 +82,7 @@ config QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32
 	help
 	Size of the buffer for the console reciever, for incoming
 	console messages from the ARC side. Must be a power of 2.
+endif
 endif
 
 endif #SOC_QUARK_SE_X86

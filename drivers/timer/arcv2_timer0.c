@@ -338,7 +338,8 @@ int _sys_clock_driver_init(struct device *device)
 
 	cycles_per_tick = sys_clock_hw_cycles_per_tick;
 
-	IRQ_CONNECT(IRQ_TIMER0, 0, _timer_int_handler, NULL, IRQ_ZERO_LATENCY);
+	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
+		    _timer_int_handler, NULL, 0);
 
 	/*
 	 * Set the reload value to achieve the configured tick rate, enable the

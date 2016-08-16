@@ -78,35 +78,23 @@ void _arch_irq_disable(unsigned int irq)
  *
  * @brief Set an interrupt's priority
  *
- * Valid values are from 0 to 13. Lower values take priority over higher
- * values. Special case priorities are expressed via mutually exclusive
- * flags.
+ * Lower values take priority over higher values. Special case priorities are
+ * expressed via mutually exclusive flags.
 
- * The priority is verified if ASSERT_ON is enabled.
+ * The priority is verified if ASSERT_ON is enabled; max priority level
+ * depends on CONFIG_NUM_IRQ_PRIO_LEVELS.
  *
  * @return N/A
  */
 
 void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
+	ARG_UNUSED(flags);
+
 	int key = irq_lock();
 
-	/* HW priorties 0 and 1 are special case selected by flags.
-	 * 2 and above are 'regular' IRQs.
-	 * Since the IRQ_CONNECT() API specifies that all priority values
-	 * have the same semantics and 'special' priorities are set via
-	 * flags, add 2 to the supplied value if flags are not in play.
-	 */
-	if (flags & IRQ_ZERO_LATENCY) {
-		prio = 0;
-	} else if (flags & IRQ_NON_MASKABLE) {
-		prio = 1;
-	} else {
-		prio += 2;
-	}
-
-	__ASSERT(prio >= 0 && prio < CONFIG_NUM_IRQ_PRIO_LEVELS,
-			 "invalid priority!");
+	__ASSERT(prio < CONFIG_NUM_IRQ_PRIO_LEVELS,
+		 "invalid priority %d for irq %d", prio, irq);
 	_arc_v2_irq_unit_prio_set(irq, prio);
 	irq_unlock(key);
 }

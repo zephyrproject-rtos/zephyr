@@ -103,12 +103,6 @@ struct __packed quark_se_ipm {
 #define QUARK_SE_IPM(channel)	((volatile struct quark_se_ipm *)(QUARK_SE_IPM_BASE + \
 					((channel) * sizeof(struct quark_se_ipm))))
 
-
-/* XXX I pulled this number out of thin air -- how to choose
- * the right priority?
- */
-#define QUARK_SE_IPM_INTERRUPT_PRI		2
-
 struct quark_se_ipm_controller_config_info {
 	int (*controller_init)(void);
 };
