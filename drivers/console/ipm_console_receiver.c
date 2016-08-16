@@ -113,6 +113,7 @@ int ipm_console_receiver_init(struct device *d)
 		return -EINVAL;
 	}
 
+	driver_data->ipm_device = ipm;
 	nano_sem_init(&driver_data->sem);
 	sys_ring_buf_init(&driver_data->rb, config_info->rb_size32,
 			  config_info->ring_buf_data);
