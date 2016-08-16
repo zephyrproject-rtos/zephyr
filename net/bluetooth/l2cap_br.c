@@ -1201,7 +1201,15 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	return -ENOTSUP;
+	struct bt_l2cap_br_chan *ch = BR_CHAN(chan);
+
+	if (buf->len > ch->tx.mtu) {
+		return -EMSGSIZE;
+	}
+
+	bt_l2cap_send(ch->chan.conn, ch->tx.cid, buf);
+
+	return buf->len;
 }
 
 static void l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
