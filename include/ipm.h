@@ -123,7 +123,7 @@ struct ipm_driver_api {
  * @param ipmdev Driver instance
  * @param wait Time to busy-wait for remote to consume the message.
  * @param id Message identifier. Values are constrained by
- *        @a ipm_max_data_size_get since many platforms only allow for a
+ *        @a ipm_max_data_size_get since many boards only allow for a
  *        subset of bits in a 32-bit register to store the ID.
  * @param data Pointer to the data sent in the message.
  * @param size Size of the data.

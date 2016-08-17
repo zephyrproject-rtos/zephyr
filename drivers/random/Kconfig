@@ -44,7 +44,7 @@ config X86_TSC_RANDOM_GENERATOR
 	default y
 	help
 	  This options enables number generator based on timestamp counter
-	  of x86 platform, obtained with rdtsc instruction.
+	  of x86 boards, obtained with rdtsc instruction.
 
 config TIMER_RANDOM_GENERATOR
 	bool

@@ -33,7 +33,7 @@ config I2C_DW
 	depends on I2C
 	default n
 	help
-	Enable Design Ware I2C support on the selected platform
+	Enable Design Ware I2C support on the selected board
 
 config I2C_QUARK_SE_SS
 	bool "I2C Driver for Quark SE Sensor Subsystem (SS)"

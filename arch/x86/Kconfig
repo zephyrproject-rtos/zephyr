@@ -236,7 +236,7 @@ config CACHE_FLUSHING
 	runtime.
 endmenu
 
-menu "Platform Capabilities"
+menu "Board Capabilities"
 config NUM_DYNAMIC_STUBS
 	int "Number of dynamic int stubs"
 	default 0

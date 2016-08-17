@@ -5,7 +5,7 @@ menuconfig UART_STELLARIS
 	help
 	This option enables the Stellaris serial driver.
 	This specific driver can be used for the serial hardware
-	available at the Texas Instrument LM3S6965 platform.
+	available at the Texas Instrument LM3S6965 board.
 
 # ---------- Port 0 ----------
 

@@ -86,7 +86,7 @@ static inline uint32_t _sys_k_get_time(void)
  * @details Calling this function permits to set the function
  * to be called by kernel event logger for setting the event
  * timestamp. By default, kernel event logger is using the
- * system timer. But on some platforms where the timer driver
+ * system timer. But on some boards where the timer driver
  * maintains the system timer cycle accumulator in software,
  * such as ones using the LOAPIC timer, the system timer behavior
  * leads to timestamp errors. For example, the timer interrupt is

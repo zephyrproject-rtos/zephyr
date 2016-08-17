@@ -41,7 +41,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
 	help
 	This option specifies the frequency of the hardware timer used for the
-	system clock (in Hz). This option is set by the platform's Kconfig file
+	system clock (in Hz). This option is set by the board's Kconfig file
 	and the user should generally avoid modifying it via the menu configuration.
 
 config SYS_CLOCK_EXISTS
@@ -68,7 +68,7 @@ config XIP
 	prompt "Execute in place"
 	help
 	  This option allows the kernel to operate with its text and read-only
-	  sections residing in ROM (or similar read-only memory). Not all platforms
+	  sections residing in ROM (or similar read-only memory). Not all boards
 	  support this option so it must be used with care; you must also
 	  supply a linker command file when building your image. Enabling this
 	  option increases both the code and data footprint of the image.
@@ -215,7 +215,7 @@ config SYS_POWER_MANAGEMENT
 	prompt "Power management"
 	default n
 	help
-	This option enables the platform to implement extra power management
+	This option enables the board to implement extra power management
 	policies whenever the kernel becomes idle. The kernel informs the
 	power management subsystem of the number of ticks until the next kernel
 	timer is due to expire.

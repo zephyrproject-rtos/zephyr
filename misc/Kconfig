@@ -37,7 +37,7 @@ config CUSTOM_LINKER_SCRIPT
 	depends on HAVE_CUSTOM_LINKER_SCRIPT
 	help
 	Path to the linker script to be used instead of the one define by the
-	platform.
+	board.
 
 	The linker script must be based on a version provided by Zephyr since
 	the kernel can expect a certain layout/certain regions.
@@ -381,7 +381,7 @@ config BOOTLOADER_UNKNOWN
 	This option signifies that the target has a generic bootloader
 	or that it supports multiple ways of booting and it isn't clear
 	at build time which method is to be used. When this option is enabled
-	the platform may have to do extra work to ensure a proper startup.
+	the board may have to do extra work to ensure a proper startup.
 
 config REBOOT
 	bool "Reboot functionality"

@@ -113,7 +113,7 @@ config GP_ALL_DATA
 	bool "All data global pointer references"
 	help
 	Use GP relative access for all data in the program, not just
-	small data. Use this if your platform has 64K or less of RAM.
+	small data. Use this if your board has 64K or less of RAM.
 
 endchoice
 

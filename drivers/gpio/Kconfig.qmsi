@@ -22,7 +22,7 @@ menuconfig GPIO_QMSI
 	default n
 	help
 	  Enable the GPIO driver found on Intel Microcontroller
-	  platforms, using the QMSI library.
+	  boards, using the QMSI library.
 
 if GPIO_QMSI
 

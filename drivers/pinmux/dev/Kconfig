@@ -66,7 +66,7 @@ config PINMUX_DEV_QMSI
 	bool "Enable QMSI pinmux dev driver"
 	depends on PINMUX_DEV && QMSI
 	help
-	Enables the pinmux dev driver for QMSI supported platforms.
+	Enables the pinmux dev driver for QMSI supported boards.
 	default n
 
 config PINMUX_DEV_STM32

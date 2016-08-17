@@ -79,7 +79,7 @@ config DATA_ENDIANNESS_LITTLE
 	default y
 	help
 	This is driven by the processor implementation, since it is fixed in
-	hardware. The platform should set this value to 'n' if the data is
+	hardware. The board should set this value to 'n' if the data is
 	implemented as big endian.
 
 config STACK_ALIGN_DOUBLE_WORD
@@ -92,12 +92,12 @@ config STACK_ALIGN_DOUBLE_WORD
 
 config NUM_IRQ_PRIO_BITS
 	int
-	#hidden option, implemented by platform
+	#hidden option, implemented by board
 	help
 	Cortex-M chips can implement up to 8 bits of interrupt priorities,
 	for a maximum of 256 priorities. Most chips implement fewer than 8.
 
-	The platform must define the correct value.
+	The board must define the correct value.
 
 config RUNTIME_NMI
 	bool
@@ -132,28 +132,28 @@ config SRAM_SIZE
 	int "SRAM Size in kB"
 	help
 	This option specifies the size of the SRAM in kB.  It is normally set by
-	the platform's defconfig file and the user should generally avoid modifying
+	the board's defconfig file and the user should generally avoid modifying
 	it via the menu configuration.
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
 	help
-	This option specifies the base address of the SRAM on the platform.  It is
-	normally set by the platform's defconfig file and the user should generally
+	This option specifies the base address of the SRAM on the board.  It is
+	normally set by the board's defconfig file and the user should generally
 	avoid modifying it via the menu configuration.
 
 config FLASH_SIZE
 	int "Flash Size in kB"
 	help
 	This option specifies the size of the flash in kB.  It is normally set by
-	the platform's defconfig file and the user should generally avoid modifying
+	the board's defconfig file and the user should generally avoid modifying
 	it via the menu configuration.
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
 	help
-	This option specifies the base address of the flash on the platform.  It is
-	normally set by the platform's defconfig file and the user should generally
+	This option specifies the base address of the flash on the board.  It is
+	normally set by the board's defconfig file and the user should generally
 	avoid modifying it via the menu configuration.
 endmenu
 
@@ -197,7 +197,7 @@ config IRQ_VECTOR_TABLE_CUSTOM
 	depends on !SW_ISR_TABLE
 	default n
 	help
-	Projects, not the platform, provide the IRQ part of the vector table.
+	Projects, not the board, provide the IRQ part of the vector table.
 
 	This is the table of interrupt handlers with the best potential
 	performance, but is the less flexible.

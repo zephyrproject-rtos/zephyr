@@ -21,7 +21,7 @@ menuconfig GPIO_SCH
 	depends on GPIO
 	default n
 	help
-	  Enable the SCH GPIO driver found on Intel platforms
+	  Enable the SCH GPIO driver found on Intel boards
 
 if GPIO_SCH
 

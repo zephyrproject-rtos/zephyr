@@ -307,7 +307,7 @@ config BLUETOOTH_DEBUG_MONITOR
 	  on the host side that can decode this protocol. Currently
 	  the 'btmon' tool from BlueZ is capable of doing this.
 
-	  If the target platform has two or more external UARTs it is
+	  If the target board has two or more external UARTs it is
 	  possible to keep using UART_CONSOLE together with this option,
 	  however if there is only a single external UART then
 	  UART_CONSOLE needs to be disabled (in which case printk/printf

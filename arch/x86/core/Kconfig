@@ -81,7 +81,7 @@ config RAM_SIZE
 	sections.  When not running an XIP kernel, it must be large enough to
 	contain the full image.
 
-	The default value is specified by the platform.
+	The default value is specified by the board.
 
 config ROM_SIZE
 	int "Amount of ROM given to the kernel (in kB)" if XIP
@@ -90,7 +90,7 @@ config ROM_SIZE
 	not exceed the amount available on the target.  It must also be large
 	enough to contain the full image.
 
-	The default value is specified by the platform.
+	The default value is specified by the board.
 
 config SET_GDT
 	bool

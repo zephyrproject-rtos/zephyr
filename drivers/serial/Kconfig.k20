@@ -5,7 +5,7 @@ menuconfig UART_K20
 	help
 	This option enables the K20 serial driver.
 	This specific driver can be used for the serial hardware
-	available at the Freescale FRDM K64F platform.
+	available at the Freescale FRDM K64F board.
 
 # ---------- Port 0 ----------
 
