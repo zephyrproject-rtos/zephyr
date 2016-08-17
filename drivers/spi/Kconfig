@@ -91,10 +91,10 @@ config SPI_CS_GPIO
 
 config	SPI_0
 	bool
-	prompt "Intel SPI port 0"
+	prompt "SPI port 0"
 	default n
 	help
-	  Enable Intel's SPI controller port 0.
+	  Enable SPI controller port 0.
 
 config SPI_0_NAME
 	string
@@ -149,20 +149,20 @@ config SPI_1_CS_GPIO_PIN
 
 config SPI_2
 	bool
-	prompt "SPI port 1"
+	prompt "SPI port 2"
 	default n
 	help
-	  Enable SPI controller port 1.
+	  Enable SPI controller port 2.
 
 config SPI_2_NAME
 	string
-	prompt "SPI port 1 device name"
+	prompt "SPI port 2 device name"
 	depends on SPI_2
 	default "SPI_2"
 
 config SPI_2_IRQ_PRI
 	int
-	prompt "Port 0 interrupt priority"
+	prompt "Port 2 interrupt priority"
 	depends on SPI_2
 
 config SPI_2_CS_GPIO_PORT
