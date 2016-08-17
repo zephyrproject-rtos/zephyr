@@ -35,6 +35,7 @@
 
 #define IEEE802154_EXT_ADDR_LENGTH		8
 #define IEEE802154_SHORT_ADDR_LENGTH		2
+#define IEEE802154_SIMPLE_ADDR_LENGTH		1
 #define IEEE802154_PAN_ID_LENGTH		2
 
 /* See Section 5.2.1.1.1 */
@@ -43,22 +44,28 @@ enum ieee802154_frame_type {
 	IEEE802154_FRAME_TYPE_DATA		= 0x1,
 	IEEE802154_FRAME_TYPE_ACK		= 0x2,
 	IEEE802154_FRAME_TYPE_MAC_COMMAND	= 0x3,
-	IEEE802154_FRAME_TYPE_RESERVED		= 0x4,
+	IEEE802154_FRAME_TYPE_LLDN		= 0x4,
+	IEEE802154_FRAME_TYPE_MULTIPURPOSE	= 0x5,
+	IEEE802154_FRAME_TYPE_RESERVED		= 0x6,
 };
 
 /* See Section 5.2.1.1.6 */
 enum ieee802154_addressing_mode {
 	IEEE802154_ADDR_MODE_NONE		= 0x0,
-	IEEE802154_ADDR_MODE_RESERVED		= 0x1,
+	IEEE802154_ADDR_MODE_SIMPLE		= 0x1,
 	IEEE802154_ADDR_MODE_SHORT		= 0x2,
 	IEEE802154_ADDR_MODE_EXTENDED		= 0x3,
 };
 
+/** Versions 2003/2006 do no support simple addressing mode */
+#define IEEE802154_ADDR_MODE_RESERVED		IEEE802154_ADDR_MODE_SIMPLE
+
 /* See Section 5.2.1.1.7 */
 enum ieee802154_version {
 	IEEE802154_VERSION_802154_2003		= 0x0,
-	IEEE802154_VERSION_802154		= 0x1,
-	IEEE802154_VERSION_RESERVED		= 0x2,
+	IEEE802154_VERSION_802154_2006		= 0x1,
+	IEEE802154_VERSION_802154		= 0x2,
+	IEEE802154_VERSION_RESERVED		= 0x3,
 };
 
 /*
@@ -72,7 +79,9 @@ struct ieee802154_fcf_seq {
 		uint16_t frame_pending		:1;
 		uint16_t ar			:1;
 		uint16_t pan_id_comp		:1;
-		uint16_t reserved		:3;
+		uint16_t reserved		:1;
+		uint16_t seq_num_suppr		:1;
+		uint16_t ie_list		:1;
 		uint16_t dst_addr_mode		:2;
 		uint16_t frame_version		:2;
 		uint16_t src_addr_mode		:2;
@@ -83,6 +92,7 @@ struct ieee802154_fcf_seq {
 
 struct ieee802154_address {
 	union {
+		uint8_t simple_addr;
 		uint16_t short_addr;
 		uint8_t ext_addr[0];
 	};

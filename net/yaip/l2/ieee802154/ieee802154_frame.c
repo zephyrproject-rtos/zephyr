@@ -19,11 +19,12 @@
 #define NET_DEBUG 1
 
 #define dbg_print_fs(fs)						\
-	NET_DBG("fs: %u/%u/%u/%u/%u/%u/%u/%u/%u - %u",			\
+	NET_DBG("fs: %u/%u/%u/%u/%u/%u/%u/%u/%u/%u/%u - %u",		\
 		fs->fc.frame_type, fs->fc.security_enabled,		\
 		fs->fc.frame_pending, fs->fc.ar, fs->fc.pan_id_comp,	\
-		fs->fc.reserved, fs->fc.dst_addr_mode,			\
-		fs->fc.frame_version, fs->fc.src_addr_mode,		\
+		fs->fc.reserved, fs->fc.seq_num_suppr, fs->fc.ie_list,	\
+		fs->fc.dst_addr_mode, fs->fc.frame_version,		\
+		fs->fc.src_addr_mode,					\
 		fs->sequence)
 #else
 #define dbg_print_fs(...)
@@ -46,9 +47,15 @@ validate_fc_seq(uint8_t *buf, uint8_t **p_buf)
 
 	/** Basic FC checks */
 	if (fs->fc.frame_type >= IEEE802154_FRAME_TYPE_RESERVED ||
-	    fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_RESERVED ||
-	    fs->fc.frame_version >= IEEE802154_VERSION_RESERVED ||
-	    fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_RESERVED) {
+	    fs->fc.frame_version >= IEEE802154_VERSION_RESERVED) {
+		return NULL;
+	}
+
+	/** Only for versions 2003/2006 */
+	if (fs->fc.frame_version < IEEE802154_VERSION_802154 &&
+	    (fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_RESERVED ||
+	     fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_RESERVED ||
+	     fs->fc.frame_type >= IEEE802154_FRAME_TYPE_LLDN)) {
 		return NULL;
 	}
 
@@ -201,7 +208,10 @@ static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf)
 	fs->fc.ar = 0;
 	fs->fc.pan_id_comp = 0;
 	fs->fc.reserved = 0;
-	fs->fc.frame_version = IEEE802154_VERSION_802154;
+	/** We support version 2006 only for now */
+	fs->fc.seq_num_suppr = 0;
+	fs->fc.ie_list = 0;
+	fs->fc.frame_version = IEEE802154_VERSION_802154_2006;
 
 	*p_buf += sizeof(struct ieee802154_fcf_seq);
 
