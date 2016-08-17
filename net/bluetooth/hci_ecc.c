@@ -186,8 +186,6 @@ static void emulate_le_generate_dhkey(struct net_buf *buf)
 
 static void ecc_task(void)
 {
-	nano_fifo_init(&ecc_queue);
-
 	while (true) {
 		struct net_buf *buf;
 
@@ -247,6 +245,8 @@ static int ecc_send(struct net_buf *buf)
 
 void bt_hci_ecc_init(void)
 {
+	nano_fifo_init(&ecc_queue);
+
 	/* set wrapper for driver send function */
 	drv_send = bt_dev.drv->send;
 	bt_dev.drv->send = ecc_send;
