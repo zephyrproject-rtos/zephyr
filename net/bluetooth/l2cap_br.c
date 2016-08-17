@@ -35,6 +35,9 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
+#if defined(CONFIG_BLUETOOTH_RFCOMM)
+#include "rfcomm_internal.h"
+#endif
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
 #undef BT_DBG
@@ -1373,4 +1376,7 @@ void bt_l2cap_br_init(void)
 
 	net_buf_pool_init(br_sig_pool);
 	bt_l2cap_br_fixed_chan_register(&chan_br);
+#if defined(CONFIG_BLUETOOTH_RFCOMM)
+	bt_rfcomm_init();
+#endif /* CONFIG_BLUETOOTH_RFCOMM */
 }
