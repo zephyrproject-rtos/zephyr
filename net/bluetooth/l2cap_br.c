@@ -509,7 +509,7 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		/* fixed channel mask protocol data is 8 octets wide */
 		memset(net_buf_add(rsp_buf, 8), 0, 8);
 		/* signaling channel is mandatory on BR/EDR transport */
-		rsp->data[0] = BT_L2CAP_MASK_BR_SIG;
+		rsp->data[0] = BIT(BT_L2CAP_CID_BR_SIG);
 		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + 8);
 		break;
 	default:

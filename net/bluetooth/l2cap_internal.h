@@ -30,10 +30,6 @@ enum l2cap_conn_list_action {
 #define BT_L2CAP_CID_LE_SIG		0x0005
 #define BT_L2CAP_CID_SMP		0x0006
 
-/* Supported BR/EDR fixed channels mask (first octet) */
-#define BT_L2CAP_MASK_BR_SIG		0x02
-#define BT_L2CAP_MASK_SMP		0x80
-
 struct bt_l2cap_hdr {
 	uint16_t len;
 	uint16_t cid;
