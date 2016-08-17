@@ -1360,7 +1360,6 @@ void bt_l2cap_br_init(void)
 {
 	static struct bt_l2cap_fixed_chan chan_br = {
 			.cid	= BT_L2CAP_CID_BR_SIG,
-			.mask	= BT_L2CAP_MASK_BR_SIG,
 			.accept = l2cap_br_accept,
 			};
 

@@ -201,12 +201,6 @@ struct bt_l2cap_le_credits {
 
 struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
-
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	/* Supported channels mask (first octet). Only for BR/EDR. */
-	uint8_t			mask;
-#endif
-
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 
 	struct bt_l2cap_fixed_chan	*_next;
