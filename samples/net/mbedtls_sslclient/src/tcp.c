@@ -68,7 +68,6 @@ int tcp_tx(void *context, const unsigned char *buf, size_t size)
 		rc = net_send(nbuf);
 		fiber_sleep(TCP_RETRY_TIMEOUT);
 		if (rc >= 0) {
-			ip_buf_unref(nbuf);
 			return size;
 		}
 		switch (rc) {

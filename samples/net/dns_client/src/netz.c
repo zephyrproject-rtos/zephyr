@@ -151,7 +151,6 @@ static int tcp_tx(struct net_context *ctx, uint8_t *buf, size_t size,
 		rc = net_send(nbuf);
 
 		if (rc >= 0) {
-			ip_buf_unref(nbuf);
 			return 0;
 		}
 		switch (rc) {
@@ -168,7 +167,7 @@ static int tcp_tx(struct net_context *ctx, uint8_t *buf, size_t size,
 		}
 	} while (1);
 
-	return 0;
+	return -EIO;
 }
 
 static int tcp_rx(struct net_context *ctx, uint8_t *buf, size_t *read_bytes,
