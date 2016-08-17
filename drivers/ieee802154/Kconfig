@@ -140,4 +140,36 @@ config TI_CC2520_AUTO_ACK
 	filtering feature to work.
 
 endif
+
+config UPIPE_15_4
+	bool "UART PIPE fake radio driver support for QEMU"
+	depends on BOARD_QEMU_X86
+	select NET_YAIP
+	select UART_PIPE
+	default n
+
+config UPIPE_15_4_DRV_NAME
+	string "UART PIPE Driver name"
+	default "upipe_15_4"
+	depends on UPIPE_15_4
+
+config SYS_LOG_UPIPE_15_4_LEVEL
+	int "UART PIPE driver log level"
+	default 0
+	depends on UPIPE_15_4
+	help
+	Sets log level for fake 802.15.4 UPIPE driver.
+
+	Levels are:
+
+	- 0 OFF, do not write
+
+	- 1 ERROR, only write SYS_LOG_ERR
+
+	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+
+	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+
+	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
+
 endmenu
