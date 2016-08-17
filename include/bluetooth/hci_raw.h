@@ -1,4 +1,6 @@
-/* hci_raw.h - Bluetooth HCI RAW channel handling */
+/** @file
+ *  @brief Bluetooth HCI RAW channel handling
+ */
 
 /*
  * Copyright (c) 2016 Intel Corporation
@@ -16,5 +18,36 @@
  * limitations under the License.
  */
 
+/**
+ * @brief HCI RAW channel
+ * @defgroup hci_raw HCI RAW channel
+ * @ingroup bluetooth
+ * @{
+ */
+
+/** @brief Send packet to the Bluetooth controller
+ *
+ * Send packet to the Bluetooth controller. Caller needs to
+ * implement netbuf pool.
+ *
+ * @param buf netbuf packet to be send
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
 int bt_send(struct net_buf *buf);
+
+/** @brief Enable Bluetooth RAW channel
+ *
+ *  Enable Bluetooth RAW HCI channel.
+ *
+ *  @param rx_queue netbuf queue where HCI packets received from the Bluetooth
+ *  controller are to be queued. The queue is defined in the caller while
+ *  the available buffers pools are handled in the stack.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
 int bt_enable_raw(struct nano_fifo *rx_queue);
+
+/**
+ * @}
+ */
