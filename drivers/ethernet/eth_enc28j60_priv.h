@@ -216,7 +216,7 @@
 #define RSV_SIZE 4
 
 /* Fiber Configuration */
-#define ENC28J60_FIBER_STACK_SIZE 256
+#define ENC28J60_FIBER_STACK_SIZE 512
 #define ENC28J60_FIBER_PRIORITY   100
 
 /* Microchip's OUI*/
