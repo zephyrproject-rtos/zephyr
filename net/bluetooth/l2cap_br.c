@@ -1348,7 +1348,7 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-static void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
+void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 {
 	BT_DBG("CID 0x%04x", chan->cid);
 

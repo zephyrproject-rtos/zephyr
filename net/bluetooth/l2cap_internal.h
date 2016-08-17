@@ -249,6 +249,9 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 /* Initialize BR/EDR L2CAP signal layer */
 void bt_l2cap_br_init(void);
 
+/* Register fixed channel */
+void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan);
+
 /* Notify BR/EDR L2CAP channels about established new ACL connection */
 void bt_l2cap_br_connected(struct bt_conn *conn);
 
