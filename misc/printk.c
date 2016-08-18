@@ -44,7 +44,7 @@ static int _nop_char_out(int c)
 	return 0;
 }
 
-static int (*_char_out)(int) = _nop_char_out;
+int (*_char_out)(int) = _nop_char_out;
 
 
 /**
