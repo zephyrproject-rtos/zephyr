@@ -35,6 +35,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/rfcomm.h>
 #include <bluetooth/storage.h>
 
 #include <misc/shell.h>
@@ -1889,6 +1890,78 @@ static int cmd_bredr_l2cap_register(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_RFCOMM)
+static void rfcomm_bredr_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
+{
+	printk("Incoming data dlc %p len %u\n", dlci, buf->len);
+}
+
+static void rfcomm_bredr_connected(struct bt_rfcomm_dlc *dlci)
+{
+	printk("Dlc %p connected\n", dlci);
+}
+
+static void rfcomm_bredr_disconnected(struct bt_rfcomm_dlc *dlci)
+{
+	printk("Dlc %p disconnected\n", dlci);
+}
+
+static struct bt_rfcomm_dlc_ops rfcomm_bredr_ops = {
+	.recv		= rfcomm_bredr_recv,
+	.connected	= rfcomm_bredr_connected,
+	.disconnected	= rfcomm_bredr_disconnected,
+};
+
+static struct bt_rfcomm_dlc rfcomm_dlc = {
+	.ops = &rfcomm_bredr_ops,
+	.mtu = 30,
+};
+
+static int rfcomm_bredr_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
+{
+	printk("Incoming RFCOMM conn %p\n", conn);
+
+	if (rfcomm_dlc.session) {
+		printk("No channels available");
+		return -ENOMEM;
+	}
+
+	*dlc = &rfcomm_dlc;
+
+	return 0;
+}
+
+struct bt_rfcomm_server rfcomm_server = {
+	.accept = &rfcomm_bredr_accept,
+};
+
+static int cmd_bredr_rfcomm_register(int argc, char *argv[])
+{
+	int ret;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	if (rfcomm_server.channel) {
+		printk("Already registered\n");
+		return 0;
+	}
+
+	rfcomm_server.channel = strtoul(argv[1], NULL, 16);
+
+	ret = bt_rfcomm_server_register(&rfcomm_server);
+	if (ret < 0) {
+		printk("Unable to register channel %x\n", ret);
+		rfcomm_server.channel = 0;
+	} else {
+		printk("RFCOMM channel %u registered\n", rfcomm_server.channel);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_RFCOMM) */
+
 static int cmd_bredr_discoverable(int argc, char *argv[])
 {
 	int err;
@@ -2029,6 +2102,9 @@ static const struct shell_cmd commands[] = {
 	  "<value: on, off> [mode: limited]"  },
 	{ "br-l2cap-register", cmd_bredr_l2cap_register, "<psm>" },
 	{ "br-oob", cmd_bredr_oob },
+#if defined(CONFIG_BLUETOOTH_RFCOMM)
+	{ "br-rfcomm-register", cmd_bredr_rfcomm_register, "<channel>" },
+#endif /* CONFIG_BLUETOOTH_RFCOMM */
 #endif
 	{ NULL, NULL }
 };
