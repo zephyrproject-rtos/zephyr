@@ -257,6 +257,19 @@ struct net_udp_hdr {
 	uint16_t chksum;
 } __packed;
 
+struct net_tcp_hdr {
+	uint16_t src_port;
+	uint16_t dst_port;
+	uint8_t seq[4];
+	uint8_t ack[4];
+	uint8_t offset;
+	uint8_t flags;
+	uint8_t wnd[2];
+	uint16_t chksum;
+	uint8_t urg[2];
+	uint8_t optdata[0];
+} __packed;
+
 #define NET_UDPH_LEN	8			/* Size of UDP header */
 #define NET_TCPH_LEN	20			/* Size of TCP header */
 #define NET_ICMPH_LEN	4			/* Size of ICMP header */
