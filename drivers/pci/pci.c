@@ -430,7 +430,7 @@ static void pci_set_command_bits(struct pci_dev_info *dev_info, uint32_t bits)
 	pci_ctrl_addr.field.reg = 1;
 
 #ifdef CONFIG_PCI_DEBUG
-	printk("pci_set_command_bits 0x%x\n", pci_ctrl_addr);
+	printk("pci_set_command_bits 0x%x\n", pci_ctrl_addr.value);
 #endif
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
