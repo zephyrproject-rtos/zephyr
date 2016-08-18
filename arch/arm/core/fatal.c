@@ -23,6 +23,7 @@
 
 #include <toolchain.h>
 #include <sections.h>
+#include <inttypes.h>
 
 #include <nanokernel.h>
 #include <nano_private.h>
@@ -97,8 +98,8 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		PR_EXC("**** Unknown Fatal Error %d! ****\n", reason);
 		break;
 	}
-	PR_EXC("Current thread ID = 0x%x\n"
-	       "Faulting instruction address = 0x%x\n",
+	PR_EXC("Current thread ID = %p\n"
+	       "Faulting instruction address = 0x%" PRIx32 "\n",
 	       sys_thread_self_get(),
 	       pEsf->pc);
 

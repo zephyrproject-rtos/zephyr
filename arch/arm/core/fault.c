@@ -26,6 +26,7 @@
 
 #include <nanokernel.h>
 #include <nano_private.h>
+#include <inttypes.h>
 
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
@@ -65,7 +66,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 {
 	int escalation = 0;
 
-	PR_EXC("Fault! EXC #%d, Thread: %x, instr @ %x\n",
+	PR_EXC("Fault! EXC #%d, Thread: %p, instr @ 0x%" PRIx32 "\n",
 	       fault,
 	       sys_thread_self_get(),
 	       esf->pc);
@@ -77,19 +78,20 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 				  : "Bus fault on vector table read\n");
 	}
 
-	PR_EXC("MMFSR: %x, BFSR: %x, UFSR: %x\n",
+	PR_EXC("MMFSR: 0x%" PRIx32 ", BFSR: 0x%" PRIx32 ", UFSR: 0x%"
+	       PRIx32 "\n",
 	       __scs.scb.cfsr.byte.mmfsr.val,
 	       __scs.scb.cfsr.byte.bfsr.val,
 	       __scs.scb.cfsr.byte.ufsr.val);
 
 	if (_ScbMemFaultIsMmfarValid()) {
-		PR_EXC("MMFAR: %x\n", _ScbMemFaultAddrGet());
+		PR_EXC("MMFAR: 0x%" PRIx32 "\n", _ScbMemFaultAddrGet());
 		if (escalation) {
 			_ScbMemFaultMmfarReset();
 		}
 	}
 	if (_ScbBusFaultIsBfarValid()) {
-		PR_EXC("BFAR: %x\n", _ScbBusFaultAddrGet());
+		PR_EXC("BFAR: 0x%" PRIx32 "\n", _ScbBusFaultAddrGet());
 		if (escalation) {
 			_ScbBusFaultBfarReset();
 		}
@@ -111,8 +113,8 @@ void _FaultDump(const NANO_ESF *esf, int fault)
  */
 static void _FaultThreadShow(const NANO_ESF *esf)
 {
-	PR_EXC("  Executing thread ID (thread): 0x%x\n"
-	       "  Faulting instruction address:  0x%x\n",
+	PR_EXC("  Executing thread ID (thread): %p\n"
+	       "  Faulting instruction address:  0x%" PRIx32 "\n",
 	       sys_thread_self_get(),
 	       esf->pc);
 }
@@ -138,7 +140,8 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 	} else if (_ScbMemFaultIsDataAccessViolation()) {
 		PR_EXC("  Data Access Violation\n");
 		if (_ScbMemFaultIsMmfarValid()) {
-			PR_EXC("  Address: 0x%x\n", _ScbMemFaultAddrGet());
+			PR_EXC("  Address: 0x%" PRIx32 "\n",
+			       _ScbMemFaultAddrGet());
 			if (fromHardFault) {
 				_ScbMemFaultMmfarReset();
 			}
@@ -169,7 +172,8 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 	} else if (_ScbBusFaultIsPrecise()) {
 		PR_EXC("  Precise data bus error\n");
 		if (_ScbBusFaultIsBfarValid()) {
-			PR_EXC("  Address: 0x%x\n", _ScbBusFaultAddrGet());
+			PR_EXC("  Address: 0x%" PRIx32 "\n",
+			       _ScbBusFaultAddrGet());
 			if (fromHardFault) {
 				_ScbBusFaultBfarReset();
 			}
