@@ -212,7 +212,7 @@ static void test_3_fiber(int arg1, int arg2)
 
 	if (destroy_called != ARRAY_SIZE(bufs_pool)) {
 		printk("Incorrect fragment destroy callback count: %d "
-		       "should be %d\n", destroy_called,
+		       "should be %zu\n", destroy_called,
 		       ARRAY_SIZE(bufs_pool));
 		return;
 	}
@@ -484,7 +484,7 @@ static bool net_buf_test_big_buf(void)
 	}
 
 	if (frag_destroy_called != ARRAY_SIZE(big_pool)) {
-		printk("Incorrect big frag destroy count: %d vs %d\n",
+		printk("Incorrect big frag destroy count: %d vs %zu\n",
 		       frag_destroy_called, ARRAY_SIZE(big_pool));
 		return false;
 	}
@@ -565,7 +565,7 @@ static bool net_buf_test_multi_frags(void)
 	}
 
 	if (frag_destroy_called != ARRAY_SIZE(frags_pool)) {
-		printk("Incorrect big frag destroy count: %d vs %d\n",
+		printk("Incorrect big frag destroy count: %d vs %zu\n",
 		       frag_destroy_called, ARRAY_SIZE(frags_pool));
 		return false;
 	}
@@ -589,8 +589,8 @@ void main(void)
 {
 	int count, pass;
 
-	printk("sizeof(struct net_buf) = %u\n", sizeof(struct net_buf));
-	printk("sizeof(bufs_pool)      = %u\n", sizeof(bufs_pool));
+	printk("sizeof(struct net_buf) = %zu\n", sizeof(struct net_buf));
+	printk("sizeof(bufs_pool)      = %zu\n", sizeof(bufs_pool));
 
 	net_buf_pool_init(bufs_pool);
 
