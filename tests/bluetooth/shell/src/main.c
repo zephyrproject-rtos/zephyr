@@ -885,7 +885,7 @@ static int cmd_gatt_mread(int argc, char *argv[])
 	}
 
 	if (argc - 1 >  ARRAY_SIZE(h)) {
-		printk("Enter max %u handle items to read\n", ARRAY_SIZE(h));
+		printk("Enter max %lu handle items to read\n", ARRAY_SIZE(h));
 		return 0;
 	}
 
