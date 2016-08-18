@@ -24,6 +24,10 @@
 #include <device.h>
 #include <init.h>
 #include <misc/printk.h>
+#include <sections.h>
+
+#include <tc_util.h>
+
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_ip.h>
@@ -37,7 +41,7 @@
 		net_byte_to_hex(out, value, 'A', true);		 \
 		if (strcmp(out, expected)) {			 \
 			printk("Test 0x%s failed.\n", expected); \
-			return;					 \
+			return false;				 \
 		}						 \
 	} while (0)
 
@@ -47,7 +51,7 @@
 		net_byte_to_hex(out, value, 'a', true);		 \
 		if (strcmp(out, expected)) {			 \
 			printk("Test 0x%s failed.\n", expected); \
-			return;					 \
+			return false;				 \
 		}						 \
 	} while (0)
 
@@ -57,7 +61,7 @@
 		if (strcmp(net_sprint_ll_addr(ll, sizeof(ll)),		\
 			   expected)) {					\
 			printk("Test %s failed.\n", expected);		\
-			return;						\
+			return false;					\
 		}							\
 	} while (0)
 
@@ -67,7 +71,7 @@
 		if (strcmp(net_sprint_ll_addr(ll, sizeof(ll)),		\
 			   expected)) {					\
 			printk("Test %s failed.\n", expected);		\
-			return;						\
+			return false;					\
 		}							\
 	} while (0)
 
@@ -82,7 +86,7 @@
 			net_sprint_ll_addr(ll2, sizeof(ll2)));		\
 		if (strcmp(out, expected)) {				\
 			printk("Test %s failed, got %s\n", expected, out); \
-			return;						\
+			return false;					\
 		}							\
 	} while (0)
 
@@ -93,7 +97,7 @@
 		char *ptr = net_sprint_ipv6_addr(&addr);		     \
 		if (strcmp(ptr, expected)) {				     \
 			printk("Test %s failed, got %s\n", expected, ptr);   \
-			return;						     \
+			return false;					     \
 		}							     \
 	} while (0)
 
@@ -103,7 +107,7 @@
 		char *ptr = net_sprint_ipv4_addr(&addr);		\
 		if (strcmp(ptr, expected)) {				\
 			printk("Test %s failed, got %s\n", expected, ptr); \
-			return;						\
+			return false;					\
 		}							\
 	} while (0)
 
@@ -166,11 +170,7 @@ NET_DEVICE_INIT(net_addr_test, "net_addr_test",
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
-void main(void)
-#endif
+static bool run_tests(void)
 {
 	struct in6_addr loopback = IN6ADDR_LOOPBACK_INIT;
 	struct in6_addr any = IN6ADDR_ANY_INIT;
@@ -236,12 +236,12 @@ void main(void)
 
 	if (!net_is_ipv6_addr_loopback(&loopback)) {
 		printk("IPv6 loopback address check failed.\n");
-		return;
+		return false;
 	}
 
 	if (!net_is_ipv6_addr_mcast(&mcast)) {
 		printk("IPv6 multicast address check failed.\n");
-		return;
+		return false;
 	}
 
 	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
@@ -250,63 +250,63 @@ void main(void)
 				      0);
 	if (!ifaddr1) {
 		printk("IPv6 interface address add failed\n");
-		return;
+		return false;
 	}
 
 	ifaddr2 = net_if_ipv6_addr_lookup(&addr6, NULL);
 	if (ifaddr1 != ifaddr2) {
 		printk("IPv6 interface address mismatch\n");
-		return;
+		return false;
 	}
 
 	if (net_is_my_ipv6_addr(&loopback)) {
 		printk("My IPv6 loopback address check failed\n");
-		return;
+		return false;
 	}
 
 	if (!net_is_my_ipv6_addr(&addr6)) {
 		printk("My IPv6 address check failed\n");
-		return;
+		return false;
 	}
 
 	if (!net_is_ipv6_prefix((uint8_t *)&addr6_pref1,
 				(uint8_t *)&addr6_pref2,
 				64)) {
 		printk("Same IPv6 prefix test failed\n");
-		return;
+		return false;
 	}
 
 	if (net_is_ipv6_prefix((uint8_t *)&addr6_pref1,
 			       (uint8_t *)&addr6_pref3,
 			       64)) {
 		printk("Different IPv6 prefix test failed\n");
-		return;
+		return false;
 	}
 
 	if (net_is_ipv6_prefix((uint8_t *)&addr6_pref1,
 			       (uint8_t *)&addr6_pref2,
 			       128)) {
 		printk("Different full IPv6 prefix test failed\n");
-		return;
+		return false;
 	}
 
 	if (net_is_ipv6_prefix((uint8_t *)&addr6_pref1,
 			       (uint8_t *)&addr6_pref3,
 			       255)) {
 		printk("Too long prefix test failed\n");
-		return;
+		return false;
 	}
 
 	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &mcast);
 	if (!ifmaddr1) {
 		printk("IPv6 multicast address add failed\n");
-		return;
+		return false;
 	}
 
 	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &addr6);
 	if (ifmaddr1) {
 		printk("IPv6 multicast address could be added failed\n");
-		return;
+		return false;
 	}
 
 	ifaddr1 = net_if_ipv4_addr_add(net_if_get_default(),
@@ -315,22 +315,22 @@ void main(void)
 				      0);
 	if (!ifaddr1) {
 		printk("IPv4 interface address add failed\n");
-		return;
+		return false;
 	}
 
 	if (!net_is_my_ipv4_addr(&addr4)) {
 		printk("My IPv4 address check failed\n");
-		return;
+		return false;
 	}
 
 	if (net_is_my_ipv4_addr(&loopback4)) {
 		printk("My IPv4 loopback address check failed\n");
-		return;
+		return false;
 	}
 
 	if (memcmp(net_if_ipv6_unspecified_addr(), &any, sizeof(any))) {
 		printk("My IPv6 unspecified address check failed\n");
-		return;
+		return false;
 	}
 
 	ifaddr2 = net_if_ipv6_addr_add(net_if_get_default(),
@@ -339,14 +339,14 @@ void main(void)
 				       0);
 	if (!ifaddr2) {
 		printk("IPv6 ll address autoconf add failed\n");
-		return;
+		return false;
 	}
 	ifaddr2->addr_state = NET_ADDR_PREFERRED;
 
 	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
 	if (memcmp(tmp, &addr6.s6_addr, sizeof(struct in6_addr))) {
 		printk("IPv6 ll address fetch failed\n");
-		return;
+		return false;
 	}
 
 	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
@@ -354,7 +354,7 @@ void main(void)
 	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
 	if (tmp || !memcmp(tmp, &any, sizeof(struct in6_addr))) {
 		printk("IPv6 preferred ll address fetch failed\n");
-		return;
+		return false;
 	}
 
 	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
@@ -363,7 +363,7 @@ void main(void)
 				       0);
 	if (!ifaddr1) {
 		printk("IPv6 global address autoconf add failed\n");
-		return;
+		return false;
 	}
 	ifaddr1->addr_state = NET_ADDR_PREFERRED;
 
@@ -375,7 +375,7 @@ void main(void)
 		if (!out) {
 			printk("IPv6 src addr selection failed, iface %p\n",
 				iface);
-			return;
+			return false;
 		}
 		printk("Selected IPv6 address %s, iface %p\n",
 		       net_sprint_ipv6_addr(out), iface);
@@ -384,7 +384,7 @@ void main(void)
 			   sizeof(struct in6_addr))) {
 			printk("IPv6 wrong src address selected, iface %p\n",
 			       iface);
-			return;
+			return false;
 		}
 
 		/* Now we should get :: address */
@@ -392,7 +392,7 @@ void main(void)
 		if (!out) {
 			printk("IPv6 src any addr selection failed, "
 			       "iface %p\n", iface);
-			return;
+			return false;
 		}
 		printk("Selected IPv6 address %s, iface %p\n",
 		       net_sprint_ipv6_addr(out), iface);
@@ -401,7 +401,7 @@ void main(void)
 			   sizeof(struct in6_addr))) {
 			printk("IPv6 wrong src any address selected, "
 			       "iface %p\n", iface);
-			return;
+			return false;
 		}
 
 		ifaddr2->addr_state = NET_ADDR_PREFERRED;
@@ -411,7 +411,7 @@ void main(void)
 		if (!out) {
 			printk("IPv6 src ll addr selection failed, iface %p\n",
 				iface);
-			return;
+			return false;
 		}
 		printk("Selected IPv6 address %s, iface %p\n",
 		       net_sprint_ipv6_addr(out), iface);
@@ -420,7 +420,7 @@ void main(void)
 			   sizeof(struct in6_addr))) {
 			printk("IPv6 wrong src ll address selected, "
 			       "iface %p\n", iface);
-			return;
+			return false;
 		}
 	}
 
@@ -431,13 +431,39 @@ void main(void)
 
 	if (net_ipv4_addr_mask_cmp(iface, &fail_addr)) {
 		printk("IPv4 wrong match failed\n");
-		return;
+		return false;
 	}
 
 	if (!net_ipv4_addr_mask_cmp(iface, &match_addr)) {
 		printk("IPv4 match failed\n");
-		return;
+		return false;
 	}
 
 	printk("IP address checks passed\n");
+
+	return true;
+}
+
+void main_fiber(void)
+{
+	if (run_tests()) {
+		TC_END_REPORT(TC_PASS);
+	} else {
+		TC_END_REPORT(TC_FAIL);
+	}
+}
+
+#if defined(CONFIG_NANOKERNEL)
+#define STACKSIZE 2000
+char __noinit __stack fiberStack[STACKSIZE];
+#endif
+
+void main(void)
+{
+#if defined(CONFIG_MICROKERNEL)
+	main_fiber();
+#else
+	task_fiber_start(&fiberStack[0], STACKSIZE,
+			(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
+#endif
 }

@@ -23,6 +23,8 @@
 #include <misc/printk.h>
 #include <stdio.h>
 
+#include <tc_util.h>
+
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 
@@ -470,16 +472,23 @@ void main(void)
 #endif
 {
 	if (test_ipv6_multi_frags() < 0) {
-		return;
+		goto fail;
 	}
 
 	if (test_fragment_copy() < 0) {
-		return;
+		goto fail;
 	}
 
 	if (test_fragment_push() < 0) {
-		return;
+		goto fail;
 	}
 
 	printk("nbuf tests passed\n");
+
+	TC_END_REPORT(TC_PASS);
+	return;
+
+fail:
+	TC_END_REPORT(TC_FAIL);
+	return;
 }

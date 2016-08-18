@@ -21,6 +21,9 @@
 #include <stddef.h>
 #include <string.h>
 #include <misc/printk.h>
+#include <sections.h>
+
+#include <tc_util.h>
 
 #include <net/buf.h>
 
@@ -69,7 +72,7 @@ static struct net_icmpv6_handler test_handler2 = {
 	.handler = handle_test_msg,
 };
 
-void main(void)
+static bool run_tests(void)
 {
 	struct net_buf *buf, *frag;
 	int ret;
@@ -91,33 +94,59 @@ void main(void)
 	ret = net_icmpv6_input(buf, net_buf_frags_len(buf->frags), 0, 0);
 	if (!ret) {
 		printk("%d: Callback not called properly\n", __LINE__);
-		return;
+		return false;
 	}
 
 	ret = net_icmpv6_input(buf, net_buf_frags_len(buf->frags),
 			       NET_ICMPV6_ECHO_REPLY, 0);
 	if (ret < 0 || buf_status(buf) != 0) {
 		printk("%d: Callback not called properly\n", __LINE__);
-		return;
+		return false;
 	}
 
 	ret = net_icmpv6_input(buf, net_buf_frags_len(buf->frags), 1, 0);
 	if (!ret) {
 		printk("%d: Callback not called properly\n", __LINE__);
-		return;
+		return false;
 	}
 
 	ret = net_icmpv6_input(buf, net_buf_frags_len(buf->frags),
 			       NET_ICMPV6_ECHO_REQUEST, 0);
 	if (ret < 0 || buf_status(buf) != 0) {
 		printk("%d: Callback not called properly\n", __LINE__);
-		return;
+		return false;
 	}
 
 	if (handler_called != 2) {
 		printk("%d: Callbacks not called properly\n", __LINE__);
-		return;
+		return false;
 	}
 
 	printk("ICMPv6 tests passed\n");
+
+	return true;
+}
+
+void main_fiber(void)
+{
+	if (run_tests()) {
+		TC_END_REPORT(TC_PASS);
+	} else {
+		TC_END_REPORT(TC_FAIL);
+	}
+}
+
+#if defined(CONFIG_NANOKERNEL)
+#define STACKSIZE 2000
+char __noinit __stack fiberStack[STACKSIZE];
+#endif
+
+void main(void)
+{
+#if defined(CONFIG_MICROKERNEL)
+	main_fiber();
+#else
+	task_fiber_start(&fiberStack[0], STACKSIZE,
+			(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
+#endif
 }

@@ -28,6 +28,9 @@
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>
+#include <sections.h>
+
+#include <tc_util.h>
 
 #define NET_DEBUG 1
 #include "net_private.h"
@@ -154,11 +157,7 @@ static const unsigned char pkt5[98] = {
 0x36, 0x37                                      /* 67 */
 };
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
-void main(void)
-#endif
+static bool run_tests(void)
 {
 	struct net_buf *frag, *buf;
 	uint16_t chksum, orig_chksum;
@@ -173,7 +172,7 @@ void main(void)
 	if (frag->len != sizeof(pkt1)) {
 		printk("Fragment len %d invalid, should be %d\n",
 		       frag->len, sizeof(pkt1));
-		return;
+		return false;
 	}
 
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
@@ -190,7 +189,7 @@ void main(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt1, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return;
+		return false;
 	}
 	net_nbuf_unref(buf);
 
@@ -218,7 +217,7 @@ void main(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt2, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return;
+		return false;
 	}
 	net_nbuf_unref(buf);
 
@@ -249,7 +248,7 @@ void main(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt3, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return;
+		return false;
 	}
 	net_nbuf_unref(buf);
 
@@ -306,14 +305,14 @@ void main(void)
 		       "pkt3 size %d frags size %d calc total %d\n",
 		       sizeof(pkt3), net_buf_frags_len(buf->frags),
 		       total + sizeof(struct net_ipv6_hdr));
-		return;
+		return false;
 	}
 
 	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt3, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return;
+		return false;
 	}
 	net_nbuf_unref(buf);
 
@@ -341,7 +340,7 @@ void main(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt4, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return;
+		return false;
 	}
 	net_nbuf_unref(buf);
 
@@ -369,9 +368,34 @@ void main(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt5, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return;
+		return false;
 	}
 	net_nbuf_unref(buf);
 
 	printk("Network utils checks passed\n");
+	return true;
+}
+
+void main_fiber(void)
+{
+	if (run_tests()) {
+		TC_END_REPORT(TC_PASS);
+	} else {
+		TC_END_REPORT(TC_FAIL);
+	}
+}
+
+#if defined(CONFIG_NANOKERNEL)
+#define STACKSIZE 2000
+char __noinit __stack fiberStack[STACKSIZE];
+#endif
+
+void main(void)
+{
+#if defined(CONFIG_MICROKERNEL)
+	main_fiber();
+#else
+	task_fiber_start(&fiberStack[0], STACKSIZE,
+			(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
+#endif
 }

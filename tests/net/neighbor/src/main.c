@@ -28,6 +28,9 @@
 #include <net/nbuf.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>
+#include <sections.h>
+
+#include <tc_util.h>
 
 #include "nbr.h"
 
@@ -65,11 +68,7 @@ static struct net_eth_addr hwaddr3 = { { 0xee, 0xe1, 0x55, 0xfe, 0x44, 0x03 } };
 static struct net_eth_addr hwaddr4 = { { 0x61, 0xf2, 0xfe, 0x4e, 0x8e, 0x04 } };
 static struct net_eth_addr hwaddr5 = { { 0x8a, 0x52, 0x01, 0x21, 0x11, 0x05 } };
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
-void main(void)
-#endif
+static bool run_tests(void)
 {
 	struct net_eth_addr *addrs[] = {
 		&hwaddr1,
@@ -92,7 +91,7 @@ void main(void)
 	if (CONFIG_NET_IPV6_MAX_NEIGHBORS != (ARRAY_SIZE(addrs) - 2)) {
 		printk("There should be exactly %d valid entries "
 		       "in addrs array\n", CONFIG_NET_IPV6_MAX_NEIGHBORS + 1);
-		return;
+		return false;
 	}
 
 	/* First adding a neighbor and trying to add multiple hw addresses
@@ -102,12 +101,12 @@ void main(void)
 	if (!nbr) {
 		printk("Cannot get neighbor from table %p\n",
 		       &net_test_neighbor.table);
-		return;
+		return false;
 	}
 
 	if (nbr->ref != 1) {
 		printk("Invalid ref count %d\n", nbr->ref);
-		return;
+		return false;
 	}
 
 	lladdr.len = sizeof(struct net_eth_addr);
@@ -124,7 +123,7 @@ void main(void)
 			printk("Cannot add %s to nbr cache (%d)\n",
 			       net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			       ret);
-			return;
+			return false;
 		} else if (!ret) {
 			printk("Adding %s\n",
 			       net_sprint_ll_addr(eth_addr->addr,
@@ -136,7 +135,7 @@ void main(void)
 	nbr = net_nbr_lookup(&net_test_neighbor.table, iface1, &lladdr);
 	if (nbr->idx != 0) {
 		printk("Wrong index %d should be %d\n", nbr->idx, 0);
-		return;
+		return false;
 	}
 
 	for (i = 0; i < 2; i++) {
@@ -149,7 +148,7 @@ void main(void)
 			printk("Cannot del %s from nbr cache (%d)\n",
 			       net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			       ret);
-			return;
+			return false;
 		} else if (!ret) {
 			printk("Deleting %s\n",
 			       net_sprint_ll_addr(eth_addr->addr,
@@ -160,7 +159,7 @@ void main(void)
 	net_nbr_unref(nbr);
 	if (nbr->ref != 0) {
 		printk("nbr still referenced, ref %d\n", nbr->ref);
-		return;
+		return false;
 	}
 
 	/* Then adding multiple neighbors.
@@ -176,12 +175,12 @@ void main(void)
 			}
 			printk("[%d] Cannot get neighbor from table %p\n",
 			       i, &net_test_neighbor.table);
-			return;
+			return false;
 		}
 
 		if (nbr->ref != 1) {
 			printk("[%d] Invalid ref count %d\n", i, nbr->ref);
-			return;
+			return false;
 		}
 		nbrs[i] = nbr;
 
@@ -194,7 +193,7 @@ void main(void)
 			printk("Cannot add %s to nbr cache (%d)\n",
 			       net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			       ret);
-			return;
+			return false;
 		} else {
 			printk("Adding %s\n",
 			       net_sprint_ll_addr(eth_addr->addr,
@@ -207,7 +206,7 @@ void main(void)
 		nbr = net_nbr_lookup(&net_test_neighbor.table, iface1, &lladdr);
 		if (nbr->idx != i) {
 			printk("Wrong index %d should be %d\n", nbr->idx, i);
-			return;
+			return false;
 		}
 	}
 
@@ -225,7 +224,7 @@ void main(void)
 			printk("Cannot del %s from nbr cache (%d)\n",
 			       net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			       ret);
-			return;
+			return false;
 		} else {
 			printk("Deleting %s\n",
 			       net_sprint_ll_addr(eth_addr->addr,
@@ -235,7 +234,7 @@ void main(void)
 		net_nbr_unref(nbr);
 		if (nbr->ref != 0) {
 			printk("nbr still referenced, ref %d\n", nbr->ref);
-			return;
+			return false;
 		}
 	}
 
@@ -254,12 +253,12 @@ void main(void)
 			}
 			printk("[%d] Cannot get neighbor from table %p\n",
 			       i, &net_test_neighbor.table);
-			return;
+			return false;
 		}
 
 		if (nbr->ref != 1) {
 			printk("[%d] Invalid ref count %d\n", i, nbr->ref);
-			return;
+			return false;
 		}
 		nbrs[i] = nbr;
 
@@ -276,7 +275,7 @@ void main(void)
 			printk("Cannot add %s to nbr cache (%d)\n",
 			       net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			       ret);
-			return;
+			return false;
 		} else {
 			printk("Adding %s iface %p\n",
 			       net_sprint_ll_addr(eth_addr->addr,
@@ -297,7 +296,7 @@ void main(void)
 		}
 		if (nbr->idx != i) {
 			printk("Wrong index %d should be %d\n", nbr->idx, i);
-			return;
+			return false;
 		}
 
 		lladdr_ptr = net_nbr_get_lladdr(i);
@@ -306,7 +305,7 @@ void main(void)
 			printk("Wrong lladdr %s in index %d\n",
 			       net_sprint_ll_addr(lladdr_ptr->addr,
 						  lladdr_ptr->len));
-			return;
+			return false;
 		}
 	}
 
@@ -328,7 +327,7 @@ void main(void)
 			printk("Cannot del %s from nbr cache (%d)\n",
 			       net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			       ret);
-			return;
+			return false;
 		} else {
 			printk("Deleting %s iface %p\n",
 			       net_sprint_ll_addr(eth_addr->addr,
@@ -339,21 +338,21 @@ void main(void)
 		net_nbr_unref(nbr);
 		if (nbr->ref != 0) {
 			printk("nbr still referenced, ref %d\n", nbr->ref);
-			return;
+			return false;
 		}
 	}
 
 	if (add_count != remove_count) {
 		printk("Remove count %d does not match add count %d\n",
 		       remove_count, add_count);
-		return;
+		return false;
 	}
 
 	net_nbr_clear_table(&net_test_neighbor.table);
 
 	if (!clear_called) {
 		printk("Table clear check failed\n");
-		return;
+		return false;
 	}
 
 	/* The table should be empty now */
@@ -362,8 +361,34 @@ void main(void)
 					     &lladdr);
 	if (nbr) {
 		printk("Some entries still found in nbr cache\n");
-		return;
+		return false;
 	}
 
 	printk("Neighbor cache checks passed\n");
+	return true;
+}
+
+
+void main_fiber(void)
+{
+	if (run_tests()) {
+		TC_END_REPORT(TC_PASS);
+	} else {
+		TC_END_REPORT(TC_FAIL);
+	}
+}
+
+#if defined(CONFIG_NANOKERNEL)
+#define STACKSIZE 2000
+char __noinit __stack fiberStack[STACKSIZE];
+#endif
+
+void main(void)
+{
+#if defined(CONFIG_MICROKERNEL)
+	main_fiber();
+#else
+	task_fiber_start(&fiberStack[0], STACKSIZE,
+			(nano_fiber_entry_t)main_fiber, 0, 0, 7, 0);
+#endif
 }

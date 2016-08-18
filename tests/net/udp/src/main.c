@@ -33,6 +33,8 @@
 #include <net/net_ip.h>
 #include <net/ethernet.h>
 
+#include <tc_util.h>
+
 #if defined(CONFIG_NETWORK_IP_STACK_DEBUG_UDP)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
@@ -359,7 +361,7 @@ static void set_port(sa_family_t family, struct sockaddr *raddr,
 	}
 }
 
-void main_fiber(void)
+static bool run_tests(void)
 {
 	void *handlers[CONFIG_NET_MAX_CONN];
 	struct net_if *iface = net_if_get_default();;
@@ -412,14 +414,14 @@ void main_fiber(void)
 	if (!ifaddr) {
 		printk("Cannot add %s to interface %p\n",
 		       net_sprint_ipv6_addr(&in6addr_my));
-		return;
+		return false;
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface, &in4addr_my, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		printk("Cannot add %s to interface %p\n",
 		       net_sprint_ipv4_addr(&in4addr_my));
-		return;
+		return false;
 	}
 
 #define REGISTER(family, raddr, laddr, rport, lport)			\
@@ -443,7 +445,7 @@ void main_fiber(void)
 		if (ret) {						\
 			printk("UDP register %s failed (%d)\n",		\
 			       user_data.test, ret);			\
-			return;						\
+			return false;					\
 		}							\
 		user_data.handle = handlers[i++];			\
 		&user_data;						\
@@ -457,7 +459,7 @@ void main_fiber(void)
 	if (!ret) {							\
 		printk("UDP register invalid match %s failed\n",	\
 		       #raddr"-"#laddr"-"#rport"-"#lport);		\
-		return;							\
+		return false;						\
 	}
 
 #define UNREGISTER(ud)							\
@@ -465,7 +467,7 @@ void main_fiber(void)
 	if (ret) {							\
 		printk("UDP unregister %p failed (%d)\n", ud->handle,	\
 		       ret);						\
-		return;							\
+		return false;						\
 	}
 
 #define TEST_IPV6_OK(ud, raddr, laddr, rport, lport)			\
@@ -474,7 +476,7 @@ void main_fiber(void)
 	if (!st) {							\
 		printk("%d: UDP test \"%s\" fail\n", __LINE__,		\
 		       ud->test);					\
-		return;							\
+		return false;						\
 	}
 
 #define TEST_IPV4_OK(ud, raddr, laddr, rport, lport)			\
@@ -483,7 +485,7 @@ void main_fiber(void)
 	if (!st) {							\
 		printk("%d: UDP test \"%s\" fail\n", __LINE__,		\
 		       ud->test);					\
-		return;							\
+		return false;						\
 	}
 
 #define TEST_IPV6_FAIL(ud, raddr, laddr, rport, lport)			\
@@ -492,7 +494,7 @@ void main_fiber(void)
 	if (st) {							\
 		printk("%d: UDP neg test \"%s\" fail\n", __LINE__,	\
 		       ud->test);					\
-		return;							\
+		return false;						\
 	}
 
 #define TEST_IPV4_FAIL(ud, raddr, laddr, rport, lport)			\
@@ -501,7 +503,7 @@ void main_fiber(void)
 	if (st) {							\
 		printk("%d: UDP neg test \"%s\" fail\n", __LINE__,	\
 		       ud->test);					\
-		return;							\
+		return false;						\
 	}
 
 	ud = REGISTER(AF_INET6, &any_addr6, &any_addr6, 1234, 4242);
@@ -566,7 +568,7 @@ void main_fiber(void)
 
 	if (fail) {
 		printk("Tests failed\n");
-		return;
+		return false;
 	}
 
 	i--;
@@ -574,7 +576,7 @@ void main_fiber(void)
 		ret = net_udp_unregister(handlers[i]);
 		if (ret < 0 && ret != -ENOENT) {
 			printk("Cannot unregister udp %d\n", i);
-			return;
+			return false;
 		}
 
 		i--;
@@ -582,10 +584,20 @@ void main_fiber(void)
 
 	if (!(net_udp_unregister(NULL) < 0)) {
 		printk("Unregister udp failed\n");
-		return;
+		return false;
 	}
 
 	printk("Network UDP checks passed\n");
+	return true;
+}
+
+void main_fiber(void)
+{
+	if (run_tests()) {
+		TC_END_REPORT(TC_PASS);
+	} else {
+		TC_END_REPORT(TC_FAIL);
+	}
 }
 
 #if defined(CONFIG_NANOKERNEL)

@@ -19,6 +19,8 @@
 #include <zephyr.h>
 #include <sections.h>
 
+#include <tc_util.h>
+
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -325,7 +327,7 @@ NET_DEVICE_INIT(net_arp_test, "net_arp_test",
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_arp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
-void main_fiber(void)
+static bool run_tests(void)
 {
 	struct net_buf *buf, *buf2;
 	struct net_buf *frag;
@@ -355,13 +357,13 @@ void main_fiber(void)
 	buf = net_nbuf_get_reserve_tx(0);
 	if (!buf) {
 		printk("Out of mem TX xcast\n");
-		return;
+		return false;
 	}
 
 	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
 	if (!frag) {
 		printk("Out of mem DATA xcast\n");
-		return;
+		return false;
 	}
 
 	net_buf_frag_add(buf, frag);
@@ -378,7 +380,7 @@ void main_fiber(void)
 
 	if (buf2 != buf) {
 		printk("ARP broadcast buffer different\n");
-		return;
+		return false;
 	}
 
 	eth_hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
@@ -392,7 +394,7 @@ void main_fiber(void)
 		printk("ETH addr dest invalid %s, should be %s", out,
 		       net_sprint_ll_addr((uint8_t *)net_eth_broadcast_addr(),
 					  sizeof(struct net_eth_addr)));
-		return;
+		return false;
 	}
 
 	net_ipaddr_copy(&ipv4->dst, &mcast);
@@ -401,7 +403,7 @@ void main_fiber(void)
 
 	if (buf2 != buf) {
 		printk("ARP multicast buffer different\n");
-		return;
+		return false;
 	}
 
 	if (memcmp(&eth_hdr->dst.addr, &multicast_eth_addr,
@@ -413,7 +415,7 @@ void main_fiber(void)
 		printk("ETH maddr dest invalid %s, should be %s", out,
 		       net_sprint_ll_addr((uint8_t *)&multicast_eth_addr,
 					  sizeof(struct net_eth_addr)));
-		return;
+		return false;
 	}
 
 	net_nbuf_unref(buf);
@@ -429,13 +431,13 @@ void main_fiber(void)
 	buf = net_nbuf_get_reserve_tx(0);
 	if (!buf) {
 		printk("Out of mem TX\n");
-		return;
+		return false;
 	}
 
 	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
 	if (!frag) {
 		printk("Out of mem DATA\n");
-		return;
+		return false;
 	}
 
 	net_buf_frag_add(buf, frag);
@@ -451,7 +453,7 @@ void main_fiber(void)
 		printk("LL reserve invalid, should be %d was %d\n",
 		       sizeof(struct net_eth_hdr),
 		       net_nbuf_ll_reserve(buf));
-		return;
+		return false;
 	}
 
 	ipv4 = (struct net_ipv4_hdr *)net_buf_add(frag,
@@ -471,12 +473,12 @@ void main_fiber(void)
 		 * still room for the buf.
 		 */
 		printk("ARP cache should still have free space\n");
-		return;
+		return false;
 	}
 
 	if (!buf2) {
 		printk("ARP buf is empty\n");
-		return;
+		return false;
 	}
 
 	/* The ARP cache should now have a link to pending net_buf
@@ -484,7 +486,7 @@ void main_fiber(void)
 	 */
 	if (!buf->frags) {
 		printk("Pending buf fragment is NULL\n");
-		return;
+		return false;
 	}
 	pending_buf = buf;
 
@@ -497,7 +499,7 @@ void main_fiber(void)
 		net_hexdump("ETH dest correct",
 			    (uint8_t *)net_eth_broadcast_addr(),
 			    sizeof(struct net_eth_addr));
-		return;
+		return false;
 	}
 
 	if (memcmp(net_nbuf_ll(buf2) + sizeof(struct net_eth_addr),
@@ -510,7 +512,7 @@ void main_fiber(void)
 		net_hexdump("ETH src wrong  ",
 			    net_nbuf_ll(buf2) +	sizeof(struct net_eth_addr),
 			    sizeof(struct net_eth_addr));
-		return;
+		return false;
 	}
 
 	arp_hdr = NET_ARP_BUF(buf2);
@@ -519,37 +521,37 @@ void main_fiber(void)
 	if (eth_hdr->type != htons(NET_ETH_PTYPE_ARP)) {
 		printk("ETH type 0x%x, should be 0x%x\n",
 		       eth_hdr->type, htons(NET_ETH_PTYPE_ARP));
-		return;
+		return false;
 	}
 
 	if (arp_hdr->hwtype != htons(NET_ARP_HTYPE_ETH)) {
 		printk("ARP hwtype 0x%x, should be 0x%x\n",
 		       arp_hdr->hwtype, htons(NET_ARP_HTYPE_ETH));
-		return;
+		return false;
 	}
 
 	if (arp_hdr->protocol != htons(NET_ETH_PTYPE_IP)) {
 		printk("ARP protocol 0x%x, should be 0x%x\n",
 		       arp_hdr->protocol, htons(NET_ETH_PTYPE_IP));
-		return;
+		return false;
 	}
 
 	if (arp_hdr->hwlen != sizeof(struct net_eth_addr)) {
 		printk("ARP hwlen 0x%x, should be 0x%x\n",
 		       arp_hdr->hwlen, sizeof(struct net_eth_addr));
-		return;
+		return false;
 	}
 
 	if (arp_hdr->protolen != sizeof(struct in_addr)) {
 		printk("ARP IP addr len 0x%x, should be 0x%x\n",
 		       arp_hdr->protolen, sizeof(struct in_addr));
-		return;
+		return false;
 	}
 
 	if (arp_hdr->opcode != htons(NET_ARP_REQUEST)) {
 		printk("ARP opcode 0x%x, should be 0x%x\n",
 		       arp_hdr->opcode, htons(NET_ARP_REQUEST));
-		return;
+		return false;
 	}
 
 	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
@@ -559,7 +561,7 @@ void main_fiber(void)
 			 net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		printk("ARP IP dest invalid %s, should be %s", out,
 		       net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
-		return;
+		return false;
 	}
 
 	if (!net_ipv4_addr_cmp(&arp_hdr->src_ipaddr,
@@ -569,7 +571,7 @@ void main_fiber(void)
 			 net_sprint_ipv4_addr(&arp_hdr->src_ipaddr));
 		printk("ARP IP src invalid %s, should be %s", out,
 		       net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src));
-		return;
+		return false;
 	}
 
 	/* We could have send the new ARP request but for this test we
@@ -579,7 +581,7 @@ void main_fiber(void)
 
 	if (buf->ref != 2) {
 		printk("ARP cache should own the original buffer\n");
-		return;
+		return false;
 	}
 
 	/* Then a case where target is not in the same subnet */
@@ -589,12 +591,12 @@ void main_fiber(void)
 
 	if (buf2 == buf) {
 		printk("ARP cache should not find anything\n");
-		return;
+		return false;
 	}
 
 	if (!buf2) {
 		printk("ARP buf2 is empty\n");
-		return;
+		return false;
 	}
 
 	arp_hdr = NET_ARP_BUF(buf2);
@@ -605,7 +607,7 @@ void main_fiber(void)
 			 net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		printk("ARP IP dst invalid %s, should be %s\n", out,
 			 net_sprint_ipv4_addr(&iface->ipv4.gw));
-		return;
+		return false;
 	}
 
 	net_nbuf_unref(buf2);
@@ -623,7 +625,7 @@ void main_fiber(void)
 	buf2 = net_arp_prepare(buf);
 	if (!buf2) {
 		printk("ARP cache is not sending the request again\n");
-		return;
+		return false;
 	}
 
 	net_nbuf_unref(buf2);
@@ -641,7 +643,7 @@ void main_fiber(void)
 	buf2 = net_arp_prepare(buf);
 	if (!buf2) {
 		printk("ARP cache did not send a req\n");
-		return;
+		return false;
 	}
 
 	/* Restore the original address so that following test case can
@@ -655,14 +657,14 @@ void main_fiber(void)
 	buf = net_nbuf_get_reserve_rx(0);
 	if (!buf) {
 		printk("Out of mem RX reply\n");
-		return;
+		return false;
 	}
 	printk("%d buf %p\n", __LINE__, buf);
 
 	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
 	if (!frag) {
 		printk("Out of mem DATA reply\n");
-		return;
+		return false;
 	}
 	printk("%d frag %p\n", __LINE__, frag);
 
@@ -680,7 +682,7 @@ void main_fiber(void)
 	buf2 = prepare_arp_reply(iface, buf, &hwaddr);
 	if (!buf2) {
 		printk("ARP reply generation failed.");
-		return;
+		return false;
 	}
 
 	/* The pending packet should now be sent */
@@ -697,12 +699,12 @@ void main_fiber(void)
 
 	if (send_status < 0) {
 		printk("ARP reply was not sent\n");
-		return;
+		return false;
 	}
 
 	if (buf->ref != 1) {
 		printk("ARP cache should no longer own the original buffer\n");
-		return;
+		return false;
 	}
 
 	net_nbuf_unref(buf);
@@ -711,13 +713,13 @@ void main_fiber(void)
 	buf = net_nbuf_get_reserve_rx(0);
 	if (!buf) {
 		printk("Out of mem RX request\n");
-		return;
+		return false;
 	}
 
 	frag = net_nbuf_get_reserve_data(sizeof(struct net_eth_hdr));
 	if (!frag) {
 		printk("Out of mem DATA request\n");
-		return;
+		return false;
 	}
 
 	net_buf_frag_add(buf, frag);
@@ -736,7 +738,7 @@ void main_fiber(void)
 	buf2 = prepare_arp_request(iface, buf, &hwaddr);
 	if (!buf2) {
 		printk("ARP request generation failed.");
-		return;
+		return false;
 	}
 
 	req_test = true;
@@ -756,12 +758,23 @@ void main_fiber(void)
 
 	if (send_status < 0) {
 		printk("ARP req was not sent\n");
-		return;
+		return false;
 	}
 
 	net_nbuf_unref(buf);
 
 	printk("Network ARP checks passed\n");
+
+	return true;
+}
+
+void main_fiber(void)
+{
+	if (run_tests()) {
+		TC_END_REPORT(TC_PASS);
+	} else {
+		TC_END_REPORT(TC_FAIL);
+	}
 }
 
 #if defined(CONFIG_NANOKERNEL)
