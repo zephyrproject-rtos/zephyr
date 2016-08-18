@@ -44,7 +44,7 @@ void zperf_udp_upload(struct net_context *net_context,
 				PACKET_SIZE_MAX);
 		packet_size = PACKET_SIZE_MAX;
 	} else if (packet_size < sizeof(zperf_udp_datagram)) {
-		printk(TAG "WARNING! packet size set to the min size: %u\n",
+		printk(TAG "WARNING! packet size set to the min size: %zu\n",
 				sizeof(zperf_udp_datagram));
 		packet_size = sizeof(zperf_udp_datagram);
 	}
