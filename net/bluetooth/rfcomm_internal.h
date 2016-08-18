@@ -25,12 +25,15 @@ struct bt_rfcomm_session {
 	/* L2CAP channel this context is associated with */
 	struct bt_l2cap_br_chan br_chan;
 	struct bt_rfcomm_dlc *dlcs;
+	uint16_t mtu;
 	uint8_t state;
+	bool initiator;
 };
 
 enum {
 	BT_RFCOMM_STATE_IDLE,
 	BT_RFCOMM_STATE_INIT,
+	BT_RFCOMM_STATE_CONNECTED,
 };
 
 struct bt_rfcomm_hdr {
@@ -39,13 +42,37 @@ struct bt_rfcomm_hdr {
 	uint8_t length;
 } __packed;
 
-#define BT_RFCOMM_SIG_MIN_MTU 23
+#define BT_RFCOMM_SABM	0x2f
+#define BT_RFCOMM_UA	0x63
+#define BT_RFCOMM_UIH	0xef
+
+struct bt_rfcomm_msg_hdr {
+	uint8_t type;
+	uint8_t len;
+} __packed;
+
+#define BT_RFCOMM_SIG_MIN_MTU	23
 
 /* Helper to calculate needed outgoing buffer size */
 #define BT_RFCOMM_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
 				sizeof(struct bt_hci_acl_hdr) + \
 				sizeof(struct bt_l2cap_hdr) + \
 				sizeof(struct bt_rfcomm_hdr) + (mtu))
+
+#define BT_RFCOMM_GET_DLCI(addr)	(((addr) & 0xfc) >> 2)
+#define BT_RFCOMM_GET_FRAME_TYPE(ctrl)	((ctrl) & 0xef)
+
+#define BT_RFCOMM_SET_ADDR(dlci, cr) ((((dlci) & 0x3f) << 2) | \
+				      ((cr) << 1) | 0x01)
+#define BT_RFCOMM_SET_CTRL(type, pf)	(((type) & 0xef) | ((pf) << 4))
+#define BT_RFCOMM_SET_LEN_8(len)	(((len) << 1) | 1)
+
+/* Length can be 2 bytes depending on data size */
+#define BT_RFCOMM_HDR_SIZE	(sizeof(struct bt_rfcomm_hdr) + 1)
+#define BT_RFCOMM_FCS_SIZE	1
+
+#define BT_RFCOMM_FCS_LEN_UIH		2
+#define BT_RFCOMM_FCS_LEN_NON_UIH	3
 
 /* Initialize RFCOMM signal layer */
 void bt_rfcomm_init(void);
