@@ -46,6 +46,7 @@ static const uint32_t debug_private_key[8] = {
 };
 
 static struct nano_fifo ecc_queue;
+static bool ecc_queue_ready;
 static int (*drv_send)(struct net_buf *buf);
 static uint32_t private_key[8];
 
@@ -184,8 +185,24 @@ static void emulate_le_generate_dhkey(struct net_buf *buf)
 	bt_recv(buf);
 }
 
+static void ecc_queue_init(void)
+{
+	unsigned int mask;
+
+	mask = irq_lock();
+
+	if (!ecc_queue_ready) {
+		nano_fifo_init(&ecc_queue);
+		ecc_queue_ready = true;
+	}
+
+	irq_unlock(mask);
+}
+
 static void ecc_task(void)
 {
+	ecc_queue_init();
+
 	while (true) {
 		struct net_buf *buf;
 
@@ -245,7 +262,7 @@ static int ecc_send(struct net_buf *buf)
 
 void bt_hci_ecc_init(void)
 {
-	nano_fifo_init(&ecc_queue);
+	ecc_queue_init();
 
 	/* set wrapper for driver send function */
 	drv_send = bt_dev.drv->send;
