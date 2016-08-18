@@ -301,6 +301,7 @@ static inline void net_nbuf_ll_swap(struct net_buf *buf)
 #define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))
 #define NET_ICMP_BUF(buf) ((struct net_icmp_hdr *)net_nbuf_icmp_data(buf))
 #define NET_UDP_BUF(buf)  ((struct net_udp_hdr *)(net_nbuf_udp_data(buf)))
+#define NET_TCP_BUF(buf)  ((struct net_tcp_hdr *)(net_nbuf_tcp_data(buf)))
 
 static inline void net_nbuf_set_src_ipv6_addr(struct net_buf *buf)
 {
