@@ -59,6 +59,20 @@ Maintainers List (try to look for most precise areas first)
 
 		-----------------------------------
 
+ARC ARCHITECTURE
+M:	Ruud Derwig <Ruud.Derwig@synopsys.com>
+M:	Chuck Jordan <Chuck.Jordan@synopsys.com
+M:	Benjamin Walsh <benjamin.walsh@windriver.com>
+S:	Supported
+F:	arch/arc/
+F:	include/arch/arc/
+
+ARM ARCHITECTURE
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	arch/arm/
+F:	include/arch/arm/
+
 BLUETOOTH
 M:	Johan Hedberg <johan.hedberg@intel.com>
 M:	Luiz Augusto von Dentz <luiz.dentz@gmail.com>
