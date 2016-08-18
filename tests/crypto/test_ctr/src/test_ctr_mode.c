@@ -115,7 +115,7 @@ uint32_t test_1_and_2(void)
 	if (tc_ctr_mode(decrypted, sizeof(decrypted), &out[TC_AES_BLOCK_SIZE],
 			sizeof(decrypted), ctr, &sched) == 0) {
 		TC_ERROR
-		    ("CTR test #2 (decryption SP 800-38a tests) failed in.\n",
+		    ("CTR test #2 (decryption SP 800-38a tests) failed in. %s\n",
 		     __func__);
 		result = TC_FAIL;
 		goto exitTest1;

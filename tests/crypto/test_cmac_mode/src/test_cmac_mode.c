@@ -88,7 +88,7 @@ static uint32_t verify_gf_2_128_double(uint8_t *K1, uint8_t *K2, struct tc_cmac_
 	(void) memset(zero, '\0', sizeof(zero));
 	tc_aes_encrypt(L, zero, s.sched);
 	if (memcmp(L, l, BUF_LEN) != 0) {
-		TC_ERROR("AES encryption failed in %s.\n", __func__);
+		TC_ERROR("%s: AES encryption failed\n", __func__);
 		show("expected L =", l, sizeof(l));
 		show("computed L =", L, sizeof(L));
 		return TC_FAIL;
@@ -96,7 +96,7 @@ static uint32_t verify_gf_2_128_double(uint8_t *K1, uint8_t *K2, struct tc_cmac_
 
 	gf_double(K1, L);
 	if (memcmp(K1, k1, BUF_LEN) != 0) {
-		TC_ERROR("gf_2_128_double failed when msb = 0\n", __func__);
+		TC_ERROR("%s: gf_2_128_double failed when msb = 0\n", __func__);
 		show("expected K1 =", k1, sizeof(k1));
 		show("computed K1 =", K1, sizeof(k1));
 		return TC_FAIL;
@@ -104,7 +104,7 @@ static uint32_t verify_gf_2_128_double(uint8_t *K1, uint8_t *K2, struct tc_cmac_
 
 	gf_double(K2, K1);
 	if (memcmp(K2, k2, BUF_LEN) != 0) {
-		TC_ERROR("gf_2_128_double failed when msb = 1\n", __func__);
+		TC_ERROR("%s: gf_2_128_double failed when msb = 1\n", __func__);
 		show("expected K2 =", k2, sizeof(k2));
 		show("computed K2 =", K2, sizeof(k2));
 		return TC_FAIL;
@@ -131,7 +131,7 @@ static uint32_t verify_cmac_null_msg(TCCmacState_t s)
 	(void) tc_cmac_final(Tag, s);
 
 	if (memcmp(Tag, tag, BUF_LEN) != 0) {
-		TC_ERROR("aes_cmac failed with null msg = 1\n", __func__);
+		TC_ERROR("%s: aes_cmac failed with null msg = 1\n", __func__);
 		show("expected Tag =", tag, sizeof(tag));
 		show("computed Tag =", Tag, sizeof(Tag));
 		return TC_FAIL;
@@ -162,7 +162,7 @@ static uint32_t verify_cmac_1_block_msg(TCCmacState_t s)
 	(void) tc_cmac_final(Tag, s);
 
 	if (memcmp(Tag, tag, BUF_LEN) != 0) {
-		TC_ERROR("aes_cmac failed with 1 block msg\n", __func__);
+		TC_ERROR("%s: aes_cmac failed with 1 block msg\n", __func__);
 		show("aes_cmac failed with 1 block msg =", msg, sizeof(msg));
 		show("expected Tag =", tag, sizeof(tag));
 		show("computed Tag =", Tag, sizeof(Tag));
@@ -197,7 +197,7 @@ static uint32_t verify_cmac_320_bit_msg(TCCmacState_t s)
 	(void) tc_cmac_final(Tag, s);
 
 	if (memcmp(Tag, tag, BUF_LEN) != 0) {
-		TC_ERROR("aes_cmac failed with 320 bit msg\n", __func__);
+		TC_ERROR("%s: aes_cmac failed with 320 bit msg\n", __func__);
 		show("aes_cmac failed with 320 bit msg =", msg, sizeof(msg));
 		show("expected Tag =", tag, sizeof(tag));
 		show("computed Tag =", Tag, sizeof(Tag));
@@ -235,7 +235,7 @@ static uint32_t verify_cmac_512_bit_msg(TCCmacState_t s)
 	(void)tc_cmac_final(Tag, s);
 
 	if (memcmp(Tag, tag, BUF_LEN) != 0) {
-		TC_ERROR("aes_cmac failed with 512 bit msg\n", __func__);
+		TC_ERROR("%s: aes_cmac failed with 512 bit msg\n", __func__);
 		show("aes_cmac failed with 512 bit msg =", msg, sizeof(msg));
 		show("expected Tag =", tag, sizeof(tag));
 		show("computed Tag =", Tag, sizeof(Tag));

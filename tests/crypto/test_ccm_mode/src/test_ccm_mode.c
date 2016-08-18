@@ -119,7 +119,7 @@ uint32_t test_vector_1(void)
 
 	uint32_t result = TC_PASS;
 
-	TC_PRINT("Performing CCM test #1 (RFC 3610 test vector #1):\n", __func__);
+	TC_PRINT("%s: Performing CCM test #1 (RFC 3610 test vector #1):\n", __func__);
 
 	/* RFC 3610 test vector #1 */
 	const uint8_t key[NUM_NIST_KEYS] = {

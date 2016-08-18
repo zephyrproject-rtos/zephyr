@@ -140,7 +140,7 @@ uint32_t test_1_and_2(void)
 	if (tc_cbc_mode_decrypt(decrypted, length - TC_AES_BLOCK_SIZE, p,
 				length, encrypted, &a) == 0) {
 		TC_ERROR
-		    ("CBC test #2 (decryption SP 800-38a tests) failed in.\n",
+		    ("CBC test #2 (decryption SP 800-38a tests) failed in. %s\n",
 		     __func__);
 		result = TC_FAIL;
 		goto exitTest1;
