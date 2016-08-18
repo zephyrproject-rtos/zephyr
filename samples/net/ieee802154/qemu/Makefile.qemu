@@ -1,0 +1,89 @@
+# Makefile - Makefile for
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+PIPE_BASE=/tmp/net-802.15.4
+
+ifeq ($(MAKECMDGOALS),qemu1)
+	QEMU_NUM=1
+endif
+ifeq ($(MAKECMDGOALS),qemu1monitor)
+	QEMU_NUM=1
+endif
+ifeq ($(MAKECMDGOALS),qemu2)
+	QEMU_NUM=2
+endif
+ifeq ($(MAKECMDGOALS),qemu2monitor)
+	QEMU_NUM=2
+endif
+ifdef QEMU_NUM
+	QEMU_EXTRA_FLAGS += -serial pipe:${PIPE_BASE}-${QEMU_NUM}	\
+			    -pidfile qemu-${QEMU_NUM}.pid
+endif
+
+PIPE1_IN=${PIPE_BASE}-1.in
+PIPE1_OUT=${PIPE_BASE}-1.out
+PIPE2_IN=${PIPE_BASE}-2.in
+PIPE2_OUT=${PIPE_BASE}-2.out
+
+.PHONY: remove_pipes
+remove_pipes:
+	rm -f ${PIPE1_IN} ${PIPE1_OUT} ${PIPE2_IN} ${PIPE2_OUT}
+
+${PIPE1_IN}:
+	mkfifo $@
+
+${PIPE1_OUT}:
+	mkfifo $@
+
+${PIPE2_IN}:
+	mkfifo $@
+
+${PIPE2_OUT}:
+	mkfifo $@
+
+.PHONY: PIPE2_IN_LINK
+PIPE2_IN_LINK: ${PIPE1_IN}
+	-ln ${PIPE1_IN} ${PIPE2_OUT}
+
+.PHONY: PIPE2_OUT_LINK
+PIPE2_OUT_LINK: ${PIPE1_OUT}
+	-ln ${PIPE1_OUT} ${PIPE2_IN}
+
+# Setup the dual qemu test case (two qemus passing data between them)
+.PHONY: setup_pipes_dual
+setup_pipes_dual: ${PIPE1_IN} ${PIPE1_OUT} PIPE2_IN_LINK PIPE2_OUT_LINK
+
+# Setup the dual qemu test case with pcap support (two qemus passing data
+# between them and saving data to pcap via help of monitor applicaiton)
+.PHONY: setup_pipes_dual_monitor
+setup_pipes_dual_monitor: ${PIPE1_IN} ${PIPE1_OUT} ${PIPE2_IN} ${PIPE2_OUT}
+
+export QEMU_NUM
+export QEMU_EXTRA_FLAGS
+
+qemu1: setup_pipes_dual
+	$(Q)$(call zephyrmake,$(O),qemu)
+
+qemu2: setup_pipes_dual
+	$(Q)$(call zephyrmake,$(O),qemu)
+
+qemu1monitor: setup_pipes_dual_monitor
+	$(Q)$(call zephyrmake,$(O),qemu)
+
+qemu2monitor: setup_pipes_dual_monitor
+	$(Q)$(call zephyrmake,$(O),qemu)
