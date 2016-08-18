@@ -410,7 +410,7 @@ int MsgRcvrTask(void)
 	}
 	if (strcmp(MRTmsg.rx_data, myData1) != 0) {
 		TC_ERROR("task_mbox_get from specified task got wrong data (%s)\n",
-			MRTmsg.rx_data);
+			(char *)MRTmsg.rx_data);
 		return TC_FAIL;
 	}
 
@@ -449,7 +449,7 @@ int MsgRcvrTask(void)
 	}
 	if (strcmp(MRTmsg.rx_data, myData2) != 0) {
 		TC_ERROR("task_mbox_get from anonymous task got wrong data (%s)\n",
-			MRTmsg.rx_data);
+			(char *)MRTmsg.rx_data);
 		return TC_FAIL;
 	}
 
@@ -506,7 +506,8 @@ int MsgRcvrTask(void)
 	setMsg_RecvBuf(&MRTmsg, rxBuffer, MSGSIZE);
 	task_mbox_data_get(&MRTmsg);
 	if (strcmp(MRTmsg.rx_data, myData3) != 0) {
-		TC_ERROR("task_mbox_data_get got wrong data #3 (%s)\n", MRTmsg.rx_data);
+		TC_ERROR("task_mbox_data_get got wrong data #3 (%s)\n",
+			 (char *)MRTmsg.rx_data);
 		return TC_FAIL;
 	}
 
@@ -579,7 +580,7 @@ int MsgRcvrTask(void)
 	}
 	if (strcmp((char *)(MRTblock.pointer_to_data), myData1) != 0) {
 		TC_ERROR("task_mbox_data_block_get got wrong data #1 (%s)\n",
-			MRTblock.pointer_to_data);
+			(char *)MRTblock.pointer_to_data);
 		return TC_FAIL;
 	}
 
@@ -626,7 +627,7 @@ int MsgRcvrTask(void)
 	}
 	if (strcmp((char *)(MRTblockAlt.pointer_to_data), myData2) != 0) {
 		TC_ERROR("task_mbox_data_block_get got wrong data #2 (%s)\n",
-			MRTblockAlt.pointer_to_data);
+			(char *)MRTblockAlt.pointer_to_data);
 		return TC_FAIL;
 	}
 
@@ -670,7 +671,8 @@ int MsgRcvrTask(void)
 	setMsg_RecvBuf(&MRTmsg, rxBuffer, MSGSIZE);
 	task_mbox_data_get(&MRTmsg);
 	if (strcmp(MRTmsg.rx_data, myData3) != 0) {
-		TC_ERROR("task_mbox_data_get got wrong data #3 (%s)\n", MRTmsg.rx_data);
+		TC_ERROR("task_mbox_data_get got wrong data #3 (%s)\n",
+			 (char *)MRTmsg.rx_data);
 		return TC_FAIL;
 	}
 

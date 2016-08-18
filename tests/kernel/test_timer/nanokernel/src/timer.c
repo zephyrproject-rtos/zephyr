@@ -228,7 +228,7 @@ int busyWaitTimers(timer_test_func testRtn)
 		if (result != NULL) {
 			numExpired++;
 			if ((result != timerData) || (numExpired != 2)) {
-				TC_ERROR("Expected <timer> to expire 2nd, not 0x%x\n",
+				TC_ERROR("Expected <timer> to expire 2nd, not %p\n",
 						 result);
 				return TC_FAIL;
 			}
@@ -238,7 +238,7 @@ int busyWaitTimers(timer_test_func testRtn)
 		if (result != NULL) {
 			numExpired++;
 			if ((result != shortTimerData) || (numExpired != 1)) {
-				TC_ERROR("Expected <shortTimer> to expire 1st, not 0x%x\n",
+				TC_ERROR("Expected <shortTimer> to expire 1st, not %p\n",
 						 result);
 				return TC_FAIL;
 			}
@@ -248,7 +248,7 @@ int busyWaitTimers(timer_test_func testRtn)
 		if (result != NULL) {
 			numExpired++;
 			if ((result != midTimerData) || (numExpired != 3)) {
-				TC_ERROR("Expected <midTimer> to expire 3rd, not 0x%x\n",
+				TC_ERROR("Expected <midTimer> to expire 3rd, not %p\n",
 						 result);
 				return TC_FAIL;
 			}
@@ -258,7 +258,7 @@ int busyWaitTimers(timer_test_func testRtn)
 		if (result != NULL) {
 			numExpired++;
 			if ((result != longTimerData) || (numExpired != 4)) {
-				TC_ERROR("Expected <longTimer> to expire 4th, not 0x%x\n",
+				TC_ERROR("Expected <longTimer> to expire 4th, not %p\n",
 						 result);
 				return TC_FAIL;
 			}

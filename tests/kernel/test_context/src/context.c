@@ -805,7 +805,8 @@ static int test_timeout(void)
 		}
 
 		TC_PRINT(" got (q order: %d, t/o: %d, t/o order %d) as expected\n",
-					data->q_order, data->timeout);
+					data->q_order, data->timeout,
+					data->timeout_order);
 	}
 
 	if (num_cancellations != next_cancellation) {

@@ -104,7 +104,7 @@ int testLowTimerPeriodicity(void)
 		if (((i == 0) && !WITHIN_ERROR(ticks, 100, 1)) ||
 			((i != 0) && !WITHIN_ERROR(ticks, 50, 1))) {
 			TC_ERROR("** Timer fired after %d ticks, not %d\n",
-					 ticks, (i == 0) ? 100 : 50);
+					 (int32_t)ticks, (i == 0) ? 100 : 50);
 			return TC_FAIL;    /* Return failure, do not "clean up" */
 		}
 	}
@@ -127,7 +127,8 @@ int testLowTimerPeriodicity(void)
 		}
 
 		if (!WITHIN_ERROR(ticks_32, 60, 1)) {
-			TC_ERROR("** Timer fired after %d ticks, not %d\n", ticks, 60);
+			TC_ERROR("** Timer fired after %d ticks, not %d\n",
+				 (int32_t)ticks, 60);
 			return TC_FAIL;    /* Return failure, do not "clean up" */
 		}
 	}

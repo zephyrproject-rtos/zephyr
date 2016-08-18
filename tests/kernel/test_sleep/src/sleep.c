@@ -179,11 +179,11 @@ void main(void)
 
 	test_fiber_id = task_fiber_start(test_fiber_stack, FIBER_STACKSIZE,
 					 test_fiber, 0, 0, TEST_FIBER_PRIORITY, 0);
-	TC_PRINT("Test fiber started: id = 0x%x\n", test_fiber_id);
+	TC_PRINT("Test fiber started: id = %p\n", test_fiber_id);
 
 	helper_fiber_id = task_fiber_start(helper_fiber_stack, FIBER_STACKSIZE,
 						helper_fiber, 0, 0, HELPER_FIBER_PRIORITY, 0);
-	TC_PRINT("Helper fiber started: id = 0x%x\n", helper_fiber_id);
+	TC_PRINT("Helper fiber started: id = %p\n", helper_fiber_id);
 
 	/* Activate test_fiber */
 	nano_task_sem_give(&test_fiber_sem);
