@@ -33,9 +33,9 @@
 #define TEST_SOFT_INT	  64
 
 #ifdef TEST_max
-#define MESSAGE "Running maximal microkernel configuration\n"
+#define MESSAGE "Running maximal microkernel configuration %p\n"
 #else
-#define MESSAGE "Running regular microkernel configuration\n"
+#define MESSAGE "Running regular microkernel configuration %p\n"
 #endif /* TEST_max */
 
 typedef void* (*pfunc) (void*);
