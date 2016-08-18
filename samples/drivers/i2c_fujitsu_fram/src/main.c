@@ -140,14 +140,14 @@ void main(void)
 	if (ret) {
 		printk("Error writing to FRAM! (%d)\n", ret);
 	} else {
-		printk("Wrote %d bytes to address 0x00.\n", sizeof(cmp_data));
+		printk("Wrote %zu bytes to address 0x00.\n", sizeof(cmp_data));
 	}
 
 	ret = read_bytes(i2c_dev, 0x00, data, sizeof(data));
 	if (ret) {
 		printk("Error writing to FRAM! (%d)\n", ret);
 	} else {
-		printk("Read %d bytes from address 0x00.\n", sizeof(data));
+		printk("Read %zu bytes from address 0x00.\n", sizeof(data));
 	}
 
 	ret = 0;
