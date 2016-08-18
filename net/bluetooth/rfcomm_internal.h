@@ -33,5 +33,19 @@ enum {
 	BT_RFCOMM_STATE_INIT,
 };
 
+struct bt_rfcomm_hdr {
+	uint8_t address;
+	uint8_t control;
+	uint8_t length;
+} __packed;
+
+#define BT_RFCOMM_SIG_MIN_MTU 23
+
+/* Helper to calculate needed outgoing buffer size */
+#define BT_RFCOMM_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
+				sizeof(struct bt_hci_acl_hdr) + \
+				sizeof(struct bt_l2cap_hdr) + \
+				sizeof(struct bt_rfcomm_hdr) + (mtu))
+
 /* Initialize RFCOMM signal layer */
 void bt_rfcomm_init(void);

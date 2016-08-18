@@ -46,9 +46,16 @@
 #define RFCOMM_CHANNEL_START	0x01
 #define RFCOMM_CHANNEL_END	0x1e
 
+#define RFCOMM_MIN_MTU		BT_RFCOMM_SIG_MIN_MTU
 #define RFCOMM_DEFAULT_MTU	127
 
 static struct bt_rfcomm_server *servers;
+
+/* Pool for outgoing RFCOMM control packets, min MTU is 23 */
+static struct nano_fifo rfcomm_session;
+static NET_BUF_POOL(rfcomm_session_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_RFCOMM_BUF_SIZE(RFCOMM_MIN_MTU), &rfcomm_session, NULL,
+		    BT_BUF_USER_DATA_MIN);
 
 #define RFCOMM_SESSION(_ch) CONTAINER_OF(_ch, \
 					 struct bt_rfcomm_session, br_chan.chan)
@@ -143,5 +150,6 @@ void bt_rfcomm_init(void)
 		.accept = rfcomm_accept,
 	};
 
+	net_buf_pool_init(rfcomm_session_pool);
 	bt_l2cap_br_server_register(&server);
 }
