@@ -18,6 +18,7 @@
 #include <arch/cpu.h>
 #include <nano_private.h>
 #include <misc/printk.h>
+#include <inttypes.h>
 
 const NANO_ESF _default_esf = {
 	0xdeadbaad,
@@ -75,7 +76,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 
 	default:
-		printk("**** Unknown Fatal Error %d! ****\n", reason);
+		printk("**** Unknown Fatal Error %u! ****\n", reason);
 		break;
 	}
 
@@ -86,13 +87,17 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	 * We may want to introduce a config option to save and dump all
 	 * registers, at the expense of some stack space.
 	 */
-	printk("Current thread ID: 0x%x\n"
-	       "Faulting instruction: 0x%x\n"
-	       " r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x\n"
-	       " r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x\n"
-	       " r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x\n"
-	       "r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x\n"
-	       "estatus: %x\n", sys_thread_self_get(), esf->instr - 4,
+	printk("Current thread ID: %p\n"
+	       "Faulting instruction: 0x%" PRIx32 "\n"
+	       "  r1: 0x%" PRIx32 "  r2: 0x%" PRIx32
+	       "  r3: 0x%" PRIx32 "  r4: 0x%" PRIx32 "\n"
+	       "  r5: 0x%" PRIx32 "  r6: 0x%" PRIx32
+	       "  r7: 0x%" PRIx32 "  r8: 0x%" PRIx32 "\n"
+	       "  r9: 0x%" PRIx32 " r10: 0x%" PRIx32
+	       " r11: 0x%" PRIx32 " r12: 0x%" PRIx32 "\n"
+	       " r13: 0x%" PRIx32 " r14: 0x%" PRIx32
+	       " r15: 0x%" PRIx32 "  ra: 0x%" PRIx32 "\n"
+	       "estatus: %" PRIx32 "\n", sys_thread_self_get(), esf->instr - 4,
 	       esf->r1, esf->r2, esf->r3, esf->r4,
 	       esf->r5, esf->r6, esf->r7, esf->r8,
 	       esf->r9, esf->r10, esf->r11, esf->r12,
@@ -181,13 +186,13 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
 		 >> NIOS2_EXCEPTION_REG_CAUSE_OFST;
 
-	printk("Exception cause: 0x%x ECCFTL: %d\n", cause, eccftl);
+	printk("Exception cause: %d ECCFTL: 0x%" PRIu32 "\n", cause, eccftl);
 #if CONFIG_EXTRA_EXCEPTION_INFO
 	printk("reason: %s\n", cause_str(cause));
 #endif
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
 		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
-		printk("Badaddr: 0x%x\n", badaddr_reg);
+		printk("Badaddr: 0x%" PRIx32 "\n", badaddr_reg);
 	}
 #endif /* ALT_CPU_HAS_EXTRA_EXCEPTION_INFO */
 #endif /* CONFIG_PRINTK */
