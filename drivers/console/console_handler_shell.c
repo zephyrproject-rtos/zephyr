@@ -104,7 +104,7 @@ static size_t line2argv(char *str, char *argv[], size_t size)
 		argv[argc++] = str;
 
 		if (argc == size) {
-			printk("Too many parameters (max %u)\n", size - 1);
+			printk("Too many parameters (max %zu)\n", size - 1);
 			return 0;
 		}
 	}
