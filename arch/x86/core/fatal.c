@@ -105,7 +105,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 	}
 
-	printk("Current thread ID = 0x%x\n"
+	printk("Current thread ID = %p\n"
 	       "Faulting segment:address = 0x%x:0x%x\n"
 	       "eax: 0x%x, ebx: 0x%x, ecx: 0x%x, edx: 0x%x\n"
 	       "esi: 0x%x, edi: 0x%x, ebp: 0%x, esp: 0x%x\n"
