@@ -85,6 +85,11 @@ static inline void _vprintk(const char *fmt, va_list ap)
 			}
 		} else {
 			switch (*fmt) {
+			case 'z':
+			case 'l':
+			case 'h':
+				/* FIXME: do nothing for these modifiers */
+				goto still_might_format;
 			case 'd':
 			case 'i': {
 				long d = va_arg(ap, long);
@@ -134,7 +139,7 @@ static inline void _vprintk(const char *fmt, va_list ap)
 			}
 			might_format = 0;
 		}
-
+still_might_format:
 		++fmt;
 	}
 }
