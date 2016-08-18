@@ -136,7 +136,7 @@ int ipm_console_receiver_init(struct device *d)
 
 	if (!ipm) {
 		printk("unable to bind IPM console receiver to '%s'\n",
-		       __func__, config_info->bind_to);
+		       config_info->bind_to);
 		return -EINVAL;
 	}
 
