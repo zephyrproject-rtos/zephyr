@@ -302,7 +302,7 @@ int net_context_tcp_send(struct net_buf *buf)
  */
 PROCESS_THREAD(tcp, ev, data, buf, user_data)
 {
-	NET_DBG("tcp %p ev %p data %p buf %p user_data %p next line %d\n",
+	NET_DBG("tcp %p ev %d data %p buf %p user_data %p next line %d\n",
 		process_thread_tcp, ev, data, buf, user_data,
 		process_pt->lc);
 

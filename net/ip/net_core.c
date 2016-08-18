@@ -858,7 +858,7 @@ static int check_and_send_packet(struct net_buf *buf)
 
 static void net_tx_fiber(void)
 {
-	NET_DBG("Starting TX fiber (stack %d bytes)\n",
+	NET_DBG("Starting TX fiber (stack %zu bytes)\n",
 		sizeof(tx_fiber_stack));
 
 	while (1) {
@@ -906,7 +906,7 @@ static void net_rx_fiber(void)
 {
 	struct net_buf *buf;
 
-	NET_DBG("Starting RX fiber (stack %d bytes)\n",
+	NET_DBG("Starting RX fiber (stack %zu bytes)\n",
 		sizeof(rx_fiber_stack));
 
 	while (1) {
@@ -938,7 +938,7 @@ static void net_timer_fiber(void)
 {
 	clock_time_t next_wakeup;
 
-	NET_DBG("Starting net timer fiber (stack %d bytes)\n",
+	NET_DBG("Starting net timer fiber (stack %zu bytes)\n",
 		sizeof(timer_fiber_stack));
 
 	while (1) {
