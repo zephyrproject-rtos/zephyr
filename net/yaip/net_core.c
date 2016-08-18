@@ -53,6 +53,7 @@
 #include "route.h"
 #include "connection.h"
 #include "udp.h"
+#include "tcp.h"
 
 /* Stack for the rx fiber.
  */
@@ -215,8 +216,14 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 						sizeof(struct net_ipv6_hdr));
 			return net_conn_input(IPPROTO_UDP, buf);
 
+		case IPPROTO_TCP:
+			net_nbuf_set_ip_hdr_len(buf,
+						sizeof(struct net_ipv6_hdr));
+			return net_conn_input(IPPROTO_TCP, buf);
+
 		default:
-			NET_DBG("Unknown next header type");
+			NET_DBG("Unknown next header type %d",
+				*net_nbuf_next_hdr(buf));
 			goto drop;
 		}
 	}
@@ -291,6 +298,9 @@ static inline enum net_verdict process_ipv4_pkt(struct net_buf *buf)
 		break;
 	case IPPROTO_UDP:
 		verdict = net_conn_input(IPPROTO_UDP, buf);
+		break;
+	case IPPROTO_TCP:
+		verdict = net_conn_input(IPPROTO_TCP, buf);
 		break;
 	}
 
@@ -459,6 +469,7 @@ static inline void l3_init(void)
 	net_conn_init();
 #endif
 	net_udp_init();
+	net_tcp_init();
 
 	net_route_init();
 

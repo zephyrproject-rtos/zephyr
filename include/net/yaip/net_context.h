@@ -39,12 +39,13 @@ extern "C" {
 /** State of the context (bits 1 & 2 in the flags) */
 enum net_context_state {
 	NET_CONTEXT_IDLE = 0,
+	NET_CONTEXT_UNCONNECTED = 0,
 	NET_CONTEXT_CONFIGURING = 1,
+	NET_CONTEXT_CONNECTING = 1,
 	NET_CONTEXT_READY = 2,
-	NET_CONTEXT_CLOSING = 3,
+	NET_CONTEXT_CONNECTED = 2,
+	NET_CONTEXT_LISTENING = 3,
 };
-
-#define NET_CONTEXT_LISTEN BIT(3)
 
 /**
  * The address family, connection type and IP protocol are
@@ -103,6 +104,28 @@ typedef void (*net_context_send_cb_t)(struct net_context *context,
 				      void *user_data);
 
 /**
+ * @brief Accept callback
+ *
+ * @details The accept callback is called after a successful
+ * connection is being established or if there was an error
+ * while we were waiting for a connection attempt.
+ * The callback is called in fiber context.
+ *
+ * @param context The context to use.
+ * @param addr The peer address.
+ * @param addrlen Length of the peer address.
+ * @param status The status code, 0 on success, < 0 otherwise
+ * @param user_data The user data given in net_context_accept() call.
+ */
+typedef void (*net_context_accept_cb_t)(struct net_context *new_context,
+					struct sockaddr *addr,
+					socklen_t addrlen,
+					int status,
+					void *user_data);
+
+struct net_tcp;
+
+/**
  * Note that we do not store the actual source IP address in the context
  * because the address is already be set in the network interface struct.
  * If there is no such source address there, the packet cannot be sent
@@ -146,6 +169,16 @@ struct net_context {
 
 	/** Flags for the context */
 	uint8_t flags;
+
+#if defined(CONFIG_NET_TCP)
+	/** TCP connection information */
+	struct net_tcp *tcp;
+
+	/** Accept callback to be called when the connection has been
+	 * established.
+	 */
+	net_context_accept_cb_t accept_cb;
+#endif /* CONFIG_NET_TCP */
 };
 
 static inline bool net_context_is_used(struct net_context *context)
@@ -464,26 +497,6 @@ int net_context_connect(struct net_context *context,
 			net_context_connect_cb_t cb,
 			int32_t timeout,
 			void *user_data);
-
-/**
- * @brief Accept callback
- *
- * @details The accept callback is called after a successful
- * connection is being established or if there was an error
- * while we were waiting for a connection attempt.
- * The callback is called in fiber context.
- *
- * @param context The context to use.
- * @param addr The peer address.
- * @param addrlen Length of the peer address.
- * @param status The status code, 0 on success, < 0 otherwise
- * @param user_data The user data given in net_context_accept() call.
- */
-typedef void (*net_context_accept_cb_t)(struct net_context *new_context,
-					struct sockaddr *addr,
-					socklen_t addrlen,
-					int status,
-					void *user_data);
 
 /**
  * @brief Accept a network connection attempt.

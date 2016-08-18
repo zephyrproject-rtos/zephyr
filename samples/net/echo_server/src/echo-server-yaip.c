@@ -211,7 +211,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 				       sizeof(struct sockaddr_in6));
 		if (ret < 0) {
 			NET_ERR("Cannot bind IPv6 TCP port %d (%d)",
-				ntohs(my_addr6.sin_port), ret);
+				ntohs(my_addr6.sin6_port), ret);
 			return false;
 		}
 
@@ -393,6 +393,37 @@ static void setup_udp_recv(struct net_context *udp_recv4,
 #endif /* CONFIG_NET_IPV4 */
 }
 #endif /* CONFIG_NET_UDP */
+
+#if defined(CONFIG_NET_TCP)
+static void tcp_received(struct net_context *context,
+			 struct sockaddr *addr,
+			 socklen_t addrlen,
+			 int error,
+			 void *user_data)
+{
+	NET_DBG("Accept called, context %p error %d", context, error);
+}
+
+static void setup_tcp_accept(struct net_context *tcp_recv4,
+			     struct net_context *tcp_recv6)
+{
+	int ret;
+
+#if defined(CONFIG_NET_IPV6)
+	ret = net_context_accept(tcp_recv6, tcp_received, 0, NULL);
+	if (ret < 0) {
+		NET_ERR("Cannot receive IPv6 TCP packets (%d)", ret);
+	}
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	ret = net_context_accept(tcp_recv4, tcp_received, 0, NULL);
+	if (ret < 0) {
+		NET_ERR("Cannot receive IPv4 TCP packets (%d)", ret);
+	}
+#endif /* CONFIG_NET_IPV4 */
+}
+#endif /* CONFIG_NET_TCP */
 
 void receive(void)
 {

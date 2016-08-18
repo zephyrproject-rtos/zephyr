@@ -91,6 +91,12 @@ struct net_buf *net_ipv4_finalize(struct net_context *context,
 		NET_UDP_BUF(buf)->chksum = ~net_calc_chksum_udp(buf);
 	}
 #endif
+#if defined(CONFIG_NET_TCP)
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		NET_TCP_BUF(buf)->chksum = 0;
+		NET_TCP_BUF(buf)->chksum = ~net_calc_chksum_tcp(buf);
+	}
+#endif
 
 	return buf;
 }

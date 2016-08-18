@@ -13,6 +13,7 @@ obj-$(CONFIG_NET_TRICKLE) += trickle.o
 obj-$(CONFIG_NET_DHCPV4) += dhcpv4.o
 obj-$(CONFIG_NET_ROUTE) += route.o
 obj-$(CONFIG_NET_MGMT_EVENT) += net_mgmt.o
+obj-$(CONFIG_NET_TCP) += tcp.o
 
 ifeq ($(CONFIG_NET_UDP),y)
 	obj-$(CONFIG_NET_UDP) += connection.o

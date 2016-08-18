@@ -360,6 +360,14 @@ struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
 		NET_UDP_BUF(buf)->chksum = ~net_calc_chksum_udp(buf);
 	} else
 #endif
+
+#if defined(CONFIG_NET_TCP)
+	if (next_header == IPPROTO_TCP) {
+		NET_TCP_BUF(buf)->chksum = 0;
+		NET_TCP_BUF(buf)->chksum = ~net_calc_chksum_tcp(buf);
+	} else
+#endif
+
 	if (next_header == IPPROTO_ICMPV6) {
 		NET_ICMP_BUF(buf)->chksum = 0;
 		NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum(buf,

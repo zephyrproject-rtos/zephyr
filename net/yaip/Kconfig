@@ -70,8 +70,17 @@ config	NET_MAX_NEXTHOPS
 	This determines how many entries can be stored in nexthop table.
 
 config NET_TCP
-	bool
+	bool "Enable TCP"
 	default n
+	help
+	The value depends on your network needs.
+
+config NET_DEBUG_TCP
+	bool "Debug TCP"
+	default n
+	depends on NET_TCP && NET_LOG
+	help
+	Enables TCP handler output debug messages
 
 config NET_UDP
 	bool "Enable UDP"
