@@ -56,26 +56,6 @@
 #endif
 
 /*
- * The following definitions are used for symbol name compatibility.
- *
- * When #if 1, sources are assembled assuming the compiler
- * you are using does not generate global symbols prefixed by "_".
- * (e.g. elf/dwarf)
- *
- * When #if 0, sources are assembled assuming the compiler
- * you are using generates global symbols prefixed by "_".
- * (e.g. coff/stabs)
- */
-
-#ifdef _ASMLANGUAGE
-  #ifndef TOOL_PREPENDS_UNDERSCORE
-    #define FUNC(sym) sym
-  #else
-    #define FUNC(sym) _##sym
-  #endif
-#endif
-
-/*
  * If the project is being built for speed (i.e. not for minimum size) then
  * align functions and branches in executable sections to improve performance.
  */
@@ -112,10 +92,7 @@
 
   #endif
 
-  #define GC_SECTION(sym) SECTION .text.FUNC(sym), "ax"
-
-  #define BRANCH_LABEL(sym) FUNC(sym) :
-  #define VAR(sym)          FUNC(sym)
+  #define GC_SECTION(sym) SECTION .text.##sym, "ax"
 
 #endif /* _ASMLANGUAGE */
 

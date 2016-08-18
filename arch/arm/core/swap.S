@@ -186,7 +186,7 @@ SECTION_FUNC(TEXT, __svc)
     /* exception return is done in _IntExit(), including _GDB_STUB_EXC_EXIT */
     b _IntExit
 
-BRANCH_LABEL(_context_switch);
+_context_switch:
 #endif
 
     /*

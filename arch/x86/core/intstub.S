@@ -223,7 +223,7 @@ SECTION_FUNC(TEXT, _IntEnt)
 #ifdef CONFIG_DEBUG_INFO
 	jmp alreadyOnIntStack
 
-BRANCH_LABEL(nested_save_isf)
+nested_save_isf:
 	movl	__tNANO_isf_OFFSET(%ecx), %edx	/* Get old ISF */
 	movl	%esp, __tNANO_isf_OFFSET(%ecx)	/* Save new ISF */
 	pushl	%edx                            /* Save old ISF */
@@ -231,7 +231,7 @@ BRANCH_LABEL(nested_save_isf)
 
 	/* fall through to nested case */
 
-BRANCH_LABEL(alreadyOnIntStack)
+alreadyOnIntStack:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	/* preserve eax which contain stub return address */
 	pushl	%eax
@@ -244,7 +244,7 @@ BRANCH_LABEL(alreadyOnIntStack)
 	jmp	*%eax		/* "return" back to stub */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-BRANCH_LABEL(_HandleIdle)
+_HandleIdle:
 	/* Preserve eax which contains stub return address */
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 	pushl	%eax
@@ -326,11 +326,11 @@ SECTION_FUNC(TEXT, _IntExitWithEoi)
  *
  * void _IntExit (void);
  */
-BRANCH_LABEL(_IntExit)
+_IntExit:
 
 	cli			/* disable interrupts */
 
-BRANCH_LABEL(_IntExitWithCli)
+_IntExitWithCli:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_start
 #endif
@@ -434,7 +434,7 @@ BRANCH_LABEL(_IntExitWithCli)
 	iret
 
 
-BRANCH_LABEL(noReschedule)
+noReschedule:
 
 	/*
 	 * A thread reschedule is not required; switch back to the
@@ -453,7 +453,7 @@ BRANCH_LABEL(noReschedule)
 	 * not be performed.
 	 */
 
-BRANCH_LABEL(nestedInterrupt)
+nestedInterrupt:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
 #endif
@@ -538,7 +538,7 @@ SECTION_FUNC(TEXT, _SpuriousIntHandler)
 	mov	%esp, %edx
 #endif
 
-BRANCH_LABEL(finishSpuriousInt)
+finishSpuriousInt:
 
 	/* re-enable interrupts */
 
@@ -551,7 +551,7 @@ BRANCH_LABEL(finishSpuriousInt)
 	movl	$_NANO_ERR_SPURIOUS_INT, %eax
 #endif
 
-BRANCH_LABEL(callFatalHandler)
+callFatalHandler:
 	/* call the fatal error handler */
 
 	call	_NanoFatalErrorHandler
@@ -559,7 +559,7 @@ BRANCH_LABEL(callFatalHandler)
 	/* handler doesn't  return */
 
 #if ALL_DYN_IRQ_STUBS > 0
-BRANCH_LABEL(_DynIntStubCommon)
+_DynIntStubCommon:
 	call _common_dynamic_irq_handler
 	/* Clean up and call IRET */
 	jmp _IntExitWithEoi
@@ -577,7 +577,7 @@ BRANCH_LABEL(_DynIntStubCommon)
  */
 .altmacro
 .macro __INT_STUB_NUM id
-BRANCH_LABEL(_DynIntStub\id)
+_DynIntStub\id:
 .endm
 .macro INT_STUB_NUM id
 __INT_STUB_NUM %id

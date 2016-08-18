@@ -90,7 +90,7 @@ SECTION_FUNC(exception.entry, _exception)
 	andi  r15, et, 1
 	beq   r15, zero, not_interrupt
 
-BRANCH_LABEL(is_interrupt)
+is_interrupt:
 	/* If we get here, this is an interrupt */
 
 	/* Grab a reference to _nanokernel in r10 so we can determine the
@@ -111,7 +111,7 @@ BRANCH_LABEL(is_interrupt)
 	addi sp, sp, -4
 	stw r12, 0(sp)
 
-BRANCH_LABEL(on_irq_stack)
+on_irq_stack:
 
 	/* Enter C interrupt handling code. Value of ipending will be the
 	 * function parameter since we put it in r4
@@ -166,7 +166,7 @@ BRANCH_LABEL(on_irq_stack)
 	call _Swap
 	jmpi _exception_exit
 
-BRANCH_LABEL(not_interrupt)
+not_interrupt:
 
 	/* Since this wasn't an interrupt we're not going to restart the
 	 * faulting instruction.
@@ -185,7 +185,7 @@ BRANCH_LABEL(not_interrupt)
 	bne   r11, zero, is_interrupt
 #endif
 
-BRANCH_LABEL(_exception_enter_fault)
+_exception_enter_fault:
 	/* If we get here, the exception wasn't in interrupt or an
 	 * invocation of irq_oflload(). Let _Fault() handle it in
 	 * C domain
@@ -195,7 +195,7 @@ BRANCH_LABEL(_exception_enter_fault)
 	call _Fault
 	jmpi _exception_exit
 
-BRANCH_LABEL(no_reschedule)
+no_reschedule:
 
 	/* We put the thread stack pointer on top of the IRQ stack before
 	 * we switched stacks. Restore it to go back to thread stack
@@ -204,7 +204,7 @@ BRANCH_LABEL(no_reschedule)
 
 	/* Fall through */
 
-BRANCH_LABEL(_exception_exit)
+_exception_exit:
 	/* We are on the thread stack. Restore all saved registers
 	 * and return to the interrupted context */
 

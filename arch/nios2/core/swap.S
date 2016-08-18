@@ -80,11 +80,11 @@ SECTION_FUNC(exception.other, _Swap)
 	stw r14, __tNANO_fiber_OFFSET(r10)
 	br next_chosen
 
-BRANCH_LABEL(not_fiber)
+not_fiber:
 	/* Fiber was NULL, we'll choose nanokernel.task */
 	ldw r11, __tNANO_task_OFFSET(r10)
 
-BRANCH_LABEL(next_chosen)
+next_chosen:
 	/* Set _nanokernel.current to value we chose for r11 */
 	stw r11, __tNANO_current_OFFSET(r10)
 
@@ -123,7 +123,7 @@ BRANCH_LABEL(next_chosen)
 	ori r3, r3, NIOS2_STATUS_PIE_MSK
 	wrctl status, r3
 
-BRANCH_LABEL(no_unlock)
+no_unlock:
 #else
 	wrctl status, r3
 #endif

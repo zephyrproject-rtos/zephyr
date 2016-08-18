@@ -158,7 +158,7 @@ SECTION_FUNC(TEXT, _Swap)
 	 * (_nanokernel.task).  The 'task' field will _never_ be NULL.
 	 */
 
-BRANCH_LABEL(swapTask)
+swapTask:
 	movl	__tNANO_task_OFFSET (%eax), %ecx
 
 	/* fall through to 'restoreContext' */
@@ -170,7 +170,7 @@ BRANCH_LABEL(swapTask)
 	 * contains &_nanokernel.
 	 */
 
-BRANCH_LABEL(restoreContext)
+restoreContext:
 
 #ifdef CONFIG_FP_SHARING
 	/*
@@ -250,7 +250,7 @@ BRANCH_LABEL(restoreContext)
 	fninit
 	jmp	floatSaveDone
 
-BRANCH_LABEL(x87FloatSave)
+x87FloatSave:
 #endif /* CONFIG_SSE */
 
 	/* 'fnsave' performs an implicit 'fninit' after saving state! */
@@ -259,8 +259,8 @@ BRANCH_LABEL(x87FloatSave)
 
 	/* fall through to 'floatSaveDone' */
 
-BRANCH_LABEL(floatSaveDone)
-BRANCH_LABEL(restoreContext_NoFloatSave)
+floatSaveDone:
+restoreContext_NoFloatSave:
 
 	/*********************************************************
 	 * Restore floating point context of the incoming thread.
@@ -282,7 +282,7 @@ BRANCH_LABEL(restoreContext_NoFloatSave)
 	fxrstor	__tTCS_preempFloatReg_OFFSET (%ecx)
 	jmp	floatRestoreDone
 
-BRANCH_LABEL(x87FloatRestore)
+x87FloatRestore:
 
 #endif /* CONFIG_SSE */
 
@@ -290,8 +290,8 @@ BRANCH_LABEL(x87FloatRestore)
 
 	/* fall through to 'floatRestoreDone' */
 
-BRANCH_LABEL(floatRestoreDone)
-BRANCH_LABEL(restoreContext_NoFloatRestore)
+floatRestoreDone:
+restoreContext_NoFloatRestore:
 
 	/* record that the incoming thread "owns" the non-integer registers */
 
@@ -305,7 +305,7 @@ BRANCH_LABEL(restoreContext_NoFloatRestore)
 	 * the last thread that utilized the non-integer registers.
 	 */
 
-BRANCH_LABEL(restoreContext_NoFloatSwap)
+restoreContext_NoFloatSwap:
 
 	/*
 	 * Leave CR0[TS] clear if incoming thread utilizes "floating point"
@@ -326,7 +326,7 @@ BRANCH_LABEL(restoreContext_NoFloatSwap)
 	orl $0x8, %edx
 	movl %edx, %cr0
 
-BRANCH_LABEL(CROHandlingDone)
+CROHandlingDone:
 
 #endif /* CONFIG_FP_SHARING */
 
@@ -379,7 +379,7 @@ BRANCH_LABEL(CROHandlingDone)
 	/* restore _Swap's %eax */
 	popl	%eax
 
-BRANCH_LABEL(skipIntLatencyStop)
+skipIntLatencyStop:
 #endif
 	popfl
 #if CONFIG_X86_IAMCU

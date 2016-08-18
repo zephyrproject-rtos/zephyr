@@ -122,7 +122,7 @@ SECTION_FUNC(TEXT, _ExcEnt)
 	 */
 	xchgl	%ecx, (%esp)
 
-BRANCH_LABEL(_ExcEntSetupDone)
+_ExcEntSetupDone:
 
 	/* By the time we get here, the stack should look like this:
 	 * ESP -> ECX (excepting task)
@@ -175,7 +175,7 @@ BRANCH_LABEL(_ExcEntSetupDone)
 	jne	alreadyInException
 	movl	%esp, __tTCS_esfPtr_OFFSET(%edx)
 
-BRANCH_LABEL(alreadyInException)
+alreadyInException:
 
 #endif /* CONFIG_GDB_INFO */
 
@@ -209,7 +209,7 @@ BRANCH_LABEL(alreadyInException)
 	je	allDone
 	sti
 
-BRANCH_LABEL(allDone)
+allDone:
 #if CONFIG_X86_IAMCU
 	movl	%esp, %eax		/* NANO_ESF * parameter */
 #else
@@ -271,7 +271,7 @@ SECTION_FUNC(TEXT, _ExcExit)
 
 	andl	$~EXC_ACTIVE, __tTCS_flags_OFFSET (%ecx)
 
-BRANCH_LABEL(nestedException)
+nestedException:
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
 	/*
@@ -299,7 +299,7 @@ BRANCH_LABEL(nestedException)
 
 
 #if ALL_DYN_EXC_STUBS > 0
-BRANCH_LABEL(_DynExcStubCommon)
+_DynExcStubCommon:
 	call _common_dynamic_exc_handler
 #ifndef CONFIG_X86_IAMCU
 	/* Cleanse the stack of stub_num */
@@ -314,7 +314,7 @@ BRANCH_LABEL(_DynExcStubCommon)
  */
 .altmacro
 .macro __EXC_STUB_NUM id
-BRANCH_LABEL(_DynExcStub\id)
+_DynExcStub\id:
 .endm
 .macro EXC_STUB_NUM id
 __EXC_STUB_NUM %id

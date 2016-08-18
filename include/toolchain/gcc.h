@@ -134,10 +134,10 @@ A##a:
 #if defined(_ASMLANGUAGE) && !defined(_LINKER)
 
 #if defined(CONFIG_ARM) || defined(CONFIG_NIOS2)
-#define GTEXT(sym) .global FUNC(sym); .type FUNC(sym), %function
-#define GDATA(sym) .global FUNC(sym); .type FUNC(sym), %object
-#define WTEXT(sym) .weak FUNC(sym); .type FUNC(sym), %function
-#define WDATA(sym) .weak FUNC(sym); .type FUNC(sym), %object
+#define GTEXT(sym) .global sym; .type sym, %function
+#define GDATA(sym) .global sym; .type sym, %object
+#define WTEXT(sym) .weak sym; .type sym, %function
+#define WDATA(sym) .weak sym; .type sym, %object
 #elif defined(CONFIG_ARC)
 /*
  * Need to use assembly macros because ';' is interpreted as the start of
@@ -145,18 +145,18 @@ A##a:
  */
 
 .macro glbl_text symbol
-	.globl FUNC(\symbol)
-	.type FUNC(\symbol), %function
+	.globl \symbol
+	.type \symbol, %function
 .endm
 
 .macro glbl_data symbol
-	.globl FUNC(\symbol)
-	.type FUNC(\symbol), %object
+	.globl \symbol
+	.type \symbol, %object
 .endm
 
 .macro weak_data symbol
-	.weak FUNC(\symbol)
-	.type FUNC(\symbol), %object
+	.weak \symbol
+	.type \symbol, %object
 .endm
 
 #define GTEXT(sym) glbl_text sym
@@ -164,8 +164,8 @@ A##a:
 #define WDATA(sym) weak_data sym
 
 #else  /* !CONFIG_ARM && !CONFIG_ARC */
-#define GTEXT(sym) .globl FUNC(sym); .type FUNC(sym), @function
-#define GDATA(sym) .globl FUNC(sym); .type FUNC(sym), @object
+#define GTEXT(sym) .globl sym; .type sym, @function
+#define GDATA(sym) .globl sym; .type sym, @object
 #endif
 
 /*
@@ -188,22 +188,22 @@ A##a:
  */
 
 .macro section_var section, symbol
-	.section .\section\().FUNC(\symbol)
-	FUNC(\symbol) :
+	.section .\section\().\symbol
+	\symbol :
 .endm
 
 .macro section_func section, symbol
-	.section .\section\().FUNC(\symbol), "ax"
+	.section .\section\().\symbol, "ax"
 	FUNC_CODE()
 	PERFOPT_ALIGN
-	FUNC(\symbol) :
+	\symbol :
 	FUNC_INSTR(\symbol)
 .endm
 
 .macro section_subsec_func section, subsection, symbol
 	.section .\section\().\subsection, "ax"
 	PERFOPT_ALIGN
-	FUNC(\symbol) :
+	\symbol :
 .endm
 
 #define SECTION_VAR(sect, sym) section_var sect, sym
@@ -212,14 +212,14 @@ A##a:
 	section_subsec_func sect, subsec, sym
 #else /* !CONFIG_ARC */
 
-#define SECTION_VAR(sect, sym)  .section .sect.FUNC(sym); FUNC(sym) :
+#define SECTION_VAR(sect, sym)  .section .sect.##sym; sym :
 #define SECTION_FUNC(sect, sym)						\
-	.section .sect.FUNC(sym), "ax";					\
+	.section .sect.sym, "ax";					\
 				FUNC_CODE()				\
-				PERFOPT_ALIGN; FUNC(sym) :		\
+				PERFOPT_ALIGN; sym :		\
 							FUNC_INSTR(sym)
 #define SECTION_SUBSEC_FUNC(sect, subsec, sym)				\
-		.section .sect.subsec, "ax"; PERFOPT_ALIGN; FUNC(sym) :
+		.section .sect.subsec, "ax"; PERFOPT_ALIGN; sym :
 
 #endif /* CONFIG_ARC */
 
