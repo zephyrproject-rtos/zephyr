@@ -1,4 +1,4 @@
-# Makefile - IP network stack Makefile for nano and micro kernel
+# Makefile - Network stack Makefile for Qemu based testing
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -25,7 +25,8 @@ ifeq ($(MAKECMDGOALS),client)
 	QEMU_NUM=client
 endif
 ifdef QEMU_NUM
-	QEMU_EXTRA_FLAGS += -serial none -serial pipe:${PIPE_BASE}-${QEMU_NUM} -pidfile qemu-${QEMU_NUM}.pid
+	QEMU_EXTRA_FLAGS += -serial none -serial pipe:${PIPE_BASE}-${QEMU_NUM}	\
+			    -pidfile qemu-${QEMU_NUM}.pid
 else
 	QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
 endif
@@ -63,7 +64,8 @@ PIPE_CLIENT_OUT_LINK: ${PIPE_SERVER_OUT}
 # Setup the dual qemu test case with pcap support (two qemus passing data
 # between them and saving data to pcap via help of monitor applicaiton)
 .PHONY: setup_pipes_dual_monitor
-setup_pipes_dual_monitor: ${PIPE_SERVER_IN} ${PIPE_SERVER_OUT} ${PIPE_CLIENT_IN} ${PIPE_CLIENT_OUT}
+setup_pipes_dual_monitor: ${PIPE_SERVER_IN} ${PIPE_SERVER_OUT} \
+			  ${PIPE_CLIENT_IN} ${PIPE_CLIENT_OUT}
 
 # Setup the dual qemu test case with (two qemus passing data
 # between them)
@@ -75,14 +77,14 @@ export QEMU_EXTRA_FLAGS
 
 PID_FILE=/tmp/monitor_15_4.pid
 
-hosttoolsmake = @$(MAKE) -C $(ZEPHYR_BASE)/net/ip/tools $1
+hosttoolsmake = @$(MAKE) -C $(ZEPHYR_BASE)/net/tools $1
 
-${ZEPHYR_BASE}/net/ip/tools/monitor_15_4:
+${ZEPHYR_BASE}/net/tools/monitor_15_4:
 	$(Q)$(call hosttoolsmake,monitor_15_4)
 
 .PHONY: start_monitor
-start_monitor: ${ZEPHYR_BASE}/net/ip/tools/monitor_15_4
-	${ZEPHYR_BASE}/net/ip/tools/monitor_15_4 \
+start_monitor: ${ZEPHYR_BASE}/net/tools/monitor_15_4
+	${ZEPHYR_BASE}/net/tools/monitor_15_4 \
 		${PCAP} \
 		${PIPE_BASE}-server ${PIPE_BASE}-client > /dev/null & \
 		echo "$$!" > ${PID_FILE}
