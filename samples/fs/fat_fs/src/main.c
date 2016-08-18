@@ -87,13 +87,13 @@ static int write_test(ZFILE *fp, off_t ofs, const char *str)
 
 	brw = fs_write(fp, (char *)str, strlen(str));
 	if (brw < 0) {
-		printk("Failed writing to file [%d]\n", brw);
+		printk("Failed writing to file [%ld]\n", brw);
 		fs_close(fp);
 		return brw;
 	}
 	if (brw < strlen(str)) {
 		printk("Unable to complete write. Volume full.\n");
-		printk("Number of bytes written: [%d]\n", brw);
+		printk("Number of bytes written: [%ld]\n", brw);
 		fs_close(fp);
 		return -1;
 	}
@@ -118,7 +118,7 @@ static int read_test(ZFILE *fp, off_t ofs, size_t sz, char *read_buff)
 
 	brw = fs_read(fp, read_buff, sz);
 	if (brw < 0) {
-		printk("Failed reading file [%d]\n", brw);
+		printk("Failed reading file [%ld]\n", brw);
 		fs_close(fp);
 		return res;
 	}
@@ -298,7 +298,7 @@ static int list_dir(const char *path)
 		if (entry.type == DIR_ENTRY_DIR) {
 			printk("[DIR ] %s\n", entry.name);
 		} else {
-			printk("[FILE] %s (size = %d)\n",
+			printk("[FILE] %s (size = %lu)\n",
 				entry.name, entry.size);
 		}
 	}
