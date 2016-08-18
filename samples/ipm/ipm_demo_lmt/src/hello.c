@@ -56,7 +56,7 @@ void message_source(struct device *ipm)
 {
 	uint8_t counter = 0;
 
-	printk("sending messages for IPM device %x\n", ipm);
+	printk("sending messages for IPM device %p\n", ipm);
 
 	while (1) {
 		ipm_send(ipm, 1, counter++, dat1, 16);
