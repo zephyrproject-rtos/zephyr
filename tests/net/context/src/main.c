@@ -1164,7 +1164,7 @@ static bool test_init(void)
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		TC_ERROR("Cannot add IPv6 address %s\n",
-		       net_sprint_ipv6_addr(&in6addr_my));
+			 net_sprint_ipv6_addr(&in6addr_my));
 		return false;
 	}
 
@@ -1172,7 +1172,7 @@ static bool test_init(void)
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		TC_ERROR("Cannot add IPv4 address %s\n",
-		       net_sprint_ipv4_addr(&in4addr_my));
+			 net_sprint_ipv4_addr(&in4addr_my));
 		return false;
 	}
 
@@ -1181,7 +1181,7 @@ static bool test_init(void)
 	maddr = net_if_ipv6_maddr_add(iface, &in6addr_mcast);
 	if (!maddr) {
 		TC_ERROR("Cannot add multicast IPv6 address %s\n",
-		       net_sprint_ipv6_addr(&in6addr_mcast));
+			 net_sprint_ipv6_addr(&in6addr_mcast));
 		return false;
 	}
 
