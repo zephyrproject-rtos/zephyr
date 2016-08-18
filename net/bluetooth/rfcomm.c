@@ -261,6 +261,15 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
+static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
+{
+	dlc->state = BT_RFCOMM_STATE_CONNECTED;
+
+	if (dlc->ops && dlc->ops->connected) {
+		dlc->ops->connected(dlc);
+	}
+}
+
 static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 {
 	if (!dlci) {
@@ -271,6 +280,21 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 		}
 
 		session->state = BT_RFCOMM_STATE_CONNECTED;
+	} else {
+		struct bt_rfcomm_dlc *dlc;
+
+		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
+		if (!dlc) {
+			if (rfcomm_dlc_accept(session, dlci, &dlc) < 0) {
+				return;
+			}
+		}
+
+		if (rfcomm_send_ua(session, dlci) < 0) {
+			return;
+		}
+
+		rfcomm_dlc_connected(dlc);
 	}
 }
 
