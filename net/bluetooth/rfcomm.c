@@ -31,6 +31,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/driver.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/rfcomm.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -42,12 +43,51 @@
 #define BT_DBG(fmt, ...)
 #endif
 
+#define RFCOMM_CHANNEL_START	0x01
+#define RFCOMM_CHANNEL_END	0x1e
+
 #define RFCOMM_DEFAULT_MTU	127
+
+static struct bt_rfcomm_server *servers;
 
 #define RFCOMM_SESSION(_ch) CONTAINER_OF(_ch, \
 					 struct bt_rfcomm_session, br_chan.chan)
 
 static struct bt_rfcomm_session bt_rfcomm_pool[CONFIG_BLUETOOTH_MAX_CONN];
+
+static struct bt_rfcomm_server *rfcomm_server_lookup_channel(uint8_t channel)
+{
+	struct bt_rfcomm_server *server;
+
+	for (server = servers; server; server = server->_next) {
+		if (server->channel == channel) {
+			return server;
+		}
+	}
+
+	return NULL;
+}
+
+int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
+{
+	if (server->channel < RFCOMM_CHANNEL_START ||
+	    server->channel > RFCOMM_CHANNEL_END || !server->accept) {
+		return -EINVAL;
+	}
+
+	/* Check if given channel is already in use */
+	if (rfcomm_server_lookup_channel(server->channel)) {
+		BT_DBG("Channel already registered");
+		return -EADDRINUSE;
+	}
+
+	BT_DBG("Channel 0x%02x", server->channel);
+
+	server->_next = servers;
+	servers = server;
+
+	return 0;
+}
 
 static void rfcomm_connected(struct bt_l2cap_chan *chan)
 {

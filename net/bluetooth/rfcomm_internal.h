@@ -18,10 +18,13 @@
  * limitations under the License.
  */
 
+#include <bluetooth/rfcomm.h>
+
 /* RFCOMM signalling connection specific context */
 struct bt_rfcomm_session {
 	/* L2CAP channel this context is associated with */
 	struct bt_l2cap_br_chan br_chan;
+	struct bt_rfcomm_dlc *dlcs;
 	uint8_t state;
 };
 
