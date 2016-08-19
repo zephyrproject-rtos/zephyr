@@ -569,12 +569,13 @@ config NET_15_4_LOOPBACK_NUM
 
 config	NET_TESTING
 	bool
-	prompt "Enable network testing setup"
+	prompt "Enable network Qemu-to-Qemu testing setup"
 	depends on NETWORKING
 	default n
 	help
 	  Setup the network stack such a way that it is suitable for
-	  testing with Qemu and slip.
+	  testing with Qemu-to-Qemu and slip. Note that this setting should
+	  not be used for Qemu-to-Host communication.
 
 if NETWORKING
 
