@@ -11,7 +11,7 @@ SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 prepare() {
   if [[ ! -d ./src ]]; then
-    git clone git://git.savannah.gnu.org/grub.git src
+    git clone http://git.savannah.gnu.org/r/grub.git src
   fi
 
   pushd src
