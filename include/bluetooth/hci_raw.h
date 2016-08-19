@@ -17,6 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef __BT_HCI_RAW_H
+#define __BT_HCI_RAW_H
 
 /**
  * @brief HCI RAW channel
@@ -24,6 +26,10 @@
  * @ingroup bluetooth
  * @{
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @brief Send packet to the Bluetooth controller
  *
@@ -48,6 +54,11 @@ int bt_send(struct net_buf *buf);
  */
 int bt_enable_raw(struct nano_fifo *rx_queue);
 
+#ifdef __cplusplus
+}
+#endif
 /**
  * @}
  */
+
+#endif /* __BT_HCI_RAW_H */
