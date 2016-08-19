@@ -1,0 +1,30 @@
+Issues and Limitations
+----------------------
+
+- Unable to connect
+	Caused by:
+		Incorrect TCP flags handling from the Zephyr IP Stack.
+	Workaround:
+		Reset the board.
+
+- Publish error
+- Subscribe error
+        Caused by:
+		The MQTT broker is sending another MQTT message while the
+		client is still processing the QoS handshake from a
+		previous MQTT message. MQTT QoS in Zephyr is implemented
+		in a synchronous way. For asynchronous implementations, see:
+		http://git.eclipse.org/c/mosquitto/org.eclipse.mosquitto.git/tree/
+	Workaround 1:
+		Reduce the speed/amount of messages received by the
+		application.
+	Workaroung 2:
+		Use the mqtt_read function to handle all the incoming
+		messages.
+
+- RX or TX error
+	Caused by:
+		Perhaps the rx/tx timeouts are too short for the LAN.
+        Workaround:
+		Increase the rx or tx timeout.
+		See: publisher/src/netz.c, struct netz_ctx_t.
