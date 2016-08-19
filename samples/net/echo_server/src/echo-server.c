@@ -51,7 +51,7 @@
 
 /* Define my IP address where to expect messages */
 #if !defined(CONFIG_NET_TESTING)
-#define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
+#define MY_IPADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } }
 #define MY_PREFIX_LEN 64
 #endif
 
