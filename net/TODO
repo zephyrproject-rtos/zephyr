@@ -1,0 +1,83 @@
+Background
+==========
+
+This is a TODO list for networking related work.
+
+- Priority scale: High, Medium and Low
+
+- Complexity scale: C1, C2, C4 and C8.
+   The complexity scale is exponential, with complexity 1 being the
+   lowest complexity. Complexity is a function of both task 'complexity'
+   and task 'scope'.
+
+
+IPv6
+====
+
+- Hop-by-Hop option handling
+
+   Priority: Medium
+   Complexity: C1
+
+   Parse IPv6 Hop-by-Hop options and act accordingly.
+   See RFC 2460 for details.
+
+- Anycast address support
+
+   Priority: Low
+   Complexity: C1
+
+   Add support for Anycast addresses, RFC 3513
+
+- ICMPv6 "Packet Too Big" support
+
+   Priority: Low
+   Complexity: C1
+
+   Add support for sending "Packet Too Big" error when
+   needed. RFC 4443
+
+- ICMPv6 "Parameter Problem" support
+
+   Priority: Low
+   Complexity: C1
+
+   Add support for sending "Parameter Problem" error when
+   needed. RFC 4443
+
+- Multicast join/leave support
+
+   Priority: Low
+   Complexity: C2
+
+   Add support for sending joining and leaving multicast group.
+   See RFC 3810 and 4604 for details.
+
+
+IPv4
+====
+
+- Multicast join/leave support
+
+   Priority: Low
+   Complexity: C2
+
+   Add support for sending joining and leaving multicast group.
+   See RFC 3376 and 4604 for details.
+
+
+TCP
+===
+
+- Core TCP support
+
+   Priority: High
+   Complexity: C4
+
+   Add core / basic support for receiving and sending TCP
+   packets. This means that we should be able to initiate
+   the connection (client role) or receive a connection request
+   (server role). After the connection establishment, the
+   TCP data should be processed so that applications can receive
+   it. Application can use the net_context API for connection
+   establishment and shutdown, and for sending and receiving data.
