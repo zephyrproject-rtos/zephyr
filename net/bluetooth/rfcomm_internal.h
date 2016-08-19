@@ -34,6 +34,7 @@ enum {
 	BT_RFCOMM_STATE_IDLE,
 	BT_RFCOMM_STATE_INIT,
 	BT_RFCOMM_STATE_CONNECTED,
+	BT_RFCOMM_STATE_CONFIG,
 };
 
 struct bt_rfcomm_hdr {
@@ -51,7 +52,22 @@ struct bt_rfcomm_msg_hdr {
 	uint8_t len;
 } __packed;
 
+#define BT_RFCOMM_PN	0x20
+struct bt_rfcomm_pn {
+	uint8_t  dlci;
+	uint8_t  flow_ctrl;
+	uint8_t  priority;
+	uint8_t  ack_timer;
+	uint16_t mtu;
+	uint8_t  max_retrans;
+	uint8_t  credits;
+} __packed;
+
 #define BT_RFCOMM_SIG_MIN_MTU	23
+#define BT_RFCOMM_SIG_MAX_MTU	32767
+
+#define BT_RFCOMM_CHECK_MTU(mtu) (!!((mtu) >= BT_RFCOMM_SIG_MIN_MTU && \
+				  (mtu) <= BT_RFCOMM_SIG_MAX_MTU))
 
 /* Helper to calculate needed outgoing buffer size */
 #define BT_RFCOMM_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
@@ -61,11 +77,21 @@ struct bt_rfcomm_msg_hdr {
 
 #define BT_RFCOMM_GET_DLCI(addr)	(((addr) & 0xfc) >> 2)
 #define BT_RFCOMM_GET_FRAME_TYPE(ctrl)	((ctrl) & 0xef)
+#define BT_RFCOMM_GET_MSG_TYPE(type)	(((type) & 0xfc) >> 2)
+#define BT_RFCOMM_GET_MSG_CR(type)	(((type) & 0x02) >> 1)
+#define	BT_RFCOMM_GET_LEN(len)		(((len) & 0xfe) >> 1)
+#define BT_RFCOMM_GET_CHANNEL(dlci)	((dlci) >> 1)
 
 #define BT_RFCOMM_SET_ADDR(dlci, cr) ((((dlci) & 0x3f) << 2) | \
 				      ((cr) << 1) | 0x01)
 #define BT_RFCOMM_SET_CTRL(type, pf)	(((type) & 0xef) | ((pf) << 4))
 #define BT_RFCOMM_SET_LEN_8(len)	(((len) << 1) | 1)
+#define BT_RFCOMM_SET_MSG_TYPE(type, cr) (((type) << 2) | (cr << 1) | 0x01)
+
+#define BT_RFCOMM_LEN_EXTENDED(len)	(!((len) & 0x01))
+
+#define BT_RFCOMM_MSG_CMD	1
+#define BT_RFCOMM_MSG_RESP	0
 
 /* Length can be 2 bytes depending on data size */
 #define BT_RFCOMM_HDR_SIZE	(sizeof(struct bt_rfcomm_hdr) + 1)

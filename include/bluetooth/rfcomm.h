@@ -81,10 +81,16 @@ struct bt_rfcomm_dlc_ops {
 
 /** @brief RFCOMM DLC structure. */
 struct bt_rfcomm_dlc {
-	uint8_t		dlci;
 	struct bt_rfcomm_session	*session;
 	struct bt_rfcomm_dlc_ops	*ops;
 	struct bt_rfcomm_dlc		*_next;
+	uint16_t	mtu;
+	uint8_t		dlci;
+	uint8_t		state;
+	uint8_t		tx_credit;
+	uint8_t		rx_credit;
+	bool		initiator;
+
 };
 
 struct bt_rfcomm_server {
