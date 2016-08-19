@@ -107,9 +107,12 @@ static inline void _vprintk(const char *fmt, va_list ap)
 				_printk_dec_ulong(u);
 				break;
 			}
+			case 'p':
+				  _char_out('0');
+				  _char_out('x');
+				  /* Fall through */
 			case 'x':
-			case 'X':
-			case 'p': {
+			case 'X': {
 				unsigned long x = va_arg(
 					ap, unsigned long);
 				_printk_hex_ulong(x);
