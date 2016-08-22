@@ -90,6 +90,7 @@ struct bt_rfcomm_msc {
 #define BT_RFCOMM_GET_MSG_CR(type)	(((type) & 0x02) >> 1)
 #define	BT_RFCOMM_GET_LEN(len)		(((len) & 0xfe) >> 1)
 #define BT_RFCOMM_GET_CHANNEL(dlci)	((dlci) >> 1)
+#define BT_RFCOMM_GET_PF(ctrl)	(((ctrl) & 0x10) >> 4)
 
 #define BT_RFCOMM_SET_ADDR(dlci, cr) ((((dlci) & 0x3f) << 2) | \
 				      ((cr) << 1) | 0x01)
@@ -108,6 +109,9 @@ struct bt_rfcomm_msc {
 
 #define BT_RFCOMM_FCS_LEN_UIH		2
 #define BT_RFCOMM_FCS_LEN_NON_UIH	3
+
+#define BT_RFCOMM_PF_CREDIT		1
+#define BT_RFCOMM_PF_NO_CREDIT		0
 
 /* Initialize RFCOMM signal layer */
 void bt_rfcomm_init(void);

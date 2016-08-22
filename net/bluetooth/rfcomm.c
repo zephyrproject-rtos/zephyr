@@ -460,6 +460,48 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 	}
 }
 
+static void rfcomm_handle_data(struct bt_rfcomm_session *session,
+			       struct net_buf *buf, uint8_t dlci, uint8_t pf)
+
+{
+	struct bt_rfcomm_dlc *dlc;
+
+	BT_DBG("dlci %d, pf %d", dlci, pf);
+
+	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
+	if (!dlc) {
+		BT_ERR("Data recvd in non existing DLC");
+		return;
+	}
+
+	BT_DBG("dlc %p rx credit %d", dlc, dlc->rx_credit);
+
+	if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+		return;
+	}
+
+	if (!dlc->rx_credit) {
+		BT_ERR("Data recvd when rx credit is 0");
+		/* Disconnect */
+		return;
+	}
+
+	if (pf == BT_RFCOMM_PF_CREDIT) {
+		/* TODO: Modify it to semaphore */
+		dlc->tx_credit += net_buf_pull_u8(buf);
+		BT_DBG("updated tx credit %d", dlc->tx_credit);
+	}
+
+	if (buf->len > BT_RFCOMM_FCS_SIZE) {
+		/* Remove FCS */
+		buf->len -= BT_RFCOMM_FCS_SIZE;
+		if (dlc->ops && dlc->ops->recv) {
+			dlc->ops->recv(dlc, buf);
+		}
+		dlc->rx_credit--;
+	}
+}
+
 static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
@@ -498,6 +540,9 @@ static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_RFCOMM_UIH:
 		if (!dlci) {
 			rfcomm_handle_msg(session, buf);
+		} else {
+			rfcomm_handle_data(session, buf, dlci,
+					   BT_RFCOMM_GET_PF(hdr->control));
 		}
 		break;
 	default:
