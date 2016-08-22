@@ -2941,7 +2941,7 @@ static int le_init(void)
 
 		cp_le = net_buf_add(buf, sizeof(*cp_le));
 
-		/* Excplicitly enable LE for dual-mode controllers */
+		/* Explicitly enable LE for dual-mode controllers */
 		cp_le->le = 0x01;
 		cp_le->simul = 0x00;
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, buf,
