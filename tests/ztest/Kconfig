@@ -1,0 +1,53 @@
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+config ZTEST
+	bool "Zephyr testing framework"
+	default n
+	help
+	Enable the Zephyr testing framework. You should enable this only
+	if you're writing automated tests.
+
+config ZTEST_STACKSIZE
+	int "Test function fiber stack size"
+	depends on ZTEST
+	default 1000
+
+config ZTEST_ASSERT_VERBOSE
+	int "Assertion verbosity level"
+	depends on ZTEST
+	default 1
+	help
+	Set verbosity level for assertions.
+	Assertion verbosity levels:
+	0 Write only file and line for failed assertions
+	1 Write file, line number, function and reason for failed assertions
+	2 Log also successful assertions
+
+config ZTEST_MOCKING
+	bool "Mocking support functions"
+	depends on ZTEST
+	default n
+	help
+	Enable mocking support for Ztest. This allows the test to set
+	return values and expected parameters to functions.
+
+config ZTEST_PARAMETER_COUNT
+	int "Count of parameters or return values reserved"
+	depends on ZTEST_MOCKING
+	default 1
+	help
+	Maximum amount of concurrent return values / expected parameters.

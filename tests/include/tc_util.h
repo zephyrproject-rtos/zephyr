@@ -54,7 +54,7 @@
 #define TC_PRINT_RUNID do {} while (0)
 #endif
 
-#define PRINT_LINE							\
+#define PRINT_LINE                          \
 	PRINT_DATA(                                                        \
 		"============================================================" \
 		"=======\n")
@@ -80,20 +80,22 @@
 #define TC_END(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 
 /* prints result and the function name */
-#define TC_END_RESULT(result)                           \
-	do {                                                \
+#define _TC_END_RESULT(result, func)                            \
+	do {                                                    \
 		PRINT_LINE;                                     \
 		TC_END(result, "%s - %s.\n",                    \
-			result == TC_PASS ? PASS : FAIL, __func__); \
+		       result == TC_PASS ? PASS : FAIL, func); \
 	} while (0)
+#define TC_END_RESULT(result)                           \
+	_TC_END_RESULT(result, __func__)
 
 #define TC_END_REPORT(result)                               \
 	do {                                                    \
 		PRINT_LINE;                                         \
 		TC_PRINT_RUNID;                                         \
 		TC_END(result,                                      \
-			"PROJECT EXECUTION %s\n",               \
-			result == TC_PASS ? "SUCCESSFUL" : "FAILED");   \
+		       "PROJECT EXECUTION %s\n",               \
+		       result == TC_PASS ? "SUCCESSFUL" : "FAILED");   \
 	} while (0)
 
 #endif /* __TC_UTIL_H__ */

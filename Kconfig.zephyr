@@ -38,6 +38,8 @@ source "ext/Kconfig"
 
 source "usb/Kconfig"
 
+source "tests/Kconfig"
+
 #
 # The following are for Kconfig files for default values only.
 # These should be parsed at the end.
