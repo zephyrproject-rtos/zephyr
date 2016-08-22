@@ -181,6 +181,34 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
 	return 0;
 }
 
+static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
+					   uint8_t cr, uint8_t type,
+					   uint8_t len)
+{
+	struct bt_rfcomm_hdr *hdr;
+	struct bt_rfcomm_msg_hdr *msg_hdr;
+	struct net_buf *buf;
+	uint8_t hdr_cr;
+
+	buf = bt_l2cap_create_pdu(&rfcomm_session);
+	if (!buf) {
+		BT_ERR("No buffers");
+		return NULL;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr_cr = dlc->session->initiator ? 1 : 0;
+	hdr->address = BT_RFCOMM_SET_ADDR(0, hdr_cr);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH, 0);
+	hdr->length = BT_RFCOMM_SET_LEN_8(sizeof(*msg_hdr) + len);
+
+	msg_hdr = net_buf_add(buf, sizeof(*msg_hdr));
+	msg_hdr->type = BT_RFCOMM_SET_MSG_TYPE(type, cr);
+	msg_hdr->len = BT_RFCOMM_SET_LEN_8(len);
+
+	return buf;
+}
+
 static void rfcomm_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
@@ -296,34 +324,6 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 
 		rfcomm_dlc_connected(dlc);
 	}
-}
-
-static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
-					   uint8_t cr, uint8_t type,
-					   uint8_t len)
-{
-	struct bt_rfcomm_hdr *hdr;
-	struct bt_rfcomm_msg_hdr *msg_hdr;
-	struct net_buf *buf;
-	uint8_t hdr_cr;
-
-	buf = bt_l2cap_create_pdu(&rfcomm_session);
-	if (!buf) {
-		BT_ERR("No buffers");
-		return NULL;
-	}
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr_cr = dlc->session->initiator ? 1 : 0;
-	hdr->address = BT_RFCOMM_SET_ADDR(0, hdr_cr);
-	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH, 0);
-	hdr->length = BT_RFCOMM_SET_LEN_8(sizeof(*msg_hdr) + len);
-
-	msg_hdr = net_buf_add(buf, sizeof(*msg_hdr));
-	msg_hdr->type = BT_RFCOMM_SET_MSG_TYPE(type, cr);
-	msg_hdr->len = BT_RFCOMM_SET_LEN_8(len);
-
-	return buf;
 }
 
 static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
