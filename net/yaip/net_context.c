@@ -728,6 +728,7 @@ int net_context_recv(struct net_context *context,
 
 		net_sin6(&local_addr)->sin6_port =
 			net_sin6((struct sockaddr *)&context->local)->sin6_port;
+		lport = net_sin6((struct sockaddr *)&context->local)->sin6_port;
 	}
 #endif /* CONFIG_NET_IPV6 */
 
