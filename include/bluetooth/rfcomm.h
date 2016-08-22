@@ -112,6 +112,12 @@ struct bt_rfcomm_server {
 	struct bt_rfcomm_server	*_next;
 };
 
+/** @def BT_RFCOMM_SEND_RESERVE
+ *  @brief Headroom needed for outgoing buffers
+ */
+#define BT_RFCOMM_SEND_RESERVE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + 4 + 4 + 4)
+
+
 /** @brief Register RFCOMM server
  *
  *  Register RFCOMM server for a channel, each new connection is authorized
@@ -123,6 +129,18 @@ struct bt_rfcomm_server {
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
+
+/** @brief Send data to RFCOMM
+ *
+ *  Send data from buffer to the dlc. Length should be less than or equal to
+ *  mtu.
+ *
+ *  @param dlc Dlc object.
+ *  @param buf Data buffer.
+ *
+ *  @return Bytes sent in case of success or negative value in case of error.
+ */
+int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 
 #ifdef __cplusplus
 }

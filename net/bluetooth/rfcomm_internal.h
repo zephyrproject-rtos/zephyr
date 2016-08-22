@@ -96,12 +96,16 @@ struct bt_rfcomm_msc {
 				      ((cr) << 1) | 0x01)
 #define BT_RFCOMM_SET_CTRL(type, pf)	(((type) & 0xef) | ((pf) << 4))
 #define BT_RFCOMM_SET_LEN_8(len)	(((len) << 1) | 1)
+#define BT_RFCOMM_SET_LEN_16(len)	((len) << 1)
 #define BT_RFCOMM_SET_MSG_TYPE(type, cr) (((type) << 2) | (cr << 1) | 0x01)
 
 #define BT_RFCOMM_LEN_EXTENDED(len)	(!((len) & 0x01))
 
 #define BT_RFCOMM_MSG_CMD	1
 #define BT_RFCOMM_MSG_RESP	0
+
+/* Excluding ext bit */
+#define BT_RFCOMM_MAX_LEN_8	127
 
 /* Length can be 2 bytes depending on data size */
 #define BT_RFCOMM_HDR_SIZE	(sizeof(struct bt_rfcomm_hdr) + 1)

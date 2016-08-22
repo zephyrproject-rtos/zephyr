@@ -503,6 +503,55 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 	}
 }
 
+int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
+{
+	struct bt_rfcomm_hdr *hdr;
+	uint8_t fcs;
+
+	if (!buf) {
+		return -EINVAL;
+	}
+
+	BT_DBG("dlc %p tx credit %d", dlc, dlc->tx_credit);
+
+	if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (buf->len > dlc->mtu) {
+		return -EMSGSIZE;
+	}
+
+	/* TODO: Remove while doing CFC */
+	if (!dlc->tx_credit) {
+		return -EINVAL;
+	}
+
+	if (buf->len > BT_RFCOMM_MAX_LEN_8) {
+		uint16_t *len;
+
+		/* Length is 2 byte */
+		hdr = net_buf_push(buf, sizeof(*hdr) + 1);
+		len = (uint16_t *)&hdr->length;
+		*len = BT_RFCOMM_SET_LEN_16(sys_cpu_to_le16(buf->len -
+							    sizeof(*hdr) + 1));
+	} else {
+		hdr = net_buf_push(buf, sizeof(*hdr));
+		hdr->length = BT_RFCOMM_SET_LEN_8(buf->len - sizeof(*hdr));
+	}
+
+	hdr->address = BT_RFCOMM_SET_ADDR(dlc->dlci, dlc->session->initiator);
+	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH,
+					  BT_RFCOMM_PF_NO_CREDIT);
+
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	dlc->tx_credit--;
+
+	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+}
+
 static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
