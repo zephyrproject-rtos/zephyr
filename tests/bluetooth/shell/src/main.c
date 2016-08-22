@@ -1965,6 +1965,38 @@ static int cmd_bredr_rfcomm_register(int argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_rfcomm_send(int argc, char *argv[])
+{
+	uint8_t buf_data[DATA_BREDR_MTU] = { [0 ... (DATA_BREDR_MTU - 1)] =
+					    0xff };
+	int ret, len, count = 1;
+	struct net_buf *buf;
+
+	if (argc > 1) {
+		count = strtoul(argv[1], NULL, 10);
+	}
+
+	/* Need to consider FCS also */
+	len = min(rfcomm_dlc.mtu, DATA_BREDR_MTU - BT_RFCOMM_SEND_RESERVE - 1);
+
+	while (count--) {
+		buf = net_buf_get_timeout(&data_bredr_fifo,
+					  BT_RFCOMM_SEND_RESERVE,
+					  TICKS_UNLIMITED);
+
+		memcpy(net_buf_add(buf, len), buf_data, len);
+		ret = bt_rfcomm_dlc_send(&rfcomm_dlc, buf);
+		if (ret < 0) {
+			printk("Unable to send: %d\n", -ret);
+			net_buf_unref(buf);
+			break;
+		}
+	}
+
+	return 0;
+}
+
 #endif /* CONFIG_BLUETOOTH_RFCOMM) */
 
 static int cmd_bredr_discoverable(int argc, char *argv[])
@@ -2109,6 +2141,7 @@ static const struct shell_cmd commands[] = {
 	{ "br-oob", cmd_bredr_oob },
 #if defined(CONFIG_BLUETOOTH_RFCOMM)
 	{ "br-rfcomm-register", cmd_bredr_rfcomm_register, "<channel>" },
+	{ "br-rfcomm-send", cmd_rfcomm_send, "<number of packets>"},
 #endif /* CONFIG_BLUETOOTH_RFCOMM */
 #endif
 	{ NULL, NULL }
