@@ -411,12 +411,15 @@ default n
 help
 	The 802.15.4 layer can either support loopback within
 	or loopback with uart but not both at the same time.
+
+if NETWORKING_HAVE_TI_CC2520
 config	NETWORKING_WITH_15_4_TI_CC2520
 	bool
 	prompt "TI CC2520"
 	select TEST_RANDOM_GENERATOR
 	help
 	  Enable Texas Instruments CC2520 802.15.4 radio driver.
+endif
 
 config	NETWORKING_WITH_15_4_LOOPBACK
 	bool

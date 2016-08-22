@@ -769,56 +769,6 @@ static int cc2520_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	return 0;
 }
 
-static int cc2520_set_txpower(struct device *dev, short dbm)
-{
-	struct cc2520_context *cc2520 = dev->driver_data;
-	uint8_t pwr;
-
-	SYS_LOG_DBG("%s: %d\n", dbm);
-
-	/* See chapter 19 part 8 */
-	switch (dbm) {
-	case 5:
-		pwr = 0xF7;
-		break;
-	case 3:
-		pwr = 0xF2;
-		break;
-	case 2:
-		pwr = 0xAB;
-		break;
-	case 1:
-		pwr = 0x13;
-		break;
-	case 0:
-		pwr = 0x32;
-		break;
-	case -2:
-		pwr = 0x81;
-		break;
-	case -4:
-		pwr = 0x88;
-		break;
-	case -7:
-		pwr = 0x2C;
-		break;
-	case -18:
-		pwr = 0x03;
-		break;
-	default:
-		goto error;
-	}
-
-	if (!write_reg_txpower(&cc2520->spi, pwr)) {
-		goto error;
-	}
-
-	return 0;
-error:
-	SYS_LOG_ERR("%s: FAILED\n");
-	return -EIO;
-}
-
 static int cc2520_tx(struct device *dev, struct net_buf *buf)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;

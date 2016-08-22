@@ -2,3 +2,4 @@
 config BOARD_QUARK_SE_DEVBOARD
 	bool "Quark SE Development Board"
 	depends on SOC_QUARK_SE
+	select NETWORKING_HAVE_TI_CC2520
