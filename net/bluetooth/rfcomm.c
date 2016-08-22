@@ -289,9 +289,32 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
 
+static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr)
+{
+	struct bt_rfcomm_msc *msc;
+	struct net_buf *buf;
+	uint8_t fcs;
+
+	buf = rfcomm_make_uih_msg(dlc, cr, BT_RFCOMM_MSC, sizeof(*msc));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	msc = net_buf_add(buf, sizeof(*msc));
+	msc->dlci = BT_RFCOMM_SET_ADDR(dlc->dlci, cr);
+	msc->v24_signal = BT_RFCOMM_DEFAULT_V24_SIG;
+
+	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
+	net_buf_add_u8(buf, fcs);
+
+	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+}
+
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
+
+	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD);
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
@@ -360,6 +383,25 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
 }
 
+static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
+			      struct net_buf *buf, uint8_t cr)
+{
+	struct bt_rfcomm_msc *msc = (void *)buf->data;
+	struct bt_rfcomm_dlc *dlc;
+	uint8_t dlci = BT_RFCOMM_GET_DLCI(msc->dlci);
+
+	BT_DBG("dlci %d", dlci);
+
+	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
+	if (!dlc) {
+		return;
+	}
+
+	if (cr == BT_RFCOMM_MSG_CMD) {
+		rfcomm_send_msc(dlc, BT_RFCOMM_MSG_RESP);
+	}
+}
+
 static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 			     struct net_buf *buf, uint8_t cr)
 {
@@ -408,6 +450,9 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 	switch (msg_type) {
 	case BT_RFCOMM_PN:
 		rfcomm_handle_pn(session, buf, cr);
+		break;
+	case BT_RFCOMM_MSC:
+		rfcomm_handle_msc(session, buf, cr);
 		break;
 	default:
 		BT_WARN("Unknown/Unsupported RFCOMM Msg type 0x%02x", msg_type);

@@ -63,6 +63,15 @@ struct bt_rfcomm_pn {
 	uint8_t  credits;
 } __packed;
 
+#define BT_RFCOMM_MSC	0x38
+struct bt_rfcomm_msc {
+	uint8_t  dlci;
+	uint8_t  v24_signal;
+} __packed;
+
+/* DV = 1 IC = 0 RTR = 1 RTC = 1 FC = 0 EXT = 0 */
+#define BT_RFCOMM_DEFAULT_V24_SIG 0x8d
+
 #define BT_RFCOMM_SIG_MIN_MTU	23
 #define BT_RFCOMM_SIG_MAX_MTU	32767
 
