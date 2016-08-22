@@ -81,3 +81,111 @@ TCP
    TCP data should be processed so that applications can receive
    it. Application can use the net_context API for connection
    establishment and shutdown, and for sending and receiving data.
+
+
+L2
+==
+
+- Add a interface management API
+
+  Priority: High
+  Complexity: C4
+
+  Add a generic API to let upper layers configuring network interfaces
+  as well as tweaking its L2 layer and raising dedicated process.
+  (I.e.: Running a scan in 802.15.4)
+
+
+
+IEEE 802.15.4
+=============
+
+2011 version
+------------
+
+- CSMA-CA Radio protocol support
+
+  Priority: Low
+  Complexity: C2
+
+  Add CSMA-CA radio protocol as a replacement of the current
+  too simplistic ALOHA radio protocol.
+
+- Beacon frame support
+
+  Priority: Medium
+  Complexity: C1
+
+  Add the means to parse or create Beacon frames.
+
+- MAC command frame support
+
+  Priority: High
+  Complexity: C2
+
+  Add the means to parse or create MAC command frames.
+  All commands as stated in table 5.
+
+- Management service: RFD level support
+
+  Priority: High
+  Complexity: C4
+
+  Support Management service to align with RFD requirements.
+  See Chapter 6.2
+
+- Security support
+
+  Priority: Medium
+  Complexity: C4
+
+  Support security, as detailed in Chapter 7.
+
+- Management service: FFD level support
+
+  Priority: Low
+  Complexity: C4
+
+  Support Management service to align with FFD requirements.
+  See Chapter 6.2
+
+
+2012-2015 versions
+------------------
+
+- IE list support
+
+  Priority: Medium
+  Complexity: C2
+
+  Support newly added IE list which can be embedded into frames.
+
+- Update existing Management commands
+
+  Priority: Medium
+  Complexity: C4
+
+  Behavioral changes as well as improvements need to be applied
+  to existing Management commands.
+
+- TSCH Radio protocol support
+
+  Priority: Medium
+  Complexity: C2
+
+  Add TSCH radio protocol as the latest radio protocol improvement.
+
+- Multipurpose frame support
+
+  Priority: Low
+  Complexity: C2
+
+  Add the means to parse or create Multipurpose frames.
+
+- LLDN frame support
+
+  Priority: Low
+  Complexity: C2
+
+  Add the means to parse or create LLDN frames.
+  Is this needed however, since it requires true RT capabilities?
