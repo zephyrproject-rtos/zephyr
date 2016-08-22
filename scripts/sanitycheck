@@ -239,8 +239,86 @@ def verbose(what):
     if VERBOSE >= 2:
         info(what)
 
-# Utility functions
-class QEMUHandler:
+class Handler:
+    RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
+    RUN_FAILED = "PROJECT EXECUTION FAILED"
+    def __init__(self, name, outdir, log_fn, timeout, unit=False):
+        """Constructor
+
+        @param name Arbitrary name of the created thread
+        @param outdir Working directory, should be where qemu.pid gets created
+            by kbuild
+        @param log_fn Absolute path to write out QEMU's log data
+        @param timeout Kill the QEMU process if it doesn't finish up within
+            the given number of seconds
+        """
+        self.lock = threading.Lock()
+        self.state = "waiting"
+        self.metrics = {}
+        self.metrics["qemu_time"] = 0
+        self.metrics["ram_size"] = 0
+        self.metrics["rom_size"] = 0
+        self.unit = unit
+
+    def set_state(self, state, metrics):
+        self.lock.acquire()
+        self.state = state
+        self.metrics.update(metrics)
+        self.lock.release()
+
+    def get_state(self):
+        self.lock.acquire()
+        ret = (self.state, self.metrics)
+        self.lock.release()
+        return ret
+
+class UnitHandler(Handler):
+    def __init__(self, name, outdir, run_log, valgrind_log, timeout):
+        """Constructor
+
+        @param name Arbitrary name of the created thread
+        @param outdir Working directory containing the test binary
+        @param run_log Absolute path to runtime logs
+        @param valgrind Absolute path to valgrind's log
+        @param timeout Kill the QEMU process if it doesn't finish up within
+            the given number of seconds
+        """
+        super().__init__(name, outdir, run_log, timeout, True)
+
+        self.timeout = timeout
+        self.outdir = outdir
+        self.run_log = run_log
+        self.valgrind_log = valgrind_log
+        self.returncode = 0
+        self.set_state("running", {})
+
+    def handle(self):
+        out_state = "failed"
+
+        with open(self.run_log, "wt") as rl, open(self.valgrind_log, "wt") as vl:
+            try:
+                binary = os.path.join(self.outdir, "testbinary")
+                command = [binary]
+                if shutil.which("valgrind"):
+                    command = ["valgrind", "--error-exitcode=2",
+                               "--leak-check=full"] + command
+                returncode = subprocess.call(command, timeout=self.timeout,
+                                             stdout=rl, stderr=vl)
+                self.returncode = returncode
+                if returncode != 0:
+                    if self.returncode == 1:
+                        out_state = "failed"
+                    else:
+                        out_state = "failed valgrind"
+                else:
+                    out_state = "passed"
+            except subprocess.TimeoutExpired:
+                out_state = "timeout"
+                self.returncode = 1
+
+        self.set_state(out_state, {})
+
+class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
 
     We pass QEMU_PIPE to 'make qemu' and monitor the pipes for output.
@@ -248,8 +326,6 @@ class QEMUHandler:
     Test cases emit special messages to the console as they run, we check
     for these to collect whether the test passed or failed.
     """
-    RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
-    RUN_FAILED = "PROJECT EXECUTION FAILED"
 
     @staticmethod
     def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results):
@@ -300,17 +376,17 @@ class QEMUHandler:
             if c != "\n":
                 continue
 
-            # If we get here, line contains a full line of data output from QEMU
+            # line contains a full line of data output from QEMU
             log_out_fp.write(line)
             log_out_fp.flush()
             line = line.strip()
             verbose("QEMU: %s" % line)
 
-            if line == QEMUHandler.RUN_PASSED:
+            if line == handler.RUN_PASSED:
                 out_state = "passed"
                 break
 
-            if line == QEMUHandler.RUN_FAILED:
+            if line == handler.RUN_FAILED:
                 out_state = "failed"
                 break
 
@@ -339,21 +415,18 @@ class QEMUHandler:
         os.unlink(fifo_in)
         os.unlink(fifo_out)
 
-
     def __init__(self, name, outdir, log_fn, timeout):
         """Constructor
 
         @param name Arbitrary name of the created thread
-        @param outdir Working directory, shoudl be where qemu.pid gets created
+        @param outdir Working directory, should be where qemu.pid gets created
             by kbuild
         @param log_fn Absolute path to write out QEMU's log data
         @param timeout Kill the QEMU process if it doesn't finish up within
             the given number of seconds
         """
-        # Create pipe to get QEMU's serial output
+        super().__init__(name, outdir, log_fn, timeout)
         self.results = {}
-        self.state = "waiting"
-        self.lock = threading.Lock()
 
         # We pass this to QEMU which looks for fifos with .in and .out
         # suffixes.
@@ -365,28 +438,15 @@ class QEMUHandler:
 
         self.log_fn = log_fn
         self.thread = threading.Thread(name=name, target=QEMUHandler._thread,
-                                       args=(self, timeout, outdir, self.log_fn,
-                                             self.fifo_fn, self.pid_fn,
-                                             self.results))
+                                       args=(self, timeout, outdir,
+                                             self.log_fn, self.fifo_fn,
+                                             self.pid_fn, self.results))
         self.thread.daemon = True
         verbose("Spawning QEMU process for %s" % name)
         self.thread.start()
 
-    def set_state(self, state, metrics):
-        self.lock.acquire()
-        self.state = state
-        self.metrics = metrics
-        self.lock.release()
-
-    def get_state(self):
-        self.lock.acquire()
-        ret = (self.state, self.metrics)
-        self.lock.release()
-        return ret
-
     def get_fifo(self):
         return self.fifo_fn
-
 
 class SizeCalculator:
 
@@ -607,7 +667,7 @@ class MakeGenerator:
 
     GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
 
-    re_make = re.compile("sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* [[](.+)[]] Error.+$")
+    re_make = re.compile("sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* \[(.+:.+: )?(.+)\] Error.+$")
 
     def __init__(self, base_outdir, asserts=False):
         """MakeGenerator constructor
@@ -706,6 +766,22 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
                                     run_logfile, qemu_logfile)
 
+    def add_unit_goal(self, name, directory, outdir, args, timeout=30):
+        self._add_goal(outdir)
+        build_logfile = os.path.join(outdir, "build.log")
+        run_logfile = os.path.join(outdir, "run.log")
+        qemu_logfile = os.path.join(outdir, "qemu.log")
+        valgrind_logfile = os.path.join(outdir, "valgrind.log")
+
+        # we handle running in the UnitHandler class
+        text = (self._get_rule_header(name) +
+                self._get_sub_make(name, "building", directory,
+                                   outdir, build_logfile, args) +
+                self._get_rule_footer(name))
+        q = UnitHandler(name, outdir, run_logfile, valgrind_logfile, timeout)
+        self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
+                                    run_logfile, valgrind_logfile)
+
 
     def add_test_instance(self, ti, build_only=False, enable_slow=False,
                           extra_args=[]):
@@ -721,6 +797,9 @@ class MakeGenerator:
         if (ti.platform.qemu_support and (not ti.build_only) and
             (not build_only) and (enable_slow or not ti.test.slow)):
             self.add_qemu_goal(ti.name, ti.test.code_location, ti.outdir,
+                               args, ti.test.timeout)
+        elif ti.test.type == "unit":
+            self.add_unit_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout)
         else:
             self.add_build_goal(ti.name, ti.test.code_location, ti.outdir, args)
@@ -762,7 +841,7 @@ class MakeGenerator:
                 if not m:
                     continue
 
-                state, name, error = m.groups()
+                state, name, _, error = m.groups()
                 if error:
                     goal = self.goals[error]
                 else:
@@ -775,6 +854,13 @@ class MakeGenerator:
                 else:
                     if state == "finished":
                         if goal.qemu:
+                            if goal.qemu.unit:
+                                # We can't run unit tests with Make
+                                goal.qemu.handle()
+                                if goal.qemu.returncode == 2:
+                                    goal.qemu_log = goal.qemu.valgrind_log
+                                elif goal.qemu.returncode:
+                                    goal.qemu_log = goal.qemu.run_log
                             thread_status, metrics = goal.qemu.get_state()
                             goal.metrics.update(metrics)
                             if thread_status == "passed":
@@ -812,6 +898,7 @@ platform_valid_keys = {"qemu_support" : {"type" : "bool", "default" : False},
                        "supported_toolchains" : {"type" : "list", "default" : []}}
 
 testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
+                       "type" : {"type" : "str", "default": "integration"},
                        "extra_args" : {"type" : "list"},
                        "build_only" : {"type" : "bool", "default" : False},
                        "skip" : {"type" : "bool", "default" : False},
@@ -1061,6 +1148,7 @@ class TestCase:
             from the testcase.ini file
         """
         self.code_location = os.path.join(testcase_root, workdir)
+        self.type = tc_dict["type"]
         self.tags = tc_dict["tags"]
         self.extra_args = tc_dict["extra_args"]
         self.arch_whitelist = tc_dict["arch_whitelist"]
@@ -1080,7 +1168,7 @@ class TestCase:
         self.ktype = None
         self.inifile = inifile
 
-        if self.kernel:
+        if self.kernel or self.type == "unit":
             self.ktype = self.kernel
         else:
             with open(os.path.join(testcase_root, workdir, "Makefile")) as makefile:
@@ -1135,6 +1223,7 @@ class TestInstance:
 def defconfig_cb(context, goals, goal):
     if not goal.failed:
         return
+
 
     info("%sCould not build defconfig for %s%s" %
          (COLOR_RED, goal.name, COLOR_NORMAL));
@@ -1251,6 +1340,9 @@ class TestSuite:
                 for plat in arch.platforms:
                     instance = TestInstance(tc, plat, self.outdir)
 
+                    if (arch_name == "unit") != (tc.type == "unit"):
+                        continue
+
                     if tc.skip:
                         continue
 
@@ -1324,6 +1416,10 @@ class TestSuite:
                 instance_list = []
                 for plat in arch.platforms:
                     instance = TestInstance(tc, plat, self.outdir)
+
+                    if (arch_name == "unit") != (tc.type == "unit"):
+                        # Discard silently
+                        continue
 
                     if tc.skip:
                         discards[instance] = "Skip filter"
@@ -1801,12 +1897,12 @@ def main():
     for name, goal in goals.items():
         if goal.failed:
             failed += 1
-        elif goal.metrics["unrecognized"]:
+        elif goal.metrics.get("unrecognized"):
             info("%sFAILED%s: %s has unrecognized binary sections: %s" %
                  (COLOR_RED, COLOR_NORMAL, goal.name,
                   str(goal.metrics["unrecognized"])))
             failed += 1
-        elif goal.metrics["mismatched"]:
+        elif goal.metrics.get("mismatched"):
             info("%sFAILED%s: %s has mismatched section offsets for: %s" %
                  (COLOR_RED, COLOR_NORMAL, goal.name,
                   str(goal.metrics["mismatched"])))
