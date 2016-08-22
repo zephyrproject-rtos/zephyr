@@ -1,15 +1,16 @@
 # vim: filetype=make
 #
 
-DQUOTE = "
-# "
-
 ARCH ?= x86
 
 UNAME := $(shell uname)
 ifeq (MINGW, $(findstring MINGW, $(UNAME)))
+DQUOTE = '
+# '
 PROJECT_BASE ?= $(shell sh -c "pwd -W")
 else
+DQUOTE = "
+# "
 PROJECT_BASE ?= $(CURDIR)
 endif
 
@@ -64,7 +65,7 @@ endif
 export CFLAGS
 
 zephyrmake	= +$(MAKE) -C $(ZEPHYR_BASE)  O=$(1) \
-			PROJECT=$(PROJECT_BASE) SOURCE_DIR="$(SOURCE_DIR)" $(2)
+			PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(DQUOTE)$(SOURCE_DIR)$(DQUOTE) $(2)
 
 BOARDCONFIG = $(O)/.board_$(BOARD)
 
