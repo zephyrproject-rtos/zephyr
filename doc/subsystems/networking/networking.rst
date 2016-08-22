@@ -63,4 +63,5 @@ The IP stack source code tree is organized as follows:
 .. toctree::
    :maxdepth: 1
 
+   ip-stack-architecture.rst
    buffers.rst
