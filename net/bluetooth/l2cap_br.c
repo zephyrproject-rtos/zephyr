@@ -621,35 +621,71 @@ static void l2cap_br_conf(struct bt_l2cap_chan *chan)
 	l2cap_br_chan_send_req(BR_CHAN(chan), buf, L2CAP_BR_CFG_TIMEOUT);
 }
 
-static bool l2cap_br_security_check(struct bt_l2cap_chan *chan,
-				    const uint16_t psm)
+enum l2cap_br_conn_security_result {
+	L2CAP_CONN_SECURITY_PASSED,
+	L2CAP_CONN_SECURITY_REJECT,
+	L2CAP_CONN_SECURITY_PENDING
+};
+
+/*
+ * Security helper against channel connection.
+ * Returns L2CAP_CONN_SECURITY_PASSED if:
+ * - existing security on link is applicable for requested PSM in connection,
+ * - legacy (non SSP) devices connecting with low security requirements,
+ * Returns L2CAP_CONN_SECURITY_PENDING if:
+ * - channel connection process is on hold since there were valid security
+ *   conditions triggering authentication indirectly in subcall.
+ * Returns L2CAP_CONN_SECURITY_REJECT if:
+ * - bt_conn_security API returns < 0.
+ */
+
+static enum l2cap_br_conn_security_result
+l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 {
 	int check;
 
+	/* For SDP PSM there's no need to change existing security on link */
 	if (psm == L2CAP_BR_PSM_SDP) {
-		return false;
+		return L2CAP_CONN_SECURITY_PASSED;
 	};
 
-	/* No link key needed and legacy devices */
+	/*
+	 * No link key needed for legacy devices (pre 2.1) and when low security
+	 * level is required.
+	 */
 	if (chan->required_sec_level == BT_SECURITY_LOW &&
 	    !lmp_ssp_host_supported(chan->conn)) {
-		return false;
+		return L2CAP_CONN_SECURITY_PASSED;
 	}
 
 	check = bt_conn_security(chan->conn, chan->required_sec_level);
 
 	/*
-	 * Get case when connection security level already covers channel
-	 * demands and bt_conn_security returns 0 and differentiate it to
-	 * the case when HCI authentication request in internal subcall was send
-	 * and bt_conn_security returns as well 0.
+	 * Check case when on existing connection security level already covers
+	 * channel (service) security requirements against link security and
+	 * bt_conn_security API returns 0 what implies also there was no need to
+	 * trigger authentication.
 	 */
 	if (check == 0 &&
 	    chan->conn->sec_level >= chan->required_sec_level) {
-		return false;
+		return L2CAP_CONN_SECURITY_PASSED;
 	}
 
-	return (check == 0) ? true : false;
+	/*
+	 * If 'check' still holds 0, it means local host just sent HCI
+	 * authentication command to start procedure to increase link security
+	 * since service/profile requires that.
+	 */
+	if (check == 0) {
+		return L2CAP_CONN_SECURITY_PENDING;
+	};
+
+	/*
+	 * For any other values in 'check' it means there was internal
+	 * validation condition forbidding to start authentication at this
+	 * moment.
+	 */
+	return L2CAP_CONN_SECURITY_REJECT;
 }
 
 static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
@@ -730,14 +766,21 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_ACCEPTOR);
 
-	if (l2cap_br_security_check(chan, psm)) {
+	switch (l2cap_br_conn_security(chan, psm)) {
+	case L2CAP_CONN_SECURITY_PENDING:
 		result = BT_L2CAP_PENDING;
 		status = BT_L2CAP_CS_AUTHEN_PEND;
 		/* store ident for connection response after GAP done */
 		chan->ident = ident;
 		/* TODO: auth timeout */
-	} else {
+		break;
+	case L2CAP_CONN_SECURITY_PASSED:
 		result = BT_L2CAP_SUCCESS;
+		break;
+	case L2CAP_CONN_SECURITY_REJECT:
+	default:
+		result = BT_L2CAP_ERR_SEC_BLOCK;
+		break;
 	}
 done:
 	rsp->dcid = sys_cpu_to_le16(dcid);
