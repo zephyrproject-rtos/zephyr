@@ -277,6 +277,8 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 
 	/* Cancel ongoing work */
 	nano_delayed_work_cancel(&chan->rtx_work);
+	/* Reset _ONLY_ internal members of common channel */
+	chan->state = BT_L2CAP_DISCONNECTED;
 }
 
 static void l2cap_br_rtx_timeout(struct nano_work *work)

@@ -223,10 +223,6 @@ destroy:
 	if (chan->destroy) {
 		chan->destroy(chan);
 	}
-
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-	chan->state = BT_L2CAP_DISCONNECTED;
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 }
 
 static void l2cap_rtx_timeout(struct nano_work *work)
