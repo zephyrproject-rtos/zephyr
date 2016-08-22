@@ -17,7 +17,6 @@
  */
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 #include <misc/printk.h>
@@ -25,11 +24,7 @@
 #include <net/buf.h>
 #include <net/net_ip.h>
 
-#if defined(CONFIG_NET_BUF_DEBUG)
-#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#else
-#define DBG(fmt, ...)
-#endif
+#include <ztest.h>
 
 #define TEST_TIMEOUT SECONDS(1)
 
@@ -73,36 +68,24 @@ static struct nano_fifo big_frags_fifo;
 static void buf_destroy(struct net_buf *buf)
 {
 	destroy_called++;
-
-	if (buf->free != &bufs_fifo) {
-		printk("Invalid free pointer in buffer!\n");
-	}
-
-	DBG("destroying %p\n", buf);
-
+	assert_equal(buf->free, &bufs_fifo, "Invalid free pointer in buffer");
 	nano_fifo_put(buf->free, buf);
 }
 
 static void frag_destroy(struct net_buf *buf)
 {
 	frag_destroy_called++;
-
-	if (buf->free != &frags_fifo) {
-		printk("Invalid free frag pointer in buffer!\n");
-	} else {
-		nano_fifo_put(buf->free, buf);
-	}
+	assert_equal(buf->free, &frags_fifo,
+		     "Invalid free frag pointer in buffer");
+	nano_fifo_put(buf->free, buf);
 }
 
 static void frag_destroy_big(struct net_buf *buf)
 {
 	frag_destroy_called++;
-
-	if (buf->free != &big_frags_fifo) {
-		printk("Invalid free big frag pointer in buffer!\n");
-	} else {
-		nano_fifo_put(buf->free, buf);
-	}
+	assert_equal(buf->free, &big_frags_fifo,
+		     "Invalid free big frag pointer in buffer");
+	nano_fifo_put(buf->free, buf);
 }
 
 static NET_BUF_POOL(bufs_pool, 22, 74, &bufs_fifo, buf_destroy,
@@ -119,7 +102,7 @@ static const char example_data[] = "0123456789"
 				   "abcdefghijklmnopqrstuvxyz"
 				   "!#¤%&/()=?";
 
-static bool net_buf_test_1(void)
+static void net_buf_test_1(void)
 {
 	struct net_buf *bufs[ARRAY_SIZE(bufs_pool)];
 	struct net_buf *buf;
@@ -127,11 +110,7 @@ static bool net_buf_test_1(void)
 
 	for (i = 0; i < ARRAY_SIZE(bufs_pool); i++) {
 		buf = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
-		if (!buf) {
-			printk("Failed to get buffer!\n");
-			return false;
-		}
-
+		assert_not_null(buf, "Failed to get buffer");
 		bufs[i] = buf;
 	}
 
@@ -139,41 +118,25 @@ static bool net_buf_test_1(void)
 		net_buf_unref(bufs[i]);
 	}
 
-	if (destroy_called != ARRAY_SIZE(bufs_pool)) {
-		printk("Incorrect destroy callback count: %d\n",
-		       destroy_called);
-		return false;
-	}
-
-	return true;
+	assert_equal(destroy_called, ARRAY_SIZE(bufs_pool),
+		     "Incorrect destroy callback count");
 }
 
-static bool net_buf_test_2(void)
+static void net_buf_test_2(void)
 {
 	struct net_buf *frag, *head;
 	struct nano_fifo fifo;
 	int i;
 
 	head = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
-	if (!head) {
-		printk("Failed to get fragment list head!\n");
-		return false;
-	}
-
-	DBG("Fragment list head %p\n", head);
+	assert_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
 	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
 		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
-		if (!frag->frags) {
-			printk("Failed to get fragment!\n");
-			return false;
-		}
-		DBG("%p -> %p\n", frag, frag->frags);
+		assert_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
-
-	DBG("%p -> %p\n", frag, frag->frags);
 
 	nano_fifo_init(&fifo);
 	net_buf_put(&fifo, head);
@@ -181,14 +144,8 @@ static bool net_buf_test_2(void)
 
 	destroy_called = 0;
 	net_buf_unref(head);
-
-	if (destroy_called != ARRAY_SIZE(bufs_pool)) {
-		printk("Incorrect fragment destroy callback count: %d\n",
-		       destroy_called);
-		return false;
-	}
-
-	return true;
+	assert_equal(destroy_called, ARRAY_SIZE(bufs_pool),
+		     "Incorrect fragment destroy callback count");
 }
 
 static void test_3_fiber(int arg1, int arg2)
@@ -200,27 +157,17 @@ static void test_3_fiber(int arg1, int arg2)
 	nano_sem_give(sema);
 
 	buf = net_buf_get_timeout(fifo, 0, TEST_TIMEOUT);
-	if (!buf) {
-		printk("test_3_fiber: Unable to get initial buffer\n");
-		return;
-	}
-
-	DBG("Got buffer %p from FIFO\n", buf);
+	assert_not_null(buf, "Unable to get buffer");
 
 	destroy_called = 0;
 	net_buf_unref(buf);
-
-	if (destroy_called != ARRAY_SIZE(bufs_pool)) {
-		printk("Incorrect fragment destroy callback count: %d "
-		       "should be %zu\n", destroy_called,
-		       ARRAY_SIZE(bufs_pool));
-		return;
-	}
+	assert_equal(destroy_called, ARRAY_SIZE(bufs_pool),
+		     "Incorrect destroy callback count");
 
 	nano_sem_give(sema);
 }
 
-static bool net_buf_test_3(void)
+static void net_buf_test_3(void)
 {
 	static char __stack test_3_fiber_stack[1024];
 	struct net_buf *frag, *head;
@@ -229,25 +176,14 @@ static bool net_buf_test_3(void)
 	int i;
 
 	head = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
-	if (!head) {
-		printk("Failed to get fragment list head!\n");
-		return false;
-	}
-
-	DBG("Fragment list head %p\n", head);
+	assert_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
 	for (i = 0; i < ARRAY_SIZE(bufs_pool) - 1; i++) {
 		frag->frags = net_buf_get_timeout(&bufs_fifo, 0, TICKS_NONE);
-		if (!frag->frags) {
-			printk("Failed to get fragment!\n");
-			return false;
-		}
-		DBG("%p -> %p\n", frag, frag->frags);
+		assert_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
-
-	DBG("%p -> %p\n", frag, frag->frags);
 
 	nano_fifo_init(&fifo);
 	nano_sem_init(&sema);
@@ -255,31 +191,20 @@ static bool net_buf_test_3(void)
 	fiber_start(test_3_fiber_stack, sizeof(test_3_fiber_stack),
 		    test_3_fiber, (int)&fifo, (int)&sema, 7, 0);
 
-	if (!nano_sem_take(&sema, TEST_TIMEOUT)) {
-		printk("Timeout 1 while waiting for semaphore\n");
-		return false;
-	}
-
-	DBG("calling net_buf_put\n");
+	assert_true(nano_sem_take(&sema, TEST_TIMEOUT),
+		    "Timeout while waiting for semaphore");
 
 	net_buf_put(&fifo, head);
 
-	if (!nano_sem_take(&sema, TEST_TIMEOUT)) {
-		printk("Timeout 2 while waiting for semaphore\n");
-		return false;
-	}
-
-	return true;
+	assert_true(nano_sem_take(&sema, TEST_TIMEOUT),
+		    "Timeout while waiting for semaphore");
 }
 
-static bool net_buf_test_4(void)
+static void net_buf_test_4(void)
 {
 	struct net_buf *frags[ARRAY_SIZE(frags_pool)];
 	struct net_buf *buf, *frag;
 	int i, removed;
-
-	DBG("sizeof(struct net_buf) = %u\n", sizeof(struct net_buf));
-	DBG("sizeof(frags_pool)     = %u\n", sizeof(frags_pool));
 
 	net_buf_pool_init(no_data_buf_pool);
 	net_buf_pool_init(frags_pool);
@@ -289,10 +214,7 @@ static bool net_buf_test_4(void)
 	 */
 	buf = net_buf_get(&no_data_buf_fifo, 0);
 
-	if (buf->size != 0) {
-		DBG("Invalid buf size %d\n", buf->size);
-		return false;
-	}
+	assert_equal(buf->size, 0, "Invalid buffer size");
 
 	/* Test the fragments by appending after last fragment */
 	for (i = 0; i < ARRAY_SIZE(frags_pool) - 1; i++) {
@@ -308,10 +230,7 @@ static bool net_buf_test_4(void)
 
 	frag = buf->frags;
 
-	if (frag->user_data_size != 0) {
-		DBG("Invalid user data size %d\n", frag->user_data_size);
-		return false;
-	}
+	assert_equal(frag->user_data_size, 0, "Invalid user data size");
 
 	i = 0;
 	while (frag) {
@@ -319,11 +238,7 @@ static bool net_buf_test_4(void)
 		i++;
 	}
 
-	if (i != ARRAY_SIZE(frags_pool)) {
-		DBG("Incorrect fragment count: %d vs %d\n",
-		    i, ARRAY_SIZE(frags_pool));
-		return false;
-	}
+	assert_equal(i, ARRAY_SIZE(frags_pool), "Incorrect fragment count");
 
 	/* Remove about half of the fragments and verify count */
 	i = removed = 0;
@@ -335,7 +250,7 @@ static bool net_buf_test_4(void)
 			net_buf_frag_del(frag, next);
 			net_buf_unref(next);
 			removed++;
-		} else {
+		} else  {
 			frag = next;
 		}
 		i++;
@@ -348,11 +263,8 @@ static bool net_buf_test_4(void)
 		i++;
 	}
 
-	if ((i + removed) != ARRAY_SIZE(frags_pool)) {
-		DBG("Incorrect removed fragment count: %d vs %d\n",
-		       i + removed, ARRAY_SIZE(frags_pool));
-		return false;
-	}
+	assert_equal(i + removed, ARRAY_SIZE(frags_pool),
+		     "Incorrect removed fragment count");
 
 	removed = 0;
 
@@ -364,17 +276,9 @@ static bool net_buf_test_4(void)
 		removed++;
 	}
 
-	if (removed != i) {
-		DBG("Not all fragments were removed: %d vs %d\n",
-		       i, removed);
-		return false;
-	}
-
-	if (frag_destroy_called != ARRAY_SIZE(frags_pool)) {
-		DBG("Incorrect frag destroy callback count: %d vs %d\n",
-		    frag_destroy_called, ARRAY_SIZE(frags_pool));
-		return false;
-	}
+	assert_equal(removed, i, "Incorrect removed fragment count");
+	assert_equal(frag_destroy_called, ARRAY_SIZE(frags_pool),
+		     "Incorrect frag destroy callback count");
 
 	/* Add the fragments back and verify that they are properly unref
 	 * by freeing the top buf.
@@ -398,35 +302,25 @@ static bool net_buf_test_4(void)
 		i++;
 	}
 
-	if (i != ARRAY_SIZE(frags_pool)) {
-		DBG("Incorrect fragment count: %d vs %d\n",
-		    i, ARRAY_SIZE(frags_pool));
-		return false;
-	}
+	assert_equal(i, ARRAY_SIZE(frags_pool),
+		     "Incorrect fragment count");
 
 	frag_destroy_called = 0;
 
 	net_buf_unref(buf);
 
-	if (frag_destroy_called != 0) {
-		DBG("Wrong frag destroy callback count\n");
-		return false;
-	}
+	assert_equal(frag_destroy_called, 0,
+		     "Incorrect frag destroy callback count");
 
 	for (i = 0; i < ARRAY_SIZE(frags_pool); i++) {
 		net_buf_unref(frags[i]);
 	}
 
-	if (frag_destroy_called != ARRAY_SIZE(frags_pool)) {
-		DBG("Incorrect frag destroy count: %d vs %d\n",
-		    frag_destroy_called, ARRAY_SIZE(frags_pool));
-		return false;
-	}
-
-	return true;
+	assert_equal(frag_destroy_called, ARRAY_SIZE(frags_pool),
+		     "Incorrect frag destroy callback count");
 }
 
-static bool net_buf_test_big_buf(void)
+static void net_buf_test_big_buf(void)
 {
 	struct net_buf *big_frags[ARRAY_SIZE(big_pool)];
 	struct net_buf *buf, *frag;
@@ -434,12 +328,10 @@ static bool net_buf_test_big_buf(void)
 	struct udp_hdr *udp;
 	int i, len;
 
-	DBG("sizeof(big_pool)       = %u\n", sizeof(big_pool));
 	net_buf_pool_init(big_pool);
 
 	frag_destroy_called = 0;
 
-	/* Example of one big fragment that can hold full IPv6 packet */
 	buf = net_buf_get(&no_data_buf_fifo, 0);
 
 	/* We reserve some space in front of the buffer for protocol
@@ -450,49 +342,32 @@ static bool net_buf_test_big_buf(void)
 	frag = net_buf_get(&big_frags_fifo, PROTO_HEADERS);
 	big_frags[0] = frag;
 
-	DBG("There is %d bytes available for user data.\n",
-	    net_buf_tailroom(frag));
-
 	/* First add some application data */
 	len = strlen(example_data);
 	for (i = 0; i < 2; i++) {
-		DBG("Adding data: %s\n", example_data);
-		if (net_buf_tailroom(frag) < len) {
-			printk("No enough space in the buffer\n");
-			return -1;
-		}
+		assert_true(net_buf_tailroom(frag) >= len,
+			    "Allocated buffer is too small");
 		memcpy(net_buf_add(frag, len), example_data, len);
 	}
-	DBG("Full data (len %d): %s\n", frag->len, frag->data);
 
 	ipv6 = (struct ipv6_hdr *)(frag->data - net_buf_headroom(frag));
 	udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
 
-	DBG("IPv6 hdr starts %p, UDP hdr starts %p, user data %p\n",
-	    ipv6, udp, frag->data);
-
 	net_buf_frag_add(buf, frag);
 	net_buf_unref(buf);
 
-	if (frag_destroy_called != 0) {
-		printk("Wrong big frag destroy callback count\n");
-		return false;
-	}
+	assert_equal(frag_destroy_called, 0,
+		     "Incorrect frag destroy callback count");
 
 	for (i = 0; i < ARRAY_SIZE(big_pool); i++) {
 		net_buf_unref(big_frags[i]);
 	}
 
-	if (frag_destroy_called != ARRAY_SIZE(big_pool)) {
-		printk("Incorrect big frag destroy count: %d vs %zu\n",
-		       frag_destroy_called, ARRAY_SIZE(big_pool));
-		return false;
-	}
-
-	return true;
+	assert_equal(frag_destroy_called, ARRAY_SIZE(big_pool),
+		     "Incorrect frag destroy callback count");
 }
 
-static bool net_buf_test_multi_frags(void)
+static void net_buf_test_multi_frags(void)
 {
 	struct net_buf *frags[ARRAY_SIZE(frags_pool)];
 	struct net_buf *buf;
@@ -527,82 +402,43 @@ static bool net_buf_test_multi_frags(void)
 	avail += net_buf_tailroom(frags[i]);
 	net_buf_frag_insert(buf, frags[i]);
 
-	DBG("There is %d bytes available for user data in %d buffers.\n",
-	    avail, i);
-
 	/* First add some application data */
 	len = strlen(example_data);
 	for (i = 0; i < ARRAY_SIZE(frags_pool) - 1; i++) {
-		DBG("Adding data: %s\n", example_data);
-		if (net_buf_tailroom(frags[i]) < len) {
-			printk("No enough space in the buffer\n");
-			return false;
-		}
+		assert_true(net_buf_tailroom(frags[i]) >= len,
+			    "Allocated buffer is too small");
 		memcpy(net_buf_add(frags[i], len), example_data, len);
 		occupied += frags[i]->len;
 	}
-	DBG("Full data len %d\n", occupied);
 
 	ipv6 = (struct ipv6_hdr *)(frags[i]->data - net_buf_headroom(frags[i]));
 	udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
 
-	DBG("Frag %p IPv6 hdr starts %p, UDP hdr starts %p\n",
-	    frags[i], ipv6, udp);
-	for (i = 0; i < ARRAY_SIZE(frags_pool); i++) {
-		DBG("[%d] frag %p user data (%d) at %p\n",
-		       i, frags[i], frags[i]->len, frags[i]->data);
-	}
-
 	net_buf_unref(buf);
 
-	if (frag_destroy_called != 0) {
-		printk("Wrong big frag destroy callback count\n");
-		return false;
-	}
+	assert_equal(frag_destroy_called, 0,
+		     "Incorrect big frag destroy callback count");
 
 	for (i = 0; i < ARRAY_SIZE(frags_pool); i++) {
 		net_buf_unref(frags[i]);
 	}
 
-	if (frag_destroy_called != ARRAY_SIZE(frags_pool)) {
-		printk("Incorrect big frag destroy count: %d vs %zu\n",
-		       frag_destroy_called, ARRAY_SIZE(frags_pool));
-		return false;
-	}
-
-	return true;
+	assert_equal(frag_destroy_called, ARRAY_SIZE(frags_pool),
+		     "Incorrect big frag destroy callback count");
 }
 
-static const struct {
-	const char *name;
-	bool (*func)(void);
-} tests[] = {
-	{ "Test 1", net_buf_test_1, },
-	{ "Test 2", net_buf_test_2, },
-	{ "Test 3", net_buf_test_3, },
-	{ "Test 4", net_buf_test_4, },
-	{ "Test 5 big buf", net_buf_test_big_buf, },
-	{ "Test 6 multi frag", net_buf_test_multi_frags, },
-};
-
-void main(void)
+void test_main(void)
 {
-	int count, pass;
-
-	printk("sizeof(struct net_buf) = %zu\n", sizeof(struct net_buf));
-	printk("sizeof(bufs_pool)      = %zu\n", sizeof(bufs_pool));
-
 	net_buf_pool_init(bufs_pool);
 
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		printk("Running %s... ", tests[count].name);
-		if (!tests[count].func()) {
-			printk("failed!\n");
-		} else {
-			printk("passed!\n");
-			pass++;
-		}
-	}
+	ztest_test_suite(net_buf_test,
+			 ztest_unit_test(net_buf_test_1),
+			 ztest_unit_test(net_buf_test_2),
+			 ztest_unit_test(net_buf_test_3),
+			 ztest_unit_test(net_buf_test_4),
+			 ztest_unit_test(net_buf_test_big_buf),
+			 ztest_unit_test(net_buf_test_multi_frags)
+			 );
 
-	printk("%d / %d tests passed\n", pass, count);
+	ztest_run_test_suite(net_buf_test);
 }
