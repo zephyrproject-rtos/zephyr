@@ -120,9 +120,12 @@ static inline void slip_writeb(unsigned char c)
 
 static int slip_send(struct net_if *iface, struct net_buf *buf)
 {
+#if defined(CONFIG_SLIP_TAP)
 	struct slip_context *slip = iface->dev->driver_data;
-	uint16_t i, reserve = slip->ll_reserve;
+	uint16_t reserve = slip->ll_reserve;
 	bool send_header_once = false;
+#endif
+	uint16_t i;
 	uint8_t *ptr;
 	uint8_t c;
 
