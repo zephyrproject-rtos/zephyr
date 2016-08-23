@@ -21,8 +21,13 @@
 #include <device.h>
 #include <dma.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_DMA_LEVEL
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define DBG	printf
+#else
+#include <misc/printk.h>
+#define DBG	printk
+#endif
 
 #include <string.h>
 
@@ -61,7 +66,7 @@ static void test_transfer(struct device *dev, void *data)
 
 static void test_error(struct device *dev, void *data)
 {
-	SYS_LOG_ERR("DMA could not proceed, an error occurred");
+	DBG("DMA could not proceed, an error occurred\n");
 }
 
 void main(void)
@@ -73,13 +78,12 @@ void main(void)
 	struct dma_channel_config dma_chan_cfg = {0};
 	struct dma_transfer_config dma_trans = {0};
 
-	SYS_LOG_DBG("DMA memory to memory transfer started on %s",
-		    DMA_DEVICE_NAME);
-	SYS_LOG_DBG("Preparing DMA Controller");
+	DBG("DMA memory to memory transfer started on %s\n", DMA_DEVICE_NAME);
+	DBG("Preparing DMA Controller\n");
 
 	dma = device_get_binding(DMA_DEVICE_NAME);
 	if (!dma) {
-		SYS_LOG_ERR("Cannot get dma controller");
+		DBG("Cannot get dma controller\n");
 		return;
 	}
 
@@ -95,22 +99,22 @@ void main(void)
 	dma_chan_cfg.callback_data = (void *)&chan_id;
 
 	if (dma_channel_config(dma, chan_id, &dma_chan_cfg)) {
-		SYS_LOG_ERR("configuration");
+		DBG("Error: configuration\n");
 		return;
 	}
 
-	SYS_LOG_DBG("Starting the transfer and waiting for 1 second");
+	DBG("Starting the transfer and waiting for 1 second\n");
 	dma_trans.block_size = strlen(tx_data);
 	dma_trans.source_address = (uint32_t *)tx_data;
 	dma_trans.destination_address = (uint32_t *)rx_data[transfer_count];
 
 	if (dma_transfer_config(dma, chan_id, &dma_trans)) {
-		SYS_LOG_ERR("transfer");
+		DBG("ERROR: transfer\n");
 		return;
 	}
 
 	if (dma_transfer_start(dma, chan_id)) {
-		SYS_LOG_ERR("transfer");
+		DBG("ERROR: transfer\n");
 		return;
 	}
 
@@ -120,18 +124,18 @@ void main(void)
 
 	if (transfer_count < TRANSFER_LOOPS) {
 		transfer_count = TRANSFER_LOOPS;
-		SYS_LOG_ERR("unfinished transfer");
+		DBG("ERROR: unfinished transfer\n");
 		if (dma_transfer_stop(dma, chan_id)) {
-			SYS_LOG_ERR("transfer stop");
+			DBG("ERROR: transfer stop\n");
 		}
 	}
 
-	SYS_LOG_DBG("Each RX buffer should contain the full TX buffer string.");
-	SYS_LOG_DBG("TX data: %s", tx_data);
+	DBG("Each RX buffer should contain the full TX buffer string.\n");
+	DBG("TX data: %s\n", tx_data);
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
-		SYS_LOG_DBG("RX data Loop %d: %s", i, rx_data[i]);
+		DBG("RX data Loop %d: %s\n", i, rx_data[i]);
 	}
 
-	SYS_LOG_INF("Finished: DMA");
+	DBG("Finished: DMA\n");
 }
