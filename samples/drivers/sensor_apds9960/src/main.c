@@ -41,8 +41,13 @@
 
 #include <zephyr.h>
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #include <device.h>
 #include <gpio.h>
@@ -120,7 +125,7 @@ void apds9960_reg_write(struct device *i2c_dev,
 
 	ret = i2c_transfer(i2c_dev, &msg, 1, APDS9960_ADDR);
 	if (ret) {
-		SYS_LOG_ERR("Cannot write APDS9960 reg 0x%X to 0x%X",
+		PRINT("Cannot write APDS9960 reg 0x%X to 0x%X\n",
 		      reg_addr, reg_val);
 
 		while (ret) {
@@ -149,7 +154,7 @@ void apds9960_reg_read(struct device *i2c_dev, uint8_t reg_addr,
 
 	ret = i2c_transfer(i2c_dev, msgs, 2, APDS9960_ADDR);
 	if (ret) {
-		SYS_LOG_ERR("Cannot read from APDS9960 reg 0x%X", reg_addr);
+		PRINT("Cannot read from APDS9960 reg 0x%X\n", reg_addr);
 
 		while (ret) {
 			/* spin if error */
@@ -200,7 +205,7 @@ void main(void)
 
 	gpio_dev = device_get_binding(GPIO_DRV_NAME);
 	if (!gpio_dev) {
-		SYS_LOG_ERR("Cannot find %s!", GPIO_DRV_NAME);
+		PRINT("Cannot find %s!\n", GPIO_DRV_NAME);
 
 		while (!gpio_dev) {
 			/* spin if error */
@@ -209,7 +214,7 @@ void main(void)
 
 	i2c_dev = device_get_binding(I2C_DRV_NAME);
 	if (!i2c_dev) {
-		SYS_LOG_ERR("Cannot find %s!", I2C_DRV_NAME);
+		PRINT("Cannot find %s!\n", I2C_DRV_NAME);
 
 		while (!i2c_dev) {
 			/* spin if error */
@@ -221,14 +226,12 @@ void main(void)
 	 */
 	ret = gpio_pin_configure(gpio_dev, GPIO_DATA_PIN, (GPIO_DIR_OUT));
 	if (ret) {
-		SYS_LOG_ERR("Error configuring " GPIO_NAME "%d!",
-			    GPIO_DATA_PIN);
+		PRINT("Error configuring " GPIO_NAME "%d!\n", GPIO_DATA_PIN);
 	}
 
 	ret = gpio_pin_configure(gpio_dev, GPIO_CLK_PIN, (GPIO_DIR_OUT));
 	if (ret) {
-		SYS_LOG_ERR("Error configuring " GPIO_NAME "%d!",
-			    GPIO_CLK_PIN);
+		PRINT("Error configuring " GPIO_NAME "%d!\n", GPIO_CLK_PIN);
 	}
 
 	/*
@@ -253,7 +256,7 @@ void main(void)
 			}
 
 			apds9960_setup(i2c_dev, als_gain);
-			SYS_LOG_INF("GAIN ==> %d", als_gain);
+			PRINT("GAIN ==> %d\n", als_gain);
 		} else if ((rgbc.ch.cdatah > 0xEF) && (als_gain != 0)) {
 			/* Less gain if too bright */
 			als_gain--;
@@ -262,7 +265,7 @@ void main(void)
 			}
 
 			apds9960_setup(i2c_dev, als_gain);
-			SYS_LOG_INF("GAIN ==> %d", als_gain);
+			PRINT("GAIN ==> %d\n", als_gain);
 		} else {
 			/* Only program the LED when gain settles.
 			 * Or else the LED would suddenly go all
