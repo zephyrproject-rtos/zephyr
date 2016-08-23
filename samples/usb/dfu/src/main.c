@@ -27,8 +27,13 @@
 #include <zephyr.h>
 #include "usb_dfu.h"
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #ifdef CONFIG_SOC_QUARK_SE
 #define DFU_FLASH_DEVICE "QUARK_FLASH"
@@ -44,11 +49,11 @@ void main(void)
 {
 	struct device *dev = NULL;
 
-	SYS_LOG_INF("DFU Test Application");
+	PRINT("DFU Test Application\n");
 
 	dev = device_get_binding(DFU_FLASH_DEVICE);
 	if (!dev) {
-		SYS_LOG_ERR("Flash device not found");
+		printf("Flash device not found\n");
 		return;
 	}
 
