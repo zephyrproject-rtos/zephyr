@@ -88,7 +88,8 @@ void net_context_put(struct net_context *context);
  *
  * @param buf Network buffer.
  *
- * @return 0 if ok, <0 if error.
+ * @return 0 if ok (do not unref the buf),
+ *        <0 if error (unref the buf).
  */
 int net_send(struct net_buf *buf);
 
