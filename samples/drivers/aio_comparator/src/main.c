@@ -34,8 +34,13 @@
  *    The line "*** A0, AIN[10] triggered falling." should appear.
  */
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #include <zephyr.h>
 #include <stdint.h>
@@ -66,8 +71,9 @@ void cb(void *param)
 
 	aio_cmp_dev = device_get_binding("AIO_CMP_0");
 
-	SYS_LOG_INF("*** %s triggered %s.", &p->name,
-		    (p->pol == AIO_CMP_POL_RISE) ? "rising" : "falling");
+	PRINT("*** %s triggered %s.\n", &p->name,
+	      (p->pol == AIO_CMP_POL_RISE) ? "rising" : "falling"
+	);
 
 	if (p->pol == AIO_CMP_POL_RISE)
 		p->pol = AIO_CMP_POL_FALL;
@@ -89,7 +95,7 @@ void main(void)
 
 	aio_cmp_dev = device_get_binding("AIO_CMP_0");
 
-	SYS_LOG_INF("===== app started ========");
+	PRINT("===== app started ========\n");
 
 	for (i = 0; i < 4; i++) {
 		/* REF_A is to use AREF for reference */
@@ -97,12 +103,12 @@ void main(void)
 					cb_data.pol, cb_data.ref,
 					cb, &cb_data);
 		if (ret)
-			SYS_LOG_ERR("ERROR registering callback for %s (%d)",
+			PRINT("ERROR registering callback for %s (%d)\n",
 			      &cb_data.name, ret);
 	}
 
 	while (1) {
-		SYS_LOG_INF("... waiting for event! (%d)", ++cnt);
+		PRINT("... waiting for event! (%d)\n", ++cnt);
 
 		/* wait a while */
 		nano_task_timer_start(&timer, SLEEPTIME);
