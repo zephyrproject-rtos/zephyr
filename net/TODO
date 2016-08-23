@@ -53,6 +53,32 @@ IPv6
    Add support for sending joining and leaving multicast group.
    See RFC 3810 and 4604 for details.
 
+- IP-to-IP tunneling support
+
+   Priority: Low
+   Complexity: C4
+
+   Add support for tunneling IPv6 traffic. This requires IPv6 L2
+   driver that can encapsulate and decapsulate IPv6 traffic.
+   See RFC 2473 for details.
+
+- DHCPv6 client support
+
+   Priority: Low
+   Complexity: C4
+
+   Add support for acting as a DHCPv6 in client role.
+   See RFC 3315 and 3646 for details.
+
+- RPL (Ripple) support
+
+   Priority: Med
+   Complexity: C4
+
+   Add support for RPL (Ripple): IPv6 routing protocol for low power
+   and lossy networks. See RFC 6550 for details. This entry is for
+   the new IP stack.
+
 
 IPv4
 ====
@@ -64,6 +90,13 @@ IPv4
 
    Add support for sending joining and leaving multicast group.
    See RFC 3376 and 4604 for details.
+
+- DHCPv4 client support
+
+   Priority: Low
+   Complexity: C2
+
+   Add support for acting as a DHCPv4 in client role.
 
 
 TCP
@@ -82,10 +115,11 @@ TCP
    it. Application can use the net_context API for connection
    establishment and shutdown, and for sending and receiving data.
 
+
 6LoWPAN
 =======
 
-- Contex based compression support
+- Context based compression support
 
   Priority: Medium
   Compexicity: C4
@@ -100,7 +134,7 @@ TCP
   Complexicity: C2
 
   Offset based reassembly of 802.15.4 packets. Fragments can come in
-  any order [e.g. mesh]).
+  any order [e.g. mesh].
 
 - Mesh Header compression and uncompression
 
@@ -109,7 +143,7 @@ TCP
 
   Add support for Mesh header compression and uncompression.
 
-- Unicast-Prefix based IPv6 Multicast(dst) address compression
+- Unicast-Prefix based IPv6 Multicast (dst) address compression
 
   Priority: Medium
   Complexicity: C2
@@ -133,7 +167,7 @@ TCP
   Complexicity: C2
 
   An IPv6 packet with a multicast destination address (DST),
-  consisting of the sixteen octets DST[1] through DST[16], is
+  consisting of sixteen octets DST[1] through DST[16], is
   transmitted to the following 802.15.4 16-bit multicast address
   (See RFC 4944, Chapter 9).
 
@@ -167,7 +201,6 @@ L2
   Add a generic API to let upper layers configuring network interfaces
   as well as tweaking its L2 layer and raising dedicated process.
   (I.e.: Running a scan in 802.15.4)
-
 
 
 IEEE 802.15.4
@@ -262,3 +295,122 @@ IEEE 802.15.4
 
   Add the means to parse or create LLDN frames.
   Is this needed however, since it requires true RT capabilities?
+
+
+IP-based services
+=================
+
+- Domain Name Service client
+
+   Priority: Low
+   Complexity: C4
+
+   Create DNS client functionality so that applications can use
+   Domain Name Service to query IP addresses.
+
+- Simple Network Time Protocol
+
+   Priority: Low
+   Complexity: C4
+
+   Create SNTP client functionality so that applications can use
+   SNTP to query current time.
+
+- Basic HTTP server support
+
+   Priority: Low
+   Complexity: C4
+
+   Create a simple HTTP server for demo / diagnostic purposes.
+
+- CoAP support
+
+   Priority: High
+   Complexity: C4
+
+   Create CoAP server and client support.
+
+- IPSO (IP Smart Object) support
+
+   Priority: Low
+   Complexity: C8
+
+   Create support for IPSO.
+
+- LWM2M support
+
+   Priority: Low
+   Complexity: C4
+
+   Create support for OMA LWM2M protocol.
+
+- MQTT support
+
+   Priority: High
+   Complexity: C4
+
+   Create support for MQTT. This requires working TCP support.
+
+- Simple Network Management Protocol support
+
+   Priority: Low
+   Complexity: C8
+
+   Create support for SNMP for managing the node.
+   See RFC 1902 and 2863 for details.
+
+
+Documentation
+=============
+
+- Architecture documentation
+
+   Priority: Medium
+   Complexity: C2
+
+   Create documentation of the new networking stack to doc/
+
+- Developer API usage documentation
+
+   Priority: Medium
+   Complexity: C2
+
+   Create documentation for the developer how to create networking
+   applications using the new IP stack.
+
+- Network device driver documentation
+
+   Priority: Medium
+   Complexity: C2
+
+   Create documentation for the developer how to create networking
+   device drivers using the new IP stack.
+
+
+Testing
+=======
+
+Here are some generic guidelines for network testing.
+
+- Unit tests
+
+   Priority: High
+   Complexity: <unknown>
+
+   Each new networking feature should have proper unit
+   test created. These tests should be located under the
+   tests/net directory. The tests should be integrated
+   to the Continuous Integration (CI) infrastructure so
+   that they are run automatically.
+
+- End-to-end networking tests
+
+   Priority: High
+   Complexity: C8
+
+   Create / port testing infrastructure for conformance
+   testing. For example TAHI framework for IPv6 could be
+   used to test IPv6 functionality, see www.ipv6ready.org
+   for details.
+   This entry should be split more to include various
+   network testing frameworks.
