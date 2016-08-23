@@ -27,6 +27,10 @@
 typedef int  ptrdiff_t;
 #endif
 
+#if defined(__GNUC__)
+#define offsetof(type, member)  __builtin_offsetof(type, member)
+#else
 #define offsetof(type, member) ((size_t) (&((type *) NULL)->member))
+#endif
 
 #endif /* __INC_stddef_h__ */
