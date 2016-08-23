@@ -14,93 +14,93 @@
 # limitations under the License.
 #
 
-menuconfig  NET_L2_IEEE802154
+menuconfig NET_L2_IEEE802154
 	bool "Enable IEEE 802.15.4 Radio"
 	default n
 	help
-	  Add support for low rate WPAN IEEE 802.15.4 technology.
+	Add support for low rate WPAN IEEE 802.15.4 technology.
 
 if NET_L2_IEEE802154
 
-config  NET_L2_IEEE802154_DEBUG
+config NET_L2_IEEE802154_DEBUG
 	bool "Enable IEEE 802.15.4 stack debug messages"
 	default n
 	depends on NET_LOG
 	help
-	  Enable it if you want to see what's happening. Only useful
-	  for developers.
+	Enable it if you want to see what's happening. Only useful
+	for developers.
 
-config  NET_L2_IEEE802154_ACK_REPLY
+config NET_L2_IEEE802154_ACK_REPLY
 	bool "Enable IEEE 802.15.4 ACK reply logic"
 	default y
 	help
-	  Enable inner stack's logic on handling ACK request. Note that
-	  if the hw driver has an AUTOACK feature, this is then unnecessary.
+	Enable inner stack's logic on handling ACK request. Note that
+	if the hw driver has an AUTOACK feature, this is then unnecessary.
 
-config  NET_L2_IEEE802154_RADIO_ALOHA
+config NET_L2_IEEE802154_RADIO_ALOHA
 	bool "Enable IEEE 802.15.4 Aloha radio protocol"
 	default y
 	help
-	  Use Aloha mechanism to transmit packets. This is a simplistic
-	  way of transmitting packets and fits contexts where radio spectrum
-	  is not too heavily loaded.
+	Use Aloha mechanism to transmit packets. This is a simplistic
+	way of transmitting packets and fits contexts where radio spectrum
+	is not too heavily loaded.
 
-config  NET_L2_IEEE802154_RADIO_ALOHA_TX_RETRIES
+config NET_L2_IEEE802154_RADIO_ALOHA_TX_RETRIES
 	int "Transmission attempts"
 	default 2
 	help
-	  Number of transmission attempts radio driver should do, before
-	  replying it could not send the packet.
+	Number of transmission attempts radio driver should do, before
+	replying it could not send the packet.
 
-config  NET_L2_IEEE802154_ORFD
+config NET_L2_IEEE802154_ORFD
 	bool "Support only an OVERLY Reduced Functionality Device"
 	default n
 	help
-	  This is a TEST ONLY support. Do not use that in production! This is
-	  not spec compliant. This is added for 2 reasons: to support legacy
-	  stack behavior and for testing. PAN ID is fixed as well as the channel.
-	  The device is not able to scan, associate to a PAN or anything else
-	  like that. You have been warned.
+	This is a TEST ONLY support. Do not use that in production! This is
+	not spec compliant. This is added for 2 reasons: to support legacy
+	stack behavior and for testing. PAN ID is fixed as well as the channel.
+	The device is not able to scan, associate to a PAN or anything else
+	like that. You have been warned.
 
-config  NET_L2_IEEE802154_ORFD_PAN_ID
+config NET_L2_IEEE802154_ORFD_PAN_ID
 	hex "IEEE 802.15.4 fixed PAN ID"
 	depends on NET_L2_IEEE802154_ORFD
 	default 0xabcd
 	help
-	  The fixed PAN ID to use for the ORFD.
+	The fixed PAN ID to use for the ORFD.
 
-config  NET_L2_IEEE802154_ORFD_CHANNEL
+config NET_L2_IEEE802154_ORFD_CHANNEL
 	int "IEEE 802.15.4 fixed channel"
 	depends on NET_L2_IEEE802154_ORFD
 	default 26
 	help
-	  The fixed channel to use for the ORFD.
+	The fixed channel to use for the ORFD.
 
-config  NET_L2_IEEE802154_FRAGMENT
+config NET_L2_IEEE802154_FRAGMENT
 	bool "Enable 802.15.4 fragmentation support"
 	default y
 	depends on NET_6LO
 	help
-	  If IPv6 packets size more than 802.15.4 MTU, packet is fragmented
-	  and reassemble incoming packets according to RFC4944/6282.
+	If IPv6 packets size more than 802.15.4 MTU, packet is fragmented
+	and reassemble incoming packets according to RFC4944/6282.
 
-config  NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
+config NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
 	int "IEEE 802.15.4 Reassembly cache size"
 	depends on NET_L2_IEEE802154_FRAGMENT
 	default 1
 	help
-	  Simultaneoulsy reassemble 802.15.4 fragments depending on
-	  cache size.
+	Simultaneoulsy reassemble 802.15.4 fragments depending on
+	cache size.
 
-config  NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
+config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 	int "IEEE 802.15.4 Reassembly timeout in seconds"
 	depends on NET_L2_IEEE802154_FRAGMENT
 	default 5
 	range 1 60
 	help
-	  Reassembly timer will start as soon as first packet received
-	  from peer. Reassembly should be finished within a given time.
-	  Otherwise all accumulated fragments are dropped.
+	Reassembly timer will start as soon as first packet received
+	from peer. Reassembly should be finished within a given time.
+	Otherwise all accumulated fragments are dropped.
 
 config  NET_L2_IEEE802154_FRAGMENT_DEBUG
 	bool "Enable debug support for IEEE 802.15.4 fragmentation"
