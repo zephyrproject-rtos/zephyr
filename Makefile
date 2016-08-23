@@ -739,14 +739,13 @@ export KBUILD_IMAGE ?= zephyr
 
 zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(core-y) $(drivers-y) \
 		     $(libs-y)))
+zephyr-app-dir-root := $(abspath $(patsubst %, %/.., $(SOURCE_DIR)))
 
-zephyr-app-dirs	:= $(SOURCE_DIR)
-
-zephyr-alldirs	:= $(sort $(zephyr-dirs) $(zephyr-app-dirs) $(patsubst %/,%,$(filter %/, \
+zephyr-alldirs	:= $(sort $(zephyr-dirs) $(SOURCE_DIR) $(patsubst %/,%,$(filter %/, \
 		     $(core-) $(drivers-) $(libs-) $(app-))))
 
 core-y		:= $(patsubst %/, %/built-in.o, $(core-y))
-app-y		:= $(patsubst %, %/built-in.o, $(notdir $(zephyr-app-dirs)))
+app-y		:= $(patsubst %, %/built-in.o, $(notdir $(SOURCE_DIR)))
 drivers-y	:= $(patsubst %/, %/built-in.o, $(drivers-y))
 libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
@@ -883,7 +882,7 @@ zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
-$(sort $(zephyr-deps)): $(zephyr-dirs) $(zephyr-app-dirs) ;
+$(sort $(zephyr-deps)): $(zephyr-dirs) zephyr-app-dir ;
 
 # Handle descending into subdirectories listed in $(zephyr-dirs)
 # Preset locale variables to speed up the build process. Limit locale
@@ -895,10 +894,9 @@ PHONY += $(zephyr-dirs)
 $(zephyr-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@
 
-PHONY += $(zephyr-app-dirs)
-$(zephyr-app-dirs): zephyr-app-dir-root = $(abspath $(patsubst %, %/.., $@))
-$(zephyr-app-dirs): prepare scripts
-	$(Q)$(MAKE) $(build)=$(@F) srctree=$(zephyr-app-dir-root)
+PHONY += zephyr-app-dir
+zephyr-app-dir: prepare scripts
+	$(Q)$(MAKE) $(build)=$(notdir $(SOURCE_DIR)) srctree=$(zephyr-app-dir-root)
 
 # Things we need to do before we recursively start building the kernel
 # or the modules are listed in "prepare".
@@ -1019,9 +1017,9 @@ clean: rm-dirs  := $(CLEAN_DIRS)
 clean: rm-files := $(CLEAN_FILES)
 clean-dirs      := $(addprefix _clean_, . $(zephyr-alldirs) )
 
-PHONY += $(clean-dirs) clean archclean zephyrclean
-$(clean-dirs):
-	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
+PHONY += clean-dirs-target clean archclean zephyrclean
+clean-dirs-target:
+	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$(clean-dirs))
 
 clean: archclean
 
@@ -1134,7 +1132,7 @@ $(help-board-dirs): help-%:
 %docs: FORCE
 	$(Q)$(MAKE) -C doc htmldocs
 
-clean: $(clean-dirs)
+clean: clean-dirs-target
 	$(call cmd,rmdirs)
 	$(call cmd,rmfiles)
 	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
