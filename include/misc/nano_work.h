@@ -52,6 +52,8 @@ struct nano_workqueue {
  */
 enum {
 	NANO_WORK_STATE_IDLE,		/* Work item idle state */
+
+	NANO_WORK_NUM_FLAGS,		/* Number of flags - must be last */
 };
 
 /**
@@ -60,7 +62,7 @@ enum {
 struct nano_work {
 	void *_reserved;		/* Used by nano_fifo implementation. */
 	work_handler_t handler;
-	atomic_t flags[1];
+	ATOMIC_DEFINE(flags, NANO_WORK_NUM_FLAGS);
 };
 
 /**
