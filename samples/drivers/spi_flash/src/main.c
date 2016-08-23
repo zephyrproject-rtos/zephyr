@@ -17,8 +17,13 @@
 #include <zephyr.h>
 #include <flash.h>
 #include <device.h>
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #define FLASH_TEST_REGION_OFFSET 0xff000
 #define FLASH_SECTOR_SIZE        4096
@@ -31,13 +36,13 @@ void main(void)
 	struct device *flash_dev;
 	uint8_t buf[TEST_DATA_LEN];
 
-	SYS_LOG_INF("\nW25QXXDV SPI flash testing");
-	SYS_LOG_INF("==========================");
+	PRINT("\nW25QXXDV SPI flash testing\n");
+	PRINT("==========================\n");
 
 	flash_dev = device_get_binding("W25QXXDV");
 
 	if (!flash_dev) {
-		SYS_LOG_ERR("SPI flash driver was not found!");
+		PRINT("SPI flash driver was not found!\n");
 		return;
 	}
 
@@ -46,39 +51,38 @@ void main(void)
 	 * on write protection automatically after completion of write and
 	 * erase operations.
 	 */
-	SYS_LOG_INF("\nTest 1: Flash erase");
+	PRINT("\nTest 1: Flash erase\n");
 	flash_write_protection_set(flash_dev, false);
 	if (flash_erase(flash_dev,
 			FLASH_TEST_REGION_OFFSET,
 			FLASH_SECTOR_SIZE) != 0) {
-		SYS_LOG_INF("   Flash erase failed!");
+		PRINT("   Flash erase failed!\n");
 	} else {
-		SYS_LOG_INF("   Flash erase succeeded!");
+		PRINT("   Flash erase succeeded!\n");
 	}
 
-	SYS_LOG_INF("\nTest 2: Flash write");
+	PRINT("\nTest 2: Flash write\n");
 	flash_write_protection_set(flash_dev, false);
 
 	buf[0] = TEST_DATA_BYTE_0;
 	buf[1] = TEST_DATA_BYTE_1;
-	SYS_LOG_INF("   Attempted to write %x %x", buf[0], buf[1]);
+	PRINT("   Attempted to write %x %x\n", buf[0], buf[1]);
 	if (flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
 	    TEST_DATA_LEN) != 0) {
-		SYS_LOG_INF("   Flash write failed!");
+		PRINT("   Flash write failed!\n");
 		return;
 	}
 
 	if (flash_read(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
 	    TEST_DATA_LEN) != 0) {
-		SYS_LOG_INF("   Flash read failed!");
+		PRINT("   Flash read failed!\n");
 		return;
 	}
-	SYS_LOG_INF("   Data read %x %x", buf[0], buf[1]);
+	PRINT("   Data read %x %x\n", buf[0], buf[1]);
 
 	if ((buf[0] == TEST_DATA_BYTE_0) && (buf[1] == TEST_DATA_BYTE_1)) {
-		SYS_LOG_INF("   Data read matches with data written. Good!!");
+		PRINT("   Data read matches with data written. Good!!\n");
 	} else {
-		SYS_LOG_INF("   Data read does not match with data "
-			    "written!!");
+		PRINT("   Data read does not match with data written!!\n");
 	}
 }
