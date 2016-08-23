@@ -100,5 +100,6 @@ This configuration prints the following message to the console:
 
 Additional notes:
 
-Various host utilities (such as the Unix "size" utility) can be used to
-determine the footprint of the resulting outdir/microkernel.elf image.
+Various host utilities (such as the Unix "size" utility) can be used
+to determine the footprint of the resulting
+outdir/$BOARD/microkernel.elf image.

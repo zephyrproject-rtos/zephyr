@@ -14,7 +14,26 @@ DQUOTE = "
 PROJECT_BASE ?= $(CURDIR)
 endif
 
-O ?= $(PROJECT_BASE)/outdir
+ifdef BOARD
+KBUILD_DEFCONFIG_PATH=$(wildcard $(ZEPHYR_BASE)/boards/*/$(BOARD)_defconfig)
+ifeq ($(KBUILD_DEFCONFIG_PATH),)
+$(error Board $(BOARD) not found!)
+endif
+else
+$(error BOARD is not defined!)
+endif
+
+# Choose a default output directory if one wasn't supplied.  Note that
+# PRISTINE_O depends on whether this is default or not.  If building
+# in-tree, we want to remove the whole outdir and not just the BOARD
+# specified (thus "pristine").  Out of tree, we can obviously remove
+# only what we were told to build.
+ifndef O
+PRISTINE_O = outdir
+O = $(PROJECT_BASE)/outdir/$(BOARD)
+else
+PRISTINE_O = $(O)
+endif
 
 # Turn O into an absolute path; we call the main Kbuild with $(MAKE) -C
 # which changes the working directory, relative paths don't work right.
@@ -29,15 +48,6 @@ export ARCH MDEF_FILE QEMU_EXTRA_FLAGS PROJECT_BASE
 
 KERNEL_TYPE ?= micro
 override CONF_FILE := $(strip $(subst $(DQUOTE),,$(CONF_FILE)))
-
-ifdef BOARD
-KBUILD_DEFCONFIG_PATH=$(wildcard $(ZEPHYR_BASE)/boards/*/$(BOARD)_defconfig)
-ifeq ($(KBUILD_DEFCONFIG_PATH),)
-$(error Board $(BOARD) not found!)
-endif
-else
-$(error BOARD is not defined!)
-endif
 
 SOURCE_DIR ?= $(PROJECT_BASE)/src/
 override SOURCE_DIR := $(abspath $(SOURCE_DIR))
@@ -132,7 +142,7 @@ $(DOTCONFIG): $(BOARDCONFIG) $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE)
 	$(Q)$(MAKE) $(S) -C $(ZEPHYR_BASE) O=$(O) PROJECT=$(PROJECT_BASE) oldnoconfig
 
 pristine:
-	$(Q)rm -rf $(O)
+	$(Q)rm -rf $(PRISTINE_O)
 
 PHONY += FORCE initconfig
 FORCE:

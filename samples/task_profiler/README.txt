@@ -316,7 +316,7 @@ Connect OpenOCD JTAG to PC
 cd $OPENOCD_FOLDER
 openocd -f interface/ftdi/olimex-arm-usb-ocd-h.cfg -f board/quark_x10xx_board.cfg
 cd $APP_BASE
-gdb outdir/zephyr.elf
+gdb outdir/$BOARD/zephyr.elf
 (gdb) target remote localhost:3333
 (gdb) c
 -->
