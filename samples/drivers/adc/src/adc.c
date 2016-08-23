@@ -20,9 +20,15 @@
 
 #include <device.h>
 #include <misc/byteorder.h>
-#define SYS_LOG_NO_NEWLINE
-#include <misc/sys_log.h>
 #include <adc.h>
+
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define DBG	printf
+#else
+#include <misc/printk.h>
+#define DBG	printk
+#endif
 
 #define SLEEPTIME  2
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec)
@@ -57,11 +63,11 @@ static struct adc_seq_table table = {
 
 static void _print_sample_in_hex(uint8_t *buf, uint32_t length)
 {
-	SYS_LOG_DBG("Buffer content:\n");
+	DBG("Buffer content:\n");
 	for (; length > 0; length -= 4, buf += 4) {
-		SYS_LOG_DBG("0x%x ", *((uint32_t *)buf));
+		DBG("0x%x ", *((uint32_t *)buf));
 	}
-	SYS_LOG_DBG("\n");
+	DBG("\n");
 }
 
 void main(void)
@@ -70,11 +76,11 @@ void main(void)
 	struct nano_timer timer;
 	uint32_t data[2] = {0, 0};
 
-	SYS_LOG_DBG("ADC sample started on %s\n", ADC_DEVICE_NAME);
+	DBG("ADC sample started on %s\n", ADC_DEVICE_NAME);
 
 	adc = device_get_binding(ADC_DEVICE_NAME);
 	if (!adc) {
-		SYS_LOG_DBG("Cannot get adc controller\n");
+		DBG("Cannot get adc controller\n");
 		return;
 	}
 
@@ -82,9 +88,9 @@ void main(void)
 	adc_enable(adc);
 	while (1) {
 		if (adc_read(adc, &table) != 0) {
-			SYS_LOG_DBG("Sampling could not proceed, an error occurred\n");
+			DBG("Sampling could not proceed, an error occurred\n");
 		} else {
-			SYS_LOG_DBG("Sampling is done\n");
+			DBG("Sampling is done\n");
 			_print_sample_in_hex(seq_buffer, BUFFER_SIZE);
 		}
 		nano_timer_start(&timer, SLEEPTICKS);
