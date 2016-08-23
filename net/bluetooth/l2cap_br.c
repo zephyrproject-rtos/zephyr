@@ -62,6 +62,11 @@
 #define L2CAP_BR_CFG_TIMEOUT		SECONDS(4)
 #define L2CAP_BR_DISCONN_TIMEOUT	SECONDS(1)
 
+/* Size of MTU is based on the maximum amount of data the buffer can hold
+ * excluding ACL and driver headers.
+ */
+#define L2CAP_BR_MAX_MTU	CONFIG_BLUETOOTH_L2CAP_IN_MTU
+
 /*
  * L2CAP extended feature mask:
  * BR/EDR fixed channel support enabled
@@ -767,6 +772,9 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	dcid = BR_CHAN(chan)->rx.cid;
 	l2cap_br_state_set(chan, BT_L2CAP_CONNECT);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_ACCEPTOR);
+
+	/* Disable fragmentation of l2cap rx pdu */
+	BR_CHAN(chan)->rx.mtu = min(BR_CHAN(chan)->rx.mtu, L2CAP_BR_MAX_MTU);
 
 	switch (l2cap_br_conn_security(chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
