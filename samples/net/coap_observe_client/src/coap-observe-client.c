@@ -16,13 +16,18 @@
  * limitations under the License.
  */
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #if defined(CONFIG_TINYDTLS_DEBUG)
 #define DEBUG DEBUG_FULL
 #else
-#define DEBUG DEBUG_SYS_LOG_INF
+#define DEBUG DEBUG_PRINT
 #endif
 #include "contiki/ip/uip-debug.h"
 
@@ -96,7 +101,7 @@ static struct in_addr in4addr_my = MY_IPADDR;
 
 static inline void init_app(void)
 {
-	SYS_LOG_INF("%s: run coap observe client", __func__);
+	PRINT("%s: run coap observe client\n", __func__);
 
 #if defined(CONFIG_NET_TESTING)
 	net_testing_setup();
@@ -209,30 +214,29 @@ static void notification_callback(coap_observee_t *obs, void *notification,
 	int len = 0;
 	const uint8_t *payload = NULL;
 
-	SYS_LOG_INF("Notification handler");
-	SYS_LOG_INF("Observee URI: %s", obs->url);
+	PRINT("Notification handler\n");
+	PRINT("Observee URI: %s\n", obs->url);
 	if(notification) {
 		len = coap_get_payload(notification, &payload);
 	}
 	switch(flag) {
 	case NOTIFICATION_OK:
-		SYS_LOG_INF("NOTIFICATION OK: %*s", len, (char *)payload);
+		PRINT("NOTIFICATION OK: %*s\n", len, (char *)payload);
 		break;
 	case OBSERVE_OK: /* server accepeted observation request */
-		SYS_LOG_INF("OBSERVE_OK: %*s", len, (char *)payload);
+		PRINT("OBSERVE_OK: %*s\n", len, (char *)payload);
 		break;
 	case OBSERVE_NOT_SUPPORTED:
-		SYS_LOG_INF("OBSERVE_NOT_SUPPORTED: %*s", len,
-			    (char *)payload);
+		PRINT("OBSERVE_NOT_SUPPORTED: %*s\n", len, (char *)payload);
 		obs = NULL;
 		break;
 	case ERROR_RESPONSE_CODE:
-		SYS_LOG_INF("ERROR_RESPONSE_CODE: %*s", len, (char *)payload);
+		PRINT("ERROR_RESPONSE_CODE: %*s\n", len, (char *)payload);
 		obs = NULL;
 		break;
 	case NO_REPLY_FROM_SERVER:
-		SYS_LOG_INF("NO_REPLY_FROM_SERVER: "
-		      "removing observe registration with token %x%x",
+		PRINT("NO_REPLY_FROM_SERVER: "
+		      "removing observe registration with token %x%x\n",
 		      obs->token[0], obs->token[1]);
 		obs = NULL;
 		break;
@@ -245,11 +249,11 @@ static void notification_callback(coap_observee_t *obs, void *notification,
 void toggle_observation(coap_context_t *coap_ctx)
 {
 	if(obs) {
-		SYS_LOG_INF("Stopping observation");
+		PRINT("Stopping observation\n");
 		coap_obs_remove_observee(obs);
 		obs = NULL;
 	} else {
-		SYS_LOG_INF("Starting observation");
+		PRINT("Starting observation\n");
 		obs = coap_obs_request_registration(coap_ctx,
 					    (uip_ipaddr_t *)&in6addr_peer,
 						    PEER_PORT,
@@ -295,7 +299,7 @@ void startup(void)
 
 #if defined(CONFIG_NETWORKING_WITH_BT)
 	if (bt_enable(NULL)) {
-		SYS_LOG_INF("Bluetooth init failed");
+		PRINT("Bluetooth init failed\n");
 		return;
 	}
 	ipss_init();
@@ -304,7 +308,7 @@ void startup(void)
 
 	coap_ctx = coap_context_new((uip_ipaddr_t *)&in6addr_my, MY_PORT);
 	if (!coap_ctx) {
-		SYS_LOG_INF("Cannot get CoAP context.");
+		PRINT("Cannot get CoAP context.\n");
 		return;
 	}
 
@@ -316,7 +320,7 @@ void startup(void)
 	if (!coap_context_connect(coap_ctx,
 				  (uip_ipaddr_t *)&in6addr_peer,
 				  PEER_PORT)) {
-		SYS_LOG_INF("Cannot connect to peer.");
+		PRINT("Cannot connect to peer.\n");
 		return;
 	}
 
@@ -325,16 +329,16 @@ void startup(void)
 
 	while (1) {
 		while (!coap_context_is_connected(coap_ctx)) {
-			SYS_LOG_INF("Trying to connect to peer...");
+			PRINT("Trying to connect to peer...\n");
 			if (!coap_context_wait_data(coap_ctx, WAIT_TICKS)) {
 				continue;
 			}
 		}
 
 		if(first_round || etimer_expired(&et)) {
-			SYS_LOG_INF("--Toggle timer--");
+			PRINT("--Toggle timer--\n");
 			toggle_observation(coap_ctx);
-			SYS_LOG_INF("--Done--");
+			PRINT("--Done--\n");
 			etimer_restart(&et);
 			first_round = false;
 		}

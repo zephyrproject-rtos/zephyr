@@ -23,8 +23,13 @@
  * back to the originator.
  */
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #include <zephyr.h>
 #include <sections.h>
@@ -116,7 +121,7 @@ static struct net_context *unicast, *multicast;
 
 static inline void init_app(void)
 {
-	SYS_LOG_INF("%s: run mcast tester", __func__);
+	PRINT("%s: run mcast tester\n", __func__);
 
 	sys_rand32_init();
 
@@ -161,24 +166,22 @@ static inline int send_packet(const char *name,
 		/* We have a pending packet that needs to be sent
 		 * first.
 		 */
-		SYS_LOG_INF("%s: Trying to re-send %p len %d", __func__, buf,
+		PRINT("%s: Trying to re-send %p len %d\n", __func__, buf,
 			buf->len);
 		ret = net_send(buf);
 		if (ret == -EAGAIN || ret == -EINPROGRESS) {
-			SYS_LOG_INF("%s: packet %p needs to be re-sent (%d)",
+			PRINT("%s: packet %p needs to be re-sent (%d)\n",
 			      name, buf, ret);
 			return ret;
 		} else if (ret < 0) {
-			SYS_LOG_INF("%s: returned %d pending buffer "
-				    "discarded %p",
-				    name, ret, buf);
+			PRINT("%s: returned %d pending buffer discarded %p\n",
+			      name, ret, buf);
 			ip_buf_unref(buf);
 			buf = NULL;
 			return ret;
 		} else {
-			SYS_LOG_INF("%s: returned %d pending buffer "
-				    "cleared %p",
-				    name, ret, buf);
+			PRINT("%s: returned %d pending buffer cleared %p\n",
+			      name, ret, buf);
 			buf = NULL;
 			return 0;
 		}
@@ -194,26 +197,24 @@ static inline int send_packet(const char *name,
 
 		ip_buf_appdatalen(buf) = sending_len;
 
-		SYS_LOG_INF("%s: Trying to send %p buflen %d datalen %d",
+		PRINT("%s: Trying to send %p buflen %d datalen %d\n",
 		      __func__, buf, buf->len, ip_buf_appdatalen(buf));
 		ret = net_send(buf);
 		if (ret < 0) {
 			if (ret == -EINPROGRESS) {
-				SYS_LOG_INF("%s: no connection yet,"
-					    " try again",
-					    __func__);
+				PRINT("%s: no connection yet, try again\n",
+				      __func__);
 			} else if (ret == -EAGAIN || ret == -ECONNRESET) {
-				SYS_LOG_INF("%s: no connection, "
-					    "try again later",
-					    __func__);
+				PRINT("%s: no connection, try again later\n",
+				      __func__);
 			} else {
-				SYS_LOG_INF("%s: sending %d bytes failed",
+				PRINT("%s: sending %d bytes failed\n",
 				      __func__, sending_len);
 				ip_buf_unref(buf);
 				buf = NULL;
 			}
 		} else {
-			SYS_LOG_INF("%s: sent %d bytes", __func__,
+			PRINT("%s: sent %d bytes\n", __func__,
 			      sending_len);
 			buf = NULL;
 		}
@@ -241,8 +242,8 @@ again:
 		if (ip_buf_appdatalen(buf) < expected_len) {
 			if (memcmp(lorem_ipsum + pos, ip_buf_appdata(buf),
 				   ip_buf_appdatalen(buf))) {
-				SYS_LOG_INF("%s: received %d bytes (total %d), "
-				      "partial data mismatch",
+				PRINT("%s: received %d bytes (total %d), "
+				      "partial data mismatch\n",
 				      name, ip_buf_appdatalen(buf),
 				      expected_len);
 				fail = true;
@@ -264,26 +265,25 @@ again:
 
 			if (memcmp(lorem_ipsum + pos, ip_buf_appdata(buf),
 				   expected_len)) {
-				SYS_LOG_INF("%s: received data mismatch in "
-				      "last packet.", name);
+				PRINT("%s: received data mismatch in "
+				      "last packet.\n", name);
 				fail = true;
 				goto free_buf;
 			}
 
 			if (total_len != sum) {
-				SYS_LOG_INF("Received %d bytes, expected %d",
+				PRINT("Received %d bytes, expected %d\n",
 				      sum, total_len);
 			} else {
-				SYS_LOG_INF("Received %d bytes"
-					    " (in %d messages)",
-					    total_len, count + 1);
+				PRINT("Received %d bytes (in %d messages)\n",
+				      total_len, count + 1);
 			}
 		}
 #else
 	buf = net_receive(ctx, WAIT_TICKS);
 	if (buf) {
 		if (ip_buf_appdatalen(buf) != expected_len) {
-			SYS_LOG_INF("%s: received %d bytes, expected %d",
+			PRINT("%s: received %d bytes, expected %d\n",
 			      name, ip_buf_appdatalen(buf), expected_len);
 			fail = true;
 			goto free_buf;
@@ -300,19 +300,19 @@ again:
 		 */
 		if (memcmp(lorem_ipsum + pos, ip_buf_appdata(buf),
 			   expected_len)) {
-			SYS_LOG_INF("%s: received data mismatch.", name);
+			PRINT("%s: received data mismatch.\n", name);
 			fail = true;
 			goto free_buf;
 		}
 
-		SYS_LOG_INF("%s: received %d bytes", __func__,
+		PRINT("%s: received %d bytes\n", __func__,
 		      expected_len);
 #endif
 
 	free_buf:
 		ip_buf_unref(buf);
 	} else {
-		SYS_LOG_INF("%s: expected data, got none", name);
+		PRINT("%s: expected data, got none\n", name);
 		fail = true;
 	}
 
@@ -370,7 +370,7 @@ static inline bool get_context(struct net_context **unicast,
 				   &peer_addr, PEER_PORT,
 				   &my_addr, MY_PORT);
 	if (!*unicast) {
-		SYS_LOG_INF("%s: Cannot get sending network context",
+		PRINT("%s: Cannot get sending network context\n",
 		      __func__);
 		return false;
 	}
@@ -380,7 +380,7 @@ static inline bool get_context(struct net_context **unicast,
 				     &mcast_addr, PEER_PORT,
 				     &my_addr, MY_PORT);
 	if (!*multicast) {
-		SYS_LOG_INF("%s: Cannot get mcast sending network context",
+		PRINT("%s: Cannot get mcast sending network context\n",
 		      __func__);
 		return false;
 	}
@@ -405,7 +405,7 @@ static bool sending(int resend)
 	static const char *type = "Unicast";
 #endif
 
-	SYS_LOG_INF("%s: Sending packet", __func__);
+	PRINT("%s: Sending packet\n", __func__);
 
 	if (resend) {
 		expecting = resend;
@@ -419,23 +419,23 @@ static bool sending(int resend)
 				  expecting);
 		if (ret == -EAGAIN || ret == -EINPROGRESS) {
 			fiber_sleep(10);
-			SYS_LOG_INF("retrying...");
+			PRINT("retrying...\n");
 			goto again;
 		} else if (ret == -ETIMEDOUT) {
-			SYS_LOG_INF("Connection timed out");
+			PRINT("Connection timed out\n");
 			return false;
 		} else if (ret < 0) {
-			SYS_LOG_INF("%s sending %d bytes FAIL", type,
+			PRINT("%s sending %d bytes FAIL\n", type,
 			      ipsum_len - expecting);
 		} else {
-			SYS_LOG_INF("%s sent %d bytes", type,
+			PRINT("%s sent %d bytes\n", type,
 			      ipsum_len - expecting);
 		}
 #if !defined(CONFIG_NETWORKING_WITH_TCP)
 	} else {
 		if (send_packet(__func__, multicast, ipsum_len,
 				expecting)) {
-			SYS_LOG_INF("Multicast sending %d bytes FAIL",
+			PRINT("Multicast sending %d bytes FAIL\n",
 			      ipsum_len - expecting);
 		}
 #endif
@@ -449,16 +449,16 @@ void receiving(void)
 	int expecting_len = 0;
 
 	while (sending(expecting_len)) {
-		SYS_LOG_INF("Waiting packet");
+		PRINT("Waiting packet\n");
 
 		if (wait_reply(__func__, unicast,
 			       ipsum_len, expecting)) {
 			if (expecting_len > 0) {
-				SYS_LOG_INF("Resend %d bytes -> FAIL",
+				PRINT("Resend %d bytes -> FAIL\n",
 				      ipsum_len - expecting);
 				expecting_len = 0;
 			} else {
-				SYS_LOG_INF("Waiting %d bytes -> resending",
+				PRINT("Waiting %d bytes -> resending\n",
 				      ipsum_len - expecting);
 				expecting_len = expecting;
 			}
@@ -477,7 +477,7 @@ void main(void)
 
 #if defined(CONFIG_NETWORKING_WITH_BT)
 	if (bt_enable(NULL)) {
-		SYS_LOG_INF("Bluetooth init failed");
+		PRINT("Bluetooth init failed\n");
 		return;
 	}
 	ipss_init();
@@ -485,7 +485,7 @@ void main(void)
 #endif
 
 	if (!get_context(&unicast, &multicast)) {
-		SYS_LOG_INF("%s: Cannot get network context", __func__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 

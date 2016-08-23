@@ -16,8 +16,13 @@
  * limitations under the License.
  */
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #include <zephyr.h>
 
@@ -58,7 +63,7 @@ static const unsigned char ecdsa_pub_key_y[] = {
 
 static inline void init_app(void)
 {
-	SYS_LOG_INF("%s: run dtls server", __func__);
+	PRINT("%s: run dtls server\n", __func__);
 
 #if defined(CONFIG_NET_TESTING)
 	net_testing_setup();
@@ -100,7 +105,7 @@ static inline void receive_message(const char *name,
 				&NET_BUF_IP(buf)->srcipaddr);
 		session.addr.port = NET_BUF_UDP(buf)->srcport;
 
-		SYS_LOG_INF("Received data %p datalen %d",
+		PRINT("Received data %p datalen %d\n",
 		      ip_buf_appdata(buf), ip_buf_appdatalen(buf));
 
 		dtls_handle_message(dtls, &session, ip_buf_appdata(buf),
@@ -148,7 +153,7 @@ static inline struct net_context *get_context(void)
 			      &any_addr, 0,
 			      &my_addr, MY_PORT);
 	if (!ctx) {
-		SYS_LOG_INF("%s: Cannot get network context", __func__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return NULL;
 	}
 
@@ -159,7 +164,7 @@ static int read_from_peer(struct dtls_context_t *ctx,
 			  session_t *session,
 			  uint8 *data, size_t len)
 {
-	SYS_LOG_INF("%s: read from peer %p len %d", __func__, data, len);
+	PRINT("%s: read from peer %p len %d\n", __func__, data, len);
 
 	/* In this test we reverse the received bytes.
 	 * We could also just pass the data back as is.
@@ -189,12 +194,11 @@ static int send_to_peer(struct dtls_context_t *ctx,
 	max_data_len = IP_BUF_MAX_DATA - sizeof(struct uip_udp_hdr) -
 					sizeof(struct uip_ip_hdr);
 
-	SYS_LOG_INF("%s: reply to peer data %p len %d", __func__, data, len);
+	PRINT("%s: reply to peer data %p len %d\n", __func__, data, len);
 
 	if (len > max_data_len) {
-		SYS_LOG_INF("%s: too much (%d bytes) data to "
-			    "send (max %d bytes)",
-			    __func__, len, max_data_len);
+		PRINT("%s: too much (%d bytes) data to send (max %d bytes)\n",
+		      __func__, len, max_data_len);
 		ip_buf_unref(buf);
 		len = -EINVAL;
 		goto out;
@@ -317,7 +321,7 @@ static int handle_event(struct dtls_context_t *ctx, session_t *session,
 	} else if (level == 0) {
 		/* internal event */
 		if (code == DTLS_EVENT_CONNECTED) {
-			SYS_LOG_INF("*** Connected ***");
+			PRINT("*** Connected ***\n");
 		}
 	}
 
@@ -339,7 +343,7 @@ static void init_dtls(struct net_context *recv, dtls_context_t **dtls)
 #endif /* DTLS_ECC */
 	};
 
-	SYS_LOG_INF("DTLS server started");
+	PRINT("DTLS server started\n");
 
 #if defined(CONFIG_TINYDTLS_DEBUG)
 	dtls_set_log_level(DTLS_LOG_DEBUG);
@@ -364,7 +368,7 @@ void startup(void)
 
 #if defined(CONFIG_NETWORKING_WITH_BT)
 	if (bt_enable(NULL)) {
-		SYS_LOG_INF("Bluetooth init failed");
+		PRINT("Bluetooth init failed\n");
 		return;
 	}
 	ipss_init();
@@ -373,13 +377,13 @@ void startup(void)
 
 	recv = get_context();
 	if (!recv) {
-		SYS_LOG_INF("%s: Cannot get network context", __func__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
 	init_dtls(recv, &dtls);
 	if (!dtls) {
-		SYS_LOG_INF("%s: Cannot get DTLS context", __func__);
+		PRINT("%s: Cannot get DTLS context\n", __func__);
 		return;
 	}
 

@@ -16,13 +16,18 @@
  * limitations under the License.
  */
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #if defined(CONFIG_TINYDTLS_DEBUG)
 #define DEBUG DEBUG_FULL
 #else
-#define DEBUG DEBUG_SYS_LOG_INF
+#define DEBUG DEBUG_PRINT
 #endif
 #include "contiki/ip/uip-debug.h"
 
@@ -71,7 +76,7 @@ char fiberStack[STACKSIZE];
 
 static inline void init_app(void)
 {
-	SYS_LOG_INF("%s: run coap server", __func__);
+	PRINT("%s: run coap server\n", __func__);
 
 #if defined(CONFIG_NET_TESTING)
 	net_testing_setup();
@@ -225,12 +230,12 @@ void startup(void)
 	my_addr.family = AF_INET;
 #endif
 
-	SYS_LOG_INF("Starting ETSI IoT Plugtests Server");
+	PRINT("Starting ETSI IoT Plugtests Server\n");
 
-	SYS_LOG_INF("uIP buffer: %u", UIP_BUFSIZE);
-	SYS_LOG_INF("LL header: %u", UIP_LLH_LEN);
-	SYS_LOG_INF("IP+UDP header: %u", UIP_IPUDPH_LEN);
-	SYS_LOG_INF("REST max chunk: %u", REST_MAX_CHUNK_SIZE);
+	PRINT("uIP buffer: %u\n", UIP_BUFSIZE);
+	PRINT("LL header: %u\n", UIP_LLH_LEN);
+	PRINT("IP+UDP header: %u\n", UIP_IPUDPH_LEN);
+	PRINT("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
 
 	net_init();
 
@@ -244,7 +249,7 @@ void startup(void)
 
 #if defined(CONFIG_NETWORKING_WITH_BT)
 	if (bt_enable(NULL)) {
-		SYS_LOG_INF("Bluetooth init failed");
+		PRINT("Bluetooth init failed\n");
 		return;
 	}
 	ipss_init();

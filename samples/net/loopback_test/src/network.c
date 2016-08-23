@@ -18,8 +18,13 @@
 
 #include <zephyr.h>
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #include <net/ip_buf.h>
 #include <net/net_core.h>
@@ -93,15 +98,15 @@ int eval_rcvd_data(char *rcvd_buf, int rcvd_len)
 
 	if (data_len != rcvd_len) {
 		rc = -1;
-		SYS_LOG_INF("Received %d bytes but was sent %d bytes",
+		PRINT("Received %d bytes but was sent %d bytes\n",
 		      rcvd_len, data_len);
 	} else {
 		/* Data integrity */
 		rc = memcmp(text, rcvd_buf, data_len-1);
 		if (rc != 0) {
-			SYS_LOG_INF("Sent and received data does not match.");
-			SYS_LOG_INF("Sent: %.*s", data_len, text);
-			SYS_LOG_INF("Received: %.*s",
+			PRINT("Sent and received data does not match.\n");
+			PRINT("Sent: %.*s\n", data_len, text);
+			PRINT("Received: %.*s\n",
 			      data_len, rcvd_buf);
 		}
 	}
@@ -119,7 +124,7 @@ void fiber_receiver(void)
 			      &any_addr, 0,
 			      &loopback_addr, 4242);
 	if (!ctx) {
-		SYS_LOG_INF("%s: Cannot get network context", __func__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
@@ -131,11 +136,11 @@ void fiber_receiver(void)
 			rcvd_buf = ip_buf_appdata(buf);
 			rcvd_len = ip_buf_appdatalen(buf);
 
-			SYS_LOG_INF("[%d] %s: Received: %d bytes",
+			PRINT("[%d] %s: Received: %d bytes\n",
 			      received, __func__, rcvd_len);
 
 			if (eval_rcvd_data(rcvd_buf, rcvd_len) != 0) {
-				SYS_LOG_INF("[%d] %s: net_receive failed!",
+				PRINT("[%d] %s: net_receive failed!\n",
 				      received, __func__);
 				failure = 1;
 			}
@@ -187,7 +192,7 @@ void fiber_sender(void)
 			      &loopback_addr, 4242,
 			      &any_addr, 0);
 	if (!ctx) {
-		SYS_LOG_INF("Cannot get network context");
+		PRINT("Cannot get network context\n");
 		return;
 	}
 
@@ -200,12 +205,12 @@ void fiber_sender(void)
 			data_len = sent_len - header_size;
 			ip_buf_appdatalen(buf) = data_len;
 
-			SYS_LOG_INF("[%d] %s: App data: %d bytes, IPv6+UDP:"
-				   " %d bytes, Total packet size: %d bytes",
-				   sent, __func__, len, header_size, sent_len);
+			PRINT("[%d] %s: App data: %d bytes, IPv6+UDP: %d bytes, "
+			      "Total packet size: %d bytes\n",
+			      sent, __func__, len, header_size, sent_len);
 
 			if (net_send(buf) < 0) {
-				SYS_LOG_INF("[%d] %s: net_send failed!",
+				PRINT("[%d] %s: net_send failed!\n",
 				      sent, __func__);
 				failure = 1;
 			}
@@ -224,9 +229,9 @@ void fiber_sender(void)
 	}
 
 	if (failure) {
-		SYS_LOG_INF("TEST FAILED");
+		PRINT("TEST FAILED\n");
 	} else {
-		SYS_LOG_INF("TEST PASSED");
+		PRINT("TEST PASSED\n");
 	}
 }
 
@@ -235,7 +240,7 @@ void main(void)
 	struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;            /* ::  */
 	struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;  /* ::1 */
 
-	SYS_LOG_INF("%s: running network loopback test", __func__);
+	PRINT("%s: running network loopback test\n", __func__);
 
 	sys_rand32_init();
 

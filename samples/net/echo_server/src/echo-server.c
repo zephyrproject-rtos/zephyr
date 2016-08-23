@@ -16,8 +16,13 @@
  * limitations under the License.
  */
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 #include <zephyr.h>
 #include <sections.h>
@@ -88,7 +93,7 @@ uip_ipaddr_t uip_netmask = { { 255, 255, 255, 0 } };
 
 static inline void init_app(void)
 {
-	SYS_LOG_INF("%s: run echo server", __func__);
+	PRINT("%s: run echo server\n", __func__);
 
 #if defined(CONFIG_NET_TESTING)
 	net_testing_setup();
@@ -115,7 +120,7 @@ static inline struct net_buf *prepare_reply(const char *name,
 					    struct net_buf *buf,
 					    int proto)
 {
-	SYS_LOG_INF("%s: %sreceived %d bytes data", name, type,
+	PRINT("%s: %sreceived %d bytes data\n", name, type,
 	      ip_buf_appdatalen(buf));
 
 	if (proto != IPPROTO_TCP) {
@@ -184,13 +189,12 @@ static inline void receive_and_reply(const char *name,
 			} else if (!ret) {
 				tcpbuf = NULL;
 			} else {
-				SYS_LOG_INF("Retrying to send packet %p",
-					    tcpbuf);
+				PRINT("Retrying to send packet %p\n", tcpbuf);
 			}
 		} else {
 			tcpbuf = net_receive(tcp_recv, WAIT_TICKS);
 			if (tcpbuf) {
-				SYS_LOG_INF("Received packet %p len %d",
+				PRINT("Received packet %p len %d\n",
 				      tcpbuf, ip_buf_appdatalen(tcpbuf));
 				prepare_reply(name, "tcp ", tcpbuf, IPPROTO_TCP);
 				goto reply;
@@ -241,7 +245,7 @@ static inline bool get_context(struct net_context **udp_recv,
 				    &any_addr, 0,
 				    &my_addr, MY_PORT);
 	if (!*udp_recv) {
-		SYS_LOG_INF("%s: Cannot get network context", __func__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return NULL;
 	}
 
@@ -251,8 +255,7 @@ static inline bool get_context(struct net_context **udp_recv,
 					    &any_addr, 0,
 					    &my_addr, MY_PORT);
 		if (!*tcp_recv) {
-			SYS_LOG_INF("%s: Cannot get network context",
-				    __func__);
+			PRINT("%s: Cannot get network context\n", __func__);
 			return NULL;
 		}
 	}
@@ -262,7 +265,7 @@ static inline bool get_context(struct net_context **udp_recv,
 				      &any_addr, 0,
 				      &mcast_addr, MY_PORT);
 	if (!*mcast_recv) {
-		SYS_LOG_INF("%s: Cannot get receiving mcast network context",
+		PRINT("%s: Cannot get receiving mcast network context\n",
 		      __func__);
 	}
 
@@ -280,7 +283,7 @@ void receive(void)
 	static struct net_context *mcast_recv;
 
 	if (!get_context(&udp_recv, &tcp_recv, &mcast_recv)) {
-		SYS_LOG_INF("%s: Cannot get network contexts", __func__);
+		PRINT("%s: Cannot get network contexts\n", __func__);
 		return;
 	}
 
@@ -297,7 +300,7 @@ void main(void)
 
 #if defined(CONFIG_NETWORKING_WITH_BT)
 	if (bt_enable(NULL)) {
-		SYS_LOG_INF("Bluetooth init failed");
+		PRINT("Bluetooth init failed\n");
 		return;
 	}
 	ipss_init();
