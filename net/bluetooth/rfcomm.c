@@ -301,7 +301,8 @@ static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	}
 
 	msc = net_buf_add(buf, sizeof(*msc));
-	msc->dlci = BT_RFCOMM_SET_ADDR(dlc->dlci, cr);
+	/* cr bit should be always 1 in MSC */
+	msc->dlci = BT_RFCOMM_SET_ADDR(dlc->dlci, 1);
 	msc->v24_signal = BT_RFCOMM_DEFAULT_V24_SIG;
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
