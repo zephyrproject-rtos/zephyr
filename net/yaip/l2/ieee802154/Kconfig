@@ -37,21 +37,6 @@ config NET_L2_IEEE802154_ACK_REPLY
 	Enable inner stack's logic on handling ACK request. Note that
 	if the hw driver has an AUTOACK feature, this is then unnecessary.
 
-config NET_L2_IEEE802154_RADIO_ALOHA
-	bool "Enable IEEE 802.15.4 Aloha radio protocol"
-	default y
-	help
-	Use Aloha mechanism to transmit packets. This is a simplistic
-	way of transmitting packets and fits contexts where radio spectrum
-	is not too heavily loaded.
-
-config NET_L2_IEEE802154_RADIO_ALOHA_TX_RETRIES
-	int "Transmission attempts"
-	default 2
-	help
-	Number of transmission attempts radio driver should do, before
-	replying it could not send the packet.
-
 config NET_L2_IEEE802154_ORFD
 	bool "Support only an OVERLY Reduced Functionality Device"
 	default n
@@ -106,5 +91,7 @@ config  NET_L2_IEEE802154_FRAGMENT_DEBUG
 	bool "Enable debug support for IEEE 802.15.4 fragmentation"
 	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
 	default n
+
+source "net/yaip/l2/ieee802154/Kconfig.radio"
 
 endif

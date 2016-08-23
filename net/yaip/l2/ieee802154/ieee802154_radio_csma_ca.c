@@ -17,6 +17,9 @@
 #include <net/net_core.h>
 #include <net/net_if.h>
 
+#include <misc/util.h>
+
+#include <stdlib.h>
 #include <errno.h>
 
 #include <net/ieee802154_radio.h>
@@ -24,17 +27,41 @@
 #include "ieee802154_frame.h"
 #include "ieee802154_radio_utils.h"
 
-static int aloha_radio_send(struct net_if *iface, struct net_buf *buf)
+static int csma_ca_radio_send(struct net_if *iface, struct net_buf *buf)
 {
+	const uint8_t max_bo = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO;
+	const uint8_t max_be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE;
 	uint8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_radio_api *radio =
 		(struct ieee802154_radio_api *)iface->dev->driver_api;
 	bool ack_required = prepare_for_ack(ctx, buf);
-	int ret;
+	uint8_t be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE;
+	uint8_t nb = 0;
+	int ret = -EIO;
 
+loop:
 	while (retries) {
 		retries--;
+
+		if (be) {
+			uint8_t bo_n = sys_rand32_get() & (2 << (be + 1));
+
+			sys_thread_busy_wait(bo_n * 20);
+		}
+
+		while (1) {
+			if (!radio->cca(iface->dev)) {
+				break;
+			}
+
+			be = min(be + 1, max_be);
+			nb++;
+
+			if (nb > max_bo) {
+				goto loop;
+			}
+		}
 
 		ret = radio->tx(iface->dev, buf);
 		if (ret) {
@@ -54,8 +81,8 @@ static int aloha_radio_send(struct net_if *iface, struct net_buf *buf)
 	return ret;
 }
 
-static enum net_verdict aloha_radio_handle_ack(struct net_if *iface,
-					       struct net_buf *buf)
+static enum net_verdict csma_ca_radio_handle_ack(struct net_if *iface,
+						 struct net_buf *buf)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
@@ -63,8 +90,8 @@ static enum net_verdict aloha_radio_handle_ack(struct net_if *iface,
 }
 
 /* Declare the public Radio driver function used by the HW drivers */
-FUNC_ALIAS(aloha_radio_send,
+FUNC_ALIAS(csma_ca_radio_send,
 	   ieee802154_radio_send, int);
 
-FUNC_ALIAS(aloha_radio_handle_ack,
+FUNC_ALIAS(csma_ca_radio_handle_ack,
 	   ieee802154_radio_handle_ack, enum net_verdict);

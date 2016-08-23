@@ -26,11 +26,8 @@ struct ieee802154_context {
 	uint16_t pan_id;
 	uint16_t channel;
 	uint8_t sequence;
-
-#ifdef CONFIG_NET_L2_IEEE802154_RADIO_ALOHA
 	struct nano_sem ack_lock;
 	bool ack_received;
-#endif /* CONFIG_NET_L2_IEEE802154_RADIO_ALOHA */
 } __packed;
 
 #endif /* __IEEE802154_H__ */
