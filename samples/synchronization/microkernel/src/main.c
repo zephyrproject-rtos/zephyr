@@ -18,9 +18,13 @@
 
 #include <zephyr.h>
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
-
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 /*
  * Microkernel version of hello world demo has two tasks that utilize
@@ -47,8 +51,7 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 		task_sem_take(mySem, TICKS_UNLIMITED);
 
 		/* say "hello" */
-		SYS_LOG_INF("%s: Hello World from %s!",
-			    taskname, CONFIG_ARCH);
+		PRINT("%s: Hello World from %s!\n", taskname, CONFIG_ARCH);
 
 		/* wait a while, then let other task have a turn */
 		task_sleep(SLEEPTICKS);
