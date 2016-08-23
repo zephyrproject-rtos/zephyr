@@ -19,8 +19,13 @@
 #include <gpio.h>
 #include <misc/util.h>
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <misc/sys_log.h>
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define PRINT           printf
+#else
+#include <misc/printk.h>
+#define PRINT           printk
+#endif
 
 /* change this to use another GPIO port */
 #define PORT	"GPIOC"
@@ -35,7 +40,7 @@
 void button_pressed(struct device *gpiob,
 		    struct gpio_callback *cb, uint32_t pins)
 {
-	SYS_LOG_INF("Button pressed at %d", sys_tick_get_32());
+	PRINT("Button pressed at %d\n", sys_tick_get_32());
 }
 
 static struct gpio_callback gpio_cb;
@@ -60,7 +65,7 @@ void main(void)
 		int val = 0;
 
 		gpio_pin_read(gpiob, PIN, &val);
-		SYS_LOG_INF("GPIO val: %d", val);
+		PRINT("GPIO val: %d\n", val);
 		task_sleep(MSEC(500));
 	}
 }
