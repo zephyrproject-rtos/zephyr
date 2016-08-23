@@ -121,12 +121,20 @@ void rpc_transmit_cb(struct net_buf *buf)
 	hdr->len = buf->len - sizeof(*hdr);
 	hdr->channel = 0;
 	hdr->src_cpu_id = 0;
-
+#if defined(CONFIG_BLUETOOTH_NRF51_PM)
+	/* Wake-up nble */
+	nrf51_enable();
+#endif
 	while (buf->len) {
 		uart_poll_out(nble_dev, net_buf_pull_u8(buf));
 	}
 
 	net_buf_unref(buf);
+#if defined(CONFIG_BLUETOOTH_NRF51_PM)
+	/* TODO check if FIFO is empty */
+	/* Allow nble to go to deep sleep */
+	nrf51_disable();
+#endif
 }
 
 static size_t nble_discard(struct device *uart, size_t len)
