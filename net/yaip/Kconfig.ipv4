@@ -39,4 +39,20 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 	int "Max number of multicast IPv4 addresses per network interface"
 	default 1
 
+if NET_LOG
+
+config NET_DEBUG_IPV4
+	bool "Debug core IPv4"
+	default n
+	help
+	Enables core IPv4 code part to output debug messages
+
+config NET_DEBUG_ICMPV4
+	bool "Debug ICMPv4"
+	default n
+	help
+	Enables ICMPv4 code part to output debug messages
+
+endif # NET_LOG
+
 endif # NET_IPV4

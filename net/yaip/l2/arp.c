@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_IPV4_ARP
+#ifdef CONFIG_NET_DEBUG_ARP
 #define SYS_LOG_DOMAIN "net/arp"
 #define NET_DEBUG 1
 #endif

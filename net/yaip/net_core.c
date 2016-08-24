@@ -22,7 +22,7 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_CORE)
+#if defined(CONFIG_NET_DEBUG_CORE)
 #define SYS_LOG_DOMAIN "net/core"
 #define NET_DEBUG 1
 #endif

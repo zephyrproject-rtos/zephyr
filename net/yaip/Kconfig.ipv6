@@ -80,6 +80,28 @@ config NET_6LO
 
 config NET_6LO_DEBUG
 	bool "Enable 6lowpan debug"
-	depends on NET_6LO
+	depends on NET_6LO && NET_LOG
+
+if NET_LOG
+
+config NET_DEBUG_IPV6
+	bool "Debug core IPv6"
+	default n
+	help
+	Enables core IPv6 code part to output debug messages
+
+config NET_DEBUG_ICMPV6
+	bool "Debug ICMPv6"
+	default n
+	help
+	Enables ICMPv6 code part to output debug messages
+
+config NET_DEBUG_IPV6_NBR_CACHE
+	bool "Debug IPv6 neighbour cache"
+	default n
+	help
+	Enables Neighbour Cache code part to output debug messages
+
+endif # NET_LOG
 
 endif # NET_IPV6

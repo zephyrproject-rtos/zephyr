@@ -16,37 +16,51 @@
 
 menu "Link layer options"
 
-config  NET_L2_DUMMY
+config NET_L2_DUMMY
 	bool "Enable dummy l2 layer"
 	default n
 	default y if !NET_L2_ETHERNET && NET_SLIP
 	help
-	  Add a dummy L2 layer driver, usually in case you need SLIP in
-	  TUN mode.
+	Add a dummy L2 layer driver, usually in case you need SLIP in
+	TUN mode.
 
-config  NET_L2_ETHERNET
+config NET_L2_ETHERNET
 	bool "Enable ethernet support"
 	default n
 	help
-         Add suport for Ethernet, enabling selecting relevant hardware drivers.
-	 If NET_SLIP and SLIP_TAP are selected, NET_L2_ETHERNET will enable to
-	 fully simulate ethernet through SLIP.
+	Add support for Ethernet, enabling selecting relevant hardware drivers.
+	If NET_SLIP and SLIP_TAP are selected, NET_L2_ETHERNET will enable to
+	fully simulate ethernet through SLIP.
+
+config NET_DEBUG_L2_ETHERNET
+	bool "Debug Ethernet L2 layer"
+	default n
+	depends on NET_LOG
+	help
+	Enables Ethernet L2 output debug messages
 
 source "net/yaip/l2/ieee802154/Kconfig"
 
 config NET_ARP
-       bool "Enable ARP"
-       default y
-       depends on NET_IPV4 && NET_L2_ETHERNET
-       help
-         Enable ARP support. This is necessary on hardware that requires it to
-	 get IPv4 working (like Ethernet devices).
+	bool "Enable ARP"
+	default y
+	depends on NET_IPV4 && NET_L2_ETHERNET
+	help
+	Enable ARP support. This is necessary on hardware that requires it to
+	get IPv4 working (like Ethernet devices).
 
 config NET_ARP_TABLE_SIZE
-       int "Number of entries in ARP table."
-       depends on NET_ARP
-       default 2
-       help
-         Each entry in the ARP table consumes 22 bytes of memory.
+	int "Number of entries in ARP table."
+	depends on NET_ARP
+	default 2
+	help
+	Each entry in the ARP table consumes 22 bytes of memory.
+
+config NET_DEBUG_ARP
+	bool "Debug IPv4 ARP"
+	depends on NET_ARP && NET_LOG
+	default n
+	help
+	Enables core ARP code part to output debug messages
 
 endmenu

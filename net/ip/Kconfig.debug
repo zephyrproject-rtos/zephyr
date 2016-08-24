@@ -16,15 +16,6 @@
 # limitations under the License.
 #
 
-menuconfig NET_LOG
-	bool "Enable network stack logging"
-	depends on NET_YAIP
-	select STDOUT_CONSOLE
-	select SYS_LOG
-	default n
-	help
-	  Enable logging in various parts of the network stack.
-
 menuconfig NETWORKING_WITH_LOGGING
 	bool "Enable network stack logging"
 	depends on NET_UIP
@@ -52,28 +43,7 @@ config NETWORK_IP_STACK_DEBUG_FULL
 
 endchoice
 
-if NETWORKING_WITH_LOGGING || NET_LOG
-
-config NETWORK_IP_STACK_DEBUG_CORE
-	bool "Debug core IP stack"
-	depends on NET_YAIP
-	default n
-	help
-	  Enables core network stack code part to output debug messages
-
-config NETWORK_IP_STACK_DEBUG_UTILS
-	bool "Debug utility functions in IP stack"
-	depends on NET_YAIP
-	default n
-	help
-	  Enables utility functions to output debug messages
-
-config NETWORK_IP_STACK_DEBUG_IF
-	bool "Debug network interface code"
-	depends on NET_YAIP
-	default n
-	help
-	  Enables network interface code part to output debug messages
+if NETWORKING_WITH_LOGGING
 
 config NETWORK_IP_STACK_DEBUG_CONTEXT
 	bool "Debug network context allocation"
@@ -95,7 +65,7 @@ config NETWORK_IP_STACK_DEBUG_RECV_SEND
 
 config NETWORK_IP_STACK_DEBUG_TCP_PSOCK
 	bool "Debug network TCP protosockets"
-	depends on NETWORKING_WITH_TCP && NET_UIP
+	depends on NETWORKING_WITH_TCP
 	default n
 	help
 	  Enables debugging the protosockets used in TCP engine.
@@ -110,7 +80,6 @@ config NETWORK_IP_STACK_DEBUG_IPV6
 config NETWORK_IP_STACK_DEBUG_SIMPLE_UDP
 	bool "Debug simple udp"
 	default n
-	depends on NET_UIP
 	help
 	  Enables network simple udp debug messages
 
@@ -122,7 +91,7 @@ config NETWORK_IP_STACK_DEBUG_UDP_PACKET
 
 config NETWORK_IP_STACK_DEBUG_IPV6_DS
 	bool "Debug IPv6 Data Structures"
-	depends on NETWORKING_WITH_IPV6 && NET_UIP
+	depends on NETWORKING_WITH_IPV6
 	default n
 	help
 	  Enables IPv6 Data Structures code part to output debug messages
@@ -133,20 +102,6 @@ config NETWORK_IP_STACK_DEBUG_IPV6_ICMPV6
 	default n
 	help
 	  Enables ICMPv6 code part to output debug messages
-
-config NETWORK_IP_STACK_DEBUG_ICMPV6
-	bool "Debug ICMPv6"
-	depends on NET_IPV6
-	default n
-	help
-	  Enables ICMPv6 code part to output debug messages
-
-config NETWORK_IP_STACK_DEBUG_ICMPV4
-	bool "Debug ICMPv4"
-	depends on NET_IPV4
-	default n
-	help
-	  Enables ICMPv4 code part to output debug messages
 
 config NETWORK_IP_STACK_DEBUG_IPV6_ND
 	bool "Debug IPv6 Neighbour Discovery"
@@ -207,7 +162,7 @@ config NETWORK_IP_STACK_DEBUG_6LOWPAN_COMPRESSION
 
 config NETWORK_IP_STACK_DEBUG_PACKET_QUEUE
 	bool "Debug uip packet queue"
-	depends on NETWORKING_WITH_IPV6 && NET_UIP
+	depends on NETWORKING_WITH_IPV6
 	default n
 	help
 	  Enables uip packet queue output debug messages
@@ -309,30 +264,6 @@ config NETWORK_IP_STACK_DEBUG_DHCP
 	default n
 	help
 	  Enables DHCP output debug messages
-
-config NETWORK_IP_STACK_DEBUG_TRICKLE
-	bool "Debug Trickle algorithm"
-	default n
-	help
-	  Enables Trickle library output debug messages
-
-config NETWORK_IP_STACK_DEBUG_L2
-	bool "Debug L2 layer"
-	default n
-	help
-	  Enables L2 output debug messages
-
-config NETWORK_IP_STACK_DEBUG_UDP
-	bool "Debug UDP"
-	default n
-	help
-	  Enables UDP debug messages
-
-config NETWORK_IP_STACK_DEBUG_CONN
-	bool "Debug connection handling"
-	default n
-	help
-	  Enables connection debug messages
 
 config NETWORK_IP_STACK_DEBUG_TRICKLE
 	bool "Debug Trickle algorithm"

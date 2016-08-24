@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_ICMPV6
+#ifdef CONFIG_NET_DEBUG_ICMPV6
 #define SYS_LOG_DOMAIN "net/icmpv6"
 #define NET_DEBUG 1
 #endif

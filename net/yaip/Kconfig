@@ -26,6 +26,8 @@ config NET_INIT_PRIO
 	Network initialization priority level. This number tells how
 	early in the boot the network stack is initialized.
 
+source "net/yaip/Kconfig.debug"
+
 source "net/yaip/Kconfig.ipv6"
 
 source "net/yaip/Kconfig.ipv4"
@@ -148,13 +150,6 @@ config NET_SLIP
 	The SLIP driver Kconfig options can be tweaked in drivers
 	section.
 
-config NET_STATISTICS
-       bool "Print network statistics"
-       default n
-       help
-	  Print network send/receive statistics to console.
-	  This takes memory so say 'n' if unsure.
-
 config NET_TRICKLE
 	bool "Enable Trickle library"
 	default n
@@ -162,8 +157,13 @@ config NET_TRICKLE
 	  Normally this is enabled automatically if needed,
 	  so say 'n' if unsure.
 
-source "net/yaip/l2/Kconfig"
+config NET_DEBUG_TRICKLE
+	bool "Debug Trickle algorithm"
+	default n
+	depends on NET_TRICKLE && NET_LOG
+	help
+	Enables Trickle library output debug messages
 
-source "net/ip/Kconfig.debug"
+source "net/yaip/l2/Kconfig"
 
 endmenu

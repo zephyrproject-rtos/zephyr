@@ -1,0 +1,74 @@
+# Kconfig.debug - Debug Options
+
+#
+# Copyright (c) 2016 Intel Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig NET_LOG
+	bool "Enable network stack logging and debugging"
+	default n
+	select STDOUT_CONSOLE
+	select SYS_LOG
+	help
+	Enable logging in various parts of the network stack.
+	Specific debugging options to other sub-menus will be unlocked
+	as well (IPv6, IPv4, ...).
+
+if NET_LOG
+
+config NET_DEBUG_CORE
+	bool "Debug core IP stack"
+	default n
+	help
+	Enables core network stack code part to output debug messages
+
+config NET_DEBUG_IF
+	bool "Debug network interface code"
+	default n
+	help
+	Enables network interface code part to output debug messages
+
+config NET_DEBUG_UTILS
+	bool "Debug utility functions in IP stack"
+	default n
+	help
+	Enables utility functions to output debug messages
+
+config NET_DEBUG_CONTEXT
+	bool "Debug network context allocation"
+	default n
+	help
+	Enables printing of network context allocations and frees.
+
+config NET_DEBUG_NET_BUF
+	bool "Debug network buffer allocation"
+	default n
+	help
+	Enables printing of network buffer allocations and frees.
+
+config NET_DEBUG_CONN
+	bool "Debug connection handling"
+	default n
+	help
+	Enables connection debug messages
+
+config NET_STATISTICS
+	bool "Print network statistics"
+	default n
+	help
+	Print network send/receive statistics to console.
+	This takes memory so say 'n' if unsure.
+
+endif # NET_LOG

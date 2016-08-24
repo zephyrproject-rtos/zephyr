@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_IF)
+#if defined(CONFIG_NET_DEBUG_IF)
 #define SYS_LOG_DOMAIN "net/if"
 #define NET_DEBUG 1
 #endif

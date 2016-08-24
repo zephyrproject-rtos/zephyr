@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 #define SYS_LOG_DOMAIN "net/nbuf"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #define NET_DEBUG 1
@@ -306,9 +306,7 @@ void net_nbuf_print_frags(struct net_buf *buf)
 		total, count * frag_size - count * ll_overhead,
 		count * ll_overhead, (total * 100) / (count * frag_size));
 }
-#endif /* NET_DEBUG */
 
-#if NET_DEBUG
 static struct net_buf *net_nbuf_get_reserve_debug(enum net_nbuf_type type,
 						  uint16_t reserve_head,
 						  const char *caller,
@@ -861,7 +859,7 @@ struct net_buf *net_nbuf_push(struct net_buf *parent,
 	return net_nbuf_compact(parent);
 }
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+#if NET_DEBUG
 void net_nbuf_print(void)
 {
 	NET_DBG("TX %d RX %d DATA %d",
@@ -869,7 +867,7 @@ void net_nbuf_print(void)
 		get_frees(NET_NBUF_RX),
 		get_frees(NET_NBUF_DATA));
 }
-#endif /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+#endif
 
 void net_nbuf_init(void)
 {

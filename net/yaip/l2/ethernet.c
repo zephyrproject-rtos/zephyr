@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_L2)
-#define SYS_LOG_DOMAIN "net/l2"
+#if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
+#define SYS_LOG_DOMAIN "net/ethernet"
 #define NET_DEBUG 1
 #endif
 

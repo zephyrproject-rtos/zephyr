@@ -311,7 +311,7 @@ static inline void net_nbuf_set_src_ipv6_addr(struct net_buf *buf)
 
 /* @endcond */
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 
 /* Debug versions of the nbuf functions that are used when tracking
  * buffer usage.
@@ -364,7 +364,7 @@ struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller,
  */
 void net_nbuf_print_frags(struct net_buf *buf);
 
-#else /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+#else /* CONFIG_NET_DEBUG_NET_BUF */
 
 #define net_nbuf_print_frags(...)
 
@@ -551,14 +551,14 @@ bool net_nbuf_is_compact(struct net_buf *buf);
 struct net_buf *net_nbuf_push(struct net_buf *parent, struct net_buf *buf,
 			      size_t amount);
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_BUF)
 /**
  * @brief Debug helper to print out the buffer allocations
  */
 void net_nbuf_print(void);
-#else /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+#else
 #define net_nbuf_print(...)
-#endif /* CONFIG_NETWORK_IP_STACK_DEBUG_NET_BUF */
+#endif /* CONFIG_NET_DEBUG_NET_BUF */
 
 #ifdef __cplusplus
 }

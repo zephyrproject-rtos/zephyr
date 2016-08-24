@@ -180,15 +180,15 @@ struct net_linkaddr_storage *net_nbr_get_lladdr(uint8_t idx);
  */
 void net_nbr_clear_table(struct net_nbr_table *table);
 
-#if defined(CONFIG_NETWORK_IP_STACK_DEBUG_IPV6_NBR_CACHE)
+#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
 /**
  * @brief Debug helper to print out the neighbor information.
  * @param table Neighbor table
  */
 void net_nbr_print(struct net_nbr_table *table);
-#else /* CONFIG_NETWORK_IP_STACK_DEBUG_IPV6_NBR_CACHE */
+#else
 #define net_nbr_print(...)
-#endif /* CONFIG_NETWORK_IP_STACK_DEBUG_IPV6_NBR_CACHE */
+#endif /* CONFIG_NET_DEBUG_IPV6_NBR_CACHE */
 
 #ifdef __cplusplus
 }

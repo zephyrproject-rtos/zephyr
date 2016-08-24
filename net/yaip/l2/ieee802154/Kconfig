@@ -25,6 +25,7 @@ if NET_L2_IEEE802154
 config  NET_L2_IEEE802154_DEBUG
 	bool "Enable IEEE 802.15.4 stack debug messages"
 	default n
+	depends on NET_LOG
 	help
 	  Enable it if you want to see what's happening. Only useful
 	  for developers.
@@ -103,7 +104,7 @@ config  NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 
 config  NET_L2_IEEE802154_FRAGMENT_DEBUG
 	bool "Enable debug support for IEEE 802.15.4 fragmentation"
-	depends on NET_L2_IEEE802154_FRAGMENT
+	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
 	default n
 
 endif
