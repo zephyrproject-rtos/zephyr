@@ -34,16 +34,16 @@
 # IEEE 802.15.4 options
 #
 menu "IEEE 802.15.4 drivers options"
-depends on NETWORKING_WITH_15_4 || NET_L2_IEEE802154
 
 config  TI_CC2520_LEGACY
 	bool "TI CC2520 Driver support"
-	depends on NETWORKING_WITH_15_4_TI_CC2520
+	depends on NET_UIP
 	default n
 
 config  TI_CC2520
 	bool "TI CC2520 Driver support"
-	depends on NET_L2_IEEE802154
+	depends on NET_YAIP
+	select NET_L2_IEEE802154
 	default n
 
 if TI_CC2520_LEGACY || TI_CC2520
