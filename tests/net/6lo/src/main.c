@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <device.h>
 #include <init.h>
-#include <misc/printk.h>
 #include <net/net_core.h>
 #include <net/nbuf.h>
 #include <net/net_ip.h>
@@ -34,6 +33,7 @@
 #include <tc_util.h>
 
 #include "6lo.h"
+#include "icmpv6.h"
 
 #define NET_DEBUG 1
 #include "net_private.h"
@@ -119,7 +119,14 @@ static const char user_data[] =
 
 struct net_6lo_data {
 	struct net_ipv6_hdr ipv6;
-	struct net_udp_hdr udp;
+
+	union {
+		struct net_udp_hdr udp;
+		struct net_icmp_hdr icmp;
+	} nh;
+
+	bool nh_udp;
+	bool nh_icmp;
 	bool iphc;
 	bool small;
 } __packed;
@@ -160,25 +167,70 @@ NET_DEVICE_INIT(net_6lo_test, "net_6lo_test",
 static bool compare_data(struct net_buf *buf, struct net_6lo_data *data)
 {
 	struct net_buf *frag;
-	uint8_t bytes, pos, compare, offset = 0;
+	uint8_t bytes;
+	uint8_t compare;
+	uint8_t pos = 0;
+	uint8_t offset = 0;
 	int remaining = data->small ? SIZE_OF_SMALL_DATA : SIZE_OF_LARGE_DATA;
 
-	if (net_buf_frags_len(buf->frags) != (NET_IPV6UDPH_LEN + remaining)) {
-		printk("mismatch lengths, expected %d received %d\n",
-			NET_IPV6UDPH_LEN + remaining,
+	if (data->nh_udp) {
+		if (net_buf_frags_len(buf->frags) !=
+		    (NET_IPV6UDPH_LEN + remaining)) {
+
+			TC_PRINT("mismatch lengths, expected %d received %d\n",
+			       NET_IPV6UDPH_LEN + remaining,
 			net_buf_frags_len(buf->frags));
-		return false;
+
+			return false;
+		}
+	} else if (data->nh_icmp) {
+		if (net_buf_frags_len(buf->frags) !=
+		    (NET_IPV6ICMPH_LEN + remaining)) {
+
+			TC_PRINT("mismatch lengths, expected %d received %d\n",
+			       NET_IPV6ICMPH_LEN + remaining,
+			net_buf_frags_len(buf->frags));
+
+			return false;
+		}
+	} else {
+		if (net_buf_frags_len(buf->frags) !=
+		    (NET_IPV6H_LEN + remaining)) {
+
+			TC_PRINT("mismatch lengths, expected %d received %d\n",
+			       NET_IPV6H_LEN + remaining,
+			net_buf_frags_len(buf->frags));
+
+			return false;
+		}
 	}
 
 	frag = buf->frags;
 
-	if (memcmp(frag->data, (uint8_t *)data, NET_IPV6UDPH_LEN)) {
-		printk("mismatch headers\n");
-		return false;
+	if (data->nh_udp) {
+		if (memcmp(frag->data, (uint8_t *)data, NET_IPV6UDPH_LEN)) {
+			TC_PRINT("mismatch headers\n");
+			return false;
+		}
+	} else	if (data->nh_icmp) {
+		if (memcmp(frag->data, (uint8_t *)data, NET_IPV6ICMPH_LEN)) {
+			TC_PRINT("mismatch headers\n");
+			return false;
+		}
+	} else {
+		if (memcmp(frag->data, (uint8_t *)data, NET_IPV6H_LEN)) {
+			TC_PRINT("mismatch headers\n");
+			return false;
+		}
 	}
 
-	pos = 0;
-	offset = NET_IPV6UDPH_LEN;
+	if (data->nh_udp) {
+		offset = NET_IPV6UDPH_LEN;
+	} else if (data->nh_icmp) {
+		offset = NET_IPV6ICMPH_LEN;
+	} else {
+		offset = NET_IPV6H_LEN;
+	}
 
 	while (remaining > 0 && frag) {
 
@@ -186,7 +238,7 @@ static bool compare_data(struct net_buf *buf, struct net_6lo_data *data)
 		compare = remaining > bytes ? bytes : remaining;
 
 		if (memcmp(frag->data + offset, user_data + pos, compare)) {
-			printk("data mismatch\n");
+			TC_PRINT("data mismatch\n");
 			return false;
 		}
 
@@ -220,23 +272,43 @@ static struct net_buf *create_buf(struct net_6lo_data *data)
 		return NULL;
 	}
 
-	memcpy(frag->data, (uint8_t *) data, NET_IPV6UDPH_LEN);
-	net_buf_add(frag, NET_IPV6UDPH_LEN);
+	if (data->nh_udp) {
+		memcpy(frag->data, (uint8_t *) data, NET_IPV6UDPH_LEN);
+		net_buf_add(frag, NET_IPV6UDPH_LEN);
+	} else if (data->nh_icmp) {
+		memcpy(frag->data, (uint8_t *) data, NET_IPV6ICMPH_LEN);
+		net_buf_add(frag, NET_IPV6ICMPH_LEN);
+
+	} else {
+		memcpy(frag->data, (uint8_t *) data, NET_IPV6H_LEN);
+		net_buf_add(frag, NET_IPV6H_LEN);
+	}
 
 	pos = 0;
 	remaining = data->small ? SIZE_OF_SMALL_DATA : SIZE_OF_LARGE_DATA;
 
-	len = NET_UDPH_LEN + remaining;
+	if (data->nh_udp) {
+		len = NET_UDPH_LEN + remaining;
+	} else if (data->nh_icmp) {
+		len = NET_ICMPH_LEN + remaining;
+	} else {
+		len = remaining;
+	}
+
 	/* length is not set in net_6lo_data data pointer, calculate and set
 	 * in ipv6, udp and in data pointer too (it's required in comparison) */
 	frag->data[4] = len >> 8;
 	frag->data[5] = (uint8_t) len;
-	frag->data[44] = len >> 8;
-	frag->data[45] = (uint8_t) len;
 
 	data->ipv6.len[0] = len >> 8;
 	data->ipv6.len[1] = (uint8_t) len;
-	data->udp.len = htons(len);
+
+	if (data->nh_udp) {
+		frag->data[44] = len >> 8;
+		frag->data[45] = (uint8_t) len;
+
+		data->nh.udp.len = htons(len);
+	}
 
 	while (remaining > 0) {
 		uint8_t copy;
@@ -272,10 +344,12 @@ static struct net_6lo_data test_data_1 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam00,
 	.ipv6.dst = dst_dam00,
-	.udp.src_port = htons(udp_src_port_4bit),
-	.udp.dst_port = htons(udp_dst_port_4bit),
-	.udp.len = 0x00,
-	.udp.chksum = 0x00,
+	.nh.udp.src_port = htons(udp_src_port_4bit),
+	.nh.udp.dst_port = htons(udp_dst_port_4bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
 	.small = true,
 	.iphc = true
 };
@@ -289,10 +363,12 @@ static struct net_6lo_data test_data_2 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam01,
 	.ipv6.dst = dst_dam01,
-	.udp.src_port = htons(udp_src_port_8bit_y),
-	.udp.dst_port = htons(udp_dst_port_8bit),
-	.udp.len = 0x00,
-	.udp.chksum = 0x00,
+	.nh.udp.src_port = htons(udp_src_port_8bit_y),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
 	.small = false,
 	.iphc = true
 };
@@ -306,10 +382,12 @@ static struct net_6lo_data test_data_3 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam10,
 	.ipv6.dst = dst_dam10,
-	.udp.src_port = htons(udp_src_port_8bit),
-	.udp.dst_port = htons(udp_dst_port_8bit_y),
-	.udp.len = 0x00,
-	.udp.chksum = 0x00,
+	.nh.udp.src_port = htons(udp_src_port_8bit),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit_y),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
 	.small = true,
 	.iphc = true
 };
@@ -323,10 +401,12 @@ static struct net_6lo_data test_data_4 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sac1_sam00,
 	.ipv6.dst = dst_m1_dam00,
-	.udp.src_port = htons(udp_src_port_16bit),
-	.udp.dst_port = htons(udp_dst_port_16bit),
-	.udp.len = 0x00,
-	.udp.chksum = 0x00,
+	.nh.udp.src_port = htons(udp_src_port_16bit),
+	.nh.udp.dst_port = htons(udp_dst_port_16bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
 	.small = false,
 	.iphc = true
 };
@@ -340,10 +420,12 @@ static struct net_6lo_data test_data_5 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam01,
 	.ipv6.dst = dst_m1_dam01,
-	.udp.src_port = htons(udp_src_port_16bit),
-	.udp.dst_port = htons(udp_dst_port_16bit),
-	.udp.len = 0x00,
-	.udp.chksum = 0x00,
+	.nh.udp.src_port = htons(udp_src_port_16bit),
+	.nh.udp.dst_port = htons(udp_dst_port_16bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
 	.small = true,
 	.iphc = true
 };
@@ -357,15 +439,50 @@ static struct net_6lo_data test_data_6 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam10,
 	.ipv6.dst = dst_m1_dam10,
-	.udp.src_port = htons(udp_src_port_8bit),
-	.udp.dst_port = htons(udp_dst_port_8bit),
-	.udp.len = 0x00,
-	.udp.chksum = 0x00,
+	.nh.udp.src_port = htons(udp_src_port_8bit),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
 	.small = true,
 	.iphc = true
 };
 
 static struct net_6lo_data test_data_7 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x0,
+	.ipv6.flow = 0x0,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = 0,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sam10,
+	.ipv6.dst = dst_m1_dam10,
+	.nh_udp = false,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_8 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x0,
+	.ipv6.flow = 0x0,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_ICMPV6,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sam10,
+	.ipv6.dst = dst_m1_dam10,
+	.nh.icmp.type = NET_ICMPV6_ECHO_REQUEST,
+	.nh.icmp.code = 0,
+	.nh.icmp.chksum = 0,
+	.nh_udp = false,
+	.nh_icmp = true,
+	.small = true,
+	.iphc = true
+};
+
+static struct net_6lo_data test_data_9 = {
 	.ipv6.vtc = 0x61,
 	.ipv6.tcflow = 0x20,
 	.ipv6.flow = 0x00,
@@ -374,15 +491,17 @@ static struct net_6lo_data test_data_7 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sac1_sam00,
 	.ipv6.dst = dst_m1_dam00,
-	.udp.src_port = htons(udp_src_port_16bit),
-	.udp.dst_port = htons(udp_dst_port_16bit),
-	.udp.len = 0x00,
-	.udp.chksum = 0x00,
+	.nh.udp.src_port = htons(udp_src_port_16bit),
+	.nh.udp.dst_port = htons(udp_dst_port_16bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
 	.small = true,
 	.iphc = false
 };
 
-static struct net_6lo_data test_data_8 = {
+static struct net_6lo_data test_data_10 = {
 	.ipv6.vtc = 0x61,
 	.ipv6.tcflow = 0x20,
 	.ipv6.flow = 0x00,
@@ -391,10 +510,45 @@ static struct net_6lo_data test_data_8 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sac1_sam00,
 	.ipv6.dst = dst_m1_dam00,
-	.udp.src_port = htons(udp_src_port_16bit),
-	.udp.dst_port = htons(udp_dst_port_16bit),
-	.udp.len = 0x00,
-	.udp.chksum = 0x00,
+	.nh.udp.src_port = htons(udp_src_port_16bit),
+	.nh.udp.dst_port = htons(udp_dst_port_16bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = false,
+	.nh_icmp = false,
+	.small = false,
+	.iphc = false
+};
+
+static struct net_6lo_data test_data_11 = {
+	.ipv6.vtc = 0x61,
+	.ipv6.tcflow = 0x20,
+	.ipv6.flow = 0x00,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = 0,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam00,
+	.ipv6.dst = dst_m1_dam00,
+	.nh_udp = false,
+	.nh_icmp = false,
+	.small = false,
+	.iphc = false
+};
+
+static struct net_6lo_data test_data_12 = {
+	.ipv6.vtc = 0x61,
+	.ipv6.tcflow = 0x20,
+	.ipv6.flow = 0x00,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_ICMPV6,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam00,
+	.ipv6.dst = dst_m1_dam00,
+	.nh.icmp.type = NET_ICMPV6_ECHO_REQUEST,
+	.nh.icmp.code = 0,
+	.nh.icmp.chksum = 0,
+	.nh_udp = false,
+	.nh_icmp = true,
 	.small = false,
 	.iphc = false
 };
@@ -411,7 +565,8 @@ static int test_6lo(struct net_6lo_data *data)
 	}
 
 #if DEBUG > 0
-	printk("length before compression %d\n", net_buf_frags_len(buf->frags));
+	TC_PRINT("length before compression %d\n",
+		 net_buf_frags_len(buf->frags));
 	net_hexdump_frags("before-compression", buf);
 #endif
 
@@ -421,7 +576,8 @@ static int test_6lo(struct net_6lo_data *data)
 	}
 
 #if DEBUG > 0
-	printk("length after compression %d\n", net_buf_frags_len(buf->frags));
+	TC_PRINT("length after compression %d\n",
+		 net_buf_frags_len(buf->frags));
 	net_hexdump_frags("after-compression", buf);
 #endif
 
@@ -431,7 +587,7 @@ static int test_6lo(struct net_6lo_data *data)
 	}
 
 #if DEBUG > 0
-	printk("length after uncompression %d\n",
+	TC_PRINT("length after uncompression %d\n",
 	       net_buf_frags_len(buf->frags));
 	net_hexdump_frags("after-uncompression", buf);
 #endif
@@ -459,8 +615,12 @@ static const struct {
 	{ "test_6lo_sac1_sam00_m1_dam00", &test_data_4},
 	{ "test_6lo_sam01_m1_dam01", &test_data_5},
 	{ "test_6lo_sam10_m1_dam10", &test_data_6},
-	{ "test_6lo_ipv6_dispatch_small", &test_data_7},
-	{ "test_6lo_ipv6_dispatch_big", &test_data_8},
+	{ "test_6lo_sam10_m1_dam10_no_udp", &test_data_7},
+	{ "test_6lo_sam10_m1_dam10_iphc", &test_data_8},
+	{ "test_6lo_ipv6_dispatch_small", &test_data_9},
+	{ "test_6lo_ipv6_dispatch_big", &test_data_10},
+	{ "test_6lo_ipv6_dispatch_big_no_udp", &test_data_11},
+	{ "test_6lo_ipv6_dispatch_big_iphc", &test_data_12},
 };
 
 static void main_fiber(void)
