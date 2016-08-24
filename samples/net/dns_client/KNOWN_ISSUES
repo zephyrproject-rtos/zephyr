@@ -1,0 +1,17 @@
+Issues
+------
+
+- RX or TX error:
+	Caused by:
+		net_send error, see:
+		https://jira.zephyrproject.org/browse/ZEP-428
+		https://jira.zephyrproject.org/browse/ZEP-676
+
+	Workaround:
+		Wait until the IP stack is "activated"
+		or reset the board.
+
+Limitations
+-----------
+
+See the ./README_API file.

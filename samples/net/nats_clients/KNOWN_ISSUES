@@ -1,0 +1,34 @@
+Issues
+------
+
+- Unable to connect
+	Caused by:
+		Incorrect TCP flags handling from the Zephyr IP Stack.
+	Workaround:
+		Reset the board.
+
+- Publisher or Subscriber error
+	Caused by:
+		The NATS server will send the PING message at configurable
+		intervals. If the PING message is not handled by the
+		client, the server will close the connection.
+
+		The NATS applications are synchronous, so if the PING
+		message arrives when the application is processing
+		another message (i.e. verbose = 1), the PING message
+		will be ignored and the server will close the connection.
+	Workaround:
+		Codify a routine similar to handle_msg (see main.c) to
+		handle all the incoming messages.
+
+- RX or TX error
+	Caused by:
+		Perhaps the rx/tx timeouts are too short for the LAN.
+        Workaround:
+		Increase the rx or tx timeout.
+		See: publisher/src/netz.c, struct netz_ctx_t.
+
+Limitations
+-----------
+
+See the ./README file.
