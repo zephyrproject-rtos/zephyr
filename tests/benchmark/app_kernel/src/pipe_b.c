@@ -106,7 +106,7 @@ void pipe_test(void)
 	uint32_t	puttime[3];
 	int		putcount;
 	int		pipe;
-	kpriority_t	TaskPrio;
+	kpriority_t	TaskPrio = UINT32_MAX;
 	int		prio;
 	GetInfo	getinfo;
 

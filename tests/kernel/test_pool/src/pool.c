@@ -104,8 +104,8 @@ int blockCompare(struct k_block *b1, struct k_block *b2)
 {
 	char *p1 = (char *) b1;
 	char *p2 = (char *) b2;
-	int  i;
-	int  diff;
+	int i;
+	int diff = 0;
 
 	for (i = 0; i < sizeof(struct k_block); i++) {
 		diff = p2[i] - p1[i];
