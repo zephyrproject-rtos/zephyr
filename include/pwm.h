@@ -114,8 +114,10 @@ static inline int pwm_pin_configure(struct device *dev, uint8_t pwm,
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param pwm PWM output.
- * @param on ON value set to the PWM.
- * @param off OFF value set to the PWM.
+ * @param on ON value (number of timer count) set to the PWM. HW specific.
+ *	     How far from the beginning of a PWM cycle the PWM pulse starts.
+ * @param off OFF value (number of timer count) set to the PWM. HW specific.
+ *	      How far from the beginning of a PWM cycle the PWM pulse stops.
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
@@ -220,8 +222,10 @@ static inline int pwm_all_configure(struct device *dev, int flags)
  * @brief Set the ON/OFF values for all PWM outputs.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param on ON value set to the PWM.
- * @param off OFF value set to the PWM.
+ * @param on ON value (number of timer count) set to the PWM. HW specific.
+ *	     How far from the beginning of a PWM cycle the PWM pulse starts.
+ * @param off OFF value (number of timer count) set to the PWM. HW specific.
+ *	      How far from the beginning of a PWM cycle the PWM pulse stops.
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.

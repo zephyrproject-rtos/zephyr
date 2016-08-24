@@ -158,32 +158,35 @@ pwm_set_port_return:
 }
 
 /*
- * Set the duration for on/off timer of PWM.
+ * Set the time to assert and de-assert the PWM pin.
  *
- * This sets the duration for the pin to low or high.
+ * This sets the duration for the pin to stay low or high.
  *
- * Assumes a nominal system clock of 32MHz, each count of on/off represents
- * 31.25ns (e.g. on == 2 means the pin stays high for 62.5ns).
- * The duration of 1 count depends on system clock. Refer to the hardware
- * manual for more information.
+ * For example, with a nominal system clock of 32MHz, each count of on/off
+ * represents 31.25ns (e.g. off == 2 means the pin is to be de-asserted at
+ * 62.5ns from the beginning of a PWM cycle). The duration of 1 count depends
+ * on system clock. Refer to the hardware manual for more information.
  *
  * Parameters
- * dev: Device struct
+ * dev: Pointer to PWM device structure
  * access_op: whether to set one pin or all
- * pwm: Which PWM port to set
- * on: Duration for pin to stay high (must be >= 2)
- * off: Duration for pin to stay low (must be >= 2)
+ * pwm: PWM port number to set
+ * on: How far (in timer count) from the beginning of a PWM cycle the PWM
+ *     pin should be asserted. Must be zero, since PWM from Quark MCU always
+ *     starts from high.
+ * off: How far (in timer count) from the beginning of a PWM cycle the PWM
+ *	pin should be de-asserted.
  *
- * return 0, -ENOTSUP
+ * return 0, or negative errno code
  */
 static int pwm_qmsi_set_values(struct device *dev, int access_op,
-				  uint32_t pwm, uint32_t on, uint32_t off)
+			       uint32_t pwm, uint32_t on, uint32_t off)
 {
-	int i;
+	uint32_t *channel_period = dev->config->config_info;
+	int i, high, low;
 
-	if (off == 0) {
-		on--;
-		off = 1;
+	if (on) {
+		return -EINVAL;
 	}
 
 	switch (access_op) {
@@ -192,13 +195,40 @@ static int pwm_qmsi_set_values(struct device *dev, int access_op,
 		if (pwm >= CONFIG_PWM_QMSI_NUM_PORTS) {
 			return -EIO;
 		}
-		return __set_one_port(dev, QM_PWM_0, pwm, on, off);
+
+		high = off;
+		low = channel_period[pwm] - off;
+
+		if (off >= channel_period[pwm]) {
+			high = channel_period[pwm] - 1;
+			low = 1;
+		}
+
+		if (off == 0) {
+			high = 1;
+			low = channel_period[pwm] - 1;
+		}
+
+		return __set_one_port(dev, QM_PWM_0, pwm, high, low);
 
 	case PWM_ACCESS_ALL:
 		for (i = 0; i < CONFIG_PWM_QMSI_NUM_PORTS; i++) {
-			__set_one_port(dev, QM_PWM_0, i, on, off);
+			high = off;
+			low = channel_period[i] - off;
+
+			if (off >= channel_period[i]) {
+				high = channel_period[i] - 1;
+				low = 1;
+			}
+
+			if (off == 0) {
+				high = 1;
+				low = channel_period[i] - 1;
+			}
+
+			return __set_one_port(dev, QM_PWM_0, i, high, low);
 		}
-	break;
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -208,7 +238,7 @@ static int pwm_qmsi_set_values(struct device *dev, int access_op,
 }
 
 static int pwm_qmsi_set_period(struct device *dev, int access_op,
-				 uint32_t pwm, uint32_t period)
+			       uint32_t pwm, uint32_t period)
 {
 	uint32_t *channel_period = dev->config->config_info;
 	int ret_val = 0;
@@ -295,12 +325,23 @@ static int pwm_qmsi_set_duty_cycle(struct device *dev, int access_op,
 	return 0;
 }
 
+static int pwm_qmsi_set_phase(struct device *dev, int access_op,
+			      uint32_t pwm, uint8_t phase)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(access_op);
+	ARG_UNUSED(pwm);
+	ARG_UNUSED(phase);
+
+	return -ENOTSUP;
+}
 
 static struct pwm_driver_api pwm_qmsi_drv_api_funcs = {
 	.config = pwm_qmsi_configure,
 	.set_values = pwm_qmsi_set_values,
 	.set_period = pwm_qmsi_set_period,
 	.set_duty_cycle = pwm_qmsi_set_duty_cycle,
+	.set_phase = pwm_qmsi_set_phase
 };
 
 static int pwm_qmsi_init(struct device *dev)
