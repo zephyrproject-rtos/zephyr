@@ -32,6 +32,7 @@
 
 #include <net/net_ip.h>
 #include <net/net_socket.h>
+#include <net/net_context.h>
 
 #include "contiki/ip/simple-udp.h"
 #include "contiki/ipv6/uip-ds6.h"

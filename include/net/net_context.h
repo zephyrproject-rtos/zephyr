@@ -20,3 +20,9 @@
  * limitations under the License.
  */
 
+#ifndef __NET_CONTEXT_H
+#define __NET_CONTEXT_H
+
+void *net_context_get_internal_connection(struct net_context *context);
+
+#endif /* #ifndef __NET_CONTEXT_H */
