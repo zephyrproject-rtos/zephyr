@@ -71,7 +71,7 @@ static const struct in6_addr in6addr_my = MY_IPADDR;
 #define UIP_IPADDR0 192
 #define UIP_IPADDR1 0
 #define UIP_IPADDR2 2
-#define UIP_IPADDR3 1
+#define UIP_IPADDR3 2
 
 #define UIP_DRIPADDR0 UIP_IPADDR0
 #define UIP_DRIPADDR1 UIP_IPADDR1
