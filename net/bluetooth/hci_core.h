@@ -19,6 +19,7 @@
 /* LMP feature helpers */
 #define lmp_bredr_capable(dev)	(!((dev).features[0][4] & BT_LMP_NO_BREDR))
 #define lmp_le_capable(dev)	((dev).features[0][4] & BT_LMP_LE)
+#define lmp_br_sc_capable(dev)	((dev).features[2][1] & BT_LMP_SC)
 
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000

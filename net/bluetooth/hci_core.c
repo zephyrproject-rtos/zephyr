@@ -3080,6 +3080,26 @@ static int br_init(void)
 		return err;
 	}
 
+	/* Enable BR/EDR SC if supported */
+	if (lmp_br_sc_capable(bt_dev)) {
+		struct bt_hci_cp_write_sc_host_supp *sc_cp;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SC_HOST_SUPP,
+					sizeof(*sc_cp));
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		sc_cp = net_buf_add(buf, sizeof(*sc_cp));
+		sc_cp->sc_support = 0x01;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SC_HOST_SUPP, buf,
+					   NULL);
+		if (err) {
+			return err;
+		}
+	}
+
 	return 0;
 }
 #else

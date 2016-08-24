@@ -129,6 +129,9 @@ struct bt_hci_cmd_hdr {
 /* Host features */
 #define BT_LMP_HOST_SSP				0x01
 
+/* Extended features (page 2)*/
+#define BT_LMP_SC				0x01
+
 /* LE features */
 #define BT_HCI_LE_ENCRYPTION			0x01
 #define BT_HCI_LE_CONN_PARAM_REQ_PROC		0x02
@@ -388,6 +391,11 @@ struct bt_hci_cp_write_ssp_mode {
 struct bt_hci_cp_write_le_host_supp {
 	uint8_t  le;
 	uint8_t  simul;
+} __packed;
+
+#define BT_HCI_OP_WRITE_SC_HOST_SUPP		BT_OP(BT_OGF_BASEBAND, 0x007a)
+struct bt_hci_cp_write_sc_host_supp {
+	uint8_t  sc_support;
 } __packed;
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO	BT_OP(BT_OGF_INFO, 0x0001)
