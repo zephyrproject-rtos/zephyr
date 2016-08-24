@@ -26,77 +26,7 @@ config NET_INIT_PRIO
          Network initialization priority level. This number tells how
 	 early in the boot the network stack is initialized.
 
-config NET_IPV6
-       bool "Enable IPv6"
-       default y
-       help
-         Enable IPv6 support. This should be selected by default as there is
-	 limited set of	network bearers provided that support IPv4.
-
-config NET_IF_UNICAST_IPV6_ADDR_COUNT
-       int "Max number of unicast IPv6 addresses per network interface"
-       depends on NET_IPV6
-       default 2
-
-config NET_IF_MCAST_IPV6_ADDR_COUNT
-       int "Max number of multicast IPv6 addresses per network interface"
-       depends on NET_IPV6
-       default 1
-
-config NET_IF_IPV6_PREFIX_COUNT
-       int "Max number of IPv6 prefixes per network interface"
-       depends on NET_IPV6
-       default 2
-
-config NET_INITIAL_HOP_LIMIT
-       int "Initial hop limit for a connection"
-       depends on NET_IPV6
-       default 64
-       help
-         The value should be > 0
-
-config NET_IPV6_MAX_NEIGHBORS
-       int "How many IPv6 neighbors are supported"
-       depends on NET_IPV6
-       default 8
-       range 1 254
-       help
-         The value depends on your network needs.
-
-config NET_IPV6_ND
-       bool "Activate neighbor discovery"
-       depends on NET_IPV6
-       default y
-       help
-         The value depends on your network needs. ND should normally
-         be active.
-
-config NET_IPV6_DAD
-       bool "Activate duplicate address detection"
-       depends on NET_IPV6
-       default y
-       default n if !NET_IPV6_ND
-       help
-         The value depends on your network needs. DAD should normally
-         be active.
-
-config NET_IPV6_RA_RDNSS
-       bool "Support RA RDNSS option"
-       depends on NET_IPV6 && !NET_IPV6_NO_ND
-       default y
-       help
-         Support Router Advertisement Recursive DNS Server option.
-	 See RFC 6106 for details. The value depends on your network needs.
-
-config NET_6LO
-       bool "Enable 6lowpan IPv6 Compression library"
-       depends on NET_IPV6
-       help
-         6lowpan compression and fragmentation.
-
-config NET_6LO_DEBUG
-        bool "Enable 6lowpan debug"
-        depends on NET_6LO
+source "net/yaip/Kconfig.ipv6"
 
 config NET_IPV4
        bool "Enable IPv4"

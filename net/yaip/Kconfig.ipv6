@@ -1,0 +1,85 @@
+# Kconfig.ipv6 - IPv6 Options
+
+#
+# Copyright (c) 2016 Intel Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig NET_IPV6
+	bool "IPv6"
+	default y
+	help
+	Enable IPv6 support. This should be selected by default as there
+	is limited set of network bearers provided that support IPv4.
+
+if NET_IPV6
+
+config NET_IF_UNICAST_IPV6_ADDR_COUNT
+	int "Max number of unicast IPv6 addresses per network interface"
+	default 2
+
+config NET_IF_MCAST_IPV6_ADDR_COUNT
+	int "Max number of multicast IPv6 addresses per network interface"
+	default 1
+
+config NET_IF_IPV6_PREFIX_COUNT
+	int "Max number of IPv6 prefixes per network interface"
+	default 2
+
+config NET_INITIAL_HOP_LIMIT
+	int "Initial hop limit for a connection"
+	default 64
+	help
+	The value should be > 0
+
+config NET_IPV6_MAX_NEIGHBORS
+	int "How many IPv6 neighbors are supported"
+	default 8
+	range 1 254
+	help
+	The value depends on your network needs.
+
+config NET_IPV6_ND
+	bool "Activate neighbor discovery"
+	default y
+	help
+	The value depends on your network needs. ND should normally
+	be active.
+
+config NET_IPV6_DAD
+	bool "Activate duplicate address detection"
+	default y
+	default n if !NET_IPV6_ND
+	help
+	The value depends on your network needs. DAD should normally
+	be active.
+
+config NET_IPV6_RA_RDNSS
+	bool "Support RA RDNSS option"
+	depends on !NET_IPV6_NO_ND
+	default y
+	help
+	Support Router Advertisement Recursive DNS Server option.
+	See RFC 6106 for details. The value depends on your network needs.
+
+config NET_6LO
+	bool "Enable 6lowpan IPv6 Compression library"
+	help
+	6lowpan compression and fragmentation.
+
+config NET_6LO_DEBUG
+	bool "Enable 6lowpan debug"
+	depends on NET_6LO
+
+endif # NET_IPV6
