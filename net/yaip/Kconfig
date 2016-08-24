@@ -16,15 +16,15 @@
 # limitations under the License.
 #
 
-menu   "New IP stack [EXPERIMENTAL]"
-       depends on NET_YAIP
+menu "New IP stack [EXPERIMENTAL]"
+	depends on NET_YAIP
 
 config NET_INIT_PRIO
-       int
-       default 90
-       help
-         Network initialization priority level. This number tells how
-	 early in the boot the network stack is initialized.
+	int
+	default 90
+	help
+	Network initialization priority level. This number tells how
+	early in the boot the network stack is initialized.
 
 source "net/yaip/Kconfig.ipv6"
 
@@ -39,110 +39,114 @@ config NET_MAX_ROUTERS
 	help
 	The value depends on your network needs.
 
+config NET_TCP
+	bool
+	default n
+
 config NET_UDP
-       bool "Enable UDP"
-       default y
-       help
-         The value depends on your network needs.
+	bool "Enable UDP"
+	default y
+	help
+	The value depends on your network needs.
 
 config NET_MAX_CONN
-       int "How many network connections are supported"
-       depends on NET_UDP || NET_TCP
-       default 4
-       help
-         The value depends on your network needs. The value
-         should include both UDP and TCP connections.
+	int "How many network connections are supported"
+	depends on NET_UDP || NET_TCP
+	default 4
+	help
+	The value depends on your network needs. The value
+	should include both UDP and TCP connections.
 
 config NET_CONN_CACHE
-       bool "Cache network connections"
-       depends on NET_UDP || NET_TCP
-       default n
-       help
-         Caching takes slight more memory but will speedup connection
-         handling of UDP and TCP connections.
+	bool "Cache network connections"
+	depends on NET_UDP || NET_TCP
+	default n
+	help
+	Caching takes slight more memory but will speedup connection
+	handling of UDP and TCP connections.
 
 config NET_TX_STACK_SIZE
 	int "TX fiber stack size"
 	default 1024
 	help
-	  Set the TX fiber stack size in bytes. The TX fiber is waiting
-	  data from application. Each network interface will start one
-	  TX fiber for sending network packets destined to it.
+	Set the TX fiber stack size in bytes. The TX fiber is waiting
+	data from application. Each network interface will start one
+	TX fiber for sending network packets destined to it.
 
 config NET_RX_STACK_SIZE
 	int "RX fiber stack size"
 	default 1200
 	help
-	  Set the RX fiber stack size in bytes. The RX fiber is waiting
-	  data from network. There is one RX fiber in the system.
+	Set the RX fiber stack size in bytes. The RX fiber is waiting
+	data from network. There is one RX fiber in the system.
 
 config NET_NBUF_RX_COUNT
 	int "How many network receives can be pending at the same time"
 	default 2
 	help
-	  Each RX buffer will occupy smallish amount of memory.
-	  See include/net/nbuf.h and the sizeof(struct nbuf)
+	Each RX buffer will occupy smallish amount of memory.
+	See include/net/nbuf.h and the sizeof(struct nbuf)
 
 config NET_NBUF_TX_COUNT
 	int "How many network sends can be pending at the same time"
 	default 2
 	help
-	  Each TX buffer will occupy smallish amount of memory.
-	  See include/net/nbuf.h and the sizeof(struct nbuf)
+	Each TX buffer will occupy smallish amount of memory.
+	See include/net/nbuf.h and the sizeof(struct nbuf)
 
 config NET_NBUF_DATA_COUNT
 	int "How many network data buffers are allocated"
 	default 16
 	help
-	  Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish
-	  header (sizeof(struct net_buf)) amount of data.
+	Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish
+	header (sizeof(struct net_buf)) amount of data.
 
 config NET_NBUF_DATA_SIZE
 	int "Size of each network data fragment"
 	default 128
 	help
-	  This value tells what is the size of the data fragment that is
-	  received from the network.
-	  Example: For IEEE 802.15.4, the network packet is 127 bytes long,
-	  which leaves in worst case 81 bytes for user data (MTU).
-	  In order to be able to receive at least full IPv6 packet which
-	  has a size of 1280 bytes, the one should allocate 16 fragments here.
+	This value tells what is the size of the data fragment that is
+	received from the network.
+	Example: For IEEE 802.15.4, the network packet is 127 bytes long,
+	which leaves in worst case 81 bytes for user data (MTU).
+	In order to be able to receive at least full IPv6 packet which
+	has a size of 1280 bytes, the one should allocate 16 fragments here.
 
 config NET_MAX_CONTEXTS
 	int "Number of network contexts to allocate"
 	default 2
 	help
-	  Each network context is used to describe a network 5-tuple that
-	  is used when listening or sending network traffic. This is very
-	  similar as one could call a network socket in some other systems.
+	Each network context is used to describe a network 5-tuple that
+	is used when listening or sending network traffic. This is very
+	similar as one could call a network socket in some other systems.
 
 config NET_CONTEXT_SYNC_RECV
 	bool "Support synchronous functionality in net_context_recv() API"
 	default y
 	help
-	  You can disable sync support to save some memory if you are calling
-	  net_context_recv() in async way only when timeout is set to 0.
+	You can disable sync support to save some memory if you are calling
+	net_context_recv() in async way only when timeout is set to 0.
 
 config NET_CONTEXT_CHECK
 	bool "Check options when calling various net_context functions"
 	default y
 	help
-	  If you know that the options passed to net_context...() functions
-	  are ok, then you can disable the checks to save some memory.
+	If you know that the options passed to net_context...() functions
+	are ok, then you can disable the checks to save some memory.
 
 config NET_SLIP
-       bool "Use SLIP connectivity with Qemu"
-       default n
-       select SLIP
-       select UART_PIPE
-       select UART_INTERRUPT_DRIVEN
-       help
-	  The SLIP support is only used when the application is
-	  run inside Qemu and the network peer is run in your
-	  host. The host needs to have tunslip running in order
-	  to receive and send network packets via the SLIP driver.
-	  The SLIP driver Kconfig options can be tweaked in drivers
-	  section.
+	bool "Use SLIP connectivity with Qemu"
+	default n
+	select SLIP
+	select UART_PIPE
+	select UART_INTERRUPT_DRIVEN
+	help
+	The SLIP support is only used when the application is
+	run inside Qemu and the network peer is run in your
+	host. The host needs to have tunslip running in order
+	to receive and send network packets via the SLIP driver.
+	The SLIP driver Kconfig options can be tweaked in drivers
+	section.
 
 config NET_STATISTICS
        bool "Print network statistics"
