@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#if defined(CONFIG_NET_UIP)
-#include <net/uip/net_if.h>
-#elif defined(CONFIG_NET_YAIP)
+#if defined(CONFIG_NET_YAIP)
 #include <net/yaip/net_if.h>
 #endif
