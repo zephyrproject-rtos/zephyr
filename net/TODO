@@ -82,6 +82,79 @@ TCP
    it. Application can use the net_context API for connection
    establishment and shutdown, and for sending and receiving data.
 
+6LoWPAN
+=======
+
+- Contex based compression support
+
+  Priority: Medium
+  Compexicity: C4
+
+  Add support for context based IPv6 header compression and
+  uncompression. RFC 6282, Chapter 3.1.1 Base format, if SAC=1
+  and DAC=1. Also 3.1.2 Context Identifier Extension.
+
+- Offset based Reassembly of 802.15.4 packets
+
+  Priority: Medium
+  Complexicity: C2
+
+  Offset based reassembly of 802.15.4 packets. Fragments can come in
+  any order [e.g. mesh]).
+
+- Mesh Header compression and uncompression
+
+  Priority: Medium
+  Complexicity: C4
+
+  Add support for Mesh header compression and uncompression.
+
+- Unicast-Prefix based IPv6 Multicast(dst) address compression
+
+  Priority: Medium
+  Complexicity: C2
+
+  See RFC 6282, Chapter 3.1.1, if M = 1 and DAC = 1.
+
+- Stateless Address Autoconfiguration
+
+  Priority: Medium
+  Complexicity: C2
+
+  The Interface Identifier [RFC4291] for an IEEE 802.15.4 interface may
+  be based on the EUI-64 identifier [EUI64] assigned to the IEEE
+  802.15.4 device.  In this case, the Interface Identifier is formed
+  from the EUI-64 according to the "IPv6 over Ethernet" specification
+  [RFC2464] (See RFC 4944, Chapter 6).
+
+- Multicast Address Mapping
+
+  Priority: Medium
+  Complexicity: C2
+
+  An IPv6 packet with a multicast destination address (DST),
+  consisting of the sixteen octets DST[1] through DST[16], is
+  transmitted to the following 802.15.4 16-bit multicast address
+  (See RFC 4944, Chapter 9).
+
+- Frame Delivery in a Link-Layer Mesh
+
+  Priority: Medium
+  Complexicity: C2
+
+  Defines how to effect delivery of layer 2 frames in a
+  mesh, given a target "Final Destination" link-layer address.
+  (See RFC 4944, Chapter 11).
+
+- IPv6 Next Header Compression
+
+  Priority: Medium
+  Complexicity: C4
+
+  LOWPAN_IPHC elides the IPv6 Next Header field when the NH bit is set
+  to 1.  This also indicates the use of 6LoWPAN next header compression,
+  LOWPAN_NHC (See RFC 6282, Chapter 4).
+
 
 L2
 ==
