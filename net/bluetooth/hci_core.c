@@ -1234,6 +1234,20 @@ static void link_key_notify(struct net_buf *buf)
 
 		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
+	case BT_LK_AUTH_COMBINATION_P256:
+		atomic_set_bit(conn->br.link_key->flags,
+			       BT_LINK_KEY_AUTHENTICATED);
+		/* fall through */
+	case BT_LK_UNAUTH_COMBINATION_P256:
+		atomic_set_bit(conn->br.link_key->flags, BT_LINK_KEY_SC);
+
+		/* Mark no-bond so that link-key is removed on disconnection */
+		if (bt_conn_ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
+			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
+		}
+
+		memcpy(conn->br.link_key->val, evt->link_key, 16);
+		break;
 	default:
 		BT_WARN("Unsupported Link Key type %u", evt->key_type);
 		memset(conn->br.link_key->val, 0,
