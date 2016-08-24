@@ -71,53 +71,53 @@ config TI_CC2520_DRV_NAME
 	string "TI CC2520 Driver's name"
 	default "cc2520"
 	help
-	  This option sets the driver name
+	This option sets the driver name
 
 config TI_CC2520_SPI_DRV_NAME
 	string "SPI driver's name to use to access CC2520"
 	default ""
 	help
-	  This option is mandatory to set which SPI controller to use in order
-	  to actually control the CC2520 chip.
+	This option is mandatory to set which SPI controller to use in order
+	to actually control the CC2520 chip.
 
 config TI_CC2520_SPI_FREQ
 	int "SPI system frequency"
 	default 0
 	help
-	  This option sets the SPI controller's frequency. Beware this value
-	  depends on the SPI controller being used and also on the system
-	  clock.
+	This option sets the SPI controller's frequency. Beware this value
+	depends on the SPI controller being used and also on the system
+	clock.
 
-config	TI_CC2520_SPI_SLAVE
+config TI_CC2520_SPI_SLAVE
 	int "SPI slave linked to CC2520"
 	default 0
 	help
-	  This option sets the SPI slave number SPI controller has to switch
-	  to when dealing with CC2520 chip.
+	This option sets the SPI slave number SPI controller has to switch
+	to when dealing with CC2520 chip.
 
-config	TI_CC2520_FIBER_STACK_SIZE
+config TI_CC2520_FIBER_STACK_SIZE
 	int "Driver's internal fiber stack size"
 	default 800
 	help
-	  This option sets the driver's stack size for its internal fiber.
-	  The default value should be sufficient, but it case it prooves to be
-	  a too little, this option makes it easy to play with the size.
+	This option sets the driver's stack size for its internal fiber.
+	The default value should be sufficient, but it case it prooves to be
+	a too little, this option makes it easy to play with the size.
 
-config	TI_CC2520_CHANNEL
+config TI_CC2520_CHANNEL
 	int "TI CC2520 Channel"
 	default 26
 	range 11 26
 	help
-	  All the 802.15.4 devices that want to connect to each other need
-	  to have same channel. Default channel is 26.
+	All the 802.15.4 devices that want to connect to each other need
+	to have same channel. Default channel is 26.
 
 config TI_CC2520_AUTO_CRC
 	bool "Let the chip handling CRC on reception"
 	default y
 	help
-	  When receiving a packet, the hardware can verify the CRC by itself
-	  and will provide a flag letting know the success - or not - on
-	  a flag on the footer.
+	When receiving a packet, the hardware can verify the CRC by itself
+	and will provide a flag letting know the success - or not - on
+	a flag on the footer.
 
 config TI_CC2520_LINK_DETAILS
 	bool "Forward RSSI and link information on reception to upper stack"
@@ -125,18 +125,19 @@ config TI_CC2520_LINK_DETAILS
 	depends on TI_CC2520_LEGACY
 	select TI_CC2520_AUTO_CRC
 	help
-	  If necessary, it will be possible to grab link and RSSI information
-	  from the packet footer and forward them to the above stack.
+	If necessary, it will be possible to grab link and RSSI information
+	from the packet footer and forward them to the above stack.
 
 config TI_CC2520_AUTO_ACK
 	bool "Let the chip handle TX/RX IEEE 802.15.4 ACK requests"
 	default n
 	select TI_CC2520_AUTO_CRC
 	help
-	  The chip is able to reply by itself to ACK requests as well as
-	  waiting for an ACK when a TX packet is requesting an ACK. However,
-	  this feature requires the chip to get hardware filtering on, and
-	  thus the above stack needs to provide the right information for such
-	  filtering feature to work.
+	The chip is able to reply by itself to ACK requests as well as
+	waiting for an ACK when a TX packet is requesting an ACK. However,
+	this feature requires the chip to get hardware filtering on, and
+	thus the above stack needs to provide the right information for such
+	filtering feature to work.
+
 endif
 endmenu
