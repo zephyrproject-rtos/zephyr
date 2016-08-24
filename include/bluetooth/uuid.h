@@ -104,6 +104,11 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_BAS				BT_UUID_DECLARE_16(0x180f)
 #define BT_UUID_BAS_VAL				0x180f
+/** @def BT_UUID_HIDS
+ *  @brief HID Service
+ */
+#define BT_UUID_HIDS				BT_UUID_DECLARE_16(0x1812)
+#define BT_UUID_HIDS_VAL			0x1812
 /** @def BT_UUID_CSC
  *  @brief Cycling Speed and Cadence Service
  */
@@ -169,6 +174,16 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_VALID_RANGE			BT_UUID_DECLARE_16(0x2906)
 #define BT_UUID_VALID_RANGE_VAL			0x2906
+/** @def BT_UUID_HIDS_EXT_REPORT
+ *  @brief HID External Report Descriptor
+ */
+#define BT_UUID_HIDS_EXT_REPORT			BT_UUID_DECLARE_16(0x2907)
+#define BT_UUID_HIDS_EXT_REPORT_VAL		0x2907
+/** @def BT_UUID_HIDS_REPORT_REF
+ *  @brief HID Report Reference Descriptor
+ */
+#define BT_UUID_HIDS_REPORT_REF			BT_UUID_DECLARE_16(0x2908)
+#define BT_UUID_HIDS_REPORT_REF_VAL		0x2908
 /** @def BT_UUID_ES_CONFIGURATION
  *  @brief Environmental Sensing Configuration Descriptor
  */
@@ -269,6 +284,26 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_HRS_CONTROL_POINT		BT_UUID_DECLARE_16(0x2a39)
 #define BT_UUID_HRS_CONTROL_POINT_VAL		0x2a39
+/** @def BT_UUID_HIDS_INFO
+ *  @brief HID Information Characteristic
+ */
+#define BT_UUID_HIDS_INFO			BT_UUID_DECLARE_16(0x2a4a)
+#define BT_UUID_HIDS_INFO_VAL			0x2a4a
+/** @def BT_UUID_HIDS_REPORT_MAP
+ *  @brief HID Report Map Characteristic
+ */
+#define BT_UUID_HIDS_REPORT_MAP			BT_UUID_DECLARE_16(0x2a4b)
+#define BT_UUID_HIDS_REPORT_MAP_VAL		0x2a4b
+/** @def BT_UUID_HIDS_CTRL_POINT
+ *  @brief HID Control Point Characteristic
+ */
+#define BT_UUID_HIDS_CTRL_POINT			BT_UUID_DECLARE_16(0x2a4c)
+#define BT_UUID_HIDS_CTRL_POINT_VAL		0x2a4c
+/** @def BT_UUID_HIDS_REPORT
+ *  @brief HID Report Characteristic
+ */
+#define BT_UUID_HIDS_REPORT			BT_UUID_DECLARE_16(0x2a4d)
+#define BT_UUID_HIDS_REPORT_VAL			0x2a4d
 /** @def BT_UUID_CSC_MEASUREMENT
  *  @brief CSC Measurement Characteristic
  */
