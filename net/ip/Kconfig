@@ -577,14 +577,6 @@ config	NET_TESTING
 	  testing with Qemu-to-Qemu and slip. Note that this setting should
 	  not be used for Qemu-to-Host communication.
 
-if NETWORKING
-
-if NET_YAIP
-source "net/yaip/Kconfig"
-endif
-
 source "net/ip/Kconfig.debug"
-
-endif
 
 endmenu
