@@ -739,6 +739,22 @@ struct sockaddr_in_ptr *net_sin_ptr(const struct sockaddr_ptr *addr)
 	return (struct sockaddr_in_ptr *)addr;
 }
 
+/**
+ * @brief Convert a string to IP address.
+ *
+ * @param family IP address family (AF_INET or AF_INET6)
+ * @param src IP address in a null terminated string
+ * @param dst Pointer to struct in_addr if family is AF_INET or
+ * pointer to struct in6_addr if family is AF_INET6
+ *
+ * @note This function doesn't do precise error checking,
+ * do not use for untrusted strings.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int net_addr_pton(sa_family_t family, const char *src,
+		  struct sockaddr *dst);
+
 #ifdef __cplusplus
 }
 #endif

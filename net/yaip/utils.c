@@ -27,6 +27,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
+#include <errno.h>
+
 #include <net/net_ip.h>
 #include <net/nbuf.h>
 #include <net/net_core.h>
@@ -235,6 +238,125 @@ char *net_sprint_ip_addr_buf(const uint8_t *ip, int ip_len,
 	}
 
 	return buf;
+}
+
+int net_addr_pton(sa_family_t family, const char *src,
+		  struct sockaddr *dst)
+{
+	if (family == AF_INET) {
+		struct in_addr *addr = (struct in_addr *)dst;
+		int i, len;
+
+		len = strlen(src);
+		for (i = 0; i < len; i++) {
+			if (!(src[i] >= '0' && src[i] <= '9') &&
+			    src[i] != '.') {
+				return -EINVAL;
+			}
+		}
+
+		for (i = 0; i < 4; i++) {
+			addr->s4_addr[i] = strtol(src, NULL, 10);
+
+			src++;
+		}
+
+	} else if (family == AF_INET6) {
+		/* If the string contains a '.', it means it's of the form
+		 * X:X:X:X:X:X:x.x.x.x, and contains only 6 16-bit pieces
+		 */
+		int expected_groups = strchr(src, '.') ? 6 : 8;
+		struct in6_addr *addr = (struct in6_addr *)dst;
+		int i, len;
+
+		if (*src == ':') {
+			/* Ignore a leading colon, makes parsing neater */
+			src++;
+		}
+
+		len = strlen(src);
+		for (i = 0; i < len; i++) {
+			if (!(src[i] >= '0' && src[i] <= '9') &&
+			    !(src[i] >= 'A' && src[i] <= 'F') &&
+			    !(src[i] >= 'a' && src[i] <= 'f') &&
+			    src[i] != '.' && src[i] != ':')
+				return -EINVAL;
+		}
+
+		for (i = 0; i < expected_groups; i++) {
+			char *tmp;
+
+			if (!src || *src == '\0') {
+				return -EINVAL;
+			}
+
+			if (*src != ':') {
+				/* Normal IPv6 16-bit piece */
+				addr->s6_addr16[i] = htons(strtol(src, NULL,
+								  16));
+				src = strchr(src, ':');
+				if (!src && i < expected_groups - 1) {
+					return -EINVAL;
+				}
+
+				src++;
+				continue;
+			}
+
+			/* Two colons in a row */
+
+			for (; i < expected_groups; i++) {
+				addr->s6_addr16[i] = 0;
+			}
+
+			tmp = strrchr(src, ':');
+			if (src == tmp && (expected_groups == 6 || !src[1])) {
+				src++;
+				break;
+			}
+
+			if (expected_groups == 6) {
+				/* we need to drop the trailing
+				 * colon since it's between the
+				 * ipv6 and ipv4 addresses, rather than being
+				 * a part of the ipv6 address
+				 */
+				tmp--;
+			}
+
+			/* Calculate the amount of skipped zeros */
+			i = expected_groups - 1;
+			do {
+				if (*tmp == ':') {
+					i--;
+				}
+			} while (tmp-- != src);
+
+			src++;
+		}
+
+		if (expected_groups == 6) {
+			/* Parse the IPv4 part */
+			for (i = 0; i < 4; i++) {
+				if (!src || !*src) {
+					return -EINVAL;
+				}
+
+				addr->s6_addr[12 + i] = strtol(src, NULL, 10);
+
+				src = strchr(src, '.');
+				if (!src && i < 3) {
+					return -EINVAL;
+				}
+
+				src++;
+			}
+		}
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static uint16_t calc_chksum(uint16_t sum, const uint8_t *ptr, uint16_t len)
