@@ -28,7 +28,8 @@
  * The sample runs like this on PWM[0] (IO3):
  * 1. At first, the period for the PWM is 1 second on, 1 second off.
  * 2. Every 4 seconds, the period is halved.
- * 3. After the period is faster than 10ms, period starts to double.
+ * 3. After the period is faster than 1 ms on and 1 ms off, period
+ *    starts to double.
  * 4. Every 4 seconds, period is doubled.
  * 5. When period is longer than 1 seconds, repeat from 2.
  *
@@ -44,11 +45,20 @@
 #include <pwm.h>
 #include <sys_clock.h>
 
-/* about 1 ms */
-#define MIN_PERIOD	32000
+#define HW_CLOCK_CYCLES_PER_USEC  (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / \
+				   USEC_PER_SEC)
 
-/* about 1 second */
-#define MAX_PERIOD	32000000
+/**
+ * unit: micro second.
+ * 1 m sec for "on" or "off" time.
+ */
+#define MIN_PERIOD	1000
+
+/**
+ * unit: micro second.
+ * 1 sec for "on" or "off" time
+ */
+#define MAX_PERIOD	1000000
 
 #define SLEEPTICKS	SECONDS(4)
 
@@ -69,25 +79,34 @@ void main(void)
 		printk("Cannot find PWM_0!\n");
 	}
 
-	period = MAX_PERIOD;
+	period = MAX_PERIOD * 2;
 	dir = 0;
 
 	while (1) {
-		pwm_pin_set_values(pwm_dev, 0, period, period);
+		if (pwm_pin_set_period(pwm_dev, 0, period)) {
+			printk("set period fails\n");
+			return;
+		}
+
+		if (pwm_pin_set_values(pwm_dev, 0, 0,
+				(period * HW_CLOCK_CYCLES_PER_USEC) / 2)) {
+			printk("set values fails\n");
+			return;
+		}
 
 		if (dir) {
 			period *= 2;
 
-			if (period > MAX_PERIOD) {
+			if (period > (MAX_PERIOD * 2)) {
 				dir = 0;
-				period = MAX_PERIOD;
+				period = MAX_PERIOD * 2;
 			}
 		} else {
 			period /= 2;
 
-			if (period < MIN_PERIOD) {
+			if (period < (MIN_PERIOD * 2)) {
 				dir = 1;
-				period = MIN_PERIOD;
+				period = MIN_PERIOD * 2;
 			}
 		}
 
