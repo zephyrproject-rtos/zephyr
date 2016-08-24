@@ -1206,6 +1206,9 @@ static void link_key_notify(struct net_buf *buf)
 		return;
 	}
 
+	/* clear any old Link Key flags */
+	atomic_set(conn->br.link_key->flags, 0);
+
 	switch (evt->key_type) {
 	case BT_LK_COMBINATION:
 		/*
@@ -1219,25 +1222,22 @@ static void link_key_notify(struct net_buf *buf)
 		}
 		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
-	case BT_LK_UNAUTH_COMBINATION_P192:
 	case BT_LK_AUTH_COMBINATION_P192:
-		if (evt->key_type == BT_LK_AUTH_COMBINATION_P192) {
-			atomic_set_bit(conn->br.link_key->flags,
-				       BT_LINK_KEY_AUTHENTICATED);
-		}
-		/*
-		 * Update keys database if authentication bond is required to
-		 * be persistent. Mark no-bond link key flag for connection on
-		 * the contrary.
-		 */
-		if (bt_conn_ssp_get_auth(conn) > BT_HCI_NO_BONDING_MITM) {
-			memcpy(conn->br.link_key->val, evt->link_key, 16);
-		} else {
+		atomic_set_bit(conn->br.link_key->flags,
+			       BT_LINK_KEY_AUTHENTICATED);
+		/* fall through */
+	case BT_LK_UNAUTH_COMBINATION_P192:
+		/* Mark no-bond so that link-key is removed on disconnection */
+		if (bt_conn_ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
 			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
 		}
+
+		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	default:
-		BT_WARN("Link key type unsupported/unimplemented");
+		BT_WARN("Unsupported Link Key type %u", evt->key_type);
+		memset(conn->br.link_key->val, 0,
+		       sizeof(conn->br.link_key->val));
 		break;
 	}
 
