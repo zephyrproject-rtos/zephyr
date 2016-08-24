@@ -86,6 +86,26 @@ char *strchr(const char *s, int c)
 
 /**
  *
+ * @brief String scanning operation
+ *
+ * @return pointer to last instance of found byte, or NULL if not found
+ */
+
+char *strrchr(const char *s, int c)
+{
+	char *match = NULL;
+
+	do {
+		if (*s == (char)c) {
+			match = (char *)s;
+		}
+	} while (*s++);
+
+	return match;
+}
+
+/**
+ *
  * @brief Get string length
  *
  * @return number of bytes in string <s>
