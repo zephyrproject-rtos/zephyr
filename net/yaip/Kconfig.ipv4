@@ -1,0 +1,42 @@
+# Kconfig.ipv4 - IPv4 Options
+
+#
+# Copyright (c) 2016 Intel Corporation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menuconfig NET_IPV4
+	bool "IPv4"
+	default n
+	help
+	Enable IPv4 support. If this is enabled then the device is
+	able to send and receive IPv4 network packets.
+
+if NET_IPV4
+
+config NET_INITIAL_TTL
+	int "Initial time to live for a connection"
+	default 64
+	help
+	The value should be > 0
+
+config NET_IF_UNICAST_IPV4_ADDR_COUNT
+	int "Max number of unicast IPv4 addresses per network interface"
+	default 1
+
+config NET_IF_MCAST_IPV4_ADDR_COUNT
+	int "Max number of multicast IPv4 addresses per network interface"
+	default 1
+
+endif # NET_IPV4

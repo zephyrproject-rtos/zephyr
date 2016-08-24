@@ -28,38 +28,16 @@ config NET_INIT_PRIO
 
 source "net/yaip/Kconfig.ipv6"
 
-config NET_IPV4
-       bool "Enable IPv4"
-       default n
-       help
-         Enable IPv4 support. If this is enabled then the device is
-	 able to send and receive IPv4 network packets.
-
-config NET_INITIAL_TTL
-       int "Initial time to live for a connection"
-       depends on NET_IPV4
-       default 64
-       help
-         The value should be > 0
-
-config NET_IF_UNICAST_IPV4_ADDR_COUNT
-       int "Max number of unicast IPv4 addresses per network interface"
-       depends on NET_IPV4
-       default 1
-
-config NET_IF_MCAST_IPV4_ADDR_COUNT
-       int "Max number of multicast IPv4 addresses per network interface"
-       depends on NET_IPV4
-       default 1
+source "net/yaip/Kconfig.ipv4"
 
 config NET_MAX_ROUTERS
-       int "How many routers are supported"
-       default 2 if NET_IPV4 && NET_IPV6
-       default 1 if NET_IPV4 && !NET_IPV6
-       default 1 if !NET_IPV4 && NET_IPV6
-       range 1 254
-       help
-         The value depends on your network needs.
+	int "How many routers are supported"
+	default 2 if NET_IPV4 && NET_IPV6
+	default 1 if NET_IPV4 && !NET_IPV6
+	default 1 if !NET_IPV4 && NET_IPV6
+	range 1 254
+	help
+	The value depends on your network needs.
 
 config NET_UDP
        bool "Enable UDP"
