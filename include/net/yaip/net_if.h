@@ -141,16 +141,16 @@ struct net_if_router {
  * and the network device.
  *
  * Because of the strong relationship between a device driver and such
- * network interface, each net_if should be instanciated by
+ * network interface, each net_if should be instantiated by
  */
 struct net_if {
-	/** The actualy device driver instance the net_if is related to */
+	/** The actually device driver instance the net_if is related to */
 	struct device *dev;
 
 	/** Interface's L2 layer */
 	const struct net_l2 const *l2;
 
-	/** Interfaces's private L2 data pointer */
+	/** Interface's private L2 data pointer */
 	void *l2_data;
 
 	/** The hardware link address */
@@ -333,7 +333,7 @@ void net_if_start_dad(struct net_if *iface);
 void net_if_start_rs(struct net_if *iface);
 
 /**
- * @brief Set a network interfac's link address
+ * @brief Set a network interface's link address
  *
  * @param iface Pointer to a network interface structure
  * @param addr a pointer on a uint8_t buffer representing the address
@@ -908,7 +908,7 @@ struct net_if_api {
 		.mtu = _mtu,						\
 	}
 
-/* Network device intialization macro */
+/* Network device initialization macro */
 
 #define NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
 			data, cfg_info, prio, api, l2,		\
