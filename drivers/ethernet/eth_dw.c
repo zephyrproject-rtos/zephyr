@@ -220,6 +220,9 @@ static int eth_initialize(struct device *port)
 
 	net_set_mac(mac_addr.bytes, sizeof(mac_addr.bytes));
 
+	/* Initialize the frame filter enabling unicast messages */
+	eth_write(base_addr, REG_ADDR_MAC_FRAME_FILTER, MAC_FILTER_4_PM);
+
 	/* Initialize transmit descriptor. */
 	context->tx_desc.tdes0 = 0;
 	context->tx_desc.tdes1 = 0;

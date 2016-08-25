@@ -176,6 +176,7 @@ struct eth_runtime {
 #define MAC_CONF_11_DUPLEX             BIT(11)
 #define MAC_CONF_3_TX_EN               BIT(3)
 #define MAC_CONF_2_RX_EN               BIT(2)
+#define MAC_FILTER_4_PM                BIT(4)
 
 #define STATUS_NORMAL_INT              BIT(16)
 #define STATUS_RX_INT                  BIT(6)
@@ -189,6 +190,7 @@ struct eth_runtime {
 #define INT_ENABLE_RX                  BIT(6)
 
 #define REG_ADDR_MAC_CONF              0x0000
+#define REG_ADDR_MAC_FRAME_FILTER      0x0004
 #define REG_ADDR_MACADDR_HI            0x0040
 #define REG_ADDR_MACADDR_LO            0x0044
 
