@@ -61,10 +61,8 @@ config UART_NRF5_FLOW_CONTROL
 	default n
 	depends on UART_NRF5
 	help
-	  Enable Flow Control.
-	  If selected, additionally two pins,
-	  RTS and CTS has to be
-	  configured.
+	  Enable Flow Control. If selected, additionally two pins, RTS and CTS
+	  has to be configured.
 
 config UART_NRF5_GPIO_TX_PIN
 	int "TX Pin Number"
