@@ -40,8 +40,8 @@ typedef void (*ticker_fp_compare_set) (uint32_t cc);
 struct ticker_node {
 	uint8_t next;
 
-	uint8_t is_sched_req;
-	uint8_t is_sched_ack;
+	uint8_t req;
+	uint8_t ack;
 	uint8_t force;
 	uint32_t ticks_periodic;
 	uint32_t ticks_to_expire;
@@ -387,25 +387,24 @@ static inline void ticker_worker(struct ticker_instance *instance)
 		/* move to next ticker */
 		ticker_id_head = ticker->next;
 
-		/* execute Task */
-		if (((ticker->is_sched_req - ticker->is_sched_ack) & 0xFF) ==
-		    1) {
-			/* scheduled timeout is acknowledged to be complete */
-			ticker->is_sched_ack--;
+		/* skip if not scheduled to execute */
+		if (((ticker->req - ticker->ack) & 0xff) != 1) {
+			continue;
+		}
 
-			if (ticker->timeout_func) {
-				DEBUG_TICKER_TASK(1);
-				(void)ticker->
-				    timeout_func(((instance->ticks_current +
-						     ticks_expired -
-						     ticker->
-						     ticks_to_expire_minus) &
-						    0x00FFFFFF),
-						   ticker->remainder_current,
-						   ticker->lazy_current,
-						   ticker->context);
-				DEBUG_TICKER_TASK(0);
-			}
+		/* scheduled timeout is acknowledged to be complete */
+		ticker->ack--;
+
+		if (ticker->timeout_func) {
+			DEBUG_TICKER_TASK(1);
+			ticker->timeout_func(((instance->ticks_current +
+					       ticks_expired -
+					       ticker->ticks_to_expire_minus) &
+					       0x00FFFFFF),
+					     ticker->remainder_current,
+					     ticker->lazy_current,
+					     ticker->context);
+			DEBUG_TICKER_TASK(0);
 		}
 	}
 
@@ -600,9 +599,7 @@ static inline uint8_t ticker_job_list_manage(
 			}
 
 			/* determine the ticker state */
-			state =
-			    (ticker->is_sched_req -
-			     ticker->is_sched_ack) & 0xFF;
+			state = (ticker->req - ticker->ack) & 0xff;
 
 			/* if not started or update not required,
 			 * set status and continue.
@@ -655,11 +652,10 @@ static inline uint8_t ticker_job_list_manage(
 					/* set schedule status of node
 					 * as updating.
 					 */
-					ticker->is_sched_req++;
+					ticker->req++;
 				} else {
 					/* reset schedule status of node */
-					ticker->is_sched_req =
-					    ticker->is_sched_ack;
+					ticker->req = ticker->ack;
 
 					if (instance->
 					    ticker_id_slot_previous ==
@@ -782,10 +778,10 @@ static inline void ticker_job_worker_bottom_half(
 			*insert_head = id_expired;
 
 			/* set schedule status of node as restarting. */
-			ticker->is_sched_req++;
+			ticker->req++;
 		} else {
 			/* reset schedule status of node */
-			ticker->is_sched_req = ticker->is_sched_ack;
+			ticker->req = ticker->ack;
 		}
 	}
 }
@@ -841,8 +837,7 @@ static inline void ticker_job_list_insert(
 					continue;
 				}
 
-				if (((ticker->is_sched_req -
-				      ticker->is_sched_ack) & 0xFF) != 0) {
+				if (((ticker->req - ticker->ack) & 0xff) != 0) {
 					user_op->op = TICKER_USER_OP_TYPE_NONE;
 					user_op->status =
 					    TICKER_STATUS_FAILURE;
@@ -909,8 +904,8 @@ static inline void ticker_job_list_insert(
 							      id_collide);
 
 					/* unschedule node */
-					ticker_preempt->is_sched_req =
-					    ticker_preempt->is_sched_ack;
+					ticker_preempt->req =
+					    ticker_preempt->ack;
 
 					/* enqueue for re-insertion */
 					ticker_preempt->next = insert_head;
@@ -928,8 +923,7 @@ static inline void ticker_job_list_insert(
 
 			/* Update flags */
 			if (id_insert == id_collide) {
-				ticker->is_sched_req =
-				    ticker->is_sched_ack + 1;
+				ticker->req = ticker->ack + 1;
 
 				status = TICKER_STATUS_SUCCESS;
 			} else {
@@ -1190,7 +1184,7 @@ static void ticker_instance0_worker_sched(uint8_t chain)
 	 * before being actually needing the work to complete before new
 	 * schedule.
 	 */
-	(void)work_schedule(&instance0_worker_irq, chain);
+	work_schedule(&instance0_worker_irq, chain);
 }
 
 static void ticker_instance0_job_sched(uint8_t chain)
@@ -1204,12 +1198,12 @@ static void ticker_instance0_job_sched(uint8_t chain)
 	 * before being actually needing the work to complete before new
 	 * schedule.
 	 */
-	(void)work_schedule(&instance0_job_irq, chain);
+	work_schedule(&instance0_job_irq, chain);
 }
 
 static void ticker_instance0_rtc_compare_set(uint32_t value)
 {
-	(void)rtc_compare_set(0, value);
+	rtc_compare_set(0, value);
 }
 
 static void ticker_instance1_worker_sched(uint8_t chain)
@@ -1223,7 +1217,7 @@ static void ticker_instance1_worker_sched(uint8_t chain)
 	 * before being actually needing the work to complete before new
 	 * schedule.
 	 */
-	(void)work_schedule(&instance1_worker_irq, chain);
+	work_schedule(&instance1_worker_irq, chain);
 }
 
 static void ticker_instance1_job_sched(uint8_t chain)
@@ -1237,12 +1231,12 @@ static void ticker_instance1_job_sched(uint8_t chain)
 	 * before being actually needing the work to complete before new
 	 * schedule.
 	 */
-	(void)work_schedule(&instance1_job_irq, chain);
+	work_schedule(&instance1_job_irq, chain);
 }
 
 static void ticker_instance1_rtc_compare_set(uint32_t value)
 {
-	(void)rtc_compare_set(1, value);
+	rtc_compare_set(1, value);
 }
 
 /*****************************************************************************

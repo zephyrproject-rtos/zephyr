@@ -2474,8 +2474,8 @@ static void isr(void)
 #if (WORK_TICKER_WORKER0_IRQ_PRIORITY == WORK_TICKER_JOB0_IRQ_PRIORITY)
 static void ticker_job_disable(uint32_t status, void *op_context)
 {
-	(void)status;
-	(void)op_context;
+	ARG_UNUSED(status);
+	ARG_UNUSED(op_context);
 
 	if (_radio.state != STATE_NONE) {
 		work_disable(WORK_TICKER_JOB0_IRQ);
@@ -2490,7 +2490,7 @@ static void ticker_if_done(uint32_t status, void *ops_context)
 
 static void ticker_success_assert(uint32_t status, void *params)
 {
-	(void)params;
+	ARG_UNUSED(params);
 
 	ASSERT(status == TICKER_STATUS_SUCCESS);
 }
@@ -2528,10 +2528,10 @@ static void event_active(uint32_t ticks_at_expire, uint32_t remainder,
 		(void *)1 };
 	uint32_t retval;
 
-	(void)ticks_at_expire;
-	(void)remainder;
-	(void)lazy;
-	(void)context;
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(context);
 
 	retval = work_schedule(&s_work_radio_active, 0);
 	ASSERT(!retval);
@@ -2539,7 +2539,7 @@ static void event_active(uint32_t ticks_at_expire, uint32_t remainder,
 
 static void work_radio_deassert(void *params)
 {
-	(void)params;
+	ARG_UNUSED(params);
 
 	work_radio_active(0);
 
@@ -2548,9 +2548,9 @@ static void work_radio_deassert(void *params)
 
 static void work_xtal_start(void *params)
 {
-	(void)params;
+	ARG_UNUSED(params);
 
-	(void)clock_m16src_start(1);
+	clock_m16src_start(1);
 }
 
 static void event_xtal(uint32_t ticks_at_expire, uint32_t remainder,
@@ -2560,10 +2560,10 @@ static void event_xtal(uint32_t ticks_at_expire, uint32_t remainder,
 		WORK_TICKER_WORKER0_IRQ, (work_fp) work_xtal_start, 0 };
 	uint32_t retval;
 
-	(void)ticks_at_expire;
-	(void)remainder;
-	(void)lazy;
-	(void)context;
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(context);
 
 	retval = work_schedule(&s_work_xtal_start, 0);
 	ASSERT(!retval);
@@ -2571,7 +2571,7 @@ static void event_xtal(uint32_t ticks_at_expire, uint32_t remainder,
 
 static void work_xtal_stop(void *params)
 {
-	(void)params;
+	ARG_UNUSED(params);
 
 	clock_m16src_stop();
 
@@ -2834,7 +2834,7 @@ static void work_xtal_stop_calc(void *params)
 					status = conn_update_req(conn_curr);
 					if ((status == 2) &&
 					    (conn->llcp_version.rx)) {
-						(void)conn_update_req(conn);
+						conn_update_req(conn);
 					}
 				} else if ((conn_curr->role.master.role == 0) &&
 						(conn->role.slave.role != 0) &&
@@ -2847,7 +2847,7 @@ static void work_xtal_stop_calc(void *params)
 					status = conn_update_req(conn);
 					if ((status == 2) &&
 					    (conn_curr->llcp_version.rx)) {
-						(void)conn_update_req(conn_curr);
+						conn_update_req(conn_curr);
 					}
 				}
 			}
@@ -3312,9 +3312,9 @@ static void event_stop(uint32_t ticks_at_expire, uint32_t remainder,
 			WORK_TICKER_WORKER0_IRQ, (work_fp) work_radio_stop, 0 };
 	uint32_t retval;
 
-	(void)ticks_at_expire;
-	(void)remainder;
-	(void)lazy;
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
 
 	/* Radio state requested (stop or abort) stored in context is supplied
 	 * in params.
@@ -3365,11 +3365,11 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 		ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		       (ticker_status == TICKER_STATUS_BUSY));
 
-		(void)event_xtal(0, 0, 0, 0);
+		event_xtal(0, 0, 0, 0);
 	} else if (_ticks_active_to_start > _ticks_xtal_to_start) {
 		ticks_to_start = _ticks_active_to_start;
 
-		(void)event_active(0, 0, 0, 0);
+		event_active(0, 0, 0, 0);
 
 		ticker_status = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				RADIO_TICKER_USER_ID_WORKER,
@@ -3384,8 +3384,8 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 	} else {
 		ticks_to_start = _ticks_xtal_to_start;
 
-		(void)event_active(0, 0, 0, 0);
-		(void)event_xtal(0, 0, 0, 0);
+		event_active(0, 0, 0, 0);
+		event_xtal(0, 0, 0, 0);
 	}
 
 	/* remember the remainder to be used in pkticker */
@@ -3644,8 +3644,8 @@ static void adv_obs_configure(uint8_t phy)
 void radio_event_adv_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 			     uint16_t lazy, void *context)
 {
-	(void)lazy;
-	(void)context;
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(context);
 
 	DEBUG_RADIO_PREPARE_A(1);
 
@@ -3696,9 +3696,9 @@ static void adv_setup(void)
 static void event_adv(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *context)
 {
-	(void)remainder;
-	(void)lazy;
-	(void)context;
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(context);
 
 	DEBUG_RADIO_START_A(1);
 
@@ -3768,10 +3768,10 @@ void event_adv_stop(uint32_t ticks_at_expire, uint32_t remainder,
 	struct pdu_data *pdu_data_rx;
 	struct radio_le_conn_cmplt *radio_le_conn_cmplt;
 
-	(void)ticks_at_expire;
-	(void)remainder;
-	(void)lazy;
-	(void)context;
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(context);
 
 	/* Stop Direct Adv */
 	ticker_status =
@@ -3819,8 +3819,8 @@ void event_adv_stop(uint32_t ticks_at_expire, uint32_t remainder,
 static void event_obs_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 			      uint16_t lazy, void *context)
 {
-	(void)lazy;
-	(void)context;
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(context);
 
 	DEBUG_RADIO_PREPARE_O(1);
 
@@ -3873,9 +3873,9 @@ static void event_obs(uint32_t ticks_at_expire, uint32_t remainder,
 {
 	uint32_t ticker_status;
 
-	(void)remainder;
-	(void)lazy;
-	(void)context;
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(context);
 
 	DEBUG_RADIO_START_O(1);
 
@@ -4350,7 +4350,7 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 				conn->role.slave.window_widening_periodic_us;
 
 			if (conn->llcp.connection_update.is_internal == 2) {
-				(void)conn_update_req(conn);
+				conn_update_req(conn);
 			}
 		} else {
 			ticks_win_offset =
@@ -5056,8 +5056,8 @@ static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 	uint8_t data_channel_use;
 	uint32_t remainder_us;
 
-	(void)remainder;
-	(void)lazy;
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
 
 	DEBUG_RADIO_START_S(1);
 
@@ -5171,8 +5171,8 @@ static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 	struct pdu_data *pdu_data_tx;
 	uint8_t data_channel_use;
 
-	(void)remainder;
-	(void)lazy;
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
 
 	DEBUG_RADIO_START_M(1);
 
@@ -6684,7 +6684,7 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 		return 1;
 	}
 
-	(void)radio_scan_disable();
+	radio_scan_disable();
 
 	_radio.observer.adv_addr_type = adv_addr_type;
 	memcpy(&_radio.observer.adv_addr[0], adv_addr, BDADDR_SIZE);
@@ -6796,7 +6796,7 @@ uint32_t radio_conn_update(uint16_t handle, uint8_t cmd, uint8_t status,
 {
 	struct connection *conn;
 
-	(void)status;
+	ARG_UNUSED(status);
 
 	conn = connection_get(handle);
 	if ((!conn) ||

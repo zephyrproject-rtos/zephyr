@@ -318,7 +318,7 @@ static int native_open(void)
 {
 	uint32_t retval;
 
-	(void)clock_k32src_start(1);
+	clock_k32src_start(1);
 
 	_ticker_users[RADIO_TICKER_USER_ID_WORKER][0] =
 	    RADIO_TICKER_USER_WORKER_OPS;
