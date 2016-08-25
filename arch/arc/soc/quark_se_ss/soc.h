@@ -108,13 +108,6 @@
 #include <misc/util.h>
 #include <drivers/rand32.h>
 
-/* ARCv2 timer 0 configuration settings for the system clock */
-#ifdef CONFIG_NANOKERNEL
-#define CONFIG_ARCV2_TIMER0_CLOCK_FREQ 32000000 /* 32MHz reference clock \
-							*/
-#define CONFIG_ARCV2_TIMER1_CLOCK_FREQ CONFIG_ARCV2_TIMER0_CLOCK_FREQ
-#endif /* CONFIG_NANOKERNEL */
-
 #define INT_ENABLE_ARC					~(0x00000001 << 8)
 #define INT_ENABLE_ARC_BIT_POS				(8)
 

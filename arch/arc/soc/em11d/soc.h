@@ -42,12 +42,6 @@
 #include <misc/util.h>
 #include <drivers/rand32.h>
 
-/* ARCv2 timer 0 configuration settings for the system clock */
-#ifdef CONFIG_NANOKERNEL
-#define CONFIG_ARCV2_TIMER0_CLOCK_FREQ 20000000 /* 20MHz reference clock */
-#define CONFIG_ARCV2_TIMER1_CLOCK_FREQ CONFIG_ARCV2_TIMER0_CLOCK_FREQ
-#endif /* CONFIG_NANOKERNEL */
-
 #define CONFIG_ARCV2_TIMER0_INT_LVL IRQ_TIMER0
 #define CONFIG_ARCV2_TIMER0_INT_PRI 0
 
