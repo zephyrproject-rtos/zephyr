@@ -209,7 +209,8 @@ static struct {
 static uint16_t const gc_lookup_ppm[] = { 500, 250, 150, 100, 75, 50, 30, 20 };
 
 static void ticker_success_assert(uint32_t status, void *params);
-static void work_radio_active(void *params);
+static void event_inactive(uint32_t ticks_at_expire, uint32_t remainder,
+			   uint16_t lazy, void *context);
 static void adv_setup(void);
 static void event_adv(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *context);
@@ -2398,7 +2399,7 @@ static inline void isr_radio_state_close(void)
 
 	radio_tmr_stop();
 
-	work_radio_active(0);
+	event_inactive(0, 0, 0, 0);
 
 	clock_m16src_stop();
 
@@ -2521,11 +2522,11 @@ static void work_radio_active(void *params)
 }
 
 static void event_active(uint32_t ticks_at_expire, uint32_t remainder,
-				   uint16_t lazy, void *context)
+			 uint16_t lazy, void *context)
 {
 	static struct work s_work_radio_active = { 0, 0, 0,
 		WORK_TICKER_WORKER0_IRQ, (work_fp) work_radio_active,
-		(void *)1 };
+		(void *)1};
 	uint32_t retval;
 
 	ARG_UNUSED(ticks_at_expire);
@@ -2537,13 +2538,29 @@ static void event_active(uint32_t ticks_at_expire, uint32_t remainder,
 	ASSERT(!retval);
 }
 
-static void work_radio_deassert(void *params)
+static void work_radio_inactive(void *params)
 {
 	ARG_UNUSED(params);
 
 	work_radio_active(0);
 
 	DEBUG_RADIO_CLOSE(0);
+}
+
+static void event_inactive(uint32_t ticks_at_expire, uint32_t remainder,
+			   uint16_t lazy, void *context)
+{
+	static struct work s_work_radio_inactive = { 0, 0, 0,
+		WORK_TICKER_WORKER0_IRQ, (work_fp) work_radio_inactive, 0};
+	uint32_t retval;
+
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(context);
+
+	retval = work_schedule(&s_work_radio_inactive, 0);
+	ASSERT(!retval);
 }
 
 static void work_xtal_start(void *params)
@@ -3350,38 +3367,52 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 			ticks_preempt_to_start;
 	}
 
+	/* decide whether its XTAL start or active event that is the current
+	 * execution context and accordingly setup the ticker for the other
+	 * event (XTAL or active event). These are oneshot ticker.
+	 */
 	if (_ticks_active_to_start < _ticks_xtal_to_start) {
+		uint32_t ticks_to_active;
+
+		/* XTAL is before Active */
+		ticks_to_active = _ticks_xtal_to_start - _ticks_active_to_start;
 		ticks_to_start = _ticks_xtal_to_start;
 
 		ticker_status =
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				     RADIO_TICKER_USER_ID_WORKER,
 				     RADIO_TICKER_ID_MARKER_0, ticks_at_expire,
-				     (_ticks_xtal_to_start - _ticks_active_to_start),
-				     TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
-				     TICKER_NULL_LAZY, TICKER_NULL_SLOT,
-				     event_active, 0, ticker_success_assert,
-				     (void *)__LINE__);
+				     ticks_to_active, TICKER_NULL_PERIOD,
+				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+				     TICKER_NULL_SLOT, event_active, 0,
+				     ticker_success_assert, (void *)__LINE__);
 		ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		       (ticker_status == TICKER_STATUS_BUSY));
 
 		event_xtal(0, 0, 0, 0);
 	} else if (_ticks_active_to_start > _ticks_xtal_to_start) {
+		uint32_t ticks_to_xtal;
+
+		/* Active is before XTAL */
+		ticks_to_xtal = _ticks_active_to_start - _ticks_xtal_to_start;
 		ticks_to_start = _ticks_active_to_start;
 
 		event_active(0, 0, 0, 0);
 
-		ticker_status = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
-				RADIO_TICKER_USER_ID_WORKER,
-				RADIO_TICKER_ID_MARKER_0, ticks_at_expire,
-				(_ticks_active_to_start - _ticks_xtal_to_start),
-				 TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
-				TICKER_NULL_LAZY, TICKER_NULL_SLOT,
-				event_xtal, 0, ticker_success_assert,
-				(void *)__LINE__);
+		ticker_status =
+			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
+				     RADIO_TICKER_USER_ID_WORKER,
+				     RADIO_TICKER_ID_MARKER_0, ticks_at_expire,
+				     ticks_to_xtal, TICKER_NULL_PERIOD,
+				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+				     TICKER_NULL_SLOT, event_xtal, 0,
+				     ticker_success_assert, (void *)__LINE__);
 		ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		       (ticker_status == TICKER_STATUS_BUSY));
 	} else {
+		/* Active and XTAL are at the same time,
+		 * no ticker required to be setup.
+		 */
 		ticks_to_start = _ticks_xtal_to_start;
 
 		event_active(0, 0, 0, 0);
@@ -6188,8 +6219,8 @@ static inline void do_adv_scan_disable(uint8_t ticker_id_stop,
 				       uint32_t ticks_xtal_to_start,
 				       uint32_t ticks_active_to_start)
 {
-	static struct work s_work_radio_deassert = { 0, 0, 0,
-		WORK_TICKER_WORKER0_IRQ, (work_fp) work_radio_deassert, 0 };
+	static struct work s_work_radio_inactive = { 0, 0, 0,
+		WORK_TICKER_WORKER0_IRQ, (work_fp) work_radio_inactive, 0 };
 	uint32_t volatile ticker_status_event;
 
 	/* Step 2: Is caller before Event? Stop Event */
@@ -6235,7 +6266,7 @@ static inline void do_adv_scan_disable(uint8_t ticker_id_stop,
 				/* radio active asserted, handle deasserting
 				 * here
 				 */
-				retval = work_schedule(&s_work_radio_deassert,
+				retval = work_schedule(&s_work_radio_inactive,
 						0);
 				ASSERT(!retval);
 			} else {
@@ -6251,7 +6282,7 @@ static inline void do_adv_scan_disable(uint8_t ticker_id_stop,
 			/* Step 2.1.2: Deassert Radio Active and XTAL start */
 
 			/* radio active asserted, handle deasserting here */
-			retval = work_schedule(&s_work_radio_deassert, 0);
+			retval = work_schedule(&s_work_radio_inactive, 0);
 			ASSERT(!retval);
 
 			/* XTAL started, handle XTAL stop here */
@@ -6297,6 +6328,7 @@ static inline void do_adv_scan_disable(uint8_t ticker_id_stop,
 			retval = work_schedule(&s_work_radio_stop, 0);
 			ASSERT(!retval);
 
+			/* wait for radio ISR to exit */
 			while (_radio.role != ROLE_NONE) {
 				cpu_sleep();
 			}
