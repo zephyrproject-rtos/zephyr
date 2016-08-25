@@ -101,6 +101,8 @@ struct usb_ep_cfg_data {
 struct usb_interface_cfg_data {
 	/** Handler for USB Class specific Control (EP 0) communications */
 	usb_request_handler class_handler;
+	/** Handler for USB Vendor specific commands */
+	usb_request_handler vendor_handler;
 	/**
 	 * The custom request handler gets a first chance at handling
 	 * the request before it is handed over to the 'chapter 9' request
@@ -115,6 +117,11 @@ struct usb_interface_cfg_data {
 	 * communications
 	 */
 	uint8_t *payload_data;
+	/**
+	 * This data area, allocated by the application, is used to store
+	 * Vendor specific payload
+	 */
+	uint8_t *vendor_data;
 };
 
 /*

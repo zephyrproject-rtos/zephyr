@@ -780,6 +780,12 @@ int usb_set_config(struct usb_cfg_data *config)
 		    config->interface.class_handler,
 		    config->interface.payload_data);
 	}
+	/* register vendor request handlers */
+	if (config->interface.vendor_handler) {
+		usb_register_request_handler(REQTYPE_TYPE_VENDOR,
+					     config->interface.vendor_handler,
+					     config->interface.vendor_data);
+	}
 	/* register class request handlers for each interface*/
 	if (config->interface.custom_handler != NULL) {
 		usb_register_custom_req_handler(
