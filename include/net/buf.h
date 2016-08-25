@@ -331,7 +331,7 @@ size_t net_buf_simple_tailroom(struct net_buf_simple *buf);
  *  @brief Parsing state of a buffer.
  *
  *  This is used for temporarily storing the parsing state of a buffer
- *  while giving control of the parsing to a routing which we don't
+ *  while giving control of the parsing to a routine which we don't
  *  control.
  */
 struct net_buf_simple_state {
