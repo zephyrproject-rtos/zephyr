@@ -204,8 +204,8 @@ static struct gpio_driver_api gpio_nrf5_drv_api_funcs = {
 static int gpio_nrf5_P0_init(struct device *dev);
 
 static struct gpio_nrf5_config gpio_nrf5_P0_cfg = {
-	.gpio_base_addr   = NRF_P0_BASE,
-	.port_base_addr   = NRF_P0_BASE,
+	.gpio_base_addr   = NRF_GPIO_BASE,
+	.port_base_addr   = NRF_GPIO_BASE,
 	.gpiote_base_addr = NRF_GPIOTE_BASE,
 };
 
