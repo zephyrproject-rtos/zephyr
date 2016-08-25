@@ -29,10 +29,7 @@ config GPIO_NRF5_P0
 	depends on GPIO_NRF5
 	default n
 	help
-	  Enable nRF5
-	  GPIO port
-	  P0 config
-	  options.
+	  Enable nRF5 GPIO port P0 config options.
 
 config GPIO_NRF5_P0_DEV_NAME
 	string "GPIO Port P0 Device Name"
