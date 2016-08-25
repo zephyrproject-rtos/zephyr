@@ -123,6 +123,11 @@ M:	Maureen Helm <maureen.helm@nxp.com>
 S:	Supported
 F:	boards/arm/hexiwear_k64/
 
+BOARDS/ARM - NORDIC NRF51 REDBEAR BLENANO
+M:	Ricardo Salveti <ricardo.salveti@linaro.org>
+S:	Supported
+F:	boards/arm/nrf51_blenano/
+
 BOARDS/ARM - NORDIC NRF52 PCA10040
 M:	Carles Cufi <carles.cufi@nordicsemi.no>
 S:	Supported
