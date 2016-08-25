@@ -59,7 +59,7 @@ void *mem_acquire(void **mem_head)
 		free_count--;
 
 		mem = *mem_head;
-		memcpy((void *)mem_head, mem, sizeof(mem_head));
+		memcpy(mem_head, mem, sizeof(mem_head));
 
 		/* Store free mem_count after the list's next pointer */
 		if (*mem_head) {
@@ -70,7 +70,7 @@ void *mem_acquire(void **mem_head)
 		return mem;
 	}
 
-	return (void *)0;
+	return NULL;
 }
 
 void mem_release(void *mem, void **mem_head)
@@ -79,13 +79,12 @@ void mem_release(void *mem, void **mem_head)
 
 	/* Get the free count from the list and increment it */
 	if (*mem_head) {
-		memcpy((void *)&free_count,
-			 ((uint8_t *)*mem_head + sizeof(mem_head)),
-			 sizeof(free_count));
+		memcpy(&free_count, ((uint8_t *)*mem_head + sizeof(mem_head)),
+		       sizeof(free_count));
 	}
 	free_count++;
 
-	memcpy(mem, (void *)mem_head, sizeof(mem));
+	memcpy(mem, mem_head, sizeof(mem));
 	*mem_head = mem;
 
 	/* Store free mem_count after the list's next pointer */
@@ -99,9 +98,8 @@ uint16_t mem_free_count_get(void *mem_head)
 
 	/* Get the free count from the list */
 	if (mem_head) {
-		memcpy((void *)&free_count,
-			 ((uint8_t *)mem_head + sizeof(mem_head)),
-			 sizeof(free_count));
+		memcpy(&free_count, ((uint8_t *)mem_head + sizeof(mem_head)),
+		       sizeof(free_count));
 	}
 
 	return free_count;
@@ -147,7 +145,7 @@ uint32_t mem_ut(void)
 	uint16_t mem_free_count;
 	void *mem;
 
-	mem_init(pool, BLOCK_SIZE, BLOCK_COUNT, (void **)&mem_free);
+	mem_init(pool, BLOCK_SIZE, BLOCK_COUNT, &mem_free);
 
 	mem_free_count = mem_free_count_get(mem_free);
 	if (mem_free_count != BLOCK_COUNT) {
@@ -164,7 +162,7 @@ uint32_t mem_ut(void)
 			return 2;
 		}
 
-		memcpy(mem, (uint8_t *)&mem_used, sizeof(mem));
+		memcpy(mem, &mem_used, sizeof(mem));
 		mem_used = mem;
 	}
 
@@ -177,7 +175,7 @@ uint32_t mem_ut(void)
 		uint16_t mem_free_count_current;
 
 		mem = mem_used;
-		memcpy((uint8_t *)&mem_used, mem, sizeof(void *));
+		memcpy(&mem_used, mem, sizeof(void *));
 		mem_release(mem, &mem_free);
 
 		mem_free_count_current = mem_free_count_get(mem_free);

@@ -56,12 +56,10 @@
 #define HCI_EVT		0x04
 
 static uint8_t ALIGNED(4) _rand_context[3 + 4 + 1];
-static uint8_t ALIGNED(4) _ticker_nodes[RADIO_TICKER_NODES]
-				[TICKER_NODE_T_SIZE];
-static uint8_t ALIGNED(4) _ticker_users[RADIO_TICKER_USERS]
-				[TICKER_USER_T_SIZE];
+static uint8_t ALIGNED(4) _ticker_nodes[RADIO_TICKER_NODES][TICKER_NODE_T_SIZE];
+static uint8_t ALIGNED(4) _ticker_users[RADIO_TICKER_USERS][TICKER_USER_T_SIZE];
 static uint8_t ALIGNED(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
-				[TICKER_USER_OP_T_SIZE];
+						[TICKER_USER_OP_T_SIZE];
 static uint8_t ALIGNED(4) _radio[LL_MEM_TOTAL];
 
 static struct nano_sem nano_sem_native_recv;
@@ -218,9 +216,8 @@ static void native_recv_fiber(int unused0, int unused1)
 		uint8_t num_cmplt;
 		struct radio_pdu_node_rx *radio_pdu_node_rx;
 
-		while (
-			(num_cmplt =
-			 radio_rx_get(&radio_pdu_node_rx, &handle))) {
+		while ((num_cmplt =
+			radio_rx_get(&radio_pdu_node_rx, &handle))) {
 			uint8_t len;
 			uint8_t *buf;
 			int retval;
