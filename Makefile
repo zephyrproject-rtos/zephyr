@@ -834,9 +834,9 @@ linker.cmd: $(zephyr-deps)
 	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -I$(srctree)/include \
 	-I$(objtree)/include/generated $(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
 
-TMP_ELF = .tmp_$(KERNEL_NAME).prebuilt
+PREBUILT_KERNEL = $(KERNEL_NAME)_prebuilt.elf
 
-$(TMP_ELF): $(zephyr-deps) libzephyr.a $(KBUILD_ZEPHYR_APP) $(app-y) linker.cmd $(KERNEL_NAME).lnk
+$(PREBUILT_KERNEL): $(zephyr-deps) libzephyr.a $(KBUILD_ZEPHYR_APP) $(app-y) linker.cmd $(KERNEL_NAME).lnk
 	$(Q)$(CC) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
 
 quiet_cmd_gen_idt = SIDT    $@
@@ -854,7 +854,7 @@ quiet_cmd_gen_idt = SIDT    $@
 	rm staticIdt.bin irq_int_vector_map.bin isrList.bin			\
 )
 
-staticIdt.o: $(TMP_ELF)
+staticIdt.o: $(PREBUILT_KERNEL)
 	$(call cmd,gen_idt)
 
 quiet_cmd_lnk_elf = LINK    $@
@@ -890,8 +890,8 @@ $(KERNEL_ELF_NAME): staticIdt.o linker.cmd
 	@$(WARN_ABOUT_ASSERT)
 	@$(WARN_ABOUT_DEPRECATION)
 else
-$(KERNEL_ELF_NAME): $(TMP_ELF)
-	@cp $(TMP_ELF) $(KERNEL_ELF_NAME)
+$(KERNEL_ELF_NAME): $(PREBUILT_KERNEL)
+	@cp $(PREBUILT_KERNEL) $(KERNEL_ELF_NAME)
 	@$(WARN_ABOUT_ASSERT)
 	@$(WARN_ABOUT_DEPRECATION)
 endif
