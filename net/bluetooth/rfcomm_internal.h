@@ -78,11 +78,15 @@ struct bt_rfcomm_msc {
 #define BT_RFCOMM_CHECK_MTU(mtu) (!!((mtu) >= BT_RFCOMM_SIG_MIN_MTU && \
 				  (mtu) <= BT_RFCOMM_SIG_MAX_MTU))
 
-/* Helper to calculate needed outgoing buffer size */
+/* Helper to calculate needed outgoing buffer size.
+ * Length in rfcomm header can be two bytes depending on user data length.
+ * One byte in the tail should be reserved for FCS.
+ */
 #define BT_RFCOMM_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + \
 				sizeof(struct bt_hci_acl_hdr) + \
 				sizeof(struct bt_l2cap_hdr) + \
-				sizeof(struct bt_rfcomm_hdr) + (mtu))
+				sizeof(struct bt_rfcomm_hdr) + 1 + (mtu) + \
+				BT_RFCOMM_FCS_SIZE)
 
 #define BT_RFCOMM_GET_DLCI(addr)	(((addr) & 0xfc) >> 2)
 #define BT_RFCOMM_GET_FRAME_TYPE(ctrl)	((ctrl) & 0xef)
