@@ -426,6 +426,14 @@ config BLUETOOTH_DEBUG_RFCOMM
 	  This option enables debug support for the Bluetooth
 	  RFCOMM layer.
 
+config BLUETOOTH_DEBUG_HFP_HF
+	bool "Bluetooth Hands Free Profile (HFP) debug"
+	depends on BLUETOOTH_HFP_HF
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  Hands Free Profile (HFP).
+
 endif # BLUETOOTH_DEBUG
 
 config BLUETOOTH_BREDR
@@ -443,6 +451,12 @@ config BLUETOOTH_RFCOMM
 	default n
 	help
 	  This option enables Bluetooth RFCOMM support
+
+config BLUETOOTH_HFP_HF
+	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
+	default n
+	help
+	  This option enables Bluetooth HF support
 
 config BLUETOOTH_BREDR_NAME
 	string "Bluetooth BR/EDR device name"
