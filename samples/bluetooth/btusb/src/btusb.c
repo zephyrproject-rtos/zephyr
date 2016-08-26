@@ -399,7 +399,7 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 	int n = 0;
 
 	if (!length) {
-		printf("%s zero-length signal packet\n");
+		printf("%s zero-length signal packet\n", str);
 		return;
 	}
 
