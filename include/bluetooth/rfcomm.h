@@ -112,12 +112,6 @@ struct bt_rfcomm_server {
 	struct bt_rfcomm_server	*_next;
 };
 
-/** @def BT_RFCOMM_SEND_RESERVE
- *  @brief Headroom needed for outgoing buffers
- */
-#define BT_RFCOMM_SEND_RESERVE (CONFIG_BLUETOOTH_HCI_SEND_RESERVE + 4 + 4 + 4)
-
-
 /** @brief Register RFCOMM server
  *
  *  Register RFCOMM server for a channel, each new connection is authorized
