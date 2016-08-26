@@ -1977,13 +1977,10 @@ static int cmd_rfcomm_send(int argc, char *argv[])
 		count = strtoul(argv[1], NULL, 10);
 	}
 
-	/* Need to consider FCS also */
-	len = min(rfcomm_dlc.mtu, DATA_BREDR_MTU - BT_RFCOMM_SEND_RESERVE - 1);
-
 	while (count--) {
-		buf = net_buf_get_timeout(&data_bredr_fifo,
-					  BT_RFCOMM_SEND_RESERVE,
-					  TICKS_UNLIMITED);
+		buf = bt_rfcomm_create_pdu(&data_bredr_fifo);
+		/* Should reserve one byte in tail for FCS */
+		len = min(rfcomm_dlc.mtu, net_buf_tailroom(buf) - 1);
 
 		memcpy(net_buf_add(buf, len), buf_data, len);
 		ret = bt_rfcomm_dlc_send(&rfcomm_dlc, buf);
