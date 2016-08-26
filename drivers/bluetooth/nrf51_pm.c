@@ -28,12 +28,12 @@
 
 static struct device *nrf51_gpio;
 
-int nrf51_enable(void)
+int nrf51_wakeup(void)
 {
 	return gpio_pin_write(nrf51_gpio, NBLE_BTWAKE_PIN, 1);
 }
 
-int nrf51_disable(void)
+int nrf51_allow_sleep(void)
 {
 	return gpio_pin_write(nrf51_gpio, NBLE_BTWAKE_PIN, 0);
 }
@@ -112,5 +112,5 @@ int nrf51_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	return nrf51_enable();
+	return nrf51_wakeup();
 }

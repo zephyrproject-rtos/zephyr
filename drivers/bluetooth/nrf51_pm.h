@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 
-int nrf51_disable(void);
-int nrf51_enable(void);
+int nrf51_allow_sleep(void);
+int nrf51_wakeup(void);
 int nrf51_init(struct device *dev);

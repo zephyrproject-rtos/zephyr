@@ -123,7 +123,7 @@ void rpc_transmit_cb(struct net_buf *buf)
 	hdr->src_cpu_id = 0;
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
 	/* Wake-up nble */
-	nrf51_enable();
+	nrf51_wakeup();
 #endif
 	while (buf->len) {
 		uart_poll_out(nble_dev, net_buf_pull_u8(buf));
@@ -133,7 +133,7 @@ void rpc_transmit_cb(struct net_buf *buf)
 #if defined(CONFIG_BLUETOOTH_NRF51_PM)
 	/* TODO check if FIFO is empty */
 	/* Allow nble to go to deep sleep */
-	nrf51_disable();
+	nrf51_allow_sleep();
 #endif
 }
 
