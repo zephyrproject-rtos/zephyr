@@ -50,6 +50,13 @@ Logical Link Control and Adaptation Protocol (L2CAP)
    :project: Zephyr
    :content-only:
 
+Serial Port Emulation (RFCOMM)
+******************************
+
+.. doxygengroup:: bt_rfcomm
+   :project: Zephyr
+   :content-only:
+
 Data Buffers
 ************
 
