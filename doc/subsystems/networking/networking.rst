@@ -64,4 +64,5 @@ The IP stack source code tree is organized as follows:
    :maxdepth: 1
 
    ip-stack-architecture.rst
+   networking-api-usage.rst
    buffers.rst
