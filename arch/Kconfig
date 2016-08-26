@@ -27,7 +27,6 @@ config ARC
 
 config ARM
 	bool "ARM architecture"
-	select ATOMIC_OPERATIONS_BUILTIN
 
 config X86
 	bool "x86 architecture"

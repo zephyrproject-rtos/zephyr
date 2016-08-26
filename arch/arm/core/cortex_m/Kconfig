@@ -49,6 +49,7 @@ config CPU_CORTEX_M3_M4
 	bool
 	# Omit prompt to signify "hidden" option
 	default n
+	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_THUMB2
 	help
 	This option signifies the use of either a Cortex-M3 or Cortex-M4 CPU.
