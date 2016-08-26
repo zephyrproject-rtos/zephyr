@@ -2728,15 +2728,6 @@ static void hci_cmd_tx_fiber(void)
 	}
 }
 
-static void read_local_features_complete(struct net_buf *buf)
-{
-	struct bt_hci_rp_read_local_features *rp = (void *)buf->data;
-
-	BT_DBG("status %u", rp->status);
-
-	memcpy(bt_dev.features, rp->features, sizeof(bt_dev.features));
-}
-
 static void read_local_ver_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_local_version_info *rp = (void *)buf->data;
@@ -2852,7 +2843,7 @@ static void read_supported_commands_complete(struct net_buf *buf)
 static int common_init(void)
 {
 	struct net_buf *rsp;
-	int err;
+	int err, i;
 
 	/* Send HCI_RESET */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
@@ -2871,13 +2862,39 @@ static int common_init(void)
 		return err;
 	}
 
-	/* Read Local Supported Features */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
-	if (err) {
-		return err;
+	/* Read Local Supported Extended Features */
+	for (i = 0; i < LMP_FEAT_PAGES_COUNT; i++) {
+		struct bt_hci_cp_read_local_ext_features *cp;
+		struct bt_hci_rp_read_local_ext_features *rp;
+		struct net_buf *buf;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
+					sizeof(*cp));
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->page = i;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
+					   buf, &rsp);
+		if (err) {
+			return err;
+		}
+
+		rp = (void *)rsp->data;
+
+		memcpy(&bt_dev.features[i], rp->ext_features,
+		       sizeof(bt_dev.features[i]));
+
+		if (rp->max_page <= i) {
+			net_buf_unref(rsp);
+			break;
+		}
+
+		net_buf_unref(rsp);
 	}
-	read_local_features_complete(rsp);
-	net_buf_unref(rsp);
 
 	/* Read Local Version Information */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_VERSION_INFO, NULL,

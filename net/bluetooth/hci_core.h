@@ -17,12 +17,14 @@
  */
 
 /* LMP feature helpers */
-#define lmp_bredr_capable(dev)	(!((dev).features[4] & BT_LMP_NO_BREDR))
-#define lmp_le_capable(dev)	((dev).features[4] & BT_LMP_LE)
+#define lmp_bredr_capable(dev)	(!((dev).features[0][4] & BT_LMP_NO_BREDR))
+#define lmp_le_capable(dev)	((dev).features[0][4] & BT_LMP_LE)
 
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
+
+#define LMP_FEAT_PAGES_COUNT	3
 
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
@@ -78,8 +80,8 @@ struct bt_dev {
 	uint16_t		hci_revision;
 	uint16_t		manufacturer;
 
-	/* BR/EDR features page 0 */
-	uint8_t			features[8];
+	/* LMP features (pages 0, 1, 2) */
+	uint8_t			features[LMP_FEAT_PAGES_COUNT][8];
 
 	/* Supported commands */
 	uint8_t			supported_commands[36];

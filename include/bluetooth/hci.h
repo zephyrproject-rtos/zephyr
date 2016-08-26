@@ -406,6 +406,17 @@ struct bt_hci_rp_read_supported_commands {
 	uint8_t  commands[36];
 } __packed;
 
+#define BT_HCI_OP_READ_LOCAL_EXT_FEATURES	BT_OP(BT_OGF_INFO, 0x0004)
+struct bt_hci_cp_read_local_ext_features {
+	uint8_t page;
+};
+struct bt_hci_rp_read_local_ext_features {
+	uint8_t  status;
+	uint8_t  page;
+	uint8_t  max_page;
+	uint8_t  ext_features[8];
+} __packed;
+
 #define BT_HCI_OP_READ_LOCAL_FEATURES		BT_OP(BT_OGF_INFO, 0x0003)
 struct bt_hci_rp_read_local_features {
 	uint8_t  status;
