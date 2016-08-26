@@ -26,4 +26,5 @@ The use of the Zephyr APIs is the same for all SoCs and boards.
    system_log.rst
    power_management_api
    file_system
+   testing
 

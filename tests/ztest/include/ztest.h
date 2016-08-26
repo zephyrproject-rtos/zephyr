@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ *
+ * @brief Zephyr testing suite
+ */
+
 #ifndef __ZTEST_H__
 #define __ZTEST_H__
+
+/**
+ * @defgroup ztest Zephyr testing suite
+ */
 
 #ifndef KERNEL
 #define CONFIG_STDOUT_CONSOLE 1
 #define CONFIG_ZTEST_ASSERT_VERBOSE 1
 #define CONFIG_ZTEST_MOCKING
+#define CONFIG_MICROKERNEL 1
 /* FIXME: Properly integrate with Zephyr's arch specific code */
 #define CONFIG_X86 1
 #define PRINT printf

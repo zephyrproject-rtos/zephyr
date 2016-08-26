@@ -14,25 +14,88 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ *
+ * @brief Ztest mocking support
+ */
+
 #ifndef __ZTEST_MOCK_H__
 #define __ZTEST_MOCK_H__
 
+/**
+ * @defgroup ztest_mock Ztest mocking support
+ * @ingroup ztest
+ *
+ * This module provides simple mocking functions for unit testing. These
+ * need CONFIG_ZTEST_MOCKING=y.
+ *
+ * @{
+ */
+
+/**
+ * @brief Tell function @a func to expect the value @a value for @a param
+ *
+ * When using ztest_check_expected_value(), tell that the value of @a param
+ * should be @a value. The value will internally be stored as an `uintptr_t`.
+ *
+ * @param func Function in question
+ * @param param Parameter for which the value should be set
+ * @param value Value for @a param
+ */
 #define ztest_expect_value(func, param, value) \
 	_ztest_expect_value(STRINGIFY(func), STRINGIFY(param), \
 			    (uintptr_t)(value))
 
+/**
+ * @brief If @a param doesn't match the value set by ztest_expect_value(),
+ * fail the test
+ *
+ * This will first check that does @a param have a value to be expected, and
+ * then checks whether the value of the parameter is equal to the expected
+ * value. If either of these checks fail, the current test will fail. This
+ * must be called from the called function.
+ *
+ * @param param Parameter to check
+ */
 #define ztest_check_expected_value(param) \
 	_ztest_check_expected_value(__func__, STRINGIFY(param), \
 				    (uintptr_t)(param))
 
+/**
+ * @brief Tell @a func that it should return @a value
+ *
+ * @param func Function that should return @a value
+ * @param value Value to return from @a func
+ */
 #define ztest_returns_value(func, value) \
 	_ztest_returns_value(STRINGIFY(func), (uintptr_t)(value))
 
+/**
+ * @brief Get the return value for current function
+ *
+ * The return value must have been set previously with ztest_returns_value().
+ * If no return value exists, the current test will fail.
+ *
+ * @returns The value the current function should return
+ */
 #define ztest_get_return_value() \
 	_ztest_get_return_value(__func__)
 
+/**
+ * @brief Get the return value as a pointer for current function
+ *
+ * The return value must have been set previously with ztest_returns_value().
+ * If no return value exists, the current test will fail.
+ *
+ * @returns The value the current function should return as a `void *`
+ */
 #define ztest_get_return_value_ptr() \
 	((void *)_ztest_get_return_value(__func__))
+
+/**
+ * @}
+ */
 
 #ifdef CONFIG_ZTEST_MOCKING
 

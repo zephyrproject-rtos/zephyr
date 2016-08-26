@@ -15,6 +15,12 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ *
+ * @brief Zephyr testing framework assertion macros
+ */
+
 #ifndef __ZTEST_ASSERT_H__
 #define __ZTEST_ASSERT_H__
 
@@ -60,20 +66,89 @@ static inline void _assert(int cond, const char *msg, const char *default_msg,
 
 #endif /* CONFIG_ZTEST_ASSERT_VERBOSE */
 
+/**
+ * @defgroup ztest_assert Ztest assertion macros
+ * @ingroup ztest
+ *
+ * This module provides assertions when using Ztest.
+ *
+ * @{
+ */
+
+/**
+ * @brief Fail the test, if @a cond is false
+ *
+ * You probably don't need to call this macro directly. You should
+ * instead use assert_{condition} macros below.
+ *
+ * @param cond Condition to check
+ * @param msg Optional, can be NULL. Message to print if @a cond is false.
+ * @param default_msg Message to print if @a cond is false
+ */
+
 #define assert(cond, msg, default_msg) \
 	_assert(cond, msg, msg ? ("(" default_msg ")") : (default_msg), \
 		__FILE__, __LINE__, __func__)
 
+/**
+ * @brief Assert that this function call won't be reached
+ * @param msg Optional message to print if the assertion fails
+ */
 #define assert_unreachable(msg) assert(0, msg, "Reached unreachable code")
 
+/**
+ * @brief Assert that @a cond is true
+ * @param cond Condition to check
+ * @param msg Optional message to print if the assertion fails
+ */
 #define assert_true(cond, msg) assert(cond, msg, #cond " is false")
+
+/**
+ * @brief Assert that @a cond is false
+ * @param cond Condition to check
+ * @param msg Optional message to print if the assertion fails
+ */
 #define assert_false(cond, msg) assert(!(cond), msg, #cond " is true")
 
+/**
+ * @brief Assert that @a ptr is NULL
+ * @param ptr Pointer to compare
+ * @param msg Optional message to print if the assertion fails
+ */
 #define assert_is_null(ptr, msg) assert((ptr) == NULL, msg, #ptr " is not NULL")
+
+/**
+ * @brief Assert that @a ptr is not NULL
+ * @param ptr Pointer to compare
+ * @param msg Optional message to print if the assertion fails
+ */
 #define assert_not_null(ptr, msg) assert((ptr) != NULL, msg, #ptr " is NULL")
 
+/**
+ * @brief Assert that @a a equals @a b
+ *
+ * @a a and @a b won't be converted and will be compared directly.
+ *
+ * @param a Value to compare
+ * @param b Value to compare
+ * @param msg Optional message to print if the assertion fails
+ */
 #define assert_equal(a, b, msg) assert((a) == (b), msg, #a " not equal to " #b)
+
+/**
+ * @brief Assert that @a a equals @a b
+ *
+ * @a a and @a b will be converted to `void *` before comparing.
+ *
+ * @param a Value to compare
+ * @param b Value to compare
+ * @param msg Optional message to print if the assertion fails
+ */
 #define assert_equal_ptr(a, b, msg) \
 	assert((void *)(a) == (void *)(b), msg, #a " not equal to  " #b)
+
+/**
+ * @}
+ */
 
 #endif /* __ZTEST_ASSERT_H__ */
