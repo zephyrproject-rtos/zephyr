@@ -73,6 +73,12 @@ S:	Supported
 F:	arch/arm/
 F:	include/arch/arm/
 
+ARM CORTEX MICROCONTROLLER SOFTWARE INTERFACE STANDARD (CMSIS)
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	ext/hal/cmsis/
+
+
 BLUETOOTH
 M:	Johan Hedberg <johan.hedberg@intel.com>
 M:	Luiz Augusto von Dentz <luiz.dentz@gmail.com>
@@ -153,11 +159,17 @@ F:	include/sys_io.h
 F:	include/toolchain.h
 F:	include/zephyr.h
 
+KINETIS SOFTWARE DEVELOPMENT KIT (KSDK)
+M:	Maureen Helm <maureen.helm@nxp.com>
+S:	Supported
+F:	ext/hal/ksdk/
+
 KNOWN ISSUES
 M:	Anas Nashif <anas.nashif@intel.com>
 M:	Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>
 M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
 F:	.known-issues/
+
 
 MAINTAINERS
 M:	Javier B Perez <javier.b.perez.hernandez@intel.com>
