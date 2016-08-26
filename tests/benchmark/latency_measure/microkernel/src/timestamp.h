@@ -48,7 +48,7 @@ static inline void TICK_SYNCH(void)
 	}
 }
 
-#elif (defined(CONFIG_MICROKERNEL) && defined(KERNEL))
+#elif defined(CONFIG_MICROKERNEL)
 typedef int64_t TICK_TYPE;
 
 #define TICK_SYNCH() task_sleep(1)
@@ -89,14 +89,13 @@ static inline void bench_test_init(void)
 	tm_off = OS_GET_TIME() - t;
 }
 
-#if defined(CONFIG_MICROKERNEL) && defined(KERNEL)
+#if defined(CONFIG_MICROKERNEL)
 
 /* number of ticks before timer overflows */
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
 
 #endif /* CONFIG_MICROKERNEL */
 
-#if (defined(CONFIG_NANOKERNEL) || defined(CONFIG_MICROKERNEL))  && defined(KERNEL)
 /* tickstamp used for timer counter overflow check */
 static TICK_TYPE tCheck;
 
@@ -138,6 +137,5 @@ static inline int high_timer_overflow(void)
 	}
 	return 0;
 }
-#endif /*  CONFIG_NANOKERNEL || CONFIG_MICROKERNEL */
 
 #endif /* _TIMESTAMP_H_ */
