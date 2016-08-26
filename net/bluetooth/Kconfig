@@ -140,7 +140,7 @@ config BLUETOOTH_RX_STACK_SIZE
 	  require extra stack space, this value can be increased to
 	  accomodate for that.
 
-config	BLUETOOTH_PERIPHERAL
+config BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
 	default n
 	select BLUETOOTH_CONN
@@ -228,7 +228,7 @@ config BLUETOOTH_SMP_SC_ONLY
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
 
-config	BLUETOOTH_USE_DEBUG_KEYS
+config BLUETOOTH_USE_DEBUG_KEYS
 	bool "Enable Security Manager Debug Mode"
 	default n
 	depends on BLUETOOTH_TINYCRYPT_ECC
@@ -261,7 +261,7 @@ config BLUETOOTH_GATT_CLIENT
 	help
 	  This option enables support for the GATT Client role.
 
-config	BLUETOOTH_MAX_CONN
+config BLUETOOTH_MAX_CONN
 	int "Maximum number of simultaneous connections"
 	default 1
 	range 1 16
@@ -269,7 +269,7 @@ config	BLUETOOTH_MAX_CONN
 	  Maximum number of simultaneous Bluetooth connections
 	  supported. The minimum (and default) number is 1.
 
-config	BLUETOOTH_MAX_PAIRED
+config BLUETOOTH_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 1
 	range 1 32
@@ -307,7 +307,7 @@ config BLUETOOTH_DEBUG_NONE
 	help
 	  Select this to disable all Bluetooth debug logs.
 
-config	BLUETOOTH_DEBUG_LOG
+config BLUETOOTH_DEBUG_LOG
 	bool "Normal printf-style to console"
 	select BLUETOOTH_DEBUG
 	select STDOUT_CONSOLE
@@ -352,7 +352,7 @@ config BLUETOOTH_MONITOR_ON_DEV_NAME
 	 for the Bluetooth monitor logging.
 
 if BLUETOOTH_DEBUG
-config	BLUETOOTH_DEBUG_HCI_CORE
+config BLUETOOTH_DEBUG_HCI_CORE
 	bool "Bluetooth HCI core debug"
 	depends on BLUETOOTH_STACK_HCI
 	default n
@@ -360,7 +360,7 @@ config	BLUETOOTH_DEBUG_HCI_CORE
 	  This option enables debug support for Bluetooth HCI
 	  core.
 
-config	BLUETOOTH_DEBUG_CONN
+config BLUETOOTH_DEBUG_CONN
 	bool "Bluetooth connection debug"
 	depends on BLUETOOTH_CONN
 	default n
@@ -368,7 +368,7 @@ config	BLUETOOTH_DEBUG_CONN
 	  This option enables debug support for Bluetooth
 	  connection handling.
 
-config	BLUETOOTH_DEBUG_KEYS
+config BLUETOOTH_DEBUG_KEYS
 	bool "Bluetooth security keys debug"
 	depends on BLUETOOTH_STACK_HCI
 	depends on BLUETOOTH_SMP
@@ -377,7 +377,7 @@ config	BLUETOOTH_DEBUG_KEYS
 	  This option enables debug support for the handling of
 	  Bluetooth security keys.
 
-config	BLUETOOTH_DEBUG_L2CAP
+config BLUETOOTH_DEBUG_L2CAP
 	bool "Bluetooth L2CAP debug"
 	depends on BLUETOOTH_CONN
 	default n
@@ -385,7 +385,7 @@ config	BLUETOOTH_DEBUG_L2CAP
 	  This option enables debug support for the Bluetooth
 	  L2ACP layer.
 
-config	BLUETOOTH_DEBUG_SMP
+config BLUETOOTH_DEBUG_SMP
 	bool "Bluetooth Security Manager Protocol (SMP) debug"
 	depends on BLUETOOTH_STACK_HCI
 	depends on BLUETOOTH_SMP
@@ -394,7 +394,7 @@ config	BLUETOOTH_DEBUG_SMP
 	  This option enables debug support for the Bluetooth
 	  Security Manager Protocol (SMP).
 
-config	BLUETOOTH_SMP_SELFTEST
+config BLUETOOTH_SMP_SELFTEST
 	bool "Bluetooth SMP self tests executed on init"
 	depends on BLUETOOTH_DEBUG_SMP
 	default n
@@ -402,7 +402,7 @@ config	BLUETOOTH_SMP_SELFTEST
 	  This option enables SMP self-tests executed on startup
 	  to verify security and crypto functions.
 
-config	BLUETOOTH_DEBUG_ATT
+config BLUETOOTH_DEBUG_ATT
 	bool "Bluetooth Attribute Protocol (ATT) debug"
 	depends on BLUETOOTH_CONN
 	default n
@@ -410,7 +410,7 @@ config	BLUETOOTH_DEBUG_ATT
 	  This option enables debug support for the Bluetooth
 	  Attribute Protocol (ATT).
 
-config	BLUETOOTH_DEBUG_GATT
+config BLUETOOTH_DEBUG_GATT
 	bool "Bluetooth Generic Attribute Profile (GATT) debug"
 	depends on BLUETOOTH_CONN
 	default n
