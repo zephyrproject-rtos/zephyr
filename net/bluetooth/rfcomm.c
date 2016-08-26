@@ -181,6 +181,16 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
 	return 0;
 }
 
+struct net_buf *bt_rfcomm_create_pdu(struct nano_fifo *fifo)
+{
+	/* Length in RFCOMM header can be 2 bytes depending on length of user
+	 * data
+	 */
+	return bt_conn_create_pdu(fifo,
+				  sizeof(struct bt_l2cap_hdr) +
+				  sizeof(struct bt_rfcomm_hdr) + 1);
+}
+
 static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_dlc *dlc,
 					   uint8_t cr, uint8_t type,
 					   uint8_t len)

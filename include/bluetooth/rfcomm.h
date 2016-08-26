@@ -142,6 +142,15 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
  */
 int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 
+/** @brief Get the buffer from fifo after reserving head room for RFCOMM, L2CAP
+ *  and ACL headers.
+ *
+ *  @param fifo Which FIFO to take the buffer from.
+ *
+ *  @return New buffer.
+ */
+struct net_buf *bt_rfcomm_create_pdu(struct nano_fifo *fifo);
+
 #ifdef __cplusplus
 }
 #endif
