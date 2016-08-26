@@ -48,7 +48,7 @@ KERNEL_TYPE ?= micro
 override CONF_FILE := $(strip $(subst $(DQUOTE),,$(CONF_FILE)))
 
 SOURCE_DIR ?= $(PROJECT_BASE)/src/
-override SOURCE_DIR := $(abspath $(SOURCE_DIR))
+override SOURCE_DIR := $(realpath $(SOURCE_DIR))
 override SOURCE_DIR := $(subst \,/,$(SOURCE_DIR))
 override SOURCE_DIR_PARENT := $(patsubst %, %/.., $(SOURCE_DIR))
 override SOURCE_DIR_PARENT := $(abspath $(SOURCE_DIR_PARENT))

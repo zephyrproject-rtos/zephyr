@@ -738,13 +738,18 @@ export KBUILD_IMAGE ?= zephyr
 
 zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(core-y) $(drivers-y) \
 		     $(libs-y)))
+
+# Workaround for some make notdir implementations that require
+# the paramenter not to end in "/".
+zephyr-app-dir-root-name := $(patsubst %/,%, $(SOURCE_DIR))
+
 zephyr-app-dir-root := $(abspath $(patsubst %, %/.., $(SOURCE_DIR)))
 
 zephyr-alldirs	:= $(sort $(zephyr-dirs) $(SOURCE_DIR) $(patsubst %/,%,$(filter %/, \
 		     $(core-) $(drivers-) $(libs-) $(app-))))
 
 core-y		:= $(patsubst %/, %/built-in.o, $(core-y))
-app-y		:= $(patsubst %, %/built-in.o, $(notdir $(SOURCE_DIR)))
+app-y		:= $(patsubst %, %/built-in.o, $(notdir $(zephyr-app-dir-root-name)))
 drivers-y	:= $(patsubst %/, %/built-in.o, $(drivers-y))
 libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
@@ -895,7 +900,8 @@ $(zephyr-dirs): prepare scripts
 
 PHONY += zephyr-app-dir
 zephyr-app-dir: prepare scripts
-	$(Q)$(MAKE) $(build)=$(notdir $(SOURCE_DIR)) srctree=$(zephyr-app-dir-root)
+	$(Q)$(MAKE) $(build)=$(notdir $(zephyr-app-dir-root-name)) \
+		srctree=$(zephyr-app-dir-root)
 
 # Things we need to do before we recursively start building the kernel
 # or the modules are listed in "prepare".
