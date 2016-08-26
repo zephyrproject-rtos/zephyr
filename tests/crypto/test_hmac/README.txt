@@ -52,6 +52,6 @@ HMAC test_7:
 PASS - test_7.
 All HMAC tests succeeded!
 ===================================================================
-PASS - mainloop.
+PASS - main.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

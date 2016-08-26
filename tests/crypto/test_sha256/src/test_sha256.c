@@ -421,11 +421,7 @@ uint32_t test_14(void)
  * Main task to test AES
  */
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
         uint32_t result = TC_PASS;
 

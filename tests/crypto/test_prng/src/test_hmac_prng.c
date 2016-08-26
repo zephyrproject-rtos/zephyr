@@ -51,11 +51,7 @@
  * Main task to test AES
  */
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
 void main(void)
-#endif
 {
         uint8_t seed[128];
         struct tc_hmac_prng_struct h;

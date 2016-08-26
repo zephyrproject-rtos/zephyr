@@ -250,11 +250,7 @@ static uint32_t verify_cmac_512_bit_msg(TCCmacState_t s)
  * Main task to test CMAC
  */
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
-	void main(void)
-#endif
+void main(void)
 {
 
 	uint32_t result = TC_PASS;

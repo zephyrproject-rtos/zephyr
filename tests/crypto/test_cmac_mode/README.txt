@@ -46,6 +46,6 @@ Performing CMAC test #5 (SP 800-38B test vector #4)
 PASS - verify_cmac_512_bit_msg.
 All CMAC tests succeeded!
 ===================================================================
-PASS - mainloop.
+PASS - main.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

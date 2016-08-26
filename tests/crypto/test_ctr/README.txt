@@ -38,6 +38,6 @@ CTR test #2 (decryption SP 800-38a tests):
 PASS - test_1_and_2.
 All CTR tests succeeded!
 ===================================================================
-PASS - mainloop.
+PASS - main.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

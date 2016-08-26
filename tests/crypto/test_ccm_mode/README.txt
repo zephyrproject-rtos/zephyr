@@ -55,6 +55,6 @@ Performing CCM test #8 (no payload data):
 PASS - test_vector_8.
 All CCM tests succeeded!
 ===================================================================
-PASS - mainloop.
+PASS - main.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

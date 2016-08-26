@@ -450,11 +450,7 @@ exitTest1:
  * Main task to test CCM
  */
 
-#ifdef CONFIG_MICROKERNEL
-void mainloop(void)
-#else
-	void main(void)
-#endif
+void main(void)
 {
 	uint32_t result = TC_PASS;
 

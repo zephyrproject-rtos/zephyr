@@ -73,7 +73,7 @@ SHA256 test #14:
 PASS - test_14.
 All SHA256 tests succeeded!
 ===================================================================
-PASS - mainloop.
+PASS - main.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL
 

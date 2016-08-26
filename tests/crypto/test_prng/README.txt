@@ -32,15 +32,15 @@ tc_start() - Performing HMAC-PRNG tests:
 HMAC-PRNG test#1 (init, reseed, generate):
 HMAC-PRNG test#1 (init):
 ===================================================================
-PASS - mainloop.
+PASS - main.
 HMAC-PRNG test#1 (reseed):
 ===================================================================
-PASS - mainloop.
+PASS - main.
 HMAC-PRNG test#1 (generate):
 ===================================================================
-PASS - mainloop.
+PASS - main.
 All HMAC tests succeeded!
 ===================================================================
-PASS - mainloop.
+PASS - main.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

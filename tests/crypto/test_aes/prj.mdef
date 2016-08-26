@@ -2,4 +2,4 @@
 
 % TASK NAME          PRIO ENTRY           STACK GROUPS
 % ====================================================
-  TASK tStartTask       7 mainloop        5120 [EXE]
+  TASK tStartTask       7 main            5120 [EXE]
