@@ -148,6 +148,52 @@ int fs_seek(ZFILE *zfp, off_t offset, int whence)
 	return translate_error(res);
 }
 
+int fs_truncate(ZFILE *zfp, off_t length)
+{
+	FRESULT res = FR_OK;
+	off_t cur_length = f_size(&zfp->fp);
+
+	/* f_lseek expands file if new position is larger than file size */
+	res = f_lseek(&zfp->fp, length);
+	if (res != FR_OK) {
+		return translate_error(res);
+	}
+
+	if (length < cur_length) {
+		res = f_truncate(&zfp->fp);
+	} else {
+		/*
+		 * Get actual length after expansion. This could be
+		 * less if there was not enough space in the volume
+		 * to expand to the requested length
+		 */
+		length = f_tell(&zfp->fp);
+
+		res = f_lseek(&zfp->fp, cur_length);
+		if (res != FR_OK) {
+			return translate_error(res);
+		}
+
+		/*
+		 * The FS module does caching and optimization of
+		 * writes. Here we write 1 byte at a time to avoid
+		 * using additional code and memory for doing any
+		 * optimization.
+		 */
+		uint32_t bw;
+		uint8_t c = 0;
+
+		for (int i = cur_length; i < length; i++) {
+			res = f_write(&zfp->fp, &c, 1, &bw);
+			if (res != FR_OK) {
+				break;
+			}
+		}
+	}
+
+	return translate_error(res);
+}
+
 int fs_mkdir(const char *path)
 {
 	FRESULT res;

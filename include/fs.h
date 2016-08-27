@@ -196,6 +196,26 @@ int fs_seek(ZFILE *zfp, off_t offset, int whence);
 off_t fs_tell(ZFILE *zfp);
 
 /**
+ * @brief Change the size of an open file
+ *
+ * Truncates the file to the new length if it is shorter than the current
+ * size of the file. Expands the file if the new length is greater than the
+ * current size of the file. The expanded region would be filled with zeroes.
+ *
+ * @note In the case of expansion, if the volume got full during the
+ * expansion process, the function will expand to the maximum possible length
+ * and returns success. Caller should check if the expanded size matches the
+ * requested length.
+ *
+ * @param zfp Pointer to the file object
+ * @param length New size of the file in bytes
+ *
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int fs_truncate(ZFILE *zfp, off_t length);
+
+/**
  * @brief Directory create
  *
  * Creates a new directory using specified path.
