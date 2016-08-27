@@ -124,7 +124,7 @@ struct bt_hci_cmd_hdr {
 /* LMP features */
 #define BT_LMP_NO_BREDR				0x20
 #define BT_LMP_LE				0x40
-#define BT_LMP_REMOTE_EXT_FEATURES		0x80
+#define BT_LMP_EXT_FEATURES			0x80
 
 /* Host features */
 #define BT_LMP_HOST_SSP				0x01

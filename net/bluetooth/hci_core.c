@@ -1861,7 +1861,7 @@ static void read_remote_features_complete(struct net_buf *buf)
 
 	memcpy(conn->br.features[0], evt->features, sizeof(evt->features));
 
-	if (!lmp_ext_feat_capable(conn)) {
+	if (!lmp_ext_feat_capable(conn->br.features)) {
 		goto done;
 	}
 

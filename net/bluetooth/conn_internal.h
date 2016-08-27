@@ -63,10 +63,6 @@ struct bt_conn_le {
 /* For now reserve space for 2 pages of LMP remote features */
 #define LMP_MAX_PAGES 2
 
-/* Helper to get remote extended features bit available at page 0 */
-#define lmp_ext_feat_capable(conn) \
-	((conn)->br.features[0][7] & BT_LMP_REMOTE_EXT_FEATURES)
-
 /* Helper to validate SSP host support within retrieved remote LMP features */
 #define lmp_ssp_host_supported(conn) \
 	((conn)->br.features[1][0] & BT_LMP_HOST_SSP)

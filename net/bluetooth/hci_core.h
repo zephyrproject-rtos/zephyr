@@ -27,6 +27,9 @@
 
 #define LMP_FEAT_PAGES_COUNT	3
 
+/* Helper to get extended features bit available at page 0 */
+#define lmp_ext_feat_capable(feat) ((feat)[0][7] & BT_LMP_EXT_FEATURES)
+
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
 	BT_DEV_ENABLE,
