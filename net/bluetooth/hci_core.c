@@ -358,51 +358,33 @@ static const bt_addr_le_t *find_id_addr(const bt_addr_le_t *addr)
 	return addr;
 }
 
-static int set_advertise_enable(void)
+static int set_advertise_enable(bool enable)
 {
 	struct net_buf *buf;
 	int err;
-
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-		return 0;
-	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
+	if (enable) {
+		net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
+	} else {
+		net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
+	}
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 	if (err) {
 		return err;
 	}
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING);
-	return 0;
-}
-
-static int set_advertise_disable(void)
-{
-	struct net_buf *buf;
-	int err;
-
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-		return 0;
+	if (enable) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+	} else {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
-	if (err) {
-		return err;
-	}
-
-	atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
 	return 0;
 }
 
@@ -469,9 +451,9 @@ static void rpa_timeout(struct nano_work *work)
 	 */
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 		/* make sure new address is used */
-		set_advertise_disable();
+		set_advertise_enable(false);
 		le_set_rpa();
-		set_advertise_enable();
+		set_advertise_enable(true);
 	}
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
@@ -650,11 +632,12 @@ static void hci_disconn_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 
 advertise:
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
+	    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
 		le_set_rpa();
 #endif
-		set_advertise_enable();
+		set_advertise_enable(true);
 	}
 }
 
@@ -767,10 +750,29 @@ static void le_conn_complete(struct net_buf *buf)
 		bt_addr_le_copy(&conn->le.init_addr, &evt->peer_addr);
 
 #if defined(CONFIG_BLUETOOTH_PRIVACY)
+		/* TODO Handle the probability that random address could have
+		 * been updated by rpa_timeout or numerous other places it is
+		 * called in this file before le_conn_complete is processed
+		 * here.
+		 */
 		bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.random_addr);
 #else
 		bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr);
 #endif /* CONFIG_BLUETOOTH_PRIVACY */
+
+		/* if the controller supports, lets advertise for another
+		 * slave connection.
+		 * check for connectable advertising state is sufficient as
+		 * this is how this le connection complete for slave occurred.
+		 */
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
+		    BT_LE_STATES_SLAVE_CONN_ADV(bt_dev.le.states)) {
+#if defined(CONFIG_BLUETOOTH_PRIVACY)
+			le_set_rpa();
+#endif
+			set_advertise_enable(true);
+		}
+
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
@@ -2425,7 +2427,7 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 		}
 #else
 		/* only set NRPA if there is no advertising ongoing */
-		if (!atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 			err = le_set_nrpa();
 			if (err) {
 				net_buf_unref(buf);
@@ -3684,13 +3686,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 		return -EALREADY;
-	}
-
-	err = set_advertise_disable();
-	if (err) {
-		return err;
 	}
 
 	err = set_ad(BT_HCI_OP_LE_SET_ADV_DATA, ad, ad_len);
@@ -3773,7 +3770,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	err = set_advertise_enable();
+	err = set_advertise_enable(true);
 	if (err) {
 		return err;
 	}
@@ -3787,16 +3784,24 @@ int bt_le_adv_stop(void)
 {
 	int err;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
+	/* Advertise disable may fail if slave connections are established,
+	 * and advertising is not kept ON as the controller does not support
+	 * simultaneous slave connections and connectable advertising state.
+	 * Hence, we test and clear BT_DEV_KEEP_ADVERTISING flag before trying
+	 * to disable advertising if BT_DEV_ADVERTISING is set.
+	 */
+	if (!atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING)) {
 		return -EALREADY;
 	}
 
-	err = set_advertise_disable();
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		return 0;
+	}
+
+	err = set_advertise_enable(false);
 	if (err) {
 		return err;
 	}
-
-	atomic_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
 
 #if !defined(CONFIG_BLUETOOTH_PRIVACY)
 	/* If active scan is ongoing set NRPA */
