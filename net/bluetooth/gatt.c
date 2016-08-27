@@ -359,8 +359,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			}
 
 			bt_addr_le_copy(&ccc->cfg[i].peer, &conn->le.dst);
-			/* Only set valid if bonded */
-			ccc->cfg[i].valid = bt_addr_le_is_bonded(&conn->le.dst);
+			ccc->cfg[i].valid = true;
 			break;
 		}
 
@@ -672,9 +671,11 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			}
 		} else {
 			/* Clear value if not paired */
-			if (!ccc->cfg[i].valid)
+			if (!bt_addr_le_is_bonded(&conn->le.dst)) {
+				ccc->cfg[i].valid = false;
 				memset(&ccc->cfg[i].value, 0,
 				       sizeof(ccc->cfg[i].value));
+			}
 		}
 	}
 
