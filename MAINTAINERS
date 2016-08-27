@@ -61,7 +61,7 @@ Maintainers List (try to look for most precise areas first)
 
 ARC ARCHITECTURE
 M:	Ruud Derwig <Ruud.Derwig@synopsys.com>
-M:	Chuck Jordan <Chuck.Jordan@synopsys.com
+M:	Chuck Jordan <Chuck.Jordan@synopsys.com>
 M:	Benjamin Walsh <benjamin.walsh@windriver.com>
 S:	Supported
 F:	arch/arc/
