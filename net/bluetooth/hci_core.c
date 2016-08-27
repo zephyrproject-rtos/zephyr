@@ -2840,33 +2840,25 @@ static void read_supported_commands_complete(struct net_buf *buf)
 #endif /* CONFIG_BLUETOOTH_TINYCRYPT_ECC */
 }
 
-static int common_init(void)
+static void read_local_features_complete(struct net_buf *buf)
 {
-	struct net_buf *rsp;
-	int err, i;
+	struct bt_hci_rp_read_local_features *rp = (void *)buf->data;
 
-	/* Send HCI_RESET */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
-	if (err) {
-		return err;
-	}
-	hci_reset_complete(rsp);
-	net_buf_unref(rsp);
+	BT_DBG("status %u", rp->status);
 
-	/*
-	 * initialize PRNG right after reset so that it is safe to use it later
-	 * on in initialization process
-	 */
-	err = prng_init(&prng);
-	if (err) {
-		return err;
-	}
+	memcpy(bt_dev.features[0], rp->features, sizeof(bt_dev.features[0]));
+}
+
+static int read_ext_features(void)
+{
+	int i;
 
 	/* Read Local Supported Extended Features */
-	for (i = 0; i < LMP_FEAT_PAGES_COUNT; i++) {
+	for (i = 1; i < LMP_FEAT_PAGES_COUNT; i++) {
 		struct bt_hci_cp_read_local_ext_features *cp;
 		struct bt_hci_rp_read_local_ext_features *rp;
-		struct net_buf *buf;
+		struct net_buf *buf, *rsp;
+		int err;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
 					sizeof(*cp));
@@ -2894,6 +2886,46 @@ static int common_init(void)
 		}
 
 		net_buf_unref(rsp);
+	}
+
+	return 0;
+}
+
+static int common_init(void)
+{
+	struct net_buf *rsp;
+	int err;
+
+	/* Send HCI_RESET */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+	hci_reset_complete(rsp);
+	net_buf_unref(rsp);
+
+	/*
+	 * initialize PRNG right after reset so that it is safe to use it later
+	 * on in initialization process
+	 */
+	err = prng_init(&prng);
+	if (err) {
+		return err;
+	}
+
+	/* Read Local Supported Features */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+	read_local_features_complete(rsp);
+	net_buf_unref(rsp);
+
+	if (lmp_ext_feat_capable(bt_dev.features)) {
+		err = read_ext_features();
+		if (err) {
+			return err;
+		}
 	}
 
 	/* Read Local Version Information */
