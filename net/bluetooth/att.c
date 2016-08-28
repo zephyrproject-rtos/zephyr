@@ -1746,7 +1746,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	}
 
 	if (len + sizeof(op) > att->chan.tx.mtu) {
-		BT_WARN("ATT MTU exceeded, max %u, wanted %zu",
+		BT_WARN("ATT MTU exceeded, max %u, wanted %u",
 			att->chan.tx.mtu, len + sizeof(op));
 		return NULL;
 	}
