@@ -51,7 +51,7 @@ struct bt_conn_le {
 	uint16_t		latency;
 	uint16_t		timeout;
 
-	uint8_t			features[8];
+	uint8_t			features[1][8];
 
 	struct bt_keys		*keys;
 
@@ -62,10 +62,6 @@ struct bt_conn_le {
 #if defined(CONFIG_BLUETOOTH_BREDR)
 /* For now reserve space for 2 pages of LMP remote features */
 #define LMP_MAX_PAGES 2
-
-/* Helper to validate SSP host support within retrieved remote LMP features */
-#define lmp_ssp_host_supported(conn) \
-	((conn)->br.features[1][0] & BT_LMP_HOST_SSP)
 
 struct bt_conn_br {
 	bt_addr_t		dst;

@@ -121,21 +121,18 @@ struct bt_hci_cmd_hdr {
 	uint8_t  param_len;
 } __packed;
 
-/* LMP features */
-#define BT_LMP_NO_BREDR				0x20
-#define BT_LMP_LE				0x40
-#define BT_LMP_EXT_FEATURES			0x80
+#define BT_FEAT_TEST(feat, page, octet, bit)    (feat[page][octet] & BIT(bit))
 
-/* Host features */
-#define BT_LMP_HOST_SSP				0x01
-
-/* Extended features (page 2)*/
-#define BT_LMP_SC				0x01
+#define BT_FEAT_BREDR(feat)                     !BT_FEAT_TEST(feat, 0, 4, 5)
+#define BT_FEAT_LE(feat)                        BT_FEAT_TEST(feat, 0, 4, 6)
+#define BT_FEAT_EXT_FEATURES(feat)              BT_FEAT_TEST(feat, 0, 7, 7)
+#define BT_FEAT_HOST_SSP(feat)                  BT_FEAT_TEST(feat, 1, 0, 0)
+#define BT_FEAT_SC(feat)                        BT_FEAT_TEST(feat, 2, 1, 0)
 
 /* LE features */
-#define BT_HCI_LE_ENCRYPTION			0x01
-#define BT_HCI_LE_CONN_PARAM_REQ_PROC		0x02
-#define BT_HCI_LE_SLAVE_FEATURES		0x08
+#define BT_FEAT_LE_ENCR(feat)                   BT_FEAT_TEST(feat, 0, 0, 0)
+#define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    BT_FEAT_TEST(feat, 0, 0, 1)
+#define BT_FEAT_LE_SLAVE_FEATURE_XCHG(feat)     BT_FEAT_TEST(feat, 0, 0, 3)
 
 /* Bonding/authentication types */
 #define BT_HCI_NO_BONDING			0x00

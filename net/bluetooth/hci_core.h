@@ -16,11 +16,6 @@
  * limitations under the License.
  */
 
-/* LMP feature helpers */
-#define lmp_bredr_capable(dev)	(!((dev).features[0][4] & BT_LMP_NO_BREDR))
-#define lmp_le_capable(dev)	((dev).features[0][4] & BT_LMP_LE)
-#define lmp_br_sc_capable(dev)	((dev).features[2][1] & BT_LMP_SC)
-
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
@@ -30,9 +25,6 @@
 #else
 #define LMP_FEAT_PAGES_COUNT	1
 #endif
-
-/* Helper to get extended features bit available at page 0 */
-#define lmp_ext_feat_capable(feat) ((feat)[0][7] & BT_LMP_EXT_FEATURES)
 
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
@@ -60,7 +52,7 @@ enum {
 
 struct bt_dev_le {
 	/* LE features */
-	uint8_t			features[8];
+	uint8_t			features[1][8];
 
 	/* Controller buffer information */
 	uint16_t		mtu;

@@ -1326,12 +1326,12 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	nano_delayed_work_cancel(&conn->le.update_work);
 
 	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
-	    !(bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+	    !BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {
 		return bt_l2cap_update_conn_param(conn, param);
 	}
 
-	if ((conn->le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
-	    (bt_dev.le.features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+	if (BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features) &&
+	    BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {
 		return bt_conn_le_conn_update(conn, param);
 	}
 

@@ -667,7 +667,7 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	 * level is required.
 	 */
 	if (chan->required_sec_level == BT_SECURITY_LOW &&
-	    !lmp_ssp_host_supported(chan->conn)) {
+	    !BT_FEAT_HOST_SSP(chan->conn->br.features)) {
 		return L2CAP_CONN_SECURITY_PASSED;
 	}
 
@@ -683,7 +683,7 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 		 * remote supports SSP before any L2CAP CoC traffic. So preset
 		 * local to MEDIUM security to trigger it if needed.
 		 */
-		if (lmp_ssp_host_supported(chan->conn)) {
+		if (BT_FEAT_HOST_SSP(chan->conn->br.features)) {
 			chan->required_sec_level = BT_SECURITY_MEDIUM;
 		}
 		break;
@@ -765,7 +765,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	 * Report security violation for non SDP channel without encryption when
 	 * remote supports SSP.
 	 */
-	if (psm != L2CAP_BR_PSM_SDP && lmp_ssp_host_supported(conn) &&
+	if (psm != L2CAP_BR_PSM_SDP && BT_FEAT_HOST_SSP(conn->br.features) &&
 	    !conn->encrypt) {
 		result = BT_L2CAP_ERR_SEC_BLOCK;
 		goto done;

@@ -785,7 +785,7 @@ static void le_conn_complete(struct net_buf *buf)
 	}
 
 	if ((evt->role == BT_HCI_ROLE_MASTER) ||
-	    (bt_dev.le.features[0] & BT_HCI_LE_SLAVE_FEATURES)) {
+	    BT_FEAT_LE_SLAVE_FEATURE_XCHG(bt_dev.le.features)) {
 		err = hci_le_read_remote_features(conn);
 		if (!err) {
 			goto done;
@@ -1861,7 +1861,7 @@ static void read_remote_features_complete(struct net_buf *buf)
 
 	memcpy(conn->br.features[0], evt->features, sizeof(evt->features));
 
-	if (!lmp_ext_feat_capable(conn->br.features)) {
+	if (!BT_FEAT_EXT_FEATURES(conn->br.features)) {
 		goto done;
 	}
 
@@ -2921,7 +2921,7 @@ static int common_init(void)
 	read_local_features_complete(rsp);
 	net_buf_unref(rsp);
 
-	if (lmp_ext_feat_capable(bt_dev.features)) {
+	if (BT_FEAT_EXT_FEATURES(bt_dev.features)) {
 		err = read_ext_features();
 		if (err) {
 			return err;
@@ -2973,7 +2973,7 @@ static int le_init(void)
 	int err;
 
 	/* For now we only support LE capable controllers */
-	if (!lmp_le_capable(bt_dev)) {
+	if (!BT_FEAT_LE(bt_dev.features)) {
 		BT_ERR("Non-LE capable controller detected!");
 		return -ENODEV;
 	}
@@ -2995,7 +2995,7 @@ static int le_init(void)
 	le_read_buffer_size_complete(rsp);
 	net_buf_unref(rsp);
 
-	if (lmp_bredr_capable(bt_dev)) {
+	if (BT_FEAT_BREDR(bt_dev.features)) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
 					sizeof(*cp_le));
 		if (!buf) {
@@ -3113,7 +3113,7 @@ static int br_init(void)
 	}
 
 	/* Enable BR/EDR SC if supported */
-	if (lmp_br_sc_capable(bt_dev)) {
+	if (BT_FEAT_SC(bt_dev.features)) {
 		struct bt_hci_cp_write_sc_host_supp *sc_cp;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SC_HOST_SUPP,
@@ -3204,7 +3204,7 @@ static int set_event_mask(void)
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_SMP)
-	if (bt_dev.le.features[0] & BT_HCI_LE_ENCRYPTION) {
+	if (BT_FEAT_LE_ENCR(bt_dev.le.features)) {
 		ev->events[0] |= 0x80; /* Encryption Change */
 		ev->events[5] |= 0x80; /* Encryption Key Refresh Complete */
 	}
@@ -3282,7 +3282,7 @@ static int hci_init(void)
 		return err;
 	}
 
-	if (lmp_bredr_capable(bt_dev)) {
+	if (BT_FEAT_BREDR(bt_dev.features)) {
 		err = br_init();
 		if (err) {
 			return err;
