@@ -227,6 +227,8 @@ static void native_recv_fiber(int unused0, int unused1)
 
 			retval = native_recv(len, buf);
 			ASSERT(!retval);
+
+			fiber_yield();
 		}
 
 		if (radio_pdu_node_rx) {
@@ -248,9 +250,12 @@ static void native_recv_fiber(int unused0, int unused1)
 			radio_rx_fc_set(radio_pdu_node_rx->hdr.handle, 0);
 			radio_pdu_node_rx->hdr.onion.next = 0;
 			radio_rx_mem_release(&radio_pdu_node_rx);
-		}
 
-		nano_fiber_sem_take(&nano_sem_native_recv, TICKS_UNLIMITED);
+			fiber_yield();
+		} else {
+			nano_fiber_sem_take(&nano_sem_native_recv,
+					    TICKS_UNLIMITED);
+		}
 	}
 }
 
