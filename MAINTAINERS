@@ -95,7 +95,7 @@ BLUETOOTH CONTROLLER
 M:	Vinayak Chettimada <vinayak.kariappa.chettimada@nordicsemi.no>
 M:	Carles Cufi <carles.cufi@nordicsemi.no>
 S:	Supported
-F:	drivers/bluetooth/controller
+F:	drivers/bluetooth/controller/
 
 DOCUMENTATION
 M:	Kinder, David <david.b.kinder@intel.com>
