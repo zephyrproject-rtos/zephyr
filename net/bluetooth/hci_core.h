@@ -25,7 +25,11 @@
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
 
+#if defined(CONFIG_BLUETOOTH_BREDR)
 #define LMP_FEAT_PAGES_COUNT	3
+#else
+#define LMP_FEAT_PAGES_COUNT	1
+#endif
 
 /* Helper to get extended features bit available at page 0 */
 #define lmp_ext_feat_capable(feat) ((feat)[0][7] & BT_LMP_EXT_FEATURES)
