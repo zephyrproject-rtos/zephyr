@@ -343,8 +343,9 @@ static int native_open(void)
 			    sizeof(_radio)
 	    );
 	if (retval) {
-		BT_ERR("Required RAM Size: %d.", retval);
-		return retval;
+		BT_ERR("Required RAM size: %d, supplied: %u.", retval,
+		       sizeof(_radio));
+		return -ENOMEM;
 	}
 
 	IRQ_CONNECT(NRF52_IRQ_POWER_CLOCK_IRQn, 2, power_clock_nrf5_isr, 0, 0);
