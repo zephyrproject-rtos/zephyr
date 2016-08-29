@@ -2849,48 +2849,6 @@ static void read_local_features_complete(struct net_buf *buf)
 	memcpy(bt_dev.features[0], rp->features, sizeof(bt_dev.features[0]));
 }
 
-static int read_ext_features(void)
-{
-	int i;
-
-	/* Read Local Supported Extended Features */
-	for (i = 1; i < LMP_FEAT_PAGES_COUNT; i++) {
-		struct bt_hci_cp_read_local_ext_features *cp;
-		struct bt_hci_rp_read_local_ext_features *rp;
-		struct net_buf *buf, *rsp;
-		int err;
-
-		buf = bt_hci_cmd_create(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
-					sizeof(*cp));
-		if (!buf) {
-			return -ENOBUFS;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->page = i;
-
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
-					   buf, &rsp);
-		if (err) {
-			return err;
-		}
-
-		rp = (void *)rsp->data;
-
-		memcpy(&bt_dev.features[i], rp->ext_features,
-		       sizeof(bt_dev.features[i]));
-
-		if (rp->max_page <= i) {
-			net_buf_unref(rsp);
-			break;
-		}
-
-		net_buf_unref(rsp);
-	}
-
-	return 0;
-}
-
 static int common_init(void)
 {
 	struct net_buf *rsp;
@@ -2920,13 +2878,6 @@ static int common_init(void)
 	}
 	read_local_features_complete(rsp);
 	net_buf_unref(rsp);
-
-	if (BT_FEAT_EXT_FEATURES(bt_dev.features)) {
-		err = read_ext_features();
-		if (err) {
-			return err;
-		}
-	}
 
 	/* Read Local Version Information */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_VERSION_INFO, NULL,
@@ -3054,6 +3005,48 @@ static int le_init(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+static int read_ext_features(void)
+{
+	int i;
+
+	/* Read Local Supported Extended Features */
+	for (i = 1; i < LMP_FEAT_PAGES_COUNT; i++) {
+		struct bt_hci_cp_read_local_ext_features *cp;
+		struct bt_hci_rp_read_local_ext_features *rp;
+		struct net_buf *buf, *rsp;
+		int err;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
+					sizeof(*cp));
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->page = i;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_EXT_FEATURES,
+					   buf, &rsp);
+		if (err) {
+			return err;
+		}
+
+		rp = (void *)rsp->data;
+
+		memcpy(&bt_dev.features[i], rp->ext_features,
+		       sizeof(bt_dev.features[i]));
+
+		if (rp->max_page <= i) {
+			net_buf_unref(rsp);
+			break;
+		}
+
+		net_buf_unref(rsp);
+	}
+
+	return 0;
+}
+
 static int br_init(void)
 {
 	struct net_buf *buf;
@@ -3061,6 +3054,14 @@ static int br_init(void)
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
 	struct bt_hci_write_local_name *name_cp;
 	int err;
+
+	/* Read extended local features */
+	if (BT_FEAT_EXT_FEATURES(bt_dev.features)) {
+		err = read_ext_features();
+		if (err) {
+			return err;
+		}
+	}
 
 	/* Get BR/EDR buffer size */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &buf);
