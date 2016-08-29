@@ -42,8 +42,8 @@
 #include <tinycrypt/constants.h>
 #include <test_utils.h>
 
-uint32_t do_hmac_test(TCHmacState_t h, uint32_t testnum, const uint8_t * data,
-		      size_t datalen, const uint8_t * expected,
+uint32_t do_hmac_test(TCHmacState_t h, uint32_t testnum, const uint8_t *data,
+		      size_t datalen, const uint8_t *expected,
 		      size_t expectedlen)
 {
 	uint8_t digest[32];
