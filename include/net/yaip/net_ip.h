@@ -91,6 +91,7 @@ struct in_addr {
 };
 
 typedef unsigned short int sa_family_t;
+typedef size_t socklen_t;
 
 /**
  * Note that the sin_port and sin6_port are in network byte order

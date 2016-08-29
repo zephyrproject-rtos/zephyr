@@ -248,7 +248,8 @@ static uint16_t find_available_port(struct net_context *context,
 	return net_sin(addr)->sin_port;
 }
 
-int net_context_bind(struct net_context *context, const struct sockaddr *addr)
+int net_context_bind(struct net_context *context, const struct sockaddr *addr,
+		     socklen_t addrlen)
 {
 	NET_ASSERT(context && addr);
 	NET_ASSERT(context >= &context[0] || \
@@ -259,6 +260,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr)
 		struct net_if *iface;
 		struct in6_addr *ptr;
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
+
+		if (addrlen < sizeof(struct sockaddr_in6)) {
+			return -EINVAL;
+		}
 
 		if (net_is_ipv6_addr_mcast(&addr6->sin6_addr)) {
 			struct net_if_mcast_addr *maddr;
@@ -315,6 +320,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr)
 		struct net_if *iface;
 		struct net_if_addr *ifaddr;
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
+
+		if (addrlen < sizeof(struct sockaddr_in)) {
+			return -EINVAL;
+		}
 
 		ifaddr = net_if_ipv4_addr_lookup(&addr4->sin_addr,
 						 &iface);
@@ -380,6 +389,7 @@ int net_context_listen(struct net_context *context, int backlog)
 
 int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,
+			socklen_t addrlen,
 			net_context_connect_cb_t cb,
 			int32_t timeout,
 			void *user_data)
@@ -404,6 +414,10 @@ int net_context_connect(struct net_context *context,
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)
 							&context->remote;
 
+		if (addrlen < sizeof(struct sockaddr_in6)) {
+			return -EINVAL;
+		}
+
 		memcpy(&addr6->sin6_addr, &net_sin6(addr)->sin6_addr,
 		       sizeof(struct in6_addr));
 
@@ -422,6 +436,10 @@ int net_context_connect(struct net_context *context,
 	if (net_context_get_family(context) == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)
 							&context->remote;
+
+		if (addrlen < sizeof(struct sockaddr_in)) {
+			return -EINVAL;
+		}
 
 		memcpy(&addr4->sin_addr, &net_sin(addr)->sin_addr,
 		       sizeof(struct in_addr));
@@ -557,6 +575,7 @@ int net_context_send(struct net_buf *buf,
 
 int net_context_sendto(struct net_buf *buf,
 		       const struct sockaddr *dst_addr,
+		       socklen_t addrlen,
 		       net_context_send_cb_t cb,
 		       int32_t timeout,
 		       void *token,
@@ -578,6 +597,10 @@ int net_context_sendto(struct net_buf *buf,
 	if (net_nbuf_family(buf) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
+		if (addrlen < sizeof(struct sockaddr_in6)) {
+			return -EINVAL;
+		}
+
 		if (net_is_ipv6_addr_unspecified(&addr6->sin6_addr)) {
 			return -EDESTADDRREQ;
 		}
@@ -592,6 +615,10 @@ int net_context_sendto(struct net_buf *buf,
 #if defined(CONFIG_NET_IPV4)
 	if (net_nbuf_family(buf) == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
+
+		if (addrlen < sizeof(struct sockaddr_in)) {
+			return -EINVAL;
+		}
 
 		if (!addr4->sin_addr.s_addr[0]) {
 			return -EDESTADDRREQ;

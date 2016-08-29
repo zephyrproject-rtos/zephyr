@@ -245,7 +245,8 @@ static bool net_ctx_bind_fail(void)
 	};
 	int ret;
 
-	ret = net_context_bind(udp_v6_ctx, (struct sockaddr *)&addr);
+	ret = net_context_bind(udp_v6_ctx, (struct sockaddr *)&addr,
+			       sizeof(struct sockaddr_in6));
 	if (ret != -ENOENT) {
 		TC_ERROR("Context bind failure test failed.\n");
 		return false;
@@ -264,7 +265,8 @@ static bool net_ctx_bind_uni_success_v6(void)
 	};
 	int ret;
 
-	ret = net_context_bind(udp_v6_ctx, (struct sockaddr *)&addr);
+	ret = net_context_bind(udp_v6_ctx, (struct sockaddr *)&addr,
+			       sizeof(struct sockaddr_in6));
 	if (ret != 0) {
 		TC_ERROR("Context bind IPv6 test failed (%d)\n", ret);
 		return false;
@@ -282,7 +284,8 @@ static bool net_ctx_bind_uni_success_v4(void)
 	};
 	int ret;
 
-	ret = net_context_bind(udp_v4_ctx, (struct sockaddr *)&addr);
+	ret = net_context_bind(udp_v4_ctx, (struct sockaddr *)&addr,
+			       sizeof(struct sockaddr_in));
 	if (ret != 0) {
 		TC_ERROR("Context bind IPv4 test failed (%d)\n", ret);
 		return false;
@@ -302,7 +305,8 @@ static bool net_ctx_bind_mcast_success(void)
 
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr.sin6_addr);
 
-	ret = net_context_bind(mcast_v6_ctx, (struct sockaddr *)&addr);
+	ret = net_context_bind(mcast_v6_ctx, (struct sockaddr *)&addr,
+			       sizeof(struct sockaddr_in6));
 	if (ret != 0) {
 		TC_ERROR("Context bind test failed (%d)\n", ret);
 		return false;
@@ -380,6 +384,7 @@ static bool net_ctx_connect_v6(void)
 	int ret;
 
 	ret = net_context_connect(udp_v6_ctx, (struct sockaddr *)&addr,
+				  sizeof(struct sockaddr_in6),
 				  connect_cb, 0, INT_TO_POINTER(AF_INET6));
 	if (ret || cb_failure) {
 		TC_ERROR("Context connect IPv6 UDP test failed (%d)\n", ret);
@@ -409,6 +414,7 @@ static bool net_ctx_connect_v4(void)
 	int ret;
 
 	ret = net_context_connect(udp_v4_ctx, (struct sockaddr *)&addr,
+				  sizeof(struct sockaddr_in),
 				  connect_cb, 0, INT_TO_POINTER(AF_INET));
 	if (ret || cb_failure) {
 		TC_ERROR("Context connect IPv4 UDP test failed (%d)\n", ret);
@@ -428,7 +434,10 @@ static bool net_ctx_connect_v4(void)
 	return true;
 }
 
-static void accept_cb(struct net_context *context, void *user_data)
+static void accept_cb(struct net_context *context,
+		      struct sockaddr *addr,
+		      socklen_t addrlen,
+		      void *user_data)
 {
 	sa_family_t family = POINTER_TO_INT(user_data);
 
@@ -573,7 +582,9 @@ static bool net_ctx_sendto_v6(void)
 
 	test_token = SENDING;
 
-	ret = net_context_sendto(buf, (struct sockaddr *)&addr, send_cb, 0,
+	ret = net_context_sendto(buf, (struct sockaddr *)&addr,
+				 sizeof(struct sockaddr_in6),
+				 send_cb, 0,
 				 INT_TO_POINTER(test_token),
 				 INT_TO_POINTER(AF_INET6));
 	if (ret || cb_failure) {
@@ -607,7 +618,9 @@ static bool net_ctx_sendto_v4(void)
 
 	test_token = SENDING;
 
-	ret = net_context_sendto(buf, (struct sockaddr *)&addr, send_cb, 0,
+	ret = net_context_sendto(buf, (struct sockaddr *)&addr,
+				 sizeof(struct sockaddr_in),
+				 send_cb, 0,
 				 INT_TO_POINTER(test_token),
 				 INT_TO_POINTER(AF_INET));
 	if (ret || cb_failure) {
@@ -703,7 +716,9 @@ static bool net_ctx_sendto_v6_wrong_src(void)
 
 	test_token = SENDING;
 
-	ret = net_context_sendto(buf, (struct sockaddr *)&addr, send_cb, 0,
+	ret = net_context_sendto(buf, (struct sockaddr *)&addr,
+				 sizeof(struct sockaddr_in6),
+				 send_cb, 0,
 				 INT_TO_POINTER(test_token),
 				 INT_TO_POINTER(AF_INET6));
 	if (ret || cb_failure) {
@@ -758,7 +773,9 @@ static bool net_ctx_sendto_v4_wrong_src(void)
 
 	test_token = SENDING;
 
-	ret = net_context_sendto(buf, (struct sockaddr *)&addr, send_cb, 0,
+	ret = net_context_sendto(buf, (struct sockaddr *)&addr,
+				 sizeof(struct sockaddr_in),
+				 send_cb, 0,
 				 INT_TO_POINTER(test_token),
 				 INT_TO_POINTER(AF_INET));
 	if (ret || cb_failure) {

@@ -156,7 +156,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
-	ret = net_context_bind(*udp_recv6, (struct sockaddr *)&my_addr6);
+	ret = net_context_bind(*udp_recv6, (struct sockaddr *)&my_addr6,
+			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
 		NET_ERR("Cannot bind IPv6 UDP port %d (%d)",
 			ntohs(my_addr6.sin6_port), ret);
@@ -170,7 +171,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
-	ret = net_context_bind(*mcast_recv6, (struct sockaddr *)&mcast_addr6);
+	ret = net_context_bind(*mcast_recv6, (struct sockaddr *)&mcast_addr6,
+			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
 		NET_ERR("Cannot bind IPv6 mcast (%d)", ret);
 		return false;
@@ -185,7 +187,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
-	ret = net_context_bind(*udp_recv4, (struct sockaddr *)&my_addr4);
+	ret = net_context_bind(*udp_recv4, (struct sockaddr *)&my_addr4,
+			       sizeof(struct sockaddr_in));
 	if (ret < 0) {
 		NET_ERR("Cannot bind IPv4 UDP port %d (%d)",
 			ntohs(my_addr4.sin_port), ret);
@@ -204,7 +207,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 		}
 
 		ret = net_context_bind(*tcp_recv6,
-				       (struct sockaddr *)&my_addr6);
+				       (struct sockaddr *)&my_addr6,
+				       sizeof(struct sockaddr_in6));
 		if (ret < 0) {
 			NET_ERR("Cannot bind IPv6 TCP port %d (%d)",
 				ntohs(my_addr6.sin_port), ret);
@@ -229,7 +233,8 @@ static inline bool get_context(struct net_context **udp_recv4,
 		}
 
 		ret = net_context_bind(*tcp_recv4,
-				       (struct sockaddr *)&my_addr4);
+				       (struct sockaddr *)&my_addr4,
+				       sizeof(struct sockaddr_in));
 		if (ret < 0) {
 			NET_ERR("Cannot bind IPv4 TCP port %d",
 				ntohs(my_addr4.sin_port));
@@ -353,7 +358,11 @@ static void udp_received(struct net_context *context,
 
 	net_nbuf_unref(buf);
 
-	ret = net_context_sendto(reply_buf, &dst_addr, udp_sent, 0,
+	ret = net_context_sendto(reply_buf, &dst_addr,
+				 family == AF_INET6 ?
+				 sizeof(struct sockaddr_in6) :
+				 sizeof(struct sockaddr_in),
+				 udp_sent, 0,
 				 UINT_TO_POINTER(net_buf_frags_len(reply_buf)),
 				 user_data);
 	if (ret < 0) {

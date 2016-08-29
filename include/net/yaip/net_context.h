@@ -398,11 +398,13 @@ int net_context_put(struct net_context *context);
  *
  * @param context The context to be assigned.
  * @param addr Address to assigned.
+ * @param addrlen Length of the address.
  *
  * @return 0 if ok, < 0 if error
  */
 int net_context_bind(struct net_context *context,
-		     const struct sockaddr *addr);
+		     const struct sockaddr *addr,
+		     socklen_t addrlen);
 
 /**
  * @brief Mark the context as a listening one.
@@ -449,6 +451,7 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
  *
  * @param context The context to use.
  * @param addr The peer address to connect to.
+ * @param addrlen Length of the address.
  * @param cb Caller supplied callback function.
  * @param timeout Timeout for the connection. Possible values
  * are TICKS_UNLIMITED, 0, >0.
@@ -458,6 +461,7 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
  */
 int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,
+			socklen_t addrlen,
 			net_context_connect_cb_t cb,
 			int32_t timeout,
 			void *user_data);
@@ -470,9 +474,13 @@ int net_context_connect(struct net_context *context,
  * attempt. The callback is called in fiber context.
  *
  * @param context The context to use.
+ * @param addr The peer address.
+ * @param addrlen Length of the peer address.
  * @param user_data The user data given in net_context_accept() call.
  */
 typedef void (*net_context_accept_cb_t)(struct net_context *new_context,
+					struct sockaddr *addr,
+					socklen_t addrlen,
 					void *user_data);
 
 /**
@@ -554,6 +562,7 @@ int net_context_send(struct net_buf *buf,
  * @param buf The network buffer to send.
  * @param dst_addr Destination address. This will override the address
  * already set in network buffer.
+ * @param addrlen Length of the address.
  * @param cb Caller supplied callback function.
  * @param timeout Timeout for the connection. Possible values
  * are TICKS_UNLIMITED, 0, >0.
@@ -564,6 +573,7 @@ int net_context_send(struct net_buf *buf,
  */
 int net_context_sendto(struct net_buf *buf,
 		       const struct sockaddr *dst_addr,
+		       socklen_t addrlen,
 		       net_context_send_cb_t cb,
 		       int32_t timeout,
 		       void *token,
