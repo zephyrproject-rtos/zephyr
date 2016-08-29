@@ -230,7 +230,7 @@ config I2C_SDA_TX_HOLD
 config I2C_SDA_RX_HOLD
 	int
 	depends on I2C_QMSI
-	default 16
+	default 24
 	help
 	The hold time on the data signal after a negative edge of i2c clock
 	while i2c acts as receiver.
