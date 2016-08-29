@@ -1,8 +1,6 @@
 # vim: filetype=make
 #
 
-ARCH ?= x86
-
 UNAME := $(shell uname)
 ifeq (MINGW, $(findstring MINGW, $(UNAME)))
 DQUOTE = '
