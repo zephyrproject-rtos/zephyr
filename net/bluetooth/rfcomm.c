@@ -633,7 +633,7 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		BT_DBG("session %p initialized", session);
 
 		session->br_chan.chan.ops = &ops;
-		session->br_chan.rx.mtu	= RFCOMM_DEFAULT_MTU;
+		session->br_chan.rx.mtu	= CONFIG_BLUETOOTH_RFCOMM_L2CAP_MTU;
 		session->state = BT_RFCOMM_STATE_INIT;
 
 		*chan = &session->br_chan.chan;
