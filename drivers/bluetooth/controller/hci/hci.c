@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <toolchain.h>
+#include <errno.h>
 
 #include "defines.h"
 #include "ticker.h"
@@ -30,6 +31,7 @@
 #include "ctrl.h"
 #include "ll.h"
 
+#include <bluetooth/hci.h>
 #include "hci.h"
 
 #include "debug.h"
@@ -748,7 +750,7 @@ static struct {
 #define HCI_CC_LEN(s)((uint8_t)(offsetof(struct hci_evt_cmd_cmplt, params) + \
 			sizeof(struct s)))
 
-static void link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
+static int link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 {
 	uint32_t status;
 	struct hci_evt *evt;
@@ -794,21 +796,15 @@ static void link_control_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 		break;
 
 	default:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_unknown_hci_command);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
-
-		ccp->unknown_hci_command.status =
-			HCI_EVT_ERROR_CODE_UNKNOWN_HCI_COMMAND;
-
-		break;
+		return -EINVAL;
 	}
 
 	*len = HCI_EVT_LEN(evt);
+
+	return 0;
 }
 
-static void ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
+static int ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 {
 	struct hci_evt *evt;
 	struct hci_evt_cmd_cmplt *cc;
@@ -846,21 +842,15 @@ static void ctrl_bb_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 		break;
 
 	default:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_unknown_hci_command);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
-
-		ccp->unknown_hci_command.status =
-			HCI_EVT_ERROR_CODE_UNKNOWN_HCI_COMMAND;
-
-		break;
+		return -EINVAL;
 	}
 
 	*len = HCI_EVT_LEN(evt);
+
+	return 0;
 }
 
-static void info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
+static int info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 {
 	struct hci_evt *evt;
 	struct hci_evt_cmd_cmplt *cc;
@@ -954,20 +944,15 @@ static void info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 		break;
 
 	default:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_unknown_hci_command);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
-
-		ccp->unknown_hci_command.status =
-			 HCI_EVT_ERROR_CODE_UNKNOWN_HCI_COMMAND;
-		break;
+		return -EINVAL;
 	}
 
 	*len = HCI_EVT_LEN(evt);
+
+	return 0;
 }
 
-static void controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
+static int controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 		uint8_t **out)
 {
 	uint32_t status;
@@ -1410,20 +1395,15 @@ static void controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 		break;
 
 	default:
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_unknown_hci_command);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
-
-		ccp->unknown_hci_command.status =
-			HCI_EVT_ERROR_CODE_UNKNOWN_HCI_COMMAND;
-		break;
+		return -EINVAL;
 	}
 
 	*len = HCI_EVT_LEN(evt);
+
+	return 0;
 }
 
-static void vs_cmd_handle(struct hci_cmd *cmd,
+static int vs_cmd_handle(struct hci_cmd *cmd,
 		uint8_t *len, uint8_t **out)
 {
 	struct hci_evt *evt;
@@ -1469,21 +1449,12 @@ static void vs_cmd_handle(struct hci_cmd *cmd,
 		break;
 
 	default:
-		hci_context.tx[0] = HCI_EVT;
-
-		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
-		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_unknown_hci_command);
-		cc->num_cmd_pkt = 1;
-		cc->opcode = cmd->opcode;
-
-		ccp->unknown_hci_command.status =
-			HCI_EVT_ERROR_CODE_UNKNOWN_HCI_COMMAND;
-
-		*out = &hci_context.tx[0];
-		break;
+		return -EINVAL;
 	}
 
 	*len = HCI_EVT_LEN(evt);
+
+	return 0;
 }
 
 static void hci_cmd_handle(struct hci_cmd *cmd, uint8_t *len, uint8_t **out)
@@ -1491,6 +1462,7 @@ static void hci_cmd_handle(struct hci_cmd *cmd, uint8_t *len, uint8_t **out)
 	struct hci_evt *evt;
 	struct hci_evt_cmd_cmplt *cc;
 	union hci_evt_cmd_cmplt_params *ccp;
+	int err;
 
 	*out = &hci_context.tx[0];
 	hci_context.tx[0] = HCI_EVT;
@@ -1500,33 +1472,33 @@ static void hci_cmd_handle(struct hci_cmd *cmd, uint8_t *len, uint8_t **out)
 
 	switch (cmd->opcode.ogf) {
 	case HCI_OGF_LINK_CONTROL:
-		link_control_cmd_handle(cmd, len);
+		err = link_control_cmd_handle(cmd, len);
 		break;
 	case HCI_OGF_CONTROL_AND_BASEBAND:
-		ctrl_bb_cmd_handle(cmd, len);
+		err = ctrl_bb_cmd_handle(cmd, len);
 		break;
 	case HCI_OGF_INFORMATIONAL:
-		info_cmd_handle(cmd, len);
+		err = info_cmd_handle(cmd, len);
 		break;
 	case HCI_OGF_LE_CONTROLLER:
-		controller_cmd_handle(cmd, len, out);
+		err = controller_cmd_handle(cmd, len, out);
 		break;
-
 	case HCI_OGF_VENDOR_SPECIFIC:
-		vs_cmd_handle(cmd, len, out);
+		err = vs_cmd_handle(cmd, len, out);
 		break;
 
 	default:
+		err = -EINVAL;
+	}
+
+	if (err == -EINVAL) {
 		evt->code = HCI_EVT_CODE_COMMAND_COMPLETE;
 		evt->len = HCI_CC_LEN(hci_evt_cmd_cmplt_unknown_hci_command);
 		cc->num_cmd_pkt = 1;
 		cc->opcode = cmd->opcode;
-
 		ccp->unknown_hci_command.status =
 		    HCI_EVT_ERROR_CODE_UNKNOWN_HCI_COMMAND;
-
 		*len = HCI_EVT_LEN(evt);
-		break;
 	}
 }
 
