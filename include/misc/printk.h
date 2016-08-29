@@ -49,11 +49,9 @@ extern "C" {
  * @return N/A
  */
 #ifdef CONFIG_PRINTK
-extern __attribute__((format(printf, 1, 2)))
-void printk(const char *fmt, ...);
+extern void printk(const char *fmt, ...);
 #else
-static  __attribute__((format(printf, 1, 2)))
-inline void printk(const char *fmt, ...)
+static inline void printk(const char *fmt, ...)
 {
 	ARG_UNUSED(fmt);
 }
