@@ -59,10 +59,16 @@ validate_fc_seq(uint8_t *buf, uint8_t **p_buf)
 		return NULL;
 	}
 
-	/** See section 5.2.2.2.1 */
-	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_DATA &&
-	    fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE &&
-	    fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_NONE) {
+	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON &&
+	    (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE ||
+	     fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_NONE ||
+	     fs->fc.pan_id_comp)) {
+		/** See section 5.2.2.1.1 */
+		return NULL;
+	} else if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_DATA &&
+		   fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE &&
+		   fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_NONE) {
+		/** See section 5.2.2.2.1 */
 		return NULL;
 	}
 
@@ -100,9 +106,49 @@ validate_addr(uint8_t *buf, uint8_t **p_buf,
 }
 
 static inline bool
+validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
+{
+	struct ieee802154_beacon *b = (struct ieee802154_beacon *)buf;
+	uint8_t *p_buf = buf;
+	struct ieee802154_pas_spec *pas;
+
+	if (length < IEEE802154_BEACON_MIN_SIZE) {
+		return false;
+	}
+
+	p_buf += IEEE802154_BEACON_SF_SIZE + IEEE802154_BEACON_GTS_SPEC_SIZE;
+
+	if (b->gts.desc_count) {
+		p_buf += IEEE802154_BEACON_GTS_DIR_SIZE +
+			b->gts.desc_count * IEEE802154_BEACON_GTS_SIZE;
+	}
+
+	if (length < (p_buf - buf)) {
+		return false;
+	}
+
+	pas = (struct ieee802154_pas_spec *)p_buf;
+	p_buf += IEEE802154_BEACON_PAS_SPEC_SIZE;
+
+	if (pas->nb_sap || pas->nb_eap) {
+		p_buf += (pas->nb_sap * IEEE802154_SHORT_ADDR_LENGTH) +
+			(pas->nb_eap * IEEE802154_EXT_ADDR_LENGTH);
+	}
+
+	if (length < (p_buf - buf)) {
+		return false;
+	}
+
+	mpdu->beacon = b;
+
+	return true;
+}
+
+static inline bool
 validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 			 uint8_t *buf, uint8_t *p_buf, uint8_t length)
 {
+	uint8_t type = mpdu->mhr.fs->fc.frame_type;
 	uint8_t payload_length;
 
 	payload_length = length - (p_buf - buf) - IEEE802154_MFR_LENGTH;
@@ -110,19 +156,24 @@ validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 	NET_DBG("Header size: %u, vs total length %u: payload size %u",
 		p_buf - buf, length, payload_length);
 
-	if (mpdu->mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_ACK) {
-		if (payload_length) {
+	if (type == IEEE802154_FRAME_TYPE_BEACON) {
+		if (!validate_beacon(mpdu, p_buf, payload_length)) {
 			return false;
 		}
-
-		mpdu->payload = NULL;
-	} else {
+	} else if (type == IEEE802154_FRAME_TYPE_DATA) {
 		 /** A data frame embeds a payload */
 		if (payload_length == 0) {
 			return false;
 		}
 
 		mpdu->payload = (void *)p_buf;
+	} else {
+		/** An ACK frame has no payload */
+		if (payload_length) {
+			return false;
+		}
+
+		mpdu->payload = NULL;
 	}
 
 	mpdu->mfr = (struct ieee802154_mfr *)(p_buf + payload_length);
@@ -146,14 +197,19 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 	}
 
 	/** ToDo: Support other frames */
-	if (mpdu->mhr.fs->fc.frame_type != IEEE802154_FRAME_TYPE_DATA &&
-	    mpdu->mhr.fs->fc.frame_type != IEEE802154_FRAME_TYPE_ACK) {
+	if (mpdu->mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
 		return false;
+	}
+
+	if (mpdu->mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
+		mpdu->mhr.dst_addr = NULL;
+		goto src;
 	}
 
 	mpdu->mhr.dst_addr = validate_addr(p_buf, &p_buf,
 					   mpdu->mhr.fs->fc.dst_addr_mode,
 					   false);
+src:
 	mpdu->mhr.src_addr = validate_addr(p_buf, &p_buf,
 					   mpdu->mhr.fs->fc.src_addr_mode,
 					   (mpdu->mhr.fs->fc.pan_id_comp));

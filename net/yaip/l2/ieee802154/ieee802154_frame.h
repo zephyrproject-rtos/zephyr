@@ -38,6 +38,17 @@
 #define IEEE802154_SIMPLE_ADDR_LENGTH		1
 #define IEEE802154_PAN_ID_LENGTH		2
 
+#define IEEE802154_BEACON_MIN_SIZE		4
+#define IEEE802154_BEACON_SF_SIZE		2
+#define IEEE802154_BEACON_GTS_SPEC_SIZE		1
+#define IEEE802154_BEACON_GTS_IF_MIN_SIZE	IEEE802154_BEACON_GTS_SPEC_SIZE
+#define IEEE802154_BEACON_PAS_SPEC_SIZE		1
+#define IEEE802154_BEACON_PAS_IF_MIN_SIZE	IEEE802154_BEACON_PAS_SPEC_SIZE
+#define IEEE802154_BEACON_GTS_DIR_SIZE		1
+#define IEEE802154_BEACON_GTS_SIZE		3
+#define IEEE802154_BEACON_GTS_RX		1
+#define IEEE802154_BEACON_GTS_TX		0
+
 /* See Section 5.2.1.1.1 */
 enum ieee802154_frame_type {
 	IEEE802154_FRAME_TYPE_BEACON		= 0x0,
@@ -125,10 +136,64 @@ struct ieee802154_mfr {
 	uint16_t fcs;
 };
 
+struct ieee802154_gts_dir {
+	uint8_t mask			: 7;
+	uint8_t reserved		: 1;
+} __packed;
+
+struct ieee802154_gts {
+	uint16_t short_address;
+	uint8_t starting_slot		: 4;
+	uint8_t length			: 4;
+} __packed;
+
+struct ieee802154_gts_spec {
+	/* Descriptor Count */
+	uint8_t desc_count		: 3;
+	uint8_t reserved		: 4;
+	/* GTS Permit */
+	uint8_t permit			: 1;
+} __packed;
+
+struct ieee802154_pas_spec {
+	/* Number of Short Addresses Pending */
+	uint8_t nb_sap			: 3;
+	uint8_t reserved_1		: 1;
+	/* Number of Extended Addresses Pending */
+	uint8_t nb_eap			: 3;
+	uint8_t reserved_2		: 1;
+} __packed;
+
+struct ieee802154_beacon_sf {
+	/* Beacon Order*/
+	uint16_t bc_order	: 4;
+	/* Superframe Order*/
+	uint16_t sf_order	: 4;
+	/* Final CAP Slot */
+	uint16_t cap_slot	: 4;
+	/* Battery Life Extension */
+	uint16_t ble		: 1;
+	uint16_t reserved	: 1;
+	/* PAN Coordinator */
+	uint16_t coordinator	: 1;
+	/* Association Permit */
+	uint16_t association	: 1;
+} __packed;
+
+struct ieee802154_beacon {
+	struct ieee802154_beacon_sf sf;
+
+	/* GTS Fields - Spec is always there */
+	struct ieee802154_gts_spec gts;
+} __packed;
+
 /** Frame */
 struct ieee802154_mpdu {
 	struct ieee802154_mhr mhr;
-	void *payload;
+	union {
+		void *payload;
+		struct ieee802154_beacon *beacon;
+	};
 	struct ieee802154_mfr *mfr;
 } __packed;
 
