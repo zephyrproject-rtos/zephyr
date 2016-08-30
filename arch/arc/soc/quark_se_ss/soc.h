@@ -157,6 +157,9 @@
 /*
  * UART
  */
+
+#define UART_IRQ_FLAGS                                  0
+
 #define UART_NS16550_PORT_0_BASE_ADDR			0xB0002000
 #define UART_NS16550_PORT_0_IRQ				41
 #define UART_NS16550_PORT_0_CLK_FREQ			SYSCLK_DEFAULT_IOSC_HZ
