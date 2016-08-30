@@ -52,21 +52,44 @@ static const struct bt_data sd[] = {
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
 	if (err) {
-		printk("Connection failed (err %u)\n", err);
-	} else {
-		printk("Connected\n");
+		printk("Failed to connect to %s (%u)\n", addr, err);
+		return;
+	}
+
+	printk("Connected %s\n", addr);
+
+	if (bt_conn_security(conn, BT_SECURITY_MEDIUM)) {
+		printk("Failed to set security\n");
 	}
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	printk("Disconnected (reason %u)\n", reason);
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Disconnected from %s (reason %u)\n", addr, reason);
+}
+
+static void security_changed(struct bt_conn *conn, bt_security_t level)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Security changed: %s level %u\n", addr, level);
 }
 
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.security_changed = security_changed,
 };
 
 static void bt_ready(int err)
