@@ -52,6 +52,13 @@
 #     different testcase names (especially those coming from
 #     testcase.ini) files can collide with each other.
 #
+# - HACK: ARCH is specified, when it should not be needed to, because
+#   of current limitations of the Zephyr build system on resolving
+#   ARCH from the BOARD specification. This is an historical carry
+#   over that eventually should be cleared
+#   (https://jira.zephyrproject.org/browse/ZEP-690 and
+#   https://jira.zephyrproject.org/browse/ZEP-754).
+#
 # Thus is the `%(tchash)s` substitution, which is a unique hash
 # for a combination of the testcase name, the target and the
 # bsp_model.
@@ -62,7 +69,7 @@
 #   rm -f %(srcdir)s/outdir-%(tchash)s-%(board)s/.config; \
 #   mkdir -p %(srcdir)s/outdir-%(tchash)s-%(board)s; \
 #   make -j -C %(srcdir)s/ %(extra_args)s \
-#       BOARD=%(board)s O=outdir-%(tchash)s-%(board)s \
+#       BOARD=%(board)s ARCH=%(bsp)s O=outdir-%(tchash)s-%(board)s \
 #       initconfig
 #
 #     Once we have the configuration generated, for Sanity Check test
@@ -93,7 +100,7 @@
 # @build [ type == "arduino101" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
 #   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-arduino_101/.config; \
 #   make -j -C $ZEPHYR_BASE/samples/stub \
-#       BOARD=arduino_101 \
+#       BOARD=arduino_101 ARCH=x86 \
 #       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-arduino_101
 #
 # @images [ type == "arduino101" and quark_se_stub == 'yes' and bsp_model == 'arc'] \
@@ -104,7 +111,7 @@
 # @build [ type == "ah" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
 #   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/.config; \
 #   make -j -C $ZEPHYR_BASE/samples/stub \
-#       BOARD=quark_se_devboard \
+#       BOARD=quark_se_devboard ARCH=x86 \
 #       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard
 #
 # @images [ type == "ah" and quark_se_stub == 'yes' and bsp_model == 'arc'] \
@@ -115,7 +122,7 @@
 # @build [ type == "ma" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
 #   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/.config; \
 #   make -j -C $ZEPHYR_BASE/samples/stub \
-#       BOARD=quark_se_devboard \
+#       BOARD=quark_se_devboard ARCH=x86 \
 #       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard
 #
 # @images [ type == "ma" and quark_se_stub == 'yes' and bsp_model == 'arc'] \
@@ -131,7 +138,7 @@
 #   sed -i 's/^CONFIG_ARC_INIT.*//' \
 #       %(srcdir)s/outdir-%(tchash)s-%(board)s/.config; \
 #   make -j -C %(srcdir)s/ %(extra_args)s \
-#       BOARD=%(board)s O=outdir-%(tchash)s-%(board)s \
+#       BOARD=%(board)s ARCH=%(bsp)s O=outdir-%(tchash)s-%(board)s \
 #       olddefconfig
 
 # (2.3) If we are running both cores at the same time, make sure
@@ -141,7 +148,7 @@
 #   echo CONFIG_ARC_INIT=y >> \
 #       %(srcdir)s/outdir-%(tchash)s-%(board)s/.config; \
 #   make -j -C %(srcdir)s %(extra_args)s \
-#       BOARD=%(board)s O=outdir-%(tchash)s-%(board)s \
+#       BOARD=%(board)s ARCH=%(bsp)s O=outdir-%(tchash)s-%(board)s \
 #       %(extra_args)s olddefconfig
 
 # (2.4) Now the basic build and deploy commands that apply to all the
@@ -159,7 +166,7 @@
 # @build \
 #   make -j -C %(srcdir)s %(extra_args)s \
 #       KCPPFLAGS=-DTC_RUNID=%(runid)s:%(tchash)s \
-#       BOARD=%(board)s O=outdir-%(tchash)s-%(board)s
+#       BOARD=%(board)s ARCH=%(bsp)s O=outdir-%(tchash)s-%(board)s
 #
 #       And deploy the kernel we just built
 #
