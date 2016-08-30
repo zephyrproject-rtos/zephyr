@@ -53,7 +53,7 @@
 #define SEQ_MUX_ODD_POS    16
 #define SEQ_DELAY_ODD_POS  21
 
-#ifdef CONFIG_SOC_QUARK_SE_SS
+#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
 #define int_unmask(__mask)                                             \
 	sys_write32(sys_read32((__mask)) & ENABLE_SSS_INTERRUPTS, (__mask))
 #else

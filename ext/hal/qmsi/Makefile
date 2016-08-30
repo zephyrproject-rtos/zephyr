@@ -10,5 +10,5 @@ ZEPHYRINCLUDE +=-I$(srctree)/ext/hal/qmsi/drivers/include
 ifeq ($(CONFIG_ARC),y)
 ZEPHYRINCLUDE +=-I$(srctree)/ext/hal/qmsi/drivers/sensor/include
 endif
-ZEPHYRINCLUDE +=-I$(srctree)/ext/hal/qmsi/soc/$(patsubst %_ss,%,$(SOC_NAME))/include/
+ZEPHYRINCLUDE +=-I$(srctree)/ext/hal/qmsi/soc/$(patsubst %_ss,%,$(SOC_SERIES))/include/
 endif

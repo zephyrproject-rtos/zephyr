@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-if ARC && SOC_QUARK_SE_SS
+if ARC && SOC_QUARK_SE_C1000_SS
 
 if IPM
 config QUARK_SE_SS_IPM_IRQ_PRI
@@ -25,4 +25,4 @@ config QUARK_SE_SS_IPM_IRQ_PRI
 	mailboxes.
 
 endif # IPM
-endif # SOC_QUARK_SE_SS
+endif # SOC_QUARK_SE_C1000_SS

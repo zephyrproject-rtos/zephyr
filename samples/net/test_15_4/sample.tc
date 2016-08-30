@@ -12,7 +12,7 @@
 #    board:(?!qemu_cortex_m3) \
 #    board:(?!qemu_x86) \
 #    board:(?!quark_d2000_crb) \
-#    board:(?!quark_se_sss_devboard) \
+#    board:(?!quark_se_c1000_ss_devboard) \
 #
 # @eval console-rx %(console)s:15 received [0-9]+ bytes
 # @eval console-rx %(console)s:15 sent [0-9]+ bytes

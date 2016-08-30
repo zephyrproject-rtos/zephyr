@@ -416,7 +416,7 @@ int spi_dw_init(struct device *dev)
 	_clock_on(dev);
 
 #if 0 /* TODO: Not correct version for every target. Don't check. */
-#ifndef CONFIG_SOC_QUARK_SE_SS
+#ifndef CONFIG_SOC_QUARK_SE_C1000_SS
 	if (read_ssi_comp_version(info->regs) != DW_SSI_COMP_VERSION) {
 		dev->driver_api = NULL;
 		_clock_off(dev);

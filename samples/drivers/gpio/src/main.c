@@ -119,7 +119,7 @@
 
 #define SLEEPTICKS	SECONDS(1)
 
-#if defined(CONFIG_SOC_QUARK_SE_SS)
+#if defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 #define GPIO_OUT_PIN	2
 #define GPIO_INT_PIN	3
 #define GPIO_NAME	"GPIO_SS_"

@@ -12,3 +12,5 @@ OUTPUT_ARCH = iamcu:intel
 else
 soc-cflags += $(call cc-option,-mno-iamcu)
 endif
+
+SOC_SERIES = quark_se

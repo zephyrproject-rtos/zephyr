@@ -89,7 +89,7 @@
 /* undef GPIO_DW_IO_ACCESS .. because memory mapped */
 /* undef CONFIG_GPIO_DW_0_IRQ_SHARED */
 /* undef CONFIG_GPIO_DW_CLOCK_GATE */
-/* undef CONFIG_SOC_QUARK_SE_SS */
+/* undef CONFIG_SOC_QUARK_SE_C1000_SS */
 
 /* SPI */
 

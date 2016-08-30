@@ -13,6 +13,6 @@
 #    board:(?!qemu_x86) \
 #    board:(?!quark_d2000_crb) \
 #    board:(?!quark_se_devboard) \
-#    board:(?!quark_se_sss_devboard) \
+#    board:(?!quark_se_c1000_ss_devboard) \
 #
 # @eval console-rx %(console)s:15 SPI Flash Manufacturer [0-9a-zA-Z]+ Device Id [0-9a-zA-Z]+

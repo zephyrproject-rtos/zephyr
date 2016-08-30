@@ -1,0 +1,5 @@
+
+config SOC_QUARK_SE_C1000_SS
+	bool "Intel Quark SE C1000- Sensor Sub System"
+	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select HAS_QMSI
