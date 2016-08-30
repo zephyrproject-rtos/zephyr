@@ -123,7 +123,7 @@
 #define GPIO_OUT_PIN	2
 #define GPIO_INT_PIN	3
 #define GPIO_NAME	"GPIO_SS_"
-#elif defined(CONFIG_SOC_QUARK_SE)
+#elif defined(CONFIG_SOC_QUARK_SE_C1000)
 #define GPIO_OUT_PIN	16
 #define GPIO_INT_PIN	19
 #define GPIO_NAME	"GPIO_"

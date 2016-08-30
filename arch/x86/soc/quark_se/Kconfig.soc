@@ -1,6 +1,6 @@
 
 
-config SOC_QUARK_SE
+config SOC_QUARK_SE_C1000
 	bool "Intel Quark SE"
 	select CPU_MINUTEIA
 	select IOAPIC

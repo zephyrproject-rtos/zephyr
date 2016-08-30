@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-if SOC_QUARK_SE
+if SOC_QUARK_SE_C1000
 
 config SOC
 	default quark_se
@@ -234,4 +234,4 @@ config USB_DW_IRQ_PRI
 	default 3
 endif # USB
 
-endif # SOC_QUARK_SE
+endif # SOC_QUARK_SE_C1000

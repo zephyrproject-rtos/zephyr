@@ -98,24 +98,24 @@
 # (2.3.2) For Quark SE Devboard v1
 #
 # @build [ type == "ah" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
-#   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/.config; \
+#   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard/.config; \
 #   make -j -C $ZEPHYR_BASE/samples/stub \
-#       BOARD=quark_se_devboard ARCH=x86 \
-#       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard
+#       BOARD=quark_se_c1000_devboard \
+#       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard
 #
 # @images [ type == "ah" and quark_se_stub == 'yes' and bsp_model == 'arc'] \
-#   kernel-x86:%(srcdir)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/zephyr.bin
+#   kernel-x86:%(srcdir)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard/zephyr.bin
 #
 # (2.3.3) For Quark SE Devboard
 #
 # @build [ type == "ma" and quark_se_stub == 'yes' and bsp_model == 'arc' ] \
-#   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/.config; \
+#   rm -f %(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard/.config; \
 #   make -j -C $ZEPHYR_BASE/samples/stub \
-#       BOARD=quark_se_devboard ARCH=x86 \
-#       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_devboard
+#       BOARD=quark_se_c1000_devboard \
+#       O=%(srcdir_abs)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard
 #
 # @images [ type == "ma" and quark_se_stub == 'yes' and bsp_model == 'arc'] \
-#   kernel-x86:%(srcdir)s/outdir-%(tchash)s-stub-x86-quark_se_devboard/zephyr.bin
+#   kernel-x86:%(srcdir)s/outdir-%(tchash)s-stub-x86-quark_se_c1000_devboard/zephyr.bin
 #
 # (2.3.4) When running the ARC in Quark SE, we redirect the output to the
 #         UART_1 (the same as the x86) to simplify the test setup (no

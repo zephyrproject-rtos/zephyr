@@ -28,7 +28,7 @@
 #include "usb_dfu.h"
 #include <stdio.h>
 
-#ifdef CONFIG_SOC_QUARK_SE
+#ifdef CONFIG_SOC_QUARK_SE_C1000
 #define DFU_FLASH_DEVICE "QUARK_FLASH"
 /* Unused flash area to test DFU class driver */
 #define DFU_FLASH_TEST_ADDR (0x40030000 + 0x10000)

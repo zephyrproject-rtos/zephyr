@@ -161,7 +161,7 @@ static void dma_qmsi_config(struct device *dev)
 	irq_enable(QM_IRQ_DMA_1);
 	QM_SCSS_INT->int_dma_channel_1_mask &= ~BIT(0);
 
-#if (CONFIG_SOC_QUARK_SE)
+#if (CONFIG_SOC_QUARK_SE_C1000)
 
 	IRQ_CONNECT(QM_IRQ_DMA_2, CONFIG_DMA_0_IRQ_PRI,
 				qm_dma_0_isr_2, DEVICE_GET(dma_qmsi), 0);
@@ -193,7 +193,7 @@ static void dma_qmsi_config(struct device *dev)
 	irq_enable(QM_IRQ_DMA_7);
 	QM_SCSS_INT->int_dma_channel_7_mask &= ~BIT(0);
 
-#endif /* CONFIG_SOC_QUARK_SE */
+#endif /* CONFIG_SOC_QUARK_SE_C1000 */
 
 	IRQ_CONNECT(QM_IRQ_DMA_ERR, CONFIG_DMA_0_IRQ_PRI,
 				qm_dma_0_isr_err, DEVICE_GET(dma_qmsi), 0);

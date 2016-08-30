@@ -33,7 +33,7 @@ extern "C" {
 #define QUARK_SE_IPM_OUTBOUND	0
 #define QUARK_SE_IPM_INBOUND		1
 
-#if defined(CONFIG_SOC_QUARK_SE)
+#if defined(CONFIG_SOC_QUARK_SE_C1000)
 /* First byte of the QUARK_SE_IPM_MASK register is for the Lakemont */
 #define QUARK_SE_IPM_MASK_START_BIT		0
 #define QUARK_SE_IPM_INTERRUPT		21

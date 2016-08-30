@@ -6,7 +6,7 @@ obj-$(CONFIG_QMSI_BUILTIN) += drivers/sensor/ss_clk.o
 obj-$(CONFIG_QMSI_BUILTIN) += drivers/sensor/ss_power_states.o
 endif
 obj-$(CONFIG_QMSI_BUILTIN) += soc/$(patsubst %_ss,%,$(SOC_SERIES))/drivers/power_states.o
-ifeq ($(CONFIG_SOC_QUARK_SE),y)
+ifeq ($(CONFIG_SOC_QUARK_SE_C1000),y)
 obj-$(CONFIG_QMSI_BUILTIN) += soc/$(SOC_SERIES)/drivers/vreg.o
 endif
 ifeq ($(CONFIG_SOC_QUARK_D2000),y)

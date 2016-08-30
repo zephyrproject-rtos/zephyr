@@ -18,7 +18,7 @@ save device states and switching to deep sleep state.
 This application runs on quark se boards.
 
 When started, the app waits for a toggle of GPIO pin 16.  GPIO Pin 16 is
-DIO 8 in arduino_101 and DIO 4 in quark_se_devboard.
+DIO 8 in arduino_101 and DIO 4 in quark_se_c1000_devboard.
 
 Toggle the GPIO pin in the following sequence:-
 	1) Start connected to GND during power on or reset.

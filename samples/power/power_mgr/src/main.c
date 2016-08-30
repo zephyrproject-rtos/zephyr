@@ -68,7 +68,7 @@ void main(void)
 	 *
 	 * Toggle GPIO pin 16 in following sequence:-
 	 * (GPIO Pin 16 is DIO 8 in arduino_101 and
-	 * DIO 4 in quark_se_devboard.)
+	 * DIO 4 in quark_se_c1000_devboard.)
 	 * 1) Start connected to GND during power on or reset.
 	 * 2) Disconnect from GND and connect to 3.3V
 	 * 3) Disconnect from 3.3V. Test should start now.

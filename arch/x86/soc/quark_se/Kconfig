@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-if X86 && SOC_QUARK_SE
+if X86 && SOC_QUARK_SE_C1000
 
 config EOI_FORWARDING_BUG
 	bool
@@ -85,4 +85,4 @@ config QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32
 endif
 endif
 
-endif #SOC_QUARK_SE_X86
+endif #SOC_QUARK_SE_C1000_X86

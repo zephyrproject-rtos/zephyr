@@ -70,7 +70,7 @@ static struct usb_dw_ctrl_prv usb_dw_ctrl;
 
 static inline void _usb_dw_int_unmask(void)
 {
-#if defined(CONFIG_SOC_QUARK_SE)
+#if defined(CONFIG_SOC_QUARK_SE_C1000)
 	QM_SCSS_INT->int_usb_mask &= ~BIT(0);
 #endif
 }
@@ -194,7 +194,7 @@ static int usb_dw_reset(void)
 
 static int usb_dw_clock_enable(void)
 {
-#if defined(CONFIG_SOC_QUARK_SE)
+#if defined(CONFIG_SOC_QUARK_SE_C1000)
 	/* 7.2.7 USB Clock Operation */
 	clk_sys_set_mode(CLK_SYS_CRYSTAL_OSC, CLK_SYS_DIV_1);
 
@@ -213,7 +213,7 @@ static int usb_dw_clock_enable(void)
 
 static void usb_dw_clock_disable(void)
 {
-#if defined(CONFIG_SOC_QUARK_SE)
+#if defined(CONFIG_SOC_QUARK_SE_C1000)
 	/* Disable the USB Clock */
 	QM_SCSS_CCU->ccu_mlayer_ahb_ctl &= ~QM_CCU_USB_CLK_EN;
 

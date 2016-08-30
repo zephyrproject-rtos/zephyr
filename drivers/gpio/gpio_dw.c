@@ -351,7 +351,7 @@ static inline int gpio_dw_resume_port(struct device *port, int pm_policy)
 }
 #endif
 
-#if defined(CONFIG_SOC_QUARK_SE) || defined(CONFIG_SOC_QUARK_D2000)
+#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
 static inline void gpio_dw_unmask_int(uint32_t mask_addr)
 {
 	sys_write32(sys_read32(mask_addr) & INT_UNMASK_IA, mask_addr);

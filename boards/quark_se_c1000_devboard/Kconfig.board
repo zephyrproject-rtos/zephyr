@@ -1,0 +1,4 @@
+
+config BOARD_QUARK_SE_C1000_DEVBOARD
+	bool "Quark SE C1000 Devboard"
+	depends on SOC_QUARK_SE_C1000

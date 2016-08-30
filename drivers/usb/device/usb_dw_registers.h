@@ -28,7 +28,7 @@
 #include <misc/util.h>
 #include <board.h>
 
-#if defined(CONFIG_SOC_QUARK_SE)
+#if defined(CONFIG_SOC_QUARK_SE_C1000)
 #include "qm_soc_regs.h"
 #endif
 
@@ -204,7 +204,7 @@ struct usb_dw_reg {
 #define USB_DW_CORE_RST_TIMEOUT_US 10000
 #define USB_DW_PLL_TIMEOUT_US 100
 
-#if defined(CONFIG_SOC_QUARK_SE)
+#if defined(CONFIG_SOC_QUARK_SE_C1000)
 #define USB_DW_BASE QM_USB_BASE
 #define USB_DW_IRQ QM_IRQ_USB_0
 #else

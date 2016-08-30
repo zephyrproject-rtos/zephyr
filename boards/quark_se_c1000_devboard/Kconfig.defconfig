@@ -1,8 +1,8 @@
 
-if BOARD_QUARK_SE_DEVBOARD
+if BOARD_QUARK_SE_C1000_DEVBOARD
 
 config BOARD
-	default "quark_se_devboard"
+	default "quark_se_c1000_devboard"
 
 if NBLE
 
@@ -96,4 +96,4 @@ endif
 
 endif # NETWORKING_WITH_15_4_TI_CC2520
 
-endif # BOARD_QUARK_SE_DEVBOARD
+endif # BOARD_QUARK_SE_C1000
