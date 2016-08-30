@@ -53,6 +53,8 @@ enum {
 struct bt_dev_le {
 	/* LE features */
 	uint8_t			features[1][8];
+	/* LE states */
+	uint64_t                states;
 
 	/* Controller buffer information */
 	uint16_t		mtu;

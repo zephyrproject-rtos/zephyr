@@ -123,6 +123,10 @@ struct bt_hci_cmd_hdr {
 	uint8_t  param_len;
 } __packed;
 
+/* Supported Commands */
+#define BT_CMD_TEST(cmd, octet, bit)            (cmd[octet] & BIT(bit))
+#define BT_CMD_LE_STATES(cmd)                   BT_CMD_TEST(cmd, 28, 3)
+
 #define BT_FEAT_TEST(feat, page, octet, bit)    (feat[page][octet] & BIT(bit))
 
 #define BT_FEAT_BREDR(feat)                     !BT_FEAT_TEST(feat, 0, 4, 5)
@@ -135,6 +139,9 @@ struct bt_hci_cmd_hdr {
 #define BT_FEAT_LE_ENCR(feat)                   BT_FEAT_TEST(feat, 0, 0, 0)
 #define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    BT_FEAT_TEST(feat, 0, 0, 1)
 #define BT_FEAT_LE_SLAVE_FEATURE_XCHG(feat)     BT_FEAT_TEST(feat, 0, 0, 3)
+
+/* LE States */
+#define BT_LE_STATES_SLAVE_CONN_ADV(states)     (states & 0x0000004000000000)
 
 /* Bonding/authentication types */
 #define BT_HCI_NO_BONDING                       0x00

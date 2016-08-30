@@ -2849,6 +2849,15 @@ static void read_local_features_complete(struct net_buf *buf)
 	memcpy(bt_dev.features[0], rp->features, sizeof(bt_dev.features[0]));
 }
 
+static void le_read_supp_states_complete(struct net_buf *buf)
+{
+	struct bt_hci_rp_le_read_supp_states *rp = (void *)buf->data;
+
+	BT_DBG("status %u", rp->status);
+
+	bt_dev.le.states = sys_get_le64(rp->le_states);
+}
+
 static int common_init(void)
 {
 	struct net_buf *rsp;
@@ -2965,6 +2974,18 @@ static int le_init(void)
 		}
 	}
 
+	/* Read LE Supported States */
+	if (BT_CMD_LE_STATES(bt_dev.supported_commands)) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_SUPP_STATES, NULL,
+					   &rsp);
+		if (err) {
+			return err;
+		}
+		le_read_supp_states_complete(rsp);
+		net_buf_unref(rsp);
+	}
+
+	/* Set LE event mask */
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EVENT_MASK, sizeof(*cp_mask));
 	if (!buf) {
 		return -ENOBUFS;
