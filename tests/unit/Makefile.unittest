@@ -8,6 +8,12 @@ O ?= outdir
 INCLUDE += tests/ztest/include tests/include include
 CFLAGS += -O0 -Wall -Werror
 
+ifdef COVERAGE
+  export GCOV_PREFIX=$(O)
+  CFLAGS += -fprofile-arcs -ftest-coverage \
+            -fno-default-inline -fno-inline
+endif
+
 ifneq (, $(shell which valgrind 2> /dev/null))
   VALGRIND = valgrind
   VALGRIND_FLAGS = --leak-check=full --error-exitcode=1 \
@@ -31,7 +37,7 @@ VPATH = $(ZEPHYR_BASE)
 
 $(O)/%.o : %.c
 	mkdir -p $(@D)
-	$(CC) -I$(ZEPHYR_BASE) $(CFLAGS) $(INCLUDED) -c $< -o $@
+	$(CC) -I$(ZEPHYR_BASE) $(CFLAGS) $(INCLUDED) -c $(realpath $<) -o $@
 
 $(TARGET): $(OBJS)
 	mkdir -p $(@D)
