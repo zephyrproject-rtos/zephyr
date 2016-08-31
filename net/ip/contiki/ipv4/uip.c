@@ -2175,7 +2175,9 @@ uip_process(struct net_buf **buf_out, uint8_t flag)
   BUF(buf)->ipchksum = ~(uip_ipchksum(buf));
   PRINTF("uip ip_send_nolen: chkecum 0x%04x\n", uip_ipchksum(buf));
 #endif /* NETSTACK_CONF_WITH_IPV6 */
+#if UIP_TCP
   UIP_STAT(++uip_stat.tcp.sent);
+#endif
 #if NETSTACK_CONF_WITH_IPV6
  send:
 #endif /* NETSTACK_CONF_WITH_IPV6 */
