@@ -131,6 +131,16 @@ config I2C_0_IRQ_PRI
 config I2C_0_DEFAULT_CFG
 	default 0x12
 endif # I2C_QMSI
+
+config I2C_SDA_SETUP
+	default 2
+
+config I2C_SDA_TX_HOLD
+	default 16
+
+config I2C_SDA_RX_HOLD
+	default 24
+
 endif # I2C
 
 

@@ -99,6 +99,15 @@ config I2C_1_DEFAULT_CFG
 
 endif # I2C_1
 
+config I2C_SDA_SETUP
+	default 2
+
+config I2C_SDA_TX_HOLD
+	default 16
+
+config I2C_SDA_RX_HOLD
+	default 24
+
 endif # I2C
 
 

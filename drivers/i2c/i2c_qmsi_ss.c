@@ -207,7 +207,7 @@ static int i2c_qmsi_ss_configure(struct device *dev, uint32_t config)
 		i2c_base = QM_SS_I2C_1_BASE;
 	}
 
-	__builtin_arc_sr(((CONFIG_I2C_SS_SDA_SETUP << 16) +
+	__builtin_arc_sr(((CONFIG_I2C_SDA_SETUP << 16) +
 			   CONFIG_I2C_SS_SDA_HOLD),
 			 (i2c_base + QM_SS_I2C_SDA_CONFIG));
 
