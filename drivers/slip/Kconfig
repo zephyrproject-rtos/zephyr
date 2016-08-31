@@ -36,7 +36,6 @@
 menuconfig SLIP
 	bool
 	prompt "SLIP driver"
-	depends on NET_SLIP
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 
