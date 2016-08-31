@@ -333,14 +333,13 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
-	const uint16_t *data = buf;
 	size_t i;
 
-	if (offset > sizeof(*data)) {
+	if (offset > sizeof(uint16_t)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (offset + len > sizeof(*data)) {
+	if (offset + len > sizeof(uint16_t)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -369,7 +368,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		}
 	}
 
-	ccc->cfg[i].value = sys_le16_to_cpu(*data);
+	ccc->cfg[i].value = sys_get_le16(buf);
 
 	BT_DBG("handle 0x%04x value %u", attr->handle, ccc->cfg[i].value);
 
