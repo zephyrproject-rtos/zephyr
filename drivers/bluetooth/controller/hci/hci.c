@@ -913,10 +913,11 @@ static void info_cmd_handle(struct hci_cmd *cmd, uint8_t *len)
 		 */
 		ccp->read_local_sup_cmds.value[27] = 0xFD;
 		/* LE Start Encryption, LE Long Term Key Req Reply,
-		 * and LE Long Term Key Req Neg Reply.
+		 * LE Long Term Key Req Neg Reply. and
+		 * LE Read Supported States.
 		 */
 		ccp->read_local_sup_cmds.value[28] = (1 << 0) | (1 << 1) |
-							(1 << 2);
+						     (1 << 2) | (1 << 3);
 		/* LE Remote Conn Param Req and Neg Reply, LE Set Data Length,
 		 * and LE Read Suggested Data Length.
 		 */
@@ -1343,7 +1344,7 @@ static void controller_cmd_handle(struct hci_cmd *cmd, uint8_t *len,
 
 		ccp->le_read_supported_states.status =
 			HCI_EVT_ERROR_CODE_SUCCESS;
-		ccp->le_read_supported_states.le_states = 0x000000001FFFFFFF;
+		ccp->le_read_supported_states.le_states = 0x000003ffffffffff;
 		break;
 
 	case HCI_OCF_LE_REMOTE_CONN_PARAM_REQ_REPLY:
