@@ -23,15 +23,6 @@
 static const char *banner1 = "Send any character to the UART device\r\n";
 static const char *banner2 = "Character read:\r\n";
 
-#ifdef CONFIG_BOARD_QUARK_SE_DEVBOARD
-#define UART_DEVICE "UART_1"
-#elif CONFIG_BOARD_QUARK_D2000_CRB
-#define UART_DEVICE "UART_0"
-#else
-/* For any other board not specified above, we use UART_0 by default. */
-#define UART_DEVICE "UART_0"
-#endif
-
 static volatile bool data_transmitted;
 static volatile bool data_arrived;
 static char new_data;
@@ -115,7 +106,7 @@ static void test_by_irq(struct device *dev)
 
 void main(void)
 {
-	struct device *dev = device_get_binding(UART_DEVICE);
+	struct device *dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 
 	test_by_polling(dev);
 	test_by_irq(dev);
