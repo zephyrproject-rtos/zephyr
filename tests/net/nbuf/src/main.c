@@ -79,7 +79,7 @@ static int test_ipv6_multi_frags(void)
 		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
 		if (net_buf_tailroom(frag) < sizeof(ipv6)) {
 			printk("Not enough space for IPv6 header, "
-			       "needed %d bytes, has %d bytes\n",
+			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(ipv6), net_buf_tailroom(frag));
 			return -EINVAL;
 		}
@@ -87,7 +87,7 @@ static int test_ipv6_multi_frags(void)
 
 		if (net_buf_tailroom(frag) < sizeof(udp)) {
 			printk("Not enough space for UDP header, "
-			       "needed %d bytes, has %d bytes\n",
+			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(udp), net_buf_tailroom(frag));
 			return -EINVAL;
 		}
@@ -103,7 +103,7 @@ static int test_ipv6_multi_frags(void)
 	if (net_buf_tailroom(frag) -
 	      (CONFIG_NET_NBUF_DATA_SIZE - LL_RESERVE)) {
 		printk("Invalid number of bytes available in the buf, "
-		       "should be 0 but was %d - %d\n",
+		       "should be 0 but was %zd - %d\n",
 		       net_buf_tailroom(frag),
 		       CONFIG_NET_NBUF_DATA_SIZE - LL_RESERVE);
 		return -EINVAL;
@@ -111,7 +111,7 @@ static int test_ipv6_multi_frags(void)
 
 	if (((int)net_buf_tailroom(frag) - remaining) > 0) {
 		printk("We should have been out of space now, "
-		       "tailroom %d user data len %d\n",
+		       "tailroom %zd user data len %zd\n",
 		       net_buf_tailroom(frag),
 		       strlen(example_data));
 		return -EINVAL;
@@ -131,7 +131,7 @@ static int test_ipv6_multi_frags(void)
 		remaining -= bytes;
 		if (net_buf_tailroom(frag) - (bytes - copy)) {
 			printk("There should have not been any tailroom left, "
-			       "tailroom %d\n",
+			       "tailroom %zd\n",
 			       net_buf_tailroom(frag) - (bytes - copy));
 			return -EINVAL;
 		}
@@ -144,7 +144,7 @@ static int test_ipv6_multi_frags(void)
 
 	bytes = net_buf_frags_len(buf->frags);
 	if (bytes != strlen(example_data)) {
-		printk("Invalid number of bytes in message, %d vs %d\n",
+		printk("Invalid number of bytes in message, %zd vs %d\n",
 		       strlen(example_data), bytes);
 		return -EINVAL;
 	}
@@ -201,7 +201,7 @@ static int test_fragment_copy(void)
 		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
 		if (net_buf_tailroom(frag) < sizeof(*ipv6)) {
 			printk("Not enough space for IPv6 header, "
-			       "needed %d bytes, has %d bytes\n",
+			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(ipv6), net_buf_tailroom(frag));
 			return -EINVAL;
 		}
@@ -209,7 +209,7 @@ static int test_fragment_copy(void)
 
 		if (net_buf_tailroom(frag) < sizeof(*udp)) {
 			printk("Not enough space for UDP header, "
-			       "needed %d bytes, has %d bytes\n",
+			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(udp), net_buf_tailroom(frag));
 			return -EINVAL;
 		}
@@ -226,7 +226,7 @@ static int test_fragment_copy(void)
 
 	orig_len = net_buf_frags_len(buf);
 
-	printk("Total copy data len %d\n", orig_len);
+	printk("Total copy data len %zd\n", orig_len);
 
 	linearize(buf, buf_orig, sizeof(orig_len));
 
@@ -241,18 +241,18 @@ static int test_fragment_copy(void)
 	new_buf = net_nbuf_get_reserve_tx(0);
 	net_buf_frag_add(new_buf, new_frag);
 
-	printk("Total new data len %d\n", net_buf_frags_len(new_buf));
+	printk("Total new data len %zd\n", net_buf_frags_len(new_buf));
 
 	if (net_buf_frags_len(buf) != 0) {
-		printk("Fragment list missing data, %d bytes not copied\n",
+		printk("Fragment list missing data, %zd bytes not copied\n",
 		       net_buf_frags_len(buf));
 		return -EINVAL;
 	}
 
 	if (net_buf_frags_len(new_buf) != (orig_len + sizeof(struct ipv6_hdr) +
 					   sizeof(struct icmp_hdr))) {
-		printk("Fragment list missing data, new buf len %d "
-		       "should be %d\n", net_buf_frags_len(new_buf),
+		printk("Fragment list missing data, new buf len %zd "
+		       "should be %zd\n", net_buf_frags_len(new_buf),
 		       orig_len + sizeof(struct ipv6_hdr) +
 		       sizeof(struct icmp_hdr));
 		return -EINVAL;
@@ -345,7 +345,7 @@ static int test_fragment_push(void)
 	bytes = net_buf_frags_len(buf);
 	if (bytes != FRAG_COUNT * sizeof(test_data) * 2) {
 		printk("Push test failed, fragments had %d bytes but "
-		       "should have had %d\n", bytes,
+		       "should have had %zd\n", bytes,
 		       FRAG_COUNT * sizeof(test_data) * 2);
 		return -1;
 	}

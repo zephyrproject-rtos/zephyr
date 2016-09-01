@@ -450,7 +450,7 @@ static bool run_tests(void)
 	len = strlen(app_data);
 
 	if (net_nbuf_ll_reserve(buf) != sizeof(struct net_eth_hdr)) {
-		printk("LL reserve invalid, should be %d was %d\n",
+		printk("LL reserve invalid, should be %zd was %d\n",
 		       sizeof(struct net_eth_hdr),
 		       net_nbuf_ll_reserve(buf));
 		return false;
@@ -537,13 +537,13 @@ static bool run_tests(void)
 	}
 
 	if (arp_hdr->hwlen != sizeof(struct net_eth_addr)) {
-		printk("ARP hwlen 0x%x, should be 0x%x\n",
+		printk("ARP hwlen 0x%x, should be 0x%zx\n",
 		       arp_hdr->hwlen, sizeof(struct net_eth_addr));
 		return false;
 	}
 
 	if (arp_hdr->protolen != sizeof(struct in_addr)) {
-		printk("ARP IP addr len 0x%x, should be 0x%x\n",
+		printk("ARP IP addr len 0x%x, should be 0x%zx\n",
 		       arp_hdr->protolen, sizeof(struct in_addr));
 		return false;
 	}

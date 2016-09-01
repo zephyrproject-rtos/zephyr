@@ -189,7 +189,7 @@ static bool compare_data(struct net_buf *buf, struct net_fragment_data *data)
 	int remaining = data->len;
 
 	if (net_buf_frags_len(buf->frags) != (NET_IPV6UDPH_LEN + remaining)) {
-		printk("mismatch lengths, expected %d received %d\n",
+		printk("mismatch lengths, expected %d received %zd\n",
 			NET_IPV6UDPH_LEN + remaining,
 			net_buf_frags_len(buf->frags));
 		return false;

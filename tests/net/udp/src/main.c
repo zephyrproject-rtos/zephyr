@@ -413,14 +413,14 @@ static bool run_tests(void)
 	ifaddr = net_if_ipv6_addr_add(iface, &in6addr_my, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		printk("Cannot add %s to interface %p\n",
-		       net_sprint_ipv6_addr(&in6addr_my));
+		       net_sprint_ipv6_addr(&in6addr_my), iface);
 		return false;
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface, &in4addr_my, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		printk("Cannot add %s to interface %p\n",
-		       net_sprint_ipv4_addr(&in4addr_my));
+		       net_sprint_ipv4_addr(&in4addr_my), iface);
 		return false;
 	}
 

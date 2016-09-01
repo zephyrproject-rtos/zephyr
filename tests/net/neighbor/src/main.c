@@ -304,7 +304,8 @@ static bool run_tests(void)
 			   sizeof(struct net_eth_addr))) {
 			printk("Wrong lladdr %s in index %d\n",
 			       net_sprint_ll_addr(lladdr_ptr->addr,
-						  lladdr_ptr->len));
+						  lladdr_ptr->len),
+			       i);
 			return false;
 		}
 	}

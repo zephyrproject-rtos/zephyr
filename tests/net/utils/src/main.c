@@ -170,7 +170,7 @@ static bool run_tests(void)
 
 	memcpy(net_buf_add(frag, sizeof(pkt1)), pkt1, sizeof(pkt1));
 	if (frag->len != sizeof(pkt1)) {
-		printk("Fragment len %d invalid, should be %d\n",
+		printk("Fragment len %d invalid, should be %zd\n",
 		       frag->len, sizeof(pkt1));
 		return false;
 	}
@@ -226,7 +226,7 @@ static bool run_tests(void)
 	frag = net_nbuf_get_reserve_data(10);
 	net_buf_frag_add(buf, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt3) / 2), pkt3, sizeof(pkt3) / 2);
-	printk("First fragment will have %d bytes\n", sizeof(pkt3) / 2);
+	printk("First fragment will have %zd bytes\n", sizeof(pkt3) / 2);
 
 	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 	net_nbuf_set_family(buf, AF_INET6);
@@ -241,7 +241,7 @@ static bool run_tests(void)
 	net_buf_frag_add(buf, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt3) - sizeof(pkt3) / 2),
 	       pkt3 + sizeof(pkt3) / 2, sizeof(pkt3) - sizeof(pkt3) / 2);
-	printk("Second fragment will have %d bytes\n",
+	printk("Second fragment will have %zd bytes\n",
 	       sizeof(pkt3) - sizeof(pkt3) / 2);
 
 	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMPV6));
@@ -302,7 +302,7 @@ static bool run_tests(void)
 	    (total + sizeof(struct net_ipv6_hdr)) !=
 				net_buf_frags_len(buf->frags)) {
 		printk("pkt3 size differs from fragment sizes, "
-		       "pkt3 size %d frags size %d calc total %d\n",
+		       "pkt3 size %zd frags size %zd calc total %zd\n",
 		       sizeof(pkt3), net_buf_frags_len(buf->frags),
 		       total + sizeof(struct net_ipv6_hdr));
 		return false;
