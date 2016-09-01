@@ -28,6 +28,22 @@
 #include "soc.h"
 #include "qm_soc_regs.h"
 
+/*
+ * The CPU-visible IRQ numbers change between the ARC and IA cores,
+ * and QMSI itself has no indirection.  Similarly the mask needed to
+ * tell the SCSS how to route the IRQ depends on which CPU we need to
+ * receive it.
+ */
+#ifdef CONFIG_SOC_QUARK_SE_SS
+# define UART0_IRQ		QM_IRQ_UART_0_VECTOR
+# define UART1_IRQ		QM_IRQ_UART_1_VECTOR
+# define SCSS_IRQ_ROUTING_MASK	BIT(8)
+#else
+# define UART0_IRQ		QM_IRQ_UART_0
+# define UART1_IRQ		QM_IRQ_UART_1
+# define SCSS_IRQ_ROUTING_MASK	BIT(0)
+#endif
+
 #define IIR_IID_NO_INTERRUPT_PENDING 0x01
 
 #define DIVISOR_LOW(baudrate) \
@@ -402,22 +418,22 @@ static void uart_qmsi_isr(void *arg)
 #ifdef CONFIG_UART_QMSI_0
 static void irq_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(QM_IRQ_UART_0, CONFIG_UART_QMSI_0_IRQ_PRI,
+	IRQ_CONNECT(UART0_IRQ, CONFIG_UART_QMSI_0_IRQ_PRI,
 		    uart_qmsi_isr, DEVICE_GET(uart_0),
 		    UART_IRQ_FLAGS);
-	irq_enable(QM_IRQ_UART_0);
-	QM_SCSS_INT->int_uart_0_mask &= ~BIT(0);
+	irq_enable(UART0_IRQ);
+	QM_SCSS_INT->int_uart_0_mask &= ~SCSS_IRQ_ROUTING_MASK;
 }
 #endif /* CONFIG_UART_QMSI_0 */
 
 #ifdef CONFIG_UART_QMSI_1
 static void irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(QM_IRQ_UART_1, CONFIG_UART_QMSI_1_IRQ_PRI,
+	IRQ_CONNECT(UART1_IRQ, CONFIG_UART_QMSI_1_IRQ_PRI,
 		    uart_qmsi_isr, DEVICE_GET(uart_1),
 		    UART_IRQ_FLAGS);
-	irq_enable(QM_IRQ_UART_1);
-	QM_SCSS_INT->int_uart_1_mask &= ~BIT(0);
+	irq_enable(UART1_IRQ);
+	QM_SCSS_INT->int_uart_1_mask &= ~SCSS_IRQ_ROUTING_MASK;
 }
 #endif /* CONFIG_UART_QMSI_1 */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
