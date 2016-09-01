@@ -75,6 +75,10 @@ extern "C" {
 	DEVICE_INIT(sys_init_##init_fn, "", init_fn, NULL, NULL, level, prio)
 #endif
 
+#define SYS_DEVICE_DEFINE(drv_name, init_fn, control_fn, level, prio) \
+	DEVICE_DEFINE(sys_init_##init_fn, drv_name, init_fn, control_fn, \
+		      NULL, NULL, level, prio, NULL)
+
 #ifdef __cplusplus
 }
 #endif

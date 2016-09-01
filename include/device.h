@@ -29,6 +29,9 @@
  * @defgroup device_model Device Model APIs
  * @{
  */
+
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -119,6 +122,11 @@ extern "C" {
 			       data, cfg_info, level, prio, api) \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)
+
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, control_fn, \
+		      data, cfg_info, level, prio, api) \
+	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
+			    level, prio, api)
 #else
 /**
  * @def DEVICE_INIT_PM
@@ -142,7 +150,7 @@ extern "C" {
  * @details The driver api is also set here, eliminating the need to do that
  * during initialization.
  */
-
+/* deprecated */
 #define DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
 			       data, cfg_info, level, prio, api) \
 	\
@@ -160,19 +168,48 @@ extern "C" {
 		 .driver_data = data \
 	}
 
-	/*
-	 * Create a default device_pm_ops for devices that do not call the
-	 * DEVICE_INIT_PM macro so that caller of hook functions
-	 * need not check dev_pm_ops != NULL.
-	 */
+/**
+* @def DEVICE_DEFINE
+*
+* @brief Create device object and set it up for boot time initialization,
+* with the option to device_control.
+*
+* @copydetails DEVICE_AND_API_INIT
+* @param control_fn Provides an initial pointer to the API function
+* used by App to send control command to the driver.
+* Can be empty function (device_control_nop) for not implementing.
+*/
 extern struct device_pm_ops device_pm_ops_nop;
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, control_fn, \
+		      data, cfg_info, level, prio, api) \
+	\
+	static struct device_config __config_##dev_name __used \
+	__attribute__((__section__(".devconfig.init"))) = { \
+		.name = drv_name, .init = (init_fn), \
+		.device_control = (control_fn), \
+		.dev_pm_ops = (&device_pm_ops_nop), \
+		.config_info = (cfg_info) \
+	}; \
+	\
+	static struct device (__device_##dev_name) __used \
+	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
+		 .config = &(__config_##dev_name), \
+		 .driver_api = api, \
+		 .driver_data = data \
+	}
+/*
+ * Use the default device_control for devices that do not call the
+ * DEVICE_DEFINE macro so that caller of hook functions
+ * need not check device_control != NULL.
+ */
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api) \
-	DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, \
-			       &device_pm_ops_nop, data, cfg_info, \
-			       level, prio, api)
+	DEVICE_DEFINE(dev_name, drv_name, init_fn, \
+		      device_control_nop, data, cfg_info, level, \
+		      prio, api)
 #endif
 
+/* deprecated */
 #define DEVICE_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
 			       data, cfg_info, level, prio) \
 	DEVICE_AND_API_INIT_PM(dev_name, drv_name, init_fn, device_pm_ops, \
@@ -244,6 +281,7 @@ struct device;
  * @param suspend Pointer to the handler for suspend operations
  * @param resume Pointer to the handler for resume operations
  */
+/* deprecated */
 struct device_pm_ops {
 	int (*suspend)(struct device *device, int pm_policy);
 	int (*resume)(struct device *device, int pm_policy);
@@ -277,6 +315,47 @@ struct device_pm_ops {
 /**
  * @}
  */
+
+/** @def DEVICE_PM_ACTIVE_STATE
+ *
+ * @brief device is in ACTIVE power state
+ *
+ * @details Normal operation of the device. All device context is retained.
+ */
+#define DEVICE_PM_ACTIVE_STATE		1
+
+/** @def DEVICE_PM_LOW_POWER_STATE
+ *
+ * @brief device is in LOW power state
+ *
+ * @details Device context is preserved by the HW and need not be
+ * restored by the driver.
+ */
+#define DEVICE_PM_LOW_POWER_STATE	2
+
+/** @def DEVICE_PM_SUSPEND_STATE
+ *
+ * @brief device is in SUSPEND power state
+ *
+ * @details Most device context is lost by the hardware.
+ * Device drivers must save and restore or reinitialize any context
+ * lost by the hardware
+ */
+#define DEVICE_PM_SUSPEND_STATE		3
+
+/** @def DEVICE_PM_OFF_STATE
+ *
+ * @brief device is in OFF power state
+ *
+ * @details - Power has been fully removed from the device.
+ * The device context is lost when this state is entered, so the OS
+ * software will reinitialize the device when powering it back on
+ */
+#define DEVICE_PM_OFF_STATE		4
+
+/* Constants defining support device power commands */
+#define DEVICE_PM_SET_POWER_STATE	1
+#define DEVICE_PM_GET_POWER_STATE	2
 #else
 #define DEFINE_DEVICE_PM_OPS(_name, _suspend, _resume)
 #define DEVICE_PM_OPS_GET(_name) NULL
@@ -293,6 +372,8 @@ struct device_config {
 	int (*init)(struct device *device);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	struct device_pm_ops *dev_pm_ops;
+	int (*device_control)(struct device *device, uint32_t command,
+			      void *context);
 #endif
 	void *config_info;
 };
@@ -402,6 +483,59 @@ static inline int device_suspend(struct device *device, int pm_policy)
 static inline int device_resume(struct device *device, int pm_policy)
 {
 	return device->config->dev_pm_ops->resume(device, pm_policy);
+}
+
+/**
+ * @brief No-op function to initialize unimplemented hook
+ *
+ * This function should be used to initialize device hook
+ * for which a device has no operation.
+ *
+ * @param unused_device Unused
+ * @param unused_ctrl_command Unused
+ * @param unused_context Unused
+ *
+ * @retval 0 Always returns 0
+ */
+int device_control_nop(struct device *unused_device,
+		       uint32_t unused_ctrl_command, void *unused_context);
+/**
+ * @brief Call the set power state function of a device
+ *
+ * Called by the application or power management service to let the device do
+ * required operations when moving to the required power state
+ * Note that devices may support just some of the device power states
+ * @param device Pointer to device structure of the driver instance.
+ * @param device_power_state Device power state to be set
+ *
+ * @retval 0 If successful.
+ * @retval Errno Negative errno code if failure.
+ */
+static inline int device_set_power_state(struct device *device,
+					 uint32_t device_power_state)
+{
+	return device->config->device_control(device,
+			DEVICE_PM_SET_POWER_STATE, &device_power_state);
+}
+
+/**
+ * @brief Call the get power state function of a device
+ *
+ * This function lets the caller know the current device
+ * power state at any time. This state will be one of the defined
+ * power states allowed for the devices in that system
+ *
+ * @param device pointer to device structure of the driver instance.
+ * @param device_power_state Device power state to be filled by the device
+ *
+ * @retval 0 If successful.
+ * @retval Errno Negative errno code if failure.
+ */
+static inline int device_get_power_state(struct device *device,
+					 uint32_t *device_power_state)
+{
+	return device->config->device_control(device,
+				DEVICE_PM_GET_POWER_STATE, device_power_state);
 }
 
 /**

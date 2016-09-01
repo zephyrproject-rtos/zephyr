@@ -84,7 +84,11 @@ int device_pm_nop(struct device *unused_device, int unused_policy)
 {
 	return 0;
 }
-
+int device_control_nop(struct device *unused_device,
+		       uint32_t unused_ctrl_command, void *unused_context)
+{
+	return 0;
+}
 void device_list_get(struct device **device_list, int *device_count)
 {
 
