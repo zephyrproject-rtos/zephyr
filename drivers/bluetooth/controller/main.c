@@ -25,6 +25,7 @@
 #include <init.h>
 #include <uart.h>
 #include <misc/util.h>
+#include <misc/stack.h>
 #include <misc/byteorder.h>
 #include <string.h>
 
@@ -63,7 +64,8 @@ static uint8_t ALIGNED(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
 static uint8_t ALIGNED(4) _radio[LL_MEM_TOTAL];
 
 static struct nano_sem nano_sem_native_recv;
-static BT_STACK_NOINIT(native_recv_fiber_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+static BT_STACK_NOINIT(native_recv_fiber_stack,
+		       CONFIG_BLUETOOTH_CONTROLLER_RX_STACK_SIZE);
 
 void radio_active_callback(uint8_t active)
 {
@@ -256,6 +258,10 @@ static void native_recv_fiber(int unused0, int unused1)
 			nano_fiber_sem_take(&nano_sem_native_recv,
 					    TICKS_UNLIMITED);
 		}
+
+		stack_analyze("native recv fiber stack",
+			      native_recv_fiber_stack,
+			      sizeof(native_recv_fiber_stack));
 	}
 }
 

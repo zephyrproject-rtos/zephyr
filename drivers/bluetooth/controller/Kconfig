@@ -27,4 +27,13 @@ config BLUETOOTH_CONTROLLER_TX_BUFFERS
 		Set the number of Tx PDUs to be queued for transmission
 		in the controller.
 
+config BLUETOOTH_CONTROLLER_RX_STACK_SIZE
+	int "Size of the receiving fiber stack"
+	default 256
+	range 256 65536
+	help
+	  Size of the receiving fiber stack. This is the context from
+	  which all radio messages are encoded into HCI events or data
+	  before passing it to Bluetooth receiving fiber.
+
 endif # BLUETOOTH_CONTROLLER
