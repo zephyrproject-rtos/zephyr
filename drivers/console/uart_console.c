@@ -101,10 +101,11 @@ static int console_out(int c)
 		return c;
 	}
 
-	uart_poll_out(uart_console_dev, (unsigned char)c);
 	if ('\n' == c) {
-		uart_poll_out(uart_console_dev, (unsigned char)'\r');
+		uart_poll_out(uart_console_dev, '\r');
 	}
+	uart_poll_out(uart_console_dev, c);
+
 	return c;
 }
 
