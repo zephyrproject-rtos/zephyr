@@ -20,8 +20,8 @@
 #include <uart.h>
 #include <zephyr.h>
 
-static const char *banner1 = "Send any character to the UART device\n";
-static const char *banner2 = "Character read:\n";
+static const char *banner1 = "Send any character to the UART device\r\n";
+static const char *banner2 = "Character read:\r\n";
 
 #ifdef CONFIG_BOARD_QUARK_SE_DEVBOARD
 #define UART_DEVICE "UART_1"
@@ -54,7 +54,7 @@ static void test_by_polling(struct device *dev)
 
 	write_string(dev, banner2, strlen(banner2));
 	write_string(dev, &data, 1);
-	write_string(dev, "\n", 1);
+	write_string(dev, "\r\n", 2);
 }
 
 static void interrupt_handler(struct device *dev)
@@ -110,7 +110,7 @@ static void test_by_irq(struct device *dev)
 	read_char_irq(dev, &data);
 	write_buf_irq(dev, banner2, strlen(banner2));
 	write_buf_irq(dev, &data, sizeof(data));
-	write_buf_irq(dev, "\n", 1);
+	write_buf_irq(dev, "\r\n", 2);
 }
 
 void main(void)
