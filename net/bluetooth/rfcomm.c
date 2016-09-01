@@ -181,6 +181,36 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
 	return 0;
 }
 
+static void rfcomm_dlc_tx_give_credits(struct bt_rfcomm_dlc *dlc,
+				       uint8_t credits)
+{
+	BT_DBG("dlc %p credits %u", dlc, credits);
+
+	while (credits--) {
+		nano_sem_give(&dlc->tx_credits);
+	}
+
+	BT_DBG("dlc %p updated credits %u", dlc, dlc->tx_credits.nsig);
+}
+
+static void rfcomm_dlc_unref(struct bt_rfcomm_dlc *dlc)
+{
+	atomic_dec(&dlc->ref);
+
+	BT_DBG("dlc %p ref %u", dlc, atomic_get(&dlc->ref));
+
+	/* TODO: Destroy dlc if ref is 0 */
+}
+
+static struct bt_rfcomm_dlc *rfcomm_dlc_ref(struct bt_rfcomm_dlc *dlc)
+{
+	atomic_inc(&dlc->ref);
+
+	BT_DBG("dlc %p ref %u", dlc, atomic_get(&dlc->ref));
+
+	return dlc;
+}
+
 struct net_buf *bt_rfcomm_create_pdu(struct nano_fifo *fifo)
 {
 	/* Length in RFCOMM header can be 2 bytes depending on length of user
@@ -271,8 +301,52 @@ static int rfcomm_dlc_accept(struct bt_rfcomm_session *session,
 	(*dlc)->rx_credit = RFCOMM_DEFAULT_CREDIT;
 	(*dlc)->state = BT_RFCOMM_STATE_INIT;
 	(*dlc)->mtu = min((*dlc)->mtu, session->mtu);
+	nano_sem_init(&(*dlc)->tx_credits);
 
 	return 0;
+}
+
+static void rfcomm_dlc_tx_fiber(int arg1, int arg2)
+{
+	struct bt_rfcomm_dlc *dlc = (struct bt_rfcomm_dlc *)arg1;
+	struct net_buf *buf;
+
+	BT_DBG("Started for dlc %p", dlc);
+
+	while (dlc->state == BT_RFCOMM_STATE_CONNECTED) {
+		/* Get next packet for dlc */
+		BT_DBG("Wait for buf %p", dlc);
+		buf = net_buf_get_timeout(&dlc->tx_queue, 0, TICKS_UNLIMITED);
+		if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+			net_buf_unref(buf);
+			break;
+		}
+
+		BT_DBG("Wait for credits %p", dlc);
+		/* Wait for credits */
+		nano_sem_take(&dlc->tx_credits, TICKS_UNLIMITED);
+		if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+			net_buf_unref(buf);
+			break;
+		}
+
+		if (bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf) < 0) {
+			/* This fails only if channel is disconnected */
+			net_buf_unref(buf);
+			break;
+		}
+	}
+
+	BT_DBG("dlc %p disconnected - cleaning up", dlc);
+
+	/* Give back any allocated buffers */
+	while ((buf = net_buf_get_timeout(&dlc->tx_queue, 0, TICKS_NONE))) {
+		net_buf_unref(buf);
+	}
+
+	rfcomm_dlc_unref(dlc);
+
+	BT_DBG("dlc %p exiting", dlc);
 }
 
 static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
@@ -326,6 +400,10 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
 
 	rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD);
+
+	nano_fifo_init(&dlc->tx_queue);
+	fiber_start(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_fiber,
+		    (int)rfcomm_dlc_ref(dlc), 0, 7, 0);
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
@@ -437,7 +515,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		BT_DBG("Incoming connection accepted dlc %p", dlc);
 
 		dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
-		dlc->tx_credit = pn->credits;
+		rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 		dlc->state = BT_RFCOMM_STATE_CONFIG;
 	}
 
@@ -491,19 +569,17 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 		return;
 	}
 
-	if (!dlc->rx_credit) {
-		BT_ERR("Data recvd when rx credit is 0");
-		/* Disconnect */
-		return;
-	}
-
 	if (pf == BT_RFCOMM_PF_CREDIT) {
-		/* TODO: Modify it to semaphore */
-		dlc->tx_credit += net_buf_pull_u8(buf);
-		BT_DBG("updated tx credit %d", dlc->tx_credit);
+		rfcomm_dlc_tx_give_credits(dlc, net_buf_pull_u8(buf));
 	}
 
 	if (buf->len > BT_RFCOMM_FCS_SIZE) {
+		if (!dlc->rx_credit) {
+			BT_ERR("Data recvd when rx credit is 0");
+			/* Disconnect */
+			return;
+		}
+
 		/* Remove FCS */
 		buf->len -= BT_RFCOMM_FCS_SIZE;
 		if (dlc->ops && dlc->ops->recv) {
@@ -522,7 +598,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	BT_DBG("dlc %p tx credit %d", dlc, dlc->tx_credit);
+	BT_DBG("dlc %p tx credit %d", dlc, dlc->tx_credits.nsig);
 
 	if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
 		return -ENOTCONN;
@@ -530,11 +606,6 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 
 	if (buf->len > dlc->mtu) {
 		return -EMSGSIZE;
-	}
-
-	/* TODO: Remove while doing CFC */
-	if (!dlc->tx_credit) {
-		return -EINVAL;
 	}
 
 	if (buf->len > BT_RFCOMM_MAX_LEN_8) {
@@ -557,9 +628,9 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	dlc->tx_credit--;
+	net_buf_put(&dlc->tx_queue, buf);
 
-	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+	return buf->len;
 }
 
 static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
