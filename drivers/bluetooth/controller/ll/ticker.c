@@ -1014,14 +1014,13 @@ static inline void ticker_job_compare_update(
 					struct ticker_instance *instance,
 					uint8_t ticker_id_old_head)
 {
-	struct ticker_node *node;
 	struct ticker_node *ticker;
+	struct ticker_node *node;
 	uint32_t ticks_to_expire;
-	uint32_t counter;
-	uint32_t counter_post;
+	uint32_t ctr_post;
+	uint32_t ctr;
 	uint32_t cc;
-	uint32_t ticks_elapsed;
-
+	uint32_t i;
 
 	if (instance->ticker_id_head == TICKER_NULL) {
 		if (rtc_stop() == 0) {
@@ -1044,23 +1043,31 @@ static inline void ticker_job_compare_update(
 	node = &instance->node[0];
 	ticker = &node[instance->ticker_id_head];
 	ticks_to_expire = ticker->ticks_to_expire;
-	counter = rtc_tick_get();
-	cc = instance->ticks_current;
-	ticks_elapsed =
-	    ticker_ticks_diff_get(counter, cc) + TICKER_RTC_CC_OFFSET_MIN;
-	cc +=
-	    ((ticks_elapsed <
-	      ticks_to_expire) ? ticks_to_expire : ticks_elapsed);
-	cc &= 0x00FFFFFF;
 
-	instance->fp_compare_set(cc);
+	/* Iterate few times, if required, to ensure that compare is
+	 * correctly set to a future value. This is required in case
+	 * the operation is pre-empted and current h/w counter runs
+	 * ahead of compare value to be set.
+	 */
+	i = 10;
+	do {
+		uint32_t ticks_elapsed;
 
-	counter_post = rtc_tick_get();
-	if ((ticker_ticks_diff_get(counter_post, counter) +
-	     TICKER_RTC_CC_OFFSET_MIN) > ticker_ticks_diff_get(cc,
-							     counter)) {
-		instance->fp_worker_sched(1);
-	}
+		ASSERT(i--);
+
+		ctr = rtc_tick_get();
+		cc = instance->ticks_current;
+		ticks_elapsed = ticker_ticks_diff_get(ctr, cc) +
+				TICKER_RTC_CC_OFFSET_MIN;
+		cc += ((ticks_elapsed < ticks_to_expire) ?
+		       ticks_to_expire : ticks_elapsed);
+		cc &= 0x00FFFFFF;
+
+		instance->fp_compare_set(cc);
+
+		ctr_post = rtc_tick_get();
+	} while ((ticker_ticks_diff_get(ctr_post, ctr) +
+		  TICKER_RTC_CC_OFFSET_MIN) > ticker_ticks_diff_get(cc, ctr));
 }
 
 static inline void ticker_job(struct ticker_instance *instance)
