@@ -381,9 +381,8 @@ static inline int task_mem_map_alloc(kmemory_map_t map, void **mptr,
 /* memory pools */
 
 #define k_block k_mem_block
-#define kmemory_pool_t k_mem_pool_t
-
-#if 0 /* unimplemented object */
+#define kmemory_pool_t struct k_mem_pool *
+#define pool_struct k_mem_pool
 
 static inline int task_mem_pool_alloc(struct k_block *blockptr,
 				      kmemory_pool_t pool_id,
@@ -397,8 +396,6 @@ static inline int task_mem_pool_alloc(struct k_block *blockptr,
 #define task_mem_pool_defragment k_mem_pool_defrag
 #define task_malloc k_malloc
 #define task_free k_free
-
-#endif
 
 /* message queues */
 

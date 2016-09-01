@@ -287,4 +287,31 @@ config SEMAPHORE_GROUPS
 	both decrease the footprint as well as improve the performance of
 	the k_sem_give() routine.
 
+choice
+	prompt "Memory pools auto-defragmentation policy"
+	default MEM_POOL_AD_AFTER_SEARCH_FOR_BIGGERBLOCK
+	help
+	Memory pool auto-defragmentation is performed if a memory
+	block of the requested size can not be found. Defragmentation
+	can be done:
+	Before trying to find a block in the next largest block set.
+	This is an attempt to preserve the memory pool's larger blocks
+	by fragmenting them only when necessary (i.e. at the cost of
+	doing more frequent auto-defragmentations).
+	After trying to find a block in the next largest block set.
+	This is an attempt to limit the cost of doing auto-defragmentations
+	by doing them only when necessary (i.e. at the cost of fragmenting
+	the memory pool's larger blocks).
+
+config MEM_POOL_AD_NONE
+	bool "No auto-defragmentation"
+
+config MEM_POOL_AD_BEFORE_SEARCH_FOR_BIGGERBLOCK
+	bool "Before trying to find a block in the next largest block set"
+
+config MEM_POOL_AD_AFTER_SEARCH_FOR_BIGGERBLOCK
+	bool "After trying to find a block in the next largest block set"
+
+endchoice
+
 endmenu

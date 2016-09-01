@@ -1036,26 +1036,207 @@ static inline int k_mem_map_num_used_get(struct k_mem_map *map)
 
 /* memory pools */
 
-struct k_mem_pool {
-	_wait_q_t wait_q;
-	int max_block_size;
-	int num_max_blocks;
+/*
+ * Memory pool requires a buffer and two arrays of structures for the
+ * memory block accounting:
+ * A set of arrays of k_mem_pool_quad_block structures where each keeps a
+ * status of four blocks of memory.
+ */
+struct k_mem_pool_quad_block {
+	char *mem_blocks; /* pointer to the first of four memory blocks */
+	uint32_t mem_status; /* four bits. If bit is set, memory block is
+				allocated */
+};
+/*
+ * Memory pool mechanism uses one array of k_mem_pool_quad_block for accounting
+ * blocks of one size. Block sizes go from maximal to minimal. Next memory
+ * block size is 4 times less than the previous one and thus requires 4 times
+ * bigger array of k_mem_pool_quad_block structures to keep track of the
+ * memory blocks.
+ */
 
+/*
+ * The array of k_mem_pool_block_set keeps the information of each array of
+ * k_mem_pool_quad_block structures
+ */
+struct k_mem_pool_block_set {
+	int block_size; /* memory block size */
+	int nr_of_entries; /* nr of quad block structures in the array */
+	struct k_mem_pool_quad_block *quad_block;
+	int count;
+};
+
+/* Memory pool descriptor */
+struct k_mem_pool {
+	int max_block_size;
+	int min_block_size;
+	int nr_of_maxblocks;
+	int nr_of_block_sets;
+	struct k_mem_pool_block_set *block_set;
+	char *bufblock;
+	_wait_q_t wait_q;
 	_DEBUG_TRACING_KERNEL_OBJECTS_NEXT_PTR(k_mem_pool);
 };
 
-/* cannot initialize pools statically */
+#ifdef CONFIG_ARM
+#define _SECTION_TYPE_SIGN "%"
+#else
+#define _SECTION_TYPE_SIGN "@"
+#endif
 
-/* XXX - review this computation */
+/*
+ * Static memory pool initialization
+ */
+/*
+ * Use .altmacro to be able to recalculate values and pass them as string
+ * arguments when calling assembler macros resursively
+ */
+__asm__(".altmacro\n\t");
+
+/*
+ * Recursively calls a macro
+ * The followig global symbols need to be initialized:
+ * __memory_pool_max_block_size - maximal size of the memory block
+ * __memory_pool_min_block_size - minimal size of the memory block
+ * Notes:
+ * Global symbols are used due the fact that assembler macro allows only
+ * one argument be passed with the % conversion
+ * Some assemblers do not get division operation ("/"). To avoid it >> 2
+ * is used instead of / 4.
+ * n_max argument needs to go first in the invoked macro, as some
+ * assemblers concatenate \name and %(\n_max * 4) arguments
+ * if \name goes first
+ */
+__asm__(".macro __do_recurse macro_name, name, n_max\n\t"
+	".ifge __memory_pool_max_block_size >> 2 -"
+	" __memory_pool_min_block_size\n\t\t"
+	"__memory_pool_max_block_size = __memory_pool_max_block_size >> 2\n\t\t"
+	"\\macro_name %(\\n_max * 4) \\name\n\t"
+	".endif\n\t"
+	".endm\n");
+
+/*
+ * Build quad blocks
+ * Macro allocates space in memory for the array of k_mem_pool_quad_block
+ * structures and recursively calls itself for the next array, 4 times
+ * larger.
+ * The followig global symbols need to be initialized:
+ * __memory_pool_max_block_size - maximal size of the memory block
+ * __memory_pool_min_block_size - minimal size of the memory block
+ * __memory_pool_quad_block_size - sizeof(struct k_mem_pool_quad_block)
+ */
+__asm__(".macro _build_quad_blocks n_max, name\n\t"
+	"_mem_pool_quad_blocks_\\name\\()_\\n_max:\n\t"
+	".skip __memory_pool_quad_block_size * \\n_max >> 2\n\t"
+	".if \\n_max % 4\n\t\t"
+	".skip __memory_pool_quad_block_size\n\t"
+	".endif\n\t"
+	"__do_recurse _build_quad_blocks \\name \\n_max\n\t"
+	".endm\n");
+
+/*
+ * Build block sets and initialize them
+ * Macro initializes the k_mem_pool_block_set structure and
+ * recursively calls itself for the next one.
+ * The followig global symbols need to be initialized:
+ * __memory_pool_max_block_size - maximal size of the memory block
+ * __memory_pool_min_block_size - minimal size of the memory block
+ * __memory_pool_block_set_count, the number of the elements in the
+ * block set array must be set to 0. Macro calculates it's real
+ * value.
+ * Since the macro initializes pointers to an array of k_mem_pool_quad_block
+ * structures, _build_quad_blocks must be called prior it.
+ */
+__asm__(".macro _build_block_set n_max, name\n\t"
+	".int __memory_pool_max_block_size\n\t" /* block_size */
+	".if \\n_max % 4\n\t\t"
+	".int \\n_max >> 2 + 1\n\t" /* nr_of_entries */
+	".else\n\t\t"
+	".int \\n_max >> 2\n\t"
+	".endif\n\t"
+	".int _mem_pool_quad_blocks_\\name\\()_\\n_max\n\t" /* quad_block */
+	".int 0\n\t" /* count */
+	"__memory_pool_block_set_count = __memory_pool_block_set_count + 1\n\t"
+	"__do_recurse _build_block_set \\name \\n_max\n\t"
+	".endm\n");
+
+/*
+ * Build a memory pool structure and initialize it
+ * Macro uses __memory_pool_block_set_count global symbol,
+ * block set addresses and buffer address, it may be called only after
+ * _build_block_set
+ */
+__asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
+	".pushsection ._k_memory_pool,\"aw\","
+	_SECTION_TYPE_SIGN "progbits\n\t"
+	".globl \\name\n\t"
+	"\\name:\n\t"
+	".int \\max_size\n\t" /* max_block_size */
+	".int \\min_size\n\t" /* min_block_size */
+	".int \\n_max\n\t" /* nr_of_maxblocks */
+	".int __memory_pool_block_set_count\n\t" /* nr_of_block_sets */
+	".int _mem_pool_block_sets_\\name\n\t" /* block_set */
+	".int _mem_pool_buffer_\\name\n\t" /* bufblock */
+	".int 0\n\t" /* wait_q->head */
+	".int 0\n\t" /* wait_q->next */
+	".popsection\n\t"
+	".endm\n");
+
+#define _MEMORY_POOL_QUAD_BLOCK_DEFINE(name, min_size, max_size, n_max) \
+	__asm__(".pushsection ._k_memory_pool.struct,\"aw\","		\
+		_SECTION_TYPE_SIGN "progbits\n\t");			\
+	__asm__("__memory_pool_min_block_size = " STRINGIFY(min_size) "\n\t"); \
+	__asm__("__memory_pool_max_block_size = " STRINGIFY(max_size) "\n\t"); \
+	__asm__("_build_quad_blocks " STRINGIFY(n_max) " "		\
+		STRINGIFY(name) "\n\t");				\
+	__asm__(".popsection\n\t")
+
+#define _MEMORY_POOL_BLOCK_SETS_DEFINE(name, min_size, max_size, n_max) \
+	__asm__("__memory_pool_block_set_count = 0\n\t");		\
+	__asm__("__memory_pool_max_block_size = " STRINGIFY(max_size) "\n\t"); \
+	__asm__(".pushsection ._k_memory_pool.struct,\"aw\","		\
+		_SECTION_TYPE_SIGN "progbits\n\t");			\
+	__asm__("_mem_pool_block_sets_" STRINGIFY(name) ":\n\t");	\
+	__asm__("_build_block_set " STRINGIFY(n_max) " "		\
+		STRINGIFY(name) "\n\t");				\
+	__asm__("_mem_pool_block_set_count_" STRINGIFY(name) ":\n\t");	\
+	__asm__(".int __memory_pool_block_set_count\n\t");		\
+	__asm__(".popsection\n\t");					\
+	extern uint32_t _mem_pool_block_set_count_##name;		\
+	extern struct k_mem_pool_block_set _mem_pool_block_sets_##name[]
+
+#define _MEMORY_POOL_BUFFER_DEFINE(name, max_size, n_max)	\
+	char __noinit _mem_pool_buffer_##name[(max_size) * (n_max)]
+
+#define K_MEMORY_POOL_DEFINE(name, min_size, max_size, n_max)		\
+	_MEMORY_POOL_QUAD_BLOCK_DEFINE(name, min_size, max_size, n_max); \
+	_MEMORY_POOL_BLOCK_SETS_DEFINE(name, min_size, max_size, n_max); \
+	_MEMORY_POOL_BUFFER_DEFINE(name, max_size, n_max);		\
+	__asm__("_build_mem_pool " STRINGIFY(name) " " STRINGIFY(min_size) " " \
+	       STRINGIFY(max_size) " " STRINGIFY(n_max) "\n\t");	\
+	extern struct k_mem_pool name
+
+/*
+ * Dummy function that assigns the value of sizeof(struct k_mem_pool_quad_block)
+ * to __memory_pool_quad_block_size absolute symbol.
+ * This function does not get called, but compiler calculates the value and
+ * assigns it to the absolute symbol, that, in turn is used by assembler macros.
+ */
+static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
+{
+	__asm__(".globl __memory_pool_quad_block_size\n\t"
+	    "__memory_pool_quad_block_size = %c0\n\t"
+	    :
+	    : "n"(sizeof(struct k_mem_pool_quad_block)));
+}
+
 #define K_MEM_POOL_SIZE(max_block_size, num_max_blocks) \
 	(sizeof(struct k_mem_pool) + ((max_block_size) * (num_max_blocks)))
 
-extern void k_mem_pool_init(struct k_mem_pool *mem, int max_block_size,
-				int num_max_blocks);
-extern int k_mem_pool_alloc(k_mem_pool_t id, struct k_mem_block *block,
+extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 				int size, int32_t timeout);
 extern void k_mem_pool_free(struct k_mem_block *block);
-extern void k_mem_pool_defrag(k_mem_pool_t id);
+extern void k_mem_pool_defrag(struct k_mem_pool *pool);
 extern void *k_malloc(uint32_t size);
 extern void k_free(void *p);
 

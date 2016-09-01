@@ -22,6 +22,7 @@ obj-y += $(strip \
 	fifo.o \
 	stack.o \
 	mem_map.o \
+	mem_pool.o \
 	msg_q.o \
 	mailbox.o \
 	mem_pool.o \

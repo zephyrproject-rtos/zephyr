@@ -802,91 +802,102 @@ def kernel_main_c_pools():
 
     kernel_main_c_out("\nint _k_mem_pool_count = %d;\n" % (total_pools))
 
-    if (total_pools == 0):
-        kernel_main_c_out("\nstruct pool_struct * _k_mem_pool_list = NULL;\n")
-        return
-    #  Heap pool if present can be indexed using the below variable
-    if (heap_pos_in_pool_list != -1):
-        kernel_main_c_out("\nconst kmemory_pool_t _heap_mem_pool_id = %d;\n" \
-                                                     %(heap_pos_in_pool_list))
+    if kernel_type == 'micro':
+        if (total_pools == 0):
+            kernel_main_c_out("\nstruct pool_struct * _k_mem_pool_list = NULL;\n")
+            return
+        #  Heap pool if present can be indexed using the below variable
+        if (heap_pos_in_pool_list != -1):
+            kernel_main_c_out("\nconst kmemory_pool_t _heap_mem_pool_id = %d;\n" \
+                                                         %(heap_pos_in_pool_list))
 
-    # start accumulating memory pool descriptor info
+        # start accumulating memory pool descriptor info
 
-    pool_descriptors = "\nstruct pool_struct _k_mem_pool_list[%d] =\n{\n" % \
-                        (total_pools)
-    ident = 0x00010000
+        pool_descriptors = "\nstruct pool_struct _k_mem_pool_list[%d] =\n{\n" % \
+                            (total_pools)
+        ident = 0x00010000
 
-    for pool in pool_list:
+        for pool in pool_list:
 
-        kernel_main_c_out("\n")
+            kernel_main_c_out("\n")
 
-        # create local variables relating to current pool
+            # create local variables relating to current pool
 
-        min_block_size = pool[1]
-        max_block_size = pool[2]
-        num_maximal_blocks = pool[3]
-        total_memory = max_block_size * num_maximal_blocks
-        buffer = "__" + pool[0] + "_buffer"
-        frag_table = "block_sets_%#010x" % ident
+            min_block_size = pool[1]
+            max_block_size = pool[2]
+            num_maximal_blocks = pool[3]
+            total_memory = max_block_size * num_maximal_blocks
+            buffer = "__" + pool[0] + "_buffer"
+            frag_table = "block_sets_%#010x" % ident
 
-        # determine block sizes used by pool (including actual minimum size)
+            # determine block sizes used by pool (including actual minimum size)
 
-        block_size_list = [max_block_size]
-        while (ident != 0):    # loop forever
-            min_block_size_actual = block_size_list[len(block_size_list) - 1]
-            min_block_size_proposed = min_block_size_actual / 4
-            if (min_block_size_proposed < min_block_size):
-                break
-            block_size_list.append(min_block_size_proposed)
-        frag_levels = len(block_size_list)
+            block_size_list = [max_block_size]
+            while (ident != 0):    # loop forever
+                min_block_size_actual = block_size_list[len(block_size_list) - 1]
+                min_block_size_proposed = min_block_size_actual / 4
+                if (min_block_size_proposed < min_block_size):
+                    break
+                block_size_list.append(min_block_size_proposed)
+            frag_levels = len(block_size_list)
 
-        # determine size of quad-block arrays,
-	# from the largest block size to the smallest block size
-	# - each array must be big enough to track the status of
-	#   the entire memory pool buffer
-	# - each array entry tracks the status of 4 consecutive blocks
-        # - need to do rounding up with array for largest block size
-	#   in case the # of largest size blocks isn't a multiple of 4
-	#   (i.e. it's final array entry may be partly unused)
+            # determine size of quad-block arrays,
+            # from the largest block size to the smallest block size
+            # - each array must be big enough to track the status of
+            #   the entire memory pool buffer
+            # - each array entry tracks the status of 4 consecutive blocks
+            # - need to do rounding up with array for largest block size
+            #   in case the # of largest size blocks isn't a multiple of 4
+            #   (i.e. it's final array entry may be partly unused)
 
-        quad_block_sizes = [(num_maximal_blocks + 3) / 4]
-        quad_block_size_to_use = num_maximal_blocks
-        for index in range(1, frag_levels):
-            quad_block_sizes.append(quad_block_size_to_use)
-            quad_block_size_to_use *= 4
+            quad_block_sizes = [(num_maximal_blocks + 3) / 4]
+            quad_block_size_to_use = num_maximal_blocks
+            for index in range(1, frag_levels):
+                quad_block_sizes.append(quad_block_size_to_use)
+                quad_block_size_to_use *= 4
 
-        # generate array of quad-blocks for each block set
+            # generate array of quad-blocks for each block set
 
-        for index in range(0, frag_levels):
-            kernel_main_c_out(
-                "struct pool_quad_block quad_blocks_%#010x_%d[%d];\n" %
-                (ident, index, quad_block_sizes[index]))
+            for index in range(0, frag_levels):
+                kernel_main_c_out(
+                    "struct pool_quad_block quad_blocks_%#010x_%d[%d];\n" %
+                    (ident, index, quad_block_sizes[index]))
 
-        # generate array of block sets for memory pool
+            # generate array of block sets for memory pool
 
-        kernel_main_c_out("\nstruct pool_block_set %s[%d] =\n{\n" %
-                        (frag_table, frag_levels))
-        for index in range(0, frag_levels):
-            kernel_main_c_out("    { %d, %d, quad_blocks_%#010x_%d},\n" %
-                (block_size_list[index], quad_block_sizes[index],
-                 ident, index))
-        kernel_main_c_out("};\n")
+            kernel_main_c_out("\nstruct pool_block_set %s[%d] =\n{\n" %
+                            (frag_table, frag_levels))
+            for index in range(0, frag_levels):
+                kernel_main_c_out("    { %d, %d, quad_blocks_%#010x_%d},\n" %
+                    (block_size_list[index], quad_block_sizes[index],
+                     ident, index))
+            kernel_main_c_out("};\n")
 
-        # generate memory pool buffer
+            # generate memory pool buffer
 
-        kernel_main_c_out("\nchar __noinit %s[%d];\n" % (buffer, total_memory))
+            kernel_main_c_out("\nchar __noinit %s[%d];\n" % (buffer, total_memory))
 
-        # append memory pool descriptor info
+            # append memory pool descriptor info
 
-        pool_descriptors += "    {%d, %d, %d, %d, NULL, %s, %s},\n" % \
-            (max_block_size, min_block_size_actual,
-            num_maximal_blocks, frag_levels, frag_table, buffer)
+            pool_descriptors += "    {%d, %d, %d, %d, NULL, %s, %s},\n" % \
+                (max_block_size, min_block_size_actual,
+                num_maximal_blocks, frag_levels, frag_table, buffer)
 
-        ident += 1
+            ident += 1
 
-    # generate memory pool descriptor info
+        # generate memory pool descriptor info
 
-    pool_descriptors += "};\n"
+        pool_descriptors += "};\n"
+    elif kernel_type == 'unified':
+        pool_descriptors = ""
+        for pool in pool_list:
+            kernel_main_c_out("\n")
+            min_block_size = pool[1]
+            max_block_size = pool[2]
+            num_maximal_blocks = pool[3]
+            pool_descriptors += "K_MEMORY_POOL_DEFINE(_k_mem_pool_obj_%s, %d, %d, %d);\n" % \
+                          (pool[0], min_block_size, max_block_size,
+                           num_maximal_blocks)
     kernel_main_c_out(pool_descriptors)
 
 
@@ -967,11 +978,11 @@ def kernel_main_c_generate():
     kernel_main_c_mailboxes()
     kernel_main_c_tasks()
     kernel_main_c_pipes()
+    kernel_main_c_pools()
 
     if kernel_type == 'micro':
         kernel_main_c_kargs()
         kernel_main_c_timers()
-        kernel_main_c_pools()
         kernel_main_c_node_init()
         kernel_main_c_priorities()
 
@@ -1117,6 +1128,7 @@ def generate_sysgen_h_obj_ids():
 	mbox_struct = 'k_mbox'
 	mbox_type = 'struct k_mbox *'
 	event_type = 'struct k_event *'
+	mem_pool_type = 'struct k_mem_pool'
         # add missing object types
 
     # mutex object ids
@@ -1208,12 +1220,22 @@ def generate_sysgen_h_obj_ids():
                 sysgen_h_data += \
                     "#define %s (&_k_event_obj_%s)\n\n" % (name, name)
 
-    # all other object ids
+    # memory pool object ids
 
-    obj_types = [
-        [pool_list, 0],
-    ]
-    sysgen_h_data += generate_obj_id_lines(obj_types)
+    if kernel_type == 'micro':
+        obj_types = [
+            [pool_list, 0],
+        ]
+        sysgen_h_data += generate_obj_id_lines(obj_types)
+    elif (kernel_type == 'unified'):
+        for mem_pool in pool_list:
+            name = mem_pool[0];
+            sysgen_h_data += \
+                "extern %s _k_mem_pool_obj_%s;\n" % (mem_pool_type, name)
+            sysgen_h_data += \
+                "#define %s ((%s *)&_k_mem_pool_obj_%s)\n" % (name, mem_pool_type, name)
+
+    # all other object ids
 
 
 sysgen_h_footer_include_guard_str = \
