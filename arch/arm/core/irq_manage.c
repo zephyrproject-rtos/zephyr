@@ -39,16 +39,13 @@ extern void __reserved(void);
  *
  * @brief Enable an interrupt line
  *
- * Clear possible pending interrupts on the line, and enable the interrupt
- * line. After this call, the CPU will receive interrupts for the specified
- * <irq>.
+ * Enable the interrupt. After this call, the CPU will receive interrupts for
+ * the specified <irq>.
  *
  * @return N/A
  */
 void _arch_irq_enable(unsigned int irq)
 {
-	/* before enabling interrupts, ensure that interrupt is cleared */
-	_NvicIrqUnpend(irq);
 	_NvicIrqEnable(irq);
 }
 
