@@ -707,7 +707,8 @@ class MakeGenerator:
                                     run_logfile, qemu_logfile)
 
 
-    def add_test_instance(self, ti, build_only=False, enable_slow=False):
+    def add_test_instance(self, ti, build_only=False, enable_slow=False,
+                          extra_args=[]):
         """Add a goal to build/test a TestInstance object
 
         @param ti TestInstance object to build. The status dictionary returned
@@ -716,6 +717,7 @@ class MakeGenerator:
         args = ti.test.extra_args[:]
         args.extend(["ARCH=%s" % ti.platform.arch.name,
                      "BOARD=%s" % ti.platform.name])
+        args.extend(extra_args)
         if (ti.platform.qemu_support and (not ti.build_only) and
             (not build_only) and (enable_slow or not ti.test.slow)):
             self.add_qemu_goal(ti.name, ti.test.code_location, ti.outdir,
@@ -1220,7 +1222,7 @@ class TestSuite:
 
     def apply_filters(self, platform_filter, arch_filter, tag_filter,
                       config_filter, testcase_filter, last_failed, all_plats,
-                      platform_limit, toolchain):
+                      platform_limit, toolchain, extra_args):
         instances = []
         discards = {}
         verbose("platform filter: " + str(platform_filter))
@@ -1286,6 +1288,7 @@ class TestSuite:
                         args = tc.extra_args[:]
                         args.extend(["ARCH=" + plat.arch.name,
                                 "BOARD=" + plat.name, "initconfig"])
+                        args.extend(extra_args)
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every plat/ktype combo,
                         # need a way to avoid different Make processe from clobbering
@@ -1408,7 +1411,8 @@ class TestSuite:
         for ti in ti_list:
             self.instances[ti.name] = ti
 
-    def execute(self, cb, cb_context, build_only, enable_slow, enable_asserts):
+    def execute(self, cb, cb_context, build_only, enable_slow, enable_asserts,
+                extra_args):
 
         def calc_one_elf_size(name, goal):
             if not goal.failed:
@@ -1421,7 +1425,7 @@ class TestSuite:
 
         mg = MakeGenerator(self.outdir, asserts=enable_asserts)
         for i in self.instances.values():
-            mg.add_test_instance(i, build_only, enable_slow)
+            mg.add_test_instance(i, build_only, enable_slow, extra_args)
         self.goals = mg.execute(cb, cb_context)
 
         # Parallelize size calculation
@@ -1631,6 +1635,10 @@ def parse_arguments():
                  "as 'slow' in testcase.ini. Normally these are only built.")
     parser.add_argument("-R", "--enable-asserts", action="store_true",
             help="Build all test cases with assertions enabled.")
+    parser.add_argument("-x", "--extra-args", action="append", default=[],
+            help="Extra arguments to pass to the build when compiling test "
+                 "cases. May be called multiple times. These will be passed "
+                 "in after any sanitycheck-supplied options.")
 
     return parser.parse_args()
 
@@ -1732,7 +1740,7 @@ def main():
     ts = TestSuite(args.arch_root, args.testcase_root, args.outdir)
     discards = ts.apply_filters(args.platform, args.arch, args.tag, args.config,
                                 args.test, args.only_failed, args.all,
-                                args.platform_limit, toolchain)
+                                args.platform_limit, toolchain, args.extra_args)
 
     if args.discard_report:
         ts.discard_report(args.discard_report)
@@ -1750,10 +1758,12 @@ def main():
 
     if VERBOSE or not TERMINAL:
         goals = ts.execute(chatty_test_cb, ts.instances, args.build_only,
-                           args.enable_slow, args.enable_asserts)
+                           args.enable_slow, args.enable_asserts,
+                           args.extra_args)
     else:
         goals = ts.execute(terse_test_cb, ts.instances, args.build_only,
-                           args.enable_slow, args.enable_asserts)
+                           args.enable_slow, args.enable_asserts,
+                           args.extra_args)
         info("")
 
     # figure out which report to use for size comparison
