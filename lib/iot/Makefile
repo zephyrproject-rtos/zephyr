@@ -9,3 +9,7 @@ endif
 ifdef CONFIG_MQTT_LIB
 include $(srctree)/lib/iot/mqtt/Makefile
 endif
+
+ifdef CONFIG_HTTP_PARSER
+include $(srctree)/lib/iot/http/Makefile
+endif

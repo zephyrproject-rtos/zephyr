@@ -1,4 +1,3 @@
-#
 # Copyright (c) 2016 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +13,20 @@
 # limitations under the License.
 #
 
-menu "IoT Protocols"
+config HTTP_PARSER
+	bool
+	prompt "HTTP Parser support"
+	default n
+	help
+	This option enables the http_parser library from nodejs.
+	This parser requires some string-related routines commonly
+	provided by a libc implementation. So, MINIMAL_LIBC_EXTENDED
+	can be used here to resolve all the required dependencies.
 
-source "lib/iot/zoap/Kconfig"
-
-source "lib/iot/dns/Kconfig"
-
-source "lib/iot/mqtt/Kconfig"
-
-source "lib/iot/http/Kconfig"
-
-endmenu
+config HTTP_PARSER_STRICT
+	bool
+	prompt "HTTP strict parsing"
+	default n
+	depends on HTTP_PARSER
+	help
+	This option enables the strict parsing option
