@@ -26,6 +26,15 @@
 #include <toolchain.h>
 #include <sections.h>
 
+#ifdef CONFIG_KERNEL_V2
+#include <nano_private.h> /* to get access to '_current' */
+#endif
+
+/* override PRINTK from nano_private.h */
+#if defined(CONFIG_KERNEL_V2) && defined(PRINTK)
+#undef PRINTK
+#endif
+
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
 #define PRINTK(...) printk(__VA_ARGS__)
@@ -66,7 +75,11 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 		if (curCtx == NANO_CTX_TASK) {
 			extern FUNC_NORETURN void _TaskAbort(void);
 			PRINTK("Fatal task error! Aborting task.\n");
+#ifdef CONFIG_KERNEL_V2
+			k_thread_abort(_current);
+#else
 			_TaskAbort();
+#endif
 		} else
 #endif /* CONFIG_MICROKERNEL */
 		{

@@ -39,6 +39,11 @@
 
 	/* externs */
 
+#ifdef CONFIG_KERNEL_V2
+	GTEXT(_get_next_ready_thread)
+	GDATA(_k_neg_eagain)
+#endif
+
 
 /**
  *
@@ -84,7 +89,7 @@
  * list (_nanokernel.fiber).  If there are no runnable fibers, then schedule
  * the task (_nanokernel.task).  The _nanokernel.task field will never be NULL.
  *
- * @return may contain a return value setup by a call to fiberRtnValueSet()
+ * @return -EAGAIN, or a return value set by a call to fiberRtnValueSet()
  *
  * C function prototype:
  *
@@ -115,13 +120,18 @@ SECTION_FUNC(TEXT, _Swap)
 	pushl	%ebx
 	pushl	%ebp
 
+#if CONFIG_KERNEL_V2
 	/*
-	 * Leave slot for eax register when _Swap() needs to return a value;
-	 * pre-populate slot with ebx's value in case _Swap() does not return
-	 * a value.
+	 * Carve space for the return value. Setting it to a defafult of
+	 * -EAGAIN eliminates the need for the timeout code to set it.
+	 * If another value is ever needed, it can be modified with
+	 * fiberRtnValueSet().
 	 */
 
+	pushl   _k_neg_eagain
+#else
 	pushl	%ebx
+#endif
 
 
 	/* save esp into tTCS structure */
@@ -134,18 +144,21 @@ SECTION_FUNC(TEXT, _Swap)
 	call	_sys_k_event_logger_context_switch
 #endif
 
+#ifdef CONFIG_KERNEL_V2
+	call	_get_next_ready_thread
+#else
 	/*
 	 * Determine what thread needs to be swapped in.
 	 * Note that the %edi still contains &_nanokernel.
 	 */
 
-	movl	__tNANO_fiber_OFFSET (%edi), %ecx
-	testl	%ecx, %ecx
+	movl	__tNANO_fiber_OFFSET (%edi), %eax
+	testl	%eax, %eax
 	jz	swapTask	/* Jump if no ready fibers */
 
 	/* remove the head 'TCS *' from the runnable fiber list */
 
-	movl	__tTCS_link_OFFSET (%ecx), %ebx
+	movl	__tTCS_link_OFFSET (%eax), %ebx
 	movl	%ebx, __tNANO_fiber_OFFSET (%edi)
 	jmp 	restoreContext
 
@@ -156,13 +169,14 @@ SECTION_FUNC(TEXT, _Swap)
 	 */
 
 swapTask:
-	movl	__tNANO_task_OFFSET (%edi), %ecx
+	movl	__tNANO_task_OFFSET (%edi), %eax
+#endif
 
 	/* fall through to 'restoreContext' */
 
 
 	/*
-	 * At this point, the %ecx register contains the 'tTCS *' of
+	 * At this point, the %eax register contains the 'tTCS *' of
 	 * the TASK or FIBER to be swapped in, and %edi still
 	 * contains &_nanokernel.
 	 */
@@ -193,7 +207,7 @@ restoreContext:
 	 * out preemptively.
 	 */
 
-	testl	$USE_FP, __tTCS_flags_OFFSET (%ecx)
+	testl	$USE_FP, __tTCS_flags_OFFSET (%eax)
 	je 	restoreContext_NoFloatSwap
 
 
@@ -204,7 +218,7 @@ restoreContext:
 	 */
 
 	movl	__tNANO_current_fp_OFFSET (%edi), %ebx
-	cmpl	%ebx, %ecx
+	cmpl	%ebx, %eax
 	je	restoreContext_NoFloatSwap
 
 
@@ -269,21 +283,21 @@ restoreContext_NoFloatSave:
 	 * thread was previously preemptively context switched out.
 	 */
 
-	testl   $INT_OR_EXC_MASK, __tTCS_flags_OFFSET (%ecx)
+	testl   $INT_OR_EXC_MASK, __tTCS_flags_OFFSET (%eax)
 	je 	restoreContext_NoFloatRestore
 
 #ifdef CONFIG_SSE
-	testl	$USE_SSE, __tTCS_flags_OFFSET (%ecx)
+	testl	$USE_SSE, __tTCS_flags_OFFSET (%eax)
 	je	x87FloatRestore
 
-	fxrstor	__tTCS_preempFloatReg_OFFSET (%ecx)
+	fxrstor	__tTCS_preempFloatReg_OFFSET (%eax)
 	jmp	floatRestoreDone
 
 x87FloatRestore:
 
 #endif /* CONFIG_SSE */
 
-	frstor	__tTCS_preempFloatReg_OFFSET (%ecx)
+	frstor	__tTCS_preempFloatReg_OFFSET (%eax)
 
 	/* fall through to 'floatRestoreDone' */
 
@@ -292,7 +306,7 @@ restoreContext_NoFloatRestore:
 
 	/* record that the incoming thread "owns" the non-integer registers */
 
-	movl	%ecx, __tNANO_current_fp_OFFSET (%edi)
+	movl	%eax, __tNANO_current_fp_OFFSET (%edi)
 
 
 	/*
@@ -309,7 +323,7 @@ restoreContext_NoFloatSwap:
 	 * instructions
 	 */
 
-	testl	$USE_FP, __tTCS_flags_OFFSET (%ecx)
+	testl	$USE_FP, __tTCS_flags_OFFSET (%eax)
 	jne	CROHandlingDone
 
 	/*
@@ -332,11 +346,11 @@ CROHandlingDone:
 
 	/* update _nanokernel.current to reflect incoming thread */
 
-	movl    %ecx, __tNANO_current_OFFSET (%edi)
+	movl    %eax, __tNANO_current_OFFSET (%edi)
 
 	/* recover task/fiber stack pointer from tTCS */
 
-	movl	__tTCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%ecx), %esp
+	movl	__tTCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%eax), %esp
 
 
 	/* load return value from a possible fiberRtnValueSet() */
@@ -351,15 +365,12 @@ CROHandlingDone:
 	popl	%edi
 
 	/*
-	 * For a non-preemptive context switch, it is checked that the volatile
-	 * integer registers have the following values:
+	 * %eax may contain one of these values:
 	 *
-	 * 1. ECX - points to the task's own TCS structure.
-	 * 2. EDX - contains the flags field of the task's own TCS structure.
-	 * 3. EAX - may contain one of the two values:
-	 *          (a) the return value for _Swap() that was set up by a
-	 *              call to fiberRtnValueSet()
-	 *          (b) same value as EBX, which is non-volatile
+	 * - the return value for _Swap() that was set up by a call to
+	 * fiberRtnValueSet()
+	 * - in legacy kernel, same value as %ebx, which is non-volatile
+	 * - in unified kernel, -EINVAL
 	 */
 
 	/* Utilize the 'eflags' parameter to _Swap() */

@@ -21,6 +21,7 @@
  * Intel-specific parts of start_task(). Only FP functionality currently.
  */
 
+#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 
 #include <start_task_arch.h>
@@ -78,3 +79,4 @@ void _StartTaskArch(struct k_task *X, unsigned int *pOpt)
 }
 
 #endif /* CONFIG_MICROKERNEL */
+#endif

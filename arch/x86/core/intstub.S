@@ -45,6 +45,10 @@
 
 	GTEXT(_Swap)
 
+#ifdef CONFIG_KERNEL_V2
+	GTEXT(__must_switch_threads)
+#endif
+
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 #if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
 	GTEXT(_power_save_idle_exit)
@@ -334,17 +338,40 @@ _IntExitWithCli:
 	jne	nestedInterrupt                 /* 'iret' if nested case */
 
 
+	movl	__tNANO_current_OFFSET (%ecx), %edx
+
+#ifdef CONFIG_KERNEL_V2
+	/*
+	 * Determine whether the execution of the ISR requires a context
+	 * switch.  If the thread is preemptible, scheduler is not locked and
+	 * a higher priority thread exists, a _Swap() needs to occur.
+	 */
+
+	/* do not reschedule coop threads (negative priority) */
+	cmpl	$0, __tTCS_prio_OFFSET (%edx)
+	jl	noReschedule
+
+	/* do not reschedule if scheduler is locked */
+	cmpl	$0, __tTCS_sched_locked_OFFSET (%edx)
+	jg	noReschedule
+
+
+	/* reschedule only if the scheduler says that we must do so */
+	call	__must_switch_threads
+	cmpl	$0, %eax
+	je	noReschedule
+#else
 	/*
 	 * Determine whether the execution of the ISR requires a context
 	 * switch.  If the interrupted thread is PREEMPTIBLE (a task) and
 	 * _nanokernel.fiber is non-NULL, a _Swap() needs to occur.
 	 */
 
-	movl	__tNANO_current_OFFSET (%ecx), %eax
-	testl	$PREEMPTIBLE, __tTCS_flags_OFFSET(%eax)
+	testl	$PREEMPTIBLE, __tTCS_flags_OFFSET(%edx)
 	je	noReschedule
 	cmpl	$0, __tNANO_fiber_OFFSET (%ecx)
 	je	noReschedule
+#endif
 
 	/*
 	 * Set the INT_ACTIVE bit in the tTCS to allow the upcoming call to
@@ -358,7 +385,11 @@ _IntExitWithCli:
 	 */
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
-	orl	$INT_ACTIVE, __tTCS_flags_OFFSET(%eax)
+#ifdef CONFIG_KERNEL_V2
+	/* reload _nanokernel.current: __must_switch_threads may clobber it */
+	movl	_nanokernel + __tNANO_current_OFFSET, %edx
+#endif
+	orl	$INT_ACTIVE, __tTCS_flags_OFFSET(%edx)
 #endif
 
 	/*
@@ -369,7 +400,7 @@ _IntExitWithCli:
 	 * a switch to the new thread.
 	 */
 
-	popl	%esp		/* switch back to kernel stack */
+	popl	%esp	/* switch back to outgoing thread's stack */
 
 #ifdef CONFIG_DEBUG_INFO
 	popl	%ebp        /* Discard saved ESP */

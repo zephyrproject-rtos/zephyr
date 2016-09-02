@@ -22,10 +22,12 @@
  * processor architecture.
  */
 
+#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
 #include <micro_private_types.h>
 #endif /* CONFIG_MICROKERNEL */
+#endif
 #ifdef CONFIG_INIT_STACKS
 #include <string.h>
 #endif /* CONFIG_INIT_STACKS */
@@ -59,13 +61,14 @@ void _thread_entry_wrapper(_thread_entry_t, _thread_arg_t,
  *
  * @param pStackMem pointer to thread stack memory
  * @param stackSize size of a stack in bytes
- * @param thread priority
- * @param options thread options: USE_FP, USE_SSE
+ * @param priority thread priority
+ * @param options thread options: ESSENTIAL, USE_FP, USE_SSE
  *
  * @return N/A
  */
 static void _new_thread_internal(char *pStackMem, unsigned stackSize,
-				 void *uk_task_ptr, int priority, unsigned options)
+				 void *uk_task_ptr, int priority,
+				 unsigned options)
 {
 	unsigned long *pInitialCtx;
 	/* ptr to the new task's tcs */
@@ -75,17 +78,32 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	ARG_UNUSED(options);
 #endif /* !CONFIG_FP_SHARING */
 
-	tcs->link = (struct tcs *)NULL; /* thread not inserted into list yet */
 	tcs->prio = priority;
 #if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
 	tcs->excNestCount = 0;
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
+#ifdef CONFIG_KERNEL_V2
+	/* k_q_node initialized upon first insertion in a list */
+#ifdef CONFIG_FP_SHARING
+	/* ensure USE_FP is set when USE_SSE is set */
+	if (options & USE_SSE) {
+		options |= USE_FP;
+	}
+#endif
+	tcs->flags = options | K_PRESTART;
+	tcs->sched_locked = 0;
 
+	/* static threads overwrite it afterwards with real value */
+	tcs->init_data = NULL;
+	tcs->fn_abort = NULL;
+#else
 	if (priority == -1)
 		tcs->flags = PREEMPTIBLE | TASK;
 	else
 		tcs->flags = FIBER;
+	tcs->link = (struct tcs *)NULL; /* thread not inserted into list yet */
+#endif
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
@@ -93,7 +111,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	tcs->custom_data = NULL;
 #endif
 
-#ifdef CONFIG_MICROKERNEL
+#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_MICROKERNEL)
 	tcs->uk_task_ptr = uk_task_ptr;
 #else
 	ARG_UNUSED(uk_task_ptr);
@@ -130,6 +148,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 	tcs->coopReg.esp = (unsigned long)pInitialCtx;
 	PRINTK("\nInitial context ESP = 0x%x\n", tcs->coopReg.esp);
 
+#ifndef CONFIG_KERNEL_V2
 #ifdef CONFIG_FP_SHARING
 /*
  * Indicate if the thread is permitted to use floating point instructions.
@@ -184,6 +203,7 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 		tcs->flags |= (options | USE_FP);
 	}
 #endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_KERNEL_V2 */
 
 	PRINTK("\nstruct tcs * = 0x%x", tcs);
 
@@ -304,8 +324,8 @@ __asm__("\t.globl _thread_entry\n"
  * @param parameter1 first param to entry point
  * @param parameter2 second param to entry point
  * @param parameter3 third param to entry point
- * @param priority  thread priority
- * @param options thread options: USE_FP, USE_SSE
+ * @param priority thread priority
+ * @param options thread options: ESSENTIAL, USE_FP, USE_SSE
  *
  *
  * @return opaque pointer to initialized TCS structure

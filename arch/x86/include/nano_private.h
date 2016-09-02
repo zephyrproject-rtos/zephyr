@@ -40,8 +40,13 @@
 #include <exception.h>
 
 #ifndef _ASMLANGUAGE
+#ifdef CONFIG_KERNEL_V2
+#include <kernel.h>		   /* public kernel API */
+#include <../../../kernel/unified/include/nano_internal.h>
+#else
 #include <nanokernel.h>		   /* public nanokernel API */
 #include <../../../kernel/nanokernel/include/nano_internal.h>
+#endif
 #include <stdint.h>
 /*
  * This pulls in the code shared with the IDT generator that actually
@@ -67,13 +72,28 @@
  * nanokernel/x86/arch.h.
  */
 
+#ifdef CONFIG_KERNEL_V2
+#define K_STATIC  0x00000800
+
+#define K_READY              0x00000000    /* Thread is ready to run */
+#define K_TIMING             0x00001000    /* Thread is waiting on a timeout */
+#define K_PENDING            0x00002000    /* Thread is waiting on an object */
+#define K_PRESTART           0x00004000    /* Thread has not yet started */
+#define K_DEAD               0x00008000    /* Thread has terminated */
+#define K_SUSPENDED          0x00010000    /* Thread is suspended */
+#define K_DUMMY              0x00020000    /* Not a real thread */
+#define K_EXECUTION_MASK    (K_TIMING | K_PENDING | K_PRESTART | \
+			     K_DEAD | K_SUSPENDED | K_DUMMY)
+#else
 #define FIBER 0
 #define TASK 0x1	       /* 1 = task, 0 = fiber   */
+#define PREEMPTIBLE 0x100  /* 1 = preemptible thread */
+#endif
+
 #define INT_ACTIVE 0x2     /* 1 = executing context is interrupt handler */
 #define EXC_ACTIVE 0x4     /* 1 = executing context is exception handler */
 #define USE_FP 0x10	       /* 1 = thread uses floating point unit */
 #define USE_SSE 0x20       /* 1 = thread uses SSEx instructions */
-#define PREEMPTIBLE 0x100  /* 1 = preemptible thread */
 #define ESSENTIAL 0x200    /* 1 = system thread that must not abort */
 #define NO_METRICS 0x400   /* 1 = _Swap() not to update task metrics */
 #define NO_METRICS_BIT_OFFSET 0xa /* Bit position of NO_METRICS */
@@ -613,6 +633,16 @@ typedef struct s_preempFloatReg {
 	} floatRegsUnion;
 } tPreempFloatReg;
 
+#if CONFIG_KERNEL_V2
+/* 'struct tcs_base' must match the beginning of 'struct tcs' */
+struct tcs_base {
+	sys_dnode_t  k_q_node;
+	uint32_t     flags;
+	int          prio;     /* thread priority used to sort linked list */
+	void        *swap_data;
+};
+#endif
+
 /*
  * The thread control stucture definition.  It contains the
  * various fields to manage a _single_ thread. The TCS will be aligned
@@ -627,6 +657,12 @@ struct tcs {
 	 * nanokernel FIFO).
 	 */
 
+#if CONFIG_KERNEL_V2
+	sys_dnode_t k_q_node;	/* node object in any kernel queue */
+	int         flags;
+	int         prio;     /* thread priority used to sort linked list */
+	void       *swap_data;
+#else
 	struct tcs *link;
 
 	/*
@@ -638,6 +674,8 @@ struct tcs {
 	 */
 
 	int flags;
+	int prio;     /* thread priority used to sort linked list */
+#endif
 
 	/*
 	 * Storage space for integer registers.  These must also remain near
@@ -656,7 +694,6 @@ struct tcs {
 	void *esfPtr; /* pointer to exception stack frame saved by */
 		      /* outermost exception wrapper */
 #endif		      /* CONFIG_GDB_INFO */
-	int prio;     /* thread priority used to sort linked list */
 #if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
 	/*
 	 * Nested exception count to maintain setting of EXC_ACTIVE flag across
@@ -670,7 +707,7 @@ struct tcs {
 	void *custom_data;     /* available for custom use */
 #endif
 
-#ifdef CONFIG_NANO_TIMEOUTS
+#if !defined(CONFIG_KERNEL_V2) && defined(CONFIG_NANO_TIMEOUTS)
 	struct _nano_timeout nano_timeout;
 #endif
 
@@ -678,8 +715,19 @@ struct tcs {
 	int errno_var;
 #endif
 
+#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 	void *uk_task_ptr;
+#endif
+#endif
+
+#ifdef CONFIG_KERNEL_V2
+#ifdef CONFIG_NANO_TIMEOUTS
+	struct _timeout timeout;
+#endif
+	atomic_t sched_locked;
+	void *init_data;
+	void (*fn_abort)(void);
 #endif
 
 	/*
@@ -700,14 +748,25 @@ struct tcs {
 	tPreempFloatReg preempFloatReg; /* volatile float register storage */
 };
 
+
+#ifdef CONFIG_KERNEL_V2
+struct ready_q {
+	uint32_t prio_bmap[1];
+	sys_dlist_t q[K_NUM_PRIORITIES];
+};
+#endif
+
+
 /*
  * The nanokernel structure definition.  It contains various fields to
  * manage _all_ the threads in the nanokernel (system level).
  */
 
 typedef struct s_NANO {
+#if !defined(CONFIG_KERNEL_V2)
 	struct tcs *fiber;   /* singly linked list of runnable fibers */
 	struct tcs *task;    /* pointer to runnable task */
+#endif
 	struct tcs *current; /* currently scheduled thread (fiber or task) */
 #if defined(CONFIG_THREAD_MONITOR)
 	struct tcs *threads; /* singly linked list of ALL fiber+tasks */
@@ -739,6 +798,9 @@ typedef struct s_NANO {
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 	sys_dlist_t timeout_q;
 	int32_t task_timeout;
+#endif
+#ifdef CONFIG_KERNEL_V2
+	struct ready_q ready_q;
 #endif
 } tNANO;
 
@@ -819,6 +881,21 @@ static inline void fiberRtnValueSet(struct tcs *fiber, unsigned int value)
 	*(unsigned int *)(fiber->coopReg.esp) = value;
 }
 
+#ifdef CONFIG_KERNEL_V2
+#define _current _nanokernel.current
+#define _ready_q _nanokernel.ready_q
+#define _timeout_q _nanokernel.timeout_q
+#define _set_thread_return_value fiberRtnValueSet
+static ALWAYS_INLINE void
+_set_thread_return_value_with_data(struct k_thread *thread, unsigned int value,
+				   void *data)
+{
+	_set_thread_return_value(thread, value);
+	thread->swap_data = data;
+}
+#define _IDLE_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES)
+#endif /* CONFIG_KERNEL_V2 */
+
 /* function prototypes */
 
 extern void nano_cpu_atomic_idle(unsigned int imask);
@@ -846,6 +923,7 @@ extern unsigned char _idt_base_address[];
 #endif
 
 #define _IS_IN_ISR() (_nanokernel.nested != 0)
+#define _is_in_isr() (_nanokernel.nested != 0)
 
 #endif /* _ASMLANGUAGE */
 

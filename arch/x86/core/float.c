@@ -76,10 +76,12 @@
  * system to enable FP resource sharing on its behalf.
  */
 
+#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
 #include <micro_private_types.h>
 #endif /* CONFIG_MICROKERNEL */
+#endif
 
 #include <nano_private.h>
 #include <toolchain.h>
@@ -265,6 +267,20 @@ void _FpEnable(struct tcs *tcs, unsigned int options)
 	irq_unlock(imask);
 }
 
+#ifdef CONFIG_KERNEL_V2
+/**
+ *
+ * @brief Enable preservation of non-integer context information
+ *
+ * This routine allows a thread to permit any thread (including itself) to
+ * safely share the system's floating point registers with other threads.
+ *
+ * See the description of _FpEnable() for further details.
+ *
+ * @return N/A
+ */
+FUNC_ALIAS(_FpEnable, k_float_enable, void);
+#else
 /**
  *
  * @brief Enable preservation of non-integer context information
@@ -290,6 +306,7 @@ FUNC_ALIAS(_FpEnable, fiber_float_enable, void);
  * @return N/A
  */
 FUNC_ALIAS(_FpEnable, task_float_enable, void);
+#endif /* CONFIG_KERNEL_V2 */
 
 /**
  *
@@ -350,6 +367,23 @@ void _FpDisable(struct tcs *tcs)
 	irq_unlock(imask);
 }
 
+#ifdef CONFIG_KERNEL_V2
+/**
+ *
+ * @brief Disable preservation of non-integer context information
+ *
+ * This routine allows a thread to disallow any thread (including itself) from
+ * safely sharing any of the system's floating point registers with other
+ * threads.
+ *
+ * WARNING
+ * This routine should only be used to disable floating point support for
+ * a thread that currently has such support enabled.
+ *
+ * @return N/A
+ */
+FUNC_ALIAS(_FpDisable, k_float_disable, void);
+#else
 /**
  *
  * @brief Disable preservation of non-integer context
@@ -382,7 +416,7 @@ FUNC_ALIAS(_FpDisable, fiber_float_disable, void);
  * @return N/A
  */
 FUNC_ALIAS(_FpDisable, task_float_disable, void);
-
+#endif /* CONFIG_KERNEL_V2 */
 
 /**
  *
@@ -407,7 +441,7 @@ void _FpNotAvailableExcHandler(NANO_ESF * pEsf)
 	ARG_UNUSED(pEsf);
 
 	/*
-	 * Assume the exception did not occur in the thread of an ISR.
+	 * Assume the exception did not occur in an ISR.
 	 * (In other words, CPU cycles will not be consumed to perform
 	 * error checking to ensure the exception was not generated in an ISR.)
 	 */
@@ -415,7 +449,7 @@ void _FpNotAvailableExcHandler(NANO_ESF * pEsf)
 	PRINTK("_FpNotAvailableExcHandler() exception handler has been "
 	       "invoked\n");
 
-/* Enable the highest level of FP capability configured into the kernel */
+	/* Enable highest level of FP capability configured into the kernel */
 
 #ifdef CONFIG_SSE
 	enableOption = USE_SSE;
