@@ -30,6 +30,7 @@
 #include <toolchain.h>
 #include <string.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 #include <net/net_ip.h>
 #include <net/buf.h>
@@ -857,6 +858,69 @@ struct net_buf *net_nbuf_push(struct net_buf *parent,
 	}
 
 	return net_nbuf_compact(parent);
+}
+
+struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount)
+{
+	struct net_buf *first;
+	ssize_t count = amount;
+
+	if (amount == 0) {
+		NET_DBG("No data to remove.");
+		return buf;
+	}
+
+	first = buf;
+
+	if (buf->user_data_size) {
+		NET_DBG("Buffer %p is not a data fragment", buf);
+		buf = buf->frags;
+	}
+
+	NET_DBG("Removing first %d bytes from the fragments (%u bytes)",
+		count, net_buf_frags_len(buf));
+
+	while (buf && count > 0) {
+		if (count < buf->len) {
+			/* We can remove the data from this single fragment */
+			net_buf_pull(buf, count);
+			return first;
+		}
+
+		if (buf->len == count) {
+			if (buf == first) {
+				struct net_buf tmp;
+
+				tmp.frags = buf;
+				first = buf->frags;
+				net_buf_frag_del(&tmp, buf);
+			} else {
+				net_buf_frag_del(first, buf);
+			}
+
+			return first;
+		}
+
+		count -= buf->len;
+
+		if (buf == first) {
+			struct net_buf tmp;
+
+			tmp.frags = buf;
+			first = buf->frags;
+			net_buf_frag_del(&tmp, buf);
+			buf = first;
+		} else {
+			net_buf_frag_del(first, buf);
+			buf = first->frags;
+		}
+	}
+
+	if (count > 0) {
+		NET_ERR("Not enough data in the fragments");
+	}
+
+	return first;
 }
 
 #if NET_DEBUG

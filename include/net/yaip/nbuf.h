@@ -551,6 +551,19 @@ bool net_nbuf_is_compact(struct net_buf *buf);
 struct net_buf *net_nbuf_push(struct net_buf *parent, struct net_buf *buf,
 			      size_t amount);
 
+/**
+ * @brief Remove given amount of data from the beginning of fragment list.
+ * This is similar thing to do as in net_buf_pull() but this function changes
+ * the fragment list instead of one fragment.
+ *
+ * @param buf Network buffer fragment list.
+ * @param amount Max amount of data to be remove.
+ *
+ * @return Pointer to start of the fragment list if successful. NULL can be
+ * returned if all fragments were removed from the list.
+ */
+struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount);
+
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 /**
  * @brief Debug helper to print out the buffer allocations
