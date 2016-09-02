@@ -194,6 +194,15 @@ int fs_truncate(ZFILE *zfp, off_t length)
 	return translate_error(res);
 }
 
+int fs_sync(ZFILE *zfp)
+{
+	FRESULT res = FR_OK;
+
+	res = f_sync(&zfp->fp);
+
+	return translate_error(res);
+}
+
 int fs_mkdir(const char *path)
 {
 	FRESULT res;

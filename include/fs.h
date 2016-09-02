@@ -234,6 +234,22 @@ off_t fs_tell(ZFILE *zfp);
 int fs_truncate(ZFILE *zfp, off_t length);
 
 /**
+ * @brief Flushes any cached write of an open file
+ *
+ * This function can be used to flush the cache of an open file. This can
+ * be called to ensure data gets written to the storage media immediately.
+ * This may be done to avoid data loss if power is removed unexpectedly.
+ * Note that closing a file will cause caches to be flushed correctly so it
+ * need not be called if the file is being closed.
+ *
+ * @param zfp Pointer to the file object
+ *
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int fs_sync(ZFILE *zfp);
+
+/**
  * @brief Directory create
  *
  * Creates a new directory using specified path.
