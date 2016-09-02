@@ -1,0 +1,103 @@
+.. _atomic_v2:
+
+Atomic Services
+###############
+
+An :dfn:`atomic variable` is a 32-bit variable that can be read and modified
+by threads and ISRs in an uninterruptible manner.
+
+.. contents::
+    :local:
+    :depth: 2
+
+Concepts
+********
+
+Any number of atomic variables can be defined.
+
+Using the kernel's atomic APIs to manipulate an atomic variable
+guarantees that the desired operation occurs correctly,
+even if higher priority contexts also manipulate the same variable.
+
+The kernel also supports the atomic manipulation of a single bit
+in an array of atomic variables.
+
+Implementation
+**************
+
+Defining an Atomic Variable
+===========================
+
+An atomic variable is defined using a variable of type :c:type:`atomic_t`.
+
+By default an atomic variable is initialized to zero. However, it can be given
+a different value using :c:macro:`ATOMIC_INIT()`:
+
+.. code-block:: c
+
+    atomic_t flags = ATOMIC_INIT(0xFF);
+
+Manipulating an Atomic Variable
+===============================
+
+An atomic variable is manipulated using the APIs listed at the end of
+this section.
+
+The following code shows how an atomic variable can be used to keep track
+of the number of times a function has been invoked. Since the count is
+incremented atomically, there is no risk that it will become corrupted
+in mid-increment if a thread calling the function is interrupted if
+by a higher priority context that also calls the routine.
+
+.. code-block:: c
+
+    atomic_t call_count;
+
+    int call_counting_routine(void)
+    {
+        /* increment invocation counter */
+        atomic_inc(&call_count);
+
+        /* do rest of routine's processing */
+        ...
+    }
+
+.. note::
+    SHOULD HAVE AN EXAMPLE OF MANIPULATING AN ARRAY OF ATOMIC VARIABLES.
+
+Suggested Uses
+**************
+
+Use an atomic variable to implement critical section processing that only
+requires the manipulation of a single 32-bit value.
+
+Use multiple atomic variables to implement critical section processing
+on a set of flag bits in a bit array longer than 32 bits.
+
+.. note::
+    Using atomic variables is typically far more efficient than using
+    other techniques to implement critical sections such as using a mutex
+    or locking interrupts.
+
+APIs
+****
+
+The following atomic operation APIs are provided by :file:`atomic.h`:
+
+* :cpp:func:`atomic_get()`
+* :cpp:func:`atomic_set()`
+* :cpp:func:`atomic_clear()`
+* :cpp:func:`atomic_add()`
+* :cpp:func:`atomic_sub()`
+* :cpp:func:`atomic_inc()`
+* :cpp:func:`atomic_dec()`
+* :cpp:func:`atomic_and()`
+* :cpp:func:`atomic_or()`
+* :cpp:func:`atomic_xor()`
+* :cpp:func:`atomic_nand()`
+* :cpp:func:`atomic_cas()`
+* :cpp:func:`atomic_set_bit()`
+* :cpp:func:`atomic_clear_bit()`
+* :cpp:func:`atomic_test_bit()`
+* :cpp:func:`atomic_test_and_set_bit()`
+* :cpp:func:`atomic_test_and_clear_bit()`
