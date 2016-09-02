@@ -1,0 +1,248 @@
+# Kconfig - nanokernel configuration options
+
+#
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+menu "Unified Kernel Options"
+
+config KERNEL_V2_DEBUG
+	bool
+	prompt "Kernel V2 debug help"
+	default n
+	depends on KERNEL_V2
+	select INIT_STACKS
+
+config NUM_COOP_PRIORITIES
+	int
+	prompt "Kernel V2: number of coop priorities"
+	default 16
+	help
+	Number of cooperative priorities configured in the system. Gives access
+	to priorities:
+
+		K_PRIO_COOP(0) to K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+
+	or seen another way, priorities:
+
+		-CONFIG_NUM_COOP_PRIORITIES to -1
+
+	This can be set to zero to disable cooperative scheduling. Cooperative
+	threads always preempt preemptible threads.
+
+	Each priority requires an extra 8 bytes of RAM. If there are more than
+	32 total priorities, an extra 4 bytes is required.
+
+config NUM_PREEMPT_PRIORITIES
+	int
+	prompt "Kernel V2: number of preemptible priorities"
+	default 15
+	help
+	Number of preemptible priorities available in the system. Gives access
+	to priorities 0 to CONFIG_NUM_PREEMPT_PRIORITIES - 1.
+
+	This can be set to 0 to disable preemptible scheduling.
+
+	The idle thread is always installed as a preemptible thread of the
+	lowest priority.
+
+	Each priority requires an extra 8 bytes of RAM. If there are more than
+	32 total priorities, an extra 4 bytes is required.
+
+config PRIORITY_CEILING
+	int
+	prompt "Kernel V2: priority inheritance ceiling"
+	default 0
+
+config BOOT_BANNER
+	bool
+	prompt "Boot banner"
+	default n
+	select PRINTK
+	depends on EARLY_CONSOLE
+	help
+	This option outputs a banner to the console device during boot up. It
+	also embeds a date & time stamp in the kernel and in each USAP image.
+
+config BUILD_TIMESTAMP
+	bool
+	prompt "Build Timestamp"
+	help
+	Build timestamp and add it to the boot banner.
+
+config INT_LATENCY_BENCHMARK
+	bool
+	prompt "Interrupt latency metrics [EXPERIMENTAL]"
+	default n
+	depends on ARCH="x86"
+	help
+	This option enables the tracking of interrupt latency metrics;
+	the exact set of metrics being tracked is board-dependent.
+	Tracking begins when int_latency_init() is invoked by an application.
+	The metrics are displayed (and a new sampling interval is started)
+	each time int_latency_show() is called thereafter.
+
+config MAIN_THREAD_PRIORITY
+	int
+	prompt "Priority of initialization/main thread"
+	default 0
+	default -1 if NUM_PREEMPT_PRIORITIES = 0
+	help
+	Priority at which the initialization thread runs, including the start
+	of the main() function. main() can then change its priority if desired.
+
+config MAIN_STACK_SIZE
+	int
+	prompt "Size of stack for initialization and main thread"
+	default 1024
+	help
+	When the intitialization is complete, the thread executing it then
+	executes the main() routine, so as to reuse the stack used by the
+	initialization, which would be wasted RAM otherwise.
+
+	After initialization is complete, the thread runs main().
+
+config ISR_STACK_SIZE
+	int
+	prompt "ISR and initialization stack size (in bytes)"
+	default 2048
+	help
+	This option specifies the size of the stack used by interrupt
+	service routines (ISRs), and during nanokernel initialization.
+
+config  THREAD_CUSTOM_DATA
+	bool
+	prompt "Task and fiber custom data"
+	default n
+	help
+	This option allows each task and fiber to store 32 bits of custom data,
+	which can be accessed using the sys_thread_custom_data_xxx() APIs.
+
+config  NANO_TIMEOUTS
+	bool
+	prompt "Enable timeouts on nanokernel objects"
+	default y
+	depends on SYS_CLOCK_EXISTS
+	help
+	Allow fibers and tasks to wait on nanokernel objects with a timeout, by
+	enabling the nano_xxx_wait_timeout APIs, and allow fibers to sleep for a
+	period of time, by enabling the fiber_sleep API.
+
+config  NANO_TIMERS
+	bool
+	prompt "Enable nanokernel timers"
+	default y
+	depends on SYS_CLOCK_EXISTS
+	help
+	Allow fibers and tasks to wait on nanokernel timers, which can be
+	accessed using the nano_timer_xxx() APIs.
+
+config NUM_DYNAMIC_TIMERS
+	int
+	prompt "Number of timers available for dynamic allocation"
+	default 10
+	depends on NANO_TIMERS
+	help
+	Number of timers available for dynamic allocation via the
+	k_timer_alloc()/k_timer_free() API.
+
+config NANOKERNEL_TICKLESS_IDLE_SUPPORTED
+	bool
+	default n
+	help
+	To be selected by an architecture if it does support tickless idle in
+	nanokernel systems.
+
+config ERRNO
+	bool
+	prompt "Enable errno support"
+	default y
+	help
+	Enable per-thread errno in the kernel. Application and library code must
+	include errno.h provided by the C library (libc) to use the errno
+	symbol. The C library must access the per-thread errno via the
+	_get_errno() symbol.
+
+config NANO_WORKQUEUE
+	bool "Enable nano workqueue support"
+	default y
+	help
+	Nano workqueues allow scheduling work items to be executed in a fiber
+	context. Typically such work items are scheduled from ISRs, when the
+	work cannot be executed in interrupt context.
+
+config SYSTEM_WORKQUEUE
+	bool "Start a system workqueue"
+	default y
+	depends on NANO_WORKQUEUE
+	help
+	Start a system-wide nano_workqueue that can be used by any system
+	component.
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	int "System workqueue stack size"
+	default 1024
+	depends on SYSTEM_WORKQUEUE
+
+config SYSTEM_WORKQUEUE_PRIORITY
+	int "System workqueue priority"
+	default -1
+	depends on SYSTEM_WORKQUEUE
+
+config NUM_MBOX_ASYNC_MSGS
+	int ""
+	default 10
+	help
+	This option specifies the total number of asynchronous mailbox
+	messages that can exist simultaneously, across all mailboxes
+	in the system.
+
+	Setting this option to 0 disables support for asynchronous
+	mailbox messages.
+
+config NUM_PIPE_ASYNC_MSGS
+	int "Maximum number of in-flight asynchronous pipe messages"
+	default 10
+	help
+	This option specifies the total number of asynchronous pipe
+	messages that can exist simultaneously, across all pipes in
+	the system.
+
+	Setting this option to 0 disables support for asynchronous
+	pipe messages.
+
+config ATOMIC_OPERATIONS_BUILTIN
+	bool
+	help
+	Use the compiler builtin functions for atomic operations. This is
+	the preferred method. However, support for all arches in GCC is
+	incomplete.
+
+config ATOMIC_OPERATIONS_CUSTOM
+	bool
+	help
+	Use when there isn't support for compiler built-ins, but you have
+	written optimized assembly code under arch/ which implements these.
+
+config ATOMIC_OPERATIONS_C
+	bool
+	help
+	Use atomic operations routines that are implemented entirely
+	in C by locking interrupts. Selected by architectures which either
+	do not have support for atomic operations in their instruction
+	set, or haven't been implemented yet during bring-up, and also
+	the compiler does not have support for the atomic __sync_* builtins.
+
+endmenu
