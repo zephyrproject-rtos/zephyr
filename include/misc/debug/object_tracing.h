@@ -32,6 +32,7 @@ extern struct nano_stack *_trace_list_nano_stack;
 extern struct ring_buf *_trace_list_sys_ring_buf;
 
 
+#if !defined(CONFIG_KERNEL_V2)
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel/base_api.h>
 #include <micro_private_types.h>
@@ -46,6 +47,7 @@ extern struct _k_event_struct *_trace_list_micro_event;
 extern struct k_timer         *_trace_list_micro_timer;
 extern struct k_task          *_trace_list_micro_task;
 #endif /*CONFIG_MICROKERNEL*/
+#endif /*CONFIG_KERNEL_V2*/
 
 /**
  * @def SYS_TRACING_HEAD
