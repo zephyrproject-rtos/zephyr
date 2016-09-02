@@ -16,10 +16,12 @@
 % =============================
 %  PIPE    PIPE_ID          256
 
+% FIFO NAME     DEPTH WIDTH
+% =========================
+  FIFO RESULTQ      2    4
+
 % SEMA NAME
 % ===================
-  SEMA SEM_TASKDONE
-  SEMA SEM_TASKFAIL
   SEMA ALTERNATE_SEM
   SEMA REGRESSION_SEM
   SEMA COUNTER_SEM

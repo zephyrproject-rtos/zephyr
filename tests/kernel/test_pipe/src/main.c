@@ -36,13 +36,6 @@ then announces the result of the test.
 /* # ticks to wait for test completion */
 #define TIMEOUT	(60 * sys_clock_ticks_per_sec)
 
-/*
- * Note that semaphore group entries are arranged so that resultSems[TC_PASS]
- * refers to SEM_TASKDONE and resultSems[TC_FAIL] refers to SEM_TASKFAIL.
- */
-
-static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
-
 ksem_t regSem		= REGRESSION_SEM;
 ksem_t altSem		= ALTERNATE_SEM;
 ksem_t counterSem	= COUNTER_SEM;
@@ -67,7 +60,9 @@ void RegressionTaskEntry(void)
 {
 	extern int RegressionTask(void);
 
-	task_sem_give(resultSems[RegressionTask()]);
+	int result = RegressionTask();
+
+	task_fifo_put(RESULTQ, &result, TICKS_NONE);
 }
 
 /**
@@ -84,7 +79,9 @@ void AlternateTaskEntry(void)
 {
 	extern int AlternateTask(void);
 
-	task_sem_give(resultSems[AlternateTask()]);
+	int result = AlternateTask();
+
+	task_fifo_put(RESULTQ, &result, TICKS_NONE);
 }
 
 /**
@@ -99,8 +96,9 @@ void AlternateTaskEntry(void)
 
 void MonitorTaskEntry(void)
 {
-	ksem_t result;
 	int tasksDone;
+	int result;
+	int msg_value = -1;
 
 	PRINT_DATA("Starting pipe tests\n");
 	PRINT_LINE;
@@ -112,11 +110,12 @@ void MonitorTaskEntry(void)
 	 */
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
-		result = task_sem_group_take(resultSems, TIMEOUT);
-		if (result != resultSems[TC_PASS]) {
-			if (result != resultSems[TC_FAIL]) {
+		result = task_fifo_get(RESULTQ, &msg_value, TIMEOUT);
+		if (msg_value != TC_PASS) {
+			if (result != RC_OK) {
 				TC_ERROR("Monitor task timed out\n");
 			}
+
 			TC_END_RESULT(TC_FAIL);
 			TC_END_REPORT(TC_FAIL);
 			return;
