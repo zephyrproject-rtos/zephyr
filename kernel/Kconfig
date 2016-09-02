@@ -16,6 +16,11 @@
 # limitations under the License.
 #
 
+config KERNEL_V2
+	bool
+	prompt "Unified Kernel"
+	default n
+
 choice
 prompt "Kernel Type"
 default MICROKERNEL
@@ -203,9 +208,15 @@ endmenu
 
 endmenu
 
+if !KERNEL_V2
 source "kernel/nanokernel/Kconfig"
+endif
 
-if MICROKERNEL
+if KERNEL_V2
+source "kernel/unified/Kconfig"
+endif
+
+if MICROKERNEL && !KERNEL_V2
 source "kernel/microkernel/Kconfig"
 endif
 
@@ -267,7 +278,7 @@ config TICKLESS_IDLE
 	bool
 	prompt "Tickless idle"
 	default y
-	depends on MICROKERNEL || NANOKERNEL_TICKLESS_IDLE_SUPPORTED
+	depends on !KERNEL_V2 && (MICROKERNEL || NANOKERNEL_TICKLESS_IDLE_SUPPORTED)
 	help
 	This option suppresses periodic system clock interrupts whenever the
 	kernel becomes idle. This permits the system to remain in a power

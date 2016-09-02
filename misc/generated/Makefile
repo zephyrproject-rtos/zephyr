@@ -1,2 +1,2 @@
 obj-y = configs.o
-obj-$(CONFIG_MICROKERNEL) += sysgen/
+obj-$(CONFIG_MDEF) += sysgen/
