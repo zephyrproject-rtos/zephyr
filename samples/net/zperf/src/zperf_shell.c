@@ -36,7 +36,9 @@
 #define DEVICE_NAME "zperf shell"
 
 static const char *CONFIG = ""
-#ifdef CONFIG_MICROKERNEL
+#if defined(CONFIG_KERNEL_V2)
+		"unified "
+#elif defined(CONFIG_MICROKERNEL)
 		"microkernel "
 #else
 		"nanokernel "
