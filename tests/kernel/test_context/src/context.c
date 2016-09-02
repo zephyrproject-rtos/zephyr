@@ -154,6 +154,7 @@ static void _trigger_isrHandler(void)
 int initNanoObjects(void)
 {
 	nano_sem_init(&wakeFiber);
+	nano_sem_init(&reply_timeout);
 	nano_timer_init(&timer, timerData);
 	nano_fifo_init(&timeout_order_fifo);
 
@@ -427,6 +428,13 @@ int nanoCtxFiberTest(nano_thread_id_t task_thread_id)
  * @return N/A
  */
 
+#ifdef CONFIG_KERNEL_V2
+#define fiber_priority_set(fiber, new_prio) task_priority_set(fiber, new_prio)
+#else
+#define fiber_priority_set(thread, new_prio) \
+	do { (thread)->prio = (new_prio); } while ((0))
+#endif
+
 static void fiberHelper(int arg1, int arg2)
 {
 	nano_thread_id_t  self_thread_id;
@@ -443,7 +451,10 @@ static void fiberHelper(int arg1, int arg2)
 
 	/* Test that helper will yield to a fiber of equal priority */
 	self_thread_id = sys_thread_self_get();
-	self_thread_id->prio++;  /* Lower priority to that of fiberEntry() */
+
+	/* Lower priority to that of fiberEntry() */
+	fiber_priority_set(self_thread_id, self_thread_id->prio + 1);
+
 	fiber_yield();        /* Yield to fiber of equal priority */
 
 	fiberEvidence++;
@@ -514,7 +525,7 @@ int fiber_yieldTest(void)
 	 * not result in switching to the helper.
 	 */
 
-	self_thread_id->prio--;
+	fiber_priority_set(self_thread_id, self_thread_id->prio - 1);
 	fiber_yield();
 
 	if (fiberEvidence != 1) {
