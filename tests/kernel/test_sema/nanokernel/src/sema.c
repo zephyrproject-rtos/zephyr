@@ -86,7 +86,7 @@ static struct nano_sem reply_multi_waiters;
  * @return N/A
  */
 
-void isr_sem_take(void *data)
+static void my_isr_sem_take(void *data)
 {
 	ISR_SEM_INFO *pInfo = (ISR_SEM_INFO *) data;
 
@@ -95,7 +95,7 @@ void isr_sem_take(void *data)
 
 static void _trigger_nano_isr_sem_take(void)
 {
-	irq_offload(isr_sem_take, &isrSemInfo);
+	irq_offload(my_isr_sem_take, &isrSemInfo);
 }
 
 /**
@@ -110,7 +110,7 @@ static void _trigger_nano_isr_sem_take(void)
  * @return N/A
  */
 
-void isr_sem_give(void *data)
+static void my_isr_sem_give(void *data)
 {
 	ISR_SEM_INFO *pInfo = (ISR_SEM_INFO *) data;
 
@@ -120,7 +120,7 @@ void isr_sem_give(void *data)
 
 static void _trigger_nano_isr_sem_give(void)
 {
-	irq_offload(isr_sem_give, &isrSemInfo);
+	irq_offload(my_isr_sem_give, &isrSemInfo);
 }
 
 /**
