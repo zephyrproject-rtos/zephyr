@@ -451,11 +451,15 @@ int device_busy_check(struct device *chk_dev);
  * Synchronous calls API
  */
 
-#include <stdbool.h>
+#ifdef CONFIG_KERNEL_V2
+#include <kernel.h>
+#else
 #include <nanokernel.h>
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
 #endif
+#endif
+#include <stdbool.h>
 
 /**
  * Specific type for synchronizing calls among the 2 possible contexts

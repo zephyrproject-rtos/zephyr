@@ -39,10 +39,17 @@
 #include <sys_clock.h>
 #include <drivers/rand32.h>
 #include <misc/slist.h>
+#include <misc/dlist.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifdef CONFIG_KERNEL_V2
+
+#include <kernel.h>
+
+#else
 
 struct tcs;
 
@@ -57,8 +64,6 @@ struct _nano_queue {
 	void *head;
 	void *tail;
 };
-
-#include <misc/dlist.h>
 
 struct _nano_timeout;
 
@@ -1718,6 +1723,8 @@ extern int64_t sys_tick_delta(int64_t *reftime);
  * @return A 32-bit tick count since reference time. Undefined for first invocation.
  */
 extern uint32_t sys_tick_delta_32(int64_t *reftime);
+
+#endif /* CONFIG_KERNEL_V2 */
 
 /**
  * @}

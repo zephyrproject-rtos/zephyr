@@ -27,6 +27,8 @@ extern "C" {
 
 #include <nanokernel.h>
 
+#if !defined(CONFIG_KERNEL_V2)
+
 /*
  * microkernel private APIs that are exposed via the public API
  *
@@ -59,6 +61,8 @@ extern "C" {
 /**
  * @}
  */
+
+#endif /* !CONFIG_KERNEL_V2 */
 
 #ifdef __cplusplus
 }

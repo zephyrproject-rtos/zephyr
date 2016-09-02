@@ -17,11 +17,18 @@
 #ifndef _ZEPHYR__H
 #define _ZEPHYR__H
 
-#if CONFIG_MICROKERNEL
+#ifdef CONFIG_KERNEL_V2
+#include <kernel.h>
+#elif CONFIG_MICROKERNEL
 #include <microkernel.h>
-#include <sysgen.h>
-#else
+#elif CONFIG_NANOKERNEL
 #include <nanokernel.h>
-#endif /* CONFIG_MICROKERNEL */
+#else
+#error "unknown kernel type!"
+#endif
+
+#ifdef CONFIG_MDEF
+#include <sysgen.h>
+#endif
 
 #endif /* _ZEPHYR__H */
