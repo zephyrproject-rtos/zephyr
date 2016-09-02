@@ -465,6 +465,125 @@ static int test_fragment_push(void)
 	return 0;
 }
 
+static int test_fragment_pull(void)
+{
+	struct net_buf *buf, *newbuf, *frags[FRAG_COUNT], *frag;
+	int i, bytes_before, bytes_after, amount = 10, bytes_before2;
+
+	buf = net_nbuf_get_reserve_tx(0);
+	frag = NULL;
+
+	for (i = 0; i < FRAG_COUNT; i++) {
+		frags[i] = net_nbuf_get_reserve_data(12);
+
+		if (frag) {
+			net_buf_frag_add(frag, frags[i]);
+		}
+
+		frag = frags[i];
+
+		/* Copy character test data in front of the fragment */
+		memcpy(net_buf_add(frags[i], sizeof(test_data)),
+		       test_data, sizeof(test_data));
+	}
+
+	net_buf_frag_add(buf, frags[0]);
+
+	bytes_before = net_buf_frags_len(buf);
+
+	newbuf = net_nbuf_pull(buf, amount / 2);
+	if (newbuf != buf) {
+		printk("First fragment is wrong\n");
+		return -1;
+	}
+
+	bytes_after = net_buf_frags_len(buf);
+	if (bytes_before != (bytes_after + amount / 2)) {
+		printk("Wrong amount of data in fragments, should be %d "
+		       "but was %d\n", bytes_before - amount / 2, bytes_after);
+		return -1;
+	}
+
+	newbuf = net_nbuf_pull(buf, amount);
+	if (newbuf != buf) {
+		printk("First fragment is wrong\n");
+		return -1;
+	}
+
+	newbuf = net_nbuf_pull(buf, amount * 100);
+	if (newbuf != buf) {
+		printk("First fragment is wrong\n");
+		return -1;
+	}
+
+	bytes_after = net_buf_frags_len(buf);
+	if (bytes_after != 0) {
+		printk("Fragment list should be empty (left %d bytes)\n",
+		       bytes_after);
+		return -1;
+	}
+
+	net_nbuf_unref(buf);
+
+	/* Trying without TX or RX buf as a first element */
+	frags[0] = net_nbuf_get_reserve_data(12);
+	frag = frags[0];
+	memcpy(net_buf_add(frags[0], sizeof(test_data)),
+	       test_data, sizeof(test_data));
+
+	for (i = 1; i < FRAG_COUNT; i++) {
+		frags[i] = net_nbuf_get_reserve_data(12);
+
+		if (frag) {
+			net_buf_frag_add(frag, frags[i]);
+		}
+
+		frag = frags[i];
+
+		memcpy(net_buf_add(frags[i], sizeof(test_data)),
+		       test_data, sizeof(test_data));
+	}
+
+	buf = frags[0];
+
+	bytes_before2 = net_buf_frags_len(buf);
+
+	if (bytes_before != bytes_before2) {
+		printk("Invalid number of bytes in fragments (%d vs %d)\n",
+		       bytes_before, bytes_before2);
+		return -1;
+	}
+
+	bytes_before = net_buf_frags_len(buf);
+
+	newbuf = net_nbuf_pull(buf, amount / 2);
+	if (newbuf != buf) {
+		printk("First fragment is wrong\n");
+		return -1;
+	}
+
+	bytes_after = net_buf_frags_len(buf);
+	if (bytes_before != (bytes_after + amount / 2)) {
+		printk("Wrong amount of data in fragments2, should be %d "
+		       "but was %d\n", bytes_before - amount / 2, bytes_after);
+		return -1;
+	}
+
+	newbuf = net_nbuf_pull(buf, amount);
+	if (newbuf == buf || newbuf != frags[1]) {
+		printk("First fragment2 is wrong\n");
+		return -1;
+	}
+
+	newbuf = net_nbuf_pull(buf, amount * 100);
+	if (newbuf == buf || newbuf != NULL) {
+		printk("First fragment2 is not correct\n");
+		return -1;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -480,6 +599,10 @@ void main(void)
 	}
 
 	if (test_fragment_push() < 0) {
+		goto fail;
+	}
+
+	if (test_fragment_pull() < 0) {
 		goto fail;
 	}
 
