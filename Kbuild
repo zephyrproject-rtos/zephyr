@@ -8,6 +8,16 @@ MDEF_FILE_PATH=$(strip $(PROJECT_BASE)/$(MDEF_FILE))
 endif
 endif
 
+ifeq (${CONFIG_NUM_COMMAND_PACKETS},)
+CONFIG_NUM_COMMAND_PACKETS=0
+endif
+ifeq (${CONFIG_NUM_TIMER_PACKETS},)
+CONFIG_NUM_TIMER_PACKETS=0
+endif
+ifeq (${CONFIG_NUM_TASK_PRIORITIES},)
+CONFIG_NUM_TASK_PRIORITIES=$(CONFIG_NUM_PREEMPT_PRIORITIES)
+endif
+
 ifeq ($(ARCH),x86)
 TASKGROUP_SSE="  TASKGROUP SSE"
 endif
@@ -39,6 +49,7 @@ sysgen_cmd=$(strip \
 	$(PYTHON) $(srctree)/scripts/sysgen \
 	-i $(CURDIR)/misc/generated/sysgen/prj.mdef \
 	-o $(CURDIR)/misc/generated/sysgen/ \
+	-k $(if $(CONFIG_KERNEL_V2),unified,micro) \
 )
 
 misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.mdef \
@@ -70,7 +81,7 @@ targets += include/generated/offsets.h
 always := misc/generated/configs.c
 always += include/generated/offsets.h
 
-ifeq ($(CONFIG_MICROKERNEL),y)
+ifeq ($(CONFIG_MDEF),y)
 targets += misc/generated/sysgen/kernel_main.c
 always += misc/generated/sysgen/kernel_main.c
 endif
@@ -79,12 +90,22 @@ define rule_cc_o_c_1
 	$(call echo-cmd,cc_o_c_1) $(cmd_cc_o_c_1);
 endef
 
+ifeq ($(CONFIG_KERNEL_V2),y)
+OFFSETS_INCLUDE_KERNEL_LOCATION=$(strip \
+	-I $(srctree)/kernel/unified/include \
+)
+else
+OFFSETS_INCLUDE_KERNEL_LOCATION=$(strip \
+	-I $(srctree)/kernel/microkernel/include \
+	-I $(srctree)/kernel/nanokernel/include \
+)
+endif
+
 OFFSETS_INCLUDE = $(strip \
 		-include $(CURDIR)/include/generated/autoconf.h \
 		-I $(srctree)/include \
 		-I $(CURDIR)/include/generated \
-		-I $(srctree)/kernel/microkernel/include \
-		-I $(srctree)/kernel/nanokernel/include \
+		$(OFFSETS_INCLUDE_KERNEL_LOCATION) \
 		-I $(srctree)/lib/libc/minimal/include \
 		-I $(srctree)/arch/${ARCH}/include )
 
