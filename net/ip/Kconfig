@@ -342,7 +342,7 @@ config NETWORKING_WITH_15_4_ALWAYS_ACK
 # Using nullmac 802.15.4 driver only.
 config	NETWORKING_WITH_15_4_MAC_NULL
 	bool
-	default y
+	default n
 
 choice
 	prompt "802.15.4 RDC Driver"

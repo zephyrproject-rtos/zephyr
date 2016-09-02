@@ -120,7 +120,6 @@ obj-$(CONFIG_NETWORKING_WITH_BT) += net_driver_bt.o \
 					contiki/mac/mac.o \
 					contiki/mac/framer.o \
 					contiki/mac/framer-nullmac.o \
-					contiki/mac/nullmac.o \
 					contiki/sicslowpan/null_fragmentation.o
 
 # At the moment we only need nullsec driver for 802.15.4
@@ -128,7 +127,7 @@ obj-$(CONFIG_NETWORKING_WITH_BT) += net_driver_bt.o \
 #					contiki/llsec/ccm-star.o \
 #					contiki/llsec/anti-replay.o
 
-ifeq ($(CONFIG_NETWORKING_WITH_15_4),)
+ifeq ($(CONFIG_NETWORKING_WITH_15_4),y)
      obj-y += contiki/mac/nullmac.o \
 		contiki/mac/framer-nullmac.o \
 		contiki/mac/simplerdc.o
