@@ -55,6 +55,11 @@ static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid_128 *dst)
 		sys_put_le16(BT_UUID_16(src)->val,
 			     &dst->val[UUID_16_BASE_OFFSET]);
 		return;
+	case BT_UUID_TYPE_32:
+		*dst = uuid128_base;
+		sys_put_le32(BT_UUID_32(src)->val,
+			     &dst->val[UUID_16_BASE_OFFSET]);
+		return;
 	case BT_UUID_TYPE_128:
 		memcpy(dst, src, sizeof(*dst));
 		return;
@@ -80,6 +85,8 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 	switch (u1->type) {
 	case BT_UUID_TYPE_16:
 		return (int)BT_UUID_16(u1)->val - (int)BT_UUID_16(u2)->val;
+	case BT_UUID_TYPE_32:
+		return (int)BT_UUID_32(u1)->val - (int)BT_UUID_32(u2)->val;
 	case BT_UUID_TYPE_128:
 		return memcmp(BT_UUID_128(u1)->val, BT_UUID_128(u2)->val, 16);
 	}
@@ -96,6 +103,9 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 	switch (uuid->type) {
 	case BT_UUID_TYPE_16:
 		snprintf(str, len, "%.4x", BT_UUID_16(uuid)->val);
+		break;
+	case BT_UUID_TYPE_32:
+		snprintf(str, len, "%.4x", BT_UUID_32(uuid)->val);
 		break;
 	case BT_UUID_TYPE_128:
 		memcpy(&tmp0, &BT_UUID_128(uuid)->val[0], sizeof(tmp0));

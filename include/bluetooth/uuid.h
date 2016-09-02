@@ -36,6 +36,7 @@ extern "C" {
 /** @brief Bluetooth UUID types */
 enum {
 	BT_UUID_TYPE_16,
+	BT_UUID_TYPE_32,
 	BT_UUID_TYPE_128,
 };
 
@@ -49,6 +50,11 @@ struct bt_uuid_16 {
 	uint16_t val;
 };
 
+struct bt_uuid_32 {
+	struct bt_uuid uuid;
+	uint32_t val;
+};
+
 struct bt_uuid_128 {
 	struct bt_uuid uuid;
 	uint8_t val[16];
@@ -60,6 +66,12 @@ struct bt_uuid_128 {
 	.val = (value),			\
 }
 
+#define BT_UUID_INIT_32(value)		\
+{					\
+	.uuid.type = BT_UUID_TYPE_32,	\
+	.val = (value),			\
+}
+
 #define BT_UUID_INIT_128(value...)	\
 {					\
 	.uuid.type = BT_UUID_TYPE_128,	\
@@ -68,10 +80,13 @@ struct bt_uuid_128 {
 
 #define BT_UUID_DECLARE_16(value) \
 	((struct bt_uuid *) (&(struct bt_uuid_16) BT_UUID_INIT_16(value)))
+#define BT_UUID_DECLARE_32(value) \
+	((struct bt_uuid *) (&(struct bt_uuid_32) BT_UUID_INIT_32(value)))
 #define BT_UUID_DECLARE_128(value...) \
 	((struct bt_uuid *) (&(struct bt_uuid_128) BT_UUID_INIT_128(value)))
 
 #define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
+#define BT_UUID_32(__u) CONTAINER_OF(__u, struct bt_uuid_32, uuid)
 #define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
 
 /** @def BT_UUID_GAP
