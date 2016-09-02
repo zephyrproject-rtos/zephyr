@@ -24,6 +24,12 @@
 #ifndef _misc_nano_work__h_
 #define _misc_nano_work__h_
 
+#ifdef CONFIG_KERNEL_V2
+
+#include <kernel.h>
+
+#else
+
 #include <nanokernel.h>
 #include <atomic.h>
 #include <misc/__assert.h>
@@ -204,5 +210,7 @@ static inline int nano_delayed_work_submit(struct nano_delayed_work *work,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* CONFIG_KERNEL_V2 */
 
 #endif /* _misc_nano_work__h_ */
