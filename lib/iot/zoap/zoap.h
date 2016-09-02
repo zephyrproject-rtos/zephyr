@@ -139,6 +139,7 @@ enum zoap_response_code {
 
 #define ZOAP_CODE_EMPTY (0)
 
+struct zoap_observer;
 struct zoap_packet;
 struct zoap_pending;
 struct zoap_reply;
@@ -153,6 +154,13 @@ typedef int (*zoap_method_t)(struct zoap_resource *resource,
 			     const void *from);
 
 /**
+ * Type of the callback being called when a resource's has observers to be
+ * informed when an update happens.
+ */
+typedef void (*zoap_notify_t)(struct zoap_resource *resource,
+			      struct zoap_observer *observer);
+
+/**
  * @brief Description of CoAP resource.
  *
  * CoAP servers often want to register resources, so that clients can act on
@@ -160,9 +168,22 @@ typedef int (*zoap_method_t)(struct zoap_resource *resource,
  */
 struct zoap_resource {
 	zoap_method_t get, post, put, del;
+	zoap_notify_t notify;
 	const char * const *path;
 	void *user_data;
+	sys_slist_t observers;
 	int age;
+};
+
+/**
+ * Represents a remote device that is observing a local resource.
+ */
+struct zoap_observer {
+	sys_snode_t list;
+	uip_ipaddr_t addr;
+	uint16_t port;
+	uint8_t token[8];
+	uint8_t tkl;
 };
 
 /**
@@ -195,9 +216,38 @@ struct zoap_pending {
 struct zoap_reply {
 	zoap_reply_t reply;
 	void *user_data;
+	int age;
 	uint8_t token[8];
 	uint8_t tkl;
 };
+
+/**
+ * Indicates that the remote device referenced by @a addr, with @a request,
+ * wants to observe a resource.
+ */
+void zoap_observer_init(struct zoap_observer *observer,
+			const struct zoap_packet *request,
+			const uip_ipaddr_t *addr,
+			uint16_t port);
+
+/**
+ * After the observer is initialized, associate the observer with an resource.
+ */
+bool zoap_register_observer(struct zoap_resource *resource,
+			    struct zoap_observer *observer);
+
+/**
+ * Remove this observer from the list of registered observers of
+ * that resource.
+ */
+void zoap_remove_observer(struct zoap_resource *resource,
+			  struct zoap_observer *observer);
+
+/**
+ * Returns the next available observer representation.
+ */
+struct zoap_observer *zoap_observer_next_unused(
+	struct zoap_observer *observers, size_t len);
 
 /**
  * Indicates that a reply is expected for @a request.
@@ -297,6 +347,17 @@ void zoap_reply_clear(struct zoap_reply *reply);
 int zoap_handle_request(struct zoap_packet *pkt,
 			 struct zoap_resource *resources,
 			 const void *from);
+
+/**
+ * Indicates that this resource was updated and that the @a notify callback
+ * should be called for every registered observer.
+ */
+int zoap_resource_notify(struct zoap_resource *resource);
+
+/**
+ * Returns if this request is enabling observing a resource.
+ */
+bool zoap_request_is_observe(const struct zoap_packet *request);
 
 /**
  * Returns a pointer to the start of the payload, and how much memory

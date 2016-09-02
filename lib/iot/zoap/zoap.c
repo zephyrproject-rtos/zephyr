@@ -374,6 +374,21 @@ struct zoap_reply *zoap_reply_next_unused(
 	return NULL;
 }
 
+struct zoap_observer *zoap_observer_next_unused(
+	struct zoap_observer *observers, size_t len)
+{
+	struct zoap_observer *o;
+	size_t i;
+
+	for (i = 0, o = observers; i < len; i++, o++) {
+		if (uip_is_addr_unspecified(&o->addr)) {
+			return o;
+		}
+	}
+
+	return NULL;
+}
+
 static bool match_response(const struct zoap_packet *request,
 			   const struct zoap_packet *response)
 {
@@ -542,6 +557,35 @@ int zoap_handle_request(struct zoap_packet *pkt,
 	return -ENOENT;
 }
 
+static int get_observe_option(const struct zoap_packet *pkt)
+{
+	struct zoap_option option = {};
+	uint16_t count = 1;
+	int r;
+
+	r = zoap_find_options(pkt, ZOAP_OPTION_OBSERVE, &option, count);
+	if (r <= 0) {
+		return -ENOENT;
+	}
+
+	/* The value is in the network order, and has at max 3 bytes. */
+	switch (option.len) {
+	case 0:
+		return 0;
+	case 1:
+		return option.value[0];
+	case 2:
+		return (option.value[0] << 0) | (option.value[1] << 8);
+	case 3:
+		return (option.value[0] << 0) | (option.value[1] << 8) |
+			(option.value[2] << 16);
+	default:
+		return -EINVAL;
+	}
+
+	return -ENOENT;
+}
+
 struct zoap_reply *zoap_response_received(
 	const struct zoap_packet *response, const void *from,
 	struct zoap_reply *replies, size_t len)
@@ -554,12 +598,27 @@ struct zoap_reply *zoap_response_received(
 	token = zoap_header_get_token(response, &tkl);
 
 	for (i = 0, r = replies; i < len; i++, r++) {
+		int age;
+
 		if (r->tkl != tkl) {
 			continue;
 		}
 
 		if (tkl > 0 && memcmp(r->token, token, tkl)) {
 			continue;
+		}
+
+		age = get_observe_option(response);
+		if (age > 0) {
+			/*
+			 * age == 2 means that the notifications wrapped,
+			 * or this is the first one
+			 */
+			if (r->age > age && age != 2) {
+				continue;
+			}
+
+			r->age = age;
 		}
 
 		r->reply(response, r, from);
@@ -574,6 +633,7 @@ void zoap_reply_init(struct zoap_reply *reply,
 {
 	const uint8_t *token;
 	uint8_t tkl;
+	int age;
 
 	token = zoap_header_get_token(request, &tkl);
 
@@ -581,11 +641,80 @@ void zoap_reply_init(struct zoap_reply *reply,
 		memcpy(reply->token, token, tkl);
 	}
 	reply->tkl = tkl;
+
+	age = get_observe_option(request);
+
+	/* It means that the request enabled observing a resource */
+	if (age == 0) {
+		reply->age = 2;
+	}
 }
 
 void zoap_reply_clear(struct zoap_reply *reply)
 {
 	reply->reply = NULL;
+}
+
+int zoap_resource_notify(struct zoap_resource *resource)
+{
+	sys_snode_t *node;
+
+	resource->age++;
+
+	SYS_SLIST_FOR_EACH_NODE(&resource->observers, node) {
+		struct zoap_observer *o = (struct zoap_observer *) node;
+
+		resource->notify(resource, o);
+	}
+
+	return 0;
+}
+
+bool zoap_request_is_observe(const struct zoap_packet *request)
+{
+	return get_observe_option(request) == 0;
+}
+
+void zoap_observer_init(struct zoap_observer *observer,
+			const struct zoap_packet *request,
+			const uip_ipaddr_t *addr,
+			uint16_t port)
+{
+	const uint8_t *token;
+	uint8_t tkl;
+
+	token = zoap_header_get_token(request, &tkl);
+
+	if (tkl > 0) {
+		memcpy(observer->token, token, tkl);
+	}
+
+	observer->tkl = tkl;
+
+	/* FIXME: new network stack */
+	uip_ipaddr_copy(&observer->addr, addr);
+	observer->port = port;
+}
+
+bool zoap_register_observer(struct zoap_resource *resource,
+			    struct zoap_observer *observer)
+{
+	bool first;
+
+	sys_slist_append(&resource->observers, &observer->list);
+
+	first = resource->age == 0;
+	if (first) {
+		resource->age = 2;
+	}
+
+	return first;
+}
+
+void zoap_remove_observer(struct zoap_resource *resource,
+			  struct zoap_observer *observer)
+{
+	sys_slist_find_and_remove(&resource->observers, &observer->list);
 }
 
 uint8_t *zoap_packet_get_payload(struct zoap_packet *pkt, uint16_t *len)
