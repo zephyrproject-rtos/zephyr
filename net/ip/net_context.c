@@ -442,7 +442,7 @@ PROCESS_THREAD(tcp, ev, data, buf, user_data)
 	PROCESS_END();
 }
 
-int net_context_tcp_init(struct net_context *context, struct net_buf *buf,
+int net_context_tcp_init(struct net_context *context,
 			 enum net_tcp_type tcp_type)
 {
 	if (!context || context->tuple.ip_proto != IPPROTO_TCP) {
@@ -491,7 +491,7 @@ int net_context_tcp_init(struct net_context *context, struct net_buf *buf,
 		tcp_connect((uip_ipaddr_t *)
 			    &context->tuple.remote_addr->in6_addr,
 			    UIP_HTONS(context->tuple.remote_port),
-			    context, &context->tcp, buf);
+			    context, &context->tcp);
 #else /* CONFIG_NETWORKING_WITH_IPV6 */
 		NET_DBG("Connecting to ");
 		PRINT6ADDR((const uip_ipaddr_t *)&context->tuple.remote_addr->in_addr);
@@ -500,7 +500,7 @@ int net_context_tcp_init(struct net_context *context, struct net_buf *buf,
 		tcp_connect((uip_ipaddr_t *)
 			    &context->tuple.remote_addr->in_addr,
 			    UIP_HTONS(context->tuple.remote_port),
-			    context, &context->tcp, buf);
+			    context, &context->tcp);
 #endif /* CONFIG_NETWORKING_WITH_IPV6 */
 #endif /* UIP_ACTIVE_OPEN */
 	}

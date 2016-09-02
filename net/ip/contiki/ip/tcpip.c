@@ -224,7 +224,7 @@ packet_input(struct net_buf *buf)
 #if UIP_ACTIVE_OPEN
 struct uip_conn *
 tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port, void *appstate,
-	    struct process *process, struct net_buf *buf)
+	    struct process *process)
 {
   struct uip_conn *c;
   
@@ -236,7 +236,7 @@ tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port, void *appstate,
   c->appstate.p = process;
   c->appstate.state = appstate;
   
-  tcpip_poll_tcp(c, buf);
+  tcpip_poll_tcp(c);
   
   return c;
 }
@@ -422,7 +422,7 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
       {
         if(!buf)
           break;
-        /* Check the clock so see if we should call the periodic uIP
+        /* Check the clock to see if we should call the periodic uIP
            processing. */
         if(data == &periodic &&
            !etimer_is_triggered(&periodic)) {
@@ -840,18 +840,12 @@ tcpip_poll_udp(struct uip_udp_conn *conn)
 /*---------------------------------------------------------------------------*/
 #if UIP_TCP
 void
-tcpip_poll_tcp(struct uip_conn *conn, struct net_buf *data_buf)
+tcpip_poll_tcp(struct uip_conn *conn)
 {
   /* We are sending here the initial SYN */
   struct net_buf *buf = ip_buf_get_tx(conn->appstate.state);
-  uip_set_conn(data_buf) = conn;
-
-  /* The conn->buf will be freed after we have established the connection,
-   * sent the message and received an ack to it. This will happen in
-   * net_core.c:net_send().
-   */
-  conn->buf = ip_buf_ref(data_buf);
-
+  uip_set_conn(buf) = conn;
+  conn->buf = ip_buf_ref(buf);
   process_post_synch(&tcpip_process, TCP_POLL, conn, buf);
 }
 

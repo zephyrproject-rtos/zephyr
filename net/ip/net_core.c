@@ -69,8 +69,7 @@ struct simple_udp_connection *
 	net_context_get_udp_connection(struct net_context *context);
 int net_context_get_receiver_registered(struct net_context *context);
 void net_context_set_receiver_registered(struct net_context *context);
-int net_context_tcp_init(struct net_context *context, struct net_buf *buf,
-			 enum net_tcp_type);
+int net_context_tcp_init(struct net_context *context, enum net_tcp_type);
 int net_context_tcp_send(struct net_buf *buf);
 void *net_context_get_internal_connection(struct net_context *context);
 struct net_buf *net_context_tcp_get_pending(struct net_context *context);
@@ -149,8 +148,7 @@ int net_send(struct net_buf *buf)
 		int status;
 		uint8_t retry_count;
 
-		net_context_tcp_init(ip_buf_context(buf), buf,
-				     NET_TCP_TYPE_CLIENT);
+		net_context_tcp_init(ip_buf_context(buf), NET_TCP_TYPE_CLIENT);
 
 		status = net_context_get_connection_status(
 							ip_buf_context(buf));
@@ -671,7 +669,7 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 		break;
 	case IPPROTO_TCP:
 #ifdef CONFIG_NETWORKING_WITH_TCP
-		ret = net_context_tcp_init(context, NULL, NET_TCP_TYPE_SERVER);
+		ret = net_context_tcp_init(context, NET_TCP_TYPE_SERVER);
 		if (ret) {
 			NET_DBG("TCP connection init failed\n");
 			ret = -ENOENT;
