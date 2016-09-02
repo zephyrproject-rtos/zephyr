@@ -556,7 +556,7 @@ int AlternateTask(void)
 int RegressionTask(void)
 {
 	int  tcRC;
-	int  value;
+	ksem_t value;
 	ksem_t semBlockList[4];
 
 	semBlockList[0] = blockHpSem;
